@@ -3,6 +3,8 @@ export type {
   CoreEventDef,
   EventCategory,
   Channel,
+  GraphHint,
+  GraphRole,
   PayloadFieldDef,
   PayloadFieldGuide,
   PayloadFieldType,

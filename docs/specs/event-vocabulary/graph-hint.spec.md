@@ -4,7 +4,7 @@
 
 ## 상태
 
-draft
+implemented
 
 ## 배경
 
@@ -168,15 +168,15 @@ engine이 loop 감지 시 이 플래그가 false인 이벤트의 반복을 anoma
 
 | role | 이벤트 수 |
 |---|---|
-| entry | 12 |
-| transition | 26 |
-| terminal | 16 |
-| observation | 6 |
+| entry | 10 |
+| transition | 23 |
+| terminal | 17 |
+| observation | 10 |
 
 | 플래그 | true 수 |
 |---|---|
-| goal_eligible | 5 (success, complete, conversion, form_submit_success, assertion_pass는 payload 레벨) |
-| loopable | 42 |
+| goal_eligible | 4 (success, complete, conversion, form_submit_success) |
+| loopable | 40 |
 
 ## CoreEventDef 확장
 

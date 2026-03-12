@@ -10,6 +10,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "오류",
     description: "오류 발생",
     auto_collectable: true,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "warning",
@@ -20,6 +21,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "경고",
     description: "경고 조건 감지",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "assertion",
@@ -30,6 +32,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "검증",
     description: "QA/엔진 검증 결과",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "mask_applied",
@@ -40,6 +43,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "마스킹 적용",
     description: "민감정보 마스킹 처리",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "field_present",
@@ -50,6 +54,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "필드 존재",
     description: "특정 필드 존재 확인",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "field_missing",
@@ -60,6 +65,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "필드 누락",
     description: "기대 필드 누락",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "policy_violation",
@@ -70,6 +76,7 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "정책 위반",
     description: "데이터/보안 정책 위반",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "unexpected_event",
@@ -80,5 +87,6 @@ export const qualityEvents: CoreEventDef[] = [
     display_name: "예상 외 이벤트",
     description: "시나리오에 정의되지 않은 이벤트 감지",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: false },
   },
 ];

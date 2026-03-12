@@ -10,6 +10,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "성공",
     description: "작업/흐름 성공 결과",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: true, loopable: false },
   },
   {
     event_key: "failure",
@@ -20,6 +21,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "실패",
     description: "작업/흐름 실패 결과",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "complete",
@@ -30,6 +32,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "완료",
     description: "작업/흐름 완료",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: true, loopable: false },
   },
   {
     event_key: "cancel",
@@ -40,6 +43,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "취소",
     description: "사용자/시스템에 의한 취소",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "timeout",
@@ -50,6 +54,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "시간 초과",
     description: "제한 시간 초과",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "drop_off",
@@ -60,6 +65,7 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "흐름 이탈",
     description: "흐름 중도 이탈",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "conversion",
@@ -70,5 +76,6 @@ export const outcomeEvents: CoreEventDef[] = [
     display_name: "전환",
     description: "목표 전환 달성",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: true, loopable: false },
   },
 ];

@@ -10,6 +10,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "클릭",
     description: "사용자의 클릭 상호작용",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "tap",
@@ -20,6 +21,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "탭",
     description: "사용자의 탭 상호작용",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "scroll",
@@ -30,6 +32,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "스크롤",
     description: "스크롤 동작",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "swipe",
@@ -40,6 +43,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "스와이프",
     description: "스와이프 제스처",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "hover",
@@ -50,6 +54,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "호버",
     description: "마우스 호버",
     auto_collectable: true,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
   {
     event_key: "focus",
@@ -60,6 +65,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "포커스",
     description: "입력 포커스 획득",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "blur",
@@ -70,6 +76,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "포커스 해제",
     description: "입력 포커스 해제",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "select",
@@ -80,6 +87,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "선택",
     description: "항목 선택",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "expand",
@@ -90,6 +98,7 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "펼치기",
     description: "UI 요소 펼치기",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "collapse",
@@ -100,5 +109,6 @@ export const interactionEvents: CoreEventDef[] = [
     display_name: "접기",
     description: "UI 요소 접기",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
 ];

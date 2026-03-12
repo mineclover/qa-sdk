@@ -21,6 +21,16 @@ export type Channel =
   | "common"
   | "qa";
 
+// ── Graph Hint ─────────────────────────────────────────
+
+export type GraphRole = "entry" | "transition" | "terminal" | "observation";
+
+export interface GraphHint {
+  role: GraphRole;
+  goal_eligible: boolean;
+  loopable: boolean;
+}
+
 // ── Core Event Definition ──────────────────────────────
 
 export interface CoreEventDef {
@@ -32,6 +42,7 @@ export interface CoreEventDef {
   display_name: string;
   description: string;
   auto_collectable: boolean;
+  graph_hint: GraphHint;
 }
 
 // ── Payload Field Guide ────────────────────────────────

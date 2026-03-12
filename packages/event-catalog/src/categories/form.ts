@@ -10,6 +10,7 @@ export const formEvents: CoreEventDef[] = [
     display_name: "입력값 변경",
     description: "입력 필드 값 변경",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "form_submit",
@@ -20,6 +21,7 @@ export const formEvents: CoreEventDef[] = [
     display_name: "폼 제출",
     description: "폼 제출 시도",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "form_submit_success",
@@ -30,6 +32,7 @@ export const formEvents: CoreEventDef[] = [
     display_name: "폼 제출 성공",
     description: "폼 제출 성공",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: true, loopable: false },
   },
   {
     event_key: "form_submit_failure",
@@ -40,6 +43,7 @@ export const formEvents: CoreEventDef[] = [
     display_name: "폼 제출 실패",
     description: "폼 제출 실패",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: true },
   },
   {
     event_key: "validation_error",
@@ -50,5 +54,6 @@ export const formEvents: CoreEventDef[] = [
     display_name: "입력 검증 실패",
     description: "입력 값 검증 실패",
     auto_collectable: false,
+    graph_hint: { role: "observation", goal_eligible: false, loopable: true },
   },
 ];

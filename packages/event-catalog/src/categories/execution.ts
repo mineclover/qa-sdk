@@ -10,6 +10,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "작업 시작",
     description: "작업/태스크 시작",
     auto_collectable: false,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: true },
   },
   {
     event_key: "task_finish",
@@ -20,6 +21,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "작업 종료",
     description: "작업/태스크 종료",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: true },
   },
   {
     event_key: "job_start",
@@ -30,6 +32,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "잡 시작",
     description: "배치/잡 시작",
     auto_collectable: false,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: false },
   },
   {
     event_key: "job_finish",
@@ -40,6 +43,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "잡 종료",
     description: "배치/잡 종료",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "sdk_init",
@@ -50,6 +54,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "SDK 초기화",
     description: "SDK 인스턴스 초기화",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: false },
   },
   {
     event_key: "sdk_flush",
@@ -60,6 +65,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "SDK flush",
     description: "SDK 이벤트 전송 flush",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "tool_invoke",
@@ -70,6 +76,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "도구 호출",
     description: "에이전트 도구 호출",
     auto_collectable: false,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "tool_result",
@@ -80,6 +87,7 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "도구 결과",
     description: "에이전트 도구 결과 수신",
     auto_collectable: false,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "state_transition",
@@ -90,5 +98,6 @@ export const executionEvents: CoreEventDef[] = [
     display_name: "상태 전이",
     description: "상태 머신/워크플로 상태 변경",
     auto_collectable: false,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
 ];

@@ -10,6 +10,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "페이지 진입",
     description: "웹 페이지 진입",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: true },
   },
   {
     event_key: "screen_view",
@@ -20,6 +21,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "화면 진입",
     description: "앱 화면 진입",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: true },
   },
   {
     event_key: "route_change",
@@ -30,6 +32,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "라우트 변경",
     description: "라우트 이동",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "deep_link_open",
@@ -40,6 +43,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "딥링크 진입",
     description: "딥링크를 통한 앱 진입",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: false },
   },
   {
     event_key: "app_open",
@@ -50,6 +54,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "앱 실행",
     description: "앱 실행",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: false },
   },
   {
     event_key: "app_background",
@@ -60,6 +65,7 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "앱 백그라운드",
     description: "앱 백그라운드 전환",
     auto_collectable: true,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: true },
   },
   {
     event_key: "app_foreground",
@@ -70,5 +76,6 @@ export const navigationEvents: CoreEventDef[] = [
     display_name: "앱 포그라운드",
     description: "앱 포그라운드 전환",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: true },
   },
 ];

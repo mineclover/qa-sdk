@@ -10,6 +10,7 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "세션 시작",
     description: "세션 시작",
     auto_collectable: true,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: false },
   },
   {
     event_key: "session_end",
@@ -20,6 +21,7 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "세션 종료",
     description: "세션 종료",
     auto_collectable: true,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "session_timeout",
@@ -30,6 +32,7 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "세션 타임아웃",
     description: "세션 비활성 타임아웃",
     auto_collectable: true,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "enter_flow",
@@ -40,6 +43,7 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "시나리오 진입",
     description: "특정 시나리오/흐름 진입",
     auto_collectable: false,
+    graph_hint: { role: "entry", goal_eligible: false, loopable: true },
   },
   {
     event_key: "exit_flow",
@@ -50,6 +54,7 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "시나리오 이탈",
     description: "특정 시나리오/흐름 이탈",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: true },
   },
   {
     event_key: "bounce",
@@ -60,5 +65,6 @@ export const sessionEvents: CoreEventDef[] = [
     display_name: "조기 이탈",
     description: "세션 초기 이탈",
     auto_collectable: false,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
 ];

@@ -10,6 +10,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "HTTP 요청",
     description: "HTTP 요청 발생",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "http_response",
@@ -20,6 +21,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "HTTP 응답",
     description: "HTTP 응답 수신",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "rpc_request",
@@ -30,6 +32,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "RPC 요청",
     description: "RPC 호출 발생",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "rpc_response",
@@ -40,6 +43,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "RPC 응답",
     description: "RPC 응답 수신",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "websocket_open",
@@ -50,6 +54,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "웹소켓 연결",
     description: "웹소켓 연결 수립",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: false },
   },
   {
     event_key: "websocket_message",
@@ -60,6 +65,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "웹소켓 메시지",
     description: "웹소켓 메시지 송수신",
     auto_collectable: true,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
   {
     event_key: "websocket_close",
@@ -70,6 +76,7 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "웹소켓 종료",
     description: "웹소켓 연결 종료",
     auto_collectable: true,
+    graph_hint: { role: "terminal", goal_eligible: false, loopable: false },
   },
   {
     event_key: "retry",
@@ -80,5 +87,6 @@ export const networkEvents: CoreEventDef[] = [
     display_name: "재시도",
     description: "네트워크 요청 재시도 발생",
     auto_collectable: false,
+    graph_hint: { role: "transition", goal_eligible: false, loopable: true },
   },
 ];
