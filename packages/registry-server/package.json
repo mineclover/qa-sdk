@@ -24,7 +24,7 @@
     "@hono/node-server": "^1.14.1",
     "drizzle-orm": "^0.39.3",
     "hono": "^4.7.5",
-    "pino": "workspace:^9.9.4",
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "postgres": "^3.4.5",
     "ulid": "^2.3.0",
     "zod": "^3.24.2"

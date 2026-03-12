@@ -195,6 +195,7 @@ class PinoLoggerImpl implements Logger {
       ...this.#base,
       ...mixin,
       ...(levelFormatter ? levelFormatter(level, LEVEL_PRIORITY[level]) : { level }),
+      time: Date.now(),
       ...serializedDetails,
     };
 

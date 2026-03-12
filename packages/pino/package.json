@@ -1,9 +1,10 @@
 {
-  "name": "pino",
+  "name": "@qa-sdk/pino",
   "version": "9.9.4",
   "type": "module",
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
@@ -11,8 +12,9 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "test": "vitest run --passWithNoTests",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "typescript": "^5.8.2",
