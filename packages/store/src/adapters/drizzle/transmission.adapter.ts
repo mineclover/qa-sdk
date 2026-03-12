@@ -1,10 +1,10 @@
 import type { TransmissionStore, TransmissionInsert } from "@qa-sdk/core";
-import type { Db } from "../../db/client.js";
+import type { DbExecutor } from "../../db/client.js";
 import { transmissions } from "../../db/schema.js";
 
 /** TransmissionStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleTransmissionStore implements TransmissionStore {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: DbExecutor) {}
 
   async insert(params: TransmissionInsert): Promise<void> {
     await this.db.insert(transmissions).values({

@@ -1,25 +1,23 @@
 import { eq } from "drizzle-orm";
 import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
-import type { Db } from "../../db/client.js";
+import type { DbExecutor } from "../../db/client.js";
 import { qaSessions } from "../../db/schema.js";
 
 /** SessionStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleSessionStore implements SessionStore {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: DbExecutor) {}
 
-  async upsert(params: SessionUpsert): Promise<StoredSession> {
+  async upsert(params: SessionUpsert): Promise<void> {
     const existing = await this.findById(params.sessionId);
-    if (existing) return existing;
+    if (existing) return;
 
-    const [row] = await this.db
+    await this.db
       .insert(qaSessions)
       .values({
         sessionId: params.sessionId,
         scenarioId: params.scenarioId,
         labels: params.labels,
-      })
-      .returning();
-    return toStoredSession(row);
+      });
   }
 
   async findById(sessionId: string): Promise<StoredSession | null> {

@@ -1,6 +1,6 @@
 /** Trace 메타데이터 저장소 계약 */
 export interface TraceStore {
-  upsert(params: TraceUpsert): Promise<StoredTrace>;
+  upsert(params: TraceUpsert): Promise<void>;
   findById(traceId: string): Promise<StoredTrace | null>;
   findUnreconstructed(limit?: number): Promise<StoredTrace[]>;
   markReconstructed(traceId: string): Promise<void>;

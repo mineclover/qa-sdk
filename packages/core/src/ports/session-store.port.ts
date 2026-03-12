@@ -1,6 +1,6 @@
 /** QA Session 저장소 계약 */
 export interface SessionStore {
-  upsert(params: SessionUpsert): Promise<StoredSession>;
+  upsert(params: SessionUpsert): Promise<void>;
   findById(sessionId: string): Promise<StoredSession | null>;
   close(sessionId: string): Promise<void>;
 }

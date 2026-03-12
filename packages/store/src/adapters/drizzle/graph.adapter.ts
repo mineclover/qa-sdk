@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import type { GraphStore } from "@qa-sdk/core";
 import type { RuntimeGraph } from "@qa-sdk/core";
-import type { Db } from "../../db/client.js";
+import type { DbExecutor } from "../../db/client.js";
 import { runtimeGraphs } from "../../db/schema.js";
 
 /** GraphStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleGraphStore implements GraphStore {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: DbExecutor) {}
 
   async upsert(traceId: string, graph: RuntimeGraph): Promise<void> {
     const existing = await this.findByTraceId(traceId);

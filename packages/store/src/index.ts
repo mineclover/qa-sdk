@@ -1,14 +1,31 @@
 // ── DB ──────────────────────────────────────────────────
 
-export { createDb } from "./db/client.js";
-export type { Db } from "./db/client.js";
+export { closeClient, createDb, getClient, withTransaction } from "./db/client.js";
+export type { Db, DbExecutor, DbTransaction } from "./db/client.js";
 export * as schema from "./db/schema.js";
 
 // ── Drizzle Adapters (PostgreSQL) ───────────────────────
 
-export { DrizzleRecordStore } from "./adapters/drizzle/record.adapter.js";
-export { DrizzleTraceStore } from "./adapters/drizzle/trace.adapter.js";
-export { DrizzleGraphStore } from "./adapters/drizzle/graph.adapter.js";
-export { DrizzleVerdictStore } from "./adapters/drizzle/verdict.adapter.js";
-export { DrizzleSessionStore } from "./adapters/drizzle/session.adapter.js";
-export { DrizzleTransmissionStore } from "./adapters/drizzle/transmission.adapter.js";
+export {
+  DrizzleRecordStore,
+  DrizzleTraceStore,
+  DrizzleSessionStore,
+  DrizzleTransmissionStore,
+  DrizzleGraphStore,
+  DrizzleScenarioSpecStore,
+  DrizzleVerdictStore,
+  DrizzleDlqStore,
+} from "./adapters/drizzle/index.js";
+
+// ── In-Memory Adapters ─────────────────────────────────
+
+export {
+  InMemoryRecordStore,
+  InMemoryTraceStore,
+  InMemorySessionStore,
+  InMemoryTransmissionStore,
+  InMemoryGraphStore,
+  InMemoryScenarioSpecStore,
+  InMemoryVerdictStore,
+  InMemoryDlqStore,
+} from "./adapters/memory/index.js";

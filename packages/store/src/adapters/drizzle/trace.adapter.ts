@@ -1,17 +1,17 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { TraceStore, TraceUpsert, StoredTrace } from "@qa-sdk/core";
-import type { Db } from "../../db/client.js";
+import type { DbExecutor } from "../../db/client.js";
 import { traces } from "../../db/schema.js";
 
 /** TraceStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleTraceStore implements TraceStore {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: DbExecutor) {}
 
-  async upsert(params: TraceUpsert): Promise<StoredTrace> {
+  async upsert(params: TraceUpsert): Promise<void> {
     const existing = await this.findById(params.traceId);
 
     if (!existing) {
-      const [row] = await this.db
+      await this.db
         .insert(traces)
         .values({
           traceId: params.traceId,
@@ -20,9 +20,8 @@ export class DrizzleTraceStore implements TraceStore {
           recordCount: params.recordCount,
           firstTimestamp: params.firstTimestamp,
           lastTimestamp: params.lastTimestamp,
-        })
-        .returning();
-      return toStoredTrace(row);
+        });
+      return;
     }
 
     const newFirst =
@@ -35,7 +34,7 @@ export class DrizzleTraceStore implements TraceStore {
         ? existing.lastTimestamp
         : params.lastTimestamp;
 
-    const [row] = await this.db
+    await this.db
       .update(traces)
       .set({
         recordCount: existing.recordCount + params.recordCount,
@@ -43,9 +42,7 @@ export class DrizzleTraceStore implements TraceStore {
         lastTimestamp: newLast,
         updatedAt: new Date(),
       })
-      .where(eq(traces.traceId, params.traceId))
-      .returning();
-    return toStoredTrace(row);
+      .where(eq(traces.traceId, params.traceId));
   }
 
   async findById(traceId: string): Promise<StoredTrace | null> {
@@ -61,6 +58,7 @@ export class DrizzleTraceStore implements TraceStore {
       .select()
       .from(traces)
       .where(eq(traces.reconstructed, false))
+      .orderBy(asc(traces.createdAt))
       .limit(limit);
     return rows.map(toStoredTrace);
   }
