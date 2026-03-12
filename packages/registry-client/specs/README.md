@@ -1,9 +1,7 @@
 # @qa-sdk/registry-client — Specs
 
-이벤트 레지스트리 검증 클라이언트. TTL+LRU 캐싱 지원.
+스펙이 중앙화되었습니다. → [docs/specs/server/registry/](../../../docs/specs/server/registry/)
 
-## 스펙
-
-| 스펙 | 설명 | 상태 |
-|---|---|---|
-| [client.spec.md](client.spec.md) | RegistryClient — 이벤트 검증, 캐싱, fail-open | implemented |
+| 스펙 | 위치 |
+|---|---|
+| client.spec.md | [docs/specs/server/registry/client.spec.md](../../../docs/specs/server/registry/client.spec.md) |

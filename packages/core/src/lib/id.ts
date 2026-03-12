@@ -19,3 +19,11 @@ export function newSpanId(): string {
 export function newQaSessionId(): string {
   return `qas_${ulid()}`;
 }
+
+export function newVerdictId(): string {
+  return `vrd_${ulid()}`;
+}
+
+export function newDlqId(): string {
+  return `dlq_${ulid()}`;
+}

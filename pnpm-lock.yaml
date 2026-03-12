@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)
 
   packages/core:
     dependencies:
@@ -31,6 +35,12 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/event-catalog:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/ingest-server:
     dependencies:
       '@hono/node-server':
@@ -42,12 +52,18 @@ importers:
       '@qa-sdk/engine':
         specifier: workspace:*
         version: link:../engine
+      '@qa-sdk/registry-client':
+        specifier: workspace:*
+        version: link:../registry-client
       '@qa-sdk/store':
         specifier: workspace:*
         version: link:../store
       hono:
         specifier: ^4.7.5
         version: 4.12.7
+      pino:
+        specifier: workspace:^9.9.4
+        version: link:../pino
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -58,6 +74,28 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  packages/pino:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)
+
+  packages/registry-client:
+    dependencies:
+      pino:
+        specifier: workspace:^9.9.4
+        version: link:../pino
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -73,6 +111,9 @@ importers:
       hono:
         specifier: ^4.7.5
         version: 4.12.7
+      pino:
+        specifier: workspace:^9.9.4
+        version: link:../pino
       postgres:
         specifier: ^3.4.5
         version: 3.4.8

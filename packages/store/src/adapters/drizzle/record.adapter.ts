@@ -1,11 +1,18 @@
-import { eq, and, asc } from "drizzle-orm";
-import type { RecordStore, RecordInsert, StoredRecord } from "@qa-sdk/core";
-import type { Db } from "../../db/client.js";
+import { and, asc, eq, gt, or, type SQL } from "drizzle-orm";
+import type {
+  RecordStore,
+  RecordInsert,
+  RecordPaginationCursor,
+  RecordPaginationParams,
+  StoredRecord,
+  StoredRecordPage,
+} from "@qa-sdk/core";
+import type { DbExecutor } from "../../db/client.js";
 import { eventRecords } from "../../db/schema.js";
 
 /** RecordStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleRecordStore implements RecordStore {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: DbExecutor) {}
 
   async insertBatch(records: RecordInsert[]): Promise<void> {
     if (records.length === 0) return;
@@ -28,9 +35,10 @@ export class DrizzleRecordStore implements RecordStore {
         payloadMaskingApplied: r.payloadMaskingApplied,
         payloadMaskedFields: r.payloadMaskedFields,
         payload: r.payload,
+        registryWarning: r.registryWarning,
         qaSessionId: r.qaSessionId,
       })),
-    );
+    ).onConflictDoNothing({ target: eventRecords.logId });
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
@@ -38,8 +46,23 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.traceId, traceId))
-      .orderBy(asc(eventRecords.timestamp));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
     return rows.map(toStoredRecord);
+  }
+
+  async findByTraceIdPaginated(
+    traceId: string,
+    params: RecordPaginationParams = {},
+  ): Promise<StoredRecordPage> {
+    const limit = params.limit ?? 50;
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(buildPaginatedWhere(eq(eventRecords.traceId, traceId), params.cursor))
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit + 1);
+
+    return toStoredRecordPage(rows, limit);
   }
 
   async findBySessionId(sessionId: string): Promise<StoredRecord[]> {
@@ -47,8 +70,25 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.qaSessionId, sessionId))
-      .orderBy(asc(eventRecords.timestamp));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
     return rows.map(toStoredRecord);
+  }
+
+  async findBySessionIdPaginated(
+    sessionId: string,
+    params: RecordPaginationParams = {},
+  ): Promise<StoredRecordPage> {
+    const limit = params.limit ?? 50;
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(
+        buildPaginatedWhere(eq(eventRecords.qaSessionId, sessionId), params.cursor),
+      )
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit + 1);
+
+    return toStoredRecordPage(rows, limit);
   }
 
   async findByTraceAndEventKey(
@@ -64,9 +104,50 @@ export class DrizzleRecordStore implements RecordStore {
           eq(eventRecords.eventKey, eventKey),
         ),
       )
-      .orderBy(asc(eventRecords.timestamp));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
     return rows.map(toStoredRecord);
   }
+}
+
+function buildPaginatedWhere(
+  baseCondition: SQL<unknown>,
+  cursor?: RecordPaginationCursor,
+): SQL<unknown> {
+  if (!cursor) {
+    return baseCondition;
+  }
+
+  return and(
+    baseCondition,
+    or(
+      gt(eventRecords.timestamp, cursor.timestamp),
+      and(
+        eq(eventRecords.timestamp, cursor.timestamp),
+        gt(eventRecords.logId, cursor.logId),
+      ),
+    ),
+  ) as SQL<unknown>;
+}
+
+function toStoredRecordPage(
+  rows: Array<typeof eventRecords.$inferSelect>,
+  limit: number,
+): StoredRecordPage {
+  const hasMore = rows.length > limit;
+  const items = rows.slice(0, limit).map(toStoredRecord);
+  const lastItem = items.at(-1);
+
+  return {
+    items,
+    nextCursor:
+      hasMore && lastItem
+        ? {
+            timestamp: new Date(lastItem.timestamp),
+            logId: lastItem.logId,
+          }
+        : null,
+    hasMore,
+  };
 }
 
 function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
@@ -88,6 +169,7 @@ function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
     payloadMaskingApplied: row.payloadMaskingApplied,
     payloadMaskedFields: row.payloadMaskedFields,
     payload: row.payload,
+    registryWarning: row.registryWarning ?? undefined,
     qaSessionId: row.qaSessionId ?? undefined,
     createdAt: row.createdAt,
   };

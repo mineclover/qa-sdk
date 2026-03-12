@@ -1,8 +1,19 @@
 import type { MiddlewareHandler } from "hono";
+import type { Logger } from "pino";
 
-export const requestLogger: MiddlewareHandler = async (c, next) => {
-  const start = Date.now();
-  await next();
-  const ms = Date.now() - start;
-  console.log(`${c.req.method} ${c.req.path} ${c.res.status} ${ms}ms`);
-};
+export function createRequestLogger(logger: Logger): MiddlewareHandler {
+  return async (c, next) => {
+    const start = Date.now();
+    await next();
+
+    logger.info(
+      {
+        method: c.req.method,
+        path: c.req.path,
+        status: c.res.status,
+        duration_ms: Date.now() - start,
+      },
+      "request completed",
+    );
+  };
+}

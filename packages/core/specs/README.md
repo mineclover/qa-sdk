@@ -1,15 +1,13 @@
 # @qa-sdk/core — Specs
 
-모든 패키지가 공유하는 타입, 스키마, 포트 인터페이스, 유틸리티.
+스펙이 중앙화되었습니다. → [docs/specs/data-model/](../../../docs/specs/data-model/)
 
-## 도메인별 스펙
-
-| 스펙 | 설명 | 상태 |
-|---|---|---|
-| [record.spec.md](record.spec.md) | EventRecord 타입 + RecordStore 포트 | implemented |
-| [trace.spec.md](trace.spec.md) | Trace 메타데이터 + TraceStore 포트 | implemented |
-| [session.spec.md](session.spec.md) | QA Session + SessionStore 포트 | implemented |
-| [transmission.spec.md](transmission.spec.md) | TransmissionEnvelope + TransmissionStore 포트 | implemented |
-| [graph.spec.md](graph.spec.md) | Spec/RuntimeGraph + GraphStore 포트 | implemented |
-| [verdict.spec.md](verdict.spec.md) | VerdictReport + VerdictStore 포트 | implemented |
-| [utils.spec.md](utils.spec.md) | ID 생성 + Clock 유틸리티 | implemented |
+| 스펙 | 위치 |
+|---|---|
+| record.spec.md | [docs/specs/data-model/record.spec.md](../../../docs/specs/data-model/record.spec.md) |
+| trace.spec.md | [docs/specs/data-model/trace.spec.md](../../../docs/specs/data-model/trace.spec.md) |
+| session.spec.md | [docs/specs/data-model/session.spec.md](../../../docs/specs/data-model/session.spec.md) |
+| transmission.spec.md | [docs/specs/data-model/transmission.spec.md](../../../docs/specs/data-model/transmission.spec.md) |
+| graph.spec.md | [docs/specs/data-model/graph.spec.md](../../../docs/specs/data-model/graph.spec.md) |
+| verdict.spec.md | [docs/specs/data-model/verdict.spec.md](../../../docs/specs/data-model/verdict.spec.md) |
+| utils.spec.md | [docs/specs/data-model/utils.spec.md](../../../docs/specs/data-model/utils.spec.md) |

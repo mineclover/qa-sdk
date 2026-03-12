@@ -1,6 +1,7 @@
 # Infrastructure
 
-> 횡단 관심사 — health check, rate limiting, API key 인증, request ID, graceful shutdown.
+> 횡단 관심사 — health check, rate limiting, request ID, graceful shutdown.
+> 인증은 게이트웨이 레벨에서 처리하며 내부 서비스는 투명하게 동작한다.
 
 ## 상태
 
@@ -79,42 +80,6 @@ type DbHealthChecker = () => Promise<{ connected: boolean; latency_ms: number }>
 | `RATE_LIMIT_WINDOW_MS` | 60000 | 슬라이딩 윈도우 크기 (ms) |
 | `RATE_LIMIT_MAX_REQUESTS` | 100 | 윈도우 내 최대 요청 수 |
 
-## API Key 인증
-
-Bearer 토큰 기반 인증. 설정 없으면 인증 비활성화.
-
-### 동작
-
-- `Authorization: Bearer <api-key>` 헤더 확인
-- API key는 SHA256 해시로 변환 후 `timingSafeEqual`로 비교 (타이밍 공격 방지)
-- 키 파싱: 쉼표 또는 줄바꿈으로 구분된 문자열, 또는 파일에서 로드
-
-### 공개 경로 (인증 면제)
-
-- `GET /health`
-- `GET /health/live`
-- `GET /health/ready`
-
-### 401 응답
-
-```json
-{
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "invalid or missing api key"
-  }
-}
-```
-
-### 설정
-
-| 환경 변수 | 기본값 | 설명 |
-|---|---|---|
-| `API_KEYS` | - | 쉼표/줄바꿈 구분 API 키 목록 |
-| `API_KEYS_FILE` | - | API 키 파일 경로 |
-
-둘 다 미설정 시 인증 비활성화.
-
 ## Request ID
 
 모든 요청에 고유 ID를 부여.
@@ -179,5 +144,5 @@ interface AppLifecycle {
 ## 미들웨어 적용 순서
 
 ```
-requestId → shutdown → apiKeyAuth (선택) → rateLimiter (/v1/ingest만) → errorHandler
+requestId → shutdown → rateLimiter (/v1/ingest만) → errorHandler
 ```

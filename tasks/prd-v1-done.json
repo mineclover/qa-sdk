@@ -1,0 +1,181 @@
+{
+  "name": "QA SDK 수집-저장-조회 E2E 라이프사이클 v1",
+  "description": "SDK로 이벤트를 기록하고, ingest-server로 전송하고, store에 저장하고, 저장된 데이터를 pagination 지원 API로 조회하며, SSE 기반 실시간 trace 스트리밍까지 포함하는 전체 운영 라이프사이클을 구현한다.",
+  "branchName": "ralph/e2e-lifecycle-v1",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "루트 워크스페이스 테스트 인프라 구성",
+      "description": "As a developer, I want pnpm run test로 전체 워크스페이스의 테스트를 한 번에 실행하고 싶다.",
+      "acceptanceCriteria": [
+        "vitest가 루트 devDependencies에 설치됨",
+        "테스트가 있는 각 패키지(sdk, store, ingest-server)에 vitest.config.ts 존재",
+        "각 패키지의 package.json에 test 스크립트가 vitest를 실행",
+        "테스트가 없는 패키지(core, engine, registry-server)는 test 스크립트 실행 시 에러 없이 skip되거나 test 스크립트가 없음",
+        "루트 package.json의 test 스크립트가 pnpm -r run test로 전체 패키지 테스트 실행",
+        "pnpm run build && pnpm run test가 클린 상태에서 성공",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "core port별 in-memory adapter 구현",
+      "description": "As a developer, I want 모든 core port 인터페이스에 대한 in-memory 구현체를 만들어서 DB 없이 전체 파이프라인을 테스트할 수 있게 하고 싶다.",
+      "acceptanceCriteria": [
+        "InMemoryRecordStore implements RecordStore — insertBatch, findByTraceId, findBySessionId, findByTraceAndEventKey 동작",
+        "InMemoryTraceStore implements TraceStore — upsert(recordCount 누적, timestamp min/max), findById, findUnreconstructed, markReconstructed 동작",
+        "InMemorySessionStore implements SessionStore — upsert(중복 무시), findById, close 동작",
+        "InMemoryTransmissionStore implements TransmissionStore — insert 동작",
+        "InMemoryGraphStore implements GraphStore — upsert, findByTraceId 동작",
+        "InMemoryVerdictStore implements VerdictStore — insert, findByScenarioAndTrace, findBySessionId 동작",
+        "모든 adapter는 @qa-sdk/store 패키지의 adapters/memory/ 디렉토리에 위치",
+        "@qa-sdk/store barrel export에 모든 in-memory adapter 포함",
+        "각 adapter에 대한 vitest 단위 테스트 존재",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "SDK vitest 단위 테스트 구현",
+      "description": "As a developer, I want SDK의 QaLogger, TraceContext, masking이 올바르게 동작함을 vitest로 검증하고 싶다.",
+      "acceptanceCriteria": [
+        "QaLogger.log() 호출 시 NoopTransport에 올바른 EventRecord가 버퍼링되는지 테스트",
+        "QaLogger.startSpan() → span.end() 호출 시 start_time, end_time, status_code가 올바르게 기록되는지 테스트",
+        "span parent-child 관계가 올바르게 설정되는지 테스트 (nested span의 parent_span_id)",
+        "QaLogger.flush() 호출 시 NoopTransport.sent에 올바른 TransmissionEnvelope가 저장되는지 테스트",
+        "batchSize 도달 시 자동 flush가 트리거되는지 테스트",
+        "TraceContext — trace_id 자동 생성, qa_session_id 전파, span stack push/pop 테스트",
+        "applyMasking — raw/mask/drop/hash 4개 모드 각각에 대한 테스트",
+        "mask 모드 결과가 { _masked: true, _present: true/false } 형태인지 테스트",
+        "모든 테스트가 pnpm --filter @qa-sdk/sdk run test로 실행 가능",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "ingest-server envelope 수신 및 저장 구현",
+      "description": "As a developer, I want ingest-server가 SDK의 Transmission Envelope을 수신하고 store에 올바르게 저장하는 것을 검증하고 싶다.",
+      "acceptanceCriteria": [
+        "POST /v1/ingest 엔드포인트가 유효한 envelope을 받으면 202를 반환",
+        "수신한 envelope의 transmission 메타데이터가 TransmissionStore에 저장됨",
+        "envelope 내 records가 trace_id별로 그룹핑되어 TraceStore에 upsert됨",
+        "각 EventRecord가 RecordStore에 배치 저장됨",
+        "qa_session_id가 있는 record의 session이 SessionStore에 upsert됨",
+        "잘못된 envelope(필수 필드 누락 등)에 대해 400 에러 반환",
+        "GET /health가 { ok: true } 반환",
+        "in-memory adapter를 주입한 vitest 테스트 존재",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "ingest-server trace/session 조회 API (pagination 포함)",
+      "description": "As a developer, I want 저장된 trace와 record를 pagination 지원 API로 조회하여 데이터 저장을 확인하고, 대량 데이터에도 안정적으로 응답받고 싶다.",
+      "acceptanceCriteria": [
+        "GET /v1/traces/:traceId — trace 메타데이터 반환 (traceId, sessionId, recordCount, firstTimestamp, lastTimestamp, reconstructed)",
+        "GET /v1/traces/:traceId/records?cursor=&limit= — 해당 trace의 EventRecord 목록을 timestamp 오름차순, cursor 기반 pagination으로 반환",
+        "GET /v1/sessions/:sessionId — session 메타데이터 반환",
+        "GET /v1/sessions/:sessionId/records?cursor=&limit= — 해당 session의 전체 EventRecord 목록을 cursor 기반 pagination으로 반환",
+        "pagination 응답에 items, next_cursor, has_more 필드 포함",
+        "limit 기본값 50, 최대값 200",
+        "존재하지 않는 traceId/sessionId에 대해 404 반환",
+        "RecordStore port에 cursor 기반 pagination 메서드 추가 (findByTraceIdPaginated, findBySessionIdPaginated)",
+        "InMemoryRecordStore에 pagination 메서드 구현",
+        "in-memory adapter를 주입한 vitest 테스트에서 pagination 동작 검증",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "ingest-server SSE 기반 실시간 trace 스트리밍",
+      "description": "As a developer, I want 디버그 모드에서 특정 trace_id 또는 session_id를 구독하여 새 이벤트가 수신될 때마다 실시간으로 스트리밍받고 싶다.",
+      "acceptanceCriteria": [
+        "GET /v1/streams/traces/:traceId — SSE 연결, 해당 trace에 새 record가 저장될 때마다 이벤트 push",
+        "GET /v1/streams/sessions/:sessionId — SSE 연결, 해당 session에 새 record가 저장될 때마다 이벤트 push",
+        "SSE 이벤트 형식: event: record, data: JSON(StoredRecord)",
+        "연결 시 기존 저장된 record는 전송하지 않고 연결 이후 새로 수신된 것만 push",
+        "클라이언트 연결 종료 시 구독 정리 (메모리 누수 방지)",
+        "ingest 시점에 활성 구독이 있으면 해당 구독자에게 새 record를 즉시 전달하는 내부 EventEmitter 또는 pub/sub 메커니즘 구현",
+        "동일 trace/session에 여러 클라이언트가 구독 가능",
+        "vitest에서 SSE 스트림 수신 후 ingest → 이벤트 수신 흐름 테스트",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "디버그 모드에서 특정 trace 또는 세션을 구독한 후 시각화할 때 사용. 추후 Spec IDE나 Trace Explorer의 실시간 뷰 기반이 된다.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "SDK-to-Ingest E2E 통합 테스트",
+      "description": "As a developer, I want SDK에서 이벤트를 기록하고 ingest-server로 전송한 뒤 조회 API로 확인하는 전체 흐름을 검증하고 싶다.",
+      "acceptanceCriteria": [
+        "테스트에서 ingest-server를 in-memory adapter로 기동",
+        "SDK의 HttpTransport가 해당 서버로 전송하도록 구성",
+        "QaLogger로 log 이벤트 2개, span 1개(nested) 기록 후 flush",
+        "GET /v1/traces/:traceId/records로 조회 시 3개 레코드가 timestamp 순으로 반환",
+        "각 레코드의 trace_id, span_id, parent_span_id, event_key, event_version이 SDK에서 기록한 값과 일치",
+        "qa_session_id가 모든 레코드에 전파되어 있음",
+        "GET /v1/sessions/:sessionId로 조회 시 session 메타데이터 존재",
+        "masking이 적용된 payload의 masked field가 올바르게 저장되어 있음",
+        "pagination 파라미터(limit=1)로 조회 시 has_more=true, next_cursor 존재",
+        "전체 테스트가 DB 없이 in-memory adapter만으로 동작",
+        "pnpm run build passes",
+        "pnpm run test passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003",
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-12T02:49:54.297Z"
+  }
+}

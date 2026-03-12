@@ -2,24 +2,30 @@ import { serve } from "@hono/node-server";
 import { env } from "./config/env.js";
 import { createDb, closeClient } from "./db/client.js";
 import { createApp } from "./app.js";
+import { createLogger } from "./lib/logger.js";
+import { createDbHealthChecker } from "./routes/health.js";
 
 const db = createDb(env.DATABASE_URL);
-const app = createApp(db);
+const logger = createLogger("registry-server");
+const app = createApp(db, {
+  checkDbHealth: createDbHealthChecker(db),
+  logger,
+});
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  console.log(`Registry server listening on http://localhost:${info.port}`);
+  logger.info({ port: info.port }, "registry server listening");
 });
 
 async function shutdown(signal: string) {
-  console.log(`${signal} received, shutting down`);
+  logger.info({ signal }, "shutdown requested");
   server.close(() => {
     closeClient(env.DATABASE_URL)
       .then(() => {
-        console.log("Shutdown complete");
+        logger.info("shutdown complete");
         process.exit(0);
       })
       .catch((err) => {
-        console.error("Error during shutdown:", err);
+        logger.error({ err }, "error during shutdown");
         process.exit(1);
       });
   });

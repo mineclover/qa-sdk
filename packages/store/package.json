@@ -11,6 +11,8 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
+    "test": "vitest run",
+    "test:integration": "vitest run src/adapters/drizzle/adapters.integration.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

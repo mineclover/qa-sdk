@@ -13,13 +13,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    exclude: ["dist/**"],
+    exclude: ["dist/**", "src/__tests__/integration/**"],
     fileParallelism: false,
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts"],
+      exclude: ["src/**/*.test.ts", "src/__tests__/integration/**"],
     },
   },
 });

@@ -9,6 +9,26 @@ export {
 } from "./reconstruction/edge-factory.js";
 export { reconstruct } from "./reconstruction/reconstruct.js";
 export type { ReconstructionOptions } from "./reconstruction/reconstruct.js";
+export {
+  reconstructTrace,
+  reconstructPendingTraces,
+} from "./orchestration/reconstruct-pending-traces.js";
+export type {
+  ReconstructPendingTracesDeps,
+  ReconstructPendingTracesOptions,
+  ReconstructPendingTracesResult,
+} from "./orchestration/reconstruct-pending-traces.js";
+
+export {
+  computeTraceVerdict,
+  computePendingVerdicts,
+} from "./orchestration/compute-pending-verdicts.js";
+export type {
+  ComputeTraceVerdictResult,
+  ComputePendingVerdictsDeps,
+  ComputePendingVerdictsOptions,
+  ComputePendingVerdictsResult,
+} from "./orchestration/compute-pending-verdicts.js";
 
 // ── Spec Compiler ───────────────────────────────────────
 

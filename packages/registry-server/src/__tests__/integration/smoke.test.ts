@@ -40,15 +40,42 @@ describe("integration smoke", () => {
     const app = await createTestApp();
 
     const response = await app.request("/health");
+    const body = await response.json();
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(body).toMatchObject({
+      ok: true,
+      version: "0.1.0",
+      db: {
+        connected: true,
+      },
+    });
+    expect(typeof body.uptime_seconds).toBe("number");
+    expect(typeof body.db.latency_ms).toBe("number");
   });
 
-  it("returns 200 from GET /ready when db is connected", async () => {
+  it("returns 200 from GET /health/ready when db is connected", async () => {
     const app = await createTestApp();
 
-    const response = await app.request("/ready");
+    const response = await app.request("/health/ready");
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: true,
+      version: "0.1.0",
+      db: {
+        connected: true,
+      },
+    });
+    expect(typeof body.uptime_seconds).toBe("number");
+    expect(typeof body.db.latency_ms).toBe("number");
+  });
+
+  it("returns 200 from GET /health/live without a db check", async () => {
+    const app = await createTestApp();
+
+    const response = await app.request("/health/live");
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });

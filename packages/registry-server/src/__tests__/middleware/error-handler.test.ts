@@ -1,11 +1,17 @@
 import { Hono } from "hono";
+import type { Logger } from "pino";
 import { z } from "zod";
 import { describe, expect, it, vi } from "vitest";
 import { AppError } from "../../lib/errors.js";
-import { errorHandler } from "../../middleware/error-handler.js";
+import { createErrorHandler } from "../../middleware/error-handler.js";
 
-function createTestApp() {
+function createTestApp(logger: Logger) {
   const app = new Hono();
+
+  app.use("*", async (c, next) => {
+    c.header("x-request-id", c.req.header("x-request-id") ?? "test-request-id");
+    await next();
+  });
 
   app.get("/service-not-found", () => {
     throw new AppError(
@@ -45,14 +51,14 @@ function createTestApp() {
     throw new Error("database password is wrong");
   });
 
-  app.onError(errorHandler);
+  app.onError(createErrorHandler(logger));
 
   return app;
 }
 
 describe("errorHandler", () => {
   it("returns a 404 payload for SERVICE_NOT_FOUND AppError", async () => {
-    const response = await createTestApp().request("/service-not-found");
+    const response = await createTestApp({} as Logger).request("/service-not-found");
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
@@ -64,7 +70,7 @@ describe("errorHandler", () => {
   });
 
   it("returns a 409 payload for SERVICE_NAME_CONFLICT AppError", async () => {
-    const response = await createTestApp().request("/service-conflict");
+    const response = await createTestApp({} as Logger).request("/service-conflict");
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
@@ -76,7 +82,7 @@ describe("errorHandler", () => {
   });
 
   it("returns INVALID_INPUT with joined field paths for ZodError", async () => {
-    const response = await createTestApp().request("/invalid-input");
+    const response = await createTestApp({} as Logger).request("/invalid-input");
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -90,11 +96,15 @@ describe("errorHandler", () => {
   });
 
   it("returns INTERNAL_ERROR with a generic 500 response for unknown errors", async () => {
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const logger = {
+      error: vi.fn(),
+    } as unknown as Logger;
 
-    const response = await createTestApp().request("/internal-error");
+    const response = await createTestApp(logger).request("/internal-error", {
+      headers: {
+        "x-request-id": "req_123",
+      },
+    });
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
@@ -103,21 +113,24 @@ describe("errorHandler", () => {
         message: "internal server error",
       },
     });
-
-    consoleError.mockRestore();
+    expect(logger.error).toHaveBeenCalledWith(
+      {
+        err: expect.any(Error),
+        requestId: "req_123",
+      },
+      "unhandled error",
+    );
   });
 
   it("does not leak internal error details for unknown errors", async () => {
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const logger = {
+      error: vi.fn(),
+    } as unknown as Logger;
 
-    const response = await createTestApp().request("/internal-error");
+    const response = await createTestApp(logger).request("/internal-error");
     const body = await response.json();
 
     expect(body.error.message).toBe("internal server error");
     expect(JSON.stringify(body)).not.toContain("database password is wrong");
-
-    consoleError.mockRestore();
   });
 });

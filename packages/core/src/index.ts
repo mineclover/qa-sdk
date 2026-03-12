@@ -102,6 +102,8 @@ export {
   newTraceId,
   newSpanId,
   newQaSessionId,
+  newVerdictId,
+  newDlqId,
 } from "./lib/id.js";
 
 export { now } from "./lib/clock.js";
@@ -111,7 +113,10 @@ export { now } from "./lib/clock.js";
 export type {
   RecordStore,
   RecordInsert,
+  RecordPaginationCursor,
+  RecordPaginationParams,
   StoredRecord,
+  StoredRecordPage,
 } from "./ports/record-store.port.js";
 
 export type {
@@ -129,6 +134,13 @@ export type {
 } from "./ports/verdict-store.port.js";
 
 export type {
+  DlqStore,
+  DlqInsert,
+  DlqPhase,
+  StoredDlqItem,
+} from "./ports/dlq-store.port.js";
+
+export type {
   SessionStore,
   SessionUpsert,
   StoredSession,
@@ -138,3 +150,5 @@ export type {
   TransmissionStore,
   TransmissionInsert,
 } from "./ports/transmission-store.port.js";
+
+export type { ScenarioSpecStore } from "./ports/scenario-spec-store.port.js";

@@ -110,6 +110,7 @@ export class QaLogger {
   }): SpanHandle {
     const ctx = this.ensureContext();
     const spanId = ctx.pushSpan();
+    const parentSpanId = ctx.parentSpanId;
     const startTime = now();
 
     return {
@@ -135,7 +136,7 @@ export class QaLogger {
           record_kind: "span",
           trace_id: ctx.trace_id,
           span_id: spanId,
-          parent_span_id: ctx.parentSpanId,
+          parent_span_id: parentSpanId,
           event_key: params.event_key,
           event_version: params.event_version,
           span_name: params.span_name,

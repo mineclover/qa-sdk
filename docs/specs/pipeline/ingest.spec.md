@@ -91,7 +91,6 @@ envelope 내 event_key + event_version이 registry에 등록된 이벤트인지 
 |---|---|---|
 | `REGISTRY_VALIDATION_MODE` | `warn` | strict / warn / off |
 | `REGISTRY_URL` | - | Registry 서버 URL (없으면 validator 미생성) |
-| `REGISTRY_API_KEY` | - | Registry API 인증 키 |
 
 ## Trace Transaction
 

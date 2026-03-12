@@ -1,0 +1,209 @@
+import { Hono } from "hono";
+import type {
+  EventRecord,
+  GraphStore,
+  RecordPaginationCursor,
+  RecordStore,
+  RuntimeGraph,
+  SessionStore,
+  StoredRecord,
+  StoredRecordPage,
+  StoredSession,
+  StoredTrace,
+  TraceStore,
+} from "@qa-sdk/core";
+import { z } from "zod";
+import {
+  badRequest,
+  graphNotFound,
+  sessionNotFound,
+  traceNotFound,
+} from "../lib/errors.js";
+
+const paginationQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+
+const cursorSchema = z.object({
+  timestamp: z.string().datetime(),
+  logId: z.string().min(1),
+});
+
+export interface QueryDeps {
+  graphStore: GraphStore;
+  recordStore: RecordStore;
+  traceStore: TraceStore;
+  sessionStore: SessionStore;
+}
+
+export function createQueryRoutes(deps: QueryDeps) {
+  const app = new Hono();
+
+  app.get("/v1/traces/:traceId", async (c) => {
+    const traceId = c.req.param("traceId");
+    const trace = await deps.traceStore.findById(traceId);
+
+    if (!trace) {
+      throw traceNotFound(traceId);
+    }
+
+    return c.json(toTraceResponse(trace));
+  });
+
+  app.get("/v1/traces/:traceId/records", async (c) => {
+    const traceId = c.req.param("traceId");
+    const pagination = parsePaginationQuery(c.req.query());
+    const trace = await deps.traceStore.findById(traceId);
+
+    if (!trace) {
+      throw traceNotFound(traceId);
+    }
+
+    const page = await deps.recordStore.findByTraceIdPaginated(traceId, pagination);
+
+    return c.json(toPaginatedRecordResponse(page));
+  });
+
+  app.get("/v1/traces/:traceId/graph", async (c) => {
+    const traceId = c.req.param("traceId");
+    const graph = await deps.graphStore.findByTraceId(traceId);
+
+    if (!graph) {
+      throw graphNotFound(traceId);
+    }
+
+    return c.json(toRuntimeGraphResponse(graph));
+  });
+
+  app.get("/v1/sessions/:sessionId", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const session = await deps.sessionStore.findById(sessionId);
+
+    if (!session) {
+      throw sessionNotFound(sessionId);
+    }
+
+    return c.json(toSessionResponse(session));
+  });
+
+  app.get("/v1/sessions/:sessionId/records", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const pagination = parsePaginationQuery(c.req.query());
+    const session = await deps.sessionStore.findById(sessionId);
+
+    if (!session) {
+      throw sessionNotFound(sessionId);
+    }
+
+    const page = await deps.recordStore.findBySessionIdPaginated(
+      sessionId,
+      pagination,
+    );
+
+    return c.json(toPaginatedRecordResponse(page));
+  });
+
+  return app;
+}
+
+function parsePaginationQuery(query: Record<string, string | undefined>) {
+  const parsed = paginationQuerySchema.parse(query);
+
+  return {
+    cursor: parsed.cursor ? decodeCursor(parsed.cursor) : undefined,
+    limit: normalizeLimit(parsed.limit),
+  };
+}
+
+function normalizeLimit(limit?: number): number {
+  return Math.min(limit ?? 50, 200);
+}
+
+function decodeCursor(cursor: string): RecordPaginationCursor {
+  try {
+    const decoded = Buffer.from(cursor, "base64url").toString("utf8");
+    const parsed = cursorSchema.parse(JSON.parse(decoded));
+
+    return {
+      timestamp: new Date(parsed.timestamp),
+      logId: parsed.logId,
+    };
+  } catch {
+    throw badRequest("cursor: invalid cursor");
+  }
+}
+
+function encodeCursor(cursor: RecordPaginationCursor): string {
+  return Buffer.from(
+    JSON.stringify({
+      timestamp: cursor.timestamp.toISOString(),
+      logId: cursor.logId,
+    }),
+  ).toString("base64url");
+}
+
+function toTraceResponse(trace: StoredTrace) {
+  return {
+    traceId: trace.traceId,
+    sessionId: trace.sessionId,
+    recordCount: trace.recordCount,
+    firstTimestamp: toNullableIsoString(trace.firstTimestamp),
+    lastTimestamp: toNullableIsoString(trace.lastTimestamp),
+    reconstructed: trace.reconstructed,
+  };
+}
+
+function toSessionResponse(session: StoredSession) {
+  return {
+    sessionId: session.sessionId,
+    scenarioId: session.scenarioId,
+    labels: session.labels,
+    startedAt: session.startedAt.toISOString(),
+    closedAt: toNullableIsoString(session.closedAt),
+  };
+}
+
+function toPaginatedRecordResponse(page: StoredRecordPage) {
+  return {
+    items: page.items.map(toEventRecord),
+    next_cursor: page.nextCursor ? encodeCursor(page.nextCursor) : null,
+    has_more: page.hasMore,
+  };
+}
+
+function toRuntimeGraphResponse(graph: RuntimeGraph) {
+  return {
+    ...graph,
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+  };
+}
+
+function toEventRecord(record: StoredRecord): EventRecord {
+  return {
+    log_id: record.logId,
+    timestamp: record.timestamp.toISOString(),
+    record_kind: record.recordKind as EventRecord["record_kind"],
+    trace_id: record.traceId,
+    span_id: record.spanId,
+    parent_span_id: record.parentSpanId,
+    event_key: record.eventKey,
+    event_version: record.eventVersion,
+    span_name: record.spanName,
+    start_time: record.startTime?.toISOString(),
+    end_time: record.endTime?.toISOString(),
+    status_code: record.statusCode as EventRecord["status_code"],
+    payload_format: record.payloadFormat as EventRecord["payload_format"],
+    payload_encoding: record.payloadEncoding as EventRecord["payload_encoding"],
+    payload_masking_applied: record.payloadMaskingApplied,
+    payload_masked_fields: record.payloadMaskedFields,
+    payload: record.payload,
+    qa_session_id: record.qaSessionId,
+    _registry_warning: record.registryWarning,
+  };
+}
+
+function toNullableIsoString(value: Date | null): string | null {
+  return value ? value.toISOString() : null;
+}

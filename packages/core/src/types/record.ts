@@ -52,4 +52,5 @@ export interface EventRecord {
   // ── QA Session ─────────────────────────────────────
 
   qa_session_id?: string;
+  _registry_warning?: string;
 }

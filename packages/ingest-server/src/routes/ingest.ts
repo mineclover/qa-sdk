@@ -1,20 +1,59 @@
 import { Hono } from "hono";
 import {
+  type GraphStore,
   transmissionEnvelopeSchema,
   type TransmissionEnvelope,
   type RecordInsert,
   type RecordStore,
+  type ScenarioSpecStore,
+  type StoredRecord,
   type TraceStore,
   type TransmissionStore,
   type SessionStore,
+  type VerdictStore,
+  type DlqStore,
 } from "@qa-sdk/core";
+import { reconstructPendingTraces, computePendingVerdicts } from "@qa-sdk/engine";
+import type { ValidationResult } from "@qa-sdk/registry-client";
+import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
+import type { Logger } from "pino";
+import { badRequest } from "../lib/errors.js";
+
+export type RegistryValidationMode = "strict" | "warn" | "off";
+
+export interface RegistryEventValidator {
+  validateEvent(
+    serviceName: string,
+    eventKey: string,
+    eventVersion: string,
+  ): Promise<ValidationResult>;
+}
 
 export interface IngestDeps {
   recordStore: RecordStore;
   traceStore: TraceStore;
+  graphStore: GraphStore;
   transmissionStore: TransmissionStore;
   sessionStore: SessionStore;
+  verdictStore: VerdictStore;
+  scenarioSpecStore: ScenarioSpecStore;
+  dlqStore: DlqStore;
+  recordStreamBroker: RecordStreamBroker;
+  registryValidationMode?: RegistryValidationMode;
+  registryValidator?: RegistryEventValidator;
+  withTraceTransaction?: TraceTransactionRunner;
+  logger?: Logger;
 }
+
+export interface TracePersistenceStores {
+  recordStore: Pick<RecordStore, "insertBatch">;
+  traceStore: Pick<TraceStore, "upsert">;
+  sessionStore: Pick<SessionStore, "upsert">;
+}
+
+export type TraceTransactionRunner = <T>(
+  fn: (stores: TracePersistenceStores) => Promise<T>,
+) => Promise<T>;
 
 export function createIngestRoutes(deps: IngestDeps) {
   const app = new Hono();
@@ -36,7 +75,20 @@ async function processEnvelope(
   envelope: TransmissionEnvelope,
   deps: IngestDeps,
 ) {
-  // 1. transmission 메타 저장
+  // Phase 1: 저장 (응답 경로)
+  await storeEnvelope(envelope, deps);
+
+  // Phase 2: 후처리 — reconstruction + verdict (향후 비동기 분리 대상)
+  await postIngestProcess(deps);
+}
+
+/** Phase 1: transmission 메타 + trace/session/record 저장 + SSE 발행 */
+async function storeEnvelope(
+  envelope: TransmissionEnvelope,
+  deps: IngestDeps,
+) {
+  const registryWarnings = await validateEnvelopeRecords(envelope, deps);
+
   await deps.transmissionStore.insert({
     transmissionId: envelope.transmission_id,
     sentAt: new Date(envelope.sent_at),
@@ -50,7 +102,6 @@ async function processEnvelope(
     recordCount: envelope.records.length,
   });
 
-  // 2. trace별 그룹핑
   const traceGroups = new Map<string, typeof envelope.records>();
   for (const r of envelope.records) {
     const group = traceGroups.get(r.trace_id);
@@ -58,26 +109,19 @@ async function processEnvelope(
     else traceGroups.set(r.trace_id, [r]);
   }
 
-  // 3. trace 메타 upsert + session upsert + record 저장
   for (const [traceId, records] of traceGroups) {
     const timestamps = records.map((r) => new Date(r.timestamp));
     const first = new Date(Math.min(...timestamps.map((d) => d.getTime())));
     const last = new Date(Math.max(...timestamps.map((d) => d.getTime())));
 
-    const sessionId = records.find((r) => r.qa_session_id)?.qa_session_id;
-
-    await deps.traceStore.upsert({
-      traceId,
-      sessionId,
-      serviceName: envelope.source.service_name,
-      recordCount: records.length,
-      firstTimestamp: first,
-      lastTimestamp: last,
-    });
-
-    if (sessionId) {
-      await deps.sessionStore.upsert({ sessionId });
-    }
+    const sessionIds = Array.from(
+      new Set(
+        records.flatMap((record) =>
+          record.qa_session_id ? [record.qa_session_id] : [],
+        ),
+      ),
+    );
+    const sessionId = sessionIds[0];
 
     const inserts: RecordInsert[] = records.map((r) => ({
       logId: r.log_id,
@@ -98,8 +142,275 @@ async function processEnvelope(
       payloadMaskedFields: r.payload_masked_fields,
       payload: r.payload,
       qaSessionId: r.qa_session_id,
+      registryWarning: registryWarnings.get(r.log_id),
     }));
 
-    await deps.recordStore.insertBatch(inserts);
+    try {
+      await persistTrace(
+        {
+          traceId,
+          sessionId,
+          sessionIds,
+          serviceName: envelope.source.service_name,
+          recordCount: records.length,
+          firstTimestamp: first,
+          lastTimestamp: last,
+          records: inserts,
+        },
+        deps,
+      );
+
+      for (const record of toStoredRecords(inserts)) {
+        deps.recordStreamBroker.publish(record);
+      }
+    } catch (error) {
+      deps.logger?.error(
+        {
+          err: error,
+          traceId,
+        },
+        "failed to store trace",
+      );
+    }
   }
+}
+
+async function persistTrace(
+  trace: {
+    traceId: string;
+    sessionId?: string;
+    sessionIds: string[];
+    serviceName: string;
+    recordCount: number;
+    firstTimestamp: Date;
+    lastTimestamp: Date;
+    records: RecordInsert[];
+  },
+  deps: IngestDeps,
+) {
+  const stores =
+    deps.withTraceTransaction === undefined
+      ? getTracePersistenceStores(deps)
+      : undefined;
+
+  const persist = async (transactionStores: TracePersistenceStores) => {
+    for (const sessionId of trace.sessionIds) {
+      await transactionStores.sessionStore.upsert({ sessionId });
+    }
+
+    await transactionStores.traceStore.upsert({
+      traceId: trace.traceId,
+      sessionId: trace.sessionId,
+      serviceName: trace.serviceName,
+      recordCount: trace.recordCount,
+      firstTimestamp: trace.firstTimestamp,
+      lastTimestamp: trace.lastTimestamp,
+    });
+
+    await transactionStores.recordStore.insertBatch(trace.records);
+  };
+
+  if (stores) {
+    await persist(stores);
+    return;
+  }
+
+  await deps.withTraceTransaction!(persist);
+}
+
+async function validateEnvelopeRecords(
+  envelope: TransmissionEnvelope,
+  deps: IngestDeps,
+): Promise<Map<string, string>> {
+  const mode = deps.registryValidationMode ?? "warn";
+  const validator = deps.registryValidator;
+
+  if (mode === "off" || validator === undefined) {
+    return new Map();
+  }
+
+  const serviceName = envelope.source.service_name;
+  const uniqueEventKeys = new Map<
+    string,
+    { eventKey: string; eventVersion: string }
+  >();
+
+  for (const record of envelope.records) {
+    const eventIdentity = getEventIdentity(record.event_key, record.event_version);
+    if (!uniqueEventKeys.has(eventIdentity)) {
+      uniqueEventKeys.set(eventIdentity, {
+        eventKey: record.event_key,
+        eventVersion: record.event_version,
+      });
+    }
+  }
+
+  const validationResults = new Map<string, ValidationResult>();
+  await Promise.all(
+    Array.from(uniqueEventKeys.entries()).map(async ([eventIdentity, event]) => {
+      validationResults.set(
+        eventIdentity,
+        await validateRegistryEvent(
+          validator,
+          {
+            serviceName,
+            ...event,
+          },
+          deps,
+        ),
+      );
+    }),
+  );
+
+  const invalidRecords = envelope.records.flatMap((record) => {
+    const result = validationResults.get(
+      getEventIdentity(record.event_key, record.event_version),
+    );
+
+    if (!result || result.valid) {
+      return [];
+    }
+
+    return [
+      {
+        eventKey: record.event_key,
+        eventVersion: record.event_version,
+        logId: record.log_id,
+        reason: result.reason ?? "event not found in registry",
+      },
+    ];
+  });
+
+  if (invalidRecords.length === 0) {
+    return new Map();
+  }
+
+  if (mode === "strict") {
+    throw badRequest(
+      `registry validation failed for ${invalidRecords
+        .map((record) => formatInvalidRegistryEvent(record))
+        .join(", ")}`,
+    );
+  }
+
+  deps.logger?.warn(
+    {
+      invalidEvents: invalidRecords.map((record) => ({
+        eventKey: record.eventKey,
+        eventVersion: record.eventVersion,
+        logId: record.logId,
+        reason: record.reason,
+      })),
+      serviceName,
+    },
+    "ingest payload contains unregistered events",
+  );
+
+  return new Map(
+    invalidRecords.map((record) => [record.logId, record.reason] as const),
+  );
+}
+
+async function validateRegistryEvent(
+  validator: RegistryEventValidator,
+  event: {
+    serviceName: string;
+    eventKey: string;
+    eventVersion: string;
+  },
+  deps: IngestDeps,
+): Promise<ValidationResult> {
+  try {
+    return await validator.validateEvent(
+      event.serviceName,
+      event.eventKey,
+      event.eventVersion,
+    );
+  } catch (error) {
+    deps.logger?.warn(
+      {
+        err: error,
+        eventKey: event.eventKey,
+        eventVersion: event.eventVersion,
+        serviceName: event.serviceName,
+      },
+      "registry validation unavailable, failing open",
+    );
+    return { valid: true };
+  }
+}
+
+function getEventIdentity(eventKey: string, eventVersion: string): string {
+  return JSON.stringify([eventKey, eventVersion]);
+}
+
+function formatInvalidRegistryEvent(record: {
+  eventKey: string;
+  eventVersion: string;
+  reason: string;
+}): string {
+  return `${record.eventKey}@${record.eventVersion} (${record.reason})`;
+}
+
+function getTracePersistenceStores(deps: IngestDeps): TracePersistenceStores {
+  return {
+    recordStore: deps.recordStore,
+    traceStore: deps.traceStore,
+    sessionStore: deps.sessionStore,
+  };
+}
+
+/** Phase 2: reconstruction + verdict 계산 */
+async function postIngestProcess(deps: IngestDeps) {
+  const reconstructResult = await reconstructPendingTraces(
+    {
+      recordStore: deps.recordStore,
+      traceStore: deps.traceStore,
+      graphStore: deps.graphStore,
+      dlqStore: deps.dlqStore,
+    },
+    {
+      onError: (traceId, error) => {
+        deps.logger?.error(
+          {
+            err: error,
+            traceId,
+          },
+          "failed to reconstruct trace",
+        );
+      },
+    },
+  );
+
+  if (reconstructResult.reconstructedTraceIds.length > 0) {
+    await computePendingVerdicts(
+      {
+        traceStore: deps.traceStore,
+        sessionStore: deps.sessionStore,
+        graphStore: deps.graphStore,
+        scenarioSpecStore: deps.scenarioSpecStore,
+        verdictStore: deps.verdictStore,
+        dlqStore: deps.dlqStore,
+      },
+      reconstructResult.reconstructedTraceIds,
+      {
+        onError: (traceId, error) => {
+          deps.logger?.error(
+            {
+              err: error,
+              traceId,
+            },
+            "failed to compute verdict",
+          );
+        },
+      },
+    );
+  }
+}
+
+function toStoredRecords(records: RecordInsert[]): StoredRecord[] {
+  return records.map((record) => ({
+    ...structuredClone(record),
+    createdAt: new Date(),
+  }));
 }

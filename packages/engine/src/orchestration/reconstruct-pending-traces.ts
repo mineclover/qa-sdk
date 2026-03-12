@@ -1,0 +1,99 @@
+import type {
+  DlqStore,
+  EventRecord,
+  GraphStore,
+  RecordStore,
+  StoredRecord,
+  TraceStore,
+} from "@qa-sdk/core";
+import { newDlqId } from "@qa-sdk/core";
+import { reconstruct } from "../reconstruction/reconstruct.js";
+
+export interface ReconstructPendingTracesDeps {
+  recordStore: Pick<RecordStore, "findByTraceId">;
+  traceStore: Pick<TraceStore, "findUnreconstructed" | "markReconstructed">;
+  graphStore: GraphStore;
+  dlqStore: Pick<DlqStore, "insert">;
+}
+
+export interface ReconstructPendingTracesOptions {
+  limit?: number;
+  onError?: (traceId: string, error: unknown) => void;
+}
+
+export interface ReconstructPendingTracesResult {
+  reconstructedTraceIds: string[];
+  failedTraceIds: string[];
+}
+
+export async function reconstructPendingTraces(
+  deps: ReconstructPendingTracesDeps,
+  options: ReconstructPendingTracesOptions = {},
+): Promise<ReconstructPendingTracesResult> {
+  const traces = await deps.traceStore.findUnreconstructed(options.limit);
+  const reconstructedTraceIds: string[] = [];
+  const failedTraceIds: string[] = [];
+
+  for (const trace of traces) {
+    try {
+      await reconstructTrace(deps, trace.traceId);
+      reconstructedTraceIds.push(trace.traceId);
+    } catch (error) {
+      failedTraceIds.push(trace.traceId);
+      await deps.dlqStore.insert({
+        id: newDlqId(),
+        traceId: trace.traceId,
+        phase: "reconstruction",
+        errorMessage: toErrorMessage(error),
+      });
+      options.onError?.(trace.traceId, error);
+    }
+  }
+
+  return {
+    reconstructedTraceIds,
+    failedTraceIds,
+  };
+}
+
+export async function reconstructTrace(
+  deps: Pick<ReconstructPendingTracesDeps, "recordStore" | "traceStore" | "graphStore">,
+  traceId: string,
+): Promise<void> {
+  const records = await deps.recordStore.findByTraceId(traceId);
+  const graph = reconstruct(traceId, records.map(toEventRecord));
+
+  await deps.graphStore.upsert(traceId, graph);
+  await deps.traceStore.markReconstructed(traceId);
+}
+
+function toEventRecord(record: StoredRecord): EventRecord {
+  return {
+    log_id: record.logId,
+    timestamp: record.timestamp.toISOString(),
+    record_kind: record.recordKind as EventRecord["record_kind"],
+    trace_id: record.traceId,
+    span_id: record.spanId,
+    parent_span_id: record.parentSpanId,
+    event_key: record.eventKey,
+    event_version: record.eventVersion,
+    span_name: record.spanName,
+    start_time: record.startTime?.toISOString(),
+    end_time: record.endTime?.toISOString(),
+    status_code: record.statusCode as EventRecord["status_code"],
+    payload_format: record.payloadFormat as EventRecord["payload_format"],
+    payload_encoding: record.payloadEncoding as EventRecord["payload_encoding"],
+    payload_masking_applied: record.payloadMaskingApplied,
+    payload_masked_fields: [...record.payloadMaskedFields],
+    payload: structuredClone(record.payload),
+    qa_session_id: record.qaSessionId,
+  };
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}

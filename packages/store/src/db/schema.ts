@@ -63,6 +63,7 @@ export const eventRecords = pgTable("event_records", {
   payloadMaskingApplied: boolean("payload_masking_applied").notNull(),
   payloadMaskedFields: jsonb("payload_masked_fields").$type<string[]>().notNull(),
   payload: jsonb("payload"),
+  registryWarning: text("registry_warning"),
 
   qaSessionId: text("qa_session_id"),
 
@@ -105,6 +106,21 @@ export const runtimeGraphs = pgTable("runtime_graphs", {
   builtAt: timestamp("built_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ── Scenario Specs ─────────────────────────────────────
+// 검증 시나리오 정의. ScenarioSpec JSON 전체를 저장한다.
+
+export const scenarioSpecs = pgTable("scenario_specs", {
+  scenarioId: text("scenario_id").primaryKey(),
+  version: text("version").notNull(),
+  domain: text("domain").notNull(),
+  description: text("description"),
+  spec: jsonb("spec").notNull(), // Full ScenarioSpec JSON
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  idxDomain: index("idx_scenario_specs_domain").on(table.domain),
+}));
+
 // ── Verdict Reports ─────────────────────────────────────
 // matching + verdict 결과.
 
@@ -122,4 +138,27 @@ export const verdictReports = pgTable("verdict_reports", {
   idxSessionId: index("idx_verdict_reports_session_id").on(table.qaSessionId),
   idxVerdict: index("idx_verdict_reports_verdict").on(table.overallVerdict),
   uniqScenarioTrace: unique().on(table.scenarioId, table.traceId),
+}));
+
+// ── Dead Letter Queue ───────────────────────────────────
+// reconstruction / verdict 후처리 실패를 추적한다.
+
+export const deadLetterQueue = pgTable("dead_letter_queue", {
+  id: text("id").primaryKey(),
+  traceId: text("trace_id").notNull().references(() => traces.traceId),
+  phase: text("phase").notNull(),
+  errorMessage: text("error_message").notNull(),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  lastAttemptedAt: timestamp("last_attempted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, (table) => ({
+  idxPending: index("idx_dead_letter_queue_pending").on(
+    table.resolvedAt,
+    table.createdAt,
+  ),
+  idxTracePhase: index("idx_dead_letter_queue_trace_phase").on(
+    table.traceId,
+    table.phase,
+  ),
 }));

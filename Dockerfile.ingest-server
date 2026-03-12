@@ -1,0 +1,21 @@
+FROM node:22-slim AS base
+RUN corepack enable pnpm
+
+FROM base AS build
+WORKDIR /app
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @qa-sdk/ingest-server... run build
+RUN pnpm --filter @qa-sdk/ingest-server deploy --legacy --prod /prod/ingest-server
+
+FROM node:22-slim AS production
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build --chown=node:node /prod/ingest-server ./
+USER node
+EXPOSE 3200
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["sh", "-c", "curl -fsS http://localhost:${PORT:-3200}/health/live || exit 1"]
+CMD ["node", "dist/server.js"]

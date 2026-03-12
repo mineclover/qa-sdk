@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import pino from "pino";
 import { createApp } from "../../app.js";
 import { closeClient, createDb, getClient, type Db } from "../../db/client.js";
 
@@ -114,7 +115,9 @@ export async function cleanupDb() {
 
 export async function createTestApp() {
   const db = await createTestDb();
-  return createApp(db);
+  return createApp(db, {
+    logger: pino({ level: "silent" }),
+  });
 }
 
 export async function closeTestDb() {

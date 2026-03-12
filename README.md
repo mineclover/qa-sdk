@@ -8,14 +8,46 @@ Spec Graph와 Runtime Graph를 비교하여
 
 ---
 
+## Quick Start
+
+로컬 풀스택 데모 환경은 루트 `docker-compose.yml` 기준으로 기동한다.
+`postgres`와 일회성 `migrations` 서비스가 먼저 올라온 뒤, `registry-server`와 `ingest-server`가 순서대로 시작된다.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+기동 후 엔드포인트:
+
+- Registry Server: `http://localhost:3001/health/live`
+- Ingest Server: `http://localhost:3002/health/live`
+
+정리:
+
+```bash
+docker compose down -v
+```
+
+메모:
+
+- 환경 변수는 루트 `.env.example`에 모두 문서화되어 있다.
+- Compose 내부에서는 `postgres` 서비스명을 호스트로 사용하므로 `REGISTRY_DATABASE_URL`, `TRACE_DATABASE_URL`의 기본값을 그대로 쓰면 된다.
+- `INGEST_REGISTRY_VALIDATION_MODE=warn`이 기본값이며, 인증은 게이트웨이에서 처리한다 ([ADR-001](docs/architecture-decisions.md#adr-001-게이트웨이-레벨-인증)).
+
+---
+
 ## 모노레포 구조
 
 ```text
 packages/
   core/               @qa-sdk/core             공유 타입 · 스키마 · 포트 · 유틸리티
+  event-catalog/      @qa-sdk/event-catalog    Core Event 어휘 · Payload Guide (정적 데이터)
   sdk/                @qa-sdk/sdk              이벤트 수집 SDK (브라우저/Node/Edge)
   engine/             @qa-sdk/engine           순수 연산 엔진 (reconstruction/matching/verdict)
   store/              @qa-sdk/store            Trace 저장소 (Drizzle/PostgreSQL adapter)
+  pino/               @qa-sdk/pino             구조화 JSON 로거
+  registry-client/    @qa-sdk/registry-client  이벤트 레지스트리 검증 클라이언트 (TTL+LRU 캐시)
   ingest-server/      @qa-sdk/ingest-server    Envelope 수신 HTTP 서버
   registry-server/    @qa-sdk/registry-server  서비스·이벤트 메타데이터 Registry API
 ```
@@ -24,11 +56,14 @@ packages/
 
 ```text
 core  ← 모든 패키지가 의존
-  ├── sdk           (core만 의존, storage 무관)
-  ├── engine        (core만 의존, storage 무관 — 순수 연산)
-  ├── store         (core 포트를 Drizzle로 구현)
-  ├── ingest-server (core + store + engine 조합)
-  └── registry-server (독립 서비스)
+  ├── event-catalog   (독립 정적 데이터 — 런타임 의존성 0)
+  ├── pino            (독립 로거)
+  ├── sdk             (core만 의존, storage 무관)
+  ├── engine          (core만 의존, storage 무관 — 순수 연산)
+  ├── store           (core 포트를 Drizzle로 구현)
+  ├── registry-client (독립 HTTP 클라이언트)
+  ├── ingest-server   (core + store + engine + registry-client 조합)
+  └── registry-server (독립 서비스, event-catalog import 가능)
 ```
 
 ---
@@ -145,6 +180,45 @@ SDK로부터 **Transmission Envelope을 수신하고 store에 저장**하는 HTT
 
 ---
 
+### `@qa-sdk/event-catalog`
+
+Core Event 어휘와 Payload Field Guide를 제공하는 **정적 데이터 패키지**.
+
+| 모듈 | 역할 |
+|---|---|
+| `categories/*` | 8개 카테고리 60개 Core Event 정의 |
+| `registry` | 전체 이벤트 집계, Map 인덱스, 조회 함수 |
+| `payload-guides` | v1 핵심 20개 이벤트의 payload 필드 가이드 |
+| `v1-minimal` | v1 핵심 20개 서브셋 |
+
+의존: 없음 (런타임 의존성 0)
+
+설계 결정: [`docs/architecture-decisions.md`](docs/architecture-decisions.md#adr-002-event-catalog-정적-데이터-패키지)
+
+---
+
+### `@qa-sdk/pino`
+
+경량 **구조화 JSON 로거**. 외부 pino 라이브러리 대신 자체 구현.
+
+의존: 없음
+
+---
+
+### `@qa-sdk/registry-client`
+
+이벤트 레지스트리에 대한 **검증 HTTP 클라이언트**. TTL+LRU 캐시로 중복 호출 방지.
+
+| 기능 | 설명 |
+|---|---|
+| `validateEvent()` | 이벤트 등록 여부 검증 |
+| 캐시 | TTL 5분, LRU 1000개 |
+| fail-open | 레지스트리 장애 시 이벤트 통과 |
+
+의존: 없음 (자체 fetch)
+
+---
+
 ### `@qa-sdk/registry-server`
 
 서비스·이벤트 메타데이터를 관리하는 **Registry HTTP API**.
@@ -195,6 +269,33 @@ pnpm --filter @qa-sdk/ingest-server run dev
 
 pnpm run clean
 ```
+
+---
+
+## 기능 명세
+
+각 패키지의 기능 명세는 `packages/<pkg>/specs/` 에서 **진입점 단위**로 관리한다.
+
+```text
+packages/<pkg>/specs/
+  README.md              ← 패키지 스펙 인덱스
+  <entry-point>.spec.md  ← 진입점별 기능 명세
+```
+
+컨벤션: [`docs/spec-convention.md`](docs/spec-convention.md)
+
+---
+
+## 설계 결정
+
+횡단 아키텍처 결정은 [`docs/architecture-decisions.md`](docs/architecture-decisions.md)에서 관리한다.
+
+| 결정 | 요약 |
+|---|---|
+| ADR-001 | 게이트웨이 레벨 인증 — 내부 서비스는 인증 수행 안 함 |
+| ADR-002 | Event Catalog 정적 데이터 패키지 — 런타임 의존성 0 |
+| ADR-003 | 패키지 경계 규칙 — 단방향 의존, 역할 분리 |
+| ADR-004 | 내부 서비스 간 통신 — 인증 없는 plain HTTP, fail-open |
 
 ---
 

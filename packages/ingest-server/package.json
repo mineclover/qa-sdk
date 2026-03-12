@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "test": "vitest run",
     "start": "node dist/server.js",
     "clean": "rm -rf dist"
   },
@@ -13,8 +17,10 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/store": "workspace:*",
     "@qa-sdk/engine": "workspace:*",
+    "@qa-sdk/registry-client": "workspace:*",
     "@hono/node-server": "^1.14.1",
     "hono": "^4.7.5",
+    "pino": "workspace:^9.9.4",
     "zod": "^3.24.2"
   },
   "devDependencies": {

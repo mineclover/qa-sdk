@@ -24,7 +24,6 @@ class RegistryClient {
 ```typescript
 interface RegistryClientOptions {
   baseUrl: string;
-  apiKey?: string;
   cacheMaxEntries?: number;
   cacheTtlMs?: number;
   fetch?: typeof fetch;
@@ -35,7 +34,6 @@ interface RegistryClientOptions {
 | 옵션 | 기본값 | 설명 |
 |---|---|---|
 | `baseUrl` | (필수) | 레지스트리 서버 URL |
-| `apiKey` | - | Authorization 헤더 API 키 |
 | `cacheMaxEntries` | 1000 | 캐시 최대 항목 수 |
 | `cacheTtlMs` | 300000 (5분) | 캐시 TTL (밀리초) |
 | `fetch` | 글로벌 `fetch` | HTTP fetch 구현 (테스트용 주입) |
@@ -83,7 +81,7 @@ interface ValidationResult {
 
 - `GET {baseUrl}/services/{serviceName}/events/{eventKey}/versions/{eventVersion}`
 - 경로 파라미터는 URL 인코딩
-- `apiKey` 설정 시 `Authorization: Bearer {apiKey}` 헤더 포함
+- 인증은 게이트웨이 레벨에서 처리 (클라이언트는 인증 헤더 미포함)
 
 ## 제약 조건
 
