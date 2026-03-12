@@ -16,9 +16,10 @@
         "pnpm --filter @qa-sdk/core run typecheck passes (기존 코드 미변경 확인)"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -34,11 +35,12 @@
         "pnpm --filter @qa-sdk/engine run typecheck passes (기존 코드 미변경 확인)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -52,11 +54,12 @@
         "스펙 문서만 수정/생성, 코드 변경 없음"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -70,9 +73,10 @@
         "pnpm --filter @qa-sdk/registry-server run test 전체 통과"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -89,13 +93,14 @@
         "pnpm --filter @qa-sdk/engine run test 전체 통과"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "가장 큰 스토리. core + engine 패키지만 건드리므로 store/ingest-server는 영향 없음.",
       "dependsOn": [
         "US-001",
         "US-002",
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -110,11 +115,12 @@
         "pnpm --filter @qa-sdk/ingest-server run test passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -134,13 +140,14 @@
         "pnpm --filter @qa-sdk/engine run test 전체 통과"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "US-005과 유사한 규모. SpecNode 경량화가 spec-compiler + graph-matcher + computeVerdict에 영향.",
       "dependsOn": [
         "US-001",
         "US-002",
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -156,11 +163,12 @@
         "pnpm --filter @qa-sdk/ingest-server run test passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-009",
@@ -175,9 +183,10 @@
         "pnpm --filter @qa-sdk/event-catalog run typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-010",
@@ -195,11 +204,12 @@
         "pnpm --filter @qa-sdk/event-catalog run test 전체 통과"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-009"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-011",
@@ -215,12 +225,13 @@
         "pnpm --filter @qa-sdk/pino run test 전체 통과"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-12T16:15:46.546Z"
+    "updatedAt": "2026-03-12T17:13:21.501Z"
   }
 }
