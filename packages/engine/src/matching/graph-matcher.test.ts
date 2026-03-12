@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { matchGraphs } from "./graph-matcher.js";
-import type { SpecGraph, SpecNode, RuntimeGraph, RuntimeNode, ScenarioStep } from "@qa-sdk/core";
+import type { SpecGraph, SpecNode, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";
 
-function buildStep(overrides: Partial<ScenarioStep> = {}): ScenarioStep {
+function buildSpecNode(
+  stepId: string,
+  overrides: Partial<Omit<SpecNode, "step_id">> = {},
+): SpecNode {
   return {
-    id: "s1",
+    step_id: stepId,
     event_key: "event.one",
     required: true,
     kind: "sequence",
     ...overrides,
   };
-}
-
-function buildSpecNode(id: string, step: Partial<ScenarioStep> = {}): SpecNode {
-  return { id, step: buildStep({ id, ...step }) };
 }
 
 function buildRuntimeNode(overrides: Partial<RuntimeNode> = {}): RuntimeNode {
@@ -59,13 +58,13 @@ describe("matchGraphs", () => {
       step_id: "s1",
       matched_node_id: "n1",
       verdict: "pass",
-      reason: undefined,
+      constraint_results: [],
     });
     expect(result.step_matches[1]).toEqual({
       step_id: "s2",
       matched_node_id: "n2",
       verdict: "pass",
-      reason: undefined,
+      constraint_results: [],
     });
     expect(result.missing_steps).toEqual([]);
     expect(result.unmatched_nodes).toEqual([]);
@@ -83,7 +82,7 @@ describe("matchGraphs", () => {
 
     expect(result.missing_steps).toEqual(["s1"]);
     expect(result.step_matches[0].verdict).toBe("fail");
-    expect(result.step_matches[0].reason).toContain("required step not found");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
     expect(result.unmatched_nodes).toEqual(["n1"]);
   });
 
@@ -97,7 +96,7 @@ describe("matchGraphs", () => {
 
     expect(result.missing_steps).toEqual(["s1"]);
     expect(result.step_matches[0].verdict).toBe("warn");
-    expect(result.step_matches[0].reason).toContain("optional step not found");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
   });
 
   it("returns fail when constraint evaluation fails", () => {
@@ -114,8 +113,14 @@ describe("matchGraphs", () => {
     const result = matchGraphs(spec, runtime);
 
     expect(result.step_matches[0].verdict).toBe("fail");
-    expect(result.step_matches[0].reason).toBe("constraint evaluation failed");
     expect(result.step_matches[0].matched_node_id).toBe("n1");
+    expect(result.step_matches[0].constraint_results).toEqual([
+      {
+        constraint: { field: "payload.status", op: "eq", value: "completed" },
+        passed: false,
+        actual: "pending",
+      },
+    ]);
   });
 
   it("passes when constraint evaluation succeeds", () => {
@@ -133,6 +138,13 @@ describe("matchGraphs", () => {
 
     expect(result.step_matches[0].verdict).toBe("pass");
     expect(result.step_matches[0].matched_node_id).toBe("n1");
+    expect(result.step_matches[0].constraint_results).toEqual([
+      {
+        constraint: { field: "payload.status", op: "eq", value: "completed" },
+        passed: true,
+        actual: "completed",
+      },
+    ]);
   });
 
   it("filters candidates by event_version when specified", () => {
@@ -148,6 +160,7 @@ describe("matchGraphs", () => {
 
     expect(result.step_matches[0].matched_node_id).toBe("n2");
     expect(result.step_matches[0].verdict).toBe("pass");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
     expect(result.unmatched_nodes).toEqual(["n1"]);
   });
 
@@ -163,6 +176,7 @@ describe("matchGraphs", () => {
     const result = matchGraphs(spec, runtime);
 
     expect(result.step_matches[0].matched_node_id).toBe("n2");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
   });
 
   it("filters candidates by record_kind when specified", () => {
@@ -177,6 +191,7 @@ describe("matchGraphs", () => {
     const result = matchGraphs(spec, runtime);
 
     expect(result.step_matches[0].matched_node_id).toBe("n2");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
   });
 
   it("does not reuse already-matched runtime nodes", () => {
@@ -193,6 +208,7 @@ describe("matchGraphs", () => {
     // s1 matches n1, s2 has no candidate left
     expect(result.step_matches[0].matched_node_id).toBe("n1");
     expect(result.step_matches[0].verdict).toBe("pass");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
     expect(result.missing_steps).toEqual(["s2"]);
   });
 
@@ -222,6 +238,7 @@ describe("matchGraphs", () => {
     const result = matchGraphs(spec, runtime);
 
     expect(result.step_matches[0].verdict).toBe("pass");
+    expect(result.step_matches[0].constraint_results).toEqual([]);
   });
 
   it("tries multiple candidates until constraint passes", () => {
@@ -240,5 +257,12 @@ describe("matchGraphs", () => {
 
     expect(result.step_matches[0].matched_node_id).toBe("n2");
     expect(result.step_matches[0].verdict).toBe("pass");
+    expect(result.step_matches[0].constraint_results).toEqual([
+      {
+        constraint: { field: "payload.amount", op: "gt", value: 100 },
+        passed: true,
+        actual: 200,
+      },
+    ]);
   });
 });

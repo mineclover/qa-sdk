@@ -23,10 +23,19 @@ function buildSpec(overrides: Partial<ScenarioSpec> & { steps?: ScenarioStep[] }
 }
 
 describe("compileSpec", () => {
-  it("creates nodes from steps", () => {
+  it("projects lightweight spec nodes from steps", () => {
+    const constraints = [{ field: "payload.total", op: "gt" as const, value: 0 }];
     const spec = buildSpec({
       steps: [
-        buildStep({ id: "s1", event_key: "checkout.start" }),
+        buildStep({
+          id: "s1",
+          event_key: "checkout.start",
+          event_version: "002",
+          source: "checkout-api",
+          record_kind: "span",
+          constraints,
+          timeout_ms: 500,
+        }),
         buildStep({ id: "s2", event_key: "checkout.end" }),
       ],
     });
@@ -34,9 +43,23 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.nodes).toHaveLength(2);
-    expect(graph.nodes[0].id).toBe("s1");
-    expect(graph.nodes[0].step.event_key).toBe("checkout.start");
-    expect(graph.nodes[1].id).toBe("s2");
+    expect(graph.nodes[0]).toEqual({
+      step_id: "s1",
+      event_key: "checkout.start",
+      event_version: "002",
+      source: "checkout-api",
+      record_kind: "span",
+      required: true,
+      kind: "sequence",
+      constraints,
+      timeout_ms: 500,
+    });
+    expect(graph.nodes[1]).toEqual({
+      step_id: "s2",
+      event_key: "checkout.end",
+      required: true,
+      kind: "sequence",
+    });
   });
 
   it("preserves scenario_id and version", () => {
@@ -58,8 +81,8 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.edges).toEqual([
-      { from: "s1", to: "s2", type: "sequence" },
-      { from: "s1", to: "s3", type: "sequence" },
+      { source: "s1", target: "s2", type: "sequence" },
+      { source: "s1", target: "s3", type: "sequence" },
     ]);
   });
 
@@ -74,7 +97,7 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.edges).toEqual([
-      { from: "s1", to: "s2", type: "optional" },
+      { source: "s1", target: "s2", type: "optional" },
     ]);
   });
 
@@ -97,8 +120,8 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.edges).toEqual([
-      { from: "s1", to: "s2", type: "branch", condition },
-      { from: "s1", to: "s3", type: "branch", condition },
+      { source: "s1", target: "s2", type: "branch", condition },
+      { source: "s1", target: "s3", type: "branch", condition },
     ]);
   });
 
@@ -129,8 +152,8 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.edges).toHaveLength(2);
-    expect(graph.edges[0]).toEqual({ from: "s1", to: "s2", type: "sequence" });
-    expect(graph.edges[1]).toEqual({ from: "s1", to: "s3", type: "branch", condition });
+    expect(graph.edges[0]).toEqual({ source: "s1", target: "s2", type: "sequence" });
+    expect(graph.edges[1]).toEqual({ source: "s1", target: "s3", type: "branch", condition });
   });
 
   it("handles multiple branches with different conditions", () => {
@@ -152,7 +175,7 @@ describe("compileSpec", () => {
     const graph = compileSpec(spec);
 
     expect(graph.edges).toHaveLength(2);
-    expect(graph.edges[0].to).toBe("s2");
-    expect(graph.edges[1].to).toBe("s3");
+    expect(graph.edges[0].target).toBe("s2");
+    expect(graph.edges[1].target).toBe("s3");
   });
 });

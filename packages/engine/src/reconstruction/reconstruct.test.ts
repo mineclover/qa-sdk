@@ -75,7 +75,7 @@ describe("reconstruct", () => {
 
     const parentChildEdges = graph.edges.filter((e) => e.type === "parent_child");
     expect(parentChildEdges).toEqual([
-      { from: "parent", to: "child", type: "parent_child" },
+      { source: "parent", target: "child", type: "parent_child" },
     ]);
   });
 
@@ -91,7 +91,7 @@ describe("reconstruct", () => {
     const temporalEdges = graph.edges.filter((e) => e.type === "temporal");
     // Only log_a → log_b (same span), NOT log_b → log_c (different spans)
     expect(temporalEdges).toEqual([
-      { from: "log_a", to: "log_b", type: "temporal" },
+      { source: "log_a", target: "log_b", type: "temporal" },
     ]);
   });
 
@@ -106,8 +106,8 @@ describe("reconstruct", () => {
 
     const temporalEdges = graph.edges.filter((e) => e.type === "temporal");
     expect(temporalEdges).toEqual([
-      { from: "log_a", to: "log_b", type: "temporal" },
-      { from: "log_b", to: "log_c", type: "temporal" },
+      { source: "log_a", target: "log_b", type: "temporal" },
+      { source: "log_b", target: "log_c", type: "temporal" },
     ]);
   });
 
@@ -123,7 +123,7 @@ describe("reconstruct", () => {
     const graph = reconstruct("trace_1", records);
 
     // Check no duplicate edge keys
-    const edgeKeys = graph.edges.map((e) => `${e.from}:${e.to}:${e.type}`);
+    const edgeKeys = graph.edges.map((e) => `${e.source}:${e.target}:${e.type}`);
     expect(edgeKeys.length).toBe(new Set(edgeKeys).size);
   });
 

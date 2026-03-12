@@ -160,26 +160,48 @@ describe("evaluateConstraint", () => {
 });
 
 describe("evaluateConstraints", () => {
-  it("returns true when all constraints pass (AND)", () => {
+  it("returns per-constraint pass results when all constraints pass", () => {
     const node = buildNode({ payload: { status: "done", count: 5 } });
     const constraints: StepConstraint[] = [
       { field: "payload.status", op: "eq", value: "done" },
       { field: "payload.count", op: "gt", value: 0 },
     ];
-    expect(evaluateConstraints(constraints, node)).toBe(true);
+    expect(evaluateConstraints(constraints, node)).toEqual([
+      {
+        constraint: constraints[0],
+        passed: true,
+        actual: "done",
+      },
+      {
+        constraint: constraints[1],
+        passed: true,
+        actual: 5,
+      },
+    ]);
   });
 
-  it("returns false when any constraint fails (AND)", () => {
+  it("returns per-constraint failures when any constraint fails", () => {
     const node = buildNode({ payload: { status: "done", count: 0 } });
     const constraints: StepConstraint[] = [
       { field: "payload.status", op: "eq", value: "done" },
       { field: "payload.count", op: "gt", value: 0 },
     ];
-    expect(evaluateConstraints(constraints, node)).toBe(false);
+    expect(evaluateConstraints(constraints, node)).toEqual([
+      {
+        constraint: constraints[0],
+        passed: true,
+        actual: "done",
+      },
+      {
+        constraint: constraints[1],
+        passed: false,
+        actual: 0,
+      },
+    ]);
   });
 
-  it("returns true for empty constraints array", () => {
+  it("returns an empty result array for empty constraints", () => {
     const node = buildNode();
-    expect(evaluateConstraints([], node)).toBe(true);
+    expect(evaluateConstraints([], node)).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import type { StepConstraint, RuntimeNode } from "@qa-sdk/core";
+import type { ConstraintResult, RuntimeNode, StepConstraint } from "@qa-sdk/core";
 
 /**
  * 단일 constraint를 runtime node의 payload에 대해 평가한다.
@@ -7,37 +7,64 @@ export function evaluateConstraint(
   constraint: StepConstraint,
   node: RuntimeNode,
 ): boolean {
-  const value = resolveField(constraint.field, node);
+  return evaluateConstraintResult(constraint, node).passed;
+}
+
+function evaluateConstraintResult(
+  constraint: StepConstraint,
+  node: RuntimeNode,
+): ConstraintResult {
+  const actual = resolveField(constraint.field, node);
 
   switch (constraint.op) {
     case "eq":
-      return value === constraint.value;
+      return { constraint, passed: actual === constraint.value, actual };
     case "neq":
-      return value !== constraint.value;
+      return { constraint, passed: actual !== constraint.value, actual };
     case "exists":
-      return value !== undefined && value !== null;
+      return {
+        constraint,
+        passed: actual !== undefined && actual !== null,
+        actual,
+      };
     case "gt":
-      return typeof value === "number" && typeof constraint.value === "number"
-        && value > constraint.value;
+      return {
+        constraint,
+        passed: typeof actual === "number" && typeof constraint.value === "number"
+          && actual > constraint.value,
+        actual,
+      };
     case "lt":
-      return typeof value === "number" && typeof constraint.value === "number"
-        && value < constraint.value;
+      return {
+        constraint,
+        passed: typeof actual === "number" && typeof constraint.value === "number"
+          && actual < constraint.value,
+        actual,
+      };
     case "contains":
-      return typeof value === "string" && typeof constraint.value === "string"
-        && value.includes(constraint.value);
+      return {
+        constraint,
+        passed: typeof actual === "string" && typeof constraint.value === "string"
+          && actual.includes(constraint.value),
+        actual,
+      };
     case "masked":
-      return isMaskedField(constraint.field, node);
+      return {
+        constraint,
+        passed: isMaskedField(constraint.field, node),
+        actual,
+      };
     default:
-      return false;
+      return { constraint, passed: false, actual };
   }
 }
 
-/** constraint 배열 전체 평가 (AND 조건) */
+/** constraint 배열 전체 평가 결과를 개별 constraint 단위로 반환한다. */
 export function evaluateConstraints(
   constraints: StepConstraint[],
   node: RuntimeNode,
-): boolean {
-  return constraints.every((c) => evaluateConstraint(c, node));
+): ConstraintResult[] {
+  return constraints.map((constraint) => evaluateConstraintResult(constraint, node));
 }
 
 /**

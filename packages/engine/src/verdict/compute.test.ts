@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { computeVerdict } from "./compute.js";
-import type { MatchResult, SpecGraph, SpecNode, RuntimeGraph, RuntimeNode, ScenarioStep } from "@qa-sdk/core";
+import type { MatchResult, SpecGraph, SpecNode, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";
 
-function buildStep(overrides: Partial<ScenarioStep> = {}): ScenarioStep {
+function buildSpecNode(
+  stepId: string,
+  overrides: Partial<Omit<SpecNode, "step_id">> = {},
+): SpecNode {
   return {
-    id: "s1",
+    step_id: stepId,
     event_key: "event.one",
     required: true,
     kind: "sequence",
     ...overrides,
   };
-}
-
-function buildSpecNode(id: string, step: Partial<ScenarioStep> = {}): SpecNode {
-  return { id, step: buildStep({ id, ...step }) };
 }
 
 function buildRuntimeNode(overrides: Partial<RuntimeNode> = {}): RuntimeNode {
@@ -27,6 +26,17 @@ function buildRuntimeNode(overrides: Partial<RuntimeNode> = {}): RuntimeNode {
     payload: {},
     payload_masking_applied: false,
     payload_masked_fields: [],
+    ...overrides,
+  };
+}
+
+function buildStepMatch(
+  overrides: Partial<MatchResult["step_matches"][number]> = {},
+): MatchResult["step_matches"][number] {
+  return {
+    step_id: "s1",
+    verdict: "pass",
+    constraint_results: [],
     ...overrides,
   };
 }
@@ -54,8 +64,8 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
-        { step_id: "s2", matched_node_id: "n2", verdict: "pass" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
+        buildStepMatch({ step_id: "s2", matched_node_id: "n2" }),
       ],
       missing_steps: [],
       unmatched_nodes: [],
@@ -64,12 +74,11 @@ describe("computeVerdict", () => {
     const report = computeVerdict(matchResult, specGraph, runtimeGraph, "qas_1");
 
     expect(report.overall_verdict).toBe("pass");
-    expect(report.passed_steps).toEqual(["s1", "s2"]);
-    expect(report.failed_steps).toEqual([]);
-    expect(report.warning_steps).toEqual([]);
+    expect(report.step_matches).toEqual(matchResult.step_matches);
     expect(report.missing_steps).toEqual([]);
     expect(report.qa_session_id).toBe("qas_1");
     expect(report.summary).toContain("verdict=pass");
+    expect(new Date(report.computed_at).toISOString()).toBe(report.computed_at);
   });
 
   it("returns fail when a required step fails", () => {
@@ -87,8 +96,19 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
-        { step_id: "s2", matched_node_id: "n2", verdict: "fail", reason: "constraint failed" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
+        buildStepMatch({
+          step_id: "s2",
+          matched_node_id: "n2",
+          verdict: "fail",
+          constraint_results: [
+            {
+              constraint: { field: "payload.status", op: "eq", value: "completed" },
+              passed: false,
+              actual: "pending",
+            },
+          ],
+        }),
       ],
       missing_steps: [],
       unmatched_nodes: [],
@@ -97,7 +117,9 @@ describe("computeVerdict", () => {
     const report = computeVerdict(matchResult, specGraph, runtimeGraph);
 
     expect(report.overall_verdict).toBe("fail");
-    expect(report.failed_steps).toEqual(["s2"]);
+    expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "fail")).toEqual([
+      matchResult.step_matches[1],
+    ]);
     expect(report.summary).toContain("verdict=fail");
   });
 
@@ -113,7 +135,7 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", verdict: "fail", reason: "required step not found" },
+        buildStepMatch({ step_id: "s1", verdict: "fail" }),
       ],
       missing_steps: ["s1"],
       unmatched_nodes: [],
@@ -144,8 +166,8 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
-        { step_id: "s2", verdict: "warn", reason: "optional step not found" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
+        buildStepMatch({ step_id: "s2", verdict: "warn" }),
       ],
       missing_steps: ["s2"],
       unmatched_nodes: [],
@@ -154,7 +176,9 @@ describe("computeVerdict", () => {
     const report = computeVerdict(matchResult, specGraph, runtimeGraph);
 
     expect(report.overall_verdict).toBe("warn");
-    expect(report.warning_steps).toEqual(["s2"]);
+    expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "warn")).toEqual([
+      matchResult.step_matches[1],
+    ]);
   });
 
   it("returns degraded when latency exceeds timeout_ms", () => {
@@ -181,7 +205,7 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
       ],
       missing_steps: [],
       unmatched_nodes: [],
@@ -219,7 +243,7 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
       ],
       missing_steps: [],
       unmatched_nodes: [],
@@ -277,8 +301,8 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
-        { step_id: "s2", verdict: "fail", reason: "required step not found" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
+        buildStepMatch({ step_id: "s2", verdict: "fail" }),
       ],
       missing_steps: ["s2"],
       unmatched_nodes: [],
@@ -302,7 +326,7 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
       ],
       missing_steps: [],
       unmatched_nodes: ["n2", "n3"],
@@ -331,7 +355,7 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
       ],
       missing_steps: [],
       unmatched_nodes: [],
@@ -359,9 +383,9 @@ describe("computeVerdict", () => {
       scenario_id: "sc_1",
       trace_id: "trace_1",
       step_matches: [
-        { step_id: "s1", matched_node_id: "n1", verdict: "pass" },
-        { step_id: "s2", verdict: "fail", reason: "required step not found" },
-        { step_id: "s3", verdict: "warn", reason: "optional step not found" },
+        buildStepMatch({ step_id: "s1", matched_node_id: "n1" }),
+        buildStepMatch({ step_id: "s2", verdict: "fail" }),
+        buildStepMatch({ step_id: "s3", verdict: "warn" }),
       ],
       missing_steps: ["s2", "s3"],
       unmatched_nodes: [],
@@ -369,6 +393,6 @@ describe("computeVerdict", () => {
 
     const report = computeVerdict(matchResult, specGraph, runtimeGraph);
 
-    expect(report.summary).toBe("verdict=fail, passed=1, failed=1, missing=2");
+    expect(report.summary).toBe("verdict=fail, passed=1, failed=1, warned=1, missing=2");
   });
 });

@@ -31,19 +31,17 @@ export function matchGraphs(
     if (match) {
       matchedNodeIds.add(match.nodeId);
       stepMatches.push({
-        step_id: specNode.id,
+        step_id: specNode.step_id,
         matched_node_id: match.nodeId,
         verdict: match.verdict,
-        reason: match.reason,
+        constraint_results: match.constraint_results,
       });
     } else {
-      missingSteps.push(specNode.id);
+      missingSteps.push(specNode.step_id);
       stepMatches.push({
-        step_id: specNode.id,
-        verdict: specNode.step.required ? "fail" : "warn",
-        reason: specNode.step.required
-          ? "required step not found in runtime"
-          : "optional step not found in runtime",
+        step_id: specNode.step_id,
+        verdict: specNode.required ? "fail" : "warn",
+        constraint_results: [],
       });
     }
   }
@@ -65,7 +63,7 @@ export function matchGraphs(
 interface CandidateMatch {
   nodeId: string;
   verdict: Verdict;
-  reason?: string;
+  constraint_results: StepMatch["constraint_results"];
 }
 
 function findBestCandidate(
@@ -73,35 +71,47 @@ function findBestCandidate(
   runtimeNodes: RuntimeNode[],
   alreadyMatched: Set<string>,
 ): CandidateMatch | null {
-  const step = specNode.step;
-
   const candidates = runtimeNodes.filter((n) => {
     if (alreadyMatched.has(n.id)) return false;
-    if (n.event_key !== step.event_key) return false;
-    if (step.event_version && n.event_version !== step.event_version) return false;
-    if (step.source && n.service_name !== step.source) return false;
-    if (step.record_kind && n.record_kind !== step.record_kind) return false;
+    if (n.event_key !== specNode.event_key) return false;
+    if (specNode.event_version && n.event_version !== specNode.event_version) return false;
+    if (specNode.source && n.service_name !== specNode.source) return false;
+    if (specNode.record_kind && n.record_kind !== specNode.record_kind) return false;
     return true;
   });
 
   if (candidates.length === 0) return null;
 
   // constraint가 있으면 평가
+  let firstFailedMatch: CandidateMatch | null = null;
+
   for (const candidate of candidates) {
-    if (!step.constraints || step.constraints.length === 0) {
-      return { nodeId: candidate.id, verdict: "pass" };
+    if (!specNode.constraints || specNode.constraints.length === 0) {
+      return {
+        nodeId: candidate.id,
+        verdict: "pass",
+        constraint_results: [],
+      };
     }
 
-    const passed = evaluateConstraints(step.constraints, candidate);
-    if (passed) {
-      return { nodeId: candidate.id, verdict: "pass" };
+    const constraintResults = evaluateConstraints(specNode.constraints, candidate);
+    if (constraintResults.every((result) => result.passed)) {
+      return {
+        nodeId: candidate.id,
+        verdict: "pass",
+        constraint_results: constraintResults,
+      };
+    }
+
+    if (!firstFailedMatch) {
+      firstFailedMatch = {
+        nodeId: candidate.id,
+        verdict: "fail",
+        constraint_results: constraintResults,
+      };
     }
   }
 
   // candidate는 있지만 constraint 실패
-  return {
-    nodeId: candidates[0].id,
-    verdict: "fail",
-    reason: "constraint evaluation failed",
-  };
+  return firstFailedMatch;
 }

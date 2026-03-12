@@ -32,8 +32,8 @@ export function buildSpanTree(records: EventRecord[]): RuntimeEdge[] {
     seen.add(key);
 
     edges.push({
-      from: parentLogId,
-      to: r.log_id,
+      source: parentLogId,
+      target: r.log_id,
       type: "parent_child",
     });
   }

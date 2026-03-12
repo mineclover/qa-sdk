@@ -24,8 +24,8 @@ export function buildTemporalEdges(sortedRecords: EventRecord[]): RuntimeEdge[] 
   for (const group of spanGroups.values()) {
     for (let i = 0; i < group.length - 1; i++) {
       edges.push({
-        from: group[i].log_id,
-        to: group[i + 1].log_id,
+        source: group[i].log_id,
+        target: group[i + 1].log_id,
         type: "temporal",
       });
     }
@@ -44,8 +44,8 @@ export function buildGlobalTemporalEdges(sortedRecords: EventRecord[]): RuntimeE
 
   for (let i = 0; i < sortedRecords.length - 1; i++) {
     edges.push({
-      from: sortedRecords[i].log_id,
-      to: sortedRecords[i + 1].log_id,
+      source: sortedRecords[i].log_id,
+      target: sortedRecords[i + 1].log_id,
       type: "temporal",
     });
   }

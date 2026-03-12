@@ -43,7 +43,7 @@ export function reconstruct(
   // 5. edge 병합 (중복 제거)
   const edgeSet = new Set<string>();
   const edges = [...parentChildEdges, ...temporalEdges].filter((e) => {
-    const key = `${e.from}:${e.to}:${e.type}`;
+    const key = `${e.source}:${e.target}:${e.type}`;
     if (edgeSet.has(key)) return false;
     edgeSet.add(key);
     return true;

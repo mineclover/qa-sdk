@@ -131,13 +131,13 @@ describe("reconstruct", () => {
     expect(graph.edges).toEqual(
       expect.arrayContaining([
         {
-          from: "root_span_record",
-          to: "child_span_record",
+          source: "root_span_record",
+          target: "child_span_record",
           type: "parent_child",
         },
         {
-          from: "root_span_record",
-          to: "root_log_record",
+          source: "root_span_record",
+          target: "root_log_record",
           type: "temporal",
         },
       ]),
@@ -165,7 +165,7 @@ describe("reconstruct", () => {
 
     const rootNodeIds = graph.nodes
       .filter((node) =>
-        !graph.edges.some((edge) => edge.type === "parent_child" && edge.to === node.id)
+        !graph.edges.some((edge) => edge.type === "parent_child" && edge.target === node.id)
       )
       .map((node) => node.id);
 
@@ -220,7 +220,7 @@ describe("compileSpec", () => {
       ]),
     );
 
-    expect(graph.nodes.map((node) => node.id)).toEqual([
+    expect(graph.nodes.map((node) => node.step_id)).toEqual([
       "start",
       "optional-review",
       "decision",
@@ -228,17 +228,17 @@ describe("compileSpec", () => {
       "rejected",
     ]);
     expect(graph.edges).toEqual([
-      { from: "start", to: "optional-review", type: "sequence" },
-      { from: "optional-review", to: "decision", type: "optional" },
+      { source: "start", target: "optional-review", type: "sequence" },
+      { source: "optional-review", target: "decision", type: "optional" },
       {
-        from: "decision",
-        to: "approved",
+        source: "decision",
+        target: "approved",
         type: "branch",
         condition: branchConditionApproved,
       },
       {
-        from: "decision",
-        to: "rejected",
+        source: "decision",
+        target: "rejected",
         type: "branch",
         condition: branchConditionRejected,
       },
@@ -275,11 +275,13 @@ describe("matchGraphs", () => {
         step_id: "start",
         matched_node_id: "runtime-start",
         verdict: "pass",
+        constraint_results: [],
       },
       {
         step_id: "completed",
         matched_node_id: "runtime-completed",
         verdict: "pass",
+        constraint_results: [],
       },
     ]);
     expect(result.missing_steps).toEqual([]);
@@ -345,7 +347,14 @@ describe("computeVerdict", () => {
     );
 
     expect(report.overall_verdict).toBe("pass");
-    expect(report.passed_steps).toEqual(["start"]);
+    expect(report.step_matches).toEqual([
+      {
+        step_id: "start",
+        matched_node_id: "runtime-start",
+        verdict: "pass",
+        constraint_results: [],
+      },
+    ]);
     expect(report.qa_session_id).toBe("qas_1");
   });
 
@@ -374,7 +383,13 @@ describe("computeVerdict", () => {
     const report = computeVerdict(matchGraphs(spec, runtime), spec, runtime);
 
     expect(report.overall_verdict).toBe("warn");
-    expect(report.warning_steps).toEqual(["review"]);
+    expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "warn")).toEqual([
+      {
+        step_id: "review",
+        verdict: "warn",
+        constraint_results: [],
+      },
+    ]);
     expect(report.missing_steps).toEqual(["review"]);
   });
 
@@ -437,7 +452,24 @@ describe("computeVerdict", () => {
     const report = computeVerdict(matchGraphs(spec, runtime), spec, runtime);
 
     expect(report.overall_verdict).toBe("fail");
-    expect(report.failed_steps).toEqual(["decision"]);
+    expect(report.step_matches.filter((stepMatch) => stepMatch.verdict === "fail")).toEqual([
+      {
+        step_id: "decision",
+        matched_node_id: "runtime-decision",
+        verdict: "fail",
+        constraint_results: [
+          {
+            constraint: {
+              field: "payload.outcome",
+              op: "eq",
+              value: "approved",
+            },
+            passed: false,
+            actual: "rejected",
+          },
+        ],
+      },
+    ]);
   });
 
   it("returns unknown when no steps can be evaluated", () => {
