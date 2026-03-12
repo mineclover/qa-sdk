@@ -375,13 +375,19 @@ async function seedTraceBundle(
         trace_id: options.traceId,
         qa_session_id: options.sessionId,
         overall_verdict: "pass",
-        passed_steps: ["step_1"],
-        failed_steps: [],
-        warning_steps: [],
+        step_matches: [
+          {
+            step_id: "step_1",
+            matched_node_id: `${options.traceId}_node`,
+            verdict: "pass",
+            constraint_results: [],
+          },
+        ],
         missing_steps: [],
         unexpected_nodes: [],
         latency_violations: [],
         summary: "ok",
+        computed_at: new Date(verdict.computedAt).toISOString(),
       },
     });
   }

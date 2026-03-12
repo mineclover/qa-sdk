@@ -20,7 +20,7 @@
     "@qa-sdk/registry-client": "workspace:*",
     "@hono/node-server": "^1.14.1",
     "hono": "^4.7.5",
-    "pino": "workspace:^9.9.4",
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "zod": "^3.24.2"
   },
   "devDependencies": {

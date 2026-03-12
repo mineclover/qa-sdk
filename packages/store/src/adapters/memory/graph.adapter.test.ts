@@ -29,7 +29,7 @@ function buildGraph(edgeTo = "node_2"): RuntimeGraph {
         payload_masked_fields: [],
       },
     ],
-    edges: [{ from: "node_1", to: edgeTo, type: "temporal" }],
+    edges: [{ source: "node_1", target: edgeTo, type: "temporal" }],
   };
 }
 

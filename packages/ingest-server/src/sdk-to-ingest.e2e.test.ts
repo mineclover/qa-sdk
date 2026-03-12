@@ -32,7 +32,7 @@ interface SessionResponse {
 interface RuntimeGraphResponse {
   trace_id: string;
   nodes: Array<{ log_id: string; event_key: string }>;
-  edges: Array<{ from: string; to: string; type: string }>;
+  edges: Array<{ source: string; target: string; type: string }>;
   nodeCount: number;
   edgeCount: number;
 }

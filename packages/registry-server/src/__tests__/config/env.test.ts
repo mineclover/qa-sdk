@@ -7,6 +7,11 @@ describe("parseEnv", () => {
   });
 
   it("parses required DATABASE_URL and defaults PORT", async () => {
+    vi.stubEnv(
+      "DATABASE_URL",
+      "postgres://postgres:postgres@localhost:5432/qa_sdk",
+    );
+
     const { parseEnv } = await import("../../config/env.js");
     const env = parseEnv({
       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/qa_sdk",

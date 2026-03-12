@@ -37,6 +37,6 @@ export class DrizzleGraphStore implements GraphStore {
       .select()
       .from(runtimeGraphs)
       .where(eq(runtimeGraphs.traceId, traceId));
-    return row ? (row.graph as RuntimeGraph) : null;
+    return row?.graph ?? null;
   }
 }

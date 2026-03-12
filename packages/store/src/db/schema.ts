@@ -1,3 +1,4 @@
+import type { RuntimeGraph } from "@qa-sdk/core";
 import {
   pgTable,
   text,
@@ -100,7 +101,7 @@ export const transmissions = pgTable("transmissions", {
 
 export const runtimeGraphs = pgTable("runtime_graphs", {
   traceId: text("trace_id").primaryKey().references(() => traces.traceId),
-  graph: jsonb("graph").notNull(), // RuntimeGraph JSON
+  graph: jsonb("graph").$type<RuntimeGraph>().notNull(),
   nodeCount: integer("node_count").notNull(),
   edgeCount: integer("edge_count").notNull(),
   builtAt: timestamp("built_at", { withTimezone: true }).notNull().defaultNow(),

@@ -14,7 +14,7 @@ describe("InMemoryTraceStore", () => {
   it("upserts traces by accumulating counts and widening the timestamp window", async () => {
     const store = new InMemoryTraceStore();
 
-    const created = await store.upsert({
+    await store.upsert({
       traceId: "trace_1",
       sessionId: "session_1",
       serviceName: "mobile-app",
@@ -23,9 +23,11 @@ describe("InMemoryTraceStore", () => {
       lastTimestamp: new Date("2026-03-12T00:00:04.000Z"),
     });
 
+    const created = await store.findById("trace_1");
+
     vi.setSystemTime(new Date("2026-03-12T02:00:00.000Z"));
 
-    const updated = await store.upsert({
+    await store.upsert({
       traceId: "trace_1",
       sessionId: "session_2",
       serviceName: "changed-service",
@@ -33,6 +35,8 @@ describe("InMemoryTraceStore", () => {
       firstTimestamp: new Date("2026-03-12T00:00:01.000Z"),
       lastTimestamp: new Date("2026-03-12T00:00:05.000Z"),
     });
+
+    const updated = await store.findById("trace_1");
 
     expect(created).toEqual({
       traceId: "trace_1",
@@ -57,8 +61,6 @@ describe("InMemoryTraceStore", () => {
       createdAt: new Date("2026-03-12T01:00:00.000Z"),
       updatedAt: new Date("2026-03-12T02:00:00.000Z"),
     });
-
-    await expect(store.findById("trace_1")).resolves.toEqual(updated);
   });
 
   it("returns unreconstructed traces and removes them after markReconstructed", async () => {

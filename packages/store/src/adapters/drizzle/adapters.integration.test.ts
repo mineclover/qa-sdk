@@ -79,7 +79,7 @@ function buildGraph(edgeTo = "node_2"): RuntimeGraph {
         payload_masked_fields: [],
       },
     ],
-    edges: [{ from: "node_1", to: edgeTo, type: "temporal" }],
+    edges: [{ source: "node_1", target: edgeTo, type: "temporal" }],
   };
 }
 
@@ -89,13 +89,19 @@ function buildReport(overrides: Partial<VerdictReport> = {}): VerdictReport {
     trace_id: "trace_1",
     qa_session_id: "session_1",
     overall_verdict: "pass",
-    passed_steps: ["step_1"],
-    failed_steps: [],
-    warning_steps: [],
+    step_matches: [
+      {
+        step_id: "step_1",
+        matched_node_id: "node_1",
+        verdict: "pass",
+        constraint_results: [],
+      },
+    ],
     missing_steps: [],
     unexpected_nodes: [],
     latency_violations: [],
     summary: "Scenario matched successfully.",
+    computed_at: "2026-03-12T01:00:00.000Z",
     ...overrides,
   };
 }

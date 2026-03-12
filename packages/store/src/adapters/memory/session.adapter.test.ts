@@ -14,19 +14,23 @@ describe("InMemorySessionStore", () => {
   it("upserts sessions, ignores duplicates, and finds them by id", async () => {
     const store = new InMemorySessionStore();
 
-    const created = await store.upsert({
+    await store.upsert({
       sessionId: "session_1",
       scenarioId: "scenario_signup",
       labels: { region: "kr" },
     });
 
+    const created = await store.findById("session_1");
+
     vi.setSystemTime(new Date("2026-03-12T02:00:00.000Z"));
 
-    const duplicate = await store.upsert({
+    await store.upsert({
       sessionId: "session_1",
       scenarioId: "scenario_checkout",
       labels: { region: "us" },
     });
+
+    const duplicate = await store.findById("session_1");
 
     expect(created).toEqual({
       sessionId: "session_1",
@@ -36,7 +40,6 @@ describe("InMemorySessionStore", () => {
       closedAt: null,
     });
     expect(duplicate).toEqual(created);
-    await expect(store.findById("session_1")).resolves.toEqual(created);
   });
 
   it("closes an existing session", async () => {
