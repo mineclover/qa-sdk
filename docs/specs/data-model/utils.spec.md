@@ -14,6 +14,8 @@ function newLogId(): string;           // "log_<ULID>"
 function newTraceId(): string;         // "trc_<ULID>"
 function newSpanId(): string;          // "spn_<ULID>"
 function newQaSessionId(): string;     // "qas_<ULID>"
+function newVerdictId(): string;       // "vrd_<ULID>"
+function newDlqId(): string;           // "dlq_<ULID>"
 ```
 
 ### 동작
@@ -31,6 +33,8 @@ function newQaSessionId(): string;     // "qas_<ULID>"
 | `trc_` | Trace | SDK (startTrace 시) |
 | `spn_` | Span | SDK (startSpan/pushSpan 시) |
 | `qas_` | QA Session | 외부 (테스트 프레임워크 등) |
+| `vrd_` | Verdict | engine / orchestration |
+| `dlq_` | Dead-letter item | engine / ingestion cleanup |
 
 ## Clock
 
@@ -48,4 +52,5 @@ function now(): string;  // ISO-8601 UTC
 
 - 모든 ID는 immutable — 생성 후 변경 불가
 - prefix로 ID 종류를 즉시 식별 가능
+- `newVerdictId()`와 `newDlqId()`도 동일한 ULID ordering / uniqueness 규칙을 따른다
 - `now()`는 시스템 시계 의존 — 테스트에서 mocking 필요 시 DI 고려

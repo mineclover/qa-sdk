@@ -28,7 +28,7 @@ class QaLogger {
 
 interface SpanHandle {
   span_id: string;
-  end(params?: { status_code?: SpanStatusCode; payload?: Record<string, unknown> }): EventRecord;
+  end(params?: SpanEndParams): EventRecord;
 }
 ```
 
@@ -46,6 +46,51 @@ interface QaLoggerConfig {
   flushIntervalMs?: number;               // default: 5000 (0이면 비활성)
 }
 ```
+
+## Recording Params
+
+```typescript
+interface LogParams {
+  event_key: string;
+  event_version: string;
+  payload?: Record<string, unknown>;
+  payload_format?: PayloadFormat;
+  payload_encoding?: PayloadEncoding;
+  qa_session_id?: string;
+}
+
+interface SpanParams extends LogParams {
+  span_name: string;
+}
+
+interface SpanEndParams {
+  status_code?: SpanStatusCode;
+  payload?: Record<string, unknown>;
+}
+```
+
+### LogParams
+
+| 필드 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `event_key` | string | - | 기록할 이벤트의 canonical key |
+| `event_version` | string | - | 이벤트 버전. 일반적으로 `"001"` 형식 |
+| `payload` | `Record<string, unknown>` | - | 선택적 payload 객체 |
+| `payload_format` | `PayloadFormat` | `"json"` | payload 직렬화 포맷 descriptor |
+| `payload_encoding` | `PayloadEncoding` | `"raw"` | payload 인코딩 descriptor |
+| `qa_session_id` | string | active context의 `qa_session_id` | 명시 시 현재 trace context보다 우선 |
+
+### SpanParams
+
+- `SpanParams`는 `LogParams`와 동일한 필드를 가지며 `span_name: string` 이 필수다.
+- `span_name`은 생성되는 span record의 `span_name` 필드로 그대로 기록된다.
+
+### SpanHandle.end(params?)
+
+- `status_code`: optional. 생략 시 `"ok"`를 사용한다.
+- `payload`: optional. `startSpan()` 시점의 `params.payload`와 shallow merge하며, 동일 키가 있으면 `end()` payload 값이 우선한다.
+- `payload_format`, `payload_encoding`, `qa_session_id`는 `startSpan()` 시점의 `SpanParams` 값을 그대로 재사용한다.
+- 반환값은 최종 span `EventRecord` 이다.
 
 ## 동작
 

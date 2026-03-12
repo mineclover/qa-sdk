@@ -1,84 +1,73 @@
 # EventRecord + RecordStore
 
-> SDK가 수집하는 개별 이벤트 레코드의 타입 정의와 저장소 포트.
+> core package의 canonical event record 구조와 저장/조회 동작.
 
 ## 상태
 
 implemented
 
+## Payload enum
+
+```typescript
+type PayloadFormat =
+  | "json"
+  | "rpc"
+  | "protobuf"
+  | "text"
+  | "binary"
+  | "stream";
+
+type PayloadEncoding = "raw" | "base64" | "gzip+base64";
+```
+
 ## EventRecord 타입
 
-SDK가 수집하는 단일 이벤트. `log` 또는 `span` 두 종류.
+SDK가 수집하는 단일 이벤트 레코드. 모든 필드명은 `snake_case`를 사용한다.
 
 ```typescript
 interface EventRecord {
-  log_id: string;           // log_<ULID>
-  timestamp: string;        // ISO-8601
+  log_id: string; // log_<ULID>
+  timestamp: string; // ISO-8601 UTC
   record_kind: "log" | "span";
 
   // trace context
-  trace_id: string;         // trc_<ULID>
-  span_id: string;          // spn_<ULID>
+  trace_id: string; // trc_<ULID>
+  span_id: string; // spn_<ULID>
   parent_span_id?: string;
 
   // event identity
-  event_key: string;        // Registry에 등록된 이벤트 키
-  event_version: string;    // 3자리, e.g. "001"
+  event_key: string;
+  event_version: string; // e.g. "001"
 
-  // span fields (record_kind === "span" 일 때)
+  // span-only fields
   span_name?: string;
-  start_time?: string;      // ISO-8601
-  end_time?: string;        // ISO-8601
+  start_time?: string; // ISO-8601 UTC
+  end_time?: string; // ISO-8601 UTC
   status_code?: "ok" | "error" | "unset";
 
-  // payload
-  payload_format: "json" | "protobuf";
-  payload_encoding: "raw" | "gzip" | "br";
+  // payload descriptor
+  payload_format: PayloadFormat;
+  payload_encoding: PayloadEncoding;
   payload_masking_applied: boolean;
   payload_masked_fields: string[];
   payload: unknown;
 
-  // QA session
-  qa_session_id?: string;   // qas_<ULID>
+  // session / registry metadata
+  qa_session_id?: string; // qas_<ULID>
+  _registry_warning?: string;
 }
 ```
 
-## RecordStore 포트
+## RecordStore 동작
 
-```typescript
-interface RecordStore {
-  insertBatch(records: RecordInsert[]): Promise<void>;
-  findByTraceId(traceId: string): Promise<StoredRecord[]>;
-  findByTraceIdPaginated(traceId: string, params?: RecordPaginationParams): Promise<StoredRecordPage>;
-  findBySessionId(sessionId: string): Promise<StoredRecord[]>;
-  findBySessionIdPaginated(sessionId: string, params?: RecordPaginationParams): Promise<StoredRecordPage>;
-  findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]>;
-}
-```
+- 레코드는 batch 단위로 저장된다.
+- 조회 축은 `trace_id`, `qa_session_id`, `event_key`를 기준으로 제공된다.
+- paginated read의 cursor는 `timestamp` + `log_id`를 함께 담는 구조를 사용한다.
+- 동일 `log_id` 중복 삽입 처리 방식은 adapter 구현에 위임한다.
 
-## 동작
+## 설계 노트
 
-### insertBatch
-- 여러 레코드를 한 번에 저장
-- 동일 `log_id` 중복 삽입 시 adapter에 따라 upsert 또는 에러 (Drizzle: onConflictDoNothing)
-
-### findByTraceIdPaginated / findBySessionIdPaginated
-- cursor 기반 pagination (timestamp + logId 복합 커서)
-- `limit` 기본값 50, 최대 200
-- timestamp 오름차순 정렬
-- 응답: `{ items, nextCursor, hasMore }`
-
-### findByTraceAndEventKey
-- 특정 trace 내 특정 event_key로 필터링
-- engine의 constraint evaluation에서 사용
-
-## Zod 스키마
-
-`eventRecordSchema` — record_kind, payload_format, payload_encoding, span_status_code 에 대한 enum 검증 포함.
-
-## 제약 조건
-
-- `log_id`는 전역 유일 (ULID 보장)
-- `record_kind: "span"` 일 때 `span_name`, `start_time`, `end_time` 필수 권장 (현재 optional)
-- `payload`는 `z.unknown()`으로 검증 — 자유 구조
-- pagination cursor는 base64url 인코딩된 `{ timestamp, logId }` JSON
+- `_registry_warning`은 registry strict reject가 아닌 warn mode에서 수집을 계속한 경우에만 포함된다.
+- `payload_masked_fields`에는 masking 후 남기는 논리 필드명이 담기며, encoded payload byte range를 기록하지 않는다.
+- `payload_format`과 `payload_encoding`은 독립 축이다. 예: `payload_format: "json"` + `payload_encoding: "gzip+base64"`.
+- `payload`는 자유 구조를 허용하지만, descriptor 필드(`payload_*`)는 항상 함께 기록한다.

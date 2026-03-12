@@ -1,59 +1,77 @@
 # SpecGraph / RuntimeGraph + GraphStore
 
-> 기대 행동 그래프(Spec)와 실제 실행 그래프(Runtime)의 타입 정의 및 저장소 포트.
+> 기대 행동 그래프(`SpecGraph`)와 실행 그래프(`RuntimeGraph`)의 canonical 구조.
 
 ## 상태
 
-implemented (타입 + 포트), engine reconstruction은 hold
+implemented
 
 ## RuntimeGraph 타입
 
-reconstruction 결과. EventRecord[] → 실행 그래프.
+reconstruction 결과. 모든 필드명은 `snake_case`를 사용한다.
 
 ```typescript
 interface RuntimeGraph {
-  traceId: string;
+  trace_id: string;
   nodes: RuntimeNode[];
   edges: RuntimeEdge[];
 }
 
 interface RuntimeNode {
-  id: string;              // span_id 또는 log_id
-  recordKind: string;
-  eventKey: string;
-  eventVersion: string;
-  timestamp: Date;
-  spanName?: string;
-  startTime?: Date;
-  endTime?: Date;
-  statusCode?: string;
+  id: string;
+  log_id: string;
+  timestamp: string; // ISO-8601 UTC
+  record_kind: "log" | "span";
+  event_key: string;
+  event_version: string;
+  service_name?: string;
+  span_name?: string;
+  start_time?: string;
+  end_time?: string;
+  status_code?: "ok" | "error" | "unset";
   payload?: unknown;
+  payload_masking_applied: boolean;
+  payload_masked_fields: string[];
 }
 
-type RuntimeEdgeType = "parent_child" | "temporal" | "causal";
+type RuntimeEdgeType = "temporal" | "parent_child" | "causal";
 
 interface RuntimeEdge {
   source: string;
   target: string;
-  edgeType: RuntimeEdgeType;
+  type: RuntimeEdgeType;
 }
 ```
 
+## RuntimeGraph 설계 노트
+
+- `service_name`은 optional이다.
+- `service_name`은 개별 `EventRecord`에 중복 저장하지 않고, 이후 reconstruction 단계에서 trace-level 메타데이터로부터 주입할 예정이다.
+- 따라서 trace-level 주입 스토리가 반영되기 전까지 일부 `RuntimeNode.service_name` 값은 `undefined`일 수 있다.
+- `payload_masking_applied`와 `payload_masked_fields`는 원본 레코드의 masking 결과를 그대로 전파한다.
+
 ## SpecGraph 타입
 
-ScenarioSpec을 컴파일한 기대 행동 그래프.
+ScenarioSpec을 판정에 필요한 필드만 남긴 경량 그래프로 컴파일한다.
 
 ```typescript
 interface SpecGraph {
-  scenarioId: string;
+  scenario_id: string;
+  version: string;
   nodes: SpecNode[];
   edges: SpecEdge[];
 }
 
 interface SpecNode {
-  stepId: string;
-  eventKey: string;
-  constraints: StepConstraint[];
+  step_id: string;
+  event_key: string;
+  event_version?: string;
+  source?: string;
+  record_kind?: "log" | "span";
+  required: boolean;
+  kind: StepKind;
+  constraints?: StepConstraint[];
+  timeout_ms?: number;
 }
 
 type SpecEdgeType = "sequence" | "branch" | "optional";
@@ -61,32 +79,21 @@ type SpecEdgeType = "sequence" | "branch" | "optional";
 interface SpecEdge {
   source: string;
   target: string;
-  edgeType: SpecEdgeType;
+  type: SpecEdgeType;
+  condition?: StepConstraint;
 }
 ```
 
-## GraphStore 포트
+## GraphStore 동작
 
-```typescript
-interface GraphStore {
-  upsert(traceId: string, graph: RuntimeGraph): Promise<void>;
-  findByTraceId(traceId: string): Promise<RuntimeGraph | null>;
-}
-```
-
-## 동작
-
-### upsert
-- traceId 기준으로 RuntimeGraph를 JSON으로 저장
-- 동일 traceId 재저장 시 덮어쓰기 (re-reconstruction 지원)
-- nodeCount, edgeCount 메타데이터 함께 저장
-
-### findByTraceId
-- 저장된 RuntimeGraph JSON을 파싱하여 반환
-- 없으면 null
+- `RuntimeGraph`는 `trace_id` 기준으로 upsert된다.
+- 동일 `trace_id`에 대한 재구성 결과는 이전 그래프를 대체한다.
+- 저장 대상은 `RuntimeGraph`만이며, `SpecGraph`는 engine 내부 계산용 투영 구조로 유지한다.
 
 ## 제약 조건
 
-- RuntimeGraph는 JSON 직렬화 가능해야 함 (Date → ISO-8601 변환 필요)
-- SpecGraph는 현재 store에 저장하지 않음 (engine 내부에서만 사용)
-- GraphStore는 RuntimeGraph만 저장 — SpecGraph 저장소는 별도 설계 예정
+- `source` / `target`이 edge의 canonical endpoint 필드다. `from` / `to`는 사용하지 않는다.
+- runtime causal relation의 edge 타입은 `causal`로 고정한다. `derived`는 사용하지 않는다.
+- `SpecNode`는 전체 `ScenarioStep` 참조를 들고 있지 않는다.
+- `ScenarioStep.next` / `ScenarioStep.branches` 같은 네비게이션 정보는 `SpecEdge`로만 표현한다.
+- `timeout_ms`는 latency verdict 계산을 위해 `SpecNode`에 유지한다.
