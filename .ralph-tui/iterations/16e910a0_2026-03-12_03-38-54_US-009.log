@@ -1,0 +1,97 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Integration tests for services CRUD endpoints
+- **Description**: As a developer, I need integration tests for all service API endpoints against a real PostgreSQL database.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-03-11T18:38:54.769Z
+- **Ended At**: 2026-03-11T18:43:16.784Z
+- **Duration**: 4m 22s
+- **Input Tokens**: 1016706
+- **Output Tokens**: 11302
+- **Total Tokens**: 1028008
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’m checking the existing test harness and the project progress notes first so I can wire the new integration tests into the same patterns and DB lifecycle the repo already uses.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "createTestApp|cleanupDb|services|integration" src'
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files .ralph-tui src package.json pnpm-workspace.yaml'
+
+[91m[Error: rg: src: IO error for operation on src: No such file or directory (os error 2)
+][0m
+
+[91m[Error: /Users/junwoobang/workflow/qa-sdk
+rg: src: No such file or directory (os error 2)
+pnpm-workspace.yaml
+package.json
+.ralph-tui/reports/sequential-summary-ce7eb93f-fc80-4257-b504-41de4a51185d-2026-03-11T17-48-18-737Z.txt
+.ralph-tui/session-meta.json
+.ralph-tui/iterations/16e910a0_2026-03-12_03-13-32_US-003.log
+.ralph-tui/iterations/16e910a0_2026-03-12_02-55-28_US-001.log
+.ralph-tui/iterations/16e910a0_2026-03-12_03-15-47_US-004.log
+.ralph-tui/iterations/16e910a0_2026-03-12_03-21-31_US-006.log
+.ral][0m
+The root notes confirm US-008 already added the real-DB test helpers. I’m switching into `packages/registry-server` now to inspect the current service routes and match the existing integration test conventions.
+[94m[shell][0m $ /bin/zsh -lc 'rg --files packages/registry-server/src packages/registry-server | rg "(__tests__|serv...
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "createTestApp|cleanupDb|app.request|POST /services|GET /services|PATCH /service...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/__tests__/helpers/setup.ts && printf '\\n...
+I have the helper details now: schema setup is already handled, and cleanup truncates both tables. Next I’m reading the actual `/services` route stack so the assertions line up with the real payloads and error shapes instead of guessing.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/routes/services.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/modules/services/service.schema.ts && pri...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/modules/services/service.repository.ts &&...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/middleware/error-handler.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/db/schema.ts && printf '\\n---FILE---\\n'...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/__tests__/modules/services/service.schema...
+The service stack is straightforward: Hono routes with Zod validation, `AppError` normalization, and JSON-serialized dates. I’m checking the package scripts now, then I’ll add the missing integration spec with a small local helper for creating seeded services.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/package.json"
+[94m[shell][0m $ /bin/zsh -lc "ls -la packages/registry-server && printf '\\n' && ls -la packages/registry-server/src...
+I’ve got enough context to write the spec cleanly. I’m adding a single `services.test.ts` integration file now with shared request helpers, `beforeEach(cleanupDb)`, and endpoint coverage for create/get/update plus validation and conflict cases.
+The spec file is in place. I’m running the package test suite and typecheck next; if the host sandbox still blocks the PostgreSQL socket, I’ll confirm that explicitly and use the same Docker-network fallback documented in US-008.
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server test'
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server typecheck'
+
+[91m[Error: 
+> @qa-sdk/registry-server@0.1.0 test /Users/junwoobang/workflow/qa-sdk/packages/registry-server
+> vitest run
+
+
+ RUN  v1.6.1 /Users/junwoobang/workflow/qa-sdk/packages/registry-server
+
+ ✓ src/__tests__/lib/errors.test.ts  (2 tests) 2ms
+ ✓ src/__tests__/lib/version.test.ts  (4 tests) 2ms
+ ✓ src/__tests__/lib/clock.test.ts  (1 test) 1ms
+ ✓ src/__tests__/lib/id.test.ts  (3 tests) 3ms
+ ✓ src/__tests__/modules/services/service.service.test.ts  (11 tests) 6ms
+ ✓ src/__tests__/modules/events/event.sche][0m
+Host-side verification hit the same `EPERM` localhost socket restriction that US-008 documented, and `typecheck` already passed. I’m checking the existing Docker test DB setup so I can run the package tests in the containerized path the project has already used for real-DB validation.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/docker-compose.yml && printf '\\n---FILE---\\...
+[94m[shell][0m $ /bin/zsh -lc 'docker --version && docker compose version'
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "docker|pnpm install|test|typecheck|5433|network" .ralph-tui/iterations/16e910a0...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '131,176p' .ralph-tui/iterations/16e910a0_2026-03-12_03-29-38_US-008.log"
+I’m using the same verification path as US-008 instead of fighting the host socket policy: start the package’s Postgres container if needed, copy the workspace to `/tmp` without host `node_modules`, then run a clean Linux install and the package test commands on the Docker network.
+[94m[shell][0m $ /bin/zsh -lc "ls -1 | rg '"'^pnpm-lock'"\\.yaml"'$'"' || true"
+[94m[shell][0m $ /bin/zsh -lc 'docker compose -f packages/registry-server/docker-compose.yml ps'
+[94m[shell][0m $ /bin/zsh -lc 'mkdir -p /tmp/qa-sdk-us009 && rsync -a --delete --exclude node_modules --exclude dist ...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' package.json"
+[94m[shell][0m $ /bin/zsh -lc 'docker run --rm --network registry-server_default -e DATABASE_URL=postgres://postgres:...
+The clean Docker verification is running now. It had to pull the `node:22-bookworm` image first, so I’m waiting for the container install/test pass rather than assuming the spec is valid from static inspection alone.
+The tests themselves are passing in the Docker-networked verification path now. I’m updating `.ralph-tui/progress.md` with the US-009 entry and the reusable integration-test pattern before I do a final pass on the changed files.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/__tests__/integration/services.test.ts"
+[94m[shell][0m $ /bin/zsh -lc 'tail -n 40 .ralph-tui/progress.md'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+I’m doing one last sanity pass on the touched files and workspace status. After that I can close this out with the exact verification results and the completion marker.
+[94m[shell][0m $ /bin/zsh -lc "nl -ba packages/registry-server/src/__tests__/integration/services.test.ts | sed -n '1...
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba .ralph-tui/progress.md | tail -n 60'
+Implemented the services CRUD integration coverage in [services.test.ts](/Users/junwoobang/workflow/qa-sdk/packages/registry-server/src/__tests__/integration/services.test.ts#L1). It uses a shared `createTestApp()`, `beforeEach(cleanupDb)`, and JSON request helpers to cover all requested `POST /services`, `GET /services/:serviceName`, and `PATCH /services/:serviceId` success and error cases against the real PostgreSQL-backed app.
+
+Updated [.ralph-tui/progress.md](/Users/junwoobang/workflow/qa-sdk/.ralph-tui/progress.md#L148) with the US-009 entry and added the reusable integration-test pattern at the top of the file.
+
+Verification: `pnpm --filter @qa-sdk/registry-server typecheck` passes locally. Host-side `pnpm --filter @qa-sdk/registry-server test` still hits the known `EPERM` block on `localhost:5433`, so I verified the same `test` and `typecheck` commands from a clean Dockerized Node container on the Postgres Docker network; both passed there.
+
+<promise>COMPLETE</promise>

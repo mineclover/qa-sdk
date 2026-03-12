@@ -1,0 +1,35 @@
+{
+  "name": "@qa-sdk/registry-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "start": "node dist/server.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.7.5",
+    "postgres": "^3.4.5",
+    "ulid": "^2.3.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "@types/node": "^22.13.10",
+    "drizzle-kit": "^0.30.5",
+    "vitest": "^1.6.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

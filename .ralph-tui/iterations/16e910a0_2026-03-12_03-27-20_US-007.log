@@ -1,0 +1,53 @@
+# Iteration 7 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Unit tests for error-handler middleware
+- **Description**: As a developer, I need unit tests for the global error handler to verify error response formatting.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-03-11T18:27:20.076Z
+- **Ended At**: 2026-03-11T18:29:37.677Z
+- **Duration**: 2m 17s
+- **Input Tokens**: 284988
+- **Output Tokens**: 6100
+- **Total Tokens**: 291088
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’m checking the existing registry-server error handling and the current `.ralph-tui/progress.md` before I make changes, so I can follow the established testing and documentation patterns instead of guessing.
+[94m[shell][0m $ /bin/zsh -lc pwd
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "rg --files .ralph-tui src packages apps . | rg 'progress\\.md|error-handler|AppError|r...
+I’ve got the progress log and the existing patterns. Next I’m reading the error middleware, its error types, and nearby tests so the new coverage matches the package’s NodeNext/Vitest conventions.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/app.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/server.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/lib/errors.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/__tests__/health.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/src/middleware/error-handler.ts"
+The middleware is simple enough that an end-to-end Hono harness should cover all acceptance criteria directly. I’m checking a couple more existing test files for assertion style and then I’ll add the new middleware test file plus the progress log entry.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/__tests__/lib/errors.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/__tests__/modules/services/service.servic...
+[94m[shell][0m $ /bin/zsh -lc 'cat packages/registry-server/tsconfig.json'
+[94m[shell][0m $ /bin/zsh -lc 'cat packages/registry-server/package.json'
+Plan:
+1. Add a dedicated middleware test harness that mounts throw routes on a local `Hono` app with `app.onError(errorHandler)`.
+2. Cover `AppError`, `ZodError`, and generic `Error` responses against the exact status/code/message behavior in the acceptance criteria.
+3. Update `.ralph-tui/progress.md` with the new pattern and the US-007 entry, then run the package test and typecheck commands to verify the story end to end.
+I’m editing two files now: the new middleware test file and the progress log. The test harness will stay local to the test package, with deliberate throw routes so the assertions hit the real `onError` path instead of calling the handler directly.
+The implementation is in place. I’m running the registry-server test suite and typecheck now to catch any NodeNext import or harness issues before I close the story.
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server test'
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server typecheck'
+The tests are green. Typecheck is still running; I’m waiting for the compiler result before I mark the story complete.
+I’ve finished the code and verification. I’m grabbing line numbers from the touched files so the close-out references are precise.
+[94m[shell][0m $ /bin/zsh -lc "nl -ba packages/registry-server/src/__tests__/middleware/error-handler.test.ts | sed -...
+[94m[shell][0m $ /bin/zsh -lc "nl -ba .ralph-tui/progress.md | sed -n '1,220p'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+Added end-to-end coverage for the global error middleware in [error-handler.test.ts](/Users/junwoobang/workflow/qa-sdk/packages/registry-server/src/__tests__/middleware/error-handler.test.ts#L1). The test app mounts throw routes and exercises the real `app.onError(errorHandler)` path to verify `SERVICE_NOT_FOUND` -> `404`, `SERVICE_NAME_CONFLICT` -> `409`, `ZodError` -> `400` with `INVALID_INPUT` and joined field paths, plus generic `Error` -> sanitized `500` with `INTERNAL_ERROR` and no leaked internal message.
+
+I also appended the US-007 entry and added the reusable middleware-testing pattern in [progress.md](/Users/junwoobang/workflow/qa-sdk/.ralph-tui/progress.md#L16) and [progress.md](/Users/junwoobang/workflow/qa-sdk/.ralph-tui/progress.md#L113). Verification passed with `pnpm --filter @qa-sdk/registry-server test` and `pnpm --filter @qa-sdk/registry-server typecheck`.
+
+<promise>COMPLETE</promise>

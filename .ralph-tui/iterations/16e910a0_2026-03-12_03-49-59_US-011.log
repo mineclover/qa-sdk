@@ -1,0 +1,95 @@
+# Iteration 11 Log
+
+## Metadata
+
+- **Task ID**: US-011
+- **Task Title**: Integration test for concurrent event version creation
+- **Description**: As a developer, I need a test that verifies concurrent event creation produces unique sequential versions via advisory lock.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-03-11T18:49:59.041Z
+- **Ended At**: 2026-03-11T18:54:09.028Z
+- **Duration**: 4m 9s
+- **Input Tokens**: 921305
+- **Output Tokens**: 11441
+- **Total Tokens**: 932746
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’m checking the current implementation status for US-011 and the surrounding test patterns first. I’ll read the progress log, locate the registry server test setup, and verify whether this story is already done before editing anything.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'pwd && rg --files .ralph-tui src package.json pnpm-workspace.yaml'
+
+[91m[Error: /Users/junwoobang/workflow/qa-sdk
+rg: src: No such file or directory (os error 2)
+pnpm-workspace.yaml
+package.json
+.ralph-tui/reports/sequential-summary-ce7eb93f-fc80-4257-b504-41de4a51185d-2026-03-11T17-48-18-737Z.txt
+.ralph-tui/session-meta.json
+.ralph-tui/iterations/16e910a0_2026-03-12_03-13-32_US-003.log
+.ralph-tui/iterations/16e910a0_2026-03-12_02-55-28_US-001.log
+.ralph-tui/iterations/16e910a0_2026-03-12_03-15-47_US-004.log
+.ralph-tui/iterations/16e910a0_2026-03-12_03-21-31_US-006.log
+.ral][0m
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "US-010|advisory|event_version|concurrency|POST /services/.*/events|integration"...
+US-011 is not implemented yet. I’ve confirmed the relevant patterns in `progress.md`, and next I’m reading the existing event integration tests plus the advisory-lock implementation so the new spec matches the current test harness and route behavior.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/__tests__/helpers/setup.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/vitest.config.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/modules/events/event.service.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/src/modules/events/event.repository.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' packages/registry-server/src/__tests__/integration/events.test.ts"
+The existing event integration harness is straightforward enough to reuse directly. I’ve confirmed the lock is taken inside the transaction before the latest-version read, so I’m moving to a dedicated `concurrency.test.ts` that stresses the same-key and split-key cases with `Promise.all()` and explicit sequence assertions.
+I’m checking the package scripts and local runtime constraints before editing so I can choose a verification path that actually works in this sandbox.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,80p' packages/registry-server/.env.test"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/package.json"
+[94m[shell][0m $ /bin/zsh -lc "docker ps --format '{{.Names}}\\t{{.Status}}'"
+I have the test shape now. Before I patch, I’m checking the schema exports so I can add one direct DB assertion for persisted versions rather than relying only on API responses.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/src/db/schema.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' packages/registry-server/src/db/client.ts"
+I’m adding the new integration spec now. It will reuse the existing DB-backed app helper, issue truly concurrent POSTs with `Promise.all()`, and read the persisted rows back to prove the stored versions are unique and sequential.
+The new spec is in place. I’m running it in the lightest verification path first to catch any typing or assertion issues before the full package checks.
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server test -- concurrency.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'pnpm --filter @qa-sdk/registry-server typecheck'
+
+[91m[Error: 
+> @qa-sdk/registry-server@0.1.0 test /Users/junwoobang/workflow/qa-sdk/packages/registry-server
+> vitest run -- concurrency.test.ts
+
+
+ RUN  v1.6.1 /Users/junwoobang/workflow/qa-sdk/packages/registry-server
+
+ ✓ src/__tests__/modules/events/event.service.test.ts  (12 tests) 6ms
+ ❯ src/__tests__/integration/events.test.ts  (14 tests) 15ms
+ ✓ src/__tests__/modules/services/service.service.test.ts  (11 tests) 5ms
+ ❯ src/__tests__/integration/services.test.ts  (13 tests) 9ms
+ ❯ src/__tests__/integrat][0m
+The test command is still running. One immediate issue is that the package script forwards `concurrency.test.ts` after `--`, which Vitest is interpreting broadly enough to start multiple test files, so I’m waiting for the actual failure mode before deciding whether I need a narrower invocation.
+Host-side DB-backed tests are still blocked exactly as earlier notes described: `connect EPERM 127.0.0.1:5433`. The new file typechecks cleanly, and I’m switching to the same Docker-networked verification approach the project has already needed for real Postgres integration tests.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' packages/registry-server/docker-compose.yml"
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "docker.*typecheck|docker.*vitest|postgres network|EPERM|dockerized Node" .ralph...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '140,190p' .ralph-tui/iterations/16e910a0_2026-03-12_03-43-17_US-010.log"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '140,190p' .ralph-tui/iterations/16e910a0_2026-03-12_03-29-38_US-008.log"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '70,130p' .ralph-tui/iterations/16e910a0_2026-03-12_03-38-54_US-009.log"
+I’m preparing a clean `/tmp` copy for containerized verification so the result isn’t contaminated by the host install tree or the known localhost socket restriction. After that I’ll run the real package `typecheck` and `test` commands against the Postgres Docker network.
+[94m[shell][0m $ /bin/zsh -lc 'mkdir -p /tmp/qa-sdk-us011'
+[94m[shell][0m $ /bin/zsh -lc "docker network ls --format '{{.Name}}' | rg '"'^registry-server_default$|''^packages-d...
+[94m[shell][0m $ /bin/zsh -lc 'rsync -a --delete --exclude node_modules --exclude dist --exclude .git /Users/junwooba...
+[94m[shell][0m $ /bin/zsh -lc "docker run --rm --network registry-server_default -e DATABASE_URL=postgres://postgres:...
+The clean container install is underway. I’m waiting on the full install-plus-suite run rather than assuming the test is good from the new file alone, because this story specifically needs the advisory-lock behavior exercised against the real DB.
+The implementation is verified in the Docker-network path: full `@qa-sdk/registry-server` `typecheck` and `test` passed there, including the new concurrency spec. I’m making the required `progress.md` updates now and then I’ll do a final sanity pass on the changed files.
+I’m updating the shared progress log with the reusable concurrency-test pattern and the US-011 entry. After that I’ll confirm the final diff and stop.
+[94m[shell][0m $ /bin/zsh -lc 'nl -ba .ralph-tui/progress.md | tail -n 60'
+[94m[shell][0m $ /bin/zsh -lc "nl -ba packages/registry-server/src/__tests__/integration/concurrency.test.ts | sed -n...
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+I’ve got the implementation and verification results. I’m pulling one concise status snapshot of the files I touched so the close-out is precise despite the larger dirty workspace.
+[94m[shell][0m $ /bin/zsh -lc "nl -ba .ralph-tui/progress.md | sed -n '1,24p'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short -- .ralph-tui/progress.md packages/registry-server/src/__tests__/in...
+Implemented the concurrent advisory-lock integration coverage in [concurrency.test.ts](/Users/junwoobang/workflow/qa-sdk/packages/registry-server/src/__tests__/integration/concurrency.test.ts#L1). The first spec fires 5 concurrent same-key `POST /services/:serviceId/events` requests, asserts all `201`s, verifies the returned versions sort to `001` through `005`, and reads the persisted rows back to confirm uniqueness for the same `(service_id, event_key)`. The second spec fires 3 concurrent requests each for `event_key_a` and `event_key_b` and verifies each key gets its own `001` through `003` sequence.
+
+Updated [progress.md](/Users/junwoobang/workflow/qa-sdk/.ralph-tui/progress.md#L6) with the reusable concurrency-test pattern and appended the required US-011 entry at [progress.md](/Users/junwoobang/workflow/qa-sdk/.ralph-tui/progress.md#L181). No commits were created.
+
+Verification: host `pnpm --filter @qa-sdk/registry-server typecheck` passed. Host `pnpm --filter @qa-sdk/registry-server test` is still blocked in this sandbox by `EPERM` on `localhost:5433`, so I verified the same package in a clean Docker-networked copy instead; `pnpm --filter @qa-sdk/registry-server typecheck` passed there and `pnpm --filter @qa-sdk/registry-server test` passed with `14/14` files and `110/110` tests.
+
+<promise>COMPLETE</promise>

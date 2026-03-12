@@ -1,0 +1,284 @@
+{
+  "name": "QA SDK Registry Server - Tests & Infrastructure",
+  "description": "TypeScript + Hono + PostgreSQL 기반 Registry Server의 테스트 스위트, DB 마이그레이션, 로컬 개발 인프라를 구축한다. 서비스/이벤트 CRUD와 event_version 자동 발급 로직의 정확성을 검증한다.",
+  "branchName": "ralph/registry-server-tests",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Test infrastructure and Docker Compose setup",
+      "description": "As a developer, I need vitest configured and a local PostgreSQL instance so that I can run unit and integration tests.",
+      "acceptanceCriteria": [
+        "vitest and @vitest/coverage-v8 added as devDependencies in packages/registry-server/package.json",
+        "vitest.config.ts created at packages/registry-server/ with proper TypeScript and path resolution",
+        "package.json scripts include: 'test' (vitest run), 'test:watch' (vitest), 'test:coverage' (vitest run --coverage), 'typecheck' (tsc --noEmit)",
+        "docker-compose.yml created at packages/registry-server/ with PostgreSQL 16 service (port 5433 to avoid conflicts, db: qa_registry_test, user: postgres, password: postgres)",
+        "A placeholder test file src/__tests__/health.test.ts exists that verifies GET /health returns { ok: true } using Hono's app.request() (no DB needed)",
+        "pnpm --filter @qa-sdk/registry-server test passes with the placeholder test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Use app.request() from hono for unit-level route testing without starting the server. The health test does not need a DB connection.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Drizzle DB migration generation",
+      "description": "As a developer, I need SQL migration files generated from the Drizzle schema so that I can set up the database deterministically.",
+      "acceptanceCriteria": [
+        "drizzle/ directory contains a generated SQL migration file for the initial schema",
+        "Migration SQL includes CREATE TABLE services with all columns, constraints, and checks matching src/db/schema.ts",
+        "Migration SQL includes CREATE TABLE service_events with all columns, FK, unique constraint, indices, and checks matching src/db/schema.ts",
+        "drizzle/meta/ directory contains the migration metadata JSON",
+        "db:generate script in package.json successfully produces the migration from the current schema",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Run 'pnpm --filter @qa-sdk/registry-server db:generate' to produce the migration. Ensure DATABASE_URL is set or use dotenv for drizzle-kit. Verify the generated SQL is correct by inspecting the output file.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "Unit tests for lib utilities (version, id, errors, clock)",
+      "description": "As a developer, I need unit tests for all shared lib modules to ensure core logic is correct.",
+      "acceptanceCriteria": [
+        "src/__tests__/lib/version.test.ts: tests nextVersionFrom(null) returns '001'",
+        "src/__tests__/lib/version.test.ts: tests nextVersionFrom('001') returns '002', nextVersionFrom('099') returns '100'",
+        "src/__tests__/lib/version.test.ts: tests nextVersionFrom('999') throws VersionOverflowError",
+        "src/__tests__/lib/version.test.ts: tests nextVersionFrom('000') edge case returns '001'",
+        "src/__tests__/lib/id.test.ts: tests newServiceId() starts with 'svc_' and has correct ULID length",
+        "src/__tests__/lib/id.test.ts: tests newEventId() starts with 'evt_' and has correct ULID length",
+        "src/__tests__/lib/id.test.ts: tests two consecutive IDs are unique",
+        "src/__tests__/lib/errors.test.ts: tests AppError has correct code, message, and statusCode",
+        "src/__tests__/lib/errors.test.ts: tests notFound() returns 404, conflict() returns 409",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Pure unit tests, no mocking needed. These are simple function tests.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "Unit tests for Zod validation schemas",
+      "description": "As a developer, I need unit tests for all Zod schemas to ensure input validation covers edge cases.",
+      "acceptanceCriteria": [
+        "src/__tests__/modules/services/service.schema.test.ts exists",
+        "createServiceSchema: accepts valid input {service_name: 'mobile_app', display_name: 'Mobile App'}",
+        "createServiceSchema: rejects service_name with uppercase ('Mobile_App'), starting with number ('1app'), containing hyphens ('my-app'), empty string",
+        "createServiceSchema: rejects display_name longer than 120 chars, empty display_name",
+        "createServiceSchema: accepts optional description, rejects description longer than 2000 chars",
+        "updateServiceSchema: rejects empty object (no fields), accepts partial updates",
+        "updateServiceSchema: validates status enum (accepts 'active'|'deprecated'|'retired', rejects 'deleted')",
+        "src/__tests__/modules/events/event.schema.test.ts exists with similar coverage for createEventSchema and updateEventSchema",
+        "createEventSchema: validates event_key format (same rules as service_name)",
+        "createEventSchema: validates record_kind enum ('log'|'span'|'both'), defaults to 'log' when omitted",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Pure unit tests calling .parse() and .safeParse() on Zod schemas. No mocking needed.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "Unit tests for ServiceService",
+      "description": "As a developer, I need unit tests for the service module business logic with mocked repository.",
+      "acceptanceCriteria": [
+        "src/__tests__/modules/services/service.service.test.ts exists",
+        "ServiceRepository is mocked (vi.fn() or manual mock object)",
+        "Test create(): happy path returns Service with correct fields and generated svc_ ID",
+        "Test create(): throws SERVICE_NAME_CONFLICT (409) when service_name already exists",
+        "Test getByName(): returns Service when found",
+        "Test getByName(): throws SERVICE_NOT_FOUND (404) when not found",
+        "Test getById(): returns Service when found",
+        "Test getById(): throws SERVICE_NOT_FOUND (404) when not found",
+        "Test update(): happy path returns updated Service with new updatedAt",
+        "Test update(): throws SERVICE_NOT_FOUND (404) when serviceId doesn't exist",
+        "Test update(): partial updates work (only display_name, only status, etc.)",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Mock ServiceRepository methods (findByName, findById, insert, update) using vitest vi.fn(). Verify the service layer correctly delegates to repository and applies business rules.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "Unit tests for EventService",
+      "description": "As a developer, I need unit tests for the event module business logic including version auto-increment with mocked dependencies.",
+      "acceptanceCriteria": [
+        "src/__tests__/modules/events/event.service.test.ts exists",
+        "EventRepository, ServiceRepository, and Db (transaction) are mocked",
+        "Test create(): first event for a key gets event_version '001'",
+        "Test create(): subsequent event for same key gets incremented version ('002', '003')",
+        "Test create(): throws SERVICE_NOT_FOUND when serviceId doesn't exist",
+        "Test create(): throws EVENT_VERSION_OVERFLOW when latest version is '999'",
+        "Test create(): verifies advisory lock is acquired before version read",
+        "Test getVersions(): returns EventVersionList with all versions sorted",
+        "Test getVersions(): throws SERVICE_NOT_FOUND when service doesn't exist",
+        "Test getVersions(): throws EVENT_NOT_FOUND when no events found for key",
+        "Test getByVersion(): returns EventWithServiceName when found",
+        "Test getByVersion(): throws EVENT_NOT_FOUND when version doesn't exist",
+        "Test update(): happy path returns updated event",
+        "Test update(): throws EVENT_NOT_FOUND when eventId doesn't exist",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "The db.transaction() mock is the trickiest part. Mock it so the callback receives a tx that acts like EventRepository. The advisory lock (acquireAdvisoryLock) should be a no-op in the mock.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "Unit tests for error-handler middleware",
+      "description": "As a developer, I need unit tests for the global error handler to verify error response formatting.",
+      "acceptanceCriteria": [
+        "src/__tests__/middleware/error-handler.test.ts exists",
+        "Test: AppError with code SERVICE_NOT_FOUND returns 404 with { error: { code: 'SERVICE_NOT_FOUND', message: '...' } }",
+        "Test: AppError with code SERVICE_NAME_CONFLICT returns 409",
+        "Test: ZodError returns 400 with code INVALID_INPUT and formatted message containing field paths",
+        "Test: Generic Error returns 500 with code INTERNAL_ERROR and message 'internal server error'",
+        "Test: Generic Error does not leak internal error message to response",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Use Hono's app.request() with routes that deliberately throw each error type to test the error handler end-to-end.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "Integration test helpers and DB setup",
+      "description": "As a developer, I need reusable test helpers for integration tests that connect to a real PostgreSQL database.",
+      "acceptanceCriteria": [
+        "src/__tests__/helpers/setup.ts exists with functions: createTestDb(), cleanupDb(), createTestApp()",
+        "createTestDb() connects to PostgreSQL using a test DATABASE_URL (from .env.test or environment variable)",
+        "createTestDb() pushes the Drizzle schema to the test database (using drizzle-kit push programmatically or raw SQL from migration)",
+        "cleanupDb() truncates all tables (services, service_events) between tests while preserving schema",
+        "createTestApp() returns a Hono app instance wired to the test database",
+        ".env.test file created with DATABASE_URL pointing to docker-compose PostgreSQL (port 5433, db: qa_registry_test)",
+        "A smoke integration test (src/__tests__/integration/smoke.test.ts) verifies: DB connection works, tables exist, GET /health returns 200",
+        "vitest.config.ts updated if needed to support integration test setup/teardown (globalSetup or beforeAll/afterAll pattern)",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test (when Docker PostgreSQL is running)",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Integration tests require Docker PostgreSQL running (docker compose up -d). Use postgres.js client directly for schema push if drizzle-kit API is not easily callable programmatically. Alternative: execute the generated migration SQL file from US-002.",
+      "dependsOn": [
+        "US-001",
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "Integration tests for services CRUD endpoints",
+      "description": "As a developer, I need integration tests for all service API endpoints against a real PostgreSQL database.",
+      "acceptanceCriteria": [
+        "src/__tests__/integration/services.test.ts exists",
+        "Test POST /services: creates service, returns 201 with service_id starting with 'svc_', correct service_name, status 'active', created_at/updated_at present",
+        "Test POST /services: duplicate service_name returns 409 with SERVICE_NAME_CONFLICT error",
+        "Test POST /services: invalid service_name format (uppercase, hyphen, starting with digit) returns 400 with INVALID_INPUT",
+        "Test POST /services: missing required fields returns 400 with INVALID_INPUT",
+        "Test GET /services/:serviceName: returns 200 with full service object",
+        "Test GET /services/:serviceName: non-existent name returns 404 with SERVICE_NOT_FOUND",
+        "Test PATCH /services/:serviceId: updates display_name, returns 200 with updated data and new updated_at",
+        "Test PATCH /services/:serviceId: updates status to 'deprecated', returns 200",
+        "Test PATCH /services/:serviceId: non-existent serviceId returns 404",
+        "Test PATCH /services/:serviceId: empty body returns 400",
+        "DB is cleaned between each test (truncate tables)",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Use createTestApp() and app.request() from the helpers in US-008. Each test should clean the DB via cleanupDb() in beforeEach.",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "Integration tests for events CRUD and auto-versioning",
+      "description": "As a developer, I need integration tests for all event API endpoints including automatic version assignment.",
+      "acceptanceCriteria": [
+        "src/__tests__/integration/events.test.ts exists",
+        "Test setup: creates a service beforeEach to use as parent for events",
+        "Test POST /services/:serviceId/events: first event gets event_version '001', returns 201 with evt_ ID",
+        "Test POST /services/:serviceId/events: second event with same event_key gets event_version '002'",
+        "Test POST /services/:serviceId/events: different event_key starts at '001' independently",
+        "Test POST /services/:serviceId/events: non-existent serviceId returns 404",
+        "Test POST /services/:serviceId/events: invalid event_key format returns 400",
+        "Test GET /services/:serviceName/events/:eventKey: returns versions array sorted by event_version ascending",
+        "Test GET /services/:serviceName/events/:eventKey: non-existent event returns 404",
+        "Test GET /services/:serviceName/events/:eventKey/versions/:eventVersion: returns specific version with service_name included",
+        "Test GET /services/:serviceName/events/:eventKey/versions/:eventVersion: non-existent version returns 404",
+        "Test PATCH /events/:eventId: updates display_name and description, returns 200",
+        "Test PATCH /events/:eventId: updates status to 'deprecated', returns 200",
+        "Test PATCH /events/:eventId: non-existent eventId returns 404",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "The core test is verifying that event_version auto-increments correctly per (service_id, event_key) scope. Create multiple events with different keys to verify independence.",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "Integration test for concurrent event version creation",
+      "description": "As a developer, I need a test that verifies concurrent event creation produces unique sequential versions via advisory lock.",
+      "acceptanceCriteria": [
+        "src/__tests__/integration/concurrency.test.ts exists",
+        "Test fires 5 concurrent POST /services/:serviceId/events requests with the same event_key using Promise.all()",
+        "All 5 requests succeed with status 201 (no duplicates or errors)",
+        "The 5 returned event_versions are exactly ['001','002','003','004','005'] (unique and sequential)",
+        "No two events share the same event_version for the same (service_id, event_key)",
+        "Test fires 3 concurrent requests for event_key_a and 3 for event_key_b simultaneously, verifying each key gets independent 001-003 sequences",
+        "All tests pass with pnpm --filter @qa-sdk/registry-server test",
+        "pnpm --filter @qa-sdk/registry-server typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "This test validates the pg_advisory_xact_lock mechanism. Uses real DB transactions, not mocks. If advisory lock is working correctly, all concurrent inserts should get unique versions without unique constraint violations.",
+      "dependsOn": [
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-11T18:54:09.030Z"
+  }
+}
