@@ -105,3 +105,36 @@ export {
 } from "./lib/id.js";
 
 export { now } from "./lib/clock.js";
+
+// ── Ports (Storage Contracts) ───────────────────────────
+
+export type {
+  RecordStore,
+  RecordInsert,
+  StoredRecord,
+} from "./ports/record-store.port.js";
+
+export type {
+  TraceStore,
+  TraceUpsert,
+  StoredTrace,
+} from "./ports/trace-store.port.js";
+
+export type { GraphStore } from "./ports/graph-store.port.js";
+
+export type {
+  VerdictStore,
+  VerdictInsert,
+  StoredVerdict,
+} from "./ports/verdict-store.port.js";
+
+export type {
+  SessionStore,
+  SessionUpsert,
+  StoredSession,
+} from "./ports/session-store.port.js";
+
+export type {
+  TransmissionStore,
+  TransmissionInsert,
+} from "./ports/transmission-store.port.js";
