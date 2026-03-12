@@ -48,6 +48,7 @@ export type {
 
 export type {
   Verdict,
+  ConstraintResult,
   StepMatch,
   MatchResult,
   VerdictReport,

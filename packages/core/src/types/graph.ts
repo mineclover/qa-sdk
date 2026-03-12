@@ -1,4 +1,4 @@
-import type { ScenarioStep, StepConstraint } from "./scenario.js";
+import type { StepConstraint, StepKind } from "./scenario.js";
 
 // ── Spec Graph (Expected Behavior Graph) ────────────────
 
@@ -10,15 +10,22 @@ export interface SpecGraph {
 }
 
 export interface SpecNode {
-  id: string;
-  step: ScenarioStep;
+  step_id: string;
+  event_key: string;
+  event_version?: string;
+  source?: string;
+  record_kind?: "log" | "span";
+  required: boolean;
+  kind: StepKind;
+  constraints?: StepConstraint[];
+  timeout_ms?: number;
 }
 
 export type SpecEdgeType = "sequence" | "branch" | "optional";
 
 export interface SpecEdge {
-  from: string;
-  to: string;
+  source: string;
+  target: string;
   type: SpecEdgeType;
   condition?: StepConstraint;
 }
@@ -48,10 +55,10 @@ export interface RuntimeNode {
   payload_masked_fields: string[];
 }
 
-export type RuntimeEdgeType = "temporal" | "parent_child" | "derived";
+export type RuntimeEdgeType = "temporal" | "parent_child" | "causal";
 
 export interface RuntimeEdge {
-  from: string;
-  to: string;
+  source: string;
+  target: string;
   type: RuntimeEdgeType;
 }

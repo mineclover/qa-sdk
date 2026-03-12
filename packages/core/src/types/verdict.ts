@@ -1,6 +1,14 @@
+import type { StepConstraint } from "./scenario.js";
+
 // ── Verdict ─────────────────────────────────────────────
 
 export type Verdict = "pass" | "fail" | "warn" | "degraded" | "unknown";
+
+export interface ConstraintResult {
+  constraint: StepConstraint;
+  passed: boolean;
+  actual?: unknown;
+}
 
 // ── Step Match ──────────────────────────────────────────
 
@@ -8,7 +16,7 @@ export interface StepMatch {
   step_id: string;
   matched_node_id?: string;
   verdict: Verdict;
-  reason?: string;
+  constraint_results: ConstraintResult[];
 }
 
 // ── Match Result ────────────────────────────────────────
@@ -28,13 +36,12 @@ export interface VerdictReport {
   trace_id: string;
   qa_session_id?: string;
   overall_verdict: Verdict;
-  passed_steps: string[];
-  failed_steps: string[];
-  warning_steps: string[];
+  step_matches: StepMatch[];
   missing_steps: string[];
   unexpected_nodes: string[];
   latency_violations: LatencyViolation[];
   summary: string;
+  computed_at: string;
 }
 
 export interface LatencyViolation {
