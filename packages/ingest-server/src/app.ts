@@ -25,6 +25,7 @@ import { createScenarioRoutes } from "./routes/scenario.js";
 import { createVerdictRoutes } from "./routes/verdict.js";
 import { createDlqRoutes } from "./routes/dlq.js";
 import { createCleanupRoutes } from "./routes/cleanup.js";
+import { createSessionRoutes } from "./routes/session.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import type { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import type { Logger } from "pino";
@@ -114,6 +115,7 @@ export function createApp(deps: AppDeps) {
     }),
   );
   app.route("/", createScenarioRoutes(deps));
+  app.route("/", createSessionRoutes(deps));
   app.route("/", createVerdictRoutes(deps));
   app.route(
     "/",

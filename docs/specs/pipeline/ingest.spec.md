@@ -148,3 +148,19 @@ interface IngestDeps {
 - Phase 1에서 trace 저장 실패는 해당 trace만 skip, 나머지는 계속 진행
 - Phase 2에서 reconstruction/verdict 실패는 DLQ에 기록하고 다음 trace로 진행
 - SSE 발행은 Phase 1 저장 성공 후 즉시 수행
+
+## 테스트 커버리지
+
+`packages/ingest-server/src/routes/ingest.test.ts`:
+- 기본 202 응답, qa_session_id 세션 생성, invalid event_version → 400, validator throw → fail-open, strict 모드 거부
+
+`packages/ingest-server/src/sdk-to-ingest.e2e.test.ts` (E2E):
+- QaLogger(HttpTransport) → ingest → reconstruction → verdict 전체 파이프라인 자동 검증
+- 7가지 체계적 시나리오 (`it.each`):
+  1. required step 전체 발생 → `pass`
+  2. required step 누락 → `fail` (missing_steps 포함)
+  3. optional step 누락 → `warn`
+  4. payload constraint 통과 → `pass`
+  5. payload constraint 실패 → `fail` (missing_steps는 빈 배열)
+  6. 시나리오 외 이벤트 발생 → `pass` 유지
+  7. 백엔드 API 요청 흐름 수집 → `pass`

@@ -1,0 +1,75 @@
+/* ── Tree View ────────────────────────────────────────── */
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  transition: background 0.1s;
+}
+
+.tree-row:hover {
+  background: var(--bg-surface);
+}
+
+.tree-row--selected {
+  background: var(--accent-dim) !important;
+}
+
+.tree-closing {
+  cursor: default;
+  color: var(--text-muted);
+}
+
+.tree-closing:hover {
+  background: transparent;
+}
+
+/* ── Arrow ───────────────────────────────────────────── */
+
+.tree-arrow {
+  display: inline-block;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.tree-arrow:hover {
+  color: var(--text-primary);
+}
+
+/* ── Tag Tokens ──────────────────────────────────────── */
+
+.tree-tag {
+  display: inline;
+}
+
+.tree-bracket {
+  color: var(--text-muted);
+}
+
+.tree-tagname {
+  color: #f38ba8;
+}
+
+.tree-attrname {
+  color: #fab387;
+}
+
+.tree-attrval {
+  color: #a6e3a1;
+}
+
+.tree-text {
+  color: var(--text-secondary);
+  font-style: italic;
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QA Roleplay</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Toolbar -->
+      <div id="toolbar">
+        <span class="toolbar-label">Elements:</span>
+        <button class="toolbar-btn" data-add-tag="div">+ div</button>
+        <button class="toolbar-btn" data-add-tag="form">+ form</button>
+        <button class="toolbar-btn" data-add-tag="input">+ input</button>
+        <button class="toolbar-btn" data-add-tag="button">+ button</button>
+        <button class="toolbar-btn" data-add-tag="label">+ label</button>
+        <button class="toolbar-btn" data-add-tag="select">+ select</button>
+        <button class="toolbar-btn" data-add-tag="textarea">+ textarea</button>
+        <button class="toolbar-btn" data-add-tag="p">+ p</button>
+        <button class="toolbar-btn" data-add-tag="h2">+ h2</button>
+        <div class="toolbar-separator"></div>
+        <button class="toolbar-btn" id="btn-delete">Delete</button>
+        <button class="toolbar-btn" id="btn-duplicate">Duplicate</button>
+        <div class="toolbar-separator"></div>
+        <button class="toolbar-btn toolbar-btn--accent" id="btn-clear">Clear All</button>
+        <div style="flex:1"></div>
+        <span id="connection-status" class="toolbar-label status-disconnected">disconnected</span>
+      </div>
+
+      <!-- Left Panel: Tree View -->
+      <div id="tree-panel"></div>
+
+      <!-- Center: Preview + Event Log -->
+      <div id="center-panel">
+        <div id="form-preview"></div>
+        <div id="event-log-panel">
+          <div id="event-log-header">Event Log</div>
+          <div id="event-log"></div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Element Editor -->
+      <div id="editor-panel"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

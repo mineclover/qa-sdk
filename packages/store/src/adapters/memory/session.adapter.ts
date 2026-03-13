@@ -27,6 +27,17 @@ export class InMemorySessionStore implements SessionStore {
     return session ? structuredClone(session) : null;
   }
 
+  async findByScenarioId(scenarioId: string, limit = 100): Promise<StoredSession[]> {
+    const results: StoredSession[] = [];
+    for (const session of this.sessions.values()) {
+      if (session.scenarioId === scenarioId) {
+        results.push(structuredClone(session));
+      }
+      if (results.length >= limit) break;
+    }
+    return results.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+  }
+
   async close(sessionId: string): Promise<void> {
     const existing = this.sessions.get(sessionId);
 

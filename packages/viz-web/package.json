@@ -1,0 +1,22 @@
+{
+  "name": "@qa-sdk/viz-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/engine": "workspace:*",
+    "@qa-sdk/event-catalog": "workspace:*",
+    "dagre": "^0.8.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vite": "^6.3.5",
+    "@types/dagre": "^0.7.52"
+  }
+}

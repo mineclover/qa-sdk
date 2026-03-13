@@ -53,7 +53,7 @@ implemented
 ```
 
 - `computed`: 성공적으로 재계산된 verdict 목록 (`Array<{ traceId: string; scenarioId: string }>`)
-- `skipped`: 건너뛴 항목 (매칭되는 scenario 없음 등)
+- `skipped`: 건너뛴 항목 — trace에 연결된 session이 없거나 scenarioId·scenarioSpec·graph가 없는 경우
 - `failed`: 재계산 실패 항목
 
 응답 404: trace 없음.
@@ -70,3 +70,11 @@ interface VerdictDeps {
   dlqStore: DlqStore;
 }
 ```
+
+## 테스트 커버리지
+
+`packages/ingest-server/src/routes/verdict.test.ts`:
+- trace/session verdict 조회, trace 없음 → 404, recompute 200, recompute → session 없으면 skipped 반환
+
+`packages/ingest-server/src/sdk-to-ingest.e2e.test.ts`:
+- 전체 파이프라인 후 `GET /v1/traces/:traceId/verdicts`로 overallVerdict 및 missing_steps 검증

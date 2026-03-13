@@ -95,8 +95,9 @@ base64url(`{ "timestamp": "<ISO-8601>", "logId": "<string>" }`)
 
 - items는 timestamp 오름차순 정렬
 - cursor가 없으면 처음부터
-- cursor가 유효하지 않으면 400 에러
+- cursor가 유효하지 않으면 400 에러 (base64url 디코딩 실패, JSON 파싱 실패, 필수 필드 누락 모두 포함)
 - limit > 200 이면 200으로 클램핑
+- limit = 0 또는 음수이면 400 에러
 - has_more=true 이면 next_cursor가 반드시 존재
 
 ## 의존 포트

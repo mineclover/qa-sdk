@@ -2,6 +2,7 @@
 export interface SessionStore {
   upsert(params: SessionUpsert): Promise<void>;
   findById(sessionId: string): Promise<StoredSession | null>;
+  findByScenarioId(scenarioId: string, limit?: number): Promise<StoredSession[]>;
   close(sessionId: string): Promise<void>;
 }
 

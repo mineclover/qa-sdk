@@ -13,6 +13,7 @@ export class RecordStreamBrokerShutdownError extends Error {
 export class RecordStreamBroker {
   private readonly traceSubscribers = new Map<string, Set<RecordListener>>();
   private readonly sessionSubscribers = new Map<string, Set<RecordListener>>();
+  private readonly scenarioSubscribers = new Map<string, Set<RecordListener>>();
   private shuttingDown = false;
 
   subscribeToTrace(traceId: string, listener: RecordListener): () => void {
@@ -21,6 +22,10 @@ export class RecordStreamBroker {
 
   subscribeToSession(sessionId: string, listener: RecordListener): () => void {
     return this.subscribe(this.sessionSubscribers, sessionId, listener);
+  }
+
+  subscribeToScenario(scenarioId: string, listener: RecordListener): () => void {
+    return this.subscribe(this.scenarioSubscribers, scenarioId, listener);
   }
 
   publish(record: StoredRecord): void {
@@ -39,12 +44,27 @@ export class RecordStreamBroker {
     }
   }
 
+  publishToScenario(scenarioId: string, record: StoredRecord): void {
+    if (this.shuttingDown) {
+      return;
+    }
+    this.publishToSubscribers(this.scenarioSubscribers, scenarioId, record);
+  }
+
+  hasScenarioSubscribers(): boolean {
+    return this.scenarioSubscribers.size > 0;
+  }
+
   getTraceSubscriberCount(traceId: string): number {
     return this.traceSubscribers.get(traceId)?.size ?? 0;
   }
 
   getSessionSubscriberCount(sessionId: string): number {
     return this.sessionSubscribers.get(sessionId)?.size ?? 0;
+  }
+
+  getScenarioSubscriberCount(scenarioId: string): number {
+    return this.scenarioSubscribers.get(scenarioId)?.size ?? 0;
   }
 
   isShuttingDown(): boolean {
@@ -59,6 +79,7 @@ export class RecordStreamBroker {
     this.shuttingDown = true;
     this.traceSubscribers.clear();
     this.sessionSubscribers.clear();
+    this.scenarioSubscribers.clear();
   }
 
   private subscribe(

@@ -13,10 +13,10 @@ implemented
 ScenarioSpec 등록/갱신 (upsert).
 
 요청 body: ScenarioSpec JSON (scenarioSpecSchema로 검증).
-등록 시 compileSpec()으로 의미 검증 (step 참조 유효성, 순환 참조 등). 실패 시 400.
+등록 시 compileSpec()으로 구조 검증. compileSpec이 예외를 던지면 400을 반환한다.
 
 응답 201: `{ accepted: true, scenario_id: string }`
-응답 400: scenario compilation failed (compileSpec 실패) 또는 schema validation 실패
+응답 400: schema validation 실패 또는 compileSpec 예외
 
 ### GET /v1/scenarios?domain=&limit=
 
@@ -25,9 +25,10 @@ ScenarioSpec 등록/갱신 (upsert).
 | 파라미터 | 타입 | 기본값 | 최대값 | 설명 |
 |---|---|---|---|---|
 | `domain` | string | - | - | 도메인 필터 (선택) |
-| `limit` | number | 100 | 100 | 결과 수 제한 |
+| `limit` | number | 100 | 100 | 결과 수 제한. 양의 정수여야 하며 0이면 400 |
 
 응답 200: `{ items: ScenarioSpec[] }`
+응답 400: limit=0 또는 음수
 
 ### GET /v1/scenarios/:scenarioId
 

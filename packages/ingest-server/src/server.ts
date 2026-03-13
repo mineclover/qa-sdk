@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
 import { RegistryClient } from "@qa-sdk/registry-client";
 import { closeClient, createDb, withTransaction } from "@qa-sdk/store";
 import {
@@ -18,6 +19,7 @@ import { installGracefulShutdown } from "./lib/graceful-shutdown.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import { createLogger } from "./lib/logger.js";
 import { createStreamConnectionRegistry } from "./lib/stream-connection-registry.js";
+import { createWsHandler } from "./routes/ws.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import {
   cleanupExpiredData,
@@ -71,6 +73,9 @@ const app = createApp({
   logger,
 });
 
+const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+app.get("/v1/ws", upgradeWebSocket(createWsHandler({ recordStreamBroker, logger })));
+
 const cleanupScheduler = installCleanupScheduler({
   enabled: env.CLEANUP_CRON_ENABLED,
   logger,
@@ -84,6 +89,8 @@ const cleanupScheduler = installCleanupScheduler({
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info({ port: info.port }, "ingest-server listening");
 });
+
+injectWebSocket(server);
 
 installGracefulShutdown({
   appLifecycle,

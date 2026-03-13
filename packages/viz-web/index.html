@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QA SDK - Graph Visualizer</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="header">
+        <h1>QA SDK Viz</h1>
+        <div id="session-info" hidden>
+          <span class="session-label">Session</span>
+          <code id="session-id-value"></code>
+          <span id="ws-status" data-status="connecting" title="connecting"></span>
+          <button id="recompute-btn">Refresh Verdict</button>
+        </div>
+      </div>
+      <div id="content">
+        <div id="sidebar"></div>
+        <div id="main-left" class="split-pane">
+          <div id="graph-container"></div>
+          <div id="event-log-container"></div>
+        </div>
+        <div id="main-right" class="split-pane">
+          <div id="footer"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

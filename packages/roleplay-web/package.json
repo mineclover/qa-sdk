@@ -1,0 +1,21 @@
+{
+  "name": "@qa-sdk/roleplay-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/sdk": "workspace:*",
+    "@qa-sdk/event-catalog": "workspace:*",
+    "handlebars": "^4.7.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vite": "^6.3.5"
+  }
+}

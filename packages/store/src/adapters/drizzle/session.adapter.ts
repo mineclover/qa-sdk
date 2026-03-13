@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";
 import { qaSessions } from "../../db/schema.js";
@@ -26,6 +26,16 @@ export class DrizzleSessionStore implements SessionStore {
       .from(qaSessions)
       .where(eq(qaSessions.sessionId, sessionId));
     return row ? toStoredSession(row) : null;
+  }
+
+  async findByScenarioId(scenarioId: string, limit = 100): Promise<StoredSession[]> {
+    const rows = await this.db
+      .select()
+      .from(qaSessions)
+      .where(eq(qaSessions.scenarioId, scenarioId))
+      .orderBy(desc(qaSessions.startedAt))
+      .limit(limit);
+    return rows.map(toStoredSession);
   }
 
   async close(sessionId: string): Promise<void> {

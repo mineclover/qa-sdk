@@ -128,3 +128,13 @@ interface SpanEndParams {
 - 자동 flush는 fire-and-forget (`void this.flush()`) — 실패해도 에러 전파 안됨
 - flushIntervalMs=0 이면 주기적 flush 비활성 (수동 flush만 가능)
 - shutdown 후 log/span 호출은 정의되지 않은 동작
+- QaLogger는 브라우저 SDK 전용이 아님 — 백엔드 서비스, 테스트 코드 등 모든 환경에서 QA 이벤트 수집에 사용 가능
+
+## 테스트 커버리지
+
+`packages/sdk/src/logger.test.ts`:
+- log/startSpan 기본 동작, batchSize 자동 flush, maskingRules, qa_session_id 오버라이드 등
+
+`packages/ingest-server/src/sdk-to-ingest.e2e.test.ts`:
+- QaLogger → HttpTransport → POST /v1/ingest → reconstruction → verdict 전체 파이프라인 E2E 검증
+- 7가지 체계적 시나리오: required step pass/fail, optional step warn, payload constraint 통과/실패, 시나리오 외 이벤트, 백엔드 로직 수집

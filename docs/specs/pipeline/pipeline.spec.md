@@ -60,7 +60,8 @@ function compileSpec(spec: ScenarioSpec): SpecGraph;
 ```
 
 - `ScenarioSpec`의 steps와 navigation을 verdict 계산에 필요한 `SpecGraph`로 투영한다.
-- 순환 참조나 존재하지 않는 step 참조는 compile 단계에서 에러로 처리한다.
+- steps → `SpecNode[]`, next/branches → `SpecEdge[]`로 변환하는 순수 구조 변환이다.
+- step 참조 유효성 검사나 순환 참조 탐지는 이 함수의 책임이 아니다. 그래프 구조 이상은 verdict 계산 결과(unmatched/missing)로 드러난다.
 
 ## 3. Matching
 
@@ -126,8 +127,10 @@ async function computeTraceVerdict(
 ```
 
 - `reconstructTrace()`는 단일 trace에 대해 `RecordStore.findByTraceId()` → `reconstruct()` → `GraphStore.upsert()` → `TraceStore.markReconstructed()`를 수행한다.
-- `computeTraceVerdict()`는 단일 trace에 대해 session/scenario lookup → `compileSpec()` → `matchGraphs()` → `computeVerdict()` → `VerdictStore.insert()`를 수행한다.
-- batch entrypoint는 각각 `reconstructPendingTraces()`와 `computePendingVerdicts(trace_ids)`다.
+- `computeTraceVerdict()`는 단일 trace에 대해 session/scenario lookup → `compileSpec()` → `matchGraphs()` → `computeVerdict()` → `VerdictStore.insert()`를 수행한다. session이 없거나 scenarioId·scenarioSpec·graph가 없으면 에러 없이 `{ status: "skipped" }`를 반환한다.
+- batch entrypoint는 각각 `reconstructPendingTraces(deps, options?)` 와 `computePendingVerdicts(deps, trace_ids, options?)`다.
+- 각 trace 처리 중 에러가 발생하면 해당 trace를 DLQ에 삽입하고 `options.onError?.(traceId, error)`를 호출한 후 다음 trace를 계속 처리한다 (partial failure). `onError`가 없으면 조용히 계속 진행한다.
+- `computePendingVerdicts`는 `options.force = true`이면 기존 verdict를 삭제하고 재계산한다.
 
 ## 제약 조건
 

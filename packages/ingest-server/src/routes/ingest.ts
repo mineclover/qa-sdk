@@ -160,8 +160,19 @@ async function storeEnvelope(
         deps,
       );
 
-      for (const record of toStoredRecords(inserts)) {
+      const storedRecords = toStoredRecords(inserts);
+      for (const record of storedRecords) {
         deps.recordStreamBroker.publish(record);
+      }
+
+      // scenario-level broadcast for WebSocket subscribers
+      if (sessionId && deps.recordStreamBroker.hasScenarioSubscribers()) {
+        const session = await deps.sessionStore.findById(sessionId).catch(() => null);
+        if (session?.scenarioId) {
+          for (const record of storedRecords) {
+            deps.recordStreamBroker.publishToScenario(session.scenarioId, record);
+          }
+        }
       }
     } catch (error) {
       deps.logger?.error(

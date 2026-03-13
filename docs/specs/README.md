@@ -82,6 +82,41 @@ PostgreSQL 스키마와 어댑터 구현.
 | [schema.spec.md](storage/schema.spec.md) | PostgreSQL 테이블 스키마 | @qa-sdk/store | implemented |
 | [adapters.spec.md](storage/adapters.spec.md) | Drizzle / InMemory 어댑터 | @qa-sdk/store | implemented |
 
+### visualization/ — 그래프 시각화
+
+SpecGraph DAG 시각화, 실시간 SSE 업데이트, UI 패널.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [graph-renderer.spec.md](visualization/graph-renderer.spec.md) | dagre 레이아웃 + SVG 렌더링 + 실시간 업데이터 | @qa-sdk/viz-web | implemented |
+| [panels.spec.md](visualization/panels.spec.md) | 시나리오 선택기, 이벤트 로그, Verdict 표시 패널 | @qa-sdk/viz-web | implemented |
+
+### roleplay/ — 롤플레이 폼 빌더
+
+DOM 트리 모델 기반 비주얼 폼 빌더, QA 이벤트 발생.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [form-builder.spec.md](roleplay/form-builder.spec.md) | DOM 트리 모델, 트리 뷰, 속성 편집기, auto-layout, 폼 렌더러 | @qa-sdk/roleplay-web | implemented |
+| [qa-bridge.spec.md](roleplay/qa-bridge.spec.md) | QaBridge + EventEmitter + 템플릿 렌더링 | @qa-sdk/roleplay-web | implemented |
+
+### web/ — 웹 공통 인프라
+
+API 클라이언트, iframe 통신 프로토콜.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [api-client.spec.md](web/api-client.spec.md) | REST fetch 래퍼 + SSE EventSource 구독 | @qa-sdk/viz-web | implemented |
+| [iframe-protocol.spec.md](web/iframe-protocol.spec.md) | postMessage 양방향 통신 프로토콜 | @qa-sdk/viz-web, @qa-sdk/roleplay-web | implemented |
+
+### indexing/ — 인덱스 인코딩
+
+가중진법 기반 다차원 좌표 ↔ 정수 ID 변환, 레이블/prefix 버전 관리.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [weighted-index.spec.md](indexing/weighted-index.spec.md) | WeightedIndex / LabelRegistry / PrefixRegistry — 가중진법 인코딩 + 버전 관리 | @qa-sdk/weighted-index | implemented |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.
@@ -104,4 +139,7 @@ PostgreSQL 스키마와 어댑터 구현.
 | @qa-sdk/ingest-server | `pipeline/ingest.spec.md` + `server/ingest/` |
 | @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
+| @qa-sdk/weighted-index | `indexing/weighted-index.spec.md` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
+| @qa-sdk/viz-web | `visualization/`, `web/` |
+| @qa-sdk/roleplay-web | `roleplay/`, `web/iframe-protocol.spec.md` |

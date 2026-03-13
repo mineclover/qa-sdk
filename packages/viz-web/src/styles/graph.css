@@ -1,0 +1,131 @@
+/* ── SVG Graph Base ───────────────────────────────────── */
+
+.spec-graph {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ── Nodes ────────────────────────────────────────────── */
+
+.graph-node rect {
+  stroke-width: 2;
+  transition: fill 0.3s, stroke 0.3s;
+}
+
+.graph-node text {
+  font-size: 12px;
+  fill: var(--text-primary, #e6e6e6);
+  pointer-events: none;
+}
+
+.optional-badge {
+  font-size: 9px;
+  fill: var(--text-muted, #6a6a7a);
+}
+
+/* ── Role Colors (border/stroke) ──────────────────────── */
+
+.role-entry rect {
+  stroke: var(--accent-green, #4ade80);
+}
+
+.role-transition rect {
+  stroke: var(--accent-blue, #4a9eff);
+}
+
+.role-terminal rect {
+  stroke: var(--accent-red, #f87171);
+}
+
+.role-observation rect {
+  stroke: var(--accent-gray, #6b7280);
+  stroke-dasharray: 6 3;
+}
+
+.role-default rect {
+  stroke: var(--border-color, #2a2a4a);
+}
+
+/* ── State Colors (fill) ─────────────────────────────── */
+
+.state-pending rect {
+  fill: rgba(42, 42, 74, 0.6);
+}
+
+.state-active rect {
+  fill: rgba(74, 158, 255, 0.2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.state-matched rect {
+  fill: rgba(74, 222, 128, 0.2);
+}
+
+.state-failed rect {
+  fill: rgba(248, 113, 113, 0.2);
+}
+
+.state-skipped rect {
+  fill: rgba(42, 42, 74, 0.3);
+  stroke-dasharray: 6 3;
+}
+
+.state-skipped text {
+  fill: var(--text-muted, #6a6a7a);
+}
+
+/* ── Active Node Pulse Animation ──────────────────────── */
+
+@keyframes pulse {
+  0%,
+  100% {
+    fill: rgba(74, 158, 255, 0.15);
+  }
+  50% {
+    fill: rgba(74, 158, 255, 0.35);
+  }
+}
+
+/* ── Edges ────────────────────────────────────────────── */
+
+.graph-edge path {
+  stroke: var(--text-muted, #6a6a7a);
+  stroke-width: 1.5;
+  transition: stroke 0.3s, stroke-width 0.3s;
+}
+
+.edge-sequence path {
+  stroke: var(--text-secondary, #a0a0b0);
+}
+
+.edge-branch path {
+  stroke: var(--accent-yellow, #fbbf24);
+  stroke-dasharray: 8 4;
+}
+
+.edge-optional path {
+  stroke: var(--accent-gray, #6b7280);
+  stroke-dasharray: 4 4;
+}
+
+.edge-highlighted path {
+  stroke: var(--accent-green, #4ade80);
+  stroke-width: 2.5;
+}
+
+/* ── Arrow Marker ─────────────────────────────────────── */
+
+.arrow-marker {
+  fill: var(--text-muted, #6a6a7a);
+}
+
+/* ── Event Count Badge ────────────────────────────────── */
+
+.event-count-badge circle {
+  fill: var(--accent-blue, #4a9eff);
+}
+
+.event-count-badge text {
+  font-size: 10px;
+  fill: #fff;
+  font-weight: 700;
+}

@@ -17,7 +17,7 @@ implemented
 | 파라미터 | 타입 | 기본값 | 최대값 | 설명 |
 |---|---|---|---|---|
 | `status` | string | `"pending"` | - | 현재 `"pending"`만 지원 |
-| `limit` | number | 50 | 200 | 조회 건수 |
+| `limit` | number | 50 | 200 | 조회 건수. 양의 정수여야 하며 0이면 400 |
 
 응답 200:
 ```json
