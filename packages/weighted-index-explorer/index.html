@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>가중진법 탐색기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ── Ribbon ─────────────────────────────────────────────────── -->
+      <div class="ribbon">
+        <div class="ribbon-brand">
+          <span class="brand-icon">⊞</span>
+          <span class="brand-name">가중진법 탐색기</span>
+          <span class="brand-sub">Weighted Positional Notation · 권한 모델</span>
+        </div>
+        <div class="ribbon-tabs">
+          <button class="rtab active" data-sheet="explorer">탐색</button>
+          <button class="rtab" data-sheet="concept">개념</button>
+          <button class="rtab" data-sheet="philosophy">설계 철학</button>
+          <button class="rtab" data-sheet="address">주소 체계</button>
+          <button class="rtab" data-sheet="version">버전 관리</button>
+          <button class="rtab" data-sheet="filter">필터링</button>
+        </div>
+        <!-- Explorer controls (only visible on explorer tab) -->
+        <div class="ribbon-tools" id="ribbon-tools">
+          <!-- View toggle: styled like ribbon tabs -->
+          <button class="tvt-btn active" data-view="grid">격자</button>
+          <button class="tvt-btn" data-view="list">전체 보기</button>
+          <div class="ribbon-tools-sep"></div>
+          <!-- Version selector -->
+          <div class="ver-btns" id="ver-btns">
+            <button class="ver-btn active" data-ver="v1">v1</button>
+            <button class="ver-btn" data-ver="v2">v2</button>
+            <button class="ver-btn" data-ver="v3">v3</button>
+          </div>
+          <div class="ribbon-tools-sep"></div>
+          <!-- Color mode: inline buttons (grid-only) -->
+          <div class="tool-color-btns grid-only" id="color-btns">
+            <button class="tcb-btn" data-mode="x" title="열 차원색">열</button>
+            <button class="tcb-btn" data-mode="y" title="행 차원색">행</button>
+            <button class="tcb-btn active" data-mode="density" title="ID 그라디언트">ID</button>
+            <button class="tcb-btn" data-mode="none" title="색상 없음">—</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Formula bar ──────────────────────────────────────────── -->
+      <div class="formula-bar">
+        <div class="name-box" id="name-box">—</div>
+        <div class="fb-divider"></div>
+        <span class="fb-fx">fx</span>
+        <div class="fb-formula" id="fb-formula">
+          encode([x₁, x₂, x₃, x₄]) = (x₁−1)×80 + (x₂−1)×20 + (x₃−1)×4 + (x₄−1)
+        </div>
+      </div>
+
+      <!-- ── Axis selector bar (explorer grid only) ────────────────── -->
+      <div class="axis-bar" id="axis-bar">
+        <div class="axis-group">
+          <div class="axis-bar-label">X축</div>
+          <div class="axis-btns" id="x-axis-btns"><!-- populated by main.ts --></div>
+        </div>
+        <div class="axis-bar-divider"></div>
+        <div class="axis-group">
+          <div class="axis-bar-label">Y축</div>
+          <div class="axis-btns" id="y-axis-btns"><!-- populated by main.ts --></div>
+        </div>
+      </div>
+
+      <!-- ── Workbook ──────────────────────────────────────────── -->
+      <div class="workbook">
+
+        <!-- Explorer sheet -->
+        <div class="sheet" id="sheet-explorer">
+          <div class="sheet-body" id="sheet-grid-body">
+
+            <!-- Left sidebar: fixed dim quick selectors -->
+            <div class="dim-sidebar" id="dim-sidebar">
+              <!-- populated by main.ts -->
+            </div>
+
+            <div class="sheet-grid-wrap">
+              <div id="grid-container"></div>
+            </div>
+            <aside class="side-panel">
+              <div class="sp-placeholder" id="sp-placeholder">
+                <div class="sp-arrow">↑</div>
+                <p>셀을 클릭하면<br/>4D 인코딩 / 디코딩<br/>단계를 확인합니다</p>
+              </div>
+              <div class="sp-content hidden" id="sp-content"></div>
+            </aside>
+          </div>
+
+          <!-- List view (full ID 0~N) -->
+          <div id="list-container" class="lv-container hidden"></div>
+        </div>
+
+        <!-- 개념 sheet (dim1~4 single scroll) -->
+        <div class="sheet hidden" id="sheet-concept"><div id="concept-all"></div></div>
+
+        <!-- 설계 철학 sheet -->
+        <div class="sheet hidden" id="sheet-philosophy"><div id="concept-philosophy"></div></div>
+
+        <!-- 주소 체계 sheet -->
+        <div class="sheet hidden" id="sheet-address"><div id="concept-address"></div></div>
+
+        <!-- 버전 관리 sheet -->
+        <div class="sheet hidden" id="sheet-version"><div id="concept-version"></div></div>
+
+        <!-- 필터링 sheet -->
+        <div class="sheet hidden" id="sheet-filter"><div id="concept-filter"></div></div>
+
+      </div>
+
+      <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
+      <div class="bottom-bar">
+        <div class="sheet-tabs">
+          <div class="stab active" data-sheet="explorer"><span class="stab-icon">⊞</span> 탐색</div>
+          <div class="stab" data-sheet="concept"><span class="stab-icon">⊙</span> 개념</div>
+          <div class="stab" data-sheet="philosophy"><span class="stab-icon">◈</span> 철학</div>
+          <div class="stab" data-sheet="address"><span class="stab-icon">⌖</span> 주소</div>
+          <div class="stab" data-sheet="version"><span class="stab-icon">⟳</span> 버전</div>
+          <div class="stab" data-sheet="filter"><span class="stab-icon">⊛</span> 필터링</div>
+        </div>
+        <div class="status-bar">
+          <span id="status-shape">v1 · shape [8, 4, 5, 4]</span>
+          <span class="status-sep">|</span>
+          <span id="status-slots">640개 슬롯</span>
+          <span class="status-sep">|</span>
+          <span id="status-sel">선택 없음</span>
+        </div>
+      </div>
+
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
