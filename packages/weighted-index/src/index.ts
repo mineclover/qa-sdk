@@ -1,4 +1,17 @@
 export { WeightedIndex } from "./weighted-index.js";
+export {
+  calcBitWidth,
+  xorObfuscate,
+  rotateLeft,
+  rotateRight,
+  reverseBits,
+  compose,
+  toHex,
+  fromHex,
+  toUUID,
+  fromUUID,
+  type ObfuscateTransform,
+} from "./obfuscate.js";
 export { calcWeights, partialQueryBase, describeRangeFormula } from "./calc.js";
 export {
   createMask, setBit, clearBit, hasBit,

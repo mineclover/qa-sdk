@@ -555,3 +555,125 @@ try {
   }
 }
 ```
+
+---
+
+## 12. 난독화 유틸리티 (obfuscate.ts)
+
+WeightedIndex의 정수 ID를 전단사(bijection) 비트 변환으로 난독화하고, hex 또는 UUID-like 문자열로 직렬화하는 유틸리티.
+
+**독립 모듈**: WeightedIndex 인스턴스에 의존하지 않음. `size` 또는 `bitWidth`만 알면 사용 가능.
+
+### 핵심 개념
+
+- `bitWidth = calcBitWidth(size)` → size를 알면 항상 고정된 비트 폭 계산 가능
+- 모든 변환은 **bijection**: `decode(encode(id)) === id` 보장
+- 변환 결과는 `[0, 2^bitWidth - 1]` 범위 (size-1 초과 가능 — 유효 WeightedIndex ID 범위가 아닐 수 있음)
+- 암호학적 안전성 보장 없음. 단순 난독화 목적.
+
+---
+
+### `calcBitWidth`
+
+```ts
+calcBitWidth(size: number): number
+// Math.max(1, Math.ceil(Math.log2(size)))
+// e.g. size=640 → 10, size=1024 → 10, size=1025 → 11
+```
+
+---
+
+### 변환 함수
+
+| 함수 | 베리에이션 파라미터 | 설명 |
+|---|---|---|
+| `xorObfuscate(id, bitWidth, key)` | `key: number` (0 ~ 2^bitWidth−1) | XOR 마스킹. key를 bitWidth 이내로 마스킹 후 XOR. |
+| `rotateLeft(id, bitWidth, amount)` | `amount: number` (1 ~ bitWidth−1) | 왼쪽 순환 시프트. |
+| `rotateRight(id, bitWidth, amount)` | `amount: number` (1 ~ bitWidth−1) | 오른쪽 순환 시프트. |
+| `reverseBits(id, bitWidth)` | 없음 | 비트 순서 반전. 자기 역원(self-inverse). |
+
+### 역변환 대응
+
+| 변환 | 역변환 |
+|---|---|
+| `xorObfuscate(id, w, key)` | 동일 함수 재적용: `xorObfuscate(obf, w, key)` |
+| `rotateLeft(id, w, k)` | `rotateRight(obf, w, k)` |
+| `rotateRight(id, w, k)` | `rotateLeft(obf, w, k)` |
+| `reverseBits(id, w)` | `reverseBits(obf, w)` |
+
+---
+
+### 조합
+
+```ts
+type ObfuscateTransform = (id: number, bitWidth: number) => number;
+
+// 변환을 순서대로 체인. 각 변환이 bijection이면 합성도 bijection.
+compose(...transforms: ObfuscateTransform[]): ObfuscateTransform
+```
+
+역변환은 역순으로 각 역변환 적용:
+
+```ts
+// encode: reverseBits → rotateLeft(3) → xorObfuscate(key)
+// decode: xorObfuscate(key) → rotateRight(3) → reverseBits
+```
+
+---
+
+### 직렬화
+
+| 함수 | 설명 |
+|---|---|
+| `toHex(id, bitWidth)` | `ceil(bitWidth / 4)` 자리 hex 문자열. zero-padded. |
+| `fromHex(hex, bitWidth)` | hex 문자열 → 정수. 길이 검증 포함. |
+| `toUUID(id, bitWidth)` | 128비트로 zero-padded 후 UUID 형식(`8-4-4-4-12`) 출력. |
+| `fromUUID(uuid)` | UUID 형식 문자열 → 정수. 대시 제거 후 parseInt. |
+
+```ts
+// toHex 예시
+// size=640 → bitWidth=10 → hexLen=3
+toHex(255, 10)    // → "0ff"
+fromHex("0ff", 10) // → 255
+
+// toUUID 예시 (id를 128비트 최하위에 배치)
+toUUID(12345, 10) // → "00000000-0000-0000-0000-000000003039"
+fromUUID("00000000-0000-0000-0000-000000003039") // → 12345
+```
+
+---
+
+### 사용 예시
+
+```ts
+import { WeightedIndex } from "weighted-index";
+import { calcBitWidth, xorObfuscate, rotateLeft, rotateRight, toHex, fromHex } from "weighted-index";
+
+const wi = new WeightedIndex([5, 10, 4]);
+const bitWidth = calcBitWidth(wi.size); // 200 → 8
+
+const id = wi.encode([3, 7, 2]); // e.g. 65
+
+// 단순 XOR
+const obf = xorObfuscate(id, bitWidth, 0xA3);  // 0b01000001 ^ 0b10100011 = 0b11100010
+const hex = toHex(obf, bitWidth);               // "e2"
+const back = xorObfuscate(fromHex(hex, bitWidth), bitWidth, 0xA3); // → 65
+
+// rotate + XOR 조합
+const obf2 = xorObfuscate(rotateLeft(id, bitWidth, 3), bitWidth, 0xA3);
+const back2 = xorObfuscate(rotateRight(obf2, bitWidth, 0xA3), bitWidth, 3); // ← 주의: 역순
+```
+
+---
+
+### bijection 보장 조건 요약
+
+- `xorObfuscate`: key 값에 무관하게 항상 bijection.
+- `rotateLeft/Right`: `amount ∈ [1, bitWidth−1]`. `amount=0`은 항등 변환(허용하되 무의미).
+- `reverseBits`: 항상 bijection.
+- `compose`: 각 변환이 bijection이면 합성도 bijection.
+
+### 주의
+
+- 복호화에는 동일한 `bitWidth`와 파라미터(`key`, `amount`)가 필요. 이를 잃으면 복원 불가.
+- `bitWidth`는 인덱스 생성 시점의 `size`에 묶여 있음. shape 변경(버전 업) 시 `bitWidth`도 재계산 필요.
