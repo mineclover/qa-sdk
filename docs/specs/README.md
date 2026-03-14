@@ -100,22 +100,39 @@ DOM 트리 모델 기반 비주얼 폼 빌더, QA 이벤트 발생.
 | [form-builder.spec.md](roleplay/form-builder.spec.md) | DOM 트리 모델, 트리 뷰, 속성 편집기, auto-layout, 폼 렌더러 | @qa-sdk/roleplay-web | implemented |
 | [qa-bridge.spec.md](roleplay/qa-bridge.spec.md) | QaBridge + EventEmitter + 템플릿 렌더링 | @qa-sdk/roleplay-web | implemented |
 
+### browser/ — 브라우저 모니터링 SDK
+
+단일 번들 브라우저 SDK — BeaconTransport, SessionManager, AutoCapture, QaMonitor.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [monitor.spec.md](browser/monitor.spec.md) | QaMonitor + BeaconTransport + AutoCapture + SessionManager | @qa-sdk/browser | implemented |
+| [lifecycle.spec.md](browser/lifecycle.spec.md) | 표준 생명주기 — 상태 전환 규칙, 각 단계 계약, 사용 패턴 | @qa-sdk/browser | implemented |
+
 ### web/ — 웹 공통 인프라
 
 API 클라이언트, iframe 통신 프로토콜.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [api-client.spec.md](web/api-client.spec.md) | REST fetch 래퍼 + SSE EventSource 구독 | @qa-sdk/viz-web | implemented |
+| [api-client.spec.md](web/api-client.spec.md) | REST fetch 래퍼 + WebSocket 구독 + cursor 기반 세션 레코드 조회 | @qa-sdk/viz-web | implemented |
 | [iframe-protocol.spec.md](web/iframe-protocol.spec.md) | postMessage 양방향 통신 프로토콜 | @qa-sdk/viz-web, @qa-sdk/roleplay-web | implemented |
 
 ### indexing/ — 인덱스 인코딩
 
-가중진법 기반 다차원 좌표 ↔ 정수 ID 변환, 레이블/prefix 버전 관리.
+가중진법 기반 다차원 좌표 ↔ 정수 ID 변환, 레이블/prefix 버전 관리, ID 포맷 적합성, 스키마 메타 DB.
 
-| 스펙 | 설명 | 원본 패키지 | 상태 |
+> 개념 루트 문서: [`indexing/README.md`](indexing/README.md)
+
+| 문서 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [weighted-index.spec.md](indexing/weighted-index.spec.md) | WeightedIndex / LabelRegistry / PrefixRegistry — 가중진법 인코딩 + 버전 관리 | @qa-sdk/weighted-index | implemented |
+| [README.md](indexing/README.md) | 인덱싱 관심사 개념 맵 — 레이어 구조, 문서 체계, 관심사 흐름 | — | — |
+| [foundation.md](indexing/foundation.md) | 근본 원리 — 닫힌 공간, 전단사, 버전화된 공간 계열 | weighted-index + index-meta | — |
+| [patterns.md](indexing/patterns.md) | 사용 패턴 — EntityId 이동, cross-index 참조, 활성/비활성 | weighted-index + index-meta | — |
+| [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 항목 토큰, EntityId 정규화 | weighted-index + index-meta | — |
+| [weighted-index.spec.md](indexing/weighted-index.spec.md) | WeightedIndex / LabelRegistry / PrefixRegistry — 수학 엔진 + 버전 관리 | weighted-index | implemented |
+| [pack-format.spec.md](indexing/pack-format.spec.md) | PackFormat / FormatRegistry / fitLayout — ID 포맷 레지스트리 + 적합성 분석 | weighted-index | implemented |
+| [index-meta.spec.md](indexing/index-meta.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
 
 ### infra/ — 인프라 도구
 
@@ -139,7 +156,9 @@ API 클라이언트, iframe 통신 프로토콜.
 | @qa-sdk/ingest-server | `pipeline/ingest.spec.md` + `server/ingest/` |
 | @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
-| @qa-sdk/weighted-index | `indexing/weighted-index.spec.md` |
+| weighted-index | `indexing/weighted-index.spec.md`, `indexing/pack-format.spec.md` |
+| index-meta | `indexing/index-meta.spec.md` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
+| @qa-sdk/browser | `browser/monitor.spec.md` |
 | @qa-sdk/viz-web | `visualization/`, `web/` |
 | @qa-sdk/roleplay-web | `roleplay/`, `web/iframe-protocol.spec.md` |
