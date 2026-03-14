@@ -1,0 +1,30 @@
+{
+  "name": "@qa-sdk/browser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/qa-monitor.umd.cjs",
+  "module": "dist/qa-monitor.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/qa-monitor.esm.js",
+      "require": "./dist/qa-monitor.umd.cjs"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/event-catalog": "workspace:*",
+    "@qa-sdk/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.8.4",
+    "typescript": "^5.8.2",
+    "vite": "^6.3.5"
+  }
+}
