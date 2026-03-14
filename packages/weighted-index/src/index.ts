@@ -10,8 +10,13 @@ export {
   fromHex,
   toUUID,
   fromUUID,
+  toStructuredUUID,
+  fromStructuredUUID,
+  toNanoId,
+  fromNanoId,
+  type UUIDField,
   type ObfuscateTransform,
-} from "./obfuscate.js";
+} from "./obfuscate/index.js";
 export { calcWeights, partialQueryBase, describeRangeFormula } from "./calc.js";
 export {
   createMask, setBit, clearBit, hasBit,
@@ -33,6 +38,19 @@ export {
   type PrefixVersionDiff,
   type CoordMigrator,
 } from "./prefix-registry.js";
+export {
+  createUUIDLayout,
+  packUUID,
+  unpackUUID,
+  charsForMax,
+  planLayout,
+  type UUIDSlot,
+  type UUIDLayoutDef,
+  type UUIDLayout,
+  type LayoutFieldSpec,
+  type PlannedField,
+  type LayoutPlan,
+} from "./uuid-layout.js";
 export {
   WeightedIndexError,
   ShapeError,

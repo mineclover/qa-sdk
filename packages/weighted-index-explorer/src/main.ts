@@ -10,12 +10,13 @@ import { renderPhilosophy } from "./philosophy.js";
 import { renderAddress } from "./address.js";
 import { renderVersion } from "./version.js";
 import { renderFilter } from "./filter.js";
+import { renderObfuscatePage } from "./obfuscate-page.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter";
+type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter" | "obfuscate";
 type ViewMode = "grid" | "list";
 
 interface AppState {
@@ -103,6 +104,10 @@ function switchSheet(id: SheetId): void {
   if (id === "filter") {
     const el = document.getElementById("concept-filter")!;
     if (!el.dataset.rendered) { renderFilter(el); el.dataset.rendered = "1"; }
+  }
+  if (id === "obfuscate") {
+    const el = document.getElementById("concept-obfuscate")!;
+    if (!el.dataset.rendered) { renderObfuscatePage(el); el.dataset.rendered = "1"; }
   }
 
   if (!isExplorer) {

@@ -28,6 +28,7 @@
           <button class="rtab" data-sheet="address">주소 체계</button>
           <button class="rtab" data-sheet="version">버전 관리</button>
           <button class="rtab" data-sheet="filter">필터링</button>
+          <button class="rtab" data-sheet="obfuscate">난독화</button>
         </div>
         <!-- Explorer controls (only visible on explorer tab) -->
         <div class="ribbon-tools" id="ribbon-tools">
@@ -118,6 +119,9 @@
         <!-- 필터링 sheet -->
         <div class="sheet hidden" id="sheet-filter"><div id="concept-filter"></div></div>
 
+        <!-- 난독화 sheet -->
+        <div class="sheet hidden" id="sheet-obfuscate"><div id="concept-obfuscate"></div></div>
+
       </div>
 
       <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
@@ -129,6 +133,7 @@
           <div class="stab" data-sheet="address"><span class="stab-icon">⌖</span> 주소</div>
           <div class="stab" data-sheet="version"><span class="stab-icon">⟳</span> 버전</div>
           <div class="stab" data-sheet="filter"><span class="stab-icon">⊛</span> 필터링</div>
+          <div class="stab" data-sheet="obfuscate"><span class="stab-icon">⊕</span> 난독화</div>
         </div>
         <div class="status-bar">
           <span id="status-shape">v1 · shape [8, 4, 5, 4]</span>

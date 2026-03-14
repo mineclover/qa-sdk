@@ -2485,3 +2485,194 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
   font-size: 0.65rem;
   color: var(--text-dim);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   난독화 페이지 (obfuscate-page)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 입력 행 ──────────────────────────────────────────────────────────────── */
+.obf-input-row,
+.obf-transform-row,
+.obf-param-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-cell);
+}
+.obf-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-header);
+  min-width: 72px;
+}
+.obf-range {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.obf-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.obf-param-label {
+  font-size: 0.72rem;
+  color: var(--text-header);
+}
+.obf-param-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+/* ── 비트 시각화 ─────────────────────────────────────────────────────────── */
+.obf-viz-block {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.obf-viz-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.obf-viz-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  min-width: 56px;
+}
+.obf-viz-num {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: right;
+}
+.obf-bits {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.obf-bit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border-cell);
+  background: var(--surface-0);
+  color: var(--text-cell);
+  transition: background 0.15s, color 0.15s;
+}
+.obf-bit-1 {
+  background: var(--xl-green-light);
+  color: var(--xl-green-dark);
+  border-color: #b8d8c4;
+}
+.obf-bit-changed {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fbbf24;
+}
+.obf-viz-arrow {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 4px 0;
+  border-top: 1px dashed var(--border-cell);
+  border-bottom: 1px dashed var(--border-cell);
+  margin: 2px 0;
+}
+.obf-changed-count {
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* ── 출력 토큰 카드 ──────────────────────────────────────────────────────── */
+.obf-token-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.obf-token-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+  min-width: 160px;
+}
+.obf-token-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.obf-token-val {
+  font-family: monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--xl-green-dark);
+  word-break: break-all;
+}
+.obf-token-hint {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+/* ── 역변환 확인 행 ──────────────────────────────────────────────────────── */
+.obf-roundtrip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--xl-green-faint);
+  border: 1px solid #b8d8c4;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.obf-rt-label {
+  font-weight: 600;
+  color: var(--xl-green-dark);
+  white-space: nowrap;
+}
+
+/* ── buf-slider (range input) ────────────────────────────────────────────── */
+.buf-slider {
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border-cell);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.buf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--xl-green);
+  cursor: pointer;
+}
+.buf-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--xl-green);
+  cursor: pointer;
+  border: none;
+}

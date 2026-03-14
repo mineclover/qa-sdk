@@ -7,6 +7,35 @@
 
 ---
 
+## 0. 설계 철학
+
+### 핵심 원칙
+
+1. **닫힌 조합 공간만 모델링한다.** WeightedIndex는 설계 시점에 상한이 고정된 차원에만 적용한다. 런타임에 무한히 증가하는 값(타임스텝, UUID, 레코드 ID)은 이 라이브러리의 입력이 아니다. 그런 값은 외부 Map/Array 인덱스로 관리한다.
+
+2. **전단사(bijection)를 보장한다.** 모든 인코딩과 변환은 겹침이 없고 빈 값이 없는 전단사다. 역변환이 항상 가능하고, 두 개의 다른 좌표가 같은 ID를 가질 수 없다.
+
+3. **성능 계층을 명시적으로 분리한다.** 검증이 포함된 안전 API와 검증을 생략한 hot-path API를 명확히 구분한다. 호출자가 신뢰도를 선택한다. 경계 검사 비용이 병목이 될 때만 `Unsafe` 변형을 사용한다.
+
+4. **런타임 의존성을 갖지 않는다.** 서버, Worker, 브라우저, 테스트 환경 어디서든 추가 설치 없이 동작한다. 순수 함수 유틸리티(`calc.ts`, `bitmask.ts`, `obfuscate.ts`)는 WeightedIndex 인스턴스조차 필요 없다.
+
+5. **컴파일 타임에 오류를 잡는다.** 런타임 오류보다 빌드 시 오류를 선호한다. TypeScript strict + schema inference로 잘못된 레이블 참조나 타입 불일치를 빌드 시점에 발견한다.
+
+### WeightedIndex 적용 경계
+
+| 차원 종류 | 적합 여부 | 이유 |
+|---|---|---|
+| 역할 수, 액션 수, 환경 수 | ✅ | 설계 시 고정된 유한 집합 |
+| API 리소스 × 테넌트 조합 | ✅ | 차원 수가 사전에 확정됨 |
+| 에피소드 시뮬의 환경 × 에이전트 | ✅ | 환경·에이전트 수는 고정 |
+| 타임스텝 t (무한 증가) | ❌ | 상한 불명. 외부 Map으로 관리 |
+| UUID, 레코드 ID | ❌ | 상한이 2^128 → size 초과로 즉시 오류 |
+| 런타임에 결정되는 수 | ❌ | 생성자 시점에 shape이 확정돼야 함 |
+
+> **판단 기준**: 차원의 최댓값이 코드 작성 시점에 확정되지 않으면 WeightedIndex 차원이 아니다. 확정되지 않는 값은 외부에서 키로 관리하고, 그 키마다 WeightedIndex ID 공간을 독립적으로 운용한다.
+
+---
+
 ## 1. 핵심 수학 공식
 
 **d차원, 1-based 좌표** 기준:
@@ -28,15 +57,36 @@ decode: x_i = floor(id / weight_i) mod N_i + 1
 
 ```
 src/
-  errors.ts          # 에러 클래스 계층
-  validators.ts      # 공유 검증 유틸 (assertNoColon, assertPositiveInt, assertNonEmptyArray, formatList)
-  weighted-index.ts  # 핵심 수학 엔진
-  label-registry.ts  # 레이블 버전 관리
-  prefix-registry.ts # 레이블 조합(prefix) + 버전 관리
-  calc.ts            # 가중치·범위 쿼리 계산 유틸 (DOM 없음, 순수 함수)
-  bitmask.ts         # 비트마스크 권한 연산 유틸 (DOM 없음, 순수 함수)
+  errors.ts          # 에러 클래스 계층 (리프 — 의존 없음)
+  validators.ts      # 공유 검증 유틸 (errors에만 의존)
+  weighted-index.ts  # 핵심 수학 엔진 (errors, validators에만 의존)
+  label-registry.ts  # 레이블 버전 관리 (errors, validators에만 의존)
+  prefix-registry.ts # 레이블 조합(prefix) + 버전 관리 (weighted-index, label-registry 위에서 조율)
+  calc.ts            # 가중치·범위 쿼리 계산 유틸 (리프 — 의존 없음, 순수 함수)
+  bitmask.ts         # 비트마스크 권한 연산 유틸 (리프 — 의존 없음, 순수 함수)
+  obfuscate.ts       # 전단사 비트 변환 + 직렬화 유틸 (리프 — 의존 없음, 순수 함수)
   index.ts           # 공개 API 재수출
 ```
+
+### 의존 레이어
+
+```
+┌─────────────────────────────────────────┐
+│  prefix-registry.ts  (조율 레이어)        │
+├──────────────┬──────────────────────────┤
+│ weighted-    │  label-registry.ts        │
+│ index.ts     │                           │
+├──────────────┴──────────────────────────┤
+│  validators.ts                           │
+├─────────────────────────────────────────┤
+│  errors.ts                               │
+└─────────────────────────────────────────┘
+
+독립 유틸 (어느 레이어에도 의존하지 않음):
+  calc.ts · bitmask.ts · obfuscate.ts
+```
+
+순환 의존 없음. 독립 유틸은 WeightedIndex 인스턴스 없이도 사용 가능.
 
 ### 빌드
 
@@ -103,6 +153,42 @@ new WeightedIndex(shape: number[], labels?: string[])
 - `weights`, `shapeBuf` → `Float64Array` (tight-loop에서 property 접근 최소화)
 - `encodeUnsafe` / `decodeUnsafe` → 입력 신뢰 시 경계 검사 비용 제거
 - `decodeTo` → 호출자 버퍼 재사용으로 GC 압박 없음
+
+### 차원 순서와 캐시 지역성
+
+shape 배열의 **마지막 차원이 stride = 1**이 된다. 가장 자주 변하는 차원(inner loop)을 마지막에 배치하면, 순회 시 ID가 1씩 증가해 bitmask의 같은 byte 내에서 이동한다. 차원 순서가 반대면 매 순회마다 멀리 떨어진 byte에 접근하게 된다.
+
+```ts
+// ✅ 가장 자주 변하는 차원을 마지막에
+// 에피소드 시뮬: env와 agent 수는 고정, t는 tight-loop
+const wi = new WeightedIndex([envCount, agentCount]);
+// t는 외부 Map으로 관리 — 아래 "열린 차원" 참고
+
+// ✅ 권한 검사: action이 가장 자주 변함
+const wi = new WeightedIndex([resourceCount, roleCount, actionCount]);
+// action 순회 시 ID가 1씩 증가 → 같은 byte 안에서 이동
+
+// ❌ action을 첫 번째에 두면
+const wi = new WeightedIndex([actionCount, resourceCount, roleCount]);
+// action 순회 시 ID가 resourceCount×roleCount만큼 점프 → byte 경계를 넘어 분산
+```
+
+### 열린 차원 분리 원칙
+
+상한이 알려지지 않은 값은 WeightedIndex 차원에 포함하지 않는다. 타임스텝 `t`처럼 무한히 증가하는 축은 외부 Map의 키로 관리하고, 각 키마다 독립된 WeightedIndex ID 공간을 운용한다.
+
+```ts
+const wi = new WeightedIndex([envCount, agentCount]); // 닫힌 차원만
+
+// t는 Map 키 — 실제 등장한 t만큼만 메모리 사용
+const maskAt = new Map<number, Uint8Array>();
+function getMask(t: number): Uint8Array {
+  if (!maskAt.has(t)) maskAt.set(t, createMask(wi.size));
+  return maskAt.get(t)!;
+}
+```
+
+타임스텝을 WeightedIndex에 넣으면: `t_max`를 추정해야 하고, 초과 시 오류가 발생하며, 전체 space를 미리 할당해야 한다. 반면 외부 Map은 실제 등장한 t만큼만 메모리를 사용한다.
 
 ---
 
@@ -461,9 +547,16 @@ export { createMask, setBit, clearBit, hasBit }
 export { buildMask, hasAnyBit, hasAllBits, popcount }
 export { maskAnd, maskOr, masksOverlap }
 
+// 난독화 유틸리티 (obfuscate.ts)
+export { calcBitWidth }
+export { xorObfuscate, rotateLeft, rotateRight, reverseBits }
+export { compose }
+export { toHex, fromHex, toUUID, fromUUID }
+
 // 타입
 export type { LabelVersionEntry, EntityId, InferLabelSchema }
 export type { PrefixVersionEntry, PrefixDefinition, VersionedIndex, PrefixVersionDiff, CoordMigrator }
+export type { ObfuscateTransform }
 
 // 에러
 export { WeightedIndexError, ShapeError, CoordError, IndexRangeError, BufferError }
@@ -564,11 +657,33 @@ WeightedIndex의 정수 ID를 전단사(bijection) 비트 변환으로 난독화
 
 **독립 모듈**: WeightedIndex 인스턴스에 의존하지 않음. `size` 또는 `bitWidth`만 알면 사용 가능.
 
+### 사용 목적
+
+| 목적 | 적합 여부 | 대안 |
+|---|---|---|
+| API 응답·URL에서 내부 인덱스 구조 숨기기 | ✅ | — |
+| 순번 예측 방지 (sequential ID scraping 방어) | ✅ | — |
+| 암호학적 보안, 위변조 방지 | ❌ | HMAC, AES 등 |
+| 단방향 변환 (역변환 불필요) | ❌ | SHA-256 등 해시 |
+
+> **판단 기준**: 받은 토큰을 원래 ID로 복원해야 하면 obfuscate, 복원이 필요 없으면 해시.
+
+### 복호화 방법 관리
+
+복호화에는 인코딩과 동일한 `bitWidth`·`key`·`amount`가 필요하다.
+
+- **`bitWidth`** → `calcBitWidth(wi.size)`로 항상 재계산 가능. shape에서 유도되므로 별도 저장 불필요.
+- **`key`, `amount`** → 별도 보관 필요. 잃으면 복원 불가.
+- **shape 버전 변경** → `wi.size`가 바뀌면 `bitWidth`도 달라진다. 이전 버전으로 발급한 토큰과 호환되지 않으므로 버전 전환 시 토큰 재발급 전략이 필요하다.
+
+WeightedIndex 인스턴스와 별도로 관리할 수도 있고, 인스턴스에 묶어 관리할 수도 있다. 어느 방식이든 `bitWidth`와 파라미터를 함께 보존하는 것이 핵심이다.
+
 ### 핵심 개념
 
 - `bitWidth = calcBitWidth(size)` → size를 알면 항상 고정된 비트 폭 계산 가능
 - 모든 변환은 **bijection**: `decode(encode(id)) === id` 보장
 - 변환 결과는 `[0, 2^bitWidth - 1]` 범위 (size-1 초과 가능 — 유효 WeightedIndex ID 범위가 아닐 수 있음)
+- ⚠️ **bitWidth ≤ 30**: JavaScript bitwise 연산은 32비트 정수 기준. 실제 권한·QA 인덱스 크기에서는 문제없으나, size가 2^30(약 10억)을 초과하는 경우 BigInt 변형이 필요하다.
 - 암호학적 안전성 보장 없음. 단순 난독화 목적.
 
 ---
@@ -587,10 +702,16 @@ calcBitWidth(size: number): number
 
 | 함수 | 베리에이션 파라미터 | 설명 |
 |---|---|---|
-| `xorObfuscate(id, bitWidth, key)` | `key: number` (0 ~ 2^bitWidth−1) | XOR 마스킹. key를 bitWidth 이내로 마스킹 후 XOR. |
-| `rotateLeft(id, bitWidth, amount)` | `amount: number` (1 ~ bitWidth−1) | 왼쪽 순환 시프트. |
-| `rotateRight(id, bitWidth, amount)` | `amount: number` (1 ~ bitWidth−1) | 오른쪽 순환 시프트. |
+| `xorObfuscate(id, bitWidth, key)` | `key: number` (0 ~ 2^bitWidth−1) | XOR 마스킹. key를 bitWidth 이내로 마스킹 후 XOR. 자기 역원. |
+| `rotateLeft(id, bitWidth, amount)` | `amount: number` | 왼쪽 순환 시프트. amount는 `mod bitWidth`로 정규화. 음수 허용. |
+| `rotateRight(id, bitWidth, amount)` | `amount: number` | 오른쪽 순환 시프트. amount는 `mod bitWidth`로 정규화. 음수 허용. |
 | `reverseBits(id, bitWidth)` | 없음 | 비트 순서 반전. 자기 역원(self-inverse). |
+
+**amount 정규화 규칙**: `((amount % bitWidth) + bitWidth) % bitWidth`
+
+- `0` 또는 `bitWidth`의 배수 → identity (no-op)
+- `amount > bitWidth` → modulo 감소: `rotateLeft(id, 8, 9) === rotateLeft(id, 8, 1)`
+- 음수 → 반대 방향과 동치: `rotateLeft(id, 8, -1) === rotateLeft(id, 8, 7) === rotateRight(id, 8, 1)`
 
 ### 역변환 대응
 
@@ -633,13 +754,19 @@ compose(...transforms: ObfuscateTransform[]): ObfuscateTransform
 ```ts
 // toHex 예시
 // size=640 → bitWidth=10 → hexLen=3
-toHex(255, 10)    // → "0ff"
+toHex(255, 10)     // → "0ff"
 fromHex("0ff", 10) // → 255
+
+// bitWidth=1 (최솟값) → hexLen=1
+toHex(1, 1)        // → "1"
+fromHex("1", 1)    // → 1
 
 // toUUID 예시 (id를 128비트 최하위에 배치)
 toUUID(12345, 10) // → "00000000-0000-0000-0000-000000003039"
 fromUUID("00000000-0000-0000-0000-000000003039") // → 12345
 ```
+
+`fromHex`는 대소문자를 모두 허용한다 (`"0FF"` === `"0ff"`). 길이가 맞지 않으면 `RangeError`.
 
 ---
 
