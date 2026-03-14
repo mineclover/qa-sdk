@@ -13,9 +13,15 @@ export function createEventEmitter(
   const controllers: AbortController[] = [];
 
   function emit(eventKey: string, payload?: Record<string, unknown>): void {
-    bridge.emitEvent(eventKey, payload);
-    childBridge.notifyEvent(eventKey);
-    appendToEventLog(eventKey, payload);
+    try {
+      bridge.emitEvent(eventKey, payload);
+      childBridge.notifyEvent(eventKey);
+      appendToEventLog(eventKey, payload);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.error(`[roleplay-web:emit:${eventKey}]`, error);
+      appendToEventLog(`ERROR:${eventKey}`, { message: error.message });
+    }
   }
 
   function selectorOf(el: Element): string {
@@ -81,8 +87,9 @@ function appendToEventLog(
   const logEl = document.getElementById("event-log");
   if (!logEl) return;
 
+  const isError = eventKey.startsWith("ERROR:");
   const entry = document.createElement("div");
-  entry.className = "event-log-entry";
+  entry.className = isError ? "event-log-entry event-log-error" : "event-log-entry";
 
   const time = document.createElement("span");
   time.className = "event-log-time";

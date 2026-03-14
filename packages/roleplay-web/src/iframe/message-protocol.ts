@@ -15,8 +15,13 @@ export interface EventEmittedMessage {
   timestamp: string;
 }
 
+/** Sent on load to signal readiness and request context from viz-web. */
+export interface ReadyMessage {
+  type: "ready";
+}
+
 export type ParentMessage = ContextMessage;
-export type ChildMessage = EventEmittedMessage;
+export type ChildMessage = EventEmittedMessage | ReadyMessage;
 
 // ── Type Guards ─────────────────────────────────────────
 

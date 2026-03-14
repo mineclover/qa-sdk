@@ -34,22 +34,22 @@ const statusEl = document.getElementById("connection-status")!;
 
 // ── SDK Initialization ──────────────────────────────────
 
-const bridge = createQaBridge();
+const bridge = createQaBridge({
+  onError(err, context) {
+    console.error(`[roleplay-web:sdk:${context}]`, err);
+    statusEl.textContent = `SDK error (${context}): ${err.message}`;
+    statusEl.className = "toolbar-label status-error";
+  },
+});
 const childBridge = createChildBridge(VIZ_WEB_ORIGIN);
 const eventEmitter = createEventEmitter(bridge, childBridge);
 
 // ── Listen for context from parent (viz-web) ────────────
 
 childBridge.onContext((ctx) => {
-  bridge.startSession(ctx.scenarioId);
+  bridge.startSession(ctx.scenarioId, ctx.sessionId);
   statusEl.textContent = `session: ${ctx.sessionId.slice(0, 8)}...`;
   statusEl.className = "toolbar-label status-connected";
-});
-
-// Emit initial page view
-bridge.emitEvent("page_view", {
-  url: window.location.href,
-  title: document.title,
 });
 
 // ── Form Builder Setup ──────────────────────────────────

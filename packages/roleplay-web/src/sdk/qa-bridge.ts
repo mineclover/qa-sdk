@@ -3,13 +3,16 @@ import { getCoreEvent } from "@qa-sdk/event-catalog";
 import { INGEST_SERVER_URL } from "../config.js";
 
 export interface QaBridge {
-  startSession(scenarioId?: string): { traceId: string; sessionId: string };
+  startSession(scenarioId?: string, existingSessionId?: string): { traceId: string; sessionId: string };
   emitEvent(eventKey: string, payload?: Record<string, unknown>): void;
   flush(): Promise<void>;
   shutdown(): Promise<void>;
 }
 
-export function createQaBridge(config?: { ingestUrl?: string }): QaBridge {
+export function createQaBridge(config?: {
+  ingestUrl?: string;
+  onError?: (err: Error, context: string) => void;
+}): QaBridge {
   const endpoint = config?.ingestUrl ?? INGEST_SERVER_URL;
 
   const transport = new HttpTransport({
@@ -30,13 +33,15 @@ export function createQaBridge(config?: { ingestUrl?: string }): QaBridge {
     },
     build: { env: "local" },
     flushIntervalMs: 3_000,
+    onError: config?.onError,
   });
 
   return {
     startSession(
       scenarioId?: string,
+      existingSessionId?: string,
     ): { traceId: string; sessionId: string } {
-      const sessionId = newQaSessionId();
+      const sessionId = existingSessionId ?? newQaSessionId();
       const ctx = logger.startTrace({ qa_session_id: sessionId });
 
       if (scenarioId) {
@@ -70,5 +75,7 @@ export function createQaBridge(config?: { ingestUrl?: string }): QaBridge {
 
 function resolveVersion(eventKey: string): string {
   const def = getCoreEvent(eventKey);
-  return def?.event_version ?? "1";
+  const raw = def?.event_version ?? "1";
+  // Ingest schema requires exactly 3 digits (e.g. "001")
+  return raw.padStart(3, "0");
 }
