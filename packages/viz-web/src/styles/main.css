@@ -47,6 +47,47 @@ body {
   gap: 1px;
 }
 
+/* ── Error Banner ─────────────────────────────────────── */
+
+#error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: rgba(248, 113, 113, 0.12);
+  border-bottom: 1px solid var(--accent-red);
+  font-size: 12px;
+  color: var(--accent-red);
+  flex-shrink: 0;
+}
+
+#error-banner[hidden] {
+  display: none;
+}
+
+#error-banner-msg {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#error-banner-close {
+  border: none;
+  background: transparent;
+  color: var(--accent-red);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+#error-banner-close:hover {
+  opacity: 1;
+}
+
 #content {
   display: flex;
   flex: 1;
@@ -123,9 +164,6 @@ body {
   min-height: 0;
   background: var(--bg-primary);
   overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 16px;
 }
 

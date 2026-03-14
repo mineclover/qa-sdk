@@ -2,13 +2,18 @@
 
 .spec-graph {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: visible;
 }
 
 /* ── Nodes ────────────────────────────────────────────── */
 
 .graph-node rect {
   stroke-width: 2;
-  transition: fill 0.3s, stroke 0.3s;
+  transition: fill 0.25s ease, stroke 0.25s ease, filter 0.25s ease;
 }
 
 .graph-node text {
@@ -20,12 +25,14 @@
 .optional-badge {
   font-size: 9px;
   fill: var(--text-muted, #6a6a7a);
+  letter-spacing: 0.02em;
 }
 
 /* ── Role Colors (border/stroke) ──────────────────────── */
 
 .role-entry rect {
   stroke: var(--accent-green, #4ade80);
+  stroke-width: 2.5;
 }
 
 .role-transition rect {
@@ -34,6 +41,7 @@
 
 .role-terminal rect {
   stroke: var(--accent-red, #f87171);
+  stroke-width: 2.5;
 }
 
 .role-observation rect {
@@ -51,17 +59,44 @@
   fill: rgba(42, 42, 74, 0.6);
 }
 
-.state-active rect {
-  fill: rgba(74, 158, 255, 0.2);
-  animation: pulse 1.5s ease-in-out infinite;
+/* Active: glow on the group + fill pulse on rect */
+.state-active {
+  animation: nodeActiveGlow 1.8s ease-in-out infinite;
 }
 
+.state-active rect {
+  animation: nodeActiveFill 1.8s ease-in-out infinite;
+}
+
+@keyframes nodeActiveFill {
+  0%, 100% { fill: rgba(74, 158, 255, 0.12); }
+  50%       { fill: rgba(74, 158, 255, 0.42); }
+}
+
+@keyframes nodeActiveGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(74, 158, 255, 0.25)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(74, 158, 255, 0.75)); }
+}
+
+/* Matched: brief bright flash → settles at green fill */
 .state-matched rect {
   fill: rgba(74, 222, 128, 0.2);
+  animation: nodeMatchedFlash 0.45s ease-out forwards;
+}
+
+@keyframes nodeMatchedFlash {
+  0%   { fill: rgba(74, 222, 128, 0.75); }
+  100% { fill: rgba(74, 222, 128, 0.2); }
 }
 
 .state-failed rect {
   fill: rgba(248, 113, 113, 0.2);
+  animation: nodeFailedFlash 0.45s ease-out forwards;
+}
+
+@keyframes nodeFailedFlash {
+  0%   { fill: rgba(248, 113, 113, 0.7); }
+  100% { fill: rgba(248, 113, 113, 0.2); }
 }
 
 .state-skipped rect {
@@ -73,55 +108,58 @@
   fill: var(--text-muted, #6a6a7a);
 }
 
-/* ── Active Node Pulse Animation ──────────────────────── */
-
-@keyframes pulse {
-  0%,
-  100% {
-    fill: rgba(74, 158, 255, 0.15);
-  }
-  50% {
-    fill: rgba(74, 158, 255, 0.35);
-  }
-}
-
 /* ── Edges ────────────────────────────────────────────── */
 
 .graph-edge path {
   stroke: var(--text-muted, #6a6a7a);
   stroke-width: 1.5;
-  transition: stroke 0.3s, stroke-width 0.3s;
+  transition: stroke 0.25s ease, stroke-width 0.25s ease, opacity 0.25s ease;
 }
 
 .edge-sequence path {
   stroke: var(--text-secondary, #a0a0b0);
+  stroke-width: 1.5;
 }
 
 .edge-branch path {
   stroke: var(--accent-yellow, #fbbf24);
+  stroke-width: 1.5;
   stroke-dasharray: 8 4;
 }
 
 .edge-optional path {
   stroke: var(--accent-gray, #6b7280);
-  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+  opacity: 0.7;
 }
 
+/* Highlighted edge: green stroke + flowing dash animation */
 .edge-highlighted path {
   stroke: var(--accent-green, #4ade80);
   stroke-width: 2.5;
+  stroke-dasharray: 9 6;
+  animation: edgeFlow 0.7s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.5));
+}
+
+@keyframes edgeFlow {
+  to { stroke-dashoffset: -15; }
 }
 
 /* ── Arrow Marker ─────────────────────────────────────── */
 
+/* context-stroke: arrowhead fill inherits the stroke color of the path that
+   references this marker — automatically matches any edge color */
 .arrow-marker {
-  fill: var(--text-muted, #6a6a7a);
+  fill: context-stroke;
 }
 
 /* ── Event Count Badge ────────────────────────────────── */
 
 .event-count-badge circle {
   fill: var(--accent-blue, #4a9eff);
+  opacity: 0.9;
 }
 
 .event-count-badge text {
