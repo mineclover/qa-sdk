@@ -10,6 +10,7 @@ import {
   ValidationError,
   ParseError,
 } from "./errors.js";
+import { PACK_FORMATS } from "weighted-index";
 
 // ── 공통 픽스처 ────────────────────────────────────────────────────────────────
 
@@ -919,6 +920,763 @@ describe("시나리오: 중첩 index (index_ref 차원)", () => {
     ]);
     for (const [value, ids] of expected) {
       expect(reg.decode({ indexId: "doc_meta", versionId: "dmv1", value })).toEqual(ids);
+    }
+  });
+});
+
+// ── Address 프로토콜 바인딩 ──────────────────────────────────────────────────
+//
+// MetaRegistry에 address config를 설정해 layout protocol 기반
+// PK 직렬화(toPK/fromPK)를 테스트한다.
+
+describe("Address 프로토콜 바인딩", () => {
+  const inputWithAddress = () => ({
+    ...baseInput(),
+    address: {
+      format: PACK_FORMATS.uuid,
+      schemaChars: 4,
+      versionChars: 2,
+      schemas: { perm: 1 },
+      versions: { iv1: 1, iv2: 2 },
+    },
+  });
+
+  // ── AddressConfig 검증 ──────────────────────────────────────────────────
+
+  describe("AddressConfig 검증", () => {
+    it("정상 address config로 생성된다", () => {
+      expect(() => new MetaRegistry(inputWithAddress())).not.toThrow();
+    });
+
+    it("address 미설정 시에도 생성된다 (기본 colon 프로토콜)", () => {
+      const reg = new MetaRegistry(baseInput());
+      expect(reg.defaultProtocol).toBe("colon");
+    });
+
+    it("address 설정 시 기본 프로토콜이 layout으로 변경된다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      expect(reg.defaultProtocol).toBe("layout:uuid");
+    });
+
+    it("등록된 indexId가 schemas에 없으면 ValidationError", () => {
+      const input = inputWithAddress();
+      input.address.schemas = {}; // perm 누락
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+
+    it("등록된 versionId가 versions에 없으면 ValidationError", () => {
+      const input = inputWithAddress();
+      input.address.versions = { iv1: 1 }; // iv2 누락
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+
+    it("schemas 매핑 값이 음수이면 ValidationError", () => {
+      const input = inputWithAddress();
+      input.address.schemas = { perm: -1 };
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+
+    it("versions 매핑 값이 소수이면 ValidationError", () => {
+      const input = inputWithAddress();
+      input.address.versions = { iv1: 1.5, iv2: 2 };
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+
+    it("schemas 매핑 값이 중복이면 ValidationError", () => {
+      const input = {
+        dims: {
+          role: {
+            kind: { type: "string_enum" } as const,
+            snapshots: { v1: { entries: ["admin"] } },
+          },
+        },
+        indices: {
+          idx_a: {
+            dims: ["role"],
+            versions: { v1: { snapshots: { role: "v1" } } },
+          },
+          idx_b: {
+            dims: ["role"],
+            versions: { v1: { snapshots: { role: "v1" } } },
+          },
+        },
+        address: {
+          format: PACK_FORMATS.uuid,
+          schemaChars: 4,
+          versionChars: 2,
+          schemas: { idx_a: 1, idx_b: 1 }, // 중복
+          versions: { v1: 1 },
+        },
+      };
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+
+    it("versions 매핑 값이 중복이면 ValidationError", () => {
+      const input = inputWithAddress();
+      input.address.versions = { iv1: 1, iv2: 1 }; // 중복
+      expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    });
+  });
+
+  // ── serialize / parse (프로토콜 통합) ──────────────────────────────────────
+
+  describe("serialize / parse (프로토콜 통합)", () => {
+    it("serialize 기본 → layout:uuid 형식 (address 설정 시)", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      const pk = reg.serialize(vv);
+
+      // UUID 형식 검증
+      expect(pk).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    it("serialize → parse round-trip (layout:uuid)", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.encode("perm", "iv1", { role: "editor", action: "write", resource: 20 });
+      const pk = reg.serialize(vv);
+      const parsed = reg.parse(pk);
+
+      expect(parsed).toEqual(vv);
+    });
+
+    it("serialize('colon') → 기존 colon 형식", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      const str = reg.serialize(vv, "colon");
+
+      expect(str).toBe("perm:iv1:0");
+    });
+
+    it("serialize('uri') → URI 형식", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      const str = reg.serialize(vv, "uri");
+
+      expect(str).toBe("wi://perm/iv1/0");
+    });
+
+    it("parse: colon 형식 자동 감지", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.parse("perm:iv1:0");
+      expect(vv).toEqual({ indexId: "perm", versionId: "iv1", value: 0 });
+    });
+
+    it("parse: URI 형식 자동 감지", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.parse("wi://perm/iv1/0");
+      expect(vv).toEqual({ indexId: "perm", versionId: "iv1", value: 0 });
+    });
+
+    it("parse: 미등록 indexId는 IndexNotFoundError", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      expect(() => reg.parse("unknown:iv1:0", "colon")).toThrow(IndexNotFoundError);
+    });
+
+    it("parse: 미등록 versionId는 IndexVersionNotFoundError", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      expect(() => reg.parse("perm:iv99:0", "colon")).toThrow(IndexVersionNotFoundError);
+    });
+
+    it("parse: value 범위 초과는 ParseError", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      // perm iv1: shape [3,3,3] → size=27
+      expect(() => reg.parse("perm:iv1:27", "colon")).toThrow(ParseError);
+    });
+
+    it("parse: 잘못된 형식은 ParseError", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      expect(() => reg.parse("not-a-valid-input")).toThrow(ParseError);
+    });
+
+    it("address 미설정 시에도 text 프로토콜은 사용 가능", () => {
+      const reg = new MetaRegistry(baseInput());
+      const vv = reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+
+      expect(reg.serialize(vv)).toBe("perm:iv1:0");
+      expect(reg.serialize(vv, "uri")).toBe("wi://perm/iv1/0");
+      expect(reg.serialize(vv, "compact")).toBe("perm-iv1-0");
+
+      expect(reg.parse("perm:iv1:0")).toEqual(vv);
+      expect(reg.parse("wi://perm/iv1/0")).toEqual(vv);
+    });
+  });
+
+  // ── toPK / fromPK ────────────────────────────────────────────────────────
+
+  describe("toPK / fromPK", () => {
+    it("toPK → fromPK round-trip", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const entityIds = { role: "editor", action: "write", resource: 20 };
+      const pk = reg.toPK("perm", "iv1", entityIds);
+      const decoded = reg.fromPK(pk);
+
+      expect(decoded).toEqual(entityIds);
+    });
+
+    it("toPK는 UUID 형식 문자열을 반환한다 (address 설정 시)", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const pk = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+
+      expect(pk).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    it("toPK: 명시적 프로토콜 사용", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const pk = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 }, "colon");
+
+      expect(pk).toBe("perm:iv1:0");
+    });
+
+    it("fromPK: 다양한 프로토콜 자동 감지", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const entityIds = { role: "viewer", action: "delete", resource: 30 };
+
+      // 동일 entity를 각 프로토콜로 인코딩
+      const uuidPK = reg.toPK("perm", "iv1", entityIds);
+      const colonPK = reg.toPK("perm", "iv1", entityIds, "colon");
+      const uriPK = reg.toPK("perm", "iv1", entityIds, "uri");
+
+      // 모두 동일한 entity로 디코딩
+      expect(reg.fromPK(uuidPK)).toEqual(entityIds);
+      expect(reg.fromPK(colonPK)).toEqual(entityIds);
+      expect(reg.fromPK(uriPK)).toEqual(entityIds);
+    });
+
+    it("서로 다른 entity 조합은 서로 다른 PK를 생성한다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const pk1 = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      const pk2 = reg.toPK("perm", "iv1", { role: "editor", action: "write", resource: 20 });
+      const pk3 = reg.toPK("perm", "iv1", { role: "viewer", action: "delete", resource: 30 });
+
+      expect(new Set([pk1, pk2, pk3]).size).toBe(3);
+    });
+
+    it("다른 버전은 다른 PK를 생성한다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const entityIds = { role: "admin", action: "read", resource: 10 };
+      const pk1 = reg.toPK("perm", "iv1", entityIds);
+      const pk2 = reg.toPK("perm", "iv2", entityIds);
+
+      expect(pk1).not.toBe(pk2); // version 필드가 다르므로 UUID도 다름
+    });
+
+    it("address 미설정 시 toPK는 colon 형식을 반환한다", () => {
+      const reg = new MetaRegistry(baseInput());
+      const pk = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      expect(pk).toBe("perm:iv1:0");
+    });
+  });
+
+  // ── 크로스 프로토콜 변환 ────────────────────────────────────────────────────
+
+  describe("크로스 프로토콜 변환", () => {
+    it("UUID → colon → UUID round-trip", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const entityIds = { role: "editor", action: "write", resource: 20 };
+      const uuidPK = reg.toPK("perm", "iv1", entityIds);
+
+      // UUID → VersionedValue → colon
+      const vv = reg.parse(uuidPK);
+      const colonStr = reg.serialize(vv, "colon");
+
+      // colon → VersionedValue → UUID
+      const vv2 = reg.parse(colonStr);
+      const uuidPK2 = reg.serialize(vv2);
+
+      expect(uuidPK2).toBe(uuidPK);
+      expect(vv).toEqual(vv2);
+    });
+
+    it("converter를 통한 직접 프로토콜 변환", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const conv = reg.converter;
+
+      const uuidStr = conv.convert("perm:iv1:0", "layout:uuid");
+      expect(uuidStr).toMatch(/^[0-9a-f]{8}-/);
+
+      const colonStr = conv.convert(uuidStr, "colon");
+      expect(colonStr).toBe("perm:iv1:0");
+
+      const uriStr = conv.convert(uuidStr, "uri");
+      expect(uriStr).toBe("wi://perm/iv1/0");
+    });
+  });
+
+  // ── UUID 구조 검증 ────────────────────────────────────────────────────────
+
+  describe("UUID 구조 검증", () => {
+    it("UUID의 schema/version 필드가 올바른 위치에 인코딩된다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const vv = reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      const pk = reg.serialize(vv);
+
+      // schema=1 → 4hex "0001", version=1 → 2hex "01"
+      // UUID format: [8]-[4]-[4]-[4]-[12]
+      // rawHex = "0001" + "01" + "000000000000000000000000000" (gap+index)
+      // schema 4자리가 rawHex 앞 4자리, version 2자리가 5-6번째
+      const rawHex = pk.replace(/-/g, "");
+      expect(rawHex.slice(0, 4)).toBe("0001"); // schema = perm → 1
+      expect(rawHex.slice(4, 6)).toBe("01");   // version = iv1 → 1
+    });
+
+    it("다른 버전은 version 필드만 달라진다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const entityIds = { role: "admin", action: "read", resource: 10 };
+      const pk1 = reg.toPK("perm", "iv1", entityIds);
+      const pk2 = reg.toPK("perm", "iv2", entityIds);
+
+      const raw1 = pk1.replace(/-/g, "");
+      const raw2 = pk2.replace(/-/g, "");
+
+      expect(raw1.slice(0, 4)).toBe(raw2.slice(0, 4)); // schema 동일
+      expect(raw1.slice(4, 6)).toBe("01"); // iv1 → 1
+      expect(raw2.slice(4, 6)).toBe("02"); // iv2 → 2
+    });
+
+    it("index 필드가 right-aligned로 인코딩된다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      // perm:iv1, admin/read/10 → value=0
+      const pk0 = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+      // perm:iv1, viewer/delete/30 → value=26
+      const pk26 = reg.toPK("perm", "iv1", { role: "viewer", action: "delete", resource: 30 });
+
+      const raw0 = pk0.replace(/-/g, "");
+      const raw26 = pk26.replace(/-/g, "");
+
+      // index는 오른쪽 정렬: 마지막 (32 - 4 - 2 = 26) hex chars
+      expect(raw0.slice(6)).toBe("0".repeat(26));
+      // value 26 = 0x1a → 오른쪽 끝 2자리가 "1a"
+      expect(raw26.slice(-2)).toBe("1a");
+      expect(raw26.slice(6, -2)).toBe("0".repeat(24)); // gap
+    });
+  });
+
+  // ── 다중 인덱스 시나리오 ──────────────────────────────────────────────────
+
+  describe("다중 인덱스 + address", () => {
+    const multiIndexInput = () => ({
+      dims: {
+        role: {
+          kind: { type: "string_enum" } as const,
+          snapshots: { v1: { entries: ["admin", "editor"] } },
+        },
+        category: {
+          kind: { type: "string_enum" } as const,
+          snapshots: { v1: { entries: ["tech", "art"] } },
+        },
+        lang: {
+          kind: { type: "string_enum" } as const,
+          snapshots: { v1: { entries: ["ko", "en"] } },
+        },
+      },
+      indices: {
+        perm: {
+          dims: ["role"],
+          versions: { v1: { snapshots: { role: "v1" } } },
+        },
+        content: {
+          dims: ["category", "lang"],
+          versions: { v1: { snapshots: { category: "v1", lang: "v1" } } },
+        },
+      },
+      address: {
+        format: PACK_FORMATS.uuid,
+        schemaChars: 4,
+        versionChars: 2,
+        schemas: { perm: 1, content: 2 },
+        versions: { v1: 1 },
+      },
+    });
+
+    it("서로 다른 index의 UUID는 schema 필드가 다르다", () => {
+      const reg = new MetaRegistry(multiIndexInput());
+      const permPK = reg.toPK("perm", "v1", { role: "admin" });
+      const contentPK = reg.toPK("content", "v1", { category: "tech", lang: "ko" });
+
+      const permRaw = permPK.replace(/-/g, "");
+      const contentRaw = contentPK.replace(/-/g, "");
+
+      expect(permRaw.slice(0, 4)).toBe("0001"); // perm → 1
+      expect(contentRaw.slice(0, 4)).toBe("0002"); // content → 2
+    });
+
+    it("서로 다른 index의 UUID도 fromPK로 올바르게 decode된다", () => {
+      const reg = new MetaRegistry(multiIndexInput());
+      const permPK = reg.toPK("perm", "v1", { role: "editor" });
+      const contentPK = reg.toPK("content", "v1", { category: "art", lang: "en" });
+
+      expect(reg.fromPK(permPK)).toEqual({ role: "editor" });
+      expect(reg.fromPK(contentPK)).toEqual({ category: "art", lang: "en" });
+    });
+  });
+
+  // ── toInput() round-trip ─────────────────────────────────────────────────
+
+  describe("toInput() round-trip (address 설정)", () => {
+    it("toInput()으로 복제한 레지스트리가 동일하게 동작한다", () => {
+      const reg = new MetaRegistry(inputWithAddress());
+      const reg2 = new MetaRegistry(reg.toInput());
+
+      const entityIds = { role: "editor", action: "write", resource: 20 };
+      expect(reg2.encode("perm", "iv1", entityIds)).toEqual(reg.encode("perm", "iv1", entityIds));
+      expect(reg2.toPK("perm", "iv1", entityIds)).toBe(reg.toPK("perm", "iv1", entityIds));
+      expect(reg2.defaultProtocol).toBe(reg.defaultProtocol);
+    });
+
+    it("toInput()에 address가 보존된다", () => {
+      const input = inputWithAddress();
+      const reg = new MetaRegistry(input);
+      const out = reg.toInput();
+      expect(out.address).toEqual(input.address);
+    });
+  });
+
+  // ── int64 포맷 ──────────────────────────────────────────────────────────
+
+  describe("int64 포맷", () => {
+    const int64Input = () => ({
+      ...baseInput(),
+      address: {
+        format: PACK_FORMATS.int64,
+        schemaChars: 2,
+        versionChars: 2,
+        schemas: { perm: 1 },
+        versions: { iv1: 1, iv2: 2 },
+      },
+    });
+
+    it("int64 형식으로 직렬화된다 (dash 없는 16자리 hex)", () => {
+      const reg = new MetaRegistry(int64Input());
+      const pk = reg.toPK("perm", "iv1", { role: "admin", action: "read", resource: 10 });
+
+      expect(pk).toMatch(/^[0-9a-f]{16}$/);
+      expect(reg.defaultProtocol).toBe("layout:int64");
+    });
+
+    it("int64 toPK → fromPK round-trip", () => {
+      const reg = new MetaRegistry(int64Input());
+      const entityIds = { role: "viewer", action: "delete", resource: 30 };
+      const pk = reg.toPK("perm", "iv1", entityIds);
+      expect(reg.fromPK(pk)).toEqual(entityIds);
+    });
+  });
+});
+
+// ── toInput() / MetaRegistryDataset ─────────────────────────────────────────
+
+describe("toInput() / MetaRegistryDataset", () => {
+  it("address 없는 레지스트리를 toInput()으로 복제할 수 있다", () => {
+    const reg = new MetaRegistry(baseInput());
+    const reg2 = new MetaRegistry(reg.toInput());
+
+    expect(reg2.dimIds.sort()).toEqual(reg.dimIds.slice().sort());
+    expect(reg2.indexIds.sort()).toEqual(reg.indexIds.slice().sort());
+    expect(reg2.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 })).toEqual(
+      reg.encode("perm", "iv1", { role: "admin", action: "read", resource: 10 })
+    );
+    expect(reg2.toInput().address).toBeUndefined();
+  });
+
+  it("migrations가 보존된다", () => {
+    const reg = new MetaRegistry({
+      dims: {
+        role: {
+          kind: { type: "string_enum" } as const,
+          snapshots: {
+            v1: { entries: ["admin", "editor"] },
+            v2: { entries: ["admin", "editor", "viewer"] },
+          },
+          migrations: [{ fromSnapshotId: "v1", toSnapshotId: "v2", indexMap: { 1: 1, 2: 2 } }],
+        },
+      },
+      indices: {
+        perm: {
+          dims: ["role"],
+          versions: {
+            iv1: { snapshots: { role: "v1" } },
+            iv2: { snapshots: { role: "v2" } },
+          },
+        },
+      },
+    });
+
+    const reg2 = new MetaRegistry(reg.toInput());
+    expect(reg2.traceMigration("role", "v1", "v2", 1)).toBe(1);
+    expect(reg2.traceMigration("role", "v1", "v2", 2)).toBe(2);
+  });
+
+  it("entryFlags / entryRefs가 보존된다", () => {
+    const reg = new MetaRegistry({
+      dims: {
+        action: {
+          kind: { type: "string_enum" } as const,
+          snapshots: {
+            v1: {
+              entries: ["read", "write", "delete"],
+              entryFlags: { 3: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-01-01" } },
+            },
+          },
+        },
+      },
+      indices: {
+        perm: {
+          dims: ["action"],
+          versions: { v1: { snapshots: { action: "v1" } } },
+        },
+      },
+    });
+
+    const out = reg.toInput();
+    const snap = out.dims.action.snapshots.v1;
+    expect(snap.entryFlags?.[3]?.status).toBe("inactive");
+    expect(snap.entryFlags?.[3]?.reason).toBe("deprecated");
+  });
+
+  it("plain object 입력으로 생성할 수 있다", () => {
+    const reg = new MetaRegistry(baseInput());
+    expect(reg.dimIds).toContain("role");
+  });
+
+  it("toInput() 반환값으로 확장된 레지스트리를 만들 수 있다 (fork 패턴)", () => {
+    const base = new MetaRegistry(baseInput());
+    const forked = new MetaRegistry({
+      ...base.toInput(),
+      dims: {
+        ...base.toInput().dims,
+        env: {
+          kind: { type: "string_enum" as const },
+          snapshots: { v1: { entries: ["prod", "staging", "dev"] } },
+        },
+      },
+      indices: {
+        ...base.toInput().indices,
+        permEnv: {
+          dims: ["role", "action", "resource", "env"],
+          versions: {
+            ev1: { snapshots: { role: "v1", action: "v1", resource: "v1", env: "v1" } },
+          },
+        },
+      },
+    });
+
+    expect(forked.dimIds).toContain("env");
+    expect(forked.dimIds).toContain("role");
+    expect(forked.indexIds).toContain("permEnv");
+    expect(forked.indexIds).toContain("perm");
+    expect(forked.encode("permEnv", "ev1", { role: "admin", action: "read", resource: 10, env: "prod" })).toBeDefined();
+  });
+});
+
+// ── 다차원 데이터 순환 패턴 ──────────────────────────────────────────────────
+//
+// 구조:
+//
+//   item_class index (inner):  format(3) × sensitivity(3) = 9 slots
+//     book/public=0   book/restricted=1   book/confidential=2
+//     ebook/public=3  ebook/restricted=4  ebook/confidential=5
+//     audio/public=6  audio/restricted=7  audio/confidential=8
+//
+//   content dim (index_ref → item_class):
+//     pos 1 = entries[0] = 0  → (book, public)
+//     pos 2 = entries[1] = 4  → (ebook, restricted)
+//     pos 3 = entries[2] = 8  → (audio, confidential)
+//
+//   catalog index (outer): category(3) × content(3) = 9 slots
+//     category: [fiction, science, history]
+//     content:  index_ref — shape 3 (= entries.length)
+//
+//   audit_log index (downstream): format(3) × action(3) = 9 slots
+//     format: [book, ebook, audio]
+//     action: [view, download, share]
+//
+// 패턴 A: catalog decode → content 값(= item_class 식별자) → item_class decode
+// 패턴 B: item_class decode에서 추출한 format + 새 action → audit_log encode
+
+describe("다차원 데이터 순환 패턴", () => {
+  const chainInput = () => ({
+    dims: {
+      format: {
+        kind: { type: "string_enum" } as const,
+        snapshots: { v1: { entries: ["book", "ebook", "audio"] } },
+      },
+      sensitivity: {
+        kind: { type: "string_enum" } as const,
+        snapshots: { v1: { entries: ["public", "restricted", "confidential"] } },
+      },
+      category: {
+        kind: { type: "string_enum" } as const,
+        snapshots: { v1: { entries: ["fiction", "science", "history"] } },
+      },
+      content: {
+        // index_ref: 각 entry가 item_class의 VersionedValue.value
+        kind: { type: "index_ref", indexId: "item_class" } as const,
+        snapshots: {
+          v1: { entries: [0, 4, 8] }, // book/public, ebook/restricted, audio/confidential
+        },
+      },
+      action: {
+        kind: { type: "string_enum" } as const,
+        snapshots: { v1: { entries: ["view", "download", "share"] } },
+      },
+    },
+    indices: {
+      item_class: {
+        dims: ["format", "sensitivity"],
+        versions: { v1: { snapshots: { format: "v1", sensitivity: "v1" } } },
+      },
+      catalog: {
+        dims: ["category", "content"],
+        versions: { v1: { snapshots: { category: "v1", content: "v1" } } },
+      },
+      audit_log: {
+        dims: ["format", "action"],
+        versions: { v1: { snapshots: { format: "v1", action: "v1" } } },
+      },
+    },
+  });
+
+  // ── 사전 조건: item_class 인코딩 테이블 검증 ─────────────────────────────
+
+  it("item_class 인코딩 테이블이 예상과 일치한다", () => {
+    const reg = new MetaRegistry(chainInput());
+    expect(reg.encode("item_class", "v1", { format: "book",  sensitivity: "public"       }).value).toBe(0);
+    expect(reg.encode("item_class", "v1", { format: "ebook", sensitivity: "restricted"   }).value).toBe(4);
+    expect(reg.encode("item_class", "v1", { format: "audio", sensitivity: "confidential" }).value).toBe(8);
+  });
+
+  it("content dim entries가 item_class 값과 1:1 대응한다", () => {
+    const reg = new MetaRegistry(chainInput());
+    const sn = reg.getDimSnapshot("content", "v1");
+    // pos 1,2,3 → item_class 값 0,4,8
+    expect(sn.entries).toEqual([0, 4, 8]);
+  });
+
+  // ── 패턴 A: 2-hop decode 체인 ────────────────────────────────────────────
+  //
+  // catalog.encode(science, content_pos2)
+  //   → catalog value
+  //   → catalog.decode → {category: "science", content: 4}
+  //   → content=4 는 item_class value
+  //   → item_class.decode(4) → {format: "ebook", sensitivity: "restricted"}
+
+  it("[패턴 A] catalog decode → content 값 추출 → item_class decode", () => {
+    const reg = new MetaRegistry(chainInput());
+
+    // content pos 2 = entries[1] = 4 (ebook/restricted)
+    const catalogVV = reg.encode("catalog", "v1", { category: "science", content: 4 });
+    const catalogDecoded = reg.decode(catalogVV);
+
+    expect(catalogDecoded.category).toBe("science");
+    expect(catalogDecoded.content).toBe(4); // item_class value 그대로 보존
+
+    // content 값으로 item_class를 직접 decode
+    const itemClassVV = { indexId: "item_class", versionId: "v1", value: catalogDecoded.content as number };
+    const itemDecoded = reg.decode(itemClassVV);
+
+    expect(itemDecoded.format).toBe("ebook");
+    expect(itemDecoded.sensitivity).toBe("restricted");
+  });
+
+  it("[패턴 A] 세 개 content 슬롯 모두 체인 decode가 일관성 있다", () => {
+    const reg = new MetaRegistry(chainInput());
+
+    const expectations = [
+      { content: 0, category: "fiction",  format: "book",  sensitivity: "public"        },
+      { content: 4, category: "science",  format: "ebook", sensitivity: "restricted"    },
+      { content: 8, category: "history",  format: "audio", sensitivity: "confidential"  },
+    ];
+
+    for (const { content, category, format, sensitivity } of expectations) {
+      const catalogVV = reg.encode("catalog", "v1", { category, content });
+      const { content: extractedContent } = reg.decode(catalogVV);
+
+      const itemVV = { indexId: "item_class", versionId: "v1", value: extractedContent as number };
+      const itemDecoded = reg.decode(itemVV);
+
+      expect(itemDecoded.format).toBe(format);
+      expect(itemDecoded.sensitivity).toBe(sensitivity);
+    }
+  });
+
+  // ── 패턴 B: decode 일부 추출 + 새 차원 결합 → 다른 index encode ──────────
+  //
+  // catalog decode → item_class decode → format 추출
+  //   → format + action → audit_log.encode
+  //   → audit_log.decode → 검증
+
+  it("[패턴 B] catalog → item_class에서 format 추출 → audit_log encode", () => {
+    const reg = new MetaRegistry(chainInput());
+
+    // Step 1: catalog에서 시작
+    const catalogVV = reg.encode("catalog", "v1", { category: "science", content: 4 });
+
+    // Step 2: catalog decode → content(item_class value) 추출
+    const { content: itemClassValue } = reg.decode(catalogVV);
+
+    // Step 3: item_class decode → format, sensitivity 분리
+    const itemVV = { indexId: "item_class", versionId: "v1", value: itemClassValue as number };
+    const { format } = reg.decode(itemVV);
+
+    // Step 4: 추출된 format + 새 action → audit_log encode
+    const auditVV = reg.encode("audit_log", "v1", { format: format as string, action: "download" });
+
+    // Step 5: audit_log decode → round-trip 검증
+    const auditDecoded = reg.decode(auditVV);
+    expect(auditDecoded.format).toBe("ebook");   // item_class에서 온 format
+    expect(auditDecoded.action).toBe("download"); // 새로 결합한 action
+  });
+
+  it("[패턴 B] 파이프라인 전체: catalog value → audit_log value bijection", () => {
+    const reg = new MetaRegistry(chainInput());
+
+    // 세 가지 catalog 슬롯 × 세 가지 action = 9가지 경로
+    const actions = ["view", "download", "share"] as const;
+    const catalogSlots = [
+      { category: "fiction",  content: 0 }, // book/public
+      { category: "science",  content: 4 }, // ebook/restricted
+      { category: "history",  content: 8 }, // audio/confidential
+    ];
+    const expectedFormats = ["book", "ebook", "audio"];
+
+    const auditValues = new Set<number>();
+
+    for (let i = 0; i < catalogSlots.length; i++) {
+      const catalogVV = reg.encode("catalog", "v1", catalogSlots[i]);
+      const { content: itemVal } = reg.decode(catalogVV);
+      const { format } = reg.decode({ indexId: "item_class", versionId: "v1", value: itemVal as number });
+
+      expect(format).toBe(expectedFormats[i]);
+
+      for (const action of actions) {
+        const auditVV = reg.encode("audit_log", "v1", { format: format as string, action });
+        auditValues.add(auditVV.value);
+      }
+    }
+
+    // 3 formats × 3 actions = 9개 고유 audit_log 값
+    expect(auditValues.size).toBe(9);
+  });
+
+  // ── 체인 내 format 불변성 검증 ──────────────────────────────────────────
+  //
+  // catalog → item_class → audit_log 체인을 통과해도
+  // format 값이 변하지 않아야 한다 (round-trip identity).
+
+  it("체인 전체에서 format 값이 보존된다 (identity)", () => {
+    const reg = new MetaRegistry(chainInput());
+
+    // item_class에서 직접 encode한 format이 catalog 체인 경유 후에도 동일
+    for (const [contentVal, expectedFormat] of [[0, "book"], [4, "ebook"], [8, "audio"]] as const) {
+      // 직접 경로: item_class.decode
+      const { format: directFormat } = reg.decode({ indexId: "item_class", versionId: "v1", value: contentVal });
+
+      // 체인 경로: catalog → decode → item_class.decode
+      const catalogVV = reg.encode("catalog", "v1", { category: "fiction", content: contentVal });
+      const { content: extracted } = reg.decode(catalogVV);
+      const { format: chainFormat } = reg.decode({ indexId: "item_class", versionId: "v1", value: extracted as number });
+
+      expect(directFormat).toBe(expectedFormat);
+      expect(chainFormat).toBe(directFormat); // 경로 무관하게 동일
     }
   });
 });

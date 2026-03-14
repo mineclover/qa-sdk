@@ -1,4 +1,5 @@
 export { MetaRegistry } from "./meta-registry.js";
+export { MetaResolver } from "./meta-resolver.js";
 
 export type {
   EntityId,
@@ -11,6 +12,7 @@ export type {
   IndexVersionInput,
   IndexInput,
   MetaRegistryInput,
+  AddressConfig,
   DimDef,
   DimSnapshot,
   IndexDef,
@@ -18,6 +20,10 @@ export type {
   VersionedValue,
   DimActiveSet,
   IndexActiveManifest,
+  DecodeMap,
+  DimRange,
+  IndexRange,
+  MetaDataset,
 } from "./types.js";
 
 export {

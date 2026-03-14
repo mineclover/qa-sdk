@@ -27,9 +27,18 @@
  *                 (forward-reference 허용: indices 루프 완료 후 교차 검증)
  */
 
-import { WeightedIndex } from "weighted-index";
+import {
+  WeightedIndex,
+  createAddressConverter,
+  createLayoutProtocol,
+  fromVersionedValue,
+  toVersionedValue,
+  type AddressConverter as WiAddressConverter,
+  type AddressProtocol,
+} from "weighted-index";
 import type {
   MetaRegistryInput,
+  AddressConfig,
   DimDef,
   DimKind,
   DimSnapshot,
@@ -75,7 +84,15 @@ export class MetaRegistry {
   /** WeightedIndex 캐시: "{indexId}:{versionId}" → WeightedIndex */
   private readonly wiCache = new Map<string, WeightedIndex>();
 
+  /** 프로토콜 통합 변환기 (text + layout 프로토콜 모두 등록) */
+  private readonly _converter: WiAddressConverter;
+  /** 기본 직렬화 프로토콜 이름. address 설정 시 layout, 미설정 시 colon. */
+  private readonly _defaultProtocol: string;
+  /** toInput() 복제용 원본 스냅샷. */
+  private readonly _input: MetaRegistryInput;
+
   constructor(input: MetaRegistryInput) {
+    this._input = structuredClone(input);
     const dimsMap = new Map<string, DimDef>();
     const snapshotsMap = new Map<string, Map<string, SnapshotCache>>();
     const migrationsMap = new Map<string, Map<string, DimSnapshotMigration>>();
@@ -336,6 +353,24 @@ export class MetaRegistry {
         }
       }
     }
+
+    // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────
+    this._converter = createAddressConverter(); // text 프로토콜 (colon, uri, compact) 기본 등록
+    this._defaultProtocol = "colon";
+
+    if (input.address) {
+      this._validateAddressConfig(input.address, indicesMap, versionsMap);
+
+      const layoutProto = createLayoutProtocol({
+        format: input.address.format,
+        schemaChars: input.address.schemaChars,
+        versionChars: input.address.versionChars,
+        schemas: input.address.schemas,
+        versions: input.address.versions,
+      });
+      this._converter.register(layoutProto);
+      this._defaultProtocol = layoutProto.name;
+    }
   }
 
   // ── Manifest ─────────────────────────────────────────────────────────────────
@@ -421,57 +456,113 @@ export class MetaRegistry {
 
   // ── 직렬화 ───────────────────────────────────────────────────────────────────
 
-  /** VersionedValue → 단일 문자열. 형식: "{indexId}:{versionId}:{value}" */
-  serialize(vv: VersionedValue): string {
-    return `${vv.indexId}:${vv.versionId}:${vv.value}`;
+  /**
+   * 내부 AddressConverter 반환.
+   * text 프로토콜(colon, uri, compact)은 항상 사용 가능.
+   * address 설정 시 layout 프로토콜도 등록되어 있다.
+   */
+  get converter(): WiAddressConverter {
+    return this._converter;
   }
 
   /**
-   * 직렬화 문자열 → VersionedValue.
-   * indexId와 versionId가 registry에 등록되어 있어야 함.
+   * 현재 기본 프로토콜 이름.
+   * address 미설정: "colon", address 설정: "layout:{formatName}"
    */
-  parse(serialized: string): VersionedValue {
-    const lastColon = serialized.lastIndexOf(":");
-    if (lastColon === -1) {
+  get defaultProtocol(): string {
+    return this._defaultProtocol;
+  }
+
+  /**
+   * VersionedValue → 프로토콜 형식 문자열.
+   *
+   * 모든 직렬화를 AddressConverter에 위임한다.
+   * protocol 생략 시 기본 프로토콜 사용 (address 설정 시 layout, 아니면 colon).
+   *
+   * @example
+   * reg.serialize(vv)                    // 기본 프로토콜
+   * reg.serialize(vv, "colon")           // → "perm:v1:42"
+   * reg.serialize(vv, "uri")             // → "wi://perm/v1/42"
+   * reg.serialize(vv, "layout:uuid")     // → "00010001-0000-...-002a"
+   */
+  serialize(vv: VersionedValue, protocol?: AddressProtocol | string): string {
+    const addr = fromVersionedValue(vv);
+    if (typeof protocol === "object") return protocol.serialize(addr);
+    return this._converter.serialize(addr, protocol ?? this._defaultProtocol);
+  }
+
+  /**
+   * 프로토콜 형식의 문자열 → VersionedValue.
+   *
+   * 파싱을 AddressConverter에 위임하고, registry 고유 검증을 수행한다:
+   * - indexId/versionId 존재 여부
+   * - value 범위 (0 ≤ value < WeightedIndex.size)
+   *
+   * protocol 생략 시 자동 감지 (layout → uri → colon → compact 순).
+   *
+   * @example
+   * reg.parse("perm:iv1:0")
+   * reg.parse("wi://perm/iv1/0")
+   * reg.parse("00010001-0000-0000-0000-000000000000")
+   * reg.parse("perm:iv1:0", "colon")     // 명시적 프로토콜
+   */
+  parse(input: string, protocol?: AddressProtocol | string): VersionedValue {
+    let addr;
+    try {
+      if (typeof protocol === "object") {
+        addr = protocol.parse(input);
+      } else if (protocol) {
+        addr = this._converter.require(protocol).parse(input);
+      } else {
+        addr = this._converter.parse(input);
+      }
+    } catch (e) {
       throw new ParseError(
-        `Invalid serialized VersionedValue: "${serialized}". Expected "{indexId}:{versionId}:{value}"`
+        `Failed to parse address "${input}": ${e instanceof Error ? e.message : String(e)}`
       );
     }
 
-    const valueStr = serialized.slice(lastColon + 1);
-    const rest = serialized.slice(0, lastColon);
-    const secondColon = rest.lastIndexOf(":");
-
-    if (secondColon === -1) {
+    const vv = toVersionedValue(addr);
+    this._getIndexVersion(vv.indexId, vv.versionId);
+    const wi = this._getWeightedIndex(vv.indexId, vv.versionId);
+    if (vv.value < 0 || vv.value >= wi.size) {
       throw new ParseError(
-        `Invalid serialized VersionedValue: "${serialized}". Expected "{indexId}:{versionId}:{value}"`
+        `Value ${vv.value} out of range [0, ${wi.size - 1}] for "${vv.indexId}/${vv.versionId}"`
       );
     }
+    return vv;
+  }
 
-    const indexId = rest.slice(0, secondColon);
-    const versionId = rest.slice(secondColon + 1);
+  /**
+   * entity ID 레코드를 인코딩해 프로토콜 형식의 PK 문자열로 직접 변환.
+   * encode() + serialize()를 한 번에 수행한다.
+   *
+   * @example
+   * reg.toPK("perm", "v1", { role: "admin", action: "read", resource: "doc" })
+   * // address 설정 시 → "00010001-0000-0000-0000-000000000000" (UUID)
+   * // address 미설정 시 → "perm:v1:0" (colon)
+   */
+  toPK(
+    indexId: string,
+    versionId: string,
+    entityIds: Record<string, EntityId>,
+    protocol?: string
+  ): string {
+    const vv = this.encode(indexId, versionId, entityIds);
+    return this.serialize(vv, protocol);
+  }
 
-    if (!indexId || !versionId || !valueStr) {
-      throw new ParseError(
-        `Invalid serialized VersionedValue: "${serialized}". Expected "{indexId}:{versionId}:{value}"`
-      );
-    }
-
-    const value = Number(valueStr);
-    if (!Number.isInteger(value) || value < 0) {
-      throw new ParseError(
-        `Invalid value "${valueStr}" in serialized VersionedValue: "${serialized}"`
-      );
-    }
-
-    this._getIndexVersion(indexId, versionId); // 존재 검증
-    const wi = this._getWeightedIndex(indexId, versionId);
-    if (value >= wi.size) {
-      throw new ParseError(
-        `Value ${value} out of range [0, ${wi.size - 1}] for "${indexId}/${versionId}"`
-      );
-    }
-    return { indexId, versionId, value };
+  /**
+   * 프로토콜 형식의 PK 문자열을 파싱해 entity ID 레코드로 직접 변환.
+   * parse() + decode()를 한 번에 수행한다.
+   *
+   * @example
+   * reg.fromPK("00010001-0000-0000-0000-000000000000")
+   * // → { role: "admin", action: "read", resource: "doc" }
+   */
+  fromPK(input: string, protocol?: string): Record<string, EntityId> {
+    const vv = this.parse(input, protocol);
+    return this.decode(vv);
   }
 
   // ── 조회 ─────────────────────────────────────────────────────────────────────
@@ -563,6 +654,16 @@ export class MetaRegistry {
     const snMap = this.snapshots.get(dimId);
     if (!snMap) throw new DimNotFoundError(`Unknown dim: "${dimId}"`);
     return [...snMap.keys()];
+  }
+
+  /**
+   * 생성자에 전달한 입력의 deep clone을 반환한다.
+   *
+   * `new MetaRegistry(reg.toInput())`으로 동일한 동작의 인스턴스를 복제하거나,
+   * spread로 일부를 교체해 fork 패턴에 사용할 수 있다.
+   */
+  toInput(): MetaRegistryInput {
+    return structuredClone(this._input);
   }
 
   // ── 내부 ─────────────────────────────────────────────────────────────────────
@@ -681,5 +782,80 @@ export class MetaRegistry {
       }
     }
     return null;
+  }
+
+  /**
+   * AddressConfig 유효성 검증.
+   *
+   * 1. 등록된 모든 indexId가 schemas에 매핑되어 있어야 한다.
+   * 2. 등록된 모든 versionId가 versions에 매핑되어 있어야 한다.
+   * 3. schemas/versions 매핑 값은 non-negative integer여야 한다.
+   * 4. schemas 매핑 값은 unique해야 한다 (역매핑 충돌 방지).
+   * 5. versions 매핑 값은 unique해야 한다.
+   */
+  private _validateAddressConfig(
+    config: AddressConfig,
+    indicesMap: ReadonlyMap<string, IndexDef>,
+    versionsMap: ReadonlyMap<string, ReadonlyMap<string, IndexVersion>>
+  ): void {
+    // 1. 모든 indexId가 schemas에 포함되어야 한다
+    for (const indexId of indicesMap.keys()) {
+      if (config.schemas[indexId] === undefined) {
+        throw new ValidationError(
+          `Address config: indexId "${indexId}" not mapped in schemas`
+        );
+      }
+    }
+
+    // 2. 모든 versionId가 versions에 포함되어야 한다
+    for (const [indexId, vMap] of versionsMap) {
+      for (const versionId of vMap.keys()) {
+        if (config.versions[versionId] === undefined) {
+          throw new ValidationError(
+            `Address config: versionId "${versionId}" (index "${indexId}") not mapped in versions`
+          );
+        }
+      }
+    }
+
+    // 3. 매핑 값 유효성 검증
+    for (const [name, num] of Object.entries(config.schemas)) {
+      if (typeof num !== "number" || !Number.isInteger(num) || num < 0) {
+        throw new ValidationError(
+          `Address config schemas["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`
+        );
+      }
+    }
+    for (const [name, num] of Object.entries(config.versions)) {
+      if (typeof num !== "number" || !Number.isInteger(num) || num < 0) {
+        throw new ValidationError(
+          `Address config versions["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`
+        );
+      }
+    }
+
+    // 4. schemas 값 uniqueness
+    const schemaNums = new Map<number, string>();
+    for (const [name, num] of Object.entries(config.schemas)) {
+      const existing = schemaNums.get(num);
+      if (existing !== undefined) {
+        throw new ValidationError(
+          `Address config: duplicate schema number ${num} for "${name}" and "${existing}"`
+        );
+      }
+      schemaNums.set(num, name);
+    }
+
+    // 5. versions 값 uniqueness
+    const versionNums = new Map<number, string>();
+    for (const [name, num] of Object.entries(config.versions)) {
+      const existing = versionNums.get(num);
+      if (existing !== undefined) {
+        throw new ValidationError(
+          `Address config: duplicate version number ${num} for "${name}" and "${existing}"`
+        );
+      }
+      versionNums.set(num, name);
+    }
   }
 }

@@ -1,3 +1,5 @@
+import type { PackFormat } from "weighted-index";
+
 /**
  * index-meta 공개 타입 정의
  *
@@ -144,11 +146,58 @@ export interface IndexInput {
   versions: Record<string, IndexVersionInput>;
 }
 
+// ── Address 프로토콜 바인딩 ──────────────────────────────────────────────────
+
+/**
+ * MetaRegistry의 VersionedValue를 hex 컨테이너(UUID, int64 등)로 직렬화하기 위한 설정.
+ *
+ * layout protocol을 구성해 SemanticAddress ↔ 포맷 문자열 변환을 가능하게 한다.
+ * 이를 통해 VersionedValue를 RDB PK 등 외부 시스템의 식별자로 직접 사용할 수 있다.
+ *
+ * @example
+ * ```ts
+ * address: {
+ *   format: PACK_FORMATS.uuid,
+ *   schemaChars: 4,
+ *   versionChars: 2,
+ *   schemas:  { perm: 1, content: 2 },
+ *   versions: { v1: 1, v2: 2, iv1: 1, iv2: 2 },
+ * }
+ * ```
+ *
+ * Layout: [schema(4hex) | version(2hex) | ...gap... | index]
+ * 예) perm:v1:42 → "00010001-0000-0000-0000-00000000002a" (UUID)
+ */
+export interface AddressConfig {
+  /** 컨테이너 포맷 (PACK_FORMATS.uuid, PACK_FORMATS.int64 등) */
+  format: PackFormat;
+  /** schema(indexId) 필드에 할당할 hex 자릿수 */
+  schemaChars: number;
+  /** version(versionId) 필드에 할당할 hex 자릿수 */
+  versionChars: number;
+  /**
+   * indexId → 숫자 매핑. layout protocol에서 schema 필드 값으로 사용.
+   * registry에 등록된 모든 indexId를 포함해야 한다.
+   */
+  schemas: Record<string, number>;
+  /**
+   * versionId → 숫자 매핑. layout protocol에서 version 필드 값으로 사용.
+   * registry에 등록된 모든 인덱스의 모든 versionId를 포함해야 한다.
+   */
+  versions: Record<string, number>;
+}
+
 export interface MetaRegistryInput {
   /** dimId → DimInput */
   dims: Record<string, DimInput>;
   /** indexId → IndexInput */
   indices: Record<string, IndexInput>;
+  /**
+   * 선택적 주소 프로토콜 바인딩.
+   * 설정하면 layout protocol 기반 직렬화(toPK/fromPK)를 사용할 수 있다.
+   * 미설정 시에도 colon/uri/compact 텍스트 프로토콜은 사용 가능.
+   */
+  address?: AddressConfig;
 }
 
 // ── 저장/조회 타입 ────────────────────────────────────────────────────────────
@@ -223,4 +272,85 @@ export interface IndexActiveManifest {
   versionId: string;
   /** IndexDef.dims 순서 유지. */
   dims: DimActiveSet[];
+}
+
+// ── Resolver 출력 타입 ───────────────────────────────────────────────────────
+
+/**
+ * 특정 index version의 디코딩에 필요한 최소 데이터 번들.
+ *
+ * 외부 시스템(DB, 프론트엔드, 마이크로서비스 등)에 이 번들을 전달하면
+ * MetaRegistry 없이도 value → entity ID 복원이 가능하다.
+ *
+ * 디코딩 절차:
+ *   1. weights 계산: weights[i] = product(shape[i+1:])
+ *   2. 좌표 복원: coord[i] = floor(remaining / weights[i]) + 1, remaining %= weights[i]
+ *   3. entity 매핑: dims[i].entries[coord[i] - 1]
+ */
+export interface DecodeMap {
+  indexId: string;
+  versionId: string;
+  /** 각 dim의 entries.length 배열. WeightedIndex 생성에 사용. */
+  shape: number[];
+  /** shape의 곱 = 가능한 value 범위 [0, size-1]. */
+  size: number;
+  /** IndexDef.dims 순서 유지. */
+  dims: {
+    dimId: string;
+    snapshotId: string;
+    kind: DimKind;
+    /** entries[i-1] = 1-based coord i의 entity ID. */
+    entries: EntityId[];
+  }[];
+  /** address 설정이 있으면 PK 파싱에 필요한 정보도 포함. */
+  address?: AddressConfig;
+}
+
+/**
+ * 하나의 dim의 모든 snapshot 데이터.
+ * 버전 range(v1~v5 등)를 한 번에 조회할 때 사용한다.
+ */
+export interface DimRange {
+  dimId: string;
+  kind: DimKind;
+  description?: string;
+  snapshots: {
+    snapshotId: string;
+    entries: EntityId[];
+    /** active 상태인 1-based 인덱스 목록. */
+    activeIndices: number[];
+    /** entries.length. shape 계산에 사용. */
+    total: number;
+  }[];
+}
+
+/**
+ * 하나의 index의 모든 version 데이터.
+ * 인덱스별로 version range를 조회할 때 사용한다.
+ */
+export interface IndexRange {
+  indexId: string;
+  description?: string;
+  dimIds: string[];
+  versions: {
+    versionId: string;
+    shape: number[];
+    size: number;
+    dims: {
+      dimId: string;
+      snapshotId: string;
+      kind: DimKind;
+      entries: EntityId[];
+      activeIndices: number[];
+    }[];
+  }[];
+}
+
+/**
+ * 전체 레지스트리의 구조화된 데이터셋.
+ * index별로 그룹핑된 version range + dim별 snapshot range.
+ */
+export interface MetaDataset {
+  indices: IndexRange[];
+  dims: DimRange[];
 }
