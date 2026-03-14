@@ -8,7 +8,7 @@ export interface WsHandlers {
   onSubscribed(scenarioId: string): void;
   onSessionActive(sessionId: string, scenarioId: string): void;
   onDisconnected(): void;
-  onError?(event: Event): void;
+  onError(event: Event): void;
 }
 
 export interface WsClient {
@@ -32,20 +32,41 @@ export function createWsClient(handlers: WsHandlers): WsClient {
     let msg: Record<string, unknown>;
     try {
       msg = JSON.parse(evt.data as string) as Record<string, unknown>;
-    } catch {
+    } catch (err) {
+      console.error("[viz-web:ws] JSON parse error", err, evt.data);
       return;
     }
 
     switch (msg["type"]) {
-      case "record":
-        handlers.onRecord(msg["data"] as StoredRecord, msg["scenarioId"] as string);
+      case "record": {
+        const data = msg["data"];
+        const scenarioId = msg["scenarioId"];
+        if (data == null || typeof scenarioId !== "string") {
+          console.error("[viz-web:ws] malformed 'record' message — missing data or scenarioId", msg);
+          break;
+        }
+        handlers.onRecord(data as StoredRecord, scenarioId);
         break;
-      case "subscribed":
-        handlers.onSubscribed(msg["scenarioId"] as string);
+      }
+      case "subscribed": {
+        const scenarioId = msg["scenarioId"];
+        if (typeof scenarioId !== "string") {
+          console.error("[viz-web:ws] malformed 'subscribed' message — missing scenarioId", msg);
+          break;
+        }
+        handlers.onSubscribed(scenarioId);
         break;
-      case "session:active":
-        handlers.onSessionActive(msg["sessionId"] as string, msg["scenarioId"] as string);
+      }
+      case "session:active": {
+        const sessionId = msg["sessionId"];
+        const scenarioId = msg["scenarioId"];
+        if (typeof sessionId !== "string" || typeof scenarioId !== "string") {
+          console.error("[viz-web:ws] malformed 'session:active' message — missing sessionId or scenarioId", msg);
+          break;
+        }
+        handlers.onSessionActive(sessionId, scenarioId);
         break;
+      }
     }
   });
 
@@ -54,7 +75,8 @@ export function createWsClient(handlers: WsHandlers): WsClient {
   });
 
   ws.addEventListener("error", (evt) => {
-    handlers.onError?.(evt);
+    console.error("[viz-web:ws] WebSocket error", evt);
+    handlers.onError(evt);
   });
 
   return {

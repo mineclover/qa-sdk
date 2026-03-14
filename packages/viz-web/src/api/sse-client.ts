@@ -19,21 +19,34 @@ export function subscribeToTrace(
   const source = new EventSource(url);
 
   source.addEventListener("record", (evt: MessageEvent) => {
+    let parsed: unknown;
     try {
-      const record = JSON.parse(evt.data) as StoredRecord;
-      handlers.onRecord(record);
-    } catch {
-      // malformed data; skip
+      parsed = JSON.parse(evt.data as string) as unknown;
+    } catch (err) {
+      console.error("[viz-web:sse] JSON parse error on 'record' event", err, evt.data);
+      return;
     }
+    if (
+      parsed == null ||
+      typeof parsed !== "object" ||
+      typeof (parsed as Record<string, unknown>)["log_id"] !== "string" ||
+      typeof (parsed as Record<string, unknown>)["event_key"] !== "string"
+    ) {
+      console.error("[viz-web:sse] malformed 'record' payload — missing log_id or event_key", parsed);
+      return;
+    }
+    handlers.onRecord(parsed as StoredRecord);
   });
 
   source.addEventListener("close", (evt: MessageEvent) => {
+    let reason = "unknown";
     try {
-      const data = JSON.parse(evt.data) as { reason: string };
-      handlers.onClose(data.reason);
-    } catch {
-      handlers.onClose("unknown");
+      const data = JSON.parse(evt.data as string) as Record<string, unknown>;
+      if (typeof data["reason"] === "string") reason = data["reason"];
+    } catch (err) {
+      console.error("[viz-web:sse] JSON parse error on 'close' event", err, evt.data);
     }
+    handlers.onClose(reason);
     source.close();
   });
 

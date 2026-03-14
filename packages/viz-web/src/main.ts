@@ -12,7 +12,8 @@ import { createEventLog, type EventLog } from "./panels/event-log";
 import { createVerdictPanel, type VerdictPanel } from "./panels/verdict-panel";
 import { createRoleplayHost, type RoleplayHost } from "./iframe/roleplay-host";
 import { createWsClient, type WsClient } from "./api/ws-client";
-import { createSession, listSessions, getSessionVerdicts } from "./api/ingest-client";
+import { createSession, listSessions, getSessionRecords, getSessionVerdicts, recomputeVerdicts } from "./api/ingest-client";
+import { mergeAndSortRecords } from "./lib/record-utils";
 
 // ── DOM refs ─────────────────────────────────────────────────
 const sidebarEl = document.getElementById("sidebar")!;
@@ -22,9 +23,24 @@ const footerEl = document.getElementById("footer")!;
 const sessionInfoEl = document.getElementById("session-info")!;
 const sessionIdValueEl = document.getElementById("session-id-value")!;
 const wsStatusEl = document.getElementById("ws-status")!;
-const recomputeBtn = document.getElementById("recompute-btn")!;
+const recomputeBtn = document.getElementById("recompute-btn") as HTMLButtonElement;
 const mainLeftEl = document.getElementById("main-left")!;
 const mainRightEl = document.getElementById("main-right")!;
+const errorBannerEl = document.getElementById("error-banner")!;
+const errorBannerMsgEl = document.getElementById("error-banner-msg")!;
+const errorBannerCloseBtn = document.getElementById("error-banner-close")!;
+
+// ── Error Banner ──────────────────────────────────────────────
+errorBannerCloseBtn.addEventListener("click", () => { errorBannerEl.hidden = true; });
+
+function showError(msg: string): void {
+  errorBannerMsgEl.textContent = msg;
+  errorBannerEl.hidden = false;
+}
+
+function clearError(): void {
+  errorBannerEl.hidden = true;
+}
 
 // ── Split-pane focus ──────────────────────────────────────────
 let focusedPane: "left" | "right" | null = null;
@@ -67,9 +83,13 @@ let currentUpdater: GraphUpdater | null = null;
 let currentSessionId: string | null = null;   // session being visualized
 let mySessionId: string | null = null;        // session created for this visit
 let wsClient: WsClient | null = null;
+let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let wsReconnectDelay = 1_000; // exponential backoff: 1s → 2s → 4s → max 30s
 
 // per-session record buffer so switching sessions replays correctly
 const sessionRecords = new Map<string, StoredRecord[]>();
+const MAX_BUFFERED_SESSIONS = 50;
+const MAX_RECORDS_PER_SESSION = 1_000;
 
 // ── Panels ────────────────────────────────────────────────────
 const eventLog: EventLog = createEventLog(eventLogContainerEl);
@@ -95,29 +115,45 @@ function renderGraph(spec: ScenarioSpec): void {
   }
 }
 
-function resetGraphForSession(sessionId: string): void {
+// ── Session selection ─────────────────────────────────────────
+function replayRecords(records: StoredRecord[]): void {
   if (!currentGraph || !currentRenderer) return;
-
+  currentRenderer.resetState();
   currentUpdater = createUpdater(currentGraph, currentRenderer);
+  // Always start with first node active — processRecord will advance it as records replay
+  if (currentGraph.nodes.length > 0) {
+    currentRenderer.updateNodeState(currentGraph.nodes[0].step_id, "active");
+  }
   eventLog.clear();
   verdictPanel.clear();
-
-  const buffered = sessionRecords.get(sessionId) ?? [];
-  for (const record of buffered) {
+  for (const record of records) {
     eventLog.addEvent(record);
     currentUpdater.processRecord(record);
   }
 }
 
-// ── Session selection ─────────────────────────────────────────
-function selectSession(sessionId: string): void {
+async function selectSession(sessionId: string): Promise<void> {
   currentSessionId = sessionId;
   sessionList.setSelected(sessionId);
-
-  // Update header to show selected session
   sessionIdValueEl.textContent = sessionId;
 
-  resetGraphForSession(sessionId);
+  // Fetch historical records from server (WS subscription stays active during fetch — no gap)
+  let historical: StoredRecord[] = [];
+  try {
+    historical = await getSessionRecords(sessionId);
+  } catch (err) {
+    console.error("[viz-web:selectSession] failed to fetch historical records", err);
+  }
+
+  // Merge server history with any WS-buffered records, dedup by logId, sort by timestamp
+  const wsBuffered = sessionRecords.get(sessionId) ?? [];
+  const merged = mergeAndSortRecords(historical, wsBuffered);
+
+  // Update buffer so future WS records append correctly
+  sessionRecords.set(sessionId, merged);
+  sessionList.setRecordCount(sessionId, merged.length);
+
+  replayRecords(merged);
 
   void loadVerdicts(sessionId);
 
@@ -129,7 +165,7 @@ function selectSession(sessionId: string): void {
 }
 
 sessionList.onSelect((sessionId) => {
-  selectSession(sessionId);
+  void selectSession(sessionId);
 });
 
 // ── Scenario select ───────────────────────────────────────────
@@ -147,6 +183,8 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
   sessionIdValueEl.textContent = "Creating session…";
   setWsStatus("connecting");
 
+  clearError();
+
   // 1. Load existing sessions for this scenario
   try {
     const { items } = await listSessions(spec.scenario_id);
@@ -157,8 +195,9 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
         closedAt: s.closedAt,
       });
     }
-  } catch {
-    // non-critical
+  } catch (err) {
+    console.error("[viz-web:listSessions]", err);
+    showError(`Failed to load sessions: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   // 2. Create a new session for this visit
@@ -173,12 +212,16 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
     });
 
     // auto-select the new session
-    selectSession(session.sessionId);
+    void selectSession(session.sessionId);
   } catch (err) {
-    sessionIdValueEl.textContent = `Error: ${err instanceof Error ? err.message : String(err)}`;
+    const msg = err instanceof Error ? err.message : String(err);
+    sessionIdValueEl.textContent = `Error: ${msg}`;
     setWsStatus("error");
+    showError(`Failed to create session: ${msg}`);
     return;
   }
+
+  wsReconnectDelay = 1_000; // reset backoff for new scenario
 
   // 3. Open WebSocket and subscribe to scenario
   connectWs(spec.scenario_id);
@@ -187,7 +230,24 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
 createScenarioSelector(sidebarEl, (spec) => void handleScenarioSelect(spec));
 
 // ── WebSocket ─────────────────────────────────────────────────
+function scheduleWsReconnect(scenarioId: string): void {
+  if (wsReconnectTimer) return; // already scheduled
+  setWsStatus("connecting");
+  wsReconnectTimer = setTimeout(() => {
+    wsReconnectTimer = null;
+    // Only reconnect if this scenario is still the active one
+    if (currentSpec?.scenario_id === scenarioId) {
+      connectWs(scenarioId);
+    }
+  }, wsReconnectDelay);
+  wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30_000);
+}
+
 function connectWs(scenarioId: string): void {
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
   if (wsClient) {
     wsClient.disconnect();
     wsClient = null;
@@ -199,8 +259,23 @@ function connectWs(scenarioId: string): void {
       const sid = record.qaSessionId;
       if (!sid) return;
 
-      if (!sessionRecords.has(sid)) sessionRecords.set(sid, []);
-      sessionRecords.get(sid)!.push(record);
+      if (!sessionRecords.has(sid)) {
+        // Evict oldest session if at cap
+        if (sessionRecords.size >= MAX_BUFFERED_SESSIONS) {
+          const oldest = sessionRecords.keys().next().value;
+          if (oldest !== undefined) {
+            sessionRecords.delete(oldest);
+            console.warn("[viz-web:sessionRecords] evicted oldest session from buffer", oldest);
+          }
+        }
+        sessionRecords.set(sid, []);
+      }
+
+      const records = sessionRecords.get(sid)!;
+      if (records.length >= MAX_RECORDS_PER_SESSION) {
+        records.shift(); // drop oldest record for this session
+      }
+      records.push(record);
       sessionList.incrementRecordCount(sid);
 
       // only update graph for the selected session
@@ -221,14 +296,19 @@ function connectWs(scenarioId: string): void {
       }
     },
     onSubscribed(_scenarioId: string) {
+      wsReconnectDelay = 1_000; // reset backoff on successful connect
+      clearError();
       setWsStatus("connected");
     },
     onDisconnected() {
       setWsStatus("disconnected");
       if (currentSessionId) void loadVerdicts(currentSessionId);
+      scheduleWsReconnect(scenarioId);
     },
-    onError() {
+    onError(evt) {
+      console.error("[viz-web:ws] connection error", evt);
       setWsStatus("error");
+      showError("WebSocket connection error — reconnecting…");
     },
   });
 
@@ -243,8 +323,32 @@ async function loadVerdicts(sessionId: string): Promise<void> {
       verdictPanel.showVerdict(result.verdicts[0]);
       applyVerdictToGraph(result.verdicts[0]);
     }
-  } catch {
-    // not available yet
+  } catch (err) {
+    console.error("[viz-web:loadVerdicts]", err);
+  }
+}
+
+async function recomputeAndLoadVerdicts(sessionId: string): Promise<void> {
+  // Collect distinct traceIds for this session from buffered records
+  const records = sessionRecords.get(sessionId) ?? [];
+  const traceIds = [...new Set(records.map((r) => r.traceId))];
+
+  recomputeBtn.disabled = true;
+  recomputeBtn.textContent = "Computing…";
+  try {
+    if (traceIds.length > 0) {
+      await Promise.all(
+        traceIds.map((tid) =>
+          recomputeVerdicts(tid).catch((err: unknown) => {
+            console.error(`[viz-web:recompute] traceId=${tid}`, err);
+          }),
+        ),
+      );
+    }
+    await loadVerdicts(sessionId);
+  } finally {
+    recomputeBtn.disabled = false;
+    recomputeBtn.textContent = "Refresh Verdict";
   }
 }
 
@@ -270,7 +374,7 @@ function setWsStatus(status: "connecting" | "connected" | "disconnected" | "erro
 
 // ── Recompute button ──────────────────────────────────────────
 recomputeBtn.addEventListener("click", () => {
-  if (currentSessionId) void loadVerdicts(currentSessionId);
+  if (currentSessionId) void recomputeAndLoadVerdicts(currentSessionId);
 });
 
 // ── Roleplay iframe ───────────────────────────────────────────
