@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import type {
   GraphStore,
   RecordStore,
@@ -84,6 +85,7 @@ export function createApp(deps: AppDeps) {
     maxRequests: deps.rateLimitMaxRequests,
   });
 
+  app.use("*", cors());
   app.use("*", requestId);
   app.use("*", createShutdownMiddleware(appLifecycle));
   app.use("/v1/ingest", ingestRateLimiter);

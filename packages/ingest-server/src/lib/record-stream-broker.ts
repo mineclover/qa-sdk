@@ -127,8 +127,12 @@ export class RecordStreamBroker {
 
       try {
         const result = listener(snapshot);
-        void Promise.resolve(result).catch(() => {});
-      } catch {}
+        Promise.resolve(result).catch((err: unknown) => {
+          console.error("[record-stream-broker] async listener error", err);
+        });
+      } catch (err: unknown) {
+        console.error("[record-stream-broker] sync listener error", err);
+      }
     }
   }
 }
