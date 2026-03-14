@@ -142,12 +142,12 @@ function createVerdictPanel(container: HTMLElement): VerdictPanel;
 
 ### 오케스트레이션 흐름
 
-1. **시나리오 선택** → `compileSpec(spec)` → `computeLayout(graph)` → `createGraphSvg()` → `render()`
-2. **Trace 연결** → `subscribeToTrace(traceId, handlers)` → `createUpdater(graph, renderer)`
-3. **SSE record 수신** → `eventLog.addEvent(record)` + `updater.processRecord(record)`
-4. **SSE close** → `loadVerdicts(traceId)` → `verdictPanel.showVerdict(report)` + `applyVerdictToGraph(report)`
-5. **Recompute 버튼** → `POST /v1/traces/:traceId/verdicts/recompute` → 재조회
-6. **iframe 메시지** → `event:emitted` 수신 시 해당 event_key의 노드를 즉시 `"active"`로 하이라이트 (SSE 도착 전 피드백)
+1. **시나리오 선택** → `listSessions()` + `createSession()` → `compileSpec(spec)` → `computeLayout(graph)` → `createGraphSvg()` → `render()` → WS 연결(`connectWs(scenarioId)`)
+2. **세션 선택** → `getSessionRecords(sessionId)` (서버 이력) + WS 버퍼 병합(`mergeAndSortRecords`) → `renderer.resetState()` → `createUpdater(graph, renderer)` → `replayRecords(merged)`
+3. **WS record 수신** → 버퍼에 추가 + 현재 세션이면 `eventLog.addEvent(record)` + `updater.processRecord(record)`
+4. **WS 연결 해제** → `loadVerdicts(sessionId)` → `verdictPanel.showVerdict(report)` + `applyVerdictToGraph(report)` → 자동 재연결(exponential backoff)
+5. **Recompute 버튼** → 세션 레코드에서 traceId 수집 → `POST /v1/traces/:id/verdicts/recompute` → `loadVerdicts(sessionId)` 재조회
+6. **iframe 메시지** → `event:emitted` 수신 시 해당 event_key의 노드를 즉시 `"active"`로 하이라이트 (WS 도착 전 피드백)
 
 ## 제약 조건
 

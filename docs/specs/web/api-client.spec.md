@@ -36,8 +36,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T>;
 | `getTraceRecords(traceId, cursor?, limit?)` | GET | `/v1/traces/:id/records` | `TraceRecordsPage` |
 | `getTraceGraph(traceId)` | GET | `/v1/traces/:id/graph` | `RuntimeGraph` |
 | `getTraceVerdicts(traceId)` | GET | `/v1/traces/:id/verdicts` | `VerdictList` |
+| `getSessionRecords(sessionId)` | GET | `/v1/sessions/:id/records` (cursor 기반 페이지네이션) | `StoredRecord[]` |
 | `getSessionVerdicts(sessionId)` | GET | `/v1/sessions/:id/verdicts` | `VerdictList` |
 | `recomputeVerdicts(traceId)` | POST | `/v1/traces/:id/verdicts/recompute` | `{ recomputed }` |
+
+### getSessionRecords
+
+cursor 기반 페이지네이션으로 세션의 모든 레코드를 수집한다. `limit=200`으로 요청하며 `next_cursor`가 없거나 누적 레코드가 1,000개를 초과하면 중단한다. snake_case REST 응답을 `StoredRecord` (camelCase)로 변환한다.
 
 ### 보조 타입
 

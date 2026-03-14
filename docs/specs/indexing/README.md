@@ -19,7 +19,8 @@
 │  │  WeightedIndex  — 순수 수학 엔진 (shape → id ↔ coords)│  │
 │  ├────────────────────────────────────────────────────────┤  │
 │  │  독립 유틸 (인스턴스 불필요)                             │  │
-│  │  calc · bitmask · obfuscate · uuid-layout · pack-format│  │
+│  │  calc · bitmask · obfuscate · uuid-layout              │  │
+│  │  pack-format · semantic-address                        │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -53,13 +54,15 @@ shape 설계                  포맷 적합성                런타임 인코�
 ──────────────              ──────────────             ──────────────
 dim 정의                    PackFormat 선택            encode(coords)
   ↓                           ↓                         ↓
-shape 배열 확정              fitLayout()               VersionedIndex
-  ↓                           ↓                         ↓
-WeightedIndex 생성           shape 축소 추천            serialize → DB
-                              ↓
-                           planLayout()
-                              ↓
-                           UUID/hex 레이아웃 확정
+shape 배열 확정              fitLayout()               SemanticAddress
+  ↓                           ↓                    { schema, version, index }
+WeightedIndex 생성           shape 축소 추천               ↓
+                              ↓                     프로토콜 선택
+                           planLayout()                   ↓
+                              ↓               ┌──── colon: "perm:v1:42"
+                           레이아웃 확정       ├──── uri:   "wi://perm/v1/42"
+                                              ├──── compact: "perm-v1-42"
+                                              └──── hex container (UUID 등)
 ```
 
 ### 포맷 적합성이 분리된 이유

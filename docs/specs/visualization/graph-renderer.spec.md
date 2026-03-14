@@ -23,6 +23,7 @@ interface PositionedNode {
   event_key: string;
   kind: string;       // StepKind
   required: boolean;
+  role: GraphRole | undefined;  // event-catalog의 graph_hint.role
   x: number;
   y: number;
   width: number;
@@ -69,6 +70,7 @@ function computeLayout(graph: SpecGraph): LayoutResult;
 ```typescript
 interface GraphRenderer {
   render(): void;
+  resetState(): void;
   updateNodeState(stepId: string, state: NodeState): void;
   addEventToStack(stepId: string, event: { event_key: string; timestamp: string }): void;
   highlightEdge(source: string, target: string): void;
@@ -109,11 +111,12 @@ function createGraphSvg(container: HTMLElement, layout: LayoutResult): GraphRend
 
 ### 동작
 
-1. `render()` — container를 비우고 SVG를 새로 생성. 엣지 → 노드 순서로 렌더링. 첫 번째 노드를 `"active"` 상태로 표시.
-2. `updateNodeState(stepId, state)` — 해당 노드 `<g>`의 CSS 클래스를 `getNodeClass(role, state)` 결과로 교체.
-3. `addEventToStack(stepId, event)` — 해당 노드의 이벤트 스택에 추가하고 뱃지 카운트 갱신. 99+이면 "99+" 표시.
-4. `highlightEdge(source, target)` — 해당 엣지 `<g>`에 `edge-highlighted` 클래스 추가.
-5. `destroy()` — SVG 제거, 내부 Map 초기화.
+1. `render()` — container를 비우고 SVG를 새로 생성. 엣지 → 노드 순서로 렌더링.
+2. `resetState()` — 모든 노드를 `"pending"` 상태로 초기화하고, 엣지 하이라이트(`edge-highlighted`) 제거, 이벤트 스택 및 뱃지 초기화. 세션 전환 시 호출된다.
+3. `updateNodeState(stepId, state)` — 해당 노드 `<g>`의 CSS 클래스를 `getNodeClass(role, state)` 결과로 교체. role은 `nodeRoles` 맵에 저장되어 있어 state 변경 시에도 자동 재적용된다.
+4. `addEventToStack(stepId, event)` — 해당 노드의 이벤트 스택에 추가하고 뱃지 카운트 갱신. 99+이면 "99+" 표시.
+5. `highlightEdge(source, target)` — 해당 엣지 `<g>`에 `edge-highlighted` 클래스 추가.
+6. `destroy()` — SVG 제거, 내부 Map 초기화.
 
 ## 3. 스타일 매핑 (style.ts)
 
@@ -189,6 +192,6 @@ pending ──(다음 대기 노드)──→ active
 
 - dagre의 `rankdir`은 `"TB"` 고정이다. 가로 레이아웃은 지원하지 않는다.
 - SVG 네임스페이스(`http://www.w3.org/2000/svg`)를 사용하여 요소를 생성한다. `innerHTML` 기반 SVG 생성은 사용하지 않는다.
-- `updateNodeState()`는 role 정보 없이 state만 갱신한다. role은 초기 렌더 시점에만 반영된다.
+- `updateNodeState()`는 `nodeRoles` 맵에 저장된 role을 함께 적용한다. role은 `render()` 시점에 `nodeRoles`에 저장되며, 이후 state가 변경되어도 일관되게 재적용된다.
 - 이벤트 스택 뱃지는 노드 `<g>` 내부에 렌더링되며, 최대 표시값은 "99+"이다.
 - updater는 순차 매칭만 수행한다. SpecGraph의 edge 구조(branch, optional)를 따르는 고급 매칭은 서버 측 `matchGraphs()`에 위임한다.

@@ -106,8 +106,11 @@ DOM 트리 모델 기반 비주얼 폼 빌더, QA 이벤트 발생.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [monitor.spec.md](browser/monitor.spec.md) | QaMonitor + BeaconTransport + AutoCapture + SessionManager | @qa-sdk/browser | implemented |
+| [monitor.spec.md](browser/monitor.spec.md) | QaMonitor API, 초기화 순서, 고정 파라미터, 오류 처리 | @qa-sdk/browser | implemented |
 | [lifecycle.spec.md](browser/lifecycle.spec.md) | 표준 생명주기 — 상태 전환 규칙, 각 단계 계약, 사용 패턴 | @qa-sdk/browser | implemented |
+| [session.spec.md](browser/session.spec.md) | SessionManager — 저장 스키마, 복원 로직, 탭 생명주기, 키 격리 | @qa-sdk/browser | implemented |
+| [transport.spec.md](browser/transport.spec.md) | BeaconTransport — sendBeacon/fetch 전송 체인, 에러 시맨틱 | @qa-sdk/browser | implemented |
+| [auto-capture.spec.md](browser/auto-capture.spec.md) | AutoCapture — 수집 모드별 계약, payload 스키마, cleanup 프로토콜 | @qa-sdk/browser | implemented |
 
 ### web/ — 웹 공통 인프라
 
