@@ -8,6 +8,7 @@ export interface SessionListEntry {
 export interface SessionList {
   addOrUpdate(entry: Omit<SessionListEntry, "recordCount">): void;
   incrementRecordCount(sessionId: string): void;
+  setRecordCount(sessionId: string, count: number): void;
   setSelected(sessionId: string): void;
   onSelect(handler: (sessionId: string) => void): void;
   clear(): void;
@@ -113,6 +114,18 @@ export function createSessionList(container: HTMLElement): SessionList {
       if (li) {
         const countSpan = li.querySelector<HTMLSpanElement>(".session-item-count");
         if (countSpan) countSpan.textContent = String(entry.recordCount);
+      }
+    },
+
+    setRecordCount(sessionId, count) {
+      const entry = entries.get(sessionId);
+      if (!entry) return;
+      entry.recordCount = count;
+      entries.set(sessionId, entry);
+      const li = itemEls.get(sessionId);
+      if (li) {
+        const countSpan = li.querySelector<HTMLSpanElement>(".session-item-count");
+        if (countSpan) countSpan.textContent = String(count);
       }
     },
 

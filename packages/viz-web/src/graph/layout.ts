@@ -1,11 +1,14 @@
 import dagre from "dagre";
 import type { SpecGraph, SpecEdge } from "@qa-sdk/core";
+import { getCoreEvent } from "@qa-sdk/event-catalog";
+import type { GraphRole } from "@qa-sdk/event-catalog";
 
 export interface PositionedNode {
   step_id: string;
   event_key: string;
   kind: string;
   required: boolean;
+  role: GraphRole | undefined;
   x: number;
   y: number;
   width: number;
@@ -50,6 +53,7 @@ export function computeLayout(graph: SpecGraph): LayoutResult {
   for (const node of graph.nodes) {
     const width = computeNodeWidth(node.event_key);
     const height = NODE_HEIGHT + NODE_PADDING_Y;
+    const role = getCoreEvent(node.event_key)?.graph_hint?.role as GraphRole | undefined;
     g.setNode(node.step_id, {
       label: node.event_key,
       width,
@@ -58,6 +62,7 @@ export function computeLayout(graph: SpecGraph): LayoutResult {
       event_key: node.event_key,
       kind: node.kind,
       required: node.required,
+      role,
     });
   }
 
@@ -73,12 +78,14 @@ export function computeLayout(graph: SpecGraph): LayoutResult {
       event_key: string;
       kind: string;
       required: boolean;
+      role: GraphRole | undefined;
     };
     return {
       step_id: n.step_id,
       event_key: n.event_key,
       kind: n.kind,
       required: n.required,
+      role: n.role,
       x: n.x,
       y: n.y,
       width: n.width,

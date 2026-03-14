@@ -4,7 +4,8 @@ import { isChildMessage } from "./message-protocol";
 
 export interface RoleplayHost {
   sendContext(ctx: { traceId: string; sessionId: string; scenarioId: string }): void;
-  onEvent(handler: (msg: ChildMessage) => void): void;
+  /** Register a handler. Returns an unsubscribe function. */
+  onEvent(handler: (msg: ChildMessage) => void): () => void;
   destroy(): void;
 }
 
@@ -46,11 +47,32 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
     toggleBtn.textContent = collapsed ? "Expand" : "Collapse";
   });
 
-  const eventHandlers: Array<(msg: ChildMessage) => void> = [];
+  // Last known context — re-sent whenever iframe signals ready
+  let lastCtx: { traceId: string; sessionId: string; scenarioId: string } | null = null;
+
+  const eventHandlers = new Set<(msg: ChildMessage) => void>();
+
+  function postContext(ctx: { traceId: string; sessionId: string; scenarioId: string }): void {
+    if (!iframe.contentWindow) return;
+    const msg: ParentMessage = {
+      type: "context",
+      traceId: ctx.traceId,
+      sessionId: ctx.sessionId,
+      scenarioId: ctx.scenarioId,
+    };
+    iframe.contentWindow.postMessage(msg, ROLEPLAY_WEB_URL);
+  }
 
   function handleMessage(event: MessageEvent): void {
     if (event.origin !== new URL(ROLEPLAY_WEB_URL).origin) return;
     if (!isChildMessage(event.data)) return;
+
+    if (event.data.type === "ready") {
+      // iframe just loaded or HMR-reloaded — re-send current context
+      if (lastCtx) postContext(lastCtx);
+      return;
+    }
+
     for (const handler of eventHandlers) {
       handler(event.data);
     }
@@ -60,22 +82,18 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
 
   return {
     sendContext(ctx) {
-      if (!iframe.contentWindow) return;
-      const msg: ParentMessage = {
-        type: "context",
-        traceId: ctx.traceId,
-        sessionId: ctx.sessionId,
-        scenarioId: ctx.scenarioId,
-      };
-      iframe.contentWindow.postMessage(msg, ROLEPLAY_WEB_URL);
+      lastCtx = ctx;
+      postContext(ctx);
     },
 
     onEvent(handler) {
-      eventHandlers.push(handler);
+      eventHandlers.add(handler);
+      return () => { eventHandlers.delete(handler); };
     },
 
     destroy() {
       window.removeEventListener("message", handleMessage);
+      eventHandlers.clear();
       if (wrapper.parentElement) {
         wrapper.parentElement.removeChild(wrapper);
       }
