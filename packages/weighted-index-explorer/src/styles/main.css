@@ -2676,3 +2676,324 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
   cursor: pointer;
   border: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   레이아웃 플래너 (layout-planner)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.plan-section {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-cell);
+}
+.plan-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* ── 개별 차원 행 ── */
+.plan-dim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.plan-dim-row .plan-dim-name { width: 100px; }
+.plan-dim-row .plan-dim-size { flex: 1; min-width: 80px; }
+.plan-dim-idx {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 36px;
+  font-family: monospace;
+}
+.plan-dim-remove {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-cell);
+  border-radius: 3px;
+  background: var(--surface-0);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.plan-dim-remove:hover {
+  background: #fde9e9;
+  color: #922b21;
+  border-color: #e5a5a5;
+}
+.plan-add-btn {
+  margin-top: 6px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px dashed var(--border-cell);
+  border-radius: 3px;
+  background: var(--surface-0);
+  color: var(--xl-green-dark);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.plan-add-btn:hover {
+  background: var(--xl-green-faint);
+  border-color: var(--xl-green);
+}
+
+/* ── 버전 범위 테이블 ── */
+.plan-ver-range-wrap {
+  margin-top: 4px;
+  padding: 8px 0 0;
+}
+.plan-ver-range-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+.plan-ver-range-table { font-size: 0.72rem; }
+.plan-ver-current td {
+  background: var(--xl-green-faint) !important;
+  border-color: #b8d8c4;
+}
+.plan-ver-current td:first-child {
+  border-left: 3px solid var(--xl-green);
+  font-weight: 700;
+}
+
+/* ── 확장 추천 카드 ── */
+.plan-rec {
+  border: 1px solid #b8d8c4;
+  border-radius: 4px;
+  background: var(--xl-green-faint);
+  overflow: hidden;
+}
+.plan-rec-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--xl-green-dark);
+}
+.plan-rec-icon {
+  font-size: 1rem;
+  color: var(--xl-green);
+}
+.plan-rec-body {
+  padding: 0 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.plan-rec-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.72rem;
+}
+.plan-rec-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 64px;
+  flex-shrink: 0;
+}
+.plan-rec-row code {
+  background: var(--surface-1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+}
+.plan-rec-ok { border-color: #b8d8c4; }
+.plan-rec-ok .plan-rec-icon { color: var(--xl-green); }
+.plan-rec-warn {
+  border-color: #fbbf24;
+  background: #fef3c7;
+}
+.plan-rec-warn .plan-rec-header { color: #92400e; }
+.plan-rec-warn .plan-rec-icon { color: #f59e0b; }
+
+/* ── 설정 복사 바 ── */
+.plan-config-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.plan-config-text {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: var(--text-cell);
+  user-select: all;
+}
+.pcfg-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #fff;
+}
+.pcfg-val {
+  font-weight: 600;
+  margin-right: 6px;
+}
+.pcfg-shape   { background: #6b7280; }
+.pcfg-prefix  { background: #1f497d; }
+.pcfg-ver     { background: #7f6000; }
+.plan-config-copy {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid var(--border-cell);
+  border-radius: 3px;
+  background: var(--surface-0);
+  color: var(--text-header);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.plan-config-copy:hover {
+  background: var(--xl-green-faint);
+  border-color: var(--xl-green);
+  color: var(--xl-green-dark);
+}
+
+/* ── 최적 shape 적용 버튼 ── */
+.plan-fit-apply {
+  padding: 2px 10px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  border: 1px solid var(--xl-green);
+  border-radius: 3px;
+  background: var(--xl-green-faint);
+  color: var(--xl-green-dark);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.plan-fit-apply:hover {
+  background: var(--xl-green-light);
+}
+
+/* ── Hex layout visualization component ── */
+.hex-layouts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hex-layout {
+  padding: 8px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.hex-layout-overflow {
+  opacity: 0.55;
+}
+.hex-layout-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+}
+.hex-layout-name {
+  font-weight: 700;
+  color: var(--text-header);
+}
+.hex-layout-cap {
+  color: var(--text-muted);
+  font-family: monospace;
+}
+.hex-layout-status {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+.hex-status-ok  { color: var(--xl-green); }
+.hex-status-fail { color: var(--status-fail, #dc2626); }
+
+/* ── Hex cell bar ── */
+.hex-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: wrap;
+}
+.hex-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 22px;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid var(--border-cell);
+  background: var(--surface-0);
+  color: var(--text-cell);
+  transition: background 0.12s;
+}
+.hex-cell-sep { margin-left: 3px; }
+.hex-cell-prefix  { background: #dce6f1; color: #1f497d; border-color: #b4c7dc; }
+.hex-cell-version { background: #fff2cc; color: #7f6000; border-color: #f0d88c; }
+.hex-cell-index   { background: var(--xl-green-light); color: var(--xl-green-dark); border-color: #b8d8c4; }
+.hex-cell-gap     { background: #f7f7f7; color: #ccc; border-color: #e8e8e8; }
+
+/* ── Field labels below the bar ── */
+.hex-labels {
+  display: flex;
+  margin-top: 3px;
+  gap: 3px;
+}
+.hex-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 2px 0;
+  border-top: 2px solid var(--border-cell);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hex-label-prefix  { border-color: #1f497d; color: #1f497d; }
+.hex-label-version { border-color: #7f6000; color: #7f6000; }
+.hex-label-index   { border-color: var(--xl-green); color: var(--xl-green-dark); }
+.hex-label-gap     { border-color: #ddd; color: #bbb; }
+
+/* ── UUID formatted string ── */
+.hex-layout-uuid-str {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.hex-layout-uuid-str code {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--xl-green-dark);
+  letter-spacing: 0.04em;
+}

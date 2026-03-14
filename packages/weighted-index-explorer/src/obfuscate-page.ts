@@ -14,9 +14,6 @@ import {
   toNanoId,
   toStructuredUUID,
   fromHex,
-  charsForMax,
-  planLayout,
-  packUUID,
 } from "weighted-index";
 
 // ── 탐색기와 동일한 권한 모델 ──────────────────────────────────────────────
@@ -72,11 +69,9 @@ export function renderObfuscatePage(container: HTMLElement): void {
     ${renderDemo()}
     ${renderTransformRef()}
     ${renderSerializationRef()}
-    ${renderLayoutPlanner()}
     ${renderKeyManagement()}
   </div>`;
   setupInteractivity(container);
-  setupPlannerInteractivity(container);
 }
 
 // ── 1. 소개 ──────────────────────────────────────────────────────────────
@@ -538,157 +533,7 @@ fromStructuredUUID("${tokenA}", [4, 8, ${BIT_WIDTH}])
   `;
 }
 
-// ── 5. 레이아웃 플래너 ────────────────────────────────────────────────────
-
-function renderLayoutPlanner(): string {
-  return `
-    <div class="concept-block">
-      <div class="cb-header">레이아웃 플래너 — 제약 조건 기반 pack 설계</div>
-      <div class="cb-body">
-        <p class="concept-desc" style="margin-bottom:14px">
-          차원 shape, prefix 길이, 버전 최댓값을 입력하면
-          필요한 hex 자릿수를 자동 계산하고 UUID에 들어가는지 확인합니다.
-        </p>
-
-        <!-- 입력 -->
-        <div class="obf-input-row">
-          <span class="obf-label">shape</span>
-          <input type="text" id="plan-shape" class="addr-dec-input" value="8, 4, 5, 4" style="width:160px" placeholder="8, 4, 5, 4" />
-          <span class="obf-param-hint" id="plan-size-hint">size = 640</span>
-        </div>
-        <div class="obf-input-row">
-          <span class="obf-label">prefix</span>
-          <input type="number" id="plan-prefix-chars" class="addr-dec-input" min="0" max="16" value="4" style="width:55px" />
-          <span class="obf-param-hint">hex chars (고정)</span>
-        </div>
-        <div class="obf-input-row">
-          <span class="obf-label">version 최댓값</span>
-          <input type="number" id="plan-ver-max" class="addr-dec-input" min="0" max="65535" value="15" style="width:70px" />
-          <span class="obf-param-hint" id="plan-ver-hint">→ 1자리</span>
-        </div>
-
-        <!-- 결과 -->
-        <div id="plan-result" style="margin-top:14px"></div>
-      </div>
-    </div>
-  `;
-}
-
-function setupPlannerInteractivity(container: HTMLElement): void {
-  const shapeInput      = container.querySelector<HTMLInputElement>("#plan-shape");
-  const prefixCharsIn   = container.querySelector<HTMLInputElement>("#plan-prefix-chars");
-  const verMaxIn        = container.querySelector<HTMLInputElement>("#plan-ver-max");
-  const sizeHint        = container.querySelector<HTMLElement>("#plan-size-hint");
-  const verHint         = container.querySelector<HTMLElement>("#plan-ver-hint");
-  const resultEl        = container.querySelector<HTMLElement>("#plan-result");
-
-  if (!shapeInput || !prefixCharsIn || !verMaxIn || !resultEl) return;
-
-  function updatePlanner(): void {
-    // Parse shape
-    const shapeParts = (shapeInput!.value || "").split(",").map(s => parseInt(s.trim(), 10)).filter(n => n > 0);
-    const size = shapeParts.length > 0 ? shapeParts.reduce((a, b) => a * b, 1) : 0;
-    const prefixChars = Math.max(0, Math.min(16, Number(prefixCharsIn!.value) || 0));
-    const verMax = Math.max(0, Number(verMaxIn!.value) || 0);
-
-    if (sizeHint) sizeHint.textContent = size > 0 ? `size = ${size.toLocaleString()}` : "shape 입력 필요";
-    const verChars = charsForMax(verMax);
-    if (verHint) verHint.textContent = `→ ${verChars}자리`;
-
-    if (size <= 0) {
-      resultEl!.innerHTML = `<span class="obf-param-hint">유효한 shape을 입력하세요</span>`;
-      return;
-    }
-
-    const indexMax = size - 1;
-    const plan = planLayout({
-      left:  [
-        { name: "prefix",  chars: prefixChars },
-        { name: "version", maxValue: verMax },
-      ],
-      right: [{ name: "index", maxValue: indexMax }],
-    });
-
-    const indexChars = plan.fields.find(f => f.name === "index")!.chars;
-
-    // Example pack
-    let exampleUUID = "";
-    let exampleCompact = "";
-    if (plan.layout) {
-      exampleUUID = packUUID(plan.layout, { prefix: 1, version: 1, index: 42 });
-    }
-    exampleCompact = `${plan.totalChars}자리 hex (dash 포함 ${plan.totalChars + Math.floor((plan.totalChars - 1) / 4)}자)`;
-
-    const statusColor = plan.fitsUUID ? "var(--xl-green)" : "var(--status-fail, #dc2626)";
-    const statusIcon  = plan.fitsUUID ? "✓" : "✗";
-    const statusText  = plan.fitsUUID
-      ? `UUID 가능 — ${plan.gap}자리 여유`
-      : `UUID 초과 — ${plan.totalChars - 32}자리 부족`;
-
-    resultEl!.innerHTML = `
-      <table class="nd-table" style="margin-bottom:12px">
-        <thead><tr><th>필드</th><th>위치</th><th>hex 자릿수</th><th>최댓값</th><th>비트</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>prefix</strong></td>
-            <td>← left</td>
-            <td>${prefixChars}</td>
-            <td>0x${"f".repeat(prefixChars)}</td>
-            <td>${prefixChars * 4}</td>
-          </tr>
-          <tr>
-            <td><strong>version</strong></td>
-            <td>← left</td>
-            <td>${verChars}</td>
-            <td>${verMax} (0x${verMax.toString(16)})</td>
-            <td>${verChars * 4}</td>
-          </tr>
-          <tr>
-            <td><strong>index</strong></td>
-            <td>right →</td>
-            <td>${indexChars}</td>
-            <td>${indexMax.toLocaleString()} (0x${indexMax.toString(16)})</td>
-            <td>${indexChars * 4}</td>
-          </tr>
-          <tr style="font-weight:700;border-top:2px solid var(--border-header)">
-            <td>합계</td>
-            <td></td>
-            <td>${plan.totalChars}</td>
-            <td></td>
-            <td>${plan.totalChars * 4}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="display:flex;gap:14px;flex-wrap:wrap">
-        <div class="obf-roundtrip" style="flex:1;min-width:200px">
-          <span class="obf-rt-label" style="color:${statusColor}">${statusIcon} UUID (32자)</span>
-          <span>${statusText}</span>
-        </div>
-        <div class="obf-roundtrip" style="flex:1;min-width:200px">
-          <span class="obf-rt-label">최소 pack</span>
-          <span>${exampleCompact}</span>
-        </div>
-      </div>
-
-      ${plan.layout ? `
-        <div class="addr-code-block" style="margin-top:12px">
-          <div class="addr-code-label">UUID 레이아웃 예시 — prefix=1, version=1, index=42</div>
-          <pre class="buf-code">${exampleUUID}
-${"├" + "─".repeat(prefixChars - 1) + "┤"}${"├" + "─".repeat(verChars > 1 ? verChars - 1 : 0) + "┤"}${" ".repeat(Math.max(0, 36 - prefixChars - verChars - indexChars - 4))}${"├" + "─".repeat(indexChars - 1) + "┤"}
- prefix  ver${" ".repeat(Math.max(1, 36 - prefixChars - verChars - indexChars - 12))}index</pre>
-        </div>
-      ` : ""}
-    `;
-  }
-
-  shapeInput.addEventListener("input", updatePlanner);
-  prefixCharsIn.addEventListener("input", updatePlanner);
-  verMaxIn.addEventListener("input", updatePlanner);
-  updatePlanner();
-}
-
-// ── 6. 복호화 방법 관리 ───────────────────────────────────────────────────
+// ── 5. 복호화 방법 관리 ───────────────────────────────────────────────────
 
 function renderKeyManagement(): string {
   return `

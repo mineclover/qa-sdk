@@ -11,12 +11,13 @@ import { renderAddress } from "./address.js";
 import { renderVersion } from "./version.js";
 import { renderFilter } from "./filter.js";
 import { renderObfuscatePage } from "./obfuscate-page.js";
+import { renderLayoutPlanner } from "./layout-planner.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter" | "obfuscate";
+type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter" | "obfuscate" | "layout";
 type ViewMode = "grid" | "list";
 
 interface AppState {
@@ -68,11 +69,33 @@ const xAxisBtns     = document.getElementById("x-axis-btns")!;
 const yAxisBtns     = document.getElementById("y-axis-btns")!;
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  Route ↔ Sheet mapping
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SHEET_IDS: readonly SheetId[] = [
+  "explorer", "concept", "philosophy", "address", "version", "filter", "obfuscate", "layout",
+] as const;
+
+function sheetFromPath(pathname: string): SheetId {
+  const seg = pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
+  return SHEET_IDS.includes(seg as SheetId) ? (seg as SheetId) : "explorer";
+}
+
+function pathForSheet(id: SheetId): string {
+  return id === "explorer" ? "/" : `/${id}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  Sheet navigation
 // ═══════════════════════════════════════════════════════════════════════════
 
-function switchSheet(id: SheetId): void {
+function switchSheet(id: SheetId, pushState = true): void {
   state.sheet = id;
+
+  if (pushState) {
+    const target = pathForSheet(id);
+    if (location.pathname !== target) history.pushState({ sheet: id }, "", target);
+  }
 
   document.querySelectorAll(".sheet").forEach((el) => el.classList.add("hidden"));
   document.getElementById(`sheet-${id}`)?.classList.remove("hidden");
@@ -109,6 +132,10 @@ function switchSheet(id: SheetId): void {
     const el = document.getElementById("concept-obfuscate")!;
     if (!el.dataset.rendered) { renderObfuscatePage(el); el.dataset.rendered = "1"; }
   }
+  if (id === "layout") {
+    const el = document.getElementById("concept-layout")!;
+    if (!el.dataset.rendered) { renderLayoutPlanner(el); el.dataset.rendered = "1"; }
+  }
 
   if (!isExplorer) {
     nameBox.textContent = "—";
@@ -123,6 +150,10 @@ document.querySelectorAll(".rtab, .stab").forEach((el) => {
     const id = (el as HTMLElement).dataset.sheet as SheetId;
     if (id) switchSheet(id);
   });
+});
+
+window.addEventListener("popstate", () => {
+  switchSheet(sheetFromPath(location.pathname), false);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -422,6 +453,15 @@ document.querySelectorAll<HTMLButtonElement>(".tcb-btn").forEach((btn) => {
 // ═══════════════════════════════════════════════════════════════════════════
 //  Init
 // ═══════════════════════════════════════════════════════════════════════════
+
+// Route-based initial sheet selection
+const initialSheet = sheetFromPath(location.pathname);
+if (initialSheet !== "explorer") {
+  switchSheet(initialSheet, false);
+} else {
+  // Replace current history entry so "/" has sheet state too
+  history.replaceState({ sheet: "explorer" }, "", location.pathname);
+}
 
 repaintGrid();
 updateFormulaBar(null);
