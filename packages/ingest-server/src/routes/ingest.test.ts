@@ -257,3 +257,75 @@ describe("POST /v1/ingest", () => {
     });
   });
 });
+
+describe("POST /v1/ingest — actor context 전파", () => {
+  const actor = {
+    actor_id: "usr_token_abc",
+    user_id: "kim@example.com",
+    user_attributes: { age_group: "30s", tier: "premium" },
+  } as const;
+
+  async function ingest(app: ReturnType<typeof buildApp>["app"], envelope: TransmissionEnvelope) {
+    return app.request("/v1/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+  }
+
+  it("레코드의 actor_id가 StoredRecord에 저장된다", async () => {
+    const { app, deps } = buildApp();
+
+    await ingest(app, buildEnvelope({
+      records: [buildRecord({ actor_id: actor.actor_id, user_id: actor.user_id, user_attributes: actor.user_attributes })],
+    }));
+
+    const records = await deps.recordStore.findByTraceId("trc_001");
+    expect(records).toHaveLength(1);
+    expect(records[0]?.actorId).toBe(actor.actor_id);
+    expect(records[0]?.userId).toBe(actor.user_id);
+    expect(records[0]?.userAttributes).toEqual(actor.user_attributes);
+  });
+
+  it("레코드의 actor_id가 StoredTrace로 전파된다", async () => {
+    const { app, deps } = buildApp();
+
+    await ingest(app, buildEnvelope({
+      records: [buildRecord({ actor_id: actor.actor_id, user_id: actor.user_id, user_attributes: actor.user_attributes })],
+    }));
+
+    const trace = await deps.traceStore.findById("trc_001");
+    expect(trace?.actorId).toBe(actor.actor_id);
+    expect(trace?.userId).toBe(actor.user_id);
+    expect(trace?.userAttributes).toEqual(actor.user_attributes);
+  });
+
+  it("레코드의 actor_id가 StoredSession으로 전파된다", async () => {
+    const { app, deps } = buildApp();
+
+    await ingest(app, buildEnvelope({
+      records: [buildRecord({
+        qa_session_id: "qas_001",
+        actor_id: actor.actor_id,
+        user_id: actor.user_id,
+        user_attributes: actor.user_attributes,
+      })],
+    }));
+
+    const session = await deps.sessionStore.findById("qas_001");
+    expect(session?.actorId).toBe(actor.actor_id);
+    expect(session?.userId).toBe(actor.user_id);
+    expect(session?.userAttributes).toEqual(actor.user_attributes);
+  });
+
+  it("actor 없는 레코드는 trace.actorId가 null이다", async () => {
+    const { app, deps } = buildApp();
+
+    await ingest(app, buildEnvelope());
+
+    const trace = await deps.traceStore.findById("trc_001");
+    expect(trace?.actorId).toBeNull();
+    expect(trace?.userId).toBeNull();
+    expect(trace?.userAttributes).toBeNull();
+  });
+});

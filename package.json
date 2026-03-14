@@ -12,6 +12,9 @@
     "dev:roleplay": "pnpm --filter @qa-sdk/roleplay-web dev",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
+  },
   "devDependencies": {
     "vitest": "^1.6.1"
   }

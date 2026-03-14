@@ -2,22 +2,23 @@ import {
   ALL_DIMS, getVersion,
   type CellData, type DimKey,
 } from "./data.js";
-import { renderGrid, updateCellSelection, type ColorMode, type GridState } from "./grid.js";
-import { renderDetail } from "./detail.js";
-import { renderConceptAll } from "./concept.js";
-import { renderList } from "./list.js";
-import { renderPhilosophy } from "./philosophy.js";
-import { renderAddress } from "./address.js";
-import { renderVersion } from "./version.js";
-import { renderFilter } from "./filter.js";
-import { renderObfuscatePage } from "./obfuscate-page.js";
-import { renderLayoutPlanner } from "./layout-planner.js";
+import { renderGrid, updateCellSelection, type ColorMode, type GridState } from "./ui/grid.js";
+import { renderDetail } from "./ui/detail.js";
+import { renderList } from "./ui/list.js";
+import { renderConceptAll } from "./pages/concept.js";
+import { renderPhilosophy } from "./pages/philosophy.js";
+import { renderAddress } from "./pages/address.js";
+import { renderVersion } from "./pages/version.js";
+import { renderFilter } from "./pages/filter.js";
+import { renderObfuscatePage } from "./pages/obfuscate.js";
+import { renderLayoutPlanner } from "./pages/layout-planner.js";
+import { renderMultiIndex } from "./pages/multi-index.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter" | "obfuscate" | "layout";
+type SheetId  = "explorer" | "concept" | "philosophy" | "address" | "version" | "filter" | "obfuscate" | "layout" | "multi";
 type ViewMode = "grid" | "list";
 
 interface AppState {
@@ -73,7 +74,7 @@ const yAxisBtns     = document.getElementById("y-axis-btns")!;
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SHEET_IDS: readonly SheetId[] = [
-  "explorer", "concept", "philosophy", "address", "version", "filter", "obfuscate", "layout",
+  "explorer", "concept", "philosophy", "address", "version", "filter", "obfuscate", "layout", "multi",
 ] as const;
 
 function sheetFromPath(pathname: string): SheetId {
@@ -135,6 +136,10 @@ function switchSheet(id: SheetId, pushState = true): void {
   if (id === "layout") {
     const el = document.getElementById("concept-layout")!;
     if (!el.dataset.rendered) { renderLayoutPlanner(el); el.dataset.rendered = "1"; }
+  }
+  if (id === "multi") {
+    const el = document.getElementById("concept-multi")!;
+    if (!el.dataset.rendered) { renderMultiIndex(el); el.dataset.rendered = "1"; }
   }
 
   if (!isExplorer) {

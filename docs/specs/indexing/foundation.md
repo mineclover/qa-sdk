@@ -4,8 +4,8 @@
 > 사용 패턴은 [`patterns.md`](patterns.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
 
 관련 스펙:
-- [`weighted-index.spec.md`](weighted-index.spec.md)
-- [`index-meta.spec.md`](index-meta.spec.md)
+- [`weighted-index/`](weighted-index/README.md)
+- [`index-meta/`](index-meta/README.md)
 
 ---
 

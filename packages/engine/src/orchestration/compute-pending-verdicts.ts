@@ -3,12 +3,15 @@ import type {
   GraphStore,
   ScenarioSpecStore,
   SessionStore,
+  StepConstraint,
   TraceStore,
   VerdictInsert,
+  VerdictReport,
   VerdictStore,
 } from "@qa-sdk/core";
-import { newDlqId, newVerdictId } from "@qa-sdk/core";
+import { newDlqId, newVerdictId, now } from "@qa-sdk/core";
 import { compileSpec } from "../spec-compiler/compile.js";
+import { evaluateConstraint } from "../matching/constraint-evaluator.js";
 import { matchGraphs } from "../matching/graph-matcher.js";
 import { computeVerdict } from "../verdict/compute.js";
 
@@ -129,6 +132,47 @@ export async function computeTraceVerdict(
   }
 
   const specGraph = compileSpec(scenarioSpec);
+
+  // entry_conditions 평가: 조건 미충족 시 "skipped" verdict를 저장하고 종료
+  if (specGraph.entry_conditions && specGraph.entry_conditions.length > 0) {
+    const sortedNodes = [...graph.nodes].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+    const firstNode = sortedNodes[0] ?? null;
+    const conditionsMet =
+      firstNode !== null &&
+      specGraph.entry_conditions.every((cond) =>
+        evaluateConstraint(cond as StepConstraint, firstNode),
+      );
+
+    if (!conditionsMet) {
+      const skippedReport: VerdictReport = {
+        scenario_id: scenarioSpec.scenario_id,
+        trace_id: traceId,
+        qa_session_id: session.sessionId,
+        overall_verdict: "skipped",
+        step_matches: [],
+        missing_steps: specGraph.nodes.map((n) => n.step_id),
+        unexpected_nodes: [],
+        latency_violations: [],
+        ordering_violations: [],
+        summary: "verdict=skipped, entry_conditions not met",
+        computed_at: now(),
+      };
+
+      await deps.verdictStore.insert({
+        id: newVerdictId(),
+        scenarioId: scenarioSpec.scenario_id,
+        traceId,
+        qaSessionId: session.sessionId,
+        overallVerdict: "skipped",
+        report: skippedReport,
+      });
+
+      return { status: "computed", traceId, scenarioId: scenarioSpec.scenario_id };
+    }
+  }
+
   const matchResult = matchGraphs(specGraph, graph);
   const report = computeVerdict(matchResult, specGraph, graph, session.sessionId);
 

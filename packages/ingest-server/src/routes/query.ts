@@ -147,6 +147,10 @@ function toTraceResponse(trace: StoredTrace) {
   return {
     traceId: trace.traceId,
     sessionId: trace.sessionId,
+    serviceName: trace.serviceName,
+    actorId: trace.actorId,
+    userId: trace.userId,
+    userAttributes: trace.userAttributes,
     recordCount: trace.recordCount,
     firstTimestamp: toNullableIsoString(trace.firstTimestamp),
     lastTimestamp: toNullableIsoString(trace.lastTimestamp),
@@ -159,6 +163,9 @@ function toSessionResponse(session: StoredSession) {
     sessionId: session.sessionId,
     scenarioId: session.scenarioId,
     labels: session.labels,
+    actorId: session.actorId,
+    userId: session.userId,
+    userAttributes: session.userAttributes,
     startedAt: session.startedAt.toISOString(),
     closedAt: toNullableIsoString(session.closedAt),
   };

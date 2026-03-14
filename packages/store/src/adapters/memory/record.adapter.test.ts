@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RecordInsert } from "@qa-sdk/core";
 import { InMemoryRecordStore } from "./record.adapter.js";
+import { runRecordStoreContract } from "../record.adapter.contract.js";
+
+runRecordStoreContract(() => new InMemoryRecordStore());
 
 function buildRecord(overrides: Partial<RecordInsert> = {}): RecordInsert {
   return {

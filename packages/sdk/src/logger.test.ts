@@ -233,6 +233,88 @@ describe("QaLogger", () => {
   });
 });
 
+describe("QaLogger — actor context", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-12T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const actor = {
+    actor_id: "usr_token_abc",
+    user_id: "kim@example.com",
+    user_attributes: { age_group: "30s", tier: "premium" },
+  } as const;
+
+  it("config.actor 설정 시 모든 log 레코드에 actor 필드가 주입된다", () => {
+    const transport = new NoopTransport();
+    const logger = new QaLogger({
+      transport, owner, source, runtime, build,
+      flushIntervalMs: 0,
+      actor,
+    });
+    logger.startTrace();
+
+    const record = logger.log({ event_key: "page_view", event_version: "001" });
+
+    expect(record.actor_id).toBe(actor.actor_id);
+    expect(record.user_id).toBe(actor.user_id);
+    expect(record.user_attributes).toEqual(actor.user_attributes);
+  });
+
+  it("setActor() 호출 후 레코드에 actor 필드가 주입된다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+    logger.setActor(actor);
+
+    const record = logger.log({ event_key: "click", event_version: "001" });
+
+    expect(record.actor_id).toBe(actor.actor_id);
+    expect(record.user_id).toBe(actor.user_id);
+    expect(record.user_attributes).toEqual(actor.user_attributes);
+  });
+
+  it("clearActor() 호출 후 레코드에 actor 필드가 없다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+    logger.setActor(actor);
+    logger.clearActor();
+
+    const record = logger.log({ event_key: "click", event_version: "001" });
+
+    expect(record.actor_id).toBeUndefined();
+    expect(record.user_id).toBeUndefined();
+    expect(record.user_attributes).toBeUndefined();
+  });
+
+  it("span 레코드에도 actor 필드가 주입된다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+    logger.setActor(actor);
+
+    const span = logger.startSpan({ event_key: "checkout", event_version: "001", span_name: "Checkout" });
+    const record = span.end();
+
+    expect(record.actor_id).toBe(actor.actor_id);
+    expect(record.user_id).toBe(actor.user_id);
+  });
+
+  it("user_id 없이 actor_id만 설정해도 동작한다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+    logger.setActor({ actor_id: "bot-regression-01" });
+
+    const record = logger.log({ event_key: "synthetic_click", event_version: "001" });
+
+    expect(record.actor_id).toBe("bot-regression-01");
+    expect(record.user_id).toBeUndefined();
+    expect(record.user_attributes).toBeUndefined();
+  });
+});
+
 describe("QaLogger — error handling", () => {
   it("drops oldest record and calls onError when buffer reaches maxBufferSize", () => {
     const onError = vi.fn();

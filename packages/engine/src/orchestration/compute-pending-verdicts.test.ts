@@ -27,8 +27,8 @@ const SCENARIO: ScenarioSpec = {
 function makeTrace(traceId: string, sessionId?: string): StoredTrace {
   return {
     traceId,
-    sessionId,
-    serviceName: undefined,
+    sessionId: sessionId ?? null,
+    serviceName: null,
     recordCount: 1,
     firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
     lastTimestamp: new Date("2026-03-13T00:00:01.000Z"),
@@ -41,10 +41,26 @@ function makeTrace(traceId: string, sessionId?: string): StoredTrace {
 function makeSession(sessionId: string, scenarioId?: string): StoredSession {
   return {
     sessionId,
-    scenarioId,
-    labels: undefined,
+    scenarioId: scenarioId ?? null,
+    labels: null,
     startedAt: new Date("2026-03-13T00:00:00.000Z"),
-    closedAt: undefined,
+    closedAt: null,
+  };
+}
+
+function makeReport(overrides: Partial<import("@qa-sdk/core").VerdictReport> = {}): import("@qa-sdk/core").VerdictReport {
+  return {
+    scenario_id: "checkout-flow",
+    trace_id: "trc_001",
+    overall_verdict: "pass",
+    step_matches: [],
+    missing_steps: [],
+    unexpected_nodes: [],
+    latency_violations: [],
+    ordering_violations: [],
+    summary: "verdict=pass",
+    computed_at: "2026-03-13T00:00:00.000Z",
+    ...overrides,
   };
 }
 
@@ -195,7 +211,7 @@ describe("computePendingVerdicts", () => {
       traceId: "trc_001",
       qaSessionId: "qas_001",
       overallVerdict: "pass",
-      report: {},
+      report: makeReport(),
       computedAt: new Date(),
     };
     const deps = buildDeps({
@@ -218,7 +234,7 @@ describe("computePendingVerdicts", () => {
       traceId: "trc_001",
       qaSessionId: "qas_001",
       overallVerdict: "pass",
-      report: {},
+      report: makeReport(),
       computedAt: new Date(),
     };
     const deps = buildDeps({
@@ -325,5 +341,62 @@ describe("computeTraceVerdict", () => {
     if (result.status === "computed") {
       expect(result.scenarioId).toBe(SCENARIO.scenario_id);
     }
+  });
+
+  it("inserts skipped verdict when entry_conditions are not met", async () => {
+    const scenarioWithConditions: ScenarioSpec = {
+      ...SCENARIO,
+      entry_conditions: [{ field: "payload.environment", op: "eq", value: "production" }],
+    };
+    const deps = buildDeps({
+      trace: makeTrace("trc_001", "qas_001"),
+      session: makeSession("qas_001", scenarioWithConditions.scenario_id),
+      graph: makeGraph("trc_001"), // payload doesn't have environment=production
+      scenario: scenarioWithConditions,
+    });
+
+    const result = await computeTraceVerdict(deps, "trc_001");
+
+    expect(result.status).toBe("computed");
+    expect(deps.insertedVerdicts).toHaveLength(1);
+    expect(deps.insertedVerdicts[0]?.overallVerdict).toBe("skipped");
+    expect(deps.insertedVerdicts[0]?.report.overall_verdict).toBe("skipped");
+  });
+
+  it("proceeds with normal verdict when entry_conditions are met", async () => {
+    const scenarioWithConditions: ScenarioSpec = {
+      ...SCENARIO,
+      entry_conditions: [{ field: "payload.environment", op: "exists" }],
+    };
+    // makeGraph returns a node with payload={} → "exists" on payload.environment → false
+    // Use a custom graph where the first node has the required field
+    const graph: RuntimeGraph = reconstruct("trc_cond", [
+      {
+        log_id: "log_cond",
+        timestamp: "2026-03-13T00:00:00.000Z",
+        record_kind: "log",
+        trace_id: "trc_cond",
+        span_id: "spn_cond",
+        event_key: "page_view",
+        event_version: "1",
+        payload_format: "json",
+        payload_encoding: "raw",
+        payload_masking_applied: false,
+        payload_masked_fields: [],
+        payload: { environment: "staging" },
+      },
+    ]);
+    const deps = buildDeps({
+      trace: makeTrace("trc_cond", "qas_001"),
+      session: makeSession("qas_001", scenarioWithConditions.scenario_id),
+      graph,
+      scenario: scenarioWithConditions,
+    });
+
+    const result = await computeTraceVerdict(deps, "trc_cond");
+
+    expect(result.status).toBe("computed");
+    expect(deps.insertedVerdicts).toHaveLength(1);
+    expect(deps.insertedVerdicts[0]?.overallVerdict).not.toBe("skipped");
   });
 });

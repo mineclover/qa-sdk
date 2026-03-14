@@ -1,35 +1,46 @@
-import type { PackFormat } from "weighted-index";
+import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from "weighted-index";
 
 /**
- * index-meta 공개 타입 정의
+ * index-meta — 닫힌 패턴의 1차원 주소를 위한 DB 라이브러리 타입 정의
  *
- * ── 엔티티 계층 ──────────────────────────────────────────────────────────────
+ * ── 목적 ───────────────────────────────────────────────────────────────────
  *
- *  DimDef          : 차원 슬롯 정의 (kind 포함 — 들어오는 값의 형태를 선언)
- *  DimSnapshot     : 해당 차원의 특정 시점 값 목록 (entries + entryFlags)
- *  IndexDef        : 차원들의 순서 있는 조합 (= prefix 정의)
- *  IndexVersion    : IndexDef의 한 버전 스냅샷 — 각 차원의 어느 DimSnapshot을 사용하는지
+ * 닫힌 패턴(closed pattern)이란 각 차원의 가능한 값이 미리 열거된 유한 상태 공간이다.
+ * index-meta는 그 패턴의 스키마를 정의하고 버전으로 관리하며,
+ * 임의의 좌표를 "1차원 주소"(단일 정수)로 압축·복원하는 DB 레이어를 제공한다.
  *
- * ── DimKind ──────────────────────────────────────────────────────────────────
+ * VersionedValue { indexId, versionId, value } 가 곧 1차원 주소다.
+ * value는 WeightedIndex가 계산한 압축 정수이며, indexId + versionId가 있어야
+ * 어떤 패턴 스키마로 압축된 값인지 알 수 있어 완전한 복원이 가능하다.
  *
- *  string_enum  : entries가 string[]. 값 자체가 identity.
- *                 예) ["admin", "editor", "viewer"]
+ * ── 엔티티 계층 ─────────────────────────────────────────────────────────────
  *
- *  index_ref    : entries가 number[]. 각 값은 다른 WeightedIndex의 1D 압축 결과.
- *                 indexId를 명시하면 어느 IndexDef의 값인지 추적 가능.
- *                 예) [42, 87, 156]  ← document_state index의 VersionedValue.value
+ *  DimDef      : 차원 슬롯 정의 — 이 차원에 들어오는 값의 형태(kind)를 선언
+ *  DimSnapshot : 해당 차원의 특정 시점 값 목록 (닫힌 집합의 스냅샷)
+ *  IndexDef    : 차원들의 순서 있는 조합 — 하나의 닫힌 패턴 스키마
+ *  IndexVersion: IndexDef의 한 버전 — 각 차원이 어느 DimSnapshot을 사용하는지
  *
- * ── 1D 복원 경로 ──────────────────────────────────────────────────────────────
+ * ── DimKind ─────────────────────────────────────────────────────────────────
  *
- *  VersionedValue { indexId, versionId, value }
+ *  string_enum : entries가 string[]. 값 자체가 identity.
+ *                예) ["admin", "editor", "viewer"]
+ *
+ *  number_enum : entries가 number[]. 숫자 자체가 identity. 외부 참조 없음.
+ *
+ *  index_ref   : entries가 number[]. 각 값은 다른 닫힌 패턴의 1차원 주소.
+ *                indexId로 어느 패턴의 주소인지 선언한다.
+ *                예) [0, 4, 8] ← doc_meta 패턴의 압축 주소들
+ *
+ * ── 1차원 주소 복원 경로 ─────────────────────────────────────────────────────
+ *
+ *  VersionedValue { indexId, versionId, value }   ← 1차원 주소
  *    → IndexDef[indexId].dims          → [dim_0, ..., dim_n]
  *    → IndexVersion[indexId,versionId] → { dim_i: snapshotId_i }
  *    → DimSnapshot[dim_i, snapshotId_i].entries.length → N_i  (shape)
  *    → WeightedIndex(shape).decode(value) → coords
  *    → DimSnapshot[dim_i, snapshotId_i].entries[coord_i - 1] → entry value
- *       ↳ string_enum → 그대로 반환
- *       ↳ number_enum → 그대로 반환
- *       ↳ index_ref   → 반환값이 또 다른 VersionedValue.value (재귀 확장 가능)
+ *       ↳ string_enum / number_enum → 그대로 반환
+ *       ↳ index_ref   → 반환값이 또 다른 닫힌 패턴의 1차원 주소 (재귀 확장 가능)
  */
 
 // ── DimKind ───────────────────────────────────────────────────────────────────
@@ -49,7 +60,7 @@ export type DimKind =
   | { type: "number_enum" }
   | { type: "index_ref"; indexId: string };
 
-export type EntityId = string | number;
+export type { EntityId };
 
 // ── Entry 상태 ───────────────────────────────────────────────────────────────
 
@@ -176,6 +187,15 @@ export interface AddressConfig {
   /** version(versionId) 필드에 할당할 hex 자릿수 */
   versionChars: number;
   /**
+   * 샤딩 전략. 설정 시 layout이 [schema | version | shard | gap | index]로 확장된다.
+   * shard = VersionedValue.value % numShards 로 자동 계산된다 (호출자 개입 불필요).
+   *
+   * @example
+   * sharding: { type: "modulo", chars: 1, numShards: 4 }
+   * // value=42 → shard = 42 % 4 = 2 → UUID 7번째 hex 자리에 삽입
+   */
+  sharding?: ShardingStrategy;
+  /**
    * indexId → 숫자 매핑. layout protocol에서 schema 필드 값으로 사용.
    * registry에 등록된 모든 indexId를 포함해야 한다.
    */
@@ -246,15 +266,7 @@ export interface IndexVersion {
 
 // ── 1D 식별자 ─────────────────────────────────────────────────────────────────
 
-/**
- * DB 저장 단위.
- * 직렬화 형식: "{indexId}:{versionId}:{value}"
- */
-export interface VersionedValue {
-  indexId: string;
-  versionId: string;
-  value: number;
-}
+export type { VersionedValue };
 
 // ── Manifest (프로그래밍 레이어에 제공하는 활성 인덱스 집합) ────────────────────
 

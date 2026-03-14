@@ -1,26 +1,31 @@
 /**
- * semantic-address.ts — Protocol-independent semantic address representation.
+ * semantic-address.ts — 닫힌 패턴 주소의 외부 표현 및 직렬화
  *
- * A SemanticAddress is the universal form of (schema, version, index).
- * It can be serialized into different protocols and parsed back:
+ * ── 개념 ───────────────────────────────────────────────────────────────────
+ *
+ * WeightedIndex가 좌표를 1D 정수(주소)로 압축하면, SemanticAddress는 그 주소에
+ * "어떤 패턴 스키마의 어느 버전에서 압축된 값인가"라는 맥락을 붙인다.
+ *
+ *   { schema: "perm", version: "v1", index: 42 }
+ *       → "perm 스키마 v1 버전에서 압축된 주소 42"
+ *
+ * 이 맥락이 있어야 주소 단독으로도 원래 좌표를 완전히 복원할 수 있다.
+ * (index-meta의 VersionedValue { indexId, versionId, value }와 동일한 개념)
+ *
+ * ── 직렬화 프로토콜 ─────────────────────────────────────────────────────────
+ *
+ * 같은 SemanticAddress를 다양한 외부 형식으로 직렬화할 수 있다.
+ * 프로토콜은 형식(포맷)만 다를 뿐 담긴 정보는 동일하다.
  *
  *   SemanticAddress { schema: "perm", version: "v1", index: 42 }
- *       ↓ colon     "perm:v1:42"
- *       ↓ uri       "wi://perm/v1/42"
- *       ↓ compact   "perm-v1-42"
- *
- * All protocols represent the same information — the protocol only
- * determines the physical string format.
- *
- * Layout protocol (hex container):
- *   SemanticAddress { schema: "perm", version: "v1", index: 42 }
+ *       ↓ colon        "perm:v1:42"
+ *       ↓ uri          "wi://perm/v1/42"
+ *       ↓ compact      "perm-v1-42"
  *       ↓ layout:uuid  "00010001-0000-0000-0000-00000000002a"
  *       ↓ layout:int64 "0001000100000042"
  *
- * Compatibility:
- *   - VersionedIndex { prefix, v, id }       (prefix-registry.ts)
- *   - VersionedValue { indexId, versionId, value } (index-meta)
- *   Both are SemanticAddress with different field names.
+ * layout 프로토콜은 hex 컨테이너(UUID, int64 등)에 주소를 packed해 DB 기본 키나
+ * UUID 필드에 직접 저장할 수 있도록 한다.
  */
 
 import { formatHex, parseHex, type PackFormat } from "./pack-format.js";
@@ -28,6 +33,19 @@ import { formatHex, parseHex, type PackFormat } from "./pack-format.js";
 // ═══════════════════════════════════════════════════════════════════════════
 //  SemanticAddress — 정보 좌표의 보편적 표현
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * 버전 + 1D 주소의 메타 레이어 표현.
+ * "어떤 스키마의 어느 버전에서 압축된 값인가"를 나타낸다.
+ *
+ * SemanticAddress와 동일한 정보를 담지만, 메타 레이어(index-meta 등)에서
+ * 사용하는 필드명 관례를 따른다.
+ */
+export interface VersionedValue {
+  indexId: string;
+  versionId: string;
+  value: number;
+}
 
 /** A protocol-independent information coordinate. */
 export interface SemanticAddress {
@@ -37,6 +55,12 @@ export interface SemanticAddress {
   readonly version: string;
   /** 인코딩된 정수 (= id / value) */
   readonly index:   number;
+  /**
+   * 샤드 라우팅 힌트. layout protocol에 shardChars가 설정된 경우에만 존재.
+   * serialize 시 index % numShards로 자동 계산되어 hex에 삽입된다.
+   * parse 시 hex에서 추출되어 반환된다.
+   */
+  readonly shard?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -260,6 +284,44 @@ function resolveBuiltinProtocol(name: string): AddressProtocol {
 //  Layout protocol — hex container 기반 직렬화
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * shard 라우팅 전략.
+ *
+ * layout이 [schema | version | shard | gap | index]로 확장되며,
+ * shard 값은 index에서 자동으로 파생된다 (호출자가 직접 지정하지 않아도 됨).
+ *
+ * `type` 필드가 discriminant(판별자) 역할을 한다. 현재는 "modulo"만 지원하며,
+ * 향후 전략 추가 시 union에 멤버를 추가하면 exhaustive switch가 자동으로
+ * 처리 누락을 컴파일 에러로 잡는다.
+ *
+ * ── 전략 ─────────────────────────────────────────────────────────────────────
+ *
+ *  "modulo"  shard = index % numShards
+ *            - index를 인터리브(교차)로 분배: 0→s0, 1→s1, 2→s2, 3→s0 …
+ *            - 레지스트리 레벨로 설정해도 모든 인덱스에 일관 적용 가능.
+ *              (totalSize 불필요 — 인덱스마다 크기가 달라도 동일하게 동작)
+ *            - 균형 조건: size % numShards === 0 이면 완전 균형.
+ *
+ * ── layout 변화 ─────────────────────────────────────────────────────────────
+ *
+ *  미설정: [schema | version | ··gap·· | index]
+ *  설정 시: [schema | version | shard | ··gap·· | index]
+ *
+ * @example
+ * sharding: { type: "modulo", chars: 1, numShards: 4 }
+ * // index=42 → shard = 42 % 4 = 2
+ * // layout:uuid  "00010001-2000-0000-0000-00000000002a"
+ * //               ^^^^^^^^ ↑
+ * //               schema+ver  shard=2 (7번째 hex 자리)
+ */
+export type ShardingStrategy = {
+  type: "modulo";
+  /** shard 라우팅 필드에 할당할 hex 자릿수. numShards - 1이 이 용량 안에 들어와야 한다. */
+  chars: number;
+  /** 논리 샤드 수 (≥ 1). shard = index % numShards. */
+  numShards: number;
+};
+
 export interface LayoutProtocolOptions {
   /** 컨테이너 포맷 (UUID, int64, custom 등) */
   format: PackFormat;
@@ -267,6 +329,11 @@ export interface LayoutProtocolOptions {
   schemaChars: number;
   /** version 필드에 할당할 hex 자릿수 */
   versionChars: number;
+  /**
+   * 샤딩 전략. 설정 시 layout이 [schema | version | shard | gap | index]로 확장된다.
+   * 미설정(기본값) 시 [schema | version | gap | index].
+   */
+  sharding?: ShardingStrategy;
   /** schema 이름 ↔ 숫자 매핑 */
   schemas: Record<string, number>;
   /** version 이름 ↔ 숫자 매핑 */
@@ -276,35 +343,65 @@ export interface LayoutProtocolOptions {
 /**
  * Create an AddressProtocol that packs SemanticAddress fields into a hex container.
  *
- * Layout: [schema | version | ...gap... | index]
- * Left fields (schema + version) from char 0 rightward.
- * Right field (index) from last char leftward.
- * Gap is zero-filled.
+ * Layout (shardChars = 0): [schema | version | ...gap... | index]
+ * Layout (shardChars > 0): [schema | version | shard | ...gap... | index]
+ *
+ * Left fields from char 0 rightward. Index right-aligned. Gap is zero-filled.
+ * shard = index % numShards (auto-derived, no caller input required).
  *
  * @example
+ * // sharding 없이
  * const proto = createLayoutProtocol({
  *   format: PACK_FORMATS.uuid,
- *   schemaChars: 4,
- *   versionChars: 2,
- *   schemas:  { perm: 1, doc: 2 },
- *   versions: { v1: 1, v2: 2 },
+ *   schemaChars: 4, versionChars: 2,
+ *   schemas: { perm: 1 }, versions: { v1: 1, v2: 2 },
  * });
- *
  * proto.serialize({ schema: "perm", version: "v1", index: 42 })
  * // → "00010001-0000-0000-0000-00000000002a"
  *
- * proto.parse("00010001-0000-0000-0000-00000000002a")
- * // → { schema: "perm", version: "v1", index: 42 }
+ * @example
+ * // 4개 샤드
+ * const proto = createLayoutProtocol({
+ *   format: PACK_FORMATS.uuid,
+ *   schemaChars: 4, versionChars: 2, shardChars: 1, numShards: 4,
+ *   schemas: { perm: 1 }, versions: { v1: 1 },
+ * });
+ * proto.serialize({ schema: "perm", version: "v1", index: 42 })
+ * // shard = 42 % 4 = 2 → "00010001-2000-0000-0000-00000000002a"
+ * proto.parse("00010001-2000-0000-0000-00000000002a")
+ * // → { schema: "perm", version: "v1", index: 42, shard: 2 }
  */
 export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtocol {
-  const { format, schemaChars, versionChars, schemas, versions } = opts;
+  const { format, schemaChars, versionChars, schemas, versions, sharding } = opts;
+  const shardChars = sharding?.chars ?? 0;
 
-  const leftChars  = schemaChars + versionChars;
+  // sharding 유효성 검증
+  if (sharding !== undefined) {
+    if (!Number.isInteger(sharding.chars) || sharding.chars <= 0) {
+      throw new RangeError(`createLayoutProtocol: sharding.chars must be a positive integer, got ${sharding.chars}`);
+    }
+    if (!Number.isInteger(sharding.numShards) || sharding.numShards < 1) {
+      throw new RangeError(`createLayoutProtocol: sharding.numShards must be a positive integer, got ${sharding.numShards}`);
+    }
+    const shardCapacity = 16 ** sharding.chars;
+    if (sharding.numShards > shardCapacity) {
+      throw new RangeError(
+        `createLayoutProtocol: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`
+      );
+    }
+  }
+
+  const leftChars  = schemaChars + versionChars + shardChars;
   const indexChars = format.chars - leftChars;
   if (indexChars <= 0) {
     throw new RangeError(
-      `createLayoutProtocol: schema(${schemaChars}) + version(${versionChars}) = ${leftChars} ≥ format.chars(${format.chars})`
+      `createLayoutProtocol: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`
     );
+  }
+
+  // shard 계산 — 현재 modulo만 지원. 향후 전략 추가 시 여기에 분기 추가.
+  function computeShard(index: number): number {
+    return index % sharding!.numShards;
   }
 
   // Reverse maps for parse
@@ -331,12 +428,14 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
       if (sNum === undefined) throw new RangeError(`Unknown schema: "${addr.schema}"`);
       if (vNum === undefined) throw new RangeError(`Unknown version: "${addr.version}"`);
 
-      // Left fields → gap → right field
-      const sHex = sNum.toString(16).padStart(schemaChars, "0");
-      const vHex = vNum.toString(16).padStart(versionChars, "0");
-      const iHex = addr.index.toString(16).padStart(indexChars, "0");
-      const gapLen = format.chars - leftChars - iHex.length;
-      const rawHex = sHex + vHex + "0".repeat(Math.max(0, gapLen)) + iHex;
+      const sHex  = sNum.toString(16).padStart(schemaChars, "0");
+      const vHex  = vNum.toString(16).padStart(versionChars, "0");
+      const shHex = shardChars > 0
+        ? computeShard(addr.index).toString(16).padStart(shardChars, "0")
+        : "";
+      const iHex  = addr.index.toString(16).padStart(indexChars, "0");
+      // leftChars + indexChars === format.chars 이므로 gap은 항상 0
+      const rawHex = sHex + vHex + shHex + iHex;
 
       return formatHex(format, rawHex);
     },
@@ -347,17 +446,20 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
         throw new SyntaxError(`Expected ${format.chars} hex chars, got ${raw.length}`);
       }
 
-      const sNum = parseInt(raw.slice(0, schemaChars), 16);
-      const vNum = parseInt(raw.slice(schemaChars, leftChars), 16);
+      const sNum  = parseInt(raw.slice(0, schemaChars), 16);
+      const vNum  = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
+      const shNum = shardChars > 0
+        ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16)
+        : undefined;
       // Index is right-aligned: take last indexChars
-      const idx  = parseInt(raw.slice(format.chars - indexChars), 16);
+      const idx   = parseInt(raw.slice(format.chars - indexChars), 16);
 
       const schema  = schemaByNum.get(sNum);
       const version = versionByNum.get(vNum);
       if (schema === undefined)  throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
       if (version === undefined) throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
 
-      return { schema, version, index: idx };
+      return { schema, version, index: idx, ...(shNum !== undefined && { shard: shNum }) };
     },
   };
 }
@@ -492,23 +594,15 @@ export function toVersionedIndex(addr: SemanticAddress): {
 }
 
 /**
- * Convert a VersionedValue (from index-meta) to a SemanticAddress.
+ * Convert a VersionedValue to a SemanticAddress.
  */
-export function fromVersionedValue(vv: {
-  indexId: string;
-  versionId: string;
-  value: number;
-}): SemanticAddress {
+export function fromVersionedValue(vv: VersionedValue): SemanticAddress {
   return { schema: vv.indexId, version: vv.versionId, index: vv.value };
 }
 
 /**
  * Convert a SemanticAddress to a VersionedValue.
  */
-export function toVersionedValue(addr: SemanticAddress): {
-  indexId: string;
-  versionId: string;
-  value: number;
-} {
+export function toVersionedValue(addr: SemanticAddress): VersionedValue {
   return { indexId: addr.schema, versionId: addr.version, value: addr.index };
 }

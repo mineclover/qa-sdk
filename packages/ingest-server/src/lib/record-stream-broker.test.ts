@@ -25,7 +25,8 @@ function makeRecord(overrides: Partial<StoredRecord> = {}): StoredRecord {
 }
 
 describe("RecordStreamBroker — listener error isolation", () => {
-  let errorSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let errorSpy: any;
 
   afterEach(() => {
     errorSpy?.mockRestore();

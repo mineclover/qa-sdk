@@ -78,7 +78,9 @@ async function processEnvelope(
   // Phase 1: 저장 (응답 경로)
   await storeEnvelope(envelope, deps);
 
-  // Phase 2: 후처리 — reconstruction + verdict (향후 비동기 분리 대상)
+  // TODO: Phase 2는 현재 HTTP 응답 전에 동기로 실행된다.
+  // 트래픽이 늘어나면 메시지 큐(e.g. BullMQ, SQS)로 분리해야 한다.
+  // 분리 시 Phase 1 완료 후 즉시 202를 반환하고, Phase 2는 워커가 처리한다.
   await postIngestProcess(deps);
 }
 
@@ -143,7 +145,16 @@ async function storeEnvelope(
       payload: r.payload,
       qaSessionId: r.qa_session_id,
       registryWarning: registryWarnings.get(r.log_id),
+      actorId: r.actor_id,
+      userId: r.user_id,
+      userAttributes: r.user_attributes,
     }));
+
+    // actor 컨텍스트: 레코드 중 첫 번째로 actor_id가 있는 것을 trace/session에 전파
+    const actorRecord = records.find((r) => r.actor_id);
+    const actorId = actorRecord?.actor_id;
+    const userId = actorRecord?.user_id;
+    const userAttributes = actorRecord?.user_attributes;
 
     try {
       await persistTrace(
@@ -156,6 +167,9 @@ async function storeEnvelope(
           firstTimestamp: first,
           lastTimestamp: last,
           records: inserts,
+          actorId,
+          userId,
+          userAttributes,
         },
         deps,
       );
@@ -196,6 +210,9 @@ async function persistTrace(
     firstTimestamp: Date;
     lastTimestamp: Date;
     records: RecordInsert[];
+    actorId?: string;
+    userId?: string;
+    userAttributes?: Record<string, string>;
   },
   deps: IngestDeps,
 ) {
@@ -206,7 +223,12 @@ async function persistTrace(
 
   const persist = async (transactionStores: TracePersistenceStores) => {
     for (const sessionId of trace.sessionIds) {
-      await transactionStores.sessionStore.upsert({ sessionId });
+      await transactionStores.sessionStore.upsert({
+        sessionId,
+        actorId: trace.actorId,
+        userId: trace.userId,
+        userAttributes: trace.userAttributes,
+      });
     }
 
     await transactionStores.traceStore.upsert({
@@ -216,6 +238,9 @@ async function persistTrace(
       recordCount: trace.recordCount,
       firstTimestamp: trace.firstTimestamp,
       lastTimestamp: trace.lastTimestamp,
+      actorId: trace.actorId,
+      userId: trace.userId,
+      userAttributes: trace.userAttributes,
     });
 
     await transactionStores.recordStore.insertBatch(trace.records);

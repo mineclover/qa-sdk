@@ -197,6 +197,9 @@ describe("SDK to ingest E2E", () => {
         sessionId,
         scenarioId: null,
         labels: null,
+        actorId: null,
+        userId: null,
+        userAttributes: null,
         startedAt: expect.any(String),
         closedAt: null,
       });

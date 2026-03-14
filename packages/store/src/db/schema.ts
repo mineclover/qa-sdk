@@ -1,4 +1,4 @@
-import type { RuntimeGraph } from "@qa-sdk/core";
+import type { PathObservation, RuntimeGraph } from "@qa-sdk/core";
 import {
   pgTable,
   text,
@@ -17,6 +17,9 @@ export const qaSessions = pgTable("qa_sessions", {
   sessionId: text("session_id").primaryKey(),
   scenarioId: text("scenario_id"),
   labels: jsonb("labels").$type<Record<string, string>>(),
+  actorId: text("actor_id"),
+  userId: text("user_id"),
+  userAttributes: jsonb("user_attributes").$type<Record<string, string>>(),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   closedAt: timestamp("closed_at", { withTimezone: true }),
 });
@@ -28,6 +31,9 @@ export const traces = pgTable("traces", {
   traceId: text("trace_id").primaryKey(),
   sessionId: text("session_id").references(() => qaSessions.sessionId),
   serviceName: text("service_name"),
+  actorId: text("actor_id"),
+  userId: text("user_id"),
+  userAttributes: jsonb("user_attributes").$type<Record<string, string>>(),
   recordCount: integer("record_count").notNull().default(0),
   firstTimestamp: timestamp("first_timestamp", { withTimezone: true }),
   lastTimestamp: timestamp("last_timestamp", { withTimezone: true }),
@@ -67,6 +73,9 @@ export const eventRecords = pgTable("event_records", {
   registryWarning: text("registry_warning"),
 
   qaSessionId: text("qa_session_id"),
+  actorId: text("actor_id"),
+  userId: text("user_id"),
+  userAttributes: jsonb("user_attributes").$type<Record<string, string>>(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
@@ -131,7 +140,11 @@ export const verdictReports = pgTable("verdict_reports", {
   traceId: text("trace_id").notNull().references(() => traces.traceId),
   qaSessionId: text("qa_session_id"),
   overallVerdict: text("overall_verdict").notNull(), // pass | fail | warn | degraded | unknown
-  report: jsonb("report").notNull(), // VerdictReport JSON
+  report: jsonb("report").notNull(), // VerdictReport JSON (path_observation 포함)
+  /** 경로 관측 결과. report.path_observation과 동일하며 DB 레벨 직접 조회용으로 제공 */
+  pathObservation: jsonb("path_observation").$type<PathObservation>(),
+  loopDetected: boolean("loop_detected"),
+  terminalReason: text("terminal_reason"),
   computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   idxScenarioId: index("idx_verdict_reports_scenario_id").on(table.scenarioId),

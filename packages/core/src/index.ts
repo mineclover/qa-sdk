@@ -18,6 +18,8 @@ export type {
   PayloadDescriptor,
 } from "./types/payload.js";
 
+export type { ActorContext } from "./types/actor.js";
+
 export type {
   RecordKind,
   SpanStatusCode,
@@ -53,7 +55,15 @@ export type {
   MatchResult,
   VerdictReport,
   LatencyViolation,
+  OrderingViolation,
 } from "./types/verdict.js";
+
+export type {
+  PathObservation,
+  ReachedNode,
+  TraversedEdge,
+  TerminalReason,
+} from "./types/path-observation.js";
 
 export type {
   ServiceStatus,

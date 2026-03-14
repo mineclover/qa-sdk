@@ -10,6 +10,12 @@ export interface ReconstructionOptions {
    * - "global": 전체 trace 레벨 temporal edge (span 정보 부족 시 fallback)
    */
   temporalStrategy?: "span-local" | "global";
+  /**
+   * trace를 발생시킨 서비스 이름.
+   * TraceStore의 serviceName에서 전달받아 RuntimeNode.service_name에 채운다.
+   * record 단위가 아닌 trace/session 단위 속성이므로 여기서 주입한다.
+   */
+  serviceName?: string;
 }
 
 /**
@@ -29,7 +35,8 @@ export function reconstruct(
   const sorted = sortByTimestamp(records);
 
   // 2. RuntimeNode 생성
-  const nodes: RuntimeNode[] = sorted.map(toRuntimeNode);
+  const serviceName = options?.serviceName;
+  const nodes: RuntimeNode[] = sorted.map((r) => toRuntimeNode(r, serviceName));
 
   // 3. parent_child edge (span 구조)
   const parentChildEdges = buildSpanTree(sorted);
@@ -52,7 +59,7 @@ export function reconstruct(
   return { trace_id: traceId, nodes, edges };
 }
 
-function toRuntimeNode(record: EventRecord): RuntimeNode {
+function toRuntimeNode(record: EventRecord, serviceName?: string): RuntimeNode {
   return {
     id: record.log_id,
     log_id: record.log_id,
@@ -60,6 +67,7 @@ function toRuntimeNode(record: EventRecord): RuntimeNode {
     record_kind: record.record_kind,
     event_key: record.event_key,
     event_version: record.event_version,
+    service_name: serviceName,
     span_name: record.span_name,
     start_time: record.start_time,
     end_time: record.end_time,

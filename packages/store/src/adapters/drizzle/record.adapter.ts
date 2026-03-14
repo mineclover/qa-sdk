@@ -37,6 +37,9 @@ export class DrizzleRecordStore implements RecordStore {
         payload: r.payload,
         registryWarning: r.registryWarning,
         qaSessionId: r.qaSessionId,
+        actorId: r.actorId,
+        userId: r.userId,
+        userAttributes: r.userAttributes,
       })),
     ).onConflictDoNothing({ target: eventRecords.logId });
   }
@@ -171,6 +174,9 @@ function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
     payload: row.payload,
     registryWarning: row.registryWarning ?? undefined,
     qaSessionId: row.qaSessionId ?? undefined,
+    actorId: row.actorId ?? undefined,
+    userId: row.userId ?? undefined,
+    userAttributes: row.userAttributes ?? undefined,
     createdAt: row.createdAt,
   };
 }

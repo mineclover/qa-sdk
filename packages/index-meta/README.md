@@ -1,16 +1,41 @@
 # index-meta
 
-`weighted-index`의 **스키마 메타 DB**.
+닫힌 패턴 인덱싱 스키마의 **안정적인 버전 관리 DB 프레임워크**.
 
-`WeightedIndex`가 정수 ↔ 좌표 변환의 수학을 담당한다면, `index-meta`는 각 축이 무엇을 의미하는지, 각 위치에 어떤 엔티티가 있는지를 선언하고 관리한다. 선언된 스키마를 바탕으로 엔티티 ID로 직접 인코딩/디코딩하고, 버전이 올라가도 값의 의미를 추적할 수 있다.
+`weighted-index`가 좌표 ↔ 정수 변환의 수학을 제공한다면, `index-meta`는 그 위에 스키마 선언, 버전 관리, 저장소, 분산 라우팅까지 구성해 — 안정적이고 일정한 간격과 기간 내에서 천천히 버전을 올릴 수 있도록 지원하는 DB 인프라를 설계한다.
+
+> 스펙 문서: [`docs/specs/indexing/index-meta/`](../../docs/specs/indexing/index-meta/README.md)
+
+---
+
+## 아키텍처
 
 ```
-weighted-index    정수 ↔ n차원 좌표 변환 (순수 수학)
-index-meta        각 축의 의미 + 엔티티 목록 + 버전 관리 + active manifest
-데이터 레이어     실제 값 저장 (VersionedValue: indexId + versionId + value)
+┌─────────────────────────────────────────────────────────────┐
+│  Tier 1: 스키마 선언                                         │
+│  defineTable() → TableDef                                    │
+│  compileSchema() → CompiledSchema (capacity, refs, diff)     │
+├─────────────────────────────────────────────────────────────┤
+│  Tier 2: 중앙 레지스트리 & 라우팅                             │
+│  PrefixRegistry (capacity DAG, 주소 해석, 역참조)             │
+│  PrefixRouter (prefix → D1 DB 라우팅)                        │
+│  syncSchemaToRegistry()                                      │
+├─────────────────────────────────────────────────────────────┤
+│  Tier 3: DB 저장소                                           │
+│  IndexMetaStore (schema_version + entry 테이블)               │
+│  어댑터: InMemory │ SqlStore │ D1Store │ BetterSqliteDriver  │
+│  DistributedStoreClient (라우터 + 멀티 스토어)                │
+├─────────────────────────────────────────────────────────────┤
+│  Tier 4: 인코딩 / 디코딩                                     │
+│  MetaRegistry (주소 게이트웨이: 직렬화 + 코덱 생성)           │
+│  MetaCodec (독립 encode/decode, LabelRegistry+PrefixRegistry) │
+│  MetaResolver (외부 소비용 DecodeMap 번들)                    │
+├─────────────────────────────────────────────────────────────┤
+│  Tier 5: 데이터 운영                                         │
+│  exportVersion / importVersion (백업/복원)                    │
+│  validateEntryBatchPayload / applyEntryBatch (API 배치)      │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-> 스펙 문서: [`docs/specs/indexing/index-meta.spec.md`](../../docs/specs/indexing/index-meta.spec.md)
 
 ---
 
@@ -69,16 +94,111 @@ const registry = new MetaRegistry({
   },
 });
 
+// 코덱 생성 (특정 version에 특화)
+const codec = registry.createCodec("perm", "iv1");
+
 // 엔티티 ID로 인코딩 → VersionedValue
-const vv = registry.encode("perm", "iv1", { role: "editor", action: "write" });
+const vv = codec.encode({ role: "editor", action: "write" });
 // { indexId: "perm", versionId: "iv1", value: 4 }
 
-// DB 저장용 문자열 직렬화
+// 직렬화 (기본 프로토콜: colon)
 const serialized = registry.serialize(vv); // "perm:iv1:4"
 
-// 역직렬화 + 디코딩
-const ids = registry.decode(registry.parse(serialized));
+// 역직렬화 + 디코딩 (프로토콜 자동 감지)
+const ids = codec.decode(registry.parse(serialized));
 // { role: "editor", action: "write" }
+```
+
+---
+
+## 스키마 선언 (Tier 1)
+
+`defineTable()`로 테이블을 선언하고, `compileSchema()`로 버전 변경을 감지한다.
+
+```ts
+import { defineTable, compileSchema } from "index-meta";
+
+const role = defineTable("role", {
+  kind: "leaf",
+  versions: [{ id: "v1", capacity: 8 }],
+});
+
+const perm = defineTable("perm", {
+  kind: "composite",
+  versions: [{
+    id: "v1",
+    refs: [
+      { table: "role", versionId: "v1" },
+      { table: "action", versionId: "v1" },
+    ],
+  }],
+});
+
+const compiled = compileSchema({ role, perm });
+// compiled.diff — 이전 스키마 대비 변경 사항
+// compiled.tables — capacity, refs 확정된 테이블 정보
+```
+
+---
+
+## 저장소 (Tier 2–3)
+
+### IndexMetaStore — entry 저장
+
+```ts
+import { InMemoryIndexMetaStore } from "index-meta";
+// 또는: SqlIndexMetaStore + BetterSqliteDriver (Node.js)
+// 또는: D1IndexMetaStore (Cloudflare Workers)
+
+const store = new InMemoryIndexMetaStore();
+await store.upsertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8 });
+await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin" });
+```
+
+### PrefixRegistry — 중앙 DAG 관리
+
+모든 prefix의 capacity, 의존 관계(refs), 역참조를 관리한다. 주소 해석(`resolveAddress`)도 제공.
+
+```ts
+import { InMemoryPrefixRegistry } from "index-meta";
+
+const registry = new InMemoryPrefixRegistry();
+await registry.register({ prefix: "role", versionId: "v1", capacity: 8, refs: [] });
+await registry.register({ prefix: "perm", versionId: "v1", capacity: 2048,
+  refs: [{ prefix: "role", versionId: "v1", capacity: 8 }] });
+
+const resolved = await registry.resolveAddress("perm:v1:42");
+// { prefix: "perm", versionId: "v1", index: 42, capacity: 2048, shape: [8,4,16,4], ... }
+```
+
+### 분산 저장소
+
+```ts
+import { DistributedStoreClient, InMemoryPrefixRouter } from "index-meta";
+
+const router = new InMemoryPrefixRouter();
+router.assign("role", store1);
+router.assign("perm", store2);
+
+const client = new DistributedStoreClient(router);
+await client.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin" });
+// → router가 store1으로 라우팅
+```
+
+### 데이터 운영 (Tier 5)
+
+```ts
+import { exportVersion, importVersion, applyEntryBatch } from "index-meta";
+
+// 백업/복원
+const backup = await exportVersion(store, "role", "v1");
+await importVersion(targetStore, backup);
+
+// API 배치 적재
+await applyEntryBatch(store, {
+  prefix: "role", versionId: "v1",
+  entries: [{ position: 1, value: "admin" }, { position: 2, value: "editor" }],
+});
 ```
 
 ---
@@ -220,7 +340,7 @@ const activeActions = actionDim.activeIndices.map(i =>
 // ["read", "write"]
 ```
 
-**중요:** `encode`와 `decode`는 inactive를 강제하지 않는다. 기존에 inactive 항목으로 인코딩된 값도 항상 decode할 수 있다. active/inactive 강제는 호출자(프로그래밍 레이어)의 책임이다.
+**중요:** `MetaCodec.encode()`와 `decode()`는 inactive를 강제하지 않는다. 기존에 inactive 항목으로 인코딩된 값도 항상 decode할 수 있다. active/inactive 강제는 호출자(프로그래밍 레이어)의 책임이다.
 
 ---
 
@@ -231,13 +351,16 @@ const activeActions = actionDim.activeIndices.map(i =>
 같은 EntityId가 두 버전 모두에 존재하면, `decode → re-encode` 패턴으로 자동 대응된다.
 
 ```ts
+const v1 = registry.createCodec("perm", "v1");
+const v2 = registry.createCodec("perm", "v2");
+
 // v1에 저장된 값
 const old = registry.parse("perm:v1:8");
-const entityIds = registry.decode(old);
+const entityIds = v1.decode(old);
 // { role: "viewer", action: "read", resource: "articles" }
 
 // v2로 re-encode — idToIndex가 v2 snapshot에서 자동으로 위치를 찾는다
-const migrated = registry.encode("perm", "v2", entityIds);
+const migrated = v2.encode(entityIds);
 // { indexId: "perm", versionId: "v2", value: ... }
 ```
 
@@ -352,8 +475,10 @@ role: {
 
 ```ts
 // v1: role × action (2차원) → v2: role × action × env (3차원)
-const ids = registry.decode(oldV1Value);
-const migrated = registry.encode("perm", "v2", {
+const v1 = registry.createCodec("perm", "v1");
+const v2 = registry.createCodec("perm", "v2");
+const ids = v1.decode(oldV1Value);
+const migrated = v2.encode({
   ...ids,
   env: 0,  // reserved: "환경 미지정"
 });
@@ -425,18 +550,102 @@ const registry = new MetaRegistry({
 });
 
 // outer encode
-const vv = registry.encode("article", "av1", { quality_tier: 2 });
+const articleCodec = registry.createCodec("article", "av1");
+const vv = articleCodec.encode({ quality_tier: 2 });
 
 // outer decode → doc_meta 압축값(=2) 반환
-const outer = registry.decode(vv);
+const outer = articleCodec.decode(vv);
 // { quality_tier: 2 }
 
 // inner decode → format + lang 복원
-const inner = registry.decode({ indexId: "doc_meta", versionId: "dmv1", value: 2 });
+const docMetaCodec = registry.createCodec("doc_meta", "dmv1");
+const inner = docMetaCodec.decodeValue(outer.quality_tier as number);
 // { format: "html", lang: "ko" }
 ```
 
-`MetaRegistry.decode()`는 EntityId 수준에서 중단한다. `index_ref` dim의 경우 반환된 숫자 값을 inner index로 재귀 decode하는 것은 호출자의 책임이다.
+`MetaCodec.decode()`는 EntityId 수준에서 중단한다. `index_ref` dim의 경우 반환된 숫자 값을 inner index의 코덱으로 재귀 decode하는 것은 호출자의 책임이다.
+
+---
+
+## Address 프로토콜 바인딩
+
+`address` 설정을 추가하면 VersionedValue를 UUID 등 고정 포맷으로 직렬화할 수 있다. 이를 통해 RDB의 PK로 직접 사용 가능하다.
+
+### 설정
+
+```ts
+import { MetaRegistry } from "index-meta";
+import { PACK_FORMATS } from "weighted-index";
+
+const registry = new MetaRegistry({
+  dims: {
+    role:   { kind: { type: "string_enum" }, snapshots: { v1: { entries: ["admin", "editor"] } } },
+    action: { kind: { type: "string_enum" }, snapshots: { v1: { entries: ["read", "write"] } } },
+  },
+  indices: {
+    perm: { dims: ["role", "action"], versions: { v1: { snapshots: { role: "v1", action: "v1" } } } },
+  },
+  address: {
+    format: PACK_FORMATS.uuid,   // 컨테이너 포맷
+    schemaChars: 4,              // indexId → hex 4자리
+    versionChars: 2,             // versionId → hex 2자리
+    schemas:  { perm: 1 },       // indexId → 숫자 매핑
+    versions: { v1: 1 },         // versionId → 숫자 매핑
+  },
+});
+```
+
+### UUID PK 생성/복원
+
+```ts
+const codec = registry.createCodec("perm", "v1");
+
+// entity ID → UUID PK (codec.encode + serialize)
+const pk = registry.serialize(codec.encode({ role: "admin", action: "read" }));
+// → "00010001-0000-0000-0000-000000000000"
+//    ├──┤├┤                          ├──┤
+//   schema ver         gap          index
+
+// UUID PK → entity ID (parse + codec.decode)
+codec.decode(registry.parse(pk));
+// → { role: "admin", action: "read" }
+```
+
+### 다중 프로토콜
+
+`serialize`/`parse`는 `weighted-index`의 `AddressConverter`에 위임한다. 프로토콜을 명시하거나 자동 감지할 수 있다.
+
+```ts
+const vv = codec.encode({ role: "admin", action: "read" });
+
+registry.serialize(vv);              // 기본 → UUID (address 설정 시)
+registry.serialize(vv, "colon");     // → "perm:v1:0"
+registry.serialize(vv, "uri");       // → "wi://perm/v1/0"
+registry.serialize(vv, "compact");   // → "perm-v1-0"
+
+// 자동 감지 파싱
+registry.parse("perm:v1:0");                                    // colon
+registry.parse("wi://perm/v1/0");                                // uri
+registry.parse("00010001-0000-0000-0000-000000000000");          // layout:uuid
+
+// converter를 직접 사용한 프로토콜 간 변환
+registry.converter.convert("perm:v1:0", "layout:uuid");
+```
+
+### 역할 분리
+
+프로토콜 변환 로직은 `weighted-index`의 `AddressConverter`에만 존재하며, MetaRegistry는 위임 + 레지스트리 검증(indexId/versionId 존재, value 범위)만 수행한다.
+
+```
+weighted-index  →  AddressConverter, createLayoutProtocol  (프로토콜 변환)
+index-meta      →  MetaRegistry.serialize/parse            (위임 + 검증)
+```
+
+### AddressConfig 검증 규칙
+
+- 등록된 모든 indexId가 `schemas`에 매핑되어야 한다
+- 등록된 모든 versionId가 `versions`에 매핑되어야 한다
+- 매핑 값은 non-negative integer, 값 중복 불가 (역매핑 충돌 방지)
 
 ---
 
@@ -453,18 +662,42 @@ new MetaRegistry(input: MetaRegistryInput)
 ### 핵심 API
 
 ```ts
+// 특정 version에 특화된 독립 코덱 생성
+createCodec(indexId: string, versionId: string): MetaCodec
+
 // 버전별 활성 인덱스 집합 반환
 getActiveManifest(indexId: string, versionId: string): IndexActiveManifest
 
+// VersionedValue ↔ 프로토콜 문자열 (AddressConverter에 위임)
+// protocol 생략 시 기본 프로토콜 (address 미설정: colon, 설정: layout)
+serialize(vv: VersionedValue, protocol?: string): string
+parse(input: string, protocol?: string): VersionedValue
+
+// AddressConverter 접근 및 기본 프로토콜
+get converter(): AddressConverter
+get defaultProtocol(): string
+```
+
+### MetaCodec API
+
+```ts
+// DecodeMap으로 직접 생성하거나, registry.createCodec()으로 생성
+new MetaCodec(map: DecodeMap)
+
 // 엔티티 ID 레코드 → VersionedValue (inactive 강제 없음)
-encode(indexId: string, versionId: string, entityIds: Record<string, EntityId>): VersionedValue
+encode(entityIds: Record<string, EntityId>): VersionedValue
 
-// VersionedValue → 엔티티 ID 레코드 (inactive 값도 항상 decode 가능)
-decode(vv: VersionedValue): Record<string, EntityId>
+// VersionedValue → 엔티티 ID 레코드 (indexId/versionId 일치 검증, inactive도 decode 가능)
+decode(vv: VersionedValue): Readonly<Record<string, EntityId>>
 
-// VersionedValue ↔ 문자열 직렬화 ("indexId:versionId:value")
-serialize(vv: VersionedValue): string
-parse(serialized: string): VersionedValue
+// value만으로 decode (indexId/versionId 검증 없음)
+decodeValue(value: number): Readonly<Record<string, EntityId>>
+
+get indexId(): string
+get versionId(): string
+get size(): number
+get shape(): readonly number[]
+toDecodeMap(): DecodeMap
 ```
 
 ### 조회 API
@@ -490,6 +723,44 @@ getMigration(dimId: string, fromSnapshotId: string, toSnapshotId: string): DimSn
 
 // BFS로 경로를 찾아 indexMap 체인 적용. 최종 1-based index 반환
 traceMigration(dimId: string, fromSnapshotId: string, toSnapshotId: string, index: number): number
+```
+
+### Resolver API
+
+`MetaResolver`는 MetaRegistry의 데이터를 외부 소비용 번들로 변환한다. DB 동기화, 프론트엔드 전송, API 응답 등에 사용.
+
+```ts
+import { MetaResolver } from "index-meta";
+
+const resolver = new MetaResolver(registry);
+
+// 특정 version의 디코딩 최소 번들 (외부에서 MetaRegistry 없이 decode 가능)
+resolver.getDecodeMap(indexId: string, versionId: string): DecodeMap
+
+// dim의 모든 snapshot (버전 range)
+resolver.getDimRange(dimId: string): DimRange
+
+// index의 모든 version (shape/size/dims 포함)
+resolver.getIndexRange(indexId: string): IndexRange
+
+// 전체 데이터셋 (index별 + dim별 그룹핑)
+resolver.getDataset(): MetaDataset
+```
+
+#### DecodeMap 외부 디코딩 예시
+
+```ts
+const map = resolver.getDecodeMap("perm", "v1");
+// → { shape: [3,3,3], size: 27, dims: [{dimId:"role", entries:[...]}, ...] }
+
+// 외부 시스템에서 MetaRegistry 없이 value → entity ID 복원:
+const weights = map.shape.map((_, i) => map.shape.slice(i + 1).reduce((a, b) => a * b, 1));
+let remaining = value;
+for (let i = 0; i < map.dims.length; i++) {
+  const coord = Math.floor(remaining / weights[i]) + 1;
+  remaining = remaining % weights[i];
+  result[map.dims[i].dimId] = map.dims[i].entries[coord - 1];
+}
 ```
 
 ---
@@ -525,7 +796,8 @@ import {
 
 ```ts
 try {
-  const vv = registry.encode("perm", "iv1", { role: "unknown_role", action: "read" });
+  const codec = registry.createCodec("perm", "iv1");
+  const vv = codec.encode({ role: "unknown_role", action: "read" });
 } catch (e) {
   if (e instanceof EntryNotFoundError) {
     // EntityId가 snapshot에 없음
@@ -542,46 +814,46 @@ try {
 ## 공개 API
 
 ```ts
-// 클래스
-export { MetaRegistry } from "index-meta";
+// ── 인코딩/디코딩 ────────────────────────────────────
+export { MetaRegistry, MetaCodec, MetaResolver } from "index-meta";
 
-// 입력 타입
+// ── 스키마 선언 ──────────────────────────────────────
+export { defineTable, compileSchema } from "index-meta";
+
+// ── 저장소 & 인프라 ─────────────────────────────────
+export { InMemoryIndexMetaStore } from "index-meta";
+export { InMemoryPrefixRegistry } from "index-meta";
+export { InMemoryPrefixRouter } from "index-meta";
+export { SqlIndexMetaStore } from "index-meta";        // + SqlDriver 인터페이스
+export { DistributedStoreClient } from "index-meta";
+
+// ── 데이터 운영 ──────────────────────────────────────
+export { exportVersion, importVersion } from "index-meta";
+export { validateEntryBatchPayload, applyEntryBatch } from "index-meta";
+
+// ── 인터페이스 ───────────────────────────────────────
+export type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "index-meta";
+export type { PrefixRegistry, PrefixRegistryRecord } from "index-meta";
+export type { PrefixRouter } from "index-meta";
+
+// ── 스키마 타입 ──────────────────────────────────────
+export type { TableDef, AddressRef, LeafVersion, CompositeVersion } from "index-meta";
+export type { CompiledSchema, SchemaDiff } from "index-meta";
+
+// ── 인코딩 타입 ──────────────────────────────────────
 export type {
-  MetaRegistryInput,
-  DimInput,
-  DimSnapshotInput,
-  DimSnapshotMigration,
-  IndexInput,
-  IndexVersionInput,
+  EntityId, VersionedValue, DecodeMap,
+  MetaRegistryInput, AddressConfig,
+  DimKind, DimDef, DimSnapshot, IndexDef, IndexVersion,
+  DimActiveSet, IndexActiveManifest,
+  DimRange, IndexRange, MetaDataset,
 } from "index-meta";
 
-// 조회/출력 타입
-export type {
-  EntityId,
-  DimKind,
-  EntryStatus,
-  EntryFlag,
-  EntryIndexRef,
-  DimDef,
-  DimSnapshot,
-  IndexDef,
-  IndexVersion,
-  VersionedValue,
-  DimActiveSet,
-  IndexActiveManifest,
-} from "index-meta";
-
-// 에러
+// ── 에러 ─────────────────────────────────────────────
 export {
-  IndexMetaError,
-  DimNotFoundError,
-  SnapshotNotFoundError,
-  IndexNotFoundError,
-  IndexVersionNotFoundError,
-  EntryNotFoundError,
-  MigrationNotFoundError,
-  ValidationError,
-  ParseError,
+  IndexMetaError, DimNotFoundError, SnapshotNotFoundError,
+  IndexNotFoundError, IndexVersionNotFoundError, EntryNotFoundError,
+  MigrationNotFoundError, ValidationError, ParseError,
 } from "index-meta";
 ```
 

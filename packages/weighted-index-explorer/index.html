@@ -30,6 +30,7 @@
           <button class="rtab" data-sheet="filter">필터링</button>
           <button class="rtab" data-sheet="obfuscate">난독화</button>
           <button class="rtab" data-sheet="layout">레이아웃</button>
+          <button class="rtab" data-sheet="multi">다중 인덱스</button>
         </div>
         <!-- Explorer controls (only visible on explorer tab) -->
         <div class="ribbon-tools" id="ribbon-tools">
@@ -126,6 +127,9 @@
         <!-- 레이아웃 플래너 sheet -->
         <div class="sheet hidden" id="sheet-layout"><div id="concept-layout"></div></div>
 
+        <!-- 다중 인덱스 sheet -->
+        <div class="sheet hidden" id="sheet-multi"><div id="concept-multi"></div></div>
+
       </div>
 
       <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
@@ -139,6 +143,7 @@
           <div class="stab" data-sheet="filter"><span class="stab-icon">⊛</span> 필터링</div>
           <div class="stab" data-sheet="obfuscate"><span class="stab-icon">⊕</span> 난독화</div>
           <div class="stab" data-sheet="layout"><span class="stab-icon">▦</span> 레이아웃</div>
+          <div class="stab" data-sheet="multi"><span class="stab-icon">⊞</span> 다중 인덱스</div>
         </div>
         <div class="status-bar">
           <span id="status-shape">v1 · shape [8, 4, 5, 4]</span>

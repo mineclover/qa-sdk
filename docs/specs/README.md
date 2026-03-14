@@ -132,9 +132,9 @@ API 클라이언트, iframe 통신 프로토콜.
 | [README.md](indexing/README.md) | 인덱싱 관심사 개념 맵 — 레이어 구조, 문서 체계, 관심사 흐름 | — | — |
 | [foundation.md](indexing/foundation.md) | 근본 원리 — 닫힌 공간, 전단사, 버전화된 공간 계열 | weighted-index + index-meta | — |
 | [patterns.md](indexing/patterns.md) | 사용 패턴 — EntityId 이동, cross-index 참조, 활성/비활성 | weighted-index + index-meta | — |
-| [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 항목 토큰, EntityId 정규화 | weighted-index + index-meta | — |
+| [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 절차 | weighted-index + index-meta | — |
 | [weighted-index.spec.md](indexing/weighted-index.spec.md) | WeightedIndex / LabelRegistry / PrefixRegistry — 수학 엔진 + 버전 관리 | weighted-index | implemented |
-| [pack-format.spec.md](indexing/pack-format.spec.md) | PackFormat / FormatRegistry / fitLayout — ID 포맷 레지스트리 + 적합성 분석 | weighted-index | implemented |
+| [pack-format.spec.md](indexing/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
 | [index-meta.spec.md](indexing/index-meta.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
 
 ### infra/ — 인프라 도구
@@ -160,6 +160,7 @@ API 클라이언트, iframe 통신 프로토콜.
 | @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
 | weighted-index | `indexing/weighted-index.spec.md`, `indexing/pack-format.spec.md` |
+| weighted-index-explorer | `indexing/README.md` (탐색기 구조 섹션) |
 | index-meta | `indexing/index-meta.spec.md` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
 | @qa-sdk/browser | `browser/monitor.spec.md` |

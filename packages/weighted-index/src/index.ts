@@ -17,7 +17,15 @@ export {
   type UUIDField,
   type ObfuscateTransform,
 } from "./obfuscate/index.js";
-export { calcWeights, partialQueryBase, describeRangeFormula } from "./calc.js";
+export {
+  calcWeights,
+  partialQueryBase,
+  describeRangeFormula,
+  mergeRanges,
+  intersectRanges,
+  calcAddressRanges,
+  type CoordConstraint,
+} from "./calc.js";
 export {
   createMask, setBit, clearBit, hasBit,
   buildMask, hasAnyBit, hasAllBits, popcount,
@@ -64,10 +72,15 @@ export {
   hexFloor,
   fitShape,
   fitLayout,
+  planCapacity,
   type PackFormat,
   type BuiltinFormatName,
   type DefineFormatOptions,
   type HexBoundary,
+  type CapacityPlanDim,
+  type PlanCapacityOptions,
+  type CapacityRecommendation,
+  type CapacityPlanResult,
   type FitShapeOptions,
   type FitShapeResult,
   type FitLayoutOptions,
@@ -88,8 +101,10 @@ export {
   AddressConverter,
   createAddressConverter,
   type SemanticAddress,
+  type VersionedValue,
   type AddressProtocol,
   type LayoutProtocolOptions,
+  type ShardingStrategy,
 } from "./semantic-address.js";
 export {
   WeightedIndexError,

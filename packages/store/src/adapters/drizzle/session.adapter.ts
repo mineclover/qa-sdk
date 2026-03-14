@@ -17,6 +17,9 @@ export class DrizzleSessionStore implements SessionStore {
         sessionId: params.sessionId,
         scenarioId: params.scenarioId,
         labels: params.labels,
+        actorId: params.actorId,
+        userId: params.userId,
+        userAttributes: params.userAttributes,
       });
   }
 
@@ -50,8 +53,11 @@ function toStoredSession(row: typeof qaSessions.$inferSelect): StoredSession {
   return {
     sessionId: row.sessionId,
     scenarioId: row.scenarioId,
-    labels: row.labels,
+    labels: row.labels ?? null,
+    actorId: row.actorId ?? null,
+    userId: row.userId ?? null,
+    userAttributes: row.userAttributes ?? null,
     startedAt: row.startedAt,
-    closedAt: row.closedAt,
+    closedAt: row.closedAt ?? null,
   };
 }

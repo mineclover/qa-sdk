@@ -17,6 +17,8 @@ function verdictColorClass(v: Verdict): string {
       return "verdict-degraded";
     case "unknown":
       return "verdict-unknown";
+    case "skipped":
+      return "verdict-skipped";
   }
 }
 
@@ -177,6 +179,77 @@ export function createVerdictPanel(container: HTMLElement): VerdictPanel {
         }
         latencySection.appendChild(latencyList);
         content.appendChild(latencySection);
+      }
+
+      if (report.ordering_violations && report.ordering_violations.length > 0) {
+        const orderingSection = document.createElement("div");
+        orderingSection.className = "verdict-ordering";
+
+        const orderingTitle = document.createElement("h4");
+        orderingTitle.textContent = "Ordering Violations";
+        orderingSection.appendChild(orderingTitle);
+
+        const orderingList = document.createElement("ul");
+        for (const v of report.ordering_violations) {
+          const li = document.createElement("li");
+          li.textContent = `${v.step_id} arrived before ${v.should_follow} (expected after ${v.predecessor_timestamp})`;
+          orderingList.appendChild(li);
+        }
+        orderingSection.appendChild(orderingList);
+        content.appendChild(orderingSection);
+      }
+
+      if (report.path_observation) {
+        const obs = report.path_observation;
+        const pathSection = document.createElement("div");
+        pathSection.className = "verdict-path";
+
+        const pathTitle = document.createElement("h4");
+        pathTitle.textContent = "Path Observation";
+        pathSection.appendChild(pathTitle);
+
+        // 요약 배지 (loop, terminal_reason)
+        const badges = document.createElement("div");
+        badges.className = "path-badges";
+        if (obs.loop_detected) {
+          const loopBadge = document.createElement("span");
+          loopBadge.className = "path-badge path-badge-warn";
+          loopBadge.textContent = "LOOP";
+          badges.appendChild(loopBadge);
+        }
+        if (obs.terminal_reason) {
+          const termBadge = document.createElement("span");
+          termBadge.className = `path-badge ${obs.terminal_reason === "goal_reached" ? "path-badge-pass" : "path-badge-warn"}`;
+          termBadge.textContent = obs.terminal_reason === "goal_reached" ? "GOAL REACHED" : "PARTIAL";
+          badges.appendChild(termBadge);
+        }
+        pathSection.appendChild(badges);
+
+        // 도달 경로 (reached_nodes)
+        if (obs.reached_nodes.length > 0) {
+          const pathFlow = document.createElement("div");
+          pathFlow.className = "path-flow";
+          pathFlow.textContent = obs.reached_nodes.map((n) => n.event_key).join(" → ");
+          pathSection.appendChild(pathFlow);
+        }
+
+        // 도달 goals
+        if (obs.reached_goals.length > 0) {
+          const goalSection = document.createElement("div");
+          goalSection.className = "path-goals";
+          goalSection.textContent = `Goals reached: ${obs.reached_goals.join(", ")}`;
+          pathSection.appendChild(goalSection);
+        }
+
+        // 미도달 goals
+        if (obs.unreachable_goals.length > 0) {
+          const missedSection = document.createElement("div");
+          missedSection.className = "path-goals-missed";
+          missedSection.textContent = `Goals missed: ${obs.unreachable_goals.join(", ")}`;
+          pathSection.appendChild(missedSection);
+        }
+
+        content.appendChild(pathSection);
       }
     },
 

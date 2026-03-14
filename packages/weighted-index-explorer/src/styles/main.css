@@ -2955,6 +2955,7 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
 .hex-cell-sep { margin-left: 3px; }
 .hex-cell-prefix  { background: #dce6f1; color: #1f497d; border-color: #b4c7dc; }
 .hex-cell-version { background: #fff2cc; color: #7f6000; border-color: #f0d88c; }
+.hex-cell-shard   { background: #f0e8ff; color: #6b21a8; border-color: #c4b5fd; }
 .hex-cell-index   { background: var(--xl-green-light); color: var(--xl-green-dark); border-color: #b8d8c4; }
 .hex-cell-gap     { background: #f7f7f7; color: #ccc; border-color: #e8e8e8; }
 
@@ -2962,7 +2963,7 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
 .hex-labels {
   display: flex;
   margin-top: 3px;
-  gap: 3px;
+  gap: 0;
 }
 .hex-label {
   font-size: 0.58rem;
@@ -2977,6 +2978,7 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
 }
 .hex-label-prefix  { border-color: #1f497d; color: #1f497d; }
 .hex-label-version { border-color: #7f6000; color: #7f6000; }
+.hex-label-shard   { border-color: #6b21a8; color: #6b21a8; }
 .hex-label-index   { border-color: var(--xl-green); color: var(--xl-green-dark); }
 .hex-label-gap     { border-color: #ddd; color: #bbb; }
 

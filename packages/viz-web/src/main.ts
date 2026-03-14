@@ -113,6 +113,13 @@ function renderGraph(spec: ScenarioSpec): void {
   if (graph.nodes.length > 0) {
     renderer.updateNodeState(graph.nodes[0].step_id, "active");
   }
+
+  // event log sequence strip용 step 번호 맵 (event_key → 1-based index, 첫 등장 기준)
+  const stepMap = new Map<string, number>();
+  graph.nodes.forEach((node, i) => {
+    if (!stepMap.has(node.event_key)) stepMap.set(node.event_key, i + 1);
+  });
+  eventLog.setStepMap(stepMap);
 }
 
 // ── Session selection ─────────────────────────────────────────

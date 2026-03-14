@@ -1,4 +1,4 @@
-import type { StepConstraint, StepKind } from "./scenario.js";
+import type { EntryCondition, StepConstraint, StepKind } from "./scenario.js";
 
 // ── Spec Graph (Expected Behavior Graph) ────────────────
 
@@ -7,6 +7,8 @@ export interface SpecGraph {
   version: string;
   nodes: SpecNode[];
   edges: SpecEdge[];
+  /** compileSpec이 ScenarioSpec.entry_conditions를 여기에 전달한다. */
+  entry_conditions?: EntryCondition[];
 }
 
 export interface SpecNode {

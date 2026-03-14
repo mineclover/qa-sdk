@@ -179,6 +179,18 @@ describe("[동치 분할] 입력 유효성", () => {
       "MAX_SAFE_INTEGER"
     );
   });
+
+  it("중간 weight가 MAX_SAFE_INTEGER를 초과하면 ShapeError", () => {
+    // shape[0] * shape[1] = (MAX_SAFE_INTEGER/2 + 1) * 2 > MAX_SAFE_INTEGER
+    // weight[0] = shape[1] = MAX_SAFE_INTEGER/2 + 1 → 자체는 OK
+    // 하지만 size = weight[0] * shape[0] 가 MAX_SAFE_INTEGER 초과
+    // 이 케이스는 기존 size 체크로 잡힘.
+    // 진짜 문제: weight 계산 중간값이 overflow되는 케이스
+    const huge = Math.pow(2, 27); // 134_217_728
+    // huge * huge = 2^54 > MAX_SAFE_INTEGER (2^53 - 1)
+    // weight[0] = huge * huge 가 중간 계산에서 overflow됨
+    expect(() => new WeightedIndex([2, huge, huge])).toThrow("MAX_SAFE_INTEGER");
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

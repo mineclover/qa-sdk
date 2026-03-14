@@ -99,6 +99,7 @@ function buildReport(overrides: Partial<VerdictReport> = {}): VerdictReport {
     ],
     missing_steps: [],
     unexpected_nodes: [],
+    ordering_violations: [],
     latency_violations: [],
     summary: "Scenario matched successfully.",
     computed_at: "2026-03-12T01:00:00.000Z",

@@ -10,7 +10,7 @@ export function createEventEmitter(
   bridge: QaBridge,
   childBridge: ChildBridge,
 ): EventEmitter {
-  const controllers: AbortController[] = [];
+  let attachedContainer: HTMLElement | null = null;
 
   function emit(eventKey: string, payload?: Record<string, unknown>): void {
     try {
@@ -59,23 +59,31 @@ export function createEventEmitter(
     });
   }
 
+  function bindListeners(container: HTMLElement): void {
+    container.addEventListener("click", handleClick);
+    container.addEventListener("input", handleInput);
+    container.addEventListener("change", handleInput);
+    container.addEventListener("submit", handleSubmit);
+  }
+
+  function unbindListeners(container: HTMLElement): void {
+    container.removeEventListener("click", handleClick);
+    container.removeEventListener("input", handleInput);
+    container.removeEventListener("change", handleInput);
+    container.removeEventListener("submit", handleSubmit);
+  }
+
   return {
     attach(container: HTMLElement): void {
-      const controller = new AbortController();
-      const signal = controller.signal;
-      controllers.push(controller);
-
-      container.addEventListener("click", handleClick, { signal });
-      container.addEventListener("input", handleInput, { signal });
-      container.addEventListener("change", handleInput, { signal });
-      container.addEventListener("submit", handleSubmit, { signal });
+      if (attachedContainer) unbindListeners(attachedContainer);
+      attachedContainer = container;
+      bindListeners(container);
     },
 
     detach(): void {
-      for (const controller of controllers) {
-        controller.abort();
-      }
-      controllers.length = 0;
+      if (!attachedContainer) return;
+      unbindListeners(attachedContainer);
+      attachedContainer = null;
     },
   };
 }

@@ -1,4 +1,5 @@
 import type {
+  ActorContext,
   TransmissionOwner,
   TransmissionSource,
   TransmissionRuntime,
@@ -22,6 +23,9 @@ export interface QaLoggerConfig {
 
   /** Build info */
   build: TransmissionBuild;
+
+  /** Actor context — 모든 레코드에 자동으로 주입된다 */
+  actor?: ActorContext;
 
   /** Global masking rules applied to all payloads */
   maskingRules?: MaskingRule[];

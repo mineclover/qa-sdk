@@ -5,189 +5,237 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
-*Add reusable patterns discovered during development here.*
-
-- Hono route modules can be unit tested by mounting them on a throwaway `Hono` instance and calling `app.request()`, which avoids booting the full server or wiring a database for route-local behavior.
-- Drizzle Kit config runs outside the app's normal env parsing and is evaluated as CommonJS, so load `DATABASE_URL` directly inside `drizzle.config.ts` using `process.cwd()`-relative file reads instead of `import.meta`.
-- In the `packages/registry-server` NodeNext setup, local ESM imports inside tests should keep the runtime `.js` specifier form (for example `../../lib/id.js`) even though the source files are TypeScript.
-- Zod schema unit tests fit the codebase best as direct `parse()` and `safeParse()` assertions with table-driven invalid cases, which gives broad validation coverage without route harnesses or mocks.
-- Service-layer business logic is cleanest to unit test by instantiating the class with a `vi.fn()` repository double and asserting the translated DTO shape plus the exact repository patch payload.
-- When a service creates a repository inside `db.transaction()`, mock the repository module constructor to return the transaction-scoped double and have `db.transaction()` pass that same double into the callback; this isolates transaction flow without mocking Drizzle internals.
-- Global Hono error middleware can be covered end-to-end by mounting throwaway routes that deliberately raise each error type and asserting the normalized JSON from `app.request()`.
-- Integration tests against the real Postgres service can stay reusable by loading `.env.test` inside a helper, applying the generated Drizzle migration SQL once with `postgres.js`, and truncating tables between tests instead of recreating the schema.
-- CRUD endpoint integration tests fit the codebase best when they reuse one `createTestApp()` instance, call `cleanupDb()` in `beforeEach`, and seed/assert entirely through small `app.request()` JSON helpers so response shapes stay aligned with the public API.
-- Nested integration endpoint tests stay aligned with the public contract when `beforeEach` seeds the parent resource through the API once and child request helpers default to that returned parent ID/name.
-- Real-DB integration specs that truncate shared tables must run with Vitest file parallelism disabled, otherwise separate test files can delete each other's seeded rows mid-test.
-- Advisory-lock integration tests for versioned resources are most reliable when they fire concurrent `app.request()` POSTs with `Promise.all()`, then sort both returned and persisted versions before asserting the exact sequence because lock acquisition order is nondeterministic.
+- Canonical spec documents live under `docs/specs/...`; package-local `packages/*/specs/README.md` files are index pages that point to the centralized docs. If a package spec file appears missing, update the central doc instead of restoring duplicate copies.
+- For spec-alignment stories, centralized docs can intentionally describe the approved snake_case refactor target even when the current implementation still uses equivalent camelCase identifiers; treat the PRD acceptance criteria as the canonical contract.
+- New shared `@qa-sdk/core` port specs should be added under `docs/specs/data-model/`, while adapter-specific persistence notes stay in `docs/specs/storage/adapters.spec.md`.
+- Config modules that export `env = parseEnv(process.env)` at module scope must be tested via dynamic import after `vi.stubEnv(...)`, with `vi.resetModules()` in cleanup so module-level parsing re-evaluates against the stubbed environment.
+- For verdict refactors, thread constraint-level detail end to end: `evaluateConstraints()` returns `ConstraintResult[]`, `matchGraphs()` stores that on `StepMatch.constraint_results`, and missing or unconstrained steps use `[]` instead of synthetic reason strings.
+- Verdict boundaries in this repo keep wrapper DTOs camelCase (`scenarioId`, `overallVerdict`, `computedAt`) while the nested `report` payload remains the canonical snake_case `VerdictReport`; verify or refactor at the embedded `report` shape boundary instead of renaming the outer store/API envelopes.
+- Graph pipeline refactors treat `SpecNode` as an engine-local projection: `compileSpec()` copies only the fields needed by matching/verdict, while matcher/verdict fixtures should build lightweight `SpecNode` objects directly instead of nesting full `ScenarioStep` payloads.
+- Workspace packages in this repo resolve sibling dependencies through their exported `dist` artifacts during consumer-package tests, so after cross-package refactors you need to rebuild the changed dependency packages before verifying downstream packages like `ingest-server`.
+- Package-level acceptance checks that invoke `pnpm --filter <pkg> run typecheck` require an explicit `typecheck` script in that package's `package.json`, even when `build` already runs `tsc`.
+- Pure data packages like `event-catalog` are easiest to regression-test with a single `src`-local Vitest suite that asserts canonical counts, key sets, and exported map/predicate behavior directly against the package registries.
+- When a workspace shim needs a canonical internal package name but must preserve a third-party-compatible import like `import pino from "pino"`, keep consumers on the public import ID via a dependency alias such as `"pino": "workspace:@qa-sdk/pino@^9.9.4"`.
 
 ---
 
-## 2026-03-12 - US-001
+## 2026-03-13 - US-001
 - What was implemented
-  - Added Vitest scripts and devDependencies for the `@qa-sdk/registry-server` package.
-  - Added `vitest.config.ts` with Node test environment, coverage config, and a source alias.
-  - Added `docker-compose.yml` with a PostgreSQL 16 test database on host port `5433`.
-  - Added a placeholder `src/__tests__/health.test.ts` that verifies `GET /health` returns `{ ok: true }` using `app.request()`.
+  - Updated the canonical core data-model specs for record, graph, verdict, and utils to match the target design in US-001.
+  - Rewrote graph/verdict specs around snake_case fields, lightweight `SpecNode`, `source`/`target` edges, `causal` runtime edges, `StepMatch.constraint_results`, and `VerdictStore` lookup/removal requirements.
+  - Added record payload enum expansions, `_registry_warning`, and the new ID utilities `newVerdictId()` / `newDlqId()`.
 - Files changed
+  - `docs/specs/data-model/record.spec.md`
+  - `docs/specs/data-model/graph.spec.md`
+  - `docs/specs/data-model/verdict.spec.md`
+  - `docs/specs/data-model/utils.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - The core package spec paths referenced in tasks are currently served through centralized docs, so `packages/core/specs/README.md` is the right handoff point for locating the canonical files.
+  - Gotchas encountered
+    - Current `packages/core/src/types/*` and port signatures still lag parts of the US-001 target design, so the spec update had to follow the PRD acceptance criteria rather than mirroring the existing implementation one-to-one.
+---
+
+## 2026-03-13 - US-002
+- What was implemented
+  - Rewrote the canonical engine pipeline spec in `docs/specs/pipeline/pipeline.spec.md` to reflect the approved target signatures for reconstruction, matching, verdict computation, and internal orchestration helpers.
+  - Documented `reconstruct(trace_id, records, options)`, `ReconstructionOptions.temporal_strategy`, `evaluateConstraints(): ConstraintResult[]`, `computeVerdict(match_result, spec_graph, runtime_graph, qa_session_id?)`, and the internal helpers `reconstructTrace()` / `computeTraceVerdict()`.
+- Files changed
+  - `docs/specs/pipeline/pipeline.spec.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Pipeline/spec alignment tasks in this repo use the centralized spec docs to lock in the refactor target API, even when the current engine source still exposes equivalent camelCase names.
+  - Gotchas encountered
+    - The existing engine implementation still returns `boolean` from `evaluateConstraints()` and uses camelCase option names, so the spec had to follow the approved target contract rather than the current source verbatim.
+---
+
+## 2026-03-13 - US-003
+- What was implemented
+  - Expanded the canonical `QaLogger` spec with explicit `LogParams`, `SpanParams`, and `SpanHandle.end()` parameter contracts.
+  - Added new centralized core specs for `ScenarioSpecStore` and `DlqStore`, including the public types and method behaviors required by the current ports.
+  - Updated the centralized spec index plus the `@qa-sdk/sdk` and `@qa-sdk/core` package-local spec README indexes.
+- Files changed
+  - `docs/specs/collection/logger.spec.md`
+  - `docs/specs/data-model/scenario-spec-store.spec.md`
+  - `docs/specs/data-model/dlq-store.spec.md`
+  - `docs/specs/README.md`
+  - `packages/sdk/specs/README.md`
+  - `packages/core/specs/README.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Missing shared-port docs should be introduced as standalone centralized specs and then linked from both `docs/specs/README.md` and the owning package's `specs/README.md`.
+  - Gotchas encountered
+    - `ScenarioSpecStore` consumes the snake_case `ScenarioSpec` type, but `DlqStore` and several storage-facing DTOs still use camelCase field names, so the new specs had to mirror each contract individually instead of normalizing all names.
+---
+
+## 2026-03-13 - US-004
+- What was implemented
+  - Updated the in-memory session and trace store tests to verify persisted state through `findById()` after `upsert()`, matching the `Promise<void>` store contract.
+  - Fixed the registry-server env test by stubbing `DATABASE_URL` before dynamically importing the config module, so the module-level `parseEnv(process.env)` evaluation succeeds during the test.
+- Files changed
+  - `packages/store/src/adapters/memory/session.adapter.test.ts`
+  - `packages/store/src/adapters/memory/trace.adapter.test.ts`
+  - `packages/registry-server/src/__tests__/config/env.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Store adapter tests in this repo should treat `upsert()` as a command operation and read back persisted state with `findById()` when asserting results.
+  - Gotchas encountered
+    - `packages/registry-server/src/config/env.ts` parses `process.env` at import time, so tests must stub required env vars before the dynamic import instead of only passing a custom object to `parseEnv()`.
+---
+
+## 2026-03-13 - US-005
+- What was implemented
+  - Replaced `StepMatch.reason` with shared `ConstraintResult[]` details and reshaped `VerdictReport` to expose canonical `step_matches`, `summary`, and `computed_at`.
+  - Updated the engine constraint evaluator, graph matcher, and verdict computation to carry constraint-level results through matching and derive the final verdict from `step_matches`.
+  - Rewrote the engine matcher, verdict, and pipeline tests to assert `constraint_results`, `step_matches`, and the new summary/computed timestamp behavior.
+- Files changed
+  - `packages/core/src/types/verdict.ts`
+  - `packages/core/src/index.ts`
+  - `packages/engine/src/matching/constraint-evaluator.ts`
+  - `packages/engine/src/matching/graph-matcher.ts`
+  - `packages/engine/src/verdict/compute.ts`
+  - `packages/engine/src/matching/constraint-evaluator.test.ts`
+  - `packages/engine/src/matching/graph-matcher.test.ts`
+  - `packages/engine/src/verdict/compute.test.ts`
+  - `packages/engine/test/pipeline.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Engine verdict fixtures are easiest to keep aligned by treating `MatchResult.step_matches` as the single source of truth in tests and deriving pass/fail/warn expectations from filtered `step_matches`.
+  - Gotchas encountered
+    - `@qa-sdk/core` does not currently define a `typecheck` script, so the acceptance check had to use `pnpm --filter @qa-sdk/core exec tsc --noEmit -p tsconfig.json` instead of `pnpm --filter @qa-sdk/core run typecheck`.
+---
+
+## 2026-03-13 - US-006
+- What was implemented
+  - Verified the existing memory and drizzle verdict adapters already persist and return the new nested `VerdictReport` shape through the `report` JSON field.
+  - Verified the ingest-server verdict query routes return that stored `report` payload unchanged and the recompute route still works with the refactored verdict pipeline.
+  - Confirmed the package-level acceptance checks pass without additional code changes.
+- Files changed
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Verdict refactor verification should focus on the nested `report` payload shape, because the outer storage and route DTOs intentionally remain camelCase for compatibility.
+  - Gotchas encountered
+    - The `store` package skips drizzle integration tests when `DATABASE_URL` is absent, so story verification for this iteration relied on the passing memory-adapter suite plus typechecks unless a test database is configured.
+---
+
+## 2026-03-13 - US-007
+- What was implemented
+  - Refactored `@qa-sdk/core` graph types to the canonical `source`/`target` edge fields, renamed the runtime edge union from `derived` to `causal`, and replaced heavyweight `SpecNode.step` references with the lightweight projected `SpecNode` shape.
+  - Updated engine `compileSpec()`, graph matching, reconstruction, and verdict computation to consume the projected node fields directly and to use `specNode.timeout_ms` for latency checks.
+  - Rewrote the affected engine tests to assert the new `SpecNode` projection and `source`/`target` edge endpoints, and added a `core` `typecheck` script so the requested acceptance command runs directly.
+- Files changed
+  - `packages/core/package.json`
+  - `packages/core/src/types/graph.ts`
+  - `packages/engine/src/spec-compiler/compile.ts`
+  - `packages/engine/src/spec-compiler/compile.test.ts`
+  - `packages/engine/src/matching/graph-matcher.ts`
+  - `packages/engine/src/matching/graph-matcher.test.ts`
+  - `packages/engine/src/reconstruction/edge-factory.ts`
+  - `packages/engine/src/reconstruction/span-tree-builder.ts`
+  - `packages/engine/src/reconstruction/reconstruct.ts`
+  - `packages/engine/src/reconstruction/reconstruct.test.ts`
+  - `packages/engine/src/verdict/compute.ts`
+  - `packages/engine/src/verdict/compute.test.ts`
+  - `packages/engine/test/pipeline.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Graph-model alignment is easiest to keep stable when `compileSpec()` is the only place that knows about `ScenarioStep`; downstream matcher/verdict code and tests should operate on projected `SpecNode` fields only.
+  - Gotchas encountered
+    - The requested `pnpm --filter @qa-sdk/core run typecheck` acceptance check was not runnable until `packages/core/package.json` exposed a dedicated `typecheck` script, even though the package already had a valid `tsconfig.json`.
+---
+
+## 2026-03-13 - US-008
+- What was implemented
+  - Updated the store graph fixtures and drizzle graph typing to use the canonical `RuntimeGraph` edge shape with `source` / `target`, while keeping the existing `runtime_graphs.graph` JSONB column unchanged.
+  - Verified the ingest-server graph query route now returns the rebuilt canonical runtime graph payload, and updated the route-facing app/E2E fixtures to assert `source` / `target` edges.
+  - Rebuilt `@qa-sdk/core`, `@qa-sdk/engine`, and `@qa-sdk/store` so downstream package tests exercised the current exported graph runtime instead of stale `dist` artifacts.
+  - Aligned stale `VerdictReport` test fixtures in `store` and `ingest-server` with the current `step_matches` / `computed_at` contract so package builds stayed clean during verification.
+- Files changed
+  - `packages/store/src/db/schema.ts`
+  - `packages/store/src/adapters/drizzle/graph.adapter.ts`
+  - `packages/store/src/adapters/drizzle/adapters.integration.test.ts`
+  - `packages/store/src/adapters/memory/graph.adapter.test.ts`
+  - `packages/store/src/adapters/memory/verdict.adapter.test.ts`
+  - `packages/ingest-server/src/app.test.ts`
+  - `packages/ingest-server/src/sdk-to-ingest.e2e.test.ts`
+  - `packages/ingest-server/src/lib/cleanup.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Consumer-package verification in this workspace must be done against rebuilt dependency `dist` outputs; otherwise downstream tests can keep executing pre-refactor runtime code even when the source packages were already updated.
+  - Gotchas encountered
+    - No drizzle migration was necessary for US-008 because the persistence layer already stores runtime graphs in a generic `jsonb` column; the change was the JSON payload shape and TypeScript typing, not the table schema.
+---
+
+## 2026-03-13 - US-009
+- What was implemented
+  - Added `GraphRole` and `GraphHint` to `@qa-sdk/event-catalog`, extended `CoreEventDef` with the required `graph_hint` field, and exported the new types from the package entrypoint.
+  - Populated `graph_hint` metadata for all 60 core events across the 8 category files using the `graph-hint.spec.md` mapping table.
+  - Marked the graph-hint spec as implemented, updated the central specs index status, corrected the spec summary counts to match the implemented event data, and added a package-level `typecheck` script so the requested acceptance command runs directly.
+- Files changed
+  - `packages/event-catalog/package.json`
+  - `packages/event-catalog/src/types.ts`
+  - `packages/event-catalog/src/index.ts`
+  - `packages/event-catalog/src/categories/navigation.ts`
+  - `packages/event-catalog/src/categories/interaction.ts`
+  - `packages/event-catalog/src/categories/form.ts`
+  - `packages/event-catalog/src/categories/session.ts`
+  - `packages/event-catalog/src/categories/network.ts`
+  - `packages/event-catalog/src/categories/execution.ts`
+  - `packages/event-catalog/src/categories/outcome.ts`
+  - `packages/event-catalog/src/categories/quality.ts`
+  - `docs/specs/event-vocabulary/graph-hint.spec.md`
+  - `docs/specs/README.md`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Package-level acceptance commands in this workspace often assume a `typecheck` script exists on the target package, so adding new package checks may require exposing `tsc --noEmit` explicitly even when `build` already compiles.
+  - Gotchas encountered
+    - The per-event graph-hint mapping table was internally consistent, but the draft spec's summary counts were stale; the implementation followed the event-level mapping and then reconciled the summary totals to the actual 60-event dataset.
+---
+
+## 2026-03-13 - US-010
+- What was implemented
+  - Added package-level Vitest support for `@qa-sdk/event-catalog` with a `test` script and `vitest.config.ts`.
+  - Added a registry integrity test suite covering all 60 core events, the per-category counts, the 20-event v1 minimal set, `coreEventMap` lookups, `isCoreEvent` / `isV1MinimalEvent`, payload guide presence with required-field assertions, and graph-hint validity including the exact 4 goal-eligible events.
+  - Verified `pnpm --filter @qa-sdk/event-catalog run typecheck`, `build`, and `test` all pass.
+- Files changed
+  - `packages/event-catalog/package.json`
+  - `packages/event-catalog/vitest.config.ts`
+  - `packages/event-catalog/src/index.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Exported const registries in pure data packages are stable enough to test as the contract directly, so a single suite can cover counts, key membership, and derived lookup helpers without bespoke fixtures.
+  - Gotchas encountered
+    - `@qa-sdk/event-catalog` does not expose a package-level lint script, so the runnable acceptance checks for this story were `typecheck`, `build`, and `test`.
+---
+
+## 2026-03-13 - US-011
+- What was implemented
+  - Renamed the logger package to the canonical `@qa-sdk/pino` identity, added a package-level `typecheck` script, and introduced `vitest.config.ts` so `pnpm --filter @qa-sdk/pino run test` is a first-class acceptance command.
+  - Added a focused `src/index.test.ts` suite covering level filtering, structured JSON output with `level` / `time` / `msg`, child logger binding inheritance and merge behavior, `Error` serialization, and `silent` mode suppression.
+  - Updated the logger implementation to emit a default numeric `time` field on every log record and aligned workspace dependency aliases plus lockfile specifiers so consumers can keep importing `pino`.
+- Files changed
+  - `packages/pino/package.json`
+  - `packages/pino/vitest.config.ts`
+  - `packages/pino/src/index.ts`
+  - `packages/pino/src/index.test.ts`
+  - `packages/registry-client/package.json`
   - `packages/registry-server/package.json`
-  - `packages/registry-server/vitest.config.ts`
-  - `packages/registry-server/docker-compose.yml`
-  - `packages/registry-server/src/__tests__/health.test.ts`
+  - `packages/ingest-server/package.json`
+  - `pnpm-lock.yaml`
   - `.ralph-tui/progress.md`
 - **Learnings:**
   - Patterns discovered
-    - Route-only Hono tests can avoid `createApp()` when the endpoint has no dependency requirements.
+    - Compatibility shims that intentionally mirror third-party import IDs can still use a canonical workspace package name by switching consumers to a `workspace:` alias instead of renaming every `import`.
   - Gotchas encountered
-    - `createApp()` requires a real `Db`, so the placeholder health check is cleaner as a mounted route test instead of a full app test.
-    - The sandbox had no registry access for `pnpm install`, so local offline package links were used to verify `typecheck`, `test`, and `test:coverage`.
----
-## 2026-03-12 - US-002
-- What was implemented
-  - Added env file loading to `drizzle.config.ts` so `drizzle-kit generate` can read `DATABASE_URL` from `.env.local` or `.env`, with a generate-only fallback to `.env.example`.
-  - Generated the initial Drizzle migration SQL and metadata for the `services` and `service_events` schema.
-  - Verified `pnpm --filter @qa-sdk/registry-server db:generate` and `pnpm --filter @qa-sdk/registry-server typecheck`.
-- Files changed
-  - `packages/registry-server/drizzle.config.ts`
-  - `packages/registry-server/drizzle/0000_cloudy_rocket_racer.sql`
-  - `packages/registry-server/drizzle/meta/0000_snapshot.json`
-  - `packages/registry-server/drizzle/meta/_journal.json`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Drizzle migration generation needs its own config-time env loading; relying on the runtime `env.ts` parser does not help `drizzle-kit`.
-  - Gotchas encountered
-    - `drizzle-kit generate` still expects `dbCredentials.url` to be present even though it generates from the schema without connecting to PostgreSQL.
-    - `drizzle-kit` evaluates `drizzle.config.ts` as CommonJS, so `import.meta.dirname` breaks and `process.cwd()` is the safer base path.
----
-## 2026-03-12 - US-003
-- What was implemented
-  - Added unit tests for shared lib utilities covering version incrementing and overflow, generated service and event IDs, application error helpers, and the clock helper.
-- Files changed
-  - `packages/registry-server/src/__tests__/lib/version.test.ts`
-  - `packages/registry-server/src/__tests__/lib/id.test.ts`
-  - `packages/registry-server/src/__tests__/lib/errors.test.ts`
-  - `packages/registry-server/src/__tests__/lib/clock.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Small shared lib modules can be covered with direct unit tests and no harness beyond Vitest, which keeps test startup and assertions simple.
-  - Gotchas encountered
-    - The package uses NodeNext module resolution, so test imports must use `.js` specifiers for local modules.
----
-## 2026-03-12 - US-004
-- What was implemented
-  - Added direct Vitest coverage for `createServiceSchema` and `updateServiceSchema`, including valid create input, `service_name` edge cases, display/description limits, empty update rejection, partial updates, and status enum validation.
-  - Added matching coverage for `createEventSchema` and `updateEventSchema`, including `event_key` edge cases plus `record_kind` enum acceptance and defaulting to `"log"`.
-  - Verified `pnpm --filter @qa-sdk/registry-server test` and `pnpm --filter @qa-sdk/registry-server typecheck`.
-- Files changed
-  - `packages/registry-server/src/__tests__/modules/services/service.schema.test.ts`
-  - `packages/registry-server/src/__tests__/modules/events/event.schema.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Schema-only validation is fastest to cover with direct Zod unit tests that assert successful normalization via `parse()` and failures via `safeParse()`.
-  - Gotchas encountered
-    - The new tests still need NodeNext-style `.js` import specifiers even though they import TypeScript source modules.
----
-## 2026-03-12 - US-005
-- What was implemented
-  - Added mocked repository unit tests for `ServiceService` covering `create`, `getByName`, `getById`, and `update` success and not-found/conflict paths.
-  - Verified generated `svc_` IDs, repository delegation, DTO field mapping, and partial update payload handling.
-- Files changed
-  - `packages/registry-server/src/__tests__/modules/services/service.service.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Service-layer tests can stay fully isolated by letting mocked repository methods echo row-shaped fixtures, which makes ID generation and DTO mapping assertions straightforward.
-  - Gotchas encountered
-    - `ServiceService` depends on the concrete `ServiceRepository` class, so the repository double needs a cast even though only `findByName`, `findById`, `insert`, and `update` are used.
----
-## 2026-03-12 - US-006
-- What was implemented
-  - Added mocked `EventService` unit tests covering transactional `create()` version assignment, advisory-lock ordering, service/event not-found paths, version overflow, version listing, version lookup, and update behavior.
-  - Verified the transaction mock by routing `db.transaction()` through a repo-shaped callback double while keeping `EventRepository`, `ServiceRepository`, and `Db` fully mocked.
-- Files changed
-  - `packages/registry-server/src/__tests__/modules/events/event.service.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Transaction-scoped repository creation can be unit tested cleanly by mocking the repository constructor itself and letting the transaction callback receive the same repo-shaped double.
-  - Gotchas encountered
-    - Strict TypeScript typing on `vi.fn()` transaction mocks is easier to keep stable when the mock is inferred locally and only cast at the `Db` injection boundary.
----
-## 2026-03-12 - US-007
-- What was implemented
-  - Added end-to-end middleware tests for the global `errorHandler` using a local `Hono` app with routes that deliberately throw `AppError`, `ZodError`, and generic `Error` instances.
-  - Verified the JSON response format, status codes, Zod path formatting, and the generic 500 response sanitization behavior.
-- Files changed
-  - `packages/registry-server/src/__tests__/middleware/error-handler.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Error middleware is easiest to validate by exercising the real `app.onError()` path through throwaway routes instead of calling the handler as a plain function.
-  - Gotchas encountered
-    - Zod's validation text can vary, so the stable assertion point is the joined field path fragments in the formatted `INVALID_INPUT` message.
----
-## 2026-03-12 - US-008
-- What was implemented
-  - Added `src/__tests__/helpers/setup.ts` with reusable `createTestDb()`, `cleanupDb()`, and `createTestApp()` helpers plus `closeTestDb()` for test shutdown.
-  - Added `.env.test` pointing at the Docker PostgreSQL instance on port `5433` and wired the helper to load `DATABASE_URL` from the environment first or from that file.
-  - Made the DB client cache URL-aware so test and non-test connections do not share a single singleton client.
-  - Added `src/__tests__/integration/smoke.test.ts` to verify PostgreSQL connectivity, schema presence, and `GET /health` on the real app.
-  - Verified `pnpm --filter @qa-sdk/registry-server typecheck` locally and re-ran `test` plus `typecheck` from a clean Dockerized Node environment on the Postgres network because the host sandbox blocks localhost DB sockets.
-- Files changed
-  - `packages/registry-server/src/db/client.ts`
-  - `packages/registry-server/src/__tests__/helpers/setup.ts`
-  - `packages/registry-server/src/__tests__/integration/smoke.test.ts`
-  - `packages/registry-server/.env.test`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Real-DB integration tests are easiest to keep deterministic by applying the generated migration SQL once and truncating the small table set between tests.
-  - Gotchas encountered
-    - The local sandbox denies Node connections to `127.0.0.1:5433` with `EPERM`, so Docker-networked verification is the reliable fallback for DB-backed tests here.
-    - The workspace lockfile is stale relative to `packages/registry-server/package.json`, so a clean verification install needs `pnpm install --no-frozen-lockfile` until the lockfile is refreshed.
----
-## 2026-03-12 - US-009
-- What was implemented
-  - Added `src/__tests__/integration/services.test.ts` covering `POST /services`, `GET /services/:serviceName`, and `PATCH /services/:serviceId` against the real PostgreSQL-backed app.
-  - Covered success cases for create, fetch, display name update, and status deprecation, plus conflict, validation, missing-field, empty-patch, and not-found error responses.
-  - Reused the US-008 test helpers with `beforeEach(cleanupDb)` so the `services` and `service_events` tables are truncated before every test.
-- Files changed
-  - `packages/registry-server/src/__tests__/integration/services.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Service endpoint integration specs stay concise when common JSON request helpers seed records through `POST /services` and later assertions reuse the returned API payloads.
-  - Gotchas encountered
-    - Hono serializes the service timestamp fields as ISO strings, so integration assertions need to compare parsed dates rather than `Date` instances.
-    - Host-side `pnpm --filter @qa-sdk/registry-server test` still fails with `EPERM` on `localhost:5433`, so real-DB verification remains Docker-network-only in this environment.
----
-## 2026-03-12 - US-010
-- What was implemented
-  - Added `src/__tests__/integration/events.test.ts` covering event creation, per-key auto-versioning, version listing, version lookup, and patch updates against the real PostgreSQL-backed app.
-  - Seeded a parent service in `beforeEach` through `POST /services` and reused that parent across the child event endpoint assertions.
-- Files changed
-  - `packages/registry-server/src/__tests__/integration/events.test.ts`
-  - `packages/registry-server/vitest.config.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Nested resource integration tests are cleanest when the parent resource is created once in `beforeEach` through the public API and child helpers default to that seeded parent.
-  - Gotchas encountered
-    - Event lookup responses include ISO timestamp strings and the version-detail route adds `service_name`, so assertions need route-specific response types instead of reusing the raw service-layer types.
-    - Vitest's default file-level parallelism races the shared Postgres truncation strategy, so the registry-server suite needs `fileParallelism: false` for deterministic integration runs.
----
-## 2026-03-12 - US-011
-- What was implemented
-  - Added `src/__tests__/integration/concurrency.test.ts` to verify advisory-lock-backed event version creation under concurrent `POST /services/:serviceId/events` requests.
-  - Covered 5 simultaneous same-key creates and 3+3 simultaneous split-key creates, asserting independent sequential version assignment and persisted uniqueness.
-- Files changed
-  - `packages/registry-server/src/__tests__/integration/concurrency.test.ts`
-  - `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered
-    - Advisory-lock concurrency coverage is strongest when the test validates both the response payload versions and the persisted row versions for the same `(service_id, event_key)` scope.
-  - Gotchas encountered
-    - `Promise.all()` preserves the original promise order, not the advisory-lock acquisition order, so the returned `event_version` values need to be sorted before asserting the expected sequence.
+    - `pnpm install --lockfile-only` could not refresh the lockfile in this sandbox because pnpm tried to create store symlinks outside the writable scope, so the importer specifiers had to be updated manually in `pnpm-lock.yaml`.
 ---

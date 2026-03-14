@@ -53,6 +53,9 @@ export interface RecordInsert {
   payload: unknown;
   qaSessionId?: string;
   registryWarning?: string;
+  actorId?: string;
+  userId?: string;
+  userAttributes?: Record<string, string>;
 }
 
 /** 조회 시 반환되는 필드 (RecordInsert + createdAt) */

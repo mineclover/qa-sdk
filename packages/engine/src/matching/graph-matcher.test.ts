@@ -266,3 +266,126 @@ describe("matchGraphs", () => {
     ]);
   });
 });
+
+describe("matchGraphs — ordering violations", () => {
+  it("no violations when steps arrive in sequence order", () => {
+    const spec: SpecGraph = {
+      scenario_id: "sc_test",
+      version: "1.0.0",
+      nodes: [
+        buildSpecNode("s1", { event_key: "step.a" }),
+        buildSpecNode("s2", { event_key: "step.b" }),
+      ],
+      edges: [{ source: "s1", target: "s2", type: "sequence" }],
+    };
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a", timestamp: "2026-03-12T10:00:00.000Z" }),
+      buildRuntimeNode({ id: "n2", event_key: "step.b", timestamp: "2026-03-12T10:00:01.000Z" }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    expect(result.ordering_violations).toEqual([]);
+  });
+
+  it("detects violation when target arrives before source", () => {
+    const spec: SpecGraph = {
+      scenario_id: "sc_test",
+      version: "1.0.0",
+      nodes: [
+        buildSpecNode("s1", { event_key: "step.a" }),
+        buildSpecNode("s2", { event_key: "step.b" }),
+      ],
+      edges: [{ source: "s1", target: "s2", type: "sequence" }],
+    };
+    // step.b arrives before step.a (reversed)
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a", timestamp: "2026-03-12T10:00:01.000Z" }),
+      buildRuntimeNode({ id: "n2", event_key: "step.b", timestamp: "2026-03-12T10:00:00.000Z" }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    expect(result.ordering_violations).toHaveLength(1);
+    expect(result.ordering_violations![0].step_id).toBe("s2");
+    expect(result.ordering_violations![0].should_follow).toBe("s1");
+    expect(result.ordering_violations![0].actual_timestamp).toBe("2026-03-12T10:00:00.000Z");
+    expect(result.ordering_violations![0].predecessor_timestamp).toBe("2026-03-12T10:00:01.000Z");
+  });
+
+  it("detects violation when timestamps are equal", () => {
+    const spec: SpecGraph = {
+      scenario_id: "sc_test",
+      version: "1.0.0",
+      nodes: [
+        buildSpecNode("s1", { event_key: "step.a" }),
+        buildSpecNode("s2", { event_key: "step.b" }),
+      ],
+      edges: [{ source: "s1", target: "s2", type: "sequence" }],
+    };
+    const ts = "2026-03-12T10:00:00.000Z";
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a", timestamp: ts }),
+      buildRuntimeNode({ id: "n2", event_key: "step.b", timestamp: ts }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    // equal timestamp도 위반 (strictly after가 아님)
+    expect(result.ordering_violations).toHaveLength(1);
+    expect(result.ordering_violations![0].step_id).toBe("s2");
+  });
+
+  it("skips ordering check for optional/branch edges", () => {
+    const spec: SpecGraph = {
+      scenario_id: "sc_test",
+      version: "1.0.0",
+      nodes: [
+        buildSpecNode("s1", { event_key: "step.a" }),
+        buildSpecNode("s2", { event_key: "step.b" }),
+      ],
+      edges: [{ source: "s1", target: "s2", type: "optional" }],
+    };
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a", timestamp: "2026-03-12T10:00:01.000Z" }),
+      buildRuntimeNode({ id: "n2", event_key: "step.b", timestamp: "2026-03-12T10:00:00.000Z" }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    expect(result.ordering_violations).toEqual([]);
+  });
+
+  it("skips ordering check when one of the steps is unmatched", () => {
+    const spec: SpecGraph = {
+      scenario_id: "sc_test",
+      version: "1.0.0",
+      nodes: [
+        buildSpecNode("s1", { event_key: "step.a" }),
+        buildSpecNode("s2", { event_key: "step.b" }),
+      ],
+      edges: [{ source: "s1", target: "s2", type: "sequence" }],
+    };
+    // step.b 없음
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a", timestamp: "2026-03-12T10:00:00.000Z" }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    expect(result.ordering_violations).toEqual([]);
+  });
+
+  it("returns empty ordering_violations when spec has no edges", () => {
+    const spec = buildSpecGraph([
+      buildSpecNode("s1", { event_key: "step.a" }),
+    ]);
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "step.a" }),
+    ]);
+
+    const result = matchGraphs(spec, runtime);
+
+    expect(result.ordering_violations).toEqual([]);
+  });
+});

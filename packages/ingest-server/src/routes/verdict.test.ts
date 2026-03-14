@@ -76,7 +76,7 @@ async function insertVerdict(deps: ReturnType<typeof buildDeps>, traceId: string
     traceId,
     qaSessionId: "qas_001",
     overallVerdict: "pass",
-    report: { overall_verdict: "pass", step_matches: [], missing_steps: [], latency_violations: [], summary: "all pass" },
+    report: { scenario_id: SCENARIO.scenario_id, trace_id: traceId, qa_session_id: "qas_001", overall_verdict: "pass", step_matches: [], missing_steps: [], unexpected_nodes: [], latency_violations: [], ordering_violations: [], summary: "all pass", computed_at: "2026-03-12T00:00:00.000Z" },
   };
   await deps.verdictStore.insert(verdictInsert);
 }
@@ -190,5 +190,23 @@ describe("POST /v1/traces/:traceId/verdicts/recompute", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.computed).toHaveLength(1);
+  });
+
+  it("recomputed verdict contains path_observation with reached_nodes", async () => {
+    const { app, deps } = buildApp();
+    await seedVerdictContext(deps, "trc_001");
+
+    await app.request("/v1/traces/trc_001/verdicts/recompute", { method: "POST" });
+
+    const res = await app.request("/v1/traces/trc_001/verdicts");
+    const body = await res.json();
+    const report = body.items[0].report;
+
+    expect(report.path_observation).toBeDefined();
+    expect(report.path_observation.reached_nodes).toBeInstanceOf(Array);
+    expect(report.path_observation.loop_detected).toBe(false);
+    // page_view가 terminal (outgoing edge 없음) → goal reached
+    expect(report.path_observation.reached_goals).toContain("s1");
+    expect(report.path_observation.terminal_reason).toBe("goal_reached");
   });
 });

@@ -179,3 +179,75 @@ describe("@qa-sdk/event-catalog", () => {
     );
   });
 });
+
+describe("@qa-sdk/event-catalog — graph_hint role 의미론", () => {
+  const expectedEntryEvents = [
+    "session_start",
+    "app_open",
+    "sdk_init",
+  ] as const;
+
+  // "error" 는 quality 카테고리의 observation 이벤트 (반복 발생 가능) — terminal이 아님
+  const expectedTerminalEvents = [
+    "session_end",
+    "complete",
+    "success",
+    "failure",
+  ] as const;
+
+  const expectedLoopableEvents = [
+    "click",
+    "tap",
+    "page_view",
+    "screen_view",
+    "route_change",
+    "input_change",
+  ] as const;
+
+  it("entry 이벤트는 role이 'entry'여야 한다", () => {
+    for (const eventKey of expectedEntryEvents) {
+      const event = coreEventMap.get(eventKey);
+      expect(event, `${eventKey} not found`).toBeDefined();
+      expect(event?.graph_hint.role).toBe("entry");
+    }
+  });
+
+  it("terminal 이벤트는 role이 'terminal'이어야 한다", () => {
+    for (const eventKey of expectedTerminalEvents) {
+      const event = coreEventMap.get(eventKey);
+      expect(event, `${eventKey} not found`).toBeDefined();
+      expect(event?.graph_hint.role).toBe("terminal");
+    }
+  });
+
+  it("반복 가능한 상호작용 이벤트는 loopable이 true여야 한다", () => {
+    for (const eventKey of expectedLoopableEvents) {
+      const event = coreEventMap.get(eventKey);
+      expect(event, `${eventKey} not found`).toBeDefined();
+      expect(event?.graph_hint.loopable, `${eventKey} should be loopable`).toBe(true);
+    }
+  });
+
+  it("entry/terminal 이벤트는 loopable이 false여야 한다 (한 번만 발생)", () => {
+    const onceEvents = [...expectedEntryEvents, ...expectedTerminalEvents];
+    for (const eventKey of onceEvents) {
+      const event = coreEventMap.get(eventKey);
+      expect(event?.graph_hint.loopable, `${eventKey} should not be loopable`).toBe(false);
+    }
+  });
+
+  it("observation role 이벤트는 goal_eligible이 false여야 한다", () => {
+    const observations = allCoreEvents.filter(e => e.graph_hint.role === "observation");
+    expect(observations.length).toBeGreaterThan(0);
+    for (const event of observations) {
+      expect(event.graph_hint.goal_eligible, `${event.event_key} observation should not be goal_eligible`).toBe(false);
+    }
+  });
+
+  it("entry 이벤트는 goal_eligible이 false여야 한다", () => {
+    const entries = allCoreEvents.filter(e => e.graph_hint.role === "entry");
+    for (const event of entries) {
+      expect(event.graph_hint.goal_eligible, `${event.event_key} entry should not be goal_eligible`).toBe(false);
+    }
+  });
+});

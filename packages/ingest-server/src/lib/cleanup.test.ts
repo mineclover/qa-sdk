@@ -386,6 +386,7 @@ async function seedTraceBundle(
         missing_steps: [],
         unexpected_nodes: [],
         latency_violations: [],
+        ordering_violations: [],
         summary: "ok",
         computed_at: new Date(verdict.computedAt).toISOString(),
       },

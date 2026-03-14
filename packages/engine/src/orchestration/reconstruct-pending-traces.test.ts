@@ -14,8 +14,8 @@ import { reconstructPendingTraces, reconstructTrace } from "./reconstruct-pendin
 function makeTrace(traceId: string, overrides: Partial<StoredTrace> = {}): StoredTrace {
   return {
     traceId,
-    sessionId: undefined,
-    serviceName: undefined,
+    sessionId: null,
+    serviceName: null,
     recordCount: 1,
     firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
     lastTimestamp: new Date("2026-03-13T00:00:01.000Z"),
@@ -60,7 +60,10 @@ function buildDeps(traces: StoredTrace[] = [], records: Map<string, StoredRecord
     findByTraceId: vi.fn().mockImplementation(async (traceId: string) => records.get(traceId) ?? []),
   };
 
-  const traceStore: Pick<TraceStore, "findUnreconstructed" | "markReconstructed"> = {
+  const traceStore: Pick<TraceStore, "findById" | "findUnreconstructed" | "markReconstructed"> = {
+    findById: vi.fn().mockImplementation(async (traceId: string) =>
+      traces.find((t) => t.traceId === traceId) ?? null,
+    ),
     findUnreconstructed: vi.fn().mockResolvedValue(traces),
     markReconstructed: vi.fn().mockImplementation(async (traceId: string) => {
       reconstructedIds.push(traceId);
@@ -105,7 +108,7 @@ describe("reconstructPendingTraces", () => {
   });
 
   it("reconstructs multiple pending traces", async () => {
-    const traces = ["trc_001", "trc_002"].map(makeTrace);
+    const traces = ["trc_001", "trc_002"].map((id) => makeTrace(id));
     const records = new Map([
       ["trc_001", [makeRecord("trc_001")]],
       ["trc_002", [makeRecord("trc_002")]],
@@ -136,7 +139,7 @@ describe("reconstructPendingTraces", () => {
   });
 
   it("handles partial failure: reconstructs successful traces even when one fails", async () => {
-    const traces = ["trc_001", "trc_fail"].map(makeTrace);
+    const traces = ["trc_001", "trc_fail"].map((id) => makeTrace(id));
     const records = new Map([["trc_001", [makeRecord("trc_001")]]]);
     const deps = buildDeps(traces, records);
     (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockImplementation(

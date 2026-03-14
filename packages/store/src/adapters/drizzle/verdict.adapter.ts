@@ -9,6 +9,7 @@ export class DrizzleVerdictStore implements VerdictStore {
   constructor(private readonly db: DbExecutor) {}
 
   async insert(params: VerdictInsert): Promise<void> {
+    const pathObs = params.report.path_observation;
     await this.db.insert(verdictReports).values({
       id: params.id,
       scenarioId: params.scenarioId,
@@ -16,6 +17,9 @@ export class DrizzleVerdictStore implements VerdictStore {
       qaSessionId: params.qaSessionId,
       overallVerdict: params.overallVerdict,
       report: params.report,
+      pathObservation: pathObs ?? null,
+      loopDetected: pathObs?.loop_detected ?? null,
+      terminalReason: pathObs?.terminal_reason ?? null,
     });
   }
 

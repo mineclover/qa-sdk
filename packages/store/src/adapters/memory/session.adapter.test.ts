@@ -36,6 +36,9 @@ describe("InMemorySessionStore", () => {
       sessionId: "session_1",
       scenarioId: "scenario_signup",
       labels: { region: "kr" },
+      actorId: null,
+      userId: null,
+      userAttributes: null,
       startedAt: new Date("2026-03-12T01:00:00.000Z"),
       closedAt: null,
     });
@@ -54,6 +57,9 @@ describe("InMemorySessionStore", () => {
       sessionId: "session_1",
       scenarioId: null,
       labels: null,
+      actorId: null,
+      userId: null,
+      userAttributes: null,
       startedAt: new Date("2026-03-12T01:00:00.000Z"),
       closedAt: new Date("2026-03-12T03:00:00.000Z"),
     });

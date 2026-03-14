@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcWeights, partialQueryBase, describeRangeFormula } from "./calc.js";
+import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, calcAddressRanges } from "./calc.js";
 import { WeightedIndex } from "./weighted-index.js";
 
 // ── calcWeights ────────────────────────────────────────────────────────────
@@ -40,6 +40,29 @@ describe("calcWeights", () => {
 
   it("shape [1] → [1] (single-slot dimension weight is 1)", () => {
     expect(calcWeights([1])).toEqual([1]);
+  });
+});
+
+// ── intersectRanges ────────────────────────────────────────
+
+describe("intersectRanges", () => {
+  it("겹치는 구간의 교집합", () => {
+    expect(intersectRanges([[0, 10]], [[5, 15]])).toEqual([[5, 10]]);
+  });
+
+  it("겹치지 않으면 빈 배열", () => {
+    expect(intersectRanges([[0, 5]], [[10, 15]])).toEqual([]);
+  });
+
+  it("완전히 포함되면 작은 구간 반환", () => {
+    expect(intersectRanges([[0, 100]], [[20, 30]])).toEqual([[20, 30]]);
+  });
+
+  it("여러 구간의 교집합", () => {
+    // a: [0,10], [20,30]
+    // b: [5,25]
+    // 교집합: [5,10], [20,25]
+    expect(intersectRanges([[0, 10], [20, 30]], [[5, 25]])).toEqual([[5, 10], [20, 25]]);
   });
 });
 
@@ -123,5 +146,129 @@ describe("describeRangeFormula", () => {
     // fix resource=1, role=1, env=1 → base=0, free=action only
     const f = describeRangeFormula(W, [1, null, 1, 1], labels);
     expect(f).toBe("(action−1)×20");
+  });
+});
+
+// ── mergeRanges ────────────────────────────────────────────
+
+describe("mergeRanges", () => {
+  it("빈 배열 → 빈 배열", () => {
+    expect(mergeRanges([])).toEqual([]);
+  });
+
+  it("인접한 구간은 병합된다", () => {
+    expect(mergeRanges([[0, 2], [3, 5]])).toEqual([[0, 5]]);
+  });
+
+  it("겹치는 구간은 병합된다", () => {
+    expect(mergeRanges([[0, 5], [3, 8]])).toEqual([[0, 8]]);
+  });
+
+  it("떨어진 구간은 유지된다", () => {
+    expect(mergeRanges([[0, 2], [10, 12]])).toEqual([[0, 2], [10, 12]]);
+  });
+
+  it("정렬 후 병합된다", () => {
+    expect(mergeRanges([[10, 12], [0, 2], [3, 5]])).toEqual([[0, 5], [10, 12]]);
+  });
+});
+
+// ── calcAddressRanges ─────────────────────────────────────
+//
+// shape = [8, 4, 16, 4]  (role, action, resource, env)
+// weights = [256, 64, 4, 1]
+// capacity = 2048
+
+describe("calcAddressRanges", () => {
+  const SHAPE = [8, 4, 16, 4] as const;
+
+  // ── 모든 와일드카드 ────────────────────────────────────────
+
+  it("전체 와일드카드 → 전체 공간", () => {
+    expect(calcAddressRanges(SHAPE, [null, null, null, null])).toEqual([[0, 2047]]);
+  });
+
+  // ── 단일 값 고정 ──────────────────────────────────────────
+
+  it('"3" — role=3 → 1개 연속 구간 [512, 767]', () => {
+    const ranges = calcAddressRanges(SHAPE, ["3", null, null, null]);
+    expect(ranges).toEqual([[512, 767]]);
+    expect(ranges[0][1] - ranges[0][0] + 1).toBe(256);
+  });
+
+  it('"3","1" — role=3, env=1 → 64개 구간 (4 간격)', () => {
+    const ranges = calcAddressRanges(SHAPE, ["3", null, null, "1"]);
+    expect(ranges.length).toBe(4 * 16);
+    expect(ranges[0]).toEqual([512, 512]);
+    expect(ranges[1]).toEqual([516, 516]);
+    const total = ranges.reduce((s, [f, t]) => s + t - f + 1, 0);
+    expect(total).toBe(64);
+  });
+
+  it('"3","2","4","1" — 모든 차원 고정 → 단일 주소 588', () => {
+    expect(calcAddressRanges(SHAPE, ["3", "2", "4", "1"])).toEqual([[588, 588]]);
+  });
+
+  // ── 범위 (a-b) ────────────────────────────────────────────
+
+  it('"2-4" — role=2..4 → 1개 연속 구간 [256, 1023]', () => {
+    expect(calcAddressRanges(SHAPE, ["2-4", null, null, null])).toEqual([[256, 1023]]);
+  });
+
+  it('"3-4" — role=3..4 → [512, 1023] (인접 병합)', () => {
+    expect(calcAddressRanges(SHAPE, ["3-4", null, null, null])).toEqual([[512, 1023]]);
+  });
+
+  // ── 비연속 OR (a,b 또는 a-b,c-d) ──────────────────────────
+
+  it('"1,3" — role=1 OR role=3 → 2개 비인접 구간', () => {
+    const ranges = calcAddressRanges(SHAPE, ["1,3", null, null, null]);
+    expect(ranges).toEqual([[0, 255], [512, 767]]);
+  });
+
+  it('"1-2,4" — role=1..2 OR role=4 → 2개 구간', () => {
+    // role=1,2: [0,511], role=4: [768,1023]
+    const ranges = calcAddressRanges(SHAPE, ["1-2,4", null, null, null]);
+    expect(ranges).toEqual([[0, 511], [768, 1023]]);
+  });
+
+  // ── WeightedIndex 일관성 ──────────────────────────────────
+
+  it("단일 값의 주소가 WeightedIndex.encode와 일치한다", () => {
+    const wi = new WeightedIndex([...SHAPE]);
+    const encoded = wi.encode([3, 2, 4, 1]);
+    expect(calcAddressRanges(SHAPE, ["3", "2", "4", "1"])).toEqual([[encoded, encoded]]);
+  });
+
+  it('"3" 범위 내 모든 주소를 WeightedIndex로 검증', () => {
+    const wi = new WeightedIndex([...SHAPE]);
+    const [[from, to]] = calcAddressRanges(SHAPE, ["3", null, null, null]);
+    for (let addr = from; addr <= to; addr++) {
+      expect(wi.decode(addr)[0]).toBe(3);
+    }
+  });
+
+  // ── intersectRanges — AND 조건 ────────────────────────────
+
+  it("intersectRanges — role=3 AND env=1", () => {
+    const combined = intersectRanges(
+      calcAddressRanges(SHAPE, ["3", null, null, null]),
+      calcAddressRanges(SHAPE, [null, null, null, "1"]),
+    );
+    expect(combined).toEqual(calcAddressRanges(SHAPE, ["3", null, null, "1"]));
+  });
+
+  // ── n차원 확장 ────────────────────────────────────────────
+
+  it("5D shape — 문자열 제약 동일하게 동작한다", () => {
+    const shape5D = [4, 3, 5, 2, 6];
+    const [[from, to]] = calcAddressRanges(shape5D, ["2", null, null, null, null]);
+    expect(from).toBe(180); // (2-1) × 180
+    expect(to).toBe(359);
+
+    const ranges = calcAddressRanges(shape5D, [null, null, null, null, "1"]);
+    expect(ranges.length).toBe(4 * 3 * 5 * 2); // 120
+    expect(ranges[0]).toEqual([0, 0]);
+    expect(ranges[1]).toEqual([6, 6]);
   });
 });

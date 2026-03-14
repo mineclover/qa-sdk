@@ -11,7 +11,7 @@ import { reconstruct } from "../reconstruction/reconstruct.js";
 
 export interface ReconstructPendingTracesDeps {
   recordStore: Pick<RecordStore, "findByTraceId">;
-  traceStore: Pick<TraceStore, "findUnreconstructed" | "markReconstructed">;
+  traceStore: Pick<TraceStore, "findById" | "findUnreconstructed" | "markReconstructed">;
   graphStore: GraphStore;
   dlqStore: Pick<DlqStore, "insert">;
 }
@@ -60,8 +60,14 @@ export async function reconstructTrace(
   deps: Pick<ReconstructPendingTracesDeps, "recordStore" | "traceStore" | "graphStore">,
   traceId: string,
 ): Promise<void> {
-  const records = await deps.recordStore.findByTraceId(traceId);
-  const graph = reconstruct(traceId, records.map(toEventRecord));
+  const [records, trace] = await Promise.all([
+    deps.recordStore.findByTraceId(traceId),
+    deps.traceStore.findById(traceId),
+  ]);
+
+  const graph = reconstruct(traceId, records.map(toEventRecord), {
+    serviceName: trace?.serviceName ?? undefined,
+  });
 
   await deps.graphStore.upsert(traceId, graph);
   await deps.traceStore.markReconstructed(traceId);

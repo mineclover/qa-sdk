@@ -10,12 +10,18 @@ export interface SessionUpsert {
   sessionId: string;
   scenarioId?: string;
   labels?: Record<string, string>;
+  actorId?: string;
+  userId?: string;
+  userAttributes?: Record<string, string>;
 }
 
 export interface StoredSession {
   sessionId: string;
   scenarioId: string | null;
   labels: Record<string, string> | null;
+  actorId: string | null;
+  userId: string | null;
+  userAttributes: Record<string, string> | null;
   startedAt: Date;
   closedAt: Date | null;
 }

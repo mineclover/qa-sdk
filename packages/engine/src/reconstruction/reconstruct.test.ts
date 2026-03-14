@@ -176,3 +176,35 @@ describe("reconstruct", () => {
     expect(node.payload_masked_fields).toEqual(["cc_number"]);
   });
 });
+
+describe("reconstruct — serviceName propagation", () => {
+  it("sets service_name on all nodes when serviceName option is provided", () => {
+    const records = [
+      buildRecord({ log_id: "log_a", span_id: "span_a" }),
+      buildRecord({ log_id: "log_b", span_id: "span_b", timestamp: "2026-03-12T10:00:01.000Z" }),
+    ];
+
+    const graph = reconstruct("trace_1", records, { serviceName: "order-svc" });
+
+    expect(graph.nodes[0].service_name).toBe("order-svc");
+    expect(graph.nodes[1].service_name).toBe("order-svc");
+  });
+
+  it("leaves service_name undefined when serviceName option is omitted", () => {
+    const records = [buildRecord({ log_id: "log_a", span_id: "span_a" })];
+
+    const graph = reconstruct("trace_1", records);
+
+    expect(graph.nodes[0].service_name).toBeUndefined();
+  });
+
+  it("enables source filtering in matchGraphs via service_name", () => {
+    const records = [
+      buildRecord({ log_id: "log_a", span_id: "span_a", event_key: "order.placed" }),
+    ];
+    const graph = reconstruct("trace_1", records, { serviceName: "order-svc" });
+
+    expect(graph.nodes[0].service_name).toBe("order-svc");
+    expect(graph.nodes[0].event_key).toBe("order.placed");
+  });
+});

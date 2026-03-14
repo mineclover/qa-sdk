@@ -504,3 +504,195 @@ export function fitLayout(opts: FitLayoutOptions): FitLayoutResult | null {
 
   return { ...fit, plan, format, indexBudget };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  planCapacity — growth-aware capacity recommendation
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CapacityPlanDim {
+  name: string;
+  /** 현재 entry 수 (실제 정의된 항목 수) */
+  current: number;
+  /**
+   * 예상 추가 entry 수.
+   * 미지정 시 current와 동일 (= 2배 headroom).
+   * 0이면 추가 여유 없음 (current → nextPow2).
+   */
+  growth?: number;
+}
+
+export interface PlanCapacityOptions {
+  dims: CapacityPlanDim[];
+  /** prefix, version 등 left 필드 스펙 */
+  left: LayoutFieldSpec[];
+  /** 대상 포맷 */
+  capacity: PackFormat | number | BuiltinFormatName;
+  /** 샤딩 자릿수 (기본 0) */
+  shardChars?: number;
+}
+
+export interface CapacityRecommendation {
+  name: string;
+  current: number;
+  /** 예상 추가 수 (입력 또는 기본값) */
+  growth: number;
+  /** 권장 capacity (current + growth → nextPow2 정렬) */
+  recommended: number;
+  /** recommended가 사용하는 hex 자릿수 */
+  hexChars: number;
+  /** 여유율: (recommended - current) / recommended */
+  headroom: number;
+}
+
+export interface CapacityPlanResult {
+  dims: CapacityRecommendation[];
+  /** 권장 capacity들의 배열 */
+  shape: number[];
+  /** shape의 곱 */
+  product: number;
+  /** 포맷에 적합한지 */
+  fits: boolean;
+  /** index 필드 hex 자릿수 예산 */
+  indexBudget: number;
+  /** product / maxProduct */
+  utilization: number;
+  /**
+   * 변동성이 높은 dim이 있어 샤딩 권장.
+   * growth/current > 1.0인 dim이 하나라도 있으면 true.
+   */
+  shardingAdvised: boolean;
+  /** 레이아웃 계획 */
+  plan: LayoutPlan;
+  format: PackFormat;
+}
+
+/** 2의 거듭제곱으로 올림 (hex 친화적 단위). 최소 1. */
+function nextPow2(n: number): number {
+  if (n <= 1) return 1;
+  return Math.pow(2, Math.ceil(Math.log2(n)));
+}
+
+/**
+ * current + growth → nextPow2 정렬.
+ *
+ * @example
+ * recommendDim(5, 3)   // 5+3=8  → nextPow2 → 8
+ * recommendDim(20, 5)  // 20+5=25 → nextPow2 → 32
+ * recommendDim(16, 0)  // 16+0=16 → nextPow2 → 16
+ * recommendDim(5, 5)   // 5+5=10 → nextPow2 → 16
+ */
+function recommendDim(current: number, growth: number): number {
+  const target = Math.max(1, current) + Math.max(0, growth);
+  return nextPow2(target);
+}
+
+/**
+ * 차원별 현재 entry 수와 예상 성장량을 기반으로 최적 capacity를 제안한다.
+ *
+ * ── 알고리즘 ──────────────────────────────────────────────────────────────
+ *
+ * 1. 각 차원에 current + growth → nextPow2 적용
+ * 2. 포맷 예산 초과 시 fitShape로 축소 (current를 min으로 보호)
+ * 3. growth/current > 1.0인 dim이 있으면 샤딩 권장
+ *
+ * ── 2의 거듭제곱 정렬 ────────────────────────────────────────────────────
+ *
+ * 2의 거듭제곱은 hex 자릿수 경계와 자연스럽게 정렬된다:
+ *   16=0x10 (1자리), 256=0x100 (2자리), 4096=0x1000 (3자리)
+ * 그 사이 값(32, 64, 128 등)도 같은 hex 자릿수 내에서 깔끔하게 배분된다.
+ *
+ * @example
+ * planCapacity({
+ *   dims: [
+ *     { name: "role",     current: 5, growth: 3 },   // 5+3=8   → 8
+ *     { name: "action",   current: 8, growth: 0 },   // 8+0=8   → 8
+ *     { name: "resource", current: 3, growth: 10 },  // 3+10=13 → 16, 샤딩 권장
+ *   ],
+ *   left: [{ name: "prefix", chars: 4 }, { name: "version", chars: 2 }],
+ *   capacity: "uuid",
+ * })
+ * // → shape: [8, 8, 16], product: 1024, fits: true, shardingAdvised: true
+ */
+export function planCapacity(opts: PlanCapacityOptions): CapacityPlanResult {
+  const format = resolveBuiltinCapacity(opts.capacity);
+  const shardChars = opts.shardChars ?? 0;
+
+  const leftChars = opts.left.reduce(
+    (s, f) => s + (f.chars ?? charsForMax(f.maxValue ?? 0)),
+    0
+  ) + shardChars;
+
+  const indexBudget = format.chars - leftChars;
+  const maxProduct = indexBudget > 0 ? Math.pow(16, indexBudget) : 0;
+
+  // 1. current + growth → nextPow2
+  const growths = opts.dims.map((d) => d.growth ?? d.current); // 미지정 시 current (= 2배 headroom)
+  const rawRecommended = opts.dims.map((d, i) => recommendDim(d.current, growths[i]));
+
+  let shape = [...rawRecommended];
+  let product = shape.reduce((a, b) => a * b, 1);
+
+  // 2. 예산 초과 시 fitShape로 축소 (current를 min으로 보호)
+  if (product > maxProduct && maxProduct > 0) {
+    const mins = opts.dims.map((d) => Math.max(1, d.current));
+    const fit = fitShape({ shape, maxProduct, min: mins });
+    if (fit) {
+      // fitShape 결과를 2의 거듭제곱으로 내림 정렬 (min 이상 보장)
+      shape = fit.shape.map((s, i) => {
+        const p2 = nextPow2down(s);
+        return Math.max(mins[i], p2);
+      });
+      product = shape.reduce((a, b) => a * b, 1);
+      // 다시 초과하면 fitShape 결과를 그대로 사용
+      if (product > maxProduct) {
+        shape = fit.shape;
+        product = fit.product;
+      }
+    }
+  }
+
+  const fits = maxProduct > 0 && product <= maxProduct;
+
+  // 3. dim별 추천 정보
+  const dims: CapacityRecommendation[] = opts.dims.map((d, i) => {
+    const rec = shape[i];
+    const b = hexBoundary(rec);
+    return {
+      name: d.name,
+      current: d.current,
+      growth: growths[i],
+      recommended: rec,
+      hexChars: b.hexChars,
+      headroom: rec > 0 ? (rec - d.current) / rec : 0,
+    };
+  });
+
+  // 4. 샤딩 권장: growth/current > 1.0인 dim이 있으면
+  const shardingAdvised = opts.dims.some((d, i) =>
+    d.current > 0 && growths[i] / d.current > 1.0
+  );
+
+  // 5. 레이아웃 계획
+  const plan = planLayout({
+    left: opts.left,
+    right: [{ name: "index", maxValue: Math.max(0, product - 1) }],
+  });
+
+  return {
+    dims,
+    shape,
+    product,
+    fits,
+    indexBudget,
+    utilization: maxProduct > 0 ? product / maxProduct : 0,
+    shardingAdvised,
+    plan,
+    format,
+  };
+}
+
+/** 2의 거듭제곱으로 내림. 최소 1. */
+function nextPow2down(n: number): number {
+  if (n <= 1) return 1;
+  return Math.pow(2, Math.floor(Math.log2(n)));
+}

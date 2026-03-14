@@ -10,6 +10,8 @@ import type {
 /**
  * ScenarioSpec DSL → SpecGraph 변환.
  * steps의 next/branches 정의를 기반으로 노드·엣지를 생성한다.
+ * spec.entry_conditions는 SpecGraph에 그대로 전달되며,
+ * computeTraceVerdict에서 matchGraphs 호출 전에 평가된다.
  */
 export function compileSpec(spec: ScenarioSpec): SpecGraph {
   const nodes: SpecNode[] = spec.steps.map(projectStep);
@@ -17,10 +19,12 @@ export function compileSpec(spec: ScenarioSpec): SpecGraph {
   const edges: SpecEdge[] = [];
 
   for (const step of spec.steps) {
-    // sequence / optional next
+    // sequence / optional / branch next
     if (step.next) {
       const edgeType: SpecEdgeType =
-        step.kind === "optional" ? "optional" : "sequence";
+        step.kind === "optional" ? "optional" :
+        step.kind === "branch" ? "branch" :
+        "sequence";
 
       for (const targetId of step.next) {
         edges.push({
@@ -51,6 +55,9 @@ export function compileSpec(spec: ScenarioSpec): SpecGraph {
     version: spec.version,
     nodes,
     edges,
+    ...(spec.entry_conditions !== undefined
+      ? { entry_conditions: spec.entry_conditions }
+      : {}),
   };
 }
 

@@ -53,4 +53,13 @@ export interface EventRecord {
 
   qa_session_id?: string;
   _registry_warning?: string;
+
+  // ── Actor ──────────────────────────────────────────────
+
+  /** 행위 주체 식별자 (사람, 봇, 에이전트) */
+  actor_id?: string;
+  /** 실제 서비스 유저 식별자 (PII 포함 가능, 선택) */
+  user_id?: string;
+  /** 익명화된 분류 속성 e.g. { age_group: "30s", tier: "premium" } */
+  user_attributes?: Record<string, string>;
 }

@@ -1,16 +1,21 @@
 /**
- * MetaResolver
+ * MetaResolver — 닫힌 패턴 스키마의 외부 소비 레이어
  *
- * MetaRegistry의 데이터를 외부 소비용 번들로 변환한다.
+ * ── 목적 ───────────────────────────────────────────────────────────────────
  *
- * MetaRegistry가 core 로직(encode/decode/validate)을 담당한다면,
- * MetaResolver는 그 데이터를 **조회·전송·해석**에 최적화된 형태로 제공한다.
+ * MetaRegistry가 1차원 주소의 압축·복원(encode/decode)을 담당한다면,
+ * MetaResolver는 그 스키마 정보를 외부 시스템이 소비할 수 있는 형태로 제공한다.
  *
- * 주요 용도:
- *   - DB에 디코딩 테이블 동기화 (DecodeMap)
- *   - 프론트엔드에 decode 번들 전송 (DecodeMap)
- *   - 버전 range 조회 — dim별 / index별 (DimRange, IndexRange)
- *   - 전체 데이터셋 내보내기 (MetaDataset)
+ * 핵심 용도는 DecodeMap이다. MetaRegistry 없이도 1차원 주소를 복원할 수 있는
+ * 최소 번들(shape + entries)을 제공해, 별도 서비스나 DB가 자체적으로
+ * 주소를 해석할 수 있게 한다.
+ *
+ * ── 주요 API ───────────────────────────────────────────────────────────────
+ *
+ *  getDecodeMap(indexId, versionId)  : 외부 독립 decode에 필요한 최소 번들
+ *  getDimRange(dimId)                : dim의 모든 snapshot — 닫힌 집합의 버전 이력
+ *  getIndexRange(indexId)            : index의 모든 version — 패턴 스키마의 버전 이력
+ *  getDataset()                      : 전체 스키마 내보내기
  */
 
 import type { MetaRegistry } from "./meta-registry.js";

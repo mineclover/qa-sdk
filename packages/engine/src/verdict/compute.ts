@@ -7,6 +7,7 @@ import type {
   RuntimeGraph,
 } from "@qa-sdk/core";
 import { now } from "@qa-sdk/core";
+import { derivePathObservation } from "../path-observation/observe-path.js";
 
 /**
  * MatchResult로부터 최종 VerdictReport를 생성한다.
@@ -57,6 +58,8 @@ export function computeVerdict(
     }
   }
 
+  const orderingViolations = matchResult.ordering_violations ?? [];
+
   // 판정
   const hasRequiredFailure = stepMatches.some((stepMatch) =>
     stepMatch.verdict === "fail" && requiredStepIds.has(stepMatch.step_id)
@@ -76,7 +79,8 @@ export function computeVerdict(
   } else if (warnedCount > 0 || matchResult.missing_steps.length > 0) {
     overall = "warn";
   } else if (passedCount > 0) {
-    overall = "pass";
+    // 이벤트는 모두 포착됐지만 순서가 어긋난 경우 → warn
+    overall = orderingViolations.length > 0 ? "warn" : "pass";
   } else {
     overall = "unknown";
   }
@@ -86,7 +90,10 @@ export function computeVerdict(
     failed: failedCount,
     warned: warnedCount,
     missing: matchResult.missing_steps.length,
+    ordering: orderingViolations.length,
   });
+
+  const path_observation = derivePathObservation(matchResult, specGraph, runtimeGraph);
 
   return {
     scenario_id: matchResult.scenario_id,
@@ -97,8 +104,10 @@ export function computeVerdict(
     missing_steps: matchResult.missing_steps,
     unexpected_nodes: matchResult.unmatched_nodes,
     latency_violations: latencyViolations,
+    ordering_violations: orderingViolations,
     summary,
     computed_at: now(),
+    path_observation,
   };
 }
 
@@ -109,6 +118,7 @@ function buildSummary(
     failed: number;
     warned: number;
     missing: number;
+    ordering: number;
   },
 ): string {
   const parts: string[] = [`verdict=${verdict}`];
@@ -116,5 +126,6 @@ function buildSummary(
   if (counts.failed > 0) parts.push(`failed=${counts.failed}`);
   if (counts.warned > 0) parts.push(`warned=${counts.warned}`);
   if (counts.missing > 0) parts.push(`missing=${counts.missing}`);
+  if (counts.ordering > 0) parts.push(`ordering_violations=${counts.ordering}`);
   return parts.join(", ");
 }

@@ -1,29 +1,35 @@
 /**
- * MetaRegistry
+ * MetaRegistry — 닫힌 패턴의 주소 게이트웨이
  *
- * DimDef / DimSnapshot / IndexDef / IndexVersion 을 보관하고
- * 두 가지 핵심 기능을 제공한다.
+ * ── 목적 ───────────────────────────────────────────────────────────────────
  *
- * 1. getActiveManifest(indexId, versionId)
- *    → 각 차원의 활성 인덱스 집합(IndexActiveManifest) 반환.
- *      프로그래밍 레이어가 이 manifest를 받아 선택지 필터 / 인코딩 검증에 사용.
+ * 닫힌 패턴의 스키마(DimDef, DimSnapshot, IndexDef, IndexVersion)를 보관하고,
+ * 주소 직렬화(VersionedValue ↔ PK 문자열)를 담당하는 게이트웨이.
  *
- * 2. encode / decode
- *    → entity ID 레코드 ↔ 1D 정수 변환.
- *      WeightedIndex 인스턴스를 내부에서 캐싱해 재사용.
+ * entity ID ↔ VersionedValue 변환(encode/decode)은 MetaCodec이 담당한다.
+ * createCodec()으로 특정 version에 특화된 경량 코덱을 생성할 수 있다.
  *
- * ── 설계 원칙 ──────────────────────────────────────────────────────────────────
- * - entries 배열은 불변. 순서 = 1-based index 좌표.
- * - inactive entry로 인코딩된 기존 값도 decode는 항상 가능.
- * - encode도 inactive를 검사하지 않는다. 활성/비활성 강제는 호출자 책임.
- * - EntityId가 행(row) 고유 식별자. decode → re-encode 패턴으로 암묵적 버전 이동 가능.
+ * ── 주요 API ───────────────────────────────────────────────────────────────
  *
- * ── DimKind 검증 ───────────────────────────────────────────────────────────────
+ * createCodec(indexId, versionId)          : 독립 encode/decode 코덱 생성
+ * serialize(vv, protocol?) / parse(input)  : VersionedValue ↔ 직렬화 문자열
+ * getActiveManifest(indexId, versionId)    : 활성 차원 집합 — 선택지 필터에 사용
+ * isEntryActive(dimId, snapshotId, idx)    : 특정 entry의 active 여부
+ *
+ * ── 설계 원칙 ──────────────────────────────────────────────────────────────
+ *
+ * - entries 배열은 불변. 순서 = 1-based 좌표.
+ * - EntityId가 행(row) 고유 식별자.
+ * - encode/decode는 MetaCodec으로 분리.
+ *   MetaRegistry는 스키마 관리 + 직렬화만 담당.
+ *
+ * ── DimKind 검증 ───────────────────────────────────────────────────────────
+ *
  * - string_enum : entries가 모두 string인지 생성자에서 검증.
  *                 entryRefs로 선언된 위치는 number 허용.
- * - number_enum : entries가 모두 정수(≥ 0)인지 생성자에서 검증.
- * - index_ref   : entries가 모두 정수(≥ 0)인지 생성자에서 검증.
- *                 indexId로 지정한 IndexDef가 registry에 존재해야 함.
+ * - number_enum : entries가 모두 정수(≥ 0)인지 검증.
+ * - index_ref   : entries가 모두 정수(≥ 0)이고, 대상 IndexDef가 존재하며,
+ *                 각 값이 대상 index의 최대 버전 크기 이내인지 검증.
  *                 (forward-reference 허용: indices 루프 완료 후 교차 검증)
  */
 
@@ -52,12 +58,12 @@ import type {
   EntityId,
   EntryFlag,
 } from "./types.js";
+import { MetaCodec } from "./meta-codec.js";
 import {
   DimNotFoundError,
   SnapshotNotFoundError,
   IndexNotFoundError,
   IndexVersionNotFoundError,
-  EntryNotFoundError,
   MigrationNotFoundError,
   ValidationError,
   ParseError,
@@ -67,7 +73,6 @@ import {
 
 interface SnapshotCache {
   snapshot: DimSnapshot;
-  idToIndex: ReadonlyMap<EntityId, number>;
 }
 
 // ── MetaRegistry ──────────────────────────────────────────────────────────────
@@ -125,7 +130,6 @@ export class MetaRegistry {
 
         this._validateEntriesKind(dimId, snapshotId, snInput.entries, dimInput.kind, snInput.entryRefs);
 
-        const idToIndex = new Map<EntityId, number>();
         const seen = new Set<EntityId>();
         for (let pos = 0; pos < snInput.entries.length; pos++) {
           const raw = snInput.entries[pos];
@@ -137,7 +141,6 @@ export class MetaRegistry {
             );
           }
           seen.add(id);
-          idToIndex.set(id, pos + 1);
         }
 
         // entry-level index_ref 검증:
@@ -177,7 +180,7 @@ export class MetaRegistry {
           changelog: snInput.changelog,
         };
 
-        snMap.set(snapshotId, { snapshot, idToIndex });
+        snMap.set(snapshotId, { snapshot });
       }
 
       if (snMap.size === 0) {
@@ -354,6 +357,40 @@ export class MetaRegistry {
       }
     }
 
+    // 3. dim-level index_ref: 각 snapshot의 entry 값이 target index의 유효 범위 이내인지 검증
+    //    entry 값은 target index의 어떤 version에서든 유효한 압축 좌표여야 한다.
+    for (const [dimId, dimDef] of dimsMap) {
+      if (dimDef.kind.type !== "index_ref") continue;
+      const { indexId: targetIndexId } = dimDef.kind;
+
+      const targetVersionMap = versionsMap.get(targetIndexId)!;
+      const targetDef = indicesMap.get(targetIndexId)!;
+
+      // target index의 모든 version size 중 최댓값 — entry 값의 상한
+      let maxTargetSize = 0;
+      for (const iv of targetVersionMap.values()) {
+        let size = 1;
+        for (const d of targetDef.dims) {
+          size *= snapshotsMap.get(d)!.get(iv.snapshots[d])!.snapshot.entries.length;
+        }
+        maxTargetSize = Math.max(maxTargetSize, size);
+      }
+
+      const snMap = snapshotsMap.get(dimId)!;
+      for (const { snapshot } of snMap.values()) {
+        for (let pos = 0; pos < snapshot.entries.length; pos++) {
+          const val = snapshot.entries[pos] as number;
+          if (val >= maxTargetSize) {
+            throw new ValidationError(
+              `DimSnapshot "${dimId}/${snapshot.snapshotId}" entry at position ${pos + 1}` +
+              ` (value ${val}) is out of range for index "${targetIndexId}"` +
+              ` (max valid value: ${maxTargetSize - 1} across all versions)`
+            );
+          }
+        }
+      }
+    }
+
     // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────
     this._converter = createAddressConverter(); // text 프로토콜 (colon, uri, compact) 기본 등록
     this._defaultProtocol = "colon";
@@ -365,6 +402,7 @@ export class MetaRegistry {
         format: input.address.format,
         schemaChars: input.address.schemaChars,
         versionChars: input.address.versionChars,
+        sharding: input.address.sharding,
         schemas: input.address.schemas,
         versions: input.address.versions,
       });
@@ -398,60 +436,43 @@ export class MetaRegistry {
     return { indexId, versionId, dims };
   }
 
-  // ── Encode / Decode ───────────────────────────────────────────────────────────
+  // ── Codec ────────────────────────────────────────────────────────────────────
 
   /**
-   * { dimId: entityId } 레코드 → VersionedValue.
-   * entity ID를 1-based 인덱스로 변환한 뒤 WeightedIndex로 인코딩.
+   * 특정 index version에 특화된 독립 코덱을 생성한다.
+   *
+   * 반환된 MetaCodec은 MetaRegistry 없이 단독으로 encode/decode를 수행할 수 있다.
+   * DecodeMap(shape + entries)을 내부적으로 빌드해 코덱에 전달한다.
+   *
+   * @example
+   * const codec = reg.createCodec("perm", "v1");
+   * const vv = codec.encode({ role: "admin", action: "read", resource: 10 });
+   * const ids = codec.decode(vv);
    */
-  encode(
-    indexId: string,
-    versionId: string,
-    entityIds: Record<string, EntityId>
-  ): VersionedValue {
-    const iv = this._getIndexVersion(indexId, versionId);
+  createCodec(indexId: string, versionId: string): MetaCodec {
     const def = this._getIndexDef(indexId);
+    const iv = this._getIndexVersion(indexId, versionId);
     const wi = this._getWeightedIndex(indexId, versionId);
 
-    const coords = def.dims.map((dimId) => {
-      const snapshotId = iv.snapshots[dimId];
-      const { idToIndex } = this._getSnapshotCache(dimId, snapshotId);
-      const entityId = entityIds[dimId];
-      if (entityId === undefined) {
-        throw new ValidationError(
-          `encode "${indexId}/${versionId}": missing entity id for dim "${dimId}"`
-        );
-      }
-      const idx = idToIndex.get(entityId);
-      if (idx === undefined) {
-        throw new EntryNotFoundError(
-          `encode "${indexId}/${versionId}": entity id "${entityId}" not found in snapshot "${dimId}/${snapshotId}"`
-        );
-      }
-      return idx;
-    });
-
-    return { indexId, versionId, value: wi.encodeUnsafe(coords) };
-  }
-
-  /**
-   * VersionedValue → { dimId: entityId } 레코드.
-   * inactive entry로 저장된 값도 항상 decode 가능.
-   */
-  decode(vv: VersionedValue): Record<string, EntityId> {
-    const iv = this._getIndexVersion(vv.indexId, vv.versionId);
-    const def = this._getIndexDef(vv.indexId);
-    const wi = this._getWeightedIndex(vv.indexId, vv.versionId);
-    const coords = wi.decode(vv.value);
-
-    const result: Record<string, EntityId> = {};
-    for (let i = 0; i < def.dims.length; i++) {
-      const dimId = def.dims[i];
+    const dims = def.dims.map((dimId) => {
       const snapshotId = iv.snapshots[dimId];
       const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
-      result[dimId] = snapshot.entries[coords[i] - 1];
-    }
-    return result;
+      const dimDef = this.dims.get(dimId)!;
+      return {
+        dimId,
+        snapshotId,
+        kind: dimDef.kind,
+        entries: [...snapshot.entries] as EntityId[],
+      };
+    });
+
+    return new MetaCodec({
+      indexId,
+      versionId,
+      shape: [...wi.shape],
+      size: wi.size,
+      dims,
+    });
   }
 
   // ── 직렬화 ───────────────────────────────────────────────────────────────────
@@ -533,38 +554,6 @@ export class MetaRegistry {
     return vv;
   }
 
-  /**
-   * entity ID 레코드를 인코딩해 프로토콜 형식의 PK 문자열로 직접 변환.
-   * encode() + serialize()를 한 번에 수행한다.
-   *
-   * @example
-   * reg.toPK("perm", "v1", { role: "admin", action: "read", resource: "doc" })
-   * // address 설정 시 → "00010001-0000-0000-0000-000000000000" (UUID)
-   * // address 미설정 시 → "perm:v1:0" (colon)
-   */
-  toPK(
-    indexId: string,
-    versionId: string,
-    entityIds: Record<string, EntityId>,
-    protocol?: string
-  ): string {
-    const vv = this.encode(indexId, versionId, entityIds);
-    return this.serialize(vv, protocol);
-  }
-
-  /**
-   * 프로토콜 형식의 PK 문자열을 파싱해 entity ID 레코드로 직접 변환.
-   * parse() + decode()를 한 번에 수행한다.
-   *
-   * @example
-   * reg.fromPK("00010001-0000-0000-0000-000000000000")
-   * // → { role: "admin", action: "read", resource: "doc" }
-   */
-  fromPK(input: string, protocol?: string): Record<string, EntityId> {
-    const vv = this.parse(input, protocol);
-    return this.decode(vv);
-  }
-
   // ── 조회 ─────────────────────────────────────────────────────────────────────
 
   getDimDef(dimId: string): DimDef {
@@ -594,10 +583,17 @@ export class MetaRegistry {
   }
 
   /**
-   * fromSnapshotId → toSnapshotId 경로로 index를 추적한다.
+   * fromSnapshotId → toSnapshotId 경로로 1-based index를 추적한다.
+   *
    * 등록된 migration edge를 BFS로 탐색해 경로를 찾고, 각 구간 indexMap을 순서대로 적용.
    * 경로가 없으면 MigrationNotFoundError.
-   * indexMap에 명시되지 않은 위치는 identity (동일 index 유지).
+   *
+   * ── sparse migration ──────────────────────────────────────────────────────
+   * indexMap에 명시되지 않은 위치는 identity로 처리된다 (동일 index 유지).
+   * 이는 의도적인 설계로, entry가 두 스냅샷에서 같은 위치에 있으면 명시할 필요가 없다.
+   *
+   * 주의: 모든 entry가 명시되지 않아도 오류가 발생하지 않는다.
+   * 부분 migration이 맞는지는 호출자가 보장해야 한다.
    */
   traceMigration(
     dimId: string,
@@ -634,6 +630,27 @@ export class MetaRegistry {
   /** 캐싱된 WeightedIndex 인스턴스 반환. */
   getWeightedIndex(indexId: string, versionId: string): WeightedIndex {
     return this._getWeightedIndex(indexId, versionId);
+  }
+
+  /**
+   * 특정 entry의 active 상태를 반환.
+   *
+   * encode() 자체는 inactive entry도 허용하므로, 인코딩 전에 active 여부를
+   * 확인해야 하는 경우 이 메서드를 사용한다.
+   *
+   * @param dimId - 차원 ID
+   * @param snapshotId - 스냅샷 ID
+   * @param oneBasedIndex - 1-based 인덱스 (DimSnapshot.entries 기준)
+   */
+  isEntryActive(dimId: string, snapshotId: string, oneBasedIndex: number): boolean {
+    const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
+    if (oneBasedIndex < 1 || oneBasedIndex > snapshot.entries.length) {
+      throw new ValidationError(
+        `isEntryActive "${dimId}/${snapshotId}": index ${oneBasedIndex} out of range [1, ${snapshot.entries.length}]`
+      );
+    }
+    const flag = snapshot.entryFlags[oneBasedIndex];
+    return !flag || flag.status === "active";
   }
 
   get dimIds(): readonly string[] {
@@ -792,6 +809,7 @@ export class MetaRegistry {
    * 3. schemas/versions 매핑 값은 non-negative integer여야 한다.
    * 4. schemas 매핑 값은 unique해야 한다 (역매핑 충돌 방지).
    * 5. versions 매핑 값은 unique해야 한다.
+   * 6. sharding이 있으면 chars/numShards 유효성을 검증한다.
    */
   private _validateAddressConfig(
     config: AddressConfig,
@@ -856,6 +874,27 @@ export class MetaRegistry {
         );
       }
       versionNums.set(num, name);
+    }
+
+    // 6. sharding 유효성
+    if (config.sharding !== undefined) {
+      const { chars, numShards } = config.sharding;
+      if (!Number.isInteger(chars) || chars <= 0) {
+        throw new ValidationError(
+          `Address config sharding.chars: must be a positive integer, got ${JSON.stringify(chars)}`
+        );
+      }
+      if (!Number.isInteger(numShards) || numShards < 1) {
+        throw new ValidationError(
+          `Address config sharding.numShards: must be a positive integer, got ${JSON.stringify(numShards)}`
+        );
+      }
+      const shardCapacity = 16 ** chars;
+      if (numShards > shardCapacity) {
+        throw new ValidationError(
+          `Address config sharding.numShards(${numShards}) exceeds chars(${chars}) capacity (max ${shardCapacity})`
+        );
+      }
     }
   }
 }

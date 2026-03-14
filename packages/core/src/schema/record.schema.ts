@@ -39,4 +39,8 @@ export const eventRecordSchema = z.object({
   payload: z.unknown(),
 
   qa_session_id: z.string().optional(),
+
+  actor_id: z.string().optional(),
+  user_id: z.string().optional(),
+  user_attributes: z.record(z.string()).optional(),
 });

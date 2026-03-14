@@ -622,3 +622,94 @@ describe("AddressConverter", () => {
     });
   });
 });
+
+// ── 샤딩 레이아웃 ─────────────────────────────────────────────────────────────
+
+describe("createLayoutProtocol with sharding", () => {
+  const baseOpts = {
+    format: PACK_FORMATS.uuid,
+    schemaChars: 4,
+    versionChars: 2,
+    schemas:  { perm: 1 },
+    versions: { v1: 1 },
+  };
+
+  // ── 기본 동작 ────────────────────────────────────────────────────────────
+
+  const modulo4 = { type: "modulo" as const, chars: 1, numShards: 4 };
+
+  it("sharding.type=modulo, chars=1, numShards=4: layout이 [schema|version|shard|gap|index]로 확장된다", () => {
+    const proto = createLayoutProtocol({ ...baseOpts, sharding: modulo4 });
+    // index=42 → shard = 42 % 4 = 2
+    const out = proto.serialize({ schema: "perm", version: "v1", index: 42 });
+    const raw = out.replace(/-/g, "");
+    expect(raw.slice(0, 4)).toBe("0001"); // schema
+    expect(raw.slice(4, 6)).toBe("01");   // version
+    expect(raw.slice(6, 7)).toBe("2");    // shard = 42 % 4 = 2
+    expect(raw.slice(-2)).toBe("2a");     // index = 42 = 0x2a
+  });
+
+  it("parse가 shard 필드를 반환한다", () => {
+    const proto = createLayoutProtocol({ ...baseOpts, sharding: modulo4 });
+    const serialized = proto.serialize({ schema: "perm", version: "v1", index: 42 });
+    const parsed = proto.parse(serialized);
+    expect(parsed.schema).toBe("perm");
+    expect(parsed.version).toBe("v1");
+    expect(parsed.index).toBe(42);
+    expect(parsed.shard).toBe(2); // 42 % 4 = 2
+  });
+
+  it("round-trip: serialize → parse가 index를 보존한다", () => {
+    const proto = createLayoutProtocol({ ...baseOpts, sharding: modulo4 });
+    for (const idx of [0, 1, 3, 4, 7, 15, 42, 100]) {
+      const addr = { schema: "perm", version: "v1", index: idx };
+      const parsed = proto.parse(proto.serialize(addr));
+      expect(parsed.index).toBe(idx);
+      expect(parsed.shard).toBe(idx % 4);
+    }
+  });
+
+  // ── shard 분배 ───────────────────────────────────────────────────────────
+
+  it("modulo 분배: 4개 샤드에 균등하게 배분되는지 확인", () => {
+    const proto = createLayoutProtocol({ ...baseOpts, sharding: modulo4 });
+    const counts = [0, 0, 0, 0];
+    for (let idx = 0; idx < 100; idx++) {
+      const parsed = proto.parse(proto.serialize({ schema: "perm", version: "v1", index: idx }));
+      counts[parsed.shard!]++;
+    }
+    // 100개 → 각 샤드 25개
+    expect(counts).toEqual([25, 25, 25, 25]);
+  });
+
+  it("numShards=16: hex 1자리 용량 전체 사용", () => {
+    const proto = createLayoutProtocol({ ...baseOpts, sharding: { type: "modulo", chars: 1, numShards: 16 } });
+    const parsed = proto.parse(proto.serialize({ schema: "perm", version: "v1", index: 17 }));
+    expect(parsed.shard).toBe(17 % 16); // = 1
+  });
+
+  // ── sharding 미설정 (기존 동작 유지) ────────────────────────────────────
+
+  it("sharding 미설정 시 shard가 반환되지 않는다 (하위 호환)", () => {
+    const proto = createLayoutProtocol({ ...baseOpts });
+    const parsed = proto.parse(proto.serialize({ schema: "perm", version: "v1", index: 42 }));
+    expect(parsed.shard).toBeUndefined();
+  });
+
+  // ── 검증 ────────────────────────────────────────────────────────────────
+
+  it("numShards가 chars 용량 초과면 RangeError", () => {
+    // chars=1 → 최대 16 shards
+    expect(() =>
+      createLayoutProtocol({ ...baseOpts, sharding: { type: "modulo", chars: 1, numShards: 17 } })
+    ).toThrow(RangeError);
+  });
+
+  it("sharding.chars + 다른 필드가 format.chars 초과 시 RangeError", () => {
+    // uuid = 32 chars, schemaChars=4, versionChars=2, sharding.chars=27 → left=33 > 32
+    expect(() =>
+      createLayoutProtocol({ ...baseOpts, sharding: { type: "modulo", chars: 27, numShards: 4 } })
+    ).toThrow(RangeError);
+  });
+
+});

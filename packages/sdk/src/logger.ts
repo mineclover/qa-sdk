@@ -1,4 +1,5 @@
 import {
+  type ActorContext,
   type EventRecord,
   type TransmissionEnvelope,
   type RecordKind,
@@ -28,6 +29,7 @@ export class QaLogger {
   private buffer: EventRecord[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private activeContext: TraceContext | null = null;
+  private actor: ActorContext | null = null;
   /** Prevents concurrent flush calls (interval + batch-size trigger). */
   private flushInProgress = false;
 
@@ -41,6 +43,10 @@ export class QaLogger {
       this.flushTimer = setInterval(() => {
         this.flush().catch((err: unknown) => this.handleError(err, "interval-flush"));
       }, this.flushIntervalMs);
+    }
+
+    if (config.actor) {
+      this.actor = config.actor;
     }
   }
 
@@ -58,6 +64,18 @@ export class QaLogger {
   /** Get the current trace context. */
   get context(): TraceContext | null {
     return this.activeContext;
+  }
+
+  // ── Actor ───────────────────────────────────────────
+
+  /** Set actor context. 이후 emit되는 모든 레코드에 자동 주입된다. */
+  setActor(actor: ActorContext): void {
+    this.actor = actor;
+  }
+
+  /** Clear actor context. */
+  clearActor(): void {
+    this.actor = null;
   }
 
   /** Set an external trace context (e.g., propagated from upstream). */
@@ -95,6 +113,11 @@ export class QaLogger {
       payload_masked_fields: maskedFields,
       payload,
       qa_session_id: params.qa_session_id ?? ctx.qa_session_id,
+      ...(this.actor ? {
+        actor_id: this.actor.actor_id,
+        ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
+        ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
+      } : {}),
     };
 
     this.addRecord(record);
@@ -154,6 +177,11 @@ export class QaLogger {
           payload_masked_fields: maskedFields,
           payload,
           qa_session_id: params.qa_session_id ?? ctx.qa_session_id,
+          ...(this.actor ? {
+            actor_id: this.actor.actor_id,
+            ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
+            ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
+          } : {}),
         };
 
         this.addRecord(record);

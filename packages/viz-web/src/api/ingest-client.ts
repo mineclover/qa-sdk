@@ -103,6 +103,9 @@ export interface SessionEntry {
   sessionId: string;
   scenarioId: string | null;
   labels: Record<string, string> | null;
+  actorId: string | null;
+  userId: string | null;
+  userAttributes: Record<string, string> | null;
   startedAt: string;
   closedAt: string | null;
 }
@@ -146,10 +149,16 @@ export function createScenario(
 }
 
 export interface TraceMetadata {
-  trace_id: string;
-  service_name?: string;
-  started_at?: string;
-  record_count?: number;
+  traceId: string;
+  sessionId: string | null;
+  serviceName: string | null;
+  actorId: string | null;
+  userId: string | null;
+  userAttributes: Record<string, string> | null;
+  recordCount: number;
+  firstTimestamp: string | null;
+  lastTimestamp: string | null;
+  reconstructed: boolean;
 }
 
 export function getTrace(traceId: string): Promise<TraceMetadata> {
@@ -158,8 +167,8 @@ export function getTrace(traceId: string): Promise<TraceMetadata> {
 
 export interface TraceRecordsPage {
   items: StoredRecord[];
-  nextCursor: { timestamp: string; logId: string } | null;
-  hasMore: boolean;
+  next_cursor: string | null;
+  has_more: boolean;
 }
 
 // API returns EventRecord (snake_case) — convert to StoredRecord (camelCase)
@@ -245,8 +254,8 @@ export async function getSessionVerdicts(sessionId: string): Promise<VerdictList
 
 export function recomputeVerdicts(
   traceId: string,
-): Promise<{ recomputed: boolean }> {
-  return request<{ recomputed: boolean }>(
+): Promise<{ computed: Array<{ traceId: string; scenarioId: string }>; skipped: string[]; failed: string[] }> {
+  return request<{ computed: Array<{ traceId: string; scenarioId: string }>; skipped: string[]; failed: string[] }>(
     `/v1/traces/${encodeURIComponent(traceId)}/verdicts/recompute`,
     { method: "POST" },
   );

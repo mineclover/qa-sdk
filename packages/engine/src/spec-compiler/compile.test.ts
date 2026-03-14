@@ -156,6 +156,42 @@ describe("compileSpec", () => {
     expect(graph.edges[1]).toEqual({ source: "s1", target: "s3", type: "branch", condition });
   });
 
+  it("creates branch edges when step kind is branch and next is used (Gap 4)", () => {
+    const spec = buildSpec({
+      steps: [
+        buildStep({ id: "s1", kind: "branch", next: ["s2", "s3"] }),
+        buildStep({ id: "s2" }),
+        buildStep({ id: "s3" }),
+      ],
+    });
+
+    const graph = compileSpec(spec);
+
+    expect(graph.edges).toEqual([
+      { source: "s1", target: "s2", type: "branch" },
+      { source: "s1", target: "s3", type: "branch" },
+    ]);
+  });
+
+  it("propagates entry_conditions to SpecGraph", () => {
+    const entryConditions = [
+      { field: "payload.env", op: "eq" as const, value: "prod" },
+    ];
+    const spec = buildSpec({ entry_conditions: entryConditions });
+
+    const graph = compileSpec(spec);
+
+    expect(graph.entry_conditions).toEqual(entryConditions);
+  });
+
+  it("omits entry_conditions from SpecGraph when not defined", () => {
+    const spec = buildSpec(); // no entry_conditions
+
+    const graph = compileSpec(spec);
+
+    expect(graph.entry_conditions).toBeUndefined();
+  });
+
   it("handles multiple branches with different conditions", () => {
     const spec = buildSpec({
       steps: [

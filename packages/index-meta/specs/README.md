@@ -2,4 +2,4 @@
 
 이 패키지의 스펙은 중앙 스펙 디렉토리에서 관리된다.
 
-→ [`docs/specs/indexing/index-meta.spec.md`](../../../docs/specs/indexing/index-meta.spec.md)
+→ [`docs/specs/indexing/index-meta/`](../../../docs/specs/indexing/index-meta/README.md)

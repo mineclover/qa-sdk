@@ -13,12 +13,18 @@ export interface TraceUpsert {
   recordCount: number;
   firstTimestamp: Date;
   lastTimestamp: Date;
+  actorId?: string;
+  userId?: string;
+  userAttributes?: Record<string, string>;
 }
 
 export interface StoredTrace {
   traceId: string;
   sessionId: string | null;
   serviceName: string | null;
+  actorId: string | null;
+  userId: string | null;
+  userAttributes: Record<string, string> | null;
   recordCount: number;
   firstTimestamp: Date | null;
   lastTimestamp: Date | null;

@@ -15,6 +15,9 @@ export class InMemorySessionStore implements SessionStore {
       sessionId: params.sessionId,
       scenarioId: params.scenarioId ?? null,
       labels: params.labels ? structuredClone(params.labels) : null,
+      actorId: params.actorId ?? null,
+      userId: params.userId ?? null,
+      userAttributes: params.userAttributes ? structuredClone(params.userAttributes) : null,
       startedAt: new Date(),
       closedAt: null,
     };

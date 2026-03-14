@@ -42,6 +42,10 @@ export {
 } from "./matching/constraint-evaluator.js";
 export { matchGraphs } from "./matching/graph-matcher.js";
 
+// ── Path Observation ─────────────────────────────────────
+
+export { derivePathObservation } from "./path-observation/observe-path.js";
+
 // ── Verdict ─────────────────────────────────────────────
 
 export { computeVerdict } from "./verdict/compute.js";
