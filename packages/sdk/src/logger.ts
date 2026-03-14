@@ -17,24 +17,29 @@ import {
   type QaLoggerConfig,
   DEFAULT_BATCH_SIZE,
   DEFAULT_FLUSH_INTERVAL_MS,
+  DEFAULT_MAX_BUFFER_SIZE,
 } from "./config.js";
 
 export class QaLogger {
   private readonly config: QaLoggerConfig;
   private readonly batchSize: number;
   private readonly flushIntervalMs: number;
+  private readonly maxBufferSize: number;
   private buffer: EventRecord[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private activeContext: TraceContext | null = null;
+  /** Prevents concurrent flush calls (interval + batch-size trigger). */
+  private flushInProgress = false;
 
   constructor(config: QaLoggerConfig) {
     this.config = config;
     this.batchSize = config.batchSize ?? DEFAULT_BATCH_SIZE;
     this.flushIntervalMs = config.flushIntervalMs ?? DEFAULT_FLUSH_INTERVAL_MS;
+    this.maxBufferSize = config.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
 
     if (this.flushIntervalMs > 0) {
       this.flushTimer = setInterval(() => {
-        void this.flush();
+        this.flush().catch((err: unknown) => this.handleError(err, "interval-flush"));
       }, this.flushIntervalMs);
     }
   }
@@ -161,11 +166,29 @@ export class QaLogger {
 
   /** Flush buffered records as a transmission envelope. */
   async flush(): Promise<void> {
-    if (this.buffer.length === 0) return;
+    if (this.flushInProgress || this.buffer.length === 0) return;
 
+    this.flushInProgress = true;
     const records = this.buffer.splice(0, this.buffer.length);
-    const envelope = this.buildEnvelope(records);
-    await this.config.transport.send(envelope);
+    try {
+      const envelope = this.buildEnvelope(records);
+      await this.config.transport.send(envelope);
+    } catch (err: unknown) {
+      // Re-insert records only up to the buffer cap; drop excess oldest records.
+      const combined = [...records, ...this.buffer];
+      if (combined.length > this.maxBufferSize) {
+        const dropped = combined.splice(0, combined.length - this.maxBufferSize);
+        this.handleError(
+          new Error(`[qa-sdk:flush] buffer overflow — dropped ${dropped.length} oldest records`),
+          "buffer-overflow",
+        );
+      }
+      this.buffer = combined;
+      const error = err instanceof Error ? err : new Error(String(err));
+      throw new Error(`[qa-sdk:flush] transport.send failed: ${error.message}`, { cause: error });
+    } finally {
+      this.flushInProgress = false;
+    }
   }
 
   /** Flush remaining records and shut down. */
@@ -210,9 +233,26 @@ export class QaLogger {
   }
 
   private addRecord(record: EventRecord): void {
+    if (this.buffer.length >= this.maxBufferSize) {
+      // Buffer is at cap and no flush in progress — drop oldest to make room
+      this.buffer.shift();
+      this.handleError(
+        new Error(`[qa-sdk:addRecord] buffer at cap (${this.maxBufferSize}) — dropping oldest record`),
+        "buffer-overflow",
+      );
+    }
     this.buffer.push(record);
-    if (this.buffer.length >= this.batchSize) {
-      void this.flush();
+    if (!this.flushInProgress && this.buffer.length >= this.batchSize) {
+      this.flush().catch((err: unknown) => this.handleError(err, "batch-flush"));
+    }
+  }
+
+  private handleError(err: unknown, context: string): void {
+    const error = err instanceof Error ? err : new Error(String(err));
+    if (this.config.onError) {
+      this.config.onError(error, context);
+    } else {
+      console.error(`[qa-sdk:${context}]`, error);
     }
   }
 

@@ -26,7 +26,7 @@ const build = {
 } as const;
 
 function createLogger(
-  overrides: Partial<Pick<QaLoggerConfig, "batchSize" | "flushIntervalMs">> = {},
+  overrides: Partial<Pick<QaLoggerConfig, "batchSize" | "flushIntervalMs" | "maxBufferSize" | "onError">> = {},
 ) {
   const transport = new NoopTransport();
   const logger = new QaLogger({
@@ -41,6 +41,17 @@ function createLogger(
   });
 
   return { logger, transport };
+}
+
+function makeFailingTransport(error = new Error("network error")) {
+  return {
+    send: vi.fn().mockRejectedValue(error),
+    shutdown: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+function getFlushInProgress(logger: QaLogger): boolean {
+  return (logger as unknown as { flushInProgress: boolean }).flushInProgress;
 }
 
 function getBufferedRecords(logger: QaLogger): EventRecord[] {
@@ -173,6 +184,29 @@ describe("QaLogger", () => {
     ]);
   });
 
+  it("does not flush when flushInProgress is true", async () => {
+    let resolveTransport!: () => void;
+    const transport = {
+      send: vi.fn().mockImplementation(
+        () => new Promise<void>((r) => { resolveTransport = r; }),
+      ),
+      shutdown: vi.fn().mockResolvedValue(undefined),
+    };
+    const logger = new QaLogger({ transport, owner, source, runtime, build, flushIntervalMs: 0 });
+    logger.startTrace();
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    const flush1 = logger.flush();
+    expect(getFlushInProgress(logger)).toBe(true);
+
+    // Second flush while first is in progress — should be a no-op
+    await logger.flush();
+    resolveTransport();
+    await flush1;
+
+    expect(transport.send).toHaveBeenCalledTimes(1);
+  });
+
   it("auto flushes when the batch size is reached", async () => {
     const { logger, transport } = createLogger({ batchSize: 2 });
 
@@ -196,5 +230,93 @@ describe("QaLogger", () => {
       }),
     );
     expect(getBufferedRecords(logger)).toEqual([]);
+  });
+});
+
+describe("QaLogger — error handling", () => {
+  it("drops oldest record and calls onError when buffer reaches maxBufferSize", () => {
+    const onError = vi.fn();
+    const { logger } = createLogger({ maxBufferSize: 3, onError });
+    logger.startTrace();
+
+    logger.log({ event_key: "e0", event_version: "1" });
+    logger.log({ event_key: "e1", event_version: "1" });
+    logger.log({ event_key: "e2", event_version: "1" }); // fills cap
+
+    // 4th record: oldest (e0) should be evicted
+    logger.log({ event_key: "e3", event_version: "1" });
+
+    const buf = getBufferedRecords(logger);
+    expect(buf).toHaveLength(3);
+    expect(buf[0].event_key).toBe("e1");
+    expect(buf[2].event_key).toBe("e3");
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("buffer at cap") }),
+      "buffer-overflow",
+    );
+  });
+
+  it("restores records after flush failure and calls onError", async () => {
+    const onError = vi.fn();
+    const transport = makeFailingTransport();
+    const logger = new QaLogger({ transport, owner, source, runtime, build, flushIntervalMs: 0, onError });
+    logger.startTrace();
+    logger.log({ event_key: "e0", event_version: "1" });
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    await expect(logger.flush()).rejects.toThrow("[qa-sdk:flush] transport.send failed");
+
+    const buf = getBufferedRecords(logger);
+    expect(buf).toHaveLength(2);
+    expect(buf[0].event_key).toBe("e0");
+    expect(buf[1].event_key).toBe("e1");
+  });
+
+  it("caps restored records at maxBufferSize when new records arrived during failed flush", async () => {
+    let rejectTransport!: (err: Error) => void;
+    const transport = {
+      send: vi.fn().mockImplementation(
+        () => new Promise<void>((_, reject) => { rejectTransport = reject; }),
+      ),
+      shutdown: vi.fn().mockResolvedValue(undefined),
+    };
+    const onError = vi.fn();
+    const logger = new QaLogger({ transport, owner, source, runtime, build, flushIntervalMs: 0, maxBufferSize: 3, onError });
+    logger.startTrace();
+    logger.log({ event_key: "e0", event_version: "1" });
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    const flushing = logger.flush();
+
+    // New record added while transport is in-flight
+    logger.log({ event_key: "e2", event_version: "1" });
+
+    rejectTransport(new Error("fail"));
+    await expect(flushing).rejects.toThrow("[qa-sdk:flush] transport.send failed");
+
+    // buffer cap=3: restored [e0,e1] + in-flight [e2] = 3 — fits exactly, no overflow
+    const buf = getBufferedRecords(logger);
+    expect(buf).toHaveLength(3);
+    expect(buf.map((r) => r.event_key)).toEqual(["e0", "e1", "e2"]);
+    // onError not called here because flush() was invoked directly — rejection is the signal
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("calls onError via batch-flush path when transport fails during auto-flush", async () => {
+    const onError = vi.fn();
+    const transport = makeFailingTransport();
+    const logger = new QaLogger({ transport, owner, source, runtime, build, flushIntervalMs: 0, batchSize: 2, onError });
+    logger.startTrace();
+
+    // Logging 2nd record triggers auto-flush via addRecord → .catch → handleError
+    logger.log({ event_key: "e0", event_version: "1" });
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    await vi.waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining("transport.send failed") }),
+        "batch-flush",
+      );
+    });
   });
 });

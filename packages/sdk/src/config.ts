@@ -31,7 +31,15 @@ export interface QaLoggerConfig {
 
   /** Auto-flush interval in ms (0 = disabled) */
   flushIntervalMs?: number;
+
+  /** Hard cap on in-memory buffer. Oldest records are dropped when exceeded. */
+  maxBufferSize?: number;
+
+  /** Called when a flush or transport error occurs. Defaults to console.error. */
+  onError?: (err: Error, context: string) => void;
 }
 
 export const DEFAULT_BATCH_SIZE = 50;
 export const DEFAULT_FLUSH_INTERVAL_MS = 5_000;
+/** Hard cap on in-memory buffer size. Oldest records are dropped with a warning when exceeded. */
+export const DEFAULT_MAX_BUFFER_SIZE = 500;
