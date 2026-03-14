@@ -156,6 +156,14 @@ body {
   background: var(--bg-surface);
 }
 
+.event-log-error {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.event-log-error .event-log-key {
+  color: #ef4444;
+}
+
 .event-log-time {
   color: var(--text-muted);
   flex-shrink: 0;
@@ -183,6 +191,10 @@ body {
 
 .status-disconnected {
   color: var(--text-muted);
+}
+
+.status-error {
+  color: #ef4444;
 }
 
 /* ── Scrollbar ───────────────────────────────────────── */
