@@ -6,7 +6,11 @@
     "build": "pnpm -r run build",
     "test": "pnpm -r --workspace-concurrency=1 run test",
     "lint": "pnpm -r run lint",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "dev:ingest": "pnpm --filter @qa-sdk/ingest-server dev",
+    "dev:viz": "pnpm --filter @qa-sdk/viz-web dev",
+    "dev:roleplay": "pnpm --filter @qa-sdk/roleplay-web dev",
+    "test:e2e": "pnpm --filter @qa-sdk/e2e test"
   },
   "devDependencies": {
     "vitest": "^1.6.1"
