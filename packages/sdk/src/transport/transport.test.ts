@@ -10,7 +10,7 @@ function buildEnvelope(overrides: Partial<TransmissionEnvelope> = {}): Transmiss
     owner: { owner_type: "workspace", owner_id: "ws_1" },
     source: { service_name: "test-service", sdk_name: "qa-sdk-js", sdk_version: "0.1.0" },
     runtime: { platform: "node" },
-    build: { env: "test" },
+    build: { env: "local" },
     records: [],
     ...overrides,
   };
