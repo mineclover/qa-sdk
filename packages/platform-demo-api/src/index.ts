@@ -121,48 +121,44 @@ function getFeatureDefs(ver: Ver) { return ver === "v1" ? FEATURE_DEFS_V1 : FEAT
 function getPermCodec(ver: Ver)  { return ver === "v1" ? permCodec : permCodecV2; }
 function getEvtCodec(ver: Ver)   { return ver === "v1" ? evtCodec : evtCodecV2; }
 
-// ── Mutable grants state (v2 only) ───────────────────────────────────────
+// ── D1 grants (v2) ──────────────────────────────────────────────────────
 
-const grantState = new Map<string, Set<string>>(
-  FEATURE_DEFS.map((f) => [f.id, new Set<string>(f.grantedRoles)])
-);
+type GrantMap = Map<string, Set<string>>;
 
-function isGranted(featureId: string, role: string): boolean {
-  return grantState.get(featureId)?.has(role) ?? false;
+const FEATURE_IDS = new Set(FEATURE_DEFS.map((f) => f.id));
+
+async function loadGrants(db: D1Database): Promise<GrantMap> {
+  const { results } = await db.prepare("SELECT feature_id, role FROM grants")
+    .all<{ feature_id: string; role: string }>();
+  const map: GrantMap = new Map();
+  for (const f of FEATURE_DEFS) map.set(f.id, new Set());
+  for (const row of results) map.get(row.feature_id)?.add(row.role);
+  return map;
 }
 
-function getGrantedRoles(featureId: string): string[] {
-  return [...(grantState.get(featureId) ?? [])];
-}
-
-function getGrantedRolesKo(featureId: string): string[] {
-  return getGrantedRoles(featureId).map((r) => ROLE_KO[r] ?? r);
-}
-
-// v1 uses fixed grants from FEATURE_DEFS_V1
-function isGrantedVer(ver: Ver, featureId: string, role: string): boolean {
+function isGrantedVer(ver: Ver, grants: GrantMap, featureId: string, role: string): boolean {
   if (ver === "v1") {
     const def = FEATURE_DEFS_V1.find((f) => f.id === featureId);
     return def ? def.grantedRoles.includes(role) : false;
   }
-  return isGranted(featureId, role);
+  return grants.get(featureId)?.has(role) ?? false;
 }
 
-function getGrantedRolesVer(ver: Ver, featureId: string): string[] {
+function getGrantedRolesVer(ver: Ver, grants: GrantMap, featureId: string): string[] {
   if (ver === "v1") {
     const def = FEATURE_DEFS_V1.find((f) => f.id === featureId);
     return def ? [...def.grantedRoles] : [];
   }
-  return getGrantedRoles(featureId);
+  return [...(grants.get(featureId) ?? [])];
 }
 
-function getGrantedRolesKoVer(ver: Ver, featureId: string): string[] {
-  return getGrantedRolesVer(ver, featureId).map((r) => ROLE_KO[r] ?? r);
+function getGrantedRolesKoVer(ver: Ver, grants: GrantMap, featureId: string): string[] {
+  return getGrantedRolesVer(ver, grants, featureId).map((r) => ROLE_KO[r] ?? r);
 }
 
 // ── App ────────────────────────────────────────────────────────────────────
 
-const app = new Hono();
+const app = new Hono<{ Bindings: { DB: D1Database } }>();
 
 app.use("*", cors({
   origin: "*",

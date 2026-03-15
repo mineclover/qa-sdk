@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createIndexSDK } from "./index-sdk.js";
+import { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
 import { MetaCodec } from "./meta-codec.js";
 import { DimNotFoundError, EntryNotFoundError, ValidationError } from "./errors.js";
 
@@ -183,6 +183,213 @@ describe("entries / constants", () => {
     expect(LEVEL["0"]).toBe(0);
     expect(LEVEL["10"]).toBe(10);
     expect(LEVEL["30"]).toBe(30);
+  });
+
+  it("client.constants()는 캐싱된다 (동일 참조 반환)", () => {
+    const sdk = trackingSchema();
+    const tracking = sdk.client("tracking", "v1");
+    expect(tracking.constants("action")).toBe(tracking.constants("action"));
+  });
+
+  it("sdk.constants()도 캐싱된다 (동일 참조 반환)", () => {
+    const sdk = trackingSchema();
+    expect(sdk.constants("action", "v1")).toBe(sdk.constants("action", "v1"));
+  });
+});
+
+// ── constants: 예약 토큰 제외 ────────────────────────────────────────────────
+
+describe("constants: 예약 토큰 제외", () => {
+  it("예약 토큰(_)은 constants에서 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        priority: {
+          kind: { type: "string_enum" as const },
+          description: 'reserved: [1]="_" (미지정)',
+          snapshots: {
+            v1: { entries: ["_", "low", "medium", "high"] },
+          },
+        },
+      },
+      indices: {
+        task: { dims: ["priority"], versions: { v1: { snapshots: { priority: "v1" } } } },
+      },
+    });
+    const PRIORITY = sdk.client("task", "v1").constants("priority");
+
+    expect(PRIORITY).toEqual({ low: "low", medium: "medium", high: "high" });
+    expect("_" in PRIORITY).toBe(false);
+  });
+
+  it("여러 예약 토큰(_, ~, ?)이 모두 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        category: {
+          kind: { type: "string_enum" as const },
+          description: 'reserved: [1]="_" (미분류), [2]="~" (기타), [3]="?" (불명)',
+          snapshots: {
+            v1: { entries: ["_", "~", "?", "tech", "science"] },
+          },
+        },
+      },
+      indices: {
+        item: { dims: ["category"], versions: { v1: { snapshots: { category: "v1" } } } },
+      },
+    });
+    const CATEGORY = sdk.client("item", "v1").constants("category");
+
+    expect(CATEGORY).toEqual({ tech: "tech", science: "science" });
+    for (const token of RESERVED_TOKENS) {
+      expect(token in CATEGORY).toBe(false);
+    }
+  });
+
+  it("예약 토큰이 없는 dim은 모든 entries가 constants에 포함된다", () => {
+    const sdk = trackingSchema();
+    const ACTION = sdk.client("tracking", "v1").constants("action");
+
+    expect(Object.keys(ACTION)).toHaveLength(4);
+    expect(ACTION).toEqual({
+      click: "click", view: "view", scroll: "scroll", submit: "submit",
+    });
+  });
+
+  it("entries()는 예약 토큰을 포함한 전체 배열을 반환한다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        priority: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["_", "low", "medium", "high"] },
+          },
+        },
+      },
+      indices: {
+        task: { dims: ["priority"], versions: { v1: { snapshots: { priority: "v1" } } } },
+      },
+    });
+    // entries()는 raw 배열 — 예약 토큰 포함
+    expect(sdk.client("task", "v1").entries("priority")).toEqual(["_", "low", "medium", "high"]);
+  });
+
+  it("sdk.constants()에서도 예약 토큰이 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        priority: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["_", "low", "medium", "high"] },
+          },
+        },
+      },
+      indices: {
+        task: { dims: ["priority"], versions: { v1: { snapshots: { priority: "v1" } } } },
+      },
+    });
+    const PRIORITY = sdk.constants("priority", "v1");
+
+    expect(PRIORITY).toEqual({ low: "low", medium: "medium", high: "high" });
+  });
+});
+
+// ── constants: inactive 항목 제외 ────────────────────────────────────────────
+
+describe("constants: inactive 항목 제외", () => {
+  it("inactive 항목은 constants에서 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        action: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: {
+              entries: ["read", "write", "delete"],
+              entryFlags: {
+                3: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-03-01" },
+              },
+            },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["action"], versions: { v1: { snapshots: { action: "v1" } } } },
+      },
+    });
+    const ACTION = sdk.client("perm", "v1").constants("action");
+
+    expect(ACTION).toEqual({ read: "read", write: "write" });
+    expect("delete" in ACTION).toBe(false);
+  });
+
+  it("entries()는 inactive 항목을 포함한 전체 배열을 반환한다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        action: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: {
+              entries: ["read", "write", "delete"],
+              entryFlags: {
+                3: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-03-01" },
+              },
+            },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["action"], versions: { v1: { snapshots: { action: "v1" } } } },
+      },
+    });
+    // entries()는 raw — inactive 포함
+    expect(sdk.client("perm", "v1").entries("action")).toEqual(["read", "write", "delete"]);
+  });
+
+  it("inactive + 예약 토큰이 동시에 있으면 둘 다 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        role: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: {
+              entries: ["_", "admin", "editor", "viewer"],
+              entryFlags: {
+                4: { status: "inactive" as const, reason: "removed", updatedAt: "2026-03-01" },
+              },
+            },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["role"], versions: { v1: { snapshots: { role: "v1" } } } },
+      },
+    });
+    const ROLE = sdk.client("perm", "v1").constants("role");
+
+    // "_"(예약) + "viewer"(inactive) 제외
+    expect(ROLE).toEqual({ admin: "admin", editor: "editor" });
+  });
+
+  it("sdk.constants()에서도 inactive 항목이 제외된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        action: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: {
+              entries: ["read", "write", "delete"],
+              entryFlags: {
+                3: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-03-01" },
+              },
+            },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["action"], versions: { v1: { snapshots: { action: "v1" } } } },
+      },
+    });
+    const ACTION = sdk.constants("action", "v1");
+
+    expect(ACTION).toEqual({ read: "read", write: "write" });
   });
 });
 

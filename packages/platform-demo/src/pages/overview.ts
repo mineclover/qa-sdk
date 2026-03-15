@@ -42,48 +42,51 @@ export function renderOverviewPage(container: HTMLElement): void {
   const stages = [
     {
       num: "01",
-      label: "출발점",
-      title: "고유 주소 체계 설계",
-      body: `서비스·역할·이벤트 같은 리소스에 <strong>고유한 숫자 주소</strong>를 부여합니다.
-             여러 차원의 좌표를 하나의 정수로 변환하여, 모든 리소스를 단일 주소 공간에서 참조합니다.`,
-      detail: `[환경, 리전, 서비스, 네임스페이스] → 단일 정수`,
+      label: "문제 인식",
+      title: "하드코딩된 식별자와 권한",
+      body: `코드 곳곳에 <strong>문자열 상수와 매직 넘버</strong>가 산재합니다.
+             권한 문자열이 하드코딩되어 오타를 감지할 수 없고,
+             식별자가 변경되면 어디까지 영향이 퍼지는지 <strong>추적이 불가능</strong>합니다.`,
+      detail: `if (role === "amdin") — 오타가 런타임까지 살아남음`,
+      accent: "var(--env-dev)",
+      icon: "⊙",
+      tabs: ["권한"],
+    },
+    {
+      num: "02",
+      label: "상수 추출",
+      title: "SDK로 식별자 체계화",
+      body: `흩어진 문자열·숫자 식별자를 <strong>인덱스와 버전 단위</strong>로 선언합니다.
+             SDK가 차원별 상수를 자동 생성하여 <strong>IDE 자동완성과 타입 안전성</strong>을 확보하고,
+             변경 지점을 스키마 한곳으로 단일화합니다.`,
+      detail: `client("perm", "v1").constants("role") → { admin, editor, viewer }`,
       accent: "var(--xl-blue)",
       icon: "⊞",
       tabs: ["서비스"],
     },
     {
-      num: "02",
-      label: "문제 인식",
-      title: "스펙 변경 시 주소 붕괴",
-      body: `역할이 하나 추가되면 <strong>기존 주소가 전부 밀립니다</strong>.
-             차원의 크기가 바뀌면 모든 하위 주소를 다시 계산해야 하는 구조적 취약성이 드러납니다.`,
-      detail: `역할 5개 → 6개: 기존 주소 전체가 무효화`,
-      accent: "var(--env-dev)",
-      icon: "⊙",
-      tabs: ["권한", "버전"],
-    },
-    {
       num: "03",
-      label: "해결 접근",
-      title: "안정적인 주소 + 중앙 관리",
-      body: `주소 체계에 <strong>여유 공간</strong>을 미리 확보하여, 차원이 추가되어도 기존 주소가 유지됩니다.
-             중앙 레지스트리가 모든 주소 스키마를 버전별로 관리하고,
-             필요할 때 <strong>즉시 버전을 전환</strong>할 수 있습니다.`,
-      detail: `여유 공간 → 변경 흡수 · 중앙 관리 → 일관성 · 버전 전환 자동화`,
+      label: "체계화",
+      title: "다차원 좌표를 정수로 압축",
+      body: `추출된 상수를 <strong>다차원 좌표 체계</strong>로 구조화합니다.
+             여러 축의 조합을 하나의 정수 주소로 변환하여,
+             전송·저장·범위 쿼리 등 <strong>정수 연산</strong>으로 확장합니다.`,
+      detail: `[역할, 행위, 리소스] → 단일 정수 주소`,
       accent: "var(--env-prod)",
       icon: "◈",
-      tabs: ["시나리오", "부여관리"],
+      tabs: ["시나리오", "범위탐색"],
     },
     {
       num: "04",
-      label: "부수 효과",
-      title: "로깅 압축과 정수 연산 확장",
-      body: `문자열 식별자를 정수 주소로 대체하여 <strong>네트워크·저장 비용이 대폭 절감</strong>됩니다.
-             범위 쿼리, 비트마스크 필터링 등 <strong>정수 연산</strong>만으로 다양한 확장이 가능합니다.`,
-      detail: `JSON ~148 bytes → protobuf ~6 bytes (96% 감소)`,
+      label: "타입 주입",
+      title: "스키마 기반 버전 관리",
+      body: `스키마가 <strong>유효한 조합만 허용</strong>하고, 잘못된 입력은 컴파일 타임에 차단합니다.
+             버전별 스냅샷으로 스펙 변경을 흡수하며,
+             기존 주소가 깨지지 않도록 <strong>안정적인 마이그레이션</strong>을 제공합니다.`,
+      detail: `encode({ role: "없는값" }) → 컴파일 에러 · v1 → v2 자동 전환`,
       accent: "var(--xl-navy)",
       icon: "▶",
-      tabs: ["이벤트", "범위탐색"],
+      tabs: ["버전", "부여관리"],
     },
   ];
 
@@ -130,45 +133,31 @@ export function renderOverviewPage(container: HTMLElement): void {
   const dxTools = [
     {
       icon: "⊞",
-      title: "Backend SDK",
-      layer: "Server / Node.js",
-      desc: "주소 생성·해석을 위한 TypeScript SDK. 인코딩, 디코딩, 범위 쿼리, 비트마스크 연산을 제공합니다.",
-      pkg: "sdk · core · weighted-index",
+      title: "Core Codec",
+      layer: "Library",
+      desc: "다차원 좌표 ↔ 정수 전단사 변환 엔진. 범위 연산, 비트마스크, 주소 직렬화, 용량 계획을 제공합니다.",
+      pkg: "weighted-index",
+    },
+    {
+      icon: "◈",
+      title: "Schema Registry",
+      layer: "Library + DB",
+      desc: "차원·인덱스 선언과 버전 관리 프레임워크. DB 저장소, 분산 라우팅, 게이트 제어를 포함합니다.",
+      pkg: "index-meta",
     },
     {
       icon: "◇",
-      title: "Browser SDK",
-      layer: "Frontend / Browser",
-      desc: "프론트엔드에서 주소를 참조하는 경량 클라이언트. 권한 확인과 이벤트 발행에 사용됩니다.",
-      pkg: "browser-sdk",
-    },
-    {
-      icon: "⊕",
-      title: "Registry Server",
-      layer: "Server / API",
-      desc: "모든 주소 스키마를 중앙에서 관리하는 서버. 클라이언트가 최신 스키마를 동기화합니다.",
-      pkg: "registry-server · registry-client",
+      title: "Client SDK",
+      layer: "Browser / Edge",
+      desc: "Node.js 의존성 없는 경량 번들. 프론트엔드·Edge에서 동일한 스키마로 encode/decode합니다.",
+      pkg: "index-meta/client",
     },
     {
       icon: "▤",
-      title: "Logging & Ingest",
-      layer: "Observability",
-      desc: "정수 주소 기반의 구조화된 로깅. pino 어댑터와 이벤트 수집 서버를 통해 파이프라인을 구성합니다.",
-      pkg: "pino · ingest-server · engine",
-    },
-    {
-      icon: "⊡",
-      title: "Store",
-      layer: "DB / Persistence",
-      desc: "주소 기반의 데이터 저장·조회. 정수 인덱스를 활용한 범위 스캔과 집계 쿼리를 지원합니다.",
-      pkg: "store",
-    },
-    {
-      icon: "◎",
-      title: "Version Snapshot",
-      layer: "Infra / DevOps",
-      desc: "특정 시점의 스키마 상태를 스냅샷으로 보존. 스키마 diff 비교와 안전한 롤백을 지원합니다.",
-      pkg: "index-meta",
+      title: "Explorer",
+      layer: "Dev Tool",
+      desc: "인코딩·디코딩 결과를 시각적으로 확인하는 탐색 도구. 주소 공간 구조를 직관적으로 파악합니다.",
+      pkg: "weighted-index-explorer",
     },
   ];
 
@@ -178,7 +167,7 @@ export function renderOverviewPage(container: HTMLElement): void {
     <div class="ov-dx-header">
       <h3 class="ov-dx-title">DX Ecosystem</h3>
       <p class="ov-dx-desc">
-        주소 데이터를 백엔드·프론트엔드·인프라 전 계층에서 활용하기 위한 도구들
+        n차원 참조 주소 체계를 구성하고 운영하기 위한 도구 모음
       </p>
     </div>
     <div class="ov-dx-grid">

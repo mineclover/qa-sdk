@@ -43,8 +43,44 @@
 import { MetaRegistry } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";
 import { MetaResolver } from "./meta-resolver.js";
-import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue } from "./types.js";
+import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet } from "./types.js";
 import { DimNotFoundError } from "./errors.js";
+
+// ── 예약 토큰 ────────────────────────────────────────────────────────────────
+
+/**
+ * 표준 예약 토큰.
+ *
+ * dim entries 배열의 앞쪽에 배치되는 특수 목적 토큰.
+ * constants()는 이 토큰에 해당하는 entry를 자동 제외한다.
+ *
+ * | 토큰 | 의미 |
+ * |------|------|
+ * | `"_"` | null — 값이 없거나 미결정 |
+ * | `"~"` | other — 정의된 카테고리에 해당하지 않음 |
+ * | `"?"` | unknown — 존재하지만 식별 불가 |
+ */
+export const RESERVED_TOKENS: ReadonlySet<string> = new Set(["_", "~", "?"]);
+
+/**
+ * createIndexSDK 옵션.
+ */
+export interface IndexSDKOptions {
+  /**
+   * constants()에서 제외할 예약 토큰 셋.
+   *
+   * 테이블마다 사용하는 예약 토큰이 다를 수 있으므로 오버라이드 가능.
+   * 생략 시 기본 RESERVED_TOKENS ({"_", "~", "?"})를 사용한다.
+   *
+   * @example
+   * // 기본 토큰 + "NaN" 추가
+   * createIndexSDK(input, { reservedTokens: new Set(["_", "~", "?", "NaN"]) })
+   *
+   * // 예약 토큰 필터링 비활성화
+   * createIndexSDK(input, { reservedTokens: new Set() })
+   */
+  reservedTokens?: ReadonlySet<string>;
+}
 
 // ── IndexClient ──────────────────────────────────────────────────────────────
 
@@ -71,11 +107,13 @@ export interface IndexClient {
   entries(dimId: string): readonly EntityId[];
 
   /**
-   * dim entries를 enum-like 상수 객체로 반환.
+   * dim entries를 enum-like 상수 객체로 반환 (캐싱됨).
    *
    * 이 client가 바인딩된 version의 snapshot에서 entries를 추출한다.
+   * 예약 토큰("_", "~", "?")과 inactive 항목은 자동 제외된다.
+   *
    * string_enum: { click: "click", view: "view" }
-   * number_enum: { "0": 0, "1": 1, "2": 2 }
+   * number_enum: { "10": 10, "20": 20 }
    */
   constants(dimId: string): Readonly<Record<string, EntityId>>;
 
@@ -101,9 +139,10 @@ export interface IndexSDK {
   client(indexId: string, versionId: string): IndexClient;
 
   /**
-   * dim entries를 enum-like 상수 객체로 반환.
+   * dim entries를 enum-like 상수 객체로 반환 (캐싱됨).
    *
    * 특정 index에 바인딩되지 않은 dim-level 상수 추출에 사용.
+   * 예약 토큰("_", "~", "?")과 inactive 항목은 자동 제외된다.
    * index에 바인딩된 상수는 client.constants()를 사용한다.
    */
   constants(dimId: string, snapshotId: string): Readonly<Record<string, EntityId>>;
@@ -114,10 +153,12 @@ export interface IndexSDK {
 
 // ── Factory ──────────────────────────────────────────────────────────────────
 
-export function createIndexSDK(input: MetaRegistryInput): IndexSDK {
+export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptions): IndexSDK {
   const registry = new MetaRegistry(input);
   const resolver = new MetaResolver(registry);
+  const reservedTokens = options?.reservedTokens ?? RESERVED_TOKENS;
   const clientCache = new Map<string, IndexClient>();
+  const sdkConstantsCache = new Map<string, Readonly<Record<string, EntityId>>>();
 
   return {
     client(indexId: string, versionId: string): IndexClient {
@@ -127,12 +168,20 @@ export function createIndexSDK(input: MetaRegistryInput): IndexSDK {
 
       const codec = registry.createCodec(indexId, versionId);
       const decodeMap = resolver.getDecodeMap(indexId, versionId);
+      const manifest = registry.getActiveManifest(indexId, versionId);
 
       // dim entries를 미리 인덱싱
       const dimEntriesMap = new Map<string, readonly EntityId[]>();
+      const dimActiveSetMap = new Map<string, DimActiveSet>();
       for (const dim of decodeMap.dims) {
         dimEntriesMap.set(dim.dimId, Object.freeze([...dim.entries]));
       }
+      for (const dimSet of manifest.dims) {
+        dimActiveSetMap.set(dimSet.dimId, dimSet);
+      }
+
+      // constants 캐시 (client 수준)
+      const constantsCache = new Map<string, Readonly<Record<string, EntityId>>>();
 
       const client: IndexClient = {
         encode: (entities) => codec.encode(entities),
@@ -151,13 +200,20 @@ export function createIndexSDK(input: MetaRegistryInput): IndexSDK {
         },
 
         constants(dimId: string): Readonly<Record<string, EntityId>> {
+          const c = constantsCache.get(dimId);
+          if (c) return c;
+
           const e = dimEntriesMap.get(dimId);
           if (!e) {
             throw new DimNotFoundError(
               `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
             );
           }
-          return buildConstants(e);
+
+          const activeSet = dimActiveSetMap.get(dimId);
+          const built = buildConstants(e, activeSet, reservedTokens);
+          constantsCache.set(dimId, built);
+          return built;
         },
 
         toDecodeMap: () => structuredClone(decodeMap),
@@ -173,8 +229,25 @@ export function createIndexSDK(input: MetaRegistryInput): IndexSDK {
     },
 
     constants(dimId: string, snapshotId: string): Readonly<Record<string, EntityId>> {
+      const cacheKey = `${dimId}:${snapshotId}`;
+      const c = sdkConstantsCache.get(cacheKey);
+      if (c) return c;
+
       const snapshot = registry.getDimSnapshot(dimId, snapshotId);
-      return buildConstants(snapshot.entries);
+      const activeIndices: number[] = [];
+      for (let i = 1; i <= snapshot.entries.length; i++) {
+        const flag = snapshot.entryFlags[i];
+        if (!flag || flag.status === "active") activeIndices.push(i);
+      }
+      const activeSet: DimActiveSet = {
+        dimId,
+        snapshotId,
+        total: snapshot.entries.length,
+        activeIndices,
+      };
+      const built = buildConstants(snapshot.entries, activeSet, reservedTokens);
+      sdkConstantsCache.set(cacheKey, built);
+      return built;
     },
 
     get registry() {
@@ -185,9 +258,31 @@ export function createIndexSDK(input: MetaRegistryInput): IndexSDK {
 
 // ── Internal ─────────────────────────────────────────────────────────────────
 
-function buildConstants(entries: readonly EntityId[]): Readonly<Record<string, EntityId>> {
+/**
+ * entries → enum-like 상수 객체.
+ *
+ * 예약 토큰("_", "~", "?")과 inactive 항목을 제외한다.
+ * 코드젠 시 정규 도메인 값만 포함된 상수를 생성할 수 있도록 한다.
+ */
+function buildConstants(
+  entries: readonly EntityId[],
+  activeSet: DimActiveSet | undefined,
+): Readonly<Record<string, EntityId>> {
+  const activeIndices = activeSet
+    ? new Set(activeSet.activeIndices)
+    : null;
+
   const result: Record<string, EntityId> = {};
-  for (const entry of entries) {
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const oneBasedIndex = i + 1;
+
+    // 예약 토큰 제외
+    if (isReservedToken(entry)) continue;
+
+    // inactive 항목 제외
+    if (activeIndices && !activeIndices.has(oneBasedIndex)) continue;
+
     result[String(entry)] = entry;
   }
   return Object.freeze(result);

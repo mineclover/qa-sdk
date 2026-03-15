@@ -26,18 +26,19 @@ import { renderGrantPage } from "./pages/grant.js";
 import { renderVersionPage } from "./pages/version.js";
 import { renderOverviewPage } from "./pages/overview.js";
 import { renderRangePage } from "./pages/range.js";
+import { renderAccessPage } from "./pages/access.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "range" | "version";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "range" | "access" | "version";
 type Ver = "v1" | "v2";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "service", "permission", "event", "scenario", "grant", "range", "version"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "version"] as const;
 
 // Sheets that depend on the active version
-const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant"];
+const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "access"];
 
 function sheetFromPath(pathname: string): SheetId {
   const seg = pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
@@ -116,6 +117,9 @@ const grantContainer = document.getElementById("grant-container")!;
 // Range sheet refs
 const rangeContainer = document.getElementById("range-container")!;
 
+// Access (permission range) sheet refs
+const accessContainer = document.getElementById("access-container")!;
+
 // Version sheet refs
 const versionContainer = document.getElementById("version-container")!;
 
@@ -140,6 +144,9 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
       ? { shape: "기능 6 × 역할 5 = 30 조합",          slots: "부여관리 (v1 읽기전용)" }
       : { shape: "기능 7 × 역할 6 = 42 조합",          slots: "부여관리" };
     case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
+    case "access":     return ver === "v1"
+      ? { shape: "permission:v1 · 1:N 범위 부여", slots: "권한 범위" }
+      : { shape: "permission:v2 · 1:N 범위 부여", slots: "권한 범위" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
   }
 }
@@ -197,6 +204,9 @@ function updateFormulaBar(): void {
   } else if (sheet === "range") {
     nameBox.textContent = "—";
     fbFormula.textContent = "range([fixed₁, n, fixed₃, fixed₄]) → 매칭 주소 집합  |  와일드카드 차원 탐색";
+  } else if (sheet === "access") {
+    nameBox.textContent = "—";
+    fbFormula.textContent = `범위 지정 + 역할 선택 → 1:N 권한 부여  |  permission:${ver}`;
   } else if (sheet === "version") {
     nameBox.textContent = "—";
     fbFormula.textContent = `활성 버전: ${ver}  |  role ${ver === "v1" ? "5" : "6"}개 · event ${ver === "v1" ? "7" : "9"}개 · feature ${ver === "v1" ? "6" : "7"}개`;
@@ -273,6 +283,7 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "scenario")   renderScenarioPage(scenarioContainer, state.ver);
     if (id === "grant")      renderGrantPage(grantContainer, state.ver);
     if (id === "range")      renderRangePage(rangeContainer);
+    if (id === "access")     renderAccessPage(accessContainer, state.ver);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
   }
 

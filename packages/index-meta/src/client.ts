@@ -22,7 +22,7 @@
 
 // ── SDK ────────────────────────────────────────────────────────────────────────
 
-export { createIndexSDK } from "./index-sdk.js";
+export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
 export type { IndexSDK, IndexClient } from "./index-sdk.js";
 
 // ── Core ───────────────────────────────────────────────────────────────────────

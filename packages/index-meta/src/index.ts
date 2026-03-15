@@ -1,4 +1,4 @@
-export { createIndexSDK } from "./index-sdk.js";
+export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
 export type { IndexSDK, IndexClient } from "./index-sdk.js";
 export { MetaRegistry } from "./meta-registry.js";
 export { AddressProtocolManager, type FallbackStats } from "./address-protocol-manager.js";

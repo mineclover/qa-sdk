@@ -23,12 +23,13 @@
         </div>
         <div class="ribbon-tabs" role="tablist" aria-label="시트 탭">
           <button class="rtab active" data-sheet="overview" role="tab" aria-selected="true" aria-controls="sheet-overview">개요</button>
+          <button class="rtab" data-sheet="range" role="tab" aria-selected="false" aria-controls="sheet-range">범위탐색</button>
+          <button class="rtab" data-sheet="access" role="tab" aria-selected="false" aria-controls="sheet-access">권한범위</button>
           <button class="rtab" data-sheet="service" role="tab" aria-selected="false" aria-controls="sheet-service">서비스</button>
           <button class="rtab" data-sheet="permission" role="tab" aria-selected="false" aria-controls="sheet-permission">권한</button>
           <button class="rtab" data-sheet="event" role="tab" aria-selected="false" aria-controls="sheet-event">이벤트</button>
           <button class="rtab" data-sheet="scenario" role="tab" aria-selected="false" aria-controls="sheet-scenario">시나리오</button>
           <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">부여관리</button>
-          <button class="rtab" data-sheet="range" role="tab" aria-selected="false" aria-controls="sheet-range">범위탐색</button>
           <button class="rtab" data-sheet="version" role="tab" aria-selected="false" aria-controls="sheet-version">버전</button>
         </div>
       </div>
@@ -137,6 +138,13 @@
           </div>
         </div>
 
+        <!-- Access (permission range) sheet -->
+        <div class="sheet hidden" id="sheet-access" role="tabpanel" aria-label="권한범위">
+          <div class="sheet-body access-body">
+            <div id="access-container"></div>
+          </div>
+        </div>
+
         <!-- Version comparison sheet -->
         <div class="sheet hidden" id="sheet-version" role="tabpanel" aria-label="버전">
           <div class="sheet-body version-body">
@@ -150,12 +158,13 @@
       <div class="bottom-bar">
         <div class="sheet-tabs" role="tablist" aria-label="시트 탭">
           <div class="stab active" data-sheet="overview" role="tab" aria-selected="true"><span class="stab-icon">◉</span> 개요</div>
+          <div class="stab" data-sheet="range" role="tab" aria-selected="false"><span class="stab-icon">⊟</span> 범위탐색</div>
+          <div class="stab" data-sheet="access" role="tab" aria-selected="false"><span class="stab-icon">⊛</span> 권한범위</div>
           <div class="stab" data-sheet="service" role="tab" aria-selected="false"><span class="stab-icon">⊞</span> 서비스</div>
           <div class="stab" data-sheet="permission" role="tab" aria-selected="false"><span class="stab-icon">⊙</span> 권한</div>
           <div class="stab" data-sheet="event" role="tab" aria-selected="false"><span class="stab-icon">◈</span> 이벤트</div>
           <div class="stab" data-sheet="scenario" role="tab" aria-selected="false"><span class="stab-icon">▶</span> 시나리오</div>
           <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 부여관리</div>
-          <div class="stab" data-sheet="range" role="tab" aria-selected="false"><span class="stab-icon">⊟</span> 범위탐색</div>
           <div class="stab" data-sheet="version" role="tab" aria-selected="false"><span class="stab-icon">◎</span> 버전</div>
         </div>
         <div class="status-bar">

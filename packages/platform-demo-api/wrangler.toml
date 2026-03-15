@@ -5,3 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [alias]
 "better-sqlite3" = "./src/stubs/better-sqlite3.ts"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "platform-demo-db"
+database_id = ""
+migrations_dir = "migrations"
