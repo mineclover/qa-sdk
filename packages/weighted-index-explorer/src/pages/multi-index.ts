@@ -4,6 +4,7 @@
 
 import {
   WeightedIndex,
+  calcWeights,
   PACK_FORMATS,
   createAddressConverter,
   createLayoutProtocol,
@@ -250,7 +251,7 @@ function buildDecodeMapHtml(idx: IndexDef, vIdx: number): string {
   const v = idx.versions[vIdx];
   const shape = v.dimSnapshots.map((e) => e.length);
   const size = shape.reduce((a, b) => a * b, 1);
-  const weights = shape.map((_, i) => shape.slice(i + 1).reduce((a, b) => a * b, 1));
+  const weights = calcWeights(shape);
 
   const dimsRows = idx.dims.map((d, i) =>
     `<tr>
