@@ -21,13 +21,14 @@
           <span class="brand-name">플랫폼 인덱스 데모</span>
           <span class="brand-sub">MetaRegistry + index_ref Demo</span>
         </div>
-        <div class="ribbon-tabs">
-          <button class="rtab active" data-sheet="service">서비스</button>
-          <button class="rtab" data-sheet="permission">권한</button>
-          <button class="rtab" data-sheet="event">이벤트</button>
-          <button class="rtab" data-sheet="scenario">시나리오</button>
-          <button class="rtab" data-sheet="grant">부여관리</button>
-          <button class="rtab" data-sheet="version">버전</button>
+        <div class="ribbon-tabs" role="tablist" aria-label="시트 탭">
+          <button class="rtab active" data-sheet="overview" role="tab" aria-selected="true" aria-controls="sheet-overview">개요</button>
+          <button class="rtab" data-sheet="service" role="tab" aria-selected="false" aria-controls="sheet-service">서비스</button>
+          <button class="rtab" data-sheet="permission" role="tab" aria-selected="false" aria-controls="sheet-permission">권한</button>
+          <button class="rtab" data-sheet="event" role="tab" aria-selected="false" aria-controls="sheet-event">이벤트</button>
+          <button class="rtab" data-sheet="scenario" role="tab" aria-selected="false" aria-controls="sheet-scenario">시나리오</button>
+          <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">부여관리</button>
+          <button class="rtab" data-sheet="version" role="tab" aria-selected="false" aria-controls="sheet-version">버전</button>
         </div>
       </div>
 
@@ -37,7 +38,7 @@
         <div class="fb-divider"></div>
         <span class="fb-fx">fx</span>
         <div class="fb-formula" id="fb-formula">
-          service:v1 · shape [5, 2, 5, 2] = 100 슬롯
+          encode([dim₁, dim₂, …, dimₙ]) → 단일 정수 주소  |  protobuf varint 전송
         </div>
       </div>
 
@@ -57,8 +58,15 @@
       <!-- ── Workbook ──────────────────────────────────────────── -->
       <div class="workbook">
 
+        <!-- Overview sheet -->
+        <div class="sheet" id="sheet-overview" role="tabpanel" aria-label="개요">
+          <div class="sheet-body overview-body">
+            <div id="overview-container"></div>
+          </div>
+        </div>
+
         <!-- Service sheet -->
-        <div class="sheet" id="sheet-service">
+        <div class="sheet hidden" id="sheet-service" role="tabpanel" aria-label="서비스">
           <div class="sheet-body">
             <div class="dim-sidebar" id="svc-dim-sidebar"><!-- populated by main.ts --></div>
             <div class="sheet-grid-wrap">
@@ -75,7 +83,7 @@
         </div>
 
         <!-- Permission sheet -->
-        <div class="sheet hidden" id="sheet-permission">
+        <div class="sheet hidden" id="sheet-permission" role="tabpanel" aria-label="권한">
           <div class="sheet-body">
             <div class="sheet-grid-wrap">
               <div id="perm-grid-container"></div>
@@ -91,7 +99,7 @@
         </div>
 
         <!-- Event sheet -->
-        <div class="sheet hidden" id="sheet-event">
+        <div class="sheet hidden" id="sheet-event" role="tabpanel" aria-label="이벤트">
           <div class="initiator-bar" id="evt-initiator-bar"><!-- populated by main.ts --></div>
           <div class="sheet-body">
             <div class="sheet-grid-wrap">
@@ -108,21 +116,21 @@
         </div>
 
         <!-- Scenario sheet -->
-        <div class="sheet hidden" id="sheet-scenario">
+        <div class="sheet hidden" id="sheet-scenario" role="tabpanel" aria-label="시나리오">
           <div class="sheet-body scenario-body">
             <div id="scenario-container"></div>
           </div>
         </div>
 
         <!-- Grant table sheet -->
-        <div class="sheet hidden" id="sheet-grant">
+        <div class="sheet hidden" id="sheet-grant" role="tabpanel" aria-label="부여관리">
           <div class="sheet-body grant-body">
             <div id="grant-container"></div>
           </div>
         </div>
 
         <!-- Version comparison sheet -->
-        <div class="sheet hidden" id="sheet-version">
+        <div class="sheet hidden" id="sheet-version" role="tabpanel" aria-label="버전">
           <div class="sheet-body version-body">
             <div id="version-container"></div>
           </div>
@@ -132,18 +140,19 @@
 
       <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
       <div class="bottom-bar">
-        <div class="sheet-tabs">
-          <div class="stab active" data-sheet="service"><span class="stab-icon">⊞</span> 서비스</div>
-          <div class="stab" data-sheet="permission"><span class="stab-icon">⊙</span> 권한</div>
-          <div class="stab" data-sheet="event"><span class="stab-icon">◈</span> 이벤트</div>
-          <div class="stab" data-sheet="scenario"><span class="stab-icon">▶</span> 시나리오</div>
-          <div class="stab" data-sheet="grant"><span class="stab-icon">⊡</span> 부여관리</div>
-          <div class="stab" data-sheet="version"><span class="stab-icon">◎</span> 버전</div>
+        <div class="sheet-tabs" role="tablist" aria-label="시트 탭">
+          <div class="stab active" data-sheet="overview" role="tab" aria-selected="true"><span class="stab-icon">◉</span> 개요</div>
+          <div class="stab" data-sheet="service" role="tab" aria-selected="false"><span class="stab-icon">⊞</span> 서비스</div>
+          <div class="stab" data-sheet="permission" role="tab" aria-selected="false"><span class="stab-icon">⊙</span> 권한</div>
+          <div class="stab" data-sheet="event" role="tab" aria-selected="false"><span class="stab-icon">◈</span> 이벤트</div>
+          <div class="stab" data-sheet="scenario" role="tab" aria-selected="false"><span class="stab-icon">▶</span> 시나리오</div>
+          <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 부여관리</div>
+          <div class="stab" data-sheet="version" role="tab" aria-selected="false"><span class="stab-icon">◎</span> 버전</div>
         </div>
         <div class="status-bar">
-          <span id="status-shape">service:v1 · shape [5, 2, 5, 2]</span>
+          <span id="status-shape">n차원 참조 주소 체계</span>
           <span class="status-sep">|</span>
-          <span id="status-slots">100개 슬롯</span>
+          <span id="status-slots">프로젝트 개요</span>
           <span class="status-sep">|</span>
           <span id="status-sel">선택 없음</span>
         </div>

@@ -1,6 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  버전 변경 — v1 / v2 비교 및 API 프로토콜 설명
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// 이 시트는 v1→v2 마이그레이션의 교육 목적으로 정적 데이터를 사용합니다.
+// 동적 API 호출 대신 하드코딩하여 변경 사항을 명확하게 대비하여 보여줍니다.
+// (역할 차원 5→6, 이벤트 차원 7→9, 기능 분리 등의 차이를 한눈에 비교)
+//
 
 // ── Static data ─────────────────────────────────────────────────────────────
 
@@ -534,18 +539,22 @@ function buildProtocolSection(): HTMLElement {
 
 // ── Main render ──────────────────────────────────────────────────────────────
 
-export function renderVersionPage(container: HTMLElement): void {
+export function renderVersionPage(
+  container: HTMLElement,
+  onVersionChange?: (ver: "v1" | "v2") => void,
+  initialVer: "v1" | "v2" = "v2",
+): void {
   container.innerHTML = "";
 
-  let activeVer: "v1" | "v2" = "v2";
+  let activeVer: "v1" | "v2" = initialVer;
 
   // ── Version selector bar ──
   const verBar = document.createElement("div");
   verBar.className = "vd-ver-bar";
   verBar.innerHTML = `
     <span class="vd-ver-label">스키마 버전</span>
-    <button class="vd-ver-btn" data-ver="v1">v1</button>
-    <button class="vd-ver-btn vd-ver-btn-active" data-ver="v2">v2</button>
+    <button class="vd-ver-btn${initialVer === "v1" ? " vd-ver-btn-active" : ""}" data-ver="v1">v1</button>
+    <button class="vd-ver-btn${initialVer === "v2" ? " vd-ver-btn-active" : ""}" data-ver="v2">v2</button>
     <span class="vd-ver-hint">v2에는 신규 항목이 강조 표시됩니다</span>
   `;
   container.appendChild(verBar);
@@ -585,6 +594,7 @@ export function renderVersionPage(container: HTMLElement): void {
         b.classList.toggle("vd-ver-btn-active", b.dataset["ver"] === activeVer);
       });
       render(activeVer);
+      onVersionChange?.(activeVer);
     });
   });
 

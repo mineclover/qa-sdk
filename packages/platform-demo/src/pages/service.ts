@@ -311,6 +311,7 @@ function renderGrid(
 
   const tbl = document.createElement("table");
   tbl.className = "xl-grid";
+  tbl.setAttribute("role", "grid");
 
   const thead = tbl.createTHead();
   const headRow = thead.insertRow();
@@ -348,6 +349,8 @@ function renderGrid(
       const value = cellMap.get(`${xi + 1},${yi + 1}`) ?? 0;
       const td = document.createElement("td");
       td.className = "xl-cell svc-cell-density";
+      td.setAttribute("role", "gridcell");
+      td.tabIndex = 0;
       if (value === selectedValue) td.classList.add("selected");
 
       const bg  = densityFill(value, maxValue);

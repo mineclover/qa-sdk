@@ -256,6 +256,12 @@ export const INIT_KO: Record<string, string> = {
 
 // ── Dimension entry arrays ─────────────────────────────────────────────────
 
+export const ROLES_V1 = ["admin", "developer", "operator", "viewer", "readonly"] as const;
+export const EVENTS_V1 = [
+  "user.login", "user.logout", "order.created", "order.paid",
+  "payment.failed", "session.expired", "config.changed",
+] as const;
+
 export const ENVS    = ["dev", "stage", "prod", "test", "local"] as const;
 export const REGIONS = ["asia", "usa"] as const;
 export const SVCS    = ["shopping-web", "shopping-backend", "auth", "payment", "gateway"] as const;

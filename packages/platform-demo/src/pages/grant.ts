@@ -257,10 +257,10 @@ function buildGrantTable(rows: GrantRow[]): HTMLElement {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function renderGrantPage(container: HTMLElement): void {
+export function renderGrantPage(container: HTMLElement, ver = "v2"): void {
   container.innerHTML = `<div style="padding:16px;color:var(--text-muted)">로딩 중...</div>`;
 
-  fetchGrantTable().then((data) => {
+  fetchGrantTable(ver).then((data) => {
     container.innerHTML = "";
 
     const allRows = data.rows;
@@ -287,9 +287,12 @@ export function renderGrantPage(container: HTMLElement): void {
       cells: buildCells(allRows),
     };
 
-    // ── Tutorial ──
-    let tutorialEl = buildTutorial(allRows, handleApplyTutorial, handleReset);
-    container.appendChild(tutorialEl);
+    // ── Tutorial (v2 only) ──
+    let tutorialEl: HTMLElement | null = null;
+    if (ver === "v2") {
+      tutorialEl = buildTutorial(allRows, handleApplyTutorial, handleReset);
+      container.appendChild(tutorialEl);
+    }
 
     // ── Matrix ──
     const matrixEl = buildMatrix(matrixData, handleToggle);
@@ -308,11 +311,13 @@ export function renderGrantPage(container: HTMLElement): void {
 
     async function refresh(): Promise<void> {
       try {
-        const fresh = await fetchGrantTable();
-        // Rebuild tutorial
-        const newTutorial = buildTutorial(fresh.rows, handleApplyTutorial, handleReset);
-        tutorialEl.replaceWith(newTutorial);
-        tutorialEl = newTutorial;
+        const fresh = await fetchGrantTable(ver);
+        // Rebuild tutorial (v2 only)
+        if (ver === "v2" && tutorialEl) {
+          const newTutorial = buildTutorial(fresh.rows, handleApplyTutorial, handleReset);
+          tutorialEl.replaceWith(newTutorial);
+          tutorialEl = newTutorial;
+        }
         // Update matrix
         matrixData.cells = buildCells(fresh.rows);
         updateMatrix(matrixEl, matrixData);
@@ -331,6 +336,8 @@ export function renderGrantPage(container: HTMLElement): void {
         await refresh();
       } catch (e) {
         console.error("patchGrant failed", e);
+        container.insertAdjacentHTML("afterbegin",
+          '<div class="error-state">권한 변경에 실패했습니다. 다시 시도해 주세요.</div>');
       }
     }
 
@@ -343,6 +350,8 @@ export function renderGrantPage(container: HTMLElement): void {
       } catch (e) {
         if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = "▶ 변경 적용"; }
         console.error("patchGrantBatch failed", e);
+        container.insertAdjacentHTML("afterbegin",
+          '<div class="error-state">일괄 변경 적용에 실패했습니다.</div>');
       }
     }
 
@@ -359,6 +368,6 @@ export function renderGrantPage(container: HTMLElement): void {
       }
     }
   }).catch((e: unknown) => {
-    container.innerHTML = `<div style="padding:16px;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
+    container.innerHTML = `<div class="error-state">데이터를 불러올 수 없습니다. ${e instanceof Error ? e.message : ""}</div>`;
   });
 }

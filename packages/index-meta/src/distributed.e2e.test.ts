@@ -157,6 +157,110 @@ describe("DistributedStoreClient — 분산 조회", () => {
   });
 });
 
+// ── DistributedStoreClient — 엣지 케이스 ─────────────────
+
+describe("DistributedStoreClient — edge cases", () => {
+  it("등록되지 않은 prefix로 getEntries 요청 시 ValidationError", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    const stores   = new Map([["db-a", new InMemoryIndexMetaStore()]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    // router에 "role"이 등록되지 않음
+    await expect(client.getEntries("role", "v1")).rejects.toThrow(ValidationError);
+    await expect(client.getEntries("role", "v1")).rejects.toThrow(
+      /no D1 database routed for prefix "role"/
+    );
+  });
+
+  it("등록되지 않은 prefix로 getEntry 요청 시 ValidationError", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    const stores   = new Map([["db-a", new InMemoryIndexMetaStore()]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    await expect(client.getEntry("role", "v1", 1)).rejects.toThrow(ValidationError);
+  });
+
+  it("등록되지 않은 prefix로 getEntriesInRange 요청 시 ValidationError", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    const stores   = new Map([["db-a", new InMemoryIndexMetaStore()]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    await expect(client.getEntriesInRange("role", "v1", 1, 10)).rejects.toThrow(ValidationError);
+  });
+
+  it("라우터에 매핑된 store가 stores에 없으면 ValidationError", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    // stores에는 "db-a"만 있지만, router는 "db-z"로 매핑
+    const stores   = new Map([["db-a", new InMemoryIndexMetaStore()]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    await router.route("role", "db-z"); // db-z는 stores에 없음
+
+    await expect(client.getEntries("role", "v1")).rejects.toThrow(ValidationError);
+    await expect(client.getEntries("role", "v1")).rejects.toThrow(
+      /D1 database "db-z" not registered in stores/
+    );
+  });
+
+  it("라우터에 매핑된 store가 stores에 없으면 getEntry도 ValidationError", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    const stores   = new Map([["db-a", new InMemoryIndexMetaStore()]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    await router.route("action", "db-missing");
+
+    await expect(client.getEntry("action", "v1", 1)).rejects.toThrow(ValidationError);
+    await expect(client.getEntry("action", "v1", 1)).rejects.toThrow(
+      /D1 database "db-missing" not registered in stores/
+    );
+  });
+
+  it("여러 prefix가 서로 다른 store로 올바르게 라우팅된다", async () => {
+    const registry = new InMemoryPrefixRegistry();
+    const router   = new InMemoryPrefixRouter();
+    const dbA      = new InMemoryIndexMetaStore();
+    const dbB      = new InMemoryIndexMetaStore();
+    const stores   = new Map([["db-a", dbA], ["db-b", dbB]]);
+    const client   = new DistributedStoreClient(registry, router, stores);
+
+    // 라우팅: role → db-a, content → db-b
+    await router.route("role",    "db-a");
+    await router.route("content", "db-b");
+
+    // 각 DB에 독립 데이터 적재
+    await applyEntryBatch("role",    "v1", ROLE_PAYLOAD,    registry, dbA, "2026-01-01T00:00:00Z");
+    await applyEntryBatch("content", "v1", CONTENT_PAYLOAD, registry, dbB, "2026-01-01T00:00:00Z");
+
+    // role은 db-a에서 가져와야 함
+    const roleEntries = await client.getEntries("role", "v1");
+    expect(roleEntries.length).toBe(Object.keys(ROLE_PAYLOAD.entries).length);
+    expect(roleEntries.map((e) => e.value)).toContain("admin");
+
+    // content는 db-b에서 가져와야 함
+    const contentEntries = await client.getEntries("content", "v1");
+    expect(contentEntries.length).toBe(Object.keys(CONTENT_PAYLOAD.entries).length);
+    expect(contentEntries.map((e) => e.value)).toContain("article");
+
+    // 교차 격리: db-a에는 content가 없고, db-b에는 role이 없음
+    expect(await dbA.getEntries("content", "v1")).toHaveLength(0);
+    expect(await dbB.getEntries("role", "v1")).toHaveLength(0);
+
+    // getEntry도 올바른 store로 라우팅
+    const roleEntry = await client.getEntry("role", "v1", 1);
+    expect(roleEntry).not.toBeNull();
+    expect(roleEntry!.value).toBe("guest");
+
+    const contentEntry = await client.getEntry("content", "v1", 50);
+    expect(contentEntry).not.toBeNull();
+    expect(contentEntry!.value).toBe("podcast");
+  });
+});
+
 // ── 분산 환경 백업/복원 ───────────────────────────────────
 
 describe("분산 환경 — versionId 단위 백업/복원", () => {

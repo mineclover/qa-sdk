@@ -126,6 +126,10 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     let migrated = 0;
     let skipped = 0;
 
+    // Collect all pending inserts first, then apply atomically.
+    // If validation fails, no entries are written (all-or-nothing).
+    const pending: { key: string; record: EntryRecord }[] = [];
+
     for (const entry of sourceEntries) {
       const newPosition = positionMap?.[entry.position] ?? entry.position;
       if (newPosition < 1 || newPosition > sv.capacity) {
@@ -138,14 +142,22 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
         skipped++;
         continue;
       }
-      this._entries.set(entryKey, {
-        prefix,
-        versionId: toVersion,
-        position: newPosition,
-        value: entry.value,
-        createdAt: now,
+      pending.push({
+        key: entryKey,
+        record: {
+          prefix,
+          versionId: toVersion,
+          position: newPosition,
+          value: entry.value,
+          createdAt: now,
+        },
       });
       migrated++;
+    }
+
+    // Atomic apply — only reached if all validations passed.
+    for (const { key, record } of pending) {
+      this._entries.set(key, record);
     }
 
     return { migrated, skipped };

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  권한 인덱스 — 2D grid page (API-backed)
+//  권한 인덱스 — 2D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
@@ -22,10 +22,9 @@ const ENV_KO: Record<string, string> = {
 const REGION_KO: Record<string, string> = { asia: "아시아", usa: "미국" };
 const NS_KO: Record<string, string>     = { shop: "쇼핑몰", cms: "CMS" };
 
-// ── Color helpers ─────────────────────────────────────────────────────────
+// ── Color helpers (use data.maxValue for scaling) ─────────────────────────
 
-function permDensityFill(value: number): string {
-  const maxValue = 59;
+function permDensityFill(value: number, maxValue: number): string {
   const t = value / maxValue;
   const from = [232, 238, 245];
   const to   = [30,  58,  95];
@@ -35,8 +34,8 @@ function permDensityFill(value: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-function permDensityInk(value: number): string {
-  return value > 36 ? "#ffffff" : "#000000";
+function permDensityInk(value: number, maxValue: number): string {
+  return value > maxValue * 0.6 ? "#ffffff" : "#000000";
 }
 
 // ── Side panel ────────────────────────────────────────────────────────────
@@ -46,8 +45,8 @@ function renderPermDetail(
   value: number,
   data: PermCellsResponse
 ): void {
-  const svcPos  = Math.floor(value / 6); // 0-based
-  const rolePos = value % 6;             // 0-based
+  const svcPos  = Math.floor(value / data.roleStride);
+  const rolePos = value % data.roleStride;
 
   const svcLabel  = data.svcLabels[svcPos];
   const roleLabel = data.roleLabels[rolePos];
@@ -69,7 +68,7 @@ function renderPermDetail(
           <span class="detail-label">value</span>
           <span class="detail-value" style="font-size:1.4rem;font-family:var(--font-num)">${value}</span>
         </div>
-        <code class="addr-code">permission:v2:${value}</code>
+        <code class="addr-code">${data.prefix}:${value}</code>
       </div>
     </div>
     <div class="sp-section">
@@ -125,7 +124,7 @@ function renderGrid(
   onSelect: (v: number) => void
 ): void {
   const { selectedValue } = state;
-  const { svcLabels, roleLabels, cells } = data;
+  const { svcLabels, roleLabels, cells, roleStride, maxValue } = data;
 
   const cellMap = new Map<string, number>();
   for (const cell of cells) {
@@ -134,6 +133,7 @@ function renderGrid(
 
   const tbl = document.createElement("table");
   tbl.className = "xl-grid";
+  tbl.setAttribute("role", "grid");
 
   const thead = tbl.createTHead();
   const headRow = thead.insertRow();
@@ -169,13 +169,15 @@ function renderGrid(
     tr.appendChild(rh);
 
     roleLabels.forEach((_rl, ri) => {
-      const value = cellMap.get(`${si + 1},${ri + 1}`) ?? (si * 6 + ri);
+      const value = cellMap.get(`${si + 1},${ri + 1}`) ?? (si * roleStride + ri);
       const td = document.createElement("td");
       td.className = "xl-cell perm-cell";
+      td.setAttribute("role", "gridcell");
+      td.tabIndex = 0;
       if (value === selectedValue) td.classList.add("selected");
 
-      const bg  = permDensityFill(value);
-      const ink = permDensityInk(value);
+      const bg  = permDensityFill(value, maxValue);
+      const ink = permDensityInk(value, maxValue);
       td.style.backgroundColor = bg;
       td.style.color = ink;
 
@@ -193,9 +195,9 @@ function renderGrid(
   container.appendChild(tbl);
 }
 
-// ── Cached data ────────────────────────────────────────────────────────────
+// ── Cached data (keyed by version) ────────────────────────────────────────
 
-let _cachedPermData: PermCellsResponse | null = null;
+const _permCache = new Map<string, PermCellsResponse>();
 
 // ── Main export ───────────────────────────────────────────────────────────
 
@@ -204,20 +206,20 @@ export async function renderPermissionPage(
   spPlaceholder: HTMLElement,
   spContent: HTMLElement,
   state: PermState,
-  onSelect: (v: number | null) => void
+  onSelect: (v: number | null) => void,
+  ver = "v2",
 ): Promise<void> {
-  // Use cached data if available, otherwise fetch
-  if (!_cachedPermData) {
+  if (!_permCache.has(ver)) {
     gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      _cachedPermData = await fetchPermCells();
+      _permCache.set(ver, await fetchPermCells(ver));
     } catch (e) {
       gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
       return;
     }
   }
 
-  const data = _cachedPermData;
+  const data = _permCache.get(ver)!;
 
   renderGrid(gridContainer, state, data, (v) => {
     if (state.selectedValue === v) {
@@ -254,7 +256,8 @@ export function updatePermSelection(
 export async function refreshPermDetail(
   spPlaceholder: HTMLElement,
   spContent: HTMLElement,
-  value: number | null
+  value: number | null,
+  ver = "v2",
 ): Promise<void> {
   if (value === null) {
     spContent.classList.add("hidden");
@@ -264,14 +267,14 @@ export async function refreshPermDetail(
   spPlaceholder.classList.add("hidden");
   spContent.classList.remove("hidden");
 
-  if (!_cachedPermData) {
+  if (!_permCache.has(ver)) {
     spContent.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      _cachedPermData = await fetchPermCells();
+      _permCache.set(ver, await fetchPermCells(ver));
     } catch (e) {
       spContent.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
       return;
     }
   }
-  renderPermDetail(spContent, value, _cachedPermData);
+  renderPermDetail(spContent, value, _permCache.get(ver)!);
 }

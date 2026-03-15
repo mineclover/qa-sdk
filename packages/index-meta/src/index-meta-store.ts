@@ -75,6 +75,11 @@ export interface IndexMetaStore {
    * toVersion에 이미 해당 position이 존재하면 건너뜀 (idempotent).
    * toVersion의 schema_version이 없으면 에러.
    *
+   * Implementations MUST execute this method atomically.
+   * Partial application is not allowed.
+   * If any entry insert fails, the entire operation MUST be rolled back
+   * so that no entries are written to toVersion.
+   *
    * @returns migrated — 실제 삽입된 수, skipped — 이미 존재해 건너뛴 수
    */
   migrateEntries(

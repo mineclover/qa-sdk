@@ -346,6 +346,13 @@ function recommendDim(current: number, growth: number): number {
  *   16=0x10 (1자리), 256=0x100 (2자리), 4096=0x1000 (3자리)
  * 그 사이 값(32, 64, 128 등)도 같은 hex 자릿수 내에서 깔끔하게 배분된다.
  *
+ * @param opts.dims - 차원별 현재 entry 수와 성장 예측.
+ * @param opts.dims[].growth - 예상 최대 크기. 미지정 시 current의 2배(2x headroom)가 적용됩니다.
+ *   즉 growth 기본값은 current와 동일하므로, recommended는 nextPow2(current + current)가 됩니다.
+ * @param opts.left - prefix, version 등 left 필드 스펙.
+ * @param opts.capacity - 대상 포맷 (PackFormat | number | BuiltinFormatName).
+ * @param opts.shardChars - 샤딩 자릿수 (기본 0).
+ *
  * @example
  * planCapacity({
  *   dims: [

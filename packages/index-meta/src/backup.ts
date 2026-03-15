@@ -40,6 +40,11 @@ export interface VersionBackup {
  *
  * PrefixRegistry에서 capacity를 읽고,
  * IndexMetaStore에서 entries를 읽어 VersionBackup을 구성한다.
+ *
+ * This function is read-only — it performs no writes to either
+ * the PrefixRegistry or the IndexMetaStore. If an error occurs at
+ * any point (e.g., network timeout, missing registry entry), there
+ * are no side effects and no cleanup is needed.
  */
 export async function exportVersion(
   prefix: string,
@@ -83,11 +88,25 @@ export async function exportVersion(
  *
  * createdAt은 백업의 exportedAt을 사용한다.
  *
- * WARNING: This operation is NOT atomic. If step 2 (insertSchemaVersion) or
- * step 3 (insertEntry) fails after step 1 (register) has already succeeded,
- * there is no automatic rollback. The PrefixRegistry will retain the
- * registered entry even though the store is in an incomplete state.
- * Callers should handle partial failures and implement cleanup if needed.
+ * ## Partial failure semantics
+ *
+ * This operation is NOT atomic across the three steps above.
+ * If a later step fails after earlier steps have succeeded,
+ * there is no automatic rollback:
+ *
+ * - Step 1 failure: No side effects (nothing was written yet).
+ * - Step 2 failure: PrefixRegistry retains the registered entry
+ *   from step 1, but no schema_version or entries exist in the store.
+ * - Step 3 failure (mid-entry): PrefixRegistry and schema_version
+ *   are committed. Some entries may have been inserted while others
+ *   have not — the store is left in an incomplete state.
+ *
+ * If the underlying IndexMetaStore implementation supports transactions
+ * (e.g., SqlIndexMetaStore with SqlDriver.transaction), callers can wrap
+ * the store operations in a transaction externally to achieve atomic import.
+ *
+ * Callers SHOULD handle partial failures and implement cleanup if needed
+ * (e.g., delete the registered prefix and schema_version on rollback).
  */
 export async function importVersion(
   backup: VersionBackup,

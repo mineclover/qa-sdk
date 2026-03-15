@@ -11,5 +11,8 @@ dist/
 # ralph-tui task runner artifacts
 .ralph-tui/
 
+# wrangler dev artifacts
+.wrangler/
+
 # claude code
 .claude/

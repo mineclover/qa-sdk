@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  이벤트 인덱스 — 3D grid page (API-backed)
+//  이벤트 인덱스 — 3D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
@@ -14,10 +14,9 @@ export interface EventState {
   selectedValue: number | null;
 }
 
-// ── Color helpers ─────────────────────────────────────────────────────────
+// ── Color helpers (use data.maxValue for scaling) ─────────────────────────
 
-function evtDensityFill(value: number): string {
-  const maxValue = 179;
+function evtDensityFill(value: number, maxValue: number): string {
   const t = value / maxValue;
   const from = [232, 238, 245];
   const to   = [30,  58,  95];
@@ -27,8 +26,8 @@ function evtDensityFill(value: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-function evtDensityInk(value: number): string {
-  return value > 100 ? "#ffffff" : "#000000";
+function evtDensityInk(value: number, maxValue: number): string {
+  return value > maxValue * 0.55 ? "#ffffff" : "#000000";
 }
 
 // ── Event type → tag class ─────────────────────────────────────────────────
@@ -49,9 +48,9 @@ function renderEventDetail(
   value: number,
   data: EvtCellsResponse
 ): void {
-  // Decode: value = (svc_pos-1)*18 + (evt_pos-1)*2 + (init_pos-1)
-  const svcPos  = Math.floor(value / 18) + 1;
-  const rem1    = value % 18;
+  const svcStride = data.svcStride;
+  const svcPos  = Math.floor(value / svcStride) + 1;
+  const rem1    = value % svcStride;
   const evtPos  = Math.floor(rem1 / 2) + 1;
   const initPos = (rem1 % 2) + 1;
 
@@ -77,7 +76,7 @@ function renderEventDetail(
           <span class="detail-label">value</span>
           <span class="detail-value" style="font-size:1.4rem;font-family:var(--font-num)">${value}</span>
         </div>
-        <code class="addr-code">event:v2:${value}</code>
+        <code class="addr-code">${data.prefix}:${value}</code>
       </div>
     </div>
     <div class="sp-section">
@@ -155,7 +154,7 @@ function renderGrid(
   onSelect: (v: number) => void
 ): void {
   const { selectedValue } = state;
-  const { svcLabels, eventLabels, cells } = data;
+  const { svcLabels, eventLabels, cells, maxValue } = data;
 
   const cellMap = new Map<string, number>();
   for (const cell of cells) {
@@ -164,6 +163,7 @@ function renderGrid(
 
   const tbl = document.createElement("table");
   tbl.className = "xl-grid";
+  tbl.setAttribute("role", "grid");
 
   const thead = tbl.createTHead();
   const headRow = thead.insertRow();
@@ -206,10 +206,12 @@ function renderGrid(
       const value = cellMap.get(`${si + 1},${ei + 1}`) ?? 0;
       const td = document.createElement("td");
       td.className = "xl-cell evt-cell";
+      td.setAttribute("role", "gridcell");
+      td.tabIndex = 0;
       if (value === selectedValue) td.classList.add("selected");
 
-      const bg  = evtDensityFill(value);
-      const ink = evtDensityInk(value);
+      const bg  = evtDensityFill(value, maxValue);
+      const ink = evtDensityInk(value, maxValue);
       td.style.backgroundColor = bg;
       td.style.color = ink;
 
@@ -227,7 +229,7 @@ function renderGrid(
   container.appendChild(tbl);
 }
 
-// ── Cached data ────────────────────────────────────────────────────────────
+// ── Cached data (keyed by "ver:initiator") ────────────────────────────────
 
 const _evtCache = new Map<string, EvtCellsResponse>();
 
@@ -240,26 +242,26 @@ export async function renderEventPage(
   spContent: HTMLElement,
   state: EventState,
   onSelect: (v: number | null) => void,
-  onInitiatorChange: (init: number) => void
+  onInitiatorChange: (init: number) => void,
+  ver = "v2",
 ): Promise<void> {
   const initiator = state.fixedInitiator === 1 ? "web" : "mobile";
+  const cacheKey = `${ver}:${initiator}`;
 
-  // Initiator bar (synchronous)
   renderInitiatorBar(initBarContainer, state.fixedInitiator, onInitiatorChange);
 
-  // Fetch or use cached data
-  if (!_evtCache.has(initiator)) {
+  if (!_evtCache.has(cacheKey)) {
     gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      const data = await fetchEvtCells(initiator);
-      _evtCache.set(initiator, data);
+      const data = await fetchEvtCells(initiator, ver);
+      _evtCache.set(cacheKey, data);
     } catch (e) {
       gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
       return;
     }
   }
 
-  const data = _evtCache.get(initiator)!;
+  const data = _evtCache.get(cacheKey)!;
 
   renderGrid(gridContainer, state, data, (v) => {
     if (state.selectedValue === v) {
@@ -297,14 +299,16 @@ export function refreshEventDetail(
   spPlaceholder: HTMLElement,
   spContent: HTMLElement,
   value: number | null,
-  initiator: string
+  initiator: string,
+  ver = "v2",
 ): void {
   if (value === null) {
     spContent.classList.add("hidden");
     spPlaceholder.classList.remove("hidden");
     return;
   }
-  const data = _evtCache.get(initiator);
+  const cacheKey = `${ver}:${initiator}`;
+  const data = _evtCache.get(cacheKey);
   if (!data) {
     spContent.classList.add("hidden");
     spPlaceholder.classList.remove("hidden");

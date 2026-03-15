@@ -13,11 +13,19 @@ import {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const ROLES_META = [
+const ROLES_META_V2 = [
   { id: "admin",     ko: "관리자" },
   { id: "developer", ko: "개발자" },
   { id: "operator",  ko: "운영자" },
   { id: "customer",  ko: "고객" },
+  { id: "viewer",    ko: "뷰어" },
+  { id: "readonly",  ko: "읽기전용" },
+] as const;
+
+const ROLES_META_V1 = [
+  { id: "admin",     ko: "관리자" },
+  { id: "developer", ko: "개발자" },
+  { id: "operator",  ko: "운영자" },
   { id: "viewer",    ko: "뷰어" },
   { id: "readonly",  ko: "읽기전용" },
 ] as const;
@@ -28,12 +36,13 @@ const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦"] as const;
 
 function renderRoleBar(
   activeRole: string,
-  onRoleChange: (role: string) => void
+  onRoleChange: (role: string) => void,
+  rolesMeta: readonly { id: string; ko: string }[] = ROLES_META_V2,
 ): HTMLElement {
   const bar = document.createElement("div");
   bar.className = "scenario-role-bar";
 
-  for (const rm of ROLES_META) {
+  for (const rm of rolesMeta) {
     const btn = document.createElement("button");
     btn.className = `scenario-role-btn${rm.id === activeRole ? " active" : ""}`;
     btn.textContent = `${rm.ko} (${rm.id})`;
@@ -56,17 +65,9 @@ function updateRoleBar(bar: HTMLElement, activeRole: string): void {
 
 // ── Mock website ───────────────────────────────────────────────────────────
 
-type NavFeatureId =
-  | "home"
-  | "product_list"
-  | "order_list"
-  | "payment_history"
-  | "payment_cancel_req"
-  | "payment_cancel_approve"
-  | "user_mgmt"
-  | "config_change";
+type NavFeatureId = string;
 
-const NAV_ITEMS: { label: string; featureId: NavFeatureId; title: string }[] = [
+const NAV_ITEMS_V2: { label: string; featureId: NavFeatureId; title: string }[] = [
   { label: "홈",      featureId: "home",                   title: "홈" },
   { label: "상품목록",  featureId: "product_list",          title: "상품 목록" },
   { label: "주문내역",  featureId: "order_list",            title: "주문 내역" },
@@ -75,6 +76,16 @@ const NAV_ITEMS: { label: string; featureId: NavFeatureId; title: string }[] = [
   { label: "취소승인",  featureId: "payment_cancel_approve", title: "결제 취소 승인" },
   { label: "사용자관리", featureId: "user_mgmt",             title: "사용자 관리" },
   { label: "설정변경",  featureId: "config_change",         title: "설정 변경" },
+];
+
+const NAV_ITEMS_V1: { label: string; featureId: NavFeatureId; title: string }[] = [
+  { label: "홈",      featureId: "home",            title: "홈" },
+  { label: "상품목록",  featureId: "product_list",    title: "상품 목록" },
+  { label: "주문내역",  featureId: "order_list",      title: "주문 내역" },
+  { label: "결제내역",  featureId: "payment_history", title: "결제 내역" },
+  { label: "결제취소",  featureId: "payment_cancel",  title: "결제 취소" },
+  { label: "사용자관리", featureId: "user_mgmt",       title: "사용자 관리" },
+  { label: "설정변경",  featureId: "config_change",   title: "설정 변경" },
 ];
 
 function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): string {
@@ -135,6 +146,19 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
           <tr><td>2026-03-15 10:23</td><td>₩89,000</td><td>완료</td><td>service:v1:46</td></tr>
           <tr><td>2026-03-14 14:11</td><td>₩12,500</td><td>완료</td><td>service:v1:46</td></tr>
           <tr><td>2026-03-13 09:47</td><td>₩45,000</td><td>환불</td><td>service:v1:46</td></tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  if (featureId === "payment_cancel") {
+    return `
+      <table class="scenario-mock-table">
+        <thead><tr><th>결제번호</th><th>금액</th><th>결제일시</th><th>서비스</th><th>취소</th></tr></thead>
+        <tbody>
+          <tr><td>#PAY-8821</td><td>₩89,000</td><td>2026-03-15 10:23</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소</button></td></tr>
+          <tr><td>#PAY-8814</td><td>₩12,500</td><td>2026-03-14 14:11</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소</button></td></tr>
+          <tr><td>#PAY-8799</td><td>₩45,000</td><td>2026-03-13 09:47</td><td>service:v1:46</td><td><span style="color:var(--text-muted);font-size:0.78rem">환불완료</span></td></tr>
         </tbody>
       </table>
     `;
@@ -217,7 +241,7 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
   `;
 }
 
-function renderSiteSection(scenario: ScenarioResponse): HTMLElement {
+function renderSiteSection(scenario: ScenarioResponse, navItems: { label: string; featureId: string; title: string }[]): HTMLElement {
   const site = document.createElement("div");
   site.className = "scenario-site";
 
@@ -255,7 +279,7 @@ function renderSiteSection(scenario: ScenarioResponse): HTMLElement {
     }
 
     // Update content title + body
-    const navItem = NAV_ITEMS.find((n) => n.featureId === featureId)!;
+    const navItem = navItems.find((n) => n.featureId === featureId)!;
     contentArea.innerHTML = `
       <h2 style="font-size:1rem;font-weight:700;margin-bottom:12px;color:#1e3a5f">${navItem.title}</h2>
       ${buildContentHtml(featureId, scenario)}
@@ -263,7 +287,7 @@ function renderSiteSection(scenario: ScenarioResponse): HTMLElement {
   }
 
   // Build nav links
-  for (const item of NAV_ITEMS) {
+  for (const item of navItems) {
     const a = document.createElement("a");
     a.href = "#";
     a.textContent = item.label;
@@ -396,7 +420,7 @@ function buildSimGroup(step: SimStep): HTMLElement {
   const permRow = document.createElement("div");
   permRow.className = "scenario-sim-step";
   permRow.innerHTML = `
-    <span class="scenario-addr-chip">[${step.perm.addr.replace("permission:v1:", "perm:v1:")}]</span>
+    <span class="scenario-addr-chip">[${step.perm.addr.replace("permission:", "perm:")}]</span>
     <span style="font-weight:600">${step.perm.svcNameKo}</span>
     <span style="color:var(--text-muted)">×</span>
     <span>${step.perm.roleNameKo}</span>
@@ -412,7 +436,7 @@ function buildSimGroup(step: SimStep): HTMLElement {
     const evtStatusClass = step.event.status === "ok" ? "status-ok" : "status-denied";
     const evtStatusIcon = step.event.status === "ok" ? "✓" : "✗";
     evtRow.innerHTML = `
-      <span class="scenario-addr-chip">[${step.event.addr.replace("event:v1:", "evt:v1:")}]</span>
+      <span class="scenario-addr-chip">[${step.event.addr.replace("event:", "evt:")}]</span>
       <span style="font-weight:600">${step.event.svcNameKo}</span>
       <span style="color:var(--text-muted)">/</span>
       <span>${step.event.eventNameKo}</span>
@@ -484,9 +508,12 @@ function renderSimSection(scenario: ScenarioResponse): HTMLElement {
 
 // ── Main export ────────────────────────────────────────────────────────────
 
-export function renderScenarioPage(container: HTMLElement): void {
+export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
   container.innerHTML = "";
   container.classList.add("scenario-body");
+
+  const rolesMeta = ver === "v1" ? ROLES_META_V1 : ROLES_META_V2;
+  const navItems = ver === "v1" ? NAV_ITEMS_V1 : NAV_ITEMS_V2;
 
   let activeRole = "viewer";
 
@@ -512,7 +539,7 @@ export function renderScenarioPage(container: HTMLElement): void {
 
   function renderAll(scenario: ScenarioResponse, features: FeaturesResponse): void {
     // Role bar
-    const newRoleBar = renderRoleBar(activeRole, handleRoleChange);
+    const newRoleBar = renderRoleBar(activeRole, handleRoleChange, rolesMeta);
     if (roleBar) {
       container.replaceChild(newRoleBar, roleBar);
     } else {
@@ -521,7 +548,7 @@ export function renderScenarioPage(container: HTMLElement): void {
     roleBar = newRoleBar;
 
     // Site section
-    const newSite = renderSiteSection(scenario);
+    const newSite = renderSiteSection(scenario, navItems);
     if (siteSection && siteSection.parentNode === container) {
       container.replaceChild(newSite, siteSection);
     } else {
@@ -564,11 +591,11 @@ export function renderScenarioPage(container: HTMLElement): void {
     if (simSection) showSimLoading();
 
     // Fetch scenario + features together so matrix reflects latest grant state
-    Promise.all([fetchScenario(activeRole), fetchFeatures()]).then(([scenario, features]) => {
+    Promise.all([fetchScenario(activeRole, ver), fetchFeatures(ver)]).then(([scenario, features]) => {
       featuresCache = features;
 
       if (siteSection && siteSection.parentNode === container) {
-        const newSite = renderSiteSection(scenario);
+        const newSite = renderSiteSection(scenario, navItems);
         container.replaceChild(newSite, siteSection);
         siteSection = newSite;
       }
@@ -592,7 +619,7 @@ export function renderScenarioPage(container: HTMLElement): void {
   }
 
   // Initial skeleton
-  const skeletonRoleBar = renderRoleBar(activeRole, handleRoleChange);
+  const skeletonRoleBar = renderRoleBar(activeRole, handleRoleChange, rolesMeta);
   container.appendChild(skeletonRoleBar);
   roleBar = skeletonRoleBar;
 
@@ -603,14 +630,14 @@ export function renderScenarioPage(container: HTMLElement): void {
 
   // Fetch both in parallel
   Promise.all([
-    fetchScenario(activeRole),
-    fetchFeatures(),
+    fetchScenario(activeRole, ver),
+    fetchFeatures(ver),
   ]).then(([scenario, features]) => {
     featuresCache = features;
     container.removeChild(loadingDiv);
 
     // Render site section
-    siteSection = renderSiteSection(scenario);
+    siteSection = renderSiteSection(scenario, navItems);
     roleBar!.insertAdjacentElement("afterend", siteSection);
 
     // Render matrix section
