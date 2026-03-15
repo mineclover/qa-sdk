@@ -19,7 +19,7 @@
  */
 
 import type { MetaRegistry } from "./meta-registry.js";
-import type { VersionedValue } from "./types.js";
+import type { EntityId, VersionedValue } from "./types.js";
 
 export interface MigrateResult {
   /** 변환된 주소 문자열 */
@@ -92,6 +92,104 @@ export function migrateValue(
   const newVV = target.encode(entityIds);
 
   return { vv: newVV, migrated: true };
+}
+
+// ── Cross-index 마이그레이션 ────────────────────────────────────────────────────
+
+/**
+ * target index의 dims 중 source에 없어 값 제공이 필요한 dim들을 나타낸다.
+ *
+ * - carryOverEntityIds: source에서 decode해 target dims와 겹치는 값들
+ * - missingDimIds: target에만 있는 새 dim IDs — 값 제공 필요
+ */
+export interface CrossIndexPartialResult {
+  readonly carryOverEntityIds: Readonly<Record<string, EntityId>>;
+  readonly missingDimIds: readonly string[];
+  readonly targetIndexId: string;
+  readonly targetVersionId: string;
+}
+
+export type CrossIndexMigrateResult =
+  | { readonly complete: true; readonly vv: VersionedValue; readonly migrated: boolean }
+  | { readonly complete: false; readonly partial: CrossIndexPartialResult };
+
+/**
+ * 다른 index(혹은 동일 index의 다른 버전)로 크로스 마이그레이션한다.
+ *
+ * source dims와 target dims가 겹치는 값은 자동으로 carry-over한다.
+ * target에만 있는 새 dim 값은 additionalEntityIds로 제공할 수 있다.
+ *
+ * - 모든 target dim이 확정되면 { complete: true, vv, migrated } 반환
+ * - 누락된 dim이 있으면 { complete: false, partial } 반환
+ *
+ * @example
+ * // perm:v1 (dims: role, action) → perm_v2:v1 (dims: role, action, resource)
+ * const result = migrateCrossIndex(reg, vv, "perm_v2", "v1");
+ * if (!result.complete) {
+ *   // result.partial.missingDimIds === ["resource"]
+ *   const done = migrateCrossIndex(reg, vv, "perm_v2", "v1", { resource: someId });
+ * }
+ */
+export function migrateCrossIndex(
+  registry: MetaRegistry,
+  vv: VersionedValue,
+  targetIndexId: string,
+  targetVersionId: string,
+  additionalEntityIds?: Record<string, EntityId>,
+): CrossIndexMigrateResult {
+  if (vv.indexId === targetIndexId && vv.versionId === targetVersionId) {
+    return { complete: true, vv, migrated: false };
+  }
+
+  const sourceCodec = registry.createCodec(vv.indexId, vv.versionId);
+  const sourceEntityIds = sourceCodec.decode(vv);
+
+  const targetDef = registry.getIndexDef(targetIndexId);
+  const carryOverEntityIds: Record<string, EntityId> = {};
+  const missingDimIds: string[] = [];
+
+  for (const dimId of targetDef.dims) {
+    if (sourceEntityIds[dimId] !== undefined) {
+      carryOverEntityIds[dimId] = sourceEntityIds[dimId];
+    } else if (additionalEntityIds?.[dimId] !== undefined) {
+      carryOverEntityIds[dimId] = additionalEntityIds[dimId];
+    } else {
+      missingDimIds.push(dimId);
+    }
+  }
+
+  if (missingDimIds.length > 0) {
+    return {
+      complete: false,
+      partial: {
+        carryOverEntityIds: Object.freeze(carryOverEntityIds),
+        missingDimIds: Object.freeze(missingDimIds) as readonly string[],
+        targetIndexId,
+        targetVersionId,
+      },
+    };
+  }
+
+  const targetCodec = registry.createCodec(targetIndexId, targetVersionId);
+  const newVV = targetCodec.encode(carryOverEntityIds);
+  return { complete: true, vv: newVV, migrated: true };
+}
+
+/**
+ * CrossIndexPartialResult에 누락 dim 값을 보완해 encode를 완성한다.
+ *
+ * @example
+ * const partial = (migrateCrossIndex(reg, vv, "perm_v2", "v1") as { complete: false; partial: CrossIndexPartialResult }).partial;
+ * const newVV = completeCrossIndex(reg, partial, { resource: someId });
+ */
+export function completeCrossIndex(
+  registry: MetaRegistry,
+  partial: CrossIndexPartialResult,
+  additionalEntityIds: Record<string, EntityId>,
+): VersionedValue {
+  const entityIds = { ...partial.carryOverEntityIds, ...additionalEntityIds };
+  const codec = registry.createCodec(partial.targetIndexId, partial.targetVersionId);
+  return codec.encode(entityIds);
 }
 
 /**

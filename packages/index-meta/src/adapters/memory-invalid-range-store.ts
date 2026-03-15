@@ -1,5 +1,6 @@
 import type { AddressStateStore, AddressStateCacheRecord } from "../invalid-range-store.js";
 
+
 export class InMemoryAddressStateStore implements AddressStateStore {
   private readonly _store = new Map<string, AddressStateCacheRecord>();
 

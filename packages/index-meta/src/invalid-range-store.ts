@@ -14,10 +14,12 @@ export interface AddressStateCacheRecord {
   readonly versionId: string;
   /** dim별 상태 명세 (재계산·감사 로그용) */
   readonly specs: readonly DimStateSpec[];
-  /** precomputed: reserved 주소 구간 (encode/decode 불가) */
+  /** encode ✗, decode ✗ */
   readonly reservedRanges: readonly [number, number][];
-  /** precomputed: inactive 주소 구간 (decode만 가능) */
+  /** encode ✗, decode ✓ */
   readonly inactiveRanges: readonly [number, number][];
+  /** encode ✓, decode ✗ */
+  readonly openRanges:     readonly [number, number][];
   readonly computedAt: string;
 }
 

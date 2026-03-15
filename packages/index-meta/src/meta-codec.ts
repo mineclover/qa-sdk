@@ -24,6 +24,8 @@
 import {
   createLabelRegistry,
   PrefixRegistry,
+  calcAddressRanges,
+  type CoordConstraint,
   type EntityId as WiEntityId,
   type LabelVersionEntry,
   EntityNotFoundError as WiEntityNotFoundError,
@@ -146,5 +148,53 @@ export class MetaCodec {
   /** 내부 DecodeMap의 복사본 반환. */
   toDecodeMap(): DecodeMap {
     return structuredClone(this._map);
+  }
+
+  /**
+   * 부분 좌표 패턴에 매칭되는 value 범위 목록을 반환한다.
+   *
+   * ── 목적 ────────────────────────────────────────────────────────────────────
+   *
+   * DB에 VersionedValue.value가 저장되어 있을 때, 특정 dim만 고정하고 나머지를
+   * 와일드카드로 두어 해당 패턴에 해당하는 value 범위를 계산한다.
+   * 반환된 [from, to] 구간을 DB BETWEEN 쿼리에 그대로 사용할 수 있다.
+   *
+   * ── 입력 ────────────────────────────────────────────────────────────────────
+   *
+   *   partial의 각 dim:
+   *     - EntityId 지정 → 해당 값만 매칭
+   *     - null 또는 키 생략 → 와일드카드 (해당 dim의 모든 값 매칭)
+   *
+   * ── 반환값 ───────────────────────────────────────────────────────────────────
+   *
+   *   정렬·병합된 [from, to][] (from 기준 오름차순, 인접·겹치는 구간은 병합됨).
+   *   모든 dim이 와일드카드이면 [[0, size-1]] 하나.
+   *
+   * @throws {EntryNotFoundError} partial에 지정된 entity ID가 해당 dim에 없을 때
+   *
+   * @example
+   * // role × action × resource (3×3×3, size=27)
+   * codec.matchRanges({ role: "editor", action: null })
+   * // → [[9, 17]]  (role=editor인 모든 주소)
+   *
+   * codec.matchRanges({ role: "viewer", action: null, resource: 30 })
+   * // → [[20,20],[23,23],[26,26]]  (action이 달라 비연속 구간)
+   *
+   * codec.matchRanges({})
+   * // → [[0, 26]]  (전체 범위)
+   */
+  matchRanges(partial: Record<string, EntityId | null>): [number, number][] {
+    const constraints: CoordConstraint[] = this._map.dims.map((dim) => {
+      const val = partial[dim.dimId];
+      if (val === undefined || val === null) return null;
+      const idx = dim.entries.indexOf(val);
+      if (idx === -1) {
+        throw new EntryNotFoundError(
+          `matchRanges "${this._map.indexId}/${this._map.versionId}": entity "${val}" not found in dim "${dim.dimId}"`
+        );
+      }
+      return String(idx + 1); // 1-based CoordConstraint
+    });
+    return calcAddressRanges(this._map.shape, constraints);
   }
 }

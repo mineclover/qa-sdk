@@ -39,12 +39,14 @@ CREATE INDEX IF NOT EXISTS idx_entry_range
 --
 -- specs_json         : DimStateSpec[] (JSON) — 상태 명세 (재계산·감사용)
 -- reserved_json      : [[from,to],...] — reserved 주소 구간 (encode/decode 불가)
--- inactive_json      : [[from,to],...] — inactive 주소 구간 (decode만 가능)
+-- inactive_json      : [[from,to],...] — inactive 주소 구간 (decode만 가능, encode 불가)
+-- open_json          : [[from,to],...] — open 주소 구간 (encode 가능, decode 불가 — headroom)
 --
 -- state 의미:
 --   active   (기본) — encode + decode 모두 허용
 --   inactive         — 값 있으나 비활성. decode 허용, encode 불가
---   reserved         — 공간만 있고 값 없음. encode/decode 모두 불가
+--   open             — 빈 headroom 슬롯. encode 허용, decode 불가 (shouldVerify=true)
+--   reserved         — 하드 블록. encode/decode 모두 불가
 
 CREATE TABLE IF NOT EXISTS address_state_cache (
   prefix         TEXT NOT NULL,
@@ -52,6 +54,7 @@ CREATE TABLE IF NOT EXISTS address_state_cache (
   specs_json     TEXT NOT NULL,
   reserved_json  TEXT NOT NULL,
   inactive_json  TEXT NOT NULL,
+  open_json      TEXT NOT NULL,
   computed_at    TEXT NOT NULL,
   PRIMARY KEY (prefix, version_id)
 );

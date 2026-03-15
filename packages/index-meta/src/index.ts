@@ -12,16 +12,24 @@ export { BetterSqliteDriver } from "./adapters/node-sqlite-driver.js";
 export { DistributedStoreClient } from "./distributed-client.js";
 export { syncSchemaToRegistry } from "./schema-sync.js";
 export {
+  ADDRESS_GATE,
   computeStateRanges,
+  checkGate,
   classifyAddress,
-  isActive,
-  isAccessible,
+  encodableRanges,
+  decodableRanges,
   activeRanges,
-  inactiveOnlyRanges,
   positionsToConstraint,
 } from "./invalid-ranges.js";
 export { InMemoryAddressStateStore } from "./adapters/memory-invalid-range-store.js";
-export { migrateAddress, migrateValue, migrateBatch } from "./migrate-address.js";
+export { SqlAddressStateStore } from "./adapters/sql-address-state-store.js";
+export {
+  migrateAddress,
+  migrateValue,
+  migrateBatch,
+  migrateCrossIndex,
+  completeCrossIndex,
+} from "./migrate-address.js";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 
@@ -38,9 +46,13 @@ export type {
 
 export type { PrefixRouter } from "./prefix-router.js";
 export type { DimRef, ResolvedAddress } from "./prefix-registry.js";
-export type { DimStateSpec, AddressState } from "./invalid-ranges.js";
+export type { DimStateSpec, AddressState, GateResult } from "./invalid-ranges.js";
 export type { AddressStateStore, AddressStateCacheRecord } from "./invalid-range-store.js";
-export type { MigrateResult } from "./migrate-address.js";
+export type {
+  MigrateResult,
+  CrossIndexPartialResult,
+  CrossIndexMigrateResult,
+} from "./migrate-address.js";
 export type { VersionBackup } from "./backup.js";
 export type { EntryBatchPayload } from "./api-payload.js";
 
