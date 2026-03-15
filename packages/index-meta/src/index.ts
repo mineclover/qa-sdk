@@ -1,5 +1,8 @@
+export { createIndexSDK } from "./index-sdk.js";
+export type { IndexSDK, IndexClient } from "./index-sdk.js";
 export { MetaRegistry } from "./meta-registry.js";
-export { MetaCodec } from "./meta-codec.js";
+export { AddressProtocolManager, type FallbackStats } from "./address-protocol-manager.js";
+export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
 export { MetaResolver } from "./meta-resolver.js";
 export { defineTable } from "./table-def.js";
 export { compileSchema } from "./compile-schema.js";
@@ -104,6 +107,8 @@ export type {
   DimRange,
   IndexRange,
   MetaDataset,
+  SnapshotDiff,
+  VersionDiff,
 } from "./types.js";
 
 export {
@@ -116,4 +121,5 @@ export {
   MigrationNotFoundError,
   ValidationError,
   ParseError,
+  NegotiationError,
 } from "./errors.js";
