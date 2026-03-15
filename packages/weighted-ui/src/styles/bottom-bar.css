@@ -30,9 +30,9 @@
 .stab:hover { background: rgba(255,255,255,0.08); color: #fff; }
 .stab.active {
   background: var(--surface-0);
-  color: var(--ui-primary, #217346);
+  color: var(--ui-primary);
   font-weight: 600;
-  border-top: 2px solid var(--ui-primary, #217346);
+  border-top: 2px solid var(--ui-primary);
   border-bottom: none;
 }
 .stab-icon { font-size: 0.7rem; }

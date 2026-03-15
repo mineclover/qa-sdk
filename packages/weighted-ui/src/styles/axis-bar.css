@@ -46,7 +46,7 @@
   cursor: pointer;
   font-family: var(--font);
   text-align: left;
-  min-width: 96px;
+  min-width: var(--axis-btn-min-w, 96px);
   gap: 1px;
   transition: background 0.08s, border-left-color 0.08s;
 }

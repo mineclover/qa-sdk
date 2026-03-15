@@ -35,6 +35,8 @@
   --cell-min-w:    88px;
   --row-header-w:  72px;
   --col-header-h:  22px;
+  --namebox-w:     64px;
+  --axis-btn-min-w: 96px;
 
   /* Radius */
   --radius-sm: 2px;

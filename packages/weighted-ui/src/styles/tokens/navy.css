@@ -14,4 +14,9 @@
   --row-header-w:  180px;
   --col-header-h:  36px;
   --cell-min-w:    96px;
+  --namebox-w:     72px;
+  --axis-btn-min-w: 100px;
+  --sidebar-w:     148px;
+  --col-value-py:  1px;
+  --col-value-px:  5px;
 }

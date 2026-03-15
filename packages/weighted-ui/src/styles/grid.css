@@ -58,7 +58,7 @@
   display: block;
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 0 4px;
+  padding: var(--col-value-py, 0) var(--col-value-px, 4px);
   border-radius: 2px;
 }
 .col-ko {

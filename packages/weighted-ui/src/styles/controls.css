@@ -26,6 +26,6 @@
   background: var(--xl-blue-hover);
 }
 .ui-toggle-btn.ui-toggle-active {
-  background: var(--ui-primary, #1e3a5f);
+  background: var(--ui-primary);
   color: #fff;
 }
