@@ -18,12 +18,10 @@
  *  getDataset()                      : 전체 스키마 내보내기
  */
 
-import type { MetaRegistry } from "./meta-registry.js";
+import { computeActiveIndices, type MetaRegistry } from "./meta-registry.js";
 import type {
   AddressConfig,
-  DimKind,
   EntityId,
-  EntryFlag,
   DecodeMap,
   DimRange,
   IndexRange,
@@ -52,37 +50,11 @@ export class MetaResolver {
    * // 외부 시스템에 전달 → shape + entries로 자체 decode
    */
   getDecodeMap(indexId: string, versionId: string): DecodeMap {
-    const reg = this.registry;
-    const def = reg.getIndexDef(indexId);
-    const iv = reg.getIndexVersion(indexId, versionId);
-    const wi = reg.getWeightedIndex(indexId, versionId);
-
-    const dims = def.dims.map((dimId) => {
-      const snapshotId = iv.snapshots[dimId];
-      const sn = reg.getDimSnapshot(dimId, snapshotId);
-      const dimDef = reg.getDimDef(dimId);
-      return {
-        dimId,
-        snapshotId,
-        kind: dimDef.kind,
-        entries: [...sn.entries] as EntityId[],
-      };
-    });
-
-    const result: DecodeMap = {
-      indexId,
-      versionId,
-      shape: [...wi.shape],
-      size: wi.size,
-      dims,
-    };
-
-    // address 설정이 있으면 포함 (캐싱된 값 사용)
+    const map = this.registry.createCodec(indexId, versionId).toDecodeMap();
     if (this._addressConfig) {
-      result.address = structuredClone(this._addressConfig);
+      map.address = structuredClone(this._addressConfig);
     }
-
-    return result;
+    return map;
   }
 
   /**
@@ -99,16 +71,11 @@ export class MetaResolver {
 
     const snapshots = snapshotIds.map((snapshotId) => {
       const sn = reg.getDimSnapshot(dimId, snapshotId);
-      const activeIndices: number[] = [];
-      for (let i = 1; i <= sn.entries.length; i++) {
-        const flag: EntryFlag | undefined = sn.entryFlags[i];
-        if (!flag || flag.status === "active") activeIndices.push(i);
-      }
       const capacity = sn.capacity ?? sn.entries.length;
       return {
         snapshotId,
         entries: [...sn.entries] as EntityId[],
-        activeIndices,
+        activeIndices: computeActiveIndices(sn),
         total: sn.entries.length,
         capacity,
         headroom: capacity - sn.entries.length,
@@ -144,18 +111,13 @@ export class MetaResolver {
         const snapshotId = iv.snapshots[dimId];
         const sn = reg.getDimSnapshot(dimId, snapshotId);
         const dimDef = reg.getDimDef(dimId);
-        const activeIndices: number[] = [];
-        for (let i = 1; i <= sn.entries.length; i++) {
-          const flag: EntryFlag | undefined = sn.entryFlags[i];
-          if (!flag || flag.status === "active") activeIndices.push(i);
-        }
         const capacity = sn.capacity ?? sn.entries.length;
         return {
           dimId,
           snapshotId,
           kind: dimDef.kind,
           entries: [...sn.entries] as EntityId[],
-          activeIndices,
+          activeIndices: computeActiveIndices(sn),
           capacity,
           headroom: capacity - sn.entries.length,
         };

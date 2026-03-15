@@ -54,7 +54,6 @@ import type {
   DimActiveSet,
   VersionedValue,
   EntityId,
-  EntryFlag,
   SnapshotDiff,
   VersionDiff,
 } from "./types.js";
@@ -68,6 +67,21 @@ import {
   ValidationError,
   ParseError,
 } from "./errors.js";
+
+// ── 공통 유틸 ─────────────────────────────────────────────────────────────────
+
+/**
+ * 스냅샷에서 active 상태인 entry의 1-based index 배열을 반환한다.
+ * entryFlags에 명시되지 않은 entry는 active로 간주한다.
+ */
+export function computeActiveIndices(snapshot: DimSnapshot): number[] {
+  const result: number[] = [];
+  for (let i = 1; i <= snapshot.entries.length; i++) {
+    const flag = snapshot.entryFlags[i];
+    if (!flag || flag.status === "active") result.push(i);
+  }
+  return result;
+}
 
 // ── 내부 캐시 타입 ────────────────────────────────────────────────────────────
 
@@ -469,13 +483,12 @@ export class MetaRegistry {
     const dims: DimActiveSet[] = def.dims.map((dimId) => {
       const snapshotId = iv.snapshots[dimId];
       const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
-      const total = snapshot.entries.length;
-      const activeIndices: number[] = [];
-      for (let i = 1; i <= total; i++) {
-        const flag: EntryFlag | undefined = snapshot.entryFlags[i];
-        if (!flag || flag.status === "active") activeIndices.push(i);
-      }
-      return { dimId, snapshotId, total, activeIndices };
+      return {
+        dimId,
+        snapshotId,
+        total: snapshot.entries.length,
+        activeIndices: computeActiveIndices(snapshot),
+      };
     });
 
     return { indexId, versionId, dims };

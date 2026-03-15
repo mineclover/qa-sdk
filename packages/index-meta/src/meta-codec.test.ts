@@ -804,3 +804,38 @@ describe("MetaRegistry hasIndex / isValidVersion", () => {
     expect(reg.isValidVersion("unknown", "iv1")).toBe(false);
   });
 });
+
+// ── strides / dimIds 캐싱 ─────────────────────────────────────────────────────
+
+describe("strides / dimIds 캐싱", () => {
+  it("strides는 매 호출마다 동일 참조를 반환한다", () => {
+    const codec = new MetaCodec(permMap());
+    const a = codec.strides;
+    const b = codec.strides;
+    expect(a).toBe(b); // 참조 동일 (캐싱됨)
+  });
+
+  it("strides 값이 shape에 대해 정확하다", () => {
+    // shape [3, 3, 3] → strides [9, 3, 1]
+    const codec = new MetaCodec(permMap());
+    expect(codec.strides).toEqual([9, 3, 1]);
+  });
+
+  it("dimIds는 매 호출마다 동일 참조를 반환한다", () => {
+    const codec = new MetaCodec(permMap());
+    const a = codec.dimIds;
+    const b = codec.dimIds;
+    expect(a).toBe(b); // 참조 동일 (캐싱됨)
+  });
+
+  it("dimIds 값이 dims 순서와 일치한다", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.dimIds).toEqual(["role", "action", "resource"]);
+  });
+
+  it("단일 dim에서도 strides/dimIds가 정확하다", () => {
+    const codec = new MetaCodec(singleDimMap());
+    expect(codec.strides).toEqual([1]);
+    expect(codec.dimIds).toEqual(["level"]);
+  });
+});

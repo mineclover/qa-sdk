@@ -944,3 +944,70 @@ describe("시나리오: 다중 인덱스 PK 혼용", () => {
     expect(contentMap.shape).toEqual([2, 2]);
   });
 });
+
+// ── getDecodeMap ↔ createCodec().toDecodeMap() 일관성 ────────────────────────
+
+describe("getDecodeMap은 createCodec().toDecodeMap()와 동일한 코어 데이터를 반환한다", () => {
+  it("address 미설정: 코어 필드가 동일하다", () => {
+    const reg = new MetaRegistry(baseInput());
+    const resolver = new MetaResolver(reg);
+
+    const fromResolver = resolver.getDecodeMap("perm", "iv1");
+    const fromCodec = reg.createCodec("perm", "iv1").toDecodeMap();
+
+    // 코어 필드 일치
+    expect(fromResolver.indexId).toBe(fromCodec.indexId);
+    expect(fromResolver.versionId).toBe(fromCodec.versionId);
+    expect(fromResolver.shape).toEqual(fromCodec.shape);
+    expect(fromResolver.size).toBe(fromCodec.size);
+    expect(fromResolver.dims).toEqual(fromCodec.dims);
+
+    // address 미설정 시 address 필드 없음
+    expect(fromResolver.address).toBeUndefined();
+    expect(fromCodec.address).toBeUndefined();
+  });
+
+  it("address 설정: 코어 필드 동일 + address 추가", () => {
+    const input = {
+      ...baseInput(),
+      address: {
+        format: PACK_FORMATS.uuid,
+        schemaChars: 4,
+        versionChars: 2,
+        schemas: { perm: 1 },
+        versions: { iv1: 1, iv2: 2 },
+      },
+    };
+    const reg = new MetaRegistry(input);
+    const resolver = new MetaResolver(reg);
+
+    const fromResolver = resolver.getDecodeMap("perm", "iv1");
+    const fromCodec = reg.createCodec("perm", "iv1").toDecodeMap();
+
+    // 코어 필드 일치
+    expect(fromResolver.indexId).toBe(fromCodec.indexId);
+    expect(fromResolver.versionId).toBe(fromCodec.versionId);
+    expect(fromResolver.shape).toEqual(fromCodec.shape);
+    expect(fromResolver.size).toBe(fromCodec.size);
+    expect(fromResolver.dims).toEqual(fromCodec.dims);
+
+    // resolver만 address를 추가
+    expect(fromResolver.address).toBeDefined();
+    expect(fromResolver.address!.schemas).toEqual({ perm: 1 });
+  });
+
+  it("두 경로로 만든 MetaCodec이 동일하게 동작한다", () => {
+    const reg = new MetaRegistry(baseInput());
+    const resolver = new MetaResolver(reg);
+
+    const codecDirect = reg.createCodec("perm", "iv1");
+    const codecFromMap = new MetaCodec(resolver.getDecodeMap("perm", "iv1"));
+
+    const entityIds = { role: "admin", action: "write", resource: 20 };
+    const vv1 = codecDirect.encode(entityIds);
+    const vv2 = codecFromMap.encode(entityIds);
+    expect(vv1).toEqual(vv2);
+
+    expect(codecDirect.decode(vv1)).toEqual(codecFromMap.decode(vv2));
+  });
+});

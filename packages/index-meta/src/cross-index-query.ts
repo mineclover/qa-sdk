@@ -76,8 +76,6 @@ export function composeQuery(
 
   // 3. target index에서 조건에 맞는 value(주소)들 계산
   const targetIndexId = throughDimDef.kind.indexId;
-  // target version: through dim의 snapshot에 있는 entries가 target index의 주소들
-  // target version을 찾기 위해, entry-level entryRefs가 있으면 사용, 없으면 가장 최신 version 사용
   const targetVersionIds = registry.getVersionIds(targetIndexId);
   if (targetVersionIds.length === 0) {
     throw new IndexNotFoundError(
@@ -85,29 +83,9 @@ export function composeQuery(
     );
   }
 
-  // targetConstraint를 coord constraint로 변환
   const targetVersionId = targetVersionIds[targetVersionIds.length - 1];
   const targetCodec = registry.createCodec(targetIndexId, targetVersionId);
-  const targetDef = registry.getIndexDef(targetIndexId);
-
-  const coordConstraints: CoordConstraint[] = targetDef.dims.map((dimId) => {
-    const entityFilter = targetConstraint[dimId];
-    if (entityFilter === undefined || entityFilter === null) return null;
-    // entity ID → 1-based position
-    const targetVersion = registry.getIndexVersion(targetIndexId, targetVersionId);
-    const snapshotId = targetVersion.snapshots[dimId];
-    const snapshot = registry.getDimSnapshot(dimId, snapshotId);
-    const pos = snapshot.entries.indexOf(entityFilter);
-    if (pos === -1) {
-      throw new ValidationError(
-        `composeQuery: entity "${entityFilter}" not found in dim "${dimId}" snapshot "${snapshotId}"`
-      );
-    }
-    return String(pos + 1); // 1-based
-  });
-
-  const targetWi = registry.getWeightedIndex(targetIndexId, targetVersionId);
-  const targetRanges = calcAddressRanges(targetWi.shape, coordConstraints);
+  const targetRanges = targetCodec.matchRanges(targetConstraint);
 
   // 4. through dim의 entries에서 target 범위에 포함되는 position 찾기
   const throughSnapshotId = sourceVersion.snapshots[through];

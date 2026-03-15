@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { MetaRegistry } from "./meta-registry.js";
 import { composeQuery, deepDecode } from "./cross-index-query.js";
-import { ValidationError } from "./errors.js";
+import { EntryNotFoundError, ValidationError } from "./errors.js";
 
 // ── 픽스처: 2-level cross-index ──────────────────────────────────────────────
 //
@@ -126,7 +126,7 @@ describe("composeQuery", () => {
         { format: "DOCX" },
         registry,
       ),
-    ).toThrow(ValidationError);
+    ).toThrow(EntryNotFoundError);
   });
 
   it("index_ref가 아닌 dim으로 호출하면 에러", () => {
@@ -301,5 +301,58 @@ describe("cross-index integration", () => {
         expect(result.layers.get("doc_meta")!.format).toBe("EPUB");
       }
     }
+  });
+});
+
+// ── composeQuery ↔ targetCodec.matchRanges 일관성 ──────────────────────────
+
+describe("composeQuery는 내부적으로 targetCodec.matchRanges를 사용한다", () => {
+  it("target 조건의 범위가 targetCodec.matchRanges와 일치", () => {
+    const registry = createFixture();
+    const targetConstraint = { format: "PDF" };
+
+    // composeQuery 결과
+    const composeResult = composeQuery(
+      { indexId: "article", versionId: "v1" },
+      "quality_tier",
+      targetConstraint,
+      registry,
+    );
+
+    // targetCodec.matchRanges로 직접 계산
+    const targetCodec = registry.createCodec("doc_meta", "v1");
+    const targetRanges = targetCodec.matchRanges(targetConstraint);
+
+    // composeQuery가 반환한 article 주소들의 quality_tier를 추출하면
+    // 모두 targetRanges 안에 있어야 함
+    const articleCodec = registry.createCodec("article", "v1");
+    for (const [from, to] of composeResult) {
+      for (let addr = from; addr <= to; addr++) {
+        const decoded = articleCodec.decodeValue(addr);
+        const tierValue = decoded.quality_tier as number;
+        const inRange = targetRanges.some(
+          ([lo, hi]) => tierValue >= lo && tierValue <= hi,
+        );
+        expect(inRange).toBe(true);
+      }
+    }
+  });
+
+  it("entity 미존재 시 EntryNotFoundError를 throw한다", () => {
+    const registry = createFixture();
+
+    // targetCodec.matchRanges가 throw하는 것과 같은 에러 타입
+    const targetCodec = registry.createCodec("doc_meta", "v1");
+    expect(() => targetCodec.matchRanges({ format: "DOCX" })).toThrow(EntryNotFoundError);
+
+    // composeQuery도 동일
+    expect(() =>
+      composeQuery(
+        { indexId: "article", versionId: "v1" },
+        "quality_tier",
+        { format: "DOCX" },
+        registry,
+      ),
+    ).toThrow(EntryNotFoundError);
   });
 });

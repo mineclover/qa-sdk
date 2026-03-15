@@ -5,7 +5,7 @@ import {
   entityVersionSpan,
   translateConstraint,
 } from "./version-query.js";
-import { ValidationError } from "./errors.js";
+import { EntryNotFoundError, ValidationError } from "./errors.js";
 
 // ── 픽스처: 다중 버전 index ──────────────────────────────────────────────────
 
@@ -294,5 +294,59 @@ describe("translateConstraint", () => {
     );
     expect(rangeResult).not.toBeNull();
     expect(rangeResult!.role).toBe("2-3"); // {2→3, 3→2} → positions {3,2} → "2-3"
+  });
+});
+
+// ── queryAcrossVersions ↔ codec.matchRanges 일관성 ──────────────────────────
+
+describe("queryAcrossVersions는 codec.matchRanges와 동일한 결과를 반환한다", () => {
+  it("각 version별 결과가 해당 version의 codec.matchRanges와 일치", () => {
+    const registry = createFixture();
+    const constraint = { role: "admin", action: null, resource: null };
+
+    const result = queryAcrossVersions(
+      "perm",
+      ["iv1", "iv2", "iv3"],
+      constraint,
+      registry,
+    );
+
+    for (const [versionId, ranges] of result) {
+      const codec = registry.createCodec("perm", versionId);
+      expect(ranges).toEqual(codec.matchRanges(constraint));
+    }
+  });
+
+  it("entity가 없는 version은 codec.matchRanges가 throw하는 것과 동일하게 skip", () => {
+    const registry = createFixture();
+    const constraint = { role: "guest" };
+
+    const result = queryAcrossVersions(
+      "perm",
+      ["iv1", "iv2", "iv3"],
+      constraint,
+      registry,
+    );
+
+    // iv1의 codec에서 guest는 EntryNotFoundError
+    const codecIv1 = registry.createCodec("perm", "iv1");
+    expect(() => codecIv1.matchRanges(constraint)).toThrow(EntryNotFoundError);
+    expect(result.has("iv1")).toBe(false);
+
+    // iv2의 codec에서 guest는 정상
+    const codecIv2 = registry.createCodec("perm", "iv2");
+    expect(result.get("iv2")).toEqual(codecIv2.matchRanges(constraint));
+  });
+
+  it("완전 와일드카드에서도 일치", () => {
+    const registry = createFixture();
+    const constraint = {};
+
+    const result = queryAcrossVersions("perm", ["iv1", "iv2"], constraint, registry);
+
+    for (const [versionId, ranges] of result) {
+      const codec = registry.createCodec("perm", versionId);
+      expect(ranges).toEqual(codec.matchRanges(constraint));
+    }
   });
 });

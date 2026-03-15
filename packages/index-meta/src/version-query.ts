@@ -6,13 +6,12 @@
  * 동일한 의미 조건을 적용할 수 있다.
  */
 import {
-  calcAddressRanges,
   positionsToConstraint,
   type CoordConstraint,
   type EntityId,
 } from "weighted-index";
 import type { MetaRegistry } from "./meta-registry.js";
-import { ValidationError } from "./errors.js";
+import { EntryNotFoundError, ValidationError } from "./errors.js";
 
 // ── queryAcrossVersions ──────────────────────────────────────────────────────
 
@@ -39,31 +38,16 @@ export function queryAcrossVersions(
   registry: MetaRegistry,
 ): Map<string, [number, number][]> {
   const result = new Map<string, [number, number][]>();
-  const indexDef = registry.getIndexDef(indexId);
 
   for (const versionId of versionIds) {
-    const version = registry.getIndexVersion(indexId, versionId);
-    const wi = registry.getWeightedIndex(indexId, versionId);
-
-    let skip = false;
-    const coordConstraints: CoordConstraint[] = indexDef.dims.map((dimId) => {
-      const entityFilter = constraint[dimId];
-      if (entityFilter === undefined || entityFilter === null) return null;
-
-      const snapshotId = version.snapshots[dimId];
-      const snapshot = registry.getDimSnapshot(dimId, snapshotId);
-      const pos = snapshot.entries.indexOf(entityFilter);
-      if (pos === -1) {
-        skip = true;
-        return null;
-      }
-      return String(pos + 1); // 1-based
-    });
-
-    if (skip) continue;
-
-    const ranges = calcAddressRanges(wi.shape, coordConstraints);
-    result.set(versionId, ranges);
+    const codec = registry.createCodec(indexId, versionId);
+    try {
+      const ranges = codec.matchRanges(constraint);
+      result.set(versionId, ranges);
+    } catch (e) {
+      if (e instanceof EntryNotFoundError) continue; // entity가 이 version에 없음
+      throw e;
+    }
   }
 
   return result;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MetaRegistry } from "./meta-registry.js";
+import { MetaRegistry, computeActiveIndices } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";
 import {
   DimNotFoundError,
@@ -2329,5 +2329,66 @@ describe("versionDiff", () => {
     expect(diff.changedDims).toHaveLength(2);
     expect(diff.changedDims[0].dimId).toBe("role");
     expect(diff.changedDims[1].dimId).toBe("action");
+  });
+});
+
+// ── computeActiveIndices ──────────────────────────────────────────────────────
+
+describe("computeActiveIndices", () => {
+  it("entryFlags가 없으면 모든 entry가 active", () => {
+    const reg = new MetaRegistry(baseInput());
+    const snapshot = reg.getDimSnapshot("role", "v1");
+
+    const active = computeActiveIndices(snapshot);
+    expect(active).toEqual([1, 2, 3]);
+  });
+
+  it("inactive flag가 있으면 해당 entry를 제외한다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v1 = {
+      entries: ["admin", "editor", "viewer"],
+      entryFlags: {
+        2: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-01-01" },
+      },
+    };
+    const reg = new MetaRegistry(input);
+    const snapshot = reg.getDimSnapshot("role", "v1");
+
+    const active = computeActiveIndices(snapshot);
+    expect(active).toEqual([1, 3]); // editor(2) 제외
+  });
+
+  it("모든 entry가 inactive이면 빈 배열", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v1 = {
+      entries: ["admin", "editor", "viewer"],
+      entryFlags: {
+        1: { status: "inactive" as const, reason: "r", updatedAt: "2026-01-01" },
+        2: { status: "inactive" as const, reason: "r", updatedAt: "2026-01-01" },
+        3: { status: "inactive" as const, reason: "r", updatedAt: "2026-01-01" },
+      },
+    };
+    const reg = new MetaRegistry(input);
+    const snapshot = reg.getDimSnapshot("role", "v1");
+
+    expect(computeActiveIndices(snapshot)).toEqual([]);
+  });
+
+  it("getActiveManifest와 동일한 결과를 반환한다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v2 = {
+      entries: ["admin", "editor", "viewer", "guest"],
+      entryFlags: {
+        2: { status: "inactive" as const, reason: "deprecated", updatedAt: "2026-01-01" },
+      },
+    };
+    const reg = new MetaRegistry(input);
+    const manifest = reg.getActiveManifest("perm", "iv2");
+
+    // manifest 내부에서 computeActiveIndices를 사용하므로 결과가 일치해야 함
+    for (const dim of manifest.dims) {
+      const snapshot = reg.getDimSnapshot(dim.dimId, dim.snapshotId);
+      expect(dim.activeIndices).toEqual(computeActiveIndices(snapshot));
+    }
   });
 });
