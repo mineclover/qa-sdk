@@ -5,6 +5,10 @@
 import {
   analyzeLayoutSim,
   computeLayoutViewModel,
+  fieldMaxVal,
+  logScalePercent,
+  valToSlider,
+  sliderToVal,
   shapeProduct,
   simDecode,
   simDecodeBig,
@@ -84,9 +88,6 @@ export function renderLayoutPage(container: HTMLElement): void {
   wrap.className = "lay-wrap";
 
   // ── Header ─────────────────────────────────────────────────────────────
-  function fieldMaxVal(chars: number): number {
-    return chars > 0 ? 16 ** chars - 1 : 0;
-  }
 
   // ── Header + inline config (title row) ─────────────────────────────────
   const header = document.createElement("div");
@@ -673,11 +674,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     "#3498db", "#2ecc71", "#e67e22", "#34495e",
   ];
 
-  /** Log-scale percentage: how much of [1..max] is covered by val. */
-  function logPct(val: number, max: number): number {
-    if (max <= 1 || val <= 1) return 0;
-    return Math.min(100, Math.log(val) / Math.log(max) * 100);
-  }
+  const logPct = logScalePercent;
 
   function repaintGraph(): void {
     const vm = getViewModel();
@@ -705,24 +702,9 @@ export function renderLayoutPage(container: HTMLElement): void {
     }).join("");
   }
 
-  // ── Log-scale slider mapping ────────────────────────────────────────────
-  //
-  // Slider positions 0–1000 map to values 1–dimMax on a log scale.
-  // This makes the slider usable for any range (10 to 10^15) and
-  // makes inter-dim constraints visually obvious.
+  // ── Slider mapping (log-scale, resolution=1000) ────────────────────────
 
   const SLD_RES = 1000;
-
-  function valToSlider(val: number, dmax: number): number {
-    if (dmax <= 1) return 0;
-    const clamped = Math.max(1, Math.min(val, dmax));
-    return Math.round(Math.log(clamped) / Math.log(dmax) * SLD_RES);
-  }
-
-  function sliderToVal(pos: number, dmax: number): number {
-    if (dmax <= 1) return 1;
-    return Math.max(1, Math.round(Math.pow(dmax, pos / SLD_RES)));
-  }
 
   // Persistent slider element refs — avoid DOM recreation during drag
   let sliderRefs: {

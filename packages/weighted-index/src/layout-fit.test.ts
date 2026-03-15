@@ -23,6 +23,11 @@ import {
   simEncodeBig,
   simPackUUID,
   simPackUUIDBig,
+  fieldMaxVal,
+  logScalePercent,
+  valToSlider,
+  sliderToVal,
+  varintByteSize,
   formatLargeNumber,
   maxProductBig,
   utilizationBig,
@@ -749,4 +754,46 @@ describe("[simPackUUIDBig] BigInt UUID 패킹", () => {
     const uuid = simPackUUIDBig(2, 0xAB, 1, 1, 0, 0, 999999999999999999n);
     expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
+});
+
+// ── §15. 추출된 유틸 함수 ───────────────────────────────────────────────────
+
+describe("[fieldMaxVal] hex 필드 최대값", () => {
+  it("chars=0 → 0", () => expect(fieldMaxVal(0)).toBe(0));
+  it("chars=1 → 15", () => expect(fieldMaxVal(1)).toBe(15));
+  it("chars=2 → 255", () => expect(fieldMaxVal(2)).toBe(255));
+  it("chars=8 → 16^8-1", () => expect(fieldMaxVal(8)).toBe(16 ** 8 - 1));
+});
+
+describe("[logScalePercent] 로그 스케일 비율", () => {
+  it("val=1 → 0%", () => expect(logScalePercent(1, 100)).toBe(0));
+  it("val=max → 100%", () => expect(logScalePercent(100, 100)).toBe(100));
+  it("max≤1 → 0%", () => expect(logScalePercent(5, 1)).toBe(0));
+  it("sqrt(max) → ≈50%", () => {
+    expect(logScalePercent(Math.sqrt(10000), 10000)).toBeCloseTo(50, 5);
+  });
+});
+
+describe("[valToSlider / sliderToVal] 로그 스케일 라운드트립", () => {
+  it("val=1 → position=0", () => expect(valToSlider(1, 1000)).toBe(0));
+  it("val=dmax → position=resolution", () => expect(valToSlider(1000, 1000)).toBe(1000));
+  it("라운드트립 근사", () => {
+    for (const v of [1, 10, 100, 500, 999]) {
+      const pos = valToSlider(v, 1000);
+      const back = sliderToVal(pos, 1000);
+      expect(Math.abs(back - v)).toBeLessThanOrEqual(Math.max(1, v * 0.05));
+    }
+  });
+  it("custom resolution", () => {
+    expect(valToSlider(100, 100, 500)).toBe(500);
+    expect(sliderToVal(500, 100, 500)).toBe(100);
+  });
+});
+
+describe("[varintByteSize] protobuf varint 크기", () => {
+  it("0 → 1B", () => expect(varintByteSize(0)).toBe(1));
+  it("127 → 1B", () => expect(varintByteSize(127)).toBe(1));
+  it("128 → 2B", () => expect(varintByteSize(128)).toBe(2));
+  it("16383 → 2B", () => expect(varintByteSize(16383)).toBe(2));
+  it("16384 → 3B", () => expect(varintByteSize(16384)).toBe(3));
 });

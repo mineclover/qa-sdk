@@ -2,12 +2,21 @@
 //  로깅 통합 — 인덱스 주소를 활용한 구조화 로그 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { serializeAddress } from "weighted-index";
+import {
+  serializeAddress, varintByteSize,
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_SVC_STRIDES,
+  demoEncodeSvc, demoDecodeSvc,
+  demoRoleStride, demoEvtStride,
+  demoDecodePerm, demoDecodeEvt,
+  DEMO_LOG_TEMPLATES,
+  type DemoVer,
+} from "weighted-index";
 import { API_BASE } from "../registry.js";
 
-type Ver = "v1" | "v2";
+type Ver = DemoVer;
 
-// ── Dimension metadata ────────────────────────────────────────────────────
+// ── Dimension metadata (demo-snapshot 기반) ──────────────────────────────
 
 interface DimMeta {
   key: string;
@@ -16,120 +25,35 @@ interface DimMeta {
 }
 
 const SVC_DIMS: DimMeta[] = [
-  {
-    key: "env", label: "환경",
-    values: [
-      { idx1: 1, id: "dev",   ko: "개발" },
-      { idx1: 2, id: "stage", ko: "스테이지" },
-      { idx1: 3, id: "prod",  ko: "운영" },
-      { idx1: 4, id: "test",  ko: "테스트" },
-      { idx1: 5, id: "local", ko: "로컬" },
-    ],
-  },
-  {
-    key: "region", label: "리전",
-    values: [
-      { idx1: 1, id: "asia", ko: "아시아" },
-      { idx1: 2, id: "usa",  ko: "미국" },
-    ],
-  },
-  {
-    key: "svc_name", label: "서비스",
-    values: [
-      { idx1: 1, id: "shopping-web",     ko: "쇼핑웹" },
-      { idx1: 2, id: "shopping-backend", ko: "쇼핑BE" },
-      { idx1: 3, id: "auth",             ko: "인증" },
-      { idx1: 4, id: "payment",          ko: "결제" },
-      { idx1: 5, id: "gateway",          ko: "GW" },
-    ],
-  },
-  {
-    key: "namespace", label: "네임스페이스",
-    values: [
-      { idx1: 1, id: "shop", ko: "쇼핑몰" },
-      { idx1: 2, id: "cms",  ko: "CMS" },
-    ],
-  },
+  { key: "env", label: "환경", values: DEMO_ENVS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.env[id] })) },
+  { key: "region", label: "리전", values: DEMO_REGIONS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.region[id] })) },
+  { key: "svc_name", label: "서비스", values: DEMO_SVCS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.svc[id] })) },
+  { key: "namespace", label: "네임스페이스", values: DEMO_NSS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.ns[id] })) },
 ];
 
-const SVC_STRIDES = [20, 10, 2, 1];
+const encodeSvc = demoEncodeSvc;
+const decodeSvc = demoDecodeSvc;
+const roleStride = demoRoleStride;
+const evtStrideFor = demoEvtStride;
 
-function encodeSvc(coords: number[]): number {
-  let v = 0;
-  for (let i = 0; i < coords.length; i++) v += (coords[i] - 1) * SVC_STRIDES[i];
-  return v;
+// UI용 래퍼: demo-snapshot flat → 기존 UI가 기대하는 nested 형태
+function decodePerm(addr: number, v: Ver) {
+  const d = demoDecodePerm(addr, v);
+  if (!d) return null;
+  return {
+    svc: { pos: d.svcIdx + 1, svcId: d.svcId, svcKo: d.svcKo, nsId: d.nsId, nsKo: d.nsKo },
+    role: { idx1: (addr % demoRoleStride(v)) + 1, id: d.roleId, ko: d.roleKo },
+  };
 }
-
-function decodeSvc(v: number): number[] {
-  const coords: number[] = [];
-  let remainder = v;
-  for (const s of SVC_STRIDES) {
-    coords.push(Math.floor(remainder / s) + 1);
-    remainder %= s;
-  }
-  return coords;
-}
-
-// ── Permission dimension metadata ────────────────────────────────────────
-
-const SVC_NAMES = [
-  { id: "shopping-web", ko: "쇼핑웹" }, { id: "shopping-backend", ko: "쇼핑BE" },
-  { id: "auth", ko: "인증" }, { id: "payment", ko: "결제" }, { id: "gateway", ko: "GW" },
-];
-const NS = [{ id: "shop", ko: "쇼핑몰" }, { id: "cms", ko: "CMS" }];
-
-interface PermSvcMeta { pos: number; svcId: string; svcKo: string; nsId: string; nsKo: string }
-const PERM_SVCS: PermSvcMeta[] = [];
-{ let p = 1; for (const s of SVC_NAMES) for (const n of NS) PERM_SVCS.push({ pos: p++, svcId: s.id, svcKo: s.ko, nsId: n.id, nsKo: n.ko }); }
-
-interface RoleMeta { idx1: number; id: string; ko: string }
-const ROLES_V1: RoleMeta[] = [
-  { idx1: 1, id: "admin", ko: "관리자" }, { idx1: 2, id: "developer", ko: "개발자" },
-  { idx1: 3, id: "operator", ko: "운영자" }, { idx1: 4, id: "viewer", ko: "뷰어" },
-  { idx1: 5, id: "readonly", ko: "읽기전용" },
-];
-const ROLES_V2: RoleMeta[] = [
-  { idx1: 1, id: "admin", ko: "관리자" }, { idx1: 2, id: "developer", ko: "개발자" },
-  { idx1: 3, id: "operator", ko: "운영자" }, { idx1: 4, id: "customer", ko: "고객" },
-  { idx1: 5, id: "viewer", ko: "뷰어" }, { idx1: 6, id: "readonly", ko: "읽기전용" },
-];
-
-function rolesFor(v: Ver) { return v === "v1" ? ROLES_V1 : ROLES_V2; }
-function roleStride(v: Ver) { return v === "v1" ? 5 : 6; }
-
-function decodePerm(addr: number, v: Ver): { svc: PermSvcMeta; role: RoleMeta } | null {
-  const rs = roleStride(v);
-  const svc = PERM_SVCS.find((s) => s.pos === Math.floor(addr / rs) + 1);
-  const role = rolesFor(v).find((r) => r.idx1 === (addr % rs) + 1);
-  return svc && role ? { svc, role } : null;
-}
-
-// ── Event dimension metadata ─────────────────────────────────────────────
-
-interface EvtMeta { idx1: number; id: string; ko: string }
-const EVENTS_V1: EvtMeta[] = [
-  { idx1: 1, id: "user.login", ko: "로그인" }, { idx1: 2, id: "user.logout", ko: "로그아웃" },
-  { idx1: 3, id: "order.created", ko: "주문생성" }, { idx1: 4, id: "order.paid", ko: "주문결제" },
-  { idx1: 5, id: "payment.failed", ko: "결제실패" }, { idx1: 6, id: "session.expired", ko: "세션만료" },
-  { idx1: 7, id: "config.changed", ko: "설정변경" },
-];
-const EVENTS_V2: EvtMeta[] = [
-  ...EVENTS_V1,
-  { idx1: 8, id: "payment.cancel_requested", ko: "취소요청" },
-  { idx1: 9, id: "payment.cancel_approved", ko: "취소승인" },
-];
-const INITIATORS = [{ idx1: 1, id: "web", ko: "웹" }, { idx1: 2, id: "mobile", ko: "모바일" }];
-
-function eventsFor(v: Ver) { return v === "v1" ? EVENTS_V1 : EVENTS_V2; }
-function evtStrideFor(v: Ver) { return v === "v1" ? 14 : 18; }
 
 function decodeEvt(addr: number, v: Ver) {
-  const es = evtStrideFor(v);
-  const svc = PERM_SVCS.find((s) => s.pos === Math.floor(addr / es) + 1);
-  const rem = addr % es;
-  const event = eventsFor(v).find((e) => e.idx1 === Math.floor(rem / 2) + 1);
-  const initiator = INITIATORS.find((i) => i.idx1 === (rem % 2) + 1);
-  return svc && event && initiator ? { svc, event, initiator } : null;
+  const d = demoDecodeEvt(addr, v);
+  if (!d) return null;
+  return {
+    svc: { pos: d.svcIdx + 1, svcId: d.svcId, svcKo: d.svcKo, nsId: d.nsId, nsKo: d.nsKo },
+    event: { idx1: Math.floor((addr % demoEvtStride(v)) / 2) + 1, id: d.eventId, ko: d.eventKo },
+    initiator: { idx1: (addr % 2) + 1, id: d.initiatorId, ko: d.initiatorKo },
+  };
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -175,20 +99,7 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
 
 // ── Random log generator (for "샘플 추가" button) ────────────────────────
 
-const RANDOM_ACTIONS: { level: LogLevel; action: string; message: string }[] = [
-  { level: "INFO",  action: "page.view",         message: "상품 상세 페이지 조회" },
-  { level: "INFO",  action: "cart.add",           message: "장바구니 추가 — SKU-8823" },
-  { level: "INFO",  action: "order.submit",       message: "주문 접수 완료 — KRW 32,000" },
-  { level: "DEBUG", action: "cache.hit",          message: "Redis 캐시 히트 — key=product:42" },
-  { level: "DEBUG", action: "db.query",           message: "SELECT COUNT(*) FROM orders WHERE status = 'pending'" },
-  { level: "WARN",  action: "latency.spike",      message: "P99 레이턴시 200ms 초과 — 현재 312ms" },
-  { level: "WARN",  action: "disk.usage",         message: "디스크 사용량 85% 도달 — /data 파티션" },
-  { level: "ERROR", action: "payment.timeout",    message: "PG 응답 타임아웃 — 30s 초과" },
-  { level: "ERROR", action: "db.connection.fail", message: "DB 커넥션 풀 소진 — max_connections=100" },
-  { level: "INFO",  action: "user.signup",        message: "신규 회원 가입 — OAuth(Google)" },
-  { level: "INFO",  action: "deploy.complete",    message: "배포 완료 — v2.5.0-rc1 (canary 100%)" },
-  { level: "WARN",  action: "auth.suspicious",    message: "비정상 접근 패턴 — 다중 IP 로그인 시도" },
-];
+const RANDOM_ACTIONS = DEMO_LOG_TEMPLATES;
 
 function generateRandomLog(ver: Ver): LogEntry {
   const rs = roleStride(ver);
@@ -543,8 +454,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
     const fullSize = new TextEncoder().encode(fullJson).length;
 
     // protobuf varint 크기 추정
-    function varintSize(n: number): number { if (n < 0) return 1; let s = 1; while (n >= 128) { n >>>= 7; s++; } return s; }
-    const protoSize = [svcAddr, permAddr ?? 0, evtAddr ?? 0, actIdx].reduce((s, v) => s + 1 + varintSize(v), 0);
+    const protoSize = [svcAddr, permAddr ?? 0, evtAddr ?? 0, actIdx].reduce((s, v) => s + 1 + varintByteSize(v), 0);
 
     const pct1 = Math.round((1 - addrSize / strSize) * 100);
     const pct2 = Math.round((1 - fullSize / strSize) * 100);

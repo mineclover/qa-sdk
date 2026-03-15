@@ -370,7 +370,40 @@ export function simPackUUIDBig(
   return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
 }
 
-// ── Display helpers ──────────────────────────────────────────────────────────
+// ── Display & UI helpers ────────────────────────────────────────────────────
+
+/** N hex chars 필드의 최대값. fieldMaxVal(2) → 255. */
+export function fieldMaxVal(chars: number): number {
+  return chars > 0 ? 16 ** chars - 1 : 0;
+}
+
+/** Log-scale percentage: val이 [1..max] 범위에서 차지하는 비율 (0–100). */
+export function logScalePercent(val: number, max: number): number {
+  if (max <= 1 || val <= 1) return 0;
+  return Math.min(100, Math.log(val) / Math.log(max) * 100);
+}
+
+/** Log-scale 슬라이더 position(0–resolution) → 실제 값(1–dmax). */
+export function sliderToVal(pos: number, dmax: number, resolution = 1000): number {
+  if (dmax <= 1) return 1;
+  return Math.max(1, Math.round(Math.pow(dmax, pos / resolution)));
+}
+
+/** 실제 값(1–dmax) → log-scale 슬라이더 position(0–resolution). */
+export function valToSlider(val: number, dmax: number, resolution = 1000): number {
+  if (dmax <= 1) return 0;
+  const clamped = Math.max(1, Math.min(val, dmax));
+  return Math.round(Math.log(clamped) / Math.log(dmax) * resolution);
+}
+
+/** Protobuf varint 인코딩 시 바이트 수 추정. */
+export function varintByteSize(n: number): number {
+  if (n < 0) return 1;
+  let s = 1;
+  let v = n;
+  while (v >= 128) { v >>>= 7; s++; }
+  return s;
+}
 
 /** Format a potentially large number for display. */
 export function formatLargeNumber(n: number): string {
