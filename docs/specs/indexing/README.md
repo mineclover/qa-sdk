@@ -52,15 +52,20 @@ weighted-index/                    ← 수학 + 포맷 + 프로토콜
 index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외부 소비
 ├── README.md                      패키지 인덱스
 ├── registry.spec.md               MetaRegistry core (타입, API, 검증, 에러)
+├── codec.spec.md                  MetaCodec (DecodeMap 기반 독립 encode/decode)
 ├── address.spec.md                Address 프로토콜 바인딩 (AddressConfig, PK 직렬화)
 ├── resolver.spec.md               MetaResolver (DecodeMap, DimRange, IndexRange)
-└── scenarios.spec.md              유저 시나리오 테스트 커버리지 (E2E 워크플로우)
+├── sdk.spec.md                    IndexSDK (경량 소비 레이어, constants, dimCapacity)
+├── dx-lifecycle.spec.md           DX 라이프사이클 (CLI, 코드젠, 타입 추론, 와이어 포맷)
+├── scenarios.spec.md              유저 시나리오 (§1–16)
+├── scenarios-address.spec.md      유저 시나리오 — 외부 시스템 통합 (§17–19)
+└── scenarios-sdk.spec.md          유저 시나리오 — SDK 라이프사이클 운영 (§20–26)
 ```
 
 | 패키지 | 인덱스 | 관심사 | 상태 |
 |---|---|---|---|
 | [weighted-index/](weighted-index/README.md) | 2 문서 | 수학 엔진, 포맷 적합성, 프로토콜 변환 | implemented |
-| [index-meta/](index-meta/README.md) | 4 문서 | 스키마 메타 DB, Address 바인딩, Resolver, 시나리오 | implemented |
+| [index-meta/](index-meta/README.md) | 6 문서 | 스키마 메타 DB, Address 바인딩, Resolver, SDK, DX, 시나리오 | implemented / planned |
 
 ## 관심사 흐름
 

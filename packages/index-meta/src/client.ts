@@ -23,7 +23,7 @@
 // ── SDK ────────────────────────────────────────────────────────────────────────
 
 export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
-export type { IndexSDK, IndexClient } from "./index-sdk.js";
+export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryView, DimFullView } from "./index-sdk.js";
 
 // ── Core ───────────────────────────────────────────────────────────────────────
 

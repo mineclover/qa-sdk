@@ -393,6 +393,361 @@ describe("constants: inactive 항목 제외", () => {
   });
 });
 
+// ── constants: reservedTokens 오버라이드 ──────────────────────────────────────
+
+describe("constants: reservedTokens 오버라이드", () => {
+  const schemaWithMarkers = () => ({
+    dims: {
+      category: {
+        kind: { type: "string_enum" as const },
+        snapshots: {
+          v1: { entries: ["_", "~", "NaN", "tech", "science"] },
+        },
+      },
+    },
+    indices: {
+      item: { dims: ["category"], versions: { v1: { snapshots: { category: "v1" } } } },
+    },
+  });
+
+  it("기본 RESERVED_TOKENS는 _, ~, ? 만 제외한다 (NaN은 포함)", () => {
+    const sdk = createIndexSDK(schemaWithMarkers());
+    const C = sdk.client("item", "v1").constants("category");
+
+    expect(C).toEqual({ NaN: "NaN", tech: "tech", science: "science" });
+  });
+
+  it("reservedTokens 옵션으로 NaN도 제외할 수 있다", () => {
+    const sdk = createIndexSDK(schemaWithMarkers(), {
+      reservedTokens: new Set(["_", "~", "?", "NaN"]),
+    });
+    const C = sdk.client("item", "v1").constants("category");
+
+    expect(C).toEqual({ tech: "tech", science: "science" });
+  });
+
+  it("reservedTokens를 빈 Set으로 지정하면 모든 entry가 포함된다", () => {
+    const sdk = createIndexSDK(schemaWithMarkers(), {
+      reservedTokens: new Set(),
+    });
+    const C = sdk.client("item", "v1").constants("category");
+
+    expect(C).toEqual({
+      "_": "_", "~": "~", NaN: "NaN", tech: "tech", science: "science",
+    });
+  });
+
+  it("커스텀 토큰만 제외할 수 있다", () => {
+    const sdk = createIndexSDK(schemaWithMarkers(), {
+      reservedTokens: new Set(["NaN"]),
+    });
+    const C = sdk.client("item", "v1").constants("category");
+
+    // NaN만 제외, _, ~ 는 포함
+    expect(C).toEqual({ "_": "_", "~": "~", tech: "tech", science: "science" });
+  });
+
+  it("sdk.constants()에도 reservedTokens 옵션이 적용된다", () => {
+    const sdk = createIndexSDK(schemaWithMarkers(), {
+      reservedTokens: new Set(["_", "~", "?", "NaN"]),
+    });
+    const C = sdk.constants("category", "v1");
+
+    expect(C).toEqual({ tech: "tech", science: "science" });
+  });
+});
+
+// ── dimCapacity ──────────────────────────────────────────────────────────────
+
+describe("dimCapacity", () => {
+  it("capacity 미지정 시 headroom은 0이다", () => {
+    const sdk = trackingSchema();
+    const tracking = sdk.client("tracking", "v1");
+    const cap = tracking.dimCapacity("action");
+
+    expect(cap.total).toBe(4);
+    expect(cap.capacity).toBe(4);
+    expect(cap.headroom).toBe(0);
+  });
+
+  it("capacity를 entries보다 크게 설정하면 headroom이 양수다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        role: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["admin", "editor", "viewer"], capacity: 8 },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["role"], versions: { v1: { snapshots: { role: "v1" } } } },
+      },
+    });
+    const cap = sdk.client("perm", "v1").dimCapacity("role");
+
+    expect(cap.total).toBe(3);
+    expect(cap.capacity).toBe(8);
+    expect(cap.headroom).toBe(5);
+  });
+
+  it("존재하지 않는 dimId는 DimNotFoundError", () => {
+    const sdk = trackingSchema();
+    const tracking = sdk.client("tracking", "v1");
+    expect(() => tracking.dimCapacity("unknown")).toThrow(DimNotFoundError);
+  });
+});
+
+// ── dimFullView ─────────────────────────────────────────────────────────────
+
+describe("dimFullView", () => {
+  it("capacity 미지정 시 entries만 포함하고 empty 없음", () => {
+    const sdk = trackingSchema();
+    const tracking = sdk.client("tracking", "v1");
+    const view = tracking.dimFullView("action");
+
+    expect(view.dimId).toBe("action");
+    expect(view.snapshotId).toBe("v1");
+    expect(view.total).toBe(4);
+    expect(view.capacity).toBe(4);
+    expect(view.headroom).toBe(0);
+    expect(view.positions).toHaveLength(4);
+
+    // 모든 position이 normal
+    for (const p of view.positions) {
+      expect(p.kind).toBe("normal");
+      expect(p.value).not.toBeNull();
+    }
+  });
+
+  it("capacity > entries일 때 empty slot이 포함된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        role: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["admin", "editor", "viewer"], capacity: 8 },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["role"], versions: { v1: { snapshots: { role: "v1" } } } },
+      },
+    });
+    const view = sdk.client("perm", "v1").dimFullView("role");
+
+    expect(view.total).toBe(3);
+    expect(view.capacity).toBe(8);
+    expect(view.headroom).toBe(5);
+    expect(view.positions).toHaveLength(8);
+
+    // 1-3: normal, 4-8: empty
+    const normals = view.positions.filter((p) => p.kind === "normal");
+    const empties = view.positions.filter((p) => p.kind === "empty");
+
+    expect(normals).toHaveLength(3);
+    expect(empties).toHaveLength(5);
+
+    // empty positions have null value
+    for (const p of empties) {
+      expect(p.value).toBeNull();
+    }
+  });
+
+  it("예약 토큰이 reserved로 분류된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        category: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["_", "~", "tech", "science"], capacity: 8 },
+          },
+        },
+      },
+      indices: {
+        item: { dims: ["category"], versions: { v1: { snapshots: { category: "v1" } } } },
+      },
+    });
+    const view = sdk.client("item", "v1").dimFullView("category");
+
+    expect(view.positions).toHaveLength(8);
+
+    const reserved = view.positions.filter((p) => p.kind === "reserved");
+    const normals = view.positions.filter((p) => p.kind === "normal");
+    const empties = view.positions.filter((p) => p.kind === "empty");
+
+    expect(reserved).toHaveLength(2);
+    expect(reserved[0]).toEqual({ position: 1, value: "_", kind: "reserved" });
+    expect(reserved[1]).toEqual({ position: 2, value: "~", kind: "reserved" });
+
+    expect(normals).toHaveLength(2);
+    expect(normals[0]).toEqual({ position: 3, value: "tech", kind: "normal" });
+    expect(normals[1]).toEqual({ position: 4, value: "science", kind: "normal" });
+
+    expect(empties).toHaveLength(4);
+  });
+
+  it("커스텀 reservedTokens가 반영된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        level: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["_", "NaN", "low", "high"], capacity: 6 },
+          },
+        },
+      },
+      indices: {
+        t: { dims: ["level"], versions: { v1: { snapshots: { level: "v1" } } } },
+      },
+    }, {
+      reservedTokens: new Set(["_", "~", "?", "NaN"]),
+    });
+    const view = sdk.client("t", "v1").dimFullView("level");
+
+    const reserved = view.positions.filter((p) => p.kind === "reserved");
+    expect(reserved).toHaveLength(2);
+    expect(reserved.map((p) => p.value)).toEqual(["_", "NaN"]);
+  });
+
+  it("number_enum entries는 모두 normal이다 (예약 토큰은 string 전용)", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        score: {
+          kind: { type: "number_enum" as const },
+          snapshots: {
+            v1: { entries: [10, 20, 30], capacity: 5 },
+          },
+        },
+      },
+      indices: {
+        t: { dims: ["score"], versions: { v1: { snapshots: { score: "v1" } } } },
+      },
+    });
+    const view = sdk.client("t", "v1").dimFullView("score");
+
+    const normals = view.positions.filter((p) => p.kind === "normal");
+    const empties = view.positions.filter((p) => p.kind === "empty");
+
+    expect(normals).toHaveLength(3);
+    expect(empties).toHaveLength(2);
+    expect(normals.map((p) => p.value)).toEqual([10, 20, 30]);
+  });
+
+  it("position은 1-based로 연속된다", () => {
+    const sdk = createIndexSDK({
+      dims: {
+        role: {
+          kind: { type: "string_enum" as const },
+          snapshots: {
+            v1: { entries: ["_", "admin", "editor"], capacity: 6 },
+          },
+        },
+      },
+      indices: {
+        perm: { dims: ["role"], versions: { v1: { snapshots: { role: "v1" } } } },
+      },
+    });
+    const view = sdk.client("perm", "v1").dimFullView("role");
+
+    expect(view.positions.map((p) => p.position)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it("반환값은 frozen이다", () => {
+    const sdk = trackingSchema();
+    const view = sdk.client("tracking", "v1").dimFullView("action");
+    expect(Object.isFrozen(view)).toBe(true);
+    expect(Object.isFrozen(view.positions)).toBe(true);
+  });
+
+  it("존재하지 않는 dimId는 DimNotFoundError", () => {
+    const sdk = trackingSchema();
+    expect(() => sdk.client("tracking", "v1").dimFullView("unknown")).toThrow(DimNotFoundError);
+  });
+});
+
+// ── entries() vs dimFullView() 대비 ─────────────────────────────────────────
+
+describe("entries() vs dimFullView(): 두 가지 엔트리 제공 모드", () => {
+  const schemaWithCapacity = () => createIndexSDK({
+    dims: {
+      role: {
+        kind: { type: "string_enum" as const },
+        snapshots: {
+          v1: { entries: ["_", "~", "admin", "editor", "viewer"], capacity: 10 },
+        },
+      },
+    },
+    indices: {
+      perm: { dims: ["role"], versions: { v1: { snapshots: { role: "v1" } } } },
+    },
+  });
+
+  it("entries()는 등록된 entries만 반환한다 (capacity 정보 없음)", () => {
+    const sdk = schemaWithCapacity();
+    const perm = sdk.client("perm", "v1");
+    const e = perm.entries("role");
+
+    // capacity 10이지만 entries는 5개만 반환
+    expect(e).toEqual(["_", "~", "admin", "editor", "viewer"]);
+    expect(e).toHaveLength(5);
+  });
+
+  it("dimFullView()는 전체 capacity 포함 주소 공간을 반환한다", () => {
+    const sdk = schemaWithCapacity();
+    const perm = sdk.client("perm", "v1");
+    const view = perm.dimFullView("role");
+
+    // capacity 10이므로 10개 position
+    expect(view.positions).toHaveLength(10);
+
+    const reserved = view.positions.filter((p) => p.kind === "reserved");
+    const normals = view.positions.filter((p) => p.kind === "normal");
+    const empties = view.positions.filter((p) => p.kind === "empty");
+
+    expect(reserved).toHaveLength(2); // "_", "~"
+    expect(normals).toHaveLength(3);  // admin, editor, viewer
+    expect(empties).toHaveLength(5);  // headroom
+  });
+
+  it("constants()는 정규 도메인 값만 반환한다 (예약+inactive 제외)", () => {
+    const sdk = schemaWithCapacity();
+    const perm = sdk.client("perm", "v1");
+    const c = perm.constants("role");
+
+    // reserved("_", "~") 제외, empty 제외
+    expect(c).toEqual({ admin: "admin", editor: "editor", viewer: "viewer" });
+  });
+
+  it("세 API의 반환 범위가 일관된다", () => {
+    const sdk = schemaWithCapacity();
+    const perm = sdk.client("perm", "v1");
+
+    const entries = perm.entries("role");
+    const constants = perm.constants("role");
+    const fullView = perm.dimFullView("role");
+    const capacity = perm.dimCapacity("role");
+
+    // entries는 등록된 것만
+    expect(entries).toHaveLength(capacity.total);
+
+    // constants는 예약 토큰 제외
+    expect(Object.keys(constants)).toHaveLength(3); // admin, editor, viewer
+
+    // fullView는 전체 capacity
+    expect(fullView.positions).toHaveLength(capacity.capacity);
+
+    // fullView의 non-empty positions = entries
+    const populated = fullView.positions.filter((p) => p.kind !== "empty");
+    expect(populated).toHaveLength(entries.length);
+    expect(populated.map((p) => p.value)).toEqual([...entries]);
+
+    // fullView의 headroom = dimCapacity의 headroom
+    const emptyCount = fullView.positions.filter((p) => p.kind === "empty").length;
+    expect(emptyCount).toBe(capacity.headroom);
+  });
+});
+
 // ── matchRanges ──────────────────────────────────────────────────────────────
 
 describe("matchRanges", () => {

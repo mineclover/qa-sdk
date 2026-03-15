@@ -139,6 +139,9 @@ export function renderRangePage(container: HTMLElement): void {
     selections: [3, 1, null, 1], // default: prod, asia, n, shop
   };
 
+  // Pin state: click a cell to lock its detail (allows text selection / copy)
+  let pinnedCell: number | null = null;
+
   const wrap = document.createElement("div");
   wrap.className = "rng-wrap";
 
@@ -250,6 +253,10 @@ export function renderRangePage(container: HTMLElement): void {
 
   // ── Repaint ───────────────────────────────────────────────────────────
   function repaint(): void {
+    // Reset pin on dimension change (grid is rebuilt)
+    pinnedCell = null;
+    detail.className = "rng-detail";
+
     const matched = computeRange(st.selections);
     const matchedSet = new Set(matched);
     const wildcardDims = st.selections.reduce<number>((c, s) => c + (s === null ? 1 : 0), 0);
@@ -312,8 +319,28 @@ export function renderRangePage(container: HTMLElement): void {
         cell.className = "rng-cell" + (matchedSet.has(v) ? " rng-cell-hit" : "");
         cell.textContent = String(v);
 
-        cell.addEventListener("mouseenter", () => showDetail(v, matchedSet.has(v)));
-        cell.addEventListener("mouseleave", () => clearDetail());
+        cell.addEventListener("mouseenter", () => {
+          if (pinnedCell === null) showDetail(v, matchedSet.has(v));
+        });
+        cell.addEventListener("mouseleave", () => {
+          if (pinnedCell === null) clearDetail();
+        });
+        cell.addEventListener("click", () => {
+          if (pinnedCell === v) {
+            // Unpin
+            pinnedCell = null;
+            cell.classList.remove("rng-cell-pinned");
+            clearDetail();
+          } else {
+            // Unpin previous
+            const prev = grid.querySelector(".rng-cell-pinned");
+            if (prev) prev.classList.remove("rng-cell-pinned");
+            // Pin new
+            pinnedCell = v;
+            cell.classList.add("rng-cell-pinned");
+            showDetail(v, matchedSet.has(v), true);
+          }
+        });
 
         rowEl.appendChild(cell);
       }
@@ -352,7 +379,7 @@ export function renderRangePage(container: HTMLElement): void {
     return `<div class="rng-summary">${rows}${more}</div>`;
   }
 
-  function showDetail(v: number, isMatch: boolean): void {
+  function showDetail(v: number, isMatch: boolean, pinned = false): void {
     const coords = decodeValue(v);
     const coordParts = coords.map((c, i) => {
       const dim = DIMS[i];
@@ -366,17 +393,27 @@ export function renderRangePage(container: HTMLElement): void {
         </div>`;
     }).join("");
 
+    const pinnedIcon = pinned
+      ? '<span class="rng-dtl-pin" title="클릭하여 고정 해제">📌</span>'
+      : "";
+
+    detail.className = "rng-detail" + (pinned ? " rng-detail-pinned" : "");
     detail.innerHTML = `
       <div class="rng-detail-hover">
         <div class="rng-dtl-header">
           <span class="rng-dtl-value">${v}</span>
           <span class="rng-dtl-status ${isMatch ? "rng-dtl-match" : "rng-dtl-miss"}">${isMatch ? "매칭" : "미매칭"}</span>
+          ${pinnedIcon}
         </div>
         <div class="rng-dtl-coords">${coordParts}</div>
       </div>`;
   }
 
   function clearDetail(): void {
+    // If pinned, don't clear — keep showing pinned cell's detail
+    if (pinnedCell !== null) return;
+
+    detail.className = "rng-detail";
     const matched = computeRange(st.selections);
     if (matched.length > 0 && matched.length <= 20) {
       detail.innerHTML = buildRangeSummary(matched);

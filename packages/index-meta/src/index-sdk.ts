@@ -43,7 +43,7 @@
 import { MetaRegistry } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";
 import { MetaResolver } from "./meta-resolver.js";
-import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet } from "./types.js";
+import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet, EntryStatus } from "./types.js";
 import { DimNotFoundError } from "./errors.js";
 
 // ── 예약 토큰 ────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ import { DimNotFoundError } from "./errors.js";
 export const RESERVED_TOKENS: ReadonlySet<string> = new Set(["_", "~", "?"]);
 
 /**
- * createIndexSDK 옵션.
+ * `createIndexSDK` 옵션.
  */
 export interface IndexSDKOptions {
   /**
@@ -117,6 +117,28 @@ export interface IndexClient {
    */
   constants(dimId: string): Readonly<Record<string, EntityId>>;
 
+  /**
+   * dim별 용량 정보 반환.
+   *
+   * headroom > 0이면 버전 변경 없이 새 entry를 추가할 수 있는 여유 공간이 있다.
+   * 추가는 관리 레이어(레지스트리/DB)에서 수행한 뒤 SDK를 재생성해 동기화한다.
+   */
+  dimCapacity(dimId: string): DimCapacityInfo;
+
+  /**
+   * dim의 전체 주소 공간 뷰 (capacity 포함).
+   *
+   * 백엔드에서 주소를 추론해야 할 때 사용한다.
+   * entries() / constants()와 달리 빈 슬롯(headroom)까지 포함한
+   * 전체 position [1..capacity]의 상태를 반환한다.
+   *
+   * position별 kind:
+   * - normal: 정규 도메인 값
+   * - reserved: 슬롯 마커 ("_", "~", "?" 등)
+   * - empty: 아직 값이 없는 빈 슬롯 (headroom)
+   */
+  dimFullView(dimId: string): DimFullView;
+
   /** DecodeMap 반환 (다른 서비스로 전달해 독립 decode에 사용) */
   toDecodeMap(): DecodeMap;
 
@@ -124,6 +146,52 @@ export interface IndexClient {
   readonly versionId: string;
   readonly size: number;
   readonly shape: readonly number[];
+}
+
+/**
+ * dim의 현재 용량 상태.
+ */
+export interface DimCapacityInfo {
+  /** 현재 등록된 entries 수 */
+  total: number;
+  /** 할당된 주소 공간 크기 */
+  capacity: number;
+  /** 추가 가능한 슬롯 수 (capacity - total) */
+  headroom: number;
+}
+
+// ── DimFullView ─────────────────────────────────────────────────────────────
+
+/**
+ * dim 주소 공간의 단일 position 뷰.
+ */
+export interface DimEntryView {
+  /** 1-based position */
+  position: number;
+  /** 해당 position의 entity 값. empty slot이면 null */
+  value: EntityId | null;
+  /** normal = 정규 도메인 값, reserved = 슬롯 마커, empty = headroom 빈 슬롯 */
+  kind: "normal" | "reserved" | "empty";
+}
+
+/**
+ * dim의 전체 주소 공간 뷰 (capacity 포함).
+ *
+ * 백엔드에서 주소를 추론해야 할 때 사용한다.
+ * 모든 position(1..capacity)의 상태를 포함하므로
+ * 빈 슬롯, 예약 마커, 정규 엔티티를 한눈에 파악할 수 있다.
+ */
+export interface DimFullView {
+  dimId: string;
+  snapshotId: string;
+  /** 현재 등록된 entries 수 */
+  total: number;
+  /** 할당된 주소 공간 크기 */
+  capacity: number;
+  /** 추가 가능한 슬롯 수 (capacity - total) */
+  headroom: number;
+  /** 모든 position [1..capacity]의 뷰 */
+  positions: readonly DimEntryView[];
 }
 
 // ── IndexSDK ─────────────────────────────────────────────────────────────────
@@ -169,12 +237,24 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
       const codec = registry.createCodec(indexId, versionId);
       const decodeMap = resolver.getDecodeMap(indexId, versionId);
       const manifest = registry.getActiveManifest(indexId, versionId);
+      const iv = registry.getIndexVersion(indexId, versionId);
 
-      // dim entries를 미리 인덱싱
+      // dim entries + capacity를 미리 인덱싱
       const dimEntriesMap = new Map<string, readonly EntityId[]>();
       const dimActiveSetMap = new Map<string, DimActiveSet>();
+      const dimCapacityMap = new Map<string, DimCapacityInfo>();
+      const dimSnapshotIdMap = new Map<string, string>();
       for (const dim of decodeMap.dims) {
         dimEntriesMap.set(dim.dimId, Object.freeze([...dim.entries]));
+        const snapshotId = iv.snapshots[dim.dimId];
+        dimSnapshotIdMap.set(dim.dimId, snapshotId);
+        const snapshot = registry.getDimSnapshot(dim.dimId, snapshotId);
+        const cap = snapshot.capacity ?? snapshot.entries.length;
+        dimCapacityMap.set(dim.dimId, {
+          total: snapshot.entries.length,
+          capacity: cap,
+          headroom: cap - snapshot.entries.length,
+        });
       }
       for (const dimSet of manifest.dims) {
         dimActiveSetMap.set(dimSet.dimId, dimSet);
@@ -214,6 +294,55 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           const built = buildConstants(e, activeSet, reservedTokens);
           constantsCache.set(dimId, built);
           return built;
+        },
+
+        dimCapacity(dimId: string): DimCapacityInfo {
+          const info = dimCapacityMap.get(dimId);
+          if (!info) {
+            throw new DimNotFoundError(
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+            );
+          }
+          return info;
+        },
+
+        dimFullView(dimId: string): DimFullView {
+          const entries = dimEntriesMap.get(dimId);
+          if (!entries) {
+            throw new DimNotFoundError(
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+            );
+          }
+          const capInfo = dimCapacityMap.get(dimId)!;
+          const snapshotId = dimSnapshotIdMap.get(dimId)!;
+
+          const positions: DimEntryView[] = [];
+          for (let pos = 1; pos <= capInfo.capacity; pos++) {
+            if (pos <= entries.length) {
+              const entry = entries[pos - 1];
+              const isReserved = typeof entry === "string" && reservedTokens.has(entry);
+              positions.push({
+                position: pos,
+                value: entry,
+                kind: isReserved ? "reserved" : "normal",
+              });
+            } else {
+              positions.push({
+                position: pos,
+                value: null,
+                kind: "empty",
+              });
+            }
+          }
+
+          return Object.freeze({
+            dimId,
+            snapshotId,
+            total: capInfo.total,
+            capacity: capInfo.capacity,
+            headroom: capInfo.headroom,
+            positions: Object.freeze(positions),
+          });
         },
 
         toDecodeMap: () => structuredClone(decodeMap),
@@ -261,12 +390,13 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
 /**
  * entries → enum-like 상수 객체.
  *
- * 예약 토큰("_", "~", "?")과 inactive 항목을 제외한다.
+ * 예약 토큰과 inactive 항목을 제외한다.
  * 코드젠 시 정규 도메인 값만 포함된 상수를 생성할 수 있도록 한다.
  */
 function buildConstants(
   entries: readonly EntityId[],
   activeSet: DimActiveSet | undefined,
+  tokens: ReadonlySet<string>,
 ): Readonly<Record<string, EntityId>> {
   const activeIndices = activeSet
     ? new Set(activeSet.activeIndices)
@@ -278,7 +408,7 @@ function buildConstants(
     const oneBasedIndex = i + 1;
 
     // 예약 토큰 제외
-    if (isReservedToken(entry)) continue;
+    if (typeof entry === "string" && tokens.has(entry)) continue;
 
     // inactive 항목 제외
     if (activeIndices && !activeIndices.has(oneBasedIndex)) continue;

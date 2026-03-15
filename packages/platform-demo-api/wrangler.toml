@@ -9,5 +9,5 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "platform-demo-db"
-database_id = ""
+database_id = "3d26d813-9a7f-4045-b7ca-e4e6e013cf45"
 migrations_dir = "migrations"

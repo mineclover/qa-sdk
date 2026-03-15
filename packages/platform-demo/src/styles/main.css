@@ -1259,6 +1259,42 @@ code {
 .status-ok  { color: #27ae60; font-weight: 700; }
 .status-denied { color: #c0392b; font-weight: 700; }
 
+/* ── Mock table (상품목록, 주문내역 등) ── */
+.scenario-mock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.scenario-mock-table thead th {
+  padding: 7px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-cell);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--text-header);
+  text-align: left;
+  white-space: nowrap;
+}
+.scenario-mock-table tbody td {
+  padding: 7px 12px;
+  border: 1px solid var(--border-cell);
+  color: var(--text-cell);
+}
+.scenario-mock-table tbody tr:nth-child(even) {
+  background: var(--xl-navy-faint);
+}
+.scenario-mock-table tbody tr:hover {
+  background: var(--xl-blue-hover);
+}
+
+/* ── Home welcome card ── */
+.scenario-home-welcome {
+  background: linear-gradient(135deg, var(--xl-navy-faint) 0%, var(--xl-blue-hover) 100%);
+  border: 1px solid var(--xl-blue-light);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    권한 부여 현황 테이블 (grant sheet)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -2715,7 +2751,7 @@ code {
   border-radius: 2px;
   background: var(--surface-1);
   color: var(--text-dim);
-  cursor: default;
+  cursor: pointer;
   transition: all 0.1s;
 }
 .rng-cell:hover {
@@ -2735,6 +2771,11 @@ code {
   border-color: var(--xl-blue);
   box-shadow: 0 0 0 1px var(--xl-blue);
 }
+.rng-cell-pinned {
+  outline: 2px solid var(--xl-blue);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
 
 /* ── Detail panel ── */
 .rng-detail {
@@ -2742,8 +2783,16 @@ code {
   border: 1px solid var(--border-cell);
   border-radius: var(--radius);
   padding: 14px 20px;
-  height: 120px;
+  min-height: 120px;
+  max-height: 120px;
   overflow-y: auto;
+  user-select: none;
+}
+.rng-detail-pinned {
+  border-color: var(--xl-navy-light);
+  box-shadow: 0 0 0 2px var(--xl-navy-faint);
+  user-select: text;
+  cursor: text;
 }
 
 .rng-detail-empty {
@@ -2818,6 +2867,15 @@ code {
 .rng-dtl-ko {
   font-size: 0.76rem;
   color: var(--text-muted);
+}
+.rng-dtl-pin {
+  margin-left: auto;
+  font-size: 0.82rem;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.rng-dtl-pin:hover {
+  opacity: 1;
 }
 .rng-dtl-badge {
   font-family: var(--font-num);
@@ -3153,8 +3211,7 @@ code {
   gap: 16px;
 }
 .acc-right {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
   position: sticky;
   top: 8px;
   display: flex;

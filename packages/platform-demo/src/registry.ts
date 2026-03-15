@@ -40,8 +40,8 @@ export interface EvtDecodeResponse {
   address: string;
 }
 
-// API base URL — empty string means same origin (proxied in dev, same domain in prod)
-export const API_BASE = "";
+// API base URL — empty in dev (Vite proxy), Worker URL in production
+export const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 async function ensureOk(r: Response): Promise<Response> {
   if (!r.ok) {

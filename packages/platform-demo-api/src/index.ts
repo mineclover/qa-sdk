@@ -372,22 +372,23 @@ app.get("/api/event/decode/:value", (c) => {
 
 // ── Scenario / Features routes ─────────────────────────────────────────────
 
-app.get("/api/features", (c) => {
+app.get("/api/features", async (c) => {
   try {
     const ver = parseVer(c.req.query("ver"));
     const featureDefs = getFeatureDefs(ver);
     const roleList = getRoleList(ver);
+    const grants = await loadGrants(c.env.DB);
 
     const features = featureDefs.map((f) => ({
       id: f.id, name: f.name,
-      grantedRoles:   getGrantedRolesVer(ver, f.id),
-      grantedRolesKo: getGrantedRolesKoVer(ver, f.id),
+      grantedRoles:   getGrantedRolesVer(ver, grants, f.id),
+      grantedRolesKo: getGrantedRolesKoVer(ver, grants, f.id),
     }));
 
     const roles = [...roleList].map((r) => ({ id: r, ko: ROLE_KO[r] ?? r }));
 
     const matrix: boolean[][] = featureDefs.map((f) =>
-      [...roleList].map((r) => isGrantedVer(ver, f.id, r))
+      [...roleList].map((r) => isGrantedVer(ver, grants, f.id, r))
     );
 
     return c.json({ features, roles, matrix });
@@ -396,7 +397,7 @@ app.get("/api/features", (c) => {
   }
 });
 
-app.get("/api/scenario", (c) => {
+app.get("/api/scenario", async (c) => {
   try {
     const ver = parseVer(c.req.query("ver"));
     const roleParam = c.req.query("role") ?? "viewer";
@@ -411,30 +412,31 @@ app.get("/api/scenario", (c) => {
     const role = roleParam;
     const roleKo = ROLE_KO[role] ?? role;
     const rolePos = rolePos_[role]!;
+    const grants = await loadGrants(c.env.DB);
 
     const mainPermValue = (7 - 1) * roleStride + (rolePos - 1);
     const mainPermAddr = `permission:${ver}:${mainPermValue}`;
 
     const features = featureDefs.map((f) => {
       const permValue = (f.permSvcPos - 1) * roleStride + (rolePos - 1);
-      const hasAccess = isGrantedVer(ver, f.id, role);
+      const hasAccess = isGrantedVer(ver, grants, f.id, role);
       return {
         id: f.id, name: f.name, svcName: f.svcName,
         svcAddr: `service:v1:${f.svcValue}`,
         hasAccess,
         permAddr: `permission:${ver}:${permValue}`,
         permValue,
-        grantedRoles:   getGrantedRolesVer(ver, f.id),
-        grantedRolesKo: getGrantedRolesKoVer(ver, f.id),
+        grantedRoles:   getGrantedRolesVer(ver, grants, f.id),
+        grantedRolesKo: getGrantedRolesKoVer(ver, grants, f.id),
       };
     });
 
     const simulation = featureDefs.map((f, idx) => {
       const permValue = (f.permSvcPos - 1) * roleStride + (rolePos - 1);
-      const hasAccess = isGrantedVer(ver, f.id, role);
+      const hasAccess = isGrantedVer(ver, grants, f.id, role);
       const permAddr = `permission:${ver}:${permValue}`;
 
-      const grantedAddrs = getGrantedRolesVer(ver, f.id)
+      const grantedAddrs = getGrantedRolesVer(ver, grants, f.id)
         .map((r) => `permission:${ver}:${(f.permSvcPos - 1) * roleStride + ((rolePos_[r] ?? 1) - 1)}`);
 
       const deniedReason = hasAccess
@@ -497,7 +499,7 @@ app.get("/api/scenario", (c) => {
   }
 });
 
-app.get("/api/grant-table", (c) => {
+app.get("/api/grant-table", async (c) => {
   try {
     const ver = parseVer(c.req.query("ver"));
     const featureDefs = getFeatureDefs(ver);
@@ -505,12 +507,13 @@ app.get("/api/grant-table", (c) => {
     const rolePos_ = getRolePos(ver);
     const roleStride = getRoleStride(ver);
     const codec = getEvtCodec(ver);
+    const grants = await loadGrants(c.env.DB);
 
     const rows = featureDefs.map((f) =>
       [...roleList].map((role) => {
         const rolePos = rolePos_[role]!;
         const permValue = (f.permSvcPos - 1) * roleStride + (rolePos - 1);
-        const granted = isGrantedVer(ver, f.id, role);
+        const granted = isGrantedVer(ver, grants, f.id, role);
 
         const svcValue  = PERM_SVC_VALUES[f.permSvcPos - 1]!;
         const svcInfo   = decodeSvcValue(svcValue);
@@ -544,8 +547,8 @@ app.get("/api/grant-table", (c) => {
           role,
           roleKo:          ROLE_KO[role] ?? role,
           granted,
-          grantedRoles:    getGrantedRolesVer(ver, f.id),
-          grantedRolesKo:  getGrantedRolesKoVer(ver, f.id),
+          grantedRoles:    getGrantedRolesVer(ver, grants, f.id),
+          grantedRolesKo:  getGrantedRolesKoVer(ver, grants, f.id),
           eventAddr,
           eventValue,
           eventNameKo,
@@ -566,19 +569,26 @@ app.patch("/api/grants", async (c) => {
   try {
     const body = await c.req.json<{ featureId: string; role: string; granted: boolean }>();
     const { featureId, role, granted } = body;
-    if (!grantState.has(featureId)) return c.json({ error: "Unknown featureId" }, 400);
+    if (!FEATURE_IDS.has(featureId)) return c.json({ error: "Unknown featureId" }, 400);
     if (!(ROLE_LIST as readonly string[]).includes(role)) return c.json({ error: "Unknown role" }, 400);
 
+    const db = c.env.DB;
     if (granted) {
-      grantState.get(featureId)!.add(role);
+      await db.prepare("INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)")
+        .bind(featureId, role).run();
     } else {
-      grantState.get(featureId)!.delete(role);
+      await db.prepare("DELETE FROM grants WHERE feature_id = ? AND role = ?")
+        .bind(featureId, role).run();
     }
+
+    const rows = await db.prepare("SELECT role FROM grants WHERE feature_id = ?")
+      .bind(featureId).all<{ role: string }>();
+    const grantedRoles = rows.results.map((r) => r.role);
 
     return c.json({
       featureId,
-      grantedRoles:   getGrantedRoles(featureId),
-      grantedRolesKo: getGrantedRolesKo(featureId),
+      grantedRoles,
+      grantedRolesKo: grantedRoles.map((r) => ROLE_KO[r] ?? r),
     });
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
@@ -602,7 +612,7 @@ app.patch("/api/grants/batch", async (c) => {
       }
       if (typeof change.featureId !== "string" || !change.featureId) {
         errors.push(`changes[${i}]: missing or invalid 'featureId'`);
-      } else if (!grantState.has(change.featureId)) {
+      } else if (!FEATURE_IDS.has(change.featureId)) {
         errors.push(`changes[${i}]: unknown featureId '${change.featureId}'`);
       }
       if (typeof change.role !== "string" || !change.role) {
@@ -619,17 +629,21 @@ app.patch("/api/grants/batch", async (c) => {
       return c.json({ error: "Invalid input", details: errors }, 400);
     }
 
+    const db = c.env.DB;
+    const stmts: D1PreparedStatement[] = [];
     for (const change of body.changes as Array<{ featureId: string; role: string; granted: boolean }>) {
-      const { featureId, role, granted } = change;
-      if (granted) {
-        grantState.get(featureId)!.add(role);
+      if (change.granted) {
+        stmts.push(db.prepare("INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)").bind(change.featureId, change.role));
       } else {
-        grantState.get(featureId)!.delete(role);
+        stmts.push(db.prepare("DELETE FROM grants WHERE feature_id = ? AND role = ?").bind(change.featureId, change.role));
       }
     }
+    if (stmts.length > 0) await db.batch(stmts);
+
+    const grants = await loadGrants(db);
     const result: Record<string, string[]> = {};
     for (const f of FEATURE_DEFS) {
-      result[f.id] = getGrantedRoles(f.id);
+      result[f.id] = [...(grants.get(f.id) ?? [])];
     }
     return c.json({ grants: result });
   } catch (e) {
@@ -637,10 +651,15 @@ app.patch("/api/grants/batch", async (c) => {
   }
 });
 
-app.post("/api/grants/reset", (c) => {
-  for (const f of FEATURE_DEFS) {
-    grantState.set(f.id, new Set<string>(f.grantedRoles));
-  }
+app.post("/api/grants/reset", async (c) => {
+  const db = c.env.DB;
+  await db.prepare("DELETE FROM grants").run();
+  const stmts = FEATURE_DEFS.flatMap((f) =>
+    [...f.grantedRoles].map((r) =>
+      db.prepare("INSERT INTO grants (feature_id, role) VALUES (?, ?)").bind(f.id, r)
+    )
+  );
+  await db.batch(stmts);
   return c.json({ ok: true });
 });
 
