@@ -39,6 +39,7 @@
 | [conventions.md](conventions.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [slot-marker.spec.md](slot-marker.spec.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
 | [data-design.md](data-design.md) | **데이터 설계** | 차원 압축, 차원 편입, 정보 저장, 범위 제어, 캐싱 전략 — 전체 설계 구조 |
+| [coordinate-query.spec.md](coordinate-query.spec.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색 |
 | [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
 
 ### 패키지 스펙
