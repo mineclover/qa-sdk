@@ -28,6 +28,13 @@ export {
   containsAddress,
   positionsToConstraint,
   calcAddressRanges,
+  rangesToConstraint,
+  constraintContains,
+  patternContains,
+  patternMeet,
+  patternJoin,
+  patternSpecificity,
+  coordMatchesPattern,
   type CoordConstraint,
 } from "./calc.js";
 export {

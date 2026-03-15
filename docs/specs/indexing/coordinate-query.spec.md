@@ -98,9 +98,9 @@ planned
 shape = [8, 4, 16]   (role × action × resource)
 
 패턴 A: [null,  null, null]     ← 모든 주소        (specificity = 0)
-패턴 B: ["3",   null, null]     ← role=3인 주소     (specificity ≈ 0.88)
-패턴 C: ["3",   "2",  null]     ← role=3, action=2  (specificity ≈ 1.63)
-패턴 D: ["3",   "2",  "5"]     ← 단일 좌표          (specificity = 3.0)
+패턴 B: ["3",   null, null]     ← role=3인 주소     (specificity = 0.875)
+패턴 C: ["3",   "2",  null]     ← role=3, action=2  (specificity = 1.625)
+패턴 D: ["3",   "2",  "5"]     ← 단일 좌표          (specificity = 2.5625)
 
 포함 관계: A ⊇ B ⊇ C ⊇ D
 
