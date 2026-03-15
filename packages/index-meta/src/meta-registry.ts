@@ -901,6 +901,45 @@ export class MetaRegistry {
   }
 
   /**
+   * index가 등록되어 있는지 확인한다.
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * API 핸들러에서 요청 파라미터의 indexId를 검증할 때 사용.
+   * getIndexDef()와 달리 throw 없이 boolean을 반환한다.
+   *
+   * @example
+   * if (!reg.hasIndex(req.params.indexId)) return c.json({ error: "unknown index" }, 400);
+   */
+  hasIndex(indexId: string): boolean {
+    return this.indices.has(indexId);
+  }
+
+  /**
+   * 특정 index의 version이 유효한지 확인한다.
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * API 핸들러에서 요청 파라미터의 versionId를 검증할 때 사용.
+   * getIndexVersion()와 달리 throw 없이 boolean을 반환한다.
+   * indexId 자체가 없으면 false.
+   *
+   * @example
+   * // 기존: ad-hoc 검증
+   * function parseVer(raw: string | undefined): Ver {
+   *   return raw === "v1" ? "v1" : "v2";
+   * }
+   *
+   * // 개선: registry 기반 검증
+   * if (!reg.isValidVersion("permission", req.query.ver)) {
+   *   return c.json({ error: "unknown version" }, 400);
+   * }
+   */
+  isValidVersion(indexId: string, versionId: string): boolean {
+    return this.versions.get(indexId)?.has(versionId) ?? false;
+  }
+
+  /**
    * 생성자에 전달한 입력의 deep clone을 반환한다.
    *
    * `new MetaRegistry(reg.toInput())`으로 동일한 동작의 인스턴스를 복제하거나,

@@ -215,7 +215,7 @@ describe("deepDecode", () => {
     expect(result.layers.has("doc_meta")).toBe(false);
   });
 
-  it("순환 참조가 있어도 무한 루프 방지", () => {
+  it("순환 참조가 있어도 무한 루프 방지 (leaf node)", () => {
     // 같은 주소를 두 번 방문하지 않으므로 순환 방지됨
     const registry = createFixture();
     const vv = { indexId: "doc_meta", versionId: "v1", value: 0 };
@@ -223,6 +223,59 @@ describe("deepDecode", () => {
     // doc_meta에 index_ref dim이 없으므로 1-layer만 반환
     const result = deepDecode(vv, registry);
     expect(result.path.length).toBe(1);
+  });
+
+  it("entry-level entryRefs 순환 참조 (A→B→A)가 있어도 무한 루프 방지", () => {
+    // indexA의 number_enum entry에 entryRef로 indexB를 가리키고,
+    // indexB의 number_enum entry에 entryRef로 indexA를 가리킴
+    const cyclicRegistry = new MetaRegistry({
+      dims: {
+        val_a: {
+          kind: { type: "number_enum" },
+          snapshots: {
+            v1: {
+              entries: [0, 1],
+              entryRefs: {
+                1: { indexId: "indexB", versionId: "v1" },
+              },
+            },
+          },
+        },
+        val_b: {
+          kind: { type: "number_enum" },
+          snapshots: {
+            v1: {
+              entries: [0, 1],
+              entryRefs: {
+                1: { indexId: "indexA", versionId: "v1" },
+              },
+            },
+          },
+        },
+      },
+      indices: {
+        indexA: {
+          dims: ["val_a"],
+          versions: { v1: { snapshots: { val_a: "v1" } } },
+        },
+        indexB: {
+          dims: ["val_b"],
+          versions: { v1: { snapshots: { val_b: "v1" } } },
+        },
+      },
+    });
+
+    // indexA value 0 → decode → val_a=0 → entryRef at pos 1 → indexB value 0
+    // → decode → val_b=0 → entryRef at pos 1 → indexA value 0 (이미 방문, 중단)
+    const result = deepDecode(
+      { indexId: "indexA", versionId: "v1", value: 0 },
+      cyclicRegistry,
+    );
+
+    // 무한 루프 없이 두 layer만 반환
+    expect(result.layers.has("indexA")).toBe(true);
+    expect(result.layers.has("indexB")).toBe(true);
+    expect(result.path.length).toBe(2);
   });
 });
 

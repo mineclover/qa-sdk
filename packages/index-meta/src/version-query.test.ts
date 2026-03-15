@@ -219,4 +219,80 @@ describe("translateConstraint", () => {
     );
     expect(result).toEqual({ role: null, action: null, resource: null });
   });
+
+  it("range 구문 constraint를 올바르게 파싱하고 변환한다", () => {
+    const registry = createFixture();
+
+    // iv1 → iv2: append-only (guest 추가), 기존 position 동일
+    // "1-2" = admin(1), editor(2) → 그대로 "1-2"
+    const result = translateConstraint(
+      "perm", "iv1", "iv2",
+      { role: "1-2", action: null, resource: null },
+      registry,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.role).toBe("1-2");
+  });
+
+  it("비연속 range 구문도 올바르게 변환한다", () => {
+    const registry = createFixture();
+
+    // "1,3" = admin(1), viewer(3)
+    const result = translateConstraint(
+      "perm", "iv1", "iv2",
+      { role: "1,3", action: null, resource: null },
+      registry,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.role).toBe("1,3");
+  });
+
+  it("migration edge가 있는 swap 시나리오", () => {
+    // editor(2)↔viewer(3) swap + guest(4) 추가
+    const swapRegistry = new MetaRegistry({
+      dims: {
+        role: {
+          kind: { type: "string_enum" },
+          snapshots: {
+            s1: { entries: ["admin", "editor", "viewer"] },
+            s2: { entries: ["admin", "viewer", "editor", "guest"] },
+          },
+          migrations: [
+            { fromSnapshotId: "s1", toSnapshotId: "s2", indexMap: { 2: 3, 3: 2 } },
+          ],
+        },
+        action: {
+          kind: { type: "string_enum" },
+          snapshots: { v1: { entries: ["read", "write"] } },
+        },
+      },
+      indices: {
+        perm: {
+          dims: ["role", "action"],
+          versions: {
+            iv1: { snapshots: { role: "s1", action: "v1" } },
+            iv2: { snapshots: { role: "s2", action: "v1" } },
+          },
+        },
+      },
+    });
+
+    // editor는 s1에서 pos 2, s2에서 pos 3 (migration에 의해)
+    const result = translateConstraint(
+      "perm", "iv1", "iv2",
+      { role: "2", action: null },
+      swapRegistry,
+    );
+    expect(result).not.toBeNull();
+    expect(result!.role).toBe("3"); // editor: 2→3
+
+    // range "2-3" (editor, viewer) → migration에 의해 "2-3" (viewer, editor, 순서만 바뀜)
+    const rangeResult = translateConstraint(
+      "perm", "iv1", "iv2",
+      { role: "2-3", action: null },
+      swapRegistry,
+    );
+    expect(rangeResult).not.toBeNull();
+    expect(rangeResult!.role).toBe("2-3"); // {2→3, 3→2} → positions {3,2} → "2-3"
+  });
 });

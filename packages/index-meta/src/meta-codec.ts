@@ -19,12 +19,19 @@
  *
  * encode(entityIds)  : { role: "admin", action: "read" } → VersionedValue
  * decode(vv)         : VersionedValue → { role: "admin", action: "read" }
+ * strides            : 각 차원의 스트라이드 (address 공식의 가중치)
+ * dimIds             : 차원 ID 배열 (shape과 같은 순서)
+ * enumerate(partial) : 부분 조건에 매칭되는 value 목록 (matchRanges + 전개)
+ * resolveRef(...)    : index_ref dim의 참조를 target codec으로 해석
+ * decodeBatch(values): 다수의 value를 한 번에 decode
  */
 
 import {
   createLabelRegistry,
   PrefixCodec,
+  calcWeights,
   calcAddressRanges,
+  expandRanges,
   type CoordConstraint,
   type EntityId as WiEntityId,
   type LabelVersionEntry,
@@ -206,6 +213,44 @@ export class MetaCodec {
     return this._map.shape;
   }
 
+  /**
+   * 각 차원의 스트라이드(가중치).
+   *
+   * strides[i] = Π_{j > i} shape[j]  (마지막 차원은 항상 1)
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * API 서버에서 수동 stride 계산을 제거한다.
+   * 기존에 `const EVT_SVC_STRIDE_V1 = 7 * 2;` 같은 상수를 유지하던 패턴을
+   * `codec.strides[0]`로 대체할 수 있다.
+   *
+   * @example
+   * // event index: shape [10, 7, 2] (svc × event × initiator)
+   * const evtCodec = reg.createCodec("event", "v1");
+   * evtCodec.strides  // → [14, 2, 1]
+   * // 서비스 하나가 바뀌면 주소가 14씩 건너뜀
+   */
+  get strides(): readonly number[] {
+    return calcWeights([...this._map.shape]);
+  }
+
+  /**
+   * 차원 ID 배열 (shape, strides와 같은 순서).
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * shape/strides가 숫자 배열이므로 "몇 번째가 어떤 차원인지" 확인할 때 사용.
+   * `dimIds[i]`와 `strides[i]`를 조합하면 차원별 stride를 label과 함께 참조 가능.
+   *
+   * @example
+   * codec.dimIds   // → ["perm_svc", "role"]
+   * codec.strides  // → [5, 1]
+   * // perm_svc의 stride = 5, role의 stride = 1
+   */
+  get dimIds(): readonly string[] {
+    return this._map.dims.map((d) => d.dimId);
+  }
+
   /** 내부 DecodeMap의 복사본 반환. */
   toDecodeMap(): DecodeMap {
     return structuredClone(this._map);
@@ -257,5 +302,118 @@ export class MetaCodec {
       return String(idx + 1); // 1-based CoordConstraint
     });
     return calcAddressRanges(this._map.shape, constraints);
+  }
+
+  /**
+   * 부분 조건에 매칭되는 개별 value 목록을 반환한다.
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * matchRanges()가 [from, to] 구간을 반환하는 반면, enumerate()는
+   * 개별 정수로 전개한다. UI 그리드의 셀 하이라이트, 접근 가능 주소 목록 등
+   * 개별 값이 필요한 경우에 사용한다.
+   *
+   * ── 주의 ──────────────────────────────────────────────────────────────────
+   *
+   * 결과 배열 크기가 매칭 주소 수와 같으므로, 넓은 와일드카드 패턴에서는
+   * matchRanges()를 직접 사용하는 것이 메모리 효율적이다.
+   *
+   * @example
+   * // role × action × resource (3×3×3)
+   * codec.enumerate({ role: "editor" })
+   * // → [9, 10, 11, 12, 13, 14, 15, 16, 17]
+   *
+   * codec.enumerate({ role: "admin", action: "read" })
+   * // → [0, 1, 2]
+   */
+  enumerate(partial: Record<string, EntityId | null>): number[] {
+    return expandRanges(this.matchRanges(partial));
+  }
+
+  /**
+   * index_ref dim의 참조값을 target codec으로 해석한다.
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * permission index에 service index를 참조하는 perm_svc dim이 있을 때,
+   * permission 주소에서 service의 구성 차원(env, region, svc_name, ns)을
+   * 한 번에 추출한다.
+   *
+   * 기존에 API에서 수동으로 수행하던 패턴:
+   *   const svcIdx = Math.floor(permValue / roleStride);
+   *   const svcValue = PERM_SVC_VALUES[svcIdx];
+   *   const decoded = decodeSvcValue(svcValue);
+   *
+   * 이를 한 줄로 대체:
+   *   const svcEntities = permCodec.resolveRef(permValue, "perm_svc", svcCodec);
+   *
+   * ── deepDecode와의 차이 ──────────────────────────────────────────────────
+   *
+   * deepDecode: 모든 index_ref를 재귀적으로 탐색. MetaRegistry 필요.
+   * resolveRef: 특정 dim 하나만, 한 단계만 해석. MetaCodec 단독 동작.
+   *
+   * @param value       이 코덱의 주소 공간에서의 value
+   * @param dimId       해석할 index_ref dim의 ID
+   * @param targetCodec 참조 대상 index의 코덱
+   *
+   * @throws {ValidationError} dimId가 이 코덱에 없거나 index_ref가 아닐 때
+   * @throws {ValidationError} 참조값이 targetCodec의 범위를 벗어날 때
+   *
+   * @example
+   * const permCodec = reg.createCodec("permission", "v1");
+   * const svcCodec  = reg.createCodec("service", "v1");
+   *
+   * permCodec.resolveRef(42, "perm_svc", svcCodec)
+   * // → { env: "prod", region: "asia", svc_name: "shopping", namespace: "web" }
+   */
+  resolveRef(
+    value: number,
+    dimId: string,
+    targetCodec: MetaCodec,
+  ): Readonly<Record<string, EntityId>> {
+    const dim = this._map.dims.find((d) => d.dimId === dimId);
+    if (!dim) {
+      throw new ValidationError(
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": unknown dim "${dimId}"`
+      );
+    }
+    if (dim.kind.type !== "index_ref") {
+      throw new ValidationError(
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" is "${dim.kind.type}", expected "index_ref"`
+      );
+    }
+
+    const decoded = this.decodeValue(value);
+    const refValue = decoded[dimId];
+    if (typeof refValue !== "number") {
+      throw new ValidationError(
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" entry is not a number`
+      );
+    }
+
+    return targetCodec.decodeValue(refValue);
+  }
+
+  /**
+   * 다수의 value를 한 번에 decode한다.
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * 구조화 로그에 저장된 주소 배열을 일괄 디코딩할 때 사용한다.
+   * 내부적으로 동일한 PrefixCodec 인스턴스를 재사용하므로
+   * 반복 decode보다 오버헤드가 적다.
+   *
+   * @example
+   * // 로그 테이블에서 조회한 svc_addr 목록
+   * const addresses = [40, 41, 42, 60, 61];
+   * const decoded = svcCodec.decodeBatch(addresses);
+   * // → [
+   * //   { env: "prod", region: "asia", svc_name: "shopping", namespace: "web" },
+   * //   { env: "prod", region: "asia", svc_name: "shopping", namespace: "api" },
+   * //   ...
+   * // ]
+   */
+  decodeBatch(values: readonly number[]): Readonly<Record<string, EntityId>>[] {
+    return values.map((v) => this.decodeValue(v));
   }
 }

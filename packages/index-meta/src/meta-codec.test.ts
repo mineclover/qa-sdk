@@ -572,3 +572,235 @@ describe("validateDecodeMap", () => {
     expect(() => validateDecodeMap(map)).toThrow(ValidationError);
   });
 });
+
+// ── strides ──────────────────────────────────────────────────────────────────
+//
+// API 서버에서 수동 stride 계산(`const EVT_SVC_STRIDE = 7 * 2;`)을 제거한다.
+// codec.strides[i]로 "i번째 dim의 좌표가 1 증가하면 value가 몇 변하는지" 참조.
+
+describe("strides", () => {
+  it("shape [3, 3, 3] → strides [9, 3, 1]", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.strides).toEqual([9, 3, 1]);
+  });
+
+  it("shape과 같은 순서이며 strides[last] === 1", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.strides[codec.strides.length - 1]).toBe(1);
+  });
+
+  it("strides[0] = product(shape[1:])", () => {
+    const codec = new MetaCodec(permMap());
+    // shape [3, 3, 3] → strides[0] = 3*3 = 9
+    expect(codec.strides[0]).toBe(3 * 3);
+  });
+
+  it("stride를 이용해 특정 dim의 주소 변화량을 확인할 수 있다", () => {
+    const codec = new MetaCodec(permMap());
+    const adminRead = codec.encode({ role: "admin", action: "read", resource: 10 }).value;
+    const editorRead = codec.encode({ role: "editor", action: "read", resource: 10 }).value;
+    // role이 1 증가 → value가 strides[0]만큼 증가
+    expect(editorRead - adminRead).toBe(codec.strides[0]);
+  });
+});
+
+// ── dimIds ───────────────────────────────────────────────────────────────────
+//
+// shape/strides가 숫자 배열이므로 "몇 번째가 어떤 차원인지" label 확인용.
+
+describe("dimIds", () => {
+  it("dim 이름 배열을 shape 순서대로 반환한다", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.dimIds).toEqual(["role", "action", "resource"]);
+  });
+
+  it("dimIds.length === shape.length", () => {
+    const codec = new MetaCodec(singleDimMap());
+    expect(codec.dimIds).toHaveLength(codec.shape.length);
+  });
+});
+
+// ── enumerate ────────────────────────────────────────────────────────────────
+//
+// matchRanges()가 [from, to] 범위를 반환하는 반면,
+// enumerate()는 개별 value로 전개한다.
+// UI 그리드 셀 하이라이트, 접근 가능 주소 목록 등에 사용.
+
+describe("enumerate", () => {
+  it("role=admin인 주소 9개를 개별 값으로 전개한다", () => {
+    const codec = new MetaCodec(permMap());
+    const values = codec.enumerate({ role: "admin" });
+    expect(values).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it("두 dim 고정 → 연속 3개", () => {
+    const codec = new MetaCodec(permMap());
+    const values = codec.enumerate({ role: "editor", action: "write" });
+    expect(values).toEqual([12, 13, 14]);
+  });
+
+  it("전체 와일드카드 → [0 .. size-1]", () => {
+    const codec = new MetaCodec(permMap());
+    const values = codec.enumerate({});
+    expect(values).toHaveLength(27);
+    expect(values[0]).toBe(0);
+    expect(values[26]).toBe(26);
+  });
+
+  it("전개된 값은 모두 해당 패턴과 매칭된다", () => {
+    const codec = new MetaCodec(permMap());
+    const values = codec.enumerate({ action: "delete" });
+    for (const v of values) {
+      expect(codec.decodeValue(v).action).toBe("delete");
+    }
+  });
+
+  it("단일 dim codec", () => {
+    const codec = new MetaCodec(singleDimMap());
+    expect(codec.enumerate({ level: 2 })).toEqual([2]);
+    expect(codec.enumerate({})).toEqual([0, 1, 2, 3]);
+  });
+});
+
+// ── resolveRef ──────────────────────────────────────────────────────────────
+//
+// permission index에 service index를 참조하는 perm_svc dim이 있을 때,
+// permission 주소에서 service의 구성 차원을 한 번에 추출한다.
+//
+// 기존 API 패턴:
+//   const svcIdx = Math.floor(permValue / roleStride);
+//   const svcValue = PERM_SVC_VALUES[svcIdx];
+//   const decoded = decodeSvcValue(svcValue);
+//
+// 개선:
+//   permCodec.resolveRef(permValue, "perm_svc", svcCodec)
+
+describe("resolveRef", () => {
+  // 픽스처: service (2 dim) + permission (index_ref + string)
+  const svcMap: DecodeMap = {
+    indexId: "service", versionId: "v1", shape: [3, 2], size: 6,
+    dims: [
+      { dimId: "env", snapshotId: "sv1", kind: { type: "string_enum" }, entries: ["dev", "stage", "prod"] },
+      { dimId: "region", snapshotId: "sv1", kind: { type: "string_enum" }, entries: ["us", "asia"] },
+    ],
+  };
+
+  // perm_svc entries는 service index의 압축 주소들
+  // 0 = (dev,us), 1 = (dev,asia), 2 = (stage,us), 3 = (stage,asia), 4 = (prod,us), 5 = (prod,asia)
+  const permRefMap: DecodeMap = {
+    indexId: "permission", versionId: "v1", shape: [3, 2], size: 6,
+    dims: [
+      { dimId: "perm_svc", snapshotId: "pv1", kind: { type: "index_ref", indexId: "service" }, entries: [0, 2, 4] },
+      { dimId: "role", snapshotId: "rv1", kind: { type: "string_enum" }, entries: ["admin", "editor"] },
+    ],
+  };
+
+  it("index_ref dim의 참조를 target codec으로 해석한다", () => {
+    const svcCodec = new MetaCodec(svcMap);
+    const permCodec = new MetaCodec(permRefMap);
+
+    // perm_svc=0(dev,us), role=admin → value 0
+    const result = permCodec.resolveRef(0, "perm_svc", svcCodec);
+    expect(result).toEqual({ env: "dev", region: "us" });
+  });
+
+  it("다른 참조값도 올바르게 해석한다", () => {
+    const svcCodec = new MetaCodec(svcMap);
+    const permCodec = new MetaCodec(permRefMap);
+
+    // perm_svc=4(prod,us), role=editor → value = 1*2 + 1 = 3? No.
+    // shape [3, 2], entries [0, 2, 4], ["admin", "editor"]
+    // encode({ perm_svc: 4, role: "editor" }) → perm_svc is at index 3 (1-based), role at 2
+    // value = (3-1)*2 + (2-1) = 5
+    const vv = permCodec.encode({ perm_svc: 4, role: "editor" });
+    const result = permCodec.resolveRef(vv.value, "perm_svc", svcCodec);
+    expect(result).toEqual({ env: "prod", region: "us" });
+  });
+
+  it("존재하지 않는 dim → ValidationError", () => {
+    const permCodec = new MetaCodec(permRefMap);
+    const svcCodec = new MetaCodec(svcMap);
+    expect(() => permCodec.resolveRef(0, "unknown_dim", svcCodec)).toThrow(ValidationError);
+  });
+
+  it("index_ref가 아닌 dim → ValidationError", () => {
+    const permCodec = new MetaCodec(permRefMap);
+    const svcCodec = new MetaCodec(svcMap);
+    expect(() => permCodec.resolveRef(0, "role", svcCodec)).toThrow(ValidationError);
+  });
+});
+
+// ── decodeBatch ──────────────────────────────────────────────────────────────
+//
+// 구조화 로그에 저장된 주소 배열을 일괄 디코딩.
+// 반복 decode보다 오버헤드가 적고, 코드가 간결해진다.
+
+describe("decodeBatch", () => {
+  it("여러 value를 한 번에 decode한다", () => {
+    const codec = new MetaCodec(permMap());
+    const values = [0, 13, 26];
+    const results = codec.decodeBatch(values);
+
+    expect(results).toEqual([
+      { role: "admin", action: "read", resource: 10 },
+      { role: "editor", action: "write", resource: 20 },
+      { role: "viewer", action: "delete", resource: 30 },
+    ]);
+  });
+
+  it("빈 배열 → 빈 배열", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.decodeBatch([])).toEqual([]);
+  });
+
+  it("각 결과가 frozen이다", () => {
+    const codec = new MetaCodec(permMap());
+    const results = codec.decodeBatch([0, 1]);
+    for (const r of results) {
+      expect(Object.isFrozen(r)).toBe(true);
+    }
+  });
+
+  it("개별 decodeValue와 동일한 결과를 반환한다", () => {
+    const codec = new MetaCodec(permMap());
+    for (let v = 0; v < codec.size; v++) {
+      const [batched] = codec.decodeBatch([v]);
+      expect(batched).toEqual(codec.decodeValue(v));
+    }
+  });
+});
+
+// ── MetaRegistry.hasIndex / isValidVersion ──────────────────────────────────
+//
+// API 핸들러에서 요청 파라미터 검증 시 throw 없이 boolean 반환.
+
+describe("MetaRegistry hasIndex / isValidVersion", () => {
+  const reg = new MetaRegistry({
+    dims: {
+      role: { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: ["admin"] } } },
+    },
+    indices: {
+      perm: { dims: ["role"], versions: { iv1: { snapshots: { role: "v1" } } } },
+    },
+  });
+
+  it("hasIndex: 등록된 index → true", () => {
+    expect(reg.hasIndex("perm")).toBe(true);
+  });
+
+  it("hasIndex: 미등록 index → false", () => {
+    expect(reg.hasIndex("unknown")).toBe(false);
+  });
+
+  it("isValidVersion: 유효한 조합 → true", () => {
+    expect(reg.isValidVersion("perm", "iv1")).toBe(true);
+  });
+
+  it("isValidVersion: 유효하지 않은 version → false", () => {
+    expect(reg.isValidVersion("perm", "iv999")).toBe(false);
+  });
+
+  it("isValidVersion: 미등록 index → false (throw 없음)", () => {
+    expect(reg.isValidVersion("unknown", "iv1")).toBe(false);
+  });
+});
