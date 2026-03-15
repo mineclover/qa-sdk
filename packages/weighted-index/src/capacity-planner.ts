@@ -98,8 +98,8 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
       let reduced = false;
       for (const i of descFree) {
         if (result[i] > minArr[i]) {
-          product = product / result[i] * (result[i] - 1);
           result[i]--;
+          product = result.reduce((a, s) => a * s, 1);
           reduced = true;
           if (product <= maxProduct) break;
         }
@@ -114,10 +114,10 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
     changed = false;
     for (const i of priority) {
       if (result[i] >= shape[i]) continue;
-      const next = product / result[i] * (result[i] + 1);
+      const next = result.reduce((a, s, j) => a * (j === i ? s + 1 : s), 1);
       if (next <= maxProduct) {
-        product = next;
         result[i]++;
+        product = next;
         changed = true;
       }
     }

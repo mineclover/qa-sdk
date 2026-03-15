@@ -47,6 +47,7 @@ const rec  = wi.decodeToRecord(5); // → { role: 2, action: 1, resource: 3 }
 │  PrefixCodec         — 레이블 조합(prefix) + 버전 관리 + 마이그레이션 │
 ├───────────────────────────────────────────────────────────────┤
 │  calc                — 범위 연산 (merge/intersect/subtract/complement) │
+│  pattern-lattice     — 패턴 포함 관계·meet/join·구체성 점수        │
 │  bitmask             — O(1) 비트 마스크 연산                     │
 ├───────────────────────────────────────────────────────────────┤
 │  SemanticAddress     — 다중 프로토콜 주소 직렬화 (colon/uri/compact/layout) │
@@ -178,6 +179,56 @@ intersectRanges([[0,10]], [[5,20]]);    // → [[5,10]]
 subtractRanges([[0,20]], [[5,10]]);     // → [[0,4], [11,20]]
 complementRanges([[5,10]], 100);        // → [[0,4], [11,99]]
 ```
+
+---
+
+## 패턴 래티스 (pattern-lattice)
+
+`CoordConstraint[]` 배열을 "패턴"으로 취급해, 패턴 간 포함 관계(partial order)와 lattice 연산(meet/join)을 제공한다. 범위 연산(calc)의 range algebra 위에 구축된다.
+
+```ts
+import {
+  constraintContains, patternContains,
+  patternMeet, patternJoin,
+  patternSpecificity, coordMatchesPattern,
+  rangesToConstraint,
+} from "weighted-index";
+
+const shape = [8, 4, 16]; // role × action × resource
+
+// 포함 관계 판정
+constraintContains("2-5", "3", 8);           // → true  (범위 ⊇ 단일값)
+patternContains(shape,
+  ["3", null, null],                          // A: role=3
+  ["3", "2", null],                           // B: role=3, action=2
+);                                            // → true  (A ⊇ B)
+
+// Meet (교집합 패턴, greatest lower bound)
+patternMeet(["1-5", null, null], ["3-8", null, null], shape);
+// → ["3-5", null, null]
+
+// Join (합집합 패턴, least upper bound)
+patternJoin(["1-3", null, null], ["5-8", null, null], shape);
+// → ["1-3,5-8", null, null]
+
+// 구체성 점수: 0 (전체 와일드카드) ~ ndims (전체 고정)
+patternSpecificity(["3", "2", null], shape); // → 1.625
+
+// 좌표 매칭
+coordMatchesPattern([3, 2, 5], ["3", null, null], shape); // → true
+
+// 범위 → constraint 변환
+rangesToConstraint([[1, 3], [7, 9]], 16); // → "1-3,7-9"
+rangesToConstraint([[1, 8]], 8);           // → null (전체 범위 = 와일드카드)
+```
+
+**주요 래티스 속성:**
+
+| 속성 | 설명 |
+|---|---|
+| 교환법칙 | `meet(A, B) = meet(B, A)`, `join(A, B) = join(B, A)` |
+| 포함 보존 | `meet` 결과는 두 패턴 모두에 포함됨, `join` 결과는 두 패턴을 모두 포함함 |
+| 공집합 처리 | 교집합이 비어 있으면 `patternMeet` → `null` |
 
 ---
 
@@ -483,8 +534,16 @@ export {
   calcWeights, calcAddressRanges, partialQueryBase,
   mergeRanges, intersectRanges, subtractRanges, complementRanges,
   containsAddress, positionsToConstraint, describeRangeFormula,
+  parseConstraintSegments, expandRanges,
 } from "weighted-index";
 export type { CoordConstraint } from "weighted-index";
+
+// ── 패턴 래티스 ────────────────────────────────────────────
+export {
+  rangesToConstraint, constraintContains,
+  patternContains, patternMeet, patternJoin,
+  patternSpecificity, coordMatchesPattern,
+} from "weighted-index";
 
 // ── 비트마스크 ─────────────────────────────────────────────
 export {
