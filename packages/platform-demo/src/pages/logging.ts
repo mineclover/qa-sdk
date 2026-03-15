@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { serializeAddress } from "weighted-index";
+import { API_BASE } from "../registry.js";
 
 type Ver = "v1" | "v2";
 
@@ -231,18 +232,18 @@ async function apiFetchLogs(params: { level?: string; limit?: number } = {}): Pr
   const qs = new URLSearchParams();
   if (params.level) qs.set("level", params.level);
   if (params.limit) qs.set("limit", String(params.limit));
-  const res = await fetch(`/api/logs?${qs}`);
+  const res = await fetch(`${API_BASE}/api/logs?${qs}`);
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
 
 async function apiSeedLogs(ver: Ver): Promise<void> {
-  const res = await fetch(`/api/logs/seed?ver=${ver}&clear=true`, { method: "POST" });
+  const res = await fetch(`${API_BASE}/api/logs/seed?ver=${ver}&clear=true`, { method: "POST" });
   if (!res.ok) throw new Error(`${res.status}`);
 }
 
 async function apiPostLog(entry: LogEntry): Promise<void> {
-  const res = await fetch("/api/logs", {
+  const res = await fetch(`${API_BASE}/api/logs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
@@ -252,7 +253,7 @@ async function apiPostLog(entry: LogEntry): Promise<void> {
 
 async function apiClearLogs(ver: Ver): Promise<void> {
   // clear=true deletes all existing rows, then re-inserts 8 sample entries
-  await fetch(`/api/logs/seed?ver=${ver}&clear=true`, { method: "POST" });
+  await fetch(`${API_BASE}/api/logs/seed?ver=${ver}&clear=true`, { method: "POST" });
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────

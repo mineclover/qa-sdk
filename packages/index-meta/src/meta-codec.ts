@@ -105,9 +105,13 @@ export function validateDecodeMap(map: DecodeMap): void {
 export class MetaCodec {
   private readonly _prefix: PrefixCodec;
   private readonly _map: DecodeMap;
+  private readonly _strides: readonly number[];
+  private readonly _dimIds: readonly string[];
 
   constructor(map: DecodeMap) {
     this._map = map;
+    this._strides = Object.freeze(calcWeights([...map.shape]));
+    this._dimIds = Object.freeze(map.dims.map((d) => d.dimId));
 
     // DecodeMap → LabelRegistry
     const labelDefs: Record<string, LabelVersionEntry<WiEntityId>[]> = {};
@@ -231,7 +235,7 @@ export class MetaCodec {
    * // 서비스 하나가 바뀌면 주소가 14씩 건너뜀
    */
   get strides(): readonly number[] {
-    return calcWeights([...this._map.shape]);
+    return this._strides;
   }
 
   /**
@@ -248,7 +252,7 @@ export class MetaCodec {
    * // perm_svc의 stride = 5, role의 stride = 1
    */
   get dimIds(): readonly string[] {
-    return this._map.dims.map((d) => d.dimId);
+    return this._dimIds;
   }
 
   /** 내부 DecodeMap의 복사본 반환. */
