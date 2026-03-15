@@ -6,6 +6,10 @@
 패키지: `weighted-index`
 관련: [core.spec.md](core.spec.md), [../index-meta/store.spec.md](../index-meta/store.spec.md)
 
+## 상태
+
+implemented
+
 ---
 
 ## 1. 개념

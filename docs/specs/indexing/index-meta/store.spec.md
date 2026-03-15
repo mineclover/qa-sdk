@@ -6,6 +6,10 @@
 패키지 인덱스: [README.md](README.md)
 스키마 선언 레이어: [table-schema.spec.md](table-schema.spec.md)
 
+## 상태
+
+implemented
+
 ---
 
 ## 1. 설계 목적

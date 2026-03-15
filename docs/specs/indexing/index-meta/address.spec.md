@@ -6,6 +6,10 @@
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 weighted-index 측 통합 문서: [../weighted-index/pack-format.spec.md](../weighted-index/pack-format.spec.md) §11
 
+## 상태
+
+implemented
+
 ---
 
 ## 설계 원칙: weighted-index에 위임

@@ -7,6 +7,10 @@
 패키지 인덱스: [README.md](README.md)
 저장소 레이어: [store.spec.md](store.spec.md)
 
+## 상태
+
+implemented
+
 ---
 
 ## 1. 설계 원칙

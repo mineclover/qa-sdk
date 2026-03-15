@@ -9,6 +9,10 @@
 
 패키지 인덱스: [README.md](README.md)
 
+## 상태
+
+implemented
+
 ---
 
 ## 1. DecodeMap 자립 UUID 디코딩

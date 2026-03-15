@@ -5,6 +5,10 @@
 > ADR: [adr-address-separation.md](adr-address-separation.md)
 > Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
 
+## 상태
+
+implemented
+
 MetaRegistry에서 분리된 `AddressProtocolManager`가 제공하는
 외부 시스템 통합 시나리오를 3개 영역으로 구분한다.
 

@@ -38,6 +38,8 @@
 | [patterns.md](patterns.md) | **사용 패턴** | EntityId 기반 이동, cross-index 참조, 활성/비활성 책임 분리 |
 | [conventions.md](conventions.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [slot-marker.spec.md](slot-marker.spec.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
+| [data-design.md](data-design.md) | **데이터 설계** | 차원 압축, 차원 편입, 정보 저장, 범위 제어, 캐싱 전략 — 전체 설계 구조 |
+| [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
 
 ### 패키지 스펙
 
@@ -47,10 +49,13 @@
 weighted-index/                    ← 수학 + 포맷 + 프로토콜
 ├── README.md                      패키지 인덱스
 ├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixCodec, bitmask, obfuscate
-└── pack-format.spec.md            PackFormat, SemanticAddress, AddressConverter, fitLayout
+├── pack-format.spec.md            PackFormat, SemanticAddress, AddressConverter, fitLayout
+└── range-query.spec.md            calcAddressRanges — 부분 좌표 제약 주소 구간 계산
 
 index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외부 소비
 ├── README.md                      패키지 인덱스
+├── table-schema.spec.md           TableDef / compileSchema (테이블 스키마 선언, capacity 버전 관리)
+├── store.spec.md                  IndexMetaStore (schema_version / entry DB 저장 레이어)
 ├── registry.spec.md               MetaRegistry core (타입, API, 검증, 에러)
 ├── codec.spec.md                  MetaCodec (DecodeMap 기반 독립 encode/decode)
 ├── address.spec.md                Address 프로토콜 바인딩 (AddressConfig, PK 직렬화)
@@ -59,13 +64,14 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 ├── dx-lifecycle.spec.md           DX 라이프사이클 (CLI, 코드젠, 타입 추론, 와이어 포맷)
 ├── scenarios.spec.md              유저 시나리오 (§1–16)
 ├── scenarios-address.spec.md      유저 시나리오 — 외부 시스템 통합 (§17–19)
-└── scenarios-sdk.spec.md          유저 시나리오 — SDK 라이프사이클 운영 (§20–26)
+├── scenarios-sdk.spec.md          유저 시나리오 — SDK 라이프사이클 운영 (§20–26)
+└── adr-address-separation.md      ADR: AddressProtocolManager 분리
 ```
 
 | 패키지 | 인덱스 | 관심사 | 상태 |
 |---|---|---|---|
-| [weighted-index/](weighted-index/README.md) | 2 문서 | 수학 엔진, 포맷 적합성, 프로토콜 변환 | implemented |
-| [index-meta/](index-meta/README.md) | 6 문서 | 스키마 메타 DB, Address 바인딩, Resolver, SDK, DX, 시나리오 | implemented / planned |
+| [weighted-index/](weighted-index/README.md) | 3 문서 | 수학 엔진, 포맷 적합성, 범위탐색, 프로토콜 변환 | implemented |
+| [index-meta/](index-meta/README.md) | 12 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, 시나리오, ADR | implemented / planned |
 
 ## 관심사 흐름
 

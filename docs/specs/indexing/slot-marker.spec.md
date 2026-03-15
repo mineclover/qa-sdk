@@ -7,6 +7,10 @@
 - [`weighted-index`](weighted-index/README.md) — 수학 레이어 (마커를 일반 좌표로 처리)
 - [`index-meta`](index-meta/README.md) — 스키마 레이어 (마커를 일반 entry로 처리)
 
+## 상태
+
+implemented
+
 ---
 
 ## 1. 문제: 닫힌 패턴에서 열린 상황

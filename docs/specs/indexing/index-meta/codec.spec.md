@@ -6,6 +6,10 @@
 패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 
+## 상태
+
+implemented
+
 ---
 
 ## 설계 원칙
