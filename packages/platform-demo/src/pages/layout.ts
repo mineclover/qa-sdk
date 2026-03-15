@@ -23,6 +23,7 @@ import { hexPreview } from "weighted-ui";
 type CalcMode = LayoutViewMode;
 
 interface LayoutState {
+  formatChars: number; // 포맷 전체 hex chars (16=int64, 24=objectId, 32=uuid)
   numDims: number;
   prefixChars: number;
   versionChars: number;
@@ -48,9 +49,8 @@ interface LayoutState {
 }
 
 function createInitialState(): LayoutState {
-  const cfg = { prefixChars: 2, versionChars: 1, shardChars: 0, numDims: 4 };
+  const cfg = { formatChars: 32, prefixChars: 2, versionChars: 1, shardChars: 0, numDims: 4 };
   const analysis = analyzeLayoutSim(cfg);
-  // Start with small reasonable values, not max
   const shape = new Array(cfg.numDims).fill(10);
   return {
     ...cfg,
@@ -92,8 +92,15 @@ export function renderLayoutPage(container: HTMLElement): void {
   const header = document.createElement("div");
   header.className = "lay-header";
   header.innerHTML = `
-    <h2 class="lay-title">UUID 레이아웃 시뮬레이터</h2>
+    <h2 class="lay-title">레이아웃 시뮬레이터</h2>
     <div class="lay-hdr-cfg">
+      <label class="lay-hc-label">Format</label>
+      <select class="lay-hc-input" id="lay-format" style="width:auto">
+        <option value="16" ${st.formatChars === 16 ? "selected" : ""}>int64 (16ch)</option>
+        <option value="24" ${st.formatChars === 24 ? "selected" : ""}>objectId (24ch)</option>
+        <option value="32" ${st.formatChars === 32 ? "selected" : ""}>UUID (32ch)</option>
+      </select>
+      <span class="lay-hc-sep"></span>
       <label class="lay-hc-label">Dims</label>
       <input type="number" class="lay-hc-input" id="lay-num-dims" min="1" max="16" value="${st.numDims}" />
       <span class="lay-hc-sep"></span>
@@ -119,6 +126,7 @@ export function renderLayoutPage(container: HTMLElement): void {
         <button class="lay-mode-btn lay-mode-active" id="lay-mode-number">Number</button>
         <button class="lay-mode-btn" id="lay-mode-bigint">BigInt</button>
       </div>
+      <span class="lay-hc-badge" id="lay-index-type"></span>
       <button class="lay-mode-btn lay-copy-btn" id="lay-copy-debug" title="디버그 정보 복사">📋 Copy</button>
     </div>
   `;
@@ -150,7 +158,7 @@ export function renderLayoutPage(container: HTMLElement): void {
   // Sliders
   const sliderSection = document.createElement("div");
   sliderSection.className = "lay-slider-section";
-  sliderSection.innerHTML = `<div class="lay-section-title">차원 슬라이더</div>`;
+  sliderSection.innerHTML = `<div class="lay-section-title">차원 슬라이더 <span class="lay-section-badge" id="lay-slider-type"></span></div>`;
   const sliderContainer = document.createElement("div");
   sliderContainer.className = "lay-sliders";
   sliderContainer.id = "lay-sliders";
@@ -227,6 +235,8 @@ export function renderLayoutPage(container: HTMLElement): void {
 
   // ── DOM refs ───────────────────────────────────────────────────────────
   const elNumDims = document.getElementById("lay-num-dims") as HTMLInputElement;
+  const elFormat = document.getElementById("lay-format") as HTMLSelectElement;
+  const elIndexType = document.getElementById("lay-index-type")!;
   const elPrefixChars = document.getElementById("lay-prefix-chars") as HTMLInputElement;
   const elPrefixCharsVal = document.getElementById("lay-prefix-chars-val")!;
   const elPrefixVal = document.getElementById("lay-prefix-val") as HTMLInputElement;
@@ -243,6 +253,7 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elAnalysis = document.getElementById("lay-analysis")!;
   const elGraph = document.getElementById("lay-graph")!;
   const elSliders = document.getElementById("lay-sliders")!;
+  const elSliderType = document.getElementById("lay-slider-type")!;
   const elShapeSummary = document.getElementById("lay-shape-summary")!;
   const elUuidPreview = document.getElementById("lay-uuid-preview")!;
   const elProgTable = document.getElementById("lay-prog-table")!;
@@ -260,6 +271,7 @@ export function renderLayoutPage(container: HTMLElement): void {
 
   function reanalyze(): void {
     st.analysis = analyzeLayoutSim({
+      formatChars: st.formatChars,
       prefixChars: st.prefixChars,
       versionChars: st.versionChars,
       shardChars: st.shardChars,
@@ -274,6 +286,7 @@ export function renderLayoutPage(container: HTMLElement): void {
   }
 
   function onConfigChange(): void {
+    st.formatChars = +elFormat.value || 32;
     st.numDims = Math.max(1, Math.min(16, +elNumDims.value || 1));
     st.prefixChars = +elPrefixChars.value;
     st.versionChars = +elVersionChars.value;
@@ -281,8 +294,8 @@ export function renderLayoutPage(container: HTMLElement): void {
 
     // Cap total to leave at least 1 char for index
     const total = st.prefixChars + st.versionChars + st.shardChars;
-    if (total >= 32) {
-      st.shardChars = Math.max(0, 31 - st.prefixChars - st.versionChars);
+    if (total >= st.formatChars) {
+      st.shardChars = Math.max(0, st.formatChars - 1 - st.prefixChars - st.versionChars);
       elShardChars.value = String(st.shardChars);
     }
 
@@ -337,6 +350,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     repaintUUID();
   }
 
+  elFormat.addEventListener("change", onConfigChange);
   elNumDims.addEventListener("change", onConfigChange);
   elPrefixChars.addEventListener("input", onConfigChange);
   elVersionChars.addEventListener("input", onConfigChange);
@@ -349,15 +363,37 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elModeNumber = document.getElementById("lay-mode-number") as HTMLButtonElement;
   const elModeBigint = document.getElementById("lay-mode-bigint") as HTMLButtonElement;
 
+  /** indexType 자동 결정 후 모드/UI 동기화 */
+  function syncIndexType(): void {
+    const vm = getViewModel();
+    // BigInt 필수인데 Number 모드면 자동 전환
+    if (vm.indexType === "bigint" && st.mode === "number") {
+      st.mode = "bigint";
+    }
+    // Number 버튼: BigInt 필수이면 비활성
+    elModeNumber.disabled = vm.indexType === "bigint";
+    elModeNumber.classList.toggle("lay-mode-active", st.mode === "number");
+    elModeBigint.classList.toggle("lay-mode-active", st.mode === "bigint");
+    // indexType 배지 (헤더 + 슬라이더 섹션)
+    const isBig = vm.indexType === "bigint";
+    elIndexType.textContent = isBig ? "BigInt 필수" : "Number OK";
+    elIndexType.className = `lay-hc-badge ${isBig ? "lay-hc-badge-warn" : "lay-hc-badge-ok"}`;
+    elSliderType.textContent = isBig
+      ? `[BigInt] dimMax: UUID 전체 용량 기준`
+      : `[Number] dimMax: MAX_SAFE_INTEGER 기준`;
+    elSliderType.className = `lay-section-badge ${isBig ? "lay-hc-badge-warn" : "lay-hc-badge-ok"}`;
+  }
+
   function setMode(mode: CalcMode): void {
+    const vm = getViewModel();
+    // BigInt 필수이면 Number 선택 불가
+    if (mode === "number" && vm.indexType === "bigint") return;
     if (st.mode === mode) return;
     st.mode = mode;
-    elModeNumber.classList.toggle("lay-mode-active", mode === "number");
-    elModeBigint.classList.toggle("lay-mode-active", mode === "bigint");
-    // Re-clamp shape values — ViewModel의 sliderMax 기준
-    const vm = getViewModel();
+    // Re-clamp shape values
+    const vm2 = getViewModel();
     for (let i = 0; i < st.shape.length; i++) {
-      st.shape[i] = Math.max(1, Math.min(st.shape[i], vm.dims[i].sliderMax));
+      st.shape[i] = Math.max(1, Math.min(st.shape[i], vm2.dims[i].sliderMax));
     }
     resetProgression();
     repaint();
@@ -541,8 +577,9 @@ export function renderLayoutPage(container: HTMLElement): void {
 
   // ── Repaint functions ──────────────────────────────────────────────────
 
-  /** Data-only repaint: updates values that depend on shape, skips DOM rebuild. */
+  /** Data-only repaint: updates values that depend on shape. */
   function repaintData(): void {
+    repaintStruct(); // fill ratio 갱신
     repaintAnalysis();
     repaintGraph();
     repaintShapeSummary();
@@ -552,6 +589,7 @@ export function renderLayoutPage(container: HTMLElement): void {
 
   /** Full repaint: rebuilds structure + sliders + all data. */
   function repaint(): void {
+    syncIndexType();
     repaintStruct();
     buildSliders();
     repaintData();
@@ -560,27 +598,38 @@ export function renderLayoutPage(container: HTMLElement): void {
   function repaintStruct(): void {
     const vm = getViewModel();
     const a = st.analysis;
-    const gapChars = a.indexBudget > 0 ? 32 - a.usedChars - a.indexBudget : 0;
+    const gapChars = a.indexBudget > 0 ? a.totalChars - a.usedChars - a.indexBudget : 0;
+    const fillPct = Math.round(vm.indexFillRatio * 100);
 
-    // 비트 단위로 세그먼트 구성 (Number 갭을 정확히 표현하기 위해)
-    type Seg = { label: string; bits: number; cls: string };
+    // 비트 단위로 세그먼트 구성
+    type Seg = { label: string; bits: number; cls: string; fill?: number };
     const segments: Seg[] = [];
     if (st.prefixChars > 0) segments.push({ label: `prefix ${st.prefixChars}ch`, bits: st.prefixChars * 4, cls: "lay-seg-prefix" });
     if (st.versionChars > 0) segments.push({ label: `ver ${st.versionChars}ch`, bits: st.versionChars * 4, cls: "lay-seg-version" });
     if (gapChars > 0) segments.push({ label: `gap ${gapChars}ch`, bits: gapChars * 4, cls: "lay-seg-gap" });
     if (st.shardChars > 0) segments.push({ label: `shard ${st.shardChars}ch`, bits: st.shardChars * 4, cls: "lay-seg-shard" });
 
-    // index 영역: Number 모드에서 캡이면 도달 가능 / 갭으로 분리
+    // index 영역: Number 갭 분리 + fill 오버레이
+    const typeTag = vm.indexType === "bigint" ? "BigInt" : "Number";
     if (vm.numberGapBits > 0) {
       segments.push({ label: `Number 갭 ${vm.numberGapBits}bit`, bits: vm.numberGapBits, cls: "lay-seg-numgap" });
-      segments.push({ label: `index ${vm.numberReachBits}bit`, bits: vm.numberReachBits, cls: "lay-seg-index" });
+      segments.push({ label: `index ${vm.numberReachBits}bit [${typeTag}]`, bits: vm.numberReachBits, cls: "lay-seg-index", fill: fillPct });
     } else if (a.indexBudget > 0) {
-      segments.push({ label: `index ${a.indexBudget}ch`, bits: a.indexBudget * 4, cls: "lay-seg-index" });
+      segments.push({ label: `index ${a.indexBudget}ch [${typeTag}]`, bits: a.indexBudget * 4, cls: "lay-seg-index", fill: fillPct });
     }
 
     elStruct.innerHTML = `
       <div class="lay-struct-bar">
-        ${segments.map(s => `<div class="lay-seg ${s.cls}" style="flex:${s.bits}"><span>${s.label}</span></div>`).join("")}
+        ${segments.map(s => {
+          if (s.fill != null) {
+            return `<div class="lay-seg ${s.cls}" style="flex:${s.bits}">
+              <div class="lay-seg-fill" style="width:${s.fill}%"></div>
+              <span class="lay-seg-text">${s.label}</span>
+              <span class="lay-seg-pct">${s.fill}%</span>
+            </div>`;
+          }
+          return `<div class="lay-seg ${s.cls}" style="flex:${s.bits}"><span>${s.label}</span></div>`;
+        }).join("")}
       </div>
       <div class="lay-struct-ruler">
         ${segments.map(s => `<span style="flex:${s.bits}">${s.bits}bit</span>`).join("")}
@@ -607,6 +656,7 @@ export function renderLayoutPage(container: HTMLElement): void {
 
     elAnalysis.innerHTML = `
       <div class="lay-an-row"><span class="lay-an-key">Index 예산</span><span class="lay-an-val">${vm.indexBudget} hex chars (${vm.indexBits} bits)</span></div>
+      <div class="lay-an-row"><span class="lay-an-key">인덱스 타입</span><span class="lay-an-val">${vm.indexType === "bigint" ? "BigInt 필수" : "Number"}</span></div>
       <div class="lay-an-row"><span class="lay-an-key">유효 용량</span><span class="lay-an-val">${vm.effectiveMaxDisplay}</span></div>
       ${gapRows}
       <div class="lay-an-row"><span class="lay-an-key">균등 배분</span><span class="lay-an-val">${a.uniformMax.toLocaleString()} / dim</span></div>
@@ -740,7 +790,14 @@ export function renderLayoutPage(container: HTMLElement): void {
    * skipDim = the dim being actively dragged (don't touch its range).
    */
   function syncSliders(skipDim: number): void {
+    // ViewModel 내부에서 clampShape가 적용됨 → dim.value가 clamp된 값
     const vm = getViewModel();
+
+    // clamp된 값을 state에 반영
+    for (let i = 0; i < st.shape.length; i++) {
+      st.shape[i] = vm.dims[i].value;
+    }
+
     for (let i = 0; i < st.shape.length; i++) {
       const ref = sliderRefs[i];
       if (!ref) continue;

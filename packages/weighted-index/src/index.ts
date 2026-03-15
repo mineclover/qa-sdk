@@ -125,6 +125,8 @@ export {
 } from "./semantic-address.js";
 export {
   analyzeLayoutSim,
+  clampShape,
+  computeLayoutViewModel,
   dimMaxForBudget,
   dimMaxBig,
   dimMaxApprox,
@@ -133,13 +135,19 @@ export {
   shapeProductUncapped,
   autoBalancedShape,
   simDecode,
+  simDecodeBig,
   simEncode,
+  simEncodeBig,
   simPackUUID,
+  simPackUUIDBig,
   formatLargeNumber,
   maxProductBig,
   utilizationBig,
   type LayoutSimConfig,
   type LayoutSimAnalysis,
+  type LayoutViewModel,
+  type LayoutViewMode,
+  type DimViewModel,
 } from "./layout-fit.js";
 export {
   WeightedIndexError,

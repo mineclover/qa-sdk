@@ -258,6 +258,110 @@ Range 캐시는 `[number, number][]` 배열. 4,608개 범위를 캐싱해도 ~34
 
 ---
 
+## 7. 브라우저 실행 검증 (레이아웃 시뮬레이터)
+
+테스트 파일: `packages/platform-demo/src/pages/layout.ts`
+검증 로직: `packages/weighted-index/src/layout-fit.ts` → `computeLayoutViewModel()`
+테스트: `packages/weighted-index/src/layout-fit.test.ts`
+접근: `http://localhost:5178/layout` → 인덱스 순차 진행 패널
+
+### 설계 원칙: 테스트 우선, UI는 시각화만
+
+모든 수치 계산은 `computeLayoutViewModel()` 순수 함수에서 수행하고,
+UI는 리턴된 `LayoutViewModel`을 그대로 렌더링한다.
+이 함수의 정합성은 Node.js 단위 테스트(`layout-fit.test.ts`)로 증명한다.
+
+```
+┌─────────────────────────────────────────────┐
+│  layout-fit.test.ts (Node, vitest)          │
+│  — 수학 불변식 증명                           │
+│  — 모드별 정합성 검증                         │
+│  — encode/decode 라운드트립                   │
+└──────────────┬──────────────────────────────┘
+               ↓ 증명된 순수 함수
+┌─────────────────────────────────────────────┐
+│  computeLayoutViewModel()                   │
+│  — config + shape + mode → LayoutViewModel   │
+│  — 모든 표시 값, 활용률, dimMax 한 벌 리턴    │
+└──────────────┬──────────────────────────────┘
+               ↓ 시각화만 담당
+┌─────────────────────────────────────────────┐
+│  layout.ts (브라우저 UI)                     │
+│  — repaint 함수들이 ViewModel만 읽어서 렌더   │
+│  — 자체 수치 계산 없음                        │
+└─────────────────────────────────────────────┘
+```
+
+### 모드별 정합성 모델
+
+UI에서 모든 숫자가 동일한 기준점(effective max)을 공유해야 모순이 없다.
+
+**Number 모드** — 기준: `min(16^budget, MAX_SAFE_INTEGER)`
+
+```
+effectiveMax = 9.007 × 10^15  (budget=29일 때)
+dimMax(i)    = floor(effectiveMax / 나머지곱)
+utilization  = product / effectiveMax × 100
+              → 슬라이더를 끝까지 올리면 100% 도달 가능
+isCapped     = true  → "실제 UUID 용량: 10^34.9" 안내 표시
+```
+
+**BigInt 모드** — 기준: `16^budget` (UUID 실제 용량)
+
+```
+effectiveMax = 16^29 ≈ 8.5 × 10^34
+dimMax(i)    = 16^budget / 나머지곱 (float 근사)
+utilization  = product / 16^budget × 100
+              → 전체 UUID 공간 대비 활용률
+isCapped     = false
+```
+
+**정합성 불변식** (테스트로 증명):
+
+| 불변식 | 설명 |
+|---|---|
+| `dims[i].sliderMax × productOfOthers ≤ effectiveMax` | 오버플로우 없음 |
+| Number 모드에서 `utilization == 100%` 도달 가능 | dimMax까지 올리면 |
+| BigInt `effectiveMax ≥ Number effectiveMax` | BigInt가 더 넓은 공간 |
+| 동일 shape → BigInt `utilization ≤ Number utilization` | 분모가 더 크니까 |
+| `simDecode(simEncode(coords)) == coords` | 라운드트립 |
+
+### 시간 예산 배치 처리
+
+`requestAnimationFrame` 기반. 프레임당 시간 예산(12ms) 내에서 최대한 처리 후 자동 중단.
+
+```
+┌─ 1 frame (16.67ms @60Hz) ──────────────────┐
+│                                             │
+│  while (elapsed < 12ms && count < cap) {    │
+│    simDecode(shape, index)                  │
+│    simPackUUID(...)                         │
+│    count++                                  │
+│    if (count % 64 === 0) check time         │
+│  }                                          │
+│                                             │
+│  남은 ~4ms → DOM 갱신 + 브라우저 렌더         │
+└─────────────────────────────────────────────┘
+```
+
+| 조작 | 효과 |
+|---|---|
+| 스킵 슬라이더 (0~60) | N프레임 건너뛰고 1프레임 연산. 육안 검증용 |
+| 상한 슬라이더 (무제한~10M) | 프레임당 처리 상한. 무제한이면 시간 예산만 적용 |
+
+성능 표시: `12.0ms에 4,000개 처리 (333.3K개/초)` — 배치 크기와 속도를 직관적으로 확인.
+
+### Node.js 벤치마크와의 대응
+
+| 브라우저 동작 | 대응하는 Node 벤치마크 | 기대 |
+|---|---|---|
+| `simDecode(shape, index)` | §2 좌표 decode | 4D 기준 ~30ns, 프레임 예산(16ms) 대비 무시 가능 |
+| `simPackUUID(...)` | — (hex 포매팅) | ~100ns 수준, 병목 아님 |
+| 배치 처리량 (12ms 예산) | — | ~1M+ ops/frame 기대 (연산만, DOM 제외) |
+| DOM 테이블 갱신 (50행) | — | innerHTML 재생성이 주 비용. 스킵으로 조절 |
+
+---
+
 ## 결론
 
 | 관심사 | 안전 범위 | 병목 가능성 |
