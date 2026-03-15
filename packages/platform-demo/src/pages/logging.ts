@@ -498,38 +498,122 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   // ── Comparison section ──────────────────────────────────────────────
   const comparison = document.createElement("div");
   comparison.className = "log-comparison";
-  comparison.innerHTML = `
-    <h3 class="log-comp-title">주소 기반 로그 vs 문자열 로그</h3>
-    <div class="log-comp-grid">
-      <div class="log-comp-card log-comp-before">
-        <div class="log-comp-card-label">기존 — 문자열 기반</div>
-        <pre class="log-comp-code">{
-  "service": "shopping-web",
-  "env": "prod", "region": "asia", "ns": "shop",
-  "permission": "shopping-web:developer",
-  "event": "payment:purchase:web",
-  "action": "payment.initiate"
+
+  // action → 인덱스 매핑 (등장 순서 기반)
+  const ACTION_INDEX = new Map<string, number>();
+  function actionIdx(action: string): number {
+    if (!ACTION_INDEX.has(action)) ACTION_INDEX.set(action, ACTION_INDEX.size + 1);
+    return ACTION_INDEX.get(action)!;
+  }
+  // 초기 action 등록
+  ["page.view","payment.initiate","token.validate","rate.limit","payment.refund.fail",
+   "catalog.sync","deploy.canary","auth.brute","db.query","session.expire",
+   "cart.add","order.submit","cache.hit","latency.spike","disk.usage",
+   "payment.timeout","db.connection.fail","user.signup","deploy.complete","auth.suspicious"
+  ].forEach(a => actionIdx(a));
+
+  function renderComparison(entry?: LogEntry): void {
+    // 기본값 또는 선택된 엔트리
+    const svcAddr = entry?.svcAddr ?? encodeSvc([3,1,1,1]);
+    const permAddr = entry?.permAddr ?? (1-1)*roleStride(ver)+1;
+    const evtAddr = entry?.evtAddr ?? (4-1)*evtStrideFor(ver)+(3-1)*2;
+    const action = entry?.action ?? "payment.initiate";
+    const actIdx = actionIdx(action);
+
+    // 문자열 기반 복원
+    const svcCoords = decodeSvc(svcAddr);
+    const svcLabels = svcCoords.map((c, i) => {
+      const v = SVC_DIMS[i].values.find(vv => vv.idx1 === c);
+      return v?.id ?? "?";
+    });
+    const permD = permAddr !== null ? decodePerm(permAddr, ver) : null;
+    const evtD = evtAddr !== null ? decodeEvt(evtAddr, ver) : null;
+
+    const strSvc = `"service": "${svcLabels[2]}"`;
+    const strEnv = `"env": "${svcLabels[0]}", "region": "${svcLabels[1]}", "ns": "${svcLabels[3]}"`;
+    const strPerm = permD ? `"permission": "${permD.svc.svcId}:${permD.role.id}"` : `"permission": null`;
+    const strEvt = evtD ? `"event": "${evtD.svc.svcId}:${evtD.event.id}:${evtD.initiator.id}"` : `"event": null`;
+
+    // JSON 크기 추정
+    const strJson = `{${strSvc},${strEnv},${strPerm},${strEvt},"action":"${action}"}`;
+    const strSize = new TextEncoder().encode(strJson).length;
+    const addrJson = `{"svc":${svcAddr},"perm":${permAddr ?? "null"},"evt":${evtAddr ?? "null"},"action":"${action}"}`;
+    const addrSize = new TextEncoder().encode(addrJson).length;
+    const fullJson = `{"svc":${svcAddr},"perm":${permAddr ?? "null"},"evt":${evtAddr ?? "null"},"act":${actIdx}}`;
+    const fullSize = new TextEncoder().encode(fullJson).length;
+
+    // protobuf varint 크기 추정
+    function varintSize(n: number): number { if (n < 0) return 1; let s = 1; while (n >= 128) { n >>>= 7; s++; } return s; }
+    const protoSize = [svcAddr, permAddr ?? 0, evtAddr ?? 0, actIdx].reduce((s, v) => s + 1 + varintSize(v), 0);
+
+    const pct1 = Math.round((1 - addrSize / strSize) * 100);
+    const pct2 = Math.round((1 - fullSize / strSize) * 100);
+    const pct3 = Math.round((1 - protoSize / strSize) * 100);
+
+    const selectedHint = entry ? `<span class="log-comp-selected">선택된 로그: ${action}</span>` : "";
+
+    comparison.innerHTML = `
+      <h3 class="log-comp-title">주소 기반 로그 vs 문자열 로그 ${selectedHint}</h3>
+      <div class="log-comp-grid">
+        <div class="log-comp-card log-comp-before">
+          <div class="log-comp-card-label">기존 — 문자열 기반</div>
+          <pre class="log-comp-code">{
+  ${strSvc},
+  ${strEnv},
+  ${strPerm},
+  ${strEvt},
+  "action": "${action}"
 }</pre>
-        <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-bad">~210 bytes</span></div>
-      </div>
-      <div class="log-comp-arrow">&#x2192;</div>
-      <div class="log-comp-card log-comp-after">
-        <div class="log-comp-card-label">인덱스 — 주소 기반</div>
-        <pre class="log-comp-code">{
-  "svc": ${encodeSvc([3,1,1,1])},
-  "perm": ${(1-1)*roleStride(ver)+1},
-  "evt": ${(4-1)*evtStrideFor(ver)+(3-1)*2},
-  "action": "payment.initiate"
+          <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-bad">~${strSize} bytes</span></div>
+        </div>
+        <div class="log-comp-arrow">→</div>
+        <div class="log-comp-card log-comp-after">
+          <div class="log-comp-card-label">인덱스 — 주소 기반 (action 문자열 유지)</div>
+          <pre class="log-comp-code">{
+  "svc": ${svcAddr},
+  "perm": ${permAddr ?? "null"},
+  "evt": ${evtAddr ?? "null"},
+  "action": "${action}"
 }</pre>
-        <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-good">~65 bytes</span></div>
+          <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-good">~${addrSize} bytes (${pct1}%↓)</span></div>
+        </div>
+        <div class="log-comp-arrow">→</div>
+        <div class="log-comp-card log-comp-after">
+          <div class="log-comp-card-label">완전 주소화 — action도 인덱스</div>
+          <pre class="log-comp-code">{
+  "svc": ${svcAddr},
+  "perm": ${permAddr ?? "null"},
+  "evt": ${evtAddr ?? "null"},
+  "act": ${actIdx}
+}
+<span class="log-comp-note">// act ${actIdx} = ${action}
+// shape [${ACTION_INDEX.size}] — ${ACTION_INDEX.size}개 action 엔트리</span></pre>
+          <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-good">~${fullSize} bytes (${pct2}%↓)</span></div>
+        </div>
+        <div class="log-comp-arrow">→</div>
+        <div class="log-comp-card log-comp-after log-comp-proto">
+          <div class="log-comp-card-label">Protobuf — 바이너리 전송</div>
+          <pre class="log-comp-code">message LogEntry {
+  uint32 svc  = 1; // ${svcAddr}
+  uint32 perm = 2; // ${permAddr ?? 0}
+  uint32 evt  = 3; // ${evtAddr ?? 0}
+  uint32 act  = 4; // ${actIdx}
+}
+<span class="log-comp-note">// varint 인코딩: 총 ${protoSize} bytes</span></pre>
+          <div class="log-comp-stat"><span class="log-comp-stat-label">페이로드</span><span class="log-comp-stat-val log-comp-stat-best">~${protoSize} bytes (${pct3}%↓)</span></div>
+        </div>
       </div>
-    </div>
-    <div class="log-comp-benefits">
-      <div class="log-comp-benefit"><span class="log-comp-benefit-num">~69%</span><span class="log-comp-benefit-label">페이로드 절감</span></div>
-      <div class="log-comp-benefit"><span class="log-comp-benefit-num">O(1)</span><span class="log-comp-benefit-label">주소 비교 연산</span></div>
-      <div class="log-comp-benefit"><span class="log-comp-benefit-num">범위 쿼리</span><span class="log-comp-benefit-label">svc 40~59 = payment 전체</span></div>
-    </div>
-  `;
+      <div class="log-comp-benefits">
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">~${pct1}%</span><span class="log-comp-benefit-label">JSON 주소화 절감</span></div>
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">~${pct2}%</span><span class="log-comp-benefit-label">완전 주소화 절감</span></div>
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">~${pct3}%</span><span class="log-comp-benefit-label">Protobuf 절감</span></div>
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">O(1)</span><span class="log-comp-benefit-label">주소 비교 연산</span></div>
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">범위 쿼리</span><span class="log-comp-benefit-label">svc ${Math.floor(svcAddr/20)*20}~${Math.floor(svcAddr/20)*20+19}</span></div>
+      </div>
+    `;
+  }
+
+  renderComparison(); // 초기 기본값
   wrap.appendChild(comparison);
 
   // ── Address anatomy — what's inside each integer ───────────────────────
@@ -774,6 +858,9 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         else if (nav === "permission") navigateTo("permission", { permAddr: addr });
       });
     });
+
+    // 비교 섹션을 선택된 로그 값으로 갱신
+    renderComparison(entry);
   }
 
   // Try API first, fall back to in-memory sample data
