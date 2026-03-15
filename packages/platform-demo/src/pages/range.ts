@@ -2,6 +2,15 @@
 //  범위 탐색 — 차원 고정/와일드카드로 주소 범위 시각화
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { serializeAddress } from "weighted-index";
+
+const SVC_PREFIX = "service";
+const SVC_VER    = "v1";
+
+function svcAddr(index: number): string {
+  return serializeAddress({ schema: SVC_PREFIX, version: SVC_VER, index }, "colon");
+}
+
 // ── Dimension metadata (service:v1 shape [5,2,5,2] = 100) ────────────────
 
 interface DimMeta {
@@ -228,25 +237,20 @@ export function renderRangePage(container: HTMLElement): void {
   detail.className = "rng-detail";
   left.appendChild(detail);
 
-  columns.appendChild(left);
-
-  // ── RIGHT PANEL: grid ─────────────────────────────────────────────────
+  // ── LEFT PANEL: grid (fixed size) ────────────────────────────────────
   const right = document.createElement("div");
   right.className = "rng-right";
 
-  const gridSection = document.createElement("div");
-  gridSection.className = "rng-grid-section";
-
   const gridTitle = document.createElement("div");
   gridTitle.className = "rng-grid-title";
-  gridSection.appendChild(gridTitle);
+  right.appendChild(gridTitle);
 
   const grid = document.createElement("div");
   grid.className = "rng-grid";
-  gridSection.appendChild(grid);
+  right.appendChild(grid);
 
-  right.appendChild(gridSection);
   columns.appendChild(right);
+  columns.appendChild(left);
 
   wrap.appendChild(columns);
   container.appendChild(wrap);
@@ -295,9 +299,9 @@ export function renderRangePage(container: HTMLElement): void {
 
     // Grid title
     gridTitle.innerHTML = `
-      <span class="rng-grid-title-text">주소 공간 0–99</span>
+      <span class="rng-grid-title-text">서비스 주소 공간 0–99</span>
       <span class="rng-grid-title-count">
-        <span class="rng-count-matched">${matched.length}</span> / ${TOTAL_SLOTS} 매칭
+        <span class="rng-count-matched">${matched.length}</span> / ${TOTAL_SLOTS}
       </span>
     `;
 
@@ -317,7 +321,7 @@ export function renderRangePage(container: HTMLElement): void {
         const v = row * 10 + col;
         const cell = document.createElement("div");
         cell.className = "rng-cell" + (matchedSet.has(v) ? " rng-cell-hit" : "");
-        cell.textContent = String(v);
+        cell.innerHTML = `<span class="rng-cell-val">${v}</span><span class="rng-cell-addr">${svcAddr(v)}</span>`;
 
         cell.addEventListener("mouseenter", () => {
           if (pinnedCell === null) showDetail(v, matchedSet.has(v));

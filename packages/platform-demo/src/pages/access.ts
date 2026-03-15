@@ -1,59 +1,43 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  권한 범위 부여 — 서비스 범위에 역할을 부여하는 1:N 시뮬레이션
+//  접근 제어 — perm_svc(1D 압축) × role × event 매핑 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
+
+import { serializeAddress } from "weighted-index";
 
 type Ver = "v1" | "v2";
 
-// ── Dimension metadata (service:v1 shape [5,2,5,2] = 100) ────────────────
-
-interface DimMeta {
-  key:    string;
-  label:  string;
-  size:   number;
-  stride: number;
-  values: { idx1: number; id: string; ko: string }[];
+function fmtAddr(schema: string, ver: Ver, index: number): string {
+  return serializeAddress({ schema, version: ver, index }, "colon");
 }
 
-const DIMS: DimMeta[] = [
-  {
-    key: "env", label: "환경", size: 5, stride: 20,
-    values: [
-      { idx1: 1, id: "dev",   ko: "개발" },
-      { idx1: 2, id: "stage", ko: "스테이지" },
-      { idx1: 3, id: "prod",  ko: "운영" },
-      { idx1: 4, id: "test",  ko: "테스트" },
-      { idx1: 5, id: "local", ko: "로컬" },
-    ],
-  },
-  {
-    key: "region", label: "리전", size: 2, stride: 10,
-    values: [
-      { idx1: 1, id: "asia", ko: "아시아" },
-      { idx1: 2, id: "usa",  ko: "미국" },
-    ],
-  },
-  {
-    key: "svc_name", label: "서비스", size: 5, stride: 2,
-    values: [
-      { idx1: 1, id: "shopping-web",     ko: "쇼핑 웹" },
-      { idx1: 2, id: "shopping-backend", ko: "쇼핑 백엔드" },
-      { idx1: 3, id: "auth",             ko: "인증" },
-      { idx1: 4, id: "payment",          ko: "결제" },
-      { idx1: 5, id: "gateway",          ko: "게이트웨이" },
-    ],
-  },
-  {
-    key: "namespace", label: "네임스페이스", size: 2, stride: 1,
-    values: [
-      { idx1: 1, id: "shop", ko: "쇼핑몰" },
-      { idx1: 2, id: "cms",  ko: "CMS" },
-    ],
-  },
+// ── perm_svc: svc_name(5) × namespace(2) → 1D (1..10) ──────────────────
+
+interface PermSvcMeta {
+  pos: number; svcId: string; svcKo: string; nsId: string; nsKo: string;
+}
+
+const SVC_NAMES = [
+  { id: "shopping-web",     ko: "쇼핑웹" },
+  { id: "shopping-backend", ko: "쇼핑BE" },
+  { id: "auth",             ko: "인증" },
+  { id: "payment",          ko: "결제" },
+  { id: "gateway",          ko: "GW" },
 ];
 
-const TOTAL_SLOTS = 100;
+const NS = [
+  { id: "shop", ko: "쇼핑몰" },
+  { id: "cms",  ko: "CMS" },
+];
 
-// ── Role metadata ─────────────────────────────────────────────────────────
+const PERM_SVCS: PermSvcMeta[] = [];
+{
+  let p = 1;
+  for (const s of SVC_NAMES)
+    for (const n of NS)
+      PERM_SVCS.push({ pos: p++, svcId: s.id, svcKo: s.ko, nsId: n.id, nsKo: n.ko });
+}
+
+// ── Role metadata ───────────────────────────────────────────────────────
 
 interface RoleMeta { idx1: number; id: string; ko: string }
 
@@ -74,265 +58,200 @@ const ROLES_V2: RoleMeta[] = [
   { idx1: 6, id: "readonly",  ko: "읽기전용" },
 ];
 
-function rolesForVer(ver: Ver): RoleMeta[] {
-  return ver === "v1" ? ROLES_V1 : ROLES_V2;
+// ── Event metadata ──────────────────────────────────────────────────────
+
+interface EvtMeta { idx1: number; id: string; ko: string }
+
+const EVENTS_V1: EvtMeta[] = [
+  { idx1: 1, id: "user.login",      ko: "로그인" },
+  { idx1: 2, id: "user.logout",     ko: "로그아웃" },
+  { idx1: 3, id: "order.created",   ko: "주문생성" },
+  { idx1: 4, id: "order.paid",      ko: "주문결제" },
+  { idx1: 5, id: "payment.failed",  ko: "결제실패" },
+  { idx1: 6, id: "session.expired", ko: "세션만료" },
+  { idx1: 7, id: "config.changed",  ko: "설정변경" },
+];
+
+const EVENTS_V2: EvtMeta[] = [
+  ...EVENTS_V1,
+  { idx1: 8, id: "payment.cancel_requested", ko: "취소요청" },
+  { idx1: 9, id: "payment.cancel_approved",  ko: "취소승인" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+function rolesFor(v: Ver) { return v === "v1" ? ROLES_V1 : ROLES_V2; }
+function eventsFor(v: Ver) { return v === "v1" ? EVENTS_V1 : EVENTS_V2; }
+function rc(v: Ver) { return v === "v1" ? 5 : 6; }
+function evtStride(v: Ver) { return v === "v1" ? 14 : 18; }
+
+function calcPermAddr(svc: number, role: number, v: Ver): number {
+  return (svc - 1) * rc(v) + (role - 1);
 }
 
-function roleCountForVer(ver: Ver): number {
-  return ver === "v1" ? 5 : 6;
+function calcEvtAddr(svc: number, evt: number, init: number, v: Ver): number {
+  return (svc - 1) * evtStride(v) + (evt - 1) * 2 + (init - 1);
 }
 
-// ── Permission address derivation ─────────────────────────────────────────
-// perm_svc = (svc_name_idx1 - 1) × 2 + (ns_idx1 - 1) + 1   (1..10)
-// permAddr = (perm_svc - 1) × roleCount + (role_idx1 - 1)
-
-function derivPermSvc(svcNameIdx1: number, nsIdx1: number): number {
-  return (svcNameIdx1 - 1) * 2 + (nsIdx1 - 1) + 1;
+// Backend services don't support mobile initiator
+function svcSupportsInit(ps: PermSvcMeta, init: number): boolean {
+  return !(ps.svcId === "shopping-backend" && init === 2);
 }
 
-function derivPermAddr(permSvc: number, roleIdx1: number, rc: number): number {
-  return (permSvc - 1) * rc + (roleIdx1 - 1);
-}
-
-// ── State ─────────────────────────────────────────────────────────────────
-
-type DimSelection = number | null;
+// ── State ───────────────────────────────────────────────────────────────
 
 interface AccessState {
-  selections: DimSelection[];
+  permSvc: number | null;  // null = wildcard
   roleIdx1: number;
+  initiator: number;       // 1=web, 2=mobile
 }
 
-// ── Compute matching service addresses ────────────────────────────────────
-
-function computeRange(selections: DimSelection[]): number[] {
-  let partials = [0];
-  for (let d = 0; d < DIMS.length; d++) {
-    const dim = DIMS[d];
-    const sel = selections[d];
-    const next: number[] = [];
-    if (sel !== null) {
-      const offset = (sel - 1) * dim.stride;
-      for (const p of partials) next.push(p + offset);
-    } else {
-      for (const v of dim.values) {
-        const offset = (v.idx1 - 1) * dim.stride;
-        for (const p of partials) next.push(p + offset);
-      }
-    }
-    partials = next;
-  }
-  return partials.sort((a, b) => a - b);
-}
-
-// ── Decode service address to coordinates ─────────────────────────────────
-
-interface DecodedCoord { dimIdx1: number; id: string; ko: string }
-
-function decodeValue(v: number): DecodedCoord[] {
-  const result: DecodedCoord[] = [];
-  let remainder = v;
-  for (const dim of DIMS) {
-    const idx0 = Math.floor(remainder / dim.stride);
-    remainder = remainder % dim.stride;
-    const entry = dim.values[idx0];
-    result.push({ dimIdx1: idx0 + 1, id: entry?.id ?? "?", ko: entry?.ko ?? "?" });
-  }
-  return result;
-}
-
-// ── Compute permission grants ─────────────────────────────────────────────
-
-interface PermGroup {
-  permAddr:   number;
-  permSvc:    number;
-  svcName:    string;
-  svcNameKo:  string;
-  nsName:     string;
-  nsNameKo:   string;
-  roleId:     string;
-  roleKo:     string;
-  instances:  { addr: number; envId: string; envKo: string; regionId: string; regionKo: string }[];
-}
-
-function computeGrants(matched: number[], roleIdx1: number, ver: Ver): PermGroup[] {
-  const rc = roleCountForVer(ver);
-  const role = rolesForVer(ver).find(r => r.idx1 === roleIdx1)!;
-  const groupMap = new Map<number, PermGroup>();
-
-  for (const addr of matched) {
-    const coords = decodeValue(addr);
-    const svcNameIdx1 = coords[2].dimIdx1;
-    const nsIdx1      = coords[3].dimIdx1;
-    const permSvc  = derivPermSvc(svcNameIdx1, nsIdx1);
-    const permAddr = derivPermAddr(permSvc, roleIdx1, rc);
-
-    let group = groupMap.get(permAddr);
-    if (!group) {
-      group = {
-        permAddr, permSvc,
-        svcName: coords[2].id, svcNameKo: coords[2].ko,
-        nsName:  coords[3].id, nsNameKo:  coords[3].ko,
-        roleId:  role.id,      roleKo:    role.ko,
-        instances: [],
-      };
-      groupMap.set(permAddr, group);
-    }
-
-    group.instances.push({
-      addr,
-      envId:    coords[0].id, envKo:    coords[0].ko,
-      regionId: coords[1].id, regionKo: coords[1].ko,
-    });
-  }
-
-  return Array.from(groupMap.values()).sort((a, b) => a.permAddr - b.permAddr);
-}
-
-// ── Render ────────────────────────────────────────────────────────────────
+// ── Render ───────────────────────────────────────────────────────────────
 
 export function renderAccessPage(container: HTMLElement, ver: Ver): void {
   container.innerHTML = "";
 
   const st: AccessState = {
-    selections: [3, null, 4, null], // prod / * / payment / *
-    roleIdx1: 1,                    // admin
+    permSvc: 7,     // payment/shop
+    roleIdx1: 1,    // admin
+    initiator: 1,   // web
   };
 
   const wrap = document.createElement("div");
   wrap.className = "acc-wrap";
 
-  // ── Top-level two-column layout ─────────────────────────────────────
   const columns = document.createElement("div");
   columns.className = "acc-columns";
 
-  // ── LEFT: controls + grants ─────────────────────────────────────────
-  const left = document.createElement("div");
-  left.className = "acc-left";
+  // ── Controls (visually RIGHT, uses acc-left for flex:1) ────────────
+  const ctrlPanel = document.createElement("div");
+  ctrlPanel.className = "acc-left";
 
-  // Header
   const header = document.createElement("div");
   header.className = "acc-header";
   header.innerHTML = `
-    <h2 class="acc-title">권한 범위 부여 시뮬레이터</h2>
+    <h2 class="acc-title">접근 제어 시뮬레이터</h2>
     <p class="acc-desc">
-      서비스 범위를 지정하고 역할을 선택하면,
-      해당 범위의 <strong>모든 서비스 인스턴스</strong>에 권한이 부여됩니다.
+      서비스를 1차원으로 압축한 <strong>perm_svc</strong>에
+      <strong>역할</strong>과 <strong>이벤트</strong>를 매핑하여
+      권한·이벤트 주소를 생성합니다.
     </p>
   `;
-  left.appendChild(header);
+  ctrlPanel.appendChild(header);
 
-  // Dimension controls
-  const controls = document.createElement("div");
-  controls.className = "acc-controls";
-  const dimRows: HTMLElement[] = [];
-
-  for (let d = 0; d < DIMS.length; d++) {
-    const dim = DIMS[d];
-    const row = document.createElement("div");
-    row.className = "acc-dim-row";
-
-    const label = document.createElement("div");
-    label.className = "acc-dim-label";
-    label.innerHTML = `
-      <span class="acc-dim-key">${dim.key}</span>
-      <span class="acc-dim-info">${dim.label} · ${dim.size}개</span>
-    `;
-    row.appendChild(label);
-
-    const btns = document.createElement("div");
-    btns.className = "acc-dim-btns";
-
-    const wBtn = document.createElement("button");
-    wBtn.className = "acc-btn acc-btn-wild" + (st.selections[d] === null ? " acc-btn-active-wild" : "");
-    wBtn.textContent = "*";
-    wBtn.title = "와일드카드 — 이 차원의 모든 값";
-    wBtn.addEventListener("click", () => { st.selections[d] = null; repaint(); });
-    btns.appendChild(wBtn);
-
-    for (const v of dim.values) {
-      const btn = document.createElement("button");
-      btn.className = "acc-btn" + (st.selections[d] === v.idx1 ? " acc-btn-active" : "");
-      btn.innerHTML = `<span class="acc-btn-id">${v.id}</span><span class="acc-btn-ko">${v.ko}</span>`;
-      btn.addEventListener("click", () => { st.selections[d] = v.idx1; repaint(); });
-      btns.appendChild(btn);
-    }
-
-    row.appendChild(btns);
-    controls.appendChild(row);
-    dimRows.push(row);
-  }
-
-  left.appendChild(controls);
+  // perm_svc selector
+  const svcCtrl = document.createElement("div");
+  svcCtrl.className = "acc-controls";
+  ctrlPanel.appendChild(svcCtrl);
 
   // Role selector
   const roleBar = document.createElement("div");
   roleBar.className = "acc-role-bar";
-  roleBar.innerHTML = `<div class="acc-role-label">부여할 역할</div>`;
-
+  roleBar.innerHTML = `<div class="acc-role-label">역할 (role)</div>`;
   const roleBtns = document.createElement("div");
   roleBtns.className = "acc-role-btns";
   roleBar.appendChild(roleBtns);
-  left.appendChild(roleBar);
+  ctrlPanel.appendChild(roleBar);
 
-  // Grant list
-  const grantSection = document.createElement("div");
-  grantSection.className = "acc-grant-section";
-  left.appendChild(grantSection);
+  // Initiator toggle
+  const initBar = document.createElement("div");
+  initBar.className = "acc-role-bar";
+  initBar.innerHTML = `<div class="acc-role-label">발원 (initiator)</div>`;
+  const initBtns = document.createElement("div");
+  initBtns.className = "acc-role-btns";
+  initBar.appendChild(initBtns);
+  ctrlPanel.appendChild(initBar);
 
-  columns.appendChild(left);
-
-  // ── RIGHT: address space grid + summary + insight ───────────────────
-  const right = document.createElement("div");
-  right.className = "acc-right";
-
-  const gridTitle = document.createElement("div");
-  gridTitle.className = "acc-grid-title";
-  right.appendChild(gridTitle);
-
-  const grid = document.createElement("div");
-  grid.className = "acc-grid";
-  right.appendChild(grid);
-
-  // Summary (below grid)
+  // Summary
   const summaryEl = document.createElement("div");
   summaryEl.className = "acc-summary";
-  right.appendChild(summaryEl);
+  ctrlPanel.appendChild(summaryEl);
 
-  // Insight callout (below summary)
-  const insight = document.createElement("div");
-  insight.className = "acc-insight";
-  right.appendChild(insight);
+  // Insight
+  const insightEl = document.createElement("div");
+  insightEl.className = "acc-insight";
+  ctrlPanel.appendChild(insightEl);
 
-  columns.appendChild(right);
+  // ── Grids (visually LEFT, uses acc-right for fixed size) ───────────
+  const gridPanel = document.createElement("div");
+  gridPanel.className = "acc-right";
+
+  const permSection = document.createElement("div");
+  permSection.className = "acc-tbl-section";
+  gridPanel.appendChild(permSection);
+
+  const evtSection = document.createElement("div");
+  evtSection.className = "acc-tbl-section";
+  gridPanel.appendChild(evtSection);
+
+  // Cell detail panel (shown on click)
+  const detailPanel = document.createElement("div");
+  detailPanel.className = "acc-cell-detail";
+  gridPanel.appendChild(detailPanel);
+
+  columns.appendChild(gridPanel);
+  columns.appendChild(ctrlPanel);
 
   wrap.appendChild(columns);
   container.appendChild(wrap);
 
-  // ── Repaint ─────────────────────────────────────────────────────────
+  // ── Repaint ────────────────────────────────────────────────────────
   function repaint(): void {
-    const matched   = computeRange(st.selections);
-    const matchedSet = new Set(matched);
-    const grants    = computeGrants(matched, st.roleIdx1, ver);
-    const roles     = rolesForVer(ver);
-    const curRole   = roles.find(r => r.idx1 === st.roleIdx1)!;
-    const totalInst = grants.reduce((s, g) => s + g.instances.length, 0);
+    const curRoles = rolesFor(ver);
+    const curEvents = eventsFor(ver);
+    const curRole = curRoles.find(r => r.idx1 === st.roleIdx1)!;
+    const totalPermCells = PERM_SVCS.length * rc(ver);
+    const totalEvtCells = PERM_SVCS.length * curEvents.length;
 
-    // Dim buttons
-    for (let d = 0; d < DIMS.length; d++) {
-      const row = dimRows[d];
-      row.querySelectorAll<HTMLButtonElement>(".acc-btn").forEach((btn, bi) => {
-        if (bi === 0) {
-          btn.classList.toggle("acc-btn-active-wild", st.selections[d] === null);
-        } else {
-          btn.classList.toggle("acc-btn-active", st.selections[d] === DIMS[d].values[bi - 1].idx1);
+    const selectedSvcs = st.permSvc !== null
+      ? [st.permSvc]
+      : PERM_SVCS.map(ps => ps.pos);
+
+    // Highlighted addresses
+    const permHits = new Set<number>();
+    const evtHits = new Set<number>();
+    for (const svc of selectedSvcs) {
+      permHits.add(calcPermAddr(svc, st.roleIdx1, ver));
+      const ps = PERM_SVCS[svc - 1];
+      if (svcSupportsInit(ps, st.initiator)) {
+        for (const evt of curEvents) {
+          evtHits.add(calcEvtAddr(svc, evt.idx1, st.initiator, ver));
         }
-      });
+      }
     }
 
-    // Role buttons
+    // ── perm_svc selector ──
+    svcCtrl.innerHTML = "";
+    const svcLabel = document.createElement("div");
+    svcLabel.className = "acc-dim-label";
+    svcLabel.innerHTML = `
+      <span class="acc-dim-key">perm_svc</span>
+      <span class="acc-dim-info">서비스(${SVC_NAMES.length}) × 네임스페이스(${NS.length}) → ${PERM_SVCS.length}개</span>
+    `;
+    svcCtrl.appendChild(svcLabel);
+
+    const svcBtns = document.createElement("div");
+    svcBtns.className = "acc-dim-btns";
+
+    const wBtn = document.createElement("button");
+    wBtn.className = "acc-btn acc-btn-wild" + (st.permSvc === null ? " acc-btn-active-wild" : "");
+    wBtn.textContent = "*";
+    wBtn.addEventListener("click", () => { st.permSvc = null; repaint(); });
+    svcBtns.appendChild(wBtn);
+
+    for (const ps of PERM_SVCS) {
+      const btn = document.createElement("button");
+      btn.className = "acc-btn" + (st.permSvc === ps.pos ? " acc-btn-active" : "");
+      btn.innerHTML = `<span class="acc-btn-id">${ps.pos}</span><span class="acc-btn-ko">${ps.svcKo}/${ps.nsKo}</span>`;
+      btn.title = `${ps.svcId} / ${ps.nsId}`;
+      btn.addEventListener("click", () => { st.permSvc = ps.pos; repaint(); });
+      svcBtns.appendChild(btn);
+    }
+    svcCtrl.appendChild(svcBtns);
+
+    // ── Role buttons ──
     roleBtns.innerHTML = "";
-    for (const role of roles) {
+    for (const role of curRoles) {
       const btn = document.createElement("button");
       btn.className = `acc-role-btn role-tag-${role.id}${role.idx1 === st.roleIdx1 ? " acc-role-btn-active" : ""}`;
       btn.textContent = role.ko;
@@ -340,136 +259,210 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
       roleBtns.appendChild(btn);
     }
 
-    // Summary
-    const scopeParts = st.selections.map((s, i) => {
-      if (s !== null) {
-        const v = DIMS[i].values[s - 1];
-        return v ? v.id : String(s);
+    // ── Initiator buttons ──
+    initBtns.innerHTML = "";
+    for (const [init, label, ko] of [[1, "web", "웹"], [2, "mobile", "모바일"]] as [number, string, string][]) {
+      const btn = document.createElement("button");
+      btn.className = `acc-role-btn${st.initiator === init ? " acc-role-btn-active" : ""}`;
+      btn.textContent = `${label} · ${ko}`;
+      btn.addEventListener("click", () => { st.initiator = init; repaint(); });
+      initBtns.appendChild(btn);
+    }
+
+    // ── Permission table ──
+    const permTitleHtml = `
+      <div class="acc-grid-title">
+        <span class="acc-grid-title-text">권한 주소 (permission:${ver})</span>
+        <span class="acc-grid-title-count">
+          <span class="acc-count-hit">${permHits.size}</span> / ${totalPermCells}
+        </span>
+      </div>
+    `;
+
+    let permHead = `<tr><th class="acc-tbl-corner">svc \\ role</th>`;
+    for (const role of curRoles) {
+      const isActive = role.idx1 === st.roleIdx1;
+      permHead += `<th class="acc-tbl-ch${isActive ? " acc-tbl-ch-active" : ""}">${role.ko}</th>`;
+    }
+    permHead += `</tr>`;
+
+    let permBody = "";
+    for (const ps of PERM_SVCS) {
+      const isRow = selectedSvcs.includes(ps.pos);
+      permBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
+      permBody += `<th class="acc-tbl-rh" title="${ps.svcId}/${ps.nsId}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
+      for (const role of curRoles) {
+        const addr = calcPermAddr(ps.pos, role.idx1, ver);
+        const isHit = permHits.has(addr);
+        permBody += `<td class="acc-tbl-td${isHit ? " acc-tbl-td-hit" : ""}" data-type="permission" data-addr="${addr}" data-svc="${ps.pos}" data-role="${role.idx1}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr("permission", ver, addr)}</span></td>`;
       }
-      return "*";
-    });
+      permBody += `</tr>`;
+    }
+
+    permSection.innerHTML = permTitleHtml;
+    const permTbl = document.createElement("table");
+    permTbl.className = "acc-tbl";
+    permTbl.innerHTML = `<thead>${permHead}</thead><tbody>${permBody}</tbody>`;
+    permSection.appendChild(permTbl);
+
+    // ── Event table ──
+    const initLabel = st.initiator === 1 ? "web" : "mobile";
+    const evtTitleHtml = `
+      <div class="acc-grid-title">
+        <span class="acc-grid-title-text">이벤트 주소 (event:${ver}) · ${initLabel}</span>
+        <span class="acc-grid-title-count">
+          <span class="acc-count-hit">${evtHits.size}</span> / ${totalEvtCells}
+        </span>
+      </div>
+    `;
+
+    let evtHead = `<tr><th class="acc-tbl-corner">svc \\ event</th>`;
+    for (const evt of curEvents) {
+      evtHead += `<th class="acc-tbl-ch">${evt.ko}</th>`;
+    }
+    evtHead += `</tr>`;
+
+    let evtBody = "";
+    for (const ps of PERM_SVCS) {
+      const isRow = selectedSvcs.includes(ps.pos);
+      const supported = svcSupportsInit(ps, st.initiator);
+      evtBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
+      evtBody += `<th class="acc-tbl-rh" title="${ps.svcId}/${ps.nsId}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
+      for (const evt of curEvents) {
+        if (!supported) {
+          evtBody += `<td class="acc-tbl-td acc-tbl-td-disabled">—</td>`;
+        } else {
+          const addr = calcEvtAddr(ps.pos, evt.idx1, st.initiator, ver);
+          const isHit = evtHits.has(addr);
+          evtBody += `<td class="acc-tbl-td${isHit ? " acc-tbl-td-hit" : ""}" data-type="event" data-addr="${addr}" data-svc="${ps.pos}" data-evt="${evt.idx1}" data-init="${st.initiator}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr("event", ver, addr)}</span></td>`;
+        }
+      }
+      evtBody += `</tr>`;
+    }
+
+    evtSection.innerHTML = evtTitleHtml;
+    const evtTbl = document.createElement("table");
+    evtTbl.className = "acc-tbl";
+    evtTbl.innerHTML = `<thead>${evtHead}</thead><tbody>${evtBody}</tbody>`;
+    evtSection.appendChild(evtTbl);
+
+    // ── Summary ──
+    const svcDisplay = st.permSvc !== null
+      ? PERM_SVCS[st.permSvc - 1].svcKo + "/" + PERM_SVCS[st.permSvc - 1].nsKo
+      : "* (전체)";
+    const permAddrStr = st.permSvc !== null
+      ? `permission:${ver}:${calcPermAddr(st.permSvc, st.roleIdx1, ver)}`
+      : `${permHits.size}개`;
 
     summaryEl.innerHTML = `
       <div class="acc-summary-rule">
-        <span class="acc-summary-label">규칙</span>
-        <code class="acc-summary-scope">${scopeParts.join(" · ")}</code>
-        <span class="acc-summary-plus">+</span>
+        <span class="acc-summary-label">perm_svc</span>
+        <code class="acc-summary-scope">${svcDisplay}</code>
+        <span class="acc-summary-plus">×</span>
         <span class="acc-summary-role role-tag-${curRole.id}">${curRole.ko}</span>
+        <span class="acc-summary-plus">→</span>
+        <code class="acc-summary-scope">${permAddrStr}</code>
       </div>
       <div class="acc-summary-result">
-        <span class="acc-summary-num">${totalInst}</span> 서비스 인스턴스
-        <span class="acc-summary-sep">→</span>
-        <span class="acc-summary-num">${grants.length}</span> 권한 부여
+        <span class="acc-summary-num">${permHits.size}</span> 권한 주소
+        <span class="acc-summary-sep">·</span>
+        <span class="acc-summary-num">${evtHits.size}</span> 이벤트 주소
       </div>
     `;
 
-    // Insight
-    if (grants.length > 0 && totalInst > grants.length) {
-      const ratio = Math.round(totalInst / grants.length);
-      insight.innerHTML = `
-        <div class="acc-insight-inner">
-          <span class="acc-insight-mark">i</span>
-          <span class="acc-insight-text">
-            권한은 <strong>서비스 + 네임스페이스</strong> 단위로 부여되며, 환경·리전과 무관합니다.
-            ${grants.length}개 권한이 ${totalInst}개 인스턴스를 커버합니다 (1:${ratio}).
-          </span>
-        </div>
-      `;
-      insight.style.display = "";
-    } else if (grants.length > 0) {
-      insight.innerHTML = `
-        <div class="acc-insight-inner">
-          <span class="acc-insight-mark">i</span>
-          <span class="acc-insight-text">
-            현재 선택은 1:1 매핑입니다.
-            환경이나 리전을 와일드카드(*)로 설정하면 1:N 효과를 확인할 수 있습니다.
-          </span>
-        </div>
-      `;
-      insight.style.display = "";
-    } else {
-      insight.style.display = "none";
-    }
-
-    // Grid
-    gridTitle.innerHTML = `
-      <span class="acc-grid-title-text">서비스 주소 공간 0–99</span>
-      <span class="acc-grid-title-count">
-        <span class="acc-count-hit">${matched.length}</span> / ${TOTAL_SLOTS}
-      </span>
+    // ── Insight ──
+    const totalEvtFull = PERM_SVCS.length * curEvents.length * 2;
+    insightEl.innerHTML = `
+      <div class="acc-insight-inner">
+        <span class="acc-insight-mark">i</span>
+        <span class="acc-insight-text">
+          <strong>perm_svc</strong>는 서비스(${SVC_NAMES.length})×네임스페이스(${NS.length})를 1차원(${PERM_SVCS.length})으로 압축한 축입니다.
+          이 축 위에 역할을 곱하면 권한 주소(<strong>${totalPermCells}</strong>개),
+          이벤트×발원을 곱하면 이벤트 주소(<strong>${totalEvtFull}</strong>개)가 됩니다.
+        </span>
+      </div>
     `;
+    insightEl.style.display = "";
 
-    grid.innerHTML = "";
-    for (let r = 0; r < 10; r++) {
-      const rowEl = document.createElement("div");
-      rowEl.className = "acc-grid-row";
+    // ── Cell click → detail panel ──
+    gridPanel.querySelectorAll<HTMLTableCellElement>(".acc-tbl-td[data-type]").forEach(td => {
+      td.style.cursor = "pointer";
+      td.addEventListener("click", () => {
+        // Remove previous selection
+        gridPanel.querySelectorAll(".acc-tbl-td-selected").forEach(el =>
+          el.classList.remove("acc-tbl-td-selected")
+        );
+        td.classList.add("acc-tbl-td-selected");
 
-      const rh = document.createElement("div");
-      rh.className = "acc-grid-rh";
-      rh.textContent = String(r * 10);
-      rowEl.appendChild(rh);
+        const type = td.dataset.type!;
+        const addr = Number(td.dataset.addr);
+        const svcPos = Number(td.dataset.svc);
+        const ps = PERM_SVCS[svcPos - 1];
 
-      for (let c = 0; c < 10; c++) {
-        const v = r * 10 + c;
-        const cell = document.createElement("div");
-        cell.className = "acc-cell" + (matchedSet.has(v) ? " acc-cell-hit" : "");
-        cell.textContent = String(v);
-        rowEl.appendChild(cell);
-      }
-      grid.appendChild(rowEl);
-    }
-
-    // Grant cards
-    if (grants.length === 0) {
-      grantSection.innerHTML = `
-        <div class="acc-grant-empty">
-          서비스 범위와 역할을 선택하면<br/>권한 부여 결과가 여기에 표시됩니다.
-        </div>`;
-      return;
-    }
-
-    let html = `
-      <div class="acc-grant-list-head">
-        <span class="acc-grant-list-title">권한 부여 목록</span>
-        <span class="acc-grant-list-count">${grants.length}개 권한 · ${totalInst}개 인스턴스</span>
-      </div>`;
-
-    for (const g of grants) {
-      const chips = g.instances.map(inst =>
-        `<span class="acc-inst-chip" title="${inst.envKo} · ${inst.regionKo}">
-          <span class="acc-inst-addr">${inst.addr}</span>
-          <span class="acc-inst-env">${inst.envId}/${inst.regionId}</span>
-        </span>`
-      ).join("");
-
-      html += `
-        <div class="acc-grant-card">
-          <div class="acc-grant-card-head">
-            <span class="acc-perm-badge">permission:${ver}:${g.permAddr}</span>
-            <span class="acc-grant-inst-count">→ ${g.instances.length}개 인스턴스</span>
-          </div>
-          <div class="acc-grant-card-body">
-            <div class="acc-grant-row">
-              <span class="acc-grant-key">서비스</span>
-              <span class="acc-grant-val">${g.svcNameKo} <code>${g.svcName}</code></span>
+        if (type === "permission") {
+          const roleIdx1 = Number(td.dataset.role);
+          const role = curRoles.find(r => r.idx1 === roleIdx1)!;
+          const isHit = permHits.has(addr);
+          detailPanel.innerHTML = `
+            <div class="acc-detail-head">
+              <code class="acc-detail-addr${isHit ? " acc-detail-addr-hit" : ""}">${fmtAddr("permission", ver, addr)}</code>
             </div>
-            <div class="acc-grant-row">
-              <span class="acc-grant-key">네임스페이스</span>
-              <span class="acc-grant-val">${g.nsNameKo} <code>${g.nsName}</code></span>
+            <div class="acc-detail-body">
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">주소</span>
+                <span class="acc-detail-val">${addr}</span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">perm_svc</span>
+                <span class="acc-detail-val">${ps.svcKo} / ${ps.nsKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos})</span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">역할</span>
+                <span class="acc-detail-val"><span class="role-tag role-tag-${role.id}">${role.ko}</span> <code>${role.id}</code></span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">산식</span>
+                <span class="acc-detail-val"><code>(${svcPos} − 1) × ${rc(ver)} + (${roleIdx1} − 1) = ${addr}</code></span>
+              </div>
             </div>
-            <div class="acc-grant-row">
-              <span class="acc-grant-key">역할</span>
-              <span class="acc-grant-val"><span class="role-tag role-tag-${g.roleId}">${g.roleKo}</span></span>
+          `;
+        } else {
+          const evtIdx1 = Number(td.dataset.evt);
+          const initIdx = Number(td.dataset.init);
+          const evt = curEvents.find(e => e.idx1 === evtIdx1)!;
+          const initLabel = initIdx === 1 ? "web" : "mobile";
+          const isHit = evtHits.has(addr);
+          detailPanel.innerHTML = `
+            <div class="acc-detail-head">
+              <code class="acc-detail-addr${isHit ? " acc-detail-addr-hit" : ""}">${fmtAddr("event", ver, addr)}</code>
             </div>
-            <div class="acc-grant-instances">
-              <span class="acc-grant-key">커버하는 서비스 주소</span>
-              <div class="acc-inst-chips">${chips}</div>
+            <div class="acc-detail-body">
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">주소</span>
+                <span class="acc-detail-val">${addr}</span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">perm_svc</span>
+                <span class="acc-detail-val">${ps.svcKo} / ${ps.nsKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos})</span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">이벤트</span>
+                <span class="acc-detail-val">${evt.ko} <code>${evt.id}</code></span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">발원</span>
+                <span class="acc-detail-val">${initLabel}</span>
+              </div>
+              <div class="acc-detail-row">
+                <span class="acc-detail-key">산식</span>
+                <span class="acc-detail-val"><code>(${svcPos} − 1) × ${evtStride(ver)} + (${evtIdx1} − 1) × 2 + (${initIdx} − 1) = ${addr}</code></span>
+              </div>
             </div>
-          </div>
-        </div>`;
-    }
-
-    grantSection.innerHTML = html;
+          `;
+        }
+        detailPanel.style.display = "block";
+      });
+    });
   }
 
   repaint();

@@ -86,7 +86,7 @@ export function renderOverviewPage(container: HTMLElement): void {
       detail: `encode({ role: "없는값" }) → 컴파일 에러 · v1 → v2 자동 전환`,
       accent: "var(--xl-navy)",
       icon: "▶",
-      tabs: ["버전", "부여관리"],
+      tabs: ["버전", "권한 부여 관리"],
     },
   ];
 
