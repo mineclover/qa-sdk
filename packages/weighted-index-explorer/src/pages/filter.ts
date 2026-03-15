@@ -6,7 +6,12 @@
 //  O(1) 산술 연산. 문자열 비교 없음.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { describeRangeFormula, partialQueryBase, createMask, setBit, hasBit, popcount } from "weighted-index";
+import {
+  describeRangeFormula, partialQueryBase,
+  createMask, setBit, hasBit, popcount,
+  calcAddressRanges, containsAddress,
+  type CoordConstraint,
+} from "weighted-index";
 import {
   SCHEMA_VERSIONS, getVersion,
   type VersionDef,
@@ -388,59 +393,65 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
     const envVal = envSel.value;
     const dims   = vDef.dims;
 
-    // Build the set of IDs matching the filter criteria
-    const targetIds: number[] = [];
+    // Build CoordConstraint array and compute address ranges via calcAddressRanges
+    const rIdx = resVal ? Array.from(dims.resource.values).indexOf(resVal) + 1 : null;
+    const aIdx = actVal ? Array.from(dims.action.values).indexOf(actVal) + 1 : null;
+    const eIdx = envVal ? Array.from(dims.env.values).indexOf(envVal) + 1 : null;
 
-    const resources = resVal ? [resVal] : Array.from(dims.resource.values).map(String);
-    const actions   = actVal ? [actVal] : Array.from(dims.action.values).map(String);
-    const envs      = envVal ? [envVal] : Array.from(dims.env.values).map(String);
-    const roles     = Array.from(dims.role.values).map(String);
+    const constraints: CoordConstraint[] = [
+      rIdx !== null ? String(rIdx) : null,  // resource
+      aIdx !== null ? String(aIdx) : null,  // action
+      null,                                  // role (always free)
+      eIdx !== null ? String(eIdx) : null,  // env
+    ];
+    const shape = [...vDef.shape];
+    const ranges = calcAddressRanges(shape, constraints);
 
-    for (const res of resources) {
-      const rIdx = Array.from(dims.resource.values).indexOf(res) + 1;
-      for (const act of actions) {
-        const aIdx = Array.from(dims.action.values).indexOf(act) + 1;
-        for (const env of envs) {
-          const eIdx = Array.from(dims.env.values).indexOf(env) + 1;
-          for (const role of roles) {
-            const roIdx = Array.from(dims.role.values).indexOf(role) + 1;
-            targetIds.push(vDef.wi.encode([rIdx, aIdx, roIdx, eIdx]));
-          }
+    // Count total addresses covered by ranges
+    const totalAddresses = ranges.reduce((sum, [f, t]) => sum + (t - f + 1), 0);
+
+    // Find matching users: check if any bit in their bitmask falls within the computed ranges
+    const matched = users.filter((u) => {
+      for (const [from, to] of ranges) {
+        for (let addr = from; addr <= to; addr++) {
+          if (hasBit(u.bitmask, addr)) return true;
         }
       }
-    }
-
-    // Find matching users
-    const matched = users.filter((u) =>
-      targetIds.some((id) => hasBit(u.bitmask, id))
-    );
+      return false;
+    });
 
     // Build formula explanation
     const nDims = [
-      resVal ? `r=${Array.from(dims.resource.values).indexOf(resVal) + 1}(${resVal})` : `r∈[1..${dims.resource.size}]`,
-      actVal ? `a=${Array.from(dims.action.values).indexOf(actVal) + 1}(${actVal})` : `a∈[1..${dims.action.size}]`,
+      resVal ? `r=${rIdx}(${resVal})` : `r∈[1..${dims.resource.size}]`,
+      actVal ? `a=${aIdx}(${actVal})` : `a∈[1..${dims.action.size}]`,
       `ro∈[1..${dims.role.size}]`,
-      envVal ? `e=${Array.from(dims.env.values).indexOf(envVal) + 1}(${envVal})` : `e∈[1..${dims.env.size}]`,
+      envVal ? `e=${eIdx}(${envVal})` : `e∈[1..${dims.env.size}]`,
     ];
 
-    const formulaLine = `IDs = { encode([${nDims.join(", ")}]) } — ${targetIds.length}개 ID`;
+    const formulaLine = `IDs = { encode([${nDims.join(", ")}]) } — ${totalAddresses}개 ID`;
 
     // Build weight formula using engine's describeRangeFormula
     const fixedCoords: Array<number | null> = [
-      resVal ? Array.from(dims.resource.values).indexOf(resVal) + 1 : null,
-      actVal ? Array.from(dims.action.values).indexOf(actVal) + 1   : null,
+      rIdx,
+      aIdx,
       null, // role is always free in the filter query
-      envVal ? Array.from(dims.env.values).indexOf(envVal) + 1      : null,
+      eIdx,
     ];
     const compactFormula = describeRangeFormula(
       vDef.weights as number[], fixedCoords, ["resource", "action", "role", "env"]
     );
+
+    // Format ranges for display
+    const rangeStr = ranges.length > 0
+      ? ranges.map(([f, t]) => f === t ? `${f}` : `${f}-${t}`).join(", ")
+      : "(없음)";
 
     result.innerHTML = `
       <div class="fd-formula-box">
         <div class="fd-formula-title">검색 수식</div>
         <code class="fd-formula-code">${formulaLine}</code>
         <code class="fd-formula-code">id = ${compactFormula}</code>
+        <code class="fd-formula-code" style="font-size:0.68rem;color:var(--text-muted)">address ranges: [${rangeStr}] (${ranges.length}개 구간)</code>
         <div class="fd-bit-check">
           hasPermission = <code>user.bitmask[id &gt;&gt; 3] &amp; (1 &lt;&lt; (id &amp; 7))</code>
         </div>
@@ -457,23 +468,29 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
             if (isMatch) {
               for (const [env, role] of Object.entries(u.envRoles)) {
                 if (!role) continue;
-                const eIdx  = Array.from(dims.env.values).indexOf(env)  + 1;
+                const envIdx  = Array.from(dims.env.values).indexOf(env)  + 1;
                 const roIdx = Array.from(dims.role.values).indexOf(role) + 1;
-                const checkRes = resVal ? [resVal] : Array.from(dims.resource.values).map(String);
-                const checkAct = actVal ? [actVal] : Array.from(dims.action.values).map(String);
                 const checkEnv = envVal ? [envVal] : [env];
                 if (!checkEnv.includes(env)) continue;
-                for (const res of checkRes) {
-                  const rIdx = Array.from(dims.resource.values).indexOf(res) + 1;
-                  for (const act of checkAct) {
-                    const aIdx = Array.from(dims.action.values).indexOf(act) + 1;
-                    const id = vDef.wi.encode([rIdx, aIdx, roIdx, eIdx]);
-                    if (hasBit(u.bitmask, id)) {
+                // Build per-user range check: fix role and env, free resource and action per filter
+                const userConstraints: CoordConstraint[] = [
+                  rIdx !== null ? String(rIdx) : null,
+                  aIdx !== null ? String(aIdx) : null,
+                  String(roIdx),
+                  String(envIdx),
+                ];
+                const userRanges = calcAddressRanges(shape, userConstraints);
+                // Check if user has any bit set in these ranges
+                let found = false;
+                for (const [from, to] of userRanges) {
+                  for (let addr = from; addr <= to; addr++) {
+                    if (hasBit(u.bitmask, addr)) {
                       matchDetails.push(`${env}/${role}`);
+                      found = true;
                       break;
                     }
                   }
-                  if (matchDetails[matchDetails.length - 1]?.startsWith(env)) break;
+                  if (found) break;
                 }
               }
             }
