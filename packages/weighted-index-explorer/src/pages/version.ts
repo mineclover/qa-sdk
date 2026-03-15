@@ -6,7 +6,17 @@
 import { SCHEMA_VERSIONS, getVersion } from "../data.js";
 import { dimBadge } from "../utils/badge.js";
 import { encodeRowsHtml } from "../utils/encode-html.js";
-import { WeightedIndex } from "weighted-index";
+import {
+  WeightedIndex,
+  calcAddressRanges,
+  mergeRanges,
+  intersectRanges,
+  subtractRanges,
+  containsAddress,
+  positionsToConstraint,
+  complementRanges,
+  type CoordConstraint,
+} from "weighted-index";
 
 export function renderVersion(container: HTMLElement): void {
   container.innerHTML = `<div class="concept-wrap">${buildVersionPage()}</div>`;
@@ -395,6 +405,7 @@ function buildAddressStateGate(): string {
           <span class="gate-legend-item"><span class="gate-swatch gate-open"></span> open</span>
           <span class="gate-legend-item"><span class="gate-swatch gate-reserved"></span> reserved</span>
         </div>
+        <div id="gate-range-summary" class="gate-range-summary" style="margin-top:14px"></div>
       </div>
     </div>
   `;
@@ -780,6 +791,8 @@ type GateState = "active" | "inactive" | "open";
 function wireAddressStateGate(container: HTMLElement): void {
   const RESOURCE_COUNT = 5;
   const ENV_COUNT = 3;
+  const SHAPE: readonly number[] = [RESOURCE_COUNT, ENV_COUNT];
+  const CAPACITY = RESOURCE_COUNT * ENV_COUNT;
   const RESOURCE_NAMES = ["posts", "comments", "users", "files", "logs"];
   const ENV_NAMES = ["prod", "staging", "dev"];
 
@@ -795,6 +808,7 @@ function wireAddressStateGate(container: HTMLElement): void {
   const resCtrls = container.querySelector<HTMLDivElement>("#gate-resource-ctrls")!;
   const envCtrls = container.querySelector<HTMLDivElement>("#gate-env-ctrls")!;
   const gridDiv  = container.querySelector<HTMLDivElement>("#gate-grid")!;
+  const summaryDiv = container.querySelector<HTMLDivElement>("#gate-range-summary")!;
 
   function buildControls(): void {
     resCtrls.innerHTML = RESOURCE_NAMES.map((name, i) => `
@@ -831,16 +845,79 @@ function wireAddressStateGate(container: HTMLElement): void {
     });
   }
 
-  function compositeState(rState: GateState, eState: GateState): string {
-    const encodeBlocked = rState === "inactive" || eState === "inactive";
-    const decodeBlocked = rState === "open" || eState === "open";
-    if (encodeBlocked && decodeBlocked) return "reserved";
-    if (encodeBlocked) return "inactive";
-    if (decodeBlocked) return "open";
+  /** Collect 1-based positions matching a given gate state from a states array. */
+  function positionsWithState(states: GateState[], target: GateState): number[] {
+    return states.reduce<number[]>((acc, s, i) => {
+      if (s === target) acc.push(i + 1); // 1-based coordinate
+      return acc;
+    }, []);
+  }
+
+  /** Build address ranges for positions of a given state in the specified dimension. */
+  function rangesForDimState(dimIndex: number, states: GateState[], target: GateState): [number, number][] {
+    const positions = positionsWithState(states, target);
+    if (positions.length === 0) return [];
+    const constraints: CoordConstraint[] = SHAPE.map(() => null);
+    constraints[dimIndex] = positionsToConstraint(positions);
+    return calcAddressRanges([...SHAPE], constraints);
+  }
+
+  function computeRanges(): {
+    inactiveRanges: [number, number][];
+    openRanges: [number, number][];
+    reservedRanges: [number, number][];
+    activeRanges: [number, number][];
+  } {
+    // Inactive ranges: addresses where any dim is "inactive"
+    // → union of resource-inactive ranges and env-inactive ranges
+    const resInactiveRanges = rangesForDimState(0, resourceStates, "inactive");
+    const envInactiveRanges = rangesForDimState(1, envStates, "inactive");
+    const allInactiveRanges = mergeRanges([...resInactiveRanges, ...envInactiveRanges]);
+
+    // Open ranges: addresses where any dim is "open"
+    const resOpenRanges = rangesForDimState(0, resourceStates, "open");
+    const envOpenRanges = rangesForDimState(1, envStates, "open");
+    const allOpenRanges = mergeRanges([...resOpenRanges, ...envOpenRanges]);
+
+    // Reserved = inactive AND open (both encode and decode blocked)
+    // An address is reserved if it has at least one inactive dim AND at least one open dim
+    const reservedRanges = intersectRanges(allInactiveRanges, allOpenRanges);
+
+    // Pure inactive = inactive addresses minus reserved
+    const inactiveRanges = subtractRanges(allInactiveRanges, reservedRanges);
+
+    // Pure open = open addresses minus reserved
+    const openRanges = subtractRanges(allOpenRanges, reservedRanges);
+
+    // Active = complement of (inactive + open + reserved)
+    const allNonActive = mergeRanges([...inactiveRanges, ...openRanges, ...reservedRanges]);
+    const activeRanges = complementRanges(CAPACITY, allNonActive);
+
+    return { inactiveRanges, openRanges, reservedRanges, activeRanges };
+  }
+
+  function stateForAddress(
+    addr: number,
+    ranges: ReturnType<typeof computeRanges>,
+  ): string {
+    if (containsAddress(addr, ranges.reservedRanges)) return "reserved";
+    if (containsAddress(addr, ranges.inactiveRanges)) return "inactive";
+    if (containsAddress(addr, ranges.openRanges)) return "open";
     return "active";
   }
 
+  function formatRanges(ranges: [number, number][]): string {
+    if (ranges.length === 0) return "(없음)";
+    return ranges.map(([f, t]) => f === t ? `${f}` : `${f}-${t}`).join(", ");
+  }
+
+  function rangeAddressCount(ranges: [number, number][]): number {
+    return ranges.reduce((sum, [f, t]) => sum + (t - f + 1), 0);
+  }
+
   function renderGrid(): void {
+    const ranges = computeRanges();
+
     // Header row
     let html = '<table class="gate-table"><thead><tr><th class="gate-corner"></th>';
     for (let e = 0; e < ENV_COUNT; e++) {
@@ -853,8 +930,8 @@ function wireAddressStateGate(container: HTMLElement): void {
       const rhCls = resourceStates[r] === "active" ? "" : ` gate-th-${resourceStates[r]}`;
       html += `<tr><td class="gate-rh${rhCls}">${RESOURCE_NAMES[r]}</td>`;
       for (let e = 0; e < ENV_COUNT; e++) {
-        const state = compositeState(resourceStates[r], envStates[e]);
         const addr = r * ENV_COUNT + e;
+        const state = stateForAddress(addr, ranges);
         const verify = state === "open" ? '<span class="gate-verify">verify</span>' : "";
         html += `<td class="gate-cell gate-cell-${state}">
           <span class="gate-addr">${addr}</span>
@@ -866,6 +943,53 @@ function wireAddressStateGate(container: HTMLElement): void {
     }
     html += "</tbody></table>";
     gridDiv.innerHTML = html;
+
+    // Range summary panel
+    if (summaryDiv) {
+      summaryDiv.innerHTML = `
+        <div class="plan-ver-range-title" style="margin-bottom:8px">
+          range 기반 상태 분석 — calcAddressRanges + 집합 연산
+        </div>
+        <table class="nd-table" style="margin-bottom:10px">
+          <thead>
+            <tr><th>상태</th><th>주소 범위</th><th>주소 수</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="gate-badge gate-active">active</span></td>
+              <td style="font-family:monospace;font-size:0.72rem">[${formatRanges(ranges.activeRanges)}]</td>
+              <td class="td-num">${rangeAddressCount(ranges.activeRanges)}</td>
+            </tr>
+            <tr>
+              <td><span class="gate-badge gate-inactive">inactive</span></td>
+              <td style="font-family:monospace;font-size:0.72rem">[${formatRanges(ranges.inactiveRanges)}]</td>
+              <td class="td-num">${rangeAddressCount(ranges.inactiveRanges)}</td>
+            </tr>
+            <tr>
+              <td><span class="gate-badge gate-open">open</span></td>
+              <td style="font-family:monospace;font-size:0.72rem">[${formatRanges(ranges.openRanges)}]</td>
+              <td class="td-num">${rangeAddressCount(ranges.openRanges)}</td>
+            </tr>
+            <tr>
+              <td><span class="gate-badge gate-reserved">reserved</span></td>
+              <td style="font-family:monospace;font-size:0.72rem">[${formatRanges(ranges.reservedRanges)}]</td>
+              <td class="td-num">${rangeAddressCount(ranges.reservedRanges)}</td>
+            </tr>
+            <tr style="font-weight:700;border-top:2px solid var(--border-header)">
+              <td>합계</td>
+              <td></td>
+              <td class="td-num">${CAPACITY}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:0.7rem;color:var(--text-muted);line-height:1.6">
+          <code>inactive = union(resInactive, envInactive) \\ reserved</code><br/>
+          <code>open = union(resOpen, envOpen) \\ reserved</code><br/>
+          <code>reserved = intersect(allInactive, allOpen)</code><br/>
+          <code>active = complement(inactive + open + reserved)</code>
+        </div>
+      `;
+    }
   }
 
   buildControls();
