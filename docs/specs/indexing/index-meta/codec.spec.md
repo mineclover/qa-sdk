@@ -26,12 +26,12 @@ MetaRegistry (주소 게이트웨이)          MetaCodec (정보 해석)
 
 ### weighted-index 위임
 
-MetaCodec은 내부적으로 `weighted-index`의 `LabelRegistry` + `PrefixRegistry`에 위임한다.
+MetaCodec은 내부적으로 `weighted-index`의 `LabelRegistry` + `PrefixCodec`에 위임한다.
 
 ```
 DecodeMap
   ├── dims[].entries → LabelRegistry (entity ID ↔ 1-based index)
-  └── shape + dims   → PrefixRegistry (좌표 배열 ↔ 1차원 정수 + entity 기반 encode/decode)
+  └── shape + dims   → PrefixCodec (좌표 배열 ↔ 1차원 정수 + entity 기반 encode/decode)
 ```
 
 로직 중복 없이 weighted-index의 검증된 구현을 재사용한다.

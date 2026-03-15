@@ -44,7 +44,7 @@ MetaRegistry                  ← 주소 게이트웨이 (registry.spec.md)
         ↓
 MetaCodec                     ← 정보 해석 (codec.spec.md)
   ├── encode/decode              entity ID ↔ VersionedValue
-  └── (내부) LabelRegistry + PrefixRegistry  ← weighted-index에 위임
+  └── (내부) LabelRegistry + PrefixCodec  ← weighted-index에 위임
 ```
 
 ## 모듈 구조
@@ -59,7 +59,7 @@ src/
   types.ts               # MetaRegistry용 공개 타입
   errors.ts              # 에러 클래스 계층
   meta-registry.ts       # MetaRegistry — 주소 게이트웨이
-  meta-codec.ts          # MetaCodec — 독립 encode/decode (LabelRegistry + PrefixRegistry 위임)
+  meta-codec.ts          # MetaCodec — 독립 encode/decode (LabelRegistry + PrefixCodec 위임)
   meta-resolver.ts       # MetaResolver — 외부 소비용 데이터 번들 생성
   index.ts               # 공개 API 재수출
 ```

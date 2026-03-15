@@ -14,7 +14,7 @@
 ├──────────────────────────────────────────────────────────────┤
 │  수학 레이어  (weighted-index)                                │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │  PrefixRegistry — 레이블 조합 + 버전 + encode/decode   │  │
+│  │  PrefixCodec — 레이블 조합 + 버전 + encode/decode   │  │
 │  │  LabelRegistry  — 레이블별 entity ID ↔ 1-based index  │  │
 │  │  WeightedIndex  — 순수 수학 엔진 (shape → id ↔ coords)│  │
 │  ├────────────────────────────────────────────────────────┤  │
@@ -45,7 +45,7 @@
 ```
 weighted-index/                    ← 수학 + 포맷 + 프로토콜
 ├── README.md                      패키지 인덱스
-├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixRegistry, bitmask, obfuscate
+├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixCodec, bitmask, obfuscate
 └── pack-format.spec.md            PackFormat, SemanticAddress, AddressConverter, fitLayout
 
 index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외부 소비

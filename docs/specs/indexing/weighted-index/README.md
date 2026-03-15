@@ -12,7 +12,7 @@ implemented
 
 | 문서 | 관심사 |
 |---|---|
-| [core.spec.md](core.spec.md) | WeightedIndex 수학 엔진, LabelRegistry, PrefixRegistry, bitmask, obfuscate |
+| [core.spec.md](core.spec.md) | WeightedIndex 수학 엔진, LabelRegistry, PrefixCodec, bitmask, obfuscate |
 | [pack-format.spec.md](pack-format.spec.md) | PackFormat, FormatRegistry, SemanticAddress, AddressConverter, fitLayout |
 | [range-query.spec.md](range-query.spec.md) | calcAddressRanges — 부분 좌표 제약 기반 주소 구간 계산, OR/AND 조합, Graph-DB 패턴 |
 

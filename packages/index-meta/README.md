@@ -28,7 +28,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │  Tier 4: 인코딩 / 디코딩                                     │
 │  MetaRegistry (주소 게이트웨이: 직렬화 + 코덱 생성)           │
-│  MetaCodec (독립 encode/decode, LabelRegistry+PrefixRegistry) │
+│  MetaCodec (독립 encode/decode, LabelRegistry+PrefixCodec) │
 │  MetaResolver (외부 소비용 DecodeMap 번들)                    │
 ├─────────────────────────────────────────────────────────────┤
 │  Tier 5: 데이터 운영                                         │

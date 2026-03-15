@@ -668,7 +668,7 @@ weighted-index (이 패키지)
 └── fromVersionedValue    : VersionedValue ↔ SemanticAddress 어댑터
 
 index-meta (외부 소비자)
-├── MetaCodec.encode/decode    : 엔티티 ID ↔ VersionedValue (LabelRegistry + PrefixRegistry 위임)
+├── MetaCodec.encode/decode    : 엔티티 ID ↔ VersionedValue (LabelRegistry + PrefixCodec 위임)
 ├── MetaRegistry.serialize/parse : AddressConverter에 위임 + 레지스트리 검증
 ├── MetaRegistry.createCodec() : 특정 version 코덱 생성
 └── AddressConfig              : layout 프로토콜 바인딩 설정

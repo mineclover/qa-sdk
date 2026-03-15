@@ -77,7 +77,7 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 |---|---|---|
 | `WeightedIndex` | 순수 수학 엔진 | 없음 (shape만) |
 | `LabelRegistry` | 레이블별 entity ID ↔ 1-based index | WeightedIndex 불필요 |
-| `PrefixRegistry` | 레이블 조합 + 버전 관리 + encode/decode | WeightedIndex + LabelRegistry |
+| `PrefixCodec` | 레이블 조합 + 버전 관리 + encode/decode | WeightedIndex + LabelRegistry |
 | `calc`, `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
 
-`PrefixRegistry`와 `MetaRegistry`는 구조적으로 유사하다. `MetaRegistry`가 기능적 상위 호환이지만, `PrefixRegistry`는 컴파일 타임 타입 안전성(`InferLabelSchema`)을 제공하고 `weighted-index` 자체를 독립 사용할 수 있는 경로를 유지한다.
+`PrefixCodec`와 `MetaRegistry`는 구조적으로 유사하다. `MetaRegistry`가 기능적 상위 호환이지만, `PrefixCodec`는 컴파일 타임 타입 안전성(`InferLabelSchema`)을 제공하고 `weighted-index` 자체를 독립 사용할 수 있는 경로를 유지한다.

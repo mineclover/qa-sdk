@@ -25,7 +25,7 @@
 │  정보 해석 레이어  (index-meta: MetaCodec)                   │
 │  entity ID ↔ VersionedValue                                 │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ 내부 위임: LabelRegistry + PrefixRegistry (weighted-index) │
+│  │ 내부 위임: LabelRegistry + PrefixCodec (weighted-index) │
 │  │ entity ID ↔ 1-based index ↔ 1차원 정수                 │ │
 │  └────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
@@ -73,7 +73,7 @@ VersionedValue { indexId: "perm", versionId: "v1", value: 14 }
 | 단계 | 패키지 | 메서드 | 입력 → 출력 |
 |---|---|---|---|
 | ① | index-meta | `MetaCodec.encode(entityIds)` | `Record<string, EntityId>` → `VersionedValue` |
-| ② | weighted-index | `PrefixRegistry.encodeFromIds()` (MetaCodec 내부) | entity ID → 좌표 → `number` |
+| ② | weighted-index | `PrefixCodec.encodeFromIds()` (MetaCodec 내부) | entity ID → 좌표 → `number` |
 | ③ | weighted-index | `fromVersionedValue(vv)` | `VersionedValue` → `SemanticAddress` |
 | ④ | weighted-index | `AddressConverter.serialize(addr, protocol)` | `SemanticAddress` → `string` |
 
@@ -120,7 +120,7 @@ VersionedValue { indexId: "perm", versionId: "v1", value: 14 }
 coords = [2, 2, 3]
   │
   │ ①' 좌표 → entity         MetaCodec.decode()
-  │   entries["role/v1"][2-1]     = "editor"    (PrefixRegistry.decodeToIds 위임)
+  │   entries["role/v1"][2-1]     = "editor"    (PrefixCodec.decodeToIds 위임)
   │   entries["action/v1"][2-1]   = "write"
   │   entries["resource/v1"][3-1] = 30
   │
@@ -135,7 +135,7 @@ coords = [2, 2, 3]
 | ④' | weighted-index | `AddressConverter.parse(input)` | `string` → `SemanticAddress` |
 | ③' | weighted-index | `toVersionedValue(addr)` | `SemanticAddress` → `VersionedValue` |
 | ✓ | index-meta | `MetaRegistry.parse()` 내부 검증 | indexId/versionId 존재 + value 범위 |
-| ②' | weighted-index | `PrefixRegistry.decodeToIds()` (MetaCodec 내부) | `number` → 좌표 → entity ID |
+| ②' | weighted-index | `PrefixCodec.decodeToIds()` (MetaCodec 내부) | `number` → 좌표 → entity ID |
 | ①' | index-meta | `MetaCodec.decode(vv)` | `VersionedValue` → `Record<string, EntityId>` |
 
 **합성**: `codec.decode(reg.parse(pk))` = ④'+③'+✓+②'+①'.

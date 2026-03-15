@@ -233,7 +233,7 @@ new LabelRegistry(defs)
 | `hasVersion(label, version)` | 버전 존재 여부 |
 | `labelNames` | 등록된 레이블 이름 목록 |
 
-### 내부 API (PrefixRegistry 전용)
+### 내부 API (PrefixCodec 전용)
 
 | 메서드 | 설명 |
 |---|---|
@@ -248,7 +248,7 @@ new LabelRegistry(defs)
 
 ---
 
-## 5. PrefixRegistry
+## 5. PrefixCodec
 
 ### 역할
 레이블 조합(prefix)과 그 버전을 관리한다.
@@ -288,7 +288,7 @@ interface VersionedIndex {
 ### 생성자
 
 ```ts
-new PrefixRegistry(labels: LabelRegistry<any>, prefixes: Record<string, PrefixDefinition>)
+new PrefixCodec(labels: LabelRegistry<any>, prefixes: Record<string, PrefixDefinition>)
 ```
 
 - 생성 시 모든 prefix 정의를 검증 (`_validatePrefixDef`)
@@ -531,7 +531,7 @@ WeightedIndexError (base)
 // 핵심 클래스
 export { WeightedIndex }
 export { LabelRegistry, createLabelRegistry }
-export { PrefixRegistry }
+export { PrefixCodec }
 
 // 계산 유틸리티 (calc.ts)
 export { calcWeights, partialQueryBase, describeRangeFormula }
@@ -583,7 +583,7 @@ export { PrefixNotFoundError, SerializeError, MigrateError }
 ## 11. 사용 예시
 
 ```ts
-import { createLabelRegistry, PrefixRegistry } from "weighted-index";
+import { createLabelRegistry, PrefixCodec } from "weighted-index";
 
 const labels = createLabelRegistry({
   role:   [{ version: "v1", ids: [1, 2, 3] }],
@@ -592,7 +592,7 @@ const labels = createLabelRegistry({
   tenant: [{ version: "v1", ids: [100, 200, 300] }],
 });
 
-const prefixes = new PrefixRegistry(labels, {
+const prefixes = new PrefixCodec(labels, {
   api_perm: {
     labels: ["role", "action", "api", "tenant"],
     versions: [
@@ -630,7 +630,7 @@ const labelsV2 = createLabelRegistry({
   // ...
 });
 
-const registryV2 = new PrefixRegistry(labelsV2, {
+const registryV2 = new PrefixCodec(labelsV2, {
   api_perm: {
     labels: ["role", "action", "api", "tenant"],
     versions: [

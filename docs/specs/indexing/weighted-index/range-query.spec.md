@@ -130,7 +130,7 @@ intersectRanges(
 
 ## 6. 중첩 prefix 활용 (Graph-DB 효율)
 
-`PrefixRegistry`와 결합하면 중첩된 composite prefix를 디코딩 없이 필터링할 수 있다.
+`PrefixCodec`과 결합하면 중첩된 composite prefix를 디코딩 없이 필터링할 수 있다.
 
 ```
 article shape = [content_type(4), perm(2048), lang(2)]
