@@ -43,7 +43,7 @@ export {
   type InferLabelSchema,
 } from "./label-registry.js";
 export {
-  PrefixRegistry,
+  PrefixCodec,
   type PrefixVersionEntry,
   type PrefixDefinition,
   type VersionedIndex,

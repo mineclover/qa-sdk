@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { LabelRegistry } from "./label-registry.js";
-import { PrefixRegistry } from "./prefix-registry.js";
+import { PrefixCodec } from "./prefix-registry.js";
 import {
   WeightedIndexError,
   CoordError,
@@ -42,7 +42,7 @@ const labelReg = new LabelRegistry({
   ],
 });
 
-const registry = new PrefixRegistry(labelReg, {
+const registry = new PrefixCodec(labelReg, {
   api_perm: {
     labels: ["role", "action", "api", "tenant"],
     versions: [

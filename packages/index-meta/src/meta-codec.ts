@@ -10,7 +10,7 @@
  *
  * weighted-index의 LabelRegistry + PrefixRegistry에 위임한다.
  * - LabelRegistry : entity ID ↔ 1-based index 변환
- * - PrefixRegistry: 좌표 배열 ↔ 1차원 정수 변환 + entity ID 기반 encode/decode
+ * - PrefixCodec: 좌표 배열 ↔ 1차원 정수 변환 + entity ID 기반 encode/decode
  *
  * MetaCodec은 이 두 레지스트리를 DecodeMap에서 자동 빌드하고,
  * VersionedIndex ↔ VersionedValue 변환을 처리하는 얇은 어댑터다.
@@ -23,7 +23,7 @@
 
 import {
   createLabelRegistry,
-  PrefixRegistry,
+  PrefixCodec,
   calcAddressRanges,
   type CoordConstraint,
   type EntityId as WiEntityId,
@@ -35,7 +35,7 @@ import type { DecodeMap, EntityId, VersionedValue } from "./types.js";
 import { EntryNotFoundError, ValidationError } from "./errors.js";
 
 export class MetaCodec {
-  private readonly _prefix: PrefixRegistry;
+  private readonly _prefix: PrefixCodec;
   private readonly _map: DecodeMap;
 
   constructor(map: DecodeMap) {
@@ -48,8 +48,8 @@ export class MetaCodec {
     }
     const labels = createLabelRegistry(labelDefs);
 
-    // DecodeMap → PrefixRegistry
-    this._prefix = new PrefixRegistry(labels, {
+    // DecodeMap → PrefixCodec
+    this._prefix = new PrefixCodec(labels, {
       [map.indexId]: {
         labels: map.dims.map((d) => d.dimId),
         versions: [

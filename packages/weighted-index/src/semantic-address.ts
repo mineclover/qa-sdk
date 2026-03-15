@@ -84,7 +84,7 @@ export interface AddressProtocol {
 /**
  * Colon protocol: `"schema:version:index"`
  *
- * 기존 PrefixRegistry.serialize() / MetaRegistry.serialize() 호환.
+ * 기존 PrefixCodec.serialize() / MetaRegistry.serialize() 호환.
  *
  * @example
  * colonProtocol.serialize({ schema: "perm", version: "v1", index: 42 })
@@ -600,7 +600,7 @@ export function createAddressConverter(): AddressConverter {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Convert a VersionedIndex (from PrefixRegistry) to a SemanticAddress.
+ * Convert a VersionedIndex (from PrefixCodec) to a SemanticAddress.
  */
 export function fromVersionedIndex(vi: {
   prefix: string;

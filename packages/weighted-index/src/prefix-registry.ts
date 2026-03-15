@@ -1,5 +1,5 @@
 /**
- * PrefixRegistry
+ * PrefixCodec
  *
  * 레이블 조합(prefix)과 그 버전을 관리한다.
  *
@@ -83,17 +83,17 @@ export type CoordMigrator = (
   newLabels: readonly string[]
 ) => number[];
 
-// ── PrefixRegistry ────────────────────────────────────────────────────────────
+// ── PrefixCodec ────────────────────────────────────────────────────────────
 
 /**
  * LabelRegistry의 TSchema는 외부에서 다양하게 정의되므로,
- * PrefixRegistry는 스키마 타입을 알 필요 없이 _Raw 내부 메서드만 사용한다.
+ * PrefixCodec는 스키마 타입을 알 필요 없이 _Raw 내부 메서드만 사용한다.
  * 이 alias는 해당 의도를 명시한다.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyLabelRegistry = LabelRegistry<any>;
 
-export class PrefixRegistry {
+export class PrefixCodec {
   private readonly labelReg: AnyLabelRegistry;
   private readonly prefixes: ReadonlyMap<string, PrefixDefinition>;
   /** WeightedIndex 캐시: "{prefix}:{version}" → WeightedIndex */

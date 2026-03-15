@@ -1,7 +1,7 @@
 /**
  * 공유 검증 유틸리티
  *
- * WeightedIndex, LabelRegistry, PrefixRegistry에서 공통으로 쓰는
+ * WeightedIndex, LabelRegistry, PrefixCodec에서 공통으로 쓰는
  * 검증 함수들을 모아 중복 제거.
  */
 

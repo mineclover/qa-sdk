@@ -51,7 +51,7 @@ export class VersionNotFoundError extends WeightedIndexError {}
 /** 레이블 버전에 등록되지 않은 entity ID 또는 index */
 export class EntityNotFoundError extends WeightedIndexError {}
 
-/** PrefixRegistry에 등록되지 않은 prefix 이름 */
+/** PrefixCodec에 등록되지 않은 prefix 이름 */
 export class PrefixNotFoundError extends WeightedIndexError {}
 
 /** 직렬화/역직렬화 형식 오류 */
