@@ -1911,3 +1911,132 @@ describe("isEntryActive()", () => {
     expect(() => reg.isEntryActive("role", "v1", 4)).toThrow(ValidationError);
   });
 });
+
+// ── index_ref cycle detection ────────────────────────────────────────────────
+
+describe("index_ref cycle detection", () => {
+  it("self-referencing index_ref (A -> A) is allowed", () => {
+    // An index whose dim references itself (e.g., a "parent" dim) is allowed.
+    const input = {
+      dims: {
+        parentRef: {
+          kind: { type: "index_ref" as const, indexId: "tree" },
+          snapshots: { s1: { entries: [0, 1, 2] } },
+        },
+        label: {
+          kind: { type: "string_enum" as const },
+          snapshots: { s1: { entries: ["a", "b", "c"] } },
+        },
+      },
+      indices: {
+        tree: {
+          dims: ["parentRef", "label"],
+          versions: { v1: { snapshots: { parentRef: "s1", label: "s1" } } },
+        },
+      },
+    };
+    expect(() => new MetaRegistry(input)).not.toThrow();
+  });
+
+  it("mutual cycle (A -> B -> A) throws ValidationError", () => {
+    // indexA has a dim referencing indexB, indexB has a dim referencing indexA
+    const input = {
+      dims: {
+        refB: {
+          kind: { type: "index_ref" as const, indexId: "indexB" },
+          snapshots: { s1: { entries: [0] } },
+        },
+        refA: {
+          kind: { type: "index_ref" as const, indexId: "indexA" },
+          snapshots: { s1: { entries: [0] } },
+        },
+        label: {
+          kind: { type: "string_enum" as const },
+          snapshots: { s1: { entries: ["x"] } },
+        },
+      },
+      indices: {
+        indexA: {
+          dims: ["refB", "label"],
+          versions: { v1: { snapshots: { refB: "s1", label: "s1" } } },
+        },
+        indexB: {
+          dims: ["refA", "label"],
+          versions: { v1: { snapshots: { refA: "s1", label: "s1" } } },
+        },
+      },
+    };
+    expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    expect(() => new MetaRegistry(input)).toThrow(/cycle/);
+  });
+
+  it("deeper cycle (A -> B -> C -> A) throws ValidationError", () => {
+    const input = {
+      dims: {
+        refB: {
+          kind: { type: "index_ref" as const, indexId: "indexB" },
+          snapshots: { s1: { entries: [0] } },
+        },
+        refC: {
+          kind: { type: "index_ref" as const, indexId: "indexC" },
+          snapshots: { s1: { entries: [0] } },
+        },
+        refA: {
+          kind: { type: "index_ref" as const, indexId: "indexA" },
+          snapshots: { s1: { entries: [0] } },
+        },
+        label: {
+          kind: { type: "string_enum" as const },
+          snapshots: { s1: { entries: ["x"] } },
+        },
+      },
+      indices: {
+        indexA: {
+          dims: ["refB", "label"],
+          versions: { v1: { snapshots: { refB: "s1", label: "s1" } } },
+        },
+        indexB: {
+          dims: ["refC", "label"],
+          versions: { v1: { snapshots: { refC: "s1", label: "s1" } } },
+        },
+        indexC: {
+          dims: ["refA", "label"],
+          versions: { v1: { snapshots: { refA: "s1", label: "s1" } } },
+        },
+      },
+    };
+    expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+    expect(() => new MetaRegistry(input)).toThrow(/cycle/);
+  });
+
+  it("valid (non-cyclic) index_ref chain succeeds", () => {
+    // indexA -> indexB -> (no ref) — linear chain, no cycle
+    const input = {
+      dims: {
+        refB: {
+          kind: { type: "index_ref" as const, indexId: "indexB" },
+          snapshots: { s1: { entries: [0, 1] } },
+        },
+        label: {
+          kind: { type: "string_enum" as const },
+          snapshots: { s1: { entries: ["x", "y"] } },
+        },
+        num: {
+          kind: { type: "number_enum" as const },
+          snapshots: { s1: { entries: [10, 20] } },
+        },
+      },
+      indices: {
+        indexA: {
+          dims: ["refB", "label"],
+          versions: { v1: { snapshots: { refB: "s1", label: "s1" } } },
+        },
+        indexB: {
+          dims: ["label", "num"],
+          versions: { v1: { snapshots: { label: "s1", num: "s1" } } },
+        },
+      },
+    };
+    expect(() => new MetaRegistry(input)).not.toThrow();
+  });
+});

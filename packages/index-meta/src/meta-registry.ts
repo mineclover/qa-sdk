@@ -391,6 +391,65 @@ export class MetaRegistry {
       }
     }
 
+    // 4. index_ref cycle detection: DFS로 index → dim(index_ref) → target index 경로를 추적
+    //    Self-references (A -> A) are allowed (e.g., a "parent" dim referencing the same index).
+    //    Only mutual/transitive cycles of length >= 2 are errors (A -> B -> A, etc.).
+    {
+      // indexId → Set<indexId> (직접 참조 대상, self-references 제외)
+      const refGraph = new Map<string, Set<string>>();
+      for (const [indexId, indexDef] of indicesMap) {
+        const targets = new Set<string>();
+        for (const dimId of indexDef.dims) {
+          const dimDef = dimsMap.get(dimId)!;
+          if (dimDef.kind.type === "index_ref" && dimDef.kind.indexId !== indexId) {
+            targets.add(dimDef.kind.indexId);
+          }
+        }
+        if (targets.size > 0) {
+          refGraph.set(indexId, targets);
+        }
+      }
+
+      // DFS cycle detection
+      const NOT_VISITED = 0;
+      const IN_STACK = 1;
+      const DONE = 2;
+      const state = new Map<string, number>();
+      for (const id of indicesMap.keys()) state.set(id, NOT_VISITED);
+
+      function dfs(nodeId: string, path: string[]): void {
+        state.set(nodeId, IN_STACK);
+        path.push(nodeId);
+
+        const neighbors = refGraph.get(nodeId);
+        if (neighbors) {
+          for (const target of neighbors) {
+            const targetState = state.get(target);
+            if (targetState === IN_STACK) {
+              // Cycle found: extract the cycle portion from the path
+              const cycleStart = path.indexOf(target);
+              const cyclePath = [...path.slice(cycleStart), target];
+              throw new ValidationError(
+                `index_ref cycle detected: ${cyclePath.join(" -> ")}`
+              );
+            }
+            if (targetState === NOT_VISITED) {
+              dfs(target, path);
+            }
+          }
+        }
+
+        path.pop();
+        state.set(nodeId, DONE);
+      }
+
+      for (const indexId of indicesMap.keys()) {
+        if (state.get(indexId) === NOT_VISITED) {
+          dfs(indexId, []);
+        }
+      }
+    }
+
     // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────
     this._converter = createAddressConverter(); // text 프로토콜 (colon, uri, compact) 기본 등록
     this._defaultProtocol = "colon";
@@ -588,12 +647,16 @@ export class MetaRegistry {
    * 등록된 migration edge를 BFS로 탐색해 경로를 찾고, 각 구간 indexMap을 순서대로 적용.
    * 경로가 없으면 MigrationNotFoundError.
    *
-   * ── sparse migration ──────────────────────────────────────────────────────
+   * ── sparse migration (identity fallback) ──────────────────────────────────
+   *
    * indexMap에 명시되지 않은 위치는 identity로 처리된다 (동일 index 유지).
    * 이는 의도적인 설계로, entry가 두 스냅샷에서 같은 위치에 있으면 명시할 필요가 없다.
    *
-   * 주의: 모든 entry가 명시되지 않아도 오류가 발생하지 않는다.
-   * 부분 migration이 맞는지는 호출자가 보장해야 한다.
+   * WARNING: ALL positions that changed between snapshots MUST be explicitly
+   * mapped in indexMap. Unmapped positions silently fall through with identity
+   * (the same index is returned), which will cause silent data inconsistency
+   * if the entry at that position actually moved. The caller is responsible
+   * for ensuring the indexMap is complete for all changed positions.
    */
   traceMigration(
     dimId: string,

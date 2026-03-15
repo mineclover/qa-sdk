@@ -60,4 +60,21 @@ export interface IndexMetaStore {
 
   /** 특정 position의 entry 조회. 없으면 null. */
   getEntry(tableId: string, versionId: string, position: number): Promise<EntryRecord | null>;
+
+  /**
+   * fromVersion의 entry를 positionMap에 따라 toVersion으로 일괄 복사.
+   *
+   * positionMap: fromVersion의 1-based position → toVersion의 1-based position.
+   * 명시 없는 position은 동일 position 유지 (identity).
+   * toVersion에 이미 해당 position이 존재하면 건너뜀 (idempotent).
+   * toVersion의 schema_version이 없으면 에러.
+   *
+   * @returns migrated — 실제 삽입된 수, skipped — 이미 존재해 건너뛴 수
+   */
+  migrateEntries(
+    tableId: string,
+    fromVersion: string,
+    toVersion: string,
+    positionMap?: Record<number, number>
+  ): Promise<{ migrated: number; skipped: number }>;
 }

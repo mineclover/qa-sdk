@@ -82,6 +82,12 @@ export async function exportVersion(
  *   3. entries → IndexMetaStore.insertEntry() 일괄 적재
  *
  * createdAt은 백업의 exportedAt을 사용한다.
+ *
+ * WARNING: This operation is NOT atomic. If step 2 (insertSchemaVersion) or
+ * step 3 (insertEntry) fails after step 1 (register) has already succeeded,
+ * there is no automatic rollback. The PrefixRegistry will retain the
+ * registered entry even though the store is in an incomplete state.
+ * Callers should handle partial failures and implement cleanup if needed.
  */
 export async function importVersion(
   backup: VersionBackup,

@@ -204,6 +204,21 @@ describe("SqlIndexMetaStore — SqlDriver 위임 검증", () => {
     await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
     expect(await store.getEntry("role", "v1", 99)).toBeNull();
   });
+
+  it("중복 position은 ValidationError", async () => {
+    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
+    await expect(
+      store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "editor", createdAt: "2026-01-01T00:00:00Z" })
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("position이 1보다 작으면 ValidationError", async () => {
+    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
+    await expect(
+      store.insertEntry({ tableId: "role", versionId: "v1", position: 0, value: "admin", createdAt: "2026-01-01T00:00:00Z" })
+    ).rejects.toThrow(ValidationError);
+  });
 });
 
 // ── SqlDriver 교체 가능성 확인 ────────────────────────────

@@ -247,6 +247,141 @@ describe("toDecodeMap", () => {
   });
 });
 
+// ── matchRanges ──────────────────────────────────────────────────────────────
+//
+// 시나리오: SaaS 권한 시스템 DB 쿼리 최적화
+//
+// DB에 VersionedValue.value가 PK로 저장되어 있을 때,
+// "editor의 모든 권한" 같은 부분 조건을 DB full scan + decode 없이
+// value BETWEEN 범위 쿼리로 처리한다.
+//
+//   permissions 테이블
+//   ┌───────┬──────────────────────────────────────┐
+//   │ value │ decoded                              │
+//   ├───────┼──────────────────────────────────────┤
+//   │  0-8  │ role=admin  (action × resource 전체) │
+//   │  9-17 │ role=editor                          │
+//   │ 18-26 │ role=viewer                          │
+//   └───────┴──────────────────────────────────────┘
+//
+//   SELECT * FROM permissions WHERE value BETWEEN 9 AND 17
+//   → role=editor인 권한 전체를 인덱스 스캔으로 조회
+
+describe("matchRanges", () => {
+  // 픽스처: role × action × resource (3×3×3 = 27)
+  // role:     admin(1), editor(2), viewer(3)        weights: 9
+  // action:   read(1),  write(2),  delete(3)        weights: 3
+  // resource: 10(1),    20(2),     30(3)            weights: 1
+
+  it("전체 와일드카드 → [[0, size-1]]", () => {
+    const codec = new MetaCodec(permMap());
+    expect(codec.matchRanges({})).toEqual([[0, 26]]);
+    expect(codec.matchRanges({ role: null, action: null, resource: null })).toEqual([[0, 26]]);
+  });
+
+  it("첫 번째 dim 고정 → 연속된 단일 구간", () => {
+    const codec = new MetaCodec(permMap());
+    // role=admin(coord=1): (1-1)*9 = 0 → [0, 8]
+    expect(codec.matchRanges({ role: "admin" })).toEqual([[0, 8]]);
+    // role=editor(coord=2): (2-1)*9 = 9 → [9, 17]
+    expect(codec.matchRanges({ role: "editor" })).toEqual([[9, 17]]);
+    // role=viewer(coord=3): (3-1)*9 = 18 → [18, 26]
+    expect(codec.matchRanges({ role: "viewer" })).toEqual([[18, 26]]);
+  });
+
+  it("중간 dim 고정 → 비연속 구간 (role마다 블록 분리)", () => {
+    const codec = new MetaCodec(permMap());
+    // action=write(coord=2): 각 role 블록에서 (2-1)*3=3 오프셋
+    // role=admin:  [3, 5], role=editor: [12, 14], role=viewer: [21, 23]
+    expect(codec.matchRanges({ action: "write" })).toEqual([[3, 5], [12, 14], [21, 23]]);
+  });
+
+  it("마지막 dim 고정 → 단원소 구간들 (가장 파편화)", () => {
+    const codec = new MetaCodec(permMap());
+    // resource=30(coord=3): 오프셋 2, 각 (role, action) 조합마다 하나
+    // (admin,read)=2, (admin,write)=5, (admin,delete)=8
+    // (editor,read)=11, (editor,write)=14, (editor,delete)=17
+    // (viewer,read)=20, (viewer,write)=23, (viewer,delete)=26
+    expect(codec.matchRanges({ resource: 30 })).toEqual([
+      [2, 2], [5, 5], [8, 8],
+      [11, 11], [14, 14], [17, 17],
+      [20, 20], [23, 23], [26, 26],
+    ]);
+  });
+
+  it("두 dim 고정 → 연속된 단일 구간 (or 단원소)", () => {
+    const codec = new MetaCodec(permMap());
+    // role=editor(9) + action=write(3) = base 12, resource wildcard → [12, 14]
+    expect(codec.matchRanges({ role: "editor", action: "write" })).toEqual([[12, 14]]);
+    // role=viewer(18) + resource=30(2) = 20, action wildcard → [20,20],[23,23],[26,26]
+    expect(codec.matchRanges({ role: "viewer", resource: 30 })).toEqual([[20, 20], [23, 23], [26, 26]]);
+  });
+
+  it("세 dim 모두 고정 → 단일 값 (encode와 일치)", () => {
+    const codec = new MetaCodec(permMap());
+    const cases: [Record<string, string | number>, number][] = [
+      [{ role: "admin",  action: "read",   resource: 10 }, 0],
+      [{ role: "admin",  action: "delete", resource: 30 }, 8],
+      [{ role: "editor", action: "write",  resource: 20 }, 13],
+      [{ role: "viewer", action: "delete", resource: 30 }, 26],
+    ];
+    for (const [ids, expectedValue] of cases) {
+      expect(codec.matchRanges(ids)).toEqual([[expectedValue, expectedValue]]);
+      expect(codec.encode(ids).value).toBe(expectedValue);
+    }
+  });
+
+  it("matchRanges 범위 내 value는 모두 패턴과 매칭된다 (진위 검증)", () => {
+    const codec = new MetaCodec(permMap());
+    const pattern = { role: "editor", action: null as null, resource: null as null };
+    const ranges = codec.matchRanges(pattern);
+
+    for (const [from, to] of ranges) {
+      for (let v = from; v <= to; v++) {
+        const ids = codec.decodeValue(v);
+        expect(ids.role).toBe("editor");
+      }
+    }
+  });
+
+  it("matchRanges 범위 밖 value는 패턴과 매칭되지 않는다 (반례 검증)", () => {
+    const codec = new MetaCodec(permMap());
+    const pattern = { action: "delete" };
+    const ranges = codec.matchRanges(pattern);
+    const inRange = new Set(ranges.flatMap(([f, t]) => Array.from({ length: t - f + 1 }, (_, i) => f + i)));
+
+    for (let v = 0; v < codec.size; v++) {
+      const ids = codec.decodeValue(v);
+      if (ids.action === "delete") {
+        expect(inRange.has(v)).toBe(true);
+      } else {
+        expect(inRange.has(v)).toBe(false);
+      }
+    }
+  });
+
+  it("단일 dim codec에서도 동작한다", () => {
+    const codec = new MetaCodec(singleDimMap());
+    expect(codec.matchRanges({})).toEqual([[0, 3]]);
+    expect(codec.matchRanges({ level: 2 })).toEqual([[2, 2]]);  // level=2 → coord=3 → value=2
+    expect(codec.matchRanges({ level: 0 })).toEqual([[0, 0]]);  // level=0 → coord=1 → value=0
+  });
+
+  it("존재하지 않는 entity ID → EntryNotFoundError", () => {
+    const codec = new MetaCodec(permMap());
+    expect(() => codec.matchRanges({ role: "superadmin" })).toThrow(EntryNotFoundError);
+    expect(() => codec.matchRanges({ resource: 999 })).toThrow(EntryNotFoundError);
+  });
+
+  it("지정된 dim이 없는 키는 무시된다 (와일드카드 처리)", () => {
+    const codec = new MetaCodec(permMap());
+    // partial에 이 codec에 없는 dim 키가 있어도 무시
+    const r1 = codec.matchRanges({ role: "admin" });
+    const r2 = codec.matchRanges({ role: "admin", unknownDim: "xyz" } as Record<string, string | null>);
+    expect(r1).toEqual(r2);
+  });
+});
+
 // ── 독립 운용 (MetaRegistry 없이) ───────────────────────────────────────────
 
 describe("독립 운용", () => {

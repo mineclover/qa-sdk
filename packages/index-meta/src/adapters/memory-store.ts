@@ -1,10 +1,18 @@
-import { ValidationError } from "../errors.js";
 import type {
   IndexMetaStore,
   SchemaVersionRecord,
   EntryRecord,
 } from "../index-meta-store.js";
+import { ValidationError } from "../errors.js";
+import { validateEntryForInsert } from "./validate-entry.js";
 
+/**
+ * In-memory implementation of IndexMetaStore.
+ *
+ * NOT concurrency-safe. Intended for testing and single-instance use only.
+ * For production environments with concurrent access, use SqlStore or D1Store
+ * which provide database-level uniqueness constraints and transactional safety.
+ */
 export class InMemoryIndexMetaStore implements IndexMetaStore {
   /** "tableId:versionId" → SchemaVersionRecord */
   private readonly _versions = new Map<string, SchemaVersionRecord>();
@@ -45,25 +53,11 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
 
   async insertEntry(record: EntryRecord): Promise<void> {
     const versionKey = `${record.tableId}:${record.versionId}`;
-    const version = this._versions.get(versionKey);
-
-    if (!version) {
-      throw new ValidationError(
-        `SchemaVersion not found: "${record.tableId}/${record.versionId}". Insert schema version first.`
-      );
-    }
-    if (record.position < 1 || record.position > version.capacity) {
-      throw new ValidationError(
-        `Position ${record.position} out of range [1, ${version.capacity}] for "${record.tableId}/${record.versionId}"`
-      );
-    }
-
+    const version = this._versions.get(versionKey) ?? null;
     const entryKey = `${record.tableId}:${record.versionId}:${record.position}`;
-    if (this._entries.has(entryKey)) {
-      throw new ValidationError(
-        `Entry already exists at position ${record.position} in "${record.tableId}/${record.versionId}"`
-      );
-    }
+    const existing = this._entries.get(entryKey) ?? null;
+
+    validateEntryForInsert(record, version, existing);
 
     this._entries.set(entryKey, record);
   }
@@ -97,5 +91,48 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     position: number
   ): Promise<EntryRecord | null> {
     return this._entries.get(`${tableId}:${versionId}:${position}`) ?? null;
+  }
+
+  async migrateEntries(
+    tableId: string,
+    fromVersion: string,
+    toVersion: string,
+    positionMap?: Record<number, number>
+  ): Promise<{ migrated: number; skipped: number }> {
+    const sv = this._versions.get(`${tableId}:${toVersion}`);
+    if (!sv) {
+      throw new ValidationError(
+        `SchemaVersion not found: "${tableId}/${toVersion}". Insert schema version first.`
+      );
+    }
+
+    const sourceEntries = await this.getEntries(tableId, fromVersion);
+    const now = new Date().toISOString();
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const entry of sourceEntries) {
+      const newPosition = positionMap?.[entry.position] ?? entry.position;
+      if (newPosition < 1 || newPosition > sv.capacity) {
+        throw new ValidationError(
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${tableId}/${toVersion}"`
+        );
+      }
+      const entryKey = `${tableId}:${toVersion}:${newPosition}`;
+      if (this._entries.has(entryKey)) {
+        skipped++;
+        continue;
+      }
+      this._entries.set(entryKey, {
+        tableId,
+        versionId: toVersion,
+        position: newPosition,
+        value: entry.value,
+        createdAt: now,
+      });
+      migrated++;
+    }
+
+    return { migrated, skipped };
   }
 }

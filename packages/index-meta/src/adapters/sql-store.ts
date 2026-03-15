@@ -11,6 +11,7 @@
 import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
 import { ValidationError } from "../errors.js";
 import type { EntityId } from "../types.js";
+import { validateEntryForInsert } from "./validate-entry.js";
 
 // ── SqlDriver — 범용 SQL 드라이버 인터페이스 ─────────────────────────────────
 
@@ -96,17 +97,13 @@ export class SqlIndexMetaStore implements IndexMetaStore {
   // ── entry ───────────────────────────────────────────────
 
   async insertEntry(record: EntryRecord): Promise<void> {
-    const sv = await this.getSchemaVersion(record.tableId, record.versionId);
-    if (!sv) {
-      throw new ValidationError(
-        `SchemaVersion not found: "${record.tableId}/${record.versionId}". Insert schema version first.`
-      );
-    }
-    if (record.position < 1 || record.position > sv.capacity) {
-      throw new ValidationError(
-        `Position ${record.position} out of range [1, ${sv.capacity}] for "${record.tableId}/${record.versionId}"`
-      );
-    }
+    const [sv, existing] = await Promise.all([
+      this.getSchemaVersion(record.tableId, record.versionId),
+      this.getEntry(record.tableId, record.versionId, record.position),
+    ]);
+
+    validateEntryForInsert(record, sv, existing);
+
     await this.driver.execute(
       `INSERT INTO entry (table_id, version_id, position, value, created_at)
        VALUES (?, ?, ?, ?, ?)`,
@@ -151,6 +148,51 @@ export class SqlIndexMetaStore implements IndexMetaStore {
       [tableId, versionId, position]
     );
     return row ? toEntryRecord(row) : null;
+  }
+
+  async migrateEntries(
+    tableId: string,
+    fromVersion: string,
+    toVersion: string,
+    positionMap?: Record<number, number>
+  ): Promise<{ migrated: number; skipped: number }> {
+    const sv = await this.getSchemaVersion(tableId, toVersion);
+    if (!sv) {
+      throw new ValidationError(
+        `SchemaVersion not found: "${tableId}/${toVersion}". Insert schema version first.`
+      );
+    }
+
+    const [sourceEntries, existingEntries] = await Promise.all([
+      this.getEntries(tableId, fromVersion),
+      this.getEntries(tableId, toVersion),
+    ]);
+    const existingPositions = new Set(existingEntries.map((e) => e.position));
+
+    const now = new Date().toISOString();
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const entry of sourceEntries) {
+      const newPosition = positionMap?.[entry.position] ?? entry.position;
+      if (existingPositions.has(newPosition)) {
+        skipped++;
+        continue;
+      }
+      if (newPosition < 1 || newPosition > sv.capacity) {
+        throw new ValidationError(
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${tableId}/${toVersion}"`
+        );
+      }
+      await this.driver.execute(
+        `INSERT INTO entry (table_id, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`,
+        [tableId, toVersion, newPosition, String(entry.value), now]
+      );
+      existingPositions.add(newPosition);
+      migrated++;
+    }
+
+    return { migrated, skipped };
   }
 }
 

@@ -28,6 +28,17 @@ CREATE TABLE IF NOT EXISTS entry (
 
 CREATE INDEX IF NOT EXISTS idx_entry_range
   ON entry (table_id, version_id, position);
+
+CREATE TABLE IF NOT EXISTS address_state_cache (
+  prefix         TEXT NOT NULL,
+  version_id     TEXT NOT NULL,
+  specs_json     TEXT NOT NULL,
+  reserved_json  TEXT NOT NULL,
+  inactive_json  TEXT NOT NULL,
+  open_json      TEXT NOT NULL,
+  computed_at    TEXT NOT NULL,
+  PRIMARY KEY (prefix, version_id)
+);
 `;
 
 export class BetterSqliteDriver implements SqlDriver {

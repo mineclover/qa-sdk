@@ -6,8 +6,9 @@
  */
 
 import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
-import { ValidationError } from "../errors.js";
+import { IndexMetaError, ValidationError } from "../errors.js";
 import type { EntityId } from "../types.js";
+import { validateEntryForInsert } from "./validate-entry.js";
 
 // ── Cloudflare D1 최소 타입 정의 ─────────────────────────
 // @cloudflare/workers-types 없이도 동작하도록 로컬 정의
@@ -37,13 +38,19 @@ export class D1IndexMetaStore implements IndexMetaStore {
   // ── schema_version ──────────────────────────────────────
 
   async insertSchemaVersion(record: SchemaVersionRecord): Promise<void> {
-    await this.db
-      .prepare(
-        `INSERT INTO schema_version (table_id, version_id, capacity, created_at)
-         VALUES (?, ?, ?, ?)`
-      )
-      .bind(record.tableId, record.versionId, record.capacity, record.createdAt)
-      .run();
+    try {
+      await this.db
+        .prepare(
+          `INSERT INTO schema_version (table_id, version_id, capacity, created_at)
+           VALUES (?, ?, ?, ?)`
+        )
+        .bind(record.tableId, record.versionId, record.capacity, record.createdAt)
+        .run();
+    } catch (err) {
+      throw new IndexMetaError(
+        `D1 insertSchemaVersion failed for "${record.tableId}/${record.versionId}": ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 
   async getSchemaVersions(tableId: string): Promise<SchemaVersionRecord[]> {
@@ -83,25 +90,26 @@ export class D1IndexMetaStore implements IndexMetaStore {
   // ── entry ───────────────────────────────────────────────
 
   async insertEntry(record: EntryRecord): Promise<void> {
-    const sv = await this.getSchemaVersion(record.tableId, record.versionId);
-    if (!sv) {
-      throw new ValidationError(
-        `SchemaVersion not found: "${record.tableId}/${record.versionId}"`
-      );
-    }
-    if (record.position < 1 || record.position > sv.capacity) {
-      throw new ValidationError(
-        `Position ${record.position} out of range [1, ${sv.capacity}]`
-      );
-    }
+    const [sv, existing] = await Promise.all([
+      this.getSchemaVersion(record.tableId, record.versionId),
+      this.getEntry(record.tableId, record.versionId, record.position),
+    ]);
 
-    await this.db
-      .prepare(
-        `INSERT INTO entry (table_id, version_id, position, value, created_at)
-         VALUES (?, ?, ?, ?, ?)`
-      )
-      .bind(record.tableId, record.versionId, record.position, String(record.value), record.createdAt)
-      .run();
+    validateEntryForInsert(record, sv, existing);
+
+    try {
+      await this.db
+        .prepare(
+          `INSERT INTO entry (table_id, version_id, position, value, created_at)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .bind(record.tableId, record.versionId, record.position, String(record.value), record.createdAt)
+        .run();
+    } catch (err) {
+      throw new IndexMetaError(
+        `D1 insertEntry failed for "${record.tableId}/${record.versionId}" position ${record.position}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
   }
 
   async getEntries(tableId: string, versionId: string): Promise<EntryRecord[]> {
@@ -146,6 +154,73 @@ export class D1IndexMetaStore implements IndexMetaStore {
       .first<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>();
 
     return row ? toEntryRecord(row) : null;
+  }
+
+  async migrateEntries(
+    tableId: string,
+    fromVersion: string,
+    toVersion: string,
+    positionMap?: Record<number, number>
+  ): Promise<{ migrated: number; skipped: number }> {
+    const sv = await this.getSchemaVersion(tableId, toVersion);
+    if (!sv) {
+      throw new ValidationError(
+        `SchemaVersion not found: "${tableId}/${toVersion}". Insert schema version first.`
+      );
+    }
+
+    let sourceResult: D1Result<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>;
+    let existingResult: D1Result<{ position: number }>;
+    try {
+      [sourceResult, existingResult] = await Promise.all([
+        this.db
+          .prepare(`SELECT table_id, version_id, position, value, created_at FROM entry WHERE table_id = ? AND version_id = ? ORDER BY position ASC`)
+          .bind(tableId, fromVersion)
+          .all<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>(),
+        this.db
+          .prepare(`SELECT position FROM entry WHERE table_id = ? AND version_id = ?`)
+          .bind(tableId, toVersion)
+          .all<{ position: number }>(),
+      ]);
+    } catch (err) {
+      throw new IndexMetaError(
+        `D1 migrateEntries failed to read entries for "${tableId}" (${fromVersion} -> ${toVersion}): ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
+    const sourceEntries = sourceResult.results.map(toEntryRecord);
+    const existingPositions = new Set(existingResult.results.map((r) => r.position));
+
+    const now = new Date().toISOString();
+    let migrated = 0;
+    let skipped = 0;
+
+    for (const entry of sourceEntries) {
+      const newPosition = positionMap?.[entry.position] ?? entry.position;
+      if (existingPositions.has(newPosition)) {
+        skipped++;
+        continue;
+      }
+      if (newPosition < 1 || newPosition > sv.capacity) {
+        throw new ValidationError(
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${tableId}/${toVersion}"`
+        );
+      }
+      try {
+        await this.db
+          .prepare(`INSERT INTO entry (table_id, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`)
+          .bind(tableId, toVersion, newPosition, String(entry.value), now)
+          .run();
+      } catch (err) {
+        throw new IndexMetaError(
+          `D1 migrateEntries failed to insert position ${newPosition} for "${tableId}/${toVersion}": ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+      existingPositions.add(newPosition);
+      migrated++;
+    }
+
+    return { migrated, skipped };
   }
 }
 
