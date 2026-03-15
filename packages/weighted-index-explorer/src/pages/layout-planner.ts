@@ -7,7 +7,9 @@ import {
   PACK_FORMAT_LIST, fitLayout,
   PACK_FORMATS,
   createAddressConverter, createLayoutProtocol,
+  planCapacity,
   type SemanticAddress,
+  type CapacityPlanDim,
 } from "weighted-index";
 import { renderHexBar } from "../utils/hex-bar.js";
 
@@ -24,9 +26,11 @@ export function renderLayoutPlanner(container: HTMLElement): void {
   container.innerHTML = `<div class="concept-wrap">
     ${renderIntro()}
     ${renderPlanner()}
+    ${renderCapacityPlanSection()}
     ${renderShardingSection()}
   </div>`;
   setupPlannerInteractivity(container);
+  setupCapacityPlanInteractivity(container);
   setupShardingInteractivity(container);
 }
 
@@ -469,6 +473,246 @@ function setupPlannerInteractivity(container: HTMLElement): void {
 
   renderShapeDims();
   update();
+}
+
+// ── Capacity Plan section ─────────────────────────────────────────────
+
+function renderCapacityPlanSection(): string {
+  return `
+    <div class="concept-block" style="margin-top:18px">
+      <div class="cb-header">성장 기반 용량 계획 — planCapacity</div>
+      <div class="cb-body">
+
+        <p class="concept-desc" style="margin-top:0">
+          차원별 현재 entry 수와 예상 성장량을 입력하면, <code>planCapacity</code>가
+          <strong>2의 거듭제곱 정렬</strong>로 최적 capacity를 추천합니다.
+          포맷 예산 초과 시 <code>fitShape</code>로 자동 축소하며,
+          성장/현재 비율이 높은 dim이 있으면 샤딩을 권장합니다.
+        </p>
+
+        <div class="xl-formula-block" style="gap:20px;flex-wrap:wrap;margin-bottom:16px">
+          <div>
+            <span class="xlf-label">추천 공식</span>
+            <span class="xlf-expr">nextPow2(current + growth)</span>
+          </div>
+          <div style="width:1px;background:var(--border-cell);align-self:stretch"></div>
+          <div>
+            <span class="xlf-label">샤딩 기준</span>
+            <span class="xlf-expr">growth / current &gt; 1.0</span>
+          </div>
+        </div>
+
+        <!-- 차원 입력 -->
+        <div class="plan-section">
+          <div class="plan-section-header">
+            <span class="obf-label" style="margin:0">차원 정의</span>
+          </div>
+          <div id="cap-dim-list"></div>
+          <button id="cap-dim-add" class="plan-add-btn" type="button">+ 차원 추가</button>
+        </div>
+
+        <!-- left fields -->
+        <div class="obf-input-row">
+          <span class="obf-label">prefix 자릿수</span>
+          <input type="number" id="cap-prefix" class="addr-dec-input" min="0" max="16" value="4" style="width:55px" />
+        </div>
+        <div class="obf-input-row">
+          <span class="obf-label">version 자릿수</span>
+          <input type="number" id="cap-version" class="addr-dec-input" min="1" max="16" value="2" style="width:55px" />
+        </div>
+
+        <!-- format -->
+        <div class="obf-input-row">
+          <span class="obf-label">대상 포맷</span>
+          <select class="recalc-sel" id="cap-format">
+            <option value="uuid" selected>UUID (128bit)</option>
+            <option value="int96">int96 (96bit)</option>
+            <option value="int64">int64 (64bit)</option>
+          </select>
+        </div>
+
+        <!-- growth factor -->
+        <div class="obf-input-row">
+          <span class="obf-label">기본 성장 배수</span>
+          <input type="number" id="cap-growth-factor" class="addr-dec-input" min="0" max="10" step="0.5" value="1.0" style="width:60px" />
+          <span class="obf-param-hint" id="cap-growth-hint">growth = current x 배수 (미입력 dim에 적용)</span>
+        </div>
+
+        <!-- 결과 -->
+        <div id="cap-result" style="margin-top:14px"></div>
+      </div>
+    </div>
+  `;
+}
+
+interface CapDim {
+  name: string;
+  current: number;
+  growth: number | null; // null = use growth factor
+}
+
+function setupCapacityPlanInteractivity(container: HTMLElement): void {
+  const dimList      = container.querySelector<HTMLElement>("#cap-dim-list")!;
+  const dimAddBtn    = container.querySelector<HTMLButtonElement>("#cap-dim-add")!;
+  const prefixIn     = container.querySelector<HTMLInputElement>("#cap-prefix")!;
+  const versionIn    = container.querySelector<HTMLInputElement>("#cap-version")!;
+  const formatSel    = container.querySelector<HTMLSelectElement>("#cap-format")!;
+  const growthFactIn = container.querySelector<HTMLInputElement>("#cap-growth-factor")!;
+  const resultEl     = container.querySelector<HTMLElement>("#cap-result")!;
+
+  if (!dimList || !dimAddBtn || !resultEl) return;
+
+  const capDims: CapDim[] = [
+    { name: "resource", current: 8, growth: null },
+    { name: "action",   current: 4, growth: null },
+    { name: "role",     current: 5, growth: 3 },
+    { name: "env",      current: 4, growth: null },
+  ];
+
+  function renderCapDims(): void {
+    dimList.innerHTML = "";
+    capDims.forEach((dim, i) => {
+      const row = document.createElement("div");
+      row.className = "plan-dim-row";
+      row.style.gap = "6px";
+
+      const growthVal = dim.growth !== null ? String(dim.growth) : "";
+      row.innerHTML = `
+        <span class="plan-dim-idx">dim${i + 1}</span>
+        <input type="text" class="plan-dim-name addr-dec-input" value="${dim.name}" placeholder="이름" style="width:80px" />
+        <span class="obf-param-hint" style="font-size:0.65rem;min-width:40px">현재:</span>
+        <input type="number" class="cap-dim-current addr-dec-input" min="1" max="99999" value="${dim.current}" style="width:55px" />
+        <span class="obf-param-hint" style="font-size:0.65rem;min-width:40px">성장:</span>
+        <input type="number" class="cap-dim-growth addr-dec-input" min="0" max="99999" value="${growthVal}" placeholder="auto" style="width:55px" />
+        <button class="plan-dim-remove" type="button" title="제거" style="margin-left:4px">x</button>
+      `;
+
+      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name")!;
+      const curInput  = row.querySelector<HTMLInputElement>(".cap-dim-current")!;
+      const groInput  = row.querySelector<HTMLInputElement>(".cap-dim-growth")!;
+      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove")!;
+
+      nameInput.addEventListener("input", () => { capDims[i].name = nameInput.value; });
+      curInput.addEventListener("input", () => {
+        capDims[i].current = Math.max(1, parseInt(curInput.value, 10) || 1);
+        updateCapacity();
+      });
+      groInput.addEventListener("input", () => {
+        const v = groInput.value.trim();
+        capDims[i].growth = v === "" ? null : Math.max(0, parseInt(v, 10) || 0);
+        updateCapacity();
+      });
+      removeBtn.addEventListener("click", () => {
+        if (capDims.length <= 1) return;
+        capDims.splice(i, 1);
+        renderCapDims();
+        updateCapacity();
+      });
+
+      dimList.appendChild(row);
+    });
+  }
+
+  dimAddBtn.addEventListener("click", () => {
+    capDims.push({ name: `dim${capDims.length + 1}`, current: 2, growth: null });
+    renderCapDims();
+    updateCapacity();
+  });
+
+  function updateCapacity(): void {
+    const prefixChars = Math.max(0, Math.min(16, Number(prefixIn.value) || 0));
+    const versionChars = Math.max(1, Math.min(16, Number(versionIn.value) || 1));
+    const formatName = formatSel.value;
+    const growthFactor = Math.max(0, Number(growthFactIn.value) || 1.0);
+
+    const dims: CapacityPlanDim[] = capDims.map((d) => ({
+      name: d.name,
+      current: d.current,
+      growth: d.growth !== null ? d.growth : Math.round(d.current * growthFactor),
+    }));
+
+    const result = planCapacity({
+      dims,
+      left: [
+        { name: "prefix",  chars: prefixChars },
+        { name: "version", chars: versionChars },
+      ],
+      capacity: formatName,
+    });
+
+    const dimRows = result.dims.map((d, i) => {
+      const inputDim = dims[i];
+      const headroomPct = (d.headroom * 100).toFixed(0);
+      const growthRatio = d.current > 0 ? (d.growth / d.current).toFixed(1) : "—";
+      const highGrowth = d.current > 0 && d.growth / d.current > 1.0;
+      return `
+        <tr>
+          <td><strong>${d.name}</strong></td>
+          <td class="td-num">${d.current}</td>
+          <td class="td-num">${d.growth}</td>
+          <td class="td-num" style="${highGrowth ? "color:#c05000;font-weight:600" : ""}">${growthRatio}x</td>
+          <td class="td-num" style="font-weight:700">${d.recommended}</td>
+          <td class="td-num">${d.hexChars}</td>
+          <td class="td-num">${headroomPct}%</td>
+        </tr>
+      `;
+    }).join("");
+
+    const utilizationPct = (result.utilization * 100).toFixed(1);
+    const fitsColor = result.fits ? "var(--xl-green)" : "var(--status-fail, #dc2626)";
+    const fitsIcon  = result.fits ? "✓" : "✗";
+    const shardAdvice = result.shardingAdvised
+      ? '<span style="color:#c05000;font-weight:600">권장 (고성장 dim 감지)</span>'
+      : '<span style="color:var(--text-muted)">불필요</span>';
+
+    resultEl.innerHTML = `
+      <div class="plan-ver-range-title" style="margin-bottom:8px">차원별 분석</div>
+      <table class="nd-table" style="margin-bottom:12px">
+        <thead>
+          <tr>
+            <th>차원</th>
+            <th>현재</th>
+            <th>예상 성장</th>
+            <th>성장/현재</th>
+            <th>권장 capacity</th>
+            <th>hex 자릿수</th>
+            <th>여유율</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${dimRows}
+          <tr style="font-weight:700;border-top:2px solid var(--border-header)">
+            <td>shape</td>
+            <td colspan="3"><code>[${dims.map(d => d.current).join(", ")}]</code></td>
+            <td colspan="3"><code>[${result.shape.join(", ")}]</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="plan-ver-range-title" style="margin-bottom:8px">요약</div>
+      <table class="nd-table" style="margin-bottom:12px">
+        <thead>
+          <tr><th>항목</th><th>값</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>권장 shape</td><td><code>[${result.shape.join(", ")}]</code></td></tr>
+          <tr><td>product (슬롯 수)</td><td>${result.product.toLocaleString()}</td></tr>
+          <tr><td>index 예산 (hex chars)</td><td>${result.indexBudget}</td></tr>
+          <tr><td>활용률</td><td>${utilizationPct}%</td></tr>
+          <tr><td>포맷 적합</td><td style="color:${fitsColor};font-weight:600">${fitsIcon} ${result.format.name} (${result.format.chars} chars)</td></tr>
+          <tr><td>샤딩 권장</td><td>${shardAdvice}</td></tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  prefixIn.addEventListener("input", updateCapacity);
+  versionIn.addEventListener("input", updateCapacity);
+  formatSel.addEventListener("change", updateCapacity);
+  growthFactIn.addEventListener("input", updateCapacity);
+
+  renderCapDims();
+  updateCapacity();
 }
 
 // ── Sharding section ────────────────────────────────────────────────────
