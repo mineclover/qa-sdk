@@ -20,7 +20,9 @@ implemented
 | [codec.spec.md](codec.spec.md) | MetaCodec — DecodeMap 기반 독립 encode/decode |
 | [address.spec.md](address.spec.md) | Address 프로토콜 바인딩 — AddressConfig, PK 직렬화, 검증 |
 | [resolver.spec.md](resolver.spec.md) | MetaResolver — DecodeMap, DimRange, IndexRange, MetaDataset |
-| [scenarios.spec.md](scenarios.spec.md) | 유저 시나리오 테스트 커버리지 — E2E 워크플로우 검증 항목 |
+| [scenarios.spec.md](scenarios.spec.md) | 유저 시나리오 — core 파이프라인 검증 (§1–16) |
+| [scenarios-address.spec.md](scenarios-address.spec.md) | 유저 시나리오 — 외부 시스템 통합 (§17–19, AddressProtocolManager) |
+| [adr-address-separation.md](adr-address-separation.md) | ADR: AddressProtocolManager 분리 |
 
 ## 횡단 문서
 
@@ -59,6 +61,7 @@ src/
   types.ts               # MetaRegistry용 공개 타입
   errors.ts              # 에러 클래스 계층
   meta-registry.ts       # MetaRegistry — 주소 게이트웨이
+  address-protocol-manager.ts  # AddressProtocolManager — 독립 주소 직렬화
   meta-codec.ts          # MetaCodec — 독립 encode/decode (LabelRegistry + PrefixCodec 위임)
   meta-resolver.ts       # MetaResolver — 외부 소비용 데이터 번들 생성
   index.ts               # 공개 API 재수출
