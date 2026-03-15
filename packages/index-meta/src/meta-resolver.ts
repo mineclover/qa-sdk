@@ -104,11 +104,14 @@ export class MetaResolver {
         const flag: EntryFlag | undefined = sn.entryFlags[i];
         if (!flag || flag.status === "active") activeIndices.push(i);
       }
+      const capacity = sn.capacity ?? sn.entries.length;
       return {
         snapshotId,
         entries: [...sn.entries] as EntityId[],
         activeIndices,
         total: sn.entries.length,
+        capacity,
+        headroom: capacity - sn.entries.length,
       };
     });
 
@@ -146,12 +149,15 @@ export class MetaResolver {
           const flag: EntryFlag | undefined = sn.entryFlags[i];
           if (!flag || flag.status === "active") activeIndices.push(i);
         }
+        const capacity = sn.capacity ?? sn.entries.length;
         return {
           dimId,
           snapshotId,
           kind: dimDef.kind,
           entries: [...sn.entries] as EntityId[],
           activeIndices,
+          capacity,
+          headroom: capacity - sn.entries.length,
         };
       });
 

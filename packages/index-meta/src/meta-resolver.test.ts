@@ -202,6 +202,28 @@ describe("getDimRange", () => {
     const resolver = new MetaResolver(reg);
     expect(() => resolver.getDimRange("unknown")).toThrow(DimNotFoundError);
   });
+
+  it("getDimRange에 capacity/headroom이 포함된다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v1 = { entries: ["admin", "editor", "viewer"], capacity: 8 };
+    const reg = new MetaRegistry(input);
+    const resolver = new MetaResolver(reg);
+    const range = resolver.getDimRange("role");
+
+    const v1 = range.snapshots.find((s) => s.snapshotId === "v1")!;
+    expect(v1.capacity).toBe(8);
+    expect(v1.headroom).toBe(5); // 8 - 3
+  });
+
+  it("capacity 미설정 시 capacity = total, headroom = 0", () => {
+    const reg = new MetaRegistry(baseInput());
+    const resolver = new MetaResolver(reg);
+    const range = resolver.getDimRange("action");
+
+    const v1 = range.snapshots.find((s) => s.snapshotId === "v1")!;
+    expect(v1.capacity).toBe(v1.total);
+    expect(v1.headroom).toBe(0);
+  });
 });
 
 // ── IndexRange ──────────────────────────────────────────────────────────────────
@@ -259,6 +281,30 @@ describe("getIndexRange", () => {
     expect(iv2.dims[0].snapshotId).toBe("v2"); // role → v2
     expect(iv1.dims[1].snapshotId).toBe("v1"); // action → 동일
     expect(iv2.dims[1].snapshotId).toBe("v1");
+  });
+
+  it("getIndexRange dims에 capacity/headroom이 포함된다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v1 = { entries: ["admin", "editor", "viewer"], capacity: 8 };
+    const reg = new MetaRegistry(input);
+    const resolver = new MetaResolver(reg);
+    const range = resolver.getIndexRange("perm");
+
+    const iv1 = range.versions.find((v) => v.versionId === "iv1")!;
+    const roleDim = iv1.dims.find((d) => d.dimId === "role")!;
+    expect(roleDim.capacity).toBe(8);
+    expect(roleDim.headroom).toBe(5); // 8 - 3
+  });
+
+  it("capacity 미설정 시 dims의 capacity = entries.length, headroom = 0", () => {
+    const reg = new MetaRegistry(baseInput());
+    const resolver = new MetaResolver(reg);
+    const range = resolver.getIndexRange("perm");
+
+    const iv1 = range.versions.find((v) => v.versionId === "iv1")!;
+    const actionDim = iv1.dims.find((d) => d.dimId === "action")!;
+    expect(actionDim.capacity).toBe(actionDim.entries.length);
+    expect(actionDim.headroom).toBe(0);
   });
 });
 
