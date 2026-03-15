@@ -663,4 +663,159 @@ app.post("/api/grants/reset", async (c) => {
   return c.json({ ok: true });
 });
 
+// ── Log routes ────────────────────────────────────────────────────────────
+
+interface LogRow {
+  id: number;
+  ts: string;
+  level: string;
+  svc_addr: number;
+  perm_addr: number | null;
+  evt_addr: number | null;
+  action: string;
+  message: string;
+  latency_ms: number;
+  user_id: string;
+}
+
+function logRowToJson(row: LogRow) {
+  return {
+    id: row.id,
+    ts: row.ts,
+    level: row.level,
+    svcAddr: row.svc_addr,
+    permAddr: row.perm_addr,
+    evtAddr: row.evt_addr,
+    action: row.action,
+    message: row.message,
+    latencyMs: row.latency_ms,
+    userId: row.user_id,
+  };
+}
+
+const VALID_LEVELS = new Set(["DEBUG", "INFO", "WARN", "ERROR"]);
+
+app.get("/api/logs", async (c) => {
+  try {
+    const db = c.env.DB;
+
+    const levelParam = c.req.query("level");
+    const svcMin = c.req.query("svc_addr_min");
+    const svcMax = c.req.query("svc_addr_max");
+    const limitRaw = c.req.query("limit");
+    const offsetRaw = c.req.query("offset");
+
+    const limit = Math.min(Math.max(parseInt(limitRaw ?? "100", 10) || 100, 1), 500);
+    const offset = Math.max(parseInt(offsetRaw ?? "0", 10) || 0, 0);
+
+    const conditions: string[] = [];
+    const binds: (string | number)[] = [];
+
+    if (levelParam) {
+      const levels = levelParam.split(",").filter((l) => VALID_LEVELS.has(l));
+      if (levels.length > 0) {
+        conditions.push(`level IN (${levels.map(() => "?").join(",")})`);
+        binds.push(...levels);
+      }
+    }
+    if (svcMin !== undefined) {
+      const v = parseInt(svcMin, 10);
+      if (!isNaN(v)) { conditions.push("svc_addr >= ?"); binds.push(v); }
+    }
+    if (svcMax !== undefined) {
+      const v = parseInt(svcMax, 10);
+      if (!isNaN(v)) { conditions.push("svc_addr <= ?"); binds.push(v); }
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countResult = await db.prepare(`SELECT COUNT(*) as cnt FROM logs ${where}`)
+      .bind(...binds).first<{ cnt: number }>();
+    const total = countResult?.cnt ?? 0;
+
+    const rows = await db.prepare(
+      `SELECT * FROM logs ${where} ORDER BY ts DESC LIMIT ? OFFSET ?`
+    ).bind(...binds, limit, offset).all<LogRow>();
+
+    return c.json({
+      results: rows.results.map(logRowToJson),
+      total,
+      limit,
+      offset,
+    });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+  }
+});
+
+app.post("/api/logs", async (c) => {
+  try {
+    const db = c.env.DB;
+    const body = await c.req.json<{
+      ts?: string; level: string; svcAddr: number;
+      permAddr?: number | null; evtAddr?: number | null;
+      action: string; message: string; latencyMs?: number; userId: string;
+    }>();
+
+    if (!VALID_LEVELS.has(body.level)) return c.json({ error: "Invalid level" }, 400);
+    if (typeof body.svcAddr !== "number") return c.json({ error: "svcAddr required" }, 400);
+    if (!body.action || !body.message) return c.json({ error: "action and message required" }, 400);
+    if (!body.userId) return c.json({ error: "userId required" }, 400);
+
+    const ts = body.ts ?? new Date().toISOString();
+    const latencyMs = body.latencyMs ?? 0;
+
+    const result = await db.prepare(
+      `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      ts, body.level, body.svcAddr,
+      body.permAddr ?? null, body.evtAddr ?? null,
+      body.action, body.message, latencyMs, body.userId,
+    ).run();
+
+    const id = result.meta?.last_row_id;
+    return c.json({ ok: true, id });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+  }
+});
+
+app.post("/api/logs/seed", async (c) => {
+  try {
+    const db = c.env.DB;
+    const ver = parseVer(c.req.query("ver"));
+    const clear = c.req.query("clear") === "true";
+
+    const roleStr = ver === "v1" ? 5 : 6;
+    const evtStr  = ver === "v1" ? 14 : 18;
+    const baseTs  = Date.now() - 30_000;
+
+    const samples: Omit<LogRow, "id">[] = [
+      { ts: new Date(baseTs).toISOString(),          level: "INFO",  svc_addr: 40, perm_addr: (1-1)*roleStr+(2-1), evt_addr: null,                                action: "page.view",         message: "메인 페이지 조회",                           latency_ms: 42,    user_id: "u-1001"    },
+      { ts: new Date(baseTs+1200).toISOString(),     level: "INFO",  svc_addr: 46, perm_addr: (4-1)*roleStr+(1-1), evt_addr: (4-1)*evtStr+(3-1)*2+(1-1),           action: "payment.initiate",  message: "결제 요청 시작 — KRW 45,000",                 latency_ms: 187,   user_id: "u-1001"    },
+      { ts: new Date(baseTs+2800).toISOString(),     level: "DEBUG", svc_addr: 44, perm_addr: null,                evt_addr: null,                                action: "token.validate",    message: "JWT 토큰 검증 완료",                          latency_ms: 3,     user_id: "u-1001"    },
+      { ts: new Date(baseTs+4500).toISOString(),     level: "WARN",  svc_addr: 48, perm_addr: null,                evt_addr: (5-1)*evtStr+(1-1)*2+(1-1),           action: "rate.limit",        message: "Rate limit 임계값 80% 도달 — IP 203.0.113.42", latency_ms: 1,     user_id: "system"    },
+      { ts: new Date(baseTs+5100).toISOString(),     level: "ERROR", svc_addr: 46, perm_addr: (4-1)*roleStr+(2-1), evt_addr: (4-1)*evtStr+(4-1)*2+(1-1),           action: "payment.refund.fail", message: "환불 처리 실패 — PG 응답 타임아웃 (30s)",     latency_ms: 30012, user_id: "u-2045"    },
+      { ts: new Date(baseTs+7200).toISOString(),     level: "INFO",  svc_addr: 53, perm_addr: (2-1)*roleStr+(3-1), evt_addr: null,                                action: "catalog.sync",      message: "상품 카탈로그 동기화 완료 — 2,340건",          latency_ms: 892,   user_id: "u-batch"   },
+      { ts: new Date(baseTs+9800).toISOString(),     level: "INFO",  svc_addr: 20, perm_addr: (1-1)*roleStr+(2-1), evt_addr: (1-1)*evtStr+(2-1)*2+(2-1),           action: "deploy.canary",     message: "카나리 배포 진행 중 — v2.4.1-rc3",             latency_ms: 0,     user_id: "u-3001"   },
+      { ts: new Date(baseTs+11500).toISOString(),    level: "WARN",  svc_addr: 45, perm_addr: (3-1)*roleStr+(1-1), evt_addr: null,                                action: "auth.brute",        message: "로그인 실패 연속 5회 — 계정 잠금 경고",        latency_ms: 8,     user_id: "u-unknown" },
+    ];
+
+    if (clear) await db.prepare("DELETE FROM logs").run();
+
+    const stmts = samples.map((s) =>
+      db.prepare(
+        `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(s.ts, s.level, s.svc_addr, s.perm_addr, s.evt_addr, s.action, s.message, s.latency_ms, s.user_id)
+    );
+    await db.batch(stmts);
+
+    return c.json({ ok: true, inserted: samples.length });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+  }
+});
+
 export default app;
