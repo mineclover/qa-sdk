@@ -54,6 +54,11 @@ export {
 export type {
   DeepDecodeResult,
 } from "./cross-index-query.js";
+export {
+  queryAcrossVersions,
+  entityVersionSpan,
+  translateConstraint,
+} from "./version-query.js";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 
