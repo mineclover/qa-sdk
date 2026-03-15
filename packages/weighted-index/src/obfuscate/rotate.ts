@@ -13,10 +13,16 @@
  *   amount > bitWidth is reduced via modulo.
  *
  * ⚠️  Not cryptographically secure. Obfuscation only.
+ *     DO NOT use for access control, authorization tokens, or session IDs.
+ *     The rotation amount has at most (bitWidth - 1) possible values,
+ *     making brute-force trivial. For security, prefer AES or Web Crypto API.
  */
 
 /**
  * Cyclic left rotation within `bitWidth` bits. Use as the encode direction.
+ *
+ * **Security notice**: This is a visual identifier transform only. The rotation
+ * amount can be brute-forced in at most (bitWidth - 1) attempts.
  *
  * @param amount  Rotation distance. Reduced mod bitWidth; 0 is identity.
  *
@@ -32,6 +38,8 @@ export function rotateLeft(id: number, bitWidth: number, amount: number): number
 
 /**
  * Cyclic right rotation within `bitWidth` bits. Use as the decode direction.
+ *
+ * **Security notice**: This is a visual identifier transform only.
  *
  * @param amount  Rotation distance. Must match the amount used in rotateLeft.
  *

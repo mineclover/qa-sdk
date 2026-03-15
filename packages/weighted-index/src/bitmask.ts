@@ -16,7 +16,7 @@ export function createMask(size: number): Uint8Array {
 }
 
 function _checkBitBounds(mask: Uint8Array, id: number): void {
-  if (id < 0 || id >= mask.length * 8) {
+  if (!Number.isInteger(id) || id < 0 || id >= mask.length * 8) {
     throw new RangeError(
       `Bit id ${id} is out of range [0, ${mask.length * 8})`
     );
@@ -113,6 +113,9 @@ export function popcount(mask: Uint8Array): number {
 
 /** Intersection: bits set in BOTH a and b (user has all required permissions). */
 export function maskAnd(a: Uint8Array, b: Uint8Array): Uint8Array {
+  if (a.length !== b.length) {
+    throw new RangeError(`Mask length mismatch: ${a.length} vs ${b.length}`);
+  }
   const out = new Uint8Array(a.length);
   for (let i = 0; i < a.length; i++) out[i] = a[i] & b[i];
   return out;
@@ -120,6 +123,9 @@ export function maskAnd(a: Uint8Array, b: Uint8Array): Uint8Array {
 
 /** Union: bits set in EITHER a or b. */
 export function maskOr(a: Uint8Array, b: Uint8Array): Uint8Array {
+  if (a.length !== b.length) {
+    throw new RangeError(`Mask length mismatch: ${a.length} vs ${b.length}`);
+  }
   const out = new Uint8Array(a.length);
   for (let i = 0; i < a.length; i++) out[i] = a[i] | b[i];
   return out;
@@ -127,6 +133,9 @@ export function maskOr(a: Uint8Array, b: Uint8Array): Uint8Array {
 
 /** Return true if (a AND b) is non-zero — i.e. a and b share at least one bit. */
 export function masksOverlap(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) {
+    throw new RangeError(`Mask length mismatch: ${a.length} vs ${b.length}`);
+  }
   for (let i = 0; i < a.length; i++) {
     if (a[i] & b[i]) return true;
   }

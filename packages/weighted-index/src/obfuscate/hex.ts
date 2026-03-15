@@ -41,5 +41,10 @@ export function fromHex(hex: string, bitWidth: number): number {
       `hex length must be ${expected} for bitWidth=${bitWidth}, got ${hex.length}`
     );
   }
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new RangeError(
+      `Invalid hex string: "${hex}" (must contain only hex characters)`
+    );
+  }
   return parseInt(hex, 16);
 }

@@ -130,16 +130,31 @@ export class WeightedIndex {
 
   // ── Hot-path API (경계 검사 생략) ────────────────────────────────────────
   //
-  // ⚠️ 계약 위반 시 잘못된 값을 반환하며 오류가 없다.
-  //    범위를 보장할 수 없는 경로에서는 안전한 encode / decode 를 사용할 것.
+  // ⚠️ 계약 위반 시 잘못된 값을 조용히 반환하며 오류가 발생하지 않는다.
+  //    범위를 보장할 수 없는 경로에서는 반드시 안전한 encode / decode 를 사용할 것.
   //    내부적으로 검증된 좌표만 다루는 hot-path (예: MetaRegistry 내부)에서만 사용.
+  //
+  // ⚠️ 외부 입력(URL 파라미터, 사용자 입력, API 요청 등)에 절대 사용 금지.
+  //    검증되지 않은 좌표가 전달되면 잘못된 주소가 생성되어 권한 검사, 비트마스크
+  //    연산 등 후속 로직에서 예측 불가한 보안 취약점을 유발할 수 있다.
 
-  /** 정변환 (검사 없음). coords[i] ∈ [1, shape[i]] 를 호출자가 보장해야 한다. */
+  /**
+   * 정변환 (검사 없음). coords[i] ∈ [1, shape[i]] 를 호출자가 보장해야 한다.
+   *
+   * **주의**: 외부 입력에 직접 사용하지 마세요. 검증되지 않은 좌표는 잘못된
+   * 인덱스를 생성하며, NaN이 후속 bitmask 검사로 전파될 수 있습니다.
+   * 외부 경계에서는 항상 `encode()`를 사용하세요.
+   */
   encodeUnsafe(coords: number[]): number {
     return this._encodeCore(coords);
   }
 
-  /** 역변환 (검사 없음). index ∈ [0, size-1] 를 호출자가 보장해야 한다. */
+  /**
+   * 역변환 (검사 없음). index ∈ [0, size-1] 를 호출자가 보장해야 한다.
+   *
+   * **주의**: 외부 입력에 직접 사용하지 마세요. 범위를 벗어난 인덱스는
+   * 잘못된 좌표를 반환합니다. 외부 경계에서는 항상 `decode()`를 사용하세요.
+   */
   decodeUnsafe(index: number): number[] {
     const out = new Array<number>(this.shape.length);
     this._decodeCore(index, out);
@@ -160,7 +175,7 @@ export class WeightedIndex {
     this._decodeCore(index, out);
   }
 
-  /** 역변환 결과를 미리 할당된 배열 `out` 에 기록 (검사 없음). */
+  /** 역변환 결과를 미리 할당된 배열 `out` 에 기록 (검사 없음). 외부 입력 금지. */
   decodeToUnsafe(index: number, out: number[]): void {
     this._decodeCore(index, out);
   }

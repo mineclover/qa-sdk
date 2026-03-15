@@ -28,6 +28,7 @@
           <button class="rtab" data-sheet="event" role="tab" aria-selected="false" aria-controls="sheet-event">이벤트</button>
           <button class="rtab" data-sheet="scenario" role="tab" aria-selected="false" aria-controls="sheet-scenario">시나리오</button>
           <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">부여관리</button>
+          <button class="rtab" data-sheet="range" role="tab" aria-selected="false" aria-controls="sheet-range">범위탐색</button>
           <button class="rtab" data-sheet="version" role="tab" aria-selected="false" aria-controls="sheet-version">버전</button>
         </div>
       </div>
@@ -129,6 +130,13 @@
           </div>
         </div>
 
+        <!-- Range explorer sheet -->
+        <div class="sheet hidden" id="sheet-range" role="tabpanel" aria-label="범위탐색">
+          <div class="sheet-body range-body">
+            <div id="range-container"></div>
+          </div>
+        </div>
+
         <!-- Version comparison sheet -->
         <div class="sheet hidden" id="sheet-version" role="tabpanel" aria-label="버전">
           <div class="sheet-body version-body">
@@ -147,6 +155,7 @@
           <div class="stab" data-sheet="event" role="tab" aria-selected="false"><span class="stab-icon">◈</span> 이벤트</div>
           <div class="stab" data-sheet="scenario" role="tab" aria-selected="false"><span class="stab-icon">▶</span> 시나리오</div>
           <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 부여관리</div>
+          <div class="stab" data-sheet="range" role="tab" aria-selected="false"><span class="stab-icon">⊟</span> 범위탐색</div>
           <div class="stab" data-sheet="version" role="tab" aria-selected="false"><span class="stab-icon">◎</span> 버전</div>
         </div>
         <div class="status-bar">

@@ -271,12 +271,12 @@ export class PrefixCodec {
       );
     }
 
-    const id = Number(idStr);
-    if (!Number.isInteger(id) || id < 0) {
+    if (!/^\d+$/.test(idStr)) {
       throw new SerializeError(
         `Invalid id "${idStr}" in serialized VersionedIndex: "${serialized}"`
       );
     }
+    const id = Number(idStr);
 
     this._getPrefixVersion(prefix, v); // 존재 검증
     return { prefix, v, id };

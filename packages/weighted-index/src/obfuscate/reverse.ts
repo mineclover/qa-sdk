@@ -11,6 +11,9 @@
  * No variation parameter — reversal is deterministic.
  *
  * ⚠️  Not cryptographically secure. Obfuscation only.
+ *     DO NOT use for access control, authorization tokens, or session IDs.
+ *     This transform is fully deterministic with no key — the output is
+ *     trivially reversible by anyone. For security, prefer AES or Web Crypto API.
  */
 
 /**
@@ -18,6 +21,9 @@
  *
  * Applying the same function twice with the same bitWidth restores the original:
  *   reverseBits(reverseBits(id, w), w) === id
+ *
+ * **Security notice**: This is a visual identifier transform only. There is no
+ * secret key — the transform is fully deterministic and trivially reversible.
  *
  * @example
  * reverseBits(0b10110000, 8) // → 0b00001101

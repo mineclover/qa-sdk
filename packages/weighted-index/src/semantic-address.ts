@@ -108,10 +108,10 @@ export const colonProtocol: AddressProtocol = {
     if (parts.length !== 3 || parts.some(p => !p)) {
       throw new SyntaxError(`Invalid colon address: "${input}"`);
     }
-    const index = Number(parts[2]);
-    if (!Number.isFinite(index)) {
+    if (!/^\d+$/.test(parts[2])) {
       throw new SyntaxError(`Invalid index in colon address: "${parts[2]}"`);
     }
+    const index = Number(parts[2]);
     return { schema: parts[0], version: parts[1], index };
   },
 };
@@ -146,10 +146,10 @@ export const uriProtocol: AddressProtocol = {
     if (parts.length !== 3 || parts.some(p => !p)) {
       throw new SyntaxError(`Invalid URI address path: "${path}" (expected schema/version/index)`);
     }
-    const index = Number(parts[2]);
-    if (!Number.isFinite(index)) {
+    if (!/^\d+$/.test(parts[2])) {
       throw new SyntaxError(`Invalid index in URI address: "${parts[2]}"`);
     }
+    const index = Number(parts[2]);
     return { schema: parts[0], version: parts[1], index };
   },
 };
@@ -208,10 +208,10 @@ export const compactProtocol: AddressProtocol = {
       throw new SyntaxError(`Invalid compact address: "${input}"`);
     }
 
-    const index = Number(indexStr);
-    if (!Number.isFinite(index)) {
+    if (!/^\d+$/.test(indexStr)) {
       throw new SyntaxError(`Invalid index in compact address: "${indexStr}"`);
     }
+    const index = Number(indexStr);
     return { schema, version, index };
   },
 };

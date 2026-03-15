@@ -54,8 +54,14 @@ export function toUUID(id: number, bitWidth: number): string {
  * fromUUID("02a00000-0000-0000-0000-000000000000", 10)  // → 42
  */
 export function fromUUID(uuid: string, bitWidth: number): number {
+  const raw = uuid.replace(/-/g, "");
+  if (!/^[0-9a-fA-F]+$/.test(raw)) {
+    throw new RangeError(
+      `Invalid UUID string: "${uuid}" (must contain only hex characters and dashes)`
+    );
+  }
   const hexLen = Math.ceil(bitWidth / 4);
-  return parseInt(uuid.replace(/-/g, "").slice(0, hexLen), 16);
+  return parseInt(raw.slice(0, hexLen), 16);
 }
 
 // ── Structured UUID ──────────────────────────────────────────────────────────
@@ -95,6 +101,12 @@ export function toStructuredUUID(fields: UUIDField[]): string {
   // Bit-pack all fields MSB-first
   let packed = 0n;
   for (const { value, bitWidth } of fields) {
+    const maxValue = (1n << BigInt(bitWidth)) - 1n;
+    if (value < 0 || BigInt(value) > maxValue) {
+      throw new RangeError(
+        `toStructuredUUID: value ${value} exceeds bitWidth ${bitWidth} capacity [0, ${maxValue}]`
+      );
+    }
     packed = (packed << BigInt(bitWidth)) | BigInt(value);
   }
 
