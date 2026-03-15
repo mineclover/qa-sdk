@@ -94,6 +94,18 @@ export interface DimSnapshotInput {
   /** 1-based 순번으로 사용될 entity ID 목록. 순서는 불변 (append-only). */
   entries: EntityId[];
   /**
+   * 미리 할당된 주소 공간 크기.
+   *
+   * entries.length보다 크게 설정하면 headroom(여유 공간)이 생겨,
+   * entries를 추가해도 capacity 안에 있으면 shape/weight 변경 없이 버전을 유지할 수 있다.
+   * 생략하면 entries.length와 동일하게 간주한다.
+   *
+   * @example
+   * // entries 3개이지만 capacity 8로 할당 → headroom 5
+   * { entries: ["admin", "editor", "viewer"], capacity: 8 }
+   */
+  capacity?: number;
+  /**
    * 개별 entry 상태 재정의. key = 1-based 인덱스.
    * 명시되지 않은 entry는 active로 간주 (sparse).
    */
@@ -105,6 +117,14 @@ export interface DimSnapshotInput {
    */
   entryRefs?: Record<number, EntryIndexRef>;
   createdAt?: string;
+  /**
+   * 이 스냅샷의 변경 사유 (감사 기록용).
+   *
+   * 코드 로직에서 사용하지 않으며, 사람이 "왜 이 스냅샷이 생겼는지"를 추적하는 용도.
+   *
+   * @example
+   * changelog: "guest 역할 추가 — 2026-Q1 접근 정책 변경"
+   */
   changelog?: string;
 }
 
@@ -128,6 +148,27 @@ export interface DimSnapshotMigration {
   toSnapshotId: string;
   indexMap: Record<number, number>;
   createdAt?: string;
+  /**
+   * 이 마이그레이션의 변경 사유 및 diff 컨텍스트 (감사 기록용).
+   *
+   * 코드 로직에서 사용하지 않지만, 마이그레이션 이력 추적을 위해
+   * 아래 형식을 권장한다:
+   *
+   * - from: 이전 스냅샷 ID
+   * - to: 대상 스냅샷 ID
+   * - sizeChange: 이전 크기 → 현재 크기 (예: "3 → 5 (+2)")
+   * - changed: 변경된 position 목록과 이유
+   *
+   * @example
+   * changelog: [
+   *   "from: v1 (3 entries, capacity 8) → to: v2 (5 entries, capacity 8)",
+   *   "capacity 유지 — headroom 내 추가, shape 변경 없음",
+   *   "position 2: science → art (swap with 3)",
+   *   "position 3: art → science (swap with 2)",
+   *   "position 4: (new) culture",
+   *   "position 5: (new) history",
+   * ].join("\n")
+   */
   changelog?: string;
 }
 
@@ -145,6 +186,14 @@ export interface IndexVersionInput {
   /** dimId → snapshotId. IndexDef.dims에 있는 모든 dim을 커버해야 함. */
   snapshots: Record<string, string>;
   createdAt?: string;
+  /**
+   * 이 버전의 변경 사유 (감사 기록용).
+   *
+   * 코드 로직에서 사용하지 않으며, 버전 승격 사유를 기록하는 용도.
+   *
+   * @example
+   * changelog: "role을 v2 snapshot으로 교체 — guest 역할 지원"
+   */
   changelog?: string;
 }
 
@@ -243,7 +292,16 @@ export interface DimSnapshot {
    * dim-level index_ref(DimKind)와 독립적으로 적용 가능.
    */
   entryRefs: Readonly<Record<number, EntryIndexRef>>;
+  /**
+   * 미리 할당된 주소 공간 크기. 생략 시 entries.length.
+   * capacity - entries.length = headroom (여유 공간).
+   */
+  capacity?: number;
   createdAt?: string;
+  /**
+   * 이 스냅샷의 변경 사유 (감사 기록용).
+   * DimSnapshotInput.changelog에서 그대로 전달된 값.
+   */
   changelog?: string;
 }
 
@@ -261,6 +319,10 @@ export interface IndexVersion {
   /** dimId → snapshotId */
   snapshots: Readonly<Record<string, string>>;
   createdAt?: string;
+  /**
+   * 이 버전의 변경 사유 (감사 기록용).
+   * IndexVersionInput.changelog에서 그대로 전달된 값.
+   */
   changelog?: string;
 }
 
@@ -333,6 +395,10 @@ export interface DimRange {
     activeIndices: number[];
     /** entries.length. shape 계산에 사용. */
     total: number;
+    /** 할당된 주소 공간 크기. 미지정이면 total과 동일. */
+    capacity: number;
+    /** 여유 공간 = capacity - total. */
+    headroom: number;
   }[];
 }
 
@@ -354,6 +420,10 @@ export interface IndexRange {
       kind: DimKind;
       entries: EntityId[];
       activeIndices: number[];
+      /** 할당된 주소 공간 크기. 미지정이면 entries.length. */
+      capacity: number;
+      /** 여유 공간 = capacity - entries.length. */
+      headroom: number;
     }[];
   }[];
 }
@@ -365,4 +435,83 @@ export interface IndexRange {
 export interface MetaDataset {
   indices: IndexRange[];
   dims: DimRange[];
+}
+
+// ── Diff 유틸리티 타입 ─────────────────────────────────────────────────────────
+
+/**
+ * 두 스냅샷 간 diff.
+ *
+ * entries.length 변화 (= MetaRegistry 수준 shape 변화)와
+ * 추가/이동된 entry 목록을 포함한다.
+ */
+export interface SnapshotDiff {
+  dimId: string;
+  from: {
+    snapshotId: string;
+    entriesCount: number;
+    /** 할당된 주소 공간 크기. capacity 미지정이면 entriesCount와 동일. */
+    capacity: number;
+    /** 여유 공간 = capacity - entriesCount. */
+    headroom: number;
+    /** position → entity 전체 매핑. 1-based index 순서. */
+    entries: readonly EntityId[];
+  };
+  to: {
+    snapshotId: string;
+    entriesCount: number;
+    /** 할당된 주소 공간 크기. capacity 미지정이면 entriesCount와 동일. */
+    capacity: number;
+    /** 여유 공간 = capacity - entriesCount. */
+    headroom: number;
+    /** position → entity 전체 매핑. 1-based index 순서. */
+    entries: readonly EntityId[];
+  };
+  /** capacity가 변경됐는지. true면 shape/weight 변경 가능성 있음. */
+  capacityChanged: boolean;
+  addedEntries: EntityId[];
+  /** indexMap에 의해 위치가 바뀐 position 목록 (migration이 있을 경우) */
+  movedPositions: { position: number; from: number; to: number; entity: EntityId }[];
+}
+
+/**
+ * 두 index version 간 shape/weight 영향 분석.
+ *
+ * capacity 변화가 weight에 영향을 미치는지 판단하고,
+ * ID 보존 여부를 반환한다. 마이그레이션 계획의 핵심 입력.
+ */
+export interface VersionDiff {
+  indexId: string;
+  from: {
+    versionId: string;
+    shape: readonly number[];
+    weights: readonly number[];
+    size: number;
+  };
+  to: {
+    versionId: string;
+    shape: readonly number[];
+    weights: readonly number[];
+    size: number;
+  };
+  /** weight 배열이 변경됐는지. false면 기존 ID가 그대로 유효. */
+  weightsChanged: boolean;
+  /** 기존 version의 ID 범위가 새 version에서도 유효한지 (weights 불변 + to.size >= from.size) */
+  idPreserved: boolean;
+  /** 변경된 dim별 상세 */
+  changedDims: {
+    dimId: string;
+    fromSnapshot: string;
+    toSnapshot: string;
+    fromEntriesCount: number;
+    toEntriesCount: number;
+    fromCapacity: number;
+    toCapacity: number;
+    fromHeadroom: number;
+    toHeadroom: number;
+    /** from snapshot의 position → entity 전체 매핑 */
+    fromEntries: readonly EntityId[];
+    /** to snapshot의 position → entity 전체 매핑 */
+    toEntries: readonly EntityId[];
+  }[];
 }

@@ -13,3 +13,4 @@ export class EntryNotFoundError extends IndexMetaError {}
 export class MigrationNotFoundError extends IndexMetaError {}
 export class ValidationError extends IndexMetaError {}
 export class ParseError extends IndexMetaError {}
+export class NegotiationError extends IndexMetaError {}
