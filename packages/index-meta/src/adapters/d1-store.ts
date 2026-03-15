@@ -41,47 +41,47 @@ export class D1IndexMetaStore implements IndexMetaStore {
     try {
       await this.db
         .prepare(
-          `INSERT INTO schema_version (table_id, version_id, capacity, created_at)
+          `INSERT INTO schema_version (prefix, version_id, capacity, created_at)
            VALUES (?, ?, ?, ?)`
         )
-        .bind(record.tableId, record.versionId, record.capacity, record.createdAt)
+        .bind(record.prefix, record.versionId, record.capacity, record.createdAt)
         .run();
     } catch (err) {
       throw new IndexMetaError(
-        `D1 insertSchemaVersion failed for "${record.tableId}/${record.versionId}": ${err instanceof Error ? err.message : String(err)}`
+        `D1 insertSchemaVersion failed for "${record.prefix}/${record.versionId}": ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
 
-  async getSchemaVersions(tableId: string): Promise<SchemaVersionRecord[]> {
+  async getSchemaVersions(prefix: string): Promise<SchemaVersionRecord[]> {
     const result = await this.db
       .prepare(
-        `SELECT table_id, version_id, capacity, created_at
-         FROM schema_version WHERE table_id = ?
+        `SELECT prefix, version_id, capacity, created_at
+         FROM schema_version WHERE prefix = ?
          ORDER BY created_at ASC`
       )
-      .bind(tableId)
-      .all<{ table_id: string; version_id: string; capacity: number; created_at: string }>();
+      .bind(prefix)
+      .all<{ prefix: string; version_id: string; capacity: number; created_at: string }>();
 
     return result.results.map(toSchemaVersionRecord);
   }
 
-  async getSchemaVersion(tableId: string, versionId: string): Promise<SchemaVersionRecord | null> {
+  async getSchemaVersion(prefix: string, versionId: string): Promise<SchemaVersionRecord | null> {
     const row = await this.db
       .prepare(
-        `SELECT table_id, version_id, capacity, created_at
-         FROM schema_version WHERE table_id = ? AND version_id = ?`
+        `SELECT prefix, version_id, capacity, created_at
+         FROM schema_version WHERE prefix = ? AND version_id = ?`
       )
-      .bind(tableId, versionId)
-      .first<{ table_id: string; version_id: string; capacity: number; created_at: string }>();
+      .bind(prefix, versionId)
+      .first<{ prefix: string; version_id: string; capacity: number; created_at: string }>();
 
     return row ? toSchemaVersionRecord(row) : null;
   }
 
-  async getCapacity(tableId: string, versionId: string): Promise<number | null> {
+  async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.db
-      .prepare(`SELECT capacity FROM schema_version WHERE table_id = ? AND version_id = ?`)
-      .bind(tableId, versionId)
+      .prepare(`SELECT capacity FROM schema_version WHERE prefix = ? AND version_id = ?`)
+      .bind(prefix, versionId)
       .first<{ capacity: number }>();
 
     return row?.capacity ?? null;
@@ -91,8 +91,8 @@ export class D1IndexMetaStore implements IndexMetaStore {
 
   async insertEntry(record: EntryRecord): Promise<void> {
     const [sv, existing] = await Promise.all([
-      this.getSchemaVersion(record.tableId, record.versionId),
-      this.getEntry(record.tableId, record.versionId, record.position),
+      this.getSchemaVersion(record.prefix, record.versionId),
+      this.getEntry(record.prefix, record.versionId, record.position),
     ]);
 
     validateEntryForInsert(record, sv, existing);
@@ -100,91 +100,105 @@ export class D1IndexMetaStore implements IndexMetaStore {
     try {
       await this.db
         .prepare(
-          `INSERT INTO entry (table_id, version_id, position, value, created_at)
+          `INSERT INTO entry (prefix, version_id, position, value, created_at)
            VALUES (?, ?, ?, ?, ?)`
         )
-        .bind(record.tableId, record.versionId, record.position, String(record.value), record.createdAt)
+        .bind(record.prefix, record.versionId, record.position, String(record.value), record.createdAt)
         .run();
     } catch (err) {
       throw new IndexMetaError(
-        `D1 insertEntry failed for "${record.tableId}/${record.versionId}" position ${record.position}: ${err instanceof Error ? err.message : String(err)}`
+        `D1 insertEntry failed for "${record.prefix}/${record.versionId}" position ${record.position}: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
 
-  async getEntries(tableId: string, versionId: string): Promise<EntryRecord[]> {
+  async getEntries(prefix: string, versionId: string): Promise<EntryRecord[]> {
     const result = await this.db
       .prepare(
-        `SELECT table_id, version_id, position, value, created_at
-         FROM entry WHERE table_id = ? AND version_id = ?
+        `SELECT prefix, version_id, position, value, created_at
+         FROM entry WHERE prefix = ? AND version_id = ?
          ORDER BY position ASC`
       )
-      .bind(tableId, versionId)
-      .all<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>();
+      .bind(prefix, versionId)
+      .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
 
     return result.results.map(toEntryRecord);
   }
 
   async getEntriesInRange(
-    tableId: string,
+    prefix: string,
     versionId: string,
     from: number,
     to: number
   ): Promise<EntryRecord[]> {
     const result = await this.db
       .prepare(
-        `SELECT table_id, version_id, position, value, created_at
+        `SELECT prefix, version_id, position, value, created_at
          FROM entry
-         WHERE table_id = ? AND version_id = ? AND position >= ? AND position <= ?
+         WHERE prefix = ? AND version_id = ? AND position >= ? AND position <= ?
          ORDER BY position ASC`
       )
-      .bind(tableId, versionId, from, to)
-      .all<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>();
+      .bind(prefix, versionId, from, to)
+      .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
 
     return result.results.map(toEntryRecord);
   }
 
-  async getEntry(tableId: string, versionId: string, position: number): Promise<EntryRecord | null> {
+  async getEntry(prefix: string, versionId: string, position: number): Promise<EntryRecord | null> {
     const row = await this.db
       .prepare(
-        `SELECT table_id, version_id, position, value, created_at
-         FROM entry WHERE table_id = ? AND version_id = ? AND position = ?`
+        `SELECT prefix, version_id, position, value, created_at
+         FROM entry WHERE prefix = ? AND version_id = ? AND position = ?`
       )
-      .bind(tableId, versionId, position)
-      .first<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>();
+      .bind(prefix, versionId, position)
+      .first<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
+
+    return row ? toEntryRecord(row) : null;
+  }
+
+  async getEntryByValue(prefix: string, versionId: string, value: EntityId): Promise<EntryRecord | null> {
+    const row = await this.db
+      .prepare(
+        `SELECT prefix, version_id, position, value, created_at
+         FROM entry WHERE prefix = ? AND version_id = ? AND value = ?`
+      )
+      .bind(prefix, versionId, String(value))
+      .first<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
 
     return row ? toEntryRecord(row) : null;
   }
 
   async migrateEntries(
-    tableId: string,
+    prefix: string,
     fromVersion: string,
     toVersion: string,
     positionMap?: Record<number, number>
   ): Promise<{ migrated: number; skipped: number }> {
-    const sv = await this.getSchemaVersion(tableId, toVersion);
+    const sv = await this.getSchemaVersion(prefix, toVersion);
     if (!sv) {
       throw new ValidationError(
-        `SchemaVersion not found: "${tableId}/${toVersion}". Insert schema version first.`
+        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`
       );
     }
 
-    let sourceResult: D1Result<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>;
+    // D1 does not support multi-statement transactions via the Workers API.
+    // Operations are individually atomic. migrateEntries runs without transaction wrapping.
+    let sourceResult: D1Result<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>;
     let existingResult: D1Result<{ position: number }>;
     try {
       [sourceResult, existingResult] = await Promise.all([
         this.db
-          .prepare(`SELECT table_id, version_id, position, value, created_at FROM entry WHERE table_id = ? AND version_id = ? ORDER BY position ASC`)
-          .bind(tableId, fromVersion)
-          .all<{ table_id: string; version_id: string; position: number; value: string; created_at: string }>(),
+          .prepare(`SELECT prefix, version_id, position, value, created_at FROM entry WHERE prefix = ? AND version_id = ? ORDER BY position ASC`)
+          .bind(prefix, fromVersion)
+          .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>(),
         this.db
-          .prepare(`SELECT position FROM entry WHERE table_id = ? AND version_id = ?`)
-          .bind(tableId, toVersion)
+          .prepare(`SELECT position FROM entry WHERE prefix = ? AND version_id = ?`)
+          .bind(prefix, toVersion)
           .all<{ position: number }>(),
       ]);
     } catch (err) {
       throw new IndexMetaError(
-        `D1 migrateEntries failed to read entries for "${tableId}" (${fromVersion} -> ${toVersion}): ${err instanceof Error ? err.message : String(err)}`
+        `D1 migrateEntries failed to read entries for "${prefix}" (${fromVersion} -> ${toVersion}): ${err instanceof Error ? err.message : String(err)}`
       );
     }
 
@@ -203,17 +217,17 @@ export class D1IndexMetaStore implements IndexMetaStore {
       }
       if (newPosition < 1 || newPosition > sv.capacity) {
         throw new ValidationError(
-          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${tableId}/${toVersion}"`
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`
         );
       }
       try {
         await this.db
-          .prepare(`INSERT INTO entry (table_id, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`)
-          .bind(tableId, toVersion, newPosition, String(entry.value), now)
+          .prepare(`INSERT INTO entry (prefix, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`)
+          .bind(prefix, toVersion, newPosition, String(entry.value), now)
           .run();
       } catch (err) {
         throw new IndexMetaError(
-          `D1 migrateEntries failed to insert position ${newPosition} for "${tableId}/${toVersion}": ${err instanceof Error ? err.message : String(err)}`
+          `D1 migrateEntries failed to insert position ${newPosition} for "${prefix}/${toVersion}": ${err instanceof Error ? err.message : String(err)}`
         );
       }
       existingPositions.add(newPosition);
@@ -227,13 +241,13 @@ export class D1IndexMetaStore implements IndexMetaStore {
 // ── 변환 헬퍼 ─────────────────────────────────────────────
 
 function toSchemaVersionRecord(row: {
-  table_id: string;
+  prefix: string;
   version_id: string;
   capacity: number;
   created_at: string;
 }): SchemaVersionRecord {
   return {
-    tableId:   row.table_id,
+    prefix:    row.prefix,
     versionId: row.version_id,
     capacity:  row.capacity,
     createdAt: row.created_at,
@@ -241,14 +255,14 @@ function toSchemaVersionRecord(row: {
 }
 
 function toEntryRecord(row: {
-  table_id: string;
+  prefix: string;
   version_id: string;
   position: number;
   value: string;
   created_at: string;
 }): EntryRecord {
   return {
-    tableId:   row.table_id,
+    prefix:    row.prefix,
     versionId: row.version_id,
     position:  row.position,
     value:     row.value,

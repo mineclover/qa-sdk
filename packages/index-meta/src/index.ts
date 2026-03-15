@@ -5,6 +5,7 @@ export { defineTable } from "./table-def.js";
 export { compileSchema } from "./compile-schema.js";
 export { InMemoryIndexMetaStore } from "./adapters/memory-store.js";
 export { InMemoryPrefixRegistry } from "./adapters/memory-prefix-registry.js";
+export { SqlPrefixRegistry } from "./adapters/sql-prefix-registry.js";
 export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 export { SqlIndexMetaStore } from "./adapters/sql-store.js";
 export type { SqlDriver } from "./adapters/sql-store.js";
@@ -23,6 +24,8 @@ export {
 } from "./invalid-ranges.js";
 export { InMemoryAddressStateStore } from "./adapters/memory-invalid-range-store.js";
 export { SqlAddressStateStore } from "./adapters/sql-address-state-store.js";
+export { InMemoryEntryFlagStore } from "./adapters/memory-entry-flag-store.js";
+export { SqlEntryFlagStore } from "./adapters/sql-entry-flag-store.js";
 export {
   migrateAddress,
   migrateValue,
@@ -48,6 +51,7 @@ export type { PrefixRouter } from "./prefix-router.js";
 export type { DimRef, ResolvedAddress } from "./prefix-registry.js";
 export type { DimStateSpec, AddressState, GateResult } from "./invalid-ranges.js";
 export type { AddressStateStore, AddressStateCacheRecord } from "./invalid-range-store.js";
+export type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
 export type {
   MigrateResult,
   CrossIndexPartialResult,

@@ -29,32 +29,32 @@ afterEach(() => {
 describe("schema_version", () => {
   it("insert → get 왕복", async () => {
     await store.insertSchemaVersion({
-      tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z",
+      prefix: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z",
     });
 
     const sv = await store.getSchemaVersion("role", "v1");
-    expect(sv).toEqual({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
+    expect(sv).toEqual({ prefix: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
   });
 
   it("getCapacity fast-path", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z" });
 
     expect(await store.getCapacity("role", "v1")).toBe(1000);
     expect(await store.getCapacity("role", "v99")).toBeNull();
   });
 
   it("getSchemaVersions createdAt 오름차순", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 16, createdAt: "2026-06-01T00:00:00Z" });
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8,  createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 16, createdAt: "2026-06-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8,  createdAt: "2026-01-01T00:00:00Z" });
 
     const versions = await store.getSchemaVersions("role");
     expect(versions.map((v) => v.versionId)).toEqual(["v1", "v2"]);
   });
 
   it("중복 삽입 시 SQLite UNIQUE 제약 에러", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" });
     await expect(
-      store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" })
+      store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8, createdAt: "2026-01-01T00:00:00Z" })
     ).rejects.toThrow();
   });
 });
@@ -64,40 +64,40 @@ describe("schema_version", () => {
 describe("entry", () => {
   beforeEach(async () => {
     await store.insertSchemaVersion({
-      tableId: "role", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z",
+      prefix: "role", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z",
     });
   });
 
   it("insert → getEntry 왕복", async () => {
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
 
     const entry = await store.getEntry("role", "v1", 1);
-    expect(entry).toEqual({ tableId: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
+    expect(entry).toEqual({ prefix: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
   });
 
   it("schema_version 없이 insert 시 ValidationError", async () => {
     await expect(
-      store.insertEntry({ tableId: "other", versionId: "v1", position: 1, value: "x", createdAt: "2026-01-01T00:00:00Z" })
+      store.insertEntry({ prefix: "other", versionId: "v1", position: 1, value: "x", createdAt: "2026-01-01T00:00:00Z" })
     ).rejects.toThrow(ValidationError);
   });
 
   it("position이 capacity를 초과하면 ValidationError", async () => {
     await expect(
-      store.insertEntry({ tableId: "role", versionId: "v1", position: 1001, value: "x", createdAt: "2026-01-01T00:00:00Z" })
+      store.insertEntry({ prefix: "role", versionId: "v1", position: 1001, value: "x", createdAt: "2026-01-01T00:00:00Z" })
     ).rejects.toThrow(ValidationError);
   });
 
   it("중복 position은 SQLite UNIQUE 제약 에러", async () => {
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
     await expect(
-      store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "other", createdAt: "2026-01-01T00:00:00Z" })
+      store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "other", createdAt: "2026-01-01T00:00:00Z" })
     ).rejects.toThrow();
   });
 
   it("getEntries position 오름차순", async () => {
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 3, value: "c", createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "a", createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 2, value: "b", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 3, value: "c", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "a", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 2, value: "b", createdAt: "2026-01-01T00:00:00Z" });
 
     const entries = await store.getEntries("role", "v1");
     expect(entries.map((e) => e.position)).toEqual([1, 2, 3]);
@@ -105,8 +105,8 @@ describe("entry", () => {
   });
 
   it("빈 position은 결과에 없다 (sparse)", async () => {
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1,   value: "guest", createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 500, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1,   value: "guest", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 500, value: "admin", createdAt: "2026-01-01T00:00:00Z" });
 
     const entries = await store.getEntries("role", "v1");
     expect(entries.map((e) => e.position)).toEqual([1, 500]);
@@ -114,7 +114,7 @@ describe("entry", () => {
 
   it("getEntriesInRange — [from, to] inclusive (idx_entry_range 인덱스 활용)", async () => {
     for (let i = 1; i <= 10; i++) {
-      await store.insertEntry({ tableId: "role", versionId: "v1", position: i, value: `v${i}`, createdAt: "2026-01-01T00:00:00Z" });
+      await store.insertEntry({ prefix: "role", versionId: "v1", position: i, value: `v${i}`, createdAt: "2026-01-01T00:00:00Z" });
     }
 
     const range = await store.getEntriesInRange("role", "v1", 3, 7);
@@ -122,11 +122,11 @@ describe("entry", () => {
   });
 
   it("예약 마커도 일반 값과 동일하게 저장된다", async () => {
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1,   value: "_",   createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 2,   value: "~",   createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 3,   value: "?",   createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 4,   value: "NaN", createdAt: "2026-01-01T00:00:00Z" });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 5,   value: "guest", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1,   value: "_",   createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 2,   value: "~",   createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 3,   value: "?",   createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 4,   value: "NaN", createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 5,   value: "guest", createdAt: "2026-01-01T00:00:00Z" });
 
     const entries = await store.getEntries("role", "v1");
     expect(entries.map((e) => e.value)).toEqual(["_", "~", "?", "NaN", "guest"]);
@@ -141,12 +141,12 @@ describe("entry", () => {
 
 describe("대용량 capacity", () => {
   it("capacity 1000, sparse entries 정상 동작", async () => {
-    await store.insertSchemaVersion({ tableId: "game", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "game", versionId: "v1", capacity: 1000, createdAt: "2026-01-01T00:00:00Z" });
 
     // 일부만 적재
     const positions = [1, 10, 50, 140, 500, 999];
     for (const pos of positions) {
-      await store.insertEntry({ tableId: "game", versionId: "v1", position: pos, value: `val-${pos}`, createdAt: "2026-01-01T00:00:00Z" });
+      await store.insertEntry({ prefix: "game", versionId: "v1", position: pos, value: `val-${pos}`, createdAt: "2026-01-01T00:00:00Z" });
     }
 
     const entries = await store.getEntries("game", "v1");

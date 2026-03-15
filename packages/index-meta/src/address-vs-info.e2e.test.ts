@@ -122,10 +122,10 @@ describe("[A] 주소 조회 경로 — label → position → gate → 주소", 
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
-    await metaStore.insertSchemaVersion({ tableId: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
     // position 4: 비워둠 (open headroom)
 
     const specs: DimStateSpec[] = [
@@ -210,10 +210,10 @@ describe("[B] 정보 조회 경로 — 주소 → gate → entry store → entit
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
-    await metaStore.insertSchemaVersion({ tableId: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
     // position 4: 비워둠 (open headroom)
 
     const specs: DimStateSpec[] = [
@@ -362,10 +362,10 @@ describe("[C] shouldVerify — 캐시 stale 감지 및 재확인", () => {
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
-    await metaStore.insertSchemaVersion({ tableId: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: TABLE, versionId: VERSION, capacity: 4, createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 1, value: "admin",  createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 2, value: "editor", createdAt: AT });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 3, value: "viewer", createdAt: AT });
 
     // 게이트 캐시: position 4 = open (이 시점에 비어있음)
     const specs: DimStateSpec[] = [
@@ -379,7 +379,7 @@ describe("[C] shouldVerify — 캐시 stale 감지 및 재확인", () => {
 
   it("shouldVerify=true: 캐시가 open이라도 entry store를 직접 확인한다", async () => {
     // 캐시 계산 후 position 4에 값이 채워짐 (캐시는 stale)
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 4, value: "guest", createdAt: "T2" });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 4, value: "guest", createdAt: "T2" });
 
     const address = toAddress(4);  // open slot
     const cache   = await loadGate();
@@ -437,7 +437,7 @@ describe("[C] shouldVerify — 캐시 stale 감지 및 재확인", () => {
 
   it("캐시 갱신 사이클: open → 값 채움 → 게이트 캐시 재계산 → active", async () => {
     // 1. position 4에 guest 삽입
-    await metaStore.insertEntry({ tableId: TABLE, versionId: VERSION, position: 4, value: "guest", createdAt: "T2" });
+    await metaStore.insertEntry({ prefix: TABLE, versionId: VERSION, position: 4, value: "guest", createdAt: "T2" });
 
     // 2. open spec 제거하고 캐시 재계산 (position 4가 이제 active)
     await stateStore.delete(TABLE, VERSION);

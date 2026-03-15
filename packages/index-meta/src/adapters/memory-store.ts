@@ -4,6 +4,7 @@ import type {
   EntryRecord,
 } from "../index-meta-store.js";
 import { ValidationError } from "../errors.js";
+import type { EntityId } from "../types.js";
 import { validateEntryForInsert } from "./validate-entry.js";
 
 /**
@@ -14,47 +15,47 @@ import { validateEntryForInsert } from "./validate-entry.js";
  * which provide database-level uniqueness constraints and transactional safety.
  */
 export class InMemoryIndexMetaStore implements IndexMetaStore {
-  /** "tableId:versionId" → SchemaVersionRecord */
+  /** "prefix:versionId" → SchemaVersionRecord */
   private readonly _versions = new Map<string, SchemaVersionRecord>();
 
-  /** "tableId:versionId:position" → EntryRecord */
+  /** "prefix:versionId:position" → EntryRecord */
   private readonly _entries = new Map<string, EntryRecord>();
 
   // ── schema_version ──────────────────────────────────────
 
   async insertSchemaVersion(record: SchemaVersionRecord): Promise<void> {
-    const key = `${record.tableId}:${record.versionId}`;
+    const key = `${record.prefix}:${record.versionId}`;
     if (this._versions.has(key)) {
       throw new ValidationError(
-        `SchemaVersion already exists: "${record.tableId}/${record.versionId}"`
+        `SchemaVersion already exists: "${record.prefix}/${record.versionId}"`
       );
     }
     this._versions.set(key, record);
   }
 
-  async getSchemaVersions(tableId: string): Promise<SchemaVersionRecord[]> {
+  async getSchemaVersions(prefix: string): Promise<SchemaVersionRecord[]> {
     return [...this._versions.values()]
-      .filter((r) => r.tableId === tableId)
+      .filter((r) => r.prefix === prefix)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async getSchemaVersion(
-    tableId: string,
+    prefix: string,
     versionId: string
   ): Promise<SchemaVersionRecord | null> {
-    return this._versions.get(`${tableId}:${versionId}`) ?? null;
+    return this._versions.get(`${prefix}:${versionId}`) ?? null;
   }
 
-  async getCapacity(tableId: string, versionId: string): Promise<number | null> {
-    return this._versions.get(`${tableId}:${versionId}`)?.capacity ?? null;
+  async getCapacity(prefix: string, versionId: string): Promise<number | null> {
+    return this._versions.get(`${prefix}:${versionId}`)?.capacity ?? null;
   }
 
   // ── entry ───────────────────────────────────────────────
 
   async insertEntry(record: EntryRecord): Promise<void> {
-    const versionKey = `${record.tableId}:${record.versionId}`;
+    const versionKey = `${record.prefix}:${record.versionId}`;
     const version = this._versions.get(versionKey) ?? null;
-    const entryKey = `${record.tableId}:${record.versionId}:${record.position}`;
+    const entryKey = `${record.prefix}:${record.versionId}:${record.position}`;
     const existing = this._entries.get(entryKey) ?? null;
 
     validateEntryForInsert(record, version, existing);
@@ -62,14 +63,14 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     this._entries.set(entryKey, record);
   }
 
-  async getEntries(tableId: string, versionId: string): Promise<EntryRecord[]> {
+  async getEntries(prefix: string, versionId: string): Promise<EntryRecord[]> {
     return [...this._entries.values()]
-      .filter((r) => r.tableId === tableId && r.versionId === versionId)
+      .filter((r) => r.prefix === prefix && r.versionId === versionId)
       .sort((a, b) => a.position - b.position);
   }
 
   async getEntriesInRange(
-    tableId: string,
+    prefix: string,
     versionId: string,
     from: number,
     to: number
@@ -77,7 +78,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     return [...this._entries.values()]
       .filter(
         (r) =>
-          r.tableId === tableId &&
+          r.prefix === prefix &&
           r.versionId === versionId &&
           r.position >= from &&
           r.position <= to
@@ -86,27 +87,41 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
   }
 
   async getEntry(
-    tableId: string,
+    prefix: string,
     versionId: string,
     position: number
   ): Promise<EntryRecord | null> {
-    return this._entries.get(`${tableId}:${versionId}:${position}`) ?? null;
+    return this._entries.get(`${prefix}:${versionId}:${position}`) ?? null;
+  }
+
+  async getEntryByValue(
+    prefix: string,
+    versionId: string,
+    value: EntityId
+  ): Promise<EntryRecord | null> {
+    const strValue = String(value);
+    for (const r of this._entries.values()) {
+      if (r.prefix === prefix && r.versionId === versionId && String(r.value) === strValue) {
+        return r;
+      }
+    }
+    return null;
   }
 
   async migrateEntries(
-    tableId: string,
+    prefix: string,
     fromVersion: string,
     toVersion: string,
     positionMap?: Record<number, number>
   ): Promise<{ migrated: number; skipped: number }> {
-    const sv = this._versions.get(`${tableId}:${toVersion}`);
+    const sv = this._versions.get(`${prefix}:${toVersion}`);
     if (!sv) {
       throw new ValidationError(
-        `SchemaVersion not found: "${tableId}/${toVersion}". Insert schema version first.`
+        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`
       );
     }
 
-    const sourceEntries = await this.getEntries(tableId, fromVersion);
+    const sourceEntries = await this.getEntries(prefix, fromVersion);
     const now = new Date().toISOString();
     let migrated = 0;
     let skipped = 0;
@@ -115,16 +130,16 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
       const newPosition = positionMap?.[entry.position] ?? entry.position;
       if (newPosition < 1 || newPosition > sv.capacity) {
         throw new ValidationError(
-          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${tableId}/${toVersion}"`
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`
         );
       }
-      const entryKey = `${tableId}:${toVersion}:${newPosition}`;
+      const entryKey = `${prefix}:${toVersion}:${newPosition}`;
       if (this._entries.has(entryKey)) {
         skipped++;
         continue;
       }
       this._entries.set(entryKey, {
-        tableId,
+        prefix,
         versionId: toVersion,
         position: newPosition,
         value: entry.value,

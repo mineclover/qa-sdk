@@ -5,7 +5,7 @@ import { ValidationError } from "../errors.js";
 // ── 공통 픽스처 ────────────────────────────────────────────
 
 const versionRecord = (overrides = {}) => ({
-  tableId: "role",
+  prefix: "role",
   versionId: "v1",
   capacity: 8,
   createdAt: "2026-01-01T00:00:00Z",
@@ -13,7 +13,7 @@ const versionRecord = (overrides = {}) => ({
 });
 
 const entryRecord = (overrides = {}) => ({
-  tableId: "role",
+  prefix: "role",
   versionId: "v1",
   position: 1,
   value: "admin",
@@ -33,13 +33,13 @@ describe("insertSchemaVersion", () => {
     expect(result).toEqual(record);
   });
 
-  it("중복 (tableId, versionId)는 ValidationError", async () => {
+  it("중복 (prefix, versionId)는 ValidationError", async () => {
     const store = new InMemoryIndexMetaStore();
     await store.insertSchemaVersion(versionRecord());
     await expect(store.insertSchemaVersion(versionRecord())).rejects.toThrow(ValidationError);
   });
 
-  it("같은 tableId라도 versionId가 다르면 삽입된다", async () => {
+  it("같은 prefix라도 versionId가 다르면 삽입된다", async () => {
     const store = new InMemoryIndexMetaStore();
     await store.insertSchemaVersion(versionRecord({ versionId: "v1", capacity: 8 }));
     await store.insertSchemaVersion(versionRecord({ versionId: "v2", capacity: 16 }));
@@ -66,13 +66,13 @@ describe("getSchemaVersions", () => {
     expect(await store.getSchemaVersions("role")).toEqual([]);
   });
 
-  it("다른 tableId의 버전은 포함되지 않는다", async () => {
+  it("다른 prefix의 버전은 포함되지 않는다", async () => {
     const store = new InMemoryIndexMetaStore();
-    await store.insertSchemaVersion(versionRecord({ tableId: "role" }));
-    await store.insertSchemaVersion(versionRecord({ tableId: "action" }));
+    await store.insertSchemaVersion(versionRecord({ prefix: "role" }));
+    await store.insertSchemaVersion(versionRecord({ prefix: "action" }));
 
     const versions = await store.getSchemaVersions("role");
-    expect(versions.every((v) => v.tableId === "role")).toBe(true);
+    expect(versions.every((v) => v.prefix === "role")).toBe(true);
     expect(versions).toHaveLength(1);
   });
 });
@@ -244,12 +244,12 @@ describe("getEntry", () => {
 // ── 격리성 ───────────────────────────────────────────────
 
 describe("격리성", () => {
-  it("서로 다른 tableId는 독립적으로 동작한다", async () => {
+  it("서로 다른 prefix는 독립적으로 동작한다", async () => {
     const store = new InMemoryIndexMetaStore();
-    await store.insertSchemaVersion(versionRecord({ tableId: "role",   versionId: "v1", capacity: 8 }));
-    await store.insertSchemaVersion(versionRecord({ tableId: "action", versionId: "v1", capacity: 4 }));
-    await store.insertEntry(entryRecord({ tableId: "role",   position: 1, value: "admin"  }));
-    await store.insertEntry(entryRecord({ tableId: "action", position: 1, value: "read"   }));
+    await store.insertSchemaVersion(versionRecord({ prefix: "role",   versionId: "v1", capacity: 8 }));
+    await store.insertSchemaVersion(versionRecord({ prefix: "action", versionId: "v1", capacity: 4 }));
+    await store.insertEntry(entryRecord({ prefix: "role",   position: 1, value: "admin"  }));
+    await store.insertEntry(entryRecord({ prefix: "action", position: 1, value: "read"   }));
 
     expect((await store.getEntry("role",   "v1", 1))?.value).toBe("admin");
     expect((await store.getEntry("action", "v1", 1))?.value).toBe("read");
@@ -268,7 +268,7 @@ describe("격리성", () => {
 
   it("composite 테이블은 schema_version에만 저장되고 entry가 없어도 된다", async () => {
     const store = new InMemoryIndexMetaStore();
-    await store.insertSchemaVersion({ tableId: "perm", versionId: "v1", capacity: 512, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "perm", versionId: "v1", capacity: 512, createdAt: "2026-01-01T00:00:00Z" });
 
     const versions = await store.getSchemaVersions("perm");
     expect(versions).toHaveLength(1);

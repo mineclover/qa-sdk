@@ -249,7 +249,7 @@ describe("exportVersion / importVersion — versionId 단위 백업/복원", () 
 
     // composite는 capacity만 등록 (entry 없음)
     await registry.register({ prefix: "perm", versionId: "v1", capacity: 32 });
-    await store.insertSchemaVersion({ tableId: "perm", versionId: "v1", capacity: 32, createdAt: "2026-01-01T00:00:00Z" });
+    await store.insertSchemaVersion({ prefix: "perm", versionId: "v1", capacity: 32, createdAt: "2026-01-01T00:00:00Z" });
 
     const backup = await exportVersion("perm", "v1", registry, store);
 

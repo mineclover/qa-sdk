@@ -135,7 +135,7 @@ describe("E2E: 게임 카테고리 테이블 1D 주소 공간 구축 + 조회", 
     // ── 2. schema_version 등록 ────────────────────────────
     store = new InMemoryIndexMetaStore();
     await store.insertSchemaVersion({
-      tableId:   GAME_CATEGORY_TABLE_ID,
+      prefix:   GAME_CATEGORY_TABLE_ID,
       versionId: GAME_CATEGORY_VERSION,
       capacity:  spec.versions.get(GAME_CATEGORY_VERSION)!.capacity,
       createdAt: "2026-01-01T00:00:00Z",
@@ -144,7 +144,7 @@ describe("E2E: 게임 카테고리 테이블 1D 주소 공간 구축 + 조회", 
     // ── 3. 예약 슬롯 적재 ─────────────────────────────────
     for (const [position, token] of RESERVED_ENTRIES) {
       await store.insertEntry({
-        tableId:   GAME_CATEGORY_TABLE_ID,
+        prefix:   GAME_CATEGORY_TABLE_ID,
         versionId: GAME_CATEGORY_VERSION,
         position,
         value:     token,
@@ -155,7 +155,7 @@ describe("E2E: 게임 카테고리 테이블 1D 주소 공간 구축 + 조회", 
     // ── 4. 정규 엔트리 적재 (중간에 빈 자리 있음) ──────────
     for (const [position, value] of REGULAR_ENTRIES) {
       await store.insertEntry({
-        tableId:   GAME_CATEGORY_TABLE_ID,
+        prefix:   GAME_CATEGORY_TABLE_ID,
         versionId: GAME_CATEGORY_VERSION,
         position,
         value,
@@ -318,7 +318,7 @@ describe("E2E: 게임 카테고리 테이블 1D 주소 공간 구축 + 조회", 
 
     // 나중에 추가
     await store.insertEntry({
-      tableId:   GAME_CATEGORY_TABLE_ID,
+      prefix:   GAME_CATEGORY_TABLE_ID,
       versionId: GAME_CATEGORY_VERSION,
       position:  newPosition,
       value:     newValue,
@@ -342,7 +342,7 @@ describe("E2E: 게임 카테고리 테이블 1D 주소 공간 구축 + 조회", 
     const NEW_CAPACITY = 2000;
 
     await store.insertSchemaVersion({
-      tableId:   GAME_CATEGORY_TABLE_ID,
+      prefix:   GAME_CATEGORY_TABLE_ID,
       versionId: NEW_VERSION,
       capacity:  NEW_CAPACITY,
       createdAt: "2026-06-01T00:00:00Z",

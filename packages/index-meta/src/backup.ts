@@ -109,7 +109,7 @@ export async function importVersion(
 
   // 2. schema_version 등록
   await store.insertSchemaVersion({
-    tableId:   backup.prefix,
+    prefix:    backup.prefix,
     versionId: backup.versionId,
     capacity:  backup.capacity,
     createdAt: backup.exportedAt,
@@ -119,7 +119,7 @@ export async function importVersion(
   for (const [posStr, value] of Object.entries(backup.entries)) {
     const position = Number(posStr);
     await store.insertEntry({
-      tableId:   backup.prefix,
+      prefix:    backup.prefix,
       versionId: backup.versionId,
       position,
       value,

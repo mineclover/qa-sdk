@@ -27,20 +27,41 @@ export class SqlAddressStateStore implements AddressStateStore {
   constructor(private readonly driver: SqlDriver) {}
 
   async save(record: AddressStateCacheRecord): Promise<void> {
-    await this.driver.execute(
-      `INSERT OR REPLACE INTO address_state_cache
-         (prefix, version_id, specs_json, reserved_json, inactive_json, open_json, computed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        record.prefix,
-        record.versionId,
-        JSON.stringify(record.specs),
-        JSON.stringify(record.reservedRanges),
-        JSON.stringify(record.inactiveRanges),
-        JSON.stringify(record.openRanges),
-        record.computedAt,
-      ]
+    const existing = await this.driver.queryOne<{ prefix: string }>(
+      `SELECT prefix FROM address_state_cache WHERE prefix = ? AND version_id = ?`,
+      [record.prefix, record.versionId]
     );
+    if (existing) {
+      await this.driver.execute(
+        `UPDATE address_state_cache
+         SET specs_json = ?, reserved_json = ?, inactive_json = ?, open_json = ?, computed_at = ?
+         WHERE prefix = ? AND version_id = ?`,
+        [
+          JSON.stringify(record.specs),
+          JSON.stringify(record.reservedRanges),
+          JSON.stringify(record.inactiveRanges),
+          JSON.stringify(record.openRanges),
+          record.computedAt,
+          record.prefix,
+          record.versionId,
+        ]
+      );
+    } else {
+      await this.driver.execute(
+        `INSERT INTO address_state_cache
+           (prefix, version_id, specs_json, reserved_json, inactive_json, open_json, computed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          record.prefix,
+          record.versionId,
+          JSON.stringify(record.specs),
+          JSON.stringify(record.reservedRanges),
+          JSON.stringify(record.inactiveRanges),
+          JSON.stringify(record.openRanges),
+          record.computedAt,
+        ]
+      );
+    }
   }
 
   async get(prefix: string, versionId: string): Promise<AddressStateCacheRecord | null> {

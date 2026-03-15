@@ -15,14 +15,14 @@ import type { SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
 // ── 픽스처 ────────────────────────────────────────────────
 
 const sv = (capacity = 8): SchemaVersionRecord => ({
-  tableId: "role",
+  prefix: "role",
   versionId: "v1",
   capacity,
   createdAt: "2026-01-01T00:00:00Z",
 });
 
 const entry = (position = 1): EntryRecord => ({
-  tableId: "role",
+  prefix: "role",
   versionId: "v1",
   position,
   value: "admin",
@@ -69,7 +69,7 @@ describe("validateEntryForInsert", () => {
     expect(() => validateEntryForInsert(entry(1), sv(8), existing)).toThrow(/already exists/);
   });
 
-  it("에러 메시지에 tableId/versionId가 포함된다 (스키마 버전 없음)", () => {
+  it("에러 메시지에 prefix/versionId가 포함된다 (스키마 버전 없음)", () => {
     const e = entry(1);
     expect(() => validateEntryForInsert(e, null, null)).toThrow(/role\/v1/);
   });

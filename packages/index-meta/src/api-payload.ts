@@ -94,7 +94,7 @@ export async function applyEntryBatch(
   const sv = await store.getSchemaVersion(prefix, versionId);
   if (!sv) {
     await store.insertSchemaVersion({
-      tableId: prefix, versionId, capacity: payload.capacity, createdAt,
+      prefix, versionId, capacity: payload.capacity, createdAt,
     });
   }
 
@@ -103,7 +103,7 @@ export async function applyEntryBatch(
     const position = Number(posStr);
     const existing = await store.getEntry(prefix, versionId, position);
     if (!existing) {
-      await store.insertEntry({ tableId: prefix, versionId, position, value, createdAt });
+      await store.insertEntry({ prefix, versionId, position, value, createdAt });
     }
   }
 }

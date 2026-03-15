@@ -43,10 +43,10 @@ describe("[S1] Boot — DB 엔트리 적재 후 게이트 캐시를 저장하고
   afterEach(() => { driver.close(); });
 
   it("schema_version + entry를 적재하면 getEntries로 조회된다", async () => {
-    await metaStore.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: AT });
-    await metaStore.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin",  createdAt: AT });
-    await metaStore.insertEntry({ tableId: "role", versionId: "v1", position: 2, value: "editor", createdAt: AT });
-    await metaStore.insertEntry({ tableId: "role", versionId: "v1", position: 3, value: "viewer", createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8, createdAt: AT });
+    await metaStore.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin",  createdAt: AT });
+    await metaStore.insertEntry({ prefix: "role", versionId: "v1", position: 2, value: "editor", createdAt: AT });
+    await metaStore.insertEntry({ prefix: "role", versionId: "v1", position: 3, value: "viewer", createdAt: AT });
 
     const entries = await metaStore.getEntries("role", "v1");
     expect(entries.map((e) => e.value)).toEqual(["admin", "editor", "viewer"]);
@@ -127,16 +127,16 @@ describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트�
     store  = new SqlIndexMetaStore(driver);
 
     // v1: capacity=4, 4개 엔트리로 꽉 참
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 4, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 4, createdAt: AT });
     for (const [pos, val] of [[1, "admin"], [2, "editor"], [3, "viewer"], [4, "guest"]] as const) {
-      await store.insertEntry({ tableId: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
+      await store.insertEntry({ prefix: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
     }
   });
 
   afterEach(() => { driver.close(); });
 
   it("새 버전(capacity 확장)을 만들고 migrateEntries가 모든 엔트리를 이전한다", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     const result = await store.migrateEntries("role", "v1", "v2");
 
     expect(result.migrated).toBe(4);
@@ -148,7 +148,7 @@ describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트�
   });
 
   it("v1 엔트리는 migrateEntries 후에도 그대로 남는다 (append-only)", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     await store.migrateEntries("role", "v1", "v2");
 
     const v1Entries = await store.getEntries("role", "v1");
@@ -157,7 +157,7 @@ describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트�
   });
 
   it("migrateEntries는 멱등적이다 — 두 번 실행하면 두 번째는 모두 skipped", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     await store.migrateEntries("role", "v1", "v2");
     const second = await store.migrateEntries("role", "v1", "v2");
 
@@ -166,7 +166,7 @@ describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트�
   });
 
   it("새 버전의 나머지 position은 비어있다", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     await store.migrateEntries("role", "v1", "v2");
 
     const v2Entries = await store.getEntries("role", "v2");
@@ -189,9 +189,9 @@ describe("[S3] Soft delete — deprecated 값은 entry에 남고 게이트 캐�
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
-    await metaStore.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 4, createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 4, createdAt: AT });
     for (const [pos, val] of [[1, "admin"], [2, "editor"], [3, "viewer"], [4, "guest"]] as const) {
-      await metaStore.insertEntry({ tableId: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
+      await metaStore.insertEntry({ prefix: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
     }
   });
 
@@ -279,17 +279,17 @@ describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다"
     store  = new SqlIndexMetaStore(driver);
 
     // v1: admin=1, editor=2, viewer=3
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 4, createdAt: AT });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin",  createdAt: AT });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 2, value: "editor", createdAt: AT });
-    await store.insertEntry({ tableId: "role", versionId: "v1", position: 3, value: "viewer", createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 4, createdAt: AT });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin",  createdAt: AT });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 2, value: "editor", createdAt: AT });
+    await store.insertEntry({ prefix: "role", versionId: "v1", position: 3, value: "viewer", createdAt: AT });
   });
 
   afterEach(() => { driver.close(); });
 
   it("positionMap으로 editor↔viewer 좌표를 교환해 이전한다", async () => {
     // v2: admin=1, viewer=2, editor=3 (editor:2→3, viewer:3→2)
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
 
     const result = await store.migrateEntries("role", "v1", "v2", { 2: 3, 3: 2 });
     expect(result.migrated).toBe(3);
@@ -304,7 +304,7 @@ describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다"
   });
 
   it("positionMap 없이 migrateEntries하면 position이 그대로 유지된다", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     await store.migrateEntries("role", "v1", "v2");
 
     const v2Entries = await store.getEntries("role", "v2");
@@ -316,7 +316,7 @@ describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다"
   });
 
   it("v1 엔트리는 positionMap 적용 후에도 원래 좌표를 유지한다 (append-only)", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 8, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 8, createdAt: AT });
     await store.migrateEntries("role", "v1", "v2", { 2: 3, 3: 2 });
 
     // v1은 변경 없음
@@ -329,7 +329,7 @@ describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다"
   });
 
   it("positionMap이 capacity 초과 위치를 참조하면 ValidationError", async () => {
-    await store.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 2, createdAt: AT });
+    await store.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 2, createdAt: AT });
 
     // admin(pos=1)을 position 3으로 → capacity=2 초과
     await expect(
@@ -541,10 +541,10 @@ describe("[S7] 멀티 prefix — 같은 DB에서 prefix별 캐시가 독립적�
     stateStore = new SqlAddressStateStore(driver);
 
     // role과 action을 동일 DB에 공존
-    for (const tableId of ["role", "action"] as const) {
-      await metaStore.insertSchemaVersion({ tableId, versionId: "v1", capacity: 4, createdAt: AT });
-      await metaStore.insertEntry({ tableId, versionId: "v1", position: 1, value: "a", createdAt: AT });
-      await metaStore.insertEntry({ tableId, versionId: "v1", position: 2, value: "b", createdAt: AT });
+    for (const prefix of ["role", "action"] as const) {
+      await metaStore.insertSchemaVersion({ prefix, versionId: "v1", capacity: 4, createdAt: AT });
+      await metaStore.insertEntry({ prefix, versionId: "v1", position: 1, value: "a", createdAt: AT });
+      await metaStore.insertEntry({ prefix, versionId: "v1", position: 2, value: "b", createdAt: AT });
     }
   });
 
@@ -554,8 +554,8 @@ describe("[S7] 멀티 prefix — 같은 DB에서 prefix별 캐시가 독립적�
     const roleEntries   = await metaStore.getEntries("role",   "v1");
     const actionEntries = await metaStore.getEntries("action", "v1");
 
-    expect(roleEntries.every((e) => e.tableId === "role")).toBe(true);
-    expect(actionEntries.every((e) => e.tableId === "action")).toBe(true);
+    expect(roleEntries.every((e) => e.prefix === "role")).toBe(true);
+    expect(actionEntries.every((e) => e.prefix === "action")).toBe(true);
     expect(roleEntries).toHaveLength(2);
     expect(actionEntries).toHaveLength(2);
   });
@@ -619,9 +619,9 @@ describe("[S8] 완전한 운영 사이클 — 부트 → deprecated → 버전 �
     // ── Phase 1: 부트 ────────────────────────────────────────────────────────
     // DB에 role/v1 적재: admin=1, editor=2, viewer=3 / positions 4-8 = headroom
 
-    await metaStore.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: AT });
+    await metaStore.insertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8, createdAt: AT });
     for (const [pos, val] of [[1, "admin"], [2, "editor"], [3, "viewer"]] as const) {
-      await metaStore.insertEntry({ tableId: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
+      await metaStore.insertEntry({ prefix: "role", versionId: "v1", position: pos, value: val, createdAt: AT });
     }
 
     const bootSpecs: DimStateSpec[] = [
@@ -665,7 +665,7 @@ describe("[S8] 완전한 운영 사이클 — 부트 → deprecated → 버전 �
 
     // ── Phase 3: 버전 업그레이드 (v2 capacity=16) ────────────────────────────
 
-    await metaStore.insertSchemaVersion({ tableId: "role", versionId: "v2", capacity: 16, createdAt: "T3" });
+    await metaStore.insertSchemaVersion({ prefix: "role", versionId: "v2", capacity: 16, createdAt: "T3" });
     const { migrated } = await metaStore.migrateEntries("role", "v1", "v2");
     expect(migrated).toBe(3);  // admin, editor, viewer 이전 (viewer도 entry는 보존됨)
 

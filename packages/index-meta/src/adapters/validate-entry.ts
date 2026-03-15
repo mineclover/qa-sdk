@@ -29,17 +29,17 @@ export function validateEntryForInsert(
 ): void {
   if (!schemaVersion) {
     throw new ValidationError(
-      `SchemaVersion not found: "${record.tableId}/${record.versionId}". Insert schema version first.`
+      `SchemaVersion not found: "${record.prefix}/${record.versionId}". Insert schema version first.`
     );
   }
   if (record.position < 1 || record.position > schemaVersion.capacity) {
     throw new ValidationError(
-      `Position ${record.position} out of range [1, ${schemaVersion.capacity}] for "${record.tableId}/${record.versionId}"`
+      `Position ${record.position} out of range [1, ${schemaVersion.capacity}] for "${record.prefix}/${record.versionId}"`
     );
   }
   if (existingEntry) {
     throw new ValidationError(
-      `Entry already exists at position ${record.position} in "${record.tableId}/${record.versionId}"`
+      `Entry already exists at position ${record.position} in "${record.prefix}/${record.versionId}"`
     );
   }
 }
