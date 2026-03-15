@@ -29,7 +29,9 @@
           <button class="rtab" data-sheet="permission" role="tab" aria-selected="false" aria-controls="sheet-permission">권한</button>
           <button class="rtab" data-sheet="event" role="tab" aria-selected="false" aria-controls="sheet-event">이벤트</button>
           <button class="rtab" data-sheet="scenario" role="tab" aria-selected="false" aria-controls="sheet-scenario">시나리오</button>
-          <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">부여관리</button>
+          <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">권한 부여 관리</button>
+          <button class="rtab" data-sheet="logging" role="tab" aria-selected="false" aria-controls="sheet-logging">로깅</button>
+          <button class="rtab" data-sheet="layout" role="tab" aria-selected="false" aria-controls="sheet-layout">레이아웃</button>
           <button class="rtab" data-sheet="version" role="tab" aria-selected="false" aria-controls="sheet-version">버전</button>
         </div>
       </div>
@@ -125,7 +127,7 @@
         </div>
 
         <!-- Grant table sheet -->
-        <div class="sheet hidden" id="sheet-grant" role="tabpanel" aria-label="부여관리">
+        <div class="sheet hidden" id="sheet-grant" role="tabpanel" aria-label="권한 부여 관리">
           <div class="sheet-body grant-body">
             <div id="grant-container"></div>
           </div>
@@ -142,6 +144,20 @@
         <div class="sheet hidden" id="sheet-access" role="tabpanel" aria-label="권한범위">
           <div class="sheet-body access-body">
             <div id="access-container"></div>
+          </div>
+        </div>
+
+        <!-- Logging integration sheet -->
+        <div class="sheet hidden" id="sheet-logging" role="tabpanel" aria-label="로깅">
+          <div class="sheet-body logging-body">
+            <div id="logging-container"></div>
+          </div>
+        </div>
+
+        <!-- Layout simulator sheet -->
+        <div class="sheet hidden" id="sheet-layout" role="tabpanel" aria-label="레이아웃">
+          <div class="sheet-body layout-body">
+            <div id="layout-container"></div>
           </div>
         </div>
 
@@ -164,7 +180,9 @@
           <div class="stab" data-sheet="permission" role="tab" aria-selected="false"><span class="stab-icon">⊙</span> 권한</div>
           <div class="stab" data-sheet="event" role="tab" aria-selected="false"><span class="stab-icon">◈</span> 이벤트</div>
           <div class="stab" data-sheet="scenario" role="tab" aria-selected="false"><span class="stab-icon">▶</span> 시나리오</div>
-          <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 부여관리</div>
+          <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 권한 부여 관리</div>
+          <div class="stab" data-sheet="logging" role="tab" aria-selected="false"><span class="stab-icon">◇</span> 로깅</div>
+          <div class="stab" data-sheet="layout" role="tab" aria-selected="false"><span class="stab-icon">⊞</span> 레이아웃</div>
           <div class="stab" data-sheet="version" role="tab" aria-selected="false"><span class="stab-icon">◎</span> 버전</div>
         </div>
         <div class="status-bar">

@@ -27,18 +27,20 @@ import { renderVersionPage } from "./pages/version.js";
 import { renderOverviewPage } from "./pages/overview.js";
 import { renderRangePage } from "./pages/range.js";
 import { renderAccessPage } from "./pages/access.js";
+import { renderLoggingPage } from "./pages/logging.js";
+import { renderLayoutPage } from "./pages/layout.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "range" | "access" | "version";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "range" | "access" | "logging" | "layout" | "version";
 type Ver = "v1" | "v2";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "version"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "logging", "layout", "version"] as const;
 
 // Sheets that depend on the active version
-const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "access"];
+const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "access", "logging"];
 
 function sheetFromPath(pathname: string): SheetId {
   const seg = pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
@@ -120,6 +122,12 @@ const rangeContainer = document.getElementById("range-container")!;
 // Access (permission range) sheet refs
 const accessContainer = document.getElementById("access-container")!;
 
+// Logging sheet refs
+const loggingContainer = document.getElementById("logging-container")!;
+
+// Layout sheet refs
+const layoutContainer = document.getElementById("layout-container")!;
+
 // Version sheet refs
 const versionContainer = document.getElementById("version-container")!;
 
@@ -141,12 +149,16 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
       ? { shape: "시나리오 — v1 역할별 접근 제어",      slots: "결제 취소 워크플로우" }
       : { shape: "시나리오 — 역할별 접근 제어 시뮬레이션", slots: "결제 취소 요청/승인 워크플로우" };
     case "grant":      return ver === "v1"
-      ? { shape: "기능 6 × 역할 5 = 30 조합",          slots: "부여관리 (v1 읽기전용)" }
-      : { shape: "기능 7 × 역할 6 = 42 조합",          slots: "부여관리" };
+      ? { shape: "기능 6 × 역할 5 = 30 조합",          slots: "권한 부여 관리 (v1 읽기전용)" }
+      : { shape: "기능 7 × 역할 6 = 42 조합",          slots: "권한 부여 관리" };
     case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
     case "access":     return ver === "v1"
-      ? { shape: "permission:v1 · 1:N 범위 부여", slots: "권한 범위" }
-      : { shape: "permission:v2 · 1:N 범위 부여", slots: "권한 범위" };
+      ? { shape: "perm_svc(10) × role(5) + event(7×2)", slots: "접근 제어" }
+      : { shape: "perm_svc(10) × role(6) + event(9×2)", slots: "접근 제어" };
+    case "logging":    return ver === "v1"
+      ? { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v1)" }
+      : { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v2)" };
+    case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
   }
 }
@@ -206,7 +218,15 @@ function updateFormulaBar(): void {
     fbFormula.textContent = "range([fixed₁, n, fixed₃, fixed₄]) → 매칭 주소 집합  |  와일드카드 차원 탐색";
   } else if (sheet === "access") {
     nameBox.textContent = "—";
-    fbFormula.textContent = `범위 지정 + 역할 선택 → 1:N 권한 부여  |  permission:${ver}`;
+    const rStride = ver === "v1" ? 5 : 6;
+    const eStride = ver === "v1" ? 14 : 18;
+    fbFormula.textContent = `permAddr = (perm_svc−1)×${rStride} + (role−1)  |  evtAddr = (svc−1)×${eStride} + (event−1)×2 + (init−1)`;
+  } else if (sheet === "logging") {
+    nameBox.textContent = "—";
+    fbFormula.textContent = `log.svc = service:v1:N  |  log.perm = permission:${ver}:N  |  log.evt = event:${ver}:N  →  구조화 로그`;
+  } else if (sheet === "layout") {
+    nameBox.textContent = "—";
+    fbFormula.textContent = `simPackUUID(prefix, version, shard, encode(coords)) → UUID PK  |  N차원 커버리지 시뮬레이터`;
   } else if (sheet === "version") {
     nameBox.textContent = "—";
     fbFormula.textContent = `활성 버전: ${ver}  |  role ${ver === "v1" ? "5" : "6"}개 · event ${ver === "v1" ? "7" : "9"}개 · feature ${ver === "v1" ? "6" : "7"}개`;
@@ -284,6 +304,8 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "grant")      renderGrantPage(grantContainer, state.ver);
     if (id === "range")      renderRangePage(rangeContainer);
     if (id === "access")     renderAccessPage(accessContainer, state.ver);
+    if (id === "logging")    renderLoggingPage(loggingContainer, state.ver);
+    if (id === "layout")     renderLayoutPage(layoutContainer);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
   }
 
@@ -402,6 +424,47 @@ function repaintEvent(): void {
     state.ver,
   ).catch(console.error);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Cross-tab navigation via custom events
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface NavDetail {
+  sheet: SheetId;
+  svcAddr?: number;
+  permAddr?: number;
+  evtAddr?: number;
+}
+
+document.addEventListener("navigate-to", ((e: CustomEvent<NavDetail>) => {
+  const { sheet, svcAddr, permAddr } = e.detail;
+
+  // Force re-render of target sheet with current version
+  const sheetEl = document.getElementById(`sheet-${sheet}`);
+  if (sheetEl) delete sheetEl.dataset["rendered"];
+
+  switchSheet(sheet);
+
+  // Post-navigation selection
+  if (sheet === "service" && svcAddr !== undefined) {
+    state.svc.selectedValue = svcAddr;
+    updateStatusSel(svcAddr);
+    updateFormulaBar();
+    // Highlight cell after render
+    requestAnimationFrame(() => {
+      const cell = svcGridContainer.querySelector(`[data-value="${svcAddr}"]`);
+      if (cell) {
+        cell.classList.add("cell-selected");
+        cell.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+  }
+  if (sheet === "permission" && permAddr !== undefined) {
+    state.perm.selectedValue = permAddr;
+    updateStatusSel(permAddr);
+    updateFormulaBar();
+  }
+}) as EventListener);
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Init
