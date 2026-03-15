@@ -8,6 +8,8 @@
  * Returns HTML strings for use inside a <table class="formula-tbl"> wrapper.
  */
 
+import { subscript } from "weighted-ui";
+
 // ── Encode steps ──────────────────────────────────────────────────────────
 
 /**
@@ -75,8 +77,3 @@ export function bitCheckHtml(id: number): string {
   return `<code class="lib-code">bitmask[${id} &gt;&gt; 3] &amp; (1 &lt;&lt; (${id} &amp; 7))</code>`;
 }
 
-// ── Subscript helper (Unicode) ─────────────────────────────────────────────
-
-function subscript(n: number): string {
-  return String(n).replace(/\d/g, (d) => "₀₁₂₃₄₅₆₇₈₉"[Number(d)]);
-}

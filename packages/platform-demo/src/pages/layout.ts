@@ -4,24 +4,23 @@
 
 import {
   analyzeLayoutSim,
-  dimMaxForBudget,
-  dimMaxBig,
-  dimMaxApprox,
-  productExcluding,
+  computeLayoutViewModel,
   shapeProduct,
-  shapeProductUncapped,
-  autoBalancedShape,
   simDecode,
+  simDecodeBig,
   simEncode,
   simPackUUID,
+  simPackUUIDBig,
   formatLargeNumber,
-  utilizationBig,
   type LayoutSimAnalysis,
+  type LayoutViewModel,
+  type LayoutViewMode,
 } from "weighted-index";
+import { hexPreview } from "weighted-ui";
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-type CalcMode = "number" | "bigint";
+type CalcMode = LayoutViewMode;
 
 interface LayoutState {
   numDims: number;
@@ -37,9 +36,15 @@ interface LayoutState {
   // progression
   playing: boolean;
   currentIndex: number;
-  speed: number; // ms per step
-  timerId: number | null;
-  progressionRows: { index: number; coords: number[]; uuid: string }[];
+  currentIndexBig: bigint;
+  skipFrames: number; // 0 = 매 프레임, 1 = 1프레임 건너뜀, ...
+  maxBatch: number; // 프레임당 처리 상한 (0 = 무제한, 시간 예산만 적용)
+  frameBudgetMs: number; // 1프레임 연산 시간 예산 (ms)
+  frameCounter: number;
+  rafId: number | null;
+  lastOpsPerFrame: number;
+  lastFrameTime: number;
+  progressionRows: { indexStr: string; coords: string[]; uuid: string }[];
 }
 
 function createInitialState(): LayoutState {
@@ -57,8 +62,14 @@ function createInitialState(): LayoutState {
     mode: "number" as CalcMode,
     playing: false,
     currentIndex: 0,
-    speed: 200,
-    timerId: null,
+    currentIndexBig: 0n,
+    skipFrames: 0,
+    maxBatch: 0,
+    frameBudgetMs: 12,
+    frameCounter: 0,
+    rafId: null,
+    lastOpsPerFrame: 0,
+    lastFrameTime: 0,
     progressionRows: [],
   };
 }
@@ -75,10 +86,6 @@ export function renderLayoutPage(container: HTMLElement): void {
   // ── Header ─────────────────────────────────────────────────────────────
   function fieldMaxVal(chars: number): number {
     return chars > 0 ? 16 ** chars - 1 : 0;
-  }
-  function hexPreview(chars: number, val: number): string {
-    if (chars <= 0) return "—";
-    return "0x" + Math.min(val, fieldMaxVal(chars)).toString(16).toUpperCase().padStart(chars, "0");
   }
 
   // ── Header + inline config (title row) ─────────────────────────────────
@@ -112,6 +119,7 @@ export function renderLayoutPage(container: HTMLElement): void {
         <button class="lay-mode-btn lay-mode-active" id="lay-mode-number">Number</button>
         <button class="lay-mode-btn" id="lay-mode-bigint">BigInt</button>
       </div>
+      <button class="lay-mode-btn lay-copy-btn" id="lay-copy-debug" title="디버그 정보 복사">📋 Copy</button>
     </div>
   `;
   wrap.appendChild(header);
@@ -186,13 +194,21 @@ export function renderLayoutPage(container: HTMLElement): void {
   const progControls = document.createElement("div");
   progControls.className = "lay-prog-controls";
   progControls.innerHTML = `
-    <button class="lay-prog-btn" id="lay-prog-play">▶ Play</button>
-    <button class="lay-prog-btn" id="lay-prog-pause" disabled>⏸ Pause</button>
-    <button class="lay-prog-btn" id="lay-prog-reset">↺ Reset</button>
-    <label class="lay-prog-speed-label">속도</label>
-    <input type="range" class="lay-prog-speed" id="lay-prog-speed" min="20" max="1000" value="${st.speed}" />
-    <span class="lay-prog-speed-val" id="lay-prog-speed-val">${st.speed}ms</span>
-    <span class="lay-prog-idx" id="lay-prog-idx">index: 0</span>
+    <div class="lay-prog-row">
+      <button class="lay-prog-btn" id="lay-prog-play">▶ Play</button>
+      <button class="lay-prog-btn" id="lay-prog-pause" disabled>⏸ Pause</button>
+      <button class="lay-prog-btn" id="lay-prog-reset">↺ Reset</button>
+      <label class="lay-prog-speed-label">스킵</label>
+      <input type="range" class="lay-prog-speed" id="lay-prog-skip" min="0" max="60" value="${st.skipFrames}" />
+      <span class="lay-prog-speed-val" id="lay-prog-skip-val">1/${st.skipFrames + 1}f</span>
+      <label class="lay-prog-speed-label">상한</label>
+      <input type="range" class="lay-prog-speed" id="lay-prog-batch" min="0" max="7" value="0" />
+      <span class="lay-prog-speed-val" id="lay-prog-batch-val">무제한</span>
+    </div>
+    <div class="lay-prog-row lay-prog-stats">
+      <span class="lay-prog-idx" id="lay-prog-idx">index: 0</span>
+      <span class="lay-prog-perf" id="lay-prog-perf">—</span>
+    </div>
   `;
   progSection.appendChild(progControls);
   const progTable = document.createElement("div");
@@ -233,9 +249,12 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elProgPlay = document.getElementById("lay-prog-play") as HTMLButtonElement;
   const elProgPause = document.getElementById("lay-prog-pause") as HTMLButtonElement;
   const elProgReset = document.getElementById("lay-prog-reset") as HTMLButtonElement;
-  const elProgSpeed = document.getElementById("lay-prog-speed") as HTMLInputElement;
-  const elProgSpeedVal = document.getElementById("lay-prog-speed-val")!;
+  const elProgSkip = document.getElementById("lay-prog-skip") as HTMLInputElement;
+  const elProgSkipVal = document.getElementById("lay-prog-skip-val")!;
+  const elProgBatch = document.getElementById("lay-prog-batch") as HTMLInputElement;
+  const elProgBatchVal = document.getElementById("lay-prog-batch-val")!;
   const elProgIdx = document.getElementById("lay-prog-idx")!;
+  const elProgPerf = document.getElementById("lay-prog-perf")!;
 
   // ── Event handlers ─────────────────────────────────────────────────────
 
@@ -335,14 +354,10 @@ export function renderLayoutPage(container: HTMLElement): void {
     st.mode = mode;
     elModeNumber.classList.toggle("lay-mode-active", mode === "number");
     elModeBigint.classList.toggle("lay-mode-active", mode === "bigint");
-    // Re-clamp shape values when switching modes
-    const budget = st.analysis.indexBudget;
+    // Re-clamp shape values — ViewModel의 sliderMax 기준
+    const vm = getViewModel();
     for (let i = 0; i < st.shape.length; i++) {
-      const others = productExcluding(st.shape, i);
-      const dmax = mode === "bigint"
-        ? dimMaxApprox(budget, others)
-        : dimMaxForBudget(budget, others);
-      st.shape[i] = Math.max(1, Math.min(st.shape[i], dmax));
+      st.shape[i] = Math.max(1, Math.min(st.shape[i], vm.dims[i].sliderMax));
     }
     resetProgression();
     repaint();
@@ -351,50 +366,161 @@ export function renderLayoutPage(container: HTMLElement): void {
   elModeNumber.addEventListener("click", () => setMode("number"));
   elModeBigint.addEventListener("click", () => setMode("bigint"));
 
+  // ── Debug copy ──────────────────────────────────────────────────────────
+  const elCopyDebug = document.getElementById("lay-copy-debug") as HTMLButtonElement;
+  elCopyDebug.addEventListener("click", () => {
+    const vm = getViewModel();
+    const dimLines = vm.dims.map(d =>
+      `  dim${d.index}: ${d.value.toLocaleString()} (max: ${d.displayMax})`
+    ).join("\n");
+
+    const text = [
+      `prefix: ${st.prefixChars}ch (${hexPreview(st.prefixChars, st.prefixVal)})`,
+      `ver: ${st.versionChars}ch (${hexPreview(st.versionChars, st.versionVal)})`,
+      `shard: ${st.shardChars}ch (${hexPreview(st.shardChars, st.shardVal)})`,
+      `mode: ${vm.mode}`,
+      `dims: ${st.numDims}, indexBudget: ${vm.indexBudget}ch (${vm.indexBits}bit)`,
+      `effectiveMax: ${vm.effectiveMaxDisplay}${vm.isCapped ? ` (UUID: ${vm.uuidCapacityDisplay})` : ""}`,
+      dimLines,
+      `product: ${vm.productDisplay}`,
+      `utilization: ${vm.utilizationDisplay}`,
+    ].join("\n");
+
+    navigator.clipboard.writeText(text).then(() => {
+      elCopyDebug.textContent = "✓ Copied";
+      setTimeout(() => { elCopyDebug.textContent = "📋 Copy"; }, 1500);
+    });
+  });
+
   // ── Progression controls ───────────────────────────────────────────────
+
+  // 상한 슬라이더: 0=무제한, 1~7=고정 상한
+  const BATCH_CAP_STEPS = [0, 100, 1000, 10_000, 100_000, 500_000, 1_000_000, 10_000_000];
+  function batchCapLabel(v: number): string {
+    const cap = BATCH_CAP_STEPS[v];
+    return cap === 0 ? "무제한" : cap.toLocaleString();
+  }
+
+  // 시간 체크 주기 — 매 64회마다 performance.now() 호출 (비트 AND로 빠름)
+  const TIME_CHECK_STRIDE = 64;
 
   function resetProgression(): void {
     stopProgression();
     st.currentIndex = 0;
+    st.currentIndexBig = 0n;
+    st.frameCounter = 0;
+    st.lastOpsPerFrame = 0;
+    st.lastFrameTime = 0;
     st.progressionRows = [];
   }
 
   function stopProgression(): void {
     st.playing = false;
-    if (st.timerId !== null) {
-      clearInterval(st.timerId);
-      st.timerId = null;
+    if (st.rafId !== null) {
+      cancelAnimationFrame(st.rafId);
+      st.rafId = null;
     }
     elProgPlay.disabled = false;
     elProgPause.disabled = true;
   }
 
-  function startProgression(): void {
-    if (st.playing) return;
+  function progressionTickNumber(): void {
     const product = shapeProduct(st.shape);
-    if (product <= 0 || st.currentIndex >= product) return;
-    st.playing = true;
-    elProgPlay.disabled = true;
-    elProgPause.disabled = false;
+    if (st.currentIndex >= product) { stopProgression(); repaintProgression(); return; }
 
-    st.timerId = window.setInterval(() => {
-      const product = shapeProduct(st.shape);
-      if (st.currentIndex >= product) {
-        stopProgression();
-        return;
-      }
-      const coords = simDecode(st.shape, st.currentIndex);
-      const uuid = simPackUUID(
+    const remaining = product - st.currentIndex;
+    const cap = st.maxBatch > 0 ? Math.min(st.maxBatch, remaining) : remaining;
+    const t0 = performance.now();
+    let lastCoords: number[] = [];
+    let lastUuid = "";
+    let count = 0;
+
+    while (count < cap) {
+      const idx = st.currentIndex + count;
+      lastCoords = simDecode(st.shape, idx);
+      lastUuid = simPackUUID(
         st.prefixChars, st.prefixVal,
         st.versionChars, st.versionVal,
-        st.shardChars, st.shardVal,
-        st.currentIndex,
+        st.shardChars, st.shardVal, idx,
       );
-      st.progressionRows.push({ index: st.currentIndex, coords, uuid });
-      if (st.progressionRows.length > 50) st.progressionRows.shift();
-      st.currentIndex++;
+      count++;
+      if ((count & (TIME_CHECK_STRIDE - 1)) === 0 && performance.now() - t0 >= st.frameBudgetMs) break;
+    }
+
+    st.lastOpsPerFrame = count;
+    st.lastFrameTime = performance.now() - t0;
+    st.progressionRows.push({
+      indexStr: (st.currentIndex + count - 1).toLocaleString(),
+      coords: lastCoords.map(c => c.toLocaleString()),
+      uuid: lastUuid,
+    });
+    if (st.progressionRows.length > 50) st.progressionRows.shift();
+    st.currentIndex += count;
+  }
+
+  function progressionTickBigInt(): void {
+    const shapeBig = st.shape.map(BigInt);
+    const product = shapeBig.reduce((p, s) => p * s, 1n);
+    if (st.currentIndexBig >= product) { stopProgression(); repaintProgression(); return; }
+
+    const remaining = product - st.currentIndexBig;
+    const capN = st.maxBatch > 0 ? BigInt(st.maxBatch) : remaining;
+    const cap = remaining < capN ? remaining : capN;
+    const t0 = performance.now();
+    let lastCoords: bigint[] = [];
+    let lastUuid = "";
+    let count = 0n;
+
+    while (count < cap) {
+      const idx = st.currentIndexBig + count;
+      lastCoords = simDecodeBig(shapeBig, idx);
+      lastUuid = simPackUUIDBig(
+        st.prefixChars, st.prefixVal,
+        st.versionChars, st.versionVal,
+        st.shardChars, st.shardVal, idx,
+      );
+      count++;
+      if ((Number(count) & (TIME_CHECK_STRIDE - 1)) === 0 && performance.now() - t0 >= st.frameBudgetMs) break;
+    }
+
+    st.lastOpsPerFrame = Number(count);
+    st.lastFrameTime = performance.now() - t0;
+    st.progressionRows.push({
+      indexStr: (st.currentIndexBig + count - 1n).toLocaleString(),
+      coords: lastCoords.map(c => c.toLocaleString()),
+      uuid: lastUuid,
+    });
+    if (st.progressionRows.length > 50) st.progressionRows.shift();
+    st.currentIndexBig += count;
+  }
+
+  function progressionTick(): void {
+    if (!st.playing) return;
+
+    if (st.frameCounter === 0) {
+      if (st.mode === "bigint") progressionTickBigInt();
+      else progressionTickNumber();
       repaintProgression();
-    }, st.speed);
+    }
+
+    st.frameCounter = (st.frameCounter + 1) % (st.skipFrames + 1);
+    st.rafId = requestAnimationFrame(progressionTick);
+  }
+
+  function startProgression(): void {
+    if (st.playing) return;
+    if (st.mode === "bigint") {
+      const product = st.shape.map(BigInt).reduce((p, s) => p * s, 1n);
+      if (product <= 0n || st.currentIndexBig >= product) return;
+    } else {
+      const product = shapeProduct(st.shape);
+      if (product <= 0 || st.currentIndex >= product) return;
+    }
+    st.playing = true;
+    st.frameCounter = 0;
+    elProgPlay.disabled = true;
+    elProgPause.disabled = false;
+    st.rafId = requestAnimationFrame(progressionTick);
   }
 
   elProgPlay.addEventListener("click", startProgression);
@@ -403,13 +529,14 @@ export function renderLayoutPage(container: HTMLElement): void {
     resetProgression();
     repaintProgression();
   });
-  elProgSpeed.addEventListener("input", () => {
-    st.speed = +elProgSpeed.value;
-    elProgSpeedVal.textContent = `${st.speed}ms`;
-    if (st.playing) {
-      stopProgression();
-      startProgression();
-    }
+  elProgSkip.addEventListener("input", () => {
+    st.skipFrames = +elProgSkip.value;
+    st.frameCounter = 0;
+    elProgSkipVal.textContent = `1/${st.skipFrames + 1}f`;
+  });
+  elProgBatch.addEventListener("input", () => {
+    st.maxBatch = BATCH_CAP_STEPS[+elProgBatch.value] ?? 0;
+    elProgBatchVal.textContent = batchCapLabel(+elProgBatch.value);
   });
 
   // ── Repaint functions ──────────────────────────────────────────────────
@@ -431,63 +558,60 @@ export function renderLayoutPage(container: HTMLElement): void {
   }
 
   function repaintStruct(): void {
+    const vm = getViewModel();
     const a = st.analysis;
     const gapChars = a.indexBudget > 0 ? 32 - a.usedChars - a.indexBudget : 0;
-    const indexChars = a.indexBudget;
 
-    const segments: { label: string; chars: number; cls: string }[] = [];
-    if (st.prefixChars > 0) segments.push({ label: `prefix ${st.prefixChars}ch`, chars: st.prefixChars, cls: "lay-seg-prefix" });
-    if (st.versionChars > 0) segments.push({ label: `ver ${st.versionChars}ch`, chars: st.versionChars, cls: "lay-seg-version" });
-    if (gapChars > 0) segments.push({ label: `gap ${gapChars}ch`, chars: gapChars, cls: "lay-seg-gap" });
-    if (st.shardChars > 0) segments.push({ label: `shard ${st.shardChars}ch`, chars: st.shardChars, cls: "lay-seg-shard" });
-    if (indexChars > 0) segments.push({ label: `index ${indexChars}ch`, chars: indexChars, cls: "lay-seg-index" });
+    // 비트 단위로 세그먼트 구성 (Number 갭을 정확히 표현하기 위해)
+    type Seg = { label: string; bits: number; cls: string };
+    const segments: Seg[] = [];
+    if (st.prefixChars > 0) segments.push({ label: `prefix ${st.prefixChars}ch`, bits: st.prefixChars * 4, cls: "lay-seg-prefix" });
+    if (st.versionChars > 0) segments.push({ label: `ver ${st.versionChars}ch`, bits: st.versionChars * 4, cls: "lay-seg-version" });
+    if (gapChars > 0) segments.push({ label: `gap ${gapChars}ch`, bits: gapChars * 4, cls: "lay-seg-gap" });
+    if (st.shardChars > 0) segments.push({ label: `shard ${st.shardChars}ch`, bits: st.shardChars * 4, cls: "lay-seg-shard" });
+
+    // index 영역: Number 모드에서 캡이면 도달 가능 / 갭으로 분리
+    if (vm.numberGapBits > 0) {
+      segments.push({ label: `Number 갭 ${vm.numberGapBits}bit`, bits: vm.numberGapBits, cls: "lay-seg-numgap" });
+      segments.push({ label: `index ${vm.numberReachBits}bit`, bits: vm.numberReachBits, cls: "lay-seg-index" });
+    } else if (a.indexBudget > 0) {
+      segments.push({ label: `index ${a.indexBudget}ch`, bits: a.indexBudget * 4, cls: "lay-seg-index" });
+    }
 
     elStruct.innerHTML = `
       <div class="lay-struct-bar">
-        ${segments.map(s => `<div class="lay-seg ${s.cls}" style="flex:${s.chars}"><span>${s.label}</span></div>`).join("")}
+        ${segments.map(s => `<div class="lay-seg ${s.cls}" style="flex:${s.bits}"><span>${s.label}</span></div>`).join("")}
       </div>
       <div class="lay-struct-ruler">
-        ${segments.map(s => `<span style="flex:${s.chars}">${s.chars * 4}bit</span>`).join("")}
+        ${segments.map(s => `<span style="flex:${s.bits}">${s.bits}bit</span>`).join("")}
       </div>
     `;
   }
 
+  function getViewModel(): LayoutViewModel {
+    return computeLayoutViewModel(st.analysis, st.shape, st.mode);
+  }
+
   function repaintAnalysis(): void {
+    const vm = getViewModel();
     const a = st.analysis;
 
-    let product: number;
-    let maxDisplay: string;
-    let utilPct: number;
+    const noteRow = vm.capacityNote
+      ? `<div class="lay-an-row lay-an-warn"><span class="lay-an-key">참고</span><span class="lay-an-val">${vm.capacityNote}</span></div>`
+      : "";
 
-    if (st.mode === "bigint") {
-      product = shapeProductUncapped(st.shape);
-      maxDisplay = a.maxProductDisplay; // BigInt exact
-      utilPct = utilizationBig(product, a.indexBudget);
-    } else {
-      product = shapeProduct(st.shape);
-      // Number mode: show capped max for consistency
-      maxDisplay = a.maxProductSafe > 0
-        ? a.indexBudget > 13
-          ? `${formatLargeNumber(a.maxProductSafe)} (Number 한계)`
-          : formatLargeNumber(a.maxProductSafe)
-        : "0";
-      utilPct = a.maxProductSafe > 0 ? (product / a.maxProductSafe * 100) : 0;
-    }
-
-    const utilStr = utilPct < 0.01 && product > 0 ? "< 0.01%" : utilPct.toFixed(2) + "%";
-
-    // Warning for Number mode when budget exceeds JS safe integer range
-    const warn = st.mode === "number" && a.indexBudget > 13
-      ? `<div class="lay-an-warn">Number 정밀도 한계: 슬라이더 최대 ${formatLargeNumber(Number.MAX_SAFE_INTEGER)}, 실제 용량 ${a.maxProductDisplay}</div>`
+    const gapRows = vm.numberGapBits > 0
+      ? `<div class="lay-an-row"><span class="lay-an-key">Index 전체</span><span class="lay-an-val">${vm.indexBits} bits → ${vm.uuidCapacityDisplay}</span></div>
+         <div class="lay-an-row lay-an-warn"><span class="lay-an-key">Number 갭</span><span class="lay-an-val">${vm.numberGapBits} bits 미도달 (${vm.numberReachBits} / ${vm.indexBits} bits 사용)</span></div>`
       : "";
 
     elAnalysis.innerHTML = `
-      <div class="lay-an-row"><span class="lay-an-key">Index 예산</span><span class="lay-an-val">${a.indexBudget} hex chars (${a.indexBits} bits)</span></div>
-      <div class="lay-an-row"><span class="lay-an-key">최대 용량</span><span class="lay-an-val">${maxDisplay}</span></div>
+      <div class="lay-an-row"><span class="lay-an-key">Index 예산</span><span class="lay-an-val">${vm.indexBudget} hex chars (${vm.indexBits} bits)</span></div>
+      <div class="lay-an-row"><span class="lay-an-key">유효 용량</span><span class="lay-an-val">${vm.effectiveMaxDisplay}</span></div>
+      ${gapRows}
       <div class="lay-an-row"><span class="lay-an-key">균등 배분</span><span class="lay-an-val">${a.uniformMax.toLocaleString()} / dim</span></div>
-      <div class="lay-an-row"><span class="lay-an-key">현재 곱</span><span class="lay-an-val">${formatLargeNumber(product)}</span></div>
-      <div class="lay-an-row"><span class="lay-an-key">활용률</span><span class="lay-an-val ${utilPct > 100 ? "lay-an-overflow" : ""}">${utilStr}</span></div>
-      ${warn}
+      <div class="lay-an-row"><span class="lay-an-key">현재 곱</span><span class="lay-an-val">${vm.productDisplay}</span></div>
+      <div class="lay-an-row"><span class="lay-an-key">활용률</span><span class="lay-an-val ${vm.overflow ? "lay-an-overflow" : ""}">${vm.utilizationDisplay}</span></div>
     `;
   }
 
@@ -506,46 +630,26 @@ export function renderLayoutPage(container: HTMLElement): void {
   }
 
   function repaintGraph(): void {
-    const budget = st.analysis.indexBudget;
+    const vm = getViewModel();
+    const maxOfSlider = Math.max(2, ...vm.dims.map(d => d.sliderMax));
 
-    // Compute per-dim: approx float max (for log graph), display string
-    const dimInfo: { approx: number; display: string }[] = [];
-    for (let i = 0; i < st.shape.length; i++) {
-      const others = productExcluding(st.shape, i);
-      if (st.mode === "bigint") {
-        dimInfo.push({
-          approx:  dimMaxApprox(budget, others),
-          display: dimMaxBig(budget, others),
-        });
-      } else {
-        const capped = dimMaxForBudget(budget, others);
-        dimInfo.push({
-          approx:  capped, // Number mode: graph uses capped value for consistency
-          display: formatLargeNumber(capped),
-        });
-      }
-    }
-    const maxOfApprox = Math.max(2, ...dimInfo.map(d => d.approx));
-
-    elGraph.innerHTML = st.shape.map((val, i) => {
-      const { approx, display } = dimInfo[i];
-      // Log scale using float approximation (works even for 10^34)
-      const barPct = logPct(approx, maxOfApprox);
-      const fillPct = logPct(val, approx);
+    elGraph.innerHTML = vm.dims.map((d, i) => {
+      const barPct = logPct(d.sliderMax, maxOfSlider);
+      const fillPct = logPct(d.value, d.sliderMax);
       const color = DIM_COLORS[i % DIM_COLORS.length];
       return `
         <div class="lay-bar-row">
           <span class="lay-bar-label"><span class="lay-bar-dot" style="background:${color}"></span>dim ${i}</span>
-          <div class="lay-bar-track" title="max: ${display}">
+          <div class="lay-bar-track" title="max: ${d.displayMax}">
             <div class="lay-bar-max" style="width:${Math.max(barPct, 2)}%">
               <div class="lay-bar-fill" style="width:${fillPct}%;background:${color}"></div>
             </div>
             <span class="lay-bar-pct">${fillPct.toFixed(0)}%</span>
           </div>
           <div class="lay-bar-nums">
-            <span class="lay-bar-cur" style="color:${color}">${formatLargeNumber(val)}</span>
+            <span class="lay-bar-cur" style="color:${color}">${formatLargeNumber(d.value)}</span>
             <span class="lay-bar-sep">/</span>
-            <span class="lay-bar-mx">${display}</span>
+            <span class="lay-bar-mx">${d.displayMax}</span>
           </div>
         </div>`;
     }).join("");
@@ -636,40 +740,26 @@ export function renderLayoutPage(container: HTMLElement): void {
    * skipDim = the dim being actively dragged (don't touch its range).
    */
   function syncSliders(skipDim: number): void {
-    const budget = st.analysis.indexBudget;
+    const vm = getViewModel();
     for (let i = 0; i < st.shape.length; i++) {
       const ref = sliderRefs[i];
       if (!ref) continue;
 
-      const others = productExcluding(st.shape, i);
-
-      // Mode-dependent max and display
-      const dmax = st.mode === "bigint"
-        ? Math.max(1, dimMaxApprox(budget, others))
-        : Math.max(1, dimMaxForBudget(budget, others));
-      const dmaxDisplay = st.mode === "bigint"
-        ? dimMaxBig(budget, others)
-        : formatLargeNumber(dmax);
-      ref.dimMax = dmax;
-
-      ref.maxSpan.textContent = `/ ${dmaxDisplay}`;
-      ref.num.max = String(Math.min(dmax, Number.MAX_SAFE_INTEGER));
+      const d = vm.dims[i];
+      ref.dimMax = d.sliderMax;
+      ref.maxSpan.textContent = `/ ${d.displayMax}`;
+      ref.num.max = String(Math.min(d.sliderMax, Number.MAX_SAFE_INTEGER));
 
       ref.num.value = String(st.shape[i]);
       if (i !== skipDim) {
-        ref.range.value = String(valToSlider(st.shape[i], dmax));
+        ref.range.value = String(valToSlider(st.shape[i], d.sliderMax));
       }
     }
   }
 
   function updateDim(dimIndex: number, newVal: number): void {
-    const budget = st.analysis.indexBudget;
-
-    // Mode-dependent clamping
-    const others = productExcluding(st.shape, dimIndex);
-    const dmax = st.mode === "bigint"
-      ? dimMaxApprox(budget, others)   // uncapped float
-      : dimMaxForBudget(budget, others); // capped at MAX_SAFE_INTEGER
+    const vm = getViewModel();
+    const dmax = vm.dims[dimIndex].sliderMax;
     st.shape[dimIndex] = Math.max(1, Math.min(newVal, dmax));
 
     // Update UI in-place — skip the active slider to prevent drag interruption
@@ -679,30 +769,16 @@ export function renderLayoutPage(container: HTMLElement): void {
   }
 
   function repaintShapeSummary(): void {
-    let product: number;
-    let utilPct: number;
+    const vm = getViewModel();
 
-    if (st.mode === "bigint") {
-      product = shapeProductUncapped(st.shape);
-      utilPct = utilizationBig(product, st.analysis.indexBudget);
-    } else {
-      product = shapeProduct(st.shape);
-      const a = st.analysis;
-      utilPct = a.maxProductSafe > 0 ? (product / a.maxProductSafe * 100) : 0;
-    }
-
-    const utilStr = utilPct < 0.01 && product > 0 ? "< 0.01%" : utilPct.toFixed(2) + "%";
-    const overflow = utilPct > 100;
-
-    // Format shape values — use scientific notation for large floats
     const shapeStr = st.shape.map(s =>
       s > 1e9 ? s.toExponential(2) : s.toLocaleString()
     ).join(", ");
 
     elShapeSummary.innerHTML = `
       <span class="lay-ss-shape">Shape: [${shapeStr}]</span>
-      <span class="lay-ss-product">Product: ${formatLargeNumber(product)}</span>
-      <span class="lay-ss-util ${overflow ? "lay-an-overflow" : ""}">활용률: ${utilStr}</span>
+      <span class="lay-ss-product">Product: ${vm.productDisplay}</span>
+      <span class="lay-ss-util ${vm.overflow ? "lay-an-overflow" : ""}">활용률: ${vm.utilizationDisplay}</span>
     `;
   }
 
@@ -751,7 +827,24 @@ export function renderLayoutPage(container: HTMLElement): void {
   }
 
   function repaintProgression(): void {
-    elProgIdx.textContent = `index: ${st.currentIndex}`;
+    const idxDisplay = st.mode === "bigint"
+      ? st.currentIndexBig.toLocaleString()
+      : st.currentIndex.toLocaleString();
+    elProgIdx.textContent = `index: ${idxDisplay}`;
+
+    // 성능 표시: 읽기 쉬운 형태
+    if (st.lastOpsPerFrame > 0 && st.lastFrameTime > 0) {
+      const opsPerSec = st.lastOpsPerFrame / (st.lastFrameTime / 1000);
+      const perSecStr = opsPerSec >= 1e6
+        ? `${(opsPerSec / 1e6).toFixed(1)}M개/초`
+        : opsPerSec >= 1e3
+          ? `${(opsPerSec / 1e3).toFixed(1)}K개/초`
+          : `${Math.round(opsPerSec)}개/초`;
+      elProgPerf.textContent =
+        `${st.lastFrameTime.toFixed(1)}ms에 ${st.lastOpsPerFrame.toLocaleString()}개 처리 (${perSecStr})`;
+    } else {
+      elProgPerf.textContent = "—";
+    }
 
     if (st.progressionRows.length === 0) {
       const dimHeaders = st.shape.map((_, i) => `<th>dim ${i}</th>`).join("");
@@ -772,7 +865,7 @@ export function renderLayoutPage(container: HTMLElement): void {
         const changed = prev !== null && prev !== c;
         return `<td class="${changed ? "lay-ptbl-changed" : ""}">${c}</td>`;
       }).join("");
-      return `<tr><td class="lay-ptbl-num">${ri + 1}</td><td class="lay-ptbl-idx">${r.index}</td>${coordCells}<td class="lay-ptbl-uuid">${r.uuid}</td></tr>`;
+      return `<tr><td class="lay-ptbl-num">${ri + 1}</td><td class="lay-ptbl-idx">${r.indexStr}</td>${coordCells}<td class="lay-ptbl-uuid">${r.uuid}</td></tr>`;
     }).join("");
 
     elProgTable.innerHTML = `

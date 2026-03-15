@@ -9,6 +9,7 @@ import {
   ENV_FILL, ENV_INK,
 } from "../utils/colors.js";
 import { WeightedIndex } from "weighted-index";
+import { colLetter } from "weighted-ui";
 
 // ── Page router ───────────────────────────────────────────────────────────
 
@@ -464,12 +465,3 @@ function hasPermission(resource, action, role, env): boolean {
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function colLetter(idx: number): string {
-  let result = "";
-  let n = idx;
-  do {
-    result = String.fromCharCode(65 + (n % 26)) + result;
-    n = Math.floor(n / 26) - 1;
-  } while (n >= 0);
-  return result;
-}

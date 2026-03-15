@@ -8,6 +8,7 @@ import {
   type ServiceCellsResponse,
   type ServiceDecodeResponse,
 } from "../registry.js";
+import { densityFill, densityInk } from "weighted-ui";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -30,29 +31,6 @@ const DIM_META: Record<SvcDimKey, { label: string; size: number }> = {
 };
 
 const ALL_DIMS: readonly SvcDimKey[] = ["env", "region", "svc_name", "namespace"] as const;
-
-// ── Color helpers ─────────────────────────────────────────────────────────
-
-function interpolateHex(from: string, to: string, t: number): string {
-  const f = parseInt(from.slice(1), 16);
-  const e = parseInt(to.slice(1), 16);
-  const fr = (f >> 16) & 0xff; const fg = (f >> 8) & 0xff; const fb = f & 0xff;
-  const er = (e >> 16) & 0xff; const eg = (e >> 8) & 0xff; const eb = e & 0xff;
-  const r = Math.round(fr + (er - fr) * t);
-  const g = Math.round(fg + (eg - fg) * t);
-  const b = Math.round(fb + (eb - fb) * t);
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
-
-function densityFill(value: number, maxValue: number): string {
-  const t = maxValue > 0 ? value / maxValue : 0;
-  return interpolateHex("#e8eef5", "#1e3a5f", t * 0.8);
-}
-
-function densityInk(value: number, maxValue: number): string {
-  const t = maxValue > 0 ? value / maxValue : 0;
-  return t > 0.5 ? "#ffffff" : "#000000";
-}
 
 // ── Env tag ───────────────────────────────────────────────────────────────
 

@@ -114,13 +114,3 @@ export function getDensityFill(count: number, maxCount: number): string {
   }
 }
 
-// Excel-style column letters: 0→A, 1→B, ..., 25→Z, 26→AA
-export function colLetter(idx: number): string {
-  let result = "";
-  let n = idx;
-  do {
-    result = String.fromCharCode(65 + (n % 26)) + result;
-    n = Math.floor(n / 26) - 1;
-  } while (n >= 0);
-  return result;
-}

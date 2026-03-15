@@ -1,0 +1,7 @@
+/* Green theme alias bridge — app rules use --xl-green-* directly */
+:root {
+  --xl-green:       var(--ui-primary);
+  --xl-green-dark:  var(--ui-primary-dark);
+  --xl-green-light: var(--ui-primary-light);
+  --xl-green-faint: var(--ui-primary-faint);
+}

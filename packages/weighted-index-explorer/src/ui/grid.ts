@@ -1,7 +1,8 @@
 import {
   buildSliceGrid, type CellData, type DimKey, type SliceSpec, type VersionDef,
 } from "../data.js";
-import { getDimFill, getDimInk, getDensityFill, colLetter } from "../utils/colors.js";
+import { getDimFill, getDimInk, getDensityFill } from "../utils/colors.js";
+import { colLetter } from "weighted-ui";
 
 export type ColorMode = "x" | "y" | "density" | "none";
 

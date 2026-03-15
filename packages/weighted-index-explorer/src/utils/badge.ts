@@ -5,6 +5,7 @@
  * They depend only on colors.ts and data.ts (type imports only).
  */
 
+export { newTag } from "weighted-ui";
 import { getDimFill, getDimInk } from "./colors.js";
 import type { DimKey } from "../data.js";
 
@@ -50,8 +51,3 @@ export function permVersionSpan(ver: string, id: number): string {
   return `<code class="perm-version-id">perm:${ver}:${id}</code>`;
 }
 
-// ── Small NEW badge ────────────────────────────────────────────────────────
-
-export function newTag(): string {
-  return `<span class="new-tag">NEW</span>`;
-}

@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@qa-sdk/event-catalog": "workspace:*",
-    "weighted-index": "workspace:*"
+    "weighted-index": "workspace:*",
+    "weighted-ui": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.2",
