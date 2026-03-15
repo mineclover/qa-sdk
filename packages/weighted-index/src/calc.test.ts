@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges } from "./calc.js";
+import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges, expandRanges } from "./calc.js";
 import { WeightedIndex } from "./weighted-index.js";
 
 // ── calcWeights ────────────────────────────────────────────────────────────
@@ -425,5 +425,50 @@ describe("calcAddressRanges", () => {
     expect(ranges.length).toBe(4 * 3 * 5 * 2); // 120
     expect(ranges[0]).toEqual([0, 0]);
     expect(ranges[1]).toEqual([6, 6]);
+  });
+});
+
+// ── expandRanges ──────────────────────────────────────────────────────────────
+//
+// calcAddressRanges / matchRanges가 반환하는 [from, to] 구간을 개별 정수로 전개.
+// UI 그리드 셀 하이라이트, 접근 가능 주소 리스트 등에 사용.
+
+describe("expandRanges", () => {
+  it("연속 구간을 개별 값으로 전개한다", () => {
+    expect(expandRanges([[0, 2], [5, 7]])).toEqual([0, 1, 2, 5, 6, 7]);
+  });
+
+  it("단일 값 구간: [3, 3] → [3]", () => {
+    expect(expandRanges([[3, 3]])).toEqual([3]);
+  });
+
+  it("빈 입력 → 빈 배열", () => {
+    expect(expandRanges([])).toEqual([]);
+  });
+
+  it("전체 범위 구간: [[0, 9]] → [0..9]", () => {
+    const result = expandRanges([[0, 9]]);
+    expect(result).toHaveLength(10);
+    expect(result[0]).toBe(0);
+    expect(result[9]).toBe(9);
+  });
+
+  it("calcAddressRanges 결과를 전개하면 해당 패턴의 모든 주소와 일치한다", () => {
+    const shape = [3, 4, 2]; // size = 24
+    const ranges = calcAddressRanges(shape, ["2", null, null]); // dim0=2
+    const expanded = expandRanges(ranges);
+
+    // dim0=2 → addresses: (2-1)*8 .. 2*8-1 = [8, 15]
+    expect(expanded).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
+  });
+
+  it("비연속 구간도 정확히 전개한다", () => {
+    // dim2=1인 주소: 각 (dim0, dim1) 조합에서 offset 0
+    const shape = [3, 4, 2];
+    const ranges = calcAddressRanges(shape, [null, null, "1"]);
+    const expanded = expandRanges(ranges);
+
+    // 전체 24개 중 짝수 index가 dim2=1: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22
+    expect(expanded).toEqual([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]);
   });
 });

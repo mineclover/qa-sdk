@@ -242,7 +242,7 @@ export function calcAddressRanges(
  * "1,3"     → [{ from:1, to:1 }, { from:3, to:3 }]
  * "1-3,7-9" → [{ from:1, to:3 }, { from:7, to:9 }]
  */
-function _normalizeConstraint(
+export function parseConstraintSegments(
   c: CoordConstraint,
   dimSize: number,
 ): { from: number; to: number }[] {
@@ -290,7 +290,7 @@ function _calcRanges(
   }
 
   const weight   = weights[dimIndex];
-  const segments = _normalizeConstraint(constraints[dimIndex], shape[dimIndex]);
+  const segments = parseConstraintSegments(constraints[dimIndex], shape[dimIndex]);
 
   // 최적화: 이후 모든 차원이 와일드카드이면 연속 블록으로 처리
   const allRemainingWild = constraints
@@ -352,199 +352,34 @@ export function describeRangeFormula(
   return base === 0 ? freeStr : `${base} + ${freeStr}`;
 }
 
-// ── Pattern Lattice ─────────────────────────────────────────────────────────
-//
-// CoordConstraint 배열 = "패턴". 패턴 간 포함 관계(partial order)와
-// lattice 연산(meet/join)을 정의한다.
-// 기반: subtractRanges, intersectRanges, mergeRanges (이 파일의 range algebra).
+// ── expandRanges ──────────────────────────────────────────────────────────────
 
 /**
- * Constraint를 정렬·병합된 [from, to] 범위 배열로 변환한다.
- * null → [1, dimSize] 전체 범위.
- */
-function _constraintToRanges(
-  c: CoordConstraint,
-  dimSize: number,
-): [number, number][] {
-  return mergeRanges(
-    _normalizeConstraint(c, dimSize).map(
-      ({ from, to }) => [from, to] as [number, number],
-    ),
-  );
-}
-
-/**
- * 정렬·병합된 [from, to] 범위 배열을 CoordConstraint 문자열로 변환한다.
- * 전체 범위이면 null (와일드카드)을 반환한다.
+ * 정렬된 [from, to] 구간 목록을 개별 정수 배열로 전개한다.
+ *
+ * ── 용도 ──────────────────────────────────────────────────────────────────
+ *
+ * calcAddressRanges / matchRanges가 반환하는 범위를 UI 그리드 셀 목록이나
+ * IN (...) 쿼리 파라미터로 변환할 때 사용한다.
+ *
+ * ── 주의 ──────────────────────────────────────────────────────────────────
+ *
+ * 반환 배열 크기는 구간의 합산 길이와 같으므로, 매우 넓은 범위에 사용하면
+ * 메모리를 많이 소모한다. DB 쿼리에는 범위 그대로 BETWEEN을 쓰는 것이 유리하고,
+ * 이 함수는 UI 렌더링·테스트 검증 등 전개가 필수인 경우에만 사용한다.
  *
  * @example
- * rangesToConstraint([[1, 3], [7, 9]], 16) // → "1-3,7-9"
- * rangesToConstraint([[1, 8]], 8)           // → null (전체 범위 = 와일드카드)
+ * expandRanges([[0, 2], [5, 7]])  // → [0, 1, 2, 5, 6, 7]
+ * expandRanges([[3, 3]])          // → [3]
+ * expandRanges([])                // → []
  */
-export function rangesToConstraint(
-  ranges: readonly [number, number][],
-  dimSize: number,
-): CoordConstraint {
-  if (
-    ranges.length === 1 &&
-    ranges[0][0] === 1 &&
-    ranges[0][1] === dimSize
-  ) {
-    return null;
-  }
-  return ranges
-    .map(([from, to]) => (from === to ? String(from) : `${from}-${to}`))
-    .join(",");
-}
-
-/**
- * 단일 차원에서 제약 a의 값 집합이 제약 b의 값 집합을 포함하는지 판정한다.
- *
- * a ⊇ b  ⟺  subtractRanges(bRanges, aRanges).length === 0
- *
- * @example
- * constraintContains(null,  "3",   8)  // → true  (와일드카드 ⊇ 모든 것)
- * constraintContains("2-5", "3",   8)  // → true
- * constraintContains("3",   "2-5", 8)  // → false
- * constraintContains("3",   null,  8)  // → false (단일 값 ⊉ 와일드카드)
- */
-export function constraintContains(
-  a: CoordConstraint,
-  b: CoordConstraint,
-  dimSize: number,
-): boolean {
-  if (a === null) return true;
-  const aRanges = _constraintToRanges(a, dimSize);
-  const bRanges = _constraintToRanges(b, dimSize);
-  return subtractRanges(bRanges, aRanges).length === 0;
-}
-
-/**
- * 패턴 a의 주소 집합이 패턴 b의 주소 집합을 포함하는지 판정한다.
- * 각 차원에서 a ⊇ b이면 전체 데카르트 곱도 a ⊇ b이다.
- *
- * @example
- * const shape = [8, 4, 16];
- * patternContains(shape, [null,  null, null], ["3", "2", null])  // → true
- * patternContains(shape, ["3",  null, null],  ["3", "2", null])  // → true
- * patternContains(shape, ["3",  "2",  null],  ["3", null, null]) // → false
- */
-export function patternContains(
-  shape: readonly number[],
-  a: ReadonlyArray<CoordConstraint>,
-  b: ReadonlyArray<CoordConstraint>,
-): boolean {
-  for (let i = 0; i < shape.length; i++) {
-    if (!constraintContains(a[i], b[i], shape[i])) return false;
-  }
-  return true;
-}
-
-/**
- * 두 패턴의 greatest lower bound (교집합 패턴)를 반환한다.
- * 어떤 차원에서든 교집합이 비어 있으면 null (공집합).
- *
- * @example
- * const shape = [8, 4, 16];
- * patternMeet([null, "2", null], ["3", null, null], shape)
- * // → ["3", "2", null]
- *
- * patternMeet(["1-3", null, null], ["5-8", null, null], shape)
- * // → null  (role 범위가 겹치지 않음)
- */
-export function patternMeet(
-  a: ReadonlyArray<CoordConstraint>,
-  b: ReadonlyArray<CoordConstraint>,
-  shape: readonly number[],
-): CoordConstraint[] | null {
-  const result: CoordConstraint[] = [];
-  for (let i = 0; i < shape.length; i++) {
-    const aRanges = _constraintToRanges(a[i], shape[i]);
-    const bRanges = _constraintToRanges(b[i], shape[i]);
-    const intersection = intersectRanges(aRanges, bRanges);
-    if (intersection.length === 0) return null;
-    result.push(rangesToConstraint(intersection, shape[i]));
+export function expandRanges(ranges: readonly [number, number][]): number[] {
+  let total = 0;
+  for (const [from, to] of ranges) total += to - from + 1;
+  const result = new Array<number>(total);
+  let idx = 0;
+  for (const [from, to] of ranges) {
+    for (let v = from; v <= to; v++) result[idx++] = v;
   }
   return result;
-}
-
-/**
- * 두 패턴의 least upper bound (합집합을 포함하는 최소 패턴)를 반환한다.
- *
- * @example
- * const shape = [8, 4, 16];
- * patternJoin(["1-3", null, null], ["5-8", null, null], shape)
- * // → ["1-3,5-8", null, null]
- *
- * patternJoin(["3", "2", null], ["3", "4", null], shape)
- * // → ["3", "2,4", null]
- */
-export function patternJoin(
-  a: ReadonlyArray<CoordConstraint>,
-  b: ReadonlyArray<CoordConstraint>,
-  shape: readonly number[],
-): CoordConstraint[] {
-  const result: CoordConstraint[] = [];
-  for (let i = 0; i < shape.length; i++) {
-    const aRanges = _constraintToRanges(a[i], shape[i]);
-    const bRanges = _constraintToRanges(b[i], shape[i]);
-    const union = mergeRanges([...aRanges, ...bRanges]);
-    result.push(rangesToConstraint(union, shape[i]));
-  }
-  return result;
-}
-
-/**
- * 패턴의 구체성 점수를 계산한다.
- *
- * 각 차원: 1 − (coveredValues / dimSize)
- * - 와일드카드 → 0
- * - 단일 값   → (dimSize−1) / dimSize  (≈ 1)
- *
- * 범위: [0, ndims)  (전체 와일드카드 = 0, 전체 고정 → ndims에 수렴)
- *
- * @example
- * const shape = [8, 4, 16];
- * patternSpecificity([null,  null, null], shape) // → 0
- * patternSpecificity(["3",   null, null], shape) // → 0.875
- * patternSpecificity(["3",   "2",  null], shape) // → 1.625
- * patternSpecificity(["3",   "2",  "5"],  shape) // → 2.5625
- */
-export function patternSpecificity(
-  pattern: ReadonlyArray<CoordConstraint>,
-  shape: readonly number[],
-): number {
-  let score = 0;
-  for (let i = 0; i < shape.length; i++) {
-    if (pattern[i] === null) continue;
-    const ranges = _normalizeConstraint(pattern[i], shape[i]);
-    const covered = ranges.reduce(
-      (sum, { from, to }) => sum + (to - from + 1),
-      0,
-    );
-    score += 1 - covered / shape[i];
-  }
-  return score;
-}
-
-/**
- * 1-based 좌표가 패턴에 포함되는지 판정한다. O(ndims).
- *
- * @example
- * const shape = [8, 4, 16];
- * coordMatchesPattern([3, 2, 5], ["3",   "2",  null], shape) // → true
- * coordMatchesPattern([3, 2, 5], ["1-2", null, null], shape) // → false
- */
-export function coordMatchesPattern(
-  coord: readonly number[],
-  pattern: ReadonlyArray<CoordConstraint>,
-  shape: readonly number[],
-): boolean {
-  for (let i = 0; i < shape.length; i++) {
-    if (pattern[i] === null) continue;
-    const ranges = _normalizeConstraint(pattern[i], shape[i]);
-    const val = coord[i];
-    if (!ranges.some(({ from, to }) => val >= from && val <= to)) return false;
-  }
-  return true;
 }

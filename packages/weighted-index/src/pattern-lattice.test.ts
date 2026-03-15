@@ -7,7 +7,7 @@ import {
   patternJoin,
   patternSpecificity,
   coordMatchesPattern,
-} from "./calc.js";
+} from "./pattern-lattice.js";
 
 // shape = [8, 4, 16]  (role × action × resource)
 const SHAPE = [8, 4, 16] as const;

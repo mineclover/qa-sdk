@@ -46,8 +46,25 @@ export class WeightedIndex {
   readonly labels: readonly string[];
   /** 총 가능한 조합 수 */
   readonly size: number;
-  /** 각 차원의 가중치 (Float64Array for tight-loop performance) */
-  private readonly weights: Float64Array;
+  /**
+   * 각 차원의 스트라이드(가중치).
+   *
+   * strides[i] = Π_{j > i} shape[j]  (마지막 차원은 항상 1)
+   *
+   * ── 용도 ──────────────────────────────────────────────────────────────────
+   *
+   * 주소 공식에서 i번째 차원의 좌표가 1 증가하면 주소가 strides[i]만큼 변한다.
+   * API 서버에서 stride를 직접 참조해 수동 주소 계산을 줄일 수 있다.
+   *
+   * @example
+   * // shape [10, 7, 2] → strides [14, 2, 1]
+   * // event dim(stride 14): 서비스 하나가 바뀌면 주소가 14씩 건너뜀
+   * const wi = new WeightedIndex([10, 7, 2]);
+   * wi.strides // → [14, 2, 1]
+   */
+  readonly strides: readonly number[];
+  /** 내부 연산용 Float64Array (tight-loop 성능) */
+  private readonly _weightsBuf: Float64Array;
   /** shape을 Float64Array로 캐시 (tight-loop에서 property 접근 최소화) */
   private readonly shapeBuf: Float64Array;
 
@@ -77,7 +94,8 @@ export class WeightedIndex {
         );
       }
     }
-    this.weights = weights;
+    this._weightsBuf = weights;
+    this.strides = Object.freeze(Array.from(weights));
     this.shapeBuf = new Float64Array(shape);
 
     const size = weights[0] * shape[0];
@@ -183,7 +201,7 @@ export class WeightedIndex {
   // ── 내부 ────────────────────────────────────────────────────────────────
 
   private _encodeCore(coords: number[]): number {
-    const w = this.weights;
+    const w = this._weightsBuf;
     let index = 0;
     for (let i = 0; i < w.length; i++) {
       index += (coords[i] - 1) * w[i];

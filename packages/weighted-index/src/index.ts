@@ -28,6 +28,11 @@ export {
   containsAddress,
   positionsToConstraint,
   calcAddressRanges,
+  parseConstraintSegments,
+  expandRanges,
+  type CoordConstraint,
+} from "./calc.js";
+export {
   rangesToConstraint,
   constraintContains,
   patternContains,
@@ -35,8 +40,7 @@ export {
   patternJoin,
   patternSpecificity,
   coordMatchesPattern,
-  type CoordConstraint,
-} from "./calc.js";
+} from "./pattern-lattice.js";
 export {
   createMask, setBit, clearBit, hasBit,
   buildMask, hasAnyBit, hasAllBits, popcount,
@@ -119,6 +123,24 @@ export {
   type LayoutProtocolOptions,
   type ShardingStrategy,
 } from "./semantic-address.js";
+export {
+  analyzeLayoutSim,
+  dimMaxForBudget,
+  dimMaxBig,
+  dimMaxApprox,
+  productExcluding,
+  shapeProduct,
+  shapeProductUncapped,
+  autoBalancedShape,
+  simDecode,
+  simEncode,
+  simPackUUID,
+  formatLargeNumber,
+  maxProductBig,
+  utilizationBig,
+  type LayoutSimConfig,
+  type LayoutSimAnalysis,
+} from "./layout-fit.js";
 export {
   WeightedIndexError,
   ShapeError,

@@ -240,6 +240,53 @@ describe("[에러 계층] instanceof 타입 검증", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// [공개 속성] strides — 차원별 가중치 노출
+//
+// API 서버에서 수동 stride 계산 (`const STRIDE = 7 * 2;`)을 제거하기 위해
+// WeightedIndex.strides를 public readonly로 노출한다.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("[공개 속성] strides", () => {
+  it("strides[i] = product(shape[i+1:])", () => {
+    // shape [3, 4, 2] → strides [8, 2, 1]
+    expect(W342.strides).toEqual([8, 2, 1]);
+  });
+
+  it("calcWeights와 동일한 결과", () => {
+    // strides는 calcWeights(shape) 결과와 동일해야 한다
+    // shape [3, 4, 2] → weights [8, 2, 1]
+    expect(W342.strides).toEqual([8, 2, 1]);
+    // shape [4, 4, 8, 2] → weights [64, 16, 2, 1]
+    expect(W4482.strides).toEqual([64, 16, 2, 1]);
+  });
+
+  it("4차원: shape [4, 4, 8, 2]", () => {
+    // strides: [4*8*2=64, 8*2=16, 2, 1]
+    expect(W4482.strides).toEqual([64, 16, 2, 1]);
+  });
+
+  it("단일 차원: shape [5] → strides [1]", () => {
+    const wi = new WeightedIndex([5]);
+    expect(wi.strides).toEqual([1]);
+  });
+
+  it("frozen 배열이다 (불변)", () => {
+    expect(Object.isFrozen(W342.strides)).toBe(true);
+  });
+
+  it("strides를 사용해 특정 차원의 좌표 변화량을 계산할 수 있다", () => {
+    // event index 시나리오: shape [10, 7, 2] (svc × event × initiator)
+    const wi = new WeightedIndex([10, 7, 2], ["svc", "event", "initiator"]);
+    // strides: [14, 2, 1]
+    expect(wi.strides).toEqual([14, 2, 1]);
+
+    // svc가 1 증가하면 address가 14 증가
+    const base = wi.encode([1, 1, 1]);       // 0
+    const nextSvc = wi.encode([2, 1, 1]);     // 14
+    expect(nextSvc - base).toBe(wi.strides[0]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // [성능 API] unsafe / buffer 변형
 // ─────────────────────────────────────────────────────────────────────────────
 describe("[성능 API] unsafe/buffer 변형", () => {
