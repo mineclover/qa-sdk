@@ -1,10 +1,48 @@
 # index-meta
 
-닫힌 패턴 인덱싱 스키마의 **안정적인 버전 관리 DB 프레임워크**.
+**구조화된 다차원 식별자 레지스트리.**
 
-`weighted-index`가 좌표 ↔ 정수 변환의 수학을 제공한다면, `index-meta`는 그 위에 스키마 선언, 버전 관리, 저장소, 분산 라우팅까지 구성해 — 안정적이고 일정한 간격과 기간 내에서 천천히 버전을 올릴 수 있도록 지원하는 DB 인프라를 설계한다.
+n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 정수 식별자를 부여하고, 스키마 변경 시 기존 식별자를 보존하는 버전 관리 구조를 제공한다. `index_ref`를 통한 DAG 구조 탐색으로 인덱스 간 참조 체인을 지원한다.
+
+`weighted-index`가 좌표 ↔ 정수 변환의 수학(mixed-radix positional encoding)을 제공한다면, `index-meta`는 그 위에 스키마 선언, 버전 스냅샷, capacity headroom, 마이그레이션, 저장소, 분산 라우팅을 구성한다.
 
 > 스펙 문서: [`docs/specs/indexing/index-meta/`](../../docs/specs/indexing/index-meta/README.md)
+
+---
+
+## 특징
+
+### 구현 완료
+
+| 특징 | 설명 | 구현 위치 |
+|------|------|-----------|
+| **n차원 → 정수 식별자** | 임의 개수의 카테고리 차원을 조합해 고유한 정수를 부여. 이름이 바뀌거나 경로가 바뀌어도 숫자 식별자는 안정적으로 유지 | [`meta-codec.ts`](src/meta-codec.ts) — encode/decode |
+| **양방향 encode/decode** | encode로 1차원 정수로 압축하고, SDK는 DecodeMap을 들고 있어 독립적으로 decode 가능. 차원 분리 | [`meta-resolver.ts:52`](src/meta-resolver.ts#L52) — `getDecodeMap()`, [`index-sdk.ts`](src/index-sdk.ts) — `toDecodeMap()` |
+| **버전 스냅샷 + 자동 마이그레이션** | capacity headroom으로 shape 변경 최소화. read-repair 패턴으로 읽을 때 즉시 마이그레이션 수행 | [`migrate-address.ts`](src/migrate-address.ts) — `migrateAddress`/`migrateValue` |
+| **index_ref DAG 탐색** | 인덱스 간 참조 체인을 따라가며 재귀 decode하거나, 하위 조건으로 상위 범위를 계산 | [`cross-index-query.ts`](src/cross-index-query.ts) — `deepDecode`/`composeQuery` |
+| **마이크로서비스 분산 설계** | PrefixRouter로 prefix → D1 DB 라우팅. DistributedStoreClient가 멀티 스토어 조율 | [`distributed-client.ts`](src/distributed-client.ts), [`prefix-router.ts`](src/prefix-router.ts) |
+| **DecodeMap 캐싱** | MetaCodec은 DecodeMap만으로 동작. 레지스트리 없이 decode 번들을 캐싱해 외부 서비스에 배포 가능 | [`meta-codec.ts:259`](src/meta-codec.ts#L259) |
+| **UUID 주소 표현** | layout 프로토콜로 semantic address를 UUID(128bit) 포맷으로 직렬화/파싱 | [`pack-format.ts:94`](../weighted-index/src/pack-format.ts#L94), [`semantic-address.ts:383`](../weighted-index/src/semantic-address.ts#L383) |
+| **게이트 제어** | 4-state 모델(active/inactive/open/reserved)로 주소별 encode/decode 허용 여부를 O(log n)으로 판정 | [`invalid-ranges.ts`](src/invalid-ranges.ts) |
+| **정책 해석** | 좌표 패턴 기반 규칙 매칭, 충돌 감지, 전략별 해석(most-specific, priority, first-match, collect) | [`policy-resolver.ts`](src/policy-resolver.ts) |
+
+### 활용 가능 (구조적으로 지원되나 전용 통합은 미구현)
+
+| 활용 | 근거 | 상태 |
+|------|------|------|
+| 로깅 payload 경량화 | encode → 정수 압축으로 payload 크기 절감. DecodeMap 캐싱으로 수신 측에서 복원 | 전용 로깅 어댑터 없음. 범용 encode/decode로 달성 |
+| 검색 인덱싱 보조 라벨 | 순수 정수 로직이므로 Elasticsearch, ClickHouse 등의 numeric field로 사용 가능 | 검색 엔진 통합 없음. 인덱스 값을 직접 저장하는 방식 |
+| MCP/CLI DX | 스키마가 선언적이고 규칙 기반이므로 품질 검사, 마이그레이션 권장, codegen 자동화에 적합 | 미구현 |
+| 메모리 압축 | 버전/스펙을 고정하면 shape가 결정적이므로 ArrayBuffer 수준 패킹 가능 | 미구현. 현재 JS Object 기반 |
+
+## 제약사항
+
+| 제약 | 설명 | 대응 |
+|------|------|------|
+| **주소 예측 가능성** | 주소 공간이 결정적(deterministic)이므로 하나의 주소를 알면 같은 스키마의 다른 주소를 열거할 수 있다. 주소 자체에 난수화나 암호화가 없음 | 주소를 외부에 노출하지 않거나, 전송 계층에서 암호화. 주소는 내부 식별자로만 사용 권장 |
+| **soft 삭제 누적** | entries는 append-only이므로 inactive 처리된 항목도 주소 공간을 영구적으로 점유. shape가 줄지 않음 | 정상 운영 중에는 headroom 내에서 관리. inactive 비율이 높아지면 새 스냅샷 버전으로 마이그레이션 |
+| **영구 제거 = 마이그레이션** | inactive 항목을 주소 공간에서 완전히 제거하려면 새 스냅샷을 만들고 `DimSnapshotMigration.indexMap`으로 position을 재매핑해야 한다. in-place compaction 없음 | [`migrate-address.ts`](src/migrate-address.ts)의 read-repair 패턴으로 점진적 전환. 일괄 마이그레이션 불필요 |
+| **Number 정밀도 한계** | `size = product(shape)`이므로 dim이 많거나 entries가 많으면 `Number.MAX_SAFE_INTEGER`(`2^53`)에 도달. 13 hex chars 이상에서 캡 발생 | BigInt 대안 필요 (미구현) |
 
 ---
 
@@ -811,3 +849,49 @@ tsup이 두 진입점(`src/index.ts`, `src/client.ts`)을 빌드하며, 공통 �
 |---|---|---|---|
 | `index.ts` | `"index-meta"` | 전체 (SQL 어댑터, 마이그레이션, 분산 클라이언트) | ✓ (external) |
 | `client.ts` | `"index-meta/client"` | SDK + 코어 (MetaRegistry, MetaCodec, MetaResolver) | ✗ |
+
+---
+
+## TODO
+
+다차원 식별자 레지스트리의 구조적 특성을 기반으로 확장 가능한 영역.
+
+> 스펙 문서: [`docs/specs/indexing/index-meta/`](../../docs/specs/indexing/index-meta/README.md)
+
+### Graph Engine 분화
+
+현재 `index_ref` + `deepDecode`/`composeQuery`로 DAG 탐색, `traceMigration`으로 마이그레이션 경로 탐색(BFS)이 구현되어 있다. 범용 그래프 엔진으로 발전시키려면:
+
+**구현 완료:**
+
+| 기능 | 구현 위치 | 스펙 |
+|------|-----------|------|
+| 순방향 DAG 탐색 — `deepDecode` (재귀, 순환 방지), `composeQuery` (하위 조건 → 상위 범위) | [`cross-index-query.ts:53`](src/cross-index-query.ts#L53), [`cross-index-query.ts:138`](src/cross-index-query.ts#L138) | [`scenarios.spec.md §14-16`](../../docs/specs/indexing/index-meta/scenarios.spec.md) |
+| 마이그레이션 경로 탐색 — `traceMigration`이 BFS로 스냅샷 간 경로 탐색 | [`meta-registry.ts:651`](src/meta-registry.ts#L651), [`meta-registry.ts:1065`](src/meta-registry.ts#L1065) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
+| WeightedIndex 캐시 — `MetaRegistry.wiCache`로 encode/decode 연산 캐싱 | [`meta-registry.ts:112`](src/meta-registry.ts#L112) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
+| PrefixRegistry 역참조 — `getReverseRefs`로 leaf를 참조하는 composite prefix 탐색 | [`prefix-registry.ts:93`](src/prefix-registry.ts#L93), [`memory-prefix-registry.ts:63`](src/adapters/memory-prefix-registry.ts#L63), [`sql-prefix-registry.ts:137`](src/adapters/sql-prefix-registry.ts#L137) | [`scenarios-address.spec.md §17-19`](../../docs/specs/indexing/index-meta/scenarios-address.spec.md) |
+
+**미구현:**
+- [ ] deepDecode/composeQuery 결과 캐시 — 현재 매 호출마다 재귀 탐색. 빈번한 탐색 패턴에 대해 adjacency 사전 캐싱으로 O(1) 접근
+- [ ] MetaRegistry 수준 역방향 탐색 — PrefixRegistry에는 있으나, MetaRegistry에서 "이 index를 참조하는 상위 index" 역추적 API 없음
+- [ ] cross-index 경로 쿼리 — 두 index 노드 간 도달 가능성 판정, 최단 경로 등 그래프 알고리즘 레이어
+- [ ] 그래프 스키마 분리 — `index_ref`가 [`types.ts:58`](src/types.ts#L58) `DimKind`/[`types.ts:118`](src/types.ts#L118) `entryRefs`로 MetaRegistry 스키마에 임베드됨. 독립적인 그래프 스키마와 별도 저장소(Graph Index DB)로 분리
+
+### Vocabulary 관리
+
+현재 dim entries는 `string_enum`/`number_enum`으로 선언되며, `applyEntryBatch`로 capacity headroom 내에서 런타임 추가가 가능하고, `EntryFlagStore`로 active/inactive 상태를 런타임 관리할 수 있다.
+
+**구현 완료:**
+
+| 기능 | 구현 위치 | 스펙 |
+|------|-----------|------|
+| capacity headroom — `DimSnapshotInput.capacity`로 사전 할당. headroom 내 추가 시 shape/weight 불변 | [`types.ts:107`](src/types.ts#L107), [`meta-registry.ts:90`](src/meta-registry.ts#L90) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
+| 런타임 entry 추가 — `applyEntryBatch`로 sparse position에 entry 점진적 적재 (capacity 내, 멱등) | [`api-payload.ts:72`](src/api-payload.ts#L72) | [`store.spec.md`](../../docs/specs/indexing/index-meta/store.spec.md) |
+| 런타임 상태 관리 — `EntryFlagStore`로 append-only 상태 이력. `computeActiveIndices`로 active 필터링 | [`entry-flag-store.ts:20`](src/entry-flag-store.ts#L20), [`memory-entry-flag-store.ts:3`](src/adapters/memory-entry-flag-store.ts#L3), [`sql-entry-flag-store.ts:20`](src/adapters/sql-entry-flag-store.ts#L20), [`meta-registry.ts:77`](src/meta-registry.ts#L77) | [`scenarios.spec.md`](../../docs/specs/indexing/index-meta/scenarios.spec.md) |
+| 마이그레이션 체인 — `DimSnapshotMigration.indexMap`으로 버전 간 position 재매핑 | [`types.ts:146`](src/types.ts#L146) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
+
+**미구현:**
+- [ ] capacity 자동 조정 — 현재 capacity는 스냅샷 생성 시 고정. headroom 소진 시 자동으로 새 스냅샷을 생성하는 전략
+- [ ] vocabulary 분할(sharding) — 대규모 vocabulary를 prefix/range 기준으로 분할하는 전략
+- [ ] sub-word 분리 — 자연어 입력을 dim entries로 매핑하기 위한 토크나이저 어댑터 (BPE, WordPiece 등)
+- [ ] 오탈자/동의어 정규화 — fuzzy matching 레이어. 입력 문자열을 가장 가까운 entry로 매핑 (edit distance, alias table)

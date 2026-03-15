@@ -83,6 +83,14 @@ export function computeActiveIndices(snapshot: DimSnapshot): number[] {
   return result;
 }
 
+/**
+ * 스냅샷의 실효 capacity를 반환한다.
+ * capacity가 명시되지 않은 경우 entries.length를 fallback으로 사용한다.
+ */
+export function snapshotCapacity(snapshot: DimSnapshot): number {
+  return snapshot.capacity ?? snapshot.entries.length;
+}
+
 // ── 내부 캐시 타입 ────────────────────────────────────────────────────────────
 
 interface SnapshotCache {
@@ -766,8 +774,8 @@ export class MetaRegistry {
       movedPositions.sort((a, b) => a.position - b.position);
     }
 
-    const fromCapa = fromSnap.capacity ?? fromSnap.entries.length;
-    const toCapa   = toSnap.capacity ?? toSnap.entries.length;
+    const fromCapa = snapshotCapacity(fromSnap);
+    const toCapa   = snapshotCapacity(toSnap);
 
     return {
       dimId,
@@ -829,8 +837,8 @@ export class MetaRegistry {
       if (fromSnapshotId !== toSnapshotId) {
         const fromSnap = this._getSnapshotCache(dimId, fromSnapshotId).snapshot;
         const toSnap = this._getSnapshotCache(dimId, toSnapshotId).snapshot;
-        const fromCapa = fromSnap.capacity ?? fromSnap.entries.length;
-        const toCapa   = toSnap.capacity ?? toSnap.entries.length;
+        const fromCapa = snapshotCapacity(fromSnap);
+        const toCapa   = snapshotCapacity(toSnap);
         changedDims.push({
           dimId,
           fromSnapshot: fromSnapshotId,

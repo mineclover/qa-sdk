@@ -40,7 +40,7 @@
  * ```
  */
 
-import { MetaRegistry } from "./meta-registry.js";
+import { MetaRegistry, computeActiveIndices, snapshotCapacity } from "./meta-registry.js";
 import { MetaCodec } from "./meta-codec.js";
 import { MetaResolver } from "./meta-resolver.js";
 import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet, EntryStatus } from "./types.js";
@@ -249,7 +249,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
         const snapshotId = iv.snapshots[dim.dimId];
         dimSnapshotIdMap.set(dim.dimId, snapshotId);
         const snapshot = registry.getDimSnapshot(dim.dimId, snapshotId);
-        const cap = snapshot.capacity ?? snapshot.entries.length;
+        const cap = snapshotCapacity(snapshot);
         dimCapacityMap.set(dim.dimId, {
           total: snapshot.entries.length,
           capacity: cap,
@@ -363,11 +363,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
       if (c) return c;
 
       const snapshot = registry.getDimSnapshot(dimId, snapshotId);
-      const activeIndices: number[] = [];
-      for (let i = 1; i <= snapshot.entries.length; i++) {
-        const flag = snapshot.entryFlags[i];
-        if (!flag || flag.status === "active") activeIndices.push(i);
-      }
+      const activeIndices = computeActiveIndices(snapshot);
       const activeSet: DimActiveSet = {
         dimId,
         snapshotId,

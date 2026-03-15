@@ -18,7 +18,7 @@
  *  getDataset()                      : 전체 스키마 내보내기
  */
 
-import { computeActiveIndices, type MetaRegistry } from "./meta-registry.js";
+import { computeActiveIndices, snapshotCapacity, type MetaRegistry } from "./meta-registry.js";
 import type {
   AddressConfig,
   EntityId,
@@ -71,7 +71,7 @@ export class MetaResolver {
 
     const snapshots = snapshotIds.map((snapshotId) => {
       const sn = reg.getDimSnapshot(dimId, snapshotId);
-      const capacity = sn.capacity ?? sn.entries.length;
+      const capacity = snapshotCapacity(sn);
       return {
         snapshotId,
         entries: [...sn.entries] as EntityId[],
@@ -111,7 +111,7 @@ export class MetaResolver {
         const snapshotId = iv.snapshots[dimId];
         const sn = reg.getDimSnapshot(dimId, snapshotId);
         const dimDef = reg.getDimDef(dimId);
-        const capacity = sn.capacity ?? sn.entries.length;
+        const capacity = snapshotCapacity(sn);
         return {
           dimId,
           snapshotId,
