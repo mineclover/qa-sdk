@@ -4,6 +4,7 @@ import { MetaCodec } from "./meta-codec.js";
 import { MetaResolver } from "./meta-resolver.js";
 import { IndexNotFoundError, IndexVersionNotFoundError, DimNotFoundError } from "./errors.js";
 import {
+  WeightedIndex,
   PACK_FORMATS,
   createAddressConverter,
   createLayoutProtocol,
@@ -135,17 +136,10 @@ describe("getDecodeMap", () => {
     const vv = codec.encode({ role: "editor", action: "write", resource: 20 });
 
     // DecodeMap만으로 외부 decode 재현
-    const weights: number[] = [];
-    for (let i = 0; i < map.shape.length; i++) {
-      weights.push(map.shape.slice(i + 1).reduce((a, b) => a * b, 1));
-    }
-
-    let remaining = vv.value;
+    const coords = new WeightedIndex(map.shape).decode(vv.value);
     const result: Record<string, string | number> = {};
     for (let i = 0; i < map.dims.length; i++) {
-      const coord = Math.floor(remaining / weights[i]) + 1;
-      remaining = remaining % weights[i];
-      result[map.dims[i].dimId] = map.dims[i].entries[coord - 1];
+      result[map.dims[i].dimId] = map.dims[i].entries[coords[i] - 1];
     }
 
     expect(result).toEqual({ role: "editor", action: "write", resource: 20 });
@@ -416,13 +410,10 @@ describe("시나리오: DecodeMap 자립 UUID 디코딩", () => {
 
   /** DecodeMap 기반으로 외부에서 value → entity ID를 복원하는 순수 함수 */
   function externalDecode(value: number, map: { shape: number[]; dims: { dimId: string; entries: (string | number)[] }[] }) {
-    const weights = map.shape.map((_, i) => map.shape.slice(i + 1).reduce((a, b) => a * b, 1));
-    let remaining = value;
+    const coords = new WeightedIndex(map.shape).decode(value);
     const result: Record<string, string | number> = {};
     for (let i = 0; i < map.dims.length; i++) {
-      const coord = Math.floor(remaining / weights[i]) + 1;
-      remaining = remaining % weights[i];
-      result[map.dims[i].dimId] = map.dims[i].entries[coord - 1];
+      result[map.dims[i].dimId] = map.dims[i].entries[coords[i] - 1];
     }
     return result;
   }
@@ -690,15 +681,10 @@ describe("시나리오: DecodeMap + index_ref (중첩 인덱스)", () => {
     const vv = articleCodec.encode({ quality_tier: 2 });
 
     // 외부 decode: outer
-    const weights = articleMap.shape.map((_, i) =>
-      articleMap.shape.slice(i + 1).reduce((a, b) => a * b, 1)
-    );
-    let remaining = vv.value;
+    const outerCoords = new WeightedIndex(articleMap.shape).decode(vv.value);
     const outerResult: Record<string, number> = {};
     for (let i = 0; i < articleMap.dims.length; i++) {
-      const coord = Math.floor(remaining / weights[i]) + 1;
-      remaining = remaining % weights[i];
-      outerResult[articleMap.dims[i].dimId] = articleMap.dims[i].entries[coord - 1] as number;
+      outerResult[articleMap.dims[i].dimId] = articleMap.dims[i].entries[outerCoords[i] - 1] as number;
     }
     expect(outerResult.quality_tier).toBe(2);
 
@@ -707,15 +693,10 @@ describe("시나리오: DecodeMap + index_ref (중첩 인덱스)", () => {
     expect(dim.kind.type).toBe("index_ref");
 
     // inner decode (doc_meta value=2)
-    const innerWeights = docMetaMap.shape.map((_, i) =>
-      docMetaMap.shape.slice(i + 1).reduce((a, b) => a * b, 1)
-    );
-    let innerRemaining = outerResult.quality_tier;
+    const innerCoords = new WeightedIndex(docMetaMap.shape).decode(outerResult.quality_tier);
     const innerResult: Record<string, string | number> = {};
     for (let i = 0; i < docMetaMap.dims.length; i++) {
-      const coord = Math.floor(innerRemaining / innerWeights[i]) + 1;
-      innerRemaining = innerRemaining % innerWeights[i];
-      innerResult[docMetaMap.dims[i].dimId] = docMetaMap.dims[i].entries[coord - 1];
+      innerResult[docMetaMap.dims[i].dimId] = docMetaMap.dims[i].entries[innerCoords[i] - 1];
     }
 
     expect(innerResult).toEqual({ format: "html", lang: "ko" });

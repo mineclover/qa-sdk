@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { calcAddressRanges } from "weighted-index";
+import { calcAddressRanges, WeightedIndex } from "weighted-index";
 import { defineTable } from "./table-def.js";
 import { compileSchema } from "./compile-schema.js";
 import { InMemoryPrefixRegistry } from "./adapters/memory-prefix-registry.js";
@@ -108,14 +108,8 @@ describe("§12 주소 해석 (Address Resolution)", () => {
     const resolved = await registry.resolveAddress("perm:v1:1345");
     const { shape, index } = resolved!;
 
-    // shape만으로 수동 decode (WeightedIndex 미사용)
-    const weights = shape.map((_, i) => shape.slice(i + 1).reduce((a, b) => a * b, 1));
-    let remaining = index;
-    const coords: number[] = [];
-    for (let i = 0; i < shape.length; i++) {
-      coords.push(Math.floor(remaining / weights[i]) + 1);
-      remaining %= weights[i];
-    }
+    // shape만으로 decode (WeightedIndex 사용)
+    const coords = new WeightedIndex(shape).decode(index);
 
     // 각 coord는 [1, shape[i]] 범위 내
     for (let i = 0; i < shape.length; i++) {

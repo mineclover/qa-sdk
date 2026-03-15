@@ -1,76 +1,101 @@
 /**
- * invalid-ranges.ts — 1D 주소 공간의 활성화 상태 캐싱
+ * invalid-ranges.ts — composite 주소별 encode/decode 게이트 제어
  *
- * ── 활성화 상태 ──────────────────────────────────────────────────────────────
+ * ── 핵심 추상화 ──────────────────────────────────────────────────────────────
  *
- *   active   : 활성. 값이 있고 사용 가능. encode + decode 허용.
- *   inactive : 비활성. 값은 있으나 비활성 처리됨.
- *              기존 데이터 decode는 허용, 새 encode 불가.
- *   reserved : 예약됨. capacity 공간은 있으나 값이 없음.
- *              encode/decode 모두 불가.
+ * 원인은 다양하지만 결과는 단순하다:
+ *   특정 주소에 대해 encode를 허용하는가, decode를 허용하는가.
+ *
+ * 4가지 상태 = encode × decode 두 boolean의 조합:
+ *
+ *   active   encode ✓  decode ✓  (정상)
+ *   inactive encode ✗  decode ✓  (기존 데이터 조회만, 새 값 추가 불가)
+ *   open     encode ✓  decode ✗  (빈 슬롯, 값 채울 수 있음, 값 없어서 decode 불가)
+ *   reserved encode ✗  decode ✗  (완전 잠금)
  *
  * ── 합성 규칙 ────────────────────────────────────────────────────────────────
  *
- *   composite 주소의 상태 = 가장 제약이 강한 dim의 상태.
- *   reserved > inactive > active
+ *   composite 주소의 게이트 = 각 dim 게이트의 AND.
+ *   어느 dim이라도 encode를 막으면 composite도 encode 차단.
+ *   어느 dim이라도 decode를 막으면 composite도 decode 차단.
  *
- *   어느 한 dim이라도 reserved → composite reserved
- *   어느 한 dim이라도 inactive (reserved 아님) → composite inactive
- *   모든 dim이 active → composite active
+ *   → inactive dim + open dim 조합 → encode ✗ AND decode ✗ → reserved 상태
  *
  * ── 캐싱 목적 ────────────────────────────────────────────────────────────────
  *
- *   dim별 상태를 composite 주소 공간으로 미리 계산해 저장한다.
- *   이후 isActive(addr) / isAccessible(addr)를 O(log n) binary search로 처리.
- *
- * ── 여유 공간(reserved) 표현 ──────────────────────────────────────────────────
- *
- *   capacity가 선언되었으나 entry가 없는 position = reserved.
- *   positionsToConstraint(emptyPositions)로 constraint 문자열을 생성해
- *   DimStateSpec에 전달한다.
+ *   dim별 상태를 composite 주소 공간으로 미리 계산해 저장.
+ *   이후 checkGate(address) → { encode, decode }를 O(log n)으로 반환.
  */
 
-import { calcAddressRanges, mergeRanges, type CoordConstraint } from "weighted-index";
+import {
+  calcAddressRanges,
+  mergeRanges,
+  intersectRanges,
+  subtractRanges,
+  complementRanges,
+  containsAddress,
+  type CoordConstraint,
+} from "weighted-index";
 
-// ── 활성화 상태 ───────────────────────────────────────────
+// ── 4가지 상태 ────────────────────────────────────────────
 
-export type AddressState = "active" | "inactive" | "reserved";
+export type AddressState = "active" | "inactive" | "open" | "reserved";
+
+/** 각 상태의 encode/decode 허용 여부 */
+export const ADDRESS_GATE: Record<AddressState, { encode: boolean; decode: boolean }> = {
+  active:   { encode: true,  decode: true  },
+  inactive: { encode: false, decode: true  },
+  open:     { encode: true,  decode: false },
+  reserved: { encode: false, decode: false },
+} as const;
 
 // ── 차원별 상태 명세 ──────────────────────────────────────
 
 /**
  * 한 차원의 특정 coord 범위에 대한 상태 선언.
- *
- * coords: CoordConstraint 문자열. null이면 이 dim 전체에 적용.
+ * active는 기본값이므로 선언 불필요.
  *
  * @example
- * // position 6-8이 비어있음 (capacity 확장 여유 공간)
- * { dimIndex: 0, state: "reserved", coords: "6-8" }
- *
- * // position 3이 비활성 처리됨
- * { dimIndex: 1, state: "inactive", coords: "3", reason: "deprecated" }
- *
- * // resource 차원 전체 비활성
- * { dimIndex: 2, state: "inactive", coords: null, reason: "차원 전환 중" }
+ * { dimIndex: 0, state: "open",     coords: "6-8" }  // 빈 슬롯 (쓰기 허용)
+ * { dimIndex: 0, state: "inactive", coords: "5" }     // 비활성 값
+ * { dimIndex: 2, state: "reserved", coords: null }    // 차원 전체 잠금
  */
 export interface DimStateSpec {
   readonly dimIndex: number;
-  readonly state: Exclude<AddressState, "active">; // active는 기본값이므로 선언 불필요
+  readonly state: Exclude<AddressState, "active">;
+  /** CoordConstraint 문자열. null = 이 dim 전체 */
   readonly coords: string | null;
   readonly reason?: string;
+}
+
+// ── 게이트 결과 ───────────────────────────────────────────
+
+export interface GateResult {
+  readonly encode: boolean;
+  readonly decode: boolean;
+  readonly state: AddressState;
+  /**
+   * true이면 캐시 상태가 stale할 수 있으므로 실제 값 조회로 검증을 권장한다.
+   *
+   * open 상태에서만 true.
+   * 캐시가 갱신되기 전에 이미 값이 채워졌을 수 있으므로,
+   * decode=false임에도 실제로 조회해보면 값이 있을 수 있다.
+   *
+   * reserved는 의도적 잠금이므로 shouldVerify=false (hard block).
+   */
+  readonly shouldVerify: boolean;
 }
 
 // ── 계산 함수 ─────────────────────────────────────────────
 
 /**
- * dim별 상태 명세에서 composite 주소 구간을 계산한다.
+ * dim별 상태 명세에서 non-active 상태의 composite 주소 구간을 계산한다.
  *
- * @returns
- *   reservedRanges : reserved state composite 주소 구간
- *   inactiveRanges : inactive state composite 주소 구간 (reserved 제외)
+ * encode 차단 구간 = inactive + reserved
+ * decode 차단 구간 = open     + reserved
  *
- * 두 구간은 겹치지 않는다. reserved가 inactive보다 우선하므로,
- * 같은 주소가 두 명세에 해당하면 reserved로만 기록된다.
+ * 반환된 3개 구간은 서로 겹치지 않도록 우선순위를 적용한다.
+ * reserved > inactive/open (더 제약적인 상태가 우선).
  */
 export function computeStateRanges(
   shape: readonly number[],
@@ -78,9 +103,11 @@ export function computeStateRanges(
 ): {
   reservedRanges: [number, number][];
   inactiveRanges: [number, number][];
+  openRanges:     [number, number][];
 } {
-  const reserved: [number, number][] = [];
-  const inactive: [number, number][] = [];
+  const rawReserved: [number, number][] = [];
+  const rawInactive: [number, number][] = [];
+  const rawOpen:     [number, number][] = [];
 
   for (const spec of specs) {
     const coordStr = spec.coords ?? `1-${shape[spec.dimIndex]}`;
@@ -89,159 +116,118 @@ export function computeStateRanges(
     );
     const ranges = calcAddressRanges(shape, constraints);
 
-    if (spec.state === "reserved") reserved.push(...ranges);
-    else                           inactive.push(...ranges);
+    if      (spec.state === "reserved") rawReserved.push(...ranges);
+    else if (spec.state === "inactive") rawInactive.push(...ranges);
+    else                                rawOpen.push(...ranges);
   }
 
-  const mergedReserved = mergeRanges(reserved);
-  const mergedInactive = mergeRanges(inactive);
+  const reservedRanges = mergeRanges(rawReserved);
 
-  // inactive에서 reserved 구간 제거 (reserved가 우선)
-  const pureInactive = _subtractRanges(mergedInactive, mergedReserved);
+  // inactive + open이 겹치면 → 두 게이트 모두 차단 → reserved로 승격
+  const inactiveAndOpen = intersectRanges(mergeRanges(rawInactive), mergeRanges(rawOpen));
+
+  // 최종: reserved = 원래 reserved + (inactive ∩ open)
+  const finalReserved = mergeRanges([...reservedRanges, ...inactiveAndOpen]);
+
+  // inactive/open에서 reserved 구간 제거
+  const finalInactive = subtractRanges(mergeRanges(rawInactive), finalReserved);
+  const finalOpen     = subtractRanges(mergeRanges(rawOpen),     finalReserved);
 
   return {
-    reservedRanges: mergedReserved,
-    inactiveRanges: pureInactive,
+    reservedRanges: finalReserved,
+    inactiveRanges: finalInactive,
+    openRanges:     finalOpen,
   };
 }
 
-// ── 상태 판단 ─────────────────────────────────────────────
+// ── 게이트 조회 ───────────────────────────────────────────
 
 /**
- * composite 주소의 활성화 상태를 O(log n)으로 판단한다.
+ * 주소의 encode/decode 허용 여부를 O(log n)으로 반환한다.
  *
- * reserved > inactive > active 우선순위 적용.
+ * encode 차단: reserved 또는 inactive 구간
+ * decode 차단: reserved 또는 open 구간
+ */
+export function checkGate(
+  address: number,
+  reservedRanges: readonly [number, number][],
+  inactiveRanges: readonly [number, number][],
+  openRanges:     readonly [number, number][],
+): GateResult {
+  const state = classifyAddress(address, reservedRanges, inactiveRanges, openRanges);
+  return {
+    ...ADDRESS_GATE[state],
+    state,
+    // open: 캐시 stale 가능 → 실제 조회로 검증 권장
+    // reserved: 의도적 잠금 → 검증 불필요 (hard block)
+    shouldVerify: state === "open",
+  };
+}
+
+/**
+ * composite 주소의 상태를 판단한다.
+ *
+ * encode 차단 = reserved || inactive
+ * decode 차단 = reserved || open
  */
 export function classifyAddress(
   address: number,
   reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
+  openRanges:     readonly [number, number][],
 ): AddressState {
-  if (_inRanges(address, reservedRanges)) return "reserved";
-  if (_inRanges(address, inactiveRanges)) return "inactive";
+  const encodeBlocked = containsAddress(address, reservedRanges) || containsAddress(address, inactiveRanges);
+  const decodeBlocked = containsAddress(address, reservedRanges) || containsAddress(address, openRanges);
+
+  if (encodeBlocked && decodeBlocked) return "reserved";
+  if (encodeBlocked)                  return "inactive";
+  if (decodeBlocked)                  return "open";
   return "active";
 }
 
-/**
- * 활성화 여부: encode + decode 모두 허용되는가?
- * active 상태만 true.
- */
-export function isActive(
-  address: number,
-  reservedRanges: readonly [number, number][],
-  inactiveRanges: readonly [number, number][],
-): boolean {
-  return classifyAddress(address, reservedRanges, inactiveRanges) === "active";
-}
+// ── 구간 조회 헬퍼 ────────────────────────────────────────
 
-/**
- * 접근 가능 여부: decode가 허용되는가?
- * active + inactive = true. reserved = false.
- */
-export function isAccessible(
-  address: number,
-  reservedRanges: readonly [number, number][],
-): boolean {
-  return !_inRanges(address, reservedRanges);
-}
-
-// ── 구간 조회 ─────────────────────────────────────────────
-
-/**
- * encode + decode 모두 가능한 구간 (active 상태).
- */
-export function activeRanges(
+/** encode 가능한 주소 구간 (active + open) */
+export function encodableRanges(
   capacity: number,
   reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
 ): [number, number][] {
-  const restricted = mergeRanges([
+  const blocked = mergeRanges([
     ...(reservedRanges as [number, number][]),
     ...(inactiveRanges as [number, number][]),
   ]);
-  return _complement(capacity, restricted);
+  return complementRanges(capacity, blocked);
 }
 
-/**
- * decode만 가능한 구간 (inactive 상태).
- * inactiveRanges에서 reservedRanges를 제외한 결과를 그대로 반환.
- */
-export function inactiveOnlyRanges(
+/** decode 가능한 주소 구간 (active + inactive) */
+export function decodableRanges(
+  capacity: number,
+  reservedRanges: readonly [number, number][],
+  openRanges: readonly [number, number][],
+): [number, number][] {
+  const blocked = mergeRanges([
+    ...(reservedRanges as [number, number][]),
+    ...(openRanges     as [number, number][]),
+  ]);
+  return complementRanges(capacity, blocked);
+}
+
+/** encode + decode 모두 가능한 주소 구간 (active only) */
+export function activeRanges(
+  capacity: number,
+  reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
+  openRanges:     readonly [number, number][],
 ): [number, number][] {
-  return [...inactiveRanges] as [number, number][];
+  const blocked = mergeRanges([
+    ...(reservedRanges as [number, number][]),
+    ...(inactiveRanges as [number, number][]),
+    ...(openRanges     as [number, number][]),
+  ]);
+  return complementRanges(capacity, blocked);
 }
 
-// ── positionsToConstraint ─────────────────────────────────
+// ── positionsToConstraint re-export ──────────────────────
 
-/**
- * position 목록 → CoordConstraint 문자열.
- *
- * @example
- * positionsToConstraint([6, 7, 8])    → "6-8"
- * positionsToConstraint([1, 3, 5])    → "1,3,5"
- * positionsToConstraint([1, 2, 5, 6]) → "1-2,5-6"
- */
-export function positionsToConstraint(positions: readonly number[]): string {
-  if (positions.length === 0) return "";
-  const sorted = [...positions].sort((a, b) => a - b);
-  const segments: string[] = [];
-  let from = sorted[0];
-  let to   = sorted[0];
-
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] === to + 1) {
-      to = sorted[i];
-    } else {
-      segments.push(from === to ? String(from) : `${from}-${to}`);
-      from = to = sorted[i];
-    }
-  }
-  segments.push(from === to ? String(from) : `${from}-${to}`);
-  return segments.join(",");
-}
-
-// ── 내부 헬퍼 ─────────────────────────────────────────────
-
-function _inRanges(address: number, ranges: readonly [number, number][]): boolean {
-  if (ranges.length === 0) return false;
-  let lo = 0, hi = ranges.length - 1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    const [from, to] = ranges[mid];
-    if (address < from)    hi = mid - 1;
-    else if (address > to) lo = mid + 1;
-    else return true;
-  }
-  return false;
-}
-
-function _complement(capacity: number, excluded: readonly [number, number][]): [number, number][] {
-  const result: [number, number][] = [];
-  let cursor = 0;
-  for (const [from, to] of excluded) {
-    if (cursor < from) result.push([cursor, from - 1]);
-    cursor = to + 1;
-  }
-  if (cursor < capacity) result.push([cursor, capacity - 1]);
-  return result;
-}
-
-function _subtractRanges(
-  base:    readonly [number, number][],
-  exclude: readonly [number, number][],
-): [number, number][] {
-  if (exclude.length === 0) return [...base] as [number, number][];
-  const result: [number, number][] = [];
-  for (const [bf, bt] of base) {
-    let cursor = bf;
-    for (const [ef, et] of exclude) {
-      if (et < cursor || ef > bt) continue;
-      if (cursor < ef) result.push([cursor, ef - 1]);
-      cursor = et + 1;
-      if (cursor > bt) break;
-    }
-    if (cursor <= bt) result.push([cursor, bt]);
-  }
-  return mergeRanges(result);
-}
+export { positionsToConstraint } from "weighted-index";

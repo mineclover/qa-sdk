@@ -23,6 +23,10 @@ export {
   describeRangeFormula,
   mergeRanges,
   intersectRanges,
+  subtractRanges,
+  complementRanges,
+  containsAddress,
+  positionsToConstraint,
   calcAddressRanges,
   type CoordConstraint,
 } from "./calc.js";
@@ -70,13 +74,15 @@ export {
   hexBoundary,
   hexCeil,
   hexFloor,
-  fitShape,
-  fitLayout,
-  planCapacity,
   type PackFormat,
   type BuiltinFormatName,
   type DefineFormatOptions,
   type HexBoundary,
+} from "./pack-format.js";
+export {
+  fitShape,
+  fitLayout,
+  planCapacity,
   type CapacityPlanDim,
   type PlanCapacityOptions,
   type CapacityRecommendation,
@@ -85,7 +91,7 @@ export {
   type FitShapeResult,
   type FitLayoutOptions,
   type FitLayoutResult,
-} from "./pack-format.js";
+} from "./capacity-planner.js";
 export {
   colonProtocol,
   uriProtocol,
