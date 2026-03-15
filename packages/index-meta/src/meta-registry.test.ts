@@ -463,6 +463,20 @@ describe("accessor API", () => {
     expect(sn.entries).toEqual(["admin", "editor", "viewer"]);
     expect(sn.entryFlags).toEqual({});
   });
+
+  it("DimSnapshot에 capacity가 설정되면 getDimSnapshot으로 접근 가능하다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots.v1 = { entries: ["admin", "editor", "viewer"], capacity: 8 };
+    const reg = new MetaRegistry(input);
+    const sn = reg.getDimSnapshot("role", "v1");
+    expect(sn.capacity).toBe(8);
+  });
+
+  it("capacity 미설정 시 getDimSnapshot.capacity는 undefined", () => {
+    const reg = new MetaRegistry(baseInput());
+    const sn = reg.getDimSnapshot("role", "v1");
+    expect(sn.capacity).toBeUndefined();
+  });
 });
 
 // ── DimSnapshotMigration ─────────────────────────────────────────────────────
@@ -592,6 +606,89 @@ describe("DimSnapshotMigration", () => {
       { fromSnapshotId: "v1", toSnapshotId: "v2", indexMap: { 1: 1 } },
     ];
     expect(() => new MetaRegistry(input)).toThrow(ValidationError);
+  });
+});
+
+// ── validateMigration ─────────────────────────────────────────────────────────
+
+describe("validateMigration", () => {
+  const validationInput = () => ({
+    dims: {
+      category: {
+        kind: { type: "string_enum" } as const,
+        snapshots: {
+          s1: { entries: ["tech", "science", "art"] },
+          s2: { entries: ["tech", "art", "science", "culture", "history"] },
+          s3: { entries: ["tech", "science", "art"] },  // same order as s1
+          s4: { entries: ["tech", "science", "art", "music"] },  // append only from s1
+        },
+        migrations: [
+          // s1→s2: science(2)↔art(3) swap + new entries at 4,5
+          {
+            fromSnapshotId: "s1",
+            toSnapshotId: "s2",
+            indexMap: { 2: 3, 3: 2 },
+          },
+          // s1→s3: identity (same positions, same entities)
+          {
+            fromSnapshotId: "s1",
+            toSnapshotId: "s3",
+            indexMap: {},
+          },
+          // s1→s4: append only (no position changes for existing)
+          {
+            fromSnapshotId: "s1",
+            toSnapshotId: "s4",
+            indexMap: {},
+          },
+        ],
+      },
+    },
+    indices: {
+      idx: {
+        dims: ["category"],
+        versions: {
+          v1: { snapshots: { category: "s1" } },
+          v2: { snapshots: { category: "s2" } },
+          v3: { snapshots: { category: "s3" } },
+          v4: { snapshots: { category: "s4" } },
+        },
+      },
+    },
+  });
+
+  it("완전한 indexMap은 검증을 통과한다", () => {
+    const reg = new MetaRegistry(validationInput());
+    // s1→s2: science(2)↔art(3) swap, both mapped
+    expect(() => reg.validateMigration("category", "s1", "s2")).not.toThrow();
+  });
+
+  it("불완전한 indexMap (swap된 position 누락)은 ValidationError", () => {
+    const input = validationInput();
+    // s1→s2 migration에서 indexMap을 { 2: 3 }만 두면 position 3 누락
+    input.dims.category.migrations[0].indexMap = { 2: 3 };
+    const reg = new MetaRegistry(input);
+    expect(() => reg.validateMigration("category", "s1", "s2")).toThrow(ValidationError);
+  });
+
+  it("모든 position이 identity인 migration은 검증을 통과한다", () => {
+    const reg = new MetaRegistry(validationInput());
+    // s1→s3: same order, empty indexMap → all identity
+    expect(() => reg.validateMigration("category", "s1", "s3")).not.toThrow();
+  });
+
+  it("append-only entries (swap 없음)는 검증을 통과한다", () => {
+    const reg = new MetaRegistry(validationInput());
+    // s1→s4: tech, science, art same positions + music appended
+    expect(() => reg.validateMigration("category", "s1", "s4")).not.toThrow();
+  });
+
+  it("잘못된 mapping 값은 ValidationError", () => {
+    const input = validationInput();
+    // s1→s2: science(2) should go to 3, but map says 1
+    input.dims.category.migrations[0].indexMap = { 2: 1, 3: 2 };
+    const reg = new MetaRegistry(input);
+    expect(() => reg.validateMigration("category", "s1", "s2")).toThrow(ValidationError);
   });
 });
 
@@ -2038,5 +2135,199 @@ describe("index_ref cycle detection", () => {
       },
     };
     expect(() => new MetaRegistry(input)).not.toThrow();
+  });
+});
+
+// ── snapshotDiff ────────────────────────────────────────────────────────────
+
+describe("snapshotDiff", () => {
+  it("append-only: addedEntries를 반환하고 movedPositions는 비어있다", () => {
+    const input = baseInput();
+    const reg = new MetaRegistry(input);
+
+    // role v1(3) → v2(4): "guest" 추가
+    const diff = reg.snapshotDiff("role", "v1", "v2");
+
+    expect(diff.dimId).toBe("role");
+    expect(diff.from).toEqual({ snapshotId: "v1", entriesCount: 3, capacity: 3, headroom: 0, entries: ["admin", "editor", "viewer"] });
+    expect(diff.to).toEqual({ snapshotId: "v2", entriesCount: 4, capacity: 4, headroom: 0, entries: ["admin", "editor", "viewer", "guest"] });
+    expect(diff.capacityChanged).toBe(true);
+    expect(diff.addedEntries).toEqual(["guest"]);
+    expect(diff.movedPositions).toEqual([]);
+  });
+
+  it("migration이 있는 경우 movedPositions가 채워진다", () => {
+    const input = baseInput();
+    // v1: ["admin", "editor", "viewer"]
+    // v2b: ["admin", "viewer", "editor", "guest"]  (editor와 viewer swap + guest 추가)
+    input.dims.role.snapshots = {
+      ...input.dims.role.snapshots,
+      v2b: { entries: ["admin", "viewer", "editor", "guest"] },
+    };
+    (input.dims.role as unknown as { migrations: unknown[] }).migrations = [
+      {
+        fromSnapshotId: "v1",
+        toSnapshotId: "v2b",
+        indexMap: { 2: 3, 3: 2 },  // editor: pos 2→3, viewer: pos 3→2
+      },
+    ];
+    // v2b를 사용하는 index version 추가
+    input.indices.perm.versions = {
+      ...input.indices.perm.versions,
+      iv3: { snapshots: { role: "v2b", action: "v1", resource: "v1" } },
+    };
+
+    const reg = new MetaRegistry(input);
+    const diff = reg.snapshotDiff("role", "v1", "v2b");
+
+    expect(diff.addedEntries).toEqual(["guest"]);
+    expect(diff.movedPositions).toEqual([
+      { position: 2, from: 2, to: 3, entity: "editor" },
+      { position: 3, from: 3, to: 2, entity: "viewer" },
+    ]);
+  });
+
+  it("같은 snapshot이면 변경 없음", () => {
+    const reg = new MetaRegistry(baseInput());
+    const diff = reg.snapshotDiff("role", "v1", "v1");
+
+    expect(diff.from.entriesCount).toBe(3);
+    expect(diff.to.entriesCount).toBe(3);
+    expect(diff.addedEntries).toEqual([]);
+    expect(diff.movedPositions).toEqual([]);
+  });
+
+  it("capacity가 설정된 경우 headroom을 정확히 계산한다", () => {
+    const input = baseInput();
+    input.dims.role.snapshots = {
+      v1: { entries: ["admin", "editor", "viewer"], capacity: 8 },
+      v2: { entries: ["admin", "editor", "viewer", "guest"], capacity: 8 },
+    };
+    const reg = new MetaRegistry(input);
+    const diff = reg.snapshotDiff("role", "v1", "v2");
+
+    expect(diff.from.capacity).toBe(8);
+    expect(diff.from.headroom).toBe(5); // 8 - 3
+    expect(diff.to.capacity).toBe(8);
+    expect(diff.to.headroom).toBe(4);   // 8 - 4
+    expect(diff.capacityChanged).toBe(false); // capacity 동일 → shape 변경 없음
+  });
+
+  it("capacity가 증가한 경우 capacityChanged=true", () => {
+    const input = baseInput();
+    input.dims.role.snapshots = {
+      v1: { entries: ["admin", "editor", "viewer"], capacity: 4 },
+      v2: { entries: ["admin", "editor", "viewer", "guest"], capacity: 8 },
+    };
+    const reg = new MetaRegistry(input);
+    const diff = reg.snapshotDiff("role", "v1", "v2");
+
+    expect(diff.from.capacity).toBe(4);
+    expect(diff.to.capacity).toBe(8);
+    expect(diff.capacityChanged).toBe(true);
+  });
+});
+
+// ── versionDiff ─────────────────────────────────────────────────────────────
+
+describe("versionDiff", () => {
+  it("weight-preserving upgrade: 첫 번째 dim만 확장 → weightsChanged=false, idPreserved=true", () => {
+    // iv1: shape [3,3,3], iv2: shape [4,3,3]
+    // weights for [3,3,3] = [9,3,1], weights for [4,3,3] = [9,3,1] → 동일
+    const reg = new MetaRegistry(baseInput());
+    const diff = reg.versionDiff("perm", "iv1", "iv2");
+
+    expect(diff.indexId).toBe("perm");
+    expect(diff.from.versionId).toBe("iv1");
+    expect(diff.to.versionId).toBe("iv2");
+    expect(diff.from.shape).toEqual([3, 3, 3]);
+    expect(diff.to.shape).toEqual([4, 3, 3]);
+    expect(diff.from.size).toBe(27);
+    expect(diff.to.size).toBe(36);
+
+    // weights: [9,3,1] for both (first dim doesn't affect weights)
+    expect(diff.weightsChanged).toBe(false);
+    expect(diff.idPreserved).toBe(true);
+
+    expect(diff.changedDims).toEqual([
+      {
+        dimId: "role",
+        fromSnapshot: "v1",
+        toSnapshot: "v2",
+        fromEntriesCount: 3,
+        toEntriesCount: 4,
+        fromCapacity: 3,
+        toCapacity: 4,
+        fromHeadroom: 0,
+        toHeadroom: 0,
+        fromEntries: ["admin", "editor", "viewer"],
+        toEntries: ["admin", "editor", "viewer", "guest"],
+      },
+    ]);
+  });
+
+  it("weight-changing upgrade: 마지막이 아닌 dim 확장 → weightsChanged=true, idPreserved=false", () => {
+    // action v2: 4 entries → shape [3,4,3], weights [12,3,1] vs [9,3,1]
+    const input = baseInput();
+    input.dims.action.snapshots = {
+      ...input.dims.action.snapshots,
+      v2: { entries: ["read", "write", "delete", "admin"] },
+    };
+    input.indices.perm.versions = {
+      ...input.indices.perm.versions,
+      iv3: { snapshots: { role: "v1", action: "v2", resource: "v1" } },
+    };
+
+    const reg = new MetaRegistry(input);
+    const diff = reg.versionDiff("perm", "iv1", "iv3");
+
+    expect(diff.from.shape).toEqual([3, 3, 3]);
+    expect(diff.to.shape).toEqual([3, 4, 3]);
+    expect(diff.weightsChanged).toBe(true);
+    expect(diff.idPreserved).toBe(false);
+
+    expect(diff.changedDims).toEqual([
+      {
+        dimId: "action",
+        fromSnapshot: "v1",
+        toSnapshot: "v2",
+        fromEntriesCount: 3,
+        toEntriesCount: 4,
+        fromCapacity: 3,
+        toCapacity: 4,
+        fromHeadroom: 0,
+        toHeadroom: 0,
+        fromEntries: ["read", "write", "delete"],
+        toEntries: ["read", "write", "delete", "admin"],
+      },
+    ]);
+  });
+
+  it("같은 version이면 변경 없음", () => {
+    const reg = new MetaRegistry(baseInput());
+    const diff = reg.versionDiff("perm", "iv1", "iv1");
+
+    expect(diff.weightsChanged).toBe(false);
+    expect(diff.idPreserved).toBe(true);
+    expect(diff.changedDims).toEqual([]);
+  });
+
+  it("여러 dim이 동시에 변경된 경우 changedDims에 모두 포함된다", () => {
+    const input = baseInput();
+    input.dims.action.snapshots = {
+      ...input.dims.action.snapshots,
+      v2: { entries: ["read", "write", "delete", "admin"] },
+    };
+    input.indices.perm.versions = {
+      ...input.indices.perm.versions,
+      iv_multi: { snapshots: { role: "v2", action: "v2", resource: "v1" } },
+    };
+
+    const reg = new MetaRegistry(input);
+    const diff = reg.versionDiff("perm", "iv1", "iv_multi");
+
+    expect(diff.changedDims).toHaveLength(2);
+    expect(diff.changedDims[0].dimId).toBe("role");
+    expect(diff.changedDims[1].dimId).toBe("action");
   });
 });

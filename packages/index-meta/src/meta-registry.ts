@@ -35,13 +35,11 @@
 
 import {
   WeightedIndex,
-  createAddressConverter,
-  createLayoutProtocol,
-  fromVersionedValue,
-  toVersionedValue,
+  calcWeights,
   type AddressConverter as WiAddressConverter,
   type AddressProtocol,
 } from "weighted-index";
+import { AddressProtocolManager } from "./address-protocol-manager.js";
 import type {
   MetaRegistryInput,
   AddressConfig,
@@ -57,6 +55,8 @@ import type {
   VersionedValue,
   EntityId,
   EntryFlag,
+  SnapshotDiff,
+  VersionDiff,
 } from "./types.js";
 import { MetaCodec } from "./meta-codec.js";
 import {
@@ -89,10 +89,8 @@ export class MetaRegistry {
   /** WeightedIndex 캐시: "{indexId}:{versionId}" → WeightedIndex */
   private readonly wiCache = new Map<string, WeightedIndex>();
 
-  /** 프로토콜 통합 변환기 (text + layout 프로토콜 모두 등록) */
-  private readonly _converter: WiAddressConverter;
-  /** 기본 직렬화 프로토콜 이름. address 설정 시 layout, 미설정 시 colon. */
-  private readonly _defaultProtocol: string;
+  /** 독립 주소 직렬화 게이트웨이. serialize/parse/converter/defaultProtocol 위임. */
+  readonly address: AddressProtocolManager;
   /** toInput() 복제용 원본 스냅샷. */
   private readonly _input: MetaRegistryInput;
 
@@ -176,6 +174,7 @@ export class MetaRegistry {
           ),
           entryFlags: Object.freeze({ ...(snInput.entryFlags ?? {}) }),
           entryRefs: Object.freeze({ ...(snInput.entryRefs ?? {}) }),
+          capacity: snInput.capacity,
           createdAt: snInput.createdAt,
           changelog: snInput.changelog,
         };
@@ -451,23 +450,10 @@ export class MetaRegistry {
     }
 
     // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────
-    this._converter = createAddressConverter(); // text 프로토콜 (colon, uri, compact) 기본 등록
-    this._defaultProtocol = "colon";
-
     if (input.address) {
       this._validateAddressConfig(input.address, indicesMap, versionsMap);
-
-      const layoutProto = createLayoutProtocol({
-        format: input.address.format,
-        schemaChars: input.address.schemaChars,
-        versionChars: input.address.versionChars,
-        sharding: input.address.sharding,
-        schemas: input.address.schemas,
-        versions: input.address.versions,
-      });
-      this._converter.register(layoutProto);
-      this._defaultProtocol = layoutProto.name;
     }
+    this.address = new AddressProtocolManager(input.address);
   }
 
   // ── Manifest ─────────────────────────────────────────────────────────────────
@@ -542,7 +528,7 @@ export class MetaRegistry {
    * address 설정 시 layout 프로토콜도 등록되어 있다.
    */
   get converter(): WiAddressConverter {
-    return this._converter;
+    return this.address.converter;
   }
 
   /**
@@ -550,13 +536,13 @@ export class MetaRegistry {
    * address 미설정: "colon", address 설정: "layout:{formatName}"
    */
   get defaultProtocol(): string {
-    return this._defaultProtocol;
+    return this.address.defaultProtocol;
   }
 
   /**
    * VersionedValue → 프로토콜 형식 문자열.
    *
-   * 모든 직렬화를 AddressConverter에 위임한다.
+   * AddressProtocolManager에 위임한다.
    * protocol 생략 시 기본 프로토콜 사용 (address 설정 시 layout, 아니면 colon).
    *
    * @example
@@ -566,15 +552,13 @@ export class MetaRegistry {
    * reg.serialize(vv, "layout:uuid")     // → "00010001-0000-...-002a"
    */
   serialize(vv: VersionedValue, protocol?: AddressProtocol | string): string {
-    const addr = fromVersionedValue(vv);
-    if (typeof protocol === "object") return protocol.serialize(addr);
-    return this._converter.serialize(addr, protocol ?? this._defaultProtocol);
+    return this.address.serialize(vv, protocol);
   }
 
   /**
    * 프로토콜 형식의 문자열 → VersionedValue.
    *
-   * 파싱을 AddressConverter에 위임하고, registry 고유 검증을 수행한다:
+   * AddressProtocolManager의 loose parse에 registry 고유 검증을 추가한다:
    * - indexId/versionId 존재 여부
    * - value 범위 (0 ≤ value < WeightedIndex.size)
    *
@@ -587,22 +571,7 @@ export class MetaRegistry {
    * reg.parse("perm:iv1:0", "colon")     // 명시적 프로토콜
    */
   parse(input: string, protocol?: AddressProtocol | string): VersionedValue {
-    let addr;
-    try {
-      if (typeof protocol === "object") {
-        addr = protocol.parse(input);
-      } else if (protocol) {
-        addr = this._converter.require(protocol).parse(input);
-      } else {
-        addr = this._converter.parse(input);
-      }
-    } catch (e) {
-      throw new ParseError(
-        `Failed to parse address "${input}": ${e instanceof Error ? e.message : String(e)}`
-      );
-    }
-
-    const vv = toVersionedValue(addr);
+    const vv = this.address.parse(input, protocol);
     this._getIndexVersion(vv.indexId, vv.versionId);
     const wi = this._getWeightedIndex(vv.indexId, vv.versionId);
     if (vv.value < 0 || vv.value >= wi.size) {
@@ -688,6 +657,201 @@ export class MetaRegistry {
 
   getIndexVersion(indexId: string, versionId: string): IndexVersion {
     return this._getIndexVersion(indexId, versionId);
+  }
+
+  /**
+   * migration의 indexMap이 완전한지 검증한다.
+   *
+   * fromSnapshot과 toSnapshot의 entries를 비교해,
+   * 같은 position에 다른 entity가 들어간 경우 indexMap에 해당 position이 명시되어 있는지 확인.
+   * 누락된 position이 있으면 ValidationError를 던진다.
+   *
+   * traceMigration()은 성능상 이 검증을 수행하지 않으므로,
+   * migration 등록 시 또는 테스트에서 이 메서드로 완전성을 확인할 수 있다.
+   */
+  validateMigration(dimId: string, fromSnapshotId: string, toSnapshotId: string): void {
+    if (!this.dims.has(dimId)) throw new DimNotFoundError(`Unknown dim: "${dimId}"`);
+
+    const mig = this.getMigration(dimId, fromSnapshotId, toSnapshotId);
+    const fromSnap = this._getSnapshotCache(dimId, fromSnapshotId).snapshot;
+    const toSnap = this._getSnapshotCache(dimId, toSnapshotId).snapshot;
+
+    // Build a lookup: entity → 1-based position in toSnapshot
+    const toEntityPos = new Map<EntityId, number>();
+    for (let i = 0; i < toSnap.entries.length; i++) {
+      toEntityPos.set(toSnap.entries[i], i + 1);
+    }
+
+    const unmapped: number[] = [];
+
+    for (let pos = 1; pos <= fromSnap.entries.length; pos++) {
+      const entity = fromSnap.entries[pos - 1];
+      const toPos = toEntityPos.get(entity);
+
+      if (toPos === undefined) {
+        // Entity removed in toSnapshot — no mapping needed
+        continue;
+      }
+
+      if (toPos === pos) {
+        // Same position in both snapshots — identity is correct
+        continue;
+      }
+
+      // Entity moved to a different position — must be in indexMap
+      const mapped = mig.indexMap[pos];
+      if (mapped === undefined) {
+        unmapped.push(pos);
+      } else if (mapped !== toPos) {
+        throw new ValidationError(
+          `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": ` +
+          `position ${pos} maps to ${mapped}, but entity "${entity}" is at position ${toPos} in toSnapshot`
+        );
+      }
+    }
+
+    if (unmapped.length > 0) {
+      throw new ValidationError(
+        `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": ` +
+        `unmapped positions with changed entities: [${unmapped.join(", ")}]`
+      );
+    }
+  }
+
+  // ── Diff 유틸리티 ──────────────────────────────────────────────────────────
+
+  /**
+   * 두 스냅샷 간 diff를 반환한다.
+   *
+   * entries.length 변화 (= MetaRegistry 수준 shape 변화)와
+   * 추가/이동된 entry 목록을 포함한다.
+   */
+  snapshotDiff(dimId: string, fromSnapshotId: string, toSnapshotId: string): SnapshotDiff {
+    const fromSnap = this._getSnapshotCache(dimId, fromSnapshotId).snapshot;
+    const toSnap = this._getSnapshotCache(dimId, toSnapshotId).snapshot;
+
+    // addedEntries: entries in `to` that are not in `from`
+    const fromSet = new Set<EntityId>(fromSnap.entries);
+    const addedEntries: EntityId[] = [];
+    for (const entry of toSnap.entries) {
+      if (!fromSet.has(entry)) {
+        addedEntries.push(entry);
+      }
+    }
+
+    // movedPositions: extract from migration indexMap if it exists
+    const movedPositions: { position: number; from: number; to: number; entity: EntityId }[] = [];
+    const migMap = this.migrations.get(dimId);
+    const mig = migMap?.get(`${fromSnapshotId}:${toSnapshotId}`);
+    if (mig) {
+      for (const [kStr, v] of Object.entries(mig.indexMap)) {
+        const k = Number(kStr);
+        if (k !== v) {
+          movedPositions.push({ position: k, from: k, to: v, entity: fromSnap.entries[k - 1] });
+        }
+      }
+      movedPositions.sort((a, b) => a.position - b.position);
+    }
+
+    const fromCapa = fromSnap.capacity ?? fromSnap.entries.length;
+    const toCapa   = toSnap.capacity ?? toSnap.entries.length;
+
+    return {
+      dimId,
+      from: {
+        snapshotId: fromSnapshotId,
+        entriesCount: fromSnap.entries.length,
+        capacity: fromCapa,
+        headroom: fromCapa - fromSnap.entries.length,
+        entries: fromSnap.entries,
+      },
+      to: {
+        snapshotId: toSnapshotId,
+        entriesCount: toSnap.entries.length,
+        capacity: toCapa,
+        headroom: toCapa - toSnap.entries.length,
+        entries: toSnap.entries,
+      },
+      capacityChanged: fromCapa !== toCapa,
+      addedEntries,
+      movedPositions,
+    };
+  }
+
+  /**
+   * 두 index version 간 shape/weight 영향을 분석한다.
+   *
+   * capacity 변화가 weight에 영향을 미치는지 판단하고,
+   * ID 보존 여부를 반환한다. 마이그레이션 계획의 핵심 입력.
+   */
+  versionDiff(indexId: string, fromVersionId: string, toVersionId: string): VersionDiff {
+    const def = this._getIndexDef(indexId);
+    const fromIv = this._getIndexVersion(indexId, fromVersionId);
+    const toIv = this._getIndexVersion(indexId, toVersionId);
+
+    const fromWi = this._getWeightedIndex(indexId, fromVersionId);
+    const toWi = this._getWeightedIndex(indexId, toVersionId);
+
+    const fromWeights = calcWeights([...fromWi.shape]);
+    const toWeights = calcWeights([...toWi.shape]);
+
+    // Compare weights arrays
+    let weightsChanged = fromWeights.length !== toWeights.length;
+    if (!weightsChanged) {
+      for (let i = 0; i < fromWeights.length; i++) {
+        if (fromWeights[i] !== toWeights[i]) {
+          weightsChanged = true;
+          break;
+        }
+      }
+    }
+
+    const idPreserved = !weightsChanged && toWi.size >= fromWi.size;
+
+    // changedDims: dims where snapshotId differs between versions
+    const changedDims: VersionDiff["changedDims"] = [];
+    for (const dimId of def.dims) {
+      const fromSnapshotId = fromIv.snapshots[dimId];
+      const toSnapshotId = toIv.snapshots[dimId];
+      if (fromSnapshotId !== toSnapshotId) {
+        const fromSnap = this._getSnapshotCache(dimId, fromSnapshotId).snapshot;
+        const toSnap = this._getSnapshotCache(dimId, toSnapshotId).snapshot;
+        const fromCapa = fromSnap.capacity ?? fromSnap.entries.length;
+        const toCapa   = toSnap.capacity ?? toSnap.entries.length;
+        changedDims.push({
+          dimId,
+          fromSnapshot: fromSnapshotId,
+          toSnapshot: toSnapshotId,
+          fromEntriesCount: fromSnap.entries.length,
+          toEntriesCount: toSnap.entries.length,
+          fromCapacity: fromCapa,
+          toCapacity: toCapa,
+          fromHeadroom: fromCapa - fromSnap.entries.length,
+          toHeadroom: toCapa - toSnap.entries.length,
+          fromEntries: fromSnap.entries,
+          toEntries: toSnap.entries,
+        });
+      }
+    }
+
+    return {
+      indexId,
+      from: {
+        versionId: fromVersionId,
+        shape: fromWi.shape,
+        weights: Object.freeze(fromWeights),
+        size: fromWi.size,
+      },
+      to: {
+        versionId: toVersionId,
+        shape: toWi.shape,
+        weights: Object.freeze(toWeights),
+        size: toWi.size,
+      },
+      weightsChanged,
+      idPreserved,
+      changedDims,
+    };
   }
 
   /** 캐싱된 WeightedIndex 인스턴스 반환. */
