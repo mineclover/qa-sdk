@@ -30,6 +30,7 @@
 │  MetaRegistry (주소 게이트웨이: 직렬화 + 코덱 생성)           │
 │  MetaCodec (독립 encode/decode, LabelRegistry+PrefixCodec) │
 │  MetaResolver (외부 소비용 DecodeMap 번들)                    │
+│  createIndexSDK → IndexClient (경량 소비 레이어)              │
 ├─────────────────────────────────────────────────────────────┤
 │  Tier 5: 데이터 운영                                         │
 │  exportVersion / importVersion (백업/복원)                    │
@@ -91,6 +92,108 @@ const serialized = registry.serialize(vv); // "perm:iv1:4"
 const ids = codec.decode(registry.parse(serialized));
 // { role: "editor", action: "write" }
 ```
+
+---
+
+## Client SDK (경량 소비 레이어)
+
+백엔드·프론트엔드에서 동일한 스키마로 encode/decode하는 경량 SDK.
+
+개발자는 `"click"`, `"home"` 같은 friendly name만 입력하면, SDK가 `{ indexId, versionId, value }` (VersionedValue)로 묶어 반환한다.
+
+### 진입점
+
+```ts
+// 브라우저·프론트엔드·Edge — 경량 진입점 (Node.js 의존성 없음)
+import { createIndexSDK } from "index-meta/client";
+
+// Node.js 백엔드 — 전체 진입점 (SQL 어댑터 포함)
+import { createIndexSDK } from "index-meta";
+```
+
+`index-meta/client`는 `better-sqlite3`·SQL 어댑터를 포함하지 않는 경량 번들이다.
+
+### SDK 정의 (공유 패키지)
+
+```ts
+// packages/my-tracking-sdk/src/index.ts
+import { createIndexSDK } from "index-meta/client";
+
+const sdk = createIndexSDK({
+  dims: {
+    action:   { kind: { type: "string_enum" }, snapshots: { v1: { entries: ["click", "view", "scroll", "submit"] } } },
+    page:     { kind: { type: "string_enum" }, snapshots: { v1: { entries: ["home", "product", "cart", "checkout"] } } },
+    userType: { kind: { type: "string_enum" }, snapshots: { v1: { entries: ["guest", "member", "premium"] } } },
+  },
+  indices: {
+    tracking: {
+      dims: ["action", "page", "userType"],
+      versions: { v1: { snapshots: { action: "v1", page: "v1", userType: "v1" } } },
+    },
+  },
+});
+
+// version-pinned 클라이언트
+export const tracking = sdk.client("tracking", "v1");
+
+// enum-like 상수 (IDE 자동완성 + typo 방지)
+export const ACTION    = tracking.constants("action");    // { click: "click", view: "view", ... }
+export const PAGE      = tracking.constants("page");      // { home: "home", product: "product", ... }
+export const USER_TYPE = tracking.constants("userType");  // { guest: "guest", member: "member", ... }
+```
+
+### 소비 (프론트엔드)
+
+```ts
+import { tracking, ACTION, PAGE } from "@my/tracking-sdk";
+
+function trackClick(page: string) {
+  const vv = tracking.encode({ action: ACTION.click, page, userType: user.type });
+  // vv = { indexId: "tracking", versionId: "v1", value: 3 }
+  fetch("/api/track", { method: "POST", body: JSON.stringify(vv) });
+}
+```
+
+### 소비 (백엔드)
+
+```ts
+import { tracking } from "@my/tracking-sdk";
+
+app.post("/track", (req) => {
+  const vv = req.body; // { indexId: "tracking", versionId: "v1", value: 3 }
+  const decoded = tracking.decode(vv);
+  // { action: "click", page: "home", userType: "member" }
+  db.insert({ pk: vv.value, index_id: vv.indexId, version_id: vv.versionId });
+});
+```
+
+### IndexClient API
+
+```ts
+interface IndexClient {
+  encode(entities: Record<string, EntityId>): VersionedValue;
+  decode(vv: VersionedValue): Readonly<Record<string, EntityId>>;
+  decodeValue(value: number): Readonly<Record<string, EntityId>>;
+  matchRanges(partial: Record<string, EntityId | null>): [number, number][];
+  entries(dimId: string): readonly EntityId[];
+  constants(dimId: string): Readonly<Record<string, EntityId>>;
+  toDecodeMap(): DecodeMap;
+  readonly indexId: string;
+  readonly versionId: string;
+  readonly size: number;
+  readonly shape: readonly number[];
+}
+```
+
+| 메서드 | 설명 |
+|---|---|
+| `encode` | entity names → `{ indexId, versionId, value }` |
+| `decode` | VersionedValue → entity names (indexId/versionId 검증) |
+| `decodeValue` | value(정수)만으로 decode (검증 없음) |
+| `matchRanges` | 부분 매칭 범위 조회 (DB BETWEEN 쿼리) |
+| `entries` | 바인딩된 version의 dim entries 배열 |
+| `constants` | entries를 enum-like 객체로 반환 |
+| `toDecodeMap` | DecodeMap 추출 (다른 서비스로 전달해 독립 decode) |
 
 ---
 
@@ -1107,6 +1210,10 @@ try {
 ## 공개 API
 
 ```ts
+// ── Client SDK ────────────────────────────────────────
+export { createIndexSDK } from "index-meta";              // 또는 "index-meta/client"
+export type { IndexSDK, IndexClient } from "index-meta";  // 또는 "index-meta/client"
+
 // ── 인코딩/디코딩 ────────────────────────────────────
 export { MetaRegistry, MetaCodec, MetaResolver } from "index-meta";
 
@@ -1191,7 +1298,14 @@ export {
 ## 빌드
 
 ```bash
-pnpm build       # tsup → dist/ (ESM + CJS)
+pnpm build       # tsup → dist/ (ESM + CJS, 2 entry points)
 pnpm test        # vitest
 pnpm typecheck   # tsc --noEmit
 ```
+
+tsup이 두 진입점(`src/index.ts`, `src/client.ts`)을 빌드하며, 공통 코드는 chunk로 분리된다.
+
+| 진입점 | import 경로 | 포함 내용 | better-sqlite3 |
+|---|---|---|---|
+| `index.ts` | `"index-meta"` | 전체 (SQL 어댑터, 마이그레이션, 분산 클라이언트) | ✓ (external) |
+| `client.ts` | `"index-meta/client"` | SDK + 코어 (MetaRegistry, MetaCodec, MetaResolver) | ✗ |

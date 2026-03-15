@@ -327,42 +327,515 @@ describe("에러 처리", () => {
   });
 });
 
-// ── End-to-end: 백엔드/프론트엔드 공유 시나리오 ─────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// prefix + version + entries → 안정적 전송 시나리오
+//
+// 사용자가 "click", "home" 같은 friendly name을 입력하면
+// SDK가 { indexId(prefix), versionId(version), value(index) }로 묶어서 내보내고
+// 수신 측에서 동일 스키마로 원본을 복원하는 전체 흐름을 검증한다.
+// ══════════════════════════════════════════════════════════════════════════════
 
-describe("공유 SDK 시나리오", () => {
-  it("동일 SDK 정의로 encode한 값을 다른 위치에서 decode할 수 있다", () => {
-    // 공유 SDK 정의 (패키지로 배포되는 것을 시뮬레이션)
-    const schema = {
+// ── 공유 스키마 정의 (패키지로 배포되는 것을 시뮬레이션) ─────────────────────
+
+import type { MetaRegistryInput, VersionedValue } from "./types.js";
+
+const SHARED_SCHEMA: MetaRegistryInput = {
+  dims: {
+    action: {
+      kind: { type: "string_enum" },
+      snapshots: {
+        sv1: { entries: ["click", "view", "scroll", "submit"] },
+        sv2: { entries: ["click", "view", "scroll", "submit", "hover", "focus"] },
+      },
+      migrations: [
+        { fromSnapshotId: "sv1", toSnapshotId: "sv2", indexMap: {} },
+      ],
+    },
+    page: {
+      kind: { type: "string_enum" },
+      snapshots: {
+        sv1: { entries: ["home", "product", "cart"] },
+      },
+    },
+    userType: {
+      kind: { type: "string_enum" },
+      snapshots: {
+        sv1: { entries: ["guest", "member", "premium"] },
+      },
+    },
+  },
+  indices: {
+    tracking: {
+      dims: ["action", "page", "userType"],
+      versions: {
+        v1: { snapshots: { action: "sv1", page: "sv1", userType: "sv1" } },
+        v2: { snapshots: { action: "sv2", page: "sv1", userType: "sv1" } },
+      },
+    },
+  },
+};
+
+// ── 1. 결정적 인코딩 (Deterministic Encoding) ───────────────────────────────
+
+describe("결정적 인코딩: 같은 입력 → 항상 같은 VersionedValue", () => {
+  it("동일 입력을 반복 encode해도 동일한 { prefix, version, value }를 반환한다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    const input = { action: "click", page: "home", userType: "member" };
+    const results: VersionedValue[] = [];
+
+    for (let i = 0; i < 100; i++) {
+      results.push(tracking.encode(input));
+    }
+
+    // 100회 모두 동일한 값
+    for (const vv of results) {
+      expect(vv).toEqual(results[0]);
+    }
+  });
+
+  it("entries 순서가 encoding value를 결정한다 (position-based)", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    // action dim: ["click"(pos1), "view"(pos2), "scroll"(pos3), "submit"(pos4)]
+    // 첫 번째 dim의 position이 가장 높은 weight를 가짐
+    const click  = tracking.encode({ action: "click",  page: "home", userType: "guest" });
+    const view   = tracking.encode({ action: "view",   page: "home", userType: "guest" });
+    const scroll = tracking.encode({ action: "scroll", page: "home", userType: "guest" });
+    const submit = tracking.encode({ action: "submit", page: "home", userType: "guest" });
+
+    // position 순서대로 value가 증가 (연속 블록)
+    expect(click.value).toBeLessThan(view.value);
+    expect(view.value).toBeLessThan(scroll.value);
+    expect(scroll.value).toBeLessThan(submit.value);
+  });
+
+  it("별도 SDK 인스턴스에서도 동일 스키마면 동일 value를 생성한다", () => {
+    const sdk1 = createIndexSDK(SHARED_SCHEMA);
+    const sdk2 = createIndexSDK(SHARED_SCHEMA);
+
+    const c1 = sdk1.client("tracking", "v1");
+    const c2 = sdk2.client("tracking", "v1");
+
+    const input = { action: "scroll", page: "cart", userType: "premium" };
+    expect(c1.encode(input)).toEqual(c2.encode(input));
+  });
+});
+
+// ── 2. VersionedValue 와이어 포맷 ───────────────────────────────────────────
+
+describe("VersionedValue 와이어 포맷: { indexId, versionId, value }", () => {
+  it("encode 결과는 prefix(indexId) + version(versionId) + index(value)를 포함한다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    const vv = tracking.encode({ action: "click", page: "home", userType: "guest" });
+
+    // 3개 필드가 모두 존재하고 정확한 타입
+    expect(vv).toHaveProperty("indexId", "tracking");
+    expect(vv).toHaveProperty("versionId", "v1");
+    expect(vv).toHaveProperty("value");
+    expect(typeof vv.value).toBe("number");
+    expect(vv.value).toBeGreaterThanOrEqual(0);
+    expect(vv.value).toBeLessThan(tracking.size);
+
+    // 추가 필드 없음 (순수 3-field 구조)
+    expect(Object.keys(vv).sort()).toEqual(["indexId", "value", "versionId"]);
+  });
+
+  it("JSON.stringify / JSON.parse round-trip이 가능하다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    const original = tracking.encode({ action: "submit", page: "cart", userType: "premium" });
+    const wire = JSON.stringify(original);
+    const restored: VersionedValue = JSON.parse(wire);
+
+    expect(restored).toEqual(original);
+    expect(tracking.decode(restored)).toEqual({ action: "submit", page: "cart", userType: "premium" });
+  });
+
+  it("value는 0 이상 size 미만의 정수다 (전체 공간 검증)", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+    const values = new Set<number>();
+
+    for (const action of ["click", "view", "scroll", "submit"]) {
+      for (const page of ["home", "product", "cart"]) {
+        for (const userType of ["guest", "member", "premium"]) {
+          const vv = tracking.encode({ action, page, userType });
+          expect(Number.isInteger(vv.value)).toBe(true);
+          expect(vv.value).toBeGreaterThanOrEqual(0);
+          expect(vv.value).toBeLessThan(tracking.size);
+          values.add(vv.value);
+        }
+      }
+    }
+
+    // 모든 조합이 고유한 value를 생성
+    expect(values.size).toBe(4 * 3 * 3); // 36
+  });
+});
+
+// ── 3. API 요청/응답 시뮬레이션 ─────────────────────────────────────────────
+
+describe("API 요청/응답 시뮬레이션", () => {
+  it("프론트엔드 encode → HTTP 전송 → 백엔드 decode", () => {
+    // ── 프론트엔드 (브라우저) ──
+    const frontendSDK = createIndexSDK(SHARED_SCHEMA);
+    const feClient = frontendSDK.client("tracking", "v1");
+    const ACTION = feClient.constants("action");
+    const PAGE = feClient.constants("page");
+
+    const payload = feClient.encode({
+      action: ACTION.click,
+      page: PAGE.product,
+      userType: "member",
+    });
+
+    // HTTP request body (JSON)
+    const requestBody = JSON.stringify(payload);
+
+    // ── 백엔드 (Node.js) ──
+    const backendSDK = createIndexSDK(SHARED_SCHEMA);
+    const beClient = backendSDK.client("tracking", "v1");
+
+    const received: VersionedValue = JSON.parse(requestBody);
+    const decoded = beClient.decode(received);
+
+    expect(decoded).toEqual({
+      action: "click",
+      page: "product",
+      userType: "member",
+    });
+  });
+
+  it("백엔드 DB 저장 → 조회 → 프론트엔드 응답", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    // 인코딩 후 DB에 저장하는 값
+    const vv = tracking.encode({ action: "view", page: "product", userType: "guest" });
+    const dbRow = {
+      pk: vv.value,
+      index_id: vv.indexId,
+      version_id: vv.versionId,
+    };
+
+    // DB에서 읽은 후 복원
+    const restored: VersionedValue = {
+      indexId: dbRow.index_id,
+      versionId: dbRow.version_id,
+      value: dbRow.pk,
+    };
+
+    expect(tracking.decode(restored)).toEqual({
+      action: "view",
+      page: "product",
+      userType: "guest",
+    });
+  });
+
+  it("DB matchRanges → BETWEEN 쿼리로 부분 조회", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    // "click" 액션의 모든 이벤트 범위
+    const ranges = tracking.matchRanges({ action: "click" });
+
+    // 해당 범위 내 모든 value를 decode하면 action=click
+    for (const [from, to] of ranges) {
+      for (let v = from; v <= to; v++) {
+        const decoded = tracking.decodeValue(v);
+        expect(decoded.action).toBe("click");
+      }
+    }
+
+    // 범위 밖 value는 action≠click
+    for (let v = 0; v < tracking.size; v++) {
+      const inRange = ranges.some(([f, t]) => v >= f && v <= t);
+      if (!inRange) {
+        expect(tracking.decodeValue(v).action).not.toBe("click");
+      }
+    }
+  });
+});
+
+// ── 4. 버전 진화 시 값 안정성 ────────────────────────────────────────────────
+
+describe("버전 진화: v1 → v2에서 기존 entries의 encode 안정성", () => {
+  it("v1 entries가 v2에서도 encode/decode 가능하다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const v1 = sdk.client("tracking", "v1");
+    const v2 = sdk.client("tracking", "v2");
+
+    // v1 entries로 v2 encode (click, view, scroll, submit은 v2에도 존재)
+    const input = { action: "click", page: "home", userType: "guest" };
+    const vv2 = v2.encode(input);
+
+    expect(v2.decode(vv2)).toEqual(input);
+  });
+
+  it("v2에서 추가된 entries는 v1에서 encode할 수 없다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const v1 = sdk.client("tracking", "v1");
+
+    // "hover", "focus"는 sv2에만 존재 → v1(sv1)에서는 불가
+    expect(() => v1.encode({ action: "hover", page: "home", userType: "guest" }))
+      .toThrow(EntryNotFoundError);
+  });
+
+  it("v2에서 추가된 entries를 v2 client로 encode할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const v2 = sdk.client("tracking", "v2");
+
+    const vv = v2.encode({ action: "hover", page: "home", userType: "guest" });
+    expect(vv.indexId).toBe("tracking");
+    expect(vv.versionId).toBe("v2");
+    expect(v2.decode(vv)).toEqual({ action: "hover", page: "home", userType: "guest" });
+  });
+
+  it("v1과 v2의 VersionedValue는 versionId로 구분된다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const v1 = sdk.client("tracking", "v1");
+    const v2 = sdk.client("tracking", "v2");
+
+    const input = { action: "click", page: "home", userType: "guest" };
+    const vv1 = v1.encode(input);
+    const vv2 = v2.encode(input);
+
+    // 같은 entity names이지만 version이 다름
+    expect(vv1.versionId).toBe("v1");
+    expect(vv2.versionId).toBe("v2");
+    // indexId는 동일
+    expect(vv1.indexId).toBe(vv2.indexId);
+  });
+
+  it("v1 VersionedValue를 v2 client로 decode하면 ValidationError", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const v1 = sdk.client("tracking", "v1");
+    const v2 = sdk.client("tracking", "v2");
+
+    const vv1 = v1.encode({ action: "click", page: "home", userType: "guest" });
+    // v1 value를 v2로 decode → version 불일치
+    expect(() => v2.decode(vv1)).toThrow(ValidationError);
+  });
+
+  it("수신 측에서 versionId를 확인해 올바른 client로 라우팅할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+
+    // 프론트엔드가 v1, v2 혼합 전송
+    const v1 = sdk.client("tracking", "v1");
+    const v2 = sdk.client("tracking", "v2");
+
+    const payloads = [
+      v1.encode({ action: "click", page: "home", userType: "guest" }),
+      v2.encode({ action: "hover", page: "product", userType: "member" }),
+      v1.encode({ action: "submit", page: "cart", userType: "premium" }),
+    ];
+
+    // 백엔드에서 versionId 기반 라우팅
+    for (const vv of payloads) {
+      const client = sdk.client(vv.indexId, vv.versionId);
+      const decoded = client.decode(vv);
+      expect(decoded.action).toBeDefined();
+      expect(decoded.page).toBeDefined();
+      expect(decoded.userType).toBeDefined();
+    }
+  });
+});
+
+// ── 5. 상수 기반 워크플로 ────────────────────────────────────────────────────
+
+describe("상수 기반 워크플로: constants → encode → decode", () => {
+  it("모든 dim을 constants로 지정해 encode할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    const ACTION    = tracking.constants("action");
+    const PAGE      = tracking.constants("page");
+    const USER_TYPE = tracking.constants("userType");
+
+    const vv = tracking.encode({
+      action:   ACTION.submit,
+      page:     PAGE.cart,
+      userType: USER_TYPE.premium,
+    });
+
+    expect(tracking.decode(vv)).toEqual({
+      action: "submit",
+      page: "cart",
+      userType: "premium",
+    });
+  });
+
+  it("constants 값과 문자열 직접 입력은 동일한 결과를 낸다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+    const ACTION = tracking.constants("action");
+
+    const withConst  = tracking.encode({ action: ACTION.click, page: "home", userType: "guest" });
+    const withString = tracking.encode({ action: "click",      page: "home", userType: "guest" });
+
+    expect(withConst).toEqual(withString);
+  });
+
+  it("constants 객체의 키로 dim의 모든 값을 열거할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+    const ACTION = tracking.constants("action");
+
+    expect(Object.keys(ACTION).sort()).toEqual(["click", "scroll", "submit", "view"]);
+  });
+});
+
+// ── 6. DecodeMap 기반 독립 소비 ──────────────────────────────────────────────
+
+describe("DecodeMap 기반 독립 소비: SDK 없이 decode", () => {
+  it("DecodeMap을 JSON으로 전달받은 서비스가 독립적으로 decode할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    // SDK가 있는 서비스에서 encode + DecodeMap 추출
+    const vv = tracking.encode({ action: "scroll", page: "product", userType: "member" });
+    const mapJson = JSON.stringify(tracking.toDecodeMap());
+
+    // SDK 없는 서비스에서 DecodeMap만으로 decode
+    const receivedMap = JSON.parse(mapJson);
+    const codec = new MetaCodec(receivedMap);
+
+    expect(codec.decode(vv)).toEqual({
+      action: "scroll",
+      page: "product",
+      userType: "member",
+    });
+  });
+
+  it("DecodeMap 기반 codec도 encode할 수 있다", () => {
+    const sdk = createIndexSDK(SHARED_SCHEMA);
+    const tracking = sdk.client("tracking", "v1");
+
+    const codec = new MetaCodec(tracking.toDecodeMap());
+    const vv = codec.encode({ action: "click", page: "home", userType: "guest" });
+
+    // SDK client와 동일한 결과
+    expect(vv).toEqual(tracking.encode({ action: "click", page: "home", userType: "guest" }));
+  });
+});
+
+// ── 7. 멀티 인덱스 실전 시나리오 ─────────────────────────────────────────────
+
+describe("멀티 인덱스: 여러 prefix를 하나의 SDK로 관리", () => {
+  const multiIndexSchema = (): MetaRegistryInput => ({
+    dims: {
+      action: {
+        kind: { type: "string_enum" },
+        snapshots: { v1: { entries: ["click", "view", "scroll"] } },
+      },
+      role: {
+        kind: { type: "string_enum" },
+        snapshots: { v1: { entries: ["admin", "editor", "viewer"] } },
+      },
+      resource: {
+        kind: { type: "string_enum" },
+        snapshots: { v1: { entries: ["post", "comment", "user"] } },
+      },
+      page: {
+        kind: { type: "string_enum" },
+        snapshots: { v1: { entries: ["dashboard", "settings"] } },
+      },
+    },
+    indices: {
+      tracking: {
+        dims: ["action", "page"],
+        versions: { v1: { snapshots: { action: "v1", page: "v1" } } },
+      },
+      permission: {
+        dims: ["role", "resource"],
+        versions: { v1: { snapshots: { role: "v1", resource: "v1" } } },
+      },
+    },
+  });
+
+  it("서로 다른 prefix의 VersionedValue는 indexId로 구분된다", () => {
+    const sdk = createIndexSDK(multiIndexSchema());
+    const tracking = sdk.client("tracking", "v1");
+    const permission = sdk.client("permission", "v1");
+
+    const tvv = tracking.encode({ action: "click", page: "dashboard" });
+    const pvv = permission.encode({ role: "admin", resource: "post" });
+
+    expect(tvv.indexId).toBe("tracking");
+    expect(pvv.indexId).toBe("permission");
+
+    // 같은 value라도 indexId가 다르면 다른 의미
+    // (우연히 같은 value가 나올 수 있지만 indexId로 구분)
+  });
+
+  it("수신 측에서 indexId로 적절한 client를 선택해 decode한다", () => {
+    const sdk = createIndexSDK(multiIndexSchema());
+
+    // 다양한 prefix의 payload가 섞여서 도착
+    const tracking = sdk.client("tracking", "v1");
+    const permission = sdk.client("permission", "v1");
+
+    const mixed: VersionedValue[] = [
+      tracking.encode({ action: "click", page: "dashboard" }),
+      permission.encode({ role: "editor", resource: "comment" }),
+      tracking.encode({ action: "view", page: "settings" }),
+      permission.encode({ role: "viewer", resource: "user" }),
+    ];
+
+    // indexId 기반 라우팅으로 decode
+    const results = mixed.map((vv) => {
+      const client = sdk.client(vv.indexId, vv.versionId);
+      return { prefix: vv.indexId, decoded: client.decode(vv) };
+    });
+
+    expect(results).toEqual([
+      { prefix: "tracking",   decoded: { action: "click", page: "dashboard" } },
+      { prefix: "permission", decoded: { role: "editor", resource: "comment" } },
+      { prefix: "tracking",   decoded: { action: "view", page: "settings" } },
+      { prefix: "permission", decoded: { role: "viewer", resource: "user" } },
+    ]);
+  });
+
+  it("dim을 공유하는 indices가 각각 독립적으로 동작한다", () => {
+    // action dim을 두 index가 공유하는 시나리오
+    const sdk = createIndexSDK({
       dims: {
         action: {
-          kind: { type: "string_enum" as const },
-          snapshots: { v1: { entries: ["click", "view", "scroll"] } },
+          kind: { type: "string_enum" },
+          snapshots: { v1: { entries: ["click", "view"] } },
         },
         page: {
-          kind: { type: "string_enum" as const },
+          kind: { type: "string_enum" },
           snapshots: { v1: { entries: ["home", "product"] } },
+        },
+        target: {
+          kind: { type: "string_enum" },
+          snapshots: { v1: { entries: ["button", "link", "image"] } },
         },
       },
       indices: {
-        tracking: {
-          dims: ["action", "page"],
-          versions: { v1: { snapshots: { action: "v1", page: "v1" } } },
-        },
+        pageView:   { dims: ["action", "page"],   versions: { v1: { snapshots: { action: "v1", page: "v1" } } } },
+        interaction: { dims: ["action", "target"], versions: { v1: { snapshots: { action: "v1", target: "v1" } } } },
       },
-    };
+    });
 
-    // 프론트엔드에서 encode
-    const frontendSDK = createIndexSDK(schema);
-    const frontendClient = frontendSDK.client("tracking", "v1");
-    const vv = frontendClient.encode({ action: "click", page: "product" });
+    const pageView = sdk.client("pageView", "v1");
+    const interaction = sdk.client("interaction", "v1");
 
-    // 백엔드에서 동일 스키마로 decode
-    const backendSDK = createIndexSDK(schema);
-    const backendClient = backendSDK.client("tracking", "v1");
-    expect(backendClient.decode(vv)).toEqual({ action: "click", page: "product" });
+    // 같은 action="click"이지만 다른 index에서 사용
+    const pv = pageView.encode({ action: "click", page: "home" });
+    const ia = interaction.encode({ action: "click", target: "button" });
 
-    // VersionedValue만 전송하면 양쪽에서 일관된 해석 가능
-    expect(vv.indexId).toBe("tracking");
-    expect(vv.versionId).toBe("v1");
+    expect(pv.indexId).toBe("pageView");
+    expect(ia.indexId).toBe("interaction");
+
+    expect(pageView.decode(pv)).toEqual({ action: "click", page: "home" });
+    expect(interaction.decode(ia)).toEqual({ action: "click", target: "button" });
   });
 });
