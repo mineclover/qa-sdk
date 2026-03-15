@@ -67,6 +67,56 @@ describe("setBit / hasBit / clearBit", () => {
     setBit(m, 17); // byte 2, bit 1 → 0b00000010 = 2
     expect(m[2]).toBe(0b00000010);
   });
+
+  // ── bounds checking ────────────────────────────────────────────────
+
+  describe("bounds checking", () => {
+    it("negative id throws RangeError on setBit", () => {
+      const m = createMask(64);
+      expect(() => setBit(m, -1)).toThrow(RangeError);
+    });
+
+    it("negative id throws RangeError on clearBit", () => {
+      const m = createMask(64);
+      expect(() => clearBit(m, -1)).toThrow(RangeError);
+    });
+
+    it("negative id throws RangeError on hasBit", () => {
+      const m = createMask(64);
+      expect(() => hasBit(m, -1)).toThrow(RangeError);
+    });
+
+    it("id >= mask.length * 8 throws RangeError on setBit", () => {
+      const m = createMask(64); // 8 bytes, max valid id = 63
+      expect(() => setBit(m, 64)).toThrow(RangeError);
+    });
+
+    it("id >= mask.length * 8 throws RangeError on clearBit", () => {
+      const m = createMask(64);
+      expect(() => clearBit(m, 64)).toThrow(RangeError);
+    });
+
+    it("id >= mask.length * 8 throws RangeError on hasBit", () => {
+      const m = createMask(64);
+      expect(() => hasBit(m, 64)).toThrow(RangeError);
+    });
+
+    it("id at boundary (mask.length * 8 - 1) succeeds", () => {
+      const m = createMask(64); // max valid = 63
+      setBit(m, 63);
+      expect(hasBit(m, 63)).toBe(true);
+      clearBit(m, 63);
+      expect(hasBit(m, 63)).toBe(false);
+    });
+
+    it("id === 0 succeeds", () => {
+      const m = createMask(64);
+      setBit(m, 0);
+      expect(hasBit(m, 0)).toBe(true);
+      clearBit(m, 0);
+      expect(hasBit(m, 0)).toBe(false);
+    });
+  });
 });
 
 // ── buildMask ─────────────────────────────────────────────────────────────

@@ -63,7 +63,13 @@ export function createUUIDLayout(def: UUIDLayoutDef): UUIDLayout {
     pos += slot.chars;
   }
 
-  // Right fields: packed from char 31 leftward (definition order = outermost first)
+  // Right fields: packed from char 31 leftward.
+  // The last element in the definition array is placed at the rightmost edge,
+  // and earlier elements are placed further left.
+  //
+  // Example: right = [{ name: "shard", chars: 2 }, { name: "index", chars: 6 }]
+  //   "index" (last) occupies chars 26-31 (rightmost)
+  //   "shard" (first) occupies chars 24-25 (next inward)
   const right: Array<UUIDSlot & { start: number }> = [];
   let rpos = 32;
   for (const slot of def.right) {

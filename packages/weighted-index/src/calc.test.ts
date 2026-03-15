@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, calcAddressRanges } from "./calc.js";
+import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges } from "./calc.js";
 import { WeightedIndex } from "./weighted-index.js";
 
 // ── calcWeights ────────────────────────────────────────────────────────────
@@ -173,6 +173,131 @@ describe("mergeRanges", () => {
   });
 });
 
+// ── subtractRanges ────────────────────────────────────────
+
+describe("subtractRanges", () => {
+  it("empty exclude → returns base unchanged", () => {
+    expect(subtractRanges([[0, 10], [20, 30]], [])).toEqual([[0, 10], [20, 30]]);
+  });
+
+  it("complete exclusion → empty result", () => {
+    expect(subtractRanges([[0, 10]], [[0, 10]])).toEqual([]);
+  });
+
+  it("partial exclusion from middle → splits into two ranges", () => {
+    expect(subtractRanges([[0, 10]], [[3, 7]])).toEqual([[0, 2], [8, 10]]);
+  });
+
+  it("multiple exclusion segments", () => {
+    expect(subtractRanges([[0, 20]], [[2, 4], [10, 12]])).toEqual([[0, 1], [5, 9], [13, 20]]);
+  });
+
+  it("no overlap between base and exclude → base unchanged", () => {
+    expect(subtractRanges([[0, 5]], [[10, 15]])).toEqual([[0, 5]]);
+  });
+
+  it("single-point exclusion", () => {
+    expect(subtractRanges([[0, 5]], [[3, 3]])).toEqual([[0, 2], [4, 5]]);
+  });
+});
+
+// ── complementRanges ──────────────────────────────────────
+
+describe("complementRanges", () => {
+  it("empty excluded → full range [0, capacity-1]", () => {
+    expect(complementRanges(10, [])).toEqual([[0, 9]]);
+  });
+
+  it("full exclusion → empty result", () => {
+    expect(complementRanges(10, [[0, 9]])).toEqual([]);
+  });
+
+  it("gap at start/middle/end", () => {
+    // excluded [3,6] → gaps [0,2] and [7,9]
+    expect(complementRanges(10, [[3, 6]])).toEqual([[0, 2], [7, 9]]);
+  });
+
+  it("multiple gaps", () => {
+    expect(complementRanges(20, [[2, 4], [10, 12]])).toEqual([[0, 1], [5, 9], [13, 19]]);
+  });
+
+  it("capacity = 0 → empty", () => {
+    expect(complementRanges(0, [])).toEqual([]);
+  });
+});
+
+// ── containsAddress ───────────────────────────────────────
+
+describe("containsAddress", () => {
+  it("empty ranges → false", () => {
+    expect(containsAddress(5, [])).toBe(false);
+  });
+
+  it("address in single range → true", () => {
+    expect(containsAddress(5, [[0, 10]])).toBe(true);
+  });
+
+  it("address before all ranges → false", () => {
+    expect(containsAddress(0, [[5, 10]])).toBe(false);
+  });
+
+  it("address after all ranges → false", () => {
+    expect(containsAddress(20, [[0, 10]])).toBe(false);
+  });
+
+  it("address between ranges → false", () => {
+    expect(containsAddress(7, [[0, 5], [10, 15]])).toBe(false);
+  });
+
+  it("address at boundary (from/to) → true", () => {
+    expect(containsAddress(0, [[0, 10]])).toBe(true);
+    expect(containsAddress(10, [[0, 10]])).toBe(true);
+  });
+
+  it("multiple ranges binary search works", () => {
+    const ranges: [number, number][] = [[0, 2], [10, 12], [20, 22], [30, 32], [40, 42]];
+    expect(containsAddress(1, ranges)).toBe(true);
+    expect(containsAddress(11, ranges)).toBe(true);
+    expect(containsAddress(21, ranges)).toBe(true);
+    expect(containsAddress(31, ranges)).toBe(true);
+    expect(containsAddress(41, ranges)).toBe(true);
+    expect(containsAddress(5, ranges)).toBe(false);
+    expect(containsAddress(15, ranges)).toBe(false);
+    expect(containsAddress(25, ranges)).toBe(false);
+    expect(containsAddress(35, ranges)).toBe(false);
+    expect(containsAddress(50, ranges)).toBe(false);
+  });
+});
+
+// ── positionsToConstraint ─────────────────────────────────
+
+describe("positionsToConstraint", () => {
+  it('consecutive positions → "a-b"', () => {
+    expect(positionsToConstraint([6, 7, 8])).toBe("6-8");
+  });
+
+  it('non-consecutive → "a,b,c"', () => {
+    expect(positionsToConstraint([1, 3, 5])).toBe("1,3,5");
+  });
+
+  it('mixed → "a-b,d,f-h"', () => {
+    expect(positionsToConstraint([1, 2, 4, 6, 7, 8])).toBe("1-2,4,6-8");
+  });
+
+  it('single position → "n"', () => {
+    expect(positionsToConstraint([42])).toBe("42");
+  });
+
+  it('empty array → ""', () => {
+    expect(positionsToConstraint([])).toBe("");
+  });
+
+  it("unsorted input → correct (sorted internally)", () => {
+    expect(positionsToConstraint([8, 6, 7])).toBe("6-8");
+    expect(positionsToConstraint([5, 1, 3])).toBe("1,3,5");
+  });
+});
+
 // ── calcAddressRanges ─────────────────────────────────────
 //
 // shape = [8, 4, 16, 4]  (role, action, resource, env)
@@ -259,6 +384,36 @@ describe("calcAddressRanges", () => {
   });
 
   // ── n차원 확장 ────────────────────────────────────────────
+
+  // ── _normalizeConstraint validation ────────────────────────────────
+
+  describe("constraint parsing validation", () => {
+    it('inverted range "5-3" throws RangeError', () => {
+      expect(() => calcAddressRanges(SHAPE, ["5-3", null, null, null])).toThrow(RangeError);
+    });
+
+    it('NaN values like "abc" throw RangeError', () => {
+      expect(() => calcAddressRanges(SHAPE, ["abc", null, null, null])).toThrow(RangeError);
+    });
+
+    it("out-of-range value 0 throws RangeError (1-based coords)", () => {
+      expect(() => calcAddressRanges(SHAPE, ["0", null, null, null])).toThrow(RangeError);
+    });
+
+    it("out-of-range value exceeding dimSize throws RangeError", () => {
+      // SHAPE[0] = 8, so "9" exceeds dimSize
+      expect(() => calcAddressRanges(SHAPE, ["9", null, null, null])).toThrow(RangeError);
+    });
+
+    it("valid constraints still work correctly", () => {
+      // "1" is valid for dim with size 8
+      expect(calcAddressRanges(SHAPE, ["1", null, null, null])).toEqual([[0, 255]]);
+      // "1-8" covers the full first dimension
+      expect(calcAddressRanges(SHAPE, ["1-8", null, null, null])).toEqual([[0, 2047]]);
+      // boundary: exact dimSize is valid
+      expect(calcAddressRanges(SHAPE, ["8", null, null, null])).toEqual([[1792, 2047]]);
+    });
+  });
 
   it("5D shape — 문자열 제약 동일하게 동작한다", () => {
     const shape5D = [4, 3, 5, 2, 6];

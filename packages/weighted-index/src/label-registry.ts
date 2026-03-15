@@ -107,7 +107,11 @@ export class LabelRegistry<
         }
         assertNonEmptyArray(entry.ids, `Label "${name}" version "${entry.version}" ids`);
 
-        versionMap.set(entry.version, this._buildCache(name, entry));
+        const safeCopy: LabelVersionEntry<EntityId> = {
+          ...entry,
+          ids: [...entry.ids],
+        };
+        versionMap.set(entry.version, this._buildCache(name, safeCopy));
         order.push(entry.version);
       }
 

@@ -167,6 +167,15 @@ export const uriProtocol: AddressProtocol = {
 export const compactProtocol: AddressProtocol = {
   name: "compact",
 
+  /**
+   * Detect whether an input string matches the compact format.
+   *
+   * NOTE: If both schema and version consist entirely of hex characters
+   * (e.g., "a1b2-c3d4-42"), the input is treated as a layout protocol
+   * address and this method returns false. Such compact addresses cannot
+   * be auto-detected and must be explicitly parsed via
+   * `compactProtocol.parse()`.
+   */
   test(input: string): boolean {
     if (input.includes(":") || input.includes("/")) return false;
     const parts = input.split("-");
@@ -427,6 +436,25 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
       const vNum = versions[addr.version];
       if (sNum === undefined) throw new RangeError(`Unknown schema: "${addr.schema}"`);
       if (vNum === undefined) throw new RangeError(`Unknown version: "${addr.version}"`);
+
+      const schemaMax = 16 ** schemaChars - 1;
+      if (sNum > schemaMax) {
+        throw new RangeError(
+          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`
+        );
+      }
+      const versionMax = 16 ** versionChars - 1;
+      if (vNum > versionMax) {
+        throw new RangeError(
+          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`
+        );
+      }
+      const indexMax = 16 ** indexChars - 1;
+      if (addr.index > indexMax) {
+        throw new RangeError(
+          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMax})`
+        );
+      }
 
       const sHex  = sNum.toString(16).padStart(schemaChars, "0");
       const vHex  = vNum.toString(16).padStart(versionChars, "0");

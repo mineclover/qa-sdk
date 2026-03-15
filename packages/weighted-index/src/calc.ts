@@ -102,45 +102,6 @@ export function mergeRanges(ranges: [number, number][]): [number, number][] {
 }
 
 /**
- * 부분 좌표 제약에서 유효한 주소 구간 목록을 계산한다.
- *
- * ── 인코딩 공식 ─────────────────────────────────────────────────────────────
- *
- *   address = Σ (coord_i − 1) × W[i],   W[i] = Π_{j>i} shape[j]
- *
- * ── 제약 처리 ────────────────────────────────────────────────────────────────
- *
- *   null        → 와일드카드: coord 1..shape[i] 전체 허용
- *   { from, to } → 해당 좌표 범위만 허용 (1-based)
- *
- * ── 최적화 ───────────────────────────────────────────────────────────────────
- *
- *   이후 모든 차원이 와일드카드이면 하나의 연속 블록으로 처리한다.
- *   그렇지 않으면 재귀적으로 탐색하고 인접 구간을 병합한다.
- *
- * ── 차원 위치와 range 연속성 ──────────────────────────────────────────────────
- *
- *   외부 차원(낮은 i, 높은 weight)을 고정할수록 결과가 연속적(적은 구간).
- *   내부 차원(높은 i, 낮은 weight)을 고정할수록 결과가 분산됨(많은 구간).
- *
- *   예) shape = [8, 4, 16, 4]  (role, action, resource, env)
- *     role=3 고정    → 1개 연속 구간  [512, 767]       (256개 주소)
- *     env=1  고정    → 512개 분산 구간 [0,0],[4,4],...  (512개 주소)
- *     role=3, env=1  → 64개 구간       각 크기 1        (64개 주소)
- *
- * @param shape       차원 크기 배열 [d0, d1, ..., dn]
- * @param constraints 차원별 제약. shape과 동일한 길이.
- * @returns 정렬·병합된 [from, to] 주소 구간 목록 (0-based, inclusive)
- *
- * @example
- * // shape = [8, 4, 16, 4] (role, action, resource, env)
- * calcAddressRanges([8,4,16,4], [{ from:3, to:3 }, null, null, null])
- * // → [[512, 767]]  (role=3, 나머지 와일드카드 → 256개 연속)
- *
- * calcAddressRanges([8,4,16,4], [{ from:3, to:3 }, null, null, { from:1, to:1 }])
- * // → [[512,512],[516,516],...,[764,764]]  (64개 분산)
- */
-/**
  * 두 range 결과의 교집합을 계산한다.
  *
  * 서로 다른 조건에서 구한 address range를 AND로 결합할 때 사용한다.
@@ -162,6 +123,92 @@ export function intersectRanges(
     }
   }
   return mergeRanges(result);
+}
+
+/**
+ * base 구간에서 exclude 구간을 제거한다 (차집합).
+ * 입력은 mergeRanges로 사전 정렬·병합되어 있어야 한다.
+ */
+export function subtractRanges(
+  base: readonly [number, number][],
+  exclude: readonly [number, number][],
+): [number, number][] {
+  if (exclude.length === 0) return [...base] as [number, number][];
+  const result: [number, number][] = [];
+  for (const [bf, bt] of base) {
+    let cursor = bf;
+    for (const [ef, et] of exclude) {
+      if (et < cursor || ef > bt) continue;
+      if (cursor < ef) result.push([cursor, ef - 1]);
+      cursor = et + 1;
+      if (cursor > bt) break;
+    }
+    if (cursor <= bt) result.push([cursor, bt]);
+  }
+  return mergeRanges(result);
+}
+
+/**
+ * [0, capacity-1] 전체 공간에서 excluded 구간의 여집합을 반환한다.
+ * excluded는 mergeRanges로 사전 정렬·병합되어 있어야 한다.
+ */
+export function complementRanges(
+  capacity: number,
+  excluded: readonly [number, number][],
+): [number, number][] {
+  const result: [number, number][] = [];
+  let cursor = 0;
+  for (const [from, to] of excluded) {
+    if (cursor < from) result.push([cursor, from - 1]);
+    cursor = to + 1;
+  }
+  if (cursor < capacity) result.push([cursor, capacity - 1]);
+  return result;
+}
+
+/**
+ * 정렬된 range 배열에서 address가 포함되어 있는지 O(log n)으로 검사한다.
+ */
+export function containsAddress(
+  address: number,
+  ranges: readonly [number, number][],
+): boolean {
+  if (ranges.length === 0) return false;
+  let lo = 0, hi = ranges.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const [from, to] = ranges[mid];
+    if (address < from)    hi = mid - 1;
+    else if (address > to) lo = mid + 1;
+    else return true;
+  }
+  return false;
+}
+
+/**
+ * position 목록을 CoordConstraint 문자열로 변환한다.
+ * @example
+ * positionsToConstraint([6,7,8])    → "6-8"
+ * positionsToConstraint([1,3,5])    → "1,3,5"
+ * positionsToConstraint([1,2,5,6]) → "1-2,5-6"
+ */
+export function positionsToConstraint(positions: readonly number[]): string {
+  if (positions.length === 0) return "";
+  const sorted = [...positions].sort((a, b) => a - b);
+  const segments: string[] = [];
+  let from = sorted[0];
+  let to   = sorted[0];
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === to + 1) {
+      to = sorted[i];
+    } else {
+      segments.push(from === to ? String(from) : `${from}-${to}`);
+      from = to = sorted[i];
+    }
+  }
+  segments.push(from === to ? String(from) : `${from}-${to}`);
+  return segments.join(",");
 }
 
 /**
@@ -219,11 +266,31 @@ function _normalizeConstraint(
   if (c === null) return [{ from: 1, to: dimSize }];
   return c.split(",").map((part) => {
     const dash = part.indexOf("-");
+    let from: number;
+    let to: number;
     if (dash === -1) {
-      const n = Number(part);
-      return { from: n, to: n };
+      from = Number(part);
+      to = from;
+    } else {
+      from = Number(part.slice(0, dash));
+      to = Number(part.slice(dash + 1));
     }
-    return { from: Number(part.slice(0, dash)), to: Number(part.slice(dash + 1)) };
+    if (!Number.isInteger(from) || !Number.isInteger(to)) {
+      throw new RangeError(
+        `Invalid constraint "${part}": from and to must be valid integers (got from=${from}, to=${to})`
+      );
+    }
+    if (from > to) {
+      throw new RangeError(
+        `Invalid constraint "${part}": from (${from}) must be <= to (${to})`
+      );
+    }
+    if (from < 1 || to > dimSize) {
+      throw new RangeError(
+        `Constraint "${part}" out of bounds: [${from}, ${to}] must be within [1, ${dimSize}]`
+      );
+    }
+    return { from, to };
   });
 }
 

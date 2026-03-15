@@ -375,6 +375,65 @@ describe("createLayoutProtocol", () => {
     expect(() => proto.serialize({ schema: "nope", version: "v1", index: 0 })).toThrow(RangeError);
   });
 
+  // ── overflow validation ──────────────────────────────────────────────
+
+  describe("overflow validation", () => {
+    it("index exceeding hex char capacity throws RangeError", () => {
+      // int64: 16 chars total, schemaChars=2, versionChars=2 → indexChars=12
+      // max index = 16^12 - 1
+      const proto = createLayoutProtocol({
+        format: PACK_FORMATS.int64,
+        schemaChars: 2,
+        versionChars: 2,
+        ...mappings,
+      });
+      const indexMax = 16 ** 12 - 1;
+      expect(() => proto.serialize({ schema: "perm", version: "v1", index: indexMax + 1 })).toThrow(RangeError);
+    });
+
+    it("schema value exceeding allocated chars throws RangeError", () => {
+      // schemaChars=1 → max schema value = 15
+      const proto = createLayoutProtocol({
+        format: PACK_FORMATS.int64,
+        schemaChars: 1,
+        versionChars: 1,
+        schemas: { big: 16 },
+        versions: { v1: 1 },
+      });
+      expect(() => proto.serialize({ schema: "big", version: "v1", index: 0 })).toThrow(RangeError);
+    });
+
+    it("version value exceeding allocated chars throws RangeError", () => {
+      // versionChars=1 → max version value = 15
+      const proto = createLayoutProtocol({
+        format: PACK_FORMATS.int64,
+        schemaChars: 2,
+        versionChars: 1,
+        schemas: { perm: 1 },
+        versions: { bigv: 16 },
+      });
+      expect(() => proto.serialize({ schema: "perm", version: "bigv", index: 0 })).toThrow(RangeError);
+    });
+
+    it("values at boundary (max valid value) succeed", () => {
+      // schemaChars=2 → max=255, versionChars=2 → max=255
+      // int64: 16 chars, indexChars=12 → max index = 16^12 - 1 = 281474976710655
+      // 16^12 - 1 = 2^48 - 1 which is within Number.MAX_SAFE_INTEGER
+      const proto = createLayoutProtocol({
+        format: PACK_FORMATS.int64,
+        schemaChars: 2,
+        versionChars: 2,
+        schemas: { maxs: 255 },
+        versions: { maxv: 255 },
+      });
+      const indexMax = 16 ** 12 - 1;
+      const addr = { schema: "maxs", version: "maxv", index: indexMax };
+      // Should not throw
+      const serialized = proto.serialize(addr);
+      expect(proto.parse(serialized)).toEqual(addr);
+    });
+  });
+
   it("works with parseAddress when added to protocols", () => {
     const proto = createLayoutProtocol({
       format: PACK_FORMATS.uuid,

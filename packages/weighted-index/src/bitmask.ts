@@ -15,24 +15,48 @@ export function createMask(size: number): Uint8Array {
   return new Uint8Array(Math.ceil(size / 8));
 }
 
-/** Set the bit at position id (grant permission). */
+function _checkBitBounds(mask: Uint8Array, id: number): void {
+  if (id < 0 || id >= mask.length * 8) {
+    throw new RangeError(
+      `Bit id ${id} is out of range [0, ${mask.length * 8})`
+    );
+  }
+}
+
+/**
+ * Set the bit at position id (grant permission).
+ *
+ * @param id Must be in range `[0, mask.length * 8)`.
+ * @throws {RangeError} if id is out of bounds
+ */
 export function setBit(mask: Uint8Array, id: number): void {
+  _checkBitBounds(mask, id);
   mask[id >> 3] |= (1 << (id & 7));
 }
 
-/** Clear the bit at position id (revoke permission). */
+/**
+ * Clear the bit at position id (revoke permission).
+ *
+ * @param id Must be in range `[0, mask.length * 8)`.
+ * @throws {RangeError} if id is out of bounds
+ */
 export function clearBit(mask: Uint8Array, id: number): void {
+  _checkBitBounds(mask, id);
   mask[id >> 3] &= ~(1 << (id & 7));
 }
 
 /**
  * Test whether permission id is set. O(1).
  *
+ * @param id Must be in range `[0, mask.length * 8)`.
+ * @throws {RangeError} if id is out of bounds
+ *
  * @example
  * const id = wi.encode([resource, action, role, env]);
  * if (hasBit(userMask, id)) { ... }
  */
 export function hasBit(mask: Uint8Array, id: number): boolean {
+  _checkBitBounds(mask, id);
   return (mask[id >> 3] & (1 << (id & 7))) !== 0;
 }
 

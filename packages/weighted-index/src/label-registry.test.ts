@@ -314,6 +314,32 @@ describe("[에러 계층] instanceof 타입 검증", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// [방어적 복사] 입력 배열 변이 방어
+// ─────────────────────────────────────────────────────────────────────────────
+describe("[방어적 복사] 입력 배열 변이 방어", () => {
+  it("생성 후 원본 ids 배열 변이가 레지스트리에 영향을 주지 않는다", () => {
+    const ids = [10, 20, 30];
+    const entry = { version: "v1", ids };
+    const reg = new LabelRegistry({ dim: [entry] });
+
+    // Mutate the original array after construction
+    ids.push(40);
+    ids[0] = 999;
+
+    // Registry should still reflect the original values
+    expect(reg.getMax("dim", "v1")).toBe(3);
+    expect(reg.getIndex("dim", "v1", 10)).toBe(1);
+    expect(reg.getIndex("dim", "v1", 20)).toBe(2);
+    expect(reg.getIndex("dim", "v1", 30)).toBe(3);
+    expect(reg.getEntityId("dim", "v1", 1)).toBe(10);
+    // 40 was added after construction, should not be found
+    expect(() => reg.getIndex("dim", "v1", 40)).toThrow("not found");
+    // 999 was set after construction, should not be found
+    expect(() => reg.getIndex("dim", "v1", 999)).toThrow("not found");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // [속성 기반] 랜덤 ID 왕복 (fast-check)
 // ─────────────────────────────────────────────────────────────────────────────
 describe("[속성 기반] 랜덤 ID 왕복", () => {
