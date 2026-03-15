@@ -9,6 +9,10 @@ import {
   type ServiceDecodeResponse,
 } from "../registry.js";
 import { densityFill, densityInk } from "weighted-ui";
+import {
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+} from "weighted-index";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -62,9 +66,6 @@ function renderServiceDetail(
   const evtInfo = inEvt
     ? `<span class="info-badge info-badge-green">이벤트 인덱스 pos ${evtPos + 1}</span>`
     : `<span class="info-badge info-badge-gray">이벤트 없음</span>`;
-
-  const PERM_SVC_VALUES = [40, 41, 42, 43, 44, 45, 46, 47, 48, 49];
-  const EVT_SVC_VALUES  = [0, 2, 4, 6, 8, 40, 42, 44, 46, 48];
 
   container.innerHTML = `
     <div class="sp-section">
@@ -135,8 +136,6 @@ function renderServiceDetail(
     </div>
   `;
 
-  // suppress unused variable warnings
-  void PERM_SVC_VALUES; void EVT_SVC_VALUES;
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
@@ -168,17 +167,17 @@ function buildDimSidebar(
   // Use DIM_META size to generate placeholder entries when we don't have them.
   // Actually, the sidebar needs all entries for the fixed dims to allow selection.
   // We track this via a local static mapping since these are stable:
-  const FIXED_DIM_ENTRIES: Record<SvcDimKey, string[]> = {
-    env:       ["dev", "stage", "prod", "test", "local"],
-    region:    ["asia", "usa"],
-    svc_name:  ["shopping-web", "shopping-backend", "auth", "payment", "gateway"],
-    namespace: ["shop", "cms"],
+  const FIXED_DIM_ENTRIES: Record<SvcDimKey, readonly string[]> = {
+    env:       DEMO_ENVS,
+    region:    DEMO_REGIONS,
+    svc_name:  DEMO_SVCS,
+    namespace: DEMO_NSS,
   };
   const FIXED_DIM_KO: Record<SvcDimKey, Record<string, string>> = {
-    env:       { dev: "개발", stage: "스테이지", prod: "운영", test: "테스트", local: "로컬" },
-    region:    { asia: "아시아", usa: "미국" },
-    svc_name:  { "shopping-web": "쇼핑 웹", "shopping-backend": "쇼핑 백엔드", auth: "인증", payment: "결제", gateway: "게이트웨이" },
-    namespace: { shop: "쇼핑몰", cms: "CMS" },
+    env:       DEMO_KO.env,
+    region:    DEMO_KO.region,
+    svc_name:  DEMO_KO.svc,
+    namespace: DEMO_KO.ns,
   };
 
   for (const dim of fixedDims) {
@@ -420,10 +419,8 @@ export async function renderServiceDetailPanel(
   container.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">로딩 중...</div>`;
   try {
     const decoded = await fetchServiceDecode(value);
-    const PERM_SVC_VALUES = [40, 41, 42, 43, 44, 45, 46, 47, 48, 49];
-    const EVT_SVC_VALUES  = [0, 2, 4, 6, 8, 40, 42, 44, 46, 48];
-    const permPos = PERM_SVC_VALUES.indexOf(value);
-    const evtPos  = EVT_SVC_VALUES.indexOf(value);
+    const permPos = (DEMO_PERM_SVC_VALUES as readonly number[]).indexOf(value);
+    const evtPos  = (DEMO_EVT_SVC_VALUES as readonly number[]).indexOf(value);
     renderServiceDetail(container, value, decoded, permPos, evtPos);
   } catch (e) {
     container.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;

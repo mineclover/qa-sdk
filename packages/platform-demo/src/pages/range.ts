@@ -2,7 +2,11 @@
 //  범위 탐색 — 차원 고정/와일드카드로 주소 범위 시각화
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { serializeAddress } from "weighted-index";
+import {
+  serializeAddress,
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_SVC_STRIDES,
+} from "weighted-index";
 
 const SVC_PREFIX = "service";
 const SVC_VER    = "v1";
@@ -23,38 +27,20 @@ interface DimMeta {
 
 const DIMS: DimMeta[] = [
   {
-    key: "env", label: "환경 (env)", size: 5, stride: 20,
-    values: [
-      { idx1: 1, id: "dev",   ko: "개발" },
-      { idx1: 2, id: "stage", ko: "스테이지" },
-      { idx1: 3, id: "prod",  ko: "운영" },
-      { idx1: 4, id: "test",  ko: "테스트" },
-      { idx1: 5, id: "local", ko: "로컬" },
-    ],
+    key: "env", label: "환경 (env)", size: DEMO_ENVS.length, stride: DEMO_SVC_STRIDES[0],
+    values: DEMO_ENVS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.env[id] })),
   },
   {
-    key: "region", label: "리전 (region)", size: 2, stride: 10,
-    values: [
-      { idx1: 1, id: "asia", ko: "아시아" },
-      { idx1: 2, id: "usa",  ko: "미국" },
-    ],
+    key: "region", label: "리전 (region)", size: DEMO_REGIONS.length, stride: DEMO_SVC_STRIDES[1],
+    values: DEMO_REGIONS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.region[id] })),
   },
   {
-    key: "svc_name", label: "서비스 (svc_name)", size: 5, stride: 2,
-    values: [
-      { idx1: 1, id: "shopping-web",     ko: "쇼핑 웹" },
-      { idx1: 2, id: "shopping-backend", ko: "쇼핑 백엔드" },
-      { idx1: 3, id: "auth",             ko: "인증" },
-      { idx1: 4, id: "payment",          ko: "결제" },
-      { idx1: 5, id: "gateway",          ko: "게이트웨이" },
-    ],
+    key: "svc_name", label: "서비스 (svc_name)", size: DEMO_SVCS.length, stride: DEMO_SVC_STRIDES[2],
+    values: DEMO_SVCS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.svc[id] })),
   },
   {
-    key: "namespace", label: "네임스페이스 (ns)", size: 2, stride: 1,
-    values: [
-      { idx1: 1, id: "shop", ko: "쇼핑몰" },
-      { idx1: 2, id: "cms",  ko: "CMS" },
-    ],
+    key: "namespace", label: "네임스페이스 (ns)", size: DEMO_NSS.length, stride: DEMO_SVC_STRIDES[3],
+    values: DEMO_NSS.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.ns[id] })),
   },
 ];
 

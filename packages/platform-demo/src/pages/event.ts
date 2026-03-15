@@ -6,6 +6,7 @@ import {
   fetchEvtCells,
   type EvtCellsResponse,
 } from "../registry.js";
+import { DEMO_KO, DEMO_INITIATORS } from "weighted-index";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -63,10 +64,8 @@ function renderEventDetail(
     return;
   }
 
-  const ENV_KO: Record<string, string> = {
-    dev: "개발", stage: "스테이지", prod: "운영", test: "테스트", local: "로컬"
-  };
-  const INIT_KO: Record<string, string> = { web: "웹", mobile: "모바일" };
+  const ENV_KO  = DEMO_KO.env;
+  const INIT_KO = DEMO_KO.initiator;
 
   container.innerHTML = `
     <div class="sp-section">
@@ -120,8 +119,8 @@ function renderEventDetail(
 
 // ── Initiator toggle bar ──────────────────────────────────────────────────
 
-const INITIATORS = ["web", "mobile"] as const;
-const INIT_KO: Record<string, string> = { web: "웹", mobile: "모바일" };
+const INITIATORS = DEMO_INITIATORS;
+const INIT_KO = DEMO_KO.initiator;
 
 function renderInitiatorBar(
   container: HTMLElement,
@@ -185,9 +184,7 @@ function renderGrid(
     headRow.appendChild(th);
   });
 
-  const ENV_KO_SIMPLE: Record<string, string> = {
-    dev: "개발", stage: "스테이지", prod: "운영", test: "테스트", local: "로컬"
-  };
+  const ENV_KO_SIMPLE = DEMO_KO.env;
 
   const tbody = tbl.createTBody();
   svcLabels.forEach((sl, si) => {

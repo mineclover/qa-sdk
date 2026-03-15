@@ -7,6 +7,7 @@ import {
   fetchPermDecode,
   type PermCellsResponse,
 } from "../registry.js";
+import { DEMO_KO } from "weighted-index";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -16,11 +17,9 @@ export interface PermState {
 
 // ── Label maps ────────────────────────────────────────────────────────────
 
-const ENV_KO: Record<string, string> = {
-  dev: "개발", stage: "스테이지", prod: "운영", test: "테스트", local: "로컬",
-};
-const REGION_KO: Record<string, string> = { asia: "아시아", usa: "미국" };
-const NS_KO: Record<string, string>     = { shop: "쇼핑몰", cms: "CMS" };
+const ENV_KO    = DEMO_KO.env;
+const REGION_KO = DEMO_KO.region;
+const NS_KO     = DEMO_KO.ns;
 
 // ── Color helpers (use data.maxValue for scaling) ─────────────────────────
 

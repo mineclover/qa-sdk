@@ -90,6 +90,13 @@ export function demoRoleStride(v: DemoVer) { return v === "v1" ? 5 : 6; }
 export function demoEventsFor(v: DemoVer) { return v === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2; }
 export function demoEvtStride(v: DemoVer) { return v === "v1" ? 14 : 18; }
 
+export function demoCalcPermAddr(svcPos: number, rolePos: number, ver: DemoVer): number {
+  return (svcPos - 1) * demoRoleStride(ver) + (rolePos - 1);
+}
+export function demoCalcEvtAddr(svcPos: number, evtPos: number, initPos: number, ver: DemoVer): number {
+  return (svcPos - 1) * demoEvtStride(ver) + (evtPos - 1) * 2 + (initPos - 1);
+}
+
 export interface DemoPermDecoded {
   svcIdx: number; svcId: string; svcKo: string;
   nsId: string; nsKo: string;

@@ -2,9 +2,17 @@
 //  접근 제어 — perm_svc(1D 압축) × role × event 매핑 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { serializeAddress } from "weighted-index";
+import {
+  serializeAddress,
+  DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  demoRoleStride, demoEvtStride,
+  demoCalcPermAddr, demoCalcEvtAddr,
+  type DemoVer,
+} from "weighted-index";
 
-type Ver = "v1" | "v2";
+type Ver = DemoVer;
 
 function fmtAddr(schema: string, ver: Ver, index: number): string {
   return serializeAddress({ schema, version: ver, index }, "colon");
@@ -16,18 +24,8 @@ interface PermSvcMeta {
   pos: number; svcId: string; svcKo: string; nsId: string; nsKo: string;
 }
 
-const SVC_NAMES = [
-  { id: "shopping-web",     ko: "쇼핑웹" },
-  { id: "shopping-backend", ko: "쇼핑BE" },
-  { id: "auth",             ko: "인증" },
-  { id: "payment",          ko: "결제" },
-  { id: "gateway",          ko: "GW" },
-];
-
-const NS = [
-  { id: "shop", ko: "쇼핑몰" },
-  { id: "cms",  ko: "CMS" },
-];
+const SVC_NAMES = DEMO_SVCS.map(id => ({ id, ko: DEMO_KO.svc[id] }));
+const NS = DEMO_NSS.map(id => ({ id, ko: DEMO_KO.ns[id] }));
 
 const PERM_SVCS: PermSvcMeta[] = [];
 {
@@ -41,57 +39,24 @@ const PERM_SVCS: PermSvcMeta[] = [];
 
 interface RoleMeta { idx1: number; id: string; ko: string }
 
-const ROLES_V1: RoleMeta[] = [
-  { idx1: 1, id: "admin",     ko: "관리자" },
-  { idx1: 2, id: "developer", ko: "개발자" },
-  { idx1: 3, id: "operator",  ko: "운영자" },
-  { idx1: 4, id: "viewer",    ko: "뷰어" },
-  { idx1: 5, id: "readonly",  ko: "읽기전용" },
-];
-
-const ROLES_V2: RoleMeta[] = [
-  { idx1: 1, id: "admin",     ko: "관리자" },
-  { idx1: 2, id: "developer", ko: "개발자" },
-  { idx1: 3, id: "operator",  ko: "운영자" },
-  { idx1: 4, id: "customer",  ko: "고객" },
-  { idx1: 5, id: "viewer",    ko: "뷰어" },
-  { idx1: 6, id: "readonly",  ko: "읽기전용" },
-];
+const ROLES_V1: RoleMeta[] = DEMO_ROLES_V1.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.role[id] }));
+const ROLES_V2: RoleMeta[] = DEMO_ROLES_V2.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.role[id] }));
 
 // ── Event metadata ──────────────────────────────────────────────────────
 
 interface EvtMeta { idx1: number; id: string; ko: string }
 
-const EVENTS_V1: EvtMeta[] = [
-  { idx1: 1, id: "user.login",      ko: "로그인" },
-  { idx1: 2, id: "user.logout",     ko: "로그아웃" },
-  { idx1: 3, id: "order.created",   ko: "주문생성" },
-  { idx1: 4, id: "order.paid",      ko: "주문결제" },
-  { idx1: 5, id: "payment.failed",  ko: "결제실패" },
-  { idx1: 6, id: "session.expired", ko: "세션만료" },
-  { idx1: 7, id: "config.changed",  ko: "설정변경" },
-];
-
-const EVENTS_V2: EvtMeta[] = [
-  ...EVENTS_V1,
-  { idx1: 8, id: "payment.cancel_requested", ko: "취소요청" },
-  { idx1: 9, id: "payment.cancel_approved",  ko: "취소승인" },
-];
+const EVENTS_V1: EvtMeta[] = DEMO_EVENTS_V1.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] }));
+const EVENTS_V2: EvtMeta[] = DEMO_EVENTS_V2.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 function rolesFor(v: Ver) { return v === "v1" ? ROLES_V1 : ROLES_V2; }
 function eventsFor(v: Ver) { return v === "v1" ? EVENTS_V1 : EVENTS_V2; }
-function rc(v: Ver) { return v === "v1" ? 5 : 6; }
-function evtStride(v: Ver) { return v === "v1" ? 14 : 18; }
-
-function calcPermAddr(svc: number, role: number, v: Ver): number {
-  return (svc - 1) * rc(v) + (role - 1);
-}
-
-function calcEvtAddr(svc: number, evt: number, init: number, v: Ver): number {
-  return (svc - 1) * evtStride(v) + (evt - 1) * 2 + (init - 1);
-}
+const rc = demoRoleStride;
+const evtStride = demoEvtStride;
+const calcPermAddr = demoCalcPermAddr;
+const calcEvtAddr = demoCalcEvtAddr;
 
 // Backend services don't support mobile initiator
 function svcSupportsInit(ps: PermSvcMeta, init: number): boolean {

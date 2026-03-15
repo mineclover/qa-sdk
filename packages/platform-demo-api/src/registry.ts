@@ -1,4 +1,11 @@
 import { MetaRegistry } from "index-meta";
+import {
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
+  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  DEMO_INITIATORS,
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+} from "weighted-index";
 
 // ── Service address constants ──────────────────────────────────────────────
 // value formula: (env_pos-1)*20 + (region_pos-1)*10 + (name_pos-1)*2 + (ns_pos-1)
@@ -201,40 +208,20 @@ export const permCodecV2 = registry.createCodec("permission", "v2");
 export const evtCodecV2  = registry.createCodec("event",      "v2");
 
 // ── Label helpers ──────────────────────────────────────────────────────────
+// env, region, ns, role, initiator 라벨은 demo-snapshot과 동일
+export const ENV_KO    = DEMO_KO.env;
+export const REGION_KO = DEMO_KO.region;
+export const NS_KO     = DEMO_KO.ns;
+export const ROLE_KO   = DEMO_KO.role;
+export const INIT_KO   = DEMO_KO.initiator;
 
-export const ENV_KO: Record<string, string> = {
-  dev:   "개발",
-  stage: "스테이지",
-  prod:  "운영",
-  test:  "테스트",
-  local: "로컬",
-};
-
-export const REGION_KO: Record<string, string> = {
-  asia: "아시아",
-  usa:  "미국",
-};
-
+// svc_name, event 라벨은 API 표시용으로 별도 유지 (SSOT과 표기 차이)
 export const SVC_NAME_KO: Record<string, string> = {
   "shopping-web":     "쇼핑 웹",
   "shopping-backend": "쇼핑 백엔드",
   auth:               "인증",
   payment:            "결제",
   gateway:            "게이트웨이",
-};
-
-export const NS_KO: Record<string, string> = {
-  shop: "쇼핑몰",
-  cms:  "CMS",
-};
-
-export const ROLE_KO: Record<string, string> = {
-  admin:     "관리자",
-  developer: "개발자",
-  operator:  "운영자",
-  customer:  "고객",
-  viewer:    "뷰어",
-  readonly:  "읽기전용",
 };
 
 export const EVT_KO: Record<string, string> = {
@@ -249,32 +236,17 @@ export const EVT_KO: Record<string, string> = {
   "payment.cancel_approved":  "취소 승인",
 };
 
-export const INIT_KO: Record<string, string> = {
-  web:    "웹",
-  mobile: "모바일",
-};
+// ── Dimension entry arrays (re-exported from weighted-index demo-snapshot) ──
 
-// ── Dimension entry arrays ─────────────────────────────────────────────────
+export const ENVS       = DEMO_ENVS;
+export const REGIONS    = DEMO_REGIONS;
+export const SVCS       = DEMO_SVCS;
+export const NSS        = DEMO_NSS;
+export const ROLES_V1   = DEMO_ROLES_V1;
+export const ROLES      = DEMO_ROLES_V2;
+export const EVENTS_V1  = DEMO_EVENTS_V1;
+export const EVENTS     = DEMO_EVENTS_V2;
+export const INITIATORS = DEMO_INITIATORS;
 
-export const ROLES_V1 = ["admin", "developer", "operator", "viewer", "readonly"] as const;
-export const EVENTS_V1 = [
-  "user.login", "user.logout", "order.created", "order.paid",
-  "payment.failed", "session.expired", "config.changed",
-] as const;
-
-export const ENVS    = ["dev", "stage", "prod", "test", "local"] as const;
-export const REGIONS = ["asia", "usa"] as const;
-export const SVCS    = ["shopping-web", "shopping-backend", "auth", "payment", "gateway"] as const;
-export const NSS     = ["shop", "cms"] as const;
-export const ROLES   = ["admin", "developer", "operator", "customer", "viewer", "readonly"] as const;
-export const EVENTS  = [
-  "user.login", "user.logout", "order.created", "order.paid",
-  "payment.failed", "session.expired", "config.changed",
-  "payment.cancel_requested", "payment.cancel_approved",
-] as const;
-export const INITIATORS = ["web", "mobile"] as const;
-
-// perm_svc entries (prod/asia services)
-export const PERM_SVC_VALUES = [40, 41, 42, 43, 44, 45, 46, 47, 48, 49] as const;
-// event_svc entries (dev+prod/asia/shop services)
-export const EVT_SVC_VALUES  = [0, 2, 4, 6, 8, 40, 42, 44, 46, 48] as const;
+export const PERM_SVC_VALUES = DEMO_PERM_SVC_VALUES;
+export const EVT_SVC_VALUES  = DEMO_EVT_SVC_VALUES;

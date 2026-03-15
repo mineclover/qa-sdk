@@ -7,19 +7,15 @@ import {
   PERM_SVC_VALUES, EVT_SVC_VALUES,
   ROLES_V1, EVENTS_V1,
 } from "./registry.js";
-
-// ── Codec-derived constants ──────────────────────────────────────────────
-// Permission: shape [perm_svc_count, role_count]
-const PERM_ROLE_COUNT_V1 = permCodec.shape[1];    // 5
-const PERM_ROLE_COUNT_V2 = permCodecV2.shape[1];   // 6
-// Event: shape [event_svc_count, event_name_count, initiator_count]
-// svcStride = event_name_count * initiator_count
-const EVT_SVC_STRIDE_V1 = evtCodec.shape[1] * evtCodec.shape[2];     // 7*2 = 14
-const EVT_SVC_STRIDE_V2 = evtCodecV2.shape[1] * evtCodecV2.shape[2]; // 9*2 = 18
+import {
+  demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
+  demoRoleStride, demoEvtStride,
+  type DemoVer,
+} from "weighted-index";
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
-type Ver = "v1" | "v2";
+type Ver = DemoVer;
 
 function parseVer(raw: string | undefined): Ver {
   return raw === "v1" ? "v1" : "v2";
@@ -45,25 +41,19 @@ const DIM_KO_FNS: Record<SvcDimKey, (v: string) => string> = {
   namespace: (v) => NS_KO[v] ?? v,
 };
 
-// Weights for service:v1 — shape [5,2,5,2]
-const SVC_WEIGHTS = [20, 10, 2, 1] as const;
-
 function computeSvcValue(
   envIdx: number, regionIdx: number, svcIdx: number, nsIdx: number
 ): number {
-  return (envIdx - 1) * SVC_WEIGHTS[0]
-    + (regionIdx - 1) * SVC_WEIGHTS[1]
-    + (svcIdx - 1) * SVC_WEIGHTS[2]
-    + (nsIdx - 1) * SVC_WEIGHTS[3];
+  return demoEncodeSvc([envIdx, regionIdx, svcIdx, nsIdx]);
 }
 
 function decodeSvcValue(value: number): { env: string; region: string; svc_name: string; namespace: string } {
-  const decoded = svcCodec.decodeValue(value);
+  const coords = demoDecodeSvc(value);
   return {
-    env:       String(decoded["env"]),
-    region:    String(decoded["region"]),
-    svc_name:  String(decoded["svc_name"]),
-    namespace: String(decoded["namespace"]),
+    env:       DEMO_ENVS[coords[0] - 1],
+    region:    DEMO_REGIONS[coords[1] - 1],
+    svc_name:  DEMO_SVCS[coords[2] - 1],
+    namespace: DEMO_NSS[coords[3] - 1],
   };
 }
 
@@ -114,9 +104,9 @@ const FEATURE_DEFS_V1 = [
 function getRoles(ver: Ver)      { return ver === "v1" ? ROLES_V1 : ROLES; }
 function getRoleList(ver: Ver)   { return ver === "v1" ? ROLE_LIST_V1 : ROLE_LIST; }
 function getRolePos(ver: Ver)    { return ver === "v1" ? ROLE_POS_V1 : ROLE_POS; }
-function getRoleStride(ver: Ver) { return ver === "v1" ? PERM_ROLE_COUNT_V1 : PERM_ROLE_COUNT_V2; }
+function getRoleStride(ver: Ver) { return demoRoleStride(ver); }
 function getEvents(ver: Ver)     { return ver === "v1" ? EVENTS_V1 : EVENTS; }
-function getEvtStride(ver: Ver)  { return ver === "v1" ? EVT_SVC_STRIDE_V1 : EVT_SVC_STRIDE_V2; }
+function getEvtStride(ver: Ver)  { return demoEvtStride(ver); }
 function getFeatureDefs(ver: Ver) { return ver === "v1" ? FEATURE_DEFS_V1 : FEATURE_DEFS; }
 function getPermCodec(ver: Ver)  { return ver === "v1" ? permCodec : permCodecV2; }
 function getEvtCodec(ver: Ver)   { return ver === "v1" ? evtCodec : evtCodecV2; }
@@ -787,8 +777,8 @@ app.post("/api/logs/seed", async (c) => {
     const ver = parseVer(c.req.query("ver"));
     const clear = c.req.query("clear") === "true";
 
-    const roleStr = ver === "v1" ? 5 : 6;
-    const evtStr  = ver === "v1" ? 14 : 18;
+    const roleStr = demoRoleStride(ver);
+    const evtStr  = demoEvtStride(ver);
     const baseTs  = Date.now() - 30_000;
 
     const samples: Omit<LogRow, "id">[] = [

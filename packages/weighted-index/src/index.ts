@@ -177,6 +177,7 @@ export {
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   demoEncodeSvc, demoDecodeSvc,
   demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
+  demoCalcPermAddr, demoCalcEvtAddr,
   demoDecodePerm, demoDecodeEvt,
   DEMO_LOG_TEMPLATES,
   type DemoVer, type DemoPermDecoded, type DemoEvtDecoded,
