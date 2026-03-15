@@ -1,0 +1,16 @@
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  root: ".",
+  appType: "spa",
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5175,
+    proxy: {
+      "/api": "http://localhost:8787",
+    },
+  },
+});

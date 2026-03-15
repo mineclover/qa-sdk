@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>플랫폼 인덱스 데모</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ── Ribbon ─────────────────────────────────────────────────── -->
+      <div class="ribbon">
+        <div class="ribbon-brand">
+          <span class="brand-icon">⊞</span>
+          <span class="brand-name">플랫폼 인덱스 데모</span>
+          <span class="brand-sub">MetaRegistry + index_ref Demo</span>
+        </div>
+        <div class="ribbon-tabs">
+          <button class="rtab active" data-sheet="service">서비스</button>
+          <button class="rtab" data-sheet="permission">권한</button>
+          <button class="rtab" data-sheet="event">이벤트</button>
+          <button class="rtab" data-sheet="scenario">시나리오</button>
+          <button class="rtab" data-sheet="grant">부여관리</button>
+          <button class="rtab" data-sheet="version">버전</button>
+        </div>
+      </div>
+
+      <!-- ── Formula bar ──────────────────────────────────────────── -->
+      <div class="formula-bar">
+        <div class="name-box" id="name-box">—</div>
+        <div class="fb-divider"></div>
+        <span class="fb-fx">fx</span>
+        <div class="fb-formula" id="fb-formula">
+          service:v1 · shape [5, 2, 5, 2] = 100 슬롯
+        </div>
+      </div>
+
+      <!-- ── Axis selector bar (service sheet only) ────────────────── -->
+      <div class="axis-bar" id="axis-bar">
+        <div class="axis-group">
+          <div class="axis-bar-label">X축</div>
+          <div class="axis-btns" id="x-axis-btns"><!-- populated by main.ts --></div>
+        </div>
+        <div class="axis-bar-divider"></div>
+        <div class="axis-group">
+          <div class="axis-bar-label">Y축</div>
+          <div class="axis-btns" id="y-axis-btns"><!-- populated by main.ts --></div>
+        </div>
+      </div>
+
+      <!-- ── Workbook ──────────────────────────────────────────── -->
+      <div class="workbook">
+
+        <!-- Service sheet -->
+        <div class="sheet" id="sheet-service">
+          <div class="sheet-body">
+            <div class="dim-sidebar" id="svc-dim-sidebar"><!-- populated by main.ts --></div>
+            <div class="sheet-grid-wrap">
+              <div id="svc-grid-container"></div>
+            </div>
+            <aside class="side-panel">
+              <div class="sp-placeholder" id="svc-sp-placeholder">
+                <div class="sp-arrow">↑</div>
+                <p>셀을 클릭하면<br/>서비스 상세 정보를<br/>확인합니다</p>
+              </div>
+              <div class="sp-content hidden" id="svc-sp-content"></div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- Permission sheet -->
+        <div class="sheet hidden" id="sheet-permission">
+          <div class="sheet-body">
+            <div class="sheet-grid-wrap">
+              <div id="perm-grid-container"></div>
+            </div>
+            <aside class="side-panel">
+              <div class="sp-placeholder" id="perm-sp-placeholder">
+                <div class="sp-arrow">↑</div>
+                <p>셀을 클릭하면<br/>권한 상세 정보를<br/>확인합니다</p>
+              </div>
+              <div class="sp-content hidden" id="perm-sp-content"></div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- Event sheet -->
+        <div class="sheet hidden" id="sheet-event">
+          <div class="initiator-bar" id="evt-initiator-bar"><!-- populated by main.ts --></div>
+          <div class="sheet-body">
+            <div class="sheet-grid-wrap">
+              <div id="evt-grid-container"></div>
+            </div>
+            <aside class="side-panel">
+              <div class="sp-placeholder" id="evt-sp-placeholder">
+                <div class="sp-arrow">↑</div>
+                <p>셀을 클릭하면<br/>이벤트 상세 정보를<br/>확인합니다</p>
+              </div>
+              <div class="sp-content hidden" id="evt-sp-content"></div>
+            </aside>
+          </div>
+        </div>
+
+        <!-- Scenario sheet -->
+        <div class="sheet hidden" id="sheet-scenario">
+          <div class="sheet-body scenario-body">
+            <div id="scenario-container"></div>
+          </div>
+        </div>
+
+        <!-- Grant table sheet -->
+        <div class="sheet hidden" id="sheet-grant">
+          <div class="sheet-body grant-body">
+            <div id="grant-container"></div>
+          </div>
+        </div>
+
+        <!-- Version comparison sheet -->
+        <div class="sheet hidden" id="sheet-version">
+          <div class="sheet-body version-body">
+            <div id="version-container"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
+      <div class="bottom-bar">
+        <div class="sheet-tabs">
+          <div class="stab active" data-sheet="service"><span class="stab-icon">⊞</span> 서비스</div>
+          <div class="stab" data-sheet="permission"><span class="stab-icon">⊙</span> 권한</div>
+          <div class="stab" data-sheet="event"><span class="stab-icon">◈</span> 이벤트</div>
+          <div class="stab" data-sheet="scenario"><span class="stab-icon">▶</span> 시나리오</div>
+          <div class="stab" data-sheet="grant"><span class="stab-icon">⊡</span> 부여관리</div>
+          <div class="stab" data-sheet="version"><span class="stab-icon">◎</span> 버전</div>
+        </div>
+        <div class="status-bar">
+          <span id="status-shape">service:v1 · shape [5, 2, 5, 2]</span>
+          <span class="status-sep">|</span>
+          <span id="status-slots">100개 슬롯</span>
+          <span class="status-sep">|</span>
+          <span id="status-sel">선택 없음</span>
+        </div>
+      </div>
+
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
