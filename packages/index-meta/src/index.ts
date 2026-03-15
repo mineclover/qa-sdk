@@ -47,6 +47,13 @@ export type {
   ResolveResult,
   ConflictReport,
 } from "./policy-resolver.js";
+export {
+  composeQuery,
+  deepDecode,
+} from "./cross-index-query.js";
+export type {
+  DeepDecodeResult,
+} from "./cross-index-query.js";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 

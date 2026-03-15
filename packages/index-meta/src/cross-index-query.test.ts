@@ -1,0 +1,252 @@
+import { describe, it, expect } from "vitest";
+import { MetaRegistry } from "./meta-registry.js";
+import { composeQuery, deepDecode } from "./cross-index-query.js";
+import { ValidationError } from "./errors.js";
+
+// ── 픽스처: 2-level cross-index ──────────────────────────────────────────────
+//
+// doc_meta = [format(3), lang(4)]  → 12 combinations
+// article  = [quality_tier(→doc_meta, 12), priority(5)] → 60 combinations
+
+const createFixture = () => {
+  const registry = new MetaRegistry({
+    dims: {
+      format: {
+        kind: { type: "string_enum" },
+        snapshots: {
+          v1: { entries: ["HTML", "PDF", "EPUB"] },
+        },
+      },
+      lang: {
+        kind: { type: "string_enum" },
+        snapshots: {
+          v1: { entries: ["en", "ko", "ja", "zh"] },
+        },
+      },
+      quality_tier: {
+        kind: { type: "index_ref", indexId: "doc_meta" },
+        snapshots: {
+          // entries = doc_meta 압축 주소들 (0-based)
+          // format(3) × lang(4) = 12 조합, 전부 편입
+          v1: { entries: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+        },
+      },
+      priority: {
+        kind: { type: "number_enum" },
+        snapshots: {
+          v1: { entries: [0, 1, 2, 3, 4] },
+        },
+      },
+    },
+    indices: {
+      doc_meta: {
+        dims: ["format", "lang"],
+        versions: {
+          v1: { snapshots: { format: "v1", lang: "v1" } },
+        },
+      },
+      article: {
+        dims: ["quality_tier", "priority"],
+        versions: {
+          v1: { snapshots: { quality_tier: "v1", priority: "v1" } },
+        },
+      },
+    },
+  });
+
+  return registry;
+};
+
+// ── composeQuery ─────────────────────────────────────────────────────────────
+
+describe("composeQuery", () => {
+  it("하위 index 조건으로 상위 index 범위를 계산한다", () => {
+    const registry = createFixture();
+
+    // "format=PDF인 article의 value 범위"
+    // doc_meta에서 format=PDF → position 2 → addresses [4,5,6,7]
+    // quality_tier entries에서 4,5,6,7 → positions 5,6,7,8
+    // article shape = [12, 5], quality_tier = positions 5-8
+    const ranges = composeQuery(
+      { indexId: "article", versionId: "v1" },
+      "quality_tier",
+      { format: "PDF" },
+      registry,
+    );
+
+    expect(ranges.length).toBeGreaterThan(0);
+
+    // 검증: 범위 내 모든 주소를 decode해서 quality_tier가 doc_meta의 format=PDF인지 확인
+    const articleCodec = registry.createCodec("article", "v1");
+    const docMetaCodec = registry.createCodec("doc_meta", "v1");
+
+    for (const [from, to] of ranges) {
+      for (let addr = from; addr <= to; addr++) {
+        const decoded = articleCodec.decodeValue(addr);
+        const qualityTierValue = decoded.quality_tier as number;
+        const docMeta = docMetaCodec.decodeValue(qualityTierValue);
+        expect(docMeta.format).toBe("PDF");
+      }
+    }
+  });
+
+  it("복합 조건: format=PDF AND lang=ko", () => {
+    const registry = createFixture();
+
+    const ranges = composeQuery(
+      { indexId: "article", versionId: "v1" },
+      "quality_tier",
+      { format: "PDF", lang: "ko" },
+      registry,
+    );
+
+    expect(ranges.length).toBeGreaterThan(0);
+
+    const articleCodec = registry.createCodec("article", "v1");
+    const docMetaCodec = registry.createCodec("doc_meta", "v1");
+
+    for (const [from, to] of ranges) {
+      for (let addr = from; addr <= to; addr++) {
+        const decoded = articleCodec.decodeValue(addr);
+        const docMeta = docMetaCodec.decodeValue(decoded.quality_tier as number);
+        expect(docMeta.format).toBe("PDF");
+        expect(docMeta.lang).toBe("ko");
+      }
+    }
+  });
+
+  it("조건에 맞는 entry가 없으면 빈 배열", () => {
+    const registry = createFixture();
+
+    // lang에 존재하지 않는 entity → 에러
+    expect(() =>
+      composeQuery(
+        { indexId: "article", versionId: "v1" },
+        "quality_tier",
+        { format: "DOCX" },
+        registry,
+      ),
+    ).toThrow(ValidationError);
+  });
+
+  it("index_ref가 아닌 dim으로 호출하면 에러", () => {
+    const registry = createFixture();
+
+    expect(() =>
+      composeQuery(
+        { indexId: "article", versionId: "v1" },
+        "priority",
+        { format: "PDF" },
+        registry,
+      ),
+    ).toThrow(ValidationError);
+  });
+
+  it("존재하지 않는 dim으로 호출하면 에러", () => {
+    const registry = createFixture();
+
+    expect(() =>
+      composeQuery(
+        { indexId: "article", versionId: "v1" },
+        "nonexistent",
+        { format: "PDF" },
+        registry,
+      ),
+    ).toThrow(ValidationError);
+  });
+});
+
+// ── deepDecode ───────────────────────────────────────────────────────────────
+
+describe("deepDecode", () => {
+  it("2-level cross-index를 끝까지 펼친다", () => {
+    const registry = createFixture();
+
+    // article address: quality_tier=5 (doc_meta addr=5), priority=2
+    // doc_meta addr=5 → decode → format=PDF(pos2), lang=ko(pos2)
+    //   format: 5 / 4 = 1 (0-based) → pos 2 → "PDF"
+    //   lang: 5 % 4 = 1 (0-based) → pos 2 → "ko"
+    const articleCodec = registry.createCodec("article", "v1");
+    const vv = articleCodec.encode({ quality_tier: 5, priority: 2 });
+
+    const result = deepDecode(vv, registry);
+
+    // article layer
+    expect(result.layers.has("article")).toBe(true);
+    const articleLayer = result.layers.get("article")!;
+    expect(articleLayer.quality_tier).toBe(5);
+    expect(articleLayer.priority).toBe(2);
+
+    // doc_meta layer (followed from quality_tier index_ref)
+    expect(result.layers.has("doc_meta")).toBe(true);
+    const docMetaLayer = result.layers.get("doc_meta")!;
+    expect(docMetaLayer.format).toBe("PDF");
+    expect(docMetaLayer.lang).toBe("ko");
+
+    // path
+    expect(result.path.length).toBe(2);
+    expect(result.path[0].indexId).toBe("article");
+    expect(result.path[1].indexId).toBe("doc_meta");
+  });
+
+  it("index_ref가 없는 단일 index → 1 layer만 반환", () => {
+    const registry = createFixture();
+
+    const docMetaCodec = registry.createCodec("doc_meta", "v1");
+    const vv = docMetaCodec.encode({ format: "HTML", lang: "en" });
+
+    const result = deepDecode(vv, registry);
+
+    expect(result.layers.size).toBe(1);
+    expect(result.layers.get("doc_meta")).toEqual({ format: "HTML", lang: "en" });
+    expect(result.path.length).toBe(1);
+  });
+
+  it("maxDepth로 재귀 깊이를 제한할 수 있다", () => {
+    const registry = createFixture();
+
+    const articleCodec = registry.createCodec("article", "v1");
+    const vv = articleCodec.encode({ quality_tier: 5, priority: 2 });
+
+    // maxDepth=1이면 article만 decode하고 doc_meta는 따라가지 않음
+    const result = deepDecode(vv, registry, 1);
+
+    expect(result.layers.has("article")).toBe(true);
+    expect(result.layers.has("doc_meta")).toBe(false);
+  });
+
+  it("순환 참조가 있어도 무한 루프 방지", () => {
+    // 같은 주소를 두 번 방문하지 않으므로 순환 방지됨
+    const registry = createFixture();
+    const vv = { indexId: "doc_meta", versionId: "v1", value: 0 };
+
+    // doc_meta에 index_ref dim이 없으므로 1-layer만 반환
+    const result = deepDecode(vv, registry);
+    expect(result.path.length).toBe(1);
+  });
+});
+
+// ── 통합 시나리오 ─────────────────────────────────────────────────────────────
+
+describe("cross-index integration", () => {
+  it("composeQuery 결과와 deepDecode 결과가 일관된다", () => {
+    const registry = createFixture();
+
+    // composeQuery: format=EPUB인 article 범위
+    const ranges = composeQuery(
+      { indexId: "article", versionId: "v1" },
+      "quality_tier",
+      { format: "EPUB" },
+      registry,
+    );
+
+    // 범위 내 모든 주소에 대해 deepDecode하면 format=EPUB이어야 함
+    for (const [from, to] of ranges) {
+      for (let addr = from; addr <= to; addr++) {
+        const vv = { indexId: "article", versionId: "v1", value: addr };
+        const result = deepDecode(vv, registry);
+        expect(result.layers.get("doc_meta")!.format).toBe("EPUB");
+      }
+    }
+  });
+});
