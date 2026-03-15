@@ -36,6 +36,17 @@ export {
   migrateCrossIndex,
   completeCrossIndex,
 } from "./migrate-address.js";
+export {
+  matchRules,
+  resolvePolicy,
+  detectConflicts,
+} from "./policy-resolver.js";
+export type {
+  PolicyRule,
+  ConflictStrategy,
+  ResolveResult,
+  ConflictReport,
+} from "./policy-resolver.js";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 
