@@ -874,6 +874,99 @@ source에 여분 dim이 있으면 target dims만 carry-over하고 나머지는 �
 
 ---
 
+## 좌표 쿼리 레이어 (Coordinate Query Layer)
+
+cross-index 탐색, 버전 횡단 쿼리, 정책 해석을 지원한다. `weighted-index`의 pattern-lattice 위에 구축된다.
+
+### Cross-Index Query
+
+하위 index 조건으로 상위 index의 주소 범위를 계산하거나, 중첩 index를 재귀적으로 decode한다.
+
+```ts
+import { composeQuery, deepDecode } from "index-meta";
+
+// "format=PDF인 article의 value 범위" — doc_meta 조건으로 article 범위 계산
+const ranges = composeQuery(
+  { indexId: "article", versionId: "v1" },
+  "quality_tier",     // index_ref dim
+  { format: "PDF" },  // 하위 index 조건
+  registry,
+);
+// → [[20, 39], [80, 99]]  (format=PDF인 quality_tier 위치에 해당하는 article 범위)
+
+// 중첩 index 재귀 decode
+const result = deepDecode(
+  { indexId: "article", versionId: "v1", value: 25 },
+  registry,
+);
+// result.layers: Map { "article" → { quality_tier: 5, priority: 0 }, "doc_meta" → { format: "PDF", lang: "ko" } }
+// result.path: [article vv, doc_meta vv]
+```
+
+`deepDecode`는 visited set으로 순환 참조를 방지한다. dim-level `index_ref`와 entry-level `entryRefs` 모두 추적.
+
+### Version Query
+
+entity 이름 기준으로 여러 version에 걸쳐 검색하거나, 버전 간 좌표 제약을 변환한다.
+
+```ts
+import { queryAcrossVersions, entityVersionSpan, translateConstraint } from "index-meta";
+
+// entity 기준으로 여러 version의 범위 반환 (position이 달라도 동일 의미 조건 적용)
+const result = queryAcrossVersions("perm", ["iv1", "iv2", "iv3"], { role: "admin" }, registry);
+// → Map { "iv1" → [[0,8]], "iv2" → [[0,8]], "iv3" → [[0,11]] }
+
+// entity가 존재하는 version 범위
+entityVersionSpan("perm", "role", "guest", registry);
+// → ["iv2", "iv3"]  (guest는 iv2부터 존재)
+
+// activeOnly 옵션으로 inactive version 제외
+entityVersionSpan("perm", "role", "viewer", registry, { activeOnly: true });
+// → ["iv1", "iv2"]  (viewer는 iv3에서 inactive)
+
+// 버전 간 좌표 제약 변환 (migration edge 또는 EntityId 기반)
+translateConstraint("perm", "iv1", "iv2", { role: "2", action: null }, registry);
+// → { role: "3", action: null }  (migration에 의해 position 변경)
+```
+
+### Policy Resolver
+
+패턴 기반 규칙 매칭과 충돌 감지. RBAC 등의 정책 해석에 사용.
+
+```ts
+import { matchRules, resolvePolicy, detectConflicts } from "index-meta";
+import type { CoordConstraint } from "weighted-index";
+
+const shape = [8, 4, 16];
+const rules = [
+  { pattern: [null, null, null] as CoordConstraint[], value: "deny" },
+  { pattern: ["3", "2", null] as CoordConstraint[], value: "allow" },
+];
+
+// 좌표에 매칭되는 규칙 목록 (구체성 순 정렬)
+matchRules([3, 2, 5], rules, shape);
+// → [{ pattern: ["3","2",null], value: "allow" }, { pattern: [null,null,null], value: "deny" }]
+
+// 전략별 정책 해석
+resolvePolicy([3, 2, 5], rules, shape, "most-specific"); // → "allow"
+resolvePolicy([3, 2, 5], rules, shape, "first-match");   // → "deny" (입력 순서)
+
+// 규칙 간 충돌 감지 (패턴이 겹치는데 값이 다른 경우)
+const conflicts = detectConflicts(rules, shape);
+// → [{ ruleA: rules[0], ruleB: rules[1], overlap: ["3","2",null] }]
+```
+
+**전략:**
+
+| 전략 | 설명 |
+|---|---|
+| `most-specific` | `patternSpecificity`가 가장 높은 규칙 승리 |
+| `priority` | 배열 인덱스 우선 (낮은 인덱스 = 높은 우선순위) |
+| `first-match` | 매칭되는 첫 번째 규칙 |
+| `collect` | 매칭되는 모든 규칙의 값 배열 반환 |
+
+---
+
 ## 게이트 제어 (encode/decode 허용 여부)
 
 composite 주소별 encode/decode 허용 여부를 제어한다. dim별 상태를 composite 주소 공간으로 미리 계산해 캐싱하고, 조회 시 O(log n)으로 반환한다.
@@ -1084,6 +1177,44 @@ migrateCrossIndex(registry, vv, targetIndexId, targetVersionId, additionalEntity
 completeCrossIndex(registry, partial, additionalEntityIds): VersionedValue
 ```
 
+### Coordinate Query Layer API
+
+```ts
+import { composeQuery, deepDecode } from "index-meta";
+
+// 하위 index 조건으로 상위 index의 주소 범위 계산
+composeQuery(target: { indexId, versionId }, refDimId: string, constraint: Record<string, EntityId>, registry): [number, number][]
+
+// 중첩 index 재귀 decode (visited set으로 순환 방지, maxDepth 제한)
+deepDecode(address: VersionedValue, registry, maxDepth?: number): { layers: Map<string, Record<string, EntityId>>, path: VersionedValue[] }
+```
+
+```ts
+import { queryAcrossVersions, entityVersionSpan, translateConstraint } from "index-meta";
+
+// entity 기준으로 여러 version의 범위 반환
+queryAcrossVersions(indexId, versionIds, constraint: Record<string, EntityId | null>, registry): Map<string, [number, number][]>
+
+// entity가 존재하는 version 목록 (activeOnly 옵션)
+entityVersionSpan(indexId, dimId, entityId, registry, options?): string[]
+
+// 버전 간 좌표 제약 변환 (migration edge 우선, fallback: EntityId 기반)
+translateConstraint(indexId, fromVersion, toVersion, constraint: Record<string, CoordConstraint>, registry): Record<string, CoordConstraint> | null
+```
+
+```ts
+import { matchRules, resolvePolicy, detectConflicts } from "index-meta";
+
+// 좌표에 매칭되는 규칙 목록 (구체성 순 정렬)
+matchRules<T>(coord, rules: { pattern, value: T }[], shape): { pattern, value: T }[]
+
+// 전략별 정책 해석 (most-specific | priority | first-match | collect)
+resolvePolicy<T>(coord, rules, shape, strategy): T | T[] | undefined
+
+// 규칙 간 충돌 감지 (패턴 겹침 + 값 불일치)
+detectConflicts<T>(rules, shape, eq?): { ruleA, ruleB, overlap }[]
+```
+
 ### 게이트 제어 API
 
 ```ts
@@ -1237,6 +1368,11 @@ export { validateEntryBatchPayload, applyEntryBatch } from "index-meta";
 // ── 즉시 마이그레이션 유틸 ───────────────────────────
 export { migrateAddress, migrateValue, migrateBatch } from "index-meta";
 export { migrateCrossIndex, completeCrossIndex } from "index-meta";
+
+// ── 좌표 쿼리 레이어 ────────────────────────────────
+export { composeQuery, deepDecode } from "index-meta";
+export { queryAcrossVersions, entityVersionSpan, translateConstraint } from "index-meta";
+export { matchRules, resolvePolicy, detectConflicts } from "index-meta";
 
 // ── 게이트 제어 ──────────────────────────────────────
 export { ADDRESS_GATE, computeStateRanges, checkGate, classifyAddress } from "index-meta";
