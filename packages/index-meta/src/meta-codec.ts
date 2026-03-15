@@ -34,6 +34,67 @@ import {
 import type { DecodeMap, EntityId, VersionedValue } from "./types.js";
 import { EntryNotFoundError, ValidationError } from "./errors.js";
 
+/**
+ * DecodeMap의 유효성을 검증한다.
+ *
+ * MetaCodec 생성 전에 호출하면 잘못된 DecodeMap으로 인한
+ * LabelRegistry/PrefixCodec 내부 에러를 방지할 수 있다.
+ *
+ * @throws {ValidationError} shape/entries 불일치, 빈 배열, 음수 등
+ */
+export function validateDecodeMap(map: DecodeMap): void {
+  if (!map.indexId || typeof map.indexId !== "string") {
+    throw new ValidationError("DecodeMap.indexId must be a non-empty string");
+  }
+  if (!map.versionId || typeof map.versionId !== "string") {
+    throw new ValidationError("DecodeMap.versionId must be a non-empty string");
+  }
+  if (!Array.isArray(map.dims) || map.dims.length === 0) {
+    throw new ValidationError("DecodeMap.dims must be a non-empty array");
+  }
+  if (!Array.isArray(map.shape) || map.shape.length !== map.dims.length) {
+    throw new ValidationError(
+      `DecodeMap.shape.length (${map.shape?.length ?? 0}) must equal dims.length (${map.dims.length})`
+    );
+  }
+
+  const seenDimIds = new Set<string>();
+  let expectedSize = 1;
+
+  for (let i = 0; i < map.dims.length; i++) {
+    const dim = map.dims[i];
+
+    if (!dim.dimId || typeof dim.dimId !== "string") {
+      throw new ValidationError(`DecodeMap.dims[${i}].dimId must be a non-empty string`);
+    }
+    if (!dim.snapshotId || typeof dim.snapshotId !== "string") {
+      throw new ValidationError(`DecodeMap.dims[${i}].snapshotId must be a non-empty string`);
+    }
+
+    if (seenDimIds.has(dim.dimId)) {
+      throw new ValidationError(`DecodeMap.dims: duplicate dimId "${dim.dimId}"`);
+    }
+    seenDimIds.add(dim.dimId);
+
+    if (map.shape[i] <= 0) {
+      throw new ValidationError(`DecodeMap.shape[${i}] must be > 0, got ${map.shape[i]}`);
+    }
+    if (map.shape[i] !== dim.entries.length) {
+      throw new ValidationError(
+        `DecodeMap.shape[${i}] (${map.shape[i]}) must equal dims[${i}].entries.length (${dim.entries.length})`
+      );
+    }
+
+    expectedSize *= map.shape[i];
+  }
+
+  if (map.size !== expectedSize) {
+    throw new ValidationError(
+      `DecodeMap.size (${map.size}) must equal product of shape (${expectedSize})`
+    );
+  }
+}
+
 export class MetaCodec {
   private readonly _prefix: PrefixCodec;
   private readonly _map: DecodeMap;

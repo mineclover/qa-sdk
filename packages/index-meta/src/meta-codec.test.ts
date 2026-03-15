@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MetaCodec } from "./meta-codec.js";
+import { MetaCodec, validateDecodeMap } from "./meta-codec.js";
 import { MetaRegistry } from "./meta-registry.js";
 import { MetaResolver } from "./meta-resolver.js";
 import { EntryNotFoundError, ValidationError } from "./errors.js";
@@ -498,5 +498,77 @@ describe("독립 운용", () => {
     expect(v2.decode(v2vv)).toEqual({ a: "y", b: "q" });
     // version이 다르므로 value도 다를 수 있다
     expect(v2vv.versionId).toBe("v2");
+  });
+});
+
+// ── validateDecodeMap ─────────────────────────────────────────────────────────
+
+describe("validateDecodeMap", () => {
+  const validMap = (): DecodeMap => ({
+    indexId: "perm",
+    versionId: "v1",
+    shape: [3, 2],
+    size: 6,
+    dims: [
+      { dimId: "role", snapshotId: "sv1", kind: { type: "string_enum" }, entries: ["admin", "editor", "viewer"] },
+      { dimId: "action", snapshotId: "sv1", kind: { type: "string_enum" }, entries: ["read", "write"] },
+    ],
+  });
+
+  it("유효한 DecodeMap은 검증을 통과한다", () => {
+    expect(() => validateDecodeMap(validMap())).not.toThrow();
+  });
+
+  it("빈 indexId는 ValidationError", () => {
+    const map = validMap();
+    map.indexId = "";
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("빈 versionId는 ValidationError", () => {
+    const map = validMap();
+    map.versionId = "";
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("shape.length !== dims.length이면 ValidationError", () => {
+    const map = validMap();
+    map.shape = [3, 2, 1]; // 3 elements but only 2 dims
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("shape[i] !== entries.length이면 ValidationError", () => {
+    const map = validMap();
+    map.shape[0] = 5; // says 5 but entries has 3
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("size !== product of shape이면 ValidationError", () => {
+    const map = validMap();
+    map.size = 999;
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("중복 dimId는 ValidationError", () => {
+    const map = validMap();
+    map.dims[1] = { dimId: "role", snapshotId: "sv2", kind: { type: "string_enum" }, entries: ["x", "y"] };
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("빈 dims 배열은 ValidationError", () => {
+    const map = validMap();
+    map.dims = [];
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
+  });
+
+  it("shape[i] <= 0이면 ValidationError", () => {
+    const map: DecodeMap = {
+      indexId: "test",
+      versionId: "v1",
+      shape: [0],
+      size: 0,
+      dims: [{ dimId: "a", snapshotId: "s1", kind: { type: "string_enum" }, entries: [] }],
+    };
+    expect(() => validateDecodeMap(map)).toThrow(ValidationError);
   });
 });
