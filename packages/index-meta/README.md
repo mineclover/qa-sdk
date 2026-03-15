@@ -143,6 +143,40 @@ const compiled = compileSchema({ role, perm });
 
 ## 저장소 (Tier 2–3)
 
+### DB 테이블 구조와 책임
+
+저장 구조는 **두 계층**으로 나뉜다.
+
+#### 계층 1 — PrefixRegistry (중앙 KV / 인메모리)
+
+SQL 테이블 없음. prefix의 capacity와 shape(refs)를 관리하는 중앙 레지스트리.
+
+| 필드 | 역할 |
+|---|---|
+| `prefix`, `versionId` | 식별자 |
+| `capacity` | 이 prefix의 주소 공간 크기 |
+| `refs[]` | 의존 dim의 (prefix, versionId, capacity) — composite의 WeightedIndex shape |
+
+composite index의 `shape = refs[].capacity 배열`. `resolveAddress("perm:v1:42")`로 shape과 refs를 복원한다.
+
+#### 계층 2 — IndexMetaStore (분산 SQLite, prefix별 DB 인스턴스)
+
+| 테이블 | 책임 |
+|---|---|
+| `schema_version` | 버전 존재 게이트. capacity 동기화 지점. entry 삽입 전 반드시 존재해야 함. |
+| `entry` | `position → EntityId` 영구 매핑. **append-only, sparse** (빈 position은 row 없음). |
+| `address_state_cache` | encode/decode 게이트 구간 캐시. `computeStateRanges` 결과를 저장. |
+
+**핵심 설계 결정 — entry 테이블에 status 컬럼이 없다:**
+
+inactive 상태는 `address_state_cache`의 `inactive_json` 구간으로 관리한다. entry row는 건드리지 않고 cache만 재계산하면 상태를 변경할 수 있다. cache를 삭제하면 재계산 전까지 전체 active로 처리된다.
+
+```
+entry row 삭제 → ✗ (append-only, coord가 깨짐)
+entry status 변경 → ✗ (컬럼 없음)
+address_state_cache 갱신 → ✓ (inactive_json 재계산 후 저장)
+```
+
 ### IndexMetaStore — entry 저장
 
 ```ts
@@ -151,8 +185,8 @@ import { InMemoryIndexMetaStore } from "index-meta";
 // 또는: D1IndexMetaStore (Cloudflare Workers)
 
 const store = new InMemoryIndexMetaStore();
-await store.upsertSchemaVersion({ prefix: "role", versionId: "v1", capacity: 8 });
-await store.insertEntry({ prefix: "role", versionId: "v1", position: 1, value: "admin" });
+await store.insertSchemaVersion({ tableId: "role", versionId: "v1", capacity: 8, createdAt: new Date().toISOString() });
+await store.insertEntry({ tableId: "role", versionId: "v1", position: 1, value: "admin", createdAt: new Date().toISOString() });
 ```
 
 ### PrefixRegistry — 중앙 DAG 관리
@@ -412,6 +446,166 @@ const newIndex = registry.traceMigration("category", "s1", "s3", 2);
 
 ---
 
+## 즉시 마이그레이션 유틸
+
+read-repair 패턴을 지원한다. DB에서 읽은 주소를 최신 버전으로 즉시 변환하고 `migrated` 플래그로 변환 여부를 반환한다.
+
+### migrateAddress — 직렬화 문자열 마이그레이션
+
+```ts
+import { migrateAddress } from "index-meta";
+
+const result = migrateAddress(registry, "perm:v1:8", "v2");
+// { serialized: string, vv: VersionedValue, migrated: boolean }
+if (result.migrated) {
+  await db.update(id, result.serialized); // DB에 즉시 반영
+}
+```
+
+이미 targetVersion이면 변환 없이 원본 반환 (`migrated: false`).
+
+### migrateValue — VersionedValue 수준 마이그레이션
+
+직렬화/파싱 없이 VV 수준에서 동작한다.
+
+```ts
+import { migrateValue } from "index-meta";
+
+const result = migrateValue(registry, vv, "v2");
+// { vv: VersionedValue, migrated: boolean }
+```
+
+### migrateBatch — 일괄 마이그레이션
+
+혼재된 버전의 주소 배열을 일괄 처리한다. 이미 최신인 항목은 건너뛴다.
+
+```ts
+import { migrateBatch } from "index-meta";
+
+const results = migrateBatch(registry, addresses, "v2");
+const updates = results.filter(r => r.migrated);
+// results[i]: { original: string, serialized: string, vv: VersionedValue, migrated: boolean }
+```
+
+### migrateCrossIndex — 다른 index로 정보 전이
+
+서로 다른 index schema 간의 정보 전이 프로토콜. dim 이름이 겹치면 자동 carry-over하고, target에만 있는 새 dim은 호출자가 값을 판단해 제공한다.
+
+```ts
+import { migrateCrossIndex, completeCrossIndex } from "index-meta";
+
+// perm:v1 (role, action) → perm_full:v1 (role, action, resource)
+const result = migrateCrossIndex(registry, vv, "perm_full", "v1");
+
+if (result.complete) {
+  // 모든 dim이 carry-over됨 → result.vv 사용
+} else {
+  // result.partial.missingDimIds === ["resource"]
+  // result.partial.carryOverEntityIds === { role: "editor", action: "write" }
+  const newVV = completeCrossIndex(registry, result.partial, { resource: "posts" });
+}
+```
+
+`additionalEntityIds`로 누락 dim을 즉시 채울 수도 있다.
+
+```ts
+const result = migrateCrossIndex(registry, vv, "perm_full", "v1", { resource: "posts" });
+// → { complete: true, vv: VersionedValue, migrated: true }
+```
+
+source에 여분 dim이 있으면 target dims만 carry-over하고 나머지는 버린다.
+
+**Note:** 이는 엄밀한 "마이그레이션"이 아니라 두 schema 간의 정보 전이 프로토콜이다. prefix가 바뀌면 dim 구성도 바뀌므로, 새 dim에 어떤 값을 줄지는 호출자가 판단해야 한다.
+
+---
+
+## 게이트 제어 (encode/decode 허용 여부)
+
+composite 주소별 encode/decode 허용 여부를 제어한다. dim별 상태를 composite 주소 공간으로 미리 계산해 캐싱하고, 조회 시 O(log n)으로 반환한다.
+
+### 4가지 상태
+
+| 상태 | encode | decode | 설명 |
+|---|---|---|---|
+| `active` | ✓ | ✓ | 정상 |
+| `inactive` | ✗ | ✓ | 기존 데이터 조회만, 새 값 추가 불가 |
+| `open` | ✓ | ✗ | 빈 슬롯, 값 채울 수 있으나 아직 없음 |
+| `reserved` | ✗ | ✗ | 완전 잠금 |
+
+composite 게이트 = 각 dim 게이트의 AND. inactive dim + open dim이 겹치는 composite 주소 → reserved로 승격.
+
+### 사용법
+
+```ts
+import {
+  computeStateRanges, checkGate, positionsToConstraint,
+  InMemoryAddressStateStore,
+} from "index-meta";
+import type { DimStateSpec } from "index-meta";
+
+const shape = [8, 4, 16, 4]; // role(8) × action(4) × resource(16) × env(4)
+
+// dim별 상태 선언 (active는 기본값이므로 선언 불필요)
+const specs: DimStateSpec[] = [
+  { dimIndex: 0, state: "inactive", coords: "5",   reason: "deprecated" },
+  { dimIndex: 0, state: "open",     coords: "6-8", reason: "여유 공간" },
+];
+
+// composite 주소 구간 계산
+const { reservedRanges, inactiveRanges, openRanges } = computeStateRanges(shape, specs);
+
+// 캐시 저장
+const store = new InMemoryAddressStateStore();
+await store.save({
+  prefix: "perm", versionId: "v1",
+  specs, reservedRanges, inactiveRanges, openRanges,
+  computedAt: new Date().toISOString(),
+});
+
+// 게이트 조회 — O(log n)
+const cached = await store.get("perm", "v1");
+const { reservedRanges: rv, inactiveRanges: ia, openRanges: op } = cached!;
+
+const gate = checkGate(address, rv, ia, op);
+// { encode: boolean, decode: boolean, state: AddressState, shouldVerify: boolean }
+if (!gate.encode) { /* encode 차단 */ }
+if (gate.shouldVerify) {
+  // open 상태: 캐시 stale 가능 → 실제 조회로 검증 권장
+}
+```
+
+캐시 없으면 (`null`) 전체 active로 처리한다.
+
+### coords 표현
+
+`DimStateSpec.coords`는 `CoordConstraint` 문자열. `null`이면 해당 dim 전체.
+
+```ts
+// positionsToConstraint는 weighted-index가 원천, index-meta에서 re-export
+import { positionsToConstraint } from "index-meta";    // re-export
+import { positionsToConstraint } from "weighted-index"; // 원천
+
+positionsToConstraint([6, 7, 8])    // → "6-8"
+positionsToConstraint([1, 3, 5])    // → "1,3,5"
+positionsToConstraint([1, 2, 5, 6]) // → "1-2,5-6"
+```
+
+### shouldVerify
+
+`open` 상태에서만 `true`. 캐시가 갱신되기 전 이미 값이 채워졌을 수 있으므로 실제 조회 권장. `reserved`는 의도적 잠금이므로 `false` (hard block).
+
+### 구간 조회 헬퍼
+
+```ts
+import { encodableRanges, decodableRanges, activeRanges } from "index-meta";
+
+encodableRanges(capacity, reservedRanges, inactiveRanges)          // active + open
+decodableRanges(capacity, reservedRanges, openRanges)              // active + inactive
+activeRanges(capacity, reservedRanges, inactiveRanges, openRanges) // active만
+```
+
+---
+
 ## 예약 항목(Reserved Entry) 관례
 
 `encode()`는 모든 차원에 반드시 값이 있어야 한다. 값이 없으면 에러다. 그러나 실제 도메인에서는 정규 분류 밖의 상태가 존재한다 — 값 미지정, 분류 불가, 식별 불가 등. 이런 상태가 에러가 되면 안 되므로, entries에 해당 상태를 나타내는 **예약 항목**을 포함해야 한다.
@@ -634,11 +828,16 @@ registry.converter.convert("perm:v1:0", "layout:uuid");
 
 ### 역할 분리
 
-프로토콜 변환 로직은 `weighted-index`의 `AddressConverter`에만 존재하며, MetaRegistry는 위임 + 레지스트리 검증(indexId/versionId 존재, value 범위)만 수행한다.
+프로토콜 변환, range 연산 등 순수 수학 로직은 `weighted-index`에만 존재하며, `index-meta`는 위임 + 도메인 검증만 수행한다.
 
 ```
 weighted-index  →  AddressConverter, createLayoutProtocol  (프로토콜 변환)
-index-meta      →  MetaRegistry.serialize/parse            (위임 + 검증)
+                   mergeRanges, intersectRanges,            (range 연산)
+                   subtractRanges, complementRanges,
+                   containsAddress, positionsToConstraint
+                   fitShape, fitLayout, planCapacity        (용량 계획)
+index-meta      →  MetaRegistry.serialize/parse             (위임 + 검증)
+                   computeStateRanges, checkGate             (도메인 게이트 로직)
 ```
 
 ### AddressConfig 검증 규칙
@@ -725,6 +924,54 @@ getMigration(dimId: string, fromSnapshotId: string, toSnapshotId: string): DimSn
 traceMigration(dimId: string, fromSnapshotId: string, toSnapshotId: string, index: number): number
 ```
 
+### 즉시 마이그레이션 API
+
+```ts
+import { migrateAddress, migrateValue, migrateBatch, migrateCrossIndex, completeCrossIndex } from "index-meta";
+
+// 직렬화 주소 → targetVersion (read-repair)
+migrateAddress(registry, serialized, targetVersion, protocol?): MigrateResult
+
+// VV → targetVersion
+migrateValue(registry, vv, targetVersion): Omit<MigrateResult, "serialized">
+
+// 주소 배열 일괄 마이그레이션
+migrateBatch(registry, addresses, targetVersion, protocol?): Array<MigrateResult & { original: string }>
+
+// 다른 index로 정보 전이
+migrateCrossIndex(registry, vv, targetIndexId, targetVersionId, additionalEntityIds?): CrossIndexMigrateResult
+
+// CrossIndexPartialResult 완성
+completeCrossIndex(registry, partial, additionalEntityIds): VersionedValue
+```
+
+### 게이트 제어 API
+
+```ts
+import {
+  ADDRESS_GATE, computeStateRanges, checkGate, classifyAddress,
+  encodableRanges, decodableRanges, activeRanges, positionsToConstraint,
+} from "index-meta";
+import type { DimStateSpec, AddressState, GateResult, AddressStateStore } from "index-meta";
+
+// dim별 상태 → composite 주소 구간 계산
+computeStateRanges(shape, specs): { reservedRanges, inactiveRanges, openRanges }
+
+// 주소의 encode/decode 허용 여부 — O(log n)
+checkGate(address, reservedRanges, inactiveRanges, openRanges): GateResult
+
+// 주소 상태만 반환
+classifyAddress(address, reservedRanges, inactiveRanges, openRanges): AddressState
+
+// 구간 집합 조회 헬퍼
+encodableRanges(capacity, reservedRanges, inactiveRanges): [number, number][]
+decodableRanges(capacity, reservedRanges, openRanges): [number, number][]
+activeRanges(capacity, reservedRanges, inactiveRanges, openRanges): [number, number][]
+
+// position 목록 → CoordConstraint 문자열
+positionsToConstraint(positions): string
+```
+
 ### Resolver API
 
 `MetaResolver`는 MetaRegistry의 데이터를 외부 소비용 번들로 변환한다. DB 동기화, 프론트엔드 전송, API 응답 등에 사용.
@@ -750,11 +997,21 @@ resolver.getDataset(): MetaDataset
 #### DecodeMap 외부 디코딩 예시
 
 ```ts
+import { calcWeights, WeightedIndex } from "weighted-index";
+
 const map = resolver.getDecodeMap("perm", "v1");
 // → { shape: [3,3,3], size: 27, dims: [{dimId:"role", entries:[...]}, ...] }
 
-// 외부 시스템에서 MetaRegistry 없이 value → entity ID 복원:
-const weights = map.shape.map((_, i) => map.shape.slice(i + 1).reduce((a, b) => a * b, 1));
+// 방법 1: WeightedIndex 사용 (권장)
+const wi = new WeightedIndex([...map.shape]);
+const coords = wi.decode(value);
+const result: Record<string, string> = {};
+for (let i = 0; i < map.dims.length; i++) {
+  result[map.dims[i].dimId] = map.dims[i].entries[coords[i] - 1];
+}
+
+// 방법 2: calcWeights + 수동 디코딩 (의존성 최소화)
+const weights = calcWeights(map.shape);
 let remaining = value;
 for (let i = 0; i < map.dims.length; i++) {
   const coord = Math.floor(remaining / weights[i]) + 1;
@@ -831,6 +1088,15 @@ export { DistributedStoreClient } from "index-meta";
 export { exportVersion, importVersion } from "index-meta";
 export { validateEntryBatchPayload, applyEntryBatch } from "index-meta";
 
+// ── 즉시 마이그레이션 유틸 ───────────────────────────
+export { migrateAddress, migrateValue, migrateBatch } from "index-meta";
+export { migrateCrossIndex, completeCrossIndex } from "index-meta";
+
+// ── 게이트 제어 ──────────────────────────────────────
+export { ADDRESS_GATE, computeStateRanges, checkGate, classifyAddress } from "index-meta";
+export { encodableRanges, decodableRanges, activeRanges, positionsToConstraint } from "index-meta";
+export { InMemoryAddressStateStore } from "index-meta";
+
 // ── 인터페이스 ───────────────────────────────────────
 export type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "index-meta";
 export type { PrefixRegistry, PrefixRegistryRecord } from "index-meta";
@@ -848,6 +1114,13 @@ export type {
   DimActiveSet, IndexActiveManifest,
   DimRange, IndexRange, MetaDataset,
 } from "index-meta";
+
+// ── 마이그레이션 타입 ─────────────────────────────────
+export type { MigrateResult, CrossIndexPartialResult, CrossIndexMigrateResult } from "index-meta";
+
+// ── 게이트 제어 타입 ──────────────────────────────────
+export type { DimStateSpec, AddressState, GateResult } from "index-meta";
+export type { AddressStateStore, AddressStateCacheRecord } from "index-meta";
 
 // ── 에러 ─────────────────────────────────────────────
 export {

@@ -10,3 +10,6 @@ dist/
 
 # ralph-tui task runner artifacts
 .ralph-tui/
+
+# claude code
+.claude/
