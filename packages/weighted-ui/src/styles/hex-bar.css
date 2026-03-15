@@ -1,0 +1,106 @@
+/* ── weighted-ui: Hex Bar Visualization ── */
+.hex-layouts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hex-layout {
+  padding: 8px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.hex-layout-overflow {
+  opacity: 0.55;
+}
+.hex-layout-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+}
+.hex-layout-name {
+  font-weight: 700;
+  color: var(--text-header);
+}
+.hex-layout-cap {
+  color: var(--text-muted);
+  font-family: monospace;
+}
+.hex-layout-status {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+.hex-status-ok  { color: var(--ui-primary, #217346); }
+.hex-status-fail { color: var(--status-fail, #dc2626); }
+
+/* ── Hex cell bar ── */
+.hex-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: wrap;
+}
+.hex-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 22px;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid var(--border-cell);
+  background: var(--surface-0);
+  color: var(--text-cell);
+  transition: background 0.12s;
+}
+.hex-cell-sep { margin-left: 3px; }
+.hex-cell-prefix  { background: #dce6f1; color: #1f497d; border-color: #b4c7dc; }
+.hex-cell-version { background: #fff2cc; color: #7f6000; border-color: #f0d88c; }
+.hex-cell-shard   { background: #f0e8ff; color: #6b21a8; border-color: #c4b5fd; }
+.hex-cell-index   { background: var(--ui-primary-light, #e8f5ee); color: var(--ui-primary-dark, #185c38); border-color: #b8d8c4; }
+.hex-cell-gap     { background: #f7f7f7; color: #ccc; border-color: #e8e8e8; }
+
+/* ── Field labels below the bar ── */
+.hex-labels {
+  display: flex;
+  margin-top: 3px;
+  gap: 0;
+}
+.hex-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 2px 0;
+  border-top: 2px solid var(--border-cell);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hex-label-prefix  { border-color: #1f497d; color: #1f497d; }
+.hex-label-version { border-color: #7f6000; color: #7f6000; }
+.hex-label-shard   { border-color: #6b21a8; color: #6b21a8; }
+.hex-label-index   { border-color: var(--ui-primary, #217346); color: var(--ui-primary-dark, #185c38); }
+.hex-label-gap     { border-color: #ddd; color: #bbb; }
+
+/* ── Formatted string display ── */
+.hex-layout-uuid-str {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: 4px;
+}
+.hex-layout-uuid-str code {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ui-primary-dark, #185c38);
+  letter-spacing: 0.04em;
+}

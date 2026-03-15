@@ -1,0 +1,79 @@
+/* ── weighted-ui: Badge / Tag ── */
+
+/* 범용 인라인 배지 */
+.ui-badge {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 2px;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+/* 그룹 칩 */
+.ui-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-left: 3px solid var(--c, #d4d4d4);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.ui-chip-label { color: var(--text-muted); }
+.ui-chip-val   { font-weight: 600; color: var(--text-cell); }
+.ui-chip-info  { font-size: 0.62rem; color: var(--text-muted); flex: 1; text-align: center; }
+
+/* 코드 스타일 배지 */
+.ui-code {
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* NEW 태그 */
+.new-tag {
+  font-size: 0.55rem;
+  font-weight: 700;
+  background: #e05020;
+  color: #fff;
+  padding: 0 3px;
+  border-radius: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+}
+
+/* 정보 배지 */
+.info-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--ui-primary-light, #e8eef5);
+  color: var(--ui-primary, #1e3a5f);
+  border: 1px solid #b0c4d8;
+}
+.info-badge-green {
+  background: #d4edda;
+  color: #1a6b3a;
+  border-color: #a3d4b5;
+}
+.info-badge-gray {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border-cell);
+}
+.info-badge-blue {
+  background: #d6eaf8;
+  color: #1a6fa8;
+  border-color: #a9d4f0;
+}
+.info-badge-red {
+  background: #fde8e8;
+  color: #c0392b;
+  border-color: #f5aaaa;
+}

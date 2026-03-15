@@ -1,0 +1,81 @@
+/* ── weighted-ui: Dimension Sidebar ── */
+.dim-sidebar {
+  width: var(--sidebar-w, 136px);
+  min-width: var(--sidebar-w, 136px);
+  background: var(--surface-0);
+  border-right: 1px solid var(--border-cell);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 transparent;
+}
+
+.sb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px 4px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-header);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.sb-header-name {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--text-header);
+}
+
+.sb-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-item {
+  padding: 7px 10px 6px 13px;
+  border-bottom: 1px solid var(--border-cell);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.08s, border-left-color 0.08s;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sb-item:hover:not(.sb-disabled) {
+  background: var(--xl-blue-hover);
+  border-left-color: #a8c6e8;
+}
+.sb-active {
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.sb-disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.sb-val {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-cell);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-ko {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sb-sep {
+  height: 6px;
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-cell);
+  border-bottom: 1px solid var(--border-cell);
+  flex-shrink: 0;
+}
+.sb-sep:last-child { border-bottom: none; }

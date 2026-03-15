@@ -1,0 +1,61 @@
+/* ── weighted-ui: Formula Bar ── */
+.formula-bar {
+  flex-shrink: 0;
+  height: var(--formulabar-h);
+  background: var(--surface-0);
+  border-bottom: 1px solid var(--border-formula);
+  display: flex;
+  align-items: center;
+}
+
+.name-box {
+  width: 64px;
+  min-width: 64px;
+  height: 100%;
+  border-right: 1px solid var(--border-formula);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-cell);
+  cursor: default;
+  user-select: none;
+  background: var(--surface-0);
+}
+
+.fb-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-formula);
+  margin: 0 4px;
+}
+
+.fb-fx {
+  padding: 0 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-formula-fn);
+  font-style: italic;
+  cursor: default;
+  user-select: none;
+  border-right: 1px solid var(--border-formula);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.fb-formula {
+  flex: 1;
+  padding: 0 10px;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  color: var(--text-formula);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}

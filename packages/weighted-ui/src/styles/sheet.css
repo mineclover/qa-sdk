@@ -1,0 +1,34 @@
+/* ── weighted-ui: Workbook / Sheet ── */
+.workbook {
+  flex: 1;
+  overflow: hidden;
+}
+
+.sheet {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.sheet.hidden { display: none; }
+
+.sheet-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.sheet-grid-wrap {
+  flex: 1;
+  overflow: auto;
+  background: var(--surface-1);
+  scrollbar-width: thin;
+  scrollbar-color: #c8c8c8 transparent;
+}
+.sheet-grid-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
+.sheet-grid-wrap::-webkit-scrollbar-corner { background: var(--surface-2); }
+.sheet-grid-wrap::-webkit-scrollbar-track { background: var(--surface-2); }
+.sheet-grid-wrap::-webkit-scrollbar-thumb {
+  background: #c8c8c8;
+  border: 2px solid var(--surface-2);
+  border-radius: 6px;
+}

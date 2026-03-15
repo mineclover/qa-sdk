@@ -1,0 +1,13 @@
+/* ── weighted-ui: Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body {
+  font-family: var(--font);
+  background: var(--surface-1);
+  color: var(--text-cell);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}

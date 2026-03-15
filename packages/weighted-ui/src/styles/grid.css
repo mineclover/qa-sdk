@@ -1,0 +1,164 @@
+/* ── weighted-ui: Spreadsheet Grid ── */
+.xl-grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--surface-0);
+  user-select: none;
+}
+
+/* ── Row-number column header (corner) ── */
+.xl-corner {
+  width: var(--row-header-w);
+  min-width: var(--row-header-w);
+  height: var(--col-header-h);
+  background: var(--surface-2);
+  border-right: 1px solid var(--border-header);
+  border-bottom: 1px solid var(--border-header);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
+
+/* ── Column headers ── */
+.xl-col-header {
+  height: var(--col-header-h);
+  min-width: var(--cell-min-w);
+  background: var(--surface-2);
+  border-right: 1px solid var(--border-header);
+  border-bottom: 2px solid var(--border-header);
+  text-align: center;
+  vertical-align: middle;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-header);
+  cursor: default;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.xl-col-header.active-col {
+  background: var(--xl-blue-light);
+  border-bottom-color: var(--xl-blue);
+  color: var(--xl-blue);
+}
+
+.col-letter {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-bottom: 1px;
+}
+.col-value {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0 4px;
+  border-radius: 2px;
+}
+.col-ko {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ── Row headers ── */
+.xl-row-header {
+  width: var(--row-header-w);
+  min-width: var(--row-header-w);
+  background: var(--surface-2);
+  border-right: 2px solid var(--border-header);
+  border-bottom: 1px solid var(--border-cell);
+  text-align: right;
+  vertical-align: middle;
+  padding: 0 8px 0 4px;
+  cursor: default;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.xl-row-header.active-row {
+  background: var(--xl-blue-light);
+  border-right-color: var(--xl-blue);
+  color: var(--xl-blue);
+}
+
+.row-num {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1;
+}
+.row-value {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-header);
+  white-space: nowrap;
+  text-align: right;
+  margin-top: 2px;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+.row-ko {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 1px;
+}
+
+/* ── Data cells ── */
+.xl-cell {
+  min-width: var(--cell-min-w);
+  height: var(--cell-h);
+  border-right: 1px solid var(--border-cell);
+  border-bottom: 1px solid var(--border-cell);
+  vertical-align: middle;
+  padding: 4px 6px;
+  cursor: cell;
+  background: var(--surface-0);
+  position: relative;
+  transition: background 0.06s;
+}
+.xl-cell:hover {
+  background: var(--xl-blue-hover) !important;
+  outline: 1px solid #a8c6e8;
+  outline-offset: -1px;
+  z-index: 1;
+}
+.xl-cell.selected {
+  background: var(--xl-blue-light) !important;
+  outline: 2px solid var(--xl-blue) !important;
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
+  background: #edf2f8;
+}
+
+.cell-id-val {
+  display: block;
+  font-family: var(--font-num);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-cell);
+  text-align: right;
+}
+.cell-coord-tag {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 2px;
+}
