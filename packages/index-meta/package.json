@@ -20,6 +20,11 @@
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js",
       "require": "./dist/client.cjs"
+    },
+    "./decode": {
+      "types": "./dist/decode.d.ts",
+      "import": "./dist/decode.js",
+      "require": "./dist/decode.cjs"
     }
   },
   "main": "./dist/index.cjs",

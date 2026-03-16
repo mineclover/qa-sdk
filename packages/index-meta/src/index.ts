@@ -13,8 +13,11 @@ export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 export { SqlIndexMetaStore } from "./adapters/sql-store.js";
 export type { SqlDriver, SqlDialect, ExecuteResult } from "./adapters/sql-store.js";
 export { BetterSqliteDriver } from "./adapters/node-sqlite-driver.js";
+export { D1SqlDriver } from "./adapters/d1-driver.js";
+export { D1IndexMetaStore, type D1Database } from "./adapters/d1-store.js";
 export { DistributedStoreClient } from "./distributed-client.js";
-export { syncSchemaToRegistry } from "./schema-sync.js";
+export { syncSchemaToRegistry, applySchemaDiff } from "./schema-sync.js";
+export type { ApplySchemaDiffResult } from "./schema-sync.js";
 export {
   ADDRESS_GATE,
   computeStateRanges,
@@ -35,6 +38,8 @@ export { CoalescingCache } from "./coalescing-cache.js";
 export type { CoalescingCacheOptions } from "./coalescing-cache.js";
 export { EntryCache } from "./entry-cache.js";
 export { MigrationCache } from "./migration-cache.js";
+export { MetadataCache } from "./metadata-cache.js";
+export type { MetadataCacheOptions } from "./metadata-cache.js";
 export { InMemoryVersionLifecycleStore } from "./adapters/memory-version-lifecycle.js";
 export { InMemoryMigrationStore } from "./adapters/memory-migration-store.js";
 export { InMemoryEntryMetadataStore } from "./adapters/memory-entry-metadata-store.js";
@@ -49,6 +54,8 @@ export {
   migrateCrossIndex,
   completeCrossIndex,
 } from "./migrate-address.js";
+export { RelationalEngine } from "./relational-engine.js";
+export type { RelationTypeRule, RelationResolveResult } from "./relational-engine.js";
 export {
   matchRules,
   resolvePolicy,
@@ -67,6 +74,8 @@ export {
 export type {
   DeepDecodeResult,
 } from "./cross-index-query.js";
+export { PrefixDecoder } from "./prefix-decoder.js";
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "./prefix-decoder.js";
 export {
   queryAcrossVersions,
   entityVersionSpan,
@@ -74,6 +83,8 @@ export {
 } from "./version-query.js";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
+export { generateTypes, lintSchema, formatSchemaDiff } from "./codegen.js";
+export type { GenerateTypesOptions, LintDiagnostic } from "./codegen.js";
 
 export type {
   IndexMetaStore,
