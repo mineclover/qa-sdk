@@ -30,6 +30,8 @@ export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryV
 export { MetaRegistry } from "./meta-registry.js";
 export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
 export { MetaResolver } from "./meta-resolver.js";
+export { PrefixDecoder } from "./prefix-decoder.js";
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "./prefix-decoder.js";
 
 // ── Errors ─────────────────────────────────────────────────────────────────────
 

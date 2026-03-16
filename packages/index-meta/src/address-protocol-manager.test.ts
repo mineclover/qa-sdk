@@ -68,6 +68,41 @@ const registryInput: MetaRegistryInput = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  §16-detect. Format Detection
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("detect", () => {
+  it("text 프로토콜 감지", () => {
+    const manager = new AddressProtocolManager();
+    expect(manager.detect("perm:v1:42")).toBe("colon");
+    expect(manager.detect("wi://perm/v1/42")).toBe("uri");
+    expect(manager.detect("perm-v1-42")).toBe("compact");
+  });
+
+  it("매칭 없으면 null", () => {
+    const manager = new AddressProtocolManager();
+    expect(manager.detect("???")).toBeNull();
+  });
+
+  it("layout 프로토콜 감지", () => {
+    const manager = new AddressProtocolManager(testConfig);
+    const vv = { indexId: "perm", versionId: "v1", value: 42 };
+    const uuid = manager.serialize(vv);
+    expect(manager.detect(uuid)).toMatch(/^layout:/);
+  });
+
+  it("layout이 text보다 우선 감지", () => {
+    const manager = new AddressProtocolManager(testConfig);
+    const vv = { indexId: "perm", versionId: "v1", value: 42 };
+    const uuid = manager.serialize(vv);
+    // UUID 형식은 layout으로 감지되어야 함
+    const detected = manager.detect(uuid);
+    expect(detected).not.toBe("colon");
+    expect(detected).toMatch(/^layout:/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  §17. Loose Address Parsing (registry 없는 주소 파싱)
 // ═══════════════════════════════════════════════════════════════════════════
 

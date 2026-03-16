@@ -117,6 +117,24 @@ export class AddressProtocolManager {
   // ── Core operations (§17) ────────────────────────────────────────────────
 
   /**
+   * 입력 문자열의 프로토콜을 감지해 이름을 반환한다.
+   *
+   * 등록된 프로토콜을 감지 순서(layout first, then text)대로 시도.
+   * 매칭 없으면 `null`.
+   *
+   * @example
+   * apm.detect("perm:v1:42")      // → "colon"
+   * apm.detect("wi://perm/v1/42") // → "uri"
+   * apm.detect("???")             // → null
+   */
+  detect(input: string): string | null {
+    for (const proto of this._order) {
+      if (proto.test(input)) return proto.name;
+    }
+    return null;
+  }
+
+  /**
    * VersionedValue → 프로토콜 형식 문자열.
    *
    * protocol 생략 시 writeProtocol → defaultProtocol 순으로 사용.
