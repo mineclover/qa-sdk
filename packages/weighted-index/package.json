@@ -1,6 +1,6 @@
 {
   "name": "weighted-index",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Weighted positional notation — encode/decode multi-dimensional coordinates to a single integer, with label versioning and prefix management.",
   "keywords": [
     "weighted-index",

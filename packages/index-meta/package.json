@@ -1,6 +1,6 @@
 {
   "name": "index-meta",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Meta-schema registry for weighted-index: stores dimension/index definitions and provides active index manifests.",
   "keywords": [
     "index-meta",
