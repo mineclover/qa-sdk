@@ -59,7 +59,13 @@ export class CrossVersionEntrySync {
     // 2. active 버전에서 중복 체크
     const existingPos = await this._cache.getByValue(prefix, active.versionId, value);
     if (existingPos !== null) {
-      return { position: existingPos, added: [], skipped: [] };
+      // 모든 writable 버전을 duplicate로 보고 (품질 게이트 완전성 보장)
+      const allVersions = await this._versions.getVersions(prefix);
+      const writable = allVersions.filter(
+        v => v.status === "draft" || v.status === "released" || v.status === "active",
+      );
+      const skipped = writable.map(v => ({ versionId: v.versionId, reason: "duplicate" }));
+      return { position: existingPos, added: [], skipped };
     }
 
     // 3. active 버전에서 다음 position 결정

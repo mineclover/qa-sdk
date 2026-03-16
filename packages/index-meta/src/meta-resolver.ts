@@ -27,6 +27,7 @@ import type {
   IndexRange,
   MetaDataset,
 } from "./types.js";
+import type { PrefixDecoderConfig } from "./prefix-decoder.js";
 
 // ── MetaResolver ──────────────────────────────────────────────────────────────
 
@@ -55,6 +56,40 @@ export class MetaResolver {
       map.address = structuredClone(this._addressConfig);
     }
     return map;
+  }
+
+  /**
+   * 특정 index version의 DecodeMap + 참조 index의 DecodeMap 번들.
+   *
+   * index_ref dim이 있으면 해당 index의 최신 버전 DecodeMap도 포함한다.
+   * 이 번들을 JSON으로 직렬화하면 마이크로서비스에서
+   * `new PrefixDecoder(bundle)`로 바로 사용 가능하다.
+   *
+   * @example
+   * const bundle = resolver.getDecodeMapBundle("article", "v1");
+   * // JSON → 전송 → new PrefixDecoder(bundle)
+   */
+  getDecodeMapBundle(indexId: string, versionId: string): PrefixDecoderConfig {
+    const map = this.getDecodeMap(indexId, versionId);
+    const refs: Record<string, DecodeMap> = {};
+
+    for (const dim of map.dims) {
+      if (dim.kind.type === "index_ref") {
+        const refIndexId = dim.kind.indexId;
+        if (!refs[refIndexId]) {
+          const refVersionIds = this.registry.getVersionIds(refIndexId);
+          if (refVersionIds.length > 0) {
+            const refVersionId = refVersionIds[refVersionIds.length - 1];
+            refs[refIndexId] = this.getDecodeMap(refIndexId, refVersionId);
+          }
+        }
+      }
+    }
+
+    return {
+      map,
+      refs: Object.keys(refs).length > 0 ? refs : undefined,
+    };
   }
 
   /**

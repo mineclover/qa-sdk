@@ -153,7 +153,25 @@ describe("CrossVersionEntrySync", () => {
 
     expect(r2.position).toBe(r1.position);
     expect(r2.added).toHaveLength(0);
-    expect(r2.skipped).toHaveLength(0);
+    // 단일 writable 버전이므로 skipped 1건 (duplicate)
+    expect(r2.skipped).toEqual([{ versionId: "v1", reason: "duplicate" }]);
+  });
+
+  it("idempotent — 멀티 버전에서 품질 게이트 완전성 보장", async () => {
+    await setupVersion("role", "v1", 8, "released");
+    await setupVersion("role", "v2", 8, "active", "v1");
+    await setupVersion("role", "v3", 16, "draft", "v2");
+
+    await sync.addEntry("role", "admin");
+    const r2 = await sync.addEntry("role", "admin"); // idempotent
+
+    expect(r2.position).toBe(1);
+    expect(r2.added).toHaveLength(0);
+    // 3개 writable 모두 skipped (duplicate) — 완전성 보장
+    expect(r2.skipped).toHaveLength(3);
+    expect(r2.skipped.every(s => s.reason === "duplicate")).toBe(true);
+    // added + skipped = writable 전체
+    expect(r2.added.length + r2.skipped.length).toBe(3);
   });
 
   // ── 에러 ───────────────────────────────────────────────────
@@ -455,6 +473,56 @@ describe("CrossVersionEntrySync", () => {
           }),
         ]),
       );
+    });
+  });
+
+  // ── applyEntryBatch + CrossVersionEntrySync 통합 ──────────
+
+  describe("applyEntryBatch + sync 통합", () => {
+    it("sync 제공 시 모든 writable 버전에 전파", async () => {
+      const { applyEntryBatch } = await import("./api-payload.js");
+      const { InMemoryPrefixRegistry } = await import("./adapters/memory-prefix-registry.js");
+
+      const registry = new InMemoryPrefixRegistry();
+
+      await setupVersion("role", "v1", 8, "released");
+      await setupVersion("role", "v2", 8, "active", "v1");
+
+      const payload = {
+        capacity: 8,
+        entries: { "1": "admin", "2": "editor", "3": "viewer" },
+      };
+
+      await applyEntryBatch("role", "v2", payload, registry, store, undefined, sync);
+
+      // 양쪽 버전에 모두 저장됨
+      expect((await store.getEntries("role", "v1")).map(e => e.value))
+        .toEqual(["admin", "editor", "viewer"]);
+      expect((await store.getEntries("role", "v2")).map(e => e.value))
+        .toEqual(["admin", "editor", "viewer"]);
+    });
+
+    it("sync 미제공 시 단일 버전에만 삽입 (기존 동작)", async () => {
+      const { applyEntryBatch } = await import("./api-payload.js");
+      const { InMemoryPrefixRegistry } = await import("./adapters/memory-prefix-registry.js");
+
+      const registry = new InMemoryPrefixRegistry();
+
+      await setupVersion("role", "v1", 8, "released");
+      await setupVersion("role", "v2", 8, "active", "v1");
+
+      const payload = {
+        capacity: 8,
+        entries: { "1": "admin", "2": "editor" },
+      };
+
+      // sync 없이 호출 → v2에만 삽입
+      await applyEntryBatch("role", "v2", payload, registry, store);
+
+      expect((await store.getEntries("role", "v2")).map(e => e.value))
+        .toEqual(["admin", "editor"]);
+      // v1에는 전파 안 됨
+      expect(await store.getEntries("role", "v1")).toEqual([]);
     });
   });
 });
