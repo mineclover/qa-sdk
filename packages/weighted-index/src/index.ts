@@ -1,4 +1,11 @@
 export { WeightedIndex } from "./weighted-index.js";
+export { WeightedIndexBig } from "./weighted-index-big.js";
+export {
+  calcWeightsBig,
+  calcAddressRangesBig,
+  mergeRangesBig,
+  containsAddressBig,
+} from "./calc-big.js";
 export {
   calcBitWidth,
   xorObfuscate,
@@ -107,6 +114,7 @@ export {
   colonProtocol,
   uriProtocol,
   compactProtocol,
+  detectProtocol,
   parseAddress,
   serializeAddress,
   convertAddress,
@@ -140,6 +148,8 @@ export {
   simEncodeBig,
   simPackUUID,
   simPackUUIDBig,
+  simPackHex,
+  simPackHexBig,
   fieldMaxVal,
   logScalePercent,
   valToSlider,

@@ -306,6 +306,59 @@ export function simPackUUID(
   ].join("-");
 }
 
+/**
+ * 범용 hex pack: totalChars 길이의 raw hex 문자열 반환 (dash 없음).
+ * formatHex()와 조합하여 포맷별 출력을 만든다.
+ */
+export function simPackHex(
+  totalChars: number,
+  prefixChars: number,
+  prefixVal: number,
+  versionChars: number,
+  versionVal: number,
+  shardChars: number,
+  shardVal: number,
+  indexVal: number,
+): string {
+  const chars = new Array(totalChars).fill("0");
+  _writeHex(chars, 0, prefixChars, prefixVal);
+  _writeHex(chars, prefixChars, versionChars, versionVal);
+  const indexChars = totalChars - prefixChars - versionChars - shardChars;
+  if (indexChars > 0) {
+    _writeHex(chars, totalChars - indexChars, indexChars, indexVal);
+  }
+  if (shardChars > 0) {
+    _writeHex(chars, totalChars - indexChars - shardChars, shardChars, shardVal);
+  }
+  return chars.join("");
+}
+
+/** BigInt 범용 hex pack: totalChars 길이의 raw hex 문자열 반환 (dash 없음). */
+export function simPackHexBig(
+  totalChars: number,
+  prefixChars: number,
+  prefixVal: number,
+  versionChars: number,
+  versionVal: number,
+  shardChars: number,
+  shardVal: number,
+  indexVal: bigint,
+): string {
+  const indexChars = totalChars - prefixChars - versionChars - shardChars;
+  let full = 0n;
+  if (prefixChars > 0)
+    full |= BigInt(prefixVal) << BigInt((totalChars - prefixChars) * 4);
+  if (versionChars > 0)
+    full |= BigInt(versionVal) << BigInt((totalChars - prefixChars - versionChars) * 4);
+  if (shardChars > 0)
+    full |= BigInt(shardVal) << BigInt(indexChars * 4);
+  if (indexChars > 0) {
+    const mask = (1n << BigInt(indexChars * 4)) - 1n;
+    full |= indexVal & mask;
+  }
+  return full.toString(16).padStart(totalChars, "0");
+}
+
 function _writeHex(arr: string[], start: number, width: number, value: number): void {
   if (width <= 0) return;
   // Cap value to the field's max capacity (16^width - 1)
