@@ -9,7 +9,7 @@ import { describe, it, expect } from "vitest";
 import { defineTable } from "./table-def.js";
 import { compileSchema } from "./compile-schema.js";
 import { InMemoryPrefixRegistry } from "./adapters/memory-prefix-registry.js";
-import { syncSchemaToRegistry } from "./schema-sync.js";
+import { syncSchemaToRegistry, applySchemaDiff } from "./schema-sync.js";
 import { ValidationError } from "./errors.js";
 
 // ── 공통 픽스처 ────────────────────────────────────────────
@@ -226,5 +226,144 @@ describe("syncSchemaToRegistry", () => {
     const affected = await reg.getReverseRefs("role", "v1");
     const prefixes = affected.map((r) => r.prefix);
     expect(prefixes).toContain("perm"); // perm v1이 영향권
+  });
+});
+
+// ── updateCapacity ──────────────────────────────────────
+
+describe("updateCapacity", () => {
+  it("leaf의 capacity를 갱신한다", async () => {
+    const reg = new InMemoryPrefixRegistry();
+    await reg.register({ prefix: "role", versionId: "v1", capacity: 8 });
+
+    await reg.updateCapacity("role", "v1", 16);
+    expect(await reg.getCapacity("role", "v1")).toBe(16);
+  });
+
+  it("composite의 capacity와 refs를 함께 갱신한다", async () => {
+    const reg = new InMemoryPrefixRegistry();
+    await reg.register({ prefix: "role",   versionId: "v1", capacity: 8 });
+    await reg.register({ prefix: "action", versionId: "v1", capacity: 4 });
+    await reg.register({ prefix: "perm",   versionId: "v1", capacity: 32,
+      refs: [
+        { prefix: "role",   versionId: "v1", capacity: 8 },
+        { prefix: "action", versionId: "v1", capacity: 4 },
+      ],
+    });
+
+    await reg.updateCapacity("perm", "v1", 64, [
+      { prefix: "role",   versionId: "v1", capacity: 16 },
+      { prefix: "action", versionId: "v1", capacity: 4 },
+    ]);
+
+    expect(await reg.getCapacity("perm", "v1")).toBe(64);
+    const record = await reg.getRecord("perm", "v1");
+    expect(record?.refs?.[0].capacity).toBe(16);
+  });
+
+  it("미등록 prefix에 대해 ValidationError", async () => {
+    const reg = new InMemoryPrefixRegistry();
+    await expect(reg.updateCapacity("role", "v1", 16)).rejects.toThrow(ValidationError);
+  });
+});
+
+// ── applySchemaDiff ─────────────────────────────────────
+
+describe("applySchemaDiff", () => {
+  it("신규 테이블이 diff.added에서 등록된다", async () => {
+    // v1 스키마 → 등록
+    const roleV1 = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 } } });
+    const schema1 = compileSchema([roleV1]);
+    const reg = new InMemoryPrefixRegistry();
+    await syncSchemaToRegistry(schema1, reg);
+
+    // v2 스키마: action 추가
+    const actionDef = defineTable("action", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 4 } } });
+    const schema2 = compileSchema([roleV1, actionDef]);
+    const diff = schema2.diff(schema1);
+
+    const result = await applySchemaDiff(diff, schema2, reg);
+    expect(result.registered).toEqual([{ prefix: "action", versionId: "v1" }]);
+    expect(await reg.getCapacity("action", "v1")).toBe(4);
+  });
+
+  it("capacity 변경이 updateCapacity로 반영된다", async () => {
+    const roleV1 = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 } } });
+    const schema1 = compileSchema([roleV1]);
+    const reg = new InMemoryPrefixRegistry();
+    await syncSchemaToRegistry(schema1, reg);
+
+    // capacity 확장: 8 → 16
+    const roleV1Expanded = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 16 } } });
+    const schema2 = compileSchema([roleV1Expanded]);
+    const diff = schema2.diff(schema1);
+
+    const result = await applySchemaDiff(diff, schema2, reg);
+    expect(result.updated).toEqual([{ prefix: "role", versionId: "v1", previousCapacity: 8, capacity: 16 }]);
+    expect(await reg.getCapacity("role", "v1")).toBe(16);
+  });
+
+  it("leaf capacity 변경이 composite에 cascade된다", async () => {
+    const roleDef = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 } } });
+    const actionDef = defineTable("action", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 4 } } });
+    const permDef = defineTable("perm", {
+      dims: [roleDef, actionDef],
+      versions: { v1: { refs: { role: { prefix: "role", version: "v1" }, action: { prefix: "action", version: "v1" } } } },
+    });
+    const schema1 = compileSchema([permDef]);
+    const reg = new InMemoryPrefixRegistry();
+    await syncSchemaToRegistry(schema1, reg);
+    expect(await reg.getCapacity("perm", "v1")).toBe(32); // 8 * 4
+
+    // role capacity 확장: 8 → 16
+    const roleExpanded = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 16 } } });
+    const permExpanded = defineTable("perm", {
+      dims: [roleExpanded, actionDef],
+      versions: { v1: { refs: { role: { prefix: "role", version: "v1" }, action: { prefix: "action", version: "v1" } } } },
+    });
+    const schema2 = compileSchema([permExpanded]);
+    const diff = schema2.diff(schema1);
+
+    const result = await applySchemaDiff(diff, schema2, reg);
+
+    // role과 perm 모두 갱신
+    expect(result.updated.find((u) => u.prefix === "role")?.capacity).toBe(16);
+    expect(result.updated.find((u) => u.prefix === "perm")?.capacity).toBe(64); // 16 * 4
+    expect(await reg.getCapacity("perm", "v1")).toBe(64);
+  });
+
+  it("제거된 테이블은 removedWarnings로 반환된다", async () => {
+    const roleDef = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 } } });
+    const actionDef = defineTable("action", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 4 } } });
+    const schema1 = compileSchema([roleDef, actionDef]);
+    const reg = new InMemoryPrefixRegistry();
+    await syncSchemaToRegistry(schema1, reg);
+
+    // action 제거
+    const schema2 = compileSchema([roleDef]);
+    const diff = schema2.diff(schema1);
+
+    const result = await applySchemaDiff(diff, schema2, reg);
+    expect(result.removedWarnings).toEqual(["action"]);
+    // 레지스트리에서는 삭제되지 않음
+    expect(await reg.getCapacity("action", "v1")).toBe(4);
+  });
+
+  it("신규 버전 추가가 올바르게 등록된다", async () => {
+    const roleDef = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 } } });
+    const schema1 = compileSchema([roleDef]);
+    const reg = new InMemoryPrefixRegistry();
+    await syncSchemaToRegistry(schema1, reg);
+
+    // v2 버전 추가
+    const roleWithV2 = defineTable("role", { source: { kind: { type: "string_enum" as const } }, versions: { v1: { capacity: 8 }, v2: { capacity: 16 } } });
+    const schema2 = compileSchema([roleWithV2]);
+    const diff = schema2.diff(schema1);
+
+    const result = await applySchemaDiff(diff, schema2, reg);
+    expect(result.registered).toEqual([{ prefix: "role", versionId: "v2" }]);
+    expect(await reg.getCapacity("role", "v2")).toBe(16);
+    // 기존 v1은 그대로
+    expect(await reg.getCapacity("role", "v1")).toBe(8);
   });
 });

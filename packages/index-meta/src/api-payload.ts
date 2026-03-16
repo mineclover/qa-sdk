@@ -1,5 +1,6 @@
 import type { PrefixRegistry } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
+import type { CrossVersionEntrySync } from "./cross-version-entry-sync.js";
 import { ValidationError } from "./errors.js";
 
 // ── API 전송 포맷 ─────────────────────────────────────────
@@ -68,6 +69,10 @@ export function validateEntryBatchPayload(
  *
  * PrefixRegistry에 이미 등록된 버전이면 capacity 일치 여부를 검증한다.
  * 미등록이면 새로 등록한다.
+ *
+ * sync가 제공되면 CrossVersionEntrySync를 통해 모든 writable 버전에 전파한다.
+ * 이 경우 payload의 position은 삽입 순서로만 사용되고,
+ * 실제 position은 active 버전 기준으로 자동 할당된다.
  */
 export async function applyEntryBatch(
   prefix: string,
@@ -75,8 +80,10 @@ export async function applyEntryBatch(
   payload: EntryBatchPayload,
   registry: PrefixRegistry,
   store: IndexMetaStore,
-  createdAt = new Date().toISOString()
+  createdAt?: string,
+  sync?: CrossVersionEntrySync,
 ): Promise<void> {
+  const ts = createdAt ?? new Date().toISOString();
   validateEntryBatchPayload(payload);
 
   // PrefixRegistry 동기화
@@ -94,16 +101,27 @@ export async function applyEntryBatch(
   const sv = await store.getSchemaVersion(prefix, versionId);
   if (!sv) {
     await store.insertSchemaVersion({
-      prefix, versionId, capacity: payload.capacity, createdAt,
+      prefix, versionId, capacity: payload.capacity, createdAt: ts,
     });
   }
 
-  // entries 적재
-  for (const [posStr, value] of Object.entries(payload.entries)) {
-    const position = Number(posStr);
-    const existing = await store.getEntry(prefix, versionId, position);
-    if (!existing) {
-      await store.insertEntry({ prefix, versionId, position, value, createdAt });
+  // position 오름차순 정렬
+  const sorted = Object.entries(payload.entries)
+    .map(([posStr, value]) => ({ position: Number(posStr), value }))
+    .sort((a, b) => a.position - b.position);
+
+  if (sync) {
+    // CrossVersionEntrySync 경로: 모든 writable 버전에 전파
+    for (const { value } of sorted) {
+      await sync.addEntry(prefix, value);
+    }
+  } else {
+    // 단일 버전 직접 삽입 (기존 동작)
+    for (const { position, value } of sorted) {
+      const entry = await store.getEntry(prefix, versionId, position);
+      if (!entry) {
+        await store.insertEntry({ prefix, versionId, position, value, createdAt: ts });
+      }
     }
   }
 }

@@ -55,6 +55,19 @@ export interface PrefixRegistry {
   /** (prefix, versionId) 등록. 중복은 에러. */
   register(record: PrefixRegistryRecord): Promise<void>;
 
+  /**
+   * 기존 (prefix, versionId)의 capacity를 갱신한다.
+   * capacity headroom 확장 시 사용. 미등록이면 에러.
+   *
+   * composite의 경우 refs의 capacity도 함께 갱신한다.
+   */
+  updateCapacity(
+    prefix: string,
+    versionId: string,
+    capacity: number,
+    refs?: readonly DimRef[],
+  ): Promise<void>;
+
   /** capacity fast-path 조회. WeightedIndex shape 계산의 핵심 경로. 없으면 null. */
   getCapacity(prefix: string, versionId: string): Promise<number | null>;
 
