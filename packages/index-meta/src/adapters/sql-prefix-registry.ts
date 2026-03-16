@@ -63,6 +63,45 @@ export class SqlPrefixRegistry implements PrefixRegistry {
     });
   }
 
+  async updateCapacity(
+    prefix: string,
+    versionId: string,
+    capacity: number,
+    refs?: readonly DimRef[],
+  ): Promise<void> {
+    const existing = await this.driver.queryOne<{ prefix: string }>(
+      `SELECT prefix FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
+      [prefix, versionId]
+    );
+    if (!existing) {
+      throw new ValidationError(
+        `PrefixRegistry: "${prefix}/${versionId}" not registered`
+      );
+    }
+
+    await this.driver.transaction(async (tx) => {
+      await tx.execute(
+        `UPDATE prefix_registry SET capacity = ? WHERE prefix = ? AND version_id = ?`,
+        [capacity, prefix, versionId]
+      );
+
+      if (refs) {
+        await tx.execute(
+          `DELETE FROM prefix_ref WHERE parent_prefix = ? AND parent_version_id = ?`,
+          [prefix, versionId]
+        );
+        for (let i = 0; i < refs.length; i++) {
+          const ref = refs[i];
+          await tx.execute(
+            `INSERT INTO prefix_ref (parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [prefix, versionId, i, ref.prefix, ref.versionId, ref.capacity]
+          );
+        }
+      }
+    });
+  }
+
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
       `SELECT capacity FROM prefix_registry WHERE prefix = ? AND version_id = ?`,

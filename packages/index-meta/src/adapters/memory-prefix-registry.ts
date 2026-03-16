@@ -15,6 +15,26 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
     this._store.set(key, record);
   }
 
+  async updateCapacity(
+    prefix: string,
+    versionId: string,
+    capacity: number,
+    refs?: readonly import("../prefix-registry.js").DimRef[],
+  ): Promise<void> {
+    const key = `${prefix}:${versionId}`;
+    const existing = this._store.get(key);
+    if (!existing) {
+      throw new ValidationError(
+        `PrefixRegistry: "${prefix}/${versionId}" not registered`
+      );
+    }
+    this._store.set(key, {
+      ...existing,
+      capacity,
+      ...(refs ? { refs } : {}),
+    });
+  }
+
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     return this._store.get(`${prefix}:${versionId}`)?.capacity ?? null;
   }
