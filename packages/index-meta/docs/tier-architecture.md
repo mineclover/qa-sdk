@@ -1,4 +1,5 @@
 > 메인 문서: [`README.md`](../README.md)
+> 네이밍 체계: [`naming.md`](naming.md)
 
 ## Tier 1: 스키마 선언
 
@@ -119,6 +120,79 @@ const stores = new Map([
 const client = new DistributedStoreClient(prefixRegistry, router, stores);
 const entries = await client.getEntries("role", "v1");
 // → router가 "db-1" → store1으로 라우팅
+```
+
+---
+
+## Tier 3: PositionEngine — entry 관리 인프라
+
+Position 안정 축 위에 버전 라이프사이클, 마이그레이션 이력, 캐시 계층, 메타데이터를 제공한다.
+
+> 상세 설계: [`position-engine.md`](position-engine.md)
+
+### 구성요소
+
+| 모듈 | 역할 | 캐시 정책 |
+|------|------|----------|
+| `VersionLifecycleStore` | 버전 상태 머신 (draft→released→active→deprecated) | — |
+| `MigrationStore` | 버전 간 EntityId 변경/비활성화 이력 | 불변 (release 시 확정) |
+| `EntryCache` (L1) | prefix+version 양방향 position↔EntityId 캐시 | 불변 (영구 유효) |
+| `MigrationCache` (L2) | 버전 쌍 마이그레이션 매핑 캐시 | 불변 (영구 유효) |
+| `CrossVersionEntrySync` | 멀티 버전 entry 동기화 (active SSOT, 동일 position 전파) | — |
+| `EntryMetadataStore` | position 기반 관계형 메타데이터 | 가변 (upsert) |
+| `CoalescingCache` | single-flight 캐시 프리미티브 (L1/L2 기반) | — |
+
+### EntryLifecycle — 데이터 흐름
+
+entry가 버전을 거치며 진화하는 전체 과정. 비활성화 모드(strict/flexible)에 따라 경로가 분기.
+
+```
+strict:   deactivate → draft에서만 → release 시 MigrationStore에 불변 기록
+flexible: deactivate → EntryFlagStore에 즉시 기록 → AddressStateStore 재계산
+```
+
+### 사용법
+
+```ts
+import {
+  InMemoryVersionLifecycleStore,
+  InMemoryMigrationStore,
+  InMemoryEntryMetadataStore,
+  InMemoryIndexMetaStore,
+  CrossVersionEntrySync,
+  EntryCache,
+  MigrationCache,
+} from "index-meta";
+
+// 버전 라이프사이클
+const versions = new InMemoryVersionLifecycleStore();
+await versions.createDraft("role", "v1", null, 8, "strict");
+await versions.release("role", "v1");
+await versions.activate("role", "v1");
+
+// entry 캐시 (IndexMetaStore 위에 L1 캐시)
+const metaStore = new InMemoryIndexMetaStore();
+const entryCache = new EntryCache(metaStore);
+
+// Cross-Version Entry Sync — 멀티 버전 entry 동기화
+const entrySync = new CrossVersionEntrySync(versions, metaStore, entryCache);
+const result = await entrySync.addEntry("role", "admin");
+// { position: 1, added: ["v1"], skipped: [] }
+
+// 캐시에서 즉시 조회 (DB 재조회 없음)
+await entryCache.getByPosition("role", "v1", 1); // "admin"
+await entryCache.getByValue("role", "v1", "admin"); // 1
+
+// 마이그레이션 이력 + 캐시
+const migrationStore = new InMemoryMigrationStore();
+const migrationCache = new MigrationCache(migrationStore);
+
+// 관계형 메타데이터
+const metadata = new InMemoryEntryMetadataStore();
+await metadata.set("role", 1, "display_name", "관리자");
+await metadata.set("role", 1, "icon", "shield");
+const all = await metadata.getAll("role", 1);
+// { display_name: "관리자", icon: "shield" }
 ```
 
 ---
@@ -261,7 +335,7 @@ const inner = docMetaCodec.decodeValue(outer.quality_tier as number);
 
 ---
 
-## Tier 5: 데이터 운영
+## Tier 6: 데이터 운영
 
 ```ts
 import { exportVersion, importVersion, applyEntryBatch } from "index-meta";

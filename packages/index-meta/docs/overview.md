@@ -1,5 +1,13 @@
 # index-meta — 프로젝트 개요
 
+> **문서 인덱스**
+> - [`naming.md`](naming.md) — 네이밍 체계 (기존 축 + EntryLifecycle / PositionEngine)
+> - [`position-engine.md`](position-engine.md) — PositionEngine 설계 (불변식, 버전 라이프사이클, 캐시)
+> - [`tier-architecture.md`](tier-architecture.md) — Tier 1–6 상세 아키텍처
+> - [`api-reference.md`](api-reference.md) — API 레퍼런스
+> - [`migration.md`](migration.md) — 마이그레이션 전략
+> - [`relational-engine.md`](relational-engine.md) — Relational Engine 설계
+
 ## 한 줄 요약
 
 **구조화된 다차원 식별자 레지스트리** — n개의 카테고리 차원을 조합해 고유한 정수 식별자를 부여하고, 스키마가 변경되어도 기존 식별자를 보존하는 버전 관리 구조.
@@ -74,7 +82,12 @@ dim kind로 `index_ref`를 선언하면 다른 인덱스의 압축값을 엔트�
 | **정책 해석** | 좌표 패턴 기반 규칙 매칭, 충돌 감지, 전략별 해석 (most-specific, priority 등) |
 | **UUID 주소 표현** | layout 프로토콜로 semantic address를 UUID(128bit) 포맷으로 직렬화/파싱 |
 | **런타임 entry 관리** | `applyEntryBatch`로 capacity 내 점진적 적재, `EntryFlagStore`로 상태 이력 관리 |
+| **Cross-Version Entry Sync** | `CrossVersionEntrySync`로 prefix의 모든 writable 버전에 동일 position으로 entry 전파. active 버전이 position SSOT. MigrationStore 무관 |
+| **PositionEngine** | Position 안정 축 위의 entry 관리 인프라 — 버전 라이프사이클, 마이그레이션 이력, L1/L2 캐시, 관계형 메타데이터. 설계: [`position-engine.md`](position-engine.md) |
+| **EntryLifecycle** | entry의 draft→released→active→deprecated 전이 흐름 + strict/flexible 비활성화 모드 |
 | **역참조 탐색** | PrefixRegistry `getReverseRefs`로 특정 leaf를 참조하는 composite 탐색 (cascade 감지) |
+| **Address Range 캐시** | `calcAddressRanges` 결과를 DB에 사전 계산·저장. 런타임 O(log n) binary search 판정 |
+| **범용 SQL 드라이버** | `SqlDialect` 기반 DB 추상화. SQLite/PG/D1/DuckDB/ClickHouse 지원을 위한 dialect 플래그 |
 
 ---
 
@@ -88,7 +101,8 @@ encode/decode 구조 자체가 범용적이므로 권한 관리 외에도 다양
 | **검색 인덱싱 보조 라벨** | 순수 정수 로직이므로 Elasticsearch, ClickHouse 등의 numeric field로 직접 저장 가능 |
 | **MCP/CLI DX** | 스키마가 선언적/규칙 기반이므로 품질 검사, 마이그레이션 권장, codegen 자동화에 적합 |
 | **메모리 압축** | shape가 결정적이므로 ArrayBuffer 수준 패킹으로 전환 가능 |
-| **Graph Engine 분화** | index_ref DAG 위에 역방향 탐색, 경로 쿼리, adjacency 캐시를 추가하면 그래프 엔진으로 확장 가능 |
+| **Relational Engine** | 하나의 index를 관계 유형 정의 테이블(S-P-O)로 사용해 rule 엔진과 prefix 조합으로 관계형 시스템 구축. 설계: [`relational-engine.md`](relational-engine.md) |
+| **DAG 탐색 확장** | index_ref DAG 위에 결과 캐시, 역방향 탐색, 경로 쿼리를 추가하면 그래프 엔진으로 확장 가능 |
 | **Vocabulary 관리** | append-only + inactive 패턴 위에 토크나이저 어댑터, fuzzy matching을 추가하면 자연어 vocabulary 관리로 확장 가능 |
 
 ---
