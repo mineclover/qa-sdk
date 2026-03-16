@@ -602,10 +602,10 @@ interface EntryMetadataStore {
 | 모듈 | 변경 |
 |------|------|
 | `IndexMetaStore` | MigrationStore 인터페이스 추가 |
-| `EntryFlagStore` | VersionLifecycleStore와 연동 (비활성화 시점 = release) |
-| `AddressStateStore` | release 시 자동 재계산 트리거 |
-| `AddressRangeCache` | release 시 자동 재계산 트리거 |
-| `applyEntryBatch` | CrossVersionEntrySync 기반으로 재구현 |
+| `EntryFlagStore` | VersionLifecycleStore와 연동 + `GateAwareEntryFlagStore` decorator |
+| `AddressStateStore` | `GateEngine.recompute`에 의해 release/flag 변경 시 자동 재계산 |
+| `AddressRangeCache` | `GateEngine.recompute`에 의해 release 시 자동 무효화 |
+| `applyEntryBatch` | optional `sync` 파라미터로 CrossVersionEntrySync 연동 지원 |
 | `DimSnapshotMigration` | indexMap(position 재매핑) 사용 금지. EntityId 변경 + 비활성화만 추적 |
 
 ### 신규 구현 (PositionEngine)
@@ -616,8 +616,12 @@ interface EntryMetadataStore {
 | `MigrationStore` | 버전 간 변경 이력 (EntityId 수정, 비활성화) |
 | `EntryCache` | L1 prefix 단위 양방향 entry 캐시 |
 | `MigrationCache` | L2 불변 마이그레이션 이력 캐시 |
-| `CrossVersionEntrySync` | 멀티 버전 entry 동기화 |
+| `CrossVersionEntrySync` | 멀티 버전 entry 동기화 + 품질 게이트 (completeness, active 보장) |
 | `EntryMetadataStore` | position 기반 관계형 메타데이터 |
+| `MetadataCache` | CoalescingCache 기반 TTL 지원 메타데이터 캐시 |
+| `GateEngine` | release/flag 변경 시 AddressStateStore 자동 재계산. nD specs 생성 + cascade |
+| `GateAwareVersionLifecycleStore` | VersionLifecycleStore decorator — release 시 GateEngine 트리거 |
+| `GateAwareEntryFlagStore` | EntryFlagStore decorator — flexible setFlag 시 GateEngine 트리거 |
 
 ---
 
@@ -632,19 +636,22 @@ interface EntryMetadataStore {
 
 ### Phase 2: Cross-Version Sync ✅
 6. `CrossVersionEntrySync` 구현 — active 버전이 position SSOT, 동일 position 전파, MigrationStore 무관
-7. 테스트: 멀티 버전 entry 추가 + capacity 제약 + idempotent + prefix 격리
+7. `applyEntryBatch` optional sync 파라미터 추가 — CrossVersionEntrySync 연동 지원
+8. 테스트: 멀티 버전 entry 추가 + capacity 제약 + idempotent(멀티 버전 품질 게이트 완전성) + prefix 격리
 
-### Phase 3: Range 재계산 연동
-9. release 시 AddressStateStore 자동 재계산
-10. release 시 AddressRangeCache 자동 재계산
-11. 테스트: 비활성화 → range 반영 E2E
+### Phase 3: Range 재계산 연동 ✅
+9. `GateEngine` — nD DimStateSpec 생성 + computeStateRanges + AddressStateStore 저장 + AddressRangeCache 무효화
+10. `GateAwareVersionLifecycleStore` — release() decorator, cascade(leaf→composite) 포함
+11. `GateAwareEntryFlagStore` — flexible 모드 setFlag() decorator
+12. 테스트: InMemory 22건 + SQL E2E 8건 (비활성화→range 반영, composite cascade, 재활성화, SQL 영속성)
 
 ### Phase 4: Metadata ✅
-12. `EntryMetadataStore` 인터페이스 + InMemory 구현
-13. 테스트: 메타데이터 CRUD + prefix 격리 + JSON 값
+13. `EntryMetadataStore` 인터페이스 + InMemory 구현
+14. `MetadataCache` — CoalescingCache 기반 TTL 지원, set/delete 시 invalidation, active 수렴
+15. 테스트: 메타데이터 CRUD + TTL 만료 + invalidation 일관성 + active 수렴 + prefix 격리
 
 ### Phase 5: SQL 어댑터
-15. SqlVersionLifecycleStore
-16. SqlMigrationStore
-17. SqlEntryMetadataStore
-18. 스키마 DDL 추가
+16. SqlVersionLifecycleStore
+17. SqlMigrationStore
+18. SqlEntryMetadataStore
+19. 스키마 DDL 추가
