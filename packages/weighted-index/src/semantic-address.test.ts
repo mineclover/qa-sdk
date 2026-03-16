@@ -3,6 +3,7 @@ import {
   colonProtocol,
   uriProtocol,
   compactProtocol,
+  detectProtocol,
   parseAddress,
   serializeAddress,
   convertAddress,
@@ -118,6 +119,38 @@ describe("compactProtocol", () => {
     expect(compactProtocol.test("perm:v1:42")).toBe(false);
     expect(compactProtocol.test("wi://perm/v1/42")).toBe(false);
     expect(compactProtocol.test("no-dashes-here")).toBe(false); // last part not numeric
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  detectProtocol — format detection
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("detectProtocol", () => {
+  it("colon 감지", () => {
+    expect(detectProtocol("perm:v1:42")).toBe("colon");
+  });
+
+  it("URI 감지", () => {
+    expect(detectProtocol("wi://perm/v1/42")).toBe("uri");
+  });
+
+  it("compact 감지", () => {
+    expect(detectProtocol("perm-v1-42")).toBe("compact");
+  });
+
+  it("매칭 없으면 null", () => {
+    expect(detectProtocol("???")).toBeNull();
+  });
+
+  it("URI가 colon보다 우선", () => {
+    // wi:// 가 포함되면 URI로 감지
+    expect(detectProtocol("wi://perm/v1/42")).toBe("uri");
+  });
+
+  it("커스텀 프로토콜 목록으로 감지", () => {
+    expect(detectProtocol("perm:v1:42", [uriProtocol])).toBeNull();
+    expect(detectProtocol("perm:v1:42", [colonProtocol])).toBe("colon");
   });
 });
 
@@ -494,6 +527,16 @@ describe("AddressConverter", () => {
     it("require throws for unknown", () => {
       const conv = createAddressConverter();
       expect(() => conv.require("nope")).toThrow(RangeError);
+    });
+
+    it("detect identifies protocol name", () => {
+      const conv = buildConverter();
+      expect(conv.detect("perm:v1:42")).toBe("colon");
+      expect(conv.detect("wi://perm/v1/42")).toBe("uri");
+      expect(conv.detect("perm-v1-42")).toBe("compact");
+      const uuid = conv.serialize(ADDR, "layout:uuid");
+      expect(conv.detect(uuid)).toBe("layout:uuid");
+      expect(conv.detect("???")).toBeNull();
     });
 
     it("parse auto-detects protocol", () => {

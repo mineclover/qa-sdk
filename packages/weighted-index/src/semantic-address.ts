@@ -228,6 +228,28 @@ const BUILTIN_PROTOCOLS: readonly AddressProtocol[] = [
 ];
 
 /**
+ * 입력 문자열의 프로토콜을 감지해 이름을 반환한다.
+ *
+ * 감지 순서: URI (`wi://`) → colon (`:`) → compact (`-`).
+ * 어떤 프로토콜에도 매칭되지 않으면 `null`.
+ *
+ * @example
+ * detectProtocol("perm:v1:42")      // → "colon"
+ * detectProtocol("wi://perm/v1/42") // → "uri"
+ * detectProtocol("perm-v1-42")      // → "compact"
+ * detectProtocol("???")             // → null
+ */
+export function detectProtocol(
+  input: string,
+  protocols: readonly AddressProtocol[] = BUILTIN_PROTOCOLS,
+): string | null {
+  for (const proto of protocols) {
+    if (proto.test(input)) return proto.name;
+  }
+  return null;
+}
+
+/**
  * Auto-detect protocol and parse a serialized address string.
  *
  * Detection order: URI (`wi://`) → colon (`:`) → compact (`-`).
@@ -556,6 +578,14 @@ export class AddressConverter {
   /** List registered protocol names. */
   protocols(): string[] {
     return this.order.map(p => p.name);
+  }
+
+  /** 입력 문자열의 프로토콜을 감지해 이름 반환. 매칭 없으면 null. */
+  detect(input: string): string | null {
+    for (const proto of this.order) {
+      if (proto.test(input)) return proto.name;
+    }
+    return null;
   }
 
   /** Auto-detect protocol and parse. */
