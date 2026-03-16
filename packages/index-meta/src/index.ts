@@ -29,8 +29,19 @@ export { InMemoryAddressStateStore } from "./adapters/memory-invalid-range-store
 export { SqlAddressStateStore } from "./adapters/sql-address-state-store.js";
 export { InMemoryAddressRangeCache } from "./adapters/memory-address-range-cache.js";
 export { SqlAddressRangeCache } from "./adapters/sql-address-range-cache.js";
+export { CrossVersionEntrySync } from "./cross-version-entry-sync.js";
+export type { CrossVersionAddResult } from "./cross-version-entry-sync.js";
+export { CoalescingCache } from "./coalescing-cache.js";
+export type { CoalescingCacheOptions } from "./coalescing-cache.js";
+export { EntryCache } from "./entry-cache.js";
+export { MigrationCache } from "./migration-cache.js";
+export { InMemoryVersionLifecycleStore } from "./adapters/memory-version-lifecycle.js";
+export { InMemoryMigrationStore } from "./adapters/memory-migration-store.js";
+export { InMemoryEntryMetadataStore } from "./adapters/memory-entry-metadata-store.js";
 export { InMemoryEntryFlagStore } from "./adapters/memory-entry-flag-store.js";
 export { SqlEntryFlagStore } from "./adapters/sql-entry-flag-store.js";
+export { GateEngine, GateAwareVersionLifecycleStore, GateAwareEntryFlagStore } from "./gate-engine.js";
+export type { GateEngineDeps } from "./gate-engine.js";
 export {
   migrateAddress,
   migrateValue,
@@ -81,6 +92,9 @@ export type { DimStateSpec, AddressState, GateResult } from "./invalid-ranges.js
 export type { AddressStateStore, AddressStateCacheRecord } from "./invalid-range-store.js";
 export type { AddressRangeCache, RangeCacheRecord } from "./address-range-cache.js";
 export type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
+export type { VersionLifecycleStore, VersionRecord, VersionStatus, DeactivationMode } from "./version-lifecycle.js";
+export type { MigrationStore, MigrationMapping, MigrationChangeType, MigrationResolveResult } from "./migration-store.js";
+export type { EntryMetadataStore, MetadataEntry } from "./entry-metadata-store.js";
 export type {
   MigrateResult,
   CrossIndexPartialResult,
