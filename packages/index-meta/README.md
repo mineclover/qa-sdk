@@ -25,6 +25,8 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 | **UUID 주소 표현** | layout 프로토콜로 semantic address를 UUID(128bit) 포맷으로 직렬화/파싱 | [`pack-format.ts:94`](../weighted-index/src/pack-format.ts#L94), [`semantic-address.ts:383`](../weighted-index/src/semantic-address.ts#L383) |
 | **게이트 제어** | 4-state 모델(active/inactive/open/reserved)로 주소별 encode/decode 허용 여부를 O(log n)으로 판정 | [`invalid-ranges.ts`](src/invalid-ranges.ts) |
 | **정책 해석** | 좌표 패턴 기반 규칙 매칭, 충돌 감지, 전략별 해석(most-specific, priority, first-match, collect) | [`policy-resolver.ts`](src/policy-resolver.ts) |
+| **Address Range 캐시** | `calcAddressRanges` 결과를 DB에 사전 계산·저장. 런타임 O(log n) binary search로 판정. 고차원 비연속 OR 조합의 성능 문제 해결 | [`address-range-cache.ts`](src/address-range-cache.ts) |
+| **범용 SQL 드라이버** | `SqlDialect` 기반 DB 추상화. SQLite/PostgreSQL/D1/DuckDB/ClickHouse 지원을 위한 dialect 플래그 + upsert + batch | [`sql-store.ts`](src/adapters/sql-store.ts) |
 
 ### 활용 가능 (구조적으로 지원되나 전용 통합은 미구현)
 
@@ -59,18 +61,28 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 │  PrefixRouter (prefix → D1 DB 라우팅)                        │
 │  syncSchemaToRegistry()                                      │
 ├─────────────────────────────────────────────────────────────┤
-│  Tier 3: DB 저장소                                           │
+│  Tier 3: PositionEngine — entry 관리 인프라                   │
+│  VersionLifecycleStore (draft/released/active/deprecated)     │
+│  MigrationStore + MigrationCache (버전 간 변경 이력)          │
+│  EntryCache (L1 양방향 position↔EntityId 캐시)               │
+│  EntryMetadataStore (position 기반 관계형 메타데이터)          │
+│  CoalescingCache (single-flight 캐시 프리미티브)              │
+├─────────────────────────────────────────────────────────────┤
+│  Tier 4: DB 저장소 + 캐시                                    │
 │  IndexMetaStore (schema_version + entry 테이블)               │
+│  AddressRangeCache (사전 계산 범위 캐시)                      │
+│  AddressStateStore (게이트 상태 캐시)                         │
+│  SqlDriver (SqlDialect 기반 DB 추상화)                       │
 │  어댑터: InMemory │ SqlStore │ BetterSqliteDriver              │
 │  DistributedStoreClient (라우터 + 멀티 스토어)                │
 ├─────────────────────────────────────────────────────────────┤
-│  Tier 4: 인코딩 / 디코딩                                     │
+│  Tier 5: 인코딩 / 디코딩                                     │
 │  MetaRegistry (주소 게이트웨이: 직렬화 + 코덱 생성)           │
 │  MetaCodec (독립 encode/decode, LabelRegistry+PrefixCodec) │
 │  MetaResolver (외부 소비용 DecodeMap 번들)                    │
 │  createIndexSDK → IndexClient (경량 소비 레이어)              │
 ├─────────────────────────────────────────────────────────────┤
-│  Tier 5: 데이터 운영                                         │
+│  Tier 6: 데이터 운영                                         │
 │  exportVersion / importVersion (백업/복원)                    │
 │  validateEntryBatchPayload / applyEntryBatch (API 배치)      │
 └─────────────────────────────────────────────────────────────┘
@@ -492,9 +504,9 @@ const activeActions = actionDim.activeIndices.map(i =>
 
 ---
 
-## Tier 1–5: 상세 아키텍처
+## Tier 1–6: 상세 아키텍처
 
-스키마 선언(`defineTable`/`compileSchema`), 저장소(`IndexMetaStore`), 중앙 레지스트리(`PrefixRegistry`), 인코딩/디코딩(`MetaRegistry`/`MetaCodec`/`MetaResolver`), 데이터 운영(`exportVersion`/`importVersion`/`applyEntryBatch`)의 상세 사용법.
+스키마 선언(`defineTable`/`compileSchema`), 중앙 레지스트리(`PrefixRegistry`), PositionEngine(버전 라이프사이클/마이그레이션/캐시), 저장소(`IndexMetaStore`), 인코딩/디코딩(`MetaRegistry`/`MetaCodec`/`MetaResolver`), 데이터 운영의 상세 사용법.
 
 > 상세: [`docs/tier-architecture.md`](docs/tier-architecture.md)
 
@@ -658,6 +670,51 @@ if (gate.shouldVerify) {
 
 캐시 없으면 (`null`) 전체 active로 처리한다.
 
+### Address Range 캐시
+
+`calcAddressRanges`의 결과를 DB에 사전 계산·저장하고, 런타임에 O(log n) binary search로 판정한다. 6차원 이상의 비연속 OR 조합에서 발생하는 성능 문제를 해결한다.
+
+```ts
+import {
+  InMemoryAddressRangeCache,
+  SqlAddressRangeCache,
+  BetterSqliteDriver,
+} from "index-meta";
+import { calcAddressRanges, containsAddress } from "weighted-index";
+
+// ── 사전 계산 (빌드 타임) ──────────────────────────────────
+
+const shape = [8, 4, 16];
+const adminRanges = calcAddressRanges(shape, ["1", null, null]); // role=admin
+
+const cache = new SqlAddressRangeCache(new BetterSqliteDriver());
+await cache.save({
+  prefix: "perm", versionId: "v1",
+  label: "role=admin",
+  ranges: adminRanges,
+  constraints: ["1", null, null],
+  computedAt: new Date().toISOString(),
+});
+
+// ── 런타임 판정 (O(log n)) ──────────────────────────────────
+
+const cached = await cache.get("perm", "v1", "role=admin");
+const isAdmin = containsAddress(targetValue, cached!.ranges); // true/false
+```
+
+인터페이스:
+```ts
+interface AddressRangeCache {
+  save(record: RangeCacheRecord): Promise<void>;
+  get(prefix: string, versionId: string, label: string): Promise<RangeCacheRecord | null>;
+  list(prefix: string, versionId: string): Promise<RangeCacheRecord[]>;
+  delete(prefix: string, versionId: string, label: string): Promise<void>;
+  deleteAll(prefix: string, versionId: string): Promise<void>;
+}
+```
+
+구현체: `InMemoryAddressRangeCache` (테스트용), `SqlAddressRangeCache` (프로덕션).
+
 #### coords 표현
 
 `DimStateSpec.coords`는 `CoordConstraint` 문자열. `null`이면 해당 dim 전체.
@@ -684,6 +741,67 @@ import { encodableRanges, decodableRanges, activeRanges } from "index-meta";
 encodableRanges(capacity, reservedRanges, inactiveRanges)          // active + open
 decodableRanges(capacity, reservedRanges, openRanges)              // active + inactive
 activeRanges(capacity, reservedRanges, inactiveRanges, openRanges) // active만
+```
+
+---
+
+## 범용 SQL 드라이버
+
+### SqlDriver 인터페이스
+
+모든 SQL 기반 저장소(`SqlIndexMetaStore`, `SqlAddressRangeCache`, `SqlAddressStateStore`, `SqlEntryFlagStore`, `SqlPrefixRegistry`)가 `SqlDriver` 인터페이스에 의존한다. DB 구현체를 교체하면 동일한 동작이 보장된다.
+
+```ts
+interface SqlDriver {
+  readonly dialect: SqlDialect;
+  query<T extends Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
+  queryOne<T extends Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | null>;
+  execute(sql: string, params?: unknown[]): Promise<ExecuteResult>;
+  transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T>;
+  batchExecute(sql: string, paramsList: unknown[][]): Promise<void>;
+}
+
+interface ExecuteResult {
+  readonly rowsAffected: number;
+}
+```
+
+### SqlDialect — DB 기능 플래그
+
+```ts
+interface SqlDialect {
+  readonly name: string;
+  readonly supportsTransaction: boolean;
+  readonly supportsReturning: boolean;
+  readonly supportsJsonType: boolean;
+  readonly supportsUpsert: boolean;
+}
+```
+
+SQL 생성 로직이 dialect 플래그를 참조해 DB별 최적 쿼리를 선택한다. 예: `supportsUpsert`가 `false`이면 2-step SELECT→INSERT/UPDATE로 폴백.
+
+### Dialect 호환성 매트릭스
+
+| DB | `supportsTransaction` | `supportsReturning` | `supportsJsonType` | `supportsUpsert` |
+|---|---|---|---|---|
+| **SQLite** (better-sqlite3) | O | O | X | O |
+| **PostgreSQL** | O | O | O | O |
+| **Cloudflare D1** | O | X | X | O |
+| **DuckDB** | O | O | O | O |
+| **ClickHouse** | X | X | O | X |
+
+### BetterSqliteDriver (Node.js)
+
+기본 제공 SQLite 드라이버. `:memory:` 또는 파일 경로를 받는다.
+
+```ts
+import { BetterSqliteDriver, SqlIndexMetaStore, SqlAddressRangeCache } from "index-meta";
+
+const driver = new BetterSqliteDriver();           // :memory:
+const driver = new BetterSqliteDriver("data.db");  // 파일
+
+const metaStore  = new SqlIndexMetaStore(driver);
+const rangeCache = new SqlAddressRangeCache(driver);
 ```
 
 ---
@@ -724,6 +842,7 @@ import {
 | `MigrationNotFoundError` | getMigration 직접 조회 실패 / traceMigration 경로 없음 |
 | `ValidationError` | 입력 데이터 제약 조건 위반 (중복 ID, 빈 entries, 범위 오류 등) |
 | `ParseError` | serialize 문자열 형식 오류 |
+| `NegotiationError` | 프로토콜 협상 실패 |
 
 ```ts
 try {
@@ -765,6 +884,21 @@ export { BetterSqliteDriver } from "index-meta";       // Node.js SQLite 드라�
 export { DistributedStoreClient } from "index-meta";
 export { syncSchemaToRegistry } from "index-meta";
 
+// ── Address Range 캐시 ────────────────────────────
+export { InMemoryAddressRangeCache } from "index-meta";
+export { SqlAddressRangeCache } from "index-meta";
+
+// ── PositionEngine (EntryLifecycle 인프라) ──────────
+export { EntryCache } from "index-meta";
+export { MigrationCache } from "index-meta";
+export { CoalescingCache } from "index-meta";
+export { InMemoryVersionLifecycleStore } from "index-meta";
+export { InMemoryMigrationStore } from "index-meta";
+export { InMemoryEntryMetadataStore } from "index-meta";
+export type { VersionLifecycleStore, VersionRecord, VersionStatus, DeactivationMode } from "index-meta";
+export type { MigrationStore, MigrationMapping, MigrationChangeType, MigrationResolveResult } from "index-meta";
+export type { EntryMetadataStore, MetadataEntry } from "index-meta";
+
 // ── 데이터 운영 ──────────────────────────────────────
 export { exportVersion, importVersion } from "index-meta";
 export { validateEntryBatchPayload, applyEntryBatch } from "index-meta";
@@ -786,12 +920,16 @@ export { SqlAddressStateStore } from "index-meta";
 export { InMemoryEntryFlagStore } from "index-meta";
 export { SqlEntryFlagStore } from "index-meta";
 
+// ── SQL 드라이버 ─────────────────────────────────────
+export type { SqlDriver, SqlDialect, ExecuteResult } from "index-meta";
+
 // ── 인터페이스 ───────────────────────────────────────
 export type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "index-meta";
 export type { PrefixRegistry, PrefixRegistryRecord } from "index-meta";
 export type { PrefixRouter } from "index-meta";
 export type { DimRef, ResolvedAddress } from "index-meta";
 export type { EntryFlagStore, EntryFlagRecord } from "index-meta";
+export type { AddressRangeCache, RangeCacheRecord } from "index-meta";
 
 // ── 스키마 타입 ──────────────────────────────────────
 export type { TableDef, AddressRef, LeafVersion, CompositeVersion, TableVersion } from "index-meta";
@@ -830,6 +968,7 @@ export {
   IndexMetaError, DimNotFoundError, SnapshotNotFoundError,
   IndexNotFoundError, IndexVersionNotFoundError, EntryNotFoundError,
   MigrationNotFoundError, ValidationError, ParseError,
+  NegotiationError,
 } from "index-meta";
 ```
 
@@ -857,41 +996,74 @@ tsup이 두 진입점(`src/index.ts`, `src/client.ts`)을 빌드하며, 공통 �
 다차원 식별자 레지스트리의 구조적 특성을 기반으로 확장 가능한 영역.
 
 > 스펙 문서: [`docs/specs/indexing/index-meta/`](../../docs/specs/indexing/index-meta/README.md)
+> 설계 문서: [`docs/position-engine.md`](docs/position-engine.md) (PositionEngine / EntryLifecycle)
+> 설계 문서: [`docs/relational-engine.md`](docs/relational-engine.md)
+> 네이밍 체계: [`docs/naming.md`](docs/naming.md)
 
-### Graph Engine 분화
+### Relational Engine
 
-현재 `index_ref` + `deepDecode`/`composeQuery`로 DAG 탐색, `traceMigration`으로 마이그레이션 경로 탐색(BFS)이 구현되어 있다. 범용 그래프 엔진으로 발전시키려면:
+index-meta의 n차원 → 1D 인코딩은 곧 관계형 테이블이다. 하나의 index를 **관계 유형 정의 테이블**(S-P-O: subject_kind × predicate × object_kind)로 사용하면, 그 위에 rule 엔진과 prefix 조합으로 관계형 시스템을 구축할 수 있다.
+
+**기존 구현이 이미 관계형 패러다임의 기반을 제공:**
+
+| 관계형 개념 | index-meta 대응 | 구현 위치 |
+|---|---|---|
+| 테이블 정의 | IndexDef (dims 순서 = 컬럼) | [`types.ts`](src/types.ts) |
+| 행 (row) | VersionedValue.value (1D 정수) | [`meta-codec.ts`](src/meta-codec.ts) |
+| Foreign Key | `index_ref` dim / `entryRefs` | [`types.ts:58`](src/types.ts#L58) |
+| JOIN | `deepDecode` / `composeQuery` | [`cross-index-query.ts`](src/cross-index-query.ts) |
+| WHERE | `matchRanges` (BETWEEN 쿼리) | [`index-sdk.ts`](src/index-sdk.ts) |
+| Rule / Policy | `matchRules` / `resolvePolicy` | [`policy-resolver.ts`](src/policy-resolver.ts) |
+| 테이블 라우팅 | PrefixRouter (prefix → store) | [`prefix-router.ts`](src/prefix-router.ts) |
+
+**미구현 — Phase 1: 관계 유형 컨벤션:**
+- [ ] `relation-schema.ts` — S-P-O 관계 유형 index 스키마 빌더 (`defineRelationType`)
+- [ ] kind → index 매핑 레지스트리 (subject/object kind를 마스터 index로 연결)
+- [ ] 인스턴스 스키마 자동 도출 (관계 유형에서 인스턴스 index dims 결정)
+
+**미구현 — Phase 2: Rule Engine:**
+- [ ] `relation-rule.ts` — 2-level rule matching (`matchRelationRules`, `resolveRelationPolicy`)
+  - Level 1: 관계 유형 좌표 공간 (S-P-O) 매칭
+  - Level 2: 인스턴스 좌표 공간 매칭
+- [ ] 기존 `matchRules`/`resolvePolicy`를 합성하는 얇은 레이어
+
+**미구현 — Phase 3: Prefix 조합:**
+- [ ] `relation-compose.ts` — transitive/compound 관계 정의 + 평가 (`composeQuery` 체이닝)
+- [ ] `relation-prefix.ts` — prefix 조합 문법 파싱 (`+` 경유, `&` AND, `|` OR) + PrefixRegistry 연동
+
+**미구현 — Phase 4: 패키지 분리:**
+- [ ] 4-패키지 경계: core (순수 로직) / query (엔진) / store (DB) / infra (라우팅)
+- [ ] 통합 `index-meta` re-export 유지 + 하위 패키지 직접 import 지원
+
+### DAG 탐색 확장
 
 **구현 완료:**
 
-| 기능 | 구현 위치 | 스펙 |
-|------|-----------|------|
-| 순방향 DAG 탐색 — `deepDecode` (재귀, 순환 방지), `composeQuery` (하위 조건 → 상위 범위) | [`cross-index-query.ts:53`](src/cross-index-query.ts#L53), [`cross-index-query.ts:138`](src/cross-index-query.ts#L138) | [`scenarios.spec.md §14-16`](../../docs/specs/indexing/index-meta/scenarios.spec.md) |
-| 마이그레이션 경로 탐색 — `traceMigration`이 BFS로 스냅샷 간 경로 탐색 | [`meta-registry.ts:651`](src/meta-registry.ts#L651), [`meta-registry.ts:1065`](src/meta-registry.ts#L1065) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
-| WeightedIndex 캐시 — `MetaRegistry.wiCache`로 encode/decode 연산 캐싱 | [`meta-registry.ts:112`](src/meta-registry.ts#L112) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
-| PrefixRegistry 역참조 — `getReverseRefs`로 leaf를 참조하는 composite prefix 탐색 | [`prefix-registry.ts:93`](src/prefix-registry.ts#L93), [`memory-prefix-registry.ts:63`](src/adapters/memory-prefix-registry.ts#L63), [`sql-prefix-registry.ts:137`](src/adapters/sql-prefix-registry.ts#L137) | [`scenarios-address.spec.md §17-19`](../../docs/specs/indexing/index-meta/scenarios-address.spec.md) |
+| 기능 | 구현 위치 |
+|------|-----------|
+| 순방향 DAG 탐색 — `deepDecode` (재귀, 순환 방지), `composeQuery` (하위 조건 → 상위 범위) | [`cross-index-query.ts`](src/cross-index-query.ts) |
+| 마이그레이션 경로 탐색 — `traceMigration` BFS | [`meta-registry.ts`](src/meta-registry.ts) |
+| WeightedIndex 캐시 — `MetaRegistry.wiCache` | [`meta-registry.ts`](src/meta-registry.ts) |
+| PrefixRegistry 역참조 — `getReverseRefs` | [`prefix-registry.ts`](src/prefix-registry.ts) |
 
 **미구현:**
-- [ ] deepDecode/composeQuery 결과 캐시 — 현재 매 호출마다 재귀 탐색. 빈번한 탐색 패턴에 대해 adjacency 사전 캐싱으로 O(1) 접근
-- [ ] MetaRegistry 수준 역방향 탐색 — PrefixRegistry에는 있으나, MetaRegistry에서 "이 index를 참조하는 상위 index" 역추적 API 없음
-- [ ] cross-index 경로 쿼리 — 두 index 노드 간 도달 가능성 판정, 최단 경로 등 그래프 알고리즘 레이어
-- [ ] 그래프 스키마 분리 — `index_ref`가 [`types.ts:58`](src/types.ts#L58) `DimKind`/[`types.ts:118`](src/types.ts#L118) `entryRefs`로 MetaRegistry 스키마에 임베드됨. 독립적인 그래프 스키마와 별도 저장소(Graph Index DB)로 분리
+- [ ] deepDecode/composeQuery 결과 캐시 — adjacency 사전 캐싱으로 O(1) 접근
+- [ ] MetaRegistry 수준 역방향 탐색 — "이 index를 참조하는 상위 index" 역추적
+- [ ] cross-index 경로 쿼리 — 두 index 노드 간 도달 가능성 판정, 최단 경로
 
 ### Vocabulary 관리
 
-현재 dim entries는 `string_enum`/`number_enum`으로 선언되며, `applyEntryBatch`로 capacity headroom 내에서 런타임 추가가 가능하고, `EntryFlagStore`로 active/inactive 상태를 런타임 관리할 수 있다.
-
 **구현 완료:**
 
-| 기능 | 구현 위치 | 스펙 |
-|------|-----------|------|
-| capacity headroom — `DimSnapshotInput.capacity`로 사전 할당. headroom 내 추가 시 shape/weight 불변 | [`types.ts:107`](src/types.ts#L107), [`meta-registry.ts:90`](src/meta-registry.ts#L90) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
-| 런타임 entry 추가 — `applyEntryBatch`로 sparse position에 entry 점진적 적재 (capacity 내, 멱등) | [`api-payload.ts:72`](src/api-payload.ts#L72) | [`store.spec.md`](../../docs/specs/indexing/index-meta/store.spec.md) |
-| 런타임 상태 관리 — `EntryFlagStore`로 append-only 상태 이력. `computeActiveIndices`로 active 필터링 | [`entry-flag-store.ts:20`](src/entry-flag-store.ts#L20), [`memory-entry-flag-store.ts:3`](src/adapters/memory-entry-flag-store.ts#L3), [`sql-entry-flag-store.ts:20`](src/adapters/sql-entry-flag-store.ts#L20), [`meta-registry.ts:77`](src/meta-registry.ts#L77) | [`scenarios.spec.md`](../../docs/specs/indexing/index-meta/scenarios.spec.md) |
-| 마이그레이션 체인 — `DimSnapshotMigration.indexMap`으로 버전 간 position 재매핑 | [`types.ts:146`](src/types.ts#L146) | [`registry.spec.md`](../../docs/specs/indexing/index-meta/registry.spec.md) |
+| 기능 | 구현 위치 |
+|------|-----------|
+| capacity headroom — headroom 내 추가 시 shape/weight 불변 | [`types.ts`](src/types.ts), [`meta-registry.ts`](src/meta-registry.ts) |
+| 런타임 entry 추가 — `applyEntryBatch` (멱등) | [`api-payload.ts`](src/api-payload.ts) |
+| 런타임 상태 관리 — `EntryFlagStore` + `computeActiveIndices` | [`entry-flag-store.ts`](src/entry-flag-store.ts) |
+| 마이그레이션 체인 — `DimSnapshotMigration.indexMap` position 재매핑 | [`types.ts`](src/types.ts) |
 
 **미구현:**
-- [ ] capacity 자동 조정 — 현재 capacity는 스냅샷 생성 시 고정. headroom 소진 시 자동으로 새 스냅샷을 생성하는 전략
-- [ ] vocabulary 분할(sharding) — 대규모 vocabulary를 prefix/range 기준으로 분할하는 전략
-- [ ] sub-word 분리 — 자연어 입력을 dim entries로 매핑하기 위한 토크나이저 어댑터 (BPE, WordPiece 등)
-- [ ] 오탈자/동의어 정규화 — fuzzy matching 레이어. 입력 문자열을 가장 가까운 entry로 매핑 (edit distance, alias table)
+- [ ] capacity 자동 조정 — headroom 소진 시 자동으로 새 스냅샷을 생성하는 전략
+- [ ] vocabulary 분할(sharding) — 대규모 vocabulary를 prefix/range 기준으로 분할
+- [ ] sub-word 분리 — 자연어 입력을 dim entries로 매핑하기 위한 토크나이저 어댑터
+- [ ] 오탈자/동의어 정규화 — fuzzy matching 레이어 (edit distance, alias table)
