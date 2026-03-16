@@ -532,7 +532,10 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
         <div class="scenario-sim-header">
           <span style="font-weight:700;font-size:0.9rem">시뮬레이션</span>
         </div>
-        <div style="padding:16px;color:var(--text-muted)">로딩 중...</div>
+        <div class="scenario-spinner-wrap">
+          <div class="scenario-spinner"></div>
+          <span class="scenario-spinner-text">시뮬레이션 로딩 중...</span>
+        </div>
       `;
     }
   }
@@ -596,17 +599,20 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
 
       if (siteSection && siteSection.parentNode === container) {
         const newSite = renderSiteSection(scenario, navItems);
+        newSite.classList.add("scenario-content-enter");
         container.replaceChild(newSite, siteSection);
         siteSection = newSite;
       }
 
       const newMatrix = renderMatrixSection(features, activeRole);
+      newMatrix.classList.add("scenario-content-enter");
       if (matrixSection && matrixSection.parentNode === container) {
         container.replaceChild(newMatrix, matrixSection);
       }
       matrixSection = newMatrix;
 
       const newSim = renderSimSection(scenario);
+      newSim.classList.add("scenario-content-enter");
       if (simSection && simSection.parentNode === container) {
         container.replaceChild(newSim, simSection);
       }
@@ -624,8 +630,27 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
   roleBar = skeletonRoleBar;
 
   const loadingDiv = document.createElement("div");
-  loadingDiv.style.cssText = "padding:16px;color:var(--text-muted)";
-  loadingDiv.textContent = "로딩 중...";
+  loadingDiv.innerHTML = `
+    <div class="scenario-skeleton">
+      <div class="scenario-skel-site">
+        <div class="scenario-skel-site-header"></div>
+        <div class="scenario-skel-site-body">
+          <div class="scenario-skel-bar" style="width:40%"></div>
+          <div class="scenario-skel-bar" style="width:100%"></div>
+          <div class="scenario-skel-bar" style="width:85%"></div>
+          <div class="scenario-skel-bar" style="width:70%"></div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="scenario-skel-bar" style="width:30%;height:18px;margin-bottom:10px"></div>
+        <div class="scenario-skel-bar" style="width:100%;height:40px"></div>
+      </div>
+      <div class="scenario-spinner-wrap" style="padding:16px">
+        <div class="scenario-spinner"></div>
+        <span class="scenario-spinner-text">데이터 로딩 중...</span>
+      </div>
+    </div>
+  `;
   container.appendChild(loadingDiv);
 
   // Fetch both in parallel
@@ -638,14 +663,17 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
 
     // Render site section
     siteSection = renderSiteSection(scenario, navItems);
+    siteSection.classList.add("scenario-content-enter");
     roleBar!.insertAdjacentElement("afterend", siteSection);
 
     // Render matrix section
     matrixSection = renderMatrixSection(features, activeRole);
+    matrixSection.classList.add("scenario-content-enter");
     siteSection.insertAdjacentElement("afterend", matrixSection);
 
     // Render sim section
     simSection = renderSimSection(scenario);
+    simSection.classList.add("scenario-content-enter");
     matrixSection.insertAdjacentElement("afterend", simSection);
 
     // Patch handleRoleChange to use featuresCache

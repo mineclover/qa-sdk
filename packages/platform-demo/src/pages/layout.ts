@@ -13,12 +13,15 @@ import {
   simDecode,
   simDecodeBig,
   simEncode,
-  simPackUUID,
-  simPackUUIDBig,
+  simPackHex,
+  simPackHexBig,
+  formatHex,
+  PACK_FORMATS,
   formatLargeNumber,
   type LayoutSimAnalysis,
   type LayoutViewModel,
   type LayoutViewMode,
+  type PackFormat,
 } from "weighted-index";
 import { hexPreview } from "weighted-ui";
 
@@ -186,10 +189,10 @@ export function renderLayoutPage(container: HTMLElement): void {
   const rightCol = document.createElement("div");
   rightCol.className = "lay-main-right";
 
-  // UUID preview
+  // ID preview
   const uuidSection = document.createElement("div");
   uuidSection.className = "lay-uuid-section";
-  uuidSection.innerHTML = `<div class="lay-section-title">UUID 미리보기</div>`;
+  uuidSection.innerHTML = `<div class="lay-section-title" id="lay-preview-title">UUID 미리보기</div>`;
   const uuidPreview = document.createElement("div");
   uuidPreview.className = "lay-uuid-preview";
   uuidPreview.id = "lay-uuid-preview";
@@ -267,6 +270,47 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elProgBatchVal = document.getElementById("lay-prog-batch-val")!;
   const elProgIdx = document.getElementById("lay-prog-idx")!;
   const elProgPerf = document.getElementById("lay-prog-perf")!;
+  const elPreviewTitle = document.getElementById("lay-preview-title")!;
+
+  // ── Format helpers ──────────────────────────────────────────────────────
+
+  const FORMAT_MAP: Record<number, PackFormat> = {
+    16: PACK_FORMATS.int64,
+    24: PACK_FORMATS.objectId,
+    32: PACK_FORMATS.uuid,
+  };
+
+  function currentFormat(): PackFormat {
+    return FORMAT_MAP[st.formatChars] ?? PACK_FORMATS.uuid;
+  }
+
+  function formatLabel(): string {
+    const fmt = currentFormat();
+    return fmt.label;
+  }
+
+  /** 현재 포맷에 맞게 pack + dash 포맷 적용 */
+  function packFormatted(indexVal: number): string {
+    const raw = simPackHex(
+      st.formatChars,
+      st.prefixChars, st.prefixVal,
+      st.versionChars, st.versionVal,
+      st.shardChars, st.shardVal,
+      indexVal,
+    );
+    return formatHex(currentFormat(), raw);
+  }
+
+  function packFormattedBig(indexVal: bigint): string {
+    const raw = simPackHexBig(
+      st.formatChars,
+      st.prefixChars, st.prefixVal,
+      st.versionChars, st.versionVal,
+      st.shardChars, st.shardVal,
+      indexVal,
+    );
+    return formatHex(currentFormat(), raw);
+  }
 
   // ── Event handlers ─────────────────────────────────────────────────────
 
@@ -475,11 +519,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     while (count < cap) {
       const idx = st.currentIndex + count;
       lastCoords = simDecode(st.shape, idx);
-      lastUuid = simPackUUID(
-        st.prefixChars, st.prefixVal,
-        st.versionChars, st.versionVal,
-        st.shardChars, st.shardVal, idx,
-      );
+      lastUuid = packFormatted(idx);
       count++;
       if ((count & (TIME_CHECK_STRIDE - 1)) === 0 && performance.now() - t0 >= st.frameBudgetMs) break;
     }
@@ -511,11 +551,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     while (count < cap) {
       const idx = st.currentIndexBig + count;
       lastCoords = simDecodeBig(shapeBig, idx);
-      lastUuid = simPackUUIDBig(
-        st.prefixChars, st.prefixVal,
-        st.versionChars, st.versionVal,
-        st.shardChars, st.shardVal, idx,
-      );
+      lastUuid = packFormattedBig(idx);
       count++;
       if ((Number(count) & (TIME_CHECK_STRIDE - 1)) === 0 && performance.now() - t0 >= st.frameBudgetMs) break;
     }
@@ -830,12 +866,8 @@ export function renderLayoutPage(container: HTMLElement): void {
     const curCoords = st.shape.map(s => Math.min(s, Math.max(1, s)));
     const curIndex = simEncode(st.shape, curCoords);
 
-    const pack = (idx: number) => simPackUUID(
-      st.prefixChars, st.prefixVal,
-      st.versionChars, st.versionVal,
-      st.shardChars, st.shardVal,
-      idx,
-    );
+    // 포맷에 맞는 미리보기 제목 갱신
+    elPreviewTitle.textContent = `${formatLabel()} 미리보기`;
 
     const prefixHex = st.prefixChars > 0 ? `0x${st.prefixVal.toString(16).toUpperCase().padStart(st.prefixChars, "0")}` : "—";
     const versionHex = st.versionChars > 0 ? `0x${st.versionVal.toString(16).toUpperCase().padStart(st.versionChars, "0")}` : "—";
@@ -844,17 +876,17 @@ export function renderLayoutPage(container: HTMLElement): void {
     elUuidPreview.innerHTML = `
       <div class="lay-uuid-row">
         <span class="lay-uuid-label">첫 번째</span>
-        <code class="lay-uuid-code">${pack(0)}</code>
+        <code class="lay-uuid-code">${packFormatted(0)}</code>
         <span class="lay-uuid-info">index=0 → [${st.shape.map(() => 1).join(", ")}]</span>
       </div>
       <div class="lay-uuid-row lay-uuid-row-current">
         <span class="lay-uuid-label">현재</span>
-        <code class="lay-uuid-code lay-uuid-code-current">${pack(curIndex)}</code>
+        <code class="lay-uuid-code lay-uuid-code-current">${packFormatted(curIndex)}</code>
         <span class="lay-uuid-info">index=${curIndex.toLocaleString()} → [${curCoords.join(", ")}]</span>
       </div>
       <div class="lay-uuid-row">
         <span class="lay-uuid-label">마지막</span>
-        <code class="lay-uuid-code">${pack(lastIndex)}</code>
+        <code class="lay-uuid-code">${packFormatted(lastIndex)}</code>
         <span class="lay-uuid-info">index=${lastIndex.toLocaleString()} → [${maxCoords.join(", ")}]</span>
       </div>
       <div class="lay-uuid-meta">
@@ -889,7 +921,7 @@ export function renderLayoutPage(container: HTMLElement): void {
       const dimHeaders = st.shape.map((_, i) => `<th>dim ${i}</th>`).join("");
       elProgTable.innerHTML = `
         <table class="lay-ptbl">
-          <thead><tr><th>#</th><th>index</th>${dimHeaders}<th>UUID</th></tr></thead>
+          <thead><tr><th>#</th><th>index</th>${dimHeaders}<th>${currentFormat().name}</th></tr></thead>
           <tbody>
             <tr><td colspan="${st.shape.length + 3}" class="lay-ptbl-empty">Play를 눌러 순차 진행을 시작하세요</td></tr>
           </tbody>
@@ -909,7 +941,7 @@ export function renderLayoutPage(container: HTMLElement): void {
 
     elProgTable.innerHTML = `
       <table class="lay-ptbl">
-        <thead><tr><th>#</th><th>index</th>${dimHeaders}<th>UUID</th></tr></thead>
+        <thead><tr><th>#</th><th>index</th>${dimHeaders}<th>${currentFormat().name}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
 
