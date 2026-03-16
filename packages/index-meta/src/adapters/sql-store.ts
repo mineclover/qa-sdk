@@ -13,18 +13,68 @@ import { ValidationError } from "../errors.js";
 import type { EntityId } from "../types.js";
 import { validateEntryForInsert } from "./validate-entry.js";
 
+// ── SqlDialect — DB 종류 + 기능 플래그 ──────────────────────────────────────
+
+/**
+ * DB 종류와 기능 플래그.
+ *
+ * Sql* 어댑터가 DB별 분기에 사용한다.
+ * 드라이버 구현자는 자신의 DB에 맞는 dialect을 제공한다.
+ *
+ * | DB | transaction | returning | jsonType | upsert |
+ * |----|-------------|-----------|----------|--------|
+ * | SQLite (better-sqlite3) | O | O (3.35+) | X | O |
+ * | PostgreSQL | O | O | O (JSONB) | O |
+ * | D1 (Workers) | X | O | X | O |
+ * | DuckDB | O | O | O | O |
+ * | ClickHouse | X | X | O | X (ReplacingMergeTree) |
+ */
+export interface SqlDialect {
+  /** DB 식별자. */
+  readonly name: string;
+  /** 멀티 스테이트먼트 트랜잭션 지원 여부. */
+  readonly supportsTransaction: boolean;
+  /** INSERT ... RETURNING 지원 여부. */
+  readonly supportsReturning: boolean;
+  /** 네이티브 JSON 컬럼 타입 지원 여부 (JSONB 등). */
+  readonly supportsJsonType: boolean;
+  /** ON CONFLICT DO UPDATE (upsert) 지원 여부. */
+  readonly supportsUpsert: boolean;
+}
+
+// ── ExecuteResult ─────────────────────────────────────────────────────────────
+
+/**
+ * INSERT/UPDATE/DELETE 실행 결과.
+ *
+ * execute() 호출자가 영향받은 행 수를 확인할 수 있다.
+ * 기존 코드에서 결과를 무시해도 안전 (backwards-compatible).
+ */
+export interface ExecuteResult {
+  /** 영향받은 행 수. DB가 제공하지 않으면 0. */
+  readonly rowsAffected: number;
+}
+
 // ── SqlDriver — 범용 SQL 드라이버 인터페이스 ─────────────────────────────────
 
 /**
- * SQLite 호환 DB를 일관된 방식으로 사용하기 위한 최소 인터페이스.
+ * 범용 SQL 드라이버 인터페이스.
+ *
+ * DB 종류와 무관하게 동일한 인터페이스로 SQL을 실행한다.
+ * 파라미터는 항상 ? (positional) 스타일로 전달하며,
+ * 드라이버 내부에서 $1/$2 등 네이티브 스타일로 변환한다.
  *
  * 구현 예:
- *   D1        → D1Database.prepare().bind().all() / first() / run()
- *   Turso     → LibsqlClient.execute()
- *   libsql    → Database.prepare().run() / all() / get()
  *   better-sqlite3 → Database.prepare().all() / get() / run()
+ *   PostgreSQL     → pg Pool.query() (? → $1 변환)
+ *   D1             → D1Database.prepare().bind().all() / first() / run()
+ *   DuckDB         → duckdb Connection.all() / run()
+ *   ClickHouse     → @clickhouse/client query() / insert()
  */
 export interface SqlDriver {
+  /** DB 종류 + 기능 플래그. */
+  readonly dialect: SqlDialect;
+
   /**
    * 여러 행 반환 쿼리 (SELECT multiple).
    * 결과가 없으면 빈 배열.
@@ -45,15 +95,45 @@ export interface SqlDriver {
 
   /**
    * 변경 쿼리 (INSERT / UPDATE / DELETE).
+   * rowsAffected로 영향받은 행 수를 확인할 수 있다.
    */
-  execute(sql: string, params?: unknown[]): Promise<void>;
+  execute(sql: string, params?: unknown[]): Promise<ExecuteResult>;
 
   /**
-   * Execute fn atomically. The passed driver is scoped to the transaction.
-   * Implementations: SQLite BEGIN/COMMIT, PostgreSQL BEGIN/COMMIT.
-   * If fn throws, the transaction is rolled back.
+   * 트랜잭션.
+   *
+   * dialect.supportsTransaction이 false인 DB에서는
+   * fn을 순차 실행한다 (non-atomic). 원자성이 필요하면
+   * dialect.supportsTransaction을 사전 확인할 것.
+   *
+   * @example
+   * if (!driver.dialect.supportsTransaction) {
+   *   console.warn("이 DB는 트랜잭션을 지원하지 않습니다");
+   * }
+   * await driver.transaction(async (tx) => {
+   *   await tx.execute("INSERT ...");
+   *   await tx.execute("INSERT ...");
+   * });
    */
   transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T>;
+
+  /**
+   * 동일 SQL을 여러 파라미터 셋으로 일괄 실행.
+   *
+   * 기본 동작: for-loop execute. 드라이버가 네이티브 batch를 지원하면
+   * 오버라이드해 성능을 개선할 수 있다.
+   *
+   * @example
+   * await driver.batchExecute(
+   *   "INSERT INTO entry (prefix, version_id, position, value) VALUES (?, ?, ?, ?)",
+   *   [
+   *     ["perm", "v1", 1, "admin"],
+   *     ["perm", "v1", 2, "editor"],
+   *     ["perm", "v1", 3, "viewer"],
+   *   ]
+   * );
+   */
+  batchExecute(sql: string, paramsList: unknown[][]): Promise<void>;
 }
 
 // ── SqlIndexMetaStore ─────────────────────────────────────────────────────────

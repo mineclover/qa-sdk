@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqlIndexMetaStore, type SqlDriver } from "./sql-store.js";
+import { SqlIndexMetaStore, type SqlDriver, type SqlDialect, type ExecuteResult } from "./sql-store.js";
 import { ValidationError } from "../errors.js";
 
 // ── InMemorySqlDriver ─────────────────────────────────────
@@ -29,7 +29,15 @@ class InMemorySqlDriver implements SqlDriver {
   private readonly schemaVersions = new Map<string, SchemaVersionRow>();
   private readonly entries        = new Map<string, EntryRow>();
 
-  async execute(sql: string, params: unknown[] = []): Promise<void> {
+  readonly dialect: SqlDialect = {
+    name: "in-memory",
+    supportsTransaction: true,
+    supportsReturning: false,
+    supportsJsonType: false,
+    supportsUpsert: false,
+  };
+
+  async execute(sql: string, params: unknown[] = []): Promise<ExecuteResult> {
     const s = sql.trim().toUpperCase();
 
     if (s.startsWith("INSERT INTO SCHEMA_VERSION")) {
@@ -39,7 +47,7 @@ class InMemorySqlDriver implements SqlDriver {
         throw new Error(`UNIQUE constraint failed: schema_version.prefix, schema_version.version_id`);
       }
       this.schemaVersions.set(key, { prefix, version_id, capacity, created_at });
-      return;
+      return { rowsAffected: 1 };
     }
 
     if (s.startsWith("INSERT INTO ENTRY")) {
@@ -49,10 +57,14 @@ class InMemorySqlDriver implements SqlDriver {
         throw new Error(`UNIQUE constraint failed: entry.prefix, entry.version_id, entry.position`);
       }
       this.entries.set(key, { prefix, version_id, position, value, created_at });
-      return;
+      return { rowsAffected: 1 };
     }
 
     throw new Error(`InMemorySqlDriver: unsupported execute query`);
+  }
+
+  async batchExecute(sql: string, paramsList: unknown[][]): Promise<void> {
+    for (const params of paramsList) await this.execute(sql, params);
   }
 
   async query<T extends Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {

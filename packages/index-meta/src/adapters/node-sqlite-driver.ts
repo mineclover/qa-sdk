@@ -6,7 +6,7 @@
  */
 
 import Database from "better-sqlite3";
-import type { SqlDriver } from "./sql-store.js";
+import type { SqlDriver, SqlDialect, ExecuteResult } from "./sql-store.js";
 
 const SCHEMA_DDL = `
 CREATE TABLE IF NOT EXISTS prefix_registry (
@@ -79,10 +79,31 @@ CREATE TABLE IF NOT EXISTS address_state_cache (
   computed_at    TEXT NOT NULL,
   PRIMARY KEY (prefix, version_id)
 );
+
+CREATE TABLE IF NOT EXISTS address_range_cache (
+  prefix           TEXT NOT NULL,
+  version_id       TEXT NOT NULL,
+  label            TEXT NOT NULL,
+  ranges_json      TEXT NOT NULL,
+  constraints_json TEXT,
+  computed_at      TEXT NOT NULL,
+  PRIMARY KEY (prefix, version_id, label)
+);
+
+CREATE INDEX IF NOT EXISTS idx_range_cache_version
+  ON address_range_cache (prefix, version_id);
 `;
 
 export class BetterSqliteDriver implements SqlDriver {
   private readonly db: Database.Database;
+
+  readonly dialect: SqlDialect = {
+    name: "sqlite",
+    supportsTransaction: true,
+    supportsReturning: true,
+    supportsJsonType: false,
+    supportsUpsert: true,
+  };
 
   constructor(path: string = ":memory:") {
     this.db = new Database(path);
@@ -103,8 +124,9 @@ export class BetterSqliteDriver implements SqlDriver {
     return (this.db.prepare(sql).get(...params) as T) ?? null;
   }
 
-  async execute(sql: string, params: unknown[] = []): Promise<void> {
-    this.db.prepare(sql).run(...params);
+  async execute(sql: string, params: unknown[] = []): Promise<ExecuteResult> {
+    const info = this.db.prepare(sql).run(...params);
+    return { rowsAffected: info.changes };
   }
 
   async transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> {
@@ -117,6 +139,14 @@ export class BetterSqliteDriver implements SqlDriver {
       this.db.exec("ROLLBACK");
       throw err;
     }
+  }
+
+  async batchExecute(sql: string, paramsList: unknown[][]): Promise<void> {
+    const stmt = this.db.prepare(sql);
+    const runAll = this.db.transaction((list: unknown[][]) => {
+      for (const params of list) stmt.run(...params);
+    });
+    runAll(paramsList);
   }
 
   close(): void {

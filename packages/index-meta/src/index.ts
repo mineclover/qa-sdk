@@ -11,7 +11,7 @@ export { InMemoryPrefixRegistry } from "./adapters/memory-prefix-registry.js";
 export { SqlPrefixRegistry } from "./adapters/sql-prefix-registry.js";
 export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 export { SqlIndexMetaStore } from "./adapters/sql-store.js";
-export type { SqlDriver } from "./adapters/sql-store.js";
+export type { SqlDriver, SqlDialect, ExecuteResult } from "./adapters/sql-store.js";
 export { BetterSqliteDriver } from "./adapters/node-sqlite-driver.js";
 export { DistributedStoreClient } from "./distributed-client.js";
 export { syncSchemaToRegistry } from "./schema-sync.js";
@@ -27,6 +27,8 @@ export {
 } from "./invalid-ranges.js";
 export { InMemoryAddressStateStore } from "./adapters/memory-invalid-range-store.js";
 export { SqlAddressStateStore } from "./adapters/sql-address-state-store.js";
+export { InMemoryAddressRangeCache } from "./adapters/memory-address-range-cache.js";
+export { SqlAddressRangeCache } from "./adapters/sql-address-range-cache.js";
 export { InMemoryEntryFlagStore } from "./adapters/memory-entry-flag-store.js";
 export { SqlEntryFlagStore } from "./adapters/sql-entry-flag-store.js";
 export {
@@ -77,6 +79,7 @@ export type { PrefixRouter } from "./prefix-router.js";
 export type { DimRef, ResolvedAddress } from "./prefix-registry.js";
 export type { DimStateSpec, AddressState, GateResult } from "./invalid-ranges.js";
 export type { AddressStateStore, AddressStateCacheRecord } from "./invalid-range-store.js";
+export type { AddressRangeCache, RangeCacheRecord } from "./address-range-cache.js";
 export type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
 export type {
   MigrateResult,

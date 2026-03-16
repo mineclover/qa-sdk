@@ -115,3 +115,30 @@ CREATE TABLE IF NOT EXISTS address_state_cache (
   computed_at    TEXT NOT NULL,
   PRIMARY KEY (prefix, version_id)
 );
+
+-- ── address_range_cache ─────────────────────────────────────────────────────
+-- calcAddressRanges 결과의 범용 사전 계산 캐시.
+-- 고차원 비연속 OR 조합의 런타임 비용을 빌드 타임 1회로 전환한다.
+--
+-- 사용 흐름:
+--   1. 빌드 타임: calcAddressRanges(shape, constraints) → ranges
+--   2. 저장: INSERT INTO address_range_cache
+--   3. 런타임: containsAddress(address, ranges) → O(log n)
+--
+-- label = 캐시 키 (의미 있는 이름: "role=admin", "user_can_access_*" 등)
+-- ranges_json = [[from,to],...] — sorted, merged
+-- constraints_json = 원본 constraint 패턴 (재계산·디버깅용, nullable)
+
+CREATE TABLE IF NOT EXISTS address_range_cache (
+  prefix           TEXT NOT NULL,
+  version_id       TEXT NOT NULL,
+  label            TEXT NOT NULL,
+  ranges_json      TEXT NOT NULL,
+  constraints_json TEXT,
+  computed_at      TEXT NOT NULL,
+  PRIMARY KEY (prefix, version_id, label)
+);
+
+-- (prefix, version_id) 기준 일괄 조회/삭제 최적화
+CREATE INDEX IF NOT EXISTS idx_range_cache_version
+  ON address_range_cache (prefix, version_id);
