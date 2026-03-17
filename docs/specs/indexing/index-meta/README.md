@@ -26,6 +26,8 @@ implemented
 | [scenarios.spec.md](scenarios.spec.md) | 유저 시나리오 — core 파이프라인 검증 (§1–16) |
 | [scenarios-address.spec.md](scenarios-address.spec.md) | 유저 시나리오 — 외부 시스템 통합 (§17–19, AddressProtocolManager) |
 | [scenarios-sdk.spec.md](scenarios-sdk.spec.md) | 유저 시나리오 — SDK 라이프사이클 운영 (§20–26) |
+| [canonical-format.spec.md](canonical-format.spec.md) | Canonical C Format — 정규 텍스트(colon)/바이너리(layout) 포맷 지정 |
+| [invariants.spec.md](invariants.spec.md) | 변환 불변조건 — 12개 invariant 명세 + 테스트 커버리지 맵 |
 | [adr-address-separation.md](adr-address-separation.md) | ADR: AddressProtocolManager 분리 |
 
 ## 횡단 문서
@@ -72,6 +74,7 @@ src/
   errors.ts              # 에러 클래스 계층
   meta-registry.ts       # MetaRegistry — 주소 게이트웨이
   address-protocol-manager.ts  # AddressProtocolManager — 독립 주소 직렬화
+  gate-aware-query.ts    # Gate-Aware Query — relational + gate 합성 유틸리티
   meta-codec.ts          # MetaCodec — 독립 encode/decode (LabelRegistry + PrefixCodec 위임)
   meta-resolver.ts       # MetaResolver — 외부 소비용 데이터 번들 생성
   index-sdk.ts           # IndexSDK — 경량 소비 레이어 (constants, dimCapacity)

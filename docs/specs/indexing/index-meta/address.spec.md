@@ -47,11 +47,16 @@ interface MetaRegistryInput {
 
 ---
 
+## Canonical Format
+
+정규 형식이 `CANONICAL_TEXT_PROTOCOL = "colon"`, `CANONICAL_BINARY_PREFIX = "layout:"`로 지정되어 있다.
+상세: [canonical-format.spec.md](canonical-format.spec.md)
+
 ## 기본 프로토콜 결정
 
 | address 설정 | defaultProtocol | serialize(vv) 기본 출력 |
 |---|---|---|
-| 미설정 | `"colon"` | `"perm:v1:42"` |
+| 미설정 | `CANONICAL_TEXT_PROTOCOL` (`"colon"`) | `"perm:v1:42"` |
 | `format: uuid` | `"layout:uuid"` | `"00010001-...-002a"` |
 | `format: int64` | `"layout:int64"` | `"010100000000002a"` |
 
