@@ -47,6 +47,18 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/demo-snapshot:
+    devDependencies:
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
+
   packages/e2e:
     devDependencies:
       '@playwright/test':
@@ -137,6 +149,22 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/permission-engine:
+    dependencies:
+      weighted-index:
+        specifier: workspace:*
+        version: link:../weighted-index
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
+
   packages/pino:
     devDependencies:
       typescript:
@@ -148,6 +176,12 @@ importers:
 
   packages/platform-demo:
     dependencies:
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
+      permission-engine:
+        specifier: workspace:*
+        version: link:../permission-engine
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -170,15 +204,15 @@ importers:
 
   packages/platform-demo-api:
     dependencies:
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       hono:
         specifier: ^4.7.5
         version: 4.12.7
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
-      weighted-index:
-        specifier: workspace:*
-        version: link:../weighted-index
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20250430.0
