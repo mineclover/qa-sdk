@@ -60,6 +60,8 @@ interface MetaRegistryInput {
 | `format: uuid` | `"layout:uuid"` | `"00010001-...-002a"` |
 | `format: int64` | `"layout:int64"` | `"010100000000002a"` |
 
+> **BigInt**: shape product > 2^53인 인덱스는 `serializeBig()`/`parseBig()`와 `createLayoutProtocolBig` 사용. 상세: [bigint-addressing.spec.md](../bigint-addressing.spec.md) §4
+
 ---
 
 ## 검증 규칙
