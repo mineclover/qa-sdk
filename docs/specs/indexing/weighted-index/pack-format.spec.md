@@ -681,6 +681,7 @@ index-meta (외부 소비자)
 ```
 
 > **핵심 원칙**: `WeightedIndex`/`WeightedIndexBig`은 순수 수학이다 — 직렬화 포맷이나 `numberType`에 관여하지 않는다. Number/BigInt 엔진 선택과 포맷 적합성 판단은 상위 레이어(Capacity Guard)가 shape product를 사후 분석하여 수행한다.
+> 검증: [`format-adapter.test.ts`](../../src/format-adapter.test.ts) §1–§7
 
 ### 통합 흐름
 

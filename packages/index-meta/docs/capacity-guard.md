@@ -2,6 +2,7 @@
 
 > **상위 개념**: Prefix 정의 → shape product → 주소 공간 크기
 > **관련 문서**: [`tier-architecture.md`](tier-architecture.md) (Tier 1 스키마 선언), [`api-reference.md`](api-reference.md)
+> **설계 원칙 검증**: [`format-adapter.test.ts`](../../../packages/weighted-index/src/format-adapter.test.ts) — WI 순수 수학 + 외부 어댑터 포맷 판단 (§1–§7)
 
 ---
 

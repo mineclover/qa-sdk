@@ -81,7 +81,8 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 | `PrefixCodec` | 레이블 조합 + 버전 관리 + encode/decode | WeightedIndex + LabelRegistry |
 | `calc`, `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
 
-> **Note**: `WeightedIndex`와 `WeightedIndexBig`은 동일한 알고리즘의 Number/BigInt 구현이다. 둘 다 shape만 알면 동작하며, 직렬화 포맷이나 `numberType` 선택에 관여하지 않는다. 엔진 선택은 상위 레이어(어댑터)가 shape product를 사후 분석하여 결정한다.
+> **Note**: `WeightedIndex`와 `WeightedIndexBig`은 동일한 알고리즘의 Number/BigInt 구현이다. 둘 다 shape만 알면 동작하며, 직렬화 포맷이나 `numberType` 선택에 관여하지 않는다. 엔진 선택은 상위 레이어(어댑터)가 `shapeProduct`/`maxProductBig` 등 패키지 유틸로 shape product를 사후 분석하여 결정한다.
+> 검증: [`format-adapter.test.ts`](../../packages/weighted-index/src/format-adapter.test.ts) §1–§7
 
 `PrefixCodec`와 `MetaRegistry`는 구조적으로 유사하다. `MetaRegistry`가 기능적 상위 호환이지만, `PrefixCodec`는 컴파일 타임 타입 안전성(`InferLabelSchema`)을 제공하고 `weighted-index` 자체를 독립 사용할 수 있는 경로를 유지한다.
 

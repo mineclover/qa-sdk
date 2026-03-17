@@ -179,14 +179,19 @@ platform-demo/src/pages/
 어느 엔진을 쓸지는 외부 어댑터가 shape product를 사후 분석하여 결정한다:
 
 ```
-shape  ─→  computeProductBig(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Number)
-                                          > 2^53?  ─→  WeightedIndexBig (BigInt)
+shape  ─→  shapeProduct(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Number)
+           maxProductBig(hex)       > 2^53?  ─→  WeightedIndexBig (BigInt)
 ```
 
-엔진 선택 후에도 포맷 적합성은 별도 판단이다:
-- `fitsHexBudget(shape, 24)` → UUID 24 hex chars에 맞는가?
-- `fits64Bit(shape)` → 64-bit 정수에 맞는가?
+엔진 선택 후에도 포맷 적합성은 별도 판단이다 — 패키지의 기존 유틸로 수행:
 - `charsForMax(wi.size - 1)` → 몇 hex chars가 필요한가?
+- `maxProductBig(hexBudget)` → hex 예산이 허용하는 최대 주소 공간
+- `dimMaxForBudget(hex, othersProduct)` → 한 차원의 최대 크기
+- `fitShape({ shape, maxProduct })` → 포맷에 맞게 shape 축소
+- `planCapacity(...)` → 성장 여력까지 포함한 종합 분석
 
 수학 엔진은 이 판단에 관여하지 않으며, 상위 레이어(`index-meta`의 Capacity Guard)가 스키마 정의 시점에 `numberType`을 확정하고 런타임 가드를 수행한다.
+
+> **검증**: [`format-adapter.test.ts`](../../packages/weighted-index/src/format-adapter.test.ts) — §1 구조적 격리, §2 사후 분석, §3 실시간 감지, §4 경계값 정밀도, §5 엔진 선택 분리, §6 다중 포맷 동시 평가, §7 포맷 변경 시 수학 불변
+
 상세: [bigint-addressing.spec.md](bigint-addressing.spec.md)
