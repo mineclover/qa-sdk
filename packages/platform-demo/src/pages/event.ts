@@ -6,7 +6,7 @@ import {
   fetchEvtCells,
   type EvtCellsResponse,
 } from "../registry.js";
-import { DEMO_KO, DEMO_INITIATORS } from "weighted-index";
+import { DEMO_KO, DEMO_INITIATORS } from "demo-snapshot";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

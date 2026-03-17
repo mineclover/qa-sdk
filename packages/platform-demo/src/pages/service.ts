@@ -12,7 +12,7 @@ import { densityFill, densityInk } from "weighted-ui";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
-} from "weighted-index";
+} from "demo-snapshot";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

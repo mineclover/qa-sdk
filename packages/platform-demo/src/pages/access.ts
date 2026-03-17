@@ -2,15 +2,15 @@
 //  접근 제어 — perm_svc(1D 압축) × role × event 매핑 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { serializeAddress } from "weighted-index";
 import {
-  serializeAddress,
   DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_ROLES_V1, DEMO_ROLES_V2,
   DEMO_EVENTS_V1, DEMO_EVENTS_V2,
   demoRoleStride, demoEvtStride,
   demoCalcPermAddr, demoCalcEvtAddr,
   type DemoVer,
-} from "weighted-index";
+} from "demo-snapshot";
 
 type Ver = DemoVer;
 

@@ -7,7 +7,7 @@ import {
   fetchPermDecode,
   type PermCellsResponse,
 } from "../registry.js";
-import { DEMO_KO } from "weighted-index";
+import { DEMO_KO } from "demo-snapshot";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 

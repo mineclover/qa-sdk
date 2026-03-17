@@ -2,8 +2,8 @@
 //  로깅 통합 — 인덱스 주소를 활용한 구조화 로그 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { serializeAddress, varintByteSize } from "weighted-index";
 import {
-  serializeAddress, varintByteSize,
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_SVC_STRIDES,
   demoEncodeSvc, demoDecodeSvc,
@@ -11,7 +11,7 @@ import {
   demoDecodePerm, demoDecodeEvt,
   DEMO_LOG_TEMPLATES,
   type DemoVer,
-} from "weighted-index";
+} from "demo-snapshot";
 import { API_BASE } from "../registry.js";
 
 type Ver = DemoVer;

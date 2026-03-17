@@ -2,11 +2,11 @@
 //  범위 탐색 — 차원 고정/와일드카드로 주소 범위 시각화
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { serializeAddress } from "weighted-index";
 import {
-  serializeAddress,
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_SVC_STRIDES,
-} from "weighted-index";
+} from "demo-snapshot";
 
 const SVC_PREFIX = "service";
 const SVC_VER    = "v1";
