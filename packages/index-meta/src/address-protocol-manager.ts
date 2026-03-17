@@ -31,6 +31,7 @@
 
 import {
   AddressConverter,
+  CANONICAL_TEXT_PROTOCOL,
   colonProtocol,
   uriProtocol,
   compactProtocol,
@@ -85,7 +86,7 @@ export class AddressProtocolManager {
     this._registerInternal(uriProtocol);
     this._registerInternal(colonProtocol);
     this._registerInternal(compactProtocol);
-    this._defaultProtocol = "colon";
+    this._defaultProtocol = CANONICAL_TEXT_PROTOCOL;
 
     if (config) {
       // parseSchemaOnly를 위한 역매핑 구축
@@ -237,7 +238,7 @@ export class AddressProtocolManager {
 
     if (this._defaultProtocol === name) {
       this._defaultProtocol =
-        this._order.length > 0 ? this._order[0].name : "colon";
+        this._order.length > 0 ? this._order[0].name : CANONICAL_TEXT_PROTOCOL;
     }
     if (this._writeProtocol === name) {
       this._writeProtocol = undefined;
