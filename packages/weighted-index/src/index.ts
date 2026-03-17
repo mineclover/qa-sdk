@@ -111,6 +111,8 @@ export {
   type FitLayoutResult,
 } from "./capacity-planner.js";
 export {
+  CANONICAL_TEXT_PROTOCOL,
+  CANONICAL_BINARY_PREFIX,
   colonProtocol,
   uriProtocol,
   compactProtocol,
@@ -177,19 +179,3 @@ export {
   SerializeError,
   MigrateError,
 } from "./errors.js";
-// ── Demo snapshot (데모 데이터 SSOT) ────────────────────────────────────────
-export {
-  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
-  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
-  DEMO_INITIATORS, DEMO_KO,
-  DEMO_SVC_SHAPE, DEMO_SVC_STRIDES,
-  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
-  demoEncodeSvc, demoDecodeSvc,
-  demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
-  demoCalcPermAddr, demoCalcEvtAddr,
-  demoDecodePerm, demoDecodeEvt,
-  DEMO_LOG_TEMPLATES,
-  type DemoVer, type DemoPermDecoded, type DemoEvtDecoded,
-  type DemoLogLevel, type DemoLogTemplate,
-} from "./demo-snapshot.js";
