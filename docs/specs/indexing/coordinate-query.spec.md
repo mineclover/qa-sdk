@@ -8,7 +8,7 @@
 
 ## 상태
 
-planned
+implemented
 
 ---
 
@@ -430,3 +430,295 @@ entityVersionSpan("perm", "role", "viewer", registry, { activeOnly: true })
 | 2 | Cross-Index Query (❸-A) | index-meta | index_ref 패턴이 이미 존재하지만 수동. 자동화 효과 즉시 체감 |
 | 3 | Policy Resolution (❷) | index-meta | 권한/정책 시나리오에서 바로 사용. ❶만 있으면 구현 가능 |
 | 4 | Version-Aware Query (❸-B) | index-meta | 운영 단계에서 필요. 초기 개발에서는 단일 version으로 충분 |
+
+---
+
+## 7. policy-resolver 상세
+
+### 핵심 타입
+
+```ts
+interface PolicyRule<T> {
+  id: string;
+  pattern: CoordConstraint[];   // dim별 제약
+  value: T;                      // 규칙이 주장하는 값
+  priority?: number;             // 명시적 우선순위 (priority 전략용)
+}
+
+type ConflictStrategy =
+  | "most-specific"    // patternSpecificity 최고값 승리
+  | "priority"         // 명시적 priority 내림차순
+  | "collect"          // 모든 매칭 값 수집 (T[] 반환)
+  | "first-match";     // 입력 순서 첫 매칭
+
+interface ResolveResult<T> {
+  value: T | T[];                 // 해소된 값 (collect면 T[])
+  matchedRules: PolicyRule<T>[];  // 구체성 내림차순 정렬
+  strategy: ConflictStrategy;
+}
+
+interface ConflictReport<T> {
+  overlapPattern: CoordConstraint[];       // 두 규칙의 교집합 패턴
+  conflictingRules: PolicyRule<T>[];       // 같은 영역, 다른 값
+}
+```
+
+### matchRules 알고리즘
+
+```ts
+function matchRules<T>(
+  coord: number[],
+  rules: PolicyRule<T>[],
+  shape: readonly number[],
+): PolicyRule<T>[]
+```
+
+1. 각 규칙에 대해 `coordMatchesPattern(coord, rule.pattern)` 실행
+2. 매칭된 규칙을 `patternSpecificity(rule.pattern, shape)` 내림차순 정렬
+3. 복잡도: O(N × ndims) — N = 규칙 수
+
+### resolvePolicy 4전략
+
+```ts
+function resolvePolicy<T>(
+  coord: number[],
+  rules: PolicyRule<T>[],
+  shape: readonly number[],
+  strategy: ConflictStrategy,
+): ResolveResult<T> | null
+```
+
+1. `matchRules(coord, rules, shape)` 호출
+2. 매칭 없으면 `null` 반환
+3. 전략별 처리:
+   - **most-specific**: 첫 번째 매칭 규칙 (이미 specificity 내림차순)
+   - **priority**: `.priority` 필드 내림차순 재정렬 후 첫 번째
+   - **collect**: 모든 매칭 값을 배열로 수집
+   - **first-match**: 원래 입력 순서에서 첫 매칭 규칙
+
+### detectConflicts 사전 검증
+
+```ts
+function detectConflicts<T>(
+  rules: PolicyRule<T>[],
+  shape: readonly number[],
+  eq?: (a: T, b: T) => boolean,  // 기본: (a, b) => a === b
+): ConflictReport<T>[]
+```
+
+1. 모든 규칙 쌍 (i, j)에 대해 `patternMeet(rules[i].pattern, rules[j].pattern, shape)` 계산
+2. 교집합이 non-null이고 `!eq(rules[i].value, rules[j].value)`이면 충돌
+3. 복잡도: O(N² × ndims) — 빌드 타임 전용
+
+---
+
+## 8. cross-index-query 상세
+
+### composeQuery 5단계 흐름
+
+```ts
+function composeQuery(
+  source: { indexId: string; versionId: string },
+  through: string,       // source의 index_ref dim ID
+  targetConstraint: Record<string, EntityId | null>,
+  registry: MetaRegistry,
+): [number, number][]
+```
+
+| 단계 | 동작 |
+|---|---|
+| ① 검증 | `through` dim이 source에 존재하고 `kind.type === "index_ref"`인지 확인 |
+| ② 대상 범위 | target index의 codec으로 `matchRanges(targetConstraint)` → target 값 범위 |
+| ③ 포지션 매핑 | source의 through dim entries에서 target 범위에 포함되는 값의 1-based position 수집 |
+| ④ 소스 제약 구성 | through dim = `positionsToConstraint(positions)`, 나머지 = null (wildcard) |
+| ⑤ 소스 범위 | `calcAddressRanges(sourceShape, sourceConstraints)` → 최종 범위 |
+
+### deepDecode 재귀 알고리즘
+
+```ts
+function deepDecode(
+  address: VersionedValue,
+  registry: MetaRegistry,
+  maxDepth?: number,        // 기본값 8
+): DeepDecodeResult
+
+interface DeepDecodeResult {
+  layers: Map<string, Record<string, EntityId>>;  // indexId → 디코드된 entity
+  path: VersionedValue[];                         // 루트 → 리프 경로
+}
+```
+
+**알고리즘** (visited set — INV-10):
+
+1. `visited = new Set<string>()`, key = `"${indexId}:${versionId}:${value}"`
+2. 현재 노드가 visited에 있거나 depth ≤ 0이면 종료
+3. `visited.add(key)`, codec.decode(vv) → entity record
+4. **dim-level index_ref**: dimDef.kind.type === "index_ref"이고 decoded 값이 number이면, target index로 재귀
+5. **entry-level entryRefs**: snapshot의 entryRefs에 해당 position이 있으면, ref의 index로 재귀
+6. 양쪽 경로를 모두 따라감
+
+**INV-10**: visited set로 순환 참조 방지. 같은 (indexId, versionId, value) 조합은 두 번 방문하지 않는다.
+
+---
+
+## 9. version-query 상세
+
+### queryAcrossVersions
+
+```ts
+function queryAcrossVersions(
+  indexId: string,
+  versionIds: string[],
+  constraint: Record<string, EntityId | null>,
+  registry: MetaRegistry,
+): Map<string, [number, number][]>
+```
+
+각 version에서 entity 이름 기준 `matchRanges` 실행. entity가 해당 version에 없으면 (`EntryNotFoundError`) 해당 version은 결과에서 제외.
+
+### entityVersionSpan
+
+```ts
+function entityVersionSpan(
+  indexId: string,
+  dimId: string,
+  entityId: EntityId,
+  registry: MetaRegistry,
+  options?: { activeOnly?: boolean },
+): string[]
+```
+
+모든 version의 DimSnapshot을 순회하여 entity 존재 여부 확인.
+`activeOnly: true`이면 entryFlags에서 inactive인 position 제외.
+
+### translateConstraint
+
+```ts
+function translateConstraint(
+  indexId: string,
+  fromVersion: string,
+  toVersion: string,
+  constraint: Record<string, CoordConstraint>,
+  registry: MetaRegistry,
+): Record<string, CoordConstraint> | null
+```
+
+**흐름**:
+1. `fromVersion === toVersion`이면 그대로 반환
+2. 각 dim에 대해:
+   - 양 version의 snapshot이 동일하면 제약 유지
+   - 다르면: position → entity 변환 후, target version에서 entity → position 역변환
+   - **migration edge 우선**: `traceMigration(dimId, from, to, pos)` 시도
+   - **EntityId fallback**: entity가 target version entries에 존재하면 position 매핑
+   - entity가 target에 없으면 `null` 반환 (변환 불가)
+3. `positionsToConstraint(mappedPositions)`로 새 제약 문자열 생성
+
+---
+
+## 10. RelationalEngine
+
+facade 클래스로, MetaRegistry + 좌표 질의 모듈을 통합한다.
+
+### 2-level 규칙 엔진
+
+```ts
+interface RelationTypeRule<T> {
+  id: string;
+  pattern: CoordConstraint[];         // 타입 수준 패턴 (subject_kind × predicate × object_kind)
+  effect: T;                          // 타입 수준 효과
+  instanceRules?: {                   // 선택적 2차 수준
+    indexId: string;
+    versionId: string;
+    rules: PolicyRule<T>[];           // 인스턴스 수준 규칙
+    strategy: ConflictStrategy;
+  };
+  priority?: number;
+}
+
+interface RelationResolveResult<T> {
+  value: T;                           // 최종 값
+  typeLevel: ResolveResult<T>;        // 타입 수준 매칭 결과
+  instanceLevel?: ResolveResult<T> | null;  // 인스턴스 수준 결과
+}
+```
+
+### resolveRelation 흐름
+
+```ts
+resolveRelation<T>(
+  relTypeCoord: number[],
+  relShape: readonly number[],
+  typeRules: RelationTypeRule<T>[],
+  typeStrategy: ConflictStrategy,
+  instanceCoord?: number[],
+): RelationResolveResult<T> | null
+```
+
+**Level 1 (타입)**:
+1. `RelationTypeRule<T>[]` → `PolicyRule<T>[]` 변환 (`effect` → `value`)
+2. `resolvePolicy(relTypeCoord, typePolicyRules, relShape, typeStrategy)`
+3. 매칭 없으면 `null`
+
+**Level 2 (인스턴스)** (조건부):
+1. 매칭된 type rule에 `instanceRules`가 있고 `instanceCoord`가 제공된 경우
+2. instance index의 WeightedIndex로 `resolvePolicy(instanceCoord, instRules, instShape, instStrategy)`
+3. 결과를 `RelationResolveResult`에 포함
+
+### facade 메서드 목록
+
+| 메서드 | 위임 대상 |
+|---|---|
+| `codec(indexId, versionId)` | `registry.createCodec()` |
+| `encode(indexId, versionId, entities)` | `codec.encode()` |
+| `decode(indexId, versionId, vv)` | `codec.decode()` |
+| `matchRanges(indexId, versionId, partial)` | `codec.matchRanges()` |
+| `addressRanges(indexId, versionId, constraints)` | `calcAddressRanges()` |
+| `contains(value, ranges)` | `containsAddress()` |
+| `composeQuery(source, through, targetConstraint)` | 독립 `composeQuery()` |
+| `deepDecode(address, maxDepth?)` | 독립 `deepDecode()` |
+| `matchRules(coord, rules, shape)` | 독립 `matchRules()` |
+| `resolvePolicy(coord, rules, shape, strategy)` | 독립 `resolvePolicy()` |
+| `detectConflicts(rules, shape, eq?)` | 독립 `detectConflicts()` |
+| `resolveRelation(...)` | 2-level 엔진 |
+
+---
+
+## 11. 테스트 맵
+
+### cross-index-query.test.ts
+
+| 시나리오 | 설명 |
+|---|---|
+| composeQuery 기본 | 단일/복수 제약 매칭 |
+| composeQuery 에러 | entry 미발견, 검증 에러 |
+| deepDecode 2-level | index_ref 2단계 확장 |
+| deepDecode 단일 | 참조 없는 단일 index |
+| deepDecode 깊이 제한 | maxDepth 초과 시 중단 |
+| deepDecode 순환 방지 | dim-level + entry-level 순환 참조 |
+
+### policy-resolver.test.ts
+
+| 시나리오 | 설명 |
+|---|---|
+| matchRules | 좌표별 매칭 + specificity 정렬 |
+| resolvePolicy 4전략 | most-specific, priority, collect, first-match |
+| detectConflicts | 겹침 탐지 + 커스텀 eq 함수 |
+
+### relational-engine.test.ts
+
+| 시나리오 | 설명 |
+|---|---|
+| encode/decode | 왕복 검증 |
+| matchRanges | 부분 질의 + containment |
+| resolvePolicy (1-level) | 3-규칙 매칭 (default/admin/editor) |
+| resolveRelation (2-level) | 타입 + 인스턴스 매칭 |
+| detectConflicts | 겹침 탐지 |
+| composeQuery + deepDecode | cross-index 통합 |
+
+### relational-engine.e2e.test.ts
+
+| 시나리오 | 설명 |
+|---|---|
+| RBAC 스키마 | rel (subject_kind × predicate × object_kind) + perm (role × action × resource) |
+| E2E 파이프라인 | 스키마 정의 → DB 삽입 → 범위 캐시 → 이진 탐색 |
+| 정책 해소 | specificity 기반 충돌 해소 + 좌표 전체 공간 검증 |

@@ -137,6 +137,16 @@ API 클라이언트, iframe 통신 프로토콜.
 | [pack-format.spec.md](indexing/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
 | [index-meta.spec.md](indexing/index-meta.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
 
+### services/ — 서비스 분리 스펙
+
+인덱싱 시스템의 마이크로서비스 분리 API 계약. decode, gate, query 3개 독립 서비스.
+
+| 스펙 | 설명 | 기반 모듈 | 상태 |
+|---|---|---|---|
+| [decode-service.spec.md](services/decode-service.spec.md) | Decode Service — DecodeMap 번들 기반 독립 decode, REST API, Edge/Node.js/임베디드 배포 | PrefixDecoder, MetaResolver | implemented |
+| [gate-service.spec.md](services/gate-service.spec.md) | Gate Service — 주소 상태 관리 분산 서비스, RPC 계약, cascade 전파, 정합성 모델 | GateEngine, invalid-ranges | planned |
+| [query-service.spec.md](services/query-service.spec.md) | Query Service — 관계형 질의 + 정책 해소 + gate 통합, 규칙 영속화, 충돌 전략 | RelationalEngine, policy-resolver | planned |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.
@@ -160,7 +170,10 @@ API 클라이언트, iframe 통신 프로토콜.
 | @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
 | weighted-index | `indexing/weighted-index.spec.md`, `indexing/pack-format.spec.md` |
-| weighted-index-explorer | `indexing/README.md` (탐색기 구조 섹션) |
+| demo-snapshot | `indexing/README.md` (데이터 카탈로그 섹션) |
+| @qa-sdk/demo-tests | `indexing/README.md` (통합 테스트 섹션) |
+| platform-demo | `indexing/README.md` (플랫폼 데모 섹션) |
+| permission-engine | `indexing/README.md` (권한 엔진 섹션) |
 | index-meta | `indexing/index-meta.spec.md` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
 | @qa-sdk/browser | `browser/monitor.spec.md` |

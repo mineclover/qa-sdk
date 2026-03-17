@@ -28,6 +28,7 @@ implemented
 | [scenarios-sdk.spec.md](scenarios-sdk.spec.md) | 유저 시나리오 — SDK 라이프사이클 운영 (§20–26) |
 | [canonical-format.spec.md](canonical-format.spec.md) | Canonical C Format — 정규 텍스트(colon)/바이너리(layout) 포맷 지정 |
 | [invariants.spec.md](invariants.spec.md) | 변환 불변조건 — 12개 invariant 명세 + 테스트 커버리지 맵 |
+| [gate-engine.spec.md](gate-engine.spec.md) | GateEngine — 주소 상태 자동 재계산, decorator 패턴, cascade 전파, gate-aware-query 합성 |
 | [adr-address-separation.md](adr-address-separation.md) | ADR: AddressProtocolManager 분리 |
 
 ## 횡단 문서

@@ -1,0 +1,326 @@
+# 작업 패키지 배치 계획 (todo-plan)
+
+> spec.todo.md의 모든 작업 항목에 대해 패키지 위치, 의존성, 산출물을 사전 정의한다.
+
+---
+
+## 패키지 레이아웃 전체 맵
+
+```
+packages/
+  # ── Layer 0: 수학 엔진 ──────────────────────────────────
+  weighted-index/              순수 수학 (encode/decode/bitmask)
+  weighted-wasm/        [신규] WASM 빌드 (SIMD bitmask, batch encode)
+  weighted-gpu/         [신규] WebGPU compute shader 어댑터
+
+  # ── Layer 1: 스키마 + 메타 ──────────────────────────────
+  index-meta/                  스키마 레지스트리, 코덱, 게이트, 관계 엔진
+  permission-engine/           비트마스크 권한 엔진
+
+  # ── Layer 2: 런타임 인프라 ──────────────────────────────
+  key-cache/            [신규] KeyCache 포트 + Memory/Redis/KV 어댑터
+  pipeline/             [신규] Aggregator + MaterializedView + Streaming consumer
+
+  # ── Layer 3: 서비스 ─────────────────────────────────────
+  decode-service/       [완료] Hono.js — decode API (39 tests)
+  gate-service/         [신규] Hono.js — gate 상태 관리 API
+  query-service/        [신규] Hono.js — 관계형 질의 + 정책 해소 API
+
+  # ── Layer D: 데모/테스트 ────────────────────────────────
+  demo-snapshot/               데이터 SSOT (Axis 카탈로그)
+  demo-tests/                  통합 테스트 (27파일, 494 tests)
+  platform-demo/               프론트엔드 시각화
+  platform-demo-api/           데모 백엔드 API
+```
+
+---
+
+## Tier 1 — 테스트 갭 보강
+
+| ID | 작업 | 패키지 | 파일 위치 | 의존성 | 산출물 |
+|---|---|---|---|---|---|
+| B-1 | SemanticAddressBig 프로토콜 테스트 | `demo-tests` | `src/index-meta/bigint-address.test.ts` | weighted-index, index-meta | 테스트 파일 |
+| B-2 | INV-9 MetaCodec 동등성 테스트 | `demo-tests` | `src/index-meta/bigint-codec-equiv.test.ts` | index-meta | 테스트 파일 |
+| B-3 | MetaCodecBig.matchRanges 대형 shape | `demo-tests` | `src/index-meta/bigint-ranges.test.ts` | index-meta | 테스트 파일 |
+
+---
+
+## Tier 2 — 서비스 레이어
+
+### decode-service (D-1 ~ D-4 ✅, D-5 잔여)
+
+```
+packages/decode-service/          [구현 완료]
+  package.json                    deps: index-meta, hono, @hono/node-server, pino, zod
+  tsconfig.json
+  src/
+    server.ts                     진입점 (@hono/node-server, graceful shutdown)
+    app.ts                        D-1: createApp 팩토리 (registry-server 패턴)
+    config/
+      env.ts                      Zod 환경 변수 (PORT, CACHE_TTL_MS)
+    lib/
+      decoder-pool.ts             D-2: DecoderPool — TTL 기반 PrefixDecoder 인스턴스 풀
+      errors.ts                   D-4: AppError + IndexMetaError → HTTP 매핑
+      logger.ts                   Pino 로거
+    middleware/
+      error-handler.ts            D-4: AppError/ZodError/IndexMetaError 통합 핸들러
+      request-id.ts               x-request-id 전파
+    routes/
+      decode.ts                   D-1: 4개 엔드포인트 + D-3: resolveDecoder 자동 감지
+      health.ts                   GET /health
+    schemas/
+      decode.ts                   Zod 요청 스키마 (decode, batch, deep)
+    app.test.ts                   39 tests
+```
+
+| ID | 파일 | 상태 | 설명 |
+|---|---|---|---|
+| D-1 | `routes/decode.ts`, `app.ts` | ✅ | 4개 엔드포인트, registry-server 패턴 |
+| D-2 | `lib/decoder-pool.ts` | ✅ | DecoderPool (load/get/evict/clear/values, TTL 자동 만료) |
+| D-3 | `routes/decode.ts` (resolveDecoder) | ✅ | 5분기: 직접조회/불완전에러/number에러/auto-detect/실패 |
+| D-4 | `lib/errors.ts`, `middleware/error-handler.ts` | ✅ | IndexMetaError→AppError→HTTP, ZodError→400, 통합 포맷 |
+| D-5 | 미구현 | 잔여 | PrefixDecoderBig — BigInt index decode 확장 |
+
+### gate-service (E-1 ~ E-4)
+
+```
+packages/gate-service/            [신규]
+  package.json                    deps: index-meta, key-cache, hono
+  src/
+    index.ts                      Hono app — 6개 RPC 엔드포인트
+    event-emitter.ts              E-2: release/flagChange 이벤트 발행
+    broadcast.ts                  E-3: 캐시 무효화 브로드캐스트 (SSE/WebSocket)
+    consistency.ts                E-4: shouldVerify 재확인, Primary 직접 조회
+```
+
+### query-service (F-1 ~ F-5)
+
+```
+packages/query-service/           [신규]
+  package.json                    deps: index-meta, key-cache, gate-service(client), hono
+  src/
+    index.ts                      Hono app — 규칙 CRUD 5종 + 질의 5종
+    stores/
+      policy-rule-store.ts        F-1: StoredPolicyRule 포트
+      policy-rule-memory.ts       F-1: InMemory 어댑터
+      policy-rule-sql.ts          F-1: SQL 어댑터
+    gate-client.ts                F-4: gate-service HTTP 클라이언트
+    migration.ts                  F-5: translateConstraint 기반 규칙 자동 변환
+```
+
+---
+
+## Tier 3 — 인프라 보강
+
+### SQL 어댑터 (H-1 ~ H-3)
+
+기존 `index-meta` 패키지 내에 추가. 포트 인터페이스는 이미 존재, 어댑터만 신규.
+
+| ID | 파일 위치 | 설명 |
+|---|---|---|
+| H-1 | `index-meta/src/adapters/sql-version-lifecycle-store.ts` | VersionLifecycleStore SQL 구현 |
+| H-2 | `index-meta/src/adapters/sql-migration-store.ts` | MigrationStore SQL 구현 |
+| H-3 | `index-meta/src/adapters/sql-prefix-router.ts` | PrefixRouter SQL 구현 |
+
+### key-cache (I-1, I-4)
+
+```
+packages/key-cache/               [신규]
+  package.json                    deps: 없음 (순수 포트). adapters에서 ioredis 등 optional
+  src/
+    index.ts                      export
+    key-cache.ts                  I-1: KeyCache 포트 인터페이스
+    adapters/
+      memory.ts                   I-1: InMemoryKeyCache (Map + TTL)
+      redis.ts                    I-4: RedisKeyCache (ioredis)
+      cloudflare-kv.ts            I-4: CloudflareKVCache
+```
+
+```ts
+// key-cache.ts — 포트 인터페이스
+interface KeyCache<K = bigint, V = unknown> {
+  get(key: K): Promise<V | undefined>
+  set(key: K, value: V, ttlMs?: number): Promise<void>
+  delete(key: K): Promise<boolean>
+  has(key: K): Promise<boolean>
+}
+```
+
+### pipeline (I-2, I-3, I-5, I-6)
+
+```
+packages/pipeline/                [신규]
+  package.json                    deps: weighted-index, key-cache
+  src/
+    index.ts                      export
+    aggregator.ts                 I-2: Aggregator 포트 인터페이스
+    materialized-view.ts          I-3: MaterializedView 스키마 + CRUD
+    streaming/
+      consumer.ts                 I-5: StreamConsumer 인터페이스
+      kafka-consumer.ts           I-5: Kafka 어댑터
+      sse-consumer.ts             I-5: SSE 어댑터
+    axis-projection.ts            I-6: 부분 decode 최적화 (특정 축만 추출)
+```
+
+```ts
+// aggregator.ts — 포트 인터페이스
+interface Aggregator {
+  groupByKey(keys: bigint[]): Promise<Map<bigint, AggregateResult>>
+  projectAxis(keys: bigint[], axisIndex: number, shape: number[]): Promise<Map<number, AggregateResult>>
+}
+
+interface AggregateResult {
+  count: number
+  lastSeen: number
+}
+```
+
+```ts
+// axis-projection.ts — 전체 decode 없이 특정 축 추출
+function projectAxis(key: number, axisIndex: number, strides: number[], shape: number[]): number {
+  return Math.floor(key / strides[axisIndex]) % shape[axisIndex]
+}
+```
+
+---
+
+## Tier 4 — 하드웨어 가속 + 스트리밍
+
+### weighted-wasm (G-1, G-4)
+
+```
+packages/weighted-wasm/           [신규]
+  package.json                    deps: weighted-index (타입만)
+  Cargo.toml                     Rust 소스 (wasm-pack 빌드)
+  src/
+    lib.rs                        encode_batch, decode_batch, bitmask_and/or/popcount
+  pkg/                            wasm-pack 빌드 산출물
+  js/
+    index.ts                      JS 래퍼 — WeightedIndex 인터페이스 호환
+    bench.test.ts                 G-1: JS vs WASM 벤치마크
+```
+
+```rust
+// lib.rs — 핵심 연산
+#[wasm_bindgen]
+pub fn encode_batch(
+    shape: &[u32],
+    strides: &[u32],
+    coords: &[u32],     // flattened: [d0,d1,...,dN, d0,d1,...] × batch_size
+    batch_size: u32,
+) -> Vec<u64> { ... }
+
+#[wasm_bindgen]
+pub fn bitmask_popcount(mask: &[u8]) -> u32 { ... }    // G-4: SIMD 활용
+```
+
+### weighted-gpu (G-2)
+
+```
+packages/weighted-gpu/            [신규]
+  package.json                    deps: weighted-index (타입만)
+  src/
+    index.ts                      GPUEncoder 클래스
+    shaders/
+      encode.wgsl                 compute shader — batch encode
+      decode.wgsl                 compute shader — batch decode
+      reduce.wgsl                 compute shader — group-by aggregation
+    bench.test.ts                 G-2: GPU vs CPU 벤치마크 (10K건 기준)
+```
+
+```ts
+// index.ts — GPU 어댑터
+class GPUEncoder {
+  constructor(device: GPUDevice, shape: number[])
+
+  async encodeBatch(coords: Uint32Array): Promise<BigUint64Array>
+  async decodeBatch(keys: BigUint64Array): Promise<Uint32Array>
+  async reduceByKey(keys: BigUint64Array): Promise<Map<bigint, number>>
+
+  destroy(): void
+}
+```
+
+### FPGA 인터페이스 (G-3)
+
+FPGA는 하드웨어 종속적이므로 인터페이스만 정의하고, 구현은 하드웨어별 별도 패키지.
+
+```
+packages/weighted-index/src/
+  fpga-adapter.ts                 G-3: FPGAAdapter 포트 인터페이스 (weighted-index에 추가)
+```
+
+```ts
+// fpga-adapter.ts — 포트 인터페이스 (weighted-index 내)
+interface FPGAAdapter {
+  encodeBatch(strides: readonly number[], coords: readonly number[][]): Promise<bigint[]>
+  decodeBatch(strides: readonly number[], shape: readonly number[], keys: readonly bigint[]): Promise<number[][]>
+  isAvailable(): boolean
+}
+
+// 임계값 기반 분기 유틸
+function createHybridEncoder(
+  cpu: WeightedIndex,
+  fpga: FPGAAdapter | null,
+  threshold: number = 1024,
+) {
+  return {
+    encodeBatch(coords: number[][]): Promise<number[]> {
+      if (fpga?.isAvailable() && coords.length >= threshold) {
+        return fpga.encodeBatch(cpu.strides, coords)
+      }
+      return Promise.resolve(coords.map(c => cpu.encode(c)))
+    }
+  }
+}
+```
+
+---
+
+## 의존성 그래프
+
+```
+Layer 0 (수학)
+  weighted-index ─────────────────────────────────────────┐
+  weighted-wasm ──→ weighted-index (타입)                  │
+  weighted-gpu ───→ weighted-index (타입)                  │
+                                                           │
+Layer 1 (스키마)                                           │
+  index-meta ─────→ weighted-index ◄──────────────────────┘
+  permission-engine → weighted-index
+
+Layer 2 (런타임)
+  key-cache ──────→ (없음, 순수 포트)
+  pipeline ───────→ weighted-index, key-cache
+
+Layer 3 (서비스)
+  decode-service ─→ index-meta, hono, pino, zod
+  gate-service ───→ index-meta, key-cache
+  query-service ──→ index-meta, key-cache, gate-service(client)
+
+Layer D (데모)
+  demo-snapshot ──→ (없음, 순수 데이터)
+  demo-tests ─────→ demo-snapshot, index-meta, permission-engine, weighted-index
+  platform-demo ──→ demo-snapshot, permission-engine, weighted-index
+  platform-demo-api → demo-snapshot, index-meta
+```
+
+---
+
+## 작업 ID → 패키지 매핑 요약
+
+| ID | 작업 | 패키지 | 신규/기존 |
+|---|---|---|---|
+| B-1~B-3 | BigInt 테스트 보강 | demo-tests | 기존 |
+| D-1~D-4 | decode 서비스 | decode-service | ✅ **완료** (D-5 잔여) |
+| E-1~E-4 | gate 서비스 | gate-service | **신규** |
+| F-1~F-5 | query 서비스 | query-service | **신규** |
+| G-1, G-4 | WASM 빌드 (encode/bitmask) | weighted-wasm | **신규** |
+| G-2 | GPU compute shader | weighted-gpu | **신규** |
+| G-3 | FPGA 인터페이스 | weighted-index | 기존 (추가) |
+| H-1~H-3 | SQL 어댑터 | index-meta | 기존 (추가) |
+| I-1, I-4 | 캐시 포트 + 어댑터 | key-cache | **신규** |
+| I-2, I-3, I-5, I-6 | 파이프라인 + 스트리밍 | pipeline | **신규** |
+
+**신규 패키지 6개**: gate-service, query-service, key-cache, pipeline, weighted-wasm, weighted-gpu
+**완료 패키지 1개**: decode-service
