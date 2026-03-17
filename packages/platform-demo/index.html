@@ -30,9 +30,11 @@
           <button class="rtab" data-sheet="event" role="tab" aria-selected="false" aria-controls="sheet-event">이벤트</button>
           <button class="rtab" data-sheet="scenario" role="tab" aria-selected="false" aria-controls="sheet-scenario">시나리오</button>
           <button class="rtab" data-sheet="grant" role="tab" aria-selected="false" aria-controls="sheet-grant">권한 부여 관리</button>
+          <button class="rtab" data-sheet="casbin" role="tab" aria-selected="false" aria-controls="sheet-casbin">Casbin 해설</button>
           <button class="rtab" data-sheet="logging" role="tab" aria-selected="false" aria-controls="sheet-logging">로깅</button>
           <button class="rtab" data-sheet="layout" role="tab" aria-selected="false" aria-controls="sheet-layout">레이아웃</button>
           <button class="rtab" data-sheet="version" role="tab" aria-selected="false" aria-controls="sheet-version">버전</button>
+          <button class="rtab" data-sheet="perm-engine" role="tab" aria-selected="false" aria-controls="sheet-perm-engine">권한엔진</button>
         </div>
       </div>
 
@@ -147,6 +149,13 @@
           </div>
         </div>
 
+        <!-- Casbin 해설 sheet -->
+        <div class="sheet hidden" id="sheet-casbin" role="tabpanel" aria-label="Casbin 해설">
+          <div class="sheet-body cb-body">
+            <div id="casbin-container"></div>
+          </div>
+        </div>
+
         <!-- Logging integration sheet -->
         <div class="sheet hidden" id="sheet-logging" role="tabpanel" aria-label="로깅">
           <div class="sheet-body logging-body">
@@ -168,6 +177,13 @@
           </div>
         </div>
 
+        <!-- Permission Engine comparison sheet -->
+        <div class="sheet hidden" id="sheet-perm-engine" role="tabpanel" aria-label="권한엔진">
+          <div class="sheet-body pe-body">
+            <div id="perm-engine-container"></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ── Bottom: sheet tabs + status bar ──────────────────── -->
@@ -181,9 +197,11 @@
           <div class="stab" data-sheet="event" role="tab" aria-selected="false"><span class="stab-icon">◈</span> 이벤트</div>
           <div class="stab" data-sheet="scenario" role="tab" aria-selected="false"><span class="stab-icon">▶</span> 시나리오</div>
           <div class="stab" data-sheet="grant" role="tab" aria-selected="false"><span class="stab-icon">⊡</span> 권한 부여 관리</div>
+          <div class="stab" data-sheet="casbin" role="tab" aria-selected="false"><span class="stab-icon">&#x2696;</span> Casbin</div>
           <div class="stab" data-sheet="logging" role="tab" aria-selected="false"><span class="stab-icon">◇</span> 로깅</div>
           <div class="stab" data-sheet="layout" role="tab" aria-selected="false"><span class="stab-icon">⊞</span> 레이아웃</div>
           <div class="stab" data-sheet="version" role="tab" aria-selected="false"><span class="stab-icon">◎</span> 버전</div>
+          <div class="stab" data-sheet="perm-engine" role="tab" aria-selected="false"><span class="stab-icon">⊘</span> 권한엔진</div>
         </div>
         <div class="status-bar">
           <span id="status-shape">n차원 참조 주소 체계</span>

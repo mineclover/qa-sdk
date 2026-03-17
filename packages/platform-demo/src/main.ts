@@ -29,18 +29,20 @@ import { renderRangePage } from "./pages/range.js";
 import { renderAccessPage } from "./pages/access.js";
 import { renderLoggingPage } from "./pages/logging.js";
 import { renderLayoutPage } from "./pages/layout.js";
+import { renderCasbinPage } from "./pages/casbin.js";
+import { renderPermEnginePage } from "./pages/perm-engine.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "range" | "access" | "logging" | "layout" | "version";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine";
 type Ver = "v1" | "v2";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "logging", "layout", "version"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine"] as const;
 
 // Sheets that depend on the active version
-const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "access", "logging"];
+const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging"];
 
 function sheetFromPath(pathname: string): SheetId {
   const seg = pathname.replace(/^\/+|\/+$/g, "").split("/")[0];
@@ -116,6 +118,9 @@ const scenarioContainer = document.getElementById("scenario-container")!;
 // Grant sheet refs
 const grantContainer = document.getElementById("grant-container")!;
 
+// Casbin sheet refs
+const casbinContainer = document.getElementById("casbin-container")!;
+
 // Range sheet refs
 const rangeContainer = document.getElementById("range-container")!;
 
@@ -130,6 +135,9 @@ const layoutContainer = document.getElementById("layout-container")!;
 
 // Version sheet refs
 const versionContainer = document.getElementById("version-container")!;
+
+// Permission Engine sheet refs
+const permEngineContainer = document.getElementById("perm-engine-container")!;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Status bar (version-aware)
@@ -151,6 +159,7 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
     case "grant":      return ver === "v1"
       ? { shape: "기능 6 × 역할 5 = 30 조합",          slots: "권한 부여 관리 (v1 읽기전용)" }
       : { shape: "기능 7 × 역할 6 = 42 조합",          slots: "권한 부여 관리" };
+    case "casbin":     return { shape: "Casbin RBAC/ABAC 권한 모델 해설", slots: "qa-sdk ↔ Casbin 대비" };
     case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
     case "access":     return ver === "v1"
       ? { shape: "perm_svc(10) × role(5) + event(7×2)", slots: "접근 제어" }
@@ -160,6 +169,7 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
       : { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v2)" };
     case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
+    case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "v1→v2 마이그레이션 비교" };
   }
 }
 
@@ -213,6 +223,9 @@ function updateFormulaBar(): void {
     fbFormula.textContent = ver === "v1"
       ? "grantedRoles[featureId] = Set<role>  |  v1 기본 부여 (읽기전용)"
       : "grantedRoles[featureId] = Set<role>  |  PATCH /api/grants → grantState 즉시 반영";
+  } else if (sheet === "casbin") {
+    nameBox.textContent = "—";
+    fbFormula.textContent = "Casbin enforce(sub, obj, act)  ↔  qa-sdk permAddr = encode([svc, role])  |  RBAC → ABAC 확장";
   } else if (sheet === "range") {
     nameBox.textContent = "—";
     fbFormula.textContent = "range([fixed₁, n, fixed₃, fixed₄]) → 매칭 주소 집합  |  와일드카드 차원 탐색";
@@ -230,6 +243,9 @@ function updateFormulaBar(): void {
   } else if (sheet === "version") {
     nameBox.textContent = "—";
     fbFormula.textContent = `활성 버전: ${ver}  |  role ${ver === "v1" ? "5" : "6"}개 · event ${ver === "v1" ? "7" : "9"}개 · feature ${ver === "v1" ? "6" : "7"}개`;
+  } else if (sheet === "perm-engine") {
+    nameBox.textContent = "—";
+    fbFormula.textContent = `PermissionSet([feature, role]) → bitmask  |  O(1) grant/check  |  migratePermissions(v1 → v2)`;
   } else {
     const { selectedValue, fixedInitiator } = state.evt;
     const initLabel = fixedInitiator === 1 ? "web" : "mobile";
@@ -302,11 +318,13 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "event")      repaintEvent();
     if (id === "scenario")   renderScenarioPage(scenarioContainer, state.ver);
     if (id === "grant")      renderGrantPage(grantContainer, state.ver);
+    if (id === "casbin")     renderCasbinPage(casbinContainer, state.ver);
     if (id === "range")      renderRangePage(rangeContainer);
     if (id === "access")     renderAccessPage(accessContainer, state.ver);
     if (id === "logging")    renderLoggingPage(loggingContainer, state.ver);
     if (id === "layout")     renderLayoutPage(layoutContainer);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
+    if (id === "perm-engine") renderPermEnginePage(permEngineContainer);
   }
 
   updateStatusBar();

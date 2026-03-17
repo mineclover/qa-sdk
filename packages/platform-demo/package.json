@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "demo-snapshot": "workspace:*",
+    "permission-engine": "workspace:*",
     "weighted-index": "workspace:*",
     "weighted-ui": "workspace:*"
   },
