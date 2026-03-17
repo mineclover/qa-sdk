@@ -189,6 +189,117 @@ activeRanges(capacity, reservedRanges, inactiveRanges, openRanges): [number, num
 positionsToConstraint(positions): string
 ```
 
+### Gate-Aware Query API
+
+`gate-aware-query.ts`는 RelationalEngine(의미적, 동기) + GateEngine(물리적, 비동기)을 결합 없이 합성하는 유틸리티.
+
+```ts
+import { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from "index-meta";
+import type { GateAwareResult } from "index-meta";
+
+// matchRanges 결과에서 gate 차단 주소 제거
+// mode: "encodable" | "decodable" | "active"
+gateFilterRanges(ranges, gateRecord, mode): [number, number][]
+
+// policy 결과 + gate 상태 → GateAwareResult
+// policyResult: 이미 계산된 resolvePolicy 결과 (null이면 policy deny)
+// gateRecord: AddressStateStore에서 조회한 캐시 레코드 (null이면 전체 active)
+gateAwareResolve<T>(policyResult, address, gateRecord): GateAwareResult<T> | null
+
+// 규칙 거부 position → DimStateSpec[] 변환 (선택적 gate 반영용)
+buildDenialSpecs(deniedPositions, dimIndex, state?): DimStateSpec[]
+
+// GateAwareResult<T>
+interface GateAwareResult<T> {
+  value: T | T[];
+  matchedRules: PolicyRule<T>[];
+  strategy: ConflictStrategy;
+  gateBlocked: boolean;
+  gateState: AddressState | null;
+  permitted: boolean;  // policy allow AND gate active
+}
+```
+
+### AddressProtocolManager API
+
+`AddressProtocolManager`(APM)는 AddressConfig 기반 프로토콜 관리 + 텍스트 프로토콜 자동 감지를 담당한다.
+
+```ts
+import { AddressProtocolManager } from "index-meta";
+import type { FallbackStats } from "index-meta";
+
+const apm = new AddressProtocolManager(indexId, versionId, size, addressConfig?);
+
+// 프로토콜별 직렬화/파싱
+apm.serialize(vv: VersionedValue, protocol?: string): string
+apm.parse(input: string, protocol?: string): VersionedValue
+
+// 프로토콜 자동 감지 (파싱 없이 포맷만 판별)
+apm.detect(input: string): string | null  // "colon" | "uri" | "compact" | "layout" | null
+
+// layout 프로토콜의 fallback 통계
+apm.getFallbackStats(): FallbackStats
+
+// 지원 프로토콜 목록
+apm.protocols: readonly string[]
+```
+
+### PrefixDecoder API
+
+`PrefixDecoder`는 MetaCodec + AddressProtocolManager를 결합한 decode 전용 facade. `number | string` 혼합 입력 자동 처리, index_ref 1-level 확장, 프로토콜 감지를 제공한다. `index-meta/decode` 경량 진입점으로 사용.
+
+```ts
+import { PrefixDecoder } from "index-meta/decode";
+import type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "index-meta/decode";
+
+// 생성: DecodeMap + 선택적 refs (index_ref 확장용)
+const decoder = new PrefixDecoder(config: PrefixDecoderConfig);
+// PrefixDecoderConfig = { map: DecodeMap; refs?: Record<string, DecodeMap> }
+
+// ── Identity ──
+decoder.indexId: string
+decoder.versionId: string
+decoder.size: number
+decoder.shape: readonly number[]
+decoder.strides: readonly number[]
+decoder.dimIds: readonly string[]
+
+// ── L1 Address: input → VersionedValue ──
+// number → 직접 VersionedValue 구성, string → 프로토콜 자동 감지 후 파싱
+decoder.resolve(input: number | string): VersionedValue
+
+// ── L2 Info: input → entity record ──
+decoder.decode(input: number | string): Record<string, EntityId>
+
+// ── L2+ Deep: index_ref dim을 1-level 확장 ──
+decoder.decodeDeep(input: number | string): PrefixDeepDecodeResult
+// → { entities: Record<string, EntityId>, refs: Record<string, Record<string, EntityId>> }
+// refs에 해당 dim의 참조 index decode 결과 포함. ref 코덱 없으면 빈 객체.
+
+// ── Batch ──
+decoder.decodeBatch(inputs: (number | string)[]): Record<string, EntityId>[]
+
+// ── Query (MetaCodec 위임) ──
+decoder.matchRanges(partial: Record<string, EntityId | null>): [number, number][]
+decoder.enumerate(partial: Record<string, EntityId | null>): number[]
+
+// ── Ref ──
+decoder.hasRef(dimId: string): boolean
+decoder.resolveRef(value: number, dimId: string): Record<string, EntityId>
+
+// ── Encode (대칭) ──
+decoder.encode(entities: Record<string, EntityId>): VersionedValue
+
+// ── Serialize (APM 위임) ──
+decoder.serialize(vv: VersionedValue, protocol?: string): string
+
+// ── Detect (프로토콜 감지) ──
+decoder.detect(input: string): string | null  // "colon" | "uri" | "compact" | "layout" | null
+
+// ── Export ──
+decoder.toDecodeMap(): DecodeMap
+```
+
 ### Resolver API
 
 `MetaResolver`는 MetaRegistry의 데이터를 외부 소비용 번들로 변환한다. DB 동기화, 프론트엔드 전송, API 응답 등에 사용.
@@ -200,6 +311,10 @@ const resolver = new MetaResolver(registry);
 
 // 특정 version의 디코딩 최소 번들 (외부에서 MetaRegistry 없이 decode 가능)
 resolver.getDecodeMap(indexId: string, versionId: string): DecodeMap
+
+// DecodeMap + index_ref 참조 DecodeMap 번들 (PrefixDecoder 생성용)
+// JSON 직렬화 → 마이크로서비스 전송 → new PrefixDecoder(bundle) 패턴
+resolver.getDecodeMapBundle(indexId: string, versionId: string): PrefixDecoderConfig
 
 // dim의 모든 snapshot (버전 range). 각 snapshot에 capacity/headroom 포함.
 resolver.getDimRange(dimId: string): DimRange

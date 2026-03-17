@@ -22,9 +22,11 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 | **index_ref DAG 탐색** | 인덱스 간 참조 체인을 따라가며 재귀 decode하거나, 하위 조건으로 상위 범위를 계산 | [`cross-index-query.ts`](src/cross-index-query.ts) — `deepDecode`/`composeQuery` |
 | **마이크로서비스 분산 설계** | PrefixRouter로 prefix → D1 DB 라우팅. DistributedStoreClient가 멀티 스토어 조율 | [`distributed-client.ts`](src/distributed-client.ts), [`prefix-router.ts`](src/prefix-router.ts) |
 | **DecodeMap 캐싱** | MetaCodec은 DecodeMap만으로 동작. 레지스트리 없이 decode 번들을 캐싱해 외부 서비스에 배포 가능 | [`meta-codec.ts:259`](src/meta-codec.ts#L259) |
+| **PrefixDecoder facade** | MetaCodec + APM 결합 decode 전용 facade. `number \| string` 혼합 입력 자동 처리, index_ref 1-level 확장(`decodeDeep`), 프로토콜 감지(`detect`). `index-meta/decode` 경량 진입점 | [`prefix-decoder.ts`](src/prefix-decoder.ts), [`decode.ts`](src/decode.ts) |
 | **UUID 주소 표현** | layout 프로토콜로 semantic address를 UUID(128bit) 포맷으로 직렬화/파싱 | [`pack-format.ts:94`](../weighted-index/src/pack-format.ts#L94), [`semantic-address.ts:383`](../weighted-index/src/semantic-address.ts#L383) |
 | **게이트 제어** | 4-state 모델(active/inactive/open/reserved)로 주소별 encode/decode 허용 여부를 O(log n)으로 판정 | [`invalid-ranges.ts`](src/invalid-ranges.ts) |
 | **정책 해석** | 좌표 패턴 기반 규칙 매칭, 충돌 감지, 전략별 해석(most-specific, priority, first-match, collect) | [`policy-resolver.ts`](src/policy-resolver.ts) |
+| **Gate-Aware Query** | RelationalEngine(의미적) + GateEngine(물리적) 합성. policy 결과에 gate 상태 결합, 범위 필터링(encodable/decodable/active 모드) | [`gate-aware-query.ts`](src/gate-aware-query.ts) |
 | **Address Range 캐시** | `calcAddressRanges` 결과를 DB에 사전 계산·저장. 런타임 O(log n) binary search로 판정. 고차원 비연속 OR 조합의 성능 문제 해결 | [`address-range-cache.ts`](src/address-range-cache.ts) |
 | **범용 SQL 드라이버** | `SqlDialect` 기반 DB 추상화. SQLite/PostgreSQL/D1/DuckDB/ClickHouse 지원을 위한 dialect 플래그 + upsert + batch | [`sql-store.ts`](src/adapters/sql-store.ts) |
 
@@ -44,7 +46,7 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 | **주소 예측 가능성** | 주소 공간이 결정적(deterministic)이므로 하나의 주소를 알면 같은 스키마의 다른 주소를 열거할 수 있다. 주소 자체에 난수화나 암호화가 없음 | 주소를 외부에 노출하지 않거나, 전송 계층에서 암호화. 주소는 내부 식별자로만 사용 권장 |
 | **soft 삭제 누적** | entries는 append-only이므로 inactive 처리된 항목도 주소 공간을 영구적으로 점유. shape가 줄지 않음 | 정상 운영 중에는 headroom 내에서 관리. inactive 비율이 높아지면 새 스냅샷 버전으로 마이그레이션 |
 | **영구 제거 = 마이그레이션** | inactive 항목을 주소 공간에서 완전히 제거하려면 새 스냅샷을 만들고 `DimSnapshotMigration.indexMap`으로 position을 재매핑해야 한다. in-place compaction 없음 | [`migrate-address.ts`](src/migrate-address.ts)의 read-repair 패턴으로 점진적 전환. 일괄 마이그레이션 불필요 |
-| **Number 정밀도 한계** | `size = product(shape)`이므로 dim이 많거나 entries가 많으면 `Number.MAX_SAFE_INTEGER`(`2^53`)에 도달. 13 hex chars 이상에서 캡 발생 | BigInt 대안 필요 (미구현) |
+| **Number 정밀도 한계** | `size = product(shape)`이므로 dim이 많거나 entries가 많으면 `Number.MAX_SAFE_INTEGER`(`2^53`)에 도달. 13 hex chars 이상에서 캡 발생 | `WeightedIndexBig` + `calcAddressRangesBig` 사용 (5~20x 느림). Capacity Guard([docs/capacity-guard.md](docs/capacity-guard.md))로 `numberType` 선언 및 사전 검증 |
 
 ---
 
@@ -79,7 +81,8 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 │  Tier 5: 인코딩 / 디코딩                                     │
 │  MetaRegistry (주소 게이트웨이: 직렬화 + 코덱 생성)           │
 │  MetaCodec (독립 encode/decode, LabelRegistry+PrefixCodec) │
-│  MetaResolver (외부 소비용 DecodeMap 번들)                    │
+│  MetaResolver (외부 소비용 DecodeMap 번들 + ref 번들)         │
+│  PrefixDecoder (decode facade: mixed input + ref 확장)      │
 │  createIndexSDK → IndexClient (경량 소비 레이어)              │
 ├─────────────────────────────────────────────────────────────┤
 │  Tier 6: 데이터 운영                                         │
@@ -159,9 +162,13 @@ import { createIndexSDK } from "index-meta/client";
 
 // Node.js 백엔드 — 전체 진입점 (SQL 어댑터 포함)
 import { createIndexSDK } from "index-meta";
+
+// 마이크로서비스 — decode 전용 최소 진입점 (MetaRegistry 없이 동작)
+import { PrefixDecoder } from "index-meta/decode";
 ```
 
 `index-meta/client`는 `better-sqlite3`·SQL 어댑터를 포함하지 않는 경량 번들이다.
+`index-meta/decode`는 `PrefixDecoder` + `MetaCodec` + `AddressProtocolManager`만 포함하는 decode 전용 번들이다.
 
 ### SDK 정의 (공유 패키지)
 
@@ -244,6 +251,93 @@ interface IndexClient {
 | `entries` | 바인딩된 version의 dim entries 배열 |
 | `constants` | entries를 enum-like 객체로 반환 |
 | `toDecodeMap` | DecodeMap 추출 (다른 서비스로 전달해 독립 decode) |
+
+---
+
+## PrefixDecoder (decode 전용 facade)
+
+마이크로서비스에서 중앙 레지스트리 없이 DecodeMap 번들만으로 decode하는 facade. `number | string` 혼합 입력을 자동 처리하고, index_ref dim의 1-level 확장을 지원한다.
+
+### 서버 → 클라이언트 흐름
+
+```ts
+// ── 서버: 번들 생성 ─────────────────────────────────────
+import { MetaResolver } from "index-meta";
+
+const resolver = new MetaResolver(registry);
+const bundle = resolver.getDecodeMapBundle("permission", "v1");
+// → { map: DecodeMap, refs: { service: DecodeMap } }
+// JSON으로 직렬화해 마이크로서비스에 전송
+
+// ── 클라이언트: decode ──────────────────────────────────
+import { PrefixDecoder } from "index-meta/decode";
+
+const decoder = new PrefixDecoder(bundle);
+
+// number 입력
+decoder.decode(42);
+// → { perm_svc: 3, role: "editor" }
+
+// string 입력 (프로토콜 자동 감지)
+decoder.decode("permission:v1:42");
+// → { perm_svc: 3, role: "editor" }
+
+// 프로토콜 감지만 (파싱 없이)
+decoder.detect("permission:v1:42");    // → "colon"
+decoder.detect("wi://permission/v1/0"); // → "uri"
+
+// index_ref 1-level 확장
+decoder.decodeDeep(42);
+// → {
+//     entities: { perm_svc: 3, role: "editor" },
+//     refs: { perm_svc: { env: "prod", region: "asia" } }
+//   }
+
+// batch decode (number/string 혼합)
+decoder.decodeBatch([0, "permission:v1:5", 17]);
+
+// encode (대칭)
+decoder.encode({ perm_svc: 3, role: "editor" });
+// → { indexId: "permission", versionId: "v1", value: 10 }
+```
+
+### PrefixDecoder API
+
+```ts
+interface PrefixDecoder {
+  // Identity
+  readonly indexId: string;
+  readonly versionId: string;
+  readonly size: number;
+  readonly shape: readonly number[];
+  readonly strides: readonly number[];
+  readonly dimIds: readonly string[];
+
+  // Format detection
+  detect(input: string): string | null;
+
+  // L1 Address
+  resolve(input: number | string): VersionedValue;
+
+  // L2 Info
+  decode(input: number | string): Readonly<Record<string, EntityId>>;
+  decodeBatch(inputs: readonly (number | string)[]): Readonly<Record<string, EntityId>>[];
+  decodeDeep(input: number | string): PrefixDeepDecodeResult;
+
+  // Query
+  matchRanges(partial: Record<string, EntityId | null>): [number, number][];
+  enumerate(partial: Record<string, EntityId | null>): number[];
+
+  // Ref
+  resolveRef(value: number, dimId: string): Readonly<Record<string, EntityId>>;
+  hasRef(dimId: string): boolean;
+
+  // Encode
+  encode(entities: Record<string, EntityId>): VersionedValue;
+  serialize(vv: VersionedValue, protocol?: string): string;
+  toDecodeMap(): DecodeMap;
+}
+```
 
 ---
 
@@ -743,6 +837,29 @@ decodableRanges(capacity, reservedRanges, openRanges)              // active + i
 activeRanges(capacity, reservedRanges, inactiveRanges, openRanges) // active만
 ```
 
+### Gate-Aware Query (policy + gate 합성)
+
+RelationalEngine(의미적)과 GateEngine(물리적)의 결과를 결합 없이 합성한다.
+
+```ts
+import { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from "index-meta";
+import { resolvePolicy } from "index-meta";
+import type { GateAwareResult } from "index-meta";
+
+// matchRanges 결과에서 gate 차단 주소 제거
+const filteredRanges = gateFilterRanges(ranges, gateRecord, "encodable");
+// mode: "encodable" | "decodable" | "active"
+
+// policy 결과 + gate 상태 → 통합 판정
+const policyResult = resolvePolicy(coord, rules, shape, "most-specific");
+const result: GateAwareResult<string> | null = gateAwareResolve(policyResult, address, gateRecord);
+// result.permitted = policy allow AND gate active
+// result.gateBlocked = gate 상태가 active가 아닌 경우
+
+// 규칙 거부 position → DimStateSpec 변환 (선택적 gate 반영)
+const specs = buildDenialSpecs([3, 5, 6], 0); // → [{ dimIndex: 0, state: "reserved", coords: "3,5-6" }]
+```
+
 ---
 
 ## 범용 SQL 드라이버
@@ -869,7 +986,8 @@ export { createIndexSDK } from "index-meta";              // 또는 "index-meta/
 export type { IndexSDK, IndexClient } from "index-meta";  // 또는 "index-meta/client"
 
 // ── 인코딩/디코딩 ────────────────────────────────────
-export { MetaRegistry, MetaCodec, MetaResolver } from "index-meta";
+export { MetaRegistry, MetaCodec, MetaResolver, PrefixDecoder } from "index-meta";
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "index-meta";
 
 // ── 스키마 선언 ──────────────────────────────────────
 export { defineTable, compileSchema } from "index-meta";
@@ -915,6 +1033,8 @@ export { matchRules, resolvePolicy, detectConflicts } from "index-meta";
 // ── 게이트 제어 ──────────────────────────────────────
 export { ADDRESS_GATE, computeStateRanges, checkGate, classifyAddress } from "index-meta";
 export { encodableRanges, decodableRanges, activeRanges, positionsToConstraint } from "index-meta";
+export { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from "index-meta";
+export type { GateAwareResult } from "index-meta";
 export { InMemoryAddressStateStore } from "index-meta";
 export { SqlAddressStateStore } from "index-meta";
 export { InMemoryEntryFlagStore } from "index-meta";
@@ -977,17 +1097,18 @@ export {
 ## 빌드
 
 ```bash
-pnpm build       # tsup → dist/ (ESM + CJS, 2 entry points)
+pnpm build       # tsup → dist/ (ESM + CJS, 3 entry points)
 pnpm test        # vitest
 pnpm typecheck   # tsc --noEmit
 ```
 
-tsup이 두 진입점(`src/index.ts`, `src/client.ts`)을 빌드하며, 공통 코드는 chunk로 분리된다.
+tsup이 세 진입점(`src/index.ts`, `src/client.ts`, `src/decode.ts`)을 빌드하며, 공통 코드는 chunk로 분리된다.
 
 | 진입점 | import 경로 | 포함 내용 | better-sqlite3 |
 |---|---|---|---|
 | `index.ts` | `"index-meta"` | 전체 (SQL 어댑터, 마이그레이션, 분산 클라이언트) | ✓ (external) |
 | `client.ts` | `"index-meta/client"` | SDK + 코어 (MetaRegistry, MetaCodec, MetaResolver) | ✗ |
+| `decode.ts` | `"index-meta/decode"` | PrefixDecoder + MetaCodec + APM (decode 전용 최소) | ✗ |
 
 ---
 
