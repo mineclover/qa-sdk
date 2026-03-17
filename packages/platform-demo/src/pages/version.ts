@@ -1,81 +1,51 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  버전 변경 — v1 / v2 비교 및 API 프로토콜 설명
+//  버전 변경 — v1 / v2 비교 (SSOT 기반)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// 이 시트는 v1→v2 마이그레이션의 교육 목적으로 정적 데이터를 사용합니다.
-// 동적 API 호출 대신 하드코딩하여 변경 사항을 명확하게 대비하여 보여줍니다.
-// (역할 차원 5→6, 이벤트 차원 7→9, 기능 분리 등의 차이를 한눈에 비교)
+// weighted-index의 demo-snapshot(SSOT)에서 차원 데이터를 직접 가져오고,
+// 기능 × 역할 매트릭스는 API에서 실시간으로 조회합니다.
+// 하드코딩 없이 실제 구현 데이터를 기반으로 v1/v2 차이를 표현합니다.
 //
 
-// ── Static data ─────────────────────────────────────────────────────────────
+import {
+  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  DEMO_INITIATORS, DEMO_KO,
+  DEMO_SVC_SHAPE, DEMO_SVC_STRIDES,
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+  demoRoleStride, demoEvtStride,
+  demoCalcPermAddr, demoCalcEvtAddr,
+  type DemoVer,
+} from "demo-snapshot";
+import { fetchFeatures, type FeaturesResponse } from "../registry.js";
 
-const ROLES_V1 = [
-  { id: "admin",     ko: "관리자",   isNew: false },
-  { id: "developer", ko: "개발자",   isNew: false },
-  { id: "operator",  ko: "운영자",   isNew: false },
-  { id: "viewer",    ko: "뷰어",     isNew: false },
-  { id: "readonly",  ko: "읽기전용", isNew: false },
-];
+type Ver = DemoVer;
 
-const ROLES_V2 = [
-  { id: "admin",     ko: "관리자",   isNew: false },
-  { id: "developer", ko: "개발자",   isNew: false },
-  { id: "operator",  ko: "운영자",   isNew: false },
-  { id: "customer",  ko: "고객",     isNew: true  },
-  { id: "viewer",    ko: "뷰어",     isNew: false },
-  { id: "readonly",  ko: "읽기전용", isNew: false },
-];
+// ── SSOT 파생 메타데이터 ──────────────────────────────────────────────────────
 
-const EVENTS_V1 = [
-  { id: "user.login",      ko: "로그인",   isNew: false },
-  { id: "user.logout",     ko: "로그아웃", isNew: false },
-  { id: "order.created",   ko: "주문 생성", isNew: false },
-  { id: "order.paid",      ko: "주문 결제", isNew: false },
-  { id: "payment.failed",  ko: "결제 실패", isNew: false },
-  { id: "session.expired", ko: "세션 만료", isNew: false },
-  { id: "config.changed",  ko: "설정 변경", isNew: false },
-];
+interface DimEntry { id: string; ko: string; pos: number; isNew: boolean }
 
-const EVENTS_V2 = [
-  { id: "user.login",               ko: "로그인",    isNew: false },
-  { id: "user.logout",              ko: "로그아웃",  isNew: false },
-  { id: "order.created",            ko: "주문 생성",  isNew: false },
-  { id: "order.paid",               ko: "주문 결제",  isNew: false },
-  { id: "payment.failed",           ko: "결제 실패",  isNew: false },
-  { id: "session.expired",          ko: "세션 만료",  isNew: false },
-  { id: "config.changed",           ko: "설정 변경",  isNew: false },
-  { id: "payment.cancel_requested", ko: "취소 요청",  isNew: true  },
-  { id: "payment.cancel_approved",  ko: "취소 승인",  isNew: true  },
-];
+function rolesFor(ver: Ver): DimEntry[] {
+  const entries = ver === "v1" ? DEMO_ROLES_V1 : DEMO_ROLES_V2;
+  const v1Set = new Set<string>(DEMO_ROLES_V1);
+  return [...entries].map((id, i) => ({
+    id, ko: DEMO_KO.role[id] ?? id, pos: i + 1,
+    isNew: ver === "v2" && !v1Set.has(id),
+  }));
+}
 
-// permission × specific roles at payment svc (permSvcPos=7) for address examples
-const PERM_EXAMPLES = [
-  { role: "operator", roleKo: "운영자", v1Pos: 3, v2Pos: 3 },
-  { role: "customer", roleKo: "고객",   v1Pos: null, v2Pos: 4 },
-  { role: "viewer",   roleKo: "뷰어",   v1Pos: 4, v2Pos: 5 },
-];
+function eventsFor(ver: Ver): DimEntry[] {
+  const entries = ver === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2;
+  const v1Set = new Set<string>(DEMO_EVENTS_V1);
+  return [...entries].map((id, i) => ({
+    id, ko: DEMO_KO.event[id] ?? id, pos: i + 1,
+    isNew: ver === "v2" && !v1Set.has(id),
+  }));
+}
 
-const FEATURES_V1 = [
-  { id: "product_list",    name: "상품 목록 조회", grantedRoles: ["admin","developer","operator","viewer","readonly"] },
-  { id: "order_list",      name: "주문 목록 조회", grantedRoles: ["admin","developer","operator","viewer"] },
-  { id: "payment_history", name: "결제 내역 조회", grantedRoles: ["admin","developer","operator"] },
-  { id: "payment_cancel",  name: "결제 취소",      grantedRoles: ["admin","developer","operator"] },
-  { id: "user_mgmt",       name: "사용자 관리",    grantedRoles: ["admin"] },
-  { id: "config_change",   name: "설정 변경",      grantedRoles: ["admin"] },
-];
-
-const FEATURES_V2 = [
-  { id: "product_list",          name: "상품 목록 조회", grantedRoles: ["admin","developer","operator","customer","viewer","readonly"], status: "unchanged" },
-  { id: "order_list",            name: "주문 목록 조회", grantedRoles: ["admin","developer","operator","viewer"],                       status: "unchanged" },
-  { id: "payment_history",       name: "결제 내역 조회", grantedRoles: ["admin","developer","operator"],                               status: "unchanged" },
-  { id: "payment_cancel_req",    name: "결제 취소 요청", grantedRoles: ["admin","customer"],                                           status: "added"     },
-  { id: "payment_cancel_approve",name: "결제 취소 승인", grantedRoles: ["admin","operator"],                                           status: "added"     },
-  { id: "user_mgmt",             name: "사용자 관리",    grantedRoles: ["admin"],                                                     status: "unchanged" },
-  { id: "config_change",         name: "설정 변경",      grantedRoles: ["admin"],                                                     status: "unchanged" },
-];
-
-const ALL_ROLES_V1 = ["admin","developer","operator","viewer","readonly"];
-const ALL_ROLES_V2 = ["admin","developer","operator","customer","viewer","readonly"];
+function dimPos(entries: DimEntry[], id: string): number | null {
+  return entries.find(e => e.id === id)?.pos ?? null;
+}
 
 function evtTagClass(id: string): string {
   if (id.startsWith("user."))    return "evt-tag evt-tag-user";
@@ -86,27 +56,36 @@ function evtTagClass(id: string): string {
   return "evt-tag";
 }
 
+// 주소 예시에 사용할 서비스: payment:prod:shop (value=46)
+const EXAMPLE_SVC_VALUE = 46;
+const EXAMPLE_PERM_SVC_POS = DEMO_PERM_SVC_VALUES.indexOf(EXAMPLE_SVC_VALUE) + 1;
+const EXAMPLE_EVT_SVC_POS  = DEMO_EVT_SVC_VALUES.indexOf(EXAMPLE_SVC_VALUE) + 1;
+
+// ── Feature data (API) ───────────────────────────────────────────────────────
+
+interface FeatureData { v1: FeaturesResponse; v2: FeaturesResponse }
+
 // ── Section builders ─────────────────────────────────────────────────────────
 
-function buildRolesSection(ver: "v1" | "v2"): HTMLElement {
+function buildRolesSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const roles = ver === "v1" ? ROLES_V1 : ROLES_V2;
-  const count = roles.length;
+  const roles = rolesFor(ver);
+  const addedCount = roles.filter(r => r.isNew).length;
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">👤</span>
       <span class="vd-sec-title">역할 (role) 차원</span>
-      <span class="vd-shape-badge">${count}개 항목</span>
-      ${ver === "v2" ? '<span class="vd-tag-new">+1 추가</span>' : ""}
+      <span class="vd-shape-badge">${roles.length}개 항목</span>
+      ${addedCount > 0 ? `<span class="vd-tag-new">+${addedCount} 추가</span>` : ""}
     </div>
     <div class="vd-sec-body">
       <div class="vd-dim-list">
-        ${roles.map((r, i) => `
+        ${roles.map(r => `
           <div class="vd-dim-row ${r.isNew ? "vd-row-added" : ""}">
-            <span class="vd-dim-pos">${i + 1}</span>
+            <span class="vd-dim-pos">${r.pos}</span>
             <span class="role-tag role-tag-${r.id}">${r.id}</span>
             <span class="vd-dim-ko">${r.ko}</span>
             ${r.isNew ? '<span class="vd-badge-new">NEW</span>' : ""}
@@ -118,25 +97,25 @@ function buildRolesSection(ver: "v1" | "v2"): HTMLElement {
   return sec;
 }
 
-function buildEventsSection(ver: "v1" | "v2"): HTMLElement {
+function buildEventsSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const events = ver === "v1" ? EVENTS_V1 : EVENTS_V2;
-  const count = events.length;
+  const events = eventsFor(ver);
+  const addedCount = events.filter(e => e.isNew).length;
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">◈</span>
       <span class="vd-sec-title">이벤트명 (event_name) 차원</span>
-      <span class="vd-shape-badge">${count}개 항목</span>
-      ${ver === "v2" ? '<span class="vd-tag-new">+2 추가</span>' : ""}
+      <span class="vd-shape-badge">${events.length}개 항목</span>
+      ${addedCount > 0 ? `<span class="vd-tag-new">+${addedCount} 추가</span>` : ""}
     </div>
     <div class="vd-sec-body">
       <div class="vd-dim-list">
-        ${events.map((e, i) => `
+        ${events.map(e => `
           <div class="vd-dim-row ${e.isNew ? "vd-row-added" : ""}">
-            <span class="vd-dim-pos">${i + 1}</span>
+            <span class="vd-dim-pos">${e.pos}</span>
             <span class="${evtTagClass(e.id)}">${e.id}</span>
             <span class="vd-dim-ko">${e.ko}</span>
             ${e.isNew ? '<span class="vd-badge-new">NEW</span>' : ""}
@@ -148,17 +127,27 @@ function buildEventsSection(ver: "v1" | "v2"): HTMLElement {
   return sec;
 }
 
-function buildIndexShapeSection(ver: "v1" | "v2"): HTMLElement {
+function buildIndexShapeSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const perm = ver === "v1"
-    ? { shape: "[10, 5]", slots: 50,  stride: 5,  formula: "(perm_svc−1)×5 + (role−1)",  max: 49,  prefix: "permission:v1" }
-    : { shape: "[10, 6]", slots: 60,  stride: 6,  formula: "(perm_svc−1)×6 + (role−1)",  max: 59,  prefix: "permission:v2" };
+  const roleCount = (ver === "v1" ? DEMO_ROLES_V1 : DEMO_ROLES_V2).length;
+  const evtCount = (ver === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2).length;
+  const initCount = DEMO_INITIATORS.length;
+  const permSvcCount = DEMO_PERM_SVC_VALUES.length;
+  const evtSvcCount = DEMO_EVT_SVC_VALUES.length;
 
-  const evt = ver === "v1"
-    ? { shape: "[10, 7, 2]", slots: 140, stride: 14, formula: "(svc−1)×14 + (event−1)×2 + (initiator−1)", max: 139, prefix: "event:v1" }
-    : { shape: "[10, 9, 2]", slots: 180, stride: 18, formula: "(svc−1)×18 + (event−1)×2 + (initiator−1)", max: 179, prefix: "event:v2" };
+  const roleStride = demoRoleStride(ver);
+  const evtStride = demoEvtStride(ver);
+  const permSlots = permSvcCount * roleCount;
+  const evtSlots = evtSvcCount * evtCount * initCount;
+
+  const svcShape = DEMO_SVC_SHAPE;
+  const svcSlots = svcShape.reduce((a, b) => a * b, 1);
+  const svcDimNames = ["env", "region", "svc", "ns"];
+  const svcFormula = DEMO_SVC_STRIDES.map((s, i) =>
+    s === 1 ? `(${svcDimNames[i]}−1)` : `(${svcDimNames[i]}−1)×${s}`
+  ).join(" + ");
 
   const changed = ver === "v2";
 
@@ -173,48 +162,48 @@ function buildIndexShapeSection(ver: "v1" | "v2"): HTMLElement {
 
         <div class="vd-index-card ${changed ? "vd-card-changed" : ""}">
           <div class="vd-index-card-header">
-            <code class="vd-addr-prefix">${perm.prefix}</code>
-            <span class="vd-shape-badge">${perm.shape}</span>
-            <span class="vd-slot-count">${perm.slots}슬롯</span>
+            <code class="vd-addr-prefix">permission:${ver}</code>
+            <span class="vd-shape-badge">[${permSvcCount}, ${roleCount}]</span>
+            <span class="vd-slot-count">${permSlots}슬롯</span>
           </div>
           <div class="vd-formula-box">
             <span class="vd-formula-label">encode</span>
-            <span class="vd-formula-expr">${perm.formula}</span>
+            <span class="vd-formula-expr">(perm_svc−1)×${roleStride} + (role−1)</span>
           </div>
           <div class="vd-formula-meta">
-            max value = <strong>${perm.max}</strong>
-            &nbsp;·&nbsp; role stride = <strong>×${perm.stride}</strong>
+            max value = <strong>${permSlots - 1}</strong>
+            &nbsp;·&nbsp; role stride = <strong>×${roleStride}</strong>
           </div>
         </div>
 
         <div class="vd-index-card ${changed ? "vd-card-changed" : ""}">
           <div class="vd-index-card-header">
-            <code class="vd-addr-prefix">${evt.prefix}</code>
-            <span class="vd-shape-badge">${evt.shape}</span>
-            <span class="vd-slot-count">${evt.slots}슬롯</span>
+            <code class="vd-addr-prefix">event:${ver}</code>
+            <span class="vd-shape-badge">[${evtSvcCount}, ${evtCount}, ${initCount}]</span>
+            <span class="vd-slot-count">${evtSlots}슬롯</span>
           </div>
           <div class="vd-formula-box">
             <span class="vd-formula-label">encode</span>
-            <span class="vd-formula-expr">${evt.formula}</span>
+            <span class="vd-formula-expr">(svc−1)×${evtStride} + (event−1)×${initCount} + (initiator−1)</span>
           </div>
           <div class="vd-formula-meta">
-            max value = <strong>${evt.max}</strong>
-            &nbsp;·&nbsp; svc stride = <strong>×${evt.stride}</strong>
+            max value = <strong>${evtSlots - 1}</strong>
+            &nbsp;·&nbsp; svc stride = <strong>×${evtStride}</strong>
           </div>
         </div>
 
         <div class="vd-index-card">
           <div class="vd-index-card-header">
             <code class="vd-addr-prefix">service:v1</code>
-            <span class="vd-shape-badge">[5, 2, 5, 2]</span>
-            <span class="vd-slot-count">100슬롯</span>
+            <span class="vd-shape-badge">[${svcShape.join(", ")}]</span>
+            <span class="vd-slot-count">${svcSlots}슬롯</span>
           </div>
           <div class="vd-formula-box">
             <span class="vd-formula-label">encode</span>
-            <span class="vd-formula-expr">(env−1)×20 + (region−1)×10 + (svc−1)×2 + (ns−1)</span>
+            <span class="vd-formula-expr">${svcFormula}</span>
           </div>
           <div class="vd-formula-meta">
-            max value = <strong>99</strong>
+            max value = <strong>${svcSlots - 1}</strong>
             &nbsp;·&nbsp; <span style="color:#27ae60;font-weight:600">v1 유지 (변경 없음)</span>
           </div>
         </div>
@@ -225,11 +214,72 @@ function buildIndexShapeSection(ver: "v1" | "v2"): HTMLElement {
   return sec;
 }
 
-function buildFeaturesSection(ver: "v1" | "v2"): HTMLElement {
+function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const allRoles = ver === "v1" ? ALL_ROLES_V1 : ALL_ROLES_V2;
+  if (!data) {
+    sec.innerHTML = `
+      <div class="vd-sec-header">
+        <span class="vd-sec-icon">⊡</span>
+        <span class="vd-sec-title">기능 × 역할 접근 배정</span>
+      </div>
+      <div class="vd-sec-body"><p style="color:var(--text-muted)">로딩 중...</p></div>
+    `;
+    return sec;
+  }
+
+  const current = ver === "v1" ? data.v1 : data.v2;
+  const allRoles = current.roles;
+  const v1FeatureIds = new Set(data.v1.features.map(f => f.id));
+  const v2FeatureIds = new Set(data.v2.features.map(f => f.id));
+
+  // v1 grant lookup for diff
+  const v1Grants = new Map<string, Set<string>>();
+  for (const f of data.v1.features) v1Grants.set(f.id, new Set(f.grantedRoles));
+
+  const tbody = current.features.map(f => {
+    const isNew = ver === "v2" && !v1FeatureIds.has(f.id);
+    const grantedSet = new Set(f.grantedRoles);
+    const v1Set = v1Grants.get(f.id);
+
+    return `
+      <tr class="${isNew ? "vd-row-added" : ""}">
+        <td class="vd-feat-name">${f.name}</td>
+        ${allRoles.map(r => {
+          const has = grantedSet.has(r.id);
+          if (ver === "v1") {
+            return `<td class="vd-feat-cell ${has ? "vd-cell-ok" : "vd-cell-no"}">${has ? "✓" : "✗"}</td>`;
+          }
+          let cls = has ? "vd-cell-ok" : "vd-cell-no";
+          if (isNew) {
+            cls += " vd-cell-new";
+          } else if (v1Set) {
+            const had = v1Set.has(r.id);
+            if (had !== has) cls = has ? "vd-cell-ok vd-cell-gained" : "vd-cell-no vd-cell-lost";
+          }
+          return `<td class="vd-feat-cell ${cls}">${has ? "✓" : "✗"}</td>`;
+        }).join("")}
+        ${ver === "v2"
+          ? `<td class="vd-feat-status">${isNew
+              ? '<span class="vd-badge-new">NEW</span>'
+              : '<span class="vd-badge-unchanged">유지</span>'}</td>`
+          : ""}
+      </tr>
+    `;
+  }).join("");
+
+  const removedRows = ver === "v2"
+    ? data.v1.features
+        .filter(f => !v2FeatureIds.has(f.id))
+        .map(f => `
+          <tr class="vd-row-removed">
+            <td class="vd-feat-name" style="text-decoration:line-through;color:var(--text-muted)">${f.name}</td>
+            ${allRoles.map(() => `<td class="vd-feat-cell vd-cell-no">—</td>`).join("")}
+            <td class="vd-feat-status"><span class="vd-badge-removed">분리됨</span></td>
+          </tr>
+        `).join("")
+    : "";
 
   sec.innerHTML = `
     <div class="vd-sec-header">
@@ -243,53 +293,13 @@ function buildFeaturesSection(ver: "v1" | "v2"): HTMLElement {
           <thead>
             <tr>
               <th class="vd-feat-name-col">기능</th>
-              ${allRoles.map((r) => `<th><span class="role-tag role-tag-${r}">${r}</span></th>`).join("")}
+              ${allRoles.map(r => `<th><span class="role-tag role-tag-${r.id}">${r.id}</span></th>`).join("")}
               ${ver === "v2" ? '<th class="vd-feat-status-col">상태</th>' : ""}
             </tr>
           </thead>
           <tbody>
-            ${ver === "v1"
-              ? FEATURES_V1.map((f) => `
-                <tr>
-                  <td class="vd-feat-name">${f.name}</td>
-                  ${ALL_ROLES_V1.map((r) => {
-                    const has = f.grantedRoles.includes(r);
-                    return `<td class="vd-feat-cell ${has ? "vd-cell-ok" : "vd-cell-no"}">${has ? "✓" : "✗"}</td>`;
-                  }).join("")}
-                </tr>
-              `).join("")
-              : FEATURES_V2.map((f) => {
-                  const v1Feature = FEATURES_V1.find((fv1) =>
-                    fv1.id === f.id || (f.id.startsWith("payment_cancel") && fv1.id === "payment_cancel")
-                  );
-                  const rowClass = f.status === "added" ? "vd-row-added" : "";
-                  return `
-                    <tr class="${rowClass}">
-                      <td class="vd-feat-name">${f.name}</td>
-                      ${ALL_ROLES_V2.map((r) => {
-                        const has = f.grantedRoles.includes(r);
-                        const had = v1Feature?.grantedRoles.includes(r) ?? null;
-                        let cls = has ? "vd-cell-ok" : "vd-cell-no";
-                        if (f.status === "added") cls += " vd-cell-new";
-                        else if (had !== null && had !== has) cls = has ? "vd-cell-ok vd-cell-gained" : "vd-cell-no vd-cell-lost";
-                        return `<td class="vd-feat-cell ${cls}">${has ? "✓" : "✗"}</td>`;
-                      }).join("")}
-                      <td class="vd-feat-status">
-                        ${f.status === "added"
-                          ? '<span class="vd-badge-new">NEW</span>'
-                          : '<span class="vd-badge-unchanged">유지</span>'}
-                      </td>
-                    </tr>
-                  `;
-                }).join("")
-            }
-            ${ver === "v1" ? "" : `
-              <tr class="vd-row-removed">
-                <td class="vd-feat-name" style="text-decoration:line-through;color:var(--text-muted)">결제 취소 (payment_cancel)</td>
-                ${ALL_ROLES_V2.map(() => `<td class="vd-feat-cell vd-cell-no">—</td>`).join("")}
-                <td class="vd-feat-status"><span class="vd-badge-removed">분리됨</span></td>
-              </tr>
-            `}
+            ${tbody}
+            ${removedRows}
           </tbody>
         </table>
       </div>
@@ -298,30 +308,48 @@ function buildFeaturesSection(ver: "v1" | "v2"): HTMLElement {
   return sec;
 }
 
-function buildAddressExamplesSection(ver: "v1" | "v2"): HTMLElement {
+function buildAddressExamplesSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  // permission: payment (permSvcPos=7)
-  const permExamples = [
-    { role: "operator", ko: "운영자", v1: (7-1)*5+(3-1), v2: (7-1)*6+(3-1) },
-    { role: "customer", ko: "고객",   v1: null,           v2: (7-1)*6+(4-1) },
-    { role: "viewer",   ko: "뷰어",   v1: (7-1)*5+(4-1), v2: (7-1)*6+(5-1) },
-  ];
+  const v1Roles = rolesFor("v1");
+  const v2Roles = rolesFor("v2");
+  const v1Events = eventsFor("v1");
+  const v2Events = eventsFor("v2");
 
-  // event: order.paid × payment:prod × web
+  // permission 주소 예시 (payment service, permSvcPos)
+  const permExamples = ["operator", "viewer", "customer"].map(id => {
+    const v1p = dimPos(v1Roles, id);
+    const v2p = dimPos(v2Roles, id);
+    return {
+      role: id, ko: DEMO_KO.role[id] ?? id,
+      v1: v1p !== null ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, v1p, "v1") : null,
+      v2: v2p !== null ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, v2p, "v2") : null,
+    };
+  });
+
+  // event 주소 예시 (payment:prod service, evtSvcPos, web initiator)
   const evtExamples = [
-    { name: "order.paid × payment:prod × web",    ko: "주문 결제",  v1: (9-1)*14+(4-1)*2+0, v2: (9-1)*18+(4-1)*2+0 },
-    { name: "payment.cancel_requested × payment:prod × web", ko: "취소 요청", v1: null, v2: (9-1)*18+(8-1)*2+0 },
-    { name: "payment.cancel_approved × payment:prod × web",  ko: "취소 승인", v1: null, v2: (9-1)*18+(9-1)*2+0 },
-  ];
+    { id: "order.paid",               label: "order.paid × payment:prod × web" },
+    { id: "payment.cancel_requested", label: "payment.cancel_requested × payment:prod × web" },
+    { id: "payment.cancel_approved",  label: "payment.cancel_approved × payment:prod × web" },
+  ].map(ex => {
+    const v1p = dimPos(v1Events, ex.id);
+    const v2p = dimPos(v2Events, ex.id);
+    return {
+      name: ex.label,
+      ko: DEMO_KO.event[ex.id] ?? ex.id,
+      v1: v1p !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, v1p, 1, "v1") : null,
+      v2: v2p !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, v2p, 1, "v2") : null,
+    };
+  });
 
   const showV2 = ver === "v2";
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">🔢</span>
-      <span class="vd-sec-title">주소 값 예시 — payment 서비스 (permSvcPos=7, evtSvcPos=9)</span>
+      <span class="vd-sec-title">주소 값 예시 — payment 서비스 (permSvcPos=${EXAMPLE_PERM_SVC_POS}, evtSvcPos=${EXAMPLE_EVT_SVC_POS})</span>
     </div>
     <div class="vd-sec-body">
       <div class="vd-addr-title">permission 주소 (역할별)</div>
@@ -336,7 +364,7 @@ function buildAddressExamplesSection(ver: "v1" | "v2"): HTMLElement {
             </tr>
           </thead>
           <tbody>
-            ${permExamples.map((ex) => `
+            ${permExamples.map(ex => `
               <tr class="${ex.v1 === null ? "vd-row-added" : ""}">
                 <td><span class="role-tag role-tag-${ex.role}">${ex.role}</span></td>
                 <td class="vd-addr-desc">payment × ${ex.ko}</td>
@@ -372,7 +400,7 @@ function buildAddressExamplesSection(ver: "v1" | "v2"): HTMLElement {
             </tr>
           </thead>
           <tbody>
-            ${evtExamples.map((ex) => `
+            ${evtExamples.map(ex => `
               <tr class="${ex.v1 === null ? "vd-row-added" : ""}">
                 <td><span class="evt-tag evt-tag-payment">${ex.ko}</span></td>
                 <td class="vd-addr-desc" style="font-size:0.72rem">${ex.name}</td>
@@ -403,6 +431,30 @@ function buildAddressExamplesSection(ver: "v1" | "v2"): HTMLElement {
 function buildProtocolSection(): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section vd-section-protocol";
+
+  // SSOT에서 계산
+  const v1RS = demoRoleStride("v1");
+  const v2RS = demoRoleStride("v2");
+  const v1ES = demoEvtStride("v1");
+  const v2ES = demoEvtStride("v2");
+  const v1RC = DEMO_ROLES_V1.length;
+  const v2RC = DEMO_ROLES_V2.length;
+  const v1EC = DEMO_EVENTS_V1.length;
+  const v2EC = DEMO_EVENTS_V2.length;
+  const IC = DEMO_INITIATORS.length;
+
+  // 주소 예시: viewer at payment
+  const v1Roles = rolesFor("v1");
+  const v2Roles = rolesFor("v2");
+  const viewerV1Pos = dimPos(v1Roles, "viewer")!;
+  const viewerV2Pos = dimPos(v2Roles, "viewer")!;
+  const viewerV1Addr = demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerV1Pos, "v1");
+  const viewerV2Addr = demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerV2Pos, "v2");
+
+  // 신규 항목 정보
+  const newRoles = v2Roles.filter(r => r.isNew);
+  const newEvents = eventsFor("v2").filter(e => e.isNew);
+  const newRolesDesc = newRoles.map(r => `${r.ko}는 끝에 추가, pos=${r.pos}`).join("; ");
 
   sec.innerHTML = `
     <div class="vd-sec-header">
@@ -436,8 +488,8 @@ function buildProtocolSection(): HTMLElement {
             </div>
             <div class="vd-protocol-note">
               v1과 v2 주소는 동일한 숫자라도 <strong>다른 논리 의미</strong>를 가집니다.<br/>
-              예) <code>permission:v1:33</code> = payment × viewer,
-              <code>permission:v2:33</code> = payment × customer
+              예) <code>permission:v1:${viewerV1Addr}</code> = payment × viewer(pos=${viewerV1Pos}),
+              <code>permission:v2:${viewerV2Addr}</code> = payment × viewer(pos=${viewerV2Pos}) — stride 변경으로 주소 달라짐
             </div>
           </div>
         </div>
@@ -448,26 +500,26 @@ function buildProtocolSection(): HTMLElement {
             <div class="vd-formula-diff">
               <div class="vd-formula-old">
                 <span class="vd-formula-ver">v1</span>
-                <span class="vd-formula-expr">(perm_svc−1) × <strong>5</strong> + (role−1)</span>
+                <span class="vd-formula-expr">(perm_svc−1) × <strong>${v1RS}</strong> + (role−1)</span>
               </div>
               <div class="vd-formula-new">
                 <span class="vd-formula-ver vd-ver-new">v2</span>
-                <span class="vd-formula-expr">(perm_svc−1) × <strong>6</strong> + (role−1)</span>
+                <span class="vd-formula-expr">(perm_svc−1) × <strong>${v2RS}</strong> + (role−1)</span>
               </div>
             </div>
             <div class="vd-formula-diff">
               <div class="vd-formula-old">
                 <span class="vd-formula-ver">v1</span>
-                <span class="vd-formula-expr">(svc−1) × <strong>14</strong> + (evt−1)×2 + (init−1)</span>
+                <span class="vd-formula-expr">(svc−1) × <strong>${v1ES}</strong> + (evt−1)×${IC} + (init−1)</span>
               </div>
               <div class="vd-formula-new">
                 <span class="vd-formula-ver vd-ver-new">v2</span>
-                <span class="vd-formula-expr">(svc−1) × <strong>18</strong> + (evt−1)×2 + (init−1)</span>
+                <span class="vd-formula-expr">(svc−1) × <strong>${v2ES}</strong> + (evt−1)×${IC} + (init−1)</span>
               </div>
             </div>
             <div class="vd-protocol-note">
-              role 차원이 5→6개로 늘어나 permission stride가 5→6으로 변경.<br/>
-              event 차원이 7→9개로 늘어나 event stride가 14(=7×2)→18(=9×2)으로 변경.
+              role 차원이 ${v1RC}→${v2RC}개로 늘어나 permission stride가 ${v1RS}→${v2RS}으로 변경.<br/>
+              event 차원이 ${v1EC}→${v2EC}개로 늘어나 event stride가 ${v1ES}(=${v1EC}×${IC})→${v2ES}(=${v2EC}×${IC})으로 변경.
             </div>
           </div>
         </div>
@@ -521,11 +573,11 @@ function buildProtocolSection(): HTMLElement {
               </div>
               <div class="vd-migration-row vd-mig-ok">
                 <span class="vd-mig-icon">✓</span>
-                <span>기존 5개 역할의 상대적 순서 유지 (customer는 operator 다음 삽입)</span>
+                <span>기존 ${v1RC}개 역할의 position 유지 (${newRolesDesc})</span>
               </div>
               <div class="vd-migration-row vd-mig-ok">
                 <span class="vd-mig-icon">✓</span>
-                <span>기존 7개 이벤트명의 position 유지 (신규 2개는 뒤에 추가)</span>
+                <span>기존 ${v1EC}개 이벤트명의 position 유지 (신규 ${newEvents.length}개는 뒤에 추가)</span>
               </div>
             </div>
           </div>
@@ -546,7 +598,9 @@ export function renderVersionPage(
 ): void {
   container.innerHTML = "";
 
-  let activeVer: "v1" | "v2" = initialVer;
+  let activeVer: Ver = initialVer;
+  let featureData: FeatureData | null = null;
+  let featuresEl: HTMLElement | null = null;
 
   // ── Version selector bar ──
   const verBar = document.createElement("div");
@@ -564,7 +618,7 @@ export function renderVersionPage(
   content.className = "vd-content";
   container.appendChild(content);
 
-  function render(ver: "v1" | "v2"): void {
+  function render(ver: Ver): void {
     content.innerHTML = "";
 
     const twoCol = document.createElement("div");
@@ -583,13 +637,27 @@ export function renderVersionPage(
     twoCol.appendChild(leftCol);
     twoCol.appendChild(rightCol);
     content.appendChild(twoCol);
-    content.appendChild(buildFeaturesSection(ver));
+
+    featuresEl = buildFeaturesSection(ver, featureData);
+    content.appendChild(featuresEl);
     content.appendChild(buildProtocolSection());
   }
 
+  // 기능 데이터 비동기 로드
+  Promise.all([fetchFeatures("v1"), fetchFeatures("v2")])
+    .then(([v1, v2]) => {
+      featureData = { v1, v2 };
+      if (featuresEl) {
+        const newEl = buildFeaturesSection(activeVer, featureData);
+        featuresEl.replaceWith(newEl);
+        featuresEl = newEl;
+      }
+    })
+    .catch(() => { /* API 미접속 시 로딩 상태 유지 */ });
+
   verBar.querySelectorAll<HTMLButtonElement>(".vd-ver-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      activeVer = btn.dataset["ver"] as "v1" | "v2";
+      activeVer = btn.dataset["ver"] as Ver;
       verBar.querySelectorAll<HTMLButtonElement>(".vd-ver-btn").forEach((b) => {
         b.classList.toggle("vd-ver-btn-active", b.dataset["ver"] === activeVer);
       });
