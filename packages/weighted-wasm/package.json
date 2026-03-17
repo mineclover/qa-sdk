@@ -1,0 +1,15 @@
+{
+  "name": "weighted-wasm",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "js/index.ts",
+  "scripts": {
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build": "pnpm run build:wasm",
+    "test:rust": "cargo test",
+    "test": "cargo test"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}
