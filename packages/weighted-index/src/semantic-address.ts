@@ -31,6 +31,16 @@
 import { formatHex, parseHex, type PackFormat } from "./pack-format.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  Canonical format constants
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** 정규 텍스트 프로토콜. API, 로그, 디버깅에서 기본 사용. */
+export const CANONICAL_TEXT_PROTOCOL = "colon" as const;
+
+/** 정규 바이너리 프로토콜 접두사. DB PK, 바이너리 저장에서 사용. */
+export const CANONICAL_BINARY_PREFIX = "layout:" as const;
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  SemanticAddress — 정보 좌표의 보편적 표현
 // ═══════════════════════════════════════════════════════════════════════════
 
