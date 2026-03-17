@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "demo-snapshot": "workspace:*",
     "hono": "^4.7.5",
-    "index-meta": "workspace:*",
-    "weighted-index": "workspace:*"
+    "index-meta": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250430.0",
