@@ -11,10 +11,15 @@
 ### weighted-index
 - `packages/weighted-index/src/index.ts` — 모든 public export 관리; 새 함수 추가 시 여기도 업데이트
 - `packages/weighted-index/src/layout-fit.ts` — 레이아웃 시뮬레이터 순수 함수 (Number/BigInt 모드)
+- `packages/weighted-index/src/partial-binder.ts` — 차원 부분 바인딩 (createBinder → resolve)
+- `packages/weighted-index/docs/partial-binder.md` — PartialBinder 상세 문서
 
 ### permission-engine
 - `packages/permission-engine/` — 비트마스크 기반 권한 엔진 (weighted-index 의존)
-- `src/permission-set.ts` — 핵심: [feature, role] bitmask 인코딩, O(1) grant/check
+- `src/permission-set.ts` — [feature, role] binary bitmask 인코딩, O(1) grant/check
+- `src/permission-codec.ts` — 3-tier 프로토콜 코덱 (text ↔ integer ↔ bitmask)
+- `src/ternary-mask.ts` — 3-state 마스크 (-1=deny, 0=unset, 1=allow) + 계층 상속
+- partial-binder는 weighted-index에 위치, permission-engine에서 re-export
 - `src/scoped-engine.ts` — env/region 등 외부 컨텍스트별 독립 마스크 관리
 - `src/migration.ts` — shape 변경 시 마스크 마이그레이션 (ID 매칭 자동 변환 또는 커스텀 CoordMapper)
 - `src/resource.ts` — resource 정규화/검증 (canonical path-like key, 타입별 패턴 규칙)
@@ -27,13 +32,43 @@
 - `packages/platform-demo/src/pages/perm-engine.ts` — permission-engine v1→v2 마이그레이션 비교 데모
 
 ## Permission Engine Architecture
-- 내부 차원: feature(resource) × role → weighted-index 압축 → bitmask
-- 외부 차원: env/region/namespace → ScopedEngine scope key로 라우팅
+
+### 3-tier 프로토콜 스택
+- Tier 1 (text): `"shop/payment.api.admin/teams.GET"` — 로그, 디버그, 설정 파일
+- Tier 2 (1D integer): `"perm:42"` — DB 저장, 이벤트 태깅, 서비스간 전송 (index-meta의 SemanticAddress 호환)
+- Tier 3 (bitmask): `Uint8Array` — 클라이언트 JWT/세션, O(1) can() 체크
+- PermissionCodec이 Tier 1 ↔ 2 ↔ 3 변환을 담당; version 없이 `perm:42` 단축형도 지원
+
+### 마스크 체계
+- Binary mask (PermissionSet): 0/1 per slot — 단순 grant/deny
+- Ternary mask (TernaryMask): -1/0/1 per slot — deny/unset/allow 3-state
+  - 계층 상속: `TernaryMask.inherit(org, team)` → child 우선 + deny-wins
+  - `toBinaryMask("deny")` → 클라이언트 전송 시 binary로 flatten
+  - 크기: binary의 2배 (allow mask + deny mask), 클라이언트에는 binary만 전송
+
+### 차원 부분 바인딩 (PartialBinder)
+- 전체 경로: `namespace > name > env > device > region > shard > resource > action`
+- SDK 부트 시 고정 차원 캐시: `createBinder(codec, "full", { namespace, name, env, device })`
+- 런타임에 나머지만 입력: `binder.resolve({ region, shard, resource, action })`
+- 체이닝 지원: `binder.bind({ region, shard }).resolveId({ resource, action })`
+- 원리: mixed-radix에서 각 차원 기여분이 독립적이므로 분리 계산 후 합산 가능 (partialQueryBase 참조)
+- PrefixCodec 연동: 라벨 기반 엔티티 ID → 1-based 인덱스 변환을 내부 수행
+- 멀티서비스: 같은 codec + 다른 binder로 서비스별 독립 주소 공간
+
+### 설계 원칙
 - 클라이언트는 role을 직접 확인하지 않음 — 서버가 role → flat permission mask로 resolve 후 전송
+- 외부 차원 (env/region/namespace) → ScopedEngine scope key 또는 PartialBinder로 관리
+- service-ref: (namespace/name) 필수 + (env/build/region) SDK가 일괄 설정하여 숨김
 - resource 규칙: 소문자, `/` 구분, leading/trailing slash 금지, depth ≤ 4, `:param` 패턴 허용
-- permission code 포맷: `{namespace/name}.{type}.{resource}.{action}` (예: `shop/payment.api.admin/teams.GET`)
-- type(page/api/action)별 resource 패턴 분리: page는 :param 금지/depth 3, api는 :param 허용/depth 4
+- permission code: `{service-ref}.{type}.{resource}.{action}` (예: `shop/payment.api.admin/teams.GET`)
+- type별 패턴: page(param 금지/depth 3), api(param 허용/depth 4), action(param 금지/depth 3)
+
+### index-meta 연동 (1D 주소 저장)
+- 1D integer address → index-meta의 EntryFlagStore (active/inactive, append-only 이력) 활용 가능
+- AddressStateStore: 범위 기반 상태 캐시 (reserved/inactive/open)
+- GateEngine: 상태 변경 시 cascade 전파 (leaf → composite)
+- PrefixCodec의 composite ref로 그룹별 독립 인코딩 → 통합 주소 구성 가능
 
 ## Conventions
 - 한국어 주석/UI 텍스트 사용
-- Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → BigInt 대안 필요
+- Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
