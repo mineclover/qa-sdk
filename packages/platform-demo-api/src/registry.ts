@@ -5,7 +5,7 @@ import {
   DEMO_EVENTS_V1, DEMO_EVENTS_V2,
   DEMO_INITIATORS,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
-} from "weighted-index";
+} from "demo-snapshot";
 
 // ── Service address constants ──────────────────────────────────────────────
 // value formula: (env_pos-1)*20 + (region_pos-1)*10 + (name_pos-1)*2 + (ns_pos-1)
@@ -87,7 +87,7 @@ export const registry = new MetaRegistry({
       kind: { type: "string_enum" },
       snapshots: {
         v1: { entries: ["admin", "developer", "operator", "viewer", "readonly"] },
-        v2: { entries: ["admin", "developer", "operator", "customer", "viewer", "readonly"] },
+        v2: { entries: ["admin", "developer", "operator", "viewer", "readonly", "customer"] },
       },
     },
     // Event dims

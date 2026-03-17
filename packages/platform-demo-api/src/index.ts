@@ -11,7 +11,7 @@ import {
   demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   demoRoleStride, demoEvtStride,
   type DemoVer,
-} from "weighted-index";
+} from "demo-snapshot";
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
@@ -60,11 +60,11 @@ function decodeSvcValue(value: number): { env: string; region: string; svc_name:
 // ── v2 Scenario / Features constants ──────────────────────────────────────
 
 const ROLE_POS: Record<string, number> = {
-  admin: 1, developer: 2, operator: 3, customer: 4, viewer: 5, readonly: 6,
+  admin: 1, developer: 2, operator: 3, viewer: 4, readonly: 5, customer: 6,
 };
 
 const FEATURE_DEFS = [
-  { id: "product_list",          name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","customer","viewer","readonly"] as const, successEventValue: 90  as number | null, failEventValue: null as number | null },
+  { id: "product_list",          name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","viewer","readonly","customer"] as const, successEventValue: 90  as number | null, failEventValue: null as number | null },
   { id: "order_list",            name: "주문 목록 조회", svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin","developer","operator","viewer"]                       as const, successEventValue: 112 as number | null, failEventValue: null as number | null },
   { id: "payment_history",       name: "결제 내역 조회", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"]                               as const, successEventValue: 150 as number | null, failEventValue: 152  as number | null },
   { id: "payment_cancel_req",    name: "결제 취소 요청", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","customer"]                                           as const, successEventValue: 158 as number | null, failEventValue: 152  as number | null },
@@ -73,7 +73,7 @@ const FEATURE_DEFS = [
   { id: "config_change",         name: "설정 변경",      svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin"]                                                     as const, successEventValue: 120 as number | null, failEventValue: 118  as number | null },
 ];
 
-const ROLE_LIST = ["admin", "developer", "operator", "customer", "viewer", "readonly"] as const;
+const ROLE_LIST = ["admin", "developer", "operator", "viewer", "readonly", "customer"] as const;
 
 // ── v1 Scenario / Features constants ──────────────────────────────────────
 
