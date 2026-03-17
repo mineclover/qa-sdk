@@ -5,6 +5,7 @@
 
 패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+운영 흐름: `[S2, A1]` encode · `[S5, A5, D1]` decode — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
 
 ## 상태
 

@@ -5,6 +5,7 @@
 
 관련 스펙: [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md) · [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md)
 참조 구현: `packages/index-meta/src/relational-engine.ts`, `policy-resolver.ts`, `cross-index-query.ts`, `version-query.ts`
+운영 흐름: `[S2]` resolve · `[S2→S4]` 규칙 CRUD · `[A5]` match-ranges/compose-query — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 

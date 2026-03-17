@@ -147,6 +147,14 @@ API 클라이언트, iframe 통신 프로토콜.
 | [gate-service.spec.md](services/gate-service.spec.md) | Gate Service — 주소 상태 관리 분산 서비스, RPC 계약, cascade 전파, 정합성 모델 | GateEngine, invalid-ranges | planned |
 | [query-service.spec.md](services/query-service.spec.md) | Query Service — 관계형 질의 + 정책 해소 + gate 통합, 규칙 영속화, 충돌 전략 | RelationalEngine, policy-resolver | planned |
 
+### operations/ — 운영 시나리오
+
+런타임 흐름 정의와 심볼 체계. 모듈 스펙에서 `[S2]`, `[A5]` 등으로 cross-reference한다.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [runtime-flows.spec.md](operations/runtime-flows.spec.md) | 동기(S)/비동기(A)/디버깅(D) 3경로 흐름 정의, 심볼 체계, 모듈 참여 맵 | planned |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.

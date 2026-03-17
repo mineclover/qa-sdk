@@ -5,6 +5,7 @@
 
 패키지 인덱스: [README.md](README.md)
 관련 스펙: [codec.spec.md](codec.spec.md) · [registry.spec.md](registry.spec.md) · [../coordinate-query.spec.md](../coordinate-query.spec.md)
+운영 흐름: `[S2]` checkGate · `[A4]` recompute/cascade · `[A5]` gateFilterRanges — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
 
 ## 상태
 

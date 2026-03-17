@@ -183,7 +183,9 @@
 
 | 항목 | 상태 | 설명 |
 |---|---|---|
-| demo-tests 패키지 | ✅ 완료 | 27개 테스트 파일 (494 tests) — index-meta 17개 + permission-engine 6개 + 통합 4개 |
+| demo-tests 패키지 | ✅ 완료 | 29개 테스트 파일 (500 tests) — index-meta 17개 + permission-engine 6개 + 통합 4개 + AXIS 반영 |
+| weighted-wasm 패키지 | ✅ 완료 | Rust→WASM 20KB, 6개 함수, 7 Rust tests, JS fallback 래퍼 |
+| weighted-gpu 패키지 | ✅ 완료 | WebGPU WGSL 3 shaders, GPUEncoder 클래스, GPU 미지원 시 null |
 | demo-snapshot 패키지 | ✅ 완료 | AXIS 기반 5개 도메인 데이터 카탈로그 (15축) + MetaRegistry 입력 빌더 |
 | index-meta 단위 테스트 | ✅ 33개 | 코어 알고리즘 유닛 테스트 패키지 내 잔류 |
 | permission-engine 테스트 | ✅ 5개 | 비트마스크 엔진 유닛 테스트 패키지 내 잔류 |
@@ -193,7 +195,7 @@
 
 ## G. 하드웨어 가속 (CPU / GPU / FPGA)
 
-**상태**: `analysis` — CPU 벤치마크 완료, 가속 후보 분석
+**상태**: `implemented` — weighted-wasm (Rust→WASM 20KB, 7 tests), weighted-gpu (WebGPU WGSL 3 shaders)
 
 ### 현재 CPU 성능 기준 (Node.js, Apple Silicon)
 
@@ -248,10 +250,12 @@ cold path (batch aggregation):
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
-| G-1 | **encodeBatch / decodeBatch WASM 벤치마크** | 중 | 중 | JS → WASM 전환 시 batch 성능 측정. GPU 오프로드 판단 기준선 |
-| G-2 | **GPU compute shader PoC (WebGPU)** | 낮 | 높 | batch encode 10K건 기준 GPU vs CPU 비교. 브라우저/Node.js 양쪽 |
+| G-1 | **encodeBatch / decodeBatch WASM** | ✅ 완료 | — | weighted-wasm: Rust encode_batch/decode_batch (u32, tight loop) |
+| G-2 | **GPU compute shader PoC (WebGPU)** | ✅ 완료 | — | weighted-gpu: encode.wgsl, decode.wgsl, reduce.wgsl + GPUEncoder 클래스 |
 | G-3 | **FPGA 인터페이스 설계** | 낮 | 높 | FPGAAdapter 인터페이스 + threshold 기반 CPU/FPGA 분기 |
-| G-4 | **bitmask SIMD 최적화** | 중 | 중 | 대형 PermissionSet (>10K bits)의 AND/OR/popcount WASM SIMD 적용 |
+| G-4 | **bitmask u64 최적화** | ✅ 완료 | — | weighted-wasm: popcountWasm, maskAndWasm, maskOrWasm, masksOverlapWasm (u64 단위) |
+| G-5 | **JS vs WASM 실측 벤치마크** | 중 | 낮 | batch 1K/10K/100K 기준 JS fallback vs WASM 성능 비교 측정 |
+| G-6 | **GPU vs CPU 실측 벤치마크** | 중 | 중 | batch 10K/100K 기준 WebGPU vs CPU 비교 (브라우저 환경) |
 
 ---
 
@@ -362,9 +366,8 @@ batch encoder (GPU offload 가능)
 
 | ID | 작업 | 영향 |
 |---|---|---|
-| G-1 | encodeBatch WASM 벤치마크 | GPU 오프로드 판단 기준선 |
-| G-4 | bitmask SIMD 최적화 | 대형 PermissionSet 성능 |
+| G-5 | JS vs WASM 실측 벤치마크 | batch 성능 비교 기준선 확보 |
+| G-6 | GPU vs CPU 실측 벤치마크 | batch 10K+ 성능 검증 |
 | I-3 | Materialized View 스키마 | 실시간 집계 기반 |
 | I-5 | Streaming consumer PoC | 이벤트 파이프라인 확장 |
-| G-2 | GPU compute shader PoC (WebGPU) | batch 10K+ 성능 검증 |
 | G-3 | FPGA 인터페이스 설계 | 전용 하드웨어 가속 경로 |

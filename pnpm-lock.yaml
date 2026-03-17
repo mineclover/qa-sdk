@@ -421,6 +421,15 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
 
+  packages/weighted-gpu:
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.54
+        version: 0.1.69
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/weighted-index:
     devDependencies:
       fast-check:
@@ -466,6 +475,12 @@ importers:
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
+
+  packages/weighted-wasm:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
 packages:
 
@@ -1707,6 +1722,9 @@ packages:
 
   '@vitest/utils@1.6.1':
     resolution: {integrity: sha512-jOrrUvXM4Av9ZWiG1EajNto0u96kWAhJ1LmPmJhXXQx/32MecEKd10pOLYgS2BQx1TgkGhloPU1ArDW2vvaY6g==}
+
+  '@webgpu/types@0.1.69':
+    resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==}
@@ -3869,6 +3887,8 @@ snapshots:
       estree-walker: 3.0.3
       loupe: 2.3.7
       pretty-format: 29.7.0
+
+  '@webgpu/types@0.1.69': {}
 
   acorn-walk@8.3.5:
     dependencies:

@@ -4,6 +4,7 @@
 
 관련 스펙: [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md) · [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md)
 참조 구현: `packages/index-meta/src/gate-engine.ts`, `invalid-ranges.ts`, `gate-aware-query.ts`
+운영 흐름: `[S2]` checkGate · `[A4]` recompute (MQ 트리거) · `[A5]` gateFilterRanges — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 

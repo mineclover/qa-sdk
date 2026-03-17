@@ -6,6 +6,7 @@
 관련 스펙: [../indexing/index-meta/codec.spec.md](../indexing/index-meta/codec.spec.md) · [../indexing/index-meta/resolver.spec.md](../indexing/index-meta/resolver.spec.md)
 기반 라이브러리: `packages/index-meta/src/prefix-decoder.ts`, `decode.ts`, `meta-resolver.ts`
 서비스 구현: `packages/decode-service/`
+운영 흐름: `[S5, D1]` decode · `[A5]` decode/batch · `[D1]` decode/deep — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 

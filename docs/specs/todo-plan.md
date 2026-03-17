@@ -10,8 +10,8 @@
 packages/
   # ── Layer 0: 수학 엔진 ──────────────────────────────────
   weighted-index/              순수 수학 (encode/decode/bitmask)
-  weighted-wasm/        [신규] WASM 빌드 (SIMD bitmask, batch encode)
-  weighted-gpu/         [신규] WebGPU compute shader 어댑터
+  weighted-wasm/        [구현됨] Rust→WASM (batch encode/decode, bitmask u64 popcount) — 20KB, 7 Rust tests
+  weighted-gpu/         [구현됨] WebGPU compute shader (encode/decode/reduce) — WGSL 3개 + GPUEncoder 클래스
 
   # ── Layer 1: 스키마 + 메타 ──────────────────────────────
   index-meta/                  스키마 레지스트리, 코덱, 게이트, 관계 엔진
@@ -28,7 +28,7 @@ packages/
 
   # ── Layer D: 데모/테스트 ────────────────────────────────
   demo-snapshot/               데이터 SSOT (Axis 카탈로그)
-  demo-tests/                  통합 테스트 (27파일, 494 tests)
+  demo-tests/                  통합 테스트 (29파일, 500 tests)
   platform-demo/               프론트엔드 시각화
   platform-demo-api/           데모 백엔드 API
 ```
@@ -186,58 +186,56 @@ function projectAxis(key: number, axisIndex: number, strides: number[], shape: n
 
 ## Tier 4 — 하드웨어 가속 + 스트리밍
 
-### weighted-wasm (G-1, G-4)
+### weighted-wasm (G-1, G-4) — ✅ 구현 완료
 
 ```
-packages/weighted-wasm/           [신규]
-  package.json                    deps: weighted-index (타입만)
-  Cargo.toml                     Rust 소스 (wasm-pack 빌드)
+packages/weighted-wasm/           [구현 완료]
+  Cargo.toml                     Rust 2024 edition, wasm-bindgen
   src/
-    lib.rs                        encode_batch, decode_batch, bitmask_and/or/popcount
-  pkg/                            wasm-pack 빌드 산출물
+    lib.rs                        6개 함수 + 7 Rust tests
+  pkg/                            wasm-pack 빌드 산출물 (20KB .wasm)
   js/
-    index.ts                      JS 래퍼 — WeightedIndex 인터페이스 호환
-    bench.test.ts                 G-1: JS vs WASM 벤치마크
+    index.ts                      JS 래퍼 — initWasm() + fallback
+  package.json
 ```
 
-```rust
-// lib.rs — 핵심 연산
-#[wasm_bindgen]
-pub fn encode_batch(
-    shape: &[u32],
-    strides: &[u32],
-    coords: &[u32],     // flattened: [d0,d1,...,dN, d0,d1,...] × batch_size
-    batch_size: u32,
-) -> Vec<u64> { ... }
+| 함수 | 설명 | 가속 원리 |
+|---|---|---|
+| `encodeBatch(strides, coords, dims, n)` | N건 배치 인코딩 | tight loop, no GC |
+| `decodeBatch(strides, shape, addrs, dims)` | N건 배치 디코딩 | Rust 정수 나눗셈 |
+| `popcountWasm(mask)` | 비트 카운트 | u64 `count_ones()` (8× throughput) |
+| `maskAndWasm(a, b)` | 교집합 | u64 단위 AND |
+| `maskOrWasm(a, b)` | 합집합 | u64 단위 OR |
+| `masksOverlapWasm(a, b)` | 겹침 확인 | 첫 번째 일치에서 즉시 반환 |
 
-#[wasm_bindgen]
-pub fn bitmask_popcount(mask: &[u8]) -> u32 { ... }    // G-4: SIMD 활용
+```ts
+// JS 래퍼 사용법
+import { initWasm, encodeBatch, popcountWasm } from "weighted-wasm/js";
+await initWasm();  // WASM 로드 (실패 시 JS fallback 자동)
 ```
 
-### weighted-gpu (G-2)
+### weighted-gpu (G-2) — ✅ 구현 완료
 
 ```
-packages/weighted-gpu/            [신규]
-  package.json                    deps: weighted-index (타입만)
+packages/weighted-gpu/            [구현 완료]
   src/
-    index.ts                      GPUEncoder 클래스
+    index.ts                      GPUEncoder 클래스 (create/destroy + 3 async 메서드)
     shaders/
-      encode.wgsl                 compute shader — batch encode
-      decode.wgsl                 compute shader — batch decode
-      reduce.wgsl                 compute shader — group-by aggregation
-    bench.test.ts                 G-2: GPU vs CPU 벤치마크 (10K건 기준)
+      encode.wgsl                 compute shader — @workgroup_size(256)
+      decode.wgsl                 compute shader — @workgroup_size(256)
+      reduce.wgsl                 compute shader — atomic 카운트 집계
+  package.json                    deps: @webgpu/types
+  tsconfig.json
 ```
 
 ```ts
-// index.ts — GPU 어댑터
-class GPUEncoder {
-  constructor(device: GPUDevice, shape: number[])
-
-  async encodeBatch(coords: Uint32Array): Promise<BigUint64Array>
-  async decodeBatch(keys: BigUint64Array): Promise<Uint32Array>
-  async reduceByKey(keys: BigUint64Array): Promise<Map<bigint, number>>
-
-  destroy(): void
+// 사용법
+const gpu = await GPUEncoder.create([10, 7, 2]);
+if (gpu) {
+  const addrs = await gpu.encodeBatch(coordsBatch);  // N건 동시
+  const coords = await gpu.decodeBatch(addrs);
+  const counts = await gpu.reduceByKey(keys, maxKey); // group-by
+  gpu.destroy();
 }
 ```
 
@@ -315,12 +313,12 @@ Layer D (데모)
 | D-1~D-4 | decode 서비스 | decode-service | ✅ **완료** (D-5 잔여) |
 | E-1~E-4 | gate 서비스 | gate-service | **신규** |
 | F-1~F-5 | query 서비스 | query-service | **신규** |
-| G-1, G-4 | WASM 빌드 (encode/bitmask) | weighted-wasm | **신규** |
-| G-2 | GPU compute shader | weighted-gpu | **신규** |
+| G-1, G-4 | WASM 빌드 (encode/bitmask) | weighted-wasm | ✅ **완료** (20KB, 7 Rust tests) |
+| G-2 | GPU compute shader | weighted-gpu | ✅ **완료** (WGSL 3개 + GPUEncoder) |
 | G-3 | FPGA 인터페이스 | weighted-index | 기존 (추가) |
 | H-1~H-3 | SQL 어댑터 | index-meta | 기존 (추가) |
 | I-1, I-4 | 캐시 포트 + 어댑터 | key-cache | **신규** |
 | I-2, I-3, I-5, I-6 | 파이프라인 + 스트리밍 | pipeline | **신규** |
 
-**신규 패키지 6개**: gate-service, query-service, key-cache, pipeline, weighted-wasm, weighted-gpu
-**완료 패키지 1개**: decode-service
+**신규 패키지 4개**: gate-service, query-service, key-cache, pipeline
+**완료 패키지 3개**: decode-service, weighted-wasm, weighted-gpu

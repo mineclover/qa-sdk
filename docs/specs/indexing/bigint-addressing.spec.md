@@ -5,6 +5,7 @@
 
 관련 스펙: [weighted-index.spec.md](weighted-index.spec.md) · [index-meta/codec.spec.md](index-meta/codec.spec.md) · [index-meta/registry.spec.md](index-meta/registry.spec.md)
 용량 가드 문서: [index-meta/docs/capacity-guard.md](../../packages/index-meta/docs/capacity-guard.md)
+운영 흐름: `[S2, A1]` encode (BigInt 경로) · `[A5]` matchRanges (BigInt 범위) — [runtime-flows.spec.md](operations/runtime-flows.spec.md)
 
 ## 상태
 
