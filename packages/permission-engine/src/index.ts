@@ -64,3 +64,9 @@ export {
   type TriState,
   type DefaultPolicy,
 } from "./ternary-mask.js";
+
+// re-export from weighted-index (partial-binder는 weighted-index에 위치)
+export {
+  createBinder,
+  type PartialBinder,
+} from "weighted-index";
