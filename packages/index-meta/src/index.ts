@@ -71,6 +71,8 @@ export {
   composeQuery,
   deepDecode,
 } from "./cross-index-query.js";
+export { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from "./gate-aware-query.js";
+export type { GateAwareResult } from "./gate-aware-query.js";
 export type {
   DeepDecodeResult,
 } from "./cross-index-query.js";
