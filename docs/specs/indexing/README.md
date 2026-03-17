@@ -39,8 +39,10 @@
 | [conventions.md](conventions.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [slot-marker.spec.md](slot-marker.spec.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
 | [data-design.md](data-design.md) | **데이터 설계** | 차원 압축, 차원 편입, 정보 저장, 범위 제어, 캐싱 전략 — 전체 설계 구조 |
-| [coordinate-query.spec.md](coordinate-query.spec.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색 |
+| [coordinate-query.spec.md](coordinate-query.spec.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색, RelationalEngine |
+| [bigint-addressing.spec.md](bigint-addressing.spec.md) | **BigInt 주소 체계** | Number.MAX_SAFE_INTEGER 한계, BigInt API (weighted-index + index-meta), 용량 가드, 성능 특성 |
 | [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
+| [acceleration.md](acceleration.md) | **하드웨어 가속 비전** | FPGA/PCIe 가속 적합성, 파이프라인 경계, batch/binary 인터페이스 로드맵 |
 
 ### 패키지 스펙
 
@@ -72,7 +74,7 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 | 패키지 | 인덱스 | 관심사 | 상태 |
 |---|---|---|---|
 | [weighted-index/](weighted-index/README.md) | 3 문서 | 수학 엔진, 포맷 적합성, 범위탐색, 프로토콜 변환 | implemented |
-| [index-meta/](index-meta/README.md) | 12 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, 시나리오, ADR | implemented / planned |
+| [index-meta/](index-meta/README.md) | 13 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, GateEngine, 시나리오, ADR | implemented / planned |
 
 ## 관심사 흐름
 
@@ -92,37 +94,74 @@ WeightedIndex 생성           shape 축소 추천               ↓
                                               └──── hex container (UUID 등)
 ```
 
-## 탐색기 (weighted-index-explorer) 구조
+## 데이터 카탈로그 (demo-snapshot)
 
-weighted-index의 개념을 시각화하고 인터랙티브하게 탐색하는 웹 도구.
+모든 데모/테스트 데이터의 단일 출처(SSOT). 기본 단위는 **1차원 축(Axis)**이며, 도메인은 축의 조합이다.
 
 ```
-weighted-index-explorer/src/
-├── main.ts              앱 진입점 + 라우팅
-├── data.ts              4D 권한 모델 데이터
-│
-├── utils/               ── wi 해석 유틸 (재사용 가능) ──
-│   ├── hex-bar.ts       hex 레이아웃 시각화 컴포넌트
-│   ├── badge.ts         차원 값 배지
-│   ├── encode-html.ts   인코딩 수식 시각화
-│   └── colors.ts        차원 색상 팔레트
-│
-├── pages/               ── 탐색기 페이지 ──
-│   ├── concept.ts       개념 설명
-│   ├── philosophy.ts    설계 철학
-│   ├── address.ts       주소 체계
-│   ├── version.ts       버전 관리
-│   ├── filter.ts        필터링
-│   ├── obfuscate.ts     난독화
-│   └── layout-planner.ts 레이아웃 플래너
-│
-├── ui/                  ── 탐색기 전용 UI ──
-│   ├── grid.ts          격자 렌더러
-│   ├── detail.ts        사이드 패널
-│   └── list.ts          전체 목록
-│
-└── styles/
-    └── main.css
+Axis("role") × Axis("action") × Axis("resource") → Domain("rbac")
+```
+
+### 축(Axis) 카탈로그 — 15개 축, 5개 도메인
+
+| 도메인 | 축 조합 | 용도 |
+|--------|---------|------|
+| **Shopping** | DEMO_ENVS × DEMO_REGIONS × DEMO_SVCS × DEMO_NSS + ROLES + EVENTS | 쇼핑 플랫폼 인덱스 체계 |
+| **RBAC** | role × action × resource | 역할 기반 접근 제어 |
+| **Content** | tag × category × status × locale × channel | 콘텐츠 플랫폼 |
+| **Tracking** | trackAction × page × userType | 사용자 행동 추적 |
+| **Relational** | subjectKind × predicate × objectKind | 관계 모델 |
+
+```typescript
+import { AXIS } from "demo-snapshot";
+
+AXIS.role.entries     // ["admin", "editor", "viewer"]
+AXIS.role.capacity    // 8
+AXIS.role.ko          // { admin: "관리자", ... }
+```
+
+### 상위 스키마
+
+| Export | 설명 |
+|--------|------|
+| `buildDemoRegistryInput()` | MetaRegistry 생성용 순수 데이터 객체 |
+| `DEMO_SVC` | 사전 계산된 서비스 주소 상수 |
+| `DEMO_FEATURES_V1/V2` | 기능 정의 (역할 매핑, 이벤트 값 포함) |
+| `DEMO_SHOPPING_SERVICES` | 서비스별 리소스/액션 컨텍스트 |
+
+## 통합 테스트 (demo-tests)
+
+완성된 데이터 구조로 의도를 표현하고, cross-package 동작을 검증하는 테스트 패키지.
+
+```
+demo-tests/src/
+├── index-meta/           17개 — MetaRegistry 시나리오, E2E, 정책, SDK
+├── permission-engine/     6개 — 시나리오, 코덱, 리소스, 서비스참조
+├── registry-codec.test.ts       MetaRegistry 코덱 라운드트립
+├── position-stability.test.ts   v1→v2 위치 안정성
+├── permission-migration.test.ts 권한 마이그레이션 통합
+└── schema-consistency.test.ts   스키마 일관성 검증
+```
+
+## 플랫폼 데모 (platform-demo)
+
+13개 시트로 인덱스 체계를 시각화하는 인터랙티브 웹 도구.
+
+```
+platform-demo/src/pages/
+├── overview.ts        개요
+├── range.ts           범위탐색
+├── access.ts          권한범위 시뮬레이터
+├── service.ts         서비스 4D 인덱스 그리드
+├── permission.ts      권한 2D 인덱스 그리드
+├── event.ts           이벤트 3D 인덱스 그리드
+├── scenario.ts        역할별 접근 제어 시뮬레이션
+├── grant.ts           기능×역할 grant 매트릭스 편집
+├── casbin.ts          Casbin RBAC/ABAC 해설
+├── logging.ts         구조화 로그 주소 태깅
+├── layout.ts          UUID 레이아웃 시뮬레이터
+├── version.ts         MetaRegistry v1/v2 비교 (SSOT 기반)
+└── perm-engine.ts     PermissionSet 비트마스크 v1→v2 마이그레이션 비교
 ```
 
 ### 포맷 적합성이 분리된 이유
@@ -134,3 +173,20 @@ weighted-index-explorer/src/
 - WeightedIndex는 포맷을 몰라도 동작한다
 - 하나의 shape에 대해 여러 포맷의 적합성을 동시에 평가할 수 있다
 - 커스텀 포맷을 추가해도 수학 레이어는 변경 없다
+
+**Number/BigInt 선택도 동일한 원칙을 따른다.**
+`WeightedIndex`(Number)와 `WeightedIndexBig`(BigInt)은 모두 shape만으로 동작하는 순수 수학이다.
+어느 엔진을 쓸지는 외부 어댑터가 shape product를 사후 분석하여 결정한다:
+
+```
+shape  ─→  computeProductBig(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Number)
+                                          > 2^53?  ─→  WeightedIndexBig (BigInt)
+```
+
+엔진 선택 후에도 포맷 적합성은 별도 판단이다:
+- `fitsHexBudget(shape, 24)` → UUID 24 hex chars에 맞는가?
+- `fits64Bit(shape)` → 64-bit 정수에 맞는가?
+- `charsForMax(wi.size - 1)` → 몇 hex chars가 필요한가?
+
+수학 엔진은 이 판단에 관여하지 않으며, 상위 레이어(`index-meta`의 Capacity Guard)가 스키마 정의 시점에 `numberType`을 확정하고 런타임 가드를 수행한다.
+상세: [bigint-addressing.spec.md](bigint-addressing.spec.md)

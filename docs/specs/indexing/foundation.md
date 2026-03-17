@@ -75,9 +75,45 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 
 | 모듈 | 역할 | 의존 |
 |---|---|---|
-| `WeightedIndex` | 순수 수학 엔진 | 없음 (shape만) |
+| `WeightedIndex` | 순수 수학 엔진 (Number) | 없음 (shape만) |
+| `WeightedIndexBig` | 순수 수학 엔진 (BigInt, shape product > 2^53) | 없음 (shape만) |
 | `LabelRegistry` | 레이블별 entity ID ↔ 1-based index | WeightedIndex 불필요 |
 | `PrefixCodec` | 레이블 조합 + 버전 관리 + encode/decode | WeightedIndex + LabelRegistry |
 | `calc`, `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
 
+> **Note**: `WeightedIndex`와 `WeightedIndexBig`은 동일한 알고리즘의 Number/BigInt 구현이다. 둘 다 shape만 알면 동작하며, 직렬화 포맷이나 `numberType` 선택에 관여하지 않는다. 엔진 선택은 상위 레이어(어댑터)가 shape product를 사후 분석하여 결정한다.
+
 `PrefixCodec`와 `MetaRegistry`는 구조적으로 유사하다. `MetaRegistry`가 기능적 상위 호환이지만, `PrefixCodec`는 컴파일 타임 타입 안전성(`InferLabelSchema`)을 제공하고 `weighted-index` 자체를 독립 사용할 수 있는 경로를 유지한다.
+
+---
+
+## 4. 가속 지향 설계 원칙
+
+> 상세: [`acceleration.md`](acceleration.md) — 하드웨어 가속 비전 및 로드맵
+
+인덱싱 시스템의 연산 특성은 하드웨어 가속(FPGA/PCIe 등)에 구조적으로 적합하다. 이 적합성은 부수적 결과가 아니라, 아래 원칙에서 **자연스럽게 도출되는 성질**이다.
+
+### 문자열은 아래로 내려가지 않는다
+
+모든 도메인 값(역할 이름, 액션 이름 등)은 스키마 레이어(MetaCodec)에서 정수 좌표로 변환된다. 수학 레이어(WeightedIndex)는 오직 정수만 다룬다. 이 경계가 곧 가속 경계다.
+
+```
+문자열 도메인  →  정수 좌표  →  packed key
+                    ↑
+              가속 경계 (이 아래는 정수만)
+```
+
+### 모든 것은 ref_id로 수렴한다
+
+각 axis의 도메인 값은 DimSnapshot의 position(1-based 정수)으로 수렴한다. 이 position이 ref_id이며, encode/decode의 유일한 입력이다. 문자열 → position 변환은 CPU에서 수행하고, position → packed key 변환만 가속한다.
+
+### packed key는 계산 결과가 아니라 identity다
+
+packed key는 단순 인코딩 결과물이 아니다. 그것이 곧 데이터의 정체성(identity)이다. schema가 불변이고 key가 결정론적이므로, **동일한 의미는 항상 동일한 key로 표현된다.** 이것이 packed key를 캐시 키, DB PK, 비교 연산의 기반으로 사용할 수 있는 근거이며, 하드웨어 lookup table의 안정성을 보장한다.
+
+### 불변성이 가속의 전제 조건이다
+
+shape 확정 → weights 불변. entries 확정 → lookup table 불변. 이 불변성 덕분에:
+- FPGA configuration을 런타임에 변경할 필요가 없다 (version 변경 시만 재로드)
+- 캐시 일관성 문제가 없다
+- 병렬 접근이 안전하다

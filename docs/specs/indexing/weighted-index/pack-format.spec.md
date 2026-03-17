@@ -661,18 +661,26 @@ layout:* → uri → colon → compact
 
 ```
 weighted-index (이 패키지)
-├── WeightedIndex         : 좌표 ↔ 정수 전단사
-├── AddressConverter      : 프로토콜 변환 엔진
-├── createLayoutProtocol  : hex 컨테이너 프로토콜 팩토리
-├── SemanticAddress       : 프로토콜 독립 좌표
-└── fromVersionedValue    : VersionedValue ↔ SemanticAddress 어댑터
+├── WeightedIndex            : 좌표 ↔ 정수 전단사 (Number, shape만 의존)
+├── WeightedIndexBig         : 좌표 ↔ 정수 전단사 (BigInt, shape만 의존)
+├── AddressConverter         : 프로토콜 변환 엔진
+├── createLayoutProtocol     : hex 컨테이너 프로토콜 팩토리 (Number)
+├── createLayoutProtocolBig  : hex 컨테이너 프로토콜 팩토리 (BigInt)
+├── SemanticAddress          : 프로토콜 독립 좌표
+└── fromVersionedValue       : VersionedValue ↔ SemanticAddress 어댑터
 
 index-meta (외부 소비자)
-├── MetaCodec.encode/decode    : 엔티티 ID ↔ VersionedValue (LabelRegistry + PrefixCodec 위임)
-├── MetaRegistry.serialize/parse : AddressConverter에 위임 + 레지스트리 검증
-├── MetaRegistry.createCodec() : 특정 version 코덱 생성
-└── AddressConfig              : layout 프로토콜 바인딩 설정
+├── MetaCodec.encode/decode        : 엔티티 ID ↔ VersionedValue (Number 경로)
+├── MetaCodecBig.encode/decode     : 엔티티 ID ↔ VersionedValueBig (BigInt 경로)
+├── MetaRegistry.serialize/parse   : AddressConverter에 위임 + 레지스트리 검증
+├── MetaRegistry.serializeBig/parseBig : BigInt layout protocol + 검증
+├── MetaRegistry.createCodec()     : Number 코덱 생성 (numberType guard)
+├── MetaRegistry.createCodecBig()  : BigInt 코덱 생성
+├── Capacity Guard                 : shape → numberType 자동 감지/검증
+└── AddressConfig                  : layout 프로토콜 바인딩 설정
 ```
+
+> **핵심 원칙**: `WeightedIndex`/`WeightedIndexBig`은 순수 수학이다 — 직렬화 포맷이나 `numberType`에 관여하지 않는다. Number/BigInt 엔진 선택과 포맷 적합성 판단은 상위 레이어(Capacity Guard)가 shape product를 사후 분석하여 수행한다.
 
 ### 통합 흐름
 
