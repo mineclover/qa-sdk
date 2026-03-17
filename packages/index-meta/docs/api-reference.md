@@ -65,6 +65,65 @@ toDecodeMap(): DecodeMap
 validateDecodeMap(map: DecodeMap): void  // standalone 함수로 export
 ```
 
+### Capacity Guard API
+
+```ts
+import { computeShapeProductBig, fitsNumber } from "index-meta";
+import { CapacityOverflowError } from "index-meta";
+import type { NumberType, VersionCapacityInfo } from "index-meta";
+
+// shape product를 BigInt로 정확히 계산
+computeShapeProductBig(shape: readonly number[]): bigint
+
+// Number.MAX_SAFE_INTEGER 이내인지 판별
+fitsNumber(shape: readonly number[]): boolean
+
+// strict: false일 때 수집된 capacity 경고 조회
+registry.capacityWarnings: readonly string[]
+
+// 특정 version의 capacity 분석 결과
+registry.getCapacityInfo(indexId, versionId): VersionCapacityInfo
+// → { indexId, versionId, shape, sizeNumber, sizeBigInt, fitsNumber, numberType }
+```
+
+### MetaCodecBig API
+
+```ts
+import { MetaCodecBig } from "index-meta";
+import type { VersionedValueBig } from "index-meta";
+
+// DecodeMap으로 생성 (BigInt-aware 검증, size 캡 허용)
+new MetaCodecBig(map: DecodeMap)
+
+// BigInt 기반 encode/decode — WeightedIndexBig 내부 사용
+encode(entityIds: Record<string, EntityId>): VersionedValueBig
+decode(vvb: VersionedValueBig): Readonly<Record<string, EntityId>>
+decodeValue(value: bigint): Readonly<Record<string, EntityId>>
+decodeBatch(values: readonly bigint[]): Readonly<Record<string, EntityId>>[]
+
+// BigInt 범위 쿼리
+matchRanges(partial: Record<string, EntityId | null>): [bigint, bigint][]
+
+get indexId(): string
+get versionId(): string
+get size(): bigint
+get shape(): readonly bigint[]
+get strides(): readonly bigint[]
+get dimIds(): readonly string[]
+toDecodeMap(): DecodeMap
+```
+
+### BigInt 직렬화 API
+
+```ts
+// BigInt 코덱 생성 — numberType과 무관하게 사용 가능
+registry.createCodecBig(indexId, versionId): MetaCodecBig
+
+// BigInt layout protocol로 직렬화/파싱 (address config 필수)
+registry.serializeBig(vvb: VersionedValueBig): string
+registry.parseBig(input: string): VersionedValueBig
+```
+
 ### 조회 API
 
 ```ts

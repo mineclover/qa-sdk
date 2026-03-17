@@ -95,7 +95,8 @@ dim kind로 `index_ref`를 선언하면 다른 인덱스의 압축값을 엔트�
 | **RelationalEngine** | policy-resolver + cross-index-query + MetaRegistry를 통합한 facade. 2-level rule engine, cross-index 범위 합성, 깊은 디코딩을 단일 진입점으로 제공 |
 | **Gate-Aware Query** | RelationalEngine(의미적) + GateEngine(물리적) 합성 유틸리티. policy 결과에 gate 상태를 결합하여 permitted 판정. 범위 필터링(encodable/decodable/active 모드) 지원 |
 | **스키마 동기화 강화** | `applySchemaDiff`로 diff 기반 capacity 자동 마이그레이션. leaf 변경의 composite cascade 반영 |
-| **BigInt 주소 공간** | `WeightedIndexBig` + `calcAddressRangesBig`로 2^53 초과 shape product 지원 |
+| **Capacity Guard** | `numberType` 선언/자동 감지 + strict 모드. shape product 초과 시 `CapacityOverflowError`. `getCapacityInfo()`로 용량 분석. 설계: [`capacity-guard.md`](capacity-guard.md) |
+| **BigInt 주소 공간** | `MetaCodecBig` + `WeightedIndexBig`로 2^53 초과 shape product encode/decode. `createCodecBig()`, `serializeBig()`/`parseBig()` 제공. `createLayoutProtocolBig`로 UUID 정밀도 손실 없는 직렬화 |
 | **Codegen + Lint** | `generateTypes`로 스키마 → TypeScript 타입 자동 생성. `lintSchema`로 스키마 검증 + `formatSchemaDiff`로 diff 리포트 |
 | **D1 SqlDriver** | `D1SqlDriver` 어댑터로 모든 Sql* 스토어(PrefixRegistry, EntryFlagStore, AddressRangeCache 등)를 Cloudflare D1에서 사용 가능 |
 
@@ -114,6 +115,7 @@ encode/decode 구조 자체가 범용적이므로 권한 관리 외에도 다양
 | **Relational Engine** | 하나의 index를 관계 유형 정의 테이블(S-P-O)로 사용해 rule 엔진과 prefix 조합으로 관계형 시스템 구축. 설계: [`relational-engine.md`](relational-engine.md) |
 | **DAG 탐색 확장** | index_ref DAG 위에 결과 캐시, 역방향 탐색, 경로 쿼리를 추가하면 그래프 엔진으로 확장 가능 |
 | **Vocabulary 관리** | append-only + inactive 패턴 위에 토크나이저 어댑터, fuzzy matching을 추가하면 자연어 vocabulary 관리로 확장 가능 |
+| **하드웨어 가속 (FPGA/PCIe)** | encode/decode가 분기 없는 순수 산술이고, shape/weights가 불변이므로 FPGA single-cycle encode가 구조적으로 가능. 비전: [`acceleration.md`](../../docs/specs/indexing/acceleration.md) |
 
 ---
 

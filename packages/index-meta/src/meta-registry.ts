@@ -36,8 +36,12 @@
 import {
   WeightedIndex,
   calcWeights,
+  createLayoutProtocolBig,
+  fromVersionedValueBig,
+  toVersionedValueBig,
   type AddressConverter as WiAddressConverter,
   type AddressProtocol,
+  type AddressProtocolBig,
 } from "weighted-index";
 import { AddressProtocolManager } from "./address-protocol-manager.js";
 import type {
@@ -53,11 +57,15 @@ import type {
   IndexActiveManifest,
   DimActiveSet,
   VersionedValue,
+  VersionedValueBig,
   EntityId,
+  NumberType,
   SnapshotDiff,
   VersionDiff,
+  VersionCapacityInfo,
 } from "./types.js";
 import { MetaCodec } from "./meta-codec.js";
+import { MetaCodecBig } from "./meta-codec-big.js";
 import {
   DimNotFoundError,
   SnapshotNotFoundError,
@@ -66,6 +74,7 @@ import {
   MigrationNotFoundError,
   ValidationError,
   ParseError,
+  CapacityOverflowError,
 } from "./errors.js";
 
 // ── 공통 유틸 ─────────────────────────────────────────────────────────────────
@@ -91,6 +100,20 @@ export function snapshotCapacity(snapshot: DimSnapshot): number {
   return snapshot.capacity ?? snapshot.entries.length;
 }
 
+// ── Capacity 헬퍼 ────────────────────────────────────────────────────────────
+
+/** shape product를 BigInt로 정확히 계산. */
+export function computeShapeProductBig(shape: readonly number[]): bigint {
+  let product = 1n;
+  for (const s of shape) product *= BigInt(s);
+  return product;
+}
+
+/** Number.MAX_SAFE_INTEGER 이내인지 판별. */
+export function fitsNumber(shape: readonly number[]): boolean {
+  return computeShapeProductBig(shape) <= BigInt(Number.MAX_SAFE_INTEGER);
+}
+
 // ── 내부 캐시 타입 ────────────────────────────────────────────────────────────
 
 interface SnapshotCache {
@@ -113,8 +136,12 @@ export class MetaRegistry {
 
   /** 독립 주소 직렬화 게이트웨이. serialize/parse/converter/defaultProtocol 위임. */
   readonly address: AddressProtocolManager;
+  /** BigInt layout protocol (lazy 초기화). */
+  private _bigLayoutProto?: AddressProtocolBig;
   /** toInput() 복제용 원본 스냅샷. */
   private readonly _input: MetaRegistryInput;
+  /** strict: false일 때 수집된 capacity 경고. */
+  private readonly _capacityWarnings: string[] = [];
 
   constructor(input: MetaRegistryInput) {
     this._input = structuredClone(input);
@@ -299,6 +326,7 @@ export class MetaRegistry {
         dims: Object.freeze([...indexInput.dims]),
         description: indexInput.description,
         domain: indexInput.domain,
+        numberType: indexInput.numberType ?? "number", // 임시값, capacity guard에서 확정
       });
 
       const vMap = new Map<string, IndexVersion>();
@@ -471,11 +499,85 @@ export class MetaRegistry {
       }
     }
 
+    // ── Capacity Guard (NumberType 확정) ─────────────────────────────────────
+    {
+      const strict = input.strict !== false;
+      for (const [indexId, indexInput] of Object.entries(input.indices)) {
+        const def = indicesMap.get(indexId)!;
+        const vMap = versionsMap.get(indexId)!;
+        let indexRequiresBigInt = false;
+
+        for (const [versionId, iv] of vMap) {
+          const shape: number[] = [];
+          for (const dimId of def.dims) {
+            const snapshotId = iv.snapshots[dimId];
+            shape.push(snapshotsMap.get(dimId)!.get(snapshotId)!.snapshot.entries.length);
+          }
+          const productBig = computeShapeProductBig(shape);
+          const fits = productBig <= BigInt(Number.MAX_SAFE_INTEGER);
+
+          if (!fits) {
+            indexRequiresBigInt = true;
+            if (indexInput.numberType === "number") {
+              const msg = `Index "${indexId}/${versionId}": shape product (${productBig}) exceeds Number.MAX_SAFE_INTEGER. Declare numberType: "bigint" or reduce dim sizes.`;
+              if (strict) {
+                throw new CapacityOverflowError(indexId, versionId, productBig,
+                  'Declare numberType: "bigint" or reduce dim sizes.');
+              }
+              this._capacityWarnings.push(msg);
+            }
+          }
+        }
+
+        // numberType 확정
+        const declaredType = indexInput.numberType;
+        let effectiveType: NumberType;
+        if (declaredType) {
+          effectiveType = indexRequiresBigInt ? "bigint" : declaredType;
+        } else {
+          effectiveType = indexRequiresBigInt ? "bigint" : "number";
+        }
+
+        // IndexDef의 numberType 갱신 (freeze 전이므로 변경 가능)
+        (def as { numberType: NumberType }).numberType = effectiveType;
+      }
+    }
+
     // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────
     if (input.address) {
       this._validateAddressConfig(input.address, indicesMap, versionsMap);
     }
     this.address = new AddressProtocolManager(input.address);
+  }
+
+  // ── Capacity Guard ──────────────────────────────────────────────────────────
+
+  /** strict: false일 때 수집된 capacity 경고 목록. */
+  get capacityWarnings(): readonly string[] {
+    return this._capacityWarnings;
+  }
+
+  /**
+   * 특정 index version의 capacity 분석 결과를 반환한다.
+   */
+  getCapacityInfo(indexId: string, versionId: string): VersionCapacityInfo {
+    const def = this._getIndexDef(indexId);
+    const iv = this._getIndexVersion(indexId, versionId);
+    const shape = def.dims.map((dimId) => {
+      const snapshotId = iv.snapshots[dimId];
+      return this._getSnapshotCache(dimId, snapshotId).snapshot.entries.length;
+    });
+    const sizeBigInt = computeShapeProductBig(shape);
+    const fits = sizeBigInt <= BigInt(Number.MAX_SAFE_INTEGER);
+    return {
+      indexId,
+      versionId,
+      shape,
+      sizeNumber: fits ? Number(sizeBigInt) : Number.MAX_SAFE_INTEGER,
+      sizeBigInt,
+      fitsNumber: fits,
+      numberType: def.numberType,
+    };
   }
 
   // ── Manifest ─────────────────────────────────────────────────────────────────
@@ -538,6 +640,47 @@ export class MetaRegistry {
       shape: [...wi.shape],
       size: wi.size,
       dims,
+      numberType: def.numberType,
+    });
+  }
+
+  /**
+   * BigInt 기반 코덱 생성.
+   *
+   * numberType과 무관하게 생성 가능. BigInt 연산이므로
+   * Number 기반보다 5~20x 느리지만 주소 공간 제한이 없다.
+   *
+   * @example
+   * const codec = reg.createCodecBig("huge", "v1");
+   * const vvb = codec.encode({ d1: 0, d2: 1, d3: 2 });
+   * const ids = codec.decode(vvb);
+   */
+  createCodecBig(indexId: string, versionId: string): MetaCodecBig {
+    const def = this._getIndexDef(indexId);
+    const iv = this._getIndexVersion(indexId, versionId);
+
+    const dims = def.dims.map((dimId) => {
+      const snapshotId = iv.snapshots[dimId];
+      const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
+      const dimDef = this.dims.get(dimId)!;
+      return {
+        dimId,
+        snapshotId,
+        kind: dimDef.kind,
+        entries: [...snapshot.entries] as EntityId[],
+      };
+    });
+
+    const shape = dims.map((d) => d.entries.length);
+    const productBig = computeShapeProductBig(shape);
+
+    return new MetaCodecBig({
+      indexId,
+      versionId,
+      shape,
+      size: productBig <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(productBig) : Number.MAX_SAFE_INTEGER,
+      dims,
+      numberType: def.numberType,
     });
   }
 
@@ -573,6 +716,16 @@ export class MetaRegistry {
    * reg.serialize(vv, "layout:uuid")     // → "00010001-0000-...-002a"
    */
   serialize(vv: VersionedValue, protocol?: AddressProtocol | string): string {
+    // Capacity Guard: bigint-typed index는 Number 기반 직렬화 불가
+    const def = this.indices.get(vv.indexId);
+    if (def?.numberType === "bigint") {
+      const iv = this._getIndexVersion(vv.indexId, vv.versionId);
+      const shape = def.dims.map((dimId) =>
+        this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
+      );
+      throw new CapacityOverflowError(vv.indexId, vv.versionId, computeShapeProductBig(shape),
+        'Number-based serialize is not available for BigInt-typed index.');
+    }
     return this.address.serialize(vv, protocol);
   }
 
@@ -601,6 +754,73 @@ export class MetaRegistry {
       );
     }
     return vv;
+  }
+
+  /**
+   * BigInt VersionedValue → layout 프로토콜 문자열.
+   *
+   * address config 필수. BigInt layout protocol로 직렬화한다.
+   * indexChars > 13인 경우에도 정밀도 손실 없이 직렬화 가능.
+   *
+   * @example
+   * reg.serializeBig({ indexId: "huge", versionId: "v1", value: 123456789012345678n })
+   * // → "00010001-0000-0000-0000-01b69b4bacd68e"
+   */
+  serializeBig(vvb: VersionedValueBig): string {
+    const proto = this._getBigLayoutProto();
+    return proto.serialize(fromVersionedValueBig(vvb));
+  }
+
+  /**
+   * layout 프로토콜 문자열 → BigInt VersionedValue.
+   *
+   * address config 필수. BigInt layout protocol로 파싱한다.
+   *
+   * @example
+   * reg.parseBig("00010001-0000-0000-0000-01b69b4bacd68e")
+   * // → { indexId: "huge", versionId: "v1", value: 123456789012345678n }
+   */
+  parseBig(input: string): VersionedValueBig {
+    const proto = this._getBigLayoutProto();
+    const addr = proto.parse(input);
+    const vvb = toVersionedValueBig(addr);
+    // 존재 검증
+    this._getIndexVersion(vvb.indexId, vvb.versionId);
+    // 범위 검증
+    const def = this._getIndexDef(vvb.indexId);
+    const iv = this._getIndexVersion(vvb.indexId, vvb.versionId);
+    const shape = def.dims.map((dimId) =>
+      this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
+    );
+    const sizeBig = computeShapeProductBig(shape);
+    if (vvb.value < 0n || vvb.value >= sizeBig) {
+      throw new ParseError(
+        `Value ${vvb.value} out of range [0, ${sizeBig - 1n}] for "${vvb.indexId}/${vvb.versionId}"`
+      );
+    }
+    return vvb;
+  }
+
+  /** BigInt layout protocol lazy 초기화. */
+  private _getBigLayoutProto(): AddressProtocolBig {
+    if (!this._bigLayoutProto) {
+      const input = this._input;
+      if (!input.address) {
+        throw new ValidationError(
+          'serializeBig/parseBig requires address config (layout protocol). ' +
+          'Use text protocols (colon/uri) via serialize/parse instead.'
+        );
+      }
+      this._bigLayoutProto = createLayoutProtocolBig({
+        format: input.address.format,
+        schemaChars: input.address.schemaChars,
+        versionChars: input.address.versionChars,
+        sharding: input.address.sharding,
+        schemas: input.address.schemas,
+        versions: input.address.versions,
+      });
+    }
+    return this._bigLayoutProto;
   }
 
   // ── 조회 ─────────────────────────────────────────────────────────────────────
@@ -1001,11 +1221,21 @@ export class MetaRegistry {
   }
 
   private _getWeightedIndex(indexId: string, versionId: string): WeightedIndex {
+    const def = this._getIndexDef(indexId);
+    if (def.numberType === "bigint") {
+      const iv = this._getIndexVersion(indexId, versionId);
+      const shape = def.dims.map((dimId) =>
+        this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
+      );
+      const productBig = computeShapeProductBig(shape);
+      throw new CapacityOverflowError(indexId, versionId, productBig,
+        'Number-based encode/decode is not available for BigInt-typed index.');
+    }
+
     const key = `${indexId}:${versionId}`;
     let wi = this.wiCache.get(key);
     if (!wi) {
       const iv = this._getIndexVersion(indexId, versionId);
-      const def = this._getIndexDef(indexId);
       const shape = def.dims.map((dimId) => {
         const snapshotId = iv.snapshots[dimId];
         return this._getSnapshotCache(dimId, snapshotId).snapshot.entries.length;

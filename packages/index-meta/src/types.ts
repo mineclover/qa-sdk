@@ -43,6 +43,16 @@ import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from "wei
  *       ↳ index_ref   → 반환값이 또 다른 닫힌 패턴의 1차원 주소 (재귀 확장 가능)
  */
 
+// ── NumberType ────────────────────────────────────────────────────────────────
+
+/**
+ * 주소 공간이 Number.MAX_SAFE_INTEGER 안에 들어오는지 선언.
+ *
+ * - "number": shape product ≤ 2^53. Number 기반 encode/decode/serialize 가능.
+ * - "bigint": shape product > 2^53. Number 기반 연산 차단. 메타데이터만 기록.
+ */
+export type NumberType = "number" | "bigint";
+
 // ── DimKind ───────────────────────────────────────────────────────────────────
 
 /**
@@ -204,6 +214,16 @@ export interface IndexInput {
   domain?: string;
   /** versionId → IndexVersionInput */
   versions: Record<string, IndexVersionInput>;
+  /**
+   * 이 인덱스의 주소 값 표현 타입 힌트.
+   *
+   * - "number" (기본): shape product가 Number.MAX_SAFE_INTEGER 이내여야 한다.
+   * - "bigint": shape product가 2^53을 초과할 수 있음을 선언.
+   *   Number 기반 encode/decode/serialize는 차단된다.
+   *
+   * 생략 시 자동 감지: shape product를 BigInt로 계산하여 결정.
+   */
+  numberType?: NumberType;
 }
 
 // ── Address 프로토콜 바인딩 ──────────────────────────────────────────────────
@@ -267,6 +287,13 @@ export interface MetaRegistryInput {
    * 미설정 시에도 colon/uri/compact 텍스트 프로토콜은 사용 가능.
    */
   address?: AddressConfig;
+  /**
+   * capacity overflow 검증 모드.
+   *
+   * - true (기본): numberType 불일치 시 즉시 CapacityOverflowError.
+   * - false: 초과해도 경고만 수집하고 생성 허용. capacityWarnings로 조회 가능.
+   */
+  strict?: boolean;
 }
 
 // ── 저장/조회 타입 ────────────────────────────────────────────────────────────
@@ -311,6 +338,8 @@ export interface IndexDef {
   dims: readonly string[];
   description?: string;
   domain?: string;
+  /** 이 인덱스의 주소 공간이 요구하는 수치 타입. 자동 감지 또는 명시 선언. */
+  numberType: NumberType;
 }
 
 export interface IndexVersion {
@@ -378,6 +407,33 @@ export interface DecodeMap {
   }[];
   /** address 설정이 있으면 PK 파싱에 필요한 정보도 포함. */
   address?: AddressConfig;
+  /** 이 version의 주소 공간이 요구하는 수치 타입. */
+  numberType?: NumberType;
+}
+
+/**
+ * BigInt 주소 공간의 VersionedValue.
+ * VersionedValue와 동일하지만 value가 bigint 타입이다.
+ */
+export interface VersionedValueBig {
+  indexId: string;
+  versionId: string;
+  value: bigint;
+}
+
+/** 특정 index version의 capacity 분석 결과. */
+export interface VersionCapacityInfo {
+  indexId: string;
+  versionId: string;
+  shape: readonly number[];
+  /** shape 곱. Number.MAX_SAFE_INTEGER 초과 시 Number.MAX_SAFE_INTEGER로 캡. */
+  sizeNumber: number;
+  /** shape 곱의 정확한 값 (BigInt). */
+  sizeBigInt: bigint;
+  /** 이 버전의 주소 공간이 Number로 표현 가능한지. */
+  fitsNumber: boolean;
+  /** 선언된 또는 자동 감지된 numberType. */
+  numberType: NumberType;
 }
 
 /**

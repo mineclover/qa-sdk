@@ -1,8 +1,9 @@
 export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
 export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryView, DimFullView } from "./index-sdk.js";
-export { MetaRegistry, computeActiveIndices, snapshotCapacity } from "./meta-registry.js";
+export { MetaRegistry, computeActiveIndices, snapshotCapacity, computeShapeProductBig, fitsNumber } from "./meta-registry.js";
 export { AddressProtocolManager, type FallbackStats } from "./address-protocol-manager.js";
 export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
+export { MetaCodecBig } from "./meta-codec-big.js";
 export { MetaResolver } from "./meta-resolver.js";
 export { defineTable } from "./table-def.js";
 export { compileSchema } from "./compile-schema.js";
@@ -162,6 +163,9 @@ export type {
   MetaDataset,
   SnapshotDiff,
   VersionDiff,
+  NumberType,
+  VersionCapacityInfo,
+  VersionedValueBig,
 } from "./types.js";
 
 export {
@@ -175,4 +179,5 @@ export {
   ValidationError,
   ParseError,
   NegotiationError,
+  CapacityOverflowError,
 } from "./errors.js";

@@ -125,11 +125,17 @@ export {
   fromVersionedValue,
   toVersionedValue,
   createLayoutProtocol,
+  createLayoutProtocolBig,
+  fromVersionedValueBig,
+  toVersionedValueBig,
   AddressConverter,
   createAddressConverter,
   type SemanticAddress,
+  type SemanticAddressBig,
   type VersionedValue,
+  type VersionedValueBig,
   type AddressProtocol,
+  type AddressProtocolBig,
   type LayoutProtocolOptions,
   type ShardingStrategy,
 } from "./semantic-address.js";
@@ -179,3 +185,7 @@ export {
   SerializeError,
   MigrateError,
 } from "./errors.js";
+export {
+  createBinder,
+  type PartialBinder,
+} from "./partial-binder.js";

@@ -91,7 +91,27 @@ interface MetaRegistryInput {
 
 `strict: false`일 때 수집된 경고는 `registry.capacityWarnings`로 조회 가능.
 
-### 2.3 검증 시점
+### 2.3 선택 가능한 경로
+
+`numberType` 선언 × shape product × strict 조합에 따른 결과:
+
+| 선언 | shape product | strict | 결과 |
+|------|--------------|--------|------|
+| 생략 | ≤ 2^53 | - | 자동 `"number"` — 모든 encode/decode/serialize 정상 |
+| 생략 | > 2^53 | - | 자동 `"bigint"` — Number 연산 차단, 메타데이터만 기록 |
+| `"number"` | ≤ 2^53 | - | `"number"` — 정상 |
+| `"number"` | > 2^53 | `true` | **즉시 `CapacityOverflowError`** — 선언과 실제 불일치 |
+| `"number"` | > 2^53 | `false` | 경고 수집 + `"bigint"` 승격 |
+| `"bigint"` | ≤ 2^53 | - | `"bigint"` 유지 — Number 연산 차단 (사용자 의도) |
+| `"bigint"` | > 2^53 | - | `"bigint"` — 정상, Number 연산 차단 |
+
+**핵심 원칙:**
+- 생략하면 시스템이 최적 타입을 자동 감지한다.
+- `"number"` 선언은 "Number 범위 안에 있어야 한다"는 제약을 건다.
+- `"bigint"` 선언은 shape 크기와 무관하게 Number 연산을 차단한다.
+- `strict`는 `"number"` 선언 + 초과 시에만 동작이 달라진다.
+
+### 2.4 검증 시점 및 전파
 
 ```
 ┌─ 스키마 정의 ──────────────────────────────────────────────┐
@@ -121,12 +141,12 @@ interface MetaRegistryInput {
 │     "UUID 변환에 BigInt 주소를 사용할 수 없습니다"             │
 │                                                            │
 │  6. PrefixDecoder                                           │
-│     DecodeMap.numberType === "bigint" → 생성 시 에러          │
+│     main/ref DecodeMap.numberType === "bigint" → 생성 시 에러  │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
-### 2.4 에러 메시지 원칙
+### 2.5 에러 메시지 원칙
 
 모든 에러는 **원인 + 조치 방법**을 포함한다.
 
@@ -359,8 +379,8 @@ if (bundle.map.numberType === "bigint") {
 
 | 제약 | 설명 |
 |------|------|
-| **BigInt encode/decode 미지원** | Capacity Guard는 *검증*만 수행한다. `numberType: "bigint"`인 스키마의 실제 encode/decode는 별도 작업 범위 |
-| **Number 타입 유지** | `VersionedValue.value`, `SemanticAddress.index`는 `number` 유지. BigInt 전환은 breaking change이므로 이 설계 범위 밖 |
+| **BigInt 경로는 별도 API** | `MetaCodecBig`, `createCodecBig()`, `serializeBig()`/`parseBig()`로 BigInt encode/decode 제공. 기존 Number API(`MetaCodec`, `createCodec()`)와 병렬 구조 |
+| **Number 타입 유지** | `VersionedValue.value`, `SemanticAddress.index`는 `number` 유지. BigInt 전용 타입은 `VersionedValueBig`, `SemanticAddressBig`으로 분리. TypeScript number/bigint 연산 비호환으로 union 불가 |
 | **capacity 필드 캡핑** | `CompositeVersionSpec.capacity`는 `number` 타입이므로, 초과 시 `Number.MAX_SAFE_INTEGER`로 캡. 정확한 값은 `VersionCapacityInfo.sizeBigInt`로 조회 |
 
 ---

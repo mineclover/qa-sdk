@@ -57,6 +57,12 @@ export class PrefixDecoder {
 
   constructor(config: PrefixDecoderConfig) {
     validateDecodeMap(config.map);
+    if (config.map.numberType === "bigint") {
+      throw new ValidationError(
+        `PrefixDecoder does not support BigInt-typed index "${config.map.indexId}/${config.map.versionId}". ` +
+        `Use BigInt-capable codec instead.`
+      );
+    }
     this._config = config;
     this._codec = new MetaCodec(config.map);
 
@@ -65,6 +71,12 @@ export class PrefixDecoder {
     if (config.refs) {
       for (const [indexId, refMap] of Object.entries(config.refs)) {
         validateDecodeMap(refMap);
+        if (refMap.numberType === "bigint") {
+          throw new ValidationError(
+            `PrefixDecoder: reference index "${indexId}" cannot be BigInt-typed. ` +
+            `Use BigInt-capable codec instead.`,
+          );
+        }
         this._refCodecs.set(indexId, new MetaCodec(refMap));
       }
     }

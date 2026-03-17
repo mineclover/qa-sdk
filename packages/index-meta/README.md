@@ -29,6 +29,8 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 | **Gate-Aware Query** | RelationalEngine(의미적) + GateEngine(물리적) 합성. policy 결과에 gate 상태 결합, 범위 필터링(encodable/decodable/active 모드) | [`gate-aware-query.ts`](src/gate-aware-query.ts) |
 | **Address Range 캐시** | `calcAddressRanges` 결과를 DB에 사전 계산·저장. 런타임 O(log n) binary search로 판정. 고차원 비연속 OR 조합의 성능 문제 해결 | [`address-range-cache.ts`](src/address-range-cache.ts) |
 | **범용 SQL 드라이버** | `SqlDialect` 기반 DB 추상화. SQLite/PostgreSQL/D1/DuckDB/ClickHouse 지원을 위한 dialect 플래그 + upsert + batch | [`sql-store.ts`](src/adapters/sql-store.ts) |
+| **Capacity Guard** | `numberType` 선언/자동 감지 + strict 모드로 shape product 초과 사전 검증. `getCapacityInfo()`로 용량 분석 | [`meta-registry.ts`](src/meta-registry.ts) — `computeShapeProductBig`/`fitsNumber`, [`docs/capacity-guard.md`](docs/capacity-guard.md) |
+| **BigInt encode/decode** | `MetaCodecBig`로 2^53 초과 주소 공간 encode/decode. `createCodecBig()`, `serializeBig()`/`parseBig()` 제공 | [`meta-codec-big.ts`](src/meta-codec-big.ts), [`semantic-address.ts`](../weighted-index/src/semantic-address.ts) — `createLayoutProtocolBig` |
 
 ### 활용 가능 (구조적으로 지원되나 전용 통합은 미구현)
 

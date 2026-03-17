@@ -674,3 +674,158 @@ export function fromVersionedValue(vv: VersionedValue): SemanticAddress {
 export function toVersionedValue(addr: SemanticAddress): VersionedValue {
   return { indexId: addr.schema, versionId: addr.version, value: addr.index };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BigInt variants — 2^53 초과 주소 공간 지원
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * BigInt 주소 공간의 SemanticAddress.
+ * SemanticAddress와 동일하지만 index가 bigint 타입이다.
+ */
+export interface SemanticAddressBig {
+  readonly schema:  string;
+  readonly version: string;
+  readonly index:   bigint;
+  readonly shard?:  number;
+}
+
+/**
+ * BigInt 주소 공간의 VersionedValue.
+ */
+export interface VersionedValueBig {
+  indexId: string;
+  versionId: string;
+  value: bigint;
+}
+
+/** BigInt 주소 프로토콜. serialize/parse가 bigint index를 사용. */
+export interface AddressProtocolBig {
+  readonly name: string;
+  test(input: string): boolean;
+  serialize(addr: SemanticAddressBig): string;
+  parse(input: string): SemanticAddressBig;
+}
+
+export function fromVersionedValueBig(vv: VersionedValueBig): SemanticAddressBig {
+  return { schema: vv.indexId, version: vv.versionId, index: vv.value };
+}
+
+export function toVersionedValueBig(addr: SemanticAddressBig): VersionedValueBig {
+  return { indexId: addr.schema, versionId: addr.version, value: addr.index };
+}
+
+/**
+ * BigInt layout protocol.
+ *
+ * createLayoutProtocol과 동일하지만 index 필드를 BigInt로 처리한다.
+ * indexChars > 13인 경우에도 정밀도 손실 없이 직렬화/파싱 가능.
+ */
+export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressProtocolBig {
+  const { format, schemaChars, versionChars, schemas, versions, sharding } = opts;
+  const shardChars = sharding?.chars ?? 0;
+
+  if (sharding !== undefined) {
+    if (!Number.isInteger(sharding.chars) || sharding.chars <= 0) {
+      throw new RangeError(`createLayoutProtocolBig: sharding.chars must be a positive integer, got ${sharding.chars}`);
+    }
+    if (!Number.isInteger(sharding.numShards) || sharding.numShards < 1) {
+      throw new RangeError(`createLayoutProtocolBig: sharding.numShards must be a positive integer, got ${sharding.numShards}`);
+    }
+    const shardCapacity = 16 ** sharding.chars;
+    if (sharding.numShards > shardCapacity) {
+      throw new RangeError(
+        `createLayoutProtocolBig: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`
+      );
+    }
+  }
+
+  const leftChars  = schemaChars + versionChars + shardChars;
+  const indexChars = format.chars - leftChars;
+  if (indexChars <= 0) {
+    throw new RangeError(
+      `createLayoutProtocolBig: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`
+    );
+  }
+
+  // BigInt로 최대값 계산 — Number 오버플로 없음
+  const indexMaxBig = (1n << BigInt(indexChars * 4)) - 1n;
+
+  function computeShard(index: bigint): number {
+    return Number(index % BigInt(sharding!.numShards));
+  }
+
+  const schemaByNum  = new Map<number, string>();
+  for (const [name, num] of Object.entries(schemas))  schemaByNum.set(num, name);
+  const versionByNum = new Map<number, string>();
+  for (const [name, num] of Object.entries(versions)) versionByNum.set(num, name);
+
+  const hexPattern = format.groups
+    ? new RegExp(`^${format.groups.map(g => `[0-9a-f]{${g}}`).join("-")}$`, "i")
+    : new RegExp(`^[0-9a-f]{${format.chars}}$`, "i");
+
+  return {
+    name: `layout:${format.name}`,
+
+    test(input: string): boolean {
+      return hexPattern.test(input);
+    },
+
+    serialize(addr: SemanticAddressBig): string {
+      const sNum = schemas[addr.schema];
+      const vNum = versions[addr.version];
+      if (sNum === undefined) throw new RangeError(`Unknown schema: "${addr.schema}"`);
+      if (vNum === undefined) throw new RangeError(`Unknown version: "${addr.version}"`);
+
+      const schemaMax = 16 ** schemaChars - 1;
+      if (sNum > schemaMax) {
+        throw new RangeError(
+          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`
+        );
+      }
+      const versionMax = 16 ** versionChars - 1;
+      if (vNum > versionMax) {
+        throw new RangeError(
+          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`
+        );
+      }
+      if (addr.index > indexMaxBig) {
+        throw new RangeError(
+          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMaxBig})`
+        );
+      }
+
+      const sHex  = sNum.toString(16).padStart(schemaChars, "0");
+      const vHex  = vNum.toString(16).padStart(versionChars, "0");
+      const shHex = shardChars > 0
+        ? computeShard(addr.index).toString(16).padStart(shardChars, "0")
+        : "";
+      const iHex  = addr.index.toString(16).padStart(indexChars, "0");
+      const rawHex = sHex + vHex + shHex + iHex;
+
+      return formatHex(format, rawHex);
+    },
+
+    parse(input: string): SemanticAddressBig {
+      const raw = parseHex(input);
+      if (raw.length !== format.chars) {
+        throw new SyntaxError(`Expected ${format.chars} hex chars, got ${raw.length}`);
+      }
+
+      const sNum  = parseInt(raw.slice(0, schemaChars), 16);
+      const vNum  = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
+      const shNum = shardChars > 0
+        ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16)
+        : undefined;
+      // BigInt 파싱 — Number 정밀도 한계 없음
+      const idx   = BigInt("0x" + raw.slice(format.chars - indexChars));
+
+      const schema  = schemaByNum.get(sNum);
+      const version = versionByNum.get(vNum);
+      if (schema === undefined)  throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
+      if (version === undefined) throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
+
+      return { schema, version, index: idx, ...(shNum !== undefined && { shard: shNum }) };
+    },
+  };
+}
