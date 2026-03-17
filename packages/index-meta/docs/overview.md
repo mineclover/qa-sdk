@@ -7,6 +7,7 @@
 > - [`api-reference.md`](api-reference.md) — API 레퍼런스
 > - [`migration.md`](migration.md) — 마이그레이션 전략
 > - [`relational-engine.md`](relational-engine.md) — Relational Engine 설계
+> - [`capacity-guard.md`](capacity-guard.md) — Capacity Guard (주소 공간 용량 검증, NumberType, strict 모드)
 
 ## 한 줄 요약
 
@@ -77,6 +78,7 @@ dim kind로 `index_ref`를 선언하면 다른 인덱스의 압축값을 엔트�
 | **버전 스냅샷 + 마이그레이션** | capacity headroom, append-only, read-repair 즉시 마이그레이션 |
 | **DAG 탐색** | `deepDecode` (재귀 순방향), `composeQuery` (하위 조건 → 상위 범위) |
 | **DecodeMap 캐싱** | MetaCodec은 DecodeMap만으로 독립 동작. 레지스트리 없이 외부 서비스에서 decode 가능 |
+| **PrefixDecoder facade** | MetaCodec + AddressProtocolManager를 결합한 decode 전용 facade. `number \| string` 혼합 입력 자동 처리, index_ref 1-level 확장(`decodeDeep`), 프로토콜 감지(`detect`). `index-meta/decode` 경량 진입점 제공 |
 | **분산 설계** | PrefixRouter → D1 라우팅, DistributedStoreClient 멀티 스토어 조율 |
 | **게이트 제어** | 4-state 모델(active/inactive/open/reserved), 주소별 encode/decode 허용을 O(log n)으로 판정 |
 | **정책 해석** | 좌표 패턴 기반 규칙 매칭, 충돌 감지, 전략별 해석 (most-specific, priority 등) |
@@ -91,6 +93,7 @@ dim kind로 `index_ref`를 선언하면 다른 인덱스의 압축값을 엔트�
 | **Address Range 캐시** | `calcAddressRanges` 결과를 DB에 사전 계산·저장. 런타임 O(log n) binary search 판정 |
 | **범용 SQL 드라이버** | `SqlDialect` 기반 DB 추상화. SQLite/PG/D1/DuckDB/ClickHouse 지원을 위한 dialect 플래그 |
 | **RelationalEngine** | policy-resolver + cross-index-query + MetaRegistry를 통합한 facade. 2-level rule engine, cross-index 범위 합성, 깊은 디코딩을 단일 진입점으로 제공 |
+| **Gate-Aware Query** | RelationalEngine(의미적) + GateEngine(물리적) 합성 유틸리티. policy 결과에 gate 상태를 결합하여 permitted 판정. 범위 필터링(encodable/decodable/active 모드) 지원 |
 | **스키마 동기화 강화** | `applySchemaDiff`로 diff 기반 capacity 자동 마이그레이션. leaf 변경의 composite cascade 반영 |
 | **BigInt 주소 공간** | `WeightedIndexBig` + `calcAddressRangesBig`로 2^53 초과 shape product 지원 |
 | **Codegen + Lint** | `generateTypes`로 스키마 → TypeScript 타입 자동 생성. `lintSchema`로 스키마 검증 + `formatSchemaDiff`로 diff 리포트 |
@@ -121,4 +124,4 @@ encode/decode 구조 자체가 범용적이므로 권한 관리 외에도 다양
 | **주소 예측 가능성** | 주소 공간이 결정적이므로 하나의 주소를 알면 같은 스키마의 다른 주소를 열거할 수 있다 | 주소는 내부 식별자로만 사용. 외부 노출 시 전송 계층에서 암호화 |
 | **soft 삭제 누적** | entries는 append-only이므로 inactive 항목도 주소 공간을 영구적으로 점유한다 | inactive 비율이 높아지면 새 스냅샷으로 마이그레이션하여 compaction |
 | **영구 제거 = 마이그레이션** | inactive를 완전히 제거하려면 새 스냅샷 + `indexMap` position 재매핑이 필요. in-place compaction 없음 | read-repair 패턴으로 점진적 전환. 일괄 마이그레이션 불필요 |
-| **Number 정밀도 한계** | `product(shape)`이 `2^53`을 초과하면 정밀도 손실. 13 hex chars 이상에서 캡 발생 | `WeightedIndexBig` + `calcAddressRangesBig` 사용 (5~20x 느림) |
+| **Number 정밀도 한계** | `product(shape)`이 `2^53`을 초과하면 정밀도 손실. 13 hex chars 이상에서 캡 발생 | `WeightedIndexBig` + `calcAddressRangesBig` 사용 (5~20x 느림). Capacity Guard([`capacity-guard.md`](capacity-guard.md))로 `numberType` 선언 및 사전 검증 |
