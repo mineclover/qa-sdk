@@ -32,7 +32,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "weighted-index": "workspace:*"
+    "weighted-index": "workspace:*",
+    "bit-index": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

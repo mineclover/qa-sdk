@@ -51,10 +51,17 @@ export {
 
 export {
   PermissionCodec,
+  PermissionView,
   type CodecDims,
   type DecodedPerm,
   type CodecSnapshot,
 } from "./permission-codec.js";
+
+export {
+  PermissionViewCache,
+  type ViewCacheOptions,
+  type CacheStats,
+} from "./permission-view-cache.js";
 
 export {
   TernaryMask,
