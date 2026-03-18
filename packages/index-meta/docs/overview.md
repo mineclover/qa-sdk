@@ -1,6 +1,6 @@
 # index-meta — 프로젝트 개요
 
-> **문서 인덱스**
+> **패키지 문서**
 > - [`naming.md`](naming.md) — 네이밍 체계 (기존 축 + EntryLifecycle / PositionEngine)
 > - [`position-engine.md`](position-engine.md) — PositionEngine 설계 (불변식, 버전 라이프사이클, 캐시)
 > - [`tier-architecture.md`](tier-architecture.md) — Tier 1–6 상세 아키텍처
@@ -8,6 +8,11 @@
 > - [`migration.md`](migration.md) — 마이그레이션 전략
 > - [`relational-engine.md`](relational-engine.md) — Relational Engine 설계
 > - [`capacity-guard.md`](capacity-guard.md) — Capacity Guard (주소 공간 용량 검증, NumberType, strict 모드)
+>
+> **스펙 문서** — [`docs/specs/indexing/index-meta/`](../../../docs/specs/indexing/index-meta/README.md)
+> - 14건 스펙 (codec, registry, gate-engine, address, resolver, SDK, DX 등)
+> - 횡단 스펙: [coordinate-query](../../../docs/specs/indexing/coordinate-query.spec.md) · [bigint-addressing](../../../docs/specs/indexing/bigint-addressing.spec.md)
+> - 운영 흐름: [runtime-flows](../../../docs/specs/operations/runtime-flows.spec.md) — `[S2]` encode · `[S5]` decode · `[A5]` matchRanges
 
 ## 한 줄 요약
 
@@ -99,6 +104,9 @@ dim kind로 `index_ref`를 선언하면 다른 인덱스의 압축값을 엔트�
 | **BigInt 주소 공간** | `MetaCodecBig` + `WeightedIndexBig`로 2^53 초과 shape product encode/decode. `createCodecBig()`, `serializeBig()`/`parseBig()` 제공. `createLayoutProtocolBig`로 UUID 정밀도 손실 없는 직렬화 |
 | **Codegen + Lint** | `generateTypes`로 스키마 → TypeScript 타입 자동 생성. `lintSchema`로 스키마 검증 + `formatSchemaDiff`로 diff 리포트 |
 | **D1 SqlDriver** | `D1SqlDriver` 어댑터로 모든 Sql* 스토어(PrefixRegistry, EntryFlagStore, AddressRangeCache 등)를 Cloudflare D1에서 사용 가능 |
+| **decode-service** | Hono.js 기반 독립 decode REST API. DecoderPool(TTL 캐시), resolveDecoder(5분기 자동 감지), 에러 매핑(IndexMetaError→HTTP). 4개 엔드포인트: `/decode`, `/decode/batch`, `/decode/deep`, `/decode-map`. 39 tests |
+| **WASM 가속** | `weighted-wasm` — Rust→WASM 20KB. `encodeBatch`/`decodeBatch` tight loop, `popcountWasm` u64 popcount (8× throughput), mask AND/OR. JS fallback 자동 전환 |
+| **GPU 가속** | `weighted-gpu` — WebGPU compute shader (WGSL). `GPUEncoder.encodeBatch`/`decodeBatch`/`reduceByKey`. @workgroup_size(256), atomic 카운트 집계. GPU 미지원 시 `create()→null` graceful |
 
 ---
 
@@ -115,7 +123,7 @@ encode/decode 구조 자체가 범용적이므로 권한 관리 외에도 다양
 | **Relational Engine** | 하나의 index를 관계 유형 정의 테이블(S-P-O)로 사용해 rule 엔진과 prefix 조합으로 관계형 시스템 구축. 설계: [`relational-engine.md`](relational-engine.md) |
 | **DAG 탐색 확장** | index_ref DAG 위에 결과 캐시, 역방향 탐색, 경로 쿼리를 추가하면 그래프 엔진으로 확장 가능 |
 | **Vocabulary 관리** | append-only + inactive 패턴 위에 토크나이저 어댑터, fuzzy matching을 추가하면 자연어 vocabulary 관리로 확장 가능 |
-| **하드웨어 가속 (FPGA/PCIe)** | encode/decode가 분기 없는 순수 산술이고, shape/weights가 불변이므로 FPGA single-cycle encode가 구조적으로 가능. 비전: [`acceleration.md`](../../docs/specs/indexing/acceleration.md) |
+| **하드웨어 가속** | WASM (`weighted-wasm`) + GPU (`weighted-gpu`) 구현 완료. FPGA는 인터페이스 설계 단계. 비전: [`acceleration.md`](../../docs/specs/indexing/acceleration.md) |
 
 ---
 
@@ -126,4 +134,4 @@ encode/decode 구조 자체가 범용적이므로 권한 관리 외에도 다양
 | **주소 예측 가능성** | 주소 공간이 결정적이므로 하나의 주소를 알면 같은 스키마의 다른 주소를 열거할 수 있다 | 주소는 내부 식별자로만 사용. 외부 노출 시 전송 계층에서 암호화 |
 | **soft 삭제 누적** | entries는 append-only이므로 inactive 항목도 주소 공간을 영구적으로 점유한다 | inactive 비율이 높아지면 새 스냅샷으로 마이그레이션하여 compaction |
 | **영구 제거 = 마이그레이션** | inactive를 완전히 제거하려면 새 스냅샷 + `indexMap` position 재매핑이 필요. in-place compaction 없음 | read-repair 패턴으로 점진적 전환. 일괄 마이그레이션 불필요 |
-| **Number 정밀도 한계** | `product(shape)`이 `2^53`을 초과하면 정밀도 손실. 13 hex chars 이상에서 캡 발생 | `WeightedIndexBig` + `calcAddressRangesBig` 사용 (5~20x 느림). Capacity Guard([`capacity-guard.md`](capacity-guard.md))로 `numberType` 선언 및 사전 검증 |
+| **Number 정밀도 한계** | `product(shape)`이 `2^53`을 초과하면 정밀도 손실. 13 hex chars 이상에서 캡 발생 | `WeightedIndexBig` + `MetaCodecBig` 사용 (encode 2-3× 느림, UUID pack은 4× 빠름). Capacity Guard([`capacity-guard.md`](capacity-guard.md))로 `numberType` 선언 및 사전 검증. INV-9: Number/BigInt 동등성 보장 (32 tests 검증) |
