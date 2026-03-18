@@ -41,7 +41,7 @@ planned
 
 ```
 POST   /rules                    규칙 생성
-GET    /rules?indexId=&version=   규칙 목록 조회
+GET    /rules?indexId=&versionId=   규칙 목록 조회
 GET    /rules/:id                단일 규칙 조회
 PUT    /rules/:id                규칙 수정
 DELETE /rules/:id                규칙 삭제
