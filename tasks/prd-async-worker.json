@@ -1,0 +1,137 @@
+{
+  "name": "비동기 Worker 분리 v7",
+  "description": "ingest-server Phase 2(reconstruction + verdict)를 MQ Worker로 분리한다. BullMQ(Redis) 기반으로 시작하되, TaskQueue 포트 인터페이스로 추상화하여 향후 Kafka/fan-out 확장을 차단하지 않는다.",
+  "branchName": "ralph/async-worker-v7",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "TaskQueue 포트 인터페이스 설계",
+      "description": "As a developer, I want MQ 구현에 의존하지 않는 TaskQueue 추상 인터페이스를 정의하여, BullMQ→Kafka 전환 시 비즈니스 로직 변경 없이 어댑터만 교체하고 싶다.",
+      "acceptanceCriteria": [
+        "TaskQueue<T> 포트 인터페이스 정의: enqueue(task: T, opts?), process(handler: (task: T) => Promise<void>), close()",
+        "TaskPayload 타입 정의: { traceId: string, phase: 'reconstruction' | 'verdict', enqueuedAt: string }",
+        "TaskQueueOptions 타입: { concurrency?: number, retryAttempts?: number, retryDelayMs?: number }",
+        "인터페이스가 fan-out을 차단하지 않는 설계: 향후 EventBus<T> 확장 포인트 고려 (subscribe 패턴 예약, 이번 US에서 구현 안 함)",
+        "인터페이스 위치: ingest-server 내부 또는 core 패키지 (기존 DlqStore 패턴 참조)",
+        "InMemoryTaskQueue 구현: 테스트용 동기 실행 (process 즉시 호출)",
+        "단위 테스트: enqueue→process 왕복, 에러 시 retry 시뮬레이션, close 후 enqueue 거부",
+        "pnpm --filter ingest-server build passes",
+        "pnpm --filter ingest-server test passes",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "fan-out 확장을 '차단하지 않는' 수준만 — EventBus 인터페이스나 subscribe 메서드는 이번에 구현하지 않음. 포트에 subscribe를 추가하면 BullMQ 어댑터가 복잡해지므로, 필요 시 별도 포트로 분리하는 것이 낫다.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "BullMQ 어댑터 구현",
+      "description": "As a developer, I want TaskQueue 포트의 BullMQ 구현을 추가하여 Redis 기반 비동기 job 처리를 가능하게 하고 싶다.",
+      "acceptanceCriteria": [
+        "BullMQTaskQueue 클래스: TaskQueue<TaskPayload> 구현",
+        "bullmq 패키지 의존성 추가 (Redis 연결 설정)",
+        "enqueue: Bull Queue에 job 추가 (jobId = traceId로 중복 방지)",
+        "process: Bull Worker 등록 (concurrency 설정 가능)",
+        "retry: BullMQ 내장 retry (attempts, backoff exponential)",
+        "close: Queue + Worker graceful shutdown",
+        "환경 변수: REDIS_URL (필수), WORKER_CONCURRENCY (기본 5)",
+        "Redis 연결 실패 시 명확한 에러 메시지 + 로깅",
+        "단위 테스트: Redis mock 또는 실제 Redis로 enqueue→process 검증",
+        "pnpm --filter ingest-server build passes",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "BullMQ 선택 이유: Redis만 추가하면 됨 (docker-compose에 PG 이미 있음), retry/DLQ 내장, 10K/s 처리량 충분, 운영 복잡도 낮음. Kafka는 fan-out 필요 시 v8에서 도입.",
+      "dependsOn": ["US-001"]
+    },
+    {
+      "id": "US-003",
+      "title": "ingest-server Phase 2 분리",
+      "description": "As a developer, I want ingest 요청 처리에서 Phase 2(reconstruction + verdict)를 TaskQueue.enqueue()로 분리하여 즉시 202 응답을 반환하고 싶다.",
+      "acceptanceCriteria": [
+        "ingest-server/src/routes/ingest.ts: Phase 2 직접 호출 제거",
+        "DB commit(Phase 1) 완료 직후 TaskQueue.enqueue({ traceId, phase: 'reconstruction' }) 호출",
+        "202 Accepted 응답은 Phase 1 완료 즉시 반환 (Phase 2 대기 없음)",
+        "TaskQueue가 AppDeps에 optional로 주입 — 미제공 시 기존 동기 실행 유지 (하위 호환)",
+        "기존 동기 경로: TASK_QUEUE_ENABLED=false 또는 TaskQueue 미주입 시 기존 동작 보존",
+        "통합 테스트: InMemoryTaskQueue로 enqueue→process→reconstruct→verdict 전체 흐름 검증",
+        "pnpm --filter ingest-server build passes",
+        "pnpm --filter ingest-server test passes",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "핵심 변경: [S4] DB commit → [A2] enqueue. 기존 Phase 2 코드(reconstructPendingTraces, computePendingVerdicts)는 worker에서 그대로 호출 — 로직 변경 없음.",
+      "dependsOn": ["US-001"]
+    },
+    {
+      "id": "US-004",
+      "title": "Worker 서비스 — reconstruction + verdict",
+      "description": "As a developer, I want TaskQueue에서 job을 소비하여 reconstruction과 verdict를 비동기로 실행하는 worker를 구축하고 싶다.",
+      "acceptanceCriteria": [
+        "Worker 진입점: ingest-server 내 별도 모듈 또는 별도 실행 모드 (--mode worker)",
+        "reconstruction worker: { traceId, phase: 'reconstruction' } job → reconstructPendingTraces([traceId])",
+        "reconstruction 완료 후 자동으로 verdict job enqueue: { traceId, phase: 'verdict' }",
+        "verdict worker: { traceId, phase: 'verdict' } job → computePendingVerdicts([traceId])",
+        "멱등성: 이미 reconstructed된 trace에 대해 reconstruction 재실행 시 skip",
+        "에러 처리: 실패 시 BullMQ retry → 최대 시도 초과 시 기존 DLQ에 기록",
+        "기존 DLQ(DB 기반) 연동: BullMQ failed job → DlqStore.insert() 호출",
+        "worker 로깅: 시작/완료/실패 per job (pino)",
+        "graceful shutdown: SIGTERM 시 진행 중 job 완료 후 종료",
+        "pnpm --filter ingest-server build passes",
+        "pnpm --filter ingest-server test passes",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "별도 패키지(packages/worker/) 대신 ingest-server 내에 worker 모듈로 배치 — 동일 DB/store 의존성 재사용. docker-compose에서 같은 이미지를 --mode worker로 실행하여 분리.",
+      "dependsOn": ["US-002", "US-003"]
+    },
+    {
+      "id": "US-005",
+      "title": "docker-compose Redis + Worker 추가",
+      "description": "As a developer, I want docker-compose에 Redis와 Worker 서비스를 추가하여 로컬에서 비동기 파이프라인을 검증하고 싶다.",
+      "acceptanceCriteria": [
+        "docker-compose.yml에 redis 서비스 추가 (redis:7-alpine, port 6379)",
+        "docker-compose.yml에 worker 서비스 추가 (같은 ingest-server 이미지, command: --mode worker)",
+        "worker 서비스 depends_on: postgres, redis",
+        "ingest-server 서비스에 REDIS_URL, TASK_QUEUE_ENABLED=true 환경 변수 추가",
+        ".env.example 업데이트: REDIS_URL, WORKER_CONCURRENCY, TASK_QUEUE_ENABLED 문서화",
+        "docker compose up --build로 전체 스택 기동 성공 (PG + Redis + ingest + worker)",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Redis는 BullMQ 전용. key-cache(I-1)와는 별도 — key-cache는 향후 redis 어댑터를 추가할 때 같은 Redis 인스턴스를 공유할 수 있음.",
+      "dependsOn": ["US-004"]
+    },
+    {
+      "id": "US-006",
+      "title": "E2E 검증 + 문서 업데이트",
+      "description": "As a developer, I want 비동기 파이프라인이 end-to-end로 동작하고, runtime-flows와 tasks 문서가 업데이트되길 원한다.",
+      "acceptanceCriteria": [
+        "E2E 테스트: POST /v1/ingest → 202 즉시 반환 → worker가 reconstruction + verdict 완료 → GET /v1/traces/:id/verdicts 결과 확인",
+        "성능 검증: ingest 응답 시간이 Phase 2 제거로 단축되었는지 확인 (before/after 로그 비교)",
+        "기존 DLQ 동작 유지: worker 실패 → DLQ 기록 → POST /v1/admin/dlq/retry 성공",
+        "runtime-flows.spec.md §9: A 14%→57% 업데이트 (A2 MQ Produce ✅, A3 MQ Buffer ✅, A4 MQ Consume ✅)",
+        "runtime-flows.spec.md §7: MQ 인프라 모듈 📋→✅ 업데이트",
+        "docs/specs/tasks/README.md: #12 async-worker 상태 ✅ 업데이트",
+        "docs/specs/spec.todo.md: 관련 항목 완료 반영",
+        "todo-plan.md: task-queue-bullmq 패키지 상태 업데이트",
+        "최종 빌드 게이트: pnpm --filter ingest-server build passes",
+        "최종 테스트 게이트: pnpm --filter ingest-server test passes",
+        "최종 테스트 게이트: pnpm --filter demo-tests test passes",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "이 US 완료 시 A 흐름 커버리지: 14%→57%. 나머지 A5(Aggregator)/A6(Metrics Store)는 Unit 2 pipeline PRD에서.",
+      "dependsOn": ["US-004", "US-005"]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-18T09:00:00.000Z"
+  }
+}
