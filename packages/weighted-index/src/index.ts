@@ -189,3 +189,21 @@ export {
   createBinder,
   type PartialBinder,
 } from "./partial-binder.js";
+export {
+  bitsForMax,
+  createBitFieldLayout,
+  bitPack,
+  bitUnpack,
+  bigintToBytes,
+  bytesToBigint,
+  bitPackToBytes,
+  bitUnpackFromBytes,
+  bitPackToHex,
+  bitUnpackFromHex,
+  analyzeBitVsHex,
+  type BitFieldSpec,
+  type BitField,
+  type BitFieldLayout,
+  type BitVsHexField,
+  type BitVsHexAnalysis,
+} from "./bit-field-layout.js";

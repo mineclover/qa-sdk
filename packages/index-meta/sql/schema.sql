@@ -31,6 +31,19 @@ CREATE TABLE IF NOT EXISTS prefix_ref (
     REFERENCES prefix_registry(prefix, version_id)
 );
 
+-- ── prefix_route ─────────────────────────────────────────────────────────────
+-- PrefixRouter의 prefix → D1 database 라우팅 테이블.
+-- 동일 prefix 재라우팅 시 기존 row를 덮어쓴다.
+
+CREATE TABLE IF NOT EXISTS prefix_route (
+  prefix          TEXT NOT NULL PRIMARY KEY,
+  d1_database_id  TEXT NOT NULL,
+  routed_at       TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_prefix_route_database
+  ON prefix_route (d1_database_id, routed_at, prefix);
+
 -- ── schema_version ────────────────────────────────────────────────────────────
 -- 이 DB 인스턴스가 담당하는 prefix의 버전 메타.
 -- capacity는 prefix_registry와 동기화된다.
@@ -43,6 +56,31 @@ CREATE TABLE IF NOT EXISTS schema_version (
   created_at  TEXT    NOT NULL,
   PRIMARY KEY (prefix, version_id)
 );
+
+-- ── version_lifecycle ────────────────────────────────────────────────────────
+-- 버전 상태 머신 (draft → released → active → deprecated).
+-- base_version_id는 기반 draft를 가리키지만, 메모리 구현과 동일하게
+-- 누락된 기반 버전도 허용하므로 FK는 두지 않는다.
+
+CREATE TABLE IF NOT EXISTS version_lifecycle (
+  prefix             TEXT NOT NULL,
+  version_id         TEXT NOT NULL,
+  status             TEXT NOT NULL
+    CHECK(status IN ('draft', 'released', 'active', 'deprecated')),
+  base_version_id    TEXT,
+  capacity           INTEGER NOT NULL,
+  deactivation_mode  TEXT NOT NULL
+    CHECK(deactivation_mode IN ('strict', 'flexible')),
+  created_at         TEXT NOT NULL,
+  released_at        TEXT,
+  PRIMARY KEY (prefix, version_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_version_lifecycle_prefix_created
+  ON version_lifecycle (prefix, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_version_lifecycle_prefix_status
+  ON version_lifecycle (prefix, status, created_at);
 
 -- ── entry ─────────────────────────────────────────────────────────────────────
 -- position(1-based) → value 매핑. append-only.
@@ -88,6 +126,30 @@ CREATE TABLE IF NOT EXISTS entry_flag (
 
 CREATE INDEX IF NOT EXISTS idx_entry_flag_lookup
   ON entry_flag (prefix, version_id, position, updated_at DESC);
+
+-- ── migration_mapping ───────────────────────────────────────────────────────
+-- 버전 간 position별 변경 이력.
+-- Position은 안정적이므로 이동은 추적하지 않고, EntityId 수정/비활성화만 기록한다.
+-- resolveToLatest는 prefix 내부의 version edge 그래프를 따라 체이닝한다.
+
+CREATE TABLE IF NOT EXISTS migration_mapping (
+  prefix           TEXT NOT NULL,
+  from_version_id  TEXT NOT NULL,
+  to_version_id    TEXT NOT NULL,
+  position         INTEGER NOT NULL,
+  change_type      TEXT NOT NULL
+    CHECK(change_type IN ('modified', 'deactivated')),
+  old_entity_id    TEXT,
+  new_entity_id    TEXT,
+  created_at       TEXT NOT NULL,
+  PRIMARY KEY (prefix, from_version_id, to_version_id, position)
+);
+
+CREATE INDEX IF NOT EXISTS idx_migration_mapping_history
+  ON migration_mapping (prefix, position, created_at, from_version_id, to_version_id);
+
+CREATE INDEX IF NOT EXISTS idx_migration_mapping_edge
+  ON migration_mapping (prefix, from_version_id, to_version_id, position);
 
 -- ── address_state_cache ───────────────────────────────────────────────────────
 -- composite 주소 공간의 활성화 상태 캐시.

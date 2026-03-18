@@ -35,7 +35,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { BetterSqliteDriver } from "index-meta";
+import { NodeSqliteDriver } from "index-meta";
 import { SqlIndexMetaStore } from "index-meta";
 import { SqlAddressStateStore } from "index-meta";
 import { computeStateRanges, checkGate } from "index-meta";
@@ -98,7 +98,7 @@ function makeInfoCache() {
 
 // ── 공통 셋업 ──────────────────────────────────────────────
 
-let driver:     BetterSqliteDriver;
+let driver:     NodeSqliteDriver;
 let metaStore:  SqlIndexMetaStore;
 let stateStore: SqlAddressStateStore;
 
@@ -118,7 +118,7 @@ function gate(address: number, cache: Awaited<ReturnType<typeof loadGate>>): Gat
 
 describe("[A] 주소 조회 경로 — label → position → gate → 주소", () => {
   beforeEach(async () => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
@@ -206,7 +206,7 @@ describe("[A] 주소 조회 경로 — label → position → gate → 주소", 
 
 describe("[B] 정보 조회 경로 — 주소 → gate → entry store → entity 정보", () => {
   beforeEach(async () => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
@@ -358,7 +358,7 @@ describe("[B] 정보 조회 경로 — 주소 → gate → entry store → entit
 
 describe("[C] shouldVerify — 캐시 stale 감지 및 재확인", () => {
   beforeEach(async () => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 

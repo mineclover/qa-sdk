@@ -5,17 +5,51 @@
  * WASM 미사용 시 JS fallback으로 동작.
  */
 
+type WasmModule = typeof import("../pkg/weighted_wasm.js");
+
 // wasm-pack 빌드 산출물 (pkg/ 디렉토리)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let wasm: any = null;
+let wasm: WasmModule | null = null;
+
+function isNodeRuntime(): boolean {
+  const maybeProcess = globalThis as typeof globalThis & {
+    process?: { versions?: { node?: string } };
+  };
+  return typeof maybeProcess.process?.versions?.node === "string";
+}
+
+async function getNodeWasmBytes(): Promise<Uint8Array | undefined> {
+  if (!isNodeRuntime()) {
+    return undefined;
+  }
+
+  const { readFile } = await import("node:fs/promises");
+  return readFile(new URL("../pkg/weighted_wasm_bg.wasm", import.meta.url));
+}
 
 /**
  * WASM 모듈 초기화.
  * wasm-pack 빌드 후 pkg/weighted_wasm.js를 동적 import.
  */
 export async function initWasm(): Promise<boolean> {
+  if (wasm) {
+    return true;
+  }
+
   try {
-    wasm = await import("../pkg/weighted_wasm.js");
+    const wasmModule = await import("../pkg/weighted_wasm.js");
+    const moduleOrPath = await getNodeWasmBytes();
+
+    if (typeof wasmModule.default !== "function") {
+      throw new TypeError("weighted-wasm init export is missing");
+    }
+
+    if (moduleOrPath) {
+      await wasmModule.default({ module_or_path: moduleOrPath });
+    } else {
+      await wasmModule.default();
+    }
+
+    wasm = wasmModule;
     return true;
   } catch {
     wasm = null;

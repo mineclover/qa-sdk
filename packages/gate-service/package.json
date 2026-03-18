@@ -1,0 +1,29 @@
+{
+  "name": "gate-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": ["dist"],
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/server.js",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "index-meta": "workspace:*",
+    "hono": "^4.7.5",
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

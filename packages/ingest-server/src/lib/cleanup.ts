@@ -240,7 +240,7 @@ export function createDatabaseCleanupStore(databaseUrl: string): CleanupStore {
         order by created_at asc, trace_id asc
         limit ${limit}
       `;
-      return rows.map((row) => row.trace_id);
+      return rows.map((row: { trace_id: string }) => row.trace_id);
     },
     async deleteEventRecordsByTraceIds(traceIds) {
       if (traceIds.length === 0) {
@@ -298,7 +298,7 @@ export function createDatabaseCleanupStore(databaseUrl: string): CleanupStore {
         order by computed_at asc, id asc
         limit ${limit}
       `;
-      return rows.map((row) => row.id);
+      return rows.map((row: { id: string }) => row.id);
     },
     async deleteVerdictReportsByIds(verdictIds) {
       if (verdictIds.length === 0) {
@@ -324,7 +324,7 @@ export function createDatabaseCleanupStore(databaseUrl: string): CleanupStore {
         order by started_at asc, session_id asc
         limit ${limit}
       `;
-      return rows.map((row) => row.session_id);
+      return rows.map((row: { session_id: string }) => row.session_id);
     },
     async deleteQaSessionsByIds(sessionIds) {
       if (sessionIds.length === 0) {

@@ -5,31 +5,46 @@ import type {
 } from "../migration-store.js";
 import type { EntityId } from "../types.js";
 
+interface StoredMigrationMapping {
+  readonly prefix: string;
+  readonly mapping: MigrationMapping;
+}
+
+interface MigrationEdge {
+  readonly fromVersionId: string;
+  readonly toVersionId: string;
+  readonly firstCreatedAt: string;
+}
+
 export class InMemoryMigrationStore implements MigrationStore {
-  private readonly _mappings: MigrationMapping[] = [];
+  private readonly _mappings: StoredMigrationMapping[] = [];
 
   async saveMappings(prefix: string, mappings: readonly MigrationMapping[]): Promise<void> {
-    // 중복 방지: (fromVersionId, toVersionId, position) 기준
+    if (mappings.length === 0) return;
+
+    // 중복 방지: (prefix, fromVersionId, toVersionId, position) 기준
     for (const m of mappings) {
       const exists = this._mappings.some(
         (e) =>
-          e.fromVersionId === m.fromVersionId &&
-          e.toVersionId === m.toVersionId &&
-          e.position === m.position,
+          e.prefix === prefix &&
+          e.mapping.fromVersionId === m.fromVersionId &&
+          e.mapping.toVersionId === m.toVersionId &&
+          e.mapping.position === m.position,
       );
       if (exists) {
         throw new Error(
-          `Duplicate mapping: ${m.fromVersionId}→${m.toVersionId} position ${m.position}`,
+          `Duplicate mapping: ${prefix} ${m.fromVersionId}→${m.toVersionId} position ${m.position}`,
         );
       }
-      this._mappings.push(m);
+      this._mappings.push({ prefix, mapping: m });
     }
   }
 
   async getHistory(prefix: string, position: number): Promise<MigrationMapping[]> {
     return this._mappings
-      .filter((m) => m.position === position)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .filter((entry) => entry.prefix === prefix && entry.mapping.position === position)
+      .map((entry) => entry.mapping)
+      .sort((a, b) => compareHistory(a, b));
   }
 
   async getMappings(
@@ -38,7 +53,13 @@ export class InMemoryMigrationStore implements MigrationStore {
     toVersionId: string,
   ): Promise<MigrationMapping[]> {
     return this._mappings
-      .filter((m) => m.fromVersionId === fromVersionId && m.toVersionId === toVersionId)
+      .filter(
+        (entry) =>
+          entry.prefix === prefix &&
+          entry.mapping.fromVersionId === fromVersionId &&
+          entry.mapping.toVersionId === toVersionId,
+      )
+      .map((entry) => entry.mapping)
       .sort((a, b) => a.position - b.position);
   }
 
@@ -48,44 +69,131 @@ export class InMemoryMigrationStore implements MigrationStore {
     position: number,
     latestVersionId: string,
   ): Promise<MigrationResolveResult> {
+    if (fromVersionId === latestVersionId) {
+      return {
+        currentVersionId: fromVersionId,
+        currentEntityId: null,
+        chain: [],
+      };
+    }
+
+    const path = this.findPath(prefix, fromVersionId, latestVersionId);
+    if (!path) {
+      return {
+        currentVersionId: fromVersionId,
+        currentEntityId: null,
+        chain: [],
+      };
+    }
+
     const chain: MigrationMapping[] = [];
-    let currentVersionId = fromVersionId;
     let currentEntityId: EntityId | null = null;
-    let foundInitial = false;
+    let foundChange = false;
 
-    // 체이닝: fromVersionId → ... → latestVersionId
-    const visited = new Set<string>();
-    while (currentVersionId !== latestVersionId) {
-      if (visited.has(currentVersionId)) break; // 순환 방지
-      visited.add(currentVersionId);
+    for (let index = 0; index < path.length - 1; index++) {
+      const currentVersionId = path[index]!;
+      const toVersionId = path[index + 1]!;
+      const mapping = this._mappings
+        .find(
+          (entry) =>
+            entry.prefix === prefix &&
+            entry.mapping.fromVersionId === currentVersionId &&
+            entry.mapping.toVersionId === toVersionId &&
+            entry.mapping.position === position,
+        )
+        ?.mapping;
 
-      // 현재 버전에서 다음 버전으로의 매핑 찾기
-      const nextMappings = this._mappings.filter(
-        (m) => m.fromVersionId === currentVersionId,
-      );
-      if (nextMappings.length === 0) break;
-
-      // 같은 position의 매핑 찾기
-      const toVersionId = nextMappings[0]!.toVersionId;
-      const mapping = nextMappings.find((m) => m.position === position);
-
-      if (mapping) {
+      if (mapping !== undefined) {
         chain.push(mapping);
         if (mapping.changeType === "deactivated") {
           currentEntityId = null;
-          currentVersionId = toVersionId;
-          break;
+          return {
+            currentVersionId: toVersionId,
+            currentEntityId,
+            chain,
+          };
         }
         currentEntityId = mapping.newEntityId;
-        foundInitial = true;
+        foundChange = true;
       }
-      currentVersionId = toVersionId;
     }
 
     return {
-      currentVersionId,
-      currentEntityId: foundInitial ? currentEntityId : null,
+      currentVersionId: latestVersionId,
+      currentEntityId: foundChange ? currentEntityId : null,
       chain,
     };
   }
+
+  private findPath(prefix: string, fromVersionId: string, latestVersionId: string): string[] | null {
+    const edges = this.getEdges(prefix);
+    const adjacency = new Map<string, MigrationEdge[]>();
+
+    for (const edge of edges) {
+      const neighbors = adjacency.get(edge.fromVersionId) ?? [];
+      neighbors.push(edge);
+      adjacency.set(edge.fromVersionId, neighbors);
+    }
+
+    const queue = [fromVersionId];
+    const previous = new Map<string, string | null>([[fromVersionId, null]]);
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      for (const edge of adjacency.get(current) ?? []) {
+        if (previous.has(edge.toVersionId)) continue;
+        previous.set(edge.toVersionId, current);
+        if (edge.toVersionId === latestVersionId) {
+          return reconstructPath(previous, latestVersionId);
+        }
+        queue.push(edge.toVersionId);
+      }
+    }
+
+    return null;
+  }
+
+  private getEdges(prefix: string): MigrationEdge[] {
+    const edgeMap = new Map<string, MigrationEdge>();
+
+    for (const entry of this._mappings) {
+      if (entry.prefix !== prefix) continue;
+      const key = `${entry.mapping.fromVersionId}\0${entry.mapping.toVersionId}`;
+      const existing = edgeMap.get(key);
+      if (!existing || entry.mapping.createdAt < existing.firstCreatedAt) {
+        edgeMap.set(key, {
+          fromVersionId: entry.mapping.fromVersionId,
+          toVersionId: entry.mapping.toVersionId,
+          firstCreatedAt: entry.mapping.createdAt,
+        });
+      }
+    }
+
+    return [...edgeMap.values()].sort(
+      (a, b) =>
+        a.firstCreatedAt.localeCompare(b.firstCreatedAt) ||
+        a.fromVersionId.localeCompare(b.fromVersionId) ||
+        a.toVersionId.localeCompare(b.toVersionId),
+    );
+  }
+}
+
+function compareHistory(a: MigrationMapping, b: MigrationMapping): number {
+  return (
+    a.createdAt.localeCompare(b.createdAt) ||
+    a.fromVersionId.localeCompare(b.fromVersionId) ||
+    a.toVersionId.localeCompare(b.toVersionId)
+  );
+}
+
+function reconstructPath(previous: Map<string, string | null>, target: string): string[] {
+  const path: string[] = [];
+  let current: string | null = target;
+
+  while (current !== null) {
+    path.push(current);
+    current = previous.get(current) ?? null;
+  }
+
+  return path.reverse();
 }

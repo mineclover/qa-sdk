@@ -23,8 +23,8 @@ packages/
 
   # ── Layer 3: 서비스 ─────────────────────────────────────
   decode-service/       [완료] Hono.js — decode API (39 tests)
-  gate-service/         [신규] Hono.js — gate 상태 관리 API
-  query-service/        [신규] Hono.js — 관계형 질의 + 정책 해소 API
+  gate-service/         [E-1 구현] Hono.js — gate 상태 관리 API
+  query-service/        [F-1~F-4 구현] Hono.js — 관계형 질의 + 정책 해소 API
 
   # ── Layer D: 데모/테스트 ────────────────────────────────
   demo-snapshot/               데이터 SSOT (Axis 카탈로그)
@@ -86,28 +86,67 @@ packages/decode-service/          [구현 완료]
 ### gate-service (E-1 ~ E-4)
 
 ```
-packages/gate-service/            [신규]
-  package.json                    deps: index-meta, key-cache, hono
+packages/gate-service/            [E-1 구현 완료, E-2~E-4 잔여]
+  package.json                    deps: index-meta, hono, @hono/node-server, pino, zod
+  tsconfig.json
+  vitest.config.ts
   src/
-    index.ts                      Hono app — 6개 RPC 엔드포인트
-    event-emitter.ts              E-2: release/flagChange 이벤트 발행
-    broadcast.ts                  E-3: 캐시 무효화 브로드캐스트 (SSE/WebSocket)
-    consistency.ts                E-4: shouldVerify 재확인, Primary 직접 조회
+    server.ts                     진입점
+    app.ts                        createApp 팩토리
+    config/
+      env.ts                      PORT, LOG_LEVEL
+    lib/
+      logger.ts                   Pino 로거
+      errors.ts                   AppError + IndexMetaError 매핑
+      gate-service.ts             package-local facade + optional GateEngine
+    middleware/
+      request-id.ts               x-request-id 전파
+      error-handler.ts            AppError/ZodError/IndexMetaError 통합 처리
+    routes/
+      health.ts                   GET /health
+      gate.ts                     6개 gate RPC 엔드포인트
+    schemas/
+      gate.ts                     Zod 요청 스키마
+    app.test.ts                   endpoint contract tests
 ```
 
 ### query-service (F-1 ~ F-5)
 
 ```
-packages/query-service/           [신규]
-  package.json                    deps: index-meta, key-cache, gate-service(client), hono
+packages/query-service/           [F-1~F-4 구현 완료, F-5 잔여]
+  package.json                    deps: index-meta, drizzle-orm, hono, @hono/node-server, pino, zod
+  tsconfig.json
+  vitest.config.ts
   src/
-    index.ts                      Hono app — 규칙 CRUD 5종 + 질의 5종
+    server.ts                     진입점
+    app.ts                        createApp 팩토리
+    index.ts                      public exports
+    config/
+      env.ts                      QUERY_DEFAULT_STRATEGY, GATE_* 설정
+    lib/
+      logger.ts                   Pino 로거
+      errors.ts                   AppError/HTTP 매핑
+      rule-service.ts             규칙 CRUD + conflict preflight
+      query-service.ts            MetaRegistry facade + gate-aware query
+      gate-client.ts              gate-service HTTP 클라이언트
+    middleware/
+      request-id.ts               x-request-id 전파
+      error-handler.ts            AppError/ZodError/IndexMetaError 통합 처리
+    routes/
+      health.ts                   GET /health
+      rules.ts                    규칙 CRUD 5종
+      query.ts                    질의 엔드포인트 5종
+    schemas/
+      policy-rule.ts              규칙 요청/쿼리 스키마
+      query.ts                    질의 요청 스키마
     stores/
       policy-rule-store.ts        F-1: StoredPolicyRule 포트
-      policy-rule-memory.ts       F-1: InMemory 어댑터
-      policy-rule-sql.ts          F-1: SQL 어댑터
-    gate-client.ts                F-4: gate-service HTTP 클라이언트
-    migration.ts                  F-5: translateConstraint 기반 규칙 자동 변환
+      in-memory-policy-rule-store.ts
+      sql-policy-rule-store.ts
+      policy-rule.schema.ts       Drizzle SQLite 스키마
+      node-sqlite-driver.ts       SQL parity test driver
+      policy-rule-store.test.ts   Memory/SQL contract tests
+    app.test.ts                   route integration tests
 ```
 
 ---

@@ -25,6 +25,8 @@ import {
 } from "@qa-sdk/store";
 import pino, { type Logger } from "pino";
 import { createApp } from "./app.js";
+import type { DebugStore } from "./lib/debug-store.js";
+import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import type {
   RegistryEventValidator,
@@ -42,6 +44,7 @@ function createTestApp(
   options: {
     dlqMaxRetryAttempts?: number;
     dlqStore?: DlqStore;
+    debugStore?: DebugStore;
     graphStore?: GraphStore;
     logger?: Logger;
     checkDbHealth?: DbHealthChecker;
@@ -68,6 +71,7 @@ function createTestApp(
   const scenarioSpecStore =
     options.scenarioSpecStore ?? new InMemoryScenarioSpecStore();
   const dlqStore = options.dlqStore ?? new InMemoryDlqStore();
+  const debugStore = options.debugStore;
   const recordStreamBroker = new RecordStreamBroker();
 
   const app = createApp({
@@ -79,6 +83,7 @@ function createTestApp(
     verdictStore,
     scenarioSpecStore,
     dlqStore,
+    debugStore,
     recordStreamBroker,
     streamSubscriptionLimit: options.streamSubscriptionLimit,
     dlqMaxRetryAttempts: options.dlqMaxRetryAttempts,
@@ -102,6 +107,7 @@ function createTestApp(
     verdictStore,
     scenarioSpecStore,
     dlqStore,
+    debugStore,
     recordStreamBroker,
   };
 }
@@ -1575,6 +1581,96 @@ describe("createApp", () => {
     );
     expect(cappedLimitBody.has_more).toBe(true);
     expect(cappedLimitBody.next_cursor).toEqual(expect.any(String));
+  });
+
+  it("round-trips ingested records through the debug store recent endpoints", async () => {
+    const { app } = createTestApp({
+      debugStore: new InMemoryDebugStore({ ttlMs: 60_000 }),
+    });
+
+    const response = await app.request("/v1/ingest", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(
+        buildEnvelopeWithRecords([
+          {
+            log_id: "log_debug_1",
+            timestamp: "2026-03-12T10:00:00.000Z",
+            record_kind: "log",
+            trace_id: "trace_debug",
+            span_id: "span_debug_1",
+            event_key: "debug.one",
+            event_version: "001",
+            payload_format: "json",
+            payload_encoding: "raw",
+            payload_masking_applied: false,
+            payload_masked_fields: [],
+            payload: { order: 1 },
+            qa_session_id: "session_debug",
+          },
+          {
+            log_id: "log_debug_2",
+            timestamp: "2026-03-12T10:00:02.000Z",
+            record_kind: "log",
+            trace_id: "trace_debug",
+            span_id: "span_debug_2",
+            event_key: "debug.two",
+            event_version: "001",
+            payload_format: "json",
+            payload_encoding: "raw",
+            payload_masking_applied: false,
+            payload_masked_fields: [],
+            payload: { order: 2 },
+            qa_session_id: "session_debug",
+          },
+          {
+            log_id: "log_debug_3",
+            timestamp: "2026-03-12T10:00:01.000Z",
+            record_kind: "log",
+            trace_id: "trace_debug",
+            span_id: "span_debug_3",
+            event_key: "debug.three",
+            event_version: "001",
+            payload_format: "json",
+            payload_encoding: "raw",
+            payload_masking_applied: false,
+            payload_masked_fields: [],
+            payload: { order: 3 },
+            qa_session_id: "session_debug",
+          },
+        ]),
+      ),
+    });
+
+    expect(response.status).toBe(202);
+
+    const traceRecentResponse = await app.request(
+      "/v1/debug/traces/trace_debug/recent?limit=2",
+    );
+    const sessionRecentResponse = await app.request(
+      "/v1/debug/sessions/session_debug/recent?limit=2",
+    );
+
+    await expect(traceRecentResponse.json()).resolves.toEqual({
+      items: [
+        expect.objectContaining({ log_id: "log_debug_2", trace_id: "trace_debug" }),
+        expect.objectContaining({ log_id: "log_debug_3", trace_id: "trace_debug" }),
+      ],
+    });
+    await expect(sessionRecentResponse.json()).resolves.toEqual({
+      items: [
+        expect.objectContaining({
+          log_id: "log_debug_2",
+          qa_session_id: "session_debug",
+        }),
+        expect.objectContaining({
+          log_id: "log_debug_3",
+          qa_session_id: "session_debug",
+        }),
+      ],
+    });
   });
 
   it("streams only newly ingested records to trace and session subscribers", async () => {

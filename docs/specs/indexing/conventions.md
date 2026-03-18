@@ -93,7 +93,7 @@ role: {
 
 새 ID 컨테이너 포맷을 추가할 때 따라야 하는 표준 프로세스.
 
-> 관련 스펙: [`pack-format.spec.md`](pack-format.spec.md)
+> 관련 스펙: [`weighted-index/pack-format.spec.md`](weighted-index/pack-format.spec.md)
 
 ### 4.1 포맷 정의
 

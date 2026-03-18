@@ -5,7 +5,7 @@
 
 기반 문서: [foundation.md](foundation.md) · [data-design.md](data-design.md) · [patterns.md](patterns.md)
 관련 스펙: [range-query.spec.md](weighted-index/range-query.spec.md) · [codec.spec.md](index-meta/codec.spec.md) · [resolver.spec.md](index-meta/resolver.spec.md)
-운영 흐름: `[S2]` resolvePolicy · `[A5]` matchRanges/composeQuery · `[D1]` deepDecode — [runtime-flows.spec.md](operations/runtime-flows.spec.md)
+운영 흐름: `[S2]` resolvePolicy · `[A5]` matchRanges/composeQuery · `[D1]` deepDecode — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 

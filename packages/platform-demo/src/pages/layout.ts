@@ -13,6 +13,7 @@ import {
   simDecode,
   simDecodeBig,
   simEncode,
+  simEncodeBig,
   simPackHex,
   simPackHexBig,
   formatHex,
@@ -39,6 +40,10 @@ interface LayoutState {
   versionVal: number;
   shardVal: number;
   shape: number[];
+  coordVals: number[]; // 역산 증명용 1-based 좌표 입력값
+  rtPrefixVal: number;
+  rtVersionVal: number;
+  rtShardVal: number;
   analysis: LayoutSimAnalysis;
   mode: CalcMode;
   // progression
@@ -65,6 +70,10 @@ function createInitialState(): LayoutState {
     versionVal: 1,
     shardVal: 0,
     shape,
+    coordVals: new Array(cfg.numDims).fill(1),
+    rtPrefixVal: 0xab,
+    rtVersionVal: 1,
+    rtShardVal: 0,
     analysis,
     mode: "number" as CalcMode,
     playing: false,
@@ -199,6 +208,38 @@ export function renderLayoutPage(container: HTMLElement): void {
   uuidSection.appendChild(uuidPreview);
   rightCol.appendChild(uuidSection);
 
+  // Round-trip proof section
+  const rtSection = document.createElement("div");
+  rtSection.className = "lay-rt-section";
+  rtSection.innerHTML = `
+    <div class="lay-section-title">역산 증명 (Round-trip)</div>
+    <div class="lay-rt-fields" id="lay-rt-fields">
+      <label class="lay-rt-field">
+        <span class="lay-rt-field-label">Prefix</span>
+        <input type="number" class="lay-rt-field-input" id="lay-rt-prefix" min="0" max="${fieldMaxVal(st.prefixChars)}" value="${st.rtPrefixVal}" ${st.prefixChars === 0 ? "disabled" : ""} />
+        <span class="lay-rt-field-hex" id="lay-rt-prefix-hex">${hexPreview(st.prefixChars, st.rtPrefixVal)}</span>
+      </label>
+      <label class="lay-rt-field">
+        <span class="lay-rt-field-label">Ver</span>
+        <input type="number" class="lay-rt-field-input" id="lay-rt-version" min="0" max="${fieldMaxVal(st.versionChars)}" value="${st.rtVersionVal}" ${st.versionChars === 0 ? "disabled" : ""} />
+        <span class="lay-rt-field-hex" id="lay-rt-version-hex">${hexPreview(st.versionChars, st.rtVersionVal)}</span>
+      </label>
+      <label class="lay-rt-field">
+        <span class="lay-rt-field-label">Shard</span>
+        <input type="number" class="lay-rt-field-input" id="lay-rt-shard" min="0" max="${fieldMaxVal(st.shardChars)}" value="${st.rtShardVal}" ${st.shardChars === 0 ? "disabled" : ""} />
+        <span class="lay-rt-field-hex" id="lay-rt-shard-hex">${hexPreview(st.shardChars, st.rtShardVal)}</span>
+      </label>
+    </div>`;
+  const rtCoordSliders = document.createElement("div");
+  rtCoordSliders.className = "lay-rt-sliders";
+  rtCoordSliders.id = "lay-rt-sliders";
+  rtSection.appendChild(rtCoordSliders);
+  const rtProof = document.createElement("div");
+  rtProof.className = "lay-rt-proof";
+  rtProof.id = "lay-rt-proof";
+  rtSection.appendChild(rtProof);
+  rightCol.appendChild(rtSection);
+
   // Index progression
   const progSection = document.createElement("div");
   progSection.className = "lay-prog-section";
@@ -230,9 +271,14 @@ export function renderLayoutPage(container: HTMLElement): void {
   progTableInner.id = "lay-prog-table";
   progTable.appendChild(progTableInner);
   progSection.appendChild(progTable);
-  rightCol.appendChild(progSection);
 
   main.appendChild(rightCol);
+
+  // ── THIRD column: index progression ──────────────────────────────────
+  const farCol = document.createElement("div");
+  farCol.className = "lay-main-far";
+  farCol.appendChild(progSection);
+  main.appendChild(farCol);
 
   wrap.appendChild(main);
   container.appendChild(wrap);
@@ -271,6 +317,14 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elProgIdx = document.getElementById("lay-prog-idx")!;
   const elProgPerf = document.getElementById("lay-prog-perf")!;
   const elPreviewTitle = document.getElementById("lay-preview-title")!;
+  const elRtSliders = document.getElementById("lay-rt-sliders")!;
+  const elRtProof = document.getElementById("lay-rt-proof")!;
+  const elRtPrefix = document.getElementById("lay-rt-prefix") as HTMLInputElement;
+  const elRtVersion = document.getElementById("lay-rt-version") as HTMLInputElement;
+  const elRtShard = document.getElementById("lay-rt-shard") as HTMLInputElement;
+  const elRtPrefixHex = document.getElementById("lay-rt-prefix-hex")!;
+  const elRtVersionHex = document.getElementById("lay-rt-version-hex")!;
+  const elRtShardHex = document.getElementById("lay-rt-shard-hex")!;
 
   // ── Format helpers ──────────────────────────────────────────────────────
 
@@ -327,6 +381,7 @@ export function renderLayoutPage(container: HTMLElement): void {
   function rebuildShape(): void {
     // Start with small values (10 per dim) so sliders aren't pinned at max
     st.shape = new Array(st.numDims).fill(10);
+    st.coordVals = new Array(st.numDims).fill(1);
     resetProgression();
   }
 
@@ -375,6 +430,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     elShardHex.textContent = hexPreview(st.shardChars, st.shardVal);
 
     reanalyze();
+    syncRtFields();
     rebuildShape();
     repaint();
   }
@@ -446,6 +502,44 @@ export function renderLayoutPage(container: HTMLElement): void {
 
   elModeNumber.addEventListener("click", () => setMode("number"));
   elModeBigint.addEventListener("click", () => setMode("bigint"));
+
+  // ── Round-trip field controls ─────────────────────────────────────────
+  function onRtFieldChange(): void {
+    const pMax = fieldMaxVal(st.prefixChars);
+    const vMax = fieldMaxVal(st.versionChars);
+    const sMax = fieldMaxVal(st.shardChars);
+    st.rtPrefixVal = Math.min(pMax, Math.max(0, +elRtPrefix.value || 0));
+    st.rtVersionVal = Math.min(vMax, Math.max(0, +elRtVersion.value || 0));
+    st.rtShardVal = Math.min(sMax, Math.max(0, +elRtShard.value || 0));
+    elRtPrefixHex.textContent = hexPreview(st.prefixChars, st.rtPrefixVal);
+    elRtVersionHex.textContent = hexPreview(st.versionChars, st.rtVersionVal);
+    elRtShardHex.textContent = hexPreview(st.shardChars, st.rtShardVal);
+    repaintRoundTrip();
+  }
+  /** 상위 config 변경 시 RT 필드 max/disabled 동기화 */
+  function syncRtFields(): void {
+    const pMax = fieldMaxVal(st.prefixChars);
+    const vMax = fieldMaxVal(st.versionChars);
+    const sMax = fieldMaxVal(st.shardChars);
+    elRtPrefix.max = String(pMax);
+    elRtVersion.max = String(vMax);
+    elRtShard.max = String(sMax);
+    elRtPrefix.disabled = st.prefixChars === 0;
+    elRtVersion.disabled = st.versionChars === 0;
+    elRtShard.disabled = st.shardChars === 0;
+    if (st.rtPrefixVal > pMax) { st.rtPrefixVal = pMax; elRtPrefix.value = String(pMax); }
+    if (st.rtVersionVal > vMax) { st.rtVersionVal = vMax; elRtVersion.value = String(vMax); }
+    if (st.rtShardVal > sMax) { st.rtShardVal = sMax; elRtShard.value = String(sMax); }
+    if (st.prefixChars === 0) { st.rtPrefixVal = 0; elRtPrefix.value = "0"; }
+    if (st.versionChars === 0) { st.rtVersionVal = 0; elRtVersion.value = "0"; }
+    if (st.shardChars === 0) { st.rtShardVal = 0; elRtShard.value = "0"; }
+    elRtPrefixHex.textContent = hexPreview(st.prefixChars, st.rtPrefixVal);
+    elRtVersionHex.textContent = hexPreview(st.versionChars, st.rtVersionVal);
+    elRtShardHex.textContent = hexPreview(st.shardChars, st.rtShardVal);
+  }
+  elRtPrefix.addEventListener("input", onRtFieldChange);
+  elRtVersion.addEventListener("input", onRtFieldChange);
+  elRtShard.addEventListener("input", onRtFieldChange);
 
   // ── Debug copy ──────────────────────────────────────────────────────────
   const elCopyDebug = document.getElementById("lay-copy-debug") as HTMLButtonElement;
@@ -621,6 +715,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     repaintGraph();
     repaintShapeSummary();
     repaintUUID();
+    repaintRoundTrip();
     repaintProgression();
   }
 
@@ -629,6 +724,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     syncIndexType();
     repaintStruct();
     buildSliders();
+    buildCoordSliders();
     repaintData();
   }
 
@@ -789,7 +885,7 @@ export function renderLayoutPage(container: HTMLElement): void {
       range.addEventListener("touchstart", () => { activeDim = dim; }, { passive: true });
       range.addEventListener("input", () => {
         const ref = sliderRefs[dim];
-        const actual = sliderToVal(+range.value, ref.dimMax);
+        const actual = Math.floor(sliderToVal(+range.value, ref.dimMax));
         updateDim(dim, actual);
       });
       const endDrag = () => { if (activeDim === dim) activeDim = -1; };
@@ -893,6 +989,219 @@ export function renderLayoutPage(container: HTMLElement): void {
         <span>prefix=${prefixHex}</span>
         <span>version=${versionHex}</span>
         <span>shard=${shardHex}</span>
+      </div>
+    `;
+  }
+
+  // ── Round-trip proof (역산 증명) ──────────────────────────────────────────
+
+  let coordSliderRefs: {
+    range: HTMLInputElement;
+    num: HTMLInputElement;
+    maxSpan: HTMLSpanElement;
+  }[] = [];
+
+  function buildCoordSliders(): void {
+    elRtSliders.innerHTML = "";
+    coordSliderRefs = [];
+    while (st.coordVals.length < st.numDims) st.coordVals.push(1);
+    st.coordVals.length = st.numDims;
+
+    for (let i = 0; i < st.numDims; i++) {
+      const row = document.createElement("div");
+      row.className = "lay-sld-row";
+
+      const label = document.createElement("span");
+      label.className = "lay-sld-label";
+      label.textContent = `dim ${i}`;
+
+      const range = document.createElement("input");
+      range.type = "range";
+      range.className = "lay-sld-range";
+      range.min = "0";
+      range.max = String(SLD_RES);
+
+      const num = document.createElement("input");
+      num.type = "number";
+      num.className = "lay-sld-num";
+      num.min = "1";
+
+      const maxSpan = document.createElement("span");
+      maxSpan.className = "lay-sld-max";
+
+      row.append(label, range, num, maxSpan);
+      elRtSliders.appendChild(row);
+      coordSliderRefs.push({ range, num, maxSpan });
+
+      const dim = i;
+      range.addEventListener("input", () => {
+        st.coordVals[dim] = Math.max(1, Math.floor(sliderToVal(+range.value, st.shape[dim])));
+        num.value = String(st.coordVals[dim]);
+        repaintRoundTrip();
+      });
+      num.addEventListener("change", () => {
+        const v = Math.max(1, Math.min(st.shape[dim], +num.value || 1));
+        st.coordVals[dim] = v;
+        num.value = String(v);
+        range.value = String(valToSlider(v, st.shape[dim]));
+        repaintRoundTrip();
+      });
+    }
+  }
+
+  function syncCoordSliders(): void {
+    for (let i = 0; i < st.coordVals.length; i++) {
+      const ref = coordSliderRefs[i];
+      if (!ref) continue;
+      if (st.coordVals[i] > st.shape[i]) st.coordVals[i] = st.shape[i];
+      if (st.coordVals[i] < 1) st.coordVals[i] = 1;
+      ref.num.value = String(st.coordVals[i]);
+      ref.range.value = String(valToSlider(st.coordVals[i], st.shape[i]));
+      ref.maxSpan.textContent = `/ ${formatLargeNumber(st.shape[i])}`;
+    }
+  }
+
+  /** BigInt-safe hex index extraction */
+  function extractIndexBig(hex: string): bigint {
+    const ic = st.formatChars - st.prefixChars - st.versionChars - st.shardChars;
+    if (ic <= 0) return 0n;
+    const h = hex.slice(hex.length - ic);
+    return h ? BigInt("0x" + h) : 0n;
+  }
+
+  /** 큰 수 포맷 (BigInt) */
+  function fmtBig(n: bigint): string {
+    const s = n.toString();
+    if (s.length <= 15) return n.toLocaleString();
+    return `${s[0]}.${s.slice(1, 5)}…×10^${s.length - 1}`;
+  }
+
+  function repaintRoundTrip(): void {
+    syncCoordSliders();
+
+    // 항상 BigInt 산술 사용 — Number 정밀도 문제 방지
+    const shapeBig = st.shape.map(n => BigInt(Math.round(n)));
+    const coordsBig = st.coordVals.map(n => BigInt(Math.round(n)));
+
+    // — 순방향: coords → index → hex —
+    const index = simEncodeBig(shapeBig, coordsBig);
+    const hex = simPackHexBig(
+      st.formatChars,
+      st.prefixChars, st.rtPrefixVal,
+      st.versionChars, st.rtVersionVal,
+      st.shardChars, st.rtShardVal,
+      index,
+    );
+    const formatted = formatHex(currentFormat(), hex);
+
+    const rtPrefixHex = st.prefixChars > 0 ? `0x${st.rtPrefixVal.toString(16).toUpperCase().padStart(st.prefixChars, "0")}` : "—";
+    const rtVersionHex = st.versionChars > 0 ? `0x${st.rtVersionVal.toString(16).toUpperCase().padStart(st.versionChars, "0")}` : "—";
+    const rtShardHex = st.shardChars > 0 ? `0x${st.rtShardVal.toString(16).toUpperCase().padStart(st.shardChars, "0")}` : "—";
+
+    // stride weights (BigInt)
+    const weights: bigint[] = new Array(shapeBig.length);
+    let w = 1n;
+    for (let i = shapeBig.length - 1; i >= 0; i--) {
+      weights[i] = w;
+      w *= shapeBig[i];
+    }
+
+    // encode 수식
+    const encodeParts = coordsBig.map((c, i) =>
+      `(${fmtBig(c)}−1)×${fmtBig(weights[i])}`
+    ).join(" + ");
+    const encodePartVals = coordsBig.map((c, i) =>
+      fmtBig((c - 1n) * weights[i])
+    ).join(" + ");
+
+    // — 역방향: hex → index 추출 → decode —
+    const extractedIndex = extractIndexBig(hex);
+    const decodedCoords = simDecodeBig(shapeBig, extractedIndex);
+
+    // 역산 분해 (step-by-step)
+    const decodeSteps: string[] = [];
+    let rest = extractedIndex;
+    for (let i = shapeBig.length - 1; i >= 0; i--) {
+      const rem = rest % shapeBig[i];
+      const coord = rem + 1n;
+      const nextRest = rest / shapeBig[i];
+      decodeSteps.unshift(
+        `<span class="lay-rt-dim-label">dim${i}</span> ` +
+        `${fmtBig(rest)} mod ${fmtBig(shapeBig[i])} = ${fmtBig(rem)} → <strong>${fmtBig(coord)}</strong>` +
+        (nextRest > 0n ? `, ÷${fmtBig(shapeBig[i])} → ${fmtBig(nextRest)}` : "")
+      );
+      rest = nextRest;
+    }
+
+    // match check
+    const match = coordsBig.every((c, i) => c === decodedCoords[i]) && index === extractedIndex;
+
+    const indexChars = st.formatChars - st.prefixChars - st.versionChars - st.shardChars;
+    const indexHex = hex.slice(hex.length - indexChars).toUpperCase();
+    const weightsStr = weights.map(fmtBig).join(", ");
+    const coordsStr = coordsBig.map(fmtBig).join(", ");
+    const decodedStr = decodedCoords.map(fmtBig).join(", ");
+
+    elRtProof.innerHTML = `
+      <div class="lay-rt-block lay-rt-forward">
+        <div class="lay-rt-step-title">순방향 (Encode)</div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">입력 좌표</span>
+          <code class="lay-rt-val lay-rt-highlight">[${coordsStr}]</code>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">스트라이드</span>
+          <code class="lay-rt-val lay-rt-formula">W = [${weightsStr}]</code>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">연산</span>
+          <code class="lay-rt-val lay-rt-formula">${encodeParts} = ${encodePartVals} = ${fmtBig(index)}</code>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">1D index</span>
+          <code class="lay-rt-val">${fmtBig(index)} → 0x${indexHex}</code>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">${formatLabel()}</span>
+          <code class="lay-rt-val lay-rt-uuid">${formatted}</code>
+        </div>
+      </div>
+
+      <div class="lay-rt-arrow">↕</div>
+
+      <div class="lay-rt-block lay-rt-reverse">
+        <div class="lay-rt-step-title">역방향 (Decode)</div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">${formatLabel()}</span>
+          <code class="lay-rt-val lay-rt-uuid">${formatted}</code>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">index 추출</span>
+          <code class="lay-rt-val">0x${indexHex} → ${fmtBig(extractedIndex)}</code>
+        </div>
+        <div class="lay-rt-step lay-rt-step-col">
+          <span class="lay-rt-label">역산 분해</span>
+          <div class="lay-rt-decode-steps">
+            ${decodeSteps.map(s => `<code class="lay-rt-val lay-rt-formula">${s}</code>`).join("")}
+          </div>
+        </div>
+        <div class="lay-rt-step">
+          <span class="lay-rt-label">복원 좌표</span>
+          <code class="lay-rt-val lay-rt-highlight">[${decodedStr}]</code>
+        </div>
+      </div>
+
+      <div class="lay-rt-result ${match ? "lay-rt-match" : "lay-rt-mismatch"}">
+        <span class="lay-rt-check">${match ? "✓" : "✗"}</span>
+        <span>${match
+          ? `Round-trip 검증 성공 — [${coordsStr}] → ${fmtBig(index)} → [${decodedStr}] 일치`
+          : "Round-trip 검증 실패 — 입력 좌표와 복원 좌표 불일치"
+        }</span>
+      </div>
+      <div class="lay-uuid-meta">
+        <span>prefix=${rtPrefixHex}</span>
+        <span>version=${rtVersionHex}</span>
+        <span>shard=${rtShardHex}</span>
       </div>
     `;
   }

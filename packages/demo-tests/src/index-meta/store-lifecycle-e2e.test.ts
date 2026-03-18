@@ -1,7 +1,7 @@
 /**
  * E2E: 저장소 생명주기 — SQL 기반 운영 시나리오
  *
- * BetterSqliteDriver (in-memory) + SqlIndexMetaStore + SqlAddressStateStore 를 조합해
+ * NodeSqliteDriver (in-memory) + SqlIndexMetaStore + SqlAddressStateStore 를 조합해
  * 실제 운영에서 발생하는 4가지 시나리오를 검증한다.
  *
  * [S1] Boot           : DB 엔트리 적재 → 게이트 캐시 저장 → 재조회 → 주소 제어 확인
@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { BetterSqliteDriver } from "index-meta";
+import { NodeSqliteDriver } from "index-meta";
 import { SqlIndexMetaStore } from "index-meta";
 import { SqlAddressStateStore } from "index-meta";
 import { computeStateRanges, checkGate, activeRanges } from "index-meta";
@@ -30,12 +30,12 @@ const AT = "2026-01-01T00:00:00Z";
 // ── [S1] Boot: DB 엔트리 적재 + 게이트 캐시 저장/재조회 ───────────────
 
 describe("[S1] Boot — DB 엔트리 적재 후 게이트 캐시를 저장하고 재조회한다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(() => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
   });
@@ -119,11 +119,11 @@ describe("[S1] Boot — DB 엔트리 적재 후 게이트 캐시를 저장하고
 // ── [S2] Version upgrade: capacity 확장 + migrateEntries ──────────────────────
 
 describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트리를 이전한다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let store: SqlIndexMetaStore;
 
   beforeEach(async () => {
-    driver = new BetterSqliteDriver(":memory:");
+    driver = new NodeSqliteDriver(":memory:");
     store  = new SqlIndexMetaStore(driver);
 
     // v1: capacity=4, 4개 엔트리로 꽉 참
@@ -180,12 +180,12 @@ describe("[S2] Version upgrade — capacity 확장 후 migrateEntries로 엔트�
 // ── [S3] Soft delete: 엔트리 유지 + 게이트 캐시 inactive 갱신 ─────────────────
 
 describe("[S3] Soft delete — deprecated 값은 entry에 남고 게이트 캐시로 제어된다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(async () => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
@@ -271,11 +271,11 @@ describe("[S3] Soft delete — deprecated 값은 entry에 남고 게이트 캐�
 // ── [S4] Position reorder: migrateEntries + positionMap ───────────────────────
 
 describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let store: SqlIndexMetaStore;
 
   beforeEach(async () => {
-    driver = new BetterSqliteDriver(":memory:");
+    driver = new NodeSqliteDriver(":memory:");
     store  = new SqlIndexMetaStore(driver);
 
     // v1: admin=1, editor=2, viewer=3
@@ -346,11 +346,11 @@ describe("[S4] Position reorder — positionMap으로 좌표를 재배치한다"
 //   - shouldVerify=true — 캐시가 stale일 수 있으므로 실제 조회 권장
 
 describe("[S5] Open slots — headroom 구간은 encode 허용, decode 차단된다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(() => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     stateStore = new SqlAddressStateStore(driver);
   });
 
@@ -438,11 +438,11 @@ describe("[S5] Open slots — headroom 구간은 encode 허용, decode 차단된
 //   - reserved(교차)   : encode ✗, decode ✗, shouldVerify=false (hard block)
 
 describe("[S6] inactive ∩ open → reserved 자동 승격", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(() => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     stateStore = new SqlAddressStateStore(driver);
   });
 
@@ -528,15 +528,15 @@ describe("[S6] inactive ∩ open → reserved 자동 승격", () => {
 // ── [S7] 멀티 prefix 격리 — 같은 DB, 서로 다른 prefix ────────────────────────
 //
 // IndexMetaStore와 AddressStateStore는 prefix 단위로 격리된다.
-// 같은 BetterSqliteDriver를 공유해도 prefix가 다르면 데이터가 섞이지 않는다.
+// 같은 NodeSqliteDriver를 공유해도 prefix가 다르면 데이터가 섞이지 않는다.
 
 describe("[S7] 멀티 prefix — 같은 DB에서 prefix별 캐시가 독립적이다", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(async () => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
 
@@ -603,12 +603,12 @@ describe("[S7] 멀티 prefix — 같은 DB에서 prefix별 캐시가 독립적�
 //   4. 정리   : v1 캐시 삭제 → v1 entry 보존 확인 → v2 캐시 활성 확인
 
 describe("[S8] 완전한 운영 사이클 — 부트 → deprecated → 버전 업그레이드", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let stateStore: SqlAddressStateStore;
 
   beforeEach(() => {
-    driver     = new BetterSqliteDriver(":memory:");
+    driver     = new NodeSqliteDriver(":memory:");
     metaStore  = new SqlIndexMetaStore(driver);
     stateStore = new SqlAddressStateStore(driver);
   });

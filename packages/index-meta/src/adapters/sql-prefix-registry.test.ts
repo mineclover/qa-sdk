@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { BetterSqliteDriver } from "./node-sqlite-driver.js";
+import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import { SqlPrefixRegistry } from "./sql-prefix-registry.js";
 import { ValidationError } from "../errors.js";
 
 // ── 공통 픽스처 ─────────────────────────────────────────
 
 function makeRegistry() {
-  const driver = new BetterSqliteDriver(":memory:");
+  const driver = new NodeSqliteDriver(":memory:");
   return new SqlPrefixRegistry(driver);
 }
 

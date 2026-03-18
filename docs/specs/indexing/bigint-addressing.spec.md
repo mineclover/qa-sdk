@@ -3,9 +3,9 @@
 > `Number.MAX_SAFE_INTEGER`(2^53)를 초과하는 shape product에 대한 BigInt 기반 주소 인코딩/디코딩.
 > weighted-index와 index-meta 양쪽에 걸치는 횡단 스펙.
 
-관련 스펙: [weighted-index.spec.md](weighted-index.spec.md) · [index-meta/codec.spec.md](index-meta/codec.spec.md) · [index-meta/registry.spec.md](index-meta/registry.spec.md)
-용량 가드 문서: [index-meta/docs/capacity-guard.md](../../packages/index-meta/docs/capacity-guard.md)
-운영 흐름: `[S2, A1]` encode (BigInt 경로) · `[A5]` matchRanges (BigInt 범위) — [runtime-flows.spec.md](operations/runtime-flows.spec.md)
+관련 스펙: [weighted-index/core.spec.md](weighted-index/core.spec.md) · [index-meta/codec.spec.md](index-meta/codec.spec.md) · [index-meta/registry.spec.md](index-meta/registry.spec.md)
+용량 가드 문서: [index-meta/docs/capacity-guard.md](../../../packages/index-meta/docs/capacity-guard.md)
+운영 흐름: `[S2, A1]` encode (BigInt 경로) · `[A5]` matchRanges (BigInt 범위) — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 

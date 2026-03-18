@@ -929,6 +929,38 @@ code {
   padding: 0 4px;
 }
 
+/* ── Hierarchy proof ── */
+.cb-hierarchy-proof {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin: 12px 0;
+}
+.cb-hierarchy-col {
+  flex: 1; min-width: 280px;
+}
+.cb-hierarchy-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 4px 8px; border-radius: 4px 4px 0 0;
+}
+.cb-hierarchy-label.cb-verdict-casbin {
+  background: #f7f2fd; color: #7c3aed;
+}
+.cb-hierarchy-label.cb-verdict-qa {
+  background: var(--xl-navy-faint, #f0f4f8); color: var(--xl-blue);
+}
+.cb-hierarchy-col .cb-code {
+  border-radius: 0 0 4px 4px; margin-top: 0;
+}
+.cb-hierarchy-result {
+  margin-top: 14px;
+}
+.cb-hierarchy-result .cb-cmp-table th,
+.cb-hierarchy-result .cb-cmp-table td {
+  text-align: center;
+}
+.cb-hierarchy-result .cb-cmp-table td:last-child {
+  text-align: left; font-size: 0.78rem; color: var(--text-muted);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    권한 부여 현황 테이블 (grant sheet)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1646,6 +1678,67 @@ code {
 }
 .vd-col-dimmed { opacity: 0.5; }
 .vd-col-active { font-weight: 700; background: #f0fdf4; }
+
+/* ── Composite index comparison ── */
+.vd-ci-block {
+  margin-bottom: 16px;
+}
+.vd-ci-block:last-child { margin-bottom: 0; }
+.vd-ci-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.vd-ci-prefix {
+  font-family: var(--font-num);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--xl-navy);
+  background: var(--xl-navy-faint);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+.vd-ci-meta {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.vd-ci-table td, .vd-ci-table th {
+  white-space: nowrap;
+}
+.vd-ci-pos {
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+.vd-ci-delta {
+  text-align: center;
+}
+.vd-ci-formula {
+  font-family: var(--font-num);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.vd-ci-formula code {
+  background: none;
+  padding: 0;
+}
+.vd-ci-na {
+  color: var(--text-muted);
+}
+.vd-delta-shift {
+  font-family: var(--font-num);
+  font-weight: 700;
+  color: #e67e22;
+  font-size: 0.78rem;
+}
+.vd-delta-zero {
+  font-family: var(--font-num);
+  color: #27ae60;
+  font-size: 0.78rem;
+}
 
 /* ── Protocol section ── */
 .vd-protocol-grid {
@@ -4168,6 +4261,15 @@ code {
   overflow-y: auto;
   padding-right: 4px;
 }
+.lay-main-far {
+  flex: 0.75;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 
 /* ── Dim max graph ── */
 .lay-graph-section {
@@ -4400,6 +4502,160 @@ code {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+/* ── Round-trip proof ── */
+.lay-rt-section {
+  background: var(--surface-0);
+  border: 1px solid var(--border-cell);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+}
+.lay-rt-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-cell);
+}
+.lay-rt-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+}
+.lay-rt-field-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 36px;
+}
+.lay-rt-field-input {
+  width: 64px;
+  font-family: var(--font-num);
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  border: 1px solid var(--border-cell);
+  border-radius: var(--radius-sm);
+  background: var(--surface-0);
+  color: var(--xl-navy);
+}
+.lay-rt-field-input:disabled {
+  opacity: 0.4;
+}
+.lay-rt-field-hex {
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  color: var(--xl-blue);
+  min-width: 28px;
+}
+.lay-rt-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-cell);
+}
+.lay-rt-proof {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lay-rt-block {
+  background: var(--surface-1);
+  border: 1px solid var(--border-cell);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.lay-rt-forward { border-left: 3px solid var(--xl-blue); }
+.lay-rt-reverse { border-left: 3px solid #27ae60; }
+.lay-rt-step-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--xl-navy);
+  margin-bottom: 6px;
+}
+.lay-rt-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.lay-rt-step-col {
+  align-items: flex-start;
+}
+.lay-rt-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+.lay-rt-val {
+  font-family: var(--font-num);
+  font-size: 0.8rem;
+  color: var(--xl-navy);
+  background: var(--surface-0);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+.lay-rt-highlight {
+  font-weight: 700;
+  color: var(--xl-blue);
+  background: var(--xl-navy-faint);
+}
+.lay-rt-formula {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.lay-rt-uuid {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  user-select: all;
+}
+.lay-rt-arrow {
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.lay-rt-decode-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lay-rt-decode-steps code {
+  display: block;
+}
+.lay-rt-dim-label {
+  display: inline-block;
+  min-width: 36px;
+  font-weight: 600;
+  color: var(--xl-navy);
+}
+.lay-rt-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.lay-rt-match {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.lay-rt-mismatch {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+.lay-rt-check {
+  font-size: 1.1rem;
 }
 
 /* ── Index progression ── */

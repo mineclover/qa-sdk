@@ -1,23 +1,23 @@
 /**
  * SqlEntryFlagStore 테스트
  *
- * BetterSqliteDriver로 실제 SQLite에서 entry_flag 테이블의
+ * NodeSqliteDriver로 실제 SQLite에서 entry_flag 테이블의
  * append-only 이력 관리가 올바른지 검증한다.
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { BetterSqliteDriver } from "./node-sqlite-driver.js";
+import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import { SqlIndexMetaStore } from "./sql-store.js";
 import { SqlEntryFlagStore } from "./sql-entry-flag-store.js";
 import type { EntryFlagRecord } from "../entry-flag-store.js";
 
 describe("SqlEntryFlagStore", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let store: SqlEntryFlagStore;
 
   beforeEach(async () => {
-    driver = new BetterSqliteDriver();
+    driver = new NodeSqliteDriver();
     metaStore = new SqlIndexMetaStore(driver);
     store = new SqlEntryFlagStore(driver);
 

@@ -133,9 +133,16 @@ API 클라이언트, iframe 통신 프로토콜.
 | [foundation.md](indexing/foundation.md) | 근본 원리 — 닫힌 공간, 전단사, 버전화된 공간 계열 | weighted-index + index-meta | — |
 | [patterns.md](indexing/patterns.md) | 사용 패턴 — EntityId 이동, cross-index 참조, 활성/비활성 | weighted-index + index-meta | — |
 | [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 절차 | weighted-index + index-meta | — |
-| [weighted-index.spec.md](indexing/weighted-index.spec.md) | WeightedIndex / LabelRegistry / PrefixCodec — 수학 엔진 + 버전 관리 | weighted-index | implemented |
-| [pack-format.spec.md](indexing/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
-| [index-meta.spec.md](indexing/index-meta.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
+| [weighted-index/README.md](indexing/weighted-index/README.md) | weighted-index 패키지 인덱스 — 수학 엔진, partial binder, pack format, range query 구성 | weighted-index | implemented |
+| [weighted-index/core.spec.md](indexing/weighted-index/core.spec.md) | WeightedIndex / LabelRegistry / PrefixCodec — 수학 엔진 + 버전 관리 | weighted-index | implemented |
+| [weighted-index/partial-binder.spec.md](indexing/weighted-index/partial-binder.spec.md) | PartialBinder / createBinder — 부분 차원 캐시, full path canonicalization, PrefixCodec 연동 | weighted-index | implemented |
+| [weighted-index/pack-format.spec.md](indexing/weighted-index/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
+| [index-meta/registry.spec.md](indexing/index-meta/registry.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
+| [permission-engine/README.md](indexing/permission-engine/README.md) | permission-engine 패키지 인덱스 — core layer, 레이어 구조, 모듈 의존 관계 | permission-engine | implemented |
+| [permission-engine/core.spec.md](indexing/permission-engine/core.spec.md) | PermissionSet / TernaryMask / ScopedEngine — binary/ternary mask, 상속, scope routing | permission-engine | implemented |
+| [permission-engine/codec.spec.md](indexing/permission-engine/codec.spec.md) | PermissionCodec — 3-tier protocol stack, text↔integer↔bitmask, PrefixCodec/index-meta 호환성 | permission-engine | implemented |
+| [permission-engine/resource.spec.md](indexing/permission-engine/resource.spec.md) | resource / service-ref / permission-code — canonical resource 규칙, ServiceContext, permission text address | permission-engine | implemented |
+| [permission-engine/migration.spec.md](indexing/permission-engine/migration.spec.md) | migration.ts — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | permission-engine | implemented |
 
 ### services/ — 서비스 분리 스펙
 
@@ -194,12 +201,12 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | @qa-sdk/ingest-server | `pipeline/ingest.spec.md` + `server/ingest/` |
 | @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
-| weighted-index | `indexing/weighted-index.spec.md`, `indexing/pack-format.spec.md` |
+| weighted-index | `indexing/weighted-index/README.md`, `indexing/weighted-index/core.spec.md`, `indexing/weighted-index/partial-binder.spec.md`, `indexing/weighted-index/pack-format.spec.md`, `indexing/weighted-index/range-query.spec.md` |
 | demo-snapshot | `indexing/README.md` (데이터 카탈로그 섹션) |
 | @qa-sdk/demo-tests | `indexing/README.md` (통합 테스트 섹션) |
 | platform-demo | `indexing/README.md` (플랫폼 데모 섹션) |
-| permission-engine | `indexing/README.md` (권한 엔진 섹션) |
-| index-meta | `indexing/index-meta.spec.md` |
+| permission-engine | `indexing/permission-engine/README.md`, `indexing/permission-engine/core.spec.md`, `indexing/permission-engine/codec.spec.md`, `indexing/permission-engine/resource.spec.md`, `indexing/permission-engine/migration.spec.md` |
+| index-meta | `indexing/index-meta/README.md` + `indexing/index-meta/` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
 | @qa-sdk/browser | `browser/monitor.spec.md` |
 | @qa-sdk/viz-web | `visualization/`, `web/` |

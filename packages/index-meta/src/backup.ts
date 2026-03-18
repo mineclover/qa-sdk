@@ -1,6 +1,7 @@
 import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import { ValidationError } from "./errors.js";
+import type { EntityId } from "./types.js";
 
 // ── 백업 포맷 ─────────────────────────────────────────────
 
@@ -8,10 +9,10 @@ import { ValidationError } from "./errors.js";
  * versionId 단위 백업 파일 포맷.
  *
  * 하나의 JSON = 하나의 (prefix, versionId) 스냅샷.
- * composite 테이블은 entries가 없으므로 entries 필드가 비어있다.
+ * composite 테이블은 sparse entries 대신 refs를 통해 의존 DAG를 복원한다.
  *
  * 복원 순서:
- *   1. PrefixRegistry에 { prefix, versionId, capacity } 등록
+ *   1. PrefixRegistry에 { prefix, versionId, capacity, refs? } 등록
  *   2. IndexMetaStore에 schema_version 등록
  *   3. entries를 IndexMetaStore에 적재
  */
@@ -23,14 +24,15 @@ export interface VersionBackup {
   prefix: string;
   versionId: string;
   capacity: number;
+  refs?: PrefixRegistryRecord["refs"];
 
   /**
    * position → value (sparse).
-   * 빈 position은 생략.
-   * 예약 마커도 동일하게 포함: { "4": "_", "140": "NaN" }
+   * 빈 position은 생략된다.
+   * 값은 string_enum / reserved token / number_enum / index_ref를 그대로 보존한다.
    * composite 테이블은 빈 객체 {}.
    */
-  entries: Record<string, string>; // key = position(1-based) as string
+  entries: Record<string, EntityId>; // key = position(1-based) as string
 }
 
 // ── export ────────────────────────────────────────────────
@@ -53,17 +55,17 @@ export async function exportVersion(
   store: IndexMetaStore,
   exportedAt = new Date().toISOString()
 ): Promise<VersionBackup> {
-  const capacity = await registry.getCapacity(prefix, versionId);
-  if (capacity === null) {
+  const record = await registry.getRecord(prefix, versionId);
+  if (record === null) {
     throw new ValidationError(
       `exportVersion: "${prefix}/${versionId}" not found in PrefixRegistry`
     );
   }
 
   const entryRecords = await store.getEntries(prefix, versionId);
-  const entries: Record<string, string> = {};
+  const entries: Record<string, EntityId> = {};
   for (const r of entryRecords) {
-    entries[String(r.position)] = String(r.value);
+    entries[String(r.position)] = r.value;
   }
 
   return {
@@ -71,7 +73,8 @@ export async function exportVersion(
     exportedAt,
     prefix,
     versionId,
-    capacity,
+    capacity: record.capacity,
+    ...(record.refs ? { refs: record.refs.map((ref) => ({ ...ref })) } : {}),
     entries,
   };
 }
@@ -82,7 +85,7 @@ export async function exportVersion(
  * VersionBackup JSON을 복원한다.
  *
  * 복원 순서:
- *   1. PrefixRegistry.register()  — capacity 등록
+ *   1. PrefixRegistry.register()  — capacity / refs 등록
  *   2. IndexMetaStore.insertSchemaVersion() — schema_version 등록
  *   3. entries → IndexMetaStore.insertEntry() 일괄 적재
  *
@@ -124,6 +127,7 @@ export async function importVersion(
     prefix: backup.prefix,
     versionId: backup.versionId,
     capacity: backup.capacity,
+    ...(backup.refs ? { refs: backup.refs.map((ref) => ({ ...ref })) } : {}),
   });
 
   // 2. schema_version 등록

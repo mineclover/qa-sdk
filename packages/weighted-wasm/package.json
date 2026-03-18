@@ -6,8 +6,10 @@
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "pnpm run build:wasm",
+    "test:js": "pnpm exec vitest run",
     "test:rust": "cargo test",
-    "test": "cargo test"
+    "test": "pnpm run test:js && cargo test",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "typescript": "^5.8.2"

@@ -14,6 +14,7 @@ import {
   WeightedIndex,
   createLabelRegistry,
   type LabelRegistry,
+  EntityNotFoundError,
   createMask,
   setBit,
   clearBit,
@@ -56,6 +57,13 @@ export interface CodecSnapshot {
   mask?: string;
 }
 
+type PermissionLabelSchema = {
+  service: string;
+  type: string;
+  resource: string;
+  action: string;
+};
+
 // ── 내부 상수 ────────────────────────────────────────────────────────────────
 
 const LABEL_VERSION = "v1";
@@ -70,7 +78,7 @@ export class PermissionCodec {
 
   private readonly _dims: CodecDims;
   /** D-1: LabelRegistry에 위임하여 string→index 맵 중복 제거 */
-  private readonly _labels: LabelRegistry;
+  private readonly _labels: LabelRegistry<PermissionLabelSchema>;
 
   constructor(version: string, dims: CodecDims) {
     this.version = version;
@@ -108,20 +116,20 @@ export class PermissionCodec {
   /** PermissionCode 객체 → integer address. */
   encodeCode(code: PermissionCode): number {
     return this.index.encode([
-      this._labels.getIndex("service", LABEL_VERSION, code.service),
-      this._labels.getIndex("type", LABEL_VERSION, code.type),
-      this._labels.getIndex("resource", LABEL_VERSION, code.resource),
-      this._labels.getIndex("action", LABEL_VERSION, code.action),
+      this._getLabelIndex("service", code.service),
+      this._getLabelIndex("type", code.type),
+      this._getLabelIndex("resource", code.resource),
+      this._getLabelIndex("action", code.action),
     ]);
   }
 
   /** 개별 파트 → integer address. */
   encodeRaw(service: string, type: string, resource: string, action: string): number {
     return this.index.encode([
-      this._labels.getIndex("service", LABEL_VERSION, service),
-      this._labels.getIndex("type", LABEL_VERSION, type),
-      this._labels.getIndex("resource", LABEL_VERSION, resource),
-      this._labels.getIndex("action", LABEL_VERSION, action),
+      this._getLabelIndex("service", service),
+      this._getLabelIndex("type", type),
+      this._getLabelIndex("resource", resource),
+      this._getLabelIndex("action", action),
     ]);
   }
 
@@ -224,5 +232,19 @@ export class PermissionCodec {
       }
     }
     return result;
+  }
+
+  private _getLabelIndex(
+    label: keyof PermissionLabelSchema,
+    value: string,
+  ): number {
+    try {
+      return this._labels.getIndex(label, LABEL_VERSION, value);
+    } catch (error) {
+      if (error instanceof EntityNotFoundError) {
+        throw new RangeError(`Unknown ${label}: "${value}"`);
+      }
+      throw error;
+    }
   }
 }

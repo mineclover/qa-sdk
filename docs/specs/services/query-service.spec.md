@@ -4,12 +4,20 @@
 > RelationalEngine + policy-resolver + gate-aware-query를 네트워크 서비스로 노출한다.
 
 관련 스펙: [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md) · [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md)
-참조 구현: `packages/index-meta/src/relational-engine.ts`, `policy-resolver.ts`, `cross-index-query.ts`, `version-query.ts`
+참조 구현: `packages/index-meta/src/relational-engine.ts`, `policy-resolver.ts`, `cross-index-query.ts`, `version-query.ts`, `packages/query-service/src/lib/query-service.ts`, `packages/query-service/src/lib/rule-service.ts`
 운영 흐름: `[S2]` resolve · `[S2→S4]` 규칙 CRUD · `[A5]` match-ranges/compose-query — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 
-planned
+implemented (`F-1~F-4`)
+
+현재 구현 범위:
+
+- PolicyRule 저장소 인터페이스 + Memory/SQL 어댑터 구현 완료
+- 규칙 CRUD 5종 구현 완료
+- 질의 엔드포인트 5종 구현 완료
+- Gate Service 연동(`gateMode`, `withGate`, fail-open/fail-closed) 구현 완료
+- `F-5` 규칙 버전 마이그레이션은 planned 유지
 
 ---
 
@@ -41,7 +49,7 @@ planned
 
 ```
 POST   /rules                    규칙 생성
-GET    /rules?indexId=&versionId=   규칙 목록 조회
+GET    /rules?indexId=&versionId=   규칙 목록 조회 (`versionId` query parameter)
 GET    /rules/:id                단일 규칙 조회
 PUT    /rules/:id                규칙 수정
 DELETE /rules/:id                규칙 삭제
@@ -82,11 +90,15 @@ POST /rules
 
 강제 삽입 옵션: `?force=true` → 충돌 경고만 반환, 생성은 진행.
 
+현재 구현은 `PrefixRegistry.getShape()` + deep equality 기반 conflict preflight를 사용한다.
+
 ---
 
 ## 3. 질의 형식
 
 ### 단일 좌표 해소
+
+현재 `POST /resolve`로 구현되어 있으며 `withGate=true`일 때 gate-aware 결과를 반환할 수 있다.
 
 ```
 POST /resolve
@@ -108,6 +120,8 @@ POST /resolve
 
 ### 범위 질의
 
+현재 `POST /match-ranges`로 구현되어 있으며 `gateMode`가 주어지면 gate-service 조회 결과를 합성한다.
+
 ```
 POST /match-ranges
 {
@@ -124,6 +138,8 @@ POST /match-ranges
 
 ### cross-index 합성 질의
 
+현재 `POST /compose-query`로 구현되어 있다.
+
 ```
 POST /compose-query
 {
@@ -139,6 +155,8 @@ POST /compose-query
 ```
 
 ### version 횡단 질의
+
+현재 `POST /query-across-versions`로 구현되어 있다.
 
 ```
 POST /query-across-versions
@@ -159,6 +177,8 @@ POST /query-across-versions
 ```
 
 ### 2-level relation 해소
+
+현재 `POST /resolve-relation`으로 구현되어 있다.
 
 ```
 POST /resolve-relation

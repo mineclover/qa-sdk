@@ -55,6 +55,7 @@ const rec  = wi.decodeToRecord(5); // → { role: 2, action: 1, resource: 3 }
 │  PackFormat          — 컨테이너 포맷 레지스트리 (uuid/int64/sha256 등) │
 ├───────────────────────────────────────────────────────────────┤
 │  CapacityPlanner     — 비례 축소, 용량 추천, 성장 예측             │
+│  BitFieldLayout      — 비트 레벨 가변 폭 필드 패킹 (저장 밀도 최적화)   │
 │  Obfuscate           — 전단사 비트 변환 (XOR/rotate/reverse → hex/uuid/nanoid) │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -386,6 +387,81 @@ const plan = planCapacity({
 
 ---
 
+## 비트 필드 레이아웃 (bit-field-layout)
+
+hex-char(4비트) 경계 대신 **정확한 비트 경계**로 필드를 패킹한다. 필드의 max value가 16의 거듭제곱에 맞지 않을 때 낭비되는 비트를 회수.
+
+```ts
+import {
+  createBitFieldLayout, bitPack, bitUnpack,
+  bitPackToHex, bitPackToBytes,
+  analyzeBitVsHex,
+} from "weighted-index";
+
+// 레이아웃 정의: 각 필드는 ⌈log₂(maxValue+1)⌉ 비트
+const layout = createBitFieldLayout([
+  { name: "prefix",  maxValue: 15 },    // 4 bits (hex과 동일)
+  { name: "version", maxValue: 7 },     // 3 bits (hex: 4 → 1 bit 절약)
+  { name: "shard",   maxValue: 3 },     // 2 bits (hex: 4 → 2 bit 절약)
+  { name: "index",   maxValue: 99999 }, // 17 bits (hex: 20 → 3 bit 절약)
+]);
+// totalBits: 26 (hex 기준 32 → 6 bits 절약, 64× 용량 증가 가능)
+
+// pack → bigint
+const packed = bitPack(layout, { prefix: 10, version: 5, shard: 2, index: 42 });
+const fields = bitUnpack(layout, packed);
+// fields.index === 42n
+
+// 다양한 출력 포맷
+bitPackToHex(layout, { prefix: 10, version: 5, shard: 2, index: 42 });
+// → hex 문자열 (디버그/표시용)
+
+bitPackToBytes(layout, { prefix: 10, version: 5, shard: 2, index: 42 });
+// → Uint8Array (저장/네트워크 전송용)
+```
+
+### BigInt 지원
+
+모든 연산이 내부적으로 bigint로 수행되므로, 53비트를 초과하는 필드도 정밀도 손실 없이 처리.
+
+```ts
+const bigLayout = createBitFieldLayout([
+  { name: "prefix",  maxValue: 15 },
+  { name: "index",   maxValue: 0, bits: 119 },  // 119-bit 필드
+]);
+
+const packed = bitPack(bigLayout, { prefix: 15, index: (1n << 119n) - 1n });
+const u = bitUnpack(bigLayout, packed);
+// u.index === (1n << 119n) - 1n  ✓
+```
+
+### 밀도 분석
+
+```ts
+const analysis = analyzeBitVsHex([
+  { name: "prefix",  maxValue: 15 },    // 4b vs 4b → 0 saved
+  { name: "version", maxValue: 7 },     // 3b vs 4b → 1 saved
+  { name: "shard",   maxValue: 3 },     // 2b vs 4b → 2 saved
+  { name: "index",   maxValue: 99999 }, // 17b vs 20b → 3 saved
+]);
+// analysis.savedBits → 6
+// analysis.capacityMultiplier → 64  (index에 6비트 추가 시 64× 더 많은 주소)
+```
+
+### uuid-layout과의 관계
+
+| | uuid-layout (hex) | bit-field-layout |
+|---|---|---|
+| 경계 | 4비트 (hex char) | 1비트 |
+| 출력 | hex 문자열 (UUID 포맷) | bigint / Uint8Array / hex |
+| 디버깅 | 필드가 hex 위치로 직접 식별 | 비트 오프셋 계산 필요 |
+| 밀도 | ~70-85% | ~95%+ |
+| 용도 | 사람이 읽는 ID, DB UUID 컬럼 | 저장 밀도 중요한 경로 |
+
+두 모듈은 병행 사용 가능: 저장은 bit-pack, 표시는 hex-format.
+
+---
+
 ## 난독화 (obfuscate)
 
 전단사(bijection) 비트 변환. 주소를 외관상 예측 불가능하게 만든다.
@@ -569,6 +645,20 @@ export { fitShape, fitLayout, planCapacity } from "weighted-index";
 export type {
   FitShapeOptions, FitShapeResult, FitLayoutOptions, FitLayoutResult,
   CapacityPlanDim, PlanCapacityOptions, CapacityRecommendation, CapacityPlanResult,
+} from "weighted-index";
+
+// ── 비트 필드 레이아웃 ────────────────────────────────────────
+export {
+  bitsForMax, createBitFieldLayout,
+  bitPack, bitUnpack,
+  bigintToBytes, bytesToBigint,
+  bitPackToBytes, bitUnpackFromBytes,
+  bitPackToHex, bitUnpackFromHex,
+  analyzeBitVsHex,
+} from "weighted-index";
+export type {
+  BitFieldSpec, BitField, BitFieldLayout,
+  BitVsHexField, BitVsHexAnalysis,
 } from "weighted-index";
 
 // ── 주소 직렬화 ────────────────────────────────────────────

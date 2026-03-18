@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryAddressRangeCache } from "./memory-address-range-cache.js";
 import { SqlAddressRangeCache } from "./sql-address-range-cache.js";
-import { BetterSqliteDriver } from "./node-sqlite-driver.js";
+import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import type { RangeCacheRecord } from "../address-range-cache.js";
 
 // ── 공통 테스트 스위트 ────────────────────────────────────────────────────
@@ -125,6 +125,6 @@ rangeCacheSuite("InMemoryAddressRangeCache", () => ({
 // ── SQL ───────────────────────────────────────────────────
 
 rangeCacheSuite("SqlAddressRangeCache", () => {
-  const driver = new BetterSqliteDriver();
+  const driver = new NodeSqliteDriver();
   return { cache: new SqlAddressRangeCache(driver) };
 });

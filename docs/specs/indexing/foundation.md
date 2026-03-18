@@ -33,29 +33,129 @@ WeightedIndex는 **설계 시점에 상한이 고정된 유한 차원**에만 �
 
 ---
 
-## 2. 버전화된 닫힌 공간의 계열
+## 2. Stride 공식과 주소 안정성
+
+### 2.1 Stride가 주소를 결정한다
+
+Mixed-radix encoding에서 각 차원의 **stride(가중치)**는 후속 차원들의 capacity 곱으로 결정된다.
+
+```
+shape    = [N₀, N₁, N₂]
+stride   = [N₁×N₂,  N₂,  1]
+
+좌표 [a, b, c]  →  주소 = a×(N₁×N₂) + b×(N₂) + c
+```
+
+이 공식에서 핵심은: **stride[i]는 i보다 뒤에 있는 모든 차원의 capacity에 의존한다.**
+
+### 2.2 단일 축: 자연스럽게 안정적
+
+차원이 1개뿐인 인덱스는 stride가 항상 `[1]`이다.
+
+```
+shape = [5]   →  stride = [1]  →  "admin"=1, "editor"=2, "viewer"=3
+shape = [8]   →  stride = [1]  →  "admin"=1, "editor"=2, "viewer"=3, "guest"=4, ...
+```
+
+entries를 추가해도 stride가 바뀌지 않으므로 **기존 인덱스가 자동으로 보존된다.** 버전 관리는 사실상 단어 사전의 이력 기록 수준이며, 마이그레이션이 필요한 상황 자체가 발생하지 않는다(capacity 변경이 아닌 한).
+
+### 2.3 복합 축: Capacity 변경이 주소를 무효화한다
+
+차원이 여러 개이면 **어떤 한 차원의 capacity 변경이 선행 차원 전체의 stride를 바꾼다.**
+
+```
+v1: shape = [3, 4, 5]  →  stride = [20, 5, 1]
+    좌표 [2, 3, 4]     →  주소 = 2×20 + 3×5 + 4 = 59
+
+v2: shape = [3, 6, 5]  →  stride = [30, 5, 1]   ← N₁이 4→6으로 변경
+    좌표 [2, 3, 4]     →  주소 = 2×30 + 3×5 + 4 = 79   ← 같은 좌표인데 주소가 다름!
+
+v1에서 저장한 59를 v2 기준으로 decode하면?
+    59 = 1×30 + 5×5 + 4  →  [1, 5, 4]   ← 완전히 다른 의미!
+```
+
+이것이 복합 축에서 **capacity headroom을 미리 선언해야 하는 근본 이유**다. capacity를 충분히 크게 잡아두면 항목을 추가해도 shape이 변하지 않고, shape이 변하지 않으면 stride가 불변이므로 기존 주소가 보존된다.
+
+### 2.4 Capacity Headroom — Stride를 고정하는 장치
+
+```
+capacity = [10, 10, 10]  →  stride = [100, 10, 1]  (고정)
+
+v1 entries: [3, 4, 5]    →  headroom = [7, 6, 5]  ← 추가 여유분
+v2 entries: [3, 6, 5]    →  headroom = [7, 4, 5]  ← 항목 추가했지만 stride 불변
+```
+
+headroom이 남아있는 한, entries를 추가해도 **버전 변경 없이** 기존 주소가 보존된다. headroom이 소진되면 capacity를 확장해야 하고, 이때 stride가 바뀌므로 **새 버전 생성 + 마이그레이션**이 필요하다.
+
+---
+
+## 3. 버전화된 닫힌 공간의 계열
 
 "닫힌 공간"이라는 제약은 **단일 버전 수준에서만 성립하면 충분하다.**
 
 ```
-perm:iv1:13  →  iv1 기준 닫힌 공간(3×3×3)에서의 13번
-perm:iv2:13  →  iv2 기준 닫힌 공간(4×3×3)에서의 13번  ← 완전히 다른 의미
+perm:iv1:13  →  iv1 기준 닫힌 공간(shape=[3,3,3], stride=[9,3,1])에서의 13번
+perm:iv2:13  →  iv2 기준 닫힌 공간(shape=[4,3,3], stride=[9,3,1])에서의 13번
 ```
 
 `indexId + versionId`가 "어떤 닫힌 공간 기준인가"를 명시한다. 공간 자체가 바뀌어도 저장된 값은 해당 버전으로 항상 decode 가능하다.
 
 실제로 관리하는 것은 **버전화된 닫힌 공간들의 계열**이다:
 - `indexId` = 어떤 조합 스키마 (어떤 축들이 어떤 순서로)
-- `versionId` = 그 스키마의 특정 시점 스냅샷 (각 축의 entries가 확정된 닫힌 공간)
+- `versionId` = 그 스키마의 특정 시점 스냅샷 (각 축의 capacity가 확정된 닫힌 공간)
 - `value` = 그 닫힌 공간 내의 정수
 
-### entries append-only 원칙
+### 3.1 버전은 복합 축에서 핵심이다
 
-DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 않고 끝에 추가하면, **공간이 확장되는 신규 버전**을 만들면서도 이전 버전 값들이 유효하게 유지된다.
+단일 축은 stride가 항상 1이므로 버전 관리가 이력 기록에 가깝다. **복합 축에서 버전은 마이그레이션의 핵심 메커니즘**이다:
+
+1. **DimSnapshot이 stride를 고정한다** — 각 버전은 확정된 capacity(=shape)를 가지며, 이것이 stride를 결정한다. 버전이 다르면 stride가 다르므로 같은 정수가 완전히 다른 의미를 갖는다.
+
+2. **decode(old) → encode(new)로 마이그레이션한다** — 저장된 정수를 old version의 stride로 decode하면 좌표를 복원할 수 있고, 그 좌표를 new version의 stride로 re-encode하면 새 주소를 얻는다.
+
+```
+저장값: perm:v1:59
+
+[v1 decode]  stride=[20,5,1]  →  59 → 좌표 [2, 3, 4]
+                                         ↓ 좌표는 엔티티 의미를 보존
+[v2 encode]  stride=[30,5,1]  →  좌표 [2, 3, 4] → 79
+
+결과: perm:v2:79  (같은 의미, 새 주소)
+```
+
+3. **read-repair 패턴** — DB에서 읽은 시점에 old version이면 즉시 변환. 일괄 마이그레이션 없이 점진적으로 전환된다.
+
+### 3.2 복합 축에서 prefix 참조(index_ref)와 버전 전파
+
+복합 축이 다른 인덱스를 `index_ref`로 참조할 때, **참조되는 prefix의 버전이 바뀌면 복합 축의 stride도 바뀔 수 있다.**
+
+```
+leaf index "role":   v1 shape=[5]  →  v2 shape=[8]   (capacity 확장)
+leaf index "action": v1 shape=[4]
+
+composite "perm":  dims = [index_ref("role"), index_ref("action")]
+  v1: shape=[5, 4]  →  stride=[4, 1]
+  v2: shape=[8, 4]  →  stride=[4, 1]   ← role capacity가 선행이므로 stride 불변!
+
+  하지만:
+  v1: shape=[4, 5]  →  stride=[5, 1]   (dims 순서가 [action, role]이면)
+  v2: shape=[4, 8]  →  stride=[8, 1]   ← role이 후행이므로 stride 변경!
+```
+
+leaf index의 capacity 변경은 composite의 shape을 바꾸고, 그 위치에 따라 stride가 변할 수 있다. 이것이 **leaf → composite cascade 전파**가 필요한 이유이며, GateEngine의 cascade recompute가 이 문제를 다룬다.
+
+### 3.3 entries append-only 원칙
+
+DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 않고 끝에 추가하면, capacity headroom 내에서 **공간이 확장되면서도 기존 주소가 보존된다.**
+
+이 원칙이 보장하는 것:
+- 단일 축: entries 추가 = 주소 안정 (stride 무관)
+- 복합 축 + headroom 내: entries 추가 = 주소 안정 (shape 불변 → stride 불변)
+- 복합 축 + headroom 소진: 새 버전 생성 필요 (capacity 확장 → stride 변경 → 마이그레이션)
 
 ---
 
-## 3. 레이어 분리
+## 4. 레이어 분리
 
 | 레이어 | 패키지 | 관심사 | 예시 |
 |---|---|---|---|
@@ -83,13 +183,13 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 | `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
 
 > **Note**: `WeightedIndex`와 `WeightedIndexBig`은 동일한 알고리즘의 Number/BigInt 구현이다. 둘 다 shape만 알면 동작하며, 직렬화 포맷이나 `numberType` 선택에 관여하지 않는다. 엔진 선택은 상위 레이어(어댑터)가 `shapeProduct`/`maxProductBig` 등 패키지 유틸로 shape product를 사후 분석하여 결정한다.
-> 검증: [`format-adapter.test.ts`](../../packages/weighted-index/src/format-adapter.test.ts) §1–§7
+> 검증: [`format-adapter.test.ts`](../../../packages/weighted-index/src/format-adapter.test.ts) §1–§7
 
 `PrefixCodec`와 `MetaRegistry`는 구조적으로 유사하다. `MetaRegistry`가 기능적 상위 호환이지만, `PrefixCodec`는 컴파일 타임 타입 안전성(`InferLabelSchema`)을 제공하고 `weighted-index` 자체를 독립 사용할 수 있는 경로를 유지한다.
 
 ---
 
-## 4. 가속 지향 설계 원칙
+## 5. 가속 지향 설계 원칙
 
 > 상세: [`acceleration.md`](acceleration.md) — 하드웨어 가속 비전 및 로드맵
 

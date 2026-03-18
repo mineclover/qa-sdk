@@ -14,6 +14,10 @@ import type {
 } from "@qa-sdk/core";
 import { z } from "zod";
 import {
+  createNoopDebugStore,
+  type DebugStore,
+} from "../lib/debug-store.js";
+import {
   badRequest,
   graphNotFound,
   sessionNotFound,
@@ -22,6 +26,10 @@ import {
 
 const paginationQuerySchema = z.object({
   cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+
+const recentQuerySchema = z.object({
   limit: z.coerce.number().int().positive().optional(),
 });
 
@@ -35,6 +43,7 @@ export interface QueryDeps {
   recordStore: RecordStore;
   traceStore: TraceStore;
   sessionStore: SessionStore;
+  debugStore?: DebugStore;
 }
 
 export function createQueryRoutes(deps: QueryDeps) {
@@ -76,6 +85,24 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toRuntimeGraphResponse(graph));
   });
 
+  app.get("/v1/debug/traces/:traceId/recent", async (c) => {
+    const traceId = c.req.param("traceId");
+    const trace = await deps.traceStore.findById(traceId);
+
+    if (!trace) {
+      throw traceNotFound(traceId);
+    }
+
+    const records = await resolveDebugStore(deps).getRecentByTrace(
+      traceId,
+      parseRecentLimit(c.req.query()),
+    );
+
+    return c.json({
+      items: records.map(toEventRecord),
+    });
+  });
+
   app.get("/v1/sessions/:sessionId", async (c) => {
     const sessionId = c.req.param("sessionId");
     const session = await deps.sessionStore.findById(sessionId);
@@ -104,6 +131,24 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toPaginatedRecordResponse(page));
   });
 
+  app.get("/v1/debug/sessions/:sessionId/recent", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const session = await deps.sessionStore.findById(sessionId);
+
+    if (!session) {
+      throw sessionNotFound(sessionId);
+    }
+
+    const records = await resolveDebugStore(deps).getRecentBySession(
+      sessionId,
+      parseRecentLimit(c.req.query()),
+    );
+
+    return c.json({
+      items: records.map(toEventRecord),
+    });
+  });
+
   return app;
 }
 
@@ -118,6 +163,11 @@ function parsePaginationQuery(query: Record<string, string | undefined>) {
 
 function normalizeLimit(limit?: number): number {
   return Math.min(limit ?? 50, 200);
+}
+
+function parseRecentLimit(query: Record<string, string | undefined>): number {
+  const parsed = recentQuerySchema.parse(query);
+  return normalizeLimit(parsed.limit);
 }
 
 function decodeCursor(cursor: string): RecordPaginationCursor {
@@ -213,4 +263,8 @@ function toEventRecord(record: StoredRecord): EventRecord {
 
 function toNullableIsoString(value: Date | null): string | null {
   return value ? value.toISOString() : null;
+}
+
+function resolveDebugStore(deps: QueryDeps): DebugStore {
+  return deps.debugStore ?? createNoopDebugStore();
 }

@@ -16,6 +16,7 @@ import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { createAppLifecycle } from "./lib/app-lifecycle.js";
 import { installGracefulShutdown } from "./lib/graceful-shutdown.js";
+import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import { createLogger } from "./lib/logger.js";
 import { createStreamConnectionRegistry } from "./lib/stream-connection-registry.js";
@@ -33,6 +34,7 @@ const db = createDb(env.TRACE_DATABASE_URL);
 const logger = createLogger("ingest-server");
 const appLifecycle = createAppLifecycle();
 const recordStreamBroker = new RecordStreamBroker();
+const debugStore = new InMemoryDebugStore();
 const streamConnectionRegistry = createStreamConnectionRegistry();
 const cleanupStore = createDatabaseCleanupStore(env.TRACE_DATABASE_URL);
 const registryValidator = env.REGISTRY_URL
@@ -54,6 +56,7 @@ const app = createApp({
   scenarioSpecStore: new DrizzleScenarioSpecStore(db),
   dlqStore: new DrizzleDlqStore(db),
   cleanupStore,
+  debugStore,
   recordStreamBroker,
   streamSubscriptionLimit: env.SSE_SUBSCRIPTION_LIMIT,
   dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,

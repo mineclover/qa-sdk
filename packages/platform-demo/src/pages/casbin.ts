@@ -266,12 +266,108 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
 <span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'admin'</span>, <span class="cb-code-str">'payment_cancel_req'</span>, <span class="cb-code-str">'read'</span>);
 <span class="cb-code-comment">// → true (g, admin, operator 계층 상속)</span></pre>
       <div class="cb-note">
-        <strong>Casbin 특유 기능:</strong> <code>g, admin, operator</code> 한 줄로 역할 계층을 정의합니다.
-        qa-sdk에서는 각 역할에 개별 grant를 부여해야 하지만, Casbin은 상위 역할이 하위 역할의 권한을 자동 상속합니다.
+        <strong>역할 계층 비교:</strong> Casbin은 <code>g, admin, operator</code> 한 줄로 역할 계층을 정의합니다.
+        qa-sdk는 <code>TernaryMask.inherit(parent, child)</code>로 비트 연산 기반 상속을 수행합니다 — 상위 역할 마스크를 하위에 합산하므로 O(1) 비트 OR로 동일한 계층 상속을 달성합니다.
       </div>
     </div>
   `;
   el.appendChild(enforceCard);
+
+  // 역할 계층 동치 증명
+  const hierarchyCard = document.createElement("div");
+  hierarchyCard.className = "cb-card";
+  hierarchyCard.innerHTML = `
+    <div class="cb-card-head">
+      <span class="cb-card-icon">&#x2261;</span>
+      <span class="cb-card-title">역할 계층 동치 증명: Casbin g() ≡ TernaryMask.inherit()</span>
+    </div>
+    <div class="cb-card-body">
+      <p class="cb-desc">
+        같은 역할 계층 <strong>admin ⊃ operator ⊃ viewer</strong>를 두 시스템이 어떻게 표현하는지 비교합니다.
+      </p>
+
+      <div class="cb-hierarchy-proof">
+        <div class="cb-hierarchy-col">
+          <div class="cb-hierarchy-label cb-verdict-casbin">Casbin — 텍스트 선언, 런타임 그래프 순회</div>
+          <pre class="cb-code"><span class="cb-code-comment"># 계층 선언</span>
+g, admin, operator
+g, operator, viewer
+
+<span class="cb-code-comment"># 기저 역할에만 정책 부여</span>
+p, viewer,   orders.view,    read
+p, operator, orders.cancel,  read
+p, admin,    config.edit,    read
+
+<span class="cb-code-comment"># enforce("admin", "orders.view", "read")</span>
+<span class="cb-code-comment"># → admin → operator → viewer 그래프 순회</span>
+<span class="cb-code-comment"># → viewer에 orders.view 정책 발견 → ✓</span>
+<span class="cb-code-comment"># 복잡도: O(depth × policies)</span></pre>
+        </div>
+
+        <div class="cb-hierarchy-col">
+          <div class="cb-hierarchy-label cb-verdict-qa">qa-sdk — 비트마스크 상속, 빌드타임 resolve</div>
+          <pre class="cb-code"><span class="cb-code-comment">// 슬롯: 0=orders.view, 1=orders.cancel, 2=config.edit</span>
+
+<span class="cb-code-comment">// 1. 기저 역할 마스크 정의</span>
+<span class="cb-code-kw">const</span> viewer = <span class="cb-code-kw">new</span> <span class="cb-code-fn">TernaryMask</span>(3);
+viewer.<span class="cb-code-fn">allow</span>(0);  <span class="cb-code-comment">// orders.view</span>
+
+<span class="cb-code-kw">const</span> opDelta = <span class="cb-code-kw">new</span> <span class="cb-code-fn">TernaryMask</span>(3);
+opDelta.<span class="cb-code-fn">allow</span>(1); <span class="cb-code-comment">// orders.cancel (추가분)</span>
+
+<span class="cb-code-kw">const</span> adminDelta = <span class="cb-code-kw">new</span> <span class="cb-code-fn">TernaryMask</span>(3);
+adminDelta.<span class="cb-code-fn">allow</span>(2); <span class="cb-code-comment">// config.edit (추가분)</span>
+
+<span class="cb-code-comment">// 2. 계층 상속 (빌드타임 1회)</span>
+<span class="cb-code-kw">const</span> op = TernaryMask.<span class="cb-code-fn">inherit</span>(viewer, opDelta);
+<span class="cb-code-comment">// op = [✓, ✓, ·]  (viewer 상속 + 자체)</span>
+<span class="cb-code-kw">const</span> admin = TernaryMask.<span class="cb-code-fn">inherit</span>(op, adminDelta);
+<span class="cb-code-comment">// admin = [✓, ✓, ✓]  (op 상속 + 자체)</span>
+
+<span class="cb-code-comment">// 3. 런타임: O(1) 비트 체크</span>
+admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">// orders.view → ✓ (상속)</span></pre>
+        </div>
+      </div>
+
+      <div class="cb-hierarchy-result">
+        <table class="cb-cmp-table">
+          <thead>
+            <tr><th>역할</th><th>orders.view</th><th>orders.cancel</th><th>config.edit</th><th>출처</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="role-tag role-tag-viewer">viewer</span></td>
+              <td style="color:#27ae60">✓</td>
+              <td style="color:#c0392b">✗</td>
+              <td style="color:#c0392b">✗</td>
+              <td>직접 부여</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag role-tag-operator">operator</span></td>
+              <td style="color:#27ae60">✓</td>
+              <td style="color:#27ae60">✓</td>
+              <td style="color:#c0392b">✗</td>
+              <td>viewer 상속 + 자체</td>
+            </tr>
+            <tr>
+              <td><span class="role-tag role-tag-admin">admin</span></td>
+              <td style="color:#27ae60">✓</td>
+              <td style="color:#27ae60">✓</td>
+              <td style="color:#27ae60">✓</td>
+              <td>operator 상속 + 자체</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cb-note">
+        <strong>성능 차이:</strong> Casbin은 <code>enforce()</code> 호출마다 역할 그래프를 순회합니다 (O(depth × policies)).
+        qa-sdk는 마스크 빌드 시 1회만 inherit하고, 이후 런타임 체크는 <code>hasBit()</code> O(1)입니다.
+        deny-wins 시맨틱도 비트 연산으로 자동 적용되므로, 상위 역할에서 거부한 권한은 하위에서 override할 수 없습니다.
+      </div>
+    </div>
+  `;
+  el.appendChild(hierarchyCard);
 
   // 비교 테이블
   const cmpCard = document.createElement("div");
@@ -299,7 +395,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
           </tr>
           <tr>
             <td class="cb-cmp-key">역할 계층</td>
-            <td class="cb-cmp-con"><span class="cb-badge cb-badge-con">CON</span> 각 역할에 개별 grant 필요</td>
+            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> <code>TernaryMask.inherit()</code> — O(1) 비트 OR 상속</td>
             <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> <code>g(admin, operator)</code> 한 줄로 상속</td>
           </tr>
           <tr>
@@ -504,7 +600,7 @@ m = r.sub.role == p.sub_role \\
           </tr>
           <tr>
             <td class="cb-cmp-key">역할 계층</td>
-            <td class="cb-cmp-con"><span class="cb-badge cb-badge-con">CON</span> 역할마다 개별 grant 필요</td>
+            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> <code>TernaryMask.inherit()</code> — O(1) 비트 OR 상속</td>
             <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> g() 함수로 계층 자동 상속</td>
           </tr>
           <tr>
@@ -544,7 +640,7 @@ m = r.sub.role == p.sub_role \\
           <ul class="cb-verdict-list">
             <li>"본인 주문만 취소 가능" 같은 동적 규칙</li>
             <li>시간대/IP 기반 조건부 접근 제어</li>
-            <li>복잡한 역할 계층 + 상속</li>
+            <li>비개발자가 역할 계층을 텍스트로 직관적 편집</li>
             <li>비개발자가 정책 CSV를 직접 편집</li>
           </ul>
         </div>

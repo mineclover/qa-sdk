@@ -46,6 +46,7 @@ import {
   createNoopCleanupStore,
   type CleanupStore,
 } from "./lib/cleanup.js";
+import type { DebugStore } from "./lib/debug-store.js";
 
 export interface AppDeps {
   appLifecycle?: AppLifecycle;
@@ -59,6 +60,7 @@ export interface AppDeps {
   scenarioSpecStore: ScenarioSpecStore;
   dlqStore: DlqStore;
   cleanupStore?: CleanupStore;
+  debugStore?: DebugStore;
   recordStreamBroker: RecordStreamBroker;
   streamSubscriptionLimit?: number;
   dlqMaxRetryAttempts?: number;

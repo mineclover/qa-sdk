@@ -133,7 +133,7 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 |---|---|---|
 | D1 | RecordStreamBroker.publish() | ingest 후 즉시 발행 |
 | D2 | SSE (`/v1/streams/`) + WebSocket (`/v1/ws`) | 이미 작동 |
-| D3 | ❌ 없음 | TTL 저장 미구현 |
+| D3 | `InMemoryDebugStore` + `/v1/debug/.../recent` | TTL 저장 + 최근 레코드 조회 |
 | D4 | viz-web (이벤트 로그 + 그래프 + verdict) | 이미 작동 |
 
 ---
@@ -223,7 +223,7 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 | `MetaResolver.getDecodeMap()` | 초기화 | DecodeMap 번들 생성 | 🔧 | DecoderPool.load() 시 사용 예정, 자동 연결 미구현 |
 | `GateEngine.recompute()` | A4 | 비동기 상태 재계산 | 🔧 | 함수+데코레이터 완성, MQ 트리거 없음 |
 | `gateFilterRanges()` | A5 | 집계 시 유효 범위 필터 | 🔧 | A5 Aggregator 미구현 |
-| `RelationalEngine.resolvePolicy()` | S2 | 정책 해소 | 🔧 | query-service 미구현 |
+| `RelationalEngine.resolvePolicy()` | S2 | 정책 해소 | ✅ | query-service `POST /resolve`에서 호출 |
 
 ### decode-service
 
@@ -235,23 +235,23 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 | `GET /decode-map` | 초기화 | DecodeMap 번들 배포 | ✅ 엔드포인트 | Edge/클라이언트 배포용 |
 | `DecoderPool` | S5 | decoder 인스턴스 캐시 | ✅ | TTL 기반 캐시 작동 |
 
-### gate-service (planned)
+### gate-service
 
 | 모듈 | 참여 심볼 | 역할 | 상태 | 비고 |
 |---|---|---|---|---|
-| `checkGate()` | S2 | encode 전 유효성 확인 | 📋 | 서비스 미구현 (라이브러리 함수는 🔧) |
-| `recompute()` | A4 | 비동기 상태 재계산 | 📋 | MQ 트리거 경로 미구현 |
-| `cascadeRecompute()` | A4 | leaf → composite 전파 | 📋 | 네트워크 cascade 미구현 |
-| `gateFilterRanges()` | A5, S5 | 유효 범위 필터 | 📋 | 서비스 엔드포인트 미구현 |
+| `checkGate()` | S2 | encode 전 유효성 확인 | ✅ | `POST /gate/check`, `POST /gate/classify`, `GET /gate/state/:prefix/:version` live |
+| `recompute()` | A4 | 비동기 상태 재계산 | 🔧 | RPC 엔드포인트 구현, MQ 트리거 경로 미구현 |
+| `cascadeRecompute()` | A4 | leaf → composite 전파 | 🔧 | RPC 엔드포인트 구현, MQ/네트워크 cascade 미구현 |
+| `gateFilterRanges()` | A5, S5 | 유효 범위 필터 | ✅ | `POST /gate/filter-ranges`, query-service gate lookup에 연동 |
 
-### query-service (planned)
+### query-service
 
 | 모듈 | 참여 심볼 | 역할 | 상태 | 비고 |
 |---|---|---|---|---|
-| `POST /resolve` | S2 | 정책 해소 | 📋 | 서비스 미구현 |
-| `POST /match-ranges` | A5 | 범위 질의 | 📋 | 서비스 미구현 |
-| `POST /compose-query` | A5 | cross-index 합성 | 📋 | 서비스 미구현 |
-| 규칙 CRUD | S2→S4 | 정책 규칙 관리 | 📋 | PolicyRule 저장소 미구현 |
+| `POST /resolve` | S2 | 정책 해소 | ✅ | `withGate` 옵션 포함 |
+| `POST /match-ranges` | A5 | 범위 질의 | ✅ | `gateMode` 옵션 포함 |
+| 고급 질의 엔드포인트 | A5, S2 | cross-index/version/relation 질의 | ✅ | `/compose-query`, `/query-across-versions`, `/resolve-relation` live |
+| 규칙 CRUD | S2→S4 | 정책 규칙 관리 | ✅ | PolicyRule 저장소 + conflict preflight 구현 |
 
 ### ingest-server (기존)
 
@@ -323,7 +323,7 @@ D4  Debug UI        시각화
 |---|---|---|---|---|---|
 | **S (동기)** | 5 | S1→S5 전체 | — | — | **100%** |
 | **A (비동기)** | 7 | A7 | A1, A5 (부분) | A2, A3, A4, A5 (집계), A6 | **14%** |
-| **D (디버깅)** | 4 | D1, D2, D4 | — | D3 | **75%** |
+| **D (디버깅)** | 4 | D1→D4 전체 | — | — | **100%** |
 
 ---
 

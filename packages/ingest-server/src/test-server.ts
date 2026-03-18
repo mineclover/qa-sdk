@@ -15,6 +15,7 @@ import {
   InMemoryVerdictStore,
 } from "@qa-sdk/store";
 import { createApp } from "./app.js";
+import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import { createWsHandler } from "./routes/ws.js";
 
@@ -31,6 +32,7 @@ const app = createApp({
   verdictStore: new InMemoryVerdictStore(),
   scenarioSpecStore: new InMemoryScenarioSpecStore(),
   dlqStore: new InMemoryDlqStore(),
+  debugStore: new InMemoryDebugStore(),
   recordStreamBroker: broker,
   registryValidationMode: "off",
 });

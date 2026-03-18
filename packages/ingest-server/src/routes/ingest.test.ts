@@ -11,12 +11,26 @@ import {
   InMemoryTransmissionStore,
   InMemoryVerdictStore,
 } from "@qa-sdk/store";
-import type { TransmissionEnvelope } from "@qa-sdk/core";
+import type { StoredRecord, TransmissionEnvelope } from "@qa-sdk/core";
 import { createErrorHandler } from "../middleware/error-handler.js";
 import { createIngestRoutes } from "./ingest.js";
+import type { DebugStore } from "../lib/debug-store.js";
 import { RecordStreamBroker } from "../lib/record-stream-broker.js";
 
-function buildDeps(overrides: Record<string, unknown> = {}) {
+interface IngestTestDeps {
+  recordStore: InMemoryRecordStore;
+  traceStore: InMemoryTraceStore;
+  graphStore: InMemoryGraphStore;
+  transmissionStore: InMemoryTransmissionStore;
+  sessionStore: InMemorySessionStore;
+  verdictStore: InMemoryVerdictStore;
+  scenarioSpecStore: InMemoryScenarioSpecStore;
+  dlqStore: InMemoryDlqStore;
+  recordStreamBroker: RecordStreamBroker;
+  debugStore?: DebugStore;
+}
+
+function buildDeps(overrides: Partial<IngestTestDeps> = {}): IngestTestDeps {
   return {
     recordStore: new InMemoryRecordStore(),
     traceStore: new InMemoryTraceStore(),
@@ -159,6 +173,36 @@ describe("POST /v1/ingest", () => {
     });
 
     expect(publishSpy).toHaveBeenCalledOnce();
+  });
+
+  it("appends records to the debug store immediately after publish", async () => {
+    const broker = new RecordStreamBroker();
+    const calls: string[] = [];
+    const debugStore: DebugStore = {
+      append: vi.fn(async (record: StoredRecord) => {
+        calls.push(`append:${record.logId}`);
+      }),
+      getRecentByTrace: vi.fn().mockResolvedValue([]),
+      getRecentBySession: vi.fn().mockResolvedValue([]),
+    };
+
+    vi.spyOn(broker, "publish").mockImplementation((record) => {
+      calls.push(`publish:${record.logId}`);
+    });
+
+    const { app } = buildApp({
+      debugStore,
+      recordStreamBroker: broker,
+    });
+
+    await app.request("/v1/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildEnvelope()),
+    });
+
+    expect(calls).toEqual(["publish:log_001", "append:log_001"]);
+    expect(debugStore.append).toHaveBeenCalledOnce();
   });
 
   it("creates a session entry when qa_session_id is present in records", async () => {

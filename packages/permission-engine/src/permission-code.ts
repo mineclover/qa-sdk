@@ -13,12 +13,7 @@
  *   packed — 각 파트를 정수 인코딩 (varint-like, 크기 최적화)
  */
 
-import {
-  type ServiceContext,
-  type ServiceRef,
-  formatServiceRef,
-  parseServiceRef,
-} from "./service-ref.js";
+import { type ServiceContext } from "./service-ref.js";
 import {
   canonicalizeResource,
   type ResourceType,
@@ -70,6 +65,10 @@ export function formatPermCode(code: PermissionCode): string {
  *   4. 중간 전부 → resource (내부에 `.`이 없으므로 안전)
  */
 export function parsePermCode(raw: string): PermissionCode {
+  if (typeof raw !== "string") {
+    throw new RangeError(`Invalid permission code "${String(raw)}": string 형식 필요`);
+  }
+
   // 첫 `.` 이후 split
   const firstDot = raw.indexOf(".");
   if (firstDot < 0) throw new RangeError(`Invalid permission code "${raw}": service.type.resource.action 형식 필요`);

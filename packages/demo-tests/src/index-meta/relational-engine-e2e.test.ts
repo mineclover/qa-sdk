@@ -17,7 +17,7 @@ import {
   createIndexSDK,
   MetaRegistry,
   SqlIndexMetaStore,
-  BetterSqliteDriver,
+  NodeSqliteDriver,
   InMemoryAddressRangeCache,
   SqlAddressRangeCache,
   matchRules,
@@ -119,13 +119,13 @@ const RBAC_SCHEMA: MetaRegistryInput = {
 // ── E2E 테스트 ───────────────────────────────────────────────────────────────
 
 describe("Relational Engine E2E — RBAC", () => {
-  let driver: BetterSqliteDriver;
+  let driver: NodeSqliteDriver;
   let metaStore: SqlIndexMetaStore;
   let rangeCache: SqlAddressRangeCache;
   let sdk: ReturnType<typeof createIndexSDK>;
 
   beforeEach(() => {
-    driver = new BetterSqliteDriver();
+    driver = new NodeSqliteDriver();
     metaStore = new SqlIndexMetaStore(driver);
     rangeCache = new SqlAddressRangeCache(driver);
     sdk = createIndexSDK(RBAC_SCHEMA);
@@ -375,7 +375,7 @@ describe("Relational Engine E2E — RBAC", () => {
 
   // ── 9. dialect 정보 확인 ──
 
-  it("BetterSqliteDriver의 dialect 정보가 올바르다", () => {
+  it("NodeSqliteDriver의 dialect 정보가 올바르다", () => {
     expect(driver.dialect.name).toBe("sqlite");
     expect(driver.dialect.supportsTransaction).toBe(true);
     expect(driver.dialect.supportsUpsert).toBe(true);

@@ -58,6 +58,7 @@ src/
     d4-stride-parity.test.ts       calcWeights() ↔ WeightedIndex.strides 일치
     error-parity.test.ts           코덱 간 에러 거부 동작 패리티
 
+  bit-field-roundtrip.test.ts    bit-field-layout 변환 경로 라운드트립 (Number/BigInt/hex/bytes)
   registry-codec.test.ts         MetaRegistry 코덱 라운드트립
   position-stability.test.ts     v1→v2 위치 안정성
   permission-migration.test.ts   권한 마이그레이션 통합

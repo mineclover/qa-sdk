@@ -16,6 +16,10 @@ import {
 import { reconstructPendingTraces, computePendingVerdicts } from "@qa-sdk/engine";
 import type { ValidationResult } from "@qa-sdk/registry-client";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
+import {
+  createNoopDebugStore,
+  type DebugStore,
+} from "../lib/debug-store.js";
 import type { Logger } from "pino";
 import { badRequest } from "../lib/errors.js";
 
@@ -39,6 +43,7 @@ export interface IngestDeps {
   scenarioSpecStore: ScenarioSpecStore;
   dlqStore: DlqStore;
   recordStreamBroker: RecordStreamBroker;
+  debugStore?: DebugStore;
   registryValidationMode?: RegistryValidationMode;
   registryValidator?: RegistryEventValidator;
   withTraceTransaction?: TraceTransactionRunner;
@@ -175,8 +180,19 @@ async function storeEnvelope(
       );
 
       const storedRecords = toStoredRecords(inserts);
+      const debugStore = resolveDebugStore(deps);
       for (const record of storedRecords) {
         deps.recordStreamBroker.publish(record);
+        await debugStore.append(record).catch((error) => {
+          deps.logger?.warn(
+            {
+              err: error,
+              logId: record.logId,
+              traceId,
+            },
+            "failed to append record to debug store",
+          );
+        });
       }
 
       // scenario-level broadcast for WebSocket subscribers
@@ -394,6 +410,10 @@ function getTracePersistenceStores(deps: IngestDeps): TracePersistenceStores {
     traceStore: deps.traceStore,
     sessionStore: deps.sessionStore,
   };
+}
+
+function resolveDebugStore(deps: IngestDeps): DebugStore {
+  return deps.debugStore ?? createNoopDebugStore();
 }
 
 /** Phase 2: reconstruction + verdict 계산 */

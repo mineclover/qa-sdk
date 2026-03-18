@@ -428,6 +428,143 @@ function buildAddressExamplesSection(ver: Ver): HTMLElement {
   return sec;
 }
 
+function buildCompositeIndexSection(ver: Ver): HTMLElement {
+  const sec = document.createElement("div");
+  sec.className = "vd-section";
+
+  const v1Roles = rolesFor("v1");
+  const v2Roles = rolesFor("v2");
+  const v1Events = eventsFor("v1");
+  const v2Events = eventsFor("v2");
+
+  const v1RS = demoRoleStride("v1");
+  const v2RS = demoRoleStride("v2");
+  const v1ES = demoEvtStride("v1");
+  const v2ES = demoEvtStride("v2");
+  const IC = DEMO_INITIATORS.length;
+
+  const svcPos = EXAMPLE_PERM_SVC_POS;
+  const evtSvcPos = EXAMPLE_EVT_SVC_POS;
+
+  // permission: 모든 역할에 대해 v1 vs v2 주소 비교
+  const v1RoleSet = new Set<string>(DEMO_ROLES_V1);
+  const allRoles = v2Roles; // v2가 상위 집합
+  const permRows = allRoles.map(r => {
+    const v1p = dimPos(v1Roles, r.id);
+    const v2p = dimPos(v2Roles, r.id);
+    const v1Addr = v1p !== null ? demoCalcPermAddr(svcPos, v1p, "v1") : null;
+    const v2Addr = v2p !== null ? demoCalcPermAddr(svcPos, v2p, "v2") : null;
+    const isNew = !v1RoleSet.has(r.id);
+    const delta = v1Addr !== null && v2Addr !== null ? v2Addr - v1Addr : null;
+    const formula = v2p !== null ? `(${svcPos}−1)×${ver === "v1" ? v1RS : v2RS} + (${v2p}−1)` : "";
+    return { role: r, v1Addr, v2Addr, isNew, delta, formula };
+  });
+
+  // event: 모든 이벤트에 대해 v1 vs v2 주소 비교 (initiator=web, pos=1)
+  const v1EvtSet = new Set<string>(DEMO_EVENTS_V1);
+  const allEvents = v2Events;
+  const evtRows = allEvents.map(e => {
+    const v1p = dimPos(v1Events, e.id);
+    const v2p = dimPos(v2Events, e.id);
+    const v1Addr = v1p !== null ? demoCalcEvtAddr(evtSvcPos, v1p, 1, "v1") : null;
+    const v2Addr = v2p !== null ? demoCalcEvtAddr(evtSvcPos, v2p, 1, "v2") : null;
+    const isNew = !v1EvtSet.has(e.id);
+    const delta = v1Addr !== null && v2Addr !== null ? v2Addr - v1Addr : null;
+    const stride = ver === "v1" ? v1ES : v2ES;
+    const formula = v2p !== null ? `(${evtSvcPos}−1)×${stride} + (${v2p}−1)×${IC} + 0` : "";
+    return { event: e, v1Addr, v2Addr, isNew, delta, formula };
+  });
+
+  function deltaCell(d: number | null, isNew: boolean): string {
+    if (isNew) return `<span class="vd-badge-new">NEW</span>`;
+    if (d === null) return "—";
+    if (d === 0) return `<span class="vd-delta-zero">±0</span>`;
+    return `<span class="vd-delta-shift">${d > 0 ? "+" : ""}${d}</span>`;
+  }
+
+  sec.innerHTML = `
+    <div class="vd-sec-header">
+      <span class="vd-sec-icon">⇄</span>
+      <span class="vd-sec-title">합성 인덱스 변경 비교 — payment 서비스 (svcValue=${EXAMPLE_SVC_VALUE})</span>
+      <span class="vd-tag-changed">stride 변경</span>
+    </div>
+    <div class="vd-sec-body">
+
+      <div class="vd-ci-block">
+        <div class="vd-ci-header">
+          <span class="vd-ci-prefix">permission</span>
+          <span class="vd-ci-meta">perm_svc pos=${svcPos} · stride v1=×${v1RS} → v2=×${v2RS}</span>
+        </div>
+        <div class="vd-addr-table-wrap">
+          <table class="vd-addr-table vd-ci-table">
+            <thead>
+              <tr>
+                <th>역할</th>
+                <th>pos</th>
+                <th class="vd-col-dimmed">v1 주소</th>
+                <th class="vd-col-active">v2 주소</th>
+                <th>변동</th>
+                <th>v2 계산식</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${permRows.map(r => `
+                <tr class="${r.isNew ? "vd-row-added" : ""}">
+                  <td><span class="role-tag role-tag-${r.role.id}">${r.role.id}</span></td>
+                  <td class="vd-ci-pos">${r.role.pos}</td>
+                  <td class="vd-col-dimmed">${r.v1Addr !== null
+                    ? `<code class="vd-addr-chip">permission:v1:${r.v1Addr}</code>`
+                    : `<span class="vd-ci-na">—</span>`}</td>
+                  <td class="vd-col-active"><code class="vd-addr-chip vd-chip-active">permission:v2:${r.v2Addr}</code></td>
+                  <td class="vd-ci-delta">${deltaCell(r.delta, r.isNew)}</td>
+                  <td class="vd-ci-formula"><code>${r.formula} = ${r.v2Addr}</code></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="vd-ci-block">
+        <div class="vd-ci-header">
+          <span class="vd-ci-prefix">event</span>
+          <span class="vd-ci-meta">evt_svc pos=${evtSvcPos} · initiator=web(1) · stride v1=×${v1ES} → v2=×${v2ES}</span>
+        </div>
+        <div class="vd-addr-table-wrap">
+          <table class="vd-addr-table vd-ci-table">
+            <thead>
+              <tr>
+                <th>이벤트</th>
+                <th>pos</th>
+                <th class="vd-col-dimmed">v1 주소</th>
+                <th class="vd-col-active">v2 주소</th>
+                <th>변동</th>
+                <th>v2 계산식</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${evtRows.map(r => `
+                <tr class="${r.isNew ? "vd-row-added" : ""}">
+                  <td><span class="${evtTagClass(r.event.id)}">${r.event.ko}</span></td>
+                  <td class="vd-ci-pos">${r.event.pos}</td>
+                  <td class="vd-col-dimmed">${r.v1Addr !== null
+                    ? `<code class="vd-addr-chip">event:v1:${r.v1Addr}</code>`
+                    : `<span class="vd-ci-na">—</span>`}</td>
+                  <td class="vd-col-active"><code class="vd-addr-chip vd-chip-active">event:v2:${r.v2Addr}</code></td>
+                  <td class="vd-ci-delta">${deltaCell(r.delta, r.isNew)}</td>
+                  <td class="vd-ci-formula"><code>${r.formula} = ${r.v2Addr}</code></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  `;
+  return sec;
+}
+
 function buildProtocolSection(): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section vd-section-protocol";
@@ -637,6 +774,8 @@ export function renderVersionPage(
     twoCol.appendChild(leftCol);
     twoCol.appendChild(rightCol);
     content.appendChild(twoCol);
+
+    content.appendChild(buildCompositeIndexSection(ver));
 
     featuresEl = buildFeaturesSection(ver, featureData);
     content.appendChild(featuresEl);

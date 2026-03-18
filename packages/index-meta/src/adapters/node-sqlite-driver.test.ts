@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { BetterSqliteDriver as NodeSqliteDriver } from "./node-sqlite-driver.js";
+import { NodeSqliteDriver } from "./node-sqlite-driver.js";
 import { SqlIndexMetaStore } from "./sql-store.js";
 import { ValidationError } from "../errors.js";
 

@@ -1,5 +1,5 @@
 /**
- * GateEngine SQL 통합 E2E — BetterSqliteDriver 기반
+ * GateEngine SQL 통합 E2E — NodeSqliteDriver 기반
  *
  * SQL 저장소(SqlIndexMetaStore, SqlEntryFlagStore, SqlAddressStateStore,
  * SqlAddressRangeCache, SqlPrefixRegistry) 위에서 GateEngine이 정상 동작하는지 검증.
@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { BetterSqliteDriver } from "index-meta";
+import { NodeSqliteDriver } from "index-meta";
 import { SqlIndexMetaStore } from "index-meta";
 import { SqlEntryFlagStore } from "index-meta";
 import { SqlAddressStateStore } from "index-meta";
@@ -32,7 +32,7 @@ import {
 const AT = "2026-01-01T00:00:00Z";
 
 interface SqlTestContext {
-  driver: BetterSqliteDriver;
+  driver: NodeSqliteDriver;
   metaStore: SqlIndexMetaStore;
   flagStore: SqlEntryFlagStore;
   stateStore: SqlAddressStateStore;
@@ -45,7 +45,7 @@ interface SqlTestContext {
 }
 
 function createSqlContext(): SqlTestContext {
-  const driver = new BetterSqliteDriver(":memory:");
+  const driver = new NodeSqliteDriver(":memory:");
   const metaStore = new SqlIndexMetaStore(driver);
   const flagStore = new SqlEntryFlagStore(driver);
   const stateStore = new SqlAddressStateStore(driver);

@@ -3,12 +3,19 @@
 > 주소 상태 관리 분산 서비스 — GateEngine의 상태 계산·캐시·cascade 전파를 네트워크 경계 너머로 확장한다.
 
 관련 스펙: [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md) · [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md)
-참조 구현: `packages/index-meta/src/gate-engine.ts`, `invalid-ranges.ts`, `gate-aware-query.ts`
+참조 구현: `packages/index-meta/src/gate-engine.ts`, `invalid-ranges.ts`, `gate-aware-query.ts`, `packages/gate-service/src/lib/gate-service.ts`, `packages/gate-service/src/routes/gate.ts`
 운영 흐름: `[S2]` checkGate · `[A4]` recompute (MQ 트리거) · `[A5]` gateFilterRanges — [runtime-flows.spec.md](../operations/runtime-flows.spec.md)
 
 ## 상태
 
-planned
+implemented (`E-1`)
+
+현재 구현 범위:
+
+- `packages/gate-service` 패키지 스캐폴딩 완료
+- 6개 RPC 엔드포인트 구현 완료
+- package-local facade + in-memory 기본 store + optional GateEngine 주입 구현
+- `E-2~E-4`는 planned 유지 (MQ/브로드캐스트/강한 일관성 경로 미연결)
 
 ---
 
@@ -39,6 +46,8 @@ Service A (encode)      Gate Service             Service B (query)
 
 ### 상태 조회
 
+현재 `POST /gate/check`, `POST /gate/classify`, `GET /gate/state/:prefix/:version`로 구현됨.
+
 ```
 checkGate(prefix, versionId, address) → GateResult
   - encode/decode 가능 여부, 상태, shouldVerify 플래그
@@ -52,6 +61,9 @@ getStateRanges(prefix, versionId) → AddressStateCacheRecord | null
 
 ### 상태 계산
 
+현재 `POST /gate/recompute`, `POST /gate/cascade-recompute`로 수동 호출 가능하다.
+단, `[A4]` MQ 트리거 경로는 아직 미연결이다.
+
 ```
 recompute(prefix, versionId) → void
   - 단일 prefix의 DimStateSpec 재생성 + 범위 재계산
@@ -61,6 +73,8 @@ cascadeRecompute(prefix, versionId) → void
 ```
 
 ### 범위 필터
+
+현재 `POST /gate/filter-ranges`로 구현되어 query-service가 조회 경로에서 사용한다.
 
 ```
 gateFilterRanges(prefix, versionId, ranges, mode) → [number, number][]

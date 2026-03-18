@@ -52,8 +52,16 @@
 weighted-index/                    ← 수학 + canonical primitives + 포맷 + 프로토콜
 ├── README.md                      패키지 인덱스
 ├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixCodec, calcWeights(canonical stride), bitmask
+├── partial-binder.spec.md         PartialBinder, createBinder, 부분 차원 캐시, PrefixCodec 연동
 ├── pack-format.spec.md            PackFormat, SemanticAddress, AddressConverter, fitLayout
 └── range-query.spec.md            calcAddressRanges — 부분 좌표 제약 주소 구간 계산
+
+permission-engine/                 ← 비트마스크 권한 런타임 + scope 라우팅
+├── README.md                      패키지 인덱스
+├── core.spec.md                   PermissionSet, TernaryMask, ScopedEngine
+├── codec.spec.md                  PermissionCodec — 3-tier protocol stack, 주소 호환성
+├── resource.spec.md               resource/service-ref/permission-code — canonical text contract
+└── migration.spec.md              migration.ts — shape 변경 시 grant 재배치
 
 index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외부 소비
 ├── README.md                      패키지 인덱스
@@ -73,8 +81,11 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 
 | 패키지 | 인덱스 | 관심사 | 상태 |
 |---|---|---|---|
-| [weighted-index/](weighted-index/README.md) | 3 문서 | 수학 엔진, 포맷 적합성, 범위탐색, 프로토콜 변환 | implemented |
+| [weighted-index/](weighted-index/README.md) | 4 문서 | 수학 엔진, partial binder, 포맷 적합성, 범위탐색, 프로토콜 변환 | implemented |
+| [permission-engine/](permission-engine/README.md) | 4 문서 | 비트마스크 권한 엔진, 3-tier 코덱, external identity layer, ternary 상속, 외부 scope 라우팅, shape migration | implemented |
 | [index-meta/](index-meta/README.md) | 13 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, GateEngine, 시나리오, ADR | implemented / planned |
+
+대표 하위 문서: [weighted-index/partial-binder.spec.md](weighted-index/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
 
 ## 관심사 흐름
 
@@ -135,8 +146,8 @@ AXIS.role.ko          // { admin: "관리자", ... }
 
 ```
 demo-tests/src/
-├── index-meta/           17개 — MetaRegistry 시나리오, E2E, 정책, SDK
-├── permission-engine/     6개 — 시나리오, 코덱, 리소스, 서비스참조
+├── index-meta/           21개 — MetaRegistry 시나리오, E2E, 정책, SDK, BigInt, gate/query 계약
+├── permission-engine/     7개 — 시나리오, 코덱, 리소스, 서비스참조, 호환성 계약
 ├── registry-codec.test.ts       MetaRegistry 코덱 라운드트립
 ├── position-stability.test.ts   v1→v2 위치 안정성
 ├── permission-migration.test.ts 권한 마이그레이션 통합
@@ -192,6 +203,6 @@ shape  ─→  shapeProduct(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Nu
 
 수학 엔진은 이 판단에 관여하지 않으며, 상위 레이어(`index-meta`의 Capacity Guard)가 스키마 정의 시점에 `numberType`을 확정하고 런타임 가드를 수행한다.
 
-> **검증**: [`format-adapter.test.ts`](../../packages/weighted-index/src/format-adapter.test.ts) — §1 구조적 격리, §2 사후 분석, §3 실시간 감지, §4 경계값 정밀도, §5 엔진 선택 분리, §6 다중 포맷 동시 평가, §7 포맷 변경 시 수학 불변
+> **검증**: [`format-adapter.test.ts`](../../../packages/weighted-index/src/format-adapter.test.ts) — §1 구조적 격리, §2 사후 분석, §3 실시간 감지, §4 경계값 정밀도, §5 엔진 선택 분리, §6 다중 포맷 동시 평가, §7 포맷 변경 시 수학 불변
 
 상세: [bigint-addressing.spec.md](bigint-addressing.spec.md)

@@ -1,21 +1,33 @@
 import { Hono } from "hono";
 import pino from "pino";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   InMemoryGraphStore,
   InMemoryRecordStore,
   InMemorySessionStore,
   InMemoryTraceStore,
 } from "@qa-sdk/store";
+import { InMemoryDebugStore } from "../lib/in-memory-debug-store.js";
+import type { DebugStore } from "../lib/debug-store.js";
 import { createErrorHandler } from "../middleware/error-handler.js";
 import { createQueryRoutes } from "./query.js";
 
-function buildDeps() {
+interface QueryTestDeps {
+  traceStore: InMemoryTraceStore;
+  sessionStore: InMemorySessionStore;
+  recordStore: InMemoryRecordStore;
+  graphStore: InMemoryGraphStore;
+  debugStore: DebugStore;
+}
+
+function buildDeps(overrides: Partial<QueryTestDeps> = {}): QueryTestDeps {
   return {
     traceStore: new InMemoryTraceStore(),
     sessionStore: new InMemorySessionStore(),
     recordStore: new InMemoryRecordStore(),
     graphStore: new InMemoryGraphStore(),
+    debugStore: new InMemoryDebugStore({ ttlMs: 60_000 }),
+    ...overrides,
   };
 }
 
@@ -186,6 +198,105 @@ describe("GET /v1/traces/:traceId/graph", () => {
   });
 });
 
+describe("GET /v1/debug/traces/:traceId/recent", () => {
+  it("returns 404 when trace does not exist", async () => {
+    const { app } = buildApp();
+    const res = await app.request("/v1/debug/traces/trc_missing/recent");
+    expect(res.status).toBe(404);
+  });
+
+  it("returns recent trace records in descending timestamp order", async () => {
+    const { app, deps } = buildApp();
+    await deps.traceStore.upsert({
+      traceId: "trc_001",
+      sessionId: "qas_001",
+      recordCount: 3,
+      firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
+      lastTimestamp: new Date("2026-03-13T00:00:02.000Z"),
+    });
+
+    await deps.debugStore.append({
+      logId: "log_001",
+      traceId: "trc_001",
+      spanId: "spn_001",
+      timestamp: new Date("2026-03-13T00:00:00.000Z"),
+      recordKind: "log",
+      eventKey: "page_view",
+      eventVersion: "001",
+      payloadFormat: "json",
+      payloadEncoding: "raw",
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      payload: {},
+      qaSessionId: "qas_001",
+      createdAt: new Date("2026-03-13T00:00:10.000Z"),
+    });
+    await deps.debugStore.append({
+      logId: "log_002",
+      traceId: "trc_001",
+      spanId: "spn_002",
+      timestamp: new Date("2026-03-13T00:00:01.000Z"),
+      recordKind: "log",
+      eventKey: "page_view",
+      eventVersion: "001",
+      payloadFormat: "json",
+      payloadEncoding: "raw",
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      payload: {},
+      qaSessionId: "qas_001",
+      createdAt: new Date("2026-03-13T00:00:11.000Z"),
+    });
+    await deps.debugStore.append({
+      logId: "log_003",
+      traceId: "trc_001",
+      spanId: "spn_003",
+      timestamp: new Date("2026-03-13T00:00:02.000Z"),
+      recordKind: "log",
+      eventKey: "page_view",
+      eventVersion: "001",
+      payloadFormat: "json",
+      payloadEncoding: "raw",
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      payload: {},
+      qaSessionId: "qas_001",
+      createdAt: new Date("2026-03-13T00:00:12.000Z"),
+    });
+
+    const res = await app.request("/v1/debug/traces/trc_001/recent?limit=2");
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      items: [
+        expect.objectContaining({ log_id: "log_003", trace_id: "trc_001" }),
+        expect.objectContaining({ log_id: "log_002", trace_id: "trc_001" }),
+      ],
+    });
+  });
+
+  it("caps debug trace limit at 200", async () => {
+    const debugStore: DebugStore = {
+      append: vi.fn().mockResolvedValue(undefined),
+      getRecentByTrace: vi.fn().mockResolvedValue([]),
+      getRecentBySession: vi.fn().mockResolvedValue([]),
+    };
+    const deps = buildDeps({ debugStore });
+    const { app } = buildApp(deps);
+    await deps.traceStore.upsert({
+      traceId: "trc_001",
+      recordCount: 0,
+      firstTimestamp: new Date(),
+      lastTimestamp: new Date(),
+    });
+
+    const res = await app.request("/v1/debug/traces/trc_001/recent?limit=9999");
+
+    expect(res.status).toBe(200);
+    expect(debugStore.getRecentByTrace).toHaveBeenCalledWith("trc_001", 200);
+  });
+});
+
 describe("GET /v1/sessions/:sessionId", () => {
   it("returns 404 when session does not exist", async () => {
     const { app } = buildApp();
@@ -247,5 +358,42 @@ describe("GET /v1/sessions/:sessionId/records", () => {
     const body = await res.json();
     expect(body.items).toHaveLength(1);
     expect(body.items[0].qa_session_id).toBe("qas_001");
+  });
+});
+
+describe("GET /v1/debug/sessions/:sessionId/recent", () => {
+  it("returns 404 when session does not exist", async () => {
+    const { app } = buildApp();
+    const res = await app.request("/v1/debug/sessions/qas_missing/recent");
+    expect(res.status).toBe(404);
+  });
+
+  it("returns recent session records with the default limit", async () => {
+    const { app, deps } = buildApp();
+    await deps.sessionStore.upsert({ sessionId: "qas_001" });
+
+    await deps.debugStore.append({
+      logId: "log_001",
+      traceId: "trc_001",
+      spanId: "spn_001",
+      timestamp: new Date("2026-03-13T00:00:00.000Z"),
+      recordKind: "log",
+      eventKey: "page_view",
+      eventVersion: "001",
+      payloadFormat: "json",
+      payloadEncoding: "raw",
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      payload: {},
+      qaSessionId: "qas_001",
+      createdAt: new Date("2026-03-13T00:00:10.000Z"),
+    });
+
+    const res = await app.request("/v1/debug/sessions/qas_001/recent");
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      items: [expect.objectContaining({ log_id: "log_001", qa_session_id: "qas_001" })],
+    });
   });
 });

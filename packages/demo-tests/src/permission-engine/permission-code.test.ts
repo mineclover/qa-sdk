@@ -1,127 +1,263 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_PATTERNS,
+  validateResourceForType,
   formatPermCode,
   parsePermCode,
   createPermCodeFactory,
   createServiceContext,
+  type PermissionCode,
+  type PermCodeFactory,
 } from "permission-engine";
 
-describe("formatPermCode", () => {
-  it("기본 포맷", () => {
-    expect(formatPermCode({
+const SERIALIZATION_CASES = [
+  {
+    label: "api",
+    code: {
       service: "shop/payment",
       type: "api",
       resource: "admin/teams",
       action: "GET",
-    })).toBe("shop/payment.api.admin/teams.GET");
-  });
-
-  it("page 타입", () => {
-    expect(formatPermCode({
+    },
+    text: "shop/payment.api.admin/teams.GET",
+  },
+  {
+    label: "page",
+    code: {
       service: "cms/portal",
       type: "page",
       resource: "admin/users",
       action: "view",
-    })).toBe("cms/portal.page.admin/users.view");
-  });
-
-  it("단일 세그먼트 resource", () => {
-    expect(formatPermCode({
+    },
+    text: "cms/portal.page.admin/users.view",
+  },
+  {
+    label: "action",
+    code: {
+      service: "ops/audit",
+      type: "action",
+      resource: "users/roles",
+      action: "approve",
+    },
+    text: "ops/audit.action.users/roles.approve",
+  },
+  {
+    label: "single segment resource",
+    code: {
       service: "shop/auth",
       type: "api",
       resource: "login",
       action: "POST",
-    })).toBe("shop/auth.api.login.POST");
-  });
-
-  it("deep resource", () => {
-    expect(formatPermCode({
+    },
+    text: "shop/auth.api.login.POST",
+  },
+  {
+    label: "api with param resource",
+    code: {
       service: "shop/payment",
       type: "api",
-      resource: "admin/teams/members",
-      action: "DELETE",
-    })).toBe("shop/payment.api.admin/teams/members.DELETE");
+      resource: "admin/teams/:teamId/members",
+      action: "GET",
+    },
+    text: "shop/payment.api.admin/teams/:teamId/members.GET",
+  },
+] satisfies Array<{
+  label: string;
+  code: PermissionCode;
+  text: string;
+}>;
+
+const ctx = createServiceContext({
+  namespace: "shop",
+  name: "payment",
+  env: "prod",
+  region: "asia",
+});
+
+describe("permission-code public exports", () => {
+  it("PermissionCode contract is usable as the public serialization shape", () => {
+    const code: PermissionCode = {
+      service: "shop/payment",
+      type: "api",
+      resource: "admin/teams",
+      action: "GET",
+    };
+
+    expect(formatPermCode(code)).toBe("shop/payment.api.admin/teams.GET");
+  });
+
+  it("PermCodeFactory contract remains callable with a .format helper", () => {
+    const perm: PermCodeFactory = createPermCodeFactory(ctx);
+    const code: PermissionCode = perm("api", "admin/teams", "GET");
+
+    expect(code.service).toBe("shop/payment");
+    expect(perm.format("api", "admin/teams", "GET")).toBe(
+      "shop/payment.api.admin/teams.GET",
+    );
   });
 });
 
+describe("formatPermCode", () => {
+  it.each(SERIALIZATION_CASES)(
+    "serializes $label permission codes",
+    ({ code, text }) => {
+      expect(formatPermCode(code)).toBe(text);
+    },
+  );
+});
+
 describe("parsePermCode", () => {
-  it("기본 파싱", () => {
-    const code = parsePermCode("shop/payment.api.admin/teams.GET");
-    expect(code.service).toBe("shop/payment");
-    expect(code.type).toBe("api");
-    expect(code.resource).toBe("admin/teams");
-    expect(code.action).toBe("GET");
+  it.each(SERIALIZATION_CASES)(
+    "parses $label permission codes",
+    ({ code, text }) => {
+      expect(parsePermCode(text)).toEqual(code);
+    },
+  );
+
+  it.each(SERIALIZATION_CASES)(
+    "roundtrips $label permission codes through format → parse → format",
+    ({ text }) => {
+      expect(formatPermCode(parsePermCode(text))).toBe(text);
+    },
+  );
+
+  it.each([
+    {
+      label: "missing all separators",
+      raw: "no-dots",
+      message: "형식 필요",
+    },
+    {
+      label: "missing type/resource/action tail",
+      raw: "shop/payment.api",
+      message: "type.resource.action 부분 없음",
+    },
+    {
+      label: "missing resource/action separator",
+      raw: "shop/payment.api.admin/teams",
+      message: "resource.action 구분 없음",
+    },
+    {
+      label: "empty service",
+      raw: ".api.admin/teams.GET",
+      message: "빈 파트 존재",
+    },
+    {
+      label: "empty type",
+      raw: "shop/payment..admin/teams.GET",
+      message: "빈 파트 존재",
+    },
+    {
+      label: "empty resource",
+      raw: "shop/payment.api..GET",
+      message: "빈 파트 존재",
+    },
+    {
+      label: "empty action",
+      raw: "shop/payment.api.admin/teams.",
+      message: "빈 파트 존재",
+    },
+  ])("rejects $label", ({ raw, message }) => {
+    expect(() => parsePermCode(raw)).toThrow(RangeError);
+    expect(() => parsePermCode(raw)).toThrow(message);
   });
 
-  it("deep resource 파싱", () => {
-    const code = parsePermCode("shop/payment.api.admin/teams/members.DELETE");
-    expect(code.resource).toBe("admin/teams/members");
-    expect(code.action).toBe("DELETE");
-  });
-
-  it("page 타입 파싱", () => {
-    const code = parsePermCode("cms/portal.page.admin/users.view");
-    expect(code.service).toBe("cms/portal");
-    expect(code.type).toBe("page");
-    expect(code.resource).toBe("admin/users");
-    expect(code.action).toBe("view");
-  });
-
-  it("단일 세그먼트 resource", () => {
-    const code = parsePermCode("shop/auth.api.login.POST");
-    expect(code.resource).toBe("login");
-    expect(code.action).toBe("POST");
-  });
-
-  it("format → parse 라운드트립", () => {
-    const original = {
-      service: "shop/payment",
-      type: "api",
-      resource: "billing/invoices",
-      action: "PATCH",
-    };
-    const roundtrip = parsePermCode(formatPermCode(original));
-    expect(roundtrip).toEqual(original);
-  });
-
-  it("잘못된 형식 throw", () => {
-    expect(() => parsePermCode("no-dots")).toThrow("형식 필요");
-    expect(() => parsePermCode("a.b")).toThrow();
-    expect(() => parsePermCode("a.b.c")).toThrow("resource.action 구분");
+  it("rejects non-string inputs such as null", () => {
+    expect(() => parsePermCode(null as unknown as string)).toThrow(RangeError);
+    expect(() => parsePermCode(null as unknown as string)).toThrow(
+      "string 형식 필요",
+    );
   });
 });
 
 describe("createPermCodeFactory", () => {
-  const ctx = createServiceContext({
-    namespace: "shop",
-    name: "payment",
-    env: "prod",
-    region: "asia",
+  it("binds ServiceContext via ref() and canonicalizes resources", () => {
+    const perm: PermCodeFactory = createPermCodeFactory(ctx);
+    const code: PermissionCode = perm("api", "  admin/teams  ", "GET");
+
+    expect(code).toEqual({
+      service: "shop/payment",
+      type: "api",
+      resource: "admin/teams",
+      action: "GET",
+    });
+    expect(code.service).toBe(ctx.ref());
+    expect(code.service).not.toContain("@");
   });
 
-  it("PermissionCode 생성 (service 자동 바인딩)", () => {
+  it("factory.format matches formatPermCode output", () => {
     const perm = createPermCodeFactory(ctx);
-    const code = perm("api", "admin/teams", "GET");
-    expect(code.service).toBe("shop/payment");
-    expect(code.type).toBe("api");
-    expect(code.resource).toBe("admin/teams");
-    expect(code.action).toBe("GET");
+    const code = perm("page", "admin/users", "view");
+
+    expect(perm.format("page", "admin/users", "view")).toBe(
+      formatPermCode(code),
+    );
   });
 
-  it(".format() — 문자열 직접 생성", () => {
+  it("rejects invalid resources during canonicalization", () => {
     const perm = createPermCodeFactory(ctx);
-    expect(perm.format("api", "admin/teams", "GET"))
-      .toBe("shop/payment.api.admin/teams.GET");
+    expect(() => perm("api", "/admin/teams", "GET")).toThrow(
+      "Invalid resource",
+    );
+  });
+});
+
+describe("permission code type-specific resource patterns", () => {
+  it("page forbids params and limits depth to 3", () => {
+    expect(DEFAULT_PATTERNS.page).toMatchObject({
+      allowParams: false,
+      maxDepth: 3,
+    });
+
+    const valid = parsePermCode("cms/portal.page.admin/users.view");
+    expect(validateResourceForType(valid.resource, valid.type)).toEqual([]);
+    expect(
+      validateResourceForType("admin/:userId", "page").some(
+        error => error.rule === "no-params",
+      ),
+    ).toBe(true);
+    expect(
+      validateResourceForType("a/b/c/d", "page").some(
+        error => error.rule === "max-depth",
+      ),
+    ).toBe(true);
   });
 
-  it("resource 정규화 적용", () => {
-    const perm = createPermCodeFactory(ctx);
-    // 앞뒤 공백 → trim
-    expect(perm("api", "  admin/teams  ", "GET").resource).toBe("admin/teams");
+  it("api allows params and limits depth to 4", () => {
+    expect(DEFAULT_PATTERNS.api).toMatchObject({
+      allowParams: true,
+      maxDepth: 4,
+    });
+
+    const valid = parsePermCode(
+      "shop/payment.api.admin/teams/:teamId/members.GET",
+    );
+    expect(validateResourceForType(valid.resource, valid.type)).toEqual([]);
+    expect(validateResourceForType("a/b/c/d", "api")).toEqual([]);
+    expect(
+      validateResourceForType("a/b/c/d/e", "api").some(
+        error => error.rule === "max-depth",
+      ),
+    ).toBe(true);
   });
 
-  it("잘못된 resource → throw", () => {
-    const perm = createPermCodeFactory(ctx);
-    expect(() => perm("api", "/admin/teams", "GET")).toThrow("Invalid resource");
+  it("action forbids params and limits depth to 3", () => {
+    expect(DEFAULT_PATTERNS.action).toMatchObject({
+      allowParams: false,
+      maxDepth: 3,
+    });
+
+    const valid = parsePermCode("ops/audit.action.users/roles.approve");
+    expect(validateResourceForType(valid.resource, valid.type)).toEqual([]);
+    expect(
+      validateResourceForType("users/:roleId", "action").some(
+        error => error.rule === "no-params",
+      ),
+    ).toBe(true);
+    expect(
+      validateResourceForType("a/b/c/d", "action").some(
+        error => error.rule === "max-depth",
+      ),
+    ).toBe(true);
   });
 });

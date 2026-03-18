@@ -37,8 +37,7 @@
 
 ### 작업 필요 사항: 없음
 
-**VersionLifecycleStore SQL 어댑터 부재** — Memory만 존재. gate-engine E2E에서도 InMemory 사용.
-→ 단독 이슈로 추적 (§H 참조).
+**VersionLifecycleStore SQL 어댑터 포함** — gate-service/query-service 배포 전제 해소.
 
 ---
 
@@ -117,52 +116,52 @@
 
 ## E. gate-service.spec.md
 
-**상태**: `planned` — 라이브러리 완성, 서비스 레이어 없음
+**상태**: `implemented` — E-1 완료, E-2~E-4 planned
 
 | 항목 | 라이브러리 | 서비스 |
 |---|---|---|
-| GateEngine (상태 계산) | ✅ 260줄, 완전 | ❌ |
-| invalid-ranges (순수 함수) | ✅ 완전 | ❌ |
-| AddressStateStore (영속화) | ✅ Memory + SQL | ❌ |
-| RPC 엔드포인트 6종 | — | ❌ 미구현 |
-| 비동기 무효화 프로토콜 | — | ❌ 미구현 |
-| 분산 전략 | — | ❌ 미구현 |
+| GateEngine (상태 계산) | ✅ 260줄, 완전 | ✅ package-local facade에서 조회/재계산 위임 |
+| invalid-ranges (순수 함수) | ✅ 완전 | ✅ route contract에서 재사용 |
+| AddressStateStore (영속화) | ✅ Memory + SQL | ✅ 기본 Memory store + optional engine injection |
+| RPC 엔드포인트 6종 | — | ✅ `/gate/check`, `/gate/classify`, `/gate/state`, `/gate/recompute`, `/gate/cascade-recompute`, `/gate/filter-ranges` |
+| 비동기 무효화 프로토콜 | — | 📋 planned (MQ 미연결) |
+| 분산 전략 | — | 📋 planned |
 
 ### 작업 필요 사항
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
-| E-1 | **gate-service 패키지 스캐폴딩** | 높 | 중 | RPC 계약: checkGate, classifyAddress, getStateRanges, recompute, cascadeRecompute, gateFilterRanges |
-| E-2 | **이벤트 발행 인터페이스** | 높 | 중 | release/flagChange 이벤트 → recompute 트리거. cascade의 네트워크 전파 기반 |
-| E-3 | **캐시 무효화 브로드캐스트** | 중 | 높 | 분산 환경에서 recompute 결과를 다른 서비스에 전파 |
-| E-4 | **정합성 모델 구현** | 중 | 중 | shouldVerify 재확인 흐름, Primary 직접 조회 경로 |
+| E-1 | **gate-service 패키지 스캐폴딩** | ✅ 완료 | 중 | Hono.js 앱, package-local GateService facade, 6개 RPC 엔드포인트 |
+| E-2 | **이벤트 발행 인터페이스** | planned | 중 | release/flagChange 이벤트 → recompute 트리거. cascade의 네트워크 전파 기반 |
+| E-3 | **캐시 무효화 브로드캐스트** | planned | 높 | 분산 환경에서 recompute 결과를 다른 서비스에 전파 |
+| E-4 | **정합성 모델 구현** | planned | 중 | shouldVerify 재확인 흐름, Primary 직접 조회 경로 |
 
 ---
 
 ## F. query-service.spec.md
 
-**상태**: `planned` — 라이브러리 완성, 서비스 레이어 + 규칙 영속화 없음
+**상태**: `implemented` — F-1~F-4 완료, F-5 planned
 
 | 항목 | 라이브러리 | 서비스 |
 |---|---|---|
-| RelationalEngine | ✅ 226줄, 완전 | ❌ |
-| PolicyResolver | ✅ 170줄, 완전 | ❌ |
-| CrossIndexQuery | ✅ 206줄, 완전 | ❌ |
-| VersionQuery | ✅ 202줄, 완전 | ❌ |
-| 규칙 CRUD 5종 | — | ❌ 미구현 |
-| 질의 엔드포인트 5종 | — | ❌ 미구현 |
-| PolicyRule 영속화 | — | ❌ 미구현 |
-| Gate 통합 | — | ❌ 미구현 |
+| RelationalEngine | ✅ 226줄, 완전 | ✅ query facade로 래핑 |
+| PolicyResolver | ✅ 170줄, 완전 | ✅ resolve/rule conflict preflight에 사용 |
+| CrossIndexQuery | ✅ 206줄, 완전 | ✅ compose-query/resolve-relation에서 사용 |
+| VersionQuery | ✅ 202줄, 완전 | ✅ query-across-versions에서 사용 |
+| 규칙 CRUD 5종 | — | ✅ POST/GET/PUT/DELETE `/rules` + conflict handling |
+| 질의 엔드포인트 5종 | — | ✅ `/resolve`, `/match-ranges`, `/compose-query`, `/query-across-versions`, `/resolve-relation` |
+| PolicyRule 영속화 | — | ✅ Memory + SQL 어댑터 |
+| Gate 통합 | — | ✅ gate client + fail-open/fail-closed |
 
 ### 작업 필요 사항
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
-| F-1 | **PolicyRule 저장소 인터페이스 + 어댑터** | 높 | 중 | StoredPolicyRule 타입, CRUD 인터페이스, Memory + SQL 어댑터 |
-| F-2 | **규칙 CRUD 엔드포인트** | 높 | 중 | POST/GET/PUT/DELETE /rules + detectConflicts 사전 검증 |
-| F-3 | **질의 엔드포인트** | 높 | 중 | /resolve, /match-ranges, /compose-query, /query-across-versions, /resolve-relation |
-| F-4 | **Gate Service 클라이언트** | 중 | 중 | gateFilterRanges, gateAwareResolve 연동. fail-open/fail-closed 전략 |
-| F-5 | **규칙 버전 마이그레이션** | 낮 | 높 | index version 변경 시 translateConstraint로 규칙 자동 변환 |
+| F-1 | **PolicyRule 저장소 인터페이스 + 어댑터** | ✅ 완료 | 중 | StoredPolicyRule 타입, CRUD 포트, Memory + SQL 어댑터 |
+| F-2 | **규칙 CRUD 엔드포인트** | ✅ 완료 | 중 | POST/GET/PUT/DELETE `/rules` + detectConflicts 사전 검증 + `force` 지원 |
+| F-3 | **질의 엔드포인트** | ✅ 완료 | 중 | `/resolve`, `/match-ranges`, `/compose-query`, `/query-across-versions`, `/resolve-relation` |
+| F-4 | **Gate Service 클라이언트** | ✅ 완료 | 중 | gateFilterRanges, gateAwareResolve 연동. fail-open/fail-closed 전략 |
+| F-5 | **규칙 버전 마이그레이션** | planned | 높 | index version 변경 시 translateConstraint로 규칙 자동 변환 |
 
 ---
 
@@ -170,14 +169,14 @@
 
 스펙에 속하지 않지만 서비스 구현 전 해결이 필요한 인프라 항목.
 
-### SQL 어댑터 미비
+### SQL 어댑터 현황
 
 | Store 인터페이스 | Memory | SQL | 영향 스펙 |
 |---|---|---|---|
-| VersionLifecycleStore | ✅ | ❌ | gate-engine (E2E에서 InMemory 사용 중) |
-| MigrationStore | ✅ | ❌ | coordinate-query (version 횡단 시 migration edge 필요) |
+| VersionLifecycleStore | ✅ | ✅ | gate-service 프로덕션 전제 충족 |
+| MigrationStore | ✅ | ✅ | coordinate-query version 횡단 질의 전제 충족 |
 | EntryMetadataStore | ✅ | ❌ | 직접 영향 낮음 |
-| PrefixRouter | ✅ | ❌ | decode-service (멀티 prefix 라우팅) |
+| PrefixRouter | ✅ | ✅ | decode-service 멀티 prefix 라우팅 전제 충족 |
 
 ### 테스트 인프라
 
@@ -369,16 +368,16 @@ batch encoder (GPU offload 가능)
 | 순서 | 서비스 | 이유 | 주요 작업 |
 |---|---|---|---|
 | ~~1~~ | ~~**decode-service**~~ | ~~외부 의존 없음, 가장 단순~~ | ✅ D-1~D-4 완료 |
-| 2 | **gate-service** | decode보다 복잡하나 단독 진행 가능 | E-1, E-2 |
-| 3 | **query-service** | 규칙 영속화 신규 구축 + gate 연동 필요 | F-1, F-2, F-3, F-4 |
+| ~~2~~ | ~~**gate-service**~~ | ~~decode보다 복잡하나 단독 진행 가능~~ | ✅ E-1 완료, E-2~E-4 planned |
+| ~~3~~ | ~~**query-service**~~ | ~~규칙 영속화 신규 구축 + gate 연동 필요~~ | ✅ F-1~F-4 완료, F-5 planned |
 
 ### Tier 3 — 인프라 보강
 
 | ID | 작업 | 영향 |
 |---|---|---|
-| H-1 | VersionLifecycleStore SQL 어댑터 | gate-service 프로덕션 배포 전제 |
-| H-2 | MigrationStore SQL 어댑터 | query-service 버전 횡단 질의 전제 |
-| H-3 | PrefixRouter SQL 어댑터 | decode-service 멀티 prefix 전제 |
+| ~~H-1~~ | ~~VersionLifecycleStore SQL 어댑터~~ | ✅ gate-service 프로덕션 배포 전제 충족 |
+| ~~H-2~~ | ~~MigrationStore SQL 어댑터~~ | ✅ query-service 버전 횡단 질의 전제 충족 |
+| ~~H-3~~ | ~~PrefixRouter SQL 어댑터~~ | ✅ decode-service 멀티 prefix 전제 충족 |
 | D-5 | PrefixDecoderBig | BigInt index decode 지원 확장 |
 | F-5 | 규칙 버전 마이그레이션 | 운영 단계 진입 시 필요 |
 | I-1 | Cache 인터페이스 + Memory 어댑터 | 서비스 레이어 성능 전제 |
