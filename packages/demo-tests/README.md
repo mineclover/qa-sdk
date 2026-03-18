@@ -51,6 +51,13 @@ src/
     service-ref.test.ts            서비스 ID 참조
     permission-code.test.ts        PermCode 포매팅
 
+  merge-contract/                ← 의미적 중복 제거 계약 (indexing-merge-plan)
+    d1-label-map-parity.test.ts    PermissionCodec ↔ LabelRegistry 맵 동등성
+    d2-d5-meta-registry-shape.test.ts  MetaRegistry shape 경로 일관성 + unresolved ref
+    d3-capacity-parity.test.ts     compileSchema ↔ MetaRegistry capacity 일치
+    d4-stride-parity.test.ts       calcWeights() ↔ WeightedIndex.strides 일치
+    error-parity.test.ts           코덱 간 에러 거부 동작 패리티
+
   registry-codec.test.ts         MetaRegistry 코덱 라운드트립
   position-stability.test.ts     v1→v2 위치 안정성
   permission-migration.test.ts   권한 마이그레이션 통합

@@ -10,6 +10,7 @@
 
 ### weighted-index
 - `packages/weighted-index/src/index.ts` — 모든 public export 관리; 새 함수 추가 시 여기도 업데이트
+- `packages/weighted-index/src/calc.ts` — `calcWeights()`가 stride 공식의 **canonical 구현**. `WeightedIndex` 생성자가 이를 호출
 - `packages/weighted-index/src/layout-fit.ts` — 레이아웃 시뮬레이터 순수 함수 (Number/BigInt 모드)
 - `packages/weighted-index/src/partial-binder.ts` — 차원 부분 바인딩 (createBinder → resolve)
 - `packages/weighted-index/docs/partial-binder.md` — PartialBinder 상세 문서
@@ -17,7 +18,7 @@
 ### permission-engine
 - `packages/permission-engine/` — 비트마스크 기반 권한 엔진 (weighted-index 의존)
 - `src/permission-set.ts` — [feature, role] binary bitmask 인코딩, O(1) grant/check
-- `src/permission-codec.ts` — 3-tier 프로토콜 코덱 (text ↔ integer ↔ bitmask)
+- `src/permission-codec.ts` — 3-tier 프로토콜 코덱 (text ↔ integer ↔ bitmask). 내부적으로 `LabelRegistry`에 위임하여 string→index 맵 구축
 - `src/ternary-mask.ts` — 3-state 마스크 (-1=deny, 0=unset, 1=allow) + 계층 상속
 - partial-binder는 weighted-index에 위치, permission-engine에서 re-export
 - `src/scoped-engine.ts` — env/region 등 외부 컨텍스트별 독립 마스크 관리
