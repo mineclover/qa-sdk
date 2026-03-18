@@ -77,7 +77,7 @@ n개의 카테고리 차원(role, action, resource 등)을 조합해 고유한 �
 │  AddressRangeCache (사전 계산 범위 캐시)                      │
 │  AddressStateStore (게이트 상태 캐시)                         │
 │  SqlDriver (SqlDialect 기반 DB 추상화)                       │
-│  어댑터: InMemory │ SqlStore │ BetterSqliteDriver              │
+│  어댑터: InMemory │ SqlStore │ NodeSqlite │ BetterSqlite │ D1   │
 │  DistributedStoreClient (라우터 + 멀티 스토어)                │
 ├─────────────────────────────────────────────────────────────┤
 │  Tier 5: 인코딩 / 디코딩                                     │
@@ -169,7 +169,7 @@ import { createIndexSDK } from "index-meta";
 import { PrefixDecoder } from "index-meta/decode";
 ```
 
-`index-meta/client`는 `better-sqlite3`·SQL 어댑터를 포함하지 않는 경량 번들이다.
+`index-meta/client`는 SQLite 드라이버·SQL 어댑터를 포함하지 않는 경량 번들이다.
 `index-meta/decode`는 `PrefixDecoder` + `MetaCodec` + `AddressProtocolManager`만 포함하는 decode 전용 번들이다.
 
 ### SDK 정의 (공유 패키지)
@@ -774,7 +774,7 @@ if (gate.shouldVerify) {
 import {
   InMemoryAddressRangeCache,
   SqlAddressRangeCache,
-  BetterSqliteDriver,
+  NodeSqliteDriver,
 } from "index-meta";
 import { calcAddressRanges, containsAddress } from "weighted-index";
 
@@ -783,7 +783,7 @@ import { calcAddressRanges, containsAddress } from "weighted-index";
 const shape = [8, 4, 16];
 const adminRanges = calcAddressRanges(shape, ["1", null, null]); // role=admin
 
-const cache = new SqlAddressRangeCache(new BetterSqliteDriver());
+const cache = new SqlAddressRangeCache(new NodeSqliteDriver());
 await cache.save({
   prefix: "perm", versionId: "v1",
   label: "role=admin",
@@ -903,24 +903,43 @@ SQL 생성 로직이 dialect 플래그를 참조해 DB별 최적 쿼리를 선�
 
 | DB | `supportsTransaction` | `supportsReturning` | `supportsJsonType` | `supportsUpsert` |
 |---|---|---|---|---|
-| **SQLite** (better-sqlite3) | O | O | X | O |
+| **SQLite** (node:sqlite / better-sqlite3) | O | O | X | O |
 | **PostgreSQL** | O | O | O | O |
 | **Cloudflare D1** | O | X | X | O |
 | **DuckDB** | O | O | O | O |
 | **ClickHouse** | X | X | O | X |
 
-### BetterSqliteDriver (Node.js)
+### SQLite 드라이버
 
-기본 제공 SQLite 드라이버. `:memory:` 또는 파일 경로를 받는다.
+3종 드라이버가 `SqlDriver` 인터페이스를 구현한다. 용도에 따라 선택.
+
+| 드라이버 | 백엔드 | 용도 |
+|---|---|---|
+| `NodeSqliteDriver` | `node:sqlite` (내장) | 로컬 개발, CI 테스트 (native 빌드 불필요) |
+| `BetterSqliteDriver` | `better-sqlite3` (npm) | 프로덕션 Node.js 서버 |
+| `D1SqlDriver` | Cloudflare D1 | 엣지 |
 
 ```ts
-import { BetterSqliteDriver, SqlIndexMetaStore, SqlAddressRangeCache } from "index-meta";
+import {
+  NodeSqliteDriver,
+  BetterSqliteDriver,
+  createSqliteDriver,
+  SqlIndexMetaStore,
+} from "index-meta";
 
-const driver = new BetterSqliteDriver();           // :memory:
-const driver = new BetterSqliteDriver("data.db");  // 파일
+// 직접 생성
+const driver = new NodeSqliteDriver();                     // :memory:, index-meta DDL 자동 적용
+const driver = new NodeSqliteDriver("data.db");            // 파일
+const driver = new NodeSqliteDriver(":memory:", null);     // bare driver (DDL 없이)
 
-const metaStore  = new SqlIndexMetaStore(driver);
-const rangeCache = new SqlAddressRangeCache(driver);
+// 팩토리 — 런타임에 드라이버 종류 선택
+const driver = await createSqliteDriver({
+  driver: "node",              // "node" | "better"
+  path: "data/my-service.db",
+  schema: null,                // 생략 시 index-meta DDL, null이면 bare
+});
+
+const metaStore = new SqlIndexMetaStore(driver);
 ```
 
 ---
@@ -1000,7 +1019,9 @@ export { InMemoryPrefixRegistry } from "index-meta";
 export { SqlPrefixRegistry } from "index-meta";
 export { InMemoryPrefixRouter } from "index-meta";
 export { SqlIndexMetaStore } from "index-meta";        // + SqlDriver 인터페이스
-export { BetterSqliteDriver } from "index-meta";       // Node.js SQLite 드라이버
+export { NodeSqliteDriver } from "index-meta";          // node:sqlite 드라이버 (테스트/로컬)
+export { BetterSqliteDriver } from "index-meta";       // better-sqlite3 드라이버 (프로덕션)
+export { createSqliteDriver } from "index-meta";       // 런타임 드라이버 팩토리
 export { DistributedStoreClient } from "index-meta";
 export { syncSchemaToRegistry } from "index-meta";
 
@@ -1106,9 +1127,9 @@ pnpm typecheck   # tsc --noEmit
 
 tsup이 세 진입점(`src/index.ts`, `src/client.ts`, `src/decode.ts`)을 빌드하며, 공통 코드는 chunk로 분리된다.
 
-| 진입점 | import 경로 | 포함 내용 | better-sqlite3 |
+| 진입점 | import 경로 | 포함 내용 | SQLite 드라이버 |
 |---|---|---|---|
-| `index.ts` | `"index-meta"` | 전체 (SQL 어댑터, 마이그레이션, 분산 클라이언트) | ✓ (external) |
+| `index.ts` | `"index-meta"` | 전체 (SQL 어댑터, 마이그레이션, 분산 클라이언트) | ✓ (node:sqlite, better-sqlite3 모두 external) |
 | `client.ts` | `"index-meta/client"` | SDK + 코어 (MetaRegistry, MetaCodec, MetaResolver) | ✗ |
 | `decode.ts` | `"index-meta/decode"` | PrefixDecoder + MetaCodec + APM (decode 전용 최소) | ✗ |
 
