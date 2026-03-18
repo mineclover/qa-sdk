@@ -183,7 +183,7 @@
 
 | 항목 | 상태 | 설명 |
 |---|---|---|
-| demo-tests 패키지 | ✅ 완료 | 37개 테스트 파일 (566 tests) — index-meta 17개 + permission-engine 6개 + 통합 4개 + merge-contract 5개 + AXIS 반영 |
+| demo-tests 패키지 | ✅ 완료 | 37개 테스트 파일 (583 tests) — index-meta 21개 + permission-engine 7개 + 통합 4개 + merge-contract 5개 + AXIS 반영 |
 | weighted-wasm 패키지 | ✅ 완료 | Rust→WASM 20KB, 6개 함수, 7 Rust tests, JS fallback 래퍼 |
 | weighted-gpu 패키지 | ✅ 완료 | WebGPU WGSL 3 shaders, GPUEncoder 클래스, GPU 미지원 시 null |
 | demo-snapshot 패키지 | ✅ 완료 | AXIS 기반 5개 도메인 데이터 카탈로그 (15축) + MetaRegistry 입력 빌더 |
@@ -335,12 +335,34 @@ batch encoder (GPU offload 가능)
 
 ## 구현 우선순위 요약
 
-### Tier 1 — 테스트 갭 보강 (기존 구현 품질 향상)
+### Tier 1 — 테스트·스펙 갭 보강 ✅ Phase 1~2 완료
 
-| ID | 작업 | 대상 스펙 | 난이도 |
+**테스트 보강 (Phase 1) — +45 tests, 7건 태스크**
+
+| 태스크 | 파일 | tests | 상태 |
 |---|---|---|---|
-| ~~B-1~~ | ~~SemanticAddressBig 프로토콜 테스트~~ | ~~bigint-addressing~~ | ✅ |
-| ~~B-2~~ | ~~INV-9 MetaCodec 동등성 테스트~~ | ~~bigint-addressing~~ | ✅ |
+| B-1 BigInt address | `demo-tests/.../bigint-address.test.ts` | 11 | ✅ |
+| B-2 BigInt codec equiv | `demo-tests/.../bigint-codec-equiv.test.ts` | 9 | ✅ |
+| B-3 BigInt ranges | `demo-tests/.../bigint-ranges.test.ts` | 12 | ✅ |
+| permission-code | `demo-tests/.../permission-code.test.ts` 보강 | 9 | ✅ |
+| api-payload | `index-meta/src/api-payload.test.ts` | 9 | ✅ |
+| schema-sync | `index-meta/src/schema-sync.test.ts` | 7 | ✅ |
+| backup | `index-meta/src/backup.test.ts` | 8 | ✅ |
+| wasm-js | `weighted-wasm/js/index.test.ts` | 9 | ✅ |
+| gpu-fallback | `weighted-gpu/src/index.test.ts` | 3 | ✅ |
+
+**스펙 보강 (Phase 2) — 6건 문서, 1,953줄**
+
+| 태스크 | 파일 | 줄 수 | 상태 |
+|---|---|---|---|
+| permission-engine README | `permission-engine/README.md` | 80 | ✅ |
+| permission-engine core | `permission-engine/core.spec.md` | 378 | ✅ |
+| permission-engine codec | `permission-engine/codec.spec.md` | 336 | ✅ |
+| permission-engine resource | `permission-engine/resource.spec.md` | 477 | ✅ |
+| permission-engine migration | `permission-engine/migration.spec.md` | 330 | ✅ |
+| partial-binder | `weighted-index/partial-binder.spec.md` | 352 | ✅ |
+
+**최종 게이트**: 3 build ✅ · demo-tests 37 files / 583 tests ✅ · decode-service 39 tests ✅
 
 ### Tier 2 — 서비스 레이어 (라이브러리 → 서비스 전환)
 
