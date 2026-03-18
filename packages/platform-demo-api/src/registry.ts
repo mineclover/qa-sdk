@@ -5,32 +5,11 @@ import {
   DEMO_EVENTS_V1, DEMO_EVENTS_V2,
   DEMO_INITIATORS,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+  DEMO_SVC,
 } from "demo-snapshot";
 
-// ── Service address constants ──────────────────────────────────────────────
-// value formula: (env_pos-1)*20 + (region_pos-1)*10 + (name_pos-1)*2 + (ns_pos-1)
-// env:    [dev,stage,prod,test,local] → pos 1-5
-// region: [asia,usa]                  → pos 1-2
-// svc:    [shopping-web,shopping-backend,auth,payment,gateway] → pos 1-5
-// ns:     [shop,cms]                  → pos 1-2
-
-export const SVC = {
-  DEV_ASIA_SHOPPING_WEB_SHOP: 0,
-  DEV_ASIA_SHOPPING_BACKEND_SHOP: 2,
-  DEV_ASIA_AUTH_SHOP: 4,
-  DEV_ASIA_PAYMENT_SHOP: 6,
-  DEV_ASIA_GATEWAY_SHOP: 8,
-  PROD_ASIA_SHOPPING_WEB_SHOP: 40,
-  PROD_ASIA_SHOPPING_BACKEND_SHOP: 42,
-  PROD_ASIA_AUTH_SHOP: 44,
-  PROD_ASIA_PAYMENT_SHOP: 46,
-  PROD_ASIA_GATEWAY_SHOP: 48,
-  PROD_ASIA_SHOPPING_WEB_CMS: 41,
-  PROD_ASIA_SHOPPING_BACKEND_CMS: 43,
-  PROD_ASIA_AUTH_CMS: 45,
-  PROD_ASIA_PAYMENT_CMS: 47,
-  PROD_ASIA_GATEWAY_CMS: 49,
-} as const;
+// ── Service address constants (demo-snapshot SSOT) ──────────────────────────
+export const SVC = DEMO_SVC;
 
 // ── MetaRegistry ────────────────────────────────────────────────────────────
 
@@ -224,17 +203,7 @@ export const SVC_NAME_KO: Record<string, string> = {
   gateway:            "게이트웨이",
 };
 
-export const EVT_KO: Record<string, string> = {
-  "user.login":               "로그인",
-  "user.logout":              "로그아웃",
-  "order.created":            "주문 생성",
-  "order.paid":               "주문 결제",
-  "payment.failed":           "결제 실패",
-  "session.expired":          "세션 만료",
-  "config.changed":           "설정 변경",
-  "payment.cancel_requested": "취소 요청",
-  "payment.cancel_approved":  "취소 승인",
-};
+export const EVT_KO = DEMO_KO.event;
 
 // ── Dimension entry arrays (re-exported from weighted-index demo-snapshot) ──
 

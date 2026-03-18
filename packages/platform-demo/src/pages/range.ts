@@ -5,7 +5,7 @@
 import { serializeAddress } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
-  DEMO_SVC_STRIDES,
+  DEMO_SVC_STRIDES, DEMO_SVC_SHAPE,
 } from "demo-snapshot";
 
 const SVC_PREFIX = "service";
@@ -44,7 +44,7 @@ const DIMS: DimMeta[] = [
   },
 ];
 
-const TOTAL_SLOTS = 100; // 5×2×5×2
+const TOTAL_SLOTS = DEMO_SVC_SHAPE.reduce((a: number, b: number) => a * b, 1);
 
 // ── State ─────────────────────────────────────────────────────────────────
 

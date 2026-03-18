@@ -71,13 +71,15 @@ export const DEMO_FEATURES_V1: readonly DemoFeatureDef[] = [
 ];
 
 export const DEMO_FEATURES_V2: readonly DemoFeatureDef[] = [
+  // ── v1에서 유지 (순서 보존, payment_cancel 제외) ──
   { id: "product_list",          name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","viewer","readonly","customer"], successEventValue: 90,   failEventValue: null },
   { id: "order_list",            name: "주문 목록 조회", svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin","developer","operator","viewer"],                       successEventValue: 112,  failEventValue: null },
   { id: "payment_history",       name: "결제 내역 조회", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"],                               successEventValue: 150,  failEventValue: 152  },
-  { id: "payment_cancel_req",    name: "결제 취소 요청", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","customer"],                                           successEventValue: 158,  failEventValue: 152  },
-  { id: "payment_cancel_approve",name: "결제 취소 승인", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","operator"],                                           successEventValue: 160,  failEventValue: 152  },
   { id: "user_mgmt",             name: "사용자 관리",    svcName: "auth",             svcValue: 44, permSvcPos: 5, grantedRoles: ["admin"],                                                     successEventValue: 138,  failEventValue: 136  },
   { id: "config_change",         name: "설정 변경",      svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin"],                                                     successEventValue: 120,  failEventValue: 118  },
+  // ── v2 신규 (append-only: 기존 뒤에 추가) ──
+  { id: "payment_cancel_req",    name: "결제 취소 요청", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","customer"],                                           successEventValue: 158,  failEventValue: 152  },
+  { id: "payment_cancel_approve",name: "결제 취소 승인", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","operator"],                                           successEventValue: 160,  failEventValue: 152  },
 ];
 
 export function demoFeatures(ver: DemoVer) { return ver === "v1" ? DEMO_FEATURES_V1 : DEMO_FEATURES_V2; }

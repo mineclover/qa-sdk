@@ -241,13 +241,16 @@ registry.<span class="ov-code-fn">migrate</span>(<span class="ov-code-str">"v1"<
       <div class="ov-usage-card">
         <div class="ov-usage-card-head">
           <span class="ov-usage-card-label">권한 확인</span>
-          <span class="ov-usage-card-desc">주소 기반 접근 제어</span>
+          <span class="ov-usage-card-desc">비트마스크 기반 접근 제어</span>
         </div>
-        <pre class="ov-usage-code"><span class="ov-code-kw">const</span> perm = permission.<span class="ov-code-fn">encode</span>({
-  svc: <span class="ov-code-str">"payment"</span>,
-  role: <span class="ov-code-str">"admin"</span>
-});
-<span class="ov-code-kw">const</span> ok = grants.<span class="ov-code-fn">has</span>(perm);
+        <pre class="ov-usage-code"><span class="ov-code-cmt">// 서버: role별 grant → flat bitmask 생성</span>
+<span class="ov-code-kw">const</span> mask = codec.<span class="ov-code-fn">createMask</span>();
+codec.<span class="ov-code-fn">grantRaw</span>(mask,
+  <span class="ov-code-str">"payment"</span>, <span class="ov-code-str">"api"</span>, <span class="ov-code-str">"orders"</span>, <span class="ov-code-str">"GET"</span>);
+
+<span class="ov-code-cmt">// 클라이언트: mask에서 O(1) 비트 체크</span>
+codec.<span class="ov-code-fn">checkRaw</span>(mask,
+  <span class="ov-code-str">"payment"</span>, <span class="ov-code-str">"api"</span>, <span class="ov-code-str">"orders"</span>, <span class="ov-code-str">"GET"</span>);
 <span class="ov-code-cmt">// => true</span></pre>
       </div>
       <div class="ov-usage-card">

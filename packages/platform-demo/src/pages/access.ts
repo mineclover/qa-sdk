@@ -58,9 +58,10 @@ const evtStride = demoEvtStride;
 const calcPermAddr = demoCalcPermAddr;
 const calcEvtAddr = demoCalcEvtAddr;
 
-// Backend services don't support mobile initiator
+// 백엔드 서비스는 모바일 이니시에이터 미지원 (SSOT의 DEMO_SVCS 기반)
+const BACKEND_SVCS = new Set(DEMO_SVCS.filter(s => s.includes("backend")));
 function svcSupportsInit(ps: PermSvcMeta, init: number): boolean {
-  return !(ps.svcId === "shopping-backend" && init === 2);
+  return !(BACKEND_SVCS.has(ps.svcId) && init === 2);
 }
 
 // ── State ───────────────────────────────────────────────────────────────

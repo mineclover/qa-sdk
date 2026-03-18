@@ -139,6 +139,7 @@ const versionContainer = document.getElementById("version-container")!;
 // Permission Engine sheet refs
 const permEngineContainer = document.getElementById("perm-engine-container")!;
 
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  Status bar (version-aware)
 // ═══════════════════════════════════════════════════════════════════════════

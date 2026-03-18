@@ -10,8 +10,12 @@ import {
 import {
   demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   demoRoleStride, demoEvtStride,
-  type DemoVer,
+  DEMO_FEATURES_V1, DEMO_FEATURES_V2, demoFeatures,
+  DEMO_ROLE_POS_V1, DEMO_ROLE_POS_V2, demoRolePos,
+  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  type DemoVer, type DemoFeatureDef,
 } from "demo-snapshot";
+import { PermissionSet, type DimDef } from "permission-engine";
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
@@ -57,57 +61,24 @@ function decodeSvcValue(value: number): { env: string; region: string; svc_name:
   };
 }
 
-// ── v2 Scenario / Features constants ──────────────────────────────────────
+// ── Scenario / Features constants (demo-snapshot SSOT) ───────────────────
 
-const ROLE_POS: Record<string, number> = {
-  admin: 1, developer: 2, operator: 3, viewer: 4, readonly: 5, customer: 6,
-};
-
-const FEATURE_DEFS = [
-  { id: "product_list",          name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","viewer","readonly","customer"] as const, successEventValue: 90  as number | null, failEventValue: null as number | null },
-  { id: "order_list",            name: "주문 목록 조회", svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin","developer","operator","viewer"]                       as const, successEventValue: 112 as number | null, failEventValue: null as number | null },
-  { id: "payment_history",       name: "결제 내역 조회", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"]                               as const, successEventValue: 150 as number | null, failEventValue: 152  as number | null },
-  { id: "payment_cancel_req",    name: "결제 취소 요청", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","customer"]                                           as const, successEventValue: 158 as number | null, failEventValue: 152  as number | null },
-  { id: "payment_cancel_approve",name: "결제 취소 승인", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","operator"]                                           as const, successEventValue: 160 as number | null, failEventValue: 152  as number | null },
-  { id: "user_mgmt",             name: "사용자 관리",    svcName: "auth",             svcValue: 44, permSvcPos: 5, grantedRoles: ["admin"]                                                     as const, successEventValue: 138 as number | null, failEventValue: 136  as number | null },
-  { id: "config_change",         name: "설정 변경",      svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin"]                                                     as const, successEventValue: 120 as number | null, failEventValue: 118  as number | null },
-];
-
-const ROLE_LIST = ["admin", "developer", "operator", "viewer", "readonly", "customer"] as const;
-
-// ── v1 Scenario / Features constants ──────────────────────────────────────
-
-const ROLE_POS_V1: Record<string, number> = {
-  admin: 1, developer: 2, operator: 3, viewer: 4, readonly: 5,
-};
-
-const ROLE_LIST_V1 = ["admin", "developer", "operator", "viewer", "readonly"] as const;
-
-// v1 event values: stride=14 (7 events × 2 initiators)
-// product_list:    evtSvc=6(shopping-web:40),  evt=user.login(1)   → (6-1)*14 + (1-1)*2 + 0 = 70
-// order_list:      evtSvc=7(shopping-backend:42), evt=order.created(3) → (7-1)*14 + (3-1)*2 + 0 = 88
-// payment_history: evtSvc=9(payment:46),       evt=order.paid(4)   → (9-1)*14 + (4-1)*2 + 0 = 118, fail: payment.failed(5) → 120
-// payment_cancel:  evtSvc=9, no cancel event in v1 → success=null, fail: payment.failed(5) → 120
-// user_mgmt:       evtSvc=8(auth:44),          evt=config.changed(7) → (8-1)*14 + (7-1)*2 + 0 = 110, fail: session.expired(6) → 108
-// config_change:   evtSvc=7(shopping-backend:42), evt=config.changed(7) → (7-1)*14 + (7-1)*2 + 0 = 96, fail: session.expired(6) → 94
-const FEATURE_DEFS_V1 = [
-  { id: "product_list",    name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","viewer","readonly"] as readonly string[], successEventValue: 70   as number | null, failEventValue: null as number | null },
-  { id: "order_list",      name: "주문 목록 조회", svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin","developer","operator","viewer"]              as readonly string[], successEventValue: 88   as number | null, failEventValue: null as number | null },
-  { id: "payment_history", name: "결제 내역 조회", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"]                      as readonly string[], successEventValue: 118  as number | null, failEventValue: 120  as number | null },
-  { id: "payment_cancel",  name: "결제 취소",      svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"]                      as readonly string[], successEventValue: null as number | null, failEventValue: 120  as number | null },
-  { id: "user_mgmt",       name: "사용자 관리",    svcName: "auth",             svcValue: 44, permSvcPos: 5, grantedRoles: ["admin"]                                            as readonly string[], successEventValue: 110  as number | null, failEventValue: 108  as number | null },
-  { id: "config_change",   name: "설정 변경",      svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin"]                                            as readonly string[], successEventValue: 96   as number | null, failEventValue: 94   as number | null },
-];
+const ROLE_POS     = DEMO_ROLE_POS_V2;
+const ROLE_POS_V1  = DEMO_ROLE_POS_V1;
+const ROLE_LIST    = DEMO_ROLES_V2;
+const ROLE_LIST_V1 = DEMO_ROLES_V1;
+const FEATURE_DEFS    = DEMO_FEATURES_V2;
+const FEATURE_DEFS_V1 = DEMO_FEATURES_V1;
 
 // ── Version-aware helpers ─────────────────────────────────────────────────
 
 function getRoles(ver: Ver)      { return ver === "v1" ? ROLES_V1 : ROLES; }
-function getRoleList(ver: Ver)   { return ver === "v1" ? ROLE_LIST_V1 : ROLE_LIST; }
-function getRolePos(ver: Ver)    { return ver === "v1" ? ROLE_POS_V1 : ROLE_POS; }
+function getRoleList(ver: Ver)   { return ver === "v1" ? [...DEMO_ROLES_V1] : [...DEMO_ROLES_V2]; }
+function getRolePos(ver: Ver)    { return demoRolePos(ver); }
 function getRoleStride(ver: Ver) { return demoRoleStride(ver); }
 function getEvents(ver: Ver)     { return ver === "v1" ? EVENTS_V1 : EVENTS; }
 function getEvtStride(ver: Ver)  { return demoEvtStride(ver); }
-function getFeatureDefs(ver: Ver) { return ver === "v1" ? FEATURE_DEFS_V1 : FEATURE_DEFS; }
+function getFeatureDefs(ver: Ver): readonly DemoFeatureDef[] { return demoFeatures(ver); }
 function getPermCodec(ver: Ver)  { return ver === "v1" ? permCodec : permCodecV2; }
 function getEvtCodec(ver: Ver)   { return ver === "v1" ? evtCodec : evtCodecV2; }
 
@@ -404,7 +375,9 @@ app.get("/api/scenario", async (c) => {
     const rolePos = rolePos_[role]!;
     const grants = await loadGrants(c.env.DB);
 
-    const mainPermValue = (7 - 1) * roleStride + (rolePos - 1);
+    // 시나리오 메인 서비스: payment (permSvcPos는 SSOT에서 참조)
+    const mainSvcPos = featureDefs.find(f => f.svcName === "payment")?.permSvcPos ?? 7;
+    const mainPermValue = (mainSvcPos - 1) * roleStride + (rolePos - 1);
     const mainPermAddr = `permission:${ver}:${mainPermValue}`;
 
     const features = featureDefs.map((f) => {
@@ -548,6 +521,60 @@ app.get("/api/grant-table", async (c) => {
     ).flat();
 
     return c.json({ rows });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+  }
+});
+
+// ── Permission mask route ──────────────────────────────────────────────────
+
+app.get("/api/permission/mask", async (c) => {
+  try {
+    const ver = parseVer(c.req.query("ver"));
+    const role = c.req.query("role");
+    if (!role || !(getRoleList(ver) as readonly string[]).includes(role)) {
+      return c.json({ error: `Invalid role. Must be one of: ${getRoleList(ver).join(", ")}` }, 400);
+    }
+
+    const featureDefs = getFeatureDefs(ver);
+    const dbGrants = await loadGrants(c.env.DB);
+
+    // PermissionSet: [features × 1 role] — role-flat mask 생성
+    const featuresDim: DimDef = { name: "features", ids: featureDefs.map(f => f.id) };
+    const rolesDim: DimDef = { name: "roles", ids: [role] };
+    const ps = new PermissionSet({ features: featuresDim, roles: rolesDim });
+
+    // DB grants → PermissionSet에 반영
+    for (const f of featureDefs) {
+      if (isGrantedVer(ver, dbGrants, f.id, role)) {
+        ps.grant(f.id, role);
+      }
+    }
+
+    // PermissionSet API로 직렬화
+    const snapshot = ps.toSnapshot();
+    const maskBytesArr = ps.toBytes();
+
+    // feature별 비트 + 메타데이터
+    const features = featureDefs.map(f => ({
+      id: f.id,
+      name: f.name,
+      granted: ps.has(f.id, role),
+    }));
+    const bits = features.map(f => f.granted ? 1 : 0);
+
+    return c.json({
+      role,
+      roleKo: ROLE_KO[role] ?? role,
+      ver,
+      bits,
+      features,
+      grantCount: ps.grantCount,
+      totalSlots: ps.size,
+      density: +(ps.grantCount / ps.size * 100).toFixed(1),
+      maskBase64: snapshot.mask,
+      maskBytes: maskBytesArr.length,
+    });
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }

@@ -153,12 +153,12 @@ tr:nth-child(even) .xl-cell:not(.selected):not(:hover) {
   font-weight: 700;
   line-height: 1;
   color: var(--text-cell);
-  text-align: right;
+  text-align: center;
 }
 .cell-coord-tag {
   display: block;
   font-size: 0.6rem;
   color: var(--text-muted);
-  text-align: right;
+  text-align: center;
   margin-top: 2px;
 }

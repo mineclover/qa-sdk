@@ -177,3 +177,21 @@ export async function patchGrantBatch(
 export async function resetGrants(): Promise<void> {
   await fetch(`${API_BASE}/api/grants/reset`, { method: "POST" }).then(ensureOk);
 }
+
+export interface PermissionMaskResponse {
+  role: string;
+  roleKo: string;
+  ver: string;
+  bits: number[];
+  features: Array<{ id: string; name: string; granted: boolean }>;
+  grantCount: number;
+  totalSlots: number;
+  density: number;
+  maskBase64: string;
+  maskBytes: number;
+}
+
+export async function fetchPermissionMask(role: string, ver = "v2"): Promise<PermissionMaskResponse> {
+  const r = await fetch(`${API_BASE}/api/permission/mask?role=${role}&ver=${ver}`).then(ensureOk);
+  return r.json();
+}

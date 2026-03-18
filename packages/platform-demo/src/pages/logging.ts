@@ -302,9 +302,9 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   const envBtns: HTMLButtonElement[] = [];
   const envOpts = [
     { id: "all", label: "전체", idx1: 0 },
-    { id: "prod", label: "prod", idx1: 3 },
-    { id: "stage", label: "stage", idx1: 2 },
-    { id: "dev", label: "dev", idx1: 1 },
+    ...DEMO_ENVS
+      .filter(e => ["prod", "stage", "dev"].includes(e))
+      .map(e => ({ id: e, label: e, idx1: DEMO_ENVS.indexOf(e) + 1 })),
   ];
 
   addrBar.innerHTML = `<span class="log-addr-label">환경</span>`;
@@ -327,13 +327,14 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   // Service filter with address ranges
   let activeSvc = "all";
   const svcBtns: HTMLButtonElement[] = [];
-  const svcOpts: { id: string; label: string; range: [number, number] | null }[] = [
-    { id: "all", label: "전체", range: null },
-    { id: "shopping-web",     label: "쇼핑웹",  range: [0, 19] },
-    { id: "shopping-backend", label: "쇼핑BE",  range: [20, 39] },
-    { id: "auth",             label: "인증",    range: [40, 59] },
-    { id: "payment",          label: "결제",    range: [60, 79] },
-    { id: "gateway",          label: "GW",      range: [80, 99] },
+  // 서비스 필터: svc_name 좌표 기반 (mixed-radix에서 연속 범위가 아니므로 range 대신 좌표 비교)
+  const svcOpts: { id: string; label: string; svcNameIdx: number | null }[] = [
+    { id: "all", label: "전체", svcNameIdx: null },
+    ...DEMO_SVCS.map((svc, i) => ({
+      id: svc,
+      label: DEMO_KO.svc[svc] ?? svc,
+      svcNameIdx: i,  // 0-based DEMO_SVCS 인덱스
+    })),
   ];
 
   const svcLbl = document.createElement("span");
@@ -344,7 +345,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   for (const opt of svcOpts) {
     const btn = document.createElement("button");
     btn.className = "log-addr-btn" + (opt.id === "all" ? " log-addr-btn-active" : "");
-    btn.innerHTML = opt.range ? `${opt.label} <span class="log-addr-range">${opt.range[0]}–${opt.range[1]}</span>` : opt.label;
+    btn.textContent = opt.label;
     btn.addEventListener("click", () => {
       activeSvc = opt.id;
       svcBtns.forEach(b => b.classList.remove("log-addr-btn-active"));
@@ -638,8 +639,12 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
     if (activeSvc === "__custom__" && customRange) {
       if (entry.svcAddr < customRange[0] || entry.svcAddr > customRange[1]) return false;
     } else if (activeSvc !== "all") {
+      // svc_name 좌표 기반 필터: 주소를 decode하여 svc_name 확인
       const opt = svcOpts.find(o => o.id === activeSvc);
-      if (opt?.range && (entry.svcAddr < opt.range[0] || entry.svcAddr > opt.range[1])) return false;
+      if (opt?.svcNameIdx != null) {
+        const decoded = demoDecodeSvc(entry.svcAddr);
+        if (decoded[2] !== opt.svcNameIdx + 1) return false; // 1-based coord
+      }
     }
     return true;
   }

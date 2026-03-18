@@ -12,6 +12,8 @@ import { densityFill, densityInk } from "weighted-ui";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+  DEMO_SVC_SHAPE,
+  DEMO_ROLES_V2, DEMO_EVENTS_V2,
 } from "demo-snapshot";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -28,10 +30,10 @@ export interface ServiceState {
 // ── Dimension metadata (for axis bar labels only — no codec needed) ────────
 
 const DIM_META: Record<SvcDimKey, { label: string; size: number }> = {
-  env:       { label: "환경 (env)",        size: 5 },
-  region:    { label: "리전 (region)",     size: 2 },
-  svc_name:  { label: "서비스 (svc)",      size: 5 },
-  namespace: { label: "네임스페이스 (ns)", size: 2 },
+  env:       { label: "환경 (env)",        size: DEMO_SVC_SHAPE[0] },
+  region:    { label: "리전 (region)",     size: DEMO_SVC_SHAPE[1] },
+  svc_name:  { label: "서비스 (svc)",      size: DEMO_SVC_SHAPE[2] },
+  namespace: { label: "네임스페이스 (ns)", size: DEMO_SVC_SHAPE[3] },
 };
 
 const ALL_DIMS: readonly SvcDimKey[] = ["env", "region", "svc_name", "namespace"] as const;
@@ -120,16 +122,16 @@ function renderServiceDetail(
         <div style="margin-top:8px">
           <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.05em;margin-bottom:4px">권한 범위</div>
           <div style="font-size:0.72rem;color:var(--text-muted)">
-            관리자~읽기전용 5개 역할 →
-            값 ${permPos * 5}–${permPos * 5 + 4}
+            ${DEMO_ROLES_V2.length}개 역할 (v2 기준) →
+            값 ${permPos * DEMO_ROLES_V2.length}–${permPos * DEMO_ROLES_V2.length + DEMO_ROLES_V2.length - 1}
           </div>
         </div>` : ""}
         ${inEvt ? `
         <div style="margin-top:8px">
           <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.05em;margin-bottom:4px">이벤트 범위</div>
           <div style="font-size:0.72rem;color:var(--text-muted)">
-            7가지 이벤트 × 2 initiator →
-            값 ${evtPos * 14}–${evtPos * 14 + 13}
+            ${DEMO_EVENTS_V2.length}가지 이벤트 × 2 initiator →
+            값 ${evtPos * DEMO_EVENTS_V2.length * 2}–${evtPos * DEMO_EVENTS_V2.length * 2 + DEMO_EVENTS_V2.length * 2 - 1}
           </div>
         </div>` : ""}
       </div>
@@ -278,7 +280,7 @@ function renderGrid(
 ): void {
   const { xLabels, yLabels, cells } = data;
   const { selectedValue } = state;
-  const maxValue = 99;
+  const maxValue = DEMO_SVC_SHAPE.reduce((a, b) => a * b, 1) - 1;
 
   // Build a quick lookup: (xPos, yPos) → value
   const cellMap = new Map<string, number>();
@@ -432,7 +434,7 @@ export function updateServiceSelection(
   prevValue: number | null,
   newValue: number | null
 ): void {
-  const maxValue = 99;
+  const maxValue = DEMO_SVC_SHAPE.reduce((a, b) => a * b, 1) - 1;
   gridContainer.querySelectorAll<HTMLElement>(".xl-cell").forEach((td) => {
     const span = td.querySelector<HTMLElement>(".cell-id-val");
     if (!span) return;

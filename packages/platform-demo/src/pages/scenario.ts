@@ -9,26 +9,18 @@ import {
   type SimStep,
   type FeaturesResponse,
 } from "../registry.js";
+import {
+  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_KO,
+  DEMO_FEATURES_V1, DEMO_FEATURES_V2,
+  DEMO_FEATURE_KO,
+} from "demo-snapshot";
 
 
-// ── Constants ──────────────────────────────────────────────────────────────
+// ── Constants (demo-snapshot SSOT 기반) ───────────────────────────────────
 
-const ROLES_META_V2 = [
-  { id: "admin",     ko: "관리자" },
-  { id: "developer", ko: "개발자" },
-  { id: "operator",  ko: "운영자" },
-  { id: "customer",  ko: "고객" },
-  { id: "viewer",    ko: "뷰어" },
-  { id: "readonly",  ko: "읽기전용" },
-] as const;
-
-const ROLES_META_V1 = [
-  { id: "admin",     ko: "관리자" },
-  { id: "developer", ko: "개발자" },
-  { id: "operator",  ko: "운영자" },
-  { id: "viewer",    ko: "뷰어" },
-  { id: "readonly",  ko: "읽기전용" },
-] as const;
+const ROLES_META_V2 = DEMO_ROLES_V2.map(id => ({ id, ko: DEMO_KO.role[id] ?? id }));
+const ROLES_META_V1 = DEMO_ROLES_V1.map(id => ({ id, ko: DEMO_KO.role[id] ?? id }));
 
 const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦"] as const;
 
@@ -67,26 +59,20 @@ function updateRoleBar(bar: HTMLElement, activeRole: string): void {
 
 type NavFeatureId = string;
 
-const NAV_ITEMS_V2: { label: string; featureId: NavFeatureId; title: string }[] = [
-  { label: "홈",      featureId: "home",                   title: "홈" },
-  { label: "상품목록",  featureId: "product_list",          title: "상품 목록" },
-  { label: "주문내역",  featureId: "order_list",            title: "주문 내역" },
-  { label: "결제내역",  featureId: "payment_history",       title: "결제 내역" },
-  { label: "취소요청",  featureId: "payment_cancel_req",    title: "결제 취소 요청" },
-  { label: "취소승인",  featureId: "payment_cancel_approve", title: "결제 취소 승인" },
-  { label: "사용자관리", featureId: "user_mgmt",             title: "사용자 관리" },
-  { label: "설정변경",  featureId: "config_change",         title: "설정 변경" },
-];
+function buildNavItems(features: readonly { id: string; name: string }[]): { label: string; featureId: NavFeatureId; title: string }[] {
+  const home = { label: "홈", featureId: "home", title: "홈" };
+  return [
+    home,
+    ...features.map(f => ({
+      label: DEMO_FEATURE_KO[f.id] ?? f.name,
+      featureId: f.id,
+      title: f.name,
+    })),
+  ];
+}
 
-const NAV_ITEMS_V1: { label: string; featureId: NavFeatureId; title: string }[] = [
-  { label: "홈",      featureId: "home",            title: "홈" },
-  { label: "상품목록",  featureId: "product_list",    title: "상품 목록" },
-  { label: "주문내역",  featureId: "order_list",      title: "주문 내역" },
-  { label: "결제내역",  featureId: "payment_history", title: "결제 내역" },
-  { label: "결제취소",  featureId: "payment_cancel",  title: "결제 취소" },
-  { label: "사용자관리", featureId: "user_mgmt",       title: "사용자 관리" },
-  { label: "설정변경",  featureId: "config_change",   title: "설정 변경" },
-];
+const NAV_ITEMS_V2 = buildNavItems(DEMO_FEATURES_V2);
+const NAV_ITEMS_V1 = buildNavItems(DEMO_FEATURES_V1);
 
 function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): string {
   if (featureId === "home") {
@@ -100,6 +86,7 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
 
   const feature = scenario.features.find((f) => f.id === featureId);
   if (!feature) return `<div style="padding:12px;color:var(--text-muted)">알 수 없는 기능</div>`;
+  const svc = feature.svcAddr; // API에서 SSOT 기반으로 계산된 주소 (예: "service:v1:40")
 
   if (!feature.hasAccess) {
     return `
@@ -116,10 +103,10 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
       <table class="scenario-mock-table">
         <thead><tr><th>상품명</th><th>가격</th><th>재고</th><th>서비스</th></tr></thead>
         <tbody>
-          <tr><td>무선 이어폰 Pro</td><td>₩129,000</td><td>재고 있음</td><td>service:v1:40</td></tr>
-          <tr><td>스마트 워치 SE</td><td>₩289,000</td><td>재고 있음</td><td>service:v1:40</td></tr>
-          <tr><td>노트북 슬리브</td><td>₩35,000</td><td>품절</td><td>service:v1:40</td></tr>
-          <tr><td>USB-C 허브</td><td>₩49,000</td><td>재고 있음</td><td>service:v1:40</td></tr>
+          <tr><td>무선 이어폰 Pro</td><td>₩129,000</td><td>재고 있음</td><td>${svc}</td></tr>
+          <tr><td>스마트 워치 SE</td><td>₩289,000</td><td>재고 있음</td><td>${svc}</td></tr>
+          <tr><td>노트북 슬리브</td><td>₩35,000</td><td>품절</td><td>${svc}</td></tr>
+          <tr><td>USB-C 허브</td><td>₩49,000</td><td>재고 있음</td><td>${svc}</td></tr>
         </tbody>
       </table>
     `;
@@ -143,9 +130,9 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
       <table class="scenario-mock-table">
         <thead><tr><th>일시</th><th>금액</th><th>상태</th><th>서비스</th></tr></thead>
         <tbody>
-          <tr><td>2026-03-15 10:23</td><td>₩89,000</td><td>완료</td><td>service:v1:46</td></tr>
-          <tr><td>2026-03-14 14:11</td><td>₩12,500</td><td>완료</td><td>service:v1:46</td></tr>
-          <tr><td>2026-03-13 09:47</td><td>₩45,000</td><td>환불</td><td>service:v1:46</td></tr>
+          <tr><td>2026-03-15 10:23</td><td>₩89,000</td><td>완료</td><td>${svc}</td></tr>
+          <tr><td>2026-03-14 14:11</td><td>₩12,500</td><td>완료</td><td>${svc}</td></tr>
+          <tr><td>2026-03-13 09:47</td><td>₩45,000</td><td>환불</td><td>${svc}</td></tr>
         </tbody>
       </table>
     `;
@@ -156,9 +143,9 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
       <table class="scenario-mock-table">
         <thead><tr><th>결제번호</th><th>금액</th><th>결제일시</th><th>서비스</th><th>취소</th></tr></thead>
         <tbody>
-          <tr><td>#PAY-8821</td><td>₩89,000</td><td>2026-03-15 10:23</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소</button></td></tr>
-          <tr><td>#PAY-8814</td><td>₩12,500</td><td>2026-03-14 14:11</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소</button></td></tr>
-          <tr><td>#PAY-8799</td><td>₩45,000</td><td>2026-03-13 09:47</td><td>service:v1:46</td><td><span style="color:var(--text-muted);font-size:0.78rem">환불완료</span></td></tr>
+          <tr><td>#PAY-8821</td><td>₩89,000</td><td>2026-03-15 10:23</td><td>${svc}</td><td><button class="scenario-action-btn">취소</button></td></tr>
+          <tr><td>#PAY-8814</td><td>₩12,500</td><td>2026-03-14 14:11</td><td>${svc}</td><td><button class="scenario-action-btn">취소</button></td></tr>
+          <tr><td>#PAY-8799</td><td>₩45,000</td><td>2026-03-13 09:47</td><td>${svc}</td><td><span style="color:var(--text-muted);font-size:0.78rem">환불완료</span></td></tr>
         </tbody>
       </table>
     `;
@@ -169,9 +156,9 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
       <table class="scenario-mock-table">
         <thead><tr><th>결제번호</th><th>금액</th><th>결제일시</th><th>서비스</th><th>취소 요청</th></tr></thead>
         <tbody>
-          <tr><td>#PAY-8821</td><td>₩89,000</td><td>2026-03-15 10:23</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소 요청</button></td></tr>
-          <tr><td>#PAY-8814</td><td>₩12,500</td><td>2026-03-14 14:11</td><td>service:v1:46</td><td><button class="scenario-action-btn">취소 요청</button></td></tr>
-          <tr><td>#PAY-8799</td><td>₩45,000</td><td>2026-03-13 09:47</td><td>service:v1:46</td><td><span style="color:var(--text-muted);font-size:0.78rem">환불완료</span></td></tr>
+          <tr><td>#PAY-8821</td><td>₩89,000</td><td>2026-03-15 10:23</td><td>${svc}</td><td><button class="scenario-action-btn">취소 요청</button></td></tr>
+          <tr><td>#PAY-8814</td><td>₩12,500</td><td>2026-03-14 14:11</td><td>${svc}</td><td><button class="scenario-action-btn">취소 요청</button></td></tr>
+          <tr><td>#PAY-8799</td><td>₩45,000</td><td>2026-03-13 09:47</td><td>${svc}</td><td><span style="color:var(--text-muted);font-size:0.78rem">환불완료</span></td></tr>
         </tbody>
       </table>
     `;
@@ -183,21 +170,21 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
         <thead><tr><th>요청번호</th><th>고객</th><th>금액</th><th>요청일시</th><th>서비스</th><th>처리</th></tr></thead>
         <tbody>
           <tr>
-            <td>#REQ-1042</td><td>홍길동</td><td>₩89,000</td><td>2026-03-15 11:00</td><td>service:v1:46</td>
+            <td>#REQ-1042</td><td>홍길동</td><td>₩89,000</td><td>2026-03-15 11:00</td><td>${svc}</td>
             <td style="white-space:nowrap">
               <button class="scenario-action-btn">승인</button>
               <button class="scenario-action-btn" style="background:#c0392b;margin-left:4px">거부</button>
             </td>
           </tr>
           <tr>
-            <td>#REQ-1039</td><td>김민수</td><td>₩34,500</td><td>2026-03-15 09:15</td><td>service:v1:46</td>
+            <td>#REQ-1039</td><td>김민수</td><td>₩34,500</td><td>2026-03-15 09:15</td><td>${svc}</td>
             <td style="white-space:nowrap">
               <button class="scenario-action-btn">승인</button>
               <button class="scenario-action-btn" style="background:#c0392b;margin-left:4px">거부</button>
             </td>
           </tr>
           <tr>
-            <td>#REQ-1035</td><td>이수연</td><td>₩120,000</td><td>2026-03-14 16:40</td><td>service:v1:46</td>
+            <td>#REQ-1035</td><td>이수연</td><td>₩120,000</td><td>2026-03-14 16:40</td><td>${svc}</td>
             <td><span style="color:#27ae60;font-size:0.78rem;font-weight:600">승인완료</span></td>
           </tr>
         </tbody>
@@ -210,9 +197,9 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
       <table class="scenario-mock-table">
         <thead><tr><th>사용자</th><th>이메일</th><th>역할</th><th>서비스</th><th>관리</th></tr></thead>
         <tbody>
-          <tr><td>홍길동</td><td>hong@example.com</td><td>viewer</td><td>service:v1:44</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
-          <tr><td>김철수</td><td>kim@example.com</td><td>operator</td><td>service:v1:44</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
-          <tr><td>이영희</td><td>lee@example.com</td><td>developer</td><td>service:v1:44</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
+          <tr><td>홍길동</td><td>hong@example.com</td><td>viewer</td><td>${svc}</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
+          <tr><td>김철수</td><td>kim@example.com</td><td>operator</td><td>${svc}</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
+          <tr><td>이영희</td><td>lee@example.com</td><td>developer</td><td>${svc}</td><td><button class="scenario-action-btn">역할 변경</button></td></tr>
         </tbody>
       </table>
     `;
@@ -223,7 +210,7 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
     <div class="scenario-config-panel">
       <div class="scenario-config-row">
         <span class="scenario-config-label">서비스</span>
-        <span class="scenario-config-value">service:v1:42 (쇼핑 백엔드)</span>
+        <span class="scenario-config-value">${svc} (쇼핑 백엔드)</span>
       </div>
       <div class="scenario-config-row">
         <span class="scenario-config-label">최대 요청 수</span>

@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  Permission Engine — v1 / v2 마이그레이션 비교
+//  Permission Engine — v1 / v2 마이그레이션 비교 (API 기반)
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // permission-engine 패키지의 PermissionSet / migratePermissions를 사용하여
 // v1→v2 마이그레이션 과정과 비트마스크 기반 권한 관리를 시각화합니다.
+// 데이터는 platform-demo-api에서 실시간으로 가져옵니다.
 //
 
 import {
@@ -13,67 +14,119 @@ import {
   type DimDef,
 } from "permission-engine";
 import {
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  fetchFeatures,
+  resetGrants,
+  type FeaturesResponse,
+} from "../registry.js";
+import {
   DEMO_KO,
+  DEMO_FEATURE_KO,
 } from "demo-snapshot";
 
-// ── Dimension definitions (SSOT 기반) ────────────────────────────────────────
+// ── API 데이터 → PermissionSet 변환 ─────────────────────────────────────────
 
-const FEATURES_V1: DimDef = {
-  name: "features",
-  ids: ["product_list", "order_list", "payment_history", "payment_cancel", "user_mgmt", "config_change"],
-};
+function buildDimDefs(data: FeaturesResponse): { features: DimDef; roles: DimDef } {
+  return {
+    features: { name: "features", ids: data.features.map(f => f.id) },
+    roles: { name: "roles", ids: data.roles.map(r => r.id) },
+  };
+}
 
-const FEATURES_V2: DimDef = {
-  name: "features",
-  ids: ["product_list", "order_list", "payment_history", "payment_cancel_req", "payment_cancel_approve", "user_mgmt", "config_change"],
-};
-
-const ROLES_V1: DimDef = { name: "roles", ids: [...DEMO_ROLES_V1] };
-const ROLES_V2: DimDef = { name: "roles", ids: [...DEMO_ROLES_V2] };
-
-const FEATURE_KO: Record<string, string> = {
-  product_list: "상품 목록", order_list: "주문 목록",
-  payment_history: "결제 내역", payment_cancel: "결제 취소",
-  payment_cancel_req: "취소 요청", payment_cancel_approve: "취소 승인",
-  user_mgmt: "사용자 관리", config_change: "설정 변경",
-};
-
-// ── Default v1 grants (데모 초기 상태) ───────────────────────────────────────
-
-function createDefaultV1(): PermissionSet {
-  const ps = new PermissionSet({ features: FEATURES_V1, roles: ROLES_V1 });
-  ps.grantRoles("product_list", ["admin", "developer", "operator", "viewer", "readonly"]);
-  ps.grantRoles("order_list", ["admin", "developer", "operator", "viewer"]);
-  ps.grantRoles("payment_history", ["admin", "developer", "operator"]);
-  ps.grantRoles("payment_cancel", ["admin", "developer", "operator"]);
-  ps.grantRoles("user_mgmt", ["admin"]);
-  ps.grantRoles("config_change", ["admin"]);
+function buildPermissionSet(data: FeaturesResponse): PermissionSet {
+  const { features, roles } = buildDimDefs(data);
+  const ps = new PermissionSet({ features, roles });
+  for (let fi = 0; fi < data.matrix.length; fi++) {
+    for (let ri = 0; ri < data.matrix[fi].length; ri++) {
+      if (data.matrix[fi][ri]) {
+        ps.grant(data.features[fi].id, data.roles[ri].id);
+      }
+    }
+  }
   return ps;
 }
 
-// ── Migration with custom mapper ─────────────────────────────────────────────
+// ── Migration ────────────────────────────────────────────────────────────────
 
-function migrateV1toV2(source: PermissionSet): PermissionSet {
-  return migratePermissions(source, FEATURES_V2, ROLES_V2, (fi, ri) => {
-    const featId = FEATURES_V1.ids[fi - 1];
-    const roleId = ROLES_V1.ids[ri - 1];
+function migrateV1toV2(
+  source: PermissionSet,
+  v1Defs: { features: DimDef; roles: DimDef },
+  v2Defs: { features: DimDef; roles: DimDef },
+): PermissionSet {
+  return migratePermissions(source, v2Defs.features, v2Defs.roles, (fi, ri) => {
+    const featId = v1Defs.features.ids[fi - 1];
+    const roleId = v1Defs.roles.ids[ri - 1];
 
     if (featId === "payment_cancel") {
-      // payment_cancel → payment_cancel_req에 이관 (approve는 별도 배정)
-      const newRi = ROLES_V2.ids.indexOf(roleId);
+      const newRi = v2Defs.roles.ids.indexOf(roleId);
       if (newRi === -1) return null;
-      return [FEATURES_V2.ids.indexOf("payment_cancel_req") + 1, newRi + 1];
+      return [v2Defs.features.ids.indexOf("payment_cancel_req") + 1, newRi + 1];
     }
 
-    const newFi = FEATURES_V2.ids.indexOf(featId);
-    const newRi = ROLES_V2.ids.indexOf(roleId);
+    const newFi = v2Defs.features.ids.indexOf(featId);
+    const newRi = v2Defs.roles.ids.indexOf(roleId);
     if (newFi === -1 || newRi === -1) return null;
     return [newFi + 1, newRi + 1];
   });
 }
 
 // ── Matrix rendering ────────────────────────────────────────────────────────
+
+function _appendFeatureRow(
+  tbody: HTMLElement,
+  ps: PermissionSet,
+  feat: string,
+  roles: readonly string[],
+  isNewFeat: boolean,
+  opts: { editable: boolean; diffBase?: PermissionSet | null; onChange?: () => void },
+  baseGrants: Map<string, Set<string>>,
+): void {
+  const tr = document.createElement("tr");
+  if (isNewFeat) tr.className = "pe-row-new";
+
+  tr.innerHTML = `<th class="pe-row-head${isNewFeat ? " pe-new" : ""}">
+    <span class="pe-feat-id">${feat}</span>
+    <span class="pe-feat-ko">${DEMO_FEATURE_KO[feat] ?? feat}</span>
+    ${isNewFeat ? '<span class="pe-badge-new">NEW</span>' : ""}
+  </th>`;
+
+  for (const role of roles) {
+    const has = ps.has(feat, role);
+    const baseSet = baseGrants.get(feat);
+    const hadInBase = baseSet?.has(role) ?? false;
+    const isNewRole = opts.diffBase && !opts.diffBase.roles.includes(role);
+
+    let cls = "pe-cell";
+    if (has) cls += " pe-granted";
+    else cls += " pe-denied";
+
+    if (opts.diffBase) {
+      if (isNewFeat || isNewRole) {
+        cls += has ? " pe-cell-new" : "";
+      } else if (has && !hadInBase) {
+        cls += " pe-cell-gained";
+      } else if (!has && hadInBase) {
+        cls += " pe-cell-lost";
+      }
+    }
+
+    const td = document.createElement("td");
+    td.className = cls;
+    td.textContent = has ? "✓" : "✗";
+    td.title = `${feat} × ${role}`;
+
+    if (opts.editable) {
+      td.style.cursor = "pointer";
+      td.addEventListener("click", () => {
+        if (ps.has(feat, role)) ps.revoke(feat, role);
+        else ps.grant(feat, role);
+        opts.onChange?.();
+      });
+    }
+
+    tr.appendChild(td);
+  }
+  tbody.appendChild(tr);
+}
 
 function renderMatrix(
   ps: PermissionSet,
@@ -89,7 +142,6 @@ function renderMatrix(
   const features = ps.features;
   const roles = ps.roles;
 
-  // v1 grants 비교용
   const baseGrants = new Map<string, Set<string>>();
   if (opts.diffBase) {
     for (const f of opts.diffBase.features) {
@@ -100,7 +152,6 @@ function renderMatrix(
   const tbl = document.createElement("table");
   tbl.className = "pe-matrix";
 
-  // thead
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
   headRow.innerHTML = `<th class="pe-corner">기능 \\ 역할</th>`;
@@ -115,75 +166,41 @@ function renderMatrix(
   thead.appendChild(headRow);
   tbl.appendChild(thead);
 
-  // tbody
   const tbody = document.createElement("tbody");
-  for (const feat of features) {
-    const isNewFeat = opts.diffBase && !opts.diffBase.features.includes(feat);
-    const tr = document.createElement("tr");
-    if (isNewFeat) tr.className = "pe-row-new";
 
-    tr.innerHTML = `<th class="pe-row-head${isNewFeat ? " pe-new" : ""}">
-      <span class="pe-feat-id">${feat}</span>
-      <span class="pe-feat-ko">${FEATURE_KO[feat] ?? feat}</span>
-      ${isNewFeat ? '<span class="pe-badge-new">NEW</span>' : ""}
-    </th>`;
+  // v1(diffBase) 순서를 기준으로 제거된 항목을 원래 위치에 표시.
+  // 병합 순서: v1 features를 순회하며 v2에 있으면 정상 행, 없으면 "제거됨" 행.
+  // 이후 v2에만 있는 NEW 항목을 append.
+  const v2Set = new Set(features);
+  const rendered = new Set<string>();
 
-    for (const role of roles) {
-      const has = ps.has(feat, role);
-      const baseSet = baseGrants.get(feat);
-      const hadInBase = baseSet?.has(role) ?? false;
-      const isNewRole = opts.diffBase && !opts.diffBase.roles.includes(role);
-
-      let cls = "pe-cell";
-      if (has) cls += " pe-granted";
-      else cls += " pe-denied";
-
-      // diff highlighting
-      if (opts.diffBase) {
-        if (isNewFeat || isNewRole) {
-          cls += has ? " pe-cell-new" : "";
-        } else if (has && !hadInBase) {
-          cls += " pe-cell-gained";
-        } else if (!has && hadInBase) {
-          cls += " pe-cell-lost";
-        }
+  // diffBase(v1) 순서대로 렌더 — 제거된 항목은 원래 위치에 표시
+  const baseFeatures = opts.diffBase ? opts.diffBase.features : [];
+  for (const f of baseFeatures) {
+    if (v2Set.has(f)) {
+      // v1에도 v2에도 있음 — 정상 행
+      _appendFeatureRow(tbody, ps, f, roles, false, opts, baseGrants);
+      rendered.add(f);
+    } else {
+      // v1에는 있지만 v2에서 제거됨 — 원래 위치에 "제거됨" 행
+      const tr = document.createElement("tr");
+      tr.className = "pe-row-removed";
+      tr.innerHTML = `<th class="pe-row-head pe-removed">
+        <span class="pe-feat-id" style="text-decoration:line-through">${f}</span>
+        <span class="pe-feat-ko">${DEMO_FEATURE_KO[f] ?? f}</span>
+        <span class="pe-badge-removed">제거됨</span>
+      </th>`;
+      for (const _role of roles) {
+        tr.innerHTML += `<td class="pe-cell pe-denied pe-cell-lost">—</td>`;
       }
-
-      const td = document.createElement("td");
-      td.className = cls;
-      td.textContent = has ? "✓" : "✗";
-      td.title = `${feat} × ${role}`;
-
-      if (opts.editable) {
-        td.style.cursor = "pointer";
-        td.addEventListener("click", () => {
-          if (ps.has(feat, role)) ps.revoke(feat, role);
-          else ps.grant(feat, role);
-          opts.onChange?.();
-        });
-      }
-
-      tr.appendChild(td);
+      tbody.appendChild(tr);
     }
-    tbody.appendChild(tr);
   }
 
-  // removed features row
-  if (opts.diffBase) {
-    for (const f of opts.diffBase.features) {
-      if (!features.includes(f)) {
-        const tr = document.createElement("tr");
-        tr.className = "pe-row-removed";
-        tr.innerHTML = `<th class="pe-row-head pe-removed">
-          <span class="pe-feat-id" style="text-decoration:line-through">${f}</span>
-          <span class="pe-feat-ko">${FEATURE_KO[f] ?? f}</span>
-          <span class="pe-badge-removed">제거됨</span>
-        </th>`;
-        for (const _role of roles) {
-          tr.innerHTML += `<td class="pe-cell pe-denied pe-cell-lost">—</td>`;
-        }
-        tbody.appendChild(tr);
-      }
+  // v2에만 있는 NEW 항목 (append-only: 기존 뒤에 추가)
+  for (const feat of features) {
+    if (!rendered.has(feat)) {
+      _appendFeatureRow(tbody, ps, feat, roles, true, opts, baseGrants);
     }
   }
 
@@ -230,18 +247,23 @@ function renderStats(ps: PermissionSet, label: string): HTMLElement {
 
 // ── Scoped Engine section ────────────────────────────────────────────────────
 
-function renderScopedSection(container: HTMLElement): void {
-  const engine = new ScopedEngine(FEATURES_V2, ROLES_V2);
+function renderScopedSection(
+  container: HTMLElement,
+  v2Data: FeaturesResponse,
+): void {
+  const { features, roles } = buildDimDefs(v2Data);
+  const engine = new ScopedEngine(features, roles);
 
-  // prod:asia — 전체 v2 기본 부여
+  // prod:asia — API에서 받은 v2 기본 grant 적용
   const prod = engine.scope("prod:asia");
-  prod.grantRoles("product_list", ["admin", "developer", "operator", "viewer", "readonly", "customer"]);
-  prod.grantRoles("order_list", ["admin", "developer", "operator", "viewer"]);
-  prod.grantRoles("payment_history", ["admin", "developer", "operator"]);
-  prod.grantRoles("payment_cancel_req", ["admin", "customer"]);
-  prod.grantRoles("payment_cancel_approve", ["admin", "operator"]);
-  prod.grantRoles("user_mgmt", ["admin"]);
-  prod.grantRoles("config_change", ["admin"]);
+  for (let fi = 0; fi < v2Data.matrix.length; fi++) {
+    const grantedRoles = v2Data.roles
+      .filter((_, ri) => v2Data.matrix[fi][ri])
+      .map(r => r.id);
+    if (grantedRoles.length > 0) {
+      prod.grantRoles(v2Data.features[fi].id, grantedRoles);
+    }
+  }
 
   // dev:asia — 개발자에게 넓은 권한
   const dev = engine.scope("dev:asia");
@@ -265,13 +287,11 @@ function renderScopedSection(container: HTMLElement): void {
   const grid = document.createElement("div");
   grid.className = "pe-scope-grid";
 
-  // prod:asia panel
   const prodPanel = document.createElement("div");
   prodPanel.className = "pe-scope-panel";
   prodPanel.innerHTML = `<div class="pe-scope-key"><code>prod:asia</code> <span class="pe-scope-tag">운영</span></div>`;
   prodPanel.appendChild(renderStats(prod, "prod:asia"));
 
-  // dev:asia panel
   const devPanel = document.createElement("div");
   devPanel.className = "pe-scope-panel";
   devPanel.innerHTML = `<div class="pe-scope-key"><code>dev:asia</code> <span class="pe-scope-tag pe-scope-tag-dev">개발</span></div>`;
@@ -281,7 +301,6 @@ function renderScopedSection(container: HTMLElement): void {
   grid.appendChild(devPanel);
   container.appendChild(grid);
 
-  // Union / Intersect
   const algebraEl = document.createElement("div");
   algebraEl.className = "pe-algebra";
   algebraEl.innerHTML = `
@@ -298,7 +317,6 @@ function renderScopedSection(container: HTMLElement): void {
   `;
   container.appendChild(algebraEl);
 
-  // Snapshot
   const snapEl = document.createElement("div");
   snapEl.className = "pe-snapshot-section";
   const snap = engine.toSnapshot();
@@ -313,16 +331,34 @@ function renderScopedSection(container: HTMLElement): void {
 
 // ── Main render ──────────────────────────────────────────────────────────────
 
-export function renderPermEnginePage(container: HTMLElement): void {
+export async function renderPermEnginePage(container: HTMLElement): Promise<void> {
+  container.innerHTML = `<div class="pe-loading">데이터 로딩 중...</div>`;
+
+  // API에서 v1, v2 데이터 동시 로드
+  let v1Data: FeaturesResponse;
+  let v2Data: FeaturesResponse;
+  try {
+    [v1Data, v2Data] = await Promise.all([
+      fetchFeatures("v1"),
+      fetchFeatures("v2"),
+    ]);
+  } catch (e) {
+    container.innerHTML = `<div class="pe-error">API 연결 실패: ${e instanceof Error ? e.message : String(e)}</div>`;
+    return;
+  }
+
   container.innerHTML = "";
 
-  let v1 = createDefaultV1();
-  let v2 = migrateV1toV2(v1);
+  let v1Defs = buildDimDefs(v1Data);
+  let v2Defs = buildDimDefs(v2Data);
+
+  let v1 = buildPermissionSet(v1Data);
+  let v2 = migrateV1toV2(v1, v1Defs, v2Defs);
 
   const wrap = document.createElement("div");
   wrap.className = "pe-wrap";
 
-  // ── Header ──
+  // ── Header + 초기화 버튼 ──
   const header = document.createElement("div");
   header.className = "pe-header";
   header.innerHTML = `
@@ -333,6 +369,44 @@ export function renderPermEnginePage(container: HTMLElement): void {
       v1 매트릭스의 셀을 클릭하여 권한을 변경하면 v2가 자동으로 재계산됩니다.
     </p>
   `;
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "pe-toolbar";
+
+  const resetBtn = document.createElement("button");
+  resetBtn.className = "pe-reset-btn";
+  resetBtn.textContent = "⟲ 초기화";
+  resetBtn.title = "DB 기본 상태로 초기화 후 다시 로드";
+  resetBtn.addEventListener("click", async () => {
+    resetBtn.disabled = true;
+    resetBtn.textContent = "초기화 중...";
+    try {
+      await resetGrants();
+      // 재로드
+      const [newV1, newV2] = await Promise.all([
+        fetchFeatures("v1"),
+        fetchFeatures("v2"),
+      ]);
+      v1Data = newV1;
+      v2Data = newV2;
+      v1Defs = buildDimDefs(v1Data);
+      v2Defs = buildDimDefs(v2Data);
+      v1 = buildPermissionSet(v1Data);
+      v2 = migrateV1toV2(v1, v1Defs, v2Defs);
+      repaint();
+      // ScopedEngine도 재렌더
+      scopedContainer.innerHTML = "";
+      renderScopedSection(scopedContainer, v2Data);
+    } catch (e) {
+      console.error("Reset failed:", e);
+    } finally {
+      resetBtn.disabled = false;
+      resetBtn.textContent = "⟲ 초기화";
+    }
+  });
+
+  toolbar.appendChild(resetBtn);
+  header.appendChild(toolbar);
   wrap.appendChild(header);
 
   // ── Migration comparison ──
@@ -349,7 +423,7 @@ export function renderPermEnginePage(container: HTMLElement): void {
   const v2StatsEl = document.createElement("div");
 
   function repaint(): void {
-    v2 = migrateV1toV2(v1);
+    v2 = migrateV1toV2(v1, v1Defs, v2Defs);
 
     v1Panel.innerHTML = "";
     v1Panel.innerHTML = `<div class="pe-panel-header"><span class="pe-ver-badge pe-ver-v1">v1</span> 원본 권한 (클릭하여 편집)</div>`;
@@ -374,7 +448,6 @@ export function renderPermEnginePage(container: HTMLElement): void {
 
   comparison.appendChild(v1Panel);
 
-  // Arrow
   const arrow = document.createElement("div");
   arrow.className = "pe-arrow";
   arrow.innerHTML = `<div class="pe-arrow-line">→</div><div class="pe-arrow-label">migrate</div>`;
@@ -424,5 +497,5 @@ export function renderPermEnginePage(container: HTMLElement): void {
 
   // Initial render
   repaint();
-  renderScopedSection(scopedContainer);
+  renderScopedSection(scopedContainer, v2Data);
 }

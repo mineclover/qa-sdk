@@ -456,7 +456,10 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
     const v2Addr = v2p !== null ? demoCalcPermAddr(svcPos, v2p, "v2") : null;
     const isNew = !v1RoleSet.has(r.id);
     const delta = v1Addr !== null && v2Addr !== null ? v2Addr - v1Addr : null;
-    const formula = v2p !== null ? `(${svcPos}−1)×${ver === "v1" ? v1RS : v2RS} + (${v2p}−1)` : "";
+    // ver에 맞는 formula: v1 뷰에서 NEW 역할(v1p===null)은 formula 비표시
+    const activeP = ver === "v1" ? v1p : v2p;
+    const activeRS = ver === "v1" ? v1RS : v2RS;
+    const formula = activeP !== null ? `(${svcPos}−1)×${activeRS} + (${activeP}−1)` : "";
     return { role: r, v1Addr, v2Addr, isNew, delta, formula };
   });
 
