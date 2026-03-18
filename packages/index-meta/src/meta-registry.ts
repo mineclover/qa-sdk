@@ -1213,10 +1213,12 @@ export class MetaRegistry {
     return iv;
   }
 
-  /** D-2: shape 구성의 단일 경로. IndexDef + IndexVersion → number[] */
+  /** D-2: shape 구성의 단일 경로. IndexDef + IndexVersion → number[].
+   *  capacity가 설정된 경우 entries.length 대신 capacity를 사용하여
+   *  headroom 기반 stride 안정성을 보장한다. */
   private _buildShape(def: IndexDef, iv: IndexVersion): number[] {
     return def.dims.map((dimId) =>
-      this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
+      snapshotCapacity(this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot)
     );
   }
 

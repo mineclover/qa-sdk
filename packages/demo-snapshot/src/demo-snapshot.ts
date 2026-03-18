@@ -16,6 +16,9 @@ export const DEMO_NSS        = ["shop", "cms"] as const;
 
 export const DEMO_ROLES_V1   = ["admin", "developer", "operator", "viewer", "readonly"] as const;
 export const DEMO_ROLES_V2   = ["admin", "developer", "operator", "viewer", "readonly", "customer"] as const;
+// v3: v2와 동일 entries, capacity 확장 (headroom). v4: capacity 내에서 추가.
+export const DEMO_ROLES_V3   = [...DEMO_ROLES_V2] as const; // 6명 유지, cap 8
+export const DEMO_ROLES_V4   = ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"] as const; // +auditor, cap 8 내
 
 export const DEMO_EVENTS_V1  = [
   "user.login", "user.logout", "order.created", "order.paid",
@@ -25,6 +28,16 @@ export const DEMO_EVENTS_V2  = [
   ...DEMO_EVENTS_V1,
   "payment.cancel_requested", "payment.cancel_approved",
 ] as const;
+export const DEMO_EVENTS_V3  = [...DEMO_EVENTS_V2] as const; // 9개 유지, cap 12
+export const DEMO_EVENTS_V4  = [
+  ...DEMO_EVENTS_V3,
+  "payment.refunded",
+] as const; // +1, cap 12 내
+
+/** 버전별 role capacity (shape 차원 크기) */
+export const DEMO_ROLE_CAP = { v1: 5, v2: 6, v3: 8, v4: 8 } as const;
+/** 버전별 event capacity */
+export const DEMO_EVENT_CAP = { v1: 7, v2: 9, v3: 12, v4: 12 } as const;
 
 export const DEMO_INITIATORS = ["web", "mobile"] as const;
 
@@ -41,6 +54,7 @@ export const DEMO_KO = {
   role: {
     admin: "관리자", developer: "개발자", operator: "운영자",
     customer: "고객", viewer: "뷰어", readonly: "읽기전용",
+    auditor: "감사자",
   } as Record<string, string>,
   event: {
     "user.login": "로그인", "user.logout": "로그아웃",
@@ -48,6 +62,7 @@ export const DEMO_KO = {
     "payment.failed": "결제실패", "session.expired": "세션만료",
     "config.changed": "설정변경",
     "payment.cancel_requested": "취소요청", "payment.cancel_approved": "취소승인",
+    "payment.refunded": "환불완료",
   } as Record<string, string>,
   initiator: { web: "웹", mobile: "모바일" } as Record<string, string>,
 } as const;
@@ -83,12 +98,17 @@ export const DEMO_EVT_SVC_VALUES  = [0, 2, 4, 6, 8, 40, 42, 44, 46, 48] as const
 
 // ── Permission / Event helpers ──────────────────────────────────────────────
 
-export type DemoVer = "v1" | "v2";
+export type DemoVer = "v1" | "v2" | "v3" | "v4";
 
-export function demoRolesFor(v: DemoVer) { return v === "v1" ? DEMO_ROLES_V1 : DEMO_ROLES_V2; }
-export function demoRoleStride(v: DemoVer) { return v === "v1" ? 5 : 6; }
-export function demoEventsFor(v: DemoVer) { return v === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2; }
-export function demoEvtStride(v: DemoVer) { return v === "v1" ? 14 : 18; }
+const ROLES_BY_VER = { v1: DEMO_ROLES_V1, v2: DEMO_ROLES_V2, v3: DEMO_ROLES_V3, v4: DEMO_ROLES_V4 } as const;
+const EVENTS_BY_VER = { v1: DEMO_EVENTS_V1, v2: DEMO_EVENTS_V2, v3: DEMO_EVENTS_V3, v4: DEMO_EVENTS_V4 } as const;
+
+export function demoRolesFor(v: DemoVer) { return ROLES_BY_VER[v]; }
+/** role 차원 stride = role capacity (shape 값). headroom 포함. */
+export function demoRoleStride(v: DemoVer) { return DEMO_ROLE_CAP[v]; }
+export function demoEventsFor(v: DemoVer) { return EVENTS_BY_VER[v]; }
+/** event 차원 stride = event capacity × initiator count. */
+export function demoEvtStride(v: DemoVer) { return DEMO_EVENT_CAP[v] * DEMO_INITIATORS.length; }
 
 export function demoCalcPermAddr(svcPos: number, rolePos: number, ver: DemoVer): number {
   return (svcPos - 1) * demoRoleStride(ver) + (rolePos - 1);

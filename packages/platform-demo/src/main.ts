@@ -37,7 +37,7 @@ import { renderPermEnginePage } from "./pages/perm-engine.js";
 // ═══════════════════════════════════════════════════════════════════════════
 
 type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine";
-type Ver = "v1" | "v2";
+type Ver = "v1" | "v2" | "v3" | "v4";
 
 const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine"] as const;
 
@@ -280,10 +280,22 @@ function handleVersionChange(ver: Ver): void {
     if (sheetEl) delete sheetEl.dataset["rendered"];
   }
 
+  // Update ribbon version buttons
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".ribbon-ver-btn")) {
+    btn.classList.toggle("active", btn.dataset["ver"] === ver);
+  }
+
   // Update bars
   updateStatusBar();
   updateFormulaBar();
   updateStatusSel(null);
+
+  // Re-render current sheet if version-sensitive
+  if (VERSION_SENSITIVE_SHEETS.includes(state.sheet)) {
+    const sheetEl = document.getElementById(`sheet-${state.sheet}`);
+    if (sheetEl) delete sheetEl.dataset["rendered"];
+    switchSheet(state.sheet, false);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -336,6 +348,14 @@ document.querySelectorAll(".rtab, .stab").forEach((el) => {
   el.addEventListener("click", () => {
     const id = (el as HTMLElement).dataset.sheet as SheetId;
     if (id) switchSheet(id);
+  });
+});
+
+// ── Ribbon version buttons ──
+document.querySelectorAll<HTMLButtonElement>(".ribbon-ver-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const ver = btn.dataset["ver"] as Ver;
+    if (ver) handleVersionChange(ver);
   });
 });
 

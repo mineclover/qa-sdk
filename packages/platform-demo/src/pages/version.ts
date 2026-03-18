@@ -8,38 +8,48 @@
 //
 
 import {
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
-  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,
+  DEMO_EVENTS_V1, DEMO_EVENTS_V2, DEMO_EVENTS_V3, DEMO_EVENTS_V4,
+  DEMO_ROLE_CAP, DEMO_EVENT_CAP,
   DEMO_INITIATORS, DEMO_KO,
   DEMO_SVC_SHAPE, DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
-  demoRoleStride, demoEvtStride,
+  demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
   demoCalcPermAddr, demoCalcEvtAddr,
   type DemoVer,
 } from "demo-snapshot";
 import { fetchFeatures, type FeaturesResponse } from "../registry.js";
 
 type Ver = DemoVer;
+const ALL_VERS: Ver[] = ["v1", "v2", "v3", "v4"];
 
 // ── SSOT 파생 메타데이터 ──────────────────────────────────────────────────────
 
 interface DimEntry { id: string; ko: string; pos: number; isNew: boolean }
 
+/** 이전 버전 대비 신규 항목 판별 */
+function prevVer(ver: Ver): Ver | null {
+  const idx = ALL_VERS.indexOf(ver);
+  return idx > 0 ? ALL_VERS[idx - 1] : null;
+}
+
 function rolesFor(ver: Ver): DimEntry[] {
-  const entries = ver === "v1" ? DEMO_ROLES_V1 : DEMO_ROLES_V2;
-  const v1Set = new Set<string>(DEMO_ROLES_V1);
+  const entries = demoRolesFor(ver);
+  const prev = prevVer(ver);
+  const prevSet = prev ? new Set<string>(demoRolesFor(prev)) : null;
   return [...entries].map((id, i) => ({
     id, ko: DEMO_KO.role[id] ?? id, pos: i + 1,
-    isNew: ver === "v2" && !v1Set.has(id),
+    isNew: prevSet ? !prevSet.has(id) : false,
   }));
 }
 
 function eventsFor(ver: Ver): DimEntry[] {
-  const entries = ver === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2;
-  const v1Set = new Set<string>(DEMO_EVENTS_V1);
+  const entries = demoEventsFor(ver);
+  const prev = prevVer(ver);
+  const prevSet = prev ? new Set<string>(demoEventsFor(prev)) : null;
   return [...entries].map((id, i) => ({
     id, ko: DEMO_KO.event[id] ?? id, pos: i + 1,
-    isNew: ver === "v2" && !v1Set.has(id),
+    isNew: prevSet ? !prevSet.has(id) : false,
   }));
 }
 
@@ -63,7 +73,7 @@ const EXAMPLE_EVT_SVC_POS  = DEMO_EVT_SVC_VALUES.indexOf(EXAMPLE_SVC_VALUE) + 1;
 
 // ── Feature data (API) ───────────────────────────────────────────────────────
 
-interface FeatureData { v1: FeaturesResponse; v2: FeaturesResponse }
+interface FeatureData { v1: FeaturesResponse; v2: FeaturesResponse; v3?: FeaturesResponse; v4?: FeaturesResponse }
 
 // ── Section builders ─────────────────────────────────────────────────────────
 
@@ -131,8 +141,12 @@ function buildIndexShapeSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const roleCount = (ver === "v1" ? DEMO_ROLES_V1 : DEMO_ROLES_V2).length;
-  const evtCount = (ver === "v1" ? DEMO_EVENTS_V1 : DEMO_EVENTS_V2).length;
+  const roleEntries = demoRolesFor(ver).length;
+  const roleCap = DEMO_ROLE_CAP[ver];
+  const evtEntries = demoEventsFor(ver).length;
+  const evtCap = DEMO_EVENT_CAP[ver];
+  const roleCount = roleCap; // shape uses capacity, not entry count
+  const evtCount = evtCap;
   const initCount = DEMO_INITIATORS.length;
   const permSvcCount = DEMO_PERM_SVC_VALUES.length;
   const evtSvcCount = DEMO_EVT_SVC_VALUES.length;
@@ -149,21 +163,28 @@ function buildIndexShapeSection(ver: Ver): HTMLElement {
     s === 1 ? `(${svcDimNames[i]}−1)` : `(${svcDimNames[i]}−1)×${s}`
   ).join(" + ");
 
-  const changed = ver === "v2";
+  const prev = prevVer(ver);
+  const prevRoleStride = prev ? demoRoleStride(prev) : roleStride;
+  const prevEvtStride = prev ? demoEvtStride(prev) : evtStride;
+  const strideChanged = roleStride !== prevRoleStride || evtStride !== prevEvtStride;
+  const hasHeadroom = roleEntries < roleCap || evtEntries < evtCap;
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">⊙</span>
       <span class="vd-sec-title">인덱스 형상 (Index Shape)</span>
-      ${changed ? '<span class="vd-tag-changed">공식 변경</span>' : ""}
+      ${strideChanged ? '<span class="vd-tag-changed">stride 변경</span>' : ""}
+      ${!strideChanged && prev ? '<span class="vd-tag-stable">stride 불변 ✓</span>' : ""}
+      ${hasHeadroom ? `<span class="vd-tag-headroom">headroom: role +${roleCap - roleEntries}, event +${evtCap - evtEntries}</span>` : ""}
     </div>
     <div class="vd-sec-body">
       <div class="vd-index-grid">
 
-        <div class="vd-index-card ${changed ? "vd-card-changed" : ""}">
+        <div class="vd-index-card ${strideChanged ? "vd-card-changed" : ""}">
           <div class="vd-index-card-header">
             <code class="vd-addr-prefix">permission:${ver}</code>
-            <span class="vd-shape-badge">[${permSvcCount}, ${roleCount}]</span>
+            <span class="vd-shape-badge">[${permSvcCount}, ${roleCap}]</span>
+            ${roleEntries < roleCap ? `<span class="vd-headroom-badge">${roleEntries}/${roleCap} used</span>` : ""}
             <span class="vd-slot-count">${permSlots}슬롯</span>
           </div>
           <div class="vd-formula-box">
@@ -176,10 +197,11 @@ function buildIndexShapeSection(ver: Ver): HTMLElement {
           </div>
         </div>
 
-        <div class="vd-index-card ${changed ? "vd-card-changed" : ""}">
+        <div class="vd-index-card ${strideChanged ? "vd-card-changed" : ""}">
           <div class="vd-index-card-header">
             <code class="vd-addr-prefix">event:${ver}</code>
-            <span class="vd-shape-badge">[${evtSvcCount}, ${evtCount}, ${initCount}]</span>
+            <span class="vd-shape-badge">[${evtSvcCount}, ${evtCap}, ${initCount}]</span>
+            ${evtEntries < evtCap ? `<span class="vd-headroom-badge">${evtEntries}/${evtCap} used</span>` : ""}
             <span class="vd-slot-count">${evtSlots}슬롯</span>
           </div>
           <div class="vd-formula-box">
@@ -229,38 +251,43 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
     return sec;
   }
 
-  const current = ver === "v1" ? data.v1 : data.v2;
+  const currentData: Record<string, FeaturesResponse | undefined> = { v1: data.v1, v2: data.v2, v3: data.v3, v4: data.v4 };
+  const current = currentData[ver] ?? data.v2;
   const allRoles = current.roles;
-  const v1FeatureIds = new Set(data.v1.features.map(f => f.id));
-  const v2FeatureIds = new Set(data.v2.features.map(f => f.id));
+  const prev = prevVer(ver);
+  const prevData = prev ? currentData[prev] : null;
+  const prevFeatureIds = prevData ? new Set(prevData.features.map(f => f.id)) : new Set<string>();
+  const currentFeatureIds = new Set(current.features.map(f => f.id));
 
-  // v1 grant lookup for diff
-  const v1Grants = new Map<string, Set<string>>();
-  for (const f of data.v1.features) v1Grants.set(f.id, new Set(f.grantedRoles));
+  // prev version grant lookup for diff
+  const prevGrants = new Map<string, Set<string>>();
+  if (prevData) {
+    for (const f of prevData.features) prevGrants.set(f.id, new Set(f.grantedRoles));
+  }
 
   const tbody = current.features.map(f => {
-    const isNew = ver === "v2" && !v1FeatureIds.has(f.id);
+    const isNew = prev !== null && !prevFeatureIds.has(f.id);
     const grantedSet = new Set(f.grantedRoles);
-    const v1Set = v1Grants.get(f.id);
+    const prevSet = prevGrants.get(f.id);
 
     return `
       <tr class="${isNew ? "vd-row-added" : ""}">
         <td class="vd-feat-name">${f.name}</td>
         ${allRoles.map(r => {
           const has = grantedSet.has(r.id);
-          if (ver === "v1") {
+          if (!prev) {
             return `<td class="vd-feat-cell ${has ? "vd-cell-ok" : "vd-cell-no"}">${has ? "✓" : "✗"}</td>`;
           }
           let cls = has ? "vd-cell-ok" : "vd-cell-no";
           if (isNew) {
             cls += " vd-cell-new";
-          } else if (v1Set) {
-            const had = v1Set.has(r.id);
+          } else if (prevSet) {
+            const had = prevSet.has(r.id);
             if (had !== has) cls = has ? "vd-cell-ok vd-cell-gained" : "vd-cell-no vd-cell-lost";
           }
           return `<td class="vd-feat-cell ${cls}">${has ? "✓" : "✗"}</td>`;
         }).join("")}
-        ${ver === "v2"
+        ${prev
           ? `<td class="vd-feat-status">${isNew
               ? '<span class="vd-badge-new">NEW</span>'
               : '<span class="vd-badge-unchanged">유지</span>'}</td>`
@@ -269,9 +296,9 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
     `;
   }).join("");
 
-  const removedRows = ver === "v2"
-    ? data.v1.features
-        .filter(f => !v2FeatureIds.has(f.id))
+  const removedRows = prev && prevData
+    ? prevData.features
+        .filter(f => !currentFeatureIds.has(f.id))
         .map(f => `
           <tr class="vd-row-removed">
             <td class="vd-feat-name" style="text-decoration:line-through;color:var(--text-muted)">${f.name}</td>
@@ -285,7 +312,7 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
     <div class="vd-sec-header">
       <span class="vd-sec-icon">⊡</span>
       <span class="vd-sec-title">기능 × 역할 접근 배정</span>
-      ${ver === "v2" ? '<span class="vd-tag-changed">구조 변경</span>' : ""}
+      ${prev ? '<span class="vd-tag-changed">이전 버전 대비</span>' : ""}
     </div>
     <div class="vd-sec-body">
       <div style="overflow-x:auto">
@@ -294,7 +321,7 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
             <tr>
               <th class="vd-feat-name-col">기능</th>
               ${allRoles.map(r => `<th><span class="role-tag role-tag-${r.id}">${r.id}</span></th>`).join("")}
-              ${ver === "v2" ? '<th class="vd-feat-status-col">상태</th>' : ""}
+              ${prev ? '<th class="vd-feat-status-col">상태</th>' : ""}
             </tr>
           </thead>
           <tbody>
@@ -733,8 +760,8 @@ function buildProtocolSection(): HTMLElement {
 
 export function renderVersionPage(
   container: HTMLElement,
-  onVersionChange?: (ver: "v1" | "v2") => void,
-  initialVer: "v1" | "v2" = "v2",
+  onVersionChange?: (ver: Ver) => void,
+  initialVer: Ver = "v2",
 ): void {
   container.innerHTML = "";
 
@@ -747,9 +774,8 @@ export function renderVersionPage(
   verBar.className = "vd-ver-bar";
   verBar.innerHTML = `
     <span class="vd-ver-label">스키마 버전</span>
-    <button class="vd-ver-btn${initialVer === "v1" ? " vd-ver-btn-active" : ""}" data-ver="v1">v1</button>
-    <button class="vd-ver-btn${initialVer === "v2" ? " vd-ver-btn-active" : ""}" data-ver="v2">v2</button>
-    <span class="vd-ver-hint">v2에는 신규 항목이 강조 표시됩니다</span>
+    ${ALL_VERS.map(v => `<button class="vd-ver-btn${v === initialVer ? " vd-ver-btn-active" : ""}" data-ver="${v}">${v}</button>`).join("")}
+    <span class="vd-ver-hint">이전 버전 대비 신규 항목이 강조됩니다</span>
   `;
   container.appendChild(verBar);
 
@@ -785,10 +811,15 @@ export function renderVersionPage(
     content.appendChild(buildProtocolSection());
   }
 
-  // 기능 데이터 비동기 로드
-  Promise.all([fetchFeatures("v1"), fetchFeatures("v2")])
-    .then(([v1, v2]) => {
-      featureData = { v1, v2 };
+  // 기능 데이터 비동기 로드 (v3/v4는 API 미지원 시 v2로 폴백)
+  Promise.all([
+    fetchFeatures("v1"),
+    fetchFeatures("v2"),
+    fetchFeatures("v2").catch(() => null), // v3 → v2 폴백 (API가 v3 미지원)
+    fetchFeatures("v2").catch(() => null), // v4 → v2 폴백
+  ])
+    .then(([v1, v2, v3, v4]) => {
+      featureData = { v1, v2, v3: v3 ?? v2, v4: v4 ?? v2 };
       if (featuresEl) {
         const newEl = buildFeaturesSection(activeVer, featureData);
         featuresEl.replaceWith(newEl);
@@ -804,7 +835,7 @@ export function renderVersionPage(
         b.classList.toggle("vd-ver-btn-active", b.dataset["ver"] === activeVer);
       });
       render(activeVer);
-      onVersionChange?.(activeVer);
+      onVersionChange?.(activeVer as Ver);
     });
   });
 

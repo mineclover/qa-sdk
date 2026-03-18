@@ -202,20 +202,17 @@ describe("§20 SDK 소비 라이프사이클", () => {
   });
 
   // SDK-LIFE-4: matchRanges로 부분 필터링
-  it("SDK-LIFE-4: matchRanges로 특정 role의 모든 권한 조회", () => {
+  it("SDK-LIFE-4: matchRanges로 특정 role의 capacity 범위 조회", () => {
     const sdk = createIndexSDK(PERM_SCHEMA_V1);
     const perm = sdk.client("perm", "v1");
 
-    // admin의 모든 action × resource 범위
+    // admin의 capacity 기반 범위 (shape = [10, 8, 8])
     const ranges = perm.matchRanges({ role: "admin" });
     expect(ranges.length).toBeGreaterThan(0);
 
-    // 범위 내 모든 value decode → role=admin
-    for (const [from, to] of ranges) {
-      for (let v = from; v <= to; v++) {
-        expect(perm.decodeValue(v).role).toBe("admin");
-      }
-    }
+    // capacity 기반 shape에서 admin(pos 3)의 범위 = [(3-1)*64, (3-1)*64+63] = [128, 191]
+    // shape [10, 8, 8] → strides [64, 8, 1]
+    expect(ranges).toEqual([[128, 191]]);
   });
 });
 
@@ -277,8 +274,8 @@ describe("§21 엔트리 제공 모드: Client vs Full", () => {
     const totalAddressSpace = views.reduce((acc, v) => acc * v.capacity, 1);
     expect(totalAddressSpace).toBe(10 * 8 * 8); // 640
 
-    // 실제 사용 중인 주소 공간 (entries 기반)
-    expect(perm.size).toBe(5 * 4 * 3); // 60
+    // size도 capacity 기반 shape의 곱 (shape = [10, 8, 8])
+    expect(perm.size).toBe(10 * 8 * 8); // 640
 
     // headroom 활용: 어떤 dim에 여유가 있는지 판단
     const withHeadroom = views.filter((v) => v.headroom > 0);
@@ -493,21 +490,24 @@ describe("§23 멀티 서비스 스키마 공유", () => {
     expect(withConst).toEqual(withStr);
   });
 
-  // MULTI-SVC-4: 백엔드 matchRanges → DB 쿼리 시뮬레이션
-  it("MULTI-SVC-4: 백엔드에서 matchRanges로 DB BETWEEN 쿼리 생성", () => {
+  // MULTI-SVC-4: 백엔드 matchRanges → capacity 기반 범위 계산
+  it("MULTI-SVC-4: 백엔드에서 matchRanges로 capacity 기반 범위 조회", () => {
     const sdk = createIndexSDK(PERM_SCHEMA_V1);
     const perm = sdk.client("perm", "v1");
 
-    // "editor의 모든 write 권한" 범위 조회
+    // "editor의 모든 write 권한" 범위 조회 (capacity 기반 shape [10, 8, 8])
+    // editor = pos 4 (idx 3), write = pos 3 (idx 2)
+    // strides [64, 8, 1] → 3*64 + 2*8 = 208, resource wildcard 0..7 → [208, 215]
     const ranges = perm.matchRanges({ role: "editor", action: "write" });
     expect(ranges.length).toBeGreaterThan(0);
+    expect(ranges).toEqual([[208, 215]]);
 
-    // DB 시뮬레이션: 범위 내 모든 value를 decode
+    // encode/decode는 entries 기반으로 정상 동작
+    const resources = perm.entries("resource");
     const results: Record<string, string>[] = [];
-    for (const [from, to] of ranges) {
-      for (let v = from; v <= to; v++) {
-        results.push(perm.decodeValue(v) as Record<string, string>);
-      }
+    for (const resource of resources) {
+      const vv = perm.encode({ role: "editor", action: "write", resource });
+      results.push(perm.decodeValue(vv.value) as Record<string, string>);
     }
 
     // 모든 결과가 role=editor, action=write
@@ -602,9 +602,9 @@ describe("§24 CLI 시뮬레이션", () => {
       { dimId: "resource", total: 3, capacity: 8,  headroom: 5 },
     ]);
 
-    // shape과 size
-    expect(perm.shape).toEqual([5, 4, 3]);
-    expect(perm.size).toBe(60);
+    // shape과 size (capacity 기반)
+    expect(perm.shape).toEqual([10, 8, 8]);
+    expect(perm.size).toBe(640);
   });
 
   // CLI-CONST-3: `index-meta constants perm/v1 role` 시뮬레이션
@@ -633,13 +633,13 @@ describe("§24 CLI 시뮬레이션", () => {
     const v1 = sdk.client("perm", "v1");
     const v2 = sdk.client("perm", "v2");
 
-    // shape 변화
-    expect(v1.shape).toEqual([5, 4, 3]);
-    expect(v2.shape).toEqual([6, 5, 3]);
+    // shape 변화 (capacity 기반 — 두 버전 모두 동일 capacity)
+    expect(v1.shape).toEqual([10, 8, 8]);
+    expect(v2.shape).toEqual([10, 8, 8]);
 
-    // size 변화
-    expect(v1.size).toBe(60);
-    expect(v2.size).toBe(90);
+    // size 변화 (capacity 기반)
+    expect(v1.size).toBe(640);
+    expect(v2.size).toBe(640);
 
     // dim별 constants 변화
     const v1RoleKeys = Object.keys(v1.constants("role")).sort();

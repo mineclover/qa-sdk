@@ -82,13 +82,28 @@ export const DEMO_FEATURES_V2: readonly DemoFeatureDef[] = [
   { id: "payment_cancel_approve",name: "결제 취소 승인", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","operator"],                                           successEventValue: 160,  failEventValue: 152  },
 ];
 
-export function demoFeatures(ver: DemoVer) { return ver === "v1" ? DEMO_FEATURES_V1 : DEMO_FEATURES_V2; }
+// v3: v2와 동일 entries (capacity만 확장, headroom 추가)
+export const DEMO_FEATURES_V3 = DEMO_FEATURES_V2;
+
+// v4: v3 capacity 내에서 항목 추가 (stride 불변)
+export const DEMO_FEATURES_V4: readonly DemoFeatureDef[] = [
+  ...DEMO_FEATURES_V3,
+  // ── v4 신규 (append-only: v3 capacity 내) ──
+  { id: "audit_log", name: "감사 로그", svcName: "auth", svcValue: 44, permSvcPos: 5, grantedRoles: ["admin","auditor"], successEventValue: null, failEventValue: null },
+];
+
+/** Feature capacity (feature 차원 shape 크기). v3/v4는 capacity 10으로 headroom 확보. */
+export const DEMO_FEATURE_CAP = { v1: 6, v2: 7, v3: 10, v4: 10 } as const;
+
+const FEATURES_BY_VER = { v1: DEMO_FEATURES_V1, v2: DEMO_FEATURES_V2, v3: DEMO_FEATURES_V3, v4: DEMO_FEATURES_V4 } as const;
+export function demoFeatures(ver: DemoVer) { return FEATURES_BY_VER[ver]; }
 
 export const DEMO_FEATURE_KO: Record<string, string> = {
   product_list: "상품 목록", order_list: "주문 목록",
   payment_history: "결제 내역", payment_cancel: "결제 취소",
   payment_cancel_req: "취소 요청", payment_cancel_approve: "취소 승인",
   user_mgmt: "사용자 관리", config_change: "설정 변경",
+  audit_log: "감사 로그",
 };
 
 // ── MetaRegistry 입력 빌더 ───────────────────────────────────────────────────

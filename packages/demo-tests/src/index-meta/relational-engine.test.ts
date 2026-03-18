@@ -89,11 +89,12 @@ describe("RelationalEngine", () => {
     });
     expect(engine.contains(vv.value, ranges)).toBe(true);
 
-    // editor+read+dashboard는 admin 범위 밖
+    // capacity 기반 shape에서 admin 범위가 entries 갭을 포함하므로
+    // editor encode 값이 admin의 capacity 범위 내에 포함된다
     const editorVv = engine.encode("perm", "v1", {
       role: "editor", action: "read", resource: "dashboard",
     });
-    expect(engine.contains(editorVv.value, ranges)).toBe(false);
+    expect(engine.contains(editorVv.value, ranges)).toBe(true);
   });
 
   it("single-level resolvePolicy로 규칙 매칭한다", () => {

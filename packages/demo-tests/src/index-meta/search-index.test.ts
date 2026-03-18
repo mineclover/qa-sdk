@@ -506,13 +506,12 @@ describe("[S7] 버전 업그레이드 — 태그 추가 후 기존 주소 보존
     expect(tagCodecV2.encode({ tag: "mobile" }).value).toBe(6);
   });
 
-  it("v2 capacity headroom — codec는 entries 기반, headroom은 PositionEngine이 관리", () => {
-    // WeightedIndex shape = entries.length = 7 (codec은 채워진 entries만 인식)
-    expect(tagCodecV2.shape).toEqual([7]);
-    expect(tagCodecV2.size).toBe(7);
+  it("v2 capacity headroom — shape은 capacity 기반, headroom은 PositionEngine이 관리", () => {
+    // WeightedIndex shape = snapshotCapacity = 10 (capacity 기반)
+    expect(tagCodecV2.shape).toEqual([10]);
+    expect(tagCodecV2.size).toBe(10);
 
-    // capacity(10)는 PositionEngine/PrefixRegistry가 관리하는 주소 공간 크기.
-    // codec에서 사용하지 않는 pos 8-10은 open 영역.
+    // capacity(10)는 shape에 반영됨. pos 8-10은 open 영역.
     // 게이트 제어 시 capacity 기준으로 DimStateSpec을 구성한다.
     const capacity = 10;
     const specs: DimStateSpec[] = [

@@ -1472,6 +1472,30 @@ code {
   font-size: 0.68rem;
   font-weight: 700;
 }
+.vd-tag-stable {
+  background: #d4edda;
+  color: #155724;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.vd-tag-headroom {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.vd-headroom-badge {
+  font-size: 0.6rem;
+  color: #1565c0;
+  background: #e3f2fd;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
 .vd-sec-body {
   padding: 12px 14px;
 }

@@ -218,8 +218,8 @@ describe("MetaRegistry 에지 케이스", () => {
       const diff = reg.versionDiff("perm", "v1", "v2");
 
       expect(diff.from.shape).toEqual([3, 4]);
-      expect(diff.to.shape).toEqual([4, 4]); // entries.length 기준
-      // shape[0]이 3→4로 변경되었으므로 changedDims에 role 포함
+      expect(diff.to.shape).toEqual([6, 4]); // capacity 기준 (snapshotCapacity)
+      // shape[0]이 3→6으로 변경되었으므로 changedDims에 role 포함
       expect(diff.changedDims.length).toBeGreaterThan(0);
       expect(diff.changedDims[0].dimId).toBe("role");
       expect(diff.changedDims[0].fromEntriesCount).toBe(3);
