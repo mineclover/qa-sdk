@@ -93,8 +93,9 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 | 단계 | 현재 구현 | 비고 |
 |---|---|---|
 | A1 | RecordStreamBroker.publish() | 인메모리, SSE/WS 전달용 |
-| A2-A3 | ❌ 없음 | MQ 미도입 |
-| A4 | ❌ 없음 | |
+| A2 | `TaskQueue.enqueue()` | POST /v1/ingest → Phase 1 commit 후 enqueue |
+| A3 | BullMQ + Redis | retry/backoff, 순서 보장 |
+| A4 | `--mode worker` (ingest-server) | reconstruction → verdict 체이닝, DLQ 연동 |
 | A5 | ❌ 없음 | spec.todo §I-2 (Aggregator 인터페이스) |
 | A6 | ❌ 없음 | spec.todo §I-3 (Materialized View) |
 | A7 | `event_records` 테이블 (immutable) | 이미 보존 중 |
@@ -257,13 +258,13 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 
 | 모듈 | 참여 심볼 | 역할 | 상태 | 비고 |
 |---|---|---|---|---|
-| `POST /v1/ingest` | S1→S5 | 이벤트 수집 + 저장 | ✅ | 동기 Phase 1 완성 |
+| `POST /v1/ingest` | S1→S5 | 이벤트 수집 + 저장 | ✅ | Phase 1 저장 후 A2 enqueue 또는 sync fallback |
 | `RecordStreamBroker` | A1, D1→D2 | 인메모리 pub/sub | ✅ | SSE/WS 전달 작동 |
-| `reconstructPendingTraces()` | S2→S4 (현재) | 그래프 재구성 | ✅ 동기 | A4 분리 예정 |
-| `computePendingVerdicts()` | S2→S4 (현재) | verdict 계산 | ✅ 동기 | A4 분리 예정 |
+| `reconstructPendingTraces()` | A4 | 그래프 재구성 | ✅ | worker job + sync fallback 둘 다 사용 |
+| `computePendingVerdicts()` | A4 | verdict 계산 | ✅ | worker job + sync fallback 둘 다 사용 |
 | SSE `/v1/streams/` | D2 | 실시간 스트림 | ✅ | |
 | WebSocket `/v1/ws` | D2 | 시나리오 구독 | ✅ | |
-| DLQ | S2 에러 경로 | 실패 항목 관리 | ✅ | 재시도 3회 |
+| DLQ | S2/A4 에러 경로 | 실패 항목 관리 | ✅ | worker final failure 기록 + admin retry |
 
 ### viz-web (기존)
 
@@ -273,13 +274,13 @@ Client ─→ [S1] Gateway ─→ [S2] App ─→ [S3] State ─→ [S4] DB ─�
 | 그래프 렌더러 | D4 | 실행 그래프 시각화 | ✅ | |
 | verdict 패널 | D4 | 테스트 결과 표시 | ✅ | |
 
-### MQ 인프라 (planned)
+### MQ 인프라
 
 | 모듈 | 참여 심볼 | 역할 | 상태 | 비고 |
 |---|---|---|---|---|
-| MQ Producer | A2 | 이벤트 발행 | 📋 | BullMQ 또는 Kafka |
-| MQ Broker | A3 | 버퍼링 + 순서 보장 | 📋 | |
-| MQ Consumer | A4 | 이벤트 수신 + 분기 | 📋 | |
+| MQ Producer | A2 | 이벤트 발행 | ✅ | `POST /v1/ingest` → `TaskQueue.enqueue()` |
+| MQ Broker | A3 | 버퍼링 + 순서 보장 | ✅ | BullMQ + Redis queue, retry/backoff 적용 |
+| MQ Consumer | A4 | 이벤트 수신 + 분기 | ✅ | `--mode worker` + reconstruction→verdict 체이닝 |
 
 ### 집계 파이프라인 (planned)
 
@@ -322,7 +323,7 @@ D4  Debug UI        시각화
 | 흐름 | 단계 수 | ✅ 작동 | 🔧 함수 완성 | 📋 설계만 | 커버리지 |
 |---|---|---|---|---|---|
 | **S (동기)** | 5 | S1→S5 전체 | — | — | **100%** |
-| **A (비동기)** | 7 | A7 | A1, A5 (부분) | A2, A3, A4, A5 (집계), A6 | **14%** |
+| **A (비동기)** | 7 | A2, A3, A4, A7 | A1, A5 (부분) | A5 (집계), A6 | **57%** |
 | **D (디버깅)** | 4 | D1→D4 전체 | — | — | **100%** |
 
 ---

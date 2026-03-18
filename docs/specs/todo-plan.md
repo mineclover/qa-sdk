@@ -23,15 +23,18 @@ packages/
 
   # ── Layer 3: 서비스 ─────────────────────────────────────
   decode-service/       [완료] Hono.js — decode API (39 tests)
-  gate-service/         [E-1 구현] Hono.js — gate 상태 관리 API
-  query-service/        [F-1~F-4 구현] Hono.js — 관계형 질의 + 정책 해소 API
+  gate-service/         [E-1 구현] Hono.js — gate 상태 관리 API (SQLITE_DRIVER/PATH env 분리)
+  query-service/        [F-1~F-4 구현] Hono.js — 관계형 질의 + 정책 해소 API (SQLITE_DRIVER/PATH env 분리)
+  ingest-server/        [구현 완료] Hono.js — 이벤트 수집 + 비동기 Worker (--mode worker, BullMQ)
 
   # ── Layer D: 데모/테스트 ────────────────────────────────
   demo-snapshot/               데이터 SSOT (Axis 카탈로그)
-  demo-tests/                  통합 테스트 (29파일, 500 tests)
+  demo-tests/                  통합 테스트 (39파일, 654 tests)
   platform-demo/               프론트엔드 시각화
   platform-demo-api/           데모 백엔드 API
 ```
+
+> Unit 1 update: 계획상 `packages/task-queue-bullmq/` standalone 패키지를 고려했지만, 실제 구현은 `packages/ingest-server/src/lib/bullmq-task-queue.ts` package-local adapter로 완료했다. worker runtime은 `packages/ingest-server/src/server.ts --mode worker`가 담당한다.
 
 ---
 
@@ -94,7 +97,7 @@ packages/gate-service/            [E-1 구현 완료, E-2~E-4 잔여]
     server.ts                     진입점
     app.ts                        createApp 팩토리
     config/
-      env.ts                      PORT, LOG_LEVEL
+      env.ts                      PORT, SQLITE_DRIVER, SQLITE_PATH
     lib/
       logger.ts                   Pino 로거
       errors.ts                   AppError + IndexMetaError 매핑
@@ -122,7 +125,7 @@ packages/query-service/           [F-1~F-4 구현 완료, F-5 잔여]
     app.ts                        createApp 팩토리
     index.ts                      public exports
     config/
-      env.ts                      QUERY_DEFAULT_STRATEGY, GATE_* 설정
+      env.ts                      QUERY_DEFAULT_STRATEGY, GATE_*, SQLITE_DRIVER, SQLITE_PATH
     lib/
       logger.ts                   Pino 로거
       errors.ts                   AppError/HTTP 매핑
@@ -144,8 +147,7 @@ packages/query-service/           [F-1~F-4 구현 완료, F-5 잔여]
       in-memory-policy-rule-store.ts
       sql-policy-rule-store.ts
       policy-rule.schema.ts       Drizzle SQLite 스키마
-      node-sqlite-driver.ts       SQL parity test driver
-      policy-rule-store.test.ts   Memory/SQL contract tests
+      policy-rule-store.test.ts   Memory/SQL contract tests (NodeSqliteDriver from index-meta)
     app.test.ts                   route integration tests
 ```
 
@@ -162,6 +164,17 @@ packages/query-service/           [F-1~F-4 구현 완료, F-5 잔여]
 | H-1 | `index-meta/src/adapters/sql-version-lifecycle-store.ts` | VersionLifecycleStore SQL 구현 |
 | H-2 | `index-meta/src/adapters/sql-migration-store.ts` | MigrationStore SQL 구현 |
 | H-3 | `index-meta/src/adapters/sql-prefix-router.ts` | PrefixRouter SQL 구현 |
+
+### SQLite 드라이버 분리 [구현 완료]
+
+| 드라이버 | 파일 | 백엔드 | 용도 |
+|---|---|---|---|
+| `NodeSqliteDriver` | `index-meta/src/adapters/node-sqlite-driver.ts` | `node:sqlite` (내장) | 로컬 개발, CI 테스트 |
+| `BetterSqliteDriver` | `index-meta/src/adapters/better-sqlite-driver.ts` | `better-sqlite3` (npm) | 프로덕션 Node.js 서버 |
+| `D1SqlDriver` | `index-meta/src/adapters/d1-driver.ts` | Cloudflare D1 | 엣지 |
+| `createSqliteDriver()` | `index-meta/src/adapters/create-sqlite-driver.ts` | 팩토리 | `{ driver, path, schema }` 런타임 선택 |
+
+서비스별 env: `SQLITE_DRIVER` (node\|better), `SQLITE_PATH` (gate-service.sqlite, query-service.sqlite 등)
 
 ### key-cache (I-1, I-4)
 

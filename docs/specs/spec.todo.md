@@ -169,6 +169,16 @@
 
 스펙에 속하지 않지만 서비스 구현 전 해결이 필요한 인프라 항목.
 
+### 비동기 Phase 2 인프라
+
+| 항목 | 상태 | 상세 |
+|---|---|---|
+| TaskQueue 포트 | ✅ 완료 | `@qa-sdk/core`에 `TaskPayload`, `TaskQueue`, retry 옵션 정의 |
+| BullMQ 어댑터 | ✅ 완료 | standalone `task-queue-bullmq` 패키지 대신 `packages/ingest-server/src/lib/bullmq-task-queue.ts`에 흡수 구현 |
+| Worker 런타임 | ✅ 완료 | `packages/ingest-server/src/server.ts`의 `--mode worker`가 A4 consumer를 실행 |
+| DLQ + retry | ✅ 완료 | worker final failure → DB DLQ 기록 → `POST /v1/admin/dlq/retry` 복구 |
+| E2E/성능 검증 | ✅ 완료 | `/v1/ingest` 202 즉시 반환, worker verdict 완료, before/after latency 비교 테스트 추가 |
+
 ### SQL 어댑터 현황
 
 | Store 인터페이스 | Memory | SQL | 영향 스펙 |
@@ -182,11 +192,11 @@
 
 | 항목 | 상태 | 설명 |
 |---|---|---|
-| demo-tests 패키지 | ✅ 완료 | 37개 테스트 파일 (583 tests) — index-meta 21개 + permission-engine 7개 + 통합 4개 + merge-contract 5개 + AXIS 반영 |
+| demo-tests 패키지 | ✅ 완료 | 39개 테스트 파일 (654 tests) — index-meta 21개 + permission-engine 7개 + 통합 5개 + merge-contract 5개 + AXIS 반영 |
 | weighted-wasm 패키지 | ✅ 완료 | Rust→WASM 20KB, 6개 함수, 7 Rust tests, JS fallback 래퍼 |
 | weighted-gpu 패키지 | ✅ 완료 | WebGPU WGSL 3 shaders, GPUEncoder 클래스, GPU 미지원 시 null |
 | demo-snapshot 패키지 | ✅ 완료 | AXIS 기반 5개 도메인 데이터 카탈로그 (15축) + MetaRegistry 입력 빌더 |
-| index-meta 단위 테스트 | ✅ 33개 | 코어 알고리즘 유닛 테스트 패키지 내 잔류 |
+| index-meta 단위 테스트 | ✅ 37개 (905 tests) | 코어 알고리즘 유닛 테스트 패키지 내 잔류 |
 | permission-engine 테스트 | ✅ 5개 | 비트마스크 엔진 유닛 테스트 패키지 내 잔류 |
 | platform-demo 권한엔진 페이지 | ✅ 완료 | /perm-engine — PermissionSet v1→v2 마이그레이션 비교 시각화 |
 
@@ -361,7 +371,7 @@ batch encoder (GPU offload 가능)
 | permission-engine migration | `permission-engine/migration.spec.md` | 330 | ✅ |
 | partial-binder | `weighted-index/partial-binder.spec.md` | 352 | ✅ |
 
-**최종 게이트**: 3 build ✅ · demo-tests 37 files / 583 tests ✅ · decode-service 39 tests ✅
+**최종 게이트**: 5 build ✅ · demo-tests 39 files / 654 tests ✅ · index-meta 37 files / 905 tests ✅ · ingest-server 16 files / 141 tests ✅ · gate-service 14 tests ✅ · query-service 29 tests ✅
 
 ### Tier 2 — 서비스 레이어 (라이브러리 → 서비스 전환)
 
