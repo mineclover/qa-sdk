@@ -5,7 +5,8 @@
 import { serializeAddress, varintByteSize } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
-  DEMO_SVC_STRIDES,
+  DEMO_SVC_STRIDES, DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   demoEncodeSvc, demoDecodeSvc,
   demoRoleStride, demoEvtStride,
   demoDecodePerm, demoDecodeEvt,
@@ -105,18 +106,20 @@ function generateRandomLog(ver: Ver): LogEntry {
   const rs = roleStride(ver);
   const es = evtStrideFor(ver);
   const pick = RANDOM_ACTIONS[Math.floor(Math.random() * RANDOM_ACTIONS.length)];
-  const envIdx = Math.floor(Math.random() * 5) + 1;
-  const regIdx = Math.floor(Math.random() * 2) + 1;
-  const svcIdx = Math.floor(Math.random() * 5) + 1;
-  const nsIdx  = Math.floor(Math.random() * 2) + 1;
+  const envIdx = Math.floor(Math.random() * DEMO_ENVS.length) + 1;
+  const regIdx = Math.floor(Math.random() * DEMO_REGIONS.length) + 1;
+  const svcIdx = Math.floor(Math.random() * DEMO_SVCS.length) + 1;
+  const nsIdx  = Math.floor(Math.random() * DEMO_NSS.length) + 1;
   const svcAddr = encodeSvc([envIdx, regIdx, svcIdx, nsIdx]);
 
   const hasPerm = Math.random() > 0.4;
-  const permAddr = hasPerm ? Math.floor(Math.random() * 10) * rs + Math.floor(Math.random() * rs) : null;
+  const permSvcCount = DEMO_PERM_SVC_VALUES.length;
+  const permAddr = hasPerm ? Math.floor(Math.random() * permSvcCount) * rs + Math.floor(Math.random() * rs) : null;
 
   const hasEvt = Math.random() > 0.5;
-  const evtCount = ver === "v1" ? 7 : 9;
-  const evtAddr = hasEvt ? Math.floor(Math.random() * 10) * es + Math.floor(Math.random() * evtCount) * 2 + Math.floor(Math.random() * 2) : null;
+  const evtSvcCount = DEMO_EVT_SVC_VALUES.length;
+  const evtCount = ver === "v1" ? DEMO_EVENTS_V1.length : DEMO_EVENTS_V2.length;
+  const evtAddr = hasEvt ? Math.floor(Math.random() * evtSvcCount) * es + Math.floor(Math.random() * evtCount) * 2 + Math.floor(Math.random() * 2) : null;
 
   const latencyMs = pick.level === "ERROR" ? 1000 + Math.floor(Math.random() * 30000)
     : pick.level === "WARN" ? 50 + Math.floor(Math.random() * 500)
