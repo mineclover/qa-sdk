@@ -36,9 +36,14 @@ export type CoordConstraint = string | null;
  * calcWeights([8, 4, 5, 4]) // → [80, 20, 4, 1]
  */
 export function calcWeights(shape: readonly number[]): number[] {
-  return shape.map((_, i) =>
-    shape.slice(i + 1).reduce((product, n) => product * n, 1)
-  );
+  const d = shape.length;
+  if (d === 0) return [];
+  const weights = new Array<number>(d);
+  weights[d - 1] = 1;
+  for (let i = d - 2; i >= 0; i--) {
+    weights[i] = weights[i + 1] * shape[i + 1];
+  }
+  return weights;
 }
 
 /**

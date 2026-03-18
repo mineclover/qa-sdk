@@ -40,6 +40,7 @@ import {
   ShapeError,
 } from "./errors.js";
 import { assertNonEmptyArray, assertPositiveInt } from "./validators.js";
+import { calcWeights } from "./calc.js";
 
 export class WeightedIndex {
   readonly shape: readonly number[];
@@ -82,23 +83,21 @@ export class WeightedIndex {
     this.shape = Object.freeze([...shape]);
     this.labels = Object.freeze(labels ?? shape.map((_, i) => `dim_${i}`));
 
-    const d = shape.length;
-    const weights = new Float64Array(d);
-    weights[d - 1] = 1;
-    for (let i = d - 2; i >= 0; i--) {
-      weights[i] = weights[i + 1] * shape[i + 1];
-      if (weights[i] > Number.MAX_SAFE_INTEGER) {
+    // stride 공식의 canonical 구현은 calcWeights() — D-4 단일화
+    const stridesArr = calcWeights(shape);
+    for (let i = 0; i < stridesArr.length; i++) {
+      if (stridesArr[i] > Number.MAX_SAFE_INTEGER) {
         throw new ShapeError(
-          `Shape product at dimension ${i} (${weights[i]}) exceeds Number.MAX_SAFE_INTEGER. ` +
+          `Shape product at dimension ${i} (${stridesArr[i]}) exceeds Number.MAX_SAFE_INTEGER. ` +
           `Reduce shape values or the number of dimensions.`
         );
       }
     }
-    this._weightsBuf = weights;
-    this.strides = Object.freeze(Array.from(weights));
+    this._weightsBuf = new Float64Array(stridesArr);
+    this.strides = Object.freeze(stridesArr);
     this.shapeBuf = new Float64Array(shape);
 
-    const size = weights[0] * shape[0];
+    const size = stridesArr[0] * shape[0];
     if (size > Number.MAX_SAFE_INTEGER) {
       throw new ShapeError(
         `Total combinations (${size}) exceeds Number.MAX_SAFE_INTEGER. Reduce shape values.`

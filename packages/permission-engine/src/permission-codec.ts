@@ -12,6 +12,8 @@
 
 import {
   WeightedIndex,
+  createLabelRegistry,
+  type LabelRegistry,
   createMask,
   setBit,
   clearBit,
@@ -54,6 +56,11 @@ export interface CodecSnapshot {
   mask?: string;
 }
 
+// ── 내부 상수 ────────────────────────────────────────────────────────────────
+
+const LABEL_VERSION = "v1";
+const DIM_LABELS = ["service", "type", "resource", "action"] as const;
+
 // ── PermissionCodec ──────────────────────────────────────────────────────────
 
 export class PermissionCodec {
@@ -62,19 +69,20 @@ export class PermissionCodec {
   readonly version: string;
 
   private readonly _dims: CodecDims;
-  private readonly _serviceMap: Map<string, number>;
-  private readonly _typeMap: Map<string, number>;
-  private readonly _resourceMap: Map<string, number>;
-  private readonly _actionMap: Map<string, number>;
+  /** D-1: LabelRegistry에 위임하여 string→index 맵 중복 제거 */
+  private readonly _labels: LabelRegistry;
 
   constructor(version: string, dims: CodecDims) {
     this.version = version;
     this._dims = dims;
 
-    this._serviceMap = _buildMap(dims.services, "services");
-    this._typeMap = _buildMap(dims.types, "types");
-    this._resourceMap = _buildMap(dims.resources, "resources");
-    this._actionMap = _buildMap(dims.actions, "actions");
+    // CodecDims → LabelRegistry 변환
+    this._labels = createLabelRegistry({
+      service:  [{ version: LABEL_VERSION, ids: [...dims.services] }],
+      type:     [{ version: LABEL_VERSION, ids: [...dims.types] }],
+      resource: [{ version: LABEL_VERSION, ids: [...dims.resources] }],
+      action:   [{ version: LABEL_VERSION, ids: [...dims.actions] }],
+    });
 
     this.index = new WeightedIndex([
       dims.services.length,
@@ -100,20 +108,20 @@ export class PermissionCodec {
   /** PermissionCode 객체 → integer address. */
   encodeCode(code: PermissionCode): number {
     return this.index.encode([
-      _resolve(this._serviceMap, code.service, "service"),
-      _resolve(this._typeMap, code.type, "type"),
-      _resolve(this._resourceMap, code.resource, "resource"),
-      _resolve(this._actionMap, code.action, "action"),
+      this._labels.getIndex("service", LABEL_VERSION, code.service),
+      this._labels.getIndex("type", LABEL_VERSION, code.type),
+      this._labels.getIndex("resource", LABEL_VERSION, code.resource),
+      this._labels.getIndex("action", LABEL_VERSION, code.action),
     ]);
   }
 
   /** 개별 파트 → integer address. */
   encodeRaw(service: string, type: string, resource: string, action: string): number {
     return this.index.encode([
-      _resolve(this._serviceMap, service, "service"),
-      _resolve(this._typeMap, type, "type"),
-      _resolve(this._resourceMap, resource, "resource"),
-      _resolve(this._actionMap, action, "action"),
+      this._labels.getIndex("service", LABEL_VERSION, service),
+      this._labels.getIndex("type", LABEL_VERSION, type),
+      this._labels.getIndex("resource", LABEL_VERSION, resource),
+      this._labels.getIndex("action", LABEL_VERSION, action),
     ]);
   }
 
@@ -123,10 +131,10 @@ export class PermissionCodec {
   decode(address: number): DecodedPerm {
     const coords = this.index.decode(address);
     return {
-      service: this._dims.services[coords[0] - 1],
-      type: this._dims.types[coords[1] - 1],
-      resource: this._dims.resources[coords[2] - 1],
-      action: this._dims.actions[coords[3] - 1],
+      service:  this._labels.getEntityId("service", LABEL_VERSION, coords[0]) as string,
+      type:     this._labels.getEntityId("type", LABEL_VERSION, coords[1]) as string,
+      resource: this._labels.getEntityId("resource", LABEL_VERSION, coords[2]) as string,
+      action:   this._labels.getEntityId("action", LABEL_VERSION, coords[3]) as string,
       address,
     };
   }
@@ -217,22 +225,4 @@ export class PermissionCodec {
     }
     return result;
   }
-}
-
-// ── Utilities ────────────────────────────────────────────────────────────────
-
-function _buildMap(ids: readonly string[], label: string): Map<string, number> {
-  if (ids.length === 0) throw new RangeError(`${label} must not be empty`);
-  const m = new Map<string, number>();
-  for (let i = 0; i < ids.length; i++) {
-    if (m.has(ids[i])) throw new RangeError(`Duplicate ${label} id: "${ids[i]}"`);
-    m.set(ids[i], i + 1);
-  }
-  return m;
-}
-
-function _resolve(map: Map<string, number>, id: string, label: string): number {
-  const idx = map.get(id);
-  if (idx === undefined) throw new RangeError(`Unknown ${label}: "${id}"`);
-  return idx;
 }

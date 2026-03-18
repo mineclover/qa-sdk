@@ -47,6 +47,15 @@ export interface PrefixDeepDecodeResult {
   refs: Record<string, Record<string, EntityId>>;
 }
 
+/**
+ * decodeDeepDetailed() 결과.
+ * decodeDeep() 결과에 unresolved ref dim 목록을 추가.
+ */
+export interface PrefixDeepDecodeDetailedResult extends PrefixDeepDecodeResult {
+  /** ref 코덱이 없어 확장하지 못한 index_ref dim ID 목록. */
+  unresolved: string[];
+}
+
 // ── PrefixDecoder ────────────────────────────────────────────────────────────
 
 export class PrefixDecoder {
@@ -178,6 +187,23 @@ export class PrefixDecoder {
     }
 
     return { entities, refs };
+  }
+
+  /**
+   * decodeDeep() + unresolved ref 수집.
+   *
+   * decode-service 등에서 unresolved 개념을 직접 구현하지 않도록,
+   * 라이브러리가 canonical 정의를 제공한다.
+   */
+  decodeDeepDetailed(input: number | string): PrefixDeepDecodeDetailedResult {
+    const result = this.decodeDeep(input);
+    const unresolved: string[] = [];
+    for (const dim of this._config.map.dims) {
+      if (dim.kind.type === "index_ref" && !this.hasRef(dim.dimId)) {
+        unresolved.push(dim.dimId);
+      }
+    }
+    return { ...result, unresolved };
   }
 
   // ── Batch ─────────────────────────────────────────────────────────────────

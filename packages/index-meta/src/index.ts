@@ -78,7 +78,7 @@ export type {
   DeepDecodeResult,
 } from "./cross-index-query.js";
 export { PrefixDecoder } from "./prefix-decoder.js";
-export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "./prefix-decoder.js";
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult, PrefixDeepDecodeDetailedResult } from "./prefix-decoder.js";
 export {
   queryAcrossVersions,
   entityVersionSpan,

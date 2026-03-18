@@ -59,20 +59,11 @@ export function createDecodeRoutes(deps: DecodeDeps) {
     const req = decodeDeepRequestSchema.parse(body);
 
     const decoder = resolveDecoder(pool, req.input, req.prefix, req.version);
-    const result = decoder.decodeDeep(req.input);
-
-    // 미해석 ref 목록 생성
-    const unresolved: string[] = [];
-    const map = decoder.toDecodeMap();
-    for (const dim of map.dims) {
-      if (dim.kind.type === "index_ref" && !decoder.hasRef(dim.dimId)) {
-        unresolved.push(dim.dimId);
-      }
-    }
+    const { entities, refs, unresolved } = decoder.decodeDeepDetailed(req.input);
 
     return c.json({
-      entities: result.entities,
-      refs: result.refs,
+      entities,
+      refs,
       ...(unresolved.length > 0 ? { unresolved } : {}),
     });
   });

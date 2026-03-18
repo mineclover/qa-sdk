@@ -563,10 +563,7 @@ export class MetaRegistry {
   getCapacityInfo(indexId: string, versionId: string): VersionCapacityInfo {
     const def = this._getIndexDef(indexId);
     const iv = this._getIndexVersion(indexId, versionId);
-    const shape = def.dims.map((dimId) => {
-      const snapshotId = iv.snapshots[dimId];
-      return this._getSnapshotCache(dimId, snapshotId).snapshot.entries.length;
-    });
+    const shape = this._buildShape(def, iv);
     const sizeBigInt = computeShapeProductBig(shape);
     const fits = sizeBigInt <= BigInt(Number.MAX_SAFE_INTEGER);
     return {
@@ -720,9 +717,7 @@ export class MetaRegistry {
     const def = this.indices.get(vv.indexId);
     if (def?.numberType === "bigint") {
       const iv = this._getIndexVersion(vv.indexId, vv.versionId);
-      const shape = def.dims.map((dimId) =>
-        this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
-      );
+      const shape = this._buildShape(def, iv);
       throw new CapacityOverflowError(vv.indexId, vv.versionId, computeShapeProductBig(shape),
         'Number-based serialize is not available for BigInt-typed index.');
     }
@@ -789,9 +784,7 @@ export class MetaRegistry {
     // 범위 검증
     const def = this._getIndexDef(vvb.indexId);
     const iv = this._getIndexVersion(vvb.indexId, vvb.versionId);
-    const shape = def.dims.map((dimId) =>
-      this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
-    );
+    const shape = this._buildShape(def, iv);
     const sizeBig = computeShapeProductBig(shape);
     if (vvb.value < 0n || vvb.value >= sizeBig) {
       throw new ParseError(
@@ -1220,13 +1213,18 @@ export class MetaRegistry {
     return iv;
   }
 
+  /** D-2: shape 구성의 단일 경로. IndexDef + IndexVersion → number[] */
+  private _buildShape(def: IndexDef, iv: IndexVersion): number[] {
+    return def.dims.map((dimId) =>
+      this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
+    );
+  }
+
   private _getWeightedIndex(indexId: string, versionId: string): WeightedIndex {
     const def = this._getIndexDef(indexId);
     if (def.numberType === "bigint") {
       const iv = this._getIndexVersion(indexId, versionId);
-      const shape = def.dims.map((dimId) =>
-        this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot.entries.length
-      );
+      const shape = this._buildShape(def, iv);
       const productBig = computeShapeProductBig(shape);
       throw new CapacityOverflowError(indexId, versionId, productBig,
         'Number-based encode/decode is not available for BigInt-typed index.');
@@ -1236,10 +1234,7 @@ export class MetaRegistry {
     let wi = this.wiCache.get(key);
     if (!wi) {
       const iv = this._getIndexVersion(indexId, versionId);
-      const shape = def.dims.map((dimId) => {
-        const snapshotId = iv.snapshots[dimId];
-        return this._getSnapshotCache(dimId, snapshotId).snapshot.entries.length;
-      });
+      const shape = this._buildShape(def, iv);
       wi = new WeightedIndex(shape, [...def.dims]);
       this.wiCache.set(key, wi);
     }
