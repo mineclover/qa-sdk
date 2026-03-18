@@ -47,7 +47,7 @@ packages/
 
 ## Tier 2 — 서비스 레이어
 
-### decode-service (D-1 ~ D-4 ✅, D-5 잔여)
+### decode-service (D-1 ~ D-4 ✅, D-5 잔여, merge-plan Phase 4 반영)
 
 ```
 packages/decode-service/          [구현 완료]
@@ -80,6 +80,8 @@ packages/decode-service/          [구현 완료]
 | D-3 | `routes/decode.ts` (resolveDecoder) | ✅ | 5분기: 직접조회/불완전에러/number에러/auto-detect/실패 |
 | D-4 | `lib/errors.ts`, `middleware/error-handler.ts` | ✅ | IndexMetaError→AppError→HTTP, ZodError→400, 통합 포맷 |
 | D-5 | 미구현 | 잔여 | PrefixDecoderBig — BigInt index decode 확장 |
+
+> **merge-plan Phase 4 반영**: `/decode/deep` 라우트가 `PrefixDecoder.decodeDeepDetailed()`를 호출하여 unresolved ref 수집을 라이브러리에 위임. 서비스 라우트에서 `dim.kind.type === "index_ref"` 순회 제거됨.
 
 ### gate-service (E-1 ~ E-4)
 

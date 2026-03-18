@@ -65,6 +65,9 @@ class PrefixDecoder {
   // L2+ — index_ref 1단계 확장
   decodeDeep(input: number | string): PrefixDeepDecodeResult
 
+  // L2+ — index_ref 확장 + unresolved ref 수집 (decode-service가 사용)
+  decodeDeepDetailed(input: number | string): PrefixDeepDecodeDetailedResult
+
   // 배치
   decodeBatch(inputs: readonly (number | string)[]): Readonly<Record<string, EntityId>>[]
 
@@ -79,6 +82,10 @@ class PrefixDecoder {
 interface PrefixDeepDecodeResult {
   entities: Record<string, EntityId>;
   refs: Record<string, Record<string, EntityId>>;
+}
+
+interface PrefixDeepDecodeDetailedResult extends PrefixDeepDecodeResult {
+  unresolved: string[];  // ref 코덱이 없는 index_ref dim ID 목록
 }
 ```
 
@@ -298,6 +305,9 @@ class DecoderPool {
 - deep-decode 범위는 번들 구성 시 결정
 
 ### 미해석 ref 처리
+
+`PrefixDecoder.decodeDeepDetailed()`이 unresolved ref 수집의 canonical 구현을 제공한다.
+서비스 라우트는 이 메서드만 호출하고, unresolved 개념을 직접 정의하지 않는다.
 
 ```ts
 // refs에 DecodeMap이 없는 index_ref dim

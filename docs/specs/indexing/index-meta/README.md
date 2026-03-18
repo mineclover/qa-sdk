@@ -30,6 +30,7 @@ implemented
 | [invariants.spec.md](invariants.spec.md) | 변환 불변조건 — 12개 invariant 명세 + 테스트 커버리지 맵 |
 | [gate-engine.spec.md](gate-engine.spec.md) | GateEngine — 주소 상태 자동 재계산, decorator 패턴, cascade 전파, gate-aware-query 합성 |
 | [adr-address-separation.md](adr-address-separation.md) | ADR: AddressProtocolManager 분리 |
+| [adr-merge-dedup.md](adr-merge-dedup.md) | ADR: 의미적 중복 제거 — D-1~D-5 식별, canonical 구현 지정, 의도적 분리 근거 |
 
 ## 횡단 문서
 
@@ -73,7 +74,7 @@ src/
     memory-store.ts      # InMemoryIndexMetaStore
   types.ts               # MetaRegistry용 공개 타입
   errors.ts              # 에러 클래스 계층
-  meta-registry.ts       # MetaRegistry — 주소 게이트웨이
+  meta-registry.ts       # MetaRegistry — 주소 게이트웨이 (_buildShape로 shape 구성 단일화)
   address-protocol-manager.ts  # AddressProtocolManager — 독립 주소 직렬화
   gate-aware-query.ts    # Gate-Aware Query — relational + gate 합성 유틸리티
   meta-codec.ts          # MetaCodec — 독립 encode/decode (LabelRegistry + PrefixCodec 위임)

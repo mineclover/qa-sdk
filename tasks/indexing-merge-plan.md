@@ -423,11 +423,15 @@ pnpm --filter @qa-sdk/decode-service typecheck
 | `decodeDeepDetailed()` 추가 시 PrefixDecoder API 표면 확대 | 기존 `decodeDeep()`은 유지, 신규 메서드는 선택적 사용 |
 | Phase 1에서 LabelRegistry의 EntityId 타입이 string 외 number도 허용하여 PermissionCodec과 차이 | CodecDims는 string[]이므로 LabelRegistry에 string으로 등록하면 문제 없음 |
 
-## Recommended Execution Order
+## Execution Status
 
-1. **Phase 0** — 계약 테스트 보강 (안전망 확보, 모든 후속 phase의 전제)
-2. **Phase 2** — stride 정리 (weighted-index 내부, 영향 범위 가장 작음)
-3. **Phase 1** — PermissionCodec 내부 교체 (Phase 2에서 정리된 weighted-index 기반)
-4. **Phase 3** — meta-registry shape 단일화 (index-meta 내부)
-5. **Phase 4** — PrefixDecoder 편의 메서드 (라이브러리 + 서비스 연결)
-6. **Phase 5** — 문서 정리 (각 phase 완료 시 즉시 반영하되, 최종 점검은 마지막)
+| 순서 | Phase | 상태 | 변경 파일 |
+|---|---|---|---|
+| 1 | Phase 0 — 계약 테스트 보강 | ✅ 완료 | `demo-tests/src/merge-contract/` 4파일 34 tests |
+| 2 | Phase 2 — stride 정리 | ✅ 완료 | `calc.ts`, `weighted-index.ts` |
+| 3 | Phase 1 — PermissionCodec → LabelRegistry | ✅ 완료 | `permission-codec.ts` |
+| 4 | Phase 3 — meta-registry shape 단일화 | ✅ 완료 | `meta-registry.ts` (`_buildShape()` 추출) |
+| 5 | Phase 4 — PrefixDecoder decodeDeepDetailed | ✅ 완료 | `prefix-decoder.ts`, `routes/decode.ts` |
+| 6 | Phase 5 — 문서 정리 | ✅ 완료 | CLAUDE.md, specs 8개 파일 |
+
+전체 quality gate 통과: 2,429 tests (weighted-index 934 + index-meta 837 + permission-engine 53 + decode-service 39 + demo-tests 566)

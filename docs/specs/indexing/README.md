@@ -49,9 +49,9 @@
 패키지별로 계층화된 문서 구조. 각 패키지 README가 하위 문서의 인덱스 역할.
 
 ```
-weighted-index/                    ← 수학 + 포맷 + 프로토콜
+weighted-index/                    ← 수학 + canonical primitives + 포맷 + 프로토콜
 ├── README.md                      패키지 인덱스
-├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixCodec, bitmask, obfuscate
+├── core.spec.md                   WeightedIndex, LabelRegistry, PrefixCodec, calcWeights(canonical stride), bitmask
 ├── pack-format.spec.md            PackFormat, SemanticAddress, AddressConverter, fitLayout
 └── range-query.spec.md            calcAddressRanges — 부분 좌표 제약 주소 구간 계산
 

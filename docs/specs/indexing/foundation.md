@@ -75,11 +75,12 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 
 | 모듈 | 역할 | 의존 |
 |---|---|---|
-| `WeightedIndex` | 순수 수학 엔진 (Number) | 없음 (shape만) |
+| `calc` | stride 공식 canonical 구현 (`calcWeights`) + 범위 연산 유틸 | 없음 (순수 함수) |
+| `WeightedIndex` | 순수 수학 엔진 (Number) | `calcWeights` (stride 계산 위임) |
 | `WeightedIndexBig` | 순수 수학 엔진 (BigInt, shape product > 2^53) | 없음 (shape만) |
 | `LabelRegistry` | 레이블별 entity ID ↔ 1-based index | WeightedIndex 불필요 |
 | `PrefixCodec` | 레이블 조합 + 버전 관리 + encode/decode | WeightedIndex + LabelRegistry |
-| `calc`, `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
+| `bitmask`, `obfuscate` | 독립 유틸 | 아무 것에도 의존하지 않음 |
 
 > **Note**: `WeightedIndex`와 `WeightedIndexBig`은 동일한 알고리즘의 Number/BigInt 구현이다. 둘 다 shape만 알면 동작하며, 직렬화 포맷이나 `numberType` 선택에 관여하지 않는다. 엔진 선택은 상위 레이어(어댑터)가 `shapeProduct`/`maxProductBig` 등 패키지 유틸로 shape product를 사후 분석하여 결정한다.
 > 검증: [`format-adapter.test.ts`](../../packages/weighted-index/src/format-adapter.test.ts) §1–§7

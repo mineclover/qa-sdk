@@ -394,7 +394,7 @@ calcWeights([8, 4, 5, 4])  // → [80, 20, 4, 1]
 // Last weight is always 1.
 ```
 
-WeightedIndex 내부 weights와 동일한 공식. `encode = Σ (x_i − 1) × W[i]`.
+`calcWeights()`는 stride 공식 `W[i] = Π_{j>i} shape[j]`의 **canonical 구현**이다. `WeightedIndex` 생성자가 이를 호출하여 stride를 계산한다. `encode = Σ (x_i − 1) × W[i]`.
 
 ### `partialQueryBase`
 

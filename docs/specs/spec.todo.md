@@ -183,7 +183,7 @@
 
 | 항목 | 상태 | 설명 |
 |---|---|---|
-| demo-tests 패키지 | ✅ 완료 | 29개 테스트 파일 (500 tests) — index-meta 17개 + permission-engine 6개 + 통합 4개 + AXIS 반영 |
+| demo-tests 패키지 | ✅ 완료 | 37개 테스트 파일 (566 tests) — index-meta 17개 + permission-engine 6개 + 통합 4개 + merge-contract 5개 + AXIS 반영 |
 | weighted-wasm 패키지 | ✅ 완료 | Rust→WASM 20KB, 6개 함수, 7 Rust tests, JS fallback 래퍼 |
 | weighted-gpu 패키지 | ✅ 완료 | WebGPU WGSL 3 shaders, GPUEncoder 클래스, GPU 미지원 시 null |
 | demo-snapshot 패키지 | ✅ 완료 | AXIS 기반 5개 도메인 데이터 카탈로그 (15축) + MetaRegistry 입력 빌더 |
