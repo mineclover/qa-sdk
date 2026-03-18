@@ -15,12 +15,14 @@
         "createPermCodeFactory: ServiceContext 바인딩 후 코드 생성 → formatPermCode 결과와 동등",
         "type별 패턴 규칙 검증: page(param 금지/depth 3), api(param 허용/depth 4), action(param 금지/depth 3)",
         "테스트 파일 위치: demo-tests에 기존 permission-code.test.ts가 있으면 보강, 없으면 permission-engine 내 생성",
+        "pnpm --filter permission-engine build passes",
         "pnpm --filter permission-engine test passes",
-        "pnpm --filter demo-tests test passes"
+        "pnpm --filter demo-tests test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 1,
       "passes": false,
-      "notes": "tasks/test-permission-code.md 참조. demo-tests/src/permission-engine/permission-code.test.ts가 이미 존재할 수 있음 — 기존 커버리지 확인 후 누락분만 추가",
+      "notes": "tasks/test-permission-code.md 참조. demo-tests/src/permission-engine/permission-code.test.ts가 이미 존재할 수 있음 — 기존 커버리지 확인 후 누락분만 추가. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
@@ -35,50 +37,54 @@
         "validateEntryBatchPayload: 빈 entries 객체 검증",
         "applyEntryBatch: 검증된 payload 적용 후 레지스트리 상태 확인",
         "테스트 파일: packages/index-meta/src/api-payload.test.ts",
-        "pnpm --filter index-meta test passes"
+        "pnpm --filter index-meta build passes",
+        "pnpm --filter index-meta test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 2,
       "passes": false,
-      "notes": "tasks/test-api-payload.md 참조",
+      "notes": "tasks/test-api-payload.md 참조. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
       "id": "US-003",
       "title": "schema-sync.ts 테스트 보강",
-      "description": "As a developer, I want schema-sync의 스키마 동기화 로직(syncSchemaToRegistry, applySchemaDiff)이 테스트로 검증되어 스키마 변경 안전성을 보장하고 싶다.",
+      "description": "As a developer, I want schema-sync의 스키마 동기화 로직이 테스트로 검증되어 스키마 변경 안전성을 보장하고 싶다.",
       "acceptanceCriteria": [
-        "packages/index-meta/src/schema-sync.ts의 모든 public export를 확인",
-        "syncSchemaToRegistry: 빈 레지스트리에 초기 스키마 적용 검증",
-        "syncSchemaToRegistry: 기존 스키마에 새 dim 추가 검증",
-        "syncSchemaToRegistry: 기존 dim에 entry 추가 (append-only) 검증",
-        "syncSchemaToRegistry: 새 index version 생성 검증",
-        "applySchemaDiff: 두 스키마 간 차이 계산 + 적용 검증",
-        "에러 케이스: 동기화 불가 상황(incompatible 변경 등) 에러 검증",
+        "사전 확인: packages/index-meta/src/schema-sync.ts가 존재하고 public export가 있는지 확인. 존재하지 않으면 이 US를 'N/A — 모듈 미존재'로 종료하고 tasks 상태를 skip으로 업데이트",
+        "존재할 경우: 모든 public export를 확인하고 각각에 대한 테스트 작성",
+        "초기 동기화: 빈 레지스트리에 스키마 적용 검증",
+        "증분 변경: dim 추가, entry 추가, version 추가 검증",
+        "에러 케이스: 동기화 불가 상황 에러 검증",
         "테스트 파일: packages/index-meta/src/schema-sync.test.ts",
-        "pnpm --filter index-meta test passes"
+        "pnpm --filter index-meta build passes",
+        "pnpm --filter index-meta test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 3,
       "passes": false,
-      "notes": "tasks/test-schema-sync.md 참조. 함수가 존재하지 않거나 다른 이름일 수 있음 — 실제 export 확인 후 작성",
+      "notes": "tasks/test-schema-sync.md 참조. 함수가 존재하지 않거나 다른 이름일 수 있음 — 실제 export 확인이 첫 단계. 모듈이 없으면 태스크 자체를 N/A로 종료. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
       "id": "US-004",
       "title": "backup.ts 테스트 보강",
-      "description": "As a developer, I want index-meta의 버전 export/import 로직(exportVersion, importVersion)이 테스트로 검증되어 백업/복원 안정성을 보장하고 싶다.",
+      "description": "As a developer, I want index-meta의 버전 export/import 로직이 테스트로 검증되어 백업/복원 안정성을 보장하고 싶다.",
       "acceptanceCriteria": [
-        "packages/index-meta/src/backup.ts의 모든 public export를 확인",
-        "export → import 왕복: 원본 MetaRegistry와 복원된 데이터 동등성 검증",
-        "다중 dim/snapshot이 포함된 version export 검증",
-        "cross-index ref(index_ref dim) 참조 무결성 보존 검증",
-        "빈 version(entries 없는 상태) export 검증",
-        "import 충돌: 이미 존재하는 ID에 import 시 동작(에러 또는 skip) 검증",
+        "사전 확인: packages/index-meta/src/backup.ts가 존재하고 public export가 있는지 확인. 존재하지 않으면 이 US를 'N/A — 모듈 미존재'로 종료하고 tasks 상태를 skip으로 업데이트",
+        "존재할 경우: 모든 public export를 확인하고 각각에 대한 테스트 작성",
+        "export → import 왕복: 원본과 복원 데이터 동등성 검증",
+        "다중 dim/snapshot 포함 version export 검증",
+        "cross-index ref 참조 무결성 보존 검증",
+        "import 충돌 시 동작 검증",
         "테스트 파일: packages/index-meta/src/backup.test.ts",
-        "pnpm --filter index-meta test passes"
+        "pnpm --filter index-meta build passes",
+        "pnpm --filter index-meta test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 4,
       "passes": false,
-      "notes": "tasks/test-backup.md 참조. 함수가 존재하지 않거나 다른 시그니처일 수 있음 — 실제 export 확인 후 작성",
+      "notes": "tasks/test-backup.md 참조. 함수가 존재하지 않거나 다른 시그니처일 수 있음 — 실제 export 확인이 첫 단계. 모듈이 없으면 N/A 종료. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
@@ -86,6 +92,7 @@
       "title": "weighted-wasm JS 래퍼 테스트",
       "description": "As a developer, I want weighted-wasm의 JS 래퍼(initWasm, encodeBatch, decodeBatch, popcountWasm 등)가 테스트로 검증되어 WASM↔JS 바인딩 안정성을 보장하고 싶다.",
       "acceptanceCriteria": [
+        "사전 확인: packages/weighted-wasm/pkg/ 디렉토리에 WASM 빌드 산출물(.wasm)이 있는지 확인. 없으면 wasm-pack build 실행 또는 빌드 불가 사유 기록",
         "packages/weighted-wasm/js/index.ts의 모든 public export를 확인",
         "initWasm 성공: WASM 모듈 로드 후 함수 바인딩 확인",
         "initWasm 실패 → JS fallback: WASM 없을 때 graceful fallback 검증",
@@ -94,11 +101,13 @@
         "popcountWasm 정확성: 알려진 비트 패턴(0x00, 0xFF, 0xAA 등) 검증",
         "maskAndWasm, maskOrWasm 정확성: 비트 연산 결과 검증",
         "테스트 파일: packages/weighted-wasm/js/index.test.ts",
-        "pnpm --filter weighted-wasm test passes (vitest 설정 필요할 수 있음)"
+        "vitest 설정이 없으면 vitest.config.ts + package.json scripts.test 추가",
+        "pnpm --filter weighted-wasm test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 5,
       "passes": false,
-      "notes": "tasks/test-wasm-js.md 참조. WASM 빌드가 필요할 수 있음 — pkg/ 디렉토리에 빌드 산출물이 있는지 확인",
+      "notes": "tasks/test-wasm-js.md 참조. WASM 빌드 의존 — pkg/가 없으면 Rust 빌드 환경 필요. fallback 경로는 WASM 없이도 테스트 가능. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
@@ -106,22 +115,24 @@
       "title": "weighted-gpu fallback 테스트",
       "description": "As a developer, I want weighted-gpu의 GPUEncoder가 GPU 미지원 환경에서 graceful하게 동작하는 것이 테스트로 검증되길 원한다.",
       "acceptanceCriteria": [
-        "packages/weighted-gpu/src/index.ts의 GPUEncoder 클래스 확인",
+        "packages/weighted-gpu/src/index.ts의 GPUEncoder 클래스 구조 확인",
         "GPUEncoder.isAvailable(): Node.js(no WebGPU) → false 반환 검증",
         "GPUEncoder.create(shape): GPU 없으면 null 반환 검증 (에러 throw 아님)",
-        "API 계약: encodeBatch, decodeBatch, reduceByKey, destroy 메서드 시그니처 타입 확인",
+        "API 계약: encodeBatch, decodeBatch, reduceByKey, destroy 메서드 존재 + 시그니처 타입 확인",
         "테스트 파일: packages/weighted-gpu/src/index.test.ts",
-        "WebGPU 없는 환경에서도 테스트 통과 (GPU 실제 연산은 브라우저 수동 검증)",
-        "pnpm --filter weighted-gpu test passes (vitest 설정 필요할 수 있음)"
+        "vitest 설정이 없으면 vitest.config.ts + package.json scripts.test 추가",
+        "WebGPU 없는 환경(Node.js)에서도 테스트 통과",
+        "pnpm --filter weighted-gpu test passes",
+        "기존 테스트가 깨지지 않음"
       ],
       "priority": 6,
       "passes": false,
-      "notes": "tasks/test-gpu-fallback.md 참조. WebGPU API가 Node.js에 없으므로 device unavailable 경로만 검증",
+      "notes": "tasks/test-gpu-fallback.md 참조. WebGPU API가 Node.js에 없으므로 device unavailable 경로만 검증. 실제 GPU 연산은 브라우저 수동 검증. 다른 US와 독립 — 병렬 실행 가능.",
       "dependsOn": []
     },
     {
       "id": "US-007",
-      "title": "permission-engine 스펙 작성 — core.spec.md",
+      "title": "permission-engine 스펙 작성 — core.spec.md + README",
       "description": "As a developer, I want PermissionSet, TernaryMask, ScopedEngine의 스펙이 문서화되어 비트마스크 권한 엔진의 설계 의도와 API 계약이 명확히 기록되길 원한다.",
       "acceptanceCriteria": [
         "docs/specs/indexing/permission-engine/ 디렉토리 생성",
@@ -132,11 +143,13 @@
         "core.spec.md에 ScopedEngine 문서화: env/region/device 외부 컨텍스트별 독립 마스크, scope key 관리",
         "상태: implemented",
         "런타임 흐름 심볼 cross-reference 포함 ([S2] 참조)",
-        "기존 packages/permission-engine/src/ 소스의 모든 public export가 스펙에 반영되었는지 확인"
+        "packages/permission-engine/src/permission-set.ts, ternary-mask.ts, scoped-engine.ts의 모든 public export가 스펙에 반영되었는지 확인",
+        "스펙 문서만 작성, 코드 변경 없음",
+        "pnpm --filter permission-engine typecheck passes (기존 코드 미변경 확인)"
       ],
       "priority": 7,
       "passes": false,
-      "notes": "tasks/spec-permission-engine.md 참조. CLAUDE.md의 Permission Engine Architecture 섹션을 정본으로 참조하되 스펙 형식으로 재구성",
+      "notes": "tasks/spec-permission-engine.md 참조. CLAUDE.md의 Permission Engine Architecture 섹션을 정본으로 참조하되 스펙 형식으로 재구성. 소스 코드를 먼저 읽고 실제 API와 일치하는 스펙 작성.",
       "dependsOn": []
     },
     {
@@ -150,11 +163,12 @@
         "PrefixCodec/SemanticAddress 연동 방식 문서화",
         "index-meta의 MetaCodec.encode() 결과와 Tier 2 주소의 호환성 명시",
         "상태: implemented",
-        "packages/permission-engine/src/permission-codec.ts의 모든 public export가 반영되었는지 확인"
+        "packages/permission-engine/src/permission-codec.ts의 모든 public export가 반영되었는지 확인",
+        "스펙 문서만 작성, 코드 변경 없음"
       ],
       "priority": 8,
       "passes": false,
-      "notes": "CLAUDE.md의 '3-tier 프로토콜 스택' 섹션 참조",
+      "notes": "CLAUDE.md의 '3-tier 프로토콜 스택' 섹션 참조. US-007의 README가 먼저 존재해야 인덱스에 추가 가능.",
       "dependsOn": [
         "US-007"
       ]
@@ -170,7 +184,8 @@
         "service-ref 문서화: (namespace/name) 필수 + (env/build/region) SDK 일괄 설정, ServiceContext",
         "permission-code 문서화: {service-ref}.{type}.{resource}.{action}, formatPermCode/parsePermCode/createPermCodeFactory",
         "상태: implemented",
-        "packages/permission-engine/src/resource.ts, service-ref.ts, permission-code.ts의 모든 public export 반영 확인"
+        "packages/permission-engine/src/resource.ts, service-ref.ts, permission-code.ts의 모든 public export 반영 확인",
+        "스펙 문서만 작성, 코드 변경 없음"
       ],
       "priority": 9,
       "passes": false,
@@ -190,7 +205,8 @@
         "CoordMapper 커스텀 변환 인터페이스 문서화",
         "composite-address.ts의 역할 문서화 (있으면)",
         "상태: implemented",
-        "packages/permission-engine/src/migration.ts, composite-address.ts의 모든 public export 반영 확인"
+        "packages/permission-engine/src/migration.ts, composite-address.ts의 모든 public export 반영 확인",
+        "스펙 문서만 작성, 코드 변경 없음"
       ],
       "priority": 10,
       "passes": false,
@@ -213,7 +229,9 @@
         "멀티서비스 패턴: 같은 codec + 다른 binder → 서비스별 독립 주소 공간",
         "상태: implemented",
         "docs/specs/indexing/weighted-index/README.md에 partial-binder.spec.md 행 추가",
-        "packages/weighted-index/src/partial-binder.ts의 모든 public export 반영 확인"
+        "packages/weighted-index/src/partial-binder.ts의 모든 public export 반영 확인",
+        "스펙 문서만 작성, 코드 변경 없음",
+        "pnpm --filter weighted-index typecheck passes (기존 코드 미변경 확인)"
       ],
       "priority": 11,
       "passes": false,
@@ -222,20 +240,32 @@
     },
     {
       "id": "US-012",
-      "title": "인덱스 문서 업데이트",
-      "description": "As a developer, I want 새로 작성된 스펙들이 인덱스 문서(README.md, specs/README.md)에 반영되어 전체 문서 체계가 일관되길 원한다.",
+      "title": "인덱스 문서 업데이트 + 품질 게이트 최종 확인",
+      "description": "As a developer, I want 새로 작성된 스펙들이 인덱스 문서에 반영되고, 전체 빌드/테스트가 통과하여 회귀 없음을 확인하고 싶다.",
       "acceptanceCriteria": [
         "docs/specs/indexing/README.md — permission-engine 패키지 스펙 행 추가 (4문서, implemented)",
         "docs/specs/indexing/README.md — partial-binder.spec.md 횡단 참조 또는 weighted-index 하위 행 추가",
         "docs/specs/indexing/weighted-index/README.md — partial-binder.spec.md 행 추가",
         "docs/specs/README.md — 패키지→스펙 매핑 테이블에 permission-engine 행 추가",
-        "docs/specs/tasks/README.md — Phase 2 태스크들(#8, #9) 상태를 ✅ 완료로 업데이트",
-        "docs/specs/spec.todo.md — 해당 작업 항목 완료 반영"
+        "docs/specs/tasks/README.md — Phase 1~2 태스크 상태를 실제 결과로 업데이트 (완료 또는 N/A)",
+        "docs/specs/spec.todo.md — 해당 작업 항목 완료 반영",
+        "모든 스펙의 cross-reference 링크가 실제 파일을 가리키는지 확인",
+        "최종 품질 게이트: pnpm --filter weighted-index build passes",
+        "최종 품질 게이트: pnpm --filter index-meta build passes",
+        "최종 품질 게이트: pnpm --filter permission-engine build passes",
+        "최종 품질 게이트: pnpm --filter demo-tests test passes",
+        "최종 품질 게이트: pnpm --filter @qa-sdk/decode-service test passes"
       ],
       "priority": 12,
       "passes": false,
-      "notes": "US-007~US-011 완료 후 인덱스 일괄 업데이트",
+      "notes": "US-001~US-011 전체 완료 후 인덱스 일괄 업데이트 + 전체 빌드/테스트 회귀 확인",
       "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
         "US-007",
         "US-008",
         "US-009",
@@ -245,6 +275,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-18T09:00:00.000Z"
+    "updatedAt": "2026-03-18T10:00:00.000Z"
   }
 }

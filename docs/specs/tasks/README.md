@@ -38,8 +38,8 @@
 ## 의존 그래프
 
 ```
-Phase 1 (테스트 — 순서 실행, 각각 독립)
-  #2 permission-code → #3 api-payload → #4 schema-sync → #5 backup → #6 wasm → #7 gpu
+Phase 1 (테스트 — 각각 독립, 병렬 가능)
+  #2 permission-code  #3 api-payload  #4 schema-sync  #5 backup  #6 wasm  #7 gpu
 
 Phase 2 (스펙 — Phase 1 이후)
   #8 permission-engine-spec → #9 partial-binder-spec

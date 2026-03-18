@@ -1,14 +1,14 @@
 {
-  "id": "0333b722-2394-4a5a-8853-1456768fb03a",
+  "id": "9421e36f-812a-4ff9-8a98-08f4eff9985a",
   "status": "completed",
-  "startedAt": "2026-03-12T16:15:39.493Z",
-  "updatedAt": "2026-03-12T23:08:34.848Z",
+  "startedAt": "2026-03-18T03:28:54.856Z",
+  "updatedAt": "2026-03-18T03:29:00.064Z",
   "agentPlugin": "codex",
   "trackerPlugin": "json",
-  "currentIteration": 11,
+  "currentIteration": 0,
   "maxIterations": 0,
   "totalTasks": 0,
-  "tasksCompleted": 11,
+  "tasksCompleted": 0,
   "cwd": "/Users/junwoobang/workflow/qa-sdk",
-  "endedAt": "2026-03-12T23:08:34.848Z"
+  "endedAt": "2026-03-18T03:29:00.064Z"
 }
