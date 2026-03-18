@@ -155,6 +155,23 @@ API 클라이언트, iframe 통신 프로토콜.
 |---|---|---|
 | [runtime-flows.spec.md](operations/runtime-flows.spec.md) | 동기(S)/비동기(A)/디버깅(D) 3경로 흐름 정의, 심볼 체계, 모듈 참여 맵 | planned |
 
+### tasks/ — 구현 태스크
+
+runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 단위.
+
+> 인덱스: [`tasks/README.md`](tasks/README.md)
+
+| 태스크 | 대상 흐름 | spec.todo 매핑 |
+|---|---|---|
+| [test-bigint.md](tasks/test-bigint.md) | — | B-1 ~ B-3 |
+| [infra-debug-store.md](tasks/infra-debug-store.md) | D3 | 신규 |
+| [infra-sql-adapters.md](tasks/infra-sql-adapters.md) | S4 | H-1 ~ H-3 |
+| [unit-1-async-worker.md](tasks/unit-1-async-worker.md) | A2→A4 | 신규 |
+| [service-gate.md](tasks/service-gate.md) | S2, A4 | E-1 ~ E-4 |
+| [service-query.md](tasks/service-query.md) | S2, A5 | F-1 ~ F-5 |
+| [unit-2-pipeline.md](tasks/unit-2-pipeline.md) | A1, A5, A6 | I-1 ~ I-6 |
+| [unit-3-monitoring.md](tasks/unit-3-monitoring.md) | A6 조회 | 신규 |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.

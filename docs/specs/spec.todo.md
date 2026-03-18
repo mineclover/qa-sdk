@@ -57,13 +57,13 @@
 | PrefixDecoder BigInt 거부 | ✅ 완료 | 생성 시 ValidationError |
 | Number 전용 메서드 BigInt 차단 | ✅ 완료 | createCodec, getWeightedIndex, serialize, parse |
 
-### 작업 필요 사항
+### 작업 필요 사항: ✅ 전부 완료
 
-| # | 작업 | 우선순위 | 난이도 | 설명 |
-|---|---|---|---|---|
-| B-1 | **SemanticAddressBig 프로토콜 테스트** | 중 | 낮 | `createLayoutProtocolBig`의 serialize/parse 왕복 테스트 없음. index > 2^53인 hex 직렬화 검증 필요 |
-| B-2 | **INV-9 MetaCodec 동등성 테스트** | 중 | 낮 | WeightedIndex 동등성은 검증됨. `MetaCodec.encode().value === Number(MetaCodecBig.encode().value)` 동등성 미검증 |
-| B-3 | **MetaCodecBig.matchRanges 대형 shape 테스트** | 낮 | 낮 | 현재 소형 shape(3×2)만 테스트. 2^53 초과 shape에서의 matchRanges 정확성 검증 |
+| # | 작업 | 상태 | 테스트 파일 |
+|---|---|---|---|
+| B-1 | SemanticAddressBig 프로토콜 테스트 | ✅ | `demo-tests/src/index-meta/bigint-address.test.ts` (11 tests) |
+| B-2 | INV-9 MetaCodec 동등성 테스트 | ✅ | `demo-tests/src/index-meta/bigint-codec-equiv.test.ts` (9 tests) |
+| B-3 | MetaCodecBig.matchRanges 대형 shape 테스트 | ✅ | `demo-tests/src/index-meta/bigint-ranges.test.ts` (12 tests) |
 
 ---
 
@@ -339,8 +339,8 @@ batch encoder (GPU offload 가능)
 
 | ID | 작업 | 대상 스펙 | 난이도 |
 |---|---|---|---|
-| B-1 | SemanticAddressBig 프로토콜 테스트 | bigint-addressing | 낮 |
-| B-2 | INV-9 MetaCodec 동등성 테스트 | bigint-addressing | 낮 |
+| ~~B-1~~ | ~~SemanticAddressBig 프로토콜 테스트~~ | ~~bigint-addressing~~ | ✅ |
+| ~~B-2~~ | ~~INV-9 MetaCodec 동등성 테스트~~ | ~~bigint-addressing~~ | ✅ |
 
 ### Tier 2 — 서비스 레이어 (라이브러리 → 서비스 전환)
 
