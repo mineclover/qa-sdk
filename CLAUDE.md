@@ -61,6 +61,13 @@
 
 ### BitIndex 최적화 레이어
 - `PermissionView = codec.createView(mask)` — mask 1개당 1회 변환, 이후 필터 4~6× 빠름
+- `PermissionView.applyGrant/applyRevoke` — 재생성 없이 O(1) 점진적 패치
+- `PermissionViewCache` — 서비스용 캐시 매니저 (LRU + Singleflight + 점진적 패치)
+  - `get(key)` → cache hit O(1) / miss → loadMask → createView → 캐시
+  - `applyGrant/applyRevoke(key, ...)` → 캐시된 view에 O(1) 패치 (재생성 없음)
+  - `invalidate(key)` / `invalidateByDim(label, value)` / `invalidateAll()` — 3단계 무효화
+  - Singleflight: 동시 get(same key) → loadMask 1회만 실행
+  - S6 벤치: 100 유저 × 100 요청, hitRate 99%, ~880K ops/s
 - 단건 check는 기존 `checkRaw`(WI+hasBit)이 더 빠름 (126ns vs 225ns)
 - 반복 필터는 `view.filter()`가 유리 (5조건 반복 시 5.1× 빠름)
 - sparse 직렬화(JWT 등)는 `BitMaskSet.toBase64()`가 Uint8Array보다 작음 (1% 부여 시 3× 절약)

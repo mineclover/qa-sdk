@@ -59,6 +59,21 @@ src/
     error-parity.test.ts           코덱 간 에러 거부 동작 패리티
 
   bit-field-roundtrip.test.ts    bit-field-layout 변환 경로 라운드트립 (Number/BigInt/hex/bytes)
+  dim-pack-roundtrip.test.ts     BitIndex 차원별 비트 패킹 라운드트립 + O(1) 추출 검증
+  encoding-comparison.test.ts    WeightedIndex vs BitIndex 역할 분담 증명 + use case 검증
+  encoding-bridge.test.ts        IndexBridge 양방향 변환 전수 왕복 + DB↔인메모리 파이프라인
+  bit-mask-set-e2e.test.ts       BitMaskSet grant/filter/대수/직렬화 + Bridge 연동
+
+  registry-service-e2e.test.ts   Registry Service 쇼핑 플랫폼 E2E (DAG·simulate·lock·release·resolve)
+  registry-service-format-exploration.test.ts  서비스 등록 포맷 탐색 (Format A~D 비교)
+  registry-dsl-git.test.ts       Git 버전 관리 체계 DSL (pkg·semver·ccType 축 + 주소 인코딩)
+
+  permission-view-e2e.test.ts    PermissionView/Cache + BitMaskSet 교차 E2E (filter/patch/cache/hasBit)
+  platform-api-contract.test.ts  platform-demo-api 응답 contract + mask API + SSOT 정합성
+
+  permission-engine (캐시/최적화)
+    permission-view-cache.test.ts  캐시 기본/패치/무효화/Singleflight/LRU/고트래픽 시뮬레이션
+    bench-bit-optimization.test.ts BitIndex 최적화 벤치마크 (§1-§6)
   registry-codec.test.ts         MetaRegistry 코덱 라운드트립
   position-stability.test.ts     v1→v2 위치 안정성
   permission-migration.test.ts   권한 마이그레이션 통합
