@@ -49,6 +49,31 @@ export type { CatalogInput, CatalogPrefix } from "./loader/catalog-bridge.js";
 export { loadSpecs, parseSpecFile } from "./loader/spec-loader.js";
 export type { LoadResult, LoadError, ParseResult } from "./loader/spec-loader.js";
 
+// ── Codegen IR ──────────────────────────────────────
+export type { IRModule, IREnum, IREnumValue, IRStruct, IRField } from "./codegen/ir.js";
+export { buildIR } from "./codegen/ir-builder.js";
+export type { BuildIROptions } from "./codegen/ir-builder.js";
+
+// ── Codegen TypeScript ──────────────────────────────
+export {
+  generateAxisType,
+  generateExportInterface,
+  generateTypescriptFile,
+  generateFromIR,
+} from "./codegen/ts-generator.js";
+export type { AxisInput, GenerateOptions } from "./codegen/ts-generator.js";
+
+// ── Codegen JavaScript ──────────────────────────────
+export { generateJSFromIR, generateCJSFromIR } from "./codegen/js-generator.js";
+export type { JSFormat } from "./codegen/js-generator.js";
+
+// ── Codegen Protobuf ────────────────────────────────
+export { generateProtoFromIR } from "./codegen/proto-generator.js";
+export type { ProtoOptions } from "./codegen/proto-generator.js";
+
+// ── Codegen JSON Schema ─────────────────────────────
+export { generateJsonSchemaFromIR } from "./codegen/json-schema-generator.js";
+
 // ── Shared ──────────────────────────────────────────
 export { ok, err } from "./shared/result.js";
 export type { Result } from "./shared/result.js";

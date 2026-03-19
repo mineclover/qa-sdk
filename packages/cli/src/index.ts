@@ -15,7 +15,7 @@ import { register } from "./commands/register.js";
 import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
 import { codegen, type CodegenFormat } from "./commands/codegen.js";
-import { specList, specResolve, specValidate, specTrace, specDecode } from "./commands/spec.js";
+import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -33,6 +33,7 @@ Usage:
   qa-sdk spec validate <schema> ...  스키마 검증
   qa-sdk spec trace <specId>         추적성 경로 조회
   qa-sdk spec decode <addr>          주소 → 제목 변환 (decode→entries→export)
+  qa-sdk spec codegen [options]      코드 생성 (ts|esm|cjs|proto|json-schema)
 
 Commands:
 
@@ -96,6 +97,8 @@ async function main() {
       return runSpecTrace(sub.rest);
     case "spec decode":
       return runSpecDecode(sub.rest);
+    case "spec codegen":
+      return runSpecCodegen(sub.rest);
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
       console.log(USAGE);
@@ -112,7 +115,7 @@ interface Subcommand {
 
 function resolveSubcommand(args: string[]): Subcommand {
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
-  const twoWord = ["scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode"];
+  const twoWord = ["scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen"];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
     if (twoWord.includes(candidate)) {
@@ -378,6 +381,23 @@ async function runSpecTrace(argv: string[]) {
     specPath: values.specs,
     catalogInput: values.catalog ? await loadCatalogInput() : undefined,
     specId: values.id,
+  });
+}
+
+// ── spec codegen ────────────────────────────────────
+
+async function runSpecCodegen(argv: string[]) {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, output: { type: "string" }, format: { type: "string", default: "ts" } },
+    strict: true,
+  });
+
+  await specCodegen({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    output: values.output,
+    format: values.format as "ts" | "esm" | "cjs" | "proto" | "json-schema",
   });
 }
 

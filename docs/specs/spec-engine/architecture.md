@@ -353,6 +353,14 @@ packages/spec-core/
       catalog-bridge.ts              ← DEMO_CATALOG → PrefixSpec[] 변환
       spec-loader.ts                 ← JSON/YAML → SpecDocument/PrefixSpec/SchemaDef/SchemaFragment
 
+    codegen/
+      ir.ts                          ← 중간 표현 (IRModule, IREnum, IRStruct)
+      ir-builder.ts                  ← 데이터 원천 → IRModule 변환
+      ts-generator.ts                ← IR → TypeScript (.ts)
+      js-generator.ts                ← IR → ESM (.mjs) / CommonJS (.cjs)
+      proto-generator.ts             ← IR → Protobuf proto3 (.proto)
+      json-schema-generator.ts       ← IR → JSON Schema draft-2020-12 (.json)
+
     observation/                     ← Phase 4 (미착수)
       observation.types.ts
       trace-context.ts

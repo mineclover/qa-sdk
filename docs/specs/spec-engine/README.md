@@ -185,4 +185,6 @@ prefix의 존재 이유를 문서화. c4-doc 참조하되 독립 재작성.
 | [core-types.md](core-types.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API |
 | [architecture.md](architecture.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계, 함정 방지 |
 | [phases.md](phases.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 |
-| [design-knowledge-graph.md](design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 8종, 엣지 14종, 순환 모델) |
+| [design-knowledge-graph.md](design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 11종, 엣지 18종, 성장 나선 모델) |
+| [dkg-skills.md](dkg-skills.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, 8개 skill 카탈로그 |
+| [spec-propagation.md](spec-propagation.md) | Spec Propagation — PrefixSpec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 |

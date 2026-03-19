@@ -13,8 +13,15 @@ import {
   catalogToPrefixSpecs,
   loadSpecs,
   registerPresets,
+  generateTypescriptFile,
+  buildIR,
+  generateFromIR,
+  generateJSFromIR,
+  generateCJSFromIR,
+  generateProtoFromIR,
+  generateJsonSchemaFromIR,
 } from "@qa-sdk/spec-core";
-import type { PrefixSpec } from "@qa-sdk/spec-core";
+import type { PrefixSpec, AxisInput } from "@qa-sdk/spec-core";
 import { decodePrefix, resolveAddress, type DemoCatalog } from "demo-snapshot";
 
 // ── Shared bootstrap ────────────────────────────────
@@ -325,6 +332,87 @@ function printResolved(
       console.log(`${indent}  → ${ref.prefix}:${ref.version}:${ref.address}`);
       printResolved(ref.dims, indent + "    ");
     }
+  }
+}
+
+// ── spec codegen ────────────────────────────────────
+
+export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema";
+
+export async function specCodegen(options: {
+  catalogInput?: unknown;
+  specPath?: string;
+  output?: string;
+  format?: CodegenFormat;
+}): Promise<void> {
+  const ctx = await createSpecContext(options);
+
+  if (!ctx.catalogInput) {
+    console.error("spec codegen은 --catalog 옵션이 필요합니다");
+    process.exitCode = 1;
+    return;
+  }
+
+  const catalog = ctx.catalogInput as DemoCatalog;
+  const format = options.format ?? "ts";
+
+  // axis entries 추출
+  const axes: AxisInput[] = [];
+  const seenAxisIds = new Set<string>();
+  const ko: Record<string, Record<string, string>> = {};
+
+  for (const spec of ctx.prefixSpecs) {
+    for (const [, dimRef] of Object.entries(spec.dims)) {
+      if (dimRef.kind === "axis" && !seenAxisIds.has(dimRef.axisId)) {
+        seenAxisIds.add(dimRef.axisId);
+        const axis = catalog.axes[dimRef.axisId];
+        if (axis) {
+          const versionKeys = Object.keys(axis.versions);
+          const latestKey = versionKeys[versionKeys.length - 1];
+          const snap = axis.versions[latestKey];
+          axes.push({ id: axis.id, entries: snap.entries, capacity: snap.capacity });
+          if (snap.ko) ko[axis.id] = snap.ko as Record<string, string>;
+        }
+      }
+    }
+  }
+
+  // IR 생성 (모든 format의 공통 입력)
+  const ir = buildIR({ axes, prefixSpecs: ctx.prefixSpecs, ko });
+
+  // format별 코드 생성
+  let content: string;
+  switch (format) {
+    case "ts":
+      content = generateFromIR(ir);
+      break;
+    case "esm":
+      content = generateJSFromIR(ir, "esm");
+      break;
+    case "cjs":
+      content = generateCJSFromIR(ir);
+      break;
+    case "proto":
+      content = generateProtoFromIR(ir);
+      break;
+    case "json-schema":
+      content = generateJsonSchemaFromIR(ir);
+      break;
+    default:
+      console.error(`지원하지 않는 format: ${format}`);
+      console.error("지원 형식: ts, esm, cjs, proto, json-schema");
+      process.exitCode = 1;
+      return;
+  }
+
+  if (options.output) {
+    const { writeFile, mkdir } = await import("node:fs/promises");
+    const { dirname } = await import("node:path");
+    await mkdir(dirname(options.output), { recursive: true });
+    await writeFile(options.output, content, "utf-8");
+    console.log(`Generated: ${options.output} (${format})`);
+  } else {
+    console.log(content);
   }
 }
 

@@ -41,7 +41,7 @@ Phase 1: spec-core 기반 (순수 TS 커널)        ✅ 완료
   ▼
 Phase 2: 소비 경로
   │
-  ├── 2-1: CLI 통합                             ✅ 4 명령어 동작
+  ├── 2-1: CLI 통합                             ✅ 7 명령어 + 5 codegen formats
   └── 2-2: spec-server (NestJS 호스트 + API)   ○ 미착수
   │
   ▼
@@ -111,27 +111,76 @@ Phase 5: 확장 (선택적)                          ○ 미착수
 
 ### 2-1: CLI 통합 ✅
 
-@qa-sdk/cli에 spec 명령어 4개 구현. DI 없이 spec-core 직접 import.
+@qa-sdk/cli에 spec 명령어 7개 구현. DI 없이 spec-core 직접 import.
+
+공통 옵션: `--catalog` (DEMO_CATALOG 직접 로딩), `--specs <dir>` (파일 기반 로딩). 병행 가능.
 
 ```
-qa-sdk spec list     [--specs <dir>]    Prefix + Schema + Fragment + Spec 문서 전체 목록
-qa-sdk spec resolve  [--specs <dir>] --prefix <id> --values <json>   Export title 생성
-qa-sdk spec validate [--specs <dir>] --schema <id> --data <json>     L0/L1/L2 검증
-qa-sdk spec trace    [--specs <dir>] --id <specId>                   추적성 경로 조회
+qa-sdk spec list      [--catalog] [--specs <dir>]                           전체 목록
+qa-sdk spec resolve   [--catalog] [--specs <dir>] --prefix <id> --values    Export title
+qa-sdk spec validate  [--catalog] [--specs <dir>] --schema <id> --data      L0/L1/L2 검증
+qa-sdk spec trace     [--catalog] [--specs <dir>] --id <specId>             추적성 경로
+qa-sdk spec decode    [--catalog] --address <prefix:ver:addr> [--deep]      주소 → 제목
+                      [--format json]                                       JSON 출력
+qa-sdk spec codegen   [--catalog] [--specs <dir>]                           코드 생성
+                      [--format ts|esm|cjs|proto|json-schema]
+                      [--output <path>]
 ```
 
 구현 상세:
-- `spec list`: prefix별 export dims/pattern/internal/imports/specRef/rationale 표시. schema + fragment + spec 문서도 함께 표시.
-- `spec resolve`: ExportSurfaceRegistry.resolve 호출. 미등록 prefix / 누락 dim 에러 처리.
-- `spec validate`: SchemaRegistry에서 schema 로딩 → SchemaValidator.validate. schema not found 시 available schemas 안내.
-- `spec trace`: SpecDocumentRegistry에서 outgoing/incoming relations + linked prefixes(specRef) 추적.
+- `spec list`: prefix별 export dims/pattern/internal/imports/specRef/rationale + schema 6종 + fragment 4종 + spec 문서.
+- `spec resolve`: ExportSurfaceRegistry.resolve. 미등록 prefix / 누락 dim 에러 처리.
+- `spec validate`: 6 base schemas 기본 제공 (registerPresets). 파일 없이 바로 검증 가능. schema not found 시 available schemas 안내.
+- `spec trace`: outgoing/incoming relations + linked prefixes(specRef) + rationale.
+- `spec decode`: `prefix:version:address` → decode → entries lookup → export resolve. `--deep`으로 prefix_ref 재귀 분해 (ko 포함). `--format json`으로 pipe 가능한 JSON 출력.
+- `spec codegen`: IR(중간 표현) 기반 multi-format 코드 생성 (아래 상세).
 - context 캐싱: 같은 옵션이면 registry 재생성 안 함.
 
+### Codegen: IR 기반 multi-format 코드 생성
+
+데이터 원천에서 언어 중립적 IR(Intermediate Representation)을 생성하고, 각 언어 generator가 IR을 소비.
+
+```
+데이터 원천 (DEMO_CATALOG + PrefixSpec)
+    ↓
+  buildIR() → IRModule { enums[], structs[] }
+    ↓
+  ├── generateFromIR()         → TypeScript (.ts)      ✅ const + type + interface
+  ├── generateJSFromIR("esm")  → ESM JavaScript (.mjs) ✅ Object.freeze + _VALUES 배열
+  ├── generateCJSFromIR()      → CommonJS (.cjs)       ✅ module.exports
+  ├── generateProtoFromIR()    → Protobuf (.proto)     ✅ proto3 enum + message
+  └── generateJsonSchemaFromIR() → JSON Schema (.json) ✅ draft-2020-12 + $ref
+```
+
+IR 타입 구조:
+- `IREnum`: axis entries → { id, values[], capacity }
+- `IRStruct`: export surface → { id, fields[], description }
+- `IRField`: dim → { name, enumRef, dimKind }
+- `IRModule`: { enums[], structs[] }
+
+새 언어 추가: `IRModule`을 소비하는 generator 함수 하나만 구현. 데이터 원천 변경 불필요.
+
+### 표준 Presets
+
+6 base schemas + 4 fragments가 기본 내장 (`registerPresets()`):
+
+| Schema | Category | Axes |
+|--------|----------|------|
+| event.base | event | event_kind, action + HasActor, HasTarget |
+| entity.base | entity | entity_kind, state + Identified |
+| relation.base | relation | source_ref, relation_kind, target_ref, qualifier |
+| state.base | state | subject_ref, state_kind, state_value, scope |
+| policy.base | policy | subject, action, resource, effect, scope |
+| observation.base | observation | observed_ref, observation_kind, metric, trace_id |
+
 검증 완료:
-- [x] @qa-sdk/cli에서 spec-core import 성공 (빌드 에러 없음)
-- [x] DI 없이 직접 인스턴스화 동작
-- [x] 4개 명령어 모두 동작 (list, resolve, validate, trace)
-- [x] 에러 처리: 인자 누락, dim 값 누락, schema not found, spec not found, 디렉토리 미존재
+- [x] 7개 명령어 모두 동작
+- [x] --catalog로 DEMO_CATALOG 10개 prefix 직접 로딩
+- [x] decode: 3단계 해상도 (표면 title → 내부 분해 → deep resolve with ko)
+- [x] decode --format json: pipe 가능한 구조화 JSON
+- [x] codegen: 5 format 모두 동작 (ts, esm, cjs, proto, json-schema)
+- [x] validate: 기본 schema 6종으로 파일 없이 즉시 검증
+- [x] 에러 처리: 인자 누락, dim 누락, schema/spec not found, 미존재 디렉토리, 잘못된 주소 형식
 
 ### 2-2: spec-server (NestJS 호스트) ○ 미착수
 

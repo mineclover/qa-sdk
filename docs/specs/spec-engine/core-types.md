@@ -516,3 +516,88 @@ class SpecDocumentRegistry {
 4. resolveAddress(42) → { env: "dev", svc → service:v1:40 → ... }  [demo-accessors]
 5. specRef → FEAT-003 → "서비스별 역할 권한 분리"                      [SpecDocumentRegistry]
 ```
+
+---
+
+## 7. Codegen IR — 언어 중립적 중간 표현
+
+데이터 원천에서 언어 중립적 IR(Intermediate Representation)을 생성하고, 각 언어 generator가 IR만 소비하여 코드를 출력한다. 새 언어를 추가할 때 데이터 원천을 건드리지 않아도 된다.
+
+### 7.1 IR 타입
+
+```typescript
+/** enum: axis entries 등 유한 집합 */
+interface IREnum {
+  id: string;
+  capacity?: number;
+  values: IREnumValue[];
+}
+
+interface IREnumValue {
+  name: string;       // 원본 entry 문자열
+  index: number;      // 0-based position
+  label?: string;     // ko 등 번역
+}
+
+/** struct: export surface 등 */
+interface IRStruct {
+  id: string;
+  description?: string;
+  fields: IRField[];
+}
+
+interface IRField {
+  name: string;                           // dim label
+  enumRef: string | null;                 // axis ID → enum 참조, null → string
+  dimKind: "axis" | "prefix_ref" | "table_ref";
+}
+
+/** codegen 전체 입력 */
+interface IRModule {
+  name?: string;
+  enums: IREnum[];
+  structs: IRStruct[];
+}
+```
+
+### 7.2 IR 생성
+
+```typescript
+import { buildIR } from "@qa-sdk/spec-core";
+
+const ir = buildIR({
+  axes: [...],           // AxisInput[]
+  prefixSpecs: [...],    // PrefixSpec[]
+  ko: { role: { admin: "어드민", ... } },
+});
+```
+
+### 7.3 지원 Generator
+
+| Generator | 출력 | 함수 |
+|-----------|------|------|
+| TypeScript | `.ts` (const + type + interface) | `generateFromIR(ir)` |
+| ESM JavaScript | `.mjs` (Object.freeze + _VALUES) | `generateJSFromIR(ir, "esm")` |
+| CommonJS | `.cjs` (module.exports) | `generateCJSFromIR(ir)` |
+| Protobuf | `.proto` (proto3 enum + message) | `generateProtoFromIR(ir)` |
+| JSON Schema | `.json` (draft-2020-12 + $ref) | `generateJsonSchemaFromIR(ir)` |
+
+### 7.4 표준 Presets
+
+`registerPresets(registry)` 호출로 6 base schemas + 4 fragments 기본 등록:
+
+| Schema | Category |
+|--------|----------|
+| event.base | event |
+| entity.base | entity |
+| relation.base | relation |
+| state.base | state |
+| policy.base | policy |
+| observation.base | observation |
+
+| Fragment | Axes |
+|----------|------|
+| HasActor | actor_ref |
+| HasTarget | target_ref |
+| HasOutcome | outcome |
+| Identified | identity |
