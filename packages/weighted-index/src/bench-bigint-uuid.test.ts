@@ -31,7 +31,7 @@ import {
   maxProductBig,
   autoBalancedShape,
   productExcluding,
-} from "./layout-fit.js";
+} from "./math/layout-fit.js";
 import {
   toUUID,
   fromUUID,
@@ -43,7 +43,7 @@ import {
   packUUID,
   unpackUUID,
   planLayout,
-} from "./uuid-layout.js";
+} from "./protocol/uuid-layout.js";
 import {
   formatHex,
   parseHex,
@@ -51,7 +51,7 @@ import {
   hexCeil,
   hexFloor,
   PACK_FORMATS,
-} from "./pack-format.js";
+} from "./protocol/pack-format.js";
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 

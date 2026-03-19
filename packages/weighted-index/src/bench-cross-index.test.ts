@@ -16,7 +16,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { WeightedIndex } from "./weighted-index.js";
+import { WeightedIndex } from "./math/weighted-index.js";
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 

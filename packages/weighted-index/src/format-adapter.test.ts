@@ -25,17 +25,17 @@
  * 제공함을 증명한다.
  */
 import { describe, it, expect } from "vitest";
-import { WeightedIndex } from "./weighted-index.js";
-import { WeightedIndexBig } from "./weighted-index-big.js";
+import { WeightedIndex } from "./math/weighted-index.js";
+import { WeightedIndexBig } from "./math/weighted-index-big.js";
 import {
   shapeProduct,
   shapeProductUncapped,
   maxProductBig,
   dimMaxForBudget,
   dimMaxBig,
-} from "./layout-fit.js";
-import { charsForMax } from "./uuid-layout.js";
-import { fitShape, planCapacity } from "./capacity-planner.js";
+} from "./math/layout-fit.js";
+import { charsForMax } from "./protocol/uuid-layout.js";
+import { fitShape, planCapacity } from "./protocol/capacity-planner.js";
 
 // ── §1 구조적 격리 ─────────────────────────────────────────────────────────
 

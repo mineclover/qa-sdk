@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WeightedIndex } from "../weighted-index.js";
+import { WeightedIndex } from "../math/weighted-index.js";
 import { calcBitWidth } from "./bit-width.js";
 import { xorObfuscate } from "./xor.js";
 import { rotateLeft, rotateRight } from "./rotate.js";

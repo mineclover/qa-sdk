@@ -11,8 +11,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { WeightedIndex } from "./weighted-index.js";
-import { calcAddressRanges } from "./calc.js";
+import { WeightedIndex } from "./math/weighted-index.js";
+import { calcAddressRanges } from "./math/calc.js";
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────
 
