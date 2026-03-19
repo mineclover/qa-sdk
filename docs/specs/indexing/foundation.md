@@ -1,7 +1,10 @@
-# 인덱싱 시스템 기반 원리
+# 좌표 시스템 기반 원리
 
-> 시스템이 **무엇인가**를 정의하는 근본 원리.
-> 사용 패턴은 [`patterns.md`](patterns.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
+> 이 시스템은 **좌표 시스템(Coordinate System)**이다.
+> 유한한 개념 조합에 정수 주소를 부여하고, 주소를 해석하고, 주소 공간을 버전 관리한다.
+> **데이터를 저장하지 않는다.** 저장은 이 좌표 위에 구축되는 별도 계층의 책임이다.
+
+사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`conventions.md`](conventions.md) · 설계 구조: [`data-design.md`](data-design.md)
 
 관련 스펙:
 - [`weighted-index/`](weighted-index/README.md)
@@ -152,6 +155,85 @@ DimSnapshot의 entries 배열은 append-only다. 기존 위치를 건드리지 �
 - 단일 축: entries 추가 = 주소 안정 (stride 무관)
 - 복합 축 + headroom 내: entries 추가 = 주소 안정 (shape 불변 → stride 불변)
 - 복합 축 + headroom 소진: 새 버전 생성 필요 (capacity 확장 → stride 변경 → 마이그레이션)
+
+### 3.4 Draft 워크플로우 — 버전 생성의 실제 패턴
+
+운영 중에는 headroom 내에서 entries를 추가하면 되므로 버전이 바뀌지 않는다. **버전이 바뀌는 것은 headroom이 소진되거나 스키마 구조를 변경해야 할 때**이며, 이때 draft cycle이 시작된다.
+
+#### 2-Phase 운영 모델
+
+```
+Phase 1: 평시 (headroom 내)
+  → 참조 주소 기반 동작
+  → entries append만 발생
+  → stride 불변, 마이그레이션 없음
+  → 단일 축은 실제 식별값까지 안정적
+
+Phase 2: Draft Cycle (headroom 소진 또는 구조 변경)
+  → 관련 축들을 draft로 전환
+  → capacity 조정, entries 재구성
+  → release 시 stride 확정 + migration mapping 계산
+  → activate 후 read-repair로 점진 마이그레이션
+```
+
+#### Draft에서의 cascade
+
+draft 축이 draft 축을 참조하면, 참조되는 축이 확정되지 않았으므로 참조하는 축도 확정될 수 없다. 이것은 자연스러운 상태다.
+
+```
+leaf "role":     draft (capacity=20, entries 추가/삭제 자유)
+leaf "action":   draft (capacity=10)
+
+composite "perm": draft
+  → refs: role(draft), action(draft)
+  → shape = [20, 10] (잠정), stride = [10, 1] (잠정)
+  → 확정 아님 — 참조 축이 draft니까 당연히 미확정
+```
+
+개발 중에 변경이 생기면:
+
+```
+"action에 PATCH 추가" → action draft에 append → perm shape 변동 없음 (headroom 내)
+"role 25개 필요"      → role capacity 20→30 조정 → perm stride 재계산
+                        draft니까 패널티 없음, 저장된 주소도 없음
+```
+
+**draft에서도 capacity를 미리 잡아두는 것이 권장된다.** capacity는 draft 단계에서 "주소 공간 예산"의 역할을 한다:
+
+| 단계 | capacity 의미 | stride | 수정 | 저장된 주소 |
+|------|--------------|--------|------|------------|
+| **draft** | 예산 (가이드라인) | 잠정 계산 | 조정 가능 | 없음 |
+| **released** | 확정 | 고정 | 불가 | 아직 없음 |
+| **active** | 확정 | 고정 | 불가 | 있음 (마이그레이션 대상) |
+
+- Capacity Guard가 draft 단계에서 overflow를 사전 경고할 수 있다
+- stride를 미리 계산하여 주소 공간 크기를 예측할 수 있다
+- release 전까지는 자유롭게 조정할 수 있으므로 설계 반복에 비용이 없다
+
+#### Release — 전체 확정
+
+모든 draft가 정리되면 한번에 release한다:
+
+1. 각 leaf draft의 capacity/entries 확정 → stride 고정
+2. composite draft의 refs가 확정된 leaf 버전을 가리킴 → composite stride 고정
+3. 이전 active 버전과의 migration mapping 계산 (old stride → new stride, decode → re-encode)
+4. activate하면 새 버전이 운영에 투입, 이전 버전은 read-repair 대상
+
+#### 실제 사용 시나리오: DB 스키마 표현
+
+```
+leaf "column_type":   [int, varchar, boolean, timestamp]     capacity=16
+leaf "constraint":    [primary_key, not_null, unique, fk]    capacity=8
+composite "column":   [table_ref, column_type, constraint]
+
+→ column_type에 json 추가: headroom 내이므로 append만. 버전 불변.
+→ column_type이 16개를 넘으면: draft cycle 진입.
+   column_type draft (capacity=32) → column도 draft → release → migrate
+```
+
+headroom을 충분히 잡으면 대부분의 스키마 진화가 Phase 1(평시)에서 처리되고, draft cycle은 드물게 발생한다.
+
+> **버전 운영 상세**: [`version-operations.md`](version-operations.md) — DraftWorkspace, 배포 워크플로우, 다중 버전 관리, 저장값 마이그레이션
 
 ---
 

@@ -134,6 +134,7 @@ API 클라이언트, iframe 통신 프로토콜.
 | [patterns.md](indexing/patterns.md) | 사용 패턴 — EntityId 이동, cross-index 참조, 활성/비활성 | weighted-index + index-meta | — |
 | [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 절차 | weighted-index + index-meta | — |
 | [weighted-index/README.md](indexing/weighted-index/README.md) | weighted-index 패키지 인덱스 — 수학 엔진, partial binder, pack format, range query 구성 | weighted-index | implemented |
+| [weighted-index/traceability.spec.md](indexing/weighted-index/traceability.spec.md) | 변경 전파 추적성 — 3-tier 핀 구조, 변경 유형별 전파 경로, DKG·qa-sdk 계약 | weighted-index | design |
 | [weighted-index/core.spec.md](indexing/weighted-index/core.spec.md) | WeightedIndex / LabelRegistry / PrefixCodec — 수학 엔진 + 버전 관리 | weighted-index | implemented |
 | [weighted-index/partial-binder.spec.md](indexing/weighted-index/partial-binder.spec.md) | PartialBinder / createBinder — 부분 차원 캐시, full path canonicalization, PrefixCodec 연동 | weighted-index | implemented |
 | [weighted-index/pack-format.spec.md](indexing/weighted-index/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
@@ -144,12 +145,38 @@ API 클라이언트, iframe 통신 프로토콜.
 | [permission-engine/resource.spec.md](indexing/permission-engine/resource.spec.md) | resource / service-ref / permission-code — canonical resource 규칙, ServiceContext, permission text address | permission-engine | implemented |
 | [permission-engine/migration.spec.md](indexing/permission-engine/migration.spec.md) | migration.ts — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | permission-engine | implemented |
 
+### spec-engine/ — 작은 세계의 구조 정의 도구
+
+좌표 시스템 위에서 "왜 이 구성인가, 밖에서 어떻게 보이는지"를 정의하는 레이어.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [README.md](spec-engine/README.md) | 프로젝트 정체성, indexing 레이어와의 경계, 핵심 개념 | design |
+| [core-types.md](spec-engine/core-types.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API | design (Phase 1-1 구현 완료) |
+| [architecture.md](spec-engine/architecture.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계 | design |
+| [phases.md](spec-engine/phases.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 | in-progress |
+| [design-knowledge-graph.md](spec-engine/design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 8종, 엣지 14종, 순환 모델) | design |
+
+### apm/ — APM 인프라
+
+텔레메트리 파이프라인 고도화 — n차원 인덱싱 주소 체계 위의 APM 시스템.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [README.md](apm/README.md) | APM 관심사 개요 — 레이어 다이어그램, Snapshot Supply 전략 | spec-complete |
+| [dsl-schemas.spec.md](apm/dsl-schemas.spec.md) | Git/K8s DSL 축 + composite + snapshotSupply 전략 | spec-complete |
+| [address-context.spec.md](apm/address-context.spec.md) | EventRecord/Envelope 주소 태깅 계약 + 전략별 포맷 | spec-complete |
+| [metrics.spec.md](apm/metrics.spec.md) | Metric RecordKind + 집계 모델 | spec-complete |
+| [codegen.spec.md](apm/codegen.spec.md) | Protobuf + CLI 타입 공급 + snapshotSupply 코드젠 | spec-complete |
+| [pipeline.spec.md](apm/pipeline.spec.md) | 파이프라인 고도화 — 미들웨어, Phase 2 metric, Range Query | spec-complete |
+
 ### services/ — 서비스 분리 스펙
 
-인덱싱 시스템의 마이크로서비스 분리 API 계약. decode, gate, query 3개 독립 서비스.
+인덱싱 시스템의 마이크로서비스 분리 API 계약.
 
 | 스펙 | 설명 | 기반 모듈 | 상태 |
 |---|---|---|---|
+| [registry-service.spec.md](services/registry-service.spec.md) | Registry Service — 중앙 prefix DAG, 버전 라이프사이클, DraftWorkspace, 배포 시점 조회 | PrefixRegistry, VersionLifecycle | planned |
 | [decode-service.spec.md](services/decode-service.spec.md) | Decode Service — DecodeMap 번들 기반 독립 decode, REST API, Edge/Node.js/임베디드 배포 | PrefixDecoder, MetaResolver | implemented |
 | [gate-service.spec.md](services/gate-service.spec.md) | Gate Service — 주소 상태 관리 분산 서비스, RPC 계약, cascade 전파, 정합성 모델 | GateEngine, invalid-ranges | planned |
 | [query-service.spec.md](services/query-service.spec.md) | Query Service — 관계형 질의 + 정책 해소 + gate 통합, 규칙 영속화, 충돌 전략 | RelationalEngine, policy-resolver | planned |

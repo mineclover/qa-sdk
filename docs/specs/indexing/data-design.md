@@ -1,28 +1,46 @@
-# 데이터 설계 구조
+# 좌표 시스템 설계 구조
 
-> 가중진법 인덱싱 시스템의 **핵심 데이터 설계 컨셉**.
-> 닫힌 공간 압축, 차원 편입, 범위 기반 주소 제어, 캐싱 전략이 하나의 설계로 결합되는 구조를 설명한다.
+> 유한한 개념 조합에 정수 주소를 부여하는 **좌표 시스템(Coordinate System)**의 설계 구조.
+> 닫힌 공간 압축, 차원 편입, 범위 기반 주소 연산, 캐싱 전략이 하나의 좌표 체계로 결합된다.
+>
+> **이 시스템은 데이터를 저장하지 않는다.** 주소를 부여하고 해석할 뿐이다. 데이터 저장은 별도 계층의 책임이다.
 
-기반 원리: [`foundation.md`](foundation.md) · 파이프라인: [`pipeline.md`](pipeline.md) · 사용 패턴: [`patterns.md`](patterns.md) · 벤치마크: [`benchmarks.md`](benchmarks.md)
+기반 원리: [`foundation.md`](foundation.md) · 파이프라인: [`pipeline.md`](pipeline.md) · 사용 패턴: [`patterns.md`](patterns.md) · 벤치마크: [`benchmarks.md`](benchmarks.md) · 온톨로지 대응: [`ontology-evaluation.md`](ontology-evaluation.md)
 
 ---
 
-## 핵심 아이디어
+## 좌표 시스템이란
 
-**모든 유한한 조합은 하나의 정수가 된다.**
+GPS가 지표면의 모든 지점에 (위도, 경도) 좌표를 부여하되 그 지점에 무엇이 있는지는 모르듯, 이 시스템은 도메인의 모든 유한한 조합에 정수 좌표(주소)를 부여하되 그 주소에 저장된 데이터는 관여하지 않는다.
 
-이 정수는 주소(address)다. 주소만 있으면 원래 조합을 복원할 수 있고, 주소의 범위로 조합의 집합을 표현할 수 있다. 이 성질 위에 차원 편입, 정보 해석, 범위 제어, 캐싱이 쌓인다.
+| 좌표 시스템이 하는 것 | 좌표 시스템이 하지 않는 것 |
+|---|---|
+| 차원 정의 (shape, capacity, entries) | 값/사실(fact) 저장 |
+| 주소 할당 (encode: 좌표 → 정수) | 데이터 질의 (query) |
+| 주소 해석 (decode: 정수 → 좌표) | 추론 (inference) |
+| 버전 관리 (headroom, migration mapping) | 트랜잭션, 일관성 보장 |
+| 주소 공간 간 참조 (prefix_ref) | 인스턴스 데이터 CRUD |
+| 범위 산술 (calcAddressRanges) | 영속성 (persistence) |
+
+**핵심 공리**: 모든 유한한 조합은 하나의 정수가 된다. 이 정수가 주소(address)다.
 
 ```
                      ┌─────────────────────────────────────────┐
-                     │           데이터 설계 구조               │
+                     │           좌표 시스템 설계 구조           │
                      │                                         │
   ┌──────────┐       │  ① 차원 압축     닫힌 공간 → 정수       │
   │ 비즈니스  │       │  ② 차원 편입     정수 → 상위 차원의 값   │
-  │ 모델     │──────▶│  ③ 정보 저장     정수 ↔ entity 이름     │
-  │          │       │  ④ 범위 제어     주소 구간으로 집합 표현  │
+  │ 모델     │──────▶│  ③ 의미 부여     정수 ↔ entity 이름     │
+  │          │       │  ④ 범위 연산     주소 구간으로 집합 표현  │
   │          │       │  ⑤ 캐싱 전략     사전 계산 + 런타임 판정  │
+  │          │       │  ⑥ 통합 카탈로그  전체 주소 체계 SSOT     │
   └──────────┘       └─────────────────────────────────────────┘
+                                        │
+                                        ▼
+                     ┌─────────────────────────────────────────┐
+                     │      데이터 저장 계층 (다음 단계)          │
+                     │  좌표 시스템이 부여한 주소에 값을 저장     │
+                     └─────────────────────────────────────────┘
 ```
 
 ---
@@ -79,9 +97,9 @@ decode: L2 index → article → L1 decode → doc_meta → L0 decode → format
 
 ---
 
-## ③ 정보 저장 — 주소와 entity 이름의 양방향 매핑
+## ③ 의미 부여 — 주소와 entity 이름의 양방향 매핑
 
-주소(정수)는 그 자체로는 의미가 없다. 의미를 부여하는 것은 **각 차원의 entity 목록**이다.
+주소(정수)는 그 자체로는 의미가 없다. 의미를 부여하는 것은 **각 차원의 entity 목록**이다. 이것은 좌표에 라벨을 붙이는 것이지, 데이터를 저장하는 것이 아니다.
 
 ```
 차원 "role" entries: ["admin", "editor", "viewer", ...]
@@ -219,7 +237,7 @@ shape이 바뀌면 모든 주소의 의미가 바뀌므로 전체 재계산이 �
 
 ---
 
-## 설계 흐름: 전체 그림
+## 좌표 시스템 구축 흐름
 
 ```
 비즈니스 모델 정의
@@ -234,55 +252,131 @@ shape이 바뀌면 모든 주소의 의미가 바뀌므로 전체 재계산이 �
   │  하위 인덱스 압축값을 상위 차원에 포함
   │  permission(10,000) × tenant(100) = 1,000,000
   ▼
-③ 정보 저장
+③ 의미 부여
   │  MetaCodec: { role: "admin", action: "read", resource: "doc" } ↔ 정수
-  │  DB에는 정수(또는 UUID)만 저장
+  │  좌표에 라벨을 붙임 (저장이 아님)
   ▼
-④ 범위 제어
+④ 범위 연산
   │  matchRanges({ role: "admin" }) → [[0, 999]]
   │  "admin의 모든 권한" = 주소 0~999
-  │  비활성: matchRanges({ action: "delete" }) → 비활성 범위
   ▼
 ⑤ 캐싱
   │  복잡한 범위를 사전 계산하여 단면 매트릭스로 보관
   │  런타임: containsAddress(addr, cached) → O(log n)
   ▼
-운영
-  │  encode/decode: ~200ns
-  │  범위 판정: ~수십ns
-  │  cross-index 종단: ~400ns
-  └─ 전부 서브 마이크로초. DB 쿼리 대비 무시할 수 있는 수준.
+⑥ 통합 카탈로그
+  │  전체 축과 prefix를 DEMO_CATALOG 하나로 관리
+  │  prefix_ref로 주소 공간 간 참조
+  ▼
+좌표 시스템 완성
+  │  encode/decode: ~200ns, 범위 판정: ~수십ns, cross-index 종단: ~400ns
+  │  ↑ 여기까지가 좌표 시스템의 경계
+  │
+  ▼
+데이터 저장 계층 (다음 단계)
+  │  좌표에 값/사실을 저장, 질의, 영속성 제공
 ```
 
 ---
 
-## 설계 원칙
+## 좌표 시스템 설계 원칙
 
-### 정수가 전부다
+### 주소가 identity다
 
-시스템의 모든 조합은 정수 하나로 귀결된다. 정수는:
-- **저장**할 수 있다 (DB 컬럼, UUID 필드)
-- **비교**할 수 있다 (범위 쿼리, BETWEEN)
+좌표 시스템의 모든 조합은 정수 하나로 귀결된다. 이 정수는 단순 인코딩 결과가 아니라 **데이터의 정체성(identity)**이다:
 - **복원**할 수 있다 (decode → 원래 entity 조합)
+- **비교**할 수 있다 (범위 쿼리, BETWEEN)
 - **압축**할 수 있다 (하위 인덱스를 상위 차원으로)
+- **합성·분해**할 수 있다 (prefix_ref를 통한 cross-space 참조)
 
-### 읽기 경로와 쓰기 경로의 비대칭
+주소는 저장 계층이 사용할 키이지만, 좌표 시스템 자체는 그 키에 무엇이 저장되는지 모른다.
 
-| | 쓰기 (빌드 타임) | 읽기 (런타임) |
+### 구축 시점과 사용 시점의 비대칭
+
+| | 구축 시점 (좌표 체계 정의) | 사용 시점 (런타임) |
 |---|---|---|
 | 범위 계산 | `calcAddressRanges` (ms) | `containsAddress` (ns) |
 | 코덱 생성 | `new MetaCodec(decodeMap)` (1회) | `codec.decode(vv)` (193ns) |
 | 스키마 등록 | `MetaRegistry` 구성 (ms) | `codec.encode(ids)` (167ns) |
 
-비용이 큰 연산은 쓰기 경로에 격리하고, 읽기 경로는 사전 계산된 결과를 참조만 한다.
+좌표 체계를 정의하는 비용은 1회. 이후 주소 할당/해석은 서브 마이크로초.
 
-### 불변성이 성능이다
+### 불변성이 좌표 시스템의 핵심이다
 
 - shape이 확정되면 WeightedIndex의 weights는 불변 `Float64Array`
 - entries가 확정되면 LabelRegistry의 `indexToId`는 불변 `Map`
 - 범위가 계산되면 `[number, number][]`은 불변 배열
 
-모든 핵심 데이터 구조가 한 번 만들어지면 변하지 않으므로, 캐시 일관성 문제 없이 동시 접근이 가능하다.
+좌표 시스템이 한 번 확정되면 변하지 않는다. 변경이 필요하면 새 버전을 만든다. 이 불변성이 동시 접근 안전성과 캐시 일관성을 보장한다.
+
+---
+
+## ⑥ 통합 카탈로그 — Prefix 기반 버전 관리 모델
+
+차원 압축(①), 편입(②), 정보 저장(③)이 개별 인덱스 수준이었다면, **카탈로그**는 전체 주소 체계를 하나의 구조체로 통합 관리한다.
+
+### 3-Layer 구조
+
+```
+DemoCatalog
+├── axes: Record<axisId, VersionedAxis>     ← Layer 0: 1D 축 (버전별 entries/capacity/ko)
+└── prefixes: Record<prefixId, PrefixDef>   ← Layer 2: N-D 주소 공간 (축 조합)
+                    │
+                    └── dims[label] → DimRef  ← Layer 1: 차원 참조
+                         ├── { kind: "axis", axisId }
+                         └── { kind: "prefix_ref", prefixId }  ← 핵심: 평행 주소 참조
+```
+
+### 차원 참조 (DimRef)
+
+모든 차원은 고유한 의미값을 가진다:
+
+| DimRef 종류 | value | 의미 해석 |
+|---|---|---|
+| `axis` | entries[position] (문자열) | 축의 엔트리 이름 + ko |
+| `prefix_ref` | 참조 prefix의 1D 주소 (정수) | 재귀 decode → 참조 prefix의 차원 좌표 |
+
+`prefix_ref`가 핵심이다 — **트리 계층이 아니라 평행한 prefix 간 주소 참조**로 복잡한 관계를 표현한다.
+
+```
+permission prefix:  [perm_svc, role]
+                        │
+                        └── prefix_ref → service prefix → [env, region, svc_name, namespace]
+
+permission addr=3 → decode → { perm_svc: pos=0, role: pos=3 }
+                              │              │
+                              │              └── axis → "viewer" (ko: "뷰어")
+                              └── prefix_ref → value=40 → service decode
+                                              → { env: "prod", region: "asia", svc: "shopping-web", ns: "shop" }
+```
+
+### 차원 합성·분해 동치성
+
+mixed-radix 인코딩의 차원 독립성에 의해, 다음이 보장된다:
+
+```
+encode(decode(addr)) === addr                    ← 모든 유효 주소에 대해 전단사
+encodePrefixByValue(values) → resolveAddress     ← 의미값 왕복 일관성
+service_addr → permission encode → decompose     ← prefix_ref 합성·분해 동치
+```
+
+이것이 의미하는 것:
+
+```
+"관리자가 제어함" + "A 리소스"  ≡  "관리자가 A 리소스 제어"
+  └── encode(perm_svc, role)     └── encode(perm_svc, role, res)
+      = sub-prefix 주소              = 상위 prefix 주소 (차원 합성)
+```
+
+sub-prefix 주소를 합성하면 상위 prefix 주소가 되고, 상위 주소를 분해하면 동일한 sub-prefix 주소를 복원한다. **prefix 구성이 같으면 결과가 동치**이므로, 어떤 경로로 인코딩해도 동일한 정수에 도달한다.
+
+### 온톨로지 스키마 표현력
+
+좌표 시스템은 RDF/OWL 온톨로지의 스키마 영역(클래스, 인스턴스, N-ary 관계, 버전)을 담을 수 있다. 3개 GAP(계층, 제약, 추론)은 좌표 코어를 변경하지 않는 타입 확장으로 해결 가능.
+
+> 상세: [`ontology-evaluation.md`](ontology-evaluation.md)
+
+---
 
 ### 정수 좌표계가 곧 가속 인터페이스다
 

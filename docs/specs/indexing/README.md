@@ -1,29 +1,89 @@
-# 인덱싱 시스템 — 개념 맵
+# 좌표 시스템 — 개념 맵
 
-> 가중진법 기반 다차원 인코딩, 레이블 버전 관리, ID 포맷 적합성 설계를 아우르는 관심사 루트 문서.
+> **작은 세계를 수학적으로 정의하고 운용하는 원시 도구.**
+>
+> 유한한 개념 조합에 정수 주소를 부여하는 **좌표 시스템(Coordinate System)**.
+> 가중진법 기반 다차원 인코딩, 레이블 버전 관리, 주소 공간 합성을 아우르는 관심사 루트 문서.
+>
+> **이 시스템은 데이터를 저장하지 않는다.** 좌표를 정의하고 주소를 할당/해석할 뿐이다.
 
-## 레이어 구조
+---
+
+## indexing 레이어의 경계
+
+이 문서가 다루는 indexing 레이어는 **닫힌 세계 하나를 정의하고 운용하는 원시 도구**이다.
+그 위에 구축되는 서비스, 관측, 구조 검증은 이 레이어의 범위 밖이다.
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  데이터 레이어  (사용자 구현)                                  │
-│  DB 저장, versionId 추적, "perm:iv1:13" 문자열 관리           │
-├──────────────────────────────────────────────────────────────┤
-│  스키마 레이어  (index-meta)                                  │
-│  축의 의미, 각 위치의 엔티티 정의, 활성 manifest               │
-├──────────────────────────────────────────────────────────────┤
-│  수학 레이어  (weighted-index)                                │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │  PrefixCodec — 레이블 조합 + 버전 + encode/decode   │  │
-│  │  LabelRegistry  — 레이블별 entity ID ↔ 1-based index  │  │
-│  │  WeightedIndex  — 순수 수학 엔진 (shape → id ↔ coords)│  │
-│  ├────────────────────────────────────────────────────────┤  │
-│  │  독립 유틸 (인스턴스 불필요)                             │  │
-│  │  calc · bitmask · obfuscate · uuid-layout              │  │
-│  │  pack-format · semantic-address                        │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+ indexing 레이어 (이 문서의 범위)
+ ═══════════════════════════════════════════════════════
+
+ ┌─ 수학 ──────────────────────────────────────────────┐
+ │  encode/decode, stride, shape, calcWeights          │  weighted-index
+ │  BitIndex, BitMaskSet, bitmask                      │  bit-index
+ │  PermissionSet, TernaryMask, ScopedEngine           │  permission-engine
+ └─────────────────────────────────────────────────────┘
+ ┌─ 어휘 ──────────────────────────────────────────────┐
+ │  VersionedAxis, entries, capacity, headroom         │  demo-snapshot
+ │  LabelRegistry, PrefixCodec                         │  weighted-index
+ │  DEMO_CATALOG (SSOT), resolve/decompose             │  demo-snapshot
+ └─────────────────────────────────────────────────────┘
+ ┌─ 버전 ──────────────────────────────────────────────┐
+ │  draft/sealed, migration, GateEngine                │  index-meta
+ │  EntryFlagStore, active/inactive                    │
+ │  DraftWorkspace, cascade recompute                  │
+ └─────────────────────────────────────────────────────┘
+ ┌─ 프로토콜 ──────────────────────────────────────────┐
+ │  PackFormat, AddressConverter, layout                │  weighted-index
+ │  직렬화: "prefix:version:address"                   │
+ │  SemanticAddress, colon/uri/compact/hex             │
+ └─────────────────────────────────────────────────────┘
+
+ ═══════════════════════════════════════════════════════
+                     indexing 레이어 경계
+ ═══════════════════════════════════════════════════════
+
+ indexing 레이어가 하는 것:
+   닫힌 세계의 shape를 정의한다
+   세계 안에서 좌표를 부여/해석한다
+   세계의 버전을 관리한다 (확장, 마이그레이션)
+   좌표를 다양한 형식으로 직렬화한다
+
+ indexing 레이어가 하지 않는 것:
+   세계를 왜 이렇게 구성했는지                 → spec-engine
+   세계 밖으로 뭘 보여줄지 (export surface)    → spec-engine
+   세계에서 일어나는 일을 관측하는 것           → QA/observation
+   여러 세계를 조합해서 서비스를 만드는 것      → application layer
+
+ ═══════════════════════════════════════════════════════
+
+ 응용 레이어 (이 문서의 범위 밖)
+ ───────────────────────────────────────────────────────
+
+ 구조 정의 (spec-engine)
+ │  export surface — prefix가 외부에 노출하는 제목
+ │  schema validation — 어떤 조합이 유효한지 (Layer 2)
+ │  spec document — 설계 근거, 추적성
+ │
+ 관측 (QA system)
+ │  EventInstance — 발생한 이벤트 기록
+ │  Edge — 이벤트 간 관계 (causal/temporal/resource/correlation)
+ │  State — 이벤트 전/후 세계 상태
+ │  수집 — 런타임 관측
+ │
+ 서비스 (application)
+    ingest-server, registry-service, CLI, ...
 ```
+
+### 책임 경계 (indexing 레이어 내부)
+
+| 계층 | 패키지 | 책임 | 하지 않는 것 |
+|---|---|---|---|
+| **수학** | weighted-index | 정수 ↔ 좌표 변환 | 의미 해석, 타입 이름 |
+| **비트 인덱스** | bit-index | 차원별 O(1) 추출, BitMaskSet | 권한 규칙, 어휘 |
+| **권한 수학** | permission-engine | bitmask grant/check, ternary 상속 | 서비스 로직, API |
+| **스키마** | index-meta | 축 의미, 버전, 활성 영역 | 이벤트 정의, 데이터 저장 |
+| **카탈로그** | demo-snapshot | 타입 통합 관리, encode/decode/resolve | 런타임 이벤트, 인스턴스 |
 
 ## 문서 체계
 
@@ -33,12 +93,19 @@
 
 | 문서 | 성격 | 핵심 내용 |
 |---|---|---|
-| [foundation.md](foundation.md) | **근본 원리** | 닫힌 조합 공간, 전단사 보장, 버전화된 공간 계열, 레이어 분리 |
+| [architecture.md](architecture.md) | **전체 아키텍처** | 5-Layer 구조 (L0~L4), Document Spec 투영, 식별자 규약, 추적성 연결, 구현 순서 **(DRAFT)** |
+| [foundation.md](foundation.md) | **근본 원리** | 좌표 시스템 정체성, 닫힌 조합 공간, stride 공식과 주소 안정성, 버전화된 공간 계열, 레이어 분리 |
+| [coordinate-states.md](coordinate-states.md) | **좌표 상태 모델** | 인프라 타입 시스템 정체성, 활성 영역, draft/sealed, version diff, 하네스 원칙 **(DRAFT)** |
+| [schema-layer.md](schema-layer.md) | **Schema Layer** | 4-Layer 아키텍처, 6 기본 스키마, fragment 조합, 구조적 제약, 검증 파이프라인 **(DRAFT)** |
+| [event-schema.md](event-schema.md) | **이벤트 스키마** | EventSchema의 구체 예시, 3-slot 구조, table_ref 증명 **(DRAFT — PERIPHERAL)** |
+| [behavioral-traversal.md](behavioral-traversal.md) | **행위 축 탐색** | 데이터 흐름 경로 추적, 4가지 관계, 탐색 DSL, 단일 원천 추적 **(DRAFT — QA 시스템 전제)** |
+| [data-design.md](data-design.md) | **설계 구조** | 좌표 시스템 6단계 설계: 차원 압축, 편입, 의미 부여, 범위 연산, 캐싱, 통합 카탈로그 |
+| [ontology-evaluation.md](ontology-evaluation.md) | **온톨로지 대응** | RDF/OWL 스키마 매핑 평가, 좌표 시스템의 경계와 데이터 저장 계층 출발점 |
+| [version-operations.md](version-operations.md) | **버전 운영** | DraftWorkspace, 배포 워크플로우, 다중 버전 관리, 저장값 마이그레이션 |
 | [pipeline.md](pipeline.md) | **파이프라인 레퍼런스** | entity ID ↔ PK 문자열 전체 인코딩/디코딩 경로 |
 | [patterns.md](patterns.md) | **사용 패턴** | EntityId 기반 이동, cross-index 참조, 활성/비활성 책임 분리 |
 | [conventions.md](conventions.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [slot-marker.spec.md](slot-marker.spec.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
-| [data-design.md](data-design.md) | **데이터 설계** | 차원 압축, 차원 편입, 정보 저장, 범위 제어, 캐싱 전략 — 전체 설계 구조 |
 | [coordinate-query.spec.md](coordinate-query.spec.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색, RelationalEngine |
 | [bigint-addressing.spec.md](bigint-addressing.spec.md) | **BigInt 주소 체계** | Number.MAX_SAFE_INTEGER 한계, BigInt API (weighted-index + index-meta), 용량 가드, 성능 특성 |
 | [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
@@ -87,58 +154,103 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 
 대표 하위 문서: [weighted-index/partial-binder.spec.md](weighted-index/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
 
-## 관심사 흐름
+## 좌표 시스템 관심사 흐름
 
 ```
-shape 설계                  포맷 적합성                런타임 인코딩
+좌표 체계 설계              포맷 적합성                주소 할당/해석
 ──────────────              ──────────────             ──────────────
 dim 정의                    PackFormat 선택            encode(coords)
   ↓                           ↓                         ↓
 shape 배열 확정              fitLayout()               SemanticAddress
   ↓                           ↓                    { schema, version, index }
 WeightedIndex 생성           shape 축소 추천               ↓
-                              ↓                     프로토콜 선택
-                           planLayout()                   ↓
-                              ↓               ┌──── colon: "perm:v1:42"
-                           레이아웃 확정       ├──── uri:   "wi://perm/v1/42"
-                                              ├──── compact: "perm-v1-42"
-                                              └──── hex container (UUID 등)
+  ↓                           ↓                     프로토콜 선택
+통합 카탈로그               planLayout()                   ↓
+(DEMO_CATALOG)                ↓               ┌──── colon: "perm:v1:42"
+  ↓                        레이아웃 확정       ├──── uri:   "wi://perm/v1/42"
+prefix_ref 참조                               ├──── compact: "perm-v1-42"
+  ↓                                           └──── hex container (UUID 등)
+resolveAddress
+(재귀 의미 해석)                    ↑ 좌표 시스템 경계 ↑
 ```
 
 ## 데이터 카탈로그 (demo-snapshot)
 
-모든 데모/테스트 데이터의 단일 출처(SSOT). 기본 단위는 **1차원 축(Axis)**이며, 도메인은 축의 조합이다.
+모든 데모/테스트 데이터의 단일 출처(SSOT). `DEMO_CATALOG`가 21개 축과 7개 prefix를 통합 관리한다.
 
 ```
-Axis("role") × Axis("action") × Axis("resource") → Domain("rbac")
+DEMO_CATALOG
+├── axes: 21개 VersionedAxis (버전별 entries/capacity/ko)
+│   └── role: { v1: [5개,cap:5], v2: [6개,cap:6], v3: [6개,cap:8], v4: [7개,cap:8] }
+└── prefixes: 7개 PrefixDef (축 조합 + prefix_ref 참조)
+    └── permission: [perm_svc(→service), role] × 4 versions
 ```
 
-### 축(Axis) 카탈로그 — 15개 축, 5개 도메인
+### Prefix 주소 공간 — 7개 prefix
 
-| 도메인 | 축 조합 | 용도 |
-|--------|---------|------|
-| **Shopping** | DEMO_ENVS × DEMO_REGIONS × DEMO_SVCS × DEMO_NSS + ROLES + EVENTS | 쇼핑 플랫폼 인덱스 체계 |
-| **RBAC** | role × action × resource | 역할 기반 접근 제어 |
-| **Content** | tag × category × status × locale × channel | 콘텐츠 플랫폼 |
-| **Tracking** | trackAction × page × userType | 사용자 행동 추적 |
-| **Relational** | subjectKind × predicate × objectKind | 관계 모델 |
+| Prefix | 차원 (labels) | shape 예시 | 특징 |
+|--------|---------------|-----------|------|
+| **service** | env × region × svc_name × namespace | [5,2,5,2]=100 | 서비스 4D 주소 |
+| **permission** | perm_svc × role | v1:[10,5] v3:[10,8] | perm_svc = prefix_ref→service |
+| **event** | evt_svc × event_name × initiator | v1:[10,7,2]=140 | evt_svc = prefix_ref→service |
+| **rbac** | role × action × resource | [8,4,16]=512 | 역할 기반 접근 제어 |
+| **content** | tag × category × status × locale × channel | 5D 콘텐츠 | 콘텐츠 플랫폼 |
+| **tracking** | trackAction × page × userType | 3D 추적 | 사용자 행동 추적 |
+| **relational** | subjectKind × predicate × objectKind | [8,16,16]=2048 | 관계 모델 (온톨로지 스키마 대응) |
+
+### 선택적 접근 API (3단계)
 
 ```typescript
-import { AXIS } from "demo-snapshot";
+import { DEMO_CATALOG, getPrefixStructure, getPrefixShape, getPrefixEntries } from "demo-snapshot";
 
-AXIS.role.entries     // ["admin", "editor", "viewer"]
+getPrefixStructure(DEMO_CATALOG, "permission")        // labels, dims, versions
+getPrefixShape(DEMO_CATALOG, "permission", "v3")       // { shape: [10,8], capacity: 80 }
+getPrefixEntries(DEMO_CATALOG, "permission", "v1")     // { entries: { perm_svc: [40,...], role: ["admin",...] } }
+```
+
+### 차원 합성·분해·의미 해석
+
+```typescript
+import { encodePrefixByValue, resolveAddress, decomposeAddress } from "demo-snapshot";
+
+// 의미값 → 1D 주소
+encodePrefixByValue(DEMO_CATALOG, "permission", "v1", { perm_svc: 42, role: "admin" })  // → 10
+
+// 1D 주소 → 재귀 의미 해석 (prefix_ref → 참조 prefix까지 풀어냄)
+resolveAddress(DEMO_CATALOG, "permission", "v1", 3)
+// → { role: { value: "viewer", ko: "뷰어" }, perm_svc: { ref: { env: "prod", ... } } }
+
+// 차원 분해 (prefix_ref의 하위 좌표 포함)
+decomposeAddress(DEMO_CATALOG, "permission", "v1", 13)
+// → { perm_svc: { refAddress: 42, refDims: { env: "prod", svc_name: "shopping-backend" } } }
+```
+
+### 하위 호환 (AXIS + DEMO_DOMAINS)
+
+기존 `Axis("role") × Axis("action") → Domain("rbac")` 패턴은 `DEMO_CATALOG`에서 파생되어 그대로 유지된다.
+
+```typescript
+import { AXIS, DEMO_DOMAINS } from "demo-snapshot";
+
+AXIS.role.entries     // ["admin", "editor", "viewer"]  (rbac_role → role 매핑)
 AXIS.role.capacity    // 8
-AXIS.role.ko          // { admin: "관리자", ... }
 ```
 
 ### 상위 스키마
 
 | Export | 설명 |
 |--------|------|
-| `buildDemoRegistryInput()` | MetaRegistry 생성용 순수 데이터 객체 |
+| `buildDemoRegistryInput()` | MetaRegistry 생성용 순수 데이터 객체 (DEMO_CATALOG에서 파생) |
+| `catalogToPrefixCodecInput()` | PrefixCodec 생성에 필요한 입력 데이터 |
 | `DEMO_SVC` | 사전 계산된 서비스 주소 상수 |
-| `DEMO_FEATURES_V1/V2` | 기능 정의 (역할 매핑, 이벤트 값 포함) |
+| `DEMO_FEATURES_V1/V2/V3/V4` | 기능 정의 (역할 매핑, 이벤트 값 포함) |
 | `DEMO_SHOPPING_SERVICES` | 서비스별 리소스/액션 컨텍스트 |
+
+### 좌표 시스템의 경계
+
+좌표 시스템은 주소 공간을 정의하고 주소를 할당/해석한다. RDF/OWL 온톨로지의 스키마 영역까지 담을 수 있으나, **데이터를 저장하지 않는다.** 좌표에 값을 저장하고 질의하는 것은 데이터 저장 계층의 책임이다.
+
+> 상세: [ontology-evaluation.md](ontology-evaluation.md)
 
 ## 통합 테스트 (demo-tests)
 
@@ -175,7 +287,7 @@ platform-demo/src/pages/
 └── perm-engine.ts     PermissionSet 비트마스크 v1→v2 마이그레이션 비교
 ```
 
-### 포맷 적합성이 분리된 이유
+### 좌표 연산과 포맷이 분리된 이유
 
 `WeightedIndex`는 순수 수학이다 — shape만 알면 동작하며, 결과가 몇 바이트로 직렬화되는지는 모른다.
 `pack-format`은 직렬화 컨테이너(64-bit, UUID 등)에 대한 관심사다.

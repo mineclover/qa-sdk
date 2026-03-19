@@ -29,7 +29,7 @@
 |---|---|---|---|---|---|
 | 10 | ~~[infra-debug-store.md](infra-debug-store.md)~~ | D3 | 없음 | 신규 | ✅ 완료 |
 | 11 | ~~[infra-sql-adapters.md](infra-sql-adapters.md)~~ | S4 | 없음 | H-1~H-3 | ✅ 완료 |
-| 12 | [unit-1-async-worker.md](unit-1-async-worker.md) | A2→A4 | 없음 | 신규 | 보류 (별도 PRD) |
+| 12 | ~~[unit-1-async-worker.md](unit-1-async-worker.md)~~ | A2→A4 | 없음 | 신규 | ✅ 완료 |
 | 13 | [service-gate.md](service-gate.md) | S2, A4 | 없음 | E-1~E-4 | 부분 완료 (E-1) |
 | 14 | [service-query.md](service-query.md) | S2, A5 | gate | F-1~F-5 | 부분 완료 (F-1~F-4) |
 | 15 | [unit-2-pipeline.md](unit-2-pipeline.md) | A1, A5, A6 | unit-1 | I-1~I-6 | 대기 |

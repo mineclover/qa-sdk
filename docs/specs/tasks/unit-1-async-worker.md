@@ -10,17 +10,17 @@
 ## 현재 상태
 
 ```
-현재: POST /v1/ingest → [S1→S4 Phase 1] → [Phase 2 동기] → 202
-목표: POST /v1/ingest → [S1→S4 Phase 1] → 202
-                                       ↘ [A2] MQ → [A3] Buffer → [A4] Worker
+완료: POST /v1/ingest → [S1→S4 Phase 1] → 202
+                                   ↘ [A2] MQ → [A3] Buffer → [A4] Worker
+fallback: TaskQueue 미주입 시 기존 동기 Phase 2 경로 유지
 ```
 
-| 단계 | 현재 | 목표 |
+| 단계 | 현재 | 구현 결과 |
 |---|---|---|
 | Phase 1 (저장) | ✅ 동기, 트랜잭션 | 변경 없음 |
-| Phase 2 (reconstruction) | ✅ 동기 (ingest 내) | A4 Worker로 분리 |
-| Phase 2 (verdict) | ✅ 동기 (ingest 내) | A4 Worker로 분리 |
-| DLQ | ✅ DB 기반 | MQ native retry 또는 유지 |
+| Phase 2 (reconstruction) | ✅ Worker job | sync fallback 유지 + trace 멱등 skip |
+| Phase 2 (verdict) | ✅ Worker job | reconstruction 후 follow-up enqueue |
+| DLQ | ✅ DB 기반 | worker final failure 기록 + admin retry 유지 |
 
 ## 선행 조건
 
@@ -40,12 +40,12 @@
 
 | # | 작업 | 위치 | 설명 |
 |---|---|---|---|
-| 1 | MQ 포트 인터페이스 | `core/src/ports/task-queue.ts` | `TaskQueue { enqueue(task), process(handler) }` — 구현 교체 가능 |
-| 2 | BullMQ 어댑터 | `packages/task-queue-bullmq/` (신규) | Redis 연결, job 정의, retry 설정 |
-| 3 | Worker 서비스 | `packages/worker/` (신규) 또는 ingest-server 내 분리 | `reconstructionWorker`, `verdictWorker` |
-| 4 | ingest-server 변경 | `ingest-server/src/routes/ingest.ts` | Phase 2 직접 호출 → `taskQueue.enqueue({ traceId })` |
-| 5 | DLQ 전환 판단 | — | 기존 DB DLQ 유지 또는 MQ native DLQ 사용 |
-| 6 | 통합 테스트 | `demo-tests/` 또는 `worker/` | enqueue → consume → reconstruct → verdict E2E |
+| 1 | MQ 포트 인터페이스 | `packages/core/src/ports/task-queue.port.ts` | `TaskQueue { enqueue(task), process(handler) }` 완료 |
+| 2 | BullMQ 어댑터 | `packages/ingest-server/src/lib/bullmq-task-queue.ts` | standalone package 대신 package-local adapter로 완료 |
+| 3 | Worker 서비스 | `packages/ingest-server/src/server.ts` | `node dist/server.js --mode worker` |
+| 4 | ingest-server 변경 | `packages/ingest-server/src/routes/ingest.ts` | Phase 2 직접 호출 → `taskQueue.enqueue({ traceId, phase })` |
+| 5 | DLQ 유지 | `packages/ingest-server/src/server.ts`, `src/routes/dlq.ts` | BullMQ final failure → DB DLQ → admin retry |
+| 6 | 통합 테스트 | `packages/ingest-server/src/async-worker.e2e.test.ts` | 202 즉시 반환, worker consume, DLQ retry, latency 비교 |
 
 ## 설계 고려
 
