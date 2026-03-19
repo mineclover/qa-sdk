@@ -331,16 +331,25 @@ function renderScopedSection(
 
 // ── Main render ──────────────────────────────────────────────────────────────
 
-export async function renderPermEnginePage(container: HTMLElement): Promise<void> {
+type DemoVer = "v1" | "v2" | "v3" | "v4";
+const ALL_VERS: DemoVer[] = ["v1", "v2", "v3", "v4"];
+function prevVerOf(ver: DemoVer): DemoVer | null {
+  const idx = ALL_VERS.indexOf(ver);
+  return idx > 0 ? ALL_VERS[idx - 1] : null;
+}
+
+export async function renderPermEnginePage(container: HTMLElement, ver: DemoVer = "v2"): Promise<void> {
   container.innerHTML = `<div class="pe-loading">데이터 로딩 중...</div>`;
 
-  // API에서 v1, v2 데이터 동시 로드
-  let v1Data: FeaturesResponse;
-  let v2Data: FeaturesResponse;
+  const prev = prevVerOf(ver) ?? "v1";
+
+  // API에서 prev, ver 데이터 동시 로드
+  let prevData: FeaturesResponse;
+  let curData: FeaturesResponse;
   try {
-    [v1Data, v2Data] = await Promise.all([
-      fetchFeatures("v1"),
-      fetchFeatures("v2"),
+    [prevData, curData] = await Promise.all([
+      fetchFeatures(prev),
+      fetchFeatures(ver),
     ]);
   } catch (e) {
     container.innerHTML = `<div class="pe-error">API 연결 실패: ${e instanceof Error ? e.message : String(e)}</div>`;
@@ -349,11 +358,11 @@ export async function renderPermEnginePage(container: HTMLElement): Promise<void
 
   container.innerHTML = "";
 
-  let v1Defs = buildDimDefs(v1Data);
-  let v2Defs = buildDimDefs(v2Data);
+  let prevDefs = buildDimDefs(prevData);
+  let curDefs = buildDimDefs(curData);
 
-  let v1 = buildPermissionSet(v1Data);
-  let v2 = migrateV1toV2(v1, v1Defs, v2Defs);
+  let prevPS = buildPermissionSet(prevData);
+  let curPS = migrateV1toV2(prevPS, prevDefs, curDefs);
 
   const wrap = document.createElement("div");
   wrap.className = "pe-wrap";
@@ -365,8 +374,8 @@ export async function renderPermEnginePage(container: HTMLElement): Promise<void
     <h2 class="pe-title">Permission Engine — 비트마스크 권한 비교</h2>
     <p class="pe-desc">
       <code>permission-engine</code> 패키지의 <code>PermissionSet</code>과
-      <code>migratePermissions</code>를 사용하여 v1→v2 마이그레이션을 시각화합니다.
-      v1 매트릭스의 셀을 클릭하여 권한을 변경하면 v2가 자동으로 재계산됩니다.
+      <code>migratePermissions</code>를 사용하여 ${prev}→${ver} 마이그레이션을 시각화합니다.
+      ${prev} 매트릭스의 셀을 클릭하여 권한을 변경하면 ${ver}가 자동으로 재계산됩니다.
     </p>
   `;
 
@@ -383,20 +392,19 @@ export async function renderPermEnginePage(container: HTMLElement): Promise<void
     try {
       await resetGrants();
       // 재로드
-      const [newV1, newV2] = await Promise.all([
-        fetchFeatures("v1"),
-        fetchFeatures("v2"),
+      const [newPrev, newCur] = await Promise.all([
+        fetchFeatures(prev),
+        fetchFeatures(ver),
       ]);
-      v1Data = newV1;
-      v2Data = newV2;
-      v1Defs = buildDimDefs(v1Data);
-      v2Defs = buildDimDefs(v2Data);
-      v1 = buildPermissionSet(v1Data);
-      v2 = migrateV1toV2(v1, v1Defs, v2Defs);
+      prevData = newPrev;
+      curData = newCur;
+      prevDefs = buildDimDefs(prevData);
+      curDefs = buildDimDefs(curData);
+      prevPS = buildPermissionSet(prevData);
+      curPS = migrateV1toV2(prevPS, prevDefs, curDefs);
       repaint();
-      // ScopedEngine도 재렌더
       scopedContainer.innerHTML = "";
-      renderScopedSection(scopedContainer, v2Data);
+      renderScopedSection(scopedContainer, curData);
     } catch (e) {
       console.error("Reset failed:", e);
     } finally {
@@ -413,47 +421,47 @@ export async function renderPermEnginePage(container: HTMLElement): Promise<void
   const comparison = document.createElement("div");
   comparison.className = "pe-comparison";
 
-  const v1Panel = document.createElement("div");
-  v1Panel.className = "pe-panel";
+  const prevPanel = document.createElement("div");
+  prevPanel.className = "pe-panel";
 
-  const v2Panel = document.createElement("div");
-  v2Panel.className = "pe-panel";
+  const curPanel = document.createElement("div");
+  curPanel.className = "pe-panel";
 
-  const v1StatsEl = document.createElement("div");
-  const v2StatsEl = document.createElement("div");
+  const prevStatsEl = document.createElement("div");
+  const curStatsEl = document.createElement("div");
 
   function repaint(): void {
-    v2 = migrateV1toV2(v1, v1Defs, v2Defs);
+    curPS = migrateV1toV2(prevPS, prevDefs, curDefs);
 
-    v1Panel.innerHTML = "";
-    v1Panel.innerHTML = `<div class="pe-panel-header"><span class="pe-ver-badge pe-ver-v1">v1</span> 원본 권한 (클릭하여 편집)</div>`;
-    v1Panel.appendChild(renderMatrix(v1, {
+    prevPanel.innerHTML = "";
+    prevPanel.innerHTML = `<div class="pe-panel-header"><span class="pe-ver-badge pe-ver-v1">${prev}</span> 원본 권한 (클릭하여 편집)</div>`;
+    prevPanel.appendChild(renderMatrix(prevPS, {
       editable: true,
       onChange: repaint,
     }));
-    v1StatsEl.innerHTML = "";
-    v1StatsEl.appendChild(renderStats(v1, "v1 PermissionSet"));
-    v1Panel.appendChild(v1StatsEl);
+    prevStatsEl.innerHTML = "";
+    prevStatsEl.appendChild(renderStats(prevPS, `${prev} PermissionSet`));
+    prevPanel.appendChild(prevStatsEl);
 
-    v2Panel.innerHTML = "";
-    v2Panel.innerHTML = `<div class="pe-panel-header"><span class="pe-ver-badge pe-ver-v2">v2</span> 마이그레이션 결과 (자동 계산)</div>`;
-    v2Panel.appendChild(renderMatrix(v2, {
+    curPanel.innerHTML = "";
+    curPanel.innerHTML = `<div class="pe-panel-header"><span class="pe-ver-badge pe-ver-v2">${ver}</span> 마이그레이션 결과 (자동 계산)</div>`;
+    curPanel.appendChild(renderMatrix(curPS, {
       editable: false,
-      diffBase: v1,
+      diffBase: prevPS,
     }));
-    v2StatsEl.innerHTML = "";
-    v2StatsEl.appendChild(renderStats(v2, "v2 PermissionSet"));
-    v2Panel.appendChild(v2StatsEl);
+    curStatsEl.innerHTML = "";
+    curStatsEl.appendChild(renderStats(curPS, `${ver} PermissionSet`));
+    curPanel.appendChild(curStatsEl);
   }
 
-  comparison.appendChild(v1Panel);
+  comparison.appendChild(prevPanel);
 
   const arrow = document.createElement("div");
   arrow.className = "pe-arrow";
   arrow.innerHTML = `<div class="pe-arrow-line">→</div><div class="pe-arrow-label">migrate</div>`;
   comparison.appendChild(arrow);
 
-  comparison.appendChild(v2Panel);
+  comparison.appendChild(curPanel);
   wrap.appendChild(comparison);
 
   // ── Migration explanation ──

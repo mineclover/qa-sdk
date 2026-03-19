@@ -339,44 +339,50 @@ function buildAddressExamplesSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const v1Roles = rolesFor("v1");
-  const v2Roles = rolesFor("v2");
-  const v1Events = eventsFor("v1");
-  const v2Events = eventsFor("v2");
+  const prev = prevVer(ver);
+  const curRoles = rolesFor(ver);
+  const prevRoles = prev ? rolesFor(prev) : null;
+  const curEvents = eventsFor(ver);
+  const prevEvents = prev ? eventsFor(prev) : null;
+  const hasPrev = prev !== null;
 
-  // permission 주소 예시 (payment service, permSvcPos)
-  const permExamples = ["operator", "viewer", "customer"].map(id => {
-    const v1p = dimPos(v1Roles, id);
-    const v2p = dimPos(v2Roles, id);
+  // 대표 역할: 현재 버전의 마지막 3개 + 신규
+  const sampleRoleIds = [...new Set([
+    ...curRoles.filter(r => r.isNew).map(r => r.id),
+    "operator", "viewer",
+  ])].slice(0, 4);
+
+  const permExamples = sampleRoleIds.map(id => {
+    const curP = dimPos(curRoles, id);
+    const prevP = prevRoles ? dimPos(prevRoles, id) : null;
     return {
       role: id, ko: DEMO_KO.role[id] ?? id,
-      v1: v1p !== null ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, v1p, "v1") : null,
-      v2: v2p !== null ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, v2p, "v2") : null,
+      prev: prevP !== null && prev ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, prevP, prev) : null,
+      cur: curP !== null ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, curP, ver) : null,
+      isNew: prevRoles ? !prevRoles.some(r => r.id === id) : false,
     };
   });
 
-  // event 주소 예시 (payment:prod service, evtSvcPos, web initiator)
-  const evtExamples = [
-    { id: "order.paid",               label: "order.paid × payment:prod × web" },
-    { id: "payment.cancel_requested", label: "payment.cancel_requested × payment:prod × web" },
-    { id: "payment.cancel_approved",  label: "payment.cancel_approved × payment:prod × web" },
-  ].map(ex => {
-    const v1p = dimPos(v1Events, ex.id);
-    const v2p = dimPos(v2Events, ex.id);
+  const sampleEvtIds = [
+    "order.paid",
+    ...curEvents.filter(e => e.isNew).map(e => e.id).slice(0, 2),
+  ];
+
+  const evtExamples = sampleEvtIds.map(id => {
+    const curP = dimPos(curEvents, id);
+    const prevP = prevEvents ? dimPos(prevEvents, id) : null;
     return {
-      name: ex.label,
-      ko: DEMO_KO.event[ex.id] ?? ex.id,
-      v1: v1p !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, v1p, 1, "v1") : null,
-      v2: v2p !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, v2p, 1, "v2") : null,
+      id, ko: DEMO_KO.event[id] ?? id,
+      prev: prevP !== null && prev ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, prevP, 1, prev) : null,
+      cur: curP !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, curP, 1, ver) : null,
+      isNew: prevEvents ? !prevEvents.some(e => e.id === id) : false,
     };
   });
-
-  const showV2 = ver === "v2";
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">🔢</span>
-      <span class="vd-sec-title">주소 값 예시 — payment 서비스 (permSvcPos=${EXAMPLE_PERM_SVC_POS}, evtSvcPos=${EXAMPLE_EVT_SVC_POS})</span>
+      <span class="vd-sec-title">주소 값 예시 — payment 서비스</span>
     </div>
     <div class="vd-sec-body">
       <div class="vd-addr-title">permission 주소 (역할별)</div>
@@ -386,67 +392,55 @@ function buildAddressExamplesSection(ver: Ver): HTMLElement {
             <tr>
               <th>역할</th>
               <th>논리 의미</th>
-              <th class="${showV2 ? "vd-col-dimmed" : ""}">permission:v1</th>
-              <th class="${showV2 ? "vd-col-active" : ""}">permission:v2</th>
+              ${hasPrev ? `<th class="vd-col-dimmed">permission:${prev}</th>` : ""}
+              <th class="vd-col-active">permission:${ver}</th>
+              ${hasPrev ? `<th>변동</th>` : ""}
             </tr>
           </thead>
           <tbody>
-            ${permExamples.map(ex => `
-              <tr class="${ex.v1 === null ? "vd-row-added" : ""}">
+            ${permExamples.map(ex => {
+              const delta = ex.prev !== null && ex.cur !== null ? ex.cur - ex.prev : null;
+              return `
+              <tr class="${ex.isNew ? "vd-row-added" : ""}">
                 <td><span class="role-tag role-tag-${ex.role}">${ex.role}</span></td>
                 <td class="vd-addr-desc">payment × ${ex.ko}</td>
-                <td class="${showV2 ? "vd-col-dimmed" : ""}">
-                  ${ex.v1 !== null
-                    ? `<code class="vd-addr-chip">permission:v1:${ex.v1}</code>`
-                    : `<span style="color:var(--text-muted)">존재 안 함</span>`}
+                ${hasPrev ? `<td class="vd-col-dimmed">${ex.prev !== null ? `<code class="vd-addr-chip">permission:${prev}:${ex.prev}</code>` : `<span style="color:var(--text-muted)">—</span>`}</td>` : ""}
+                <td class="vd-col-active">
+                  ${ex.cur !== null ? `<code class="vd-addr-chip vd-chip-active">permission:${ver}:${ex.cur}</code>` : "—"}
+                  ${ex.isNew ? '<span class="vd-badge-new">NEW</span>' : ""}
                 </td>
-                <td class="${showV2 ? "vd-col-active" : ""}">
-                  ${ex.v2 !== null
-                    ? `<code class="vd-addr-chip ${showV2 ? "vd-chip-active" : ""}">${`permission:v2:${ex.v2}`}</code>`
-                    : `<span style="color:var(--text-muted)">—</span>`}
-                  ${ex.v1 !== null && ex.v2 !== null && ex.v1 !== ex.v2 && showV2
-                    ? `<span class="vd-addr-diff">(v1: ${ex.v1})</span>`
-                    : ""}
-                  ${ex.v1 === null && showV2 ? '<span class="vd-badge-new">NEW</span>' : ""}
-                </td>
-              </tr>
-            `).join("")}
+                ${hasPrev ? `<td>${ex.isNew ? '<span class="vd-badge-new">NEW</span>' : delta === 0 ? '<span class="vd-delta-zero">±0</span>' : delta !== null ? `<span class="vd-delta-shift">${delta > 0 ? "+" : ""}${delta}</span>` : "—"}</td>` : ""}
+              </tr>`;
+            }).join("")}
           </tbody>
         </table>
       </div>
 
-      <div class="vd-addr-title" style="margin-top:14px">event 주소 (payment:prod 서비스)</div>
+      <div class="vd-addr-title" style="margin-top:14px">event 주소 (payment:prod)</div>
       <div class="vd-addr-table-wrap">
         <table class="vd-addr-table">
           <thead>
             <tr>
               <th>이벤트</th>
-              <th>설명</th>
-              <th class="${showV2 ? "vd-col-dimmed" : ""}">event:v1</th>
-              <th class="${showV2 ? "vd-col-active" : ""}">event:v2</th>
+              ${hasPrev ? `<th class="vd-col-dimmed">event:${prev}</th>` : ""}
+              <th class="vd-col-active">event:${ver}</th>
+              ${hasPrev ? `<th>변동</th>` : ""}
             </tr>
           </thead>
           <tbody>
-            ${evtExamples.map(ex => `
-              <tr class="${ex.v1 === null ? "vd-row-added" : ""}">
+            ${evtExamples.map(ex => {
+              const delta = ex.prev !== null && ex.cur !== null ? ex.cur - ex.prev : null;
+              return `
+              <tr class="${ex.isNew ? "vd-row-added" : ""}">
                 <td><span class="evt-tag evt-tag-payment">${ex.ko}</span></td>
-                <td class="vd-addr-desc" style="font-size:0.72rem">${ex.name}</td>
-                <td class="${showV2 ? "vd-col-dimmed" : ""}">
-                  ${ex.v1 !== null
-                    ? `<code class="vd-addr-chip">event:v1:${ex.v1}</code>`
-                    : `<span style="color:var(--text-muted)">존재 안 함</span>`}
+                ${hasPrev ? `<td class="vd-col-dimmed">${ex.prev !== null ? `<code class="vd-addr-chip">event:${prev}:${ex.prev}</code>` : "—"}</td>` : ""}
+                <td class="vd-col-active">
+                  ${ex.cur !== null ? `<code class="vd-addr-chip vd-chip-active">event:${ver}:${ex.cur}</code>` : "—"}
+                  ${ex.isNew ? '<span class="vd-badge-new">NEW</span>' : ""}
                 </td>
-                <td class="${showV2 ? "vd-col-active" : ""}">
-                  ${ex.v2 !== null
-                    ? `<code class="vd-addr-chip ${showV2 ? "vd-chip-active" : ""}">${`event:v2:${ex.v2}`}</code>`
-                    : `<span style="color:var(--text-muted)">—</span>`}
-                  ${ex.v1 !== null && ex.v2 !== null && ex.v1 !== ex.v2 && showV2
-                    ? `<span class="vd-addr-diff">(v1: ${ex.v1})</span>`
-                    : ""}
-                  ${ex.v1 === null && showV2 ? '<span class="vd-badge-new">NEW</span>' : ""}
-                </td>
-              </tr>
-            `).join("")}
+                ${hasPrev ? `<td>${ex.isNew ? '<span class="vd-badge-new">NEW</span>' : delta === 0 ? '<span class="vd-delta-zero">±0</span>' : delta !== null ? `<span class="vd-delta-shift">${delta > 0 ? "+" : ""}${delta}</span>` : "—"}</td>` : ""}
+              </tr>`;
+            }).join("")}
           </tbody>
         </table>
       </div>
@@ -459,50 +453,50 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section";
 
-  const v1Roles = rolesFor("v1");
-  const v2Roles = rolesFor("v2");
-  const v1Events = eventsFor("v1");
-  const v2Events = eventsFor("v2");
+  const prev = prevVer(ver);
+  if (!prev) {
+    sec.innerHTML = `<div class="vd-sec-header"><span class="vd-sec-icon">⇄</span><span class="vd-sec-title">합성 인덱스 비교</span></div>
+      <div class="vd-sec-body"><p style="color:var(--text-muted)">v1은 기준 버전이므로 비교 대상이 없습니다.</p></div>`;
+    return sec;
+  }
 
-  const v1RS = demoRoleStride("v1");
-  const v2RS = demoRoleStride("v2");
-  const v1ES = demoEvtStride("v1");
-  const v2ES = demoEvtStride("v2");
+  const curRoles = rolesFor(ver);
+  const prevRoles = rolesFor(prev);
+  const curEvents = eventsFor(ver);
+  const prevEvents = eventsFor(prev);
+
+  const curRS = demoRoleStride(ver);
+  const prevRS = demoRoleStride(prev);
+  const curES = demoEvtStride(ver);
+  const prevES = demoEvtStride(prev);
   const IC = DEMO_INITIATORS.length;
+  const strideChanged = curRS !== prevRS || curES !== prevES;
 
   const svcPos = EXAMPLE_PERM_SVC_POS;
   const evtSvcPos = EXAMPLE_EVT_SVC_POS;
 
-  // permission: 모든 역할에 대해 v1 vs v2 주소 비교
-  const v1RoleSet = new Set<string>(DEMO_ROLES_V1);
-  const allRoles = v2Roles; // v2가 상위 집합
+  const allRoles = curRoles; // 현재 버전 기준
   const permRows = allRoles.map(r => {
-    const v1p = dimPos(v1Roles, r.id);
-    const v2p = dimPos(v2Roles, r.id);
-    const v1Addr = v1p !== null ? demoCalcPermAddr(svcPos, v1p, "v1") : null;
-    const v2Addr = v2p !== null ? demoCalcPermAddr(svcPos, v2p, "v2") : null;
-    const isNew = !v1RoleSet.has(r.id);
-    const delta = v1Addr !== null && v2Addr !== null ? v2Addr - v1Addr : null;
-    // ver에 맞는 formula: v1 뷰에서 NEW 역할(v1p===null)은 formula 비표시
-    const activeP = ver === "v1" ? v1p : v2p;
-    const activeRS = ver === "v1" ? v1RS : v2RS;
-    const formula = activeP !== null ? `(${svcPos}−1)×${activeRS} + (${activeP}−1)` : "";
-    return { role: r, v1Addr, v2Addr, isNew, delta, formula };
+    const curP = dimPos(curRoles, r.id);
+    const prevP = dimPos(prevRoles, r.id);
+    const prevAddr = prevP !== null ? demoCalcPermAddr(svcPos, prevP, prev) : null;
+    const curAddr = curP !== null ? demoCalcPermAddr(svcPos, curP, ver) : null;
+    const isNew = !prevRoles.some(pr => pr.id === r.id);
+    const delta = prevAddr !== null && curAddr !== null ? curAddr - prevAddr : null;
+    const formula = curP !== null ? `(${svcPos}−1)×${curRS} + (${curP}−1)` : "";
+    return { role: r, prevAddr, curAddr, isNew, delta, formula };
   });
 
-  // event: 모든 이벤트에 대해 v1 vs v2 주소 비교 (initiator=web, pos=1)
-  const v1EvtSet = new Set<string>(DEMO_EVENTS_V1);
-  const allEvents = v2Events;
+  const allEvents = curEvents;
   const evtRows = allEvents.map(e => {
-    const v1p = dimPos(v1Events, e.id);
-    const v2p = dimPos(v2Events, e.id);
-    const v1Addr = v1p !== null ? demoCalcEvtAddr(evtSvcPos, v1p, 1, "v1") : null;
-    const v2Addr = v2p !== null ? demoCalcEvtAddr(evtSvcPos, v2p, 1, "v2") : null;
-    const isNew = !v1EvtSet.has(e.id);
-    const delta = v1Addr !== null && v2Addr !== null ? v2Addr - v1Addr : null;
-    const stride = ver === "v1" ? v1ES : v2ES;
-    const formula = v2p !== null ? `(${evtSvcPos}−1)×${stride} + (${v2p}−1)×${IC} + 0` : "";
-    return { event: e, v1Addr, v2Addr, isNew, delta, formula };
+    const curP = dimPos(curEvents, e.id);
+    const prevP = dimPos(prevEvents, e.id);
+    const prevAddr = prevP !== null ? demoCalcEvtAddr(evtSvcPos, prevP, 1, prev) : null;
+    const curAddr = curP !== null ? demoCalcEvtAddr(evtSvcPos, curP, 1, ver) : null;
+    const isNew = !prevEvents.some(pe => pe.id === e.id);
+    const delta = prevAddr !== null && curAddr !== null ? curAddr - prevAddr : null;
+    const formula = curP !== null ? `(${evtSvcPos}−1)×${curES} + (${curP}−1)×${IC} + 0` : "";
+    return { event: e, prevAddr, curAddr, isNew, delta, formula };
   });
 
   function deltaCell(d: number | null, isNew: boolean): string {
@@ -515,15 +509,15 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">⇄</span>
-      <span class="vd-sec-title">합성 인덱스 변경 비교 — payment 서비스 (svcValue=${EXAMPLE_SVC_VALUE})</span>
-      <span class="vd-tag-changed">stride 변경</span>
+      <span class="vd-sec-title">합성 인덱스 비교 — ${prev} → ${ver} (payment 서비스)</span>
+      ${strideChanged ? '<span class="vd-tag-changed">stride 변경</span>' : '<span class="vd-tag-stable">stride 불변 ✓</span>'}
     </div>
     <div class="vd-sec-body">
 
       <div class="vd-ci-block">
         <div class="vd-ci-header">
           <span class="vd-ci-prefix">permission</span>
-          <span class="vd-ci-meta">perm_svc pos=${svcPos} · stride v1=×${v1RS} → v2=×${v2RS}</span>
+          <span class="vd-ci-meta">perm_svc pos=${svcPos} · stride ${prev}=×${prevRS} → ${ver}=×${curRS}</span>
         </div>
         <div class="vd-addr-table-wrap">
           <table class="vd-addr-table vd-ci-table">
@@ -531,10 +525,10 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
               <tr>
                 <th>역할</th>
                 <th>pos</th>
-                <th class="vd-col-dimmed">v1 주소</th>
-                <th class="vd-col-active">v2 주소</th>
+                <th class="vd-col-dimmed">${prev} 주소</th>
+                <th class="vd-col-active">${ver} 주소</th>
                 <th>변동</th>
-                <th>v2 계산식</th>
+                <th>${ver} 계산식</th>
               </tr>
             </thead>
             <tbody>
@@ -542,12 +536,14 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
                 <tr class="${r.isNew ? "vd-row-added" : ""}">
                   <td><span class="role-tag role-tag-${r.role.id}">${r.role.id}</span></td>
                   <td class="vd-ci-pos">${r.role.pos}</td>
-                  <td class="vd-col-dimmed">${r.v1Addr !== null
-                    ? `<code class="vd-addr-chip">permission:v1:${r.v1Addr}</code>`
+                  <td class="vd-col-dimmed">${r.prevAddr !== null
+                    ? `<code class="vd-addr-chip">permission:${prev}:${r.prevAddr}</code>`
                     : `<span class="vd-ci-na">—</span>`}</td>
-                  <td class="vd-col-active"><code class="vd-addr-chip vd-chip-active">permission:v2:${r.v2Addr}</code></td>
+                  <td class="vd-col-active">${r.curAddr !== null
+                    ? `<code class="vd-addr-chip vd-chip-active">permission:${ver}:${r.curAddr}</code>`
+                    : "—"}</td>
                   <td class="vd-ci-delta">${deltaCell(r.delta, r.isNew)}</td>
-                  <td class="vd-ci-formula"><code>${r.formula} = ${r.v2Addr}</code></td>
+                  <td class="vd-ci-formula"><code>${r.formula}${r.curAddr !== null ? ` = ${r.curAddr}` : ""}</code></td>
                 </tr>
               `).join("")}
             </tbody>
@@ -558,7 +554,7 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
       <div class="vd-ci-block">
         <div class="vd-ci-header">
           <span class="vd-ci-prefix">event</span>
-          <span class="vd-ci-meta">evt_svc pos=${evtSvcPos} · initiator=web(1) · stride v1=×${v1ES} → v2=×${v2ES}</span>
+          <span class="vd-ci-meta">evt_svc pos=${evtSvcPos} · initiator=web(1) · stride ${prev}=×${prevES} → ${ver}=×${curES}</span>
         </div>
         <div class="vd-addr-table-wrap">
           <table class="vd-addr-table vd-ci-table">
@@ -566,10 +562,10 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
               <tr>
                 <th>이벤트</th>
                 <th>pos</th>
-                <th class="vd-col-dimmed">v1 주소</th>
-                <th class="vd-col-active">v2 주소</th>
+                <th class="vd-col-dimmed">${prev} 주소</th>
+                <th class="vd-col-active">${ver} 주소</th>
                 <th>변동</th>
-                <th>v2 계산식</th>
+                <th>${ver} 계산식</th>
               </tr>
             </thead>
             <tbody>
@@ -577,12 +573,14 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
                 <tr class="${r.isNew ? "vd-row-added" : ""}">
                   <td><span class="${evtTagClass(r.event.id)}">${r.event.ko}</span></td>
                   <td class="vd-ci-pos">${r.event.pos}</td>
-                  <td class="vd-col-dimmed">${r.v1Addr !== null
-                    ? `<code class="vd-addr-chip">event:v1:${r.v1Addr}</code>`
+                  <td class="vd-col-dimmed">${r.prevAddr !== null
+                    ? `<code class="vd-addr-chip">event:${prev}:${r.prevAddr}</code>`
                     : `<span class="vd-ci-na">—</span>`}</td>
-                  <td class="vd-col-active"><code class="vd-addr-chip vd-chip-active">event:v2:${r.v2Addr}</code></td>
+                  <td class="vd-col-active">${r.curAddr !== null
+                    ? `<code class="vd-addr-chip vd-chip-active">event:${ver}:${r.curAddr}</code>`
+                    : "—"}</td>
                   <td class="vd-ci-delta">${deltaCell(r.delta, r.isNew)}</td>
-                  <td class="vd-ci-formula"><code>${r.formula} = ${r.v2Addr}</code></td>
+                  <td class="vd-ci-formula"><code>${r.formula}${r.curAddr !== null ? ` = ${r.curAddr}` : ""}</code></td>
                 </tr>
               `).join("")}
             </tbody>
@@ -595,156 +593,129 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
   return sec;
 }
 
-function buildProtocolSection(): HTMLElement {
+function buildProtocolSection(ver: Ver): HTMLElement {
   const sec = document.createElement("div");
   sec.className = "vd-section vd-section-protocol";
 
-  // SSOT에서 계산
-  const v1RS = demoRoleStride("v1");
-  const v2RS = demoRoleStride("v2");
-  const v1ES = demoEvtStride("v1");
-  const v2ES = demoEvtStride("v2");
-  const v1RC = DEMO_ROLES_V1.length;
-  const v2RC = DEMO_ROLES_V2.length;
-  const v1EC = DEMO_EVENTS_V1.length;
-  const v2EC = DEMO_EVENTS_V2.length;
+  const prev = prevVer(ver);
+  if (!prev) {
+    sec.innerHTML = `<div class="vd-sec-header"><span class="vd-sec-icon">📡</span><span class="vd-sec-title">프로토콜 변경 설명</span></div>
+      <div class="vd-sec-body"><p style="color:var(--text-muted)">v1은 기준 버전이므로 변경 사항이 없습니다.</p></div>`;
+    return sec;
+  }
+
+  const prevRS = demoRoleStride(prev);
+  const curRS = demoRoleStride(ver);
+  const prevES = demoEvtStride(prev);
+  const curES = demoEvtStride(ver);
+  const prevRC = demoRolesFor(prev).length;
+  const curRC = demoRolesFor(ver).length;
+  const prevEC = demoEventsFor(prev).length;
+  const curEC = demoEventsFor(ver).length;
   const IC = DEMO_INITIATORS.length;
+  const strideChanged = prevRS !== curRS || prevES !== curES;
 
-  // 주소 예시: viewer at payment
-  const v1Roles = rolesFor("v1");
-  const v2Roles = rolesFor("v2");
-  const viewerV1Pos = dimPos(v1Roles, "viewer")!;
-  const viewerV2Pos = dimPos(v2Roles, "viewer")!;
-  const viewerV1Addr = demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerV1Pos, "v1");
-  const viewerV2Addr = demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerV2Pos, "v2");
+  const curRoles = rolesFor(ver);
+  const prevRoles = rolesFor(prev);
+  const newRoles = curRoles.filter(r => r.isNew);
+  const newEvents = eventsFor(ver).filter(e => e.isNew);
 
-  // 신규 항목 정보
-  const newRoles = v2Roles.filter(r => r.isNew);
-  const newEvents = eventsFor("v2").filter(e => e.isNew);
-  const newRolesDesc = newRoles.map(r => `${r.ko}는 끝에 추가, pos=${r.pos}`).join("; ");
+  // 주소 예시: viewer
+  const viewerPrevPos = dimPos(prevRoles, "viewer");
+  const viewerCurPos = dimPos(curRoles, "viewer");
+  const viewerPrevAddr = viewerPrevPos ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerPrevPos, prev) : null;
+  const viewerCurAddr = viewerCurPos ? demoCalcPermAddr(EXAMPLE_PERM_SVC_POS, viewerCurPos, ver) : null;
 
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">📡</span>
-      <span class="vd-sec-title">API 프로토콜 변경 설명</span>
-      <span class="vd-tag-changed">Breaking Change</span>
+      <span class="vd-sec-title">${prev} → ${ver} 프로토콜 변경</span>
+      ${strideChanged ? '<span class="vd-tag-changed">Breaking Change</span>' : '<span class="vd-tag-stable">Non-Breaking ✓</span>'}
     </div>
     <div class="vd-sec-body">
-
       <div class="vd-protocol-grid">
 
         <div class="vd-protocol-card">
-          <div class="vd-protocol-card-title">① 주소 prefix 변경</div>
+          <div class="vd-protocol-card-title">① 주소 prefix</div>
           <div class="vd-protocol-card-body">
             <div class="vd-proto-row">
-              <span class="vd-proto-label">권한 주소</span>
-              <code class="vd-addr-chip vd-chip-old">permission:v1:X</code>
+              <span class="vd-proto-label">권한</span>
+              <code class="vd-addr-chip vd-chip-old">permission:${prev}:X</code>
               <span class="vd-proto-arrow">→</span>
-              <code class="vd-addr-chip vd-chip-active">permission:v2:X</code>
+              <code class="vd-addr-chip vd-chip-active">permission:${ver}:X</code>
             </div>
             <div class="vd-proto-row">
-              <span class="vd-proto-label">이벤트 주소</span>
-              <code class="vd-addr-chip vd-chip-old">event:v1:X</code>
+              <span class="vd-proto-label">이벤트</span>
+              <code class="vd-addr-chip vd-chip-old">event:${prev}:X</code>
               <span class="vd-proto-arrow">→</span>
-              <code class="vd-addr-chip vd-chip-active">event:v2:X</code>
+              <code class="vd-addr-chip vd-chip-active">event:${ver}:X</code>
             </div>
-            <div class="vd-proto-row">
-              <span class="vd-proto-label">서비스 주소</span>
-              <code class="vd-addr-chip">service:v1:X</code>
-              <span class="vd-proto-note">변경 없음</span>
-            </div>
+            ${viewerPrevAddr !== null && viewerCurAddr !== null ? `
             <div class="vd-protocol-note">
-              v1과 v2 주소는 동일한 숫자라도 <strong>다른 논리 의미</strong>를 가집니다.<br/>
-              예) <code>permission:v1:${viewerV1Addr}</code> = payment × viewer(pos=${viewerV1Pos}),
-              <code>permission:v2:${viewerV2Addr}</code> = payment × viewer(pos=${viewerV2Pos}) — stride 변경으로 주소 달라짐
-            </div>
+              viewer 주소: <code>permission:${prev}:${viewerPrevAddr}</code> → <code>permission:${ver}:${viewerCurAddr}</code>
+              ${viewerPrevAddr === viewerCurAddr ? " — <strong>동일 (stride 불변)</strong>" : " — stride 변경으로 값 달라짐"}
+            </div>` : ""}
           </div>
         </div>
 
         <div class="vd-protocol-card">
-          <div class="vd-protocol-card-title">② 인코딩 공식 변경</div>
+          <div class="vd-protocol-card-title">② 인코딩 공식</div>
           <div class="vd-protocol-card-body">
             <div class="vd-formula-diff">
               <div class="vd-formula-old">
-                <span class="vd-formula-ver">v1</span>
-                <span class="vd-formula-expr">(perm_svc−1) × <strong>${v1RS}</strong> + (role−1)</span>
+                <span class="vd-formula-ver">${prev}</span>
+                <span class="vd-formula-expr">perm stride = <strong>×${prevRS}</strong> (role cap ${DEMO_ROLE_CAP[prev]})</span>
               </div>
               <div class="vd-formula-new">
-                <span class="vd-formula-ver vd-ver-new">v2</span>
-                <span class="vd-formula-expr">(perm_svc−1) × <strong>${v2RS}</strong> + (role−1)</span>
+                <span class="vd-formula-ver vd-ver-new">${ver}</span>
+                <span class="vd-formula-expr">perm stride = <strong>×${curRS}</strong> (role cap ${DEMO_ROLE_CAP[ver]})</span>
               </div>
             </div>
             <div class="vd-formula-diff">
               <div class="vd-formula-old">
-                <span class="vd-formula-ver">v1</span>
-                <span class="vd-formula-expr">(svc−1) × <strong>${v1ES}</strong> + (evt−1)×${IC} + (init−1)</span>
+                <span class="vd-formula-ver">${prev}</span>
+                <span class="vd-formula-expr">evt stride = <strong>×${prevES}</strong> (event cap ${DEMO_EVENT_CAP[prev]}×${IC})</span>
               </div>
               <div class="vd-formula-new">
-                <span class="vd-formula-ver vd-ver-new">v2</span>
-                <span class="vd-formula-expr">(svc−1) × <strong>${v2ES}</strong> + (evt−1)×${IC} + (init−1)</span>
+                <span class="vd-formula-ver vd-ver-new">${ver}</span>
+                <span class="vd-formula-expr">evt stride = <strong>×${curES}</strong> (event cap ${DEMO_EVENT_CAP[ver]}×${IC})</span>
               </div>
             </div>
             <div class="vd-protocol-note">
-              role 차원이 ${v1RC}→${v2RC}개로 늘어나 permission stride가 ${v1RS}→${v2RS}으로 변경.<br/>
-              event 차원이 ${v1EC}→${v2EC}개로 늘어나 event stride가 ${v1ES}(=${v1EC}×${IC})→${v2ES}(=${v2EC}×${IC})으로 변경.
+              ${strideChanged
+                ? `role ${prevRC}→${curRC}개, event ${prevEC}→${curEC}개로 변경. stride 재계산 필요.`
+                : `capacity 동일 (role cap ${DEMO_ROLE_CAP[ver]}, event cap ${DEMO_EVENT_CAP[ver]}). <strong>stride 불변 → 기존 주소 그대로 사용 가능.</strong>`
+              }
             </div>
           </div>
         </div>
 
         <div class="vd-protocol-card">
-          <div class="vd-protocol-card-title">③ 기능 분리 (Breaking)</div>
-          <div class="vd-protocol-card-body">
-            <div class="vd-split-diagram">
-              <div class="vd-split-old">
-                <code class="vd-feat-chip vd-chip-old">payment_cancel</code>
-                <div class="vd-split-old-roles">admin · developer · operator</div>
-              </div>
-              <div class="vd-split-arrow">분리 ↓</div>
-              <div class="vd-split-new">
-                <div class="vd-split-row">
-                  <code class="vd-feat-chip vd-chip-active">payment_cancel_req</code>
-                  <span class="vd-split-roles">admin · <span class="role-tag role-tag-customer">customer</span></span>
-                </div>
-                <div class="vd-split-row">
-                  <code class="vd-feat-chip vd-chip-active">payment_cancel_approve</code>
-                  <span class="vd-split-roles">admin · <span class="role-tag role-tag-operator">operator</span></span>
-                </div>
-              </div>
-            </div>
-            <div class="vd-protocol-note">
-              developer는 v1에서 결제 취소 권한을 보유했으나<br/>
-              v2에서는 두 기능 모두에서 <strong>의도적으로 제외</strong>됩니다.
-            </div>
-          </div>
-        </div>
-
-        <div class="vd-protocol-card">
-          <div class="vd-protocol-card-title">④ 마이그레이션 영향</div>
+          <div class="vd-protocol-card-title">③ 마이그레이션 영향</div>
           <div class="vd-protocol-card-body">
             <div class="vd-migration-list">
+              ${strideChanged ? `
               <div class="vd-migration-row vd-mig-breaking">
                 <span class="vd-mig-icon">⚠</span>
-                <span>저장된 <code>permission:v1:X</code> 주소를 v2 주소로 재계산 필요</span>
-              </div>
-              <div class="vd-migration-row vd-mig-breaking">
-                <span class="vd-mig-icon">⚠</span>
-                <span>저장된 <code>event:v1:X</code> 주소를 v2 주소로 재계산 필요</span>
-              </div>
-              <div class="vd-migration-row vd-mig-breaking">
-                <span class="vd-mig-icon">⚠</span>
-                <span><code>payment_cancel</code> featureId 참조를 두 개로 분리</span>
-              </div>
+                <span>permission/event 주소 재계산 필요 (stride 변경)</span>
+              </div>` : `
               <div class="vd-migration-row vd-mig-ok">
                 <span class="vd-mig-icon">✓</span>
-                <span><code>service:v1:X</code> 주소 변경 없음</span>
-              </div>
+                <span><strong>주소 재계산 불필요</strong> — stride 불변, capacity headroom 활용</span>
+              </div>`}
+              ${newRoles.length > 0 ? `
               <div class="vd-migration-row vd-mig-ok">
                 <span class="vd-mig-icon">✓</span>
-                <span>기존 ${v1RC}개 역할의 position 유지 (${newRolesDesc})</span>
-              </div>
+                <span>신규 역할 ${newRoles.map(r => `${r.ko}(pos=${r.pos})`).join(", ")} — 끝에 추가</span>
+              </div>` : ""}
+              ${newEvents.length > 0 ? `
               <div class="vd-migration-row vd-mig-ok">
                 <span class="vd-mig-icon">✓</span>
-                <span>기존 ${v1EC}개 이벤트명의 position 유지 (신규 ${newEvents.length}개는 뒤에 추가)</span>
+                <span>신규 이벤트 ${newEvents.length}개 — 끝에 추가</span>
+              </div>` : ""}
+              <div class="vd-migration-row vd-mig-ok">
+                <span class="vd-mig-icon">✓</span>
+                <span>기존 ${prevRC}개 역할, ${prevEC}개 이벤트 position 유지</span>
               </div>
             </div>
           </div>
@@ -808,7 +779,7 @@ export function renderVersionPage(
 
     featuresEl = buildFeaturesSection(ver, featureData);
     content.appendChild(featuresEl);
-    content.appendChild(buildProtocolSection());
+    content.appendChild(buildProtocolSection(ver));
   }
 
   // 기능 데이터 비동기 로드 (v3/v4는 API 미지원 시 v2로 폴백)

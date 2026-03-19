@@ -340,7 +340,7 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "logging")    renderLoggingPage(loggingContainer, state.ver);
     if (id === "layout")     renderLayoutPage(layoutContainer);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
-    if (id === "perm-engine") renderPermEnginePage(permEngineContainer);
+    if (id === "perm-engine") renderPermEnginePage(permEngineContainer, state.ver);
   }
 
   updateStatusBar();
