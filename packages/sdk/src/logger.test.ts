@@ -46,6 +46,7 @@ function createLogger(
 function makeFailingTransport(error = new Error("network error")) {
   return {
     send: vi.fn().mockRejectedValue(error),
+    flush: vi.fn().mockResolvedValue(undefined),
     shutdown: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -190,6 +191,7 @@ describe("QaLogger", () => {
       send: vi.fn().mockImplementation(
         () => new Promise<void>((r) => { resolveTransport = r; }),
       ),
+      flush: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
     };
     const logger = new QaLogger({ transport, owner, source, runtime, build, flushIntervalMs: 0 });
@@ -315,6 +317,176 @@ describe("QaLogger — actor context", () => {
   });
 });
 
+describe("QaLogger — address_context", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-12T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("log()에 address_context가 포함된다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.log({
+      event_key: "order_placed",
+      event_version: "1",
+      address_context: { svc: "svc:v1:42", perm: "perm:v1:7" },
+    });
+
+    expect(record.address_context).toEqual({ svc: "svc:v1:42", perm: "perm:v1:7" });
+  });
+
+  it("address_context 미지정 시 필드가 없다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.log({ event_key: "click", event_version: "1" });
+
+    expect(record.address_context).toBeUndefined();
+  });
+
+  it("startSpan()에 address_context가 포함된다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const span = logger.startSpan({
+      event_key: "checkout",
+      event_version: "1",
+      span_name: "Checkout",
+      address_context: { svc: "svc:v1:30" },
+    });
+    const record = span.end();
+
+    expect(record.address_context).toEqual({ svc: "svc:v1:30" });
+  });
+});
+
+describe("QaLogger — metric()", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-12T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("기본 gauge 메트릭 레코드를 생성한다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.metric("http_request_duration_ms", 42);
+
+    expect(record).toEqual(
+      expect.objectContaining({
+        record_kind: "metric",
+        event_key: "http_request_duration_ms",
+        metric_type: "gauge",
+        metric_name: "http_request_duration_ms",
+        metric_value: 42,
+      }),
+    );
+  });
+
+  it("옵션으로 type, unit, labels를 설정한다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.metric("request_count", 1, {
+      type: "counter",
+      unit: "requests",
+      labels: { method: "GET", path: "/api" },
+    });
+
+    expect(record.metric_type).toBe("counter");
+    expect(record.metric_unit).toBe("requests");
+    expect(record.metric_labels).toEqual({ method: "GET", path: "/api" });
+  });
+
+  it("address_context와 함께 메트릭을 기록한다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.metric("latency", 150, {
+      address_context: { svc: "svc:v1:30" },
+    });
+
+    expect(record.address_context).toEqual({ svc: "svc:v1:30" });
+    expect(record.metric_value).toBe(150);
+  });
+
+  it("histogram 옵션 (buckets, quantiles)을 설정한다", () => {
+    const { logger } = createLogger();
+    logger.startTrace();
+
+    const record = logger.metric("response_time", 100, {
+      type: "histogram",
+      buckets: [10, 50, 100, 500],
+      quantiles: [0.5, 0.9, 0.99],
+    });
+
+    expect(record.metric_type).toBe("histogram");
+    expect(record.metric_buckets).toEqual([10, 50, 100, 500]);
+    expect(record.metric_quantiles).toEqual([0.5, 0.9, 0.99]);
+  });
+});
+
+describe("QaLogger — buildEnvelope infra_context / entry_snapshot", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-12T00:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("infraContext가 envelope의 infra_context로 전달된다", async () => {
+    const transport = new NoopTransport();
+    const logger = new QaLogger({
+      transport, owner, source, runtime, build,
+      flushIntervalMs: 0,
+      infraContext: { svc: "svc:v1:30" },
+    });
+    logger.startTrace();
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    await logger.flush();
+
+    expect(transport.sent[0].infra_context).toEqual({ svc: "svc:v1:30" });
+  });
+
+  it("entrySnapshot이 envelope의 entry_snapshot으로 전달된다", async () => {
+    const transport = new NoopTransport();
+    const logger = new QaLogger({
+      transport, owner, source, runtime, build,
+      flushIntervalMs: 0,
+      entrySnapshot: "snap_demo_v1_20260312",
+    });
+    logger.startTrace();
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    await logger.flush();
+
+    expect(transport.sent[0].entry_snapshot).toBe("snap_demo_v1_20260312");
+  });
+
+  it("infraContext/entrySnapshot 미지정 시 envelope에 필드가 없다", async () => {
+    const { logger, transport } = createLogger();
+    logger.startTrace();
+    logger.log({ event_key: "e1", event_version: "1" });
+
+    await logger.flush();
+
+    expect(transport.sent[0].infra_context).toBeUndefined();
+    expect(transport.sent[0].entry_snapshot).toBeUndefined();
+  });
+});
+
 describe("QaLogger — error handling", () => {
   it("drops oldest record and calls onError when buffer reaches maxBufferSize", () => {
     const onError = vi.fn();
@@ -360,6 +532,7 @@ describe("QaLogger — error handling", () => {
       send: vi.fn().mockImplementation(
         () => new Promise<void>((_, reject) => { rejectTransport = reject; }),
       ),
+      flush: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
     };
     const onError = vi.fn();

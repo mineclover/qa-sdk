@@ -41,6 +41,12 @@ export interface QaLoggerConfig {
 
   /** Called when a flush or transport error occurs. Defaults to console.error. */
   onError?: (err: Error, context: string) => void;
+
+  /** 엔벨로프 전체에 적용되는 인프라 주소 컨텍스트 (레코드의 address_context가 override) */
+  infraContext?: Record<string, string>;
+
+  /** 배포 시점의 entry snapshot ID (envelope 전략 snapshotSupply용) */
+  entrySnapshot?: string;
 }
 
 export const DEFAULT_BATCH_SIZE = 50;

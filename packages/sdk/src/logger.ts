@@ -3,6 +3,7 @@ import {
   type EventRecord,
   type TransmissionEnvelope,
   type RecordKind,
+  type MetricType,
   type SpanStatusCode,
   type PayloadFormat,
   type PayloadEncoding,
@@ -93,6 +94,7 @@ export class QaLogger {
     payload_format?: PayloadFormat;
     payload_encoding?: PayloadEncoding;
     qa_session_id?: string;
+    address_context?: Record<string, string>;
   }): EventRecord {
     const ctx = this.ensureContext();
     const { payload, maskedFields, maskingApplied } =
@@ -113,11 +115,8 @@ export class QaLogger {
       payload_masked_fields: maskedFields,
       payload,
       qa_session_id: params.qa_session_id ?? ctx.qa_session_id,
-      ...(this.actor ? {
-        actor_id: this.actor.actor_id,
-        ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
-        ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
-      } : {}),
+      ...(params.address_context ? { address_context: params.address_context } : {}),
+      ...this.actorFields(),
     };
 
     this.addRecord(record);
@@ -135,6 +134,7 @@ export class QaLogger {
     payload_format?: PayloadFormat;
     payload_encoding?: PayloadEncoding;
     qa_session_id?: string;
+    address_context?: Record<string, string>;
   }): SpanHandle {
     const ctx = this.ensureContext();
     const spanId = ctx.pushSpan();
@@ -177,17 +177,57 @@ export class QaLogger {
           payload_masked_fields: maskedFields,
           payload,
           qa_session_id: params.qa_session_id ?? ctx.qa_session_id,
-          ...(this.actor ? {
-            actor_id: this.actor.actor_id,
-            ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
-            ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
-          } : {}),
+          ...(params.address_context ? { address_context: params.address_context } : {}),
+          ...this.actorFields(),
         };
 
         this.addRecord(record);
         return record;
       },
     };
+  }
+
+  // ── Metric ──────────────────────────────────────────
+
+  /** Record a metric event. */
+  metric(name: string, value: number, opts?: {
+    type?: MetricType;
+    unit?: string;
+    labels?: Record<string, string>;
+    buckets?: number[];
+    quantiles?: number[];
+    address_context?: Record<string, string>;
+  }): EventRecord {
+    const ctx = this.ensureContext();
+
+    const record: EventRecord = {
+      log_id: newLogId(),
+      timestamp: now(),
+      record_kind: "metric",
+      trace_id: ctx.trace_id,
+      span_id: ctx.currentSpanId,
+      parent_span_id: ctx.parentSpanId,
+      event_key: name,
+      event_version: "1",
+      payload_format: "json",
+      payload_encoding: "raw",
+      payload_masking_applied: false,
+      payload_masked_fields: [],
+      payload: null,
+      qa_session_id: ctx.qa_session_id,
+      metric_type: opts?.type ?? "gauge",
+      metric_name: name,
+      metric_value: value,
+      ...(opts?.unit ? { metric_unit: opts.unit } : {}),
+      ...(opts?.labels ? { metric_labels: opts.labels } : {}),
+      ...(opts?.buckets ? { metric_buckets: opts.buckets } : {}),
+      ...(opts?.quantiles ? { metric_quantiles: opts.quantiles } : {}),
+      ...(opts?.address_context ? { address_context: opts.address_context } : {}),
+      ...this.actorFields(),
+    };
+
+    this.addRecord(record);
+    return record;
   }
 
   // ── Flush / Shutdown ───────────────────────────────
@@ -284,6 +324,15 @@ export class QaLogger {
     }
   }
 
+  private actorFields(): Partial<EventRecord> {
+    if (!this.actor) return {};
+    return {
+      actor_id: this.actor.actor_id,
+      ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
+      ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
+    };
+  }
+
   private buildEnvelope(records: EventRecord[]): TransmissionEnvelope {
     return {
       transmission_id: newTransmissionId(),
@@ -292,6 +341,8 @@ export class QaLogger {
       source: this.config.source,
       runtime: this.config.runtime,
       build: this.config.build,
+      ...(this.config.infraContext ? { infra_context: this.config.infraContext } : {}),
+      ...(this.config.entrySnapshot ? { entry_snapshot: this.config.entrySnapshot } : {}),
       records,
     };
   }

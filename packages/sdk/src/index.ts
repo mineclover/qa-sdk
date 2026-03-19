@@ -30,6 +30,7 @@ export type {
   EventRecord,
   TransmissionEnvelope,
   RecordKind,
+  MetricType,
   SpanStatusCode,
   PayloadFormat,
   PayloadEncoding,
