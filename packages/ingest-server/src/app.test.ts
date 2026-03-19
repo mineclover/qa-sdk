@@ -8,6 +8,8 @@ import type {
   ScenarioSpec,
   ScenarioSpecStore,
   SessionStore,
+  TaskPayload,
+  TaskQueue,
   TraceStore,
   TransmissionEnvelope,
   TransmissionInsert,
@@ -27,6 +29,8 @@ import pino, { type Logger } from "pino";
 import { createApp } from "./app.js";
 import type { DebugStore } from "./lib/debug-store.js";
 import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
+import { InMemoryTaskQueue } from "./lib/in-memory-task-queue.js";
+import { registerTaskQueueWorker } from "./lib/phase-two-worker.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 import type {
   RegistryEventValidator,
@@ -57,6 +61,7 @@ function createTestApp(
     scenarioSpecStore?: ScenarioSpecStore;
     sessionStore?: SessionStore;
     streamSubscriptionLimit?: number;
+    taskQueue?: TaskQueue<TaskPayload>;
     traceStore?: TraceStore;
     verdictStore?: VerdictStore;
     withTraceTransaction?: TraceTransactionRunner;
@@ -91,6 +96,7 @@ function createTestApp(
     rateLimitMaxRequests: options.rateLimitMaxRequests,
     registryValidationMode: options.registryValidationMode,
     registryValidator: options.registryValidator,
+    taskQueue: options.taskQueue,
     withTraceTransaction: options.withTraceTransaction,
     checkDbHealth: options.checkDbHealth,
     getUptimeSeconds: options.getUptimeSeconds,
@@ -108,6 +114,7 @@ function createTestApp(
     scenarioSpecStore,
     dlqStore,
     debugStore,
+    taskQueue: options.taskQueue,
     recordStreamBroker,
   };
 }
@@ -2379,6 +2386,138 @@ describe("createApp", () => {
       expect.objectContaining({
         scenarioId: "checkout-flow",
         overallVerdict: "pass",
+      }),
+    );
+  });
+
+  it("enqueues Phase 2 and completes reconstruct plus verdict when the TaskQueue worker processes pending jobs", async () => {
+    const taskQueue = new InMemoryTaskQueue<TaskPayload>();
+    const {
+      app,
+      dlqStore,
+      graphStore,
+      recordStore,
+      scenarioSpecStore,
+      sessionStore,
+      traceStore,
+      verdictStore,
+    } = createTestApp({
+      taskQueue,
+    });
+
+    await scenarioSpecStore.upsert({
+      scenario_id: "checkout-flow-queued",
+      version: "1.0.0",
+      domain: "checkout",
+      steps: [
+        {
+          id: "step_form",
+          event_key: "checkout.form.updated",
+          required: true,
+          kind: "sequence",
+        },
+        {
+          id: "step_save",
+          event_key: "checkout.save",
+          required: true,
+          kind: "sequence",
+        },
+      ],
+    });
+    await sessionStore.upsert({
+      sessionId: "session_verdict_queued",
+      scenarioId: "checkout-flow-queued",
+    });
+
+    const envelope: TransmissionEnvelope = {
+      transmission_id: "tx_verdict_queued",
+      sent_at: "2026-03-12T10:00:05.000Z",
+      owner: { owner_type: "workspace", owner_id: "workspace_1" },
+      source: { service_name: "checkout-api", sdk_name: "qa-sdk-js", sdk_version: "0.1.0" },
+      runtime: { platform: "node", app_version: "20.12.0" },
+      build: { env: "staging", release_version: "2026.03.12" },
+      records: [
+        {
+          log_id: "log_q_form",
+          timestamp: "2026-03-12T10:00:01.000Z",
+          record_kind: "log",
+          trace_id: "trace_verdict_queued",
+          span_id: "span_form",
+          event_key: "checkout.form.updated",
+          event_version: "001",
+          payload_format: "json",
+          payload_encoding: "raw",
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+          payload: { field: "email" },
+          qa_session_id: "session_verdict_queued",
+        },
+        {
+          log_id: "log_q_save",
+          timestamp: "2026-03-12T10:00:02.000Z",
+          record_kind: "span",
+          trace_id: "trace_verdict_queued",
+          span_id: "span_save",
+          parent_span_id: "span_form",
+          event_key: "checkout.save",
+          event_version: "001",
+          span_name: "persist_order",
+          start_time: "2026-03-12T10:00:01.500Z",
+          end_time: "2026-03-12T10:00:02.000Z",
+          status_code: "ok",
+          payload_format: "json",
+          payload_encoding: "raw",
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+          payload: { orderId: "order_1" },
+          qa_session_id: "session_verdict_queued",
+        },
+      ],
+    };
+
+    const response = await app.request("/v1/ingest", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+
+    expect(response.status).toBe(202);
+    await expect(graphStore.findByTraceId("trace_verdict_queued")).resolves.toBeNull();
+    await expect(verdictStore.findByTraceId("trace_verdict_queued")).resolves.toEqual([]);
+    await expect(traceStore.findById("trace_verdict_queued")).resolves.toEqual(
+      expect.objectContaining({
+        traceId: "trace_verdict_queued",
+        reconstructed: false,
+      }),
+    );
+
+    await registerTaskQueueWorker(taskQueue, {
+      recordStore,
+      traceStore,
+      graphStore,
+      sessionStore,
+      verdictStore,
+      scenarioSpecStore,
+      dlqStore,
+      logger: createNoopLogger(),
+    });
+
+    await expect(graphStore.findByTraceId("trace_verdict_queued")).resolves.toEqual(
+      expect.objectContaining({
+        trace_id: "trace_verdict_queued",
+      }),
+    );
+    await expect(verdictStore.findByTraceId("trace_verdict_queued")).resolves.toEqual([
+      expect.objectContaining({
+        scenarioId: "checkout-flow-queued",
+        traceId: "trace_verdict_queued",
+        overallVerdict: "pass",
+      }),
+    ]);
+    await expect(traceStore.findById("trace_verdict_queued")).resolves.toEqual(
+      expect.objectContaining({
+        traceId: "trace_verdict_queued",
+        reconstructed: true,
       }),
     );
   });

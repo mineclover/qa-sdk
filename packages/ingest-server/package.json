@@ -20,6 +20,7 @@
     "@qa-sdk/engine": "workspace:*",
     "@qa-sdk/registry-client": "workspace:*",
     "@qa-sdk/store": "workspace:*",
+    "bullmq": "^5.0.0",
     "hono": "^4.7.5",
     "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "ws": "^8.19.0",

@@ -5,6 +5,8 @@ import type {
   RecordStore,
   ScenarioSpecStore,
   SessionStore,
+  TaskPayload,
+  TaskQueue,
   TraceStore,
   TransmissionStore,
   VerdictStore,
@@ -68,6 +70,7 @@ export interface AppDeps {
   rateLimitMaxRequests?: number;
   registryValidationMode?: RegistryValidationMode;
   registryValidator?: RegistryEventValidator;
+  taskQueue?: TaskQueue<TaskPayload>;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;

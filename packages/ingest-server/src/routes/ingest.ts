@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import {
   type GraphStore,
+  type TaskPayload,
+  type TaskQueue,
   transmissionEnvelopeSchema,
   type TransmissionEnvelope,
   type RecordInsert,
@@ -13,7 +15,6 @@ import {
   type VerdictStore,
   type DlqStore,
 } from "@qa-sdk/core";
-import { reconstructPendingTraces, computePendingVerdicts } from "@qa-sdk/engine";
 import type { ValidationResult } from "@qa-sdk/registry-client";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
 import {
@@ -22,6 +23,12 @@ import {
 } from "../lib/debug-store.js";
 import type { Logger } from "pino";
 import { badRequest } from "../lib/errors.js";
+import { enrichAddressContext } from "../lib/enrich-address-context.js";
+import {
+  buildReconstructionTask,
+  PHASE_TWO_TASK_QUEUE_OPTIONS,
+  processPendingPhaseTwo,
+} from "../lib/phase-two-worker.js";
 
 export type RegistryValidationMode = "strict" | "warn" | "off";
 
@@ -47,6 +54,7 @@ export interface IngestDeps {
   registryValidationMode?: RegistryValidationMode;
   registryValidator?: RegistryEventValidator;
   withTraceTransaction?: TraceTransactionRunner;
+  taskQueue?: TaskQueue<TaskPayload>;
   logger?: Logger;
 }
 
@@ -81,20 +89,26 @@ async function processEnvelope(
   deps: IngestDeps,
 ) {
   // Phase 1: 저장 (응답 경로)
-  await storeEnvelope(envelope, deps);
+  const persistedTraceIds = await storeEnvelope(envelope, deps);
 
-  // TODO: Phase 2는 현재 HTTP 응답 전에 동기로 실행된다.
-  // 트래픽이 늘어나면 메시지 큐(e.g. BullMQ, SQS)로 분리해야 한다.
-  // 분리 시 Phase 1 완료 후 즉시 202를 반환하고, Phase 2는 워커가 처리한다.
-  await postIngestProcess(deps);
+  if (deps.taskQueue) {
+    await enqueuePhaseTwoTasks(persistedTraceIds, deps.taskQueue);
+    return;
+  }
+
+  await processPendingPhaseTwo(deps);
 }
 
 /** Phase 1: transmission 메타 + trace/session/record 저장 + SSE 발행 */
 async function storeEnvelope(
   envelope: TransmissionEnvelope,
   deps: IngestDeps,
-) {
+): Promise<string[]> {
+  // address context 머지: infra_context(base) ← record.address_context(override)
+  enrichAddressContext(envelope, envelope.records);
+
   const registryWarnings = await validateEnvelopeRecords(envelope, deps);
+  const persistedTraceIds: string[] = [];
 
   await deps.transmissionStore.insert({
     transmissionId: envelope.transmission_id,
@@ -150,6 +164,14 @@ async function storeEnvelope(
       payload: r.payload,
       qaSessionId: r.qa_session_id,
       registryWarning: registryWarnings.get(r.log_id),
+      addressContext: r.address_context,
+      metricType: r.metric_type,
+      metricName: r.metric_name,
+      metricValue: r.metric_value,
+      metricUnit: r.metric_unit,
+      metricLabels: r.metric_labels,
+      metricBuckets: r.metric_buckets,
+      metricQuantiles: r.metric_quantiles,
       actorId: r.actor_id,
       userId: r.user_id,
       userAttributes: r.user_attributes,
@@ -204,6 +226,8 @@ async function storeEnvelope(
           }
         }
       }
+
+      persistedTraceIds.push(traceId);
     } catch (error) {
       deps.logger?.error(
         {
@@ -214,6 +238,8 @@ async function storeEnvelope(
       );
     }
   }
+
+  return persistedTraceIds;
 }
 
 async function persistTrace(
@@ -416,50 +442,14 @@ function resolveDebugStore(deps: IngestDeps): DebugStore {
   return deps.debugStore ?? createNoopDebugStore();
 }
 
-/** Phase 2: reconstruction + verdict 계산 */
-async function postIngestProcess(deps: IngestDeps) {
-  const reconstructResult = await reconstructPendingTraces(
-    {
-      recordStore: deps.recordStore,
-      traceStore: deps.traceStore,
-      graphStore: deps.graphStore,
-      dlqStore: deps.dlqStore,
-    },
-    {
-      onError: (traceId, error) => {
-        deps.logger?.error(
-          {
-            err: error,
-            traceId,
-          },
-          "failed to reconstruct trace",
-        );
-      },
-    },
-  );
-
-  if (reconstructResult.reconstructedTraceIds.length > 0) {
-    await computePendingVerdicts(
-      {
-        traceStore: deps.traceStore,
-        sessionStore: deps.sessionStore,
-        graphStore: deps.graphStore,
-        scenarioSpecStore: deps.scenarioSpecStore,
-        verdictStore: deps.verdictStore,
-        dlqStore: deps.dlqStore,
-      },
-      reconstructResult.reconstructedTraceIds,
-      {
-        onError: (traceId, error) => {
-          deps.logger?.error(
-            {
-              err: error,
-              traceId,
-            },
-            "failed to compute verdict",
-          );
-        },
-      },
+async function enqueuePhaseTwoTasks(
+  traceIds: string[],
+  taskQueue: TaskQueue<TaskPayload>,
+) {
+  for (const traceId of traceIds) {
+    await taskQueue.enqueue(
+      buildReconstructionTask(traceId),
+      PHASE_TWO_TASK_QUEUE_OPTIONS,
     );
   }
 }

@@ -11,11 +11,21 @@ import {
   InMemoryTransmissionStore,
   InMemoryVerdictStore,
 } from "@qa-sdk/store";
-import type { StoredRecord, TransmissionEnvelope } from "@qa-sdk/core";
+import type {
+  StoredRecord,
+  TaskPayload,
+  TaskQueue,
+  TransmissionEnvelope,
+} from "@qa-sdk/core";
 import { createErrorHandler } from "../middleware/error-handler.js";
 import { createIngestRoutes } from "./ingest.js";
+import { PHASE_TWO_TASK_QUEUE_OPTIONS } from "../lib/phase-two-worker.js";
 import type { DebugStore } from "../lib/debug-store.js";
 import { RecordStreamBroker } from "../lib/record-stream-broker.js";
+import type {
+  RegistryEventValidator,
+  RegistryValidationMode,
+} from "./ingest.js";
 
 interface IngestTestDeps {
   recordStore: InMemoryRecordStore;
@@ -28,6 +38,9 @@ interface IngestTestDeps {
   dlqStore: InMemoryDlqStore;
   recordStreamBroker: RecordStreamBroker;
   debugStore?: DebugStore;
+  registryValidationMode?: RegistryValidationMode;
+  registryValidator?: RegistryEventValidator;
+  taskQueue?: TaskQueue<TaskPayload>;
 }
 
 function buildDeps(overrides: Partial<IngestTestDeps> = {}): IngestTestDeps {
@@ -45,7 +58,7 @@ function buildDeps(overrides: Partial<IngestTestDeps> = {}): IngestTestDeps {
   };
 }
 
-function buildApp(overrides: Record<string, unknown> = {}) {
+function buildApp(overrides: Partial<IngestTestDeps> = {}) {
   const deps = buildDeps(overrides);
   const app = new Hono();
   app.onError(createErrorHandler(pino({ level: "silent" })));
@@ -220,6 +233,37 @@ describe("POST /v1/ingest", () => {
     const session = await deps.sessionStore.findById("qas_001");
     expect(session).not.toBeNull();
     expect(session?.sessionId).toBe("qas_001");
+  });
+
+  it("enqueues reconstruction after Phase 1 and does not run Phase 2 inline when TaskQueue is injected", async () => {
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+    const { app, deps } = buildApp({
+      taskQueue: {
+        close: vi.fn(),
+        enqueue,
+        process: vi.fn(),
+      },
+    });
+    const envelope = buildEnvelope({
+      records: [buildRecord({ qa_session_id: "qas_001" })],
+    });
+
+    const response = await app.request("/v1/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+
+    expect(response.status).toBe(202);
+    expect(enqueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trc_001",
+        phase: "reconstruction",
+      }),
+      PHASE_TWO_TASK_QUEUE_OPTIONS,
+    );
+    await expect(deps.graphStore.findByTraceId("trc_001")).resolves.toBeNull();
+    await expect(deps.verdictStore.findByTraceId("trc_001")).resolves.toEqual([]);
   });
 
   it("returns 400 for invalid event_version format (must be 3 digits)", async () => {
