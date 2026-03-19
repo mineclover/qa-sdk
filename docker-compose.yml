@@ -15,6 +15,17 @@ services:
       retries: 12
       start_period: 5s
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
   migrations:
     build:
       context: .
@@ -62,14 +73,19 @@ services:
     environment:
       TRACE_DATABASE_URL: ${TRACE_DATABASE_URL}
       PORT: ${INGEST_SERVER_PORT}
+      REDIS_URL: ${REDIS_URL}
+      TASK_QUEUE_ENABLED: ${TASK_QUEUE_ENABLED}
       SSE_SUBSCRIPTION_LIMIT: ${INGEST_SSE_SUBSCRIPTION_LIMIT}
       DLQ_MAX_RETRY_ATTEMPTS: ${INGEST_DLQ_MAX_RETRY_ATTEMPTS}
       RATE_LIMIT_WINDOW_MS: ${INGEST_RATE_LIMIT_WINDOW_MS}
       RATE_LIMIT_MAX_REQUESTS: ${INGEST_RATE_LIMIT_MAX_REQUESTS}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY}
       REGISTRY_URL: ${INGEST_REGISTRY_URL}
       REGISTRY_VALIDATION_MODE: ${INGEST_REGISTRY_VALIDATION_MODE}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
@@ -77,6 +93,28 @@ services:
         condition: service_started
     ports:
       - "${INGEST_SERVER_PORT}:${INGEST_SERVER_PORT}"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest-server
+    env_file:
+      - .env
+    environment:
+      TRACE_DATABASE_URL: ${TRACE_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      TASK_QUEUE_ENABLED: ${TASK_QUEUE_ENABLED}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    command: ["node", "dist/server.js", "--mode", "worker"]
+    healthcheck:
+      disable: true
 
 volumes:
   pgdata:
