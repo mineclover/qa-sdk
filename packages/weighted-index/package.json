@@ -15,6 +15,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./math": {
+      "types": "./dist/math/index.d.ts",
+      "import": "./dist/math/index.js",
+      "require": "./dist/math/index.cjs"
+    },
+    "./vocab": {
+      "types": "./dist/vocab/index.d.ts",
+      "import": "./dist/vocab/index.js",
+      "require": "./dist/vocab/index.cjs"
+    },
+    "./protocol": {
+      "types": "./dist/protocol/index.d.ts",
+      "import": "./dist/protocol/index.js",
+      "require": "./dist/protocol/index.cjs"
     }
   },
   "main": "./dist/index.cjs",
