@@ -10,9 +10,7 @@ import {
   type FeaturesResponse,
 } from "../registry.js";
 import {
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
   DEMO_KO,
-  DEMO_FEATURES_V1, DEMO_FEATURES_V2,
   DEMO_FEATURE_KO,
   demoRolesFor, demoFeatures,
 } from "demo-snapshot";
@@ -75,8 +73,6 @@ function buildNavItems(features: readonly { id: string; name: string }[]): { lab
   ];
 }
 
-const NAV_ITEMS_V2 = buildNavItems(DEMO_FEATURES_V2);
-const NAV_ITEMS_V1 = buildNavItems(DEMO_FEATURES_V1);
 
 function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): string {
   if (featureId === "home") {

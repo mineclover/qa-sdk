@@ -5,7 +5,7 @@
 import { serializeAddress, varintByteSize } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
-  DEMO_SVC_STRIDES, DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES, DEMO_EVENT_CAP,
   demoEncodeSvc, demoDecodeSvc, demoEventsFor,
   demoRoleStride, demoEvtStride,

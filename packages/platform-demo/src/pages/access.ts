@@ -34,19 +34,10 @@ const PERM_SVCS: PermSvcMeta[] = [];
       PERM_SVCS.push({ pos: p++, svcId: s.id, svcKo: s.ko, nsId: n.id, nsKo: n.ko });
 }
 
-// ── Role metadata ───────────────────────────────────────────────────────
+// ── Role / Event metadata (demoRolesFor/demoEventsFor에서 동적 생성) ────
 
 interface RoleMeta { idx1: number; id: string; ko: string }
-
-const ROLES_V1: RoleMeta[] = DEMO_ROLES_V1.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.role[id] }));
-const ROLES_V2: RoleMeta[] = DEMO_ROLES_V2.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.role[id] }));
-
-// ── Event metadata ──────────────────────────────────────────────────────
-
 interface EvtMeta { idx1: number; id: string; ko: string }
-
-const EVENTS_V1: EvtMeta[] = DEMO_EVENTS_V1.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] }));
-const EVENTS_V2: EvtMeta[] = DEMO_EVENTS_V2.map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
