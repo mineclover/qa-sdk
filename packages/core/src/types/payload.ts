@@ -8,7 +8,7 @@ export type PayloadFormat =
   | "binary"
   | "stream";
 
-export type PayloadEncoding = "raw" | "base64" | "gzip+base64";
+export type PayloadEncoding = "raw" | "base64" | "gzip+base64" | "protobuf";
 
 // ── Masking ─────────────────────────────────────────────
 

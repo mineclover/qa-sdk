@@ -45,5 +45,9 @@ export interface TransmissionEnvelope {
   source: TransmissionSource;
   runtime: TransmissionRuntime;
   build: TransmissionBuild;
+  /** 엔벨로프 전체에 적용되는 인프라 주소 컨텍스트. 레코드의 address_context가 override */
+  infra_context?: Record<string, string>;
+  /** 배포 시점의 entry snapshot ID (envelope 전략 snapshotSupply용) */
+  entry_snapshot?: string;
   records: EventRecord[];
 }

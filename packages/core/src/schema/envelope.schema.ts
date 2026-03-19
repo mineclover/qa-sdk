@@ -46,5 +46,7 @@ export const transmissionEnvelopeSchema = z.object({
   source: transmissionSourceSchema,
   runtime: transmissionRuntimeSchema,
   build: transmissionBuildSchema,
+  infra_context: z.record(z.string(), z.string()).optional(),
+  entry_snapshot: z.string().optional(),
   records: z.array(eventRecordSchema).min(1),
 });

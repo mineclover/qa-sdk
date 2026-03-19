@@ -22,6 +22,7 @@ export type { ActorContext } from "./types/actor.js";
 
 export type {
   RecordKind,
+  MetricType,
   SpanStatusCode,
   EventRecord,
 } from "./types/record.js";
@@ -89,6 +90,7 @@ export {
 
 export {
   recordKindSchema,
+  metricTypeSchema,
   spanStatusCodeSchema,
   payloadFormatSchema,
   payloadEncodingSchema,
@@ -152,6 +154,14 @@ export type {
 } from "./ports/dlq-store.port.js";
 
 export type {
+  TaskQueue,
+  TaskPayload,
+  TaskPhase,
+  TaskQueueOptions,
+  TaskHandler,
+} from "./ports/task-queue.port.js";
+
+export type {
   SessionStore,
   SessionUpsert,
   StoredSession,
@@ -163,3 +173,11 @@ export type {
 } from "./ports/transmission-store.port.js";
 
 export type { ScenarioSpecStore } from "./ports/scenario-spec-store.port.js";
+
+export type {
+  MetricRollupStore,
+  MetricRollupInsert,
+  StoredMetricRollup,
+  MetricRollupQuery,
+  MetricWindowType,
+} from "./ports/metric-rollup-store.port.js";

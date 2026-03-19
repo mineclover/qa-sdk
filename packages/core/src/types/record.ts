@@ -5,7 +5,11 @@ import type {
 
 // ── Record Kind ─────────────────────────────────────────
 
-export type RecordKind = "log" | "span";
+export type RecordKind = "log" | "span" | "metric";
+
+// ── Metric Type ──────────────────────────────────────
+
+export type MetricType = "counter" | "gauge" | "histogram" | "summary";
 
 // ── Status Code (for spans) ─────────────────────────────
 
@@ -53,6 +57,21 @@ export interface EventRecord {
 
   qa_session_id?: string;
   _registry_warning?: string;
+
+  // ── Address Context ────────────────────────────────────
+
+  /** n차원 주소 컨텍스트. key=prefix_id, value="prefix:v:address" */
+  address_context?: Record<string, string>;
+
+  // ── Metric (when record_kind === "metric") ────────────
+
+  metric_type?: MetricType;
+  metric_name?: string;
+  metric_value?: number;
+  metric_unit?: string;
+  metric_labels?: Record<string, string>;
+  metric_buckets?: number[];
+  metric_quantiles?: number[];
 
   // ── Actor ──────────────────────────────────────────────
 

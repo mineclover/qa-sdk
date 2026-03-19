@@ -53,6 +53,17 @@ export interface RecordInsert {
   payload: unknown;
   qaSessionId?: string;
   registryWarning?: string;
+  // Address context
+  addressContext?: Record<string, string>;
+  // Metric (when recordKind === "metric")
+  metricType?: string;
+  metricName?: string;
+  metricValue?: number;
+  metricUnit?: string;
+  metricLabels?: Record<string, string>;
+  metricBuckets?: number[];
+  metricQuantiles?: number[];
+  // Actor
   actorId?: string;
   userId?: string;
   userAttributes?: Record<string, string>;
