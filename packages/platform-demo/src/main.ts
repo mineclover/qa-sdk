@@ -31,6 +31,7 @@ import { renderLoggingPage } from "./pages/logging.js";
 import { renderLayoutPage } from "./pages/layout.js";
 import { renderCasbinPage } from "./pages/casbin.js";
 import { renderPermEnginePage } from "./pages/perm-engine.js";
+import { renderPrefixMetaPage } from "./pages/prefix-meta.js";
 import {
   DEMO_ROLE_CAP, DEMO_EVENT_CAP, DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   DEMO_INITIATORS, demoRolesFor, demoEventsFor, demoFeatures,
@@ -41,10 +42,10 @@ import {
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine" | "prefix-meta";
 type Ver = "v1" | "v2" | "v3" | "v4";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine", "prefix-meta"] as const;
 
 // Sheets that depend on the active version
 const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging", "version", "perm-engine"];
@@ -144,6 +145,9 @@ const versionContainer = document.getElementById("version-container")!;
 // Permission Engine sheet refs
 const permEngineContainer = document.getElementById("perm-engine-container")!;
 
+// Prefix Meta sheet refs
+const prefixMetaContainer = document.getElementById("prefix-meta-container")!;
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Status bar (version-aware)
@@ -171,7 +175,8 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
     case "logging":    return { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: `로깅 통합 (${ver})` };
     case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
-    case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "v1→v2 마이그레이션 비교" };
+    case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "마이그레이션 비교" };
+    case "prefix-meta": return { shape: "Prefix 메타 · dim/index capacity", slots: "축 + 합성 prefix 조회" };
   }
 }
 
@@ -339,6 +344,7 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "layout")     renderLayoutPage(layoutContainer);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
     if (id === "perm-engine") renderPermEnginePage(permEngineContainer, state.ver);
+    if (id === "prefix-meta") renderPrefixMetaPage(prefixMetaContainer);
   }
 
   updateStatusBar();

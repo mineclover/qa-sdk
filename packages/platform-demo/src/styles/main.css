@@ -5471,3 +5471,92 @@ code {
 
 .pe-snapshot-section { margin-top: 16px; }
 /* EOF — DSL/PV styles moved to @qa-sdk/registry-ui */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Prefix Meta 페이지
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pm-wrap { padding: 0 8px; }
+.pm-header { margin-bottom: 20px; }
+.pm-title { font-size: 1.3rem; font-weight: 700; color: var(--xl-navy); margin: 0 0 6px; }
+.pm-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.pm-section { margin-bottom: 24px; }
+.pm-section-title {
+  font-size: 0.88rem; font-weight: 700; color: var(--xl-navy);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.pm-section-icon { font-size: 1rem; }
+.pm-grid { display: flex; flex-direction: column; gap: 12px; }
+
+/* card */
+.pm-card {
+  background: var(--surface-0); border: 1px solid var(--border-cell);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.pm-card-header {
+  padding: 10px 14px; background: var(--surface-2);
+  border-bottom: 1px solid var(--border-cell);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.pm-card-icon { font-size: 1rem; }
+.pm-card-id { font-size: 0.88rem; font-weight: 700; color: var(--xl-navy); font-family: var(--font-num); }
+.pm-card-type {
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 3px; letter-spacing: 0.04em;
+}
+.pm-card-dim .pm-card-type { background: #e3f2fd; color: #1565c0; }
+.pm-card-index .pm-card-type { background: #e8f5e9; color: #2e7d32; }
+.pm-card-kind { font-size: 0.72rem; color: var(--text-muted); }
+.pm-card-dims { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-num); }
+
+/* dim snapshot table */
+.pm-snap-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.pm-snap-table th {
+  padding: 5px 10px; text-align: left; font-size: 0.65rem;
+  font-weight: 700; text-transform: uppercase; color: var(--text-muted);
+  border-bottom: 1px solid var(--border-cell); letter-spacing: 0.03em;
+}
+.pm-snap-table td { padding: 5px 10px; border-bottom: 1px solid var(--border-cell); }
+.pm-snap-table tr:last-child td { border-bottom: none; }
+.pm-snap-id { font-family: var(--font-num); font-weight: 600; color: var(--xl-navy); }
+.pm-num { font-family: var(--font-num); text-align: right; }
+.pm-headroom { color: #1565c0; font-weight: 700; }
+
+/* index version block */
+.pm-ver-block { padding: 10px 14px; border-bottom: 1px solid var(--border-cell); }
+.pm-ver-block:last-child { border-bottom: none; }
+.pm-ver-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.pm-ver-id {
+  font-family: var(--font-num); font-weight: 700; font-size: 0.82rem;
+  color: var(--xl-navy); min-width: 28px;
+}
+.pm-ver-cap, .pm-ver-used {
+  font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-num);
+}
+.pm-dim-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.pm-dim-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px; font-size: 0.72rem;
+  background: var(--surface-1); border: 1px solid var(--border-cell);
+  font-family: var(--font-num); font-weight: 600; color: var(--text-cell);
+}
+.pm-chip-headroom { border-color: #90caf9; background: #e3f2fd; }
+.pm-chip-nums { font-weight: 400; color: var(--text-muted); }
+.pm-chip-snap { font-size: 0.6rem; color: var(--text-dim); }
+
+/* bar */
+.pm-bar-wrap {
+  position: relative; height: 16px; background: #f0f0f0;
+  border-radius: 3px; overflow: hidden; min-width: 80px;
+}
+.pm-bar-wide { flex: 1; max-width: 200px; }
+.pm-bar {
+  height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71);
+  border-radius: 3px; transition: width 0.2s;
+}
+.pm-bar-label {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; font-weight: 700; color: #333;
+  font-family: var(--font-num);
+}

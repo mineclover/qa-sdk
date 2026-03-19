@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
+  registry,
   svcCodec, permCodec, evtCodec, permCodecV2, evtCodecV2,
   permCodecV3, evtCodecV3, permCodecV4, evtCodecV4,
   ENV_KO, REGION_KO, SVC_NAME_KO, NS_KO, ROLE_KO, EVT_KO,
@@ -17,6 +18,7 @@ import {
   type DemoVer, type DemoFeatureDef,
 } from "demo-snapshot";
 import { PermissionSet, type DimDef } from "permission-engine";
+import { snapshotCapacity } from "index-meta";
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
@@ -135,6 +137,64 @@ app.use("*", cors({
 
 // GET /api/health
 app.get("/api/health", (c) => c.json({ ok: true }));
+
+// ── Prefix meta route ─────────────────────────────────────────────────────
+
+app.get("/api/prefix-meta", (c) => {
+  try {
+    const dimIds = registry.dimIds;
+    const indexIds = registry.indexIds;
+
+    // dims (leaf prefixes)
+    const dims = dimIds.map(dimId => {
+      const def = registry.getDimDef(dimId);
+      const snapIds = registry.getSnapshotIds(dimId);
+      const snapshots = snapIds.map(snapId => {
+        const snap = registry.getDimSnapshot(dimId, snapId);
+        return {
+          snapshotId: snapId,
+          entries: snap.entries.length,
+          capacity: snapshotCapacity(snap),
+          headroom: snapshotCapacity(snap) - snap.entries.length,
+        };
+      });
+      return { id: dimId, type: "dim" as const, kind: def.kind, snapshots };
+    });
+
+    // indices (composite prefixes)
+    const indices = indexIds.map(indexId => {
+      const def = registry.getIndexDef(indexId);
+      const verIds = registry.getVersionIds(indexId);
+      const versions = verIds.map(verId => {
+        const iv = registry.getIndexVersion(indexId, verId);
+        const shape = def.dims.map(dimId => {
+          const snapId = iv.snapshots[dimId];
+          const snap = registry.getDimSnapshot(dimId, snapId);
+          return {
+            dimId,
+            snapshotId: snapId,
+            entries: snap.entries.length,
+            capacity: snapshotCapacity(snap),
+          };
+        });
+        const totalCapacity = shape.reduce((a, d) => a * d.capacity, 1);
+        const totalEntries = shape.reduce((a, d) => a * d.entries, 1);
+        return {
+          versionId: verId,
+          dims: shape,
+          totalCapacity,
+          totalEntries,
+          utilization: +(totalEntries / totalCapacity * 100).toFixed(1),
+        };
+      });
+      return { id: indexId, type: "index" as const, dims: [...def.dims], versions };
+    });
+
+    return c.json({ dims, indices });
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+  }
+});
 
 // ── Service routes ─────────────────────────────────────────────────────────
 
