@@ -225,7 +225,7 @@ app.get("/api/permission/cells", (c) => {
     const roles = getRoles(ver);
     const roleStride = getRoleStride(ver);
     const prefix = `permission:${ver}`;
-    const maxValue = PERM_SVC_VALUES.length * roles.length - 1;
+    const maxValue = PERM_SVC_VALUES.length * roleStride - 1; // capacity 기반
 
     const svcLabels = PERM_SVC_VALUES.map((svcValue, si) => {
       const { env, region, svc_name, namespace } = decodeSvcValue(svcValue);
@@ -289,7 +289,7 @@ app.get("/api/event/cells", (c) => {
     const events = getEvents(ver);
     const svcStride = getEvtStride(ver);
     const prefix = `event:${ver}`;
-    const maxValue = EVT_SVC_VALUES.length * events.length * 2 - 1;
+    const maxValue = EVT_SVC_VALUES.length * svcStride - 1; // capacity 기반
 
     const svcLabels = EVT_SVC_VALUES.map((svcValue, si) => {
       const { env, svc_name } = decodeSvcValue(svcValue);
