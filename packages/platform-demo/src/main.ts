@@ -31,6 +31,11 @@ import { renderLoggingPage } from "./pages/logging.js";
 import { renderLayoutPage } from "./pages/layout.js";
 import { renderCasbinPage } from "./pages/casbin.js";
 import { renderPermEnginePage } from "./pages/perm-engine.js";
+import {
+  DEMO_ROLE_CAP, DEMO_EVENT_CAP, DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+  DEMO_INITIATORS, demoRolesFor, demoEventsFor, demoFeatures,
+  demoRoleStride, demoEvtStride,
+} from "demo-snapshot";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
@@ -145,26 +150,24 @@ const permEngineContainer = document.getElementById("perm-engine-container")!;
 // ═══════════════════════════════════════════════════════════════════════════
 
 function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string } {
+  const rc = DEMO_ROLE_CAP[ver];
+  const ec = DEMO_EVENT_CAP[ver];
+  const ic = DEMO_INITIATORS.length;
+  const psc = DEMO_PERM_SVC_VALUES.length;
+  const esc = DEMO_EVT_SVC_VALUES.length;
+  const fc = demoFeatures(ver).length;
+  const rn = demoRolesFor(ver).length;
+
   switch (sheet) {
     case "overview":   return { shape: "n차원 참조 주소 체계", slots: "프로젝트 개요" };
     case "service":    return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "100개 슬롯" };
-    case "permission": return ver === "v1"
-      ? { shape: "permission:v1 · shape [10, 5]",    slots: "50개 슬롯" }
-      : { shape: "permission:v2 · shape [10, 6]",    slots: "60개 슬롯" };
-    case "event":      return ver === "v1"
-      ? { shape: "event:v1 · shape [10, 7, 2]",      slots: "140개 슬롯" }
-      : { shape: "event:v2 · shape [10, 9, 2]",      slots: "180개 슬롯" };
-    case "scenario":   return ver === "v1"
-      ? { shape: "시나리오 — v1 역할별 접근 제어",      slots: "결제 취소 워크플로우" }
-      : { shape: "시나리오 — 역할별 접근 제어 시뮬레이션", slots: "결제 취소 요청/승인 워크플로우" };
-    case "grant":      return ver === "v1"
-      ? { shape: "기능 6 × 역할 5 = 30 조합",          slots: "권한 부여 관리 (v1 읽기전용)" }
-      : { shape: "기능 7 × 역할 6 = 42 조합",          slots: "권한 부여 관리" };
+    case "permission": return { shape: `permission:${ver} · shape [${psc}, ${rc}]`, slots: `${psc * rc}개 슬롯` };
+    case "event":      return { shape: `event:${ver} · shape [${esc}, ${ec}, ${ic}]`, slots: `${esc * ec * ic}개 슬롯` };
+    case "scenario":   return { shape: `시나리오 — ${ver} 역할별 접근 제어`, slots: "워크플로우 시뮬레이션" };
+    case "grant":      return { shape: `기능 ${fc} × 역할 ${rn} = ${fc * rn} 조합`, slots: "권한 부여 관리" };
     case "casbin":     return { shape: "Casbin RBAC/ABAC 권한 모델 해설", slots: "qa-sdk ↔ Casbin 대비" };
     case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
-    case "access":     return ver === "v1"
-      ? { shape: "perm_svc(10) × role(5) + event(7×2)", slots: "접근 제어" }
-      : { shape: "perm_svc(10) × role(6) + event(9×2)", slots: "접근 제어" };
+    case "access":     return { shape: `perm_svc(${psc}) × role(${rc}) + event(${ec}×${ic})`, slots: "접근 제어" };
     case "logging":    return ver === "v1"
       ? { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v1)" }
       : { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v2)" };
@@ -207,8 +210,8 @@ function updateFormulaBar(): void {
     }
   } else if (sheet === "permission") {
     const { selectedValue } = state.perm;
-    const stride = ver === "v1" ? 5 : 6;
-    const shape = ver === "v1" ? "[10, 5]" : "[10, 6]";
+    const stride = demoRoleStride(ver);
+    const shape = `[${DEMO_PERM_SVC_VALUES.length}, ${DEMO_ROLE_CAP[ver]}]`;
     if (selectedValue !== null) {
       nameBox.textContent = String(selectedValue);
       fbFormula.textContent = `permission:${ver}:${selectedValue}  =  (perm_svc−1)×${stride} + (role−1)`;
@@ -232,8 +235,8 @@ function updateFormulaBar(): void {
     fbFormula.textContent = "range([fixed₁, n, fixed₃, fixed₄]) → 매칭 주소 집합  |  와일드카드 차원 탐색";
   } else if (sheet === "access") {
     nameBox.textContent = "—";
-    const rStride = ver === "v1" ? 5 : 6;
-    const eStride = ver === "v1" ? 14 : 18;
+    const rStride = demoRoleStride(ver);
+    const eStride = demoEvtStride(ver);
     fbFormula.textContent = `permAddr = (perm_svc−1)×${rStride} + (role−1)  |  evtAddr = (svc−1)×${eStride} + (event−1)×2 + (init−1)`;
   } else if (sheet === "logging") {
     nameBox.textContent = "—";
@@ -243,14 +246,14 @@ function updateFormulaBar(): void {
     fbFormula.textContent = `simPackUUID(prefix, version, shard, encode(coords)) → UUID PK  |  N차원 커버리지 시뮬레이터`;
   } else if (sheet === "version") {
     nameBox.textContent = "—";
-    fbFormula.textContent = `활성 버전: ${ver}  |  role ${ver === "v1" ? "5" : "6"}개 · event ${ver === "v1" ? "7" : "9"}개 · feature ${ver === "v1" ? "6" : "7"}개`;
+    fbFormula.textContent = `활성 버전: ${ver}  |  role ${demoRolesFor(ver).length}개 (cap ${DEMO_ROLE_CAP[ver]}) · event ${demoEventsFor(ver).length}개 (cap ${DEMO_EVENT_CAP[ver]}) · feature ${demoFeatures(ver).length}개`;
   } else if (sheet === "perm-engine") {
     nameBox.textContent = "—";
     fbFormula.textContent = `PermissionSet([feature, role]) → bitmask  |  O(1) grant/check  |  migratePermissions(v1 → v2)`;
   } else {
     const { selectedValue, fixedInitiator } = state.evt;
     const initLabel = fixedInitiator === 1 ? "web" : "mobile";
-    const svcStride = ver === "v1" ? 14 : 18;
+    const svcStride = demoEvtStride(ver);
     if (selectedValue !== null) {
       nameBox.textContent = String(selectedValue);
       fbFormula.textContent = `event:${ver}:${selectedValue}  =  (svc−1)×${svcStride} + (event−1)×2 + (initiator−1)`;

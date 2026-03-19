@@ -43,6 +43,7 @@ const DEMO_USERS = [
   { id: "u-1004", name: "박민수", role: "viewer" },
   { id: "u-1005", name: "정수연", role: "readonly" },
   { id: "u-1006", name: "최고객", role: "customer" },
+  { id: "u-1007", name: "감사원", role: "auditor" },
 ];
 
 // ── Tutorial section ───────────────────────────────────────────────────────

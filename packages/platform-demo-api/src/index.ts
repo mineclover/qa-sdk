@@ -13,7 +13,7 @@ import {
   demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
   DEMO_FEATURES_V1, DEMO_FEATURES_V2, DEMO_FEATURES_V4, demoFeatures,
   DEMO_ROLE_POS_V1, DEMO_ROLE_POS_V2, demoRolePos,
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V4,
   type DemoVer, type DemoFeatureDef,
 } from "demo-snapshot";
 import { PermissionSet, type DimDef } from "permission-engine";
@@ -81,8 +81,8 @@ function getRoleStride(ver: Ver) { return demoRoleStride(ver); }
 function getEvents(ver: Ver)     { return demoEventsFor(ver); }
 function getEvtStride(ver: Ver)  { return demoEvtStride(ver); }
 function getFeatureDefs(ver: Ver): readonly DemoFeatureDef[] { return demoFeatures(ver); }
-const PERM_CODECS: Record<Ver, ReturnType<typeof permCodec["decodeValue"]> extends any ? typeof permCodec : never> = { v1: permCodec, v2: permCodecV2, v3: permCodecV3, v4: permCodecV4 };
-const EVT_CODECS: Record<Ver, typeof evtCodec> = { v1: evtCodec, v2: evtCodecV2, v3: evtCodecV3, v4: evtCodecV4 };
+const PERM_CODECS = { v1: permCodec, v2: permCodecV2, v3: permCodecV3, v4: permCodecV4 } as const;
+const EVT_CODECS = { v1: evtCodec, v2: evtCodecV2, v3: evtCodecV3, v4: evtCodecV4 } as const;
 function getPermCodec(ver: Ver)  { return PERM_CODECS[ver]; }
 function getEvtCodec(ver: Ver)   { return EVT_CODECS[ver]; }
 
@@ -593,7 +593,7 @@ app.patch("/api/grants", async (c) => {
     const body = await c.req.json<{ featureId: string; role: string; granted: boolean }>();
     const { featureId, role, granted } = body;
     if (!FEATURE_IDS.has(featureId)) return c.json({ error: "Unknown featureId" }, 400);
-    if (!(ROLE_LIST as readonly string[]).includes(role)) return c.json({ error: "Unknown role" }, 400);
+    if (!(DEMO_ROLES_V4 as readonly string[]).includes(role)) return c.json({ error: "Unknown role" }, 400);
 
     const db = c.env.DB;
     if (granted) {
@@ -640,7 +640,7 @@ app.patch("/api/grants/batch", async (c) => {
       }
       if (typeof change.role !== "string" || !change.role) {
         errors.push(`changes[${i}]: missing or invalid 'role'`);
-      } else if (!(ROLE_LIST as readonly string[]).includes(change.role)) {
+      } else if (!(DEMO_ROLES_V4 as readonly string[]).includes(change.role)) {
         errors.push(`changes[${i}]: unknown role '${change.role}'`);
       }
       if (typeof change.granted !== "boolean") {

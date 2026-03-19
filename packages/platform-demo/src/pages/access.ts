@@ -5,8 +5,7 @@
 import { serializeAddress } from "weighted-index";
 import {
   DEMO_SVCS, DEMO_NSS, DEMO_KO,
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
-  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
+  demoRolesFor, demoEventsFor,
   demoRoleStride, demoEvtStride,
   demoCalcPermAddr, demoCalcEvtAddr,
   type DemoVer,
@@ -51,8 +50,8 @@ const EVENTS_V2: EvtMeta[] = DEMO_EVENTS_V2.map((id, i) => ({ idx1: i + 1, id, k
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function rolesFor(v: Ver) { return v === "v1" ? ROLES_V1 : ROLES_V2; }
-function eventsFor(v: Ver) { return v === "v1" ? EVENTS_V1 : EVENTS_V2; }
+function rolesFor(v: Ver) { return demoRolesFor(v); }
+function eventsFor(v: Ver) { return demoEventsFor(v); }
 const rc = demoRoleStride;
 const evtStride = demoEvtStride;
 const calcPermAddr = demoCalcPermAddr;
