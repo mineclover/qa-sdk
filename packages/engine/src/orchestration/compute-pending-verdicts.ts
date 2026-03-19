@@ -25,6 +25,7 @@ export interface ComputePendingVerdictsDeps {
 }
 
 export interface ComputePendingVerdictsOptions {
+  captureFailuresInDlq?: boolean;
   /** true면 기존 verdict를 삭제하고 재계산 */
   force?: boolean;
   onError?: (traceId: string, error: unknown) => void;
@@ -66,12 +67,14 @@ export async function computePendingVerdicts(
       computed.push({ traceId, scenarioId: result.scenarioId });
     } catch (error) {
       failed.push(traceId);
-      await deps.dlqStore.insert({
-        id: newDlqId(),
-        traceId,
-        phase: "verdict",
-        errorMessage: toErrorMessage(error),
-      });
+      if (options.captureFailuresInDlq !== false) {
+        await deps.dlqStore.insert({
+          id: newDlqId(),
+          traceId,
+          phase: "verdict",
+          errorMessage: toErrorMessage(error),
+        });
+      }
       options.onError?.(traceId, error);
     }
   }

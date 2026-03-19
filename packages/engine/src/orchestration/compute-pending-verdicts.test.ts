@@ -29,6 +29,9 @@ function makeTrace(traceId: string, sessionId?: string): StoredTrace {
     traceId,
     sessionId: sessionId ?? null,
     serviceName: null,
+    actorId: null,
+    userId: null,
+    userAttributes: null,
     recordCount: 1,
     firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
     lastTimestamp: new Date("2026-03-13T00:00:01.000Z"),
@@ -43,6 +46,9 @@ function makeSession(sessionId: string, scenarioId?: string): StoredSession {
     sessionId,
     scenarioId: scenarioId ?? null,
     labels: null,
+    actorId: null,
+    userId: null,
+    userAttributes: null,
     startedAt: new Date("2026-03-13T00:00:00.000Z"),
     closedAt: null,
   };
@@ -312,6 +318,23 @@ describe("computePendingVerdicts", () => {
 
     expect(result.failed).toContain("trc_001");
     expect(deps.dlqItems).toHaveLength(1);
+  });
+
+  it("can suppress DLQ writes when a queue worker owns terminal failure handling", async () => {
+    const deps = buildDeps({
+      trace: makeTrace("trc_001", "qas_001"),
+      session: makeSession("qas_001", SCENARIO.scenario_id),
+      graph: makeGraph("trc_001"),
+      scenario: SCENARIO,
+    });
+    (deps.verdictStore.insert as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("db error"));
+
+    const result = await computePendingVerdicts(deps, ["trc_001"], {
+      captureFailuresInDlq: false,
+    });
+
+    expect(result.failed).toEqual(["trc_001"]);
+    expect(deps.dlqItems).toEqual([]);
   });
 });
 

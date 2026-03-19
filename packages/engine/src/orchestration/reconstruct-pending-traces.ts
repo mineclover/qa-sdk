@@ -4,6 +4,7 @@ import type {
   GraphStore,
   RecordStore,
   StoredRecord,
+  StoredTrace,
   TraceStore,
 } from "@qa-sdk/core";
 import { newDlqId } from "@qa-sdk/core";
@@ -17,8 +18,10 @@ export interface ReconstructPendingTracesDeps {
 }
 
 export interface ReconstructPendingTracesOptions {
+  captureFailuresInDlq?: boolean;
   limit?: number;
   onError?: (traceId: string, error: unknown) => void;
+  traceIds?: string[];
 }
 
 export interface ReconstructPendingTracesResult {
@@ -30,7 +33,7 @@ export async function reconstructPendingTraces(
   deps: ReconstructPendingTracesDeps,
   options: ReconstructPendingTracesOptions = {},
 ): Promise<ReconstructPendingTracesResult> {
-  const traces = await deps.traceStore.findUnreconstructed(options.limit);
+  const traces = await findTracesToReconstruct(deps.traceStore, options);
   const reconstructedTraceIds: string[] = [];
   const failedTraceIds: string[] = [];
 
@@ -40,12 +43,14 @@ export async function reconstructPendingTraces(
       reconstructedTraceIds.push(trace.traceId);
     } catch (error) {
       failedTraceIds.push(trace.traceId);
-      await deps.dlqStore.insert({
-        id: newDlqId(),
-        traceId: trace.traceId,
-        phase: "reconstruction",
-        errorMessage: toErrorMessage(error),
-      });
+      if (options.captureFailuresInDlq !== false) {
+        await deps.dlqStore.insert({
+          id: newDlqId(),
+          traceId: trace.traceId,
+          phase: "reconstruction",
+          errorMessage: toErrorMessage(error),
+        });
+      }
       options.onError?.(trace.traceId, error);
     }
   }
@@ -71,6 +76,38 @@ export async function reconstructTrace(
 
   await deps.graphStore.upsert(traceId, graph);
   await deps.traceStore.markReconstructed(traceId);
+}
+
+async function findTracesToReconstruct(
+  traceStore: Pick<
+    ReconstructPendingTracesDeps["traceStore"],
+    "findById" | "findUnreconstructed"
+  >,
+  options: ReconstructPendingTracesOptions,
+): Promise<StoredTrace[]> {
+  if (!options.traceIds) {
+    return traceStore.findUnreconstructed(options.limit);
+  }
+
+  const traces: StoredTrace[] = [];
+  const seenTraceIds = new Set<string>();
+
+  for (const traceId of options.traceIds) {
+    if (seenTraceIds.has(traceId)) {
+      continue;
+    }
+
+    seenTraceIds.add(traceId);
+
+    const trace = await traceStore.findById(traceId);
+    if (!trace || trace.reconstructed) {
+      continue;
+    }
+
+    traces.push(trace);
+  }
+
+  return traces;
 }
 
 function toEventRecord(record: StoredRecord): EventRecord {

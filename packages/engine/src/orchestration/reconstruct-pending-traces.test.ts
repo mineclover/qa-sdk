@@ -12,17 +12,27 @@ import type {
 import { reconstructPendingTraces, reconstructTrace } from "./reconstruct-pending-traces.js";
 
 function makeTrace(traceId: string, overrides: Partial<StoredTrace> = {}): StoredTrace {
+  const {
+    actorId = null,
+    userAttributes = null,
+    userId = null,
+    ...restOverrides
+  } = overrides;
+
   return {
     traceId,
     sessionId: null,
     serviceName: null,
+    actorId,
+    userId,
+    userAttributes,
     recordCount: 1,
     firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
     lastTimestamp: new Date("2026-03-13T00:00:01.000Z"),
     reconstructed: false,
     createdAt: new Date("2026-03-13T00:00:00.000Z"),
     updatedAt: new Date("2026-03-13T00:00:00.000Z"),
-    ...overrides,
+    ...restOverrides,
   };
 }
 
@@ -122,6 +132,29 @@ describe("reconstructPendingTraces", () => {
     expect(result.reconstructedTraceIds).toContain("trc_002");
   });
 
+  it("targets specific trace IDs and skips already reconstructed traces", async () => {
+    const traces = [
+      makeTrace("trc_001"),
+      makeTrace("trc_002", { reconstructed: true }),
+      makeTrace("trc_003"),
+    ];
+    const records = new Map([
+      ["trc_001", [makeRecord("trc_001")]],
+      ["trc_002", [makeRecord("trc_002")]],
+      ["trc_003", [makeRecord("trc_003")]],
+    ]);
+    const deps = buildDeps(traces, records);
+
+    const result = await reconstructPendingTraces(deps, {
+      traceIds: ["trc_003", "trc_002", "trc_003"],
+    });
+
+    expect(result.reconstructedTraceIds).toEqual(["trc_003"]);
+    expect(result.failedTraceIds).toEqual([]);
+    expect(deps.reconstructedIds).toEqual(["trc_003"]);
+    expect(deps.traceStore.findUnreconstructed).not.toHaveBeenCalled();
+  });
+
   it("adds to DLQ and calls onError when reconstruction fails", async () => {
     const traceId = "trc_fail";
     const deps = buildDeps([makeTrace(traceId)]);
@@ -164,6 +197,19 @@ describe("reconstructPendingTraces", () => {
 
     expect(result.failedTraceIds).toContain(traceId);
     expect(deps.dlqItems).toHaveLength(1);
+  });
+
+  it("can suppress DLQ writes when the caller handles final failure elsewhere", async () => {
+    const traceId = "trc_fail";
+    const deps = buildDeps([makeTrace(traceId)]);
+    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("db error"));
+
+    const result = await reconstructPendingTraces(deps, {
+      captureFailuresInDlq: false,
+    });
+
+    expect(result.failedTraceIds).toEqual([traceId]);
+    expect(deps.dlqItems).toEqual([]);
   });
 });
 
