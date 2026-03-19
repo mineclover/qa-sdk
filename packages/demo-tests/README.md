@@ -20,6 +20,37 @@
 | **Tracking** | action × page × userType | 사용자 행동 추적 — 이커머스 이벤트 분석 |
 | **Relational** | subject_kind × predicate × object_kind | 관계 모델 — RBAC 관계 표현, 정책 평가 |
 
+## Registry DSL — Prefix 참조 구조
+
+Registry DSL의 핵심 개념:
+
+### Prefix는 모두 capacity를 가진다
+
+모든 prefix(leaf든 composite든)는 **capacity**를 가진다. composite가 다른 prefix를 dims로 참조할 때, 참조 대상의 **capacity만 사용**한다. 내부를 재귀적으로 펼치지 않는다.
+
+```
+leaf env(cap=5), leaf svc(cap=8)
+composite service = [env, svc]                → service.cap = 5 × 8 = 40
+composite permission = [service, role(cap=4)] → permission.cap = 40 × 4 = 160
+                                                (service 내부의 env·svc를 다시 보지 않음)
+```
+
+### 주소는 schema:version에 고정된다
+
+같은 정수 주소라도 스키마 버전이 다르면 다른 좌표를 가리킨다. capacity가 stride를 결정하고, stride가 주소의 의미를 결정하므로, **버전 없이 주소는 무의미**하다.
+
+```
+v1: role(cap=8), action(cap=4) → stride=[4,1] → encode([2,3]) = 6
+v2: role(cap=8), action(cap=8) → stride=[8,1] → encode([2,3]) = 10
+                                                 decode(6) = [1,7] ← 오역!
+```
+
+직렬화: `schema:version:prefix:address` (예: `rbac:v1:perm:6`)
+
+### 축 배치 순서 = stride 안정성
+
+변경 빈도 높은 축을 첫 번째(외부)에 배치하면 capacity 확장 시 stride 불변 → 마이그레이션 불필요.
+
 ## 테스트 구조
 
 ```
@@ -58,22 +89,25 @@ src/
     d4-stride-parity.test.ts       calcWeights() ↔ WeightedIndex.strides 일치
     error-parity.test.ts           코덱 간 에러 거부 동작 패리티
 
+  ── Registry DSL 시리즈 ────────────────────────────────────
+  registry-dsl-prefix-ref.test.ts  §1 참조=capacity조회 §2 버전고정 §3 체인시나리오 §4 역추적 §5 안전성
+  registry-dsl-spec.test.ts        DSL 스펙 (EnumAxis/Prefix/Schema) + Meta-DSL + Budget + 직렬화
+  registry-dsl-git.test.ts         Git 버전 관리 체계 (pkg·semver·ccType 축 + 의존성 DAG)
+
+  ── Registry Service E2E ───────────────────────────────────
+  registry-service-e2e.test.ts     쇼핑 플랫폼 E2E (DAG·simulate·lock·release·resolve)
+  registry-service-format-exploration.test.ts  서비스 등록 포맷 탐색 (Format A~D 비교)
+
+  ── 인코딩 ─────────────────────────────────────────────────
   bit-field-roundtrip.test.ts    bit-field-layout 변환 경로 라운드트립 (Number/BigInt/hex/bytes)
   dim-pack-roundtrip.test.ts     BitIndex 차원별 비트 패킹 라운드트립 + O(1) 추출 검증
   encoding-comparison.test.ts    WeightedIndex vs BitIndex 역할 분담 증명 + use case 검증
   encoding-bridge.test.ts        IndexBridge 양방향 변환 전수 왕복 + DB↔인메모리 파이프라인
   bit-mask-set-e2e.test.ts       BitMaskSet grant/filter/대수/직렬화 + Bridge 연동
 
-  registry-service-e2e.test.ts   Registry Service 쇼핑 플랫폼 E2E (DAG·simulate·lock·release·resolve)
-  registry-service-format-exploration.test.ts  서비스 등록 포맷 탐색 (Format A~D 비교)
-  registry-dsl-git.test.ts       Git 버전 관리 체계 DSL (pkg·semver·ccType 축 + 주소 인코딩)
-
-  permission-view-e2e.test.ts    PermissionView/Cache + BitMaskSet 교차 E2E (filter/patch/cache/hasBit)
-  platform-api-contract.test.ts  platform-demo-api 응답 contract + mask API + SSOT 정합성
-
-  permission-engine (캐시/최적화)
-    permission-view-cache.test.ts  캐시 기본/패치/무효화/Singleflight/LRU/고트래픽 시뮬레이션
-    bench-bit-optimization.test.ts BitIndex 최적화 벤치마크 (§1-§6)
+  ── 기타 ───────────────────────────────────────────────────
+  permission-view-e2e.test.ts    PermissionView/Cache + BitMaskSet 교차 E2E
+  platform-api-contract.test.ts  platform-demo-api 응답 contract + SSOT 정합성
   registry-codec.test.ts         MetaRegistry 코덱 라운드트립
   position-stability.test.ts     v1→v2 위치 안정성
   permission-migration.test.ts   권한 마이그레이션 통합
