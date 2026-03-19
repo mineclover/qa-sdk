@@ -11,7 +11,7 @@ Spec Graph와 Runtime Graph를 비교하여
 ## Quick Start
 
 로컬 풀스택 데모 환경은 루트 `docker-compose.yml` 기준으로 기동한다.
-`postgres`와 일회성 `migrations` 서비스가 먼저 올라온 뒤, `registry-server`와 `ingest-server`가 순서대로 시작된다.
+`postgres`, `redis`, 일회성 `migrations` 서비스가 먼저 올라온 뒤, `registry-server`, `ingest-server`, `worker`가 순서대로 시작된다.
 
 ```bash
 cp .env.example .env
@@ -32,7 +32,8 @@ docker compose down -v
 메모:
 
 - 환경 변수는 루트 `.env.example`에 모두 문서화되어 있다.
-- Compose 내부에서는 `postgres` 서비스명을 호스트로 사용하므로 `REGISTRY_DATABASE_URL`, `TRACE_DATABASE_URL`의 기본값을 그대로 쓰면 된다.
+- Compose 내부에서는 `postgres`, `redis` 서비스명을 호스트로 사용하므로 `REGISTRY_DATABASE_URL`, `TRACE_DATABASE_URL`, `REDIS_URL`의 기본값을 그대로 쓰면 된다.
+- `TASK_QUEUE_ENABLED=true`면 ingest-server가 Phase 2를 BullMQ worker로 분리하고, `false`면 기존 동기 경로를 유지한다.
 - `INGEST_REGISTRY_VALIDATION_MODE=warn`이 기본값이며, 인증은 게이트웨이에서 처리한다 ([ADR-001](docs/architecture-decisions.md#adr-001-게이트웨이-레벨-인증)).
 
 ---
@@ -41,6 +42,7 @@ docker compose down -v
 
 ```text
 packages/
+  ── QA Observability ──
   core/               @qa-sdk/core             공유 타입 · 스키마 · 포트 · 유틸리티
   event-catalog/      @qa-sdk/event-catalog    Core Event 어휘 · Payload Guide (정적 데이터)
   sdk/                @qa-sdk/sdk              이벤트 수집 SDK (브라우저/Node/Edge)
@@ -50,12 +52,26 @@ packages/
   registry-client/    @qa-sdk/registry-client  이벤트 레지스트리 검증 클라이언트 (TTL+LRU 캐시)
   ingest-server/      @qa-sdk/ingest-server    Envelope 수신 HTTP 서버
   registry-server/    @qa-sdk/registry-server  서비스·이벤트 메타데이터 Registry API
+
+  ── Indexing & Encoding ──
+  weighted-index/     weighted-index           n차원 가중 위치 기수법 (mixed-radix) 인코딩
+  bit-index/          bit-index                차원별 비트 패킹 인덱스 (O(1) 추출)
+  index-meta/         index-meta               메타-스키마 레지스트리 (DAG·버전·마이그레이션)
+  permission-engine/  permission-engine        비트마스크 기반 권한 엔진
+
+  ── Service Registry ──
+  registry-service/   @qa-sdk/registry-service Prefix DAG·버전 라이프사이클·DraftWorkspace 서비스
+
+  ── Demo & Test ──
+  demo-snapshot/      demo-snapshot            데모 데이터 스냅샷 (축 카탈로그·도메인·쇼핑 시나리오)
+  demo-tests/         @qa-sdk/demo-tests       통합 테스트 (cross-package 시나리오)
 ```
 
 ### 의존 관계
 
 ```text
-core  ← 모든 패키지가 의존
+── QA Observability 트리 ──
+core  ← observability 패키지가 의존
   ├── event-catalog   (독립 정적 데이터 — 런타임 의존성 0)
   ├── pino            (독립 로거)
   ├── sdk             (core만 의존, storage 무관)
@@ -64,6 +80,13 @@ core  ← 모든 패키지가 의존
   ├── registry-client (독립 HTTP 클라이언트)
   ├── ingest-server   (core + store + engine + registry-client 조합)
   └── registry-server (독립 서비스, event-catalog import 가능)
+
+── Indexing & Encoding 트리 ──
+weighted-index  ← 인코딩 패키지가 의존
+  ├── bit-index          (weighted-index 의존)
+  ├── index-meta         (weighted-index 의존 — 메타 스키마 + DAG)
+  ├── permission-engine  (weighted-index + bit-index 의존)
+  └── registry-service   (index-meta + weighted-index 의존)
 ```
 
 ---

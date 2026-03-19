@@ -1,8 +1,27 @@
 # QA-SDK Monorepo
 
+## Monorepo 패키지 그룹
+
+두 개의 독립적인 패키지 그룹이 공존하며, 향후 QA 플랫폼이 인코딩 레이어를 소비하는 통합 경로를 목표로 함.
+
+### 수학/인코딩 라이브러리 (unscoped)
+- 패키지: `weighted-index`, `bit-index`, `permission-engine`, `index-meta`, `demo-snapshot`
+- 네이밍: bare name (npm 공개 배포 대상)
+- 빌드: tsup → ESM + CJS dual format
+- 빌드 순서: weighted-index → bit-index → permission-engine → platform-demo
+
+### QA 플랫폼 (@qa-sdk/* scoped)
+- 패키지: `@qa-sdk/core`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/cli`
+- 네이밍: `@qa-sdk/*` scope (내부 플랫폼 서비스)
+- 빌드: tsc → ESM only (예외: cli는 tsup ESM only + shebang)
+
+### 규칙
+- 새 라이브러리 패키지 → unscoped name + tsup dual format
+- 새 서비스/앱 패키지 → `@qa-sdk/*` scope + tsc ESM only
+- 그룹 간 의존: QA 플랫폼 → 인코딩 라이브러리 방향만 허용 (역방향 금지)
+
 ## Build
-- `pnpm --filter <pkg> build` — 개별 패키지 빌드 (tsup)
-- weighted-index → bit-index → permission-engine → platform-demo 순서로 빌드해야 함 (의존성)
+- `pnpm --filter <pkg> build` — 개별 패키지 빌드
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상
 - platform-demo tsc 우회: `pnpm --filter platform-demo exec vite build --mode development`
 
@@ -38,6 +57,24 @@
 - `src/resource.ts` — resource 정규화/검증 (canonical path-like key, 타입별 패턴 규칙)
 - `src/service-ref.ts` — 서비스 참조 (namespace/name) + SDK 글로벌 컨텍스트 (env/build/region 숨김)
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
+
+### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
+- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (24 axes, 10 prefixes)
+  - `VersionedAxis`: 버전별 entries/capacity/ko
+  - `DimRef` 3종: `axis` (enum 직접) / `prefix_ref` (다른 prefix 주소) / `table_ref` (DB 테이블 타입 참조)
+  - `PrefixDef`: N-D 주소 공간 (축 조합 + 버전별 axis version 핀)
+  - 이벤트 prefix: cart_event, auth_event, order_event (table_ref + axis + prefix_ref 조합)
+- `packages/demo-snapshot/src/demo-accessors.ts` — 선택적 접근 + 차원 합성·분해·의미 해석
+  - `getPrefixStructure/Shape/Entries` — 3단계 조회
+  - `encodePrefix/decodePrefix` — 차원 좌표 ↔ 1D 주소
+  - `encodePrefixByValue` — 의미값(entry string / ref address)으로 인코딩
+  - `resolveAddress` — 재귀 의미 해석 (prefix_ref → 참조 prefix까지 풀어냄)
+  - `decomposeAddress` — 차원 분해 (prefix_ref의 하위 좌표 포함)
+  - `verifyRoundTrip` — 전 범위 encode↔decode 정합성 검증
+- `packages/demo-snapshot/src/demo-compat.ts` — DEMO_CATALOG에서 기존 상수/함수 파생 (하위 호환)
+- `packages/demo-snapshot/src/demo-bridge.ts` — 외부 시스템 변환 (catalogToRegistryInput, catalogToPrefixCodecInput)
+- 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains (순환 금지)
+- axis ID 충돌 주의: catalog `rbac_role` ≠ `role` (쇼핑). compat에서 AXIS.role로 매핑.
 
 ### platform-demo
 - `packages/platform-demo/src/pages/layout.ts` — 레이아웃 시뮬레이터 UI
