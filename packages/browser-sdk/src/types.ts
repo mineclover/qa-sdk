@@ -18,6 +18,12 @@ export interface QaMonitorConfig {
     env?: string;
     version?: string;
   };
+
+  /** 엔벨로프 전체에 적용되는 인프라 주소 컨텍스트 */
+  infraContext?: Record<string, string>;
+
+  /** 배포 시점의 entry snapshot ID */
+  entrySnapshot?: string;
 }
 
 export interface AutoCaptureConfig {

@@ -1,5 +1,5 @@
 import { QaLogger, TraceContext } from "@qa-sdk/sdk";
-import type { BuildEnv } from "@qa-sdk/core";
+import type { BuildEnv, MetricType } from "@qa-sdk/core";
 import { getCoreEvent } from "@qa-sdk/event-catalog";
 import { BeaconTransport } from "./transport.js";
 import { getOrCreateSession, clearSession } from "./session.js";
@@ -51,6 +51,8 @@ export class QaMonitor {
       build: { env: (config.meta?.env ?? "production") as BuildEnv },
       flushIntervalMs: 5_000,
       onError: config.onError,
+      ...(config.infraContext ? { infraContext: config.infraContext } : {}),
+      ...(config.entrySnapshot ? { entrySnapshot: config.entrySnapshot } : {}),
     });
 
     // 세션 컨텍스트 연결
@@ -108,6 +110,24 @@ export class QaMonitor {
     const def = getCoreEvent(eventKey);
     const version = (def?.event_version ?? "1").padStart(3, "0");
     this.logger.log({ event_key: eventKey, event_version: version, payload });
+  }
+
+  // ── 메트릭 ─────────────────────────────────────────────
+
+  /**
+   * 메트릭 이벤트 기록. QaLogger.metric() 위임.
+   * stopped 상태에서는 경고 후 무시.
+   */
+  metric(name: string, value: number, opts?: {
+    type?: MetricType;
+    unit?: string;
+    labels?: Record<string, string>;
+  }): void {
+    if (this._status === "stopped") {
+      console.warn(`[QaMonitor] metric("${name}") called after shutdown — event dropped`);
+      return;
+    }
+    this.logger.metric(name, value, opts);
   }
 
   // ── 세션 관리 ───────────────────────────────────────────
