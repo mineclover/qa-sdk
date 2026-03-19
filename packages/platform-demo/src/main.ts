@@ -37,6 +37,7 @@ import {
   DEMO_INITIATORS, demoRolesFor, demoEventsFor, demoFeatures,
   demoRoleStride, demoEvtStride,
 } from "demo-snapshot";
+import { resetGrants } from "./registry.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  App state
@@ -364,6 +365,33 @@ document.querySelectorAll<HTMLButtonElement>(".ribbon-ver-btn").forEach((btn) =>
     const ver = btn.dataset["ver"] as Ver;
     if (ver) handleVersionChange(ver);
   });
+});
+
+// ── Reset button ──
+const resetBtn = document.getElementById("ribbon-reset-btn");
+resetBtn?.addEventListener("click", async () => {
+  resetBtn.textContent = "초기화 중...";
+  (resetBtn as HTMLButtonElement).disabled = true;
+  try {
+    await resetGrants();
+    // 현재 시트가 DB 의존 시트면 re-render
+    const dbSheets: SheetId[] = ["scenario", "grant", "version", "perm-engine"];
+    for (const id of dbSheets) {
+      const el = document.getElementById(`sheet-${id}`);
+      if (el) delete el.dataset["rendered"];
+    }
+    if (dbSheets.includes(state.sheet)) {
+      switchSheet(state.sheet, false);
+    }
+    resetBtn.textContent = "완료!";
+    setTimeout(() => { resetBtn.textContent = "초기화"; }, 1500);
+  } catch (e) {
+    resetBtn.textContent = "실패";
+    console.error("Reset grants failed:", e);
+    setTimeout(() => { resetBtn.textContent = "초기화"; }, 2000);
+  } finally {
+    (resetBtn as HTMLButtonElement).disabled = false;
+  }
 });
 
 window.addEventListener("popstate", () => {
