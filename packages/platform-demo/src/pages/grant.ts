@@ -349,7 +349,7 @@ export function renderGrantPage(container: HTMLElement, ver = "v2"): void {
 
     // Tutorial
     let tutorialEl: HTMLElement | null = null;
-    if (ver === "v2") {
+    if (ver !== "v1") {
       tutorialEl = buildTutorial(allRows, handleApplyTutorial, handleReset);
       leftCol.appendChild(tutorialEl);
     }
@@ -473,7 +473,7 @@ export function renderGrantPage(container: HTMLElement, ver = "v2"): void {
     async function refresh(): Promise<void> {
       try {
         const fresh = await fetchGrantTable(ver);
-        if (ver === "v2" && tutorialEl) {
+        if (ver !== "v1" && tutorialEl) {
           const newTutorial = buildTutorial(fresh.rows, handleApplyTutorial, handleReset);
           tutorialEl.replaceWith(newTutorial);
           tutorialEl = newTutorial;

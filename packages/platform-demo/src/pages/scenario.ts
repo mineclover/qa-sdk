@@ -14,13 +14,17 @@ import {
   DEMO_KO,
   DEMO_FEATURES_V1, DEMO_FEATURES_V2,
   DEMO_FEATURE_KO,
+  demoRolesFor, demoFeatures,
 } from "demo-snapshot";
 
 
 // ── Constants (demo-snapshot SSOT 기반) ───────────────────────────────────
 
-const ROLES_META_V2 = DEMO_ROLES_V2.map(id => ({ id, ko: DEMO_KO.role[id] ?? id }));
-const ROLES_META_V1 = DEMO_ROLES_V1.map(id => ({ id, ko: DEMO_KO.role[id] ?? id }));
+function rolesMetaFor(ver: string) {
+  return demoRolesFor(ver as any).map((id: string) => ({ id, ko: DEMO_KO.role[id] ?? id }));
+}
+// 하위 호환 (기존 default 파라미터 참조용)
+const ROLES_META_V2 = rolesMetaFor("v2");
 
 const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥", "⑦"] as const;
 
@@ -499,8 +503,8 @@ export function renderScenarioPage(container: HTMLElement, ver = "v2"): void {
   container.innerHTML = "";
   container.classList.add("scenario-body");
 
-  const rolesMeta = ver === "v1" ? ROLES_META_V1 : ROLES_META_V2;
-  const navItems = ver === "v1" ? NAV_ITEMS_V1 : NAV_ITEMS_V2;
+  const rolesMeta = rolesMetaFor(ver);
+  const navItems = buildNavItems(demoFeatures(ver as any));
 
   let activeRole = "viewer";
 

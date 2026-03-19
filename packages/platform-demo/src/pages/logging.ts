@@ -6,8 +6,8 @@ import { serializeAddress, varintByteSize } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
   DEMO_SVC_STRIDES, DEMO_EVENTS_V1, DEMO_EVENTS_V2,
-  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
-  demoEncodeSvc, demoDecodeSvc,
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES, DEMO_EVENT_CAP,
+  demoEncodeSvc, demoDecodeSvc, demoEventsFor,
   demoRoleStride, demoEvtStride,
   demoDecodePerm, demoDecodeEvt,
   DEMO_LOG_TEMPLATES,
@@ -118,7 +118,7 @@ function generateRandomLog(ver: Ver): LogEntry {
 
   const hasEvt = Math.random() > 0.5;
   const evtSvcCount = DEMO_EVT_SVC_VALUES.length;
-  const evtCount = ver === "v1" ? DEMO_EVENTS_V1.length : DEMO_EVENTS_V2.length;
+  const evtCount = demoEventsFor(ver).length;
   const evtAddr = hasEvt ? Math.floor(Math.random() * evtSvcCount) * es + Math.floor(Math.random() * evtCount) * 2 + Math.floor(Math.random() * 2) : null;
 
   const latencyMs = pick.level === "ERROR" ? 1000 + Math.floor(Math.random() * 30000)
@@ -600,7 +600,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         <div class="log-anat-head">
           <span class="log-anat-schema">evt</span>
           <span class="log-anat-idx">= ${exEvt}</span>
-          <span class="log-anat-shape">shape [10, ${ver === "v1" ? 7 : 9}, 2]</span>
+          <span class="log-anat-shape">shape [10, ${DEMO_EVENT_CAP[ver]}, 2]</span>
         </div>
         <div class="log-anat-body">
           <div class="log-anat-dim">

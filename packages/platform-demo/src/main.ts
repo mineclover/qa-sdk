@@ -168,9 +168,7 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
     case "casbin":     return { shape: "Casbin RBAC/ABAC 권한 모델 해설", slots: "qa-sdk ↔ Casbin 대비" };
     case "range":      return { shape: "service:v1 · shape [5, 2, 5, 2]", slots: "범위 탐색" };
     case "access":     return { shape: `perm_svc(${psc}) × role(${rc}) + event(${ec}×${ic})`, slots: "접근 제어" };
-    case "logging":    return ver === "v1"
-      ? { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v1)" }
-      : { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: "로깅 통합 (v2)" };
+    case "logging":    return { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: `로깅 통합 (${ver})` };
     case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
     case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "v1→v2 마이그레이션 비교" };
