@@ -42,7 +42,7 @@ type Ver = "v1" | "v2" | "v3" | "v4";
 const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine"] as const;
 
 // Sheets that depend on the active version
-const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging"];
+const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging", "version", "perm-engine"];
 
 function sheetFromPath(pathname: string): SheetId {
   const seg = pathname.replace(/^\/+|\/+$/g, "").split("/")[0];

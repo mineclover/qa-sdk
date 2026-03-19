@@ -21,8 +21,9 @@ import { PermissionSet, type DimDef } from "permission-engine";
 
 type Ver = DemoVer;
 
+const VALID_VERS = new Set<Ver>(["v1", "v2", "v3", "v4"]);
 function parseVer(raw: string | undefined): Ver {
-  return raw === "v1" ? "v1" : "v2";
+  return VALID_VERS.has(raw as Ver) ? (raw as Ver) : "v2";
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
