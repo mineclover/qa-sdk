@@ -41,8 +41,12 @@ interface EvtMeta { idx1: number; id: string; ko: string }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function rolesFor(v: Ver) { return demoRolesFor(v); }
-function eventsFor(v: Ver) { return demoEventsFor(v); }
+function rolesFor(v: Ver): RoleMeta[] {
+  return [...demoRolesFor(v)].map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.role[id] ?? id }));
+}
+function eventsFor(v: Ver): EvtMeta[] {
+  return [...demoEventsFor(v)].map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] ?? id }));
+}
 const rc = demoRoleStride;
 const evtStride = demoEvtStride;
 const calcPermAddr = demoCalcPermAddr;
@@ -86,11 +90,12 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
   const header = document.createElement("div");
   header.className = "acc-header";
   header.innerHTML = `
-    <h2 class="acc-title">접근 제어 시뮬레이터</h2>
+    <h2 class="acc-title">주소 공간 탐색기</h2>
     <p class="acc-desc">
-      서비스를 1차원으로 압축한 <strong>perm_svc</strong>에
-      <strong>역할</strong>과 <strong>이벤트</strong>를 매핑하여
-      권한·이벤트 주소를 생성합니다.
+      서비스를 1차원으로 압축한 <strong>perm_svc</strong> 축 위에
+      <strong>역할</strong>을 매핑하면 <em>권한 좌표</em>,
+      <strong>이벤트 × 발원</strong>을 매핑하면 <em>감사 좌표</em>.
+      각 셀은 좌표계에서의 위치를 나타냅니다.
     </p>
   `;
   ctrlPanel.appendChild(header);
@@ -228,14 +233,14 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     // ── Permission table ──
     const permTitleHtml = `
       <div class="acc-grid-title">
-        <span class="acc-grid-title-text">권한 주소 (permission:${ver})</span>
+        <span class="acc-grid-title-text">권한 좌표 (permission:${ver})</span>
         <span class="acc-grid-title-count">
           <span class="acc-count-hit">${permHits.size}</span> / ${totalPermCells}
         </span>
       </div>
     `;
 
-    let permHead = `<tr><th class="acc-tbl-corner">svc \\ role</th>`;
+    let permHead = `<tr><th class="acc-tbl-corner">서비스 \\ 역할</th>`;
     for (const role of curRoles) {
       const isActive = role.idx1 === st.roleIdx1;
       permHead += `<th class="acc-tbl-ch${isActive ? " acc-tbl-ch-active" : ""}">${role.ko}</th>`;
@@ -265,14 +270,14 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     const initLabel = st.initiator === 1 ? "web" : "mobile";
     const evtTitleHtml = `
       <div class="acc-grid-title">
-        <span class="acc-grid-title-text">이벤트 주소 (event:${ver}) · ${initLabel}</span>
+        <span class="acc-grid-title-text">감사 좌표 (event:${ver}) · ${initLabel}</span>
         <span class="acc-grid-title-count">
           <span class="acc-count-hit">${evtHits.size}</span> / ${totalEvtCells}
         </span>
       </div>
     `;
 
-    let evtHead = `<tr><th class="acc-tbl-corner">svc \\ event</th>`;
+    let evtHead = `<tr><th class="acc-tbl-corner">서비스 \\ 감사 이벤트</th>`;
     for (const evt of curEvents) {
       evtHead += `<th class="acc-tbl-ch">${evt.ko}</th>`;
     }
@@ -320,9 +325,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         <code class="acc-summary-scope">${permAddrStr}</code>
       </div>
       <div class="acc-summary-result">
-        <span class="acc-summary-num">${permHits.size}</span> 권한 주소
+        <span class="acc-summary-num">${permHits.size}</span> 권한 좌표
         <span class="acc-summary-sep">·</span>
-        <span class="acc-summary-num">${evtHits.size}</span> 이벤트 주소
+        <span class="acc-summary-num">${evtHits.size}</span> 감사 좌표
       </div>
     `;
 
@@ -333,8 +338,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         <span class="acc-insight-mark">i</span>
         <span class="acc-insight-text">
           <strong>perm_svc</strong>는 서비스(${SVC_NAMES.length})×네임스페이스(${NS.length})를 1차원(${PERM_SVCS.length})으로 압축한 축입니다.
-          이 축 위에 역할을 곱하면 권한 주소(<strong>${totalPermCells}</strong>개),
-          이벤트×발원을 곱하면 이벤트 주소(<strong>${totalEvtFull}</strong>개)가 됩니다.
+          이 축에 <strong>역할</strong>을 곱하면 <em>권한 좌표</em>(<strong>${totalPermCells}</strong>개),
+          <strong>이벤트×발원</strong>을 곱하면 <em>감사 좌표</em>(<strong>${totalEvtFull}</strong>개).
+          각 좌표는 주소 공간에서의 고유 위치입니다.
         </span>
       </div>
     `;
@@ -402,7 +408,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
                 <span class="acc-detail-val">${ps.svcKo} / ${ps.nsKo} <code>${ps.svcId}/${ps.nsId}</code> (#${svcPos})</span>
               </div>
               <div class="acc-detail-row">
-                <span class="acc-detail-key">이벤트</span>
+                <span class="acc-detail-key">감사 이벤트</span>
                 <span class="acc-detail-val">${evt.ko} <code>${evt.id}</code></span>
               </div>
               <div class="acc-detail-row">
