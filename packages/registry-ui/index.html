@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registry DSL UI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="rui-header">
+        <div class="rui-brand">
+          <span class="rui-brand-icon">⊕</span>
+          <span class="rui-brand-name">Registry DSL UI</span>
+        </div>
+        <nav class="rui-tabs" role="tablist">
+          <button class="rui-tab" data-tab="glossary" role="tab" aria-selected="false">용어집</button>
+          <button class="rui-tab active" data-tab="prefix-builder" role="tab" aria-selected="true">Prefix 제작</button>
+          <button class="rui-tab" data-tab="dsl-builder" role="tab" aria-selected="false">DSL 빌더</button>
+        </nav>
+      </header>
+      <main class="rui-main">
+        <div class="rui-page rui-hidden" id="page-glossary"><div id="glossary-container"></div></div>
+        <div class="rui-page" id="page-prefix-builder"><div id="prefix-builder-container"></div></div>
+        <div class="rui-page rui-hidden" id="page-dsl-builder"><div id="dsl-builder-container"></div></div>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
