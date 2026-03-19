@@ -265,14 +265,49 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
     for (const f of prevData.features) prevGrants.set(f.id, new Set(f.grantedRoles));
   }
 
-  const tbody = current.features.map(f => {
-    const isNew = prev !== null && !prevFeatureIds.has(f.id);
-    const grantedSet = new Set(f.grantedRoles);
-    const prevSet = prevGrants.get(f.id);
+  // prev가 있으면 prev 인덱스 순서 기준으로 통합 렌더 (비활성화 항목도 원래 위치에 표시)
+  const currentFeatureMap = new Map(current.features.map(f => [f.id, f]));
+
+  type RowEntry = { id: string; name: string; kind: "active" | "new" | "removed"; grantedRoles: string[] };
+  let mergedRows: RowEntry[];
+
+  if (prev && prevData) {
+    // prev 순서 유지 + current에만 있는 새 항목은 끝에 추가
+    mergedRows = prevData.features.map(f => {
+      const cur = currentFeatureMap.get(f.id);
+      if (cur) {
+        return { id: cur.id, name: cur.name, kind: "active" as const, grantedRoles: cur.grantedRoles };
+      }
+      return { id: f.id, name: f.name, kind: "removed" as const, grantedRoles: [] };
+    });
+    // current에만 있는 새 항목
+    for (const f of current.features) {
+      if (!prevFeatureIds.has(f.id)) {
+        mergedRows.push({ id: f.id, name: f.name, kind: "new", grantedRoles: f.grantedRoles });
+      }
+    }
+  } else {
+    mergedRows = current.features.map(f => ({ id: f.id, name: f.name, kind: "active" as const, grantedRoles: f.grantedRoles }));
+  }
+
+  const tbody = mergedRows.map(row => {
+    if (row.kind === "removed") {
+      return `
+        <tr class="vd-row-removed">
+          <td class="vd-feat-name" style="text-decoration:line-through;color:var(--text-muted)">${row.name}</td>
+          ${allRoles.map(() => `<td class="vd-feat-cell vd-cell-no">—</td>`).join("")}
+          <td class="vd-feat-status"><span class="vd-badge-removed">비활성화</span></td>
+        </tr>
+      `;
+    }
+
+    const isNew = row.kind === "new";
+    const grantedSet = new Set(row.grantedRoles);
+    const prevSet = prevGrants.get(row.id);
 
     return `
       <tr class="${isNew ? "vd-row-added" : ""}">
-        <td class="vd-feat-name">${f.name}</td>
+        <td class="vd-feat-name">${row.name}</td>
         ${allRoles.map(r => {
           const has = grantedSet.has(r.id);
           if (!prev) {
@@ -296,18 +331,6 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
     `;
   }).join("");
 
-  const removedRows = prev && prevData
-    ? prevData.features
-        .filter(f => !currentFeatureIds.has(f.id))
-        .map(f => `
-          <tr class="vd-row-removed">
-            <td class="vd-feat-name" style="text-decoration:line-through;color:var(--text-muted)">${f.name}</td>
-            ${allRoles.map(() => `<td class="vd-feat-cell vd-cell-no">—</td>`).join("")}
-            <td class="vd-feat-status"><span class="vd-badge-removed">분리됨</span></td>
-          </tr>
-        `).join("")
-    : "";
-
   sec.innerHTML = `
     <div class="vd-sec-header">
       <span class="vd-sec-icon">⊡</span>
@@ -326,7 +349,6 @@ function buildFeaturesSection(ver: Ver, data: FeatureData | null): HTMLElement {
           </thead>
           <tbody>
             ${tbody}
-            ${removedRows}
           </tbody>
         </table>
       </div>
