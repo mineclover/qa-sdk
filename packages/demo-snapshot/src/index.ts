@@ -38,4 +38,33 @@ export {
   RELATIONAL_RESERVED,
   // 쇼핑 서비스 컨텍스트
   DEMO_SHOPPING_SERVICES, type ShoppingServiceContext,
+  // SchemaSnapshot
+  buildDemoSchemaSnapshot,
+  type AxisSnapshot, type DomainSnapshot, type SchemaSnapshot,
 } from "./demo-domains.js";
+
+// ── 통합 카탈로그 (신규) ──────────────────────────────────────────────────────
+export {
+  DEMO_CATALOG,
+  type AxisVersionSnapshot, type VersionedAxis,
+  type DimRef,
+  type PrefixVersionDef, type PrefixDef,
+  type ColumnRef, type TableSchema,
+  type DemoCatalog,
+} from "./demo-catalog.js";
+
+export {
+  getPrefixStructure, getPrefixShape, getPrefixEntries,
+  encodePrefix, decodePrefix, encodePrefixByValue,
+  resolveAddress, decomposeAddress,
+  verifyRoundTrip,
+  type PrefixStructure, type PrefixShape, type PrefixEntries,
+  type DecodedPosition, type ResolvedDimValue, type ResolvedAddress,
+  type DecomposedDim,
+} from "./demo-accessors.js";
+
+export {
+  catalogToRegistryInput,
+  catalogToPrefixCodecInput,
+  type LabelRegistryInput, type PrefixCodecPrefixInput, type PrefixCodecInput,
+} from "./demo-bridge.js";

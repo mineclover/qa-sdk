@@ -1,19 +1,16 @@
 /**
  * demo-schema.ts — 데모 시나리오의 상위 스키마 정의.
  *
- * 차원 데이터(demo-snapshot.ts) 위에 구축되는
+ * 차원 데이터(DEMO_CATALOG) 위에 구축되는
  * SVC 주소 상수, Feature 정의, MetaRegistry 입력을 제공한다.
  */
 
 import {
-  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
   DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,
-  DEMO_EVENTS_V1, DEMO_EVENTS_V2,
-  DEMO_INITIATORS,
-  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
   demoEncodeSvc,
   type DemoVer,
-} from "./demo-snapshot.js";
+} from "./demo-compat.js";
+import { catalogToRegistryInput } from "./demo-bridge.js";
 
 // ── SVC 주소 상수 ────────────────────────────────────────────────────────────
 
@@ -74,28 +71,22 @@ export const DEMO_FEATURES_V1: readonly DemoFeatureDef[] = [
 ];
 
 export const DEMO_FEATURES_V2: readonly DemoFeatureDef[] = [
-  // ── v1에서 유지 (순서 보존, payment_cancel 제외) ──
   { id: "product_list",          name: "상품 목록 조회", svcName: "shopping-web",     svcValue: 40, permSvcPos: 1, grantedRoles: ["admin","developer","operator","viewer","readonly","customer"], successEventValue: 90,   failEventValue: null },
   { id: "order_list",            name: "주문 목록 조회", svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin","developer","operator","viewer"],                       successEventValue: 112,  failEventValue: null },
   { id: "payment_history",       name: "결제 내역 조회", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","developer","operator"],                               successEventValue: 150,  failEventValue: 152  },
   { id: "user_mgmt",             name: "사용자 관리",    svcName: "auth",             svcValue: 44, permSvcPos: 5, grantedRoles: ["admin"],                                                     successEventValue: 138,  failEventValue: 136  },
   { id: "config_change",         name: "설정 변경",      svcName: "shopping-backend", svcValue: 42, permSvcPos: 3, grantedRoles: ["admin"],                                                     successEventValue: 120,  failEventValue: 118  },
-  // ── v2 신규 (append-only: 기존 뒤에 추가) ──
   { id: "payment_cancel_req",    name: "결제 취소 요청", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","customer"],                                           successEventValue: 158,  failEventValue: 152  },
   { id: "payment_cancel_approve",name: "결제 취소 승인", svcName: "payment",          svcValue: 46, permSvcPos: 7, grantedRoles: ["admin","operator"],                                           successEventValue: 160,  failEventValue: 152  },
 ];
 
-// v3: v2와 동일 entries (capacity만 확장, headroom 추가)
 export const DEMO_FEATURES_V3 = DEMO_FEATURES_V2;
 
-// v4: v3 capacity 내에서 항목 추가 (stride 불변)
 export const DEMO_FEATURES_V4: readonly DemoFeatureDef[] = [
   ...DEMO_FEATURES_V3,
-  // ── v4 신규 (append-only: v3 capacity 내) ──
   { id: "audit_log", name: "감사 로그", svcName: "auth", svcValue: 44, permSvcPos: 5, grantedRoles: ["admin","auditor"], successEventValue: null, failEventValue: null },
 ];
 
-/** Feature capacity (feature 차원 shape 크기). v3/v4는 capacity 10으로 headroom 확보. */
 export const DEMO_FEATURE_CAP = { v1: 6, v2: 7, v3: 10, v4: 10 } as const;
 
 const FEATURES_BY_VER = { v1: DEMO_FEATURES_V1, v2: DEMO_FEATURES_V2, v3: DEMO_FEATURES_V3, v4: DEMO_FEATURES_V4 } as const;
@@ -111,63 +102,7 @@ export const DEMO_FEATURE_KO: Record<string, string> = {
 
 // ── MetaRegistry 입력 빌더 ───────────────────────────────────────────────────
 
-function buildEntryRefs(count: number) {
-  const refs: Record<number, { indexId: string; versionId: string }> = {};
-  for (let i = 1; i <= count; i++) refs[i] = { indexId: "service", versionId: "v1" };
-  return refs;
-}
-
 /** MetaRegistry 생성에 필요한 순수 데이터 객체를 반환한다. */
 export function buildDemoRegistryInput() {
-  return {
-    dims: {
-      env:       { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: [...DEMO_ENVS] } } },
-      region:    { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: [...DEMO_REGIONS] } } },
-      svc_name:  { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: [...DEMO_SVCS] } } },
-      namespace: { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: [...DEMO_NSS] } } },
-      perm_svc: {
-        kind: { type: "index_ref" as const, indexId: "service" },
-        snapshots: { v1: { entries: [...DEMO_PERM_SVC_VALUES], entryRefs: buildEntryRefs(DEMO_PERM_SVC_VALUES.length) } },
-      },
-      role: {
-        kind: { type: "string_enum" as const },
-        snapshots: {
-          v1: { entries: [...DEMO_ROLES_V1] },
-          v2: { entries: [...DEMO_ROLES_V2] },
-        },
-      },
-      event_svc: {
-        kind: { type: "index_ref" as const, indexId: "service" },
-        snapshots: { v1: { entries: [...DEMO_EVT_SVC_VALUES], entryRefs: buildEntryRefs(DEMO_EVT_SVC_VALUES.length) } },
-      },
-      event_name: {
-        kind: { type: "string_enum" as const },
-        snapshots: {
-          v1: { entries: [...DEMO_EVENTS_V1] },
-          v2: { entries: [...DEMO_EVENTS_V2] },
-        },
-      },
-      initiator: { kind: { type: "string_enum" as const }, snapshots: { v1: { entries: [...DEMO_INITIATORS] } } },
-    },
-    indices: {
-      service: {
-        dims: ["env", "region", "svc_name", "namespace"],
-        versions: { v1: { snapshots: { env: "v1", region: "v1", svc_name: "v1", namespace: "v1" } } },
-      },
-      permission: {
-        dims: ["perm_svc", "role"],
-        versions: {
-          v1: { snapshots: { perm_svc: "v1", role: "v1" } },
-          v2: { snapshots: { perm_svc: "v1", role: "v2" } },
-        },
-      },
-      event: {
-        dims: ["event_svc", "event_name", "initiator"],
-        versions: {
-          v1: { snapshots: { event_svc: "v1", event_name: "v1", initiator: "v1" } },
-          v2: { snapshots: { event_svc: "v1", event_name: "v2", initiator: "v1" } },
-        },
-      },
-    },
-  };
+  return catalogToRegistryInput();
 }

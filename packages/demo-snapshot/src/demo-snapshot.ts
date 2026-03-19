@@ -4,172 +4,34 @@
  * platform-demo와 platform-demo-api가 공유하는 차원 메타데이터,
  * 한국어 라벨, 인코딩 상수의 단일 출처(SSOT).
  *
+ * 모든 차원 데이터는 DEMO_CATALOG(demo-catalog.ts)에서 파생됨.
+ *
  * @internal 데모 전용 — 라이브러리 공개 API가 아님.
  */
 
-// ── Dimension entries ───────────────────────────────────────────────────────
+// ── DEMO_CATALOG 파생 상수/함수 ──────────────────────────────────────────────
 
-export const DEMO_ENVS       = ["dev", "stage", "prod", "test", "local"] as const;
-export const DEMO_REGIONS    = ["asia", "usa"] as const;
-export const DEMO_SVCS       = ["shopping-web", "shopping-backend", "auth", "payment", "gateway"] as const;
-export const DEMO_NSS        = ["shop", "cms"] as const;
+export {
+  // Dimension entries
+  DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
+  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,
+  DEMO_EVENTS_V1, DEMO_EVENTS_V2, DEMO_EVENTS_V3, DEMO_EVENTS_V4,
+  DEMO_ROLE_CAP, DEMO_EVENT_CAP,
+  DEMO_INITIATORS, DEMO_KO,
+  // Service encoding
+  DEMO_SVC_SHAPE, DEMO_SVC_STRIDES,
+  demoEncodeSvc, demoDecodeSvc,
+  // Cross-index address constants
+  DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
+  // Permission / Event helpers
+  demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
+  demoCalcPermAddr, demoCalcEvtAddr,
+  demoDecodePerm, demoDecodeEvt,
+  // Types
+  type DemoVer, type DemoPermDecoded, type DemoEvtDecoded,
+} from "./demo-compat.js";
 
-export const DEMO_ROLES_V1   = ["admin", "developer", "operator", "viewer", "readonly"] as const;
-export const DEMO_ROLES_V2   = ["admin", "developer", "operator", "viewer", "readonly", "customer"] as const;
-// v3: v2와 동일 entries, capacity 확장 (headroom). v4: capacity 내에서 추가.
-export const DEMO_ROLES_V3   = [...DEMO_ROLES_V2] as const; // 6명 유지, cap 8
-export const DEMO_ROLES_V4   = ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"] as const; // +auditor, cap 8 내
-
-export const DEMO_EVENTS_V1  = [
-  "user.login", "user.logout", "order.created", "order.paid",
-  "payment.failed", "session.expired", "config.changed",
-] as const;
-export const DEMO_EVENTS_V2  = [
-  ...DEMO_EVENTS_V1,
-  "payment.cancel_requested", "payment.cancel_approved",
-] as const;
-export const DEMO_EVENTS_V3  = [...DEMO_EVENTS_V2] as const; // 9개 유지, cap 12
-export const DEMO_EVENTS_V4  = [
-  ...DEMO_EVENTS_V3,
-  "payment.refunded",
-] as const; // +1, cap 12 내
-
-/** 버전별 role capacity (shape 차원 크기) */
-export const DEMO_ROLE_CAP = { v1: 5, v2: 6, v3: 8, v4: 8 } as const;
-/** 버전별 event capacity */
-export const DEMO_EVENT_CAP = { v1: 7, v2: 9, v3: 12, v4: 12 } as const;
-
-export const DEMO_INITIATORS = ["web", "mobile"] as const;
-
-// ── Korean labels ───────────────────────────────────────────────────────────
-
-export const DEMO_KO = {
-  env: { dev: "개발", stage: "스테이지", prod: "운영", test: "테스트", local: "로컬" } as Record<string, string>,
-  region: { asia: "아시아", usa: "미국" } as Record<string, string>,
-  svc: {
-    "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE",
-    auth: "인증", payment: "결제", gateway: "GW",
-  } as Record<string, string>,
-  ns: { shop: "쇼핑몰", cms: "CMS" } as Record<string, string>,
-  role: {
-    admin: "관리자", developer: "개발자", operator: "운영자",
-    customer: "고객", viewer: "뷰어", readonly: "읽기전용",
-    auditor: "감사자",
-  } as Record<string, string>,
-  event: {
-    "user.login": "로그인", "user.logout": "로그아웃",
-    "order.created": "주문생성", "order.paid": "주문결제",
-    "payment.failed": "결제실패", "session.expired": "세션만료",
-    "config.changed": "설정변경",
-    "payment.cancel_requested": "취소요청", "payment.cancel_approved": "취소승인",
-    "payment.refunded": "환불완료",
-  } as Record<string, string>,
-  initiator: { web: "웹", mobile: "모바일" } as Record<string, string>,
-} as const;
-
-// ── Service encoding ────────────────────────────────────────────────────────
-
-/** SVC shape [5, 2, 5, 2] → strides [20, 10, 2, 1] */
-export const DEMO_SVC_SHAPE   = [5, 2, 5, 2] as const;
-export const DEMO_SVC_STRIDES = [20, 10, 2, 1] as const;
-
-export function demoEncodeSvc(coords: readonly number[]): number {
-  let v = 0;
-  for (let i = 0; i < coords.length; i++) v += (coords[i] - 1) * DEMO_SVC_STRIDES[i];
-  return v;
-}
-
-export function demoDecodeSvc(v: number): number[] {
-  const coords: number[] = [];
-  let rest = v;
-  for (const s of DEMO_SVC_STRIDES) {
-    coords.push(Math.floor(rest / s) + 1);
-    rest %= s;
-  }
-  return coords;
-}
-
-// ── Cross-index address constants ───────────────────────────────────────────
-
-/** perm_svc entries (prod/asia 서비스 주소 40–49) */
-export const DEMO_PERM_SVC_VALUES = [40, 41, 42, 43, 44, 45, 46, 47, 48, 49] as const;
-/** event_svc entries (dev+prod/asia/shop 서비스 주소) */
-export const DEMO_EVT_SVC_VALUES  = [0, 2, 4, 6, 8, 40, 42, 44, 46, 48] as const;
-
-// ── Permission / Event helpers ──────────────────────────────────────────────
-
-export type DemoVer = "v1" | "v2" | "v3" | "v4";
-
-const ROLES_BY_VER = { v1: DEMO_ROLES_V1, v2: DEMO_ROLES_V2, v3: DEMO_ROLES_V3, v4: DEMO_ROLES_V4 } as const;
-const EVENTS_BY_VER = { v1: DEMO_EVENTS_V1, v2: DEMO_EVENTS_V2, v3: DEMO_EVENTS_V3, v4: DEMO_EVENTS_V4 } as const;
-
-export function demoRolesFor(v: DemoVer) { return ROLES_BY_VER[v]; }
-/** role 차원 stride = role capacity (shape 값). headroom 포함. */
-export function demoRoleStride(v: DemoVer) { return DEMO_ROLE_CAP[v]; }
-export function demoEventsFor(v: DemoVer) { return EVENTS_BY_VER[v]; }
-/** event 차원 stride = event capacity × initiator count. */
-export function demoEvtStride(v: DemoVer) { return DEMO_EVENT_CAP[v] * DEMO_INITIATORS.length; }
-
-export function demoCalcPermAddr(svcPos: number, rolePos: number, ver: DemoVer): number {
-  return (svcPos - 1) * demoRoleStride(ver) + (rolePos - 1);
-}
-export function demoCalcEvtAddr(svcPos: number, evtPos: number, initPos: number, ver: DemoVer): number {
-  return (svcPos - 1) * demoEvtStride(ver) + (evtPos - 1) * 2 + (initPos - 1);
-}
-
-export interface DemoPermDecoded {
-  svcIdx: number; svcId: string; svcKo: string;
-  nsId: string; nsKo: string;
-  roleId: string; roleKo: string;
-}
-
-export function demoDecodePerm(addr: number, v: DemoVer): DemoPermDecoded | null {
-  const rs = demoRoleStride(v);
-  const svcPos = Math.floor(addr / rs);
-  const roleIdx = addr % rs;
-  const roles = demoRolesFor(v);
-  if (svcPos >= 10 || roleIdx >= rs) return null; // capacity 기반 bounds check
-  const svcI = Math.floor(svcPos / 2);
-  const nsI  = svcPos % 2;
-  // headroom zone: roleIdx가 entries 범위 밖이면 "(headroom)" 표시
-  const isHeadroom = roleIdx >= roles.length;
-  return {
-    svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
-    nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
-    roleId: isHeadroom ? `(reserved:${roleIdx})` : roles[roleIdx],
-    roleKo: isHeadroom ? "(예약)" : (DEMO_KO.role[roles[roleIdx]] ?? roles[roleIdx]),
-  };
-}
-
-export interface DemoEvtDecoded {
-  svcIdx: number; svcId: string; svcKo: string;
-  nsId: string; nsKo: string;
-  eventId: string; eventKo: string;
-  initiatorId: string; initiatorKo: string;
-}
-
-export function demoDecodeEvt(addr: number, v: DemoVer): DemoEvtDecoded | null {
-  const es = demoEvtStride(v);
-  const svcPos = Math.floor(addr / es);
-  const rem = addr % es;
-  const events = demoEventsFor(v);
-  const evtIdx = Math.floor(rem / 2);
-  const initIdx = rem % 2;
-  const evtCap = DEMO_EVENT_CAP[v];
-  if (svcPos >= 10 || evtIdx >= evtCap || initIdx >= 2) return null; // capacity 기반
-  const svcI = Math.floor(svcPos / 2);
-  const nsI  = svcPos % 2;
-  const isHeadroom = evtIdx >= events.length;
-  return {
-    svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
-    nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
-    eventId: isHeadroom ? `(reserved:${evtIdx})` : events[evtIdx],
-    eventKo: isHeadroom ? "(예약)" : (DEMO_KO.event[events[evtIdx]] ?? events[evtIdx]),
-    initiatorId: DEMO_INITIATORS[initIdx], initiatorKo: DEMO_KO.initiator[DEMO_INITIATORS[initIdx]],
-  };
-}
-
-// ── Sample log templates ────────────────────────────────────────────────────
+// ── 독립 데이터 (카탈로그 외) ────────────────────────────────────────────────
 
 export type DemoLogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
 
