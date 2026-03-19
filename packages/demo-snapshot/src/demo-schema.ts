@@ -7,7 +7,7 @@
 
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
-  DEMO_ROLES_V1, DEMO_ROLES_V2,
+  DEMO_ROLES_V1, DEMO_ROLES_V2, DEMO_ROLES_V3, DEMO_ROLES_V4,
   DEMO_EVENTS_V1, DEMO_EVENTS_V2,
   DEMO_INITIATORS,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES,
@@ -45,8 +45,11 @@ function buildRolePos(roles: readonly string[]): Record<string, number> {
 
 export const DEMO_ROLE_POS_V1 = buildRolePos(DEMO_ROLES_V1);
 export const DEMO_ROLE_POS_V2 = buildRolePos(DEMO_ROLES_V2);
+export const DEMO_ROLE_POS_V3 = buildRolePos(DEMO_ROLES_V3);
+export const DEMO_ROLE_POS_V4 = buildRolePos(DEMO_ROLES_V4);
 
-export function demoRolePos(ver: DemoVer) { return ver === "v1" ? DEMO_ROLE_POS_V1 : DEMO_ROLE_POS_V2; }
+const ROLE_POS_BY_VER = { v1: DEMO_ROLE_POS_V1, v2: DEMO_ROLE_POS_V2, v3: DEMO_ROLE_POS_V3, v4: DEMO_ROLE_POS_V4 } as const;
+export function demoRolePos(ver: DemoVer) { return ROLE_POS_BY_VER[ver]; }
 
 // ── Feature definitions ──────────────────────────────────────────────────────
 

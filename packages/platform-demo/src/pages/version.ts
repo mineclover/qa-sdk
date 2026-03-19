@@ -815,8 +815,8 @@ export function renderVersionPage(
   Promise.all([
     fetchFeatures("v1"),
     fetchFeatures("v2"),
-    fetchFeatures("v2").catch(() => null), // v3 → v2 폴백 (API가 v3 미지원)
-    fetchFeatures("v2").catch(() => null), // v4 → v2 폴백
+    fetchFeatures("v3").catch(() => null),
+    fetchFeatures("v4").catch(() => null),
   ])
     .then(([v1, v2, v3, v4]) => {
       featureData = { v1, v2, v3: v3 ?? v2, v4: v4 ?? v2 };

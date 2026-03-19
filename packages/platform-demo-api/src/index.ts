@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
   svcCodec, permCodec, evtCodec, permCodecV2, evtCodecV2,
+  permCodecV3, evtCodecV3, permCodecV4, evtCodecV4,
   ENV_KO, REGION_KO, SVC_NAME_KO, NS_KO, ROLE_KO, EVT_KO,
   ENVS, REGIONS, SVCS, NSS, ROLES, EVENTS, INITIATORS,
   PERM_SVC_VALUES, EVT_SVC_VALUES,
@@ -9,8 +10,8 @@ import {
 } from "./registry.js";
 import {
   demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
-  demoRoleStride, demoEvtStride,
-  DEMO_FEATURES_V1, DEMO_FEATURES_V2, demoFeatures,
+  demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
+  DEMO_FEATURES_V1, DEMO_FEATURES_V2, DEMO_FEATURES_V4, demoFeatures,
   DEMO_ROLE_POS_V1, DEMO_ROLE_POS_V2, demoRolePos,
   DEMO_ROLES_V1, DEMO_ROLES_V2,
   type DemoVer, type DemoFeatureDef,
@@ -73,27 +74,31 @@ const FEATURE_DEFS_V1 = DEMO_FEATURES_V1;
 
 // ── Version-aware helpers ─────────────────────────────────────────────────
 
-function getRoles(ver: Ver)      { return ver === "v1" ? ROLES_V1 : ROLES; }
-function getRoleList(ver: Ver)   { return ver === "v1" ? [...DEMO_ROLES_V1] : [...DEMO_ROLES_V2]; }
+function getRoles(ver: Ver)      { return demoRolesFor(ver); }
+function getRoleList(ver: Ver)   { return [...demoRolesFor(ver)]; }
 function getRolePos(ver: Ver)    { return demoRolePos(ver); }
 function getRoleStride(ver: Ver) { return demoRoleStride(ver); }
-function getEvents(ver: Ver)     { return ver === "v1" ? EVENTS_V1 : EVENTS; }
+function getEvents(ver: Ver)     { return demoEventsFor(ver); }
 function getEvtStride(ver: Ver)  { return demoEvtStride(ver); }
 function getFeatureDefs(ver: Ver): readonly DemoFeatureDef[] { return demoFeatures(ver); }
-function getPermCodec(ver: Ver)  { return ver === "v1" ? permCodec : permCodecV2; }
-function getEvtCodec(ver: Ver)   { return ver === "v1" ? evtCodec : evtCodecV2; }
+const PERM_CODECS: Record<Ver, ReturnType<typeof permCodec["decodeValue"]> extends any ? typeof permCodec : never> = { v1: permCodec, v2: permCodecV2, v3: permCodecV3, v4: permCodecV4 };
+const EVT_CODECS: Record<Ver, typeof evtCodec> = { v1: evtCodec, v2: evtCodecV2, v3: evtCodecV3, v4: evtCodecV4 };
+function getPermCodec(ver: Ver)  { return PERM_CODECS[ver]; }
+function getEvtCodec(ver: Ver)   { return EVT_CODECS[ver]; }
 
-// ── D1 grants (v2) ──────────────────────────────────────────────────────
+// ── D1 grants ───────────────────────────────────────────────────────────
 
 type GrantMap = Map<string, Set<string>>;
 
-const FEATURE_IDS = new Set(FEATURE_DEFS.map((f) => f.id));
+// 모든 버전의 feature ID를 포함 (v4의 audit_log 등)
+const ALL_FEATURE_DEFS = DEMO_FEATURES_V4; // v4가 상위 집합
+const FEATURE_IDS = new Set(ALL_FEATURE_DEFS.map((f) => f.id));
 
 async function loadGrants(db: D1Database): Promise<GrantMap> {
   const { results } = await db.prepare("SELECT feature_id, role FROM grants")
     .all<{ feature_id: string; role: string }>();
   const map: GrantMap = new Map();
-  for (const f of FEATURE_DEFS) map.set(f.id, new Set());
+  for (const f of ALL_FEATURE_DEFS) map.set(f.id, new Set());
   for (const row of results) map.get(row.feature_id)?.add(row.role);
   return map;
 }
@@ -660,7 +665,7 @@ app.patch("/api/grants/batch", async (c) => {
 
     const grants = await loadGrants(db);
     const result: Record<string, string[]> = {};
-    for (const f of FEATURE_DEFS) {
+    for (const f of ALL_FEATURE_DEFS) {
       result[f.id] = [...(grants.get(f.id) ?? [])];
     }
     return c.json({ grants: result });
@@ -672,7 +677,8 @@ app.patch("/api/grants/batch", async (c) => {
 app.post("/api/grants/reset", async (c) => {
   const db = c.env.DB;
   await db.prepare("DELETE FROM grants").run();
-  const stmts = FEATURE_DEFS.flatMap((f) =>
+  // v4 기준으로 reset (상위 집합)
+  const stmts = ALL_FEATURE_DEFS.flatMap((f) =>
     [...f.grantedRoles].map((r) =>
       db.prepare("INSERT INTO grants (feature_id, role) VALUES (?, ?)").bind(f.id, r)
     )

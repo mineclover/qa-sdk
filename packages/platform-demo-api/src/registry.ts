@@ -67,6 +67,8 @@ export const registry = new MetaRegistry({
       snapshots: {
         v1: { entries: ["admin", "developer", "operator", "viewer", "readonly"] },
         v2: { entries: ["admin", "developer", "operator", "viewer", "readonly", "customer"] },
+        v3: { entries: ["admin", "developer", "operator", "viewer", "readonly", "customer"], capacity: 8 },
+        v4: { entries: ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"], capacity: 8 },
       },
     },
     // Event dims
@@ -107,16 +109,27 @@ export const registry = new MetaRegistry({
         },
         v2: {
           entries: [
-            "user.login",
-            "user.logout",
-            "order.created",
-            "order.paid",
-            "payment.failed",
-            "session.expired",
-            "config.changed",
-            "payment.cancel_requested",
-            "payment.cancel_approved",
+            "user.login", "user.logout", "order.created", "order.paid",
+            "payment.failed", "session.expired", "config.changed",
+            "payment.cancel_requested", "payment.cancel_approved",
           ],
+        },
+        v3: {
+          entries: [
+            "user.login", "user.logout", "order.created", "order.paid",
+            "payment.failed", "session.expired", "config.changed",
+            "payment.cancel_requested", "payment.cancel_approved",
+          ],
+          capacity: 12,
+        },
+        v4: {
+          entries: [
+            "user.login", "user.logout", "order.created", "order.paid",
+            "payment.failed", "session.expired", "config.changed",
+            "payment.cancel_requested", "payment.cancel_approved",
+            "payment.refunded",
+          ],
+          capacity: 12,
         },
       },
     },
@@ -150,31 +163,18 @@ export const registry = new MetaRegistry({
             role: "v1",
           },
         },
-        v2: {
-          snapshots: {
-            perm_svc: "v1",
-            role: "v2",
-          },
-        },
+        v2: { snapshots: { perm_svc: "v1", role: "v2" } },
+        v3: { snapshots: { perm_svc: "v1", role: "v3" } },
+        v4: { snapshots: { perm_svc: "v1", role: "v4" } },
       },
     },
     event: {
       dims: ["event_svc", "event_name", "initiator"],
       versions: {
-        v1: {
-          snapshots: {
-            event_svc: "v1",
-            event_name: "v1",
-            initiator: "v1",
-          },
-        },
-        v2: {
-          snapshots: {
-            event_svc: "v1",
-            event_name: "v2",
-            initiator: "v1",
-          },
-        },
+        v1: { snapshots: { event_svc: "v1", event_name: "v1", initiator: "v1" } },
+        v2: { snapshots: { event_svc: "v1", event_name: "v2", initiator: "v1" } },
+        v3: { snapshots: { event_svc: "v1", event_name: "v3", initiator: "v1" } },
+        v4: { snapshots: { event_svc: "v1", event_name: "v4", initiator: "v1" } },
       },
     },
   },
@@ -185,6 +185,10 @@ export const permCodec   = registry.createCodec("permission", "v1");
 export const evtCodec    = registry.createCodec("event",      "v1");
 export const permCodecV2 = registry.createCodec("permission", "v2");
 export const evtCodecV2  = registry.createCodec("event",      "v2");
+export const permCodecV3 = registry.createCodec("permission", "v3");
+export const evtCodecV3  = registry.createCodec("event",      "v3");
+export const permCodecV4 = registry.createCodec("permission", "v4");
+export const evtCodecV4  = registry.createCodec("event",      "v4");
 
 // ── Label helpers ──────────────────────────────────────────────────────────
 // env, region, ns, role, initiator 라벨은 demo-snapshot과 동일

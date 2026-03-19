@@ -128,13 +128,16 @@ export function demoDecodePerm(addr: number, v: DemoVer): DemoPermDecoded | null
   const svcPos = Math.floor(addr / rs);
   const roleIdx = addr % rs;
   const roles = demoRolesFor(v);
-  if (svcPos >= 10 || roleIdx >= roles.length) return null;
+  if (svcPos >= 10 || roleIdx >= rs) return null; // capacity 기반 bounds check
   const svcI = Math.floor(svcPos / 2);
   const nsI  = svcPos % 2;
+  // headroom zone: roleIdx가 entries 범위 밖이면 "(headroom)" 표시
+  const isHeadroom = roleIdx >= roles.length;
   return {
     svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
     nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
-    roleId: roles[roleIdx], roleKo: DEMO_KO.role[roles[roleIdx]],
+    roleId: isHeadroom ? `(reserved:${roleIdx})` : roles[roleIdx],
+    roleKo: isHeadroom ? "(예약)" : (DEMO_KO.role[roles[roleIdx]] ?? roles[roleIdx]),
   };
 }
 
@@ -152,13 +155,16 @@ export function demoDecodeEvt(addr: number, v: DemoVer): DemoEvtDecoded | null {
   const events = demoEventsFor(v);
   const evtIdx = Math.floor(rem / 2);
   const initIdx = rem % 2;
-  if (svcPos >= 10 || evtIdx >= events.length || initIdx >= 2) return null;
+  const evtCap = DEMO_EVENT_CAP[v];
+  if (svcPos >= 10 || evtIdx >= evtCap || initIdx >= 2) return null; // capacity 기반
   const svcI = Math.floor(svcPos / 2);
   const nsI  = svcPos % 2;
+  const isHeadroom = evtIdx >= events.length;
   return {
     svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
     nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
-    eventId: events[evtIdx], eventKo: DEMO_KO.event[events[evtIdx]],
+    eventId: isHeadroom ? `(reserved:${evtIdx})` : events[evtIdx],
+    eventKo: isHeadroom ? "(예약)" : (DEMO_KO.event[events[evtIdx]] ?? events[evtIdx]),
     initiatorId: DEMO_INITIATORS[initIdx], initiatorKo: DEMO_KO.initiator[DEMO_INITIATORS[initIdx]],
   };
 }
