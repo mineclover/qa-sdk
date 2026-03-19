@@ -29,8 +29,8 @@ import {
   LabelNotFoundError,
   ShapeError,
   VersionNotFoundError,
-} from "./errors.js";
-import { assertNoColon, assertNonEmptyArray, formatList } from "./validators.js";
+} from "../math/errors.js";
+import { assertNoColon, assertNonEmptyArray, formatList } from "../math/validators.js";
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 

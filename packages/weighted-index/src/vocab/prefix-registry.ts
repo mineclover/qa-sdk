@@ -17,7 +17,7 @@
  * (prefix와 v에는 ":" 사용 불가)
  */
 
-import { WeightedIndex } from "./weighted-index.js";
+import { WeightedIndex } from "../math/weighted-index.js";
 import {
   type EntityId,
   type LabelRegistry,
@@ -29,8 +29,8 @@ import {
   SerializeError,
   ShapeError,
   VersionNotFoundError,
-} from "./errors.js";
-import { assertNoColon, assertNonEmptyArray, formatList } from "./validators.js";
+} from "../math/errors.js";
+import { assertNoColon, assertNonEmptyArray, formatList } from "../math/validators.js";
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 

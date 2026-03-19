@@ -12,8 +12,8 @@ import {
   bytesToBigint,
   analyzeBitVsHex,
 } from "./bit-field-layout.js";
-import { WeightedIndex } from "./weighted-index.js";
-import { WeightedIndexBig } from "./weighted-index-big.js";
+import { WeightedIndex } from "../math/weighted-index.js";
+import { WeightedIndexBig } from "../math/weighted-index-big.js";
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  1. bitsForMax — 최소 비트 수 계산

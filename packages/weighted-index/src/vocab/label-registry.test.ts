@@ -7,7 +7,7 @@ import {
   LabelNotFoundError,
   VersionNotFoundError,
   EntityNotFoundError,
-} from "./errors.js";
+} from "../math/errors.js";
 
 // ── 픽스처 ────────────────────────────────────────────────────────────────────
 //   role   : DB 정수 PK

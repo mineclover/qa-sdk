@@ -10,7 +10,7 @@ import {
   VersionNotFoundError,
   EntityNotFoundError,
   SerializeError,
-} from "./errors.js";
+} from "../math/errors.js";
 
 // ── 픽스처 ────────────────────────────────────────────────────────────────────
 const labelReg = new LabelRegistry({
