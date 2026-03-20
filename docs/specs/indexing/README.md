@@ -107,6 +107,9 @@
 | [conventions.md](conventions.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [slot-marker.spec.md](slot-marker.spec.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
 | [coordinate-query.spec.md](coordinate-query.spec.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색, RelationalEngine |
+| [dimension-operations.md](dimension-operations.md) | **차원 운영** | 축 교차 선택(BitMaskSet, ScopedEngine), 환경 주입(ServiceRef, PermCodeFactory), 배포 시점 해석(PartialBinder) |
+| [table-system.md](table-system.md) | **테이블 시스템** | 좌표↔관계형 양방향 연결, DimRef table_ref, ColumnRef 4종, 이벤트 인코딩 분리, 그래프 탐색 |
+| [dsl-bundle.md](dsl-bundle.md) | **DSL 번들** | prefix 묶음 + 서비스 바인딩 + 사용 패턴 정의, DslBundleNode, 커버리지 분석 |
 | [bigint-addressing.spec.md](bigint-addressing.spec.md) | **BigInt 주소 체계** | Number.MAX_SAFE_INTEGER 한계, BigInt API (weighted-index + index-meta), 용량 가드, 성능 특성 |
 | [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
 | [acceleration.md](acceleration.md) | **하드웨어 가속 비전** | FPGA/PCIe 가속 적합성, 파이프라인 경계, batch/binary 인터페이스 로드맵 |
@@ -186,17 +189,29 @@ DEMO_CATALOG
     └── permission: [perm_svc(→service), role] × 4 versions
 ```
 
-### Prefix 주소 공간 — 7개 prefix
+### Prefix 주소 공간
 
-| Prefix | 차원 (labels) | shape 예시 | 특징 |
-|--------|---------------|-----------|------|
-| **service** | env × region × svc_name × namespace | [5,2,5,2]=100 | 서비스 4D 주소 |
-| **permission** | perm_svc × role | v1:[10,5] v3:[10,8] | perm_svc = prefix_ref→service |
-| **event** | evt_svc × event_name × initiator | v1:[10,7,2]=140 | evt_svc = prefix_ref→service |
-| **rbac** | role × action × resource | [8,4,16]=512 | 역할 기반 접근 제어 |
-| **content** | tag × category × status × locale × channel | 5D 콘텐츠 | 콘텐츠 플랫폼 |
-| **tracking** | trackAction × page × userType | 3D 추적 | 사용자 행동 추적 |
-| **relational** | subjectKind × predicate × objectKind | [8,16,16]=2048 | 관계 모델 (온톨로지 스키마 대응) |
+| Prefix | 차원 (labels) | 특징 |
+|--------|---------------|------|
+| **service** | env × region × svc_name × namespace | 서비스 4D 주소 (인프라 중심) |
+| **permission** | perm_svc(→service) × role | 권한 스코프 |
+| **event** | evt_svc(→service) × event_name × initiator | 이벤트 컨텍스트 |
+| **rbac** | role × action × resource | 역할 기반 접근 제어 |
+| **content** | tag × category × status × locale × channel | 5D 콘텐츠 |
+| **tracking** | trackAction × page × userType | 사용자 행동 추적 |
+| **relational** | subjectKind × predicate × objectKind | 관계 모델 |
+| **page_view** | svc_ref(→service) × page × locale × userType | 화면 관측 |
+| **endpoint** | svc_ref(→service) × resource_type × http_method × api_version | 엔드포인트 관측 |
+| **flow_point** | svc_ref(→service) × flow_name × flow_step × flow_variant | 흐름 관측 |
+| **deploy_event** | svc_ref(→service) × deploy_action × actor(table_ref) | 배포 이벤트 |
+| **health_event** | svc_ref(→service) × health_status | 헬스 이벤트 |
+| **cart_event** | actor(table_ref) × action × target(table_ref) | 장바구니 이벤트 |
+| **auth_event** | actor(table_ref) × action | 인증 이벤트 |
+| **order_event** | service_ctx(→service) × actor(table_ref) × action × order(table_ref) | 주문 이벤트 |
+| **engine_event** | svc_ref(→service) × constraint_op × verdict_result | 엔진 평가 이벤트 |
+| **schema_event** | svc_ref(→service) × migration_pattern × deploy_action | 스키마 마이그레이션 이벤트 |
+| **pipeline_point** | svc_ref(→service) × pipeline_phase × validation_mode × verdict_result × temporal_strategy | 파이프라인 관측 |
+| **data_policy** | svc_ref(→service) × mask_mode | 데이터 정책 관측 |
 
 ### 선택적 접근 API (3단계)
 

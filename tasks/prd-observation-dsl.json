@@ -1,0 +1,188 @@
+{
+  "name": "비즈니스 로직 관측 포인트 DSL 구성",
+  "description": "비즈니스 로직의 경우의 수를 prefix 기반 DSL로 정의하고, SDK 환경 오버라이드와 관측 포인트를 표준화한다. 페이지, API, 이벤트, 권한, 행동 추적을 모두 prefix 단위로 취급하여 차원 압축 기반 DSL DB의 전체 구성을 완성한다.",
+  "branchName": "ralph/observation-dsl",
+  "userStories": [
+    {
+      "id": "OD-001",
+      "title": "page prefix 정의 + DEMO_CATALOG 등록",
+      "description": "As a developer, I want 화면(페이지)을 prefix로 정의하여, 어떤 화면을 어떤 언어로 어떤 사용자가 보는지를 정수 주소로 추적하고 싶다.",
+      "acceptanceCriteria": [
+        "page_view prefix 정의: page × locale × userType 3차원",
+        "page axis 기존 활용 (home, product, cart, checkout) + capacity 32",
+        "locale axis 기존 활용 (ko, en, ja) + capacity 32",
+        "userType axis 기존 활용 (guest, member, premium) + capacity 32",
+        "DEMO_CATALOG.prefixes에 page_view 추가",
+        "export surface: {page}.{locale}.{userType} → 'checkout.ko.premium'",
+        "encode/decode 라운드트립 테스트 통과",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 1,
+      "dependsOn": [],
+      "notes": "기존 tracking prefix와 구분: tracking은 행동(click/view/scroll), page_view는 화면 진입 자체. 다른 의사결정 단위."
+    },
+    {
+      "id": "OD-002",
+      "title": "api prefix 정의 + DEMO_CATALOG 등록",
+      "description": "As a developer, I want API 엔드포인트를 prefix로 정의하여, 어떤 메서드/경로/버전이 호출되는지를 정수 주소로 추적하고 싶다.",
+      "acceptanceCriteria": [
+        "새 축 정의: http_method (GET, POST, PUT, DELETE, PATCH) capacity 32",
+        "새 축 정의: api_path (users, orders, products, auth, payments, health) capacity 64",
+        "새 축 정의: api_version (v1, v2) capacity 32",
+        "api prefix 정의: http_method × api_path × api_version 3차원",
+        "DEMO_CATALOG.axes + DEMO_CATALOG.prefixes에 등록",
+        "export surface: {http_method}.{api_path}.{api_version} → 'POST.orders.v2'",
+        "encode/decode 라운드트립 테스트 통과",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 1,
+      "dependsOn": [],
+      "notes": "api_path는 도메인 리소스 경로. URL 전체가 아닌 논리적 리소스. 새로운 API 추가 시 entry append로 충분해야 함."
+    },
+    {
+      "id": "OD-003",
+      "title": "flow_point prefix — 비즈니스 흐름 관측 포인트",
+      "description": "As a developer, I want 비즈니스 흐름의 분기점을 prefix로 정의하여, 어떤 흐름의 어떤 단계를 거쳤는지를 정수 주소로 추적하고 싶다.",
+      "acceptanceCriteria": [
+        "새 축 정의: flow_name (checkout, signup, order_cancel, refund) capacity 64",
+        "새 축 정의: flow_step (entry, processing, branch, success, failure, timeout) capacity 32",
+        "새 축 정의: flow_variant (default, retry, fallback, manual) capacity 32",
+        "flow_point prefix 정의: flow_name × flow_step × flow_variant 3차원",
+        "DEMO_CATALOG.axes + DEMO_CATALOG.prefixes에 등록",
+        "export surface: {flow_name}.{flow_step}.{flow_variant} → 'checkout.branch.default'",
+        "encode/decode 라운드트립 테스트 통과",
+        "기존 테스트가 깨지지 않음"
+      ],
+      "priority": 2,
+      "dependsOn": [],
+      "notes": "기존 event prefix와 구분: event는 '무엇이 발생했는가', flow_point는 '흐름에서 어디에 있는가'. event가 데이터라면 flow_point는 위치."
+    },
+    {
+      "id": "OD-004",
+      "title": "SDK 환경 컨텍스트 + PartialBinder 연동",
+      "description": "As a developer, I want SDK 초기화 시 환경 변수(env, region, service, namespace)를 주입하여, 이후 encode에서 인프라 차원을 자동으로 포함하고 싶다.",
+      "acceptanceCriteria": [
+        "createQaContext(config) 함수: env, region, service, namespace를 받아 컨텍스트 생성",
+        "내부적으로 service prefix PartialBinder 생성 (4차원 고정)",
+        "qa.encode(prefix, dims) 호출 시 service 컨텍스트 자동 주입",
+        "qa.address(prefix, dims) — encode 결과를 serialize한 문자열 반환",
+        "환경 변수 기본값: QA_ENV=dev, QA_REGION=asia, QA_SERVICE=unknown, QA_NAMESPACE=default",
+        "TypeScript 타입: prefix별로 필요한 dims만 요구 (service 차원은 자동 주입)",
+        "단위 테스트: 같은 dims + 다른 env → 다른 주소",
+        "단위 테스트: encode → decode → 원래 dims 복원",
+        "pnpm --filter @qa-sdk/sdk build passes"
+      ],
+      "priority": 1,
+      "dependsOn": ["OD-001", "OD-002"],
+      "notes": "PartialBinder는 이미 weighted-index에 구현됨. 여기서는 SDK 레벨에서 환경 변수와 연결하는 래퍼."
+    },
+    {
+      "id": "OD-005",
+      "title": "관측 포인트 정의 DSL — FlowDefinition 타입",
+      "description": "As a developer, I want 비즈니스 흐름의 관측 포인트를 선언적으로 정의하여, 어떤 진입점에서 어떤 분기를 거쳐 어떤 결과에 도달하는지를 명시적으로 관리하고 싶다.",
+      "acceptanceCriteria": [
+        "FlowDefinition 타입: { id, name, entry, branches, requiredPermissions?, expectedEvents? }",
+        "entry: prefix 주소 (page_view 또는 api 주소)",
+        "branches: Record<string, prefix 주소> (flow_point 또는 event 주소)",
+        "requiredPermissions: permission prefix 주소 배열 (선택)",
+        "expectedEvents: event prefix 주소 배열 (선택)",
+        "defineFlow(qa, definition) → FlowDefinition (주소 resolve + 검증)",
+        "검증: 참조하는 모든 prefix/entry가 존재하는지 확인",
+        "직렬화: FlowDefinition → JSON (주소 포함)",
+        "예시 흐름 3개: checkout, signup, order-cancel",
+        "단위 테스트: 정의 → 직렬화 → 역직렬화 라운드트립"
+      ],
+      "priority": 2,
+      "dependsOn": ["OD-001", "OD-002", "OD-003", "OD-004"],
+      "notes": "이것이 '비즈니스 로직의 경우의 수를 제어하는' 핵심 DSL. 흐름 정의 = 의사결정의 구체화."
+    },
+    {
+      "id": "OD-006",
+      "title": "DKG 자동 등록 — prefix/domain/consumer/intent-link",
+      "description": "As a system, I want 새로 추가된 prefix들이 DKG에 자동 반영되어, 영향 분석과 수렴 분석이 즉시 가능하게 하고 싶다.",
+      "acceptanceCriteria": [
+        "bootstrapDkg에 page_view, api, flow_point prefix 반영",
+        "새 Domain 추가: observation-domain (page_view, api, flow_point, tracking)",
+        "기존 shopping-domain에 page_view 추가 검토 (또는 독립 domain)",
+        "IntentLink: checkout-flow (page_view ↔ flow_point ↔ order_event 연결)",
+        "analyzeImpact 테스트: 새 축(http_method 등) 변경 시 api prefix 영향 확인",
+        "scanAxisOverlaps: 새 축과 기존 축 중복 없음 확인",
+        "self-evaluation 재실행: 새 prefix 반영 확인"
+      ],
+      "priority": 3,
+      "dependsOn": ["OD-001", "OD-002", "OD-003"],
+      "notes": "DKG bootstrap를 확장하여 관측 포인트 prefix들을 포함. 기존 34노드/35엣지에 추가."
+    },
+    {
+      "id": "OD-007",
+      "title": "resolve 함수 — 자동 마이그레이션",
+      "description": "As a developer, I want 구버전 주소를 자동으로 최신 버전으로 변환하여, 마이그레이션을 수동으로 관리하지 않고 싶다.",
+      "acceptanceCriteria": [
+        "resolve(codec, serialized) 함수: parse → version 확인 → 구버전이면 decodeToIds → encodeFromIds(latest)",
+        "ResolveResult 타입: { address, ids, migrated, originalVersion? }",
+        "최신 version이면 decode만 수행 (마이그레이션 없음)",
+        "구버전이면 문자열 기반 자동 마이그레이션 (decode → re-encode)",
+        "비활성 entry 포함 주소: decode 가능, re-encode 시 에러 (비활성 entry로 encode 차단)",
+        "단위 테스트: v1 주소 → resolve → v2 주소 자동 변환",
+        "단위 테스트: 최신 version → resolve → 변환 없음",
+        "spec-core에 위치 (PrefixCodec 확장 또는 별도 함수)"
+      ],
+      "priority": 2,
+      "dependsOn": ["OD-004"],
+      "notes": "문자열 식별자가 영구 고정이므로 migrator 함수 불필요. decode → re-encode로 항상 마이그레이션 가능. 이것이 DSL DB의 마이그레이션 전략."
+    },
+    {
+      "id": "OD-008",
+      "title": "CLI dkg 명령어 연동 + 관측 포인트 조회",
+      "description": "As a developer, I want CLI에서 관측 포인트를 조회하고, 흐름 정의를 확인하고, 영향 분석을 실행하고 싶다.",
+      "acceptanceCriteria": [
+        "qa dkg report — 전체 현황 (새 prefix 포함)",
+        "qa dkg flows — 등록된 FlowDefinition 목록",
+        "qa dkg flow <id> — 특정 흐름의 진입점/분기점/권한/이벤트 표시",
+        "qa dkg pages --page 1 --limit 10 — page_view prefix 주소 목록 (페이지네이션)",
+        "qa dkg apis --page 1 --limit 10 — api prefix 주소 목록 (페이지네이션)",
+        "qa dkg impact <axis> — 새 축 포함 영향 분석",
+        "JSON 출력 지원: --format json 옵션",
+        "기존 CLI 명령어가 깨지지 않음"
+      ],
+      "priority": 3,
+      "dependsOn": ["OD-005", "OD-006"],
+      "notes": "기존 dkg.ts CLI에 추가. flows 조회는 FlowDefinition을 spec-loader 또는 하드코딩으로 로드."
+    },
+    {
+      "id": "OD-009",
+      "title": "capacity 최적화 일괄 적용 + Decision 기록",
+      "description": "As a system, I want 모든 축의 capacity를 optimalCapacity 규칙에 맞게 조정하고, 각 조정의 Decision을 DKG에 기록하고 싶다.",
+      "acceptanceCriteria": [
+        "optimizeCapacities로 전체 축 분석",
+        "변경이 필요한 축 식별 (기존 + 신규 포함)",
+        "DEMO_CATALOG의 capacity 값 업데이트 (entries는 변경 없음)",
+        "각 변경에 대해 scaffoldDecision으로 Decision 생성",
+        "DKG bootstrapDkg에 반영",
+        "self-evaluation 재실행: headroom 경고 0개 확인",
+        "기존 테스트 호환: capacity 변경 시 shape 변경 → 테스트 기대값 업데이트"
+      ],
+      "priority": 3,
+      "dependsOn": ["OD-001", "OD-002", "OD-003"],
+      "notes": "이것은 1회성 대규모 변경. 이후에는 축 추가 시 optimalCapacity를 기본으로 적용하면 됨. 기존 데이터가 없으므로 stride-break 비용 없음."
+    },
+    {
+      "id": "OD-010",
+      "title": "종단 시나리오 테스트 — 결제 흐름 관측",
+      "description": "As a system, I want checkout 흐름의 전체 관측 포인트를 정의하고, SDK로 인코딩하고, DKG로 영향 분석하는 종단 테스트를 통해 시스템의 일관성을 증명하고 싶다.",
+      "acceptanceCriteria": [
+        "checkout FlowDefinition 정의: entry(page_view checkout) → branches(create/complete/cancel/refund) → permissions",
+        "SDK 환경 컨텍스트 초기화: env=test, region=asia",
+        "각 관측 포인트의 주소 인코딩 + 디코딩 라운드트립",
+        "DKG에서 checkout 흐름의 IntentLink 확인",
+        "order_action 축 변경 시 영향 분석: flow_point + order_event cascade 확인",
+        "resolve로 구버전 주소 자동 마이그레이션 확인",
+        "self-evaluation 포함: 전체 시스템 일관성 확인",
+        "135+ 기존 테스트가 깨지지 않음"
+      ],
+      "priority": 3,
+      "dependsOn": ["OD-005", "OD-006", "OD-007", "OD-009"],
+      "notes": "이 테스트가 통과하면 '차원 압축 기반 DSL DB'의 전체 라이프사이클이 증명된 것. 의사결정(prefix 정의) → 고정(seal) → 운용(encode/decode) → 관측(flow_point) → 마이그레이션(resolve) → 영향 분석(DKG) 전체 경로."
+    }
+  ]
+}

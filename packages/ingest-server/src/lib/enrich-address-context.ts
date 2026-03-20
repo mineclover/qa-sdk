@@ -25,3 +25,69 @@ export function enrichAddressContext(
 
   return records;
 }
+
+// ── 수집 건전성 검증 ──────────────────────────────────────
+
+export interface AddressHealthResult {
+  readonly totalAddresses: number;
+  readonly validAddresses: number;
+  readonly orphanPrefixes: readonly string[];
+  readonly staleVersions: readonly { prefix: string; version: string; latest: string }[];
+  readonly healthRate: number;
+}
+
+/**
+ * address_context의 건전성을 간이 검증한다.
+ *
+ * 전체 catalog 기반 검증(analyzeCollectionHealth)의 경량 버전.
+ * ingest 경로에서 호출되므로 성능에 민감.
+ *
+ * @param knownPrefixes - catalog prefix ID 목록
+ * @param latestVersions - prefix별 최신 version 맵
+ */
+export function checkAddressHealth(
+  records: EventRecord[],
+  knownPrefixes: ReadonlySet<string>,
+  latestVersions: ReadonlyMap<string, string>,
+): AddressHealthResult {
+  let totalAddresses = 0;
+  let validAddresses = 0;
+  const orphanSet = new Set<string>();
+  const staleMap = new Map<string, { prefix: string; version: string; latest: string }>();
+
+  for (const record of records) {
+    const ctx = record.address_context;
+    if (!ctx) continue;
+
+    for (const [prefixId, serialized] of Object.entries(ctx)) {
+      totalAddresses++;
+
+      if (!knownPrefixes.has(prefixId)) {
+        orphanSet.add(prefixId);
+        continue;
+      }
+
+      const parts = serialized.split(":");
+      if (parts.length !== 3) continue;
+
+      const version = parts[1];
+      validAddresses++;
+
+      const latest = latestVersions.get(prefixId);
+      if (latest && version !== latest) {
+        const key = `${prefixId}:${version}`;
+        if (!staleMap.has(key)) {
+          staleMap.set(key, { prefix: prefixId, version, latest });
+        }
+      }
+    }
+  }
+
+  return {
+    totalAddresses,
+    validAddresses,
+    orphanPrefixes: [...orphanSet],
+    staleVersions: [...staleMap.values()],
+    healthRate: totalAddresses > 0 ? validAddresses / totalAddresses : 1,
+  };
+}

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Prefix Monitor — Cell Grid</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#06060a;color:#c8ccd4;font-family:'Outfit',sans-serif;overflow:hidden;height:100vh}
+#scene{position:fixed;inset:0;z-index:0}
+
+.hud{position:fixed;z-index:10;pointer-events:none}
+.hud-top{top:20px;left:24px}
+.hud-right{top:20px;right:24px;text-align:right;max-width:280px}
+.hud-bottom{bottom:20px;left:24px;right:24px;display:flex;gap:12px;align-items:flex-end}
+
+.brand{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#445}
+.title{font-size:24px;font-weight:700;letter-spacing:-0.5px;background:linear-gradient(135deg,#64ffda,#00b4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{font-size:11px;color:#334;margin-top:3px;font-family:'JetBrains Mono',monospace}
+
+.card{background:rgba(10,12,18,0.88);border:1px solid rgba(100,255,218,0.06);border-radius:6px;padding:10px 14px;backdrop-filter:blur(10px);margin-bottom:6px}
+.card-label{font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:#445;margin-bottom:4px}
+.card-value{font-size:18px;font-weight:600;color:#64ffda}
+.card-sub{font-size:10px;color:#334;margin-top:2px;font-family:'JetBrains Mono',monospace}
+
+.step-name{font-size:14px;font-weight:600;color:#e0e4ec}
+.active-list{font-size:10px;color:#556;font-family:'JetBrains Mono',monospace;margin-top:4px;line-height:1.6}
+.active-list .hit{color:#64ffda}
+
+.layer-bar{flex:1;background:rgba(10,12,18,0.88);border:1px solid rgba(100,255,218,0.04);border-radius:5px;padding:8px 12px}
+.layer-bar-label{font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:#334}
+.layer-bar-fill{height:3px;border-radius:2px;background:#12141c;margin-top:4px;overflow:hidden}
+.layer-bar-inner{height:100%;border-radius:2px;transition:width .4s}
+.l0-fill{background:linear-gradient(90deg,#64ffda,#00b4d8)}
+.l1-fill{background:linear-gradient(90deg,#ff9f43,#ffa502)}
+.l2-fill{background:linear-gradient(90deg,#a29bfe,#6c5ce7)}
+.l3-fill{background:linear-gradient(90deg,#fd79a8,#e84393)}
+.layer-bar-count{font-size:11px;font-weight:600;margin-top:3px;color:#667}
+
+.controls{position:fixed;bottom:20px;right:24px;z-index:10;display:flex;gap:6px}
+.btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 14px;border:1px solid rgba(100,255,218,0.15);background:rgba(10,12,18,0.92);color:#64ffda;border-radius:5px;cursor:pointer;pointer-events:all;transition:all .2s;letter-spacing:1px}
+.btn:hover{background:rgba(100,255,218,0.08);border-color:#64ffda}
+.btn.on{background:rgba(100,255,218,0.12);border-color:#64ffda;box-shadow:0 0 8px rgba(100,255,218,0.15)}
+
+.scanline{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.015) 3px,rgba(0,0,0,0.015) 4px)}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="scanline"></div>
+
+<div class="hud hud-top">
+  <div class="brand">qa-sdk / cell monitor</div>
+  <div class="title">Coordinate Grid</div>
+  <div class="subtitle" id="status">initializing...</div>
+</div>
+
+<div class="hud hud-right">
+  <div class="card">
+    <div class="card-label">Step</div>
+    <div class="step-name" id="hud-step">--</div>
+    <div class="card-sub" id="hud-desc"></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Active Cells</div>
+    <div class="active-list" id="hud-active"></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Hits</div>
+    <div class="card-value" id="hud-total">0</div>
+  </div>
+</div>
+
+<div class="hud hud-bottom" id="layer-bars"></div>
+
+<div class="controls">
+  <span id="conn-status" style="font-family:'JetBrains Mono';font-size:10px;color:#445;padding:7px 0;pointer-events:none">●</span>
+  <input class="btn" id="ws-url" style="width:220px;color:#889;text-align:left" placeholder="ws://localhost:3100/v1/ws" value="ws://localhost:3100/v1/ws">
+  <button class="btn" id="btn-live" onclick="toggleLive()">LIVE</button>
+  <button class="btn" id="btn-demo" onclick="toggleDemo()">DEMO</button>
+  <button class="btn" onclick="resetAll()">RESET</button>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import*as THREE from'three';
+import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+
+// ═══════════════════════════════════════════════════
+//  Encode Engine (실제 좌표 인코딩/디코딩)
+// ═══════════════════════════════════════════════════
+
+const CATALOG = {"service":{"version":"v1","labels":["env","region","svc_name","namespace"],"dims":{"env":{"kind":"axis","entries":["dev","stage","prod","test","local"],"capacity":32},"region":{"kind":"axis","entries":["asia","usa"],"capacity":32},"svc_name":{"kind":"axis","entries":["shopping-web","shopping-backend","auth","payment","gateway"],"capacity":32},"namespace":{"kind":"axis","entries":["shop","cms"],"capacity":32}}},"permission":{"version":"v4","labels":["perm_svc","role"],"dims":{"perm_svc":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"role":{"kind":"axis","entries":["admin","developer","operator","viewer","readonly","customer","auditor"],"capacity":32}}},"page_view":{"version":"v2","labels":["svc_ref","page","locale","userType"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"locale":{"kind":"axis","entries":["ko","en","ja"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"tracking":{"version":"v2","labels":["trackAction","page","userType"],"dims":{"trackAction":{"kind":"axis","entries":["click","view","scroll","submit","navigate","add_to_cart","purchase","close"],"capacity":32},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"endpoint":{"version":"v1","labels":["svc_ref","resource_type","http_method","api_version"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"resource_type":{"kind":"axis","entries":["api","page","webhook","grpc"],"capacity":32},"http_method":{"kind":"axis","entries":["GET","POST","PUT","DELETE","PATCH"],"capacity":32},"api_version":{"kind":"axis","entries":["v1","v2"],"capacity":32}}},"flow_point":{"version":"v2","labels":["svc_ref","flow_name","flow_step","flow_variant"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"flow_name":{"kind":"axis","entries":["checkout","signup","order_cancel","refund","login","browse","cart_manage","payment"],"capacity":64},"flow_step":{"kind":"axis","entries":["entry","processing","branch","success","failure","timeout","payment","complete","exit"],"capacity":32},"flow_variant":{"kind":"axis","entries":["default","retry","fallback","manual"],"capacity":32}}},"cart_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["add","remove","checkout"],"capacity":32}}},"auth_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["login","logout","token_refresh"],"capacity":32}}},"order_event":{"version":"v1","labels":["service_ctx","action"],"dims":{"service_ctx":{"kind":"prefix_ref","values":[65536,65568,65600,65632,65664]},"action":{"kind":"axis","entries":["create","cancel","refund","complete"],"capacity":32}}},"deploy_event":{"version":"v1","labels":["svc_ref","deploy_action"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"deploy_action":{"kind":"axis","entries":["deploy","rollback","scale_up","scale_down","restart","canary_start","canary_promote"],"capacity":32}}},"health_event":{"version":"v1","labels":["svc_ref","health_status"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"health_status":{"kind":"axis","entries":["healthy","degraded","unhealthy","maintenance"],"capacity":32}}},"pipeline_point":{"version":"v1","labels":["svc_ref","pipeline_phase","validation_mode","verdict_result","temporal_strategy"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"pipeline_phase":{"kind":"axis","entries":["ingest","reconstruct","verdict","aggregate","propagate"],"capacity":32},"validation_mode":{"kind":"axis","entries":["strict","warn","off"],"capacity":32},"verdict_result":{"kind":"axis","entries":["pass","fail","warn","degraded","unknown"],"capacity":32},"temporal_strategy":{"kind":"axis","entries":["span_local","global"],"capacity":32}}},"data_policy":{"version":"v1","labels":["svc_ref","mask_mode"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"mask_mode":{"kind":"axis","entries":["raw","mask","drop","hash"],"capacity":32}}}};
+
+// 실제 mixed-radix encode
+function encode(prefixId, values) {
+  const def = CATALOG[prefixId];
+  if (!def) return null;
+  const shape = [], positions = [];
+  for (const label of def.labels) {
+    const dim = def.dims[label];
+    if (dim.kind === 'axis') {
+      shape.push(dim.capacity);
+      const idx = dim.entries.indexOf(values[label]);
+      if (idx < 0) return null;
+      positions.push(idx);
+    } else if (dim.kind === 'prefix_ref') {
+      shape.push(dim.values.length);
+      const idx = dim.values.indexOf(values[label]);
+      if (idx < 0) return null;
+      positions.push(idx);
+    }
+  }
+  const strides = new Array(shape.length);
+  strides[shape.length - 1] = 1;
+  for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i+1] * shape[i+1];
+  let addr = 0;
+  for (let i = 0; i < positions.length; i++) addr += positions[i] * strides[i];
+  return { prefix: prefixId, version: def.version, address: addr, serialized: `${prefixId}:${def.version}:${addr}` };
+}
+
+// 실제 mixed-radix decode
+function decode(serialized) {
+  const [prefixId, version, addrStr] = serialized.split(':');
+  const def = CATALOG[prefixId];
+  if (!def) return null;
+  let addr = parseInt(addrStr);
+  const shape = [], labels = [];
+  for (const label of def.labels) {
+    const dim = def.dims[label];
+    if (dim.kind === 'axis') { shape.push(dim.capacity); labels.push({label, dim}); }
+    else if (dim.kind === 'prefix_ref') { shape.push(dim.values.length); labels.push({label, dim}); }
+  }
+  const strides = new Array(shape.length);
+  strides[shape.length-1]=1;
+  for(let i=shape.length-2;i>=0;i--)strides[i]=strides[i+1]*shape[i+1];
+  const result = {};
+  for (let i = 0; i < labels.length; i++) {
+    const pos = Math.floor(addr / strides[i]); addr %= strides[i];
+    const {label, dim} = labels[i];
+    result[label] = dim.kind === 'axis' ? (dim.entries[pos] || `(${pos})`) : dim.values[pos];
+  }
+  return { prefix: prefixId, version, values: result };
+}
+
+// Service address for prod/asia/shopping-web/shop
+const SVC_WEB = encode('service', {env:'prod',region:'asia',svc_name:'shopping-web',namespace:'shop'}).address;
+const SVC_BE = encode('service', {env:'prod',region:'asia',svc_name:'shopping-backend',namespace:'shop'}).address;
+const SVC_PAY = encode('service', {env:'prod',region:'asia',svc_name:'payment',namespace:'shop'}).address;
+
+// QaContext-like track function
+function track(prefixDims) {
+  const ctx = {};
+  for (const [prefixId, dims] of Object.entries(prefixDims)) {
+    const def = CATALOG[prefixId];
+    if (!def) continue;
+    const fullDims = { ...dims };
+    // Auto-inject svc_ref
+    for (const label of def.labels) {
+      const dim = def.dims[label];
+      if (dim.kind === 'prefix_ref' && !(label in fullDims)) {
+        fullDims[label] = dim.values[0]; // default first service
+      }
+    }
+    const result = encode(prefixId, fullDims);
+    if (result) ctx[prefixId] = result.serialized;
+  }
+  return ctx;
+}
+
+// ═══════════════════════════════════════════════════
+//  Demo Steps with REAL encode
+// ═══════════════════════════════════════════════════
+
+const DEMO_STEPS = [
+  { name:'1. Login', desc:'인증 → 세션 생성 → 멤버 조회',
+    encode: () => track({
+      page_view: {svc_ref:SVC_WEB, page:'login', locale:'ko', userType:'guest'},
+      tracking: {trackAction:'submit', page:'login', userType:'guest'},
+      auth_event: {action:'login'},
+      endpoint: {svc_ref:SVC_WEB, resource_type:'api', http_method:'POST', api_version:'v1'},
+      flow_point: {svc_ref:SVC_WEB, flow_name:'login', flow_step:'entry', flow_variant:'default'},
+    }), tables: ['members/id','members/role'] },
+  { name:'2. Home', desc:'홈 화면 렌더링',
+    encode: () => track({
+      page_view: {svc_ref:SVC_WEB, page:'home', locale:'ko', userType:'member'},
+      tracking: {trackAction:'view', page:'home', userType:'member'},
+    }), tables: [] },
+  { name:'3. Product List', desc:'상품 목록 API → items 테이블 조회',
+    encode: () => track({
+      page_view: {svc_ref:SVC_BE, page:'product_list', locale:'ko', userType:'member'},
+      tracking: {trackAction:'view', page:'product_list', userType:'member'},
+      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
+    }), tables: ['items/id','items/name','items/category'] },
+  { name:'4. Product Detail', desc:'상품 상세 → items + orgs 조회',
+    encode: () => track({
+      page_view: {svc_ref:SVC_BE, page:'product_detail', locale:'ko', userType:'member'},
+      tracking: {trackAction:'click', page:'product_detail', userType:'member'},
+      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
+    }), tables: ['items/id','items/name','items/warehouse_addr','orgs/region_addr'] },
+  { name:'5. Add to Cart', desc:'장바구니 담기 → carts, cart_items 쓰기',
+    encode: () => track({
+      page_view: {svc_ref:SVC_BE, page:'product_detail', locale:'ko', userType:'member'},
+      tracking: {trackAction:'add_to_cart', page:'product_detail', userType:'member'},
+      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'POST', api_version:'v1'},
+      cart_event: {action:'add'},
+    }), tables: ['carts/id','carts/member_id','cart_items/cart_id','cart_items/item_id','cart_items/qty'] },
+  { name:'6. Cart', desc:'장바구니 조회 → cart_items + items 조인',
+    encode: () => track({
+      page_view: {svc_ref:SVC_BE, page:'cart', locale:'ko', userType:'member'},
+      tracking: {trackAction:'view', page:'cart', userType:'member'},
+      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
+    }), tables: ['carts/id','cart_items/item_id','items/name'] },
+  { name:'7. Checkout Entry', desc:'결제 진입 → 흐름 시작',
+    encode: () => track({
+      page_view: {svc_ref:SVC_PAY, page:'checkout', locale:'ko', userType:'member'},
+      tracking: {trackAction:'navigate', page:'checkout', userType:'member'},
+      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'entry', flow_variant:'default'},
+      permission: {perm_svc:SVC_PAY, role:'customer'},
+    }), tables: [] },
+  { name:'8. Checkout Process', desc:'주문 생성 → orders 쓰기 + 권한 검사',
+    encode: () => track({
+      endpoint: {svc_ref:SVC_PAY, resource_type:'api', http_method:'POST', api_version:'v1'},
+      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'processing', flow_variant:'default'},
+      permission: {perm_svc:SVC_PAY, role:'customer'},
+      order_event: {service_ctx:SVC_PAY, action:'create'},
+      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'ingest', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
+    }), tables: ['orders/id','orders/member_id','orders/service_addr','orders/status','orders/amount'] },
+  { name:'9. Payment', desc:'결제 처리 → 외부 PG 연동',
+    encode: () => track({
+      endpoint: {svc_ref:SVC_PAY, resource_type:'api', http_method:'POST', api_version:'v1'},
+      flow_point: {svc_ref:SVC_PAY, flow_name:'payment', flow_step:'payment', flow_variant:'default'},
+      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'reconstruct', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
+    }), tables: [] },
+  { name:'10. Payment OK', desc:'결제 성공 → 주문 상태 업데이트',
+    encode: () => track({
+      order_event: {service_ctx:SVC_BE, action:'complete'},
+      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'success', flow_variant:'default'},
+      health_event: {svc_ref:SVC_PAY, health_status:'healthy'},
+      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'verdict', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
+    }), tables: ['orders/status'] },
+  { name:'11. Complete', desc:'완료 화면 → 주문 확인',
+    encode: () => track({
+      page_view: {svc_ref:SVC_WEB, page:'order_complete', locale:'ko', userType:'member'},
+      tracking: {trackAction:'view', page:'order_complete', userType:'member'},
+      flow_point: {svc_ref:SVC_WEB, flow_name:'checkout', flow_step:'complete', flow_variant:'default'},
+    }), tables: ['orders/id','orders/amount'] },
+  { name:'12. Mypage', desc:'마이페이지 → 주문 내역 조회',
+    encode: () => track({
+      page_view: {svc_ref:SVC_WEB, page:'mypage', locale:'ko', userType:'member'},
+      tracking: {trackAction:'navigate', page:'mypage', userType:'member'},
+      endpoint: {svc_ref:SVC_WEB, resource_type:'api', http_method:'GET', api_version:'v1'},
+    }), tables: ['orders/id','orders/status','members/name'] },
+  { name:'13. Exit', desc:'로그아웃 → 세션 종료',
+    encode: () => track({
+      tracking: {trackAction:'close', page:'mypage', userType:'member'},
+      flow_point: {svc_ref:SVC_WEB, flow_name:'browse', flow_step:'exit', flow_variant:'default'},
+      auth_event: {action:'logout'},
+      data_policy: {svc_ref:SVC_WEB, mask_mode:'raw'},
+      pipeline_point: {svc_ref:SVC_WEB, pipeline_phase:'aggregate', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
+    }), tables: [] },
+];
+
+// ═══════════════════════════════════════════════════
+//  Visual Config
+// ═══════════════════════════════════════════════════
+
+const CAT_COLORS={
+  observation:{c:0x64ffda,e:0x00b4d8},event:{c:0xff9f43,e:0xff6b35},
+  policy:{c:0x2ed573,e:0x00b894},relation:{c:0xa29bfe,e:0x6c5ce7},
+  entity:{c:0x636e72,e:0x4a5568},table:{c:0xfd79a8,e:0xe84393},
+};
+
+// 4개 계층 — entries는 CATALOG에서 동적 생성
+const LAYERS=[
+  {id:'ui',name:'UI / Interface',y:6,color:0x64ffda,groups:[
+    {prefix:'page_view',cat:'observation',entries: CATALOG.page_view.dims.page.entries},
+    {prefix:'tracking',cat:'entity',entries: CATALOG.tracking.dims.trackAction.entries},
+  ]},
+  {id:'biz',name:'Business Logic',y:1.5,color:0xff9f43,groups:[
+    {prefix:'endpoint',cat:'observation',entries:['GET/api','POST/api','PUT/api','DELETE/api','POST/webhook']},
+    {prefix:'flow_point',cat:'observation',entries: CATALOG.flow_point.dims.flow_name.entries.flatMap(f => [f+'/entry',f+'/success']).slice(0,12)},
+    {prefix:'permission',cat:'policy',entries: CATALOG.permission.dims.role.entries},
+    {prefix:'cart_event',cat:'event',entries: CATALOG.cart_event.dims.action.entries},
+    {prefix:'auth_event',cat:'event',entries: CATALOG.auth_event.dims.action.entries},
+    {prefix:'order_event',cat:'event',entries: CATALOG.order_event.dims.action.entries},
+  ]},
+  {id:'infra',name:'Infra / Pipeline',y:-3,color:0xa29bfe,groups:[
+    {prefix:'service',cat:'entity',entries:['prod/asia/web','prod/asia/backend','prod/asia/auth','prod/asia/payment','prod/asia/gateway']},
+    {prefix:'deploy_event',cat:'event',entries: CATALOG.deploy_event.dims.deploy_action.entries.slice(0,5)},
+    {prefix:'health_event',cat:'event',entries: CATALOG.health_event.dims.health_status.entries},
+    {prefix:'pipeline_point',cat:'observation',entries: CATALOG.pipeline_point.dims.pipeline_phase.entries},
+    {prefix:'data_policy',cat:'observation',entries: CATALOG.data_policy.dims.mask_mode.entries},
+  ]},
+  {id:'data',name:'Data / Tables',y:-7.5,color:0xfd79a8,groups:[
+    {prefix:'members',cat:'table',entries:['id','name','role','org_id']},
+    {prefix:'orders',cat:'table',entries:['id','member_id','service_addr','status','amount']},
+    {prefix:'items',cat:'table',entries:['id','name','category','warehouse_addr']},
+    {prefix:'orgs',cat:'table',entries:['id','name','region_addr']},
+    {prefix:'carts',cat:'table',entries:['id','member_id']},
+    {prefix:'cart_items',cat:'table',entries:['cart_id','item_id','qty']},
+  ]},
+];
+
+// ═══════════════════════════════════════════════════
+//  Three.js Setup
+// ═══════════════════════════════════════════════════
+
+const canvas=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x06060a,0.012);
+
+const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,300);
+camera.position.set(30,22,35);
+
+const ctrl=new OrbitControls(camera,canvas);
+ctrl.enableDamping=true;ctrl.dampingFactor=0.05;
+ctrl.target.set(0,-1,0);ctrl.minDistance=15;ctrl.maxDistance=80;
+
+scene.add(new THREE.AmbientLight(0x141820,3));
+const dl=new THREE.DirectionalLight(0xffffff,0.3);dl.position.set(15,30,15);scene.add(dl);
+
+// ═══════════════════════════════════════════════════
+//  Build Cell Grid
+// ═══════════════════════════════════════════════════
+
+const cellMap={};// "prefix/entry" → {mesh,wire,glow,hits,layer}
+const cellSize=0.55;
+const cellGap=0.12;
+const groupGap=0.8;
+
+function buildGrid(){
+  LAYERS.forEach((layer,li)=>{
+    let curX=-((layer.groups.reduce((s,g)=>s+g.entries.length,0)*(cellSize+cellGap)+layer.groups.length*groupGap)/2);
+
+    // Layer plane
+    const totalW=layer.groups.reduce((s,g)=>s+g.entries.length,0)*(cellSize+cellGap)+layer.groups.length*groupGap+2;
+    const maxRows=Math.max(...layer.groups.map(g=>1));
+    const planeGeo=new THREE.PlaneGeometry(totalW,2.5);
+    const planeMat=new THREE.MeshBasicMaterial({color:layer.color,transparent:true,opacity:0.008,side:THREE.DoubleSide});
+    const plane=new THREE.Mesh(planeGeo,planeMat);
+    plane.rotation.x=-Math.PI/2;plane.position.set(0,layer.y-0.4,0);
+    scene.add(plane);
+
+    // Layer label
+    const lblCanvas=document.createElement('canvas');lblCanvas.width=512;lblCanvas.height=64;
+    const lctx=lblCanvas.getContext('2d');
+    lctx.fillStyle=`#${layer.color.toString(16).padStart(6,'0')}`;lctx.globalAlpha=0.4;
+    lctx.font='500 20px JetBrains Mono';lctx.fillText(layer.name,10,40);
+    const lblTex=new THREE.CanvasTexture(lblCanvas);lblTex.minFilter=THREE.LinearFilter;
+    const lblSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:lblTex,transparent:true}));
+    lblSprite.scale.set(8,1.5,1);lblSprite.position.set(curX-2,layer.y+0.6,2);
+    scene.add(lblSprite);
+
+    layer.groups.forEach(group=>{
+      // Group label
+      const gCanvas=document.createElement('canvas');gCanvas.width=256;gCanvas.height=48;
+      const gctx=gCanvas.getContext('2d');
+      const cc=CAT_COLORS[group.cat]||CAT_COLORS.entity;
+      gctx.fillStyle=`#${cc.c.toString(16).padStart(6,'0')}`;gctx.globalAlpha=0.5;
+      gctx.font='400 14px JetBrains Mono';gctx.fillText(group.prefix,4,30);
+      const gTex=new THREE.CanvasTexture(gCanvas);gTex.minFilter=THREE.LinearFilter;
+      const gSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:gTex,transparent:true}));
+      gSprite.scale.set(3,0.6,1);
+      gSprite.position.set(curX+group.entries.length*(cellSize+cellGap)/2,layer.y+0.4,-1.2);
+      scene.add(gSprite);
+
+      group.entries.forEach((entry,ei)=>{
+        const x=curX+ei*(cellSize+cellGap);
+        const catDef=CAT_COLORS[group.cat]||CAT_COLORS.entity;
+
+        const geo=new THREE.BoxGeometry(cellSize,0.3,cellSize);
+        const mat=new THREE.MeshStandardMaterial({
+          color:catDef.c,emissive:0x000000,metalness:0.4,roughness:0.6,
+          transparent:true,opacity:0.12,
+        });
+        const mesh=new THREE.Mesh(geo,mat);
+        mesh.position.set(x,layer.y,0);
+        scene.add(mesh);
+
+        const edgeGeo=new THREE.EdgesGeometry(geo);
+        const edgeMat=new THREE.LineBasicMaterial({color:catDef.c,transparent:true,opacity:0.08});
+        const wire=new THREE.LineSegments(edgeGeo,edgeMat);
+        wire.position.copy(mesh.position);
+        scene.add(wire);
+
+        // Entry label (small)
+        const eCanvas=document.createElement('canvas');eCanvas.width=128;eCanvas.height=32;
+        const ectx=eCanvas.getContext('2d');
+        ectx.fillStyle='#778';ectx.font='300 10px JetBrains Mono';
+        ectx.textAlign='center';
+        const shortLabel=entry.length>10?entry.slice(0,9)+'…':entry;
+        ectx.fillText(shortLabel,64,20);
+        const eTex=new THREE.CanvasTexture(eCanvas);eTex.minFilter=THREE.LinearFilter;
+        const eSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:eTex,transparent:true,opacity:0.5}));
+        eSprite.scale.set(1.2,0.3,1);
+        eSprite.position.set(x,layer.y-0.35,0.5);
+        scene.add(eSprite);
+
+        const key=`${group.prefix}/${entry}`;
+        cellMap[key]={mesh,mat,edgeMat,catDef,hits:0,glow:0,layer:li,x,y:layer.y};
+      });
+
+      curX+=group.entries.length*(cellSize+cellGap)+groupGap;
+    });
+  });
+}
+buildGrid();
+
+// ═══════════════════════════════════════════════════
+//  Connection Lines
+// ═══════════════════════════════════════════════════
+
+const MAX_LINES=60;
+const lines=[];
+for(let i=0;i<MAX_LINES;i++){
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+  const mat=new THREE.LineBasicMaterial({color:0x64ffda,transparent:true,opacity:0});
+  const line=new THREE.Line(geo,mat);scene.add(line);
+  lines.push({geo,mat,life:0});
+}
+let lineIdx=0;
+
+function spawnLine(a,b){
+  if(!a||!b||a.layer===b.layer)return;
+  const L=lines[lineIdx%MAX_LINES];lineIdx++;
+  const p=L.geo.attributes.position.array;
+  p[0]=a.x;p[1]=a.y;p[2]=0;p[3]=b.x;p[4]=b.y;p[5]=0;
+  L.geo.attributes.position.needsUpdate=true;
+  L.mat.color.setHex(a.catDef.c);L.life=1;
+}
+
+// ═══════════════════════════════════════════════════
+//  Activate
+// ═══════════════════════════════════════════════════
+
+const layerHits=[0,0,0,0];
+let totalHits=0;
+let activeSet=new Set();
+
+let demoTraceId = 'trc_demo_' + Date.now();
+let demoSpanSeq = 0;
+
+function sendToIngest(addressContext, eventKey) {
+  const ingestUrl = document.getElementById('ws-url').value
+    .replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');
+  demoSpanSeq++;
+  const now = new Date().toISOString();
+  const envelope = {
+    transmission_id: 'tx_demo_' + Date.now(),
+    sent_at: now,
+    owner: { owner_type: 'workspace', owner_id: 'monitor-demo' },
+    source: { service_name: 'shopping-web', sdk_name: '@qa-sdk/monitor', sdk_version: '0.1.0' },
+    runtime: { platform: 'browser' },
+    build: { env: 'dev' },
+    records: [{
+      log_id: 'log_demo_' + Date.now() + '_' + demoSpanSeq,
+      timestamp: now,
+      record_kind: 'log',
+      trace_id: demoTraceId,
+      span_id: 'spn_demo_' + demoSpanSeq,
+      event_key: eventKey || 'demo.step',
+      event_version: '001',
+      payload_format: 'json',
+      payload_encoding: 'raw',
+      payload_masking_applied: false,
+      payload_masked_fields: [],
+      payload: { step: eventKey },
+      address_context: addressContext,
+    }],
+  };
+
+  fetch(ingestUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(envelope),
+  }).then(r => {
+    if (!r.ok) console.warn('ingest response:', r.status);
+  }).catch(() => {
+    // 서버 미가동 시 무시 — 로컬 시각화는 동작
+  });
+}
+
+function fireStep(step){
+  // 1. 실제 encode 실행 → address_context 생성
+  const addressContext = step.encode();
+
+  // 1.5. ingest-server에 실제 전송
+  sendToIngest(addressContext, step.name);
+
+  // 2. decode → 각 prefix의 실제 값 추출
+  const decodedPrefixes = {};
+  for (const [prefixId, serialized] of Object.entries(addressContext)) {
+    const decoded = decode(serialized);
+    if (decoded) decodedPrefixes[prefixId] = decoded;
+  }
+
+  // 3. decoded 값을 셀 키로 변환하여 활성화
+  const cellKeys = new Set();
+  for (const [prefixId, decoded] of Object.entries(decodedPrefixes)) {
+    // prefix의 주요 값으로 셀 키 생성
+    const vals = Object.values(decoded.values);
+    if (prefixId === 'flow_point') {
+      cellKeys.add(`flow_point/${decoded.values.flow_name}/${decoded.values.flow_step}`);
+      // 약식도 추가
+      cellKeys.add(`flow_point/${decoded.values.flow_name}/entry`);
+      cellKeys.add(`flow_point/${decoded.values.flow_name}/success`);
+    } else if (prefixId === 'endpoint') {
+      cellKeys.add(`endpoint/${decoded.values.http_method}/${decoded.values.resource_type}`);
+    } else if (prefixId === 'service') {
+      const sn = decoded.values.svc_name?.replace('shopping-','') || 'web';
+      cellKeys.add(`service/prod/asia/${sn}`);
+    } else {
+      // 첫 번째 axis 값으로 매칭
+      for (const v of Object.values(decoded.values)) {
+        cellKeys.add(`${prefixId}/${v}`);
+      }
+    }
+  }
+  // 테이블 셀 추가 (encode 대상이 아닌 메타데이터)
+  for (const t of (step.tables || [])) cellKeys.add(t);
+
+  activeSet = cellKeys;
+  const activated = [];
+  for (const key of cellKeys) {
+    const cell = cellMap[key];
+    if (!cell) continue;
+    cell.glow = 2; cell.hits++;
+    layerHits[cell.layer]++; totalHits++;
+    activated.push(cell);
+  }
+  for(let i=0;i<activated.length;i++)
+    for(let j=i+1;j<activated.length;j++)
+      if(activated[i].layer!==activated[j].layer)spawnLine(activated[i],activated[j]);
+
+  // HUD: 실제 address_context 표시
+  step._addressContext = addressContext;
+  step._decoded = decodedPrefixes;
+  step._cells = [...cellKeys];
+  updateHUD(step);
+}
+
+// ═══════════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════════
+
+// Layer bars
+const barsEl=document.getElementById('layer-bars');
+LAYERS.forEach((l,i)=>{
+  const cls=['l0','l1','l2','l3'][i];
+  barsEl.innerHTML+=`<div class="layer-bar"><div class="layer-bar-label">${l.name}</div><div class="layer-bar-fill"><div class="layer-bar-inner ${cls}-fill" id="bar-${i}" style="width:0%"></div></div><div class="layer-bar-count" id="cnt-${i}">0</div></div>`;
+});
+
+function updateHUD(step){
+  document.getElementById('hud-step').textContent=step?.name||'--';
+  document.getElementById('hud-desc').textContent=step?.desc||'';
+  document.getElementById('hud-total').textContent=totalHits;
+  const maxH=Math.max(1,...layerHits);
+  LAYERS.forEach((_,i)=>{
+    document.getElementById(`bar-${i}`).style.width=`${(layerHits[i]/maxH)*100}%`;
+    document.getElementById(`cnt-${i}`).textContent=layerHits[i];
+  });
+  const activeEl=document.getElementById('hud-active');
+  if (step?._addressContext) {
+    activeEl.innerHTML = Object.entries(step._addressContext).map(([pid, ser]) => {
+      return `<span class="hit">${pid}</span> → ${ser}`;
+    }).join('<br>');
+    if (step.tables?.length) {
+      activeEl.innerHTML += '<br>' + step.tables.map(t => `<span style="color:#fd79a8">${t}</span>`).join('<br>');
+    }
+  } else {
+    activeEl.innerHTML = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  Demo
+// ═══════════════════════════════════════════════════
+
+let demoOn=false,demoTimer=null,demoIdx=0;
+
+window.toggleDemo=function(){
+  demoOn=!demoOn;
+  document.getElementById('btn-demo').classList.toggle('on',demoOn);
+  if(demoOn){
+    demoIdx=0;
+    demoTraceId='trc_demo_'+Date.now();
+    demoSpanSeq=0;
+    runDemo();
+  }else clearTimeout(demoTimer);
+};
+function runDemo(){
+  if(!demoOn)return;
+  if(demoIdx>=DEMO_STEPS.length)demoIdx=0;
+  fireStep(DEMO_STEPS[demoIdx]);
+  document.getElementById('status').textContent=`step ${demoIdx+1}/${DEMO_STEPS.length}`;
+  demoIdx++;demoTimer=setTimeout(runDemo,2200);
+}
+
+// ═══════════════════════════════════════════════════
+//  LIVE Mode — WebSocket → ingest-server 연결
+// ═══════════════════════════════════════════════════
+
+let ws = null;
+let liveOn = false;
+
+function setConnStatus(label, color) {
+  const el = document.getElementById('conn-status');
+  el.textContent = `● ${label}`;
+  el.style.color = color;
+}
+
+window.toggleLive = function() {
+  liveOn = !liveOn;
+  document.getElementById('btn-live').classList.toggle('on', liveOn);
+
+  if (liveOn) {
+    const url = document.getElementById('ws-url').value;
+    document.getElementById('status').textContent = `connecting to ${url}...`;
+    try {
+      ws = new WebSocket(url);
+      ws.onopen = () => {
+        setConnStatus('connected', '#2ed573');
+        document.getElementById('status').textContent = `connected — waiting for events`;
+        ws.send(JSON.stringify({ type: 'subscribe', scenarioId: '*' }));
+      };
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'record' && msg.data) {
+            handleLiveRecord(msg.data);
+          } else if (msg.type === 'subscribed') {
+            setConnStatus('subscribed', '#64ffda');
+            document.getElementById('status').textContent = `subscribed to ${msg.scenarioId} — waiting for events`;
+          }
+        } catch {}
+      };
+      ws.onerror = () => {
+        setConnStatus('error', '#ff6b6b');
+        document.getElementById('status').textContent = `connection error — is ingest-server running on ${url.replace('ws','http').replace('/v1/ws','')}?`;
+      };
+      ws.onclose = () => {
+        setConnStatus(liveOn ? 'reconnecting' : 'disconnected', liveOn ? '#ff9f43' : '#445');
+        document.getElementById('status').textContent = liveOn ? `disconnected — retrying in 3s...` : `disconnected`;
+        if (liveOn) { liveOn = false; setTimeout(() => { liveOn = true; window.toggleLive(); window.toggleLive(); }, 3000); }
+      };
+    } catch (e) {
+      document.getElementById('status').textContent = `failed: ${e.message}`;
+      liveOn = false;
+      document.getElementById('btn-live').classList.remove('on');
+    }
+  } else {
+    if (ws) { ws.close(); ws = null; }
+    document.getElementById('status').textContent = 'live disconnected';
+  }
+};
+
+function handleLiveRecord(record) {
+  const ctx = record.addressContext || record.address_context;
+  if (!ctx || Object.keys(ctx).length === 0) return;
+
+  // 실제 decode → 셀 활성화
+  const cellKeys = new Set();
+  const decodedPrefixes = {};
+
+  for (const [prefixId, serialized] of Object.entries(ctx)) {
+    const decoded = decode(serialized);
+    if (!decoded) continue;
+    decodedPrefixes[prefixId] = decoded;
+
+    if (prefixId === 'flow_point') {
+      cellKeys.add(`flow_point/${decoded.values.flow_name}/entry`);
+      cellKeys.add(`flow_point/${decoded.values.flow_name}/success`);
+    } else if (prefixId === 'endpoint') {
+      cellKeys.add(`endpoint/${decoded.values.http_method}/${decoded.values.resource_type}`);
+    } else if (prefixId === 'service') {
+      const sn = decoded.values.svc_name?.replace('shopping-','') || 'web';
+      cellKeys.add(`service/prod/asia/${sn}`);
+    } else {
+      for (const v of Object.values(decoded.values)) {
+        cellKeys.add(`${prefixId}/${v}`);
+      }
+    }
+  }
+
+  activeSet = cellKeys;
+  const activated = [];
+  for (const key of cellKeys) {
+    const cell = cellMap[key];
+    if (!cell) continue;
+    cell.glow = 2; cell.hits++;
+    layerHits[cell.layer]++; totalHits++;
+    activated.push(cell);
+  }
+  for(let i=0;i<activated.length;i++)
+    for(let j=i+1;j<activated.length;j++)
+      if(activated[i].layer!==activated[j].layer)spawnLine(activated[i],activated[j]);
+
+  const step = {
+    name: record.eventKey || record.event_key || 'live',
+    desc: `trace:${(record.traceId||record.trace_id||'').slice(0,12)}`,
+    _addressContext: ctx,
+    _decoded: decodedPrefixes,
+    tables: [],
+  };
+  updateHUD(step);
+  document.getElementById('status').textContent = `live — ${totalHits} events received`;
+}
+
+window.resetAll=function(){
+  demoOn=false;clearTimeout(demoTimer);
+  document.getElementById('btn-demo').classList.remove('on');
+  totalHits=0;layerHits.fill(0);activeSet.clear();
+  Object.values(cellMap).forEach(c=>{c.hits=0;c.glow=0;});
+  updateHUD(null);document.getElementById('status').textContent='reset';
+};
+
+// ═══════════════════════════════════════════════════
+//  Render Loop
+// ═══════════════════════════════════════════════════
+
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  const t=clock.elapsedTime;
+
+  Object.entries(cellMap).forEach(([key,cell])=>{
+    cell.glow=Math.max(0,cell.glow-dt*1.2);
+    const isActive=activeSet.has(key);
+    const pulse=isActive?0.4+Math.sin(t*5)*0.2:0;
+    const intensity=Math.max(cell.glow,pulse);
+
+    cell.mat.emissive.setHex(cell.catDef.e);
+    cell.mat.emissiveIntensity=intensity*3;
+    cell.mat.opacity=0.12+intensity*0.7;
+    cell.edgeMat.opacity=0.08+intensity*0.9;
+  });
+
+  lines.forEach(l=>{
+    if(l.life>0){l.life-=dt*0.5;l.mat.opacity=Math.max(0,l.life*0.35);}
+  });
+
+  ctrl.update();
+  renderer.render(scene,camera);
+}
+animate();
+document.getElementById('status').textContent='ready — press DEMO';
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "@qa-sdk/shop-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve public -p 5220 --no-clipboard",
+    "start": "npx serve public -p 5220 --no-clipboard"
+  }
+}

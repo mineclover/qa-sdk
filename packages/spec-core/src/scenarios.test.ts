@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { DEMO_CATALOG, decodePrefix, resolveAddress } from "demo-snapshot";
+import { DEMO_CATALOG, decodePrefix, encodePrefixByValue, resolveAddress } from "demo-snapshot";
 import {
   ExportSurfaceRegistry,
   catalogToPrefixSpecs,
@@ -54,16 +54,21 @@ describe("시나리오 1: service prefix", () => {
     expect(title).toBe("dev.asia.shopping-web.shop");
   });
 
-  it("service: address 40 = prod 환경", () => {
-    const decoded = decodePrefix(DEMO_CATALOG, "service", "v1", 40);
+  it("service: prod 환경 encode → decode 라운드트립", () => {
+    // capacity 변경에 독립적인 테스트: 문자열 기반 라운드트립
+    const addr = encodePrefixByValue(DEMO_CATALOG, "service", "v1", {
+      env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop",
+    });
+
+    const decoded = decodePrefix(DEMO_CATALOG, "service", "v1", addr);
+    expect(decoded.env.value).toBe("prod");
+    expect(decoded.region.value).toBe("asia");
+
     const values: Record<string, string> = {};
     for (const [label, dim] of Object.entries(decoded)) {
       values[label] = String(dim.value);
     }
-
     const title = surfaces.resolve("service", values);
-    // address 40에서 env의 position을 확인
-    expect(decoded.env.value).toBe("prod");
     expect(title).toContain("prod");
   });
 });

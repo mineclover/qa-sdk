@@ -556,7 +556,13 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
     devDependencies:
+      '@qa-sdk/spec-core':
+        specifier: workspace:*
+        version: link:../spec-core
       typescript:
         specifier: ^5.8.2
         version: 5.9.3

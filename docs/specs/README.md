@@ -155,7 +155,9 @@ API 클라이언트, iframe 통신 프로토콜.
 | [core-types.md](spec-engine/core-types.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API | design (Phase 1-1 구현 완료) |
 | [architecture.md](spec-engine/architecture.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계 | design |
 | [phases.md](spec-engine/phases.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 | in-progress |
-| [design-knowledge-graph.md](spec-engine/design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 8종, 엣지 14종, 순환 모델) | design |
+| [design-knowledge-graph.md](spec-engine/design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 11종, 엣지 18종, 성장 나선 모델) | design |
+| [dkg-skills.md](spec-engine/dkg-skills.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, 8개 skill 카탈로그 | design |
+| [spec-propagation.md](spec-engine/spec-propagation.md) | Spec Propagation — 스펙 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 | design |
 
 ### apm/ — APM 인프라
 

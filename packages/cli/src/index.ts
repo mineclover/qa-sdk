@@ -12,6 +12,14 @@
 import { parseArgs } from "node:util";
 import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
+import {
+  dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
+  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
+} from "./commands/dkg.js";
+import {
+  cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
+  cliImpact, cliListPrefixes, cliListAxes,
+} from "./commands/dx.js";
 import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
 import { codegen, type CodegenFormat } from "./commands/codegen.js";
@@ -34,6 +42,29 @@ Usage:
   qa-sdk spec trace <specId>         추적성 경로 조회
   qa-sdk spec decode <addr>          주소 → 제목 변환 (decode→entries→export)
   qa-sdk spec codegen [options]      코드 생성 (ts|esm|cjs|proto|json-schema)
+
+  qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩
+  qa-sdk decode <addr>               주소 → 문자열 디코딩
+  qa-sdk resolve <addr>              자동 마이그레이션
+  qa-sdk find-version <axis> <entry> 문자열이 있는 버전 찾기
+  qa-sdk list-prefixes [--json]      prefix 목록
+  qa-sdk list-axes [--json]          축 목록
+  qa-sdk derive-refs [--check]       refEntries 정합성
+  qa-sdk impact --axis <id>          영향 분석
+
+  qa-sdk dkg report                  전체 현황 + SQLite 상태
+  qa-sdk dkg refresh                 bootstrap 재실행
+  qa-sdk dkg axes [--page N]         축 목록
+  qa-sdk dkg prefixes [--page N]     prefix 목록
+  qa-sdk dkg domains                 도메인 목록
+  qa-sdk dkg impact <axis>           영향 분석
+  qa-sdk dkg overlaps                축 중복 스캔
+  qa-sdk dkg history [--limit N]     스냅샷 히스토리
+  qa-sdk dkg skew                    배포 스큐 상세
+  qa-sdk dkg coverage                entry 커버리지
+  qa-sdk dkg skills                  skill 목록
+  qa-sdk dkg export [--output path]  SQLite → JSON
+  qa-sdk dkg import <input>          JSON → SQLite
 
 Commands:
 
@@ -99,6 +130,71 @@ async function main() {
       return runSpecDecode(sub.rest);
     case "spec codegen":
       return runSpecCodegen(sub.rest);
+
+    // DX 명령어
+    case "encode":
+      return runEncode(sub.rest);
+    case "decode":
+      return runDecode(sub.rest);
+    case "resolve":
+      return runResolve(sub.rest);
+    case "find-version":
+      return runFindVersion(sub.rest);
+    case "list-prefixes":
+      cliListPrefixes({ json: sub.rest.includes("--json") });
+      return;
+    case "list-axes":
+      cliListAxes({ json: sub.rest.includes("--json") });
+      return;
+    case "derive-refs":
+      cliDeriveRefs({ check: true });
+      return;
+    case "impact":
+      return runImpactCmd(sub.rest);
+
+    // DKG 명령어
+    case "dkg report":
+      dkgReport();
+      return;
+    case "dkg refresh":
+      dkgRefresh();
+      return;
+    case "dkg axes":
+      dkgAxes(parsePage(sub.rest));
+      return;
+    case "dkg prefixes":
+      dkgPrefixes(parsePage(sub.rest));
+      return;
+    case "dkg domains":
+      dkgDomains(parsePage(sub.rest));
+      return;
+    case "dkg impact":
+      if (sub.rest[0]) dkgImpact(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg impact <axisId>");
+      return;
+    case "dkg overlaps":
+      dkgOverlaps();
+      return;
+    case "dkg history":
+      dkgHistory({ limit: parseInt(sub.rest[sub.rest.indexOf("--limit") + 1]) || 10 });
+      return;
+    case "dkg skew":
+      dkgSkew();
+      return;
+    case "dkg coverage":
+      dkgCoverage();
+      return;
+    case "dkg skills":
+      dkgSkills();
+      return;
+    case "dkg export":
+      dkgExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
+      return;
+    case "dkg import":
+      if (sub.rest[0]) dkgImport({ input: sub.rest[0] });
+      else console.error("Usage: qa-sdk dkg import <path>");
+      return;
+
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
       console.log(USAGE);
@@ -115,7 +211,11 @@ interface Subcommand {
 
 function resolveSubcommand(args: string[]): Subcommand {
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
-  const twoWord = ["scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen"];
+  const twoWord = [
+    "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
+    "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
+    "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import",
+  ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
     if (twoWord.includes(candidate)) {
@@ -123,7 +223,10 @@ function resolveSubcommand(args: string[]): Subcommand {
     }
   }
   // 1단어 커맨드
-  const oneWord = ["register", "dry-run", "codegen", "inspect"];
+  const oneWord = [
+    "register", "dry-run", "codegen", "inspect",
+    "encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact",
+  ];
   if (oneWord.includes(args[0])) {
     return { name: args[0], rest: args.slice(1) };
   }
@@ -424,6 +527,74 @@ async function runSpecDecode(argv: string[]) {
     deep: values.deep,
     format: values.format === "json" ? "json" : "text",
   });
+}
+
+// ── DX: encode ──────────────────────────────────────
+
+function runEncode(argv: string[]) {
+  const prefix = argv[0];
+  if (!prefix) { console.error("Usage: qa-sdk encode <prefix> --dim1 val1 --dim2 val2"); return; }
+
+  const dims: Record<string, string | number> = {};
+  for (let i = 1; i < argv.length; i += 2) {
+    const key = argv[i]?.replace(/^--/, "");
+    const val = argv[i + 1];
+    if (key && val) dims[key] = val;
+  }
+
+  const json = argv.includes("--json");
+  cliEncode({ prefix, dims, json });
+}
+
+// ── DX: decode ──────────────────────────────────────
+
+function runDecode(argv: string[]) {
+  const address = argv[0];
+  if (!address) { console.error('Usage: qa-sdk decode "prefix:version:address"'); return; }
+  const deep = argv.includes("--deep");
+  const json = argv.includes("--json");
+  cliDecode({ address, deep, json });
+}
+
+// ── DX: resolve ─────────────────────────────────────
+
+function runResolve(argv: string[]) {
+  const address = argv[0];
+  if (!address) { console.error('Usage: qa-sdk resolve "prefix:version:address"'); return; }
+  const json = argv.includes("--json");
+  const toIdx = argv.indexOf("--to");
+  const to = toIdx >= 0 ? argv[toIdx + 1] : undefined;
+  cliResolve({ address, to, json });
+}
+
+// ── DX: find-version ────────────────────────────────
+
+function runFindVersion(argv: string[]) {
+  const axis = argv[0];
+  const entry = argv[1];
+  if (!axis || !entry) { console.error("Usage: qa-sdk find-version <axis> <entry>"); return; }
+  cliFindVersion({ axis, entry });
+}
+
+// ── DX: impact ──────────────────────────────────────
+
+function runImpactCmd(argv: string[]) {
+  const axisIdx = argv.indexOf("--axis");
+  const prefixIdx = argv.indexOf("--prefix");
+  if (axisIdx >= 0) cliImpact({ axis: argv[axisIdx + 1] });
+  else if (prefixIdx >= 0) cliImpact({ prefix: argv[prefixIdx + 1] });
+  else console.error("Usage: qa-sdk impact --axis <id> or --prefix <id>");
+}
+
+// ── DKG helpers ─────────────────────────────────────
+
+function parsePage(argv: string[]): { page?: number; limit?: number } {
+  const pageIdx = argv.indexOf("--page");
+  const limitIdx = argv.indexOf("--limit");
+  return {
+    page: pageIdx >= 0 ? parseInt(argv[pageIdx + 1]) : undefined,
+    limit: limitIdx >= 0 ? parseInt(argv[limitIdx + 1]) : undefined,
+  };
 }
 
 // ── Entry ────────────────────────────────────────────

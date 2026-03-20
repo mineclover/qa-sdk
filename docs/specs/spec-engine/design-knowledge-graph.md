@@ -304,7 +304,7 @@ interface SchemaNode {
 }
 ```
 
-### 신규 (4종)
+### 신규 (8종)
 
 #### Decision — closure provenance의 핵심
 
@@ -665,6 +665,7 @@ event-domain:
 | **Observation** | DKG 고유 | — | **운영 피드백** |
 | **Consumer** | DKG 고유 | — | **설계된 소비자** |
 | **IntentLink** | DKG 고유 | — | **연결 의도 명시** |
+| **DslBundle** | DKG 고유 | — | **DSL 번들 (prefix 그룹 패키징)** |
 
 ---
 
@@ -1169,7 +1170,7 @@ Phase 3: 좌표계 시나리오 검증
 
 Phase 3.5: DKG 기반 (신규)              ← 여기
   ├── 3.5-1: DKG 코어 타입 (spec-core 내)
-  │     노드 11종 + 엣지 18종 타입
+  │     노드 12종 + 엣지 18종 타입
   │     GraphRegistry (노드/엣지 등록 + 질의)
   │
   ├── 3.5-2: DEMO_CATALOG → DKG 자동 파생
@@ -1195,7 +1196,7 @@ Phase 5: 확장 (기존, 선택적)
 packages/spec-core/
   src/
     dkg/                               ← DKG 코어 (순수 TS)
-      dkg.types.ts                     ← 노드 11종 + 엣지 18종 타입
+      dkg.types.ts                     ← 노드 12종 + 엣지 18종 타입
       graph-registry.ts                ← 노드/엣지 등록 + 질의
       catalog-derive.ts                ← DEMO_CATALOG → 자동 파생
       yaml-loader.ts                   ← YAML 파일 → 그래프 적재

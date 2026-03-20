@@ -23,7 +23,7 @@ import {
 } from "../lib/debug-store.js";
 import type { Logger } from "pino";
 import { badRequest } from "../lib/errors.js";
-import { enrichAddressContext } from "../lib/enrich-address-context.js";
+import { enrichAddressContext, checkAddressHealth } from "../lib/enrich-address-context.js";
 import {
   buildReconstructionTask,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
@@ -56,6 +56,9 @@ export interface IngestDeps {
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
   logger?: Logger;
+  /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
+  knownPrefixes?: ReadonlySet<string>;
+  latestVersions?: ReadonlyMap<string, string>;
 }
 
 export interface TracePersistenceStores {
@@ -106,6 +109,17 @@ async function storeEnvelope(
 ): Promise<string[]> {
   // address context 머지: infra_context(base) ← record.address_context(override)
   enrichAddressContext(envelope, envelope.records);
+
+  // address context 건전성 검증 (설정 시)
+  if (deps.knownPrefixes && deps.latestVersions) {
+    const health = checkAddressHealth(envelope.records, deps.knownPrefixes, deps.latestVersions);
+    if (health.orphanPrefixes.length > 0) {
+      deps.logger?.warn({ orphans: health.orphanPrefixes, healthRate: health.healthRate }, "address_context orphan prefixes detected");
+    }
+    if (health.staleVersions.length > 0) {
+      deps.logger?.warn({ stale: health.staleVersions }, "address_context stale versions detected");
+    }
+  }
 
   const registryWarnings = await validateEnvelopeRecords(envelope, deps);
   const persistedTraceIds: string[] = [];
