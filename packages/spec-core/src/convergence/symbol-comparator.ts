@@ -1,5 +1,7 @@
 /**
  * 심볼 비교 — 축/prefix 간 중복을 감지한다.
+ *
+ * @layer 비교 (Comparison)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

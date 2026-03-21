@@ -5,6 +5,8 @@
  * 1. observed  — 정의되어 있고 실 트래픽에서 관측됨
  * 2. dormant   — 정의되어 있지만 한 번도 관측 안 됨
  * 3. phantom   — 정의에 없지만 트래픽에서 관측됨 (코드 불일치)
+ *
+ * @layer 측정 (Measurement)
  */
 
 import type { DemoCatalog } from "demo-snapshot";

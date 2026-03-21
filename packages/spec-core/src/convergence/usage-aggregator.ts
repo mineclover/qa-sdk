@@ -5,6 +5,8 @@
  *
  * 이것이 관측 파이프라인의 핵심:
  * 런타임 이벤트 → 집계 → 수렴 레이어 입력
+ *
+ * @layer 집계 (Aggregation)
  */
 
 import type { DemoCatalog } from "demo-snapshot";

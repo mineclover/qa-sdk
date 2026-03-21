@@ -3,6 +3,8 @@
  * 그 근거를 Decision + Constraint로 DKG에 남긴다.
  *
  * 나중에 같은 중복이 재발견됐을 때 "이미 검토됨"을 확인할 수 있다.
+ *
+ * @layer 기록 (Recording)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

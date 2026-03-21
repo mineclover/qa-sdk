@@ -3,6 +3,8 @@
  *
  * 하나의 records 배열을 여러 관점으로 슬라이스하여
  * 각 영역의 분기 분포, 커버리지, 건전성을 독립적으로 분석한다.
+ *
+ * @layer 집계 (Aggregation)
  */
 
 import type { DemoCatalog } from "demo-snapshot";

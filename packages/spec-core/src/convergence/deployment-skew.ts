@@ -6,6 +6,8 @@
  *
  * session_id로 소비자(서비스)를 식별하여
  * "어떤 서비스가 어떤 version에 머물러 있는가"를 보여준다.
+ *
+ * @layer 측정 (Measurement)
  */
 
 import type { VersionUsage } from "./convergence.types.js";

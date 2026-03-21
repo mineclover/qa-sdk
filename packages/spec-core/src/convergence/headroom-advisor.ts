@@ -1,5 +1,7 @@
 /**
  * Headroom Advisor — headroom이 부족한 축을 감지하고 capacity 확장 Decision을 생성한다.
+ *
+ * @layer 추천 (Recommendation)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

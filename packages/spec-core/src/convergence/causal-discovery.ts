@@ -1,5 +1,7 @@
 /**
  * 인과 발견 — co-occurrence에서 인과 관계 후보를 추출한다.
+ *
+ * @layer 비교 (Comparison)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

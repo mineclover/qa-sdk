@@ -20,6 +20,8 @@
  *   항상 2의 거듭제곱 (bitmask 정렬 최적)
  *   항상 entries의 최소 2~4배 headroom
  *   stride-break 1회 비용 >> headroom 비용이므로 넉넉히 잡는다
+ *
+ * @layer 추천 (Recommendation)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

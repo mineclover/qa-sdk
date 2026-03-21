@@ -3,6 +3,8 @@
  *
  * aggregateUsageData의 결과를 category별로 필터링한다.
  * GraphRegistry의 PrefixNode.category를 기준으로 분류.
+ *
+ * @layer 필터 (Filtering)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

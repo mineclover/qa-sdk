@@ -1,5 +1,7 @@
 /**
  * 최소 가짓수 유지 — prefix의 불필요한 복잡도를 감지한다.
+ *
+ * @layer 추천 (Recommendation)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

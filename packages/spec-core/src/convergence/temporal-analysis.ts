@@ -5,6 +5,8 @@
  * 1. 윈도우별 분기 분포 추적 (시간에 따라 success 비율이 떨어지는가?)
  * 2. 이상 윈도우 감지 (평균 대비 급격한 변화)
  * 3. SLA 기준 위반 (특정 분기 비율이 임계값 초과/미달)
+ *
+ * @layer 측정 (Measurement)
  */
 
 import type { DemoCatalog } from "demo-snapshot";

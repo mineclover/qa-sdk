@@ -1,5 +1,7 @@
 /**
  * 경계 추천 — 새 prefix가 필요한 시점과 위치를 추천한다.
+ *
+ * @layer 추천 (Recommendation)
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";

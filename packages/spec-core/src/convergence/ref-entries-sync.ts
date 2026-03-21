@@ -6,6 +6,8 @@
  * refEntries도 재생성해야 한다.
  *
  * CLI의 핵심 목적: capacity 변경 → 최신 값으로 동기화.
+ *
+ * @layer 기록 (Recording)
  */
 
 import type { DemoCatalog, PrefixDef, PrefixVersionDef } from "demo-snapshot";
