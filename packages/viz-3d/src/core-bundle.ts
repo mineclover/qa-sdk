@@ -75,3 +75,12 @@ export type { FrameStats } from "./renderer/perf-stats.js";
 // Adapter
 export { MonitorAdapter, defaultKeyMapper } from "./adapter/monitor-adapter.js";
 export type { DecodeFn, CellKeyMapper, AdapterConfig } from "./adapter/monitor-adapter.js";
+
+// Browser Codec (encode/decode 단일 출처)
+export { encode, decode, track, decodeContext, trackWithSignal } from "./adapter/browser-codec.js";
+export type { BrowserCatalog, BrowserPrefixDef, BrowserDimDef, EncodeResult } from "./adapter/browser-codec.js";
+export { BROWSER_CATALOG } from "./adapter/demo-catalog-browser.js";
+
+// Catalog Loader (API → Cache → Static)
+export { loadCatalog } from "./adapter/catalog-loader.js";
+export type { CatalogLoaderConfig, LoadResult } from "./adapter/catalog-loader.js";
