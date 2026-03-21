@@ -2387,6 +2387,15 @@ const SELF_CHECK_PKGS = [
   { name: "decode-service", filter: "@qa-sdk/decode-service", hasTest: true, hasBuild: true },
   { name: "registry-server", filter: "@qa-sdk/registry-server", hasTest: true, hasBuild: true },
   { name: "registry-client", filter: "@qa-sdk/registry-client", hasTest: true, hasBuild: true },
+  // 미관리 → 관리 전환 (8개)
+  { name: "apm", filter: "@qa-sdk/apm", hasTest: true, hasBuild: true },
+  { name: "browser-sdk", filter: "@qa-sdk/browser", hasTest: true, hasBuild: true },
+  { name: "event-catalog", filter: "@qa-sdk/event-catalog", hasTest: true, hasBuild: true },
+  { name: "pino", filter: "@qa-sdk/pino", hasTest: true, hasBuild: true },
+  { name: "viz-3d", filter: "@qa-sdk/viz-3d", hasTest: true, hasBuild: true },
+  { name: "viz-web", filter: "@qa-sdk/viz-web", hasTest: true, hasBuild: true },
+  { name: "demo-tests", filter: "demo-tests", hasTest: true, hasBuild: false },
+  { name: "weighted-wasm", filter: "weighted-wasm", hasTest: true, hasBuild: true },
 ];
 
 /**
