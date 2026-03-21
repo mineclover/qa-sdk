@@ -233,7 +233,7 @@ export function emitCliEvent(command: string): void {
   try {
     const now = new Date().toISOString();
     const session = `cli-${process.env.USER ?? "unknown"}`;
-    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", "v1", {
+    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", latestVer("cli_event"), {
       cli_intent: mapping.intent,
       cli_domain: mapping.domain,
       cli_subject: mapping.subject,
@@ -249,7 +249,7 @@ export function emitCliEvent(command: string): void {
         { prefix: "cli_event", version: "v1", address, count: 1 },
       ],
       coOccurrences: [],
-      versionUsages: [{ prefix: "cli_event", version: "v1", count: 1, lastSeen: now, sessions: [session] }],
+      versionUsages: [{ prefix: "cli_event", version: latestVer("cli_event"), count: 1, lastSeen: now, sessions: [session] }],
       collectionPeriod: { from: now, to: now },
     } as any);
   } catch {
@@ -319,6 +319,13 @@ export function analyzeCliCoverage(): {
   };
 }
 
+/** prefix의 최신 version ID. 하드코딩 방지. */
+function latestVer(prefixId: string): string {
+  const prefix = (DEMO_CATALOG as any).prefixes?.[prefixId];
+  if (!prefix?.versions?.length) return "v1";
+  return prefix.versions[prefix.versions.length - 1].version;
+}
+
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
 // cli_event의 subset. mutate intent 명령의 상세 정보 기록.
 
@@ -334,7 +341,7 @@ function emitDkgEvent(
     const versionUsages: Array<{ prefix: string; version: string; count: number; lastSeen: string; sessions: string[] }> = [];
 
     // 기본 dkg_event
-    const baseAddr = encodePrefixByValue(DEMO_CATALOG, "dkg_event", "v1", {
+    const baseAddr = encodePrefixByValue(DEMO_CATALOG, "dkg_event", latestVer("dkg_event"), {
       dkg_op: op,
       dkg_target_kind: targetKind,
     });
@@ -343,7 +350,7 @@ function emitDkgEvent(
     // 승격된 prefix: dkg_decision_event (decide 시)
     if (extra?.decisionType) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", "v1", {
+        encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", latestVer("dkg_decision_event"), {
           decision_type: extra.decisionType,
           dkg_target_kind: targetKind,
           node_source: extra.nodeSource ?? "manual",
@@ -355,7 +362,7 @@ function emitDkgEvent(
     // 승격된 prefix: dkg_observation_event (observe 시)
     if (extra?.obsSource) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", "v1", {
+        encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", latestVer("dkg_observation_event"), {
           obs_source: extra.obsSource,
           dkg_target_kind: targetKind,
           lifecycle_state: extra.lifecycleState ?? "active",
@@ -2613,7 +2620,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     const resultAxis = r.kind === "build" ? "build_result" : "test_result";
     const qaModule = r.module ?? "_all";
     try {
-      const address = encodePrefixByValue(DEMO_CATALOG, prefixId, "v2", {
+      const address = encodePrefixByValue(DEMO_CATALOG, prefixId, latestVer(prefixId), {
         qa_pkg: r.pkg,
         qa_module: qaModule,
         [resultAxis]: r.result,
@@ -2634,7 +2641,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   // contract_check records (파일별 인터페이스 계약)
   for (const c of fileContracts) {
     try {
-      const address = encodePrefixByValue(DEMO_CATALOG, "contract_check", "v1", {
+      const address = encodePrefixByValue(DEMO_CATALOG, "contract_check", latestVer("contract_check"), {
         qa_pkg: c.pkg,
         api_surface: c.surface,
         test_result: c.result,

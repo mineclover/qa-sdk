@@ -19,6 +19,13 @@ import { analyzeEntryCoverage } from "./entry-coverage.js";
 import type { UsageData, CollectionHealthReport, CoverageReport } from "./convergence.types.js";
 import type { AddressContextRecord } from "./usage-aggregator.js";
 
+/** prefix의 최신 version ID를 반환 */
+function latestPrefixVersion(catalog: DemoCatalog, prefixId: string): string {
+  const prefix = (catalog as any).prefixes?.[prefixId];
+  if (!prefix?.versions?.length) return "v1";
+  return prefix.versions[prefix.versions.length - 1].version;
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  Types
 // ═══════════════════════════════════════════════════════════════
@@ -54,13 +61,14 @@ export interface SelfCheckAnalysis {
 //  비즈니스 시뮬레이션 정의
 // ═══════════════════════════════════════════════════════════════
 
+/** 비즈니스 시뮬레이션 — version은 latestPrefixVersion으로 동적 결정 */
 const BIZ_PREFIXES = [
-  { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDim: "svc_ref" },
-  { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDim: "svc_ref" },
-  { prefix: "permission", version: "v4", dims: { role: "admin" }, refDim: "perm_svc" },
-  { prefix: "permission", version: "v4", dims: { role: "developer" }, refDim: "perm_svc" },
-  { prefix: "event", version: "v4", dims: { event_name: "user.login", initiator: "web" }, refDim: "evt_svc" },
-  { prefix: "event", version: "v4", dims: { event_name: "order.created", initiator: "web" }, refDim: "evt_svc" },
+  { prefix: "endpoint", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDim: "svc_ref" },
+  { prefix: "endpoint", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDim: "svc_ref" },
+  { prefix: "permission", dims: { role: "admin" }, refDim: "perm_svc" },
+  { prefix: "permission", dims: { role: "developer" }, refDim: "perm_svc" },
+  { prefix: "event", dims: { event_name: "user.login", initiator: "web" }, refDim: "evt_svc" },
+  { prefix: "event", dims: { event_name: "order.created", initiator: "web" }, refDim: "evt_svc" },
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -103,13 +111,14 @@ export function analyzeSelfCheck(
     const resultAxis = r.kind === "build" ? "build_result" : "test_result";
     const qaModule = r.module ?? "_all";
     try {
-      const address = encodePrefixByValue(catalog, prefixId, "v2", {
+      const ver = latestPrefixVersion(catalog, prefixId);
+      const address = encodePrefixByValue(catalog, prefixId, ver, {
         qa_pkg: r.pkg,
         qa_module: qaModule,
         [resultAxis]: r.result,
       });
       records.push({
-        address_context: { [prefixId]: `${prefixId}:v2:${address}` },
+        address_context: { [prefixId]: `${prefixId}:${ver}:${address}` },
         timestamp: now,
         session_id: runId,
         event_key: `${r.kind}:${r.pkg}`,
@@ -125,13 +134,14 @@ export function analyzeSelfCheck(
   let bizRecords = 0;
   for (const bp of BIZ_PREFIXES) {
     try {
+      const ver = latestPrefixVersion(catalog, bp.prefix);
       const prefixDef = (catalog as any).prefixes?.[bp.prefix];
-      const verDef = prefixDef?.versions?.find((v: any) => v.version === bp.version);
+      const verDef = prefixDef?.versions?.find((v: any) => v.version === ver);
       const refVal = verDef?.refEntries?.[bp.refDim]?.values?.[0];
       const dims = refVal !== undefined ? { [bp.refDim]: refVal, ...bp.dims } : { ...bp.dims };
-      const address = encodePrefixByValue(catalog, bp.prefix, bp.version, dims);
+      const address = encodePrefixByValue(catalog, bp.prefix, ver, dims);
       records.push({
-        address_context: { [bp.prefix]: `${bp.prefix}:${bp.version}:${address}` },
+        address_context: { [bp.prefix]: `${bp.prefix}:${ver}:${address}` },
         timestamp: now,
         session_id: runId,
         event_key: `biz:${bp.prefix}`,
