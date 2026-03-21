@@ -8,10 +8,14 @@
 - 패키지: `weighted-index`, `bit-index`, `permission-engine`, `index-meta`, `demo-snapshot`
 - 네이밍: bare name (npm 공개 배포 대상)
 - 빌드: tsup → ESM + CJS dual format
-- 빌드 순서: weighted-index → bit-index → permission-engine → platform-demo
+- 빌드 순서: pnpm workspace가 의존성 기반으로 자동 관리. 수동 순서 불필요
+- 인코딩: weighted-index → bit-index → permission-engine
+- 플랫폼: @qa-sdk/core → @qa-sdk/logger → @qa-sdk/codec → @qa-sdk/context → @qa-sdk/sdk
 
 ### QA 플랫폼 (@qa-sdk/* scoped)
-- 패키지: `@qa-sdk/core`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/cli`
+- 패키지: `@qa-sdk/core`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
+- 서비스 (unscoped): `gate-service`, `query-service`
+- `@qa-sdk/decode-service`
 - 네이밍: `@qa-sdk/*` scope (내부 플랫폼 서비스)
 - 빌드: tsc → ESM only (예외: cli는 tsup ESM only + shebang)
 
@@ -26,6 +30,14 @@
 - platform-demo tsc 우회: `pnpm --filter platform-demo exec vite build --mode development`
 
 ## Package Structure
+
+### SDK 구조 (3분할)
+- `@qa-sdk/logger`: QaLogger, Transport, TraceContext, Masking (core만 의존)
+- `@qa-sdk/codec`: createIndexSDK, DimWireCodec (core + weighted-index)
+- `@qa-sdk/context`: createQaContext, CatalogProvider (core)
+- `@qa-sdk/sdk`: 3개를 re-export하는 facade (하위 호환)
+- `@qa-sdk/apm`: ApmLogger — QaLogger + PartialBinder 통합
+- `@qa-sdk/browser`: QaMonitor — 브라우저 전용 래퍼
 
 ### weighted-index
 - `packages/weighted-index/src/index.ts` — 모든 public export 관리; 새 함수 추가 시 여기도 업데이트
@@ -59,7 +71,7 @@
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
 
 ### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
-- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (59 axes, 28 prefixes, 6 tables)
+- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (67축, 34 prefixes, 6 tables)
   - `VersionedAxis`: 버전별 entries/capacity/ko
   - `DimRef` 3종: `axis` (enum 직접) / `prefix_ref` (다른 prefix 주소) / `table_ref` (DB 테이블 타입 참조)
   - `PrefixDef`: N-D 주소 공간 (축 조합 + 버전별 axis version 핀)
@@ -79,6 +91,7 @@
   - `resolveAddress` — 재귀 의미 해석 (prefix_ref → 참조 prefix까지 풀어냄)
   - `decomposeAddress` — 차원 분해 (prefix_ref의 하위 좌표 포함)
   - `verifyRoundTrip` — 전 범위 encode↔decode 정합성 검증
+- 모든 runtime 함수(`encodePrefix`, `decodePrefix`, `resolveAddress` 등)는 `@qa-sdk/core/catalog/runtime.ts`가 canonical 구현. demo-accessors는 core를 re-export하는 하위 호환 레이어
 - `packages/demo-snapshot/src/demo-compat.ts` — DEMO_CATALOG에서 기존 상수/함수 파생 (하위 호환)
 - `packages/demo-snapshot/src/demo-bridge.ts` — 외부 시스템 변환 (catalogToRegistryInput, catalogToPrefixCodecInput)
 - 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains (순환 금지)
@@ -113,7 +126,7 @@
 
 ### spec-core — 설계 지식 그래프 + 수렴 분석
 - `packages/spec-core/` — DKG(Design Knowledge Graph) + 수렴 레이어 + 전파 파이프라인
-- 서브 경로 exports: `"."` (shared+schema+spec), `"./analysis"` (dkg+convergence), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`
+- 서브 경로 exports: `"."` (shared+schema+spec), `"./dkg"` (DKG 그래프+스킬), `"./convergence"` (수렴 분석), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`, `"./analysis"` (deprecated — ./dkg + ./convergence 사용)
 - **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약)
 - **convergence/**: 5개 분석 서비스 + 집계/측정/필터/기록
   - `symbol-comparator.ts` — 축/prefix Jaccard 유사도 비교 (merge/alias/review 판정)
@@ -183,7 +196,8 @@
 - `D1SqlDriver` (`d1-driver.ts`) — Cloudflare D1 엣지용
 - `createSqliteDriver(options)` — 팩토리. `{ driver: "node"|"better", path, schema }` 런타임 선택
 - 생성자 `schema` 파라미터: 생략 시 index-meta 전체 DDL, `null` 전달 시 bare driver (서비스별 자체 스키마 적용)
-- 서비스별 env 설정: `SQLITE_DRIVER` (node|better), `SQLITE_PATH` (서비스별 분리 — gate-service.sqlite, query-service.sqlite 등)
+- 서비스별 env 설정: `SQLITE_DRIVER` (node|better) — gate-service, query-service만 지원. registry-service는 NodeSqliteDriver 고정
+- `SQLITE_PATH` — 서비스별 분리 (gate-service.sqlite, query-service.sqlite 등). registry-service 기본값 `:memory:` (운영 시 반드시 설정)
 - DkgSqliteStore `catalog_id` 컬럼: dkg_nodes/dkg_edges에 마이그레이션 자동 추가. 기본값 "demo". 멀티 카탈로그 격리용
 - 서비스 포트 레지스트리: registry-server(3100), ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600). 각 서비스 시작 시 충돌 경고
 
@@ -266,6 +280,17 @@ ingest-server Phase 2 완료
 | `CONSTRAINT_GATE_DKG_PATH` | — | registry-service | DKG SQLite 경로 |
 | `POST_ACTIVATION_HOOK_ENABLED` | `false` | registry-service | 활성화 후 DKG 기록 |
 | `POST_ACTIVATION_DKG_PATH` | — | registry-service | DKG SQLite 경로 |
+| `TRACE_DATABASE_URL` | — (필수) | ingest-server | PostgreSQL 연결 URL |
+| `REDIS_URL` | — | ingest-server | TASK_QUEUE_ENABLED=true 시 필수 |
+| `REGISTRY_URL` | — | ingest-server | 스키마 검증용 레지스트리 URL |
+| `REGISTRY_VALIDATION_MODE` | `"warn"` | ingest-server | strict/warn/off |
+| `SQLITE_PATH` | `":memory:"` | registry-service | SQLite 경로 (운영: 반드시 설정) |
+| `DATABASE_URL` | — (필수) | registry-server | PostgreSQL 연결 URL |
+| `GATE_SERVICE_URL` | — | query-service | gate-service 연동 URL |
+| `QUERY_DEFAULT_STRATEGY` | `"most-specific"` | query-service | 질의 전략 |
+| `QUERY_GATE_FAILURE_MODE` | `"fail-open"` | query-service | gate 실패 시 동작 |
+| `DECODE_MAP_SOURCE` | — | decode-service | DecodeMap JSON 파일/URL |
+| `CACHE_TTL_MS` | `60000` | decode-service | 디코더 캐시 TTL (ms) |
 
 ### CLI 통합
 - `qa-sdk dkg converge [--persist] [--verbose]` — metrics + convergeChain + systemHealthChain 통합 실행
@@ -274,7 +299,7 @@ ingest-server Phase 2 완료
 
 ### Dev Dashboard
 - `DEV_DASHBOARD_ENABLED=true` → `http://localhost:3300/dev/` 접속
-- **Flow Map**: Schema(59축) → Prefix(28개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
+- **Flow Map**: Schema(67축) → Prefix(34개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
 - **Metrics**: 6종 metric 카테고리 카드 (headroom, skew, coverage, overlap, conflict, health)
 - **Timeline**: 의사결정/관측/버전 이벤트 시간순 (루프 닫힘 표시)
 - **WebSocket**: `/dev/ws` — 10초 push (overview+metrics). 연결 끊기면 30초 폴링 fallback
@@ -312,7 +337,7 @@ ingest-server Phase 2 완료
 - **CatalogRegistry**: `@qa-sdk/core/catalog` — 인메모리 Map<id, Catalog>. 멀티 카탈로그 런타임 관리. defaultId "demo"
 - **DEMO_CATALOG**: demo-snapshot의 인스턴스. `id: "demo"`, `name: "쇼핑 데모"`. 25개 prefix에 `meta: PrefixMeta` 포함. `deepFreeze` 적용 (런타임 변경 방어)
 - **DkgConfig**: bootstrap.ts의 하드코딩 데이터를 선언적 구조로 추출. `DEMO_DKG_CONFIG` (demo-snapshot)
-- **bootstrapDkg**: `(options?: { catalog?, config?, date? })` — 기본값 DEMO_CATALOG + DEMO_DKG_CONFIG
+- **bootstrapDkg**: `(options: { catalog, config, date? })` — catalog과 config 필수. 기본값 없음. CLI는 DEMO_CATALOG + DEMO_DKG_CONFIG 전달
 - **deriveMeta**: `core/catalog/derive-meta.ts` — prefix.meta 있으면 사용, 없으면 구조 기반 추론
 - **flattenForBrowser**: `core/catalog/browser-flatten.ts` — Catalog → BrowserCatalog 변환
 - **BROWSER_CATALOG**: `viz-3d/scripts/generate-browser-catalog.ts` 자동 생성 (수동 동기화 제거)
@@ -326,9 +351,11 @@ ingest-server Phase 2 완료
   - `PATCH /prefixes/:id` — category, meta, labels 병합 패치
   - `GET/PATCH/POST/DELETE /catalogs/:cid/axes/:id` — axis 프로필 CRUD
   - `POST /catalogs/:cid/axes/:id/entries` — entry 추가 (headroom 자동 검증)
-  - 서버 시작 시 DEMO_CATALOG → catalog blob + axis 프로필 59개 자동 seed
+  - 서버 시작 시 DEMO_CATALOG → catalog blob + axis 프로필 67개 자동 seed
   - 변경 시 `onCatalogChange`/`onAxisChange` 콜백 → dev dashboard `refresh()` 캐시 무효화
 - **Catalog → Registry fetch**: `CONVERGENCE_REGISTRY_URL` 설정 시 graph provider가 API에서 catalog fetch (실패 시 static fallback)
+- **core subpath exports**: `.` (전체), `./catalog` (Catalog 타입 + runtime 함수), `./platform` (QA 플랫폼 전용 타입/포트/서버 유틸)
+- **catalog runtime 함수**: `encodePrefix`, `decodePrefix`, `encodePrefixByValue`, `resolveAddress`, `decomposeAddress`, `latestPrefixVersion` 등이 `@qa-sdk/core/catalog/runtime.ts`에 canonical 구현. demo-snapshot은 re-export
 - 카탈로그가 유일한 입력이면 나머지는 전부 파생되어야 한다
 
 ## Browser Encode/Decode 단일 출처

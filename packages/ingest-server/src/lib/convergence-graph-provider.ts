@@ -6,6 +6,13 @@
  */
 
 import type { Logger } from "pino";
+import type {
+  AnalysisModulePort,
+  StoreModulePort,
+  DemoSnapshotModulePort,
+  DkgSqliteStorePort,
+  GraphRegistryPort,
+} from "../types/spec-core-ports.js";
 
 export interface GraphProviderConfig {
   /** 주입할 카탈로그 (없으면 registry fetch → DEMO_CATALOG fallback) */
@@ -20,9 +27,9 @@ export interface GraphProviderConfig {
 }
 
 export interface GraphProviderResult {
-  getGraph: () => unknown;
+  getGraph: () => GraphRegistryPort | null;
   getCatalog: () => unknown;
-  getDkgStore: () => unknown | undefined;
+  getDkgStore: () => DkgSqliteStorePort | null;
   close: () => void;
 }
 
@@ -39,18 +46,18 @@ export interface GraphProviderResult {
 export async function createGraphProvider(
   config: GraphProviderConfig,
 ): Promise<GraphProviderResult> {
-  // spec-core 동적 import
+  // spec-core 동적 import — unknown 모듈을 port 인터페이스로 단언
   const [analysisModule, storeModule] = await Promise.all([
-    import("@qa-sdk/spec-core/analysis"),
-    import("@qa-sdk/spec-core/store"),
+    import("@qa-sdk/spec-core/analysis") as unknown as AnalysisModulePort,
+    import("@qa-sdk/spec-core/store") as unknown as StoreModulePort,
   ]);
 
   // demo-snapshot도 동적 import (catalog + config 제공)
-  const demoSnapshot = await import("demo-snapshot");
+  const demoSnapshot = await import("demo-snapshot") as unknown as DemoSnapshotModulePort;
 
-  let cachedGraph: unknown = null;
+  let cachedGraph: GraphRegistryPort | null = null;
   let cachedCatalog: unknown = null;
-  let dkgStore: unknown = null;
+  let dkgStore: DkgSqliteStorePort | null = null;
 
   /** registry-service에서 카탈로그를 fetch. 실패 시 null */
   async function fetchCatalogFromRegistry(): Promise<unknown | null> {
@@ -84,7 +91,7 @@ export async function createGraphProvider(
 
     if (config.dkgSqlitePath) {
       // SQLite에서 기존 DKG 로드
-      const store = new (storeModule as any).DkgSqliteStore(
+      const store = new storeModule.DkgSqliteStore(
         config.dkgSqlitePath,
         config.catalogId ?? "demo",
       );
@@ -94,14 +101,14 @@ export async function createGraphProvider(
       // 노드가 비어있으면 부트스트랩 후 저장
       if (loaded.getAllNodes().length === 0) {
         config.logger?.info("DKG store empty, bootstrapping...");
-        cachedGraph = (analysisModule as any).bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
+        cachedGraph = analysisModule.bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
         store.saveGraph(cachedGraph, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
       // 인메모리 부트스트랩
-      cachedGraph = (analysisModule as any).bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
+      cachedGraph = analysisModule.bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
     }
 
     config.logger?.info("convergence graph provider initialized");
@@ -114,7 +121,7 @@ export async function createGraphProvider(
   }
 
   return {
-    getGraph(): unknown {
+    getGraph(): GraphRegistryPort | null {
       ensureInit();
       return cachedGraph;
     },
@@ -122,13 +129,13 @@ export async function createGraphProvider(
       ensureInit();
       return cachedCatalog;
     },
-    getDkgStore(): unknown | undefined {
+    getDkgStore(): DkgSqliteStorePort | null {
       ensureInit();
       return dkgStore;
     },
     close(): void {
-      if (dkgStore && typeof (dkgStore as any).close === "function") {
-        (dkgStore as any).close();
+      if (dkgStore) {
+        dkgStore.close();
       }
       cachedGraph = null;
       cachedCatalog = null;

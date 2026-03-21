@@ -115,7 +115,7 @@ async function startServer() {
       let patternFns: PatternFunctions | undefined;
       try {
         const sa = specAnalysis as any;
-        if (sa.classifyPattern && sa.DEMO_PATTERN_RULES) {
+        if (env.PATTERN_CLASSIFICATION_ENABLED && sa.classifyPattern && sa.DEMO_PATTERN_RULES) {
           patternFns = {
             classifyPattern: sa.classifyPattern,
             aggregatePatternStats: sa.aggregatePatternStats,
