@@ -10,11 +10,16 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, type DemoCatalog } from "demo-snapshot";
 import { catalogToSchemaSnapshot } from "../loader/catalog-bridge.js";
 
+// DemoCatalog → DemoCatalog 타입 (Record<string, ...> 기반이라 동적 인덱싱 가능)
+const catalog: DemoCatalog = DEMO_CATALOG;
+// spec-core는 demo-snapshot에 직접 의존 안 하므로 FullCatalogInput으로 변환
+const catalogForSnapshot = catalog as Parameters<typeof catalogToSchemaSnapshot>[0];
+
 describe("Version Resolution — 전체 prefix 라운드트립", () => {
-  const prefixes = Object.entries(DEMO_CATALOG.prefixes);
+  const prefixes = Object.entries(catalog.prefixes);
 
   it(`${prefixes.length}개 prefix의 최신 version에서 encode/decode 라운드트립 성공`, () => {
     let pass = 0;
@@ -22,23 +27,25 @@ describe("Version Resolution — 전체 prefix 라운드트립", () => {
     const errors: string[] = [];
 
     for (const [prefixId, prefix] of prefixes) {
-      const ver = prefix.versions[prefix.versions.length - 1].version;
+      const latestVer = prefix.versions[prefix.versions.length - 1];
+      const ver = latestVer.version;
       const dims: Record<string, string | number> = {};
       let canTest = true;
 
       for (const label of prefix.labels) {
-        const dim = (prefix.dims as any)[label];
+        const dim = prefix.dims[label];
+        if (!dim) { canTest = false; break; }
         if (dim.kind === "axis") {
           const axisId = dim.axisId;
-          const axis = (DEMO_CATALOG.axes as any)[axisId];
+          const axis = catalog.axes[axisId];
           if (!axis) { canTest = false; break; }
-          const versionKey = (prefix.versions[prefix.versions.length - 1].axisVersions as any)?.[label];
+          const versionKey = latestVer.axisVersions[label];
           if (!versionKey) { canTest = false; break; }
           const snap = axis.versions[versionKey];
           if (!snap?.entries?.length) { canTest = false; break; }
           dims[label] = snap.entries[0];
         } else if (dim.kind === "prefix_ref") {
-          const refEntries = (prefix.versions[prefix.versions.length - 1] as any).refEntries?.[label];
+          const refEntries = latestVer.refEntries?.[label];
           if (!refEntries?.values?.length) { canTest = false; break; }
           dims[label] = refEntries.values[0];
         } else {
@@ -49,8 +56,8 @@ describe("Version Resolution — 전체 prefix 라운드트립", () => {
       if (!canTest) continue;
 
       try {
-        const addr = encodePrefixByValue(DEMO_CATALOG, prefixId, ver, dims);
-        decodePrefix(DEMO_CATALOG, prefixId, ver, addr);
+        const addr = encodePrefixByValue(catalog, prefixId, ver, dims);
+        decodePrefix(catalog, prefixId, ver, addr);
         pass++;
       } catch (e: any) {
         fail++;
@@ -66,7 +73,7 @@ describe("Version Resolution — 전체 prefix 라운드트립", () => {
   });
 
   it("latestVersion이 catalog의 마지막 version과 일치", () => {
-    for (const [prefixId, prefix] of prefixes) {
+    for (const [, prefix] of prefixes) {
       const expected = prefix.versions[prefix.versions.length - 1].version;
       // latestPrefixVersion 패턴과 동일
       expect(expected).toBeTruthy();
@@ -77,7 +84,7 @@ describe("Version Resolution — 전체 prefix 라운드트립", () => {
 
 describe("catalogToSchemaSnapshot — 전체 포함 검증", () => {
   it("모든 축이 snapshot에 포함됨", () => {
-    const snapshot = catalogToSchemaSnapshot(DEMO_CATALOG as any);
+    const snapshot = catalogToSchemaSnapshot(catalogForSnapshot);
     const snapshotAxes = new Set(snapshot.axes.map(a => a.id));
     const catalogAxes = Object.keys(DEMO_CATALOG.axes);
 
@@ -88,7 +95,7 @@ describe("catalogToSchemaSnapshot — 전체 포함 검증", () => {
   });
 
   it("모든 prefix가 snapshot에 포함됨", () => {
-    const snapshot = catalogToSchemaSnapshot(DEMO_CATALOG as any);
+    const snapshot = catalogToSchemaSnapshot(catalogForSnapshot);
     const snapshotPrefixes = new Set(snapshot.composites.map(c => c.id));
     const catalogPrefixes = Object.keys(DEMO_CATALOG.prefixes);
 
@@ -99,7 +106,7 @@ describe("catalogToSchemaSnapshot — 전체 포함 검증", () => {
   });
 
   it("축 capacity가 entries보다 큼", () => {
-    const snapshot = catalogToSchemaSnapshot(DEMO_CATALOG as any);
+    const snapshot = catalogToSchemaSnapshot(catalogForSnapshot);
     for (const axis of snapshot.axes) {
       expect(axis.capacity).toBeGreaterThanOrEqual(axis.entries.length);
     }
