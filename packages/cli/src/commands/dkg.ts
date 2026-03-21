@@ -5,7 +5,7 @@
  * 페이지네이션 지원.
  */
 
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
@@ -36,11 +36,37 @@ import {
   entryAddChain,
   systemHealthChain,
   convergeChain,
+  collectMetrics,
+  metricsToObservations,
+  METRIC_DEFS,
+  aggregateUsageData,
+  analyzeCollectionHealth,
+  analyzeEntryCoverage,
 } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode } from "@qa-sdk/spec-core/analysis";
+import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join } from "node:path";
 import { mkdirSync, existsSync } from "node:fs";
+import { execSync } from "node:child_process";
+
+// ── Catalog Context ──────────────────────────────────
+// CLI에서 --catalog 옵션으로 주입된 카탈로그.
+// setCatalogContext()로 설정하면 DKG 명령어가 해당 카탈로그를 사용.
+
+let _catalogOverride: unknown | undefined;
+let _configOverride: unknown | undefined;
+
+/**
+ * DKG 명령어에서 사용할 카탈로그/설정을 주입한다.
+ * CLI의 --catalog 옵션에서 호출됨.
+ */
+export function setCatalogContext(catalog?: unknown, config?: unknown): void {
+  _catalogOverride = catalog;
+  _configOverride = config;
+  // 카탈로그가 바뀌면 캐시 무효화
+  cachedGraph = null;
+}
 
 // ── Shared ──────────────────────────────────────────
 
@@ -60,6 +86,16 @@ function getStore(): DkgSqliteStore {
 
 function getGraph(): GraphRegistry {
   if (!cachedGraph) {
+    // 커스텀 카탈로그가 있으면 항상 fresh bootstrap (SQLite 캐시 우회)
+    if (_catalogOverride) {
+      cachedGraph = bootstrapDkg({
+        catalog: _catalogOverride as any,
+        config: _configOverride as any,
+      });
+      console.log(`  (bootstrapped with custom catalog)`);
+      return cachedGraph;
+    }
+
     const store = getStore();
     const stats = store.stats();
 
@@ -1451,6 +1487,24 @@ export function dkgRun(skillId: string, args: string[]): void {
         console.log(`    ${icon} ${step.step}: ${step.message}`);
       }
       console.log(`\n  ${result.summary}`);
+
+      // ── metric 통합 출력 ──
+      const chainMetrics = collectMetrics(DEMO_CATALOG, graph, null);
+      const relevantMetrics = chainMetrics.filter(m =>
+        m.id.startsWith("metric:health") ||
+        m.id.startsWith("metric:conflict") ||
+        m.id.startsWith("metric:overlap") ||
+        m.id.startsWith("metric:headroom"),
+      );
+      if (relevantMetrics.length > 0) {
+        const warn = relevantMetrics.filter(m => m.status !== "ok");
+        console.log(`\n  ── Metrics (${relevantMetrics.length}건, ${warn.length} issues) ──`);
+        for (const m of relevantMetrics.filter(m => m.status !== "ok")) {
+          const icon = m.status === "warning" ? "⚠" : "🔴";
+          console.log(`    ${icon} ${m.id}: ${m.detail ?? `value=${m.value}`}`);
+        }
+        if (warn.length === 0) console.log(`    ✅ 모든 metric 정상`);
+      }
       break;
     }
 
@@ -1500,6 +1554,445 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(`  output: ${skillNode.output}`);
       break;
   }
+}
+
+// ── dkg metrics ─────────────────────────────────────
+
+export function dkgMetrics(): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  // usage data 로드 (있으면)
+  const recent = store.loadRecentVersionUsages(1);
+  const usage = recent.length > 0 && recent[0].versionUsages.length > 0
+    ? (() => {
+        // minimal UsageData 구성
+        return {
+          entryUsages: [] as any[],
+          addressUsages: [] as any[],
+          coOccurrences: [] as any[],
+          versionUsages: recent[0].versionUsages,
+          collectionPeriod: { from: recent[0].collectedAt, to: recent[0].collectedAt },
+        } as any;
+      })()
+    : null;
+
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+
+  console.log(`\n══ Metrics Dashboard ══`);
+  console.log(`  정의: ${METRIC_DEFS.length}종, 측정: ${metrics.length}건\n`);
+
+  // status별 카운트
+  const ok = metrics.filter(m => m.status === "ok").length;
+  const warning = metrics.filter(m => m.status === "warning").length;
+  const critical = metrics.filter(m => m.status === "critical").length;
+
+  console.log(`  ✅ ok: ${ok}  ⚠ warning: ${warning}  🔴 critical: ${critical}\n`);
+
+  // category별 그룹핑
+  const byCategory = new Map<string, MetricValue[]>();
+  for (const m of metrics) {
+    const cat = m.id.split(":")[1] ?? "unknown";
+    const list = byCategory.get(cat) ?? [];
+    list.push(m);
+    byCategory.set(cat, list);
+  }
+
+  for (const [cat, catMetrics] of byCategory) {
+    console.log(`  ── ${cat} ──`);
+    for (const m of catMetrics) {
+      const icon = m.status === "ok" ? "✅" : m.status === "warning" ? "⚠" : "🔴";
+      const target = m.target ? ` (${m.target})` : "";
+      console.log(`    ${icon} ${m.id.padEnd(35)} value=${String(m.value).padEnd(5)} ${m.detail ?? ""}${target}`);
+    }
+    console.log("");
+  }
+
+  // 자동 Observation 후보
+  const autoObs = metricsToObservations(metrics);
+  if (autoObs.length > 0) {
+    console.log(`  ── 자동 Observation 후보 (${autoObs.length}건) ──`);
+    for (const obs of autoObs) {
+      console.log(`    ${obs.id}: ${obs.finding}`);
+    }
+    console.log(`\n  이 Observation을 DKG에 기록하려면 각각 dkg observe로 수동 등록하세요.`);
+  }
+}
+
+// ── dkg self-check ──────────────────────────────────
+
+const SELF_CHECK_PKGS = [
+  { name: "spec-core", filter: "@qa-sdk/spec-core", hasTest: true, hasBuild: true },
+  { name: "cli", filter: "@qa-sdk/cli", hasTest: false, hasBuild: true },
+  { name: "sdk", filter: "@qa-sdk/sdk", hasTest: true, hasBuild: true },
+  { name: "demo-snapshot", filter: "demo-snapshot", hasTest: true, hasBuild: true },
+  { name: "weighted-index", filter: "weighted-index", hasTest: true, hasBuild: true },
+  { name: "bit-index", filter: "bit-index", hasTest: true, hasBuild: true },
+  { name: "permission-engine", filter: "permission-engine", hasTest: true, hasBuild: true },
+  { name: "index-meta", filter: "index-meta", hasTest: true, hasBuild: true },
+  { name: "platform-demo", filter: "platform-demo", hasTest: false, hasBuild: true },
+  { name: "ingest-server", filter: "@qa-sdk/ingest-server", hasTest: true, hasBuild: true },
+  { name: "registry-service", filter: "@qa-sdk/registry-service", hasTest: true, hasBuild: true },
+  { name: "e2e", filter: "@qa-sdk/e2e", hasTest: false, hasBuild: false },
+];
+
+interface SelfCheckResult {
+  pkg: string;
+  kind: "build" | "test";
+  result: string;
+  tests?: number;
+  passed?: number;
+  failed?: number;
+  durationMs?: number;
+}
+
+export function dkgSelfCheck(): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  const now = new Date().toISOString();
+  const runId = `self-check-${Date.now()}`;
+  const results: SelfCheckResult[] = [];
+  const cwd = process.env.HOME ? join(process.env.HOME, "workflow/qa-sdk") : ".";
+
+  console.log(`\n══ Self-Check ══`);
+  console.log(`  run: ${runId}\n`);
+
+  // ════════════════════════════════════════════════════════════
+  //  Step 1: 빌드/테스트 실행
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`  ── Build ──`);
+  for (const pkg of SELF_CHECK_PKGS) {
+    if (!pkg.hasBuild) {
+      results.push({ pkg: pkg.name, kind: "build", result: "skipped", durationMs: 0 });
+      console.log(`    ⏭ ${pkg.name.padEnd(20)} (no build script)`);
+      continue;
+    }
+    const t0 = Date.now();
+    let result: string;
+    try {
+      execSync(`pnpm --filter ${pkg.filter} build`, { cwd, stdio: "pipe", timeout: 60000 });
+      result = "success";
+    } catch (err: any) {
+      const stderr = (err.stderr?.toString() ?? "") + (err.stdout?.toString() ?? "");
+      result = stderr.includes("TS") ? "type-error" : "failure";
+    }
+    const dur = Date.now() - t0;
+    results.push({ pkg: pkg.name, kind: "build", result, durationMs: dur });
+    const icon = result === "success" ? "✅" : result === "type-error" ? "🔴" : "⚠";
+    console.log(`    ${icon} ${pkg.name.padEnd(20)} ${result} (${dur}ms)`);
+  }
+
+  console.log(`\n  ── Test ──`);
+  for (const pkg of SELF_CHECK_PKGS) {
+    if (!pkg.hasTest) {
+      console.log(`    ⏭ ${pkg.name.padEnd(20)} (no tests)`);
+      continue;
+    }
+    const t0 = Date.now();
+    let result: string;
+    let tests = 0, passed = 0, failed = 0;
+    try {
+      const output = execSync(`pnpm --filter ${pkg.filter} test 2>&1`, { cwd, stdio: "pipe", timeout: 120000 }).toString();
+      const testsMatch = output.match(/Tests\s+(\d+)\s+passed/);
+      const altPassMatch = output.match(/(\d+)\s+passed\s+\((\d+)\)/);
+      const failMatch = output.match(/(\d+)\s+failed/);
+      passed = testsMatch ? parseInt(testsMatch[1])
+        : altPassMatch ? parseInt(altPassMatch[1])
+        : parseInt(output.match(/(\d+) passed/)?.[1] ?? "0");
+      failed = failMatch ? parseInt(failMatch[1]) : 0;
+      tests = passed + failed;
+      result = failed > 0 ? "failed" : "passed";
+    } catch {
+      result = "error";
+    }
+    const dur = Date.now() - t0;
+    results.push({ pkg: pkg.name, kind: "test", result, tests, passed, failed, durationMs: dur });
+    const icon = result === "passed" ? "✅" : result === "failed" ? "⚠" : "🔴";
+    const detail = result === "error" ? "실행 실패" : `${passed}/${tests} (${dur}ms)`;
+    console.log(`    ${icon} ${pkg.name.padEnd(20)} ${result} ${detail}`);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase A: AddressContextRecord 생성 → aggregateUsageData
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase A: aggregate ──`);
+  const records: AddressContextRecord[] = [];
+
+  for (const r of results) {
+    const prefixId = r.kind === "build" ? "build_event" : "test_event";
+    const resultAxis = r.kind === "build" ? "build_result" : "test_result";
+    try {
+      const address = encodePrefixByValue(DEMO_CATALOG, prefixId, "v1", {
+        qa_pkg: r.pkg,
+        [resultAxis]: r.result,
+      });
+      records.push({
+        address_context: { [prefixId]: `${prefixId}:v1:${address}` },
+        timestamp: now,
+        session_id: runId,
+        event_key: `${r.kind}:${r.pkg}`,
+        execution_mode: "live" as const,
+        execution_id: runId,
+      });
+    } catch {
+      // entry가 카탈로그에 없으면 건너뜀 (예: type-error는 build_result에 있음)
+    }
+  }
+
+  const usage = aggregateUsageData(DEMO_CATALOG, records);
+  console.log(`    records: ${records.length}건 → entryUsage: ${usage.entryUsages.length}, addressUsage: ${usage.addressUsages.length}, coOccurrence: ${usage.coOccurrences.length}`);
+  console.log(`    versionUsage: ${usage.versionUsages.length}건`);
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase B: convergence 분석
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase B: convergence ──`);
+
+  // B-1: collection health
+  const health = analyzeCollectionHealth(DEMO_CATALOG, records);
+  const healthIcon = health.healthRate >= 0.9 ? "✅" : health.healthRate >= 0.5 ? "⚠" : "🔴";
+  console.log(`    ${healthIcon} 건전성: ${health.summary}`);
+
+  // B-2: entry coverage
+  const coverage = analyzeEntryCoverage(DEMO_CATALOG, usage.entryUsages, usage.addressUsages);
+  const buildCov = coverage.prefixes.find(p => p.prefixId === "build_event");
+  const testCov = coverage.prefixes.find(p => p.prefixId === "test_event");
+  if (buildCov) console.log(`    build_event: ${buildCov.summary}`);
+  if (testCov) console.log(`    test_event:  ${testCov.summary}`);
+  console.log(`    전체: ${coverage.summary}`);
+
+  // B-3: metrics with usage data
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+  const metricIssues = metrics.filter(m => m.status !== "ok");
+  console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase C: 관측 자동 해소
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase C: auto-resolve ──`);
+  const existingObs = graph.getNodesByKind("observation") as any[];
+  let autoResolved = 0;
+
+  // 이전 빌드 실패 observation — 이번에 해당 패키지가 전부 성공하면 해소
+  const prevBuildObs = existingObs.filter(
+    o => o.id.startsWith("OBS-SELF-BUILD-") && !o.resolution,
+  );
+  for (const obs of prevBuildObs) {
+    const prevFailed = (obs.subjects as string[]) ?? [];
+    const stillFailing = prevFailed.filter(pkg =>
+      results.some(r => r.kind === "build" && r.pkg === pkg && r.result !== "success"),
+    );
+    if (stillFailing.length === 0 && prevFailed.length > 0) {
+      // 전부 성공 → auto-resolve
+      const resolved = {
+        ...obs,
+        resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}에서 전부 성공 확인` },
+      };
+      store.saveNodes([resolved], [], "auto");
+      graph.replaceNode(resolved);
+      autoResolved++;
+      console.log(`    auto-resolved: ${obs.id} (${prevFailed.join(",")}: 이번에 성공)`);
+    }
+  }
+
+  // 이전 테스트 실패 observation
+  const prevTestObs = existingObs.filter(
+    o => o.id.startsWith("OBS-SELF-TEST-") && !o.resolution,
+  );
+  for (const obs of prevTestObs) {
+    const prevFailed = (obs.subjects as string[]) ?? [];
+    const stillFailing = prevFailed.filter(pkg =>
+      results.some(r => r.kind === "test" && r.pkg === pkg && r.result !== "passed"),
+    );
+    if (stillFailing.length === 0 && prevFailed.length > 0) {
+      const resolved = {
+        ...obs,
+        resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}에서 전부 통과 확인` },
+      };
+      store.saveNodes([resolved], [], "auto");
+      graph.replaceNode(resolved);
+      autoResolved++;
+      console.log(`    auto-resolved: ${obs.id}`);
+    }
+  }
+
+  // 이전 metric observation
+  const prevMetricObs = existingObs.filter(
+    o => o.id.startsWith("OBS-SELF-METRIC-") && !o.resolution,
+  );
+  for (const obs of prevMetricObs) {
+    const currentCritical = metricIssues.filter(m => m.status === "critical");
+    if (currentCritical.length === 0) {
+      const resolved = {
+        ...obs,
+        resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}에서 critical 0건` },
+      };
+      store.saveNodes([resolved], [], "auto");
+      graph.replaceNode(resolved);
+      autoResolved++;
+      console.log(`    auto-resolved: ${obs.id} (critical 해소)`);
+    }
+  }
+
+  if (autoResolved === 0) console.log(`    (해소 대상 없음)`);
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase D: DSL 불변조건 검증
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase D: invariant ──`);
+  const invariantViolations: string[] = [];
+
+  // dsl-dev 불변조건 1: "빌드 실패 후 테스트 금지" (skipped 제외)
+  for (const r of results) {
+    if (r.kind !== "build" || r.result === "success" || r.result === "skipped") continue;
+    // 이 패키지에 테스트가 실행됐는가?
+    const testRan = results.find(t => t.kind === "test" && t.pkg === r.pkg);
+    if (testRan) {
+      invariantViolations.push(`${r.pkg}: 빌드 ${r.result}인데 테스트 실행됨 (${testRan.result})`);
+    }
+  }
+
+  // dsl-dev 불변조건 2: "테스트 실패 시 해당 패키지의 빌드 성공이 선행"
+  for (const r of results) {
+    if (r.kind !== "test" || r.result === "passed") continue;
+    const buildResult = results.find(b => b.kind === "build" && b.pkg === r.pkg);
+    if (!buildResult || buildResult.result !== "success") {
+      invariantViolations.push(`${r.pkg}: 테스트 ${r.result}인데 빌드 성공이 선행되지 않음`);
+    }
+  }
+
+  if (invariantViolations.length > 0) {
+    console.log(`    🔴 dsl-dev invariant 위반 ${invariantViolations.length}건:`);
+    for (const v of invariantViolations) console.log(`      ${v}`);
+    // observation 생성
+    const hasExistingInv = existingObs.some(o => o.id.startsWith("OBS-SELF-INVARIANT-") && !o.resolution);
+    if (!hasExistingInv) {
+      const obs = {
+        kind: "observation" as const,
+        id: `OBS-SELF-INVARIANT-${runId}`,
+        date: now.slice(0, 10),
+        source: "metric" as const,
+        intent: "action-needed" as const,
+        subjects: ["dsl-dev", ...invariantViolations.map(v => v.split(":")[0])],
+        finding: `dsl-dev invariant 위반: ${invariantViolations.join("; ")}`,
+      };
+      store.saveNodes([obs as any], [{ type: "observes", from: obs.id, to: "dsl-dev" }], "auto");
+    }
+  } else {
+    console.log(`    ✅ dsl-dev 불변조건 통과`);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  저장 + 새 Observation 생성
+  // ════════════════════════════════════════════════════════════
+
+  const snapshotId = store.saveUsageSnapshot(usage);
+  const newObservations: Array<{ id: string; finding: string }> = [];
+
+  // 빌드 실패 (skipped 제외, 이전 것이 auto-resolve 됐거나 없을 때만)
+  const failedBuilds = results.filter(r => r.kind === "build" && r.result !== "success" && r.result !== "skipped");
+  const stillHasBuildObs = existingObs.some(o => o.id.startsWith("OBS-SELF-BUILD-") && !o.resolution);
+  if (failedBuilds.length > 0 && !stillHasBuildObs) {
+    const obs = {
+      kind: "observation" as const,
+      id: `OBS-SELF-BUILD-${runId}`,
+      date: now.slice(0, 10),
+      source: "metric" as const,
+      intent: "action-needed" as const,
+      subjects: failedBuilds.map(r => r.pkg),
+      finding: `빌드 실패 ${failedBuilds.length}건: ${failedBuilds.map(r => `${r.pkg}(${r.result})`).join(", ")}`,
+    };
+    store.saveNodes([obs as any], [{ type: "observes", from: obs.id, to: "build_event" }], "auto");
+    newObservations.push(obs);
+  }
+
+  // 테스트 실패
+  const failedTests = results.filter(r => r.kind === "test" && r.result !== "passed");
+  const stillHasTestObs = existingObs.some(o => o.id.startsWith("OBS-SELF-TEST-") && !o.resolution);
+  if (failedTests.length > 0 && !stillHasTestObs) {
+    const obs = {
+      kind: "observation" as const,
+      id: `OBS-SELF-TEST-${runId}`,
+      date: now.slice(0, 10),
+      source: "metric" as const,
+      intent: "action-needed" as const,
+      subjects: failedTests.map(r => r.pkg),
+      finding: `테스트 실패 ${failedTests.length}건: ${failedTests.map(r => `${r.pkg}(${r.result})`).join(", ")}`,
+    };
+    store.saveNodes([obs as any], [{ type: "observes", from: obs.id, to: "test_event" }], "auto");
+    newObservations.push(obs);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  DKG 시그널
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── DKG Signal ──`);
+  const t0 = Date.now();
+  const freshGraph = bootstrapDkg();
+  const bootstrapMs = Date.now() - t0;
+  console.log(`    bootstrap: ${freshGraph.nodeCount} nodes, ${freshGraph.edgeCount} edges (${bootstrapMs}ms)`);
+
+  const constraintAudit = auditAllConstraints(graph);
+  console.log(`    constraints: ${constraintAudit.total} checked, ${constraintAudit.violated} violated`);
+
+  const domainHealth = checkAllDomainsHealth(graph);
+  const unhealthy = domainHealth.filter(r => r.overallHealth !== "healthy");
+  console.log(`    domains: ${domainHealth.length} checked, ${unhealthy.length} unhealthy`);
+
+  // ════════════════════════════════════════════════════════════
+  //  종합
+  // ════════════════════════════════════════════════════════════
+
+  const buildSummary = { success: 0, failure: 0, skipped: 0, total: 0 };
+  const testSummary = { passed: 0, failed: 0, tests: 0, total: 0 };
+  for (const r of results) {
+    if (r.kind === "build") {
+      buildSummary.total++;
+      if (r.result === "success") buildSummary.success++;
+      else if (r.result === "skipped") buildSummary.skipped++;
+      else buildSummary.failure++;
+    } else {
+      testSummary.total++;
+      testSummary.tests += r.tests ?? 0;
+      testSummary.passed += r.passed ?? 0;
+      testSummary.failed += r.failed ?? 0;
+    }
+  }
+
+  // dev-domain 관련 metric만 필터 (self-check의 usage는 build_event/test_event만 포함)
+  const devMetricIssues = metricIssues.filter(m =>
+    m.id.includes("build_event") || m.id.includes("test_event") ||
+    m.id.includes("dev-domain") || m.id.startsWith("metric:conflict") ||
+    m.id.startsWith("metric:headroom:qa_") || m.id.startsWith("metric:headroom:build_") || m.id.startsWith("metric:headroom:test_"),
+  );
+
+  console.log(`\n  ── 저장 ──`);
+  console.log(`  snapshot #${snapshotId} (${records.length} records, entryUsage ${usage.entryUsages.length}건)`);
+  if (autoResolved > 0) console.log(`  auto-resolved: ${autoResolved}건`);
+  if (newObservations.length > 0) {
+    console.log(`  new observations: ${newObservations.length}건`);
+    for (const obs of newObservations) console.log(`    ${obs.id}: ${obs.finding}`);
+  }
+
+  const buildCount = buildSummary.total - buildSummary.skipped;
+  console.log(`\n  ── 종합 ──`);
+  console.log(`  build:      ${buildSummary.success}/${buildCount} success${buildSummary.failure > 0 ? ` (${buildSummary.failure} failed)` : ""}${buildSummary.skipped > 0 ? ` (${buildSummary.skipped} skipped)` : ""}`);
+  console.log(`  test:       ${testSummary.passed}/${testSummary.tests} passed${testSummary.failed > 0 ? ` (${testSummary.failed} failed)` : ""}`);
+  console.log(`  coverage:   build_event ${buildCov ? Math.round(buildCov.coverageRate * 100) : "?"}%, test_event ${testCov ? Math.round(testCov.coverageRate * 100) : "?"}%`);
+  console.log(`  health:     건전성 ${Math.round(health.healthRate * 100)}%`);
+  console.log(`  invariant:  ${invariantViolations.length === 0 ? "통과" : `${invariantViolations.length}건 위반`}`);
+  console.log(`  DKG:        ${freshGraph.nodeCount} nodes${devMetricIssues.length > 0 ? `, ${devMetricIssues.length} dev metric issues` : ""}`);
+  console.log(`  resolved:   ${autoResolved}건 auto-resolved`);
+
+  const hasProblem = buildSummary.failure > 0 || testSummary.failed > 0 || invariantViolations.length > 0 || devMetricIssues.filter(m => m.status === "critical").length > 0;
+  console.log(hasProblem ? `\n  ⚠ 문제 감지` : `\n  ✅ 전체 정상`);
 }
 
 function findArg(args: string[], flag: string): string | undefined {

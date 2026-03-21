@@ -17,8 +17,10 @@ import {
   dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
   dkgService, dkgPrefix, dkgDsl, dkgOverview,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
-  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun,
+  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgSelfCheck,
+  setCatalogContext,
 } from "./commands/dkg.js";
+import { loadCatalog, type LoadedCatalog } from "./catalog-loader.js";
 import {
   cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
   cliImpact, cliListPrefixes, cliListAxes,
@@ -27,13 +29,18 @@ import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
 import { codegen, type CodegenFormat } from "./commands/codegen.js";
 import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
+import { init } from "./commands/init.js";
 
 // ── Usage ────────────────────────────────────────────
 
 const USAGE = `
 qa-sdk — DSL 접근 도구
 
+Global Options:
+  --catalog <path>       카탈로그 파일 (.ts/.js/.json). 기본: qa-sdk.config.ts 또는 DEMO_CATALOG
+
 Usage:
+  qa-sdk init [options]            새 카탈로그 프로젝트 스캐폴딩
   qa-sdk scan git [options]          Git 메타데이터 수집 → SchemaSnapshot
   qa-sdk register [options]          SchemaSnapshot → Registry 등록
   qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)
@@ -79,6 +86,8 @@ Usage:
   qa-sdk dkg resolve <obs> [opts]    관측을 결정으로 해소 (루프 닫기)
   qa-sdk dkg link <obs> --decision   관측 → 결정 연결
   qa-sdk dkg timeline [--open]       시간순 이력
+  qa-sdk dkg metrics                 전체 metric 대시보드
+  qa-sdk dkg self-check              빌드/테스트 자기 진단
   qa-sdk dkg run <skillId> [args]    skill 직접 실행
   qa-sdk dkg export [--output path]  SQLite → JSON
   qa-sdk dkg import <input>          JSON → SQLite
@@ -122,9 +131,29 @@ async function main() {
     return;
   }
 
-  const sub = resolveSubcommand(args);
+  // --catalog 글로벌 옵션 추출
+  const catalogIdx = args.indexOf("--catalog");
+  let catalogPath: string | undefined;
+  const filteredArgs = [...args];
+  if (catalogIdx >= 0 && catalogIdx + 1 < args.length) {
+    catalogPath = args[catalogIdx + 1];
+    filteredArgs.splice(catalogIdx, 2);
+  }
+
+  const sub = resolveSubcommand(filteredArgs);
+
+  // --catalog 옵션이 있거나 CWD에 qa-sdk.config가 있으면 카탈로그 로드 → DKG 컨텍스트 주입
+  if (catalogPath || sub.name.startsWith("dkg")) {
+    const catalog = await loadCatalog(catalogPath);
+    if (catalog.id !== "demo") {
+      // 커스텀 카탈로그 → DKG 컨텍스트 설정
+      setCatalogContext(catalog);
+    }
+  }
 
   switch (sub.name) {
+    case "init":
+      return runInit(sub.rest);
     case "scan git":
       return runScanGit(sub.rest);
     case "register":
@@ -267,6 +296,12 @@ async function main() {
       dkgRun(runSkillId, sub.rest.slice(1));
       return;
     }
+    case "dkg metrics":
+      dkgMetrics();
+      return;
+    case "dkg self-check":
+      dkgSelfCheck();
+      return;
     case "dkg trace":
       if (sub.rest[0]) dkgTrace(sub.rest[0]);
       else console.error("Usage: qa-sdk dkg trace <nodeId>");
@@ -341,7 +376,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import",
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
-    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run",
+    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg self-check",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
@@ -351,6 +386,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   }
   // 1단어 커맨드
   const oneWord = [
+    "init",
     "register", "dry-run", "codegen", "inspect",
     "encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact",
   ];
@@ -711,6 +747,15 @@ function runImpactCmd(argv: string[]) {
   if (axisIdx >= 0) cliImpact({ axis: argv[axisIdx + 1] });
   else if (prefixIdx >= 0) cliImpact({ prefix: argv[prefixIdx + 1] });
   else console.error("Usage: qa-sdk impact --axis <id> or --prefix <id>");
+}
+
+// ── init ─────────────────────────────────────────────
+
+async function runInit(argv: string[]) {
+  const fromIdx = argv.indexOf("--from");
+  await init({
+    from: fromIdx >= 0 ? argv[fromIdx + 1] : undefined,
+  });
 }
 
 // ── DKG helpers ─────────────────────────────────────
