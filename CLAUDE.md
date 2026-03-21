@@ -361,12 +361,29 @@ ingest-server Phase 2 완료
 - **CLI**: `--registry` 옵션 또는 `QA_REGISTRY_URL` 환경변수
 - Registry가 prefix/version/shape/stride의 authority. 코드는 development shortcut.
 
-### Observation Intent
-- `action-needed`: 조치 필요 (metric 감지, suggestion 있는 수동). health metric이 issue로 집계
-- `monitoring`: 추적 관찰 (설계 메모, suggestion 없는 수동). health에서 제외
-- `completed`: 완료 보고. resolve 대상
-- DEC-SEP Decision으로 수용된 overlap → metric ok 처리
-- `prompts → active Decision` 연결된 observation → acknowledged, health 제외
+### 관측 루프 (Observation Loop) — SPEC-OBSERVATION-LOOP
+관측 루프 = observation이 열리면 decision으로 판단하고 resolution으로 닫는 순환 구조.
+
+루프 상태:
+- **열림 (open)**: observation 생성됨. resolution 없음. 미해결.
+- **연결됨 (linked)**: prompts 엣지로 decision에 연결됨. 아직 resolve 안 됨.
+- **닫힘 (closed)**: resolution 설정됨. outcome: accepted|deferred|rejected.
+
+루프 경로:
+1. `dkg observe` → observation 생성 (루프 열기)
+2. `dkg decide` → decision 생성 (판단). `--spec`으로 근거 연결 가능.
+3. `dkg link` → observation → decision prompts 엣지 (촉발 연결)
+4. `dkg resolve` → observation.resolution 설정 (루프 닫기)
+
+intent별 루프 의무:
+- `action-needed`: **반드시 닫아야 함**. health metric이 issue로 집계.
+- `monitoring`: 닫지 않아도 됨. 조건 변화 시 재평가. health에서 제외.
+- `completed`: 닫아야 함 (완료 보고).
+
+자동 해소:
+- metric 기반 observation → metric ok 복귀 시 `resolveRecoveredMetrics()`가 자동 resolve.
+- DEC-SEP Decision으로 수용된 overlap → metric ok 처리.
+- `prompts → active Decision` 연결된 observation → acknowledged, health 제외.
 
 ### Self-Check 레이어
 - **Layer 1 (SLOW)**: CI에서 빌드/테스트 실행 → SelfCheckResult[]

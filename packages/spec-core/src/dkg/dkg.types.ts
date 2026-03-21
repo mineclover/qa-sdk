@@ -91,11 +91,44 @@ export interface ConstraintNode {
   readonly lifecycle: "active" | "suspended" | "retired";
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  관측 루프 (Observation Loop) — SPEC-OBSERVATION-LOOP
+//
+//  정의: observation이 열리면 decision으로 판단하고 resolution으로 닫는 순환 구조.
+//
+//  루프 상태:
+//    열림 (open)    — observation 생성됨. resolution 없음. 미해결.
+//    연결됨 (linked) — prompts 엣지로 decision에 연결됨. 아직 resolve 안 됨.
+//    닫힘 (closed)  — resolution 설정됨. outcome: accepted|deferred|rejected.
+//
+//  루프 경로:
+//    1. 감지: observation 생성 (source: metric|manual|review|runtime)
+//    2. 촉발: observation → prompts → decision (관측이 결정을 촉발)
+//    3. 판단: decision 생성 (type: capacity|merge|deprecate|...)
+//    4. 해소: observation.resolution = { decisionId, outcome, note }
+//
+//  intent별 루프 의무:
+//    action-needed → 반드시 닫아야 함. health metric이 issue로 집계.
+//    monitoring    → 닫지 않아도 됨. 조건 변화 시 재평가. health에서 제외.
+//    completed     → 닫아야 함 (완료 보고).
+//
+//  자동 해소:
+//    metric 기반 observation은 metric이 ok로 복귀하면 자동 resolve.
+//    resolveRecoveredMetrics()가 이를 수행.
+//
+//  CLI:
+//    dkg observe  → 루프 열기
+//    dkg decide   → 판단 생성 (--spec으로 근거 연결 가능)
+//    dkg resolve  → 루프 닫기
+//    dkg link     → observation → decision prompts 엣지 연결
+//    dkg timeline --open → 열린 루프 조회
+// ═══════════════════════════════════════════════════════════════
+
 /**
  * Observation 의도 분류.
  *
- *   "action-needed" — 조치 필요. health metric에서 issue로 집계됨.
- *   "monitoring"    — 추적 관찰. 즉시 조치 불필요. 조건 변화 시 재평가.
+ *   "action-needed" — 조치 필요. health metric에서 issue로 집계됨. 루프를 반드시 닫아야 함.
+ *   "monitoring"    — 추적 관찰. 즉시 조치 불필요. 루프 닫기 의무 없음.
  *   "completed"     — 작업 완료 기록. resolve 대상.
  *
  * intent 미지정 시 기본 판정:
