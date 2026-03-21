@@ -27,18 +27,18 @@ describe("Version Resolution — 전체 prefix 라운드트립", () => {
       let canTest = true;
 
       for (const label of prefix.labels) {
-        const dim = prefix.dims[label];
+        const dim = (prefix.dims as any)[label];
         if (dim.kind === "axis") {
           const axisId = dim.axisId;
-          const axis = DEMO_CATALOG.axes[axisId];
+          const axis = (DEMO_CATALOG.axes as any)[axisId];
           if (!axis) { canTest = false; break; }
-          const versionKey = prefix.versions[prefix.versions.length - 1].axisVersions?.[label];
+          const versionKey = (prefix.versions[prefix.versions.length - 1].axisVersions as any)?.[label];
           if (!versionKey) { canTest = false; break; }
           const snap = axis.versions[versionKey];
           if (!snap?.entries?.length) { canTest = false; break; }
           dims[label] = snap.entries[0];
         } else if (dim.kind === "prefix_ref") {
-          const refEntries = prefix.versions[prefix.versions.length - 1].refEntries?.[label];
+          const refEntries = (prefix.versions[prefix.versions.length - 1] as any).refEntries?.[label];
           if (!refEntries?.values?.length) { canTest = false; break; }
           dims[label] = refEntries.values[0];
         } else {

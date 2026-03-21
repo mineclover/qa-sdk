@@ -932,6 +932,45 @@ export const DEMO_CATALOG = {
       },
     },
 
+    // ── Skill 관리 축 ────────────────────────────────────────────────
+    skill_id: {
+      id: "skill_id", name: "스킬 ID",
+      versions: {
+        v1: {
+          entries: [
+            "skill-trace", "skill-explore-service", "skill-explore-prefix", "skill-explore-dsl", "skill-system-overview",
+            "skill-record-decision", "skill-record-observation", "skill-claim", "skill-release", "skill-lifecycle-transition",
+            "skill-checkout-flow-verify", "skill-commerce-skew-audit", "skill-observation-coverage", "skill-infra-impact-verify",
+            "skill-pipeline-phase-verify", "skill-event-action-check", "skill-svc-binding-check", "skill-safe-entry-add",
+            "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health",
+            "skill-pattern-analysis", "skill-schema-health-audit",
+            "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain",
+          ],
+          capacity: 64,
+        },
+      },
+    },
+    skill_category: {
+      id: "skill_category", name: "스킬 카테고리",
+      versions: {
+        v1: {
+          entries: ["read", "write", "analysis", "chain"],
+          capacity: 8,
+          ko: { read: "조회", write: "변경", analysis: "분석", chain: "체인" },
+        },
+      },
+    },
+    skill_outcome: {
+      id: "skill_outcome", name: "스킬 실행 결과",
+      versions: {
+        v1: {
+          entries: ["ok", "warning", "error", "blocked", "skipped"],
+          capacity: 8,
+          ko: { ok: "정상", warning: "경고", error: "오류", blocked: "차단", skipped: "건너뜀" },
+        },
+      },
+    },
+
     // ── 내부 로직 추출 축 ────────────────────────────────────────────
 
     version_lifecycle: {
@@ -1363,6 +1402,19 @@ export const DEMO_CATALOG = {
       },
       versions: [
         { version: "v1", axisVersions: { obs_source: "v1", dkg_target_kind: "v1", lifecycle_state: "v1" } },
+      ],
+    },
+    skill_execution: {
+      id: "skill_execution", name: "스킬 실행 이벤트",
+      description: "skill_id × skill_category × skill_outcome — 어떤 스킬이 어떤 카테고리로 어떤 결과를 냈는가",
+      labels: ["skill_id", "skill_category", "skill_outcome"],
+      dims: {
+        skill_id:       { kind: "axis", axisId: "skill_id" },
+        skill_category: { kind: "axis", axisId: "skill_category" },
+        skill_outcome:  { kind: "axis", axisId: "skill_outcome" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { skill_id: "v1", skill_category: "v1", skill_outcome: "v1" } },
       ],
     },
     cli_event: {

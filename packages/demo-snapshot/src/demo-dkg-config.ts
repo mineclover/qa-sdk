@@ -42,9 +42,9 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "dev-domain", name: "자기참조 개발 도메인",
-      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event"],
-      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject"],
-      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event"], internal: [] },
+      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution"],
+      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject", "skill_id", "skill_category"],
+      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution"], internal: [] },
       rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI활동 전체를 좌표계로 추적. 완전 자기참조 모니터링.",
     },
   ],
@@ -172,7 +172,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-dev", name: "자기참조 개발 DSL",
       description: "qa-sdk 모노레포의 빌드/테스트/DKG운영/CLI활동을 좌표계로 추적하는 DSL.",
-      memberPrefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check"],
+      memberPrefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check", "skill_execution"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "build_event(failure) 후 test_event는 발생하면 안 된다 (빌드 실패 시 테스트 불가)",

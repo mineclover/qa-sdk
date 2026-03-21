@@ -797,7 +797,7 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
     // 검증
     expect(report.services.length).toBe(7);
     expect(report.contracts.length).toBe(3);
-    expect(report.orphanPrefixes.length).toBe(13);
+    expect(report.orphanPrefixes.length).toBe(14);
     expect(breakResult.requiresApproval).toBe(true);
     expect(breakResult.affectedServices).toContain("shopping-web");
     expect(breakResult.affectedServices).toContain("auth");

@@ -320,6 +320,32 @@ export function analyzeCliCoverage(): {
 }
 
 /** prefix의 최신 version ID. 하드코딩 방지. */
+/** skill 실행 이벤트를 skill_execution prefix로 기록 */
+function emitSkillExecution(skillId: string, category: string, outcome: string = "ok"): void {
+  try {
+    const now = new Date().toISOString();
+    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const ver = latestVer("skill_execution");
+    encodePrefixByValue(DEMO_CATALOG, "skill_execution", ver, {
+      skill_id: skillId,
+      skill_category: category,
+      skill_outcome: outcome,
+    });
+    const store = getStore();
+    store.saveUsageSnapshot({
+      entryUsages: [
+        { axisId: "skill_id", entry: skillId, count: 1, lastSeen: now },
+        { axisId: "skill_category", entry: category, count: 1, lastSeen: now },
+        { axisId: "skill_outcome", entry: outcome, count: 1, lastSeen: now },
+      ],
+      addressUsages: [],
+      coOccurrences: [],
+      versionUsages: [{ prefix: "skill_execution", version: ver, count: 1, lastSeen: now, sessions: [session] }],
+      collectionPeriod: { from: now, to: now },
+    } as any);
+  } catch { /* 기록 실패 시 무시 */ }
+}
+
 function latestVer(prefixId: string): string {
   const prefix = (DEMO_CATALOG as any).prefixes?.[prefixId];
   if (!prefix?.versions?.length) return "v1";
@@ -1894,6 +1920,9 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(`  output: ${skillNode.output}`);
       break;
   }
+
+  // skill 실행 이벤트 기록
+  emitSkillExecution(skillId, skillNode.category);
 }
 
 // ── dkg metrics ─────────────────────────────────────
@@ -2464,10 +2493,49 @@ const FILE_TO_SURFACE: Record<string, string> = {
   "demo-run.test": "integration", "scenarios.test": "integration",
 };
 
+/** 테스트 파일 → qa_module 매핑 (spec-core 세분화) */
+const FILE_TO_MODULE: Record<string, string> = {
+  // schema
+  "category-rules.test": "schema", "schema.test": "schema",
+  "schema-prefix-consumer.test": "schema",
+  // export-surface
+  "export-surface.registry.test": "export-surface",
+  // spec
+  "spec-document.registry.test": "spec",
+  // loader
+  "catalog-bridge.test": "loader", "spec-loader.test": "loader",
+  // codegen
+  "codegen.test": "codegen",
+  // dkg
+  "dkg.test": "dkg", "doc-sync.test": "dkg", "semantic-ref.test": "dkg",
+  "cli-query.test": "dkg", "lifecycle-e2e.test": "dkg",
+  // dkg-skills
+  "skills-suite.test": "dkg-skills", "trace-demo.test": "dkg-skills",
+  "service-explorer.test": "dkg-skills", "claim-operation.test": "dkg-skills",
+  "record-operation.test": "dkg-skills", "converge-chain.test": "dkg-skills",
+  "converge-review.test": "dkg-skills", "operational-loop.test": "dkg-skills",
+  // convergence
+  "convergence.test": "convergence", "capacity-optimizer.test": "convergence",
+  "category-filter.test": "convergence", "deployment-skew.test": "convergence",
+  "observation-lifecycle.test": "convergence", "pattern-classifier.test": "convergence",
+  "pipeline-e2e.test": "convergence", "ref-entries-sync.test": "convergence",
+  "self-check-analyzer.test": "convergence",
+  // propagation
+  "activation-gate.test": "propagation", "lifecycle.test": "propagation",
+  "publish.test": "propagation",
+  // store
+  "dkg-sqlite-store.test": "store",
+  // visualization
+  "self-evaluation.test": "visualization",
+  // shared (demo-run, scenarios)
+  "demo-run.test": "shared", "scenarios.test": "shared",
+};
+
 /** E2E 시나리오 → qa_module 매핑 */
 const E2E_SCENARIOS = [
   "shopping-flow", "event-pipeline", "iframe-integration",
   "scenario-selector", "shop-ingest-integration",
+  "anonymous-browse", "cart-abandon", "multi-product-purchase",
 ] as const;
 
 interface SelfCheckResult {
@@ -2596,13 +2664,18 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     if (output) {
       const fileLines = output.split("\n").filter(l => l.match(/[✓×✗]\s+\S+\.test\.ts/));
       for (const line of fileLines) {
-        const fileMatch = line.match(/([✓×✗])\s+\S*?(\w[\w-]*?)\.test\.ts/);
+        const fileMatch = line.match(/([✓×✗])\s+\S*?([\w][\w.-]*?)\.test\.ts/);
         if (!fileMatch) continue;
         const fileStatus = fileMatch[1] === "✓" ? "passed" : "failed";
         const fileName = fileMatch[2];
         const surface = FILE_TO_SURFACE[`${fileName}.test`];
         if (surface) {
           fileContracts.push({ pkg: pkg.name, surface, result: fileStatus });
+        }
+        // qa_module별 test_event 레코드 생성
+        const mod = FILE_TO_MODULE[`${fileName}.test`];
+        if (mod) {
+          results.push({ pkg: pkg.name, kind: "test", module: mod, result: fileStatus, tests: 0, passed: 0, failed: 0, durationMs: 0 });
         }
       }
     }
