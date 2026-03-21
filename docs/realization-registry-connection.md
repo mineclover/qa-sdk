@@ -1,6 +1,6 @@
 # Realization Plan: Registry 연결
 
-> Status: planning
+> Status: verified
 > DKG-Ref: (작성 후 등록)
 > Created: 2026-03-21
 > Last verified: —

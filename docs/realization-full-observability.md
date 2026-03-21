@@ -1,6 +1,6 @@
 # Realization Plan: 완전 관측 — CLI + DKG + 시스템 이벤트의 좌표화
 
-> Status: planning
+> Status: verified
 > Created: 2026-03-21
 > Last verified: —
 

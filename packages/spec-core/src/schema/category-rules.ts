@@ -67,7 +67,8 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
         e.to.includes("action") || e.to.includes("deploy") || e.to.includes("health") ||
         e.to.includes("constraint") || e.to.includes("migration") || e.to.includes("result") ||
         e.to.includes("event_name") || e.to.includes("_op") || e.to.includes("intent") ||
-        e.to.includes("lifecycle") || e.to.includes("record_type") || e.to.includes("decision_type"),
+        e.to.includes("lifecycle") || e.to.includes("record_type") || e.to.includes("decision_type") ||
+        e.to.includes("skill_id") || e.to.includes("edge_type") || e.to.includes("spec_type"),
       );
       if (!hasAction) {
         errors.push(`event prefix "${prefixId}" has no action-related axis`);

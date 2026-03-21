@@ -1,6 +1,6 @@
 # Realization Plan: spec-core 패키지 개선/분해
 
-> Status: draft
+> Status: partial — analysis barrel 분리 완료, convergence 물리적 분리 불필요 판정
 > Created: 2026-03-22
 
 ## 1. 현재 구조 분석
