@@ -21,12 +21,20 @@ import {
   duplicatePrefix,
 } from "./errors.js";
 import { analyze } from "./draft-workspace.js";
+import type { ActivationGatePort } from "./activation-gate-adapter.js";
+
+/** post-activation hook 포트 */
+export interface PostActivationHookPort {
+  run(input: { prefix: string; versionId: string; previousVersion: string | null }): Promise<void>;
+}
 
 export interface RegistryServiceDeps {
   prefixRegistry: PrefixRegistry;
   versionStore: VersionLifecycleStore;
   ownerStore: PrefixOwnerStore;
   lockStore: DraftLockStore;
+  activationGate?: ActivationGatePort;
+  postActivationHook?: PostActivationHookPort;
 }
 
 /**
@@ -46,12 +54,16 @@ export class RegistryService {
   readonly versionStore: VersionLifecycleStore;
   readonly ownerStore: PrefixOwnerStore;
   readonly lockStore: DraftLockStore;
+  private readonly activationGate?: ActivationGatePort;
+  private readonly postActivationHook?: PostActivationHookPort;
 
   constructor(deps: RegistryServiceDeps) {
     this.prefixRegistry = deps.prefixRegistry;
     this.versionStore = deps.versionStore;
     this.ownerStore = deps.ownerStore;
     this.lockStore = deps.lockStore;
+    this.activationGate = deps.activationGate;
+    this.postActivationHook = deps.postActivationHook;
   }
 
   // ── Prefix CRUD ───────────────────────────────────────────
@@ -84,6 +96,13 @@ export class RegistryService {
 
   async listPrefixes(): Promise<PrefixOwnerRecord[]> {
     return this.ownerStore.list();
+  }
+
+  async patchPrefix(prefix: string, patch: import("../stores/prefix-owner-store.js").PrefixProfilePatch): Promise<PrefixOwnerRecord> {
+    const record = await this.ownerStore.get(prefix);
+    if (!record) throw prefixNotFound(prefix);
+    await this.ownerStore.patch(prefix, patch);
+    return (await this.ownerStore.get(prefix))!;
   }
 
   async deletePrefix(prefix: string): Promise<void> {
@@ -318,10 +337,46 @@ export class RegistryService {
     await this.versionStore.release(prefix, versionId);
   }
 
-  async activate(prefix: string, versionId: string): Promise<void> {
+  async activate(prefix: string, versionId: string): Promise<{ ok: true; diagnostics: readonly { level: string; source: string; id: string; message: string }[] }> {
     const version = await this.versionStore.getVersion(prefix, versionId);
     if (!version) throw versionNotFound(prefix, versionId);
+
+    // Optional constraint gate
+    let diagnostics: { level: string; source: string; id: string; message: string }[] = [];
+    if (this.activationGate) {
+      const result = await this.activationGate.check(prefix, versionId);
+      diagnostics = [...result.diagnostics];
+      if (!result.allowed) {
+        throw notReady(
+          `Activation blocked by constraints: ${result.diagnostics
+            .filter((d) => d.level === "error")
+            .map((d) => d.message)
+            .join("; ")}`,
+        );
+      }
+    }
+
+    // 이전 active version 기록 (hook에서 사용)
+    const previousActive = await this.versionStore.getActive(prefix);
+    const previousVersion = previousActive?.versionId ?? null;
+
+    // 마이그레이션 호환성 검증: capacity 축소 감지
+    if (previousActive && version.capacity < previousActive.capacity) {
+      diagnostics.push({
+        level: "warning", source: "migration",
+        id: "migration-capacity-shrink",
+        message: `capacity ${previousActive.capacity} → ${version.capacity} 축소 — stride-break 가능`,
+      });
+    }
+
     await this.versionStore.activate(prefix, versionId);
+
+    // Post-activation hook (fire-and-forget — 응답 지연 없음)
+    if (this.postActivationHook) {
+      void this.postActivationHook.run({ prefix, versionId, previousVersion }).catch(() => {});
+    }
+
+    return { ok: true, diagnostics };
   }
 
   async deprecate(prefix: string, versionId: string): Promise<void> {
@@ -457,7 +512,13 @@ export class RegistryService {
     >
   > {
     const prefixes = await this.ownerStore.list();
-    const result: Record<string, any> = {};
+    const result: Record<string, {
+      versionId: string;
+      capacity: number;
+      numberType: string;
+      shape?: number[];
+      stride?: number[];
+    }> = {};
 
     for (const p of prefixes) {
       const active = await this.versionStore.getActive(p.prefix);
@@ -477,7 +538,13 @@ export class RegistryService {
   }
 
   async resolveManifest(): Promise<{
-    versions: Record<string, any>;
+    versions: Record<string, {
+      versionId: string;
+      capacity: number;
+      numberType: string;
+      shape?: number[];
+      stride?: number[];
+    }>;
     generatedAt: string;
   }> {
     const versions = await this.resolveAllActive();
@@ -625,7 +692,16 @@ export class RegistryService {
     migrationRequired: boolean;
   }> {
     const prefixes = await this.ownerStore.list();
-    const diffs: any[] = [];
+    const diffs: Array<{
+      prefix: string;
+      kind: string;
+      from: { capacity: number; shape: number[] | null; stride: number[] | null } | null;
+      to: { capacity: number; shape: number[] | null; stride: number[] | null } | null;
+      capacityChanged: boolean;
+      strideChanged: boolean;
+      migrationRequired: boolean;
+      status: "added" | "removed" | "changed";
+    }> = [];
 
     for (const p of prefixes) {
       let fromCap: number | null = null;
@@ -677,7 +753,7 @@ export class RegistryService {
       from: fromVersionId,
       to: toVersionId,
       diffs,
-      migrationRequired: diffs.some((d: any) => d.migrationRequired),
+      migrationRequired: diffs.some(d => d.migrationRequired),
     };
   }
 
@@ -695,7 +771,7 @@ export class RegistryService {
     { prefix: string; versionId: string; owner: string; kind: string; capacity: number; locked: boolean }[]
   > {
     const prefixes = await this.ownerStore.list();
-    const results: any[] = [];
+    const results: Array<{ prefix: string; versionId: string; owner: string; kind: string; capacity: number; locked: boolean }> = [];
 
     for (const p of prefixes) {
       const drafts = await this.versionStore.getVersions(p.prefix, "draft");

@@ -28,6 +28,7 @@ import {
   buildReconstructionTask,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
   processPendingPhaseTwo,
+  type ConvergencePipelinePort,
 } from "../lib/phase-two-worker.js";
 
 export type RegistryValidationMode = "strict" | "warn" | "off";
@@ -55,6 +56,7 @@ export interface IngestDeps {
   registryValidator?: RegistryEventValidator;
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
+  convergencePipeline?: ConvergencePipelinePort;
   logger?: Logger;
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;

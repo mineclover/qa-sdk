@@ -16,7 +16,15 @@ const app = createApp({
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info({ port: info.port }, "decode-service listening");
+  warnPortConflict("decode-service", env.PORT);
 });
+
+function warnPortConflict(self: string, port: number) {
+  const known: Record<string, number> = { "registry-server": 3100, "ingest-server": 3200, "registry-service": 3300, "gate-service": 3400, "query-service": 3500, "decode-service": 3600 };
+  for (const [name, p] of Object.entries(known)) {
+    if (name !== self && p === port) logger.warn(`⚠ PORT ${port} conflicts with ${name} (default: ${p}). Set PORT env to avoid collision.`);
+  }
+}
 
 function shutdown(signal: string) {
   logger.info({ signal }, "shutdown requested");

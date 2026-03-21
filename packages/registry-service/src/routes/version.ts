@@ -71,8 +71,8 @@ export function createVersionRoutes(deps: VersionRouteDeps) {
   routes.post("/prefixes/:prefix/versions/:versionId/activate", async (c) => {
     const prefix = c.req.param("prefix");
     const versionId = c.req.param("versionId");
-    await service.activate(prefix, versionId);
-    return c.json({ ok: true });
+    const result = await service.activate(prefix, versionId);
+    return c.json(result);
   });
 
   routes.post("/prefixes/:prefix/versions/:versionId/deprecate", async (c) => {

@@ -32,6 +32,8 @@ import { createStreamConnectionRegistry } from "./lib/stream-connection-registry
 import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
+import type { ConvergencePipelineRunner, PatternFunctions } from "./lib/convergence-pipeline.js";
+import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js";
 
 const PHASE_TWO_QUEUE_NAME = "ingest-phase-two";
 
@@ -86,6 +88,76 @@ async function startServer() {
     logger,
   });
 
+  // ── Convergence Pipeline (optional) ──────────────────
+  let convergencePipeline: ConvergencePipelineRunner | undefined;
+  let convergenceScheduler: ConvergenceSchedulerHandle | null = null;
+  if (env.CONVERGENCE_ENABLED) {
+    try {
+      const { createGraphProvider } = await import("./lib/convergence-graph-provider.js");
+      const { ConvergencePipelineRunner: PipelineCtor } = await import("./lib/convergence-pipeline.js");
+      const { installConvergenceScheduler } = await import("./lib/convergence-scheduler.js");
+
+      const graphProvider = await createGraphProvider({
+        dkgSqlitePath: env.CONVERGENCE_DKG_SQLITE_PATH,
+        registryUrl: env.CONVERGENCE_REGISTRY_URL,
+        logger,
+      });
+
+      // spec-core convergence 함수 동적 import
+      const specAnalysis = await import("@qa-sdk/spec-core/analysis");
+      const convergenceFns = {
+        aggregateUsageData: (specAnalysis as any).aggregateUsageData,
+        collectMetrics: (specAnalysis as any).collectMetrics,
+        metricsToObservations: (specAnalysis as any).metricsToObservations,
+      };
+
+      // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
+      let patternFns: PatternFunctions | undefined;
+      try {
+        const sa = specAnalysis as any;
+        if (sa.classifyPattern && sa.DEMO_PATTERN_RULES) {
+          patternFns = {
+            classifyPattern: sa.classifyPattern,
+            aggregatePatternStats: sa.aggregatePatternStats,
+            detectAnomalies: sa.detectAnomalies,
+            buildPatternHealthReport: sa.buildPatternHealthReport,
+            patternRules: sa.DEMO_PATTERN_RULES,
+          };
+          logger.info("pattern classification enabled");
+        }
+      } catch (patternErr) {
+        logger.warn({ err: patternErr }, "pattern classification not available — skipped");
+      }
+
+      convergencePipeline = new PipelineCtor(
+        {
+          recordStore: stores.recordStore,
+          convergenceFns,
+          patternFns,
+          graphProvider: () => graphProvider.getGraph(),
+          catalogProvider: () => graphProvider.getCatalog(),
+          dkgStore: graphProvider.getDkgStore() as any,
+          logger,
+        },
+        {
+          recordThreshold: env.CONVERGENCE_RECORD_THRESHOLD,
+          flushIntervalMs: env.CONVERGENCE_FLUSH_INTERVAL_MS,
+        },
+      );
+
+      convergenceScheduler = installConvergenceScheduler({
+        enabled: true,
+        convergencePipeline,
+        logger,
+        intervalMs: env.CONVERGENCE_SCHEDULE_INTERVAL_MS,
+      });
+
+      logger.info("convergence pipeline enabled");
+    } catch (error) {
+      logger.error({ err: error }, "convergence pipeline initialization failed — disabled");
+    }
+  }
+
   const app = createApp({
     appLifecycle,
     checkDbHealth: createDbHealthChecker(stores.db),
@@ -117,6 +189,7 @@ async function startServer() {
         }),
       ),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
+    convergencePipeline,
   });
 
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
@@ -131,6 +204,8 @@ async function startServer() {
   installGracefulShutdown({
     appLifecycle,
     closeDb: async () => {
+      convergenceScheduler?.stop();
+      await convergencePipeline?.close();
       cleanupScheduler?.stop();
       await taskQueue?.close();
       await closeClient(env.TRACE_DATABASE_URL);

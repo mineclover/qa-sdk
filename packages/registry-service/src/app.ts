@@ -12,9 +12,19 @@ import { createDagRoutes } from "./routes/dag.js";
 import { createWorkspaceRoutes } from "./routes/workspace.js";
 import { createResolveRoutes } from "./routes/resolve.js";
 import { createSchemaRoutes } from "./routes/schema.js";
+import { createCatalogRoutes } from "./routes/catalog.js";
+import { createAxisRoutes } from "./routes/axis.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
+import type { CatalogStore } from "./stores/catalog-store.js";
+import type { AxisProfileStore } from "./stores/axis-profile-store.js";
+import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
+import { createDevDashboardRoutes } from "./routes/dev-dashboard.js";
 
 export interface AppDeps extends RegistryServiceDeps {
   logger?: Logger;
+  catalogStore?: CatalogStore;
+  axisStore?: AxisProfileStore;
+  devDashboardProvider?: DevDkgProvider;
 }
 
 export function createApp(deps: AppDeps) {
@@ -33,6 +43,42 @@ export function createApp(deps: AppDeps) {
   app.route("/", createWorkspaceRoutes({ service }));
   app.route("/", createResolveRoutes({ service }));
   app.route("/", createSchemaRoutes({ service }));
+  if (deps.catalogStore) {
+    app.route("/", createCatalogRoutes({
+      catalogStore: deps.catalogStore,
+      onCatalogChange: (catalogId) => {
+        logger.info({ catalogId }, "catalog changed — invalidating caches");
+        // dev dashboard DKG 캐시 무효화
+        if (deps.devDashboardProvider && typeof deps.devDashboardProvider.refresh === "function") {
+          deps.devDashboardProvider.refresh();
+        }
+      },
+    }));
+  }
+  if (deps.axisStore) {
+    app.route("/", createAxisRoutes({
+      axisStore: deps.axisStore,
+      onAxisChange: (catalogId, axisId) => {
+        logger.info({ catalogId, axisId }, "axis changed — invalidating caches");
+        if (deps.devDashboardProvider && typeof deps.devDashboardProvider.refresh === "function") {
+          deps.devDashboardProvider.refresh();
+        }
+      },
+    }));
+  }
+  if (deps.devDashboardProvider) {
+    app.route("/", createDevDashboardRoutes({
+      provider: deps.devDashboardProvider,
+      catalogStore: deps.catalogStore,
+    }));
+  }
+  app.route(
+    "/",
+    createMetricsRoutes({
+      catalogStore: deps.catalogStore,
+      axisStore: deps.axisStore,
+    }),
+  );
 
   return app;
 }

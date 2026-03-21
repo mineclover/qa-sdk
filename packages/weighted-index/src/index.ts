@@ -17,6 +17,7 @@ export type {
   Strides,
   BatchEncoder,
   AsyncBatchEncoder,
+  FlatBatchEncoder,
 } from "./math/types.js";
 
 export { WeightedIndex } from "./math/weighted-index.js";
@@ -69,6 +70,12 @@ export {
   SerializeError,
   MigrateError,
 } from "./math/errors.js";
+export {
+  packAxis,
+  unpackAxis,
+  fromPackedAxis,
+  toPackedAxis,
+} from "./math/binary-axis.js";
 export {
   analyzeLayoutSim,
   clampShape,

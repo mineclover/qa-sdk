@@ -11,6 +11,7 @@ import {
   getPrefixShape, getPrefixStructure,
 } from "demo-snapshot";
 import type { DemoCatalog } from "demo-snapshot";
+import { parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
 import {
   resolve,
   findVersionForEntry,
@@ -61,15 +62,16 @@ export function cliDecode(args: {
   deep?: boolean;
   json?: boolean;
 }): void {
-  const parts = args.address.split(":");
-  if (parts.length !== 3) {
+  let parsed;
+  try {
+    parsed = parseSerializedAddress(args.address);
+  } catch {
     console.error('형식: "prefix:version:address" (예: permission:v1:65536)');
     process.exitCode = 1;
     return;
   }
 
-  const [prefixId, version, addrStr] = parts;
-  const address = Number(addrStr);
+  const { prefix: prefixId, version, address } = parsed;
 
   try {
     const decoded = decodePrefix(DEMO_CATALOG, prefixId, version, address);

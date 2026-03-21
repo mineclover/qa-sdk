@@ -21,6 +21,11 @@ export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
   retryDelayMs: 1_000,
 } as const satisfies TaskQueueOptions;
 
+/** convergence 파이프라인 최소 인터페이스 (순환 의존 방지) */
+export interface ConvergencePipelinePort {
+  notifyCompletion(traceIds: readonly string[]): void;
+}
+
 export interface PhaseTwoWorkerDeps {
   recordStore: RecordStore;
   traceStore: TraceStore;
@@ -30,6 +35,7 @@ export interface PhaseTwoWorkerDeps {
   scenarioSpecStore: ScenarioSpecStore;
   dlqStore: DlqStore;
   metricRollupStore?: MetricRollupStore;
+  convergencePipeline?: ConvergencePipelinePort;
   logger?: Logger;
   taskQueue?: TaskQueue<TaskPayload>;
 }
@@ -143,6 +149,15 @@ export async function processPendingPhaseTwo(
       },
     },
   );
+
+  // convergence 파이프라인에 완료 알림 (에러 격리)
+  if (deps.convergencePipeline) {
+    try {
+      deps.convergencePipeline.notifyCompletion(reconstructResult.reconstructedTraceIds);
+    } catch (error) {
+      deps.logger?.error({ err: error }, "convergence notification failed");
+    }
+  }
 }
 
 export async function registerTaskQueueWorker(

@@ -14,6 +14,7 @@ export type {
   Strides,
   BatchEncoder,
   AsyncBatchEncoder,
+  FlatBatchEncoder,
 } from "./types.js";
 
 // ── 에러 ────────────────────────────────────────────────────────────────────
@@ -119,3 +120,11 @@ export {
   patternSpecificity,
   coordMatchesPattern,
 } from "./pattern-lattice.js";
+
+// ── 바이너리 직렬화 ─────────────────────────────────────────────────────────
+export {
+  packAxis,
+  unpackAxis,
+  fromPackedAxis,
+  toPackedAxis,
+} from "./binary-axis.js";

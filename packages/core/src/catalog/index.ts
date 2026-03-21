@@ -18,6 +18,7 @@ export type {
 // ── Provider ──────────────────────────────────────────────────
 export type { CatalogProvider, CatalogInfo } from "./catalog-provider.js";
 export { StaticCatalogProvider } from "./static-provider.js";
+export { CatalogRegistry } from "./catalog-registry.js";
 
 // ── Derive Meta ───────────────────────────────────────────────
 export { deriveMeta } from "./derive-meta.js";

@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 const INGEST_URL = "http://localhost:3101";
 const VIZ_URL = "http://localhost:5210";
 const ROLEPLAY_URL = "http://localhost:5211";
+const SHOP_URL = "http://localhost:5220";
 
 export default defineConfig({
   testDir: "./tests",
@@ -53,6 +54,12 @@ export default defineConfig({
         VITE_INGEST_SERVER_URL: INGEST_URL,
         VITE_VIZ_WEB_ORIGIN: VIZ_URL,
       },
+    },
+    {
+      command: "pnpm --filter @qa-sdk/shop-web start",
+      url: SHOP_URL,
+      reuseExistingServer: !process.env["CI"],
+      timeout: 15_000,
     },
   ],
 });

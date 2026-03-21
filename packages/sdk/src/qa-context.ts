@@ -13,6 +13,7 @@
 
 import type { DemoCatalog } from "demo-snapshot";
 import { encodePrefixByValue, decodePrefix, resolveAddress } from "demo-snapshot";
+import { parseSerializedAddress } from "@qa-sdk/core";
 
 /** 실행 모드 */
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
@@ -148,8 +149,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     },
 
     decode(serialized: string): Record<string, string | number> {
-      const [prefixId, version, addrStr] = serialized.split(":");
-      const address = Number(addrStr);
+      const { prefix: prefixId, version, address } = parseSerializedAddress(serialized);
       const decoded = decodePrefix(catalog, prefixId, version, address);
       return Object.fromEntries(
         Object.entries(decoded).map(([k, v]) => [k, v.value]),
@@ -157,8 +157,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     },
 
     resolve(serialized: string) {
-      const [prefixId, version, addrStr] = serialized.split(":");
-      const address = Number(addrStr);
+      const { prefix: prefixId, version, address } = parseSerializedAddress(serialized);
       const prefixDef = catalog.prefixes[prefixId as keyof typeof catalog.prefixes];
       if (!prefixDef) throw new Error(`Unknown prefix: ${prefixId}`);
       const latest = prefixDef.versions[prefixDef.versions.length - 1].version;
@@ -196,8 +195,8 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
         const serialized = this.encode(prefixId, dims);
         address_context[prefixId] = serialized;
 
-        const [p, v, a] = serialized.split(":");
-        addresses[prefixId] = { prefix: p, version: v, address: Number(a) };
+        const parsed = parseSerializedAddress(serialized);
+        addresses[prefixId] = { prefix: parsed.prefix, version: parsed.version, address: parsed.address };
       }
 
       // service context는 항상 포함

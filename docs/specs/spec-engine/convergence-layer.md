@@ -1,6 +1,6 @@
 # Convergence Layer — 수렴/비교/인과 발견
 
-> **Status: DESIGN**
+> **Status: IMPLEMENTED** (2026-03-21)
 >
 > 좌표 시스템의 심볼들이 점차 수렴하도록 돕는 분석 계층.
 > 관측 데이터와 DKG 그래프를 조합하여 수렴 기회를 발견하고,
@@ -373,3 +373,36 @@ interface BoundaryRecommendation {
 3. **인과 관계는 통계적 후보다.** high confidence여도 IntentLink 고정은 인간 확인 후.
 4. **단순화는 로직 보존이 전제다.** remove-dim은 해당 차원이 정말 단일 값만 쓰일 때만.
 5. **경계 추천의 estimatedCapacity는 참고값이다.** 실제 capacity는 Decision에서 결정.
+
+---
+
+## 구현 매핑
+
+| 스펙 서비스 | 구현 파일 | 주요 함수 |
+|---|---|---|
+| SymbolComparator | `convergence/symbol-comparator.ts` | `compareAxes`, `comparePrefixes`, `scanAxisOverlaps` |
+| DecisionComparator | `convergence/decision-comparator.ts` | `compareDecisions`, `scanDecisionConflicts` |
+| CausalDiscovery | `convergence/causal-discovery.ts` | `discoverCausality`, `discoverCausalityWithObservations` |
+| SimplificationAdvisor | `convergence/simplification-advisor.ts` | `analyzeSimplification`, `scanAllSimplifications` |
+| BoundaryRecommender | `convergence/boundary-recommender.ts` | `recommendFromSimplification`, `recommendFromCausality`, `recommendAll` |
+| 수렴 사이클 오케스트레이터 | `convergence/convergence-runner.ts` | `runConvergenceAnalysis` |
+
+export: `@qa-sdk/spec-core/analysis`
+
+---
+
+## SchemaValidator as Prefix Consumer
+
+스키마 검증을 prefix 인프라를 소비하는 유틸리티로 전환.
+
+| 구성 요소 | 파일 | 역할 |
+|---|---|---|
+| `schema_validation` prefix | DEMO_CATALOG | `svc_ref × validation_layer × constraint_rule × verdict_result` 좌표 |
+| `schema-validation-codec.ts` | spec-core/schema | ValidationResult → prefix 좌표 매핑 |
+| `schema-observation-bridge.ts` | spec-core/schema | 검증 결과 → ObservationNode 변환 |
+| `schema-health-audit.ts` | spec-core/schema | 전체 prefix category 규칙 감사 |
+| `metric:schema:violations` | metric-registry | 자동 수집 메트릭 |
+| `skill-schema-health-audit` | DKG skill | system-health-chain 의존 |
+| Profile API | registry-service | prefix/axis 단위 PATCH (blob 교체 → 프로필 패치) |
+
+`inferCategory()`: `meta.category` 우선 → 구조 추론 fallback. category-rules event 규칙: `*_action`, `*_result`, `event_name` 축 인정.

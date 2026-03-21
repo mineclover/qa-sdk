@@ -18,6 +18,8 @@ export interface BuildIROptions {
   prefixSpecs: readonly PrefixSpec[];
   /** axis별 ko 번역 (axisId → entry → ko) */
   ko?: Record<string, Record<string, string>>;
+  /** prefix별 버전 목록 (prefixId → versions) */
+  prefixVersions?: Record<string, readonly string[]>;
 }
 
 /**
@@ -58,6 +60,7 @@ export function buildIR(options: BuildIROptions): IRModule {
       id: spec.id,
       description: `export: ${spec.export.pattern}`,
       fields,
+      versions: options.prefixVersions?.[spec.id],
     });
   }
 

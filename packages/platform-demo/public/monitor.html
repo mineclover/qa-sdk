@@ -40,6 +40,28 @@ input.btn{width:170px;color:#556;text-align:left}
 .slider-row label{font-size:7px;color:#334;letter-spacing:1px;text-transform:uppercase;width:50px}
 .slider-row input[type=range]{width:80px;accent-color:var(--mint);height:3px;pointer-events:all}
 .slider-row span{font-size:9px;color:#556;width:30px;text-align:right}
+
+/* ── Flow Timeline Panel ── */
+.flow-timeline{position:fixed;bottom:60px;right:18px;width:300px;max-height:340px;z-index:11;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.flow-timeline-inner{display:flex;flex-direction:column;gap:2px;padding:4px 0}
+.ft-entry{background:rgba(8,10,16,0.88);border:1px solid rgba(100,255,218,0.06);border-radius:4px;padding:6px 10px;backdrop-filter:blur(8px);display:flex;gap:8px;align-items:flex-start;animation:ft-slide-in .35s ease-out;opacity:1;transition:opacity .4s}
+.ft-entry.ft-fading{opacity:0.3}
+@keyframes ft-slide-in{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.ft-role-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.ft-body{flex:1;min-width:0}
+.ft-prefix{font-size:10px;font-weight:500;color:#c0c8d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ft-values{font-size:8px;color:#556;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ft-time{font-size:7px;color:#334;font-family:'IBM Plex Mono',monospace;flex-shrink:0;margin-top:3px}
+.ft-role-tag{font-size:7px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-top:1px}
+
+/* ── Signal Role Legend ── */
+.signal-legend{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:6px 10px;backdrop-filter:blur(8px);margin-bottom:4px}
+.signal-legend .cl{margin-bottom:4px}
+.sl-roles{display:flex;flex-wrap:wrap;gap:2px 6px}
+.sl-role{display:flex;align-items:center;gap:4px;font-size:8px;font-family:'IBM Plex Mono',monospace;color:#556;cursor:pointer;padding:2px 4px;border-radius:2px;transition:all .15s;pointer-events:all;user-select:none}
+.sl-role:hover{background:rgba(255,255,255,0.04)}
+.sl-role.sl-active{opacity:1}.sl-role.sl-dimmed{opacity:0.3}
+.sl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -131,12 +153,15 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 </style>
 
 <!-- HUD -->
-<div class="hud hud-tl">
-  <div class="brand m">qa-sdk / coordinate monitor</div>
+<div class="hud hud-tl" id="hud-tl">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="brand m">qa-sdk / coordinate monitor</div>
+    <a href="http://localhost:3300/dev/" target="_blank" class="btn m" id="link-dashboard" style="font-size:7px;padding:2px 6px;text-decoration:none;pointer-events:all">Dashboard</a>
+  </div>
   <div class="ttl">3D Grid View</div>
   <div class="sub m" id="status">loading modules...</div>
   <div class="sub m" id="perf" style="color:#334;font-size:8px"></div>
-  <div class="cd" style="margin-top:8px">
+  <div class="cd" style="margin-top:8px" id="display-controls">
     <div class="cl m">Display</div>
     <div class="slider-row m"><label>opacity</label><input type="range" id="sl-opacity" min="10" max="100" value="35"><span id="sl-opacity-v">35%</span></div>
     <div class="slider-row m"><label>glow</label><input type="range" id="sl-glow" min="10" max="100" value="70"><span id="sl-glow-v">70%</span></div>
@@ -146,7 +171,19 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     <div class="slider-row m"><label>fog</label><input type="range" id="sl-fog" min="0" max="30" value="6"><span id="sl-fog-v">6‰</span></div>
   </div>
 </div>
-<div class="hud hud-tr">
+<div class="hud hud-tr" id="hud-tr">
+  <div class="signal-legend" id="signal-legend">
+    <div class="cl m">Signal Roles</div>
+    <div class="sl-roles" id="sl-roles">
+      <span class="sl-role sl-active" data-role="context"><span class="sl-dot" style="background:#4ade80"></span>context</span>
+      <span class="sl-role sl-active" data-role="trigger"><span class="sl-dot" style="background:#facc15"></span>trigger</span>
+      <span class="sl-role sl-active" data-role="channel"><span class="sl-dot" style="background:#60a5fa"></span>channel</span>
+      <span class="sl-role sl-active" data-role="state"><span class="sl-dot" style="background:#c084fc"></span>state</span>
+      <span class="sl-role sl-active" data-role="guard"><span class="sl-dot" style="background:#f472b6"></span>guard</span>
+      <span class="sl-role sl-active" data-role="effect"><span class="sl-dot" style="background:#fb923c"></span>effect</span>
+      <span class="sl-role sl-active" data-role="data"><span class="sl-dot" style="background:#94a3b8"></span>data</span>
+    </div>
+  </div>
   <div class="cd"><div class="cl m">Step</div><div style="font-size:12px;font-weight:600" id="h-step">--</div><div class="cs m" id="h-desc"></div></div>
   <div class="cd"><div class="cl m">Address Context</div><div class="cs m" id="h-ctx" style="max-height:100px;overflow-y:auto"></div></div>
   <div class="cd"><div class="cl m">Events</div><div class="cv" id="h-total">0</div></div>
@@ -159,13 +196,16 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     <div class="cs m" id="flow-steps" style="max-height:120px;overflow-y:auto"></div>
   </div>
 </div>
-<div class="hud hud-bl">
+<div class="hud hud-bl" id="hud-bl">
   <div class="bar"><div class="bl m">L0 UI</div><div class="bt"><div class="bf" id="b0" style="width:0%;background:linear-gradient(90deg,var(--mint),var(--cyan))"></div></div><div class="bn m" id="n0">0</div></div>
   <div class="bar"><div class="bl m">L1 Biz</div><div class="bt"><div class="bf" id="b1" style="width:0%;background:linear-gradient(90deg,var(--amber),#ffa502)"></div></div><div class="bn m" id="n1">0</div></div>
   <div class="bar"><div class="bl m">L2 Infra</div><div class="bt"><div class="bf" id="b2" style="width:0%;background:linear-gradient(90deg,var(--violet),#6c5ce7)"></div></div><div class="bn m" id="n2">0</div></div>
   <div class="bar"><div class="bl m">L3 Data</div><div class="bt"><div class="bf" id="b3" style="width:0%;background:linear-gradient(90deg,var(--rose),#e84393)"></div></div><div class="bn m" id="n3">0</div></div>
 </div>
-<div class="hud hud-br">
+<div class="flow-timeline" id="flow-timeline">
+  <div class="flow-timeline-inner" id="ft-inner"></div>
+</div>
+<div class="hud hud-br" id="hud-br">
   <div class="vr">
     <button class="vb m on" data-v="layer" id="v-layer">LAYER</button>
     <button class="vb m" data-v="category" id="v-category">CATEGORY</button>
@@ -183,6 +223,18 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   </div>
 </div>
 
+<script>
+// ── Embed mode: ?embed=true 시 HUD/컨트롤 숨기고 캔버스만 표시 ──
+(function(){
+  if(new URLSearchParams(location.search).get('embed')!=='true')return;
+  var ids=['hud-tl','hud-tr','hud-bl','hud-br','info-overlay','flow-timeline'];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el)el.style.display='none';
+  }
+  document.body.style.overflow='hidden';
+})();
+</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
 import * as T from 'three';
@@ -196,7 +248,7 @@ import {
   computeLodLevel, getLodVisibility, PerfMonitor,
   DEMO_PREFIX_META, formatDetail,
   encode, decode, track as codecTrack, BROWSER_CATALOG, loadCatalog,
-  classifyByRole,
+  classifyByRole, getPrefixRole, SIGNAL_ROLE_LABELS,
 } from './viz-3d-core.js';
 
 // ═══════════════════════════════════════════════════
@@ -209,6 +261,66 @@ const trk = (pd) => codecTrack(CAT, pd);
 const SW = encode(CAT,'service',{env:'prod',region:'asia',svc_name:'shopping-web',namespace:'shop'}).address;
 const SB = encode(CAT,'service',{env:'prod',region:'asia',svc_name:'shopping-backend',namespace:'shop'}).address;
 const SP = encode(CAT,'service',{env:'prod',region:'asia',svc_name:'payment',namespace:'shop'}).address;
+
+// ═══════════════════════════════════════════════════
+//  SIGNAL ROLE COLORS + FLOW TIMELINE
+// ═══════════════════════════════════════════════════
+const ROLE_COLORS={
+  context:'#4ade80',trigger:'#facc15',channel:'#60a5fa',
+  state:'#c084fc',guard:'#f472b6',effect:'#fb923c',data:'#94a3b8'
+};
+const ROLE_HEX={
+  context:0x4ade80,trigger:0xfacc15,channel:0x60a5fa,
+  state:0xc084fc,guard:0xf472b6,effect:0xfb923c,data:0x94a3b8
+};
+
+// 셀 키 → 활성화 시 사용할 role color hex (활성 이벤트마다 갱신)
+const cellRoleColor=new Map();
+
+const MAX_TIMELINE=10;
+const timelineEntries=[];
+let roleFilter=null;
+
+function getRoleForKey(key){
+  const prefix=key.split('/')[0];
+  return getPrefixRole(prefix);
+}
+
+function addTimelineEntry(prefixId,valuesStr,role){
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+'.'+String(now.getMilliseconds()).padStart(3,'0');
+  timelineEntries.push({prefixId,valuesStr,role,ts});
+  if(timelineEntries.length>MAX_TIMELINE)timelineEntries.shift();
+  renderTimeline();
+}
+
+function renderTimeline(){
+  const container=document.getElementById('ft-inner');if(!container)return;
+  const html=timelineEntries.map(e=>{
+    const col=ROLE_COLORS[e.role]||'#556';
+    const dimmed=roleFilter&&roleFilter!==e.role?'ft-fading':'';
+    return `<div class="ft-entry ${dimmed}"><span class="ft-role-dot" style="background:${col}"></span><div class="ft-body"><div class="ft-prefix" style="color:${col}">${e.prefixId}</div><div class="ft-values">${e.valuesStr}</div><div class="ft-role-tag" style="color:${col}">${e.role}</div></div><div class="ft-time">${e.ts}</div></div>`;
+  }).join('');
+  container.innerHTML=html;
+  const panel=document.getElementById('flow-timeline');
+  if(panel)panel.scrollTop=panel.scrollHeight;
+}
+
+function feedTimeline(ctx){
+  for(const[p,s]of Object.entries(ctx)){
+    const role=getPrefixRole(p);
+    const d=dec(s);
+    const vals=d?Object.entries(d.values).map(([k,v])=>`${k}=${v}`).join(' '):s;
+    addTimelineEntry(p,vals,role);
+  }
+}
+
+function markCellRoles(keys){
+  for(const k of keys){
+    const role=getRoleForKey(k);
+    cellRoleColor.set(k,ROLE_HEX[role]||0x94a3b8);
+  }
+}
 
 // ═══════════════════════════════════════════════════
 //  GRID DEFS — viz-3d buildGridPositions 사용
@@ -340,7 +452,7 @@ LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMat
 // Beams
 const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0})}
 let bI=0;
-function beam(a,b){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;e.m.color.setHex(a.cc.c);e.life=1}
+function beam(a,b,key){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=1}
 
 // ═══════════════════════════════════════════════════
 //  DEMO STEPS (compact)
@@ -388,12 +500,14 @@ function setGlow(key){
 
 function activateKeys(keys,flow){
   aSet=new Set(keys);
+  markCellRoles(keys);
   if(flow&&flow.length>0){
     flowTimers.forEach(t=>clearTimeout(t));flowTimers=[];
     aSet=new Set();
     flow.forEach((f,i)=>{
       flowTimers.push(setTimeout(()=>{
         aSet.add(f.cell);setGlow(f.cell);
+        markCellRoles([f.cell]);
         const c=cellMap[f.cell];
         if(c){CS.activate(f.cell,c.layer);lH[c.layer]++;tot++;
           if(i>0){const pc=cellMap[flow[i-1].cell];if(pc&&c.layer!==pc.layer)beam(pc,c)}
@@ -413,6 +527,9 @@ function fireStep(step){
   const{keys}=decodeKeys(ctx);
   for(const t of(step.t||[]))keys.add(t);
   activateKeys(keys,step.flow);
+  feedTimeline(ctx);
+  // 추가 table ref 키도 타임라인에 data role로 표시
+  for(const t of(step.t||[])){const role=getRoleForKey(t);addTimelineEntry(t.split('/')[0],t.split('/').slice(1).join('/'),role)}
   FH.push({name:step.n,desc:step.d,flow:step.flow||[],keys:[...keys],ctx,timestamp:new Date().toISOString(),source:'demo'});
   updateHUD(step,ctx);showFlow(FH.current());
 }
@@ -466,6 +583,9 @@ function showCellInfo(key){
   // 런타임 정보 추가
   html+=`<div style="margin-top:6px;border-top:1px solid rgba(100,255,218,0.06);padding-top:4px">`;
   html+=`<div style="font-size:8px;color:#334;letter-spacing:1px">RUNTIME</div>`;
+  const cellRole=getPrefixRole(prefix);
+  const cellRoleCol=ROLE_COLORS[cellRole]||'#94a3b8';
+  html+=`<div style="font-size:9px;color:#667">role: <span style="color:${cellRoleCol};font-weight:500">${cellRole}</span></div>`;
   html+=`<div style="font-size:9px;color:#667">layer: L${c.layer} ${['UI','Business','Infra','Data'][c.layer]||''}</div>`;
 
   const ig=instancedGrids.find(g=>g.gridId===prefix);
@@ -500,6 +620,7 @@ const adapter=new MonitorAdapter({
   decode:dec,mapToKeys:defaultKeyMapper,
   onActivation:(keys,ctx)=>{
     activateKeys(new Set(keys),null);
+    if(ctx)feedTimeline(ctx);
     FH.push({name:'live',desc:'',flow:[],keys,ctx,timestamp:new Date().toISOString(),source:'live'});
     updateHUD({n:'live',d:''},ctx);$('status').textContent=`live — ${tot} events (${FH.length} recorded)`;
   },
@@ -523,6 +644,24 @@ document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
   VE.setMode(m);
 }));
 
+// Signal Role Legend 토글
+document.querySelectorAll('.sl-role').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const r=el.dataset.role;
+    if(roleFilter===r){
+      roleFilter=null;
+      document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
+    }else{
+      roleFilter=r;
+      document.querySelectorAll('.sl-role').forEach(x=>{
+        if(x.dataset.role===r){x.classList.remove('sl-dimmed');x.classList.add('sl-active')}
+        else{x.classList.add('sl-dimmed');x.classList.remove('sl-active')}
+      });
+    }
+    renderTimeline();
+  });
+});
+
 // Flow nav
 $('btn-prev').addEventListener('click',()=>replayEntry(FH.prev()));
 $('btn-next').addEventListener('click',()=>replayEntry(FH.next()));
@@ -542,6 +681,8 @@ $('btn-info').addEventListener('click',toggleInfo);
 $('btn-reset').addEventListener('click',()=>{
   dOn=false;clearTimeout(dT);$('btn-demo').classList.remove('on');
   tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();
+  cellRoleColor.clear();timelineEntries.length=0;renderTimeline();
+  roleFilter=null;document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
   updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
 });
@@ -570,27 +711,35 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   VE.update(dt);for(const[id,grp]of groups){const p=VE.getPosition(id);if(p)grp.position.lerp(new T.Vector3(p.x,p.y,p.z),dt*3)}
   CS.decay(dt);
 
-  // InstancedMesh glow update — per-instance color (개별 셀 반짝이)
+  // InstancedMesh glow update — per-instance color (개별 셀 반짝이, signal role 색상 적용)
   for(const ig of instancedGrids){
     let needsUpdate=false;
-    baseC.setHex(ig.cc.main.hex);glowC.setHex(ig.cc.emissive.hex);
+    baseC.setHex(ig.cc.main.hex);
     for(let i=0;i<ig.count;i++){
       const key=ig.idxToKey[i];
       if(ig.glows[i]>0)ig.glows[i]=Math.max(0,ig.glows[i]-dt*1.2);
       const isA=aSet.has(key);
       const pulse=isA?.4+Math.sin(t*5)*.2:0;
       const I=Math.max(ig.glows[i],pulse);
-      // 활성 셀: 밝은 emissive color / 비활성 셀: 원래 색 유지
       if(I>0.01){
-        tmpC.copy(baseC).lerp(glowC,I*settings.glowMul);
+        // 활성 셀: signal role 색상 사용 (role filter 적용)
+        const roleHex=cellRoleColor.get(key);
+        const role=getRoleForKey(key);
+        const dimByFilter=roleFilter&&roleFilter!==role;
+        if(roleHex&&!dimByFilter){
+          glowC.setHex(roleHex);
+        }else{
+          glowC.setHex(ig.cc.emissive.hex);
+        }
+        const eff=dimByFilter?I*settings.glowMul*0.2:I*settings.glowMul;
+        tmpC.copy(baseC).lerp(glowC,eff);
         ig.iMesh.setColorAt(i,tmpC);needsUpdate=true;
       } else {
-        // 비활성 셀은 원래 색으로 복원
         ig.iMesh.setColorAt(i,baseC);needsUpdate=true;
       }
     }
     ig.mat.opacity=settings.baseOpacity;
-    ig.mat.emissiveIntensity=0.1; // 최소 emissive (전체 반짝이 방지)
+    ig.mat.emissiveIntensity=0.1;
     if(needsUpdate&&ig.iMesh.instanceColor)ig.iMesh.instanceColor.needsUpdate=true;
   }
 
@@ -627,9 +776,10 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 // ═══════════════════════════════════════════════════
 const moveSpeed=0.5;
 const keyState={};
-let infoVisible=true;
+const _isEmbed=new URLSearchParams(location.search).get('embed')==='true';
+let infoVisible=!_isEmbed;
 
-function toggleInfo(){infoVisible=!infoVisible;$('info-overlay').style.display=infoVisible?'flex':'none'}
+function toggleInfo(){if(_isEmbed)return;infoVisible=!infoVisible;$('info-overlay').style.display=infoVisible?'flex':'none'}
 
 // 최초: info 표시. 아무 키 누르면 닫기
 $('btn-close-info').addEventListener('click',toggleInfo);

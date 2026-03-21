@@ -23,6 +23,7 @@ import {
   generateCJSFromIR,
   generateProtoFromIR,
   generateJsonSchemaFromIR,
+  generateDtsFromIR,
 } from "@qa-sdk/spec-core/codegen";
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { decodePrefix, resolveAddress, type DemoCatalog } from "demo-snapshot";
@@ -340,7 +341,7 @@ function printResolved(
 
 // ── spec codegen ────────────────────────────────────
 
-export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema";
+export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema" | "dts";
 
 export async function specCodegen(options: {
   catalogInput?: unknown;
@@ -354,6 +355,27 @@ export async function specCodegen(options: {
     console.error("spec codegen은 --catalog 옵션이 필요합니다");
     process.exitCode = 1;
     return;
+  }
+
+  // codegen 전 스키마 검증
+  const validationResult = ctx.validator.validate(
+    ctx.prefixSpecs.length > 0 ? `${(ctx.prefixSpecs[0] as any).category ?? "entity"}.base` : "entity.base",
+    {},
+  );
+  // prefix specs 자체 구조 검증 (validator가 등록된 schema가 없으면 skip)
+  try {
+    for (const spec of ctx.prefixSpecs) {
+      if (!spec.schema) continue;
+      const result = ctx.validator.validate(spec.schema, {});
+      if (!result.valid) {
+        console.warn(`  ⚠ ${spec.id} 스키마 검증 경고: ${result.errors.length}건`);
+        for (const e of result.errors) {
+          console.warn(`    L${e.layer} [${e.rule}] ${e.message}`);
+        }
+      }
+    }
+  } catch {
+    // schema가 등록되지 않은 경우 skip
   }
 
   const catalog = ctx.catalogInput as DemoCatalog;
@@ -380,8 +402,14 @@ export async function specCodegen(options: {
     }
   }
 
+  // prefix별 버전 목록 추출
+  const prefixVersions: Record<string, readonly string[]> = {};
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
+    prefixVersions[prefixId] = prefix.versions.map((v: { version: string }) => v.version);
+  }
+
   // IR 생성 (모든 format의 공통 입력)
-  const ir = buildIR({ axes, prefixSpecs: ctx.prefixSpecs, ko });
+  const ir = buildIR({ axes, prefixSpecs: ctx.prefixSpecs, ko, prefixVersions });
 
   // format별 코드 생성
   let content: string;
@@ -401,9 +429,12 @@ export async function specCodegen(options: {
     case "json-schema":
       content = generateJsonSchemaFromIR(ir);
       break;
+    case "dts":
+      content = generateDtsFromIR(ir);
+      break;
     default:
       console.error(`지원하지 않는 format: ${format}`);
-      console.error("지원 형식: ts, esm, cjs, proto, json-schema");
+      console.error("지원 형식: ts, esm, cjs, proto, json-schema, dts");
       process.exitCode = 1;
       return;
   }

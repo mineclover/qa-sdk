@@ -82,6 +82,11 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY}
       REGISTRY_URL: ${INGEST_REGISTRY_URL}
       REGISTRY_VALIDATION_MODE: ${INGEST_REGISTRY_VALIDATION_MODE}
+      CONVERGENCE_ENABLED: "true"
+      CONVERGENCE_DKG_SQLITE_PATH: /data/convergence.sqlite
+      CONVERGENCE_RECORD_THRESHOLD: "50"
+      CONVERGENCE_FLUSH_INTERVAL_MS: "60000"
+      CONVERGENCE_SCHEDULE_INTERVAL_MS: "300000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,6 +98,8 @@ services:
         condition: service_started
     ports:
       - "${INGEST_SERVER_PORT}:${INGEST_SERVER_PORT}"
+    volumes:
+      - convergence-data:/data
 
   worker:
     build:
@@ -116,5 +123,128 @@ services:
     healthcheck:
       disable: true
 
+  # ── Layer 2: 경량 마이크로서비스 ──────────────────────────
+
+  registry-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    working_dir: /app/packages/registry-service
+    env_file:
+      - .env
+    environment:
+      PORT: ${REGISTRY_SERVICE_PORT:-3300}
+      SQLITE_PATH: /data/registry-service.sqlite
+    ports:
+      - "${REGISTRY_SERVICE_PORT:-3300}:${REGISTRY_SERVICE_PORT:-3300}"
+    volumes:
+      - registry-service-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:${REGISTRY_SERVICE_PORT:-3300}/health/live"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    command: ["node", "dist/server.js"]
+
+  decode-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    working_dir: /app/packages/decode-service
+    environment:
+      PORT: ${DECODE_SERVICE_PORT:-3600}
+    ports:
+      - "${DECODE_SERVICE_PORT:-3600}:${DECODE_SERVICE_PORT:-3600}"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:${DECODE_SERVICE_PORT:-3600}/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    command: ["node", "dist/server.js"]
+
+  gate-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    working_dir: /app/packages/gate-service
+    environment:
+      PORT: ${GATE_SERVICE_PORT:-3400}
+      SQLITE_DRIVER: node
+      SQLITE_PATH: /data/gate-service.sqlite
+    ports:
+      - "${GATE_SERVICE_PORT:-3400}:${GATE_SERVICE_PORT:-3400}"
+    volumes:
+      - gate-service-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:${GATE_SERVICE_PORT:-3400}/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    command: ["node", "dist/server.js"]
+
+  query-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.services
+    working_dir: /app/packages/query-service
+    environment:
+      PORT: ${QUERY_SERVICE_PORT:-3500}
+      SQLITE_DRIVER: node
+      SQLITE_PATH: /data/query-service.sqlite
+      GATE_SERVICE_URL: http://gate-service:${GATE_SERVICE_PORT:-3400}
+    depends_on:
+      gate-service:
+        condition: service_started
+    ports:
+      - "${QUERY_SERVICE_PORT:-3500}:${QUERY_SERVICE_PORT:-3500}"
+    volumes:
+      - query-service-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:${QUERY_SERVICE_PORT:-3500}/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    command: ["node", "dist/server.js"]
+
+  # ── Backup (cron 기반 자동 백업) ──────────────────────────
+  backup:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      BACKUP_DIR: /backup
+      BACKUP_RETENTION_DAILY: ${BACKUP_RETENTION_DAILY:-30}
+      BACKUP_RETENTION_WEEKLY: ${BACKUP_RETENTION_WEEKLY:-90}
+      REGISTRY_DATABASE_URL: ${REGISTRY_DATABASE_URL}
+      TRACE_DATABASE_URL: ${TRACE_DATABASE_URL}
+      REGISTRY_SERVICE_URL: http://registry-service:${REGISTRY_SERVICE_PORT:-3300}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+      - backup-data:/backup
+      - gate-service-data:/data/gate:ro
+      - query-service-data:/data/query:ro
+      - registry-service-data:/data/registry:ro
+      - convergence-data:/data/convergence:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        echo "${BACKUP_CRON_SCHEDULE:-0 2 * * *} /scripts/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        crond -f -l 2
+    profiles:
+      - backup
+
 volumes:
   pgdata:
+  convergence-data:
+  registry-service-data:
+  gate-service-data:
+  query-service-data:
+  backup-data:

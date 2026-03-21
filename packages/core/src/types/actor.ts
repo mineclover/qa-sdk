@@ -1,5 +1,9 @@
 // ── Actor Context ────────────────────────────────────────
 
+import type { IdentificationMode } from "./event-pattern.js";
+
+export type { IdentificationMode };
+
 /**
  * 이벤트를 발생시킨 행위 주체 컨텍스트.
  *
@@ -14,6 +18,8 @@ export interface ActorContext {
   actor_id: string;
   /** 실제 서비스 유저 식별자 (선택, PII 포함 가능) */
   user_id?: string;
+  /** 식별 모드 — anonymous/identified/pseudonymized/service. 미지정 시 자동 판별 */
+  identification_mode?: IdentificationMode;
   /** 익명화된 분류 속성 (선택) */
   user_attributes?: Record<string, string>;
 }

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const envSchema = z.object({
-  PORT: z.coerce.number().int().default(3300),
+  PORT: z.coerce.number().int().default(3600),
   /** DecodeMap JSON 파일 경로 또는 URL (선택) */
   DECODE_MAP_SOURCE: z.string().optional(),
   /** 캐시 TTL (밀리초). 기본 60초. */

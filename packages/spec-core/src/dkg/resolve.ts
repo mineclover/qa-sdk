@@ -9,6 +9,7 @@
 
 import type { DemoCatalog } from "demo-snapshot";
 import { decodePrefix, encodePrefixByValue } from "demo-snapshot";
+import { parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
 
 export interface ResolveResult {
   /** 최신 version의 주소 (prefix:version:address) */
@@ -36,12 +37,7 @@ export function resolve(
   serialized: string,
   latestVersion?: string,
 ): ResolveResult {
-  const parts = serialized.split(":");
-  if (parts.length !== 3) throw new Error(`Invalid address format: "${serialized}". Expected "prefix:version:address"`);
-
-  const [prefixId, version, addrStr] = parts;
-  const address = Number(addrStr);
-  if (isNaN(address)) throw new Error(`Invalid address number: "${addrStr}"`);
+  const { prefix: prefixId, version, address } = parseSerializedAddress(serialized);
 
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: "${prefixId}"`);

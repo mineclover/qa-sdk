@@ -11,6 +11,7 @@ export type {
 } from "./catalog/index.js";
 
 export { StaticCatalogProvider } from "./catalog/static-provider.js";
+export { CatalogRegistry } from "./catalog/catalog-registry.js";
 export { deriveMeta } from "./catalog/derive-meta.js";
 export { flattenForBrowser } from "./catalog/browser-flatten.js";
 
@@ -35,6 +36,19 @@ export type {
 } from "./types/payload.js";
 
 export type { ActorContext } from "./types/actor.js";
+
+export type {
+  IdentificationMode,
+  BehaviorPattern,
+  PatternConfidence,
+  PatternRule,
+  PatternMatchCondition,
+  PatternClassification,
+  PatternAnomaly,
+  AnomalyKind,
+  PatternStats,
+  PatternHealthReport,
+} from "./types/event-pattern.js";
 
 export type {
   RecordKind,
@@ -136,6 +150,18 @@ export {
 } from "./lib/id.js";
 
 export { now } from "./lib/clock.js";
+
+export {
+  parseSerializedAddress,
+  serializeAddress,
+} from "./lib/address-parser.js";
+export type { ParsedAddress } from "./lib/address-parser.js";
+
+export { SERVICE_PORTS, detectPortConflicts, warnPortConflict } from "./lib/service-ports.js";
+export type { ServicePortEntry } from "./lib/service-ports.js";
+
+export { identifyActorMode } from "./lib/identify-actor.js";
+export type { IdentifyActorInput } from "./lib/identify-actor.js";
 
 // ── Ports (Storage Contracts) ───────────────────────────
 

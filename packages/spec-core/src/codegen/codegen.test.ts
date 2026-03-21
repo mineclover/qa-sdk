@@ -1,5 +1,5 @@
 /**
- * codegen 기본 테스트 — IR → TS/JS/Proto/JSON Schema 변환 검증.
+ * codegen 기본 테스트 — IR → TS/JS/Proto/JSON Schema/DTS 변환 검증.
  */
 
 import { describe, it, expect } from "vitest";
@@ -10,6 +10,7 @@ import { generateFromIR, generateTypescriptFile } from "./ts-generator.js";
 import { generateJSFromIR } from "./js-generator.js";
 import { generateProtoFromIR } from "./proto-generator.js";
 import { generateJsonSchemaFromIR } from "./json-schema-generator.js";
+import { generateDtsFromIR } from "./dts-generator.js";
 
 describe("codegen — IR 생성", () => {
   it("DEMO_CATALOG → IR 생성", () => {
@@ -110,5 +111,40 @@ describe("codegen — JSON Schema 출력", () => {
     const parsed = JSON.parse(jsonSchema);
     expect(parsed).toBeDefined();
     expect(parsed.$schema || parsed.definitions || parsed.type).toBeDefined();
+  });
+});
+
+describe("codegen — DTS 출력", () => {
+  it("IR → .d.ts 타입 선언 생성", () => {
+    const specs = catalogToPrefixSpecs(DEMO_CATALOG);
+    const axes = Object.entries(DEMO_CATALOG.axes).slice(0, 5).map(([id, axis]) => {
+      const versions = Object.keys(axis.versions);
+      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      return { id, entries: [...latest.entries], capacity: latest.capacity };
+    });
+
+    const prefixVersions: Record<string, readonly string[]> = {};
+    for (const [prefixId, prefix] of Object.entries(DEMO_CATALOG.prefixes)) {
+      prefixVersions[prefixId] = prefix.versions.map(v => v.version);
+    }
+
+    const ir = buildIR({ axes, prefixSpecs: specs.slice(0, 3), prefixVersions });
+    const dts = generateDtsFromIR(ir);
+
+    // Entry union type이 있어야 함
+    expect(dts).toContain("export type");
+    expect(dts).toContain("Entry");
+
+    // Coord interface에 readonly 필드가 있어야 함
+    expect(dts).toContain("Coord");
+    expect(dts).toContain("readonly");
+
+    // 런타임 const가 없어야 함
+    expect(dts).not.toContain("export const");
+
+    // Version type이 있어야 함 (prefixVersions 전달했으므로)
+    expect(dts).toContain("Version");
+
+    console.log(`\n  DTS output: ${dts.length} chars, ${dts.split("\n").length} lines`);
   });
 });

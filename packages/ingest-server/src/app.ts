@@ -28,6 +28,7 @@ import { createScenarioRoutes } from "./routes/scenario.js";
 import { createVerdictRoutes } from "./routes/verdict.js";
 import { createDlqRoutes } from "./routes/dlq.js";
 import { createCleanupRoutes } from "./routes/cleanup.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
 import { createSessionRoutes } from "./routes/session.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import type { RecordStreamBroker } from "./lib/record-stream-broker.js";
@@ -49,6 +50,8 @@ import {
   type CleanupStore,
 } from "./lib/cleanup.js";
 import type { DebugStore } from "./lib/debug-store.js";
+import type { ConvergencePipelinePort } from "./lib/phase-two-worker.js";
+import type { MetricsCollector } from "./lib/metrics-collector.js";
 
 export interface AppDeps {
   appLifecycle?: AppLifecycle;
@@ -71,6 +74,8 @@ export interface AppDeps {
   registryValidationMode?: RegistryValidationMode;
   registryValidator?: RegistryEventValidator;
   taskQueue?: TaskQueue<TaskPayload>;
+  convergencePipeline?: ConvergencePipelinePort;
+  metricsCollector?: MetricsCollector;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;
@@ -137,6 +142,15 @@ export function createApp(deps: AppDeps) {
     createCleanupRoutes({
       cleanupStore,
       logger,
+    }),
+  );
+  app.route(
+    "/",
+    createMetricsRoutes({
+      metricsCollector: deps.metricsCollector,
+      dlqStore: deps.dlqStore,
+      streamConnectionRegistry,
+      getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
 

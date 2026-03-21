@@ -33,6 +33,7 @@
  * decodeToUnsafe(index, out)   : 검사 없는 버퍼 기록.
  */
 
+import type { Coord } from "./types.js";
 import {
   BufferError,
   CoordError,
@@ -197,6 +198,95 @@ export class WeightedIndex {
     this._decodeCore(index, out);
   }
 
+  // ── Batch API ──────────────────────────────────────────────────────────
+
+  /** 배치 정변환: 좌표 배열 → Uint32Array. 경계 검사 포함. */
+  encodeBatch(coords: readonly Coord[]): Uint32Array {
+    if (this.size > 0xFFFF_FFFF) {
+      throw new IndexRangeError(
+        `size (${this.size}) exceeds Uint32Array range (4294967295)`
+      );
+    }
+    const n = coords.length;
+    const out = new Uint32Array(n);
+    for (let i = 0; i < n; i++) {
+      this._validateCoords(coords[i] as number[]);
+      out[i] = this._encodeCore(coords[i] as number[]);
+    }
+    return out;
+  }
+
+  /** 배치 역변환: Uint32Array → 좌표 배열. 경계 검사 포함. */
+  decodeBatch(addrs: Uint32Array): number[][] {
+    const n = addrs.length;
+    const out: number[][] = new Array(n);
+    for (let i = 0; i < n; i++) {
+      this._validateIndex(addrs[i]);
+      const row = new Array<number>(this.shape.length);
+      this._decodeCore(addrs[i], row);
+      out[i] = row;
+    }
+    return out;
+  }
+
+  /** 배치 정변환 (검사 없음). 호출자가 좌표 범위를 보장해야 한다. */
+  encodeBatchUnsafe(coords: readonly Coord[]): Uint32Array {
+    const n = coords.length;
+    const out = new Uint32Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = this._encodeCore(coords[i] as number[]);
+    }
+    return out;
+  }
+
+  /** 배치 역변환 (검사 없음). 호출자가 index 범위를 보장해야 한다. */
+  decodeBatchUnsafe(addrs: Uint32Array): number[][] {
+    const n = addrs.length;
+    const out: number[][] = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const row = new Array<number>(this.shape.length);
+      this._decodeCore(addrs[i], row);
+      out[i] = row;
+    }
+    return out;
+  }
+
+  /** Flat 배치 정변환: row-major Float64Array → Float64Array. zero-copy. */
+  encodeBatchFlat(coordsBuf: Float64Array, itemCount: number): Float64Array {
+    const d = this.shape.length;
+    if (coordsBuf.length !== itemCount * d) {
+      throw new BufferError(
+        `coordsBuf length (${coordsBuf.length}) must equal itemCount * dims (${itemCount} * ${d} = ${itemCount * d})`
+      );
+    }
+    const w = this._weightsBuf;
+    const out = new Float64Array(itemCount);
+    for (let i = 0; i < itemCount; i++) {
+      const base = i * d;
+      let index = 0;
+      for (let j = 0; j < d; j++) {
+        index += (coordsBuf[base + j] - 1) * w[j];
+      }
+      out[i] = index;
+    }
+    return out;
+  }
+
+  /** Flat 배치 역변환: Float64Array → row-major Float64Array. zero-copy. */
+  decodeBatchFlat(addrsBuf: Float64Array, itemCount: number): Float64Array {
+    if (addrsBuf.length !== itemCount) {
+      throw new BufferError(
+        `addrsBuf length (${addrsBuf.length}) must equal itemCount (${itemCount})`
+      );
+    }
+    const d = this.shape.length;
+    const out = new Float64Array(itemCount * d);
+    for (let i = 0; i < itemCount; i++) {
+      this._decodeCoreFlat(addrsBuf[i], out, i * d);
+    }
+    return out;
+  }
+
   // ── 내부 ────────────────────────────────────────────────────────────────
 
   private _encodeCore(coords: number[]): number {
@@ -214,6 +304,16 @@ export class WeightedIndex {
     for (let i = s.length - 1; i >= 0; i--) {
       const ni = s[i];
       out[i] = (rest % ni) + 1;
+      rest = Math.floor(rest / ni);
+    }
+  }
+
+  private _decodeCoreFlat(index: number, out: Float64Array, offset: number): void {
+    const s = this.shapeBuf;
+    let rest = index;
+    for (let i = s.length - 1; i >= 0; i--) {
+      const ni = s[i];
+      out[offset + i] = (rest % ni) + 1;
       rest = Math.floor(rest / ni);
     }
   }

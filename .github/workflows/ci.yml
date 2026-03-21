@@ -1,13 +1,16 @@
-name: CI (disabled — manual only)
+name: CI
 
-# 자동 트리거 비활성화. 수동 실행만 가능.
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       matrix:
         node-version:
@@ -71,3 +74,9 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/qa_sdk_ci
         run: pnpm --filter @qa-sdk/store run test:integration
+
+      - name: DKG self-check (빌드/테스트/커버리지/불변조건)
+        run: node packages/cli/dist/index.js dkg self-check
+
+      - name: DKG converge (수렴 분석)
+        run: node packages/cli/dist/index.js dkg converge

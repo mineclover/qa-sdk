@@ -176,3 +176,64 @@ describe("DKG SQLite Store — JSON export/import", () => {
     expect(store.getMeta("nonexistent")).toBeNull();
   });
 });
+
+// ── Phase 6b: 멀티 카탈로그 격리 ──────────────────────
+
+describe("DKG SQLite Store — 멀티 카탈로그 격리", () => {
+
+  it("catalogId 기본값 'demo'", () => {
+    expect(store.catalogId).toBe("demo");
+  });
+
+  it("커스텀 catalogId로 생성", () => {
+    const s = new DkgSqliteStore(":memory:", "custom");
+    expect(s.catalogId).toBe("custom");
+    s.close();
+  });
+
+  it("exportJson에 catalogId 포함", () => {
+    const s = new DkgSqliteStore(":memory:", "export-test");
+    const graph = bootstrapDkg();
+    s.saveGraph(graph);
+
+    const exported = JSON.parse(s.exportJson());
+    expect(exported.catalogId).toBe("export-test");
+    s.close();
+  });
+
+  it("listCatalogIds — 저장된 카탈로그 목록", () => {
+    const graph = bootstrapDkg();
+    store.saveGraph(graph);
+
+    const ids = store.listCatalogIds();
+    expect(ids).toContain("demo");
+  });
+
+  it("deleteCatalog — 특정 카탈로그만 삭제", () => {
+    const graph = bootstrapDkg();
+    store.saveGraph(graph);
+    const before = store.stats();
+    expect(before.nodes).toBeGreaterThan(0);
+
+    const deleted = store.deleteCatalog("demo");
+    expect(deleted.nodesDeleted).toBe(before.nodes);
+
+    const after = store.stats();
+    expect(after.nodes).toBe(0);
+  });
+
+  it("importJson은 현재 catalogId에 저장", () => {
+    const src = new DkgSqliteStore(":memory:", "src");
+    src.saveGraph(bootstrapDkg());
+    const json = src.exportJson();
+    src.close();
+
+    const dest = new DkgSqliteStore(":memory:", "dest");
+    const result = dest.importJson(json);
+    expect(result.nodesImported).toBeGreaterThan(0);
+
+    const loaded = dest.loadGraph();
+    expect(loaded.nodeCount).toBe(result.nodesImported);
+    dest.close();
+  });
+});

@@ -45,3 +45,13 @@ export interface AsyncBatchEncoder {
   encodeBatch(coords: readonly Coord[]): Promise<Uint32Array>;
   decodeBatch(addrs: Uint32Array): Promise<number[][]>;
 }
+
+/**
+ * Float64Array 기반 zero-copy 배치 인코더/디코더 인터페이스.
+ *
+ * coords는 row-major 패킹: [coord0_dim0, coord0_dim1, ..., coord1_dim0, ...]
+ */
+export interface FlatBatchEncoder {
+  encodeBatchFlat(coordsBuf: Float64Array, itemCount: number): Float64Array;
+  decodeBatchFlat(addrsBuf: Float64Array, itemCount: number): Float64Array;
+}

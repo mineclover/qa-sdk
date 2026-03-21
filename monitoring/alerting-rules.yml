@@ -1,0 +1,58 @@
+# Prometheus 알림 규칙
+groups:
+  - name: qa-sdk-alerts
+    rules:
+      # ── DLQ 누적 ──
+      - alert: DlqDepthHigh
+        expr: dlq_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DLQ depth가 100 초과 ({{ $value }})"
+          description: "worker 스케일아웃 또는 근본 원인 조사 필요"
+
+      # ── 5xx 비율 ──
+      - alert: IngestErrorRateHigh
+        expr: >
+          (
+            sum(rate(ingest_requests_total{status="500"}[5m]))
+            /
+            sum(rate(ingest_requests_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ingest-server 5xx 비율 1% 초과"
+          description: "로그 확인, DB 연결 점검 필요"
+
+      # ── Convergence 분류율 ──
+      - alert: ClassificationRateLow
+        expr: convergence_classification_rate < 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "패턴 분류율 80% 미만 ({{ $value }}%)"
+          description: "패턴 규칙 추가 또는 미분류 세션 분석 필요"
+
+      # ── 프로세스 다운 ──
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 서비스 다운"
+          description: "{{ $labels.instance }} 응답 없음"
+
+      # ── 메모리 사용량 ──
+      - alert: HighMemoryUsage
+        expr: process_rss_bytes > 512 * 1024 * 1024
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} RSS 메모리 512MB 초과"
+          description: "메모리 누수 조사 필요"

@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { SessionStore } from "@qa-sdk/core";
 import { badRequest, sessionNotFound } from "../lib/errors.js";
+import type { PatternClassificationPort } from "../lib/pattern-classification-port.js";
 
 export interface SessionRouteDeps {
   sessionStore: SessionStore;
+  patternClassifier?: PatternClassificationPort;
 }
 
 const createSessionBodySchema = z.object({
@@ -80,7 +82,19 @@ export function createSessionRoutes(deps: SessionRouteDeps) {
 
     await deps.sessionStore.close(sessionId);
 
-    return c.json({ closed: true, sessionId });
+    // 패턴 분류 (비동기, 실패 시 무시)
+    let patternResult = null;
+    if (deps.patternClassifier) {
+      try {
+        patternResult = await deps.patternClassifier.classifySession(sessionId);
+      } catch { /* 분류 실패는 세션 close를 막지 않음 */ }
+    }
+
+    return c.json({
+      closed: true,
+      sessionId,
+      ...(patternResult ? { pattern: patternResult.classification } : {}),
+    });
   });
 
   return app;

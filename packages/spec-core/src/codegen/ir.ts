@@ -39,6 +39,8 @@ export interface IRStruct {
   description?: string;
   /** 필드 목록 */
   fields: readonly IRField[];
+  /** prefix 버전 목록 (예: ["v1", "v2"]) */
+  versions?: readonly string[];
 }
 
 export interface IRField {

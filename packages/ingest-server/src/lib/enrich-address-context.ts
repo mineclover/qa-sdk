@@ -1,4 +1,5 @@
 import type { TransmissionEnvelope, EventRecord } from "@qa-sdk/core";
+import { parseSerializedAddress } from "@qa-sdk/core";
 
 /**
  * envelope.infra_context를 각 record의 address_context에 머지한다.
@@ -67,10 +68,10 @@ export function checkAddressHealth(
         continue;
       }
 
-      const parts = serialized.split(":");
-      if (parts.length !== 3) continue;
+      let parsed;
+      try { parsed = parseSerializedAddress(serialized); } catch { continue; }
 
-      const version = parts[1];
+      const version = parsed.version;
       validAddresses++;
 
       const latest = latestVersions.get(prefixId);

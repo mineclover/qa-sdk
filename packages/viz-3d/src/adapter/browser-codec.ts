@@ -91,7 +91,11 @@ export function decode(
   catalog: BrowserCatalog,
   serialized: string,
 ): { prefix: string; version: string; values: Record<string, string | number> } | null {
-  const [prefixId, version, addrStr] = serialized.split(":");
+  const parts = serialized.split(":");
+  // 3파트: prefix:ver:addr / 4파트: catalogId:prefix:ver:addr
+  const [prefixId, version, addrStr] = parts.length === 4
+    ? [parts[1], parts[2], parts[3]]
+    : [parts[0], parts[1], parts[2]];
   const def = catalog[prefixId];
   if (!def) return null;
 

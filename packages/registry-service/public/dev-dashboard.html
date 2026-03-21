@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Dev Dashboard</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-card: #1c2128;
+  --bg-card-hover: #242a33;
+  --border-primary: #30363d;
+  --border-secondary: #21262d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --accent-purple: #bc8cff;
+  --accent-orange: #d18616;
+  --status-ok: #3fb950;
+  --status-warning: #d29922;
+  --status-critical: #f85149;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.last-update {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 14px;
+}
+.btn-refresh:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.btn-refresh.spinning .refresh-icon {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.refresh-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Main ── */
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+}
+
+/* ── Overview Bar ── */
+.overview-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.overview-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.overview-stat .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.overview-stat .value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.overview-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-primary);
+}
+
+.overview-alert {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--accent-yellow);
+}
+
+.overview-alert .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+}
+
+.overview-health {
+  font-size: 12px;
+  color: var(--status-ok);
+}
+
+/* ── Section ── */
+.section {
+  margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ── Progress Bar ── */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.progress-bar-wrapper {
+  flex: 1;
+  max-width: 300px;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 3px;
+  transition: width var(--transition-normal);
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* ── Flow Map ── */
+.flow-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.flow-column {
+  min-width: 0;
+}
+
+.flow-column-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 0 8px 0;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-column-header .count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.flow-card {
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.flow-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+.flow-card.selected {
+  border-color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.06);
+}
+
+.flow-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.ok { background: var(--status-ok); }
+.status-dot.warning { background: var(--status-warning); }
+.status-dot.critical { background: var(--status-critical); }
+.status-dot.neutral { background: var(--text-muted); }
+
+.flow-card-id {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flow-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.3px;
+}
+
+.badge-category {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent-blue);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+}
+
+.badge-lifecycle {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--accent-green);
+  border: 1px solid rgba(63, 185, 80, 0.2);
+}
+.badge-lifecycle.draft {
+  background: rgba(139, 148, 158, 0.12);
+  color: var(--text-secondary);
+  border: 1px solid rgba(139, 148, 158, 0.2);
+}
+.badge-lifecycle.deprecated {
+  background: rgba(248, 81, 73, 0.12);
+  color: var(--accent-red);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.badge-dim {
+  background: rgba(188, 140, 255, 0.12);
+  color: var(--accent-purple);
+  border: 1px solid rgba(188, 140, 255, 0.2);
+}
+
+.badge-role {
+  background: rgba(209, 134, 22, 0.12);
+  color: var(--accent-orange);
+  border: 1px solid rgba(209, 134, 22, 0.2);
+}
+
+/* ── Headroom Bar ── */
+.headroom-bar-wrapper {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.headroom-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.headroom-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width var(--transition-normal);
+}
+.headroom-bar-fill.ok { background: var(--status-ok); }
+.headroom-bar-fill.warning { background: var(--status-warning); }
+.headroom-bar-fill.critical { background: var(--status-critical); }
+
+.headroom-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* ── Detail Panel ── */
+.detail-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-top: 12px;
+  margin-bottom: 24px;
+  display: none;
+}
+.detail-panel.visible { display: block; }
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.detail-title {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.detail-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+.detail-close:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-field-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-field-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.detail-field-value .tag {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  margin: 1px 2px;
+}
+
+/* ── Bottom Grid ── */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Metrics ── */
+.metrics-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.metrics-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.metrics-summary-item .count { font-weight: 700; }
+.metrics-summary-item.ok .count { color: var(--status-ok); }
+.metrics-summary-item.warning .count { color: var(--status-warning); }
+.metrics-summary-item.critical .count { color: var(--status-critical); }
+
+.metric-category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.metric-category-card {
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+}
+
+.metric-category-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  text-transform: capitalize;
+}
+
+.metric-category-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.metric-badge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+.metric-badge.ok {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--status-ok);
+}
+.metric-badge.warning {
+  background: rgba(210, 153, 34, 0.12);
+  color: var(--status-warning);
+}
+.metric-badge.critical {
+  background: rgba(248, 81, 73, 0.12);
+  color: var(--status-critical);
+}
+.metric-badge.zero {
+  opacity: 0.3;
+}
+
+/* ── Timeline ── */
+.timeline-list {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.timeline-list::-webkit-scrollbar {
+  width: 6px;
+}
+.timeline-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.timeline-list::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-secondary);
+}
+.timeline-item:last-child { border-bottom: none; }
+
+.timeline-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 3px;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.timeline-dot.decision { background: var(--accent-blue); }
+.timeline-dot.observation { background: var(--accent-yellow); }
+.timeline-dot.observation.resolved { background: var(--accent-green); }
+.timeline-dot.version-event { background: var(--accent-purple); }
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  min-height: 8px;
+  background: var(--border-secondary);
+  margin-top: 4px;
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-content-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.timeline-kind-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.timeline-kind-badge.decision {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent-blue);
+}
+.timeline-kind-badge.observation {
+  background: rgba(210, 153, 34, 0.12);
+  color: var(--accent-yellow);
+}
+.timeline-kind-badge.version-event {
+  background: rgba(188, 140, 255, 0.12);
+  color: var(--accent-purple);
+}
+
+.timeline-id {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.timeline-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.timeline-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.timeline-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.timeline-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.badge-loop-closed {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(63, 185, 80, 0.25);
+}
+
+/* ── Loading / Error ── */
+.state-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 12px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-card-hover) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.skeleton-bar { height: 56px; margin-bottom: 20px; }
+.skeleton-flow { height: 300px; margin-bottom: 20px; }
+.skeleton-bottom { height: 200px; }
+
+.error-container {
+  text-align: center;
+  padding: 32px;
+}
+
+.error-message {
+  font-size: 14px;
+  color: var(--accent-red);
+  margin-bottom: 12px;
+}
+
+.btn-retry {
+  padding: 6px 16px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all var(--transition-fast);
+}
+.btn-retry:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+
+/* ── 3D Monitor Link ── */
+.btn-monitor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.08);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-monitor-link:hover {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: rgba(88, 166, 255, 0.4);
+  color: #79b8ff;
+}
+
+/* ── 3D Minimap Panel ── */
+.minimap-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.minimap-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.minimap-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-minimap {
+  padding: 3px 10px;
+  font-size: 11px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+.btn-minimap:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.minimap-iframe {
+  width: 100%;
+  height: 300px;
+  border: none;
+  background: #050508;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .header { padding: 10px 16px; }
+  .main { padding: 16px; }
+  .overview-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .overview-alert { margin-left: 0; }
+  .overview-divider { display: none; }
+  .flow-map { grid-template-columns: 1fr; }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .metric-category-grid { grid-template-columns: 1fr; }
+  .minimap-iframe { height: 200px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <span class="header-title">QA-SDK Dev Dashboard</span>
+  <div class="header-actions">
+    <a href="http://localhost:3000/monitor.html" target="_blank" class="btn-monitor-link" title="3D Coordinate Monitor">3D Monitor</a>
+    <span id="wsStatus" style="font-size:11px;padding:2px 6px;border-radius:3px;background:var(--color-border);margin-right:8px">poll</span>
+    <span class="last-update" id="lastUpdate"></span>
+    <button class="btn-refresh" id="btnRefresh" title="Refresh">
+      <svg class="refresh-icon" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 2.5a5.5 5.5 0 1 0 5.25 3.85.75.75 0 0 1 1.44-.42A7 7 0 1 1 8 1v1.5z"/>
+        <path d="M8 1V4.5L11 2.5 8 1z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main class="main" id="app">
+  <!-- Content injected by JS -->
+</main>
+
+<script>
+(function() {
+  "use strict";
+
+  const API_BASE = "/dev/api";
+  const REFRESH_INTERVAL = 30000;
+  const MAX_TIMELINE_ITEMS = 30;
+
+  let state = {
+    overview: null,
+    flowMap: null,
+    metrics: null,
+    timeline: null,
+    loading: true,
+    error: null,
+    lastFetchTime: null,
+    selectedCard: null,
+  };
+
+  let refreshTimer = null;
+
+  // ── Helpers ──
+
+  function escapeHtml(str) {
+    if (str == null) return "";
+    const div = document.createElement("div");
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) return seconds + "s ago";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + "m ago";
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "h ago";
+    const days = Math.floor(hours / 24);
+    return days + "d ago";
+  }
+
+  function updateLastUpdateDisplay() {
+    const el = document.getElementById("lastUpdate");
+    if (!el) return;
+    if (!state.lastFetchTime) {
+      el.textContent = "";
+      return;
+    }
+    const diff = Date.now() - state.lastFetchTime;
+    const sec = Math.floor(diff / 1000);
+    if (sec < 60) el.textContent = "Last: " + sec + "s ago";
+    else el.textContent = "Last: " + Math.floor(sec / 60) + "m ago";
+  }
+
+  function axisStatus(item) {
+    if (item.status) return item.status;
+    if (item.capacity === 0) return "critical";
+    const ratio = item.entries / item.capacity;
+    if (ratio >= 1) return "critical";
+    if (ratio >= 0.8) return "warning";
+    return "ok";
+  }
+
+  function prefixStatus(item) {
+    if (item.lifecycle === "deprecated") return "critical";
+    if (item.lifecycle === "draft") return "neutral";
+    return "ok";
+  }
+
+  function lifecycleClass(lc) {
+    if (lc === "draft") return "draft";
+    if (lc === "deprecated") return "deprecated";
+    return "";
+  }
+
+  // ── API Fetch ──
+
+  async function fetchJson(path) {
+    const resp = await fetch(API_BASE + path);
+    if (!resp.ok) throw new Error("HTTP " + resp.status + " on " + path);
+    return resp.json();
+  }
+
+  async function loadAll() {
+    state.loading = true;
+    state.error = null;
+    render();
+
+    try {
+      const [overview, flowMap, metrics, timeline] = await Promise.all([
+        fetchJson("/overview"),
+        fetchJson("/flow-map"),
+        fetchJson("/metrics"),
+        fetchJson("/timeline"),
+      ]);
+      state.overview = overview;
+      state.flowMap = flowMap;
+      state.metrics = metrics;
+      state.timeline = timeline;
+      state.lastFetchTime = Date.now();
+      state.loading = false;
+    } catch (e) {
+      state.error = e.message || "Failed to fetch data";
+      state.loading = false;
+    }
+    render();
+  }
+
+  async function doRefresh() {
+    const btn = document.getElementById("btnRefresh");
+    if (btn) btn.classList.add("spinning");
+    try {
+      await fetch(API_BASE + "/refresh", { method: "POST" });
+    } catch (_) {
+      // ignore refresh failure, still re-fetch
+    }
+    await loadAll();
+    if (btn) btn.classList.remove("spinning");
+  }
+
+  // ── Render ──
+
+  function render() {
+    const app = document.getElementById("app");
+
+    if (state.loading && !state.overview) {
+      app.innerHTML = renderLoading();
+      return;
+    }
+
+    if (state.error && !state.overview) {
+      app.innerHTML = renderError(state.error);
+      return;
+    }
+
+    let html = "";
+    html += renderOverviewBar();
+    html += renderFlowMap();
+    html += renderDetailPanel();
+    html += renderBottomGrid();
+    html += renderMinimap();
+    app.innerHTML = html;
+    bindEvents();
+  }
+
+  function renderLoading() {
+    return '<div class="skeleton skeleton-bar"></div>'
+      + '<div class="skeleton skeleton-flow"></div>'
+      + '<div class="skeleton skeleton-bottom"></div>';
+  }
+
+  function renderError(msg) {
+    return '<div class="error-container">'
+      + '<div class="error-message">' + escapeHtml(msg) + '</div>'
+      + '<button class="btn-retry" onclick="window.__dashRetry()">Retry</button>'
+      + '</div>';
+  }
+
+  // ── Overview Bar ──
+
+  function renderOverviewBar() {
+    const o = state.overview;
+    if (!o) return "";
+    const nodes = o.nodes || {};
+    const obs = o.observations || {};
+    const health = o.health || {};
+
+    return '<div class="overview-bar">'
+      + stat("axes", nodes.axis)
+      + divider()
+      + stat("prefixes", nodes.prefix)
+      + divider()
+      + stat("domains", nodes.domain)
+      + divider()
+      + stat("decisions", nodes.decision)
+      + divider()
+      + '<span class="overview-health">' + escapeHtml(health.constraints || "") + '</span>'
+      + (obs.unresolved > 0
+        ? '<div class="overview-alert"><span class="dot"></span>' + obs.unresolved + ' unresolved obs</div>'
+        : '')
+      + '</div>';
+  }
+
+  function stat(label, value) {
+    return '<div class="overview-stat"><span class="value">' + (value != null ? value : "-") + '</span><span class="label">' + escapeHtml(label) + '</span></div>';
+  }
+
+  function divider() {
+    return '<span class="overview-divider"></span>';
+  }
+
+  // ── Flow Map ──
+
+  function renderFlowMap() {
+    const fm = state.flowMap;
+    if (!fm) return "";
+    const layers = fm.layers || {};
+    const progress = fm.progress || {};
+    const schemas = layers.schema || [];
+    const prefixes = layers.prefix || [];
+    const consumers = layers.consumer || [];
+
+    let html = '<div class="section">';
+    html += '<div class="section-header"><span class="section-title">Development Flow</span></div>';
+
+    // Progress bar
+    const defined = progress.defined || 0;
+    const active = progress.active || 0;
+    const pct = defined > 0 ? Math.round((active / defined) * 100) : 0;
+    html += '<div class="progress-container">'
+      + '<div class="progress-bar-wrapper"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div>'
+      + '<span class="progress-text">' + active + '/' + defined + ' active</span>';
+    if (progress.draft > 0) html += '<span class="progress-text" style="color:var(--text-muted)">' + progress.draft + ' draft</span>';
+    if (progress.deprecated > 0) html += '<span class="progress-text" style="color:var(--accent-red)">' + progress.deprecated + ' deprecated</span>';
+    html += '</div>';
+
+    html += '<div class="flow-map">';
+
+    // Schema column
+    html += '<div class="flow-column">';
+    html += '<div class="flow-column-header">Schema (axes) <span class="count">' + schemas.length + '</span></div>';
+    for (const item of schemas) {
+      const st = axisStatus(item);
+      const sel = isSelected("schema", item.id) ? " selected" : "";
+      const headroomPct = item.capacity > 0 ? Math.round((item.entries / item.capacity) * 100) : 100;
+      html += '<div class="flow-card' + sel + '" data-layer="schema" data-id="' + escapeHtml(item.id) + '">'
+        + '<div class="flow-card-top">'
+        + '<span class="status-dot ' + st + '"></span>'
+        + '<span class="flow-card-id">' + escapeHtml(item.id) + '</span>'
+        + '</div>'
+        + '<div class="flow-card-meta">'
+        + '<span class="badge badge-category">v' + escapeHtml(String(item.version || "")) + '</span>'
+        + '</div>'
+        + '<div class="headroom-bar-wrapper">'
+        + '<div class="headroom-bar"><div class="headroom-bar-fill ' + st + '" style="width:' + headroomPct + '%"></div></div>'
+        + '<span class="headroom-label">' + item.entries + '/' + item.capacity + '</span>'
+        + '</div>'
+        + '</div>';
+    }
+    html += '</div>';
+
+    // Prefix column
+    html += '<div class="flow-column">';
+    html += '<div class="flow-column-header">Prefix <span class="count">' + prefixes.length + '</span></div>';
+    for (const item of prefixes) {
+      const st = prefixStatus(item);
+      const sel = isSelected("prefix", item.id) ? " selected" : "";
+      const lcClass = lifecycleClass(item.lifecycle);
+      html += '<div class="flow-card' + sel + '" data-layer="prefix" data-id="' + escapeHtml(item.id) + '">'
+        + '<div class="flow-card-top">'
+        + '<span class="status-dot ' + st + '"></span>'
+        + '<span class="flow-card-id">' + escapeHtml(item.id) + '</span>'
+        + '</div>'
+        + '<div class="flow-card-meta">'
+        + '<span class="badge badge-category">' + escapeHtml(item.category || "") + '</span>'
+        + '<span class="badge badge-lifecycle ' + lcClass + '">' + escapeHtml(item.lifecycle || "") + '</span>'
+        + '<span class="badge badge-dim">' + (item.dimCount || 0) + 'D</span>'
+        + '</div>'
+        + '</div>';
+    }
+    html += '</div>';
+
+    // Consumer column
+    html += '<div class="flow-column">';
+    html += '<div class="flow-column-header">Consumer <span class="count">' + consumers.length + '</span></div>';
+    for (const item of consumers) {
+      const sel = isSelected("consumer", item.id) ? " selected" : "";
+      html += '<div class="flow-card' + sel + '" data-layer="consumer" data-id="' + escapeHtml(item.id) + '">'
+        + '<div class="flow-card-top">'
+        + '<span class="status-dot ok"></span>'
+        + '<span class="flow-card-id">' + escapeHtml(item.id) + '</span>'
+        + '</div>'
+        + '<div class="flow-card-meta">'
+        + '<span class="badge badge-role">' + escapeHtml(item.role || "") + '</span>'
+        + '<span class="badge badge-dim">' + ((item.prefixes || []).length) + ' prefixes</span>'
+        + '</div>'
+        + '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>'; // .flow-map
+    html += '</div>'; // .section
+    return html;
+  }
+
+  function isSelected(layer, id) {
+    return state.selectedCard && state.selectedCard.layer === layer && state.selectedCard.id === id;
+  }
+
+  // ── Detail Panel ──
+
+  function renderDetailPanel() {
+    if (!state.selectedCard) return '<div class="detail-panel" id="detailPanel"></div>';
+
+    const { layer, id } = state.selectedCard;
+    const fm = state.flowMap;
+    if (!fm) return '<div class="detail-panel" id="detailPanel"></div>';
+
+    let item = null;
+    const layers = fm.layers || {};
+    const list = layers[layer] || [];
+    for (const el of list) {
+      if (el.id === id) { item = el; break; }
+    }
+    if (!item) return '<div class="detail-panel" id="detailPanel"></div>';
+
+    // Find related edges
+    const edges = fm.edges || [];
+    const related = edges.filter(function(e) { return e.from === id || e.to === id; });
+
+    let html = '<div class="detail-panel visible" id="detailPanel">';
+    html += '<div class="detail-header"><span class="detail-title">' + escapeHtml(id) + '</span>'
+      + '<button class="detail-close" id="detailClose" title="Close">&#x2715;</button></div>';
+
+    html += '<div class="detail-grid">';
+
+    if (item.name) html += field("name", item.name);
+    if (item.version) html += field("version", item.version);
+    if (item.entries != null) html += field("entries", item.entries);
+    if (item.capacity != null) html += field("capacity", item.capacity);
+    if (item.headroom != null) html += field("headroom", item.headroom);
+    if (item.status) html += field("status", item.status);
+    if (item.category) html += field("category", item.category);
+    if (item.lifecycle) html += field("lifecycle", item.lifecycle);
+    if (item.dimCount != null) html += field("dimensions", item.dimCount);
+    if (item.role) html += field("role", item.role);
+
+    if (item.axes && item.axes.length > 0) {
+      html += '<div class="detail-field"><span class="detail-field-label">axes</span>'
+        + '<div class="detail-field-value">' + item.axes.map(function(a) { return '<span class="tag">' + escapeHtml(a) + '</span>'; }).join("") + '</div></div>';
+    }
+
+    if (item.prefixes && item.prefixes.length > 0) {
+      html += '<div class="detail-field"><span class="detail-field-label">prefixes</span>'
+        + '<div class="detail-field-value">' + item.prefixes.map(function(p) { return '<span class="tag">' + escapeHtml(p) + '</span>'; }).join("") + '</div></div>';
+    }
+
+    if (item.consumers && item.consumers.length > 0) {
+      html += '<div class="detail-field"><span class="detail-field-label">consumers</span>'
+        + '<div class="detail-field-value">' + item.consumers.map(function(c) { return '<span class="tag">' + escapeHtml(c) + '</span>'; }).join("") + '</div></div>';
+    }
+
+    if (related.length > 0) {
+      html += '<div class="detail-field"><span class="detail-field-label">relationships</span>'
+        + '<div class="detail-field-value">' + related.map(function(e) {
+          const other = e.from === id ? e.to : e.from;
+          return '<span class="tag">' + escapeHtml(e.type) + ': ' + escapeHtml(other) + '</span>';
+        }).join("") + '</div></div>';
+    }
+
+    html += '</div>'; // .detail-grid
+    html += '</div>'; // .detail-panel
+    return html;
+  }
+
+  function field(label, value) {
+    return '<div class="detail-field"><span class="detail-field-label">' + escapeHtml(label) + '</span>'
+      + '<span class="detail-field-value">' + escapeHtml(String(value)) + '</span></div>';
+  }
+
+  // ── Bottom Grid ──
+
+  function renderBottomGrid() {
+    return '<div class="bottom-grid">'
+      + renderMetrics()
+      + renderTimeline()
+      + '</div>';
+  }
+
+  // ── 3D Minimap ──
+
+  function renderMinimap() {
+    return '<div class="section">'
+      + '<div class="minimap-panel">'
+      + '<div class="minimap-header">'
+      + '<span class="minimap-title">3D Coordinate Space</span>'
+      + '<div class="minimap-actions">'
+      + '<a class="btn-minimap" href="http://localhost:3000/monitor.html" target="_blank">전체 화면</a>'
+      + '</div>'
+      + '</div>'
+      + '<iframe class="minimap-iframe" src="http://localhost:3000/monitor.html?embed=true" loading="lazy" title="3D Coordinate Monitor"></iframe>'
+      + '</div>'
+      + '</div>';
+  }
+
+  // ── Metrics ──
+
+  function renderMetrics() {
+    const m = state.metrics;
+    if (!m) return '<div class="section"></div>';
+    const summary = m.summary || {};
+    const byCategory = m.byCategory || {};
+    const observations = m.observations || {};
+
+    let html = '<div class="section">';
+    html += '<div class="section-header"><span class="section-title">Metrics</span>'
+      + '<span class="section-subtitle">' + (summary.total || 0) + ' total</span></div>';
+
+    html += '<div class="metrics-summary">';
+    html += '<div class="metrics-summary-item ok"><span class="count">' + (summary.ok || 0) + '</span> ok</div>';
+    html += '<div class="metrics-summary-item warning"><span class="count">' + (summary.warning || 0) + '</span> warning</div>';
+    html += '<div class="metrics-summary-item critical"><span class="count">' + (summary.critical || 0) + '</span> critical</div>';
+    if (observations.unresolved > 0) {
+      html += '<div class="metrics-summary-item warning"><span class="count">' + observations.unresolved + '</span> unresolved obs</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="metric-category-grid">';
+    const categoryNames = {
+      headroom: "Headroom",
+      skew: "Skew",
+      overlap: "Overlap",
+      conflict: "Conflict",
+      health: "Health",
+      coverage: "Coverage",
+    };
+    for (const [key, data] of Object.entries(byCategory)) {
+      html += '<div class="metric-category-card">';
+      html += '<div class="metric-category-name">' + escapeHtml(categoryNames[key] || key) + '</div>';
+      html += '<div class="metric-category-badges">';
+      html += metricBadge("ok", data.ok || 0);
+      html += metricBadge("warning", data.warning || 0);
+      html += metricBadge("critical", data.critical || 0);
+      html += '</div></div>';
+    }
+    html += '</div>'; // .metric-category-grid
+    html += '</div>'; // .section
+    return html;
+  }
+
+  function metricBadge(status, count) {
+    const zero = count === 0 ? " zero" : "";
+    return '<span class="metric-badge ' + status + zero + '">' + count + ' ' + status + '</span>';
+  }
+
+  // ── Timeline ──
+
+  function renderTimeline() {
+    const t = state.timeline;
+    if (!t) return '<div class="section"></div>';
+    const events = (t.events || []).slice(0, MAX_TIMELINE_ITEMS);
+
+    let html = '<div class="section">';
+    html += '<div class="section-header"><span class="section-title">Timeline</span>'
+      + '<span class="section-subtitle">' + (t.total || events.length) + ' events</span></div>';
+
+    html += '<div class="timeline-list">';
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      const kind = ev.kind || "observation";
+      const isLast = i === events.length - 1;
+
+      let dotClass = kind;
+      if (kind === "observation" && ev.resolved) dotClass += " resolved";
+
+      html += '<div class="timeline-item">';
+      html += '<div class="timeline-indicator">'
+        + '<span class="timeline-dot ' + dotClass + '"></span>'
+        + (isLast ? '' : '<span class="timeline-line"></span>')
+        + '</div>';
+
+      html += '<div class="timeline-content">';
+      html += '<div class="timeline-content-header">'
+        + '<span class="timeline-kind-badge ' + escapeHtml(kind) + '">' + kindLabel(kind) + '</span>'
+        + '<span class="timeline-id">' + escapeHtml(ev.id || "") + '</span>'
+        + '<span class="timeline-date">' + escapeHtml(ev.date || "") + '</span>'
+        + '</div>';
+
+      // Title/finding
+      const title = ev.title || ev.finding || ev.impact || "";
+      html += '<div class="timeline-title">' + escapeHtml(title) + '</div>';
+
+      // Loop closed badge
+      if (ev.loopClosed) {
+        html += '<span class="badge-loop-closed">loop closed</span> ';
+      }
+
+      // Tags
+      const tags = ev.targets || ev.subjects || [];
+      if (ev.prefix) tags.push(ev.prefix);
+      if (ev.fromVersion && ev.toVersion) tags.push(ev.fromVersion + " -> " + ev.toVersion);
+      if (ev.source) tags.push(ev.source);
+      if (tags.length > 0) {
+        html += '<div class="timeline-tags">';
+        for (const tag of tags) {
+          html += '<span class="timeline-tag">' + escapeHtml(tag) + '</span>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>'; // .timeline-content
+      html += '</div>'; // .timeline-item
+    }
+    html += '</div>'; // .timeline-list
+    html += '</div>'; // .section
+    return html;
+  }
+
+  function kindLabel(kind) {
+    switch (kind) {
+      case "decision": return "decision";
+      case "observation": return "observation";
+      case "version-event": return "version";
+      default: return kind;
+    }
+  }
+
+  // ── Events ──
+
+  function bindEvents() {
+    // Flow card clicks
+    var cards = document.querySelectorAll(".flow-card");
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].addEventListener("click", onCardClick);
+    }
+
+    // Detail close
+    var closeBtn = document.getElementById("detailClose");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function() {
+        state.selectedCard = null;
+        render();
+      });
+    }
+  }
+
+  function onCardClick(e) {
+    var card = e.currentTarget;
+    var layer = card.getAttribute("data-layer");
+    var id = card.getAttribute("data-id");
+
+    if (state.selectedCard && state.selectedCard.layer === layer && state.selectedCard.id === id) {
+      state.selectedCard = null;
+    } else {
+      state.selectedCard = { layer: layer, id: id };
+    }
+    render();
+  }
+
+  // ── WebSocket 실시간 연동 ──
+
+  let ws = null;
+  let wsConnected = false;
+
+  function connectWebSocket() {
+    try {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(proto + "//" + location.host + "/dev/ws");
+
+      ws.onopen = function() {
+        wsConnected = true;
+        // WS 연결 성공 → 폴링 중지
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+        var badge = document.getElementById("wsStatus");
+        if (badge) { badge.textContent = "WS"; badge.style.color = "var(--color-ok)"; }
+      };
+
+      ws.onmessage = function(evt) {
+        try {
+          var msg = JSON.parse(evt.data);
+          if (msg.type === "update" && msg.data) {
+            // overview + metrics 부분 업데이트 (full reload 대신)
+            if (msg.data.overview) { state.overview = Object.assign(state.overview || {}, msg.data.overview); }
+            if (msg.data.metrics) { state.metrics = Object.assign(state.metrics || {}, msg.data.metrics); }
+            state.lastFetchTime = new Date();
+            render();
+          }
+        } catch(e) { /* 잘못된 메시지 무시 */ }
+      };
+
+      ws.onclose = function() {
+        wsConnected = false;
+        var badge = document.getElementById("wsStatus");
+        if (badge) { badge.textContent = "poll"; badge.style.color = "var(--color-warning)"; }
+        // 폴링 복귀
+        if (!refreshTimer) {
+          refreshTimer = setInterval(function() { loadAll(); }, REFRESH_INTERVAL);
+        }
+        // 3초 후 재연결 시도
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = function() { ws.close(); };
+    } catch(e) { /* WS 지원 안 하면 폴링 유지 */ }
+  }
+
+  // ── Init ──
+
+  window.__dashRetry = function() { loadAll(); };
+
+  document.getElementById("btnRefresh").addEventListener("click", function() {
+    doRefresh();
+    if (ws && wsConnected) {
+      try { ws.send(JSON.stringify({ type: "refresh" })); } catch(e) {}
+    }
+  });
+
+  // Start
+  loadAll();
+
+  // Auto-refresh (WS 연결 전까지)
+  refreshTimer = setInterval(function() {
+    loadAll();
+  }, REFRESH_INTERVAL);
+
+  // WebSocket 연결 시도
+  connectWebSocket();
+
+  // Update "last update" display every 10s
+  setInterval(updateLastUpdateDisplay, 10000);
+
+})();
+</script>
+</body>
+</html>

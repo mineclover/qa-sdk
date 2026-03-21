@@ -16,6 +16,7 @@ import type { ObservationNode } from "../dkg.types.js";
 export interface ClaimData {
   readonly by: string;
   readonly at: string;
+  readonly reason?: string;
 }
 
 export interface ClaimImpact {
@@ -112,6 +113,7 @@ export function prepareClaim(
   targetId: string,
   by: string,
   existingClaim: ClaimData | null,
+  reason?: string,
 ): ClaimResult {
   if (!graph.hasNode(targetId)) {
     return { verdict: "blocked", reason: `대상 노드 없음: ${targetId}`, claim: null, impact: null, summary: `대상 노드 없음: ${targetId}` };
@@ -128,7 +130,7 @@ export function prepareClaim(
   }
 
   const now = new Date().toISOString();
-  const claim: ClaimData = { by, at: now };
+  const claim: ClaimData = { by, at: now, ...(reason ? { reason } : {}) };
   const impact = analyzeClaimImpact(graph, topo, targetId);
 
   return {

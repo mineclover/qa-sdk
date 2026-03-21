@@ -59,7 +59,7 @@
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
 
 ### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
-- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (43 axes, 21 prefixes, 6 tables)
+- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (59 axes, 28 prefixes, 6 tables)
   - `VersionedAxis`: 버전별 entries/capacity/ko
   - `DimRef` 3종: `axis` (enum 직접) / `prefix_ref` (다른 prefix 주소) / `table_ref` (DB 테이블 타입 참조)
   - `PrefixDef`: N-D 주소 공간 (축 조합 + 버전별 axis version 핀)
@@ -67,6 +67,9 @@
   - 인프라 prefix: deploy_event, health_event (svc_ref + action/status)
   - 파이프라인 prefix: pipeline_point, data_policy, engine_event, schema_event
   - 빌드/테스트 prefix: build_event, test_event (qa_pkg, qa_module 축)
+  - DKG 자기참조 prefix: dkg_event (dkg_op × dkg_target_kind), dkg_decision_event (decision_type × dkg_target_kind × node_source), dkg_observation_event (obs_source × dkg_target_kind × lifecycle_state)
+  - 계약 검증 prefix: contract_check (qa_pkg × api_surface × test_result)
+  - 패턴 분류 prefix: pattern_match (svc_ref × identification_mode × behavior_pattern × pattern_confidence), pattern_anomaly (svc_ref × anomaly_kind × behavior_pattern × anomaly_severity)
 - `packages/demo-snapshot/src/catalog-builder.ts` — refEntries 의미 정의 (PERM_SVC_MEANING, EVT_SVC_MEANING 등)
   - SSOT 체인: `_axes.capacity` → `_S` shape → `_sStrides` → `_svcAddr()` → `DEMO_CATALOG`
 - `packages/demo-snapshot/src/demo-accessors.ts` — 선택적 접근 + 차원 합성·분해·의미 해석
@@ -111,9 +114,17 @@
 ### spec-core — 설계 지식 그래프 + 수렴 분석
 - `packages/spec-core/` — DKG(Design Knowledge Graph) + 수렴 레이어 + 전파 파이프라인
 - 서브 경로 exports: `"."` (shared+schema+spec), `"./analysis"` (dkg+convergence), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`
-- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 25 skill, 7 spec), service-topology(7 서비스, 3 계약)
-- **convergence/**: entry-coverage, temporal-analysis, scoped-aggregator, metric-registry
+- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약)
+- **convergence/**: 5개 분석 서비스 + 집계/측정/필터/기록
+  - `symbol-comparator.ts` — 축/prefix Jaccard 유사도 비교 (merge/alias/review 판정)
+  - `decision-comparator.ts` — Decision 충돌 스캔 (contradictory/redundant/superseding)
+  - `causal-discovery.ts` — co-occurrence → 인과 후보 + Observation 노드 생성
+  - `simplification-advisor.ts` — 미사용 차원/저사용 entry/과도 headroom 감지
+  - `boundary-recommender.ts` — 새 prefix 경계 추천 (split/extends/independent)
+  - `convergence-runner.ts` — `runConvergenceAnalysis()` 5개 서비스 단일 진입점
+  - 집계: usage-aggregator, scoped-aggregator / 측정: entry-coverage, temporal-analysis, deployment-skew / 기록: metric-registry
 - **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
+  - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
 - **store/**: DkgSqliteStore (persist + migrate)
 
 ## Permission Engine Architecture
@@ -173,6 +184,8 @@
 - `createSqliteDriver(options)` — 팩토리. `{ driver: "node"|"better", path, schema }` 런타임 선택
 - 생성자 `schema` 파라미터: 생략 시 index-meta 전체 DDL, `null` 전달 시 bare driver (서비스별 자체 스키마 적용)
 - 서비스별 env 설정: `SQLITE_DRIVER` (node|better), `SQLITE_PATH` (서비스별 분리 — gate-service.sqlite, query-service.sqlite 등)
+- DkgSqliteStore `catalog_id` 컬럼: dkg_nodes/dkg_edges에 마이그레이션 자동 추가. 기본값 "demo". 멀티 카탈로그 격리용
+- 서비스 포트 레지스트리: registry-server(3100), ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600). 각 서비스 시작 시 충돌 경고
 
 ### index-meta 연동 (1D 주소 저장)
 - 1D integer address → index-meta의 EntryFlagStore (active/inactive, append-only 이력) 활용 가능
@@ -187,20 +200,140 @@
 - Signal chain: requires 관계로 의존 표현 (예: trigger는 context를 require)
 - 구현: `viz-3d/src/core/signal-model.ts` (`getPrefixRole()`, `classifyByRole()`, `validateSignal()`)
 
+## Observation Loop (관측 루프)
+
+런타임 이벤트 → 자동 분석 → DKG 기록 → 활성화 게이트의 폐루프 아키텍처.
+
+### 파이프라인 흐름
+```
+ingest-server Phase 2 완료
+  → ConvergencePipelineRunner.notifyCompletion(traceIds)
+  → 버퍼 축적 (threshold 100건 or timer 60초)
+  → recordStore.findByTraceId() → AddressContextRecord[]
+  → aggregateUsageData(catalog, records)
+  → collectMetrics(catalog, graph, usageData)
+  → metricsToObservations(metrics)
+  → DkgSqliteStore.saveUsageSnapshotWithObservations()
+```
+
+### 구성 요소
+
+| 모듈 | 패키지 | 역할 |
+|------|--------|------|
+| `convergence-pipeline.ts` | ingest-server | Window-based 배치 처리, Phase 2 후단. 패턴 분류 단계 포함 |
+| `convergence-graph-provider.ts` | ingest-server | Lazy DKG graph/catalog 초기화 (동적 import, catalog 주입 지원) |
+| `convergence-scheduler.ts` | ingest-server | 주기적 강제 flush (저트래픽 대응) |
+| `activation-gate.ts` | spec-core/propagation | `checkActivationReadiness()` 순수 함수 |
+| `activation-gate-adapter.ts` | registry-service | ActivationGatePort 어댑터 (fail-open) |
+| `post-activation-hook.ts` | registry-service | 활성화 후 VersionEvent 자동 기록 |
+
+### 패턴 분류 파이프라인 (convergence pipeline 내장)
+- convergence pipeline flush 시 자동 실행 (patternFns 주입 시)
+- 흐름: sessionId별 그룹핑 → classifyPattern(세션) → aggregatePatternStats → detectAnomalies → observation 변환
+- `PatternFunctions`: classifyPattern, aggregatePatternStats, detectAnomalies, buildPatternHealthReport, patternRules
+- 이전 윈도우 통계를 `previousPatternStats`로 보관하여 비율 급변(ratio_shift) 감지
+- observation ID: `OBS-PATTERN-{anomaly_kind}-{date}` (날짜 단위 멱등)
+- 에러 격리: 패턴 분류 실패가 metric pipeline을 차단하지 않음
+- `ConvergenceFlushResult.pattern`: sessionsClassified, anomaliesDetected, classificationRate
+
+### 패턴 분류 관련 prefix/축 (ADR-006)
+- `pattern_match` prefix: svc_ref × identification_mode × behavior_pattern × pattern_confidence
+- `pattern_anomaly` prefix: svc_ref × anomaly_kind × behavior_pattern × anomaly_severity (v2: 4차원 확장)
+- 축: `anomaly_kind` (6종: unclassified/ratio_shift/volume_spike/new_sequence/abnormal_speed/abnormal_duration)
+- 축: `anomaly_severity` (3종: info/warning/critical)
+- DKG constraint: CON-004 (classificationRate >= 80%), CON-005 (critical anomaly → auto observation)
+- DKG consumer: convergence-pipeline (pattern_match, pattern_anomaly 소비)
+- DKG skill: skill-pattern-analysis (분류 + 이상 감지 조합)
+
+### Observation 멱등성
+- metric observation ID는 결정적: `OBS-METRIC-{metric.id}` (timestamp 없음 → upsert 덮어쓰기)
+- pattern observation ID는 결정적: `OBS-PATTERN-{anomaly_kind}-{date}` (날짜 단위 멱등)
+- `resolveRecoveredMetrics()`: metric이 ok로 복귀하면 이전 observation을 자동 해소
+- `cleanStaleMetricObservations()`: 이전 timestamp 기반 잔여 observation 자동 정리
+- `converge --persist` 반복 실행 시 observation 수 고정 (누적 안 함)
+
+### 환경변수
+
+| 변수 | 기본값 | 패키지 | 설명 |
+|------|--------|--------|------|
+| `CONVERGENCE_ENABLED` | `false` | ingest-server | convergence 파이프라인 활성화 |
+| `CONVERGENCE_FLUSH_INTERVAL_MS` | `60000` | ingest-server | 타이머 기반 flush 주기 |
+| `CONVERGENCE_RECORD_THRESHOLD` | `100` | ingest-server | 건수 기반 flush 임계값 |
+| `CONVERGENCE_DKG_SQLITE_PATH` | — | ingest-server | DKG SQLite 경로 |
+| `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | ingest-server | 스케줄러 주기 |
+| `CONSTRAINT_GATE_ENABLED` | `false` | registry-service | 활성화 게이트 사용 |
+| `CONSTRAINT_GATE_MODE` | `"warn"` | registry-service | "strict" = 차단, "warn" = 진단만 |
+| `CONSTRAINT_GATE_DKG_PATH` | — | registry-service | DKG SQLite 경로 |
+| `POST_ACTIVATION_HOOK_ENABLED` | `false` | registry-service | 활성화 후 DKG 기록 |
+| `POST_ACTIVATION_DKG_PATH` | — | registry-service | DKG SQLite 경로 |
+
+### CLI 통합
+- `qa-sdk dkg converge [--persist] [--verbose]` — metrics + convergeChain + systemHealthChain 통합 실행
+- `--persist`: 결과를 DKG store에 자동 저장 + auto-resolve + stale 정리
+- `--verbose`: 개별 observation/action 상세 출력 + 미해결 observation top-3 안내
+
+### Dev Dashboard
+- `DEV_DASHBOARD_ENABLED=true` → `http://localhost:3300/dev/` 접속
+- **Flow Map**: Schema(59축) → Prefix(28개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
+- **Metrics**: 6종 metric 카테고리 카드 (headroom, skew, coverage, overlap, conflict, health)
+- **Timeline**: 의사결정/관측/버전 이벤트 시간순 (루프 닫힘 표시)
+- **WebSocket**: `/dev/ws` — 10초 push (overview+metrics). 연결 끊기면 30초 폴링 fallback
+- **카탈로그**: `/dev/api/catalogs` — 등록된 카탈로그 목록. CatalogStore 연동
+- 환경변수: `DEV_DASHBOARD_ENABLED` (default: false), `DEV_DASHBOARD_DKG_PATH` (SQLite 경로)
+
+### 런타임 이벤트 연결
+- `store/src/db/schema.ts`에 `addressContext` jsonb 컬럼 추가 (event_records 테이블)
+- shop-web의 13개 트래킹 포인트 → ingest-server → convergence pipeline → DKG store
+- `CONVERGENCE_ENABLED=true` 설정 시 Phase 2 완료 후 자동 실행
+
+### 설계 원칙
+- spec-core는 라이브러리 — ingest-server/registry-service에 정적 의존 없음
+- 서비스는 동적 import (`ENABLED=true`일 때만) + optional peer dependency
+- 에러 격리: convergence 실패가 Phase 2 verdict/활성화를 절대 차단하지 않음
+- Fail-open: gate check 실패 → 허용 + warning diagnostic
+- 멀티 카탈로그: provider에 `catalog` 파라미터 주입 가능 (기본: DEMO_CATALOG)
+
+## Event Pattern Classification (ADR-006)
+- **2축 분류**: identification_mode (anonymous/identified/pseudonymized/service) × behavior_pattern (12종)
+- **PatternRule**: 선언적 규칙 정의 (requiredKeys, excludedKeys, requiredSequence, actorCondition, minIntervalMs)
+- **DEMO_PATTERN_RULES**: 10개 기본 규칙 (bot_crawl, health_check, api_integration, purchase_complete, checkout_fail, error_recovery, cart_abandon, browse_only, anonymous_cart, anonymous_browse)
+- **classifyPattern()**: `spec-core/convergence/pattern-classifier.ts` — 세션 이벤트 시퀀스 → PatternClassification
+- **detectAnomalies()**: `spec-core/convergence/pattern-anomaly.ts` — 미분류/비율급변/볼륨급증/비정상속도/비정상시간
+- **aggregatePatternStats()**: `spec-core/convergence/pattern-aggregator.ts` — 패턴별 빈도/비율/평균
+- **PatternClassificationPort**: `ingest-server/lib/pattern-classification-port.ts` — 세션 close 시 비동기 분류 hook
+- **좌표 매핑**: `pattern_match` prefix (svc_ref × identification_mode × behavior_pattern × pattern_confidence)
+- **이상 감지**: `pattern_anomaly` prefix (svc_ref × behavior_pattern)
+- **CLI**: `qa-sdk dkg patterns` (규칙 목록), `qa-sdk dkg pattern-stats` (통계)
+- **활성화**: `PATTERN_CLASSIFICATION_ENABLED=true`
+- **ActorContext.identification_mode**: actor_id/user_id/platform 기반 자동 판별 (`identifyActorMode()`)
+
 ## Catalog Generalization
 - **Canonical types**: `@qa-sdk/core/catalog` (Catalog, PrefixMeta, CatalogProvider, DkgConfig)
-- **DEMO_CATALOG**: demo-snapshot의 인스턴스. `id: "demo"`, `name: "쇼핑 데모"`. 21개 prefix에 `meta: PrefixMeta` 포함
+- **CatalogRegistry**: `@qa-sdk/core/catalog` — 인메모리 Map<id, Catalog>. 멀티 카탈로그 런타임 관리. defaultId "demo"
+- **DEMO_CATALOG**: demo-snapshot의 인스턴스. `id: "demo"`, `name: "쇼핑 데모"`. 25개 prefix에 `meta: PrefixMeta` 포함. `deepFreeze` 적용 (런타임 변경 방어)
 - **DkgConfig**: bootstrap.ts의 하드코딩 데이터를 선언적 구조로 추출. `DEMO_DKG_CONFIG` (demo-snapshot)
 - **bootstrapDkg**: `(options?: { catalog?, config?, date? })` — 기본값 DEMO_CATALOG + DEMO_DKG_CONFIG
 - **deriveMeta**: `core/catalog/derive-meta.ts` — prefix.meta 있으면 사용, 없으면 구조 기반 추론
 - **flattenForBrowser**: `core/catalog/browser-flatten.ts` — Catalog → BrowserCatalog 변환
 - **BROWSER_CATALOG**: `viz-3d/scripts/generate-browser-catalog.ts` 자동 생성 (수동 동기화 제거)
 - **CLI --catalog**: 글로벌 옵션. 우선순위: --catalog → CWD qa-sdk.config.ts → DEMO_CATALOG
+- **CLI catalog list/info**: 등록된 카탈로그 목록/상세 조회 (CatalogRegistry 기반)
 - **qa-sdk init**: 새 카탈로그 프로젝트 스캐폴딩 (인터랙티브 + --from demo)
+- **parseSerializedAddress**: 3파트 (`perm:v1:42`) + 4파트 (`catalogId:perm:v1:42`) 주소 파싱. 6+ 파일의 `split(":")` 중앙화
+- **DkgSqliteStore(catalogId)**: 단일 SQLite + `catalog_id` 컬럼으로 카탈로그별 DKG 격리
+- **registry-service CatalogStore**: POST/GET/PUT/DELETE `/catalogs` CRUD 엔드포인트 (SQL + in-memory)
+- **Profile API**: prefix/axis 단위 개별 PATCH (전체 blob 교체 대신 프로필 패치)
+  - `PATCH /prefixes/:id` — category, meta, labels 병합 패치
+  - `GET/PATCH/POST/DELETE /catalogs/:cid/axes/:id` — axis 프로필 CRUD
+  - `POST /catalogs/:cid/axes/:id/entries` — entry 추가 (headroom 자동 검증)
+  - 서버 시작 시 DEMO_CATALOG → catalog blob + axis 프로필 59개 자동 seed
+  - 변경 시 `onCatalogChange`/`onAxisChange` 콜백 → dev dashboard `refresh()` 캐시 무효화
+- **Catalog → Registry fetch**: `CONVERGENCE_REGISTRY_URL` 설정 시 graph provider가 API에서 catalog fetch (실패 시 static fallback)
 - 카탈로그가 유일한 입력이면 나머지는 전부 파생되어야 한다
 
 ## Browser Encode/Decode 단일 출처
 - 브라우저 환경 encode/decode는 `viz-3d/src/adapter/browser-codec.ts`가 **유일한 출처**
+- 주소 형식: 3파트 (`perm:v1:42`) 또는 4파트 (`catalogId:perm:v1:42`). browser-codec은 인라인 3/4파트 파싱 (core 미의존)
 - 인라인 encode 코드 금지 — HTML 파일은 `import { encode, decode, track } from './viz-3d-core.js'` 사용
 - BROWSER_CATALOG: 자동 생성 (`pnpm --filter @qa-sdk/viz-3d prebuild`). 직접 수정 금지
 - CatalogLoader: 런타임 시 API → localStorage 캐시 → BROWSER_CATALOG(static) 순서로 카탈로그 로딩

@@ -72,6 +72,7 @@ export const eventRecords = pgTable("event_records", {
   payload: jsonb("payload"),
   registryWarning: text("registry_warning"),
 
+  addressContext: jsonb("address_context").$type<Record<string, string>>(),
   qaSessionId: text("qa_session_id"),
   actorId: text("actor_id"),
   userId: text("user_id"),

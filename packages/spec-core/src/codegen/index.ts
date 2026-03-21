@@ -17,3 +17,5 @@ export type { JSFormat } from "./js-generator.js";
 export { generateProtoFromIR } from "./proto-generator.js";
 export type { ProtoOptions } from "./proto-generator.js";
 export { generateJsonSchemaFromIR } from "./json-schema-generator.js";
+export { generateDtsFromIR } from "./dts-generator.js";
+export type { DtsOptions } from "./dts-generator.js";

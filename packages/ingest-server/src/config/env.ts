@@ -44,6 +44,15 @@ export const envSchema = z.object({
   WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),
   REGISTRY_URL: optionalUrl,
   REGISTRY_VALIDATION_MODE: z.enum(["strict", "warn", "off"]).default("warn"),
+  // ── Convergence Pipeline ──────────────────────────
+  CONVERGENCE_ENABLED: booleanWithDefaultFalse,
+  CONVERGENCE_FLUSH_INTERVAL_MS: z.coerce.number().int().positive().default(60_000),
+  CONVERGENCE_RECORD_THRESHOLD: z.coerce.number().int().positive().default(100),
+  CONVERGENCE_DKG_SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  CONVERGENCE_SCHEDULE_INTERVAL_MS: z.coerce.number().int().positive().default(300_000),
+  CONVERGENCE_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  // ── Pattern Classification ─────────────────────────
+  PATTERN_CLASSIFICATION_ENABLED: booleanWithDefaultFalse,
 }).superRefine((value, ctx) => {
   if (value.TASK_QUEUE_ENABLED && !value.REDIS_URL) {
     ctx.addIssue({

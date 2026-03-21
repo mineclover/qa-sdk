@@ -26,6 +26,14 @@
     "ws": "^8.19.0",
     "zod": "^3.24.2"
   },
+  "peerDependencies": {
+    "@qa-sdk/spec-core": "workspace:*",
+    "demo-snapshot": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@qa-sdk/spec-core": { "optional": true },
+    "demo-snapshot": { "optional": true }
+  },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/ws": "^8.18.1",

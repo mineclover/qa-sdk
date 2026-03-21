@@ -86,11 +86,17 @@ export function deriveFromCatalog(catalog: DeriveInput, graph?: GraphRegistry): 
   return g;
 }
 
-/** prefix 구조에서 schema category를 추론 */
+/** prefix의 schema category를 결정: meta.category 우선, 없으면 구조 추론 */
 function inferCategory(
   id: string,
   prefix: DeriveInput["prefixes"][string],
 ): PrefixNode["category"] {
+  // meta.category가 있으면 우선 사용 (DEMO_CATALOG SSOT)
+  if ((prefix as any).meta?.category) {
+    return (prefix as any).meta.category as PrefixNode["category"];
+  }
+
+  // fallback: 구조 기반 추론
   const dimKinds = Object.values(prefix.dims).map(d => d.kind);
   const hasTableRef = dimKinds.includes("table_ref");
   const labels = prefix.labels as readonly string[];

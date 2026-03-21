@@ -8,6 +8,19 @@ export interface PrefixOwnerRecord {
   readonly kind: "leaf" | "composite";
   readonly numberType: "number" | "bigint";
   readonly createdAt: string;
+  /** prefix 프로필 — category, layer, detailKind 등 */
+  readonly meta?: PrefixProfileMeta;
+  /** prefix 차원 라벨 목록 */
+  readonly labels?: readonly string[];
+}
+
+/** prefix 프로필 메타데이터 (PATCH 가능) */
+export interface PrefixProfileMeta {
+  readonly category?: string;
+  readonly layer?: number;
+  readonly detailKind?: string;
+  readonly name?: string;
+  readonly description?: string;
 }
 
 // ── Draft Lock ────────────────────────────────────────────

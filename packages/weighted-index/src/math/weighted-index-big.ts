@@ -71,6 +71,50 @@ export class WeightedIndexBig {
     return this._decodeCore(index);
   }
 
+  // ── Batch API ──────────────────────────────────────────────────────────
+
+  /** 배치 정변환: 좌표 배열 → BigInt64Array. 경계 검사 포함. */
+  encodeBatch(coords: readonly bigint[][]): BigInt64Array {
+    const n = coords.length;
+    const out = new BigInt64Array(n);
+    for (let i = 0; i < n; i++) {
+      this._validateCoords(coords[i] as bigint[]);
+      out[i] = this._encodeCore(coords[i] as bigint[]);
+    }
+    return out;
+  }
+
+  /** 배치 역변환: BigInt64Array → 좌표 배열. 경계 검사 포함. */
+  decodeBatch(addrs: BigInt64Array): bigint[][] {
+    const n = addrs.length;
+    const out: bigint[][] = new Array(n);
+    for (let i = 0; i < n; i++) {
+      this._validateIndex(addrs[i]);
+      out[i] = this._decodeCore(addrs[i]);
+    }
+    return out;
+  }
+
+  /** 배치 정변환 (검사 없음). 호출자가 좌표 범위를 보장해야 한다. */
+  encodeBatchUnsafe(coords: readonly bigint[][]): BigInt64Array {
+    const n = coords.length;
+    const out = new BigInt64Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = this._encodeCore(coords[i] as bigint[]);
+    }
+    return out;
+  }
+
+  /** 배치 역변환 (검사 없음). 호출자가 index 범위를 보장해야 한다. */
+  decodeBatchUnsafe(addrs: BigInt64Array): bigint[][] {
+    const n = addrs.length;
+    const out: bigint[][] = new Array(n);
+    for (let i = 0; i < n; i++) {
+      out[i] = this._decodeCore(addrs[i]);
+    }
+    return out;
+  }
+
   private _encodeCore(coords: bigint[]): bigint {
     let index = 0n;
     for (let i = 0; i < this.strides.length; i++) {

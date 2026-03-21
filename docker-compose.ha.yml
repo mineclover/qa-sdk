@@ -1,0 +1,178 @@
+# ══════════════════════════════════════════════════════════════
+#  HA 구성 오버레이
+#  사용법: docker compose -f docker-compose.yml -f docker-compose.ha.yml up
+# ══════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL Primary (기본 compose의 postgres를 override) ──
+  postgres:
+    environment:
+      POSTGRES_REPLICATION_USER: replicator
+      POSTGRES_REPLICATION_PASSWORD: replicator_pass
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=3
+      - -c
+      - wal_keep_size=256MB
+      - -c
+      - hot_standby=on
+
+  # ── PostgreSQL Replica (streaming replication) ──
+  postgres-replica:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata-replica:/var/lib/postgresql/data
+      - ./postgres/replica.conf:/etc/postgresql/replica.conf:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - bash
+      - -c
+      - |
+        # 초기 base backup (데이터 없을 때만)
+        if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+          pg_basebackup -h postgres -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R
+          cp /etc/postgresql/replica.conf /var/lib/postgresql/data/
+        fi
+        exec postgres -c config_file=/var/lib/postgresql/data/replica.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Redis Sentinel 구성 ──
+  redis-sentinel-1:
+    image: redis:7-alpine
+    command: >
+      sh -c '
+        echo "sentinel monitor mymaster redis 6379 2" > /tmp/sentinel.conf &&
+        echo "sentinel down-after-milliseconds mymaster 5000" >> /tmp/sentinel.conf &&
+        echo "sentinel failover-timeout mymaster 10000" >> /tmp/sentinel.conf &&
+        echo "sentinel parallel-syncs mymaster 1" >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      '
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "26379:26379"
+
+  redis-sentinel-2:
+    image: redis:7-alpine
+    command: >
+      sh -c '
+        echo "sentinel monitor mymaster redis 6379 2" > /tmp/sentinel.conf &&
+        echo "sentinel down-after-milliseconds mymaster 5000" >> /tmp/sentinel.conf &&
+        echo "sentinel failover-timeout mymaster 10000" >> /tmp/sentinel.conf &&
+        echo "sentinel parallel-syncs mymaster 1" >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      '
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis-sentinel-3:
+    image: redis:7-alpine
+    command: >
+      sh -c '
+        echo "sentinel monitor mymaster redis 6379 2" > /tmp/sentinel.conf &&
+        echo "sentinel down-after-milliseconds mymaster 5000" >> /tmp/sentinel.conf &&
+        echo "sentinel failover-timeout mymaster 10000" >> /tmp/sentinel.conf &&
+        echo "sentinel parallel-syncs mymaster 1" >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      '
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── ingest-server 이중화 (LB 뒤에 2개 인스턴스) ──
+  ingest-1:
+    extends:
+      file: docker-compose.yml
+      service: ingest-server
+    ports: []  # nginx가 외부 노출 담당
+
+  ingest-2:
+    extends:
+      file: docker-compose.yml
+      service: ingest-server
+    ports: []
+
+  # 기존 ingest-server는 비활성화 (LB 뒤 인스턴스로 대체)
+  ingest-server:
+    profiles:
+      - disabled
+
+  # ── nginx Load Balancer ──
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${INGEST_SERVER_PORT:-3200}:3200"
+    depends_on:
+      - ingest-1
+      - ingest-2
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3200/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── worker 이중화 (consumer group) ──
+  worker-1:
+    extends:
+      file: docker-compose.yml
+      service: worker
+
+  worker-2:
+    extends:
+      file: docker-compose.yml
+      service: worker
+
+  worker:
+    profiles:
+      - disabled
+
+  # ── Prometheus ──
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerting-rules.yml:/etc/prometheus/alerting-rules.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+
+  # ── Grafana ──
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/qa-sdk.json
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata-replica:
+  prometheus-data:
+  grafana-data:

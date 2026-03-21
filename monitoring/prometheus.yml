@@ -1,0 +1,38 @@
+# Prometheus 스크레이프 설정
+# docker compose -f docker-compose.yml -f docker-compose.ha.yml 환경 기준
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerting-rules.yml"
+
+scrape_configs:
+  # ── ingest-server (HA: 2개 인스턴스) ──
+  - job_name: "ingest-server"
+    metrics_path: "/v1/metrics"
+    static_configs:
+      - targets:
+          - "ingest-1:3200"
+          - "ingest-2:3200"
+        labels:
+          service: "ingest-server"
+
+  # ── registry-service ──
+  - job_name: "registry-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "registry-service:3300"
+        labels:
+          service: "registry-service"
+
+  # ── nginx LB ──
+  - job_name: "nginx"
+    metrics_path: "/nginx-health"
+    static_configs:
+      - targets:
+          - "nginx:3200"
+        labels:
+          service: "nginx-lb"

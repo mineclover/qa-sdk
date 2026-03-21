@@ -575,9 +575,9 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   topo.registerService({
     serviceId: "infra-controller", name: "인프라 컨트롤러", team: "devops",
     status: "active",
-    ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "endpoint"],
+    ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "endpoint", "pattern_match", "pattern_anomaly"],
     consumedPrefixes: [],
-    dslBindings: ["dsl-infra", "dsl-pipeline"],
+    dslBindings: ["dsl-infra", "dsl-pipeline", "dsl-observation"],
   });
 
   topo.registerService({

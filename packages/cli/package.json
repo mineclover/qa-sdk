@@ -24,8 +24,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@qa-sdk/core": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
-    "demo-snapshot": "workspace:*"
+    "demo-snapshot": "workspace:*",
+    "execa": "^9.6.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

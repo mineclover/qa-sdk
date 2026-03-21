@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "demo-snapshot": "workspace:*"
+    "demo-snapshot": "workspace:*",
+    "weighted-index": "workspace:*"
   },
   "devDependencies": {
     "@qa-sdk/spec-core": "workspace:*",

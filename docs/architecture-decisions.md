@@ -198,3 +198,80 @@ ingest-server → registry-server
 8. [ ] `docs/specs/README.md` 인덱스를 업데이트했는가?
 9. [ ] `packages/<pkg>/specs/README.md` 리다이렉트를 추가했는가?
 10. [ ] README.md 의존 그래프를 업데이트했는가?
+11. [ ] 서비스 포트가 SERVICE_PORTS 레지스트리와 일치하는가? (ADR-005)
+12. [ ] 멀티 카탈로그가 필요하면 CatalogRegistry + catalogId를 사용하는가? (ADR-005)
+
+---
+
+## ADR-005: 멀티 카탈로그 런타임
+
+### 결정
+
+하나의 런타임에서 여러 Catalog를 CatalogRegistry(인메모리 Map)로 관리한다. DKG 상태는 단일 SQLite + `catalog_id` 컬럼으로 격리한다. 주소 형식은 기존 3파트와 4파트(catalogId 포함)를 양립한다.
+
+### 배경
+
+Phase 1-5까지 DEMO_CATALOG 단일 인스턴스. 멀티 테넌트/조직을 지원하려면 카탈로그별 독립 관리가 필요하지만 기존 3파트 주소와의 하위 호환을 깨면 안 된다.
+
+### 규칙
+
+| 규칙 | 설명 |
+|---|---|
+| **CatalogRegistry는 인메모리** | O(1) 조회. 프로세스당 1개. SQLite는 DKG 상태 저장 전용 |
+| **기본값 "demo"** | catalogId 미지정 시 항상 "demo". 3파트 주소 = 기본 카탈로그 |
+| **4파트 주소 양립** | `parseSerializedAddress()`로 3/4파트 자동 판별. `split(":")` 직접 사용 금지 |
+| **단일 SQLite + catalog_id** | 파일 분리 대신 컬럼 추가. 크로스 카탈로그 쿼리 가능. `listCatalogIds()` |
+| **registry-service CRUD** | `/catalogs` REST 엔드포인트. CatalogStore 인터페이스 (SQL + in-memory) |
+| **서비스 포트 충돌 경고** | 각 서비스 시작 시 `warnPortConflict()` 호출. 다른 서비스 기본 포트와 겹치면 WARN |
+| **포트 할당 SSOT** | `@qa-sdk/core` → `SERVICE_PORTS` 상수. 서비스별 env.ts 기본값과 일치 필수 |
+
+---
+
+## ADR-006: 이벤트 패턴 분류 체계
+
+### 결정
+
+세션 수준의 이벤트 시퀀스를 **식별 모드(IdentificationMode) × 행동 패턴(BehaviorPattern)** 2축으로 자동 분류한다. 분류 결과는 좌표계(`pattern_match` prefix)로 인코딩되어 convergence 분석에 통합된다.
+
+### 배경
+
+QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이 세션이 어떤 유형의 사용자 행동인가"는 추적하지 않았다. 식별된 구매 vs 비식별 탐색 vs 봇 크롤링을 구분하지 못하면 수집 품질과 비즈니스 의미를 평가할 수 없다.
+
+### 핵심 개념
+
+```
+패턴(Pattern) > 시나리오(Scenario) > 이벤트(Event)
+
+패턴    = 세션의 의미적 분류 (purchase_complete, cart_abandon, bot_crawl)
+시나리오 = 패턴의 구체적 step 정의 (ScenarioSpec)
+이벤트   = 개별 발생 (EventRecord)
+```
+
+### 2축 분류
+
+| 축 | 값 | 판별 기준 |
+|---|---|---|
+| **identification_mode** | anonymous, identified, pseudonymized, service | actor_id/user_id 유무 + platform |
+| **behavior_pattern** | purchase_complete, browse_only, cart_abandon, checkout_fail, error_recovery, return_visit, anonymous_browse, anonymous_cart, api_integration, bot_crawl, health_check, unclassified | event_key 시퀀스 + 시간 패턴 |
+
+### 규칙
+
+| 규칙 | 설명 |
+|---|---|
+| **PatternRule 선언적 정의** | 규칙은 코드가 아닌 선언적 조건(requiredKeys, excludedKeys, actorCondition 등)으로 정의 |
+| **우선순위 기반 매칭** | 복수 규칙 매칭 시 priority 높은 규칙 우선. 동률이면 먼저 정의된 규칙 |
+| **미분류 = 이상 감지 대상** | unclassified 패턴은 자동으로 anomaly observation 생성 |
+| **좌표계 인코딩** | 분류 결과는 `pattern_match:v1:{address}` 형태로 address_context에 태깅 |
+| **패턴 통계 = convergence** | 패턴별 빈도/비율은 convergence 레이어의 metric으로 관리 |
+| **규칙 변경 = DKG decision** | 새 규칙 추가/삭제는 DKG decision 노드로 기록 |
+| **이상 감지 6종** | unclassified, ratio_shift, volume_spike, new_sequence, abnormal_speed, abnormal_duration |
+
+### 인프라 흐름
+
+```
+이벤트 수집 → 세션 완료 → 패턴 분류 → 좌표 인코딩 → convergence 집계
+                                            ↓
+                                  이상 감지 → DKG observation
+                                            ↓
+                                  통계 → metric-registry → self-check 보고
+```

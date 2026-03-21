@@ -45,3 +45,22 @@ export {
   newQaSessionId,
   now,
 } from "@qa-sdk/core";
+
+// ── Typed SDK ──────────────────────────────────────────────
+
+export { createIndexSDK } from "./typed-sdk.js";
+export type {
+  SdkSchema,
+  AxisDef,
+  PrefixDef,
+  AxisEntries,
+  PrefixNames,
+  PrefixDims,
+  PrefixCoord,
+  TypedIndexSDK,
+} from "./typed-sdk.js";
+
+// ── Dim Wire Format ────────────────────────────────────────
+
+export { createDimWireCodec } from "./dim-wire.js";
+export type { DimWireCodec } from "./dim-wire.js";
