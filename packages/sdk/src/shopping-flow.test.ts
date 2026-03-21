@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { createQaContext } from "./qa-context.js";
+import { createQaContext } from "@qa-sdk/context";
 import { buildLayerMap, MonitorState } from "@qa-sdk/spec-core/viz";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
 import type { TracePath } from "@qa-sdk/spec-core/viz";

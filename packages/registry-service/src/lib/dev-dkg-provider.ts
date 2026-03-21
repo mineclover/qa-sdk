@@ -43,7 +43,7 @@ export async function createDevDkgProvider(
 ): Promise<DevDkgProvider> {
   const analysis = await import("@qa-sdk/spec-core/analysis") as unknown as AnalysisModulePort;
   const storeModule = await import("@qa-sdk/spec-core/store") as unknown as StoreModulePort;
-  const demoSnapshot = await import("demo-snapshot") as { DEMO_CATALOG: CatalogPort };
+  const demoSnapshot = await import("demo-snapshot") as { DEMO_CATALOG: CatalogPort; DEMO_DKG_CONFIG: unknown };
 
   const ttl = config.cacheTtlMs ?? 10 * 60 * 1000; // 10분
   let cachedGraph: GraphRegistryPort | null = null;
@@ -66,13 +66,13 @@ export async function createDevDkgProvider(
       }
       const loaded = dkgStore.loadGraph();
       if (loaded.getAllNodes().length === 0) {
-        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog });
+        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG });
         dkgStore.saveGraph(cachedGraph!, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
-      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog });
+      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG });
     }
 
     lastInit = now;

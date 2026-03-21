@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { createQaContext } from "./qa-context.js";
+import { createQaContext } from "@qa-sdk/context";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
 import {
   aggregateUsageData, analyzeCollectionHealth,

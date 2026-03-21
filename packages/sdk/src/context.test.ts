@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TraceContext } from "./context.js";
+import { TraceContext } from "@qa-sdk/logger";
 
 describe("TraceContext", () => {
   it("auto-generates a trace id, preserves qa_session_id, and manages the span stack", () => {

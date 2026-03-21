@@ -45,7 +45,7 @@ export async function createGraphProvider(
     import("@qa-sdk/spec-core/store"),
   ]);
 
-  // demo-snapshot도 동적 import (catalog 제공)
+  // demo-snapshot도 동적 import (catalog + config 제공)
   const demoSnapshot = await import("demo-snapshot");
 
   let cachedGraph: unknown = null;
@@ -94,14 +94,14 @@ export async function createGraphProvider(
       // 노드가 비어있으면 부트스트랩 후 저장
       if (loaded.getAllNodes().length === 0) {
         config.logger?.info("DKG store empty, bootstrapping...");
-        cachedGraph = (analysisModule as any).bootstrapDkg({ catalog });
+        cachedGraph = (analysisModule as any).bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
         store.saveGraph(cachedGraph, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
       // 인메모리 부트스트랩
-      cachedGraph = (analysisModule as any).bootstrapDkg({ catalog });
+      cachedGraph = (analysisModule as any).bootstrapDkg({ catalog, config: demoSnapshot.DEMO_DKG_CONFIG });
     }
 
     config.logger?.info("convergence graph provider initialized");

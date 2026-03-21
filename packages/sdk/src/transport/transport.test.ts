@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { TransmissionEnvelope } from "@qa-sdk/core";
-import { HttpTransport } from "./http.js";
-import { NoopTransport } from "./noop.js";
+import { HttpTransport } from "@qa-sdk/logger";
+import { NoopTransport } from "@qa-sdk/logger";
 
 function buildEnvelope(overrides: Partial<TransmissionEnvelope> = {}): TransmissionEnvelope {
   return {

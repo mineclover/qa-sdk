@@ -118,7 +118,7 @@ export interface DkgSqliteStoreConstructor {
 // ── Analysis Module (동적 import 결과) ──────────────────
 
 export interface AnalysisModulePort {
-  bootstrapDkg(options?: { catalog?: unknown; config?: unknown; date?: string }): GraphRegistryPort;
+  bootstrapDkg(options: { catalog: unknown; config: unknown; date?: string }): GraphRegistryPort;
   collectMetrics(catalog: CatalogPort, graph: GraphRegistryPort, usage: unknown | null): MetricValuePort[];
   metricsToObservations(metrics: readonly MetricValuePort[], options?: { date?: string }): ObservationNodePort[];
 }

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { createActivationGate } from "./activation-gate-adapter.js";
 import { createPostActivationHook } from "./post-activation-hook.js";
 
@@ -15,7 +16,7 @@ describe("activation gate — 실제 spec-core 동적 import", () => {
     const analysis = await import("@qa-sdk/spec-core/analysis");
 
     // bootstrapDkg가 GraphRegistry를 직접 반환하는지 확인 (.graph가 아님)
-    const graph = (analysis as any).bootstrapDkg();
+    const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     expect(typeof graph.getAllNodes).toBe("function");
     expect(graph.getAllNodes().length).toBeGreaterThan(0);
 
@@ -38,7 +39,7 @@ describe("activation gate — 실제 spec-core 동적 import", () => {
     const specCore = await import("@qa-sdk/spec-core/propagation");
     const analysis = await import("@qa-sdk/spec-core/analysis");
 
-    const graph = (analysis as any).bootstrapDkg();
+    const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     const gate = createActivationGate({
       mode: "strict",
@@ -98,7 +99,7 @@ describe("전체 activate 경로 시뮬레이션", () => {
     const analysis = await import("@qa-sdk/spec-core/analysis");
     const storeModule = await import("@qa-sdk/spec-core/store");
 
-    const graph = (analysis as any).bootstrapDkg();
+    const graph = (analysis as any).bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     // 1. Gate check
     const gate = createActivationGate({

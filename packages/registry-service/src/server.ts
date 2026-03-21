@@ -80,8 +80,9 @@ async function buildActivationGate(): Promise<ActivationGatePort | undefined> {
     const specCore = await import("@qa-sdk/spec-core/propagation");
     const analysis = await import("@qa-sdk/spec-core/analysis") ;
 
-    // DKG 부트스트랩 — catalog + config 기본값 사용
-    const graph = analysis.bootstrapDkg();
+    // DKG 부트스트랩 — catalog + config 필수
+    const { DEMO_CATALOG, DEMO_DKG_CONFIG } = await import("demo-snapshot");
+    const graph = analysis.bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     logger.info({ mode: env.CONSTRAINT_GATE_MODE }, "Activation constraint gate enabled");
 

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EventRecord } from "@qa-sdk/core";
-import type { QaLoggerConfig } from "./config.js";
-import { QaLogger } from "./logger.js";
-import { NoopTransport } from "./transport/noop.js";
+import type { QaLoggerConfig } from "@qa-sdk/logger";
+import { QaLogger } from "@qa-sdk/logger";
+import { NoopTransport } from "@qa-sdk/logger";
 
 const owner = {
   owner_type: "workspace",

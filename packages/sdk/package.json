@@ -18,11 +18,14 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
-    "weighted-index": "workspace:*"
+    "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/codec": "workspace:*",
+    "@qa-sdk/context": "workspace:*"
   },
   "devDependencies": {
     "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "weighted-index": "workspace:*",
     "typescript": "^5.8.2"
   }
 }

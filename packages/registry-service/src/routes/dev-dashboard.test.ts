@@ -17,7 +17,7 @@ beforeAll(async () => {
   const analysis = await import("@qa-sdk/spec-core/analysis");
   const demoSnapshot = await import("demo-snapshot");
 
-  const graph = (analysis as any).bootstrapDkg({ catalog: demoSnapshot.DEMO_CATALOG });
+  const graph = (analysis as any).bootstrapDkg({ catalog: demoSnapshot.DEMO_CATALOG, config: demoSnapshot.DEMO_DKG_CONFIG });
   const catalog = demoSnapshot.DEMO_CATALOG;
 
   provider = {

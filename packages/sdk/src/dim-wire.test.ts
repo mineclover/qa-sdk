@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { encodePrefixByValue, decodePrefix, getPrefixShape } from "demo-snapshot";
-import { createDimWireCodec } from "./dim-wire.js";
+import { createDimWireCodec } from "@qa-sdk/codec";
 
 describe("DimWireCodec", () => {
   const codec = createDimWireCodec(DEMO_CATALOG);
