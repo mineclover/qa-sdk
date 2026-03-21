@@ -1,12 +1,12 @@
 /**
- * Design Knowledge Graph — 노드 11종 + 엣지 18종 타입 정의.
+ * Design Knowledge Graph — 노드 13종 + 엣지 18종 타입 정의.
  *
  * 좌표 시스템의 성장 나선을 추적하는 설계 시점 메타데이터 그래프.
  * 스펙: docs/specs/spec-engine/design-knowledge-graph.md
  */
 
 // ═══════════════════════════════════════════════════════════════
-//  Node Types (11종)
+//  Node Types (13종)
 // ═══════════════════════════════════════════════════════════════
 
 // ── 승계: DEMO_CATALOG + spec-engine (4종) ──────────────────
@@ -91,6 +91,20 @@ export interface ConstraintNode {
   readonly lifecycle: "active" | "suspended" | "retired";
 }
 
+/**
+ * Observation 의도 분류.
+ *
+ *   "action-needed" — 조치 필요. health metric에서 issue로 집계됨.
+ *   "monitoring"    — 추적 관찰. 즉시 조치 불필요. 조건 변화 시 재평가.
+ *   "completed"     — 작업 완료 기록. resolve 대상.
+ *
+ * intent 미지정 시 기본 판정:
+ *   source=metric → action-needed
+ *   source=manual/review + suggestion 있음 → action-needed
+ *   source=manual/review + suggestion 없음 → monitoring
+ */
+export type ObservationIntent = "action-needed" | "monitoring" | "completed";
+
 export interface ObservationNode {
   readonly kind: "observation";
   readonly id: string;
@@ -99,6 +113,8 @@ export interface ObservationNode {
   readonly subjects: readonly string[];
   readonly finding: string;
   readonly suggestion?: ObservationSuggestion;
+  /** 의도 분류. 미지정 시 source + suggestion으로 자동 판정 */
+  readonly intent?: ObservationIntent;
   readonly resolution?: {
     readonly decisionId: string;
     readonly outcome: "accepted" | "deferred" | "rejected";
@@ -179,6 +195,8 @@ export interface SkillSpecialization {
   readonly constraints?: readonly string[];
   /** 검증하는 불변조건 (DSL invariant 텍스트) */
   readonly invariants?: readonly string[];
+  /** 이 skill이 측정하는 metric ID들 */
+  readonly metrics?: readonly string[];
 }
 
 export interface SkillNode {

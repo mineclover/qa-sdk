@@ -227,6 +227,43 @@ export class DkgSqliteStore {
     });
   }
 
+  /**
+   * UsageData 저장 + 분석 결과 observation을 함께 기록.
+   * 분석은 호출자가 수행하고 결과만 전달한다 (store → convergence 의존 방지).
+   * ObservationNode의 subjects 필드에서 observes 엣지를 자동 생성하여 그래프 정합성을 유지한다.
+   */
+  saveUsageSnapshotWithObservations(
+    usage: UsageData,
+    autoObservations: readonly DkgNode[],
+  ): { snapshotId: number; observationsWritten: number } {
+    const snapshotId = this.saveUsageSnapshot(usage);
+
+    if (autoObservations.length > 0) {
+      const upsertNode = this.db.prepare(
+        `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
+         VALUES (?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
+      );
+      const insertEdge = this.db.prepare(
+        `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
+         VALUES (?, ?, ?, ?, ?)`,
+      );
+
+      for (const obs of autoObservations) {
+        upsertNode.run(obs.id, obs.kind, "auto", JSON.stringify(obs));
+        // ObservationNode.subjects → observes 엣지 자동 생성
+        const subjects = (obs as any).subjects as readonly string[] | undefined;
+        if (subjects) {
+          for (const subjectId of subjects) {
+            insertEdge.run("observes", obs.id, subjectId, "auto", null);
+          }
+        }
+      }
+    }
+
+    return { snapshotId, observationsWritten: autoObservations.length };
+  }
+
   // ── Meta ──────────────────────────────────────────────
 
   setMeta(key: string, value: string): void {

@@ -43,7 +43,7 @@ describe("CLI 조회: prefix 식별자 기반", () => {
       }
     }
 
-    expect(prefixes.length).toBe(19);
+    expect(prefixes.length).toBe(21);
 
     // category 분류 검증
     const eventPrefixes = prefixes.filter(p => p.category === "event");

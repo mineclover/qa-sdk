@@ -158,19 +158,19 @@ describe("종단 E2E: checkout 흐름", () => {
     const consumers = graph.getNodesByKind("consumer");
     const intentLinks = graph.getNodesByKind("intent-link");
 
-    // 39개 축 (37 기존 + 2 신규: constraint_op, migration_pattern)
-    expect(axes.length).toBe(39);
-    // 19개 prefix (17 기존 + 2 신규: engine_event, schema_event)
-    expect(prefixes.length).toBe(19);
-    // 5개 도메인 (shopping, tracking, event, observation, infra)
-    expect(domains.length).toBe(5);
+    // 43개 축 (37 기존 + 2 신규: constraint_op, migration_pattern + 4 신규: qa_pkg, qa_module, build_result, test_result)
+    expect(axes.length).toBe(43);
+    // 21개 prefix (17 기존 + 2 신규: engine_event, schema_event + 2 신규: build_event, test_event)
+    expect(prefixes.length).toBe(21);
+    // 6개 도메인 (shopping, tracking, event, observation, infra, dev)
+    expect(domains.length).toBe(6);
     // 2개 소비자
     expect(consumers.length).toBe(2);
     // 3개 intent-link (checkout-flow, api-event, infra-impact)
     expect(intentLinks.length).toBe(3);
-    // 8개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline)
+    // 9개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev)
     const dslBundles = graph.getNodesByKind("dsl-bundle");
-    expect(dslBundles.length).toBe(8);
+    expect(dslBundles.length).toBe(9);
     // 3개 Observation (dsl-checkout skew, dsl-auth skew, dsl-commerce skew)
     const observations = graph.getNodesByKind("observation");
     expect(observations.length).toBe(3);

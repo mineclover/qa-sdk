@@ -5,6 +5,8 @@
  */
 
 // ── DKG (Design Knowledge Graph) ────────────────────
+
+// ── DKG: Types + Graph ──────────────────────────────
 export type {
   DkgNode,
   DkgNodeKind,
@@ -25,6 +27,7 @@ export type {
   VersionChange,
   ConstraintNode,
   ObservationNode,
+  ObservationIntent,
   ObservationSuggestion,
   DomainNode,
   ConsumerNode,
@@ -44,13 +47,17 @@ export type {
 } from "../dkg/dkg.types.js";
 
 export { GraphRegistry } from "../dkg/graph-registry.js";
+
+// ── DKG: Derivation + Bootstrap ─────────────────────
 export { deriveFromCatalog } from "../dkg/catalog-derive.js";
 export type { DeriveInput } from "../dkg/catalog-derive.js";
 export { bootstrapDkg } from "../dkg/bootstrap.js";
+// ── DKG: Doc Sync ───────────────────────────────────
 export { generateDocSyncReport } from "../dkg/doc-sync.js";
 export { checkDocMarkers, applyDocMarkers, checkAllDocs } from "../dkg/doc-sync-marker.js";
 export type { DocSyncCheckResult } from "../dkg/doc-sync-marker.js";
 export type { DocSyncReport } from "../dkg/doc-sync.js";
+// ── DKG: Semantic ───────────────────────────────────
 export { resolve } from "../dkg/resolve.js";
 export {
   deriveRefEntries,
@@ -72,6 +79,7 @@ export { encodeRelationType, decodeRelationType, createRelationInstance, listRel
 export type { RelationTypeAddress, RelationInstance } from "../dkg/relational-instance.js";
 export type { FlowDefinition, FlowPoint, FlowDefinitionInput } from "../dkg/flow-definition.js";
 
+// ── DKG: DSL Bundle ─────────────────────────────────
 export { defineDslBundle, DslBundleRegistry, analyzeDslCoverage, analyzeDslVersionSkew, analyzeAllVersionSkew } from "../dkg/dsl-bundle.js";
 export type {
   DslBundle,
@@ -88,6 +96,7 @@ export type {
   ExecutionMode as DslExecutionMode,
 } from "../dkg/dsl-bundle.js";
 
+// ── DKG: Skills ─────────────────────────────────────
 export { analyzeImpact } from "../dkg/skills/analyze-impact.js";
 export { inferMigrator } from "../dkg/skills/infer-migrator.js";
 export type { DiffInfo } from "../dkg/skills/infer-migrator.js";
@@ -146,25 +155,49 @@ export type {
   StaleVersionUsage,
 } from "../convergence/convergence.types.js";
 
-export { compareAxes, comparePrefixes, scanAxisOverlaps } from "../convergence/symbol-comparator.js";
-export { compareDecisions, scanDecisionConflicts } from "../convergence/decision-comparator.js";
-export { discoverCausality } from "../convergence/causal-discovery.js";
-export { analyzeSimplification } from "../convergence/simplification-advisor.js";
-export { recommendFromSimplification, recommendFromObservation } from "../convergence/boundary-recommender.js";
-export { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
+// ── Convergence: 집계 (Aggregation) ──────────────────
 export { aggregateUsageData, analyzeCollectionHealth } from "../convergence/usage-aggregator.js";
 export { aggregateByDsl, aggregateByCategory, aggregateByService } from "../convergence/scoped-aggregator.js";
 export type { ScopedUsage, BranchDistribution, ScopedReport } from "../convergence/scoped-aggregator.js";
 export type { AddressContextRecord } from "../convergence/usage-aggregator.js";
-export { optimalCapacity, optimizeCapacities, optimizeWithImpact } from "../convergence/capacity-optimizer.js";
-export type { CapacityRecommendation, CapacityOptimizationReport } from "../convergence/capacity-optimizer.js";
-export type { HeadroomIssue, HeadroomReport } from "../convergence/headroom-advisor.js";
-export { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
-export type { SeparationRecord } from "../convergence/separation-record.js";
+
+// ── Convergence: 측정 (Measurement) ─────────────────
 export { analyzeDeploymentSkew } from "../convergence/deployment-skew.js";
-export { filterUsageByCategory, groupUsageByCategory, summarizeByCategory } from "../convergence/category-filter.js";
 export type { DeploymentSkew } from "../convergence/deployment-skew.js";
 export { analyzeEntryCoverage } from "../convergence/entry-coverage.js";
 export type { EntryState, PrefixCoverage, DimCoverage, CoverageReport } from "../convergence/entry-coverage.js";
 export { analyzeTemporalTrends } from "../convergence/temporal-analysis.js";
 export type { TimeWindow, TrendPoint, Anomaly, SlaViolation, SlaRule, TemporalReport } from "../convergence/temporal-analysis.js";
+
+// ── Convergence: 비교 (Comparison) ──────────────────
+export { compareAxes, comparePrefixes, scanAxisOverlaps } from "../convergence/symbol-comparator.js";
+export { compareDecisions, scanDecisionConflicts } from "../convergence/decision-comparator.js";
+export { discoverCausality } from "../convergence/causal-discovery.js";
+
+// ── Convergence: 추천 (Recommendation) ──────────────
+export { analyzeSimplification } from "../convergence/simplification-advisor.js";
+export { recommendFromSimplification, recommendFromObservation } from "../convergence/boundary-recommender.js";
+export { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
+export type { HeadroomIssue, HeadroomReport } from "../convergence/headroom-advisor.js";
+export { optimalCapacity, optimizeCapacities, optimizeWithImpact } from "../convergence/capacity-optimizer.js";
+export type { CapacityRecommendation, CapacityOptimizationReport } from "../convergence/capacity-optimizer.js";
+
+// ── Convergence: 기록 (Recording) ───────────────────
+export { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
+export type { SeparationRecord } from "../convergence/separation-record.js";
+
+// ── Convergence: 필터 (Filtering) ───────────────────
+export { filterUsageByCategory, groupUsageByCategory, summarizeByCategory } from "../convergence/category-filter.js";
+
+// ── Convergence: Metric 체계 ────────────────────────
+export type {
+  MetricStatus,
+  MetricValue,
+  MetricThreshold,
+  MetricDef,
+  IngestFlowInput,
+  RegistryFlowInput,
+  GateFlowInput,
+  DataFlowInput,
+} from "../convergence/metric.types.js";
+export { METRIC_DEFS, collectMetrics, metricsToObservations } from "../convergence/metric-registry.js";
