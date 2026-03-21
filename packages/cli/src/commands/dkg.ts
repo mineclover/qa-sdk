@@ -232,15 +232,21 @@ export function emitCliEvent(command: string): void {
   try {
     const now = new Date().toISOString();
     const session = `cli-${process.env.USER ?? "unknown"}`;
-    encodePrefixByValue(DEMO_CATALOG, "cli_event", "v1", {
+    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", "v1", {
       cli_intent: mapping.intent,
       cli_domain: mapping.domain,
       cli_subject: mapping.subject,
     });
     const store = getStore();
     store.saveUsageSnapshot({
-      entryUsages: [],
-      addressUsages: [],
+      entryUsages: [
+        { axisId: "cli_intent", entry: mapping.intent, count: 1, lastSeen: now },
+        { axisId: "cli_domain", entry: mapping.domain, count: 1, lastSeen: now },
+        { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: now },
+      ],
+      addressUsages: [
+        { prefix: "cli_event", version: "v1", address, count: 1 },
+      ],
       coOccurrences: [],
       versionUsages: [{ prefix: "cli_event", version: "v1", count: 1, lastSeen: now, sessions: [session] }],
       collectionPeriod: { from: now, to: now },
@@ -248,6 +254,68 @@ export function emitCliEvent(command: string): void {
   } catch {
     // 인코딩 실패 시 무시
   }
+}
+
+/**
+ * CLI 커버리지 분석 — 관측된 좌표 vs 전체 좌표.
+ * dormant 좌표 = 한 번도 실행되지 않은 CLI 기능 경로.
+ */
+export function analyzeCliCoverage(): {
+  totalCoords: number;
+  observedCoords: number;
+  dormantCoords: Array<{ coord: string; commands: string[] }>;
+  coverageRate: number;
+} {
+  // 전체 고유 좌표 수집
+  const allCoords = new Map<string, string[]>();
+  for (const [cmd, m] of Object.entries(CLI_COMMAND_MAP)) {
+    const key = `${m.intent}:${m.domain}:${m.subject}`;
+    const list = allCoords.get(key) ?? [];
+    list.push(cmd);
+    allCoords.set(key, list);
+  }
+
+  // store의 usage_snapshots data JSON에서 cli_* entryUsage 직접 스캔
+  const observedIntents = new Set<string>();
+  const observedDomains = new Set<string>();
+  const observedSubjects = new Set<string>();
+  try {
+    const s = getStore();
+    // DkgSqliteStore 내부의 db에 접근하여 raw data 쿼리
+    const rows = (s as any).db.prepare(
+      "SELECT data FROM usage_snapshots ORDER BY id DESC LIMIT 500",
+    ).all() as Array<{ data: string }>;
+    for (const row of rows) {
+      try {
+        const d = JSON.parse(row.data);
+        for (const eu of d.entryUsages ?? []) {
+          if (eu.axisId === "cli_intent") observedIntents.add(eu.entry);
+          if (eu.axisId === "cli_domain") observedDomains.add(eu.entry);
+          if (eu.axisId === "cli_subject") observedSubjects.add(eu.entry);
+        }
+      } catch { /* 개별 파싱 실패 무시 */ }
+    }
+  } catch { /* store 접근 실패 */ }
+
+  // 관측된 좌표 조합 판별
+  const observed = new Set<string>();
+  for (const [key] of allCoords) {
+    const [intent, domain, subject] = key.split(":");
+    if (observedIntents.has(intent) && observedDomains.has(domain) && observedSubjects.has(subject)) {
+      observed.add(key);
+    }
+  }
+
+  const dormant = [...allCoords.entries()]
+    .filter(([key]) => !observed.has(key))
+    .map(([key, cmds]) => ({ coord: key, commands: cmds }));
+
+  return {
+    totalCoords: allCoords.size,
+    observedCoords: observed.size,
+    dormantCoords: dormant,
+    coverageRate: allCoords.size > 0 ? observed.size / allCoords.size : 1,
+  };
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
@@ -2684,6 +2752,18 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     const failedSurfaces = [...bySurface.entries()].filter(([, s]) => s.failed > 0);
     console.log(`  contracts:  ${fileContracts.length}건 (${bySurface.size} surfaces)${failedSurfaces.length > 0 ? ` — ${failedSurfaces.map(([k, v]) => `${k}:${v.failed}F`).join(", ")}` : ""}`);
   }
+  // cli_event 커버리지 + dormant 명령 감지
+  const cliCov = analyzeCliCoverage();
+  const dormantList = cliCov.dormantCoords.slice(0, 5);
+  console.log(`  cli_event:  ${Math.round(cliCov.coverageRate * 100)}% (${cliCov.observedCoords}/${cliCov.totalCoords} 좌표, ${Object.keys(CLI_COMMAND_MAP).length}개 명령)`);
+  if (dormantList.length > 0) {
+    console.log(`  dormant:    ${cliCov.dormantCoords.length}개 미사용 좌표`);
+    for (const d of dormantList) {
+      console.log(`    ${d.coord.padEnd(35)} → ${d.commands.join(", ")}`);
+    }
+    if (cliCov.dormantCoords.length > 5) console.log(`    ... +${cliCov.dormantCoords.length - 5}개`);
+  }
+
   if (!apply && (resolveTargets.length > 0 || newObsCandidates.length > 0)) {
     console.log(`  pending:    ${resolveTargets.length} resolve, ${newObsCandidates.length} new obs (--apply로 반영)`);
   }
