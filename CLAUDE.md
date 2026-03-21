@@ -341,3 +341,59 @@ ingest-server Phase 2 완료
 ## Conventions
 - 한국어 주석/UI 텍스트 사용
 - Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
+
+## 좌표계 컨벤션 (2026-03-21 확립)
+
+### Prefix Version
+- prefix version은 `latestPrefixVersion(catalog, prefixId)` 또는 `prefix.versions[versions.length - 1].version`으로 동적 조회
+- `"v1"`, `"v2"` 하드코딩 금지 — catalog 구조 변경 시 깨짐
+- `version-resolution.test.ts`가 34개 prefix의 라운드트립을 자동 검증
+
+### Axis Capacity
+- 새 축 추가 시 capacity는 `nextPowerOf2(entries.length * 2)` 이상
+- 눈대중으로 딱 맞게 잡으면 headroom 경고 발생 (headroom ≤ 1 → warning, 0 → critical)
+- `dkg promote scan`의 q5_capacity가 이 공식 사용
+
+### Catalog 소비 경로
+- **개발**: `import { DEMO_CATALOG } from "demo-snapshot"` 직접 사용
+- **운영**: `createCatalogProvider({ registry: "http://registry:3300" })` → registry에서 active catalog fetch
+- **SDK**: `createQaContextAsync({ registry })` → CatalogProvider 경유 → fallback: 로컬
+- **CLI**: `--registry` 옵션 또는 `QA_REGISTRY_URL` 환경변수
+- Registry가 prefix/version/shape/stride의 authority. 코드는 development shortcut.
+
+### Observation Intent
+- `action-needed`: 조치 필요 (metric 감지, suggestion 있는 수동). health metric이 issue로 집계
+- `monitoring`: 추적 관찰 (설계 메모, suggestion 없는 수동). health에서 제외
+- `completed`: 완료 보고. resolve 대상
+- DEC-SEP Decision으로 수용된 overlap → metric ok 처리
+- `prompts → active Decision` 연결된 observation → acknowledged, health 제외
+
+### Self-Check 레이어
+- **Layer 1 (SLOW)**: CI에서 빌드/테스트 실행 → SelfCheckResult[]
+- **Layer 2 (FAST)**: `analyzeSelfCheck()` 순수 함수 → 좌표 인코딩 + convergence + invariant (47ms, execSync 없음)
+- **Layer 3 (STORE)**: `--apply` 시 snapshot/observation 저장 (dry-run이 기본)
+
+### CLI 완전 관측
+- 모든 CLI 명령은 `emitCliEvent(command)` → `cli_event` prefix로 자동 기록
+- `CLI_COMMAND_MAP`: 69개 명령 → 47개 고유 좌표 (intent × domain × subject)
+- 명령어 이름은 교체 가능한 UI. 좌표가 안정 식별자
+- `analyzeCliCoverage()`: dormant 좌표 = 한 번도 실행 안 된 기능
+
+### DKG 자기참조
+- 67축, 34 prefix, 11 DSL, 6 도메인
+- `dev-domain`: build_event, test_event, dkg_event, dkg_decision_event, dkg_observation_event, cli_event, contract_check
+- `dsl-dev`: 7 members, 불변조건 3개 (빌드 실패 후 테스트 금지 등)
+- `dkg_op` 축: claim, release, decide, observe, resolve, link, refresh, self-check, converge, trace, promote
+- `dkg promote scan`: 5Q 자동 판정으로 좌표 승격 후보 발견
+
+### Self-Check 패키지
+- 28/35 패키지 관리 (80%)
+- 미관리 7개: platform-demo-api, registry-ui, roleplay-web, shop-web, weighted-gpu, weighted-index-explorer, weighted-ui
+- `SELF_CHECK_PKGS` 배열에 등록. `hasBuild`/`hasTest` 플래그로 빌드/테스트 스킵 제어
+
+### 지정 초기화
+- `dkg reset bootstrap` — 구조만 재초기화
+- `dkg reset operational` — 운영 데이터(observation, decision) 삭제
+- `dkg reset snapshots` — usage 스냅샷 삭제
+- `dkg reset all --confirm` — 전체 초기화
+- `--confirm` 없으면 dry-run (현재 상태만 표시)
