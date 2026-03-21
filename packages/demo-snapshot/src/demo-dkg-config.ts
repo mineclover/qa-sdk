@@ -480,6 +480,41 @@ export const DEMO_DKG_CONFIG = {
       category: "chain", targetKinds: ["axis", "prefix"],
       input: "UsageData", output: "ConvergeChainResult",
     },
+
+    // ── 이 세션에서 추가된 skill ──────────────────────────
+    {
+      kind: "skill", id: "skill-self-check-analyze", name: "자기진단 분석",
+      description: "SelfCheckResult[] → 좌표 인코딩 + aggregateUsageData + convergence + invariant 검증. Layer 2 순수 함수. execSync 없음.",
+      category: "analysis", targetKinds: ["system"],
+      input: "SelfCheckResult[] + DemoCatalog", output: "SelfCheckAnalysis",
+      specialization: { dslBundles: ["dsl-dev"], metrics: ["metric:health"] },
+    },
+    {
+      kind: "skill", id: "skill-cli-coverage", name: "CLI 커버리지 분석",
+      description: "69개 CLI 명령의 47개 고유 좌표 중 관측된 것 vs dormant 감지. 한 번도 실행 안 된 기능 경로 식별.",
+      category: "analysis", targetKinds: ["system"],
+      input: "store (entryUsage 스캔)", output: "{ totalCoords, observedCoords, dormantCoords, coverageRate }",
+      specialization: { prefixes: ["cli_event"], metrics: ["metric:coverage"] },
+    },
+    {
+      kind: "skill", id: "skill-promote-scan", name: "좌표 승격 스캔",
+      description: "DKG 노드 열거형 필드를 5Q Checklist로 자동 판정하여 축 승격 후보 제안. Level 1(열거형) → Level 2(좌표축) 경로.",
+      category: "analysis", targetKinds: ["axis", "prefix"],
+      input: "GraphRegistry + existingAxes", output: "PromotionCandidate[]",
+    },
+    {
+      kind: "skill", id: "skill-spec-manage", name: "스펙 문서 관리",
+      description: "SpecNode CRUD + lifecycle 전이 + spec_event 기록. dkg spec add/list/transition.",
+      category: "write", targetKinds: ["spec"],
+      input: "id + type + title + rationale?", output: "SpecNode + governs edges",
+    },
+    {
+      kind: "skill", id: "skill-registry-publish", name: "레지스트리 발행",
+      description: "catalogToSchemaSnapshot → registry import + lock → release → activate lifecycle. dkg publish + dkg version.",
+      category: "write", targetKinds: ["system"],
+      input: "DemoCatalog + registryUrl", output: "PublishResult + VersionStatus",
+      specialization: { prefixes: ["version_point"] },
+    },
   ],
 
   specs: [

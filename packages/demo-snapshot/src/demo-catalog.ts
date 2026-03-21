@@ -945,6 +945,8 @@ export const DEMO_CATALOG = {
             "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health",
             "skill-pattern-analysis", "skill-schema-health-audit",
             "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain",
+            "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan",
+            "skill-spec-manage", "skill-registry-publish",
           ],
           capacity: 64,
         },

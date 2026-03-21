@@ -49,6 +49,7 @@ import {
   DEMO_PATTERN_RULES,
   buildPatternHealthReport,
   scanPromotionCandidates,
+  analyzeSelfCheck,
 } from "@qa-sdk/spec-core/analysis";
 import {
   executeEntryAdd,
@@ -1930,6 +1931,44 @@ export function dkgRun(skillId: string, args: string[]): void {
       if (result.constraintViolations.length > 0) {
         console.log(`  ⚠ constraint violations: ${result.constraintViolations.map(v => v.constraintId).join(", ")}`);
       }
+      break;
+    }
+
+    case "skill-self-check-analyze": {
+      // mock 데이터 — 현재 패키지 목록으로 전부 성공 가정
+      const mockResults = SELF_CHECK_PKGS.map(p => ({ pkg: p.name, kind: "build" as const, result: "success" }));
+      const analysis = analyzeSelfCheck(mockResults, DEMO_CATALOG, "cli-run");
+      console.log(`  records: ${analysis.records.length}, entryUsage: ${analysis.usage.entryUsages.length}`);
+      console.log(`  coverage: ${Math.round(analysis.coverage.overallCoverageRate * 100)}%`);
+      console.log(`  invariant: ${analysis.invariantViolations.length === 0 ? "통과" : analysis.invariantViolations.length + "건 위반"}`);
+      console.log(`  건전성: ${Math.round(analysis.health.healthRate * 100)}%`);
+      break;
+    }
+
+    case "skill-cli-coverage": {
+      const cov = analyzeCliCoverage();
+      console.log(`  커버리지: ${Math.round(cov.coverageRate * 100)}% (${cov.observedCoords}/${cov.totalCoords} 좌표)`);
+      console.log(`  dormant: ${cov.dormantCoords.length}개`);
+      for (const d of cov.dormantCoords.slice(0, 10)) {
+        console.log(`    ${d.coord.padEnd(35)} → ${d.commands.join(", ")}`);
+      }
+      break;
+    }
+
+    case "skill-promote-scan": {
+      dkgPromoteScan();
+      break;
+    }
+
+    case "skill-spec-manage": {
+      dkgSpecList();
+      break;
+    }
+
+    case "skill-registry-publish": {
+      const regUrl = args[0] || process.env.QA_REGISTRY_URL || "http://localhost:3300";
+      console.log(`  registry: ${regUrl}`);
+      console.log(`  이 skill은 dkg publish --registry <url>로 실행하세요.`);
       break;
     }
 
