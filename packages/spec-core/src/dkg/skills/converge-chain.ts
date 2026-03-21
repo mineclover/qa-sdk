@@ -4,7 +4,7 @@
  * 각 행위가 명확히 구분되고, 발견 → Decision → 실행까지 체인된다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import type { UsageData } from "../../convergence/convergence.types.js";
 import type { AxisOverlap, PrefixOverlap } from "../../convergence/convergence.types.js";
@@ -46,7 +46,7 @@ export interface ConvergeChainResult {
  * 4. 관측 (observe) — 인과 발견, 배포 스큐 → Observation 생성
  */
 export function convergeChain(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
   usage: UsageData | null,
   options?: { date?: string; entriesMap?: ReadonlyMap<string, readonly string[]> },

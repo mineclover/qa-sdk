@@ -7,9 +7,8 @@
  * 이것이 DSL DB의 마이그레이션 전략.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { decodePrefix, encodePrefixByValue } from "demo-snapshot";
-import { parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
+import { decodePrefix, encodePrefixByValue, parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
 
 export interface ResolveResult {
   /** 최신 version의 주소 (prefix:version:address) */
@@ -33,7 +32,7 @@ export interface ResolveResult {
  * @param latestVersion - 대상 최신 version (없으면 마지막 version 사용)
  */
 export function resolve(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   serialized: string,
   latestVersion?: string,
 ): ResolveResult {

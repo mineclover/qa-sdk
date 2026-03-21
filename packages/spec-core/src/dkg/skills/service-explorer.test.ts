@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { createDemoTopology } from "../service-topology.js";
 import {
@@ -13,7 +13,7 @@ import {
   systemOverview,
 } from "./service-explorer.js";
 
-const graph = bootstrapDkg();
+const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 const topo = createDemoTopology();
 
 describe("exploreService", () => {

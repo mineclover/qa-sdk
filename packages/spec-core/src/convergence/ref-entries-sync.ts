@@ -10,8 +10,8 @@
  * @layer 기록 (Recording)
  */
 
-import type { DemoCatalog, PrefixDef, PrefixVersionDef } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import type { Catalog, PrefixDef, PrefixVersionDef } from "@qa-sdk/core";
+import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
 
 export interface RefEntrySyncResult {
   readonly prefix: string;
@@ -33,7 +33,7 @@ export interface RefEntrySyncResult {
  * 최신 주소로 변환한다.
  */
 export function syncRefEntries(
-  catalog: DemoCatalog,
+  catalog: Catalog,
 ): RefEntrySyncResult[] {
   const results: RefEntrySyncResult[] = [];
 

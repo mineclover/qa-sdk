@@ -10,11 +10,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, type DemoCatalog } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import { catalogToSchemaSnapshot } from "../loader/catalog-bridge.js";
 
-// DemoCatalog → DemoCatalog 타입 (Record<string, ...> 기반이라 동적 인덱싱 가능)
-const catalog: DemoCatalog = DEMO_CATALOG;
+// Catalog 타입 (Record<string, ...> 기반이라 동적 인덱싱 가능)
+const catalog: Catalog = DEMO_CATALOG;
 // spec-core는 demo-snapshot에 직접 의존 안 하므로 FullCatalogInput으로 변환
 const catalogForSnapshot = catalog as Parameters<typeof catalogToSchemaSnapshot>[0];
 

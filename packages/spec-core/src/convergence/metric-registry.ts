@@ -8,7 +8,7 @@ import type { MetricDef, MetricValue, MetricStatus } from "./metric.types.js";
 import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode } from "../dkg/dkg.types.js";
 import type { UsageData } from "./convergence.types.js";
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import { analyzeHeadroom } from "./headroom-advisor.js";
 import { analyzeDeploymentSkew } from "./deployment-skew.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
@@ -110,7 +110,7 @@ function evaluateStatus(
  * 전체 자동 metric을 수집하여 값 + 상태를 반환한다.
  */
 export function collectMetrics(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphPort,
   usage: UsageData | null,
 ): MetricValue[] {

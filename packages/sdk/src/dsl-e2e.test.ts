@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { createQaContext } from "./qa-context.js";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
 import {
@@ -62,7 +62,7 @@ describe("DSL 종단 E2E", () => {
     }
 
     const usage = aggregateUsageData(DEMO_CATALOG, records);
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const audit = auditCoverage(DEMO_CATALOG, graph, usage.entryUsages, usage.addressUsages, { date: "2026-03-20" });
 
     console.log(`  coverage: ${audit.report.summary}`);
@@ -93,7 +93,7 @@ describe("DSL 종단 E2E", () => {
       records.push({ address_context: { flow_point: fp }, timestamp: new Date(2026, 2, 20, 3, 0, i).toISOString() });
     }
 
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const trace = traceFlows(graph, records, { date: "2026-03-20" });
 
     console.log(`  flow-trace: ${trace.summary}`);

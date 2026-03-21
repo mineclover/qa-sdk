@@ -4,7 +4,7 @@
  */
 
 import { describe, it } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
 import { bootstrapDkg } from "./dkg/bootstrap.js";
 import { analyzeImpact } from "./dkg/skills/analyze-impact.js";
 import { defineFlow, serializeFlow } from "./dkg/flow-definition.js";
@@ -129,7 +129,7 @@ for (const [name, point] of Object.entries(refundFlow.branches)) {
 
 console.log("\n\nStep 4. DKG 영향 분석 — resource_type 축 확인\n" + SEP);
 
-const graph = bootstrapDkg();
+const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 const impact = analyzeImpact(graph, {
   type: "entry-added",
   target: { axis: "resource_type" },

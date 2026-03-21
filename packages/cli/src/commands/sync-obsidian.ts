@@ -859,7 +859,7 @@ export function syncObsidian(options: SyncObsidianOptions): void {
   console.log(`   mode: ${dryRun ? "dry-run (미리보기)" : "write"}\n`);
 
   // DKG 부트스트랩 (검증용)
-  const graph = bootstrapDkg();
+  const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
   const axisCount = graph.getNodesByKind("axis").length;
   const prefixCount = graph.getNodesByKind("prefix").length;
   console.log(`   DKG: ${axisCount} axes, ${prefixCount} prefixes\n`);

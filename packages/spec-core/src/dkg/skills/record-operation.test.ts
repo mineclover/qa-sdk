@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { recordDecision, recordObservation } from "./record-operation.js";
 
-const graph = bootstrapDkg();
+const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
 describe("recordDecision", () => {
   it("대상 없으면 blocked", () => {

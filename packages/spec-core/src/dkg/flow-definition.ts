@@ -5,8 +5,8 @@
  * 각 포인트는 prefix 주소(정수)로 표현된다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
+import { encodePrefixByValue } from "@qa-sdk/core";
 
 export interface FlowDefinition {
   readonly id: string;
@@ -48,7 +48,7 @@ export interface FlowDefinitionInput {
  * 각 포인트의 values를 encode하여 주소를 확정한다.
  */
 export function defineFlow(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   input: FlowDefinitionInput,
 ): FlowDefinition {
   const encodePoint = (

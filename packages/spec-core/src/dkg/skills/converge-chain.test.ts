@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { deriveFromCatalog } from "../catalog-derive.js";
 import { aggregateUsageData, type AddressContextRecord } from "../../convergence/usage-aggregator.js";
@@ -41,7 +41,7 @@ describe("converge-chain — 4가지 행위 구분", () => {
   });
 
   it("usage 있음 — 4가지 행위 모두 구분", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const svcRef = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
 
     // 편향된 트래픽 생성 — page_view에서 home/ko/member만 사용

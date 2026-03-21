@@ -5,7 +5,7 @@
  * "이 entry를 추가해도 안전한가?" → impact → 결과 종합.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import { analyzeImpact } from "./analyze-impact.js";
 import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
@@ -43,7 +43,7 @@ export interface SafeEntryAddResult {
  * entry 추가의 안전성을 종합 판정한다.
  */
 export function safeEntryAdd(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
   input: SafeEntryAddInput,
 ): SafeEntryAddResult {

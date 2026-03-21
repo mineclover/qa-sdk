@@ -8,12 +8,27 @@ export type {
   DomainDef, ConsumerDef, ConstraintDef, DslBundleDef,
   IntentLinkDef, SkillDef, SpecDef, ReviewPairDef, DkgConfig,
   BrowserDimDef, BrowserPrefixDef, BrowserCatalog,
+  PrefixStructure, PrefixShape, PrefixEntries,
+  DecodedPosition, ResolvedDimValue, ResolvedAddress, DecomposedDim,
 } from "./catalog/index.js";
 
 export { StaticCatalogProvider } from "./catalog/static-provider.js";
 export { CatalogRegistry } from "./catalog/catalog-registry.js";
 export { deriveMeta } from "./catalog/derive-meta.js";
 export { flattenForBrowser } from "./catalog/browser-flatten.js";
+
+export {
+  latestPrefixVersion,
+  getPrefixStructure,
+  getPrefixShape,
+  getPrefixEntries,
+  encodePrefix,
+  decodePrefix,
+  encodePrefixByValue,
+  resolveAddress,
+  decomposeAddress,
+  verifyRoundTrip,
+} from "./catalog/runtime.js";
 
 // ── Types ───────────────────────────────────────────────
 

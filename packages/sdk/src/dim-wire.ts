@@ -8,14 +8,14 @@
  * 단점: prefix 합성 정보(shape, stride) 누락 → 1D 주소 복원 불가 (dimsToAddress로 별도 수행)
  */
 
-import type { DemoCatalog, DimRef } from "demo-snapshot";
+import type { Catalog, DimRef } from "@qa-sdk/core";
 import {
   latestPrefixVersion,
   getPrefixShape,
   getPrefixEntries,
   encodePrefix,
   decodePrefix,
-} from "demo-snapshot";
+} from "@qa-sdk/core";
 
 // ── 타입 ────────────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ const latestVersion = latestPrefixVersion;
 
 // ── 팩토리 ──────────────────────────────────────────────────────────────────────
 
-export function createDimWireCodec(catalog: DemoCatalog): DimWireCodec {
+export function createDimWireCodec(catalog: Catalog): DimWireCodec {
   return {
     encodeDims(prefixId: string, values: Record<string, string>): Record<string, number> {
       const prefix = catalog.prefixes[prefixId];

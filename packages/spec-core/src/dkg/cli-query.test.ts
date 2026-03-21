@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
 import { resolve } from "./resolve.js";
 import { findVersionForEntry, findRefAddress } from "./semantic-ref.js";
@@ -137,7 +137,7 @@ describe("CLI 조회: prefix 식별자 기반", () => {
   });
 
   it("impact — deploy_action 축 변경 cascade", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const impact = analyzeImpact(graph, {
       type: "entry-added",
       target: { axis: "deploy_action" },

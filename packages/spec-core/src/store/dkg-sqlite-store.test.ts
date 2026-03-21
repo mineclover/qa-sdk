@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { DkgSqliteStore } from "./dkg-sqlite-store.js";
 import { bootstrapDkg } from "../dkg/bootstrap.js";
 import { aggregateUsageData, type AddressContextRecord } from "../convergence/usage-aggregator.js";
@@ -18,7 +18,7 @@ afterEach(() => {
 describe("DKG SQLite Store — Graph", () => {
 
   it("save → load → 노드/엣지 수 일치", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const saved = store.saveGraph(graph);
 
     console.log(`\n  saved: ${saved.nodesWritten} nodes, ${saved.edgesWritten} edges`);
@@ -30,7 +30,7 @@ describe("DKG SQLite Store — Graph", () => {
   });
 
   it("upsert — 같은 노드 2번 저장해도 1개", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
     store.saveGraph(graph); // 2번째
 
@@ -39,7 +39,7 @@ describe("DKG SQLite Store — Graph", () => {
   });
 
   it("load 후 cascade 질의 동작", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
 
     const loaded = store.loadGraph();
@@ -148,7 +148,7 @@ describe("DKG SQLite Store — Usage 스냅샷", () => {
 describe("DKG SQLite Store — JSON export/import", () => {
 
   it("export → import → 동일 상태", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
 
     const json = store.exportJson();
@@ -193,7 +193,7 @@ describe("DKG SQLite Store — 멀티 카탈로그 격리", () => {
 
   it("exportJson에 catalogId 포함", () => {
     const s = new DkgSqliteStore(":memory:", "export-test");
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     s.saveGraph(graph);
 
     const exported = JSON.parse(s.exportJson());
@@ -202,7 +202,7 @@ describe("DKG SQLite Store — 멀티 카탈로그 격리", () => {
   });
 
   it("listCatalogIds — 저장된 카탈로그 목록", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
 
     const ids = store.listCatalogIds();
@@ -210,7 +210,7 @@ describe("DKG SQLite Store — 멀티 카탈로그 격리", () => {
   });
 
   it("deleteCatalog — 특정 카탈로그만 삭제", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
     const before = store.stats();
     expect(before.nodes).toBeGreaterThan(0);
@@ -224,7 +224,7 @@ describe("DKG SQLite Store — 멀티 카탈로그 격리", () => {
 
   it("importJson은 현재 catalogId에 저장", () => {
     const src = new DkgSqliteStore(":memory:", "src");
-    src.saveGraph(bootstrapDkg());
+    src.saveGraph(bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG }));
     const json = src.exportJson();
     src.close();
 

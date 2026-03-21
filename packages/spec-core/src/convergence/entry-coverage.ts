@@ -9,7 +9,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { EntryUsage, AddressUsage } from "./convergence.types.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -96,7 +96,7 @@ export interface CoverageReport {
  * @param addressUsages - aggregateUsageData에서 나온 AddressUsage[]
  */
 export function analyzeEntryCoverage(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
 ): CoverageReport {

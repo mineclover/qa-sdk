@@ -7,8 +7,8 @@
  * 주소는 관계 유형을 식별한다. 구체적 인스턴스(42, admin)는 좌표 밖.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
+import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
 
 export interface RelationTypeAddress {
   /** relational prefix 주소 */
@@ -34,7 +34,7 @@ export interface RelationInstance {
  * "user has role" → relational:v1:ADDRESS
  */
 export function encodeRelationType(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   subject: string,
   predicate: string,
   object: string,
@@ -61,7 +61,7 @@ export function encodeRelationType(
  * 관계 유형 주소를 디코딩한다.
  */
 export function decodeRelationType(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   serialized: string,
 ): RelationTypeAddress {
   const [, version, addrStr] = serialized.split(":");
@@ -83,7 +83,7 @@ export function decodeRelationType(
  * EventRecord의 payload에 넣을 형태.
  */
 export function createRelationInstance(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   subject: { kind: string; id: string | number },
   predicate: string,
   object: { kind: string; id: string | number },
@@ -102,7 +102,7 @@ export function createRelationInstance(
  * 예: "user × has × *" → role, permission, group, resource
  */
 export function listRelationObjects(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   subjectKind: string,
   predicate: string,
   version?: string,

@@ -5,7 +5,7 @@
  * 결과를 누적하여 최종 리포트 생성.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import type { DecisionNode, VersionEventNode, ImpactAnalysisResult } from "../dkg.types.js";
 import { safeEntryAdd, type SafeEntryAddResult } from "./safe-entry-add.js";
@@ -47,7 +47,7 @@ export interface SkillChainResult {
  * 각 단계의 결과를 누적. blocked이면 이후 단계 스킵.
  */
 export function entryAddChain(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
   axisId: string,
   entry: string,

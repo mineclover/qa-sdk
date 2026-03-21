@@ -14,6 +14,7 @@
   },
   "files": ["dist"],
   "dependencies": {
+    "@qa-sdk/core": "workspace:*",
     "weighted-index": "workspace:*"
   },
   "scripts": {

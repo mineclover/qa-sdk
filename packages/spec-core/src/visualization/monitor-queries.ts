@@ -4,7 +4,7 @@
  * 모니터링 서버가 이 함수들을 HTTP/WebSocket 핸들러에서 호출한다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath } from "./layer-map.js";
 import type { AddressContextRecord } from "../convergence/usage-aggregator.js";
 
@@ -18,7 +18,7 @@ export class MonitorState {
   private readonly windowMs: number;
 
   constructor(
-    private readonly catalog: DemoCatalog,
+    private readonly catalog: Catalog,
     options?: { windowSeconds?: number },
   ) {
     this.layerMap = buildLayerMap(catalog);

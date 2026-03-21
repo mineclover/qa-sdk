@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
 import { generateDocSyncReport } from "./doc-sync.js";
 
 describe("Doc Sync — 문서 SSOT 리포트", () => {
   it("현재 시스템 상태 리포트 생성", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const report = generateDocSyncReport(DEMO_CATALOG, graph);
 
     console.log("\n══ Doc Sync Report ══");

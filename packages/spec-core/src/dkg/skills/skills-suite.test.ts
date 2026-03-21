@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { checkConstraints, auditAllConstraints } from "./constraint-check.js";
 import { safeEntryAdd } from "./safe-entry-add.js";
@@ -14,7 +14,7 @@ import { entryAddChain, systemHealthChain } from "./skill-chain.js";
 
 describe("constraint-check", () => {
   it("활성 constraint 검사 — role 축", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = checkConstraints(graph, "role");
 
     console.log(`\n  role constraints: ${result.violations.length} violations, ${result.passed.length} passed`);
@@ -23,7 +23,7 @@ describe("constraint-check", () => {
   });
 
   it("전체 constraint 감사", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const audit = auditAllConstraints(graph);
 
     console.log(`\n  전체 constraint: ${audit.total} targets, ${audit.passed} passed, ${audit.violated} violated`);
@@ -34,7 +34,7 @@ describe("constraint-check", () => {
 
 describe("safe-entry-add", () => {
   it("safe — headroom 충분, 기존에 없음", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = safeEntryAdd(DEMO_CATALOG, graph, { axisId: "role", entry: "moderator" });
 
     console.log(`\n  ${result.verdict}: ${result.summary}`);
@@ -44,7 +44,7 @@ describe("safe-entry-add", () => {
   });
 
   it("already-exists — 이미 있는 entry", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = safeEntryAdd(DEMO_CATALOG, graph, { axisId: "role", entry: "admin" });
 
     expect(result.verdict).toBe("already-exists");
@@ -52,7 +52,7 @@ describe("safe-entry-add", () => {
   });
 
   it("영향 분석이 포함됨", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = safeEntryAdd(DEMO_CATALOG, graph, { axisId: "role", entry: "superadmin" });
 
     expect(result.affectedPrefixes.length).toBeGreaterThan(0);
@@ -62,7 +62,7 @@ describe("safe-entry-add", () => {
 
 describe("domain-health", () => {
   it("단일 domain 진단 — shopping-domain", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = checkDomainHealth(graph, "shopping-domain");
 
     console.log(`\n  ${result.domainId}: ${result.overallHealth} (${result.issues.length} issues)`);
@@ -71,7 +71,7 @@ describe("domain-health", () => {
   });
 
   it("전체 domain 진단", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const results = checkAllDomainsHealth(graph);
 
     console.log("\n  Domain Health:");
@@ -88,7 +88,7 @@ describe("domain-health", () => {
 
 describe("skill-chain", () => {
   it("entryAddChain — safe entry 추가", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = entryAddChain(DEMO_CATALOG, graph, "role", "moderator");
 
     console.log("\n  Entry Add Chain:");
@@ -103,7 +103,7 @@ describe("skill-chain", () => {
   });
 
   it("entryAddChain — 이미 있는 entry → skipped", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = entryAddChain(DEMO_CATALOG, graph, "role", "admin");
 
     expect(result.steps[0].status).toBe("skipped");
@@ -111,7 +111,7 @@ describe("skill-chain", () => {
   });
 
   it("systemHealthChain — 전체 건강 진단", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const result = systemHealthChain(graph);
 
     console.log("\n  System Health Chain:");

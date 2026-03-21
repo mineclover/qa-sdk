@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
 import { resolve } from "./resolve.js";
 import { defineFlow, serializeFlow, deserializeFlow } from "./flow-definition.js";
@@ -126,7 +126,7 @@ describe("종단 E2E: checkout 흐름", () => {
   });
 
   it("5. DKG 영향 분석 — flow_name 축 변경 cascade", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     const impact = analyzeImpact(graph, {
       type: "entry-added",
@@ -142,7 +142,7 @@ describe("종단 E2E: checkout 흐름", () => {
   });
 
   it("6. DKG IntentLink — checkout-flow 연결 확인", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     const links = graph.intentLinksFor("flow_point");
     expect(links.some(l => l.id === "IL-checkout-flow")).toBe(true);
@@ -150,7 +150,7 @@ describe("종단 E2E: checkout 흐름", () => {
   });
 
   it("7. 전체 시스템 현황 — self-evaluation", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     const axes = graph.getNodesByKind("axis");
     const prefixes = graph.getNodesByKind("prefix");

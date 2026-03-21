@@ -9,7 +9,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
 import type { EntryUsage } from "./convergence.types.js";
 
@@ -86,7 +86,7 @@ const BRANCH_AXES = new Set([
  * records를 시간 윈도우로 슬라이스하여 트렌드/이상/SLA 위반을 분석한다.
  */
 export function analyzeTemporalTrends(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
   options?: {
     windowMinutes?: number;

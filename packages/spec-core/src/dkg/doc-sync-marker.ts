@@ -9,7 +9,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { generateDocSyncReport, type DocSyncReport } from "./doc-sync.js";
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "./graph-registry.js";
 
 const MARKER_REGEX = /<!-- dkg:(\w+) -->.*?<!-- \/dkg -->/gs;
@@ -89,7 +89,7 @@ export function applyDocMarkers(
  */
 export function checkAllDocs(
   filePaths: readonly string[],
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
 ): DocSyncCheckResult[] {
   const report = generateDocSyncReport(catalog, graph);

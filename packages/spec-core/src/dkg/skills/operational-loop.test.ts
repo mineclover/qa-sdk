@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { DkgSqliteStore } from "../../store/dkg-sqlite-store.js";
 import { bootstrapDkg } from "../bootstrap.js";
 import { aggregateUsageData, type AddressContextRecord } from "../../convergence/usage-aggregator.js";
@@ -21,7 +21,7 @@ const svcRef = () => DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_
 
 beforeAll(() => {
   store = new DkgSqliteStore(":memory:");
-  const graph = bootstrapDkg();
+  const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
   store.saveGraph(graph);
   store.setMeta("simulation_start", "2026-03-20");
 });

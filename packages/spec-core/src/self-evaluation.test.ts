@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { GraphRegistry } from "./dkg/graph-registry.js";
 import { deriveFromCatalog } from "./dkg/catalog-derive.js";
 import { bootstrapDkg } from "./dkg/bootstrap.js";
@@ -501,7 +501,7 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
   let fullGraph: GraphRegistry;
 
   beforeAll(() => {
-    fullGraph = bootstrapDkg({ date: "2026-03-20" });
+    fullGraph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
   });
 
   it("메타데이터 등록 — 도메인/소비자/제약/DSL/IntentLink", () => {

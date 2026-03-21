@@ -7,7 +7,7 @@
  * 기본값: DEMO_CATALOG + DEMO_DKG_CONFIG (하위 호환).
  */
 
-import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
+import type { Catalog, DkgConfig } from "@qa-sdk/core";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
 import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode } from "./dkg.types.js";
@@ -64,13 +64,13 @@ interface CatalogInput extends DeriveInput {
  * 4. 알려진 분리 유지 기록
  * 5. DSL 버전 스큐 분석 → Observation 자동 생성
  */
-export function bootstrapDkg(options?: {
-  catalog?: CatalogInput;
-  config?: DkgConfigInput;
+export function bootstrapDkg(options: {
+  catalog: CatalogInput;
+  config: DkgConfigInput;
   date?: string;
 }): GraphRegistry {
-  const catalog = (options?.catalog ?? DEMO_CATALOG) as CatalogInput;
-  const config = (options?.config ?? DEMO_DKG_CONFIG) as DkgConfigInput;
+  const catalog = options.catalog as CatalogInput;
+  const config = options.config as DkgConfigInput;
   const date = options?.date ?? "2026-03-20";
 
   const graph = deriveFromCatalog(catalog);

@@ -10,7 +10,7 @@
  * "유저 클릭 → API 호출 → DB 저장" 흐름이 된다.
  */
 
-import type { DemoCatalog, PrefixDef } from "demo-snapshot";
+import type { Catalog, PrefixDef } from "@qa-sdk/core";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -106,7 +106,7 @@ function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string
  *
  * 우선순위: prefix.meta.layer/category → LAYER_RULES/inferCategoryFromStructure
  */
-export function buildLayerMap(catalog: DemoCatalog): LayerMapResult {
+export function buildLayerMap(catalog: Catalog): LayerMapResult {
   const placementMap = new Map<string, PrefixPlacement>();
   const layerBuckets: Map<LayerLevel, PrefixPlacement[]> = new Map([
     [0, []], [1, []], [2, []],

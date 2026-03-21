@@ -11,9 +11,13 @@
  *   qa.resolve("permission:v1:5")                // 자동 마이그레이션
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix, resolveAddress } from "demo-snapshot";
-import { parseSerializedAddress } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
+import {
+  parseSerializedAddress,
+  encodePrefixByValue,
+  decodePrefix,
+  latestPrefixVersion,
+} from "@qa-sdk/core";
 
 /** 실행 모드 */
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
@@ -28,7 +32,7 @@ export interface QaContextConfig {
   /** 네임스페이스 (default: process.env.QA_NAMESPACE ?? "default") */
   namespace?: string;
   /** 카탈로그 (default: DEMO_CATALOG). registry 옵션과 함께 사용 시 fallback. */
-  catalog?: DemoCatalog;
+  catalog?: Catalog;
   /**
    * Registry URL. 설정하면 registry에서 active catalog을 가져옴.
    * 미설정 시 catalog 옵션 또는 DEMO_CATALOG 사용.
@@ -109,13 +113,10 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     namespace: userConfig?.namespace ?? process.env.QA_NAMESPACE ?? "default",
   };
 
-  // dynamic import를 피하기 위해 catalog를 인자로 받음
-  let catalog: DemoCatalog;
-  try {
-    catalog = userConfig?.catalog ?? require("demo-snapshot").DEMO_CATALOG;
-  } catch {
-    throw new Error("DEMO_CATALOG not available. Pass catalog in config.");
+  if (!userConfig?.catalog) {
+    throw new Error("catalog is required. Pass catalog in QaContextConfig.");
   }
+  const catalog: Catalog = userConfig.catalog;
 
   // 서비스 주소 캐시
   let _svcAddr: number | null = null;
@@ -137,7 +138,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     encode(prefix: string, dims: Record<string, string | number>, version?: string): string {
       const prefixDef = catalog.prefixes[prefix as keyof typeof catalog.prefixes];
       if (!prefixDef) throw new Error(`Unknown prefix: ${prefix}`);
-      const ver = version ?? prefixDef.versions[prefixDef.versions.length - 1].version;
+      const ver = version ?? latestPrefixVersion(catalog, prefix);
 
       // prefix_ref 차원이 있고 dims에 안 넣었으면 자동 주입
       const fullDims = { ...dims };
@@ -166,7 +167,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
       const { prefix: prefixId, version, address } = parseSerializedAddress(serialized);
       const prefixDef = catalog.prefixes[prefixId as keyof typeof catalog.prefixes];
       if (!prefixDef) throw new Error(`Unknown prefix: ${prefixId}`);
-      const latest = prefixDef.versions[prefixDef.versions.length - 1].version;
+      const latest = latestPrefixVersion(catalog, prefixId);
 
       if (version === latest) {
         const decoded = decodePrefix(catalog, prefixId, version, address);
@@ -208,7 +209,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
       // service context는 항상 포함
       const svcAddr = getServiceAddr();
       const svcDef = catalog.prefixes.service;
-      const svcVer = svcDef.versions[svcDef.versions.length - 1].version;
+      const svcVer = latestPrefixVersion(catalog, "service");
       if (!address_context.service) {
         address_context.service = `service:${svcVer}:${svcAddr}`;
         addresses.service = { prefix: "service", version: svcVer, address: svcAddr };

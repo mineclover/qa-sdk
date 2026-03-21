@@ -7,7 +7,7 @@
  * 3. 저커버리지 prefix → Decision (테스트 보강 또는 entry 정리 필요)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
 import type { EntryUsage, AddressUsage } from "../../convergence/convergence.types.js";
@@ -23,7 +23,7 @@ export interface CoverageAuditResult {
  * entry 관측 커버리지를 감사하고, DKG에 Observation/Decision을 생성한다.
  */
 export function auditCoverage(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],

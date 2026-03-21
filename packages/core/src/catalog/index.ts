@@ -39,3 +39,27 @@ export type {
 // ── Browser Flatten ───────────────────────────────────────────
 export type { BrowserDimDef, BrowserPrefixDef, BrowserCatalog } from "./browser-flatten.js";
 export { flattenForBrowser } from "./browser-flatten.js";
+
+// ── Runtime (Catalog Accessors) ──────────────────────────────
+export {
+  latestPrefixVersion,
+  getPrefixStructure,
+  getPrefixShape,
+  getPrefixEntries,
+  encodePrefix,
+  decodePrefix,
+  encodePrefixByValue,
+  resolveAddress,
+  decomposeAddress,
+  verifyRoundTrip,
+} from "./runtime.js";
+
+export type {
+  PrefixStructure,
+  PrefixShape,
+  PrefixEntries,
+  DecodedPosition,
+  ResolvedDimValue,
+  ResolvedAddress,
+  DecomposedDim,
+} from "./runtime.js";

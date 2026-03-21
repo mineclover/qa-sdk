@@ -7,8 +7,8 @@
  * 이것이 DSL DB에서 "문자열이 원본, 정수는 파생"의 핵심 구현.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
+import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
 
 // ═══════════════════════════════════════════════════════════════
 //  타입
@@ -70,7 +70,7 @@ export interface RefValidationResult {
  * 현재 shape 기준의 정수 배열을 반환한다.
  */
 export function deriveRefEntries(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   semantic: SemanticRefEntries,
 ): DerivedRefEntries {
   const details: DerivedRefEntries["details"][number][] = [];
@@ -98,7 +98,7 @@ export function deriveRefEntries(
  * 현재 DEMO_CATALOG의 refEntries가 semantic 정의와 일치하는지 검증한다.
  */
 export function validateRefEntries(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   semantic: SemanticRefEntries,
 ): RefValidationResult {
   const derived = deriveRefEntries(catalog, semantic);
@@ -142,7 +142,7 @@ export function validateRefEntries(
  * version 정보가 있으면 항상 가능하다 (sealed version은 영원히 보존).
  */
 export function recoverSemanticFromAddresses(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   refPrefix: string,
   refVersion: string,
   addresses: readonly number[],
@@ -163,7 +163,7 @@ export function recoverSemanticFromAddresses(
  * CLI: "이 문자열이 있던 버전을 찾아줘"
  */
 export function findVersionForEntry(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   axisId: string,
   entryValue: string,
 ): string[] {
@@ -185,7 +185,7 @@ export function findVersionForEntry(
  * CLI: "이 조합의 주소가 뭐야?"
  */
 export function findRefAddress(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   prefixId: string,
   version: string,
   dimLabel: string,

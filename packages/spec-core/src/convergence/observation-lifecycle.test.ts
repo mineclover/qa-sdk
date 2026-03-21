@@ -10,6 +10,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "./metric-registry.js";
 import type { MetricValue } from "./metric.types.js";
 import type { ObservationNode } from "../dkg/dkg.types.js";
@@ -296,12 +297,11 @@ describe("observation store 멱등성 — 반복 converge 시 누적 안 함", (
     const store = new DkgSqliteStore(":memory:", "cycle-test");
 
     // 1. bootstrap
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     store.saveGraph(graph);
     const initialStats = store.stats();
 
     // 2. collectMetrics → metricsToObservations → save (1회차)
-    const { DEMO_CATALOG } = require("demo-snapshot");
     const metrics1 = collectMetrics(DEMO_CATALOG, graph, null);
     const obs1 = metricsToObservations(metrics1);
     if (obs1.length > 0) {

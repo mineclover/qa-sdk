@@ -12,7 +12,7 @@
  *   결제 DSL = { permission, endpoint, flow_point, order_event } × prod 바인딩
  */
 
-import type { DemoCatalog, DimRef } from "demo-snapshot";
+import type { Catalog, DimRef } from "@qa-sdk/core";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -112,7 +112,7 @@ export interface DslMemberInput {
  * prefix_ref → serviceBinding.prefixId 인 차원이 있으면 그것이 svcRefLabel.
  */
 export function defineDslBundle(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   input: DslBundleInput,
 ): DslBundle {
   // serviceBinding.prefixId가 실제로 존재하는지 검증
@@ -265,7 +265,7 @@ export interface DslVersionSkewReport {
  * 3. refEntries가 다른 service 집합을 참조하는 멤버
  */
 export function analyzeDslVersionSkew(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   bundle: DslBundle,
 ): DslVersionSkewReport {
   const members: MemberVersionInfo[] = [];
@@ -358,7 +358,7 @@ export function analyzeDslVersionSkew(
  * 모든 DSL 번들에 대해 버전 스큐를 분석한다.
  */
 export function analyzeAllVersionSkew(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   registry: DslBundleRegistry,
 ): DslVersionSkewReport[] {
   return registry.list().map(bundle => analyzeDslVersionSkew(catalog, bundle));
@@ -379,7 +379,7 @@ export interface DslCoverageReport {
  * 카탈로그의 모든 prefix에 대해 DSL 커버리지를 분석한다.
  */
 export function analyzeDslCoverage(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   registry: DslBundleRegistry,
 ): DslCoverageReport {
   const allPrefixes = Object.keys(catalog.prefixes);

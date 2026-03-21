@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { aggregateUsageData, analyzeCollectionHealth, type AddressContextRecord } from "./usage-aggregator.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import { auditCoverage } from "../dkg/skills/coverage-audit.js";
@@ -718,7 +718,7 @@ describe("E2E: DSL 번들 단위 파이프라인", () => {
   });
 
   it("DSL 버전 스큐 + Observation → 재귀 개선 검증", () => {
-    const fullGraph = bootstrapDkg({ date: "2026-03-20" });
+    const fullGraph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const dslNodes = fullGraph.getNodesByKind("dsl-bundle") as DslBundleNode[];
 
     const registry = new DslBundleRegistry();
@@ -921,7 +921,7 @@ describe("E2E: entry 관측 커버리지", () => {
 describe("E2E: skills — coverage-audit + flow-trace", () => {
 
   it("coverage-audit: 부분 트래픽 → Observation + Decision 자동 생성", () => {
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const svcAddr = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
     const records: AddressContextRecord[] = [];
 
@@ -969,7 +969,7 @@ describe("E2E: skills — coverage-audit + flow-trace", () => {
 
   it("flow-trace: DSL 우회 시 invariant 위반 감지 (의도적 시나리오)", () => {
     // 시나리오: page_view 없이 flow_point만 보내는 상황 — 봇/크롤러 또는 DSL 미적용 코드
-    const graph = bootstrapDkg({ date: "2026-03-20" });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, date: "2026-03-20" });
     const svcAddr = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
 
     // 정상 레코드: page_view + flow_point 모두 있음

@@ -5,15 +5,15 @@
  * execSync 없음. Store 의존 없음. 순수 함수.
  *
  * 컨벤션:
- *   - 입력: SelfCheckResult[] (빌드/테스트 결과) + DemoCatalog
+ *   - 입력: SelfCheckResult[] (빌드/테스트 결과) + Catalog
  *   - 출력: SelfCheckAnalysis (좌표 인코딩 + convergence + invariant)
  *   - CI에서 결과를 JSON으로 저장 → 이 모듈로 분석 → CLI/테스트에서 소비
  *
  * @layer 측정 (Measurement)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
+import { encodePrefixByValue, latestPrefixVersion } from "@qa-sdk/core";
 import { aggregateUsageData, analyzeCollectionHealth } from "./usage-aggregator.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import type { UsageData, CollectionHealthReport, CoverageReport } from "./convergence.types.js";
@@ -362,7 +362,7 @@ export const SELF_CHECK_PKG_NAMES = [
  */
 export function analyzeSelfCheck(
   results: readonly SelfCheckResult[],
-  catalog: DemoCatalog,
+  catalog: Catalog,
   runId: string = `analysis-${Date.now()}`,
 ): SelfCheckAnalysis {
   const now = new Date().toISOString();

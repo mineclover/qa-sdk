@@ -8,7 +8,7 @@
  * 이 도구가 실제 값으로 대체할 수 있다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "./graph-registry.js";
 import type { PrefixNode } from "./dkg.types.js";
 
@@ -40,7 +40,7 @@ export interface DocSyncReport {
  * 이 리포트의 값이 문서의 SSOT.
  */
 export function generateDocSyncReport(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   graph: GraphRegistry,
 ): DocSyncReport {
   // Catalog

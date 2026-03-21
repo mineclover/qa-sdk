@@ -5,7 +5,7 @@
  * 페이지네이션 지원.
  */
 
-import { DEMO_CATALOG, encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
 import { CatalogRegistry } from "@qa-sdk/core";
 import type { Catalog } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
@@ -110,7 +110,7 @@ function getGraph(catalogId?: string): GraphRegistry {
     if (registry.has(id) && id !== "demo") {
       const graph = bootstrapDkg({
         catalog: registry.getCatalog(id) as any,
-        config: _configOverride as any,
+        config: (_configOverride ?? DEMO_DKG_CONFIG) as any,
       });
       graphCache.set(id, graph);
       console.log(`  (bootstrapped with custom catalog: ${id})`);
@@ -127,8 +127,8 @@ function getGraph(catalogId?: string): GraphRegistry {
     } else {
       const graph = bootstrapDkg(
         registry.has(id)
-          ? { catalog: registry.getCatalog(id) as any, config: _configOverride as any }
-          : undefined,
+          ? { catalog: registry.getCatalog(id) as any, config: (_configOverride ?? DEMO_DKG_CONFIG) as any }
+          : { catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG },
       );
       const saved = store.saveGraph(graph);
       store.setMeta("last_bootstrap", new Date().toISOString());
@@ -758,7 +758,7 @@ export function dkgRefresh(): void {
   const cleared = store.clearBootstrap();
 
   // 2. 새 bootstrap 그래프 생성 → 저장
-  const graph = bootstrapDkg();
+  const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
   const saved = store.saveGraph(graph, "bootstrap");
   store.setMeta("last_bootstrap", new Date().toISOString());
 

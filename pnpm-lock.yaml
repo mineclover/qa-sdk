@@ -149,6 +149,9 @@ importers:
 
   packages/demo-snapshot:
     dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -605,9 +608,6 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
-      demo-snapshot:
-        specifier: workspace:*
-        version: link:../demo-snapshot
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -615,6 +615,9 @@ importers:
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -626,9 +629,6 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
-      demo-snapshot:
-        specifier: workspace:*
-        version: link:../demo-snapshot
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
@@ -639,6 +639,9 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.15
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

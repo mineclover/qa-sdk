@@ -6,7 +6,7 @@
  */
 
 import {
-  DEMO_CATALOG,
+  DEMO_CATALOG, DEMO_DKG_CONFIG,
   encodePrefixByValue, decodePrefix, resolveAddress,
   getPrefixShape, getPrefixStructure,
 } from "demo-snapshot";
@@ -220,7 +220,7 @@ export function cliImpact(args: {
   axis?: string;
   prefix?: string;
 }): void {
-  const graph = bootstrapDkg();
+  const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
   const input = args.axis
     ? { type: "entry-added" as const, target: { axis: args.axis } }

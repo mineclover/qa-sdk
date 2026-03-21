@@ -7,8 +7,8 @@
  * @layer 집계 (Aggregation)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { decodePrefix } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
+import { decodePrefix } from "@qa-sdk/core";
 import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
 import type { UsageData, EntryUsage } from "./convergence.types.js";
 
@@ -46,7 +46,7 @@ export interface ScopedReport {
  * 어떤 DSL의 멤버인지 판단하여 분류.
  */
 export function aggregateByDsl(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
   dslMemberMap: ReadonlyMap<string, readonly string[]>,
 ): ScopedReport {
@@ -98,7 +98,7 @@ export function aggregateByDsl(
  * records를 prefix category별로 분리하여 독립 집계한다.
  */
 export function aggregateByCategory(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
   prefixCategoryMap: ReadonlyMap<string, string>,
 ): ScopedReport {
@@ -140,7 +140,7 @@ export function aggregateByCategory(
  * records를 서비스(svc_ref) 주소별로 분리하여 독립 집계한다.
  */
 export function aggregateByService(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
 ): ScopedReport {
   const buckets = new Map<string, AddressContextRecord[]>();

@@ -5,7 +5,7 @@
  * 의도 링크, 서비스 토폴로지, cascade를 한 번에 추적한다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import type { ServiceTopologyRegistry } from "../service-topology.js";
 import type {
@@ -100,7 +100,7 @@ export interface TraceResult {
 
 export function traceNode(
   graph: GraphRegistry,
-  catalog: DemoCatalog,
+  catalog: Catalog,
   nodeId: string,
   options?: {
     topo?: ServiceTopologyRegistry;
@@ -298,7 +298,7 @@ function extractDetails(node: object): Record<string, unknown> {
 }
 
 function getAxisEntries(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   targetId: string,
   dimKind?: string,
 ): { entries?: readonly string[]; capacity?: number } {

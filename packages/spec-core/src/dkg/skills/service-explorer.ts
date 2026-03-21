@@ -8,7 +8,7 @@
  *   4. systemOverview — 시스템 대시보드
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 import type { GraphRegistry } from "../graph-registry.js";
 import type { ServiceTopologyRegistry, SharedContract, DependencyGraph } from "../service-topology.js";
 import { buildDependencyGraph } from "../service-topology.js";
@@ -158,7 +158,7 @@ export interface SystemOverview {
 //  Helpers
 // ═══════════════════════════════════════════════════════════════
 
-function getAxisHeadroom(catalog: DemoCatalog, axisId: string): AxisHeadroom | null {
+function getAxisHeadroom(catalog: Catalog, axisId: string): AxisHeadroom | null {
   const axis = catalog.axes[axisId];
   if (!axis) return null;
   const versions = Object.keys(axis.versions);
@@ -170,7 +170,7 @@ function getAxisHeadroom(catalog: DemoCatalog, axisId: string): AxisHeadroom | n
 }
 
 function getMinHeadroom(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   prefixId: string,
 ): OwnedPrefixInfo["minHeadroom"] {
   const prefix = catalog.prefixes[prefixId];
@@ -195,7 +195,7 @@ function getMinHeadroom(
 export function exploreService(
   graph: GraphRegistry,
   topo: ServiceTopologyRegistry,
-  catalog: DemoCatalog,
+  catalog: Catalog,
   serviceId: string,
 ): ServiceProfile | null {
   const services = topo.listServices();
@@ -288,7 +288,7 @@ export function exploreService(
 export function explorePrefix(
   graph: GraphRegistry,
   topo: ServiceTopologyRegistry,
-  catalog: DemoCatalog,
+  catalog: Catalog,
   prefixId: string,
 ): PrefixProfile | null {
   const node = graph.getNode(prefixId) as PrefixNode | undefined;
@@ -386,7 +386,7 @@ export function explorePrefix(
 
 export function exploreDsl(
   graph: GraphRegistry,
-  catalog: DemoCatalog,
+  catalog: Catalog,
   dslId: string,
 ): DslProfile | null {
   const node = graph.getNode(dslId) as DslBundleNode | undefined;
@@ -473,7 +473,7 @@ export function exploreDsl(
 export function systemOverview(
   graph: GraphRegistry,
   topo: ServiceTopologyRegistry,
-  catalog: DemoCatalog,
+  catalog: Catalog,
 ): SystemOverview {
   // services
   const allServices = topo.listServices();

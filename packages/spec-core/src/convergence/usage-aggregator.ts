@@ -9,9 +9,8 @@
  * @layer 집계 (Aggregation)
  */
 
-import type { DemoCatalog } from "demo-snapshot";
-import { decodePrefix } from "demo-snapshot";
-import { parseSerializedAddress } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
+import { decodePrefix, parseSerializedAddress } from "@qa-sdk/core";
 import type { UsageData, EntryUsage, AddressUsage, CoOccurrence, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
@@ -39,7 +38,7 @@ export interface AddressContextRecord {
  * address_context 레코드 배열에서 UsageData를 집계한다.
  */
 export function aggregateUsageData(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
 ): UsageData {
   const entryCountMap = new Map<string, { axisId: string; entry: string; count: number; lastSeen: string }>();
@@ -206,7 +205,7 @@ export function aggregateUsageData(
  * 4. 구버전 사용 — 최신이 아닌 version을 사용
  */
 export function analyzeCollectionHealth(
-  catalog: DemoCatalog,
+  catalog: Catalog,
   records: readonly AddressContextRecord[],
 ): CollectionHealthReport {
   const orphans = new Map<string, OrphanAddress>();

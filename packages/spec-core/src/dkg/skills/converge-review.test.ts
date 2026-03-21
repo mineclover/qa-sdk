@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { deriveFromCatalog } from "../catalog-derive.js";
 import { scanAxisOverlaps, comparePrefixes } from "../../convergence/symbol-comparator.js";
@@ -178,7 +178,7 @@ describe("행위 체인 리뷰 — 현재 시스템 결정 사항", () => {
   // ═══════════════════════════════════════════════════════
 
   it("observe: bootstrapDkg의 자동 관측 결과", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
     console.log("\n══ OBSERVE 리뷰 ══\n");
 
@@ -210,7 +210,7 @@ describe("행위 체인 리뷰 — 현재 시스템 결정 사항", () => {
   // ═══════════════════════════════════════════════════════
 
   it("종합: 시스템 건강 + 행위 체인 요약", () => {
-    const graph = bootstrapDkg();
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
     const health = systemHealthChain(graph);
 
     console.log("\n══ 종합 리뷰 ══\n");
