@@ -27,8 +27,14 @@ export interface QaContextConfig {
   service?: string;
   /** 네임스페이스 (default: process.env.QA_NAMESPACE ?? "default") */
   namespace?: string;
-  /** 카탈로그 (default: DEMO_CATALOG) */
+  /** 카탈로그 (default: DEMO_CATALOG). registry 옵션과 함께 사용 시 fallback. */
   catalog?: DemoCatalog;
+  /**
+   * Registry URL. 설정하면 registry에서 active catalog을 가져옴.
+   * 미설정 시 catalog 옵션 또는 DEMO_CATALOG 사용.
+   * (default: process.env.QA_REGISTRY_URL)
+   */
+  registry?: string;
   /** 실행 모드 (default: "live") */
   executionMode?: ExecutionMode;
   /** 실행 식별자 — 테스트 suite ID 등 */
@@ -263,4 +269,32 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
       };
     },
   };
+}
+
+/**
+ * 비동기 QaContext 생성 — registry에서 catalog을 가져올 때 사용.
+ *
+ * 컨벤션:
+ *   - registry 옵션이 있으면 → registry에서 active catalog fetch
+ *   - 없으면 → createQaContext()와 동일 (로컬)
+ *   - SDK와 CLI 모두 이 경로를 통해 catalog을 소비
+ *
+ * 사용:
+ *   const qa = await createQaContextAsync({ registry: "http://registry:3300" });
+ */
+export async function createQaContextAsync(userConfig?: QaContextConfig): Promise<QaContext> {
+  const registryUrl = userConfig?.registry ?? process.env.QA_REGISTRY_URL;
+
+  if (registryUrl) {
+    try {
+      const { createCatalogProvider } = await import("./catalog-provider.js");
+      const provider = createCatalogProvider({ registry: registryUrl });
+      const catalog = await provider.getCatalog();
+      return createQaContext({ ...userConfig, catalog });
+    } catch {
+      // fallback to local
+    }
+  }
+
+  return createQaContext(userConfig);
 }

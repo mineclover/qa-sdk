@@ -64,3 +64,13 @@ export type {
 
 export { createDimWireCodec } from "./dim-wire.js";
 export type { DimWireCodec } from "./dim-wire.js";
+
+// ── QaContext (DSL DB 앱 진입점) ─────────────────────────────
+
+export { createQaContext, createQaContextAsync } from "./qa-context.js";
+export type { QaContext, QaContextConfig, DslSession, ExecutionMode } from "./qa-context.js";
+
+// ── CatalogProvider (registry/local 추상화) ──────────────────
+
+export { createCatalogProvider } from "./catalog-provider.js";
+export type { CatalogProvider, CatalogProviderConfig } from "./catalog-provider.js";
