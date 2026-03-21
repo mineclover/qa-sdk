@@ -22,6 +22,7 @@ import {
   dkgPromoteScan,
   dkgPublish, dkgVersion,
   dkgAddEntry, dkgReset,
+  dkgSpecAdd, dkgSpecList, dkgSpecTransition,
   emitCliEvent,
   dkgPatterns, dkgPatternStats,
   setCatalogContext, getCatalogRegistry,
@@ -387,6 +388,36 @@ async function main() {
         verbose: sub.rest.includes("--verbose"),
       });
       return;
+    case "dkg spec add": {
+      const saId = sub.rest[sub.rest.indexOf("--id") + 1];
+      const saType = sub.rest[sub.rest.indexOf("--type") + 1];
+      const saTitle = sub.rest[sub.rest.indexOf("--title") + 1];
+      const saRatIdx = sub.rest.indexOf("--rationale");
+      const saGovIdx = sub.rest.indexOf("--governs");
+      if (!saId || !saType || !saTitle) {
+        console.error('Usage: qa-sdk dkg spec add --id <id> --type <type> --title "..." [--rationale "..."] [--governs <id,...>]');
+        return;
+      }
+      dkgSpecAdd({
+        id: saId, type: saType, title: saTitle,
+        rationale: saRatIdx >= 0 ? sub.rest[saRatIdx + 1] : undefined,
+        governs: saGovIdx >= 0 ? sub.rest[saGovIdx + 1].split(",") : undefined,
+      });
+      return;
+    }
+    case "dkg spec list":
+      dkgSpecList();
+      return;
+    case "dkg spec transition": {
+      const stSpecId = sub.rest[0];
+      const stLifecycle = sub.rest[1];
+      if (!stSpecId || !stLifecycle) {
+        console.error("Usage: qa-sdk dkg spec transition <specId> <draft|active|deprecated>");
+        return;
+      }
+      dkgSpecTransition(stSpecId, stLifecycle);
+      return;
+    }
     case "dkg reset": {
       const resetTarget = sub.rest[0] ?? "all";
       dkgReset(resetTarget, { confirm: sub.rest.includes("--confirm") });
@@ -446,15 +477,17 @@ async function main() {
       const titleIdx = sub.rest.indexOf("--title");
       const rationaleIdx = sub.rest.indexOf("--rationale");
       if (targetIdx < 0 || typeIdx < 0 || titleIdx < 0 || rationaleIdx < 0) {
-        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..."');
+        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..." [--spec <specId>]');
         console.error("  types: capacity, new-axis, new-prefix, dim-add, merge, deprecate");
         return;
       }
+      const specIdx = sub.rest.indexOf("--spec");
       dkgDecide({
         target: sub.rest[targetIdx + 1],
         type: sub.rest[typeIdx + 1],
         title: sub.rest[titleIdx + 1],
         rationale: sub.rest[rationaleIdx + 1],
+        spec: specIdx >= 0 ? sub.rest[specIdx + 1] : undefined,
       });
       return;
     }
@@ -551,6 +584,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   // 3단어: "dkg decisions export" 등
   const threeWord = [
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
+    "dkg spec add", "dkg spec list", "dkg spec transition",
   ];
   if (args.length >= 3) {
     const candidate = `${args[0]} ${args[1]} ${args[2]}`;

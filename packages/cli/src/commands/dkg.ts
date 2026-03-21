@@ -215,6 +215,9 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   // 추가된 명령어
   "dkg add-entry": { intent: "mutate", domain: "dkg-graph", subject: "axis" },
   "dkg reset":     { intent: "mutate", domain: "system", subject: "system" },
+  "dkg spec add":  { intent: "mutate", domain: "spec", subject: "spec" },
+  "dkg spec list": { intent: "query", domain: "spec", subject: "spec" },
+  "dkg spec transition": { intent: "lifecycle", domain: "spec", subject: "spec" },
   "obs read":      { intent: "query", domain: "system", subject: "spec" },
   "obs search":    { intent: "query", domain: "system", subject: "spec" },
   "obs append":    { intent: "mutate", domain: "system", subject: "spec" },
@@ -1416,6 +1419,7 @@ export function dkgDecide(opts: {
   type: string;
   title: string;
   rationale: string;
+  spec?: string;
 }): void {
   const graph = getGraph();
   const store = getStore();
@@ -1435,8 +1439,21 @@ export function dkgDecide(opts: {
   // skill이 반환한 노드/엣지를 그래프 + SQLite에 적용
   const dec = result.decision!;
   graph.addNode(dec);
-  for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
-  store.saveNodes([dec], result.edges, "manual");
+  const edges = [...result.edges];
+
+  // --spec: 의사결정이 어떤 spec에 근거하는지 traces-to 엣지 연결
+  if (opts.spec) {
+    const specNode = graph.getNode(opts.spec);
+    if (specNode && specNode.kind === "spec") {
+      edges.push({ type: "traces-to", from: dec.id, to: opts.spec });
+      graph.addEdge("traces-to" as any, dec.id, opts.spec);
+    } else {
+      console.warn(`  ⚠ spec '${opts.spec}' 없음 — traces-to 연결 건너뜀`);
+    }
+  }
+
+  for (const edge of edges) graph.addEdge(edge.type as any, edge.from, edge.to);
+  store.saveNodes([dec], edges, "manual");
   store.setMeta("last_decision", dec.id);
 
   emitDkgEvent("decide", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
@@ -1455,6 +1472,7 @@ export function dkgDecide(opts: {
     console.log(`  alternatives:`);
     for (const alt of dec.alternatives) console.log(`    - ${alt}`);
   }
+  if (opts.spec) console.log(`  spec:      ${opts.spec} (traces-to)`);
   console.log(`  (source: manual — refresh 시 보존됨)`);
 }
 
@@ -2280,6 +2298,143 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
   } catch (err: any) {
     console.error(`연결 실패: ${err.message}`);
   }
+}
+
+// ── dkg spec ────────────────────────────────────────
+
+export function dkgSpecAdd(opts: {
+  id: string;
+  type: string;
+  title: string;
+  lifecycle?: string;
+  rationale?: string;
+  governs?: string[];
+}): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  const validTypes = ["req", "feat", "uc", "evt", "ls", "adr"];
+  if (!validTypes.includes(opts.type)) {
+    console.error(`  유효하지 않은 type: ${opts.type} (${validTypes.join(", ")})`);
+    return;
+  }
+
+  const existing = graph.getNode(opts.id);
+  if (existing) {
+    console.error(`  이미 존재: ${opts.id}`);
+    return;
+  }
+
+  const spec = {
+    kind: "spec" as const,
+    id: opts.id,
+    type: opts.type as "req" | "feat" | "uc" | "evt" | "ls" | "adr",
+    title: opts.title,
+    lifecycle: (opts.lifecycle ?? "draft") as "draft" | "active" | "deprecated",
+    rationale: opts.rationale,
+  };
+
+  const edges: Array<{ type: string; from: string; to: string }> = [];
+  if (opts.governs) {
+    for (const target of opts.governs) {
+      if (graph.getNode(target)) {
+        edges.push({ type: "governs", from: opts.id, to: target });
+      }
+    }
+  }
+
+  graph.addNode(spec);
+  for (const e of edges) graph.addEdge(e.type as any, e.from, e.to);
+  store.saveNodes([spec], edges, "manual");
+
+  // spec_event 기록
+  emitSpecEvent(opts.type, opts.lifecycle ?? "draft");
+
+  emitDkgEvent("decide", "spec", opts.id);
+
+  console.log(`\n══ Spec 등록 완료 ══`);
+  console.log(`  id:        ${opts.id}`);
+  console.log(`  type:      ${opts.type}`);
+  console.log(`  title:     ${opts.title}`);
+  console.log(`  lifecycle: ${opts.lifecycle ?? "draft"}`);
+  if (edges.length > 0) console.log(`  governs:   ${edges.map(e => e.to).join(", ")}`);
+}
+
+export function dkgSpecList(): void {
+  const graph = getGraph();
+  const specs = graph.getNodesByKind("spec") as any[];
+
+  console.log(`\n══ Spec Documents (${specs.length}개) ══`);
+  if (specs.length === 0) { console.log("  (없음)"); return; }
+
+  const byType = new Map<string, typeof specs>();
+  for (const s of specs) {
+    const list = byType.get(s.type) ?? [];
+    list.push(s);
+    byType.set(s.type, list);
+  }
+
+  for (const [type, items] of byType) {
+    console.log(`\n  [${type}]`);
+    for (const s of items) {
+      const icon = s.lifecycle === "active" ? "✅" : s.lifecycle === "draft" ? "📝" : "⏸";
+      const governs = graph.neighbors(s.id, "governs");
+      const governsStr = governs.length > 0 ? ` → ${governs.join(", ")}` : "";
+      console.log(`    ${icon} ${s.id.padEnd(25)} ${s.title}${governsStr}`);
+    }
+  }
+}
+
+export function dkgSpecTransition(specId: string, toLifecycle: string): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  const spec = graph.getNode(specId) as any;
+  if (!spec || spec.kind !== "spec") {
+    console.error(`  spec을 찾을 수 없음: ${specId}`);
+    return;
+  }
+
+  const validLifecycles = ["draft", "active", "deprecated"];
+  if (!validLifecycles.includes(toLifecycle)) {
+    console.error(`  유효하지 않은 lifecycle: ${toLifecycle} (${validLifecycles.join(", ")})`);
+    return;
+  }
+
+  const fromLifecycle = spec.lifecycle;
+  const updated = { ...spec, lifecycle: toLifecycle };
+  graph.replaceNode(updated);
+  store.saveNodes([updated], [], "manual");
+
+  // spec_event 기록
+  emitSpecEvent(spec.type, toLifecycle);
+
+  console.log(`\n══ Spec Transition ══`);
+  console.log(`  ${specId}: ${fromLifecycle} → ${toLifecycle}`);
+}
+
+/** spec 변경 이벤트를 spec_event prefix로 기록 */
+function emitSpecEvent(specType: string, lifecycleState: string): void {
+  try {
+    const now = new Date().toISOString();
+    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const ver = latestVer("spec_event");
+    encodePrefixByValue(DEMO_CATALOG, "spec_event", ver, {
+      spec_type: specType,
+      lifecycle_state: lifecycleState,
+    });
+    const store = getStore();
+    store.saveUsageSnapshot({
+      entryUsages: [
+        { axisId: "spec_type", entry: specType, count: 1, lastSeen: now },
+        { axisId: "lifecycle_state", entry: lifecycleState, count: 1, lastSeen: now },
+      ],
+      addressUsages: [],
+      coOccurrences: [],
+      versionUsages: [{ prefix: "spec_event", version: ver, count: 1, lastSeen: now, sessions: [session] }],
+      collectionPeriod: { from: now, to: now },
+    } as any);
+  } catch { /* 기록 실패 시 무시 */ }
 }
 
 // ── dkg reset ───────────────────────────────────────
