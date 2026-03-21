@@ -1,3 +1,19 @@
+// ── Catalog ─────────────────────────────────────────────
+
+export type {
+  VisualShape, DetailKind, PrefixCategory, LayerLevel, PrefixMeta,
+  AxisVersionSnapshot, VersionedAxis, DimRef, PrefixVersionDef, PrefixDef,
+  ColumnRef, TableSchema, Catalog,
+  CatalogProvider, CatalogInfo,
+  DomainDef, ConsumerDef, ConstraintDef, DslBundleDef,
+  IntentLinkDef, SkillDef, SpecDef, ReviewPairDef, DkgConfig,
+  BrowserDimDef, BrowserPrefixDef, BrowserCatalog,
+} from "./catalog/index.js";
+
+export { StaticCatalogProvider } from "./catalog/static-provider.js";
+export { deriveMeta } from "./catalog/derive-meta.js";
+export { flattenForBrowser } from "./catalog/browser-flatten.js";
+
 // ── Types ───────────────────────────────────────────────
 
 export type {

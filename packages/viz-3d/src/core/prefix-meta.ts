@@ -283,6 +283,45 @@ export const DEMO_PREFIX_META: Record<string, PrefixMetadata> = {
 };
 
 // ═══════════════════════════════════════════════════
+//  카탈로그 메타 → PrefixMetadata 변환
+// ═══════════════════════════════════════════════════
+
+/**
+ * Build PrefixMetadata from catalog prefix.
+ * Falls back to DEMO_PREFIX_META if prefix has no meta.
+ */
+export function buildPrefixMetadata(
+  prefixId: string,
+  prefix: {
+    name: string;
+    description?: string;
+    meta?: {
+      category?: string;
+      visualShape?: string;
+      heightRatio?: number;
+      detailKind?: string;
+      source?: { module?: string; file?: string };
+    };
+  },
+): PrefixMetadata {
+  const fallback = DEMO_PREFIX_META[prefixId];
+  if (!prefix.meta && fallback) return fallback;
+
+  return {
+    id: prefixId,
+    displayName: prefix.name,
+    description: prefix.description ?? prefixId,
+    shape: (prefix.meta?.visualShape as VisualShape) ?? fallback?.shape ?? "cube",
+    detailKind: (prefix.meta?.detailKind as DetailKind) ?? fallback?.detailKind ?? "generic",
+    heightRatio: prefix.meta?.heightRatio ?? fallback?.heightRatio ?? 1,
+    source: prefix.meta?.source
+      ? { module: prefix.meta.source.module, file: prefix.meta.source.file }
+      : fallback?.source,
+    detail: fallback?.detail,
+  };
+}
+
+// ═══════════════════════════════════════════════════
 //  상세 정보 포맷터
 // ═══════════════════════════════════════════════════
 
