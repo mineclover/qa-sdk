@@ -159,7 +159,7 @@ describe("종단 E2E: checkout 흐름", () => {
     const intentLinks = graph.getNodesByKind("intent-link");
 
     expect(axes.length).toBe(70);
-    expect(prefixes.length).toBe(35);
+    expect(prefixes.length).toBe(37);
     // 6개 도메인 (shopping, tracking, event, observation, infra, dev)
     expect(domains.length).toBe(6);
     // 3개 소비자 (platform-demo, ingest-server, convergence-pipeline)

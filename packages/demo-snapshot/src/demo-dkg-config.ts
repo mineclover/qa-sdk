@@ -183,7 +183,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-internal", name: "내부 로직 관측 DSL",
       description: "버전 생명주기/주소 상태/관측 의도/실행 컨텍스트를 서비스 단위로 추적.",
-      memberPrefixes: ["version_point", "gate_point", "observation_event", "execution_context"],
+      memberPrefixes: ["version_point", "gate_point", "observation_event", "execution_context", "spec_event", "edge_activity"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "version_point(active) 전환 시 gate_point(active)도 동기화되어야 한다",

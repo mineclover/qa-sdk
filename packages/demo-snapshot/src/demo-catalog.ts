@@ -1518,6 +1518,32 @@ export const DEMO_CATALOG = {
         { version: "v1", axisVersions: { observation_intent: "v1", dkg_target_kind: "v1" } },
       ],
     },
+    spec_event: {
+      id: "spec_event", name: "스펙 문서 이벤트",
+      description: "spec_type × lifecycle_state — 어떤 유형의 스펙이 어떤 상태로 변경됐는가",
+      labels: ["spec_type", "lifecycle_state"],
+      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      dims: {
+        spec_type:       { kind: "axis", axisId: "spec_type" },
+        lifecycle_state: { kind: "axis", axisId: "lifecycle_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { spec_type: "v1", lifecycle_state: "v1" } },
+      ],
+    },
+    edge_activity: {
+      id: "edge_activity", name: "관계 활동 이벤트",
+      description: "edge_type × dkg_target_kind — 어떤 관계가 어떤 대상에 생성됐는가",
+      labels: ["edge_type", "dkg_target_kind"],
+      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      dims: {
+        edge_type:       { kind: "axis", axisId: "edge_type" },
+        dkg_target_kind: { kind: "axis", axisId: "dkg_target_kind" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { edge_type: "v1", dkg_target_kind: "v1" } },
+      ],
+    },
     execution_context: {
       id: "execution_context", name: "실행 컨텍스트",
       description: "svc_ref × execution_mode — 어떤 서비스가 어떤 실행 모드에 있는가",
