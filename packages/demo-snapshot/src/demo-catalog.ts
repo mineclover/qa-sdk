@@ -728,7 +728,7 @@ export const DEMO_CATALOG = {
             "apm", "browser-sdk", "event-catalog", "pino",
             "viz-3d", "viz-web", "demo-tests", "weighted-wasm",
           ],
-          capacity: 32,
+          capacity: 64,
           ko: { "spec-core": "스펙코어", cli: "CLI", sdk: "SDK", "demo-snapshot": "데모카탈로그", "weighted-index": "가중인덱스", "bit-index": "비트인덱스", "permission-engine": "권한엔진", "index-meta": "인덱스메타", "platform-demo": "플랫폼데모", "ingest-server": "수집서버", "registry-service": "레지스트리", e2e: "E2E테스트", core: "코어", engine: "엔진", store: "스토어", "gate-service": "게이트서비스", "query-service": "쿼리서비스", "decode-service": "디코드서비스", "registry-server": "레지스트리서버", "registry-client": "레지스트리클라이언트", apm: "APM", "browser-sdk": "브라우저SDK", "event-catalog": "이벤트카탈로그", pino: "로거", "viz-3d": "3D시각화", "viz-web": "웹시각화", "demo-tests": "데모테스트", "weighted-wasm": "WASM" },
         },
       },
