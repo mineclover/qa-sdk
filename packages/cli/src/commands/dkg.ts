@@ -2652,8 +2652,34 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     }
   }
 
+  // 비즈니스 prefix 합성 이벤트 — 쇼핑 도메인 트래픽 주입
+  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  let bizRecords = 0;
+  const bizPrefixes = [
+    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDim: "svc_ref" },
+    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDim: "svc_ref" },
+    { prefix: "permission", version: "v4", dims: { role: "admin" }, refDim: "perm_svc" },
+    { prefix: "permission", version: "v4", dims: { role: "developer" }, refDim: "perm_svc" },
+    { prefix: "event", version: "v4", dims: { event_name: "user.login", initiator: "web" }, refDim: "evt_svc" },
+    { prefix: "event", version: "v4", dims: { event_name: "order.created", initiator: "web" }, refDim: "evt_svc" },
+  ];
+  for (const bp of bizPrefixes) {
+    try {
+      const prefixDef = catalog.prefixes?.[bp.prefix];
+      const verDef = prefixDef?.versions?.find((v: any) => v.version === bp.version);
+      const refVal = verDef?.refEntries?.[bp.refDim]?.values?.[0];
+      const dims = refVal !== undefined ? { [bp.refDim]: refVal, ...bp.dims } : bp.dims;
+      const address = encodePrefixByValue(catalog, bp.prefix, bp.version, dims);
+      records.push({
+        address_context: { [bp.prefix]: `${bp.prefix}:${bp.version}:${address}` },
+        timestamp: now, session_id: runId, event_key: `biz:${bp.prefix}`, execution_mode: "synthetic" as const, execution_id: runId,
+      });
+      bizRecords++;
+    } catch { /* 인코딩 실패 시 건너뜀 */ }
+  }
+
   const usage = aggregateUsageData(DEMO_CATALOG, records);
-  console.log(`    records: ${records.length}건 (build/test ${results.length} + contract ${fileContracts.length})`);
+  console.log(`    records: ${records.length}건 (build/test ${results.length} + contract ${fileContracts.length} + biz ${bizRecords})`);
   console.log(`    entryUsage: ${usage.entryUsages.length}, addressUsage: ${usage.addressUsages.length}`);
 
   // ════════════════════════════════════════════════════════════

@@ -205,6 +205,10 @@ export { filterUsageByCategory, groupUsageByCategory, summarizeByCategory } from
 export { scanPromotionCandidates } from "../convergence/promotion-scanner.js";
 export type { PromotionCandidate } from "../convergence/promotion-scanner.js";
 
+// ── Convergence: Self-Check 분석 (Layer 2 순수 함수) ──
+export { analyzeSelfCheck, SELF_CHECK_PKG_NAMES } from "../convergence/self-check-analyzer.js";
+export type { SelfCheckResult, SelfCheckAnalysis, InvariantViolation } from "../convergence/self-check-analyzer.js";
+
 // ── Convergence: Metric 체계 ────────────────────────
 export type {
   MetricStatus,
