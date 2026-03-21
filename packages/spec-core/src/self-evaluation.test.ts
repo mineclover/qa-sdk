@@ -527,8 +527,8 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
     expect(consumers.length).toBe(3);
     // 6개: CON-001, CON-002, CON-003, CON-004, CON-005 + CON-SEP-initiator-channel (분리 유지)
     expect(constraints.length).toBe(6);
-    // 9개 DSL: observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev
-    expect(dslBundles.length).toBe(9);
+    // 11개 DSL: observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev, internal, ingest
+    expect(dslBundles.length).toBe(11);
     // 4개: checkout-flow, api-event, infra-impact, pattern-observation
     expect(intentLinks.length).toBe(4);
   });
@@ -556,10 +556,10 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
       console.log(`  ⚠ ${obs.id}: ${obs.finding}`);
     }
 
-    // dsl-checkout, dsl-auth, dsl-commerce는 minor skew → Observation 생성
-    expect(skewObs.length).toBe(3);
-    // schema_validation prefix는 DSL에 미배치 → uncovered 1건
-    expect(coverageObs.length).toBe(1);
+    // dsl-checkout, dsl-auth, dsl-commerce, dsl-dev는 minor skew → Observation 생성
+    expect(skewObs.length).toBe(4);
+    // 모든 prefix가 DSL에 포함됨 (dsl-ingest가 schema_validation 커버) → uncovered 0건
+    expect(coverageObs.length).toBe(0);
 
     // 각 skew Observation → Decision 연결 확인
     for (const obs of skewObs) {

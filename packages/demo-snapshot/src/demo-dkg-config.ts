@@ -171,12 +171,32 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "dsl-bundle", id: "dsl-dev", name: "자기참조 개발 DSL",
-      description: "qa-sdk 모노레포의 빌드/테스트 이벤트를 좌표계로 추적하는 DSL. 패키지별 빌드 성공률, 테스트 통과율을 관측한다.",
-      memberPrefixes: ["build_event", "test_event"],
+      description: "qa-sdk 모노레포의 빌드/테스트/DKG운영/CLI활동을 좌표계로 추적하는 DSL.",
+      memberPrefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "build_event(failure) 후 test_event는 발생하면 안 된다 (빌드 실패 시 테스트 불가)",
         "test_event(failed) 발생 시 해당 패키지의 build_event(success)가 선행되어야 한다",
+        "dkg_decision_event 없이 dkg_observation_event만 누적되면 의사결정 지연",
+      ],
+    },
+    {
+      kind: "dsl-bundle", id: "dsl-internal", name: "내부 로직 관측 DSL",
+      description: "버전 생명주기/주소 상태/관측 의도/실행 컨텍스트를 서비스 단위로 추적.",
+      memberPrefixes: ["version_point", "gate_point", "observation_event", "execution_context"],
+      serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
+      invariants: [
+        "version_point(active) 전환 시 gate_point(active)도 동기화되어야 한다",
+        "execution_context(test) 모드에서 gate_point 변경이 발생하면 안 된다",
+      ],
+    },
+    {
+      kind: "dsl-bundle", id: "dsl-ingest", name: "수집 파이프라인 관측 DSL",
+      description: "수집 레코드 유형과 스키마 검증을 서비스 단위로 추적.",
+      memberPrefixes: ["ingest_record", "schema_validation", "pipeline_point", "data_policy"],
+      serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
+      invariants: [
+        "ingest_record(metric) 수집 시 schema_validation이 선행되어야 한다",
       ],
     },
   ],

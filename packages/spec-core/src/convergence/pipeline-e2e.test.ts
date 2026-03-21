@@ -752,8 +752,8 @@ describe("E2E: DSL 번들 단위 파이프라인", () => {
       console.log(`    ${obs.id} → observes: ${targets.join(", ")}`);
     }
 
-    // dsl-checkout, dsl-auth, dsl-commerce에서 minor skew 감지
-    expect(skewObs.length).toBe(3);
+    // dsl-checkout, dsl-auth, dsl-commerce, dsl-ingest에서 minor skew 감지
+    expect(skewObs.length).toBe(4);
 
     // Observation이 그래프에서 DSL 번들과 연결됨
     for (const obs of skewObs) {

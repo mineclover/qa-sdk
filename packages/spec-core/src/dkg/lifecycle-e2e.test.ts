@@ -166,18 +166,18 @@ describe("종단 E2E: checkout 흐름", () => {
     expect(consumers.length).toBe(3);
     // 4개 intent-link (checkout-flow, api-event, infra-impact, pattern-observation)
     expect(intentLinks.length).toBe(4);
-    // 9개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev)
+    // 11개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev, internal, ingest)
     const dslBundles = graph.getNodesByKind("dsl-bundle");
-    expect(dslBundles.length).toBe(9);
-    // 4개 Observation (3 dsl skew + 1 schema_validation DSL uncovered)
+    expect(dslBundles.length).toBe(11);
+    // 4개 Observation (4 dsl skew: checkout, auth, commerce, dev)
     const observations = graph.getNodesByKind("observation");
     expect(observations.length).toBe(4);
     // 6개 Constraint (CON-001, CON-002, CON-003, CON-004, CON-005 + CON-SEP-initiator-channel)
     const constraints = graph.getNodesByKind("constraint");
     expect(constraints.length).toBe(6);
-    // 6개 Decision (1 sep-initiator-channel + 1 sep-verdict-migration + 1 sep-tracking-page_view + 3 skew)
+    // 7개 Decision (1 sep-initiator-channel + 1 sep-verdict-migration + 1 sep-tracking-page_view + 4 skew)
     const decisions = graph.getNodesByKind("decision");
-    expect(decisions.length).toBe(6);
+    expect(decisions.length).toBe(7);
     // Skew Observation → Decision prompts 엣지 확인 (coverage obs 제외)
     const skewObs = observations.filter(o => (o as any).id?.includes("SKEW"));
     for (const obs of skewObs) {
