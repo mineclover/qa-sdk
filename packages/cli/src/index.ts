@@ -17,19 +17,27 @@ import {
   dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
   dkgService, dkgPrefix, dkgDsl, dkgOverview,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
-  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgSelfCheck,
-  setCatalogContext,
+  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
+  dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
+  dkgPromoteScan,
+  dkgPublish, dkgVersion,
+  dkgAddEntry,
+  emitCliEvent,
+  dkgPatterns, dkgPatternStats,
+  setCatalogContext, getCatalogRegistry,
 } from "./commands/dkg.js";
 import { loadCatalog, type LoadedCatalog } from "./catalog-loader.js";
 import {
   cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
   cliImpact, cliListPrefixes, cliListAxes,
 } from "./commands/dx.js";
+import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from "./commands/obs.js";
 import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
 import { codegen, type CodegenFormat } from "./commands/codegen.js";
 import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
 import { init } from "./commands/init.js";
+import { syncObsidian } from "./commands/sync-obsidian.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -87,12 +95,35 @@ Usage:
   qa-sdk dkg link <obs> --decision   관측 → 결정 연결
   qa-sdk dkg timeline [--open]       시간순 이력
   qa-sdk dkg metrics                 전체 metric 대시보드
-  qa-sdk dkg self-check              빌드/테스트 자기 진단
+  qa-sdk dkg promote                 좌표 승격 후보 스캔 (5Q 자동 판정)
+  qa-sdk dkg add-entry <axis> <entry> [--apply]  축 entry 추가 (check→mutate→record)
+  qa-sdk dkg publish [--registry url] [--version id]  카탈로그 → registry 등록
+  qa-sdk dkg version <action> <prefix> [versionId]    버전 lifecycle (list|lock|release|activate)
+  qa-sdk dkg self-check [--apply]    빌드/테스트 자기 진단 (기본: dry-run)
+  qa-sdk dkg patterns                패턴 분류 규칙 목록
+  qa-sdk dkg pattern-stats           패턴 통계
   qa-sdk dkg run <skillId> [args]    skill 직접 실행
-  qa-sdk dkg export [--output path]  SQLite → JSON
-  qa-sdk dkg import <input>          JSON → SQLite
+  qa-sdk dkg export [--output path]  SQLite → JSON (전체)
+  qa-sdk dkg import <input>          JSON → SQLite (전체)
+  qa-sdk dkg decisions export [--output path]  의사결정만 백업
+  qa-sdk dkg decisions import <input>          의사결정 복원 (머지)
+  qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회
+
+  qa-sdk catalog list                등록된 카탈로그 목록
+  qa-sdk catalog info <id>           카탈로그 상세 정보
+
+  qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화
+  qa-sdk obs read <path>             Obsidian 노트 읽기
+  qa-sdk obs search <query>          Obsidian 검색
+  qa-sdk obs append <path> <content> Obsidian 노트에 내용 추가
+  qa-sdk obs backlinks <name>        Obsidian 백링크 조회
 
 Commands:
+
+  sync-obsidian
+    --vault <name>         대상 Obsidian 볼트 (기본: spec-prefix)
+    --dry-run              미리보기 (실제 쓰기 없음)
+
 
   scan git
     --root <path>          모노레포 루트 (기본: .)
@@ -143,13 +174,13 @@ async function main() {
   const sub = resolveSubcommand(filteredArgs);
 
   // --catalog 옵션이 있거나 CWD에 qa-sdk.config가 있으면 카탈로그 로드 → DKG 컨텍스트 주입
-  if (catalogPath || sub.name.startsWith("dkg")) {
+  if (catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog")) {
     const catalog = await loadCatalog(catalogPath);
-    if (catalog.id !== "demo") {
-      // 커스텀 카탈로그 → DKG 컨텍스트 설정
-      setCatalogContext(catalog);
-    }
+    setCatalogContext(catalog);
   }
+
+  // 모든 CLI 명령을 cli_event 좌표로 기록
+  try { emitCliEvent(sub.name); } catch { /* 관측 실패는 명령 실행에 영향 없음 */ }
 
   switch (sub.name) {
     case "init":
@@ -176,6 +207,40 @@ async function main() {
       return runSpecDecode(sub.rest);
     case "spec codegen":
       return runSpecCodegen(sub.rest);
+
+    // Obsidian 동기화
+    case "sync-obsidian":
+      return runSyncObsidian(sub.rest);
+
+    // Obsidian 조회/수정
+    case "obs read":
+      if (sub.rest[0]) obsRead(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
+      else console.error("Usage: qa-sdk obs read <path>");
+      return;
+    case "obs search":
+      if (sub.rest[0]) obsSearch(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
+      else console.error("Usage: qa-sdk obs search <query>");
+      return;
+    case "obs append": {
+      const appendPath = sub.rest[0];
+      const contentIdx = sub.rest.indexOf("--content");
+      if (!appendPath || contentIdx < 0) {
+        console.error('Usage: qa-sdk obs append <path> --content "..."');
+        return;
+      }
+      obsAppend(appendPath, sub.rest[contentIdx + 1], sub.rest[sub.rest.indexOf("--vault") + 1]);
+      return;
+    }
+    case "obs backlinks":
+      if (sub.rest[0]) obsBacklinks(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
+      else console.error("Usage: qa-sdk obs backlinks <name>");
+      return;
+    case "obs list":
+      obsList(sub.rest[0] ?? "", sub.rest[sub.rest.indexOf("--vault") + 1]);
+      return;
+    case "obs stats":
+      obsStats(sub.rest[sub.rest.indexOf("--vault") + 1]);
+      return;
 
     // DX 명령어
     case "encode":
@@ -240,6 +305,22 @@ async function main() {
       if (sub.rest[0]) dkgImport({ input: sub.rest[0] });
       else console.error("Usage: qa-sdk dkg import <path>");
       return;
+    case "dkg decisions export":
+      dkgDecisionsExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
+      return;
+    case "dkg decisions import":
+      if (sub.rest[0]) dkgDecisionsImport({ input: sub.rest[0] });
+      else console.error("Usage: qa-sdk dkg decisions import <path>");
+      return;
+    case "dkg decisions list": {
+      const dlLimit = sub.rest.indexOf("--limit");
+      const dlKind = sub.rest.indexOf("--kind");
+      dkgDecisionsList({
+        limit: dlLimit >= 0 ? parseInt(sub.rest[dlLimit + 1]) : undefined,
+        kind: dlKind >= 0 ? sub.rest[dlKind + 1] : undefined,
+      });
+      return;
+    }
     case "dkg service":
       dkgService(sub.rest[0]);
       return;
@@ -299,8 +380,55 @@ async function main() {
     case "dkg metrics":
       dkgMetrics();
       return;
+    case "dkg converge":
+      dkgConverge({
+        persist: sub.rest.includes("--persist"),
+        verbose: sub.rest.includes("--verbose"),
+      });
+      return;
+    case "dkg promote":
+      dkgPromoteScan();
+      return;
+    case "dkg add-entry": {
+      const aeAxisId = sub.rest[0];
+      const aeEntry = sub.rest[1];
+      if (!aeAxisId || !aeEntry) {
+        console.error("Usage: qa-sdk dkg add-entry <axis> <entry> [--apply] [--expand-capacity]");
+        return;
+      }
+      dkgAddEntry({
+        axisId: aeAxisId,
+        entry: aeEntry,
+        apply: sub.rest.includes("--apply"),
+        expandCapacity: sub.rest.includes("--expand-capacity"),
+      });
+      return;
+    }
+    case "dkg publish": {
+      const pubRegIdx = sub.rest.indexOf("--registry");
+      const pubVerIdx = sub.rest.indexOf("--version");
+      await dkgPublish({
+        registry: pubRegIdx >= 0 ? sub.rest[pubRegIdx + 1] : undefined,
+        versionId: pubVerIdx >= 0 ? sub.rest[pubVerIdx + 1] : undefined,
+      });
+      return;
+    }
+    case "dkg version": {
+      const vAction = sub.rest[0] ?? "list";
+      const vPrefix = sub.rest[1] ?? "";
+      const vVersionId = sub.rest[2] ?? "";
+      const vRegIdx = sub.rest.indexOf("--registry");
+      await dkgVersion(vAction, vPrefix, vVersionId, { registry: vRegIdx >= 0 ? sub.rest[vRegIdx + 1] : undefined });
+      return;
+    }
     case "dkg self-check":
-      dkgSelfCheck();
+      dkgSelfCheck({ apply: sub.rest.includes("--apply") });
+      return;
+    case "dkg patterns":
+      dkgPatterns();
+      return;
+    case "dkg pattern-stats":
+      dkgPatternStats();
       return;
     case "dkg trace":
       if (sub.rest[0]) dkgTrace(sub.rest[0]);
@@ -343,16 +471,61 @@ async function main() {
       const claimTarget = sub.rest[0];
       const byIdx = sub.rest.indexOf("--by");
       if (!claimTarget || byIdx < 0) {
-        console.error("Usage: qa-sdk dkg claim <id> --by <worker>");
+        console.error('Usage: qa-sdk dkg claim <id> --by <worker> [--reason "..."]');
         return;
       }
-      dkgClaim({ target: claimTarget, by: sub.rest[byIdx + 1] });
+      const reasonIdx = sub.rest.indexOf("--reason");
+      dkgClaim({ target: claimTarget, by: sub.rest[byIdx + 1], reason: reasonIdx >= 0 ? sub.rest[reasonIdx + 1] : undefined });
       return;
     }
     case "dkg release":
       if (sub.rest[0]) dkgRelease(sub.rest[0]);
       else console.error("Usage: qa-sdk dkg release <id>");
       return;
+
+    // Catalog 명령어
+    case "catalog list": {
+      const reg = getCatalogRegistry();
+      const catalogs = reg.listCatalogs();
+      if (catalogs.length === 0) {
+        console.log("  등록된 카탈로그 없음");
+      } else {
+        console.log(`\n══ Catalogs (${catalogs.length}) ══\n`);
+        for (const c of catalogs) {
+          console.log(`  ${c.id.padEnd(15)} ${c.name.padEnd(20)} prefixes=${c.prefixCount}`);
+        }
+      }
+      return;
+    }
+    case "catalog info": {
+      const infoId = sub.rest[0];
+      if (!infoId) {
+        console.error("Usage: qa-sdk catalog info <id>");
+        return;
+      }
+      const reg = getCatalogRegistry();
+      if (!reg.has(infoId)) {
+        console.error(`카탈로그 '${infoId}' 없음. 사용 가능: ${reg.listCatalogs().map(c => c.id).join(", ")}`);
+        process.exitCode = 1;
+        return;
+      }
+      const cat = reg.getCatalog(infoId);
+      console.log(`\n══ Catalog: ${cat.id} ══`);
+      console.log(`  name:     ${cat.name}`);
+      console.log(`  axes:     ${Object.keys(cat.axes).length}`);
+      console.log(`  prefixes: ${Object.keys(cat.prefixes).length}`);
+      console.log(`  tables:   ${cat.tables ? Object.keys(cat.tables).length : 0}`);
+      console.log(`\n  Axes:`);
+      for (const [id, a] of Object.entries(cat.axes)) {
+        const versions = Object.keys(a.versions);
+        console.log(`    ${id.padEnd(15)} versions=${versions.length}`);
+      }
+      console.log(`\n  Prefixes:`);
+      for (const [id, p] of Object.entries(cat.prefixes)) {
+        console.log(`    ${id.padEnd(15)} ${p.name.padEnd(15)} dims=${p.labels.length}`);
+      }
+      return;
+    }
 
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
@@ -369,6 +542,16 @@ interface Subcommand {
 }
 
 function resolveSubcommand(args: string[]): Subcommand {
+  // 3단어: "dkg decisions export" 등
+  const threeWord = [
+    "dkg decisions export", "dkg decisions import", "dkg decisions list",
+  ];
+  if (args.length >= 3) {
+    const candidate = `${args[0]} ${args[1]} ${args[2]}`;
+    if (threeWord.includes(candidate)) {
+      return { name: candidate, rest: args.slice(3) };
+    }
+  }
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
   const twoWord = [
     "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
@@ -376,7 +559,10 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import",
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
-    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg self-check",
+    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
+    "dkg promote", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats",
+    "catalog list", "catalog info",
+    "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
@@ -389,6 +575,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "init",
     "register", "dry-run", "codegen", "inspect",
     "encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact",
+    "sync-obsidian",
   ];
   if (oneWord.includes(args[0])) {
     return { name: args[0], rest: args.slice(1) };
@@ -747,6 +934,24 @@ function runImpactCmd(argv: string[]) {
   if (axisIdx >= 0) cliImpact({ axis: argv[axisIdx + 1] });
   else if (prefixIdx >= 0) cliImpact({ prefix: argv[prefixIdx + 1] });
   else console.error("Usage: qa-sdk impact --axis <id> or --prefix <id>");
+}
+
+// ── sync-obsidian ───────────────────────────────────
+
+function runSyncObsidian(argv: string[]) {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      vault: { type: "string", default: "spec-prefix" },
+      "dry-run": { type: "boolean", default: false },
+    },
+    strict: true,
+  });
+
+  syncObsidian({
+    vault: values.vault!,
+    dryRun: values["dry-run"]!,
+  });
 }
 
 // ── init ─────────────────────────────────────────────

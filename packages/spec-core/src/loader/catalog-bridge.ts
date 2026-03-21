@@ -145,3 +145,64 @@ function convertDimRef(raw: { readonly kind: string; readonly [key: string]: unk
       throw new Error(`Unknown DimRef kind: ${raw.kind}`);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  catalogToSchemaSnapshot — registry-service import 형식 변환
+// ═══════════════════════════════════════════════════════════════
+
+/** SchemaSnapshot 호환 타입 (registry-service에서 import하는 형식) */
+export interface SchemaSnapshotOutput {
+  readonly id: string;
+  readonly axes: readonly { readonly id: string; readonly entries: readonly string[]; readonly capacity: number }[];
+  readonly composites: readonly { readonly id: string; readonly dims: readonly string[]; readonly owner: string }[];
+}
+
+/** CatalogInput (axis 정보 포함) */
+export interface FullCatalogInput extends CatalogInput {
+  readonly axes: Record<string, {
+    readonly id: string;
+    readonly name: string;
+    readonly versions: Record<string, { readonly entries?: readonly string[]; readonly capacity?: number }>;
+  }>;
+}
+
+/**
+ * 카탈로그를 SchemaSnapshot 형식으로 변환한다.
+ * registry-service의 POST /schema/import에 전달 가능.
+ */
+export function catalogToSchemaSnapshot(
+  catalog: FullCatalogInput,
+  options?: { id?: string },
+): SchemaSnapshotOutput {
+  const id = options?.id ?? "demo";
+
+  // axes: 각 축의 최신 버전 entries + capacity
+  const axes: SchemaSnapshotOutput["axes"][number][] = [];
+  for (const [axisId, axis] of Object.entries(catalog.axes)) {
+    const versions = Object.keys(axis.versions);
+    const latestKey = versions[versions.length - 1];
+    const latest = axis.versions[latestKey];
+    if (!latest) continue;
+    axes.push({
+      id: axisId,
+      entries: [...(latest.entries ?? [])],
+      capacity: latest.capacity ?? (latest.entries?.length ?? 0),
+    });
+  }
+
+  // composites: prefix → { id, dims (axis dim만), owner }
+  const composites: SchemaSnapshotOutput["composites"][number][] = [];
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
+    const dims = prefix.labels.filter(label => {
+      const dim = prefix.dims[label];
+      return dim?.kind === "axis";
+    });
+    composites.push({
+      id: prefixId,
+      dims,
+      owner: "catalog",
+    });
+  }
+
+  return { id, axes, composites };
+}

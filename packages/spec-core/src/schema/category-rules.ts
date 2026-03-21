@@ -62,10 +62,11 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
       const edges = graph.edgesFrom(prefixId, "composes");
       const axisEdges = edges.filter(e => e.meta?.dimKind === "axis");
 
-      // event prefix는 action 관련 축을 가져야 함
+      // event prefix는 action/result 관련 축을 가져야 함
       const hasAction = axisEdges.some(e =>
         e.to.includes("action") || e.to.includes("deploy") || e.to.includes("health") ||
-        e.to.includes("constraint") || e.to.includes("migration"),
+        e.to.includes("constraint") || e.to.includes("migration") || e.to.includes("result") ||
+        e.to.includes("event_name"),
       );
       if (!hasAction) {
         errors.push(`event prefix "${prefixId}" has no action-related axis`);

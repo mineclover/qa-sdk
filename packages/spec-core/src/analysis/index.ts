@@ -172,11 +172,23 @@ export type { TimeWindow, TrendPoint, Anomaly, SlaViolation, SlaRule, TemporalRe
 // ── Convergence: 비교 (Comparison) ──────────────────
 export { compareAxes, comparePrefixes, scanAxisOverlaps } from "../convergence/symbol-comparator.js";
 export { compareDecisions, scanDecisionConflicts } from "../convergence/decision-comparator.js";
-export { discoverCausality } from "../convergence/causal-discovery.js";
+export { discoverCausality, discoverCausalityWithObservations } from "../convergence/causal-discovery.js";
 
 // ── Convergence: 추천 (Recommendation) ──────────────
-export { analyzeSimplification } from "../convergence/simplification-advisor.js";
-export { recommendFromSimplification, recommendFromObservation } from "../convergence/boundary-recommender.js";
+export { analyzeSimplification, scanAllSimplifications } from "../convergence/simplification-advisor.js";
+export { recommendFromSimplification, recommendFromObservation, recommendFromCausality, recommendAll } from "../convergence/boundary-recommender.js";
+
+// ── Convergence: 오케스트레이터 ─────────────────────
+export { runConvergenceAnalysis } from "../convergence/convergence-runner.js";
+export type { ConvergenceReport } from "../convergence/convergence-runner.js";
+
+// ── Schema: Prefix Consumer ─────────────────────────
+export { mapErrorToCoordinate, mapValidationToCoordinates, decodeCoordinate, AXIS_ENTRIES } from "../schema/schema-validation-codec.js";
+export type { ValidationCoordinate } from "../schema/schema-validation-codec.js";
+export { bridgeValidationToObservation } from "../schema/schema-observation-bridge.js";
+export type { SchemaObservationResult } from "../schema/schema-observation-bridge.js";
+export { auditSchemaHealth } from "../schema/schema-health-audit.js";
+export type { SchemaHealthReport, SchemaViolationEntry } from "../schema/schema-health-audit.js";
 export { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
 export type { HeadroomIssue, HeadroomReport } from "../convergence/headroom-advisor.js";
 export { optimalCapacity, optimizeCapacities, optimizeWithImpact } from "../convergence/capacity-optimizer.js";
@@ -189,6 +201,10 @@ export type { SeparationRecord } from "../convergence/separation-record.js";
 // ── Convergence: 필터 (Filtering) ───────────────────
 export { filterUsageByCategory, groupUsageByCategory, summarizeByCategory } from "../convergence/category-filter.js";
 
+// ── Convergence: 좌표 승격 ──────────────────────────
+export { scanPromotionCandidates } from "../convergence/promotion-scanner.js";
+export type { PromotionCandidate } from "../convergence/promotion-scanner.js";
+
 // ── Convergence: Metric 체계 ────────────────────────
 export type {
   MetricStatus,
@@ -200,4 +216,12 @@ export type {
   GateFlowInput,
   DataFlowInput,
 } from "../convergence/metric.types.js";
-export { METRIC_DEFS, collectMetrics, metricsToObservations } from "../convergence/metric-registry.js";
+export { METRIC_DEFS, collectMetrics, metricsToObservations, resolveRecoveredMetrics } from "../convergence/metric-registry.js";
+
+// ── Convergence: 패턴 분류 (ADR-006) ─────────────────
+export { classifyPattern } from "../convergence/pattern-classifier.js";
+export type { ClassifierInput, ClassifierEvent } from "../convergence/pattern-classifier.js";
+export { DEMO_PATTERN_RULES } from "../convergence/pattern-rules.js";
+export { detectAnomalies } from "../convergence/pattern-anomaly.js";
+export type { AnomalyDetectionInput } from "../convergence/pattern-anomaly.js";
+export { aggregatePatternStats, buildPatternHealthReport } from "../convergence/pattern-aggregator.js";

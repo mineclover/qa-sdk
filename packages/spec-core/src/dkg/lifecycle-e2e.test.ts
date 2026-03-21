@@ -158,30 +158,29 @@ describe("종단 E2E: checkout 흐름", () => {
     const consumers = graph.getNodesByKind("consumer");
     const intentLinks = graph.getNodesByKind("intent-link");
 
-    // 43개 축 (37 기존 + 2 신규: constraint_op, migration_pattern + 4 신규: qa_pkg, qa_module, build_result, test_result)
-    expect(axes.length).toBe(43);
-    // 21개 prefix (17 기존 + 2 신규: engine_event, schema_event + 2 신규: build_event, test_event)
-    expect(prefixes.length).toBe(21);
+    expect(axes.length).toBe(62);
+    expect(prefixes.length).toBe(29);
     // 6개 도메인 (shopping, tracking, event, observation, infra, dev)
     expect(domains.length).toBe(6);
-    // 2개 소비자
-    expect(consumers.length).toBe(2);
-    // 3개 intent-link (checkout-flow, api-event, infra-impact)
-    expect(intentLinks.length).toBe(3);
+    // 3개 소비자 (platform-demo, ingest-server, convergence-pipeline)
+    expect(consumers.length).toBe(3);
+    // 4개 intent-link (checkout-flow, api-event, infra-impact, pattern-observation)
+    expect(intentLinks.length).toBe(4);
     // 9개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev)
     const dslBundles = graph.getNodesByKind("dsl-bundle");
     expect(dslBundles.length).toBe(9);
-    // 3개 Observation (dsl-checkout skew, dsl-auth skew, dsl-commerce skew)
+    // 4개 Observation (3 dsl skew + 1 schema_validation DSL uncovered)
     const observations = graph.getNodesByKind("observation");
-    expect(observations.length).toBe(3);
-    // 4개 Constraint (CON-001, CON-002, CON-003 + CON-SEP-initiator-channel)
+    expect(observations.length).toBe(4);
+    // 6개 Constraint (CON-001, CON-002, CON-003, CON-004, CON-005 + CON-SEP-initiator-channel)
     const constraints = graph.getNodesByKind("constraint");
-    expect(constraints.length).toBe(4);
+    expect(constraints.length).toBe(6);
     // 6개 Decision (1 sep-initiator-channel + 1 sep-verdict-migration + 1 sep-tracking-page_view + 3 skew)
     const decisions = graph.getNodesByKind("decision");
     expect(decisions.length).toBe(6);
-    // Observation → Decision prompts 엣지 확인
-    for (const obs of observations) {
+    // Skew Observation → Decision prompts 엣지 확인 (coverage obs 제외)
+    const skewObs = observations.filter(o => (o as any).id?.includes("SKEW"));
+    for (const obs of skewObs) {
       const prompted = graph.neighbors(obs.id, "prompts");
       expect(prompted.length).toBe(1);
     }

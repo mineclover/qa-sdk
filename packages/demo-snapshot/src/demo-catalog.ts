@@ -543,6 +543,26 @@ export const DEMO_CATALOG = {
         },
       },
     },
+    validation_layer: {
+      id: "validation_layer", name: "검증 레이어",
+      versions: {
+        v1: {
+          entries: ["vocabulary", "structural", "constraint"],
+          capacity: 8,
+          ko: { vocabulary: "L0 어휘", structural: "L1 구조", constraint: "L2 제약" },
+        },
+      },
+    },
+    constraint_rule: {
+      id: "constraint_rule", name: "제약 규칙 종류",
+      versions: {
+        v1: {
+          entries: ["required", "maxCount", "minCount", "requiredIf", "exclusive", "type", "multi", "unknownAxis"],
+          capacity: 32,
+          ko: { required: "필수", maxCount: "최대개수", minCount: "최소개수", requiredIf: "조건부필수", exclusive: "배타", type: "타입", multi: "복수값", unknownAxis: "미정의축" },
+        },
+      },
+    },
     health_status: {
       id: "health_status", name: "헬스 상태",
       versions: {
@@ -550,6 +570,62 @@ export const DEMO_CATALOG = {
           entries: ["healthy", "degraded", "unhealthy", "maintenance"],
           capacity: 32,
           ko: { healthy: "정상", degraded: "성능저하", unhealthy: "장애", maintenance: "점검" },
+        },
+      },
+    },
+
+    // ── 이벤트 패턴 분류 축 (ADR-006) ─────────────────────────
+    identification_mode: {
+      id: "identification_mode", name: "식별 모드",
+      versions: {
+        v1: {
+          entries: ["anonymous", "identified", "pseudonymized", "service"],
+          capacity: 8,
+          ko: { anonymous: "비식별", identified: "식별", pseudonymized: "가명", service: "서비스" },
+        },
+      },
+    },
+    behavior_pattern: {
+      id: "behavior_pattern", name: "행동 패턴",
+      versions: {
+        v1: {
+          entries: [
+            "purchase_complete", "browse_only", "cart_abandon", "checkout_fail",
+            "error_recovery", "return_visit", "anonymous_browse", "anonymous_cart",
+            "api_integration", "bot_crawl", "health_check", "unclassified",
+          ],
+          capacity: 32,
+          ko: { purchase_complete: "구매완료", browse_only: "탐색만", cart_abandon: "장바구니포기", checkout_fail: "결제실패", error_recovery: "에러복구", return_visit: "재방문", anonymous_browse: "비회원탐색", anonymous_cart: "비회원장바구니", api_integration: "API연동", bot_crawl: "봇크롤링", health_check: "헬스체크", unclassified: "미분류" },
+        },
+      },
+    },
+    pattern_confidence: {
+      id: "pattern_confidence", name: "패턴 신뢰도",
+      versions: {
+        v1: {
+          entries: ["exact", "high", "medium", "low", "unknown"],
+          capacity: 8,
+          ko: { exact: "확정", high: "높음", medium: "보통", low: "낮음", unknown: "미정" },
+        },
+      },
+    },
+    anomaly_kind: {
+      id: "anomaly_kind", name: "이상 유형",
+      versions: {
+        v1: {
+          entries: ["unclassified", "ratio_shift", "volume_spike", "new_sequence", "abnormal_speed", "abnormal_duration"],
+          capacity: 16,
+          ko: { unclassified: "미분류", ratio_shift: "비율급변", volume_spike: "볼륨급증", new_sequence: "신규시퀀스", abnormal_speed: "비정상속도", abnormal_duration: "비정상시간" },
+        },
+      },
+    },
+    anomaly_severity: {
+      id: "anomaly_severity", name: "이상 심각도",
+      versions: {
+        v1: {
+          entries: ["info", "warning", "critical"],
+          capacity: 8,
+          ko: { info: "정보", warning: "경고", critical: "심각" },
         },
       },
     },
@@ -641,6 +717,18 @@ export const DEMO_CATALOG = {
           capacity: 32,
           ko: { "spec-core": "스펙코어", cli: "CLI", sdk: "SDK", "demo-snapshot": "데모카탈로그", "weighted-index": "가중인덱스", "bit-index": "비트인덱스", "permission-engine": "권한엔진", "index-meta": "인덱스메타", "platform-demo": "플랫폼데모", "ingest-server": "수집서버", "registry-service": "레지스트리", e2e: "E2E테스트" },
         },
+        v2: {
+          entries: [
+            "spec-core", "cli", "sdk", "demo-snapshot", "weighted-index",
+            "bit-index", "permission-engine", "index-meta", "platform-demo",
+            "ingest-server", "registry-service", "e2e",
+            "core", "engine", "store",
+            "gate-service", "query-service", "decode-service",
+            "registry-server", "registry-client",
+          ],
+          capacity: 32,
+          ko: { "spec-core": "스펙코어", cli: "CLI", sdk: "SDK", "demo-snapshot": "데모카탈로그", "weighted-index": "가중인덱스", "bit-index": "비트인덱스", "permission-engine": "권한엔진", "index-meta": "인덱스메타", "platform-demo": "플랫폼데모", "ingest-server": "수집서버", "registry-service": "레지스트리", e2e: "E2E테스트", core: "코어", engine: "엔진", store: "스토어", "gate-service": "게이트서비스", "query-service": "쿼리서비스", "decode-service": "디코드서비스", "registry-server": "레지스트리서버", "registry-client": "레지스트리클라이언트" },
+        },
       },
     },
     qa_module: {
@@ -653,6 +741,20 @@ export const DEMO_CATALOG = {
           ],
           capacity: 32,
           ko: { shared: "공유", schema: "스키마", "export-surface": "내보내기", spec: "스펙", loader: "로더", codegen: "코드생성", dkg: "설계그래프", "dkg-skills": "DKG스킬", convergence: "수렴분석", propagation: "전파", store: "저장소", visualization: "시각화" },
+        },
+        v2: {
+          entries: [
+            // 코어 모듈
+            "shared", "schema", "export-surface", "spec", "loader", "codegen",
+            "dkg", "dkg-skills", "convergence", "propagation", "store", "visualization",
+            // E2E 시나리오
+            "shopping-flow", "event-pipeline", "iframe-integration", "scenario-selector", "shop-ingest-integration",
+            "anonymous-browse", "cart-abandon", "multi-product-purchase",
+            // 패키지 전체 (모듈 미구분 시)
+            "_all",
+          ],
+          capacity: 32,
+          ko: { shared: "공유", schema: "스키마", "export-surface": "내보내기", spec: "스펙", loader: "로더", codegen: "코드생성", dkg: "설계그래프", "dkg-skills": "DKG스킬", convergence: "수렴분석", propagation: "전파", store: "저장소", visualization: "시각화", "shopping-flow": "쇼핑흐름", "event-pipeline": "이벤트파이프라인", "iframe-integration": "iframe통합", "scenario-selector": "시나리오선택", "shop-ingest-integration": "쇼핑수집통합", "anonymous-browse": "익명탐색", "cart-abandon": "장바구니이탈", "multi-product-purchase": "다중상품구매", "_all": "전체" },
         },
       },
     },
@@ -673,6 +775,157 @@ export const DEMO_CATALOG = {
           entries: ["passed", "failed", "error", "skipped", "timeout"],
           capacity: 8,
           ko: { passed: "통과", failed: "실패", error: "오류", skipped: "건너뜀", timeout: "시간초과" },
+        },
+      },
+    },
+    dkg_op: {
+      id: "dkg_op", name: "DKG 운영",
+      versions: {
+        v1: {
+          entries: [
+            "claim", "release", "decide", "observe", "resolve", "link",
+            "refresh", "self-check", "converge", "trace", "promote",
+          ],
+          capacity: 16,
+          ko: { claim: "선점", release: "해제", decide: "결정", observe: "관측", resolve: "해소", link: "연결", refresh: "재부트", "self-check": "자기진단", converge: "수렴", trace: "추적", promote: "승격" },
+        },
+      },
+    },
+    dkg_target_kind: {
+      id: "dkg_target_kind", name: "DKG 대상 종류",
+      versions: {
+        v1: {
+          entries: [
+            "axis", "prefix", "domain", "dsl-bundle", "decision",
+            "observation", "constraint", "skill", "intent-link", "system",
+          ],
+          capacity: 16,
+          ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템" },
+        },
+      },
+    },
+    api_surface: {
+      id: "api_surface", name: "인터페이스 영역",
+      versions: {
+        v1: {
+          entries: [
+            "encode-decode",
+            "stride-calc",
+            "bitmask-ops",
+            "dim-extract",
+            "perm-grant",
+            "protocol-codec",
+            "state-lifecycle",
+            "query-resolve",
+            "schema-validate",
+            "convergence-analysis",
+            "dkg-graph",
+            "integration",
+          ],
+          capacity: 16,
+          ko: { "encode-decode": "인코딩/디코딩", "stride-calc": "스트라이드계산", "bitmask-ops": "비트연산", "dim-extract": "차원추출", "perm-grant": "권한부여", "protocol-codec": "프로토콜변환", "state-lifecycle": "상태관리", "query-resolve": "조회/해석", "schema-validate": "스키마검증", "convergence-analysis": "수렴분석", "dkg-graph": "그래프연산", integration: "통합테스트" },
+        },
+      },
+    },
+
+    // ── CLI 완전 관측 축 ──────────────────────────────────
+    cli_intent: {
+      id: "cli_intent", name: "CLI 의도",
+      versions: {
+        v1: {
+          entries: ["query", "analyze", "mutate", "publish", "lifecycle", "init", "backup"],
+          capacity: 16,
+          ko: { query: "조회", analyze: "분석", mutate: "변경", publish: "발행", lifecycle: "생명주기", init: "초기화", backup: "백업" },
+        },
+      },
+    },
+    cli_domain: {
+      id: "cli_domain", name: "CLI 도메인",
+      versions: {
+        v1: {
+          entries: ["dkg-graph", "dkg-skill", "convergence", "spec", "coordinate", "registry", "catalog", "self-ref", "system"],
+          capacity: 16,
+          ko: { "dkg-graph": "그래프", "dkg-skill": "스킬", convergence: "수렴분석", spec: "스펙", coordinate: "좌표", registry: "레지스트리", catalog: "카탈로그", "self-ref": "자기참조", system: "시스템" },
+        },
+      },
+    },
+    cli_subject: {
+      id: "cli_subject", name: "CLI 대상",
+      versions: {
+        v1: {
+          entries: [
+            "axis", "prefix", "domain", "dsl-bundle", "decision", "observation",
+            "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog",
+          ],
+          capacity: 16,
+          ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템", version: "버전", spec: "스펙", schema: "스키마", catalog: "카탈로그" },
+        },
+      },
+    },
+
+    // ── 좌표 승격 축 (dkg promote scan으로 발견) ────────────
+    obs_source: {
+      id: "obs_source", name: "관측 원천",
+      versions: {
+        v1: {
+          entries: ["manual", "metric", "runtime", "review"],
+          capacity: 8,
+          ko: { manual: "수동", metric: "자동측정", runtime: "런타임", review: "리뷰" },
+        },
+      },
+    },
+    node_source: {
+      id: "node_source", name: "노드 원천",
+      versions: {
+        v1: {
+          entries: ["bootstrap", "manual", "auto"],
+          capacity: 8,
+          ko: { bootstrap: "부트스트랩", manual: "수동", auto: "자동" },
+        },
+      },
+    },
+    spec_type: {
+      id: "spec_type", name: "스펙 유형",
+      versions: {
+        v1: {
+          entries: ["req", "feat", "uc", "evt", "ls", "adr"],
+          capacity: 16,
+          ko: { req: "요구사항", feat: "기능", uc: "유스케이스", evt: "이벤트", ls: "리빙스펙", adr: "결정기록" },
+        },
+      },
+    },
+    lifecycle_state: {
+      id: "lifecycle_state", name: "생명주기 상태",
+      versions: {
+        v1: {
+          entries: ["draft", "active", "deprecated", "archived", "superseded", "reversed"],
+          capacity: 16,
+          ko: { draft: "초안", active: "활성", deprecated: "폐기예정", archived: "보관", superseded: "대체됨", reversed: "번복" },
+        },
+      },
+    },
+    edge_type: {
+      id: "edge_type", name: "관계 유형",
+      versions: {
+        v1: {
+          entries: [
+            "satisfies", "implements", "tests", "traces-to", "depends-on",
+            "composes", "references", "governs", "justifies", "constrains",
+            "contains", "bridges", "consumes", "binds",
+            "observes", "prompts", "evolves-from", "supersedes",
+          ],
+          capacity: 32,
+          ko: { satisfies: "충족", implements: "구현", tests: "검증", "traces-to": "추적", "depends-on": "의존", composes: "구성", references: "참조", governs: "관장", justifies: "근거", constrains: "제약", contains: "포함", bridges: "연결", consumes: "소비", binds: "바인딩", observes: "관측", prompts: "촉발", "evolves-from": "진화원본", supersedes: "대체" },
+        },
+      },
+    },
+    decision_type: {
+      id: "decision_type", name: "의사결정 유형",
+      versions: {
+        v1: {
+          entries: ["capacity", "new-axis", "new-prefix", "dim-add", "merge", "deprecate", "separation"],
+          capacity: 16,
+          ko: { capacity: "용량확장", "new-axis": "새축", "new-prefix": "새프리픽스", "dim-add": "차원추가", merge: "병합", deprecate: "폐기", separation: "분리유지" },
         },
       },
     },
@@ -867,6 +1120,22 @@ export const DEMO_CATALOG = {
       ],
     },
 
+    schema_validation: {
+      id: "schema_validation", name: "스키마 검증 이벤트",
+      description: "svc_ref(서비스 참조) × validation_layer × constraint_rule × verdict_result — 어떤 스키마의 어떤 레이어에서 어떤 규칙으로 어떤 결과가 나왔는가",
+      labels: ["svc_ref", "validation_layer", "constraint_rule", "verdict_result"],
+      meta: { category: "observation", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "schema/schema-validation-codec.ts" } },
+      dims: {
+        svc_ref: { kind: "prefix_ref", prefixId: "service" },
+        validation_layer: { kind: "axis", axisId: "validation_layer" },
+        constraint_rule: { kind: "axis", axisId: "constraint_rule" },
+        verdict_result: { kind: "axis", axisId: "verdict_result" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { validation_layer: "v1", constraint_rule: "v1", verdict_result: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+
     // ── 파이프라인 관측 prefix ──────────────────────────────────────────
     pipeline_point: {
       id: "pipeline_point", name: "파이프라인 관측 포인트",
@@ -974,28 +1243,130 @@ export const DEMO_CATALOG = {
     // ── 자기참조 prefix (qa-sdk 자체 모니터링) ──────────────────
     build_event: {
       id: "build_event", name: "빌드 이벤트",
-      description: "qa_pkg × build_result — 어떤 패키지가 어떤 빌드 결과를 냈는가",
-      labels: ["qa_pkg", "build_result"],
+      description: "qa_pkg × qa_module × build_result — 어떤 패키지의 어떤 모듈이 어떤 빌드 결과를 냈는가",
+      labels: ["qa_pkg", "qa_module", "build_result"],
       meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
       dims: {
         qa_pkg:       { kind: "axis", axisId: "qa_pkg" },
+        qa_module:    { kind: "axis", axisId: "qa_module" },
         build_result: { kind: "axis", axisId: "build_result" },
       },
       versions: [
         { version: "v1", axisVersions: { qa_pkg: "v1", build_result: "v1" } },
+        { version: "v2", axisVersions: { qa_pkg: "v1", qa_module: "v2", build_result: "v1" } },
       ],
     },
     test_event: {
       id: "test_event", name: "테스트 이벤트",
-      description: "qa_pkg × test_result — 어떤 패키지가 어떤 테스트 결과를 냈는가",
-      labels: ["qa_pkg", "test_result"],
+      description: "qa_pkg × qa_module × test_result — 어떤 패키지의 어떤 모듈/시나리오가 어떤 테스트 결과를 냈는가",
+      labels: ["qa_pkg", "qa_module", "test_result"],
       meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
       dims: {
         qa_pkg:      { kind: "axis", axisId: "qa_pkg" },
+        qa_module:   { kind: "axis", axisId: "qa_module" },
         test_result: { kind: "axis", axisId: "test_result" },
       },
       versions: [
         { version: "v1", axisVersions: { qa_pkg: "v1", test_result: "v1" } },
+        { version: "v2", axisVersions: { qa_pkg: "v1", qa_module: "v2", test_result: "v1" } },
+      ],
+    },
+
+    dkg_event: {
+      id: "dkg_event", name: "DKG 운영 이벤트",
+      description: "dkg_op × dkg_target_kind — 어떤 운영 작업이 어떤 종류의 대상에 수행됐는가",
+      labels: ["dkg_op", "dkg_target_kind"],
+      dims: {
+        dkg_op:          { kind: "axis", axisId: "dkg_op" },
+        dkg_target_kind: { kind: "axis", axisId: "dkg_target_kind" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { dkg_op: "v1", dkg_target_kind: "v1" } },
+      ],
+    },
+    dkg_decision_event: {
+      id: "dkg_decision_event", name: "의사결정 이벤트",
+      description: "decision_type × dkg_target_kind × node_source — 어떤 유형의 결정이 어떤 대상에 어떤 원천으로 생성됐는가",
+      labels: ["decision_type", "dkg_target_kind", "node_source"],
+      dims: {
+        decision_type:   { kind: "axis", axisId: "decision_type" },
+        dkg_target_kind: { kind: "axis", axisId: "dkg_target_kind" },
+        node_source:     { kind: "axis", axisId: "node_source" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { decision_type: "v1", dkg_target_kind: "v1", node_source: "v1" } },
+      ],
+    },
+    dkg_observation_event: {
+      id: "dkg_observation_event", name: "관측 이벤트",
+      description: "obs_source × dkg_target_kind × lifecycle_state — 어떤 원천의 관측이 어떤 대상에 어떤 상태로 존재하는가",
+      labels: ["obs_source", "dkg_target_kind", "lifecycle_state"],
+      dims: {
+        obs_source:      { kind: "axis", axisId: "obs_source" },
+        dkg_target_kind: { kind: "axis", axisId: "dkg_target_kind" },
+        lifecycle_state: { kind: "axis", axisId: "lifecycle_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { obs_source: "v1", dkg_target_kind: "v1", lifecycle_state: "v1" } },
+      ],
+    },
+    cli_event: {
+      id: "cli_event", name: "CLI 활동 이벤트",
+      description: "cli_intent × cli_domain × cli_subject — 모든 CLI 명령 실행을 의도 기반으로 기록. 명령어 이름이 아닌 의도가 좌표.",
+      labels: ["cli_intent", "cli_domain", "cli_subject"],
+      dims: {
+        cli_intent:  { kind: "axis", axisId: "cli_intent" },
+        cli_domain:  { kind: "axis", axisId: "cli_domain" },
+        cli_subject: { kind: "axis", axisId: "cli_subject" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { cli_intent: "v1", cli_domain: "v1", cli_subject: "v1" } },
+      ],
+    },
+    contract_check: {
+      id: "contract_check", name: "인터페이스 계약 검증",
+      description: "qa_pkg × api_surface × test_result — 어떤 패키지의 어떤 인터페이스 영역이 어떤 결과를 냈는가",
+      labels: ["qa_pkg", "api_surface", "test_result"],
+      dims: {
+        qa_pkg:      { kind: "axis", axisId: "qa_pkg" },
+        api_surface: { kind: "axis", axisId: "api_surface" },
+        test_result: { kind: "axis", axisId: "test_result" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { qa_pkg: "v2", api_surface: "v1", test_result: "v1" } },
+      ],
+    },
+
+    // ── 이벤트 패턴 분류 prefix (ADR-006) ────────────────────
+    pattern_match: {
+      id: "pattern_match", name: "패턴 매칭 결과",
+      description: "svc_ref × identification_mode × behavior_pattern × pattern_confidence — 세션 패턴 분류 좌표",
+      labels: ["svc_ref", "identification_mode", "behavior_pattern", "pattern_confidence"],
+      meta: { category: "observation", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-classifier.ts" } },
+      dims: {
+        svc_ref:              { kind: "prefix_ref", prefixId: "service" },
+        identification_mode:  { kind: "axis", axisId: "identification_mode" },
+        behavior_pattern:     { kind: "axis", axisId: "behavior_pattern" },
+        pattern_confidence:   { kind: "axis", axisId: "pattern_confidence" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { identification_mode: "v1", behavior_pattern: "v1", pattern_confidence: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    pattern_anomaly: {
+      id: "pattern_anomaly", name: "이상 패턴 감지",
+      description: "svc_ref × anomaly_kind × behavior_pattern × anomaly_severity — 이상 패턴 발생 좌표",
+      labels: ["svc_ref", "anomaly_kind", "behavior_pattern", "anomaly_severity"],
+      meta: { category: "observation", layer: 2, visualShape: "sphere", heightRatio: 1.2, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-anomaly.ts" } },
+      dims: {
+        svc_ref:            { kind: "prefix_ref", prefixId: "service" },
+        anomaly_kind:       { kind: "axis", axisId: "anomaly_kind" },
+        behavior_pattern:   { kind: "axis", axisId: "behavior_pattern" },
+        anomaly_severity:   { kind: "axis", axisId: "anomaly_severity" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { behavior_pattern: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+        { version: "v2", axisVersions: { anomaly_kind: "v1", behavior_pattern: "v1", anomaly_severity: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
       ],
     },
   },
@@ -1057,3 +1428,15 @@ export const DEMO_CATALOG = {
     },
   },
 } as const satisfies DemoCatalog;
+
+/** 런타임 변경 방어 — API 경유 업데이트만 허용 */
+function deepFreeze<T extends object>(obj: T): T {
+  Object.freeze(obj);
+  for (const val of Object.values(obj)) {
+    if (val && typeof val === "object" && !Object.isFrozen(val)) {
+      deepFreeze(val as object);
+    }
+  }
+  return obj;
+}
+deepFreeze(DEMO_CATALOG as unknown as object);

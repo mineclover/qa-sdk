@@ -64,7 +64,7 @@ function toRuntimeNode(record: EventRecord, serviceName?: string): RuntimeNode {
     id: record.log_id,
     log_id: record.log_id,
     timestamp: record.timestamp,
-    record_kind: record.record_kind,
+    record_kind: record.record_kind as "log" | "span",
     event_key: record.event_key,
     event_version: record.event_version,
     service_name: serviceName,

@@ -5,7 +5,7 @@
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { SimplificationCandidate, BoundaryRecommendation } from "./convergence.types.js";
+import type { SimplificationCandidate, BoundaryRecommendation, CausalCandidate } from "./convergence.types.js";
 
 /**
  * SimplificationCandidate에서 split 후보가 있으면 경계를 추천한다.
@@ -63,4 +63,78 @@ export function recommendFromObservation(
     estimatedCapacity: unmappedAxes.length * 8, // 축당 8 기본 추정
     confidence: relatedPrefix ? "medium" : "low",
   };
+}
+
+/**
+ * 인과 후보에서 교차 도메인 패턴을 발견하면 브릿지 prefix를 추천한다.
+ */
+export function recommendFromCausality(
+  graph: GraphRegistry,
+  candidates: readonly CausalCandidate[],
+): BoundaryRecommendation[] {
+  const results: BoundaryRecommendation[] = [];
+
+  for (const c of candidates) {
+    if (c.confidence !== "high") continue;
+    if (c.source.prefix === c.target.prefix) continue;
+
+    // source/target이 서로 다른 domain에 속하는지 확인
+    const srcDomains = graph.edgesTo(c.source.prefix, "contains").map(e => e.from);
+    const tgtDomains = graph.edgesTo(c.target.prefix, "contains").map(e => e.from);
+    const crossDomain = srcDomains.length > 0 && tgtDomains.length > 0
+      && !srcDomains.some(d => tgtDomains.includes(d));
+
+    if (!crossDomain) continue;
+
+    results.push({
+      reason: `${c.source.prefix}→${c.target.prefix} 교차 도메인 인과 (rate ${(c.coOccurrenceRate * 100).toFixed(0)}%). 브릿지 prefix 검토.`,
+      suggestedDomain: null,
+      suggestedDims: [c.source.prefix, c.target.prefix],
+      relatedPrefixes: [
+        { id: c.source.prefix, relation: "extends" },
+        { id: c.target.prefix, relation: "extends" },
+      ],
+      estimatedCapacity: 16,
+      confidence: "medium",
+    });
+  }
+
+  return results;
+}
+
+/**
+ * 모든 추천 소스를 통합하여 중복 제거된 경계 추천 목록을 반환한다.
+ */
+export function recommendAll(
+  graph: GraphRegistry,
+  inputs: {
+    simplifications?: readonly SimplificationCandidate[];
+    causalCandidates?: readonly CausalCandidate[];
+    unmappedAxes?: readonly string[];
+    relatedPrefix?: string;
+  },
+): BoundaryRecommendation[] {
+  const results: BoundaryRecommendation[] = [];
+
+  // 1. SimplificationAdvisor → split 추천
+  for (const s of inputs.simplifications ?? []) {
+    const rec = recommendFromSimplification(graph, s);
+    if (rec) results.push(rec);
+  }
+
+  // 2. CausalDiscovery → extends 추천
+  results.push(...recommendFromCausality(graph, inputs.causalCandidates ?? []));
+
+  // 3. 관측 미매핑 → independent 추천
+  const obsRec = recommendFromObservation(graph, inputs.unmappedAxes ?? [], inputs.relatedPrefix);
+  if (obsRec) results.push(obsRec);
+
+  // 중복 제거: 같은 relatedPrefixes 조합이면 첫 번째만
+  const seen = new Set<string>();
+  return results.filter(r => {
+    const key = r.relatedPrefixes.map(p => `${p.id}:${p.relation}`).sort().join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

@@ -81,9 +81,9 @@ GraphRegistry는 GraphPort를 구조적으로 만족하므로 호환.
 | codegen | ir-builder.ts → ts/js/proto/json | IR → 코드 생성 |
 | dkg | dkg.types.ts, graph-registry.ts | 13종 노드 + 18종 엣지 + 그래프 |
 | dkg/skills | 25개 skill | 분석/검증/수렴 체인 |
-| convergence | 17개 파일 | 집계/비교/감지/최적화/metric |
+| convergence | 18개 파일 (+8 test) | 집계/비교/감지/최적화/metric/오케스트레이터 |
 | propagation | publish.ts, lifecycle.ts | spec → registry → activate |
-| store | dkg-sqlite-store.ts | SQLite 영속화 |
+| store | dkg-sqlite-store.ts | SQLite 영속화 + catalog_id 격리 |
 | visualization | layer-map.ts, monitor-queries.ts | 레이어 맵 + 모니터 |
 
 ## 스펙 관리 vs 로깅 인프라 경계
@@ -131,16 +131,17 @@ gate-service
   └── VersionEvent → DKG graph.addNode()  → version-event 노드
        └── analyzeImpact()                → cascade 분석
 
-dkg self-check (자기참조 — 실체화 완료)
+dkg self-check (자기참조 — dry-run 기본, --apply 옵트인)
   └── pnpm build/test → AddressContextRecord[]
        ├── encodePrefixByValue → build_event/test_event 주소
        ├── aggregateUsageData → UsageData (entryUsage+addressUsage)
-       ├── analyzeCollectionHealth → 건전성 검증
-       ├── analyzeEntryCoverage  → 커버리지 측정
-       ├── collectMetrics        → 전체 metric 수집
-       ├── dsl-dev 불변조건 검증 → invariant violation 감지
-       ├── auto-resolve         → 이전 observation 자동 해소
-       └── store.saveUsageSnapshot → SQLite 영속화
+       ├── analyzeCollectionHealth → 건전성 검증 (읽기 전용)
+       ├── analyzeEntryCoverage  → 커버리지 측정 (읽기 전용)
+       ├── dsl-dev 불변조건 검증 → invariant violation 감지 (읽기 전용)
+       └── [--apply 시에만]
+            ├── store.saveUsageSnapshot → SQLite 영속화
+            ├── observation 생성/해소 → DKG 상태 변경
+            └── DEC-CAPACITY-dsl-dev-mmzyw4go: CLI 권한 분리 근거
 ```
 
 ## Observation Intent 분류
@@ -156,6 +157,23 @@ intent 판정 규칙:
 
 health metric은 action-needed만 issue로 집계.
 overlap은 DEC-SEP Decision 수용 시 ok로 다운그레이드.
+resolveRecoveredMetrics: metric ok 복귀 시 OBS-METRIC 자동 해소 (결정적 ID).
+```
+
+## Convergence 오케스트레이터
+
+```
+runConvergenceAnalysis(catalog, graph, usage?)
+  ├── analyzeCollectionHealth   → 건전성
+  ├── analyzeEntryCoverage      → 커버리지
+  ├── analyzeDeploymentSkew     → 배포 스큐
+  ├── scanAxisOverlaps          → 축 중복
+  ├── scanDecisionConflicts     → 결정 충돌
+  ├── analyzeHeadroom           → headroom
+  ├── collectMetrics            → metric 수집
+  └── ConvergenceReport 반환
+
+CLI: dkg converge [--persist] [--verbose]
 ```
 
 ## Metric 체계

@@ -18,12 +18,14 @@ const LOW_UTILIZATION_THRESHOLD = 0.10; // 10% 미만 → 과도한 headroom
 
 /**
  * prefix의 단순화 기회를 분석한다.
+ * @param options.addressSpaceSize - 실제 주소 공간 크기 (shape 곱). 미지정 시 관측 기반 추정.
  */
 export function analyzeSimplification(
   graph: GraphRegistry,
   prefixId: string,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
+  options?: { addressSpaceSize?: number },
 ): SimplificationCandidate {
   const prefixNode = graph.getNode(prefixId) as PrefixNode | undefined;
   const dims = prefixNode?.dimLabels ?? [];
@@ -68,8 +70,8 @@ export function analyzeSimplification(
     }
   }
 
-  // addressSpaceSize 추정 (실제로는 shape 곱이지만 관측 기반으로 추정)
-  const addressSpaceSize = Math.max(activeAddressCount * 10, 1); // 추정
+  // addressSpaceSize: 외부 제공 시 사용, 아니면 관측 기반 추정
+  const addressSpaceSize = options?.addressSpaceSize ?? Math.max(activeAddressCount * 10, 1);
 
   const utilizationRate = addressSpaceSize > 0 ? activeAddressCount / addressSpaceSize : 0;
 
@@ -114,6 +116,23 @@ export function analyzeSimplification(
     lowUsageEntries,
     suggestions,
   };
+}
+
+/**
+ * 여러 prefix를 일괄 분석한다.
+ */
+export function scanAllSimplifications(
+  graph: GraphRegistry,
+  prefixIds: readonly string[],
+  entryUsages: readonly EntryUsage[],
+  addressUsages: readonly AddressUsage[],
+  options?: { addressSpaceSizes?: ReadonlyMap<string, number> },
+): SimplificationCandidate[] {
+  return prefixIds.map(id =>
+    analyzeSimplification(graph, id, entryUsages, addressUsages, {
+      addressSpaceSize: options?.addressSpaceSizes?.get(id),
+    }),
+  );
 }
 
 function isAxisOfPrefix(graph: GraphRegistry, prefixId: string, axisId: string): boolean {

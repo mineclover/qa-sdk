@@ -14,6 +14,7 @@ import { analyzeDeploymentSkew } from "./deployment-skew.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import { scanAxisOverlaps } from "./symbol-comparator.js";
 import { scanDecisionConflicts } from "./decision-comparator.js";
+import { auditSchemaHealth } from "../schema/schema-health-audit.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  표준 Metric 정의
@@ -73,6 +74,15 @@ export const METRIC_DEFS: readonly MetricDef[] = [
     autoRunnable: true,
     threshold: { warning: 1, critical: 5 },
     measureFn: "collectMetrics (inline — convergence→dkg/skills 의존 금지)",
+  },
+  {
+    id: "metric:schema:violations",
+    name: "스키마 카테고리 위반",
+    description: "prefix의 카테고리 규칙 위반 수. 0이면 전체 적합.",
+    category: "health",
+    autoRunnable: true,
+    threshold: { warning: 1, critical: 5 },
+    measureFn: "auditSchemaHealth",
   },
 ];
 
@@ -298,6 +308,20 @@ export function collectMetrics(
     });
   }
 
+  // ── schema violations ──
+  const schemaDef = METRIC_DEFS.find(m => m.id === "metric:schema:violations")!;
+  const schemaReport = auditSchemaHealth(graph, { date: now });
+  results.push({
+    id: "metric:schema:violations",
+    name: schemaDef.name,
+    value: schemaReport.failed,
+    status: evaluateStatus(schemaReport.failed, schemaDef.threshold),
+    detail: schemaReport.failed > 0
+      ? `${schemaReport.failed}건 위반: ${schemaReport.violations.slice(0, 3).map(v => v.prefixId).join(", ")}`
+      : `${schemaReport.totalPrefixes}개 prefix 전체 적합`,
+    measuredAt: now,
+  });
+
   return results;
 }
 
@@ -307,6 +331,8 @@ export function collectMetrics(
 
 /**
  * metric 결과에서 threshold 초과 항목을 자동 Observation으로 변환한다.
+ *
+ * ID는 결정적 (timestamp 없음) → 동일 metric 위반은 항상 같은 ID → upsert 시 덮어쓰기.
  */
 export function metricsToObservations(
   metrics: readonly MetricValue[],
@@ -314,15 +340,13 @@ export function metricsToObservations(
 ): ObservationNode[] {
   const date = options?.date ?? new Date().toISOString().slice(0, 10);
   const observations: ObservationNode[] = [];
-  let counter = 0;
 
   for (const m of metrics) {
     if (m.status === "ok") continue;
 
-    counter++;
     const obs: ObservationNode = {
       kind: "observation",
-      id: `OBS-METRIC-${m.id.replace(/[:\/]/g, "-")}-${Date.now()}-${counter}`,
+      id: `OBS-METRIC-${m.id.replace(/[:\/]/g, "-")}`,
       date,
       source: "metric",
       subjects: m.target ? [m.target] : [],
@@ -335,4 +359,46 @@ export function metricsToObservations(
   }
 
   return observations;
+}
+
+/**
+ * metric이 ok로 복귀한 경우, 이전에 생성된 observation을 자동 해소한다.
+ *
+ * 반환: resolution이 추가된 ObservationNode[] (store에 저장해야 함).
+ */
+export function resolveRecoveredMetrics(
+  metrics: readonly MetricValue[],
+  existingObservations: readonly ObservationNode[],
+  options?: { date?: string },
+): ObservationNode[] {
+  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const resolved: ObservationNode[] = [];
+
+  // ok로 복귀한 metric의 예상 observation ID 목록
+  const okMetricObsIds = new Set<string>();
+  for (const m of metrics) {
+    if (m.status === "ok") {
+      okMetricObsIds.add(`OBS-METRIC-${m.id.replace(/[:\/]/g, "-")}`);
+    }
+  }
+
+  // 기존 미해결 observation 중 ok 복귀 대상을 찾아 resolve
+  for (const obs of existingObservations) {
+    if (obs.kind !== "observation") continue;
+    if ((obs as any).resolution) continue; // 이미 해결됨
+    if (!obs.id.startsWith("OBS-METRIC-")) continue; // metric observation만
+    if (!okMetricObsIds.has(obs.id)) continue; // ok 복귀 대상만
+
+    resolved.push({
+      ...obs,
+      date,
+      resolution: {
+        decisionId: "AUTO-RESOLVE",
+        outcome: "accepted",
+        note: `metric이 ok로 복귀하여 자동 해소 (${date})`,
+      },
+    } as any);
+  }
+
+  return resolved;
 }

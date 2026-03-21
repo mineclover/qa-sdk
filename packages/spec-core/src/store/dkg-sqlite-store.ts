@@ -29,8 +29,10 @@ export type NodeSource = "bootstrap" | "manual" | "auto";
 
 export class DkgSqliteStore {
   private db: DatabaseSyncInstance;
+  readonly catalogId: string;
 
-  constructor(path: string = ":memory:") {
+  constructor(path: string = ":memory:", catalogId: string = "demo") {
+    this.catalogId = catalogId;
     const Ctor = getDatabaseSync();
     this.db = new Ctor(path);
     this.db.exec(DKG_SCHEMA_DDL);
@@ -51,6 +53,20 @@ export class DkgSqliteStore {
     } catch {
       this.db.exec("ALTER TABLE dkg_edges ADD COLUMN source TEXT NOT NULL DEFAULT 'bootstrap'");
     }
+
+    // catalog_id 컬럼 마이그레이션
+    try {
+      this.db.prepare("SELECT catalog_id FROM dkg_nodes LIMIT 1").get();
+    } catch {
+      this.db.exec("ALTER TABLE dkg_nodes ADD COLUMN catalog_id TEXT NOT NULL DEFAULT 'demo'");
+      this.db.exec("CREATE INDEX IF NOT EXISTS idx_dkg_nodes_catalog ON dkg_nodes(catalog_id)");
+    }
+    try {
+      this.db.prepare("SELECT catalog_id FROM dkg_edges LIMIT 1").get();
+    } catch {
+      this.db.exec("ALTER TABLE dkg_edges ADD COLUMN catalog_id TEXT NOT NULL DEFAULT 'demo'");
+      this.db.exec("CREATE INDEX IF NOT EXISTS idx_dkg_edges_catalog ON dkg_edges(catalog_id)");
+    }
   }
 
   // ── Graph: save/load ─────────────────────────────────
@@ -64,19 +80,19 @@ export class DkgSqliteStore {
     let edgesWritten = 0;
 
     const upsertNode = this.db.prepare(
-      `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
-       VALUES (?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
+      `INSERT INTO dkg_nodes (id, kind, source, catalog_id, data, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
     );
 
     const insertEdge = this.db.prepare(
-      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, catalog_id, meta)
+       VALUES (?, ?, ?, ?, ?, ?)`,
     );
 
     // 노드 저장
     for (const node of graph.getAllNodes()) {
-      upsertNode.run(node.id, node.kind, source, JSON.stringify(node));
+      upsertNode.run(node.id, node.kind, source, this.catalogId, JSON.stringify(node));
       nodesWritten++;
     }
 
@@ -87,7 +103,7 @@ export class DkgSqliteStore {
         const key = `${edge.type}:${edge.from}:${edge.to}`;
         if (seenEdges.has(key)) continue;
         seenEdges.add(key);
-        insertEdge.run(edge.type, edge.from, edge.to, source, edge.meta ? JSON.stringify(edge.meta) : null);
+        insertEdge.run(edge.type, edge.from, edge.to, source, this.catalogId, edge.meta ? JSON.stringify(edge.meta) : null);
         edgesWritten++;
       }
     }
@@ -105,20 +121,20 @@ export class DkgSqliteStore {
     source: NodeSource = "manual",
   ): void {
     const upsertNode = this.db.prepare(
-      `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
-       VALUES (?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
+      `INSERT INTO dkg_nodes (id, kind, source, catalog_id, data, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
     );
     const insertEdge = this.db.prepare(
-      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, catalog_id, meta)
+       VALUES (?, ?, ?, ?, ?, ?)`,
     );
 
     for (const node of nodes) {
-      upsertNode.run(node.id, node.kind, source, JSON.stringify(node));
+      upsertNode.run(node.id, node.kind, source, this.catalogId, JSON.stringify(node));
     }
     for (const edge of edges) {
-      insertEdge.run(edge.type, edge.from, edge.to, source, edge.meta ? JSON.stringify(edge.meta) : null);
+      insertEdge.run(edge.type, edge.from, edge.to, source, this.catalogId, edge.meta ? JSON.stringify(edge.meta) : null);
     }
   }
 
@@ -127,11 +143,11 @@ export class DkgSqliteStore {
    * refresh 전 호출하여 구조를 초기화한 후 재부트스트랩.
    */
   clearBootstrap(): { nodesDeleted: number; edgesDeleted: number } {
-    const nodesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap'").get() as { c: number }).c;
-    const edgesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap'").get() as { c: number }).c;
+    const nodesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
+    const edgesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
 
-    this.db.exec("DELETE FROM dkg_edges WHERE source='bootstrap'");
-    this.db.exec("DELETE FROM dkg_nodes WHERE source='bootstrap'");
+    this.db.prepare("DELETE FROM dkg_edges WHERE source='bootstrap' AND catalog_id=?").run(this.catalogId);
+    this.db.prepare("DELETE FROM dkg_nodes WHERE source='bootstrap' AND catalog_id=?").run(this.catalogId);
 
     return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
   }
@@ -141,7 +157,7 @@ export class DkgSqliteStore {
     const graph = new GraphRegistry();
 
     // 노드 로드
-    const nodes = this.db.prepare("SELECT id, kind, data FROM dkg_nodes").all() as Array<{
+    const nodes = this.db.prepare("SELECT id, kind, data FROM dkg_nodes WHERE catalog_id=?").all(this.catalogId) as Array<{
       id: string; kind: string; data: string;
     }>;
     for (const row of nodes) {
@@ -149,7 +165,7 @@ export class DkgSqliteStore {
     }
 
     // 엣지 로드
-    const edges = this.db.prepare("SELECT type, from_id, to_id, meta FROM dkg_edges").all() as Array<{
+    const edges = this.db.prepare("SELECT type, from_id, to_id, meta FROM dkg_edges WHERE catalog_id=?").all(this.catalogId) as Array<{
       type: string; from_id: string; to_id: string; meta: string | null;
     }>;
     for (const row of edges) {
@@ -240,28 +256,37 @@ export class DkgSqliteStore {
 
     if (autoObservations.length > 0) {
       const upsertNode = this.db.prepare(
-        `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
-         VALUES (?, ?, ?, ?, datetime('now'))
-         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
+        `INSERT INTO dkg_nodes (id, kind, source, catalog_id, data, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
       );
       const insertEdge = this.db.prepare(
-        `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
-         VALUES (?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, catalog_id, meta)
+         VALUES (?, ?, ?, ?, ?, ?)`,
       );
 
       for (const obs of autoObservations) {
-        upsertNode.run(obs.id, obs.kind, "auto", JSON.stringify(obs));
+        upsertNode.run(obs.id, obs.kind, "auto", this.catalogId, JSON.stringify(obs));
         // ObservationNode.subjects → observes 엣지 자동 생성
         const subjects = (obs as any).subjects as readonly string[] | undefined;
         if (subjects) {
           for (const subjectId of subjects) {
-            insertEdge.run("observes", obs.id, subjectId, "auto", null);
+            insertEdge.run("observes", obs.id, subjectId, "auto", this.catalogId, null);
           }
         }
       }
     }
 
     return { snapshotId, observationsWritten: autoObservations.length };
+  }
+
+  /** 단일 노드 upsert. resolution 영속화 등에 사용. */
+  updateNode(node: DkgNode, source: NodeSource = "auto"): void {
+    this.db.prepare(
+      `INSERT INTO dkg_nodes (id, kind, source, catalog_id, data, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
+    ).run(node.id, node.kind, source, this.catalogId, JSON.stringify(node));
   }
 
   // ── Meta ──────────────────────────────────────────────
@@ -277,6 +302,27 @@ export class DkgSqliteStore {
     return row?.value ?? null;
   }
 
+  /**
+   * 결정적 ID 전환 후 남은 timestamp 기반 stale observation을 정리한다.
+   * ID 패턴: OBS-METRIC-...-{timestamp}-{counter} (13자리 숫자 + 하이픈 + 숫자로 끝남)
+   * 보존 대상: OBS-METRIC-...-{no-timestamp} (결정적 ID)
+   */
+  cleanStaleMetricObservations(): number {
+    // timestamp 패턴: 13자리 숫자-숫자 로 끝나는 OBS-METRIC ID
+    const stale = this.db.prepare(
+      `SELECT id FROM dkg_nodes WHERE catalog_id=? AND kind='observation' AND id LIKE 'OBS-METRIC-%' AND id GLOB 'OBS-METRIC-*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*-[0-9]*'`,
+    ).all(this.catalogId) as Array<{ id: string }>;
+
+    if (stale.length === 0) return 0;
+
+    for (const row of stale) {
+      this.db.prepare("DELETE FROM dkg_edges WHERE catalog_id=? AND (from_id=? OR to_id=?)").run(this.catalogId, row.id, row.id);
+      this.db.prepare("DELETE FROM dkg_nodes WHERE catalog_id=? AND id=?").run(this.catalogId, row.id);
+    }
+
+    return stale.length;
+  }
+
   // ── Stats ────────────────────────────────────────────
 
   stats(): {
@@ -284,14 +330,14 @@ export class DkgSqliteStore {
     bootstrapNodes: number; manualNodes: number;
     bootstrapEdges: number; manualEdges: number;
   } {
-    const nodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes").get() as { c: number }).c;
-    const edges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges").get() as { c: number }).c;
+    const nodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE catalog_id=?").get(this.catalogId) as { c: number }).c;
+    const edges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE catalog_id=?").get(this.catalogId) as { c: number }).c;
     const snapshots = (this.db.prepare("SELECT COUNT(*) as c FROM usage_snapshots").get() as { c: number }).c;
     const versionUsages = (this.db.prepare("SELECT COUNT(*) as c FROM version_usages").get() as { c: number }).c;
-    const bootstrapNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap'").get() as { c: number }).c;
-    const manualNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='manual'").get() as { c: number }).c;
-    const bootstrapEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap'").get() as { c: number }).c;
-    const manualEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='manual'").get() as { c: number }).c;
+    const bootstrapNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
+    const manualNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='manual' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
+    const bootstrapEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
+    const manualEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='manual' AND catalog_id=?").get(this.catalogId) as { c: number }).c;
     return { nodes, edges, snapshots, versionUsages, bootstrapNodes, manualNodes, bootstrapEdges, manualEdges };
   }
 
@@ -299,10 +345,10 @@ export class DkgSqliteStore {
 
   /** 전체 상태를 JSON으로 export. */
   exportJson(): string {
-    const nodes = this.db.prepare("SELECT id, kind, data FROM dkg_nodes").all() as Array<{
+    const nodes = this.db.prepare("SELECT id, kind, data FROM dkg_nodes WHERE catalog_id=?").all(this.catalogId) as Array<{
       id: string; kind: string; data: string;
     }>;
-    const edges = this.db.prepare("SELECT type, from_id, to_id, meta FROM dkg_edges").all() as Array<{
+    const edges = this.db.prepare("SELECT type, from_id, to_id, meta FROM dkg_edges WHERE catalog_id=?").all(this.catalogId) as Array<{
       type: string; from_id: string; to_id: string; meta: string | null;
     }>;
     const snapshots = this.db.prepare("SELECT * FROM usage_snapshots ORDER BY collected_at").all();
@@ -310,6 +356,7 @@ export class DkgSqliteStore {
 
     return JSON.stringify({
       version: 1,
+      catalogId: this.catalogId,
       exportedAt: new Date().toISOString(),
       nodes: nodes.map(n => ({ id: n.id, kind: n.kind, ...JSON.parse(n.data) })),
       edges: edges.map(e => ({ type: e.type, from: e.from_id, to: e.to_id, meta: e.meta ? JSON.parse(e.meta) : undefined })),
@@ -326,26 +373,148 @@ export class DkgSqliteStore {
     };
 
     const upsertNode = this.db.prepare(
-      `INSERT INTO dkg_nodes (id, kind, data, updated_at) VALUES (?, ?, ?, datetime('now'))
-       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, data=excluded.data, updated_at=datetime('now')`,
+      `INSERT INTO dkg_nodes (id, kind, catalog_id, data, updated_at) VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
     );
     const insertEdge = this.db.prepare(
-      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, meta) VALUES (?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, catalog_id, meta) VALUES (?, ?, ?, ?, ?)`,
     );
 
     let nodesImported = 0;
     let edgesImported = 0;
 
     for (const node of data.nodes) {
-      upsertNode.run(node.id, node.kind, JSON.stringify(node));
+      upsertNode.run(node.id, node.kind, this.catalogId, JSON.stringify(node));
       nodesImported++;
     }
     for (const edge of data.edges) {
-      insertEdge.run(edge.type, edge.from, edge.to, edge.meta ? JSON.stringify(edge.meta) : null);
+      insertEdge.run(edge.type, edge.from, edge.to, this.catalogId, edge.meta ? JSON.stringify(edge.meta) : null);
       edgesImported++;
     }
 
     return { nodesImported, edgesImported };
+  }
+
+  // ── Decisions export/import ─────────────────────────
+
+  /**
+   * manual/auto 의사결정 데이터만 export.
+   * bootstrap 데이터는 카탈로그에서 재생성 가능하므로 제외.
+   * decision, observation, version-event 노드 + 관련 엣지만 추출.
+   */
+  exportDecisions(): string {
+    const nodes = this.db.prepare(
+      `SELECT id, kind, source, data FROM dkg_nodes WHERE catalog_id=? AND source IN ('manual','auto')`,
+    ).all(this.catalogId) as Array<{ id: string; kind: string; source: string; data: string }>;
+
+    const nodeIds = new Set(nodes.map(n => n.id));
+
+    // 관련 엣지: from 또는 to가 manual/auto 노드인 것
+    const allEdges = this.db.prepare(
+      `SELECT type, from_id, to_id, source, meta FROM dkg_edges WHERE catalog_id=?`,
+    ).all(this.catalogId) as Array<{ type: string; from_id: string; to_id: string; source: string; meta: string | null }>;
+
+    const edges = allEdges.filter(e => nodeIds.has(e.from_id) || nodeIds.has(e.to_id));
+
+    return JSON.stringify({
+      version: 1,
+      type: "decisions",
+      catalogId: this.catalogId,
+      exportedAt: new Date().toISOString(),
+      summary: {
+        decisions: nodes.filter(n => n.kind === "decision").length,
+        observations: nodes.filter(n => n.kind === "observation").length,
+        versionEvents: nodes.filter(n => n.kind === "version-event").length,
+        edges: edges.length,
+      },
+      nodes: nodes.map(n => ({ id: n.id, kind: n.kind, source: n.source, ...JSON.parse(n.data) })),
+      edges: edges.map(e => ({ type: e.type, from: e.from_id, to: e.to_id, source: e.source, meta: e.meta ? JSON.parse(e.meta) : undefined })),
+    }, null, 2);
+  }
+
+  /**
+   * 의사결정 JSON을 현재 카탈로그에 import (머지).
+   * 기존 bootstrap 데이터 위에 manual/auto 노드를 덮어쓴다.
+   */
+  importDecisions(json: string): { nodesImported: number; edgesImported: number } {
+    const data = JSON.parse(json) as {
+      type?: string;
+      nodes: Array<{ id: string; kind: string; source?: string; [k: string]: unknown }>;
+      edges: Array<{ type: string; from: string; to: string; source?: string; meta?: Record<string, unknown> }>;
+    };
+
+    const upsertNode = this.db.prepare(
+      `INSERT INTO dkg_nodes (id, kind, source, catalog_id, data, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, catalog_id=excluded.catalog_id, data=excluded.data, updated_at=datetime('now')`,
+    );
+    const insertEdge = this.db.prepare(
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, catalog_id, meta)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+
+    let nodesImported = 0;
+    let edgesImported = 0;
+
+    for (const node of data.nodes) {
+      const source = node.source ?? "manual";
+      upsertNode.run(node.id, node.kind, source, this.catalogId, JSON.stringify(node));
+      nodesImported++;
+    }
+    for (const edge of data.edges) {
+      const source = edge.source ?? "manual";
+      insertEdge.run(edge.type, edge.from, edge.to, source, this.catalogId, edge.meta ? JSON.stringify(edge.meta) : null);
+      edgesImported++;
+    }
+
+    return { nodesImported, edgesImported };
+  }
+
+  /**
+   * 최근 의사결정/관측 노드 목록 조회.
+   * @param limit 최대 N개 (기본 20)
+   * @param kinds 필터할 노드 종류 (기본: decision + observation)
+   */
+  listRecentDecisions(
+    limit: number = 20,
+    kinds: readonly string[] = ["decision", "observation"],
+  ): Array<{ id: string; kind: string; source: string; date: string; data: Record<string, unknown> }> {
+    const placeholders = kinds.map(() => "?").join(",");
+    const rows = this.db.prepare(
+      `SELECT id, kind, source, data, updated_at FROM dkg_nodes
+       WHERE catalog_id=? AND kind IN (${placeholders})
+       ORDER BY updated_at DESC LIMIT ?`,
+    ).all(this.catalogId, ...kinds, limit) as Array<{
+      id: string; kind: string; source: string; data: string; updated_at: string;
+    }>;
+
+    return rows.map(r => {
+      const parsed = JSON.parse(r.data) as Record<string, unknown>;
+      return {
+        id: r.id,
+        kind: r.kind,
+        source: r.source,
+        date: (parsed.date as string) ?? r.updated_at,
+        data: parsed,
+      };
+    });
+  }
+
+  /** 등록된 모든 카탈로그 ID 목록. */
+  listCatalogIds(): string[] {
+    const rows = this.db.prepare(
+      "SELECT DISTINCT catalog_id FROM dkg_nodes UNION SELECT DISTINCT catalog_id FROM dkg_edges",
+    ).all() as Array<{ catalog_id: string }>;
+    return [...new Set(rows.map(r => r.catalog_id))];
+  }
+
+  /** 특정 카탈로그의 모든 DKG 데이터 삭제. */
+  deleteCatalog(catalogId: string): { nodesDeleted: number; edgesDeleted: number } {
+    const nodesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE catalog_id=?").get(catalogId) as { c: number }).c;
+    const edgesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE catalog_id=?").get(catalogId) as { c: number }).c;
+    this.db.prepare("DELETE FROM dkg_edges WHERE catalog_id=?").run(catalogId);
+    this.db.prepare("DELETE FROM dkg_nodes WHERE catalog_id=?").run(catalogId);
+    return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
   }
 
   close(): void {

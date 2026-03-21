@@ -28,10 +28,10 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "observation-domain", name: "관측 도메인",
-      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event"],
-      sharedAxes: [],
-      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event"], internal: [] },
-      rationale: "비즈니스 로직 + 파이프라인 + 엔진/스키마 관측 포인트 DSL 그룹.",
+      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly"],
+      sharedAxes: ["behavior_pattern", "identification_mode"],
+      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly"], internal: [] },
+      rationale: "비즈니스 로직 + 파이프라인 + 엔진/스키마 관측 포인트 + 패턴 분류 DSL 그룹.",
     },
     {
       kind: "domain", id: "infra-domain", name: "인프라 도메인",
@@ -42,10 +42,10 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "dev-domain", name: "자기참조 개발 도메인",
-      prefixes: ["build_event", "test_event"],
-      sharedAxes: ["qa_pkg"],
-      boundary: { exports: ["build_event", "test_event"], internal: [] },
-      rationale: "qa-sdk 모노레포 자체의 빌드/테스트 이벤트를 좌표계로 추적. 자기참조 모니터링.",
+      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event"],
+      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject"],
+      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event"], internal: [] },
+      rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI활동 전체를 좌표계로 추적. 완전 자기참조 모니터링.",
     },
   ],
 
@@ -59,6 +59,11 @@ export const DEMO_DKG_CONFIG = {
       kind: "consumer", id: "ingest-server", type: "service",
       intendedPrefixes: ["event", "permission", "service", "endpoint", "deploy_event", "health_event", "pipeline_point", "data_policy"],
       rationale: "수집 서버는 이벤트 수신 + 주소 컨텍스트 태깅 + 인프라 이벤트 수집 + 파이프라인 자체 관측. dsl-infra, dsl-pipeline 사용.",
+    },
+    {
+      kind: "consumer", id: "convergence-pipeline", type: "service",
+      intendedPrefixes: ["pattern_match", "pattern_anomaly", "flow_point", "endpoint", "page_view"],
+      rationale: "수렴 파이프라인은 세션별 패턴 분류 결과를 pattern_match/pattern_anomaly prefix로 기록하고, 관측 포인트에서 행동 흐름을 분석한다.",
     },
   ],
 
@@ -82,17 +87,31 @@ export const DEMO_DKG_CONFIG = {
       scope: ["page_view", "endpoint", "flow_point", "deploy_event", "health_event"],
       lifecycle: "active",
     },
+    {
+      kind: "constraint", id: "CON-004",
+      rule: "패턴 분류율(classificationRate)은 80% 이상이어야 한다. 미달 시 새 패턴 규칙 추가를 검토해야 한다.",
+      formal: "classificationRate >= 0.8",
+      scope: ["pattern_match", "pattern_anomaly"],
+      lifecycle: "active",
+    },
+    {
+      kind: "constraint", id: "CON-005",
+      rule: "pattern_anomaly(critical)가 발생하면 자동으로 action-needed observation이 생성되어야 한다.",
+      scope: ["pattern_anomaly"],
+      lifecycle: "active",
+    },
   ],
 
   dslBundles: [
     {
       kind: "dsl-bundle", id: "dsl-observation", name: "관측 DSL",
-      description: "화면/API/흐름 관측 포인트를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다.",
-      memberPrefixes: ["page_view", "endpoint", "flow_point"],
+      description: "화면/API/흐름 관측 포인트 + 패턴 분류를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다.",
+      memberPrefixes: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "모든 관측 prefix의 svc_ref는 동일한 service 주소를 참조해야 한다",
         "page_view 없이 flow_point가 관측되면 진입점 누락",
+        "pattern_anomaly가 발생하면 pattern_match에 unclassified가 있어야 한다",
       ],
     },
     {
@@ -182,6 +201,13 @@ export const DEMO_DKG_CONFIG = {
       via: "service",
       intent: "인프라 변경(배포/헬스) → API 영향을 동일 서비스 컨텍스트에서 추적한다",
       invariant: "deploy_event 직후 health_event(degraded) 발생 시 배포 실패 후보 탐지",
+    },
+    {
+      kind: "intent-link", id: "IL-pattern-observation",
+      endpoints: ["pattern_match", "pattern_anomaly", "flow_point"],
+      via: "service",
+      intent: "패턴 분류 결과(pattern_match)와 이상 감지(pattern_anomaly)가 흐름 관측(flow_point)과 동일 서비스 컨텍스트에서 연결된다",
+      invariant: "pattern_anomaly(unclassified) 발생 시 해당 세션의 flow_point 시퀀스가 새 패턴 규칙의 근거가 된다",
     },
   ],
 
@@ -324,6 +350,31 @@ export const DEMO_DKG_CONFIG = {
       },
     },
 
+    {
+      kind: "skill", id: "skill-schema-health-audit", name: "스키마 카테고리 건전성 감사",
+      description: "전체 prefix의 카테고리 규칙 적합성 검증. 위반 건 → ObservationNode 생성, 심각 위반 → DecisionNode scaffold. schema_validation prefix 좌표로 인코딩",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "(없음)", output: "SchemaHealthReport (observations + decisions)",
+      specialization: {
+        prefixes: ["schema_validation"],
+        metrics: ["metric:schema:violations"],
+      },
+    },
+
+    // ── 전문 analysis — 패턴 분류 ─────────────────────────
+    {
+      kind: "skill", id: "skill-pattern-analysis", name: "패턴 분류 분석",
+      description: "세션 이벤트 시퀀스를 행동 패턴으로 분류하고 이상 패턴을 감지한다. classifyPattern + detectAnomalies + buildPatternHealthReport 조합.",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "ClassifierInput[] + PatternRule[]", output: "PatternHealthReport + PatternAnomaly[]",
+      specialization: {
+        domains: ["observation-domain"],
+        dslBundles: ["dsl-observation"],
+        prefixes: ["pattern_match", "pattern_anomaly"],
+        constraints: ["CON-004", "CON-005"],
+      },
+    },
+
     // ── 전문 analysis — 제약/구조 ───────────────────────────
     {
       kind: "skill", id: "skill-event-action-check", name: "이벤트 action 축 규칙 검사",
@@ -398,9 +449,9 @@ export const DEMO_DKG_CONFIG = {
       description: "전 도메인 constraint 검사 → 건강 진단 → 커버리지 감사 + metric 수집. health metric은 action-needed observation만 issue로 집계 (monitoring/completed/Decision-acknowledged 제외)",
       category: "chain", targetKinds: [],
       input: "(없음)", output: "SkillChainResult",
-      depends: ["skill-event-action-check", "skill-svc-binding-check", "skill-domain-health", "skill-observation-coverage"],
+      depends: ["skill-event-action-check", "skill-svc-binding-check", "skill-domain-health", "skill-observation-coverage", "skill-schema-health-audit"],
       specialization: {
-        metrics: ["metric:health", "metric:conflict:decisions", "metric:overlap"],
+        metrics: ["metric:health", "metric:conflict:decisions", "metric:overlap", "metric:schema:violations"],
       },
     },
     {

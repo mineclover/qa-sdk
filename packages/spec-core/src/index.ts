@@ -44,6 +44,19 @@ export {
 } from "./schema/presets.js";
 export type { ValidationResult } from "./schema/schema.validator.js";
 
+// ── Schema: Prefix Consumer ─────────────────────────
+export {
+  mapErrorToCoordinate,
+  mapValidationToCoordinates,
+  decodeCoordinate,
+  AXIS_ENTRIES,
+} from "./schema/schema-validation-codec.js";
+export type { ValidationCoordinate } from "./schema/schema-validation-codec.js";
+export { bridgeValidationToObservation } from "./schema/schema-observation-bridge.js";
+export type { SchemaObservationResult } from "./schema/schema-observation-bridge.js";
+export { auditSchemaHealth } from "./schema/schema-health-audit.js";
+export type { SchemaHealthReport, SchemaViolationEntry } from "./schema/schema-health-audit.js";
+
 // ── Spec Document ───────────────────────────────────
 export type {
   SpecType,
@@ -58,8 +71,8 @@ export { SpecDocumentRegistry } from "./spec/spec-document.registry.js";
 export type { DimRef, PrefixSpec } from "./spec/prefix-spec.types.js";
 
 // ── Loader ──────────────────────────────────────────
-export { catalogToPrefixSpecs, prefixToPrefixSpec } from "./loader/catalog-bridge.js";
-export type { CatalogInput, CatalogPrefix } from "./loader/catalog-bridge.js";
+export { catalogToPrefixSpecs, prefixToPrefixSpec, catalogToSchemaSnapshot } from "./loader/catalog-bridge.js";
+export type { CatalogInput, CatalogPrefix, SchemaSnapshotOutput, FullCatalogInput } from "./loader/catalog-bridge.js";
 export { loadSpecs, parseSpecFile } from "./loader/spec-loader.js";
 export { mergeCatalogs, extractServiceCatalog } from "./loader/catalog-merge.js";
 export type { PartialCatalog, MergeResult, MergeConflict } from "./loader/catalog-merge.js";

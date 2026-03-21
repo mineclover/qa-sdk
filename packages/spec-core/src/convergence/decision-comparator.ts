@@ -42,14 +42,48 @@ export function compareDecisions(
     };
   }
 
-  // 둘 다 active이고 같은 대상 → redundant 또는 contradictory
-  // 간단한 heuristic: rationale 길이/내용 비교는 하지 않고
-  // 같은 대상에 active 결정이 2개 있으면 redundant로 판정
+  // 둘 다 active이고 같은 대상 → contradictory 또는 redundant
+  if (isContradictory(aNode, bNode)) {
+    return {
+      a: aId, b: bId, sharedTargets: shared,
+      conflict: "contradictory",
+      resolution: `같은 대상(${shared.join(", ")})에 상반된 결정. 인간 해소 필요.`,
+    };
+  }
+
   return {
     a: aId, b: bId, sharedTargets: shared,
     conflict: "redundant",
     resolution: `같은 대상(${shared.join(", ")})에 활성 결정이 2개. 통합 검토 필요.`,
   };
+}
+
+// 상반 신호 쌍: rationale에 한쪽이 있고 다른 쪽이 있으면 contradictory
+const OPPOSING_PAIRS: readonly [RegExp, RegExp][] = [
+  [/증가|확장|추가|활성화|merge|add|increase|expand/i, /감소|축소|제거|비활성화|split|remove|decrease|reduce/i],
+];
+
+function isContradictory(a: DecisionNode, b: DecisionNode): boolean {
+  const aText = a.rationale;
+  const bText = b.rationale;
+
+  // 1. rationale 내 상반 신호
+  for (const [pos, neg] of OPPOSING_PAIRS) {
+    if ((pos.test(aText) && neg.test(bText)) || (neg.test(aText) && pos.test(bText))) {
+      return true;
+    }
+  }
+
+  // 2. 한쪽의 선택이 다른 쪽의 대안에 있으면 (명시적 갈등)
+  if (a.alternatives && b.alternatives) {
+    const aTitleLower = a.title.toLowerCase();
+    const bTitleLower = b.title.toLowerCase();
+    const aHasBAsAlt = a.alternatives.some(alt => alt.toLowerCase().includes(bTitleLower));
+    const bHasAAsAlt = b.alternatives.some(alt => alt.toLowerCase().includes(aTitleLower));
+    if (aHasBAsAlt || bHasAAsAlt) return true;
+  }
+
+  return false;
 }
 
 /**

@@ -11,6 +11,7 @@
 
 import type { DemoCatalog } from "demo-snapshot";
 import { decodePrefix } from "demo-snapshot";
+import { parseSerializedAddress } from "@qa-sdk/core";
 import type { UsageData, EntryUsage, AddressUsage, CoOccurrence, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
@@ -78,12 +79,10 @@ export function aggregateUsageData(
     const decodedPrefixes: Array<{ prefixId: string; entries: Record<string, string | number> }> = [];
 
     for (const [prefixId, serialized] of Object.entries(ctx)) {
-      const parts = serialized.split(":");
-      if (parts.length !== 3) continue;
+      let parsed;
+      try { parsed = parseSerializedAddress(serialized); } catch { continue; }
 
-      const [, version, addrStr] = parts;
-      const address = Number(addrStr);
-      if (isNaN(address)) continue;
+      const { version, address } = parsed;
 
       // AddressUsage
       const addrKey = serialized;
@@ -222,8 +221,8 @@ export function analyzeCollectionHealth(
     for (const [prefixId, serialized] of Object.entries(ctx)) {
       totalAddresses++;
 
-      const parts = serialized.split(":");
-      if (parts.length !== 3) {
+      let parsed;
+      try { parsed = parseSerializedAddress(serialized); } catch {
         const key = `${prefixId}:parse-fail`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
@@ -231,8 +230,7 @@ export function analyzeCollectionHealth(
         continue;
       }
 
-      const [, version, addrStr] = parts;
-      const address = Number(addrStr);
+      const { version, address } = parsed;
 
       // 1. prefix 존재 확인
       const prefix = catalog.prefixes[prefixId];
