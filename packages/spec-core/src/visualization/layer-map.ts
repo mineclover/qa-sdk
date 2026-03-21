@@ -10,7 +10,7 @@
  * "유저 클릭 → API 호출 → DB 저장" 흐름이 된다.
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { DemoCatalog, PrefixDef } from "demo-snapshot";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -47,6 +47,10 @@ export interface LayerMapResult {
 //  Layer Classification
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * Fallback layer rules for catalogs without prefix.meta.
+ * When prefix.meta.layer is present, it takes precedence.
+ */
 const LAYER_RULES: Record<string, LayerLevel> = {
   // Layer 0: UI
   page_view: 0,
@@ -85,7 +89,22 @@ const LAYER_DESCRIPTIONS: Record<LayerLevel, string> = {
 };
 
 /**
+ * prefix의 구조에서 카테고리를 추론한다 (fallback 로직).
+ * prefix.meta.category가 없을 때 사용.
+ */
+function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string {
+  const hasTableRef = Object.values(prefix.dims).some(d => d.kind === "table_ref");
+  if (hasTableRef || prefixId.endsWith("_event")) return "event";
+  if (prefixId === "relational") return "relation";
+  if (["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy"].includes(prefixId)) return "observation";
+  if (["permission", "rbac"].includes(prefixId)) return "policy";
+  return "entity";
+}
+
+/**
  * DEMO_CATALOG의 모든 prefix를 3D 계층에 배치한다.
+ *
+ * 우선순위: prefix.meta.layer/category → LAYER_RULES/inferCategoryFromStructure
  */
 export function buildLayerMap(catalog: DemoCatalog): LayerMapResult {
   const placementMap = new Map<string, PrefixPlacement>();
@@ -95,17 +114,12 @@ export function buildLayerMap(catalog: DemoCatalog): LayerMapResult {
 
   let index = 0;
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
-    const layer = LAYER_RULES[prefixId] ?? 1; // 기본: 비즈니스 레이어
+    const layer: LayerLevel = (prefix.meta?.layer ?? LAYER_RULES[prefixId] ?? 1) as LayerLevel;
     const bucket = layerBuckets.get(layer)!;
     const gridX = bucket.length % 4;
     const gridZ = Math.floor(bucket.length / 4);
 
-    const hasTableRef = Object.values(prefix.dims).some(d => d.kind === "table_ref");
-    const category = hasTableRef || prefixId.endsWith("_event") ? "event"
-      : prefixId === "relational" ? "relation"
-      : ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy"].includes(prefixId) ? "observation"
-      : ["permission", "rbac"].includes(prefixId) ? "policy"
-      : "entity";
+    const category = prefix.meta?.category ?? inferCategoryFromStructure(prefixId, prefix);
 
     const placement: PrefixPlacement = {
       prefixId,

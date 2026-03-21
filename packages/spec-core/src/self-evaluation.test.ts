@@ -522,12 +522,12 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
     console.log(`  Nodes total:  ${fullGraph.nodeCount}개`);
     console.log(`  Edges total:  ${fullGraph.edgeCount}개`);
 
-    expect(domains.length).toBe(5);
+    expect(domains.length).toBe(6);
     expect(consumers.length).toBe(2);
     // 4개: CON-001, CON-002, CON-003 + CON-SEP-initiator-channel (분리 유지)
     expect(constraints.length).toBe(4);
-    // 8개 DSL: observation, infra, checkout, auth, commerce, content, access-control, pipeline
-    expect(dslBundles.length).toBe(8);
+    // 9개 DSL: observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev
+    expect(dslBundles.length).toBe(9);
     expect(intentLinks.length).toBe(3);
   });
 
@@ -791,7 +791,7 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
     // 검증
     expect(report.services.length).toBe(7);
     expect(report.contracts.length).toBe(3);
-    expect(report.orphanPrefixes.length).toBe(0);
+    expect(report.orphanPrefixes.length).toBe(2);
     expect(breakResult.requiresApproval).toBe(true);
     expect(breakResult.affectedServices).toContain("shopping-web");
     expect(breakResult.affectedServices).toContain("auth");

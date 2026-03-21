@@ -5,6 +5,15 @@
  * "이 카테고리의 prefix는 반드시 이 조건을 충족해야 한다."
  *
  * 이것이 문서 구조를 prefix 기반 타입으로 강제하는 메커니즘.
+ *
+ * ## Validation Layers
+ *
+ * - **L0 vocabulary**: axis entry 유효성 — entry가 정의된 vocabulary에 존재하는가.
+ * - **L1 structural**: prefix 구조 유효성 — dimRef kind, dim count, required refs.
+ * - **L2 constraint**: 비즈니스 규칙 — custom validate 함수, cross-prefix 관계.
+ *
+ * CATEGORY_RULES는 L1(구조)과 L2(제약)를 data-driven으로 선언한다.
+ * L0(vocabulary)는 별도의 entry 검증 레이어에서 처리된다.
  */
 
 import type { SchemaCategory } from "./schema.types.js";
@@ -21,7 +30,14 @@ export interface CategoryRule {
   readonly minDims?: number;
   /** 최대 차원 수 */
   readonly maxDims?: number;
-  /** 추가 검증 함수 */
+  /**
+   * 추가 검증 함수.
+   *
+   * @remarks L2 constraint validation을 구현한다.
+   * L1 structural 검증(dimRef kind, dim count, required refs)은
+   * CATEGORY_RULES의 선언적 필드로 처리되고,
+   * 이 함수는 그래프 구조를 탐색해야 하는 비즈니스 규칙을 검증한다.
+   */
   readonly validate?: (prefixId: string, graph: GraphPort) => string[];
 }
 
