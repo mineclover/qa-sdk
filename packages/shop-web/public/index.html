@@ -191,22 +191,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script type="module">
 // ═══════════════════════════════════════════════════
-//  QA Tracking — viz-3d-core encode 사용
+//  QA Tracking — viz-3d-core.js의 encode 사용 (단일 출처)
 // ═══════════════════════════════════════════════════
 
+import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole } from './viz-3d-core.js';
+
 const INGEST_URL=(new URLSearchParams(location.search).get('ingest'))||'http://localhost:3100';
-
-// 인라인 경량 encode (viz-3d-core에 의존하지 않고 독립 실행)
-const C={"service":{"v":"v1","l":["env","region","svc_name","namespace"],"d":{"env":{"k":"a","e":["dev","stage","prod","test","local"],"c":32},"region":{"k":"a","e":["asia","usa"],"c":32},"svc_name":{"k":"a","e":["shopping-web","shopping-backend","auth","payment","gateway"],"c":32},"namespace":{"k":"a","e":["shop","cms"],"c":32}}},"page_view":{"v":"v2","l":["svc_ref","page","locale","userType"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"page":{"k":"a","e":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"c":32},"locale":{"k":"a","e":["ko","en","ja"],"c":32},"userType":{"k":"a","e":["guest","member","premium"],"c":32}}},"tracking":{"v":"v2","l":["trackAction","page","userType"],"d":{"trackAction":{"k":"a","e":["click","view","scroll","submit","navigate","add_to_cart","purchase","close"],"c":32},"page":{"k":"a","e":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"c":32},"userType":{"k":"a","e":["guest","member","premium"],"c":32}}},"endpoint":{"v":"v1","l":["svc_ref","resource_type","http_method","api_version"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"resource_type":{"k":"a","e":["api","page","webhook","grpc"],"c":32},"http_method":{"k":"a","e":["GET","POST","PUT","DELETE","PATCH"],"c":32},"api_version":{"k":"a","e":["v1","v2"],"c":32}}},"flow_point":{"v":"v2","l":["svc_ref","flow_name","flow_step","flow_variant"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"flow_name":{"k":"a","e":["checkout","signup","order_cancel","refund","login","browse","cart_manage","payment"],"c":64},"flow_step":{"k":"a","e":["entry","processing","branch","success","failure","timeout","payment","complete","exit"],"c":32},"flow_variant":{"k":"a","e":["default","retry","fallback","manual"],"c":32}}},"cart_event":{"v":"v1","l":["action"],"d":{"action":{"k":"a","e":["add","remove","checkout"],"c":32}}},"auth_event":{"v":"v1","l":["action"],"d":{"action":{"k":"a","e":["login","logout","token_refresh"],"c":32}}},"order_event":{"v":"v1","l":["service_ctx","action"],"d":{"service_ctx":{"k":"r","vs":[65536,65568,65600,65632,65664]},"action":{"k":"a","e":["create","cancel","refund","complete"],"c":32}}},"permission":{"v":"v4","l":["perm_svc","role"],"d":{"perm_svc":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"role":{"k":"a","e":["admin","developer","operator","viewer","readonly","customer","auditor"],"c":32}}}};
-
-function qEnc(p,v){const d=C[p];if(!d)return null;const s=[],po=[];for(const l of d.l){const dm=d.d[l];if(dm.k==='a'){s.push(dm.c);const i=dm.e.indexOf(v[l]);if(i<0)return null;po.push(i)}else{s.push(dm.vs.length);const i=dm.vs.indexOf(v[l]??dm.vs[0]);po.push(i<0?0:i)}}const st=Array(s.length);st[s.length-1]=1;for(let i=s.length-2;i>=0;i--)st[i]=st[i+1]*s[i+1];let a=0;for(let i=0;i<po.length;i++)a+=po[i]*st[i];return`${p}:${d.v}:${a}`}
-
 const traceId='trc_shop_'+Date.now();
 let spanSeq=0,eventCount=0,userType='guest';
+const sessionId='ses_'+Date.now();
 
 function qaTrack(eventKey,prefixes){
-  const ctx={};
-  for(const[p,v]of Object.entries(prefixes)){const s=qEnc(p,v);if(s)ctx[p]=s}
+  const ctx=qaTrackEncode(BROWSER_CATALOG,prefixes);
   spanSeq++;eventCount++;
   document.getElementById('qa-events').textContent=`events: ${eventCount}`;
   document.getElementById('qa-status').textContent=`qa: ${eventKey} → sending`;
@@ -223,6 +219,7 @@ function qaTrack(eventKey,prefixes){
         trace_id:traceId,span_id:`spn_${spanSeq}`,event_key:eventKey,event_version:'001',
         payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],
         payload:{event:eventKey},address_context:ctx,
+        qa_session_id:sessionId,
       }],
     }),
   }).then(r=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → ${r.status}`})

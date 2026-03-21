@@ -1,7 +1,7 @@
-var C = Object.defineProperty;
-var N = (i, e, t) => e in i ? C(i, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[e] = t;
-var z = (i, e, t) => N(i, typeof e != "symbol" ? e + "" : e, t);
-const W = {
+var N = Object.defineProperty;
+var A = (t, e, i) => e in t ? N(t, e, { enumerable: !0, configurable: !0, writable: !0, value: i }) : t[e] = i;
+var T = (t, e, i) => A(t, typeof e != "symbol" ? e + "" : e, i);
+const ne = {
   background: 328968,
   categories: {
     observation: { color: 58879, emissive: 38823 },
@@ -16,390 +16,390 @@ const W = {
   activeOpacity: 0.85,
   beamOpacity: 0.4
 };
-function F(i, e, t, s) {
-  var l, x;
+function re(t, e, i, s) {
+  var c, h;
   const n = [], r = /* @__PURE__ */ new Map();
-  for (const c of i) {
-    const b = [], h = t + s;
-    if (c.axes3d) {
-      const g = c.axes3d.x.entries, p = ((l = c.axes3d.y) == null ? void 0 : l.entries) ?? ["_"], v = ((x = c.axes3d.z) == null ? void 0 : x.entries) ?? ["_"], f = g.length, w = p.length, d = v.length;
-      for (let a = 0; a < f; a++)
-        for (let _ = 0; _ < w; _++)
-          for (let m = 0; m < d; m++) {
-            const y = -(f - 1) * h / 2 + a * h, $ = _ * h, k = -(d - 1) * h / 2 + m * h, T = w > 1 || d > 1 ? [g[a], p[_] !== "_" ? p[_] : null, v[m] !== "_" ? v[m] : null].filter(Boolean).join("/") : g[a], S = `${c.id}/${T}`;
-            b.push({ key: S, gridId: c.id, entry: T, localX: y, localY: $, localZ: k, col: a, row: _, depth: m }), r.set(S, { gridId: c.id, entry: T, localX: y, localY: $, localZ: k, layer: c.layer, category: c.category });
+  for (const o of t) {
+    const _ = [], l = i + s;
+    if (o.axes3d) {
+      const u = o.axes3d.x.entries, p = ((c = o.axes3d.y) == null ? void 0 : c.entries) ?? ["_"], v = ((h = o.axes3d.z) == null ? void 0 : h.entries) ?? ["_"], m = u.length, w = p.length, f = v.length;
+      for (let d = 0; d < m; d++)
+        for (let x = 0; x < w; x++)
+          for (let y = 0; y < f; y++) {
+            const b = -(m - 1) * l / 2 + d * l, k = x * l, $ = -(f - 1) * l / 2 + y * l, I = w > 1 || f > 1 ? [u[d], p[x] !== "_" ? p[x] : null, v[y] !== "_" ? v[y] : null].filter(Boolean).join("/") : u[d], S = `${o.id}/${I}`;
+            _.push({ key: S, gridId: o.id, entry: I, localX: b, localY: k, localZ: $, col: d, row: x, depth: y }), r.set(S, { gridId: o.id, entry: I, localX: b, localY: k, localZ: $, layer: o.layer, category: o.category });
           }
       n.push({
-        id: c.id,
-        category: c.category,
-        layer: c.layer,
-        cells: b,
-        width: f * h,
-        height: w * h,
-        depth: d * h,
-        cols: f,
+        id: o.id,
+        category: o.category,
+        layer: o.layer,
+        cells: _,
+        width: m * l,
+        height: w * l,
+        depth: f * l,
+        cols: m,
         rows: w,
-        depths: d,
+        depths: f,
         is3d: w > 1
       });
     } else {
-      const g = Math.ceil(c.entries.length / c.cols);
-      for (let p = 0; p < c.entries.length; p++) {
-        const v = p % c.cols, f = Math.floor(p / c.cols), w = -(c.cols - 1) * h / 2 + v * h, d = -(g - 1) * h / 2 + f * h, a = `${c.id}/${c.entries[p]}`;
-        b.push({ key: a, gridId: c.id, entry: c.entries[p], localX: w, localY: 0, localZ: d, col: v, row: f, depth: 0 }), r.set(a, { gridId: c.id, entry: c.entries[p], localX: w, localY: 0, localZ: d, layer: c.layer, category: c.category });
+      const u = Math.ceil(o.entries.length / o.cols);
+      for (let p = 0; p < o.entries.length; p++) {
+        const v = p % o.cols, m = Math.floor(p / o.cols), w = -(o.cols - 1) * l / 2 + v * l, f = -(u - 1) * l / 2 + m * l, d = `${o.id}/${o.entries[p]}`;
+        _.push({ key: d, gridId: o.id, entry: o.entries[p], localX: w, localY: 0, localZ: f, col: v, row: m, depth: 0 }), r.set(d, { gridId: o.id, entry: o.entries[p], localX: w, localY: 0, localZ: f, layer: o.layer, category: o.category });
       }
       n.push({
-        id: c.id,
-        category: c.category,
-        layer: c.layer,
-        cells: b,
-        width: c.cols * h,
-        height: h,
-        depth: g * h,
-        cols: c.cols,
-        rows: g,
+        id: o.id,
+        category: o.category,
+        layer: o.layer,
+        cells: _,
+        width: o.cols * l,
+        height: l,
+        depth: u * l,
+        cols: o.cols,
+        rows: u,
         depths: 1,
         is3d: !1
       });
     }
   }
-  const o = V(i, e, t, s);
-  return { grids: n, viewPositions: o, cellMap: r };
+  const a = L(t, e, i, s);
+  return { grids: n, viewPositions: a, cellMap: r };
 }
-function V(i, e, t = 0.42, s = 0.1) {
-  var p, v, f, w;
+function L(t, e, i = 0.42, s = 0.1) {
+  var p, v, m, w;
   const n = {
     layer: {},
     category: {},
     dsl: {},
     service: {}
   }, r = /* @__PURE__ */ new Map();
-  for (const d of i) {
-    const a = t + s;
-    if (d.axes3d)
-      r.set(d.id, { w: d.axes3d.x.entries.length * a, d: (((p = d.axes3d.z) == null ? void 0 : p.entries.length) ?? 1) * a });
+  for (const f of t) {
+    const d = i + s;
+    if (f.axes3d)
+      r.set(f.id, { w: f.axes3d.x.entries.length * d, d: (((p = f.axes3d.z) == null ? void 0 : p.entries.length) ?? 1) * d });
     else {
-      const _ = Math.ceil(d.entries.length / d.cols);
-      r.set(d.id, { w: d.cols * a, d: _ * a });
+      const x = Math.ceil(f.entries.length / f.cols);
+      r.set(f.id, { w: f.cols * d, d: x * d });
     }
   }
-  const o = e.map(() => []);
-  for (const d of i) (v = o[d.layer]) == null || v.push(d);
-  const l = t * 2;
-  for (let d = 0; d < o.length; d++) {
-    const a = o[d], _ = Math.min(a.length, 4);
-    for (let m = 0; m < a.length; m++) {
-      const y = Math.floor(m / _), $ = a.filter((M, O) => Math.floor(O / _) === y);
-      let T = -$.reduce((M, O) => {
-        var K;
-        return M + (((K = r.get(O.id)) == null ? void 0 : K.w) ?? 2) + l;
-      }, -l) / 2;
-      const S = m - y * _;
-      for (let M = 0; M < S; M++)
-        T += (((f = r.get($[M].id)) == null ? void 0 : f.w) ?? 2) + l;
-      const P = ((w = r.get(a[m].id)) == null ? void 0 : w.w) ?? 2;
-      T += P / 2;
-      const R = Math.max(...$.map((M) => {
-        var O;
-        return ((O = r.get(M.id)) == null ? void 0 : O.d) ?? 2;
+  const a = e.map(() => []);
+  for (const f of t) (v = a[f.layer]) == null || v.push(f);
+  const c = i * 2;
+  for (let f = 0; f < a.length; f++) {
+    const d = a[f], x = Math.min(d.length, 4);
+    for (let y = 0; y < d.length; y++) {
+      const b = Math.floor(y / x), k = d.filter((O, M) => Math.floor(M / x) === b);
+      let I = -k.reduce((O, M) => {
+        var C;
+        return O + (((C = r.get(M.id)) == null ? void 0 : C.w) ?? 2) + c;
+      }, -c) / 2;
+      const S = y - b * x;
+      for (let O = 0; O < S; O++)
+        I += (((m = r.get(k[O].id)) == null ? void 0 : m.w) ?? 2) + c;
+      const K = ((w = r.get(d[y].id)) == null ? void 0 : w.w) ?? 2;
+      I += K / 2;
+      const P = Math.max(...k.map((O) => {
+        var M;
+        return ((M = r.get(O.id)) == null ? void 0 : M.d) ?? 2;
       }));
-      n.layer[a[m].id] = {
-        x: T,
-        y: e[d],
-        z: y * -(R + l * 2)
+      n.layer[d[y].id] = {
+        x: I,
+        y: e[f],
+        z: b * -(P + c * 2)
       };
     }
   }
-  [...new Set(i.map((d) => d.category))].forEach((d, a) => {
-    const _ = i.filter(($) => $.category === d), m = a % 3, y = Math.floor(a / 3);
-    _.forEach(($, k) => {
-      n.category[$.id] = { x: -12 + m * 12, y: 4 - k * 3.5, z: y * -8 };
+  [...new Set(t.map((f) => f.category))].forEach((f, d) => {
+    const x = t.filter((k) => k.category === f), y = d % 3, b = Math.floor(d / 3);
+    x.forEach((k, $) => {
+      n.category[k.id] = { x: -12 + y * 12, y: 4 - $ * 3.5, z: b * -8 };
     });
   });
-  const c = [...new Set(i.map((d) => d.dsl).filter(Boolean))], b = i.filter((d) => !d.dsl);
-  c.forEach((d, a) => {
-    const _ = i.filter(($) => $.dsl === d), m = a % 4, y = Math.floor(a / 4);
-    _.forEach(($, k) => {
-      n.dsl[$.id] = { x: -18 + m * 12, y: 4 - k * 3, z: y * -10 };
+  const o = [...new Set(t.map((f) => f.dsl).filter(Boolean))], _ = t.filter((f) => !f.dsl);
+  o.forEach((f, d) => {
+    const x = t.filter((k) => k.dsl === f), y = d % 4, b = Math.floor(d / 4);
+    x.forEach((k, $) => {
+      n.dsl[k.id] = { x: -18 + y * 12, y: 4 - $ * 3, z: b * -10 };
     });
-  }), b.forEach((d, a) => {
-    n.dsl[d.id] = { x: 24, y: 4 - a * 3, z: -12 };
+  }), _.forEach((f, d) => {
+    n.dsl[f.id] = { x: 24, y: 4 - d * 3, z: -12 };
   });
-  const h = [...new Set(i.map((d) => d.service).filter(Boolean))], g = i.filter((d) => !d.service);
-  return h.forEach((d, a) => {
-    i.filter((m) => m.service === d).forEach((m, y) => {
-      n.service[m.id] = { x: -16 + a * 8, y: 4 - Math.floor(y / 2) * 3.5, z: y % 2 * -5 };
+  const l = [...new Set(t.map((f) => f.service).filter(Boolean))], u = t.filter((f) => !f.service);
+  return l.forEach((f, d) => {
+    t.filter((y) => y.service === f).forEach((y, b) => {
+      n.service[y.id] = { x: -16 + d * 8, y: 4 - Math.floor(b / 2) * 3.5, z: b % 2 * -5 };
     });
-  }), g.forEach((d, a) => {
-    n.service[d.id] = { x: 24, y: 4, z: -a * 5 };
+  }), u.forEach((f, d) => {
+    n.service[f.id] = { x: 24, y: 4, z: -d * 5 };
   }), n;
 }
-function U(i, e) {
-  const t = {};
-  for (const s of i)
+function ae(t, e) {
+  const i = {};
+  for (const s of t)
     s.grids.forEach((n, r) => {
-      const o = r * s.gap;
-      t[n] = {
-        x: s.position.x + (s.axis === "x" ? o : 0),
-        y: s.position.y + (s.axis === "y" ? o : 0),
-        z: s.position.z + (s.axis === "z" ? o : 0)
+      const a = r * s.gap;
+      i[n] = {
+        x: s.position.x + (s.axis === "x" ? a : 0),
+        y: s.position.y + (s.axis === "y" ? a : 0),
+        z: s.position.z + (s.axis === "z" ? a : 0)
       };
     });
-  return t;
+  return i;
 }
-function u(i) {
-  const e = i >> 16 & 255, t = i >> 8 & 255, s = i & 255;
-  return { hex: i, css: `#${i.toString(16).padStart(6, "0")}`, rgb: `${e},${t},${s}` };
+function g(t) {
+  const e = t >> 16 & 255, i = t >> 8 & 255, s = t & 255;
+  return { hex: t, css: `#${t.toString(16).padStart(6, "0")}`, rgb: `${e},${i},${s}` };
 }
-const I = {
+const z = {
   // Background / Surface
-  bgDeep: u(328968),
-  bgCard: u(526864),
-  bgSurface: u(790036),
-  bgGrid1: u(1712176),
-  bgGrid2: u(1053984),
-  bgAxis: u(1714232),
+  bgDeep: g(328968),
+  bgCard: g(526864),
+  bgSurface: g(790036),
+  bgGrid1: g(1712176),
+  bgGrid2: g(1053984),
+  bgAxis: g(1714232),
   // Text
-  txtPrimary: u(12634328),
-  txtSecondary: u(6715272),
-  txtDim: u(3359829),
-  txtMuted: u(2241348),
+  txtPrimary: g(12634328),
+  txtSecondary: g(6715272),
+  txtDim: g(3359829),
+  txtMuted: g(2241348),
   // Accent
-  mint: u(6619098),
-  cyan: u(46296),
-  amber: u(16752451),
-  orange: u(16753922),
-  violet: u(8150268),
-  purple: u(7101671),
-  rose: u(16726112),
-  pink: u(15221651),
-  green: u(3069299),
-  red: u(16739179),
+  mint: g(6619098),
+  cyan: g(46296),
+  amber: g(16752451),
+  orange: g(16753922),
+  violet: g(8150268),
+  purple: g(7101671),
+  rose: g(16726112),
+  pink: g(15221651),
+  green: g(3069299),
+  red: g(16739179),
   // State
-  connected: u(3069299),
-  warning: u(16752451),
-  error: u(16726112),
-  info: u(6619098)
-}, L = {
-  observation: { main: u(58879), emissive: u(38823) },
-  event: { main: u(16748800), emissive: u(12545024) },
-  policy: { main: u(58998), emissive: u(38436) },
-  relation: { main: u(11766015), emissive: u(8146431) },
-  entity: { main: u(5533306), emissive: u(3622735) },
-  table: { main: u(16732754), emissive: u(12986408) }
-}, A = [
-  u(6619098),
+  connected: g(3069299),
+  warning: g(16752451),
+  error: g(16726112),
+  info: g(6619098)
+}, V = {
+  observation: { main: g(58879), emissive: g(38823) },
+  event: { main: g(16748800), emissive: g(12545024) },
+  policy: { main: g(58998), emissive: g(38436) },
+  relation: { main: g(11766015), emissive: g(8146431) },
+  entity: { main: g(5533306), emissive: g(3622735) },
+  table: { main: g(16732754), emissive: g(12986408) }
+}, j = [
+  g(6619098),
   // L0 UI — mint
-  u(16752451),
+  g(16752451),
   // L1 Business — amber
-  u(8150268),
+  g(8150268),
   // L2 Infra — violet
-  u(16726112)
+  g(16726112)
   // L3 Data — rose
 ];
-function J() {
+function oe() {
   return [
-    `--bg:${I.bgDeep.css}`,
-    `--card:rgba(${I.bgCard.rgb},0.92)`,
-    `--border:rgba(${I.mint.rgb},0.08)`,
-    `--mint:${I.mint.css}`,
-    `--amber:${I.amber.css}`,
-    `--violet:${I.violet.css}`,
-    `--rose:${I.rose.css}`,
-    `--txt:${I.txtPrimary.css}`,
-    `--dim:${I.txtDim.css}`,
-    `--green:${I.green.css}`,
-    `--red:${I.red.css}`,
-    `--cyan:${I.cyan.css}`,
+    `--bg:${z.bgDeep.css}`,
+    `--card:rgba(${z.bgCard.rgb},0.92)`,
+    `--border:rgba(${z.mint.rgb},0.08)`,
+    `--mint:${z.mint.css}`,
+    `--amber:${z.amber.css}`,
+    `--violet:${z.violet.css}`,
+    `--rose:${z.rose.css}`,
+    `--txt:${z.txtPrimary.css}`,
+    `--dim:${z.txtDim.css}`,
+    `--green:${z.green.css}`,
+    `--red:${z.red.css}`,
+    `--cyan:${z.cyan.css}`,
     // Category
-    ...Object.entries(L).map(([i, e]) => `--cat-${i}:${e.main.css}`),
+    ...Object.entries(V).map(([t, e]) => `--cat-${t}:${e.main.css}`),
     // Layer
-    ...A.map((i, e) => `--layer-${e}:${i.css}`)
+    ...j.map((t, e) => `--layer-${e}:${t.css}`)
   ].join(";");
 }
-function Q(i, e) {
+function ce(t, e) {
   return {
     type: "scalar",
-    prefixId: i,
+    prefixId: t,
     mappings: [{ axis: e, channel: "color" }],
-    description: `${i}.${e} → 단일 값 표시`
+    description: `${t}.${e} → 단일 값 표시`
   };
 }
-function ee(i, e) {
+function le(t, e) {
   return {
     type: "row",
-    prefixId: i,
+    prefixId: t,
     mappings: [{ axis: e, channel: "x" }],
-    description: `${i}.${e} → 가로 행`
+    description: `${t}.${e} → 가로 행`
   };
 }
-function te(i, e, t) {
+function de(t, e, i) {
   return {
     type: "grid",
-    prefixId: i,
+    prefixId: t,
     mappings: [
       { axis: e, channel: "x" },
-      { axis: t, channel: "z" }
+      { axis: i, channel: "z" }
     ],
-    description: `${i}: ${e}(x) × ${t}(z) → 2D 그리드`
+    description: `${t}: ${e}(x) × ${i}(z) → 2D 그리드`
   };
 }
-function ie(i, e, t, s) {
+function pe(t, e, i, s) {
   return {
     type: "cube",
-    prefixId: i,
+    prefixId: t,
     mappings: [
       { axis: e, channel: "x" },
-      { axis: t, channel: "y" },
+      { axis: i, channel: "y" },
       { axis: s, channel: "z" }
     ],
-    description: `${i}: ${e}(x) × ${t}(y) × ${s}(z) → 3D 큐브`
+    description: `${t}: ${e}(x) × ${i}(y) × ${s}(z) → 3D 큐브`
   };
 }
-function se(i, e, t) {
+function he(t, e, i) {
   return {
     type: "spine",
-    prefixId: i,
+    prefixId: t,
     mappings: [
       { axis: e, channel: "x" },
-      ...t.map((s) => ({ axis: s, channel: "collapse" }))
+      ...i.map((s) => ({ axis: s, channel: "collapse" }))
     ],
-    description: `${i}: ${e}(x), [${t.join(",")}] 압축 → 확대 시 큐브`
+    description: `${t}: ${e}(x), [${i.join(",")}] 압축 → 확대 시 큐브`
   };
 }
-function ne(i, e, t, s) {
+function fe(t, e, i, s) {
   return {
     type: "shelf",
-    prefixId: i,
+    prefixId: t,
     mappings: [
       { axis: e, channel: "group", subPattern: "grid" },
-      { axis: t, channel: "x" },
+      { axis: i, channel: "x" },
       { axis: s, channel: "z" }
     ],
-    description: `${i}: ${e}별 선반, 각 선반 = ${t}(x) × ${s}(z) 그리드`
+    description: `${t}: ${e}별 선반, 각 선반 = ${i}(x) × ${s}(z) 그리드`
   };
 }
-function re(i, e, t) {
+function ue(t, e, i) {
   return {
     type: "nested",
-    prefixId: i,
+    prefixId: t,
     mappings: [
-      { axis: e, channel: "group", subPattern: t }
+      { axis: e, channel: "group", subPattern: i }
     ],
-    description: `${i}: ${e}별 그룹, 각 그룹 = ${t}`
+    description: `${t}: ${e}별 그룹, 각 그룹 = ${i}`
   };
 }
-function oe(i, e, t = 0.4, s = 0.08) {
-  const n = t + s, r = [], o = i.mappings.find((a) => a.channel === "x"), l = i.mappings.find((a) => a.channel === "y"), x = i.mappings.find((a) => a.channel === "z"), c = i.mappings.find((a) => a.channel === "group"), b = i.mappings.filter((a) => a.channel === "collapse").map((a) => a.axis), h = o ? e[o.axis] || [] : ["_"], g = l ? e[l.axis] || [] : ["_"], p = x ? e[x.axis] || [] : ["_"], v = c ? e[c.axis] || [] : ["_"];
-  switch (i.type) {
+function me(t, e, i = 0.4, s = 0.08) {
+  const n = i + s, r = [], a = t.mappings.find((d) => d.channel === "x"), c = t.mappings.find((d) => d.channel === "y"), h = t.mappings.find((d) => d.channel === "z"), o = t.mappings.find((d) => d.channel === "group"), _ = t.mappings.filter((d) => d.channel === "collapse").map((d) => d.axis), l = a ? e[a.axis] || [] : ["_"], u = c ? e[c.axis] || [] : ["_"], p = h ? e[h.axis] || [] : ["_"], v = o ? e[o.axis] || [] : ["_"];
+  switch (t.type) {
     case "scalar":
-      r.push({ key: `${i.prefixId}/_`, x: 0, y: 0, z: 0 });
+      r.push({ key: `${t.prefixId}/_`, x: 0, y: 0, z: 0 });
       break;
     case "row":
-      h.forEach((a, _) => {
-        r.push({ key: `${i.prefixId}/${a}`, x: _ * n, y: 0, z: 0 });
+      l.forEach((d, x) => {
+        r.push({ key: `${t.prefixId}/${d}`, x: x * n, y: 0, z: 0 });
       });
       break;
     case "grid":
-      h.forEach((a, _) => {
-        p.forEach((m, y) => {
-          r.push({ key: `${i.prefixId}/${a}_${m}`, x: _ * n, y: 0, z: y * n });
+      l.forEach((d, x) => {
+        p.forEach((y, b) => {
+          r.push({ key: `${t.prefixId}/${d}_${y}`, x: x * n, y: 0, z: b * n });
         });
       });
       break;
     case "cube":
-      h.forEach((a, _) => {
-        g.forEach((m, y) => {
-          p.forEach(($, k) => {
-            r.push({ key: `${i.prefixId}/${a}_${m}_${$}`, x: _ * n, y: y * n, z: k * n });
+      l.forEach((d, x) => {
+        u.forEach((y, b) => {
+          p.forEach((k, $) => {
+            r.push({ key: `${t.prefixId}/${d}_${y}_${k}`, x: x * n, y: b * n, z: $ * n });
           });
         });
       });
       break;
     case "spine":
-      h.forEach((a, _) => {
-        const m = {};
-        for (const y of b)
-          m[y] = `(${(e[y] || []).length} entries)`;
-        r.push({ key: `${i.prefixId}/${a}`, x: _ * n, y: 0, z: 0, collapsed: m });
+      l.forEach((d, x) => {
+        const y = {};
+        for (const b of _)
+          y[b] = `(${(e[b] || []).length} entries)`;
+        r.push({ key: `${t.prefixId}/${d}`, x: x * n, y: 0, z: 0, collapsed: y });
       });
       break;
     case "shelf":
-      v.forEach((a, _) => {
-        const m = _ * (p.length * n + n * 2);
-        h.forEach((y, $) => {
-          p.forEach((k, T) => {
+      v.forEach((d, x) => {
+        const y = x * (p.length * n + n * 2);
+        l.forEach((b, k) => {
+          p.forEach(($, I) => {
             r.push({
-              key: `${i.prefixId}/${a}_${y}_${k}`,
-              x: $ * n,
-              y: m,
-              z: T * n,
-              group: a
+              key: `${t.prefixId}/${d}_${b}_${$}`,
+              x: k * n,
+              y,
+              z: I * n,
+              group: d
             });
           });
         });
       });
       break;
     case "nested":
-      v.forEach((a, _) => {
-        const m = _ * (h.length * n + n * 2);
-        h.forEach((y, $) => {
+      v.forEach((d, x) => {
+        const y = x * (l.length * n + n * 2);
+        l.forEach((b, k) => {
           r.push({
-            key: `${i.prefixId}/${a}/${y}`,
-            x: m + $ * n,
+            key: `${t.prefixId}/${d}/${b}`,
+            x: y + k * n,
             y: 0,
             z: 0,
-            group: a
+            group: d
           });
         });
       });
       break;
   }
-  const f = r.map((a) => a.x), w = r.map((a) => a.y), d = r.map((a) => a.z);
+  const m = r.map((d) => d.x), w = r.map((d) => d.y), f = r.map((d) => d.z);
   return {
-    pattern: i,
+    pattern: t,
     cells: r,
     bounds: {
-      width: r.length > 0 ? Math.max(...f) - Math.min(...f) + t : 0,
-      height: r.length > 0 ? Math.max(...w) - Math.min(...w) + t : 0,
-      depth: r.length > 0 ? Math.max(...d) - Math.min(...d) + t : 0
+      width: r.length > 0 ? Math.max(...m) - Math.min(...m) + i : 0,
+      height: r.length > 0 ? Math.max(...w) - Math.min(...w) + i : 0,
+      depth: r.length > 0 ? Math.max(...f) - Math.min(...f) + i : 0
     }
   };
 }
-function j(i, e) {
+function D(t, e) {
   if (e === "prefix_ref" || e === "table_ref") return "context";
-  const t = i.toLowerCase();
-  return t.includes("step") || t.includes("phase") || t.includes("stage") ? "sequence" : t.includes("variant") || t.includes("version") || t.includes("mode") ? "variant" : t.endsWith("_name") || t === "flow_name" || t === "event_name" || t.endsWith("_type") || t === "resource_type" ? "classify" : (t.includes("action") || t.includes("method") || t.includes("op") || t === "role" || t === "resource", "identity");
+  const i = t.toLowerCase();
+  return i.includes("step") || i.includes("phase") || i.includes("stage") ? "sequence" : i.includes("variant") || i.includes("version") || i.includes("mode") ? "variant" : i.endsWith("_name") || i === "flow_name" || i === "event_name" || i.endsWith("_type") || i === "resource_type" ? "classify" : (i.includes("action") || i.includes("method") || i.includes("op") || i === "role" || i === "resource", "identity");
 }
-function ae(i, e) {
-  const t = typeof e[0] == "string" ? e.map((p) => ({ label: p, kind: "axis" })) : e, s = t.filter((p) => p.kind === "axis"), n = t.filter((p) => p.kind === "prefix_ref"), r = t.filter((p) => p.kind === "table_ref"), o = s.map((p) => ({ ...p, role: j(p.label, p.kind) })), l = o.filter((p) => p.role === "classify"), x = o.filter((p) => p.role === "sequence"), c = o.filter((p) => p.role === "variant"), b = o.filter((p) => p.role === "identity"), h = [];
+function ge(t, e) {
+  const i = typeof e[0] == "string" ? e.map((p) => ({ label: p, kind: "axis" })) : e, s = i.filter((p) => p.kind === "axis"), n = i.filter((p) => p.kind === "prefix_ref"), r = i.filter((p) => p.kind === "table_ref"), a = s.map((p) => ({ ...p, role: D(p.label, p.kind) })), c = a.filter((p) => p.role === "classify"), h = a.filter((p) => p.role === "sequence"), o = a.filter((p) => p.role === "variant"), _ = a.filter((p) => p.role === "identity"), l = [];
   for (const p of n)
-    h.push({ axis: p.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
+    l.push({ axis: p.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
   for (const p of r)
-    h.push({ axis: p.label, channel: "link", role: "context", dimKind: "table_ref" });
-  if (l.length > 0) {
-    const p = l[0], v = o.filter((d) => d !== p);
+    l.push({ axis: p.label, channel: "link", role: "context", dimKind: "table_ref" });
+  if (c.length > 0) {
+    const p = c[0], v = a.filter((f) => f !== p);
     if (v.length === 0)
-      return h.push({ axis: p.label, channel: "x", role: "classify" }), { type: "row", prefixId: i, mappings: h, description: `${i}: ${p.label}(x) → 행` };
+      return l.push({ axis: p.label, channel: "x", role: "classify" }), { type: "row", prefixId: t, mappings: l, description: `${t}: ${p.label}(x) → 행` };
     if (v.length === 1)
-      return h.push({ axis: p.label, channel: "group", role: "classify", subPattern: "row" }), h.push({ axis: v[0].label, channel: "x", role: v[0].role }), { type: "shelf", prefixId: i, mappings: h, description: `${i}: ${p.label}별 선반, ${v[0].label}(x)` };
-    h.push({ axis: p.label, channel: "group", role: "classify", subPattern: "grid" });
-    const f = x[0] || v[0], w = c[0] || v.find((d) => d !== f) || v[1];
-    return f && h.push({ axis: f.label, channel: "x", role: f.role }), w && w !== f && h.push({ axis: w.label, channel: "z", role: w.role }), { type: "shelf", prefixId: i, mappings: h, description: `${i}: ${p.label}별 선반, ${f == null ? void 0 : f.label}(x) × ${w == null ? void 0 : w.label}(z)` };
+      return l.push({ axis: p.label, channel: "group", role: "classify", subPattern: "row" }), l.push({ axis: v[0].label, channel: "x", role: v[0].role }), { type: "shelf", prefixId: t, mappings: l, description: `${t}: ${p.label}별 선반, ${v[0].label}(x)` };
+    l.push({ axis: p.label, channel: "group", role: "classify", subPattern: "grid" });
+    const m = h[0] || v[0], w = o[0] || v.find((f) => f !== m) || v[1];
+    return m && l.push({ axis: m.label, channel: "x", role: m.role }), w && w !== m && l.push({ axis: w.label, channel: "z", role: w.role }), { type: "shelf", prefixId: t, mappings: l, description: `${t}: ${p.label}별 선반, ${m == null ? void 0 : m.label}(x) × ${w == null ? void 0 : w.label}(z)` };
   }
-  const g = [...x, ...b, ...c];
-  return g.length === 0 ? { type: "scalar", prefixId: i, mappings: [{ axis: "_", channel: "color" }], description: `${i}: scalar` } : g.length === 1 ? (h.push({ axis: g[0].label, channel: "x", role: g[0].role }), { type: "row", prefixId: i, mappings: h, description: `${i}: ${g[0].label}(x)` }) : g.length === 2 ? (h.push({ axis: g[0].label, channel: "x", role: g[0].role }), h.push({ axis: g[1].label, channel: "z", role: g[1].role }), { type: "grid", prefixId: i, mappings: h, description: `${i}: ${g[0].label}(x) × ${g[1].label}(z)` }) : (h.push({ axis: g[0].label, channel: "x", role: g[0].role }), h.push({ axis: g[1].label, channel: "y", role: g[1].role }), h.push({ axis: g[2].label, channel: "z", role: g[2].role }), { type: "cube", prefixId: i, mappings: h, description: `${i}: ${g[0].label}(x) × ${g[1].label}(y) × ${g[2].label}(z)` });
+  const u = [...h, ..._, ...o];
+  return u.length === 0 ? { type: "scalar", prefixId: t, mappings: [{ axis: "_", channel: "color" }], description: `${t}: scalar` } : u.length === 1 ? (l.push({ axis: u[0].label, channel: "x", role: u[0].role }), { type: "row", prefixId: t, mappings: l, description: `${t}: ${u[0].label}(x)` }) : u.length === 2 ? (l.push({ axis: u[0].label, channel: "x", role: u[0].role }), l.push({ axis: u[1].label, channel: "z", role: u[1].role }), { type: "grid", prefixId: t, mappings: l, description: `${t}: ${u[0].label}(x) × ${u[1].label}(z)` }) : (l.push({ axis: u[0].label, channel: "x", role: u[0].role }), l.push({ axis: u[1].label, channel: "y", role: u[1].role }), l.push({ axis: u[2].label, channel: "z", role: u[2].role }), { type: "cube", prefixId: t, mappings: l, description: `${t}: ${u[0].label}(x) × ${u[1].label}(y) × ${u[2].label}(z)` });
 }
-function ce(i) {
-  return Object.entries(i).map(([e, t]) => ({
+function _e(t) {
+  return Object.entries(t).map(([e, i]) => ({
     label: e,
-    kind: t.kind
+    kind: i.kind
   }));
 }
-function le(i) {
-  return Object.entries(i).filter(([, e]) => e.kind === "axis").map(([e]) => e);
+function ye(t) {
+  return Object.entries(t).filter(([, e]) => e.kind === "axis").map(([e]) => e);
 }
-const de = {
+const xe = {
   context: "어디서",
   trigger: "뭘 했는가",
   channel: "어떤 경로",
@@ -407,7 +407,7 @@ const de = {
   guard: "어떤 조건",
   effect: "결과",
   data: "데이터 접점"
-}, pe = {
+}, ve = {
   context: "#546e7a",
   trigger: "#ff9100",
   channel: "#00e5ff",
@@ -450,10 +450,10 @@ const de = {
   relational: "context",
   content: "context"
 };
-function D(i) {
-  return H[i] ?? "trigger";
+function B(t) {
+  return H[t] ?? "trigger";
 }
-function he(i) {
+function X(t) {
   const e = {
     context: [],
     trigger: [],
@@ -463,13 +463,13 @@ function he(i) {
     effect: [],
     data: []
   };
-  for (const [t, s] of Object.entries(i)) {
-    const n = D(t);
-    e[n].push({ prefixId: t, serialized: s });
+  for (const [i, s] of Object.entries(t)) {
+    const n = B(i);
+    e[n].push({ prefixId: i, serialized: s });
   }
   return e;
 }
-const fe = [
+const be = [
   {
     id: "auth.login",
     name: "로그인",
@@ -566,23 +566,23 @@ const fe = [
     ]
   }
 ];
-function ue(i, e) {
-  const t = new Set(Object.keys(e)), s = new Set(i.members.map((l) => l.prefixId));
+function we(t, e) {
+  const i = new Set(Object.keys(e)), s = new Set(t.members.map((c) => c.prefixId));
   let n = 0;
   const r = /* @__PURE__ */ new Set();
-  for (const l of i.members)
-    t.has(l.prefixId) ? n++ : r.add(l.role);
-  const o = [...t].filter((l) => !s.has(l) && l !== "service");
+  for (const c of t.members)
+    i.has(c.prefixId) ? n++ : r.add(c.role);
+  const a = [...i].filter((c) => !s.has(c) && c !== "service");
   return {
-    signalId: i.id,
-    valid: n === i.members.length,
+    signalId: t.id,
+    valid: n === t.members.length,
     missingRoles: [...r],
-    extraPrefixes: o,
+    extraPrefixes: a,
     matchedMembers: n,
-    totalMembers: i.members.length
+    totalMembers: t.members.length
   };
 }
-const ge = {
+const ke = {
   // ── Observation ──
   page_view: {
     id: "page_view",
@@ -860,100 +860,100 @@ const ge = {
     ] }
   }
 };
-function me(i, e) {
+function $e(t, e) {
   var s, n;
-  const t = [];
-  if (t.push(`<div style="font-size:11px;font-weight:600;color:#e0e4ec">${i.displayName}</div>`), t.push(`<div style="font-size:9px;color:#556;margin:3px 0">${i.description}</div>`), i.source) {
-    const r = i.source, o = [];
-    r.module && o.push(r.module), r.file && o.push(r.file), r.line && o.push(`L${r.line}`), t.push(`<div style="font-size:8px;color:#334;margin-top:4px">📁 ${o.join(" / ")}</div>`), r.url && t.push(`<div style="font-size:8px"><a href="${r.url}" target="_blank" style="color:#64ffda">📎 docs</a></div>`);
+  const i = [];
+  if (i.push(`<div style="font-size:11px;font-weight:600;color:#e0e4ec">${t.displayName}</div>`), i.push(`<div style="font-size:9px;color:#556;margin:3px 0">${t.description}</div>`), t.source) {
+    const r = t.source, a = [];
+    r.module && a.push(r.module), r.file && a.push(r.file), r.line && a.push(`L${r.line}`), i.push(`<div style="font-size:8px;color:#334;margin-top:4px">📁 ${a.join(" / ")}</div>`), r.url && i.push(`<div style="font-size:8px"><a href="${r.url}" target="_blank" style="color:#64ffda">📎 docs</a></div>`);
   }
-  switch (i.detailKind) {
+  switch (t.detailKind) {
     case "schema": {
-      const r = i.detail;
+      const r = t.detail;
       if (r != null && r.columns) {
-        t.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">SCHEMA</div>');
-        for (const o of r.columns) {
-          const l = o.refKind !== "scalar" ? ` <span style="color:${o.refKind === "axis_ref" ? "#00e676" : o.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${o.refTarget}</span>` : "", x = e && o.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
-          t.push(`<div style="font-size:9px;${x}">${o.name} <span style="color:#334">${o.type}</span>${l}</div>`);
+        i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">SCHEMA</div>');
+        for (const a of r.columns) {
+          const c = a.refKind !== "scalar" ? ` <span style="color:${a.refKind === "axis_ref" ? "#00e676" : a.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${a.refTarget}</span>` : "", h = e && a.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
+          i.push(`<div style="font-size:9px;${h}">${a.name} <span style="color:#334">${a.type}</span>${c}</div>`);
         }
       }
       break;
     }
     case "event-def": {
-      const r = i.detail;
-      if (r && (t.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">EVENT STRUCTURE</div>'), t.push(`<div style="font-size:9px;color:#ff9100">${r.structure}</div>`), r.slots))
-        for (const o of r.slots) {
-          const l = o.kind === "table_ref" ? "#ff5252" : o.kind === "prefix_ref" ? "#00e5ff" : "#00e676";
-          t.push(`<div style="font-size:9px;color:#667">${o.name} <span style="color:${l}">${o.kind}→${o.target}</span></div>`);
+      const r = t.detail;
+      if (r && (i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">EVENT STRUCTURE</div>'), i.push(`<div style="font-size:9px;color:#ff9100">${r.structure}</div>`), r.slots))
+        for (const a of r.slots) {
+          const c = a.kind === "table_ref" ? "#ff5252" : a.kind === "prefix_ref" ? "#00e5ff" : "#00e676";
+          i.push(`<div style="font-size:9px;color:#667">${a.name} <span style="color:${c}">${a.kind}→${a.target}</span></div>`);
         }
       break;
     }
     case "permission":
-      t.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">PERMISSION</div>'), t.push(`<div style="font-size:9px;color:#00e676">${((s = i.detail) == null ? void 0 : s.matrix) || "role-based grant/deny"}</div>`);
+      i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">PERMISSION</div>'), i.push(`<div style="font-size:9px;color:#00e676">${((s = t.detail) == null ? void 0 : s.matrix) || "role-based grant/deny"}</div>`);
       break;
     case "endpoint": {
-      const r = (n = i.detail) == null ? void 0 : n.routes;
+      const r = (n = t.detail) == null ? void 0 : n.routes;
       if (r) {
-        t.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">ROUTES</div>');
-        for (const o of r)
-          t.push(`<div style="font-size:9px;color:#667"><span style="color:#00e5ff">${o.method}</span> ${o.path}</div>`);
+        i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">ROUTES</div>');
+        for (const a of r)
+          i.push(`<div style="font-size:9px;color:#667"><span style="color:#00e5ff">${a.method}</span> ${a.path}</div>`);
       }
       break;
     }
   }
-  return t.join("");
+  return i.join("");
 }
-function xe(i, e = 0.42, t = 0.1) {
-  const s = e + t, n = i.channels.find((f) => f.channel === "x"), r = i.channels.find((f) => f.channel === "y"), o = i.channels.find((f) => f.channel === "z"), l = i.channels.find((f) => f.channel === "group"), x = i.channels.find((f) => f.channel === "color"), c = (f) => {
-    var d;
-    return f ? ((d = i.filters) == null ? void 0 : d[f.id]) ?? f.entries : ["_"];
-  }, b = c(n == null ? void 0 : n.axis), h = c(r == null ? void 0 : r.axis), g = c(o == null ? void 0 : o.axis), p = c(l == null ? void 0 : l.axis), v = [];
-  for (const f of p) {
-    const w = p.indexOf(f) * (b.length * s + s * 3);
-    for (const d of b)
-      for (const a of h)
-        for (const _ of g) {
-          const m = b.indexOf(d), y = h.indexOf(a), $ = g.indexOf(_), k = {};
-          n && (k[n.axis.id] = d), r && (k[r.axis.id] = a), o && (k[o.axis.id] = _), l && f !== "_" && (k[l.axis.id] = f);
-          const S = Object.values(k).join(":");
+function Te(t, e = 0.42, i = 0.1) {
+  const s = e + i, n = t.channels.find((m) => m.channel === "x"), r = t.channels.find((m) => m.channel === "y"), a = t.channels.find((m) => m.channel === "z"), c = t.channels.find((m) => m.channel === "group"), h = t.channels.find((m) => m.channel === "color"), o = (m) => {
+    var f;
+    return m ? ((f = t.filters) == null ? void 0 : f[m.id]) ?? m.entries : ["_"];
+  }, _ = o(n == null ? void 0 : n.axis), l = o(r == null ? void 0 : r.axis), u = o(a == null ? void 0 : a.axis), p = o(c == null ? void 0 : c.axis), v = [];
+  for (const m of p) {
+    const w = p.indexOf(m) * (_.length * s + s * 3);
+    for (const f of _)
+      for (const d of l)
+        for (const x of u) {
+          const y = _.indexOf(f), b = l.indexOf(d), k = u.indexOf(x), $ = {};
+          n && ($[n.axis.id] = f), r && ($[r.axis.id] = d), a && ($[a.axis.id] = x), c && m !== "_" && ($[c.axis.id] = m);
+          const S = Object.values($).join(":");
           v.push({
-            coords: k,
+            coords: $,
             key: S,
-            x: w + m * s,
-            y: y * s,
-            z: $ * s,
-            group: f !== "_" ? f : void 0,
-            colorValue: x ? k[x.axis.id] : void 0
+            x: w + y * s,
+            y: b * s,
+            z: k * s,
+            group: m !== "_" ? m : void 0,
+            colorValue: h ? $[h.axis.id] : void 0
           });
         }
   }
   return {
-    def: i,
+    def: t,
     cells: v,
-    xEntries: b,
-    yEntries: h,
-    zEntries: g,
-    groups: p.filter((f) => f !== "_"),
+    xEntries: _,
+    yEntries: l,
+    zEntries: u,
+    groups: p.filter((m) => m !== "_"),
     totalCells: v.length,
     bounds: {
-      width: (p.length > 1 ? p.length : 1) * b.length * s,
-      height: h.length * s,
-      depth: g.length * s
+      width: (p.length > 1 ? p.length : 1) * _.length * s,
+      height: l.length * s,
+      depth: u.length * s
     }
   };
 }
-function _e(i, e) {
-  const t = [];
+function Ee(t, e) {
+  const i = [];
   for (const s of e.cells) {
     let n = !0;
-    for (const [r, o] of Object.entries(s.coords))
-      if (i[r] !== o) {
+    for (const [r, a] of Object.entries(s.coords))
+      if (t[r] !== a) {
         n = !1;
         break;
       }
-    n && t.push(s.key);
+    n && i.push(s.key);
   }
-  return t;
+  return i;
 }
 const E = {
   page: { id: "page", name: "페이지", entries: ["home", "product_list", "product_detail", "cart", "checkout", "order_complete", "mypage", "login"], usedBy: ["page_view", "tracking"] },
@@ -967,7 +967,7 @@ const E = {
   role: { id: "role", name: "역할", entries: ["admin", "developer", "operator", "viewer", "customer", "auditor"], usedBy: ["permission"] },
   userType: { id: "userType", name: "사용자유형", entries: ["guest", "member", "premium"], usedBy: ["page_view", "tracking"] },
   trackAction: { id: "trackAction", name: "행동", entries: ["click", "view", "scroll", "submit", "navigate", "add_to_cart", "purchase", "close"], usedBy: ["tracking"] }
-}, ye = [
+}, ze = [
   {
     id: "page-x-flowstep",
     name: "페이지 × 흐름 단계",
@@ -1021,17 +1021,17 @@ const E = {
     filters: { flow_name: ["checkout", "login", "payment"] }
   }
 ];
-class ve {
+class Ie {
   constructor() {
-    z(this, "targets", /* @__PURE__ */ new Map());
-    z(this, "positions", {
+    T(this, "targets", /* @__PURE__ */ new Map());
+    T(this, "positions", {
       layer: {},
       category: {},
       dsl: {},
       service: {}
     });
-    z(this, "_currentMode", "layer");
-    z(this, "_lerpSpeed", 3);
+    T(this, "_currentMode", "layer");
+    T(this, "_lerpSpeed", 3);
   }
   get currentMode() {
     return this._currentMode;
@@ -1040,52 +1040,52 @@ class ve {
     this.positions = e;
   }
   /** 매트릭스 스택용 커스텀 뷰 모드 추가 */
-  addViewMode(e, t) {
-    this.positions[e] = t;
+  addViewMode(e, i) {
+    this.positions[e] = i;
   }
-  registerGroup(e, t) {
+  registerGroup(e, i) {
     this.targets.set(e, {
       groupId: e,
-      currentX: t.x,
-      currentY: t.y,
-      currentZ: t.z,
-      targetX: t.x,
-      targetY: t.y,
-      targetZ: t.z
+      currentX: i.x,
+      currentY: i.y,
+      currentZ: i.z,
+      targetX: i.x,
+      targetY: i.y,
+      targetZ: i.z
     });
   }
   setMode(e) {
     this._currentMode = e;
-    const t = this.positions[e];
-    if (t)
-      for (const [s, n] of Object.entries(t)) {
+    const i = this.positions[e];
+    if (i)
+      for (const [s, n] of Object.entries(i)) {
         const r = this.targets.get(s);
         r && (r.targetX = n.x, r.targetY = n.y, r.targetZ = n.z);
       }
   }
   /** 매 프레임 호출 — dt 기반 lerp */
   update(e) {
-    const t = this._lerpSpeed * e;
+    const i = this._lerpSpeed * e;
     for (const s of this.targets.values())
-      s.currentX += (s.targetX - s.currentX) * t, s.currentY += (s.targetY - s.currentY) * t, s.currentZ += (s.targetZ - s.currentZ) * t;
+      s.currentX += (s.targetX - s.currentX) * i, s.currentY += (s.targetY - s.currentY) * i, s.currentZ += (s.targetZ - s.currentZ) * i;
   }
   getPosition(e) {
-    const t = this.targets.get(e);
-    return t ? { x: t.currentX, y: t.currentY, z: t.currentZ } : void 0;
+    const i = this.targets.get(e);
+    return i ? { x: i.currentX, y: i.currentY, z: i.currentZ } : void 0;
   }
   getAllPositions() {
     const e = /* @__PURE__ */ new Map();
-    for (const [t, s] of this.targets)
-      e.set(t, { x: s.currentX, y: s.currentY, z: s.currentZ });
+    for (const [i, s] of this.targets)
+      e.set(i, { x: s.currentX, y: s.currentY, z: s.currentZ });
     return e;
   }
 }
-const we = {
+const Oe = {
   0: "이벤트 발생",
   1: "이벤트 처리",
   2: "이벤트 소비/생산",
   3: "데이터 도달"
-}, X = {
+}, Y = {
   // T0: 이벤트 발생 (UI 접점)
   page_view: 0,
   tracking: 0,
@@ -1108,55 +1108,55 @@ const we = {
   // T1 (컨텍스트)
   service: 1
 };
-function B(i) {
-  return X[i] ?? 2;
+function Z(t) {
+  return Y[t] ?? 2;
 }
-function be(i, e, t) {
-  return i.map((s) => {
+function Se(t, e, i) {
+  return t.map((s) => {
     const n = [.../* @__PURE__ */ new Set([...s.ownedPrefixes, ...s.consumedPrefixes])], r = { 0: [], 1: [], 2: [], 3: [] };
-    for (const l of n) {
-      const x = e.get(l);
-      if (!x) continue;
-      const c = B(l);
-      r[c].push({
-        prefixId: l,
-        tier: c,
-        entries: x.entries,
-        pattern: x.pattern,
-        category: x.category
+    for (const c of n) {
+      const h = e.get(c);
+      if (!h) continue;
+      const o = Z(c);
+      r[o].push({
+        prefixId: c,
+        tier: o,
+        entries: h.entries,
+        pattern: h.pattern,
+        category: h.category
       });
     }
-    const o = [];
-    if (t)
-      for (const l of s.tables) {
-        const x = t[l];
-        x && o.push(...x);
+    const a = [];
+    if (i)
+      for (const c of s.tables) {
+        const h = i[c];
+        h && a.push(...h);
       }
     return {
       serviceId: s.id,
       serviceName: s.name,
       tiers: r,
-      dataEntries: o
+      dataEntries: a
     };
   });
 }
-function $e(i, e, t) {
-  const s = t.find((n) => n.axisId === e);
-  return s ? s.mode === "show" ? i.filter((n) => s.values.includes(n)) : i.filter((n) => !s.values.includes(n)) : [...i];
+function Me(t, e, i) {
+  const s = i.find((n) => n.axisId === e);
+  return s ? s.mode === "show" ? t.filter((n) => s.values.includes(n)) : t.filter((n) => !s.values.includes(n)) : [...t];
 }
-function ke(i, e) {
-  const t = (e == null ? void 0 : e.containerGap) ?? 12, s = (e == null ? void 0 : e.tierGap) ?? 3;
-  return i.map((n, r) => {
-    const l = (Object.values(n.tiers).filter((b) => b.length > 0).length + (n.dataEntries.length > 0 ? 1 : 0)) * s, x = Math.max(1, ...Object.values(n.tiers).flatMap((b) => b.map((h) => h.entries.length))), c = Math.max(4, Math.ceil(Math.sqrt(x)) * 1.5);
+function Ce(t, e) {
+  const i = (e == null ? void 0 : e.containerGap) ?? 12, s = (e == null ? void 0 : e.tierGap) ?? 3;
+  return t.map((n, r) => {
+    const c = (Object.values(n.tiers).filter((_) => _.length > 0).length + (n.dataEntries.length > 0 ? 1 : 0)) * s, h = Math.max(1, ...Object.values(n.tiers).flatMap((_) => _.map((l) => l.entries.length))), o = Math.max(4, Math.ceil(Math.sqrt(h)) * 1.5);
     return {
       serviceId: n.serviceId,
-      position: { x: r * t - (i.length - 1) * t / 2, y: 0, z: 0 },
-      size: { width: c, height: l, depth: c },
+      position: { x: r * i - (t.length - 1) * i / 2, y: 0, z: 0 },
+      size: { width: o, height: c, depth: o },
       tierOffsets: { 0: s * 1.5, 1: s * 0.5, 2: -s * 0.5, 3: -s * 1.5 }
     };
   });
 }
-const ze = [
+const Re = [
   {
     id: "shopping-web",
     name: "쇼핑 웹",
@@ -1192,35 +1192,35 @@ const ze = [
     consumedPrefixes: [],
     tables: ["orgs"]
   }
-], Ee = {
+], Ke = {
   prodOnly: { axisId: "env", mode: "show", values: ["prod"] },
   devOnly: { axisId: "env", mode: "show", values: ["dev"] },
   hideTest: { axisId: "env", mode: "hide", values: ["test", "local"] },
   all: { axisId: "env", mode: "show", values: ["dev", "stage", "prod", "test", "local"] }
 };
-class Ie {
+class Pe {
   constructor(e) {
-    z(this, "states", /* @__PURE__ */ new Map());
-    z(this, "_activeSet", /* @__PURE__ */ new Set());
-    z(this, "_layerHits");
-    z(this, "_totalHits", 0);
+    T(this, "states", /* @__PURE__ */ new Map());
+    T(this, "_activeSet", /* @__PURE__ */ new Set());
+    T(this, "_layerHits");
+    T(this, "_totalHits", 0);
     this._layerHits = new Array(e).fill(0);
   }
   getOrCreate(e) {
-    let t = this.states.get(e);
-    return t || (t = { glow: 0, hits: 0 }, this.states.set(e, t)), t;
+    let i = this.states.get(e);
+    return i || (i = { glow: 0, hits: 0 }, this.states.set(e, i)), i;
   }
-  activate(e, t) {
+  activate(e, i) {
     const s = this.getOrCreate(e);
-    s.glow = 2, s.hits++, this._activeSet.add(e), t >= 0 && t < this._layerHits.length && this._layerHits[t]++, this._totalHits++;
+    s.glow = 2, s.hits++, this._activeSet.add(e), i >= 0 && i < this._layerHits.length && this._layerHits[i]++, this._totalHits++;
   }
   deactivateAll() {
     this._activeSet.clear();
   }
   /** glow decay — 매 프레임 호출 */
-  decay(e, t = 1.2) {
+  decay(e, i = 1.2) {
     for (const s of this.states.values())
-      s.glow > 0 && (s.glow = Math.max(0, s.glow - e * t));
+      s.glow > 0 && (s.glow = Math.max(0, s.glow - e * i));
   }
   isActive(e) {
     return this._activeSet.has(e);
@@ -1238,10 +1238,10 @@ class Ie {
     this.states.clear(), this._activeSet.clear(), this._layerHits.fill(0), this._totalHits = 0;
   }
 }
-class Te {
+class Ne {
   constructor(e) {
-    z(this, "beams");
-    z(this, "index", 0);
+    T(this, "beams");
+    T(this, "index", 0);
     this.beams = Array.from({ length: e }, () => ({
       fromX: 0,
       fromY: 0,
@@ -1253,13 +1253,13 @@ class Te {
       life: 0
     }));
   }
-  spawn(e, t, s) {
+  spawn(e, i, s) {
     const n = this.beams[this.index % this.beams.length];
-    this.index++, n.fromX = e.x, n.fromY = e.y, n.fromZ = e.z, n.toX = t.x, n.toY = t.y, n.toZ = t.z, n.color = s, n.life = 1;
+    this.index++, n.fromX = e.x, n.fromY = e.y, n.fromZ = e.z, n.toX = i.x, n.toY = i.y, n.toZ = i.z, n.color = s, n.life = 1;
   }
-  decay(e, t = 0.5) {
+  decay(e, i = 0.5) {
     for (const s of this.beams)
-      s.life > 0 && (s.life = Math.max(0, s.life - e * t));
+      s.life > 0 && (s.life = Math.max(0, s.life - e * i));
   }
   getActive() {
     return this.beams.filter((e) => e.life > 0);
@@ -1268,18 +1268,18 @@ class Te {
     return this.beams;
   }
 }
-class Me {
-  constructor(e, t) {
-    this.cells = e, this.beams = t;
+class Ae {
+  constructor(e, i) {
+    this.cells = e, this.beams = i;
   }
   /**
    * 셀 키 목록을 활성화하고, 크로스 레이어 빔을 생성한다.
    */
-  fire(e, t) {
+  fire(e, i) {
     this.cells.deactivateAll();
     const s = [];
     for (const n of e) {
-      const r = t(n);
+      const r = i(n);
       r && (this.cells.activate(n, r.layer), s.push(r));
     }
     for (let n = 0; n < s.length; n++)
@@ -1296,58 +1296,58 @@ class Me {
     };
   }
 }
-function Y(i, e) {
-  const t = new Map(e.map((l) => [l.id, l])), s = {};
+function G(t, e) {
+  const i = new Map(e.map((c) => [c.id, c])), s = {};
   let n = 0, r = 0;
-  i.grids.forEach((l, x) => {
-    const c = t.get(l);
-    c && (n = Math.max(n, c.width), r = Math.max(r, c.depth));
-    const b = x * i.gap;
-    s[l] = {
-      x: i.position.x + (i.axis === "x" ? b : 0),
-      y: i.position.y + (i.axis === "y" ? b : 0),
-      z: i.position.z + (i.axis === "z" ? b : 0)
+  t.grids.forEach((c, h) => {
+    const o = i.get(c);
+    o && (n = Math.max(n, o.width), r = Math.max(r, o.depth));
+    const _ = h * t.gap;
+    s[c] = {
+      x: t.position.x + (t.axis === "x" ? _ : 0),
+      y: t.position.y + (t.axis === "y" ? _ : 0),
+      z: t.position.z + (t.axis === "z" ? _ : 0)
     };
   });
-  const o = i.grids.length * i.gap;
+  const a = t.grids.length * t.gap;
   return {
-    stackId: i.id,
-    axis: i.axis,
+    stackId: t.id,
+    axis: t.axis,
     gridPositions: s,
     bounds: {
-      width: i.axis === "x" ? o : n,
-      height: i.axis === "y" ? o : 1,
-      depth: i.axis === "z" ? o : r
+      width: t.axis === "x" ? a : n,
+      height: t.axis === "y" ? a : 1,
+      depth: t.axis === "z" ? a : r
     }
   };
 }
-function Se(i, e) {
-  const t = [], s = {};
-  for (const n of i) {
-    const r = Y(n, e);
-    t.push(r), Object.assign(s, r.gridPositions);
+function Le(t, e) {
+  const i = [], s = {};
+  for (const n of t) {
+    const r = G(n, e);
+    i.push(r), Object.assign(s, r.gridPositions);
   }
   for (const n of e)
     n.id in s || (s[n.id] = { x: 30, y: 0, z: 0 });
-  return { layouts: t, viewPositions: s };
+  return { layouts: i, viewPositions: s };
 }
-const Oe = {
+const Ve = {
   id: "stack-checkout",
   grids: ["page_view", "endpoint", "flow_point", "permission", "order_event", "orders"],
   axis: "y",
   gap: 3,
   position: { x: 0, y: -4, z: 0 }
-}, Ke = {
+}, je = {
   id: "stack-infra",
   grids: ["service", "deploy_event", "health_event", "pipeline_point", "data_policy"],
   axis: "y",
   gap: 3,
   position: { x: 12, y: -4, z: 0 }
 };
-class Pe {
+class De {
   constructor() {
-    z(this, "entries", []);
-    z(this, "_viewIdx", -1);
+    T(this, "entries", []);
+    T(this, "_viewIdx", -1);
   }
   // -1 = latest (live mode)
   push(e) {
@@ -1397,35 +1397,35 @@ class Pe {
   /** 특정 prefix를 포함하는 스텝만 필터 */
   filterByPrefix(e) {
     return this.entries.filter(
-      (t) => t.keys.some((s) => s.startsWith(e + "/")) || t.flow.some((s) => s.cell.startsWith(e + "/"))
+      (i) => i.keys.some((s) => s.startsWith(e + "/")) || i.flow.some((s) => s.cell.startsWith(e + "/"))
     );
   }
   /** 특정 tier만 포함하는 스텝 필터 */
   filterByTier(e) {
-    return this.entries.filter((t) => t.flow.some((s) => s.tier === e));
+    return this.entries.filter((i) => i.flow.some((s) => s.tier === e));
   }
   /** 표시용 텍스트 */
   indexLabel() {
     return this.entries.length === 0 ? "-/-" : `${this._viewIdx === -1 ? this.entries.length : this._viewIdx + 1}/${this.entries.length}`;
   }
 }
-const Z = {
+const W = {
   near: 15,
   mid: 35
 };
-function G(i, e = Z) {
-  return i <= e.near ? "near" : i <= e.mid ? "mid" : "far";
+function q(t, e = W) {
+  return t <= e.near ? "near" : t <= e.mid ? "mid" : "far";
 }
-function Re(i, e, t) {
+function He(t, e, i) {
   const s = /* @__PURE__ */ new Map();
   for (const [n, r] of e) {
-    const o = i.x - r.x, l = i.y - r.y, x = i.z - r.z, c = Math.sqrt(o * o + l * l + x * x);
-    s.set(n, G(c, t));
+    const a = t.x - r.x, c = t.y - r.y, h = t.z - r.z, o = Math.sqrt(a * a + c * c + h * h);
+    s.set(n, q(o, i));
   }
   return s;
 }
-function Ce(i) {
-  switch (i) {
+function Be(t) {
+  switch (t) {
     case "near":
       return { showLabels: !0, showEdges: !0, showHitCounts: !0, cellOpacityMultiplier: 1 };
     case "mid":
@@ -1434,18 +1434,18 @@ function Ce(i) {
       return { showLabels: !1, showEdges: !1, showHitCounts: !1, cellOpacityMultiplier: 0.7 };
   }
 }
-class Ne {
+class Xe {
   constructor() {
-    z(this, "frames", 0);
-    z(this, "lastTime", performance.now());
-    z(this, "_fps", 0);
-    z(this, "_frameTime", 0);
+    T(this, "frames", 0);
+    T(this, "lastTime", performance.now());
+    T(this, "_fps", 0);
+    T(this, "_frameTime", 0);
   }
   /** 매 프레임 호출 */
   tick() {
     this.frames++;
-    const e = performance.now(), t = e - this.lastTime;
-    t >= 1e3 && (this._fps = Math.round(this.frames * 1e3 / t), this._frameTime = Math.round(t / this.frames * 100) / 100, this.frames = 0, this.lastTime = e);
+    const e = performance.now(), i = e - this.lastTime;
+    i >= 1e3 && (this._fps = Math.round(this.frames * 1e3 / i), this._frameTime = Math.round(i / this.frames * 100) / 100, this.frames = 0, this.lastTime = e);
   }
   get fps() {
     return this._fps;
@@ -1454,7 +1454,7 @@ class Ne {
     return this._frameTime;
   }
   /** Three.js renderer.info에서 통계 추출 */
-  getStats(e, t, s) {
+  getStats(e, i, s) {
     return {
       fps: this._fps,
       frameTime: this._frameTime,
@@ -1462,7 +1462,7 @@ class Ne {
       triangles: e.render.triangles,
       points: e.render.points,
       lines: e.render.lines,
-      cellCount: t,
+      cellCount: i,
       activeCount: s
     };
   }
@@ -1471,10 +1471,10 @@ class Ne {
     return `${e.fps}fps ${e.frameTime}ms | draw:${e.drawCalls} tri:${e.triangles} | cells:${e.cellCount} active:${e.activeCount}`;
   }
 }
-class Ve {
+class Ye {
   constructor(e) {
-    z(this, "ws", null);
-    z(this, "_connected", !1);
+    T(this, "ws", null);
+    T(this, "_connected", !1);
     this.config = e;
   }
   get connected() {
@@ -1482,51 +1482,51 @@ class Ve {
   }
   /** WebSocket 연결 */
   connect(e) {
-    var t, s, n, r;
-    (s = (t = this.config).onConnectionChange) == null || s.call(t, "connecting");
+    var i, s, n, r;
+    (s = (i = this.config).onConnectionChange) == null || s.call(i, "connecting");
     try {
       this.ws = new WebSocket(e), this.ws.onopen = () => {
-        var o, l;
-        this._connected = !0, (l = (o = this.config).onConnectionChange) == null || l.call(o, "connected"), this.ws.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
-      }, this.ws.onmessage = (o) => {
-        var l, x;
+        var a, c;
+        this._connected = !0, (c = (a = this.config).onConnectionChange) == null || c.call(a, "connected"), this.ws.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
+      }, this.ws.onmessage = (a) => {
+        var c, h;
         try {
-          const c = JSON.parse(o.data);
-          c.type === "record" && c.data ? this.handleRecord(c.data) : c.type === "subscribed" && ((x = (l = this.config).onConnectionChange) == null || x.call(l, "subscribed"));
+          const o = JSON.parse(a.data);
+          o.type === "record" && o.data ? this.handleRecord(o.data) : o.type === "subscribed" && ((h = (c = this.config).onConnectionChange) == null || h.call(c, "subscribed"));
         } catch {
         }
       }, this.ws.onerror = () => {
-        var o, l;
-        (l = (o = this.config).onConnectionChange) == null || l.call(o, "error");
+        var a, c;
+        (c = (a = this.config).onConnectionChange) == null || c.call(a, "error");
       }, this.ws.onclose = () => {
-        var o, l;
-        this._connected = !1, (l = (o = this.config).onConnectionChange) == null || l.call(o, "disconnected");
+        var a, c;
+        this._connected = !1, (c = (a = this.config).onConnectionChange) == null || c.call(a, "disconnected");
       };
     } catch {
       (r = (n = this.config).onConnectionChange) == null || r.call(n, "failed");
     }
   }
   disconnect() {
-    var e, t;
-    this.ws && (this.ws.close(), this.ws = null), this._connected = !1, (t = (e = this.config).onConnectionChange) == null || t.call(e, "disconnected");
+    var e, i;
+    this.ws && (this.ws.close(), this.ws = null), this._connected = !1, (i = (e = this.config).onConnectionChange) == null || i.call(e, "disconnected");
   }
   /** HTTP로 이벤트 전송 (DEMO용) */
-  async sendToIngest(e, t, s, n, r) {
-    const o = (/* @__PURE__ */ new Date()).toISOString();
+  async sendToIngest(e, i, s, n, r) {
+    const a = (/* @__PURE__ */ new Date()).toISOString();
     try {
       await fetch(e, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transmission_id: `tx_${Date.now()}`,
-          sent_at: o,
+          sent_at: a,
           owner: { owner_type: "workspace", owner_id: "viz-3d" },
           source: { service_name: "viz-3d", sdk_name: "@qa-sdk/viz-3d", sdk_version: "0.1.0" },
           runtime: { platform: "browser" },
           build: { env: "dev" },
           records: [{
             log_id: `l_${Date.now()}_${r}`,
-            timestamp: o,
+            timestamp: a,
             record_kind: "log",
             trace_id: n,
             span_id: `s_${r}`,
@@ -1537,7 +1537,7 @@ class Ve {
             payload_masking_applied: !1,
             payload_masked_fields: [],
             payload: { step: s },
-            address_context: t
+            address_context: i
           }]
         })
       });
@@ -1545,84 +1545,256 @@ class Ve {
     }
   }
   handleRecord(e) {
-    const t = e.addressContext || e.address_context;
-    if (!t || Object.keys(t).length === 0) return;
+    const i = e.addressContext || e.address_context;
+    if (!i || Object.keys(i).length === 0) return;
     const s = [];
-    for (const [, n] of Object.entries(t)) {
+    for (const [, n] of Object.entries(i)) {
       const r = this.config.decode(n);
       if (!r) continue;
-      const o = this.config.mapToKeys(r.prefix, r.values);
-      s.push(...o);
+      const a = this.config.mapToKeys(r.prefix, r.values);
+      s.push(...a);
     }
-    s.length > 0 && this.config.onActivation(s, t);
+    s.length > 0 && this.config.onActivation(s, i);
   }
 }
-function Le(i, e) {
-  const t = [];
-  if (i === "flow_point" && e.flow_name && e.flow_step)
-    t.push(`flow_point/${e.flow_name}/${e.flow_step}`);
-  else if (i === "endpoint" && e.http_method && e.resource_type)
-    t.push(`endpoint/${e.http_method}/${e.resource_type}`);
-  else if (i === "service" && e.svc_name) {
+function Ze(t, e) {
+  const i = [];
+  if (t === "flow_point" && e.flow_name && e.flow_step)
+    i.push(`flow_point/${e.flow_name}/${e.flow_step}`);
+  else if (t === "endpoint" && e.http_method && e.resource_type)
+    i.push(`endpoint/${e.http_method}/${e.resource_type}`);
+  else if (t === "service" && e.svc_name) {
     const s = String(e.svc_name).replace("shopping-", "");
-    t.push(`service/${s}`);
+    i.push(`service/${s}`);
   } else
     for (const s of Object.values(e))
-      typeof s == "string" && t.push(`${i}/${s}`);
-  return t;
+      typeof s == "string" && i.push(`${t}/${s}`);
+  return i;
+}
+function U(t, e, i) {
+  const s = t[e];
+  if (!s) return null;
+  const n = [], r = [];
+  for (const h of s.labels) {
+    const o = s.dims[h];
+    if (!o) return null;
+    if (o.kind === "axis") {
+      n.push(o.capacity ?? o.entries.length);
+      const _ = o.entries.indexOf(i[h]);
+      if (_ < 0) return null;
+      r.push(_);
+    } else {
+      const _ = o.values;
+      n.push(_.length);
+      const l = i[h] ?? _[0], u = _.indexOf(l);
+      r.push(u < 0 ? 0 : u);
+    }
+  }
+  const a = new Array(n.length);
+  a[n.length - 1] = 1;
+  for (let h = n.length - 2; h >= 0; h--) a[h] = a[h + 1] * n[h + 1];
+  let c = 0;
+  for (let h = 0; h < r.length; h++) c += r[h] * a[h];
+  return { prefix: e, version: s.version, address: c, serialized: `${e}:${s.version}:${c}` };
+}
+function F(t, e) {
+  const [i, s, n] = e.split(":"), r = t[i];
+  if (!r) return null;
+  let a = parseInt(n);
+  if (isNaN(a)) return null;
+  const c = [], h = [];
+  for (const l of r.labels) {
+    const u = r.dims[l];
+    u && (u.kind === "axis" ? c.push(u.capacity ?? u.entries.length) : c.push(u.values.length), h.push({ label: l, dim: u }));
+  }
+  const o = new Array(c.length);
+  o[c.length - 1] = 1;
+  for (let l = c.length - 2; l >= 0; l--) o[l] = o[l + 1] * c[l + 1];
+  const _ = {};
+  for (let l = 0; l < h.length; l++) {
+    const u = Math.floor(a / o[l]);
+    a %= o[l];
+    const { label: p, dim: v } = h[l];
+    _[p] = v.kind === "axis" ? v.entries[u] ?? `(${u})` : v.values[u] ?? u;
+  }
+  return { prefix: i, version: s, values: _ };
+}
+function J(t, e) {
+  const i = {};
+  for (const [s, n] of Object.entries(e)) {
+    const r = t[s];
+    if (!r) continue;
+    const a = { ...n };
+    for (const h of r.labels) {
+      const o = r.dims[h];
+      (o == null ? void 0 : o.kind) === "prefix_ref" && !(h in a) && (a[h] = o.values[0]);
+    }
+    const c = U(t, s, a);
+    c && (i[s] = c.serialized);
+  }
+  return i;
+}
+function Ge(t, e) {
+  const i = {};
+  for (const [s, n] of Object.entries(e)) {
+    const r = F(t, n);
+    r && (i[s] = { prefix: r.prefix, values: r.values });
+  }
+  return i;
+}
+function We(t, e) {
+  const i = J(t, e), s = X(i);
+  return { addressContext: i, byRole: s };
+}
+const R = {
+  service: { version: "v1", labels: ["env", "region", "svc_name", "namespace"], dims: { env: { kind: "axis", entries: ["dev", "stage", "prod", "test", "local"], capacity: 32 }, region: { kind: "axis", entries: ["asia", "usa"], capacity: 32 }, svc_name: { kind: "axis", entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway"], capacity: 32 }, namespace: { kind: "axis", entries: ["shop", "cms"], capacity: 32 } } },
+  page_view: { version: "v2", labels: ["svc_ref", "page", "locale", "userType"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, page: { kind: "axis", entries: ["home", "product_list", "product_detail", "cart", "checkout", "order_complete", "mypage", "login"], capacity: 32 }, locale: { kind: "axis", entries: ["ko", "en", "ja"], capacity: 32 }, userType: { kind: "axis", entries: ["guest", "member", "premium"], capacity: 32 } } },
+  tracking: { version: "v2", labels: ["trackAction", "page", "userType"], dims: { trackAction: { kind: "axis", entries: ["click", "view", "scroll", "submit", "navigate", "add_to_cart", "purchase", "close"], capacity: 32 }, page: { kind: "axis", entries: ["home", "product_list", "product_detail", "cart", "checkout", "order_complete", "mypage", "login"], capacity: 32 }, userType: { kind: "axis", entries: ["guest", "member", "premium"], capacity: 32 } } },
+  endpoint: { version: "v1", labels: ["svc_ref", "resource_type", "http_method", "api_version"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, resource_type: { kind: "axis", entries: ["api", "page", "webhook", "grpc"], capacity: 32 }, http_method: { kind: "axis", entries: ["GET", "POST", "PUT", "DELETE", "PATCH"], capacity: 32 }, api_version: { kind: "axis", entries: ["v1", "v2"], capacity: 32 } } },
+  flow_point: { version: "v2", labels: ["svc_ref", "flow_name", "flow_step", "flow_variant"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, flow_name: { kind: "axis", entries: ["checkout", "signup", "order_cancel", "refund", "login", "browse", "cart_manage", "payment"], capacity: 64 }, flow_step: { kind: "axis", entries: ["entry", "processing", "branch", "success", "failure", "timeout", "payment", "complete", "exit"], capacity: 32 }, flow_variant: { kind: "axis", entries: ["default", "retry", "fallback", "manual"], capacity: 32 } } },
+  cart_event: { version: "v1", labels: ["action"], dims: { action: { kind: "axis", entries: ["add", "remove", "checkout"], capacity: 32 } } },
+  auth_event: { version: "v1", labels: ["action"], dims: { action: { kind: "axis", entries: ["login", "logout", "token_refresh"], capacity: 32 } } },
+  order_event: { version: "v1", labels: ["service_ctx", "action"], dims: { service_ctx: { kind: "prefix_ref", values: [65536, 65568, 65600, 65632, 65664] }, action: { kind: "axis", entries: ["create", "cancel", "refund", "complete"], capacity: 32 } } },
+  permission: { version: "v4", labels: ["perm_svc", "role"], dims: { perm_svc: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, role: { kind: "axis", entries: ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"], capacity: 32 } } },
+  deploy_event: { version: "v1", labels: ["svc_ref", "deploy_action"], dims: { svc_ref: { kind: "prefix_ref", values: [0, 32, 64, 96, 128, 32768, 32800, 32832, 32864, 32896, 65536, 65568, 65600, 65632, 65664] }, deploy_action: { kind: "axis", entries: ["deploy", "rollback", "scale_up", "scale_down", "restart", "canary_start", "canary_promote"], capacity: 32 } } },
+  health_event: { version: "v1", labels: ["svc_ref", "health_status"], dims: { svc_ref: { kind: "prefix_ref", values: [0, 32, 64, 96, 128, 32768, 32800, 32832, 32864, 32896, 65536, 65568, 65600, 65632, 65664] }, health_status: { kind: "axis", entries: ["healthy", "degraded", "unhealthy", "maintenance"], capacity: 32 } } },
+  pipeline_point: { version: "v1", labels: ["svc_ref", "pipeline_phase", "validation_mode", "verdict_result", "temporal_strategy"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, pipeline_phase: { kind: "axis", entries: ["ingest", "reconstruct", "verdict", "aggregate", "propagate"], capacity: 32 }, validation_mode: { kind: "axis", entries: ["strict", "warn", "off"], capacity: 32 }, verdict_result: { kind: "axis", entries: ["pass", "fail", "warn", "degraded", "unknown"], capacity: 32 }, temporal_strategy: { kind: "axis", entries: ["span_local", "global"], capacity: 32 } } },
+  data_policy: { version: "v1", labels: ["svc_ref", "mask_mode"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, mask_mode: { kind: "axis", entries: ["raw", "mask", "drop", "hash"], capacity: 32 } } }
+};
+async function qe(t) {
+  const e = (t == null ? void 0 : t.cacheKey) ?? "qa-sdk-catalog", i = (t == null ? void 0 : t.cacheTtlMs) ?? 300 * 1e3, s = (t == null ? void 0 : t.timeoutMs) ?? 5e3;
+  if (t != null && t.registryUrl)
+    try {
+      const r = await Q(t.registryUrl, s);
+      if (r && Object.keys(r).length > 0)
+        return te(e, r), {
+          catalog: r,
+          source: "api",
+          prefixCount: Object.keys(r).length,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        };
+    } catch {
+    }
+  const n = ie(e, i);
+  return n ? {
+    catalog: n,
+    source: "cache",
+    prefixCount: Object.keys(n).length,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  } : {
+    catalog: R,
+    source: "static",
+    prefixCount: Object.keys(R).length,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+async function Q(t, e) {
+  const i = new AbortController(), s = setTimeout(() => i.abort(), e);
+  try {
+    const n = await fetch(`${t}/resolve/active`, { signal: i.signal });
+    if (clearTimeout(s), !n.ok) return null;
+    const r = await n.json();
+    return ee(r);
+  } catch {
+    return clearTimeout(s), null;
+  }
+}
+function ee(t) {
+  var i;
+  const e = {};
+  for (const [s, n] of Object.entries(t)) {
+    if (!n || typeof n != "object") continue;
+    const r = n.version ?? n.activeVersion ?? "v1", a = n.labels ?? n.dims ? Object.keys(n.dims) : [], c = {};
+    if (n.dims)
+      for (const [h, o] of Object.entries(n.dims))
+        o.kind === "axis" || o.entries ? c[h] = {
+          kind: "axis",
+          entries: o.entries ?? [],
+          capacity: o.capacity ?? ((i = o.entries) == null ? void 0 : i.length) ?? 32
+        } : (o.kind === "prefix_ref" || o.values) && (c[h] = {
+          kind: "prefix_ref",
+          values: o.values ?? []
+        });
+    (a.length > 0 || Object.keys(c).length > 0) && (e[s] = { version: r, labels: a, dims: c });
+  }
+  return e;
+}
+function te(t, e) {
+  try {
+    const i = { catalog: e, savedAt: Date.now() };
+    localStorage.setItem(t, JSON.stringify(i));
+  } catch {
+  }
+}
+function ie(t, e) {
+  try {
+    const i = localStorage.getItem(t);
+    if (!i) return null;
+    const s = JSON.parse(i);
+    return Date.now() - s.savedAt > e ? null : s.catalog;
+  } catch {
+    return null;
+  }
 }
 export {
-  Me as ActivationProcessor,
-  Te as BeamPool,
-  L as CATEGORY_COLORS,
-  Ie as CellStateManager,
-  Z as DEFAULT_LOD,
-  W as DEFAULT_THEME,
-  ge as DEMO_PREFIX_META,
-  ze as DEMO_SERVICES,
-  fe as DEMO_SIGNALS,
-  Ee as ENV_FILTERS,
-  Pe as FlowHistory,
-  A as LAYER_COLORS,
-  Ve as MonitorAdapter,
-  I as PALETTE,
+  Ae as ActivationProcessor,
+  R as BROWSER_CATALOG,
+  Ne as BeamPool,
+  V as CATEGORY_COLORS,
+  Pe as CellStateManager,
+  W as DEFAULT_LOD,
+  ne as DEFAULT_THEME,
+  ke as DEMO_PREFIX_META,
+  Re as DEMO_SERVICES,
+  be as DEMO_SIGNALS,
+  Ke as ENV_FILTERS,
+  De as FlowHistory,
+  j as LAYER_COLORS,
+  Ye as MonitorAdapter,
+  z as PALETTE,
   E as PRESET_AXES,
-  ye as PRESET_VIEWS,
-  Ne as PerfMonitor,
-  pe as SIGNAL_ROLE_COLORS,
-  de as SIGNAL_ROLE_LABELS,
-  Oe as STACK_CHECKOUT,
-  Ke as STACK_INFRA,
-  we as TIER_NAMES,
-  ve as ViewEngine,
-  $e as applyFilters,
-  F as buildGridPositions,
-  be as buildServiceContainers,
-  he as classifyByRole,
-  Se as computeAllStacks,
-  xe as computeCrossViewLayout,
-  Re as computeGroupLod,
-  G as computeLodLevel,
-  oe as computePatternLayout,
-  ke as computeScopeLayouts,
-  Y as computeStackLayout,
-  U as computeStackPositions,
-  ie as cube,
-  Le as defaultKeyMapper,
-  le as extractAxes,
-  ce as extractDims,
-  me as formatDetail,
-  J as generateCssVariables,
-  Ce as getLodVisibility,
-  D as getPrefixRole,
-  te as grid,
-  ae as inferPattern,
-  j as inferRole,
-  _e as matchEventToCells,
-  re as nested,
-  ee as row,
-  Q as scalar,
-  ne as shelf,
-  se as spine,
-  ue as validateSignal
+  ze as PRESET_VIEWS,
+  Xe as PerfMonitor,
+  ve as SIGNAL_ROLE_COLORS,
+  xe as SIGNAL_ROLE_LABELS,
+  Ve as STACK_CHECKOUT,
+  je as STACK_INFRA,
+  Oe as TIER_NAMES,
+  Ie as ViewEngine,
+  Me as applyFilters,
+  re as buildGridPositions,
+  Se as buildServiceContainers,
+  X as classifyByRole,
+  Le as computeAllStacks,
+  Te as computeCrossViewLayout,
+  He as computeGroupLod,
+  q as computeLodLevel,
+  me as computePatternLayout,
+  Ce as computeScopeLayouts,
+  G as computeStackLayout,
+  ae as computeStackPositions,
+  pe as cube,
+  F as decode,
+  Ge as decodeContext,
+  Ze as defaultKeyMapper,
+  U as encode,
+  ye as extractAxes,
+  _e as extractDims,
+  $e as formatDetail,
+  oe as generateCssVariables,
+  Be as getLodVisibility,
+  B as getPrefixRole,
+  de as grid,
+  ge as inferPattern,
+  D as inferRole,
+  qe as loadCatalog,
+  Ee as matchEventToCells,
+  ue as nested,
+  le as row,
+  ce as scalar,
+  fe as shelf,
+  he as spine,
+  J as track,
+  We as trackWithSignal,
+  we as validateSignal
 };

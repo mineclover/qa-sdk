@@ -505,5 +505,5 @@ export async function renderPermEnginePage(container: HTMLElement, ver: DemoVer 
 
   // Initial render
   repaint();
-  renderScopedSection(scopedContainer, v2Data);
+  renderScopedSection(scopedContainer, curData);
 }
