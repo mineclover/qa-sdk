@@ -214,6 +214,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "sync-obsidian": { intent: "publish", domain: "system", subject: "catalog" },
   // 추가된 명령어
   "dkg add-entry": { intent: "mutate", domain: "dkg-graph", subject: "axis" },
+  "dkg reset":     { intent: "mutate", domain: "system", subject: "system" },
   "obs read":      { intent: "query", domain: "system", subject: "spec" },
   "obs search":    { intent: "query", domain: "system", subject: "spec" },
   "obs append":    { intent: "mutate", domain: "system", subject: "spec" },
@@ -2243,6 +2244,72 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
   } catch (err: any) {
     console.error(`연결 실패: ${err.message}`);
   }
+}
+
+// ── dkg reset ───────────────────────────────────────
+
+export function dkgReset(target: string, opts: { catalogId?: string; confirm?: boolean }): void {
+  const store = getStore(opts.catalogId);
+
+  if (!opts.confirm) {
+    console.log(`\n══ Reset: ${target} ══`);
+    console.log(`  catalog: ${store.catalogId}`);
+    console.log(`  대상: ${target}`);
+    console.log(`\n  현재 상태:`);
+    const stats = store.stats();
+    console.log(`    nodes: ${stats.nodes} (bootstrap: ${stats.bootstrapNodes}, manual: ${stats.manualNodes})`);
+    console.log(`    edges: ${stats.edges}`);
+    console.log(`    snapshots: ${stats.snapshots}`);
+    console.log(`\n  --confirm 플래그로 실행을 확인하세요.`);
+    return;
+  }
+
+  console.log(`\n══ Reset: ${target} (--confirm) ══`);
+
+  switch (target) {
+    case "bootstrap": {
+      const result = store.clearBootstrap();
+      console.log(`  bootstrap 삭제: ${result.nodesDeleted} nodes, ${result.edgesDeleted} edges`);
+      console.log(`  → dkg refresh로 재부트스트랩하세요.`);
+      break;
+    }
+    case "operational": {
+      const result = store.clearOperational();
+      console.log(`  운영 데이터 삭제: ${result.nodesDeleted} nodes, ${result.edgesDeleted} edges`);
+      console.log(`  (observation, decision, claim 등 manual/auto/metric 데이터)`);
+      break;
+    }
+    case "snapshots": {
+      const result = store.clearSnapshots();
+      console.log(`  스냅샷 삭제: ${result.snapshotsDeleted} snapshots, ${result.versionUsagesDeleted} version usages`);
+      break;
+    }
+    case "auto": {
+      const result = store.clearBySource("auto");
+      console.log(`  auto 데이터 삭제: ${result.nodesDeleted} nodes, ${result.edgesDeleted} edges`);
+      break;
+    }
+    case "catalog": {
+      const catId = opts.catalogId ?? "demo";
+      const result = store.deleteCatalog(catId);
+      console.log(`  카탈로그 '${catId}' 삭제: ${result.nodesDeleted} nodes, ${result.edgesDeleted} edges`);
+      break;
+    }
+    case "all": {
+      const snapResult = store.clearSnapshots();
+      const catResult = store.deleteCatalog(store.catalogId);
+      console.log(`  전체 초기화:`);
+      console.log(`    nodes: ${catResult.nodesDeleted}, edges: ${catResult.edgesDeleted}`);
+      console.log(`    snapshots: ${snapResult.snapshotsDeleted}, versionUsages: ${snapResult.versionUsagesDeleted}`);
+      console.log(`  → dkg refresh로 재부트스트랩하세요.`);
+      break;
+    }
+    default:
+      console.error(`  알 수 없는 대상: ${target}`);
+      console.error(`  사용 가능: bootstrap, operational, snapshots, auto, catalog, all`);
+  }
+
+  emitCliEvent("dkg reset");
 }
 
 // ── dkg promote ─────────────────────────────────────

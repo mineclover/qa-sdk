@@ -480,9 +480,9 @@ export const DEMO_CATALOG = {
       id: "verdict_result", name: "판정 결과",
       versions: {
         v1: {
-          entries: ["pass", "fail", "warn", "degraded", "unknown"],
+          entries: ["pass", "fail", "warn", "degraded", "unknown", "skipped"],
           capacity: 32,
-          ko: { pass: "통과", fail: "실패", warn: "경고", degraded: "성능저하", unknown: "미정" },
+          ko: { pass: "통과", fail: "실패", warn: "경고", degraded: "성능저하", unknown: "미정", skipped: "건너뜀" },
         },
       },
     },
@@ -857,7 +857,7 @@ export const DEMO_CATALOG = {
             "axis", "prefix", "domain", "dsl-bundle", "decision", "observation",
             "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog",
           ],
-          capacity: 16,
+          capacity: 32,
           ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템", version: "버전", spec: "스펙", schema: "스키마", catalog: "카탈로그" },
         },
       },
@@ -926,6 +926,59 @@ export const DEMO_CATALOG = {
           entries: ["capacity", "new-axis", "new-prefix", "dim-add", "merge", "deprecate", "separation"],
           capacity: 16,
           ko: { capacity: "용량확장", "new-axis": "새축", "new-prefix": "새프리픽스", "dim-add": "차원추가", merge: "병합", deprecate: "폐기", separation: "분리유지" },
+        },
+      },
+    },
+
+    // ── 내부 로직 추출 축 ────────────────────────────────────────────
+
+    version_lifecycle: {
+      id: "version_lifecycle", name: "버전 생명주기",
+      versions: {
+        v1: {
+          entries: ["draft", "locked", "released", "active", "deprecated"],
+          capacity: 8,
+          ko: { draft: "초안", locked: "잠금", released: "릴리스", active: "활성", deprecated: "폐기" },
+        },
+      },
+    },
+    address_state: {
+      id: "address_state", name: "주소 상태",
+      versions: {
+        v1: {
+          entries: ["active", "reserved", "inactive", "open"],
+          capacity: 8,
+          ko: { active: "활성", reserved: "예약", inactive: "비활성", open: "열림" },
+        },
+      },
+    },
+    observation_intent: {
+      id: "observation_intent", name: "관측 의도",
+      versions: {
+        v1: {
+          entries: ["action_needed", "monitoring", "completed"],
+          capacity: 8,
+          ko: { action_needed: "조치필요", monitoring: "모니터링", completed: "완료" },
+        },
+      },
+    },
+    execution_mode: {
+      id: "execution_mode", name: "실행 모드",
+      versions: {
+        v1: {
+          entries: ["live", "test", "synthetic", "replay"],
+          capacity: 8,
+          ko: { live: "실제", test: "테스트", synthetic: "합성", replay: "재생" },
+        },
+      },
+    },
+    record_type: {
+      id: "record_type", name: "레코드 유형",
+      versions: {
+        v1: {
+          entries: ["log", "span", "metric"],
+          capacity: 8,
+          ko: { log: "로그", span: "스팬", metric: "메트릭" },
         },
       },
     },
@@ -1367,6 +1420,74 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { behavior_pattern: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
         { version: "v2", axisVersions: { anomaly_kind: "v1", behavior_pattern: "v1", anomaly_severity: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 내부 로직 추출 prefix ────────────────────────────────────
+
+    version_point: {
+      id: "version_point", name: "버전 생명주기 관측",
+      description: "svc_ref × version_lifecycle — 어떤 서비스의 prefix 버전이 어떤 상태에 있는가",
+      labels: ["svc_ref", "version_lifecycle"],
+      meta: { category: "observation", layer: 2, visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
+      dims: {
+        svc_ref:            { kind: "prefix_ref", prefixId: "service" },
+        version_lifecycle:  { kind: "axis", axisId: "version_lifecycle" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { version_lifecycle: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    gate_point: {
+      id: "gate_point", name: "주소 상태 관측",
+      description: "svc_ref × address_state — 어떤 서비스에서 주소가 어떤 상태에 있는가",
+      labels: ["svc_ref", "address_state"],
+      meta: { category: "observation", layer: 2, visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
+      dims: {
+        svc_ref:        { kind: "prefix_ref", prefixId: "service" },
+        address_state:  { kind: "axis", axisId: "address_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { address_state: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    observation_event: {
+      id: "observation_event", name: "관측 의도 이벤트",
+      description: "observation_intent × dkg_target_kind — 어떤 의도의 관측이 어떤 대상에 생성됐는가",
+      labels: ["observation_intent", "dkg_target_kind"],
+      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      dims: {
+        observation_intent: { kind: "axis", axisId: "observation_intent" },
+        dkg_target_kind:    { kind: "axis", axisId: "dkg_target_kind" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { observation_intent: "v1", dkg_target_kind: "v1" } },
+      ],
+    },
+    execution_context: {
+      id: "execution_context", name: "실행 컨텍스트",
+      description: "svc_ref × execution_mode — 어떤 서비스가 어떤 실행 모드에 있는가",
+      labels: ["svc_ref", "execution_mode"],
+      meta: { category: "entity", layer: 1, visualShape: "cube", heightRatio: 1, detailKind: "config" },
+      dims: {
+        svc_ref:         { kind: "prefix_ref", prefixId: "service" },
+        execution_mode:  { kind: "axis", axisId: "execution_mode" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { execution_mode: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    ingest_record: {
+      id: "ingest_record", name: "수집 레코드",
+      description: "svc_ref × record_type — 어떤 서비스에서 어떤 유형의 레코드가 수집됐는가",
+      labels: ["svc_ref", "record_type"],
+      meta: { category: "observation", layer: 1, visualShape: "column", heightRatio: 0.8, detailKind: "generic" },
+      dims: {
+        svc_ref:      { kind: "prefix_ref", prefixId: "service" },
+        record_type:  { kind: "axis", axisId: "record_type" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { record_type: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
       ],
     },
   },

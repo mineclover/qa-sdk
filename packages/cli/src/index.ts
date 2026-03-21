@@ -21,7 +21,7 @@ import {
   dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
   dkgPromoteScan,
   dkgPublish, dkgVersion,
-  dkgAddEntry,
+  dkgAddEntry, dkgReset,
   emitCliEvent,
   dkgPatterns, dkgPatternStats,
   setCatalogContext, getCatalogRegistry,
@@ -96,6 +96,7 @@ Usage:
   qa-sdk dkg timeline [--open]       시간순 이력
   qa-sdk dkg metrics                 전체 metric 대시보드
   qa-sdk dkg promote                 좌표 승격 후보 스캔 (5Q 자동 판정)
+  qa-sdk dkg reset <target> [--confirm]  지정 초기화 (bootstrap|operational|snapshots|auto|catalog|all)
   qa-sdk dkg add-entry <axis> <entry> [--apply]  축 entry 추가 (check→mutate→record)
   qa-sdk dkg publish [--registry url] [--version id]  카탈로그 → registry 등록
   qa-sdk dkg version <action> <prefix> [versionId]    버전 lifecycle (list|lock|release|activate)
@@ -386,6 +387,11 @@ async function main() {
         verbose: sub.rest.includes("--verbose"),
       });
       return;
+    case "dkg reset": {
+      const resetTarget = sub.rest[0] ?? "all";
+      dkgReset(resetTarget, { confirm: sub.rest.includes("--confirm") });
+      return;
+    }
     case "dkg promote":
       dkgPromoteScan();
       return;
@@ -560,7 +566,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
-    "dkg promote", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats",
+    "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];

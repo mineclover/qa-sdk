@@ -509,6 +509,45 @@ export class DkgSqliteStore {
   }
 
   /** 특정 카탈로그의 모든 DKG 데이터 삭제. */
+  /** 관측/결정 노드만 삭제 (source=manual|auto|metric|runtime). 구조(bootstrap)는 보존. */
+  clearOperational(): { nodesDeleted: number; edgesDeleted: number } {
+    const nodesBefore = (this.db.prepare(
+      "SELECT COUNT(*) as c FROM dkg_nodes WHERE source != 'bootstrap' AND catalog_id=?",
+    ).get(this.catalogId) as { c: number }).c;
+    const edgesBefore = (this.db.prepare(
+      "SELECT COUNT(*) as c FROM dkg_edges WHERE source != 'bootstrap' AND catalog_id=?",
+    ).get(this.catalogId) as { c: number }).c;
+
+    this.db.prepare("DELETE FROM dkg_edges WHERE source != 'bootstrap' AND catalog_id=?").run(this.catalogId);
+    this.db.prepare("DELETE FROM dkg_nodes WHERE source != 'bootstrap' AND catalog_id=?").run(this.catalogId);
+
+    return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
+  }
+
+  /** usage 스냅샷만 삭제. DKG 그래프는 보존. */
+  clearSnapshots(): { snapshotsDeleted: number; versionUsagesDeleted: number } {
+    const snapCount = (this.db.prepare("SELECT COUNT(*) as c FROM usage_snapshots").get() as { c: number }).c;
+    const vuCount = (this.db.prepare("SELECT COUNT(*) as c FROM version_usages").get() as { c: number }).c;
+    this.db.exec("DELETE FROM version_usages");
+    this.db.exec("DELETE FROM usage_snapshots");
+    return { snapshotsDeleted: snapCount, versionUsagesDeleted: vuCount };
+  }
+
+  /** 특정 source의 노드/엣지만 삭제. */
+  clearBySource(source: NodeSource): { nodesDeleted: number; edgesDeleted: number } {
+    const nodesBefore = (this.db.prepare(
+      "SELECT COUNT(*) as c FROM dkg_nodes WHERE source=? AND catalog_id=?",
+    ).get(source, this.catalogId) as { c: number }).c;
+    const edgesBefore = (this.db.prepare(
+      "SELECT COUNT(*) as c FROM dkg_edges WHERE source=? AND catalog_id=?",
+    ).get(source, this.catalogId) as { c: number }).c;
+
+    this.db.prepare("DELETE FROM dkg_edges WHERE source=? AND catalog_id=?").run(source, this.catalogId);
+    this.db.prepare("DELETE FROM dkg_nodes WHERE source=? AND catalog_id=?").run(source, this.catalogId);
+
+    return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
+  }
+
   deleteCatalog(catalogId: string): { nodesDeleted: number; edgesDeleted: number } {
     const nodesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE catalog_id=?").get(catalogId) as { c: number }).c;
     const edgesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE catalog_id=?").get(catalogId) as { c: number }).c;
