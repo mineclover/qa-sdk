@@ -1,3 +1,6 @@
+export { AppError } from "@qa-sdk/core";
+import { AppError } from "@qa-sdk/core";
+
 export type ErrorCode =
   | "INVALID_INPUT"
   | "TRACE_NOT_FOUND"
@@ -5,17 +8,6 @@ export type ErrorCode =
   | "SESSION_NOT_FOUND"
   | "SCENARIO_NOT_FOUND"
   | "INTERNAL_ERROR";
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly statusCode: number,
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
 
 export function badRequest(message: string): AppError {
   return new AppError("INVALID_INPUT", message, 400);

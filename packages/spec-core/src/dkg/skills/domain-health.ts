@@ -84,17 +84,6 @@ export function checkDomainHealth(
     issues.push(`${violations.length} constraint violation(s): ${violations.map(v => v.constraintId).join(", ")}`);
   }
 
-  // intent-link 검사 — domain의 prefix에 연결된 intent-link의 invariant
-  for (const pid of prefixIds) {
-    const links = graph.intentLinksFor(pid);
-    for (const link of links) {
-      if (link.invariant) {
-        // invariant 존재 자체는 문제가 아님 — 위반 여부는 traceFlows에서 판단
-        // 여기서는 "invariant가 정의되어 있다"는 정보만
-      }
-    }
-  }
-
   // 건강 판정
   let overallHealth: DomainHealthResult["overallHealth"];
   if (violations.length > 0 || issues.some(i => i.includes("not found"))) {

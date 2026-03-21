@@ -7,6 +7,7 @@
  * 정수는 이 파일 밖으로 노출되지 않는다.
  */
 
+import { calcWeights } from "weighted-index";
 import type { DemoCatalog, PrefixVersionDef } from "./demo-catalog.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -98,11 +99,7 @@ export function deriveServiceAddresses(
   });
 
   // strides 계산
-  const strides = new Array(shape.length);
-  strides[shape.length - 1] = 1;
-  for (let i = shape.length - 2; i >= 0; i--) {
-    strides[i] = strides[i + 1] * shape[i + 1];
-  }
+  const strides = calcWeights(shape);
 
   // 의미값 → 정수 주소
   return meanings.map(meaning => {

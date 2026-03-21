@@ -141,3 +141,21 @@ export function masksOverlap(a: Uint8Array, b: Uint8Array): boolean {
   }
   return false;
 }
+
+// ── Power-of-2 utilities ─────────────────────────────────────────────────
+
+/** n이 2의 거듭제곱인지 판별 */
+export function isPowerOf2(n: number): boolean {
+  return n > 0 && (n & (n - 1)) === 0;
+}
+
+/** n 이상의 최소 2의 거듭제곱. 최솟값 1. */
+export function nextPowerOf2(n: number): number {
+  let v = n - 1;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  return Math.max(v + 1, 1);
+}

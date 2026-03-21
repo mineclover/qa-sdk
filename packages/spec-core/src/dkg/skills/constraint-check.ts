@@ -6,18 +6,14 @@
  */
 
 import type { GraphRegistry } from "../graph-registry.js";
-import type { ConstraintNode } from "../dkg.types.js";
+import type { ConstraintNode, ConstraintViolation } from "../dkg.types.js";
+
+export type { ConstraintViolation };
 
 export interface ConstraintCheckResult {
   readonly targetId: string;
   readonly violations: readonly ConstraintViolation[];
   readonly passed: readonly PassedConstraint[];
-}
-
-export interface ConstraintViolation {
-  readonly constraintId: string;
-  readonly rule: string;
-  readonly severity: "error" | "warning";
 }
 
 export interface PassedConstraint {

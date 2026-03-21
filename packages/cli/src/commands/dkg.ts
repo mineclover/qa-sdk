@@ -5,7 +5,7 @@
  * 페이지네이션 지원.
  */
 
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
 import { CatalogRegistry } from "@qa-sdk/core";
 import type { Catalog } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
@@ -352,9 +352,7 @@ function emitSkillExecution(skillId: string, category: string, outcome: string =
 }
 
 function latestVer(prefixId: string): string {
-  const prefix = (DEMO_CATALOG as any).prefixes?.[prefixId];
-  if (!prefix?.versions?.length) return "v1";
-  return prefix.versions[prefix.versions.length - 1].version;
+  return latestPrefixVersion(DEMO_CATALOG as any, prefixId);
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
@@ -376,7 +374,7 @@ function emitDkgEvent(
       dkg_op: op,
       dkg_target_kind: targetKind,
     });
-    versionUsages.push({ prefix: "dkg_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+    versionUsages.push({ prefix: "dkg_event", version: latestVer("dkg_event"), count: 1, lastSeen: now, sessions: [session] });
 
     // 승격된 prefix: dkg_decision_event (decide 시)
     if (extra?.decisionType) {
@@ -386,7 +384,7 @@ function emitDkgEvent(
           dkg_target_kind: targetKind,
           node_source: extra.nodeSource ?? "manual",
         });
-        versionUsages.push({ prefix: "dkg_decision_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+        versionUsages.push({ prefix: "dkg_decision_event", version: latestVer("dkg_decision_event"), count: 1, lastSeen: now, sessions: [session] });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
@@ -398,7 +396,7 @@ function emitDkgEvent(
           dkg_target_kind: targetKind,
           lifecycle_state: extra.lifecycleState ?? "active",
         });
-        versionUsages.push({ prefix: "dkg_observation_event", version: "v1", count: 1, lastSeen: now, sessions: [session] });
+        versionUsages.push({ prefix: "dkg_observation_event", version: latestVer("dkg_observation_event"), count: 1, lastSeen: now, sessions: [session] });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
@@ -1813,7 +1811,6 @@ export function dkgRun(skillId: string, args: string[]): void {
       break;
     }
 
-    case "skill-constraint-check":
     case "skill-event-action-check":
     case "skill-svc-binding-check": {
       const targetId = args[0];
@@ -1824,7 +1821,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       } else {
         console.log(`  ⚠ ${targetId}: ${result.violations.length} violation(s)`);
         for (const v of result.violations) {
-          console.log(`    ${v.constraintId} [${v.severity}]: ${v.rule}`);
+          console.log(`    ${v.constraintId} [${v.severity ?? "warning"}]: ${v.rule}`);
         }
       }
       break;
@@ -1921,7 +1918,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       if (!node) { console.error(`  노드 없음: ${targetId}`); return; }
       const input = node.kind === "axis"
         ? { type: "capacity-changed" as const, target: { axis: targetId } }
-        : { type: "version-bump" as const, target: { prefix: targetId } };
+        : { type: "ref-changed" as const, target: { prefix: targetId } };
       const result = analyzeImpact(graph, input);
       console.log(`  strideBreak: ${result.strideBreak}`);
       console.log(`  migrationRequired: ${result.migrationRequired}`);
@@ -1935,7 +1932,8 @@ export function dkgRun(skillId: string, args: string[]): void {
     }
 
     case "skill-self-check-analyze": {
-      // mock 데이터 — 현재 패키지 목록으로 전부 성공 가정
+      // Layer 2 (FAST) 순수 분석 — 실제 빌드/테스트 결과는 dkg self-check로 수행
+      console.log("  ⚠ mock 입력 사용 (실제 진단: dkg self-check)");
       const mockResults = SELF_CHECK_PKGS.map(p => ({ pkg: p.name, kind: "build" as const, result: "success" }));
       const analysis = analyzeSelfCheck(mockResults, DEMO_CATALOG, "cli-run");
       console.log(`  records: ${analysis.records.length}, entryUsage: ${analysis.usage.entryUsages.length}`);
@@ -1969,6 +1967,31 @@ export function dkgRun(skillId: string, args: string[]): void {
       const regUrl = args[0] || process.env.QA_REGISTRY_URL || "http://localhost:3300";
       console.log(`  registry: ${regUrl}`);
       console.log(`  이 skill은 dkg publish --registry <url>로 실행하세요.`);
+      break;
+    }
+
+    // ── read 스킬: 기존 조회 명령 재사용 ──
+    case "skill-trace": {
+      const nodeId = args[0];
+      if (!nodeId) { console.error("  Usage: dkg run skill-trace <nodeId>"); return; }
+      dkgTrace(nodeId);
+      break;
+    }
+    case "skill-explore-service": {
+      dkgService(args[0]);
+      break;
+    }
+    case "skill-explore-prefix": {
+      if (!args[0]) { console.error("  Usage: dkg run skill-explore-prefix <prefixId>"); return; }
+      dkgPrefix(args[0]);
+      break;
+    }
+    case "skill-explore-dsl": {
+      dkgDsl(args[0]);
+      break;
+    }
+    case "skill-system-overview": {
+      dkgOverview();
       break;
     }
 

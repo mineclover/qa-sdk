@@ -15,6 +15,7 @@
  *   decompose: decode(perm_svc, role, res) → { sub:[perm_svc,role], rest:[res] }
  */
 
+import { calcWeights } from "weighted-index";
 import type { DemoCatalog, DimRef, PrefixDef } from "./demo-catalog.js";
 
 // ── 반환 타입 ────────────────────────────────────────────────────────────────
@@ -76,6 +77,13 @@ function resolvePrefixCapacity(catalog: DemoCatalog, prefixId: string, version: 
 }
 
 // ── 공개 API ─────────────────────────────────────────────────────────────────
+
+/** prefix의 최신 버전 키를 동적으로 조회. 하드코딩 금지 — 이 함수가 SSOT. */
+export function latestPrefixVersion(catalog: DemoCatalog, prefixId: string): string {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix?.versions?.length) return "v1";
+  return prefix.versions[prefix.versions.length - 1].version;
+}
 
 /** 구조만 — labels + dim refs + version 목록 */
 export function getPrefixStructure(catalog: DemoCatalog, prefixId: string): PrefixStructure {
@@ -158,17 +166,9 @@ export function getPrefixEntries(catalog: DemoCatalog, prefixId: string, version
 
 // ── 내부: shape → strides ────────────────────────────────────────────────────
 
-function computeStrides(shape: readonly number[]): number[] {
-  const n = shape.length;
-  const strides = new Array<number>(n);
-  strides[n - 1] = 1;
-  for (let i = n - 2; i >= 0; i--) strides[i] = strides[i + 1] * shape[i + 1];
-  return strides;
-}
-
 function getShapeAndStrides(catalog: DemoCatalog, prefixId: string, version: string) {
   const { shape } = getPrefixShape(catalog, prefixId, version);
-  return { shape, strides: computeStrides(shape) };
+  return { shape, strides: calcWeights(shape) };
 }
 
 // ── encode: 차원 좌표 → 1D 주소 ─────────────────────────────────────────────

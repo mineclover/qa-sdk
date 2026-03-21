@@ -5,21 +5,9 @@
  * Node 내장 `node:sqlite`를 사용한다.
  */
 
-import { createRequire } from "node:module";
-import type { SqlDriver, SqlDialect, ExecuteResult } from "./sql-store.js";
-
-type DatabaseSyncCtor = typeof import("node:sqlite").DatabaseSync;
-type DatabaseSyncInstance = InstanceType<DatabaseSyncCtor>;
-
-let _DatabaseSync: DatabaseSyncCtor | null = null;
-
-function getDatabaseSync(): DatabaseSyncCtor {
-  if (!_DatabaseSync) {
-    const require = createRequire(import.meta.url);
-    _DatabaseSync = (require("node:sqlite") as { DatabaseSync: DatabaseSyncCtor }).DatabaseSync;
-  }
-  return _DatabaseSync;
-}
+import type { SqlDriver, ExecuteResult } from "./sql-store.js";
+import { getDatabaseSync, type DatabaseSyncInstance } from "./database-sync-loader.js";
+import { SQLITE_DIALECT, runTransaction } from "./sqlite-shared.js";
 
 const SCHEMA_DDL = `
 CREATE TABLE IF NOT EXISTS prefix_registry (
@@ -158,13 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_range_cache_version
 export class NodeSqliteDriver implements SqlDriver {
   private readonly db: DatabaseSyncInstance;
 
-  readonly dialect: SqlDialect = {
-    name: "sqlite",
-    supportsTransaction: true,
-    supportsReturning: true,
-    supportsJsonType: false,
-    supportsUpsert: true,
-  };
+  readonly dialect = SQLITE_DIALECT;
 
   /**
    * @param path SQLite 파일 경로 (기본 `:memory:`)
@@ -198,15 +180,7 @@ export class NodeSqliteDriver implements SqlDriver {
   }
 
   async transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> {
-    this.db.exec("BEGIN");
-    try {
-      const result = await fn(this);
-      this.db.exec("COMMIT");
-      return result;
-    } catch (err) {
-      this.db.exec("ROLLBACK");
-      throw err;
-    }
+    return runTransaction(s => this.db.exec(s), this, fn);
   }
 
   async batchExecute(sql: string, paramsList: unknown[][]): Promise<void> {

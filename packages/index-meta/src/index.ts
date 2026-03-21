@@ -14,6 +14,7 @@ export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
 export { SqlPrefixRouter } from "./adapters/sql-prefix-router.js";
 export { SqlIndexMetaStore } from "./adapters/sql-store.js";
 export type { SqlDriver, SqlDialect, ExecuteResult } from "./adapters/sql-store.js";
+export { getDatabaseSync, type DatabaseSyncCtor, type DatabaseSyncInstance } from "./adapters/database-sync-loader.js";
 export { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";
 export { BetterSqliteDriver } from "./adapters/better-sqlite-driver.js";
 export { createSqliteDriver } from "./adapters/create-sqlite-driver.js";

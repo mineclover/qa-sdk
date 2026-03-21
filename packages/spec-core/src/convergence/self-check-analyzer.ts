@@ -13,18 +13,12 @@
  */
 
 import type { DemoCatalog } from "demo-snapshot";
-import { encodePrefixByValue } from "demo-snapshot";
+import { encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
 import { aggregateUsageData, analyzeCollectionHealth } from "./usage-aggregator.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import type { UsageData, CollectionHealthReport, CoverageReport } from "./convergence.types.js";
 import type { AddressContextRecord } from "./usage-aggregator.js";
 
-/** prefix의 최신 version ID를 반환 */
-function latestPrefixVersion(catalog: DemoCatalog, prefixId: string): string {
-  const prefix = (catalog as any).prefixes?.[prefixId];
-  if (!prefix?.versions?.length) return "v1";
-  return prefix.versions[prefix.versions.length - 1].version;
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  Types

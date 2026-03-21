@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { installSimpleShutdown } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createDb, closeClient } from "./db/client.js";
 import { createApp } from "./app.js";
@@ -16,20 +17,8 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info({ port: info.port }, "registry server listening");
 });
 
-async function shutdown(signal: string) {
-  logger.info({ signal }, "shutdown requested");
-  server.close(() => {
-    closeClient(env.DATABASE_URL)
-      .then(() => {
-        logger.info("shutdown complete");
-        process.exit(0);
-      })
-      .catch((err) => {
-        logger.error({ err }, "error during shutdown");
-        process.exit(1);
-      });
-  });
-}
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+installSimpleShutdown({
+  server,
+  logger,
+  cleanup: () => closeClient(env.DATABASE_URL),
+});

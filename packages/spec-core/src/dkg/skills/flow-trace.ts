@@ -53,7 +53,8 @@ export function traceFlows(
   const date = options?.date ?? new Date().toISOString().slice(0, 10);
 
   const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
-  const violationMap = new Map<string, FlowViolation>();
+  const violationMap = new Map<string, Omit<FlowViolation, "count">>();
+  const countMap = new Map<string, number>();
   let checkedRecords = 0;
 
   for (const record of records) {
@@ -84,22 +85,21 @@ export function traceFlows(
       // invariant 없어도 endpoint 불완전이면 기본 위반으로 취급하지 않음 (pass)
 
       const key = `${link.id}:${missingEndpoints.sort().join(",")}`;
-      const existing = violationMap.get(key);
-      if (existing) {
-        (existing as { count: number }).count++;
-      } else {
+      countMap.set(key, (countMap.get(key) ?? 0) + 1);
+      if (!violationMap.has(key)) {
         violationMap.set(key, {
           intentLinkId: link.id,
           invariant: link.invariant ?? `endpoints ${link.endpoints.join(",")} 불완전`,
           presentPrefixes: [...matchedEndpoints],
           missingPrefixes: missingEndpoints,
-          count: 1,
         });
       }
     }
   }
 
-  const violations = [...violationMap.values()].sort((a, b) => b.count - a.count);
+  const violations: FlowViolation[] = [...violationMap.entries()]
+    .map(([key, v]) => ({ ...v, count: countMap.get(key) ?? 1 }))
+    .sort((a, b) => b.count - a.count);
 
   // Observation 자동 생성
   const observations: ObservationNode[] = [];
@@ -148,7 +148,7 @@ function checkInvariantViolation(
   // "page_view 없이 flow_point" → page_view가 required, flow_point가 dependent
   for (const ep of endpoints) {
     // "ep 없이" 패턴 → ep가 있어야 하는데 없으면 위반
-    if (invariant.includes(`${ep} 없이`) || invariant.includes(`${ep}(`) && invariant.includes("없이")) {
+    if (invariant.includes(`${ep} 없이`) || (invariant.includes(`${ep}(`) && invariant.includes("없이"))) {
       // ep가 required 측인지 확인
       const withoutIdx = invariant.indexOf("없이");
       const epIdx = invariant.indexOf(ep);

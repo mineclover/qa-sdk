@@ -10,6 +10,7 @@
 
 import type { DemoCatalog, DimRef } from "demo-snapshot";
 import {
+  latestPrefixVersion,
   getPrefixShape,
   getPrefixEntries,
   encodePrefix,
@@ -40,11 +41,7 @@ function getFixedLabels(prefix: { labels: readonly string[]; dims: Record<string
 }
 
 /** prefix의 최신 version을 반환 */
-function latestVersion(catalog: DemoCatalog, prefixId: string): string {
-  const prefix = catalog.prefixes[prefixId];
-  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  return prefix.versions[prefix.versions.length - 1].version;
-}
+const latestVersion = latestPrefixVersion;
 
 // ── 팩토리 ──────────────────────────────────────────────────────────────────────
 

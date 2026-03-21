@@ -54,6 +54,7 @@ export {
 } from "./demo-catalog.js";
 
 export {
+  latestPrefixVersion,
   getPrefixStructure, getPrefixShape, getPrefixEntries,
   encodePrefix, decodePrefix, encodePrefixByValue,
   resolveAddress, decomposeAddress,

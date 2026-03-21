@@ -40,7 +40,7 @@ export function checkActivationReadiness(
   const constraintResult = checkConstraints(graph, prefixId);
   for (const v of constraintResult.violations) {
     diagnostics.push({
-      level: v.severity,
+      level: v.severity ?? "warning",
       source: "constraint",
       id: v.constraintId,
       message: `Constraint violated: ${v.rule}`,

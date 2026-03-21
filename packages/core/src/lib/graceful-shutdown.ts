@@ -3,10 +3,14 @@
  *
  * ingest-server처럼 복잡한 정리가 필요한 경우 자체 구현 사용.
  */
-import type { Server } from "node:http";
+
+/** `@hono/node-server`의 `serve()`가 반환하는 ServerType 호환 */
+interface Closeable {
+  close(callback?: (err?: Error) => void): unknown;
+}
 
 export interface SimpleShutdownDeps {
-  server: Server;
+  server: Closeable;
   logger: { info: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void };
   /** 서버 종료 전 추가 정리 작업 (DB 연결 해제 등) */
   cleanup?: () => Promise<void>;

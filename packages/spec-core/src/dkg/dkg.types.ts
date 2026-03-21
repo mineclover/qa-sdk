@@ -358,6 +358,8 @@ export interface AffectedConsumer {
 export interface ConstraintViolation {
   readonly constraintId: string;
   readonly rule: string;
+  /** 실제 검사 시 severity 판정. analyze-impact처럼 잠재적 위반 목록에는 미설정. */
+  readonly severity?: "error" | "warning";
 }
 
 export interface BrokenIntentLink {

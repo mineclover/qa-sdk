@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
+    "index-meta": "workspace:*",
     "weighted-index": "workspace:*",
     "demo-snapshot": "workspace:*"
   },

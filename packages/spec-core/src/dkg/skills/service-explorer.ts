@@ -324,23 +324,15 @@ export function explorePrefix(
   const owner = topo.getOwner(prefixId) ?? null;
   const consumers = topo.getConsumers(prefixId);
 
-  // domains
+  // domains + dsl bundles (같은 "contains" edge에서 kind로 분류)
   const domainEdges = graph.edgesTo(prefixId, "contains");
   const domains: string[] = [];
-  for (const edge of domainEdges) {
-    const dn = graph.getNode(edge.from);
-    if (dn?.kind === "domain") domains.push(dn.id);
-  }
-
-  // dsl bundles
   const dslBundles: string[] = [];
   for (const edge of domainEdges) {
     const dn = graph.getNode(edge.from);
-    if (dn?.kind === "dsl-bundle") dslBundles.push(dn.id);
+    if (dn?.kind === "domain") domains.push(dn.id);
+    else if (dn?.kind === "dsl-bundle") dslBundles.push(dn.id);
   }
-  // Also check "contains" edges from dsl-bundle nodes (same edge type as domains)
-  // domains and dsl-bundles both use "contains" edge to prefixes
-  // The above loop handles both — filter by kind
 
   // constraints
   const constraintEdges = graph.edgesTo(prefixId, "constrains");

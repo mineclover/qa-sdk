@@ -116,7 +116,7 @@ export type { CoverageAuditResult } from "./skills/coverage-audit.js";
 export { traceFlows } from "./skills/flow-trace.js";
 export type { FlowViolation, FlowTraceResult } from "./skills/flow-trace.js";
 export { checkConstraints, checkAllConstraints, auditAllConstraints } from "./skills/constraint-check.js";
-export type { ConstraintCheckResult, ConstraintViolation as ConstraintViolationDetail, PassedConstraint } from "./skills/constraint-check.js";
+export type { ConstraintCheckResult, PassedConstraint } from "./skills/constraint-check.js";
 export { safeEntryAdd } from "./skills/safe-entry-add.js";
 export type { SafeEntryAddInput, SafeEntryAddResult } from "./skills/safe-entry-add.js";
 export { checkDomainHealth, checkAllDomainsHealth } from "./skills/domain-health.js";

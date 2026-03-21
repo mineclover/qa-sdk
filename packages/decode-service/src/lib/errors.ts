@@ -6,6 +6,8 @@ import {
   ValidationError,
   IndexMetaError,
 } from "index-meta";
+export { AppError } from "@qa-sdk/core";
+import { AppError } from "@qa-sdk/core";
 
 export type ErrorCode =
   | "INVALID_INPUT"
@@ -13,17 +15,6 @@ export type ErrorCode =
   | "PARSE_ERROR"
   | "DECODER_NOT_LOADED"
   | "INTERNAL_ERROR";
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly statusCode: number = 400,
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
 
 export function notFound(message: string): AppError {
   return new AppError("NOT_FOUND", message, 404);

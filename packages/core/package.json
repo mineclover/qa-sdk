@@ -20,16 +20,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "ulid": "^2.3.0",
     "zod": "^3.24.2"
   },
-  "peerDependencies": {
-    "pino": "^9.0.0"
-  },
-  "peerDependenciesMeta": {
-    "pino": { "optional": true }
-  },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "typescript": "^5.8.2"
   }
 }

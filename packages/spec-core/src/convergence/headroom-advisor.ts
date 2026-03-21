@@ -4,6 +4,7 @@
  * @layer 추천 (Recommendation)
  */
 
+import { nextPowerOf2 } from "weighted-index";
 import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode } from "../dkg/dkg.types.js";
 import { scaffoldDecision } from "../dkg/decision-scaffold.js";
@@ -162,12 +163,3 @@ export function applyHeadroomDecisions(
   }
 }
 
-function nextPowerOf2(n: number): number {
-  let v = n - 1;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  return v + 1;
-}

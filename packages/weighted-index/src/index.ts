@@ -56,6 +56,7 @@ export {
   createMask, setBit, clearBit, hasBit,
   buildMask, hasAnyBit, hasAllBits, popcount,
   maskAnd, maskOr, masksOverlap,
+  isPowerOf2, nextPowerOf2,
 } from "./math/bitmask.js";
 export {
   WeightedIndexError,

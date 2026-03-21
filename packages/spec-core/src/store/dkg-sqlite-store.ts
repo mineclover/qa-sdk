@@ -6,24 +6,11 @@
  * 집계 결과를 스냅샷으로 저장하여 누적/비교 가능.
  */
 
-import { createRequire } from "node:module";
+import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { GraphRegistry } from "../dkg/graph-registry.js";
 import type { DkgNode, DkgEdge } from "../dkg/dkg.types.js";
 import type { UsageData, VersionUsage } from "../convergence/convergence.types.js";
 import { DKG_SCHEMA_DDL } from "./dkg-schema.sql.js";
-
-type DatabaseSyncCtor = typeof import("node:sqlite").DatabaseSync;
-type DatabaseSyncInstance = InstanceType<DatabaseSyncCtor>;
-
-let _DatabaseSync: DatabaseSyncCtor | null = null;
-
-function getDatabaseSync(): DatabaseSyncCtor {
-  if (!_DatabaseSync) {
-    const require = createRequire(import.meta.url);
-    _DatabaseSync = (require("node:sqlite") as { DatabaseSync: DatabaseSyncCtor }).DatabaseSync;
-  }
-  return _DatabaseSync;
-}
 
 export type NodeSource = "bootstrap" | "manual" | "auto";
 

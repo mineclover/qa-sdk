@@ -74,6 +74,7 @@ export function encode(
     }
   }
 
+  // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
   const strides = new Array(shape.length);
   strides[shape.length - 1] = 1;
   for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * shape[i + 1];
@@ -91,6 +92,7 @@ export function decode(
   catalog: BrowserCatalog,
   serialized: string,
 ): { prefix: string; version: string; values: Record<string, string | number> } | null {
+  // canonical: @qa-sdk/core/lib/address-parser.ts (브라우저 번들 격리 위해 인라인)
   const parts = serialized.split(":");
   // 3파트: prefix:ver:addr / 4파트: catalogId:prefix:ver:addr
   const [prefixId, version, addrStr] = parts.length === 4
@@ -116,6 +118,7 @@ export function decode(
     labels.push({ label, dim });
   }
 
+  // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
   const strides = new Array(shape.length);
   strides[shape.length - 1] = 1;
   for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * shape[i + 1];

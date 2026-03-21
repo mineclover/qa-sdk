@@ -11,6 +11,7 @@
  * @layer 추천 (Recommendation)
  */
 
+import { nextPowerOf2 as _nextPow2 } from "weighted-index";
 import type { GraphPort, GraphNodeLike } from "../shared/graph-port.js";
 
 /** 노드의 런타임 필드를 열거한다. 각 variant가 서로 다른 필드를 가지므로 정적 타입 단언 불가. */
@@ -39,10 +40,9 @@ export interface PromotionCandidate {
 
 // ═══════════════════════════════════════════════════════════════
 
+/** 축 capacity 최솟값 4 보장 */
 function nextPowerOf2(n: number): number {
-  let v = n - 1;
-  v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16;
-  return Math.max(v + 1, 4);
+  return Math.max(_nextPow2(n), 4);
 }
 
 function judge(c: Omit<PromotionCandidate, "verdict" | "reason">): PromotionCandidate {

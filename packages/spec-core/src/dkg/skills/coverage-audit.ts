@@ -56,7 +56,7 @@ export function auditCoverage(
       source: "metric",
       subjects: [pc.prefixId],
       finding: `${pc.prefixId} 커버리지 ${(pc.coverageRate * 100).toFixed(0)}% — dormant: ${dormantDims.join("; ")}`,
-      suggestion: { kind: "add-entry", axis: pc.prefixId, entry: "테스트 보강 또는 dormant entry 비활성화" },
+      suggestion: { kind: "add-constraint", rule: `${pc.prefixId} 커버리지 개선: 테스트 보강 또는 dormant entry 비활성화` },
     };
     observations.push(obs);
     graph.addNode(obs);

@@ -24,6 +24,7 @@
  * @layer 추천 (Recommendation)
  */
 
+import { isPowerOf2, nextPowerOf2 } from "weighted-index";
 import type { GraphPort } from "../shared/graph-port.js";
 
 export interface CapacityRecommendation {
@@ -170,16 +171,3 @@ export function optimizeWithImpact(
   return { ...base, impactDetails };
 }
 
-function isPowerOf2(n: number): boolean {
-  return n > 0 && (n & (n - 1)) === 0;
-}
-
-function nextPowerOf2(n: number): number {
-  let v = n - 1;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  return v + 1;
-}

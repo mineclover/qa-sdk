@@ -13,6 +13,9 @@
     }
   },
   "files": ["dist"],
+  "dependencies": {
+    "weighted-index": "workspace:*"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run"

@@ -1,4 +1,6 @@
 import { IndexMetaError, ValidationError } from "index-meta";
+export { AppError } from "@qa-sdk/core";
+import { AppError } from "@qa-sdk/core";
 
 export type ErrorCode =
   | "INVALID_INPUT"
@@ -13,17 +15,6 @@ export type ErrorCode =
   | "OWNER_MISMATCH"
   | "DUPLICATE_PREFIX"
   | "INTERNAL_ERROR";
-
-export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly statusCode: number,
-  ) {
-    super(message);
-    this.name = "AppError";
-  }
-}
 
 export function badRequest(message: string): AppError {
   return new AppError("INVALID_INPUT", message, 400);
