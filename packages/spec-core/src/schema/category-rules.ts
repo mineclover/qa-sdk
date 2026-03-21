@@ -8,8 +8,7 @@
  */
 
 import type { SchemaCategory } from "./schema.types.js";
-import type { PrefixNode } from "../dkg/dkg.types.js";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { PrefixLike, GraphPort } from "../shared/graph-port.js";
 
 export interface CategoryRule {
   readonly category: SchemaCategory;
@@ -23,7 +22,7 @@ export interface CategoryRule {
   /** 최대 차원 수 */
   readonly maxDims?: number;
   /** 추가 검증 함수 */
-  readonly validate?: (prefixId: string, graph: GraphRegistry) => string[];
+  readonly validate?: (prefixId: string, graph: GraphPort) => string[];
 }
 
 /**
@@ -119,14 +118,14 @@ export interface CategoryValidationResult {
 
 export function validatePrefixCategory(
   prefixId: string,
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): CategoryValidationResult {
-  const node = graph.getNode(prefixId) as PrefixNode | undefined;
+  const node = graph.getNode(prefixId) as PrefixLike | undefined;
   if (!node || node.kind !== "prefix") {
     return { prefixId, category: "entity", valid: false, errors: [`"${prefixId}" is not a prefix node`] };
   }
 
-  const category = node.category ?? "entity";
+  const category = (node.category ?? "entity") as SchemaCategory;
   const rule = CATEGORY_RULES[category];
   const errors: string[] = [];
 
@@ -162,7 +161,7 @@ export function validatePrefixCategory(
  * 모든 prefix의 카테고리 규칙 준수를 검증한다.
  */
 export function validateAllCategories(
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): {
   total: number;
   passed: number;

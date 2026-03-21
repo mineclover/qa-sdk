@@ -110,6 +110,7 @@
 | [dimension-operations.md](dimension-operations.md) | **차원 운영** | 축 교차 선택(BitMaskSet, ScopedEngine), 환경 주입(ServiceRef, PermCodeFactory), 배포 시점 해석(PartialBinder) |
 | [table-system.md](table-system.md) | **테이블 시스템** | 좌표↔관계형 양방향 연결, DimRef table_ref, ColumnRef 4종, 이벤트 인코딩 분리, 그래프 탐색 |
 | [dsl-bundle.md](dsl-bundle.md) | **DSL 번들** | prefix 묶음 + 서비스 바인딩 + 사용 패턴 정의, DslBundleNode, 커버리지 분석 |
+| [signal-model.md](signal-model.md) | **Signal 모델** | 트래킹 상위 개념 — Signal = 의미있는 순간, 7가지 SignalRole, Signal 체인, 검증 |
 | [bigint-addressing.spec.md](bigint-addressing.spec.md) | **BigInt 주소 체계** | Number.MAX_SAFE_INTEGER 한계, BigInt API (weighted-index + index-meta), 용량 가드, 성능 특성 |
 | [benchmarks.md](benchmarks.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
 | [acceleration.md](acceleration.md) | **하드웨어 가속 비전** | FPGA/PCIe 가속 적합성, 파이프라인 경계, batch/binary 인터페이스 로드맵 |

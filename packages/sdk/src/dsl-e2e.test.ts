@@ -5,13 +5,13 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { createQaContext } from "./qa-context.js";
+import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
 import {
   aggregateUsageData, analyzeCollectionHealth,
   type AddressContextRecord,
   auditCoverage, traceFlows, bootstrapDkg,
   aggregateByDsl, aggregateByCategory, aggregateByService,
-  catalogToPrefixSpecs,
-} from "@qa-sdk/spec-core";
+} from "@qa-sdk/spec-core/analysis";
 
 describe("DSL 종단 E2E", () => {
 

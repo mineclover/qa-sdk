@@ -13,12 +13,14 @@ export const DKG_SCHEMA_DDL = `
 CREATE TABLE IF NOT EXISTS dkg_nodes (
   id        TEXT    NOT NULL PRIMARY KEY,
   kind      TEXT    NOT NULL,
+  source    TEXT    NOT NULL DEFAULT 'bootstrap',  -- bootstrap | manual | auto
   data      TEXT    NOT NULL,  -- JSON
   created_at TEXT   NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT   NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_dkg_nodes_kind ON dkg_nodes (kind);
+CREATE INDEX IF NOT EXISTS idx_dkg_nodes_source ON dkg_nodes (source);
 
 -- ═══════════════════════════════════════════════════════
 --  DKG 엣지
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS dkg_edges (
   type       TEXT    NOT NULL,
   from_id    TEXT    NOT NULL,
   to_id      TEXT    NOT NULL,
+  source     TEXT    NOT NULL DEFAULT 'bootstrap',  -- bootstrap | manual | auto
   meta       TEXT,  -- JSON (nullable)
   created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
@@ -75,4 +78,10 @@ CREATE TABLE IF NOT EXISTS dkg_meta (
   key   TEXT NOT NULL PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+-- ═══════════════════════════════════════════════════════
+--  마이그레이션: source 컬럼 추가 (기존 DB 호환)
+-- ═══════════════════════════════════════════════════════
+
+-- SQLite에서 ALTER TABLE ADD COLUMN은 IF NOT EXISTS가 없으므로 PRAGMA로 확인
 `;

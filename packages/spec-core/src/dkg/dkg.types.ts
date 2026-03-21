@@ -161,6 +161,44 @@ export interface DslBundleNode {
   readonly lifecycle?: DslLifecycle;
 }
 
+// ── Skill 노드 ──────────────────────────────────────────────
+
+export type SkillCategory = "read" | "write" | "analysis" | "chain";
+
+/** Skill이 전문화되는 시나리오 컨텍스트 */
+export interface SkillSpecialization {
+  /** 대상 도메인 */
+  readonly domains?: readonly string[];
+  /** 대상 DSL 번들 */
+  readonly dslBundles?: readonly string[];
+  /** 대상 prefix (구체적) */
+  readonly prefixes?: readonly string[];
+  /** 검증하는 intent-link */
+  readonly intentLinks?: readonly string[];
+  /** 강제하는 constraint */
+  readonly constraints?: readonly string[];
+  /** 검증하는 불변조건 (DSL invariant 텍스트) */
+  readonly invariants?: readonly string[];
+}
+
+export interface SkillNode {
+  readonly kind: "skill";
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly category: SkillCategory;
+  /** 다룰 수 있는 노드 종류 (문자열 — "prefix" | "axis" | ... ) */
+  readonly targetKinds: readonly string[];
+  /** 입력 설명 */
+  readonly input: string;
+  /** 출력 설명 */
+  readonly output: string;
+  /** 의존하는 다른 skill ID */
+  readonly depends?: readonly string[];
+  /** 시나리오 전문화 — 이 skill이 구체적으로 어떤 DSL/도메인/prefix를 소비하는가 */
+  readonly specialization?: SkillSpecialization;
+}
+
 // ── 노드 유니온 ───────────────────────────────────────────
 
 export type DkgNode =
@@ -175,7 +213,8 @@ export type DkgNode =
   | DomainNode
   | ConsumerNode
   | IntentLinkNode
-  | DslBundleNode;
+  | DslBundleNode
+  | SkillNode;
 
 export type DkgNodeKind = DkgNode["kind"];
 

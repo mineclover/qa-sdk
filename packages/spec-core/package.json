@@ -6,6 +6,26 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./codegen": {
+      "import": "./dist/codegen/index.js",
+      "types": "./dist/codegen/index.d.ts"
+    },
+    "./analysis": {
+      "import": "./dist/analysis/index.js",
+      "types": "./dist/analysis/index.d.ts"
+    },
+    "./propagation": {
+      "import": "./dist/propagation/index.js",
+      "types": "./dist/propagation/index.d.ts"
+    },
+    "./store": {
+      "import": "./dist/store/index.js",
+      "types": "./dist/store/index.d.ts"
+    },
+    "./viz": {
+      "import": "./dist/visualization/index.js",
+      "types": "./dist/visualization/index.d.ts"
     }
   },
   "scripts": {

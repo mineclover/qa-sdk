@@ -15,6 +15,9 @@ import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
   dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
+  dkgService, dkgPrefix, dkgDsl, dkgOverview,
+  dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
+  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun,
 } from "./commands/dkg.js";
 import {
   cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
@@ -63,6 +66,20 @@ Usage:
   qa-sdk dkg skew                    배포 스큐 상세
   qa-sdk dkg coverage                entry 커버리지
   qa-sdk dkg skills                  skill 목록
+  qa-sdk dkg service [id]            서비스 탐색 (id 없으면 목록)
+  qa-sdk dkg prefix <id>             prefix 심층 탐색
+  qa-sdk dkg dsl [id]                DSL 번들 탐색 (id 없으면 목록)
+  qa-sdk dkg overview                시스템 대시보드
+  qa-sdk dkg trace <id>              노드 역추적 (전체 인과 체인)
+  qa-sdk dkg decide [options]        의사결정 기록
+  qa-sdk dkg observe [options]       관측 기록
+  qa-sdk dkg claim <id> --by <name>  작업 선점 (전파)
+  qa-sdk dkg release <id>            작업 해제
+  qa-sdk dkg claims                  활성 claim 목록
+  qa-sdk dkg resolve <obs> [opts]    관측을 결정으로 해소 (루프 닫기)
+  qa-sdk dkg link <obs> --decision   관측 → 결정 연결
+  qa-sdk dkg timeline [--open]       시간순 이력
+  qa-sdk dkg run <skillId> [args]    skill 직접 실행
   qa-sdk dkg export [--output path]  SQLite → JSON
   qa-sdk dkg import <input>          JSON → SQLite
 
@@ -194,6 +211,113 @@ async function main() {
       if (sub.rest[0]) dkgImport({ input: sub.rest[0] });
       else console.error("Usage: qa-sdk dkg import <path>");
       return;
+    case "dkg service":
+      dkgService(sub.rest[0]);
+      return;
+    case "dkg prefix":
+      if (sub.rest[0]) dkgPrefix(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg prefix <id>");
+      return;
+    case "dkg dsl":
+      dkgDsl(sub.rest[0]);
+      return;
+    case "dkg overview":
+      dkgOverview();
+      return;
+    case "dkg claims":
+      dkgClaims();
+      return;
+    case "dkg timeline":
+      dkgTimeline({ open: sub.rest.includes("--open") });
+      return;
+    case "dkg resolve": {
+      const resObsId = sub.rest[0];
+      const resDecIdx = sub.rest.indexOf("--decision");
+      const resOutIdx = sub.rest.indexOf("--outcome");
+      const resNoteIdx = sub.rest.indexOf("--note");
+      if (!resObsId || resDecIdx < 0 || resOutIdx < 0) {
+        console.error("Usage: qa-sdk dkg resolve <obsId> --decision <decId> --outcome accepted|deferred|rejected [--note ...]");
+        return;
+      }
+      dkgResolve({
+        obsId: resObsId,
+        decisionId: sub.rest[resDecIdx + 1],
+        outcome: sub.rest[resOutIdx + 1],
+        note: resNoteIdx >= 0 ? sub.rest[resNoteIdx + 1] : undefined,
+      });
+      return;
+    }
+    case "dkg link": {
+      const linkObsId = sub.rest[0];
+      const linkDecIdx = sub.rest.indexOf("--decision");
+      if (!linkObsId || linkDecIdx < 0) {
+        console.error("Usage: qa-sdk dkg link <obsId> --decision <decId>");
+        return;
+      }
+      dkgLink({ obsId: linkObsId, decisionId: sub.rest[linkDecIdx + 1] });
+      return;
+    }
+    case "dkg run": {
+      const runSkillId = sub.rest[0];
+      if (!runSkillId) {
+        console.error("Usage: qa-sdk dkg run <skillId> [args...]");
+        console.error("  qa-sdk dkg skills 로 목록 확인");
+        return;
+      }
+      dkgRun(runSkillId, sub.rest.slice(1));
+      return;
+    }
+    case "dkg trace":
+      if (sub.rest[0]) dkgTrace(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg trace <nodeId>");
+      return;
+    case "dkg decide": {
+      const targetIdx = sub.rest.indexOf("--target");
+      const typeIdx = sub.rest.indexOf("--type");
+      const titleIdx = sub.rest.indexOf("--title");
+      const rationaleIdx = sub.rest.indexOf("--rationale");
+      if (targetIdx < 0 || typeIdx < 0 || titleIdx < 0 || rationaleIdx < 0) {
+        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..."');
+        console.error("  types: capacity, new-axis, new-prefix, dim-add, merge, deprecate");
+        return;
+      }
+      dkgDecide({
+        target: sub.rest[targetIdx + 1],
+        type: sub.rest[typeIdx + 1],
+        title: sub.rest[titleIdx + 1],
+        rationale: sub.rest[rationaleIdx + 1],
+      });
+      return;
+    }
+    case "dkg observe": {
+      const obsTargetIdx = sub.rest.indexOf("--target");
+      const findingIdx = sub.rest.indexOf("--finding");
+      if (obsTargetIdx < 0 || findingIdx < 0) {
+        console.error('Usage: qa-sdk dkg observe --target <id> --finding "..."');
+        return;
+      }
+      const suggIdx = sub.rest.indexOf("--suggestion");
+      dkgObserve({
+        target: sub.rest[obsTargetIdx + 1],
+        finding: sub.rest[findingIdx + 1],
+        suggestion: suggIdx >= 0 ? sub.rest[suggIdx + 1] : undefined,
+      });
+      return;
+    }
+    case "dkg claim": {
+      const claimTarget = sub.rest[0];
+      const byIdx = sub.rest.indexOf("--by");
+      if (!claimTarget || byIdx < 0) {
+        console.error("Usage: qa-sdk dkg claim <id> --by <worker>");
+        return;
+      }
+      dkgClaim({ target: claimTarget, by: sub.rest[byIdx + 1] });
+      return;
+    }
+    case "dkg release":
+      if (sub.rest[0]) dkgRelease(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg release <id>");
+      return;
 
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
@@ -215,6 +339,9 @@ function resolveSubcommand(args: string[]): Subcommand {
     "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
     "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import",
+    "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
+    "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
+    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;

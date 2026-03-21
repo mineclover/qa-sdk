@@ -9,10 +9,9 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { createQaContext } from "./qa-context.js";
-import {
-  buildLayerMap, MonitorState,
-  type AddressContextRecord, type TracePath,
-} from "@qa-sdk/spec-core";
+import { buildLayerMap, MonitorState } from "@qa-sdk/spec-core/viz";
+import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
+import type { TracePath } from "@qa-sdk/spec-core/viz";
 
 describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까지", () => {
 

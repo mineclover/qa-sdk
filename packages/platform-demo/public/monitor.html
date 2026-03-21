@@ -3,762 +3,666 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QA-SDK Prefix Monitor — Cell Grid</title>
+<title>QA-SDK Coordinate Monitor</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600;700&display=swap');
+:root{--bg:#050508;--card:rgba(8,10,16,0.92);--border:rgba(100,255,218,0.08);--mint:#64ffda;--cyan:#00b4d8;--amber:#ff9f43;--violet:#7c5cfc;--rose:#ff3860;--green:#2ed573;--red:#ff6b6b;--txt:#c0c8d8;--dim:#445}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#06060a;color:#c8ccd4;font-family:'Outfit',sans-serif;overflow:hidden;height:100vh}
-#scene{position:fixed;inset:0;z-index:0}
-
+body{background:var(--bg);color:var(--txt);font-family:'Sora',sans-serif;overflow:hidden;height:100vh}
+canvas{position:fixed;inset:0;z-index:0}
 .hud{position:fixed;z-index:10;pointer-events:none}
-.hud-top{top:20px;left:24px}
-.hud-right{top:20px;right:24px;text-align:right;max-width:280px}
-.hud-bottom{bottom:20px;left:24px;right:24px;display:flex;gap:12px;align-items:flex-end}
-
-.brand{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#445}
-.title{font-size:24px;font-weight:700;letter-spacing:-0.5px;background:linear-gradient(135deg,#64ffda,#00b4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{font-size:11px;color:#334;margin-top:3px;font-family:'JetBrains Mono',monospace}
-
-.card{background:rgba(10,12,18,0.88);border:1px solid rgba(100,255,218,0.06);border-radius:6px;padding:10px 14px;backdrop-filter:blur(10px);margin-bottom:6px}
-.card-label{font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:#445;margin-bottom:4px}
-.card-value{font-size:18px;font-weight:600;color:#64ffda}
-.card-sub{font-size:10px;color:#334;margin-top:2px;font-family:'JetBrains Mono',monospace}
-
-.step-name{font-size:14px;font-weight:600;color:#e0e4ec}
-.active-list{font-size:10px;color:#556;font-family:'JetBrains Mono',monospace;margin-top:4px;line-height:1.6}
-.active-list .hit{color:#64ffda}
-
-.layer-bar{flex:1;background:rgba(10,12,18,0.88);border:1px solid rgba(100,255,218,0.04);border-radius:5px;padding:8px 12px}
-.layer-bar-label{font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:#334}
-.layer-bar-fill{height:3px;border-radius:2px;background:#12141c;margin-top:4px;overflow:hidden}
-.layer-bar-inner{height:100%;border-radius:2px;transition:width .4s}
-.l0-fill{background:linear-gradient(90deg,#64ffda,#00b4d8)}
-.l1-fill{background:linear-gradient(90deg,#ff9f43,#ffa502)}
-.l2-fill{background:linear-gradient(90deg,#a29bfe,#6c5ce7)}
-.l3-fill{background:linear-gradient(90deg,#fd79a8,#e84393)}
-.layer-bar-count{font-size:11px;font-weight:600;margin-top:3px;color:#667}
-
-.controls{position:fixed;bottom:20px;right:24px;z-index:10;display:flex;gap:6px}
-.btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 14px;border:1px solid rgba(100,255,218,0.15);background:rgba(10,12,18,0.92);color:#64ffda;border-radius:5px;cursor:pointer;pointer-events:all;transition:all .2s;letter-spacing:1px}
-.btn:hover{background:rgba(100,255,218,0.08);border-color:#64ffda}
-.btn.on{background:rgba(100,255,218,0.12);border-color:#64ffda;box-shadow:0 0 8px rgba(100,255,218,0.15)}
-
-.scanline{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.015) 3px,rgba(0,0,0,0.015) 4px)}
+.hud *{pointer-events:none}
+.hud button,.hud input,.hud .vb{pointer-events:all}
+.hud-tl{top:14px;left:18px}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
+.hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
+.hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+.m{font-family:'IBM Plex Mono',monospace}
+.brand{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#334}
+.ttl{font-size:20px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,var(--mint),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{font-size:10px;color:var(--dim);margin-top:2px}
+.cd{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px 12px;backdrop-filter:blur(8px);margin-bottom:4px}
+.cl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#334;margin-bottom:2px}
+.cv{font-size:15px;font-weight:600;color:var(--mint)}
+.cs{font-size:9px;color:#556;line-height:1.5}.cs .h{color:var(--mint)}
+.vr{display:flex;gap:3px;flex-wrap:wrap}
+.vb{font-size:8px;padding:4px 8px;border:1px solid var(--border);background:var(--card);color:#556;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+.vb:hover{border-color:#556;color:#aab}.vb.on{border-color:var(--mint);color:var(--mint);background:rgba(100,255,218,0.06)}
+.bar{flex:1;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:5px 8px}
+.bl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#223}
+.bt{height:3px;border-radius:2px;background:#0c0e14;margin-top:3px;overflow:hidden}
+.bf{height:100%;border-radius:2px;transition:width .4s}.bn{font-size:10px;font-weight:600;margin-top:2px;color:#445}
+.cr{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.btn{font-size:8px;padding:5px 10px;border:1px solid var(--border);background:var(--card);color:var(--mint);border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+.btn:hover{background:rgba(100,255,218,0.06);border-color:var(--mint)}.btn.on{background:rgba(100,255,218,0.1);border-color:var(--mint)}
+.conn{font-size:8px;color:#334;padding:0 2px}
+input.btn{width:170px;color:#556;text-align:left}
+.slider-row{display:flex;gap:6px;align-items:center;margin-top:4px}
+.slider-row label{font-size:7px;color:#334;letter-spacing:1px;text-transform:uppercase;width:50px}
+.slider-row input[type=range]{width:80px;accent-color:var(--mint);height:3px;pointer-events:all}
+.slider-row span{font-size:9px;color:#556;width:30px;text-align:right}
 </style>
 </head>
 <body>
-<canvas id="scene"></canvas>
-<div class="scanline"></div>
+<canvas id="c"></canvas>
 
-<div class="hud hud-top">
-  <div class="brand">qa-sdk / cell monitor</div>
-  <div class="title">Coordinate Grid</div>
-  <div class="subtitle" id="status">initializing...</div>
+<!-- Info Overlay -->
+<div id="info-overlay" style="display:flex;position:fixed;inset:0;z-index:100;background:rgba(5,5,8,0.92);justify-content:center;align-items:center;pointer-events:all">
+  <div style="max-width:640px;width:90%;max-height:80vh;overflow-y:auto;background:rgba(10,12,18,0.95);border:1px solid rgba(100,255,218,0.1);border-radius:8px;padding:32px 36px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <div class="brand m">qa-sdk / coordinate monitor</div>
+        <div class="ttl" style="font-size:18px">Controls & Info</div>
+      </div>
+      <button class="btn m" id="btn-close-info" style="font-size:10px;padding:6px 14px">ESC</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:11px">
+      <div>
+        <div class="cl m" style="margin-bottom:8px;color:var(--mint)">Camera</div>
+        <div class="cs m" style="line-height:2">
+          <kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd> — 이동<br>
+          <kbd>Q</kbd> <kbd>E</kbd> — 위/아래<br>
+          <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> — 이동 (대체)<br>
+          마우스 드래그 — 회전<br>
+          스크롤 / 핀치 — 줌
+        </div>
+      </div>
+      <div>
+        <div class="cl m" style="margin-bottom:8px;color:var(--amber)">View Mode</div>
+        <div class="cs m" style="line-height:2">
+          <kbd>1</kbd> LAYER — 계층별 배치<br>
+          <kbd>2</kbd> CATEGORY — 카테고리별<br>
+          <kbd>3</kbd> DSL — DSL 번들별<br>
+          <kbd>4</kbd> SERVICE — 서비스별<br>
+          <kbd>5</kbd> STACK — 결제 흐름 스택
+        </div>
+      </div>
+      <div>
+        <div class="cl m" style="margin-bottom:8px;color:var(--violet)">Controls</div>
+        <div class="cs m" style="line-height:2">
+          <kbd>Space</kbd> — DEMO 시작/정지<br>
+          <kbd>R</kbd> — RESET<br>
+          <kbd>[</kbd> <kbd>]</kbd> — Flow 이전/다음<br>
+          <kbd>?</kbd> — 이 도움말 토글<br>
+          셀 클릭 — 상세 정보 표시
+        </div>
+      </div>
+      <div>
+        <div class="cl m" style="margin-bottom:8px;color:var(--rose)">Layers</div>
+        <div class="cs m" style="line-height:2">
+          <span style="color:var(--mint)">●</span> L0 UI — 화면, 행동 추적<br>
+          <span style="color:var(--amber)">●</span> L1 Business — API, 흐름, 권한<br>
+          <span style="color:var(--violet)">●</span> L2 Infra — 배포, 헬스, 파이프<br>
+          <span style="color:var(--rose)">●</span> L3 Data — DB 테이블
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;border-top:1px solid rgba(100,255,218,0.06);padding-top:16px">
+      <div class="cl m" style="margin-bottom:8px;color:var(--mint)">Categories</div>
+      <div class="cs m" style="display:flex;gap:16px;flex-wrap:wrap;line-height:2">
+        <span><span style="color:#00e5ff">■</span> observation</span>
+        <span><span style="color:#ff9100">■</span> event</span>
+        <span><span style="color:#00e676">■</span> policy</span>
+        <span><span style="color:#b388ff">■</span> relation</span>
+        <span><span style="color:#546e7a">■</span> entity</span>
+        <span><span style="color:#ff5252">■</span> table</span>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;border-top:1px solid rgba(100,255,218,0.06);padding-top:16px">
+      <div class="cl m" style="margin-bottom:8px;color:var(--amber)">Data Flow</div>
+      <div class="cs m" style="line-height:1.8;color:#556">
+        DEMO 실행 시 13단계 쇼핑 흐름이 자동 재생됩니다.<br>
+        각 단계에서 이벤트가 T0(UI) → T1(Business) → T2(Event) → T3(Data) 순서로 순차 활성화됩니다.<br>
+        <kbd>[</kbd> <kbd>]</kbd> 키로 이전/다음 스텝을 탐색할 수 있습니다.<br>
+        LIVE 버튼으로 ingest-server에 연결하면 실 이벤트가 실시간으로 표시됩니다.
+      </div>
+    </div>
+
+    <div style="margin-top:16px;text-align:center">
+      <div class="cs m" style="color:#334">아무 키나 누르면 닫힙니다</div>
+    </div>
+  </div>
 </div>
 
-<div class="hud hud-right">
-  <div class="card">
-    <div class="card-label">Step</div>
-    <div class="step-name" id="hud-step">--</div>
-    <div class="card-sub" id="hud-desc"></div>
-  </div>
-  <div class="card">
-    <div class="card-label">Active Cells</div>
-    <div class="active-list" id="hud-active"></div>
-  </div>
-  <div class="card">
-    <div class="card-label">Total Hits</div>
-    <div class="card-value" id="hud-total">0</div>
+<style>
+kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);border:1px solid rgba(100,255,218,0.12);border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mint);margin:0 2px}
+</style>
+
+<!-- HUD -->
+<div class="hud hud-tl">
+  <div class="brand m">qa-sdk / coordinate monitor</div>
+  <div class="ttl">3D Grid View</div>
+  <div class="sub m" id="status">loading modules...</div>
+  <div class="sub m" id="perf" style="color:#334;font-size:8px"></div>
+  <div class="cd" style="margin-top:8px">
+    <div class="cl m">Display</div>
+    <div class="slider-row m"><label>opacity</label><input type="range" id="sl-opacity" min="10" max="100" value="35"><span id="sl-opacity-v">35%</span></div>
+    <div class="slider-row m"><label>glow</label><input type="range" id="sl-glow" min="10" max="100" value="70"><span id="sl-glow-v">70%</span></div>
+    <div class="slider-row m"><label>edge</label><input type="range" id="sl-edge" min="5" max="100" value="30"><span id="sl-edge-v">30%</span></div>
+    <div class="slider-row m"><label>grid</label><input type="range" id="sl-grid" min="0" max="100" value="40"><span id="sl-grid-v">40%</span></div>
+    <div class="slider-row m"><label>bg</label><input type="range" id="sl-bg" min="0" max="30" value="3"><span id="sl-bg-v">3%</span></div>
+    <div class="slider-row m"><label>fog</label><input type="range" id="sl-fog" min="0" max="30" value="6"><span id="sl-fog-v">6‰</span></div>
   </div>
 </div>
-
-<div class="hud hud-bottom" id="layer-bars"></div>
-
-<div class="controls">
-  <span id="conn-status" style="font-family:'JetBrains Mono';font-size:10px;color:#445;padding:7px 0;pointer-events:none">●</span>
-  <input class="btn" id="ws-url" style="width:220px;color:#889;text-align:left" placeholder="ws://localhost:3100/v1/ws" value="ws://localhost:3100/v1/ws">
-  <button class="btn" id="btn-live" onclick="toggleLive()">LIVE</button>
-  <button class="btn" id="btn-demo" onclick="toggleDemo()">DEMO</button>
-  <button class="btn" onclick="resetAll()">RESET</button>
+<div class="hud hud-tr">
+  <div class="cd"><div class="cl m">Step</div><div style="font-size:12px;font-weight:600" id="h-step">--</div><div class="cs m" id="h-desc"></div></div>
+  <div class="cd"><div class="cl m">Address Context</div><div class="cs m" id="h-ctx" style="max-height:100px;overflow-y:auto"></div></div>
+  <div class="cd"><div class="cl m">Events</div><div class="cv" id="h-total">0</div></div>
+  <div class="cd" id="h-select" style="display:none;border-color:rgba(100,255,218,0.15)"><div class="cl m">Selected Cell</div><div style="font-size:11px;font-weight:600;color:var(--mint)" id="sel-id"></div><div class="cs m" id="sel-info" style="margin-top:4px"></div></div>
+  <div class="cd" id="h-flow" style="display:none;border-color:rgba(255,159,67,0.12)">
+    <div class="cl m" style="display:flex;justify-content:space-between;align-items:center"><span>Data Flow</span>
+      <span id="flow-nav" style="pointer-events:all;display:flex;gap:3px"><button class="btn m" style="padding:2px 6px;font-size:8px" id="btn-prev">◄</button><span id="flow-idx" style="font-size:8px;color:var(--dim);min-width:40px;text-align:center">-/-</span><button class="btn m" style="padding:2px 6px;font-size:8px" id="btn-next">►</button></span>
+    </div>
+    <div style="font-size:10px;font-weight:500;color:var(--amber);margin:3px 0" id="flow-title"></div>
+    <div class="cs m" id="flow-steps" style="max-height:120px;overflow-y:auto"></div>
+  </div>
+</div>
+<div class="hud hud-bl">
+  <div class="bar"><div class="bl m">L0 UI</div><div class="bt"><div class="bf" id="b0" style="width:0%;background:linear-gradient(90deg,var(--mint),var(--cyan))"></div></div><div class="bn m" id="n0">0</div></div>
+  <div class="bar"><div class="bl m">L1 Biz</div><div class="bt"><div class="bf" id="b1" style="width:0%;background:linear-gradient(90deg,var(--amber),#ffa502)"></div></div><div class="bn m" id="n1">0</div></div>
+  <div class="bar"><div class="bl m">L2 Infra</div><div class="bt"><div class="bf" id="b2" style="width:0%;background:linear-gradient(90deg,var(--violet),#6c5ce7)"></div></div><div class="bn m" id="n2">0</div></div>
+  <div class="bar"><div class="bl m">L3 Data</div><div class="bt"><div class="bf" id="b3" style="width:0%;background:linear-gradient(90deg,var(--rose),#e84393)"></div></div><div class="bn m" id="n3">0</div></div>
+</div>
+<div class="hud hud-br">
+  <div class="vr">
+    <button class="vb m on" data-v="layer" id="v-layer">LAYER</button>
+    <button class="vb m" data-v="category" id="v-category">CATEGORY</button>
+    <button class="vb m" data-v="dsl" id="v-dsl">DSL</button>
+    <button class="vb m" data-v="service" id="v-service">SERVICE</button>
+    <button class="vb m" data-v="stack" id="v-stack">STACK</button>
+  </div>
+  <div class="cr">
+    <span class="conn m" id="conn">●</span>
+    <input class="btn m" id="ws-url" value="ws://localhost:3100/v1/ws">
+    <button class="btn m" id="btn-live">LIVE</button>
+    <button class="btn m" id="btn-demo">DEMO</button>
+    <button class="btn m" id="btn-reset">RESET</button>
+    <button class="btn m" id="btn-info">?</button>
+  </div>
 </div>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script type="module">
-import*as THREE from'three';
-import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+import * as T from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── viz-3d 모듈 import ──
+import {
+  PALETTE, CATEGORY_COLORS, LAYER_COLORS,
+  buildGridPositions, ViewEngine, CellStateManager, BeamPool,
+  FlowHistory, MonitorAdapter, defaultKeyMapper,
+  computeLodLevel, getLodVisibility, PerfMonitor,
+  DEMO_PREFIX_META, formatDetail,
+} from './viz-3d-core.js';
 
 // ═══════════════════════════════════════════════════
-//  Encode Engine (실제 좌표 인코딩/디코딩)
+//  ENCODE ENGINE (인라인 — 브라우저 전용)
 // ═══════════════════════════════════════════════════
+const CAT={"service":{"version":"v1","labels":["env","region","svc_name","namespace"],"dims":{"env":{"kind":"axis","entries":["dev","stage","prod","test","local"],"capacity":32},"region":{"kind":"axis","entries":["asia","usa"],"capacity":32},"svc_name":{"kind":"axis","entries":["shopping-web","shopping-backend","auth","payment","gateway"],"capacity":32},"namespace":{"kind":"axis","entries":["shop","cms"],"capacity":32}}},"page_view":{"version":"v2","labels":["svc_ref","page","locale","userType"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"locale":{"kind":"axis","entries":["ko","en","ja"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"tracking":{"version":"v2","labels":["trackAction","page","userType"],"dims":{"trackAction":{"kind":"axis","entries":["click","view","scroll","submit","navigate","add_to_cart","purchase","close"],"capacity":32},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"endpoint":{"version":"v1","labels":["svc_ref","resource_type","http_method","api_version"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"resource_type":{"kind":"axis","entries":["api","page","webhook","grpc"],"capacity":32},"http_method":{"kind":"axis","entries":["GET","POST","PUT","DELETE","PATCH"],"capacity":32},"api_version":{"kind":"axis","entries":["v1","v2"],"capacity":32}}},"flow_point":{"version":"v2","labels":["svc_ref","flow_name","flow_step","flow_variant"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"flow_name":{"kind":"axis","entries":["checkout","signup","order_cancel","refund","login","browse","cart_manage","payment"],"capacity":64},"flow_step":{"kind":"axis","entries":["entry","processing","branch","success","failure","timeout","payment","complete","exit"],"capacity":32},"flow_variant":{"kind":"axis","entries":["default","retry","fallback","manual"],"capacity":32}}},"cart_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["add","remove","checkout"],"capacity":32}}},"auth_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["login","logout","token_refresh"],"capacity":32}}},"order_event":{"version":"v1","labels":["service_ctx","action"],"dims":{"service_ctx":{"kind":"prefix_ref","values":[65536,65568,65600,65632,65664]},"action":{"kind":"axis","entries":["create","cancel","refund","complete"],"capacity":32}}},"permission":{"version":"v4","labels":["perm_svc","role"],"dims":{"perm_svc":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"role":{"kind":"axis","entries":["admin","developer","operator","viewer","readonly","customer","auditor"],"capacity":32}}},"deploy_event":{"version":"v1","labels":["svc_ref","deploy_action"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"deploy_action":{"kind":"axis","entries":["deploy","rollback","scale_up","scale_down","restart","canary_start","canary_promote"],"capacity":32}}},"health_event":{"version":"v1","labels":["svc_ref","health_status"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"health_status":{"kind":"axis","entries":["healthy","degraded","unhealthy","maintenance"],"capacity":32}}},"pipeline_point":{"version":"v1","labels":["svc_ref","pipeline_phase","validation_mode","verdict_result","temporal_strategy"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"pipeline_phase":{"kind":"axis","entries":["ingest","reconstruct","verdict","aggregate","propagate"],"capacity":32},"validation_mode":{"kind":"axis","entries":["strict","warn","off"],"capacity":32},"verdict_result":{"kind":"axis","entries":["pass","fail","warn","degraded","unknown"],"capacity":32},"temporal_strategy":{"kind":"axis","entries":["span_local","global"],"capacity":32}}},"data_policy":{"version":"v1","labels":["svc_ref","mask_mode"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"mask_mode":{"kind":"axis","entries":["raw","mask","drop","hash"],"capacity":32}}}};
 
-const CATALOG = {"service":{"version":"v1","labels":["env","region","svc_name","namespace"],"dims":{"env":{"kind":"axis","entries":["dev","stage","prod","test","local"],"capacity":32},"region":{"kind":"axis","entries":["asia","usa"],"capacity":32},"svc_name":{"kind":"axis","entries":["shopping-web","shopping-backend","auth","payment","gateway"],"capacity":32},"namespace":{"kind":"axis","entries":["shop","cms"],"capacity":32}}},"permission":{"version":"v4","labels":["perm_svc","role"],"dims":{"perm_svc":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"role":{"kind":"axis","entries":["admin","developer","operator","viewer","readonly","customer","auditor"],"capacity":32}}},"page_view":{"version":"v2","labels":["svc_ref","page","locale","userType"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"locale":{"kind":"axis","entries":["ko","en","ja"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"tracking":{"version":"v2","labels":["trackAction","page","userType"],"dims":{"trackAction":{"kind":"axis","entries":["click","view","scroll","submit","navigate","add_to_cart","purchase","close"],"capacity":32},"page":{"kind":"axis","entries":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"capacity":32},"userType":{"kind":"axis","entries":["guest","member","premium"],"capacity":32}}},"endpoint":{"version":"v1","labels":["svc_ref","resource_type","http_method","api_version"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"resource_type":{"kind":"axis","entries":["api","page","webhook","grpc"],"capacity":32},"http_method":{"kind":"axis","entries":["GET","POST","PUT","DELETE","PATCH"],"capacity":32},"api_version":{"kind":"axis","entries":["v1","v2"],"capacity":32}}},"flow_point":{"version":"v2","labels":["svc_ref","flow_name","flow_step","flow_variant"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"flow_name":{"kind":"axis","entries":["checkout","signup","order_cancel","refund","login","browse","cart_manage","payment"],"capacity":64},"flow_step":{"kind":"axis","entries":["entry","processing","branch","success","failure","timeout","payment","complete","exit"],"capacity":32},"flow_variant":{"kind":"axis","entries":["default","retry","fallback","manual"],"capacity":32}}},"cart_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["add","remove","checkout"],"capacity":32}}},"auth_event":{"version":"v1","labels":["action"],"dims":{"action":{"kind":"axis","entries":["login","logout","token_refresh"],"capacity":32}}},"order_event":{"version":"v1","labels":["service_ctx","action"],"dims":{"service_ctx":{"kind":"prefix_ref","values":[65536,65568,65600,65632,65664]},"action":{"kind":"axis","entries":["create","cancel","refund","complete"],"capacity":32}}},"deploy_event":{"version":"v1","labels":["svc_ref","deploy_action"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"deploy_action":{"kind":"axis","entries":["deploy","rollback","scale_up","scale_down","restart","canary_start","canary_promote"],"capacity":32}}},"health_event":{"version":"v1","labels":["svc_ref","health_status"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[0,32,64,96,128,32768,32800,32832,32864,32896,65536,65568,65600,65632,65664]},"health_status":{"kind":"axis","entries":["healthy","degraded","unhealthy","maintenance"],"capacity":32}}},"pipeline_point":{"version":"v1","labels":["svc_ref","pipeline_phase","validation_mode","verdict_result","temporal_strategy"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"pipeline_phase":{"kind":"axis","entries":["ingest","reconstruct","verdict","aggregate","propagate"],"capacity":32},"validation_mode":{"kind":"axis","entries":["strict","warn","off"],"capacity":32},"verdict_result":{"kind":"axis","entries":["pass","fail","warn","degraded","unknown"],"capacity":32},"temporal_strategy":{"kind":"axis","entries":["span_local","global"],"capacity":32}}},"data_policy":{"version":"v1","labels":["svc_ref","mask_mode"],"dims":{"svc_ref":{"kind":"prefix_ref","values":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"mask_mode":{"kind":"axis","entries":["raw","mask","drop","hash"],"capacity":32}}}};
+function enc(p,v){const d=CAT[p];if(!d)return null;const s=[],po=[];for(const l of d.labels){const dm=d.dims[l];if(dm.kind==='axis'){s.push(dm.capacity);const i=dm.entries.indexOf(v[l]);if(i<0)return null;po.push(i)}else{s.push(dm.values.length);const i=dm.values.indexOf(v[l]);if(i<0)return null;po.push(i)}}const st=Array(s.length);st[s.length-1]=1;for(let i=s.length-2;i>=0;i--)st[i]=st[i+1]*s[i+1];let a=0;for(let i=0;i<po.length;i++)a+=po[i]*st[i];return{prefix:p,version:d.version,address:a,serialized:`${p}:${d.version}:${a}`}}
+function dec(ser){const[p,v,as]=ser.split(':');const d=CAT[p];if(!d)return null;let a=parseInt(as);const s=[],ls=[];for(const l of d.labels){const dm=d.dims[l];if(dm.kind==='axis'){s.push(dm.capacity);ls.push({l,dm})}else{s.push(dm.values.length);ls.push({l,dm})}}const st=Array(s.length);st[s.length-1]=1;for(let i=s.length-2;i>=0;i--)st[i]=st[i+1]*s[i+1];const r={};for(let i=0;i<ls.length;i++){const pos=Math.floor(a/st[i]);a%=st[i];r[ls[i].l]=ls[i].dm.kind==='axis'?(ls[i].dm.entries[pos]||`(${pos})`):ls[i].dm.values[pos]}return{prefix:p,version:v,values:r}}
+function trk(pd){const c={};for(const[p,dm]of Object.entries(pd)){const d=CAT[p];if(!d)continue;const f={...dm};for(const l of d.labels){const di=d.dims[l];if(di.kind==='prefix_ref'&&!(l in f))f[l]=di.values[0]}const r=enc(p,f);if(r)c[p]=r.serialized}return c}
+const SW=enc('service',{env:'prod',region:'asia',svc_name:'shopping-web',namespace:'shop'}).address;
+const SB=enc('service',{env:'prod',region:'asia',svc_name:'shopping-backend',namespace:'shop'}).address;
+const SP=enc('service',{env:'prod',region:'asia',svc_name:'payment',namespace:'shop'}).address;
 
-// 실제 mixed-radix encode
-function encode(prefixId, values) {
-  const def = CATALOG[prefixId];
-  if (!def) return null;
-  const shape = [], positions = [];
-  for (const label of def.labels) {
-    const dim = def.dims[label];
-    if (dim.kind === 'axis') {
-      shape.push(dim.capacity);
-      const idx = dim.entries.indexOf(values[label]);
-      if (idx < 0) return null;
-      positions.push(idx);
-    } else if (dim.kind === 'prefix_ref') {
-      shape.push(dim.values.length);
-      const idx = dim.values.indexOf(values[label]);
-      if (idx < 0) return null;
-      positions.push(idx);
-    }
+// ═══════════════════════════════════════════════════
+//  GRID DEFS — viz-3d buildGridPositions 사용
+// ═══════════════════════════════════════════════════
+const GRIDS=[
+  {id:'page_view',category:'observation',layer:0,entries:['home','product_list','product_detail','cart','checkout','order_complete','mypage','login'],cols:4},
+  {id:'tracking',category:'entity',layer:0,entries:['click','view','scroll','submit','navigate','add_to_cart','purchase','close'],cols:4},
+  {id:'endpoint',category:'observation',layer:1,entries:['GET/api','POST/api','PUT/api','DELETE/api','webhook'],cols:3},
+  {id:'flow_point',category:'observation',layer:1,entries:['checkout/entry','checkout/process','checkout/success','checkout/payment','checkout/complete','login/entry','browse/exit','payment/pay'],cols:4},
+  {id:'permission',category:'policy',layer:1,entries:['admin','developer','operator','viewer','readonly','customer','auditor'],cols:4},
+  {id:'cart_event',category:'event',layer:1,entries:['add','remove','checkout'],cols:3},
+  {id:'auth_event',category:'event',layer:1,entries:['login','logout','token_refresh'],cols:3},
+  {id:'order_event',category:'event',layer:1,entries:['create','cancel','refund','complete'],cols:2},
+  {id:'service',category:'entity',layer:2,entries:['web','backend','auth','payment','gateway'],cols:3},
+  {id:'deploy_event',category:'event',layer:2,entries:['deploy','rollback','scale_up','restart','canary'],cols:3},
+  {id:'health_event',category:'event',layer:2,entries:['healthy','degraded','unhealthy','maintenance'],cols:2},
+  {id:'pipeline_point',category:'observation',layer:2,entries:['ingest','reconstruct','verdict','aggregate','propagate'],cols:3},
+  {id:'data_policy',category:'observation',layer:2,entries:['raw','mask','drop','hash'],cols:2},
+  {id:'members',category:'table',layer:3,entries:['id','name','role','org_id'],cols:2},
+  {id:'orders',category:'table',layer:3,entries:['id','member_id','svc_addr','status','amount'],cols:3},
+  {id:'items',category:'table',layer:3,entries:['id','name','category','warehouse'],cols:2},
+  {id:'orgs',category:'table',layer:3,entries:['id','name','region_addr'],cols:3},
+  {id:'carts',category:'table',layer:3,entries:['id','member_id'],cols:2},
+  {id:'cart_items',category:'table',layer:3,entries:['cart_id','item_id','qty'],cols:3},
+];
+
+const LY=[8,2,-4,-10];
+const cS=0.42,cG=0.1;
+
+// ── viz-3d 모듈 사용 ──
+const GP=buildGridPositions(GRIDS,LY,cS,cG);
+const VE=new ViewEngine();
+VE.setPositions(GP.viewPositions);
+// Stack view positions
+const stk=['page_view','endpoint','flow_point','permission','order_event','orders'];
+const stackPos={};stk.forEach((id,i)=>{stackPos[id]={x:0,y:8-i*3.5,z:0}});GRIDS.forEach(g=>{if(!stackPos[g.id])stackPos[g.id]={x:25,y:5-GRIDS.indexOf(g)*2,z:0}});
+VE.addViewMode('stack',stackPos);
+
+const CS=new CellStateManager(4);
+const BP=new BeamPool(50);
+const FH=new FlowHistory();
+
+// ═══════════════════════════════════════════════════
+//  THREE.JS SCENE
+// ═══════════════════════════════════════════════════
+let settings={baseOpacity:0.35,glowMul:0.7,edgeOpacity:0.3,gridOpacity:0.4,bgLevel:0.03,fogDensity:0.006};
+
+const canvas=document.getElementById('c');
+const R=new T.WebGLRenderer({canvas,antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);
+R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.1;
+const scene=new T.Scene();scene.background=new T.Color(PALETTE.bgDeep.hex);scene.fog=new T.FogExp2(PALETTE.bgDeep.hex,settings.fogDensity);
+const cam=new T.PerspectiveCamera(38,innerWidth/innerHeight,0.1,500);cam.position.set(40,28,45);
+const ctl=new OrbitControls(cam,canvas);ctl.enableDamping=true;ctl.dampingFactor=0.04;ctl.target.set(0,-2,0);
+scene.add(new T.AmbientLight(PALETTE.bgGrid1.hex,3));
+const dl=new T.DirectionalLight(0xffffff,0.3);dl.position.set(20,40,20);scene.add(dl);
+const gf1=new T.GridHelper(100,20,PALETTE.bgGrid1.hex,PALETTE.bgGrid1.hex);gf1.position.y=-14;gf1.material.transparent=true;gf1.material.opacity=settings.gridOpacity;scene.add(gf1);
+const gf2=new T.GridHelper(100,100,PALETTE.bgGrid2.hex,PALETTE.bgGrid2.hex);gf2.position.y=-14.01;gf2.material.transparent=true;gf2.material.opacity=settings.gridOpacity*0.5;scene.add(gf2);
+const axM=new T.LineBasicMaterial({color:PALETTE.bgAxis.hex,transparent:true,opacity:0.3});
+scene.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(-30,-14,0),new T.Vector3(30,-14,0)]),axM));
+scene.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(0,-14,-30),new T.Vector3(0,-14,30)]),axM.clone()));
+scene.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(0,-14,0),new T.Vector3(0,14,0)]),new T.LineBasicMaterial({color:PALETTE.bgAxis.hex,transparent:true,opacity:0.15})));
+// (파티클 제거 — 불필요한 시각 노이즈)
+
+// ═══════════════════════════════════════════════════
+//  BUILD CELLS — InstancedMesh per prefix
+// ═══════════════════════════════════════════════════
+function tx(t,sz,col){const c=document.createElement('canvas');c.width=256;c.height=48;const x=c.getContext('2d');x.fillStyle=col;x.font=`500 ${sz}px IBM Plex Mono`;x.textAlign='center';x.fillText(t,128,32);const tex=new T.CanvasTexture(c);tex.minFilter=T.LinearFilter;return tex}
+
+const cellMap={};const groups=new Map();
+const instancedGrids=[];const labelSprites=[];
+const perf=new PerfMonitor();
+
+for(const gl of GP.grids){
+  const def=GRIDS.find(g=>g.id===gl.id);
+  const cc=CATEGORY_COLORS[def.category]||CATEGORY_COLORS.entity;
+  const pos=GP.viewPositions.layer[gl.id];
+  const grp=new T.Group();grp.position.set(pos.x,pos.y,pos.z);scene.add(grp);
+  groups.set(gl.id,grp);
+  VE.registerGroup(gl.id,pos);
+
+  const pw=gl.width+0.4,pd=gl.depth+0.4,ph=gl.height+0.4;
+  // Base plate
+  const plate=new T.Mesh(new T.PlaneGeometry(pw,pd),new T.MeshBasicMaterial({color:cc.main.hex,transparent:true,opacity:0.02,side:T.DoubleSide}));
+  plate.rotation.x=-Math.PI/2;plate.position.y=-0.2;grp.add(plate);
+  // Label
+  const lb=new T.Sprite(new T.SpriteMaterial({map:tx(gl.id,13,cc.main.css),transparent:true,opacity:0.6}));
+  lb.scale.set(4,0.7,1);lb.position.set(0,gl.is3d?ph+0.3:0.7,-(pd/2+0.4));grp.add(lb);
+  labelSprites.push({sprite:lb,gridId:gl.id});
+
+  // InstancedMesh — 1 draw call per prefix
+  const count=gl.cells.length;
+  const meta=DEMO_PREFIX_META[gl.id];
+  const hRatio=meta?.heightRatio??1;
+  const cellH=gl.is3d?cS*0.6:(0.25*hRatio);
+  const geo=new T.BoxGeometry(cS,cellH,cS);
+  const mat=new T.MeshStandardMaterial({color:cc.main.hex,emissive:cc.emissive.hex,emissiveIntensity:0,metalness:0.35,roughness:0.5,transparent:true,opacity:settings.baseOpacity});
+  const iMesh=new T.InstancedMesh(geo,mat,count);
+  iMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
+
+  const dummy=new T.Object3D();
+  const keyToIdx=new Map();const idxToKey=[];
+  const glows=new Float32Array(count);
+
+  for(let i=0;i<count;i++){
+    const cell=gl.cells[i];
+    dummy.position.set(cell.localX,cell.localY,cell.localZ);dummy.updateMatrix();
+    iMesh.setMatrixAt(i,dummy.matrix);
+    iMesh.setColorAt(i,new T.Color(cc.main.hex));
+    keyToIdx.set(cell.key,i);idxToKey.push(cell.key);
+
+    // Entry label (near LOD only — will be toggled)
+    const short=cell.entry.length>9?cell.entry.slice(0,8)+'…':cell.entry;
+    const el=new T.Sprite(new T.SpriteMaterial({map:tx(short,10,'#778'),transparent:true,opacity:0.5}));
+    el.scale.set(1.1,0.22,1);el.position.set(cell.localX,cell.localY-0.3,cell.localZ+0.4);
+    grp.add(el);labelSprites.push({sprite:el,gridId:gl.id});
+
+    // cellMap for activation/beam/click
+    cellMap[cell.key]={iMesh,idx:i,mat,cc:{c:cc.main.hex,e:cc.emissive.hex},layer:def.layer,grp,
+      wp:()=>{const v=new T.Vector3(cell.localX,cell.localY,cell.localZ);grp.localToWorld(v);return v}};
   }
-  const strides = new Array(shape.length);
-  strides[shape.length - 1] = 1;
-  for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i+1] * shape[i+1];
-  let addr = 0;
-  for (let i = 0; i < positions.length; i++) addr += positions[i] * strides[i];
-  return { prefix: prefixId, version: def.version, address: addr, serialized: `${prefixId}:${def.version}:${addr}` };
+  iMesh.instanceMatrix.needsUpdate=true;
+  if(iMesh.instanceColor)iMesh.instanceColor.needsUpdate=true;
+  grp.add(iMesh);
+
+  instancedGrids.push({gridId:gl.id,iMesh,mat,cc,keyToIdx,idxToKey,glows,count});
 }
+LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMaterial({map:tx(['L0 UI','L1 Business','L2 Infra','L3 Data'][i],13,lc.css),transparent:true,opacity:0.2}));l.scale.set(5,1,1);l.position.set(-28,y,0);scene.add(l)});
 
-// 실제 mixed-radix decode
-function decode(serialized) {
-  const [prefixId, version, addrStr] = serialized.split(':');
-  const def = CATALOG[prefixId];
-  if (!def) return null;
-  let addr = parseInt(addrStr);
-  const shape = [], labels = [];
-  for (const label of def.labels) {
-    const dim = def.dims[label];
-    if (dim.kind === 'axis') { shape.push(dim.capacity); labels.push({label, dim}); }
-    else if (dim.kind === 'prefix_ref') { shape.push(dim.values.length); labels.push({label, dim}); }
-  }
-  const strides = new Array(shape.length);
-  strides[shape.length-1]=1;
-  for(let i=shape.length-2;i>=0;i--)strides[i]=strides[i+1]*shape[i+1];
-  const result = {};
-  for (let i = 0; i < labels.length; i++) {
-    const pos = Math.floor(addr / strides[i]); addr %= strides[i];
-    const {label, dim} = labels[i];
-    result[label] = dim.kind === 'axis' ? (dim.entries[pos] || `(${pos})`) : dim.values[pos];
-  }
-  return { prefix: prefixId, version, values: result };
-}
-
-// Service address for prod/asia/shopping-web/shop
-const SVC_WEB = encode('service', {env:'prod',region:'asia',svc_name:'shopping-web',namespace:'shop'}).address;
-const SVC_BE = encode('service', {env:'prod',region:'asia',svc_name:'shopping-backend',namespace:'shop'}).address;
-const SVC_PAY = encode('service', {env:'prod',region:'asia',svc_name:'payment',namespace:'shop'}).address;
-
-// QaContext-like track function
-function track(prefixDims) {
-  const ctx = {};
-  for (const [prefixId, dims] of Object.entries(prefixDims)) {
-    const def = CATALOG[prefixId];
-    if (!def) continue;
-    const fullDims = { ...dims };
-    // Auto-inject svc_ref
-    for (const label of def.labels) {
-      const dim = def.dims[label];
-      if (dim.kind === 'prefix_ref' && !(label in fullDims)) {
-        fullDims[label] = dim.values[0]; // default first service
-      }
-    }
-    const result = encode(prefixId, fullDims);
-    if (result) ctx[prefixId] = result.serialized;
-  }
-  return ctx;
-}
+// Beams
+const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0})}
+let bI=0;
+function beam(a,b){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;e.m.color.setHex(a.cc.c);e.life=1}
 
 // ═══════════════════════════════════════════════════
-//  Demo Steps with REAL encode
+//  DEMO STEPS (compact)
 // ═══════════════════════════════════════════════════
-
-const DEMO_STEPS = [
-  { name:'1. Login', desc:'인증 → 세션 생성 → 멤버 조회',
-    encode: () => track({
-      page_view: {svc_ref:SVC_WEB, page:'login', locale:'ko', userType:'guest'},
-      tracking: {trackAction:'submit', page:'login', userType:'guest'},
-      auth_event: {action:'login'},
-      endpoint: {svc_ref:SVC_WEB, resource_type:'api', http_method:'POST', api_version:'v1'},
-      flow_point: {svc_ref:SVC_WEB, flow_name:'login', flow_step:'entry', flow_variant:'default'},
-    }), tables: ['members/id','members/role'] },
-  { name:'2. Home', desc:'홈 화면 렌더링',
-    encode: () => track({
-      page_view: {svc_ref:SVC_WEB, page:'home', locale:'ko', userType:'member'},
-      tracking: {trackAction:'view', page:'home', userType:'member'},
-    }), tables: [] },
-  { name:'3. Product List', desc:'상품 목록 API → items 테이블 조회',
-    encode: () => track({
-      page_view: {svc_ref:SVC_BE, page:'product_list', locale:'ko', userType:'member'},
-      tracking: {trackAction:'view', page:'product_list', userType:'member'},
-      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
-    }), tables: ['items/id','items/name','items/category'] },
-  { name:'4. Product Detail', desc:'상품 상세 → items + orgs 조회',
-    encode: () => track({
-      page_view: {svc_ref:SVC_BE, page:'product_detail', locale:'ko', userType:'member'},
-      tracking: {trackAction:'click', page:'product_detail', userType:'member'},
-      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
-    }), tables: ['items/id','items/name','items/warehouse_addr','orgs/region_addr'] },
-  { name:'5. Add to Cart', desc:'장바구니 담기 → carts, cart_items 쓰기',
-    encode: () => track({
-      page_view: {svc_ref:SVC_BE, page:'product_detail', locale:'ko', userType:'member'},
-      tracking: {trackAction:'add_to_cart', page:'product_detail', userType:'member'},
-      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'POST', api_version:'v1'},
-      cart_event: {action:'add'},
-    }), tables: ['carts/id','carts/member_id','cart_items/cart_id','cart_items/item_id','cart_items/qty'] },
-  { name:'6. Cart', desc:'장바구니 조회 → cart_items + items 조인',
-    encode: () => track({
-      page_view: {svc_ref:SVC_BE, page:'cart', locale:'ko', userType:'member'},
-      tracking: {trackAction:'view', page:'cart', userType:'member'},
-      endpoint: {svc_ref:SVC_BE, resource_type:'api', http_method:'GET', api_version:'v1'},
-    }), tables: ['carts/id','cart_items/item_id','items/name'] },
-  { name:'7. Checkout Entry', desc:'결제 진입 → 흐름 시작',
-    encode: () => track({
-      page_view: {svc_ref:SVC_PAY, page:'checkout', locale:'ko', userType:'member'},
-      tracking: {trackAction:'navigate', page:'checkout', userType:'member'},
-      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'entry', flow_variant:'default'},
-      permission: {perm_svc:SVC_PAY, role:'customer'},
-    }), tables: [] },
-  { name:'8. Checkout Process', desc:'주문 생성 → orders 쓰기 + 권한 검사',
-    encode: () => track({
-      endpoint: {svc_ref:SVC_PAY, resource_type:'api', http_method:'POST', api_version:'v1'},
-      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'processing', flow_variant:'default'},
-      permission: {perm_svc:SVC_PAY, role:'customer'},
-      order_event: {service_ctx:SVC_PAY, action:'create'},
-      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'ingest', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
-    }), tables: ['orders/id','orders/member_id','orders/service_addr','orders/status','orders/amount'] },
-  { name:'9. Payment', desc:'결제 처리 → 외부 PG 연동',
-    encode: () => track({
-      endpoint: {svc_ref:SVC_PAY, resource_type:'api', http_method:'POST', api_version:'v1'},
-      flow_point: {svc_ref:SVC_PAY, flow_name:'payment', flow_step:'payment', flow_variant:'default'},
-      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'reconstruct', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
-    }), tables: [] },
-  { name:'10. Payment OK', desc:'결제 성공 → 주문 상태 업데이트',
-    encode: () => track({
-      order_event: {service_ctx:SVC_BE, action:'complete'},
-      flow_point: {svc_ref:SVC_PAY, flow_name:'checkout', flow_step:'success', flow_variant:'default'},
-      health_event: {svc_ref:SVC_PAY, health_status:'healthy'},
-      pipeline_point: {svc_ref:SVC_PAY, pipeline_phase:'verdict', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
-    }), tables: ['orders/status'] },
-  { name:'11. Complete', desc:'완료 화면 → 주문 확인',
-    encode: () => track({
-      page_view: {svc_ref:SVC_WEB, page:'order_complete', locale:'ko', userType:'member'},
-      tracking: {trackAction:'view', page:'order_complete', userType:'member'},
-      flow_point: {svc_ref:SVC_WEB, flow_name:'checkout', flow_step:'complete', flow_variant:'default'},
-    }), tables: ['orders/id','orders/amount'] },
-  { name:'12. Mypage', desc:'마이페이지 → 주문 내역 조회',
-    encode: () => track({
-      page_view: {svc_ref:SVC_WEB, page:'mypage', locale:'ko', userType:'member'},
-      tracking: {trackAction:'navigate', page:'mypage', userType:'member'},
-      endpoint: {svc_ref:SVC_WEB, resource_type:'api', http_method:'GET', api_version:'v1'},
-    }), tables: ['orders/id','orders/status','members/name'] },
-  { name:'13. Exit', desc:'로그아웃 → 세션 종료',
-    encode: () => track({
-      tracking: {trackAction:'close', page:'mypage', userType:'member'},
-      flow_point: {svc_ref:SVC_WEB, flow_name:'browse', flow_step:'exit', flow_variant:'default'},
-      auth_event: {action:'logout'},
-      data_policy: {svc_ref:SVC_WEB, mask_mode:'raw'},
-      pipeline_point: {svc_ref:SVC_WEB, pipeline_phase:'aggregate', validation_mode:'strict', verdict_result:'pass', temporal_strategy:'span_local'},
-    }), tables: [] },
+const STEPS=[
+{n:'1. Login',d:'인증',e:()=>trk({page_view:{svc_ref:SW,page:'login',locale:'ko',userType:'guest'},tracking:{trackAction:'submit',page:'login',userType:'guest'},auth_event:{action:'login'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SW,flow_name:'login',flow_step:'entry',flow_variant:'default'}}),t:['members/id','members/role'],flow:[{tier:'T0',cell:'page_view/login',l:'화면: 로그인'},{tier:'T0',cell:'tracking/submit',l:'행동: 제출'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/login/entry',l:'흐름: 로그인'},{tier:'T2',cell:'auth_event/login',l:'이벤트: 로그인'},{tier:'T3',cell:'members/id',l:'DB: 멤버'}]},
+{n:'2. Home',d:'홈',e:()=>trk({page_view:{svc_ref:SW,page:'home',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'home',userType:'member'}}),t:[],flow:[{tier:'T0',cell:'page_view/home',l:'화면: 홈'},{tier:'T0',cell:'tracking/view',l:'행동: 조회'}]},
+{n:'3. Products',d:'상품목록',e:()=>trk({page_view:{svc_ref:SB,page:'product_list',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'product_list',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','items/name'],flow:[{tier:'T0',cell:'page_view/product_list',l:'화면: 상품목록'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'}]},
+{n:'4. Detail',d:'상품상세',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{trackAction:'click',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['items/id','orgs/region_addr'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/click',l:'행동: 클릭'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'items/id',l:'DB: 상품'},{tier:'T3',cell:'orgs/region_addr',l:'DB: 리전'}]},
+{n:'5. Add Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'product_detail',locale:'ko',userType:'member'},tracking:{trackAction:'add_to_cart',page:'product_detail',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'POST',api_version:'v1'},cart_event:{action:'add'}}),t:['carts/id','cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/product_detail',l:'화면: 상세'},{tier:'T0',cell:'tracking/add_to_cart',l:'행동: 담기'},{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T2',cell:'cart_event/add',l:'이벤트: 추가'},{tier:'T3',cell:'carts/id',l:'DB: 장바구니'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
+{n:'6. Cart',d:'장바구니',e:()=>trk({page_view:{svc_ref:SB,page:'cart',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'cart',userType:'member'},endpoint:{svc_ref:SB,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['cart_items/item_id'],flow:[{tier:'T0',cell:'page_view/cart',l:'화면: 장바구니'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'cart_items/item_id',l:'DB: 항목'}]},
+{n:'7. Checkout',d:'결제진입',e:()=>trk({page_view:{svc_ref:SP,page:'checkout',locale:'ko',userType:'member'},tracking:{trackAction:'navigate',page:'checkout',userType:'member'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'entry',flow_variant:'default'},permission:{perm_svc:SP,role:'customer'}}),t:[],flow:[{tier:'T0',cell:'page_view/checkout',l:'화면: 결제'},{tier:'T1',cell:'flow_point/checkout/entry',l:'흐름: 결제진입'},{tier:'T1',cell:'permission/customer',l:'권한: 고객'}]},
+{n:'8. Process',d:'주문생성',e:()=>trk({endpoint:{svc_ref:SP,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'processing',flow_variant:'default'},permission:{perm_svc:SP,role:'customer'},order_event:{service_ctx:SP,action:'create'},pipeline_point:{svc_ref:SP,pipeline_phase:'ingest',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:['orders/id','orders/status','orders/amount'],flow:[{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/checkout/process',l:'흐름: 처리'},{tier:'T2',cell:'order_event/create',l:'이벤트: 주문생성'},{tier:'T2',cell:'pipeline_point/ingest',l:'파이프: 수집'},{tier:'T3',cell:'orders/id',l:'DB: 주문'},{tier:'T3',cell:'orders/status',l:'DB: 상태'}]},
+{n:'9. Payment',d:'결제',e:()=>trk({endpoint:{svc_ref:SP,resource_type:'api',http_method:'POST',api_version:'v1'},flow_point:{svc_ref:SP,flow_name:'payment',flow_step:'payment',flow_variant:'default'},pipeline_point:{svc_ref:SP,pipeline_phase:'reconstruct',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:[],flow:[{tier:'T1',cell:'endpoint/POST/api',l:'API: POST'},{tier:'T1',cell:'flow_point/payment/pay',l:'흐름: 결제'},{tier:'T2',cell:'pipeline_point/reconstruct',l:'파이프: 재구성'}]},
+{n:'10. OK',d:'성공',e:()=>trk({order_event:{service_ctx:SB,action:'complete'},flow_point:{svc_ref:SP,flow_name:'checkout',flow_step:'success',flow_variant:'default'},health_event:{svc_ref:SP,health_status:'healthy'},pipeline_point:{svc_ref:SP,pipeline_phase:'verdict',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:['orders/status'],flow:[{tier:'T1',cell:'flow_point/checkout/success',l:'흐름: 성공'},{tier:'T2',cell:'order_event/complete',l:'이벤트: 완료'},{tier:'T2',cell:'health_event/healthy',l:'헬스: 정상'},{tier:'T3',cell:'orders/status',l:'DB: 상태'}]},
+{n:'11. Done',d:'완료',e:()=>trk({page_view:{svc_ref:SW,page:'order_complete',locale:'ko',userType:'member'},tracking:{trackAction:'view',page:'order_complete',userType:'member'},flow_point:{svc_ref:SW,flow_name:'checkout',flow_step:'complete',flow_variant:'default'}}),t:['orders/id'],flow:[{tier:'T0',cell:'page_view/order_complete',l:'화면: 완료'},{tier:'T1',cell:'flow_point/checkout/complete',l:'흐름: 완료'},{tier:'T3',cell:'orders/id',l:'DB: 주문확인'}]},
+{n:'12. Mypage',d:'마이페이지',e:()=>trk({page_view:{svc_ref:SW,page:'mypage',locale:'ko',userType:'member'},tracking:{trackAction:'navigate',page:'mypage',userType:'member'},endpoint:{svc_ref:SW,resource_type:'api',http_method:'GET',api_version:'v1'}}),t:['members/name','orders/id'],flow:[{tier:'T0',cell:'page_view/mypage',l:'화면: 마이페이지'},{tier:'T1',cell:'endpoint/GET/api',l:'API: GET'},{tier:'T3',cell:'members/name',l:'DB: 이름'},{tier:'T3',cell:'orders/id',l:'DB: 주문'}]},
+{n:'13. Exit',d:'이탈',e:()=>trk({tracking:{trackAction:'close',page:'mypage',userType:'member'},flow_point:{svc_ref:SW,flow_name:'browse',flow_step:'exit',flow_variant:'default'},auth_event:{action:'logout'},data_policy:{svc_ref:SW,mask_mode:'raw'},pipeline_point:{svc_ref:SW,pipeline_phase:'aggregate',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'}}),t:[],flow:[{tier:'T0',cell:'tracking/close',l:'행동: 닫기'},{tier:'T1',cell:'flow_point/browse/exit',l:'흐름: 이탈'},{tier:'T2',cell:'auth_event/logout',l:'이벤트: 로그아웃'},{tier:'T2',cell:'data_policy/raw',l:'정책: 원본'}]},
 ];
 
 // ═══════════════════════════════════════════════════
-//  Visual Config
+//  ACTIVATION + FLOW
 // ═══════════════════════════════════════════════════
+const lH=[0,0,0,0];let tot=0;let aSet=new Set();let flowTimers=[];
 
-const CAT_COLORS={
-  observation:{c:0x64ffda,e:0x00b4d8},event:{c:0xff9f43,e:0xff6b35},
-  policy:{c:0x2ed573,e:0x00b894},relation:{c:0xa29bfe,e:0x6c5ce7},
-  entity:{c:0x636e72,e:0x4a5568},table:{c:0xfd79a8,e:0xe84393},
-};
+function decodeKeys(ctx){
+  const keys=new Set();const ds={};
+  for(const[p,s]of Object.entries(ctx)){const d=dec(s);if(!d)continue;ds[p]=d;
+    if(p==='flow_point')keys.add(`flow_point/${d.values.flow_name}/${d.values.flow_step}`);
+    else if(p==='endpoint')keys.add(`endpoint/${d.values.http_method}/${d.values.resource_type}`);
+    else if(p==='service'){const sn=d.values.svc_name?.replace('shopping-','');keys.add(`service/${sn||'web'}`)}
+    else for(const v of Object.values(d.values))if(typeof v==='string')keys.add(`${p}/${v}`);
+  }
+  return{keys,ds};
+}
 
-// 4개 계층 — entries는 CATALOG에서 동적 생성
-const LAYERS=[
-  {id:'ui',name:'UI / Interface',y:6,color:0x64ffda,groups:[
-    {prefix:'page_view',cat:'observation',entries: CATALOG.page_view.dims.page.entries},
-    {prefix:'tracking',cat:'entity',entries: CATALOG.tracking.dims.trackAction.entries},
-  ]},
-  {id:'biz',name:'Business Logic',y:1.5,color:0xff9f43,groups:[
-    {prefix:'endpoint',cat:'observation',entries:['GET/api','POST/api','PUT/api','DELETE/api','POST/webhook']},
-    {prefix:'flow_point',cat:'observation',entries: CATALOG.flow_point.dims.flow_name.entries.flatMap(f => [f+'/entry',f+'/success']).slice(0,12)},
-    {prefix:'permission',cat:'policy',entries: CATALOG.permission.dims.role.entries},
-    {prefix:'cart_event',cat:'event',entries: CATALOG.cart_event.dims.action.entries},
-    {prefix:'auth_event',cat:'event',entries: CATALOG.auth_event.dims.action.entries},
-    {prefix:'order_event',cat:'event',entries: CATALOG.order_event.dims.action.entries},
-  ]},
-  {id:'infra',name:'Infra / Pipeline',y:-3,color:0xa29bfe,groups:[
-    {prefix:'service',cat:'entity',entries:['prod/asia/web','prod/asia/backend','prod/asia/auth','prod/asia/payment','prod/asia/gateway']},
-    {prefix:'deploy_event',cat:'event',entries: CATALOG.deploy_event.dims.deploy_action.entries.slice(0,5)},
-    {prefix:'health_event',cat:'event',entries: CATALOG.health_event.dims.health_status.entries},
-    {prefix:'pipeline_point',cat:'observation',entries: CATALOG.pipeline_point.dims.pipeline_phase.entries},
-    {prefix:'data_policy',cat:'observation',entries: CATALOG.data_policy.dims.mask_mode.entries},
-  ]},
-  {id:'data',name:'Data / Tables',y:-7.5,color:0xfd79a8,groups:[
-    {prefix:'members',cat:'table',entries:['id','name','role','org_id']},
-    {prefix:'orders',cat:'table',entries:['id','member_id','service_addr','status','amount']},
-    {prefix:'items',cat:'table',entries:['id','name','category','warehouse_addr']},
-    {prefix:'orgs',cat:'table',entries:['id','name','region_addr']},
-    {prefix:'carts',cat:'table',entries:['id','member_id']},
-    {prefix:'cart_items',cat:'table',entries:['cart_id','item_id','qty']},
-  ]},
-];
+function setGlow(key){
+  const c=cellMap[key];if(!c)return;
+  // InstancedMesh의 glow 배열 업데이트
+  for(const ig of instancedGrids){
+    const idx=ig.keyToIdx.get(key);
+    if(idx!==undefined){ig.glows[idx]=2;break}
+  }
+}
 
-// ═══════════════════════════════════════════════════
-//  Three.js Setup
-// ═══════════════════════════════════════════════════
-
-const canvas=document.getElementById('scene');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(innerWidth,innerHeight);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.1;
-
-const scene=new THREE.Scene();
-scene.fog=new THREE.FogExp2(0x06060a,0.012);
-
-const camera=new THREE.PerspectiveCamera(42,innerWidth/innerHeight,0.1,300);
-camera.position.set(30,22,35);
-
-const ctrl=new OrbitControls(camera,canvas);
-ctrl.enableDamping=true;ctrl.dampingFactor=0.05;
-ctrl.target.set(0,-1,0);ctrl.minDistance=15;ctrl.maxDistance=80;
-
-scene.add(new THREE.AmbientLight(0x141820,3));
-const dl=new THREE.DirectionalLight(0xffffff,0.3);dl.position.set(15,30,15);scene.add(dl);
-
-// ═══════════════════════════════════════════════════
-//  Build Cell Grid
-// ═══════════════════════════════════════════════════
-
-const cellMap={};// "prefix/entry" → {mesh,wire,glow,hits,layer}
-const cellSize=0.55;
-const cellGap=0.12;
-const groupGap=0.8;
-
-function buildGrid(){
-  LAYERS.forEach((layer,li)=>{
-    let curX=-((layer.groups.reduce((s,g)=>s+g.entries.length,0)*(cellSize+cellGap)+layer.groups.length*groupGap)/2);
-
-    // Layer plane
-    const totalW=layer.groups.reduce((s,g)=>s+g.entries.length,0)*(cellSize+cellGap)+layer.groups.length*groupGap+2;
-    const maxRows=Math.max(...layer.groups.map(g=>1));
-    const planeGeo=new THREE.PlaneGeometry(totalW,2.5);
-    const planeMat=new THREE.MeshBasicMaterial({color:layer.color,transparent:true,opacity:0.008,side:THREE.DoubleSide});
-    const plane=new THREE.Mesh(planeGeo,planeMat);
-    plane.rotation.x=-Math.PI/2;plane.position.set(0,layer.y-0.4,0);
-    scene.add(plane);
-
-    // Layer label
-    const lblCanvas=document.createElement('canvas');lblCanvas.width=512;lblCanvas.height=64;
-    const lctx=lblCanvas.getContext('2d');
-    lctx.fillStyle=`#${layer.color.toString(16).padStart(6,'0')}`;lctx.globalAlpha=0.4;
-    lctx.font='500 20px JetBrains Mono';lctx.fillText(layer.name,10,40);
-    const lblTex=new THREE.CanvasTexture(lblCanvas);lblTex.minFilter=THREE.LinearFilter;
-    const lblSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:lblTex,transparent:true}));
-    lblSprite.scale.set(8,1.5,1);lblSprite.position.set(curX-2,layer.y+0.6,2);
-    scene.add(lblSprite);
-
-    layer.groups.forEach(group=>{
-      // Group label
-      const gCanvas=document.createElement('canvas');gCanvas.width=256;gCanvas.height=48;
-      const gctx=gCanvas.getContext('2d');
-      const cc=CAT_COLORS[group.cat]||CAT_COLORS.entity;
-      gctx.fillStyle=`#${cc.c.toString(16).padStart(6,'0')}`;gctx.globalAlpha=0.5;
-      gctx.font='400 14px JetBrains Mono';gctx.fillText(group.prefix,4,30);
-      const gTex=new THREE.CanvasTexture(gCanvas);gTex.minFilter=THREE.LinearFilter;
-      const gSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:gTex,transparent:true}));
-      gSprite.scale.set(3,0.6,1);
-      gSprite.position.set(curX+group.entries.length*(cellSize+cellGap)/2,layer.y+0.4,-1.2);
-      scene.add(gSprite);
-
-      group.entries.forEach((entry,ei)=>{
-        const x=curX+ei*(cellSize+cellGap);
-        const catDef=CAT_COLORS[group.cat]||CAT_COLORS.entity;
-
-        const geo=new THREE.BoxGeometry(cellSize,0.3,cellSize);
-        const mat=new THREE.MeshStandardMaterial({
-          color:catDef.c,emissive:0x000000,metalness:0.4,roughness:0.6,
-          transparent:true,opacity:0.12,
-        });
-        const mesh=new THREE.Mesh(geo,mat);
-        mesh.position.set(x,layer.y,0);
-        scene.add(mesh);
-
-        const edgeGeo=new THREE.EdgesGeometry(geo);
-        const edgeMat=new THREE.LineBasicMaterial({color:catDef.c,transparent:true,opacity:0.08});
-        const wire=new THREE.LineSegments(edgeGeo,edgeMat);
-        wire.position.copy(mesh.position);
-        scene.add(wire);
-
-        // Entry label (small)
-        const eCanvas=document.createElement('canvas');eCanvas.width=128;eCanvas.height=32;
-        const ectx=eCanvas.getContext('2d');
-        ectx.fillStyle='#778';ectx.font='300 10px JetBrains Mono';
-        ectx.textAlign='center';
-        const shortLabel=entry.length>10?entry.slice(0,9)+'…':entry;
-        ectx.fillText(shortLabel,64,20);
-        const eTex=new THREE.CanvasTexture(eCanvas);eTex.minFilter=THREE.LinearFilter;
-        const eSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:eTex,transparent:true,opacity:0.5}));
-        eSprite.scale.set(1.2,0.3,1);
-        eSprite.position.set(x,layer.y-0.35,0.5);
-        scene.add(eSprite);
-
-        const key=`${group.prefix}/${entry}`;
-        cellMap[key]={mesh,mat,edgeMat,catDef,hits:0,glow:0,layer:li,x,y:layer.y};
-      });
-
-      curX+=group.entries.length*(cellSize+cellGap)+groupGap;
+function activateKeys(keys,flow){
+  aSet=new Set(keys);
+  if(flow&&flow.length>0){
+    flowTimers.forEach(t=>clearTimeout(t));flowTimers=[];
+    aSet=new Set();
+    flow.forEach((f,i)=>{
+      flowTimers.push(setTimeout(()=>{
+        aSet.add(f.cell);setGlow(f.cell);
+        const c=cellMap[f.cell];
+        if(c){CS.activate(f.cell,c.layer);lH[c.layer]++;tot++;
+          if(i>0){const pc=cellMap[flow[i-1].cell];if(pc&&c.layer!==pc.layer)beam(pc,c)}
+        }
+      },i*150));
     });
-  });
-}
-buildGrid();
-
-// ═══════════════════════════════════════════════════
-//  Connection Lines
-// ═══════════════════════════════════════════════════
-
-const MAX_LINES=60;
-const lines=[];
-for(let i=0;i<MAX_LINES;i++){
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
-  const mat=new THREE.LineBasicMaterial({color:0x64ffda,transparent:true,opacity:0});
-  const line=new THREE.Line(geo,mat);scene.add(line);
-  lines.push({geo,mat,life:0});
-}
-let lineIdx=0;
-
-function spawnLine(a,b){
-  if(!a||!b||a.layer===b.layer)return;
-  const L=lines[lineIdx%MAX_LINES];lineIdx++;
-  const p=L.geo.attributes.position.array;
-  p[0]=a.x;p[1]=a.y;p[2]=0;p[3]=b.x;p[4]=b.y;p[5]=0;
-  L.geo.attributes.position.needsUpdate=true;
-  L.mat.color.setHex(a.catDef.c);L.life=1;
-}
-
-// ═══════════════════════════════════════════════════
-//  Activate
-// ═══════════════════════════════════════════════════
-
-const layerHits=[0,0,0,0];
-let totalHits=0;
-let activeSet=new Set();
-
-let demoTraceId = 'trc_demo_' + Date.now();
-let demoSpanSeq = 0;
-
-function sendToIngest(addressContext, eventKey) {
-  const ingestUrl = document.getElementById('ws-url').value
-    .replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');
-  demoSpanSeq++;
-  const now = new Date().toISOString();
-  const envelope = {
-    transmission_id: 'tx_demo_' + Date.now(),
-    sent_at: now,
-    owner: { owner_type: 'workspace', owner_id: 'monitor-demo' },
-    source: { service_name: 'shopping-web', sdk_name: '@qa-sdk/monitor', sdk_version: '0.1.0' },
-    runtime: { platform: 'browser' },
-    build: { env: 'dev' },
-    records: [{
-      log_id: 'log_demo_' + Date.now() + '_' + demoSpanSeq,
-      timestamp: now,
-      record_kind: 'log',
-      trace_id: demoTraceId,
-      span_id: 'spn_demo_' + demoSpanSeq,
-      event_key: eventKey || 'demo.step',
-      event_version: '001',
-      payload_format: 'json',
-      payload_encoding: 'raw',
-      payload_masking_applied: false,
-      payload_masked_fields: [],
-      payload: { step: eventKey },
-      address_context: addressContext,
-    }],
-  };
-
-  fetch(ingestUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(envelope),
-  }).then(r => {
-    if (!r.ok) console.warn('ingest response:', r.status);
-  }).catch(() => {
-    // 서버 미가동 시 무시 — 로컬 시각화는 동작
-  });
+    flowTimers.push(setTimeout(()=>{for(const k of keys)aSet.add(k)},flow.length*150));
+  } else {
+    for(const k of keys){const c=cellMap[k];if(c){setGlow(k);CS.activate(k,c.layer);lH[c.layer]++;tot++}}
+    const act=[...keys].map(k=>cellMap[k]).filter(Boolean);
+    for(let i=0;i<act.length;i++)for(let j=i+1;j<act.length;j++)if(act[i].layer!==act[j].layer)beam(act[i],act[j]);
+  }
 }
 
 function fireStep(step){
-  // 1. 실제 encode 실행 → address_context 생성
-  const addressContext = step.encode();
-
-  // 1.5. ingest-server에 실제 전송
-  sendToIngest(addressContext, step.name);
-
-  // 2. decode → 각 prefix의 실제 값 추출
-  const decodedPrefixes = {};
-  for (const [prefixId, serialized] of Object.entries(addressContext)) {
-    const decoded = decode(serialized);
-    if (decoded) decodedPrefixes[prefixId] = decoded;
-  }
-
-  // 3. decoded 값을 셀 키로 변환하여 활성화
-  const cellKeys = new Set();
-  for (const [prefixId, decoded] of Object.entries(decodedPrefixes)) {
-    // prefix의 주요 값으로 셀 키 생성
-    const vals = Object.values(decoded.values);
-    if (prefixId === 'flow_point') {
-      cellKeys.add(`flow_point/${decoded.values.flow_name}/${decoded.values.flow_step}`);
-      // 약식도 추가
-      cellKeys.add(`flow_point/${decoded.values.flow_name}/entry`);
-      cellKeys.add(`flow_point/${decoded.values.flow_name}/success`);
-    } else if (prefixId === 'endpoint') {
-      cellKeys.add(`endpoint/${decoded.values.http_method}/${decoded.values.resource_type}`);
-    } else if (prefixId === 'service') {
-      const sn = decoded.values.svc_name?.replace('shopping-','') || 'web';
-      cellKeys.add(`service/prod/asia/${sn}`);
-    } else {
-      // 첫 번째 axis 값으로 매칭
-      for (const v of Object.values(decoded.values)) {
-        cellKeys.add(`${prefixId}/${v}`);
-      }
-    }
-  }
-  // 테이블 셀 추가 (encode 대상이 아닌 메타데이터)
-  for (const t of (step.tables || [])) cellKeys.add(t);
-
-  activeSet = cellKeys;
-  const activated = [];
-  for (const key of cellKeys) {
-    const cell = cellMap[key];
-    if (!cell) continue;
-    cell.glow = 2; cell.hits++;
-    layerHits[cell.layer]++; totalHits++;
-    activated.push(cell);
-  }
-  for(let i=0;i<activated.length;i++)
-    for(let j=i+1;j<activated.length;j++)
-      if(activated[i].layer!==activated[j].layer)spawnLine(activated[i],activated[j]);
-
-  // HUD: 실제 address_context 표시
-  step._addressContext = addressContext;
-  step._decoded = decodedPrefixes;
-  step._cells = [...cellKeys];
-  updateHUD(step);
+  const ctx=step.e();sendI(ctx,step.n);
+  const{keys}=decodeKeys(ctx);
+  for(const t of(step.t||[]))keys.add(t);
+  activateKeys(keys,step.flow);
+  FH.push({name:step.n,desc:step.d,flow:step.flow||[],keys:[...keys],ctx,timestamp:new Date().toISOString(),source:'demo'});
+  updateHUD(step,ctx);showFlow(FH.current());
 }
+
+function replayEntry(entry){
+  if(!entry)return;Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
+  activateKeys(new Set(entry.keys),null);
+  updateHUD({n:entry.name,d:entry.desc},entry.ctx);showFlow(entry);
+  $('status').textContent=`history ${FH.indexLabel()} — ${entry.name}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  INGEST
+// ═══════════════════════════════════════════════════
+let tId='trc_'+Date.now(),sSeq=0;
+function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transmission_id:'tx_'+Date.now(),sent_at:new Date().toISOString(),owner:{owner_type:'workspace',owner_id:'viz'},source:{service_name:'viz',sdk_name:'@qa-sdk/viz-3d',sdk_version:'0.1.0'},runtime:{platform:'browser'},build:{env:'dev'},records:[{log_id:'l_'+Date.now()+'_'+sSeq,timestamp:new Date().toISOString(),record_kind:'log',trace_id:tId,span_id:'s_'+sSeq,event_key:ek||'demo',event_version:'001',payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],payload:{},address_context:ctx}]})}).catch(()=>{})}
 
 // ═══════════════════════════════════════════════════
 //  HUD
 // ═══════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
 
-// Layer bars
-const barsEl=document.getElementById('layer-bars');
-LAYERS.forEach((l,i)=>{
-  const cls=['l0','l1','l2','l3'][i];
-  barsEl.innerHTML+=`<div class="layer-bar"><div class="layer-bar-label">${l.name}</div><div class="layer-bar-fill"><div class="layer-bar-inner ${cls}-fill" id="bar-${i}" style="width:0%"></div></div><div class="layer-bar-count" id="cnt-${i}">0</div></div>`;
+function updateHUD(step,ctx){
+  $('h-step').textContent=step?.n||'--';$('h-desc').textContent=step?.d||'';$('h-total').textContent=tot;
+  const mx=Math.max(1,...lH);for(let i=0;i<4;i++){$('b'+i).style.width=(lH[i]/mx*100)+'%';$('n'+i).textContent=lH[i]}
+  if(ctx)$('h-ctx').innerHTML=Object.entries(ctx).map(([p,s])=>`<span class="h">${p}</span> ${s}`).join('<br>');
+}
+
+function showFlow(entry){
+  if(!entry)return;$('h-flow').style.display='block';$('flow-idx').textContent=FH.indexLabel();$('flow-title').textContent=entry.name;
+  if(entry.flow.length)$('flow-steps').innerHTML=entry.flow.map(f=>`<div><span style="color:#889">${f.tier}</span> ${f.l}</div>`).join('');
+}
+
+function showCellInfo(key){
+  const c=cellMap[key];if(!c){$('h-select').style.display='none';return}
+  $('h-select').style.display='block';
+  const prefix=key.split('/')[0];
+  const entry=key.slice(prefix.length+1);
+  $('sel-id').textContent=key;
+
+  // prefix-meta 기반 상세 정보
+  const meta=DEMO_PREFIX_META[prefix];
+  let html='';
+
+  if(meta){
+    html=formatDetail(meta,entry);
+  }else{
+    html=`<div style="font-size:11px;color:#e0e4ec">${prefix}</div><div style="font-size:9px;color:#556">${entry}</div>`;
+  }
+
+  // 런타임 정보 추가
+  html+=`<div style="margin-top:6px;border-top:1px solid rgba(100,255,218,0.06);padding-top:4px">`;
+  html+=`<div style="font-size:8px;color:#334;letter-spacing:1px">RUNTIME</div>`;
+  html+=`<div style="font-size:9px;color:#667">layer: L${c.layer} ${['UI','Business','Infra','Data'][c.layer]||''}</div>`;
+
+  const ig=instancedGrids.find(g=>g.gridId===prefix);
+  const idx=ig?.keyToIdx.get(key);
+  if(ig&&idx!==undefined){
+    html+=`<div style="font-size:9px;color:#667">hits: <span style="color:var(--mint)">${CS.getOrCreate(key).hits}</span></div>`;
+  }
+
+  // Co-active
+  const peers=[...aSet].filter(k=>k!==key);
+  if(peers.length>0){
+    html+=`<div style="font-size:8px;color:#334;letter-spacing:1px;margin-top:4px">CO-ACTIVE</div>`;
+    peers.slice(0,5).forEach(p=>html+=`<div style="font-size:9px;color:#556">${p}</div>`);
+    if(peers.length>5)html+=`<div style="font-size:9px;color:#334">+${peers.length-5} more</div>`;
+  }
+
+  // Address context
+  const recent=FH.current();
+  if(recent?.ctx){
+    const matchedCtx=Object.entries(recent.ctx).find(([p])=>p===prefix);
+    if(matchedCtx)html+=`<div style="font-size:8px;color:#334;margin-top:4px">ADDR: <span style="color:#445">${matchedCtx[1]}</span></div>`;
+  }
+
+  html+=`</div>`;
+  $('sel-info').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════
+//  LIVE (using MonitorAdapter from viz-3d)
+// ═══════════════════════════════════════════════════
+const adapter=new MonitorAdapter({
+  decode:dec,mapToKeys:defaultKeyMapper,
+  onActivation:(keys,ctx)=>{
+    activateKeys(new Set(keys),null);
+    FH.push({name:'live',desc:'',flow:[],keys,ctx,timestamp:new Date().toISOString(),source:'live'});
+    updateHUD({n:'live',d:''},ctx);$('status').textContent=`live — ${tot} events (${FH.length} recorded)`;
+  },
+  onConnectionChange:s=>{const colors={connecting:'#ff9f43',connected:'#2ed573',subscribed:'#64ffda',error:'#ff3860',disconnected:'#334455',failed:'#ff3860'};$('conn').textContent='● '+s;$('conn').style.color=colors[s]||'#334';$('status').textContent=s},
 });
 
-function updateHUD(step){
-  document.getElementById('hud-step').textContent=step?.name||'--';
-  document.getElementById('hud-desc').textContent=step?.desc||'';
-  document.getElementById('hud-total').textContent=totalHits;
-  const maxH=Math.max(1,...layerHits);
-  LAYERS.forEach((_,i)=>{
-    document.getElementById(`bar-${i}`).style.width=`${(layerHits[i]/maxH)*100}%`;
-    document.getElementById(`cnt-${i}`).textContent=layerHits[i];
-  });
-  const activeEl=document.getElementById('hud-active');
-  if (step?._addressContext) {
-    activeEl.innerHTML = Object.entries(step._addressContext).map(([pid, ser]) => {
-      return `<span class="hit">${pid}</span> → ${ser}`;
-    }).join('<br>');
-    if (step.tables?.length) {
-      activeEl.innerHTML += '<br>' + step.tables.map(t => `<span style="color:#fd79a8">${t}</span>`).join('<br>');
-    }
-  } else {
-    activeEl.innerHTML = '';
-  }
-}
+// ═══════════════════════════════════════════════════
+//  EVENT BINDINGS (no inline onclick)
+// ═══════════════════════════════════════════════════
+// Display sliders
+$('sl-opacity').oninput=e=>{settings.baseOpacity=e.target.value/100;$('sl-opacity-v').textContent=e.target.value+'%'};
+$('sl-glow').oninput=e=>{settings.glowMul=e.target.value/100;$('sl-glow-v').textContent=e.target.value+'%'};
+$('sl-edge').oninput=e=>{settings.edgeOpacity=e.target.value/100;$('sl-edge-v').textContent=e.target.value+'%'};
+$('sl-grid').oninput=e=>{settings.gridOpacity=e.target.value/100;$('sl-grid-v').textContent=e.target.value+'%';gf1.material.opacity=settings.gridOpacity;gf2.material.opacity=settings.gridOpacity*0.5};
+$('sl-bg').oninput=e=>{const v=e.target.value/100;$('sl-bg-v').textContent=e.target.value+'%';scene.background=new T.Color(0.02+v*0.3,0.02+v*0.3,0.03+v*0.4)};
+$('sl-fog').oninput=e=>{settings.fogDensity=e.target.value/1000;$('sl-fog-v').textContent=e.target.value+'‰';scene.fog=new T.FogExp2(scene.background,settings.fogDensity)};
+
+// View modes
+document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
+  const m=b.dataset.v;document.querySelectorAll('.vb').forEach(x=>x.classList.toggle('on',x.dataset.v===m));
+  VE.setMode(m);
+}));
+
+// Flow nav
+$('btn-prev').addEventListener('click',()=>replayEntry(FH.prev()));
+$('btn-next').addEventListener('click',()=>replayEntry(FH.next()));
+
+// Live/Demo/Reset
+let dOn=false,dT=null,dI=0;
+$('btn-live').addEventListener('click',()=>{
+  if(adapter.connected){adapter.disconnect();$('btn-live').classList.remove('on')}
+  else{adapter.connect($('ws-url').value);$('btn-live').classList.add('on')}
+});
+$('btn-demo').addEventListener('click',()=>{
+  dOn=!dOn;$('btn-demo').classList.toggle('on',dOn);
+  if(dOn){dI=0;tId='trc_'+Date.now();sSeq=0;rD()}else clearTimeout(dT);
+});
+function rD(){if(!dOn)return;if(dI>=STEPS.length)dI=0;fireStep(STEPS[dI]);$('status').textContent=`demo ${dI+1}/${STEPS.length}`;dI++;dT=setTimeout(rD,2200)}
+$('btn-info').addEventListener('click',toggleInfo);
+$('btn-reset').addEventListener('click',()=>{
+  dOn=false;clearTimeout(dT);$('btn-demo').classList.remove('on');
+  tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();
+  Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
+  updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
+});
+
+// Cell click — InstancedMesh 지원
+const rc=new T.Raycaster(),mv=new T.Vector2();
+canvas.addEventListener('click',e=>{
+  mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
+  const iMeshes=instancedGrids.map(ig=>ig.iMesh);
+  const h=rc.intersectObjects(iMeshes);
+  if(h.length&&h[0].instanceId!==undefined){
+    const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
+    if(ig){const key=ig.idxToKey[h[0].instanceId];showCellInfo(key)}
+  }else $('h-select').style.display='none';
+});
 
 // ═══════════════════════════════════════════════════
-//  Demo
+//  RENDER LOOP
 // ═══════════════════════════════════════════════════
+const clk=new T.Clock();
+const baseC=new T.Color(),glowC=new T.Color(),tmpC=new T.Color();
 
-let demoOn=false,demoTimer=null,demoIdx=0;
+function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapsedTime;
+  perf.tick();
+  // View lerp
+  VE.update(dt);for(const[id,grp]of groups){const p=VE.getPosition(id);if(p)grp.position.lerp(new T.Vector3(p.x,p.y,p.z),dt*3)}
+  CS.decay(dt);
 
-window.toggleDemo=function(){
-  demoOn=!demoOn;
-  document.getElementById('btn-demo').classList.toggle('on',demoOn);
-  if(demoOn){
-    demoIdx=0;
-    demoTraceId='trc_demo_'+Date.now();
-    demoSpanSeq=0;
-    runDemo();
-  }else clearTimeout(demoTimer);
-};
-function runDemo(){
-  if(!demoOn)return;
-  if(demoIdx>=DEMO_STEPS.length)demoIdx=0;
-  fireStep(DEMO_STEPS[demoIdx]);
-  document.getElementById('status').textContent=`step ${demoIdx+1}/${DEMO_STEPS.length}`;
-  demoIdx++;demoTimer=setTimeout(runDemo,2200);
-}
-
-// ═══════════════════════════════════════════════════
-//  LIVE Mode — WebSocket → ingest-server 연결
-// ═══════════════════════════════════════════════════
-
-let ws = null;
-let liveOn = false;
-
-function setConnStatus(label, color) {
-  const el = document.getElementById('conn-status');
-  el.textContent = `● ${label}`;
-  el.style.color = color;
-}
-
-window.toggleLive = function() {
-  liveOn = !liveOn;
-  document.getElementById('btn-live').classList.toggle('on', liveOn);
-
-  if (liveOn) {
-    const url = document.getElementById('ws-url').value;
-    document.getElementById('status').textContent = `connecting to ${url}...`;
-    try {
-      ws = new WebSocket(url);
-      ws.onopen = () => {
-        setConnStatus('connected', '#2ed573');
-        document.getElementById('status').textContent = `connected — waiting for events`;
-        ws.send(JSON.stringify({ type: 'subscribe', scenarioId: '*' }));
-      };
-      ws.onmessage = (evt) => {
-        try {
-          const msg = JSON.parse(evt.data);
-          if (msg.type === 'record' && msg.data) {
-            handleLiveRecord(msg.data);
-          } else if (msg.type === 'subscribed') {
-            setConnStatus('subscribed', '#64ffda');
-            document.getElementById('status').textContent = `subscribed to ${msg.scenarioId} — waiting for events`;
-          }
-        } catch {}
-      };
-      ws.onerror = () => {
-        setConnStatus('error', '#ff6b6b');
-        document.getElementById('status').textContent = `connection error — is ingest-server running on ${url.replace('ws','http').replace('/v1/ws','')}?`;
-      };
-      ws.onclose = () => {
-        setConnStatus(liveOn ? 'reconnecting' : 'disconnected', liveOn ? '#ff9f43' : '#445');
-        document.getElementById('status').textContent = liveOn ? `disconnected — retrying in 3s...` : `disconnected`;
-        if (liveOn) { liveOn = false; setTimeout(() => { liveOn = true; window.toggleLive(); window.toggleLive(); }, 3000); }
-      };
-    } catch (e) {
-      document.getElementById('status').textContent = `failed: ${e.message}`;
-      liveOn = false;
-      document.getElementById('btn-live').classList.remove('on');
-    }
-  } else {
-    if (ws) { ws.close(); ws = null; }
-    document.getElementById('status').textContent = 'live disconnected';
-  }
-};
-
-function handleLiveRecord(record) {
-  const ctx = record.addressContext || record.address_context;
-  if (!ctx || Object.keys(ctx).length === 0) return;
-
-  // 실제 decode → 셀 활성화
-  const cellKeys = new Set();
-  const decodedPrefixes = {};
-
-  for (const [prefixId, serialized] of Object.entries(ctx)) {
-    const decoded = decode(serialized);
-    if (!decoded) continue;
-    decodedPrefixes[prefixId] = decoded;
-
-    if (prefixId === 'flow_point') {
-      cellKeys.add(`flow_point/${decoded.values.flow_name}/entry`);
-      cellKeys.add(`flow_point/${decoded.values.flow_name}/success`);
-    } else if (prefixId === 'endpoint') {
-      cellKeys.add(`endpoint/${decoded.values.http_method}/${decoded.values.resource_type}`);
-    } else if (prefixId === 'service') {
-      const sn = decoded.values.svc_name?.replace('shopping-','') || 'web';
-      cellKeys.add(`service/prod/asia/${sn}`);
-    } else {
-      for (const v of Object.values(decoded.values)) {
-        cellKeys.add(`${prefixId}/${v}`);
+  // InstancedMesh glow update — per-instance color (개별 셀 반짝이)
+  for(const ig of instancedGrids){
+    let needsUpdate=false;
+    baseC.setHex(ig.cc.main.hex);glowC.setHex(ig.cc.emissive.hex);
+    for(let i=0;i<ig.count;i++){
+      const key=ig.idxToKey[i];
+      if(ig.glows[i]>0)ig.glows[i]=Math.max(0,ig.glows[i]-dt*1.2);
+      const isA=aSet.has(key);
+      const pulse=isA?.4+Math.sin(t*5)*.2:0;
+      const I=Math.max(ig.glows[i],pulse);
+      // 활성 셀: 밝은 emissive color / 비활성 셀: 원래 색 유지
+      if(I>0.01){
+        tmpC.copy(baseC).lerp(glowC,I*settings.glowMul);
+        ig.iMesh.setColorAt(i,tmpC);needsUpdate=true;
+      } else {
+        // 비활성 셀은 원래 색으로 복원
+        ig.iMesh.setColorAt(i,baseC);needsUpdate=true;
       }
     }
+    ig.mat.opacity=settings.baseOpacity;
+    ig.mat.emissiveIntensity=0.1; // 최소 emissive (전체 반짝이 방지)
+    if(needsUpdate&&ig.iMesh.instanceColor)ig.iMesh.instanceColor.needsUpdate=true;
   }
 
-  activeSet = cellKeys;
-  const activated = [];
-  for (const key of cellKeys) {
-    const cell = cellMap[key];
-    if (!cell) continue;
-    cell.glow = 2; cell.hits++;
-    layerHits[cell.layer]++; totalHits++;
-    activated.push(cell);
+  // LOD — 카메라 거리에 따라 라벨 표시/숨김
+  const camPos={x:cam.position.x,y:cam.position.y,z:cam.position.z};
+  for(const ls of labelSprites){
+    const grp=groups.get(ls.gridId);
+    if(!grp)continue;
+    const dx=camPos.x-grp.position.x,dy=camPos.y-grp.position.y,dz=camPos.z-grp.position.z;
+    const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    const lod=computeLodLevel(dist);
+    const vis=getLodVisibility(lod);
+    ls.sprite.visible=vis.showLabels;
   }
-  for(let i=0;i<activated.length;i++)
-    for(let j=i+1;j<activated.length;j++)
-      if(activated[i].layer!==activated[j].layer)spawnLine(activated[i],activated[j]);
 
-  const step = {
-    name: record.eventKey || record.event_key || 'live',
-    desc: `trace:${(record.traceId||record.trace_id||'').slice(0,12)}`,
-    _addressContext: ctx,
-    _decoded: decodedPrefixes,
-    tables: [],
-  };
-  updateHUD(step);
-  document.getElementById('status').textContent = `live — ${totalHits} events received`;
+  // Beams
+  bLines.forEach(b=>{if(b.life>0){b.life-=dt*.5;b.m.opacity=Math.max(0,b.life*.4)}});
+
+  updateKeyboardNav();
+  ctl.update();R.render(scene,cam);
+
+  // Perf HUD (매 초 업데이트)
+  if(perf.fps>0){
+    const info=R.info.render;
+    $('perf').textContent=`${perf.fps}fps ${perf.frameTime}ms | draw:${info.calls} tri:${info.triangles} | cells:${Object.keys(cellMap).length} active:${aSet.size}`;
+  }
 }
-
-window.resetAll=function(){
-  demoOn=false;clearTimeout(demoTimer);
-  document.getElementById('btn-demo').classList.remove('on');
-  totalHits=0;layerHits.fill(0);activeSet.clear();
-  Object.values(cellMap).forEach(c=>{c.hits=0;c.glow=0;});
-  updateHUD(null);document.getElementById('status').textContent='reset';
-};
+anim();
+$('status').textContent='ready';
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
 
 // ═══════════════════════════════════════════════════
-//  Render Loop
+//  키보드 네비게이션
 // ═══════════════════════════════════════════════════
+const moveSpeed=0.5;
+const keyState={};
+let infoVisible=true;
 
-const clock=new THREE.Clock();
-function animate(){
-  requestAnimationFrame(animate);
-  const dt=clock.getDelta();
-  const t=clock.elapsedTime;
+function toggleInfo(){infoVisible=!infoVisible;$('info-overlay').style.display=infoVisible?'flex':'none'}
 
-  Object.entries(cellMap).forEach(([key,cell])=>{
-    cell.glow=Math.max(0,cell.glow-dt*1.2);
-    const isActive=activeSet.has(key);
-    const pulse=isActive?0.4+Math.sin(t*5)*0.2:0;
-    const intensity=Math.max(cell.glow,pulse);
+// 최초: info 표시. 아무 키 누르면 닫기
+$('btn-close-info').addEventListener('click',toggleInfo);
+$('info-overlay').addEventListener('click',e=>{if(e.target===$('info-overlay'))toggleInfo()});
 
-    cell.mat.emissive.setHex(cell.catDef.e);
-    cell.mat.emissiveIntensity=intensity*3;
-    cell.mat.opacity=0.12+intensity*0.7;
-    cell.edgeMat.opacity=0.08+intensity*0.9;
-  });
-
-  lines.forEach(l=>{
-    if(l.life>0){l.life-=dt*0.5;l.mat.opacity=Math.max(0,l.life*0.35);}
-  });
-
-  ctrl.update();
-  renderer.render(scene,camera);
-}
-animate();
-document.getElementById('status').textContent='ready — press DEMO';
-
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+addEventListener('keydown',e=>{
+  // info가 보이면: 아무 키나 닫기
+  if(infoVisible){toggleInfo();return}
+  keyState[e.code]=true;
+  if(e.code==='Digit1'){const b=document.querySelector('[data-v="layer"]');b?.click()}
+  if(e.code==='Digit2'){const b=document.querySelector('[data-v="category"]');b?.click()}
+  if(e.code==='Digit3'){const b=document.querySelector('[data-v="dsl"]');b?.click()}
+  if(e.code==='Digit4'){const b=document.querySelector('[data-v="service"]');b?.click()}
+  if(e.code==='Digit5'){const b=document.querySelector('[data-v="stack"]');b?.click()}
+  if(e.code==='Space'){e.preventDefault();$('btn-demo').click()}
+  if(e.code==='KeyR'&&!e.metaKey&&!e.ctrlKey)$('btn-reset').click();
+  if(e.code==='BracketLeft')$('btn-prev').click();
+  if(e.code==='BracketRight')$('btn-next').click();
+  if(e.key==='?'||e.code==='Slash'&&e.shiftKey)toggleInfo();
+  if(e.code==='Escape')toggleInfo();
 });
+addEventListener('keyup',e=>{keyState[e.code]=false});
+
+// 렌더 루프 내 카메라 이동을 위한 업데이트
+function updateKeyboardNav(){
+  const fwd=new T.Vector3();cam.getWorldDirection(fwd);fwd.y=0;fwd.normalize();
+  const right=new T.Vector3().crossVectors(fwd,cam.up).normalize();
+  if(keyState['KeyW']||keyState['ArrowUp']){cam.position.addScaledVector(fwd,moveSpeed);ctl.target.addScaledVector(fwd,moveSpeed)}
+  if(keyState['KeyS']||keyState['ArrowDown']){cam.position.addScaledVector(fwd,-moveSpeed);ctl.target.addScaledVector(fwd,-moveSpeed)}
+  if(keyState['KeyA']||keyState['ArrowLeft']){cam.position.addScaledVector(right,-moveSpeed);ctl.target.addScaledVector(right,-moveSpeed)}
+  if(keyState['KeyD']||keyState['ArrowRight']){cam.position.addScaledVector(right,moveSpeed);ctl.target.addScaledVector(right,moveSpeed)}
+  if(keyState['KeyQ']){cam.position.y+=moveSpeed;ctl.target.y+=moveSpeed}
+  if(keyState['KeyE']){cam.position.y-=moveSpeed;ctl.target.y-=moveSpeed}
+}
 </script>
 </body>
 </html>

@@ -13,6 +13,9 @@ import {
   catalogToPrefixSpecs,
   loadSpecs,
   registerPresets,
+} from "@qa-sdk/spec-core";
+import type { PrefixSpec } from "@qa-sdk/spec-core";
+import {
   generateTypescriptFile,
   buildIR,
   generateFromIR,
@@ -20,8 +23,8 @@ import {
   generateCJSFromIR,
   generateProtoFromIR,
   generateJsonSchemaFromIR,
-} from "@qa-sdk/spec-core";
-import type { PrefixSpec, AxisInput } from "@qa-sdk/spec-core";
+} from "@qa-sdk/spec-core/codegen";
+import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { decodePrefix, resolveAddress, type DemoCatalog } from "demo-snapshot";
 
 // ── Shared bootstrap ────────────────────────────────

@@ -25,6 +25,8 @@ function getDatabaseSync(): DatabaseSyncCtor {
   return _DatabaseSync;
 }
 
+export type NodeSource = "bootstrap" | "manual" | "auto";
+
 export class DkgSqliteStore {
   private db: DatabaseSyncInstance;
 
@@ -32,51 +34,106 @@ export class DkgSqliteStore {
     const Ctor = getDatabaseSync();
     this.db = new Ctor(path);
     this.db.exec(DKG_SCHEMA_DDL);
+    this.migrate();
+  }
+
+  /** 기존 DB에 source 컬럼이 없으면 추가 */
+  private migrate(): void {
+    try {
+      // source 컬럼 존재 여부 확인
+      this.db.prepare("SELECT source FROM dkg_nodes LIMIT 1").get();
+    } catch {
+      // 컬럼 없으면 추가
+      this.db.exec("ALTER TABLE dkg_nodes ADD COLUMN source TEXT NOT NULL DEFAULT 'bootstrap'");
+    }
+    try {
+      this.db.prepare("SELECT source FROM dkg_edges LIMIT 1").get();
+    } catch {
+      this.db.exec("ALTER TABLE dkg_edges ADD COLUMN source TEXT NOT NULL DEFAULT 'bootstrap'");
+    }
   }
 
   // ── Graph: save/load ─────────────────────────────────
 
-  /** GraphRegistry의 전체 노드/엣지를 SQLite에 저장. 기존 데이터와 머지 (upsert). */
-  saveGraph(graph: GraphRegistry): { nodesWritten: number; edgesWritten: number } {
+  /**
+   * GraphRegistry의 전체 노드/엣지를 SQLite에 저장. 기존 데이터와 머지 (upsert).
+   * @param source 저장 원천 — bootstrap(재생성 가능) | manual(사용자 기록) | auto(자동 파생)
+   */
+  saveGraph(graph: GraphRegistry, source: NodeSource = "bootstrap"): { nodesWritten: number; edgesWritten: number } {
     let nodesWritten = 0;
     let edgesWritten = 0;
 
     const upsertNode = this.db.prepare(
-      `INSERT INTO dkg_nodes (id, kind, data, updated_at)
-       VALUES (?, ?, ?, datetime('now'))
-       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, data=excluded.data, updated_at=datetime('now')`,
+      `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
     );
 
     const insertEdge = this.db.prepare(
-      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, meta)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
+       VALUES (?, ?, ?, ?, ?)`,
     );
 
     // 노드 저장
-    for (const kind of ["axis", "prefix", "spec", "schema", "decision", "version-event",
-      "constraint", "observation", "domain", "consumer", "intent-link", "dsl-bundle"] as const) {
-      for (const node of graph.getNodesByKind(kind)) {
-        upsertNode.run(node.id, node.kind, JSON.stringify(node));
-        nodesWritten++;
-      }
+    for (const node of graph.getAllNodes()) {
+      upsertNode.run(node.id, node.kind, source, JSON.stringify(node));
+      nodesWritten++;
     }
 
     // 엣지 저장 — 모든 노드의 forward edges
     const seenEdges = new Set<string>();
-    for (const kind of ["axis", "prefix", "spec", "schema", "decision", "version-event",
-      "constraint", "observation", "domain", "consumer", "intent-link", "dsl-bundle"] as const) {
-      for (const node of graph.getNodesByKind(kind)) {
-        for (const edge of graph.edgesFrom(node.id)) {
-          const key = `${edge.type}:${edge.from}:${edge.to}`;
-          if (seenEdges.has(key)) continue;
-          seenEdges.add(key);
-          insertEdge.run(edge.type, edge.from, edge.to, edge.meta ? JSON.stringify(edge.meta) : null);
-          edgesWritten++;
-        }
+    for (const node of graph.getAllNodes()) {
+      for (const edge of graph.edgesFrom(node.id)) {
+        const key = `${edge.type}:${edge.from}:${edge.to}`;
+        if (seenEdges.has(key)) continue;
+        seenEdges.add(key);
+        insertEdge.run(edge.type, edge.from, edge.to, source, edge.meta ? JSON.stringify(edge.meta) : null);
+        edgesWritten++;
       }
     }
 
     return { nodesWritten, edgesWritten };
+  }
+
+  /**
+   * 개별 노드 + 엣지를 저장. decide/observe 등 운영 기록용.
+   * saveGraph와 달리 전체 그래프를 덮지 않고 추가만.
+   */
+  saveNodes(
+    nodes: readonly DkgNode[],
+    edges: readonly { type: string; from: string; to: string; meta?: Record<string, unknown> }[],
+    source: NodeSource = "manual",
+  ): void {
+    const upsertNode = this.db.prepare(
+      `INSERT INTO dkg_nodes (id, kind, source, data, updated_at)
+       VALUES (?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, source=excluded.source, data=excluded.data, updated_at=datetime('now')`,
+    );
+    const insertEdge = this.db.prepare(
+      `INSERT OR IGNORE INTO dkg_edges (type, from_id, to_id, source, meta)
+       VALUES (?, ?, ?, ?, ?)`,
+    );
+
+    for (const node of nodes) {
+      upsertNode.run(node.id, node.kind, source, JSON.stringify(node));
+    }
+    for (const edge of edges) {
+      insertEdge.run(edge.type, edge.from, edge.to, source, edge.meta ? JSON.stringify(edge.meta) : null);
+    }
+  }
+
+  /**
+   * bootstrap 데이터만 삭제. manual/auto 운영 데이터는 보존.
+   * refresh 전 호출하여 구조를 초기화한 후 재부트스트랩.
+   */
+  clearBootstrap(): { nodesDeleted: number; edgesDeleted: number } {
+    const nodesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap'").get() as { c: number }).c;
+    const edgesBefore = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap'").get() as { c: number }).c;
+
+    this.db.exec("DELETE FROM dkg_edges WHERE source='bootstrap'");
+    this.db.exec("DELETE FROM dkg_nodes WHERE source='bootstrap'");
+
+    return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
   }
 
   /** SQLite에서 GraphRegistry를 로드. */
@@ -185,12 +242,20 @@ export class DkgSqliteStore {
 
   // ── Stats ────────────────────────────────────────────
 
-  stats(): { nodes: number; edges: number; snapshots: number; versionUsages: number } {
+  stats(): {
+    nodes: number; edges: number; snapshots: number; versionUsages: number;
+    bootstrapNodes: number; manualNodes: number;
+    bootstrapEdges: number; manualEdges: number;
+  } {
     const nodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes").get() as { c: number }).c;
     const edges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges").get() as { c: number }).c;
     const snapshots = (this.db.prepare("SELECT COUNT(*) as c FROM usage_snapshots").get() as { c: number }).c;
     const versionUsages = (this.db.prepare("SELECT COUNT(*) as c FROM version_usages").get() as { c: number }).c;
-    return { nodes, edges, snapshots, versionUsages };
+    const bootstrapNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='bootstrap'").get() as { c: number }).c;
+    const manualNodes = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_nodes WHERE source='manual'").get() as { c: number }).c;
+    const bootstrapEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='bootstrap'").get() as { c: number }).c;
+    const manualEdges = (this.db.prepare("SELECT COUNT(*) as c FROM dkg_edges WHERE source='manual'").get() as { c: number }).c;
+    return { nodes, edges, snapshots, versionUsages, bootstrapNodes, manualNodes, bootstrapEdges, manualEdges };
   }
 
   // ── JSON export/import ───────────────────────────────

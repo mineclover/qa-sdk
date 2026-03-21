@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Shop</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+:root{--bg:#f8f9fb;--card:#fff;--primary:#4a6cf7;--primary-dark:#3558d6;--accent:#ff6b6b;--text:#2d3436;--dim:#8395a7;--border:#e8ecf1;--success:#00b894;--shadow:0 2px 8px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+
+/* Header */
+.header{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;justify-content:space-between;align-items:center;height:56px;position:sticky;top:0;z-index:50}
+.header h1{font-size:18px;font-weight:700;color:var(--primary);cursor:pointer}
+.header-right{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--dim)}
+.header-right a{color:var(--accent);text-decoration:none;cursor:pointer;font-weight:500}
+
+/* Nav */
+.nav{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:4px;height:44px;align-items:center}
+.nav a{color:var(--dim);text-decoration:none;font-size:13px;font-weight:500;padding:8px 14px;border-radius:6px;cursor:pointer;transition:all .15s}
+.nav a:hover{background:rgba(74,108,247,0.06);color:var(--primary)}
+.nav a.active{background:rgba(74,108,247,0.08);color:var(--primary)}
+.nav .badge{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px}
+
+/* Main */
+.main{max-width:1000px;margin:20px auto;padding:0 20px}
+.page{display:none}.page.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:17px;font-weight:700;margin-bottom:12px}
+
+/* Product Grid */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.product-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.product-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.product-img{height:160px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:48px}
+.product-info{padding:14px}
+.product-name{font-weight:600;font-size:14px;margin-bottom:4px}
+.product-price{color:var(--accent);font-weight:700;font-size:18px}
+.product-cat{font-size:11px;color:var(--dim);margin-top:4px}
+
+/* Buttons */
+.btn{padding:10px 24px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#ee5a5a}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#00a381}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:6px 14px;font-size:12px}
+
+/* Cart */
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-total{font-size:22px;font-weight:700;color:var(--accent);text-align:right;margin-top:16px}
+
+/* Form */
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:13px;color:var(--dim);margin-bottom:4px;font-weight:500}
+.form-row input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+
+/* Complete */
+.complete-box{text-align:center;padding:48px 24px}
+.complete-icon{font-size:64px;margin-bottom:16px}
+.complete-title{font-size:24px;font-weight:700;color:var(--success);margin-bottom:8px}
+
+/* Status bar */
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:#64ffda;padding:6px 20px;font-size:10px;font-family:monospace;z-index:100;display:flex;justify-content:space-between}
+.status-bar .dim{color:#556}
+
+/* Login */
+.login-wrap{display:flex;justify-content:center;align-items:center;min-height:400px}
+.login-box{width:360px;padding:36px;border-radius:14px}
+
+/* Monitor link */
+.monitor-link{position:fixed;bottom:36px;right:20px;z-index:90}
+.monitor-link a{background:rgba(26,26,46,0.9);color:#64ffda;padding:8px 16px;border-radius:8px;font-size:11px;text-decoration:none;font-family:monospace;border:1px solid rgba(100,255,218,0.2);display:flex;align-items:center;gap:6px}
+.monitor-link a:hover{background:rgba(26,26,46,1);border-color:#64ffda}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 data-testid="logo" onclick="go('home')">QA Shop</h1>
+  <div class="header-right">
+    <span data-testid="user-status" id="user-name">Guest</span>
+    <a data-testid="logout-btn" onclick="doLogout()">로그아웃</a>
+  </div>
+</div>
+
+<nav class="nav" id="nav" style="display:none">
+  <a onclick="go('home')" data-testid="nav-home">홈</a>
+  <a onclick="go('products')" data-testid="nav-products">상품</a>
+  <a onclick="go('cart')" data-testid="nav-cart">장바구니 <span class="badge" id="cart-count">0</span></a>
+  <a onclick="go('mypage')" data-testid="nav-mypage">마이페이지</a>
+</nav>
+
+<div class="main">
+  <!-- Login -->
+  <div class="page active" id="page-login">
+    <div class="login-wrap"><div class="card login-box">
+      <h2>로그인</h2>
+      <div class="form-row"><label>이메일</label><input type="email" data-testid="login-email" value="user@shop.com"></div>
+      <div class="form-row"><label>비밀번호</label><input type="password" data-testid="login-password" value="password"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()" data-testid="login-submit">로그인</button>
+    </div></div>
+  </div>
+
+  <!-- Home -->
+  <div class="page" id="page-home">
+    <div class="card"><h2>QA Shop에 오신 것을 환영합니다</h2><p style="color:var(--dim)">다양한 상품을 만나보세요. 모든 행동이 좌표계로 추적됩니다.</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="go('products')">상품 보러가기</button>
+    </div>
+  </div>
+
+  <!-- Products -->
+  <div class="page" id="page-products">
+    <div class="card" style="padding:14px 24px"><h2 style="margin:0">상품 목록</h2></div>
+    <div class="product-grid" id="product-list" data-testid="product-list" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Product Detail -->
+  <div class="page" id="page-detail">
+    <div class="card" data-testid="product-detail">
+      <button class="btn btn-outline btn-sm" onclick="go('products')" style="margin-bottom:16px">← 목록으로</button>
+      <h2 id="detail-name"></h2>
+      <p id="detail-price" style="font-size:28px;color:var(--accent);font-weight:700;margin:12px 0"></p>
+      <p id="detail-desc" style="color:var(--dim);margin-bottom:20px;line-height:1.6"></p>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="addToCart()" data-testid="add-to-cart-btn">장바구니에 담기</button>
+        <button class="btn btn-outline" onclick="go('cart')">장바구니 보기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart -->
+  <div class="page" id="page-cart">
+    <div class="card">
+      <h2>장바구니</h2>
+      <div id="cart-items" data-testid="cart-items"></div>
+      <div class="cart-total" data-testid="cart-total">합계: ₩0</div>
+      <div style="text-align:right;margin-top:16px">
+        <button class="btn btn-success" onclick="goCheckout()" data-testid="checkout-btn" style="padding:12px 32px">결제하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout -->
+  <div class="page" id="page-checkout">
+    <div class="card">
+      <h2>결제</h2>
+      <div class="form-row"><label>카드번호</label><input data-testid="card-number" value="4242-4242-4242-4242"></div>
+      <div class="form-row"><label>만료일</label><input data-testid="card-expiry" value="12/28"></div>
+      <div class="form-row"><label>CVC</label><input data-testid="card-cvc" value="123"></div>
+      <button class="btn btn-accent" style="width:100%;margin-top:12px;padding:14px" onclick="doPayment()" data-testid="pay-btn">₩0 결제하기</button>
+    </div>
+  </div>
+
+  <!-- Complete -->
+  <div class="page" id="page-complete">
+    <div class="card complete-box">
+      <div class="complete-icon">✅</div>
+      <div class="complete-title" data-testid="order-complete">주문이 완료되었습니다</div>
+      <p style="color:var(--dim)">주문번호: <strong id="order-id" data-testid="order-id">ORD-001</strong></p>
+      <div style="margin-top:24px;display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-primary" onclick="go('mypage')" data-testid="go-mypage-btn">마이페이지</button>
+        <button class="btn btn-outline" onclick="go('products')">쇼핑 계속하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mypage -->
+  <div class="page" id="page-mypage">
+    <div class="card">
+      <h2>마이페이지</h2>
+      <div style="margin-top:16px"><h3 style="font-size:14px;color:var(--dim);margin-bottom:12px">주문 내역</h3>
+        <div id="order-history" data-testid="order-history"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="qa-status">qa: initializing</span>
+  <span class="dim" id="qa-events">events: 0</span>
+</div>
+
+<div class="monitor-link">
+  <a href="/monitor.html" target="_blank" id="monitor-btn">⊞ Monitor</a>
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════
+//  QA Tracking — viz-3d-core encode 사용
+// ═══════════════════════════════════════════════════
+
+const INGEST_URL=(new URLSearchParams(location.search).get('ingest'))||'http://localhost:3100';
+
+// 인라인 경량 encode (viz-3d-core에 의존하지 않고 독립 실행)
+const C={"service":{"v":"v1","l":["env","region","svc_name","namespace"],"d":{"env":{"k":"a","e":["dev","stage","prod","test","local"],"c":32},"region":{"k":"a","e":["asia","usa"],"c":32},"svc_name":{"k":"a","e":["shopping-web","shopping-backend","auth","payment","gateway"],"c":32},"namespace":{"k":"a","e":["shop","cms"],"c":32}}},"page_view":{"v":"v2","l":["svc_ref","page","locale","userType"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"page":{"k":"a","e":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"c":32},"locale":{"k":"a","e":["ko","en","ja"],"c":32},"userType":{"k":"a","e":["guest","member","premium"],"c":32}}},"tracking":{"v":"v2","l":["trackAction","page","userType"],"d":{"trackAction":{"k":"a","e":["click","view","scroll","submit","navigate","add_to_cart","purchase","close"],"c":32},"page":{"k":"a","e":["home","product_list","product_detail","cart","checkout","order_complete","mypage","login"],"c":32},"userType":{"k":"a","e":["guest","member","premium"],"c":32}}},"endpoint":{"v":"v1","l":["svc_ref","resource_type","http_method","api_version"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"resource_type":{"k":"a","e":["api","page","webhook","grpc"],"c":32},"http_method":{"k":"a","e":["GET","POST","PUT","DELETE","PATCH"],"c":32},"api_version":{"k":"a","e":["v1","v2"],"c":32}}},"flow_point":{"v":"v2","l":["svc_ref","flow_name","flow_step","flow_variant"],"d":{"svc_ref":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"flow_name":{"k":"a","e":["checkout","signup","order_cancel","refund","login","browse","cart_manage","payment"],"c":64},"flow_step":{"k":"a","e":["entry","processing","branch","success","failure","timeout","payment","complete","exit"],"c":32},"flow_variant":{"k":"a","e":["default","retry","fallback","manual"],"c":32}}},"cart_event":{"v":"v1","l":["action"],"d":{"action":{"k":"a","e":["add","remove","checkout"],"c":32}}},"auth_event":{"v":"v1","l":["action"],"d":{"action":{"k":"a","e":["login","logout","token_refresh"],"c":32}}},"order_event":{"v":"v1","l":["service_ctx","action"],"d":{"service_ctx":{"k":"r","vs":[65536,65568,65600,65632,65664]},"action":{"k":"a","e":["create","cancel","refund","complete"],"c":32}}},"permission":{"v":"v4","l":["perm_svc","role"],"d":{"perm_svc":{"k":"r","vs":[65536,65537,65568,65569,65600,65601,65632,65633,65664,65665]},"role":{"k":"a","e":["admin","developer","operator","viewer","readonly","customer","auditor"],"c":32}}}};
+
+function qEnc(p,v){const d=C[p];if(!d)return null;const s=[],po=[];for(const l of d.l){const dm=d.d[l];if(dm.k==='a'){s.push(dm.c);const i=dm.e.indexOf(v[l]);if(i<0)return null;po.push(i)}else{s.push(dm.vs.length);const i=dm.vs.indexOf(v[l]??dm.vs[0]);po.push(i<0?0:i)}}const st=Array(s.length);st[s.length-1]=1;for(let i=s.length-2;i>=0;i--)st[i]=st[i+1]*s[i+1];let a=0;for(let i=0;i<po.length;i++)a+=po[i]*st[i];return`${p}:${d.v}:${a}`}
+
+const traceId='trc_shop_'+Date.now();
+let spanSeq=0,eventCount=0,userType='guest';
+
+function qaTrack(eventKey,prefixes){
+  const ctx={};
+  for(const[p,v]of Object.entries(prefixes)){const s=qEnc(p,v);if(s)ctx[p]=s}
+  spanSeq++;eventCount++;
+  document.getElementById('qa-events').textContent=`events: ${eventCount}`;
+  document.getElementById('qa-status').textContent=`qa: ${eventKey} → sending`;
+
+  fetch(`${INGEST_URL}/v1/ingest`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      transmission_id:`tx_shop_${Date.now()}`,sent_at:new Date().toISOString(),
+      owner:{owner_type:'workspace',owner_id:'shop-web'},
+      source:{service_name:'shopping-web',sdk_name:'@qa-sdk/shop',sdk_version:'0.1.0'},
+      runtime:{platform:'browser'},build:{env:'dev'},
+      records:[{
+        log_id:`log_${Date.now()}_${spanSeq}`,timestamp:new Date().toISOString(),record_kind:'log',
+        trace_id:traceId,span_id:`spn_${spanSeq}`,event_key:eventKey,event_version:'001',
+        payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],
+        payload:{event:eventKey},address_context:ctx,
+      }],
+    }),
+  }).then(r=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → ${r.status}`})
+    .catch(()=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → offline`});
+}
+
+// ═══════════════════════════════════════════════════
+//  Shop Data
+// ═══════════════════════════════════════════════════
+const PRODUCTS=[
+  {id:1,name:'무선 이어버드 Pro',price:89000,cat:'audio',desc:'프리미엄 액티브 노이즈 캔슬링. 36시간 배터리.',emoji:'🎧'},
+  {id:2,name:'스마트 워치 Ultra',price:299000,cat:'wearable',desc:'건강 모니터링 + GPS + 5ATM 방수.',emoji:'⌚'},
+  {id:3,name:'알루미늄 노트북 스탠드',price:45000,cat:'accessory',desc:'인체공학 각도 조절. 맥북/윈도우 호환.',emoji:'💻'},
+  {id:4,name:'기계식 키보드 TKL',price:129000,cat:'input',desc:'적축 기계식. RGB 백라이트. USB-C.',emoji:'⌨️'},
+  {id:5,name:'USB-C 7-in-1 허브',price:35000,cat:'accessory',desc:'HDMI + SD + USB 3.0 × 3 + PD 100W.',emoji:'🔌'},
+  {id:6,name:'듀얼 모니터 암',price:79000,cat:'accessory',desc:'최대 32인치 × 2. VESA 마운트.',emoji:'🖥️'},
+  {id:7,name:'무선 충전 패드',price:29000,cat:'accessory',desc:'15W 급속. Qi 호환. 슬림 디자인.',emoji:'🔋'},
+  {id:8,name:'노이즈캔슬링 헤드폰',price:199000,cat:'audio',desc:'오버이어. 30시간 배터리. 멀티포인트.',emoji:'🎵'},
+];
+
+let cart=[],orders=[],selectedProduct=null,loggedIn=false;
+
+// ═══════════════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════════════
+window.go=function go(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  document.querySelector(`[data-testid="nav-${page}"]`)?.classList.add('active');
+  location.hash=page;
+
+  const pageName=page==='products'?'product_list':page==='detail'?'product_detail':page==='complete'?'order_complete':page;
+  qaTrack(`page.${pageName}`,{
+    page_view:{page:pageName,locale:'ko',userType},
+    tracking:{trackAction:'view',page:pageName,userType},
+  });
+  if(page==='products')renderProducts();
+  if(page==='cart')renderCart();
+  if(page==='mypage')renderMypage();
+}
+
+// Hash routing
+window.addEventListener('hashchange',()=>{
+  const h=location.hash.slice(1);
+  if(h&&document.getElementById('page-'+h))go(h);
+});
+
+// ═══════════════════════════════════════════════════
+//  Auth
+// ═══════════════════════════════════════════════════
+window.doLogin=function(){
+  loggedIn=true;userType='member';
+  document.getElementById('user-name').textContent='user@shop.com';
+  document.getElementById('nav').style.display='flex';
+  qaTrack('auth.login',{
+    page_view:{page:'login',locale:'ko',userType:'guest'},
+    tracking:{trackAction:'submit',page:'login',userType:'guest'},
+    auth_event:{action:'login'},
+    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+    flow_point:{flow_name:'login',flow_step:'entry',flow_variant:'default'},
+    permission:{role:'customer'},
+  });
+  go('home');
+};
+
+window.doLogout=function(){
+  qaTrack('auth.logout',{
+    tracking:{trackAction:'close',page:'mypage',userType},
+    auth_event:{action:'logout'},
+    flow_point:{flow_name:'browse',flow_step:'exit',flow_variant:'default'},
+  });
+  loggedIn=false;userType='guest';
+  document.getElementById('user-name').textContent='Guest';
+  document.getElementById('nav').style.display='none';
+  go('login');
+};
+
+// ═══════════════════════════════════════════════════
+//  Products
+// ═══════════════════════════════════════════════════
+function renderProducts(){
+  const el=document.getElementById('product-list');
+  el.innerHTML=PRODUCTS.map(p=>`
+    <div class="product-card" onclick="viewProduct(${p.id})" data-testid="product-${p.id}">
+      <div class="product-img">${p.emoji}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">₩${p.price.toLocaleString()}</div>
+        <div class="product-cat">${p.cat}</div>
+      </div>
+    </div>
+  `).join('');
+  qaTrack('api.product_list',{endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'}});
+}
+
+window.viewProduct=function(id){
+  selectedProduct=PRODUCTS.find(p=>p.id===id);
+  document.getElementById('detail-name').textContent=selectedProduct.name;
+  document.getElementById('detail-price').textContent=`₩${selectedProduct.price.toLocaleString()}`;
+  document.getElementById('detail-desc').textContent=selectedProduct.desc;
+  go('detail');
+  qaTrack('page.product_detail',{
+    page_view:{page:'product_detail',locale:'ko',userType},
+    tracking:{trackAction:'click',page:'product_detail',userType},
+    endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'},
+  });
+};
+
+// ═══════════════════════════════════════════════════
+//  Cart
+// ═══════════════════════════════════════════════════
+window.addToCart=function(){
+  if(!selectedProduct)return;
+  cart.push({...selectedProduct,qty:1});
+  document.getElementById('cart-count').textContent=cart.length;
+  qaTrack('cart.add',{
+    tracking:{trackAction:'add_to_cart',page:'product_detail',userType},
+    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+    cart_event:{action:'add'},
+  });
+  // 피드백
+  const btn=document.querySelector('[data-testid="add-to-cart-btn"]');
+  if(btn){const orig=btn.textContent;btn.textContent='✓ 담김!';btn.style.background='var(--success)';setTimeout(()=>{btn.textContent=orig;btn.style.background=''},1200)}
+};
+
+function renderCart(){
+  const el=document.getElementById('cart-items');
+  const total=cart.reduce((s,c)=>s+c.price,0);
+  el.innerHTML=cart.length===0
+    ?'<p style="color:var(--dim);padding:24px 0;text-align:center">장바구니가 비어있습니다</p>'
+    :cart.map((c,i)=>`<div class="cart-item" data-testid="cart-item-${i}"><div><strong>${c.name}</strong></div><div style="font-weight:700;color:var(--accent)">₩${c.price.toLocaleString()}</div></div>`).join('');
+  document.querySelector('[data-testid="cart-total"]').textContent=`합계: ₩${total.toLocaleString()}`;
+  document.querySelector('[data-testid="pay-btn"]').textContent=`₩${total.toLocaleString()} 결제하기`;
+}
+
+// ═══════════════════════════════════════════════════
+//  Checkout
+// ═══════════════════════════════════════════════════
+window.goCheckout=function(){
+  if(cart.length===0){alert('장바구니가 비어있습니다');return}
+  go('checkout');
+  qaTrack('checkout.entry',{
+    page_view:{page:'checkout',locale:'ko',userType},
+    tracking:{trackAction:'navigate',page:'checkout',userType},
+    flow_point:{flow_name:'checkout',flow_step:'entry',flow_variant:'default'},
+    permission:{role:'customer'},
+  });
+};
+
+window.doPayment=function(){
+  qaTrack('checkout.process',{
+    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+    flow_point:{flow_name:'checkout',flow_step:'processing',flow_variant:'default'},
+    permission:{role:'customer'},
+    order_event:{action:'create'},
+  });
+
+  setTimeout(()=>{
+    qaTrack('payment.process',{
+      endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+      flow_point:{flow_name:'payment',flow_step:'payment',flow_variant:'default'},
+    });
+  },500);
+
+  setTimeout(()=>{
+    const orderId='ORD-'+Date.now().toString(36).toUpperCase();
+    orders.push({id:orderId,items:[...cart],total:cart.reduce((s,c)=>s+c.price,0),date:new Date()});
+    cart=[];document.getElementById('cart-count').textContent='0';
+    document.getElementById('order-id').textContent=orderId;
+    qaTrack('payment.success',{
+      order_event:{action:'complete'},
+      flow_point:{flow_name:'checkout',flow_step:'success',flow_variant:'default'},
+    });
+    go('complete');
+  },1500);
+};
+
+// ═══════════════════════════════════════════════════
+//  Mypage
+// ═══════════════════════════════════════════════════
+function renderMypage(){
+  const el=document.getElementById('order-history');
+  el.innerHTML=orders.length===0
+    ?'<p style="color:var(--dim)">주문 내역이 없습니다</p>'
+    :orders.map(o=>`<div class="cart-item" data-testid="order-${o.id}"><div><strong>${o.id}</strong> — ${o.items.length}개 상품</div><div style="font-weight:700;color:var(--accent)">₩${o.total.toLocaleString()}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════
+document.getElementById('qa-status').textContent=`qa: ready → ${INGEST_URL}`;
+
+// Monitor link에 ingest URL 전달
+const monitorUrl=location.origin.replace(location.port,'3335');
+document.getElementById('monitor-btn').href=`${monitorUrl}/monitor.html`;
+</script>
+</body>
+</html>

@@ -8,7 +8,7 @@
 import { DEMO_CATALOG } from "demo-snapshot";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog } from "./catalog-derive.js";
-import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode } from "./dkg.types.js";
+import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode } from "./dkg.types.js";
 import { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
 import { scanAxisOverlaps, comparePrefixes } from "../convergence/symbol-comparator.js";
 import { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
@@ -424,6 +424,241 @@ export function bootstrapDkg(options?: { date?: string }): GraphRegistry {
   graph.addEdge("governs", "SPEC-CATEGORY-RULES", "rbac");
   graph.addEdge("governs", "SPEC-AXIS-BOUNDARY", "endpoint");
   graph.addEdge("governs", "SPEC-PROPAGATION", "service");
+
+  // ── Skill 노드 등록 ──────────────────────────────────────
+  //
+  // skill = DSL/도메인의 활용법. 구조(도로)가 아닌 소비 계층(운전 매뉴얼).
+  // 범용 skill: 어떤 노드에도 적용 (trace, claim, release)
+  // 전문 skill: 특정 DSL/도메인/invariant에 바인딩
+  //
+  const skills: SkillNode[] = [
+
+    // ── 범용 read ──────────────────────────────────────────
+    {
+      kind: "skill", id: "skill-trace", name: "역추적",
+      description: "임의 노드에서 구성/소속/제약/인과 체인/의도 링크/토폴로지/cascade를 한 흐름으로 추적",
+      category: "read", targetKinds: ["prefix", "axis", "decision", "observation", "dsl-bundle"],
+      input: "nodeId", output: "TraceResult",
+    },
+    {
+      kind: "skill", id: "skill-explore-service", name: "서비스 프로파일",
+      description: "서비스 단위 전체 프로파일: 소유/소비 prefix, 계약, DSL, 의존, 관측/결정",
+      category: "read", targetKinds: ["prefix"],
+      input: "serviceId", output: "ServiceProfile",
+    },
+    {
+      kind: "skill", id: "skill-explore-prefix", name: "prefix 프로파일",
+      description: "prefix 단위 심층 프로파일: 차원, headroom, 소유/소비, domain, DSL, 제약",
+      category: "read", targetKinds: ["prefix"],
+      input: "prefixId", output: "PrefixProfile",
+    },
+    {
+      kind: "skill", id: "skill-explore-dsl", name: "DSL 프로파일",
+      description: "DSL 번들 프로파일: 멤버, 서비스 바인딩, 불변조건, 버전 스큐",
+      category: "read", targetKinds: ["dsl-bundle"],
+      input: "dslId", output: "DslProfile",
+    },
+    {
+      kind: "skill", id: "skill-system-overview", name: "시스템 대시보드",
+      description: "서비스별 현황, 위험 지점, 의존 그래프, 도메인 건강 종합",
+      category: "read", targetKinds: [],
+      input: "(없음)", output: "SystemOverview",
+    },
+
+    // ── 범용 write (좌표) ──────────────────────────────────
+    {
+      kind: "skill", id: "skill-record-decision", name: "의사결정 기록",
+      description: "대상 노드에 대한 의사결정을 구조화하여 DKG에 기록. 변경 유형별 자동 대안/반전 조건 생성",
+      category: "write", targetKinds: ["prefix", "axis", "dsl-bundle"],
+      input: "targetId + type + title + rationale", output: "DecisionNode + governs edge",
+      depends: ["skill-decision-scaffold"],
+    },
+    {
+      kind: "skill", id: "skill-record-observation", name: "관측 기록",
+      description: "대상 노드에 대한 관측(패턴, 이상, 발견)을 DKG에 기록",
+      category: "write", targetKinds: ["prefix", "axis", "dsl-bundle", "decision"],
+      input: "targetId + finding + suggestion?", output: "ObservationNode + observes edge",
+    },
+    {
+      kind: "skill", id: "skill-claim", name: "작업 선점",
+      description: "대상 노드에 작업중 표시. 영향 범위(owner/consumer/domain/DSL/intent-link) 자동 전파",
+      category: "write", targetKinds: ["prefix", "axis"],
+      input: "targetId + by", output: "ClaimData + ClaimImpact",
+    },
+    {
+      kind: "skill", id: "skill-release", name: "작업 해제",
+      description: "작업 완료. claim 해제 + 완료 observation 자동 생성",
+      category: "write", targetKinds: ["prefix", "axis"],
+      input: "targetId", output: "ObservationNode + observes edge",
+      depends: ["skill-claim"],
+    },
+    {
+      kind: "skill", id: "skill-lifecycle-transition", name: "lifecycle 전이",
+      description: "prefix/decision/observation 상태 전이 (draft→active→deprecated→archived). 전이 기록 + VersionEvent 생성",
+      category: "write", targetKinds: ["prefix", "decision", "observation"],
+      input: "nodeId + toLifecycle", output: "TransitionResult",
+    },
+
+    // ── 전문 analysis — 결제/커머스 ──────────────────────────
+    {
+      kind: "skill", id: "skill-checkout-flow-verify", name: "결제 흐름 불변조건 검증",
+      description: "dsl-checkout의 결제 흐름 불변조건 검증: 화면 진입→API→흐름 분기→주문 이벤트→권한이 동일 서비스 컨텍스트에서 추적되는지 확인",
+      category: "analysis", targetKinds: ["prefix", "intent-link"],
+      input: "address_context records", output: "FlowTraceResult + 위반 ObservationNode",
+      specialization: {
+        dslBundles: ["dsl-checkout"],
+        prefixes: ["page_view", "endpoint", "flow_point", "order_event", "permission"],
+        intentLinks: ["IL-checkout-flow"],
+        invariants: [
+          "checkout page_view 없이 checkout flow_point(success)가 관측되면 안 됨",
+          "order_event(create) 없이 order_event(complete)가 관측되면 안 됨",
+        ],
+      },
+    },
+    {
+      kind: "skill", id: "skill-commerce-skew-audit", name: "커머스 버전 정렬 감사",
+      description: "dsl-commerce/dsl-checkout 내 멤버 prefix 간 버전 격차 감지. 빠른 멤버(permission, event)와 느린 멤버(order_event, cart_event) 간 호환성 판단",
+      category: "analysis", targetKinds: ["prefix", "dsl-bundle"],
+      input: "dslBundleId", output: "DslVersionSkewReport + ObservationNode",
+      specialization: {
+        dslBundles: ["dsl-checkout", "dsl-commerce"],
+        prefixes: ["permission", "event", "order_event", "cart_event", "page_view", "endpoint", "flow_point"],
+      },
+    },
+
+    // ── 전문 analysis — 관측/인프라 ─────────────────────────
+    {
+      kind: "skill", id: "skill-observation-coverage", name: "관측 커버리지 감사",
+      description: "observation-domain prefix의 entry 관측 커버리지 분석. dormant(정의됐지만 미관측)/phantom(미정의지만 관측) 탐지",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "UsageData", output: "CoverageAuditResult + ObservationNode",
+      specialization: {
+        domains: ["observation-domain"],
+        dslBundles: ["dsl-observation"],
+        prefixes: ["page_view", "endpoint", "flow_point"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-infra-impact-verify", name: "인프라 변경 영향 검증",
+      description: "dsl-infra의 배포/헬스 인과 관계 검증. deploy_event 직후 health_event(degraded) 발생 시 배포 실패 후보 탐지, endpoint 관측 중단 감지",
+      category: "analysis", targetKinds: ["prefix", "intent-link"],
+      input: "address_context records", output: "FlowTraceResult + 위반 ObservationNode",
+      specialization: {
+        dslBundles: ["dsl-infra"],
+        prefixes: ["deploy_event", "health_event", "endpoint"],
+        intentLinks: ["IL-infra-impact"],
+        invariants: [
+          "deploy_event 직후 health_event(degraded)가 발생하면 배포 실패 후보",
+          "health_event(unhealthy) 시 해당 서비스의 endpoint 관측을 중단 감지",
+        ],
+      },
+    },
+    {
+      kind: "skill", id: "skill-pipeline-phase-verify", name: "파이프라인 단계 순서 검증",
+      description: "dsl-pipeline의 처리 단계 순서 불변조건 검증. reconstruct→verdict 선후, strict 모드 unknown 금지, 스키마 마이그레이션 후 평가 기준 일관성",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "address_context records", output: "FlowTraceResult + 위반 ObservationNode",
+      specialization: {
+        dslBundles: ["dsl-pipeline"],
+        prefixes: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint"],
+        invariants: [
+          "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
+          "validation_mode=strict에서 verdict_result=unknown이 나오면 안 된다",
+          "schema_event(migrate) 후 engine_event의 constraint_op 평가가 새 스키마 기준이어야 한다",
+        ],
+      },
+    },
+
+    // ── 전문 analysis — 제약/구조 ───────────────────────────
+    {
+      kind: "skill", id: "skill-event-action-check", name: "이벤트 action 축 규칙 검사",
+      description: "CON-002 강제: 이벤트 prefix의 action 차원이 해당 도메인의 *_action 축을 사용하는지 검증",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "prefixId", output: "ConstraintCheckResult",
+      specialization: {
+        domains: ["event-domain"],
+        prefixes: ["cart_event", "auth_event", "order_event"],
+        constraints: ["CON-002"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-svc-binding-check", name: "서비스 바인딩 검사",
+      description: "CON-003 강제: DSL 번들의 관측/인프라 멤버가 svc_ref(→service) 차원을 갖는지 검증. 서비스 바인딩 없는 관측은 추적 불가",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "prefixId or dslBundleId", output: "ConstraintCheckResult",
+      specialization: {
+        dslBundles: ["dsl-observation", "dsl-infra", "dsl-pipeline"],
+        prefixes: ["page_view", "endpoint", "flow_point", "deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event"],
+        constraints: ["CON-003"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-safe-entry-add", name: "축 entry 안전 추가",
+      description: "축에 새 entry 추가 시 headroom/stride-break/constraint 종합 판정. 영향받는 prefix/DSL/consumer cascade 분석",
+      category: "analysis", targetKinds: ["axis"],
+      input: "axisId + entry", output: "SafeEntryAddResult (verdict: safe|needs-capacity|...)",
+    },
+    {
+      kind: "skill", id: "skill-decision-scaffold", name: "의사결정 스캐폴드",
+      description: "변경 유형별(capacity/new-axis/new-prefix/dim-add/merge/deprecate) Decision 템플릿 자동 생성. 대안/반전 조건 포함",
+      category: "analysis", targetKinds: ["prefix", "axis"],
+      input: "ScaffoldInput", output: "DecisionNode",
+    },
+    {
+      kind: "skill", id: "skill-analyze-impact", name: "변경 영향 cascade 분석",
+      description: "축/prefix 변경 시 cascade 범위: 영향 prefix → domain → consumer → DSL → intent-link 파손 분석",
+      category: "analysis", targetKinds: ["axis", "prefix"],
+      input: "ImpactAnalysisInput", output: "ImpactAnalysisResult",
+    },
+    {
+      kind: "skill", id: "skill-infer-migrator", name: "마이그레이션 패턴 추론",
+      description: "prefix version diff에서 migrator 패턴(identity/append-dim/remove-dim/reorder/composite) + 변환 함수 자동 추론",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "DiffInfo", output: "InferredMigrator",
+    },
+    {
+      kind: "skill", id: "skill-domain-health", name: "도메인 건강 진단",
+      description: "도메인 단위 prefix 정합성 + constraint 위반 + boundary 검사 + intent-link invariant 정보",
+      category: "analysis", targetKinds: ["domain"],
+      input: "domainId", output: "DomainHealthResult",
+      specialization: {
+        domains: ["shopping-domain", "tracking-domain", "event-domain", "observation-domain", "infra-domain"],
+      },
+    },
+
+    // ── chain ──────────────────────────────────────────────
+    {
+      kind: "skill", id: "skill-entry-add-chain", name: "entry 추가 체인",
+      description: "safe-entry-add → constraint-check → domain-health → decision-scaffold. 축 entry 추가의 전체 판정→기록 워크플로우",
+      category: "chain", targetKinds: ["axis"],
+      input: "axisId + entry", output: "SkillChainResult",
+      depends: ["skill-safe-entry-add", "skill-event-action-check", "skill-domain-health", "skill-decision-scaffold"],
+    },
+    {
+      kind: "skill", id: "skill-system-health-chain", name: "시스템 건강 체인",
+      description: "전 도메인 constraint 검사 → 건강 진단 → 커버리지 감사. 시스템 전체 정합성 워크플로우",
+      category: "chain", targetKinds: [],
+      input: "(없음)", output: "SkillChainResult",
+      depends: ["skill-event-action-check", "skill-svc-binding-check", "skill-domain-health", "skill-observation-coverage"],
+    },
+    {
+      kind: "skill", id: "skill-converge-chain", name: "수렴 체인",
+      description: "merge(축/prefix 중복) + deactivate(dormant) + simplify + observe. 축 중복과 비활성 entry 정리 워크플로우",
+      category: "chain", targetKinds: ["axis", "prefix"],
+      input: "UsageData", output: "ConvergeChainResult",
+    },
+  ];
+
+  for (const skill of skills) {
+    graph.addNode(skill);
+    // skill → skill 의존 (구체적 관계만 엣지로)
+    if (skill.depends) {
+      for (const depId of skill.depends) {
+        graph.addEdge("depends-on", skill.id, depId);
+      }
+    }
+    // targetKinds는 노드 속성으로 충분 — references 엣지 불필요
+  }
 
   return graph;
 }
