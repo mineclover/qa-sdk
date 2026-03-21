@@ -59,11 +59,16 @@
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
 
 ### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
-- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (24 axes, 10 prefixes)
+- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (43 axes, 21 prefixes, 6 tables)
   - `VersionedAxis`: 버전별 entries/capacity/ko
   - `DimRef` 3종: `axis` (enum 직접) / `prefix_ref` (다른 prefix 주소) / `table_ref` (DB 테이블 타입 참조)
   - `PrefixDef`: N-D 주소 공간 (축 조합 + 버전별 axis version 핀)
   - 이벤트 prefix: cart_event, auth_event, order_event (table_ref + axis + prefix_ref 조합)
+  - 인프라 prefix: deploy_event, health_event (svc_ref + action/status)
+  - 파이프라인 prefix: pipeline_point, data_policy, engine_event, schema_event
+  - 빌드/테스트 prefix: build_event, test_event (qa_pkg, qa_module 축)
+- `packages/demo-snapshot/src/catalog-builder.ts` — refEntries 의미 정의 (PERM_SVC_MEANING, EVT_SVC_MEANING 등)
+  - SSOT 체인: `_axes.capacity` → `_S` shape → `_sStrides` → `_svcAddr()` → `DEMO_CATALOG`
 - `packages/demo-snapshot/src/demo-accessors.ts` — 선택적 접근 + 차원 합성·분해·의미 해석
   - `getPrefixStructure/Shape/Entries` — 3단계 조회
   - `encodePrefix/decodePrefix` — 차원 좌표 ↔ 1D 주소
@@ -76,10 +81,40 @@
 - 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains (순환 금지)
 - axis ID 충돌 주의: catalog `rbac_role` ≠ `role` (쇼핑). compat에서 AXIS.role로 매핑.
 
+### viz-3d — 3D 좌표계 시각화 + 브라우저 코덱
+- `packages/viz-3d/` — Three.js 기반 3D 좌표 시각화 + 브라우저 전용 encode/decode 단일 출처
+- 빌드: tsup → `dist/core.js` (ESM 번들, Three.js 무의존)
+- **core/**: grid-builder, split-pattern(7종), color-tokens, signal-model, prefix-meta, cross-view
+- **adapter/**:
+  - `browser-codec.ts` — **단일 출처 encode/decode**: `encode()`, `decode()`, `track()`, `trackWithSignal()`
+  - `demo-catalog-browser.ts` — BROWSER_CATALOG (DEMO_CATALOG의 브라우저 경량 사본)
+  - `catalog-loader.ts` — 런타임 카탈로그 로딩: API → localStorage 캐시 → Static fallback
+  - `monitor-adapter.ts` — WebSocket ↔ 셀 매핑 어댑터
+- **view/**: ViewEngine(layer/category/dsl/service 4모드 전환), service-scope(4-tier 서비스 계층)
+- **effects/**: CellStateManager, BeamPool, ActivationProcessor
+- **renderer/**: InstancedMesh, LOD(near/mid/far), PerfMonitor, FlowHistory
+- **matrix/**: matrix-stack (스택 축 레이아웃)
+- 번들 복사 위치: `platform-demo/public/viz-3d-core.js`, `shop-web/public/viz-3d-core.js`
+
+### shop-web — 쇼핑 데모 사이트
+- `packages/shop-web/public/index.html` — 8개 상품, 해시 라우팅, 13개 트래킹 포인트
+- encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
+- ingest-server로 실시간 이벤트 전송 + 모니터링 연동
+
 ### platform-demo
 - `packages/platform-demo/src/pages/layout.ts` — 레이아웃 시뮬레이터 UI
 - `packages/platform-demo/src/pages/casbin.ts` — Casbin 권한 모델 해설 (qa-sdk ↔ Casbin 대비)
 - `packages/platform-demo/src/pages/perm-engine.ts` — permission-engine v1→v2 마이그레이션 비교 데모
+- `packages/platform-demo/public/monitor.html` — 3D 모니터링 대시보드 (InstancedMesh, LOD, 4-view 모드)
+  - encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
+
+### spec-core — 설계 지식 그래프 + 수렴 분석
+- `packages/spec-core/` — DKG(Design Knowledge Graph) + 수렴 레이어 + 전파 파이프라인
+- 서브 경로 exports: `"."` (shared+schema+spec), `"./analysis"` (dkg+convergence), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`
+- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 25 skill, 7 spec), service-topology(7 서비스, 3 계약)
+- **convergence/**: entry-coverage, temporal-analysis, scoped-aggregator, metric-registry
+- **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
+- **store/**: DkgSqliteStore (persist + migrate)
 
 ## Permission Engine Architecture
 
@@ -144,6 +179,31 @@
 - AddressStateStore: 범위 기반 상태 캐시 (reserved/inactive/open)
 - GateEngine: 상태 변경 시 cascade 전파 (leaf → composite)
 - PrefixCodec의 composite ref로 그룹별 독립 인코딩 → 통합 주소 구성 가능
+
+## Signal Model
+- Signal = 1회 qaTrack() 호출 = 하나의 의미 있는 순간
+- 7 SignalRole: context(배경), trigger(사용자 행위), channel(전송 경로), state(흐름 상태), guard(권한), effect(부수 효과), data(데이터 참조)
+- prefix → SignalRole 매핑: service→context, tracking→trigger, endpoint→channel, flow_point→state, permission→guard, pipeline_point→effect, orders→data
+- Signal chain: requires 관계로 의존 표현 (예: trigger는 context를 require)
+- 구현: `viz-3d/src/core/signal-model.ts` (`getPrefixRole()`, `classifyByRole()`, `validateSignal()`)
+
+## Catalog Generalization
+- **Canonical types**: `@qa-sdk/core/catalog` (Catalog, PrefixMeta, CatalogProvider, DkgConfig)
+- **DEMO_CATALOG**: demo-snapshot의 인스턴스. `id: "demo"`, `name: "쇼핑 데모"`. 21개 prefix에 `meta: PrefixMeta` 포함
+- **DkgConfig**: bootstrap.ts의 하드코딩 데이터를 선언적 구조로 추출. `DEMO_DKG_CONFIG` (demo-snapshot)
+- **bootstrapDkg**: `(options?: { catalog?, config?, date? })` — 기본값 DEMO_CATALOG + DEMO_DKG_CONFIG
+- **deriveMeta**: `core/catalog/derive-meta.ts` — prefix.meta 있으면 사용, 없으면 구조 기반 추론
+- **flattenForBrowser**: `core/catalog/browser-flatten.ts` — Catalog → BrowserCatalog 변환
+- **BROWSER_CATALOG**: `viz-3d/scripts/generate-browser-catalog.ts` 자동 생성 (수동 동기화 제거)
+- **CLI --catalog**: 글로벌 옵션. 우선순위: --catalog → CWD qa-sdk.config.ts → DEMO_CATALOG
+- **qa-sdk init**: 새 카탈로그 프로젝트 스캐폴딩 (인터랙티브 + --from demo)
+- 카탈로그가 유일한 입력이면 나머지는 전부 파생되어야 한다
+
+## Browser Encode/Decode 단일 출처
+- 브라우저 환경 encode/decode는 `viz-3d/src/adapter/browser-codec.ts`가 **유일한 출처**
+- 인라인 encode 코드 금지 — HTML 파일은 `import { encode, decode, track } from './viz-3d-core.js'` 사용
+- BROWSER_CATALOG: 자동 생성 (`pnpm --filter @qa-sdk/viz-3d prebuild`). 직접 수정 금지
+- CatalogLoader: 런타임 시 API → localStorage 캐시 → BROWSER_CATALOG(static) 순서로 카탈로그 로딩
 
 ## Conventions
 - 한국어 주석/UI 텍스트 사용

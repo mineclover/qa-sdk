@@ -18,7 +18,7 @@ export class SqlDraftLockStore implements DraftLockStore {
       "DELETE FROM draft_lock WHERE prefix = ? AND version_id = ?",
       [prefix, versionId],
     );
-    return (result?.changes ?? 0) > 0;
+    return (result?.rowsAffected ?? 0) > 0;
   }
 
   async get(prefix: string, versionId: string): Promise<DraftLock | null> {

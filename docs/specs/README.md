@@ -144,6 +144,10 @@ API 클라이언트, iframe 통신 프로토콜.
 | [permission-engine/codec.spec.md](indexing/permission-engine/codec.spec.md) | PermissionCodec — 3-tier protocol stack, text↔integer↔bitmask, PrefixCodec/index-meta 호환성 | permission-engine | implemented |
 | [permission-engine/resource.spec.md](indexing/permission-engine/resource.spec.md) | resource / service-ref / permission-code — canonical resource 규칙, ServiceContext, permission text address | permission-engine | implemented |
 | [permission-engine/migration.spec.md](indexing/permission-engine/migration.spec.md) | migration.ts — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | permission-engine | implemented |
+| [signal-model.md](indexing/signal-model.md) | Signal Model — Signal = 1회 qaTrack() 호출, 7 SignalRole, prefix→role 매핑, chain(requires) | viz-3d | implemented |
+| [dimension-operations.md](indexing/dimension-operations.md) | 차원 연산 — cross-axis 선택, env 주입, deploy-time 해상도 | demo-snapshot + viz-3d | implemented |
+| [table-system.md](indexing/table-system.md) | 테이블 시스템 — table_ref DimRef, 좌표↔관계형 양방향 | demo-snapshot | implemented |
+| [dsl-bundle.md](indexing/dsl-bundle.md) | DSL 번들 — prefix 그룹핑, 버전 스큐 감지, 커버리지 분석 | spec-core | implemented |
 
 ### spec-engine/ — 작은 세계의 구조 정의 도구
 
@@ -240,3 +244,9 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | @qa-sdk/browser | `browser/monitor.spec.md` |
 | @qa-sdk/viz-web | `visualization/`, `web/` |
 | @qa-sdk/roleplay-web | `roleplay/`, `web/iframe-protocol.spec.md` |
+| viz-3d | `indexing/signal-model.md`, `indexing/dimension-operations.md` |
+| spec-core | `spec-engine/` |
+| @qa-sdk/cli | `spec-engine/` (dkg/codegen 명령) |
+| shop-web | — (데모 사이트, 별도 스펙 없음) |
+| platform-demo | — (3D 모니터 + 레이아웃 데모) |
+| e2e | — (Playwright E2E 테스트) |
