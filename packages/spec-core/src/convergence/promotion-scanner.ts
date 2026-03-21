@@ -11,11 +11,10 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { DkgNode } from "../dkg/dkg.types.js";
+import type { GraphPort, GraphNodeLike } from "../shared/graph-port.js";
 
-/** DkgNode 유니온의 런타임 필드를 열거한다. 각 variant가 서로 다른 필드를 가지므로 정적 타입 단언 불가. */
-function nodeFields(node: DkgNode): [string, unknown][] {
+/** 노드의 런타임 필드를 열거한다. 각 variant가 서로 다른 필드를 가지므로 정적 타입 단언 불가. */
+function nodeFields(node: GraphNodeLike): [string, unknown][] {
   return Object.entries(node);
 }
 
@@ -79,7 +78,7 @@ function judge(c: Omit<PromotionCandidate, "verdict" | "reason">): PromotionCand
  * DKG 그래프에서 좌표 승격 후보를 스캔한다.
  */
 export function scanPromotionCandidates(
-  graph: GraphRegistry,
+  graph: GraphPort,
   options?: { existingAxes?: ReadonlySet<string> },
 ): PromotionCandidate[] {
   const existingAxes = options?.existingAxes ?? new Set<string>();

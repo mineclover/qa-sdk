@@ -7,10 +7,10 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode, ConstraintNode } from "../dkg/dkg.types.js";
 import type { AxisOverlap } from "./convergence.types.js";
-import { scaffoldDecision } from "../dkg/skills/decision-scaffold.js";
+import { scaffoldDecision } from "../dkg/decision-scaffold.js";
 
 export interface SeparationRecord {
   readonly decision: DecisionNode;
@@ -64,7 +64,7 @@ export function recordSeparation(
  * SeparationRecord를 DKG에 등록한다.
  */
 export function applySeparationRecord(
-  graph: GraphRegistry,
+  graph: GraphPort,
   record: SeparationRecord,
 ): void {
   graph.addNode(record.decision);

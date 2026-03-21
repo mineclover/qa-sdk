@@ -163,6 +163,20 @@ export type { ServicePortEntry } from "./lib/service-ports.js";
 export { identifyActorMode } from "./lib/identify-actor.js";
 export type { IdentifyActorInput } from "./lib/identify-actor.js";
 
+export { createLogger } from "./lib/create-logger.js";
+export type { Logger } from "./lib/create-logger.js";
+
+export { AppError } from "./lib/app-error.js";
+
+export {
+  emptyStringToUndefined,
+  optionalUrl,
+  booleanWithDefaultFalse,
+} from "./lib/env-helpers.js";
+
+export { installSimpleShutdown } from "./lib/graceful-shutdown.js";
+export type { SimpleShutdownDeps } from "./lib/graceful-shutdown.js";
+
 // ── Ports (Storage Contracts) ───────────────────────────
 
 export type {

@@ -1,27 +1,5 @@
 import { z } from "zod";
-
-const booleanWithDefaultFalse = z.preprocess((value) => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized.length === 0) {
-      return undefined;
-    }
-
-    if (normalized === "true") {
-      return true;
-    }
-
-    if (normalized === "false") {
-      return false;
-    }
-  }
-
-  return value;
-}, z.boolean().default(false));
+import { booleanWithDefaultFalse } from "@qa-sdk/core";
 
 export const envSchema = z.object({
   PORT: z.coerce.number().default(3300),

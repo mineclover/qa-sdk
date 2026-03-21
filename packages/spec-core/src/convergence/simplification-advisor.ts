@@ -4,7 +4,7 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { PrefixNode } from "../dkg/dkg.types.js";
 import type {
   EntryUsage,
@@ -21,7 +21,7 @@ const LOW_UTILIZATION_THRESHOLD = 0.10; // 10% 미만 → 과도한 headroom
  * @param options.addressSpaceSize - 실제 주소 공간 크기 (shape 곱). 미지정 시 관측 기반 추정.
  */
 export function analyzeSimplification(
-  graph: GraphRegistry,
+  graph: GraphPort,
   prefixId: string,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
@@ -122,7 +122,7 @@ export function analyzeSimplification(
  * 여러 prefix를 일괄 분석한다.
  */
 export function scanAllSimplifications(
-  graph: GraphRegistry,
+  graph: GraphPort,
   prefixIds: readonly string[],
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
@@ -135,6 +135,6 @@ export function scanAllSimplifications(
   );
 }
 
-function isAxisOfPrefix(graph: GraphRegistry, prefixId: string, axisId: string): boolean {
+function isAxisOfPrefix(graph: GraphPort, prefixId: string, axisId: string): boolean {
   return graph.edgesFrom(prefixId, "composes").some(e => e.to === axisId);
 }

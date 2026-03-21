@@ -11,7 +11,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode, DecisionNode } from "../dkg/dkg.types.js";
 import { validateAllCategories, type CategoryValidationResult } from "./category-rules.js";
 
@@ -40,7 +40,7 @@ export interface SchemaViolationEntry {
  * category-rules의 validateAllCategories를 실행하고 결과를 DKG 노드로 변환.
  */
 export function auditSchemaHealth(
-  graph: GraphRegistry,
+  graph: GraphPort,
   options?: { date?: string },
 ): SchemaHealthReport {
   const date = options?.date ?? new Date().toISOString().slice(0, 10);

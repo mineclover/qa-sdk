@@ -5,7 +5,7 @@
  */
 
 import type { MetricDef, MetricValue, MetricStatus } from "./metric.types.js";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode } from "../dkg/dkg.types.js";
 import type { UsageData } from "./convergence.types.js";
 import type { DemoCatalog } from "demo-snapshot";
@@ -111,7 +111,7 @@ function evaluateStatus(
  */
 export function collectMetrics(
   catalog: DemoCatalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
   usage: UsageData | null,
 ): MetricValue[] {
   const now = new Date().toISOString().slice(0, 10);

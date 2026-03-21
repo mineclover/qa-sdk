@@ -4,8 +4,7 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { AxisNode, PrefixNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { AxisOverlap, PrefixOverlap } from "./convergence.types.js";
 
 /**
@@ -63,7 +62,7 @@ export function compareAxes(
  * 공유 축과 공유 참조를 기준으로 판정한다.
  */
 export function comparePrefixes(
-  graph: GraphRegistry,
+  graph: GraphPort,
   aId: string,
   bId: string,
 ): PrefixOverlap {
@@ -110,7 +109,7 @@ export function comparePrefixes(
  * graph에서 prefix-axis 관계를 추출하여 alias 판정에 활용한다.
  */
 export function scanAxisOverlaps(
-  graph: GraphRegistry,
+  graph: GraphPort,
   entriesMap: ReadonlyMap<string, readonly string[]>,
 ): AxisOverlap[] {
   const axes = graph.getNodesByKind("axis").map(n => n.id);

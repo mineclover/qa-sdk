@@ -22,3 +22,7 @@ export { addEntryToCatalog } from "./catalog-mutator.js";
 export type { CatalogMutationResult } from "./catalog-mutator.js";
 export { executeEntryAdd, EntryAddError } from "./entry-add-executor.js";
 export type { EntryAddResult, EntryAddOptions } from "./entry-add-executor.js";
+export { serializeCatalogToTs } from "./catalog-writer.js";
+export type { WriterOptions } from "./catalog-writer.js";
+export { writeCatalogFile } from "./catalog-file-writer.js";
+export type { FileWriterOptions, FileWriterResult } from "./catalog-file-writer.js";

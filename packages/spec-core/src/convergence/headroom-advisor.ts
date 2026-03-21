@@ -4,9 +4,9 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode } from "../dkg/dkg.types.js";
-import { scaffoldDecision } from "../dkg/skills/decision-scaffold.js";
+import { scaffoldDecision } from "../dkg/decision-scaffold.js";
 
 export interface HeadroomIssue {
   readonly axisId: string;
@@ -59,7 +59,7 @@ export function analyzeHeadroom(
     /** 이미 sealed된 version이 있는가 (데이터가 인코딩되어 있을 수 있음) */
     sealed?: boolean;
   }>,
-  options?: { date?: string; graph?: GraphRegistry },
+  options?: { date?: string; graph?: GraphPort },
 ): HeadroomReport {
   const date = options?.date ?? new Date().toISOString().slice(0, 10);
   const graph = options?.graph;
@@ -147,7 +147,7 @@ export function analyzeHeadroom(
  * HeadroomReport의 Decision들을 DKG에 등록한다.
  */
 export function applyHeadroomDecisions(
-  graph: GraphRegistry,
+  graph: GraphPort,
   report: HeadroomReport,
 ): void {
   for (const decision of report.decisions) {

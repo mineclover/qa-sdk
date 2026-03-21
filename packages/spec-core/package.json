@@ -11,6 +11,14 @@
       "import": "./dist/codegen/index.js",
       "types": "./dist/codegen/index.d.ts"
     },
+    "./dkg": {
+      "import": "./dist/dkg/index.js",
+      "types": "./dist/dkg/index.d.ts"
+    },
+    "./convergence": {
+      "import": "./dist/convergence/index.js",
+      "types": "./dist/convergence/index.d.ts"
+    },
     "./analysis": {
       "import": "./dist/analysis/index.js",
       "types": "./dist/analysis/index.d.ts"

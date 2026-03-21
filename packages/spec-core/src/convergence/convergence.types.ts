@@ -203,3 +203,10 @@ export interface BoundaryRecommendation {
 // ── re-export (entry-coverage) ───────────────────────────────
 
 export type { CoverageReport, PrefixCoverage } from "./entry-coverage.js";
+
+// ═══════════════════════════════════════════════════════════════
+//  Dormant 분류
+// ═══════════════════════════════════════════════════════════════
+
+/** dormant entry의 구조적 분류 */
+export type DormantReason = "error-path" | "forward-designed" | "source-gap" | "structural";

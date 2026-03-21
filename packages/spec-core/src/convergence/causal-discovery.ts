@@ -4,7 +4,7 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode } from "../dkg/dkg.types.js";
 import type { CoOccurrence, CausalCandidate } from "./convergence.types.js";
 
@@ -13,7 +13,7 @@ import type { CoOccurrence, CausalCandidate } from "./convergence.types.js";
  * 이미 IntentLink로 등록된 쌍은 제외한다.
  */
 export function discoverCausality(
-  graph: GraphRegistry,
+  graph: GraphPort,
   coOccurrences: readonly CoOccurrence[],
 ): CausalCandidate[] {
   const candidates: CausalCandidate[] = [];
@@ -65,7 +65,7 @@ export function discoverCausality(
  * 각 후보를 DKG에 기록할 수 있는 ObservationNode로 변환한다.
  */
 export function discoverCausalityWithObservations(
-  graph: GraphRegistry,
+  graph: GraphPort,
   coOccurrences: readonly CoOccurrence[],
   options?: { date?: string },
 ): { candidates: CausalCandidate[]; observations: ObservationNode[] } {

@@ -24,7 +24,7 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 
 export interface CapacityRecommendation {
   readonly axisId: string;
@@ -146,7 +146,7 @@ export function optimizeWithImpact(
     entries: number;
     capacity: number;
   }>,
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): CapacityOptimizationReport & {
   readonly impactDetails: ReadonlyArray<{
     axisId: string;

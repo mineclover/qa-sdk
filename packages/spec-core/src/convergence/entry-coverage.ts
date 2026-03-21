@@ -13,6 +13,24 @@ import type { DemoCatalog } from "demo-snapshot";
 import type { EntryUsage, AddressUsage } from "./convergence.types.js";
 
 // ═══════════════════════════════════════════════════════════════
+//  Error-path entries — 건강한 시스템에서 관측되지 않는 것이 정상
+// ═══════════════════════════════════════════════════════════════
+
+/** 오류/장애 시에만 발생하는 entry. coverage 분모에서 제외. */
+export const ERROR_PATH_ENTRIES: Readonly<Record<string, readonly string[]>> = {
+  build_result: ["failure", "type-error"],
+  test_result: ["failed", "error", "skipped", "timeout"],
+  health_status: ["unhealthy", "maintenance"],
+  verdict_result: ["fail", "degraded", "unknown"],
+  flow_step: ["failure", "timeout"],
+  anomaly_severity: ["critical"],
+};
+
+function isErrorPath(axisId: string, entry: string): boolean {
+  return ERROR_PATH_ENTRIES[axisId]?.includes(entry) ?? false;
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Types
 // ═══════════════════════════════════════════════════════════════
 
@@ -58,6 +76,10 @@ export interface CoverageReport {
   readonly dormantCount: number;
   /** phantom entries — 정의 없이 관측됨 */
   readonly phantomCount: number;
+  /** error-path entries — 오류 시에만 발생. dormant가 정상 */
+  readonly errorPathCount: number;
+  /** 실질 커버리지율 — error-path 제외 기준: observed / (observed + dormant - errorPath) */
+  readonly adjustedCoverageRate: number;
   /** 요약 */
   readonly summary: string;
 }
@@ -191,13 +213,24 @@ export function analyzeEntryCoverage(
   const phantomCount = uniqueEntries.filter(e => e.status === "phantom").length;
   const overallCoverageRate = totalDefined > 0 ? totalObserved / totalDefined : 1;
 
+  // error-path: dormant이면서 error-path에 해당하는 entry
+  const errorPathCount = uniqueEntries.filter(
+    e => e.status === "dormant" && isErrorPath(e.axisId, e.entry),
+  ).length;
+
+  // 실질 커버리지: error-path 제외
+  const adjustedDenominator = totalDefined - errorPathCount;
+  const adjustedCoverageRate = adjustedDenominator > 0 ? totalObserved / adjustedDenominator : 1;
+
   return {
     prefixes: prefixCoverages,
     allEntries: uniqueEntries,
     overallCoverageRate,
     dormantCount,
     phantomCount,
-    summary: `전체 커버리지 ${(overallCoverageRate * 100).toFixed(0)}% — observed=${totalObserved} dormant=${dormantCount} phantom=${phantomCount}`,
+    errorPathCount,
+    adjustedCoverageRate,
+    summary: `전체 커버리지 ${(overallCoverageRate * 100).toFixed(0)}% (실질 ${(adjustedCoverageRate * 100).toFixed(0)}%: error-path ${errorPathCount}개 제외) — observed=${totalObserved} dormant=${dormantCount} phantom=${phantomCount}`,
   };
 }
 

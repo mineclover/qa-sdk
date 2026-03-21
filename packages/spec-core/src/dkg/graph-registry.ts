@@ -5,11 +5,12 @@
  * transitive 순회 지원 (깊이 제한 10).
  */
 
+import type { GraphPort } from "../shared/graph-port.js";
 import type { DkgNode, DkgNodeKind, DkgEdge, DkgEdgeType } from "./dkg.types.js";
 
 const MAX_TRANSITIVE_DEPTH = 10;
 
-export class GraphRegistry {
+export class GraphRegistry implements GraphPort {
   private readonly nodes = new Map<string, DkgNode>();
   private readonly forward = new Map<string, DkgEdge[]>();   // from → edges
   private readonly reverse = new Map<string, DkgEdge[]>();   // to → edges

@@ -4,14 +4,14 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { SimplificationCandidate, BoundaryRecommendation, CausalCandidate } from "./convergence.types.js";
 
 /**
  * SimplificationCandidate에서 split 후보가 있으면 경계를 추천한다.
  */
 export function recommendFromSimplification(
-  graph: GraphRegistry,
+  graph: GraphPort,
   candidate: SimplificationCandidate,
 ): BoundaryRecommendation | null {
   const splitSuggestion = candidate.suggestions.find(s => s.kind === "split-prefix");
@@ -40,7 +40,7 @@ export function recommendFromSimplification(
  * 관측에서 기존 prefix에 매핑되지 않는 패턴을 발견하면 새 경계를 추천한다.
  */
 export function recommendFromObservation(
-  graph: GraphRegistry,
+  graph: GraphPort,
   unmappedAxes: readonly string[],
   relatedPrefix?: string,
 ): BoundaryRecommendation | null {
@@ -69,7 +69,7 @@ export function recommendFromObservation(
  * 인과 후보에서 교차 도메인 패턴을 발견하면 브릿지 prefix를 추천한다.
  */
 export function recommendFromCausality(
-  graph: GraphRegistry,
+  graph: GraphPort,
   candidates: readonly CausalCandidate[],
 ): BoundaryRecommendation[] {
   const results: BoundaryRecommendation[] = [];
@@ -106,7 +106,7 @@ export function recommendFromCausality(
  * 모든 추천 소스를 통합하여 중복 제거된 경계 추천 목록을 반환한다.
  */
 export function recommendAll(
-  graph: GraphRegistry,
+  graph: GraphPort,
   inputs: {
     simplifications?: readonly SimplificationCandidate[];
     causalCandidates?: readonly CausalCandidate[];

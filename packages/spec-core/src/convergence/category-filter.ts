@@ -2,13 +2,12 @@
  * Category Filter — UsageData를 schema category별로 슬라이싱.
  *
  * aggregateUsageData의 결과를 category별로 필터링한다.
- * GraphRegistry의 PrefixNode.category를 기준으로 분류.
+ * GraphPort의 PrefixNode.category를 기준으로 분류.
  *
  * @layer 필터 (Filtering)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { PrefixNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { UsageData } from "./convergence.types.js";
 
 /**
@@ -16,7 +15,7 @@ import type { UsageData } from "./convergence.types.js";
  */
 export function filterUsageByCategory(
   usage: UsageData,
-  graph: GraphRegistry,
+  graph: GraphPort,
   category: string,
 ): UsageData {
   const prefixIds = new Set(
@@ -40,7 +39,7 @@ export function filterUsageByCategory(
  */
 export function groupUsageByCategory(
   usage: UsageData,
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): Record<string, UsageData> {
   const groups = graph.groupPrefixesByCategory();
   const result: Record<string, UsageData> = {};
@@ -68,7 +67,7 @@ export function groupUsageByCategory(
  */
 export function summarizeByCategory(
   usage: UsageData,
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): Array<{
   category: string;
   prefixCount: number;

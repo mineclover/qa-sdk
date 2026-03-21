@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
+    "@qa-sdk/core": "workspace:*",
     "drizzle-orm": "^0.39.3",
     "index-meta": "workspace:*",
     "hono": "^4.7.5",

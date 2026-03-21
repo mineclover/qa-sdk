@@ -23,6 +23,12 @@
     "ulid": "^2.3.0",
     "zod": "^3.24.2"
   },
+  "peerDependencies": {
+    "pino": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pino": { "optional": true }
+  },
   "devDependencies": {
     "typescript": "^5.8.2"
   }

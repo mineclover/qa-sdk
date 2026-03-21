@@ -430,14 +430,16 @@ async function main() {
       const aeAxisId = sub.rest[0];
       const aeEntry = sub.rest[1];
       if (!aeAxisId || !aeEntry) {
-        console.error("Usage: qa-sdk dkg add-entry <axis> <entry> [--apply] [--expand-capacity]");
+        console.error("Usage: qa-sdk dkg add-entry <axis> <entry> [--apply] [--expand-capacity] [--write-file <path>]");
         return;
       }
+      const aeWriteIdx = sub.rest.indexOf("--write-file");
       dkgAddEntry({
         axisId: aeAxisId,
         entry: aeEntry,
         apply: sub.rest.includes("--apply"),
         expandCapacity: sub.rest.includes("--expand-capacity"),
+        writeFile: aeWriteIdx >= 0 ? sub.rest[aeWriteIdx + 1] : undefined,
       });
       return;
     }

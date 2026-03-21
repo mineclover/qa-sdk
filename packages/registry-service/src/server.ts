@@ -8,6 +8,7 @@ import {
   SqlVersionLifecycleStore,
   type SqlDriver,
 } from "index-meta";
+import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { createLogger } from "./lib/logger.js";
@@ -233,28 +234,12 @@ async function main() {
 
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
     logger.info(`registry-service listening on port ${info.port}`);
-    warnPortConflict(env.PORT);
+    warnPortConflict("registry-service", env.PORT, logger);
   });
 
   injectWebSocket(server);
 
-  function shutdown(signal: string) {
-    logger.info({ signal }, "shutdown requested");
-    server.close(() => {
-      logger.info("shutdown complete");
-      process.exit(0);
-    });
-  }
-
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
-}
-
-function warnPortConflict(port: number) {
-  const known: Record<string, number> = { "registry-server": 3100, "ingest-server": 3200, "registry-service": 3300, "gate-service": 3400, "query-service": 3500, "decode-service": 3600 };
-  for (const [name, p] of Object.entries(known)) {
-    if (name !== "registry-service" && p === port) logger.warn(`⚠ PORT ${port} conflicts with ${name} (default: ${p}). Set PORT env to avoid collision.`);
-  }
+  installSimpleShutdown({ server, logger });
 }
 
 main().catch((err) => {

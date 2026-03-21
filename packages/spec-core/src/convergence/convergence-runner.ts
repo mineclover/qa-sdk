@@ -1,13 +1,13 @@
 /**
  * 수렴 분석 오케스트레이터 — 5개 서비스를 한번에 실행한다.
  *
- * 입력: DKG GraphRegistry + UsageData (관측 집계)
+ * 입력: DKG GraphPort + UsageData (관측 집계)
  * 출력: ConvergenceReport (모든 분석 결과 + Observation 노드)
  *
  * @layer 기록 (Recording)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode } from "../dkg/dkg.types.js";
 import type {
   UsageData,
@@ -47,7 +47,7 @@ export interface ConvergenceReport {
  * @param options.date - Observation 날짜 (기본: today)
  */
 export function runConvergenceAnalysis(
-  graph: GraphRegistry,
+  graph: GraphPort,
   usage: UsageData | null,
   options?: {
     entriesMap?: ReadonlyMap<string, readonly string[]>;

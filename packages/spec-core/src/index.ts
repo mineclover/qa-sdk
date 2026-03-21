@@ -8,7 +8,7 @@ export {
   ValidationError,
 } from "./shared/errors.js";
 export type { ValidationErrorDetail } from "./shared/errors.js";
-export type { GraphPort, GraphNodeLike, PrefixLike } from "./shared/graph-port.js";
+export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "./shared/graph-port.js";
 
 // ── Export Surface ───────────────────────────────────
 export type { ExportSurface } from "./export-surface/export-surface.types.js";

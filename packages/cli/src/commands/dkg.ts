@@ -53,6 +53,7 @@ import {
 import {
   executeEntryAdd,
   EntryAddError,
+  writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
 import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
@@ -3145,6 +3146,7 @@ export function dkgAddEntry(opts: {
   entry: string;
   apply?: boolean;
   expandCapacity?: boolean;
+  writeFile?: string;
 }): void {
   const graph = getGraph();
   const catalog = registry.has(activeCatalogId)
@@ -3156,6 +3158,7 @@ export function dkgAddEntry(opts: {
   const flags = [
     dryRun ? "dry-run" : "apply",
     opts.expandCapacity ? "expand-capacity" : "",
+    opts.writeFile ? "write-file" : "",
   ].filter(Boolean).join(", ");
 
   console.log(`\n══ Add Entry: ${opts.entry} → ${opts.axisId} (${flags}) ══`);
@@ -3211,6 +3214,27 @@ export function dkgAddEntry(opts: {
     if (result.graphUpdated) {
       const saved = store!.saveGraph(graph);
       console.log(`\n  ✅ 저장 완료 (${saved.nodesWritten} nodes, ${saved.edgesWritten} edges)`);
+
+      // ── CatalogRegistry re-register ──
+      registry.register(mutation.catalog as Catalog);
+      console.log(`  ✅ CatalogRegistry 갱신 (${activeCatalogId})`);
+
+      // ── 파일 기록 ──
+      if (opts.writeFile) {
+        // demo 카탈로그인 경우 경고
+        if (activeCatalogId === "demo") {
+          console.log(`\n  ⚠ demo 카탈로그는 구조가 특수합니다 (refEntries 파생 체인).`);
+          console.log(`    packages/demo-snapshot/src/demo-catalog.ts 자동 재생성은 지원하지 않습니다.`);
+          console.log(`    변이된 카탈로그를 별도 경로에 기록합니다.`);
+        }
+
+        const writeResult = writeCatalogFile(mutation.catalog as Catalog, opts.writeFile);
+        if (writeResult.written) {
+          console.log(`  ✅ 카탈로그 파일 기록: ${opts.writeFile}`);
+        } else {
+          console.log(`  ℹ 카탈로그 파일 변경 없음 (기존과 동일): ${opts.writeFile}`);
+        }
+      }
     } else {
       console.log(`\n  ℹ dry-run — --apply 플래그로 실제 반영`);
     }

@@ -4,7 +4,7 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode } from "../dkg/dkg.types.js";
 import type { DecisionConflict } from "./convergence.types.js";
 
@@ -12,7 +12,7 @@ import type { DecisionConflict } from "./convergence.types.js";
  * 두 Decision이 충돌하는지 비교한다.
  */
 export function compareDecisions(
-  graph: GraphRegistry,
+  graph: GraphPort,
   aId: string,
   bId: string,
 ): DecisionConflict {
@@ -89,7 +89,7 @@ function isContradictory(a: DecisionNode, b: DecisionNode): boolean {
 /**
  * 전체 활성 Decision에서 충돌/중복 쌍을 찾는다.
  */
-export function scanDecisionConflicts(graph: GraphRegistry): DecisionConflict[] {
+export function scanDecisionConflicts(graph: GraphPort): DecisionConflict[] {
   const decisions = graph.findNodes("decision", d => d.lifecycle === "active");
   const results: DecisionConflict[] = [];
 

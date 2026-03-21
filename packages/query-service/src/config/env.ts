@@ -1,12 +1,5 @@
 import { z } from "zod";
-
-const emptyStringToUndefined = (value: unknown) =>
-  typeof value === "string" && value.trim().length === 0 ? undefined : value;
-
-const optionalUrl = z.preprocess(
-  emptyStringToUndefined,
-  z.string().url().optional(),
-);
+import { optionalUrl } from "@qa-sdk/core";
 
 export const envSchema = z.object({
   PORT: z.coerce.number().int().default(3500),
