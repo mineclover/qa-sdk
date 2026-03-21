@@ -1377,6 +1377,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { dkg_op: "v1", dkg_target_kind: "v1" } },
       ],
+      meta: { category: "event" as const },
     },
     dkg_decision_event: {
       id: "dkg_decision_event", name: "의사결정 이벤트",
@@ -1390,6 +1391,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { decision_type: "v1", dkg_target_kind: "v1", node_source: "v1" } },
       ],
+      meta: { category: "event" as const },
     },
     dkg_observation_event: {
       id: "dkg_observation_event", name: "관측 이벤트",
@@ -1403,6 +1405,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { obs_source: "v1", dkg_target_kind: "v1", lifecycle_state: "v1" } },
       ],
+      meta: { category: "event" as const },
     },
     skill_execution: {
       id: "skill_execution", name: "스킬 실행 이벤트",
@@ -1416,6 +1419,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { skill_id: "v1", skill_category: "v1", skill_outcome: "v1" } },
       ],
+      meta: { category: "event" as const },
     },
     cli_event: {
       id: "cli_event", name: "CLI 활동 이벤트",
@@ -1429,6 +1433,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { cli_intent: "v1", cli_domain: "v1", cli_subject: "v1" } },
       ],
+      meta: { category: "event" as const },
     },
     contract_check: {
       id: "contract_check", name: "인터페이스 계약 검증",
@@ -1442,6 +1447,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { qa_pkg: "v2", api_surface: "v1", test_result: "v1" } },
       ],
+      meta: { category: "entity" as const },
     },
 
     // ── 이벤트 패턴 분류 prefix (ADR-006) ────────────────────

@@ -13,57 +13,133 @@ endpoint:v1:32 = "prod/asia/shopping-web에서 POST /api v1 호출"
 
 프로젝트를 분석할 때, 모든 "좌표화할 것"은 6종 중 하나로 분류된다.
 
-### entity — "무엇이 있는가"
+```
+┌─────────────┬──────────────────┬─────────┬──────────────────────────────────────────┐
+│  카테고리   │       설명       │ 현재 수 │                판정 기준                 │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ entity      │ 정체성을 가진 것 │    5    │ 서비스, 콘텐츠, 리소스. 2-6 dims.        │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ event       │ 발생한 것        │   15    │ action/op/intent 관련 축 필수.           │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ observation │ 관측 포인트      │   11    │ svc_ref(서비스 참조) 포함. 관측 데이터.  │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ policy      │ 권한/규칙        │    2    │ role/action/resource 축 포함.            │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ relation    │ 관계 모델        │    1    │ subject-predicate-object 3+ dims.        │
+├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
+│ state       │ 상태 스냅샷      │    0    │ status/lifecycle 축 포함.                │
+└─────────────┴──────────────────┴─────────┴──────────────────────────────────────────┘
+```
+
+> 검증: `category-rules.ts` (`CATEGORY_RULES`) 기준. `dkg report` 또는 `graph.groupPrefixesByCategory()`로 확인 가능.
+
+### entity — "무엇이 있는가" (5개)
 **시스템에 존재하는 것의 정의.**
 
 - 서비스, 콘텐츠, 리소스, 패키지, 모듈
-- dims: 식별 차원 (env, region, name, namespace 등)
-- 예: `service` (env × region × svc_name × namespace)
+- dims: 식별 차원 (env, region, name, namespace 등). 2-6개.
+- 규칙: L1 structural — `minDims: 2, maxDims: 6`
+
+현재 prefix:
+| prefix | dims | 설명 |
+|--------|------|------|
+| `service` | env × region × svc_name × namespace | 서비스 식별 |
+| `content` | tag × category × status × locale × channel | 콘텐츠 플랫폼 |
+| `tracking` | trackAction × page × userType | 사용자 행동 추적 |
+| `contract_check` | qa_pkg × api_surface × test_result | 인터페이스 계약 검증 |
+| `execution_context` | execution_mode × record_type | 실행 컨텍스트 |
 
 판정: "이것은 다른 것들이 참조하는 대상인가?" → entity
 
-### event — "무엇이 일어났는가"
+### event — "무엇이 일어났는가" (15개)
 **발생한 사건의 기록.**
 
 - 액션, 이벤트, 변경, 트리거
 - dims: action/operation 관련 축 필수
-- 예: `deploy_event` (svc_ref × deploy_action × actor)
+- 규칙: L1 — `requiredDimKinds: ["axis"], minDims: 2` + L2 — action 관련 축 존재 검증
+
+현재 prefix:
+| prefix | 도메인 | 핵심 dims |
+|--------|--------|-----------|
+| `event` | shopping | evt_svc × event_name × initiator |
+| `cart_event` | shopping | actor(tbl) × action × target(tbl) |
+| `auth_event` | shopping | actor(tbl) × action |
+| `order_event` | shopping | service_ctx(ref) × actor(tbl) × action × order(tbl) |
+| `deploy_event` | infra | svc_ref(ref) × deploy_action × actor(tbl) |
+| `health_event` | infra | svc_ref(ref) × health_status |
+| `engine_event` | pipeline | svc_ref(ref) × constraint_op × verdict_result |
+| `schema_event` | pipeline | svc_ref(ref) × migration_pattern × deploy_action |
+| `build_event` | dev | qa_pkg × qa_module × build_result |
+| `test_event` | dev | qa_pkg × qa_module × test_result |
+| `dkg_event` | dev | dkg_op × dkg_target_kind |
+| `dkg_decision_event` | dev | decision_type × dkg_target_kind × node_source |
+| `dkg_observation_event` | dev | obs_source × dkg_target_kind × lifecycle_state |
+| `cli_event` | dev | cli_intent × cli_domain × cli_subject |
+| `observation_event` | dev | observation_intent × dkg_target_kind |
 
 판정: "이것은 시간 순서로 발생하는가? action 축이 있는가?" → event
 
-### observation — "무엇이 관측됐는가"
+### observation — "무엇이 관측됐는가" (11개)
 **관측 포인트. entity에 대한 측정/추적.**
 
 - 페이지뷰, API 호출, 흐름 진입, 파이프라인 단계
 - dims: svc_ref(서비스 참조) + 관측 차원
-- 예: `endpoint` (svc_ref × resource_type × http_method × api_version)
+- 규칙: L1 — `requiredRefs: ["service"]` + L2 — `references` 엣지에 service 포함 검증
+
+현재 prefix:
+| prefix | 도메인 | 핵심 dims |
+|--------|--------|-----------|
+| `page_view` | observation | svc_ref(ref) × page × locale × userType |
+| `endpoint` | observation | svc_ref(ref) × resource_type × http_method × api_version |
+| `flow_point` | observation | svc_ref(ref) × flow_name × flow_step × flow_variant |
+| `pipeline_point` | observation | svc_ref(ref) × pipeline_phase × validation_mode × verdict_result × temporal_strategy |
+| `data_policy` | observation | svc_ref(ref) × mask_mode |
+| `schema_validation` | observation | svc_ref(ref) × validation_layer × constraint_rule × verdict_result |
+| `pattern_match` | observation | svc_ref(ref) × identification_mode × behavior_pattern × pattern_confidence |
+| `pattern_anomaly` | observation | svc_ref(ref) × anomaly_kind × behavior_pattern × anomaly_severity |
+| `version_point` | observation | svc_ref(ref) × version_lifecycle |
+| `gate_point` | observation | svc_ref(ref) × address_state |
+| `ingest_record` | observation | svc_ref(ref) × record_type |
 
 판정: "이것은 어떤 서비스의 특정 지점을 관찰하는가?" → observation
 
-### policy — "무엇이 허용되는가"
+### policy — "무엇이 허용되는가" (2개)
 **권한, 규칙, 적용 범위.**
 
 - RBAC, ACL, feature flag
 - dims: role/action/resource 축 포함
-- 예: `permission` (perm_svc × role)
+- 규칙: L1 — `requiredDimKinds: ["axis"]` + L2 — role/action/resource 축 존재 검증
+
+현재 prefix:
+| prefix | dims |
+|--------|------|
+| `permission` | perm_svc(ref) × role |
+| `rbac` | role × action × resource |
 
 판정: "이것은 허용/거부 판정에 사용되는가?" → policy
 
-### relation — "무엇이 연결되는가"
+### relation — "무엇이 연결되는가" (1개)
 **객체 간 관계.**
 
 - subject-predicate-object 패턴
 - dims: 3+ (주체, 술어, 객체)
-- 예: `relational` (subjectKind × predicate × objectKind)
+- 규칙: L1 — `minDims: 3`
+
+현재 prefix:
+| prefix | dims |
+|--------|------|
+| `relational` | subjectKind × predicate × objectKind |
 
 판정: "이것은 두 대상 사이의 관계를 표현하는가?" → relation
 
-### state — "현재 상태가 뭔가"
+### state — "현재 상태가 뭔가" (0개)
 **상태 스냅샷.**
 
 - 현재 진행 상태, lifecycle 단계
 - dims: status/lifecycle 축 포함
-- 예: `version_point` (svc_ref × version_lifecycle)
+- 규칙: L1 — `minDims: 2`
+
+현재 prefix: 없음. `version_point`과 `gate_point`은 구조적으로 state에 가까우나 svc_ref를 포함하여 observation으로 분류됨.
 
 판정: "이것은 현재 시점의 상태를 나타내는가?" → state
 
@@ -142,15 +218,19 @@ dsl-checkout:
 
 ## 4. 예시: qa-sdk 자기참조
 
-qa-sdk 모노레포를 분석한 결과:
+qa-sdk 모노레포를 분석한 결과 (34개 prefix):
 
-| Step | 발견 | prefix |
-|------|------|--------|
-| 명사 | 패키지, 모듈, 스킬 | (qa_pkg, qa_module, skill_id는 축) |
-| 동사 | 빌드, 테스트, CLI 실행, 스킬 실행, DKG 변경 | build_event, test_event, cli_event, skill_execution, dkg_event |
-| 규칙 | 빌드 실패 후 테스트 금지, invariant | dsl-dev 불변조건 |
-| 관측 | 인터페이스 계약, 커버리지 | contract_check |
-| 관계 | 의사결정→관측, 관측→대상 | dkg_decision_event, dkg_observation_event |
+| Step | 발견 | 카테고리 | prefix 예시 |
+|------|------|---------|------------|
+| 명사 | 서비스, 콘텐츠, 패키지, 모듈 | entity (5) | service, content, tracking, execution_context |
+| 동사 | 빌드, 테스트, CLI, 스킬, DKG, 배포, 인증, 주문 | event (15) | build_event, test_event, cli_event, deploy_event, cart_event |
+| 관측 | 페이지뷰, API 호출, 흐름, 파이프라인, 패턴, 상태 | observation (11) | endpoint, flow_point, pipeline_point, pattern_match, version_point |
+| 규칙 | RBAC, 권한 체크 | policy (2) | permission, rbac |
+| 관계 | subject-predicate-object | relation (1) | relational |
+| 상태 | (현재 없음 — observation으로 흡수됨) | state (0) | — |
+
+카테고리 분포 결정은 `category-rules.ts`의 `CATEGORY_RULES`와 각 prefix의 `meta.category`로 제어된다.
+`inferCategory()`가 `meta.category` 우선 → 구조 기반 fallback 순으로 판정.
 
 ## 5. dim 유형
 
