@@ -48,7 +48,7 @@ export {
   DEMO_CATALOG,
   type AxisVersionSnapshot, type VersionedAxis,
   type DimRef,
-  type PrefixVersionDef, type PrefixDef,
+  type PrefixVersionDef, type PrefixDef, type PrefixMeta,
   type ColumnRef, type TableSchema,
   type DemoCatalog,
 } from "./demo-catalog.js";
@@ -68,3 +68,5 @@ export {
   catalogToPrefixCodecInput,
   type LabelRegistryInput, type PrefixCodecPrefixInput, type PrefixCodecInput,
 } from "./demo-bridge.js";
+
+export { DEMO_DKG_CONFIG } from "./demo-dkg-config.js";
