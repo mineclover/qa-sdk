@@ -199,3 +199,7 @@ export interface BoundaryRecommendation {
   readonly estimatedCapacity: number;
   readonly confidence: "high" | "medium" | "low";
 }
+
+// ── re-export (entry-coverage) ───────────────────────────────
+
+export type { CoverageReport, PrefixCoverage } from "./entry-coverage.js";

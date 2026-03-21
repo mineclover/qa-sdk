@@ -108,7 +108,7 @@ describe("self-check-analyzer: Layer 2 순수 분석", () => {
   it("coverage — build_event/test_event 커버리지 계산", () => {
     const analysis = analyzeSelfCheck(ALL_SUCCESS, DEMO_CATALOG, "test-run");
 
-    const buildCov = analysis.coverage.prefixes.find(p => p.prefixId === "build_event");
+    const buildCov = analysis.coverage.prefixes.find((p: { prefixId: string }) => p.prefixId === "build_event");
     expect(buildCov).toBeDefined();
     expect(buildCov!.coverageRate).toBeGreaterThan(0);
   });
