@@ -744,9 +744,25 @@ async function runCodegen(argv: string[]) {
       catalog: { type: "string" },
       "dkg-config": { type: "string" },
       "lock-version": { type: "string" },
+      registry: { type: "string" },
+      "catalog-id": { type: "string" },
     },
     strict: true,
   });
+
+  // --registry → Registry에서 카탈로그 fetch → codegen
+  if (values.registry) {
+    await codegen({
+      formats: ["ts"],
+      input: values.input!,
+      output: values.output!,
+      registry: values.registry,
+      catalogId: values["catalog-id"],
+      dkgConfig: values["dkg-config"],
+      lockVersion: values["lock-version"],
+    });
+    return;
+  }
 
   // --catalog 경로 또는 loadedCatalog → Catalog 기반 codegen
   if (values.catalog || values["dkg-config"] || loadedCatalog) {

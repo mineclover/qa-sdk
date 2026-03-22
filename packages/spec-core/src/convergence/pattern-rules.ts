@@ -1,16 +1,23 @@
 /**
- * DEMO 기본 패턴 규칙 — 쇼핑 도메인.
+ * 패턴 규칙 — 시스템 공통 + 도메인별 분리.
  *
- * 이 규칙은 DEMO_CATALOG의 쇼핑 이벤트에 맞춰져 있다.
- * 실제 서비스에서는 카탈로그별 커스텀 규칙을 정의해야 한다.
+ * SYSTEM_PATTERN_RULES: 도메인 무관 (봇/헬스체크/API/에러 복구)
+ * DEMO_PATTERN_RULES: 쇼핑 도메인 (구매/장바구니/결제 등) + 시스템 규칙 포함
+ *
+ * 새 도메인 도입 시: SYSTEM_PATTERN_RULES + 도메인 전용 규칙을 결합.
  *
  * @layer 측정 (Measurement)
  */
 
 import type { PatternRule } from "@qa-sdk/core";
 
-export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
-  // ── 봇/시스템 패턴 (최고 우선순위) ────────────────
+// ── 시스템 공통 규칙 (도메인 무관) ────────────────────
+
+/**
+ * 도메인에 무관한 시스템 패턴 규칙.
+ * 봇 감지, 헬스체크, API 통합, 에러 복구 — 어떤 비즈니스에서든 적용 가능.
+ */
+export const SYSTEM_PATTERN_RULES: readonly PatternRule[] = [
   {
     id: "rule-bot-crawl",
     identificationMode: "any",
@@ -21,7 +28,7 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
     match: {
       eventKeyPatterns: ["page\\..*"],
       minEvents: 10,
-      minIntervalMs: 200,  // 200ms 미만 간격이 있으면 매칭 안 됨 → 반전 필요
+      minIntervalMs: 200,
     },
   },
   {
@@ -48,8 +55,28 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
       actorCondition: "any",
     },
   },
+  {
+    id: "rule-error-recovery",
+    identificationMode: "any",
+    behaviorPattern: "error_recovery",
+    defaultConfidence: "high",
+    priority: 40,
+    description: "에러 발생 후 재시도 성공",
+    match: {
+      requiredKeys: ["*.error", "*.fail*"],
+      requiredSequence: ["*.error", "*.success"],
+      actorCondition: "has_actor",
+    },
+  },
+];
 
-  // ── 식별된 사용자 패턴 ─────────────────────────
+// ── 쇼핑 도메인 규칙 ──────────────────────────────────
+
+/**
+ * 쇼핑 도메인 전용 패턴 규칙.
+ * 구매 완료, 장바구니 이탈, 결제 실패 등 e-commerce 이벤트 시퀀스.
+ */
+export const SHOPPING_PATTERN_RULES: readonly PatternRule[] = [
   {
     id: "rule-identified-purchase",
     identificationMode: "any",
@@ -73,19 +100,6 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
     match: {
       requiredKeys: ["checkout.*"],
       excludedKeys: ["payment.success", "order.complete"],
-      actorCondition: "has_actor",
-    },
-  },
-  {
-    id: "rule-error-recovery",
-    identificationMode: "any",
-    behaviorPattern: "error_recovery",
-    defaultConfidence: "high",
-    priority: 40,
-    description: "에러 발생 후 재시도 성공",
-    match: {
-      requiredKeys: ["*.error", "*.fail*"],
-      requiredSequence: ["*.error", "*.success"],
       actorCondition: "has_actor",
     },
   },
@@ -115,8 +129,6 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
       minEvents: 2,
     },
   },
-
-  // ── 비식별 패턴 ────────────────────────────────
   {
     id: "rule-anonymous-cart",
     identificationMode: "anonymous",
@@ -143,3 +155,33 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
     },
   },
 ];
+
+// ── 통합 (하위 호환) ──────────────────────────────────
+
+/**
+ * DEMO 기본 패턴 규칙 — 시스템 공통 + 쇼핑 도메인 결합.
+ *
+ * 새 도메인 도입 시: [...SYSTEM_PATTERN_RULES, ...YOUR_DOMAIN_RULES]
+ */
+export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
+  ...SYSTEM_PATTERN_RULES,
+  ...SHOPPING_PATTERN_RULES,
+];
+
+// ── 도메인 규칙 결합 헬퍼 ─────────────────────────────
+
+/**
+ * 시스템 공통 규칙 + 커스텀 도메인 규칙을 결합.
+ * priority 기준 내림차순 정렬.
+ *
+ * @example
+ * const myRules = combinePatternRules(LOGISTICS_RULES);
+ * // → SYSTEM_PATTERN_RULES + LOGISTICS_RULES, priority 정렬
+ */
+export function combinePatternRules(...domainRules: readonly (readonly PatternRule[])[]): readonly PatternRule[] {
+  const all = [...SYSTEM_PATTERN_RULES];
+  for (const rules of domainRules) {
+    all.push(...rules);
+  }
+  return all.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+}

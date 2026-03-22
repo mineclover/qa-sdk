@@ -44,8 +44,49 @@
 ### 3. PatternRules (이벤트 분류 규칙) — 패턴 분류 시
 세션 이벤트 시퀀스를 행동 패턴으로 분류하는 규칙. `BehaviorPattern`은 `string` 타입이므로 비즈니스별 자유 정의.
 - 형식: `PatternRule[]` (`@qa-sdk/core`)
-- 참고: `spec-core`의 `DEMO_PATTERN_RULES` (쇼핑 도메인 예시)
 - 권장: behavior_pattern 축 entries와 1:1 매핑
+
+#### 규칙 구성 (2단계)
+- **`SYSTEM_PATTERN_RULES`** — 도메인 무관 (bot_crawl, health_check, api_integration, error_recovery). 모든 비즈니스에서 재사용.
+- **도메인 규칙** — 비즈니스 전용. 예: `SHOPPING_PATTERN_RULES` (purchase_complete, cart_abandon 등)
+- 결합: `combinePatternRules(MY_DOMAIN_RULES)` → 시스템 + 도메인 규칙 priority 정렬 병합
+
+#### 커스텀 규칙 작성 예시 (물류 도메인)
+```typescript
+import type { PatternRule } from "@qa-sdk/core";
+
+export const LOGISTICS_PATTERN_RULES: readonly PatternRule[] = [
+  {
+    id: "rule-delivery-completed",
+    identificationMode: "any",
+    behaviorPattern: "delivery_completed",     // catalog behavior_pattern 축과 일치
+    defaultConfidence: "exact",
+    priority: 50,
+    description: "배송 완료 흐름",
+    match: {
+      requiredSequence: ["route.planned", "pickup.*", "in_transit.*", "delivery.completed"],
+    },
+  },
+  {
+    id: "rule-delivery-failed",
+    identificationMode: "any",
+    behaviorPattern: "delivery_failed",
+    defaultConfidence: "high",
+    priority: 45,
+    match: {
+      requiredKeys: ["delivery.attempted"],
+      excludedKeys: ["delivery.completed"],
+    },
+  },
+];
+```
+
+#### 적용
+```typescript
+import { combinePatternRules } from "@qa-sdk/spec-core/convergence";
+const myRules = combinePatternRules(LOGISTICS_PATTERN_RULES);
+// → SYSTEM_PATTERN_RULES + LOGISTICS_PATTERN_RULES, priority 정렬
+```
 
 ### 4. ServiceBootConfig (서비스 정체성) — 필수
 각 서비스의 namespace, name, env, region 정의. 모든 SDK 레이어(좌표 인코딩, 전송 메타데이터, 권한)가 이 설정에서 파생.

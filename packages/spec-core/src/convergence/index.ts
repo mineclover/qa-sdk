@@ -84,7 +84,7 @@ export { METRIC_DEFS, collectMetrics, metricsToObservations, resolveRecoveredMet
 // ── 패턴 분류 (ADR-006) ──────────────────────────
 export { classifyPattern } from "./pattern-classifier.js";
 export type { ClassifierInput, ClassifierEvent } from "./pattern-classifier.js";
-export { DEMO_PATTERN_RULES } from "./pattern-rules.js";
+export { DEMO_PATTERN_RULES, SYSTEM_PATTERN_RULES, SHOPPING_PATTERN_RULES, combinePatternRules } from "./pattern-rules.js";
 export { detectAnomalies } from "./pattern-anomaly.js";
 export type { AnomalyDetectionInput } from "./pattern-anomaly.js";
 export { aggregatePatternStats, buildPatternHealthReport } from "./pattern-aggregator.js";

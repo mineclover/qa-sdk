@@ -16,30 +16,73 @@ export interface CodegenOptions {
   input: string;
   output: string;
   packageName?: string;
-  /** Catalog 파일 경로 (TS/JS/JSON). 지정 시 Catalog 기반 codegen 실행. */
+  /** Catalog 파일 경로 (TS/JS/JSON). */
   catalog?: string;
   /** 이미 로드된 Catalog 객체. catalog 경로보다 우선. */
   loadedCatalog?: Catalog;
-  /** DkgConfig 파일 경로. catalog과 함께 사용. */
+  /** DkgConfig 파일 경로. */
   dkgConfig?: string;
   /** 특정 prefix version으로 고정. 미지정 시 latest. */
   lockVersion?: string;
+  /** Registry URL. 원격 카탈로그 fetch. */
+  registry?: string;
+  /** Registry에서 가져올 catalog ID (default: "demo"). */
+  catalogId?: string;
 }
 
 /**
  * 코드 생성.
  *
- * --catalog 지정 시: Catalog + DkgConfig → Typed SDK 멀티 파일 생성
- * --input 지정 시: SchemaSnapshot JSON → 단일 .d.ts/.proto 생성 (기존 경로)
+ * --registry 지정 시: Registry에서 카탈로그 fetch → Typed SDK 생성
+ * --catalog 지정 시: 로컬 Catalog → Typed SDK 생성
+ * --input 지정 시: SchemaSnapshot JSON → 단일 .d.ts/.proto 생성 (기존)
  */
 export async function codegen(opts: CodegenOptions): Promise<void> {
+  if (opts.registry) {
+    return codegenFromRegistry(opts);
+  }
   if (opts.catalog || opts.loadedCatalog) {
     return codegenFromCatalog(opts);
   }
   return codegenFromSnapshot(opts);
 }
 
-// ── Catalog 기반 codegen (신규) ────────────────────────
+// ── Registry 기반 codegen ──────────────────────────────
+
+async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
+  const registryUrl = opts.registry!;
+  const catalogId = opts.catalogId ?? "demo";
+
+  console.log(`Fetching catalog "${catalogId}" from ${registryUrl}...`);
+
+  const res = await fetch(`${registryUrl}/catalogs/${catalogId}`);
+  if (!res.ok) {
+    throw new Error(`Registry fetch failed: ${res.status} ${res.statusText} (${registryUrl}/catalogs/${catalogId})`);
+  }
+
+  const body = await res.json() as { id: string; name: string; data: string };
+  const catalog = JSON.parse(body.data) as Catalog;
+
+  console.log(`Catalog loaded: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes, ${Object.keys(catalog.axes).length} axes)`);
+
+  const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
+
+  const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
+    lockVersion: opts.lockVersion,
+  });
+
+  await mkdir(opts.output, { recursive: true });
+
+  for (const file of result.files) {
+    const outPath = join(opts.output, file.path);
+    await writeOutput(outPath, file.content);
+    console.log(`Generated → ${outPath}`);
+  }
+
+  console.log(`${result.files.length} file(s) generated from registry "${registryUrl}" catalog "${catalog.id}" (hash: ${result.contentHash})`);
+}
+
+// ── Catalog 기반 codegen ───────────────────────────────
 
 async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
   const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
