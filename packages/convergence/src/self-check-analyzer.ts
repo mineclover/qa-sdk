@@ -503,6 +503,30 @@ const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
   // ── dkg_observation_event: 누락 lifecycle_state ──
   { prefix: "dkg_observation_event", dims: { obs_source: "runtime", dkg_target_kind: "prefix", lifecycle_state: "reversed" } },
 
+  // ── build_event/test_event: 누락 qa_module 보충 ──
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "shared", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "schema", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "export-surface", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "spec", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "loader", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "dkg", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "dkg-skills", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "convergence", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "propagation", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "store", build_result: "success" } },
+  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "visualization", build_result: "success" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "shared", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "schema", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "export-surface", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "spec", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "loader", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "dkg", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "dkg-skills", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "convergence", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "propagation", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "store", test_result: "passed" } },
+  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "visualization", test_result: "passed" } },
+
   // ── event_classification: 이벤트 분류 좌표 ──
   { prefix: "event_classification", dims: { event_category: "user_action", event_lifecycle_stage: "interaction" }, refDims: ["svc_ref"] },
   { prefix: "event_classification", dims: { event_category: "system_action", event_lifecycle_stage: "processing" }, refDims: ["svc_ref"] },
