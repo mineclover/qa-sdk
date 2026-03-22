@@ -222,19 +222,60 @@ body {
 
 #diagram-container {
   flex: 1;
-  overflow: auto;
-  padding: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
 }
 
-#diagram-container .mermaid {
+#diagram-container.panning { cursor: grabbing; }
+
+#diagram-viewport {
+  transform-origin: 0 0;
+  padding: 24px;
+  display: inline-block;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+#diagram-viewport .mermaid {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 24px;
   min-width: 400px;
+}
+
+#zoom-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+}
+
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+#zoom-level {
+  font-size: 10px;
+  color: var(--dim);
+  align-self: center;
+  min-width: 36px;
+  text-align: center;
 }
 
 #empty-state { text-align: center; color: var(--dim); margin-top: 80px; }
@@ -302,13 +343,22 @@ body {
     </div>
   </div>
   <div id="diagram-container">
-    <div id="empty-state">
-      <div class="icon">&#9671;</div>
-      <p>
-        사이드바에서 다이어그램을 선택하거나<br>
-        Custom 영역에 Mermaid 텍스트를 입력하세요.<br><br>
-        <code style="font-size:11px;color:var(--cyan)">qa-sdk dkg diagram list</code>
-      </p>
+    <div id="diagram-viewport">
+      <div id="empty-state">
+        <div class="icon">&#9671;</div>
+        <p>
+          사이드바에서 다이어그램을 선택하거나<br>
+          Custom 영역에 Mermaid 텍스트를 입력하세요.<br><br>
+          <code style="font-size:11px;color:var(--cyan)">qa-sdk dkg diagram list</code>
+        </p>
+      </div>
+    </div>
+    <div id="zoom-controls">
+      <button class="zoom-btn" id="zoom-out" title="Zoom Out">-</button>
+      <span id="zoom-level">100%</span>
+      <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
+      <button class="zoom-btn" id="zoom-fit" title="Fit">&#8690;</button>
+      <button class="zoom-btn" id="zoom-reset" title="Reset">1:1</button>
     </div>
   </div>
 </div>
@@ -508,7 +558,7 @@ function restoreFromUrl() {
 
 async function renderMermaid(mmd) {
   currentMmd = mmd;
-  const container = document.getElementById('diagram-container');
+  const viewport = document.getElementById('diagram-viewport');
   document.getElementById('btn-copy').disabled = false;
   document.getElementById('btn-download').disabled = false;
 
@@ -516,9 +566,10 @@ async function renderMermaid(mmd) {
     renderCounter++;
     const id = `mmd-${renderCounter}`;
     const { svg } = await mermaid.render(id, mmd);
-    container.innerHTML = `<div class="mermaid">${svg}</div>`;
+    viewport.innerHTML = `<div class="mermaid">${svg}</div>`;
+    resetZoom();
   } catch (err) {
-    container.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+    viewport.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">
       <strong>Render Error</strong><br>
       <pre style="margin-top:8px;white-space:pre-wrap;">${err.message || err}</pre>
       <pre style="margin-top:12px;color:var(--dim);white-space:pre-wrap;">${mmd}</pre>
@@ -543,11 +594,12 @@ function renderCustom() {
 }
 
 function showEmpty(msg) {
-  document.getElementById('diagram-container').innerHTML =
+  document.getElementById('diagram-viewport').innerHTML =
     `<div id="empty-state"><div class="icon">&#9671;</div><p>${msg.replace(/\n/g, '<br>')}</p></div>`;
   currentMmd = '';
   document.getElementById('btn-copy').disabled = true;
   document.getElementById('btn-download').disabled = true;
+  resetZoom();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -567,7 +619,7 @@ document.getElementById('btn-copy').addEventListener('click', function () {
 });
 
 document.getElementById('btn-download').addEventListener('click', function () {
-  const svgEl = document.querySelector('#diagram-container svg');
+  const svgEl = document.querySelector('#diagram-viewport svg');
   if (!svgEl) return;
   const svgData = new XMLSerializer().serializeToString(svgEl);
   const blob = new Blob([svgData], { type: 'image/svg+xml' });
@@ -610,6 +662,120 @@ async function loadTrace() {
     showEmpty('ingest-server에 연결할 수 없습니다 (localhost:3200)');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Zoom + Pan
+// ═══════════════════════════════════════════════════════════════
+
+let scale = 1;
+let panX = 0, panY = 0;
+let isPanning = false;
+let panStartX = 0, panStartY = 0;
+
+const viewport = document.getElementById('diagram-viewport');
+const container = document.getElementById('diagram-container');
+const zoomLabel = document.getElementById('zoom-level');
+
+function applyTransform() {
+  viewport.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+}
+
+function resetZoom() {
+  scale = 1; panX = 0; panY = 0;
+  applyTransform();
+}
+
+function zoomTo(newScale, cx, cy) {
+  const clamp = Math.max(0.1, Math.min(5, newScale));
+  // 줌 중심점 유지
+  panX = cx - (cx - panX) * (clamp / scale);
+  panY = cy - (cy - panY) * (clamp / scale);
+  scale = clamp;
+  applyTransform();
+}
+
+function fitToView() {
+  const svgEl = viewport.querySelector('svg');
+  if (!svgEl) { resetZoom(); return; }
+  const cw = container.clientWidth;
+  const ch = container.clientHeight;
+  const sw = svgEl.scrollWidth || svgEl.clientWidth || 800;
+  const sh = svgEl.scrollHeight || svgEl.clientHeight || 600;
+  const pad = 48;
+  scale = Math.min((cw - pad) / sw, (ch - pad) / sh, 2);
+  panX = (cw - sw * scale) / 2;
+  panY = (ch - sh * scale) / 2;
+  applyTransform();
+}
+
+// 휠 줌
+container.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = container.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  zoomTo(scale * delta, cx, cy);
+}, { passive: false });
+
+// 마우스 팬
+container.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  isPanning = true;
+  panStartX = e.clientX - panX;
+  panStartY = e.clientY - panY;
+  container.classList.add('panning');
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!isPanning) return;
+  panX = e.clientX - panStartX;
+  panY = e.clientY - panStartY;
+  applyTransform();
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  container.classList.remove('panning');
+});
+
+// 터치 팬 (모바일)
+let touchStartX = 0, touchStartY = 0;
+container.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    touchStartX = e.touches[0].clientX - panX;
+    touchStartY = e.touches[0].clientY - panY;
+  }
+}, { passive: true });
+
+container.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1) {
+    panX = e.touches[0].clientX - touchStartX;
+    panY = e.touches[0].clientY - touchStartY;
+    applyTransform();
+  }
+}, { passive: true });
+
+// 버튼
+document.getElementById('zoom-in').addEventListener('click', () => {
+  const rect = container.getBoundingClientRect();
+  zoomTo(scale * 1.2, rect.width / 2, rect.height / 2);
+});
+document.getElementById('zoom-out').addEventListener('click', () => {
+  const rect = container.getBoundingClientRect();
+  zoomTo(scale / 1.2, rect.width / 2, rect.height / 2);
+});
+document.getElementById('zoom-fit').addEventListener('click', fitToView);
+document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+
+// 키보드 단축키
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'TEXTAREA') return;
+  if ((e.ctrlKey || e.metaKey) && e.key === '=') { e.preventDefault(); document.getElementById('zoom-in').click(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === '-') { e.preventDefault(); document.getElementById('zoom-out').click(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); resetZoom(); }
+});
 
 loadPresets();
 </script>
