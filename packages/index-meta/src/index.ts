@@ -21,6 +21,7 @@ export { createSqliteDriver } from "./adapters/create-sqlite-driver.js";
 export type { SqliteDriverType, CreateSqliteDriverOptions } from "./adapters/create-sqlite-driver.js";
 export { D1SqlDriver } from "./adapters/d1-driver.js";
 export { D1IndexMetaStore, type D1Database } from "./adapters/d1-store.js";
+export { BunSqliteDriver, type BunDatabase } from "./adapters/bun-sqlite-driver.js";
 export { DistributedStoreClient } from "./distributed-client.js";
 export { syncSchemaToRegistry, applySchemaDiff } from "./schema-sync.js";
 export type { ApplySchemaDiffResult } from "./schema-sync.js";
