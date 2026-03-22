@@ -492,10 +492,17 @@ for(const gl of GP.grids){
 }
 LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMaterial({map:tx(['L0 UI','L1 Business','L2 Infra','L3 Data'][i],13,lc.css),transparent:true,opacity:0.2}));l.scale.set(5,1,1);l.position.set(-28,y,0);scene.add(l)});
 
-// Beams
-const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0})}
+// Beams — pinned(고정) + transient(시간감쇠) 이중 모드
+const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0,pinned:false})}
 let bI=0;
-function beam(a,b,key){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=6}
+
+/** transient beam — 시간 지나면 fade */
+function beam(a,b,key){const e=bLines[bI++%50];e.pinned=false;const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=4}
+
+/** pinned beam — clearPinnedBeams() 전까지 유지 */
+function pinnedBeam(a,b,key){const e=bLines[bI++%50];e.pinned=true;const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=1;e.m.opacity=0.6}
+
+function clearPinnedBeams(){bLines.forEach(b=>{if(b.pinned){b.pinned=false;b.life=0;b.m.opacity=0}})}
 
 // ═══════════════════════════════════════════════════
 //  DEMO STEPS (compact)
@@ -578,8 +585,25 @@ function fireStep(step){
 }
 
 function replayEntry(entry){
-  if(!entry)return;Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
-  activateKeys(new Set(entry.keys),null);
+  if(!entry)return;
+  clearPinnedBeams();
+  Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
+  aSet=new Set(entry.keys);
+  markCellRoles([...entry.keys]);
+  for(const k of entry.keys){setGlow(k)}
+
+  // flow가 있으면 pinned beam으로 연결 (이동 전까지 유지)
+  if(entry.flow&&entry.flow.length>1){
+    for(let i=0;i<entry.flow.length-1;i++){
+      const a=cellMap[entry.flow[i].cell],b=cellMap[entry.flow[i+1].cell];
+      if(a&&b)pinnedBeam(a,b,entry.flow[i+1].cell);
+    }
+  } else {
+    // flow 없으면 레이어 간 pinned beam
+    const act=[...entry.keys].map(k=>cellMap[k]).filter(Boolean);
+    for(let i=0;i<act.length;i++)for(let j=i+1;j<act.length;j++)if(act[i].layer!==act[j].layer)pinnedBeam(act[i],act[j]);
+  }
+
   updateHUD({n:entry.name,d:entry.desc},entry.ctx);showFlow(entry);
   $('status').textContent=`history ${FH.indexLabel()} — ${entry.name}`;
 }
@@ -723,7 +747,7 @@ function rD(){if(!dOn)return;if(dI>=STEPS.length)dI=0;fireStep(STEPS[dI]);$('sta
 $('btn-info').addEventListener('click',toggleInfo);
 $('btn-reset').addEventListener('click',()=>{
   dOn=false;clearTimeout(dT);$('btn-demo').classList.remove('on');
-  tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();
+  tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();clearPinnedBeams();
   cellRoleColor.clear();timelineEntries.length=0;renderTimeline();
   roleFilter=null;document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
@@ -804,7 +828,7 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   }
 
   // Beams
-  bLines.forEach(b=>{if(b.life>0){b.life-=dt*0.15;b.m.opacity=Math.max(0,Math.min(b.life*0.15,0.7))}});
+  bLines.forEach(b=>{if(b.pinned)return;if(b.life>0){b.life-=dt*0.5;b.m.opacity=Math.max(0,Math.min(b.life*0.2,0.6))}});
 
   updateKeyboardNav();
   ctl.update();R.render(scene,cam);
