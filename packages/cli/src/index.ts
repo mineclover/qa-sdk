@@ -42,6 +42,7 @@ import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen
 import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
+import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints } from "./commands/service.js";
 
 // ── Usage ────────────────────────────────────────────
@@ -137,6 +138,14 @@ Usage:
   qa-sdk ingest trace <traceId>      trace 상세 (records + verdicts)
   qa-sdk ingest status               수집 파이프라인 상태 요약
   qa-sdk ingest services             서비스 URL 맵 (registry 기반, → service list 권장)
+
+  qa-sdk gate health                  gate-service 헬스체크
+  qa-sdk gate check <prefix> [ver]   주소 상태 확인
+  qa-sdk gate classify <prefix> <ver> <addr>  주소 분류
+
+  qa-sdk query health                query-service 헬스체크
+  qa-sdk query resolve --coord d=v   정책 해석
+  qa-sdk query rules                 정책 규칙 목록
 
   qa-sdk catalog list                등록된 카탈로그 목록
   qa-sdk catalog info <id>           카탈로그 상세 정보
@@ -623,6 +632,28 @@ async function main() {
       await ingestServices(sub.rest);
       return;
 
+    // Gate 명령어
+    case "gate health":
+      await gateHealth(sub.rest);
+      return;
+    case "gate check":
+      await gateCheck(sub.rest);
+      return;
+    case "gate classify":
+      await gateClassify(sub.rest);
+      return;
+
+    // Query 명령어
+    case "query health":
+      await queryHealth(sub.rest);
+      return;
+    case "query resolve":
+      await queryResolve(sub.rest);
+      return;
+    case "query rules":
+      await queryRules(sub.rest);
+      return;
+
     // Catalog 명령어
     case "catalog list": {
       const reg = getCatalogRegistry();
@@ -705,6 +736,8 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
     "service list", "service show", "service owners", "service endpoints",
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
+    "gate health", "gate check", "gate classify",
+    "query health", "query resolve", "query rules",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];

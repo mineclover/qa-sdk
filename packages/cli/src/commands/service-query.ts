@@ -1,0 +1,192 @@
+/**
+ * qa-sdk gate / query — gate-service + query-service CLI 접근.
+ *
+ * gate check: 주소 상태 확인 (active/reserved/inactive)
+ * query resolve: 정책 해석
+ * query rules: 정책 규칙 목록
+ */
+
+const DEFAULT_GATE_URL = "http://localhost:3400";
+const DEFAULT_QUERY_URL = "http://localhost:3500";
+
+async function resolveServiceUrl(args: string[], service: "gate" | "query"): Promise<string> {
+  // 1. 직접 지정
+  const flag = service === "gate" ? "--gate" : "--query";
+  const idx = args.indexOf(flag);
+  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
+
+  // 2. 환경변수
+  const envKey = service === "gate" ? "GATE_SERVICE_URL" : "QUERY_SERVICE_URL";
+  if (process.env[envKey]) return process.env[envKey]!;
+
+  // 3. registry에서 탐색
+  const registryUrl = process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
+  try {
+    const resp = await fetch(`${registryUrl}/api/services/urls`, { signal: AbortSignal.timeout(3_000) });
+    if (resp.ok) {
+      const urls = await resp.json() as Record<string, string>;
+      const key = service === "gate" ? "gate-service" : "query-service";
+      if (urls[key]) return urls[key];
+    }
+  } catch { /* fallback */ }
+
+  return service === "gate" ? DEFAULT_GATE_URL : DEFAULT_QUERY_URL;
+}
+
+async function fetchJson(url: string, init?: RequestInit): Promise<any> {
+  const resp = await fetch(url, { signal: AbortSignal.timeout(5_000), ...init });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error(`${resp.status} ${resp.statusText}: ${text.slice(0, 200)}`);
+  }
+  return resp.json();
+}
+
+// ── gate check ──────────────────────────────────────
+
+export async function gateCheck(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "gate");
+  const prefix = args.find(a => !a.startsWith("--"));
+  const version = args.find((a, i) => i > 0 && !a.startsWith("--") && args[i - 1] !== "--gate");
+
+  if (!prefix) {
+    console.error("Usage: qa-sdk gate check <prefix> [version] [--gate url]");
+    return;
+  }
+
+  console.log(`\n══ Gate Check ══`);
+  console.log(`  URL: ${url}`);
+  console.log(`  prefix: ${prefix}, version: ${version ?? "latest"}`);
+
+  try {
+    if (version) {
+      const data = await fetchJson(`${url}/gate/state/${prefix}/${version}`);
+      console.log(`  state: ${JSON.stringify(data, null, 2)}`);
+    } else {
+      const data = await fetchJson(`${url}/health`);
+      console.log(`  health: ${data.status ?? "ok"}`);
+      console.log(`\n  (version 지정 시: qa-sdk gate check ${prefix} v1)`);
+    }
+  } catch (err: any) {
+    console.error(`  ❌ 조회 실패: ${err.message}`);
+  }
+}
+
+// ── gate classify ───────────────────────────────────
+
+export async function gateClassify(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "gate");
+  const prefix = args.find(a => !a.startsWith("--"));
+  const version = args[1] && !args[1].startsWith("--") ? args[1] : "v1";
+  const address = args[2] && !args[2].startsWith("--") ? parseInt(args[2]) : 0;
+
+  if (!prefix) {
+    console.error("Usage: qa-sdk gate classify <prefix> <version> <address> [--gate url]");
+    return;
+  }
+
+  console.log(`\n══ Gate Classify ══`);
+
+  try {
+    const data = await fetchJson(`${url}/gate/classify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prefix, version, address }),
+    });
+    console.log(`  result: ${JSON.stringify(data, null, 2)}`);
+  } catch (err: any) {
+    console.error(`  ❌ 분류 실패: ${err.message}`);
+  }
+}
+
+// ── query resolve ───────────────────────────────────
+
+export async function queryResolve(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "query");
+
+  // --coord key=value 파싱
+  const coord: Record<string, number> = {};
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--coord" && args[i + 1]) {
+      const [key, val] = args[i + 1].split("=");
+      if (key && val) coord[key] = parseInt(val);
+      i++;
+    }
+  }
+
+  if (Object.keys(coord).length === 0) {
+    console.error("Usage: qa-sdk query resolve --coord dim1=0 --coord dim2=1 [--query url]");
+    return;
+  }
+
+  console.log(`\n══ Query Resolve ══`);
+  console.log(`  URL: ${url}`);
+  console.log(`  coord: ${JSON.stringify(coord)}`);
+
+  try {
+    const data = await fetchJson(`${url}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coord, shape: [], rules: [] }),
+    });
+    console.log(`  result: ${JSON.stringify(data, null, 2)}`);
+  } catch (err: any) {
+    console.error(`  ❌ 질의 실패: ${err.message}`);
+  }
+}
+
+// ── query rules ─────────────────────────────────────
+
+export async function queryRules(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "query");
+
+  console.log(`\n══ Query Rules ══`);
+  console.log(`  URL: ${url}`);
+
+  try {
+    const data = await fetchJson(`${url}/rules`);
+    const rules = data.rules ?? data.items ?? data;
+    if (Array.isArray(rules) && rules.length === 0) {
+      console.log("  (등록된 규칙 없음)");
+      return;
+    }
+    if (Array.isArray(rules)) {
+      for (const r of rules.slice(0, 20)) {
+        console.log(`  ${(r.id ?? "?").padEnd(20)} priority=${r.priority ?? "?"} pattern=${JSON.stringify(r.pattern ?? {}).slice(0, 50)}`);
+      }
+      if (rules.length > 20) console.log(`  ... 외 ${rules.length - 20}건`);
+    } else {
+      console.log(`  ${JSON.stringify(rules).slice(0, 200)}`);
+    }
+  } catch (err: any) {
+    console.error(`  ❌ 조회 실패: ${err.message}`);
+  }
+}
+
+// ── query health ────────────────────────────────────
+
+export async function queryHealth(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "query");
+  console.log(`\n══ Query Service Health ══`);
+  console.log(`  URL: ${url}`);
+  try {
+    const data = await fetchJson(`${url}/health`);
+    console.log(`  status: ${data.status ?? "ok"}`);
+  } catch (err: any) {
+    console.error(`  ❌ 연결 실패: ${err.message}`);
+  }
+}
+
+// ── gate health ─────────────────────────────────────
+
+export async function gateHealth(args: string[]): Promise<void> {
+  const url = await resolveServiceUrl(args, "gate");
+  console.log(`\n══ Gate Service Health ══`);
+  console.log(`  URL: ${url}`);
+  try {
+    const data = await fetchJson(`${url}/health`);
+    console.log(`  status: ${data.status ?? "ok"}`);
+  } catch (err: any) {
+    console.error(`  ❌ 연결 실패: ${err.message}`);
+  }
+}
