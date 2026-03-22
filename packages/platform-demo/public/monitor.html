@@ -179,7 +179,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 </div>
 <div class="hud hud-tr" id="hud-tr">
   <div class="signal-legend" id="signal-legend">
-    <div class="cl m">Signal Roles</div>
+    <div class="cl m">Signal Roles <span style="font-size:7px;color:#445;font-weight:400">(선/반짝임)</span></div>
     <div class="sl-roles" id="sl-roles">
       <span class="sl-role sl-active" data-role="context"><span class="sl-dot" style="background:#4ade80"></span>context</span>
       <span class="sl-role sl-active" data-role="trigger"><span class="sl-dot" style="background:#facc15"></span>trigger</span>
@@ -188,6 +188,15 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
       <span class="sl-role sl-active" data-role="guard"><span class="sl-dot" style="background:#f472b6"></span>guard</span>
       <span class="sl-role sl-active" data-role="effect"><span class="sl-dot" style="background:#fb923c"></span>effect</span>
       <span class="sl-role sl-active" data-role="data"><span class="sl-dot" style="background:#94a3b8"></span>data</span>
+    </div>
+    <div class="cl m" style="margin-top:6px">Category <span style="font-size:7px;color:#445;font-weight:400">(노드)</span></div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
+      <span style="font-size:8px;color:#00e5ff;padding:2px 5px;border:1px solid rgba(0,229,255,0.2);border-radius:3px">observation</span>
+      <span style="font-size:8px;color:#ff9100;padding:2px 5px;border:1px solid rgba(255,145,0,0.2);border-radius:3px">event</span>
+      <span style="font-size:8px;color:#00e676;padding:2px 5px;border:1px solid rgba(0,230,118,0.2);border-radius:3px">policy</span>
+      <span style="font-size:8px;color:#78909c;padding:2px 5px;border:1px solid rgba(120,144,156,0.2);border-radius:3px">entity</span>
+      <span style="font-size:8px;color:#9575cd;padding:2px 5px;border:1px solid rgba(149,117,205,0.2);border-radius:3px">state</span>
+      <span style="font-size:8px;color:#ff5252;padding:2px 5px;border:1px solid rgba(255,82,82,0.2);border-radius:3px">table</span>
     </div>
   </div>
   <div class="cd"><div class="cl m">Step</div><div style="font-size:12px;font-weight:600" id="h-step">--</div><div class="cs m" id="h-desc"></div></div>
@@ -412,20 +421,13 @@ const instancedGrids=[];const labelSprites=[];
 const perf=new PerfMonitor();
 
 // entity 카테고리 색상 개선 (tracking, service 등 — 기본값이 너무 어두움)
-CATEGORY_COLORS.entity = { main: {hex:0x78909c, css:'#78909c'}, emissive: {hex:0x4fc3f7, css:'#4fc3f7'} };
-
-// prefix → role 색상으로 셀 기본 색상 결정 (범례와 일치)
-function roleColorForPrefix(prefixId){
-  const role=getPrefixRole(prefixId);
-  const hex=ROLE_HEX[role]||0x94a3b8;
-  // 어두운 버전 (base) + 밝은 버전 (emissive)
-  const dim=new T.Color(hex).multiplyScalar(0.35);
-  return {main:{hex:dim.getHex(),css:'#'+dim.getHexString()},emissive:{hex:hex,css:'#'+new T.Color(hex).getHexString()}};
-}
+CATEGORY_COLORS.entity = { main: {hex:0x78909c, css:'#78909c'}, emissive: {hex:0xb0bec5, css:'#b0bec5'} };
+// state 카테고리 추가 (flow_point용 — PrefixCategory에 정의됨)
+CATEGORY_COLORS.state = { main: {hex:0x9575cd, css:'#9575cd'}, emissive: {hex:0xd1c4e9, css:'#d1c4e9'} };
 
 for(const gl of GP.grids){
   const def=GRIDS.find(g=>g.id===gl.id);
-  const cc=roleColorForPrefix(gl.id);
+  const cc=CATEGORY_COLORS[def.category]||CATEGORY_COLORS.entity;
   const pos=GP.viewPositions.layer[gl.id];
   const grp=new T.Group();grp.position.set(pos.x,pos.y,pos.z);scene.add(grp);
   groups.set(gl.id,grp);
