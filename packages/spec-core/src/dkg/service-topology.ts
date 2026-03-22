@@ -40,10 +40,15 @@ export interface SharedContract {
   readonly breakingConditions: readonly string[];
 }
 
+/** 서비스 배포 계층. layer 자동 추론에 사용. */
+export type ServiceTier = "frontend" | "backend" | "infra" | "system";
+
 export interface ServiceRegistration {
   readonly serviceId: string;
   readonly name: string;
   readonly team?: string;
+  /** 서비스 계층. frontend=L0, backend=L1, infra=L2, system=L3 */
+  readonly tier?: ServiceTier;
   readonly status: "active" | "draining" | "deregistered";
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes: readonly string[];
@@ -597,7 +602,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
 
   // ── 서비스 등록 ──
   topo.registerService({
-    serviceId: "shopping-web", name: "쇼핑 웹", team: "frontend",
+    serviceId: "shopping-web", name: "쇼핑 웹", team: "frontend", tier: "frontend",
     status: "active",
     ownedPrefixes: ["page_view", "tracking"],
     consumedPrefixes: ["permission", "endpoint", "flow_point", "service"],
@@ -605,7 +610,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "shopping-backend", name: "쇼핑 백엔드", team: "backend",
+    serviceId: "shopping-backend", name: "쇼핑 백엔드", team: "backend", tier: "backend",
     status: "active",
     ownedPrefixes: ["cart_event", "order_event", "permission", "event"],
     consumedPrefixes: ["service", "endpoint"],
@@ -613,7 +618,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "auth", name: "인증 서비스", team: "platform",
+    serviceId: "auth", name: "인증 서비스", team: "platform", tier: "backend",
     status: "active",
     ownedPrefixes: ["auth_event", "rbac"],
     consumedPrefixes: ["permission", "service", "endpoint"],
@@ -621,7 +626,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "payment", name: "결제 서비스", team: "backend",
+    serviceId: "payment", name: "결제 서비스", team: "backend", tier: "backend",
     status: "active",
     ownedPrefixes: [],
     consumedPrefixes: ["permission", "order_event", "endpoint", "service"],
@@ -629,7 +634,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "infra-controller", name: "인프라 컨트롤러", team: "devops",
+    serviceId: "infra-controller", name: "인프라 컨트롤러", team: "devops", tier: "infra",
     status: "active",
     ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "endpoint", "pattern_match", "pattern_anomaly"],
     consumedPrefixes: [],
@@ -637,7 +642,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "content-service", name: "콘텐츠 서비스", team: "frontend",
+    serviceId: "content-service", name: "콘텐츠 서비스", team: "frontend", tier: "frontend",
     status: "active",
     ownedPrefixes: ["content", "relational"],
     consumedPrefixes: ["service", "endpoint"],
@@ -645,7 +650,7 @@ export function createDemoTopology(): ServiceTopologyRegistry {
   });
 
   topo.registerService({
-    serviceId: "gateway", name: "API 게이트웨이", team: "platform",
+    serviceId: "gateway", name: "API 게이트웨이", team: "platform", tier: "backend",
     status: "active",
     ownedPrefixes: ["flow_point"],
     consumedPrefixes: ["service", "endpoint", "permission"],

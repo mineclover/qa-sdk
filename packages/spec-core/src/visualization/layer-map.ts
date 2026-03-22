@@ -11,6 +11,7 @@
  */
 
 import { type Catalog, type PrefixDef, compareTimestamps } from "@qa-sdk/core";
+import type { ServiceTier } from "../dkg/service-topology.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -101,12 +102,32 @@ function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string
   return "entity";
 }
 
+/** ServiceTier → LayerLevel 매핑 */
+const TIER_TO_LAYER: Record<ServiceTier, LayerLevel> = {
+  frontend: 0,
+  backend: 1,
+  infra: 2,
+  system: 2,
+};
+
+/** 서비스 소유/소비 정보. prefix → owner service tier 매핑에 사용. */
+export interface ServiceOwnerMap {
+  /** prefixId → owner serviceId */
+  readonly owners: ReadonlyMap<string, string>;
+  /** serviceId → tier */
+  readonly tiers: ReadonlyMap<string, ServiceTier>;
+}
+
 /**
- * DEMO_CATALOG의 모든 prefix를 3D 계층에 배치한다.
+ * prefix를 3D 계층에 배치한다.
  *
- * 우선순위: prefix.meta.layer/category → LAYER_RULES/inferCategoryFromStructure
+ * 우선순위:
+ *   1. prefix.meta.layer (명시적 하드코딩)
+ *   2. serviceOwners → owner service tier → layer (service 기반 추론)
+ *   3. LAYER_RULES (prefix ID 기반 fallback)
+ *   4. default: Layer 1
  */
-export function buildLayerMap(catalog: Catalog): LayerMapResult {
+export function buildLayerMap(catalog: Catalog, serviceOwners?: ServiceOwnerMap): LayerMapResult {
   const placementMap = new Map<string, PrefixPlacement>();
   const layerBuckets: Map<LayerLevel, PrefixPlacement[]> = new Map([
     [0, []], [1, []], [2, []],
@@ -114,7 +135,17 @@ export function buildLayerMap(catalog: Catalog): LayerMapResult {
 
   let index = 0;
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
-    const layer: LayerLevel = (prefix.meta?.layer ?? LAYER_RULES[prefixId] ?? 1) as LayerLevel;
+    // service tier 기반 추론
+    let serviceDerivedLayer: LayerLevel | undefined;
+    if (serviceOwners) {
+      const ownerId = serviceOwners.owners.get(prefixId);
+      if (ownerId) {
+        const tier = serviceOwners.tiers.get(ownerId);
+        if (tier) serviceDerivedLayer = TIER_TO_LAYER[tier];
+      }
+    }
+
+    const layer: LayerLevel = (prefix.meta?.layer ?? serviceDerivedLayer ?? LAYER_RULES[prefixId] ?? 1) as LayerLevel;
     const bucket = layerBuckets.get(layer)!;
     const gridX = bucket.length % 4;
     const gridZ = Math.floor(bucket.length / 4);
@@ -148,6 +179,26 @@ export function buildLayerMap(catalog: Catalog): LayerMapResult {
     allPlacements: [...placementMap.values()],
     placementMap,
   };
+}
+
+/**
+ * ServiceTopologyRegistry에서 ServiceOwnerMap을 구성한다.
+ * buildLayerMap의 두 번째 인자로 전달하면 service tier 기반 layer 추론이 활성화된다.
+ */
+export function buildServiceOwnerMap(
+  services: ReadonlyArray<{ serviceId: string; tier?: ServiceTier; ownedPrefixes: readonly string[] }>,
+): ServiceOwnerMap {
+  const owners = new Map<string, string>();
+  const tiers = new Map<string, ServiceTier>();
+
+  for (const svc of services) {
+    if (svc.tier) tiers.set(svc.serviceId, svc.tier);
+    for (const prefixId of svc.ownedPrefixes) {
+      owners.set(prefixId, svc.serviceId);
+    }
+  }
+
+  return { owners, tiers };
 }
 
 // ═══════════════════════════════════════════════════════════════
