@@ -11,7 +11,7 @@
 import type { Catalog } from "@qa-sdk/core";
 import {
   parseSerializedAddress, serializeAddress,
-  encodePrefixByValue, decodePrefix, resolveAddress,
+  encodePrefixByValue, decodePrefix, decomposeAddress, resolveAddress,
   getPrefixShape, getPrefixStructure, latestPrefixVersion,
 } from "@qa-sdk/core";
 import {
@@ -99,8 +99,21 @@ export function cliDecode(catalog: Catalog, args: {
       console.log(JSON.stringify(result, null, 2));
     } else {
       console.log(`\n  ${args.address}`);
-      for (const [k, v] of Object.entries(values)) {
-        console.log(`    ${k}: ${v}`);
+
+      // prefixRef는 참조 주소로 표시, axis는 직접 값으로 표시
+      const prefixDef = catalog.prefixes[prefixId];
+      const decomposed = decomposeAddress(catalog, prefixId, version, address);
+      for (const [k, dim] of Object.entries(decomposed)) {
+        if ("refDims" in dim && dim.refDims) {
+          // prefixRef — 참조 prefix 주소 + 대표값 표시
+          const refPrefix = prefixDef?.dims?.[k];
+          const refPrefixId = refPrefix && "prefixId" in refPrefix ? refPrefix.prefixId : "?";
+          const refEntries = Object.entries(dim.refDims as Record<string, { value: unknown }>);
+          const summary = refEntries.map(([, v]) => v.value).join("/");
+          console.log(`    ${k}: ${refPrefixId}:${dim.refAddress} (${summary})`);
+        } else {
+          console.log(`    ${k}: ${dim.value}`);
+        }
       }
 
       if (args.deep) {
