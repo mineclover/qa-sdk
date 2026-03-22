@@ -49,6 +49,72 @@ tracking prefix:
 
 ---
 
+## 1.5. DSL Bundle, IntentLink, Domain — prefix 위의 3개 조직 레이어
+
+prefix 위에 3가지 다른 관점의 조직 구조가 존재한다. 각각의 목적이 다르다.
+
+### DSL Bundle — "같은 서비스에서 함께 쓰이는 prefix 묶음"
+
+```
+dsl-checkout:
+  members: [page_view, endpoint, flow_point, order_event, permission]
+  serviceBindingPrefix: service
+  fixedDims: [env, region, svc_name, namespace]
+  invariants:
+    - "checkout page_view 없이 checkout flow_point(success) 관측 금지"
+```
+
+DSL Bundle은:
+- 같은 **서비스 바인딩**(env, region, svc_name, namespace)을 공유하는 prefix를 묶는다
+- 멤버 prefix 간 **불변조건(invariant)**을 정의한다
+- 1 prefix가 **여러 DSL**에 속할 수 있다 (page_view는 dsl-checkout + dsl-observation 모두 소속)
+
+현재 11개 DSL: observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev, internal, ingest
+
+### IntentLink — "왜 함께 관측되어야 하는가"
+
+```
+IL-checkout-flow:
+  endpoints: [page_view, endpoint, flow_point, order_event, permission]
+  invariant: "page_view 없이 flow_point(success) 금지"
+```
+
+IntentLink는:
+- prefix 간 **의도적 연결**을 명시한다
+- invariant가 실 트래픽에서 위반되면 **잘못된 데이터를 감지**한다
+- co-occurrence 분석에서 **자동 발견**될 수 있다
+
+현재 6개 IntentLink.
+
+### Domain — "어디에 소속되는가"
+
+```
+observation-domain:
+  prefixes: [page_view, endpoint, flow_point, ..., event_classification, schema_validation]
+  exports: [page_view, endpoint, ...]
+  internal: []
+```
+
+Domain은:
+- prefix의 **소속 경계**를 구분한다
+- 1 prefix는 **1개 domain에만** 속한다 (orphan 없음)
+- domain health 진단의 단위
+
+현재 6개 도메인: shopping, tracking, event, observation, infra, dev
+
+### 3가지의 관계
+
+```
+Domain (소속)     — prefix가 어디에 속하는가     → 1:N (중복 없음)
+DSL (협력)        — prefix가 누구와 함께 쓰이는가  → N:M (중복 가능)
+IntentLink (의도) — prefix가 왜 함께여야 하는가   → N:M (중복 가능)
+```
+
+**Domain**은 행정 구역, **DSL**은 프로젝트 팀, **IntentLink**는 업무 계약.
+한 사람(prefix)은 한 구역(domain)에 살지만, 여러 팀(DSL)에서 일하고, 여러 계약(IntentLink)에 참여한다.
+
+---
+
 ## 2. Self-Check — "시스템이 건강한가?"
 
 시스템의 빌드/테스트/커버리지/불변조건/흐름 정합성을 한 명령으로 진단한다.
