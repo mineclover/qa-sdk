@@ -1,7 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { classifyPattern, type ClassifierEvent } from "./pattern-classifier.js";
-import { DEMO_PATTERN_RULES } from "./pattern-rules.js";
-import { detectAnomalies } from "./pattern-anomaly.js";
+import { classifyPattern, DEMO_PATTERN_RULES, detectAnomalies, type ClassifierEvent } from "@qa-sdk/convergence";
 import type { PatternClassification } from "@qa-sdk/core";
 
 function ev(key: string, ms: number = 0, actor?: string, userId?: string): ClassifierEvent {

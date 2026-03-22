@@ -8,7 +8,7 @@
 // ── DKG ────────────────────────────────────────────
 export * from "../dkg/index.js";
 
-// ── Convergence ────────────────────────────────────
+// ── Convergence (DKG 타입 중복 제외) ─────────────
 export * from "../convergence/index.js";
 
 // ── Schema: Prefix Consumer (analysis에서 제공하던 것) ──

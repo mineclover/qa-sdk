@@ -9,7 +9,7 @@
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { GraphRegistry } from "../dkg/graph-registry.js";
 import type { DkgNode, DkgEdge } from "../dkg/dkg.types.js";
-import type { UsageData, VersionUsage } from "../convergence/convergence.types.js";
+import type { UsageData, VersionUsage } from "@qa-sdk/convergence";
 import { DKG_SCHEMA_DDL } from "./dkg-schema.sql.js";
 
 export type NodeSource = "bootstrap" | "manual" | "auto";

@@ -10,8 +10,7 @@ import { analyzeImpact } from "./dkg/skills/analyze-impact.js";
 import { defineFlow, serializeFlow } from "./dkg/flow-definition.js";
 import { resolve } from "./dkg/resolve.js";
 import { findVersionForEntry, findRefAddress } from "./dkg/semantic-ref.js";
-import { compareAxes } from "./convergence/symbol-comparator.js";
-import { optimizeCapacities } from "./convergence/capacity-optimizer.js";
+import { compareAxes, optimizeCapacities } from "@qa-sdk/convergence";
 
 const SEP = "─".repeat(60);
 

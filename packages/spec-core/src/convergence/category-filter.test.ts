@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
 import { deriveFromCatalog } from "../dkg/catalog-derive.js";
 import { bootstrapDkg } from "../dkg/bootstrap.js";
-import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
-import { filterUsageByCategory, groupUsageByCategory, summarizeByCategory } from "./category-filter.js";
-import type { PrefixNode } from "../dkg/dkg.types.js";
+import { aggregateUsageData, filterUsageByCategory, groupUsageByCategory, summarizeByCategory, type AddressContextRecord, type PrefixNode } from "@qa-sdk/convergence";
 
 describe("Category 기반 질의", () => {
 

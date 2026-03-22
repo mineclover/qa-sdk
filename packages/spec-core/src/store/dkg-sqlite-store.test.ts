@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { DkgSqliteStore } from "./dkg-sqlite-store.js";
 import { bootstrapDkg } from "../dkg/bootstrap.js";
-import { aggregateUsageData, type AddressContextRecord } from "../convergence/usage-aggregator.js";
-import { analyzeDeploymentSkew } from "../convergence/deployment-skew.js";
+import { aggregateUsageData, analyzeDeploymentSkew, type AddressContextRecord } from "@qa-sdk/convergence";
 
 let store: DkgSqliteStore;
 

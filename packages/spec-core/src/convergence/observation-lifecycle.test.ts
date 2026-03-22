@@ -11,9 +11,8 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "./metric-registry.js";
-import type { MetricValue } from "./metric.types.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
+import { metricsToObservations, resolveRecoveredMetrics, collectMetrics } from "@qa-sdk/convergence";
+import type { MetricValue, ObservationNode } from "@qa-sdk/convergence";
 import { DkgSqliteStore } from "../store/dkg-sqlite-store.js";
 import { bootstrapDkg } from "../dkg/bootstrap.js";
 

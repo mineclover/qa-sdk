@@ -7,7 +7,7 @@
  * @layer 필터 (Filtering)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
+import type { GraphPort } from "./graph-port.js";
 import type { UsageData } from "./convergence.types.js";
 
 /**

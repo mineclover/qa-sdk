@@ -4,8 +4,8 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "./graph-port.js";
+import type { ObservationNode } from "./dkg-types.js";
 import type { CoOccurrence, CausalCandidate } from "./convergence.types.js";
 
 /**

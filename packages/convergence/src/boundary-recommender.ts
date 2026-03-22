@@ -4,7 +4,7 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
+import type { GraphPort } from "./graph-port.js";
 import type { SimplificationCandidate, BoundaryRecommendation, CausalCandidate } from "./convergence.types.js";
 
 /**

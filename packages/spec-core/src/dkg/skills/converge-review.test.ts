@@ -9,7 +9,7 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { deriveFromCatalog } from "../catalog-derive.js";
-import { scanAxisOverlaps, comparePrefixes } from "../../convergence/symbol-comparator.js";
+import { scanAxisOverlaps, comparePrefixes } from "@qa-sdk/convergence";
 import { scaffoldDecision } from "./decision-scaffold.js";
 import { convergeChain } from "./converge-chain.js";
 import { systemHealthChain } from "./skill-chain.js";

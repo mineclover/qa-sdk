@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { syncRefEntries, printSyncReport } from "./ref-entries-sync.js";
+import { syncRefEntries, printSyncReport } from "@qa-sdk/convergence";
 
 describe("refEntries 동기화", () => {
   it("현재 DEMO_CATALOG의 refEntries 상태 확인", () => {

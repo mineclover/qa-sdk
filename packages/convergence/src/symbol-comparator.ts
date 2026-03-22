@@ -4,7 +4,7 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
+import type { GraphPort } from "./graph-port.js";
 import type { AxisOverlap, PrefixOverlap } from "./convergence.types.js";
 
 /**

@@ -8,10 +8,9 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "../../shared/graph-port.js";
+import type { GraphPort, EntryUsage, AddressUsage, CoverageReport } from "@qa-sdk/convergence";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
-import type { EntryUsage, AddressUsage } from "../../convergence/convergence.types.js";
-import { analyzeEntryCoverage, type CoverageReport } from "../../convergence/entry-coverage.js";
+import { analyzeEntryCoverage } from "@qa-sdk/convergence";
 
 export interface CoverageAuditResult {
   readonly report: CoverageReport;

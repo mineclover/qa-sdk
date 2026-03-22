@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { analyzeSelfCheck, type SelfCheckResult } from "./self-check-analyzer.js";
+import { analyzeSelfCheck, type SelfCheckResult } from "@qa-sdk/convergence";
 
 // ── mock 데이터: 전체 성공 ──
 

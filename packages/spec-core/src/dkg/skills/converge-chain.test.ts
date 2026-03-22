@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { bootstrapDkg } from "../bootstrap.js";
 import { deriveFromCatalog } from "../catalog-derive.js";
-import { aggregateUsageData, type AddressContextRecord } from "../../convergence/usage-aggregator.js";
+import { aggregateUsageData, type AddressContextRecord } from "@qa-sdk/convergence";
 import { convergeChain } from "./converge-chain.js";
 
 describe("converge-chain — 4가지 행위 구분", () => {

@@ -52,6 +52,7 @@ import {
   buildPatternHealthReport,
   scanPromotionCandidates,
   analyzeSelfCheck,
+  auditSchemaHealth,
 } from "@qa-sdk/spec-core/analysis";
 import {
   executeEntryAdd,
@@ -2191,7 +2192,7 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(`\n  ${result.summary}`);
 
       // ── metric 통합 출력 ──
-      const chainMetrics = collectMetrics(DEMO_CATALOG, graph, null);
+      const chainMetrics = collectMetrics(DEMO_CATALOG, graph, null, { schemaHealthAuditor: auditSchemaHealth });
       const relevantMetrics = chainMetrics.filter(m =>
         m.id.startsWith("metric:health") ||
         m.id.startsWith("metric:conflict") ||
@@ -2346,7 +2347,7 @@ export function dkgMetrics(): void {
       })()
     : null;
 
-  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage, { schemaHealthAuditor: auditSchemaHealth });
 
   console.log(`\n══ Metrics Dashboard ══`);
   console.log(`  정의: ${METRIC_DEFS.length}종, 측정: ${metrics.length}건\n`);
@@ -2420,7 +2421,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`  usage snapshots: ${recent.length}개 로드${usage ? ` (${usage.versionUsages.length} version usages)` : " (없음)"}`);
 
   // 2. Metrics 수집
-  const metrics = collectMetrics(catalog, graph, usage) as MetricValue[];
+  const metrics = collectMetrics(catalog, graph, usage, { schemaHealthAuditor: auditSchemaHealth }) as MetricValue[];
   const ok = metrics.filter(m => m.status === "ok").length;
   const warning = metrics.filter(m => m.status === "warning").length;
   const critical = metrics.filter(m => m.status === "critical").length;
@@ -3304,7 +3305,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   console.log(`    전체: ${coverage.summary}`);
 
   // B-3: metrics with usage data
-  const metrics = collectMetrics(DEMO_CATALOG, graph, usage);
+  const metrics = collectMetrics(DEMO_CATALOG, graph, usage, { schemaHealthAuditor: auditSchemaHealth });
   const metricIssues = metrics.filter(m => m.status !== "ok");
   console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
 

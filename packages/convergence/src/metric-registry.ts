@@ -5,8 +5,8 @@
  */
 
 import type { MetricDef, MetricValue, MetricStatus } from "./metric.types.js";
-import type { GraphPort } from "../shared/graph-port.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "./graph-port.js";
+import type { ObservationNode } from "./dkg-types.js";
 import type { UsageData } from "./convergence.types.js";
 import type { Catalog } from "@qa-sdk/core";
 import { analyzeHeadroom } from "./headroom-advisor.js";
@@ -14,7 +14,20 @@ import { analyzeDeploymentSkew } from "./deployment-skew.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import { scanAxisOverlaps } from "./symbol-comparator.js";
 import { scanDecisionConflicts } from "./decision-comparator.js";
-import { auditSchemaHealth } from "../schema/schema-health-audit.js";
+
+/** 스키마 건전성 감사 결과 (schema-health-audit에서 주입) */
+export interface SchemaHealthReportLike {
+  readonly totalPrefixes: number;
+  readonly passed: number;
+  readonly failed: number;
+  readonly violations: readonly { readonly prefixId: string }[];
+}
+
+/** 스키마 건전성 감사 함수 시그니처 (schema-health-audit에서 주입) */
+export type SchemaHealthAuditor = (
+  graph: GraphPort,
+  options?: { date?: string },
+) => SchemaHealthReportLike;
 
 // ═══════════════════════════════════════════════════════════════
 //  표준 Metric 정의
@@ -136,11 +149,14 @@ function evaluateStatus(
 
 /**
  * 전체 자동 metric을 수집하여 값 + 상태를 반환한다.
+ *
+ * @param options.schemaHealthAuditor - 스키마 건전성 감사 함수. 미제공 시 schema violations metric 생략.
  */
 export function collectMetrics(
   catalog: Catalog,
   graph: GraphPort,
   usage: UsageData | null,
+  options?: { schemaHealthAuditor?: SchemaHealthAuditor },
 ): MetricValue[] {
   const now = new Date().toISOString().slice(0, 10);
   const results: MetricValue[] = [];
@@ -336,19 +352,22 @@ export function collectMetrics(
     });
   }
 
-  // ── schema violations ──
-  const schemaDef = METRIC_DEFS.find(m => m.id === "metric:schema:violations")!;
-  const schemaReport = auditSchemaHealth(graph, { date: now });
-  results.push({
-    id: "metric:schema:violations",
-    name: schemaDef.name,
-    value: schemaReport.failed,
-    status: evaluateStatus(schemaReport.failed, schemaDef.threshold),
-    detail: schemaReport.failed > 0
-      ? `${schemaReport.failed}건 위반: ${schemaReport.violations.slice(0, 3).map(v => v.prefixId).join(", ")}`
-      : `${schemaReport.totalPrefixes}개 prefix 전체 적합`,
-    measuredAt: now,
-  });
+  // ── schema violations ── (schemaHealthAuditor 주입 시에만 실행)
+  const auditFn = options?.schemaHealthAuditor;
+  if (auditFn) {
+    const schemaDef = METRIC_DEFS.find(m => m.id === "metric:schema:violations")!;
+    const schemaReport = auditFn(graph, { date: now });
+    results.push({
+      id: "metric:schema:violations",
+      name: schemaDef.name,
+      value: schemaReport.failed,
+      status: evaluateStatus(schemaReport.failed, schemaDef.threshold),
+      detail: schemaReport.failed > 0
+        ? `${schemaReport.failed}건 위반: ${schemaReport.violations.slice(0, 3).map(v => v.prefixId).join(", ")}`
+        : `${schemaReport.totalPrefixes}개 prefix 전체 적합`,
+      measuredAt: now,
+    });
+  }
 
   return results;
 }

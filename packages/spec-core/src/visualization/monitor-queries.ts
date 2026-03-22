@@ -6,7 +6,7 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath, type Projection } from "./layer-map.js";
-import type { AddressContextRecord } from "../convergence/usage-aggregator.js";
+import type { AddressContextRecord } from "@qa-sdk/convergence";
 
 // ═══════════════════════════════════════════════════════════════
 //  Monitor State

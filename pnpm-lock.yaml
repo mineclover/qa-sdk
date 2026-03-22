@@ -55,6 +55,9 @@ importers:
       '@qa-sdk/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@qa-sdk/viz-3d':
+        specifier: workspace:*
+        version: link:../viz-3d
     devDependencies:
       happy-dom:
         specifier: ^20.8.4
@@ -122,6 +125,25 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+
+  packages/convergence:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+      weighted-index:
+        specifier: workspace:*
+        version: link:../weighted-index
+    devDependencies:
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
 
   packages/core:
     dependencies:
@@ -702,6 +724,9 @@ importers:
 
   packages/spec-core:
     dependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core

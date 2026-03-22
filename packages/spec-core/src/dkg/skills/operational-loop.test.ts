@@ -11,8 +11,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { DkgSqliteStore } from "../../store/dkg-sqlite-store.js";
 import { bootstrapDkg } from "../bootstrap.js";
-import { aggregateUsageData, type AddressContextRecord } from "../../convergence/usage-aggregator.js";
-import { analyzeDeploymentSkew } from "../../convergence/deployment-skew.js";
+import { aggregateUsageData, analyzeDeploymentSkew, type AddressContextRecord } from "@qa-sdk/convergence";
 import { convergeChain } from "./converge-chain.js";
 import { systemHealthChain } from "./skill-chain.js";
 

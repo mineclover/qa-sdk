@@ -8,4 +8,4 @@ export type { NodeSource } from "./dkg-sqlite-store.js";
 // ── Metric-aware snapshot ──
 // collectMetrics + metricsToObservations are passed in to avoid store → convergence dependency
 
-export type { MetricValue } from "../convergence/metric.types.js";
+export type { MetricValue } from "@qa-sdk/convergence";

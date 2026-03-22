@@ -5,14 +5,9 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "../../shared/graph-port.js";
-import type { UsageData } from "../../convergence/convergence.types.js";
-import type { AxisOverlap, PrefixOverlap } from "../../convergence/convergence.types.js";
+import type { GraphPort, UsageData, AxisOverlap, PrefixOverlap, DeploymentSkew } from "@qa-sdk/convergence";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
-import { scanAxisOverlaps, comparePrefixes } from "../../convergence/symbol-comparator.js";
-import { analyzeSimplification } from "../../convergence/simplification-advisor.js";
-import { discoverCausality } from "../../convergence/causal-discovery.js";
-import { analyzeDeploymentSkew, type DeploymentSkew } from "../../convergence/deployment-skew.js";
+import { scanAxisOverlaps, comparePrefixes, analyzeSimplification, discoverCausality, analyzeDeploymentSkew } from "@qa-sdk/convergence";
 import { scaffoldDecision } from "./decision-scaffold.js";
 
 // ═══════════════════════════════════════════════════════════════

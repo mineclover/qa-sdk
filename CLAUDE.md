@@ -309,11 +309,11 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - **번들 복사**: `viz-3d/dist/core.js` → `platform-demo/public/viz-3d-core.js`
 - 3페이지 공유 nav bar: Demo | Monitor | Diagram
 
-### spec-core — 설계 지식 그래프 + 수렴 분석
-- `packages/spec-core/` — DKG(Design Knowledge Graph) + 수렴 레이어 + 전파 파이프라인
-- 서브 경로 exports: `"."` (shared+schema+spec), `"./dkg"` (DKG 그래프+스킬), `"./convergence"` (수렴 분석), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`, `"./analysis"` (deprecated — ./dkg + ./convergence 사용)
-- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약), **TableNode(14번째 노드 타입)**
-- **convergence/**: 5개 분석 서비스 + 집계/측정/필터/기록
+### @qa-sdk/convergence — 수렴 분석 (독립 패키지)
+- `packages/convergence/` — spec-core에서 물리 분리됨. `@qa-sdk/core` + `weighted-index`만 의존
+- DKG 타입 부분집합 (`dkg-types.ts`), GraphPort, decision-scaffold를 자체 포함 (spec-core 역의존 없음)
+- `collectMetrics`의 `auditSchemaHealth` 의존은 optional injection으로 분리 (`schemaHealthAuditor` 옵션)
+- 5개 분석 서비스 + 집계/측정/필터/기록/패턴 분류
   - `symbol-comparator.ts` — 축/prefix Jaccard 유사도 비교 (merge/alias/review 판정)
   - `decision-comparator.ts` — Decision 충돌 스캔 (contradictory/redundant/superseding)
   - `causal-discovery.ts` — co-occurrence → 인과 후보 + Observation 노드 생성
@@ -322,6 +322,11 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
   - `convergence-runner.ts` — `runConvergenceAnalysis()` 5개 서비스 단일 진입점
   - `self-check-analyzer.ts` — `analyzeSelfCheck()` 순수 함수 + `SYNTHETIC_EVENTS` (전체 도메인 합성 이벤트)
   - 집계: usage-aggregator, scoped-aggregator / 측정: entry-coverage, temporal-analysis, deployment-skew / 기록: metric-registry
+
+### spec-core — 설계 지식 그래프
+- `packages/spec-core/` — DKG(Design Knowledge Graph) + 전파 파이프라인. convergence는 `@qa-sdk/convergence`로 분리
+- 서브 경로 exports: `"."` (shared+schema+spec), `"./dkg"` (DKG 그래프+스킬), `"./convergence"` (re-export from @qa-sdk/convergence), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`, `"./analysis"` (deprecated — ./dkg + ./convergence 사용)
+- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약), **TableNode(14번째 노드 타입)**
 - **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
   - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
 - **store/**: DkgSqliteStore (persist + migrate)

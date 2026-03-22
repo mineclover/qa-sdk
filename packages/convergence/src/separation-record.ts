@@ -7,10 +7,10 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
-import type { DecisionNode, ConstraintNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "./graph-port.js";
+import type { DecisionNode, ConstraintNode } from "./dkg-types.js";
 import type { AxisOverlap } from "./convergence.types.js";
-import { scaffoldDecision } from "../shared/decision-scaffold.js";
+import { scaffoldDecision } from "./decision-scaffold.js";
 
 export interface SeparationRecord {
   readonly decision: DecisionNode;

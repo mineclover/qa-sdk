@@ -7,8 +7,8 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
+import type { GraphPort } from "./graph-port.js";
+import type { ObservationNode } from "./dkg-types.js";
 import type {
   UsageData,
   AxisOverlap,

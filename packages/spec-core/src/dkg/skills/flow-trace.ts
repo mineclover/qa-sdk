@@ -7,9 +7,8 @@
  * 예: "page_view 없이 flow_point가 관측" → invariant 위반
  */
 
-import type { GraphPort } from "../../shared/graph-port.js";
+import type { GraphPort, AddressContextRecord } from "@qa-sdk/convergence";
 import type { IntentLinkNode, ObservationNode } from "../dkg.types.js";
-import type { AddressContextRecord } from "../../convergence/usage-aggregator.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
-import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
-import { analyzeDeploymentSkew } from "./deployment-skew.js";
+import { aggregateUsageData, analyzeDeploymentSkew, type AddressContextRecord } from "@qa-sdk/convergence";
 
 describe("배포 스큐 감지 — 집계 기반", () => {
 

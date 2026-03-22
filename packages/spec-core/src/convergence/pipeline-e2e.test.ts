@@ -7,12 +7,9 @@
 
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
-import { aggregateUsageData, analyzeCollectionHealth, type AddressContextRecord } from "./usage-aggregator.js";
-import { analyzeEntryCoverage } from "./entry-coverage.js";
+import { aggregateUsageData, analyzeCollectionHealth, analyzeEntryCoverage, discoverCausality, analyzeSimplification, type AddressContextRecord } from "@qa-sdk/convergence";
 import { auditCoverage } from "../dkg/skills/coverage-audit.js";
 import { traceFlows } from "../dkg/skills/flow-trace.js";
-import { discoverCausality } from "./causal-discovery.js";
-import { analyzeSimplification } from "./simplification-advisor.js";
 import { deriveFromCatalog } from "../dkg/catalog-derive.js";
 import { bootstrapDkg } from "../dkg/bootstrap.js";
 import { analyzeAllVersionSkew, defineDslBundle, DslBundleRegistry } from "../dkg/dsl-bundle.js";

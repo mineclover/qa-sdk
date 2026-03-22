@@ -13,9 +13,9 @@ import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
 import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode } from "./dkg.types.js";
 import type { TransitionSpec } from "../transition/transition.types.js";
 import { toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "../transition/dkg-bridge.js";
-import { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
-import { scanAxisOverlaps, comparePrefixes } from "../convergence/symbol-comparator.js";
-import { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
+import { analyzeHeadroom, applyHeadroomDecisions } from "@qa-sdk/convergence";
+import { scanAxisOverlaps, comparePrefixes } from "@qa-sdk/convergence";
+import { recordSeparation, applySeparationRecord } from "@qa-sdk/convergence";
 import { defineDslBundle, DslBundleRegistry, analyzeDslCoverage, analyzeAllVersionSkew } from "./dsl-bundle.js";
 
 // ── Config 타입 (구조적 호환) ────────────────────────────────
