@@ -5,3 +5,11 @@
 export { buildLayerMap, extractTracePaths, computeActivity } from "./layer-map.js";
 export type { LayerLevel, PrefixPlacement, LayerDefinition, LayerMapResult, TraceStep, TracePath, PrefixActivity } from "./layer-map.js";
 export { MonitorState } from "./monitor-queries.js";
+
+export {
+  intentLinkDiagram,
+  allIntentLinksDiagram,
+  dslDiagram,
+  signalDiagram,
+} from "./mermaid-gen.js";
+export type { MermaidDiagramOptions, SignalDefLike } from "./mermaid-gen.js";

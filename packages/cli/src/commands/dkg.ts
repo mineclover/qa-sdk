@@ -5,6 +5,7 @@
  * 페이지네이션 지원.
  */
 
+import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
 import { CatalogRegistry } from "@qa-sdk/core";
 import type { Catalog } from "@qa-sdk/core";
@@ -226,6 +227,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "obs backlinks": { intent: "query", domain: "system", subject: "spec" },
   "obs list":      { intent: "query", domain: "system", subject: "spec" },
   "obs stats":     { intent: "query", domain: "system", subject: "system" },
+  "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
 };
 
 /**
@@ -3305,6 +3307,102 @@ export function dkgAddEntry(opts: {
       console.log(`\n  ✗ ${error.verdict}: ${error.message}`);
     } else {
       console.error(`\n  ✗ ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+}
+
+// ── dkg diagram ──────────────────────────────────────────
+
+import {
+  intentLinkDiagram,
+  allIntentLinksDiagram,
+  dslDiagram,
+  signalDiagram,
+} from "@qa-sdk/spec-core/viz";
+import type { SignalDefLike } from "@qa-sdk/spec-core/viz";
+
+export async function dkgDiagram(argv: string[]): Promise<void> {
+  const { values, positionals } = parseArgs({
+    args: argv,
+    options: {
+      output: { type: "string", short: "o" },
+      format: { type: "string", default: "mmd" },
+      "no-invariants": { type: "boolean", default: false },
+    },
+    allowPositionals: true,
+    strict: false,
+  });
+
+  const kind = positionals[0];
+  const id = positionals[1];
+
+  if (!kind || !["intent-links", "dsl", "signal"].includes(kind)) {
+    console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|svg|png] [--no-invariants]");
+    console.log("  kind: intent-links | dsl | signal");
+    return;
+  }
+
+  const graph = getGraph();
+  const opts = { showInvariants: !values["no-invariants"] } as any;
+  let mmd: string;
+
+  switch (kind) {
+    case "intent-links": {
+      mmd = id
+        ? intentLinkDiagram(graph, id, opts)
+        : allIntentLinksDiagram(graph, opts);
+      break;
+    }
+    case "dsl": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram dsl <dslId>"); return; }
+      mmd = dslDiagram(graph, id, opts);
+      break;
+    }
+    case "signal": {
+      if (!id) {
+        // List available signals from DEMO_DKG_CONFIG
+        try {
+          const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+          const skills = (DEMO_DKG_CONFIG as any).skills ?? [];
+          console.log("Available signal IDs require DEMO_SIGNALS from viz-3d.");
+          console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
+        } catch { /* ignore */ }
+        return;
+      }
+      console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
+      return;
+    }
+    default:
+      console.error(`Unknown diagram kind: ${kind}`);
+      return;
+  }
+
+  // Output
+  const outputPath = values.output as string | undefined;
+  const format = (values.format as string) ?? "mmd";
+
+  if (outputPath) {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(outputPath, mmd, "utf-8");
+    console.log(`  Written: ${outputPath}`);
+  } else {
+    console.log(mmd);
+  }
+
+  // Optional render via mmdc
+  if ((format === "svg" || format === "png") && outputPath) {
+    try {
+      const { execa } = await import("execa");
+      const ext = format;
+      const renderOut = outputPath.replace(/\.mmd$/, `.${ext}`);
+      await execa("mmdc", ["-i", outputPath, "-o", renderOut]);
+      console.log(`  Rendered: ${renderOut}`);
+    } catch (err: any) {
+      if (err?.code === "ENOENT" || err?.message?.includes("ENOENT")) {
+        console.log("  mmdc not found. Install with: npm install -g @mermaid-js/mermaid-cli");
+      } else {
+        console.error(`  mmdc error: ${err?.message ?? err}`);
+      }
     }
   }
 }

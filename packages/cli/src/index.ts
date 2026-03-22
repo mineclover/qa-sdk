@@ -469,6 +469,11 @@ async function main() {
     case "dkg pattern-stats":
       dkgPatternStats();
       return;
+    case "dkg diagram": {
+      const { dkgDiagram } = await import("./commands/dkg.js");
+      await dkgDiagram(sub.rest);
+      break;
+    }
     case "dkg trace":
       if (sub.rest[0]) dkgTrace(sub.rest[0]);
       else console.error("Usage: qa-sdk dkg trace <nodeId>");
@@ -602,7 +607,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
-    "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats",
+    "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
