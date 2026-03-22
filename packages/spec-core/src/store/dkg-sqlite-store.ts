@@ -548,7 +548,7 @@ export class DkgSqliteStore {
   /** 최근 N건의 usage snapshot raw data를 반환한다 */
   getRecentUsageSnapshots(limit = 500): Array<{ id: number; data: string; createdAt: string }> {
     return this.db.prepare(
-      "SELECT id, data, created_at as createdAt FROM usage_snapshots ORDER BY id DESC LIMIT ?",
+      "SELECT id, data, collected_at as createdAt FROM usage_snapshots ORDER BY id DESC LIMIT ?",
     ).all(limit) as Array<{ id: number; data: string; createdAt: string }>;
   }
 
