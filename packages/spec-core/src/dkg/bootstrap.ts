@@ -218,7 +218,22 @@ export function bootstrapDkg(options: {
 
   const skewReports = analyzeAllVersionSkew(catalog as any, dslRegistry);
   for (const report of skewReports) {
-    if (report.severity === "ok") continue;
+    // severity ok → 이전 OBS-SKEW가 있으면 자동 해소
+    if (report.severity === "ok") {
+      const obsId = `OBS-SKEW-${report.bundleId}`;
+      const existingObs = (existing?.getNode(obsId) ?? graph.getNode(obsId)) as ObservationNode | undefined;
+      if (existingObs?.kind === "observation" && !existingObs.resolution) {
+        graph.addNode({
+          ...existingObs,
+          resolution: {
+            decisionId: `DEC-SKEW-${report.bundleId}`,
+            outcome: "accepted",
+            note: `severity ok로 복귀하여 자동 해소 (${date})`,
+          },
+        } as ObservationNode);
+      }
+      continue;
+    }
 
     // 이미 resolved된 observation은 재생성하지 않음 (refresh 안정성)
     const obsId = `OBS-SKEW-${report.bundleId}`;
@@ -318,6 +333,13 @@ export function bootstrapDkg(options: {
   const configDecisions = config.decisions ?? [];
   for (const decision of configDecisions) {
     graph.addNode(decision);
+    // DEC-NEW-AXIS-{axisId} → justifies → axisId (축 신설 근거 연결)
+    if (decision.id.startsWith("DEC-NEW-AXIS-")) {
+      const axisId = decision.id.replace("DEC-NEW-AXIS-", "");
+      if (graph.getNode(axisId)) {
+        graph.addEdge("justifies", decision.id, axisId);
+      }
+    }
   }
 
   // ── TransitionSpec 노드 등록 ───────────────────────────

@@ -2501,6 +2501,28 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
       console.log(`    observations ${autoObs.length}건 저장 (usage 없음)`);
     }
 
+    // metric observation → 자동 prompts 연결 (Decision이 이미 존재하면 연결)
+    let promptsLinked = 0;
+    for (const obs of autoObs as any[]) {
+      if (!obs.id?.startsWith("OBS-METRIC-")) continue;
+      // 이미 prompts 엣지가 있으면 skip
+      const existing = graph.neighbors(obs.id, "prompts");
+      if (existing.length > 0) continue;
+      // subject에서 대상 식별 → 관련 Decision 검색
+      for (const subject of obs.subjects ?? []) {
+        const decisions = graph.reverseNeighbors(subject, "governs")
+          .concat(graph.reverseNeighbors(subject, "justifies"));
+        for (const decId of decisions) {
+          store.saveNodes([], [{ type: "prompts" as const, from: obs.id, to: decId }], "auto");
+          promptsLinked++;
+          break; // 첫 매칭 Decision에만 연결
+        }
+      }
+    }
+    if (promptsLinked > 0) {
+      console.log(`    metric observation → decision prompts ${promptsLinked}건 자동 연결`);
+    }
+
     // Converge chain 결과 저장
     const allNodes = [
       ...convergeResult.observations,

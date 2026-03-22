@@ -14,7 +14,7 @@ import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
-  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions, dkgTransitionAnalysis,
+  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions, dkgTransitionAnalysis, dkgAudit,
   dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
@@ -97,6 +97,7 @@ Usage:
   qa-sdk dkg link <obs> --decision   관측 → 결정 연결
   qa-sdk dkg timeline [--open]       시간순 이력
   qa-sdk dkg metrics                 전체 metric 대시보드
+  qa-sdk dkg converge [--persist] [--verbose]  수렴 분석 실행 (metric+converge+health chain)
   qa-sdk dkg promote                 좌표 승격 후보 스캔 (5Q 자동 판정)
   qa-sdk dkg reset <target> [--confirm]  지정 초기화 (bootstrap|operational|snapshots|auto|catalog|all)
   qa-sdk dkg add-entry <axis> <entry> [--apply]  축 entry 추가 (check→mutate→record)
@@ -108,6 +109,15 @@ Usage:
   qa-sdk dkg run <skillId> [args]    skill 직접 실행
   qa-sdk dkg export [--output path]  SQLite → JSON (전체)
   qa-sdk dkg import <input>          JSON → SQLite (전체)
+  qa-sdk dkg tables                   테이블 목록
+  qa-sdk dkg table <id>               테이블 상세 (컬럼 + FK + prefix 참조)
+  qa-sdk dkg transitions [specId]     전이 spec 목록 (effect별 + 축 사용 빈도)
+  qa-sdk dkg transition <name>        전이 spec 상세 (축 역할 + 상태 의존성)
+  qa-sdk dkg transition coverage      전이 커버리지 분석
+  qa-sdk dkg transition orphans       전이 미관찰 prefix 분석
+  qa-sdk dkg transition violations    전이 위반 통계
+  qa-sdk dkg audit                    DKG 감사 (observation/decision/constraint 상태)
+  qa-sdk dkg diagram <kind> [id] [--output] [--format]  다이어그램 생성 (mmd|html|svg|png)
   qa-sdk dkg decisions export [--output path]  의사결정만 백업
   qa-sdk dkg decisions import <input>          의사결정 복원 (머지)
   qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회
@@ -305,6 +315,9 @@ async function main() {
       return;
     case "dkg skills":
       dkgSkills();
+      return;
+    case "dkg audit":
+      dkgAudit();
       return;
     case "dkg transitions":
       dkgTransitions(sub.rest[0]);
@@ -633,7 +646,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
-    "dkg tables", "dkg table", "dkg transitions", "dkg transition",
+    "dkg tables", "dkg table", "dkg transitions", "dkg transition", "dkg audit",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
