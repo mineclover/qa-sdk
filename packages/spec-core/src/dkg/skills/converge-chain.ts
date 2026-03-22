@@ -5,7 +5,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { UsageData } from "../../convergence/convergence.types.js";
 import type { AxisOverlap, PrefixOverlap } from "../../convergence/convergence.types.js";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
@@ -41,7 +41,7 @@ export interface ConvergeChainResult {
  * 기존 DEC-SEP / DEC-MERGE(분리 유지) 결정이 활성 상태로 존재하는지 확인.
  * DEC-SEP-{a}-{b} 또는 DEC-MERGE-{a}-{b} (양방향) 중 하나라도 있으면 true.
  */
-function hasActiveSeparationDecision(graph: GraphRegistry, a: string, b: string): boolean {
+function hasActiveSeparationDecision(graph: GraphPort, a: string, b: string): boolean {
   const candidates = [
     `DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`,
     `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`,
@@ -65,7 +65,7 @@ function hasActiveSeparationDecision(graph: GraphRegistry, a: string, b: string)
  */
 export function convergeChain(
   catalog: Catalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
   usage: UsageData | null,
   options?: { date?: string; entriesMap?: ReadonlyMap<string, readonly string[]> },
 ): ConvergeChainResult {

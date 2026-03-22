@@ -8,7 +8,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
 import type { EntryUsage, AddressUsage } from "../../convergence/convergence.types.js";
 import { analyzeEntryCoverage, type CoverageReport } from "../../convergence/entry-coverage.js";
@@ -24,7 +24,7 @@ export interface CoverageAuditResult {
  */
 export function auditCoverage(
   catalog: Catalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
   entryUsages: readonly EntryUsage[],
   addressUsages: readonly AddressUsage[],
   options?: { date?: string; lowCoverageThreshold?: number },

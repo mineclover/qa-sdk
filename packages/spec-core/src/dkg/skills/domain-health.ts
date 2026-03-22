@@ -4,7 +4,7 @@
  * prefix 간 version 정합성 + constraint 위반 + coverage 요약.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { DomainNode, PrefixNode } from "../dkg.types.js";
 import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
 
@@ -28,7 +28,7 @@ export interface PrefixHealthSummary {
  * 특정 domain의 건강 상태를 진단한다.
  */
 export function checkDomainHealth(
-  graph: GraphRegistry,
+  graph: GraphPort,
   domainId: string,
 ): DomainHealthResult {
   const domainNode = graph.getNode(domainId);
@@ -108,7 +108,7 @@ export function checkDomainHealth(
  * 모든 domain의 건강 상태를 진단한다.
  */
 export function checkAllDomainsHealth(
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): DomainHealthResult[] {
   const domains = graph.getNodesByKind("domain");
   return domains.map(d => checkDomainHealth(graph, d.id));

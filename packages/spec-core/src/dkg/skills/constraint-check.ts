@@ -5,7 +5,7 @@
  * 단독 실행 가능 + analyzeImpact에서도 호출.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { ConstraintNode, ConstraintViolation } from "../dkg.types.js";
 
 export type { ConstraintViolation };
@@ -25,7 +25,7 @@ export interface PassedConstraint {
  * 단일 대상에 대한 constraint 검사.
  */
 export function checkConstraints(
-  graph: GraphRegistry,
+  graph: GraphPort,
   targetId: string,
 ): ConstraintCheckResult {
   const edges = graph.edgesTo(targetId, "constrains");
@@ -58,7 +58,7 @@ export function checkConstraints(
  * 여러 대상에 대한 일괄 constraint 검사.
  */
 export function checkAllConstraints(
-  graph: GraphRegistry,
+  graph: GraphPort,
   targetIds: readonly string[],
 ): ConstraintCheckResult[] {
   return targetIds.map(id => checkConstraints(graph, id));
@@ -68,7 +68,7 @@ export function checkAllConstraints(
  * DKG의 모든 활성 constraint에 대해 전체 scope를 검사.
  */
 export function auditAllConstraints(
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): {
   total: number;
   passed: number;
@@ -100,7 +100,7 @@ export function auditAllConstraints(
  * 현재: REVIEWED_OVERLAP 패턴만 지원 (분리 유지 기록).
  * 확장 가능.
  */
-function evaluateFormal(graph: GraphRegistry, formal: string, _targetId: string): boolean {
+function evaluateFormal(graph: GraphPort, formal: string, _targetId: string): boolean {
   // REVIEWED_OVERLAP(...) = keep-separate → 위반 아님 (이미 검토됨)
   if (formal.startsWith("REVIEWED_OVERLAP")) return false;
 

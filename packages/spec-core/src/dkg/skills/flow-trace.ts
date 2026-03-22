@@ -7,7 +7,7 @@
  * 예: "page_view 없이 flow_point가 관측" → invariant 위반
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { IntentLinkNode, ObservationNode } from "../dkg.types.js";
 import type { AddressContextRecord } from "../../convergence/usage-aggregator.js";
 
@@ -46,7 +46,7 @@ export interface FlowTraceResult {
  * - "A 없이 B" 패턴을 invariant 텍스트에서 추출하여 순서 검증
  */
 export function traceFlows(
-  graph: GraphRegistry,
+  graph: GraphPort,
   records: readonly AddressContextRecord[],
   options?: { date?: string },
 ): FlowTraceResult {
