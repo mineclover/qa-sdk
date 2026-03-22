@@ -1,0 +1,6 @@
+# Cloudflare Pages — shop-web
+# 배포: npx wrangler pages deploy public --project-name=qa-shop-web
+
+name = "qa-shop-web"
+pages_build_output_dir = "public"
+compatibility_date = "2025-01-01"

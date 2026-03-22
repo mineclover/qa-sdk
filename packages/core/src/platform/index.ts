@@ -159,3 +159,7 @@ export {
 
 export { installSimpleShutdown } from "../lib/graceful-shutdown.js";
 export type { SimpleShutdownDeps } from "../lib/graceful-shutdown.js";
+
+// ── Auth ────────────────────────────────────────────────
+export { createAuthMiddleware, authConfigFromEnv } from "./auth-middleware.js";
+export type { AuthMode, AuthConfig, AuthContext } from "./auth-middleware.js";

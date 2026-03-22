@@ -1,12 +1,10 @@
 name: CI
 
-# 일시 비활성화 — pnpm-lock.yaml 불일치 해소 후 재활성화
-# on:
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:

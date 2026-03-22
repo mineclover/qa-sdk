@@ -1,0 +1,12 @@
+# Cloudflare Worker — gate-service
+# 배포: npx wrangler deploy
+# 로컬: npx wrangler dev
+
+name = "qa-gate-service"
+main = "worker.ts"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qa-gate"
+database_id = "" # wrangler d1 create qa-gate 후 ID 입력
