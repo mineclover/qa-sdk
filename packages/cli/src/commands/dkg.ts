@@ -566,8 +566,6 @@ export function dkgAxes(opts: PageOptions): void {
 export function dkgPrefixes(opts: PageOptions): void {
   const graph = getGraph();
   const prefixes = graph.getNodesByKind("prefix");
-  const specs = catalogToPrefixSpecs(DEMO_CATALOG);
-  const specMap = new Map(specs.map(s => [s.id, s]));
 
   const result = paginate(prefixes, opts);
 
@@ -577,8 +575,7 @@ export function dkgPrefixes(opts: PageOptions): void {
     const axisDims = edges.filter(e => e.meta?.dimKind === "axis").length;
     const refDims = edges.filter(e => e.meta?.dimKind === "prefix_ref").length;
     const tblDims = edges.filter(e => e.meta?.dimKind === "table_ref").length;
-    const spec = specMap.get(prefix.id);
-    const cat = spec?.schema?.category ?? "?";
+    const cat = prefix.category ?? "entity";
     const catTag = `[${cat}]`.padEnd(14);
     console.log(`  ${prefix.id.padEnd(17)} ${catTag} ${prefix.name.padEnd(15)} dims=${prefix.dimLabels.length} (axis:${axisDims} ref:${refDims} tbl:${tblDims})`);
   }

@@ -13,7 +13,7 @@
 - 플랫폼: @qa-sdk/core → @qa-sdk/logger → @qa-sdk/codec → @qa-sdk/context → @qa-sdk/sdk
 
 ### QA 플랫폼 (@qa-sdk/* scoped)
-- 패키지: `@qa-sdk/core`, `@qa-sdk/convergence`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
+- 패키지: `@qa-sdk/core`, `@qa-sdk/convergence`, `@qa-sdk/browser-codec`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
 - 서비스 (unscoped): `gate-service`, `query-service`
 - `@qa-sdk/decode-service`
 - 네이밍: `@qa-sdk/*` scope (내부 플랫폼 서비스)
@@ -102,7 +102,7 @@ CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
 
 ### demo-snapshot의 위치
 `demo-snapshot`은 **참조 구현**이다. 인프라가 아님.
-- `DEMO_CATALOG` — 쇼핑 도메인 카탈로그 예시 (67축, 34 prefix)
+- `DEMO_CATALOG` — 쇼핑 도메인 카탈로그 예시 (74축, 39 prefix, 6 tables)
 - `DEMO_DKG_CONFIG` — 쇼핑 도메인 거버넌스 예시
 - `DEMO_PATTERN_RULES` — 쇼핑 이벤트 분류 규칙 예시
 - 새 비즈니스는 이를 복사하여 자기 도메인으로 교체
@@ -224,7 +224,7 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
 
 ### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
-- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (67축, 34 prefixes, 6 tables)
+- `packages/demo-snapshot/src/demo-catalog.ts` — **SSOT**: 타입 정의 + DEMO_CATALOG 상수 (74축, 39 prefixes, 6 tables)
   - `VersionedAxis`: 버전별 entries/capacity/ko
   - `DimRef` 3종: `axis` (enum 직접) / `prefix_ref` (다른 prefix 주소) / `table_ref` (DB 테이블 타입 참조)
   - `PrefixDef`: N-D 주소 공간 (축 조합 + 버전별 axis version 핀)
@@ -326,7 +326,7 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 ### spec-core — 설계 지식 그래프
 - `packages/spec-core/` — DKG(Design Knowledge Graph) + 전파 파이프라인. convergence는 `@qa-sdk/convergence`로 분리
 - 서브 경로 exports: `"."` (shared+schema+spec), `"./dkg"` (DKG 그래프+스킬), `"./convergence"` (re-export from @qa-sdk/convergence), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`, `"./analysis"` (deprecated — ./dkg + ./convergence 사용)
-- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약), **TableNode(14번째 노드 타입)**
+- **dkg/**: bootstrapDkg(6 도메인, 11 DSL 번들, 32 skill, 7 spec), service-topology(7 서비스, 3 계약), **TableNode(15번째 노드 타입)**
 - **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
   - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
 - **store/**: DkgSqliteStore (persist + migrate)
@@ -537,7 +537,7 @@ ingest-server Phase 2 완료
 
 ### Dev Dashboard
 - `DEV_DASHBOARD_ENABLED=true` → `http://localhost:3300/dev/` 접속
-- **Flow Map**: Schema(67축) → Prefix(34개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
+- **Flow Map**: Schema(74축) → Prefix(39개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
 - **Metrics**: 6종 metric 카테고리 카드 (headroom, skew, coverage, overlap, conflict, health)
 - **Timeline**: 의사결정/관측/버전 이벤트 시간순 (루프 닫힘 표시)
 - **WebSocket**: `/dev/ws` — 10초 push (overview+metrics). 연결 끊기면 30초 폴링 fallback
@@ -597,13 +597,19 @@ ingest-server Phase 2 완료
 - **catalog runtime 함수**: `encodePrefix`, `decodePrefix`, `encodePrefixByValue`, `resolveAddress`, `decomposeAddress`, `latestPrefixVersion` 등이 `@qa-sdk/core/catalog/runtime.ts`에 canonical 구현. demo-snapshot은 re-export
 - 카탈로그가 유일한 입력이면 나머지는 전부 파생되어야 한다
 
-## Browser SDK + Encode/Decode 단일 출처
-- 브라우저 환경 encode/decode는 `viz-3d/src/adapter/browser-codec.ts`가 **유일한 출처**
-- `qa-browser-sdk.js`가 browser-codec을 소스 참조로 번들에 포함 → **단일 import로 SDK + encode/decode**
+## Browser Encode/Decode — @qa-sdk/browser-codec
+- `@qa-sdk/browser-codec` — zero-dependency 독립 패키지. 브라우저 encode/decode의 **단일 출처**
+- `encode()`, `decode()`, `track()`, `trackWithSignal()`, `decodeContext()` — mixed-radix 경량 구현
+- `BROWSER_CATALOG` — DEMO_CATALOG에서 자동 생성된 경량 JSON. 직접 수정 금지
+- `loadCatalog()` — 런타임 카탈로그 로딩: API → localStorage 캐시 → BROWSER_CATALOG(static) fallback
+- 재생성: `pnpm --filter @qa-sdk/viz-3d prebuild` → `packages/browser-codec/src/demo-catalog-browser.ts`
+- 소비자: `@qa-sdk/browser` (QaMonitor), `@qa-sdk/viz-3d` (3D 시각화), `shop-web`, `platform-demo`
+- viz-3d/adapter/browser-codec.ts는 @qa-sdk/browser-codec re-export (하위 호환)
+- 인라인 encode 코드 금지 — `import { track } from '@qa-sdk/browser-codec'` 사용
+
+## Browser SDK — @qa-sdk/browser
+- `qa-browser-sdk.js` — 브라우저 번들. QaMonitor + encode/decode + BROWSER_CATALOG 통합
 - `viz-3d-core.js`는 3D 시각화 전용. SDK 기능(QaMonitor, emit, ID 생성)은 `qa-browser-sdk.js`에만 포함
-- 인라인 encode 코드 금지 — `import { track, createQaMonitor } from './qa-browser-sdk.js'` 또는 `import { track } from './viz-3d-core.js'`
-- BROWSER_CATALOG: 자동 생성 (`pnpm --filter @qa-sdk/viz-3d prebuild`). 직접 수정 금지
-- CatalogLoader: 런타임 시 API → localStorage 캐시 → BROWSER_CATALOG(static) 순서로 카탈로그 로딩
 - 번들 복사: `pnpm --filter @qa-sdk/browser build` → `dist/qa-browser-sdk.js` → `shop-web/public/`에 복사
 
 ## Conventions
@@ -814,7 +820,7 @@ intent별 루프 의무:
 - `analyzeCliCoverage()`: dormant 좌표 = 한 번도 실행 안 된 기능
 
 ### DKG 자기참조
-- 70축, 37 prefix, 11 DSL, 6 도메인, 6 테이블
+- 74축, 39 prefix, 11 DSL, 6 도메인, 6 테이블
 - `dev-domain`: build_event, test_event, dkg_event, dkg_decision_event, dkg_observation_event, cli_event, contract_check
 - `dsl-dev`: 7 members, 불변조건 3개 (빌드 실패 후 테스트 금지 등)
 - `dkg_op` 축: claim, release, decide, observe, resolve, link, refresh, self-check, converge, trace, promote
