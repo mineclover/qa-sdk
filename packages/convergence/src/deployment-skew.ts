@@ -53,8 +53,24 @@ export function analyzeDeploymentSkew(
   const results: DeploymentSkew[] = [];
 
   for (const [prefix, usages] of byPrefix) {
+    // 같은 version의 usage를 병합 (중복 snapshot에서 같은 version이 여러 번 기록될 수 있음)
+    const merged = new Map<string, VersionUsage>();
+    for (const u of usages) {
+      const existing = merged.get(u.version);
+      if (existing) {
+        merged.set(u.version, {
+          ...existing,
+          count: existing.count + u.count,
+          sessions: [...new Set([...existing.sessions, ...u.sessions])],
+          lastSeen: u.lastSeen > existing.lastSeen ? u.lastSeen : existing.lastSeen,
+        });
+      } else {
+        merged.set(u.version, { ...u, sessions: [...u.sessions] });
+      }
+    }
+
     // version 정렬 (count 기준, 가장 많이 쓰이는 게 "latest"로 추정)
-    const sorted = [...usages].sort((a, b) => b.count - a.count);
+    const sorted = [...merged.values()].sort((a, b) => b.count - a.count);
     const latestVersion = sorted[0]?.version ?? "unknown";
 
     const activeVersions = sorted.map(u => ({
