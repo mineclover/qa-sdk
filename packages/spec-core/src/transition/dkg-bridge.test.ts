@@ -117,12 +117,12 @@ describe("toTransitionSpecNode", () => {
 describe("toTransitionSpecNodes", () => {
   it("배열 변환", () => {
     const nodes = toTransitionSpecNodes(DEMO_TRANSITION_SPECS);
-    expect(nodes).toHaveLength(3);
-    expect(nodes.map(n => n.id).sort()).toEqual([
-      "TSPEC-cart-checkout",
-      "TSPEC-payment-capture",
-      "TSPEC-user-login",
-    ]);
+    expect(nodes).toHaveLength(DEMO_TRANSITION_SPECS.length);
+    // 기본 3종 포함 확인
+    const ids = nodes.map(n => n.id);
+    expect(ids).toContain("TSPEC-cart-checkout");
+    expect(ids).toContain("TSPEC-user-login");
+    expect(ids).toContain("TSPEC-payment-capture");
   });
 });
 

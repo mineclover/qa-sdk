@@ -124,9 +124,216 @@ export const PAYMENT_CAPTURE_SPEC: TransitionSpec = {
   effect: { kind: "close" },
 };
 
-/** DEMO_CATALOG 기반 예시 3종 */
+// ═══════════════════════════════════════════════════════════════
+//  4. deploy.rollout — 배포 후 헬스 전이 (인프라 도메인)
+//
+//  deploy_event(deploy) → health_event(healthy|degraded)
+// ═══════════════════════════════════════════════════════════════
+
+export const DEPLOY_ROLLOUT_SPEC: TransitionSpec = {
+  transition: "deploy.rollout",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { deploy_action: "deploy" },
+      { health_status: "healthy" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].service_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", eq: "active" },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "health_status", value: "healthy" },
+      { axis: "version_lifecycle", value: "released" },
+    ],
+  },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  5. deploy.degraded — 배포 후 성능 저하 (인프라 도메인)
+//
+//  deploy_event(deploy) → health_event(degraded)
+// ═══════════════════════════════════════════════════════════════
+
+export const DEPLOY_DEGRADED_SPEC: TransitionSpec = {
+  transition: "deploy.degraded",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { deploy_action: "deploy" },
+      { health_status: "degraded" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].service_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", eq: "active" },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "health_status", value: "degraded" },
+    ],
+  },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  6. pipeline.ingest — 수집 파이프라인 전이
+//
+//  pipeline_point(ingest) → pipeline_point(reconstruct) → pipeline_point(verdict)
+// ═══════════════════════════════════════════════════════════════
+
+export const PIPELINE_INGEST_SPEC: TransitionSpec = {
+  transition: "pipeline.ingest",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { pipeline_phase: "ingest" },
+      { pipeline_phase: "reconstruct" },
+      { pipeline_phase: "verdict" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].trace_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", exists: false },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "lifecycle_state", value: "active" },
+      { axis: "flow_step", value: "complete" },
+    ],
+  },
+  effect: { kind: "create" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  7. build.success — 빌드 성공 후 테스트 (자기참조 도메인)
+//
+//  build_event(success) → test_event(passed)
+// ═══════════════════════════════════════════════════════════════
+
+export const BUILD_SUCCESS_SPEC: TransitionSpec = {
+  transition: "build.success",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { build_result: "success" },
+      { test_result: "passed" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].package_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", exists: false },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "lifecycle_state", value: "active" },
+      { axis: "version_lifecycle", value: "locked" },
+    ],
+  },
+  effect: { kind: "create" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  8. permission.grant — 권한 부여 전이
+//
+//  permission(role=customer → role=admin)
+// ═══════════════════════════════════════════════════════════════
+
+export const PERMISSION_GRANT_SPEC: TransitionSpec = {
+  transition: "permission.grant",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [
+      { role: "admin", action: "write" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].user_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", eq: "active" },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "flow_step", value: "complete" },
+    ],
+  },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  9. pattern.anomaly — 패턴 이상 감지 전이
+//
+//  pattern_match → pattern_anomaly
+// ═══════════════════════════════════════════════════════════════
+
+export const PATTERN_ANOMALY_SPEC: TransitionSpec = {
+  transition: "pattern.anomaly",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { behavior_pattern: "unclassified" },
+      { anomaly_kind: "ratio_shift" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].session_id",
+  },
+  input: {
+    all: [
+      { axis: "lifecycle_state", exists: false },
+    ],
+  },
+  output: {
+    set: [
+      { axis: "lifecycle_state", value: "active" },
+    ],
+  },
+  effect: { kind: "open" },
+};
+
+/** DEMO_CATALOG 기반 TransitionSpec — shop-web 3종 + 인프라 3종 + dev 1종 + 관측 2종 */
 export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   CART_CHECKOUT_SPEC,
   USER_LOGIN_SPEC,
   PAYMENT_CAPTURE_SPEC,
+  DEPLOY_ROLLOUT_SPEC,
+  DEPLOY_DEGRADED_SPEC,
+  PIPELINE_INGEST_SPEC,
+  BUILD_SUCCESS_SPEC,
+  PERMISSION_GRANT_SPEC,
+  PATTERN_ANOMALY_SPEC,
 ] as const;

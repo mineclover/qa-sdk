@@ -416,18 +416,17 @@ describe("DEMO_CATALOG 기반 예시 specs", () => {
     }
   });
 
-  it("3종 모두 registry에 등록 가능", () => {
+  it("전체 spec registry에 등록 가능", () => {
     const registry = new TransitionRegistry();
     for (const spec of DEMO_TRANSITION_SPECS) {
       const result = registry.register(spec);
-      expect(result.valid).toBe(true);
+      expect(result.valid, `${spec.transition}: ${JSON.stringify(result.issues)}`).toBe(true);
     }
-    expect(registry.size).toBe(3);
-    expect(registry.names().sort()).toEqual([
-      "cart.checkout",
-      "payment.capture",
-      "user.login",
-    ]);
+    expect(registry.size).toBe(DEMO_TRANSITION_SPECS.length);
+    // 기본 3종 포함 확인
+    expect(registry.names()).toContain("cart.checkout");
+    expect(registry.names()).toContain("user.login");
+    expect(registry.names()).toContain("payment.capture");
   });
 
   it("cart.checkout — 축 기반 input/output", () => {

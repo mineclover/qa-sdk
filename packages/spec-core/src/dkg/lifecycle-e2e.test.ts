@@ -262,7 +262,7 @@ describe("종단 E2E: checkout 흐름", () => {
     // createTransitionFunctions — 상단에서 import
 
     const fns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
-    expect(fns.specs).toHaveLength(3);
+    expect(fns.specs).toHaveLength(DEMO_TRANSITION_SPECS.length);
 
     // 정상 세션: login 이벤트 (USER_LOGIN_SPEC 좌표: resource_type/http_method/api_version → auth_action → flow_name/flow_step/flow_variant)
     const normalResult = fns.processSession({
