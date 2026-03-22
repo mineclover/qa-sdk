@@ -124,10 +124,9 @@ async function setupConvergence() {
                 }
                 return {
                   log_id: r.logId,
-                  event_key: r.eventKey,
                   timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
-                  address_context: r.addressContext,
-                  decoded_dims: decoded,
+                  // TransitionEvent.address_context = 디코딩된 축 값 맵
+                  address_context: decoded,
                 };
               });
 
