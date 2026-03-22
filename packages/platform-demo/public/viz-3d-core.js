@@ -1794,6 +1794,7 @@ export {
   T as PRESET_AXES,
   Ie as PRESET_VIEWS,
   Ye as PerfMonitor,
+  q as ROLE_COLORS,
   be as SIGNAL_ROLE_COLORS,
   ke as SIGNAL_ROLE_LABELS,
   qe as STACK_CHECKOUT,

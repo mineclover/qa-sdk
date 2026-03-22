@@ -16,8 +16,8 @@ export { buildGridPositions, computeStackPositions } from "./core/grid-builder.j
 export type { CellLayout, GridLayout, GridPositions } from "./core/grid-builder.js";
 
 // Color Tokens
-export { PALETTE, CATEGORY_COLORS, LAYER_COLORS, generateCssVariables } from "./core/color-tokens.js";
-export type { ColorToken, CategoryColor } from "./core/color-tokens.js";
+export { PALETTE, CATEGORY_COLORS, ROLE_COLORS, LAYER_COLORS, generateCssVariables } from "./core/color-tokens.js";
+export type { ColorToken, CategoryColor, RoleColor } from "./core/color-tokens.js";
 
 // Split Pattern
 export {
