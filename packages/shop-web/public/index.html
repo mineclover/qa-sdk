@@ -194,7 +194,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 //  QA SDK — @qa-sdk/browser 번들 사용
 // ═══════════════════════════════════════════════════
 
-import { createQaMonitor, track as qaTrackEncode, BROWSER_CATALOG } from './qa-browser-sdk.js';
+import { createQaMonitor } from './qa-browser-sdk.js';
 
 const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 
@@ -214,13 +214,11 @@ const monitor = createQaMonitor({
 let eventCount = 0, userType = 'guest';
 
 function qaTrack(eventKey, prefixes) {
-  const ctx = qaTrackEncode(BROWSER_CATALOG, prefixes);
   eventCount++;
   document.getElementById('qa-events').textContent = `events: ${eventCount}`;
   document.getElementById('qa-status').textContent = `qa: ${eventKey}`;
-
-  // QaMonitor.emit() — SDK가 envelope 구성 + Beacon 전송 + 세션 관리
-  monitor.emit(eventKey, { event: eventKey, userType }, { address_context: ctx });
+  // emitWithCoords — 좌표 인코딩 + 전송을 한 번에
+  monitor.emitWithCoords(eventKey, prefixes, { event: eventKey, userType });
 }
 
 // ═══════════════════════════════════════════════════

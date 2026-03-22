@@ -116,6 +116,22 @@ export class QaMonitor {
   // ── 이벤트 발생 ─────────────────────────────────────────
 
   /**
+   * 좌표 인코딩 + 이벤트 전송을 한 번에.
+   *
+   * track(BROWSER_CATALOG, prefixes) → emit(eventKey, payload, { address_context }) 조합.
+   *
+   * @example
+   * monitor.emitWithCoords('page.home', {
+   *   page_view: { page: 'home', locale: 'ko', userType: 'member' },
+   *   tracking: { trackAction: 'view', page: 'home', userType: 'member' },
+   * });
+   */
+  emitWithCoords(eventKey: string, prefixes: Record<string, Record<string, string | number>>, payload?: Record<string, unknown>): void {
+    const ctx = browserTrack(BROWSER_CATALOG, prefixes);
+    this.emit(eventKey, payload ?? { event: eventKey }, { address_context: ctx });
+  }
+
+  /**
    * 수동 이벤트 발생.
    * event-catalog에 등록된 event_key면 버전을 자동으로 조회한다.
    * stopped 상태에서는 경고 후 무시된다.
