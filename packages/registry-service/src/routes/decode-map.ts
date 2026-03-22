@@ -21,6 +21,8 @@ interface DecodeMap {
   shape: number[];
   size: number;
   dims: DecodeMapDim[];
+  /** prefix_ref dim의 refEntries — 정수 → display label 매핑 */
+  refLabels?: Record<string, { values: number[]; labels: string[] }>;
 }
 
 export interface DecodeMapRouteDeps {
@@ -136,7 +138,28 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
 
   const size = shape.reduce((a, b) => a * b, 1);
 
-  return { indexId: prefixId, versionId, shape, size, dims: mapDims };
+  // refEntries → refLabels 변환 (prefix_ref dim의 display label)
+  let refLabels: Record<string, { values: number[]; labels: string[] }> | undefined;
+  const refEntriesDef = verDef.refEntries;
+  if (refEntriesDef && typeof refEntriesDef === "object") {
+    refLabels = {};
+    for (const [dimLabel, ref] of Object.entries(refEntriesDef as Record<string, any>)) {
+      const values: number[] = ref.values ? [...ref.values] : [];
+      // display label: 참조 prefix의 축 값을 결합 (service의 경우 "env/region/svc_name/namespace")
+      const dimDef = dims[dimLabel];
+      const refPrefixId = dimDef?.prefixId;
+      const refPrefix = refPrefixId ? catalog.prefixes?.[refPrefixId] : null;
+      const refLabelsArr: string[] = values.map((addr: number) => {
+        if (!refPrefix) return String(addr);
+        // 참조 prefix의 labels로 display label 생성
+        const refPrefixLabels: string[] = refPrefix.labels ?? [];
+        return refPrefixLabels.length > 0 ? `${refPrefixId}:${addr}` : String(addr);
+      });
+      refLabels[dimLabel] = { values, labels: refLabelsArr };
+    }
+  }
+
+  return { indexId: prefixId, versionId, shape, size, dims: mapDims, ...(refLabels ? { refLabels } : {}) };
 }
 
 /** prefix의 capacity 계산 (shape의 곱, prefix_ref는 참조 prefix의 capacity 곱) */

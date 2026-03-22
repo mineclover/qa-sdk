@@ -862,6 +862,47 @@ const result = buildLayerMap(catalog, SERVICE_PROJECTION, svcOwners);
 - 눈대중으로 딱 맞게 잡으면 headroom 경고 발생 (headroom ≤ 1 → warning, 0 → critical)
 - `dkg promote scan`의 q5_capacity가 이 공식 사용
 
+### DimRef 3종 — axis / prefix_ref / table_ref
+
+prefix의 각 dim은 3종 중 하나:
+
+| kind | 값 | 디코딩 결과 | 예시 |
+|------|-----|-----------|------|
+| `axis` | entry 문자열 | `{ role: "admin" }` | role, env, action |
+| `prefix_ref` | 참조 prefix의 1D 주소 (정수) | `{ perm_svc: 42 }` | perm_svc, evt_svc, svc_ref |
+| `table_ref` | DB 레코드 식별자 | `{ member_id: 7 }` | member_id, order_id |
+
+### prefix_ref 디코딩 컨벤션
+
+**원칙**: prefix_ref dim은 **명시적 추가 조회 없이는 정수만 반환**. 재귀 디코딩은 클라이언트가 요청할 때만 수행.
+
+```
+permission:v4:1376
+  ↓ 1단계 (기본): 자체 디코딩
+  { perm_svc: 42, role: "admin" }     ← perm_svc는 정수 (service prefix 1D 주소)
+
+  ↓ 2단계 (명시적 /decode/deep 요청 시): prefix_ref 재귀 해석
+  { perm_svc: { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
+    role: "admin" }
+```
+
+**display label**: prefix_ref dim은 정수 외에 **표시 이름**을 1개 갖는다.
+- `refEntries`가 SSOT — 의미값 배열(MEANING) → 정수 배열(values) 매핑
+- 예: `PERM_SVC_MEANING[0] = { env: "prod", svc_name: "shopping-web", ... }` → `values[0] = 65536`
+- display label: `"prod/asia/shopping-web/shop"` (의미값 join)
+- catalog-builder.ts에서 자동 파생. 직접 정수 하드코딩 금지 (`feedback_semantic-ref-entries` 참조)
+
+**DecodeMap에서의 표현**:
+```json
+{ "dimId": "perm_svc", "kind": { "type": "index_ref", "indexId": "service" }, "entries": [] }
+```
+- `entries: []` — prefix_ref는 자체 entry 목록 없음. shape에는 참조 prefix의 capacity가 들어감
+- 디코더는 정수 그대로 반환. 재귀 해석은 `/decode/deep`에서만
+
+**decode-service API**:
+- `POST /decode` → `{ entities: { perm_svc: 42, role: "admin" } }` (1단계)
+- `POST /decode/deep` → `{ entities: ..., refs: { perm_svc: { env: "prod", ... } } }` (2단계)
+
 ### Catalog 소비 경로
 - **개발**: `import { DEMO_CATALOG } from "demo-snapshot"` 직접 사용
 - **운영**: `createCatalogProvider({ registry: "http://registry:3300" })` → registry에서 active catalog fetch
