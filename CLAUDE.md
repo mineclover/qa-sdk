@@ -903,6 +903,32 @@ permission:v4:1376
 - `POST /decode` → `{ entities: { perm_svc: 42, role: "admin" } }` (1단계)
 - `POST /decode/deep` → `{ entities: ..., refs: { perm_svc: { env: "prod", ... } } }` (2단계)
 
+### 주소 디코딩 함수 계층 — 4단계
+
+같은 1D 주소를 해석하는 함수가 4개 있으며, 각각 해석 깊이와 의존성이 다르다.
+
+| 단계 | 함수 | 패키지 | prefix_ref 처리 | 의존성 | 용도 |
+|------|------|--------|----------------|--------|------|
+| L1 | `decodePrefix()` | `@qa-sdk/core` | **refEntries의 정수값** 반환 | Catalog | 기본 디코딩. `{ perm_svc: 42, role: "admin" }` |
+| L2 | `resolveAddress()` | `@qa-sdk/core` | **재귀 해석** → 트리 구조 (ref.dims) | Catalog | 의미 해석. `{ perm_svc: { ref: { dims: { env: "prod", ... } } } }` |
+| L3 | `decomposeAddress()` | `@qa-sdk/core` | **참조 prefix decode** → refDims | Catalog | 차원 분해. `{ perm_svc: { value: 42, refDims: { env: { value: "prod" } } } }` |
+| S1 | `PrefixDecoder.decode()` | `index-meta` | **정수** 그대로 반환 | DecodeMap | 서비스용 경량 디코딩 (catalog 불필요) |
+| S2 | `PrefixDecoder.decodeDeep()` | `index-meta` | **refs에 로드된 코덱으로 1-level 확장** | DecodeMap + refs | 서비스용 deep 디코딩 |
+
+**L계열 (Catalog 기반)**: `@qa-sdk/core/catalog/runtime.ts`. Catalog 전체를 알아야 동작. CLI, spec-core, 서버 사이드에서 사용.
+**S계열 (DecodeMap 기반)**: `index-meta/prefix-decoder.ts`. DecodeMap 번들만으로 동작. decode-service, 외부 서비스, 브라우저에서 사용.
+
+핵심 차이:
+- **L1 `decodePrefix`** vs **S1 `decode`**: 같은 결과. axis→entry string, prefix_ref→refEntries 정수. L1은 catalog 직접 참조, S1은 DecodeMap shape/strides로 계산
+- **L2 `resolveAddress`**: ko 라벨 + prefix_ref 재귀 resolve (트리 형태). **S계열에 대응 없음** — catalog의 axes.ko, refEntries.meaning 필요
+- **L3 `decomposeAddress`**: prefix_ref를 참조 prefix로 decode. **S2 `decodeDeep`과 유사**하지만 L3은 catalog에서 refVersion/refEntries를 직접 조회
+- **S2 `decodeDeep`**: refs Map에 로드된 코덱으로만 확장. 로드 안 된 ref는 unresolved로 보고
+
+decode-service API 매핑:
+- `POST /decode` → S1 `decode()` — 정수/entry만 반환
+- `POST /decode/deep` → S2 `decodeDeepDetailed()` — refs 확장 + unresolved 보고
+- `POST /decode/batch` → S1 `decode()` × N
+
 ### Catalog 소비 경로
 - **개발**: `import { DEMO_CATALOG } from "demo-snapshot"` 직접 사용
 - **운영**: `createCatalogProvider({ registry: "http://registry:3300" })` → registry에서 active catalog fetch
