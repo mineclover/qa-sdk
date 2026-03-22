@@ -1,11 +1,13 @@
 import { QaLogger, TraceContext } from "@qa-sdk/sdk";
 import type { MetricType } from "@qa-sdk/core";
-import { toTransmissionSource, toTransmissionBuild } from "@qa-sdk/core";
+import { toTransmissionSource, toTransmissionBuild, toServiceDims } from "@qa-sdk/core";
 import { getCoreEvent } from "@qa-sdk/event-catalog";
 import { BeaconTransport } from "./transport.js";
 import { getOrCreateSession, clearSession } from "./session.js";
 import { createAutoCapture } from "./auto-capture.js";
 import type { QaMonitorConfig, MonitorSession, MonitorStatus } from "./types.js";
+import { track as browserTrack } from "../../viz-3d/src/adapter/browser-codec.js";
+import { BROWSER_CATALOG } from "../../viz-3d/src/adapter/demo-catalog-browser.js";
 
 /**
  * QaMonitor — 브라우저 모니터링 SDK 진입점.
@@ -45,6 +47,17 @@ export class QaMonitor {
       ? toTransmissionBuild(svc)
       : { env: config.meta?.env ?? "production" };
 
+    // infra_context 자동 생성: serviceConfig → service prefix 좌표
+    let infraContext = config.infraContext;
+    if (!infraContext && svc) {
+      try {
+        const serviceDims = toServiceDims(svc);
+        infraContext = browserTrack(BROWSER_CATALOG, { service: serviceDims });
+      } catch {
+        // BROWSER_CATALOG에 service prefix가 없으면 무시
+      }
+    }
+
     this.logger = new QaLogger({
       transport,
       owner: config.owner ?? { owner_type: "tenant", owner_id: "browser-monitor" },
@@ -56,7 +69,7 @@ export class QaMonitor {
       build,
       flushIntervalMs: 5_000,
       onError: config.onError,
-      ...(config.infraContext ? { infraContext: config.infraContext } : {}),
+      ...(infraContext ? { infraContext } : {}),
       ...(config.entrySnapshot ? { entrySnapshot: config.entrySnapshot } : {}),
     });
 
@@ -132,12 +145,18 @@ export class QaMonitor {
     type?: MetricType;
     unit?: string;
     labels?: Record<string, string>;
+    address_context?: Record<string, string>;
   }): void {
     if (this._status === "stopped") {
       console.warn(`[QaMonitor] metric("${name}") called after shutdown — event dropped`);
       return;
     }
-    this.logger.metric(name, value, opts);
+    this.logger.metric(name, value, {
+      type: opts?.type,
+      unit: opts?.unit,
+      labels: opts?.labels,
+      ...(opts?.address_context ? { address_context: opts.address_context } : {}),
+    });
   }
 
   // ── 세션 관리 ───────────────────────────────────────────
@@ -201,5 +220,39 @@ export class QaMonitor {
 }
 
 export function createQaMonitor(config: QaMonitorConfig): QaMonitor {
+  return new QaMonitor(config);
+}
+
+/**
+ * 비동기 QaMonitor 생성 — registry에서 최신 catalog를 fetch한 뒤 생성.
+ *
+ * 사용:
+ *   const monitor = await createQaMonitorAsync({
+ *     ingestUrl: "...",
+ *     serviceConfig: { ... },
+ *     registry: "http://registry:3300",
+ *   });
+ */
+export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaMonitor> {
+  if (config.registry) {
+    try {
+      const { loadCatalog: loadBrowserCatalog } = await import("../../viz-3d/src/adapter/catalog-loader.js");
+      const result = await loadBrowserCatalog({
+        registryUrl: config.registry,
+        cacheKey: `qa-catalog-${config.catalogId ?? "demo"}`,
+      });
+
+      // 로드된 catalog으로 infra_context 재계산
+      if (config.serviceConfig && !config.infraContext) {
+        const serviceDims = toServiceDims(config.serviceConfig);
+        config = {
+          ...config,
+          infraContext: browserTrack(result.catalog, { service: serviceDims }),
+        };
+      }
+    } catch {
+      // registry 실패 → 정적 BROWSER_CATALOG fallback (동기 생성)
+    }
+  }
   return new QaMonitor(config);
 }

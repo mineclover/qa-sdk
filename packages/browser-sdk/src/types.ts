@@ -30,6 +30,11 @@ export interface QaMonitorConfig {
 
   /** 배포 시점의 entry snapshot ID */
   entrySnapshot?: string;
+
+  /** registry URL. 설정하면 최신 BROWSER_CATALOG를 API에서 fetch (localStorage 캐시). */
+  registry?: string;
+  /** catalog ID (registry 모드에서 사용, default: "demo") */
+  catalogId?: string;
 }
 
 export interface AutoCaptureConfig {

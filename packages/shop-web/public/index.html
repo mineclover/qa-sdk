@@ -198,7 +198,7 @@ import { createQaMonitor, track as qaTrackEncode, BROWSER_CATALOG } from './qa-b
 
 const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 
-// ── QaMonitor 생성 (SDK가 세션/전송/envelope 전부 관리) ──
+// ── QaMonitor 생성 — serviceConfig만 넘기면 infra_context 자동 생성 ──
 const monitor = createQaMonitor({
   ingestUrl: INGEST_URL,
   serviceConfig: {
@@ -209,15 +209,6 @@ const monitor = createQaMonitor({
   },
   owner: { owner_type: 'tenant', owner_id: 'shop-monitor' },
   autoCapture: { clicks: true, navigation: true },
-  // infra_context — 서비스 좌표를 전 envelope에 주입
-  infraContext: qaTrackEncode(BROWSER_CATALOG, {
-    service: {
-      env: new URLSearchParams(location.search).get('env') || 'dev',
-      region: new URLSearchParams(location.search).get('region') || 'asia',
-      svc_name: 'shopping-web',
-      namespace: 'shop',
-    },
-  }),
 });
 
 let eventCount = 0, userType = 'guest';
