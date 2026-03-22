@@ -19,6 +19,7 @@
   --dim: #8b949e;
   --hover: #21262d;
   --active: rgba(100, 255, 218, 0.08);
+  --nav-h: 36px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,7 +29,50 @@ body {
   background: var(--bg);
   color: var(--txt);
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Nav Bar ── */
+#nav {
+  height: var(--nav-h);
+  background: var(--sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.nav-link {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dim);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.nav-link:hover { color: var(--txt); background: var(--hover); }
+.nav-link.active { color: var(--mint); background: var(--active); }
+
+.nav-sep { width: 1px; height: 16px; background: var(--border); margin: 0 8px; }
+
+.nav-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mint);
+  margin-right: 12px;
+}
+
+/* ── Layout ── */
+#content {
+  flex: 1;
+  display: flex;
   overflow: hidden;
 }
 
@@ -40,69 +84,77 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .sidebar-header {
-  padding: 16px 16px 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.sidebar-header h1 {
-  font-size: 14px;
+.sidebar-header h2 {
+  font-size: 13px;
   font-weight: 600;
-  color: var(--mint);
+  color: var(--txt);
   letter-spacing: -0.3px;
 }
 
-.sidebar-header .sub {
-  font-size: 10px;
-  color: var(--dim);
-  margin-top: 4px;
+/* ── Search ── */
+#search-box {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.section {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+#search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
 }
+
+#search-input:focus { outline: none; border-color: var(--mint); }
+#search-input::placeholder { color: var(--dim); }
+
+/* ── Preset List ── */
+#preset-sections {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section { padding: 8px 0; border-bottom: 1px solid var(--border); }
 
 .section-title {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--dim);
-  padding: 0 16px 8px;
+  padding: 4px 16px 6px;
 }
 
 .preset-item {
   display: block;
   width: 100%;
-  padding: 8px 16px;
+  padding: 7px 16px;
   background: none;
   border: none;
   color: var(--txt);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 11px;
   text-align: left;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.preset-item:hover {
-  background: var(--hover);
-}
-
-.preset-item.active {
-  background: var(--active);
-  color: var(--mint);
-}
-
-.preset-item .item-id {
-  display: block;
-  font-weight: 500;
-}
-
+.preset-item:hover { background: var(--hover); }
+.preset-item.active { background: var(--active); color: var(--mint); }
+.preset-item .item-id { display: block; font-weight: 500; }
 .preset-item .item-desc {
   display: block;
   font-family: 'Sora', sans-serif;
@@ -115,57 +167,30 @@ body {
   white-space: nowrap;
 }
 
-/* ── Custom Input Section ── */
-.custom-section {
-  padding: 12px 16px;
-  flex-shrink: 0;
-}
+.preset-item.hidden { display: none; }
 
+/* ── Custom Input ── */
+.custom-section { padding: 10px 16px; flex-shrink: 0; border-top: 1px solid var(--border); }
 .custom-section h3 {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin-bottom: 8px;
+  font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 6px;
 }
 
 #custom-input {
-  width: 100%;
-  height: 120px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--txt);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  padding: 8px;
-  resize: vertical;
+  width: 100%; height: 100px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--txt); font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  padding: 8px; resize: vertical;
 }
-
-#custom-input:focus {
-  outline: none;
-  border-color: var(--mint);
-}
+#custom-input:focus { outline: none; border-color: var(--mint); }
 
 #render-btn {
-  margin-top: 8px;
-  width: 100%;
-  padding: 8px;
-  background: rgba(100, 255, 218, 0.1);
-  border: 1px solid var(--mint);
-  border-radius: 4px;
-  color: var(--mint);
-  font-family: 'Sora', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
+  margin-top: 6px; width: 100%; padding: 7px;
+  background: rgba(100, 255, 218, 0.1); border: 1px solid var(--mint); border-radius: 4px;
+  color: var(--mint); font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
 }
-
-#render-btn:hover {
-  background: rgba(100, 255, 218, 0.2);
-}
+#render-btn:hover { background: rgba(100, 255, 218, 0.2); }
 
 /* ── Main Area ── */
 #main {
@@ -176,7 +201,7 @@ body {
 }
 
 #main-header {
-  padding: 12px 24px;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -184,33 +209,16 @@ body {
   flex-shrink: 0;
 }
 
-#diagram-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--txt);
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
+#diagram-title { font-size: 13px; font-weight: 600; }
+.header-actions { display: flex; gap: 8px; }
 
 .action-btn {
-  padding: 6px 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--dim);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
+  padding: 5px 12px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--dim); font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  cursor: pointer; transition: all 0.15s;
 }
-
-.action-btn:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-}
+.action-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 
 #diagram-container {
   flex: 1;
@@ -229,22 +237,11 @@ body {
   min-width: 400px;
 }
 
-#empty-state {
-  text-align: center;
-  color: var(--dim);
-  margin-top: 120px;
-}
+#empty-state { text-align: center; color: var(--dim); margin-top: 80px; }
+#empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+#empty-state p { font-size: 12px; line-height: 1.8; }
 
-#empty-state .icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.3;
-}
-
-#empty-state p {
-  font-size: 13px;
-  line-height: 1.8;
-}
+#loading { text-align: center; color: var(--dim); padding: 24px; font-size: 11px; }
 
 /* Mermaid 테마 오버라이드 */
 .mermaid .actor { fill: #1c2128 !important; stroke: #30363d !important; }
@@ -257,20 +254,34 @@ body {
 </head>
 <body>
 
+<!-- ── Nav Bar ── -->
+<nav id="nav">
+  <span class="nav-brand">QA-SDK</span>
+  <a class="nav-link" href="/">Demo</a>
+  <a class="nav-link" href="/monitor.html">Monitor</a>
+  <a class="nav-link active" href="/diagram.html">Diagram</a>
+</nav>
+
+<!-- ── Content ── -->
+<div id="content">
+
 <div id="sidebar">
   <div class="sidebar-header">
-    <h1>Diagram Viewer</h1>
-    <div class="sub">QA-SDK DKG Mermaid Diagrams</div>
+    <h2>Diagrams</h2>
+  </div>
+
+  <div id="search-box">
+    <input id="search-input" type="text" placeholder="검색..." />
   </div>
 
   <div id="preset-sections">
-    <!-- preset 항목이 여기에 동적으로 삽입됨 -->
+    <div id="loading">프리셋 로딩 중...</div>
   </div>
 
   <div class="custom-section">
     <h3>Custom Mermaid</h3>
-    <textarea id="custom-input" placeholder="sequenceDiagram&#10;  Alice ->> Bob: Hello"></textarea>
-    <button id="render-btn" onclick="renderCustom()">Render</button>
+    <textarea id="custom-input" placeholder="sequenceDiagram&#10;  Alice ->> Bob: Hello&#10;&#10;Ctrl+Enter로 렌더"></textarea>
+    <button id="render-btn">Render (Ctrl+Enter)</button>
   </div>
 </div>
 
@@ -278,221 +289,268 @@ body {
   <div id="main-header">
     <span id="diagram-title">Diagram Viewer</span>
     <div class="header-actions">
-      <button class="action-btn" onclick="copySource()">Copy MMD</button>
-      <button class="action-btn" onclick="downloadSvg()">Download SVG</button>
+      <button class="action-btn" id="btn-copy" disabled>Copy MMD</button>
+      <button class="action-btn" id="btn-download" disabled>Download SVG</button>
     </div>
   </div>
   <div id="diagram-container">
     <div id="empty-state">
       <div class="icon">&#9671;</div>
       <p>
-        왼쪽 사이드바에서 다이어그램을 선택하거나<br>
-        Custom 영역에 Mermaid 텍스트를 붙여넣으세요.<br><br>
-        <code style="font-size:11px;color:#58a6ff">qa-sdk dkg diagram list</code> 로도 목록 확인 가능
+        사이드바에서 다이어그램을 선택하거나<br>
+        Custom 영역에 Mermaid 텍스트를 입력하세요.<br><br>
+        <code style="font-size:11px;color:var(--cyan)">qa-sdk dkg diagram list</code>
       </p>
     </div>
   </div>
 </div>
 
+</div><!-- /content -->
+
 <script>
-  // Mermaid 초기화 (다크 테마)
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'dark',
-    securityLevel: 'loose',
-    sequence: {
-      actorMargin: 50,
-      noteMargin: 10,
-    },
-  });
+// ═══════════════════════════════════════════════════════════════
+//  Mermaid Init
+// ═══════════════════════════════════════════════════════════════
 
-  let currentMmd = '';
-  let renderCounter = 0;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose',
+  sequence: { actorMargin: 50, noteMargin: 10 },
+});
 
-  // ── Preset 로딩 ──────────────────────────────────────
+let currentMmd = '';
+let renderCounter = 0;
+let presets = {};
 
-  const FALLBACK_PRESETS = {
-    "intent-links": [
-      { id: "__all__", label: "전체 IntentLink 흐름", description: "모든 IntentLink를 하나의 시퀀스 다이어그램으로 통합", mmd: "" },
-    ],
-    "dsl": [],
-  };
+// ═══════════════════════════════════════════════════════════════
+//  Preset Loading (fetch 기반 — race condition 없음)
+// ═══════════════════════════════════════════════════════════════
 
-  let presets = FALLBACK_PRESETS;
+async function loadPresets() {
+  try {
+    const resp = await fetch('diagram-presets.js');
+    if (!resp.ok) throw new Error(resp.statusText);
+    const text = await resp.text();
+    // window.DIAGRAM_PRESETS = {...} 형식 → eval로 파싱
+    const fn = new Function(text + '; return window.DIAGRAM_PRESETS;');
+    presets = fn() || {};
+  } catch {
+    presets = {};
+  }
+  buildSidebar();
+  restoreFromUrl();
+}
 
-  function loadPresets() {
-    if (window.DIAGRAM_PRESETS) {
-      presets = window.DIAGRAM_PRESETS;
-    }
-    buildSidebar();
+// ═══════════════════════════════════════════════════════════════
+//  Sidebar Build
+// ═══════════════════════════════════════════════════════════════
+
+const SECTION_LABELS = {
+  'intent-links': 'IntentLink',
+  'dsl': 'DSL Bundle',
+};
+
+function buildSidebar() {
+  const container = document.getElementById('preset-sections');
+  container.innerHTML = '';
+
+  const keys = Object.keys(presets);
+  if (keys.length === 0) {
+    container.innerHTML = `<div style="padding:16px;color:var(--dim);font-size:11px;line-height:1.6;">
+      프리셋이 없습니다.<br><br>
+      <code style="color:var(--cyan)">pnpm --filter platform-demo exec tsx scripts/generate-diagram-presets.ts</code>
+    </div>`;
+    return;
   }
 
-  function buildSidebar() {
-    const container = document.getElementById('preset-sections');
-    container.innerHTML = '';
+  for (const [key, items] of Object.entries(presets)) {
+    if (!items || items.length === 0) continue;
 
-    const sectionNames = { "intent-links": "IntentLink", "dsl": "DSL Bundle" };
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.dataset.section = key;
 
-    for (const [key, items] of Object.entries(presets)) {
-      if (!items || items.length === 0) continue;
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = `${SECTION_LABELS[key] || key} (${items.length})`;
+    section.appendChild(title);
 
-      const section = document.createElement('div');
-      section.className = 'section';
+    for (const item of items) {
+      const btn = document.createElement('button');
+      btn.className = 'preset-item';
+      btn.dataset.key = key;
+      btn.dataset.id = item.id;
+      btn.dataset.search = `${item.id} ${item.label || ''} ${item.description || ''}`.toLowerCase();
 
-      const title = document.createElement('div');
-      title.className = 'section-title';
-      title.textContent = `${sectionNames[key] || key} (${items.length})`;
-      section.appendChild(title);
+      const idSpan = document.createElement('span');
+      idSpan.className = 'item-id';
+      idSpan.textContent = item.label || item.id;
+      btn.appendChild(idSpan);
 
-      for (const item of items) {
-        const btn = document.createElement('button');
-        btn.className = 'preset-item';
-        btn.dataset.key = key;
-        btn.dataset.id = item.id;
-
-        const idSpan = document.createElement('span');
-        idSpan.className = 'item-id';
-        idSpan.textContent = item.label || item.id;
-        btn.appendChild(idSpan);
-
-        if (item.description) {
-          const descSpan = document.createElement('span');
-          descSpan.className = 'item-desc';
-          descSpan.textContent = item.description;
-          btn.appendChild(descSpan);
-        }
-
-        btn.addEventListener('click', () => selectPreset(key, item));
-        section.appendChild(btn);
+      if (item.description) {
+        const descSpan = document.createElement('span');
+        descSpan.className = 'item-desc';
+        descSpan.textContent = item.description;
+        btn.appendChild(descSpan);
       }
 
-      container.appendChild(section);
+      btn.addEventListener('click', () => selectPreset(key, item));
+      section.appendChild(btn);
     }
 
-    // preset이 없으면 안내
-    if (container.children.length === 0) {
-      const notice = document.createElement('div');
-      notice.style.cssText = 'padding: 16px; color: var(--dim); font-size: 11px; line-height: 1.6;';
-      notice.innerHTML = 'Preset이 없습니다.<br><br>생성 방법:<br><code style="color:var(--cyan)">pnpm --filter @qa-sdk/platform-demo prebuild-diagrams</code>';
-      container.appendChild(notice);
+    container.appendChild(section);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Search
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.preset-item').forEach(el => {
+    el.classList.toggle('hidden', q.length > 0 && !el.dataset.search.includes(q));
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Preset Selection + URL State
+// ═══════════════════════════════════════════════════════════════
+
+function selectPreset(key, item) {
+  // active 표시
+  document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
+  const btn = document.querySelector(`.preset-item[data-key="${key}"][data-id="${item.id}"]`);
+  if (btn) btn.classList.add('active');
+
+  const title = item.label || item.id;
+  document.getElementById('diagram-title').textContent = title;
+
+  // URL 업데이트 (새로고침 시 복원용)
+  const url = new URL(window.location.href);
+  url.searchParams.set('preset', item.id);
+  url.hash = '';
+  history.replaceState(null, '', url);
+
+  if (item.mmd) {
+    renderMermaid(item.mmd);
+  } else {
+    showEmpty('Mermaid 텍스트가 없습니다.');
+  }
+}
+
+function restoreFromUrl() {
+  const url = new URL(window.location.href);
+
+  // ?preset=ID 복원
+  const presetId = url.searchParams.get('preset');
+  if (presetId) {
+    for (const [key, items] of Object.entries(presets)) {
+      const found = items.find(i => i.id === presetId);
+      if (found) { selectPreset(key, found); return; }
     }
   }
 
-  function selectPreset(key, item) {
-    // 활성 표시 업데이트
-    document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
-    const btn = document.querySelector(`.preset-item[data-key="${key}"][data-id="${item.id}"]`);
-    if (btn) btn.classList.add('active');
-
-    const title = item.label || item.id;
-    document.getElementById('diagram-title').textContent = title;
-
-    if (item.mmd) {
-      renderMermaid(item.mmd);
-    } else {
-      showEmpty('이 프리셋에 Mermaid 텍스트가 없습니다.\nprebuild-diagrams 스크립트를 실행하세요.');
-    }
-  }
-
-  // ── 렌더링 ──────────────────────────────────────
-
-  async function renderMermaid(mmd) {
-    currentMmd = mmd;
-    const container = document.getElementById('diagram-container');
-
-    try {
-      renderCounter++;
-      const id = `mermaid-diagram-${renderCounter}`;
-      const { svg } = await mermaid.render(id, mmd);
-      container.innerHTML = `<div class="mermaid">${svg}</div>`;
-    } catch (err) {
-      container.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">
-        <strong>Render Error</strong><br><pre style="margin-top:8px;white-space:pre-wrap;">${err.message || err}</pre>
-        <pre style="margin-top:12px;color:var(--dim);white-space:pre-wrap;">${mmd}</pre>
-      </div>`;
-    }
-  }
-
-  function renderCustom() {
-    const text = document.getElementById('custom-input').value.trim();
-    if (!text) return;
-
-    document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('diagram-title').textContent = 'Custom Diagram';
-    renderMermaid(text);
-  }
-
-  function showEmpty(msg) {
-    const container = document.getElementById('diagram-container');
-    container.innerHTML = `<div id="empty-state"><div class="icon">&#9671;</div><p>${msg.replace(/\n/g, '<br>')}</p></div>`;
-    currentMmd = '';
-  }
-
-  // ── 액션 ──────────────────────────────────────
-
-  function copySource() {
-    if (!currentMmd) return;
-    navigator.clipboard.writeText(currentMmd).then(() => {
-      const btn = document.querySelector('.action-btn');
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      btn.style.color = 'var(--mint)';
-      btn.style.borderColor = 'var(--mint)';
-      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
-    });
-  }
-
-  function downloadSvg() {
-    const svgEl = document.querySelector('#diagram-container svg');
-    if (!svgEl) return;
-
-    const svgData = new XMLSerializer().serializeToString(svgEl);
-    const blob = new Blob([svgData], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'diagram.svg';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ── URL hash 지원: diagram.html#base64encodedMermaid ──
-
-  function checkHash() {
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
-
+  // #base64 복원
+  const hash = url.hash.slice(1);
+  if (hash) {
     try {
       const mmd = decodeURIComponent(atob(hash));
       document.getElementById('diagram-title').textContent = 'URL Diagram';
       document.getElementById('custom-input').value = mmd;
       renderMermaid(mmd);
-    } catch {
-      // base64 디코드 실패 — 무시
-    }
+    } catch { /* ignore */ }
   }
+}
 
-  // ── 초기화 ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  Render
+// ═══════════════════════════════════════════════════════════════
 
-  loadPresets();
-  checkHash();
-  window.addEventListener('hashchange', checkHash);
+async function renderMermaid(mmd) {
+  currentMmd = mmd;
+  const container = document.getElementById('diagram-container');
+  document.getElementById('btn-copy').disabled = false;
+  document.getElementById('btn-download').disabled = false;
 
-  // Ctrl+Enter로 custom 렌더링
-  document.getElementById('custom-input').addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      renderCustom();
-    }
+  try {
+    renderCounter++;
+    const id = `mmd-${renderCounter}`;
+    const { svg } = await mermaid.render(id, mmd);
+    container.innerHTML = `<div class="mermaid">${svg}</div>`;
+  } catch (err) {
+    container.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+      <strong>Render Error</strong><br>
+      <pre style="margin-top:8px;white-space:pre-wrap;">${err.message || err}</pre>
+      <pre style="margin-top:12px;color:var(--dim);white-space:pre-wrap;">${mmd}</pre>
+    </div>`;
+  }
+}
+
+function renderCustom() {
+  const text = document.getElementById('custom-input').value.trim();
+  if (!text) return;
+
+  document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('diagram-title').textContent = 'Custom Diagram';
+
+  // URL 업데이트 (hash)
+  const url = new URL(window.location.href);
+  url.searchParams.delete('preset');
+  url.hash = btoa(encodeURIComponent(text));
+  history.replaceState(null, '', url);
+
+  renderMermaid(text);
+}
+
+function showEmpty(msg) {
+  document.getElementById('diagram-container').innerHTML =
+    `<div id="empty-state"><div class="icon">&#9671;</div><p>${msg.replace(/\n/g, '<br>')}</p></div>`;
+  currentMmd = '';
+  document.getElementById('btn-copy').disabled = true;
+  document.getElementById('btn-download').disabled = true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Actions (Copy / Download)
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('btn-copy').addEventListener('click', function () {
+  if (!currentMmd) return;
+  const self = this;
+  navigator.clipboard.writeText(currentMmd).then(() => {
+    const orig = self.textContent;
+    self.textContent = 'Copied!';
+    self.style.color = 'var(--mint)';
+    self.style.borderColor = 'var(--mint)';
+    setTimeout(() => { self.textContent = orig; self.style.color = ''; self.style.borderColor = ''; }, 1500);
   });
-</script>
+});
 
-<!-- preset 데이터 로딩 (prebuild 시 생성) -->
-<script src="diagram-presets.js" onerror="console.log('diagram-presets.js not found — run: pnpm --filter @qa-sdk/platform-demo prebuild-diagrams')"></script>
-<script>
-  // diagram-presets.js 로딩 후 재빌드
-  if (window.DIAGRAM_PRESETS && presets === FALLBACK_PRESETS) {
-    loadPresets();
-  }
+document.getElementById('btn-download').addEventListener('click', function () {
+  const svgEl = document.querySelector('#diagram-container svg');
+  if (!svgEl) return;
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob([svgData], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'diagram.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('render-btn').addEventListener('click', renderCustom);
+document.getElementById('custom-input').addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') renderCustom();
+});
+
+loadPresets();
 </script>
 </body>
 </html>
