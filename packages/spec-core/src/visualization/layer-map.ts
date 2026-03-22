@@ -95,10 +95,12 @@ export const SERVICE_PROJECTION: Projection = {
   },
   svcNameMap: {
     "shopping-web": 0,
+    "content-service": 0,
     "shopping-backend": 1,
     "auth": 1,
     "payment": 1,
     "gateway": 1,
+    "infra-controller": 2,
   },
   // 전체 prefix → layer 매핑 (svcOwners 없이도 작동)
   prefixMap: {
@@ -206,17 +208,17 @@ export function buildLayerMap(
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
     let layer: LayerLevel | undefined;
 
-    // 1. prefixMap 직접 매핑
-    if (proj.prefixMap && prefixId in proj.prefixMap) {
-      layer = proj.prefixMap[prefixId];
-    }
-
-    // 2. svcNameMap — service owner의 svc_name으로 매핑
-    if (layer === undefined && proj.svcNameMap && svcOwners) {
-      const ownerSvcName = resolveSvcNameForPrefix(catalog, prefixId, svcOwners);
+    // 1. svcNameMap — svcOwners에 등록된 prefix는 발생 서비스 기반 배치
+    if (proj.svcNameMap && svcOwners) {
+      const ownerSvcName = svcOwners.get(prefixId);
       if (ownerSvcName && ownerSvcName in proj.svcNameMap) {
         layer = proj.svcNameMap[ownerSvcName];
       }
+    }
+
+    // 2. prefixMap — svcOwners에 없는 prefix 고정 매핑
+    if (layer === undefined && proj.prefixMap && prefixId in proj.prefixMap) {
+      layer = proj.prefixMap[prefixId];
     }
 
     // 3. domainMap — domain 소속으로 매핑
