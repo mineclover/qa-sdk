@@ -828,7 +828,7 @@ const result = buildLayerMap(catalog, SERVICE_PROJECTION, svcOwners);
 ### Prefix Version
 - prefix version은 `latestPrefixVersion(catalog, prefixId)` 또는 `prefix.versions[versions.length - 1].version`으로 동적 조회
 - `"v1"`, `"v2"` 하드코딩 금지 — catalog 구조 변경 시 깨짐
-- `version-resolution.test.ts`가 34개 prefix의 라운드트립을 자동 검증
+- `version-resolution.test.ts`가 전체 prefix의 라운드트립을 자동 검증 (SSOT 기반 동적 카운트)
 
 ### Axis Capacity
 - 새 축 추가 시 capacity는 `nextPowerOf2(entries.length * 2)` 이상

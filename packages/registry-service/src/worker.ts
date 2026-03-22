@@ -45,6 +45,7 @@ export default {
     const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
     const { SqlPrefixOwnerStore } = await import("./stores/sql-prefix-owner-store.js");
     const { SqlDraftLockStore } = await import("./stores/sql-draft-lock-store.js");
+    const { SqlAxisProfileStore } = await import("./stores/sql-axis-profile-store.js");
     const { SqlPrefixRegistry, SqlVersionLifecycleStore } = await import("index-meta") as any;
 
     const app = createApp({
@@ -55,6 +56,7 @@ export default {
       catalogStore: new SqlCatalogStore(driver),
       configStore: new SqlConfigStore(driver),
       endpointStore: new SqlServiceEndpointStore(driver),
+      axisStore: new SqlAxisProfileStore(driver),
       corsOrigin: "*",
     });
 

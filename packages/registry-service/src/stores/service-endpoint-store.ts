@@ -1,10 +1,12 @@
 /**
- * ServiceEndpointStore — 좌표계 기반 서비스 URL 관리.
+ * ServiceEndpointStore — 서비스 URL 관리.
  *
  * composite key: (catalogId, namespace, svcName, env, region)
- * = service prefix 4축과 정확히 일치.
  *
- * ServiceBootConfig → 좌표 → DB lookup → URL resolve.
+ * 비즈니스 서비스(svc_name 축에 등록)는 좌표계와 일치.
+ * 인프라 서비스(registry, ingest 등)는 좌표계 외부이지만 동일 키 구조 사용.
+ *
+ * ServiceBootConfig → DB lookup → URL resolve.
  */
 
 /**
