@@ -3,6 +3,7 @@ import { booleanWithDefaultFalse } from "@qa-sdk/core";
 
 export const envSchema = z.object({
   PORT: z.coerce.number().default(3300),
+  CORS_ORIGIN: z.string().default("*"),
   SQLITE_PATH: z.string().default(":memory:"),
   CONSTRAINT_GATE_ENABLED: booleanWithDefaultFalse,
   CONSTRAINT_GATE_MODE: z.enum(["strict", "warn"]).default("warn"),

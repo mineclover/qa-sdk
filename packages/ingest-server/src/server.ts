@@ -223,6 +223,7 @@ async function startServer() {
       ),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
+    corsOrigin: env.CORS_ORIGIN,
   });
 
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });

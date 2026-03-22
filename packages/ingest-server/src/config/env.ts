@@ -5,6 +5,7 @@ export const envSchema = z.object({
   TRACE_DATABASE_URL: z.string().url(),
   REDIS_URL: optionalUrl,
   PORT: z.coerce.number().default(3200),
+  CORS_ORIGIN: z.string().default("*"),
   CLEANUP_CRON_ENABLED: booleanWithDefaultFalse,
   TASK_QUEUE_ENABLED: booleanWithDefaultFalse,
   SSE_SUBSCRIPTION_LIMIT: z.coerce.number().int().positive().default(10),

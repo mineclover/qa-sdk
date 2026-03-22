@@ -291,6 +291,7 @@ async function main() {
     ...(postActivationHook ? { postActivationHook } : {}),
     ...(devDashboardProvider ? { devDashboardProvider } : {}),
     configStore,
+    corsOrigin: env.CORS_ORIGIN,
     logger,
   });
 

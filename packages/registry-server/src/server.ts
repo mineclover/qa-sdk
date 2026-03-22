@@ -10,6 +10,7 @@ const db = createDb(env.DATABASE_URL);
 const logger = createLogger("registry-server");
 const app = createApp(db, {
   checkDbHealth: createDbHealthChecker(db),
+  corsOrigin: env.CORS_ORIGIN,
   logger,
 });
 

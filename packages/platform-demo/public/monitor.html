@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Coordinate Monitor</title>
+<script src="config.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Sora:wght@300;400;600;700&display=swap');
 :root{--bg:#050508;--card:rgba(8,10,16,0.92);--border:rgba(100,255,218,0.08);--mint:#64ffda;--cyan:#00b4d8;--amber:#ff9f43;--violet:#7c5cfc;--rose:#ff3860;--green:#2ed573;--red:#ff6b6b;--txt:#c0c8d8;--dim:#445}
@@ -163,7 +164,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 <div class="hud hud-tl" id="hud-tl">
   <div style="display:flex;align-items:center;gap:8px">
     <div class="brand m">qa-sdk / coordinate monitor</div>
-    <a href="http://localhost:3300/dev/" target="_blank" class="btn m" id="link-dashboard" style="font-size:7px;padding:2px 6px;text-decoration:none;pointer-events:all">Dashboard</a>
+    <a id="link-dashboard" target="_blank" class="btn m" style="font-size:7px;padding:2px 6px;text-decoration:none;pointer-events:all">Dashboard</a>
   </div>
   <div class="ttl">3D Grid View</div>
   <div class="sub m" id="status">loading modules...</div>
@@ -240,7 +241,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   </div>
   <div class="cr">
     <span class="conn m" id="conn">●</span>
-    <input class="btn m" id="ws-url" value="ws://localhost:3100/v1/ws">
+    <input class="btn m" id="ws-url">
     <button class="btn m" id="btn-live">LIVE</button>
     <button class="btn m" id="btn-demo">DEMO</button>
     <button class="btn m" id="btn-reset">RESET</button>
@@ -249,6 +250,14 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 </div>
 
 <script>
+// ── config.js 기반 URL 초기화 ──
+(function(){
+  var cfg = window.__QA_CONFIG__ || {};
+  var dash = document.getElementById('link-dashboard');
+  var wsInput = document.getElementById('ws-url');
+  if(dash) dash.href = cfg.DASHBOARD_URL || 'http://localhost:3300/dev/';
+  if(wsInput) wsInput.value = cfg.WS_URL || 'ws://localhost:3100/v1/ws';
+})();
 // ── Info overlay 닫기 (module 로딩 실패와 무관하게 동작) ──
 (function(){
   var overlay=document.getElementById('info-overlay');
@@ -743,7 +752,8 @@ $('btn-check-server').addEventListener('click', async ()=>{
   } catch { $('srv-ingest').innerHTML='<span style="color:#ff3860">● ingest: offline</span>'; }
   // Check registry
   try {
-    const r=await fetch('http://localhost:3300/health');
+    const regUrl = (window.__QA_CONFIG__||{}).REGISTRY_URL || 'http://localhost:3300';
+    const r=await fetch(regUrl+'/health');
     $('srv-registry').innerHTML=r.ok?'<span style="color:#2ed573">● registry: ok</span>':'<span style="color:#ff3860">● registry: '+r.status+'</span>';
   } catch { $('srv-registry').innerHTML='<span style="color:#ff3860">● registry: offline</span>'; }
 });

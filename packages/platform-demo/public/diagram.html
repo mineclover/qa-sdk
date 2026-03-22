@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA-SDK Diagram Viewer</title>
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Sora:wght@300;400;600;700&display=swap');
@@ -660,7 +661,7 @@ async function loadTrace() {
     const data = await resp.json();
     renderMermaid(data.mmd);
   } catch {
-    showEmpty('ingest-server에 연결할 수 없습니다 (localhost:3200)');
+    showEmpty('ingest-server에 연결할 수 없습니다');
   }
 }
 

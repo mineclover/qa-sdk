@@ -30,6 +30,7 @@ export interface AppDeps extends RegistryServiceDeps {
   devDashboardProvider?: DevDkgProvider;
   /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
   configStore?: ConfigStore;
+  corsOrigin?: string;
 }
 
 export function createApp(deps: AppDeps) {
@@ -37,7 +38,7 @@ export function createApp(deps: AppDeps) {
   const logger = deps.logger ?? createLogger("registry-service");
   const service = new RegistryService(deps);
 
-  app.use("*", cors());
+  app.use("*", cors({ origin: deps.corsOrigin ?? "*" }));
   app.use("*", requestId);
   app.onError(createErrorHandler(logger));
 

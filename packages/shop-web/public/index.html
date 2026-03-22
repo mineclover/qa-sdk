@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QA Shop</title>
+<script src="config.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
 :root{--bg:#f8f9fb;--card:#fff;--primary:#4a6cf7;--primary-dark:#3558d6;--accent:#ff6b6b;--text:#2d3436;--dim:#8395a7;--border:#e8ecf1;--success:#00b894;--shadow:0 2px 8px rgba(0,0,0,0.06)}
@@ -196,7 +197,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 import { createQaMonitor } from './qa-browser-sdk.js';
 
-const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
+const _cfg = window.__QA_CONFIG__ || {};
+const _qs = new URLSearchParams(location.search);
+const INGEST_URL = _qs.get('ingest') || _cfg.INGEST_URL || 'http://localhost:3200';
 
 // ── QaMonitor 생성 — serviceConfig만 넘기면 infra_context 자동 생성 ──
 const monitor = createQaMonitor({
@@ -204,8 +207,8 @@ const monitor = createQaMonitor({
   serviceConfig: {
     namespace: 'shop',
     name: 'shopping-web',
-    env: new URLSearchParams(location.search).get('env') || 'dev',
-    region: new URLSearchParams(location.search).get('region') || 'asia',
+    env: _qs.get('env') || _cfg.ENV || 'dev',
+    region: _qs.get('region') || _cfg.REGION || 'asia',
   },
   owner: { owner_type: 'tenant', owner_id: 'shop-monitor' },
   autoCapture: { clicks: true, navigation: true },

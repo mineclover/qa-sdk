@@ -82,6 +82,7 @@ export interface AppDeps {
   streamConnectionRegistry?: StreamConnectionRegistry;
   getUptimeSeconds?: () => number;
   version?: string;
+  corsOrigin?: string;
 }
 
 export function createApp(deps: AppDeps) {
@@ -96,7 +97,7 @@ export function createApp(deps: AppDeps) {
     maxRequests: deps.rateLimitMaxRequests,
   });
 
-  app.use("*", cors());
+  app.use("*", cors({ origin: deps.corsOrigin ?? "*" }));
   app.use("*", requestId);
   app.use("*", createShutdownMiddleware(appLifecycle));
   app.use("/v1/ingest", ingestRateLimiter);

@@ -15,6 +15,7 @@ import { ServiceRepository } from "./modules/services/service.repository.js";
 import { ServiceService } from "./modules/services/service.service.js";
 import { EventRepository } from "./modules/events/event.repository.js";
 import { EventService } from "./modules/events/event.service.js";
+import { cors } from "hono/cors";
 import { createLogger } from "./lib/logger.js";
 
 export interface AppDeps {
@@ -22,6 +23,7 @@ export interface AppDeps {
   getUptimeSeconds?: () => number;
   logger?: Logger;
   version?: string;
+  corsOrigin?: string;
 }
 
 export function createApp(db: Db, deps: AppDeps = {}) {
@@ -29,6 +31,7 @@ export function createApp(db: Db, deps: AppDeps = {}) {
   const logger = deps.logger ?? createLogger("registry-server");
 
   // middleware
+  app.use("*", cors({ origin: deps.corsOrigin ?? "*" }));
   app.use("*", requestId);
   app.use("*", createRequestLogger(logger));
 
