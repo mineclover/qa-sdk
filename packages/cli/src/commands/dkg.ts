@@ -9,7 +9,7 @@ import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
 import { CatalogRegistry } from "@qa-sdk/core";
-import type { Catalog } from "@qa-sdk/core";
+import type { Catalog, DkgConfig, AxisVersionSnapshot } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
@@ -62,7 +62,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate, ConstraintNode, DkgEdgeType, DkgEdge, SpecNode, ConvergeAction, ChainStepResult, UsageData, EntryUsage, AddressUsage, CoOccurrence, VersionUsage } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -112,8 +112,10 @@ function getStore(catalogId?: string): DkgSqliteStore {
 /** bootstrap 옵션 생성 — transitionSpecs 주입 DRY */
 function bootstrapOptions(catalogOverride?: unknown) {
   const catalog = catalogOverride ?? DEMO_CATALOG;
-  const config = (_configOverride ?? DEMO_DKG_CONFIG) as any;
-  return { catalog: catalog as any, config, transitionSpecs: DEMO_TRANSITION_SPECS };
+  const config = _configOverride ?? DEMO_DKG_CONFIG;
+  // NOTE: Catalog/DkgConfig → CatalogInput/DkgConfigInput 구조적 호환.
+  // bootstrapDkg 내부에서 duck-typing으로 소비하므로 Parameters<> 캐스트 사용.
+  return { catalog, config, transitionSpecs: DEMO_TRANSITION_SPECS } as Parameters<typeof bootstrapDkg>[0];
 }
 
 function getGraph(catalogId?: string): GraphRegistry {
@@ -270,7 +272,7 @@ export function emitCliEvent(command: string): void {
       coOccurrences: [],
       versionUsages: [{ prefix: "cli_event", version: latestVer("cli_event"), count: 1, lastSeen: now, sessions: [session] }],
       collectionPeriod: { from: now, to: now },
-    } as any);
+    } satisfies UsageData);
   } catch {
     // 인코딩 실패 시 무시
   }
@@ -363,12 +365,12 @@ function emitSkillExecution(skillId: string, category: string, outcome: string =
       coOccurrences: [],
       versionUsages: [{ prefix: "skill_execution", version: ver, count: 1, lastSeen: now, sessions: [session] }],
       collectionPeriod: { from: now, to: now },
-    } as any);
+    } satisfies UsageData);
   } catch { /* 기록 실패 시 무시 */ }
 }
 
 function latestVer(prefixId: string): string {
-  return latestPrefixVersion(DEMO_CATALOG as any, prefixId);
+  return latestPrefixVersion(DEMO_CATALOG, prefixId);
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
@@ -423,7 +425,7 @@ function emitDkgEvent(
       coOccurrences: [],
       versionUsages,
       collectionPeriod: { from: now, to: now },
-    } as any);
+    } satisfies UsageData);
   } catch {
     // 인코딩 실패 시 무시 (운영에 영향 없음)
   }
@@ -480,10 +482,11 @@ export function dkgReport(): void {
 
   // headroom 요약
   const criticalAxes = axes.filter(a => {
-    const catalog = DEMO_CATALOG.axes[a.id as DemoAxisId];
-    if (!catalog) return false;
-    const versions = Object.keys(catalog.versions);
-    const latest = catalog.versions[versions[versions.length - 1] as keyof typeof catalog.versions] as any;
+    const axisData = DEMO_CATALOG.axes[a.id as DemoAxisId];
+    if (!axisData) return false;
+    const versionKeys = Object.keys(axisData.versions);
+    const latest = (axisData.versions as Record<string, AxisVersionSnapshot>)[versionKeys[versionKeys.length - 1]];
+    if (!latest) return false;
     return (latest.capacity ?? latest.entries.length) === latest.entries.length;
   });
 
@@ -562,10 +565,10 @@ export function dkgAxes(opts: PageOptions): void {
     const catalog = DEMO_CATALOG.axes[axis.id as DemoAxisId];
     let info = "";
     if (catalog) {
-      const versions = Object.keys(catalog.versions);
-      const latest = catalog.versions[versions[versions.length - 1] as keyof typeof catalog.versions] as any;
-      const entries = latest.entries?.length ?? 0;
-      const cap = latest.capacity ?? entries;
+      const versionKeys = Object.keys(catalog.versions);
+      const latest = (catalog.versions as Record<string, AxisVersionSnapshot>)[versionKeys[versionKeys.length - 1]];
+      const entries = latest?.entries?.length ?? 0;
+      const cap = latest?.capacity ?? entries;
       info = ` entries=${entries} cap=${cap} headroom=${cap - entries}`;
     }
     console.log(`  ${axis.id.padEnd(15)} ${axis.name.padEnd(12)}${info}`);
@@ -1091,19 +1094,20 @@ export function dkgTransitionAnalysis(subcommand: string): void {
       console.log(`\n══ Violation Summary ══`);
       // DKG에서 transition observation 조회
       const observations = graph.getNodesByKind("observation");
-      const transObs = observations.filter(o => (o as any).id?.startsWith("OBS-TRANSITION-"));
+      const transObs = observations.filter(o => o.id?.startsWith("OBS-TRANSITION-"));
       if (transObs.length === 0) {
         console.log("  기록된 전이 위반 없음");
       } else {
         console.log(`  전이 위반 observation: ${transObs.length}개`);
         for (const obs of transObs) {
-          console.log(`    ${(obs as any).id}: ${(obs as any).finding}`);
+          console.log(`    ${obs.id}: ${obs.finding}`);
         }
       }
       // constraint 상태
       const effectConstraint = graph.getNode("CON-EFFECT-VOCAB");
-      if (effectConstraint) {
-        console.log(`\n  CON-EFFECT-VOCAB: ${(effectConstraint as any).lifecycle} — ${(effectConstraint as any).rule?.slice(0, 80)}`);
+      if (effectConstraint && effectConstraint.kind === "constraint") {
+        const con = effectConstraint as ConstraintNode;
+        console.log(`\n  CON-EFFECT-VOCAB: ${con.lifecycle} — ${con.rule?.slice(0, 80)}`);
       }
       break;
     }
@@ -1124,12 +1128,11 @@ export function dkgAudit(): void {
   const observations = graph.getNodesByKind("observation");
   console.log(`\n  Observations: ${observations.length}개`);
   for (const obs of observations) {
-    const o = obs as any;
-    const icon = o.suggestion ? "⚠" : "ℹ";
-    console.log(`    ${icon} ${o.id}`);
-    console.log(`      ${o.finding}`);
+    const icon = obs.suggestion ? "⚠" : "ℹ";
+    console.log(`    ${icon} ${obs.id}`);
+    console.log(`      ${obs.finding}`);
     // prompts → Decision 연결
-    const prompted = graph.neighbors(o.id, "prompts");
+    const prompted = graph.neighbors(obs.id, "prompts");
     if (prompted.length > 0) {
       console.log(`      → Decision: ${prompted.join(", ")}`);
     }
@@ -1139,16 +1142,15 @@ export function dkgAudit(): void {
   const decisions = graph.getNodesByKind("decision");
   console.log(`\n  Decisions: ${decisions.length}개`);
   for (const dec of decisions) {
-    const d = dec as any;
-    const governed = graph.neighbors(d.id, "governs");
-    const justified = graph.neighbors(d.id, "justifies");
+    const governed = graph.neighbors(dec.id, "governs");
+    const justified = graph.neighbors(dec.id, "justifies");
     const targets = [...governed, ...justified];
-    console.log(`    ${d.id}: ${d.title}`);
+    console.log(`    ${dec.id}: ${dec.title}`);
     if (targets.length > 0) {
       console.log(`      → 대상: ${targets.join(", ")}`);
     }
-    if (d.alternatives?.length > 0) {
-      console.log(`      → 대안: ${d.alternatives.length}개`);
+    if (dec.alternatives && dec.alternatives.length > 0) {
+      console.log(`      → 대안: ${dec.alternatives.length}개`);
     }
   }
 
@@ -1156,27 +1158,24 @@ export function dkgAudit(): void {
   const constraints = graph.getNodesByKind("constraint");
   console.log(`\n  Constraints: ${constraints.length}개`);
   for (const con of constraints) {
-    const c = con as any;
-    const icon = c.lifecycle === "active" ? "✅" : "⏸";
-    console.log(`    ${icon} ${c.id}: ${c.rule}`);
+    const icon = con.lifecycle === "active" ? "✅" : "⏸";
+    console.log(`    ${icon} ${con.id}: ${con.rule}`);
   }
 
   // 4. DSL 커버리지
   const dslBundles = graph.getNodesByKind("dsl-bundle");
   console.log(`\n  DSL Bundles: ${dslBundles.length}개`);
   for (const bundle of dslBundles) {
-    const b = bundle as any;
-    const contains = graph.edgesFrom(b.id, "contains");
-    console.log(`    ${b.id}: [${contains.map((e: any) => e.to).join(",")}]`);
+    const contains = graph.edgesFrom(bundle.id, "contains");
+    console.log(`    ${bundle.id}: [${contains.map(e => e.to).join(",")}]`);
   }
 
   // 5. IntentLink invariant
   const links = graph.getNodesByKind("intent-link");
   console.log(`\n  IntentLinks: ${links.length}개`);
   for (const link of links) {
-    const l = link as any;
-    console.log(`    ${l.id}: ${l.intent}`);
-    if (l.invariant) console.log(`      invariant: ${l.invariant}`);
+    console.log(`    ${link.id}: ${link.intent}`);
+    if (link.invariant) console.log(`      invariant: ${link.invariant}`);
   }
 
   // 6. 종합
@@ -1478,8 +1477,8 @@ export function dkgScanTables(): void {
     "grants", "logs",
   ];
 
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
-  const catalogTables = Object.values(catalog.tables ?? {}).map((t: { table: string }) => t.table);
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+  const catalogTables = Object.values(catalog.tables ?? {}).map(t => t.table);
 
   const registered = new Set(catalogTables);
   const known = new Set(KNOWN_DB_TABLES);
@@ -1649,23 +1648,24 @@ export function dkgTrace(nodeId: string): void {
 
   // kind-specific details
   if (result.kind === "prefix") {
-    const d = result.details as any;
+    const d = result.details;
     console.log(`  category:  ${d.category ?? "unknown"}`);
     console.log(`  lifecycle: ${d.lifecycle ?? "active"}`);
-    console.log(`  dims:      ${(d.dimLabels ?? []).join(", ")}`);
+    console.log(`  dims:      ${(d.dimLabels as string[] ?? []).join(", ")}`);
   } else if (result.kind === "axis") {
-    const d = result.details as any;
-    console.log(`  versions: ${(d.currentVersions ?? []).join(", ")}`);
+    const d = result.details;
+    console.log(`  versions: ${(d.currentVersions as string[] ?? []).join(", ")}`);
   } else if (result.kind === "decision") {
-    const d = result.details as any;
+    const d = result.details;
     console.log(`  lifecycle: ${d.lifecycle}`);
     console.log(`  context:   ${d.context}`);
     console.log(`  rationale: ${d.rationale}`);
   } else if (result.kind === "observation") {
-    const d = result.details as any;
+    const d = result.details;
     console.log(`  finding: ${d.finding}`);
     console.log(`  source:  ${d.source}`);
-    if (d.resolution) console.log(`  resolved: ${d.resolution.outcome} → ${d.resolution.decisionId}`);
+    const res = d.resolution as { outcome: string; decisionId: string } | undefined;
+    if (res) console.log(`  resolved: ${res.outcome} → ${res.decisionId}`);
   }
 
   // composition
@@ -1833,20 +1833,20 @@ export function dkgDecide(opts: {
   // skill이 반환한 노드/엣지를 그래프 + SQLite에 적용
   const dec = result.decision!;
   graph.addNode(dec);
-  const edges = [...result.edges];
+  const edges: Array<{ type: DkgEdgeType; from: string; to: string }> = [...result.edges];
 
   // --spec: 의사결정이 어떤 spec에 근거하는지 traces-to 엣지 연결
   if (opts.spec) {
     const specNode = graph.getNode(opts.spec);
     if (specNode && specNode.kind === "spec") {
       edges.push({ type: "traces-to", from: dec.id, to: opts.spec });
-      graph.addEdge("traces-to" as any, dec.id, opts.spec);
+      graph.addEdge("traces-to", dec.id, opts.spec);
     } else {
       console.warn(`  ⚠ spec '${opts.spec}' 없음 — traces-to 연결 건너뜀`);
     }
   }
 
-  for (const edge of edges) graph.addEdge(edge.type as any, edge.from, edge.to);
+  for (const edge of edges) graph.addEdge(edge.type as DkgEdgeType, edge.from, edge.to);
   store.saveNodes([dec], edges, "manual");
   store.setMeta("last_decision", dec.id);
 
@@ -2156,7 +2156,7 @@ export function dkgClaims(): void {
     const target = row.key.replace("claim:", "");
     const claim = JSON.parse(row.value) as ClaimData;
     const node = graph.getNode(target);
-    const name = node ? ((node as any).name ?? target) : target;
+    const name = node && "name" in node ? (node as { name: string }).name : target;
     console.log(`  ${target.padEnd(20)} by ${claim.by} (${claim.at})`);
     console.log(`    [${node?.kind ?? "?"}] ${name}`);
     if (claim.reason) console.log(`    사유: ${claim.reason}`);
@@ -2289,9 +2289,8 @@ export function dkgRun(skillId: string, args: string[]): void {
       const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap: buildEntriesMap() });
       console.log(`  actions: ${result.actions.length}`);
       for (const action of result.actions) {
-        const a = action as any;
-        const target = a.targets?.join("↔") ?? a.axis ?? a.prefix ?? a.source ?? "?";
-        console.log(`    [${a.kind}] ${target}`);
+        const target = convergeActionTarget(action);
+        console.log(`    [${action.kind}] ${target}`);
       }
       console.log(`\n  merges: ${result.summary.merges}, deactivations: ${result.summary.deactivations}, simplifications: ${result.summary.simplifications}, observations: ${result.summary.observations}`);
       if (result.observations.length > 0) {
@@ -2408,17 +2407,14 @@ export function dkgMetrics(): void {
 
   // usage data 로드 (있으면)
   const recent = store.loadRecentVersionUsages(1);
-  const usage = recent.length > 0 && recent[0].versionUsages.length > 0
-    ? (() => {
-        // minimal UsageData 구성
-        return {
-          entryUsages: [] as any[],
-          addressUsages: [] as any[],
-          coOccurrences: [] as any[],
-          versionUsages: recent[0].versionUsages,
-          collectionPeriod: { from: recent[0].collectedAt, to: recent[0].collectedAt },
-        } as any;
-      })()
+  const usage: UsageData | null = recent.length > 0 && recent[0].versionUsages.length > 0
+    ? {
+        entryUsages: [] as EntryUsage[],
+        addressUsages: [] as AddressUsage[],
+        coOccurrences: [] as CoOccurrence[],
+        versionUsages: recent[0].versionUsages,
+        collectionPeriod: { from: recent[0].collectedAt, to: recent[0].collectedAt },
+      }
     : null;
 
   const metrics = collectMetrics(DEMO_CATALOG, graph, usage, { schemaHealthAuditor: auditSchemaHealth });
@@ -2473,23 +2469,23 @@ export function dkgMetrics(): void {
 export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): void {
   const graph = getGraph();
   const store = getStore();
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
 
   console.log(`\n══ Convergence Pipeline ══`);
 
   // 1. Usage data 로드
   const recent = store.loadRecentVersionUsages(5);
-  const usage = recent.length > 0 && recent[0].versionUsages.length > 0
+  const usage: UsageData | null = recent.length > 0 && recent[0].versionUsages.length > 0
     ? {
-        entryUsages: [] as any[],
-        addressUsages: [] as any[],
-        coOccurrences: [] as any[],
+        entryUsages: [] as EntryUsage[],
+        addressUsages: [] as AddressUsage[],
+        coOccurrences: [] as CoOccurrence[],
         versionUsages: recent.flatMap(s => s.versionUsages),
         collectionPeriod: {
           from: recent[recent.length - 1]?.collectedAt ?? new Date().toISOString(),
           to: recent[0]?.collectedAt ?? new Date().toISOString(),
         },
-      } as any
+      }
     : null;
 
   console.log(`  usage snapshots: ${recent.length}개 로드${usage ? ` (${usage.versionUsages.length} version usages)` : " (없음)"}`);
@@ -2527,9 +2523,8 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`    merges=${convergeResult.summary.merges}, deactivations=${convergeResult.summary.deactivations}, simplifications=${convergeResult.summary.simplifications}, observations=${convergeResult.summary.observations}`);
   if (opts.verbose) {
     for (const action of convergeResult.actions) {
-      const a = action as any;
-      const target = a.targets?.join("↔") ?? a.axis ?? a.prefix ?? a.source ?? "?";
-      console.log(`      [${a.kind}] ${target}`);
+      const target = convergeActionTarget(action);
+      console.log(`      [${action.kind}] ${target}`);
     }
   }
 
@@ -2538,9 +2533,8 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`\n  system health:`);
   console.log(`    steps: ${healthResult.steps.length}건`);
   for (const step of healthResult.steps) {
-    const s = step as any;
-    const icon = s.status === "ok" ? "✅" : s.status === "warning" ? "⚠" : "🔴";
-    console.log(`    ${icon} ${s.step}: ${s.message}`);
+    const icon = step.status === "ok" ? "✅" : step.status === "warning" ? "⚠" : "🔴";
+    console.log(`    ${icon} ${step.step}: ${step.message}`);
   }
 
   // 6. Persist (--persist)
@@ -2568,7 +2562,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
     // metric observation → 자동 prompts 연결 (Decision이 이미 존재하면 연결)
     let promptsLinked = 0;
-    for (const obs of autoObs as any[]) {
+    for (const obs of autoObs) {
       if (!obs.id?.startsWith("OBS-METRIC-")) continue;
       // 이미 prompts 엣지가 있으면 skip
       const existing = graph.neighbors(obs.id, "prompts");
@@ -2589,17 +2583,14 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
     }
 
     // Converge chain 결과 저장
-    const allNodes = [
+    const allNodes: DkgNode[] = [
       ...convergeResult.observations,
       ...convergeResult.decisions,
-    ] as any[];
+    ];
     if (allNodes.length > 0) {
-      const edges = allNodes.flatMap((n: any) => {
-        if (n.kind === "observation" && n.subjects) {
-          return n.subjects.map((s: string) => ({ type: "observes" as const, from: n.id, to: s }));
-        }
-        if (n.kind === "decision" && n.targets) {
-          return n.targets.map((t: string) => ({ type: "justifies" as const, from: n.id, to: t }));
+      const edges = allNodes.flatMap(n => {
+        if (n.kind === "observation") {
+          return n.subjects.map((s) => ({ type: "observes" as const, from: n.id, to: s }));
         }
         return [];
       });
@@ -2610,7 +2601,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
     // Auto-resolved observations 영속화
     if (autoResolved.length > 0) {
       for (const obs of autoResolved) {
-        store.updateNode(obs as any);
+        store.updateNode(obs);
       }
       console.log(`    auto-resolved ${autoResolved.length}건 영속화`);
     }
@@ -2624,12 +2615,12 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   console.log(`\n  총 ${metrics.length} metrics, ${total} observations/decisions 생성, ${autoResolved.length} auto-resolved${opts.persist ? " (저장됨)" : " (--persist로 저장)"}`);
 
   // 미해결 observation 안내
-  const unresolvedObs = existingObs.filter((o: any) => !o.resolution);
+  const unresolvedObs = existingObs.filter(o => !o.resolution);
   if (unresolvedObs.length > 0) {
     console.log(`\n  ── 미해결 observation (${unresolvedObs.length}건) ──`);
     const top = unresolvedObs.slice(0, 3);
     for (const obs of top) {
-      console.log(`    ${obs.id}: ${(obs as any).finding?.slice(0, 70) ?? "?"}`);
+      console.log(`    ${obs.id}: ${obs.finding?.slice(0, 70) ?? "?"}`);
     }
     if (unresolvedObs.length > 3) {
       console.log(`    ... 외 ${unresolvedObs.length - 3}건`);
@@ -2677,7 +2668,7 @@ export function dkgPatternStats(): void {
 // ── dkg publish ─────────────────────────────────────
 
 export async function dkgPublish(opts: { registry?: string; versionId?: string }): Promise<void> {
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
   const registryUrl = opts.registry ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
   const versionId = opts.versionId ?? "v1";
 
@@ -2813,7 +2804,7 @@ export function dkgSpecAdd(opts: {
     rationale: opts.rationale,
   };
 
-  const edges: Array<{ type: string; from: string; to: string }> = [];
+  const edges: Array<{ type: DkgEdgeType; from: string; to: string }> = [];
   if (opts.governs) {
     for (const target of opts.governs) {
       if (graph.getNode(target)) {
@@ -2823,7 +2814,7 @@ export function dkgSpecAdd(opts: {
   }
 
   graph.addNode(spec);
-  for (const e of edges) graph.addEdge(e.type as any, e.from, e.to);
+  for (const e of edges) graph.addEdge(e.type, e.from, e.to);
   store.saveNodes([spec], edges, "manual");
 
   // spec_event 기록
@@ -2868,20 +2859,21 @@ export function dkgSpecTransition(specId: string, toLifecycle: string): void {
   const graph = getGraph();
   const store = getStore();
 
-  const spec = graph.getNode(specId) as any;
-  if (!spec || spec.kind !== "spec") {
+  const specNode = graph.getNode(specId);
+  if (!specNode || specNode.kind !== "spec") {
     console.error(`  spec을 찾을 수 없음: ${specId}`);
     return;
   }
+  const spec = specNode as SpecNode;
 
-  const validLifecycles = ["draft", "active", "deprecated"];
-  if (!validLifecycles.includes(toLifecycle)) {
+  const validLifecycles = ["draft", "active", "deprecated"] as const;
+  if (!validLifecycles.includes(toLifecycle as typeof validLifecycles[number])) {
     console.error(`  유효하지 않은 lifecycle: ${toLifecycle} (${validLifecycles.join(", ")})`);
     return;
   }
 
   const fromLifecycle = spec.lifecycle;
-  const updated = { ...spec, lifecycle: toLifecycle };
+  const updated = { ...spec, lifecycle: toLifecycle as SpecNode["lifecycle"] };
   graph.replaceNode(updated);
   store.saveNodes([updated], [], "manual");
 
@@ -2912,7 +2904,7 @@ function emitSpecEvent(specType: string, lifecycleState: string): void {
       coOccurrences: [],
       versionUsages: [{ prefix: "spec_event", version: ver, count: 1, lastSeen: now, sessions: [session] }],
       collectionPeriod: { from: now, to: now },
-    } as any);
+    } satisfies UsageData);
   } catch { /* 기록 실패 시 무시 */ }
 }
 
@@ -2986,7 +2978,7 @@ export function dkgReset(target: string, opts: { catalogId?: string; confirm?: b
 
 export function dkgPromoteScan(): void {
   const graph = getGraph();
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
 
   emitDkgEvent("promote", "system", "scan");
 
@@ -3521,8 +3513,8 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
       console.log(`    resolved: ${obs.id} (${reason})`);
     }
     for (const cand of newObsCandidates) {
-      const obs = { kind: "observation" as const, id: cand.id, date: now.slice(0, 10), source: "metric" as const, intent: "action-needed" as const, subjects: cand.subjects, finding: cand.finding };
-      store.saveNodes([obs as any], [{ type: "observes", from: obs.id, to: cand.subjects[0] ?? "build_event" }], "auto");
+      const obs: ObservationNode = { kind: "observation", id: cand.id, date: now.slice(0, 10), source: "metric", intent: "action-needed", subjects: cand.subjects, finding: cand.finding };
+      store.saveNodes([obs], [{ type: "observes", from: obs.id, to: cand.subjects[0] ?? "build_event" }], "auto");
       console.log(`    created: ${cand.id}`);
     }
   } else if (resolveTargets.length > 0 || newObsCandidates.length > 0) {
@@ -3597,15 +3589,25 @@ function findArg(args: string[], flag: string): string | undefined {
 
 // ── helpers ─────────────────────────────────────────
 
-function buildEntriesMap(catalog?: any): Map<string, readonly string[]> {
+/** ConvergeAction의 대상을 사람이 읽을 수 있는 문자열로 추출 */
+function convergeActionTarget(action: ConvergeAction): string {
+  switch (action.kind) {
+    case "merge": return action.targets.join("↔");
+    case "deactivate": return action.axis;
+    case "simplify": return action.prefix;
+    case "observe": return action.source;
+  }
+}
+
+function buildEntriesMap(catalog?: Catalog): Map<string, readonly string[]> {
   const cat = catalog ?? DEMO_CATALOG;
   const map = new Map<string, readonly string[]>();
-  for (const [id, axis] of Object.entries((cat as any).axes) as [string, any][]) {
+  for (const [id, axis] of Object.entries(cat.axes)) {
     const versions = Object.keys(axis.versions);
     const latestKey = versions[versions.length - 1];
     const latest = axis.versions[latestKey];
-    if (latest && "entries" in latest) {
-      map.set(id, [...(latest as any).entries]);
+    if (latest && latest.entries) {
+      map.set(id, [...latest.entries]);
     }
   }
   return map;
@@ -3644,7 +3646,7 @@ export function dkgAddEntry(opts: {
   console.log(`\n══ Add Entry: ${opts.entry} → ${opts.axisId} (${flags}) ══`);
 
   try {
-    const result = executeEntryAdd(catalog as any, graph, opts.axisId, opts.entry, {
+    const result = executeEntryAdd(catalog, graph, opts.axisId, opts.entry, {
       dryRun,
       expandCapacity: opts.expandCapacity,
       store,
@@ -3744,8 +3746,8 @@ import {
   transitionDagDiagram,
   listAllDiagrams,
 } from "@qa-sdk/spec-core/viz";
-import type { SignalDefLike } from "@qa-sdk/spec-core/viz";
-import { createDemoTopology } from "@qa-sdk/spec-core/dkg";
+import type { SignalDefLike, MermaidDiagramOptions } from "@qa-sdk/spec-core/viz";
+// createDemoTopology already imported from @qa-sdk/spec-core/analysis
 
 export async function dkgDiagram(argv: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -3816,7 +3818,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
     return;
   }
 
-  const opts = { showInvariants: !values["no-invariants"] } as any;
+  const opts: MermaidDiagramOptions = { showInvariants: !values["no-invariants"] };
   let mmd: string;
 
   switch (kind) {
@@ -3836,7 +3838,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
         // List available signals from DEMO_DKG_CONFIG
         try {
           const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
-          const skills = (DEMO_DKG_CONFIG as any).skills ?? [];
+          const skills = (DEMO_DKG_CONFIG as DkgConfig).skills ?? [];
           console.log("Available signal IDs require DEMO_SIGNALS from viz-3d.");
           console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
         } catch { /* ignore */ }
