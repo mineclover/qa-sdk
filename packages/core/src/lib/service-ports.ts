@@ -14,12 +14,21 @@ export interface ServicePortEntry {
 
 /** 서비스별 기본 포트 할당 (SSOT) */
 export const SERVICE_PORTS: readonly ServicePortEntry[] = [
-  { name: "registry-server",  defaultPort: 3100, description: "Prefix/version 메타데이터 (PostgreSQL)" },
-  { name: "ingest-server",    defaultPort: 3200, description: "이벤트 수집 + Phase-2 (PostgreSQL + Redis)" },
-  { name: "registry-service", defaultPort: 3300, description: "카탈로그/주소 스키마 관리 (SQLite)" },
-  { name: "gate-service",     defaultPort: 3400, description: "주소 상태 게이트 (SQLite)" },
-  { name: "query-service",    defaultPort: 3500, description: "정책 규칙 질의 (SQLite)" },
-  { name: "decode-service",   defaultPort: 3600, description: "좌표 디코더 캐시 (Stateless)" },
+  // ── 인프라 서비스 (3xxx) ──
+  { name: "registry-server",    defaultPort: 3100, description: "Prefix/version 메타데이터 (PostgreSQL)" },
+  { name: "ingest-server",      defaultPort: 3200, description: "이벤트 수집 + Phase-2 (PostgreSQL/In-memory)" },
+  { name: "registry-service",   defaultPort: 3300, description: "카탈로그/주소 스키마 관리 (SQLite) + Dev Dashboard" },
+  { name: "gate-service",       defaultPort: 3400, description: "주소 상태 게이트 (SQLite)" },
+  { name: "query-service",      defaultPort: 3500, description: "정책 규칙 질의 (SQLite)" },
+  { name: "decode-service",     defaultPort: 3600, description: "좌표 디코더 캐시 (Stateless)" },
+  // ── 비즈니스 서비스 (4xxx) ── (데모용, 실제 배포 시 변경)
+  { name: "shopping-backend",   defaultPort: 4100, description: "쇼핑 백엔드 API" },
+  { name: "auth",               defaultPort: 4200, description: "인증 서비스" },
+  { name: "payment",            defaultPort: 4300, description: "결제 서비스" },
+  { name: "gateway",            defaultPort: 4400, description: "API 게이트웨이" },
+  // ── 프론트엔드 (5xxx) ──
+  { name: "shopping-web",       defaultPort: 5220, description: "쇼핑 데모 사이트" },
+  { name: "platform-demo",      defaultPort: 5176, description: "3D 모니터 + 다이어그램 뷰어" },
 ] as const;
 
 /**
