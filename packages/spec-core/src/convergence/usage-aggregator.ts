@@ -10,7 +10,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { decodePrefix, parseSerializedAddress } from "@qa-sdk/core";
+import { decodePrefix, parseSerializedAddress, compareTimestamps } from "@qa-sdk/core";
 import type { UsageData, EntryUsage, AddressUsage, CoOccurrence, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
@@ -94,7 +94,7 @@ export function aggregateUsageData(
       const vExisting = versionCountMap.get(vKey);
       if (vExisting) {
         vExisting.count++;
-        if (record.timestamp > vExisting.lastSeen) vExisting.lastSeen = record.timestamp;
+        if (compareTimestamps(record.timestamp, vExisting.lastSeen) > 0) vExisting.lastSeen = record.timestamp;
         if (record.session_id) vExisting.sessions.add(record.session_id);
       } else {
         const sessions = new Set<string>();
@@ -113,7 +113,7 @@ export function aggregateUsageData(
           const ex = entryCountMap.get(entryKey);
           if (ex) {
             ex.count++;
-            if (record.timestamp > ex.lastSeen) ex.lastSeen = record.timestamp;
+            if (compareTimestamps(record.timestamp, ex.lastSeen) > 0) ex.lastSeen = record.timestamp;
           } else {
             entryCountMap.set(entryKey, {
               axisId: label,

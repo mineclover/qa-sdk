@@ -274,6 +274,7 @@ import {
   buildRoleLegend, buildCategoryLegend,
   encode, decode, track as codecTrack, BROWSER_CATALOG, loadCatalog,
   classifyByRole, getPrefixRole, SIGNAL_ROLE_LABELS,
+  FlowTimeline, DemoRunner,
 } from './viz-3d-core.js';
 
 // ═══════════════════════════════════════════════════
@@ -301,42 +302,12 @@ const cellRoleColor=new Map();
 buildRoleLegend(document.getElementById('sl-roles'), VIZ_ROLE_COLORS);
 buildCategoryLegend(document.getElementById('cat-legend'), CATEGORY_COLORS);
 
-const MAX_TIMELINE=10;
-const timelineEntries=[];
-let roleFilter=null;
+// ── FlowTimeline 인스턴스 (viz-3d 모듈) ──
+const FT=new FlowTimeline({maxEntries:10,containerId:'ft-inner',roleColors:ROLE_COLORS});
 
 function getRoleForKey(key){
   const prefix=key.split('/')[0];
   return getPrefixRole(prefix);
-}
-
-function addTimelineEntry(prefixId,valuesStr,role){
-  const now=new Date();
-  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0')+'.'+String(now.getMilliseconds()).padStart(3,'0');
-  timelineEntries.push({prefixId,valuesStr,role,ts});
-  if(timelineEntries.length>MAX_TIMELINE)timelineEntries.shift();
-  renderTimeline();
-}
-
-function renderTimeline(){
-  const container=document.getElementById('ft-inner');if(!container)return;
-  const html=timelineEntries.map(e=>{
-    const col=ROLE_COLORS[e.role]||'#556';
-    const dimmed=roleFilter&&roleFilter!==e.role?'ft-fading':'';
-    return `<div class="ft-entry ${dimmed}"><span class="ft-role-dot" style="background:${col}"></span><div class="ft-body"><div class="ft-prefix" style="color:${col}">${e.prefixId}</div><div class="ft-values">${e.valuesStr}</div><div class="ft-role-tag" style="color:${col}">${e.role}</div></div><div class="ft-time">${e.ts}</div></div>`;
-  }).join('');
-  container.innerHTML=html;
-  const panel=document.getElementById('flow-timeline');
-  if(panel)panel.scrollTop=panel.scrollHeight;
-}
-
-function feedTimeline(ctx){
-  for(const[p,s]of Object.entries(ctx)){
-    const role=getPrefixRole(p);
-    const d=dec(s);
-    const vals=d?Object.entries(d.values).map(([k,v])=>`${k}=${v}`).join(' '):s;
-    addTimelineEntry(p,vals,role);
-  }
 }
 
 function markCellRoles(keys){
@@ -560,9 +531,9 @@ function fireStep(step){
   const{keys}=decodeKeys(ctx);
   for(const t of(step.t||[]))keys.add(t);
   activateKeys(keys,step.flow);
-  feedTimeline(ctx);
+  FT.feed(ctx,dec,getPrefixRole);
   // 추가 table ref 키도 타임라인에 data role로 표시
-  for(const t of(step.t||[])){const role=getRoleForKey(t);addTimelineEntry(t.split('/')[0],t.split('/').slice(1).join('/'),role)}
+  for(const t of(step.t||[])){const role=getRoleForKey(t);FT.add(t.split('/')[0],t.split('/').slice(1).join('/'),role)}
   FH.push({name:step.n,desc:step.d,flow:step.flow||[],keys:[...keys],ctx,timestamp:new Date().toISOString(),source:'demo'});
   updateHUD(step,ctx);showFlow(FH.current());
 }
@@ -670,7 +641,7 @@ const adapter=new MonitorAdapter({
   decode:dec,mapToKeys:defaultKeyMapper,
   onActivation:(keys,ctx)=>{
     activateKeys(new Set(keys),null);
-    if(ctx)feedTimeline(ctx);
+    if(ctx)FT.feed(ctx,dec,getPrefixRole);
     FH.push({name:'live',desc:'',flow:[],keys,ctx,timestamp:new Date().toISOString(),source:'live'});
     updateHUD({n:'live',d:''},ctx);$('status').textContent=`live — ${tot} events (${FH.length} recorded)`;
   },
@@ -698,17 +669,16 @@ document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
 document.querySelectorAll('.sl-role').forEach(el=>{
   el.addEventListener('click',()=>{
     const r=el.dataset.role;
-    if(roleFilter===r){
-      roleFilter=null;
+    if(FT.roleFilter===r){
+      FT.setRoleFilter(null);
       document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
     }else{
-      roleFilter=r;
+      FT.setRoleFilter(r);
       document.querySelectorAll('.sl-role').forEach(x=>{
         if(x.dataset.role===r){x.classList.remove('sl-dimmed');x.classList.add('sl-active')}
         else{x.classList.add('sl-dimmed');x.classList.remove('sl-active')}
       });
     }
-    renderTimeline();
   });
 });
 
@@ -716,23 +686,22 @@ document.querySelectorAll('.sl-role').forEach(el=>{
 $('btn-prev').addEventListener('click',()=>replayEntry(FH.prev()));
 $('btn-next').addEventListener('click',()=>replayEntry(FH.next()));
 
-// Live/Demo/Reset
-let dOn=false,dT=null,dI=0;
+// Live/Demo/Reset — DemoRunner 인스턴스 (viz-3d 모듈)
+const DR=new DemoRunner({totalSteps:STEPS.length,intervalMs:2200,onStep(i){fireStep(STEPS[i]);$('status').textContent=`demo ${i+1}/${STEPS.length}`}});
 $('btn-live').addEventListener('click',()=>{
   if(adapter.connected){adapter.disconnect();$('btn-live').classList.remove('on')}
   else{adapter.connect($('ws-url').value);$('btn-live').classList.add('on')}
 });
 $('btn-demo').addEventListener('click',()=>{
-  dOn=!dOn;$('btn-demo').classList.toggle('on',dOn);
-  if(dOn){dI=0;tId='trc_'+Date.now();sSeq=0;rD()}else clearTimeout(dT);
+  if(DR.isRunning){DR.stop();$('btn-demo').classList.remove('on')}
+  else{tId='trc_'+Date.now();sSeq=0;DR.start();$('btn-demo').classList.add('on')}
 });
-function rD(){if(!dOn)return;if(dI>=STEPS.length)dI=0;fireStep(STEPS[dI]);$('status').textContent=`demo ${dI+1}/${STEPS.length}`;dI++;dT=setTimeout(rD,2200)}
 $('btn-info').addEventListener('click',toggleInfo);
 $('btn-reset').addEventListener('click',()=>{
-  dOn=false;clearTimeout(dT);$('btn-demo').classList.remove('on');
+  DR.reset();$('btn-demo').classList.remove('on');
   tot=0;lH.fill(0);aSet.clear();CS.reset();FH.clear();clearPinnedBeams();
-  cellRoleColor.clear();timelineEntries.length=0;renderTimeline();
-  roleFilter=null;document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
+  cellRoleColor.clear();FT.clear();
+  FT.setRoleFilter(null);document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
   updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
 });
@@ -780,7 +749,7 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
         // 활성 셀: signal role 색상 사용 (role filter 적용)
         const roleHex=cellRoleColor.get(key);
         const role=getRoleForKey(key);
-        const dimByFilter=roleFilter&&roleFilter!==role;
+        const dimByFilter=FT.roleFilter&&FT.roleFilter!==role;
         if(roleHex&&!dimByFilter){
           glowC.setHex(roleHex);
         }else{

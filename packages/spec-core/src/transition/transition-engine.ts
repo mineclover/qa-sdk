@@ -7,6 +7,7 @@
  * 이벤트는 timestamp 순으로 처리되며, 같은 입력 → 같은 출력 (deterministic).
  */
 
+import { compareTimestamps } from "@qa-sdk/core";
 import type {
   TransitionSpec,
   TransitionInstance,
@@ -54,6 +55,16 @@ export interface TransitionEvent {
   readonly [key: string]: unknown;
 }
 
+// ── 내부 타입 ─────────────────────────────────────────────
+
+interface MatchedCandidate {
+  spec: TransitionSpec;
+  matched: TransitionEvent[];
+  context_id: string;
+  resource_id: string;
+  matched_at: string;
+}
+
 // ── Engine ────────────────────────────────────────────────
 
 export class TransitionEngine {
@@ -78,35 +89,49 @@ export class TransitionEngine {
    */
   process(events: readonly TransitionEvent[]): TransitionResult {
     // Step 1: collect — timestamp 정렬
-    const sorted = [...events].sort((a, b) =>
-      a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0,
-    );
-
-    const instances: TransitionInstance[] = [];
-    const violations: InputViolation[] = [];
-    const matchedEventIds = new Set<string>();
+    const sorted = [...events].sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
 
     const specs = this.registry.list();
+    const matchedEventIds = new Set<string>();
+
+    // ── Pass 1: match + bind (상태 무관) ──────────────────
+    // 모든 spec에 대해 좌표 매칭과 bind를 수행. 상태는 아직 확인하지 않는다.
+    const candidates: MatchedCandidate[] = [];
 
     for (const spec of specs) {
-      // Step 2: match — 좌표 패턴 매칭
       const matched = this.matchEvents(spec.match, sorted);
-      if (!matched) { console.log(`[engine] ${spec.transition}: match FAILED`); continue; }
+      if (!matched) continue;
 
-      console.log(`[engine] ${spec.transition}: match OK (${matched.map(e => e.log_id).join(",")})`);
       const matchedEvents = matched.map((e) => e as Record<string, unknown>);
+      const bindResult = extractBind(spec.bind, matchedEvents);
+      if (!bindResult.ok) continue;
+
+      candidates.push({
+        spec,
+        matched,
+        context_id: bindResult.result.context_id,
+        resource_id: bindResult.result.resource_id,
+        matched_at: matched[matched.length - 1].timestamp,
+      });
+    }
+
+    // ── matched_at 기준 시간순 정렬 ──────────────────────
+    // 시간적으로 먼저 완료된 전이가 먼저 상태를 적용한다.
+    candidates.sort((a, b) => compareTimestamps(a.matched_at, b.matched_at));
+
+    // ── Pass 2: load → validate → apply → emit ──────────
+    const instances: TransitionInstance[] = [];
+    const violations: InputViolation[] = [];
+
+    for (const candidate of candidates) {
+      const { spec, matched, context_id, resource_id } = candidate;
+
       matched.forEach((e) => matchedEventIds.add(e.log_id));
 
-      // Step 3: bind — identity 추출
-      const bindResult = extractBind(spec.bind, matchedEvents);
-      if (!bindResult.ok) { console.log(`[engine] ${spec.transition}: bind FAILED`, JSON.stringify((bindResult as any).errors)); continue; }
-
-      const { context_id, resource_id } = bindResult.result;
-
-      // Step 4: load state — 현재 축 스냅샷
+      // Step 4: load state
       const currentSnapshot = this.store.snapshot(context_id, resource_id);
 
-      // Step 5: validate input — 조건 검증
+      // Step 5: validate input
       const inputResult = validateInput(spec.input, currentSnapshot, {
         transition: spec.transition,
         context_id,
@@ -120,10 +145,10 @@ export class TransitionEngine {
 
       const inputSnapshot = { ...currentSnapshot };
 
-      // Step 6: apply output — 상태 변경
+      // Step 6: apply output
       const outputSnapshot = applyOutput(spec.output, this.store, context_id, resource_id);
 
-      // Step 7: emit — TransitionInstance 생성
+      // Step 7: emit
       instances.push({
         transition_name: spec.transition,
         spec_version: spec.version,
@@ -133,7 +158,7 @@ export class TransitionEngine {
         input_snapshot: inputSnapshot,
         output_snapshot: outputSnapshot,
         effect_kind: spec.effect.kind,
-        matched_at: matched[matched.length - 1].timestamp,
+        matched_at: candidate.matched_at,
       });
     }
 

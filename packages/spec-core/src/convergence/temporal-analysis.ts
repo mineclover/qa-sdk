@@ -9,7 +9,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { Catalog } from "@qa-sdk/core";
+import { type Catalog, compareTimestamps } from "@qa-sdk/core";
 import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
 import type { EntryUsage } from "./convergence.types.js";
 
@@ -99,7 +99,7 @@ export function analyzeTemporalTrends(
   const slaRules = options?.slaRules ?? [];
 
   // 시간순 정렬
-  const sorted = [...records].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  const sorted = [...records].sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
   if (sorted.length === 0) {
     return { windows: [], trends: [], anomalies: [], slaViolations: [], summary: "레코드 없음" };
   }

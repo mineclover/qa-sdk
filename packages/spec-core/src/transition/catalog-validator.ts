@@ -30,6 +30,8 @@ function allEntriesForAxis(catalog: Catalog, axisId: string): Set<string> | null
  * TransitionSpec을 catalog에 대해 검증한다.
  *
  * 검증 항목:
+ * - match.coordinates[].dimension이 catalog.axes에 존재하는지
+ * - match.coordinates[].value가 해당 축의 entries에 있는지
  * - input.all[].axis가 catalog.axes에 존재하는지
  * - input.all[].eq/neq 값이 해당 축의 entries에 있는지
  * - input.all[].in 배열의 각 값이 해당 축의 entries에 있는지
@@ -41,6 +43,27 @@ export function validateWithCatalog(
   catalog: Catalog,
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
+
+  // match.coordinates 검증
+  for (let i = 0; i < spec.match.coordinates.length; i++) {
+    const coord = spec.match.coordinates[i];
+    for (const [dim, value] of Object.entries(coord)) {
+      const entries = allEntriesForAxis(catalog, dim);
+      if (entries === null) {
+        issues.push({
+          path: `match.coordinates[${i}].${dim}`,
+          message: `axis "${dim}" not found in catalog "${catalog.id}"`,
+        });
+        continue;
+      }
+      if (!entries.has(value)) {
+        issues.push({
+          path: `match.coordinates[${i}].${dim}`,
+          message: `entry "${value}" not found in axis "${dim}"`,
+        });
+      }
+    }
+  }
 
   // input 조건 검증
   for (let i = 0; i < spec.input.all.length; i++) {

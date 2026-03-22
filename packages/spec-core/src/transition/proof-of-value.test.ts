@@ -161,44 +161,42 @@ function evt(
 function normalFlow(): TransitionEvent[] {
   return [
     // 1. 로그인
-    evt("e01", "2026-03-22T10:00:00Z", { trackAction: "submit", page: "login", userType: "guest" }),
+    evt("e01", "2026-03-22T10:00:00.000Z", { trackAction: "submit", page: "login", userType: "guest" }),
     evt("e02", "2026-03-22T10:00:00.100Z", { auth_action: "login" }, { actor_id: ACTOR }),
     evt("e03", "2026-03-22T10:00:00.200Z", { flow_name: "login", flow_step: "entry", flow_variant: "default" }),
     // 2. 상품 탐색 + 장바구니 (transition spec 없음 → unmatched)
-    evt("e04", "2026-03-22T10:00:30Z", { trackAction: "view", page: "product_detail", userType: "member" }),
-    evt("e05", "2026-03-22T10:00:45Z", { trackAction: "add_to_cart", page: "product_detail", userType: "member" }),
+    evt("e04", "2026-03-22T10:00:30.000Z", { trackAction: "view", page: "product_detail", userType: "member" }),
+    evt("e05", "2026-03-22T10:00:45.000Z", { trackAction: "add_to_cart", page: "product_detail", userType: "member" }),
     // 3. 체크아웃 진입
-    evt("e06", "2026-03-22T10:01:00Z", { trackAction: "navigate", page: "checkout", userType: "member" }),
+    evt("e06", "2026-03-22T10:01:00.000Z", { trackAction: "navigate", page: "checkout", userType: "member" }),
     evt("e07", "2026-03-22T10:01:00.100Z", { flow_name: "checkout", flow_step: "entry", flow_variant: "default" }),
     // 4. 주문 생성
-    evt("e08", "2026-03-22T10:01:05Z", { flow_name: "checkout", flow_step: "processing", flow_variant: "default" }),
+    evt("e08", "2026-03-22T10:01:05.000Z", { flow_name: "checkout", flow_step: "processing", flow_variant: "default" }),
     evt("e09", "2026-03-22T10:01:05.500Z", { order_action: "create" }, { order_id: ORDER }),
     // 5. 결제 처리 → 완료
-    evt("e10", "2026-03-22T10:01:06Z", { flow_name: "payment", flow_step: "payment", flow_variant: "default" }),
+    evt("e10", "2026-03-22T10:01:06.000Z", { flow_name: "payment", flow_step: "payment", flow_variant: "default" }),
     evt("e11", "2026-03-22T10:01:07.500Z", { order_action: "complete" }, { order_id: ORDER }),
     evt("e12", "2026-03-22T10:01:07.600Z", { flow_name: "checkout", flow_step: "success", flow_variant: "default" }),
     // 6. 주문 완료 페이지 (transition spec 없음)
-    evt("e13", "2026-03-22T10:01:10Z", { trackAction: "view", page: "order_complete", userType: "member" }),
+    evt("e13", "2026-03-22T10:01:10.000Z", { trackAction: "view", page: "order_complete", userType: "member" }),
   ];
 }
 
-/** 시나리오 B: 비정상 흐름 — payment.success가 order.create보다 먼저 */
+/** 시나리오 B: 비정상 흐름 — 주문 생성 없이 결제 완료 이벤트 도착 */
 function anomalousFlow(): TransitionEvent[] {
   return [
     // 로그인 (정상)
-    evt("b01", "2026-03-22T10:00:00Z", { trackAction: "submit", page: "login", userType: "guest" }),
+    evt("b01", "2026-03-22T10:00:00.000Z", { trackAction: "submit", page: "login", userType: "guest" }),
     evt("b02", "2026-03-22T10:00:00.100Z", { auth_action: "login" }, { actor_id: ACTOR }),
     evt("b03", "2026-03-22T10:00:00.200Z", { flow_name: "login", flow_step: "entry", flow_variant: "default" }),
     // 체크아웃 진입 (정상)
-    evt("b04", "2026-03-22T10:01:00Z", { trackAction: "navigate", page: "checkout", userType: "member" }),
+    evt("b04", "2026-03-22T10:01:00.000Z", { trackAction: "navigate", page: "checkout", userType: "member" }),
     evt("b05", "2026-03-22T10:01:00.100Z", { flow_name: "checkout", flow_step: "entry", flow_variant: "default" }),
-    // ⚠ 비정상: 결제 완료가 먼저 도착 (order.create 없이)
-    evt("b06", "2026-03-22T10:01:05Z", { flow_name: "payment", flow_step: "payment", flow_variant: "default" }),
-    evt("b07", "2026-03-22T10:01:06Z", { order_action: "complete" }, { order_id: ORDER }),
+    // ⚠ 비정상: order.create 없이 바로 결제 완료
+    // order_event(create)가 누락 → payment.complete의 input 조건(lifecycle_state=active) 불충족
+    evt("b06", "2026-03-22T10:01:05.000Z", { flow_name: "payment", flow_step: "payment", flow_variant: "default" }),
+    evt("b07", "2026-03-22T10:01:06.000Z", { order_action: "complete" }, { order_id: ORDER }),
     evt("b08", "2026-03-22T10:01:06.100Z", { flow_name: "checkout", flow_step: "success", flow_variant: "default" }),
-    // order.create가 뒤늦게 도착
-    evt("b09", "2026-03-22T10:01:07Z", { flow_name: "checkout", flow_step: "processing", flow_variant: "default" }),
-    evt("b10", "2026-03-22T10:01:07.500Z", { order_action: "create" }, { order_id: ORDER }),
   ];
 }
 
@@ -321,13 +319,15 @@ describe("실증: shop-web checkout 흐름", () => {
       expect(succeeded).toContain("user.login");
       expect(succeeded).toContain("checkout.entry");
 
-      // payment.complete는 input violation — 주문(TRACE, ORDER)에 아직 상태가 없음.
-      // order.create가 뒤늦게 도착했으므로, payment 시점에 lifecycle_state가 없다.
+      // order.create 이벤트 자체가 없으므로 order.create 전이도 없음
+      expect(succeeded).not.toContain("order.create");
+
+      // payment.complete는 input violation — 주문이 생성되지 않아 상태가 없음.
       expect(result.violations.length).toBeGreaterThan(0);
 
       const paymentViolation = result.violations.find(v => v.transition === "payment.complete");
       expect(paymentViolation).toBeDefined();
-      // lifecycle_state가 "active"여야 하는데 null (주문이 아직 안 만들어짐)
+      // lifecycle_state가 "active"여야 하는데 null (주문이 만들어지지 않음)
       expect(paymentViolation!.axis).toBe("lifecycle_state");
     });
 
@@ -346,13 +346,14 @@ describe("실증: shop-web checkout 흐름", () => {
       expect(normalResult.violations).toHaveLength(0);
 
       // 비정상 흐름: 전이 수 감소 + violation 발생
+      // login + checkout.entry만 성공 (order.create 이벤트 없음)
       expect(anomalyResult.instances.length).toBeLessThan(normalResult.instances.length);
       expect(anomalyResult.violations.length).toBeGreaterThan(0);
 
-      // 이것이 핵심: 같은 이벤트들이 존재하지만,
-      // 순서가 잘못되어 상태 전제조건이 충족되지 않음.
-      // Verdict는 이벤트 존재 여부만 보지만,
-      // Transition은 상태 선행조건을 검증한다.
+      // 이것이 핵심:
+      // Verdict는 "payment 이벤트가 존재하는가"만 본다 → 존재하므로 pass 가능.
+      // Transition은 "주문이 생성된 상태에서 결제가 일어났는가"를 본다
+      // → 주문 생성 전이가 없으므로 violation.
     });
   });
 

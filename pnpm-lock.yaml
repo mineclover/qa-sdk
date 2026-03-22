@@ -682,6 +682,9 @@ importers:
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      demo-types:
+        specifier: workspace:*
+        version: link:../demo-types
       typescript:
         specifier: ^5.8.2
         version: 5.9.3

@@ -84,6 +84,13 @@ export { encode, decode, track, decodeContext, trackWithSignal } from "./adapter
 export type { BrowserCatalog, BrowserPrefixDef, BrowserDimDef, EncodeResult } from "./adapter/browser-codec.js";
 export { BROWSER_CATALOG } from "./adapter/demo-catalog-browser.js";
 
+// Flow Timeline
+export { FlowTimeline } from "./adapter/flow-timeline.js";
+export type { TimelineEntry } from "./adapter/flow-timeline.js";
+
+// Demo Runner
+export { DemoRunner } from "./adapter/demo-runner.js";
+
 // Catalog Loader (API → Cache → Static)
 export { loadCatalog } from "./adapter/catalog-loader.js";
 export type { CatalogLoaderConfig, LoadResult } from "./adapter/catalog-loader.js";

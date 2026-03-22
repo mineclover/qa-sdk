@@ -178,7 +178,7 @@ export {
   newDlqId,
 } from "./lib/id.js";
 
-export { now } from "./lib/clock.js";
+export { now, normalizeTimestamp, compareTimestamps } from "./lib/clock.js";
 
 export {
   parseSerializedAddress,

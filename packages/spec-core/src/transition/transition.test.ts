@@ -546,4 +546,43 @@ describe("validateWithCatalog", () => {
     const result = validateWithCatalog(spec, DEMO_CATALOG);
     expect(result.valid).toBe(true);
   });
+
+  // match.coordinates 검증
+  it("match.coordinates의 존재하지 않는 축 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      match: {
+        mode: "single",
+        coordinates: [{ nonexistent_dim: "value" }],
+      },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0].path).toContain("match.coordinates[0]");
+  });
+
+  it("match.coordinates의 잘못된 entry 값 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      match: {
+        mode: "single",
+        coordinates: [{ flow_step: "invalid_step_value" }],
+      },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0].message).toContain("not found in axis");
+  });
+
+  it("match.coordinates의 유효한 축+entry → 통과", () => {
+    const spec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      match: {
+        mode: "single",
+        coordinates: [{ flow_step: "entry", flow_name: "checkout" }],
+      },
+    };
+    const result = validateWithCatalog(spec, DEMO_CATALOG);
+    expect(result.valid).toBe(true);
+  });
 });

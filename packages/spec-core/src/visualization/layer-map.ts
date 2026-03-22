@@ -10,7 +10,7 @@
  * "유저 클릭 → API 호출 → DB 저장" 흐름이 된다.
  */
 
-import type { Catalog, PrefixDef } from "@qa-sdk/core";
+import { type Catalog, type PrefixDef, compareTimestamps } from "@qa-sdk/core";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -196,7 +196,7 @@ export function extractTracePaths(
 
   const paths: TracePath[] = [];
   for (const [traceId, steps] of traceGroups) {
-    const sorted = steps.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    const sorted = steps.sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
     const layerPath = sorted.map(s => s.layer);
     const t0 = new Date(sorted[0].timestamp).getTime();
     const t1 = new Date(sorted[sorted.length - 1].timestamp).getTime();
@@ -240,7 +240,7 @@ export function computeActivity(
       const existing = countMap.get(prefixId);
       if (existing) {
         existing.count++;
-        if (r.timestamp > existing.lastSeen) existing.lastSeen = r.timestamp;
+        if (compareTimestamps(r.timestamp, existing.lastSeen) > 0) existing.lastSeen = r.timestamp;
       } else {
         countMap.set(prefixId, { count: 1, lastSeen: r.timestamp });
       }
