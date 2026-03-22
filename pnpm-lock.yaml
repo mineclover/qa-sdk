@@ -229,6 +229,19 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
 
+  packages/demo-types:
+    dependencies:
+      '@qa-sdk/codec':
+        specifier: workspace:*
+        version: link:../codec
+      '@qa-sdk/context':
+        specifier: workspace:*
+        version: link:../context
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/e2e:
     devDependencies:
       '@playwright/test':
