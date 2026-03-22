@@ -416,9 +416,22 @@ function renderMypage(){
 const svcConfig = monitor.getSession ? monitor.getSession() : {};
 document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (session: ${svcConfig.sessionId ?? 'n/a'})`;
 
-// Monitor link에 ingest URL 전달
-const monitorUrl = location.origin.replace(location.port, '3335');
-document.getElementById('monitor-btn').href = `${monitorUrl}/monitor.html`;
+// Monitor link — registry에서 URL resolve, fallback config.js
+(async () => {
+  const regUrl = _cfg.REGISTRY_URL || 'http://localhost:3300';
+  try {
+    const res = await fetch(`${regUrl}/api/services/urls`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const urls = await res.json();
+      if (urls.monitor) {
+        document.getElementById('monitor-btn').href = `${urls.monitor}/monitor.html`;
+        return;
+      }
+    }
+  } catch { /* registry 실패 시 config.js fallback */ }
+  const monitorUrl = _cfg.MONITOR_URL || location.origin.replace(location.port, '5176');
+  document.getElementById('monitor-btn').href = `${monitorUrl}/monitor.html`;
+})();
 </script>
 </body>
 </html>

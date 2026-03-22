@@ -13,6 +13,7 @@ export interface ServiceRecord {
   readonly name: string;
   readonly tier?: "frontend" | "backend" | "infra" | "system";
   readonly team?: string;
+  readonly url?: string;
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes?: readonly string[];
 }
@@ -52,6 +53,19 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
       }
     }
     return c.json(owners);
+  });
+
+  // GET /api/services/urls — 서비스별 URL 맵 (config.js 등에서 소비)
+  routes.get("/api/services/urls", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const record = await configStore.get(catalogId, CONFIG_TYPE);
+    if (!record) return c.json({});
+    const services = parseServices(record.data) ?? [];
+    const urls: Record<string, string> = {};
+    for (const svc of services) {
+      if (svc.url) urls[svc.serviceId] = svc.url;
+    }
+    return c.json(urls);
   });
 
   // GET /api/services/:id — 단건 조회

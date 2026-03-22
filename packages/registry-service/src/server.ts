@@ -263,13 +263,16 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
 
   // 서비스 목록 seed
   const demoServices = [
-    { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
+    { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", url: "http://localhost:5220", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
     { serviceId: "shopping-backend", name: "쇼핑 백엔드", tier: "backend", team: "backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
     { serviceId: "auth", name: "인증 서비스", tier: "backend", team: "platform", ownedPrefixes: ["rbac"] },
     { serviceId: "payment", name: "결제 서비스", tier: "backend", team: "backend", ownedPrefixes: [] },
     { serviceId: "gateway", name: "API 게이트웨이", tier: "backend", team: "platform", ownedPrefixes: ["flow_point"] },
     { serviceId: "content-service", name: "콘텐츠 서비스", tier: "frontend", team: "frontend", ownedPrefixes: ["content", "relational"] },
-    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+    { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200", ownedPrefixes: [] },
+    { serviceId: "monitor", name: "3D 모니터", tier: "frontend", team: "frontend", url: "http://localhost:5176", ownedPrefixes: [] },
+    { serviceId: "dashboard", name: "Dev Dashboard", tier: "infra", team: "platform", url: "http://localhost:3300/dev/", ownedPrefixes: [] },
   ];
   await configStore.set("demo", "services", JSON.stringify(demoServices));
   logger.info({ count: demoServices.length }, "seeded demo services to config store");
