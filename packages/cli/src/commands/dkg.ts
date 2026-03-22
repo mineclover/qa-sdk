@@ -4033,7 +4033,7 @@ export function dkgDiscoverLinks(): void {
   }
 
   // 5. 기존 IntentLink와 비교
-  const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
+  const intentLinks = graph.getNodesByKind("intent-link");
   if (intentLinks.length > 0) {
     console.log(`\n  ── 기존 IntentLink (${intentLinks.length}개) ──`);
     for (const link of intentLinks) {
