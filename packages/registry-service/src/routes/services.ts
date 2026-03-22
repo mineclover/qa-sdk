@@ -7,6 +7,7 @@
 
 import { Hono } from "hono";
 import type { ConfigStore } from "../stores/config-store.js";
+import type { ServiceEndpointStore } from "../stores/service-endpoint-store.js";
 
 export interface ServiceRecord {
   readonly serviceId: string;
@@ -25,6 +26,7 @@ export interface ServiceRecord {
 
 export interface ServiceRouteDeps {
   configStore: ConfigStore;
+  endpointStore?: ServiceEndpointStore;
 }
 
 const CONFIG_TYPE = "services";
@@ -35,7 +37,7 @@ function parseServices(data: string): ServiceRecord[] | null {
 
 export function createServiceRoutes(deps: ServiceRouteDeps) {
   const routes = new Hono();
-  const { configStore } = deps;
+  const { configStore, endpointStore } = deps;
 
   // GET /api/services — 전체 서비스 목록
   routes.get("/api/services", async (c) => {
@@ -61,27 +63,61 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
   });
 
   // GET /api/services/urls — 서비스별 URL 맵 (config.js 등에서 소비)
-  // ?env=dev|staging|prod → 환경별 URL 반환 (미지정 시 기본 url 필드)
+  // ?env=dev|staging|prod → 환경별 URL 반환
+  // 우선순위: endpoint 테이블 → ServiceRecord.urls[env] → ServiceRecord.url
   routes.get("/api/services/urls", async (c) => {
     const catalogId = c.req.query("catalog") ?? "demo";
-    const envName = c.req.query("env");
-    const record = await configStore.get(catalogId, CONFIG_TYPE);
-    if (!record) return c.json({});
-    const services = parseServices(record.data) ?? [];
+    const envName = c.req.query("env") ?? "dev";
+    const namespace = c.req.query("namespace") ?? "shop";
+    const region = c.req.query("region") ?? "asia";
+
     const urls: Record<string, string> = {};
-    for (const svc of services) {
-      const envUrl = envName && svc.urls ? svc.urls[envName] : undefined;
-      const url = envUrl ?? svc.url;
-      if (url) urls[svc.serviceId] = url;
+
+    // 1) endpoint 테이블에서 해당 env의 URL 조회 (우선)
+    if (endpointStore) {
+      const endpoints = await endpointStore.list(catalogId);
+      for (const ep of endpoints) {
+        if (ep.env === envName && ep.region === region && ep.namespace === namespace) {
+          urls[ep.svcName] = ep.url;
+        }
+      }
     }
+
+    // 2) ServiceRecord에서 보충 (endpoint에 없는 서비스)
+    const record = await configStore.get(catalogId, CONFIG_TYPE);
+    if (record) {
+      const services = parseServices(record.data) ?? [];
+      for (const svc of services) {
+        if (urls[svc.serviceId]) continue; // endpoint가 우선
+        const envUrl = svc.urls ? svc.urls[envName] : undefined;
+        const url = envUrl ?? svc.url;
+        if (url) urls[svc.serviceId] = url;
+      }
+    }
+
     return c.json(urls);
   });
 
   // GET /api/services/gateway — 게이트웨이 라우팅 구성
   // 게이트웨이가 이 엔드포인트를 호출하여 동적으로 라우팅 테이블 구성 가능
+  // URL 우선순위: endpoint 테이블 → ServiceRecord.urls[env] → ServiceRecord.url
   routes.get("/api/services/gateway", async (c) => {
     const catalogId = c.req.query("catalog") ?? "demo";
     const envName = c.req.query("env") ?? "dev";
+    const namespace = c.req.query("namespace") ?? "shop";
+    const region = c.req.query("region") ?? "asia";
+
+    // endpoint 테이블에서 URL 맵 구성
+    const epUrls: Record<string, string> = {};
+    if (endpointStore) {
+      const endpoints = await endpointStore.list(catalogId);
+      for (const ep of endpoints) {
+        if (ep.env === envName && ep.region === region && ep.namespace === namespace) {
+          epUrls[ep.svcName] = ep.url;
+        }
+      }
+    }
+
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json({ routes: [], env: envName });
     const services = parseServices(record.data) ?? [];
@@ -90,7 +126,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
       .map(svc => ({
         path: svc.gatewayPath!,
         serviceId: svc.serviceId,
-        url: (svc.urls?.[envName]) ?? svc.url ?? "",
+        url: epUrls[svc.serviceId] ?? svc.urls?.[envName] ?? svc.url ?? "",
         tier: svc.tier ?? "backend",
       }));
     return c.json({ routes: routes_list, env: envName });

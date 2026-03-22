@@ -443,7 +443,8 @@ document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} 
 (async () => {
   const regUrl = _cfg.REGISTRY_URL || 'http://localhost:3300';
   try {
-    const res = await fetch(`${regUrl}/api/services/urls`, { signal: AbortSignal.timeout(3000) });
+    const envName = _cfg.ENV || 'dev';
+    const res = await fetch(`${regUrl}/api/services/urls?env=${envName}`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       const urls = await res.json();
       const demoUrl = urls['platform-demo'];

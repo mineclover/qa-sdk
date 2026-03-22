@@ -85,7 +85,7 @@ export function createApp(deps: AppDeps) {
     }));
   }
   if (deps.configStore) {
-    app.route("/", createServiceRoutes({ configStore: deps.configStore }));
+    app.route("/", createServiceRoutes({ configStore: deps.configStore, endpointStore: deps.endpointStore }));
   }
   if (deps.endpointStore) {
     app.route("/", createEndpointRoutes({ endpointStore: deps.endpointStore }));
