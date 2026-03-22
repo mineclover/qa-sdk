@@ -495,7 +495,7 @@ LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMat
 // Beams
 const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0})}
 let bI=0;
-function beam(a,b,key){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=1}
+function beam(a,b,key){const e=bLines[bI++%50];const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=6}
 
 // ═══════════════════════════════════════════════════
 //  DEMO STEPS (compact)
@@ -804,7 +804,7 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   }
 
   // Beams
-  bLines.forEach(b=>{if(b.life>0){b.life-=dt*.5;b.m.opacity=Math.max(0,b.life*.4)}});
+  bLines.forEach(b=>{if(b.life>0){b.life-=dt*0.15;b.m.opacity=Math.max(0,Math.min(b.life*0.15,0.7))}});
 
   updateKeyboardNav();
   ctl.update();R.render(scene,cam);
