@@ -48,52 +48,75 @@ export interface LayerMapResult {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  Projection — "보는 관점"별 prefix 재배치
+//  Projection — 이벤트 좌표를 서비스 단위로 묶어 보는 뷰 프리셋
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Projection = catalog의 raw 구조와 독립적인 "관점별 배치 규칙".
+ * Projection = "좌표 공간을 어떤 조건으로 잘라서 어떻게 배치할지" 선언.
  *
- * 같은 catalog에서 여러 projection을 만들 수 있다:
- *   - service projection: svc_name → layer 매핑
- *   - domain projection: domain → layer 매핑
- *   - prefix projection: prefixId → layer 직접 매핑 (LAYER_RULES 대체)
+ * 전제: 모든 이벤트 prefix는 service에 바인딩된다.
+ *   - svc_ref (prefix_ref → service) 축으로 직접 바인딩
+ *   - 또는 svcOwners 매핑으로 간접 바인딩
+ *   - infra_context.service에 항상 서비스 주소 포함
+ *
+ * Projection이 결정하는 것:
+ *   1. 그룹핑: service prefix의 어떤 축(groupByAxis)으로 이벤트를 묶을지
+ *   2. 배치: 그룹 값 → layer 매핑 (groupLayerMap)
+ *   3. 필터: 어떤 축 값의 이벤트만 볼지 (axisFilters)
+ *   4. 고정: service 바인딩 없는 prefix의 배치 (prefixMap)
  */
 export interface Projection {
   /** projection 이름 */
   readonly name: string;
-  /** 관점별 layer 이름 (최대 4계층) */
+  /** projection 설명 */
+  readonly description?: string;
+
+  // ── 서비스 그룹핑 ──
+
+  /** 그룹핑 기준이 되는 service prefix ID (default: "service") */
+  readonly servicePrefix?: string;
+  /** service prefix의 어떤 축으로 그룹핑할지 (default: "svc_name") */
+  readonly groupByAxis?: string;
+  /** 그룹 축 값 → layer 매핑 (핵심 배치 규칙) */
+  readonly groupLayerMap: Record<string, LayerLevel>;
+
+  // ── 축 필터 ──
+
+  /** 축 필터 — 특정 축 값의 이벤트만 표시. 예: { env: ["prod"], region: ["asia"] } */
+  readonly axisFilters?: Record<string, readonly string[]>;
+  /** 포함할 prefix만 (미지정 시 전체) */
+  readonly includePrefixes?: readonly string[];
+  /** 제외할 prefix */
+  readonly excludePrefixes?: readonly string[];
+
+  // ── 고정 배치 ──
+
+  /** service 바인딩 없는 prefix의 layer 직접 매핑 */
+  readonly prefixMap?: Record<string, LayerLevel>;
+  /** domain → layer 매핑 */
+  readonly domainMap?: Record<string, LayerLevel>;
+
+  // ── 표시 ──
+
+  /** 관점별 layer 이름 */
   readonly layerNames?: Partial<Record<LayerLevel, string>>;
   /** 관점별 layer 설명 */
   readonly layerDescriptions?: Partial<Record<LayerLevel, string>>;
-  /** svc_name entry → layer 매핑. prefix가 바인딩된 service의 svc_name으로 layer 결정. */
-  readonly svcNameMap?: Record<string, LayerLevel>;
-  /** domain → layer 매핑. DkgConfig.domains의 prefix 소속으로 layer 결정. */
-  readonly domainMap?: Record<string, LayerLevel>;
-  /** prefixId → layer 직접 매핑. 최우선. */
-  readonly prefixMap?: Record<string, LayerLevel>;
   /** 기본 layer (매핑에 없을 때). default: 1 */
   readonly defaultLayer?: LayerLevel;
 }
 
 // ── 기본 Projection 정의 ─────────────────────────────────
 
-/** 서비스 기반 projection — svc_name으로 layer 결정 */
+// ── 기본 프리셋 ──────────────────────────────────────────
+
+/** 서비스 계층 projection — svc_name으로 이벤트 발생 위치 기준 배치 */
 export const SERVICE_PROJECTION: Projection = {
   name: "service",
-  layerNames: {
-    0: "Frontend",
-    1: "Backend",
-    2: "Infrastructure",
-    3: "System / DKG",
-  },
-  layerDescriptions: {
-    0: "유저 접점 — 화면 관측, 행동 추적",
-    1: "비즈니스 로직 — API, 흐름, 권한, 도메인 이벤트",
-    2: "인프라 — 배포, 헬스, 파이프라인, 서비스 컨텍스트",
-    3: "시스템 — DKG 자기참조, CLI, 빌드/테스트",
-  },
-  svcNameMap: {
+  description: "이벤트 발생 서비스 기준 배치. 같은 prefix도 서비스에 따라 다른 layer.",
+  servicePrefix: "service",
+  groupByAxis: "svc_name",
+  groupLayerMap: {
     "shopping-web": 0,
     "content-service": 0,
     "shopping-backend": 1,
@@ -102,31 +125,61 @@ export const SERVICE_PROJECTION: Projection = {
     "gateway": 1,
     "infra-controller": 2,
   },
-  // 전체 prefix → layer 매핑 (svcOwners 없이도 작동)
   prefixMap: {
-    // L0: Frontend (shopping-web 소유)
-    page_view: 0, tracking: 0,
-    // L1: Backend
-    endpoint: 1, flow_point: 1, permission: 1, rbac: 1,
-    cart_event: 1, auth_event: 1, order_event: 1, event: 1,
-    content: 1, relational: 1, engine_event: 1,
-    execution_context: 1, ingest_record: 1, event_classification: 1, metric_point: 1,
-    // L2: Infrastructure
-    service: 2, deploy_event: 2, health_event: 2,
-    pipeline_point: 2, data_policy: 2, schema_event: 2, schema_validation: 2,
-    pattern_match: 2, pattern_anomaly: 2,
-    version_point: 2, gate_point: 2, observation_event: 2, spec_event: 2, edge_activity: 2,
-    // L3: System / DKG
+    // svc 바인딩 없는 UI prefix
+    tracking: 0,
+    // svc 바인딩 없는 비즈니스
+    content: 1, relational: 1, event: 1,
+    execution_context: 1, event_classification: 1, metric_point: 1,
+    // svc 바인딩 없는 인프라
+    service: 2, version_point: 2, gate_point: 2,
+    observation_event: 2, spec_event: 2, edge_activity: 2,
+    // System / DKG
     dkg_event: 3, dkg_decision_event: 3, dkg_observation_event: 3,
     cli_event: 3, skill_execution: 3, contract_check: 3,
     build_event: 3, test_event: 3,
   },
+  layerNames: { 0: "Frontend", 1: "Backend", 2: "Infrastructure", 3: "System / DKG" },
+  layerDescriptions: {
+    0: "유저 접점 — 프론트엔드 서비스에서 발생한 이벤트",
+    1: "비즈니스 로직 — 백엔드 서비스에서 발생한 이벤트",
+    2: "인프라 — 인프라 서비스에서 발생한 이벤트",
+    3: "시스템 — DKG 자기참조, CLI, 빌드/테스트",
+  },
   defaultLayer: 1,
+};
+
+/** prod + asia 환경만 보는 projection */
+export const PROD_ASIA_PROJECTION: Projection = {
+  ...SERVICE_PROJECTION,
+  name: "prod-asia",
+  description: "프로덕션 아시아 리전만 필터링",
+  axisFilters: { env: ["prod"], region: ["asia"] },
+};
+
+/** dev 환경 전체를 보는 projection */
+export const DEV_PROJECTION: Projection = {
+  ...SERVICE_PROJECTION,
+  name: "dev",
+  description: "개발 환경만 필터링",
+  axisFilters: { env: ["dev"] },
+};
+
+/** checkout 흐름만 보는 projection */
+export const CHECKOUT_PROJECTION: Projection = {
+  ...SERVICE_PROJECTION,
+  name: "checkout",
+  description: "결제 흐름 관련 prefix만 표시",
+  includePrefixes: [
+    "page_view", "endpoint", "flow_point", "permission",
+    "cart_event", "order_event", "auth_event", "service",
+  ],
 };
 
 /** 레거시 하드코딩 호환 projection */
 export const LEGACY_PROJECTION: Projection = {
   name: "legacy",
+  groupLayerMap: {},
   prefixMap: {
     page_view: 0, tracking: 0,
     endpoint: 1, flow_point: 1, permission: 1, rbac: 1,
@@ -166,29 +219,20 @@ function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string
 }
 
 /**
- * prefix가 바인딩된 service의 svc_name entry를 추출한다.
- * prefix에 svc_ref (prefix_ref → service)가 있으면,
- * 해당 prefix의 refEntries에서 첫 번째 service 주소를 역으로 decode.
+ * prefix를 projection 규칙에 따라 계층에 배치한다.
  *
- * 간단 버전: ServiceTopology의 ownedPrefixes로 매핑 (catalog 만으로는 owner를 알 수 없으므로).
- */
-function resolveSvcNameForPrefix(
-  _catalog: Catalog,
-  prefixId: string,
-  svcOwners?: ReadonlyMap<string, string>,
-): string | undefined {
-  return svcOwners?.get(prefixId);
-}
-
-/**
- * prefix를 계층에 배치한다.
+ * 전제: 모든 이벤트 prefix는 service에 바인딩됨.
  *
- * projection 우선순위:
- *   1. projection.prefixMap (직접 매핑)
- *   2. projection.svcNameMap (svc_name 기반 — svcOwners 필요)
- *   3. projection.domainMap (domain 기반 — domainMembers 필요)
- *   4. meta.layer (catalog 하드코딩)
- *   5. projection.defaultLayer (기본값)
+ * 배치 우선순위:
+ *   1. groupLayerMap — svcOwners에서 owner service → groupByAxis 값 → layer
+ *   2. prefixMap — service 바인딩 없는 prefix 고정 매핑
+ *   3. domainMap — domain 소속으로 매핑
+ *   4. meta.layer — catalog 하드코딩 (fallback)
+ *   5. defaultLayer
+ *
+ * 필터:
+ *   - axisFilters: 축 값 필터 (표시 여부에만 영향, 배치에는 무영향)
+ *   - includePrefixes/excludePrefixes: prefix 필터
  */
 export function buildLayerMap(
   catalog: Catalog,
@@ -200,36 +244,47 @@ export function buildLayerMap(
   const layerNames = { ...DEFAULT_LAYER_NAMES, ...proj.layerNames };
   const layerDescs = { ...DEFAULT_LAYER_DESCRIPTIONS, ...proj.layerDescriptions };
 
+  // prefix 필터 셋 구성
+  const includeSet = proj.includePrefixes ? new Set(proj.includePrefixes) : null;
+  const excludeSet = proj.excludePrefixes ? new Set(proj.excludePrefixes) : null;
+
   const placementMap = new Map<string, PrefixPlacement>();
   const layerBuckets = new Map<LayerLevel, PrefixPlacement[]>([
     [0, []], [1, []], [2, []], [3, []],
   ]);
 
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
-    let layer: LayerLevel | undefined;
+    // prefix 필터
+    if (includeSet && !includeSet.has(prefixId)) continue;
+    if (excludeSet && excludeSet.has(prefixId)) continue;
 
-    // 1. svcNameMap — svcOwners에 등록된 prefix는 발생 서비스 기반 배치
-    if (proj.svcNameMap && svcOwners) {
+    let layer: LayerLevel | undefined;
+    let group: string | undefined;
+
+    // 1. groupLayerMap — svcOwners에서 owner service → groupByAxis 값 → layer
+    if (Object.keys(proj.groupLayerMap).length > 0 && svcOwners) {
       const ownerSvcName = svcOwners.get(prefixId);
-      if (ownerSvcName && ownerSvcName in proj.svcNameMap) {
-        layer = proj.svcNameMap[ownerSvcName];
+      if (ownerSvcName && ownerSvcName in proj.groupLayerMap) {
+        layer = proj.groupLayerMap[ownerSvcName];
+        group = ownerSvcName;
       }
     }
 
-    // 2. prefixMap — svcOwners에 없는 prefix 고정 매핑
+    // 2. prefixMap — service 바인딩 없는 prefix 고정 매핑
     if (layer === undefined && proj.prefixMap && prefixId in proj.prefixMap) {
       layer = proj.prefixMap[prefixId];
     }
 
-    // 3. domainMap — domain 소속으로 매핑
+    // 3. domainMap
     if (layer === undefined && proj.domainMap && domainMembers) {
       const domain = domainMembers.get(prefixId);
       if (domain && domain in proj.domainMap) {
         layer = proj.domainMap[domain];
+        group = group ?? domain;
       }
     }
 
-    // 4. meta.layer (catalog 하드코딩)
+    // 4. meta.layer
     if (layer === undefined && prefix.meta?.layer !== undefined) {
       layer = prefix.meta.layer as LayerLevel;
     }
@@ -241,8 +296,6 @@ export function buildLayerMap(
 
     const bucket = layerBuckets.get(layer)!;
     const category = prefix.meta?.category ?? inferCategoryFromStructure(prefixId, prefix);
-    const ownerSvc = svcOwners?.get(prefixId);
-    const domain = domainMembers?.get(prefixId);
 
     const placement: PrefixPlacement = {
       prefixId,
@@ -250,7 +303,7 @@ export function buildLayerMap(
       layer,
       layerName: layerNames[layer] ?? `Layer ${layer}`,
       category,
-      group: ownerSvc ?? domain,
+      group: group ?? domainMembers?.get(prefixId),
       gridX: bucket.length % 4,
       gridZ: Math.floor(bucket.length / 4),
     };

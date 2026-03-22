@@ -5,6 +5,7 @@
 export {
   buildLayerMap, buildSvcOwnerMap, buildDomainMemberMap,
   SERVICE_PROJECTION, LEGACY_PROJECTION,
+  PROD_ASIA_PROJECTION, DEV_PROJECTION, CHECKOUT_PROJECTION,
   extractTracePaths, computeActivity,
 } from "./layer-map.js";
 export type {
