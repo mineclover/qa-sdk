@@ -1,0 +1,26 @@
+# ═══════════════════════════════════════════════════════
+#  registry-service — Cloudflare Workers 배포 설정
+#
+#  사용법:
+#    npx wrangler d1 create qa-registry       # D1 DB 생성
+#    npx wrangler dev --local                 # 로컬 개발
+#    npx wrangler deploy                      # 프로덕션 배포
+# ═══════════════════════════════════════════════════════
+
+name = "qa-registry-service"
+main = "src/worker.ts"
+compatibility_date = "2024-01-01"
+node_compat = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qa-registry"
+database_id = ""  # ← npx wrangler d1 create 후 ID 입력
+
+# 환경별 설정
+# [env.production]
+# name = "qa-registry-service-prod"
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "qa-registry-prod"
+# database_id = ""
