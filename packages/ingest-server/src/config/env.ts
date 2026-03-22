@@ -23,6 +23,9 @@ export const envSchema = z.object({
   CONVERGENCE_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
   // ── Pattern Classification ─────────────────────────
   PATTERN_CLASSIFICATION_ENABLED: booleanWithDefaultFalse,
+  // ── Transition Engine (Phase 2.5) ─────────────────
+  TRANSITION_ENGINE_ENABLED: booleanWithDefaultFalse,
+  TRANSITION_VIOLATION_MODE: z.enum(["strict", "warn"]).default("warn"),
 }).superRefine((value, ctx) => {
   if (value.TASK_QUEUE_ENABLED && !value.REDIS_URL) {
     ctx.addIssue({

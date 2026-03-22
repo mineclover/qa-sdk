@@ -17,6 +17,7 @@ import {
   buildVerdictTask,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
   processPhaseTwoTask,
+  processPendingPhaseTwo,
   registerTaskQueueWorker,
 } from "./phase-two-worker.js";
 
@@ -257,5 +258,72 @@ describe("registerTaskQueueWorker", () => {
         traceId: "trace_chain",
       }),
     ]);
+  });
+
+  // ── Phase 2.5 에러 격리 ──────────────────────────────
+
+  it("transition engine 실패 시 verdict 결과에 영향 없음", async () => {
+    const deps = createWorkerDeps();
+    const logger = createLoggerMock();
+
+    // addressContext가 있는 레코드 seed (Phase 2.5가 처리하도록)
+    await deps.traceStore.upsert({
+      traceId: "trace_isolation",
+      sessionId: "session_001",
+      recordCount: 1,
+      firstTimestamp: new Date("2026-03-18T00:00:00.000Z"),
+      lastTimestamp: new Date("2026-03-18T00:00:01.000Z"),
+    });
+    await deps.recordStore.insertBatch([{
+      logId: "log_isolation",
+      traceId: "trace_isolation",
+      spanId: "span_isolation",
+      timestamp: new Date("2026-03-18T00:00:00.000Z"),
+      recordKind: "log",
+      eventKey: "test",
+      eventVersion: "1",
+      payloadFormat: "json",
+      payloadEncoding: "raw",
+      payloadMaskingApplied: false,
+      payloadMaskedFields: [],
+      payload: {},
+      qaSessionId: "session_001",
+      addressContext: { tracking: "tracking:v1:0" },
+    }]);
+
+    // decodeCtx가 throw → Phase 2.5 전체 실패
+    const failingEngine = {
+      processSession: () => ({ instances: [], violations: [], unmatchedCount: 0 }),
+      decodeCtx: () => { throw new Error("decode crash"); },
+    };
+
+    await processPendingPhaseTwo({
+      ...deps,
+      logger,
+      transitionEngine: failingEngine as any,
+      transitionCatalog: {},
+    });
+
+    // Phase 2.5 에러가 로깅됨
+    const errorCalls = (logger.error as any).mock.calls;
+    expect(errorCalls.some(
+      (call: any[]) => call.some((arg: unknown) => typeof arg === "string" && arg.includes("Phase 2.5")),
+    )).toBe(true);
+    // reconstruction은 성공 (Phase 2.5 실패에 영향 안 받음)
+    const graph = await deps.graphStore.findByTraceId("trace_isolation");
+    expect(graph).toBeDefined();
+  });
+
+  it("transition engine 없으면 Phase 2.5 건너뜀", async () => {
+    const deps = createWorkerDeps();
+    const logger = createLoggerMock();
+    await seedPendingTrace(deps, "trace_no_engine");
+
+    // transitionEngine 미설정
+    await processPendingPhaseTwo({ ...deps, logger });
+
+    // reconstruction + verdict 정상 동작
+    const graph = await deps.graphStore.findByTraceId("trace_no_engine");
+    expect(graph).toBeDefined();
   });
 });

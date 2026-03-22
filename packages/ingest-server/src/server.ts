@@ -33,6 +33,8 @@ import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
 import type { ConvergencePipelineRunner, PatternFunctions } from "./lib/convergence-pipeline.js";
+import type { TransitionFunctions } from "@qa-sdk/spec-core/transition";
+import type { TransitionEnginePort } from "./lib/phase-two-worker.js";
 import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js";
 
 const PHASE_TWO_QUEUE_NAME = "ingest-phase-two";
@@ -158,6 +160,21 @@ async function startServer() {
     }
   }
 
+  // ── Transition Engine (Phase 2.5, optional) ─────────
+  let transitionFns: TransitionFunctions | undefined;
+  let transitionCatalog: unknown;
+  if (env.TRANSITION_ENGINE_ENABLED) {
+    try {
+      const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
+      const { DEMO_CATALOG } = await import("demo-snapshot");
+      transitionFns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+      transitionCatalog = DEMO_CATALOG;
+      logger.info(`transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
+    } catch (error) {
+      logger.error({ err: error }, "transition engine initialization failed — disabled");
+    }
+  }
+
   const app = createApp({
     appLifecycle,
     checkDbHealth: createDbHealthChecker(stores.db),
@@ -231,6 +248,21 @@ async function startWorker() {
     );
   }
 
+  // Transition Engine (worker mode)
+  let workerTransitionEngine: TransitionEnginePort | undefined;
+  let workerTransitionCatalog: unknown;
+  if (env.TRANSITION_ENGINE_ENABLED) {
+    try {
+      const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
+      const { DEMO_CATALOG } = await import("demo-snapshot");
+      workerTransitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS) as any;
+      workerTransitionCatalog = DEMO_CATALOG;
+      logger.info(`transition engine enabled in worker (${DEMO_TRANSITION_SPECS.length} specs)`);
+    } catch (error) {
+      logger.warn({ err: error }, "transition engine not available in worker — skipped");
+    }
+  }
+
   await registerTaskQueueWorker(taskQueue, {
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
@@ -240,6 +272,8 @@ async function startWorker() {
     sessionStore: stores.sessionStore,
     traceStore: stores.traceStore,
     verdictStore: stores.verdictStore,
+    transitionEngine: workerTransitionEngine,
+    transitionCatalog: workerTransitionCatalog,
   });
 
   logger.info(

@@ -26,6 +26,16 @@ export interface ConvergencePipelinePort {
   notifyCompletion(traceIds: readonly string[]): void;
 }
 
+/** TransitionFunctions 최소 인터페이스 (순환 의존 방지) */
+export interface TransitionEnginePort {
+  processSession(input: { sessionId: string; events: readonly Record<string, unknown>[] }): {
+    instances: readonly Record<string, unknown>[];
+    violations: readonly Record<string, unknown>[];
+    unmatchedCount: number;
+  };
+  decodeCtx(catalog: unknown, encoded: Record<string, string>): Record<string, string>;
+}
+
 export interface PhaseTwoWorkerDeps {
   recordStore: RecordStore;
   traceStore: TraceStore;
@@ -36,6 +46,8 @@ export interface PhaseTwoWorkerDeps {
   dlqStore: DlqStore;
   metricRollupStore?: MetricRollupStore;
   convergencePipeline?: ConvergencePipelinePort;
+  transitionEngine?: TransitionEnginePort;
+  transitionCatalog?: unknown;
   logger?: Logger;
   taskQueue?: TaskQueue<TaskPayload>;
 }
@@ -149,6 +161,40 @@ export async function processPendingPhaseTwo(
       },
     },
   );
+
+  // ── Phase 2.5: Transition Matching (에러 격리) ──────
+  if (deps.transitionEngine && deps.transitionCatalog) {
+    try {
+      for (const traceId of reconstructResult.reconstructedTraceIds) {
+        const records = await deps.recordStore.findByTraceId(traceId);
+        // address_context가 있는 레코드만 디코딩 + 전이 매칭
+        const decodedEvents = records
+          .filter((r: any) => r.addressContext && typeof r.addressContext === "object")
+          .map((r: any) => ({
+            log_id: r.id ?? r.logId ?? "",
+            timestamp: r.createdAt ?? r.timestamp ?? "",
+            address_context: deps.transitionEngine!.decodeCtx(deps.transitionCatalog!, r.addressContext as Record<string, string>),
+            ...r,
+          }));
+
+        if (decodedEvents.length > 0) {
+          const result = deps.transitionEngine.processSession({
+            sessionId: traceId,
+            events: decodedEvents,
+          });
+
+          if (result.violations.length > 0) {
+            deps.logger?.warn(
+              { traceId, violations: result.violations.length, instances: result.instances.length },
+              "transition violations detected",
+            );
+          }
+        }
+      }
+    } catch (error) {
+      deps.logger?.error({ err: error }, "transition matching failed (Phase 2.5) — verdict unaffected");
+    }
+  }
 
   // convergence 파이프라인에 완료 알림 (에러 격리)
   if (deps.convergencePipeline) {
