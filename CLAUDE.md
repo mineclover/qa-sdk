@@ -36,8 +36,8 @@
 - `@qa-sdk/codec`: createIndexSDK, DimWireCodec (core + weighted-index)
 - `@qa-sdk/context`: createQaContext, CatalogProvider (core)
 - `@qa-sdk/sdk`: 3개를 re-export하는 facade (하위 호환)
-- `@qa-sdk/apm`: ApmLogger — QaLogger + PartialBinder 통합
-- `@qa-sdk/browser`: QaMonitor — 브라우저 전용 래퍼
+- `@qa-sdk/apm`: ApmLogger — QaLogger + PartialBinder 통합. `createApmLoggerFromBoot(ApmBootConfig)` — ServiceBootConfig 기반 편의 팩토리
+- `@qa-sdk/browser`: QaMonitor — 브라우저 전용 래퍼. `QaMonitorConfig.serviceConfig` — ServiceBootConfig 기반 통합 설정
 
 ### weighted-index
 - `packages/weighted-index/src/index.ts` — 모든 public export 관리; 새 함수 추가 시 여기도 업데이트
@@ -67,7 +67,7 @@
 - `src/scoped-engine.ts` — env/region 등 외부 컨텍스트별 독립 마스크 관리
 - `src/migration.ts` — shape 변경 시 마스크 마이그레이션 (ID 매칭 자동 변환 또는 커스텀 CoordMapper)
 - `src/resource.ts` — resource 정규화/검증 (canonical path-like key, 타입별 패턴 규칙)
-- `src/service-ref.ts` — 서비스 참조 (namespace/name) + SDK 글로벌 컨텍스트 (env/build/region 숨김)
+- `src/service-ref.ts` — 서비스 참조 (namespace/name) + SDK 글로벌 컨텍스트 (env/build/region 숨김). `@qa-sdk/core` `ServiceBootConfig`과 구조적 호환 (TypeScript structural typing)
 - `src/permission-code.ts` — 전체 permission address: `{service-ref}.{type}.{resource}.{action}`
 
 ### demo-snapshot — 통합 카탈로그 (DEMO_CATALOG)
@@ -110,6 +110,13 @@
 - **effects/**: CellStateManager, BeamPool, ActivationProcessor
 - **renderer/**: InstancedMesh, LOD(near/mid/far), PerfMonitor, FlowHistory
 - **matrix/**: matrix-stack (스택 축 레이아웃)
+- **색상 토큰 체계** (`core/color-tokens.ts` — SSOT):
+  - `PALETTE`: 배경/텍스트/액센트 기본 색상
+  - `CATEGORY_COLORS`: prefix 존재론적 성격별 색상 (observation/event/policy/entity/state/relation/table). 노드 기본 색상에 사용
+  - `ROLE_COLORS`: Signal Role별 색상 (context/trigger/channel/state/guard/effect/data). 선(beam)/반짝임(glow)/타임라인에 사용
+  - `LAYER_COLORS`: 레이어별 색상 (L0 UI/L1 Business/L2 Infra/L3 Data)
+  - `generateCssVariables()`: `--cat-*`, `--role-*`, `--layer-*` CSS 변수 자동 생성
+  - 색상 변경 시: color-tokens.ts 수정 → `pnpm --filter @qa-sdk/viz-3d build` → 번들 복사
 - 번들 복사 위치: `platform-demo/public/viz-3d-core.js`, `shop-web/public/viz-3d-core.js`
 
 ### shop-web — 쇼핑 데모 사이트
@@ -117,17 +124,27 @@
 - encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
 - ingest-server로 실시간 이벤트 전송 + 모니터링 연동
 
-### platform-demo
-- `packages/platform-demo/src/pages/layout.ts` — 레이아웃 시뮬레이터 UI
-- `packages/platform-demo/src/pages/casbin.ts` — Casbin 권한 모델 해설 (qa-sdk ↔ Casbin 대비)
-- `packages/platform-demo/src/pages/perm-engine.ts` — permission-engine v1→v2 마이그레이션 비교 데모
-- `packages/platform-demo/public/monitor.html` — 3D 모니터링 대시보드 (InstancedMesh, LOD, 4-view 모드)
+### platform-demo — 데모 + 모니터링 + 다이어그램
+- `packages/platform-demo/` — Vite SPA + static HTML 페이지 (Cloudflare Pages 배포)
+- dev 서버: `pnpm --filter platform-demo dev` → `http://localhost:5176/`
+- **SPA** (`/`): 14개 시트 — overview, range, access, service, permission, event, scenario 등
+- **Monitor** (`/monitor.html`): 3D 모니터링 대시보드 (InstancedMesh, LOD, 4-view 모드)
+  - 노드 색상: CATEGORY_COLORS (존재론적 성격)
+  - 선/반짝임: ROLE_COLORS (Signal Role)
   - encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
+- **Diagram** (`/diagram.html`): Mermaid 시퀀스 다이어그램 뷰어
+  - 프리셋: IntentLink + DSL 번들 (diagram-presets.js, prebuild 생성)
+  - 커스텀 입력: textarea + Ctrl+Enter
+  - URL 상태: `?preset=IL-checkout-flow` (새로고침 복원)
+  - Copy MMD / Download SVG
+- **프리셋 생성**: `pnpm --filter platform-demo exec tsx scripts/generate-diagram-presets.ts`
+- **번들 복사**: `viz-3d/dist/core.js` → `platform-demo/public/viz-3d-core.js`
+- 3페이지 공유 nav bar: Demo | Monitor | Diagram
 
 ### spec-core — 설계 지식 그래프 + 수렴 분석
 - `packages/spec-core/` — DKG(Design Knowledge Graph) + 수렴 레이어 + 전파 파이프라인
 - 서브 경로 exports: `"."` (shared+schema+spec), `"./dkg"` (DKG 그래프+스킬), `"./convergence"` (수렴 분석), `"./store"` (SQLite), `"./codegen"`, `"./propagation"`, `"./viz"`, `"./analysis"` (deprecated — ./dkg + ./convergence 사용)
-- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약)
+- **dkg/**: bootstrapDkg(6 도메인, 9 DSL 번들, 27 skill, 7 spec), service-topology(7 서비스, 3 계약), **TableNode(14번째 노드 타입)**
 - **convergence/**: 5개 분석 서비스 + 집계/측정/필터/기록
   - `symbol-comparator.ts` — 축/prefix Jaccard 유사도 비교 (merge/alias/review 판정)
   - `decision-comparator.ts` — Decision 충돌 스캔 (contradictory/redundant/superseding)
@@ -139,6 +156,26 @@
 - **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
   - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
 - **store/**: DkgSqliteStore (persist + migrate)
+
+### DKG Table 의존 추적
+- `TableNode` (14번째 DKG 노드): catalog의 `tables` 섹션에서 자동 파생. `kind: "table"`, `columns: string[]`
+- `catalog-derive.ts`가 `catalog.tables` 순회 → TableNode 생성 + column-level 엣지:
+  - column `axis_ref` → `composes` 엣지 (dimKind: "column_axis")
+  - column `prefix_ref` → `references` 엣지
+  - column `table_ref` (FK) → `references` 엣지 (meta: `{ fk: true }`)
+- prefix → table 연결: prefix의 `table_ref` dim → `composes` 엣지 (dimKind: "table_ref") — 기존과 동일
+- `GraphRegistry` 질의 API:
+  - `getPrefixesForTable(tableId)` — 테이블을 참조하는 prefix 목록
+  - `getTablesForPrefix(prefixId)` — prefix가 참조하는 테이블 목록
+  - `getTableColumnRefs(tableId)` — 컬럼별 참조 대상 (axis/prefix/FK)
+  - `cascadeFromTable(tableId)` — 테이블 변경 시 영향받는 prefix + FK 참조 테이블
+- `ServiceTopologyRegistry` 추론 API:
+  - `getTablesForService(serviceId, graph)` — 서비스가 접근하는 테이블 (prefix 소유 관계에서 추론)
+  - `getServicesForTable(tableId, graph)` — 테이블에 접근하는 서비스
+- CLI:
+  - `dkg tables` — 전체 테이블 목록 (cols, prefixes, services, fk, axis_ref 요약)
+  - `dkg table <id>` — 개별 테이블 프로파일 (컬럼 참조, prefix, FK, 서비스, impact summary)
+- DEMO_CATALOG에 6개 테이블 정의: members, orgs, items, orders, carts, cart_items
 
 ## Permission Engine Architecture
 
@@ -180,7 +217,7 @@
 ### 설계 원칙
 - 클라이언트는 role을 직접 확인하지 않음 — 서버가 role → flat permission mask로 resolve 후 전송
 - 외부 차원 (env/region/namespace) → ScopedEngine scope key 또는 PartialBinder로 관리
-- service-ref: (namespace/name) 필수 + (env/build/region) SDK가 일괄 설정하여 숨김
+- service-ref: (namespace/name) 필수 + (env/build/region) SDK가 일괄 설정하여 숨김. `ServiceBootConfig`이 통합 진입점
 - resource 규칙: 소문자, `/` 구분, leading/trailing slash 금지, depth ≤ 4, `:param` 패턴 허용
 - permission code: `{service-ref}.{type}.{resource}.{action}` (예: `shop/payment.api.admin/teams.GET`)
 - type별 패턴: page(param 금지/depth 3), api(param 허용/depth 4), action(param 금지/depth 3)
@@ -213,6 +250,8 @@
 - prefix → SignalRole 매핑: service→context, tracking→trigger, endpoint→channel, flow_point→state, permission→guard, pipeline_point→effect, orders→data
 - Signal chain: requires 관계로 의존 표현 (예: trigger는 context를 require)
 - 구현: `viz-3d/src/core/signal-model.ts` (`getPrefixRole()`, `classifyByRole()`, `validateSignal()`)
+- 색상: `viz-3d/core/color-tokens.ts`의 `ROLE_COLORS`가 Signal Role별 색상 SSOT
+- 시각화: monitor.html에서 노드=CATEGORY_COLORS, 선/glow=ROLE_COLORS로 이중 표현
 
 ## Observation Loop (관측 루프)
 
@@ -297,6 +336,17 @@ ingest-server Phase 2 완료
 - `--persist`: 결과를 DKG store에 자동 저장 + auto-resolve + stale 정리
 - `--verbose`: 개별 observation/action 상세 출력 + 미해결 observation top-3 안내
 
+### Mermaid 다이어그램 생성
+- `qa-sdk dkg diagram list` — 사용 가능한 IntentLink/DSL 다이어그램 목록 조회
+- `qa-sdk dkg diagram intent-links` — 전체 IntentLink 시퀀스 다이어그램
+- `qa-sdk dkg diagram intent-links IL-checkout-flow` — 단일 IntentLink
+- `qa-sdk dkg diagram dsl dsl-checkout` — DSL 번들 시퀀스 다이어그램
+- `--output <path>` — 파일 출력
+- `--format mmd|svg|png|html` — 출력 형식 (svg/png는 mmdc 필요)
+- `--no-invariants` — invariant 주석 비표시
+- 생성기: `spec-core/src/visualization/mermaid-gen.ts` (순수 함수, I/O 없음)
+- 웹 뷰어: `platform-demo/public/diagram.html` (Mermaid CDN 기반 라이브 렌더링)
+
 ### Dev Dashboard
 - `DEV_DASHBOARD_ENABLED=true` → `http://localhost:3300/dev/` 접속
 - **Flow Map**: Schema(67축) → Prefix(34개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
@@ -317,6 +367,7 @@ ingest-server Phase 2 완료
 - 에러 격리: convergence 실패가 Phase 2 verdict/활성화를 절대 차단하지 않음
 - Fail-open: gate check 실패 → 허용 + warning diagnostic
 - 멀티 카탈로그: provider에 `catalog` 파라미터 주입 가능 (기본: DEMO_CATALOG)
+- Catalog 자동 갱신: seedDemoCatalog가 JSON hash 비교로 변경 감지 → 자동 update. SQLite 삭제 불필요
 
 ## Event Pattern Classification (ADR-006)
 - **2축 분류**: identification_mode (anonymous/identified/pseudonymized/service) × behavior_pattern (12종)
@@ -369,6 +420,83 @@ ingest-server Phase 2 완료
 - 한국어 주석/UI 텍스트 사용
 - Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
 
+## ServiceBootConfig — 서비스 정체성 설정 (2026-03-22 확립)
+
+로깅 SDK의 핵심 질문은 "이 이벤트가 어디서 발생했는가"이다. `ServiceBootConfig`은 이 질문에 대한 **단일 정답**으로, 앱 부트 시 한 번 정의하면 모든 SDK 레이어(좌표 인코딩, 전송 메타데이터, 권한)가 자동으로 정렬된다.
+
+### 정의 (`@qa-sdk/core/types/service-identity.ts`)
+```typescript
+interface ServiceBootConfig {
+  namespace: string;        // 필수. 서비스 네임스페이스 (예: "shop")
+  name: string;             // 필수. 서비스 이름 (예: "payment")
+  env: string;              // 필수. 배포 환경 — 좌표 차원 (예: "prod", "dev")
+  region: string;           // 필수. 리전 — 좌표 차원 (예: "asia", "usa")
+  build?: string;           // 선택. 빌드 식별자 — 비좌표 메타데이터
+  releaseVersion?: string;  // 선택. 릴리즈 버전 — 비좌표 메타데이터
+}
+```
+- `namespace`/`name` → 서비스 식별 (permission canonical form: `"namespace/name"`)
+- `env`/`region` → 좌표 차원 (카탈로그 service prefix 4축 중 2축). required
+- `build`/`releaseVersion` → 5Q 체크리스트 미통과 (유한하지 않음, 배포마다 변경). 전송 메타데이터로만 전달
+
+### 설정 방법 (패키지별)
+
+**Node.js 서버 — QaContext 경로**
+```typescript
+import { createQaContext } from "@qa-sdk/sdk";
+const qa = createQaContext({
+  serviceConfig: { namespace: "shop", name: "payment", env: "prod", region: "asia", build: "abc123" },
+  catalog: DEMO_CATALOG,
+});
+qa.infraContext();  // → { service: "service:v1:42" } — QaLogger.infraContext에 전달
+```
+
+**Node.js 서버 — ApmLogger 경로**
+```typescript
+import { createApmLoggerFromBoot } from "@qa-sdk/apm";
+const logger = createApmLoggerFromBoot({
+  service: { namespace: "shop", name: "payment", env: "prod", region: "asia" },
+  transport, owner, codec,
+});
+```
+
+**브라우저 — QaMonitor 경로**
+```typescript
+import { createQaMonitor } from "@qa-sdk/browser";
+const monitor = createQaMonitor({
+  ingestUrl: "http://localhost:3200",
+  serviceConfig: { namespace: "shop", name: "web", env: "prod", region: "asia" },
+});
+```
+
+**기존 방식 (deprecated, 하위 호환)**
+```typescript
+// QaContext: 개별 필드
+createQaContext({ env: "prod", region: "asia", service: "payment", namespace: "shop", catalog });
+// QaMonitor: meta
+createQaMonitor({ ingestUrl, meta: { serviceName: "payment", env: "prod" } });
+```
+
+### 자동 파생
+`ServiceBootConfig` 하나로 3가지 출력이 자동 생성된다:
+
+| 함수 | 출력 | 용도 |
+|------|------|------|
+| `toServiceDims(config)` | `{ env, region, svc_name, namespace }` | 카탈로그 service prefix 인코딩. `name` → `svc_name` 매핑 |
+| `toTransmissionSource(config, sdk, ver)` | `{ service_name: "namespace/name", ... }` | 전송 엔벨로프 source 필드 |
+| `toTransmissionBuild(config)` | `{ env: "production", build_ref, ... }` | 전송 엔벨로프 build 필드. env 정규화 포함 |
+
+모든 파생 함수는 `@qa-sdk/core`에서 export. `@qa-sdk/sdk` facade에서도 re-export.
+
+### Env 정규화
+- `BuildEnv`는 `string` 타입 (리터럴 유니온 아님). 권장값: local, dev, staging, production, test, stage, prod
+- 카탈로그 축 엔트리(`prod`, `stage`)와 전송 형식(`production`, `staging`)이 다름 → 자동 매핑
+- `catalogEnvToBuildEnv("prod")` → `"production"`, `buildEnvToCatalogEnv("staging")` → `"stage"`
+
+### 호환성
+- permission-engine `ServiceRef`와 구조적 호환 (TypeScript structural typing). 패키지 의존 추가 없음
+- `QaContext.infraContext()` — 서비스 좌표를 infra_context 형태로 반환. envelope 레벨 서비스 바인딩에 사용
+
 ## 좌표계 컨벤션 (2026-03-21 확립)
 
 ### Prefix Version
@@ -419,7 +547,7 @@ intent별 루프 의무:
 
 ### CLI 완전 관측
 - 모든 CLI 명령은 `emitCliEvent(command)` → `cli_event` prefix로 자동 기록
-- `CLI_COMMAND_MAP`: 69개 명령 → 47개 고유 좌표 (intent × domain × subject)
+- `CLI_COMMAND_MAP`: 71개 명령 → 48개 고유 좌표 (intent × domain × subject)
 - 명령어 이름은 교체 가능한 UI. 좌표가 안정 식별자
 - `analyzeCliCoverage()`: dormant 좌표 = 한 번도 실행 안 된 기능
 
