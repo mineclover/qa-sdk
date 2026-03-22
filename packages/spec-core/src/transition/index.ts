@@ -72,6 +72,9 @@ export { violationsToObservations } from "./violation-bridge.js";
 export type { TransitionFunctions, TransitionSessionInput, TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
 export { createTransitionFunctions } from "./transition-pipeline.js";
 
+// ── Transition Metrics ────────────────────────────────
+export { aggregateTransitionResults, transitionFlushToMetrics } from "./transition-metrics.js";
+
 // ── Decode Adapter ───────────────────────────────────
 export { decodeAddressContext } from "./decode-adapter.js";
 

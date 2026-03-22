@@ -22,6 +22,7 @@ import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
 import { createQueryRoutes } from "./routes/query.js";
 import { createRuleRoutes } from "./routes/rules.js";
+import { createStateRoutes, type StateRouteDeps } from "./routes/state.js";
 import {
   InMemoryPolicyRuleStore,
 } from "./stores/in-memory-policy-rule-store.js";
@@ -38,6 +39,7 @@ export interface AppDeps {
   logger?: Logger;
   version?: string;
   getUptimeSeconds?: () => number;
+  stateRoutes?: StateRouteDeps;
 }
 
 export function createApp(deps: AppDeps) {
@@ -71,6 +73,8 @@ export function createApp(deps: AppDeps) {
   );
   app.route("/", createRuleRoutes({ ruleService }));
   app.route("/", createQueryRoutes({ queryService }));
+  app.route("/state", createStateRoutes(deps.stateRoutes ?? {}));
+  app.route("/transitions", createStateRoutes(deps.stateRoutes ?? {}));
 
   app.onError(createErrorHandler(logger));
 

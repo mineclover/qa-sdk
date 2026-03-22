@@ -14,7 +14,7 @@ import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
-  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions,
+  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions, dkgTransitionAnalysis,
   dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
@@ -309,9 +309,15 @@ async function main() {
     case "dkg transitions":
       dkgTransitions(sub.rest[0]);
       return;
-    case "dkg transition":
-      dkgTransitions(sub.rest[0]);
+    case "dkg transition": {
+      const arg = sub.rest[0];
+      if (arg === "coverage" || arg === "orphans" || arg === "violations") {
+        dkgTransitionAnalysis(arg);
+      } else {
+        dkgTransitions(arg);
+      }
       return;
+    }
     case "dkg export":
       dkgExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
       return;

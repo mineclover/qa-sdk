@@ -1024,6 +1024,81 @@ export function dkgTransitions(specId?: string): void {
   }
 }
 
+// ── dkg transition coverage/orphans/violations ────
+
+export function dkgTransitionAnalysis(subcommand: string): void {
+  const graph = getGraph();
+  const tspecs = graph.getNodesByKind("transition-spec");
+
+  if (tspecs.length === 0) {
+    console.log("\n  (transition-spec 노드 없음)");
+    return;
+  }
+
+  switch (subcommand) {
+    case "coverage": {
+      console.log(`\n══ Transition Coverage ══`);
+      console.log(`  정의된 spec: ${tspecs.length}개`);
+      // effect 분포
+      const byEffect = new Map<string, number>();
+      for (const t of tspecs) {
+        byEffect.set(t.effectKind, (byEffect.get(t.effectKind) ?? 0) + 1);
+      }
+      console.log(`  effect 분포:`);
+      for (const [effect, count] of byEffect) {
+        console.log(`    ${effect}: ${count}개`);
+      }
+      // 축 커버리지: 전체 축 중 transition이 참조하는 축 비율
+      const allAxes = new Set(graph.getNodesByKind("axis").map(a => a.id));
+      const referencedAxes = new Set(tspecs.flatMap(t => [...t.slotRefs]));
+      const covered = [...referencedAxes].filter(a => allAxes.has(a));
+      console.log(`  축 커버리지: ${covered.length}/${allAxes.size} (${((covered.length / allAxes.size) * 100).toFixed(0)}%)`);
+      console.log(`  미참조 축: ${[...allAxes].filter(a => !referencedAxes.has(a)).length}개`);
+      break;
+    }
+    case "orphans": {
+      console.log(`\n══ Orphan Analysis ══`);
+      // transition이 참조하지 않는 prefix (transition 관점에서 orphan)
+      const prefixes = graph.getNodesByKind("prefix");
+      const tspecAxes = new Set(tspecs.flatMap(t => [...t.matchAxes]));
+      const orphanPrefixes = prefixes.filter(p => {
+        const composes = graph.edgesFrom(p.id, "composes");
+        const prefixAxes = composes.filter(e => (e.meta?.dimKind === "axis")).map(e => e.to);
+        return prefixAxes.length > 0 && !prefixAxes.some(a => tspecAxes.has(a));
+      });
+      console.log(`  transition이 관찰하지 않는 prefix: ${orphanPrefixes.length}개`);
+      for (const p of orphanPrefixes.slice(0, 10)) {
+        console.log(`    ${p.id}`);
+      }
+      if (orphanPrefixes.length > 10) console.log(`    ... 외 ${orphanPrefixes.length - 10}개`);
+      break;
+    }
+    case "violations": {
+      console.log(`\n══ Violation Summary ══`);
+      // DKG에서 transition observation 조회
+      const observations = graph.getNodesByKind("observation");
+      const transObs = observations.filter(o => (o as any).id?.startsWith("OBS-TRANSITION-"));
+      if (transObs.length === 0) {
+        console.log("  기록된 전이 위반 없음");
+      } else {
+        console.log(`  전이 위반 observation: ${transObs.length}개`);
+        for (const obs of transObs) {
+          console.log(`    ${(obs as any).id}: ${(obs as any).finding}`);
+        }
+      }
+      // constraint 상태
+      const effectConstraint = graph.getNode("CON-EFFECT-VOCAB");
+      if (effectConstraint) {
+        console.log(`\n  CON-EFFECT-VOCAB: ${(effectConstraint as any).lifecycle} — ${(effectConstraint as any).rule?.slice(0, 80)}`);
+      }
+      break;
+    }
+    default:
+      console.log(`  알 수 없는 서브커맨드: ${subcommand}`);
+      console.log("  사용법: dkg transition coverage | orphans | violations");
+  }
+}
+
 // ── dkg audit ─────────────────────────────────────
 
 export function dkgAudit(): void {

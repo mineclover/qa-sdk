@@ -26,6 +26,7 @@ export const envSchema = z.object({
   // ── Transition Engine (Phase 2.5) ─────────────────
   TRANSITION_ENGINE_ENABLED: booleanWithDefaultFalse,
   TRANSITION_VIOLATION_MODE: z.enum(["strict", "warn"]).default("warn"),
+  TRANSITION_STATE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
 }).superRefine((value, ctx) => {
   if (value.TASK_QUEUE_ENABLED && !value.REDIS_URL) {
     ctx.addIssue({
