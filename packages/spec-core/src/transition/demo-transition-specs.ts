@@ -588,6 +588,209 @@ export const SKILL_EXECUTE_SPEC: TransitionSpec = {
   effect: { kind: "close" },
 };
 
+// ═══════════════════════════════════════════════════════════════
+//  23. engine.evaluate — 엔진 제약 평가 전이
+// ═══════════════════════════════════════════════════════════════
+
+export const ENGINE_EVALUATE_SPEC: TransitionSpec = {
+  transition: "engine.evaluate",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ constraint_op: "eq", verdict_result: "pass" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].evaluation_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "complete" }] },
+  effect: { kind: "close" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  24. build.package — 패키지 빌드+테스트 전이 (qa_pkg, qa_module)
+// ═══════════════════════════════════════════════════════════════
+
+export const BUILD_PACKAGE_SPEC: TransitionSpec = {
+  transition: "build.package",
+  version: "v1",
+  match: {
+    mode: "ordered",
+    coordinates: [
+      { qa_pkg: "spec-core", qa_module: "dkg", build_result: "success" },
+      { qa_pkg: "spec-core", qa_module: "dkg", test_result: "passed" },
+    ],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].build_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", exists: false }] },
+  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
+  effect: { kind: "create" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  25. contract.check — 계약 검증 전이 (api_surface)
+// ═══════════════════════════════════════════════════════════════
+
+export const CONTRACT_CHECK_SPEC: TransitionSpec = {
+  transition: "contract.check",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ api_surface: "encode-decode", test_result: "passed" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].contract_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "complete" }] },
+  effect: { kind: "close" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  26. pattern.severity — 이상 심각도 전이 (anomaly_severity)
+// ═══════════════════════════════════════════════════════════════
+
+export const PATTERN_SEVERITY_SPEC: TransitionSpec = {
+  transition: "pattern.severity",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ anomaly_kind: "volume_spike", anomaly_severity: "critical" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].anomaly_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "health_status", value: "unhealthy" }] },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  27. schema.migrate — 스키마 마이그레이션 전이 (migration_pattern, spec_type)
+// ═══════════════════════════════════════════════════════════════
+
+export const SCHEMA_MIGRATE_SPEC: TransitionSpec = {
+  transition: "schema.migrate",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ migration_pattern: "append_dim", spec_type: "adr" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].migration_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "version_lifecycle", value: "released" }] },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  28. metric.record — 메트릭 기록 전이 (metric_type, record_type)
+// ═══════════════════════════════════════════════════════════════
+
+export const METRIC_RECORD_SPEC: TransitionSpec = {
+  transition: "metric.record",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ metric_type: "counter", record_type: "metric" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].metric_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "complete" }] },
+  effect: { kind: "consume" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  29. edge.activity — 엣지 활동 전이 (edge_type)
+// ═══════════════════════════════════════════════════════════════
+
+export const EDGE_ACTIVITY_SPEC: TransitionSpec = {
+  transition: "edge.activity",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ edge_type: "consumes", dkg_target_kind: "prefix" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].edge_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "processing" }] },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  30. gate.check — 게이트 상태 확인 전이 (address_state)
+// ═══════════════════════════════════════════════════════════════
+
+export const GATE_CHECK_SPEC: TransitionSpec = {
+  transition: "gate.check",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ address_state: "active" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].address_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "complete" }] },
+  effect: { kind: "consume" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  31. event.classify — 이벤트 분류 전이 (event_category, event_lifecycle_stage)
+// ═══════════════════════════════════════════════════════════════
+
+export const EVENT_CLASSIFY_SPEC: TransitionSpec = {
+  transition: "event.classify",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ event_category: "user_action", event_lifecycle_stage: "completion" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].event_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "complete" }] },
+  effect: { kind: "update" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  32. execution.replay — 실행 모드 전이 (execution_mode)
+// ═══════════════════════════════════════════════════════════════
+
+export const EXECUTION_REPLAY_SPEC: TransitionSpec = {
+  transition: "execution.replay",
+  version: "v1",
+  match: {
+    mode: "single",
+    coordinates: [{ execution_mode: "replay" }],
+  },
+  bind: {
+    context_id: "$.events[0].context_id",
+    resource_id: "$.events[0].execution_id",
+  },
+  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
+  output: { set: [{ axis: "flow_step", value: "processing" }] },
+  effect: { kind: "consume" },
+};
+
 /** DEMO_CATALOG 기반 TransitionSpec 전체 */
 export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   // shop-web (3)
@@ -616,4 +819,16 @@ export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   RELATIONAL_BIND_SPEC,
   // skill (1)
   SKILL_EXECUTE_SPEC,
+  // engine/schema (3)
+  ENGINE_EVALUATE_SPEC, SCHEMA_MIGRATE_SPEC, CONTRACT_CHECK_SPEC,
+  // build (1)
+  BUILD_PACKAGE_SPEC,
+  // pattern (1)
+  PATTERN_SEVERITY_SPEC,
+  // metric/record (1)
+  METRIC_RECORD_SPEC,
+  // dkg extended (2)
+  EDGE_ACTIVITY_SPEC, GATE_CHECK_SPEC,
+  // event/execution (2)
+  EVENT_CLASSIFY_SPEC, EXECUTION_REPLAY_SPEC,
 ] as const;
