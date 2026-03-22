@@ -53,13 +53,67 @@ tracking prefix:
 
 ### dim 종류
 
-| kind | 의미 | 예시 |
-|------|------|------|
-| `axis` | 유한한 분류 차원 | `trackAction: ["click","view","scroll",...]` |
-| `prefix_ref` | 다른 prefix의 주소를 참조 | `svc_ref → service prefix의 주소` |
-| `table_ref` | DB 테이블을 참조 | `actor → members 테이블` |
+| kind | 의미 | 값 | 예시 |
+|------|------|-----|------|
+| `axis` | 유한한 분류 차원 | 문자열 (entry) | `trackAction: "click"` |
+| `prefix_ref` | 다른 prefix의 주소 | 정수 (주소) | `svc_ref: 65536` |
+| `table_ref` | DB 테이블 참조 | (인코딩 안 됨) | `actor → members` |
 
-`prefix_ref`는 **prefix 간 참조**다. endpoint prefix가 `svc_ref`로 service prefix를 참조하면, "이 API 호출이 어떤 서비스에서 발생했는가"를 좌표에 포함시킨다. prefix가 다른 prefix를 조합하여 더 풍부한 의미를 구성하는 방식이다.
+### prefix_ref — prefix 간 참조
+
+prefix_ref는 **다른 prefix의 주소를 값으로 가지는 차원**이다. 정수 주소 자체가 값이지만, 그 주소를 디코딩하면 참조된 prefix의 차원들이 펼쳐진다.
+
+```
+endpoint prefix를 디코딩하면:
+
+  endpoint:v1:32
+    svc_ref: service:65536 (prod/asia/shopping-web/shop)   ← prefix_ref
+    resource_type: api                                      ← axis (직접 값)
+    http_method: POST                                       ← axis
+    api_version: v1                                         ← axis
+
+svc_ref는 "65536"이라는 정수를 가지고 있지만,
+이것은 service prefix의 주소이므로 펼치면:
+  env: prod, region: asia, svc_name: shopping-web, namespace: shop
+```
+
+이 구조가 중요한 이유:
+
+**1. 정보를 담는다** — prefix_ref 주소 자체가 식별자. `65536`으로 "어떤 서비스인가"를 즉시 조회할 수 있다.
+
+**2. 조합한다** — endpoint prefix는 "이 서비스(svc_ref)의 이 API(resource_type/http_method)"를 하나의 좌표로 표현한다. service prefix의 4차원을 endpoint의 3차원과 조합하여 7차원 주소 공간을 구성하되, service 부분은 이미 인코딩된 정수 하나로 압축된다.
+
+**3. 인덱스로 작동한다** — service 주소 `65536`을 키로:
+- permission prefix에서 "이 서비스의 권한" 조회
+- deploy_event prefix에서 "이 서비스의 배포 이력" 조회
+- DB에서 `WHERE service_addr = 65536` 질의
+
+**4. 범위 질의가 가능하다** — `calcAddressRanges({ svc_name: "shopping-web" })`로 해당 서비스의 모든 주소 범위를 계산하고, `SQL WHERE addr BETWEEN from AND to`로 조회한다.
+
+```
+service prefix 주소가 인덱스 키가 되는 예:
+
+  service:v1:65536 = { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" }
+
+  이 주소를 참조하는 곳:
+    permission → perm_svc: 65536  → "이 서비스의 권한"
+    endpoint   → svc_ref: 65536   → "이 서비스의 API"
+    page_view  → svc_ref: 65536   → "이 서비스의 화면 관측"
+    deploy_event → svc_ref: 65536 → "이 서비스의 배포"
+
+  → DSL이 service binding으로 이 prefix들을 묶으면,
+    같은 svc_ref를 공유하는 prefix들의 이벤트를 함께 추적할 수 있다.
+```
+
+### axis와 prefix_ref의 구분
+
+| | axis | prefix_ref |
+|---|---|---|
+| 값 | 문자열 entry (`"admin"`, `"POST"`) | 정수 주소 (`65536`) |
+| 의미 | 직접 읽을 수 있음 | 디코딩해야 의미 파악 |
+| 표시 | `role: admin` | `svc_ref: service:65536 (prod/asia/shopping-web/shop)` |
+| 펼침 | 없음 (그 자체가 값) | 참조된 prefix의 차원들로 펼쳐짐 |
+| 인덱스 | entry 이름으로 필터 | 주소로 DB 질의 (`BETWEEN`) |
 
 ### 카테고리 (6종)
 

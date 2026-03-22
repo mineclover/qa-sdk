@@ -22,8 +22,14 @@ rbac:v1:0  →  { role: "admin", action: "read", resource: "dashboard" }
 
 좌표 시스템의 구성 요소:
 - **축 (Axis)**: 유한한 분류 차원. 예: `role`(7개 값), `env`(5개 값), `page`(8개 값)
-- **Prefix**: 축의 조합으로 구성된 주소 공간. 예: `rbac` = role × action × resource
-- **인코딩**: mixed-radix 방식으로 다차원 좌표를 1D 정수로 변환. `calcWeights` 함수가 canonical 구현
+- **Prefix**: 의미의 재사용 단위. 축의 조합으로 구성된 독립적 주소 공간. 예: `rbac` = role × action × resource
+- **prefix_ref**: prefix 간 참조. 다른 prefix의 주소를 값으로 가지는 차원. 디코딩하면 참조된 prefix의 차원들이 펼쳐진다.
+  ```
+  endpoint:v1:32
+    svc_ref: service:65536 (prod/asia/shopping-web/shop)  ← prefix_ref (참조 주소 + 의미)
+    resource_type: api                                     ← axis (직접 값)
+  ```
+- **인코딩**: mixed-radix 방식으로 다차원 좌표를 1D 정수로 변환. prefix_ref 주소는 DB 인덱스 키로 사용 가능
 
 ### SDK
 
