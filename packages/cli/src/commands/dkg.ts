@@ -234,6 +234,8 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg tables":    { intent: "query", domain: "dkg-graph", subject: "table" },
   "dkg table":     { intent: "query", domain: "dkg-graph", subject: "table" },
+  "dkg transitions": { intent: "query", domain: "dkg-graph", subject: "spec" },
+  "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
 };
 
 /**
@@ -307,9 +309,11 @@ export function analyzeCliCoverage(): {
           if (eu.axisId === "cli_domain") observedDomains.add(eu.entry);
           if (eu.axisId === "cli_subject") observedSubjects.add(eu.entry);
         }
-      } catch { /* 개별 파싱 실패 무시 */ }
+      } catch { /* 개별 snapshot JSON 파싱 실패 — 스킵 */ }
     }
-  } catch { /* store 접근 실패 */ }
+  } catch (err) {
+    if (process.env.DEBUG) console.warn("[analyzeCliCoverage] store access failed:", err);
+  }
 
   // 관측된 좌표 조합 판별
   const observed = new Set<string>();
@@ -487,11 +491,16 @@ export function dkgReport(): void {
   // 수렴 분석 요약 — DEC-SEP/DEC-MERGE 분리 결정이 있는 쌍은 별도 표시
   const entriesMap = buildEntriesMap();
   const overlaps = scanAxisOverlaps(graph, entriesMap);
-  const hasSepDec = (a: string, b: string) =>
-    [`DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`, `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`]
-      .some(id => { const n = graph.getNode(id); return n && n.kind === "decision" && (n as any).lifecycle === "active"; });
-  const mergeCandidate = overlaps.filter(o => o.recommendation === "merge" && !hasSepDec(o.a, o.b));
-  const mergeSuppressed = overlaps.filter(o => o.recommendation === "merge" && hasSepDec(o.a, o.b));
+  function hasActiveDecision(a: string, b: string): boolean {
+    const ids = [`DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`, `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`];
+    return ids.some(id => {
+      const n = graph.getNode(id);
+      return n?.kind === "decision" && (n as DecisionNode).lifecycle === "active";
+    });
+  }
+  const mergeOverlaps = overlaps.filter(o => o.recommendation === "merge");
+  const mergeCandidate = mergeOverlaps.filter(o => !hasActiveDecision(o.a, o.b));
+  const mergeSuppressed = mergeOverlaps.filter(o => hasActiveDecision(o.a, o.b));
   const reviewCandidate = overlaps.filter(o => o.recommendation === "review");
 
   if (mergeCandidate.length > 0) {
@@ -1388,10 +1397,11 @@ export function dkgTable(tableId: string): void {
 
   // 컬럼 참조 상세
   const colRefs = graph.getTableColumnRefs(tableId);
+  const kindLabels: Record<string, string> = { column_axis: "axis", fk: "FK", prefix_ref: "prefix" };
   if (colRefs.length > 0) {
     console.log(`\n  ── Column References (${colRefs.length}) ──`);
     for (const ref of colRefs) {
-      const kindLabel = ref.refKind === "column_axis" ? "axis" : ref.refKind === "fk" ? "FK" : "prefix";
+      const kindLabel = kindLabels[ref.refKind] ?? ref.refKind;
       console.log(`    ${ref.column.padEnd(16)} → ${ref.targetId} [${kindLabel}]`);
     }
   }
@@ -1425,13 +1435,11 @@ export function dkgTable(tableId: string): void {
   }
 
   // impact summary
-  const allPrefixes = cascade.prefixes;
-  const allServices = services;
-  if (allPrefixes.length > 0 || allServices.length > 0) {
+  if (cascade.prefixes.length > 0 || services.length > 0) {
     console.log(`\n  ── Impact Summary ──`);
     console.log(`    이 테이블 변경 시:`);
-    console.log(`      영향 prefix: ${allPrefixes.map(p => p.prefixId).join(", ") || "없음"}`);
-    console.log(`      영향 service: ${[...new Set(allServices.map(s => s.serviceId))].join(", ") || "없음"}`);
+    console.log(`      영향 prefix: ${cascade.prefixes.map(p => p.prefixId).join(", ") || "없음"}`);
+    console.log(`      영향 service: ${[...new Set(services.map(s => s.serviceId))].join(", ") || "없음"}`);
     if (cascade.referencingTables.length > 0) {
       console.log(`      FK 참조 테이블: ${cascade.referencingTables.map(t => t.id).join(", ")}`);
     }
@@ -3273,7 +3281,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   // analyzeSelfCheck가 생성한 records에 contract records를 병합
   for (const r of syntheticAnalysis.records) {
     // build/test records는 이미 위에서 생성 — synthetic만 추가
-    if ((r as any).execution_mode === "synthetic") {
+    if (r.execution_mode === "synthetic") {
       records.push(r);
     }
   }

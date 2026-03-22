@@ -128,10 +128,10 @@ export class RecordStreamBroker {
       try {
         const result = listener(snapshot);
         Promise.resolve(result).catch((err: unknown) => {
-          console.error("[record-stream-broker] async listener error", err);
+          console.error("[record-stream-broker] async listener error", { err, eventKey: record.eventKey });
         });
       } catch (err: unknown) {
-        console.error("[record-stream-broker] sync listener error", err);
+        console.error("[record-stream-broker] sync listener error", { err, eventKey: record.eventKey });
       }
     }
   }
