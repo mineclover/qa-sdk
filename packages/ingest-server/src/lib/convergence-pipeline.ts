@@ -57,6 +57,8 @@ export interface DkgStorePort {
   ): { snapshotId: number; observationsWritten: number };
   /** observation 노드 업데이트 (자동 해소용) */
   updateNode?(node: unknown): void;
+  /** 노드/엣지 추가 저장 (prompts 연결 등) */
+  saveNodes?(nodes: readonly unknown[], edges: readonly unknown[], source: string): void;
 }
 
 // ── Pipeline 설정 ────────────────────────────────────
@@ -272,6 +274,19 @@ export class ConvergencePipelineRunner {
       try {
         const result = dkgStore.saveUsageSnapshotWithObservations(usage, observations);
         snapshotId = result.snapshotId;
+
+        // OBS-PATTERN → CON-004/CON-005 prompts 자동 연결
+        const patternObs = observations.filter((o: any) => o.id?.startsWith("OBS-PATTERN-"));
+        if (patternObs.length > 0) {
+          const promptsEdges = patternObs.map((o: any) => ({
+            type: "prompts" as const,
+            from: o.id as string,
+            to: "CON-005",  // critical anomaly → auto observation constraint
+          }));
+          try {
+            dkgStore.saveNodes?.([], promptsEdges, "auto");
+          } catch { /* prompts 저장 실패는 무시 */ }
+        }
       } catch (error) {
         logger?.error({ err: error }, "convergence: failed to save snapshot");
       }

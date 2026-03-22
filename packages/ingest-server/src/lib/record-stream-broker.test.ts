@@ -45,7 +45,7 @@ describe("RecordStreamBroker — listener error isolation", () => {
     expect(goodListener).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith(
       "[record-stream-broker] sync listener error",
-      expect.any(Error),
+      expect.objectContaining({ err: expect.any(Error) }),
     );
   });
 
@@ -60,7 +60,7 @@ describe("RecordStreamBroker — listener error isolation", () => {
     await vi.waitFor(() => {
       expect(errorSpy).toHaveBeenCalledWith(
         "[record-stream-broker] async listener error",
-        expect.any(Error),
+        expect.objectContaining({ err: expect.any(Error) }),
       );
     });
   });

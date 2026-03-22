@@ -27,6 +27,19 @@ const gateClient = env.GATE_SERVICE_URL
   : undefined;
 const startedAt = Date.now();
 
+// ── Transition State Store (optional) ───────────────
+let stateRoutesDeps: { stateStore: { snapshot(ctx: string, res: string): Record<string, string> } } | undefined;
+try {
+  // InMemoryStateStore는 get/set/snapshot 인터페이스 충족
+  const mod = await (Function('return import("@qa-sdk/spec-core/transition")')() as Promise<any>);
+  if (mod?.InMemoryStateStore) {
+    stateRoutesDeps = { stateStore: new mod.InMemoryStateStore() };
+    logger.info("transition state store initialized (in-memory)");
+  }
+} catch {
+  // spec-core/transition 미설치 환경에서는 무시
+}
+
 const app = createApp({
   policyRuleStore,
   prefixRegistry,
@@ -36,6 +49,7 @@ const app = createApp({
   gateFailureMode: env.QUERY_GATE_FAILURE_MODE,
   logger,
   getUptimeSeconds: () => Math.floor((Date.now() - startedAt) / 1000),
+  stateRoutes: stateRoutesDeps,
 });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
