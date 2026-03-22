@@ -496,22 +496,35 @@ export function dkgReport(): void {
   const entriesMap = buildEntriesMap();
   const overlaps = scanAxisOverlaps(graph, entriesMap);
   function hasActiveDecision(a: string, b: string): boolean {
+    // 1. ID 패턴 매칭 (bootstrap에서 생성된 DEC-SEP-{a}-{b})
     const ids = [`DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`, `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`];
-    return ids.some(id => {
+    const byId = ids.some(id => {
       const n = graph.getNode(id);
       return n?.kind === "decision" && (n as DecisionNode).lifecycle === "active";
+    });
+    if (byId) return true;
+
+    // 2. 전체 Decision 스캔 — ID 또는 title에 두 축이 모두 언급된 활성 Decision
+    const decisions = graph.getNodesByKind("decision") as DecisionNode[];
+    return decisions.some(d => {
+      if (d.lifecycle !== "active") return false;
+      const text = `${d.id} ${d.title}`;
+      return (text.includes(a) && text.includes(b));
     });
   }
   const mergeOverlaps = overlaps.filter(o => o.recommendation === "merge");
   const mergeCandidate = mergeOverlaps.filter(o => !hasActiveDecision(o.a, o.b));
   const mergeSuppressed = mergeOverlaps.filter(o => hasActiveDecision(o.a, o.b));
-  const reviewCandidate = overlaps.filter(o => o.recommendation === "review");
+  const reviewAll = overlaps.filter(o => o.recommendation === "review");
+  const reviewCandidate = reviewAll.filter(o => !hasActiveDecision(o.a, o.b));
+  const reviewSuppressed = reviewAll.filter(o => hasActiveDecision(o.a, o.b));
 
   if (mergeCandidate.length > 0) {
     console.log(`\n  병합 후보: ${mergeCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);
   }
-  if (mergeSuppressed.length > 0) {
-    console.log(`  분리 유지 (결정됨): ${mergeSuppressed.map(o => `${o.a}↔${o.b}`).join(", ")}`);
+  if (mergeSuppressed.length > 0 || reviewSuppressed.length > 0) {
+    const all = [...mergeSuppressed, ...reviewSuppressed];
+    console.log(`  분리 유지 (결정됨): ${all.map(o => `${o.a}↔${o.b}`).join(", ")}`);
   }
   if (reviewCandidate.length > 0) {
     console.log(`  검토 필요: ${reviewCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);
