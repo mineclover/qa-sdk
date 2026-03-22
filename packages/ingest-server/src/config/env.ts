@@ -21,6 +21,8 @@ export const envSchema = z.object({
   CONVERGENCE_DKG_SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   CONVERGENCE_SCHEDULE_INTERVAL_MS: z.coerce.number().int().positive().default(300_000),
   CONVERGENCE_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  // ── Catalog ──────────────────────────────────────────
+  CATALOG_ID: z.string().default("demo"),
   // ── Pattern Classification ─────────────────────────
   PATTERN_CLASSIFICATION_ENABLED: booleanWithDefaultFalse,
   // ── Transition Engine (Phase 2.5) ─────────────────

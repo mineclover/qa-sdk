@@ -123,7 +123,7 @@ async function startServer() {
           const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
           if (registryUrl) {
             try {
-              const rulesRes = await fetch(`${registryUrl}/catalogs/${process.env.CATALOG_ID ?? "demo"}/pattern-rules`);
+              const rulesRes = await fetch(`${registryUrl}/catalogs/${env.CATALOG_ID}/pattern-rules`);
               if (rulesRes.ok) {
                 const rulesBody = await rulesRes.json() as { data: string };
                 patternRules = JSON.parse(rulesBody.data);
