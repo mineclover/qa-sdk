@@ -10,7 +10,7 @@
 import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode, ConstraintNode } from "../dkg/dkg.types.js";
 import type { AxisOverlap } from "./convergence.types.js";
-import { scaffoldDecision } from "../dkg/decision-scaffold.js";
+import { scaffoldDecision } from "../shared/decision-scaffold.js";
 
 export interface SeparationRecord {
   readonly decision: DecisionNode;

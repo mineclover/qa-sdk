@@ -7,7 +7,7 @@
 import { nextPowerOf2 } from "weighted-index";
 import type { GraphPort } from "../shared/graph-port.js";
 import type { DecisionNode } from "../dkg/dkg.types.js";
-import { scaffoldDecision } from "../dkg/decision-scaffold.js";
+import { scaffoldDecision } from "../shared/decision-scaffold.js";
 
 export interface HeadroomIssue {
   readonly axisId: string;
