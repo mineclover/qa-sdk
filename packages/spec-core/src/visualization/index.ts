@@ -2,8 +2,16 @@
  * visualization — 레이어 맵 + 모니터.
  */
 
-export { buildLayerMap, buildServiceOwnerMap, extractTracePaths, computeActivity } from "./layer-map.js";
-export type { LayerLevel, PrefixPlacement, LayerDefinition, LayerMapResult, ServiceOwnerMap, TraceStep, TracePath, PrefixActivity } from "./layer-map.js";
+export {
+  buildLayerMap, buildSvcOwnerMap, buildDomainMemberMap,
+  SERVICE_PROJECTION, LEGACY_PROJECTION,
+  extractTracePaths, computeActivity,
+} from "./layer-map.js";
+export type {
+  LayerLevel, PrefixPlacement, LayerDefinition, LayerMapResult,
+  Projection,
+  TraceStep, TracePath, PrefixActivity,
+} from "./layer-map.js";
 export { MonitorState } from "./monitor-queries.js";
 
 export {

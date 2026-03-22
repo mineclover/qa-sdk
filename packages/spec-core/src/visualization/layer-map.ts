@@ -11,13 +11,12 @@
  */
 
 import { type Catalog, type PrefixDef, compareTimestamps } from "@qa-sdk/core";
-import type { ServiceTier } from "../dkg/service-topology.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
 // ═══════════════════════════════════════════════════════════════
 
-export type LayerLevel = 0 | 1 | 2;
+export type LayerLevel = 0 | 1 | 2 | 3;
 
 export interface PrefixPlacement {
   readonly prefixId: string;
@@ -25,6 +24,8 @@ export interface PrefixPlacement {
   readonly layer: LayerLevel;
   readonly layerName: string;
   readonly category: string;
+  /** projection 소속 그룹 (service name, domain name 등) */
+  readonly group?: string;
   /** 3D 그리드 위치 (layer 내 x, z) */
   readonly gridX: number;
   readonly gridZ: number;
@@ -42,57 +43,109 @@ export interface LayerMapResult {
   readonly allPlacements: readonly PrefixPlacement[];
   /** prefix ID → placement 빠른 조회 */
   readonly placementMap: ReadonlyMap<string, PrefixPlacement>;
+  /** 사용된 projection */
+  readonly projection?: Projection;
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Projection — "보는 관점"별 prefix 재배치
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Projection = catalog의 raw 구조와 독립적인 "관점별 배치 규칙".
+ *
+ * 같은 catalog에서 여러 projection을 만들 수 있다:
+ *   - service projection: svc_name → layer 매핑
+ *   - domain projection: domain → layer 매핑
+ *   - prefix projection: prefixId → layer 직접 매핑 (LAYER_RULES 대체)
+ */
+export interface Projection {
+  /** projection 이름 */
+  readonly name: string;
+  /** 관점별 layer 이름 (최대 4계층) */
+  readonly layerNames?: Partial<Record<LayerLevel, string>>;
+  /** 관점별 layer 설명 */
+  readonly layerDescriptions?: Partial<Record<LayerLevel, string>>;
+  /** svc_name entry → layer 매핑. prefix가 바인딩된 service의 svc_name으로 layer 결정. */
+  readonly svcNameMap?: Record<string, LayerLevel>;
+  /** domain → layer 매핑. DkgConfig.domains의 prefix 소속으로 layer 결정. */
+  readonly domainMap?: Record<string, LayerLevel>;
+  /** prefixId → layer 직접 매핑. 최우선. */
+  readonly prefixMap?: Record<string, LayerLevel>;
+  /** 기본 layer (매핑에 없을 때). default: 1 */
+  readonly defaultLayer?: LayerLevel;
+}
+
+// ── 기본 Projection 정의 ─────────────────────────────────
+
+/** 서비스 기반 projection — svc_name으로 layer 결정 */
+export const SERVICE_PROJECTION: Projection = {
+  name: "service",
+  layerNames: {
+    0: "Frontend",
+    1: "Backend",
+    2: "Infrastructure",
+    3: "System / DKG",
+  },
+  layerDescriptions: {
+    0: "유저 접점 — 화면 관측, 행동 추적",
+    1: "비즈니스 로직 — API, 흐름, 권한, 도메인 이벤트",
+    2: "인프라 — 배포, 헬스, 파이프라인, 서비스 컨텍스트",
+    3: "시스템 — DKG 자기참조, CLI, 빌드/테스트",
+  },
+  svcNameMap: {
+    "shopping-web": 0,
+    "shopping-backend": 1,
+    "auth": 1,
+    "payment": 1,
+    "gateway": 1,
+  },
+  // svc_ref 없는 prefix 중 dev/dkg 관련
+  prefixMap: {
+    dkg_event: 3,
+    dkg_decision_event: 3,
+    dkg_observation_event: 3,
+    cli_event: 3,
+    skill_execution: 3,
+    contract_check: 3,
+    build_event: 3,
+    test_event: 3,
+  },
+  defaultLayer: 1,
+};
+
+/** 레거시 하드코딩 호환 projection */
+export const LEGACY_PROJECTION: Projection = {
+  name: "legacy",
+  prefixMap: {
+    page_view: 0, tracking: 0,
+    endpoint: 1, flow_point: 1, permission: 1, rbac: 1,
+    cart_event: 1, auth_event: 1, order_event: 1, event: 1,
+    content: 1, relational: 1, engine_event: 1,
+    service: 2, deploy_event: 2, health_event: 2,
+    pipeline_point: 2, data_policy: 2, schema_event: 2,
+  },
+  defaultLayer: 1,
+};
 
 // ═══════════════════════════════════════════════════════════════
 //  Layer Classification
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Fallback layer rules for catalogs without prefix.meta.
- * When prefix.meta.layer is present, it takes precedence.
- */
-const LAYER_RULES: Record<string, LayerLevel> = {
-  // Layer 0: UI
-  page_view: 0,
-  tracking: 0,
-  // Layer 1: Business
-  endpoint: 1,
-  flow_point: 1,
-  permission: 1,
-  rbac: 1,
-  cart_event: 1,
-  auth_event: 1,
-  order_event: 1,
-  event: 1,
-  content: 1,
-  relational: 1,
-  engine_event: 1,
-  // Layer 2: Infra
-  service: 2,
-  deploy_event: 2,
-  health_event: 2,
-  pipeline_point: 2,
-  data_policy: 2,
-  schema_event: 2,
-};
-
-const LAYER_NAMES: Record<LayerLevel, string> = {
+const DEFAULT_LAYER_NAMES: Record<LayerLevel, string> = {
   0: "UI / 사용자 인터페이스",
   1: "비즈니스 로직",
   2: "인프라 / 데이터",
+  3: "시스템",
 };
 
-const LAYER_DESCRIPTIONS: Record<LayerLevel, string> = {
+const DEFAULT_LAYER_DESCRIPTIONS: Record<LayerLevel, string> = {
   0: "유저 접점 — 화면 관측, 행동 추적. 이벤트의 시작점.",
-  1: "비즈니스 로직 — API 호출, 흐름 분기, 권한 검사, 도메인 이벤트. 이벤트의 처리.",
-  2: "인프라/데이터 — 파이프라인, 배포, 헬스, 서비스 컨텍스트. 이벤트의 저장/전파.",
+  1: "비즈니스 로직 — API 호출, 흐름 분기, 권한 검사, 도메인 이벤트.",
+  2: "인프라/데이터 — 파이프라인, 배포, 헬스, 서비스 컨텍스트.",
+  3: "시스템 — DKG 자기참조, CLI 관측, 빌드/테스트.",
 };
 
-/**
- * prefix의 구조에서 카테고리를 추론한다 (fallback 로직).
- * prefix.meta.category가 없을 때 사용.
- */
 function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string {
   const hasTableRef = Object.values(prefix.dims).some(d => d.kind === "table_ref");
   if (hasTableRef || prefixId.endsWith("_event")) return "event";
@@ -102,103 +155,148 @@ function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string
   return "entity";
 }
 
-/** ServiceTier → LayerLevel 매핑 */
-const TIER_TO_LAYER: Record<ServiceTier, LayerLevel> = {
-  frontend: 0,
-  backend: 1,
-  infra: 2,
-  system: 2,
-};
-
-/** 서비스 소유/소비 정보. prefix → owner service tier 매핑에 사용. */
-export interface ServiceOwnerMap {
-  /** prefixId → owner serviceId */
-  readonly owners: ReadonlyMap<string, string>;
-  /** serviceId → tier */
-  readonly tiers: ReadonlyMap<string, ServiceTier>;
+/**
+ * prefix가 바인딩된 service의 svc_name entry를 추출한다.
+ * prefix에 svc_ref (prefix_ref → service)가 있으면,
+ * 해당 prefix의 refEntries에서 첫 번째 service 주소를 역으로 decode.
+ *
+ * 간단 버전: ServiceTopology의 ownedPrefixes로 매핑 (catalog 만으로는 owner를 알 수 없으므로).
+ */
+function resolveSvcNameForPrefix(
+  _catalog: Catalog,
+  prefixId: string,
+  svcOwners?: ReadonlyMap<string, string>,
+): string | undefined {
+  return svcOwners?.get(prefixId);
 }
 
 /**
- * prefix를 3D 계층에 배치한다.
+ * prefix를 계층에 배치한다.
  *
- * 우선순위:
- *   1. prefix.meta.layer (명시적 하드코딩)
- *   2. serviceOwners → owner service tier → layer (service 기반 추론)
- *   3. LAYER_RULES (prefix ID 기반 fallback)
- *   4. default: Layer 1
+ * projection 우선순위:
+ *   1. projection.prefixMap (직접 매핑)
+ *   2. projection.svcNameMap (svc_name 기반 — svcOwners 필요)
+ *   3. projection.domainMap (domain 기반 — domainMembers 필요)
+ *   4. meta.layer (catalog 하드코딩)
+ *   5. projection.defaultLayer (기본값)
  */
-export function buildLayerMap(catalog: Catalog, serviceOwners?: ServiceOwnerMap): LayerMapResult {
+export function buildLayerMap(
+  catalog: Catalog,
+  projection?: Projection,
+  svcOwners?: ReadonlyMap<string, string>,
+  domainMembers?: ReadonlyMap<string, string>,
+): LayerMapResult {
+  const proj = projection ?? LEGACY_PROJECTION;
+  const layerNames = { ...DEFAULT_LAYER_NAMES, ...proj.layerNames };
+  const layerDescs = { ...DEFAULT_LAYER_DESCRIPTIONS, ...proj.layerDescriptions };
+
   const placementMap = new Map<string, PrefixPlacement>();
-  const layerBuckets: Map<LayerLevel, PrefixPlacement[]> = new Map([
-    [0, []], [1, []], [2, []],
+  const layerBuckets = new Map<LayerLevel, PrefixPlacement[]>([
+    [0, []], [1, []], [2, []], [3, []],
   ]);
 
-  let index = 0;
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
-    // service tier 기반 추론
-    let serviceDerivedLayer: LayerLevel | undefined;
-    if (serviceOwners) {
-      const ownerId = serviceOwners.owners.get(prefixId);
-      if (ownerId) {
-        const tier = serviceOwners.tiers.get(ownerId);
-        if (tier) serviceDerivedLayer = TIER_TO_LAYER[tier];
+    let layer: LayerLevel | undefined;
+
+    // 1. prefixMap 직접 매핑
+    if (proj.prefixMap && prefixId in proj.prefixMap) {
+      layer = proj.prefixMap[prefixId];
+    }
+
+    // 2. svcNameMap — service owner의 svc_name으로 매핑
+    if (layer === undefined && proj.svcNameMap && svcOwners) {
+      const ownerSvcName = resolveSvcNameForPrefix(catalog, prefixId, svcOwners);
+      if (ownerSvcName && ownerSvcName in proj.svcNameMap) {
+        layer = proj.svcNameMap[ownerSvcName];
       }
     }
 
-    const layer: LayerLevel = (prefix.meta?.layer ?? serviceDerivedLayer ?? LAYER_RULES[prefixId] ?? 1) as LayerLevel;
-    const bucket = layerBuckets.get(layer)!;
-    const gridX = bucket.length % 4;
-    const gridZ = Math.floor(bucket.length / 4);
+    // 3. domainMap — domain 소속으로 매핑
+    if (layer === undefined && proj.domainMap && domainMembers) {
+      const domain = domainMembers.get(prefixId);
+      if (domain && domain in proj.domainMap) {
+        layer = proj.domainMap[domain];
+      }
+    }
 
+    // 4. meta.layer (catalog 하드코딩)
+    if (layer === undefined && prefix.meta?.layer !== undefined) {
+      layer = prefix.meta.layer as LayerLevel;
+    }
+
+    // 5. default
+    if (layer === undefined) {
+      layer = proj.defaultLayer ?? 1;
+    }
+
+    const bucket = layerBuckets.get(layer)!;
     const category = prefix.meta?.category ?? inferCategoryFromStructure(prefixId, prefix);
+    const ownerSvc = svcOwners?.get(prefixId);
+    const domain = domainMembers?.get(prefixId);
 
     const placement: PrefixPlacement = {
       prefixId,
       name: prefix.name,
       layer,
-      layerName: LAYER_NAMES[layer],
+      layerName: layerNames[layer] ?? `Layer ${layer}`,
       category,
-      gridX,
-      gridZ,
+      group: ownerSvc ?? domain,
+      gridX: bucket.length % 4,
+      gridZ: Math.floor(bucket.length / 4),
     };
 
     bucket.push(placement);
     placementMap.set(prefixId, placement);
-    index++;
   }
 
-  const layers: LayerDefinition[] = [0, 1, 2].map(level => ({
-    level: level as LayerLevel,
-    name: LAYER_NAMES[level as LayerLevel],
-    description: LAYER_DESCRIPTIONS[level as LayerLevel],
-    prefixes: layerBuckets.get(level as LayerLevel)!,
+  const usedLevels = [...layerBuckets.entries()]
+    .filter(([, bucket]) => bucket.length > 0)
+    .map(([level]) => level)
+    .sort();
+
+  const layers: LayerDefinition[] = usedLevels.map(level => ({
+    level,
+    name: layerNames[level] ?? `Layer ${level}`,
+    description: layerDescs[level] ?? "",
+    prefixes: layerBuckets.get(level)!,
   }));
 
   return {
     layers,
     allPlacements: [...placementMap.values()],
     placementMap,
+    projection: proj,
   };
 }
 
 /**
- * ServiceTopologyRegistry에서 ServiceOwnerMap을 구성한다.
- * buildLayerMap의 두 번째 인자로 전달하면 service tier 기반 layer 추론이 활성화된다.
+ * ServiceTopologyRegistry에서 prefix → owner svc_name 맵 구성.
  */
-export function buildServiceOwnerMap(
-  services: ReadonlyArray<{ serviceId: string; tier?: ServiceTier; ownedPrefixes: readonly string[] }>,
-): ServiceOwnerMap {
-  const owners = new Map<string, string>();
-  const tiers = new Map<string, ServiceTier>();
-
+export function buildSvcOwnerMap(
+  services: ReadonlyArray<{ serviceId: string; ownedPrefixes: readonly string[] }>,
+): ReadonlyMap<string, string> {
+  const map = new Map<string, string>();
   for (const svc of services) {
-    if (svc.tier) tiers.set(svc.serviceId, svc.tier);
     for (const prefixId of svc.ownedPrefixes) {
-      owners.set(prefixId, svc.serviceId);
+      map.set(prefixId, svc.serviceId);
     }
   }
+  return map;
+}
 
-  return { owners, tiers };
+/**
+ * DkgConfig.domains에서 prefix → domain 맵 구성.
+ */
+export function buildDomainMemberMap(
+  domains: ReadonlyArray<{ id: string; prefixes: readonly string[] }>,
+): ReadonlyMap<string, string> {
+  const map = new Map<string, string>();
+  for (const domain of domains) {
+    for (const prefixId of domain.prefixes) {
+      map.set(prefixId, domain.id);
+    }
+  }
+  return map;
 }
 
 // ═══════════════════════════════════════════════════════════════
