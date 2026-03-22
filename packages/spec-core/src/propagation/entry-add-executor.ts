@@ -65,7 +65,7 @@ export function executeEntryAdd(
   const warnings: string[] = [];
 
   // ── 1. 멱등성 — 동일 entry에 대한 VersionEvent가 이미 존재하는지 확인 ──
-  const existingEvents = graph.getNodesByKind("version-event") as VersionEventNode[];
+  const existingEvents = graph.getNodesByKind("version-event");
   const alreadyRecorded = existingEvents.some(
     (e) =>
       e.subjectId === axisId &&

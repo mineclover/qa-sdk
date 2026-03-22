@@ -162,24 +162,24 @@ export function resolveObservation(
  * 전체 DKG 그래프의 lifecycle 상태를 요약한다.
  */
 export function generateLifecycleReport(graph: GraphRegistry): LifecycleReport {
-  const prefixes = (graph.getNodesByKind("prefix") as PrefixNode[]).map(p => ({
+  const prefixes = graph.getNodesByKind("prefix").map(p => ({
     id: p.id,
     lifecycle: p.lifecycle ?? "active",
     category: p.category,
   }));
 
-  const dslBundles = (graph.getNodesByKind("dsl-bundle") as DslBundleNode[]).map(d => ({
+  const dslBundles = graph.getNodesByKind("dsl-bundle").map(d => ({
     id: d.id,
     lifecycle: d.lifecycle ?? "active",
   }));
 
-  const decisions = (graph.getNodesByKind("decision") as DecisionNode[]).map(d => ({
+  const decisions = graph.getNodesByKind("decision").map(d => ({
     id: d.id,
     lifecycle: d.lifecycle,
     title: d.title,
   }));
 
-  const observations = (graph.getNodesByKind("observation") as ObservationNode[]).map(o => ({
+  const observations = graph.getNodesByKind("observation").map(o => ({
     id: o.id,
     resolved: !!o.resolution,
     outcome: o.resolution?.outcome,

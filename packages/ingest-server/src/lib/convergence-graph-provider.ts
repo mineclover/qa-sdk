@@ -65,7 +65,7 @@ export async function createGraphProvider(
     const catalogId = config.catalogId ?? "demo";
     try {
       const url = `${config.registryUrl}/catalogs/${catalogId}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (!res.ok) return null;
       const record = await res.json() as { data?: string };
       if (record.data) {

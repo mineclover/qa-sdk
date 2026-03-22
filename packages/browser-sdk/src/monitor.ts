@@ -271,8 +271,8 @@ export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaM
           infraContext: browserTrack(result.catalog, { service: serviceDims }),
         };
       }
-    } catch {
-      // registry 실패 → 정적 BROWSER_CATALOG fallback (동기 생성)
+    } catch (err) {
+      console.warn(`[QaMonitorAsync] registry fetch failed: ${err instanceof Error ? err.message : String(err)}. Using static BROWSER_CATALOG fallback.`);
     }
   }
   return new QaMonitor(config);
