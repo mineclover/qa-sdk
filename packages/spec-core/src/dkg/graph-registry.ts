@@ -1,8 +1,14 @@
 /**
  * DKG GraphRegistry — 노드/엣지 저장소 + 질의 API.
  *
- * 순방향/역방향 인접 리스트로 O(1) 이웃 조회.
- * transitive 순회 지원 (깊이 제한 10).
+ * GraphPort를 구현하는 구체 클래스.
+ * - 순방향/역방향 인접 리스트로 O(1) 이웃 조회
+ * - transitive 순회 지원 (깊이 제한 10)
+ * - getNodesByKind<K>() → Extract<DkgNode, { kind: K }> 타입 안전 반환
+ * - Table 의존 질의: getPrefixesForTable, getTablesForPrefix, cascadeFromTable
+ *
+ * CLI/skills는 이 클래스를 직접 사용하고,
+ * convergence/schema 레이어는 GraphPort 인터페이스만 참조한다.
  */
 
 import type { GraphPort } from "../shared/graph-port.js";

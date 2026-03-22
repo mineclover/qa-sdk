@@ -3,6 +3,11 @@
  *
  * spec-core는 optional peer dependency이므로 정적 import 불가.
  * 동적 import 결과에 대한 최소 구조적 인터페이스를 정의한다.
+ *
+ * 3단 추상화에서 최하위 레벨:
+ *   GraphPort (spec-core/shared)  → convergence/schema 내부용
+ *   GraphRegistryPort (여기)      → 서비스 동적 import용 (최소 2메서드)
+ *   GraphRegistry (spec-core/dkg) → CLI/skills 직접 사용
  */
 
 // ── GraphRegistry (최소 읽기 인터페이스) ─────────────────

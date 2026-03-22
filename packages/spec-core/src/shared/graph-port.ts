@@ -1,8 +1,14 @@
 /**
- * GraphPort — DKG 그래프의 추상 인터페이스.
+ * GraphPort — DKG 그래프의 추상 인터페이스 (의존성 역전).
  *
- * schema, convergence 등 하위 레이어가 GraphRegistry에 직접 의존하지 않도록 한다.
- * GraphRegistry가 이 인터페이스를 구현(implement)한다.
+ * 3단 추상화:
+ *   GraphPort (shared/)     → convergence/schema 레이어가 사용. GraphNodeLike 반환.
+ *   GraphRegistryPort       → 서비스(ingest/registry)가 동적 import 시 사용. 최소 2메서드.
+ *   GraphRegistry (dkg/)    → CLI/skills가 직접 사용. DkgNode 15종 구체 타입 반환.
+ *
+ * GraphPort는 DkgNode를 import하지 않는다.
+ * convergence 함수들은 kind/id만으로 그래프를 질의하고,
+ * 구체 필드(title, rationale 등)가 필요하면 GraphRegistry를 직접 사용한다.
  */
 
 export interface PrefixLike {

@@ -1,14 +1,12 @@
 /**
  * spec-core Port Interfaces — registry-service가 spec-core를 소비할 때 사용하는 인터페이스.
  *
- * 관측 기반 설계 (2026-03-21):
- *   GraphRegistry proto: constructor, addNode, replaceNode, getNode, getNodeOrThrow,
- *     hasNode, getNodesByKind, getAllNodes, nodeCount, addEdge, edgesFrom, edgesTo,
- *     edgeCount, neighbors, reverseNeighbors, transitiveNeighbors, cascadeFromAxis,
- *     cascadeFromPrefix, activeConstraints, intentLinksFor, findNodes,
- *     getPrefixesByCategory, groupPrefixesByCategory
- *   GraphRegistry own: nodes, forward, reverse
+ * 3단 추상화에서 서비스 레벨:
+ *   GraphPort (spec-core/shared)    → convergence/schema 내부용
+ *   GraphRegistryPort (여기)        → 서비스 동적 import용
+ *   GraphRegistry (spec-core/dkg)   → CLI/skills 직접 사용
  *
+ * 관측 기반 설계 (2026-03-21):
  *   Catalog keys: id, name, axes, prefixes, tables
  *   Axis keys: id, name, versions
  *   MetricValue keys: id, name, value, status, detail, target, measuredAt
