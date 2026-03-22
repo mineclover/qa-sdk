@@ -13,7 +13,12 @@ export interface ServiceRecord {
   readonly name: string;
   readonly tier?: "frontend" | "backend" | "infra" | "system";
   readonly team?: string;
+  /** 기본 URL (현재 환경) */
   readonly url?: string;
+  /** 환경별 URL (dev/staging/prod) */
+  readonly urls?: Readonly<Record<string, string>>;
+  /** 게이트웨이 경로 prefix (예: "/v1/ingest") */
+  readonly gatewayPath?: string;
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes?: readonly string[];
 }
@@ -56,16 +61,39 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
   });
 
   // GET /api/services/urls — 서비스별 URL 맵 (config.js 등에서 소비)
+  // ?env=dev|staging|prod → 환경별 URL 반환 (미지정 시 기본 url 필드)
   routes.get("/api/services/urls", async (c) => {
     const catalogId = c.req.query("catalog") ?? "demo";
+    const envName = c.req.query("env");
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json({});
     const services = parseServices(record.data) ?? [];
     const urls: Record<string, string> = {};
     for (const svc of services) {
-      if (svc.url) urls[svc.serviceId] = svc.url;
+      const envUrl = envName && svc.urls ? svc.urls[envName] : undefined;
+      const url = envUrl ?? svc.url;
+      if (url) urls[svc.serviceId] = url;
     }
     return c.json(urls);
+  });
+
+  // GET /api/services/gateway — 게이트웨이 라우팅 구성
+  // 게이트웨이가 이 엔드포인트를 호출하여 동적으로 라우팅 테이블 구성 가능
+  routes.get("/api/services/gateway", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const envName = c.req.query("env") ?? "dev";
+    const record = await configStore.get(catalogId, CONFIG_TYPE);
+    if (!record) return c.json({ routes: [], env: envName });
+    const services = parseServices(record.data) ?? [];
+    const routes_list = services
+      .filter(svc => svc.gatewayPath)
+      .map(svc => ({
+        path: svc.gatewayPath!,
+        serviceId: svc.serviceId,
+        url: (svc.urls?.[envName]) ?? svc.url ?? "",
+        tier: svc.tier ?? "backend",
+      }));
+    return c.json({ routes: routes_list, env: envName });
   });
 
   // GET /api/services/:id — 단건 조회

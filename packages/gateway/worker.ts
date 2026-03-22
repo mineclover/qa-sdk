@@ -31,7 +31,8 @@ export interface Env {
   DECODE_URL?: string;
 }
 
-const SERVICE_ROUTES: Array<{ prefix: string; envKey: keyof Env; defaultUrl: string }> = [
+/** 하드코딩 fallback — registry 미연결 시 사용 */
+const FALLBACK_ROUTES: Array<{ prefix: string; envKey: keyof Env; defaultUrl: string }> = [
   { prefix: "/v1/ingest", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
   { prefix: "/v1/traces", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
   { prefix: "/v1/sessions", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
@@ -46,6 +47,38 @@ const SERVICE_ROUTES: Array<{ prefix: string; envKey: keyof Env; defaultUrl: str
   { prefix: "/decode/", envKey: "DECODE_URL", defaultUrl: "http://localhost:3600" },
 ];
 
+/** registry에서 동적 라우팅 테이블 로드 (캐시: 60초) */
+let cachedRoutes: Array<{ path: string; url: string }> | null = null;
+let cacheExpiry = 0;
+
+async function loadRoutes(env: Env): Promise<Array<{ prefix: string; url: string }>> {
+  const now = Date.now();
+  if (cachedRoutes && now < cacheExpiry) {
+    return cachedRoutes.map(r => ({ prefix: r.path, url: r.url }));
+  }
+
+  const registryUrl = env.REGISTRY_URL ?? "http://localhost:3300";
+  try {
+    const resp = await fetch(`${registryUrl}/api/services/gateway?env=${env.AUTH_MODE === "bypass" ? "dev" : "prod"}`, {
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (resp.ok) {
+      const data = await resp.json() as { routes: Array<{ path: string; url: string }> };
+      if (data.routes.length > 0) {
+        cachedRoutes = data.routes;
+        cacheExpiry = now + 60_000; // 60초 캐시
+        return data.routes.map(r => ({ prefix: r.path, url: r.url }));
+      }
+    }
+  } catch { /* registry 미연결 → fallback */ }
+
+  // fallback: 환경변수 + 하드코딩
+  return FALLBACK_ROUTES.map(r => ({
+    prefix: r.prefix,
+    url: env[r.envKey] ?? r.defaultUrl,
+  }));
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -59,11 +92,11 @@ export default {
     const authResult = authenticate(request, env);
     if (authResult instanceof Response) return authResult;
 
-    // 서비스 라우팅
-    for (const route of SERVICE_ROUTES) {
+    // 서비스 라우팅 (registry 동적 → fallback)
+    const routes = await loadRoutes(env);
+    for (const route of routes) {
       if (url.pathname.startsWith(route.prefix)) {
-        const targetBase = env[route.envKey] ?? route.defaultUrl;
-        const targetUrl = `${targetBase}${url.pathname}${url.search}`;
+        const targetUrl = `${route.url}${url.pathname}${url.search}`;
 
         const headers = new Headers(request.headers);
         headers.set("X-Gateway-Identity", authResult.identity);
