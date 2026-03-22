@@ -1,0 +1,263 @@
+/**
+ * BrowserCodec — 브라우저에서 사용 가능한 경량 encode/decode.
+ *
+ * DEMO_CATALOG의 축/prefix 정의를 JSON으로 받아
+ * mixed-radix encode/decode를 수행한다.
+ *
+ * 이 모듈이 단일 출처가 되면:
+ *   shop-web/index.html — 인라인 encode 제거 → import { encode } from viz-3d-core
+ *   monitor.html — 인라인 encode 제거 → 동일
+ *   sdk/qa-context — 이미 demo-snapshot 의존 (호환)
+ */
+
+// ═══════════════════════════════════════════════════
+//  Catalog Schema (경량)
+// ═══════════════════════════════════════════════════
+
+export interface BrowserDimDef {
+  readonly kind: "axis" | "prefix_ref";
+  /** axis일 때 */
+  readonly entries?: readonly string[];
+  readonly capacity?: number;
+  /** prefix_ref일 때 */
+  readonly values?: readonly number[];
+}
+
+export interface BrowserPrefixDef {
+  readonly version: string;
+  readonly labels: readonly string[];
+  readonly dims: Record<string, BrowserDimDef>;
+}
+
+export type BrowserCatalog = Record<string, BrowserPrefixDef>;
+
+// ═══════════════════════════════════════════════════
+//  Encode / Decode
+// ═══════════════════════════════════════════════════
+
+export interface EncodeResult {
+  readonly prefix: string;
+  readonly version: string;
+  readonly address: number;
+  readonly serialized: string;
+}
+
+/**
+ * 차원 값 → serialized 주소.
+ */
+export function encode(
+  catalog: BrowserCatalog,
+  prefixId: string,
+  values: Record<string, string | number>,
+): EncodeResult | null {
+  const def = catalog[prefixId];
+  if (!def) return null;
+
+  const shape: number[] = [];
+  const positions: number[] = [];
+
+  for (const label of def.labels) {
+    const dim = def.dims[label];
+    if (!dim) return null;
+
+    if (dim.kind === "axis") {
+      shape.push(dim.capacity ?? dim.entries!.length);
+      const idx = dim.entries!.indexOf(values[label] as string);
+      if (idx < 0) return null;
+      positions.push(idx);
+    } else {
+      const vals = dim.values!;
+      shape.push(vals.length);
+      const v = values[label] ?? vals[0];
+      const idx = vals.indexOf(v as number);
+      positions.push(idx < 0 ? 0 : idx);
+    }
+  }
+
+  // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
+  const strides = new Array(shape.length);
+  strides[shape.length - 1] = 1;
+  for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * shape[i + 1];
+
+  let addr = 0;
+  for (let i = 0; i < positions.length; i++) addr += positions[i] * strides[i];
+
+  return { prefix: prefixId, version: def.version, address: addr, serialized: `${prefixId}:${def.version}:${addr}` };
+}
+
+/**
+ * serialized 주소 → 차원 값.
+ */
+export function decode(
+  catalog: BrowserCatalog,
+  serialized: string,
+): { prefix: string; version: string; values: Record<string, string | number> } | null {
+  // canonical: @qa-sdk/core/lib/address-parser.ts (브라우저 번들 격리 위해 인라인)
+  const parts = serialized.split(":");
+  // 3파트: prefix:ver:addr / 4파트: catalogId:prefix:ver:addr
+  const [prefixId, version, addrStr] = parts.length === 4
+    ? [parts[1], parts[2], parts[3]]
+    : [parts[0], parts[1], parts[2]];
+  const def = catalog[prefixId];
+  if (!def) return null;
+
+  let addr = parseInt(addrStr);
+  if (isNaN(addr)) return null;
+
+  const shape: number[] = [];
+  const labels: { label: string; dim: BrowserDimDef }[] = [];
+
+  for (const label of def.labels) {
+    const dim = def.dims[label];
+    if (!dim) continue;
+    if (dim.kind === "axis") {
+      shape.push(dim.capacity ?? dim.entries!.length);
+    } else {
+      shape.push(dim.values!.length);
+    }
+    labels.push({ label, dim });
+  }
+
+  // canonical: weighted-index/calc.ts → calcWeights (브라우저 번들 격리 위해 인라인)
+  const strides = new Array(shape.length);
+  strides[shape.length - 1] = 1;
+  for (let i = shape.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * shape[i + 1];
+
+  const values: Record<string, string | number> = {};
+  for (let i = 0; i < labels.length; i++) {
+    const pos = Math.floor(addr / strides[i]);
+    addr %= strides[i];
+    const { label, dim } = labels[i];
+    values[label] = dim.kind === "axis"
+      ? (dim.entries![pos] ?? `(${pos})`)
+      : (dim.values![pos] ?? pos);
+  }
+
+  return { prefix: prefixId, version, values };
+}
+
+/**
+ * 여러 prefix를 한번에 encode + service 자동 주입.
+ */
+export function track(
+  catalog: BrowserCatalog,
+  prefixDims: Record<string, Record<string, string | number>>,
+): Record<string, string> {
+  const ctx: Record<string, string> = {};
+
+  for (const [prefixId, dims] of Object.entries(prefixDims)) {
+    const def = catalog[prefixId];
+    if (!def) continue;
+
+    const fullDims = { ...dims };
+    // prefix_ref 자동 주입
+    for (const label of def.labels) {
+      const dim = def.dims[label];
+      if (dim?.kind === "prefix_ref" && !(label in fullDims)) {
+        fullDims[label] = dim.values![0];
+      }
+    }
+
+    const result = encode(catalog, prefixId, fullDims);
+    if (result) ctx[prefixId] = result.serialized;
+  }
+
+  return ctx;
+}
+
+/**
+ * address_context의 모든 prefix를 decode.
+ */
+export function decodeContext(
+  catalog: BrowserCatalog,
+  addressContext: Record<string, string>,
+): Record<string, { prefix: string; values: Record<string, string | number> }> {
+  const result: Record<string, { prefix: string; values: Record<string, string | number> }> = {};
+
+  for (const [prefixId, serialized] of Object.entries(addressContext)) {
+    const decoded = decode(catalog, serialized);
+    if (decoded) result[prefixId] = { prefix: decoded.prefix, values: decoded.values };
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
+//  Signal 런타임 분류 (인라인 — zero-dependency 유지)
+// ═══════════════════════════════════════════════════
+
+export type SignalRole =
+  | "context"   // 어디서 — service, page_view (환경/위치)
+  | "trigger"   // 뭘 했는가 — tracking, *_event (유저 행동/시스템 이벤트)
+  | "channel"   // 어떤 경로로 — endpoint (API/webhook/gRPC)
+  | "state"     // 흐름 어디 — flow_point (비즈니스 흐름 위치)
+  | "guard"     // 어떤 조건 — permission, rbac (권한/정책)
+  | "effect"    // 결과 — pipeline_point, health_event, deploy_event
+  | "data"      // 데이터 접점 — table refs (DB 읽기/쓰기)
+  ;
+
+const PREFIX_ROLE_MAP: Record<string, SignalRole> = {
+  // context
+  service: "context",
+  page_view: "context",
+  // trigger
+  tracking: "trigger",
+  cart_event: "trigger",
+  auth_event: "trigger",
+  order_event: "trigger",
+  event: "trigger",
+  engine_event: "trigger",
+  schema_event: "trigger",
+  // channel
+  endpoint: "channel",
+  // state
+  flow_point: "state",
+  // guard
+  permission: "guard",
+  rbac: "guard",
+  // effect
+  pipeline_point: "effect",
+  health_event: "effect",
+  deploy_event: "effect",
+  data_policy: "effect",
+  // data
+  members: "data",
+  orders: "data",
+  items: "data",
+  orgs: "data",
+  carts: "data",
+  cart_items: "data",
+  // relation
+  relational: "context",
+  content: "context",
+};
+
+function getPrefixRole(prefixId: string): SignalRole {
+  return PREFIX_ROLE_MAP[prefixId] ?? "trigger";
+}
+
+function classifyByRole(addressContext: Record<string, string>): Record<SignalRole, { prefixId: string; serialized: string }[]> {
+  const result: Record<SignalRole, { prefixId: string; serialized: string }[]> = {
+    context: [], trigger: [], channel: [], state: [], guard: [], effect: [], data: [],
+  };
+  for (const [prefixId, serialized] of Object.entries(addressContext)) {
+    const role = getPrefixRole(prefixId);
+    result[role].push({ prefixId, serialized });
+  }
+  return result;
+}
+
+/**
+ * address_context를 encode + Signal role 분류까지 한 번에 수행.
+ */
+export function trackWithSignal(
+  catalog: BrowserCatalog,
+  prefixDims: Record<string, Record<string, string | number>>,
+): {
+  addressContext: Record<string, string>;
+  byRole: Record<SignalRole, { prefixId: string; serialized: string }[]>;
+} {
+  const addressContext = track(catalog, prefixDims);
+  const byRole = classifyByRole(addressContext);
+  return { addressContext, byRole };
+}

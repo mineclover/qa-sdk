@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@qa-sdk/browser-codec": "workspace:*",
     "three": "^0.170.0"
   },
   "devDependencies": {

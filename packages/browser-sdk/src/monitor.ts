@@ -6,8 +6,8 @@ import { BeaconTransport } from "./transport.js";
 import { getOrCreateSession, clearSession } from "./session.js";
 import { createAutoCapture } from "./auto-capture.js";
 import type { QaMonitorConfig, MonitorSession, MonitorStatus } from "./types.js";
-import { track as browserTrack } from "../../viz-3d/src/adapter/browser-codec.js";
-import { BROWSER_CATALOG } from "../../viz-3d/src/adapter/demo-catalog-browser.js";
+import { track as browserTrack } from "@qa-sdk/browser-codec";
+import { BROWSER_CATALOG } from "@qa-sdk/browser-codec";
 
 /**
  * QaMonitor — 브라우저 모니터링 SDK 진입점.
@@ -252,7 +252,7 @@ export function createQaMonitor(config: QaMonitorConfig): QaMonitor {
 export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaMonitor> {
   if (config.registry) {
     try {
-      const { loadCatalog: loadBrowserCatalog } = await import("../../viz-3d/src/adapter/catalog-loader.js");
+      const { loadCatalog: loadBrowserCatalog } = await import("@qa-sdk/browser-codec");
       const result = await loadBrowserCatalog({
         registryUrl: config.registry,
         cacheKey: `qa-catalog-${config.catalogId ?? "demo"}`,

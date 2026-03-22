@@ -44,8 +44,20 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
 
+  packages/browser-codec:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
+
   packages/browser-sdk:
     dependencies:
+      '@qa-sdk/browser-codec':
+        specifier: workspace:*
+        version: link:../browser-codec
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
@@ -55,9 +67,6 @@ importers:
       '@qa-sdk/sdk':
         specifier: workspace:*
         version: link:../sdk
-      '@qa-sdk/viz-3d':
-        specifier: workspace:*
-        version: link:../viz-3d
     devDependencies:
       happy-dom:
         specifier: ^20.8.4
@@ -774,6 +783,9 @@ importers:
 
   packages/viz-3d:
     dependencies:
+      '@qa-sdk/browser-codec':
+        specifier: workspace:*
+        version: link:../browser-codec
       three:
         specifier: ^0.170.0
         version: 0.170.0

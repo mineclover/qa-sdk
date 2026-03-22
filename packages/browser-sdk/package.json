@@ -18,10 +18,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@qa-sdk/browser-codec": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
-    "@qa-sdk/sdk": "workspace:*",
-    "@qa-sdk/viz-3d": "workspace:*"
+    "@qa-sdk/sdk": "workspace:*"
   },
   "devDependencies": {
     "happy-dom": "^20.8.4",

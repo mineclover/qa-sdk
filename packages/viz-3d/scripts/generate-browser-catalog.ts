@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { DEMO_CATALOG } from "demo-snapshot";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_PATH = resolve(__dirname, "../src/adapter/demo-catalog-browser.ts");
+const OUTPUT_PATH = resolve(__dirname, "../../browser-codec/src/demo-catalog-browser.ts");
 
 // ── 변환 로직 (core/catalog/browser-flatten.ts와 동일) ──────
 
