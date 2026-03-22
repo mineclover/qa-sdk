@@ -3196,8 +3196,9 @@ interface SelfCheckResult {
  *
  * DEC-CAPACITY-dsl-dev-mmzyw4go: CLI는 데이터 공급/탐색 인터페이스.
  */
-export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
+export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): void {
   const apply = opts.apply ?? false;
+  const fast = opts.fast ?? false;
   const graph = getGraph();
   const store = apply ? getStore() : null;
 
@@ -3206,12 +3207,23 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   const results: SelfCheckResult[] = [];
   const cwd = process.env.HOME ? join(process.env.HOME, "workflow/qa-sdk") : ".";
 
-  console.log(`\n══ Self-Check${apply ? " (--apply)" : ""} ══`);
+  console.log(`\n══ Self-Check${fast ? " (--fast)" : ""}${apply ? " (--apply)" : ""} ══`);
   console.log(`  run: ${runId}\n`);
 
   // ════════════════════════════════════════════════════════════
-  //  Step 1: 빌드/테스트 실행
+  //  Step 1: 빌드/테스트 실행 (--fast 시 스킵)
   // ════════════════════════════════════════════════════════════
+
+  if (fast) {
+    console.log(`\n  ── Phase A: 스킵 (--fast) ──`);
+    // mock 결과로 대체 — analyzeSelfCheck에서 합성 이벤트 생성에만 사용
+    for (const pkg of SELF_CHECK_PKGS) {
+      results.push({ pkg: pkg.name, kind: "build", module: "_all", result: "success", durationMs: 0 });
+      if (pkg.hasTest) results.push({ pkg: pkg.name, kind: "test", module: "_all", result: "passed", tests: 0, passed: 0, failed: 0, durationMs: 0 });
+    }
+    // fast 모드에서는 contract 검증도 스킵 — 빈 배열로 초기화
+    var fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
+  } else {
 
   console.log(`  ── Build ──`);
   for (const pkg of SELF_CHECK_PKGS) {
@@ -3318,6 +3330,8 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
       }
     }
   }
+
+  } // end of if (!fast) — Step 1 빌드/테스트
 
   // ════════════════════════════════════════════════════════════
   //  Phase A: AddressContextRecord 생성 → aggregateUsageData

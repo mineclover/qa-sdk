@@ -41,6 +41,7 @@ import { codegen, runMigrationTest, type CodegenFormat } from "./commands/codege
 import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
 import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
+import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus } from "./commands/ingest.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -123,6 +124,12 @@ Usage:
   qa-sdk dkg decisions export [--output path]  의사결정만 백업
   qa-sdk dkg decisions import <input>          의사결정 복원 (머지)
   qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회
+
+  qa-sdk ingest health               수집 서버 헬스체크
+  qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송
+  qa-sdk ingest recent [limit]       최근 수집 trace 목록
+  qa-sdk ingest trace <traceId>      trace 상세 (records + verdicts)
+  qa-sdk ingest status               수집 파이프라인 상태 요약
 
   qa-sdk catalog list                등록된 카탈로그 목록
   qa-sdk catalog info <id>           카탈로그 상세 정보
@@ -504,7 +511,7 @@ async function main() {
       return;
     }
     case "dkg self-check":
-      dkgSelfCheck({ apply: sub.rest.includes("--apply") });
+      dkgSelfCheck({ apply: sub.rest.includes("--apply"), fast: sub.rest.includes("--fast") });
       return;
     case "dkg patterns":
       dkgPatterns();
@@ -573,6 +580,23 @@ async function main() {
     case "dkg release":
       if (sub.rest[0]) dkgRelease(sub.rest[0]);
       else console.error("Usage: qa-sdk dkg release <id>");
+      return;
+
+    // Ingest 명령어
+    case "ingest health":
+      await ingestHealth(sub.rest);
+      return;
+    case "ingest send":
+      await ingestSend(sub.rest);
+      return;
+    case "ingest recent":
+      await ingestRecent(sub.rest);
+      return;
+    case "ingest trace":
+      await ingestTrace(sub.rest);
+      return;
+    case "ingest status":
+      await ingestStatus(sub.rest);
       return;
 
     // Catalog 명령어
@@ -655,6 +679,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
     "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
+    "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
