@@ -102,10 +102,34 @@ CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
 
 ### demo-snapshot의 위치
 `demo-snapshot`은 **참조 구현**이다. 인프라가 아님.
-- `DEMO_CATALOG` — 쇼핑 도메인 카탈로그 예시 (74축, 39 prefix, 6 tables)
+- `DEMO_CATALOG` — 쇼핑 도메인 카탈로그 예시 (74축, 39 prefix, 19 tables)
 - `DEMO_DKG_CONFIG` — 쇼핑 도메인 거버넌스 예시
 - `DEMO_PATTERN_RULES` — 쇼핑 이벤트 분류 규칙 예시
+- `DEMO_SCENARIOS` — 정식 ScenarioSpec 8종 (shop-web 5 + infra 2 + dev 1)
+- `DEMO_TRANSITION_SPECS` — TransitionSpec 3종 (spec-core/transition에 위치)
 - 새 비즈니스는 이를 복사하여 자기 도메인으로 교체
+
+### Transition Spec DSL
+- 좌표계 위의 상태 해석 계층. ADR-009 참조
+- 상태는 별도 vocabulary 없이 기존 축(flow_step, lifecycle_state, resource_location)으로 표현
+- TransitionSpec이 SSOT → dkg-bridge가 TransitionSpecNode 자동 파생
+- 7단계 파이프라인: collect→match→bind→load→validate→apply→emit
+- DKG 엣지: consumes(축 참조), depends-on(상태 의존), satisfies(DSL invariant 형식 구현)
+- CON-EFFECT-VOCAB: effect kind 정규 vocabulary 제약 (create/update/move/consume/open/close)
+- ingest Phase 2.5: `TRANSITION_ENGINE_ENABLED=true`로 활성화
+- CLI: `dkg transitions`, `dkg transition <name>`, `dkg transition coverage|orphans|violations`
+- 다이어그램: `dkg diagram transition-spec <id>`, `dkg diagram transition-dag`
+- 설계 문서: `docs/plan/transition-spec-dsl/`
+
+### ScenarioSpec (Verdict)
+- ScenarioSpec: "이 흐름이 올바른가?" → Verdict (pass/fail)
+- TransitionSpec: "이 흐름이 무슨 의미인가?" → TransitionInstance (상태 변화)
+- 두 spec은 같은 이벤트 스트림을 병렬 소비
+- DEMO_SCENARIOS 8종:
+  - shop-login, shop-checkout-entry, shop-checkout-complete, shop-full-purchase, shop-cart-abandon (shop-web)
+  - infra-deploy-health, infra-pipeline-ingest (인프라)
+  - dev-build-test (자기참조)
+- address_context prefix 존재 검증: `{ field: "address_context.prefix", op: "exists" }` constraint로 좌표 누락 감지
 
 ## Codegen 파이프라인
 
@@ -300,8 +324,9 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
   - 노드 색상: CATEGORY_COLORS (존재론적 성격)
   - 선/반짝임: ROLE_COLORS (Signal Role)
   - encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
-- **Diagram** (`/diagram.html`): Mermaid 시퀀스 다이어그램 뷰어
-  - 프리셋: IntentLink + DSL 번들 (diagram-presets.js, prebuild 생성)
+- **Diagram** (`/diagram.html`): Mermaid 다이어그램 뷰어 + 줌/팬
+  - 프리셋: IntentLink, DSL, Domain, Service, Constraint, Table(ER), Transition Spec, Transition DAG, Observation Loop
+  - 줌: 휠/Ctrl+±/버튼, 팬: 드래그/터치, Fit: 자동 스케일링
   - 커스텀 입력: textarea + Ctrl+Enter
   - URL 상태: `?preset=IL-checkout-flow` (새로고침 복원)
   - Copy MMD / Download SVG
@@ -430,6 +455,7 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - 7 SignalRole: context(배경), trigger(사용자 행위), channel(전송 경로), state(흐름 상태), guard(권한), effect(부수 효과), data(데이터 참조)
 - prefix → SignalRole 매핑: service→context, tracking→trigger, endpoint→channel, flow_point→state, permission→guard, pipeline_point→effect, orders→data
 - Signal chain: requires 관계로 의존 표현 (예: trigger는 context를 require)
+- DEMO_SIGNALS 13종: auth.login, page.view, page.home, page.product, page.mypage, page.order_complete, api.call, cart.add, checkout.entry, checkout.process, payment.success, auth.logout
 - 구현: `viz-3d/src/core/signal-model.ts` (`getPrefixRole()`, `classifyByRole()`, `validateSignal()`)
 - 색상: `viz-3d/core/color-tokens.ts`의 `ROLE_COLORS`가 Signal Role별 색상 SSOT
 - 시각화: monitor.html에서 노드=CATEGORY_COLORS, 선/glow=ROLE_COLORS로 이중 표현
@@ -525,20 +551,28 @@ ingest-server Phase 2 완료
 - 예: `initiator↔channel`(DEC-SEP), `dkg_target_kind↔cli_subject`(DEC-MERGE) — 기존 분리 결정으로 merge 제안 자동 억제
 
 ### Mermaid 다이어그램 생성
-- `qa-sdk dkg diagram list` — 사용 가능한 IntentLink/DSL 다이어그램 목록 조회
-- `qa-sdk dkg diagram intent-links` — 전체 IntentLink 시퀀스 다이어그램
-- `qa-sdk dkg diagram intent-links IL-checkout-flow` — 단일 IntentLink
-- `qa-sdk dkg diagram dsl dsl-checkout` — DSL 번들 시퀀스 다이어그램
+- `qa-sdk dkg diagram list` — 사용 가능한 다이어그램 목록
+- `qa-sdk dkg diagram intent-links [IL-id]` — IntentLink 시퀀스
+- `qa-sdk dkg diagram dsl <dsl-id>` — DSL 번들 시퀀스
+- `qa-sdk dkg diagram domain <dom-id>` — 도메인 prefix 시퀀스
+- `qa-sdk dkg diagram service <svc-id>` — 서비스 소유/소비 관계
+- `qa-sdk dkg diagram constraint <CON-id>` — 제약 대상
+- `qa-sdk dkg diagram table <table-id>` — 단일 테이블 ER (컬럼 타입 + FK + prefix 참조)
+- `qa-sdk dkg diagram table-er` — 전체 테이블 ER 다이어그램
+- `qa-sdk dkg diagram transition-spec <TSPEC-id>` — 전이 spec 흐름 (match→input→output)
+- `qa-sdk dkg diagram transition-dag` — 전이 간 관계 DAG (depends-on + satisfies)
+- `qa-sdk dkg diagram observation-loop` — 관측→의사결정 루프
 - `--output <path>` — 파일 출력
 - `--format mmd|svg|png|html` — 출력 형식 (svg/png는 mmdc 필요)
 - `--no-invariants` — invariant 주석 비표시
 - 생성기: `spec-core/src/visualization/mermaid-gen.ts` (순수 함수, I/O 없음)
-- 웹 뷰어: `platform-demo/public/diagram.html` (Mermaid CDN 기반 라이브 렌더링)
+- 웹 뷰어: `platform-demo/public/diagram.html` (줌/팬 + Mermaid CDN 라이브 렌더링)
+- API: `registry-service /api/diagrams` (목록 + 개별 생성)
 
 ### Dev Dashboard
 - `DEV_DASHBOARD_ENABLED=true` → `http://localhost:3300/dev/` 접속
 - **Flow Map**: Schema(74축) → Prefix(39개) → Consumer 3-layer 시각화. 노드 클릭 → 상세
-- **Metrics**: 6종 metric 카테고리 카드 (headroom, skew, coverage, overlap, conflict, health)
+- **Metrics**: 8종 metric 카테고리 카드 (headroom, skew, coverage, overlap, conflict, health, invariant, transition)
 - **Timeline**: 의사결정/관측/버전 이벤트 시간순 (루프 닫힘 표시)
 - **WebSocket**: `/dev/ws` — 10초 push (overview+metrics). 연결 끊기면 30초 폴링 fallback
 - **카탈로그**: `/dev/api/catalogs` — 등록된 카탈로그 목록. CatalogStore 연동
