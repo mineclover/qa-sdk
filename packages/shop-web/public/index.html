@@ -191,39 +191,97 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script type="module">
 // ═══════════════════════════════════════════════════
-//  QA Tracking — viz-3d-core.js의 encode 사용 (단일 출처)
+//  QA SDK — ServiceBootConfig + QaMonitor 패턴
 // ═══════════════════════════════════════════════════
 
 import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole } from './viz-3d-core.js';
 
-const INGEST_URL=(new URLSearchParams(location.search).get('ingest'))||'http://localhost:3100';
-const traceId='trc_shop_'+Date.now();
-let spanSeq=0,eventCount=0,userType='guest';
-const sessionId='ses_'+Date.now();
+// ── ServiceBootConfig ──
+const SERVICE_CONFIG = {
+  namespace: 'shop',
+  name: 'shopping-web',
+  env: new URLSearchParams(location.search).get('env') || 'dev',
+  region: new URLSearchParams(location.search).get('region') || 'asia',
+  build: document.querySelector('meta[name="build-ref"]')?.content,
+};
 
-function qaTrack(eventKey,prefixes){
-  const ctx=qaTrackEncode(BROWSER_CATALOG,prefixes);
-  spanSeq++;eventCount++;
-  document.getElementById('qa-events').textContent=`events: ${eventCount}`;
-  document.getElementById('qa-status').textContent=`qa: ${eventKey} → sending`;
+const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 
-  fetch(`${INGEST_URL}/v1/ingest`,{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      transmission_id:`tx_shop_${Date.now()}`,sent_at:new Date().toISOString(),
-      owner:{owner_type:'workspace',owner_id:'shop-web'},
-      source:{service_name:'shopping-web',sdk_name:'@qa-sdk/shop',sdk_version:'0.1.0'},
-      runtime:{platform:'browser'},build:{env:'dev'},
-      records:[{
-        log_id:`log_${Date.now()}_${spanSeq}`,timestamp:new Date().toISOString(),record_kind:'log',
-        trace_id:traceId,span_id:`spn_${spanSeq}`,event_key:eventKey,event_version:'001',
-        payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],
-        payload:{event:eventKey},address_context:ctx,
-        qa_session_id:sessionId,
-      }],
-    }),
-  }).then(r=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → ${r.status}`})
-    .catch(()=>{document.getElementById('qa-status').textContent=`qa: ${eventKey} → offline`});
+// ── Session (sessionStorage 기반 지속) ──
+function getOrCreateSession() {
+  const KEY = 'qa_shop_session';
+  const stored = sessionStorage.getItem(KEY);
+  if (stored) return JSON.parse(stored);
+  const session = {
+    sessionId: 'ses_' + crypto.randomUUID().slice(0, 8),
+    traceId: 'trc_' + crypto.randomUUID().slice(0, 12),
+  };
+  sessionStorage.setItem(KEY, JSON.stringify(session));
+  return session;
+}
+const { sessionId, traceId } = getOrCreateSession();
+
+// ── Envelope 구성 (ServiceBootConfig 기반) ──
+const TX_SOURCE = {
+  service_name: `${SERVICE_CONFIG.namespace}/${SERVICE_CONFIG.name}`,
+  sdk_name: '@qa-sdk/browser',
+  sdk_version: '0.1.0',
+};
+const TX_BUILD = {
+  env: SERVICE_CONFIG.env,
+  ...(SERVICE_CONFIG.build ? { build_ref: SERVICE_CONFIG.build } : {}),
+};
+const TX_OWNER = { owner_type: 'tenant', owner_id: `${SERVICE_CONFIG.namespace}-monitor` };
+
+// ── infra_context (서비스 좌표 — 전 envelope 공통) ──
+const infraContext = qaTrackEncode(BROWSER_CATALOG, {
+  service: { env: SERVICE_CONFIG.env, region: SERVICE_CONFIG.region, svc_name: SERVICE_CONFIG.name, namespace: SERVICE_CONFIG.namespace },
+});
+
+let spanSeq = 0, eventCount = 0, userType = 'guest';
+
+function qaTrack(eventKey, prefixes) {
+  const ctx = qaTrackEncode(BROWSER_CATALOG, prefixes);
+  spanSeq++; eventCount++;
+  document.getElementById('qa-events').textContent = `events: ${eventCount}`;
+  document.getElementById('qa-status').textContent = `qa: ${eventKey} → sending`;
+
+  const envelope = {
+    transmission_id: `tx_${Date.now()}_${spanSeq}`,
+    sent_at: new Date().toISOString(),
+    owner: TX_OWNER,
+    source: TX_SOURCE,
+    runtime: { platform: 'browser', os_version: navigator.userAgent },
+    build: TX_BUILD,
+    infra_context: infraContext,
+    records: [{
+      log_id: `log_${Date.now()}_${spanSeq}`,
+      timestamp: new Date().toISOString(),
+      record_kind: 'log',
+      trace_id: traceId,
+      span_id: `spn_${spanSeq}`,
+      event_key: eventKey,
+      event_version: '001',
+      payload_format: 'json',
+      payload_encoding: 'raw',
+      payload_masking_applied: false,
+      payload_masked_fields: [],
+      payload: { event: eventKey, userType },
+      address_context: ctx,
+      qa_session_id: sessionId,
+    }],
+  };
+
+  // Beacon (페이지 닫힘에도 전송 보장) + fetch fallback
+  const body = JSON.stringify(envelope);
+  const sent = navigator.sendBeacon?.(`${INGEST_URL}/v1/ingest`, new Blob([body], { type: 'application/json' }));
+  if (sent) {
+    document.getElementById('qa-status').textContent = `qa: ${eventKey} → beacon`;
+  } else {
+    fetch(`${INGEST_URL}/v1/ingest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+      .then(r => { document.getElementById('qa-status').textContent = `qa: ${eventKey} → ${r.status}`; })
+      .catch(() => { document.getElementById('qa-status').textContent = `qa: ${eventKey} → offline`; });
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -411,11 +469,30 @@ function renderMypage(){
 // ═══════════════════════════════════════════════════
 //  Init
 // ═══════════════════════════════════════════════════
-document.getElementById('qa-status').textContent=`qa: ready → ${INGEST_URL}`;
+document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (${SERVICE_CONFIG.namespace}/${SERVICE_CONFIG.name}@${SERVICE_CONFIG.env})`;
+
+// pagehide — 페이지 닫힘 시 마지막 이벤트 전송
+window.addEventListener('pagehide', () => {
+  qaTrack('session.end', {
+    tracking: { trackAction: 'close', page: location.hash.slice(1) || 'home', userType },
+  });
+});
+
+// Auto-capture — data-qa-event 속성 클릭 자동 수집
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-qa-event]');
+  if (!target) return;
+  const eventKey = target.getAttribute('data-qa-event');
+  if (eventKey) {
+    qaTrack(`auto.${eventKey}`, {
+      tracking: { trackAction: 'click', page: location.hash.slice(1) || 'home', userType },
+    });
+  }
+});
 
 // Monitor link에 ingest URL 전달
-const monitorUrl=location.origin.replace(location.port,'3335');
-document.getElementById('monitor-btn').href=`${monitorUrl}/monitor.html`;
+const monitorUrl = location.origin.replace(location.port, '3335');
+document.getElementById('monitor-btn').href = `${monitorUrl}/monitor.html`;
 </script>
 </body>
 </html>
