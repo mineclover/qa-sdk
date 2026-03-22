@@ -9,11 +9,21 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { createQaContext } from "@qa-sdk/context";
-import { buildLayerMap, MonitorState } from "@qa-sdk/spec-core/viz";
+import { buildLayerMap, buildSvcOwnerMap, MonitorState, SERVICE_PROJECTION } from "@qa-sdk/spec-core/viz";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
 import type { TracePath } from "@qa-sdk/spec-core/viz";
 import type { TypedQaContext } from "demo-types";
 import { DSL_CHECKOUT, sdk } from "demo-types";
+
+// 서비스 소유 매핑 — Projection이 발생 서비스 기반 layer를 결정
+const DEMO_SVC_OWNERS = buildSvcOwnerMap([
+  { serviceId: "shopping-web", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
+  { serviceId: "shopping-backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
+  { serviceId: "auth", ownedPrefixes: ["rbac"] },
+  { serviceId: "gateway", ownedPrefixes: ["flow_point"] },
+  { serviceId: "content-service", ownedPrefixes: ["content", "relational"] },
+  { serviceId: "infra-controller", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+]);
 
 describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까지", () => {
 
@@ -23,8 +33,8 @@ describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까
     catalog: DEMO_CATALOG, executionMode: "test", executionId: "shopping-e2e",
   });
 
-  const layerMap = buildLayerMap(DEMO_CATALOG);
-  const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 300 });
+  const layerMap = buildLayerMap(DEMO_CATALOG, SERVICE_PROJECTION, DEMO_SVC_OWNERS);
+  const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 300, svcOwners: DEMO_SVC_OWNERS });
 
   // 전체 흐름을 하나의 trace로 추적
   const traceId = "trace-shopping-full";

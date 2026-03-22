@@ -5,7 +5,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath } from "./layer-map.js";
+import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath, type Projection } from "./layer-map.js";
 import type { AddressContextRecord } from "../convergence/usage-aggregator.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -19,9 +19,14 @@ export class MonitorState {
 
   constructor(
     private readonly catalog: Catalog,
-    options?: { windowSeconds?: number },
+    options?: {
+      windowSeconds?: number;
+      projection?: Projection;
+      svcOwners?: ReadonlyMap<string, string>;
+      domainMembers?: ReadonlyMap<string, string>;
+    },
   ) {
-    this.layerMap = buildLayerMap(catalog);
+    this.layerMap = buildLayerMap(catalog, options?.projection, options?.svcOwners, options?.domainMembers);
     this.windowMs = (options?.windowSeconds ?? 30) * 1000;
   }
 

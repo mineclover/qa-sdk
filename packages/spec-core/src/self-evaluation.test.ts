@@ -19,7 +19,7 @@ import type { AxisNode, PrefixNode, ObservationNode, DecisionNode } from "./dkg/
 import { transitionPrefix, transitionDecision, resolveObservation, generateLifecycleReport } from "./dkg/skills/lifecycle-transition.js";
 import { createDemoTopology, buildDependencyGraph, buildTimeline } from "./dkg/service-topology.js";
 import { analyzeTemporalTrends } from "./convergence/temporal-analysis.js";
-import { buildLayerMap, extractTracePaths, computeActivity } from "./visualization/layer-map.js";
+import { buildLayerMap, buildSvcOwnerMap, extractTracePaths, computeActivity, SERVICE_PROJECTION } from "./visualization/layer-map.js";
 import { MonitorState } from "./visualization/monitor-queries.js";
 import { aggregateUsageData, type AddressContextRecord } from "./convergence/usage-aggregator.js";
 import { analyzeEntryCoverage } from "./convergence/entry-coverage.js";
@@ -969,26 +969,38 @@ describe("자가 진단 5단계: bootstrapDkg 재귀 개선 플로우", () => {
 
   it("3D 계층 시각화 — layer 매핑 + 실시간 모니터링 쿼리", () => {
     // 계층 맵 생성
-    const layerMap = buildLayerMap(DEMO_CATALOG);
+    // 서비스 소유 매핑 — SERVICE_PROJECTION 기반
+    const svcOwners = buildSvcOwnerMap([
+      { serviceId: "shopping-web", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
+      { serviceId: "shopping-backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
+      { serviceId: "auth", ownedPrefixes: ["rbac"] },
+      { serviceId: "gateway", ownedPrefixes: ["flow_point"] },
+      { serviceId: "content-service", ownedPrefixes: ["content", "relational"] },
+      { serviceId: "infra-controller", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+    ]);
 
-    console.log("\n══ 3D 계층 맵 ══");
+    const layerMap = buildLayerMap(DEMO_CATALOG, SERVICE_PROJECTION, svcOwners);
+
+    console.log("\n══ 3D 계층 맵 (SERVICE_PROJECTION) ══");
     for (const layer of layerMap.layers) {
       console.log(`\n  Layer ${layer.level}: ${layer.name}`);
       console.log(`    ${layer.description}`);
       for (const p of layer.prefixes) {
-        console.log(`    [${p.gridX},${p.gridZ}] ${p.prefixId.padEnd(17)} (${p.category})`);
+        console.log(`    [${p.gridX},${p.gridZ}] ${p.prefixId.padEnd(17)} (${p.category}) ${p.group ?? ""}`);
       }
     }
 
     // 검증: 모든 prefix가 배치됨
     expect(layerMap.allPlacements.length).toBe(Object.keys(DEMO_CATALOG.prefixes).length);
-    // Layer 0에 UI prefix
+    // Layer 0에 UI prefix (shopping-web 소유)
     expect(layerMap.layers[0].prefixes.some(p => p.prefixId === "page_view")).toBe(true);
+    // cart_event도 shopping-web 소유이므로 Frontend
+    expect(layerMap.layers[0].prefixes.some(p => p.prefixId === "cart_event")).toBe(true);
     // Layer 2에 infra prefix
-    expect(layerMap.layers[2].prefixes.some(p => p.prefixId === "service")).toBe(true);
+    expect(layerMap.layers.find(l => l.level === 2)!.prefixes.some(p => p.prefixId === "service")).toBe(true);
 
     // 실시간 모니터링 시뮬레이션
-    const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 60 });
+    const monitor = new MonitorState(DEMO_CATALOG, { windowSeconds: 60, svcOwners });
     const svcAddr = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
 
     // 이벤트 주입: checkout 흐름 (Layer 0 → 1 → 2)
