@@ -16,7 +16,7 @@
  */
 
 export interface Env {
-  /** 인증 모드: bypass(개발) | api-key | cf-access | zero-trust */
+  /** 인증 모드: bypass(개발) | api-key | cf-access */
   AUTH_MODE?: string;
   /** API Key 목록 (쉼표 구분) */
   AUTH_API_KEYS?: string;

@@ -133,11 +133,17 @@ app.all("*", async (c) => {
       headers.set("X-Gateway-Identity", c.get("identity") ?? "unknown");
       headers.delete("Authorization");
 
+      // body: arrayBuffer로 읽어서 전달 (stream 소비 문제 방지)
+      let body: ArrayBuffer | undefined;
+      if (c.req.method !== "GET" && c.req.method !== "HEAD") {
+        try { body = await c.req.arrayBuffer(); } catch { /* empty body */ }
+      }
+
       try {
         const resp = await fetch(targetUrl, {
           method: c.req.method,
           headers,
-          body: c.req.method !== "GET" && c.req.method !== "HEAD" ? c.req.raw.body : undefined,
+          body,
         });
         return new Response(resp.body, {
           status: resp.status,
