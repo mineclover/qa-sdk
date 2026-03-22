@@ -9,7 +9,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { parseSerializedAddress, decodePrefix } from "@qa-sdk/core";
+import { parseSerializedAddress, decodePrefixAsResult } from "@qa-sdk/core";
 
 /**
  * 인코딩된 address_context를 디코딩하여 축 이름→entry 값 flat map으로 변환한다.
@@ -18,7 +18,7 @@ import { parseSerializedAddress, decodePrefix } from "@qa-sdk/core";
  * 출력: `{ "trackAction": "submit", "page": "checkout", "flow_name": "checkout", "flow_step": "entry", ... }`
  *
  * 같은 축 이름이 여러 prefix에서 나오면 나중 prefix가 덮어쓴다.
- * prefix_ref 차원의 value는 정수 주소이므로 건너뛴다 (string entry만 포함).
+ * prefix_ref 차원은 kind로 명시적 판별하여 건너뛴다 (axis entry만 포함).
  */
 export function decodeAddressContext(
   catalog: Catalog,
@@ -29,21 +29,18 @@ export function decodeAddressContext(
   for (const [_prefixKey, serialized] of Object.entries(encoded)) {
     try {
       const parsed = parseSerializedAddress(serialized);
-      const decoded = decodePrefix(catalog, parsed.prefix, parsed.version, parsed.address);
+      const decoded = decodePrefixAsResult(catalog, parsed.prefix, parsed.version, parsed.address);
 
-      // prefix dims에서 label → axisId 매핑 추출
-      const prefixDef = (catalog as any).prefixes?.[parsed.prefix];
-      const dims = prefixDef?.dims as Record<string, { kind: string; axisId?: string }> | undefined;
+      for (const [label, dim] of Object.entries(decoded.dims)) {
+        // axis 차원만 포함 — prefix_ref/table_ref는 건너뜀
+        if (dim.kind !== "axis") continue;
 
-      for (const [label, dim] of Object.entries(decoded)) {
-        // prefix_ref의 value는 정수 주소 — string entry만 포함
-        if (typeof dim.value === "string") {
-          result[label] = dim.value;
-          // axisId가 label과 다르면 axisId로도 매핑 (TransitionSpec 호환)
-          const axisId = dims?.[label]?.axisId;
-          if (axisId && axisId !== label) {
-            result[axisId] = dim.value;
-          }
+        result[label] = String(dim.value);
+        // axisId가 label과 다르면 axisId로도 매핑 (TransitionSpec 호환)
+        const prefixDef = catalog.prefixes?.[parsed.prefix];
+        const dimDef = prefixDef?.dims[label];
+        if (dimDef?.kind === "axis" && dimDef.axisId !== label) {
+          result[dimDef.axisId] = String(dim.value);
         }
       }
     } catch {

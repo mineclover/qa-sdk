@@ -929,6 +929,59 @@ decode-service API 매핑:
 - `POST /decode/deep` → S2 `decodeDeepDetailed()` — refs 확장 + unresolved 보고
 - `POST /decode/batch` → S1 `decode()` × N
 
+### DecodeResult 표준 사용 컨벤션
+
+**새 코드에서는 `DecodeResult`를 사용한다**. 기존 `DecodedPosition`/`ResolvedDimValue`/`DecomposedDim`은 하위 호환.
+
+#### 언제 무엇을 쓰는가
+
+| 상황 | 함수 | 이유 |
+|------|------|------|
+| 값만 필요 (position + value) | `decodePrefixAsResult()` (L1) | kind 명시, 구조 통일 |
+| ko 라벨 + 재귀 해석 | `resolveAddressAsResult()` (L2) | ko + ref 트리 |
+| prefix_ref 1-level 분해 | `decomposeAddressAsResult()` (L3) | ref.dims 포함 |
+| catalog 없는 외부 서비스 | `entitiesToDecodeResult()` (S→통일) | DecodeMap 기반 |
+| S계열 API 호출 결과 소비 | `decodeResultToEntities()` | flat 변환 |
+| deep 결과 S2 형태로 | `decodeResultToDeep()` | entities + refs 분리 |
+
+#### 코드 예시
+
+```typescript
+import { decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core/catalog";
+
+// L1 → DecodeResult (kind 명시)
+const result = decodePrefixAsResult(catalog, "permission", "v4", 1376);
+const svcDim = result.dims["perm_svc"];
+if (svcDim.kind === "prefix_ref") {
+  console.log(`서비스 주소: ${svcDim.value}`); // 정수
+}
+
+// DecodeResult → flat (S계열 호환)
+const flat = decodeResultToEntities(result);
+// → { perm_svc: 42, role: "admin" }
+
+// L2 deep → S2 형태
+const deep = resolveAddressAsResult(catalog, "permission", "v4", 1376);
+const { entities, refs } = decodeResultToDeep(deep);
+// entities: { perm_svc: 42, role: "admin" }
+// refs: { perm_svc: { env: "prod", region: "asia", ... } }
+```
+
+#### 금지 패턴
+
+```typescript
+// ❌ dim.kind를 확인하지 않고 value 타입 가정
+const val = decoded["perm_svc"].value as string; // prefix_ref는 number
+
+// ❌ 기존 함수 결과에서 kind 정보 없이 분기
+if (typeof decoded["svc_ref"].value === "number") { ... } // 구조에 의존
+
+// ✅ DecodeResult의 kind로 명시적 분기
+if (result.dims["svc_ref"].kind === "prefix_ref") {
+  const addr = result.dims["svc_ref"].value as number;
+}
+```
+
 ### Catalog 소비 경로
 - **개발**: `import { DEMO_CATALOG } from "demo-snapshot"` 직접 사용
 - **운영**: `createCatalogProvider({ registry: "http://registry:3300" })` → registry에서 active catalog fetch

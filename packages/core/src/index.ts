@@ -29,7 +29,13 @@ export {
   resolveAddress,
   decomposeAddress,
   verifyRoundTrip,
+  decodePrefixAsResult,
+  resolveAddressAsResult,
+  decomposeAddressAsResult,
 } from "./catalog/runtime.js";
+
+export type { DecodeResult, DecodedDim } from "./catalog/decode-result.js";
+export { entitiesToDecodeResult, decodeResultToEntities, decodeResultToDeep } from "./catalog/decode-result.js";
 
 // ── Types ───────────────────────────────────────────────
 
