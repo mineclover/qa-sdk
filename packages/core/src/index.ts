@@ -43,6 +43,20 @@ export type {
 } from "./types/envelope.js";
 
 export type {
+  ServiceIdentity,
+  DeployContext,
+  ServiceBootConfig,
+} from "./types/service-identity.js";
+
+export {
+  toServiceDims,
+  toTransmissionSource,
+  toTransmissionBuild,
+  catalogEnvToBuildEnv,
+  buildEnvToCatalogEnv,
+} from "./types/service-identity.js";
+
+export type {
   PayloadFormat,
   PayloadEncoding,
   MaskingMode,

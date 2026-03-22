@@ -15,6 +15,7 @@ import { createSchemaRoutes } from "./routes/schema.js";
 import { createCatalogRoutes } from "./routes/catalog.js";
 import { createAxisRoutes } from "./routes/axis.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
+import { createDiagramRoutes } from "./routes/diagrams.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
@@ -70,6 +71,11 @@ export function createApp(deps: AppDeps) {
     app.route("/", createDevDashboardRoutes({
       provider: deps.devDashboardProvider,
       catalogStore: deps.catalogStore,
+    }));
+
+    // DKG 기반 다이어그램 API — devDashboardProvider가 graph를 제공
+    app.route("/api/diagrams", createDiagramRoutes({
+      getGraph: () => deps.devDashboardProvider!.getGraph(),
     }));
   }
   app.route(

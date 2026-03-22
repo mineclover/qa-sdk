@@ -11,7 +11,7 @@
  *   qa.resolve("permission:v1:5")                // 자동 마이그레이션
  */
 
-import type { Catalog } from "@qa-sdk/core";
+import type { Catalog, ServiceBootConfig } from "@qa-sdk/core";
 import {
   parseSerializedAddress,
   encodePrefixByValue,
@@ -23,13 +23,15 @@ import {
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
 
 export interface QaContextConfig {
-  /** 배포 환경 (default: process.env.QA_ENV ?? "dev") */
+  /** 통합 서비스 설정. 개별 필드(env/region/service/namespace)보다 우선. */
+  serviceConfig?: ServiceBootConfig;
+  /** @deprecated serviceConfig.env 사용 */
   env?: string;
-  /** 서비스 리전 (default: process.env.QA_REGION ?? "asia") */
+  /** @deprecated serviceConfig.region 사용 */
   region?: string;
-  /** 서비스 이름 (default: process.env.QA_SERVICE ?? "unknown") */
+  /** @deprecated serviceConfig.name 사용 */
   service?: string;
-  /** 네임스페이스 (default: process.env.QA_NAMESPACE ?? "default") */
+  /** @deprecated serviceConfig.namespace 사용 */
   namespace?: string;
   /** 카탈로그 (default: DEMO_CATALOG). registry 옵션과 함께 사용 시 fallback. */
   catalog?: Catalog;
@@ -74,6 +76,9 @@ export interface QaContext {
   /** 서비스 주소 (현재 env/region/service/namespace의 정수 주소) */
   serviceAddress(): number;
 
+  /** 서비스 주소를 infra_context 형태로 반환. QaLogger.infraContext에 직접 전달 가능. */
+  infraContext(): Record<string, string>;
+
   /**
    * 이벤트 추적 — encode + address_context 자동 생성.
    *
@@ -106,12 +111,20 @@ export interface QaContext {
 }
 
 export function createQaContext(userConfig?: QaContextConfig): QaContext {
+  const svc = userConfig?.serviceConfig;
   const config = {
-    env: userConfig?.env ?? process.env.QA_ENV ?? "dev",
-    region: userConfig?.region ?? process.env.QA_REGION ?? "asia",
-    service: userConfig?.service ?? process.env.QA_SERVICE ?? "unknown",
-    namespace: userConfig?.namespace ?? process.env.QA_NAMESPACE ?? "default",
+    env: svc?.env ?? userConfig?.env ?? process.env.QA_ENV ?? "dev",
+    region: svc?.region ?? userConfig?.region ?? process.env.QA_REGION ?? "",
+    service: svc?.name ?? userConfig?.service ?? process.env.QA_SERVICE ?? "",
+    namespace: svc?.namespace ?? userConfig?.namespace ?? process.env.QA_NAMESPACE ?? "default",
   };
+
+  if (!config.region) {
+    throw new Error('QaContext: "region" is required. Set via serviceConfig, QaContextConfig, or QA_REGION env.');
+  }
+  if (!config.service) {
+    throw new Error('QaContext: "service" is required. Set via serviceConfig, QaContextConfig, or QA_SERVICE env.');
+  }
 
   if (!userConfig?.catalog) {
     throw new Error("catalog is required. Pass catalog in QaContextConfig.");
@@ -123,7 +136,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
 
   const getServiceAddr = (): number => {
     if (_svcAddr !== null) return _svcAddr;
-    _svcAddr = encodePrefixByValue(catalog, "service", "v1", {
+    _svcAddr = encodePrefixByValue(catalog, "service", latestPrefixVersion(catalog, "service"), {
       env: config.env,
       region: config.region,
       svc_name: config.service,
@@ -193,6 +206,12 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     },
 
     serviceAddress: getServiceAddr,
+
+    infraContext() {
+      const svcAddr = getServiceAddr();
+      const svcVer = latestPrefixVersion(catalog, "service");
+      return { service: `service:${svcVer}:${svcAddr}` };
+    },
 
     track(prefixes: Record<string, Record<string, string | number>>) {
       const address_context: Record<string, string> = {};

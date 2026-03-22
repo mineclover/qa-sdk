@@ -995,6 +995,16 @@ export const DEMO_CATALOG = {
         },
       },
     },
+    resource_location: {
+      id: "resource_location", name: "자원 위치",
+      versions: {
+        v1: {
+          entries: ["origin", "cache", "queue", "external"],
+          capacity: 8,
+          ko: { origin: "원본", cache: "캐시", queue: "큐", external: "외부" },
+        },
+      },
+    },
     observation_intent: {
       id: "observation_intent", name: "관측 의도",
       versions: {

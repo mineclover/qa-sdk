@@ -18,11 +18,11 @@
  *   const version = provider.latestVersion("permission");
  */
 
-import type { DemoCatalog } from "demo-snapshot";
+import type { Catalog } from "@qa-sdk/core";
 
 export interface CatalogProvider {
   /** catalog 조회 (registry 또는 로컬) */
-  getCatalog(): Promise<DemoCatalog>;
+  getCatalog(): Promise<Catalog>;
   /** prefix의 최신 version */
   latestVersion(prefixId: string): string;
   /** 소스 식별자 */
@@ -35,7 +35,7 @@ export interface CatalogProviderConfig {
   /** registry URL. 없으면 로컬 모드. */
   registry?: string;
   /** 로컬 catalog (registry 없을 때 사용) */
-  catalog?: DemoCatalog;
+  catalog?: Catalog;
   /** catalog ID (registry 모드에서 사용, default: "demo") */
   catalogId?: string;
 }
@@ -55,8 +55,8 @@ export function createCatalogProvider(config?: CatalogProviderConfig): CatalogPr
 
 // ── Local Provider ──
 
-function createLocalProvider(catalog?: DemoCatalog): CatalogProvider {
-  let _catalog: DemoCatalog | null = catalog ?? null;
+function createLocalProvider(catalog?: Catalog): CatalogProvider {
+  let _catalog: Catalog | null = catalog ?? null;
 
   return {
     source: "local",
@@ -82,7 +82,7 @@ function createLocalProvider(catalog?: DemoCatalog): CatalogProvider {
 // ── Registry Provider ──
 
 function createRegistryProvider(registryUrl: string, catalogId: string): CatalogProvider {
-  let _catalog: DemoCatalog | null = null;
+  let _catalog: Catalog | null = null;
 
   return {
     source: "registry",
@@ -93,7 +93,7 @@ function createRegistryProvider(registryUrl: string, catalogId: string): Catalog
         const res = await fetch(`${registryUrl}/catalogs/${catalogId}`);
         if (!res.ok) throw new Error(`Registry ${res.status}`);
         const body = await res.json() as { data: string };
-        _catalog = JSON.parse(body.data) as DemoCatalog;
+        _catalog = JSON.parse(body.data) as Catalog;
         return _catalog;
       } catch (err: any) {
         // Fallback: 로컬 catalog

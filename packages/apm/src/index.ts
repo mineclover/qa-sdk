@@ -1,6 +1,6 @@
 // ── ApmLogger ───────────────────────────────────────────
-export { ApmLogger, createApmLogger } from "./apm-logger.js";
-export type { ApmLoggerConfig } from "./config.js";
+export { ApmLogger, createApmLogger, createApmLoggerFromBoot } from "./apm-logger.js";
+export type { ApmLoggerConfig, ApmBootConfig } from "./config.js";
 
 // ── Address Ranges ──────────────────────────────────────
 export { buildAddressRanges } from "./address-ranges.js";

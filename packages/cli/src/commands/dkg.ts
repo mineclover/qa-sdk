@@ -58,7 +58,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -228,6 +228,8 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "obs list":      { intent: "query", domain: "system", subject: "spec" },
   "obs stats":     { intent: "query", domain: "system", subject: "system" },
   "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg tables":    { intent: "query", domain: "dkg-graph", subject: "table" },
+  "dkg table":     { intent: "query", domain: "dkg-graph", subject: "table" },
 };
 
 /**
@@ -253,7 +255,7 @@ export function emitCliEvent(command: string): void {
         { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: now },
       ],
       addressUsages: [
-        { prefix: "cli_event", version: "v1", address, count: 1 },
+        { prefix: "cli_event", version: latestVer("cli_event"), address, count: 1 },
       ],
       coOccurrences: [],
       versionUsages: [{ prefix: "cli_event", version: latestVer("cli_event"), count: 1, lastSeen: now, sessions: [session] }],
@@ -1128,6 +1130,98 @@ export function dkgPrefix(prefixId: string): void {
     console.log(`\n  ── Intent Links (${profile.intentLinks.length}) ──`);
     for (const l of profile.intentLinks) {
       console.log(`    ${l.id}: ${l.intent.slice(0, 70)}`);
+    }
+  }
+}
+
+// ── dkg tables / dkg table ───────────────────────────
+
+export function dkgTables(): void {
+  const graph = getGraph();
+  const topo = createDemoTopology();
+
+  const tables = graph.getNodesByKind("table") as TableNode[];
+  if (tables.length === 0) {
+    console.log("\n  테이블 노드 없음 (catalog에 tables 섹션이 정의되지 않음)");
+    return;
+  }
+
+  console.log(`\n══ Tables (${tables.length}) ══`);
+  for (const t of tables) {
+    const prefixes = graph.getPrefixesForTable(t.id);
+    const services = topo.getServicesForTable(t.id, graph);
+    const uniqueServices = [...new Set(services.map(s => s.serviceId))];
+    const colRefs = graph.getTableColumnRefs(t.id);
+    const fkCount = colRefs.filter(r => r.refKind === "fk").length;
+    const axisCount = colRefs.filter(r => r.refKind === "column_axis").length;
+
+    console.log(`  ${t.id.padEnd(14)} cols=${t.columns.length} prefixes=${prefixes.length} services=${uniqueServices.length} fk=${fkCount} axis_ref=${axisCount}`);
+  }
+}
+
+export function dkgTable(tableId: string): void {
+  const graph = getGraph();
+  const topo = createDemoTopology();
+
+  const node = graph.getNode(tableId);
+  if (!node || node.kind !== "table") {
+    console.error(`  테이블을 찾을 수 없음: ${tableId}`);
+    return;
+  }
+
+  const tableNode = node as TableNode;
+  console.log(`\n══ Table: ${tableNode.id} ══`);
+  console.log(`  name:    ${tableNode.name}`);
+  console.log(`  columns: ${tableNode.columns.join(", ")}`);
+
+  // 컬럼 참조 상세
+  const colRefs = graph.getTableColumnRefs(tableId);
+  if (colRefs.length > 0) {
+    console.log(`\n  ── Column References (${colRefs.length}) ──`);
+    for (const ref of colRefs) {
+      const kindLabel = ref.refKind === "column_axis" ? "axis" : ref.refKind === "fk" ? "FK" : "prefix";
+      console.log(`    ${ref.column.padEnd(16)} → ${ref.targetId} [${kindLabel}]`);
+    }
+  }
+
+  // 이 테이블을 참조하는 prefix (table_ref dim)
+  const prefixes = graph.getPrefixesForTable(tableId);
+  if (prefixes.length > 0) {
+    console.log(`\n  ── Referencing Prefixes (${prefixes.length}) ──`);
+    for (const p of prefixes) {
+      const owner = topo.getOwner(p.prefixId);
+      console.log(`    ${p.prefixId.padEnd(17)} dim="${p.dimLabel}" owner=${owner ?? "-"}`);
+    }
+  }
+
+  // 이 테이블을 FK로 참조하는 다른 테이블
+  const cascade = graph.cascadeFromTable(tableId);
+  if (cascade.referencingTables.length > 0) {
+    console.log(`\n  ── Referencing Tables (FK) (${cascade.referencingTables.length}) ──`);
+    for (const rt of cascade.referencingTables) {
+      console.log(`    ${rt.id.padEnd(14)} via column "${rt.column}"`);
+    }
+  }
+
+  // 접근하는 서비스
+  const services = topo.getServicesForTable(tableId, graph);
+  if (services.length > 0) {
+    console.log(`\n  ── Accessing Services (${services.length}) ──`);
+    for (const s of services) {
+      console.log(`    ${s.serviceId.padEnd(20)} via ${s.via} [${s.role}]`);
+    }
+  }
+
+  // impact summary
+  const allPrefixes = cascade.prefixes;
+  const allServices = services;
+  if (allPrefixes.length > 0 || allServices.length > 0) {
+    console.log(`\n  ── Impact Summary ──`);
+    console.log(`    이 테이블 변경 시:`);
+    console.log(`      영향 prefix: ${allPrefixes.map(p => p.prefixId).join(", ") || "없음"}`);
+    console.log(`      영향 service: ${[...new Set(allServices.map(s => s.serviceId))].join(", ") || "없음"}`);
+    if (cascade.referencingTables.length > 0) {
+      console.log(`      FK 참조 테이블: ${cascade.referencingTables.map(t => t.id).join(", ")}`);
     }
   }
 }
@@ -2952,30 +3046,15 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     }
   }
 
-  // 비즈니스 prefix 합성 이벤트 — 쇼핑 도메인 트래픽 주입
-  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
-  let bizRecords = 0;
-  const bizPrefixes = [
-    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDim: "svc_ref" },
-    { prefix: "endpoint", version: "v1", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDim: "svc_ref" },
-    { prefix: "permission", version: "v4", dims: { role: "admin" }, refDim: "perm_svc" },
-    { prefix: "permission", version: "v4", dims: { role: "developer" }, refDim: "perm_svc" },
-    { prefix: "event", version: "v4", dims: { event_name: "user.login", initiator: "web" }, refDim: "evt_svc" },
-    { prefix: "event", version: "v4", dims: { event_name: "order.created", initiator: "web" }, refDim: "evt_svc" },
-  ];
-  for (const bp of bizPrefixes) {
-    try {
-      const prefixDef = catalog.prefixes?.[bp.prefix];
-      const verDef = prefixDef?.versions?.find((v: any) => v.version === bp.version);
-      const refVal = verDef?.refEntries?.[bp.refDim]?.values?.[0];
-      const dims = refVal !== undefined ? { [bp.refDim]: refVal, ...bp.dims } : bp.dims;
-      const address = encodePrefixByValue(catalog, bp.prefix, bp.version, dims);
-      records.push({
-        address_context: { [bp.prefix]: `${bp.prefix}:${bp.version}:${address}` },
-        timestamp: now, session_id: runId, event_key: `biz:${bp.prefix}`, execution_mode: "synthetic" as const, execution_id: runId,
-      });
-      bizRecords++;
-    } catch { /* 인코딩 실패 시 건너뜀 */ }
+  // 합성 이벤트 — analyzeSelfCheck의 SYNTHETIC_EVENTS를 재활용하여 전체 도메인 커버리지 확보
+  const syntheticAnalysis = analyzeSelfCheck(results, DEMO_CATALOG, runId);
+  const bizRecords = syntheticAnalysis.bizRecords;
+  // analyzeSelfCheck가 생성한 records에 contract records를 병합
+  for (const r of syntheticAnalysis.records) {
+    // build/test records는 이미 위에서 생성 — synthetic만 추가
+    if ((r as any).execution_mode === "synthetic") {
+      records.push(r);
+    }
   }
 
   const usage = aggregateUsageData(DEMO_CATALOG, records);
@@ -3318,8 +3397,15 @@ import {
   allIntentLinksDiagram,
   dslDiagram,
   signalDiagram,
+  domainDiagram,
+  serviceDiagram,
+  constraintDiagram,
+  tableDiagram,
+  observationLoopDiagram,
+  listAllDiagrams,
 } from "@qa-sdk/spec-core/viz";
 import type { SignalDefLike } from "@qa-sdk/spec-core/viz";
+import { createDemoTopology } from "@qa-sdk/spec-core/dkg";
 
 export async function dkgDiagram(argv: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -3336,15 +3422,21 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const kind = positionals[0];
   const id = positionals[1];
 
-  if (!kind || !["intent-links", "dsl", "signal", "list"].includes(kind)) {
+  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "observation-loop", "list"];
+  if (!kind || !validKinds.includes(kind)) {
     console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
-    console.log("  kind: list | intent-links | dsl | signal");
+    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop");
     console.log("");
     console.log("Examples:");
     console.log("  qa-sdk dkg diagram list                        선택 가능한 다이어그램 리스트");
     console.log("  qa-sdk dkg diagram intent-links                전체 IntentLink 시퀀스");
     console.log("  qa-sdk dkg diagram intent-links IL-xxx         단일 IntentLink");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout            DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram domain dom-commerce         도메인 prefix 시퀀스");
+    console.log("  qa-sdk dkg diagram service svc-ingest          서비스 소유/소비 관계");
+    console.log("  qa-sdk dkg diagram constraint CON-001          constraint 대상");
+    console.log("  qa-sdk dkg diagram table tbl-orders            테이블 참조 관계");
+    console.log("  qa-sdk dkg diagram observation-loop            observation→decision 루프");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd   파일 출력");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
     return;
@@ -3354,23 +3446,19 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
 
   // ── list: 선택 가능한 다이어그램 리스트 ──
   if (kind === "list") {
-    const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
-    const dslBundles = graph.getNodesByKind("dsl-bundle") as DslBundleNode[];
+    const topo = createDemoTopology();
+    const allDiagrams = listAllDiagrams(graph, topo);
 
     console.log("");
     console.log("══ Available Diagrams ══");
-    console.log("");
 
-    console.log(`[intent-links] (${intentLinks.length}개)`);
-    for (const il of intentLinks) {
-      const desc = il.intent.length > 60 ? il.intent.slice(0, 57) + "..." : il.intent;
-      console.log(`  ${il.id.padEnd(28)} ${desc}`);
-    }
-
-    console.log("");
-    console.log(`[dsl] (${dslBundles.length}개)`);
-    for (const dsl of dslBundles) {
-      console.log(`  ${dsl.id.padEnd(28)} ${dsl.name}`);
+    for (const [diagramKind, entries] of Object.entries(allDiagrams)) {
+      console.log("");
+      console.log(`[${diagramKind}] (${entries.length}개)`);
+      for (const entry of entries) {
+        const desc = entry.label.length > 60 ? entry.label.slice(0, 57) + "..." : entry.label;
+        console.log(`  ${entry.id.padEnd(28)} ${desc}`);
+      }
     }
 
     console.log("");
@@ -3378,6 +3466,11 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
     console.log("  qa-sdk dkg diagram intent-links              전체 IntentLink 시퀀스");
     console.log("  qa-sdk dkg diagram intent-links IL-xxx       단일 IntentLink");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout          DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram domain dom-commerce       도메인 prefix 시퀀스");
+    console.log("  qa-sdk dkg diagram service svc-ingest        서비스 소유/소비 관계");
+    console.log("  qa-sdk dkg diagram constraint CON-001        constraint 대상");
+    console.log("  qa-sdk dkg diagram table tbl-orders          테이블 참조 관계");
+    console.log("  qa-sdk dkg diagram observation-loop          observation→decision 루프");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd 파일 출력");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
     return;
@@ -3412,6 +3505,31 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
       return;
     }
+    case "domain": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram domain <domainId>"); return; }
+      mmd = domainDiagram(graph, id, opts);
+      break;
+    }
+    case "service": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram service <serviceId>"); return; }
+      const topo = createDemoTopology();
+      mmd = serviceDiagram(graph, topo, id, opts);
+      break;
+    }
+    case "constraint": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram constraint <constraintId>"); return; }
+      mmd = constraintDiagram(graph, id, opts);
+      break;
+    }
+    case "table": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram table <tableId>"); return; }
+      mmd = tableDiagram(graph, id, opts);
+      break;
+    }
+    case "observation-loop": {
+      mmd = observationLoopDiagram(graph, opts);
+      break;
+    }
     default:
       console.error(`Unknown diagram kind: ${kind}`);
       return;
@@ -3422,7 +3540,14 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const format = (values.format as string) ?? "mmd";
 
   if (format === "html") {
-    const title = kind === "dsl" ? `DSL: ${id}` : kind === "intent-links" ? (id ?? "전체 IntentLink") : kind;
+    const title = kind === "dsl" ? `DSL: ${id}`
+      : kind === "intent-links" ? (id ?? "전체 IntentLink")
+      : kind === "domain" ? `Domain: ${id}`
+      : kind === "service" ? `Service: ${id}`
+      : kind === "constraint" ? `Constraint: ${id}`
+      : kind === "table" ? `Table: ${id}`
+      : kind === "observation-loop" ? "Observation Loop"
+      : kind;
     const html = wrapMermaidHtml(mmd, title);
     if (outputPath) {
       const { writeFileSync } = await import("node:fs");

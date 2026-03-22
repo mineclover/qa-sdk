@@ -1,5 +1,6 @@
 import { QaLogger, TraceContext } from "@qa-sdk/sdk";
-import type { BuildEnv, MetricType } from "@qa-sdk/core";
+import type { MetricType } from "@qa-sdk/core";
+import { toTransmissionSource, toTransmissionBuild } from "@qa-sdk/core";
 import { getCoreEvent } from "@qa-sdk/event-catalog";
 import { BeaconTransport } from "./transport.js";
 import { getOrCreateSession, clearSession } from "./session.js";
@@ -36,19 +37,23 @@ export class QaMonitor {
 
     const transport = new BeaconTransport(`${config.ingestUrl}/v1/ingest`);
 
+    const svc = config.serviceConfig;
+    const source = svc
+      ? toTransmissionSource(svc, "@qa-sdk/browser", "0.1.0")
+      : { service_name: config.meta?.serviceName ?? "browser", sdk_name: "@qa-sdk/browser", sdk_version: "0.1.0" };
+    const build = svc
+      ? toTransmissionBuild(svc)
+      : { env: config.meta?.env ?? "production" };
+
     this.logger = new QaLogger({
       transport,
-      owner: { owner_type: "tenant", owner_id: "browser-monitor" },
-      source: {
-        service_name: config.meta?.serviceName ?? "browser",
-        sdk_name: "@qa-sdk/browser",
-        sdk_version: "0.1.0",
-      },
+      owner: config.owner ?? { owner_type: "tenant", owner_id: "browser-monitor" },
+      source,
       runtime: {
         platform: "browser",
         os_version: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
       },
-      build: { env: (config.meta?.env ?? "production") as BuildEnv },
+      build,
       flushIntervalMs: 5_000,
       onError: config.onError,
       ...(config.infraContext ? { infraContext: config.infraContext } : {}),

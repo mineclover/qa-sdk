@@ -1,5 +1,5 @@
 /**
- * Design Knowledge Graph — 노드 13종 + 엣지 18종 타입 정의.
+ * Design Knowledge Graph — 노드 14종 + 엣지 18종 타입 정의.
  *
  * 좌표 시스템의 성장 나선을 추적하는 설계 시점 메타데이터 그래프.
  * 스펙: docs/specs/spec-engine/design-knowledge-graph.md
@@ -250,6 +250,31 @@ export interface SkillNode {
   readonly specialization?: SkillSpecialization;
 }
 
+// ── Transition Spec 노드 ─────────────────────────────────
+
+export interface TransitionSpecNode {
+  readonly kind: "transition-spec";
+  readonly id: string;
+  /** 전이 이름. 형식: <domain>.<entity>.<operation> */
+  readonly transition: string;
+  readonly version: string;
+  readonly matchMode: "single" | "ordered" | "unordered" | "windowed";
+  readonly coordinateCount: number;
+  readonly effectKind: "create" | "update" | "move" | "consume" | "open" | "close";
+  /** input/output에서 참조하는 슬롯 이름 목록 */
+  readonly slotRefs: readonly string[];
+}
+
+// ── 테이블 노드 ──────────────────────────────────────────
+
+export interface TableNode {
+  readonly kind: "table";
+  readonly id: string;
+  readonly name: string;
+  /** 컬럼 이름 목록 */
+  readonly columns: readonly string[];
+}
+
 // ── 노드 유니온 ───────────────────────────────────────────
 
 export type DkgNode =
@@ -265,7 +290,9 @@ export type DkgNode =
   | ConsumerNode
   | IntentLinkNode
   | DslBundleNode
-  | SkillNode;
+  | SkillNode
+  | TransitionSpecNode
+  | TableNode;
 
 export type DkgNodeKind = DkgNode["kind"];
 

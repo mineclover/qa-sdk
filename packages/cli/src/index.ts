@@ -15,7 +15,7 @@ import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
   dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
-  dkgService, dkgPrefix, dkgDsl, dkgOverview,
+  dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
   dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
@@ -27,7 +27,8 @@ import {
   dkgPatterns, dkgPatternStats,
   setCatalogContext, getCatalogRegistry,
 } from "./commands/dkg.js";
-import { loadCatalog, type LoadedCatalog } from "./catalog-loader.js";
+import { loadCatalog } from "./catalog-loader.js";
+import type { Catalog } from "@qa-sdk/core";
 import {
   cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
   cliImpact, cliListPrefixes, cliListAxes,
@@ -154,6 +155,9 @@ Commands:
     --output <dir>         저장 디렉토리 (기본: ./schemas)
 `.trim();
 
+// ── Module State ────────────────────────────────────
+let loadedCatalog: Catalog | undefined;
+
 // ── Main ─────────────────────────────────────────────
 
 async function main() {
@@ -175,10 +179,12 @@ async function main() {
 
   const sub = resolveSubcommand(filteredArgs);
 
-  // --catalog 옵션이 있거나 CWD에 qa-sdk.config가 있으면 카탈로그 로드 → DKG 컨텍스트 주입
-  if (catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog")) {
-    const catalog = await loadCatalog(catalogPath);
-    setCatalogContext(catalog);
+  // 카탈로그가 필요한 명령 → loadCatalog() 실행
+  const DX_COMMANDS = new Set(["encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact"]);
+  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || DX_COMMANDS.has(sub.name);
+  if (needsCatalog) {
+    loadedCatalog = await loadCatalog(catalogPath);
+    setCatalogContext(loadedCatalog);
   }
 
   // 모든 CLI 명령을 cli_event 좌표로 기록
@@ -254,13 +260,13 @@ async function main() {
     case "find-version":
       return runFindVersion(sub.rest);
     case "list-prefixes":
-      cliListPrefixes({ json: sub.rest.includes("--json") });
+      cliListPrefixes(loadedCatalog!, { json: sub.rest.includes("--json") });
       return;
     case "list-axes":
-      cliListAxes({ json: sub.rest.includes("--json") });
+      cliListAxes(loadedCatalog!, { json: sub.rest.includes("--json") });
       return;
     case "derive-refs":
-      cliDeriveRefs({ check: true });
+      cliDeriveRefs(loadedCatalog!, { check: true });
       return;
     case "impact":
       return runImpactCmd(sub.rest);
@@ -332,6 +338,13 @@ async function main() {
       return;
     case "dkg dsl":
       dkgDsl(sub.rest[0]);
+      return;
+    case "dkg tables":
+      dkgTables();
+      return;
+    case "dkg table":
+      if (sub.rest[0]) dkgTable(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg table <id>");
       return;
     case "dkg overview":
       dkgOverview();
@@ -608,6 +621,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
+    "dkg tables", "dkg table",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
@@ -940,7 +954,7 @@ function runEncode(argv: string[]) {
   }
 
   const json = argv.includes("--json");
-  cliEncode({ prefix, dims, json });
+  cliEncode(loadedCatalog!, { prefix, dims, json });
 }
 
 // ── DX: decode ──────────────────────────────────────
@@ -950,7 +964,7 @@ function runDecode(argv: string[]) {
   if (!address) { console.error('Usage: qa-sdk decode "prefix:version:address"'); return; }
   const deep = argv.includes("--deep");
   const json = argv.includes("--json");
-  cliDecode({ address, deep, json });
+  cliDecode(loadedCatalog!, { address, deep, json });
 }
 
 // ── DX: resolve ─────────────────────────────────────
@@ -961,7 +975,7 @@ function runResolve(argv: string[]) {
   const json = argv.includes("--json");
   const toIdx = argv.indexOf("--to");
   const to = toIdx >= 0 ? argv[toIdx + 1] : undefined;
-  cliResolve({ address, to, json });
+  cliResolve(loadedCatalog!, { address, to, json });
 }
 
 // ── DX: find-version ────────────────────────────────
@@ -970,16 +984,19 @@ function runFindVersion(argv: string[]) {
   const axis = argv[0];
   const entry = argv[1];
   if (!axis || !entry) { console.error("Usage: qa-sdk find-version <axis> <entry>"); return; }
-  cliFindVersion({ axis, entry });
+  cliFindVersion(loadedCatalog!, { axis, entry });
 }
 
 // ── DX: impact ──────────────────────────────────────
 
-function runImpactCmd(argv: string[]) {
+async function runImpactCmd(argv: string[]) {
   const axisIdx = argv.indexOf("--axis");
   const prefixIdx = argv.indexOf("--prefix");
-  if (axisIdx >= 0) cliImpact({ axis: argv[axisIdx + 1] });
-  else if (prefixIdx >= 0) cliImpact({ prefix: argv[prefixIdx + 1] });
+  // DkgConfig는 동적 로드 (demo-snapshot fallback)
+  const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+  const dkgConfig = DEMO_DKG_CONFIG;
+  if (axisIdx >= 0) cliImpact(loadedCatalog!, dkgConfig, { axis: argv[axisIdx + 1] });
+  else if (prefixIdx >= 0) cliImpact(loadedCatalog!, dkgConfig, { prefix: argv[prefixIdx + 1] });
   else console.error("Usage: qa-sdk impact --axis <id> or --prefix <id>");
 }
 

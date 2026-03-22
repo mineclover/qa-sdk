@@ -30,6 +30,8 @@ export type {
   DomainNode,
   ConsumerNode,
   IntentLinkNode,
+  TransitionSpecNode,
+  TableNode,
   ImpactAnalysisInput,
   ImpactAnalysisResult,
   InferredMigrator,

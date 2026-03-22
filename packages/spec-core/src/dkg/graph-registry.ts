@@ -283,4 +283,74 @@ export class GraphRegistry implements GraphPort {
     }
     return groups;
   }
+
+  // ── Table 의존 질의 ──────────────────────────────────
+
+  /**
+   * 테이블을 참조하는 prefix 목록.
+   * prefix → table_ref dim으로 연결된 composes 엣지의 역방향.
+   */
+  getPrefixesForTable(tableId: string): Array<{ prefixId: string; dimLabel: string }> {
+    return this.edgesTo(tableId, "composes")
+      .filter(e => e.meta?.dimKind === "table_ref")
+      .map(e => ({ prefixId: e.from, dimLabel: e.meta!.label as string }));
+  }
+
+  /**
+   * prefix가 참조하는 테이블 목록.
+   */
+  getTablesForPrefix(prefixId: string): Array<{ tableId: string; dimLabel: string }> {
+    return this.edgesFrom(prefixId, "composes")
+      .filter(e => e.meta?.dimKind === "table_ref")
+      .map(e => ({ tableId: e.to, dimLabel: e.meta!.label as string }));
+  }
+
+  /**
+   * 테이블의 컬럼이 참조하는 축/prefix/테이블 (column-level edges).
+   */
+  getTableColumnRefs(tableId: string): Array<{
+    column: string;
+    targetId: string;
+    refKind: "column_axis" | "prefix_ref" | "fk";
+  }> {
+    const result: Array<{ column: string; targetId: string; refKind: "column_axis" | "prefix_ref" | "fk" }> = [];
+
+    for (const edge of this.edgesFrom(tableId)) {
+      if (edge.meta?.dimKind === "column_axis") {
+        result.push({ column: edge.meta.column as string, targetId: edge.to, refKind: "column_axis" });
+      } else if (edge.meta?.column && edge.meta?.fk) {
+        result.push({ column: edge.meta.column as string, targetId: edge.to, refKind: "fk" });
+      } else if (edge.meta?.column && edge.type === "references") {
+        const node = this.getNode(edge.to);
+        if (node?.kind === "prefix") {
+          result.push({ column: edge.meta.column as string, targetId: edge.to, refKind: "prefix_ref" });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 테이블 변경 시 영향받는 전체 체인:
+   *   table → prefixes (via table_ref dims) → services (via topology ownership)
+   *
+   * topology는 외부에서 주입.
+   */
+  cascadeFromTable(tableId: string): {
+    prefixes: Array<{ prefixId: string; dimLabel: string }>;
+    referencingTables: Array<{ id: string; column: string }>;
+  } {
+    const prefixes = this.getPrefixesForTable(tableId);
+
+    // 이 테이블을 FK로 참조하는 다른 테이블
+    const referencingTables: Array<{ id: string; column: string }> = [];
+    for (const edge of this.edgesTo(tableId, "references")) {
+      if (edge.meta?.fk) {
+        referencingTables.push({ id: edge.from, column: edge.meta.column as string });
+      }
+    }
+
+    return { prefixes, referencingTables };
+  }
 }

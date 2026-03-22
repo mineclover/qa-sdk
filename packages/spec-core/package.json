@@ -34,6 +34,10 @@
     "./viz": {
       "import": "./dist/visualization/index.js",
       "types": "./dist/visualization/index.d.ts"
+    },
+    "./transition": {
+      "import": "./dist/transition/index.js",
+      "types": "./dist/transition/index.d.ts"
     }
   },
   "scripts": {

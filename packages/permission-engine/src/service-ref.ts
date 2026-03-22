@@ -16,7 +16,13 @@
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-/** 서비스 식별자 (필수). */
+/**
+ * 서비스 식별자 (필수).
+ *
+ * @note `@qa-sdk/core`의 `ServiceBootConfig`과 구조적으로 호환.
+ *   TypeScript structural typing으로 `ServiceBootConfig` 값이
+ *   `ServiceIdentity`/`ServiceRef`로 자동 할당 가능.
+ */
 export interface ServiceIdentity {
   /** 서비스 네임스페이스. 예: "shop", "cms" */
   readonly namespace: string;

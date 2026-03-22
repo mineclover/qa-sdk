@@ -140,9 +140,9 @@ describe("transmissionEnvelopeSchema — 잘못된 입력 거부", () => {
     expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(false);
   });
 
-  it("build.env가 enum 외 값이면 실패", () => {
+  it("build.env가 빈 문자열이면 실패", () => {
     const envelope = makeValidEnvelope();
-    (envelope.build as Record<string, unknown>).env = "test";
+    (envelope.build as Record<string, unknown>).env = "";
     expect(transmissionEnvelopeSchema.safeParse(envelope).success).toBe(false);
   });
 

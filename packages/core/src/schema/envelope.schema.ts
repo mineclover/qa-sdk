@@ -26,12 +26,7 @@ export const transmissionRuntimeSchema = z.object({
   app_version: z.string().optional(),
 });
 
-export const buildEnvSchema = z.enum([
-  "local",
-  "dev",
-  "staging",
-  "production",
-]);
+export const buildEnvSchema = z.string().min(1);
 
 export const transmissionBuildSchema = z.object({
   env: buildEnvSchema,

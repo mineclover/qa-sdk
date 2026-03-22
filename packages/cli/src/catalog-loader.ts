@@ -10,22 +10,14 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-
-/** 카탈로그 호환 최소 타입 (core 의존 없이) */
-export interface LoadedCatalog {
-  readonly id: string;
-  readonly name: string;
-  readonly axes: Record<string, unknown>;
-  readonly prefixes: Record<string, unknown>;
-  readonly tables?: Record<string, unknown>;
-}
+import type { Catalog } from "@qa-sdk/core";
 
 /**
  * 카탈로그를 로드한다.
  *
  * @param catalogPath --catalog 플래그 값 (undefined이면 자동 탐색)
  */
-export async function loadCatalog(catalogPath?: string): Promise<LoadedCatalog> {
+export async function loadCatalog(catalogPath?: string): Promise<Catalog> {
   // 1. 명시적 --catalog 경로
   if (catalogPath) {
     return loadFromPath(catalogPath);
@@ -45,7 +37,7 @@ export async function loadCatalog(catalogPath?: string): Promise<LoadedCatalog> 
 }
 
 /** 파일 경로에서 카탈로그 로드 (.ts, .js, .json) */
-async function loadFromPath(filePath: string): Promise<LoadedCatalog> {
+async function loadFromPath(filePath: string): Promise<Catalog> {
   const absPath = resolve(process.cwd(), filePath);
 
   if (!existsSync(absPath)) {
@@ -55,7 +47,7 @@ async function loadFromPath(filePath: string): Promise<LoadedCatalog> {
   if (absPath.endsWith(".json")) {
     const { readFileSync } = await import("node:fs");
     const content = readFileSync(absPath, "utf-8");
-    return JSON.parse(content) as LoadedCatalog;
+    return JSON.parse(content) as Catalog;
   }
 
   // .ts 파일은 jiti 또는 tsx 런타임 필요
@@ -69,7 +61,7 @@ async function loadFromPath(filePath: string): Promise<LoadedCatalog> {
 }
 
 /** qa-sdk.config.ts/js에서 catalog 경로를 읽어 로드 */
-async function loadFromConfig(configPath: string): Promise<LoadedCatalog> {
+async function loadFromConfig(configPath: string): Promise<Catalog> {
   let mod: Record<string, unknown>;
 
   if (configPath.endsWith(".ts")) {
@@ -86,14 +78,14 @@ async function loadFromConfig(configPath: string): Promise<LoadedCatalog> {
   }
 
   if (config.catalog && typeof config.catalog === "object" && "id" in (config.catalog as object)) {
-    return config.catalog as LoadedCatalog;
+    return config.catalog as Catalog;
   }
 
   throw new Error(`qa-sdk.config에서 catalog를 찾을 수 없습니다: ${configPath}`);
 }
 
 /** TypeScript 파일을 동적으로 로드 */
-async function loadTypeScriptFile(filePath: string): Promise<LoadedCatalog> {
+async function loadTypeScriptFile(filePath: string): Promise<Catalog> {
   const mod = await loadTypeScriptModule(filePath);
   return extractCatalog(mod);
 }
@@ -123,10 +115,10 @@ async function loadTypeScriptModule(filePath: string): Promise<Record<string, un
 }
 
 /** 모듈에서 카탈로그 객체 추출 */
-function extractCatalog(mod: Record<string, unknown>): LoadedCatalog {
+function extractCatalog(mod: Record<string, unknown>): Catalog {
   // default export
   if (mod.default && typeof mod.default === "object" && "prefixes" in (mod.default as object)) {
-    return mod.default as LoadedCatalog;
+    return mod.default as Catalog;
   }
 
   // named export: catalog 또는 CATALOG 또는 *_CATALOG
@@ -134,7 +126,7 @@ function extractCatalog(mod: Record<string, unknown>): LoadedCatalog {
     if (value && typeof value === "object" && "prefixes" in (value as object)) {
       const obj = value as Record<string, unknown>;
       if ("id" in obj && "axes" in obj) {
-        return obj as unknown as LoadedCatalog;
+        return obj as unknown as Catalog;
       }
     }
   }
@@ -143,7 +135,7 @@ function extractCatalog(mod: Record<string, unknown>): LoadedCatalog {
 }
 
 /** 기본 DEMO_CATALOG 로드 */
-async function loadDemoCatalog(): Promise<LoadedCatalog> {
+async function loadDemoCatalog(): Promise<Catalog> {
   const { DEMO_CATALOG } = await import("demo-snapshot");
-  return DEMO_CATALOG as unknown as LoadedCatalog;
+  return DEMO_CATALOG as unknown as Catalog;
 }

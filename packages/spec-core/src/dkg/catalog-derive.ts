@@ -1,12 +1,12 @@
 /**
  * DEMO_CATALOG → DKG 자동 파생.
  *
- * Axis/Prefix 노드와 composes/references 엣지를
+ * Axis/Prefix/Table 노드와 composes/references 엣지를
  * 카탈로그 구조에서 결정론적으로 추출한다.
  */
 
 import { GraphRegistry } from "./graph-registry.js";
-import type { AxisNode, PrefixNode } from "./dkg.types.js";
+import type { AxisNode, PrefixNode, TableNode } from "./dkg.types.js";
 
 /**
  * 카탈로그 호환 타입.
@@ -29,6 +29,16 @@ export interface DeriveInput {
       readonly table?: string;
     }>;
   }>;
+  readonly tables?: Record<string, {
+    readonly table: string;
+    readonly columns: Record<string, {
+      readonly kind: "scalar" | "prefix_ref" | "table_ref" | "axis_ref";
+      readonly type?: string;
+      readonly prefixId?: string;
+      readonly table?: string;
+      readonly axisId?: string;
+    }>;
+  }>;
 }
 
 /**
@@ -36,9 +46,13 @@ export interface DeriveInput {
  *
  * - 각 axis → AxisNode
  * - 각 prefix → PrefixNode
+ * - 각 table → TableNode
  * - axis dim → composes 엣지 (dimKind: "axis")
  * - prefix_ref dim → composes 엣지 (dimKind: "prefix_ref") + references 엣지
  * - table_ref dim → composes 엣지 (dimKind: "table_ref")
+ * - table column axis_ref → composes 엣지 (dimKind: "column_axis")
+ * - table column prefix_ref → references 엣지
+ * - table column table_ref → references 엣지 (FK)
  */
 export function deriveFromCatalog(catalog: DeriveInput, graph?: GraphRegistry): GraphRegistry {
   const g = graph ?? new GraphRegistry();
@@ -79,6 +93,40 @@ export function deriveFromCatalog(catalog: DeriveInput, graph?: GraphRegistry): 
         case "table_ref":
           g.addEdge("composes", id, dimRef.table!, { dimKind: "table_ref", label });
           break;
+      }
+    }
+  }
+
+  // Table 노드 + 컬럼 엣지
+  if (catalog.tables) {
+    for (const [id, tableDef] of Object.entries(catalog.tables)) {
+      const tableNode: TableNode = {
+        kind: "table",
+        id,
+        name: tableDef.table,
+        columns: Object.keys(tableDef.columns),
+      };
+      g.addNode(tableNode);
+
+      for (const [colName, colRef] of Object.entries(tableDef.columns)) {
+        switch (colRef.kind) {
+          case "axis_ref":
+            // 컬럼이 축 값을 저장 → table --composes--> axis
+            g.addEdge("composes", id, colRef.axisId!, { dimKind: "column_axis", column: colName });
+            break;
+
+          case "prefix_ref":
+            // 컬럼이 prefix 주소를 저장 → table --references--> prefix
+            g.addEdge("references", id, colRef.prefixId!, { column: colName });
+            break;
+
+          case "table_ref":
+            // FK → table --references--> table
+            g.addEdge("references", id, colRef.table!, { column: colName, fk: true });
+            break;
+
+          // scalar: 엣지 없음
+        }
       }
     }
   }

@@ -9,10 +9,11 @@
  */
 
 import type { EventRecord, MetricType, PayloadFormat, PayloadEncoding, SpanStatusCode } from "@qa-sdk/core";
+import { toServiceDims, toTransmissionSource, toTransmissionBuild } from "@qa-sdk/core";
 import { QaLogger, TraceContext } from "@qa-sdk/sdk";
 import type { SpanHandle } from "@qa-sdk/sdk";
 import { createBinder, type PartialBinder } from "weighted-index";
-import type { ApmLoggerConfig } from "./config.js";
+import type { ApmLoggerConfig, ApmBootConfig } from "./config.js";
 
 export class ApmLogger {
   private readonly logger: QaLogger;
@@ -167,4 +168,27 @@ export class ApmLogger {
 /** Factory function */
 export function createApmLogger(config: ApmLoggerConfig): ApmLogger {
   return new ApmLogger(config);
+}
+
+/**
+ * ServiceBootConfig 기반 편의 팩토리.
+ *
+ * ServiceBootConfig 하나로 source, build, fixedDims를 자동 파생.
+ * 기존 createApmLogger()와 동일한 ApmLogger를 반환한다.
+ */
+export function createApmLoggerFromBoot(boot: ApmBootConfig): ApmLogger {
+  const { service } = boot;
+  return createApmLogger({
+    transport: boot.transport,
+    owner: boot.owner,
+    source: toTransmissionSource(service, "@qa-sdk/apm", "0.1.0"),
+    build: toTransmissionBuild(service),
+    runtime: { platform: "node", ...boot.runtime },
+    codec: boot.codec,
+    prefix: boot.prefix ?? "service",
+    fixedDims: toServiceDims(service),
+    generation: boot.generation,
+    actor: boot.actor,
+    entrySnapshot: boot.entrySnapshot,
+  });
 }

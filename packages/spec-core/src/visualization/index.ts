@@ -11,5 +11,11 @@ export {
   allIntentLinksDiagram,
   dslDiagram,
   signalDiagram,
+  domainDiagram,
+  serviceDiagram,
+  constraintDiagram,
+  tableDiagram,
+  observationLoopDiagram,
+  listAllDiagrams,
 } from "./mermaid-gen.js";
-export type { MermaidDiagramOptions, SignalDefLike } from "./mermaid-gen.js";
+export type { MermaidDiagramOptions, SignalDefLike, DiagramEntry, ServiceTopologyLike } from "./mermaid-gen.js";

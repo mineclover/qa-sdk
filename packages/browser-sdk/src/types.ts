@@ -1,9 +1,15 @@
+import type { ServiceBootConfig } from "@qa-sdk/core";
+
 /** QaMonitor의 생명주기 상태 */
 export type MonitorStatus = "active" | "stopped";
 
 export interface QaMonitorConfig {
   /** ingest-server URL (e.g. "http://localhost:3100") */
   ingestUrl: string;
+  /** 통합 서비스 설정. meta보다 우선. */
+  serviceConfig?: ServiceBootConfig;
+  /** 엔벨로프 소유자. 기본: { owner_type: "tenant", owner_id: "browser-monitor" } */
+  owner?: { owner_type: string; owner_id: string };
   /** 시나리오 ID — session_start 이벤트 payload에 포함 */
   scenarioId?: string;
   /** 자동 이벤트 수집 설정 */
@@ -12,7 +18,7 @@ export interface QaMonitorConfig {
   storageKey?: string;
   /** 에러 핸들러 (미지정 시 console.error) */
   onError?: (err: Error, context: string) => void;
-  /** 서비스/환경 메타 */
+  /** @deprecated serviceConfig 사용 */
   meta?: {
     serviceName?: string;
     env?: string;

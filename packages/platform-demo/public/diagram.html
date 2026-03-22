@@ -322,19 +322,35 @@ mermaid.initialize({
 let currentMmd = '';
 let renderCounter = 0;
 let presets = {};
+let presetsFromApi = false;
 
 // ═══════════════════════════════════════════════════════════════
-//  Preset Loading (fetch 기반 — race condition 없음)
+//  Preset Loading — API 우선, static fallback
 // ═══════════════════════════════════════════════════════════════
 
 async function loadPresets() {
+  // 1. Try API (live DKG)
+  try {
+    const resp = await fetch('/api/diagrams');
+    if (resp.ok) {
+      const data = await resp.json();
+      presets = data;
+      presetsFromApi = true;
+      buildSidebar();
+      restoreFromUrl();
+      return;
+    }
+  } catch { /* API not available */ }
+
+  // 2. Fallback to static presets
   try {
     const resp = await fetch('diagram-presets.js');
-    if (!resp.ok) throw new Error(resp.statusText);
-    const text = await resp.text();
-    // window.DIAGRAM_PRESETS = {...} 형식 → eval로 파싱
-    const fn = new Function(text + '; return window.DIAGRAM_PRESETS;');
-    presets = fn() || {};
+    if (resp.ok) {
+      const text = await resp.text();
+      // window.DIAGRAM_PRESETS = {...} 형식 → eval로 파싱
+      const fn = new Function(text + '; return window.DIAGRAM_PRESETS;');
+      presets = fn() || {};
+    }
   } catch {
     presets = {};
   }
@@ -418,7 +434,7 @@ document.getElementById('search-input').addEventListener('input', (e) => {
 //  Preset Selection + URL State
 // ═══════════════════════════════════════════════════════════════
 
-function selectPreset(key, item) {
+async function selectPreset(key, item) {
   // active 표시
   document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
   const btn = document.querySelector(`.preset-item[data-key="${key}"][data-id="${item.id}"]`);
@@ -435,6 +451,18 @@ function selectPreset(key, item) {
 
   if (item.mmd) {
     renderMermaid(item.mmd);
+  } else if (presetsFromApi) {
+    // API에서 on-demand로 mmd 가져오기
+    try {
+      const resp = await fetch(`/api/diagrams/${encodeURIComponent(key)}/${encodeURIComponent(item.id)}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        item.mmd = data.mmd; // 캐시 (다음 클릭 시 재요청 방지)
+        renderMermaid(data.mmd);
+        return;
+      }
+    } catch { /* fetch 실패 */ }
+    showEmpty('다이어그램을 가져올 수 없습니다.');
   } else {
     showEmpty('Mermaid 텍스트가 없습니다.');
   }

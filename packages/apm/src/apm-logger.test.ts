@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createLabelRegistry, PrefixCodec } from "weighted-index";
 import { NoopTransport } from "@qa-sdk/sdk";
-import { ApmLogger, createApmLogger } from "./apm-logger.js";
+import { ApmLogger, createApmLogger, createApmLoggerFromBoot } from "./apm-logger.js";
+import type { ServiceBootConfig } from "@qa-sdk/core";
 
 // ── Test Fixtures ──────────────────────────────────────
 
@@ -213,5 +214,82 @@ describe("ApmLogger", () => {
     logger.info("e2");
     await logger.shutdown();
     expect(transport.sent).toHaveLength(2);
+  });
+
+  describe("createApmLoggerFromBoot", () => {
+    // 카탈로그 호환 라벨 (svc_name, namespace)
+    const bootLabels = createLabelRegistry({
+      env:       [{ version: "v1", ids: ["dev", "prod"] }],
+      region:    [{ version: "v1", ids: ["asia", "usa"] }],
+      svc_name:  [{ version: "v1", ids: ["web", "api", "worker"] }],
+      namespace: [{ version: "v1", ids: ["shop", "cms"] }],
+    });
+    const bootCodec = new PrefixCodec(bootLabels, {
+      service: {
+        labels: ["env", "region", "svc_name", "namespace"],
+        versions: [{ version: "v1", labelVersions: { env: "v1", region: "v1", svc_name: "v1", namespace: "v1" } }],
+      },
+    });
+
+    const bootConfig: ServiceBootConfig = {
+      namespace: "shop",
+      name: "api",
+      env: "prod",
+      region: "asia",
+      build: "abc123",
+    };
+
+    it("ServiceBootConfig에서 source, build, fixedDims를 자동 파생한다", async () => {
+      const transport = makeTransport();
+      const logger = createApmLoggerFromBoot({
+        service: bootConfig,
+        transport,
+        owner,
+        codec: bootCodec,
+        prefix: "service",
+      });
+
+      expect(logger).toBeInstanceOf(ApmLogger);
+      // toServiceDims → { env: "prod", region: "asia", svc_name: "api", namespace: "shop" }
+      expect(logger.partialBinder.bound).toEqual({
+        env: "prod", region: "asia", svc_name: "api", namespace: "shop",
+      });
+      expect(logger.partialBinder.free).toEqual([]);
+
+      logger.startTrace();
+      logger.info("boot_test");
+      await logger.flush();
+
+      const envelope = transport.sent[0];
+      expect(envelope.source.service_name).toBe("shop/api");
+      expect(envelope.build.env).toBe("production"); // prod → production
+      expect(envelope.build.build_ref).toBe("abc123");
+    });
+
+    it("기존 createApmLogger와 동일한 bound/free를 생성한다", () => {
+      const transport1 = makeTransport();
+      const transport2 = makeTransport();
+
+      // 기존 방식
+      const logger1 = createApmLogger({
+        transport: transport1, owner, source, runtime, build,
+        codec: bootCodec, prefix: "service",
+        fixedDims: { env: "prod", region: "asia", svc_name: "api", namespace: "shop" },
+        flushIntervalMs: 0,
+      });
+
+      // 새 방식
+      const logger2 = createApmLoggerFromBoot({
+        service: bootConfig,
+        transport: transport2,
+        owner,
+        codec: bootCodec,
+        prefix: "service",
+      });
+
+      // 동일한 bound/free 구조
+      expect(logger1.partialBinder.bound).toEqual(logger2.partialBinder.bound);
+      expect(logger1.partialBinder.free).toEqual(logger2.partialBinder.free);
+    });
   });
 });

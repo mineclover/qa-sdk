@@ -288,6 +288,62 @@ export class ServiceTopologyRegistry {
     return true;
   }
 
+  // ── Table 의존 질의 ─────────────────────────────────
+
+  /**
+   * 서비스가 접근하는 테이블 목록.
+   * 서비스가 소유/소비하는 prefix의 table_ref dim에서 추론.
+   */
+  getTablesForService(serviceId: string, graph: GraphRegistry): Array<{
+    tableId: string;
+    via: string;
+    role: OwnershipRole;
+  }> {
+    const result: Array<{ tableId: string; via: string; role: OwnershipRole }> = [];
+    const seen = new Set<string>();
+
+    const ownerships = this.ownerships.filter(o => o.serviceId === serviceId);
+    for (const o of ownerships) {
+      const tables = graph.getTablesForPrefix(o.prefixId);
+      for (const t of tables) {
+        const key = `${t.tableId}:${o.prefixId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push({ tableId: t.tableId, via: o.prefixId, role: o.role });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 테이블에 접근하는 서비스 목록.
+   * 테이블을 참조하는 prefix를 소유/소비하는 서비스에서 추론.
+   */
+  getServicesForTable(tableId: string, graph: GraphRegistry): Array<{
+    serviceId: string;
+    via: string;
+    role: OwnershipRole;
+  }> {
+    const prefixes = graph.getPrefixesForTable(tableId);
+    const result: Array<{ serviceId: string; via: string; role: OwnershipRole }> = [];
+    const seen = new Set<string>();
+
+    for (const p of prefixes) {
+      const related = this.ownerships.filter(o => o.prefixId === p.prefixId);
+      for (const o of related) {
+        const key = `${o.serviceId}:${p.prefixId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          result.push({ serviceId: o.serviceId, via: p.prefixId, role: o.role });
+        }
+      }
+    }
+
+    return result;
+  }
+
   // ── Approval Gate ─────────────────────────────────────
 
   /**

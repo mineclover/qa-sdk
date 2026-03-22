@@ -28,7 +28,8 @@ export interface TransmissionRuntime {
 
 // ── Build ──────────────────────────────────────────────
 
-export type BuildEnv = "local" | "dev" | "staging" | "production";
+/** 배포 환경. 권장값: "local" | "dev" | "staging" | "production" | "test" | "stage" | "prod" */
+export type BuildEnv = string;
 
 export interface TransmissionBuild {
   env: BuildEnv;

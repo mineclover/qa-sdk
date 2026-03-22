@@ -29,5 +29,12 @@ export type {
   EventRecord, TransmissionEnvelope, RecordKind,
   MetricType, SpanStatusCode, PayloadFormat,
   PayloadEncoding, MaskingMode, QaSession,
+  ServiceIdentity, DeployContext, ServiceBootConfig,
+  TransmissionOwner, TransmissionSource, TransmissionBuild, BuildEnv,
+  ActorContext,
 } from "@qa-sdk/core";
-export { newTraceId, newSpanId, newLogId, newQaSessionId, now } from "@qa-sdk/core";
+export {
+  newTraceId, newSpanId, newLogId, newQaSessionId, now,
+  toServiceDims, toTransmissionSource, toTransmissionBuild,
+  catalogEnvToBuildEnv, buildEnvToCatalogEnv,
+} from "@qa-sdk/core";

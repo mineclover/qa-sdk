@@ -24,6 +24,48 @@
 - 새 서비스/앱 패키지 → `@qa-sdk/*` scope + tsc ESM only
 - 그룹 간 의존: QA 플랫폼 → 인코딩 라이브러리 방향만 허용 (역방향 금지)
 
+## 산출물 단위 (Deliverable Units)
+
+비즈니스가 QA SDK를 도입할 때 제공해야 하는 5가지 단위. SDK 인프라는 이 입력을 소비하여 전체 파이프라인(인코딩 → 로깅 → 수집 → 분석)을 구동한다.
+
+### 1. Catalog (도메인 좌표 정의) — 필수
+비즈니스의 축(axes) + 주소 공간(prefixes) + 테이블(tables) 정의. 이것이 전체 시스템의 입력. 나머지는 파생.
+- 형식: `Catalog` 인터페이스 (`@qa-sdk/core`)
+- 참고: `demo-snapshot`의 `DEMO_CATALOG` (쇼핑 도메인 예시)
+- 생성: `qa-sdk init`으로 스캐폴딩, 또는 직접 정의
+- 운영: `registry-service`에 등록 → 서비스가 API로 조회
+
+### 2. DkgConfig (거버넌스 설정) — DKG 사용 시
+도메인 경계, 제약 조건, DSL 번들, 스킬, 스펙 정의. Catalog이 "무엇이 있는가"면, DkgConfig은 "어떻게 관리하는가".
+- 형식: `DkgConfig` 인터페이스 (`@qa-sdk/core`)
+- 참고: `demo-snapshot`의 `DEMO_DKG_CONFIG`
+- 용도: `bootstrapDkg({ catalog, config })` → DKG 그래프 생성 → convergence 분석
+
+### 3. PatternRules (이벤트 분류 규칙) — 패턴 분류 시
+세션 이벤트 시퀀스를 행동 패턴으로 분류하는 규칙. `BehaviorPattern`은 `string` 타입이므로 비즈니스별 자유 정의.
+- 형식: `PatternRule[]` (`@qa-sdk/core`)
+- 참고: `spec-core`의 `DEMO_PATTERN_RULES` (쇼핑 도메인 예시)
+- 권장: behavior_pattern 축 entries와 1:1 매핑
+
+### 4. ServiceBootConfig (서비스 정체성) — 필수
+각 서비스의 namespace, name, env, region 정의. 모든 SDK 레이어(좌표 인코딩, 전송 메타데이터, 권한)가 이 설정에서 파생.
+- 형식: `ServiceBootConfig` (`@qa-sdk/core`)
+- 파생: `toServiceDims()` → 좌표, `toTransmissionSource()` → 전송, `toTransmissionBuild()` → 빌드
+- QaContext / ApmLogger / QaMonitor 모두 `serviceConfig` 필드로 수용
+
+### 5. qa-sdk.config.ts (프로젝트 설정) — CLI 사용 시
+CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
+- 형식: `{ catalog: "./path/to/my-catalog.ts" }` 또는 `{ catalog: MyCatalog }`
+- 탐색 우선순위: `--catalog` → CWD `qa-sdk.config.ts` → `DEMO_CATALOG`
+- 모든 CLI dx 명령(encode/decode/resolve 등)이 이 경로를 따름
+
+### demo-snapshot의 위치
+`demo-snapshot`은 **참조 구현**이다. 인프라가 아님.
+- `DEMO_CATALOG` — 쇼핑 도메인 카탈로그 예시 (67축, 34 prefix)
+- `DEMO_DKG_CONFIG` — 쇼핑 도메인 거버넌스 예시
+- `DEMO_PATTERN_RULES` — 쇼핑 이벤트 분류 규칙 예시
+- 새 비즈니스는 이를 복사하여 자기 도메인으로 교체
+
 ## Build
 - `pnpm --filter <pkg> build` — 개별 패키지 빌드
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상

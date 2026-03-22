@@ -25,25 +25,15 @@ export type IdentificationMode =
 
 // ── 행동 패턴 ─────────────────────────────────────────
 
-/** 세션 수준의 행동 패턴 분류 */
-export type BehaviorPattern =
-  // 식별 패턴
-  | "purchase_complete"    // 로그인 → 상품 → 결제 완료
-  | "browse_only"          // 로그인 후 탐색만 (장바구니/결제 없음)
-  | "cart_abandon"         // 장바구니 담기 후 결제 미진행
-  | "checkout_fail"        // 결제 시도 후 실패 (성공 없음)
-  | "error_recovery"       // 에러 발생 후 재시도 → 성공
-  | "return_visit"         // 이전 세션에서 이탈 후 재방문 구매
-  // 비식별 패턴
-  | "anonymous_browse"     // 비로그인 탐색
-  | "anonymous_cart"       // 비로그인 장바구니 (결제 불가)
-  // 시스템 패턴
-  | "api_integration"      // 서비스 간 API 호출
-  | "bot_crawl"            // 비정상 속도 탐색 (봇 의심)
-  | "health_check"         // 헬스체크/모니터링 호출
-  // 미분류
-  | "unclassified"         // 규칙에 매칭되지 않는 패턴
-  ;
+/**
+ * 세션 수준의 행동 패턴 분류.
+ *
+ * 비즈니스별로 자유 정의. catalog의 behavior_pattern 축 entries와 일치시킨다.
+ * 예: 쇼핑 → "purchase_complete", 물류 → "delivery_completed", 금융 → "transaction_approved"
+ *
+ * 시스템 예약값: "unclassified" (규칙에 매칭되지 않는 패턴)
+ */
+export type BehaviorPattern = string;
 
 // ── 패턴 매칭 신뢰도 ──────────────────────────────────
 
