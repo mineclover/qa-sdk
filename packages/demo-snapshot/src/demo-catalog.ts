@@ -604,7 +604,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["exact", "high", "medium", "low", "unknown"],
-          capacity: 8,
+          capacity: 16,
           ko: { exact: "확정", high: "높음", medium: "보통", low: "낮음", unknown: "미정" },
         },
       },
@@ -755,7 +755,7 @@ export const DEMO_CATALOG = {
             // 패키지 전체 (모듈 미구분 시)
             "_all",
           ],
-          capacity: 32,
+          capacity: 64,
           ko: { shared: "공유", schema: "스키마", "export-surface": "내보내기", spec: "스펙", loader: "로더", codegen: "코드생성", dkg: "설계그래프", "dkg-skills": "DKG스킬", convergence: "수렴분석", propagation: "전파", store: "저장소", visualization: "시각화", "shopping-flow": "쇼핑흐름", "event-pipeline": "이벤트파이프라인", "iframe-integration": "iframe통합", "scenario-selector": "시나리오선택", "shop-ingest-integration": "쇼핑수집통합", "anonymous-browse": "익명탐색", "cart-abandon": "장바구니이탈", "multi-product-purchase": "다중상품구매", "_all": "전체" },
         },
       },
@@ -775,7 +775,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["passed", "failed", "error", "skipped", "timeout"],
-          capacity: 8,
+          capacity: 16,
           ko: { passed: "통과", failed: "실패", error: "오류", skipped: "건너뜀", timeout: "시간초과" },
         },
       },
@@ -788,7 +788,7 @@ export const DEMO_CATALOG = {
             "claim", "release", "decide", "observe", "resolve", "link",
             "refresh", "self-check", "converge", "trace", "promote",
           ],
-          capacity: 16,
+          capacity: 32,
           ko: { claim: "선점", release: "해제", decide: "결정", observe: "관측", resolve: "해소", link: "연결", refresh: "재부트", "self-check": "자기진단", converge: "수렴", trace: "추적", promote: "승격" },
         },
       },
@@ -824,7 +824,7 @@ export const DEMO_CATALOG = {
             "dkg-graph",
             "integration",
           ],
-          capacity: 16,
+          capacity: 32,
           ko: { "encode-decode": "인코딩/디코딩", "stride-calc": "스트라이드계산", "bitmask-ops": "비트연산", "dim-extract": "차원추출", "perm-grant": "권한부여", "protocol-codec": "프로토콜변환", "state-lifecycle": "상태관리", "query-resolve": "조회/해석", "schema-validate": "스키마검증", "convergence-analysis": "수렴분석", "dkg-graph": "그래프연산", integration: "통합테스트" },
         },
       },
@@ -968,7 +968,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["ok", "warning", "error", "blocked", "skipped"],
-          capacity: 8,
+          capacity: 16,
           ko: { ok: "정상", warning: "경고", error: "오류", blocked: "차단", skipped: "건너뜀" },
         },
       },
@@ -981,7 +981,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["draft", "locked", "released", "active", "deprecated"],
-          capacity: 8,
+          capacity: 16,
           ko: { draft: "초안", locked: "잠금", released: "릴리스", active: "활성", deprecated: "폐기" },
         },
       },
