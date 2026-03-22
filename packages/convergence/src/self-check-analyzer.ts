@@ -473,6 +473,8 @@ const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
   { prefix: "skill_execution", dims: { skill_id: "skill-promote-scan", skill_category: "analysis", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-spec-manage", skill_category: "write", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-registry-publish", skill_category: "write", skill_outcome: "ok" } },
+  { prefix: "skill_execution", dims: { skill_id: "skill-flow-trace", skill_category: "analysis", skill_outcome: "ok" } },
+  { prefix: "skill_execution", dims: { skill_id: "skill-table-impact", skill_category: "read", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-domain-health", skill_category: "analysis", skill_outcome: "error" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-converge-chain", skill_category: "chain", skill_outcome: "blocked" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-trace", skill_category: "read", skill_outcome: "skipped" } },

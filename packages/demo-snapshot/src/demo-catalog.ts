@@ -947,6 +947,7 @@ export const DEMO_CATALOG = {
             "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain",
             "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan",
             "skill-spec-manage", "skill-registry-publish",
+            "skill-flow-trace", "skill-table-impact",
           ],
           capacity: 64,
         },

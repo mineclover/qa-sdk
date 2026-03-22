@@ -529,6 +529,21 @@ export const DEMO_DKG_CONFIG = {
       input: "DemoCatalog + registryUrl", output: "PublishResult + VersionStatus",
       specialization: { prefixes: ["version_point"] },
     },
+    {
+      kind: "skill", id: "skill-flow-trace", name: "IntentLink 흐름 검증",
+      description: "IntentLink invariant를 실 트래픽(AddressContextRecord)과 대조하여 위반 감지. 잘못된 데이터 식별. self-check Phase E에서 자동 실행.",
+      category: "analysis", targetKinds: ["intent-link", "prefix"],
+      input: "AddressContextRecord[] + GraphPort", output: "FlowTraceResult (violations + observations)",
+      specialization: {
+        intentLinks: ["IL-checkout-flow", "IL-api-event", "IL-infra-impact", "IL-pattern-observation", "IL-cart-abandon", "IL-pipeline-flow"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-table-impact", name: "테이블 의존 추적",
+      description: "DB 테이블의 축/prefix/서비스 의존 체인 추적. dkg tables (목록), dkg table <id> (상세 + FK 체인 + impact).",
+      category: "read", targetKinds: ["table"],
+      input: "tableId", output: "{ columnRefs, referencingPrefixes, accessingServices, impactSummary }",
+    },
   ],
 
   specs: [
