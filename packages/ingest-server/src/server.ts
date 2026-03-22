@@ -24,6 +24,11 @@ import {
 import { installCleanupScheduler } from "./lib/cleanup-scheduler.js";
 import { installGracefulShutdown } from "./lib/graceful-shutdown.js";
 import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
+import {
+  InMemoryDlqStore, InMemoryGraphStore, InMemoryRecordStore,
+  InMemoryScenarioSpecStore, InMemorySessionStore,
+  InMemoryTraceStore, InMemoryTransmissionStore, InMemoryVerdictStore,
+} from "@qa-sdk/store";
 import { createLogger } from "./lib/logger.js";
 import { registerTaskQueueWorker } from "./lib/phase-two-worker.js";
 import { RecordStreamBroker } from "./lib/record-stream-broker.js";
@@ -32,7 +37,7 @@ import { createStreamConnectionRegistry } from "./lib/stream-connection-registry
 import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
-import type { ConvergencePipelineRunner, PatternFunctions } from "./lib/convergence-pipeline.js";
+import type { ConvergencePipelineRunner, ConvergenceFunctions, PatternFunctions } from "./lib/convergence-pipeline.js";
 import type { TransitionFunctions } from "@qa-sdk/spec-core/transition";
 import type { TransitionEnginePort } from "./lib/phase-two-worker.js";
 import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js";
@@ -69,13 +74,13 @@ async function startServer() {
   const recordStreamBroker = new RecordStreamBroker();
   const debugStore = new InMemoryDebugStore();
   const streamConnectionRegistry = createStreamConnectionRegistry();
-  const cleanupStore = createDatabaseCleanupStore(env.TRACE_DATABASE_URL);
+  const cleanupStore = env.TRACE_DATABASE_URL ? createDatabaseCleanupStore(env.TRACE_DATABASE_URL) : undefined;
   const cleanupScheduler = installCleanupScheduler({
-    enabled: env.CLEANUP_CRON_ENABLED,
+    enabled: env.CLEANUP_CRON_ENABLED && !!cleanupStore,
     logger,
     runCleanup: () =>
       cleanupExpiredData({
-        cleanupStore,
+        cleanupStore: cleanupStore as any,
         logger,
       }),
   });
@@ -106,21 +111,21 @@ async function startServer() {
       });
 
       // spec-core convergence 함수 동적 import
-      const specAnalysis = await import("@qa-sdk/spec-core/analysis");
+      const specConvergence = await import("@qa-sdk/spec-core/convergence");
+      const specDkg = await import("@qa-sdk/spec-core/dkg");
       const convergenceFns = {
-        aggregateUsageData: (specAnalysis as any).aggregateUsageData,
-        collectMetrics: (specAnalysis as any).collectMetrics,
-        metricsToObservations: (specAnalysis as any).metricsToObservations,
-        traceFlows: (specAnalysis as any).traceFlows,
-      };
+        aggregateUsageData: specConvergence.aggregateUsageData,
+        collectMetrics: specConvergence.collectMetrics,
+        metricsToObservations: specConvergence.metricsToObservations,
+        traceFlows: specDkg.traceFlows,
+      } as ConvergenceFunctions;
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
       let patternFns: PatternFunctions | undefined;
       try {
-        const sa = specAnalysis as any;
-        if (env.PATTERN_CLASSIFICATION_ENABLED && sa.classifyPattern) {
+        if (env.PATTERN_CLASSIFICATION_ENABLED && specConvergence.classifyPattern) {
           // PatternRules: registry → 코드 상수 fallback
-          let patternRules = sa.DEMO_PATTERN_RULES;
+          let patternRules = (specConvergence as any).DEMO_PATTERN_RULES;
           const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
           if (registryUrl) {
             try {
@@ -135,10 +140,10 @@ async function startServer() {
 
           if (patternRules) {
             patternFns = {
-              classifyPattern: sa.classifyPattern,
-              aggregatePatternStats: sa.aggregatePatternStats,
-              detectAnomalies: sa.detectAnomalies,
-              buildPatternHealthReport: sa.buildPatternHealthReport,
+              classifyPattern: specConvergence.classifyPattern,
+              aggregatePatternStats: specConvergence.aggregatePatternStats,
+              detectAnomalies: specConvergence.detectAnomalies,
+              buildPatternHealthReport: specConvergence.buildPatternHealthReport,
               patternRules,
             };
             logger.info("pattern classification enabled");
@@ -212,7 +217,7 @@ async function startServer() {
   const app = createApp({
     appLifecycle,
     checkDbHealth: createDbHealthChecker(stores.db),
-    cleanupStore,
+    cleanupStore: cleanupStore as any,
     debugStore,
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
@@ -260,7 +265,7 @@ async function startServer() {
       await convergencePipeline?.close();
       cleanupScheduler?.stop();
       await taskQueue?.close();
-      await closeClient(env.TRACE_DATABASE_URL);
+      if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
     },
     logger,
     recordStreamBroker,
@@ -322,13 +327,28 @@ async function startWorker() {
   installWorkerShutdown({
     close: async () => {
       await taskQueue.close();
-      await closeClient(env.TRACE_DATABASE_URL);
+      if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
     },
     logger,
   });
 }
 
 function createRuntimeStores(): RuntimeStores {
+  if (!env.TRACE_DATABASE_URL) {
+    // in-memory store (개발/데모용 — DB 없이 동작)
+    return {
+      db: null as any,
+      dlqStore: new InMemoryDlqStore() as any,
+      graphStore: new InMemoryGraphStore() as any,
+      recordStore: new InMemoryRecordStore() as any,
+      scenarioSpecStore: new InMemoryScenarioSpecStore() as any,
+      sessionStore: new InMemorySessionStore() as any,
+      traceStore: new InMemoryTraceStore() as any,
+      transmissionStore: new InMemoryTransmissionStore() as any,
+      verdictStore: new InMemoryVerdictStore() as any,
+    };
+  }
+
   const db = createDb(env.TRACE_DATABASE_URL);
 
   return {
