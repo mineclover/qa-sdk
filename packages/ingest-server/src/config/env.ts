@@ -2,7 +2,8 @@ import { z } from "zod";
 import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse } from "@qa-sdk/core";
 
 export const envSchema = z.object({
-  TRACE_DATABASE_URL: z.string().url(),
+  /** PostgreSQL URL. 미설정 시 in-memory store 사용 (개발/데모용). */
+  TRACE_DATABASE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
   REDIS_URL: optionalUrl,
   PORT: z.coerce.number().default(3200),
   CORS_ORIGIN: z.string().default("*"),
