@@ -42,7 +42,7 @@ export interface MetricDef {
   readonly id: string;
   readonly name: string;
   readonly description: string;
-  readonly category: "headroom" | "skew" | "coverage" | "overlap" | "conflict" | "health" | "invariant";
+  readonly category: "headroom" | "skew" | "coverage" | "overlap" | "conflict" | "health" | "invariant" | "transition";
   readonly autoRunnable: boolean;
   readonly threshold: MetricThreshold;
   /** 이 metric을 측정하는 convergence 함수 */

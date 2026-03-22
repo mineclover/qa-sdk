@@ -84,6 +84,34 @@ export const METRIC_DEFS: readonly MetricDef[] = [
     threshold: { warning: 1, critical: 5 },
     measureFn: "auditSchemaHealth",
   },
+  // ── Transition Metric (Phase 2.5) ────────────────────
+  {
+    id: "metric:transition:coverage",
+    name: "전이 커버리지",
+    description: "정의된 transition spec 중 실제 매칭된 비율.",
+    category: "transition",
+    autoRunnable: false,
+    threshold: { warning: 50, critical: 20, above: false },
+    measureFn: "TransitionFlushResult.coverageRate",
+  },
+  {
+    id: "metric:transition:violation-rate",
+    name: "전이 위반율",
+    description: "input 조건 실패 비율. 0.05 이하면 정상.",
+    category: "transition",
+    autoRunnable: false,
+    threshold: { warning: 20, critical: 50 },
+    measureFn: "TransitionFlushResult.violationRate",
+  },
+  {
+    id: "metric:transition:orphan-sequences",
+    name: "미매칭 시퀀스",
+    description: "transition spec 없이 반복되는 좌표 패턴이 있는 세션 수.",
+    category: "transition",
+    autoRunnable: false,
+    threshold: { warning: 10, critical: 50 },
+    measureFn: "TransitionFlushResult.orphanSequences",
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════
