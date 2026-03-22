@@ -427,6 +427,12 @@ export function constraintDiagram(
 /**
  * 테이블의 FK/prefix 참조를 sequenceDiagram으로 생성.
  */
+/**
+ * 단일 테이블 ER 다이어그램.
+ *
+ * 해당 테이블 + FK로 연결된 테이블 + 참조하는 prefix/축을 erDiagram으로 표현.
+ * 컬럼별 타입과 참조 관계가 한눈에 보인다.
+ */
 export function tableDiagram(
   graph: GraphRegistry,
   tableId: string,
@@ -437,52 +443,127 @@ export function tableDiagram(
     throw new Error(`Table not found: ${tableId}`);
   }
 
-  const lines: string[] = ["sequenceDiagram"];
-  const title = options?.title ?? `Table: ${node.name} (${tableId})`;
-  lines.push(`  title ${title}`);
+  const lines: string[] = ["erDiagram"];
+  const title = options?.title ?? `Table: ${node.name}`;
+  lines.push(`  %% ${title}`);
 
-  // table as participant
-  lines.push(`  participant ${tableId} as ${node.name}`);
-
-  // prefix references via getPrefixesForTable
-  const prefixRefs = graph.getPrefixesForTable(tableId);
-  for (const pr of prefixRefs) {
-    if (!lines.some(l => l.includes(`participant ${pr.prefixId}`))) {
-      lines.push(`  participant ${pr.prefixId} as ${pr.prefixId}`);
-    }
-  }
-
-  // column-level references
+  // 관련 테이블 수집 (FK 관계)
+  const relatedTables = new Set<string>();
   const colRefs = graph.getTableColumnRefs(tableId);
-  const participantIds = new Set<string>([tableId, ...prefixRefs.map(p => p.prefixId)]);
-
   for (const cr of colRefs) {
-    if (!participantIds.has(cr.targetId)) {
-      participantIds.add(cr.targetId);
-      const tNode = graph.getNode(cr.targetId);
-      const label = tNode ? `${cr.targetId} [${tNode.kind}]` : cr.targetId;
-      lines.push(`  participant ${cr.targetId} as ${label}`);
+    if (cr.refKind === "fk") relatedTables.add(cr.targetId);
+  }
+
+  // 역방향 FK (이 테이블을 참조하는 테이블)
+  const allTables = graph.getNodesByKind("table") as TableNode[];
+  for (const t of allTables) {
+    if (t.id === tableId) continue;
+    const refs = graph.getTableColumnRefs(t.id);
+    if (refs.some(r => r.refKind === "fk" && r.targetId === tableId)) {
+      relatedTables.add(t.id);
     }
   }
 
-  // prefix_ref arrows
-  for (const pr of prefixRefs) {
-    lines.push(`  ${pr.prefixId} ->> ${tableId}: table_ref (${pr.dimLabel})`);
+  // 엔티티 정의 (컬럼 포함)
+  const tablesToRender = [tableId, ...relatedTables];
+  for (const tid of tablesToRender) {
+    const tNode = graph.getNode(tid) as TableNode | undefined;
+    if (!tNode) continue;
+    lines.push(`  ${safeId(tid)} {`);
+    for (const col of tNode.columns) {
+      const refs = graph.getTableColumnRefs(tid);
+      const colRef = refs.find(r => r.column === col);
+      const typeLabel = colRef
+        ? colRef.refKind === "fk" ? "FK"
+        : colRef.refKind === "column_axis" ? `axis(${colRef.targetId})`
+        : `ref(${colRef.targetId})`
+        : "scalar";
+      const pk = col === "id" ? "PK" : "";
+      lines.push(`    string ${col} ${pk ? pk + " " : ""}"${typeLabel}"`);
+    }
+    lines.push(`  }`);
   }
 
-  // column-level ref arrows
+  // FK 관계
   for (const cr of colRefs) {
-    const refLabel = cr.refKind === "fk" ? "FK" : cr.refKind === "column_axis" ? "axis" : "prefix_ref";
-    lines.push(`  ${tableId} ->> ${cr.targetId}: ${cr.column} (${refLabel})`);
+    if (cr.refKind === "fk") {
+      lines.push(`  ${safeId(tableId)} }o--|| ${safeId(cr.targetId)} : "${cr.column}"`);
+    }
   }
 
-  // columns note
-  if (node.columns.length > 0) {
-    const colText = node.columns.join(", ");
-    lines.push(`  note right of ${tableId}: columns: ${escapeNote(colText)}`);
+  // 역방향 FK
+  for (const tid of relatedTables) {
+    if (tid === tableId) continue;
+    const refs = graph.getTableColumnRefs(tid);
+    for (const r of refs) {
+      if (r.refKind === "fk" && r.targetId === tableId) {
+        lines.push(`  ${safeId(tid)} }o--|| ${safeId(tableId)} : "${r.column}"`);
+      }
+    }
+  }
+
+  // prefix 참조 (이 테이블을 table_ref로 사용하는 prefix)
+  const prefixRefs = graph.getPrefixesForTable(tableId);
+  if (prefixRefs.length > 0) {
+    lines.push(`  %% prefix references`);
+    for (const pr of prefixRefs) {
+      lines.push(`  ${safeId(pr.prefixId)}["${pr.prefixId} (prefix)"] }o..|| ${safeId(tableId)} : "${pr.dimLabel}"`);
+    }
   }
 
   return lines.join("\n");
+}
+
+/**
+ * 전체 테이블 ER 다이어그램 — 모든 테이블 + FK + prefix 참조.
+ */
+export function tableErDiagram(
+  graph: GraphRegistry,
+  options?: MermaidDiagramOptions,
+): string {
+  const allTables = graph.getNodesByKind("table") as TableNode[];
+  if (allTables.length === 0) return "erDiagram\n  %% No tables";
+
+  const lines: string[] = ["erDiagram"];
+  const title = options?.title ?? `All Tables (${allTables.length})`;
+  lines.push(`  %% ${title}`);
+
+  // 모든 테이블 엔티티
+  for (const t of allTables) {
+    lines.push(`  ${safeId(t.id)} {`);
+    for (const col of t.columns) {
+      const refs = graph.getTableColumnRefs(t.id);
+      const colRef = refs.find(r => r.column === col);
+      const typeLabel = colRef
+        ? colRef.refKind === "fk" ? "FK"
+        : colRef.refKind === "column_axis" ? `axis`
+        : `ref`
+        : "scalar";
+      lines.push(`    string ${col} "${typeLabel}"`);
+    }
+    lines.push(`  }`);
+  }
+
+  // FK 관계 (중복 방지)
+  const seenEdges = new Set<string>();
+  for (const t of allTables) {
+    const refs = graph.getTableColumnRefs(t.id);
+    for (const r of refs) {
+      if (r.refKind === "fk") {
+        const edgeKey = `${t.id}->${r.targetId}:${r.column}`;
+        if (seenEdges.has(edgeKey)) continue;
+        seenEdges.add(edgeKey);
+        lines.push(`  ${safeId(t.id)} }o--|| ${safeId(r.targetId)} : "${r.column}"`);
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/** Mermaid ID에 안전한 문자열 변환 (하이픈/언더스코어 허용, 특수문자 제거) */
+function safeId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
 // ── Observation Loop Diagram ────────────────────────────────
@@ -614,6 +695,11 @@ export function listAllDiagrams(
       id: t.id,
       label: t.name,
     }));
+    result["table-er"] = [{
+      kind: "table-er",
+      id: "table-er",
+      label: `All Tables ER (${tables.length})`,
+    }];
   }
 
   // observation-loop (always available as single entry)

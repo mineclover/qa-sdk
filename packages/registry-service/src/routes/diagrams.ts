@@ -17,6 +17,7 @@ interface DiagramFns {
   constraintDiagram: Function;
   tableDiagram: Function;
   observationLoopDiagram: Function;
+  tableErDiagram: Function;
   transitionSpecDiagram: Function;
   transitionDagDiagram: Function;
 }
@@ -104,6 +105,9 @@ export function createDiagramRoutes(deps: DiagramRouteDeps) {
           break;
         case "observation-loop":
           mmd = viz.observationLoopDiagram(graph, opts);
+          break;
+        case "table-er":
+          mmd = viz.tableErDiagram(graph, opts);
           break;
         case "transition-spec":
           mmd = viz.transitionSpecDiagram(graph, id, opts);

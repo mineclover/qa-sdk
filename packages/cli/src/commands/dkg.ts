@@ -3623,6 +3623,7 @@ import {
   constraintDiagram,
   tableDiagram,
   observationLoopDiagram,
+  tableErDiagram,
   transitionSpecDiagram,
   transitionDagDiagram,
   listAllDiagrams,
@@ -3645,7 +3646,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const kind = positionals[0];
   const id = positionals[1];
 
-  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "observation-loop", "transition-spec", "transition-dag", "list"];
+  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "table-er", "observation-loop", "transition-spec", "transition-dag", "list"];
   if (!kind || !validKinds.includes(kind)) {
     console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
     console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop | transition-spec | transition-dag");
@@ -3753,6 +3754,10 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       mmd = observationLoopDiagram(graph, opts);
       break;
     }
+    case "table-er": {
+      mmd = tableErDiagram(graph, opts);
+      break;
+    }
     case "transition-spec": {
       if (!id) { console.error("Usage: qa-sdk dkg diagram transition-spec <specId>"); return; }
       mmd = transitionSpecDiagram(graph, id, opts);
@@ -3778,7 +3783,10 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       : kind === "service" ? `Service: ${id}`
       : kind === "constraint" ? `Constraint: ${id}`
       : kind === "table" ? `Table: ${id}`
+      : kind === "table-er" ? "All Tables ER"
       : kind === "observation-loop" ? "Observation Loop"
+      : kind === "transition-spec" ? `Transition: ${id}`
+      : kind === "transition-dag" ? "Transition DAG"
       : kind;
     const html = wrapMermaidHtml(mmd, title);
     if (outputPath) {

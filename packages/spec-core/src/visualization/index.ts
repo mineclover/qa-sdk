@@ -25,6 +25,7 @@ export {
   constraintDiagram,
   tableDiagram,
   observationLoopDiagram,
+  tableErDiagram,
   transitionSpecDiagram,
   transitionDagDiagram,
   listAllDiagrams,
