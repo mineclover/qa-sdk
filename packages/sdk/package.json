@@ -25,6 +25,7 @@
   "devDependencies": {
     "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "demo-types": "workspace:*",
     "weighted-index": "workspace:*",
     "typescript": "^5.8.2"
   }

@@ -12,10 +12,13 @@ import { createQaContext } from "@qa-sdk/context";
 import { buildLayerMap, MonitorState } from "@qa-sdk/spec-core/viz";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
 import type { TracePath } from "@qa-sdk/spec-core/viz";
+import type { TypedQaContext } from "demo-types";
+import { DSL_CHECKOUT, sdk } from "demo-types";
 
 describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까지", () => {
 
-  const qa = createQaContext({
+  // TypedQaContext — prefix 자동완성 제공
+  const qa: TypedQaContext = createQaContext({
     env: "prod", region: "asia", service: "shopping-web", namespace: "shop",
     catalog: DEMO_CATALOG, executionMode: "test", executionId: "shopping-e2e",
   });
@@ -189,5 +192,21 @@ describe("전체 쇼핑 흐름 시뮬레이션 — 로그인부터 창 닫기까
     expect(activity.some(a => a.prefixId === "endpoint")).toBe(true);
     expect(activity.some(a => a.prefixId === "tracking")).toBe(true);
     expect(activity.some(a => a.prefixId === "flow_point")).toBe(true);
+  });
+
+  it("생성된 DSL_CHECKOUT const 검증", () => {
+    // codegen에서 생성된 DSL 상수와 실제 사용 멤버가 일치하는지 확인
+    expect(DSL_CHECKOUT.id).toBe("dsl-checkout");
+    expect(DSL_CHECKOUT.members).toContain("page_view");
+    expect(DSL_CHECKOUT.members).toContain("endpoint");
+    expect(DSL_CHECKOUT.members).toContain("flow_point");
+    expect(DSL_CHECKOUT.serviceBindingPrefix).toBe("service");
+  });
+
+  it("생성된 sdk로 encode/decode 라운드트립", () => {
+    // codegen에서 생성된 createIndexSDK 인스턴스
+    const addr = sdk.encode("permission", { role: "admin" });
+    const decoded = sdk.decode("permission", addr);
+    expect(decoded.role).toBe("admin");
   });
 });

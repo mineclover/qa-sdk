@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { createQaContext } from "@qa-sdk/context";
+import type { TypedQaContext } from "demo-types";
 
 describe("QaContext", () => {
-  const qa = createQaContext({
+  // TypedQaContext — encode("permission", ...) 등 prefix 자동완성
+  const qa: TypedQaContext = createQaContext({
     env: "prod", region: "asia", service: "shopping-web", namespace: "shop",
     catalog: DEMO_CATALOG,
   });
@@ -26,6 +28,11 @@ describe("QaContext", () => {
 
     expect(result.address_context.endpoint).toMatch(/^endpoint:v1:\d+$/);
     expect(result.address_context.service).toMatch(/^service:v1:\d+$/);
+  });
+
+  it("infraContext — 서비스 주소를 infra_context로 반환", () => {
+    const infra = qa.infraContext();
+    expect(infra.service).toMatch(/^service:v\d+:\d+$/);
   });
 
   it("executionMode 기본값 live", () => {
