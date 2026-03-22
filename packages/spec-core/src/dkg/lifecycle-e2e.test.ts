@@ -11,6 +11,8 @@ import { bootstrapDkg } from "./bootstrap.js";
 import { DEMO_TRANSITION_SPECS } from "../transition/demo-transition-specs.js";
 import { violationsToObservations } from "../transition/violation-bridge.js";
 import { createTransitionFunctions } from "../transition/transition-pipeline.js";
+import { decodeAddressContext } from "../transition/decode-adapter.js";
+import { encodePrefix } from "@qa-sdk/core";
 import { resolve } from "./resolve.js";
 import { defineFlow, serializeFlow, deserializeFlow } from "./flow-definition.js";
 import { analyzeImpact } from "./skills/analyze-impact.js";
@@ -287,5 +289,31 @@ describe("종단 E2E: checkout 흐름", () => {
       ],
     });
     expect(badResult.violations.length).toBeGreaterThan(0);
+  });
+
+  it("12. decodeAddressContext — 인코딩된 주소 → 디코딩된 축:entry", () => {
+
+    // tracking prefix를 인코딩 (trackAction=click, page=home, userType=guest → v1 기준)
+    const trackAddr = encodePrefix(DEMO_CATALOG, "tracking", "v1", { trackAction: 0, page: 0, userType: 0 });
+    const encoded = { tracking: `tracking:v1:${trackAddr}` };
+
+    const decoded = decodeAddressContext(DEMO_CATALOG, encoded);
+
+    // 디코딩 결과: 축 이름→entry 값 flat map
+    expect(decoded.trackAction).toBe("click");   // v1 entries[0]
+    expect(decoded.page).toBe("home");            // v1 entries[0]
+    expect(decoded.userType).toBe("guest");       // v1 entries[0]
+  });
+
+  it("12b. decodeAddressContext — 잘못된 주소 skip (에러 격리)", () => {
+
+    const encoded = {
+      invalid: "not-a-valid-address",
+      also_bad: "tracking:v99:999999",
+    };
+
+    // 에러 없이 빈 결과 반환
+    const decoded = decodeAddressContext(DEMO_CATALOG, encoded);
+    expect(Object.keys(decoded)).toHaveLength(0);
   });
 });

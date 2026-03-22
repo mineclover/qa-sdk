@@ -5,6 +5,7 @@
  * 세션 단위 처리: 세션마다 fresh engine (상태 격리).
  */
 
+import type { Catalog } from "@qa-sdk/core";
 import type { TransitionSpec, TransitionInstance } from "./transition.types.js";
 import type { TransitionEvent } from "./transition-engine.js";
 import type { InputViolation } from "./input-validator.js";
@@ -13,6 +14,7 @@ import { TransitionRegistry } from "./transition.registry.js";
 import { InMemoryStateStore } from "./state-store.js";
 import { TransitionEngine } from "./transition-engine.js";
 import { violationsToObservations } from "./violation-bridge.js";
+import { decodeAddressContext } from "./decode-adapter.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -31,16 +33,25 @@ export interface TransitionSessionResult {
   readonly unmatchedCount: number;
 }
 
+/** tier-3 수렴 metric 3종의 입력 */
 export interface TransitionFlushResult {
   readonly sessionsProcessed: number;
   readonly transitionsDetected: number;
   readonly violationsDetected: number;
+  /** transition_coverage: 매칭된 spec 수 / 전체 spec 수 */
+  readonly coverageRate: number;
+  /** input_violation_rate: 위반 수 / (위반 + 성공) */
+  readonly violationRate: number;
+  /** orphan_sequence: unmatched 이벤트가 있는 세션 수 */
+  readonly orphanSequences: number;
 }
 
-/** convergence pipeline에 주입되는 전이 함수 번들 */
+/** Phase 2.5 + convergence pipeline에 주입되는 전이 함수 번들 */
 export interface TransitionFunctions {
   processSession: (input: TransitionSessionInput) => TransitionSessionResult;
   violationsToObs: (violations: readonly InputViolation[], opts?: { date?: string }) => ObservationNode[];
+  /** 인코딩된 address_context → 디코딩된 축:entry flat map */
+  decodeCtx: (catalog: Catalog, encoded: Record<string, string>) => Record<string, string>;
   specs: readonly TransitionSpec[];
 }
 
@@ -80,6 +91,7 @@ export function createTransitionFunctions(
   return {
     processSession,
     violationsToObs: violationsToObservations,
+    decodeCtx: decodeAddressContext,
     specs,
   };
 }

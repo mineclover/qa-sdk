@@ -333,13 +333,24 @@ export function bootstrapDkg(options: {
 
   // ── TransitionSpec 간 상태 의존 + DSL satisfies ──────
   if (allTspecs.length > 0) {
-    const interSpecEdges = deriveInterSpecEdges(allTspecs);
-    for (const edge of interSpecEdges) {
+    for (const edge of deriveInterSpecEdges(allTspecs)) {
       graph.addEdge(edge.type, edge.from, edge.to, edge.meta);
     }
-    const satisfiesEdges = deriveDslSatisfiesEdges(allTspecs, graph);
-    for (const edge of satisfiesEdges) {
+    for (const edge of deriveDslSatisfiesEdges(allTspecs, graph)) {
       graph.addEdge(edge.type, edge.from, edge.to, edge.meta);
+    }
+
+    // CON-EFFECT-VOCAB: effect kind 정규 vocabulary 제약
+    const effectConstraint: ConstraintNode = {
+      kind: "constraint",
+      id: "CON-EFFECT-VOCAB",
+      rule: "transition effect kind는 정규 vocabulary만 허용 (create/update/move/consume/open/close). 새 effect 추가 시 DKG Decision 필수.",
+      scope: allTspecs.map(t => t.id),
+      lifecycle: "active",
+    };
+    graph.addNode(effectConstraint);
+    for (const tspec of allTspecs) {
+      graph.addEdge("constrains", effectConstraint.id, tspec.id);
     }
   }
 
