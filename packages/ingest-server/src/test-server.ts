@@ -52,19 +52,52 @@ async function setupConvergence() {
     const specConvergence = await import("@qa-sdk/spec-core/convergence");
     const specDkg = await import("@qa-sdk/spec-core/dkg");
 
-    new ConvergencePipelineRunner({
-      recordStore: app.fetch as any, // placeholder — InMemory에서는 flush 시 레코드 접근 불가
-      convergenceFns: {
-        aggregateUsageData: specConvergence.aggregateUsageData as any,
-        collectMetrics: specConvergence.collectMetrics as any,
-        metricsToObservations: specConvergence.metricsToObservations as any,
-        traceFlows: specDkg.traceFlows as any,
-      },
-      graphProvider: () => provider.getGraph() as any,
-      catalogProvider: () => provider.getCatalog() as Catalog,
-      dkgStore: provider.getDkgStore() as any,
-    }, { recordThreshold: 10, flushIntervalMs: 5_000 });
-    console.log(`[e2e:test-server] convergence pipeline enabled`);
+    // InMemory 모드: convergence pipeline 대신 직접 address_context 수집
+    // ingest POST body에서 records의 address_context를 직접 추출
+    const addressBuffer: unknown[] = [];
+    const catalog = provider.getCatalog();
+    const dkgStore = provider.getDkgStore();
+
+    // Middleware: /v1/ingest POST body에서 address_context 추출
+    app.use("/v1/ingest", async (c, next) => {
+      await next();
+      // 응답 후 비동기로 address_context 수집 (요청 처리에 영향 없음)
+      try {
+        const body = await c.req.raw.clone().json() as { records?: Array<{ address_context?: Record<string, string>; timestamp?: string; qa_session_id?: string; event_key?: string }> };
+        for (const r of body.records ?? []) {
+          if (r.address_context && Object.keys(r.address_context).length > 0) {
+            addressBuffer.push({
+              address_context: r.address_context,
+              timestamp: r.timestamp ?? new Date().toISOString(),
+              session_id: r.qa_session_id,
+              event_key: r.event_key,
+            });
+          }
+        }
+      } catch { /* 파싱 실패 무시 */ }
+    });
+
+    // 주기적 flush — 버퍼에 축적된 address_context를 집계
+    const flushInterval = setInterval(() => {
+      if (addressBuffer.length === 0) return;
+      const records = addressBuffer.splice(0);
+      try {
+        const usage = specConvergence.aggregateUsageData(catalog as any, records as any);
+        const graph = provider.getGraph();
+        if (graph && dkgStore) {
+          const metrics = specConvergence.collectMetrics(catalog as any, graph as any, usage);
+          const observations = specConvergence.metricsToObservations(metrics);
+          (dkgStore as any).saveUsageSnapshotWithObservations(usage, observations);
+          console.log(`[convergence] flush: ${records.length} records, ${metrics.length} metrics, ${observations.length} obs`);
+        }
+      } catch (err) {
+        console.warn("[convergence] flush failed:", err);
+      }
+    }, 5_000);
+
+    process.on("SIGTERM", () => clearInterval(flushInterval));
+    process.on("SIGINT", () => clearInterval(flushInterval));
+    console.log(`[e2e:test-server] convergence pipeline enabled (direct mode, 5s flush)`);
   } catch (err) {
     console.warn("[e2e:test-server] convergence setup failed:", err);
   }
