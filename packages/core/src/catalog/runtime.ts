@@ -419,6 +419,102 @@ export function decomposeAddress(
   return result;
 }
 
+// ── 통일 DecodeResult 변환 ────────────────────────────────────────────────────
+
+import type { DecodeResult, DecodedDim } from "./decode-result.js";
+
+/**
+ * decodePrefix (L1) 결과를 통일 DecodeResult로 변환.
+ */
+export function decodePrefixAsResult(
+  catalog: Catalog, prefixId: string, version: string, address: number,
+): DecodeResult {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  const decoded = decodePrefix(catalog, prefixId, version, address);
+  const dims: Record<string, DecodedDim> = {};
+
+  for (const [label, d] of Object.entries(decoded)) {
+    const dim = prefix.dims[label];
+    dims[label] = {
+      label,
+      kind: dim.kind === "axis" ? "axis" : dim.kind === "prefix_ref" ? "prefix_ref" : "table_ref",
+      position: d.position,
+      value: d.value,
+    };
+  }
+  return { prefix: prefixId, version, address, dims };
+}
+
+/**
+ * resolveAddress (L2) 결과를 통일 DecodeResult로 변환.
+ * ko + ref 재귀 포함.
+ */
+export function resolveAddressAsResult(
+  catalog: Catalog, prefixId: string, version: string, address: number,
+): DecodeResult {
+  const resolved = resolveAddress(catalog, prefixId, version, address);
+  return resolvedToResult(resolved);
+}
+
+function resolvedToResult(resolved: ResolvedAddress): DecodeResult {
+  const dims: Record<string, DecodedDim> = {};
+  for (const [label, d] of Object.entries(resolved.dims)) {
+    dims[label] = {
+      label,
+      kind: d.ref ? "prefix_ref" : "axis",
+      position: d.position,
+      value: d.value,
+      ko: d.ko,
+      ref: d.ref ? resolvedToResult(d.ref) : undefined,
+    };
+  }
+  return { prefix: resolved.prefix, version: resolved.version, address: resolved.address, dims };
+}
+
+/**
+ * decomposeAddress (L3) 결과를 통일 DecodeResult로 변환.
+ */
+export function decomposeAddressAsResult(
+  catalog: Catalog, prefixId: string, version: string, address: number,
+): DecodeResult {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  const decomposed = decomposeAddress(catalog, prefixId, version, address);
+  const dims: Record<string, DecodedDim> = {};
+
+  for (const [label, d] of Object.entries(decomposed)) {
+    const dim = prefix.dims[label];
+    const dimObj: DecodedDim = {
+      label,
+      kind: dim.kind === "axis" ? "axis" : dim.kind === "prefix_ref" ? "prefix_ref" : "table_ref",
+      position: d.position,
+      value: d.value,
+    };
+    if (d.refDims && dim.kind === "prefix_ref") {
+      const refDims: Record<string, DecodedDim> = {};
+      const refPrefix = catalog.prefixes[dim.prefixId];
+      for (const [rl, rd] of Object.entries(d.refDims)) {
+        const refDim = refPrefix?.dims[rl];
+        refDims[rl] = {
+          label: rl,
+          kind: refDim?.kind === "prefix_ref" ? "prefix_ref" : "axis",
+          position: rd.position,
+          value: rd.value,
+        };
+      }
+      (dimObj as any).ref = {
+        prefix: dim.prefixId,
+        version: "v1",
+        address: d.refAddress ?? d.value,
+        dims: refDims,
+      };
+    }
+    dims[label] = dimObj;
+  }
+  return { prefix: prefixId, version, address, dims };
+}
+
 // ── 라운드트립 검증 헬퍼 ─────────────────────────────────────────────────────
 
 /**

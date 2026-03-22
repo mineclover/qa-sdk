@@ -66,6 +66,16 @@ export type {
   DecomposedDim,
 } from "./runtime.js";
 
+export {
+  decodePrefixAsResult,
+  resolveAddressAsResult,
+  decomposeAddressAsResult,
+} from "./runtime.js";
+
+// ── 통일 Decode 결과 타입 ────────────────────────────────────
+export type { DecodeResult, DecodedDim } from "./decode-result.js";
+export { entitiesToDecodeResult, decodeResultToEntities, decodeResultToDeep } from "./decode-result.js";
+
 // ── Axis Usage Analysis ─────────────────────────────────────
 export type { AxisUsageEntry, AxisUsageSummary, CollectAxisUsageOptions } from "./axis-usage.js";
 export { collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "./axis-usage.js";
