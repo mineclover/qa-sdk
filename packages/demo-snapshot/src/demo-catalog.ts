@@ -1707,6 +1707,152 @@ export const DEMO_CATALOG = {
         qty:     { kind: "scalar", type: "integer" },
       },
     },
+
+    // ── 수집 파이프라인 (PostgreSQL — @qa-sdk/store) ──────────────────────
+    event_records: {
+      table: "event_records",
+      columns: {
+        log_id:          { kind: "scalar", type: "string" },
+        trace_id:        { kind: "table_ref", table: "traces" },
+        record_kind:     { kind: "axis_ref", axisId: "record_type" },
+        event_key:       { kind: "scalar", type: "string" },
+        event_version:   { kind: "scalar", type: "string" },
+        status_code:     { kind: "scalar", type: "string" },
+        payload_format:  { kind: "scalar", type: "string" },
+        address_context: { kind: "scalar", type: "json" },
+        qa_session_id:   { kind: "scalar", type: "string" },
+        actor_id:        { kind: "scalar", type: "string" },
+      },
+    },
+    traces: {
+      table: "traces",
+      columns: {
+        trace_id:      { kind: "scalar", type: "string" },
+        session_id:    { kind: "table_ref", table: "qa_sessions" },
+        service_name:  { kind: "axis_ref", axisId: "svc_name" },
+        actor_id:      { kind: "scalar", type: "string" },
+        record_count:  { kind: "scalar", type: "integer" },
+        reconstructed: { kind: "scalar", type: "boolean" },
+      },
+    },
+    qa_sessions: {
+      table: "qa_sessions",
+      columns: {
+        session_id:  { kind: "scalar", type: "string" },
+        scenario_id: { kind: "scalar", type: "string" },
+        actor_id:    { kind: "scalar", type: "string" },
+      },
+    },
+    transmissions: {
+      table: "transmissions",
+      columns: {
+        transmission_id: { kind: "scalar", type: "string" },
+        owner_type:      { kind: "scalar", type: "string" },
+        owner_id:        { kind: "scalar", type: "string" },
+        service_name:    { kind: "axis_ref", axisId: "svc_name" },
+        env:             { kind: "axis_ref", axisId: "env" },
+        record_count:    { kind: "scalar", type: "integer" },
+      },
+    },
+    verdict_reports: {
+      table: "verdict_reports",
+      columns: {
+        id:              { kind: "scalar", type: "string" },
+        scenario_id:     { kind: "scalar", type: "string" },
+        trace_id:        { kind: "table_ref", table: "traces" },
+        qa_session_id:   { kind: "scalar", type: "string" },
+        overall_verdict: { kind: "axis_ref", axisId: "verdict_result" },
+        loop_detected:   { kind: "scalar", type: "boolean" },
+        terminal_reason: { kind: "scalar", type: "string" },
+      },
+    },
+
+    // ── 좌표 인프라 (SQLite — index-meta) ───────────────────────────────
+    version_lifecycle: {
+      table: "version_lifecycle",
+      columns: {
+        prefix:            { kind: "scalar", type: "string" },
+        version_id:        { kind: "scalar", type: "string" },
+        status:            { kind: "axis_ref", axisId: "version_lifecycle" },
+        base_version_id:   { kind: "scalar", type: "string" },
+        capacity:          { kind: "scalar", type: "integer" },
+        deactivation_mode: { kind: "scalar", type: "string" },
+      },
+    },
+    entry: {
+      table: "entry",
+      columns: {
+        prefix:     { kind: "scalar", type: "string" },
+        version_id: { kind: "scalar", type: "string" },
+        position:   { kind: "scalar", type: "integer" },
+        value:      { kind: "scalar", type: "string" },
+      },
+    },
+
+    // ── DKG 자기참조 (SQLite — spec-core/store) ─────────────────────────
+    dkg_nodes: {
+      table: "dkg_nodes",
+      columns: {
+        id:     { kind: "scalar", type: "string" },
+        kind:   { kind: "axis_ref", axisId: "dkg_target_kind" },
+        source: { kind: "axis_ref", axisId: "node_source" },
+        data:   { kind: "scalar", type: "json" },
+      },
+    },
+    dkg_edges: {
+      table: "dkg_edges",
+      columns: {
+        id:      { kind: "scalar", type: "integer" },
+        type:    { kind: "axis_ref", axisId: "edge_type" },
+        from_id: { kind: "scalar", type: "string" },
+        to_id:   { kind: "scalar", type: "string" },
+        source:  { kind: "axis_ref", axisId: "node_source" },
+        meta:    { kind: "scalar", type: "json" },
+      },
+    },
+    usage_snapshots: {
+      table: "usage_snapshots",
+      columns: {
+        id:            { kind: "scalar", type: "integer" },
+        total_records: { kind: "scalar", type: "integer" },
+        data:          { kind: "scalar", type: "json" },
+      },
+    },
+    version_usages: {
+      table: "version_usages",
+      columns: {
+        id:          { kind: "scalar", type: "integer" },
+        snapshot_id: { kind: "table_ref", table: "usage_snapshots" },
+        prefix:      { kind: "scalar", type: "string" },
+        version:     { kind: "scalar", type: "string" },
+        count:       { kind: "scalar", type: "integer" },
+        last_seen:   { kind: "scalar", type: "string" },
+        sessions:    { kind: "scalar", type: "json" },
+      },
+    },
+    transition_state: {
+      table: "transition_state",
+      columns: {
+        context_id:  { kind: "scalar", type: "string" },
+        resource_id: { kind: "scalar", type: "string" },
+        axis:        { kind: "scalar", type: "string" },
+        value:       { kind: "scalar", type: "string" },
+      },
+    },
+
+    // ── 질의 서비스 (SQLite — query-service) ────────────────────────────
+    policy_rule: {
+      table: "policy_rule",
+      columns: {
+        id:           { kind: "scalar", type: "string" },
+        index_id:     { kind: "scalar", type: "string" },
+        version_id:   { kind: "scalar", type: "string" },
+        pattern_json: { kind: "scalar", type: "json" },
+        value_json:   { kind: "scalar", type: "json" },
+        priority:     { kind: "scalar", type: "integer" },
+        rule_set_id:  { kind: "scalar", type: "string" },
+      },
+    },
   },
 } as const satisfies DemoCatalog;
 
