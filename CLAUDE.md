@@ -106,7 +106,7 @@ CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
 - `DEMO_DKG_CONFIG` — 쇼핑 도메인 거버넌스 예시
 - `DEMO_PATTERN_RULES` — 쇼핑 이벤트 분류 규칙 예시
 - `DEMO_SCENARIOS` — 정식 ScenarioSpec 8종 (shop-web 5 + infra 2 + dev 1)
-- `DEMO_TRANSITION_SPECS` — TransitionSpec 3종 (spec-core/transition에 위치)
+- `DEMO_TRANSITION_SPECS` — TransitionSpec 32종 (축 커버리지 89%, spec-core/transition에 위치)
 - 새 비즈니스는 이를 복사하여 자기 도메인으로 교체
 
 ### Transition Spec DSL
@@ -695,6 +695,33 @@ ingest-server Phase 2 완료
 - 잘못된 방법: `expect(axes.length).toBe(71)` — 축 추가 시 깨짐
 - bootstrap 로직이 자동 생성하는 노드(observation, decision)는 `toBeGreaterThan(0)` 또는 불변조건으로 검증
 - 특정 테스트 시나리오에서 주입한 데이터 기반 카운트(예: 이벤트 3종 inject → activePrefixes: 3)는 하드코딩 허용
+
+## Gateway — API 게이트웨이 (2026-03-23 확립)
+- `packages/gateway/` — 단일 진입점 인증 + 서비스 라우팅 (ADR-001 구현)
+- 실행 모드: `pnpm dev` (Node.js + Tailscale) | `pnpm dev:worker` (CF Worker)
+- AUTH_MODE: bypass(개발) | api-key | tailscale | cf-access
+- 동적 라우팅: registry `/api/services/gateway` 에서 60초 캐시 로드 → fallback 하드코딩
+- body 전달: `c.req.arrayBuffer()` 사용 (stream 소비 문제 방지 — `c.req.raw.body` 금지)
+- Tailscale: `tailscale serve --bg <port>` → VPN 네트워크에 노출. `Tailscale-User-Login` 헤더로 인증
+- ServiceRecord: `urls` (환경별 URL), `gatewayPath` (라우팅 prefix) 필드로 registry 중앙 관리
+
+### CLI Ingest 명령
+- `qa-sdk ingest health|send|recent|trace|status|services` — 수집 서버 상호작용
+- `--env dev|prod|staging` 또는 `QA_ENV` — 환경 프리셋 스위칭
+- `--registry <url>` → `/api/services/urls` 에서 서비스 URL 자동 탐색
+- `--ingest <url>` — 직접 지정 (최우선)
+
+### 배포 인프라
+- CF Pages: shop-web (`wrangler.toml` + `_redirects`), platform-demo (기존 wrangler.toml)
+- CF Workers: gate-service, query-service (D1 바인딩), gateway (인증 + 프록시)
+- GitHub Actions: `.github/workflows/ci.yml` (빌드+테스트), `deploy.yml` (Pages+Workers)
+- 시크릿: `CF_API_TOKEN`, `CF_ACCOUNT_ID`
+
+### convergence-pipeline 타입 규칙
+- ConvergenceFunctions: `unknown` 대신 `Catalog`, `UsageData`, `MetricValue[]`, `ObservationNode[]` 사용
+- OBS-PATTERN: DKG ObservationNode 스키마 준수 (`subjects[]`, `finding`, `intent` — 비표준 필드 금지)
+- GraphPort vs ConvergenceGraphPort: 서비스는 ConvergenceGraphPort(최소 — `getNodesByKind`만), CLI는 GraphRegistry(최대)
+- `as unknown as ConcreteType`: 동적 import의 구조적 캐스트. `as any`보다 안전 (의도적 캐스트 명시)
 
 ## ServiceBootConfig — 서비스 정체성 설정 (2026-03-22 확립)
 
