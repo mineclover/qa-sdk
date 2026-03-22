@@ -96,17 +96,36 @@ qa-sdk codegen --input ./snapshot.json --output ./generated --format ts,proto
 - 출력: 단일 `.d.ts` 또는 `.proto`
 - 하위 호환 유지. 신규 프로젝트는 Catalog 기반 사용 권장
 
+### 버전 관리 옵션
+- `--lock-version v1` — 모든 prefix를 특정 version으로 고정. 생성 파일의 `VERSION_META.prefixVersions`에 반영
+- 미지정 시 `latestPrefixVersion()` 기준 (latest)
+
+### 생성 메타데이터
+- `VERSION_META.contentHash` — Catalog 구조의 SHA-256 prefix 12자. 같은 구조 → 같은 hash
+- `VERSION_META.prefixVersions` — prefix별 생성 시점 version (빌드 고정)
+- `VERSION_META.generatedAt` — ISO 8601 생성 시각
+- `GENERATION` — `"catalogId:contentHash"` 형식. SDK 부트 시 `QaContextConfig.generation`에 전달하면 catalog 불일치 경고
+- `SNAPSHOT_SUPPLY` — prefix별 스냅샷 전략 (`"envelope"` | `"implicit"`)
+
 ### 생성 파일 사용 예시
 ```typescript
-import { sdk, type TypedQaContext, type PrefixId } from "./generated";
+import { sdk, type TypedQaContext, GENERATION, VERSION_META } from "./generated";
 
 // createIndexSDK 자동완성
 const addr = sdk.encode("permission", { role: "admin", action: "read" });
 
-// QaContext 자동완성
-const qa: TypedQaContext = createQaContext({ catalog: DEMO_CATALOG, ... });
+// QaContext — generation 검증 포함
+const qa: TypedQaContext = createQaContext({
+  catalog: DEMO_CATALOG,
+  generation: GENERATION, // catalog 불일치 시 경고
+  serviceConfig: { namespace: "shop", name: "web", env: "prod", region: "asia" },
+});
 qa.encode("permission", { role: "admin" }); // prefix 자동완성
 ```
+
+### Migration Test
+- `testMigration(catalog, prefixId, fromVersion, toVersion)` — encode(v_old) → decode(v_new) 라운드트립 검증
+- stride-break, entry 누락 등 조기 감지
 
 ## Build
 - `pnpm --filter <pkg> build` — 개별 패키지 빌드
@@ -511,6 +530,13 @@ ingest-server Phase 2 완료
 ## Conventions
 - 한국어 주석/UI 텍스트 사용
 - Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
+
+### ISO-8601 타임스탬프 비교 — 문자열 비교 금지
+- 타임스탬프 정렬/비교 시 `localeCompare`, `<`, `>` 문자열 비교를 사용하지 않는다
+- `"10:00:00Z"` vs `"10:00:00.100Z"` — Z(0x5A) > .(0x2E)이므로 밀리초 없는 타임스탬프가 뒤로 밀린다
+- `compareTimestamps(a, b)` (`@qa-sdk/core`) 사용. Date 변환 기반으로 밀리초 유무 차이 안전 처리
+- `normalizeTimestamp(iso)` — 밀리초 없는 타임스탬프에 `.000Z` 추가 (정규 형식: `YYYY-MM-DDTHH:mm:ss.mmmZ`)
+- `now()` 반환값은 이미 정규 형식. 외부 입력(클라이언트, DB)은 보장 안 되므로 비교 전 normalizeTimestamp 또는 compareTimestamps 사용
 
 ### 테스트에서 카탈로그 파생 카운트 하드코딩 금지
 - 축/prefix/domain/consumer/DSL 등 DEMO_CATALOG 또는 DEMO_DKG_CONFIG에서 파생되는 엔티티 수를 테스트에 숫자로 하드코딩하지 않는다

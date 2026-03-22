@@ -22,6 +22,8 @@ export interface CodegenOptions {
   loadedCatalog?: Catalog;
   /** DkgConfig 파일 경로. catalog과 함께 사용. */
   dkgConfig?: string;
+  /** 특정 prefix version으로 고정. 미지정 시 latest. */
+  lockVersion?: string;
 }
 
 /**
@@ -43,7 +45,9 @@ async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
   const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
   const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
 
-  const result = generateCatalogTypes(catalog, dkgConfig ?? undefined);
+  const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
+    lockVersion: opts.lockVersion,
+  });
 
   await mkdir(opts.output, { recursive: true });
 
@@ -53,7 +57,10 @@ async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
     console.log(`Generated → ${outPath}`);
   }
 
-  console.log(`${result.files.length} file(s) generated from catalog "${catalog.id}"`);
+  console.log(`${result.files.length} file(s) generated from catalog "${catalog.id}" (hash: ${result.contentHash})`);
+  if (opts.lockVersion) {
+    console.log(`  version locked to: ${opts.lockVersion}`);
+  }
 }
 
 // ── SchemaSnapshot 기반 codegen (기존) ─────────────────

@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" at 2026-03-22T05:01:54
+// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:27:34
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import { createIndexSDK } from "@qa-sdk/codec";
@@ -343,3 +343,46 @@ const SCHEMA = {
 
 /** Catalog "demo" 기반 타입 안전 SDK */
 export const sdk = createIndexSDK(SCHEMA);
+
+/** prefix별 snapshot supply 전략 */
+export const SNAPSHOT_SUPPLY = {
+  "auth_event": "implicit" as const,
+  "build_event": "implicit" as const,
+  "cart_event": "implicit" as const,
+  "cli_event": "implicit" as const,
+  "content": "implicit" as const,
+  "contract_check": "implicit" as const,
+  "data_policy": "envelope" as const,
+  "deploy_event": "envelope" as const,
+  "dkg_decision_event": "implicit" as const,
+  "dkg_event": "implicit" as const,
+  "dkg_observation_event": "implicit" as const,
+  "edge_activity": "implicit" as const,
+  "endpoint": "envelope" as const,
+  "engine_event": "envelope" as const,
+  "event": "envelope" as const,
+  "event_classification": "envelope" as const,
+  "execution_context": "envelope" as const,
+  "flow_point": "envelope" as const,
+  "gate_point": "envelope" as const,
+  "health_event": "envelope" as const,
+  "ingest_record": "envelope" as const,
+  "metric_point": "envelope" as const,
+  "observation_event": "implicit" as const,
+  "order_event": "envelope" as const,
+  "page_view": "envelope" as const,
+  "pattern_anomaly": "envelope" as const,
+  "pattern_match": "envelope" as const,
+  "permission": "envelope" as const,
+  "pipeline_point": "envelope" as const,
+  "rbac": "implicit" as const,
+  "relational": "implicit" as const,
+  "schema_event": "envelope" as const,
+  "schema_validation": "envelope" as const,
+  "service": "implicit" as const,
+  "skill_execution": "implicit" as const,
+  "spec_event": "implicit" as const,
+  "test_event": "implicit" as const,
+  "tracking": "implicit" as const,
+  "version_point": "envelope" as const,
+} as const;

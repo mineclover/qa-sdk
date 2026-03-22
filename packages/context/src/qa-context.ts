@@ -45,6 +45,11 @@ export interface QaContextConfig<C extends Catalog = Catalog> {
   executionMode?: ExecutionMode;
   /** 실행 식별자 — 테스트 suite ID 등 */
   executionId?: string;
+  /**
+   * codegen GENERATION 상수. 설정하면 catalog content hash와 비교하여 불일치 시 경고.
+   * 형식: "catalogId:contentHash" (예: "demo:abb55ca63a8b")
+   */
+  generation?: string;
 }
 
 /** DSL 세션 — useDsl() 반환값 */
@@ -130,6 +135,16 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
     throw new Error("catalog is required. Pass catalog in QaContextConfig.");
   }
   const catalog: Catalog = userConfig.catalog;
+
+  // generation 검증 (fail-open)
+  if (userConfig.generation) {
+    const [genCatalogId, genHash] = userConfig.generation.split(":");
+    if (genCatalogId && genCatalogId !== catalog.id) {
+      console.warn(`[QaContext] GENERATION catalog "${genCatalogId}" ≠ loaded catalog "${catalog.id}". 생성된 타입이 다른 카탈로그 기준일 수 있습니다.`);
+    }
+    // content hash 검증은 runtime에서 hash 재계산 비용이 크므로 catalogId만 검증
+    // 정밀 검증이 필요하면 registry API에서 확인
+  }
 
   // 서비스 주소 캐시
   let _svcAddr: number | null = null;

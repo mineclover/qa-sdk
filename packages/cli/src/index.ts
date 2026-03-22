@@ -743,6 +743,7 @@ async function runCodegen(argv: string[]) {
       package: { type: "string", default: "qa.apm.v1" },
       catalog: { type: "string" },
       "dkg-config": { type: "string" },
+      "lock-version": { type: "string" },
     },
     strict: true,
   });
@@ -756,6 +757,7 @@ async function runCodegen(argv: string[]) {
       catalog: values.catalog,
       loadedCatalog: loadedCatalog,
       dkgConfig: values["dkg-config"],
+      lockVersion: values["lock-version"],
     });
     return;
   }

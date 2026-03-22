@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" at 2026-03-22T05:01:54
+// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:27:34
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** Catalog prefix 이름 리터럴 유니온 (39개) */
@@ -134,3 +134,58 @@ export type TableId =
   | "orgs";
 
 export const TABLE_IDS = ["cart_items", "carts", "items", "members", "orders", "orgs"] as const;
+
+/** 빌드 시점 version 메타데이터 */
+export const VERSION_META = {
+  /** Catalog ID */
+  catalogId: "demo" as const,
+  /** Catalog 구조 content hash (SHA-256 prefix 12자) */
+  contentHash: "abb55ca63a8b" as const,
+  /** 생성 시각 (ISO 8601) */
+  generatedAt: "2026-03-22T05:27:34.623Z" as const,
+  /** prefix별 version (생성 시점 기준) */
+  prefixVersions: {
+    "auth_event": "v1",
+    "build_event": "v2",
+    "cart_event": "v1",
+    "cli_event": "v1",
+    "content": "v1",
+    "contract_check": "v1",
+    "data_policy": "v1",
+    "deploy_event": "v1",
+    "dkg_decision_event": "v1",
+    "dkg_event": "v1",
+    "dkg_observation_event": "v1",
+    "edge_activity": "v1",
+    "endpoint": "v1",
+    "engine_event": "v1",
+    "event": "v4",
+    "event_classification": "v1",
+    "execution_context": "v1",
+    "flow_point": "v2",
+    "gate_point": "v1",
+    "health_event": "v1",
+    "ingest_record": "v1",
+    "metric_point": "v1",
+    "observation_event": "v1",
+    "order_event": "v1",
+    "page_view": "v2",
+    "pattern_anomaly": "v2",
+    "pattern_match": "v1",
+    "permission": "v4",
+    "pipeline_point": "v1",
+    "rbac": "v1",
+    "relational": "v2",
+    "schema_event": "v1",
+    "schema_validation": "v1",
+    "service": "v1",
+    "skill_execution": "v1",
+    "spec_event": "v1",
+    "test_event": "v2",
+    "tracking": "v2",
+    "version_point": "v1",
+  } as const,
+} as const;
+
+/** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */
+export const GENERATION = "demo:abb55ca63a8b" as const;
