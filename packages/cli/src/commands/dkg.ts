@@ -239,6 +239,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg table":     { intent: "query", domain: "dkg-graph", subject: "table" },
   "dkg transitions": { intent: "query", domain: "dkg-graph", subject: "spec" },
   "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
+  "dkg scan-tables": { intent: "analyze", domain: "dkg-graph", subject: "table" },
 };
 
 /**
@@ -1449,6 +1450,68 @@ export function dkgTable(tableId: string): void {
     if (cascade.referencingTables.length > 0) {
       console.log(`      FK 참조 테이블: ${cascade.referencingTables.map(t => t.id).join(", ")}`);
     }
+  }
+}
+
+// ── dkg scan-tables ─────────────────────────────────
+
+export function dkgScanTables(): void {
+  // Known DB tables from schema files (manually maintained, but centralized here)
+  const KNOWN_DB_TABLES = [
+    // store (PostgreSQL)
+    "qa_sessions", "traces", "event_records", "transmissions",
+    "runtime_graphs", "scenario_specs", "verdict_reports", "dead_letter_queue",
+    // registry-server (PostgreSQL)
+    "services", "service_events",
+    // index-meta (SQLite)
+    "prefix_registry", "prefix_ref", "prefix_route", "schema_version",
+    "version_lifecycle", "entry", "entry_flag", "migration_mapping",
+    "address_state_cache", "address_range_cache",
+    // registry-service (SQLite)
+    "prefix", "draft_lock", "axis_profile", "catalogs",
+    // query-service (SQLite)
+    "policy_rule",
+    // spec-core DKG (SQLite)
+    "dkg_nodes", "dkg_edges", "usage_snapshots", "version_usages", "dkg_meta",
+    "transition_state",
+    // platform-demo-api (SQLite)
+    "grants", "logs",
+  ];
+
+  const catalog = (registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG) as any;
+  const catalogTables = Object.values(catalog.tables ?? {}).map((t: { table: string }) => t.table);
+
+  const registered = new Set(catalogTables);
+  const known = new Set(KNOWN_DB_TABLES);
+
+  // Tables in DB but not in catalog
+  const missing = KNOWN_DB_TABLES.filter(t => !registered.has(t));
+  // Tables in catalog but not in known DB list
+  const extra = catalogTables.filter(t => !known.has(t));
+  // Tables in both
+  const matched = catalogTables.filter(t => known.has(t));
+
+  console.log(`\n══ Table Drift Scan ══`);
+  console.log(`  DB tables:      ${KNOWN_DB_TABLES.length}`);
+  console.log(`  Catalog tables: ${catalogTables.length}`);
+  console.log(`  Matched:        ${matched.length}`);
+
+  if (missing.length > 0) {
+    console.log(`\n  ── 미등록 (DB에 있지만 catalog에 없음: ${missing.length}) ──`);
+    for (const t of missing) {
+      console.log(`    ${t}`);
+    }
+  }
+
+  if (extra.length > 0) {
+    console.log(`\n  ── 불일치 (catalog에 있지만 DB에 없음: ${extra.length}) ──`);
+    for (const t of extra) {
+      console.log(`    ${t}`);
+    }
+  }
+
+  if (missing.length === 0 && extra.length === 0) {
+    console.log(`\n  드리프트 없음`);
   }
 }
 

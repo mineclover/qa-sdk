@@ -19,7 +19,7 @@ import {
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
   dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
-  dkgPromoteScan,
+  dkgPromoteScan, dkgScanTables,
   dkgPublish, dkgVersion,
   dkgAddEntry, dkgReset,
   dkgSpecAdd, dkgSpecList, dkgSpecTransition,
@@ -373,6 +373,9 @@ async function main() {
       if (sub.rest[0]) dkgTable(sub.rest[0]);
       else console.error("Usage: qa-sdk dkg table <id>");
       return;
+    case "dkg scan-tables":
+      dkgScanTables();
+      return;
     case "dkg overview":
       dkgOverview();
       return;
@@ -651,7 +654,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
-    "dkg tables", "dkg table", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
+    "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];
