@@ -343,13 +343,13 @@ export const DEMO_DKG_CONFIG = {
     // ── 전문 analysis — 관측/인프라 ─────────────────────────
     {
       kind: "skill", id: "skill-observation-coverage", name: "관측 커버리지 감사",
-      description: "observation-domain prefix의 entry 관측 커버리지 분석. dormant(정의됐지만 미관측)/phantom(미정의지만 관측) 탐지",
+      description: "observation-domain prefix의 entry 관측 커버리지 분석. dormant(정의됐지만 미관측)/phantom(미정의지만 관측) 탐지. 12개 관측 prefix 대상.",
       category: "analysis", targetKinds: ["prefix"],
       input: "UsageData", output: "CoverageAuditResult + ObservationNode",
       specialization: {
         domains: ["observation-domain"],
-        dslBundles: ["dsl-observation"],
-        prefixes: ["page_view", "endpoint", "flow_point"],
+        dslBundles: ["dsl-observation", "dsl-pipeline", "dsl-ingest"],
+        prefixes: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"],
         metrics: ["metric:coverage"],
       },
     },
@@ -449,8 +449,8 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "skill", id: "skill-analyze-impact", name: "변경 영향 cascade 분석",
-      description: "축/prefix 변경 시 cascade 범위: 영향 prefix → domain → consumer → DSL → intent-link 파손 분석",
-      category: "analysis", targetKinds: ["axis", "prefix"],
+      description: "축/prefix/table 변경 시 cascade 범위: 영향 prefix → domain → consumer → DSL → intent-link → table FK 체인 분석",
+      category: "analysis", targetKinds: ["axis", "prefix", "table"],
       input: "ImpactAnalysisInput", output: "ImpactAnalysisResult",
     },
     {
@@ -465,7 +465,7 @@ export const DEMO_DKG_CONFIG = {
       category: "analysis", targetKinds: ["domain"],
       input: "domainId", output: "DomainHealthResult",
       specialization: {
-        domains: ["shopping-domain", "tracking-domain", "event-domain", "observation-domain", "infra-domain"],
+        domains: ["shopping-domain", "tracking-domain", "event-domain", "observation-domain", "infra-domain", "dev-domain"],
         metrics: ["metric:health"],
       },
     },
@@ -505,7 +505,7 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "skill", id: "skill-cli-coverage", name: "CLI 커버리지 분석",
-      description: "69개 CLI 명령의 47개 고유 좌표 중 관측된 것 vs dormant 감지. 한 번도 실행 안 된 기능 경로 식별.",
+      description: "77개 CLI 명령의 52개 고유 좌표 중 관측된 것 vs dormant 감지. 한 번도 실행 안 된 기능 경로 식별.",
       category: "analysis", targetKinds: ["system"],
       input: "store (entryUsage 스캔)", output: "{ totalCoords, observedCoords, dormantCoords, coverageRate }",
       specialization: { prefixes: ["cli_event"], metrics: ["metric:coverage"] },
@@ -531,18 +531,22 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "skill", id: "skill-flow-trace", name: "IntentLink 흐름 검증",
-      description: "IntentLink invariant를 실 트래픽(AddressContextRecord)과 대조하여 위반 감지. 잘못된 데이터 식별. self-check Phase E에서 자동 실행.",
+      description: "IntentLink invariant를 실 트래픽(AddressContextRecord)과 대조하여 위반 감지. 잘못된 데이터 식별. self-check Phase E에서 자동 실행. 합성 이벤트(synthetic)는 제외.",
       category: "analysis", targetKinds: ["intent-link", "prefix"],
       input: "AddressContextRecord[] + GraphPort", output: "FlowTraceResult (violations + observations)",
       specialization: {
+        dslBundles: ["dsl-checkout", "dsl-commerce", "dsl-observation", "dsl-infra", "dsl-pipeline"],
         intentLinks: ["IL-checkout-flow", "IL-api-event", "IL-infra-impact", "IL-pattern-observation", "IL-cart-abandon", "IL-pipeline-flow"],
       },
     },
     {
       kind: "skill", id: "skill-table-impact", name: "테이블 의존 추적",
-      description: "DB 테이블의 축/prefix/서비스 의존 체인 추적. dkg tables (목록), dkg table <id> (상세 + FK 체인 + impact).",
+      description: "DB 테이블의 축/prefix/서비스 의존 체인 추적. dkg tables (목록), dkg table <id> (상세 + FK 체인 + impact). 19개 테이블 대상.",
       category: "read", targetKinds: ["table"],
       input: "tableId", output: "{ columnRefs, referencingPrefixes, accessingServices, impactSummary }",
+      specialization: {
+        domains: ["shopping-domain", "infra-domain", "dev-domain"],
+      },
     },
   ],
 
