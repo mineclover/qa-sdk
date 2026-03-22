@@ -194,8 +194,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 //  QA SDK — @qa-sdk/browser 번들 사용
 // ═══════════════════════════════════════════════════
 
-import { createQaMonitor } from './qa-browser-sdk.js';
-import { track as qaTrackEncode, BROWSER_CATALOG } from './viz-3d-core.js';
+import { createQaMonitor, track as qaTrackEncode, BROWSER_CATALOG } from './qa-browser-sdk.js';
 
 const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 

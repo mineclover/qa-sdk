@@ -15,7 +15,10 @@ export default defineConfig({
     sourcemap: true,
   },
   resolve: {
-    // workspace 패키지를 소스에서 직접 참조
     conditions: ["source"],
+    alias: {
+      // viz-3d 소스 직접 참조 (subpath export 없이 내부 모듈 접근)
+      "@qa-sdk/viz-3d/src/": resolve(__dirname, "../viz-3d/src/"),
+    },
   },
 });
