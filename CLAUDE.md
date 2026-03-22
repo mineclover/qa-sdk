@@ -241,6 +241,18 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains (순환 금지)
 - axis ID 충돌 주의: catalog `rbac_role` ≠ `role` (쇼핑). compat에서 AXIS.role로 매핑.
 
+### demo-types — codegen 생성 타입 패키지
+- `packages/demo-types/` — `qa-sdk codegen --output` 으로 자동 생성. 직접 수정 금지
+- 빌드: tsc → ESM only
+- 생성물: `PrefixId`(39), `AxisId`(74), `TableId`(6) 리터럴 유니온 + `PREFIX_IDS`/`AXIS_IDS`/`TABLE_IDS` const 배열
+- `sdk`: 타입 안전 encode/decode 팩토리 (DEMO_CATALOG 스키마 내장)
+- `VERSION_META`: catalogId + contentHash + generatedAt + prefixVersions
+- `GENERATION`: `"demo:hash"` 형식 빌드 시점 식별자
+- `DSL_*` const: DSL 번들별 멤버 prefix + fixedDims
+- `TypedQaContext`: 타입 안전 QaContext (PrefixId 유니온)
+- 의존: `@qa-sdk/codec`, `@qa-sdk/context` (런타임). demo-snapshot에 대한 런타임 의존 없음 (1-way 생성)
+- 재생성: `pnpm --filter demo-types generate`
+
 ### viz-3d — 3D 좌표계 시각화 + 브라우저 코덱
 - `packages/viz-3d/` — Three.js 기반 3D 좌표 시각화 + 브라우저 전용 encode/decode 단일 출처
 - 빌드: tsup → `dist/core.js` (ESM 번들, Three.js 무의존)
