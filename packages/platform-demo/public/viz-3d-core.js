@@ -1,7 +1,7 @@
-var N = Object.defineProperty;
-var A = (t, e, i) => e in t ? N(t, e, { enumerable: !0, configurable: !0, writable: !0, value: i }) : t[e] = i;
-var z = (t, e, i) => A(t, typeof e != "symbol" ? e + "" : e, i);
-const ae = {
+var L = Object.defineProperty;
+var N = (t, e, i) => e in t ? L(t, e, { enumerable: !0, configurable: !0, writable: !0, value: i }) : t[e] = i;
+var z = (t, e, i) => N(t, typeof e != "symbol" ? e + "" : e, i);
+const re = {
   background: 328968,
   categories: {
     observation: { color: 58879, emissive: 38823 },
@@ -18,7 +18,7 @@ const ae = {
 };
 function oe(t, e, i, s) {
   var c, p;
-  const n = [], r = /* @__PURE__ */ new Map();
+  const n = [], a = /* @__PURE__ */ new Map();
   for (const o of t) {
     const _ = [], f = i + s;
     if (o.axes3d) {
@@ -27,7 +27,7 @@ function oe(t, e, i, s) {
         for (let y = 0; y < b; y++)
           for (let v = 0; v < h; v++) {
             const k = -(m - 1) * f / 2 + d * f, w = y * f, $ = -(h - 1) * f / 2 + v * f, O = b > 1 || h > 1 ? [u[d], l[y] !== "_" ? l[y] : null, x[v] !== "_" ? x[v] : null].filter(Boolean).join("/") : u[d], M = `${o.id}/${O}`;
-            _.push({ key: M, gridId: o.id, entry: O, localX: k, localY: w, localZ: $, col: d, row: y, depth: v }), r.set(M, { gridId: o.id, entry: O, localX: k, localY: w, localZ: $, layer: o.layer, category: o.category });
+            _.push({ key: M, gridId: o.id, entry: O, localX: k, localY: w, localZ: $, col: d, row: y, depth: v }), a.set(M, { gridId: o.id, entry: O, localX: k, localY: w, localZ: $, layer: o.layer, category: o.category });
           }
       n.push({
         id: o.id,
@@ -46,7 +46,7 @@ function oe(t, e, i, s) {
       const u = Math.ceil(o.entries.length / o.cols);
       for (let l = 0; l < o.entries.length; l++) {
         const x = l % o.cols, m = Math.floor(l / o.cols), b = -(o.cols - 1) * f / 2 + x * f, h = -(u - 1) * f / 2 + m * f, d = `${o.id}/${o.entries[l]}`;
-        _.push({ key: d, gridId: o.id, entry: o.entries[l], localX: b, localY: 0, localZ: h, col: x, row: m, depth: 0 }), r.set(d, { gridId: o.id, entry: o.entries[l], localX: b, localY: 0, localZ: h, layer: o.layer, category: o.category });
+        _.push({ key: d, gridId: o.id, entry: o.entries[l], localX: b, localY: 0, localZ: h, col: x, row: m, depth: 0 }), a.set(d, { gridId: o.id, entry: o.entries[l], localX: b, localY: 0, localZ: h, layer: o.layer, category: o.category });
       }
       n.push({
         id: o.id,
@@ -63,45 +63,45 @@ function oe(t, e, i, s) {
       });
     }
   }
-  const a = L(t, e, i, s);
-  return { grids: n, viewPositions: a, cellMap: r };
+  const r = A(t, e, i, s);
+  return { grids: n, viewPositions: r, cellMap: a };
 }
-function L(t, e, i = 0.42, s = 0.1) {
+function A(t, e, i = 0.42, s = 0.1) {
   var l, x, m, b;
   const n = {
     layer: {},
     category: {},
     dsl: {},
     service: {}
-  }, r = /* @__PURE__ */ new Map();
+  }, a = /* @__PURE__ */ new Map();
   for (const h of t) {
     const d = i + s;
     if (h.axes3d)
-      r.set(h.id, { w: h.axes3d.x.entries.length * d, d: (((l = h.axes3d.z) == null ? void 0 : l.entries.length) ?? 1) * d });
+      a.set(h.id, { w: h.axes3d.x.entries.length * d, d: (((l = h.axes3d.z) == null ? void 0 : l.entries.length) ?? 1) * d });
     else {
       const y = Math.ceil(h.entries.length / h.cols);
-      r.set(h.id, { w: h.cols * d, d: y * d });
+      a.set(h.id, { w: h.cols * d, d: y * d });
     }
   }
-  const a = e.map(() => []);
-  for (const h of t) (x = a[h.layer]) == null || x.push(h);
+  const r = e.map(() => []);
+  for (const h of t) (x = r[h.layer]) == null || x.push(h);
   const c = i * 2;
-  for (let h = 0; h < a.length; h++) {
-    const d = a[h], y = Math.min(d.length, 4);
+  for (let h = 0; h < r.length; h++) {
+    const d = r[h], y = Math.min(d.length, 4);
     for (let v = 0; v < d.length; v++) {
       const k = Math.floor(v / y), w = d.filter((I, C) => Math.floor(C / y) === k);
       let O = -w.reduce((I, C) => {
         var K;
-        return I + (((K = r.get(C.id)) == null ? void 0 : K.w) ?? 2) + c;
+        return I + (((K = a.get(C.id)) == null ? void 0 : K.w) ?? 2) + c;
       }, -c) / 2;
       const M = v - k * y;
       for (let I = 0; I < M; I++)
-        O += (((m = r.get(w[I].id)) == null ? void 0 : m.w) ?? 2) + c;
-      const P = ((b = r.get(d[v].id)) == null ? void 0 : b.w) ?? 2;
+        O += (((m = a.get(w[I].id)) == null ? void 0 : m.w) ?? 2) + c;
+      const P = ((b = a.get(d[v].id)) == null ? void 0 : b.w) ?? 2;
       O += P / 2;
       const j = Math.max(...w.map((I) => {
         var C;
-        return ((C = r.get(I.id)) == null ? void 0 : C.d) ?? 2;
+        return ((C = a.get(I.id)) == null ? void 0 : C.d) ?? 2;
       }));
       n.layer[d[v].id] = {
         x: O,
@@ -137,12 +137,12 @@ function L(t, e, i = 0.42, s = 0.1) {
 function ce(t, e) {
   const i = {};
   for (const s of t)
-    s.grids.forEach((n, r) => {
-      const a = r * s.gap;
+    s.grids.forEach((n, a) => {
+      const r = a * s.gap;
       i[n] = {
-        x: s.position.x + (s.axis === "x" ? a : 0),
-        y: s.position.y + (s.axis === "y" ? a : 0),
-        z: s.position.z + (s.axis === "z" ? a : 0)
+        x: s.position.x + (s.axis === "x" ? r : 0),
+        y: s.position.y + (s.axis === "y" ? r : 0),
+        z: s.position.z + (s.axis === "z" ? r : 0)
       };
     });
   return i;
@@ -305,20 +305,20 @@ function ge(t, e, i) {
   };
 }
 function _e(t, e, i = 0.4, s = 0.08) {
-  const n = i + s, r = [], a = t.mappings.find((d) => d.channel === "x"), c = t.mappings.find((d) => d.channel === "y"), p = t.mappings.find((d) => d.channel === "z"), o = t.mappings.find((d) => d.channel === "group"), _ = t.mappings.filter((d) => d.channel === "collapse").map((d) => d.axis), f = a ? e[a.axis] || [] : ["_"], u = c ? e[c.axis] || [] : ["_"], l = p ? e[p.axis] || [] : ["_"], x = o ? e[o.axis] || [] : ["_"];
+  const n = i + s, a = [], r = t.mappings.find((d) => d.channel === "x"), c = t.mappings.find((d) => d.channel === "y"), p = t.mappings.find((d) => d.channel === "z"), o = t.mappings.find((d) => d.channel === "group"), _ = t.mappings.filter((d) => d.channel === "collapse").map((d) => d.axis), f = r ? e[r.axis] || [] : ["_"], u = c ? e[c.axis] || [] : ["_"], l = p ? e[p.axis] || [] : ["_"], x = o ? e[o.axis] || [] : ["_"];
   switch (t.type) {
     case "scalar":
-      r.push({ key: `${t.prefixId}/_`, x: 0, y: 0, z: 0 });
+      a.push({ key: `${t.prefixId}/_`, x: 0, y: 0, z: 0 });
       break;
     case "row":
       f.forEach((d, y) => {
-        r.push({ key: `${t.prefixId}/${d}`, x: y * n, y: 0, z: 0 });
+        a.push({ key: `${t.prefixId}/${d}`, x: y * n, y: 0, z: 0 });
       });
       break;
     case "grid":
       f.forEach((d, y) => {
         l.forEach((v, k) => {
-          r.push({ key: `${t.prefixId}/${d}_${v}`, x: y * n, y: 0, z: k * n });
+          a.push({ key: `${t.prefixId}/${d}_${v}`, x: y * n, y: 0, z: k * n });
         });
       });
       break;
@@ -326,7 +326,7 @@ function _e(t, e, i = 0.4, s = 0.08) {
       f.forEach((d, y) => {
         u.forEach((v, k) => {
           l.forEach((w, $) => {
-            r.push({ key: `${t.prefixId}/${d}_${v}_${w}`, x: y * n, y: k * n, z: $ * n });
+            a.push({ key: `${t.prefixId}/${d}_${v}_${w}`, x: y * n, y: k * n, z: $ * n });
           });
         });
       });
@@ -336,7 +336,7 @@ function _e(t, e, i = 0.4, s = 0.08) {
         const v = {};
         for (const k of _)
           v[k] = `(${(e[k] || []).length} entries)`;
-        r.push({ key: `${t.prefixId}/${d}`, x: y * n, y: 0, z: 0, collapsed: v });
+        a.push({ key: `${t.prefixId}/${d}`, x: y * n, y: 0, z: 0, collapsed: v });
       });
       break;
     case "shelf":
@@ -344,7 +344,7 @@ function _e(t, e, i = 0.4, s = 0.08) {
         const v = y * (l.length * n + n * 2);
         f.forEach((k, w) => {
           l.forEach(($, O) => {
-            r.push({
+            a.push({
               key: `${t.prefixId}/${d}_${k}_${$}`,
               x: w * n,
               y: v,
@@ -359,7 +359,7 @@ function _e(t, e, i = 0.4, s = 0.08) {
       x.forEach((d, y) => {
         const v = y * (f.length * n + n * 2);
         f.forEach((k, w) => {
-          r.push({
+          a.push({
             key: `${t.prefixId}/${d}/${k}`,
             x: v + w * n,
             y: 0,
@@ -370,14 +370,14 @@ function _e(t, e, i = 0.4, s = 0.08) {
       });
       break;
   }
-  const m = r.map((d) => d.x), b = r.map((d) => d.y), h = r.map((d) => d.z);
+  const m = a.map((d) => d.x), b = a.map((d) => d.y), h = a.map((d) => d.z);
   return {
     pattern: t,
-    cells: r,
+    cells: a,
     bounds: {
-      width: r.length > 0 ? Math.max(...m) - Math.min(...m) + i : 0,
-      height: r.length > 0 ? Math.max(...b) - Math.min(...b) + i : 0,
-      depth: r.length > 0 ? Math.max(...h) - Math.min(...h) + i : 0
+      width: a.length > 0 ? Math.max(...m) - Math.min(...m) + i : 0,
+      height: a.length > 0 ? Math.max(...b) - Math.min(...b) + i : 0,
+      depth: a.length > 0 ? Math.max(...h) - Math.min(...h) + i : 0
     }
   };
 }
@@ -387,13 +387,13 @@ function H(t, e) {
   return i.includes("step") || i.includes("phase") || i.includes("stage") ? "sequence" : i.includes("variant") || i.includes("version") || i.includes("mode") ? "variant" : i.endsWith("_name") || i === "flow_name" || i === "event_name" || i.endsWith("_type") || i === "resource_type" ? "classify" : (i.includes("action") || i.includes("method") || i.includes("op") || i === "role" || i === "resource", "identity");
 }
 function ve(t, e) {
-  const i = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = i.filter((l) => l.kind === "axis"), n = i.filter((l) => l.kind === "prefix_ref"), r = i.filter((l) => l.kind === "table_ref"), a = s.map((l) => ({ ...l, role: H(l.label, l.kind) })), c = a.filter((l) => l.role === "classify"), p = a.filter((l) => l.role === "sequence"), o = a.filter((l) => l.role === "variant"), _ = a.filter((l) => l.role === "identity"), f = [];
+  const i = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = i.filter((l) => l.kind === "axis"), n = i.filter((l) => l.kind === "prefix_ref"), a = i.filter((l) => l.kind === "table_ref"), r = s.map((l) => ({ ...l, role: H(l.label, l.kind) })), c = r.filter((l) => l.role === "classify"), p = r.filter((l) => l.role === "sequence"), o = r.filter((l) => l.role === "variant"), _ = r.filter((l) => l.role === "identity"), f = [];
   for (const l of n)
     f.push({ axis: l.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
-  for (const l of r)
+  for (const l of a)
     f.push({ axis: l.label, channel: "link", role: "context", dimKind: "table_ref" });
   if (c.length > 0) {
-    const l = c[0], x = a.filter((h) => h !== l);
+    const l = c[0], x = r.filter((h) => h !== l);
     if (x.length === 0)
       return f.push({ axis: l.label, channel: "x", role: "classify" }), { type: "row", prefixId: t, mappings: f, description: `${t}: ${l.label}(x) → 행` };
     if (x.length === 1)
@@ -584,15 +584,15 @@ const we = [
 function $e(t, e) {
   const i = new Set(Object.keys(e)), s = new Set(t.members.map((c) => c.prefixId));
   let n = 0;
-  const r = /* @__PURE__ */ new Set();
+  const a = /* @__PURE__ */ new Set();
   for (const c of t.members)
-    i.has(c.prefixId) ? n++ : r.add(c.role);
-  const a = [...i].filter((c) => !s.has(c) && c !== "service");
+    i.has(c.prefixId) ? n++ : a.add(c.role);
+  const r = [...i].filter((c) => !s.has(c) && c !== "service");
   return {
     signalId: t.id,
     valid: n === t.members.length,
-    missingRoles: [...r],
-    extraPrefixes: a,
+    missingRoles: [...a],
+    extraPrefixes: r,
     matchedMembers: n,
     totalMembers: t.members.length
   };
@@ -879,27 +879,27 @@ function Te(t, e) {
   var s, n;
   const i = [];
   if (i.push(`<div style="font-size:11px;font-weight:600;color:#e0e4ec">${t.displayName}</div>`), i.push(`<div style="font-size:9px;color:#556;margin:3px 0">${t.description}</div>`), t.source) {
-    const r = t.source, a = [];
-    r.module && a.push(r.module), r.file && a.push(r.file), r.line && a.push(`L${r.line}`), i.push(`<div style="font-size:8px;color:#334;margin-top:4px">📁 ${a.join(" / ")}</div>`), r.url && i.push(`<div style="font-size:8px"><a href="${r.url}" target="_blank" style="color:#64ffda">📎 docs</a></div>`);
+    const a = t.source, r = [];
+    a.module && r.push(a.module), a.file && r.push(a.file), a.line && r.push(`L${a.line}`), i.push(`<div style="font-size:8px;color:#334;margin-top:4px">📁 ${r.join(" / ")}</div>`), a.url && i.push(`<div style="font-size:8px"><a href="${a.url}" target="_blank" style="color:#64ffda">📎 docs</a></div>`);
   }
   switch (t.detailKind) {
     case "schema": {
-      const r = t.detail;
-      if (r != null && r.columns) {
+      const a = t.detail;
+      if (a != null && a.columns) {
         i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">SCHEMA</div>');
-        for (const a of r.columns) {
-          const c = a.refKind !== "scalar" ? ` <span style="color:${a.refKind === "axis_ref" ? "#00e676" : a.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${a.refTarget}</span>` : "", p = e && a.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
-          i.push(`<div style="font-size:9px;${p}">${a.name} <span style="color:#334">${a.type}</span>${c}</div>`);
+        for (const r of a.columns) {
+          const c = r.refKind !== "scalar" ? ` <span style="color:${r.refKind === "axis_ref" ? "#00e676" : r.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${r.refTarget}</span>` : "", p = e && r.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
+          i.push(`<div style="font-size:9px;${p}">${r.name} <span style="color:#334">${r.type}</span>${c}</div>`);
         }
       }
       break;
     }
     case "event-def": {
-      const r = t.detail;
-      if (r && (i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">EVENT STRUCTURE</div>'), i.push(`<div style="font-size:9px;color:#ff9100">${r.structure}</div>`), r.slots))
-        for (const a of r.slots) {
-          const c = a.kind === "table_ref" ? "#ff5252" : a.kind === "prefix_ref" ? "#00e5ff" : "#00e676";
-          i.push(`<div style="font-size:9px;color:#667">${a.name} <span style="color:${c}">${a.kind}→${a.target}</span></div>`);
+      const a = t.detail;
+      if (a && (i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">EVENT STRUCTURE</div>'), i.push(`<div style="font-size:9px;color:#ff9100">${a.structure}</div>`), a.slots))
+        for (const r of a.slots) {
+          const c = r.kind === "table_ref" ? "#ff5252" : r.kind === "prefix_ref" ? "#00e5ff" : "#00e676";
+          i.push(`<div style="font-size:9px;color:#667">${r.name} <span style="color:${c}">${r.kind}→${r.target}</span></div>`);
         }
       break;
     }
@@ -907,11 +907,11 @@ function Te(t, e) {
       i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">PERMISSION</div>'), i.push(`<div style="font-size:9px;color:#00e676">${((s = t.detail) == null ? void 0 : s.matrix) || "role-based grant/deny"}</div>`);
       break;
     case "endpoint": {
-      const r = (n = t.detail) == null ? void 0 : n.routes;
-      if (r) {
+      const a = (n = t.detail) == null ? void 0 : n.routes;
+      if (a) {
         i.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">ROUTES</div>');
-        for (const a of r)
-          i.push(`<div style="font-size:9px;color:#667"><span style="color:#00e5ff">${a.method}</span> ${a.path}</div>`);
+        for (const r of a)
+          i.push(`<div style="font-size:9px;color:#667"><span style="color:#00e5ff">${r.method}</span> ${r.path}</div>`);
       }
       break;
     }
@@ -919,17 +919,17 @@ function Te(t, e) {
   return i.join("");
 }
 function Ee(t, e = 0.42, i = 0.1) {
-  const s = e + i, n = t.channels.find((m) => m.channel === "x"), r = t.channels.find((m) => m.channel === "y"), a = t.channels.find((m) => m.channel === "z"), c = t.channels.find((m) => m.channel === "group"), p = t.channels.find((m) => m.channel === "color"), o = (m) => {
+  const s = e + i, n = t.channels.find((m) => m.channel === "x"), a = t.channels.find((m) => m.channel === "y"), r = t.channels.find((m) => m.channel === "z"), c = t.channels.find((m) => m.channel === "group"), p = t.channels.find((m) => m.channel === "color"), o = (m) => {
     var h;
     return m ? ((h = t.filters) == null ? void 0 : h[m.id]) ?? m.entries : ["_"];
-  }, _ = o(n == null ? void 0 : n.axis), f = o(r == null ? void 0 : r.axis), u = o(a == null ? void 0 : a.axis), l = o(c == null ? void 0 : c.axis), x = [];
+  }, _ = o(n == null ? void 0 : n.axis), f = o(a == null ? void 0 : a.axis), u = o(r == null ? void 0 : r.axis), l = o(c == null ? void 0 : c.axis), x = [];
   for (const m of l) {
     const b = l.indexOf(m) * (_.length * s + s * 3);
     for (const h of _)
       for (const d of f)
         for (const y of u) {
           const v = _.indexOf(h), k = f.indexOf(d), w = u.indexOf(y), $ = {};
-          n && ($[n.axis.id] = h), r && ($[r.axis.id] = d), a && ($[a.axis.id] = y), c && m !== "_" && ($[c.axis.id] = m);
+          n && ($[n.axis.id] = h), a && ($[a.axis.id] = d), r && ($[r.axis.id] = y), c && m !== "_" && ($[c.axis.id] = m);
           const M = Object.values($).join(":");
           x.push({
             coords: $,
@@ -961,8 +961,8 @@ function Oe(t, e) {
   const i = [];
   for (const s of e.cells) {
     let n = !0;
-    for (const [r, a] of Object.entries(s.coords))
-      if (t[r] !== a) {
+    for (const [a, r] of Object.entries(s.coords))
+      if (t[a] !== r) {
         n = !1;
         break;
       }
@@ -1074,8 +1074,8 @@ class Se {
     const i = this.positions[e];
     if (i)
       for (const [s, n] of Object.entries(i)) {
-        const r = this.targets.get(s);
-        r && (r.targetX = n.x, r.targetY = n.y, r.targetZ = n.z);
+        const a = this.targets.get(s);
+        a && (a.targetX = n.x, a.targetY = n.y, a.targetZ = n.z);
       }
   }
   /** 매 프레임 호출 — dt 기반 lerp */
@@ -1128,12 +1128,12 @@ function G(t) {
 }
 function Ce(t, e, i) {
   return t.map((s) => {
-    const n = [.../* @__PURE__ */ new Set([...s.ownedPrefixes, ...s.consumedPrefixes])], r = { 0: [], 1: [], 2: [], 3: [] };
+    const n = [.../* @__PURE__ */ new Set([...s.ownedPrefixes, ...s.consumedPrefixes])], a = { 0: [], 1: [], 2: [], 3: [] };
     for (const c of n) {
       const p = e.get(c);
       if (!p) continue;
       const o = G(c);
-      r[o].push({
+      a[o].push({
         prefixId: c,
         tier: o,
         entries: p.entries,
@@ -1141,17 +1141,17 @@ function Ce(t, e, i) {
         category: p.category
       });
     }
-    const a = [];
+    const r = [];
     if (i)
       for (const c of s.tables) {
         const p = i[c];
-        p && a.push(...p);
+        p && r.push(...p);
       }
     return {
       serviceId: s.id,
       serviceName: s.name,
-      tiers: r,
-      dataEntries: a
+      tiers: a,
+      dataEntries: r
     };
   });
 }
@@ -1161,11 +1161,11 @@ function Ke(t, e, i) {
 }
 function Re(t, e) {
   const i = (e == null ? void 0 : e.containerGap) ?? 12, s = (e == null ? void 0 : e.tierGap) ?? 3;
-  return t.map((n, r) => {
+  return t.map((n, a) => {
     const c = (Object.values(n.tiers).filter((_) => _.length > 0).length + (n.dataEntries.length > 0 ? 1 : 0)) * s, p = Math.max(1, ...Object.values(n.tiers).flatMap((_) => _.map((f) => f.entries.length))), o = Math.max(4, Math.ceil(Math.sqrt(p)) * 1.5);
     return {
       serviceId: n.serviceId,
-      position: { x: r * i - (t.length - 1) * i / 2, y: 0, z: 0 },
+      position: { x: a * i - (t.length - 1) * i / 2, y: 0, z: 0 },
       size: { width: o, height: c, depth: o },
       tierOffsets: { 0: s * 1.5, 1: s * 0.5, 2: -s * 0.5, 3: -s * 1.5 }
     };
@@ -1213,7 +1213,7 @@ const Pe = [
   hideTest: { axisId: "env", mode: "hide", values: ["test", "local"] },
   all: { axisId: "env", mode: "show", values: ["dev", "stage", "prod", "test", "local"] }
 };
-class Ne {
+class Le {
   constructor(e) {
     z(this, "states", /* @__PURE__ */ new Map());
     z(this, "_activeSet", /* @__PURE__ */ new Set());
@@ -1253,7 +1253,7 @@ class Ne {
     this.states.clear(), this._activeSet.clear(), this._layerHits.fill(0), this._totalHits = 0;
   }
 }
-class Ae {
+class Ne {
   constructor(e) {
     z(this, "beams");
     z(this, "index", 0);
@@ -1283,7 +1283,7 @@ class Ae {
     return this.beams;
   }
 }
-class Le {
+class Ae {
   constructor(e, i) {
     this.cells = e, this.beams = i;
   }
@@ -1294,14 +1294,14 @@ class Le {
     this.cells.deactivateAll();
     const s = [];
     for (const n of e) {
-      const r = i(n);
-      r && (this.cells.activate(n, r.layer), s.push(r));
+      const a = i(n);
+      a && (this.cells.activate(n, a.layer), s.push(a));
     }
     for (let n = 0; n < s.length; n++)
-      for (let r = n + 1; r < s.length; r++)
-        s[n].layer !== s[r].layer && this.beams.spawn(
+      for (let a = n + 1; a < s.length; a++)
+        s[n].layer !== s[a].layer && this.beams.spawn(
           { x: s[n].worldX, y: s[n].worldY, z: s[n].worldZ },
-          { x: s[r].worldX, y: s[r].worldY, z: s[r].worldZ },
+          { x: s[a].worldX, y: s[a].worldY, z: s[a].worldZ },
           s[n].categoryColor
         );
     return {
@@ -1313,10 +1313,10 @@ class Le {
 }
 function W(t, e) {
   const i = new Map(e.map((c) => [c.id, c])), s = {};
-  let n = 0, r = 0;
+  let n = 0, a = 0;
   t.grids.forEach((c, p) => {
     const o = i.get(c);
-    o && (n = Math.max(n, o.width), r = Math.max(r, o.depth));
+    o && (n = Math.max(n, o.width), a = Math.max(a, o.depth));
     const _ = p * t.gap;
     s[c] = {
       x: t.position.x + (t.axis === "x" ? _ : 0),
@@ -1324,23 +1324,23 @@ function W(t, e) {
       z: t.position.z + (t.axis === "z" ? _ : 0)
     };
   });
-  const a = t.grids.length * t.gap;
+  const r = t.grids.length * t.gap;
   return {
     stackId: t.id,
     axis: t.axis,
     gridPositions: s,
     bounds: {
-      width: t.axis === "x" ? a : n,
-      height: t.axis === "y" ? a : 1,
-      depth: t.axis === "z" ? a : r
+      width: t.axis === "x" ? r : n,
+      height: t.axis === "y" ? r : 1,
+      depth: t.axis === "z" ? r : a
     }
   };
 }
 function Ve(t, e) {
   const i = [], s = {};
   for (const n of t) {
-    const r = W(n, e);
-    i.push(r), Object.assign(s, r.gridPositions);
+    const a = W(n, e);
+    i.push(a), Object.assign(s, a.gridPositions);
   }
   for (const n of e)
     n.id in s || (s[n.id] = { x: 30, y: 0, z: 0 });
@@ -1433,8 +1433,8 @@ function F(t, e = U) {
 }
 function Be(t, e, i) {
   const s = /* @__PURE__ */ new Map();
-  for (const [n, r] of e) {
-    const a = t.x - r.x, c = t.y - r.y, p = t.z - r.z, o = Math.sqrt(a * a + c * c + p * p);
+  for (const [n, a] of e) {
+    const r = t.x - a.x, c = t.y - a.y, p = t.z - a.z, o = Math.sqrt(r * r + c * c + p * p);
     s.set(n, F(o, i));
   }
   return s;
@@ -1486,7 +1486,21 @@ class Ye {
     return `${e.fps}fps ${e.frameTime}ms | draw:${e.drawCalls} tri:${e.triangles} | cells:${e.cellCount} active:${e.activeCount}`;
   }
 }
-class Ze {
+function Ze(t, e, i) {
+  t.innerHTML = "";
+  for (const [s, n] of Object.entries(e)) {
+    const a = document.createElement("span");
+    a.className = "sl-role sl-active", a.dataset.role = s, a.innerHTML = `<span class="sl-dot" style="background:${n.token.css}"></span>${s}`, i && a.addEventListener("click", () => i(s, a)), t.appendChild(a);
+  }
+}
+function Ge(t, e) {
+  t.innerHTML = "";
+  for (const [i, s] of Object.entries(e)) {
+    const n = document.createElement("span");
+    n.style.cssText = `font-size:8px;color:${s.main.css};padding:2px 5px;border:1px solid ${s.main.css}33;border-radius:3px`, n.textContent = i, t.appendChild(n);
+  }
+}
+class We {
   constructor(e) {
     z(this, "ws", null);
     z(this, "_connected", !1);
@@ -1497,28 +1511,28 @@ class Ze {
   }
   /** WebSocket 연결 */
   connect(e) {
-    var i, s, n, r;
+    var i, s, n, a;
     (s = (i = this.config).onConnectionChange) == null || s.call(i, "connecting");
     try {
       this.ws = new WebSocket(e), this.ws.onopen = () => {
-        var a, c;
-        this._connected = !0, (c = (a = this.config).onConnectionChange) == null || c.call(a, "connected"), this.ws.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
-      }, this.ws.onmessage = (a) => {
+        var r, c;
+        this._connected = !0, (c = (r = this.config).onConnectionChange) == null || c.call(r, "connected"), this.ws.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
+      }, this.ws.onmessage = (r) => {
         var c, p;
         try {
-          const o = JSON.parse(a.data);
+          const o = JSON.parse(r.data);
           o.type === "record" && o.data ? this.handleRecord(o.data) : o.type === "subscribed" && ((p = (c = this.config).onConnectionChange) == null || p.call(c, "subscribed"));
         } catch {
         }
       }, this.ws.onerror = () => {
-        var a, c;
-        (c = (a = this.config).onConnectionChange) == null || c.call(a, "error");
+        var r, c;
+        (c = (r = this.config).onConnectionChange) == null || c.call(r, "error");
       }, this.ws.onclose = () => {
-        var a, c;
-        this._connected = !1, (c = (a = this.config).onConnectionChange) == null || c.call(a, "disconnected");
+        var r, c;
+        this._connected = !1, (c = (r = this.config).onConnectionChange) == null || c.call(r, "disconnected");
       };
     } catch {
-      (r = (n = this.config).onConnectionChange) == null || r.call(n, "failed");
+      (a = (n = this.config).onConnectionChange) == null || a.call(n, "failed");
     }
   }
   disconnect() {
@@ -1526,25 +1540,25 @@ class Ze {
     this.ws && (this.ws.close(), this.ws = null), this._connected = !1, (i = (e = this.config).onConnectionChange) == null || i.call(e, "disconnected");
   }
   /** HTTP로 이벤트 전송 (DEMO용) */
-  async sendToIngest(e, i, s, n, r) {
-    const a = (/* @__PURE__ */ new Date()).toISOString();
+  async sendToIngest(e, i, s, n, a) {
+    const r = (/* @__PURE__ */ new Date()).toISOString();
     try {
       await fetch(e, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transmission_id: `tx_${Date.now()}`,
-          sent_at: a,
+          sent_at: r,
           owner: { owner_type: "workspace", owner_id: "viz-3d" },
           source: { service_name: "viz-3d", sdk_name: "@qa-sdk/viz-3d", sdk_version: "0.1.0" },
           runtime: { platform: "browser" },
           build: { env: "dev" },
           records: [{
-            log_id: `l_${Date.now()}_${r}`,
-            timestamp: a,
+            log_id: `l_${Date.now()}_${a}`,
+            timestamp: r,
             record_kind: "log",
             trace_id: n,
-            span_id: `s_${r}`,
+            span_id: `s_${a}`,
             event_key: s,
             event_version: "001",
             payload_format: "json",
@@ -1564,15 +1578,15 @@ class Ze {
     if (!i || Object.keys(i).length === 0) return;
     const s = [];
     for (const [, n] of Object.entries(i)) {
-      const r = this.config.decode(n);
-      if (!r) continue;
-      const a = this.config.mapToKeys(r.prefix, r.values);
-      s.push(...a);
+      const a = this.config.decode(n);
+      if (!a) continue;
+      const r = this.config.mapToKeys(a.prefix, a.values);
+      s.push(...r);
     }
     s.length > 0 && this.config.onActivation(s, i);
   }
 }
-function Ge(t, e) {
+function Ue(t, e) {
   const i = [];
   if (t === "flow_point" && e.flow_name && e.flow_step)
     i.push(`flow_point/${e.flow_name}/${e.flow_step}`);
@@ -1589,7 +1603,7 @@ function Ge(t, e) {
 function J(t, e, i) {
   const s = t[e];
   if (!s) return null;
-  const n = [], r = [];
+  const n = [], a = [];
   for (const p of s.labels) {
     const o = s.dims[p];
     if (!o) return null;
@@ -1597,29 +1611,29 @@ function J(t, e, i) {
       n.push(o.capacity ?? o.entries.length);
       const _ = o.entries.indexOf(i[p]);
       if (_ < 0) return null;
-      r.push(_);
+      a.push(_);
     } else {
       const _ = o.values;
       n.push(_.length);
       const f = i[p] ?? _[0], u = _.indexOf(f);
-      r.push(u < 0 ? 0 : u);
+      a.push(u < 0 ? 0 : u);
     }
   }
-  const a = new Array(n.length);
-  a[n.length - 1] = 1;
-  for (let p = n.length - 2; p >= 0; p--) a[p] = a[p + 1] * n[p + 1];
+  const r = new Array(n.length);
+  r[n.length - 1] = 1;
+  for (let p = n.length - 2; p >= 0; p--) r[p] = r[p + 1] * n[p + 1];
   let c = 0;
-  for (let p = 0; p < r.length; p++) c += r[p] * a[p];
+  for (let p = 0; p < a.length; p++) c += a[p] * r[p];
   return { prefix: e, version: s.version, address: c, serialized: `${e}:${s.version}:${c}` };
 }
 function Q(t, e) {
-  const i = e.split(":"), [s, n, r] = i.length === 4 ? [i[1], i[2], i[3]] : [i[0], i[1], i[2]], a = t[s];
-  if (!a) return null;
-  let c = parseInt(r);
+  const i = e.split(":"), [s, n, a] = i.length === 4 ? [i[1], i[2], i[3]] : [i[0], i[1], i[2]], r = t[s];
+  if (!r) return null;
+  let c = parseInt(a);
   if (isNaN(c)) return null;
   const p = [], o = [];
-  for (const u of a.labels) {
-    const l = a.dims[u];
+  for (const u of r.labels) {
+    const l = r.dims[u];
     l && (l.kind === "axis" ? p.push(l.capacity ?? l.entries.length) : p.push(l.values.length), o.push({ label: u, dim: l }));
   }
   const _ = new Array(p.length);
@@ -1637,27 +1651,27 @@ function Q(t, e) {
 function ee(t, e) {
   const i = {};
   for (const [s, n] of Object.entries(e)) {
-    const r = t[s];
-    if (!r) continue;
-    const a = { ...n };
-    for (const p of r.labels) {
-      const o = r.dims[p];
-      (o == null ? void 0 : o.kind) === "prefix_ref" && !(p in a) && (a[p] = o.values[0]);
+    const a = t[s];
+    if (!a) continue;
+    const r = { ...n };
+    for (const p of a.labels) {
+      const o = a.dims[p];
+      (o == null ? void 0 : o.kind) === "prefix_ref" && !(p in r) && (r[p] = o.values[0]);
     }
-    const c = J(t, s, a);
+    const c = J(t, s, r);
     c && (i[s] = c.serialized);
   }
   return i;
 }
-function We(t, e) {
+function Fe(t, e) {
   const i = {};
   for (const [s, n] of Object.entries(e)) {
-    const r = Q(t, n);
-    r && (i[s] = { prefix: r.prefix, values: r.values });
+    const a = Q(t, n);
+    a && (i[s] = { prefix: a.prefix, values: a.values });
   }
   return i;
 }
-function Ue(t, e) {
+function Je(t, e) {
   const i = ee(t, e), s = Y(i);
   return { addressContext: i, byRole: s };
 }
@@ -1698,18 +1712,20 @@ const R = {
   spec_event: { version: "v1", labels: ["spec_type", "lifecycle_state"], dims: { spec_type: { kind: "axis", entries: ["req", "feat", "uc", "evt", "ls", "adr"], capacity: 16 }, lifecycle_state: { kind: "axis", entries: ["draft", "active", "deprecated", "archived", "superseded", "reversed"], capacity: 16 } } },
   edge_activity: { version: "v1", labels: ["edge_type", "dkg_target_kind"], dims: { edge_type: { kind: "axis", entries: ["satisfies", "implements", "tests", "traces-to", "depends-on", "composes", "references", "governs", "justifies", "constrains", "contains", "bridges", "consumes", "binds", "observes", "prompts", "evolves-from", "supersedes"], capacity: 32 }, dkg_target_kind: { kind: "axis", entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system"], capacity: 16 } } },
   execution_context: { version: "v1", labels: ["svc_ref", "execution_mode"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, execution_mode: { kind: "axis", entries: ["live", "test", "synthetic", "replay"], capacity: 8 } } },
-  ingest_record: { version: "v1", labels: ["svc_ref", "record_type"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, record_type: { kind: "axis", entries: ["log", "span", "metric"], capacity: 8 } } }
+  ingest_record: { version: "v1", labels: ["svc_ref", "record_type"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, record_type: { kind: "axis", entries: ["log", "span", "metric"], capacity: 8 } } },
+  event_classification: { version: "v1", labels: ["svc_ref", "event_category", "event_lifecycle_stage"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, event_category: { kind: "axis", entries: ["user_action", "system_action", "network_action", "data_action", "agent_action", "sdk_action", "error", "state_change"], capacity: 16 }, event_lifecycle_stage: { kind: "axis", entries: ["interaction", "request", "processing", "result", "side_effect", "completion"], capacity: 16 } } },
+  metric_point: { version: "v1", labels: ["svc_ref", "metric_type", "record_type"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, metric_type: { kind: "axis", entries: ["counter", "gauge", "histogram", "summary"], capacity: 8 }, record_type: { kind: "axis", entries: ["log", "span", "metric"], capacity: 8 } } }
 };
-async function Fe(t) {
+async function Qe(t) {
   const e = (t == null ? void 0 : t.cacheKey) ?? "qa-sdk-catalog", i = (t == null ? void 0 : t.cacheTtlMs) ?? 300 * 1e3, s = (t == null ? void 0 : t.timeoutMs) ?? 5e3;
   if (t != null && t.registryUrl)
     try {
-      const r = await te(t.registryUrl, s);
-      if (r && Object.keys(r).length > 0)
-        return se(e, r), {
-          catalog: r,
+      const a = await te(t.registryUrl, s);
+      if (a && Object.keys(a).length > 0)
+        return se(e, a), {
+          catalog: a,
           source: "api",
-          prefixCount: Object.keys(r).length,
+          prefixCount: Object.keys(a).length,
           timestamp: (/* @__PURE__ */ new Date()).toISOString()
         };
     } catch {
@@ -1732,8 +1748,8 @@ async function te(t, e) {
   try {
     const n = await fetch(`${t}/resolve/active`, { signal: i.signal });
     if (clearTimeout(s), !n.ok) return null;
-    const r = await n.json();
-    return ie(r);
+    const a = await n.json();
+    return ie(a);
   } catch {
     return clearTimeout(s), null;
   }
@@ -1743,7 +1759,7 @@ function ie(t) {
   const e = {};
   for (const [s, n] of Object.entries(t)) {
     if (!n || typeof n != "object") continue;
-    const r = n.version ?? n.activeVersion ?? "v1", a = n.labels ?? n.dims ? Object.keys(n.dims) : [], c = {};
+    const a = n.version ?? n.activeVersion ?? "v1", r = n.labels ?? n.dims ? Object.keys(n.dims) : [], c = {};
     if (n.dims)
       for (const [p, o] of Object.entries(n.dims))
         o.kind === "axis" || o.entries ? c[p] = {
@@ -1754,7 +1770,7 @@ function ie(t) {
           kind: "prefix_ref",
           values: o.values ?? []
         });
-    (a.length > 0 || Object.keys(c).length > 0) && (e[s] = { version: r, labels: a, dims: c });
+    (r.length > 0 || Object.keys(c).length > 0) && (e[s] = { version: a, labels: r, dims: c });
   }
   return e;
 }
@@ -1776,20 +1792,20 @@ function ne(t, e) {
   }
 }
 export {
-  Le as ActivationProcessor,
+  Ae as ActivationProcessor,
   R as BROWSER_CATALOG,
-  Ae as BeamPool,
+  Ne as BeamPool,
   V as CATEGORY_COLORS,
-  Ne as CellStateManager,
+  Le as CellStateManager,
   U as DEFAULT_LOD,
-  ae as DEFAULT_THEME,
+  re as DEFAULT_THEME,
   ze as DEMO_PREFIX_META,
   Pe as DEMO_SERVICES,
   we as DEMO_SIGNALS,
   je as ENV_FILTERS,
   He as FlowHistory,
   D as LAYER_COLORS,
-  Ze as MonitorAdapter,
+  We as MonitorAdapter,
   E as PALETTE,
   T as PRESET_AXES,
   Ie as PRESET_VIEWS,
@@ -1802,7 +1818,9 @@ export {
   Me as TIER_NAMES,
   Se as ViewEngine,
   Ke as applyFilters,
+  Ge as buildCategoryLegend,
   oe as buildGridPositions,
+  Ze as buildRoleLegend,
   Ce as buildServiceContainers,
   Y as classifyByRole,
   Ve as computeAllStacks,
@@ -1815,8 +1833,8 @@ export {
   ce as computeStackPositions,
   he as cube,
   Q as decode,
-  We as decodeContext,
-  Ge as defaultKeyMapper,
+  Fe as decodeContext,
+  Ue as defaultKeyMapper,
   J as encode,
   xe as extractAxes,
   ye as extractDims,
@@ -1827,7 +1845,7 @@ export {
   fe as grid,
   ve as inferPattern,
   H as inferRole,
-  Fe as loadCatalog,
+  Qe as loadCatalog,
   Oe as matchEventToCells,
   ge as nested,
   pe as row,
@@ -1835,6 +1853,6 @@ export {
   me as shelf,
   ue as spine,
   ee as track,
-  Ue as trackWithSignal,
+  Je as trackWithSignal,
   $e as validateSignal
 };

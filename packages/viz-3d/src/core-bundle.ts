@@ -72,6 +72,9 @@ export type { LodThresholds, LodLevel, LodVisibility } from "./renderer/lod.js";
 export { PerfMonitor } from "./renderer/perf-stats.js";
 export type { FrameStats } from "./renderer/perf-stats.js";
 
+// Legend Builder
+export { buildRoleLegend, buildCategoryLegend } from "./adapter/legend-builder.js";
+
 // Adapter
 export { MonitorAdapter, defaultKeyMapper } from "./adapter/monitor-adapter.js";
 export type { DecodeFn, CellKeyMapper, AdapterConfig } from "./adapter/monitor-adapter.js";

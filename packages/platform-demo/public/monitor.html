@@ -271,6 +271,7 @@ import {
   FlowHistory, MonitorAdapter, defaultKeyMapper,
   computeLodLevel, getLodVisibility, PerfMonitor,
   DEMO_PREFIX_META, formatDetail,
+  buildRoleLegend, buildCategoryLegend,
   encode, decode, track as codecTrack, BROWSER_CATALOG, loadCatalog,
   classifyByRole, getPrefixRole, SIGNAL_ROLE_LABELS,
 } from './viz-3d-core.js';
@@ -296,27 +297,9 @@ const ROLE_HEX=Object.fromEntries(Object.entries(VIZ_ROLE_COLORS).map(([k,v])=>[
 // 셀 키 → 활성화 시 사용할 role color hex (활성 이벤트마다 갱신)
 const cellRoleColor=new Map();
 
-// ── 범례 동적 생성 (color-tokens 기반, 하드코딩 없음) ──
-(function buildLegends(){
-  const slRoles=document.getElementById('sl-roles');
-  if(slRoles){
-    for(const[role,css]of Object.entries(ROLE_COLORS)){
-      const sp=document.createElement('span');
-      sp.className='sl-role sl-active';sp.dataset.role=role;
-      sp.innerHTML=`<span class="sl-dot" style="background:${css}"></span>${role}`;
-      slRoles.appendChild(sp);
-    }
-  }
-  const catLeg=document.getElementById('cat-legend');
-  if(catLeg){
-    for(const[cat,cc]of Object.entries(CATEGORY_COLORS)){
-      const sp=document.createElement('span');
-      sp.style.cssText=`font-size:8px;color:${cc.main.css};padding:2px 5px;border:1px solid rgba(${cc.main.rgb||'128,128,128'},0.2);border-radius:3px`;
-      sp.textContent=cat;
-      catLeg.appendChild(sp);
-    }
-  }
-})();
+// ── 범례 동적 생성 (viz-3d/legend-builder 모듈) ──
+buildRoleLegend(document.getElementById('sl-roles'), VIZ_ROLE_COLORS);
+buildCategoryLegend(document.getElementById('cat-legend'), CATEGORY_COLORS);
 
 const MAX_TIMELINE=10;
 const timelineEntries=[];
@@ -612,7 +595,7 @@ function replayEntry(entry){
 //  INGEST
 // ═══════════════════════════════════════════════════
 let tId='trc_'+Date.now(),sSeq=0;
-function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transmission_id:'tx_'+Date.now(),sent_at:new Date().toISOString(),owner:{owner_type:'workspace',owner_id:'viz'},source:{service_name:'viz',sdk_name:'@qa-sdk/viz-3d',sdk_version:'0.1.0'},runtime:{platform:'browser'},build:{env:'dev'},records:[{log_id:'l_'+Date.now()+'_'+sSeq,timestamp:new Date().toISOString(),record_kind:'log',trace_id:tId,span_id:'s_'+sSeq,event_key:ek||'demo',event_version:'001',payload_format:'json',payload_encoding:'raw',payload_masking_applied:false,payload_masked_fields:[],payload:{},address_context:ctx}]})}).catch(()=>{})}
+function sendI(ctx,ek){sSeq++;const u=$('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/v1/ingest');adapter.sendToIngest(u,ctx,ek||'demo',tId,sSeq).catch(()=>{})}
 
 // ═══════════════════════════════════════════════════
 //  HUD
