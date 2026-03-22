@@ -63,484 +63,75 @@ interface SyntheticEvent {
 }
 
 /**
- * 도메인별 합성 이벤트 — version은 latestPrefixVersion으로 동적 결정.
- * encodePrefixByValue로 인코딩하여 해당 entry를 관측 상태로 전환한다.
- * prefix_ref 차원은 refEntries의 첫 번째 값을 자동 주입한다.
+ * 카탈로그에서 합성 이벤트를 자동 생성한다.
+ *
+ * 각 prefix의 각 axis dim에서 모든 entry를 순회하여 최소 1회 관측되는 이벤트를 생성.
+ * prefix_ref dim은 refEntries의 첫 번째 값을 자동 주입.
+ * table_ref dim은 스킵 (인코딩 대상 아님).
  */
-const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
-  // ── 쇼핑 도메인 ──────────────────────────────────────────────
-  // service: env × region × svc_name × namespace (직접 axis — refDim 없음)
-  { prefix: "service", dims: { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" } },
-  { prefix: "service", dims: { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" } },
-  { prefix: "service", dims: { env: "stage", region: "usa", svc_name: "auth", namespace: "cms" } },
-  { prefix: "service", dims: { env: "test", region: "asia", svc_name: "payment", namespace: "shop" } },
-  { prefix: "service", dims: { env: "local", region: "asia", svc_name: "gateway", namespace: "shop" } },
+function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
+  const events: SyntheticEvent[] = [];
+  const prefixes = (catalog as any).prefixes as Record<string, any> | undefined;
+  const axes = (catalog as any).axes as Record<string, any> | undefined;
+  if (!prefixes || !axes) return events;
 
-  // tracking: trackAction × page × userType
-  { prefix: "tracking", dims: { trackAction: "click", page: "home", userType: "guest" } },
-  { prefix: "tracking", dims: { trackAction: "view", page: "product_detail", userType: "member" } },
-  { prefix: "tracking", dims: { trackAction: "scroll", page: "product_list", userType: "premium" } },
-  { prefix: "tracking", dims: { trackAction: "submit", page: "checkout", userType: "member" } },
-  { prefix: "tracking", dims: { trackAction: "navigate", page: "cart", userType: "guest" } },
-  { prefix: "tracking", dims: { trackAction: "add_to_cart", page: "product_detail", userType: "member" } },
-  { prefix: "tracking", dims: { trackAction: "purchase", page: "order_complete", userType: "member" } },
-  { prefix: "tracking", dims: { trackAction: "close", page: "mypage", userType: "member" } },
+  for (const [prefixId, prefixDef] of Object.entries(prefixes)) {
+    const dims = prefixDef.dims as Record<string, { kind: string; axisId?: string }> | undefined;
+    if (!dims) continue;
 
-  // page_view: svc_ref × page × locale × userType
-  { prefix: "page_view", dims: { page: "home", locale: "ko", userType: "guest" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "product_detail", locale: "en", userType: "member" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "cart", locale: "ja", userType: "premium" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "login", locale: "ko", userType: "guest" }, refDims: ["svc_ref"] },
+    // axis dim만 추출 (prefix_ref/table_ref 제외)
+    const axisDims: Array<{ label: string; axisId: string; entries: readonly string[] }> = [];
+    const refDimLabels: string[] = [];
 
-  // rbac: role(rbac_role) × action × resource
-  { prefix: "rbac", dims: { role: "admin", action: "read", resource: "dashboard" } },
-  { prefix: "rbac", dims: { role: "editor", action: "write", resource: "reports" } },
-  { prefix: "rbac", dims: { role: "viewer", action: "delete", resource: "settings" } },
-  { prefix: "rbac", dims: { role: "admin", action: "admin", resource: "users" } },
+    for (const [label, dimRef] of Object.entries(dims)) {
+      if (dimRef.kind === "axis" && dimRef.axisId) {
+        const axis = axes[dimRef.axisId];
+        if (!axis) continue;
+        const versions = Object.keys(axis.versions);
+        const latest = axis.versions[versions[versions.length - 1]] as any;
+        if (latest?.entries) {
+          axisDims.push({ label, axisId: dimRef.axisId, entries: latest.entries });
+        }
+      } else if (dimRef.kind === "prefix_ref") {
+        refDimLabels.push(label);
+      }
+    }
 
-  // content: tag × category × status × locale × channel
-  { prefix: "content", dims: { tag: "frontend", category: "tech", status: "published", locale: "ko", channel: "web" } },
-  { prefix: "content", dims: { tag: "backend", category: "design", status: "draft", locale: "en", channel: "mobile" } },
-  { prefix: "content", dims: { tag: "devops", category: "product", status: "archived", locale: "ja", channel: "web" } },
-  { prefix: "content", dims: { tag: "ai", category: "culture", status: "published", locale: "ko", channel: "mobile" } },
-  { prefix: "content", dims: { tag: "database", category: "tech", status: "draft", locale: "en", channel: "web" } },
+    if (axisDims.length === 0) continue;
 
-  // flow_point: svc_ref × flow_name × flow_step × flow_variant
-  { prefix: "flow_point", dims: { flow_name: "checkout", flow_step: "entry", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "signup", flow_step: "processing", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "order_cancel", flow_step: "branch", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "refund", flow_step: "success", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "login", flow_step: "entry", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "browse", flow_step: "complete", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "cart_manage", flow_step: "exit", flow_variant: "default" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "payment", flow_step: "payment", flow_variant: "default" }, refDims: ["svc_ref"] },
+    // 전략: 각 axis의 모든 entry를 최소 1회 관측하되, 조합 폭발을 방지
+    // → 첫 번째 axis의 모든 entry를 순회하고, 나머지 axis는 첫 번째 entry 고정
+    // → 그 다음 두 번째 axis의 나머지 entry를 순회 (첫 번째 axis는 첫 entry 고정)
+    // 이렇게 하면 총 이벤트 수 = sum(entries.length) (곱이 아닌 합)
+    const baseDims: Record<string, string> = {};
+    for (const ad of axisDims) baseDims[ad.label] = ad.entries[0];
 
-  // endpoint: svc_ref × resource_type × http_method × api_version
-  { prefix: "endpoint", dims: { resource_type: "api", http_method: "POST", api_version: "v1" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "api", http_method: "GET", api_version: "v1" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "page", http_method: "GET", api_version: "v1" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "webhook", http_method: "POST", api_version: "v2" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "grpc", http_method: "POST", api_version: "v1" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "api", http_method: "PUT", api_version: "v1" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "api", http_method: "DELETE", api_version: "v2" }, refDims: ["svc_ref"] },
-  { prefix: "endpoint", dims: { resource_type: "api", http_method: "PATCH", api_version: "v1" }, refDims: ["svc_ref"] },
+    for (const ad of axisDims) {
+      for (const entry of ad.entries) {
+        const dims = { ...baseDims, [ad.label]: entry };
+        events.push({
+          prefix: prefixId,
+          dims,
+          ...(refDimLabels.length > 0 ? { refDims: refDimLabels } : {}),
+        });
+      }
+    }
+  }
 
-  // permission: perm_svc × role
-  { prefix: "permission", dims: { role: "admin" }, refDims: ["perm_svc"] },
-  { prefix: "permission", dims: { role: "developer" }, refDims: ["perm_svc"] },
-  { prefix: "permission", dims: { role: "operator" }, refDims: ["perm_svc"] },
-  { prefix: "permission", dims: { role: "viewer" }, refDims: ["perm_svc"] },
-  { prefix: "permission", dims: { role: "customer" }, refDims: ["perm_svc"] },
-  { prefix: "permission", dims: { role: "auditor" }, refDims: ["perm_svc"] },
+  return events;
+}
 
-  // event: evt_svc × event_name × initiator
-  { prefix: "event", dims: { event_name: "user.login", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "order.created", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "user.logout", initiator: "mobile" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "order.paid", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "payment.failed", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "session.expired", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "config.changed", initiator: "web" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "payment.cancel_requested", initiator: "mobile" }, refDims: ["evt_svc"] },
-  { prefix: "event", dims: { event_name: "payment.refunded", initiator: "web" }, refDims: ["evt_svc"] },
-
-  // relational: subjectKind × predicate × objectKind
-  { prefix: "relational", dims: { subjectKind: "user", predicate: "has", objectKind: "role" } },
-  { prefix: "relational", dims: { subjectKind: "role", predicate: "can_access", objectKind: "permission" } },
-  { prefix: "relational", dims: { subjectKind: "group", predicate: "belongs_to", objectKind: "group" } },
-  { prefix: "relational", dims: { subjectKind: "service", predicate: "has_capability", objectKind: "resource" } },
-  { prefix: "relational", dims: { subjectKind: "engine", predicate: "evaluated", objectKind: "constraint" } },
-
-  // ── DKG 도메인 ──────────────────────────────────────────────
-  // dkg_event: dkg_op × dkg_target_kind
-  { prefix: "dkg_event", dims: { dkg_op: "claim", dkg_target_kind: "prefix" } },
-  { prefix: "dkg_event", dims: { dkg_op: "decide", dkg_target_kind: "decision" } },
-  { prefix: "dkg_event", dims: { dkg_op: "observe", dkg_target_kind: "observation" } },
-  { prefix: "dkg_event", dims: { dkg_op: "resolve", dkg_target_kind: "observation" } },
-  { prefix: "dkg_event", dims: { dkg_op: "link", dkg_target_kind: "intent-link" } },
-  { prefix: "dkg_event", dims: { dkg_op: "refresh", dkg_target_kind: "system" } },
-  { prefix: "dkg_event", dims: { dkg_op: "self-check", dkg_target_kind: "system" } },
-  { prefix: "dkg_event", dims: { dkg_op: "converge", dkg_target_kind: "system" } },
-  { prefix: "dkg_event", dims: { dkg_op: "trace", dkg_target_kind: "skill" } },
-  { prefix: "dkg_event", dims: { dkg_op: "release", dkg_target_kind: "axis" } },
-  { prefix: "dkg_event", dims: { dkg_op: "promote", dkg_target_kind: "constraint" } },
-
-  // dkg_decision_event: decision_type × dkg_target_kind × node_source
-  { prefix: "dkg_decision_event", dims: { decision_type: "capacity", dkg_target_kind: "axis", node_source: "bootstrap" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "new-axis", dkg_target_kind: "axis", node_source: "manual" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "new-prefix", dkg_target_kind: "prefix", node_source: "auto" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "dim-add", dkg_target_kind: "domain", node_source: "manual" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "merge", dkg_target_kind: "prefix", node_source: "auto" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "deprecate", dkg_target_kind: "axis", node_source: "manual" } },
-  { prefix: "dkg_decision_event", dims: { decision_type: "separation", dkg_target_kind: "dsl-bundle", node_source: "bootstrap" } },
-
-  // dkg_observation_event: obs_source × dkg_target_kind × lifecycle_state
-  { prefix: "dkg_observation_event", dims: { obs_source: "manual", dkg_target_kind: "prefix", lifecycle_state: "draft" } },
-  { prefix: "dkg_observation_event", dims: { obs_source: "metric", dkg_target_kind: "axis", lifecycle_state: "active" } },
-  { prefix: "dkg_observation_event", dims: { obs_source: "runtime", dkg_target_kind: "observation", lifecycle_state: "active" } },
-  { prefix: "dkg_observation_event", dims: { obs_source: "review", dkg_target_kind: "decision", lifecycle_state: "deprecated" } },
-  { prefix: "dkg_observation_event", dims: { obs_source: "metric", dkg_target_kind: "constraint", lifecycle_state: "archived" } },
-  { prefix: "dkg_observation_event", dims: { obs_source: "manual", dkg_target_kind: "system", lifecycle_state: "superseded" } },
-
-  // skill_execution: skill_id × skill_category × skill_outcome
-  { prefix: "skill_execution", dims: { skill_id: "skill-trace", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-explore-prefix", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-record-decision", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-domain-health", skill_category: "analysis", skill_outcome: "warning" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-converge-chain", skill_category: "chain", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-schema-health-audit", skill_category: "analysis", skill_outcome: "ok" } },
-
-  // cli_event: cli_intent × cli_domain × cli_subject
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "prefix" } },
-  { prefix: "cli_event", dims: { cli_intent: "analyze", cli_domain: "convergence", cli_subject: "observation" } },
-  { prefix: "cli_event", dims: { cli_intent: "mutate", cli_domain: "dkg-graph", cli_subject: "decision" } },
-  { prefix: "cli_event", dims: { cli_intent: "publish", cli_domain: "registry", cli_subject: "version" } },
-  { prefix: "cli_event", dims: { cli_intent: "lifecycle", cli_domain: "dkg-skill", cli_subject: "skill" } },
-  { prefix: "cli_event", dims: { cli_intent: "init", cli_domain: "catalog", cli_subject: "catalog" } },
-  { prefix: "cli_event", dims: { cli_intent: "backup", cli_domain: "system", cli_subject: "system" } },
-
-  // contract_check: qa_pkg × api_surface × test_result
-  { prefix: "contract_check", dims: { qa_pkg: "weighted-index", api_surface: "encode-decode", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "permission-engine", api_surface: "perm-grant", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "spec-core", api_surface: "convergence-analysis", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "bit-index", api_surface: "dim-extract", test_result: "passed" } },
-
-  // observation_event: observation_intent × dkg_target_kind
-  { prefix: "observation_event", dims: { observation_intent: "action_needed", dkg_target_kind: "prefix" } },
-  { prefix: "observation_event", dims: { observation_intent: "monitoring", dkg_target_kind: "axis" } },
-  { prefix: "observation_event", dims: { observation_intent: "completed", dkg_target_kind: "observation" } },
-
-  // spec_event: spec_type × lifecycle_state
-  { prefix: "spec_event", dims: { spec_type: "req", lifecycle_state: "draft" } },
-  { prefix: "spec_event", dims: { spec_type: "feat", lifecycle_state: "active" } },
-  { prefix: "spec_event", dims: { spec_type: "adr", lifecycle_state: "active" } },
-  { prefix: "spec_event", dims: { spec_type: "uc", lifecycle_state: "archived" } },
-  { prefix: "spec_event", dims: { spec_type: "evt", lifecycle_state: "active" } },
-  { prefix: "spec_event", dims: { spec_type: "ls", lifecycle_state: "reversed" } },
-
-  // edge_activity: edge_type × dkg_target_kind
-  { prefix: "edge_activity", dims: { edge_type: "satisfies", dkg_target_kind: "prefix" } },
-  { prefix: "edge_activity", dims: { edge_type: "implements", dkg_target_kind: "domain" } },
-  { prefix: "edge_activity", dims: { edge_type: "tests", dkg_target_kind: "dsl-bundle" } },
-  { prefix: "edge_activity", dims: { edge_type: "depends-on", dkg_target_kind: "skill" } },
-  { prefix: "edge_activity", dims: { edge_type: "consumes", dkg_target_kind: "constraint" } },
-  { prefix: "edge_activity", dims: { edge_type: "observes", dkg_target_kind: "observation" } },
-  { prefix: "edge_activity", dims: { edge_type: "supersedes", dkg_target_kind: "decision" } },
-
-  // ── 인프라 도메인 ──────────────────────────────────────────────
-  // deploy_event: svc_ref × deploy_action × actor(table_ref — 자동 건너뜀)
-  { prefix: "deploy_event", dims: { deploy_action: "deploy" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "scale_up" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "restart" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "scale_down" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "migrate" }, refDims: ["svc_ref"] },
-
-  // health_event: svc_ref × health_status
-  { prefix: "health_event", dims: { health_status: "healthy" }, refDims: ["svc_ref"] },
-  { prefix: "health_event", dims: { health_status: "degraded" }, refDims: ["svc_ref"] },
-
-  // pipeline_point: svc_ref × pipeline_phase × validation_mode × verdict_result × temporal_strategy
-  { prefix: "pipeline_point", dims: { pipeline_phase: "ingest", validation_mode: "strict", verdict_result: "pass", temporal_strategy: "span_local" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "reconstruct", validation_mode: "warn", verdict_result: "pass", temporal_strategy: "global" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "verdict", validation_mode: "strict", verdict_result: "warn", temporal_strategy: "span_local" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "aggregate", validation_mode: "off", verdict_result: "pass", temporal_strategy: "global" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "propagate", validation_mode: "strict", verdict_result: "pass", temporal_strategy: "span_local" }, refDims: ["svc_ref"] },
-
-  // engine_event: svc_ref × constraint_op × verdict_result
-  { prefix: "engine_event", dims: { constraint_op: "eq", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "exists", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "gt", verdict_result: "warn" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "contains", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "neq", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "lt", verdict_result: "skipped" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "masked", verdict_result: "pass" }, refDims: ["svc_ref"] },
-
-  // schema_event: svc_ref × migration_pattern × deploy_action
-  { prefix: "schema_event", dims: { migration_pattern: "identity", deploy_action: "deploy" }, refDims: ["svc_ref"] },
-  { prefix: "schema_event", dims: { migration_pattern: "reorder", deploy_action: "migrate" }, refDims: ["svc_ref"] },
-  { prefix: "schema_event", dims: { migration_pattern: "append_dim", deploy_action: "deploy" }, refDims: ["svc_ref"] },
-  { prefix: "schema_event", dims: { migration_pattern: "remove_dim", deploy_action: "migrate" }, refDims: ["svc_ref"] },
-  { prefix: "schema_event", dims: { migration_pattern: "composite", deploy_action: "deploy" }, refDims: ["svc_ref"] },
-
-  // schema_validation: svc_ref × validation_layer × constraint_rule × verdict_result
-  { prefix: "schema_validation", dims: { validation_layer: "vocabulary", constraint_rule: "required", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "structural", constraint_rule: "maxCount", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "constraint", constraint_rule: "exclusive", verdict_result: "warn" }, refDims: ["svc_ref"] },
-
-  // data_policy: svc_ref × mask_mode
-  { prefix: "data_policy", dims: { mask_mode: "raw" }, refDims: ["svc_ref"] },
-  { prefix: "data_policy", dims: { mask_mode: "mask" }, refDims: ["svc_ref"] },
-  { prefix: "data_policy", dims: { mask_mode: "drop" }, refDims: ["svc_ref"] },
-  { prefix: "data_policy", dims: { mask_mode: "hash" }, refDims: ["svc_ref"] },
-
-  // ── 패턴 도메인 ──────────────────────────────────────────────
-  // pattern_match: svc_ref × identification_mode × behavior_pattern × pattern_confidence
-  { prefix: "pattern_match", dims: { identification_mode: "anonymous", behavior_pattern: "browse_only", pattern_confidence: "medium" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "identified", behavior_pattern: "purchase_complete", pattern_confidence: "high" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "pseudonymized", behavior_pattern: "cart_abandon", pattern_confidence: "low" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "service", behavior_pattern: "api_integration", pattern_confidence: "exact" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "anonymous", behavior_pattern: "anonymous_browse", pattern_confidence: "high" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "service", behavior_pattern: "health_check", pattern_confidence: "exact" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "service", behavior_pattern: "bot_crawl", pattern_confidence: "unknown" }, refDims: ["svc_ref"] },
-
-  // pattern_anomaly: svc_ref × anomaly_kind × behavior_pattern × anomaly_severity
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "ratio_shift", behavior_pattern: "browse_only", anomaly_severity: "warning" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "volume_spike", behavior_pattern: "api_integration", anomaly_severity: "info" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "new_sequence", behavior_pattern: "unclassified", anomaly_severity: "info" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "abnormal_speed", behavior_pattern: "checkout_fail", anomaly_severity: "warning" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "unclassified", behavior_pattern: "error_recovery", anomaly_severity: "info" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "abnormal_duration", behavior_pattern: "return_visit", anomaly_severity: "info" }, refDims: ["svc_ref"] },
-
-  // ── 내부 로직 도메인 ──────────────────────────────────────────
-  // version_point: svc_ref × version_lifecycle
-  { prefix: "version_point", dims: { version_lifecycle: "draft" }, refDims: ["svc_ref"] },
-  { prefix: "version_point", dims: { version_lifecycle: "locked" }, refDims: ["svc_ref"] },
-  { prefix: "version_point", dims: { version_lifecycle: "released" }, refDims: ["svc_ref"] },
-  { prefix: "version_point", dims: { version_lifecycle: "active" }, refDims: ["svc_ref"] },
-  { prefix: "version_point", dims: { version_lifecycle: "deprecated" }, refDims: ["svc_ref"] },
-
-  // gate_point: svc_ref × address_state
-  { prefix: "gate_point", dims: { address_state: "active" }, refDims: ["svc_ref"] },
-  { prefix: "gate_point", dims: { address_state: "reserved" }, refDims: ["svc_ref"] },
-  { prefix: "gate_point", dims: { address_state: "inactive" }, refDims: ["svc_ref"] },
-  { prefix: "gate_point", dims: { address_state: "open" }, refDims: ["svc_ref"] },
-
-  // execution_context: svc_ref × execution_mode
-  { prefix: "execution_context", dims: { execution_mode: "live" }, refDims: ["svc_ref"] },
-  { prefix: "execution_context", dims: { execution_mode: "test" }, refDims: ["svc_ref"] },
-  { prefix: "execution_context", dims: { execution_mode: "synthetic" }, refDims: ["svc_ref"] },
-  { prefix: "execution_context", dims: { execution_mode: "replay" }, refDims: ["svc_ref"] },
-
-  // ingest_record: svc_ref × record_type
-  { prefix: "ingest_record", dims: { record_type: "log" }, refDims: ["svc_ref"] },
-  { prefix: "ingest_record", dims: { record_type: "span" }, refDims: ["svc_ref"] },
-  { prefix: "ingest_record", dims: { record_type: "metric" }, refDims: ["svc_ref"] },
-
-  // ── table_ref prefix (axis 차원만 인코딩) ──────────────────────
-  // cart_event: actor(table_ref) × action(cart_action) × target(table_ref) — action만 인코딩
-  { prefix: "cart_event", dims: { action: "add" } },
-  { prefix: "cart_event", dims: { action: "remove" } },
-  { prefix: "cart_event", dims: { action: "checkout" } },
-
-  // auth_event: actor(table_ref) × action(auth_action) — action만 인코딩
-  { prefix: "auth_event", dims: { action: "login" } },
-  { prefix: "auth_event", dims: { action: "logout" } },
-  { prefix: "auth_event", dims: { action: "token_refresh" } },
-
-  // order_event: service_ctx(prefix_ref) × actor(table_ref) × action(order_action) × order(table_ref)
-  { prefix: "order_event", dims: { action: "create" }, refDims: ["service_ctx"] },
-  { prefix: "order_event", dims: { action: "cancel" }, refDims: ["service_ctx"] },
-  { prefix: "order_event", dims: { action: "refund" }, refDims: ["service_ctx"] },
-  { prefix: "order_event", dims: { action: "complete" }, refDims: ["service_ctx"] },
-
-  // ═══════════════════════════════════════════════════════════════
-  //  커버리지 확장 — 기존 이벤트에서 누락된 entry 보충
-  // ═══════════════════════════════════════════════════════════════
-
-  // ── page_view: 누락 page ──
-  { prefix: "page_view", dims: { page: "product_list", locale: "ko", userType: "member" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "checkout", locale: "en", userType: "member" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "order_complete", locale: "ko", userType: "member" }, refDims: ["svc_ref"] },
-  { prefix: "page_view", dims: { page: "mypage", locale: "ja", userType: "premium" }, refDims: ["svc_ref"] },
-
-  // ── flow_point: 누락 flow_step, flow_variant ──
-  { prefix: "flow_point", dims: { flow_name: "checkout", flow_step: "failure", flow_variant: "retry" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "payment", flow_step: "timeout", flow_variant: "fallback" }, refDims: ["svc_ref"] },
-  { prefix: "flow_point", dims: { flow_name: "refund", flow_step: "processing", flow_variant: "manual" }, refDims: ["svc_ref"] },
-
-  // ── relational: 누락 predicate, objectKind ──
-  { prefix: "relational", dims: { subjectKind: "service", predicate: "migrated_to", objectKind: "prefix_version" } },
-  { prefix: "relational", dims: { subjectKind: "engine", predicate: "has_capability", objectKind: "queue" } },
-  { prefix: "relational", dims: { subjectKind: "service", predicate: "evaluated", objectKind: "metric_store" } },
-
-  // ── endpoint: 누락 resource_type ──
-  { prefix: "endpoint", dims: { resource_type: "page", http_method: "GET", api_version: "v2" }, refDims: ["svc_ref"] },
-
-  // ── deploy_event: 누락 deploy_action ──
-  { prefix: "deploy_event", dims: { deploy_action: "rollback" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "canary_start" }, refDims: ["svc_ref"] },
-  { prefix: "deploy_event", dims: { deploy_action: "canary_promote" }, refDims: ["svc_ref"] },
-
-  // ── pipeline_point: 누락 verdict_result, temporal_strategy ──
-  { prefix: "pipeline_point", dims: { pipeline_phase: "verdict", validation_mode: "strict", verdict_result: "fail", temporal_strategy: "global" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "verdict", validation_mode: "warn", verdict_result: "degraded", temporal_strategy: "span_local" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "aggregate", validation_mode: "off", verdict_result: "unknown", temporal_strategy: "global" }, refDims: ["svc_ref"] },
-  { prefix: "pipeline_point", dims: { pipeline_phase: "ingest", validation_mode: "strict", verdict_result: "skipped", temporal_strategy: "span_local" }, refDims: ["svc_ref"] },
-
-  // ── engine_event: 누락 verdict_result ──
-  { prefix: "engine_event", dims: { constraint_op: "eq", verdict_result: "fail" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "gt", verdict_result: "degraded" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "exists", verdict_result: "unknown" }, refDims: ["svc_ref"] },
-  // ── schema_event: 누락 migration_pattern, deploy_action ──
-  { prefix: "schema_event", dims: { migration_pattern: "unknown", deploy_action: "rollback" }, refDims: ["svc_ref"] },
-  { prefix: "schema_event", dims: { migration_pattern: "identity", deploy_action: "canary_start" }, refDims: ["svc_ref"] },
-
-  // ── schema_validation: 누락 constraint_rule ──
-  { prefix: "schema_validation", dims: { validation_layer: "structural", constraint_rule: "minCount", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "constraint", constraint_rule: "requiredIf", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "vocabulary", constraint_rule: "type", verdict_result: "pass" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "structural", constraint_rule: "multi", verdict_result: "warn" }, refDims: ["svc_ref"] },
-  { prefix: "schema_validation", dims: { validation_layer: "constraint", constraint_rule: "unknownAxis", verdict_result: "pass" }, refDims: ["svc_ref"] },
-
-  // ── edge_activity: 누락 edge_type ──
-  { prefix: "edge_activity", dims: { edge_type: "traces-to", dkg_target_kind: "decision" } },
-  { prefix: "edge_activity", dims: { edge_type: "composes", dkg_target_kind: "axis" } },
-  { prefix: "edge_activity", dims: { edge_type: "references", dkg_target_kind: "prefix" } },
-  { prefix: "edge_activity", dims: { edge_type: "governs", dkg_target_kind: "decision" } },
-  { prefix: "edge_activity", dims: { edge_type: "justifies", dkg_target_kind: "decision" } },
-  { prefix: "edge_activity", dims: { edge_type: "constrains", dkg_target_kind: "prefix" } },
-  { prefix: "edge_activity", dims: { edge_type: "contains", dkg_target_kind: "domain" } },
-  { prefix: "edge_activity", dims: { edge_type: "bridges", dkg_target_kind: "intent-link" } },
-  { prefix: "edge_activity", dims: { edge_type: "binds", dkg_target_kind: "prefix" } },
-  { prefix: "edge_activity", dims: { edge_type: "prompts", dkg_target_kind: "observation" } },
-  { prefix: "edge_activity", dims: { edge_type: "evolves-from", dkg_target_kind: "axis" } },
-
-  // ── pattern_match: 누락 behavior_pattern ──
-  { prefix: "pattern_match", dims: { identification_mode: "identified", behavior_pattern: "checkout_fail", pattern_confidence: "high" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "identified", behavior_pattern: "error_recovery", pattern_confidence: "medium" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "identified", behavior_pattern: "return_visit", pattern_confidence: "high" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "anonymous", behavior_pattern: "anonymous_cart", pattern_confidence: "low" }, refDims: ["svc_ref"] },
-  { prefix: "pattern_match", dims: { identification_mode: "anonymous", behavior_pattern: "unclassified", pattern_confidence: "unknown" }, refDims: ["svc_ref"] },
-
-  // ── pattern_anomaly: 누락 anomaly_severity critical ──
-  { prefix: "pattern_anomaly", dims: { anomaly_kind: "volume_spike", behavior_pattern: "purchase_complete", anomaly_severity: "critical" }, refDims: ["svc_ref"] },
-
-  // ── cli_event: 누락 cli_domain, cli_subject ──
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "axis" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "domain" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "dsl-bundle" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "observation" } },
-  { prefix: "cli_event", dims: { cli_intent: "analyze", cli_domain: "dkg-graph", cli_subject: "constraint" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "intent-link" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "spec", cli_subject: "spec" } },
-  { prefix: "cli_event", dims: { cli_intent: "analyze", cli_domain: "spec", cli_subject: "schema" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "table" } },
-  { prefix: "cli_event", dims: { cli_intent: "analyze", cli_domain: "self-ref", cli_subject: "system" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "convergence", cli_subject: "version" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "coordinate", cli_subject: "axis" } },
-  { prefix: "cli_event", dims: { cli_intent: "query", cli_domain: "coordinate", cli_subject: "version" } },
-  { prefix: "cli_event", dims: { cli_intent: "analyze", cli_domain: "coordinate", cli_subject: "prefix" } },
-
-  // ── contract_check: 누락 qa_pkg, api_surface ──
-  { prefix: "contract_check", dims: { qa_pkg: "core", api_surface: "protocol-codec", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "engine", api_surface: "state-lifecycle", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "store", api_surface: "query-resolve", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "gate-service", api_surface: "state-lifecycle", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "query-service", api_surface: "query-resolve", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "decode-service", api_surface: "protocol-codec", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "registry-server", api_surface: "schema-validate", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "registry-client", api_surface: "dkg-graph", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "apm", api_surface: "stride-calc", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "browser-sdk", api_surface: "encode-decode", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "event-catalog", api_surface: "schema-validate", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "pino", api_surface: "integration", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "viz-3d", api_surface: "encode-decode", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "viz-web", api_surface: "integration", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "demo-tests", api_surface: "integration", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "weighted-wasm", api_surface: "bitmask-ops", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "index-meta", api_surface: "state-lifecycle", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "sdk", api_surface: "integration", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "demo-snapshot", api_surface: "encode-decode", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "ingest-server", api_surface: "schema-validate", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "registry-service", api_surface: "query-resolve", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "e2e", api_surface: "integration", test_result: "passed" } },
-  { prefix: "contract_check", dims: { qa_pkg: "platform-demo", api_surface: "integration", test_result: "passed" } },
-
-  // ── skill_execution: 누락 skill_id, skill_outcome ──
-  { prefix: "skill_execution", dims: { skill_id: "skill-explore-service", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-explore-dsl", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-system-overview", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-record-observation", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-claim", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-release", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-lifecycle-transition", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-checkout-flow-verify", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-commerce-skew-audit", skill_category: "analysis", skill_outcome: "warning" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-observation-coverage", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-infra-impact-verify", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-pipeline-phase-verify", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-event-action-check", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-svc-binding-check", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-safe-entry-add", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-decision-scaffold", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-analyze-impact", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-infer-migrator", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-pattern-analysis", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-entry-add-chain", skill_category: "chain", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-system-health-chain", skill_category: "chain", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-self-check-analyze", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-cli-coverage", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-promote-scan", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-spec-manage", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-registry-publish", skill_category: "write", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-flow-trace", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-table-impact", skill_category: "read", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-domain-health", skill_category: "analysis", skill_outcome: "error" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-converge-chain", skill_category: "chain", skill_outcome: "blocked" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-trace", skill_category: "read", skill_outcome: "skipped" } },
-
-  // ── dkg_event: 누락 dkg_target_kind ──
-  { prefix: "dkg_event", dims: { dkg_op: "claim", dkg_target_kind: "axis" } },
-  { prefix: "dkg_event", dims: { dkg_op: "decide", dkg_target_kind: "domain" } },
-  { prefix: "dkg_event", dims: { dkg_op: "observe", dkg_target_kind: "dsl-bundle" } },
-  { prefix: "dkg_event", dims: { dkg_op: "trace", dkg_target_kind: "decision" } },
-  { prefix: "dkg_event", dims: { dkg_op: "converge", dkg_target_kind: "constraint" } },
-
-  // ── observation_event: 누락 dkg_target_kind 조합 ──
-  { prefix: "observation_event", dims: { observation_intent: "action_needed", dkg_target_kind: "axis" } },
-  { prefix: "observation_event", dims: { observation_intent: "monitoring", dkg_target_kind: "domain" } },
-  { prefix: "observation_event", dims: { observation_intent: "completed", dkg_target_kind: "decision" } },
-  { prefix: "observation_event", dims: { observation_intent: "action_needed", dkg_target_kind: "dsl-bundle" } },
-  { prefix: "observation_event", dims: { observation_intent: "monitoring", dkg_target_kind: "constraint" } },
-  { prefix: "observation_event", dims: { observation_intent: "completed", dkg_target_kind: "skill" } },
-  { prefix: "observation_event", dims: { observation_intent: "action_needed", dkg_target_kind: "intent-link" } },
-  { prefix: "observation_event", dims: { observation_intent: "monitoring", dkg_target_kind: "system" } },
-
-  // ── spec_event: 누락 lifecycle_state ──
-  { prefix: "spec_event", dims: { spec_type: "req", lifecycle_state: "superseded" } },
-
-  // ── dkg_observation_event: 누락 lifecycle_state ──
-  { prefix: "dkg_observation_event", dims: { obs_source: "runtime", dkg_target_kind: "prefix", lifecycle_state: "reversed" } },
-
-  // ── build_event/test_event: 누락 qa_module 보충 ──
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "shared", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "schema", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "export-surface", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "spec", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "loader", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "dkg", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "dkg-skills", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "convergence", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "propagation", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "store", build_result: "success" } },
-  { prefix: "build_event", dims: { qa_pkg: "spec-core", qa_module: "visualization", build_result: "success" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "shared", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "schema", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "export-surface", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "spec", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "loader", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "dkg", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "dkg-skills", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "convergence", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "propagation", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "store", test_result: "passed" } },
-  { prefix: "test_event", dims: { qa_pkg: "spec-core", qa_module: "visualization", test_result: "passed" } },
-
-  // ── event_classification: 이벤트 분류 좌표 ──
-  { prefix: "event_classification", dims: { event_category: "user_action", event_lifecycle_stage: "interaction" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "system_action", event_lifecycle_stage: "processing" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "network_action", event_lifecycle_stage: "request" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "data_action", event_lifecycle_stage: "result" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "agent_action", event_lifecycle_stage: "side_effect" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "sdk_action", event_lifecycle_stage: "completion" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "error", event_lifecycle_stage: "result" }, refDims: ["svc_ref"] },
-  { prefix: "event_classification", dims: { event_category: "state_change", event_lifecycle_stage: "processing" }, refDims: ["svc_ref"] },
-
-  // ── metric_point: 메트릭 수집 좌표 ──
-  { prefix: "metric_point", dims: { metric_type: "counter", record_type: "metric" }, refDims: ["svc_ref"] },
-  { prefix: "metric_point", dims: { metric_type: "gauge", record_type: "metric" }, refDims: ["svc_ref"] },
-  { prefix: "metric_point", dims: { metric_type: "histogram", record_type: "metric" }, refDims: ["svc_ref"] },
-  { prefix: "metric_point", dims: { metric_type: "summary", record_type: "metric" }, refDims: ["svc_ref"] },
+/**
+ * 하위 호환 + 추가 수동 이벤트.
+ * 자동 생성으로 커버되지 않는 특수 조합이 있으면 여기에 추가.
+ */
+/**
+ * 수동 보충 이벤트 — 자동 생성으로 커버되지 않는 특수 조합만 추가.
+ * generateSyntheticEvents()가 모든 axis entry를 커버하므로 대부분의 경우 빈 배열.
+ */
+const MANUAL_SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
+  // 자동 생성이 100% 커버하므로 수동 보충 불필요.
+  // 특수 조합이 필요하면 여기에 추가.
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -602,9 +193,10 @@ export function analyzeSelfCheck(
     }
   }
 
-  // ── 2. 합성 이벤트 시뮬레이션 ──
+  // ── 2. 합성 이벤트 시뮬레이션 (자동 생성 + 수동 보충) ──
   let bizRecords = 0;
-  for (const se of SYNTHETIC_EVENTS) {
+  const allSynthetic = [...generateSyntheticEvents(catalog), ...MANUAL_SYNTHETIC_EVENTS];
+  for (const se of allSynthetic) {
     try {
       const ver = latestPrefixVersion(catalog, se.prefix);
       const prefixDef = (catalog as any).prefixes?.[se.prefix];
