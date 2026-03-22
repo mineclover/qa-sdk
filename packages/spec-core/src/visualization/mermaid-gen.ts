@@ -88,7 +88,7 @@ export function allIntentLinksDiagram(
   graph: GraphRegistry,
   options?: MermaidDiagramOptions,
 ): string {
-  const nodes = graph.getNodesByKind("intent-link") as IntentLinkNode[];
+  const nodes = graph.getNodesByKind("intent-link");
   if (nodes.length === 0) return "sequenceDiagram\n  note right of Actor: IntentLink 없음";
 
   const showInv = options?.showInvariants !== false;
@@ -494,8 +494,8 @@ export function observationLoopDiagram(
   graph: GraphRegistry,
   options?: MermaidDiagramOptions,
 ): string {
-  const observations = graph.getNodesByKind("observation") as ObservationNode[];
-  const decisions = graph.getNodesByKind("decision") as DecisionNode[];
+  const observations = graph.getNodesByKind("observation");
+  const decisions = graph.getNodesByKind("decision");
 
   const lines: string[] = ["sequenceDiagram"];
   const title = options?.title ?? "Observation Loop";
@@ -555,7 +555,7 @@ export function listAllDiagrams(
   const result: Record<string, DiagramEntry[]> = {};
 
   // intent-links
-  const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
+  const intentLinks = graph.getNodesByKind("intent-link");
   if (intentLinks.length > 0) {
     result["intent-links"] = intentLinks.map(il => ({
       kind: "intent-links",
@@ -565,7 +565,7 @@ export function listAllDiagrams(
   }
 
   // dsl
-  const dslBundles = graph.getNodesByKind("dsl-bundle") as DslBundleNode[];
+  const dslBundles = graph.getNodesByKind("dsl-bundle");
   if (dslBundles.length > 0) {
     result["dsl"] = dslBundles.map(d => ({
       kind: "dsl",
@@ -575,7 +575,7 @@ export function listAllDiagrams(
   }
 
   // domain
-  const domains = graph.getNodesByKind("domain") as DomainNode[];
+  const domains = graph.getNodesByKind("domain");
   if (domains.length > 0) {
     result["domain"] = domains.map(d => ({
       kind: "domain",
@@ -597,7 +597,7 @@ export function listAllDiagrams(
   }
 
   // constraint
-  const constraints = graph.getNodesByKind("constraint") as ConstraintNode[];
+  const constraints = graph.getNodesByKind("constraint");
   if (constraints.length > 0) {
     result["constraint"] = constraints.map(c => ({
       kind: "constraint",
@@ -607,7 +607,7 @@ export function listAllDiagrams(
   }
 
   // table
-  const tables = graph.getNodesByKind("table") as TableNode[];
+  const tables = graph.getNodesByKind("table");
   if (tables.length > 0) {
     result["table"] = tables.map(t => ({
       kind: "table",

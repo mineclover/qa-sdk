@@ -161,7 +161,6 @@ describe("종단 E2E: checkout 흐름", () => {
     // catalog/config에서 파생 — 하드코딩 금지
     const catalogAxisCount = Object.keys(DEMO_CATALOG.axes).length;
     const catalogPrefixCount = Object.keys(DEMO_CATALOG.prefixes).length;
-    const catalogTableCount = Object.keys(DEMO_CATALOG.tables ?? {}).length;
     const configDomainCount = DEMO_DKG_CONFIG.domains.length;
     const configConsumerCount = DEMO_DKG_CONFIG.consumers.length;
     const configConstraintCount = DEMO_DKG_CONFIG.constraints.length;
@@ -169,7 +168,7 @@ describe("종단 E2E: checkout 흐름", () => {
 
     // DKG bootstrap가 catalog의 모든 엔티티를 등록했는지 검증
     expect(axes.length).toBe(catalogAxisCount);
-    expect(prefixes.length).toBe(catalogPrefixCount + catalogTableCount);
+    expect(prefixes.length).toBe(catalogPrefixCount);
     expect(domains.length).toBe(configDomainCount);
     expect(consumers.length).toBe(configConsumerCount);
     expect(intentLinks.length).toBe(DEMO_DKG_CONFIG.intentLinks?.length ?? intentLinks.length);

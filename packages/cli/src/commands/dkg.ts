@@ -447,10 +447,10 @@ function printPageInfo(result: { page: number; totalPages: number; total: number
 export function dkgReport(): void {
   const graph = getGraph();
 
-  const axes = graph.getNodesByKind("axis") as AxisNode[];
-  const prefixes = graph.getNodesByKind("prefix") as PrefixNode[];
-  const domains = graph.getNodesByKind("domain") as DomainNode[];
-  const consumers = graph.getNodesByKind("consumer") as ConsumerNode[];
+  const axes = graph.getNodesByKind("axis");
+  const prefixes = graph.getNodesByKind("prefix");
+  const domains = graph.getNodesByKind("domain");
+  const consumers = graph.getNodesByKind("consumer");
   const decisions = graph.getNodesByKind("decision");
   const constraints = graph.getNodesByKind("constraint");
   const observations = graph.getNodesByKind("observation");
@@ -529,7 +529,7 @@ export function dkgReport(): void {
 
 export function dkgAxes(opts: PageOptions): void {
   const graph = getGraph();
-  const axes = graph.getNodesByKind("axis") as AxisNode[];
+  const axes = graph.getNodesByKind("axis");
 
   const result = paginate(axes, opts);
 
@@ -554,7 +554,7 @@ export function dkgAxes(opts: PageOptions): void {
 
 export function dkgPrefixes(opts: PageOptions): void {
   const graph = getGraph();
-  const prefixes = graph.getNodesByKind("prefix") as PrefixNode[];
+  const prefixes = graph.getNodesByKind("prefix");
   const specs = catalogToPrefixSpecs(DEMO_CATALOG);
   const specMap = new Map(specs.map(s => [s.id, s]));
 
@@ -579,7 +579,7 @@ export function dkgPrefixes(opts: PageOptions): void {
 
 export function dkgDomains(opts: PageOptions): void {
   const graph = getGraph();
-  const domains = graph.getNodesByKind("domain") as DomainNode[];
+  const domains = graph.getNodesByKind("domain");
 
   const result = paginate(domains, opts);
 
@@ -845,7 +845,7 @@ export function dkgCoverage(): void {
 
 export function dkgSkills(): void {
   const graph = getGraph();
-  const skillNodes = graph.getNodesByKind("skill") as any[];
+  const skillNodes = graph.getNodesByKind("skill");
 
   if (skillNodes.length === 0) {
     console.log("\n  (skill 노드 없음. dkg refresh로 재부트스트랩하세요.)");
@@ -1140,7 +1140,7 @@ export function dkgTables(): void {
   const graph = getGraph();
   const topo = createDemoTopology();
 
-  const tables = graph.getNodesByKind("table") as TableNode[];
+  const tables = graph.getNodesByKind("table");
   if (tables.length === 0) {
     console.log("\n  테이블 노드 없음 (catalog에 tables 섹션이 정의되지 않음)");
     return;
@@ -1233,7 +1233,7 @@ export function dkgDsl(dslId?: string): void {
 
   if (!dslId) {
     // 목록 모드
-    const bundles = graph.getNodesByKind("dsl-bundle") as DslBundleNode[];
+    const bundles = graph.getNodesByKind("dsl-bundle");
     console.log(`\n══ DSL Bundles (${bundles.length}) ══`);
     for (const b of bundles) {
       const members = graph.neighbors(b.id, "contains");
@@ -2205,7 +2205,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
 
   // 3. 자동 Observation 생성 + ok 복귀 시 자동 해소
   const autoObs = metricsToObservations(metrics);
-  const existingObs = graph.getNodesByKind("observation") as ObservationNode[];
+  const existingObs = graph.getNodesByKind("observation");
   const autoResolved = resolveRecoveredMetrics(metrics, existingObs);
 
   if (autoObs.length > 0) {
@@ -2521,7 +2521,7 @@ export function dkgSpecAdd(opts: {
 
 export function dkgSpecList(): void {
   const graph = getGraph();
-  const specs = graph.getNodesByKind("spec") as any[];
+  const specs = graph.getNodesByKind("spec");
 
   console.log(`\n══ Spec Documents (${specs.length}개) ══`);
   if (specs.length === 0) { console.log("  (없음)"); return; }
@@ -3097,7 +3097,7 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
   // ════════════════════════════════════════════════════════════
 
   // ── observation 해소/생성 후보 탐색 (읽기 전용) ──
-  const existingObs = graph.getNodesByKind("observation") as any[];
+  const existingObs = graph.getNodesByKind("observation");
   const resolveTargets: Array<{ obs: any; reason: string }> = [];
 
   for (const obs of existingObs.filter(o => o.id.startsWith("OBS-SELF-BUILD-") && !o.resolution)) {

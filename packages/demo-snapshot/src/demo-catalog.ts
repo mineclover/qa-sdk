@@ -1035,6 +1035,38 @@ export const DEMO_CATALOG = {
         },
       },
     },
+
+    // ── 이벤트 분류 축 (코드베이스 상수 좌표화) ────────────────
+    event_category: {
+      id: "event_category", name: "이벤트 카테고리",
+      versions: {
+        v1: {
+          entries: ["user_action", "system_action", "network_action", "data_action", "agent_action", "sdk_action", "error", "state_change"],
+          capacity: 16,
+          ko: { user_action: "사용자행위", system_action: "시스템행위", network_action: "네트워크행위", data_action: "데이터행위", agent_action: "에이전트행위", sdk_action: "SDK행위", error: "오류", state_change: "상태변경" },
+        },
+      },
+    },
+    event_lifecycle_stage: {
+      id: "event_lifecycle_stage", name: "이벤트 생명주기 단계",
+      versions: {
+        v1: {
+          entries: ["interaction", "request", "processing", "result", "side_effect", "completion"],
+          capacity: 16,
+          ko: { interaction: "상호작용", request: "요청", processing: "처리", result: "결과", side_effect: "부수효과", completion: "완료" },
+        },
+      },
+    },
+    metric_type: {
+      id: "metric_type", name: "메트릭 유형",
+      versions: {
+        v1: {
+          entries: ["counter", "gauge", "histogram", "summary"],
+          capacity: 8,
+          ko: { counter: "카운터", gauge: "게이지", histogram: "히스토그램", summary: "서머리" },
+        },
+      },
+    },
   },
 
   prefixes: {
@@ -1586,6 +1618,36 @@ export const DEMO_CATALOG = {
       },
       versions: [
         { version: "v1", axisVersions: { record_type: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 이벤트 분류 prefix (코드베이스 상수 좌표화) ────────────
+    event_classification: {
+      id: "event_classification", name: "이벤트 분류",
+      description: "svc_ref × event_category × event_lifecycle_stage — 이벤트의 카테고리와 생명주기 단계를 좌표화",
+      labels: ["svc_ref", "event_category", "event_lifecycle_stage"],
+      meta: { category: "observation" as const, layer: 1, visualShape: "cube", heightRatio: 0.8, detailKind: "generic" },
+      dims: {
+        svc_ref:                { kind: "prefix_ref" as const, prefixId: "service" },
+        event_category:         { kind: "axis" as const, axisId: "event_category" },
+        event_lifecycle_stage:  { kind: "axis" as const, axisId: "event_lifecycle_stage" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { event_category: "v1", event_lifecycle_stage: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    metric_point: {
+      id: "metric_point", name: "메트릭 수집 포인트",
+      description: "svc_ref × metric_type × record_type — 어떤 서비스에서 어떤 유형의 메트릭이 어떤 레코드로 수집됐는가",
+      labels: ["svc_ref", "metric_type", "record_type"],
+      meta: { category: "observation" as const, layer: 1, visualShape: "column", heightRatio: 0.6, detailKind: "metric" },
+      dims: {
+        svc_ref:      { kind: "prefix_ref" as const, prefixId: "service" },
+        metric_type:  { kind: "axis" as const, axisId: "metric_type" },
+        record_type:  { kind: "axis" as const, axisId: "record_type" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { metric_type: "v1", record_type: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
       ],
     },
   },

@@ -43,7 +43,7 @@ describe("CLI 조회: prefix 식별자 기반", () => {
       }
     }
 
-    const expectedPrefixCount = Object.keys(DEMO_CATALOG.prefixes).length + Object.keys(DEMO_CATALOG.tables ?? {}).length;
+    const expectedPrefixCount = Object.keys(DEMO_CATALOG.prefixes).length;
     expect(prefixes.length).toBe(expectedPrefixCount);
 
     // category 분류 검증

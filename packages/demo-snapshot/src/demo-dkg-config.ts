@@ -106,7 +106,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-observation", name: "관측 DSL",
       description: "화면/API/흐름 관측 포인트 + 패턴 분류를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다.",
-      memberPrefixes: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly"],
+      memberPrefixes: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly", "event_classification"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "모든 관측 prefix의 svc_ref는 동일한 service 주소를 참조해야 한다",
@@ -193,7 +193,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-ingest", name: "수집 파이프라인 관측 DSL",
       description: "수집 레코드 유형과 스키마 검증을 서비스 단위로 추적.",
-      memberPrefixes: ["ingest_record", "schema_validation", "pipeline_point", "data_policy"],
+      memberPrefixes: ["ingest_record", "schema_validation", "pipeline_point", "data_policy", "metric_point"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "ingest_record(metric) 수집 시 schema_validation이 선행되어야 한다",

@@ -40,8 +40,8 @@ export class GraphRegistry implements GraphPort {
     return this.nodes.has(id);
   }
 
-  getNodesByKind(kind: DkgNodeKind): DkgNode[] {
-    return [...this.nodes.values()].filter(n => n.kind === kind);
+  getNodesByKind<K extends DkgNodeKind>(kind: K): Array<Extract<DkgNode, { kind: K }>> {
+    return [...this.nodes.values()].filter((n): n is Extract<DkgNode, { kind: K }> => n.kind === kind);
   }
 
   getAllNodes(): DkgNode[] {

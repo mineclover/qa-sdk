@@ -23,6 +23,7 @@ export interface GraphPort {
   getNode(id: string): GraphNodeLike | undefined;
   getNodeOrThrow(id: string): GraphNodeLike;
   getNodesByKind(kind: string): GraphNodeLike[];
+  getNodesByKind<K extends string>(kind: K): GraphNodeLike[];
   getAllNodes(): GraphNodeLike[];
   findNodes(kind: string, predicate?: (node: any) => boolean): any[];
 

@@ -470,6 +470,13 @@ ingest-server Phase 2 완료
 - 한국어 주석/UI 텍스트 사용
 - Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
 
+### 테스트에서 카탈로그 파생 카운트 하드코딩 금지
+- 축/prefix/domain/consumer/DSL 등 DEMO_CATALOG 또는 DEMO_DKG_CONFIG에서 파생되는 엔티티 수를 테스트에 숫자로 하드코딩하지 않는다
+- 올바른 방법: `expect(axes.length).toBe(Object.keys(DEMO_CATALOG.axes).length)` — SSOT에서 파생
+- 잘못된 방법: `expect(axes.length).toBe(71)` — 축 추가 시 깨짐
+- bootstrap 로직이 자동 생성하는 노드(observation, decision)는 `toBeGreaterThan(0)` 또는 불변조건으로 검증
+- 특정 테스트 시나리오에서 주입한 데이터 기반 카운트(예: 이벤트 3종 inject → activePrefixes: 3)는 하드코딩 허용
+
 ## ServiceBootConfig — 서비스 정체성 설정 (2026-03-22 확립)
 
 로깅 SDK의 핵심 질문은 "이 이벤트가 어디서 발생했는가"이다. `ServiceBootConfig`은 이 질문에 대한 **단일 정답**으로, 앱 부트 시 한 번 정의하면 모든 SDK 레이어(좌표 인코딩, 전송 메타데이터, 권한)가 자동으로 정렬된다.

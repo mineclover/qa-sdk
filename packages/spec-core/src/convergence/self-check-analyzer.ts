@@ -502,6 +502,22 @@ const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
 
   // ── dkg_observation_event: 누락 lifecycle_state ──
   { prefix: "dkg_observation_event", dims: { obs_source: "runtime", dkg_target_kind: "prefix", lifecycle_state: "reversed" } },
+
+  // ── event_classification: 이벤트 분류 좌표 ──
+  { prefix: "event_classification", dims: { event_category: "user_action", event_lifecycle_stage: "interaction" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "system_action", event_lifecycle_stage: "processing" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "network_action", event_lifecycle_stage: "request" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "data_action", event_lifecycle_stage: "result" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "agent_action", event_lifecycle_stage: "side_effect" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "sdk_action", event_lifecycle_stage: "completion" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "error", event_lifecycle_stage: "result" }, refDims: ["svc_ref"] },
+  { prefix: "event_classification", dims: { event_category: "state_change", event_lifecycle_stage: "processing" }, refDims: ["svc_ref"] },
+
+  // ── metric_point: 메트릭 수집 좌표 ──
+  { prefix: "metric_point", dims: { metric_type: "counter", record_type: "metric" }, refDims: ["svc_ref"] },
+  { prefix: "metric_point", dims: { metric_type: "gauge", record_type: "metric" }, refDims: ["svc_ref"] },
+  { prefix: "metric_point", dims: { metric_type: "histogram", record_type: "metric" }, refDims: ["svc_ref"] },
+  { prefix: "metric_point", dims: { metric_type: "summary", record_type: "metric" }, refDims: ["svc_ref"] },
 ];
 
 // ═══════════════════════════════════════════════════════════════
