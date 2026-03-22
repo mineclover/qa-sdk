@@ -175,3 +175,122 @@ async function readErrorReason(response: Response): Promise<string> {
     return "event not found in registry";
   }
 }
+
+// ═══════════════════════════════════════════════════════
+//  Registry Config Client — 개별 레포에서 사용
+// ═══════════════════════════════════════════════════════
+
+export interface RegistryConfig {
+  /** registry-service URL */
+  readonly registryUrl: string;
+  /** catalog ID (default: "demo") */
+  readonly catalogId?: string;
+  /** fetch timeout ms (default: 5000) */
+  readonly timeoutMs?: number;
+}
+
+/**
+ * registry-service에서 config를 받는 범용 클라이언트.
+ *
+ * 어떤 레포에서든 사용 가능:
+ *   const client = createRegistryConfigClient({ registryUrl: "http://localhost:3300" });
+ *   const endpoint = await client.resolveEndpoint({ namespace: "shop", name: "ingest-server", env: "dev", region: "asia" });
+ *   const catalog = await client.fetchCatalog();
+ *   const dkgConfig = await client.fetchConfig("dkg-config");
+ */
+export function createRegistryConfigClient(config: RegistryConfig) {
+  const baseUrl = config.registryUrl.replace(/\/+$/, "");
+  const catalogId = config.catalogId ?? "demo";
+  const timeoutMs = config.timeoutMs ?? 5_000;
+
+  async function safeFetch(url: string): Promise<Response | null> {
+    try {
+      return await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    } catch {
+      return null;
+    }
+  }
+
+  return {
+    /** 서비스 엔드포인트 URL resolve */
+    async resolveEndpoint(query: {
+      namespace: string;
+      name: string;
+      env: string;
+      region: string;
+    }): Promise<string | null> {
+      const params = new URLSearchParams({
+        catalog: catalogId,
+        namespace: query.namespace,
+        name: query.name,
+        env: query.env,
+        region: query.region,
+      });
+      const res = await safeFetch(`${baseUrl}/api/endpoints/resolve?${params}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { url?: string };
+      return body.url ?? null;
+    },
+
+    /** 전체 엔드포인트 목록 */
+    async listEndpoints(): Promise<Array<{
+      namespace: string; svcName: string; env: string; region: string; url: string;
+    }>> {
+      const res = await safeFetch(`${baseUrl}/api/endpoints?catalog=${catalogId}`);
+      if (!res?.ok) return [];
+      return res.json() as any;
+    },
+
+    /** 서비스 URL 맵 (config.js 대체용) */
+    async fetchServiceUrls(): Promise<Record<string, string>> {
+      const res = await safeFetch(`${baseUrl}/api/services/urls?catalog=${catalogId}`);
+      if (!res?.ok) return {};
+      return res.json() as any;
+    },
+
+    /** Catalog JSON fetch */
+    async fetchCatalog(): Promise<unknown | null> {
+      const res = await safeFetch(`${baseUrl}/catalogs/${catalogId}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { data?: string };
+      if (!body.data) return null;
+      try { return JSON.parse(body.data); } catch { return null; }
+    },
+
+    /**
+     * 설정 fetch.
+     * - "config" → /catalogs/:id/config (DkgConfig)
+     * - "pattern-rules" → /catalogs/:id/pattern-rules
+     */
+    async fetchConfig(configType: string): Promise<unknown | null> {
+      const res = await safeFetch(`${baseUrl}/catalogs/${catalogId}/${configType}`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { data?: string };
+      if (!body.data) return null;
+      try { return JSON.parse(body.data); } catch { return null; }
+    },
+
+    /** GENERATION hash 확인 */
+    async fetchGeneration(): Promise<{
+      catalogHash: string;
+      dkgConfigHash: string | null;
+      prefixCount: number;
+      axisCount: number;
+    } | null> {
+      const res = await safeFetch(`${baseUrl}/health/generation`);
+      if (!res?.ok) return null;
+      const body = await res.json() as { generations?: Record<string, any> };
+      return body.generations?.[catalogId] ?? null;
+    },
+
+    /** health check */
+    async isHealthy(): Promise<boolean> {
+      const res = await safeFetch(`${baseUrl}/health`);
+      if (!res?.ok) return false;
+      const body = await res.json() as { ok?: boolean };
+      return body.ok === true;
+    },
+  };
+}
+
+export type RegistryConfigClient = ReturnType<typeof createRegistryConfigClient>;
