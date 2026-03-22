@@ -29,7 +29,19 @@ describe("traceFlows — IntentLink invariant 검증", () => {
           pipeline_point: "pipeline_point:v1:0",
           engine_event: "engine_event:v1:0",
           schema_event: "schema_event:v1:0",
+          schema_validation: "schema_validation:v1:0",
           event: "event:v4:0",
+          auth_event: "auth_event:v1:0",
+          rbac: "rbac:v1:0",
+          content: "content:v1:0",
+          skill_execution: "skill_execution:v1:0",
+          cli_event: "cli_event:v1:0",
+          dkg_event: "dkg_event:v1:0",
+          dkg_decision_event: "dkg_decision_event:v1:0",
+          dkg_observation_event: "dkg_observation_event:v1:0",
+          build_event: "build_event:v1:0",
+          test_event: "test_event:v1:0",
+          contract_check: "contract_check:v1:0",
         },
         timestamp: "2026-03-20T00:00:00Z",
         session_id: "test-session",
@@ -84,7 +96,7 @@ describe("traceFlows — IntentLink invariant 검증", () => {
     const records: AddressContextRecord[] = [
       {
         address_context: {
-          content: "content:v1:0", // content는 어떤 IntentLink에도 속하지 않음
+          relational: "relational:v1:0", // relational은 어떤 IntentLink에도 속하지 않음
         },
         timestamp: "2026-03-20T00:00:00Z",
         session_id: "test-session",
