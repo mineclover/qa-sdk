@@ -52,6 +52,7 @@ import {
   buildPatternHealthReport,
   scanPromotionCandidates,
   analyzeSelfCheck,
+  traceFlows,
   auditSchemaHealth,
 } from "@qa-sdk/spec-core/analysis";
 import {
@@ -3384,6 +3385,23 @@ export function dkgSelfCheck(opts: { apply?: boolean } = {}): void {
     }
   } else {
     console.log(`    ✅ dsl-dev 불변조건 통과`);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase E: IntentLink 흐름 검증
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase E: flow-trace ──`);
+  // 합성 이벤트는 단일 prefix만 포함하므로 IntentLink 검증에서 제외 (false positive 방지)
+  const liveRecords = records.filter(r => r.execution_mode !== "synthetic");
+  const flowResult = traceFlows(graph, liveRecords, { date: now.slice(0, 10) });
+  if (flowResult.violations.length > 0) {
+    console.log(`    🔴 IntentLink 위반 ${flowResult.violations.length}종 (${flowResult.violations.reduce((s, v) => s + v.count, 0)}건):`);
+    for (const v of flowResult.violations) {
+      console.log(`      ${v.intentLinkId}: missing=[${v.missingPrefixes.join(",")}] (${v.count}건)`);
+    }
+  } else {
+    console.log(`    ✅ IntentLink 흐름 정상 (${flowResult.checkedRecords}건 검사, ${graph.getNodesByKind("intent-link").length}개 링크)`);
   }
 
   // ════════════════════════════════════════════════════════════
