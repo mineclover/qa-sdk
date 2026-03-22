@@ -407,11 +407,62 @@ function genContextTypes(catalog: Catalog, contentHash: string): string {
   const lines = [header(catalog.id, contentHash)];
 
   lines.push(`import type { QaContext } from "@qa-sdk/context";`);
+  lines.push(`import type { ServiceBootConfig } from "@qa-sdk/core";`);
   lines.push(`import type { PrefixId } from "./prefix-ids.js";`);
   lines.push(``);
   lines.push(`/** Catalog "${catalog.id}" 기반 타입 안전 QaContext. prefix 자동완성 제공. */`);
   lines.push(`export type TypedQaContext = QaContext<PrefixId>;`);
   lines.push(``);
+
+  // service prefix의 axis entries로 ServiceBootConfig narrowing
+  const serviceDef = catalog.prefixes["service"];
+  if (serviceDef) {
+    const envAxis = serviceDef.dims["env"];
+    const regionAxis = serviceDef.dims["region"];
+    const svcNameAxis = serviceDef.dims["svc_name"];
+    const nsAxis = serviceDef.dims["namespace"];
+
+    const getEntries = (axisId: string): readonly string[] => {
+      const axis = catalog.axes[axisId];
+      if (!axis) return [];
+      const vkeys = Object.keys(axis.versions);
+      const latest = axis.versions[vkeys[vkeys.length - 1]];
+      return latest?.entries ?? [];
+    };
+
+    const envEntries = envAxis?.kind === "axis" ? getEntries(envAxis.axisId) : [];
+    const regionEntries = regionAxis?.kind === "axis" ? getEntries(regionAxis.axisId) : [];
+    const svcEntries = svcNameAxis?.kind === "axis" ? getEntries(svcNameAxis.axisId) : [];
+    const nsEntries = nsAxis?.kind === "axis" ? getEntries(nsAxis.axisId) : [];
+
+    lines.push(`/**`);
+    lines.push(` * Catalog "${catalog.id}" 기반 ServiceBootConfig.`);
+    lines.push(` * env/region/name/namespace가 실제 축 엔트리로 제한되어 컴파일 타임 검증 가능.`);
+    lines.push(` */`);
+    lines.push(`export interface TypedServiceBootConfig extends Omit<ServiceBootConfig, "env" | "region" | "name" | "namespace"> {`);
+    if (envEntries.length > 0) {
+      lines.push(`  readonly env: ${envEntries.map(e => `"${e}"`).join(" | ")};`);
+    } else {
+      lines.push(`  readonly env: string;`);
+    }
+    if (regionEntries.length > 0) {
+      lines.push(`  readonly region: ${regionEntries.map(e => `"${e}"`).join(" | ")};`);
+    } else {
+      lines.push(`  readonly region: string;`);
+    }
+    if (svcEntries.length > 0) {
+      lines.push(`  readonly name: ${svcEntries.map(e => `"${e}"`).join(" | ")};`);
+    } else {
+      lines.push(`  readonly name: string;`);
+    }
+    if (nsEntries.length > 0) {
+      lines.push(`  readonly namespace: ${nsEntries.map(e => `"${e}"`).join(" | ")};`);
+    } else {
+      lines.push(`  readonly namespace: string;`);
+    }
+    lines.push(`}`);
+    lines.push(``);
+  }
 
   return lines.join("\n");
 }
@@ -512,7 +563,7 @@ function genBarrel(_catalog: Catalog, hasDkg: boolean, contentHash: string): str
   lines.push(`export * from "./axes.js";`);
   lines.push(`export * from "./dims.js";`);
   lines.push(`export { sdk } from "./sdk-factory.js";`);
-  lines.push(`export type { TypedQaContext } from "./context-types.js";`);
+  lines.push(`export type { TypedQaContext, TypedServiceBootConfig } from "./context-types.js";`);
 
   if (hasDkg) {
     lines.push(`export * from "./dsl.js";`);

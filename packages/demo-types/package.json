@@ -19,6 +19,8 @@
     "@qa-sdk/context": "workspace:*"
   },
   "devDependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "demo-snapshot": "workspace:*",
     "typescript": "^5.8.2"
   }
 }

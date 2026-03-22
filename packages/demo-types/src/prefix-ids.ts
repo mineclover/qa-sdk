@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:27:34
+// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:59:32
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** Catalog prefix 이름 리터럴 유니온 (39개) */
@@ -142,7 +142,7 @@ export const VERSION_META = {
   /** Catalog 구조 content hash (SHA-256 prefix 12자) */
   contentHash: "abb55ca63a8b" as const,
   /** 생성 시각 (ISO 8601) */
-  generatedAt: "2026-03-22T05:27:34.623Z" as const,
+  generatedAt: "2026-03-22T05:59:32.948Z" as const,
   /** prefix별 version (생성 시점 기준) */
   prefixVersions: {
     "auth_event": "v1",
