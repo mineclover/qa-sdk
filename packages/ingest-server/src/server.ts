@@ -1,6 +1,16 @@
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
-import { newDlqId } from "@qa-sdk/core";
+import {
+  newDlqId,
+  type DlqStore,
+  type GraphStore,
+  type RecordStore,
+  type ScenarioSpecStore,
+  type SessionStore,
+  type TraceStore,
+  type TransmissionStore,
+  type VerdictStore,
+} from "@qa-sdk/core";
 import { RegistryClient } from "@qa-sdk/registry-client";
 import { closeClient, createDb, withTransaction } from "@qa-sdk/store";
 import {
@@ -45,15 +55,15 @@ import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js"
 const PHASE_TWO_QUEUE_NAME = "ingest-phase-two";
 
 interface RuntimeStores {
-  db: ReturnType<typeof createDb>;
-  dlqStore: DrizzleDlqStore;
-  graphStore: DrizzleGraphStore;
-  recordStore: DrizzleRecordStore;
-  scenarioSpecStore: DrizzleScenarioSpecStore;
-  sessionStore: DrizzleSessionStore;
-  traceStore: DrizzleTraceStore;
-  transmissionStore: DrizzleTransmissionStore;
-  verdictStore: DrizzleVerdictStore;
+  db: ReturnType<typeof createDb> | null;
+  dlqStore: DlqStore;
+  graphStore: GraphStore;
+  recordStore: RecordStore;
+  scenarioSpecStore: ScenarioSpecStore;
+  sessionStore: SessionStore;
+  traceStore: TraceStore;
+  transmissionStore: TransmissionStore;
+  verdictStore: VerdictStore;
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -80,7 +90,7 @@ async function startServer() {
     logger,
     runCleanup: () =>
       cleanupExpiredData({
-        cleanupStore: cleanupStore as any,
+        cleanupStore: cleanupStore!,
         logger,
       }),
   });
@@ -125,7 +135,7 @@ async function startServer() {
       try {
         if (env.PATTERN_CLASSIFICATION_ENABLED && specConvergence.classifyPattern) {
           // PatternRules: registry → 코드 상수 fallback
-          let patternRules = (specConvergence as any).DEMO_PATTERN_RULES;
+          let patternRules = specConvergence.DEMO_PATTERN_RULES;
           const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
           if (registryUrl) {
             try {
@@ -158,9 +168,9 @@ async function startServer() {
           recordStore: stores.recordStore,
           convergenceFns,
           patternFns,
-          graphProvider: () => graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] } as any,
+          graphProvider: () => graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] },
           catalogProvider: () => graphProvider.getCatalog(),
-          dkgStore: graphProvider.getDkgStore() as any,
+          dkgStore: graphProvider.getDkgStore() ?? undefined,
           logger,
         },
         {
@@ -216,8 +226,8 @@ async function startServer() {
 
   const app = createApp({
     appLifecycle,
-    checkDbHealth: createDbHealthChecker(stores.db),
-    cleanupStore: cleanupStore as any,
+    checkDbHealth: stores.db ? createDbHealthChecker(stores.db) : undefined,
+    cleanupStore,
     debugStore,
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
@@ -236,14 +246,16 @@ async function startServer() {
     traceStore: stores.traceStore,
     transmissionStore: stores.transmissionStore,
     verdictStore: stores.verdictStore,
-    withTraceTransaction: (fn) =>
-      withTransaction(stores.db, async (tx) =>
-        fn({
-          recordStore: new DrizzleRecordStore(tx),
-          traceStore: new DrizzleTraceStore(tx),
-          sessionStore: new DrizzleSessionStore(tx),
-        }),
-      ),
+    withTraceTransaction: stores.db
+      ? (fn) =>
+          withTransaction(stores.db!, async (tx) =>
+            fn({
+              recordStore: new DrizzleRecordStore(tx),
+              traceStore: new DrizzleTraceStore(tx),
+              sessionStore: new DrizzleSessionStore(tx),
+            }),
+          )
+      : (fn) => fn({ recordStore: stores.recordStore, traceStore: stores.traceStore, sessionStore: stores.sessionStore }),
     dlqMaxRetryAttempts: env.DLQ_MAX_RETRY_ATTEMPTS,
     convergencePipeline,
     corsOrigin: env.CORS_ORIGIN,
@@ -295,7 +307,7 @@ async function startWorker() {
     try {
       const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
       const { DEMO_CATALOG } = await import("demo-snapshot");
-      workerTransitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS) as any;
+      workerTransitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS);
       workerTransitionCatalog = DEMO_CATALOG;
       logger.info(`transition engine enabled in worker (${DEMO_TRANSITION_SPECS.length} specs)`);
     } catch (error) {
@@ -337,15 +349,15 @@ function createRuntimeStores(): RuntimeStores {
   if (!env.TRACE_DATABASE_URL) {
     // in-memory store (개발/데모용 — DB 없이 동작)
     return {
-      db: null as any,
-      dlqStore: new InMemoryDlqStore() as any,
-      graphStore: new InMemoryGraphStore() as any,
-      recordStore: new InMemoryRecordStore() as any,
-      scenarioSpecStore: new InMemoryScenarioSpecStore() as any,
-      sessionStore: new InMemorySessionStore() as any,
-      traceStore: new InMemoryTraceStore() as any,
-      transmissionStore: new InMemoryTransmissionStore() as any,
-      verdictStore: new InMemoryVerdictStore() as any,
+      db: null,
+      dlqStore: new InMemoryDlqStore(),
+      graphStore: new InMemoryGraphStore(),
+      recordStore: new InMemoryRecordStore(),
+      scenarioSpecStore: new InMemoryScenarioSpecStore(),
+      sessionStore: new InMemorySessionStore(),
+      traceStore: new InMemoryTraceStore(),
+      transmissionStore: new InMemoryTransmissionStore(),
+      verdictStore: new InMemoryVerdictStore(),
     };
   }
 
@@ -368,7 +380,7 @@ function createTaskQueue({
   dlqStore,
   logger,
 }: {
-  dlqStore: DrizzleDlqStore;
+  dlqStore: DlqStore;
   logger: ReturnType<typeof createLogger>;
 }) {
   if (!env.TASK_QUEUE_ENABLED || !env.REDIS_URL) {

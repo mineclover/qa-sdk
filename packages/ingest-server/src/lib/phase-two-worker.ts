@@ -28,10 +28,10 @@ export interface ConvergencePipelinePort {
 
 /** TransitionFunctions 최소 인터페이스 (순환 의존 방지) */
 export interface TransitionEnginePort {
-  processSession(input: { sessionId: string; events: readonly Record<string, unknown>[] }): {
-    instances: readonly Record<string, unknown>[];
-    violations: readonly Record<string, unknown>[];
-    unmatchedCount: number;
+  processSession(input: { readonly sessionId: string; readonly events: readonly unknown[] }): {
+    readonly instances: readonly unknown[];
+    readonly violations: readonly unknown[];
+    readonly unmatchedCount: number;
   };
   decodeCtx(catalog: unknown, encoded: Record<string, string>): Record<string, string>;
 }
