@@ -28,6 +28,10 @@ export interface AddressContextRecord {
   readonly session_id?: string;
   /** 이벤트 키 */
   readonly event_key?: string;
+  /** 행위 주체 식별자 (패턴 분류용) */
+  readonly actor_id?: string;
+  /** 실제 서비스 유저 ID (패턴 분류용) */
+  readonly user_id?: string;
   /** 실행 모드 — live/test/synthetic/replay */
   readonly execution_mode?: ExecutionMode;
   /** 실행 식별자 — 테스트 suite ID 등 */

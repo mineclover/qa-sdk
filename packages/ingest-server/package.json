@@ -7,7 +7,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "test": "vitest run",
     "start": "node dist/server.js",
@@ -21,18 +21,27 @@
     "@qa-sdk/registry-client": "workspace:*",
     "@qa-sdk/store": "workspace:*",
     "bullmq": "^5.0.0",
+    "dotenv": "^17.3.1",
     "hono": "^4.7.5",
     "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "ws": "^8.19.0",
     "zod": "^3.24.2"
   },
   "peerDependencies": {
+    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@qa-sdk/spec-core": { "optional": true },
-    "demo-snapshot": { "optional": true }
+    "@qa-sdk/spec-core": {
+      "optional": true
+    },
+    "@qa-sdk/convergence": {
+      "optional": true
+    },
+    "demo-snapshot": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

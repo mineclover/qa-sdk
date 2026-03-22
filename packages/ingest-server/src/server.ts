@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import {
@@ -10,6 +11,7 @@ import {
   type TraceStore,
   type TransmissionStore,
   type VerdictStore,
+  type Catalog,
 } from "@qa-sdk/core";
 import { RegistryClient } from "@qa-sdk/registry-client";
 import { closeClient, createDb, withTransaction } from "@qa-sdk/store";
@@ -47,7 +49,7 @@ import { createStreamConnectionRegistry } from "./lib/stream-connection-registry
 import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
-import type { ConvergencePipelineRunner, ConvergenceFunctions, PatternFunctions } from "./lib/convergence-pipeline.js";
+import type { ConvergencePipelineRunner, ConvergenceFunctions, ConvergenceGraphPort, PatternFunctions } from "./lib/convergence-pipeline.js";
 import type { TransitionFunctions } from "@qa-sdk/spec-core/transition";
 import type { TransitionEnginePort } from "./lib/phase-two-worker.js";
 import type { ConvergenceSchedulerHandle } from "./lib/convergence-scheduler.js";
@@ -128,7 +130,7 @@ async function startServer() {
         collectMetrics: specConvergence.collectMetrics,
         metricsToObservations: specConvergence.metricsToObservations,
         traceFlows: specDkg.traceFlows,
-      } as ConvergenceFunctions;
+      } as unknown as ConvergenceFunctions;
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
       let patternFns: PatternFunctions | undefined;
@@ -168,8 +170,8 @@ async function startServer() {
           recordStore: stores.recordStore,
           convergenceFns,
           patternFns,
-          graphProvider: () => graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] },
-          catalogProvider: () => graphProvider.getCatalog(),
+          graphProvider: () => (graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] }) as unknown as ConvergenceGraphPort,
+          catalogProvider: () => graphProvider.getCatalog() as Catalog,
           dkgStore: graphProvider.getDkgStore() ?? undefined,
           logger,
         },

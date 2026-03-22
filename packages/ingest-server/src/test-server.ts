@@ -3,6 +3,7 @@
  * playwright.config.ts의 webServer에서 사용.
  */
 import { serve } from "@hono/node-server";
+import type { Catalog } from "@qa-sdk/core";
 import { createNodeWebSocket } from "@hono/node-ws";
 import {
   InMemoryDlqStore,
@@ -60,7 +61,7 @@ async function setupConvergence() {
         traceFlows: specDkg.traceFlows as any,
       },
       graphProvider: () => provider.getGraph() as any,
-      catalogProvider: () => provider.getCatalog(),
+      catalogProvider: () => provider.getCatalog() as Catalog,
       dkgStore: provider.getDkgStore() as any,
     }, { recordThreshold: 10, flushIntervalMs: 5_000 });
     console.log(`[e2e:test-server] convergence pipeline enabled`);

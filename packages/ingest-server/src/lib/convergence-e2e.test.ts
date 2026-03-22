@@ -103,7 +103,7 @@ describe("관측 루프 E2E", () => {
         recordStore,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({ axes: {}, prefixes: {} }),
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
         dkgStore,
       },
       {
@@ -182,7 +182,7 @@ describe("관측 루프 E2E", () => {
         } as any,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({}),
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );
@@ -232,7 +232,7 @@ describe("관측 루프 E2E", () => {
         recordStore,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({}),
+        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );

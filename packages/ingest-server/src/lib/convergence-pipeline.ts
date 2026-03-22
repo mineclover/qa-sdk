@@ -18,13 +18,19 @@ import type {
   PatternStats,
   PatternHealthReport,
   PatternRule,
+  Catalog,
 } from "@qa-sdk/core";
+import type {
+  AddressContextRecord,
+  UsageData,
+  MetricValue,
+  ObservationNode,
+} from "@qa-sdk/convergence";
 import type { Logger } from "pino";
-import type { GraphRegistryPort } from "../types/spec-core-ports.js";
 
-// ── 동적 import 대상 함수 시그니처 ──────────────────────
+// ── 동적 import 대상 함수 시그니처 (구체 타입) ─────────
 
-/** 패턴 분류 엔진 입력 (spec-core의 ClassifierInput 미러) */
+/** 패턴 분류 엔진 입력 */
 export interface ClassifierInputPort {
   readonly events: readonly { readonly event_key: string; readonly timestamp: string; readonly actor_id?: string; readonly user_id?: string }[];
   readonly sessionId?: string;
@@ -32,16 +38,21 @@ export interface ClassifierInputPort {
   readonly ownerType?: string;
 }
 
-/** spec-core에서 동적 import할 함수들 */
+/** 그래프 조회 최소 인터페이스 (convergence 함수에 전달) */
+export interface ConvergenceGraphPort {
+  getNodesByKind(kind: string): readonly { kind: string; id: string; [key: string]: unknown }[];
+  [key: string]: unknown;
+}
+
+/** convergence 분석 함수 (spec-core/convergence에서 동적 import) */
 export interface ConvergenceFunctions {
-  aggregateUsageData: (catalog: unknown, records: readonly unknown[]) => unknown;
-  collectMetrics: (catalog: unknown, graph: unknown, usage: unknown) => readonly unknown[];
-  metricsToObservations: (metrics: readonly unknown[], options?: { date?: string }) => readonly unknown[];
-  resolveRecoveredMetrics?: (metrics: readonly unknown[], existingObs: readonly unknown[], options?: { date?: string }) => readonly unknown[];
-  /** IntentLink invariant 검증 (optional) */
-  traceFlows?: (graph: unknown, records: readonly unknown[], options?: { date?: string }) => {
+  aggregateUsageData: (catalog: Catalog, records: readonly AddressContextRecord[]) => UsageData;
+  collectMetrics: (catalog: Catalog, graph: ConvergenceGraphPort, usage: UsageData | null) => MetricValue[];
+  metricsToObservations: (metrics: readonly MetricValue[], options?: { date?: string }) => ObservationNode[];
+  resolveRecoveredMetrics?: (metrics: readonly MetricValue[], existingObs: readonly ObservationNode[], options?: { date?: string }) => ObservationNode[];
+  traceFlows?: (graph: ConvergenceGraphPort, records: readonly AddressContextRecord[], options?: { date?: string }) => {
     violations: readonly { intentLinkId: string; count: number }[];
-    observations: readonly unknown[];
+    observations: readonly ObservationNode[];
     summary: string;
   };
 }
@@ -58,13 +69,13 @@ export interface PatternFunctions {
 /** DkgSqliteStore 인터페이스 (최소 필수) */
 export interface DkgStorePort {
   saveUsageSnapshotWithObservations(
-    usage: unknown,
-    observations: readonly unknown[],
+    usage: UsageData,
+    observations: readonly ObservationNode[],
   ): { snapshotId: number; observationsWritten: number };
   /** observation 노드 업데이트 (자동 해소용) */
-  updateNode?(node: unknown): void;
+  updateNode?(node: ObservationNode): void;
   /** 노드/엣지 추가 저장 (prompts 연결 등) */
-  saveNodes?(nodes: readonly unknown[], edges: readonly unknown[], source: string): void;
+  saveNodes?(nodes: readonly unknown[], edges: readonly { type: string; from: string; to: string }[], source: string): void;
 }
 
 // ── Pipeline 설정 ────────────────────────────────────
@@ -82,8 +93,8 @@ export interface ConvergencePipelineDeps {
   recordStore: RecordStore;
   convergenceFns: ConvergenceFunctions;
   patternFns?: PatternFunctions;
-  graphProvider: () => GraphRegistryPort;
-  catalogProvider: () => unknown;
+  graphProvider: () => ConvergenceGraphPort;
+  catalogProvider: () => Catalog;
   dkgStore?: DkgStorePort;
   logger?: Logger;
 }
@@ -208,7 +219,7 @@ export class ConvergencePipelineRunner {
     const { recordStore, convergenceFns, patternFns, graphProvider, catalogProvider, dkgStore, logger } = this.deps;
 
     // 1. 레코드 조회 — address_context가 있는 것만 수집
-    const addressRecords: unknown[] = [];
+    const addressRecords: AddressContextRecord[] = [];
     for (const traceId of traceIds) {
       try {
         const records = await recordStore.findByTraceId(traceId);
@@ -216,14 +227,14 @@ export class ConvergencePipelineRunner {
           const rec = r as unknown as Record<string, unknown>;
           if (rec.addressContext && typeof rec.addressContext === "object") {
             addressRecords.push({
-              address_context: rec.addressContext,
-              timestamp: rec.createdAt ?? new Date().toISOString(),
-              log_id: rec.id,
+              address_context: rec.addressContext as Record<string, string>,
+              timestamp: (rec.createdAt as string) ?? new Date().toISOString(),
+              log_id: (rec.id as string) ?? "",
               trace_id: traceId,
-              session_id: rec.sessionId,
-              event_key: rec.eventKey ?? (rec.addressContext as Record<string, unknown>).event_key,
-              actor_id: rec.actorId,
-              user_id: rec.userId,
+              session_id: rec.sessionId as string | undefined,
+              event_key: (rec.eventKey as string) ?? "",
+              actor_id: rec.actorId as string | undefined,
+              user_id: rec.userId as string | undefined,
             });
           }
         }
@@ -246,13 +257,13 @@ export class ConvergencePipelineRunner {
     const metrics = convergenceFns.collectMetrics(catalog, graph, usage);
 
     // 4. 자동 observation 생성
-    const observations = [...convergenceFns.metricsToObservations(metrics)];
+    const observations: ObservationNode[] = [...convergenceFns.metricsToObservations(metrics)];
 
     // 4b. ok 복귀 metric의 자동 해소
     let autoResolvedCount = 0;
     if (convergenceFns.resolveRecoveredMetrics && dkgStore) {
       try {
-        const existingObs = graph.getNodesByKind("observation");
+        const existingObs = graph.getNodesByKind("observation") as unknown as ObservationNode[];
         const resolved = convergenceFns.resolveRecoveredMetrics(metrics, existingObs);
         if (resolved.length > 0) {
           for (const obs of resolved) {
@@ -300,13 +311,13 @@ export class ConvergencePipelineRunner {
         const result = dkgStore.saveUsageSnapshotWithObservations(usage, observations);
         snapshotId = result.snapshotId;
 
-        // OBS-PATTERN → CON-004/CON-005 prompts 자동 연결
-        const patternObs = observations.filter((o: any) => o.id?.startsWith("OBS-PATTERN-"));
+        // OBS-PATTERN → CON-005 prompts 자동 연결
+        const patternObs = observations.filter(o => o.id.startsWith("OBS-PATTERN-"));
         if (patternObs.length > 0) {
-          const promptsEdges = patternObs.map((o: any) => ({
+          const promptsEdges = patternObs.map(o => ({
             type: "prompts" as const,
-            from: o.id as string,
-            to: "CON-005",  // critical anomaly → auto observation constraint
+            from: o.id,
+            to: "CON-005",
           }));
           try {
             dkgStore.saveNodes?.([], promptsEdges, "auto");
@@ -353,18 +364,15 @@ export class ConvergencePipelineRunner {
    * 6. previousPatternStats 갱신 (다음 윈도우 비교용)
    */
   private runPatternClassification(
-    addressRecords: readonly unknown[],
+    addressRecords: readonly AddressContextRecord[],
     fns: PatternFunctions,
-    observations: unknown[],
+    observations: ObservationNode[],
     logger?: Logger,
   ): PatternFlushResult {
-    type Rec = Record<string, unknown>;
-
     // 1. 세션별 그룹핑
-    const sessionMap = new Map<string, Rec[]>();
-    for (const raw of addressRecords) {
-      const rec = raw as Rec;
-      const sid = (rec.session_id as string) ?? "unknown";
+    const sessionMap = new Map<string, AddressContextRecord[]>();
+    for (const rec of addressRecords) {
+      const sid = rec.session_id ?? "unknown";
       let group = sessionMap.get(sid);
       if (!group) {
         group = [];
@@ -376,18 +384,15 @@ export class ConvergencePipelineRunner {
     // 2. 각 세션을 패턴으로 분류
     const classifications: PatternClassification[] = [];
     for (const [sessionId, records] of sessionMap) {
-      // 세션 내 이벤트를 timestamp 순 정렬
-      const sorted = [...records].sort((a, b) => {
-        const ta = new Date(a.timestamp as string).getTime();
-        const tb = new Date(b.timestamp as string).getTime();
-        return ta - tb;
-      });
+      const sorted = [...records].sort((a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
 
       const events = sorted.map(r => ({
-        event_key: (r.event_key as string) ?? "",
-        timestamp: (r.timestamp as string) ?? new Date().toISOString(),
-        actor_id: r.actor_id as string | undefined,
-        user_id: r.user_id as string | undefined,
+        event_key: r.event_key ?? "",
+        timestamp: r.timestamp ?? new Date().toISOString(),
+        actor_id: r.actor_id,
+        user_id: r.user_id,
       }));
 
       // event_key가 없는 세션은 건너뜀
@@ -410,24 +415,20 @@ export class ConvergencePipelineRunner {
       previous: this.previousPatternStats.length > 0 ? this.previousPatternStats : undefined,
     });
 
-    // 4. critical/warning 이상 → observation 변환
+    // 4. critical/warning 이상 → DKG ObservationNode 변환
     for (const anomaly of anomalies) {
       if (anomaly.severity === "info") continue;
       observations.push({
+        kind: "observation",
         id: `OBS-PATTERN-${anomaly.kind}-${anomaly.detectedAt.slice(0, 10)}`,
-        kind: "observation" as const,
-        intent: "investigate" as const,
-        subjectId: "pattern_anomaly",
-        summary: anomaly.description,
-        detail: `kind=${anomaly.kind}, severity=${anomaly.severity}`,
-        status: "open" as const,
-        createdAt: anomaly.detectedAt,
-        suggestions: [{
-          label: anomaly.kind === "unclassified"
-            ? "새 패턴 규칙 추가 검토"
-            : `${anomaly.kind} 원인 조사`,
-          targetId: "pattern_anomaly",
-        }],
+        date: anomaly.detectedAt.slice(0, 10),
+        source: "runtime",
+        subjects: ["pattern_anomaly", anomaly.kind],
+        finding: `[${anomaly.severity}] ${anomaly.description} (kind=${anomaly.kind})`,
+        intent: anomaly.severity === "critical" ? "action-needed" : "monitoring",
+        suggestion: anomaly.kind === "unclassified"
+          ? { kind: "add-constraint", rule: "새 패턴 규칙 추가 검토" }
+          : undefined,
       });
     }
 
