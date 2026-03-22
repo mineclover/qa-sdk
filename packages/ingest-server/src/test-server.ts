@@ -93,49 +93,44 @@ async function setupConvergence() {
         const transitionCatalog = provider.getCatalog();
 
         // 새 trace 감지 시 transition processing
-        const processedSessions = new Set<string>();
+        const processedCounts = new Map<string, number>();
         setInterval(async () => {
           try {
             const allTraceIds = recordStore.getTraceIds();
             for (const traceId of allTraceIds) {
-              if (processedSessions.has(traceId)) continue;
-              processedSessions.add(traceId);
 
               const records = await recordStore.findByTraceId(traceId);
               if (records.length === 0) continue;
+              // 이전 처리 시 레코드 수와 같으면 스킵 (새 이벤트 없음)
+              if (processedCounts.get(traceId) === records.length) continue;
+              processedCounts.set(traceId, records.length);
 
-              // address_context 디코딩 → 이벤트 좌표 추출
-              const { decodePrefix } = await import("@qa-sdk/core");
-              const cat = transitionCatalog;
+              // address_context 디코딩 → TransitionEvent 생성
               const events = records.map(r => {
-                const decoded: Record<string, string> = {};
+                let decoded: Record<string, string> = {};
                 if (r.addressContext) {
-                  for (const [prefix, serialized] of Object.entries(r.addressContext)) {
-                    try {
-                      const parts = String(serialized).split(":");
-                      const ver = parts[1];
-                      const addr = parseInt(parts[2], 10);
-                      if (!isNaN(addr)) {
-                        const dims = decodePrefix(cat as any, prefix, ver, addr);
-                        for (const [k, v] of Object.entries(dims)) decoded[k] = String(v);
-                      }
-                    } catch { /* 디코딩 실패 무시 */ }
+                  try {
+                    decoded = transitionEngine.decodeCtx(transitionCatalog as Catalog, r.addressContext);
+                  } catch (err) {
+                    console.warn(`[transition] decode failed for ${r.logId}:`, err);
                   }
                 }
                 return {
                   log_id: r.logId,
                   timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
-                  // TransitionEvent.address_context = 디코딩된 축 값 맵
                   address_context: decoded,
+                  context_id: r.qaSessionId ?? traceId,
+                  actor_id: (r as unknown as Record<string, unknown>).actorId as string | undefined,
                 };
               });
+              if (events.length > 0) {
+                console.log(`[transition] decoded sample:`, JSON.stringify(events[0].address_context));
+              }
 
               const result = transitionEngine.processSession({ sessionId: traceId, events });
-              if (result.instances.length > 0) {
-                console.log(`[transition] trace=${traceId}: ${result.instances.length} transitions, ${result.violations.length} violations, ${result.unmatchedCount} unmatched`);
-              }
+              console.log(`[transition] trace=${traceId}: events=${events.length} instances=${result.instances.length} violations=${result.violations.length} unmatched=${result.unmatchedCount}`);
             }
-          } catch { /* 무시 */ }
+          } catch (err) { console.warn("[transition] polling error:", err); }
         }, 5_000);
 
         console.log(`[e2e:test-server] transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);

@@ -31,10 +31,19 @@ export function decodeAddressContext(
       const parsed = parseSerializedAddress(serialized);
       const decoded = decodePrefix(catalog, parsed.prefix, parsed.version, parsed.address);
 
+      // prefix dims에서 label → axisId 매핑 추출
+      const prefixDef = (catalog as any).prefixes?.[parsed.prefix];
+      const dims = prefixDef?.dims as Record<string, { kind: string; axisId?: string }> | undefined;
+
       for (const [label, dim] of Object.entries(decoded)) {
         // prefix_ref의 value는 정수 주소 — string entry만 포함
         if (typeof dim.value === "string") {
           result[label] = dim.value;
+          // axisId가 label과 다르면 axisId로도 매핑 (TransitionSpec 호환)
+          const axisId = dims?.[label]?.axisId;
+          if (axisId && axisId !== label) {
+            result[axisId] = dim.value;
+          }
         }
       }
     } catch {
