@@ -668,6 +668,20 @@ ingest-server Phase 2 완료
 - **라이브러리** (core, spec-core, codec): constructor 인자 우선, `process.env` fallback 최소화. 필요 시 JSDoc으로 문서화
 - **테스트**: `process.env.DATABASE_URL` 등 직접 접근 허용
 
+### 브라우저 SDK 에러 처리
+- `emitWithCoords`, `browserTrack` 등 인코딩 호출은 반드시 try-catch — 잘못된 prefix/dim 값이 UI를 크래시하면 안 됨
+- 인코딩 실패 시 coordinate 없이 emit (이벤트 유실보다 좌표 누락이 낫다)
+- `createQaMonitorAsync` registry fetch 실패 → console.warn + 로컬 fallback (silent swallow 금지)
+
+### 서비스 네트워크 호출
+- 서버 시작 시 외부 서비스 fetch에 timeout 필수: `AbortSignal.timeout(5_000)`
+- JSON.parse(외부 데이터)는 try-catch 필수 — 손상된 데이터가 서비스를 죽이면 안 됨
+
+### codegen 결정론성
+- `generateCatalogTypes()`는 timestamp를 **1회 캡처**하여 전 파일에 동일 값 사용
+- 같은 catalog → 같은 contentHash (SHA-256 결정론적)
+- timestamp 외 입력이 같으면 동일 출력 (VCS 노이즈 최소화)
+
 ### ISO-8601 타임스탬프 비교 — 문자열 비교 금지
 - 타임스탬프 정렬/비교 시 `localeCompare`, `<`, `>` 문자열 비교를 사용하지 않는다
 - `"10:00:00Z"` vs `"10:00:00.100Z"` — Z(0x5A) > .(0x2E)이므로 밀리초 없는 타임스탬프가 뒤로 밀린다
