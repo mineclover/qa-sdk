@@ -348,3 +348,61 @@ ServiceTopology 추론:
 | **Table 질의는 GraphRegistry 전용** | GraphPort에 Table 메서드를 추가하지 않음. Table은 구체 구현의 확장 기능 |
 | **CLI로 조회** | `dkg tables` (목록), `dkg table <id>` (상세 + impact) |
 | **DEMO_CATALOG 6개 테이블** | members, orgs, items, orders, carts, cart_items |
+
+---
+
+## ADR-009: Transition Spec DSL — 좌표계 위의 상태 해석 계층
+
+### 결정
+
+좌표계(DEMO_CATALOG)는 불변 primitive로 유지하면서, 상태 전이 해석을 외부 spec으로 분리한다. 상태는 별도 vocabulary가 아닌 기존 축(axis)의 entry로 표현한다.
+
+### 배경
+
+기존 시스템은 "이 흐름이 올바른가?"(Verdict: pass/fail)만 판단했다. "이 흐름으로 무슨 상태가 되었는가?"를 알려면 이벤트 시퀀스에 상태 전이 의미를 부여하는 해석 계층이 필요했다. 별도 slot vocabulary를 만들면 축 시스템과 이중 관리가 되므로, 기존 축을 그대로 사용한다.
+
+### 구조
+
+```
+DEMO_CATALOG (좌표 + 축) ← 불변
+  ↓ match (좌표 패턴)
+TransitionSpec (해석 규칙) ← 버전별 진화
+  ↓ output (축 entry 설정)
+StateStore (축별 상태) ← 런타임 파생
+```
+
+TransitionEngine 7단계: collect → match → bind → load → validate → apply → emit
+
+### 핵심 타입
+
+- `StateCondition` — axis + eq/neq/in/exists (축 entry 기반 전제조건)
+- `StateAssignment` — axis + value (축 entry 설정, null = 제거)
+- `TransitionInstance` — 전이 결과 (input/output 스냅샷 포함)
+- `TransitionSpecNode` — DKG 노드 (matchAxes/inputAxes/outputAxes 역할별 분리)
+
+### DKG 통합
+
+- `consumes` 엣지: TransitionSpecNode → 참조 축
+- `depends-on` 엣지: outputAxes ∩ inputAxes로 전이 간 상태 의존성 자동 파생
+- `satisfies` 엣지: slotRefs ∩ DSL member axes로 invariant 형식 구현 연결
+- `CON-EFFECT-VOCAB`: effect kind 정규 vocabulary 제약
+
+### Ingest 통합 (Phase 2.5)
+
+```
+Phase 2.3: Verdict
+Phase 2.5: Decode + Transition Matching (TRANSITION_ENGINE_ENABLED)
+Phase 2.6: Convergence Notification
+```
+
+에러 격리: Phase 2.5 전체 실패 → verdict/convergence 미영향.
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **상태는 축으로 표현** | 별도 slot vocabulary 만들지 않음. `flow_step`, `lifecycle_state` 등 기존 축 사용 |
+| **TransitionSpec이 SSOT** | DKG TransitionSpecNode는 bridge 자동 파생. 수동 정의 금지 |
+| **address_context 디코딩** | TransitionEngine은 디코딩된 이벤트만 받음. decode 책임은 호출자 |
+| **effect vocabulary 통제** | create/update/move/consume/open/close. 추가 시 DKG Decision 필수 |
+| **metric은 주입** | autoRunnable: false. Phase 2.5 결과에서 값을 계산하여 주입 |

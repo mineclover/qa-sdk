@@ -50,6 +50,17 @@ Core Event 정의, payload 가이드, 그래프 의미론 힌트.
 | [pipeline.spec.md](pipeline/pipeline.spec.md) | 4단계 순수 연산 파이프라인 | @qa-sdk/engine | implemented |
 | [ingest.spec.md](pipeline/ingest.spec.md) | POST /v1/ingest — 수집 + 저장 + 후처리 오케스트레이션 | @qa-sdk/ingest-server | implemented |
 
+### transition/ — 전이 해석 계층
+
+좌표계 위의 상태 전이 DSL. 이벤트 시퀀스에 상태 의미를 부여한다.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [plan/transition-spec-dsl/README.md](../plan/transition-spec-dsl/README.md) | Transition Spec DSL 전체 설계 | @qa-sdk/spec-core | implemented |
+| [plan/transition-spec-dsl/tier-1-types-and-schema.md](../plan/transition-spec-dsl/tier-1-types-and-schema.md) | 타입 + 스키마 + registry | @qa-sdk/spec-core | implemented |
+| [plan/transition-spec-dsl/tier-2-state-and-engine.md](../plan/transition-spec-dsl/tier-2-state-and-engine.md) | 축 기반 상태 + 7단계 엔진 | @qa-sdk/spec-core | implemented |
+| [plan/transition-spec-dsl/tier-3-pipeline-integration.md](../plan/transition-spec-dsl/tier-3-pipeline-integration.md) | ingest 통합 + metric + API | @qa-sdk/spec-core + ingest + query | implemented |
+
 ### server/ingest/ — Ingest Server 엔드포인트
 
 Ingest Server의 조회, 스트리밍, 시나리오 관리, 운영 엔드포인트.
