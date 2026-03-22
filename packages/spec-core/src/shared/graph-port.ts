@@ -41,8 +41,17 @@ export interface GraphPort {
   // ── 읽기: 복합 질의 ──
   intentLinksFor(targetId: string): Array<{ id: string; intent: string; invariant?: string }>;
   cascadeFromAxis(axisId: string): Array<{ id: string; reason: "composes" | "references"; distance: number }>;
+  cascadeFromPrefix(prefixId: string): {
+    domains: Array<{ id: string; affectedPrefixes: string[] }>;
+    consumers: Array<{ id: string; via: string }>;
+  };
+  activeConstraints(targetId: string): Array<{ constraintId: string; rule: string }>;
   getPrefixesByCategory(category: string): GraphNodeLike[];
   groupPrefixesByCategory(): Record<string, GraphNodeLike[]>;
+
+  // ── 읽기: 통계 ──
+  readonly nodeCount: number;
+  readonly edgeCount: number;
 
   // ── 쓰기 ──
   addNode(node: GraphNodeLike): void;

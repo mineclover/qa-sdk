@@ -6,7 +6,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import { analyzeImpact } from "./analyze-impact.js";
 import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
 import type { ImpactAnalysisResult, AffectedPrefix } from "../dkg.types.js";
@@ -44,7 +44,7 @@ export interface SafeEntryAddResult {
  */
 export function safeEntryAdd(
   catalog: Catalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
   input: SafeEntryAddInput,
 ): SafeEntryAddResult {
   const axis = (catalog.axes as Record<string, {

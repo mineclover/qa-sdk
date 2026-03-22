@@ -6,7 +6,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { ServiceTopologyRegistry } from "../service-topology.js";
 import type {
   DkgNodeKind,
@@ -101,7 +101,7 @@ export interface TraceResult {
 // ═══════════════════════════════════════════════════════════════
 
 export function traceNode(
-  graph: GraphRegistry,
+  graph: GraphPort,
   catalog: Catalog,
   nodeId: string,
   options?: {
@@ -280,7 +280,7 @@ export function traceNode(
 
   return {
     id: nodeId,
-    kind: node.kind,
+    kind: node.kind as DkgNodeKind,
     name,
     details,
     composition,

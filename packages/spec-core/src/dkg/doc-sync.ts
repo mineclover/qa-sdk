@@ -9,7 +9,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "./graph-registry.js";
+import type { GraphPort } from "../shared/graph-port.js";
 import type { PrefixNode } from "./dkg.types.js";
 
 export interface DocSyncReport {
@@ -41,7 +41,7 @@ export interface DocSyncReport {
  */
 export function generateDocSyncReport(
   catalog: Catalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): DocSyncReport {
   // Catalog
   const axesList = Object.entries(catalog.axes).map(([id, axis]) => {

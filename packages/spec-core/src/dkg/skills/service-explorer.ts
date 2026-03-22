@@ -9,7 +9,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { ServiceTopologyRegistry, SharedContract, DependencyGraph } from "../service-topology.js";
 import { buildDependencyGraph } from "../service-topology.js";
 import { checkAllDomainsHealth, type DomainHealthResult } from "./domain-health.js";
@@ -193,7 +193,7 @@ function getMinHeadroom(
 // ═══════════════════════════════════════════════════════════════
 
 export function exploreService(
-  graph: GraphRegistry,
+  graph: GraphPort,
   topo: ServiceTopologyRegistry,
   catalog: Catalog,
   serviceId: string,
@@ -286,7 +286,7 @@ export function exploreService(
 // ═══════════════════════════════════════════════════════════════
 
 export function explorePrefix(
-  graph: GraphRegistry,
+  graph: GraphPort,
   topo: ServiceTopologyRegistry,
   catalog: Catalog,
   prefixId: string,
@@ -385,7 +385,7 @@ export function explorePrefix(
 // ═══════════════════════════════════════════════════════════════
 
 export function exploreDsl(
-  graph: GraphRegistry,
+  graph: GraphPort,
   catalog: Catalog,
   dslId: string,
 ): DslProfile | null {
@@ -471,7 +471,7 @@ export function exploreDsl(
 // ═══════════════════════════════════════════════════════════════
 
 export function systemOverview(
-  graph: GraphRegistry,
+  graph: GraphPort,
   topo: ServiceTopologyRegistry,
   catalog: Catalog,
 ): SystemOverview {

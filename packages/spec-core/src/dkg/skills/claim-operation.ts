@@ -5,7 +5,7 @@
  * 그래프 변경 및 store.setMeta는 호출자가 수행.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { ServiceTopologyRegistry } from "../service-topology.js";
 import type { ObservationNode } from "../dkg.types.js";
 
@@ -58,7 +58,7 @@ export function claimKey(targetId: string): string {
 // ═══════════════════════════════════════════════════════════════
 
 export function analyzeClaimImpact(
-  graph: GraphRegistry,
+  graph: GraphPort,
   topo: ServiceTopologyRegistry | null,
   targetId: string,
 ): ClaimImpact {
@@ -108,14 +108,14 @@ function emptyImpact(): ClaimImpact {
 // ═══════════════════════════════════════════════════════════════
 
 export function prepareClaim(
-  graph: GraphRegistry,
+  graph: GraphPort,
   topo: ServiceTopologyRegistry | null,
   targetId: string,
   by: string,
   existingClaim: ClaimData | null,
   reason?: string,
 ): ClaimResult {
-  if (!graph.hasNode(targetId)) {
+  if (!graph.getNode(targetId)) {
     return { verdict: "blocked", reason: `대상 노드 없음: ${targetId}`, claim: null, impact: null, summary: `대상 노드 없음: ${targetId}` };
   }
 
@@ -146,7 +146,7 @@ export function prepareClaim(
 // ═══════════════════════════════════════════════════════════════
 
 export function prepareRelease(
-  graph: GraphRegistry,
+  graph: GraphPort,
   targetId: string,
   existingClaim: ClaimData | null,
   date?: string,

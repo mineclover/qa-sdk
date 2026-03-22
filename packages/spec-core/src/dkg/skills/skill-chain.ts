@@ -6,7 +6,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type { DecisionNode, VersionEventNode, ImpactAnalysisResult } from "../dkg.types.js";
 import { safeEntryAdd, type SafeEntryAddResult } from "./safe-entry-add.js";
 import { versionEventFromDiff, type DiffInput } from "./version-event-derive.js";
@@ -48,7 +48,7 @@ export interface SkillChainResult {
  */
 export function entryAddChain(
   catalog: Catalog,
-  graph: GraphRegistry,
+  graph: GraphPort,
   axisId: string,
   entry: string,
   options?: { date?: string },
@@ -138,7 +138,7 @@ export function entryAddChain(
  * 시스템 전체 건강 진단 체인.
  */
 export function systemHealthChain(
-  graph: GraphRegistry,
+  graph: GraphPort,
 ): SkillChainResult {
   const steps: ChainStepResult[] = [];
 

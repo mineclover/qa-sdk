@@ -4,7 +4,7 @@
  * weighted-index diff → DKG 그래프 순회 → 최종 영향 범위.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
+import type { GraphPort } from "../../shared/graph-port.js";
 import type {
   ImpactAnalysisInput,
   ImpactAnalysisResult,
@@ -16,7 +16,7 @@ import type {
 } from "../dkg.types.js";
 
 export function analyzeImpact(
-  graph: GraphRegistry,
+  graph: GraphPort,
   input: ImpactAnalysisInput,
 ): ImpactAnalysisResult {
   const affectedPrefixes: AffectedPrefix[] = [];
