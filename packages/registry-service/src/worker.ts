@@ -56,7 +56,7 @@ class D1StoreDriver {
   }
 }
 
-// DDL 실행
+// DDL 실행 — registry-service 전 테이블 + index-meta prefix/version 테이블
 async function initSchema(db: D1Database) {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS catalogs (
@@ -79,6 +79,16 @@ async function initSchema(db: D1Database) {
       meta_json TEXT, updated_at TEXT NOT NULL,
       PRIMARY KEY (id, catalog_id)
     );
+    CREATE TABLE IF NOT EXISTS prefix (
+      prefix TEXT PRIMARY KEY, owner TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('leaf', 'composite')),
+      number_type TEXT NOT NULL DEFAULT 'number' CHECK (number_type IN ('number', 'bigint')),
+      created_at TEXT NOT NULL, meta_json TEXT, labels_json TEXT
+    );
+    CREATE TABLE IF NOT EXISTS draft_lock (
+      prefix TEXT NOT NULL, version_id TEXT NOT NULL, locked_at TEXT NOT NULL,
+      PRIMARY KEY (prefix, version_id)
+    );
   `);
 }
 
@@ -89,20 +99,19 @@ export default {
     // 첫 요청 시 스키마 초기화 (D1은 migration 기반이 아닌 idempotent DDL)
     await initSchema(env.DB);
 
-    // SQL store 생성 (동적 import로 번들 크기 최소화)
+    // 전체 SQL store — D1 위에서 동작 (in-memory 없음)
     const { SqlCatalogStore } = await import("./stores/sql-catalog-store.js");
     const { SqlConfigStore } = await import("./stores/sql-config-store.js");
     const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
-
-    // prefix/version store — CF에서는 in-memory (catalog/config/endpoint가 주 용도)
-    const { InMemoryPrefixOwnerStore } = await import("./stores/in-memory-prefix-owner-store.js");
-    const { InMemoryDraftLockStore } = await import("./stores/in-memory-draft-lock-store.js");
+    const { SqlPrefixOwnerStore } = await import("./stores/sql-prefix-owner-store.js");
+    const { SqlDraftLockStore } = await import("./stores/sql-draft-lock-store.js");
+    const { SqlPrefixRegistry, SqlVersionLifecycleStore } = await import("index-meta") as any;
 
     const app = createApp({
-      prefixRegistry: { register: async () => {}, get: async () => null, list: async () => [], delete: async () => {} } as any,
-      versionStore: { createDraft: async () => {}, listVersions: async () => [] } as any,
-      ownerStore: new InMemoryPrefixOwnerStore(),
-      lockStore: new InMemoryDraftLockStore(),
+      prefixRegistry: new SqlPrefixRegistry(driver as any),
+      versionStore: new SqlVersionLifecycleStore(driver as any),
+      ownerStore: new SqlPrefixOwnerStore(driver as any),
+      lockStore: new SqlDraftLockStore(driver as any),
       catalogStore: new SqlCatalogStore(driver as any),
       configStore: new SqlConfigStore(driver as any),
       endpointStore: new SqlServiceEndpointStore(driver as any),
