@@ -14,7 +14,7 @@ canvas{position:fixed;inset:0;z-index:0}
 .hud *{pointer-events:none}
 .hud button,.hud input,.hud .vb{pointer-events:all}
 .hud-tr{pointer-events:all}
-.hud-tl{top:14px;left:18px}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
+.hud-tl{top:14px;left:18px;max-height:calc(100vh - 40px);overflow-y:auto}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
 .hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
 .hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
 .m{font-family:'IBM Plex Mono',monospace}
@@ -176,6 +176,26 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     <div class="slider-row m"><label>grid</label><input type="range" id="sl-grid" min="0" max="100" value="40"><span id="sl-grid-v">40%</span></div>
     <div class="slider-row m"><label>bg</label><input type="range" id="sl-bg" min="0" max="30" value="3"><span id="sl-bg-v">3%</span></div>
     <div class="slider-row m"><label>fog</label><input type="range" id="sl-fog" min="0" max="30" value="6"><span id="sl-fog-v">6‰</span></div>
+    <div class="slider-row m"><label>beam</label><input type="range" id="sl-beam" min="0" max="100" value="60"><span id="sl-beam-v">60%</span></div>
+    <div class="slider-row m"><label>beam life</label><input type="range" id="sl-beam-life" min="1" max="20" value="4"><span id="sl-beam-life-v">4s</span></div>
+  </div>
+  <div class="cd" style="margin-top:4px" id="server-panel">
+    <div class="cl m">Server</div>
+    <div class="cs m" style="line-height:1.8">
+      <div id="srv-ingest" style="font-size:9px"><span style="color:#334">● ingest</span></div>
+      <div id="srv-registry" style="font-size:9px"><span style="color:#334">● registry</span></div>
+    </div>
+    <button class="btn m" id="btn-check-server" style="margin-top:4px;width:100%;font-size:8px">Check Servers</button>
+  </div>
+  <div class="cd" style="margin-top:4px" id="filter-panel">
+    <div class="cl m">Filter</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px" id="prefix-filters">
+      <!-- JS에서 동적 생성: 각 prefix에 대한 토글 칩 -->
+    </div>
+    <div style="margin-top:4px;display:flex;gap:4px">
+      <button class="btn m" id="btn-filter-all" style="font-size:7px;flex:1">All</button>
+      <button class="btn m" id="btn-filter-none" style="font-size:7px;flex:1">None</button>
+    </div>
   </div>
 </div>
 <div class="hud hud-tr" id="hud-tr">
@@ -362,7 +382,7 @@ const FH=new FlowHistory();
 // ═══════════════════════════════════════════════════
 //  THREE.JS SCENE
 // ═══════════════════════════════════════════════════
-let settings={baseOpacity:0.3,glowMul:1.2,edgeOpacity:0.3,gridOpacity:0.4,bgLevel:0.03,fogDensity:0.006};
+let settings={baseOpacity:0.3,glowMul:1.2,edgeOpacity:0.3,gridOpacity:0.4,bgLevel:0.03,fogDensity:0.006,beamOpacity:0.6,beamLife:4};
 
 const canvas=document.getElementById('c');
 const R=new T.WebGLRenderer({canvas,antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);
@@ -664,6 +684,8 @@ $('sl-edge').oninput=e=>{settings.edgeOpacity=e.target.value/100;$('sl-edge-v').
 $('sl-grid').oninput=e=>{settings.gridOpacity=e.target.value/100;$('sl-grid-v').textContent=e.target.value+'%';gf1.material.opacity=settings.gridOpacity;gf2.material.opacity=settings.gridOpacity*0.5};
 $('sl-bg').oninput=e=>{const v=e.target.value/100;$('sl-bg-v').textContent=e.target.value+'%';scene.background=new T.Color(0.02+v*0.3,0.02+v*0.3,0.03+v*0.4)};
 $('sl-fog').oninput=e=>{settings.fogDensity=e.target.value/1000;$('sl-fog-v').textContent=e.target.value+'‰';scene.fog=new T.FogExp2(scene.background,settings.fogDensity)};
+$('sl-beam').oninput=e=>{const v=e.target.value/100;$('sl-beam-v').textContent=e.target.value+'%';settings.beamOpacity=v};
+$('sl-beam-life').oninput=e=>{const v=parseInt(e.target.value);$('sl-beam-life-v').textContent=v+'s';settings.beamLife=v};
 
 // View modes
 document.querySelectorAll('.vb').forEach(b=>b.addEventListener('click',()=>{
@@ -710,6 +732,50 @@ $('btn-reset').addEventListener('click',()=>{
   FT.setRoleFilter(null);document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
   updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
+});
+
+// Server check
+$('btn-check-server').addEventListener('click', async ()=>{
+  // Check ingest
+  try {
+    const r=await fetch($('ws-url').value.replace('ws://','http://').replace('wss://','https://').replace('/v1/ws','/health'));
+    $('srv-ingest').innerHTML=r.ok?'<span style="color:#2ed573">● ingest: ok</span>':'<span style="color:#ff3860">● ingest: '+r.status+'</span>';
+  } catch { $('srv-ingest').innerHTML='<span style="color:#ff3860">● ingest: offline</span>'; }
+  // Check registry
+  try {
+    const r=await fetch('http://localhost:3300/health');
+    $('srv-registry').innerHTML=r.ok?'<span style="color:#2ed573">● registry: ok</span>':'<span style="color:#ff3860">● registry: '+r.status+'</span>';
+  } catch { $('srv-registry').innerHTML='<span style="color:#ff3860">● registry: offline</span>'; }
+});
+
+// Prefix filter chips
+const prefixVisible=new Map();
+const filterContainer=$('prefix-filters');
+GRIDS.forEach(g=>{
+  prefixVisible.set(g.id, true);
+  const chip=document.createElement('span');
+  chip.className='btn m';
+  chip.style.cssText='font-size:7px;padding:2px 6px';
+  chip.textContent=g.id;
+  chip.dataset.prefix=g.id;
+  chip.classList.add('on');
+  chip.addEventListener('click',()=>{
+    const vis=!prefixVisible.get(g.id);
+    prefixVisible.set(g.id, vis);
+    chip.classList.toggle('on', vis);
+    const grp=groups.get(g.id);
+    if(grp) grp.visible=vis;
+  });
+  filterContainer.appendChild(chip);
+});
+
+$('btn-filter-all').addEventListener('click',()=>{
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,true);const grp=groups.get(g.id);if(grp)grp.visible=true});
+  filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.add('on'));
+});
+$('btn-filter-none').addEventListener('click',()=>{
+  GRIDS.forEach(g=>{prefixVisible.set(g.id,false);const grp=groups.get(g.id);if(grp)grp.visible=false});
+  filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.remove('on'));
 });
 
 // Cell click — InstancedMesh 지원
