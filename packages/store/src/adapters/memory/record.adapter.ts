@@ -69,6 +69,20 @@ export class InMemoryRecordStore implements RecordStore {
     );
   }
 
+  /** 전체 고유 traceId 목록 반환 */
+  getTraceIds(): string[] {
+    const ids = new Set<string>();
+    for (const record of this.records.values()) {
+      ids.add(record.traceId);
+    }
+    return [...ids];
+  }
+
+  /** 저장된 레코드 수 */
+  get size(): number {
+    return this.records.size;
+  }
+
   private selectRecords(
     predicate: (record: StoredRecord) => boolean,
   ): StoredRecord[] {

@@ -4,6 +4,7 @@
  */
 import { serve } from "@hono/node-server";
 import type { Catalog } from "@qa-sdk/core";
+import type { ConvergenceGraphPort, DkgStorePort } from "./lib/convergence-pipeline.js";
 import { createNodeWebSocket } from "@hono/node-ws";
 import {
   InMemoryDlqStore,
@@ -53,41 +54,33 @@ async function setupConvergence() {
     const specConvergence = await import("@qa-sdk/spec-core/convergence");
     const specDkg = await import("@qa-sdk/spec-core/dkg");
 
+    const graph = provider.getGraph();
+    const dkgStore = provider.getDkgStore();
     const pipeline = new ConvergencePipelineRunner({
-      recordStore: recordStore as any,
+      recordStore,
       convergenceFns: {
-        aggregateUsageData: specConvergence.aggregateUsageData as any,
-        collectMetrics: specConvergence.collectMetrics as any,
-        metricsToObservations: specConvergence.metricsToObservations as any,
-        traceFlows: specDkg.traceFlows as any,
+        aggregateUsageData: specConvergence.aggregateUsageData,
+        collectMetrics: specConvergence.collectMetrics,
+        metricsToObservations: specConvergence.metricsToObservations,
+        traceFlows: specDkg.traceFlows,
       },
-      graphProvider: () => provider.getGraph() as any,
+      graphProvider: () => (graph ?? { getNodesByKind: () => [] }) as ConvergenceGraphPort,
       catalogProvider: () => provider.getCatalog() as Catalog,
-      dkgStore: provider.getDkgStore() as any,
+      dkgStore: dkgStore as DkgStorePort | undefined,
+      logger: { info: console.log, warn: console.warn, error: console.error, debug: () => {} } as any,
     }, { recordThreshold: 5, flushIntervalMs: 5_000 });
 
     // ingest 완료 시 convergence pipeline에 traceId 알림
-    // recordStore에서 직접 최근 traceId를 주기적으로 수집
+    // InMemoryRecordStore.getTraceIds()로 새 traceId를 주기적으로 수집
     const seenTraces = new Set<string>();
-    setInterval(async () => {
+    setInterval(() => {
       try {
-        // InMemoryRecordStore의 내부 records Map에서 traceId 추출
-        const allRecords = await recordStore.findBySessionId("*").catch(() => []);
-        // findBySessionId("*")가 작동하지 않으면 빈 배열
-        // 대안: 전체 record를 순회하여 새 traceId 발견
-        const store = recordStore as any;
-        if (store.records instanceof Map) {
-          const newTraceIds: string[] = [];
-          for (const [, record] of store.records as Map<string, any>) {
-            const tid = record.traceId;
-            if (tid && !seenTraces.has(tid)) {
-              seenTraces.add(tid);
-              newTraceIds.push(tid);
-            }
-          }
-          if (newTraceIds.length > 0) {
-            pipeline.notifyCompletion(newTraceIds);
-          }
+        const allTraceIds = recordStore.getTraceIds();
+        const newTraceIds = allTraceIds.filter(tid => !seenTraces.has(tid));
+        for (const tid of newTraceIds) seenTraces.add(tid);
+        if (newTraceIds.length > 0) {
+          pipeline.notifyCompletion(newTraceIds);
+          console.log(`[convergence] notified ${newTraceIds.length} new traces`);
         }
       } catch { /* 무시 */ }
     }, 3_000);
