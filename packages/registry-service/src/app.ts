@@ -19,6 +19,7 @@ import { createDiagramRoutes } from "./routes/diagrams.js";
 import { createServiceRoutes } from "./routes/services.js";
 import { createEndpointRoutes } from "./routes/endpoints.js";
 import { createEventSchemaRoutes } from "./routes/event-schemas.js";
+import { createDecodeMapRoutes } from "./routes/decode-map.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { ConfigStore } from "./stores/config-store.js";
@@ -91,6 +92,9 @@ export function createApp(deps: AppDeps) {
   }
   if (deps.eventSchemaStore) {
     app.route("/", createEventSchemaRoutes({ eventSchemaStore: deps.eventSchemaStore }));
+  }
+  if (deps.catalogStore) {
+    app.route("/", createDecodeMapRoutes({ catalogStore: deps.catalogStore }));
   }
   if (deps.devDashboardProvider) {
     app.route("/", createDevDashboardRoutes({

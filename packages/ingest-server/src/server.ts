@@ -328,6 +328,7 @@ async function startWorker() {
     verdictStore: stores.verdictStore,
     transitionEngine: workerTransitionEngine,
     transitionCatalog: workerTransitionCatalog,
+    decodeServiceUrl: env.DECODE_SERVICE_URL,
   });
 
   logger.info(

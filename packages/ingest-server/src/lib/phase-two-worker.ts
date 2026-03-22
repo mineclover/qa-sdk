@@ -14,6 +14,7 @@ import {
 } from "@qa-sdk/core";
 import { computePendingVerdicts, reconstructPendingTraces } from "@qa-sdk/engine";
 import { aggregateMetrics } from "./metric-aggregator.js";
+import { decodeAddressContext } from "./decode-client.js";
 import type { Logger } from "pino";
 
 export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
@@ -48,6 +49,8 @@ export interface PhaseTwoWorkerDeps {
   convergencePipeline?: ConvergencePipelinePort;
   transitionEngine?: TransitionEnginePort;
   transitionCatalog?: unknown;
+  /** decode-service URL — 설정 시 address_context 디코딩에 외부 서비스 사용 */
+  decodeServiceUrl?: string;
   logger?: Logger;
   taskQueue?: TaskQueue<TaskPayload>;
 }
@@ -168,14 +171,34 @@ export async function processPendingPhaseTwo(
       for (const traceId of reconstructResult.reconstructedTraceIds) {
         const records = await deps.recordStore.findByTraceId(traceId);
         // address_context가 있는 레코드만 디코딩 + 전이 매칭
-        const decodedEvents = records
-          .filter((r: any) => r.addressContext && typeof r.addressContext === "object")
-          .map((r: any) => ({
-            log_id: r.id ?? r.logId ?? "",
-            timestamp: r.createdAt ?? r.timestamp ?? "",
-            address_context: deps.transitionEngine!.decodeCtx(deps.transitionCatalog!, r.addressContext as Record<string, string>),
+        const withCtx = records.filter((r: any) => r.addressContext && typeof r.addressContext === "object");
+        const decodedEvents: any[] = [];
+        for (const r of withCtx) {
+          const ctx = r.addressContext as Record<string, string>;
+          // 1) decode-service 우선 시도 (설정된 경우)
+          let decoded: Record<string, string> | undefined;
+          if (deps.decodeServiceUrl) {
+            const result = await decodeAddressContext(deps.decodeServiceUrl, ctx);
+            if (result) {
+              decoded = {};
+              for (const [k, v] of Object.entries(result)) {
+                for (const [ek, ev] of Object.entries(v.entities)) {
+                  decoded[`${k}.${ek}`] = ev;
+                }
+              }
+            }
+          }
+          // 2) 로컬 fallback
+          if (!decoded) {
+            decoded = deps.transitionEngine!.decodeCtx(deps.transitionCatalog!, ctx);
+          }
+          decodedEvents.push({
             ...r,
-          }));
+            log_id: (r as any).id ?? (r as any).logId ?? "",
+            timestamp: (r as any).createdAt ?? (r as any).timestamp ?? "",
+            address_context: decoded,
+          });
+        }
 
         if (decodedEvents.length > 0) {
           const result = deps.transitionEngine.processSession({

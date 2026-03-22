@@ -27,6 +27,8 @@ export const envSchema = z.object({
   CATALOG_ID: z.string().default("demo"),
   // ── Pattern Classification ─────────────────────────
   PATTERN_CLASSIFICATION_ENABLED: booleanWithDefaultFalse,
+  // ── Decode Service ───────────────────────────────────
+  DECODE_SERVICE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
   // ── Transition Engine (Phase 2.5) ─────────────────
   TRANSITION_ENGINE_ENABLED: booleanWithDefaultFalse,
   TRANSITION_VIOLATION_MODE: z.enum(["strict", "warn"]).default("warn"),
