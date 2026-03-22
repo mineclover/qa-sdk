@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Diagram Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Sora:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg: #0d1117;
+  --sidebar: #161b22;
+  --card: #1c2128;
+  --border: #30363d;
+  --mint: #64ffda;
+  --cyan: #58a6ff;
+  --txt: #c9d1d9;
+  --dim: #8b949e;
+  --hover: #21262d;
+  --active: rgba(100, 255, 218, 0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mint);
+  letter-spacing: -0.3px;
+}
+
+.sidebar-header .sub {
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 4px;
+}
+
+.section {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 0 16px 8px;
+}
+
+.preset-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--txt);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.preset-item:hover {
+  background: var(--hover);
+}
+
+.preset-item.active {
+  background: var(--active);
+  color: var(--mint);
+}
+
+.preset-item .item-id {
+  display: block;
+  font-weight: 500;
+}
+
+.preset-item .item-desc {
+  display: block;
+  font-family: 'Sora', sans-serif;
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 2px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Custom Input Section ── */
+.custom-section {
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.custom-section h3 {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+
+#custom-input {
+  width: 100%;
+  height: 120px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--txt);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 8px;
+  resize: vertical;
+}
+
+#custom-input:focus {
+  outline: none;
+  border-color: var(--mint);
+}
+
+#render-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px;
+  background: rgba(100, 255, 218, 0.1);
+  border: 1px solid var(--mint);
+  border-radius: 4px;
+  color: var(--mint);
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#render-btn:hover {
+  background: rgba(100, 255, 218, 0.2);
+}
+
+/* ── Main Area ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#main-header {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+#diagram-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.action-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+#diagram-container {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#diagram-container .mermaid {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  min-width: 400px;
+}
+
+#empty-state {
+  text-align: center;
+  color: var(--dim);
+  margin-top: 120px;
+}
+
+#empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+#empty-state p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* Mermaid 테마 오버라이드 */
+.mermaid .actor { fill: #1c2128 !important; stroke: #30363d !important; }
+.mermaid text { fill: #c9d1d9 !important; }
+.mermaid .messageLine0, .mermaid .messageLine1 { stroke: #58a6ff !important; }
+.mermaid .noteText { fill: #c9d1d9 !important; }
+.mermaid .note { fill: #21262d !important; stroke: #30363d !important; }
+.mermaid rect.rect { fill: rgba(100, 255, 218, 0.04) !important; stroke: rgba(100, 255, 218, 0.15) !important; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <h1>Diagram Viewer</h1>
+    <div class="sub">QA-SDK DKG Mermaid Diagrams</div>
+  </div>
+
+  <div id="preset-sections">
+    <!-- preset 항목이 여기에 동적으로 삽입됨 -->
+  </div>
+
+  <div class="custom-section">
+    <h3>Custom Mermaid</h3>
+    <textarea id="custom-input" placeholder="sequenceDiagram&#10;  Alice ->> Bob: Hello"></textarea>
+    <button id="render-btn" onclick="renderCustom()">Render</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="main-header">
+    <span id="diagram-title">Diagram Viewer</span>
+    <div class="header-actions">
+      <button class="action-btn" onclick="copySource()">Copy MMD</button>
+      <button class="action-btn" onclick="downloadSvg()">Download SVG</button>
+    </div>
+  </div>
+  <div id="diagram-container">
+    <div id="empty-state">
+      <div class="icon">&#9671;</div>
+      <p>
+        왼쪽 사이드바에서 다이어그램을 선택하거나<br>
+        Custom 영역에 Mermaid 텍스트를 붙여넣으세요.<br><br>
+        <code style="font-size:11px;color:#58a6ff">qa-sdk dkg diagram list</code> 로도 목록 확인 가능
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mermaid 초기화 (다크 테마)
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    sequence: {
+      actorMargin: 50,
+      noteMargin: 10,
+    },
+  });
+
+  let currentMmd = '';
+  let renderCounter = 0;
+
+  // ── Preset 로딩 ──────────────────────────────────────
+
+  const FALLBACK_PRESETS = {
+    "intent-links": [
+      { id: "__all__", label: "전체 IntentLink 흐름", description: "모든 IntentLink를 하나의 시퀀스 다이어그램으로 통합", mmd: "" },
+    ],
+    "dsl": [],
+  };
+
+  let presets = FALLBACK_PRESETS;
+
+  function loadPresets() {
+    if (window.DIAGRAM_PRESETS) {
+      presets = window.DIAGRAM_PRESETS;
+    }
+    buildSidebar();
+  }
+
+  function buildSidebar() {
+    const container = document.getElementById('preset-sections');
+    container.innerHTML = '';
+
+    const sectionNames = { "intent-links": "IntentLink", "dsl": "DSL Bundle" };
+
+    for (const [key, items] of Object.entries(presets)) {
+      if (!items || items.length === 0) continue;
+
+      const section = document.createElement('div');
+      section.className = 'section';
+
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.textContent = `${sectionNames[key] || key} (${items.length})`;
+      section.appendChild(title);
+
+      for (const item of items) {
+        const btn = document.createElement('button');
+        btn.className = 'preset-item';
+        btn.dataset.key = key;
+        btn.dataset.id = item.id;
+
+        const idSpan = document.createElement('span');
+        idSpan.className = 'item-id';
+        idSpan.textContent = item.label || item.id;
+        btn.appendChild(idSpan);
+
+        if (item.description) {
+          const descSpan = document.createElement('span');
+          descSpan.className = 'item-desc';
+          descSpan.textContent = item.description;
+          btn.appendChild(descSpan);
+        }
+
+        btn.addEventListener('click', () => selectPreset(key, item));
+        section.appendChild(btn);
+      }
+
+      container.appendChild(section);
+    }
+
+    // preset이 없으면 안내
+    if (container.children.length === 0) {
+      const notice = document.createElement('div');
+      notice.style.cssText = 'padding: 16px; color: var(--dim); font-size: 11px; line-height: 1.6;';
+      notice.innerHTML = 'Preset이 없습니다.<br><br>생성 방법:<br><code style="color:var(--cyan)">pnpm --filter @qa-sdk/platform-demo prebuild-diagrams</code>';
+      container.appendChild(notice);
+    }
+  }
+
+  function selectPreset(key, item) {
+    // 활성 표시 업데이트
+    document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
+    const btn = document.querySelector(`.preset-item[data-key="${key}"][data-id="${item.id}"]`);
+    if (btn) btn.classList.add('active');
+
+    const title = item.label || item.id;
+    document.getElementById('diagram-title').textContent = title;
+
+    if (item.mmd) {
+      renderMermaid(item.mmd);
+    } else {
+      showEmpty('이 프리셋에 Mermaid 텍스트가 없습니다.\nprebuild-diagrams 스크립트를 실행하세요.');
+    }
+  }
+
+  // ── 렌더링 ──────────────────────────────────────
+
+  async function renderMermaid(mmd) {
+    currentMmd = mmd;
+    const container = document.getElementById('diagram-container');
+
+    try {
+      renderCounter++;
+      const id = `mermaid-diagram-${renderCounter}`;
+      const { svg } = await mermaid.render(id, mmd);
+      container.innerHTML = `<div class="mermaid">${svg}</div>`;
+    } catch (err) {
+      container.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+        <strong>Render Error</strong><br><pre style="margin-top:8px;white-space:pre-wrap;">${err.message || err}</pre>
+        <pre style="margin-top:12px;color:var(--dim);white-space:pre-wrap;">${mmd}</pre>
+      </div>`;
+    }
+  }
+
+  function renderCustom() {
+    const text = document.getElementById('custom-input').value.trim();
+    if (!text) return;
+
+    document.querySelectorAll('.preset-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('diagram-title').textContent = 'Custom Diagram';
+    renderMermaid(text);
+  }
+
+  function showEmpty(msg) {
+    const container = document.getElementById('diagram-container');
+    container.innerHTML = `<div id="empty-state"><div class="icon">&#9671;</div><p>${msg.replace(/\n/g, '<br>')}</p></div>`;
+    currentMmd = '';
+  }
+
+  // ── 액션 ──────────────────────────────────────
+
+  function copySource() {
+    if (!currentMmd) return;
+    navigator.clipboard.writeText(currentMmd).then(() => {
+      const btn = document.querySelector('.action-btn');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.color = 'var(--mint)';
+      btn.style.borderColor = 'var(--mint)';
+      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
+    });
+  }
+
+  function downloadSvg() {
+    const svgEl = document.querySelector('#diagram-container svg');
+    if (!svgEl) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'diagram.svg';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── URL hash 지원: diagram.html#base64encodedMermaid ──
+
+  function checkHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+
+    try {
+      const mmd = decodeURIComponent(atob(hash));
+      document.getElementById('diagram-title').textContent = 'URL Diagram';
+      document.getElementById('custom-input').value = mmd;
+      renderMermaid(mmd);
+    } catch {
+      // base64 디코드 실패 — 무시
+    }
+  }
+
+  // ── 초기화 ──────────────────────────────────────
+
+  loadPresets();
+  checkHash();
+  window.addEventListener('hashchange', checkHash);
+
+  // Ctrl+Enter로 custom 렌더링
+  document.getElementById('custom-input').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      renderCustom();
+    }
+  });
+</script>
+
+<!-- preset 데이터 로딩 (prebuild 시 생성) -->
+<script src="diagram-presets.js" onerror="console.log('diagram-presets.js not found — run: pnpm --filter @qa-sdk/platform-demo prebuild-diagrams')"></script>
+<script>
+  // diagram-presets.js 로딩 후 재빌드
+  if (window.DIAGRAM_PRESETS && presets === FALLBACK_PRESETS) {
+    loadPresets();
+  }
+</script>
+</body>
+</html>

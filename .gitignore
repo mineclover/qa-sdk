@@ -14,5 +14,8 @@ dist/
 # wrangler dev artifacts
 .wrangler/
 
+# auto-generated diagram presets
+packages/platform-demo/public/diagram-presets.js
+
 # claude code
 .claude/

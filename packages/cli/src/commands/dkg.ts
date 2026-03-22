@@ -58,7 +58,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -3336,13 +3336,53 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const kind = positionals[0];
   const id = positionals[1];
 
-  if (!kind || !["intent-links", "dsl", "signal"].includes(kind)) {
-    console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|svg|png] [--no-invariants]");
-    console.log("  kind: intent-links | dsl | signal");
+  if (!kind || !["intent-links", "dsl", "signal", "list"].includes(kind)) {
+    console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
+    console.log("  kind: list | intent-links | dsl | signal");
+    console.log("");
+    console.log("Examples:");
+    console.log("  qa-sdk dkg diagram list                        선택 가능한 다이어그램 리스트");
+    console.log("  qa-sdk dkg diagram intent-links                전체 IntentLink 시퀀스");
+    console.log("  qa-sdk dkg diagram intent-links IL-xxx         단일 IntentLink");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout            DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd   파일 출력");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
     return;
   }
 
   const graph = getGraph();
+
+  // ── list: 선택 가능한 다이어그램 리스트 ──
+  if (kind === "list") {
+    const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
+    const dslBundles = graph.getNodesByKind("dsl-bundle") as DslBundleNode[];
+
+    console.log("");
+    console.log("══ Available Diagrams ══");
+    console.log("");
+
+    console.log(`[intent-links] (${intentLinks.length}개)`);
+    for (const il of intentLinks) {
+      const desc = il.intent.length > 60 ? il.intent.slice(0, 57) + "..." : il.intent;
+      console.log(`  ${il.id.padEnd(28)} ${desc}`);
+    }
+
+    console.log("");
+    console.log(`[dsl] (${dslBundles.length}개)`);
+    for (const dsl of dslBundles) {
+      console.log(`  ${dsl.id.padEnd(28)} ${dsl.name}`);
+    }
+
+    console.log("");
+    console.log("Usage:");
+    console.log("  qa-sdk dkg diagram intent-links              전체 IntentLink 시퀀스");
+    console.log("  qa-sdk dkg diagram intent-links IL-xxx       단일 IntentLink");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout          DSL 번들 시퀀스");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd 파일 출력");
+    console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
+    return;
+  }
+
   const opts = { showInvariants: !values["no-invariants"] } as any;
   let mmd: string;
 
@@ -3381,6 +3421,19 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const outputPath = values.output as string | undefined;
   const format = (values.format as string) ?? "mmd";
 
+  if (format === "html") {
+    const title = kind === "dsl" ? `DSL: ${id}` : kind === "intent-links" ? (id ?? "전체 IntentLink") : kind;
+    const html = wrapMermaidHtml(mmd, title);
+    if (outputPath) {
+      const { writeFileSync } = await import("node:fs");
+      writeFileSync(outputPath, html, "utf-8");
+      console.log(`  Written: ${outputPath}`);
+    } else {
+      console.log(html);
+    }
+    return;
+  }
+
   if (outputPath) {
     const { writeFileSync } = await import("node:fs");
     writeFileSync(outputPath, mmd, "utf-8");
@@ -3405,4 +3458,39 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       }
     }
   }
+}
+
+/** Mermaid 텍스트를 CDN 기반 self-contained HTML로 래핑 */
+function wrapMermaidHtml(mmd: string, title: string): string {
+  const escaped = mmd.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title} — QA-SDK Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"><\/script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 24px; background: #fafbfc; }
+  h1 { font-size: 18px; color: #24292e; margin-bottom: 16px; }
+  #diagram { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 24px; }
+  .source { margin-top: 24px; }
+  .source summary { cursor: pointer; color: #586069; font-size: 13px; }
+  .source pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+<div id="diagram">
+  <pre class="mermaid">
+${mmd}
+  </pre>
+</div>
+<details class="source">
+  <summary>Mermaid source</summary>
+  <pre>${escaped}</pre>
+</details>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });<\/script>
+</body>
+</html>`;
 }
