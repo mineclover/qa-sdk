@@ -285,6 +285,7 @@ window.doLogout=function(){
   qaTrack('auth.logout',{
     tracking:{trackAction:'close',page:'mypage',userType},
     auth_event:{action:'logout'},
+    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
     flow_point:{flow_name:'browse',flow_step:'exit',flow_variant:'default'},
   });
   loggedIn=false;userType='guest';
@@ -360,6 +361,7 @@ window.goCheckout=function(){
   qaTrack('checkout.entry',{
     page_view:{page:'checkout',locale:'ko',userType},
     tracking:{trackAction:'navigate',page:'checkout',userType},
+    endpoint:{resource_type:'page',http_method:'GET',api_version:'v1'},
     flow_point:{flow_name:'checkout',flow_step:'entry',flow_variant:'default'},
     permission:{role:'customer'},
   });
@@ -367,6 +369,7 @@ window.goCheckout=function(){
 
 window.doPayment=function(){
   qaTrack('checkout.process',{
+    page_view:{page:'checkout',locale:'ko',userType},
     endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
     flow_point:{flow_name:'checkout',flow_step:'processing',flow_variant:'default'},
     permission:{role:'customer'},
@@ -388,6 +391,7 @@ window.doPayment=function(){
     qaTrack('payment.success',{
       order_event:{action:'complete'},
       flow_point:{flow_name:'checkout',flow_step:'success',flow_variant:'default'},
+      health_event:{health_status:'healthy',deploy_action:'deploy'},
     });
     go('complete');
   },1500);

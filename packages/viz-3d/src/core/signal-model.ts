@@ -175,10 +175,42 @@ export const DEMO_SIGNALS: SignalDef[] = [
     ],
   },
   {
-    id: "page.view", name: "화면 조회", description: "사용자가 페이지를 방문",
+    id: "page.view", name: "화면 조회", description: "사용자가 페이지를 방문 (generic)",
     members: [
       { prefixId: "page_view", role: "context" },
       { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view" } },
+    ],
+  },
+  {
+    id: "page.home", name: "홈 화면", description: "홈 페이지 방문",
+    members: [
+      { prefixId: "page_view", role: "context", fixedValues: { page: "home" } },
+      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "home" } },
+    ],
+  },
+  {
+    id: "page.product", name: "상품 상세", description: "상품 상세 페이지 방문",
+    requires: ["page.home"],
+    members: [
+      { prefixId: "page_view", role: "context", fixedValues: { page: "product_detail" } },
+      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "click", page: "product_detail" } },
+      { prefixId: "endpoint", role: "channel", fixedValues: { resource_type: "api", http_method: "GET" } },
+    ],
+  },
+  {
+    id: "page.mypage", name: "마이페이지", description: "마이페이지 방문",
+    requires: ["auth.login"],
+    members: [
+      { prefixId: "page_view", role: "context", fixedValues: { page: "mypage" } },
+      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "mypage" } },
+    ],
+  },
+  {
+    id: "page.order_complete", name: "주문 완료", description: "주문 완료 페이지",
+    requires: ["payment.success"],
+    members: [
+      { prefixId: "page_view", role: "context", fixedValues: { page: "order_complete" } },
+      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "order_complete" } },
     ],
   },
   {
@@ -205,6 +237,7 @@ export const DEMO_SIGNALS: SignalDef[] = [
     members: [
       { prefixId: "page_view", role: "context", fixedValues: { page: "checkout" } },
       { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "navigate" } },
+      { prefixId: "endpoint", role: "channel", fixedValues: { resource_type: "page", http_method: "GET" } },
       { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "checkout", flow_step: "entry" } },
       { prefixId: "permission", role: "guard", fixedValues: { role: "customer" } },
     ],
@@ -214,6 +247,7 @@ export const DEMO_SIGNALS: SignalDef[] = [
     dsl: "dsl-checkout",
     requires: ["checkout.entry"],
     members: [
+      { prefixId: "page_view", role: "context", fixedValues: { page: "checkout" } },
       { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
       { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "checkout", flow_step: "processing" } },
       { prefixId: "permission", role: "guard", fixedValues: { role: "customer" } },
@@ -238,6 +272,7 @@ export const DEMO_SIGNALS: SignalDef[] = [
     members: [
       { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "close" } },
       { prefixId: "auth_event", role: "trigger", fixedValues: { action: "logout" } },
+      { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
       { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "browse", flow_step: "exit" } },
     ],
   },
