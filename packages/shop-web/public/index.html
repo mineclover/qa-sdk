@@ -191,94 +191,46 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script type="module">
 // ═══════════════════════════════════════════════════
-//  QA SDK — ServiceBootConfig + QaMonitor 패턴
+//  QA SDK — @qa-sdk/browser 번들 사용
 // ═══════════════════════════════════════════════════
 
-import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole, newTransmissionId, newLogId, newTraceId, newSessionId, newSpanId } from './viz-3d-core.js';
-
-// ── ServiceBootConfig ──
-const SERVICE_CONFIG = {
-  namespace: 'shop',
-  name: 'shopping-web',
-  env: new URLSearchParams(location.search).get('env') || 'dev',
-  region: new URLSearchParams(location.search).get('region') || 'asia',
-  build: document.querySelector('meta[name="build-ref"]')?.content,
-};
+import { createQaMonitor } from './qa-browser-sdk.js';
+import { track as qaTrackEncode, BROWSER_CATALOG } from './viz-3d-core.js';
 
 const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 
-// ── Session (sessionStorage 기반 지속, SDK ID 생성) ──
-function getOrCreateSession() {
-  const KEY = 'qa_shop_session';
-  const stored = sessionStorage.getItem(KEY);
-  if (stored) return JSON.parse(stored);
-  const session = { sessionId: newSessionId(), traceId: newTraceId() };
-  sessionStorage.setItem(KEY, JSON.stringify(session));
-  return session;
-}
-const { sessionId, traceId } = getOrCreateSession();
-
-// ── Envelope 구성 (ServiceBootConfig 기반) ──
-const TX_SOURCE = {
-  service_name: `${SERVICE_CONFIG.namespace}/${SERVICE_CONFIG.name}`,
-  sdk_name: '@qa-sdk/browser',
-  sdk_version: '0.1.0',
-};
-const TX_BUILD = {
-  env: SERVICE_CONFIG.env,
-  ...(SERVICE_CONFIG.build ? { build_ref: SERVICE_CONFIG.build } : {}),
-};
-const TX_OWNER = { owner_type: 'tenant', owner_id: `${SERVICE_CONFIG.namespace}-monitor` };
-
-// ── infra_context (서비스 좌표 — 전 envelope 공통) ──
-const infraContext = qaTrackEncode(BROWSER_CATALOG, {
-  service: { env: SERVICE_CONFIG.env, region: SERVICE_CONFIG.region, svc_name: SERVICE_CONFIG.name, namespace: SERVICE_CONFIG.namespace },
+// ── QaMonitor 생성 (SDK가 세션/전송/envelope 전부 관리) ──
+const monitor = createQaMonitor({
+  ingestUrl: INGEST_URL,
+  serviceConfig: {
+    namespace: 'shop',
+    name: 'shopping-web',
+    env: new URLSearchParams(location.search).get('env') || 'dev',
+    region: new URLSearchParams(location.search).get('region') || 'asia',
+  },
+  owner: { owner_type: 'tenant', owner_id: 'shop-monitor' },
+  autoCapture: { clicks: true, navigation: true },
+  // infra_context — 서비스 좌표를 전 envelope에 주입
+  infraContext: qaTrackEncode(BROWSER_CATALOG, {
+    service: {
+      env: new URLSearchParams(location.search).get('env') || 'dev',
+      region: new URLSearchParams(location.search).get('region') || 'asia',
+      svc_name: 'shopping-web',
+      namespace: 'shop',
+    },
+  }),
 });
 
-let spanSeq = 0, eventCount = 0, userType = 'guest';
+let eventCount = 0, userType = 'guest';
 
 function qaTrack(eventKey, prefixes) {
   const ctx = qaTrackEncode(BROWSER_CATALOG, prefixes);
-  spanSeq++; eventCount++;
+  eventCount++;
   document.getElementById('qa-events').textContent = `events: ${eventCount}`;
-  document.getElementById('qa-status').textContent = `qa: ${eventKey} → sending`;
+  document.getElementById('qa-status').textContent = `qa: ${eventKey}`;
 
-  const envelope = {
-    transmission_id: newTransmissionId(),
-    sent_at: new Date().toISOString(),
-    owner: TX_OWNER,
-    source: TX_SOURCE,
-    runtime: { platform: 'browser', os_version: navigator.userAgent },
-    build: TX_BUILD,
-    infra_context: infraContext,
-    records: [{
-      log_id: newLogId(),
-      timestamp: new Date().toISOString(),
-      record_kind: 'log',
-      trace_id: traceId,
-      span_id: newSpanId(),
-      event_key: eventKey,
-      event_version: '001',
-      payload_format: 'json',
-      payload_encoding: 'raw',
-      payload_masking_applied: false,
-      payload_masked_fields: [],
-      payload: { event: eventKey, userType },
-      address_context: ctx,
-      qa_session_id: sessionId,
-    }],
-  };
-
-  // Beacon (페이지 닫힘에도 전송 보장) + fetch fallback
-  const body = JSON.stringify(envelope);
-  const sent = navigator.sendBeacon?.(`${INGEST_URL}/v1/ingest`, new Blob([body], { type: 'application/json' }));
-  if (sent) {
-    document.getElementById('qa-status').textContent = `qa: ${eventKey} → beacon`;
-  } else {
-    fetch(`${INGEST_URL}/v1/ingest`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
-      .then(r => { document.getElementById('qa-status').textContent = `qa: ${eventKey} → ${r.status}`; })
-      .catch(() => { document.getElementById('qa-status').textContent = `qa: ${eventKey} → offline`; });
-  }
+  // QaMonitor.emit() — SDK가 envelope 구성 + Beacon 전송 + 세션 관리
+  monitor.emit(eventKey, { event: eventKey, userType }, { address_context: ctx });
 }
 
 // ═══════════════════════════════════════════════════
@@ -466,26 +418,8 @@ function renderMypage(){
 // ═══════════════════════════════════════════════════
 //  Init
 // ═══════════════════════════════════════════════════
-document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (${SERVICE_CONFIG.namespace}/${SERVICE_CONFIG.name}@${SERVICE_CONFIG.env})`;
-
-// pagehide — 페이지 닫힘 시 마지막 이벤트 전송
-window.addEventListener('pagehide', () => {
-  qaTrack('session.end', {
-    tracking: { trackAction: 'close', page: location.hash.slice(1) || 'home', userType },
-  });
-});
-
-// Auto-capture — data-qa-event 속성 클릭 자동 수집
-document.addEventListener('click', (e) => {
-  const target = e.target.closest('[data-qa-event]');
-  if (!target) return;
-  const eventKey = target.getAttribute('data-qa-event');
-  if (eventKey) {
-    qaTrack(`auto.${eventKey}`, {
-      tracking: { trackAction: 'click', page: location.hash.slice(1) || 'home', userType },
-    });
-  }
-});
+const svcConfig = monitor.getSession ? monitor.getSession() : {};
+document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (session: ${svcConfig.sessionId ?? 'n/a'})`;
 
 // Monitor link에 ingest URL 전달
 const monitorUrl = location.origin.replace(location.port, '3335');

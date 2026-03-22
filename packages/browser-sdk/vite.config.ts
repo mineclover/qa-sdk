@@ -8,7 +8,7 @@ export default defineConfig({
       name: "QaMonitor",
       formats: ["es", "umd"],
       fileName: (format) =>
-        format === "es" ? "qa-monitor.esm.js" : "qa-monitor.umd.cjs",
+        format === "es" ? "qa-browser-sdk.js" : "qa-browser-sdk.umd.cjs",
     },
     // 단일 번들 파일 — 의존성을 외부화하지 않음
     rollupOptions: {},

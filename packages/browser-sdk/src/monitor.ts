@@ -107,14 +107,19 @@ export class QaMonitor {
    * event-catalog에 등록된 event_key면 버전을 자동으로 조회한다.
    * stopped 상태에서는 경고 후 무시된다.
    */
-  emit(eventKey: string, payload?: Record<string, unknown>): void {
+  emit(eventKey: string, payload?: Record<string, unknown>, options?: { address_context?: Record<string, string> }): void {
     if (this._status === "stopped") {
       console.warn(`[QaMonitor] emit("${eventKey}") called after shutdown — event dropped`);
       return;
     }
     const def = getCoreEvent(eventKey);
     const version = (def?.event_version ?? "1").padStart(3, "0");
-    this.logger.log({ event_key: eventKey, event_version: version, payload });
+    this.logger.log({
+      event_key: eventKey,
+      event_version: version,
+      payload,
+      ...(options?.address_context ? { address_context: options.address_context } : {}),
+    });
   }
 
   // ── 메트릭 ─────────────────────────────────────────────
