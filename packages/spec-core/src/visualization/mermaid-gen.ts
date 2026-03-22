@@ -6,7 +6,7 @@
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, ObservationNode, DecisionNode, PrefixNode } from "../dkg/dkg.types.js";
+import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, ObservationNode, DecisionNode, PrefixNode, TransitionSpecNode } from "../dkg/dkg.types.js";
 
 // ── SignalDef duck type (viz-3d 의존 없이) ──────────────────
 
@@ -625,6 +625,22 @@ export function listAllDiagrams(
     label: `${observations.length} observations, ${decisions.length} decisions`,
   }];
 
+  // transition-spec
+  const tspecs = graph.getNodesByKind("transition-spec");
+  if (tspecs.length > 0) {
+    result["transition-spec"] = tspecs.map(t => ({
+      kind: "transition-spec",
+      id: t.id,
+      label: `${t.transition} (${t.effectKind})`,
+    }));
+    // inter-spec DAG (전체 전이 관계도)
+    result["transition-dag"] = [{
+      kind: "transition-dag",
+      id: "transition-dag",
+      label: `${tspecs.length} specs — depends-on + satisfies`,
+    }];
+  }
+
   // Note: traces are dynamic (runtime), not from DKG graph — excluded here.
 
   return result;
@@ -725,6 +741,137 @@ export function traceSequenceDiagram(
   const first = trace.steps[0].prefixId;
   const last = trace.steps[trace.steps.length - 1].prefixId;
   lines.push(`  note over ${first},${last}: ${trace.duration}ms / ${trace.steps.length} steps`);
+
+  return lines.join("\n");
+}
+
+// ── Transition Spec Diagrams ──────────────────────────────
+
+/**
+ * 단일 TransitionSpec의 match→input→output 흐름 다이어그램.
+ *
+ * 참여자: Event(이벤트 매칭) → State(상태 조건) → Transition(전이 실행) → Effect(결과)
+ * 축 역할별로 화살표 색상 구분.
+ */
+export function transitionSpecDiagram(
+  graph: GraphRegistry,
+  specId: string,
+  options?: MermaidDiagramOptions,
+): string {
+  const node = graph.getNode(specId) as TransitionSpecNode | undefined;
+  if (!node || node.kind !== "transition-spec") return `sequenceDiagram\n  note right of Actor: ${specId} not found`;
+
+  const title = options?.title ?? `Transition: ${node.transition} (${node.version})`;
+  const lines: string[] = ["sequenceDiagram"];
+  lines.push(`  title ${title}`);
+
+  // 참여자
+  lines.push(`  participant Event as 🎯 Event Match`);
+  lines.push(`  participant State as 📋 State Check`);
+  lines.push(`  participant Engine as ⚙️ ${node.transition}`);
+  lines.push(`  participant Output as 📤 State Mutate`);
+
+  // match 단계
+  lines.push(`  rect rgb(230, 245, 255)`);
+  lines.push(`  note over Event: match: ${node.matchMode} (${node.coordinateCount}개 좌표)`);
+  for (const axis of node.matchAxes) {
+    lines.push(`  Event->>Engine: ${axis}`);
+  }
+  lines.push(`  end`);
+
+  // input 단계
+  if (node.inputAxes.length > 0) {
+    lines.push(`  rect rgb(255, 245, 230)`);
+    lines.push(`  note over State: input 전제조건`);
+    for (const axis of node.inputAxes) {
+      lines.push(`  State->>Engine: ${axis} ✓`);
+    }
+    lines.push(`  end`);
+  }
+
+  // output 단계
+  if (node.outputAxes.length > 0) {
+    lines.push(`  rect rgb(230, 255, 230)`);
+    lines.push(`  note over Output: output 상태 변경`);
+    for (const axis of node.outputAxes) {
+      lines.push(`  Engine->>Output: ${axis} ←`);
+    }
+    lines.push(`  end`);
+  }
+
+  // effect 주석
+  lines.push(`  note over Engine: effect: ${node.effectKind}`);
+
+  // depends-on 관계
+  const dependsOn = graph.edgesFrom(specId, "depends-on");
+  if (dependsOn.length > 0) {
+    lines.push(`  note right of Engine: depends-on: ${dependsOn.map(e => (graph.getNode(e.to) as TransitionSpecNode)?.transition ?? e.to).join(", ")}`);
+  }
+
+  // satisfies 관계
+  const satisfies = graph.edgesFrom(specId, "satisfies");
+  if (satisfies.length > 0) {
+    lines.push(`  note right of Output: satisfies: ${satisfies.map(e => e.to).join(", ")}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * 전체 TransitionSpec 간 관계 DAG.
+ *
+ * depends-on + satisfies 엣지를 Mermaid graph로 표현.
+ * sequenceDiagram이 아닌 graph TD (방향 그래프).
+ */
+export function transitionDagDiagram(
+  graph: GraphRegistry,
+  options?: MermaidDiagramOptions,
+): string {
+  const tspecs = graph.getNodesByKind("transition-spec") as TransitionSpecNode[];
+  if (tspecs.length === 0) return "graph TD\n  EMPTY[No transition specs]";
+
+  const title = options?.title ?? "Transition Spec DAG";
+  const lines: string[] = [`graph TD`];
+  lines.push(`  %% ${title}`);
+
+  // 노드 정의
+  for (const t of tspecs) {
+    const label = `${t.transition}\\n${t.effectKind} | ${t.matchMode}(${t.coordinateCount})`;
+    lines.push(`  ${t.id}["${label}"]`);
+  }
+
+  // depends-on 엣지
+  for (const t of tspecs) {
+    const deps = graph.edgesFrom(t.id, "depends-on");
+    for (const e of deps) {
+      const shared = (e.meta as any)?.sharedAxes as string[] | undefined;
+      const label = shared ? shared.join(",") : "state";
+      lines.push(`  ${t.id} -->|${label}| ${e.to}`);
+    }
+  }
+
+  // satisfies 엣지 (DSL 연결)
+  const dslIds = new Set<string>();
+  for (const t of tspecs) {
+    const sats = graph.edgesFrom(t.id, "satisfies");
+    for (const e of sats) {
+      if (!dslIds.has(e.to)) {
+        const dsl = graph.getNode(e.to) as DslBundleNode | undefined;
+        lines.push(`  ${e.to}[/"${dsl?.name ?? e.to}"/]`);
+        dslIds.add(e.to);
+      }
+      lines.push(`  ${t.id} -.->|satisfies| ${e.to}`);
+    }
+  }
+
+  // 스타일
+  for (const t of tspecs) {
+    const color = t.effectKind === "create" ? "#e8f5e9"
+      : t.effectKind === "close" ? "#fce4ec"
+      : t.effectKind === "open" ? "#e3f2fd"
+      : "#fff3e0";
+    lines.push(`  style ${t.id} fill:${color}`);
+  }
 
   return lines.join("\n");
 }

@@ -25,6 +25,8 @@ export {
   constraintDiagram,
   tableDiagram,
   observationLoopDiagram,
+  transitionSpecDiagram,
+  transitionDagDiagram,
   listAllDiagrams,
 } from "./mermaid-gen.js";
 export type { MermaidDiagramOptions, SignalDefLike, DiagramEntry, ServiceTopologyLike, TracePathLike, TraceStepLike } from "./mermaid-gen.js";

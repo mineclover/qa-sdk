@@ -3626,6 +3626,8 @@ import {
   constraintDiagram,
   tableDiagram,
   observationLoopDiagram,
+  transitionSpecDiagram,
+  transitionDagDiagram,
   listAllDiagrams,
 } from "@qa-sdk/spec-core/viz";
 import type { SignalDefLike } from "@qa-sdk/spec-core/viz";
@@ -3646,10 +3648,10 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const kind = positionals[0];
   const id = positionals[1];
 
-  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "observation-loop", "list"];
+  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "observation-loop", "transition-spec", "transition-dag", "list"];
   if (!kind || !validKinds.includes(kind)) {
     console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
-    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop");
+    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop | transition-spec | transition-dag");
     console.log("");
     console.log("Examples:");
     console.log("  qa-sdk dkg diagram list                        선택 가능한 다이어그램 리스트");
@@ -3752,6 +3754,15 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
     }
     case "observation-loop": {
       mmd = observationLoopDiagram(graph, opts);
+      break;
+    }
+    case "transition-spec": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram transition-spec <specId>"); return; }
+      mmd = transitionSpecDiagram(graph, id, opts);
+      break;
+    }
+    case "transition-dag": {
+      mmd = transitionDagDiagram(graph, opts);
       break;
     }
     default:
