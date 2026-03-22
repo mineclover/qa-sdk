@@ -100,16 +100,24 @@ export const SERVICE_PROJECTION: Projection = {
     "payment": 1,
     "gateway": 1,
   },
-  // svc_ref 없는 prefix 중 dev/dkg 관련
+  // 전체 prefix → layer 매핑 (svcOwners 없이도 작동)
   prefixMap: {
-    dkg_event: 3,
-    dkg_decision_event: 3,
-    dkg_observation_event: 3,
-    cli_event: 3,
-    skill_execution: 3,
-    contract_check: 3,
-    build_event: 3,
-    test_event: 3,
+    // L0: Frontend (shopping-web 소유)
+    page_view: 0, tracking: 0,
+    // L1: Backend
+    endpoint: 1, flow_point: 1, permission: 1, rbac: 1,
+    cart_event: 1, auth_event: 1, order_event: 1, event: 1,
+    content: 1, relational: 1, engine_event: 1,
+    execution_context: 1, ingest_record: 1, event_classification: 1, metric_point: 1,
+    // L2: Infrastructure
+    service: 2, deploy_event: 2, health_event: 2,
+    pipeline_point: 2, data_policy: 2, schema_event: 2, schema_validation: 2,
+    pattern_match: 2, pattern_anomaly: 2,
+    version_point: 2, gate_point: 2, observation_event: 2, spec_event: 2, edge_activity: 2,
+    // L3: System / DKG
+    dkg_event: 3, dkg_decision_event: 3, dkg_observation_event: 3,
+    cli_event: 3, skill_execution: 3, contract_check: 3,
+    build_event: 3, test_event: 3,
   },
   defaultLayer: 1,
 };
@@ -186,7 +194,7 @@ export function buildLayerMap(
   svcOwners?: ReadonlyMap<string, string>,
   domainMembers?: ReadonlyMap<string, string>,
 ): LayerMapResult {
-  const proj = projection ?? LEGACY_PROJECTION;
+  const proj = projection ?? SERVICE_PROJECTION;
   const layerNames = { ...DEFAULT_LAYER_NAMES, ...proj.layerNames };
   const layerDescs = { ...DEFAULT_LAYER_DESCRIPTIONS, ...proj.layerDescriptions };
 

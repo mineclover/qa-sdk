@@ -1074,7 +1074,7 @@ export const DEMO_CATALOG = {
       id: "service", name: "서비스",
       description: "env × region × svc_name × namespace 4차원 서비스 주소 공간",
       labels: ["env", "region", "svc_name", "namespace"],
-      meta: { category: "entity", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "config", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
+      meta: { category: "entity", visualShape: "cube", heightRatio: 1, detailKind: "config", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
       dims: {
         env: { kind: "axis", axisId: "env" },
         region: { kind: "axis", axisId: "region" },
@@ -1089,7 +1089,7 @@ export const DEMO_CATALOG = {
       id: "permission", name: "권한",
       description: "perm_svc(서비스 참조) × role 2차원 권한 주소 공간",
       labels: ["perm_svc", "role"],
-      meta: { category: "policy", layer: 1, visualShape: "thin-bar", heightRatio: 0.3, detailKind: "permission", source: { module: "permission-engine", file: "permission-set.ts" } },
+      meta: { category: "policy", visualShape: "thin-bar", heightRatio: 0.3, detailKind: "permission", source: { module: "permission-engine", file: "permission-set.ts" } },
       dims: {
         perm_svc: { kind: "prefix_ref", prefixId: "service" },
         role: { kind: "axis", axisId: "role" },
@@ -1105,7 +1105,7 @@ export const DEMO_CATALOG = {
       id: "event", name: "이벤트",
       description: "evt_svc(서비스 참조) × event_name × initiator 3차원 이벤트 주소 공간",
       labels: ["evt_svc", "event_name", "initiator"],
-      meta: { category: "event", layer: 1, visualShape: "cube", heightRatio: 0.8, detailKind: "generic", source: { module: "ingest-server" } },
+      meta: { category: "event", visualShape: "cube", heightRatio: 0.8, detailKind: "generic", source: { module: "ingest-server" } },
       dims: {
         evt_svc: { kind: "prefix_ref", prefixId: "service" },
         event_name: { kind: "axis", axisId: "event_name" },
@@ -1122,7 +1122,7 @@ export const DEMO_CATALOG = {
       id: "rbac", name: "역할 기반 접근 제어",
       description: "role × action × resource 3차원 권한 모델",
       labels: ["role", "action", "resource"],
-      meta: { category: "policy", layer: 1, visualShape: "thin-bar", heightRatio: 0.3, detailKind: "permission", source: { module: "permission-engine", file: "permission-set.ts" } },
+      meta: { category: "policy", visualShape: "thin-bar", heightRatio: 0.3, detailKind: "permission", source: { module: "permission-engine", file: "permission-set.ts" } },
       dims: {
         role: { kind: "axis", axisId: "rbac_role" },
         action: { kind: "axis", axisId: "action" },
@@ -1136,7 +1136,7 @@ export const DEMO_CATALOG = {
       id: "content", name: "콘텐츠 플랫폼",
       description: "tag × category × status × locale × channel 5차원 콘텐츠 모델",
       labels: ["tag", "category", "status", "locale", "channel"],
-      meta: { category: "entity", layer: 1, visualShape: "cube", heightRatio: 1, detailKind: "generic" },
+      meta: { category: "entity", visualShape: "cube", heightRatio: 1, detailKind: "generic" },
       dims: {
         tag: { kind: "axis", axisId: "tag" },
         category: { kind: "axis", axisId: "category" },
@@ -1152,7 +1152,7 @@ export const DEMO_CATALOG = {
       id: "tracking", name: "사용자 행동 추적",
       description: "trackAction × page × userType 3차원 이벤트 추적",
       labels: ["trackAction", "page", "userType"],
-      meta: { category: "entity", layer: 0, visualShape: "cube", heightRatio: 1, detailKind: "generic", source: { module: "browser-sdk", file: "auto-capture.ts" } },
+      meta: { category: "entity", visualShape: "cube", heightRatio: 1, detailKind: "generic", source: { module: "browser-sdk", file: "auto-capture.ts" } },
       dims: {
         trackAction: { kind: "axis", axisId: "trackAction" },
         page: { kind: "axis", axisId: "page" },
@@ -1167,7 +1167,7 @@ export const DEMO_CATALOG = {
       id: "relational", name: "관계 모델",
       description: "subjectKind × predicate × objectKind 관계 인덱스",
       labels: ["subjectKind", "predicate", "objectKind"],
-      meta: { category: "relation", layer: 1, visualShape: "sphere", heightRatio: 1, detailKind: "generic", source: { module: "spec-core", file: "dkg/dkg.types.ts" } },
+      meta: { category: "relation", visualShape: "sphere", heightRatio: 1, detailKind: "generic", source: { module: "spec-core", file: "dkg/dkg.types.ts" } },
       dims: {
         subjectKind: { kind: "axis", axisId: "subjectKind" },
         predicate: { kind: "axis", axisId: "predicate" },
@@ -1184,7 +1184,7 @@ export const DEMO_CATALOG = {
       id: "page_view", name: "화면 관측",
       description: "svc_ref(서비스 참조) × page × locale × userType — 어떤 서비스에서 어떤 화면을 어떤 언어로 누가 보는가",
       labels: ["svc_ref", "page", "locale", "userType"],
-      meta: { category: "observation", layer: 0, visualShape: "cube", heightRatio: 1, detailKind: "generic", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "generic", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         page: { kind: "axis", axisId: "page" },
@@ -1200,7 +1200,7 @@ export const DEMO_CATALOG = {
       id: "endpoint", name: "엔드포인트 관측",
       description: "svc_ref(서비스 참조) × resource_type × http_method × api_version — 서비스의 어떤 유형 엔드포인트에 어떻게 접근하는가. API 경로는 좌표 밖(payload.resource_path).",
       labels: ["svc_ref", "resource_type", "http_method", "api_version"],
-      meta: { category: "observation", layer: 1, visualShape: "cube", heightRatio: 1, detailKind: "endpoint", source: { module: "ingest-server", file: "routes/ingest.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "endpoint", source: { module: "ingest-server", file: "routes/ingest.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         resource_type: { kind: "axis", axisId: "resource_type" },
@@ -1215,7 +1215,7 @@ export const DEMO_CATALOG = {
       id: "flow_point", name: "흐름 관측 포인트",
       description: "svc_ref(서비스 참조) × flow_name × flow_step × flow_variant — 어떤 서비스에서 비즈니스 흐름의 어디에 있는가",
       labels: ["svc_ref", "flow_name", "flow_step", "flow_variant"],
-      meta: { category: "observation", layer: 1, visualShape: "cube", heightRatio: 1, detailKind: "flow-step", source: { module: "spec-core", file: "dkg/flow-definition.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "flow-step", source: { module: "spec-core", file: "dkg/flow-definition.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         flow_name: { kind: "axis", axisId: "flow_name" },
@@ -1233,7 +1233,7 @@ export const DEMO_CATALOG = {
       id: "engine_event", name: "엔진 평가 이벤트",
       description: "svc_ref(서비스 참조) × constraint_op × verdict_result — 엔진이 어떤 연산자로 평가하여 어떤 결과를 냈는가",
       labels: ["svc_ref", "constraint_op", "verdict_result"],
-      meta: { category: "event", layer: 1, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric", source: { module: "engine", file: "matching/constraint-evaluator.ts" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric", source: { module: "engine", file: "matching/constraint-evaluator.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         constraint_op: { kind: "axis", axisId: "constraint_op" },
@@ -1247,7 +1247,7 @@ export const DEMO_CATALOG = {
       id: "schema_event", name: "스키마 마이그레이션 이벤트",
       description: "svc_ref(서비스 참조) × migration_pattern × deploy_action — 어떤 패턴으로 어떤 배포 행위가 스키마에 적용됐는가",
       labels: ["svc_ref", "migration_pattern", "deploy_action"],
-      meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "spec-core", file: "dkg/skills/infer-migrator.ts" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "spec-core", file: "dkg/skills/infer-migrator.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         migration_pattern: { kind: "axis", axisId: "migration_pattern" },
@@ -1262,7 +1262,7 @@ export const DEMO_CATALOG = {
       id: "schema_validation", name: "스키마 검증 이벤트",
       description: "svc_ref(서비스 참조) × validation_layer × constraint_rule × verdict_result — 어떤 스키마의 어떤 레이어에서 어떤 규칙으로 어떤 결과가 나왔는가",
       labels: ["svc_ref", "validation_layer", "constraint_rule", "verdict_result"],
-      meta: { category: "observation", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "schema/schema-validation-codec.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "schema/schema-validation-codec.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         validation_layer: { kind: "axis", axisId: "validation_layer" },
@@ -1279,7 +1279,7 @@ export const DEMO_CATALOG = {
       id: "pipeline_point", name: "파이프라인 관측 포인트",
       description: "svc_ref(서비스 참조) × pipeline_phase × validation_mode × verdict_result × temporal_strategy — 수집 파이프라인의 어떤 단계에서 어떤 모드로 어떤 결과가 나왔는가",
       labels: ["svc_ref", "pipeline_phase", "validation_mode", "verdict_result", "temporal_strategy"],
-      meta: { category: "observation", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "ingest-server", file: "lib/phase-two-worker.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "ingest-server", file: "lib/phase-two-worker.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         pipeline_phase: { kind: "axis", axisId: "pipeline_phase" },
@@ -1295,7 +1295,7 @@ export const DEMO_CATALOG = {
       id: "data_policy", name: "데이터 정책 관측",
       description: "svc_ref(서비스 참조) × mask_mode — 어떤 서비스에서 어떤 마스킹 정책이 적용되는가",
       labels: ["svc_ref", "mask_mode"],
-      meta: { category: "observation", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "sdk", file: "masking.ts" } },
+      meta: { category: "observation", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "sdk", file: "masking.ts" } },
       dims: {
         svc_ref: { kind: "prefix_ref", prefixId: "service" },
         mask_mode: { kind: "axis", axisId: "mask_mode" },
@@ -1310,7 +1310,7 @@ export const DEMO_CATALOG = {
       id: "deploy_event", name: "배포 이벤트",
       description: "svc_ref(서비스 참조) × deploy_action × actor(배포자) — 어떤 서비스에 누가 어떤 배포 행위를 했는가",
       labels: ["svc_ref", "deploy_action", "actor"],
-      meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "spec-core", file: "dkg/bootstrap.ts" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "spec-core", file: "dkg/bootstrap.ts" } },
       dims: {
         svc_ref:       { kind: "prefix_ref", prefixId: "service" },
         deploy_action: { kind: "axis", axisId: "deploy_action" },
@@ -1324,7 +1324,7 @@ export const DEMO_CATALOG = {
       id: "health_event", name: "헬스 이벤트",
       description: "svc_ref(서비스 참조) × health_status — 어떤 서비스가 어떤 상태가 되었는가",
       labels: ["svc_ref", "health_status"],
-      meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "ingest-server" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "config", source: { module: "ingest-server" } },
       dims: {
         svc_ref:       { kind: "prefix_ref", prefixId: "service" },
         health_status: { kind: "axis", axisId: "health_status" },
@@ -1339,7 +1339,7 @@ export const DEMO_CATALOG = {
       id: "cart_event", name: "장바구니 이벤트",
       description: "actor(member) × action × target(item) — 이벤트 관계 정의",
       labels: ["actor", "action", "target"],
-      meta: { category: "event", layer: 1, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
       dims: {
         actor:  { kind: "table_ref", table: "members" },
         action: { kind: "axis", axisId: "cart_action" },
@@ -1353,7 +1353,7 @@ export const DEMO_CATALOG = {
       id: "auth_event", name: "인증 이벤트",
       description: "actor(member) × action — 단항 이벤트",
       labels: ["actor", "action"],
-      meta: { category: "event", layer: 1, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot" } },
       dims: {
         actor:  { kind: "table_ref", table: "members" },
         action: { kind: "axis", axisId: "auth_action" },
@@ -1366,7 +1366,7 @@ export const DEMO_CATALOG = {
       id: "order_event", name: "주문 이벤트",
       description: "actor(member) × action × order(table) × service_ctx(prefix_ref) — 다항 + 컨텍스트",
       labels: ["service_ctx", "actor", "action", "order"],
-      meta: { category: "event", layer: 1, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot" } },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot" } },
       dims: {
         service_ctx: { kind: "prefix_ref", prefixId: "service" },
         actor:       { kind: "table_ref", table: "members" },
@@ -1383,7 +1383,7 @@ export const DEMO_CATALOG = {
       id: "build_event", name: "빌드 이벤트",
       description: "qa_pkg × qa_module × build_result — 어떤 패키지의 어떤 모듈이 어떤 빌드 결과를 냈는가",
       labels: ["qa_pkg", "qa_module", "build_result"],
-      meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
       dims: {
         qa_pkg:       { kind: "axis", axisId: "qa_pkg" },
         qa_module:    { kind: "axis", axisId: "qa_module" },
@@ -1398,7 +1398,7 @@ export const DEMO_CATALOG = {
       id: "test_event", name: "테스트 이벤트",
       description: "qa_pkg × qa_module × test_result — 어떤 패키지의 어떤 모듈/시나리오가 어떤 테스트 결과를 냈는가",
       labels: ["qa_pkg", "qa_module", "test_result"],
-      meta: { category: "event", layer: 2, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
+      meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
       dims: {
         qa_pkg:      { kind: "axis", axisId: "qa_pkg" },
         qa_module:   { kind: "axis", axisId: "qa_module" },
@@ -1499,7 +1499,7 @@ export const DEMO_CATALOG = {
       id: "pattern_match", name: "패턴 매칭 결과",
       description: "svc_ref × identification_mode × behavior_pattern × pattern_confidence — 세션 패턴 분류 좌표",
       labels: ["svc_ref", "identification_mode", "behavior_pattern", "pattern_confidence"],
-      meta: { category: "observation", layer: 2, visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-classifier.ts" } },
+      meta: { category: "observation", visualShape: "cube", heightRatio: 1, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-classifier.ts" } },
       dims: {
         svc_ref:              { kind: "prefix_ref", prefixId: "service" },
         identification_mode:  { kind: "axis", axisId: "identification_mode" },
@@ -1514,7 +1514,7 @@ export const DEMO_CATALOG = {
       id: "pattern_anomaly", name: "이상 패턴 감지",
       description: "svc_ref × anomaly_kind × behavior_pattern × anomaly_severity — 이상 패턴 발생 좌표",
       labels: ["svc_ref", "anomaly_kind", "behavior_pattern", "anomaly_severity"],
-      meta: { category: "observation", layer: 2, visualShape: "sphere", heightRatio: 1.2, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-anomaly.ts" } },
+      meta: { category: "observation", visualShape: "sphere", heightRatio: 1.2, detailKind: "metric", source: { module: "spec-core", file: "convergence/pattern-anomaly.ts" } },
       dims: {
         svc_ref:            { kind: "prefix_ref", prefixId: "service" },
         anomaly_kind:       { kind: "axis", axisId: "anomaly_kind" },
@@ -1533,7 +1533,7 @@ export const DEMO_CATALOG = {
       id: "version_point", name: "버전 생명주기 관측",
       description: "svc_ref × version_lifecycle — 어떤 서비스의 prefix 버전이 어떤 상태에 있는가",
       labels: ["svc_ref", "version_lifecycle"],
-      meta: { category: "observation", layer: 2, visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
+      meta: { category: "observation", visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
       dims: {
         svc_ref:            { kind: "prefix_ref", prefixId: "service" },
         version_lifecycle:  { kind: "axis", axisId: "version_lifecycle" },
@@ -1546,7 +1546,7 @@ export const DEMO_CATALOG = {
       id: "gate_point", name: "주소 상태 관측",
       description: "svc_ref × address_state — 어떤 서비스에서 주소가 어떤 상태에 있는가",
       labels: ["svc_ref", "address_state"],
-      meta: { category: "observation", layer: 2, visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
+      meta: { category: "observation", visualShape: "flat-tile", heightRatio: 0.6, detailKind: "generic" },
       dims: {
         svc_ref:        { kind: "prefix_ref", prefixId: "service" },
         address_state:  { kind: "axis", axisId: "address_state" },
@@ -1559,7 +1559,7 @@ export const DEMO_CATALOG = {
       id: "observation_event", name: "관측 의도 이벤트",
       description: "observation_intent × dkg_target_kind — 어떤 의도의 관측이 어떤 대상에 생성됐는가",
       labels: ["observation_intent", "dkg_target_kind"],
-      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      meta: { category: "event", visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
       dims: {
         observation_intent: { kind: "axis", axisId: "observation_intent" },
         dkg_target_kind:    { kind: "axis", axisId: "dkg_target_kind" },
@@ -1572,7 +1572,7 @@ export const DEMO_CATALOG = {
       id: "spec_event", name: "스펙 문서 이벤트",
       description: "spec_type × lifecycle_state — 어떤 유형의 스펙이 어떤 상태로 변경됐는가",
       labels: ["spec_type", "lifecycle_state"],
-      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      meta: { category: "event", visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
       dims: {
         spec_type:       { kind: "axis", axisId: "spec_type" },
         lifecycle_state: { kind: "axis", axisId: "lifecycle_state" },
@@ -1585,7 +1585,7 @@ export const DEMO_CATALOG = {
       id: "edge_activity", name: "관계 활동 이벤트",
       description: "edge_type × dkg_target_kind — 어떤 관계가 어떤 대상에 생성됐는가",
       labels: ["edge_type", "dkg_target_kind"],
-      meta: { category: "event", layer: 2, visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
+      meta: { category: "event", visualShape: "thin-bar", heightRatio: 0.8, detailKind: "event-def" },
       dims: {
         edge_type:       { kind: "axis", axisId: "edge_type" },
         dkg_target_kind: { kind: "axis", axisId: "dkg_target_kind" },
@@ -1598,7 +1598,7 @@ export const DEMO_CATALOG = {
       id: "execution_context", name: "실행 컨텍스트",
       description: "svc_ref × execution_mode — 어떤 서비스가 어떤 실행 모드에 있는가",
       labels: ["svc_ref", "execution_mode"],
-      meta: { category: "entity", layer: 1, visualShape: "cube", heightRatio: 1, detailKind: "config" },
+      meta: { category: "entity", visualShape: "cube", heightRatio: 1, detailKind: "config" },
       dims: {
         svc_ref:         { kind: "prefix_ref", prefixId: "service" },
         execution_mode:  { kind: "axis", axisId: "execution_mode" },
@@ -1611,7 +1611,7 @@ export const DEMO_CATALOG = {
       id: "ingest_record", name: "수집 레코드",
       description: "svc_ref × record_type — 어떤 서비스에서 어떤 유형의 레코드가 수집됐는가",
       labels: ["svc_ref", "record_type"],
-      meta: { category: "observation", layer: 1, visualShape: "column", heightRatio: 0.8, detailKind: "generic" },
+      meta: { category: "observation", visualShape: "column", heightRatio: 0.8, detailKind: "generic" },
       dims: {
         svc_ref:      { kind: "prefix_ref", prefixId: "service" },
         record_type:  { kind: "axis", axisId: "record_type" },
@@ -1626,7 +1626,7 @@ export const DEMO_CATALOG = {
       id: "event_classification", name: "이벤트 분류",
       description: "svc_ref × event_category × event_lifecycle_stage — 이벤트의 카테고리와 생명주기 단계를 좌표화",
       labels: ["svc_ref", "event_category", "event_lifecycle_stage"],
-      meta: { category: "observation" as const, layer: 1, visualShape: "cube", heightRatio: 0.8, detailKind: "generic" },
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 0.8, detailKind: "generic" },
       dims: {
         svc_ref:                { kind: "prefix_ref" as const, prefixId: "service" },
         event_category:         { kind: "axis" as const, axisId: "event_category" },
@@ -1640,7 +1640,7 @@ export const DEMO_CATALOG = {
       id: "metric_point", name: "메트릭 수집 포인트",
       description: "svc_ref × metric_type × record_type — 어떤 서비스에서 어떤 유형의 메트릭이 어떤 레코드로 수집됐는가",
       labels: ["svc_ref", "metric_type", "record_type"],
-      meta: { category: "observation" as const, layer: 1, visualShape: "column", heightRatio: 0.6, detailKind: "metric" },
+      meta: { category: "observation" as const, visualShape: "column", heightRatio: 0.6, detailKind: "metric" },
       dims: {
         svc_ref:      { kind: "prefix_ref" as const, prefixId: "service" },
         metric_type:  { kind: "axis" as const, axisId: "metric_type" },
