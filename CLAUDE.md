@@ -881,7 +881,7 @@ intent별 루프 의무:
 
 ### CLI 완전 관측
 - 모든 CLI 명령은 `emitCliEvent(command)` → `cli_event` prefix로 자동 기록
-- `CLI_COMMAND_MAP`: 71개 명령 → 48개 고유 좌표 (intent × domain × subject)
+- `CLI_COMMAND_MAP`: 전체 CLI 명령 → 고유 좌표 매핑 (intent × domain × subject). 수치는 `dkg run skill-cli-coverage`로 동적 확인
 - 명령어 이름은 교체 가능한 UI. 좌표가 안정 식별자
 - `analyzeCliCoverage()`: dormant 좌표 = 한 번도 실행 안 된 기능
 

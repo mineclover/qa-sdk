@@ -343,7 +343,7 @@ export const DEMO_DKG_CONFIG = {
     // ── 전문 analysis — 관측/인프라 ─────────────────────────
     {
       kind: "skill", id: "skill-observation-coverage", name: "관측 커버리지 감사",
-      description: "observation-domain prefix의 entry 관측 커버리지 분석. dormant(정의됐지만 미관측)/phantom(미정의지만 관측) 탐지. 12개 관측 prefix 대상.",
+      description: "observation-domain prefix의 entry 관측 커버리지 분석. dormant(정의됐지만 미관측)/phantom(미정의지만 관측) 탐지.",
       category: "analysis", targetKinds: ["prefix"],
       input: "UsageData", output: "CoverageAuditResult + ObservationNode",
       specialization: {
@@ -505,7 +505,7 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "skill", id: "skill-cli-coverage", name: "CLI 커버리지 분석",
-      description: "77개 CLI 명령의 52개 고유 좌표 중 관측된 것 vs dormant 감지. 한 번도 실행 안 된 기능 경로 식별.",
+      description: "CLI_COMMAND_MAP 전체 명령의 고유 좌표(intent × domain × subject) 중 관측된 것 vs dormant 감지. 한 번도 실행 안 된 기능 경로 식별.",
       category: "analysis", targetKinds: ["system"],
       input: "store (entryUsage 스캔)", output: "{ totalCoords, observedCoords, dormantCoords, coverageRate }",
       specialization: { prefixes: ["cli_event"], metrics: ["metric:coverage"] },
@@ -541,7 +541,7 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "skill", id: "skill-table-impact", name: "테이블 의존 추적",
-      description: "DB 테이블의 축/prefix/서비스 의존 체인 추적. dkg tables (목록), dkg table <id> (상세 + FK 체인 + impact). 19개 테이블 대상.",
+      description: "DB 테이블의 축/prefix/서비스 의존 체인 추적. dkg tables (목록), dkg table <id> (상세 + FK 체인 + impact). catalog.tables 전체 대상.",
       category: "read", targetKinds: ["table"],
       input: "tableId", output: "{ columnRefs, referencingPrefixes, accessingServices, impactSummary }",
       specialization: {
