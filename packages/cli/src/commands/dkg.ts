@@ -2618,6 +2618,28 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
       console.log(`    auto-resolved ${autoResolved.length}건 영속화`);
     }
 
+    // Monitoring observation 자동 만료 (30일 이상 변화 없음)
+    const EXPIRE_DAYS = 30;
+    const expireCutoff = new Date(Date.now() - EXPIRE_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    let expiredCount = 0;
+    for (const obs of existingObs) {
+      if (obs.resolution) continue;
+      const obsNode = obs as ObservationNode;
+      if (obsNode.intent !== "monitoring") continue;
+      if (obsNode.date > expireCutoff) continue;
+      // 30일 이상 된 monitoring observation → 자동 만료
+      const expired: ObservationNode = {
+        ...obsNode,
+        resolution: { decisionId: "auto-expire", outcome: "deferred" as const, note: `${EXPIRE_DAYS}일 이상 변화 없어 자동 만료` },
+      };
+      store.updateNode(expired as any);
+      graph.replaceNode(expired);
+      expiredCount++;
+    }
+    if (expiredCount > 0) {
+      console.log(`    monitoring 자동 만료: ${expiredCount}건 (${EXPIRE_DAYS}일 초과)`);
+    }
+
     store.setMeta("last_convergence", new Date().toISOString());
     console.log(`    last_convergence 메타 업데이트`);
   }
