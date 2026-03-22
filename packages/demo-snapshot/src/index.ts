@@ -74,3 +74,11 @@ export {
 } from "./demo-bridge.js";
 
 export { DEMO_DKG_CONFIG } from "./demo-dkg-config.js";
+export {
+  SCENARIO_LOGIN,
+  SCENARIO_CHECKOUT_ENTRY,
+  SCENARIO_CHECKOUT_COMPLETE,
+  SCENARIO_FULL_PURCHASE,
+  SCENARIO_CART_ABANDON,
+  DEMO_SCENARIOS,
+} from "./demo-scenarios.js";
