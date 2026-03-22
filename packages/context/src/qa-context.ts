@@ -326,6 +326,28 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(userConf
       const { createCatalogProvider } = await import("./catalog-provider.js");
       const provider = createCatalogProvider({ registry: registryUrl });
       const catalog = await provider.getCatalog();
+
+      // generation 검증 — registry의 hash와 비교
+      if (userConfig?.generation) {
+        const [, genHash] = userConfig.generation.split(":");
+        if (genHash) {
+          try {
+            const genRes = await fetch(`${registryUrl}/health/generation`);
+            if (genRes.ok) {
+              const genData = await genRes.json() as { generations: Record<string, { catalogHash: string }> };
+              const catalogId = catalog.id ?? "demo";
+              const registryHash = genData.generations?.[catalogId]?.catalogHash;
+              if (registryHash && registryHash !== genHash) {
+                console.warn(
+                  `[QaContext] GENERATION hash "${genHash}" ≠ registry hash "${registryHash}". ` +
+                  `codegen 재실행이 필요할 수 있습니다: qa-sdk codegen --registry ${registryUrl}`,
+                );
+              }
+            }
+          } catch { /* generation 검증 실패는 무시 (fail-open) */ }
+        }
+      }
+
       return createQaContext({ ...userConfig, catalog });
     } catch {
       // fallback to local

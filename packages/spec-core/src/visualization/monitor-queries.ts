@@ -120,3 +120,42 @@ export class MonitorState {
     };
   }
 }
+
+/**
+ * registry에서 svcOwners를 자동 fetch하여 MonitorState 생성.
+ *
+ * 사용:
+ *   const monitor = await createMonitorStateAsync(catalog, {
+ *     registryUrl: "http://registry:3300",
+ *   });
+ */
+export async function createMonitorStateAsync(
+  catalog: Catalog,
+  options?: {
+    windowSeconds?: number;
+    projection?: Projection;
+    registryUrl?: string;
+    svcOwners?: ReadonlyMap<string, string>;
+    domainMembers?: ReadonlyMap<string, string>;
+  },
+): Promise<MonitorState> {
+  let svcOwners = options?.svcOwners;
+
+  // registry에서 svcOwners fetch
+  if (!svcOwners && options?.registryUrl) {
+    try {
+      const res = await fetch(`${options.registryUrl}/api/services/svc-owners`);
+      if (res.ok) {
+        const data = await res.json() as Record<string, string>;
+        svcOwners = new Map(Object.entries(data));
+      }
+    } catch { /* fetch 실패 시 prefixMap fallback */ }
+  }
+
+  return new MonitorState(catalog, {
+    windowSeconds: options?.windowSeconds,
+    projection: options?.projection,
+    svcOwners,
+    domainMembers: options?.domainMembers,
+  });
+}

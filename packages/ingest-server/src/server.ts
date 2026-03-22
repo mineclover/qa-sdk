@@ -117,15 +117,31 @@ async function startServer() {
       let patternFns: PatternFunctions | undefined;
       try {
         const sa = specAnalysis as any;
-        if (env.PATTERN_CLASSIFICATION_ENABLED && sa.classifyPattern && sa.DEMO_PATTERN_RULES) {
-          patternFns = {
-            classifyPattern: sa.classifyPattern,
-            aggregatePatternStats: sa.aggregatePatternStats,
-            detectAnomalies: sa.detectAnomalies,
-            buildPatternHealthReport: sa.buildPatternHealthReport,
-            patternRules: sa.DEMO_PATTERN_RULES,
-          };
-          logger.info("pattern classification enabled");
+        if (env.PATTERN_CLASSIFICATION_ENABLED && sa.classifyPattern) {
+          // PatternRules: registry → 코드 상수 fallback
+          let patternRules = sa.DEMO_PATTERN_RULES;
+          const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
+          if (registryUrl) {
+            try {
+              const rulesRes = await fetch(`${registryUrl}/catalogs/${process.env.CATALOG_ID ?? "demo"}/pattern-rules`);
+              if (rulesRes.ok) {
+                const rulesBody = await rulesRes.json() as { data: string };
+                patternRules = JSON.parse(rulesBody.data);
+                logger.info({ source: "registry", count: patternRules.length }, "pattern rules loaded from registry");
+              }
+            } catch { /* registry 실패 → 코드 상수 fallback */ }
+          }
+
+          if (patternRules) {
+            patternFns = {
+              classifyPattern: sa.classifyPattern,
+              aggregatePatternStats: sa.aggregatePatternStats,
+              detectAnomalies: sa.detectAnomalies,
+              buildPatternHealthReport: sa.buildPatternHealthReport,
+              patternRules,
+            };
+            logger.info("pattern classification enabled");
+          }
         }
       } catch (patternErr) {
         logger.warn({ err: patternErr }, "pattern classification not available — skipped");

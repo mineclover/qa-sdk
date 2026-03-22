@@ -13,7 +13,7 @@ export type {
   Projection,
   TraceStep, TracePath, PrefixActivity,
 } from "./layer-map.js";
-export { MonitorState } from "./monitor-queries.js";
+export { MonitorState, createMonitorStateAsync } from "./monitor-queries.js";
 
 export {
   intentLinkDiagram,
