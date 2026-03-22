@@ -74,10 +74,13 @@ export function bootstrapDkg(options: {
   date?: string;
   /** TransitionSpec 배열 → 자동 변환 후 DKG 등록. config.transitionSpecs와 병합. */
   transitionSpecs?: readonly TransitionSpec[];
+  /** refresh 시 기존 그래프. resolved observation 재생성 방지용. */
+  existingGraph?: GraphRegistry;
 }): GraphRegistry {
   const catalog = options.catalog as CatalogInput;
   const config = options.config as DkgConfigInput;
   const date = options?.date ?? "2026-03-20";
+  const existing = options.existingGraph;
 
   const graph = deriveFromCatalog(catalog);
 
@@ -216,6 +219,11 @@ export function bootstrapDkg(options: {
   const skewReports = analyzeAllVersionSkew(catalog as any, dslRegistry);
   for (const report of skewReports) {
     if (report.severity === "ok") continue;
+
+    // 이미 resolved된 observation은 재생성하지 않음 (refresh 안정성)
+    const obsId = `OBS-SKEW-${report.bundleId}`;
+    const existingObs = (existing?.getNode(obsId) ?? graph.getNode(obsId)) as ObservationNode | undefined;
+    if (existingObs?.kind === "observation" && existingObs.resolution) continue;
 
     const obs: ObservationNode = {
       kind: "observation",

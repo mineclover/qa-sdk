@@ -775,11 +775,14 @@ export function dkgDecisionsList(opts: { limit?: number; kind?: string }): void 
 export function dkgRefresh(): void {
   const store = getStore();
 
+  // 0. 기존 manual 노드 수집 (resolved observation 보존용)
+  const existingGraph = store.loadGraph();
+
   // 1. bootstrap 데이터만 삭제 (운영 데이터 보존)
   const cleared = store.clearBootstrap();
 
-  // 2. 새 bootstrap 그래프 생성 → 저장
-  const graph = bootstrapDkg(bootstrapOptions());
+  // 2. 새 bootstrap 그래프 생성 → 기존 그래프 전달 (resolved observation 재생성 방지)
+  const graph = bootstrapDkg({ ...bootstrapOptions(), existingGraph });
   const saved = store.saveGraph(graph, "bootstrap");
   store.setMeta("last_bootstrap", new Date().toISOString());
 
