@@ -23,6 +23,10 @@ export interface ServiceRouteDeps {
 
 const CONFIG_TYPE = "services";
 
+function parseServices(data: string): ServiceRecord[] | null {
+  try { return JSON.parse(data); } catch { return null; }
+}
+
 export function createServiceRoutes(deps: ServiceRouteDeps) {
   const routes = new Hono();
   const { configStore } = deps;
@@ -32,7 +36,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     const catalogId = c.req.query("catalog") ?? "demo";
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json([]);
-    return c.json(JSON.parse(record.data));
+    return c.json(parseServices(record.data) ?? []);
   });
 
   // GET /api/services/svc-owners — Projection용 svcOwners 맵 (반드시 :id보다 먼저)
@@ -40,7 +44,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     const catalogId = c.req.query("catalog") ?? "demo";
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json({});
-    const services: ServiceRecord[] = JSON.parse(record.data);
+    const services: ServiceRecord[] = parseServices(record.data) ?? [];
     const owners: Record<string, string> = {};
     for (const svc of services) {
       for (const prefixId of svc.ownedPrefixes) {
@@ -56,7 +60,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     const serviceId = c.req.param("id");
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json({ error: "Services not found" }, 404);
-    const services: ServiceRecord[] = JSON.parse(record.data);
+    const services: ServiceRecord[] = parseServices(record.data) ?? [];
     const found = services.find(s => s.serviceId === serviceId);
     if (!found) return c.json({ error: `Service '${serviceId}' not found` }, 404);
     return c.json(found);
@@ -82,7 +86,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     }
 
     const record = await configStore.get(catalogId, CONFIG_TYPE);
-    const services: ServiceRecord[] = record ? JSON.parse(record.data) : [];
+    const services: ServiceRecord[] = record ? parseServices(record.data) ?? [] : [];
     const idx = services.findIndex(s => s.serviceId === body.serviceId);
     if (idx >= 0) {
       services[idx] = body;
@@ -99,7 +103,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     const serviceId = c.req.param("id");
     const record = await configStore.get(catalogId, CONFIG_TYPE);
     if (!record) return c.json({ error: "Services not found" }, 404);
-    const services: ServiceRecord[] = JSON.parse(record.data);
+    const services: ServiceRecord[] = parseServices(record.data) ?? [];
     const filtered = services.filter(s => s.serviceId !== serviceId);
     if (filtered.length === services.length) {
       return c.json({ error: `Service '${serviceId}' not found` }, 404);

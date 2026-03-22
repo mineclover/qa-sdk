@@ -127,8 +127,13 @@ export class QaMonitor {
    * });
    */
   emitWithCoords(eventKey: string, prefixes: Record<string, Record<string, string | number>>, payload?: Record<string, unknown>): void {
-    const ctx = browserTrack(BROWSER_CATALOG, prefixes);
-    this.emit(eventKey, payload ?? { event: eventKey }, { address_context: ctx });
+    let ctx: Record<string, string> | undefined;
+    try {
+      ctx = browserTrack(BROWSER_CATALOG, prefixes);
+    } catch {
+      // encoding 실패 — coordinate 없이 emit (UI 크래시 방지)
+    }
+    this.emit(eventKey, payload ?? { event: eventKey }, ctx ? { address_context: ctx } : undefined);
   }
 
   /**

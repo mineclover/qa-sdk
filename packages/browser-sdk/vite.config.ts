@@ -10,8 +10,10 @@ export default defineConfig({
       fileName: (format) =>
         format === "es" ? "qa-browser-sdk.js" : "qa-browser-sdk.umd.cjs",
     },
-    // 단일 번들 파일 — 의존성을 외부화하지 않음
-    rollupOptions: {},
+    // 단일 번들 파일 — chunk splitting 비활성화
+    rollupOptions: {
+      output: { inlineDynamicImports: true },
+    },
     sourcemap: true,
   },
   resolve: {

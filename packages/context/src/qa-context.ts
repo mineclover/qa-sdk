@@ -243,7 +243,6 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
 
       // service context는 항상 포함
       const svcAddr = getServiceAddr();
-      const svcDef = catalog.prefixes.service;
       const svcVer = latestPrefixVersion(catalog, "service");
       if (!address_context.service) {
         address_context.service = `service:${svcVer}:${svcAddr}`;
@@ -349,8 +348,8 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(userConf
       }
 
       return createQaContext({ ...userConfig, catalog });
-    } catch {
-      // fallback to local
+    } catch (err) {
+      console.warn(`[QaContext] Registry fetch failed (${registryUrl}): ${err instanceof Error ? err.message : String(err)}. Falling back to local catalog.`);
     }
   }
 

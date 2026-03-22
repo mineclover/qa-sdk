@@ -123,7 +123,7 @@ async function startServer() {
           const registryUrl = env.REGISTRY_URL ?? env.CONVERGENCE_REGISTRY_URL;
           if (registryUrl) {
             try {
-              const rulesRes = await fetch(`${registryUrl}/catalogs/${env.CATALOG_ID}/pattern-rules`);
+              const rulesRes = await fetch(`${registryUrl}/catalogs/${env.CATALOG_ID}/pattern-rules`, { signal: AbortSignal.timeout(5_000) });
               if (rulesRes.ok) {
                 const rulesBody = await rulesRes.json() as { data: string };
                 patternRules = JSON.parse(rulesBody.data);
@@ -189,6 +189,23 @@ async function startServer() {
     } catch (error) {
       logger.error({ err: error }, "transition engine initialization failed — disabled");
     }
+  }
+
+  // ── DEMO_SCENARIOS 등록 (ScenarioSpecStore) ──────────
+  try {
+    const { DEMO_SCENARIOS } = await import("demo-snapshot");
+    if (DEMO_SCENARIOS && stores.scenarioSpecStore) {
+      let registered = 0;
+      for (const spec of DEMO_SCENARIOS) {
+        await stores.scenarioSpecStore.upsert(spec);
+        registered++;
+      }
+      if (registered > 0) {
+        logger.info(`demo scenarios registered: ${registered}`);
+      }
+    }
+  } catch {
+    // demo-snapshot 미사용 환경에서는 무시
   }
 
   const app = createApp({
