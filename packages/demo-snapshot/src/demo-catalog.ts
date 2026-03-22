@@ -1768,7 +1768,7 @@ export const DEMO_CATALOG = {
     },
 
     // ── 좌표 인프라 (SQLite — index-meta) ───────────────────────────────
-    version_lifecycle: {
+    tbl_version_lifecycle: {
       table: "version_lifecycle",
       columns: {
         prefix:            { kind: "scalar", type: "string" },

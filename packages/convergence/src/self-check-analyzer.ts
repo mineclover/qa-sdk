@@ -371,8 +371,6 @@ const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
   { prefix: "engine_event", dims: { constraint_op: "eq", verdict_result: "fail" }, refDims: ["svc_ref"] },
   { prefix: "engine_event", dims: { constraint_op: "gt", verdict_result: "degraded" }, refDims: ["svc_ref"] },
   { prefix: "engine_event", dims: { constraint_op: "exists", verdict_result: "unknown" }, refDims: ["svc_ref"] },
-  { prefix: "engine_event", dims: { constraint_op: "lt", verdict_result: "skipped" }, refDims: ["svc_ref"] },
-
   // ── schema_event: 누락 migration_pattern, deploy_action ──
   { prefix: "schema_event", dims: { migration_pattern: "unknown", deploy_action: "rollback" }, refDims: ["svc_ref"] },
   { prefix: "schema_event", dims: { migration_pattern: "identity", deploy_action: "canary_start" }, refDims: ["svc_ref"] },
@@ -468,7 +466,6 @@ const SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
   { prefix: "skill_execution", dims: { skill_id: "skill-analyze-impact", skill_category: "analysis", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-infer-migrator", skill_category: "analysis", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-pattern-analysis", skill_category: "analysis", skill_outcome: "ok" } },
-  { prefix: "skill_execution", dims: { skill_id: "skill-schema-health-audit", skill_category: "analysis", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-entry-add-chain", skill_category: "chain", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-system-health-chain", skill_category: "chain", skill_outcome: "ok" } },
   { prefix: "skill_execution", dims: { skill_id: "skill-self-check-analyze", skill_category: "analysis", skill_outcome: "ok" } },
