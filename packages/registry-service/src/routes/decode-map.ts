@@ -102,7 +102,7 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
       mapDims.push({
         dimId: label,
         snapshotId: `${axisId}_${axisVer}`,
-        kind: "string_enum",
+        kind: { type: "string_enum" },
         entries,
       });
       shape.push(axisVerDef.capacity ?? entries.length);
@@ -112,23 +112,22 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
       const refPrefix = catalog.prefixes?.[refPrefixId];
       if (!refPrefix) continue;
 
-      // 참조 prefix의 최신 버전에서 size 계산
       const refVer = (refPrefix.versions ?? [])[0];
-      const refSize = refVer ? computePrefixSize(catalog, refPrefix, refVer.version) : 0;
-
+      // prefix_ref: 참조 capacity만 shape에 반영, entries는 빈 배열
+      const refCapacity = refVer ? computePrefixCapacity(catalog, refPrefix, refVer.version) : 1;
       mapDims.push({
         dimId: label,
         snapshotId: `ref_${refPrefixId}`,
         kind: { type: "index_ref", indexId: refPrefixId },
-        entries: Array.from({ length: refSize }, (_, i) => String(i)),
+        entries: [],
       });
-      shape.push(refSize || 1);
+      shape.push(refCapacity);
     } else if (dimDef.kind === "table_ref") {
       // table_ref — 스킵 (디코딩에서는 불필요)
       mapDims.push({
         dimId: label,
         snapshotId: `table_${dimDef.tableId}`,
-        kind: "string_enum",
+        kind: { type: "string_enum" },
         entries: ["_ref"],
       });
       shape.push(1);
@@ -140,15 +139,19 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
   return { indexId: prefixId, versionId, shape, size, dims: mapDims };
 }
 
-/** prefix의 전체 주소 공간 크기 계산 */
-function computePrefixSize(catalog: any, prefix: any, versionId: string): number {
+/** prefix의 capacity 계산 (shape의 곱, prefix_ref는 참조 prefix의 capacity 곱) */
+function computePrefixCapacity(catalog: any, prefix: any, versionId: string, visited = new Set<string>()): number {
+  const key = `${prefix.id ?? ""}:${versionId}`;
+  if (visited.has(key)) return 1; // 순환 참조 방어
+  visited.add(key);
+
   const labels: string[] = prefix.labels ?? [];
   const dims = prefix.dims ?? {};
   const verDef = (prefix.versions ?? []).find((v: any) => v.version === versionId);
   if (!verDef) return 0;
 
   const axisVersions = verDef.axisVersions ?? {};
-  let size = 1;
+  let cap = 1;
 
   for (const label of labels) {
     const dimDef = dims[label];
@@ -159,15 +162,15 @@ function computePrefixSize(catalog: any, prefix: any, versionId: string): number
       if (!axis) continue;
       const axisVer = axisVersions[label] ?? Object.keys(axis.versions)[0] ?? "v1";
       const axisVerDef = axis.versions?.[axisVer];
-      size *= axisVerDef?.capacity ?? 1;
+      cap *= axisVerDef?.capacity ?? 1;
     } else if (dimDef.kind === "prefix_ref") {
       const refPrefix = catalog.prefixes?.[dimDef.prefixId];
       if (refPrefix) {
         const refVer = (refPrefix.versions ?? [])[0];
-        size *= refVer ? computePrefixSize(catalog, refPrefix, refVer.version) : 1;
+        cap *= refVer ? computePrefixCapacity(catalog, refPrefix, refVer.version, visited) : 1;
       }
     }
   }
 
-  return size;
+  return cap;
 }
