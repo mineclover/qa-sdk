@@ -125,7 +125,7 @@ import {
 const _axes = {
   env:       { entries: ["dev", "stage", "prod", "test", "local"] as const, capacity: 32 },
   region:    { entries: ["asia", "usa"] as const, capacity: 32 },
-  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway"] as const, capacity: 32 },
+  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry", "ingest-server", "monitor", "content-service", "infra-controller"] as const, capacity: 32 },
   namespace: { entries: ["shop", "cms"] as const, capacity: 32 },
 } as const;
 
@@ -180,7 +180,7 @@ export const DEMO_CATALOG = {
         v1: {
           entries: _axes.svc_name.entries,
           capacity: _axes.svc_name.capacity,
-          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW" },
+          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", registry: "레지스트리", "ingest-server": "수집서버", monitor: "모니터", "content-service": "콘텐츠", "infra-controller": "인프라" },
         },
       },
     },

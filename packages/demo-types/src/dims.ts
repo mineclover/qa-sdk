@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:59:32
+// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import type * as Axes from "./axes.js";

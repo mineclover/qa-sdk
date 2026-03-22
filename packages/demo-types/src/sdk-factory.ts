@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:59:32
+// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import { createIndexSDK } from "@qa-sdk/codec";
@@ -23,7 +23,7 @@ const SCHEMA = {
     },
     api_surface: {
       entries: ["encode-decode", "stride-calc", "bitmask-ops", "dim-extract", "perm-grant", "protocol-codec", "state-lifecycle", "query-resolve", "schema-validate", "convergence-analysis", "dkg-graph", "integration"],
-      capacity: 16,
+      capacity: 32,
     },
     api_version: {
       entries: ["v1", "v2"],
@@ -83,7 +83,7 @@ const SCHEMA = {
     },
     dkg_op: {
       entries: ["claim", "release", "decide", "observe", "resolve", "link", "refresh", "self-check", "converge", "trace", "promote"],
-      capacity: 16,
+      capacity: 32,
     },
     dkg_target_kind: {
       entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system"],
@@ -191,7 +191,7 @@ const SCHEMA = {
     },
     pattern_confidence: {
       entries: ["exact", "high", "medium", "low", "unknown"],
-      capacity: 8,
+      capacity: 16,
     },
     pipeline_phase: {
       entries: ["ingest", "reconstruct", "verdict", "aggregate", "propagate"],
@@ -203,7 +203,7 @@ const SCHEMA = {
     },
     qa_module: {
       entries: ["shared", "schema", "export-surface", "spec", "loader", "codegen", "dkg", "dkg-skills", "convergence", "propagation", "store", "visualization", "shopping-flow", "event-pipeline", "iframe-integration", "scenario-selector", "shop-ingest-integration", "anonymous-browse", "cart-abandon", "multi-product-purchase", "_all"],
-      capacity: 32,
+      capacity: 64,
     },
     qa_pkg: {
       entries: ["spec-core", "cli", "sdk", "demo-snapshot", "weighted-index", "bit-index", "permission-engine", "index-meta", "platform-demo", "ingest-server", "registry-service", "e2e", "core", "engine", "store", "gate-service", "query-service", "decode-service", "registry-server", "registry-client", "apm", "browser-sdk", "event-catalog", "pino", "viz-3d", "viz-web", "demo-tests", "weighted-wasm"],
@@ -238,12 +238,12 @@ const SCHEMA = {
       capacity: 8,
     },
     skill_id: {
-      entries: ["skill-trace", "skill-explore-service", "skill-explore-prefix", "skill-explore-dsl", "skill-system-overview", "skill-record-decision", "skill-record-observation", "skill-claim", "skill-release", "skill-lifecycle-transition", "skill-checkout-flow-verify", "skill-commerce-skew-audit", "skill-observation-coverage", "skill-infra-impact-verify", "skill-pipeline-phase-verify", "skill-event-action-check", "skill-svc-binding-check", "skill-safe-entry-add", "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health", "skill-pattern-analysis", "skill-schema-health-audit", "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain", "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan", "skill-spec-manage", "skill-registry-publish"],
+      entries: ["skill-trace", "skill-explore-service", "skill-explore-prefix", "skill-explore-dsl", "skill-system-overview", "skill-record-decision", "skill-record-observation", "skill-claim", "skill-release", "skill-lifecycle-transition", "skill-checkout-flow-verify", "skill-commerce-skew-audit", "skill-observation-coverage", "skill-infra-impact-verify", "skill-pipeline-phase-verify", "skill-event-action-check", "skill-svc-binding-check", "skill-safe-entry-add", "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health", "skill-pattern-analysis", "skill-schema-health-audit", "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain", "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan", "skill-spec-manage", "skill-registry-publish", "skill-flow-trace", "skill-table-impact"],
       capacity: 64,
     },
     skill_outcome: {
       entries: ["ok", "warning", "error", "blocked", "skipped"],
-      capacity: 8,
+      capacity: 16,
     },
     spec_type: {
       entries: ["req", "feat", "uc", "evt", "ls", "adr"],
@@ -258,7 +258,7 @@ const SCHEMA = {
       capacity: 32,
     },
     svc_name: {
-      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway"],
+      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry", "ingest-server", "monitor", "content-service", "infra-controller"],
       capacity: 32,
     },
     tag: {
@@ -271,7 +271,7 @@ const SCHEMA = {
     },
     test_result: {
       entries: ["passed", "failed", "error", "skipped", "timeout"],
-      capacity: 8,
+      capacity: 16,
     },
     trackAction: {
       entries: ["click", "view", "scroll", "submit", "navigate", "add_to_cart", "purchase", "close"],
@@ -295,7 +295,7 @@ const SCHEMA = {
     },
     version_lifecycle: {
       entries: ["draft", "locked", "released", "active", "deprecated"],
-      capacity: 8,
+      capacity: 16,
     },
   },
   prefixes: {

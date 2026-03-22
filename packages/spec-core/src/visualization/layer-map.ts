@@ -117,12 +117,18 @@ export const SERVICE_PROJECTION: Projection = {
   servicePrefix: "service",
   groupByAxis: "svc_name",
   groupLayerMap: {
+    // Frontend
     "shopping-web": 0,
     "content-service": 0,
+    "monitor": 0,
+    // Backend
     "shopping-backend": 1,
     "auth": 1,
     "payment": 1,
     "gateway": 1,
+    // Infrastructure
+    "registry": 2,
+    "ingest-server": 2,
     "infra-controller": 2,
   },
   prefixMap: {

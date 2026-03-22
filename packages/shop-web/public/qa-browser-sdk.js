@@ -541,7 +541,7 @@ class v {
     return this.nullable().optional();
   }
   array() {
-    return E.create(this);
+    return A.create(this);
   }
   promise() {
     return ce.create(this, this._def);
@@ -625,7 +625,7 @@ function qt(n) {
 function It(n, e) {
   return !!((e === "v4" || !e) && vt.test(n) || (e === "v6" || !e) && bt.test(n));
 }
-function Et(n, e) {
+function At(n, e) {
   if (!_t.test(n))
     return !1;
   try {
@@ -638,7 +638,7 @@ function Et(n, e) {
     return !1;
   }
 }
-function At(n, e) {
+function Et(n, e) {
   return !!((e === "v4" || !e) && kt.test(n) || (e === "v6" || !e) && xt.test(n));
 }
 class R extends v {
@@ -777,11 +777,11 @@ class R extends v {
         validation: "ip",
         code: l.invalid_string,
         message: s.message
-      }), r.dirty()) : s.kind === "jwt" ? Et(e.data, s.alg) || (a = this._getOrReturnCtx(e, a), u(a, {
+      }), r.dirty()) : s.kind === "jwt" ? At(e.data, s.alg) || (a = this._getOrReturnCtx(e, a), u(a, {
         validation: "jwt",
         code: l.invalid_string,
         message: s.message
-      }), r.dirty()) : s.kind === "cidr" ? At(e.data, s.version) || (a = this._getOrReturnCtx(e, a), u(a, {
+      }), r.dirty()) : s.kind === "cidr" ? Et(e.data, s.version) || (a = this._getOrReturnCtx(e, a), u(a, {
         validation: "cidr",
         code: l.invalid_string,
         message: s.message
@@ -1200,7 +1200,7 @@ B.create = (n) => new B({
   coerce: (n == null ? void 0 : n.coerce) || !1,
   ...y(n)
 });
-class J extends v {
+class G extends v {
   constructor() {
     super(...arguments), this.min = this.gte, this.max = this.lte;
   }
@@ -1256,7 +1256,7 @@ class J extends v {
     return this.setLimit("max", e, !1, f.toString(t));
   }
   setLimit(e, t, r, a) {
-    return new J({
+    return new G({
       ...this._def,
       checks: [
         ...this._def.checks,
@@ -1270,7 +1270,7 @@ class J extends v {
     });
   }
   _addCheck(e) {
-    return new J({
+    return new G({
       ...this._def,
       checks: [...this._def.checks, e]
     });
@@ -1327,7 +1327,7 @@ class J extends v {
     return e;
   }
 }
-J.create = (n) => new J({
+G.create = (n) => new G({
   checks: [],
   typeName: m.ZodBigInt,
   coerce: (n == null ? void 0 : n.coerce) ?? !1,
@@ -1446,7 +1446,7 @@ Ie.create = (n) => new Ie({
   typeName: m.ZodSymbol,
   ...y(n)
 });
-class Ee extends v {
+class Ae extends v {
   _parse(e) {
     if (this._getType(e) !== p.undefined) {
       const r = this._getOrReturnCtx(e);
@@ -1459,11 +1459,11 @@ class Ee extends v {
     return T(e.data);
   }
 }
-Ee.create = (n) => new Ee({
+Ae.create = (n) => new Ae({
   typeName: m.ZodUndefined,
   ...y(n)
 });
-class Ae extends v {
+class Ee extends v {
   _parse(e) {
     if (this._getType(e) !== p.null) {
       const r = this._getOrReturnCtx(e);
@@ -1476,7 +1476,7 @@ class Ae extends v {
     return T(e.data);
   }
 }
-Ae.create = (n) => new Ae({
+Ee.create = (n) => new Ee({
   typeName: m.ZodNull,
   ...y(n)
 });
@@ -1535,7 +1535,7 @@ Ne.create = (n) => new Ne({
   typeName: m.ZodVoid,
   ...y(n)
 });
-class E extends v {
+class A extends v {
   _parse(e) {
     const { ctx: t, status: r } = this._processInputParams(e), a = this._def;
     if (t.parsedType !== p.array)
@@ -1579,19 +1579,19 @@ class E extends v {
     return this._def.type;
   }
   min(e, t) {
-    return new E({
+    return new A({
       ...this._def,
       minLength: { value: e, message: f.toString(t) }
     });
   }
   max(e, t) {
-    return new E({
+    return new A({
       ...this._def,
       maxLength: { value: e, message: f.toString(t) }
     });
   }
   length(e, t) {
-    return new E({
+    return new A({
       ...this._def,
       exactLength: { value: e, message: f.toString(t) }
     });
@@ -1600,7 +1600,7 @@ class E extends v {
     return this.min(1, e);
   }
 }
-E.create = (n, e) => new E({
+A.create = (n, e) => new A({
   type: n,
   minLength: null,
   maxLength: null,
@@ -1619,7 +1619,7 @@ function D(n) {
       ...n._def,
       shape: () => e
     });
-  } else return n instanceof E ? new E({
+  } else return n instanceof A ? new A({
     ...n._def,
     type: D(n.element)
   }) : n instanceof $ ? $.create(D(n.unwrap())) : n instanceof F ? F.create(D(n.unwrap())) : n instanceof L ? L.create(n.items.map((e) => D(e))) : n;
@@ -2188,7 +2188,7 @@ Re.create = (n, e, t) => new Re({
   typeName: m.ZodMap,
   ...y(t)
 });
-class G extends v {
+class J extends v {
   _parse(e) {
     const { status: t, ctx: r } = this._processInputParams(e);
     if (r.parsedType !== p.set)
@@ -2227,13 +2227,13 @@ class G extends v {
     return r.common.async ? Promise.all(o).then((c) => i(c)) : i(o);
   }
   min(e, t) {
-    return new G({
+    return new J({
       ...this._def,
       minSize: { value: e, message: f.toString(t) }
     });
   }
   max(e, t) {
-    return new G({
+    return new J({
       ...this._def,
       maxSize: { value: e, message: f.toString(t) }
     });
@@ -2245,7 +2245,7 @@ class G extends v {
     return this.min(1, e);
   }
 }
-G.create = (n, e) => new G({
+J.create = (n, e) => new J({
   valueType: n,
   minSize: null,
   maxSize: null,
@@ -2674,7 +2674,7 @@ var m;
 })(m || (m = {}));
 const _ = R.create, ee = B.create, be = he.create, xe = _e.create;
 M.create;
-const A = E.create, I = x.create;
+const E = A.create, I = x.create;
 se.create;
 ie.create;
 L.create;
@@ -2705,7 +2705,7 @@ const Ue = z.createWithPreprocess, Rt = N(["log", "span", "metric"]), jt = N(["o
   payload_format: $t,
   payload_encoding: Mt,
   payload_masking_applied: be(),
-  payload_masked_fields: A(_()),
+  payload_masked_fields: E(_()),
   payload: xe(),
   qa_session_id: _().optional(),
   // Address context
@@ -2716,8 +2716,8 @@ const Ue = z.createWithPreprocess, Rt = N(["log", "span", "metric"]), jt = N(["o
   metric_value: ee().optional(),
   metric_unit: _().optional(),
   metric_labels: te(_(), _()).optional(),
-  metric_buckets: A(ee()).optional(),
-  metric_quantiles: A(ee()).optional(),
+  metric_buckets: E(ee()).optional(),
+  metric_quantiles: E(ee()).optional(),
   actor_id: _().optional(),
   user_id: _().optional(),
   user_attributes: te(_()).optional()
@@ -2752,7 +2752,7 @@ I({
   build: Ut,
   infra_context: te(_(), _()).optional(),
   entry_snapshot: _().optional(),
-  records: A(Lt).min(1)
+  records: E(Lt).min(1)
 });
 const Ft = N([
   "eq",
@@ -2772,8 +2772,8 @@ const Ft = N([
   value: xe().optional()
 }), Ht = I({
   condition: Fe,
-  next: A(_().min(1))
-}), Kt = N(["sequence", "optional", "branch"]), Jt = I({
+  next: E(_().min(1))
+}), Kt = N(["sequence", "optional", "branch"]), Gt = I({
   id: _().min(1),
   event_key: _().min(1),
   event_version: _().regex(/^\d{3}$/).optional(),
@@ -2781,24 +2781,24 @@ const Ft = N([
   record_kind: N(["log", "span"]).optional(),
   required: be(),
   kind: Kt,
-  constraints: A(Fe).optional(),
+  constraints: E(Fe).optional(),
   timeout_ms: ee().int().positive().optional(),
-  next: A(_().min(1)).optional(),
-  branches: A(Ht).optional()
+  next: E(_().min(1)).optional(),
+  branches: E(Ht).optional()
 });
 I({
   scenario_id: _().min(1),
   version: _().min(1),
   domain: _().min(1),
   description: _().optional(),
-  entry_conditions: A(Wt).optional(),
-  steps: A(Jt).min(1)
+  entry_conditions: E(Wt).optional(),
+  steps: E(Gt).min(1)
 });
 function ne(n) {
   const e = new Error(n);
   return e.source = "ulid", e;
 }
-const we = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", K = we.length, Le = Math.pow(2, 48) - 1, Gt = 10, Qt = 16;
+const we = "0123456789ABCDEFGHJKMNPQRSTVWXYZ", K = we.length, Le = Math.pow(2, 48) - 1, Jt = 10, Qt = 16;
 function Yt(n) {
   let e = Math.floor(n() * K);
   return e === K && (e = K - 1), we.charAt(e);
@@ -2847,7 +2847,7 @@ function tn(n = !1, e) {
 }
 function nn(n) {
   return n || (n = tn()), function(t) {
-    return isNaN(t) && (t = Date.now()), Xt(t, Gt) + en(Qt, n);
+    return isNaN(t) && (t = Date.now()), Xt(t, Jt) + en(Qt, n);
   };
 }
 const X = nn();
@@ -4101,8 +4101,8 @@ class Cn {
   async shutdown() {
   }
 }
-const Je = "qa_monitor";
-function ze(n = Je) {
+const Ge = "qa_monitor";
+function ze(n = Ge) {
   try {
     const t = sessionStorage.getItem(n);
     if (t) {
@@ -4122,7 +4122,7 @@ function ze(n = Je) {
   }
   return e;
 }
-function Tn(n = Je) {
+function Tn(n = Ge) {
   try {
     sessionStorage.removeItem(n);
   } catch {
@@ -4173,7 +4173,7 @@ function qn(n, e) {
   }
   return () => t.forEach((r) => r());
 }
-function Ge(n, e, t) {
+function Je(n, e, t) {
   const r = n[e];
   if (!r)
     return null;
@@ -4240,7 +4240,7 @@ function Q(n, e) {
       const d = s.dims[c];
       (d == null ? void 0 : d.kind) === "prefix_ref" && !(c in i) && (i[c] = d.values[0]);
     }
-    const o = Ge(n, r, i);
+    const o = Je(n, r, i);
     o && (t[r] = o.serialized);
   }
   return t;
@@ -4253,7 +4253,7 @@ function In(n, e) {
   }
   return t;
 }
-const En = {
+const An = {
   // context
   service: "context",
   page_view: "context",
@@ -4288,8 +4288,8 @@ const En = {
   relational: "context",
   content: "context"
 };
-function An(n) {
-  return En[n] ?? "trigger";
+function En(n) {
+  return An[n] ?? "trigger";
 }
 function On(n) {
   const e = {
@@ -4302,7 +4302,7 @@ function On(n) {
     data: []
   };
   for (const [t, r] of Object.entries(n)) {
-    const a = An(t);
+    const a = En(t);
     e[a].push({ prefixId: t, serialized: r });
   }
   return e;
@@ -4435,7 +4435,7 @@ const Ln = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   BROWSER_CATALOG: Y,
   decode: Qe,
   decodeContext: In,
-  encode: Ge,
+  encode: Je,
   loadCatalog: Rn,
   track: Q,
   trackWithSignal: Nn
@@ -4603,7 +4603,8 @@ async function Vn(n) {
           infraContext: Q(t.catalog, { service: r })
         };
       }
-    } catch {
+    } catch (e) {
+      console.warn(`[QaMonitorAsync] registry fetch failed: ${e instanceof Error ? e.message : String(e)}. Using static BROWSER_CATALOG fallback.`);
     }
   return new Ye(n);
 }
@@ -4617,7 +4618,7 @@ export {
   Vn as createQaMonitorAsync,
   Qe as decode,
   In as decodeContext,
-  Ge as encode,
+  Je as encode,
   pe as newLogId,
   sn as newQaSessionId,
   an as newSpanId,

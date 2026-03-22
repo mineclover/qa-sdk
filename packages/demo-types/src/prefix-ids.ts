@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:59:32
+// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** Catalog prefix 이름 리터럴 유니온 (39개) */
@@ -124,25 +124,38 @@ export type AxisId =
 
 export const AXIS_IDS = ["action", "address_state", "anomaly_kind", "anomaly_severity", "api_surface", "api_version", "auth_action", "behavior_pattern", "build_result", "cart_action", "category", "channel", "cli_domain", "cli_intent", "cli_subject", "constraint_op", "constraint_rule", "decision_type", "deploy_action", "dkg_op", "dkg_target_kind", "edge_type", "env", "event_category", "event_lifecycle_stage", "event_name", "execution_mode", "flow_name", "flow_step", "flow_variant", "health_status", "http_method", "identification_mode", "initiator", "lifecycle_state", "locale", "mask_mode", "metric_type", "migration_pattern", "namespace", "node_source", "objectKind", "obs_source", "observation_intent", "order_action", "page", "pattern_confidence", "pipeline_phase", "predicate", "qa_module", "qa_pkg", "rbac_role", "record_type", "region", "resource", "resource_location", "resource_type", "role", "skill_category", "skill_id", "skill_outcome", "spec_type", "status", "subjectKind", "svc_name", "tag", "temporal_strategy", "test_result", "trackAction", "userType", "validation_layer", "validation_mode", "verdict_result", "version_lifecycle"] as const;
 
-/** Catalog table 이름 리터럴 유니온 (6개) */
+/** Catalog table 이름 리터럴 유니온 (19개) */
 export type TableId =
   | "cart_items"
   | "carts"
+  | "dkg_edges"
+  | "dkg_nodes"
+  | "entry"
+  | "event_records"
   | "items"
   | "members"
   | "orders"
-  | "orgs";
+  | "orgs"
+  | "policy_rule"
+  | "qa_sessions"
+  | "tbl_version_lifecycle"
+  | "traces"
+  | "transition_state"
+  | "transmissions"
+  | "usage_snapshots"
+  | "verdict_reports"
+  | "version_usages";
 
-export const TABLE_IDS = ["cart_items", "carts", "items", "members", "orders", "orgs"] as const;
+export const TABLE_IDS = ["cart_items", "carts", "dkg_edges", "dkg_nodes", "entry", "event_records", "items", "members", "orders", "orgs", "policy_rule", "qa_sessions", "tbl_version_lifecycle", "traces", "transition_state", "transmissions", "usage_snapshots", "verdict_reports", "version_usages"] as const;
 
 /** 빌드 시점 version 메타데이터 */
 export const VERSION_META = {
   /** Catalog ID */
   catalogId: "demo" as const,
   /** Catalog 구조 content hash (SHA-256 prefix 12자) */
-  contentHash: "abb55ca63a8b" as const,
+  contentHash: "6554b4a976b6" as const,
   /** 생성 시각 (ISO 8601) */
-  generatedAt: "2026-03-22T05:59:32.948Z" as const,
+  generatedAt: "2026-03-22T18:39:49.311Z" as const,
   /** prefix별 version (생성 시점 기준) */
   prefixVersions: {
     "auth_event": "v1",
@@ -188,4 +201,4 @@ export const VERSION_META = {
 } as const;
 
 /** GENERATION — 빌드 시점 version 식별자. SDK 부트 시 전달. */
-export const GENERATION = "demo:abb55ca63a8b" as const;
+export const GENERATION = "demo:6554b4a976b6" as const;

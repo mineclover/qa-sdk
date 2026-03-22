@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: abb55ca63a8b) at 2026-03-22T05:59:32
+// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
@@ -38,7 +38,7 @@ export const ANOMALY_SEVERITY = {
 } as const;
 export type AnomalySeverity = typeof ANOMALY_SEVERITY[keyof typeof ANOMALY_SEVERITY];
 
-/** api_surface — 인터페이스 영역 (entries: 12, capacity: 16) */
+/** api_surface — 인터페이스 영역 (entries: 12, capacity: 32) */
 export const API_SURFACE = {
   ENCODE_DECODE: "encode-decode",
   STRIDE_CALC: "stride-calc",
@@ -215,7 +215,7 @@ export const DEPLOY_ACTION = {
 } as const;
 export type DeployAction = typeof DEPLOY_ACTION[keyof typeof DEPLOY_ACTION];
 
-/** dkg_op — DKG 운영 (entries: 11, capacity: 16) */
+/** dkg_op — DKG 운영 (entries: 11, capacity: 32) */
 export const DKG_OP = {
   CLAIM: "claim",
   RELEASE: "release",
@@ -514,7 +514,7 @@ export const PAGE = {
 } as const;
 export type Page = typeof PAGE[keyof typeof PAGE];
 
-/** pattern_confidence — 패턴 신뢰도 (entries: 5, capacity: 8) */
+/** pattern_confidence — 패턴 신뢰도 (entries: 5, capacity: 16) */
 export const PATTERN_CONFIDENCE = {
   EXACT: "exact",
   HIGH: "high",
@@ -546,7 +546,7 @@ export const PREDICATE = {
 } as const;
 export type Predicate = typeof PREDICATE[keyof typeof PREDICATE];
 
-/** qa_module — 모듈 (entries: 21, capacity: 32) */
+/** qa_module — 모듈 (entries: 21, capacity: 64) */
 export const QA_MODULE = {
   SHARED: "shared",
   SCHEMA: "schema",
@@ -676,7 +676,7 @@ export const SKILL_CATEGORY = {
 } as const;
 export type SkillCategory = typeof SKILL_CATEGORY[keyof typeof SKILL_CATEGORY];
 
-/** skill_id — 스킬 ID (entries: 32, capacity: 64) */
+/** skill_id — 스킬 ID (entries: 34, capacity: 64) */
 export const SKILL_ID = {
   SKILL_TRACE: "skill-trace",
   SKILL_EXPLORE_SERVICE: "skill-explore-service",
@@ -710,10 +710,12 @@ export const SKILL_ID = {
   SKILL_PROMOTE_SCAN: "skill-promote-scan",
   SKILL_SPEC_MANAGE: "skill-spec-manage",
   SKILL_REGISTRY_PUBLISH: "skill-registry-publish",
+  SKILL_FLOW_TRACE: "skill-flow-trace",
+  SKILL_TABLE_IMPACT: "skill-table-impact",
 } as const;
 export type SkillId = typeof SKILL_ID[keyof typeof SKILL_ID];
 
-/** skill_outcome — 스킬 실행 결과 (entries: 5, capacity: 8) */
+/** skill_outcome — 스킬 실행 결과 (entries: 5, capacity: 16) */
 export const SKILL_OUTCOME = {
   OK: "ok",
   WARNING: "warning",
@@ -753,13 +755,18 @@ export const SUBJECTKIND = {
 } as const;
 export type Subjectkind = typeof SUBJECTKIND[keyof typeof SUBJECTKIND];
 
-/** svc_name — 서비스명 (entries: 5, capacity: 32) */
+/** svc_name — 서비스명 (entries: 10, capacity: 32) */
 export const SVC_NAME = {
   SHOPPING_WEB: "shopping-web",
   SHOPPING_BACKEND: "shopping-backend",
   AUTH: "auth",
   PAYMENT: "payment",
   GATEWAY: "gateway",
+  REGISTRY: "registry",
+  INGEST_SERVER: "ingest-server",
+  MONITOR: "monitor",
+  CONTENT_SERVICE: "content-service",
+  INFRA_CONTROLLER: "infra-controller",
 } as const;
 export type SvcName = typeof SVC_NAME[keyof typeof SVC_NAME];
 
@@ -780,7 +787,7 @@ export const TEMPORAL_STRATEGY = {
 } as const;
 export type TemporalStrategy = typeof TEMPORAL_STRATEGY[keyof typeof TEMPORAL_STRATEGY];
 
-/** test_result — 테스트결과 (entries: 5, capacity: 8) */
+/** test_result — 테스트결과 (entries: 5, capacity: 16) */
 export const TEST_RESULT = {
   PASSED: "passed",
   FAILED: "failed",
@@ -838,7 +845,7 @@ export const VERDICT_RESULT = {
 } as const;
 export type VerdictResult = typeof VERDICT_RESULT[keyof typeof VERDICT_RESULT];
 
-/** version_lifecycle — 버전 생명주기 (entries: 5, capacity: 8) */
+/** version_lifecycle — 버전 생명주기 (entries: 5, capacity: 16) */
 export const VERSION_LIFECYCLE = {
   DRAFT: "draft",
   LOCKED: "locked",
