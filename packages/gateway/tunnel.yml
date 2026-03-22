@@ -1,0 +1,38 @@
+# Cloudflare Tunnel 설정 — 내부 서비스를 CF 네트워크에 노출
+#
+# 설치: cloudflared tunnel create qa-sdk
+# 실행: cloudflared tunnel --config tunnel.yml run
+#
+# 이 파일은 cloudflared가 내부 서비스로 트래픽을 라우팅하는 방법을 정의한다.
+# 게이트웨이 Worker가 이 tunnel을 통해 내부 서비스에 접근한다.
+
+tunnel: qa-sdk
+credentials-file: ~/.cloudflared/qa-sdk.json
+
+ingress:
+  # ingest-server
+  - hostname: ingest.qa-sdk.io
+    service: http://localhost:3200
+
+  # registry-service
+  - hostname: registry.qa-sdk.io
+    service: http://localhost:3300
+
+  # registry-server
+  - hostname: registry-server.qa-sdk.io
+    service: http://localhost:3100
+
+  # gate-service (D1 Worker 대신 로컬 사용 시)
+  - hostname: gate.qa-sdk.io
+    service: http://localhost:3400
+
+  # query-service (D1 Worker 대신 로컬 사용 시)
+  - hostname: query.qa-sdk.io
+    service: http://localhost:3500
+
+  # decode-service
+  - hostname: decode.qa-sdk.io
+    service: http://localhost:3600
+
+  # catch-all
+  - service: http_status:404
