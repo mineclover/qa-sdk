@@ -12,7 +12,8 @@ body{background:var(--bg);color:var(--txt);font-family:'Sora',sans-serif;overflo
 canvas{position:fixed;inset:0;z-index:0}
 .hud{position:fixed;z-index:10;pointer-events:none}
 .hud *{pointer-events:none}
-.hud button,.hud input,.hud .vb,.hud [style*="overflow-y:auto"],.hud #h-flow,.hud #h-select,.hud #h-ctx{pointer-events:all}
+.hud button,.hud input,.hud .vb{pointer-events:all}
+.hud-tr{pointer-events:all}
 .hud-tl{top:14px;left:18px}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
 .hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
 .hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
@@ -240,20 +241,12 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     if(overlay.style.display!=='none'&&(e.key==='Escape'||overlay.style.display==='flex')){hide();}
   });
 })();
-// ── HUD 스크롤 영역에서 wheel 이벤트가 canvas(OrbitControls)로 전파되지 않도록 차단 ──
-document.querySelectorAll('#h-flow, #h-select, #h-ctx, #flow-steps, #sel-info').forEach(function(el) {
-  el.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: false });
-});
-// hud-tr 전체에서도 차단 (스크롤 가능 요소가 동적으로 추가될 수 있으므로)
+// ── hud-tr 위에서 wheel/trackpad 이벤트가 canvas로 전파되지 않도록 차단 ──
 var hudTr = document.getElementById('hud-tr');
-if (hudTr) hudTr.addEventListener('wheel', function(e) {
-  // 스크롤 가능한 자식이 있으면 canvas 전파 차단
-  var t = e.target;
-  while (t && t !== hudTr) {
-    if (t.scrollHeight > t.clientHeight) { e.stopPropagation(); return; }
-    t = t.parentElement;
-  }
-}, { passive: false });
+if (hudTr) {
+  hudTr.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: false });
+  hudTr.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: false });
+}
 
 // ── Embed mode: ?embed=true 시 HUD/컨트롤 숨기고 캔버스만 표시 ──
 (function(){
