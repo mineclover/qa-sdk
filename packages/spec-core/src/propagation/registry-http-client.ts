@@ -10,6 +10,10 @@ import type { RegistryPort } from "./registry-port.js";
 export class RegistryHttpClient implements RegistryPort {
   private readonly baseUrl: string;
 
+  /**
+   * @param baseUrl — registry-service URL. 미지정 시 QA_REGISTRY_URL env fallback.
+   *   라이브러리에서 process.env 직접 접근은 최소화하되, CLI/SDK 편의를 위해 fallback 유지.
+   */
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3100";
   }

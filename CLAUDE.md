@@ -650,6 +650,13 @@ ingest-server Phase 2 완료
 - 한국어 주석/UI 텍스트 사용
 - Number.MAX_SAFE_INTEGER 한계: indexBudget > 13 hex chars 시 dimMaxForBudget 캡 발생 → `MetaCodecBig` + `createLayoutProtocolBig` + `Capacity Guard`로 BigInt 경로 제공. `numberType: "bigint"` 선언 또는 자동 감지
 
+### 환경변수 (process.env) 처리 규칙
+- **서비스 패키지** (ingest-server, registry-service, gate-service 등): `config/env.ts`에 zod 스키마 정의 → `export const env = envSchema.parse(process.env)` → 코드에서 `env.CATALOG_ID`로 접근. `process.env` 직접 접근 금지
+- **SDK/context** (qa-context, catalog-provider): `process.env.QA_*` fallback 허용 — SDK 소비자가 env로 설정하는 것은 편의 패턴
+- **CLI**: `process.env.QA_REGISTRY_URL`, `HOME`, `USER` 등 직접 접근 허용 — CLI 도구는 zod 불필요
+- **라이브러리** (core, spec-core, codec): constructor 인자 우선, `process.env` fallback 최소화. 필요 시 JSDoc으로 문서화
+- **테스트**: `process.env.DATABASE_URL` 등 직접 접근 허용
+
 ### ISO-8601 타임스탬프 비교 — 문자열 비교 금지
 - 타임스탬프 정렬/비교 시 `localeCompare`, `<`, `>` 문자열 비교를 사용하지 않는다
 - `"10:00:00Z"` vs `"10:00:00.100Z"` — Z(0x5A) > .(0x2E)이므로 밀리초 없는 타임스탬프가 뒤로 밀린다
