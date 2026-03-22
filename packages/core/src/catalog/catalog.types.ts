@@ -112,3 +112,11 @@ export interface Catalog {
   readonly prefixes: Record<string, PrefixDef>;
   readonly tables?: Record<string, TableSchema>;
 }
+
+// ── Catalog 유틸리티 타입 ─────────────────────────────────────────────────
+
+/** Catalog에서 prefix 이름 리터럴 유니온 추출 */
+export type PrefixIds<C extends Catalog> = keyof C["prefixes"] & string;
+
+/** Catalog에서 axis 이름 리터럴 유니온 추출 */
+export type AxisIds<C extends Catalog> = keyof C["axes"] & string;

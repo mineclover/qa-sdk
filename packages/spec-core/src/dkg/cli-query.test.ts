@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix, getPrefixShape, getPrefixStructure, type DemoPrefixId } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
 import { resolve } from "./resolve.js";
 import { findVersionForEntry, findRefAddress } from "./semantic-ref.js";
@@ -154,7 +154,7 @@ describe("CLI 조회: prefix 식별자 기반", () => {
   it("shape 조회 — 신규 prefix들", () => {
     console.log("\n══ 신규 prefix shape ══");
     for (const id of ["endpoint", "page_view", "flow_point", "deploy_event", "health_event"]) {
-      const prefix = DEMO_CATALOG.prefixes[id as keyof typeof DEMO_CATALOG.prefixes];
+      const prefix = DEMO_CATALOG.prefixes[id as DemoPrefixId];
       const latestV = prefix.versions[prefix.versions.length - 1].version;
       const shape = getPrefixShape(DEMO_CATALOG, id, latestV);
       console.log(`  ${id.padEnd(15)} shape=[${shape.shape.join(",")}] cap=${shape.capacity}`);

@@ -11,7 +11,7 @@
  *   qa.resolve("permission:v1:5")                // 자동 마이그레이션
  */
 
-import type { Catalog, ServiceBootConfig } from "@qa-sdk/core";
+import type { Catalog, ServiceBootConfig, PrefixIds } from "@qa-sdk/core";
 import {
   parseSerializedAddress,
   encodePrefixByValue,
@@ -22,7 +22,7 @@ import {
 /** 실행 모드 */
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
 
-export interface QaContextConfig {
+export interface QaContextConfig<C extends Catalog = Catalog> {
   /** 통합 서비스 설정. 개별 필드(env/region/service/namespace)보다 우선. */
   serviceConfig?: ServiceBootConfig;
   /** @deprecated serviceConfig.env 사용 */
@@ -33,8 +33,8 @@ export interface QaContextConfig {
   service?: string;
   /** @deprecated serviceConfig.namespace 사용 */
   namespace?: string;
-  /** 카탈로그 (default: DEMO_CATALOG). registry 옵션과 함께 사용 시 fallback. */
-  catalog?: Catalog;
+  /** 카탈로그. 정적 타입이면 prefix 자동완성 제공. */
+  catalog?: C;
   /**
    * Registry URL. 설정하면 registry에서 active catalog을 가져옴.
    * 미설정 시 catalog 옵션 또는 DEMO_CATALOG 사용.
@@ -54,18 +54,18 @@ export interface DslSession {
   /** DSL 멤버 prefix 목록 */
   readonly memberPrefixes: readonly string[];
   /** track — DSL 멤버만 허용, 누락 경고 포함 */
-  track(prefixes: Record<string, Record<string, string | number>>): {
+  track(prefixes: Partial<Record<string, Record<string, string | number>>>): {
     address_context: Record<string, string>;
     warnings: readonly string[];
   };
 }
 
-export interface QaContext {
+export interface QaContext<P extends string = string> {
   /** 환경 설정 */
   readonly config: Readonly<Required<Pick<QaContextConfig, "env" | "region" | "service" | "namespace">>>;
 
-  /** 인코딩: 비즈니스 차원만 지정 → prefix:version:address */
-  encode(prefix: string, dims: Record<string, string | number>, version?: string): string;
+  /** 인코딩: 비즈니스 차원만 지정 → prefix:version:address. 정적 카탈로그 사용 시 prefix 자동완성. */
+  encode(prefix: P, dims: Record<string, string | number>, version?: string): string;
 
   /** 디코딩: prefix:version:address → 문자열 값 */
   decode(serialized: string): Record<string, string | number>;
@@ -85,7 +85,7 @@ export interface QaContext {
    * 여러 prefix를 한번에 태깅할 수 있다.
    * 반환된 address_context를 QaLogger.log()에 전달하면 된다.
    */
-  track(prefixes: Record<string, Record<string, string | number>>): {
+  track(prefixes: Partial<Record<P, Record<string, string | number>>>): {
     address_context: Record<string, string>;
     addresses: Record<string, { prefix: string; version: string; address: number }>;
   };
@@ -110,7 +110,7 @@ export interface QaContext {
   useDsl(dslId: string, memberPrefixes: readonly string[]): DslSession;
 }
 
-export function createQaContext(userConfig?: QaContextConfig): QaContext {
+export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaContextConfig<C>): QaContext<PrefixIds<C>> {
   const svc = userConfig?.serviceConfig;
   const config = {
     env: svc?.env ?? userConfig?.env ?? process.env.QA_ENV ?? "dev",
@@ -149,7 +149,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
     config,
 
     encode(prefix: string, dims: Record<string, string | number>, version?: string): string {
-      const prefixDef = catalog.prefixes[prefix as keyof typeof catalog.prefixes];
+      const prefixDef = catalog.prefixes[prefix];
       if (!prefixDef) throw new Error(`Unknown prefix: ${prefix}`);
       const ver = version ?? latestPrefixVersion(catalog, prefix);
 
@@ -213,7 +213,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
       return { service: `service:${svcVer}:${svcAddr}` };
     },
 
-    track(prefixes: Record<string, Record<string, string | number>>) {
+    track(prefixes) {
       const address_context: Record<string, string> = {};
       const addresses: Record<string, { prefix: string; version: string; address: number }> = {};
 
@@ -256,7 +256,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
         dslId,
         memberPrefixes,
 
-        track(prefixes: Record<string, Record<string, string | number>>) {
+        track(prefixes) {
           const warnings: string[] = [];
 
           // 비멤버 prefix 사용 경고
@@ -302,7 +302,7 @@ export function createQaContext(userConfig?: QaContextConfig): QaContext {
  * 사용:
  *   const qa = await createQaContextAsync({ registry: "http://registry:3300" });
  */
-export async function createQaContextAsync(userConfig?: QaContextConfig): Promise<QaContext> {
+export async function createQaContextAsync<C extends Catalog = Catalog>(userConfig?: QaContextConfig<C>): Promise<QaContext<PrefixIds<C>>> {
   const registryUrl = userConfig?.registry ?? process.env.QA_REGISTRY_URL;
 
   if (registryUrl) {

@@ -1659,3 +1659,14 @@ function deepFreeze<T extends object>(obj: T): T {
   return obj;
 }
 deepFreeze(DEMO_CATALOG as unknown as object);
+
+// ── DEMO_CATALOG 파생 리터럴 타입 ───────────────────────────────────────────
+
+/** DEMO_CATALOG의 prefix 이름 리터럴 유니온 (34개) */
+export type DemoPrefixId = keyof typeof DEMO_CATALOG.prefixes & string;
+
+/** DEMO_CATALOG의 axis 이름 리터럴 유니온 (67개) */
+export type DemoAxisId = keyof typeof DEMO_CATALOG.axes & string;
+
+/** DEMO_CATALOG의 table 이름 리터럴 유니온 */
+export type DemoTableId = keyof NonNullable<typeof DEMO_CATALOG.tables> & string;

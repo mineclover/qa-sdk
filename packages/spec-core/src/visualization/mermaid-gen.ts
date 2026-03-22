@@ -625,5 +625,96 @@ export function listAllDiagrams(
     label: `${observations.length} observations, ${decisions.length} decisions`,
   }];
 
+  // Note: traces are dynamic (runtime), not from DKG graph — excluded here.
+
   return result;
+}
+
+// ── Trace Sequence Diagrams (런타임 이벤트 기반) ────────────
+
+export interface TraceStepLike {
+  readonly timestamp: string;
+  readonly prefixId: string;
+  readonly layer: number;
+  readonly serialized: string;
+}
+
+export interface TracePathLike {
+  readonly traceId: string;
+  readonly steps: readonly TraceStepLike[];
+  readonly duration: number;
+}
+
+/**
+ * 실제 이벤트 TracePath를 sequenceDiagram으로 생성.
+ *
+ * participants: layer별 그룹 (L0 UI / L1 Business / L2 Infra)
+ * messages: timestamp순 prefix 활성화
+ * 동시 발생(같은 timestamp) prefix는 같은 시점으로 표시.
+ */
+export function traceSequenceDiagram(
+  trace: TracePathLike,
+  options?: MermaidDiagramOptions & { decode?: (serialized: string) => Record<string, string | number> | null },
+): string {
+  const lines: string[] = ["sequenceDiagram"];
+  lines.push(`  title Trace: ${trace.traceId} (${trace.duration}ms)`);
+
+  // Collect unique prefixes and group by layer
+  const prefixLayers = new Map<string, number>();
+  for (const s of trace.steps) prefixLayers.set(s.prefixId, s.layer);
+
+  const layerNames = ["L0 UI", "L1 Business", "L2 Infra", "L3 Data"];
+  const byLayer = new Map<number, string[]>();
+  for (const [pid, layer] of prefixLayers) {
+    if (!byLayer.has(layer)) byLayer.set(layer, []);
+    byLayer.get(layer)!.push(pid);
+  }
+
+  // Emit participants grouped by layer
+  for (const [layer, pids] of [...byLayer.entries()].sort((a, b) => a[0] - b[0])) {
+    lines.push(`  box ${layerNames[layer] ?? `L${layer}`}`);
+    for (const pid of pids) lines.push(`    participant ${pid}`);
+    lines.push(`  end`);
+  }
+
+  // Emit messages in timestamp order
+  let prevPrefix: string | null = null;
+  let prevTs: string | null = null;
+
+  for (const step of trace.steps) {
+    // Try to decode for label
+    let label = step.prefixId;
+    if (options?.decode) {
+      try {
+        const vals = options.decode(step.serialized);
+        if (vals) {
+          label = Object.entries(vals).map(([k, v]) => `${k}=${v}`).join(", ");
+          if (label.length > 50) label = label.slice(0, 47) + "...";
+        }
+      } catch {}
+    }
+
+    const ts = step.timestamp.split("T")[1]?.slice(0, 12) ?? step.timestamp;
+
+    if (prevPrefix && prevPrefix !== step.prefixId) {
+      const sameTime = prevTs === step.timestamp;
+      const arrow = sameTime ? "->>" : "->>";
+      lines.push(`  ${prevPrefix} ${arrow} ${step.prefixId}: ${label}`);
+    } else if (!prevPrefix) {
+      // First step — note with timestamp
+      lines.push(`  note over ${step.prefixId}: ${ts}`);
+    }
+
+    prevPrefix = step.prefixId;
+    prevTs = step.timestamp;
+  }
+
+  // Duration note
+  if (trace.steps.length > 0) {
+    const first = trace.steps[0].prefixId;
+    const last = trace.steps[trace.steps.length - 1].prefixId;
+    lines.push(`  note over ${first},${last}: ${trace.duration}ms / ${trace.steps.length} steps`);
+  }
+
+  return lines.join("\n");
 }

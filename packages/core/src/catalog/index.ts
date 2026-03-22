@@ -13,6 +13,8 @@ export type {
   ColumnRef,
   TableSchema,
   Catalog,
+  PrefixIds,
+  AxisIds,
 } from "./catalog.types.js";
 
 // ── Provider ──────────────────────────────────────────────────

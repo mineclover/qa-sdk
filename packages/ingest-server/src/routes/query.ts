@@ -258,6 +258,7 @@ function toEventRecord(record: StoredRecord): EventRecord {
     payload: record.payload,
     qa_session_id: record.qaSessionId,
     _registry_warning: record.registryWarning,
+    address_context: record.addressContext ?? undefined,
   };
 }
 

@@ -31,6 +31,7 @@ export default defineConfig({
     port: 5176,
     proxy: {
       "/api/diagrams": "http://localhost:3300",
+      "/v1": "http://localhost:3200",
       "/api": "http://localhost:8787",
     },
   },

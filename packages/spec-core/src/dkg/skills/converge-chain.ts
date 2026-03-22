@@ -38,9 +38,27 @@ export interface ConvergeChainResult {
 }
 
 /**
+ * 기존 DEC-SEP / DEC-MERGE(분리 유지) 결정이 활성 상태로 존재하는지 확인.
+ * DEC-SEP-{a}-{b} 또는 DEC-MERGE-{a}-{b} (양방향) 중 하나라도 있으면 true.
+ */
+function hasActiveSeparationDecision(graph: GraphRegistry, a: string, b: string): boolean {
+  const candidates = [
+    `DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`,
+    `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`,
+  ];
+  return candidates.some(id => {
+    const node = graph.getNode(id);
+    if (!node || node.kind !== "decision") return false;
+    const dec = node as DecisionNode;
+    // 활성 결정만 억제. superseded/reversed된 결정은 재검토 허용.
+    return dec.lifecycle === "active";
+  });
+}
+
+/**
  * 4가지 행위를 한 번에 실행하고 결과를 구분하여 반환한다.
  *
- * 1. 수렴 (merge) — 축/prefix 중복 발견 → 병합 Decision
+ * 1. 수렴 (merge) — 축/prefix 중복 발견 → 병합 Decision (기존 분리 결정 시 억제)
  * 2. 분기 정리 (deactivate) — dormant entry → 비활성화 Decision
  * 3. 선택지 정리 (simplify) — 단일값 차원, 과도한 복잡도 → 단순화 Decision
  * 4. 관측 (observe) — 인과 발견, 배포 스큐 → Observation 생성
@@ -62,6 +80,9 @@ export function convergeChain(
     const overlaps = scanAxisOverlaps(graph, options.entriesMap);
     for (const o of overlaps) {
       if (o.recommendation === "merge") {
+        // 기존 DEC-SEP 분리 결정이 있으면 이미 검토된 건으로 건너뜀
+        if (hasActiveSeparationDecision(graph, o.a, o.b)) continue;
+
         actions.push({ kind: "merge", targets: [o.a, o.b], overlap: o });
 
         decisions.push(scaffoldDecision({
@@ -82,6 +103,9 @@ export function convergeChain(
     for (let j = i + 1; j < prefixIds.length; j++) {
       const overlap = comparePrefixes(graph, prefixIds[i], prefixIds[j]);
       if (overlap.recommendation === "merge") {
+        // 기존 DEC-SEP 분리 결정이 있으면 건너뜀
+        if (hasActiveSeparationDecision(graph, overlap.a, overlap.b)) continue;
+
         actions.push({ kind: "merge", targets: [overlap.a, overlap.b], overlap });
       }
     }

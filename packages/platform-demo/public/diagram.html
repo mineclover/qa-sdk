@@ -274,6 +274,14 @@ body {
     <input id="search-input" type="text" placeholder="검색..." />
   </div>
 
+  <div id="trace-section" style="padding:8px 16px;border-bottom:1px solid var(--border);">
+    <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:6px;">TRACE</div>
+    <div style="display:flex;gap:4px;">
+      <input id="trace-input" type="text" placeholder="trace ID..." style="flex:1;padding:5px 8px;background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-family:'IBM Plex Mono',monospace;font-size:10px;" />
+      <button id="trace-btn" style="padding:5px 10px;background:rgba(100,255,218,0.1);border:1px solid var(--mint);border-radius:4px;color:var(--mint);font-size:10px;cursor:pointer;">Load</button>
+    </div>
+  </div>
+
   <div id="preset-sections">
     <div id="loading">프리셋 로딩 중...</div>
   </div>
@@ -577,6 +585,29 @@ document.getElementById('render-btn').addEventListener('click', renderCustom);
 document.getElementById('custom-input').addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') renderCustom();
 });
+
+document.getElementById('trace-btn').addEventListener('click', loadTrace);
+document.getElementById('trace-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') loadTrace();
+});
+
+async function loadTrace() {
+  const traceId = document.getElementById('trace-input').value.trim();
+  if (!traceId) return;
+  document.getElementById('diagram-title').textContent = `Trace: ${traceId}`;
+  try {
+    const resp = await fetch(`/v1/traces/${encodeURIComponent(traceId)}/diagram`);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showEmpty(err.error ?? `Trace not found (${resp.status})`);
+      return;
+    }
+    const data = await resp.json();
+    renderMermaid(data.mmd);
+  } catch {
+    showEmpty('ingest-server에 연결할 수 없습니다 (localhost:3200)');
+  }
+}
 
 loadPresets();
 </script>

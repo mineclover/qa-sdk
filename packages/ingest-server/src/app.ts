@@ -23,6 +23,7 @@ import {
   type TraceTransactionRunner,
 } from "./routes/ingest.js";
 import { createQueryRoutes } from "./routes/query.js";
+import { createTraceDiagramRoutes } from "./routes/trace-diagrams.js";
 import { createStreamRoutes } from "./routes/streams.js";
 import { createScenarioRoutes } from "./routes/scenario.js";
 import { createVerdictRoutes } from "./routes/verdict.js";
@@ -117,6 +118,7 @@ export function createApp(deps: AppDeps) {
       logger,
     }),
   );
+  app.route("/v1/traces", createTraceDiagramRoutes({ recordStore: deps.recordStore, logger }));
   app.route("/", createQueryRoutes(deps));
   app.route(
     "/",

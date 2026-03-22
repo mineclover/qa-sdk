@@ -51,6 +51,9 @@ export {
   type PrefixVersionDef, type PrefixDef, type PrefixMeta,
   type ColumnRef, type TableSchema,
   type DemoCatalog,
+  type DemoPrefixId,
+  type DemoAxisId,
+  type DemoTableId,
 } from "./demo-catalog.js";
 
 export {

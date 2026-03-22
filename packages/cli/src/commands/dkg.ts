@@ -6,7 +6,7 @@
  */
 
 import { parseArgs } from "node:util";
-import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { CatalogRegistry } from "@qa-sdk/core";
 import type { Catalog } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
@@ -468,7 +468,7 @@ export function dkgReport(): void {
 
   // headroom 요약
   const criticalAxes = axes.filter(a => {
-    const catalog = DEMO_CATALOG.axes[a.id as keyof typeof DEMO_CATALOG.axes];
+    const catalog = DEMO_CATALOG.axes[a.id as DemoAxisId];
     if (!catalog) return false;
     const versions = Object.keys(catalog.versions);
     const latest = catalog.versions[versions[versions.length - 1] as keyof typeof catalog.versions] as any;
@@ -535,7 +535,7 @@ export function dkgAxes(opts: PageOptions): void {
 
   console.log(`\n══ Axes ══`);
   for (const axis of result.items) {
-    const catalog = DEMO_CATALOG.axes[axis.id as keyof typeof DEMO_CATALOG.axes];
+    const catalog = DEMO_CATALOG.axes[axis.id as DemoAxisId];
     let info = "";
     if (catalog) {
       const versions = Object.keys(catalog.versions);

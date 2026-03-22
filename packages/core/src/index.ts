@@ -3,7 +3,7 @@
 export type {
   VisualShape, DetailKind, PrefixCategory, LayerLevel, PrefixMeta,
   AxisVersionSnapshot, VersionedAxis, DimRef, PrefixVersionDef, PrefixDef,
-  ColumnRef, TableSchema, Catalog,
+  ColumnRef, TableSchema, Catalog, PrefixIds, AxisIds,
   CatalogProvider, CatalogInfo,
   DomainDef, ConsumerDef, ConstraintDef, DslBundleDef,
   IntentLinkDef, SkillDef, SpecDef, ReviewPairDef, DkgConfig,
