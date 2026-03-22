@@ -229,6 +229,20 @@ export const DEMO_DKG_CONFIG = {
       intent: "패턴 분류 결과(pattern_match)와 이상 감지(pattern_anomaly)가 흐름 관측(flow_point)과 동일 서비스 컨텍스트에서 연결된다",
       invariant: "pattern_anomaly(unclassified) 발생 시 해당 세션의 flow_point 시퀀스가 새 패턴 규칙의 근거가 된다",
     },
+    {
+      kind: "intent-link", id: "IL-cart-abandon",
+      endpoints: ["cart_event", "order_event", "tracking"],
+      via: "service",
+      intent: "장바구니 이벤트(cart_event)와 주문 이벤트(order_event)가 사용자 행동(tracking)과 동일 세션에서 추적된다",
+      invariant: "cart_event(checkout) 없이 order_event(create)가 발생하면 비정상 흐름",
+    },
+    {
+      kind: "intent-link", id: "IL-pipeline-flow",
+      endpoints: ["pipeline_point", "engine_event", "schema_event"],
+      via: "service",
+      intent: "파이프라인 단계(pipeline_point)와 엔진 평가(engine_event), 스키마 마이그레이션(schema_event)이 동일 서비스에서 순차 추적된다",
+      invariant: "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
+    },
   ],
 
   skills: [
