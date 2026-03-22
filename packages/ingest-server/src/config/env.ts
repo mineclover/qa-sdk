@@ -2,8 +2,12 @@ import { z } from "zod";
 import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse } from "@qa-sdk/core";
 
 export const envSchema = z.object({
-  /** PostgreSQL URL. 미설정 시 in-memory store 사용 (개발/데모용). */
+  /** Store 드라이버: memory(기본) | pg | d1 | clickhouse */
+  STORE_DRIVER: z.enum(["memory", "pg", "d1", "clickhouse"]).default("memory"),
+  /** PostgreSQL URL (STORE_DRIVER=pg 시 필수). 미설정 + STORE_DRIVER=memory 시 InMemory 사용. */
   TRACE_DATABASE_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  /** SQLite 경로 (STORE_DRIVER=d1 시 Node.js 로컬용). CF Workers에서는 D1 바인딩 사용. */
+  SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   REDIS_URL: optionalUrl,
   PORT: z.coerce.number().default(3200),
   CORS_ORIGIN: z.string().default("*"),

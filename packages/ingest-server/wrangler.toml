@@ -1,0 +1,12 @@
+name = "qa-ingest-server"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+CORS_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qa-ingest"
+database_id = "" # npx wrangler d1 create qa-ingest 후 ID 입력

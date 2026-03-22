@@ -426,6 +426,9 @@ importers:
       hono:
         specifier: ^4.7.5
         version: 4.12.7
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
       pino:
         specifier: workspace:@qa-sdk/pino@^9.9.4
         version: link:../pino
