@@ -480,14 +480,21 @@ export function dkgReport(): void {
     console.log(`    (${decisions.length > 0 ? "Decision으로 확장 계획 기록됨" : "Decision 없음 — 확장 계획 필요"})`);
   }
 
-  // 수렴 분석 요약
+  // 수렴 분석 요약 — DEC-SEP/DEC-MERGE 분리 결정이 있는 쌍은 별도 표시
   const entriesMap = buildEntriesMap();
   const overlaps = scanAxisOverlaps(graph, entriesMap);
-  const mergeCandidate = overlaps.filter(o => o.recommendation === "merge");
+  const hasSepDec = (a: string, b: string) =>
+    [`DEC-SEP-${a}-${b}`, `DEC-SEP-${b}-${a}`, `DEC-MERGE-${a}-${b}`, `DEC-MERGE-${b}-${a}`]
+      .some(id => { const n = graph.getNode(id); return n && n.kind === "decision" && (n as any).lifecycle === "active"; });
+  const mergeCandidate = overlaps.filter(o => o.recommendation === "merge" && !hasSepDec(o.a, o.b));
+  const mergeSuppressed = overlaps.filter(o => o.recommendation === "merge" && hasSepDec(o.a, o.b));
   const reviewCandidate = overlaps.filter(o => o.recommendation === "review");
 
   if (mergeCandidate.length > 0) {
     console.log(`\n  병합 후보: ${mergeCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);
+  }
+  if (mergeSuppressed.length > 0) {
+    console.log(`  분리 유지 (결정됨): ${mergeSuppressed.map(o => `${o.a}↔${o.b}`).join(", ")}`);
   }
   if (reviewCandidate.length > 0) {
     console.log(`  검토 필요: ${reviewCandidate.map(o => `${o.a}↔${o.b}`).join(", ")}`);

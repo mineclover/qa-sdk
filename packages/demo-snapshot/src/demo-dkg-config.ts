@@ -7,17 +7,17 @@ export const DEMO_DKG_CONFIG = {
   domains: [
     {
       kind: "domain", id: "shopping-domain", name: "쇼핑 서비스 도메인",
-      prefixes: ["permission", "event", "service"],
-      sharedAxes: ["env", "region", "svc_name", "namespace"],
-      boundary: { exports: ["permission", "event"], internal: ["service"] },
-      rationale: "권한과 이벤트가 동일한 서비스 컨텍스트를 공유하는 도메인",
+      prefixes: ["permission", "event", "service", "rbac"],
+      sharedAxes: ["env", "region", "svc_name", "namespace", "role"],
+      boundary: { exports: ["permission", "event", "rbac"], internal: ["service"] },
+      rationale: "권한/역할/이벤트가 동일한 서비스 컨텍스트를 공유하는 도메인. rbac은 permission과 같은 접근 제어 계열.",
     },
     {
       kind: "domain", id: "tracking-domain", name: "행동 추적 도메인",
-      prefixes: ["tracking", "content"],
+      prefixes: ["tracking", "content", "relational"],
       sharedAxes: ["channel", "locale"],
-      boundary: { exports: ["tracking"], internal: ["content"] },
-      rationale: "사용자 행동과 콘텐츠가 같은 채널/로케일 컨텍스트를 공유",
+      boundary: { exports: ["tracking", "relational"], internal: ["content"] },
+      rationale: "사용자 행동과 콘텐츠가 같은 채널/로케일 컨텍스트를 공유. relational은 행동 간 관계 모델.",
     },
     {
       kind: "domain", id: "event-domain", name: "이벤트 도메인",
@@ -28,24 +28,24 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "observation-domain", name: "관측 도메인",
-      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly"],
-      sharedAxes: ["behavior_pattern", "identification_mode"],
-      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly"], internal: [] },
-      rationale: "비즈니스 로직 + 파이프라인 + 엔진/스키마 관측 포인트 + 패턴 분류 DSL 그룹.",
+      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"],
+      sharedAxes: ["behavior_pattern", "identification_mode", "event_category", "event_lifecycle_stage"],
+      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"], internal: [] },
+      rationale: "비즈니스/파이프라인/엔진/스키마 관측 + 패턴 분류 + 이벤트 분류. svc_ref 공유.",
     },
     {
       kind: "domain", id: "infra-domain", name: "인프라 도메인",
-      prefixes: ["deploy_event", "health_event"],
-      sharedAxes: ["deploy_action", "health_status"],
-      boundary: { exports: ["deploy_event", "health_event"], internal: [] },
-      rationale: "인프라 계측 이벤트. 배포/헬스 관측. 전 환경(dev/stage/prod) 대상.",
+      prefixes: ["deploy_event", "health_event", "ingest_record", "metric_point", "execution_context"],
+      sharedAxes: ["deploy_action", "health_status", "record_type", "metric_type", "execution_mode"],
+      boundary: { exports: ["deploy_event", "health_event", "ingest_record", "metric_point"], internal: ["execution_context"] },
+      rationale: "인프라 계측 + 수집/메트릭 관측. 전 환경(dev/stage/prod) 대상.",
     },
     {
       kind: "domain", id: "dev-domain", name: "자기참조 개발 도메인",
-      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution"],
-      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject", "skill_id", "skill_category"],
-      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution"], internal: [] },
-      rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI활동 전체를 좌표계로 추적. 완전 자기참조 모니터링.",
+      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity", "version_point", "gate_point"],
+      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject", "skill_id", "skill_category", "edge_type", "observation_intent", "version_lifecycle", "address_state"],
+      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity"], internal: ["version_point", "gate_point"] },
+      rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI/내부 로직 관측 전체를 좌표계로 추적. 완전 자기참조 모니터링.",
     },
   ],
 
@@ -525,6 +525,17 @@ export const DEMO_DKG_CONFIG = {
     { kind: "spec", id: "SPEC-DECISION-STD", type: "feat", title: "의사결정 표준 프로세스 7Q", lifecycle: "active", governs: [] },
     { kind: "spec", id: "SPEC-PROPAGATION", type: "feat", title: "스펙 전파 파이프라인 (publish→seal→activate)", lifecycle: "active", governs: ["service"] },
     { kind: "spec", id: "SPEC-TEMPORAL", type: "req", title: "시간 순서와 데이터 흐름 수집", lifecycle: "draft", governs: [] },
+  ],
+
+  decisions: [
+    {
+      kind: "decision", id: "DEC-NEW-AXIS-resource_location",
+      date: "2026-03-22",
+      title: "resource_location 축 신설 — 자원 물리적 위치 추적",
+      context: "Transition Spec DSL의 move effect를 표현하려면 자원이 어디에 있는지(origin/cache/queue/external) 추적하는 축이 필요하다.",
+      rationale: "5Q 충족: 유한(4종) / 의사결정(읽기 경로 분기) / 공유(여러 prefix) / 안정(인프라 유형) / capacity 8. 기존 resource_type(api/page/webhook)은 논리적 유형이고, resource_location은 물리적 위치로 의미가 다르다.",
+      lifecycle: "active",
+    },
   ],
 
   reviewPairs: [

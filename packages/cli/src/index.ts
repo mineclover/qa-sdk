@@ -181,7 +181,7 @@ async function main() {
 
   // 카탈로그가 필요한 명령 → loadCatalog() 실행
   const DX_COMMANDS = new Set(["encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact"]);
-  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || DX_COMMANDS.has(sub.name);
+  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || sub.name === "codegen" || DX_COMMANDS.has(sub.name);
   if (needsCatalog) {
     loadedCatalog = await loadCatalog(catalogPath);
     setCatalogContext(loadedCatalog);
@@ -741,9 +741,24 @@ async function runCodegen(argv: string[]) {
       input: { type: "string", default: "./schemas" },
       output: { type: "string", default: "./generated" },
       package: { type: "string", default: "qa.apm.v1" },
+      catalog: { type: "string" },
+      "dkg-config": { type: "string" },
     },
     strict: true,
   });
+
+  // --catalog 경로 또는 loadedCatalog → Catalog 기반 codegen
+  if (values.catalog || values["dkg-config"] || loadedCatalog) {
+    await codegen({
+      formats: ["ts"],
+      input: values.input!,
+      output: values.output!,
+      catalog: values.catalog,
+      loadedCatalog: loadedCatalog,
+      dkgConfig: values["dkg-config"],
+    });
+    return;
+  }
 
   const formats = values.format!.split(",").map((f) => {
     const trimmed = f.trim();

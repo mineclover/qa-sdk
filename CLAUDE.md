@@ -66,6 +66,48 @@ CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
 - `DEMO_PATTERN_RULES` — 쇼핑 이벤트 분류 규칙 예시
 - 새 비즈니스는 이를 복사하여 자기 도메인으로 교체
 
+## Codegen 파이프라인
+
+### Catalog 기반 codegen (권장)
+```bash
+qa-sdk codegen --catalog ./my-catalog.ts [--dkg-config ./my-dkg.ts] --output ./generated
+```
+- 입력: Catalog (`.ts`/`.js`/`.json`) + DkgConfig (선택)
+- 출력 (7개 파일):
+
+| 파일 | 내용 |
+|------|------|
+| `prefix-ids.ts` | `PrefixId`, `AxisId`, `TableId` 리터럴 유니온 + const 배열 |
+| `axes.ts` | 축별 `const ROLE = { ADMIN: "admin", ... } as const` + `type Role` 유니온 |
+| `dims.ts` | prefix별 dimension interface (`PermissionDims { role: Role; }`) + `PrefixDimsMap` |
+| `dsl.ts` | DSL bundle members/invariants/fixedDims const (DkgConfig 제공 시) |
+| `sdk-factory.ts` | `createIndexSDK(SCHEMA)` 사전 구성. `sdk.encode("permission", ...)` 자동완성 |
+| `context-types.ts` | `TypedQaContext = QaContext<PrefixId>`. prefix 자동완성 |
+| `index.ts` | barrel export |
+
+- `--catalog` 미지정 시 `loadCatalog()` 우선순위: `--catalog` → `qa-sdk.config.ts` → `DEMO_CATALOG`
+- `--dkg-config` 미지정 시 `loadDkgConfig()` 우선순위: `--dkg-config` → `qa-sdk.config.ts` → `DEMO_DKG_CONFIG`
+
+### SchemaSnapshot 기반 codegen (레거시)
+```bash
+qa-sdk codegen --input ./snapshot.json --output ./generated --format ts,proto
+```
+- 입력: SchemaSnapshot JSON (flat, axis dims만)
+- 출력: 단일 `.d.ts` 또는 `.proto`
+- 하위 호환 유지. 신규 프로젝트는 Catalog 기반 사용 권장
+
+### 생성 파일 사용 예시
+```typescript
+import { sdk, type TypedQaContext, type PrefixId } from "./generated";
+
+// createIndexSDK 자동완성
+const addr = sdk.encode("permission", { role: "admin", action: "read" });
+
+// QaContext 자동완성
+const qa: TypedQaContext = createQaContext({ catalog: DEMO_CATALOG, ... });
+qa.encode("permission", { role: "admin" }); // prefix 자동완성
+```
+
 ## Build
 - `pnpm --filter <pkg> build` — 개별 패키지 빌드
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상

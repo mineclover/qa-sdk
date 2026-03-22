@@ -67,7 +67,7 @@ describe("domain-health", () => {
 
     console.log(`\n  ${result.domainId}: ${result.overallHealth} (${result.issues.length} issues)`);
     expect(result.overallHealth).toBe("healthy");
-    expect(result.prefixes.length).toBe(3); // permission, event, service
+    expect(result.prefixes.length).toBe(4); // permission, event, service, rbac
   });
 
   it("전체 domain 진단", () => {
