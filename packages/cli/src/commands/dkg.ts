@@ -303,10 +303,7 @@ export function analyzeCliCoverage(): {
   const observedSubjects = new Set<string>();
   try {
     const s = getStore();
-    // DkgSqliteStore 내부의 db에 접근하여 raw data 쿼리
-    const rows = (s as any).db.prepare(
-      "SELECT data FROM usage_snapshots ORDER BY id DESC LIMIT 500",
-    ).all() as Array<{ data: string }>;
+    const rows = s.getRecentUsageSnapshots(500);
     for (const row of rows) {
       try {
         const d = JSON.parse(row.data);
@@ -2144,7 +2141,7 @@ export function dkgClaims(): void {
   const graph = getGraph();
 
   // dkg_meta에서 claim: 키 조회
-  const allMeta = (store as any).db.prepare("SELECT key, value FROM dkg_meta WHERE key LIKE 'claim:%' AND value != ''").all() as Array<{ key: string; value: string }>;
+  const allMeta = store.getMetaByPrefix("claim:");
 
   if (allMeta.length === 0) {
     console.log("\n  활성 claim 없음");

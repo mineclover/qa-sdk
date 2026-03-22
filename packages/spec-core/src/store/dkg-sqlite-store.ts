@@ -543,6 +543,24 @@ export class DkgSqliteStore {
     return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
   }
 
+  // ── Usage Snapshot 조회 ──────────────────────────────
+
+  /** 최근 N건의 usage snapshot raw data를 반환한다 */
+  getRecentUsageSnapshots(limit = 500): Array<{ id: number; data: string; createdAt: string }> {
+    return this.db.prepare(
+      "SELECT id, data, created_at as createdAt FROM usage_snapshots ORDER BY id DESC LIMIT ?",
+    ).all(limit) as Array<{ id: number; data: string; createdAt: string }>;
+  }
+
+  // ── Meta 범위 조회 ─────────────────────────────────
+
+  /** prefix로 시작하는 모든 meta 키-값 쌍을 반환한다 */
+  getMetaByPrefix(prefix: string): Array<{ key: string; value: string }> {
+    return this.db.prepare(
+      "SELECT key, value FROM dkg_meta WHERE key LIKE ? AND value != ''",
+    ).all(`${prefix}%`) as Array<{ key: string; value: string }>;
+  }
+
   close(): void {
     this.db.close();
   }
