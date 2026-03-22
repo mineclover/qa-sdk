@@ -13,7 +13,7 @@
 - 플랫폼: @qa-sdk/core → @qa-sdk/logger → @qa-sdk/codec → @qa-sdk/context → @qa-sdk/sdk
 
 ### QA 플랫폼 (@qa-sdk/* scoped)
-- 패키지: `@qa-sdk/core`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
+- 패키지: `@qa-sdk/core`, `@qa-sdk/convergence`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
 - 서비스 (unscoped): `gate-service`, `query-service`
 - `@qa-sdk/decode-service`
 - 네이밍: `@qa-sdk/*` scope (내부 플랫폼 서비스)
@@ -181,7 +181,16 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - `@qa-sdk/context`: createQaContext, CatalogProvider (core)
 - `@qa-sdk/sdk`: 3개를 re-export하는 facade (하위 호환)
 - `@qa-sdk/apm`: ApmLogger — QaLogger + PartialBinder 통합. `createApmLoggerFromBoot(ApmBootConfig)` — ServiceBootConfig 기반 편의 팩토리
-- `@qa-sdk/browser`: QaMonitor — 브라우저 전용 래퍼. `QaMonitorConfig.serviceConfig` — ServiceBootConfig 기반 통합 설정
+- `@qa-sdk/browser`: QaMonitor — 브라우저 전용 SDK + `qa-browser-sdk.js` 독립 번들
+  - `createQaMonitor({ serviceConfig, ingestUrl, autoCapture })` — 동기 생성 (정적 catalog)
+  - `createQaMonitorAsync({ registry })` — 비동기 생성 (registry에서 최신 catalog fetch)
+  - `emitWithCoords(eventKey, prefixes)` — 좌표 인코딩 + 전송 한 번에
+  - `emit(eventKey, payload, { address_context })` — 수동 좌표 전달
+  - `metric(name, value, { address_context })` — 메트릭 + 좌표
+  - `serviceConfig` → infra_context 자동 생성 (BROWSER_CATALOG + toServiceDims)
+  - encode/decode/track/BROWSER_CATALOG 내장 (viz-3d-core.js 불필요)
+  - 번들: `qa-browser-sdk.js` (154KB ESM), `qa-browser-sdk.umd.cjs` (114KB UMD)
+  - 복사 위치: `shop-web/public/qa-browser-sdk.js`
 
 ### weighted-index
 - `packages/weighted-index/src/index.ts` — 모든 public export 관리; 새 함수 추가 시 여기도 업데이트
@@ -277,8 +286,11 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 
 ### shop-web — 쇼핑 데모 사이트
 - `packages/shop-web/public/index.html` — 8개 상품, 해시 라우팅, 13개 트래킹 포인트
-- encode/decode는 viz-3d-core.js에서 import (인라인 코드 없음)
-- ingest-server로 실시간 이벤트 전송 + 모니터링 연동
+- `qa-browser-sdk.js` 단일 import — encode/decode + QaMonitor + ID 생성 통합
+- `createQaMonitor({ serviceConfig })` → infra_context 자동 + BeaconTransport + sessionStorage 세션
+- `emitWithCoords(eventKey, prefixes)` — 좌표 인코딩 + 전송 1줄
+- autoCapture: clicks + navigation 자동 수집
+- viz-3d-core.js는 3D 모니터링 시각화 전용 (SDK 기능은 qa-browser-sdk.js에 통합)
 
 ### platform-demo — 데모 + 모니터링 + 다이어그램
 - `packages/platform-demo/` — Vite SPA + static HTML 페이지 (Cloudflare Pages 배포)
@@ -580,12 +592,14 @@ ingest-server Phase 2 완료
 - **catalog runtime 함수**: `encodePrefix`, `decodePrefix`, `encodePrefixByValue`, `resolveAddress`, `decomposeAddress`, `latestPrefixVersion` 등이 `@qa-sdk/core/catalog/runtime.ts`에 canonical 구현. demo-snapshot은 re-export
 - 카탈로그가 유일한 입력이면 나머지는 전부 파생되어야 한다
 
-## Browser Encode/Decode 단일 출처
+## Browser SDK + Encode/Decode 단일 출처
 - 브라우저 환경 encode/decode는 `viz-3d/src/adapter/browser-codec.ts`가 **유일한 출처**
-- 주소 형식: 3파트 (`perm:v1:42`) 또는 4파트 (`catalogId:perm:v1:42`). browser-codec은 인라인 3/4파트 파싱 (core 미의존)
-- 인라인 encode 코드 금지 — HTML 파일은 `import { encode, decode, track } from './viz-3d-core.js'` 사용
+- `qa-browser-sdk.js`가 browser-codec을 소스 참조로 번들에 포함 → **단일 import로 SDK + encode/decode**
+- `viz-3d-core.js`는 3D 시각화 전용. SDK 기능(QaMonitor, emit, ID 생성)은 `qa-browser-sdk.js`에만 포함
+- 인라인 encode 코드 금지 — `import { track, createQaMonitor } from './qa-browser-sdk.js'` 또는 `import { track } from './viz-3d-core.js'`
 - BROWSER_CATALOG: 자동 생성 (`pnpm --filter @qa-sdk/viz-3d prebuild`). 직접 수정 금지
 - CatalogLoader: 런타임 시 API → localStorage 캐시 → BROWSER_CATALOG(static) 순서로 카탈로그 로딩
+- 번들 복사: `pnpm --filter @qa-sdk/browser build` → `dist/qa-browser-sdk.js` → `shop-web/public/`에 복사
 
 ## Conventions
 - 한국어 주석/UI 텍스트 사용
@@ -645,13 +659,20 @@ const logger = createApmLoggerFromBoot({
 });
 ```
 
-**브라우저 — QaMonitor 경로**
-```typescript
-import { createQaMonitor } from "@qa-sdk/browser";
+**브라우저 — qa-browser-sdk.js 경로**
+```html
+<script type="module">
+import { createQaMonitor } from './qa-browser-sdk.js';
 const monitor = createQaMonitor({
   ingestUrl: "http://localhost:3200",
-  serviceConfig: { namespace: "shop", name: "web", env: "prod", region: "asia" },
+  serviceConfig: { namespace: "shop", name: "shopping-web", env: "prod", region: "asia" },
+  autoCapture: { clicks: true, navigation: true },
 });
+// infra_context 자동 생성, 세션 자동 관리, Beacon 전송 보장
+monitor.emitWithCoords('page.home', {
+  page_view: { page: 'home', locale: 'ko', userType: 'member' },
+});
+</script>
 ```
 
 **기존 방식 (deprecated, 하위 호환)**
@@ -681,6 +702,49 @@ createQaMonitor({ ingestUrl, meta: { serviceName: "payment", env: "prod" } });
 ### 호환성
 - permission-engine `ServiceRef`와 구조적 호환 (TypeScript structural typing). 패키지 의존 추가 없음
 - `QaContext.infraContext()` — 서비스 좌표를 infra_context 형태로 반환. envelope 레벨 서비스 바인딩에 사용
+
+## Projection — 이벤트 뷰 프리셋 (2026-03-22 확립)
+
+### 개념
+- Projection = "좌표 공간을 어떤 조건으로 잘라서 어떻게 배치할지" 선언
+- 전제: 모든 이벤트 prefix는 service에 바인딩 (svc_ref 축 또는 svcOwners 매핑)
+- 같은 `cart_event`라도 shopping-web에서 발생하면 Frontend, shopping-backend이면 Backend
+
+### Projection 인터페이스
+```typescript
+interface Projection {
+  name: string;
+  servicePrefix?: string;    // default: "service"
+  groupByAxis?: string;      // default: "svc_name"
+  groupLayerMap: Record<string, LayerLevel>;  // svc_name → layer
+  axisFilters?: Record<string, string[]>;     // { env: ["prod"] }
+  includePrefixes?: string[];
+  excludePrefixes?: string[];
+  prefixMap?: Record<string, LayerLevel>;     // svc 바인딩 없는 prefix 고정
+}
+```
+
+### 기본 프리셋
+- `SERVICE_PROJECTION` — 전체 서비스 계층 (기본값). Frontend/Backend/Infra/System 4계층
+- `PROD_ASIA_PROJECTION` — prod + asia 환경만 필터
+- `DEV_PROJECTION` — dev 환경만 필터
+- `CHECKOUT_PROJECTION` — 결제 흐름 prefix만 (8개)
+- `LEGACY_PROJECTION` — 하위 호환 (prefix ID 기반 하드코딩)
+
+### 사용법
+```typescript
+import { buildLayerMap, buildSvcOwnerMap, SERVICE_PROJECTION } from "@qa-sdk/spec-core/viz";
+const svcOwners = buildSvcOwnerMap(services);
+const result = buildLayerMap(catalog, SERVICE_PROJECTION, svcOwners);
+// result.layers → Frontend 6 / Backend 9 / Infra 16 / System 8
+```
+
+### 배치 우선순위
+1. `groupLayerMap` — svcOwners에 등록된 prefix → 발생 서비스 기반 layer
+2. `prefixMap` — svcOwners에 없는 prefix 고정 (DKG, system 등)
+3. `domainMap` — domain 기반
+4. `meta.layer` — catalog 하드코딩 (fallback)
+5. `defaultLayer` — 기본값 (1)
 
 ## 좌표계 컨벤션 (2026-03-21 확립)
 
