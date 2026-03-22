@@ -243,26 +243,44 @@ async function seedDemoCatalog(
   }
 }
 
-/** DkgConfig seed — demo-snapshot에서 DEMO_DKG_CONFIG 로드하여 저장 */
-async function seedDkgConfig(configStore: Map<string, string>) {
+/** DkgConfig + PatternRules seed */
+async function seedConfigs(configStore: import("./stores/config-store.js").ConfigStore) {
   try {
     const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
-    const configJson = JSON.stringify(DEMO_DKG_CONFIG);
-    configStore.set("demo", configJson);
+    await configStore.set("demo", "dkg-config", JSON.stringify(DEMO_DKG_CONFIG));
     logger.info("seeded DEMO_DKG_CONFIG to config store");
   } catch (error) {
-    logger.warn(
-      { error: error instanceof Error ? error.message : String(error) },
-      "Failed to seed DEMO_DKG_CONFIG — skipped",
-    );
+    logger.warn({ error: error instanceof Error ? error.message : String(error) }, "Failed to seed DEMO_DKG_CONFIG");
   }
+
+  try {
+    const { DEMO_PATTERN_RULES } = await import("@qa-sdk/spec-core/convergence") as any;
+    await configStore.set("demo", "pattern-rules", JSON.stringify(DEMO_PATTERN_RULES));
+    logger.info("seeded DEMO_PATTERN_RULES to config store");
+  } catch (error) {
+    logger.warn({ error: error instanceof Error ? error.message : String(error) }, "Failed to seed DEMO_PATTERN_RULES");
+  }
+
+  // 서비스 목록 seed
+  const demoServices = [
+    { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
+    { serviceId: "shopping-backend", name: "쇼핑 백엔드", tier: "backend", team: "backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
+    { serviceId: "auth", name: "인증 서비스", tier: "backend", team: "platform", ownedPrefixes: ["rbac"] },
+    { serviceId: "payment", name: "결제 서비스", tier: "backend", team: "backend", ownedPrefixes: [] },
+    { serviceId: "gateway", name: "API 게이트웨이", tier: "backend", team: "platform", ownedPrefixes: ["flow_point"] },
+    { serviceId: "content-service", name: "콘텐츠 서비스", tier: "frontend", team: "frontend", ownedPrefixes: ["content", "relational"] },
+    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
+  ];
+  await configStore.set("demo", "services", JSON.stringify(demoServices));
+  logger.info({ count: demoServices.length }, "seeded demo services to config store");
 }
 
 async function main() {
   const stores = await createStores(env.SQLITE_PATH);
-  const dkgConfigStore = new Map<string, string>();
+  const { InMemoryConfigStore } = await import("./stores/in-memory-config-store.js");
+  const configStore = new InMemoryConfigStore();
   await seedDemoCatalog(stores.catalogStore, stores.axisStore);
-  await seedDkgConfig(dkgConfigStore);
+  await seedConfigs(configStore);
   const activationGate = await buildActivationGate();
   const postActivationHook = await buildPostActivationHook();
   const devDashboardProvider = await buildDevDashboardProvider();
@@ -272,7 +290,7 @@ async function main() {
     ...(activationGate ? { activationGate } : {}),
     ...(postActivationHook ? { postActivationHook } : {}),
     ...(devDashboardProvider ? { devDashboardProvider } : {}),
-    dkgConfigStore,
+    configStore,
     logger,
   });
 

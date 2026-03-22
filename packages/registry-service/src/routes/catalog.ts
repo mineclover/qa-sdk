@@ -1,18 +1,18 @@
 import { Hono } from "hono";
 import type { CatalogStore } from "../stores/catalog-store.js";
+import type { ConfigStore } from "../stores/config-store.js";
 
 export interface CatalogRouteDeps {
   catalogStore: CatalogStore;
   /** catalog 변경 시 호출되는 콜백 (캐시 무효화 등) */
   onCatalogChange?: (catalogId: string) => void;
-  /** DkgConfig 저장소 (in-memory). catalogId → DkgConfig JSON */
-  dkgConfigStore?: Map<string, string>;
+  /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
+  configStore?: ConfigStore;
 }
 
 export function createCatalogRoutes(deps: CatalogRouteDeps) {
   const routes = new Hono();
-  const { catalogStore, onCatalogChange, dkgConfigStore } = deps;
-  const configStore = dkgConfigStore ?? new Map<string, string>();
+  const { catalogStore, onCatalogChange, configStore } = deps;
 
   // POST /catalogs — 카탈로그 등록
   routes.post("/catalogs", async (c) => {
@@ -113,29 +113,56 @@ export function createCatalogRoutes(deps: CatalogRouteDeps) {
     }
   });
 
+  // ── 통합 설정 API (DkgConfig, PatternRules 등) ──
+
   // GET /catalogs/:id/config — DkgConfig 조회
-  routes.get("/catalogs/:id/config", (c) => {
+  routes.get("/catalogs/:id/config", async (c) => {
     const id = c.req.param("id");
-    const config = configStore.get(id);
-    if (!config) {
-      return c.json({ error: `DkgConfig for catalog '${id}' not found` }, 404);
-    }
-    return c.json({ catalogId: id, data: config });
+    if (!configStore) return c.json({ error: "configStore not available" }, 503);
+    const record = await configStore.get(id, "dkg-config");
+    if (!record) return c.json({ error: `DkgConfig for catalog '${id}' not found` }, 404);
+    return c.json({ catalogId: id, data: record.data });
   });
 
   // PUT /catalogs/:id/config — DkgConfig 저장/업데이트
   routes.put("/catalogs/:id/config", async (c) => {
     const id = c.req.param("id");
     const existing = await catalogStore.get(id);
-    if (!existing) {
-      return c.json({ error: `Catalog '${id}' not found` }, 404);
-    }
+    if (!existing) return c.json({ error: `Catalog '${id}' not found` }, 404);
+    if (!configStore) return c.json({ error: "configStore not available" }, 503);
     const body = await c.req.json<{ data: string }>();
-    if (!body.data) {
-      return c.json({ error: "data (DkgConfig JSON) 필수" }, 400);
-    }
-    configStore.set(id, body.data);
+    if (!body.data) return c.json({ error: "data (DkgConfig JSON) 필수" }, 400);
+    await configStore.set(id, "dkg-config", body.data);
     return c.json({ catalogId: id, ok: true });
+  });
+
+  // GET /catalogs/:id/pattern-rules — PatternRules 조회
+  routes.get("/catalogs/:id/pattern-rules", async (c) => {
+    const id = c.req.param("id");
+    if (!configStore) return c.json({ error: "configStore not available" }, 503);
+    const record = await configStore.get(id, "pattern-rules");
+    if (!record) return c.json({ error: `PatternRules for catalog '${id}' not found` }, 404);
+    return c.json({ catalogId: id, data: record.data });
+  });
+
+  // PUT /catalogs/:id/pattern-rules — PatternRules 저장/업데이트
+  routes.put("/catalogs/:id/pattern-rules", async (c) => {
+    const id = c.req.param("id");
+    const existing = await catalogStore.get(id);
+    if (!existing) return c.json({ error: `Catalog '${id}' not found` }, 404);
+    if (!configStore) return c.json({ error: "configStore not available" }, 503);
+    const body = await c.req.json<{ data: string }>();
+    if (!body.data) return c.json({ error: "data (PatternRules JSON) 필수" }, 400);
+    await configStore.set(id, "pattern-rules", body.data);
+    return c.json({ catalogId: id, ok: true });
+  });
+
+  // GET /catalogs/:id/configs — 모든 설정 타입 목록
+  routes.get("/catalogs/:id/configs", async (c) => {
+    const id = c.req.param("id");
+    if (!configStore) return c.json({ error: "configStore not available" }, 503);
+    const records = await configStore.list(id);
+    return c.json(records.map(r => ({ configType: r.configType, updatedAt: r.updatedAt })));
   });
 
   return routes;

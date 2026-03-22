@@ -36,7 +36,7 @@ import {
 import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from "./commands/obs.js";
 import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
-import { codegen, type CodegenFormat } from "./commands/codegen.js";
+import { codegen, runMigrationTest, type CodegenFormat } from "./commands/codegen.js";
 import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
 import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
@@ -758,9 +758,31 @@ async function runCodegen(argv: string[]) {
       "lock-version": { type: "string" },
       registry: { type: "string" },
       "catalog-id": { type: "string" },
+      "test-migration": { type: "boolean" },
+      prefix: { type: "string" },
+      from: { type: "string" },
+      to: { type: "string" },
+      samples: { type: "string" },
     },
     strict: true,
   });
+
+  // --test-migration → 라운드트립 검증
+  if (values["test-migration"]) {
+    if (!values.prefix || !values.from || !values.to) {
+      console.error("Usage: qa-sdk codegen --test-migration --prefix <id> --from <v1> --to <v2> [--samples 100]");
+      return;
+    }
+    await runMigrationTest({
+      loadedCatalog: loadedCatalog,
+      catalog: values.catalog,
+      prefix: values.prefix,
+      from: values.from,
+      to: values.to,
+      samples: values.samples ? parseInt(values.samples) : undefined,
+    });
+    return;
+  }
 
   // --registry → Registry에서 카탈로그 fetch → codegen
   if (values.registry) {

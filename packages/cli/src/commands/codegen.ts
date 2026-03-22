@@ -224,3 +224,44 @@ async function validatePrefixVersions(
     console.warn("");
   }
 }
+
+// ── Migration Test CLI ───────────────────────────────
+
+import { testMigration } from "../generators/catalog-typescript.js";
+
+/**
+ * prefix의 multi-version 라운드트립을 CLI에서 실행.
+ *
+ * qa-sdk codegen --test-migration --prefix permission --from v1 --to v2
+ */
+export async function runMigrationTest(opts: {
+  catalog?: string;
+  loadedCatalog?: Catalog;
+  prefix: string;
+  from: string;
+  to: string;
+  samples?: number;
+}): Promise<void> {
+  const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
+
+  console.log(`\n══ Migration Test: ${opts.prefix} ${opts.from} → ${opts.to} ══\n`);
+
+  const result = testMigration(catalog, opts.prefix, opts.from, opts.to, opts.samples);
+
+  console.log(`  총 좌표: ${result.totalCoords}`);
+  console.log(`  통과:    ${result.passed}`);
+  console.log(`  실패:    ${result.failed}`);
+
+  if (result.errors.length > 0) {
+    console.log(`\n  실패 상세:`);
+    for (const err of result.errors.slice(0, 5)) {
+      console.log(`    coord=${JSON.stringify(err.coord)} → ${err.error}`);
+    }
+    if (result.errors.length > 5) {
+      console.log(`    ... 외 ${result.errors.length - 5}건`);
+    }
+    process.exitCode = 1;
+  } else {
+    console.log(`\n  ✅ 모든 좌표 라운드트립 성공`);
+  }
+}

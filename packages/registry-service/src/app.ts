@@ -16,8 +16,10 @@ import { createCatalogRoutes } from "./routes/catalog.js";
 import { createAxisRoutes } from "./routes/axis.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
 import { createDiagramRoutes } from "./routes/diagrams.js";
+import { createServiceRoutes } from "./routes/services.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
+import type { ConfigStore } from "./stores/config-store.js";
 import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
 import { createDevDashboardRoutes } from "./routes/dev-dashboard.js";
 
@@ -26,8 +28,8 @@ export interface AppDeps extends RegistryServiceDeps {
   catalogStore?: CatalogStore;
   axisStore?: AxisProfileStore;
   devDashboardProvider?: DevDkgProvider;
-  /** DkgConfig 저장소 (in-memory). catalogId → DkgConfig JSON */
-  dkgConfigStore?: Map<string, string>;
+  /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
+  configStore?: ConfigStore;
 }
 
 export function createApp(deps: AppDeps) {
@@ -39,7 +41,10 @@ export function createApp(deps: AppDeps) {
   app.use("*", requestId);
   app.onError(createErrorHandler(logger));
 
-  app.route("/", createHealthRoutes());
+  app.route("/", createHealthRoutes({
+    catalogStore: deps.catalogStore,
+    configStore: deps.configStore,
+  }));
   app.route("/", createPrefixRoutes({ service }));
   app.route("/", createVersionRoutes({ service }));
   app.route("/", createDagRoutes({ service }));
@@ -55,7 +60,7 @@ export function createApp(deps: AppDeps) {
           deps.devDashboardProvider.refresh();
         }
       },
-      dkgConfigStore: deps.dkgConfigStore,
+      configStore: deps.configStore,
     }));
   }
   if (deps.axisStore) {
@@ -68,6 +73,9 @@ export function createApp(deps: AppDeps) {
         }
       },
     }));
+  }
+  if (deps.configStore) {
+    app.route("/", createServiceRoutes({ configStore: deps.configStore }));
   }
   if (deps.devDashboardProvider) {
     app.route("/", createDevDashboardRoutes({
