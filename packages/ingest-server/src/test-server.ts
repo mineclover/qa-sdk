@@ -105,12 +105,31 @@ async function setupConvergence() {
               if (records.length === 0) continue;
 
               // address_context 디코딩 → 이벤트 좌표 추출
-              const events = records.map(r => ({
-                log_id: r.logId,
-                event_key: r.eventKey,
-                timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
-                address_context: r.addressContext,
-              }));
+              const { decodePrefix } = await import("@qa-sdk/core");
+              const cat = transitionCatalog;
+              const events = records.map(r => {
+                const decoded: Record<string, string> = {};
+                if (r.addressContext) {
+                  for (const [prefix, serialized] of Object.entries(r.addressContext)) {
+                    try {
+                      const parts = String(serialized).split(":");
+                      const ver = parts[1];
+                      const addr = parseInt(parts[2], 10);
+                      if (!isNaN(addr)) {
+                        const dims = decodePrefix(cat as any, prefix, ver, addr);
+                        for (const [k, v] of Object.entries(dims)) decoded[k] = String(v);
+                      }
+                    } catch { /* 디코딩 실패 무시 */ }
+                  }
+                }
+                return {
+                  log_id: r.logId,
+                  event_key: r.eventKey,
+                  timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
+                  address_context: r.addressContext,
+                  decoded_dims: decoded,
+                };
+              });
 
               const result = transitionEngine.processSession({ sessionId: traceId, events });
               if (result.instances.length > 0) {
