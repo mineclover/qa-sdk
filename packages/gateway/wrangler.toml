@@ -1,0 +1,29 @@
+# QA-SDK API Gateway — CF Worker
+# 배포: npx wrangler deploy
+# 로컬: npx wrangler dev
+
+name = "qa-gateway"
+main = "worker.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+AUTH_MODE = "bypass"
+# AUTH_API_KEYS = "key1,key2"
+# AUTH_CF_TEAM_DOMAIN = "myteam.cloudflareaccess.com"
+
+# 서비스 URL (프로덕션 시 교체)
+INGEST_URL = "http://localhost:3200"
+REGISTRY_URL = "http://localhost:3300"
+GATE_URL = "http://localhost:3400"
+QUERY_URL = "http://localhost:3500"
+DECODE_URL = "http://localhost:3600"
+
+# 프로덕션 환경:
+# [env.production.vars]
+# AUTH_MODE = "cf-access"
+# AUTH_CF_TEAM_DOMAIN = "myteam.cloudflareaccess.com"
+# INGEST_URL = "https://ingest.qa-sdk.io"
+# REGISTRY_URL = "https://registry.qa-sdk.io"
+# GATE_URL = "https://gate.qa-sdk.io"
+# QUERY_URL = "https://query.qa-sdk.io"
+# DECODE_URL = "https://decode.qa-sdk.io"
