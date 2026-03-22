@@ -242,6 +242,8 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg transitions": { intent: "query", domain: "dkg-graph", subject: "spec" },
   "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
   "dkg scan-tables": { intent: "analyze", domain: "dkg-graph", subject: "table" },
+  "dkg audit":       { intent: "analyze", domain: "dkg-graph", subject: "system" },
+  "dkg discover-links": { intent: "analyze", domain: "convergence", subject: "intent-link" },
 };
 
 /**
