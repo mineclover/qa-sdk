@@ -240,6 +240,21 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
     if(overlay.style.display!=='none'&&(e.key==='Escape'||overlay.style.display==='flex')){hide();}
   });
 })();
+// ── HUD 스크롤 영역에서 wheel 이벤트가 canvas(OrbitControls)로 전파되지 않도록 차단 ──
+document.querySelectorAll('#h-flow, #h-select, #h-ctx, #flow-steps, #sel-info').forEach(function(el) {
+  el.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: false });
+});
+// hud-tr 전체에서도 차단 (스크롤 가능 요소가 동적으로 추가될 수 있으므로)
+var hudTr = document.getElementById('hud-tr');
+if (hudTr) hudTr.addEventListener('wheel', function(e) {
+  // 스크롤 가능한 자식이 있으면 canvas 전파 차단
+  var t = e.target;
+  while (t && t !== hudTr) {
+    if (t.scrollHeight > t.clientHeight) { e.stopPropagation(); return; }
+    t = t.parentElement;
+  }
+}, { passive: false });
+
 // ── Embed mode: ?embed=true 시 HUD/컨트롤 숨기고 캔버스만 표시 ──
 (function(){
   if(new URLSearchParams(location.search).get('embed')!=='true')return;
