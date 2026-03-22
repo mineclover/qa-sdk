@@ -845,9 +845,9 @@ export const DEMO_CATALOG = {
       id: "cli_domain", name: "CLI 도메인",
       versions: {
         v1: {
-          entries: ["dkg-graph", "dkg-skill", "convergence", "spec", "coordinate", "registry", "catalog", "self-ref", "system"],
+          entries: ["dkg-graph", "dkg-skill", "convergence", "spec", "coordinate", "registry", "catalog", "self-ref", "system", "ingest"],
           capacity: 16,
-          ko: { "dkg-graph": "그래프", "dkg-skill": "스킬", convergence: "수렴분석", spec: "스펙", coordinate: "좌표", registry: "레지스트리", catalog: "카탈로그", "self-ref": "자기참조", system: "시스템" },
+          ko: { "dkg-graph": "그래프", "dkg-skill": "스킬", convergence: "수렴분석", spec: "스펙", coordinate: "좌표", registry: "레지스트리", catalog: "카탈로그", "self-ref": "자기참조", system: "시스템", ingest: "수집" },
         },
       },
     },
@@ -858,9 +858,10 @@ export const DEMO_CATALOG = {
           entries: [
             "axis", "prefix", "domain", "dsl-bundle", "decision", "observation",
             "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog",
+            "service", "table",
           ],
           capacity: 32,
-          ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템", version: "버전", spec: "스펙", schema: "스키마", catalog: "카탈로그" },
+          ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템", version: "버전", spec: "스펙", schema: "스키마", catalog: "카탈로그", service: "서비스", table: "테이블" },
         },
       },
     },

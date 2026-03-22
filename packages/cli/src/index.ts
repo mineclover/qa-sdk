@@ -42,6 +42,7 @@ import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen
 import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
+import { serviceList, serviceShow, serviceOwners, serviceEndpoints } from "./commands/service.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -125,12 +126,17 @@ Usage:
   qa-sdk dkg decisions import <input>          의사결정 복원 (머지)
   qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회
 
+  qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)
+  qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)
+  qa-sdk service owners [--json]     prefix → 소유 서비스 맵
+  qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
+
   qa-sdk ingest health [--env dev|prod|staging]  수집 서버 헬스체크
   qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송
   qa-sdk ingest recent [limit]       최근 수집 세션 목록
   qa-sdk ingest trace <traceId>      trace 상세 (records + verdicts)
   qa-sdk ingest status               수집 파이프라인 상태 요약
-  qa-sdk ingest services             서비스 URL 맵 (registry 기반)
+  qa-sdk ingest services             서비스 URL 맵 (registry 기반, → service list 권장)
 
   qa-sdk catalog list                등록된 카탈로그 목록
   qa-sdk catalog info <id>           카탈로그 상세 정보
@@ -583,6 +589,20 @@ async function main() {
       else console.error("Usage: qa-sdk dkg release <id>");
       return;
 
+    // Service 명령어
+    case "service list":
+      await serviceList(sub.rest);
+      return;
+    case "service show":
+      await serviceShow(sub.rest);
+      return;
+    case "service owners":
+      await serviceOwners(sub.rest);
+      return;
+    case "service endpoints":
+      await serviceEndpoints(sub.rest);
+      return;
+
     // Ingest 명령어
     case "ingest health":
       await ingestHealth(sub.rest);
@@ -683,6 +703,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
     "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
+    "service list", "service show", "service owners", "service endpoints",
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",

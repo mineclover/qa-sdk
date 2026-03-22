@@ -16,6 +16,7 @@ export { StaticCatalogProvider } from "./catalog/static-provider.js";
 export { CatalogRegistry } from "./catalog/catalog-registry.js";
 export { deriveMeta } from "./catalog/derive-meta.js";
 export { flattenForBrowser } from "./catalog/browser-flatten.js";
+export { collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "./catalog/axis-usage.js";
 
 export {
   latestPrefixVersion,

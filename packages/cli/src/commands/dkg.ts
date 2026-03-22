@@ -8,7 +8,7 @@
 import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
-import { CatalogRegistry } from "@qa-sdk/core";
+import { CatalogRegistry, collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "@qa-sdk/core";
 import type { Catalog, DkgConfig, AxisVersionSnapshot } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
@@ -1202,7 +1202,36 @@ export function dkgAudit(): void {
     if (link.invariant) console.log(`      invariant: ${link.invariant}`);
   }
 
-  // 6. 종합
+  // 6. 축 사용 분석 (prefix dims + TransitionSpec)
+  {
+    // TransitionSpec에서 축 참조 수집
+    const tSpecNodes = graph.getNodesByKind("transition-spec") as Array<{ transition: string; matchAxes: string[]; inputAxes: string[]; outputAxes: string[] }>;
+    const transitionAxes = tSpecNodes.map(n => ({
+      transition: n.transition,
+      matchAxes: n.matchAxes ?? [],
+      inputAxes: n.inputAxes ?? [],
+      outputAxes: n.outputAxes ?? [],
+    }));
+    const entries = collectAxisUsage(DEMO_CATALOG, { transitionAxes });
+    const summary = summarizeAxisUsage(entries);
+    const unused = findUnusedAxes(DEMO_CATALOG, entries);
+
+    console.log(`\n  ── Axis Usage (${summary.length} axes used) ──`);
+    // source별 집계
+    const sourceTotals: Record<string, number> = {};
+    for (const e of entries) sourceTotals[e.source] = (sourceTotals[e.source] ?? 0) + 1;
+    for (const [src, cnt] of Object.entries(sourceTotals)) {
+      console.log(`    ${src}: ${cnt}건`);
+    }
+
+    if (unused.length > 0) {
+      console.log(`\n  ⚠ 미사용 축 (${unused.length}): ${unused.join(", ")}`);
+    } else {
+      console.log(`\n  ✅ 전체 ${Object.keys(DEMO_CATALOG.axes).length}개 축 사용 확인`);
+    }
+  }
+
+  // 7. 종합
   const specs = catalogToPrefixSpecs(DEMO_CATALOG);
   const specMap = new Map(specs.map(s => [s.id, s]));
   const byCategory = new Map<string, number>();

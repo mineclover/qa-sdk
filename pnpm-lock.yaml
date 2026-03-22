@@ -344,6 +344,22 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)
 
+  packages/gateway:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.14.1
+        version: 1.19.11(hono@4.12.7)
+      hono:
+        specifier: ^4.7.5
+        version: 4.12.7
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+      wrangler:
+        specifier: ^4.0.0
+        version: 4.73.0(@cloudflare/workers-types@4.20260313.1)
+
   packages/index-meta:
     dependencies:
       weighted-index:

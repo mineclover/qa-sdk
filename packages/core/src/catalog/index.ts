@@ -65,3 +65,7 @@ export type {
   ResolvedAddress,
   DecomposedDim,
 } from "./runtime.js";
+
+// ── Axis Usage Analysis ─────────────────────────────────────
+export type { AxisUsageEntry, AxisUsageSummary, CollectAxisUsageOptions } from "./axis-usage.js";
+export { collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "./axis-usage.js";
