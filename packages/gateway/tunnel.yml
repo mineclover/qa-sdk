@@ -18,10 +18,6 @@ ingress:
   - hostname: registry.qa-sdk.io
     service: http://localhost:3300
 
-  # registry-server
-  - hostname: registry-server.qa-sdk.io
-    service: http://localhost:3100
-
   # gate-service (D1 Worker 대신 로컬 사용 시)
   - hostname: gate.qa-sdk.io
     service: http://localhost:3400

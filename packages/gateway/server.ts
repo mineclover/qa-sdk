@@ -31,7 +31,7 @@ const SERVICE_URLS: Record<string, string> = {
   decode: process.env.DECODE_URL ?? "http://localhost:3600",
 };
 
-const PATH_MAP: Array<{ prefix: string; service: string }> = [
+const PATH_MAP: Array<{ prefix: string; service: string; strip?: boolean }> = [
   { prefix: "/v1/ingest", service: "ingest" },
   { prefix: "/v1/traces", service: "ingest" },
   { prefix: "/v1/sessions", service: "ingest" },
@@ -40,18 +40,27 @@ const PATH_MAP: Array<{ prefix: string; service: string }> = [
   { prefix: "/v1/admin", service: "ingest" },
   { prefix: "/api/", service: "registry" },
   { prefix: "/dev/", service: "registry" },
-  { prefix: "/gate/", service: "gate" },
-  { prefix: "/query/", service: "query" },
-  { prefix: "/state/", service: "query" },
-  { prefix: "/decode/", service: "decode" },
+  { prefix: "/catalogs", service: "registry" },
+  { prefix: "/health/generation", service: "registry" },
+  { prefix: "/metrics", service: "registry", strip: true },
+  { prefix: "/gate/", service: "gate", strip: true },
+  { prefix: "/query/", service: "query", strip: true },
+  { prefix: "/state/", service: "query", strip: true },
+  { prefix: "/decode/", service: "decode", strip: true },
 ];
 
 // ── 동적 라우팅 (registry 기반) ─────────────────────
 
-let dynamicRoutes: Array<{ prefix: string; url: string }> | null = null;
+interface GatewayRoute {
+  prefix: string;
+  url: string;
+  strip: boolean;
+}
+
+let dynamicRoutes: GatewayRoute[] | null = null;
 let routesCacheExpiry = 0;
 
-async function getRoutes(): Promise<Array<{ prefix: string; url: string }>> {
+async function getRoutes(): Promise<GatewayRoute[]> {
   const now = Date.now();
   if (dynamicRoutes && now < routesCacheExpiry) return dynamicRoutes;
 
@@ -61,16 +70,16 @@ async function getRoutes(): Promise<Array<{ prefix: string; url: string }>> {
       signal: AbortSignal.timeout(3_000),
     });
     if (resp.ok) {
-      const data = await resp.json() as { routes: Array<{ path: string; url: string }> };
+      const data = await resp.json() as { routes: Array<{ path: string; url: string; strip?: boolean }> };
       if (data.routes.length > 0) {
-        dynamicRoutes = data.routes.map(r => ({ prefix: r.path, url: r.url }));
+        dynamicRoutes = data.routes.map(r => ({ prefix: r.path, url: r.url, strip: r.strip ?? false }));
         routesCacheExpiry = now + 60_000;
         return dynamicRoutes;
       }
     }
   } catch { /* fallback */ }
 
-  return PATH_MAP.map(r => ({ prefix: r.prefix, url: SERVICE_URLS[r.service] }));
+  return PATH_MAP.map(r => ({ prefix: r.prefix, url: SERVICE_URLS[r.service], strip: r.strip ?? false }));
 }
 
 // ── 미들웨어 ────────────────────────────────────────
@@ -128,7 +137,10 @@ app.all("*", async (c) => {
 
   for (const route of routes) {
     if (url.pathname.startsWith(route.prefix)) {
-      const targetUrl = `${route.url}${url.pathname}${url.search}`;
+      const targetPath = route.strip
+        ? url.pathname.slice(route.prefix.replace(/\/$/, "").length) || "/"
+        : url.pathname;
+      const targetUrl = `${route.url}${targetPath}${url.search}`;
       const headers = new Headers(c.req.raw.headers);
       headers.set("X-Gateway-Identity", c.get("identity") ?? "unknown");
       headers.delete("Authorization");

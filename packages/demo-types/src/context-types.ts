@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 1eae1ce8030e) at 2026-03-22T19:56:48
+// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import type { QaContext } from "@qa-sdk/context";
@@ -15,6 +15,6 @@ export type TypedQaContext = QaContext<PrefixId>;
 export interface TypedServiceBootConfig extends Omit<ServiceBootConfig, "env" | "region" | "name" | "namespace"> {
   readonly env: "dev" | "stage" | "prod" | "test" | "local";
   readonly region: "asia" | "usa";
-  readonly name: "shopping-web" | "shopping-backend" | "auth" | "payment" | "gateway" | "registry-service" | "ingest-server" | "platform-demo" | "content-service" | "infra-controller" | "gate-service" | "query-service" | "decode-service" | "registry-server" | "platform-demo-api";
+  readonly name: "shopping-web" | "shopping-backend" | "auth" | "payment" | "gateway" | "registry-service" | "ingest-server" | "platform-demo" | "content-service" | "infra-controller" | "gate-service" | "query-service" | "decode-service" | "platform-demo-api";
   readonly namespace: "shop" | "cms";
 }

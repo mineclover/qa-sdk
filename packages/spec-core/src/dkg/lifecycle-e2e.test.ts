@@ -293,8 +293,9 @@ describe("종단 E2E: checkout 흐름", () => {
 
   it("12. decodeAddressContext — 인코딩된 주소 → 디코딩된 축:entry", () => {
 
-    // tracking prefix를 인코딩 (trackAction=click, page=home, userType=guest → v1 기준)
-    const trackAddr = encodePrefix(DEMO_CATALOG, "tracking", "v1", { trackAction: 0, page: 0, userType: 0 });
+    // tracking prefix를 인코딩 (svc_ref=첫 서비스 주소, trackAction=click, page=home, userType=guest → v1 기준)
+    const svcRefAddr = DEMO_CATALOG.prefixes.tracking.versions[0].refEntries!.svc_ref.values[0];
+    const trackAddr = encodePrefix(DEMO_CATALOG, "tracking", "v1", { svc_ref: svcRefAddr, trackAction: 0, page: 0, userType: 0 });
     const encoded = { tracking: `tracking:v1:${trackAddr}` };
 
     const decoded = decodeAddressContext(DEMO_CATALOG, encoded);

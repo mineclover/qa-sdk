@@ -503,8 +503,7 @@ source: docs/msa-architecture.md
 |--------|------|--------|------|
 | ingest-server | 3200 | PostgreSQL + Redis | 이벤트 수집, address_context 검증, 실시간 스트림 |
 | worker | — | PostgreSQL + Redis | Phase-2 비동기 처리, DLQ |
-| registry-server | 3100 | PostgreSQL | prefix 메타데이터, 버전 관리 |
-| registry-service | 3300 | SQLite/Mem | prefix 등록, 카탈로그 CRUD |
+| registry-service | 3300 | SQLite/Mem | prefix 등록, 카탈로그 CRUD, 이벤트 스키마 검증 |
 | decode-service | 3600 | In-memory cache | mixed-radix decode, TTL 캐시 |
 | gate-service | 3400 | SQLite (file) | 주소 상태 관리, cascade 전파 |
 | query-service | 3500 | SQLite (file) | 정책 규칙 기반 질의 |

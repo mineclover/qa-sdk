@@ -20,6 +20,8 @@ export interface ServiceRecord {
   readonly urls?: Readonly<Record<string, string>>;
   /** 게이트웨이 경로 prefix (예: "/v1/ingest") */
   readonly gatewayPath?: string;
+  /** gateway에서 prefix를 제거 후 서비스에 전달 (기본 false — 경로 그대로 프록시) */
+  readonly stripPrefix?: boolean;
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes?: readonly string[];
 }
@@ -128,6 +130,7 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
         serviceId: svc.serviceId,
         url: epUrls[svc.serviceId] ?? svc.urls?.[envName] ?? svc.url ?? "",
         tier: svc.tier ?? "backend",
+        strip: svc.stripPrefix ?? false,
       }));
     return c.json({ routes: routes_list, env: envName });
   });

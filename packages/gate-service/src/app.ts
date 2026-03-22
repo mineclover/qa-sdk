@@ -4,6 +4,7 @@ import type { AddressStateStore, GateEngine } from "index-meta";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
 import { createGateRoutes } from "./routes/gate.js";
 import {
   createGateService,
@@ -38,6 +39,13 @@ export function createApp(deps: AppDeps) {
       engineConfigured: gateService.engine !== null,
       getUptimeSeconds: deps.getUptimeSeconds,
       version: deps.version,
+    }),
+  );
+  app.route(
+    "/",
+    createMetricsRoutes({
+      engineConfigured: gateService.engine !== null,
+      getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
   app.route("/", createGateRoutes({ gateService }));

@@ -144,7 +144,7 @@ export const SELF_CHECK_PKG_NAMES = [
   "ingest-server", "registry-service", "e2e",
   "core", "engine", "store",
   "gate-service", "query-service", "decode-service",
-  "registry-server", "registry-client",
+  "registry-client",
   "apm", "browser-sdk", "event-catalog", "pino",
   "viz-3d", "viz-web", "demo-tests", "weighted-wasm",
 ] as const;

@@ -132,6 +132,49 @@ export async function serviceOwners(args: string[]): Promise<void> {
   }
 }
 
+// ── health ────────────────────────────────────────
+
+export async function serviceHealth(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const json = args.includes("--json");
+  const envIdx = args.indexOf("--env");
+  const env = envIdx !== -1 && args[envIdx + 1] ? args[envIdx + 1] : process.env.QA_ENV ?? "dev";
+
+  try {
+    const data = await fetchJson(`${registryUrl}/api/health/services?env=${env}`);
+
+    if (json) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
+    const statusIcon = (s: string) => s === "up" ? "●" : "○";
+    const statusColor = data.status === "healthy" ? "HEALTHY" : data.status === "degraded" ? "DEGRADED" : "UNHEALTHY";
+
+    console.log(`\n══ System Health: ${statusColor} (${data.up}/${data.total} up) ══`);
+    console.log(`  env: ${data.env}  checked: ${data.checkedAt}\n`);
+    console.log(`  ${"STATUS".padEnd(8)} ${"SERVICE".padEnd(22)} ${"TIER".padEnd(10)} ${"LATENCY".padEnd(10)} URL`);
+    console.log("  " + "─".repeat(85));
+
+    for (const svc of data.services) {
+      const icon = statusIcon(svc.status);
+      const lat = svc.status === "up" ? `${svc.latencyMs}ms` : svc.error ?? "—";
+      console.log(
+        `  ${icon} ${svc.status.padEnd(5)} ${svc.serviceId.padEnd(22)} ${(svc.tier ?? "—").padEnd(10)} ${lat.padEnd(10)} ${svc.url}`,
+      );
+    }
+
+    if (data.down > 0) {
+      console.log(`\n  ⚠ ${data.down}개 서비스 다운`);
+    }
+  } catch (err: any) {
+    // fallback: registry 자체가 죽으면 직접 호출
+    console.error(`  registry 헬스체크 API 실패: ${err.message}`);
+    console.log(`  URL: ${registryUrl}/api/health/services?env=${env}`);
+    console.log(`  registry-service가 실행 중인지 확인하세요.`);
+  }
+}
+
 // ── endpoints ─────────────────────────────────────
 
 export async function serviceEndpoints(args: string[]): Promise<void> {

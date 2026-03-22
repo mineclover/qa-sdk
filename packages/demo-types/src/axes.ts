@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 1eae1ce8030e) at 2026-03-22T19:56:48
+// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
@@ -758,7 +758,7 @@ export const SUBJECTKIND = {
 } as const;
 export type Subjectkind = typeof SUBJECTKIND[keyof typeof SUBJECTKIND];
 
-/** svc_name — 서비스명 (entries: 15, capacity: 32) */
+/** svc_name — 서비스명 (entries: 14, capacity: 32) */
 export const SVC_NAME = {
   SHOPPING_WEB: "shopping-web",
   SHOPPING_BACKEND: "shopping-backend",
@@ -773,7 +773,6 @@ export const SVC_NAME = {
   GATE_SERVICE: "gate-service",
   QUERY_SERVICE: "query-service",
   DECODE_SERVICE: "decode-service",
-  REGISTRY_SERVER: "registry-server",
   PLATFORM_DEMO_API: "platform-demo-api",
 } as const;
 export type SvcName = typeof SVC_NAME[keyof typeof SVC_NAME];

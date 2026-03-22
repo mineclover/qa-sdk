@@ -20,6 +20,7 @@ import { createRuleService } from "./lib/rule-service.js";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
 import { createQueryRoutes } from "./routes/query.js";
 import { createRuleRoutes } from "./routes/rules.js";
 import { createStateRoutes, type StateRouteDeps } from "./routes/state.js";
@@ -69,6 +70,12 @@ export function createApp(deps: AppDeps) {
       storeKind: policyRuleStore.constructor.name,
       getUptimeSeconds: deps.getUptimeSeconds,
       version: deps.version,
+    }),
+  );
+  app.route(
+    "/",
+    createMetricsRoutes({
+      getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
   app.route("/", createRuleRoutes({ ruleService }));

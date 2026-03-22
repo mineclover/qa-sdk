@@ -3,6 +3,7 @@ import type { Logger } from "pino";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
+import { createMetricsRoutes } from "./routes/metrics.js";
 import { createDecodeRoutes } from "./routes/decode.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
 import { createLogger } from "./lib/logger.js";
@@ -27,6 +28,13 @@ export function createApp(deps: AppDeps) {
     getUptimeSeconds: deps.getUptimeSeconds,
     version: deps.version,
   }));
+  app.route(
+    "/",
+    createMetricsRoutes({
+      pool: deps.pool,
+      getUptimeSeconds: deps.getUptimeSeconds,
+    }),
+  );
   app.route("/", createDecodeRoutes({ pool: deps.pool }));
 
   // error handler

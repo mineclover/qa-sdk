@@ -28,6 +28,42 @@ scrape_configs:
         labels:
           service: "registry-service"
 
+  # ── gate-service ──
+  - job_name: "gate-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "gate-service:3400"
+        labels:
+          service: "gate-service"
+
+  # ── query-service ──
+  - job_name: "query-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "query-service:3500"
+        labels:
+          service: "query-service"
+
+  # ── decode-service ──
+  - job_name: "decode-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "decode-service:3600"
+        labels:
+          service: "decode-service"
+
+  # ── gateway ──
+  - job_name: "gateway"
+    metrics_path: "/health"
+    static_configs:
+      - targets:
+          - "gateway:8787"
+        labels:
+          service: "gateway"
+
   # ── nginx LB ──
   - job_name: "nginx"
     metrics_path: "/nginx-health"

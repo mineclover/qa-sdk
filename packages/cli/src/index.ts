@@ -43,7 +43,7 @@ import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
-import { serviceList, serviceShow, serviceOwners, serviceEndpoints } from "./commands/service.js";
+import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth } from "./commands/service.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -129,6 +129,7 @@ Usage:
 
   qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)
   qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)
+  qa-sdk service health [--env dev]  전체 서비스 헬스체크 (registry 경유)
   qa-sdk service owners [--json]     prefix → 소유 서비스 맵
   qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
 
@@ -605,6 +606,9 @@ async function main() {
     case "service show":
       await serviceShow(sub.rest);
       return;
+    case "service health":
+      await serviceHealth(sub.rest);
+      return;
     case "service owners":
       await serviceOwners(sub.rest);
       return;
@@ -734,7 +738,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
     "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
-    "service list", "service show", "service owners", "service endpoints",
+    "service list", "service show", "service health", "service owners", "service endpoints",
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",

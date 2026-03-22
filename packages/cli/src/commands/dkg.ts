@@ -1513,8 +1513,6 @@ export function dkgScanTables(): void {
     // store (PostgreSQL)
     "qa_sessions", "traces", "event_records", "transmissions",
     "runtime_graphs", "scenario_specs", "verdict_reports", "dead_letter_queue",
-    // registry-server (PostgreSQL)
-    "services", "service_events",
     // index-meta (SQLite)
     "prefix_registry", "prefix_ref", "prefix_route", "schema_version",
     "version_lifecycle", "entry", "entry_flag", "migration_mapping",
@@ -3122,7 +3120,6 @@ const SELF_CHECK_PKGS = [
   { name: "gate-service", filter: "gate-service", hasTest: true, hasBuild: true },
   { name: "query-service", filter: "query-service", hasTest: true, hasBuild: true },
   { name: "decode-service", filter: "@qa-sdk/decode-service", hasTest: true, hasBuild: true },
-  { name: "registry-server", filter: "@qa-sdk/registry-server", hasTest: true, hasBuild: true },
   { name: "registry-client", filter: "@qa-sdk/registry-client", hasTest: true, hasBuild: true },
   // 미관리 → 관리 전환 (8개)
   { name: "apm", filter: "@qa-sdk/apm", hasTest: true, hasBuild: true },

@@ -51,6 +51,7 @@ async function createStores(sqlitePath: string) {
   if (sqlitePath === ":memory:") {
     const { InMemoryConfigStore } = await import("./stores/in-memory-config-store.js");
     const { InMemoryServiceEndpointStore } = await import("./stores/in-memory-service-endpoint-store.js");
+    const { InMemoryEventSchemaStore } = await import("./stores/in-memory-event-schema-store.js");
     return {
       prefixRegistry: new InMemoryPrefixRegistry(),
       versionStore: new InMemoryVersionLifecycleStore(),
@@ -60,6 +61,7 @@ async function createStores(sqlitePath: string) {
       axisStore: new InMemoryAxisProfileStore(),
       configStore: new InMemoryConfigStore(),
       endpointStore: new InMemoryServiceEndpointStore(),
+      eventSchemaStore: new InMemoryEventSchemaStore(),
     };
   }
 
@@ -314,16 +316,14 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
       gatewayPath: "/v1/",
       ownedPrefixes: ["ingest_record", "event_classification", "metric_point", "pipeline_point", "pattern_match", "pattern_anomaly"],
       consumedPrefixes: ["service"] },
-    { serviceId: "registry-server", name: "레지스트리 서버 (PG)", tier: "infra", team: "platform", url: "http://localhost:3100",
-      ownedPrefixes: [], consumedPrefixes: ["service"] },
     { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
-      gatewayPath: "/v1/gate",
+      gatewayPath: "/gate/", stripPrefix: true,
       ownedPrefixes: ["gate_point"], consumedPrefixes: ["service", "version_point"] },
     { serviceId: "query-service", name: "질의 서비스", tier: "infra", team: "platform", url: "http://localhost:3500",
-      gatewayPath: "/v1/query",
+      gatewayPath: "/query/", stripPrefix: true,
       ownedPrefixes: [], consumedPrefixes: ["service", "gate_point"] },
     { serviceId: "decode-service", name: "디코드 서비스", tier: "infra", team: "platform", url: "http://localhost:3600",
-      gatewayPath: "/v1/decode",
+      gatewayPath: "/decode/", stripPrefix: true,
       ownedPrefixes: [], consumedPrefixes: ["service"] },
     // ── 시스템 (CLI / CI / DKG 엔진) ──
     { serviceId: "qa-sdk-cli", name: "QA SDK CLI", tier: "system", team: "platform",
@@ -339,6 +339,15 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
       gatewayPath: "/api/",
       ownedPrefixes: ["version_point", "gate_point"],
       consumedPrefixes: ["service"] },
+    // ── 모니터링 ──
+    { serviceId: "prometheus", name: "Prometheus", tier: "infra", team: "devops", url: "http://localhost:9090",
+      urls: { dev: "http://localhost:9090" },
+      gatewayPath: "/monitoring/prometheus", stripPrefix: true,
+      ownedPrefixes: [], consumedPrefixes: [] },
+    { serviceId: "grafana", name: "Grafana", tier: "infra", team: "devops", url: "http://localhost:3000",
+      urls: { dev: "http://localhost:3000" },
+      gatewayPath: "/monitoring/grafana", stripPrefix: true,
+      ownedPrefixes: [], consumedPrefixes: [] },
   ];
   await configStore.set("demo", "services", JSON.stringify(demoServices));
   logger.info({ count: demoServices.length }, "seeded demo services to config store");
@@ -351,7 +360,6 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
   // tier/team은 ServiceRecord(토폴로지)에서 관리
   const endpoints = [
     // dev/asia — 인프라 (3xxx)
-    { catalogId: "demo", namespace: "shop", svcName: "registry-server",   env: "dev", region: "asia", url: "http://localhost:3100" },
     { catalogId: "demo", namespace: "shop", svcName: "ingest-server",     env: "dev", region: "asia", url: "http://localhost:3200" },
     { catalogId: "demo", namespace: "shop", svcName: "registry-service",  env: "dev", region: "asia", url: "http://localhost:3300" },
     { catalogId: "demo", namespace: "shop", svcName: "gate-service",      env: "dev", region: "asia", url: "http://localhost:3400" },
@@ -366,6 +374,9 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
     { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "dev", region: "asia", url: "http://localhost:5220" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "dev", region: "asia", url: "http://localhost:5176" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo-api", env: "dev", region: "asia", url: "http://localhost:8787" },
+    // dev/asia — 모니터링
+    { catalogId: "demo", namespace: "shop", svcName: "prometheus",           env: "dev", region: "asia", url: "http://localhost:9090" },
+    { catalogId: "demo", namespace: "shop", svcName: "grafana",             env: "dev", region: "asia", url: "http://localhost:3000" },
     // prod/asia — Cloudflare Pages / Workers
     { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "prod", region: "asia", url: "https://shop-web-7dq.pages.dev" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "prod", region: "asia", url: "https://platform-demo-3v1.pages.dev" },

@@ -15,14 +15,14 @@ canvas{position:fixed;inset:0;z-index:0}
 .hud *{pointer-events:none}
 .hud button,.hud input,.hud .vb{pointer-events:all}
 .hud-tr{pointer-events:all}
-.hud-tl{top:14px;left:18px;max-height:calc(100vh - 40px);overflow-y:auto}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
+.hud-tl{top:14px;left:18px;max-height:calc(100vh - 40px);overflow-y:auto;max-width:220px}.hud-tr{top:14px;right:18px;text-align:right;max-width:260px;max-height:calc(100vh - 100px);overflow-y:auto}
 .hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
 .hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
 .m{font-family:'IBM Plex Mono',monospace}
 .brand{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#334}
 .ttl{font-size:20px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,var(--mint),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sub{font-size:10px;color:var(--dim);margin-top:2px}
-.cd{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px 12px;backdrop-filter:blur(8px);margin-bottom:4px}
+.cd{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px 12px;backdrop-filter:blur(8px);margin-bottom:4px;overflow:hidden}
 .cl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#334;margin-bottom:2px}
 .cv{font-size:15px;font-weight:600;color:var(--mint)}
 .cs{font-size:9px;color:#556;line-height:1.5}.cs .h{color:var(--mint)}
@@ -188,8 +188,8 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   <div class="cd" style="margin-top:4px" id="server-panel">
     <div class="cl m">Server</div>
     <div class="cs m" style="line-height:1.8">
-      <div id="srv-ingest" style="font-size:9px"><span style="color:#334">● ingest</span></div>
-      <div id="srv-registry" style="font-size:9px"><span style="color:#334">● registry</span></div>
+      <div id="srv-ingest" style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#334">● ingest</span></div>
+      <div id="srv-registry" style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#334">● registry</span></div>
     </div>
     <button class="btn m" id="btn-check-server" style="margin-top:4px;width:100%;font-size:8px">Check Servers</button>
   </div>
@@ -780,7 +780,8 @@ $('btn-reset').addEventListener('click',()=>{
   cellRoleColor.clear();FT.clear();
   FT.setRoleFilter(null);document.querySelectorAll('.sl-role').forEach(x=>{x.classList.remove('sl-dimmed');x.classList.add('sl-active')});
   Object.values(cellMap).forEach(c=>c.mat.emissiveIntensity=0);
-  updateHUD(null,null);$('h-flow').style.display='none';$('h-select').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
+  deselectCell();
+  updateHUD(null,null);$('h-flow').style.display='none';$('flow-idx').textContent='-/-';$('status').textContent='reset';
 });
 
 // Server check
@@ -828,16 +829,75 @@ $('btn-filter-none').addEventListener('click',()=>{
   filterContainer.querySelectorAll('.btn').forEach(c=>c.classList.remove('on'));
 });
 
-// Cell click — InstancedMesh 지원
+// Cell click — InstancedMesh 지원 + 선택 마커
 const rc=new T.Raycaster(),mv=new T.Vector2();
+let selectedKey=null;
+
+// 선택 마커 — 셀 위치에 띄우는 밝은 링
+const selRingGeo=new T.RingGeometry(0.28,0.34,16);
+const selRingMat=new T.MeshBasicMaterial({color:0x64ffda,transparent:true,opacity:0.9,side:T.DoubleSide});
+const selRing=new T.Mesh(selRingGeo,selRingMat);
+selRing.rotation.x=-Math.PI/2;
+selRing.visible=false;
+scene.add(selRing);
+// 선택 마커 pulse 애니메이션용
+let selPulse=0;
+
+function selectCell(key){
+  if(selectedKey===key){selectedKey=null;selRing.visible=false;$('h-select').style.display='none';return}
+  selectedKey=key;
+  const c=cellMap[key];
+  if(!c){selRing.visible=false;return}
+  // 마커를 셀 위치로 이동
+  const wp=c.wp();
+  selRing.position.set(wp.x,wp.y+0.3,wp.z);
+  selRing.visible=true;
+  selPulse=0;
+  // glow
+  setGlow(key);
+  showCellInfo(key);
+}
+
+function deselectCell(){
+  selectedKey=null;selRing.visible=false;$('h-select').style.display='none';
+}
+
 canvas.addEventListener('click',e=>{
   mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
   const iMeshes=instancedGrids.map(ig=>ig.iMesh);
   const h=rc.intersectObjects(iMeshes);
   if(h.length&&h[0].instanceId!==undefined){
     const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
-    if(ig){const key=ig.idxToKey[h[0].instanceId];showCellInfo(key)}
-  }else $('h-select').style.display='none';
+    if(ig){selectCell(ig.idxToKey[h[0].instanceId])}
+  }else deselectCell();
+});
+
+// 호버 툴팁 — 마우스 위치에 셀 이름 표시
+const tooltip=document.createElement('div');
+tooltip.style.cssText='position:fixed;z-index:20;pointer-events:none;font-family:IBM Plex Mono,monospace;font-size:10px;color:#64ffda;background:rgba(5,5,8,0.85);border:1px solid rgba(100,255,218,0.15);padding:3px 8px;border-radius:3px;display:none;white-space:nowrap';
+document.body.appendChild(tooltip);
+let hoveredKey=null;
+
+canvas.addEventListener('mousemove',e=>{
+  mv.x=(e.clientX/innerWidth)*2-1;mv.y=-(e.clientY/innerHeight)*2+1;rc.setFromCamera(mv,cam);
+  const iMeshes=instancedGrids.map(ig=>ig.iMesh);
+  const h=rc.intersectObjects(iMeshes);
+  if(h.length&&h[0].instanceId!==undefined){
+    const ig=instancedGrids.find(g=>g.iMesh===h[0].object);
+    if(ig){
+      const key=ig.idxToKey[h[0].instanceId];
+      if(key!==hoveredKey){
+        hoveredKey=key;
+        tooltip.textContent=key;
+        canvas.style.cursor='pointer';
+      }
+      tooltip.style.display='block';
+      tooltip.style.left=(e.clientX+12)+'px';
+      tooltip.style.top=(e.clientY-8)+'px';
+    }
+  }else{
+    if(hoveredKey){hoveredKey=null;tooltip.style.display='none';canvas.style.cursor='default'}
+  }
 });
 
 // ═══════════════════════════════════════════════════
@@ -880,6 +940,16 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
 
   // Beams
   beamRenderer.update(dt);
+
+  // 선택 마커 pulse + 위치 추적
+  if(selRing.visible&&selectedKey){
+    selPulse+=dt*3;
+    selRingMat.opacity=0.5+Math.sin(selPulse)*0.3;
+    selRing.scale.setScalar(1+Math.sin(selPulse*0.7)*0.08);
+    // 셀 위치가 view 전환으로 바뀔 수 있으므로 매 프레임 추적
+    const c=cellMap[selectedKey];
+    if(c){const wp=c.wp();selRing.position.set(wp.x,wp.y+0.3,wp.z)}
+  }
 
   updateKeyboardNav();
   ctl.update();R.render(scene,cam);

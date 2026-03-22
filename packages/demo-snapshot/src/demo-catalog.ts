@@ -1162,9 +1162,9 @@ export const DEMO_CATALOG = {
         userType: { kind: "axis", axisId: "userType" },
       },
       versions: [
-        { version: "v1", axisVersions: { trackAction: "v1", page: "v1", userType: "v1" } },
-        { version: "v2", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" } },
-        { version: "v3", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" } },
+        { version: "v1", axisVersions: { trackAction: "v1", page: "v1", userType: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
+        { version: "v2", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
+        { version: "v3", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
       ],
     },
     relational: {
@@ -1351,8 +1351,8 @@ export const DEMO_CATALOG = {
         target: { kind: "table_ref", table: "items" },
       },
       versions: [
-        { version: "v1", axisVersions: { action: "v1" } },
-        { version: "v2", axisVersions: { action: "v1" } },
+        { version: "v1", axisVersions: { action: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
+        { version: "v2", axisVersions: { action: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
       ],
     },
     auth_event: {
@@ -1366,8 +1366,8 @@ export const DEMO_CATALOG = {
         action: { kind: "axis", axisId: "auth_action" },
       },
       versions: [
-        { version: "v1", axisVersions: { action: "v1" } },
-        { version: "v2", axisVersions: { action: "v1" } },
+        { version: "v1", axisVersions: { action: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
+        { version: "v2", axisVersions: { action: "v1" }, refEntries: { svc_ref: { values: _EVT_SVC, refVersion: "v1" } } },
       ],
     },
     order_event: {

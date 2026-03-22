@@ -20,6 +20,7 @@ import { createServiceRoutes } from "./routes/services.js";
 import { createEndpointRoutes } from "./routes/endpoints.js";
 import { createEventSchemaRoutes } from "./routes/event-schemas.js";
 import { createDecodeMapRoutes } from "./routes/decode-map.js";
+import { createServiceHealthRoutes } from "./routes/service-health.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { ConfigStore } from "./stores/config-store.js";
@@ -86,6 +87,7 @@ export function createApp(deps: AppDeps) {
   }
   if (deps.configStore) {
     app.route("/", createServiceRoutes({ configStore: deps.configStore, endpointStore: deps.endpointStore }));
+    app.route("/", createServiceHealthRoutes({ configStore: deps.configStore, endpointStore: deps.endpointStore }));
   }
   if (deps.endpointStore) {
     app.route("/", createEndpointRoutes({ endpointStore: deps.endpointStore }));

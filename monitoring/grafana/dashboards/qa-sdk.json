@@ -7,9 +7,45 @@
   "links": [],
   "panels": [
     {
+      "title": "서비스 상태",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "서비스 Up/Down",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "title": "Ingest Server",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "title": "Ingest — 요청 처리량",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "targets": [
         {
           "expr": "sum(rate(ingest_requests_total[5m])) by (status)",
@@ -21,9 +57,23 @@
       }
     },
     {
+      "title": "Ingest — 이벤트 수집량",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(ingest_records_total[5m]))",
+          "legendFormat": "records/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      }
+    },
+    {
       "title": "Ingest — DLQ Depth",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 14 },
       "targets": [
         {
           "expr": "dlq_depth",
@@ -45,7 +95,7 @@
     {
       "title": "SSE 연결 수",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 14 },
       "targets": [
         {
           "expr": "sse_connections_active",
@@ -54,9 +104,30 @@
       ]
     },
     {
+      "title": "Rate Limit 거부",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "expr": "sum(rate(rate_limit_rejected_total[5m]))",
+          "legendFormat": "rejected/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      }
+    },
+    {
+      "title": "Convergence Pipeline",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "title": "Convergence — Flush 빈도",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 21 },
       "targets": [
         {
           "expr": "rate(convergence_flush_total[5m])",
@@ -67,7 +138,7 @@
     {
       "title": "Convergence — 패턴 분류",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 21 },
       "targets": [
         {
           "expr": "sum(rate(convergence_sessions_classified_total[5m])) by (pattern)",
@@ -78,7 +149,7 @@
     {
       "title": "Convergence — 이상 감지",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 21 },
       "targets": [
         {
           "expr": "sum(rate(convergence_anomalies_detected_total[5m])) by (kind)",
@@ -87,9 +158,16 @@
       ]
     },
     {
+      "title": "Registry & Services",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "title": "Registry — 카탈로그 수",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 30 },
       "targets": [
         {
           "expr": "registry_catalogs_total",
@@ -98,9 +176,66 @@
       ]
     },
     {
+      "title": "Registry — Axis 수",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 30 },
+      "targets": [
+        {
+          "expr": "registry_axes_total",
+          "legendFormat": "axes"
+        }
+      ]
+    },
+    {
+      "title": "Gate Engine 상태",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 30 },
+      "targets": [
+        {
+          "expr": "gate_engine_configured",
+          "legendFormat": "configured"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "OFF", "color": "yellow" }, "1": { "text": "ON", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Decode Pool 크기",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 30 },
+      "targets": [
+        {
+          "expr": "decode_pool_size",
+          "legendFormat": "decoders"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "리소스",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "title": "프로세스 메모리 (RSS)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
       "targets": [
         {
           "expr": "process_rss_bytes",
@@ -112,9 +247,23 @@
       }
     },
     {
+      "title": "프로세스 Heap 사용량",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "targets": [
+        {
+          "expr": "process_heap_used_bytes",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    },
+    {
       "title": "프로세스 Uptime",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 45 },
       "targets": [
         {
           "expr": "process_uptime_seconds",
@@ -123,6 +272,10 @@
       ],
       "fieldConfig": {
         "defaults": { "unit": "s" }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal"
       }
     }
   ],
@@ -134,5 +287,5 @@
   "timezone": "browser",
   "title": "QA-SDK 모니터링",
   "uid": "qa-sdk-overview",
-  "version": 1
+  "version": 2
 }

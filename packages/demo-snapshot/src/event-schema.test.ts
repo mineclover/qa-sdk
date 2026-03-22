@@ -25,33 +25,16 @@ describe("이벤트 = 관계 정의 (3-slot: actor × action × target)", () => 
       expect(s.dims.target).toEqual({ kind: "table_ref", table: "items" });
     });
 
-    it("shape: table_ref는 제외, axis만 인코딩 (SSOT 파생)", () => {
+    it("shape: prefix_ref(svc_ref) + axis(cart_action) (SSOT 파생)", () => {
       const shape = getPrefixShape(DEMO_CATALOG, "cart_event", "v1");
-      // cart_action capacity에서 파생
       const cartCap = DEMO_CATALOG.axes.cart_action.versions.v1.capacity ?? DEMO_CATALOG.axes.cart_action.versions.v1.entries.length;
-      expect(shape.shape).toEqual([cartCap]);
-      expect(shape.capacity).toBe(cartCap);
+      // svc_ref(prefix_ref → service capacity) + cart_action
+      expect(shape.shape.length).toBe(2);
+      expect(shape.shape[shape.shape.length - 1]).toBe(cartCap);
     });
 
-    it("encode/decode: action만 좌표에 인코딩", () => {
-      // "add" = position 0
-      const addr = encodePrefix(DEMO_CATALOG, "cart_event", "v1", { action: 0 });
-      expect(addr).toBe(0);
-
-      // "checkout" = position 2
-      const addr2 = encodePrefix(DEMO_CATALOG, "cart_event", "v1", { action: 2 });
-      expect(addr2).toBe(2);
-
-      // decode: 좌표에서 action만 복원
-      const decoded = decodePrefix(DEMO_CATALOG, "cart_event", "v1", 1);
-      expect(decoded.action.value).toBe("remove");
-      // table_ref 차원(actor, target)은 decode 결과에 없음
-      expect(decoded.actor).toBeUndefined();
-      expect(decoded.target).toBeUndefined();
-    });
-
-    it("encodePrefixByValue: action 의미값으로 인코딩 → decode 라운드트립", () => {
-      const addr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { action: "checkout" });
+    it("encodePrefixByValue: svc_ref + action 의미값으로 인코딩 → decode 라운드트립", () => {
+      const addr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { svc_ref: DEMO_CATALOG.prefixes.cart_event.versions[0].refEntries!.svc_ref.values[0], action: "checkout" });
       const decoded = decodePrefix(DEMO_CATALOG, "cart_event", "v1", addr);
       expect(decoded.action.value).toBe("checkout");
     });
@@ -60,9 +43,6 @@ describe("이벤트 = 관계 정의 (3-slot: actor × action × target)", () => 
       const r = resolveAddress(DEMO_CATALOG, "cart_event", "v1", 0);
       expect(r.dims.action.value).toBe("add");
       expect(r.dims.action.ko).toBe("추가");
-      // table_ref 차원은 resolve에 포함되지 않음
-      expect(r.dims.actor).toBeUndefined();
-      expect(r.dims.target).toBeUndefined();
     });
 
     it("라운드트립: 전 범위 정합", () => {
@@ -83,14 +63,16 @@ describe("이벤트 = 관계 정의 (3-slot: actor × action × target)", () => 
   // ── auth_event: 단항 이벤트 (actor만, target 없음) ────────────────────
 
   describe("auth_event — 단항 이벤트 (actor + action)", () => {
-    it("shape: axis(auth_action) 만 (SSOT 파생)", () => {
+    it("shape: prefix_ref(svc_ref) + axis(auth_action) (SSOT 파생)", () => {
       const shape = getPrefixShape(DEMO_CATALOG, "auth_event", "v1");
       const authCap = DEMO_CATALOG.axes.auth_action.versions.v1.capacity ?? DEMO_CATALOG.axes.auth_action.versions.v1.entries.length;
-      expect(shape.shape).toEqual([authCap]);
+      // svc_ref + auth_action
+      expect(shape.shape.length).toBe(2);
+      expect(shape.shape[shape.shape.length - 1]).toBe(authCap);
     });
 
     it("encode/decode 라운드트립", () => {
-      const addr = encodePrefixByValue(DEMO_CATALOG, "auth_event", "v1", { action: "logout" });
+      const addr = encodePrefixByValue(DEMO_CATALOG, "auth_event", "v1", { svc_ref: DEMO_CATALOG.prefixes.auth_event.versions[0].refEntries!.svc_ref.values[0], action: "logout" });
       const decoded = decodePrefix(DEMO_CATALOG, "auth_event", "v1", addr);
       expect(decoded.action.value).toBe("logout");
     });
@@ -159,9 +141,9 @@ describe("이벤트 = 관계 정의 (3-slot: actor × action × target)", () => 
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe("인코딩 분리: 같은 좌표 + 다른 refs = 같은 종류의 이벤트, 다른 대상", () => {
-  it("cart_event addr=0(add)는 모든 member×item 조합에서 동일", () => {
-    // addr=0 = "add" action. 누가(member) 무엇을(item) 넣었는지는 좌표 밖.
-    const addr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { action: "add" });
+  it("cart_event: 같은 svc_ref + action이면 모든 member×item 조합에서 동일 주소", () => {
+    // svc_ref=0(기본 서비스), action="add"
+    const addr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { svc_ref: DEMO_CATALOG.prefixes.cart_event.versions[0].refEntries!.svc_ref.values[0], action: "add" });
 
     // EventInstance 형태 (런타임)
     const event1 = { event_type: "cart_event", address: addr, refs: { actor: 42, target: 1 }, timestamp: Date.now() };
@@ -169,7 +151,6 @@ describe("인코딩 분리: 같은 좌표 + 다른 refs = 같은 종류의 이�
 
     // 같은 좌표 주소
     expect(event1.address).toBe(event2.address);
-    expect(event1.address).toBe(0);
 
     // 다른 대상
     expect(event1.refs.actor).not.toBe(event2.refs.actor);
@@ -259,7 +240,7 @@ describe("테이블 스키마: 좌표 ↔ 관계형 양방향 연결", () => {
 
     it("전체 경로: event → table → table → prefix → decode", () => {
       // cart_event(add) 발생, actor=member:42
-      const eventAddr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { action: "add" });
+      const eventAddr = encodePrefixByValue(DEMO_CATALOG, "cart_event", "v1", { svc_ref: DEMO_CATALOG.prefixes.cart_event.versions[0].refEntries!.svc_ref.values[0], action: "add" });
 
       // 시뮬레이션: 런타임 데이터
       const member42 = { id: 42, name: "홍길동", role: "admin", org_id: 7 };

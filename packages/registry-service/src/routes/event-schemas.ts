@@ -92,5 +92,19 @@ export function createEventSchemaRoutes(deps: EventSchemaRouteDeps) {
     return c.json({ ok: true });
   });
 
+  // ── 하위 호환: registry-server의 RegistryClient.validateEvent()가 호출하는 경로 ──
+  // GET /services/:name/events/:key/versions/:ver
+  // serviceName은 "namespace/name" 형식일 수 있으므로 "name" 부분만 추출
+  routes.get("/services/:name/events/:key/versions/:ver", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const rawName = decodeURIComponent(c.req.param("name"));
+    const serviceId = rawName.includes("/") ? rawName.split("/").pop()! : rawName;
+    const record = await eventSchemaStore.get(
+      catalogId, serviceId, c.req.param("key"), c.req.param("ver"),
+    );
+    if (!record) return c.json({ error: "Event not found" }, 404);
+    return c.json(record);
+  });
+
   return routes;
 }
