@@ -414,9 +414,18 @@ const perf=new PerfMonitor();
 // entity 카테고리 색상 개선 (tracking, service 등 — 기본값이 너무 어두움)
 CATEGORY_COLORS.entity = { main: {hex:0x78909c, css:'#78909c'}, emissive: {hex:0x4fc3f7, css:'#4fc3f7'} };
 
+// prefix → role 색상으로 셀 기본 색상 결정 (범례와 일치)
+function roleColorForPrefix(prefixId){
+  const role=getPrefixRole(prefixId);
+  const hex=ROLE_HEX[role]||0x94a3b8;
+  // 어두운 버전 (base) + 밝은 버전 (emissive)
+  const dim=new T.Color(hex).multiplyScalar(0.35);
+  return {main:{hex:dim.getHex(),css:'#'+dim.getHexString()},emissive:{hex:hex,css:'#'+new T.Color(hex).getHexString()}};
+}
+
 for(const gl of GP.grids){
   const def=GRIDS.find(g=>g.id===gl.id);
-  const cc=CATEGORY_COLORS[def.category]||CATEGORY_COLORS.entity;
+  const cc=roleColorForPrefix(gl.id);
   const pos=GP.viewPositions.layer[gl.id];
   const grp=new T.Group();grp.position.set(pos.x,pos.y,pos.z);scene.add(grp);
   groups.set(gl.id,grp);
