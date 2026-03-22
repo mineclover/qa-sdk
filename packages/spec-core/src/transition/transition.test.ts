@@ -21,6 +21,8 @@ import {
   PAYMENT_CAPTURE_SPEC,
   DEMO_TRANSITION_SPECS,
 } from "./demo-transition-specs.js";
+import { validateWithCatalog } from "./catalog-validator.js";
+import { DEMO_CATALOG } from "demo-snapshot";
 
 // ── 예시 spec (일반 도메인) ──────────────────────────────
 
@@ -473,5 +475,75 @@ describe("DEMO_CATALOG 기반 예시 specs", () => {
       op: "eq",
       value: "create",
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Catalog Validator — 2단계 검증
+// ═══════════════════════════════════════════════════════════════
+
+describe("validateWithCatalog", () => {
+  it("DEMO_CATALOG 기반 예시 3종 모두 통과", () => {
+    for (const spec of DEMO_TRANSITION_SPECS) {
+      const result = validateWithCatalog(spec, DEMO_CATALOG);
+      expect(result.valid, `${spec.transition}: ${JSON.stringify(result.issues)}`).toBe(true);
+    }
+  });
+
+  it("존재하지 않는 축 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      input: { all: [{ axis: "nonexistent_axis", eq: "value" }] },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0].message).toContain("not found in catalog");
+  });
+
+  it("존재하지 않는 entry 값 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      input: { all: [{ axis: "flow_step", eq: "invalid_step" }] },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0].message).toContain("not found in axis");
+  });
+
+  it("output의 잘못된 entry 값 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      output: { set: [{ axis: "lifecycle_state", value: "nonexistent" }] },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+  });
+
+  it("output value: null은 통과 (축 값 제거)", () => {
+    const spec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      output: { set: [{ axis: "lifecycle_state", value: null }] },
+    };
+    const result = validateWithCatalog(spec, DEMO_CATALOG);
+    expect(result.valid).toBe(true);
+  });
+
+  it("input in 배열의 잘못된 값 → 실패", () => {
+    const badSpec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      input: { all: [{ axis: "flow_step", in: ["entry", "bad_value"] }] },
+    };
+    const result = validateWithCatalog(badSpec, DEMO_CATALOG);
+    expect(result.valid).toBe(false);
+    expect(result.issues[0].path).toContain("in[1]");
+  });
+
+  it("exists 연산자는 entry 검증 불필요 → 통과", () => {
+    const spec: TransitionSpec = {
+      ...CART_CHECKOUT_SPEC,
+      input: { all: [{ axis: "lifecycle_state", exists: false }] },
+    };
+    const result = validateWithCatalog(spec, DEMO_CATALOG);
+    expect(result.valid).toBe(true);
   });
 });

@@ -28,6 +28,9 @@ export { EFFECT_KINDS } from "./transition.types.js";
 // ── Schema Validation ────────────────────────────────────
 export { validateTransitionSpec } from "./transition.schema.js";
 
+// ── Catalog Validation ───────────────────────────────────
+export { validateWithCatalog } from "./catalog-validator.js";
+
 // ── Registry ─────────────────────────────────────────────
 export { TransitionRegistry } from "./transition.registry.js";
 

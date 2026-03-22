@@ -30,10 +30,25 @@ export interface TransitionResult {
 
 // ── 이벤트 인터페이스 (engine의 EventRecord 최소 부분집합) ──
 
+/**
+ * TransitionEngine이 소비하는 이벤트 형식.
+ *
+ * **중요: address_context는 디코딩된 축 이름→entry 값 매핑이어야 한다.**
+ *
+ * 실제 ingest-server의 address_context는 인코딩된 prefix 주소를 담는다:
+ *   `{ "tracking": "tracking:v2:42", "flow_point": "flow_point:v1:15" }`
+ *
+ * TransitionEngine은 이를 전제하지 않는다. 디코딩된 형태를 기대한다:
+ *   `{ "trackAction": "submit", "page": "checkout", "flow_step": "entry" }`
+ *
+ * decode 책임은 호출자(ingest Phase 2.5 또는 전처리 어댑터)에 있다.
+ * engine은 "이미 디코딩된 이벤트"만 받는다.
+ */
 export interface TransitionEvent {
   readonly log_id: string;
   readonly timestamp: string;
   readonly event_key?: string;
+  /** 디코딩된 축 이름 → entry 값 매핑. 인코딩된 prefix 주소가 아님. */
   readonly address_context?: Readonly<Record<string, string>>;
   readonly payload?: unknown;
   readonly [key: string]: unknown;
@@ -76,14 +91,15 @@ export class TransitionEngine {
     for (const spec of specs) {
       // Step 2: match — 좌표 패턴 매칭
       const matched = this.matchEvents(spec.match, sorted);
-      if (!matched) continue;
+      if (!matched) { console.log(`[engine] ${spec.transition}: match FAILED`); continue; }
 
+      console.log(`[engine] ${spec.transition}: match OK (${matched.map(e => e.log_id).join(",")})`);
       const matchedEvents = matched.map((e) => e as Record<string, unknown>);
       matched.forEach((e) => matchedEventIds.add(e.log_id));
 
       // Step 3: bind — identity 추출
       const bindResult = extractBind(spec.bind, matchedEvents);
-      if (!bindResult.ok) continue;
+      if (!bindResult.ok) { console.log(`[engine] ${spec.transition}: bind FAILED`, JSON.stringify((bindResult as any).errors)); continue; }
 
       const { context_id, resource_id } = bindResult.result;
 
