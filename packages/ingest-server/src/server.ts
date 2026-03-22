@@ -134,7 +134,7 @@ async function startServer() {
           recordStore: stores.recordStore,
           convergenceFns,
           patternFns,
-          graphProvider: () => graphProvider.getGraph(),
+          graphProvider: () => graphProvider.getGraph() ?? { getAllNodes: () => [], getNodesByKind: () => [] } as any,
           catalogProvider: () => graphProvider.getCatalog(),
           dkgStore: graphProvider.getDkgStore() as any,
           logger,

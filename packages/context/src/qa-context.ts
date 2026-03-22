@@ -218,7 +218,8 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
       const addresses: Record<string, { prefix: string; version: string; address: number }> = {};
 
       for (const [prefixId, dims] of Object.entries(prefixes)) {
-        const serialized = this.encode(prefixId, dims);
+        if (!dims) continue;
+        const serialized = this.encode(prefixId as PrefixIds<C>, dims);
         address_context[prefixId] = serialized;
 
         const parsed = parseSerializedAddress(serialized);
@@ -267,14 +268,14 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
           }
 
           // 멤버만 필터하여 track
-          const filtered: Record<string, Record<string, string | number>> = {};
+          const filtered: Partial<Record<string, Record<string, string | number>>> = {};
           for (const [prefixId, dims] of Object.entries(prefixes)) {
-            if (members.has(prefixId)) {
+            if (dims && members.has(prefixId)) {
               filtered[prefixId] = dims;
             }
           }
 
-          const result = self.track(filtered);
+          const result = self.track(filtered as Partial<Record<PrefixIds<C>, Record<string, string | number>>>);
 
           // 누락 멤버 경고
           const tracked = new Set(Object.keys(filtered));

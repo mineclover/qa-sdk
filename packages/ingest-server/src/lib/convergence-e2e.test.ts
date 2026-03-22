@@ -102,7 +102,7 @@ describe("관측 루프 E2E", () => {
       {
         recordStore,
         convergenceFns,
-        graphProvider: () => ({ getAllNodes: () => [] }),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
         catalogProvider: () => ({ axes: {}, prefixes: {} }),
         dkgStore,
       },
@@ -181,7 +181,7 @@ describe("관측 루프 E2E", () => {
           ]),
         } as any,
         convergenceFns,
-        graphProvider: () => ({}),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
         catalogProvider: () => ({}),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
@@ -231,7 +231,7 @@ describe("관측 루프 E2E", () => {
       {
         recordStore,
         convergenceFns,
-        graphProvider: () => ({}),
+        graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
         catalogProvider: () => ({}),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },

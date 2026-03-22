@@ -659,7 +659,13 @@ export function traceSequenceDiagram(
   const lines: string[] = ["sequenceDiagram"];
   lines.push(`  title Trace: ${trace.traceId} (${trace.duration}ms)`);
 
-  // Collect unique prefixes and group by layer
+  // 빈 trace 가드
+  if (trace.steps.length === 0) {
+    lines.push(`  note right of Actor: 이벤트 없음`);
+    return lines.join("\n");
+  }
+
+  // prefix → layer 매핑 수집
   const prefixLayers = new Map<string, number>();
   for (const s of trace.steps) prefixLayers.set(s.prefixId, s.layer);
 
@@ -670,19 +676,18 @@ export function traceSequenceDiagram(
     byLayer.get(layer)!.push(pid);
   }
 
-  // Emit participants grouped by layer
+  // layer별 participant 그룹
   for (const [layer, pids] of [...byLayer.entries()].sort((a, b) => a[0] - b[0])) {
     lines.push(`  box ${layerNames[layer] ?? `L${layer}`}`);
     for (const pid of pids) lines.push(`    participant ${pid}`);
     lines.push(`  end`);
   }
 
-  // Emit messages in timestamp order
+  // timestamp순 메시지
   let prevPrefix: string | null = null;
   let prevTs: string | null = null;
 
   for (const step of trace.steps) {
-    // Try to decode for label
     let label = step.prefixId;
     if (options?.decode) {
       try {
@@ -691,30 +696,35 @@ export function traceSequenceDiagram(
           label = Object.entries(vals).map(([k, v]) => `${k}=${v}`).join(", ");
           if (label.length > 50) label = label.slice(0, 47) + "...";
         }
-      } catch {}
+      } catch { /* decode 실패 시 prefixId 사용 */ }
     }
 
     const ts = step.timestamp.split("T")[1]?.slice(0, 12) ?? step.timestamp;
+    const sameTime = prevTs === step.timestamp;
 
-    if (prevPrefix && prevPrefix !== step.prefixId) {
-      const sameTime = prevTs === step.timestamp;
-      const arrow = sameTime ? "->>" : "->>";
-      lines.push(`  ${prevPrefix} ${arrow} ${step.prefixId}: ${label}`);
-    } else if (!prevPrefix) {
-      // First step — note with timestamp
+    if (!prevPrefix) {
+      // 첫 번째 스텝
       lines.push(`  note over ${step.prefixId}: ${ts}`);
+      lines.push(`  ${step.prefixId} ->> ${step.prefixId}: ${label}`);
+    } else if (prevPrefix === step.prefixId) {
+      // 같은 prefix 반복 활성화 (self-arrow)
+      lines.push(`  ${step.prefixId} -->> ${step.prefixId}: ${label}`);
+    } else if (sameTime) {
+      // 동시 발생 (같은 timestamp) — 점선 화살표
+      lines.push(`  ${prevPrefix} -->> ${step.prefixId}: ${label}`);
+    } else {
+      // 시간순 이동
+      lines.push(`  ${prevPrefix} ->> ${step.prefixId}: ${label}`);
     }
 
     prevPrefix = step.prefixId;
     prevTs = step.timestamp;
   }
 
-  // Duration note
-  if (trace.steps.length > 0) {
-    const first = trace.steps[0].prefixId;
-    const last = trace.steps[trace.steps.length - 1].prefixId;
-    lines.push(`  note over ${first},${last}: ${trace.duration}ms / ${trace.steps.length} steps`);
-  }
+  // 요약
+  const first = trace.steps[0].prefixId;
+  const last = trace.steps[trace.steps.length - 1].prefixId;
+  lines.push(`  note over ${first},${last}: ${trace.duration}ms / ${trace.steps.length} steps`);
 
   return lines.join("\n");
 }

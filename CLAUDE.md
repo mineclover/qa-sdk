@@ -194,6 +194,7 @@ CLI가 사용할 카탈로그 경로 또는 레지스트리 URL.
   - `simplification-advisor.ts` — 미사용 차원/저사용 entry/과도 headroom 감지
   - `boundary-recommender.ts` — 새 prefix 경계 추천 (split/extends/independent)
   - `convergence-runner.ts` — `runConvergenceAnalysis()` 5개 서비스 단일 진입점
+  - `self-check-analyzer.ts` — `analyzeSelfCheck()` 순수 함수 + `SYNTHETIC_EVENTS` (전체 도메인 합성 이벤트)
   - 집계: usage-aggregator, scoped-aggregator / 측정: entry-coverage, temporal-analysis, deployment-skew / 기록: metric-registry
 - **propagation/**: spec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록
   - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
@@ -377,6 +378,13 @@ ingest-server Phase 2 완료
 - `qa-sdk dkg converge [--persist] [--verbose]` — metrics + convergeChain + systemHealthChain 통합 실행
 - `--persist`: 결과를 DKG store에 자동 저장 + auto-resolve + stale 정리
 - `--verbose`: 개별 observation/action 상세 출력 + 미해결 observation top-3 안내
+
+### Converge Chain — 분리 결정 자동 억제
+- `convergeChain()`의 merge 제안 시 기존 DEC-SEP/DEC-MERGE 결정을 자동 확인
+- `hasActiveSeparationDecision(graph, a, b)`: `DEC-SEP-{a}-{b}` / `DEC-MERGE-{a}-{b}` 양방향 ID 탐색
+- `lifecycle === "active"` 결정만 억제. superseded/reversed 결정은 재검토 허용
+- axis merge + prefix merge 양쪽 경로에 적용
+- 예: `initiator↔channel`(DEC-SEP), `dkg_target_kind↔cli_subject`(DEC-MERGE) — 기존 분리 결정으로 merge 제안 자동 억제
 
 ### Mermaid 다이어그램 생성
 - `qa-sdk dkg diagram list` — 사용 가능한 IntentLink/DSL 다이어그램 목록 조회
@@ -587,6 +595,14 @@ intent별 루프 의무:
 - **Layer 2 (FAST)**: `analyzeSelfCheck()` 순수 함수 → 좌표 인코딩 + convergence + invariant (47ms, execSync 없음)
 - **Layer 3 (STORE)**: `--apply` 시 snapshot/observation 저장 (dry-run이 기본)
 
+### SYNTHETIC_EVENTS — 합성 이벤트 기반 커버리지
+- `self-check-analyzer.ts`의 `SYNTHETIC_EVENTS` 배열이 전체 도메인 합성 이벤트를 정의
+- `analyzeSelfCheck()` 호출 시 build/test 결과 + SYNTHETIC_EVENTS를 합산하여 커버리지 계산
+- `dkg self-check`가 `analyzeSelfCheck()`에 위임하여 동일한 SYNTHETIC_EVENTS 사용 (중복 로직 제거)
+- 커버리지 목표: entry 레벨 97%+ (실질 99%, error-path 제외)
+- 새 축/entry 추가 시 SYNTHETIC_EVENTS에도 해당 entry를 포함하는 이벤트 추가 필요
+- error-path entries (build_result:failure, test_result:failed 등)는 coverage 분모에서 제외 (`ERROR_PATH_ENTRIES`)
+
 ### CLI 완전 관측
 - 모든 CLI 명령은 `emitCliEvent(command)` → `cli_event` prefix로 자동 기록
 - `CLI_COMMAND_MAP`: 71개 명령 → 48개 고유 좌표 (intent × domain × subject)
@@ -594,7 +610,7 @@ intent별 루프 의무:
 - `analyzeCliCoverage()`: dormant 좌표 = 한 번도 실행 안 된 기능
 
 ### DKG 자기참조
-- 67축, 34 prefix, 11 DSL, 6 도메인
+- 70축, 37 prefix, 11 DSL, 6 도메인, 6 테이블
 - `dev-domain`: build_event, test_event, dkg_event, dkg_decision_event, dkg_observation_event, cli_event, contract_check
 - `dsl-dev`: 7 members, 불변조건 3개 (빌드 실패 후 테스트 금지 등)
 - `dkg_op` 축: claim, release, decide, observe, resolve, link, refresh, self-check, converge, trace, promote

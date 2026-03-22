@@ -20,6 +20,7 @@ import type {
   PatternRule,
 } from "@qa-sdk/core";
 import type { Logger } from "pino";
+import type { GraphRegistryPort } from "../types/spec-core-ports.js";
 
 // ── 동적 import 대상 함수 시그니처 ──────────────────────
 
@@ -54,6 +55,8 @@ export interface DkgStorePort {
     usage: unknown,
     observations: readonly unknown[],
   ): { snapshotId: number; observationsWritten: number };
+  /** observation 노드 업데이트 (자동 해소용) */
+  updateNode?(node: unknown): void;
 }
 
 // ── Pipeline 설정 ────────────────────────────────────
@@ -71,7 +74,7 @@ export interface ConvergencePipelineDeps {
   recordStore: RecordStore;
   convergenceFns: ConvergenceFunctions;
   patternFns?: PatternFunctions;
-  graphProvider: () => unknown;
+  graphProvider: () => GraphRegistryPort;
   catalogProvider: () => unknown;
   dkgStore?: DkgStorePort;
   logger?: Logger;
@@ -240,11 +243,11 @@ export class ConvergencePipelineRunner {
     let autoResolvedCount = 0;
     if (convergenceFns.resolveRecoveredMetrics && dkgStore) {
       try {
-        const existingObs = (graph as any).getNodesByKind?.("observation") ?? [];
+        const existingObs = graph.getNodesByKind("observation");
         const resolved = convergenceFns.resolveRecoveredMetrics(metrics, existingObs);
         if (resolved.length > 0) {
           for (const obs of resolved) {
-            (dkgStore as any).updateNode?.(obs);
+            dkgStore.updateNode?.(obs);
           }
           autoResolvedCount = resolved.length;
         }

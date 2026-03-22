@@ -123,7 +123,7 @@ function createDeps(overrides?: Partial<ConvergencePipelineDeps>): ConvergencePi
   return {
     recordStore: createMockRecordStore(),
     convergenceFns: createMockConvergenceFns(),
-    graphProvider: () => ({ getAllNodes: () => [] }),
+    graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }),
     catalogProvider: () => ({ axes: {}, prefixes: {} }),
     dkgStore: createMockDkgStore(),
     ...overrides,

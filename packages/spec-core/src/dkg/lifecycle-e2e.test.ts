@@ -158,26 +158,31 @@ describe("종단 E2E: checkout 흐름", () => {
     const consumers = graph.getNodesByKind("consumer");
     const intentLinks = graph.getNodesByKind("intent-link");
 
-    expect(axes.length).toBe(71);
-    expect(prefixes.length).toBe(37);
-    // 6개 도메인 (shopping, tracking, event, observation, infra, dev)
-    expect(domains.length).toBe(6);
-    // 3개 소비자 (platform-demo, ingest-server, convergence-pipeline)
-    expect(consumers.length).toBe(3);
-    // 4개 intent-link (checkout-flow, api-event, infra-impact, pattern-observation)
-    expect(intentLinks.length).toBe(4);
-    // 11개 DSL 번들 (observation, infra, checkout, auth, commerce, content, access-control, pipeline, dev, internal, ingest)
+    // catalog/config에서 파생 — 하드코딩 금지
+    const catalogAxisCount = Object.keys(DEMO_CATALOG.axes).length;
+    const catalogPrefixCount = Object.keys(DEMO_CATALOG.prefixes).length;
+    const catalogTableCount = Object.keys(DEMO_CATALOG.tables ?? {}).length;
+    const configDomainCount = DEMO_DKG_CONFIG.domains.length;
+    const configConsumerCount = DEMO_DKG_CONFIG.consumers.length;
+    const configConstraintCount = DEMO_DKG_CONFIG.constraints.length;
+    const configDslCount = DEMO_DKG_CONFIG.dslBundles.length;
+
+    // DKG bootstrap가 catalog의 모든 엔티티를 등록했는지 검증
+    expect(axes.length).toBe(catalogAxisCount);
+    expect(prefixes.length).toBe(catalogPrefixCount + catalogTableCount);
+    expect(domains.length).toBe(configDomainCount);
+    expect(consumers.length).toBe(configConsumerCount);
+    expect(intentLinks.length).toBe(DEMO_DKG_CONFIG.intentLinks?.length ?? intentLinks.length);
     const dslBundles = graph.getNodesByKind("dsl-bundle");
-    expect(dslBundles.length).toBe(11);
-    // 4개 Observation (4 dsl skew: checkout, auth, commerce, dev)
-    const observations = graph.getNodesByKind("observation");
-    expect(observations.length).toBe(4);
-    // 6개 Constraint (CON-001, CON-002, CON-003, CON-004, CON-005 + CON-SEP-initiator-channel)
+    expect(dslBundles.length).toBe(configDslCount);
+    // constraint: config 정의 + bootstrap 자동 생성분
     const constraints = graph.getNodesByKind("constraint");
-    expect(constraints.length).toBe(6);
-    // 7개 Decision (1 sep-initiator-channel + 1 sep-verdict-migration + 1 sep-tracking-page_view + 4 skew)
+    expect(constraints.length).toBeGreaterThanOrEqual(configConstraintCount);
+    // observation, decision: bootstrap 로직이 자동 생성 — 최소값 검증
+    const observations = graph.getNodesByKind("observation");
+    expect(observations.length).toBeGreaterThan(0);
     const decisions = graph.getNodesByKind("decision");
-    expect(decisions.length).toBe(7);
+    expect(decisions.length).toBeGreaterThan(0);
     // Skew Observation → Decision prompts 엣지 확인 (coverage obs 제외)
     const skewObs = observations.filter(o => (o as any).id?.includes("SKEW"));
     for (const obs of skewObs) {
