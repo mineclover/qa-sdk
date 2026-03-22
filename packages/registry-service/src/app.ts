@@ -17,9 +17,11 @@ import { createAxisRoutes } from "./routes/axis.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
 import { createDiagramRoutes } from "./routes/diagrams.js";
 import { createServiceRoutes } from "./routes/services.js";
+import { createEndpointRoutes } from "./routes/endpoints.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { ConfigStore } from "./stores/config-store.js";
+import type { ServiceEndpointStore } from "./stores/service-endpoint-store.js";
 import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
 import { createDevDashboardRoutes } from "./routes/dev-dashboard.js";
 
@@ -30,6 +32,8 @@ export interface AppDeps extends RegistryServiceDeps {
   devDashboardProvider?: DevDkgProvider;
   /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
   configStore?: ConfigStore;
+  /** 서비스 엔드포인트 저장소 (좌표계 기반 URL 관리) */
+  endpointStore?: ServiceEndpointStore;
   corsOrigin?: string;
 }
 
@@ -77,6 +81,9 @@ export function createApp(deps: AppDeps) {
   }
   if (deps.configStore) {
     app.route("/", createServiceRoutes({ configStore: deps.configStore }));
+  }
+  if (deps.endpointStore) {
+    app.route("/", createEndpointRoutes({ endpointStore: deps.endpointStore }));
   }
   if (deps.devDashboardProvider) {
     app.route("/", createDevDashboardRoutes({
