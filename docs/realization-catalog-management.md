@@ -1,8 +1,14 @@
 # Realization Plan: 카탈로그 생명주기 관리
 
-> Status: draft
+> Status: **completed**
 > Created: 2026-03-22
-> DKG-Ref: (구현 시 결정)
+> Completed: 2026-03-22
+>
+> **달성**: Phase 1~4 전부 구현.
+> Phase 1: generateCatalogTypes() 순수 함수 → 7개 TS 파일 (prefix-ids, axes, dims, sdk-factory, context-types, dsl, index).
+> Phase 2: CatalogRegistry register/unregister/setDefault + computeCatalogHash() 드리프트 감지.
+> Phase 3: viz-3d/scripts/generate-browser-catalog.ts 자동 생성 + prebuild 스크립트.
+> Phase 4: loadCatalog() 3-tier 우선순위 (--catalog → qa-sdk.config.ts → DEMO_CATALOG).
 
 ## 1. 현재 상태 + 문제 진단
 

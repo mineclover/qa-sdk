@@ -1,9 +1,12 @@
 # Realization Plan: 파이프라인 실체화
 
-> Status: verified
+> Status: **mostly-completed**
 > DKG-Ref: OBS-MANUAL-service-mmz1ay93, OBS-MANUAL-service-mmz1n7ak, OBS-MANUAL-dsl-dev-mmzwyfbc, DEC-CAPACITY-dsl-dev-mmzyw4go
 > Created: 2026-03-21
-> Last verified: 2026-03-21
+> Last verified: 2026-03-22
+>
+> **달성**: G1~G4 해결, R3/R5 완료. 현재 74축, 39 prefix, 225 nodes, 472 edges.
+> **잔여**: G5 (skill→AddressContextRecord 미구현 — 설계상 불필요할 수 있음), R2 (non-dev DSL invariant 검증 — dsl-dev만 검증 중).
 
 ## 1. 배경
 

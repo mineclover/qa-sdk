@@ -1,9 +1,13 @@
 # Realization Plan: Registry 연결
 
-> Status: verified
-> DKG-Ref: (작성 후 등록)
+> Status: **completed**
 > Created: 2026-03-21
-> Last verified: —
+> Completed: 2026-03-22
+>
+> **달성**: Phase A~C 전부 구현.
+> Phase A: catalogToSchemaSnapshot() + `dkg publish --registry` → POST /schema/import.
+> Phase B: `dkg version list/lock/unlock/release/activate/deprecate` 6개 lifecycle CLI.
+> Phase C: `--registry` 글로벌 옵션 + createCatalogProvider({ registry }) + createQaContextAsync({ registry }) + QA_REGISTRY_URL env.
 
 ## 1. 배경
 
