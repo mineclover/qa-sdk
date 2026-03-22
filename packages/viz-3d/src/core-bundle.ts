@@ -102,3 +102,18 @@ export type { InstancedGridState, CellRenderOptions } from "./renderer/instanced
 // Catalog Loader (API → Cache → Static)
 export { loadCatalog } from "./adapter/catalog-loader.js";
 export type { CatalogLoaderConfig, LoadResult } from "./adapter/catalog-loader.js";
+
+// ── Browser ID Generators ──────────────────────────
+// @qa-sdk/core의 ID 생성 함수를 브라우저에서 사용할 수 있도록 경량 구현.
+// ULID 대신 crypto.randomUUID 기반 (브라우저 네이티브).
+
+/** transmission_id 생성 (tx_ prefix) */
+export function newTransmissionId(): string { return `tx_${crypto.randomUUID()}`; }
+/** log_id 생성 (log_ prefix) */
+export function newLogId(): string { return `log_${crypto.randomUUID()}`; }
+/** trace_id 생성 (trc_ prefix) */
+export function newTraceId(): string { return `trc_${crypto.randomUUID().slice(0, 12)}`; }
+/** span_id 생성 (spn_ prefix) */
+export function newSpanId(): string { return `spn_${crypto.randomUUID().slice(0, 8)}`; }
+/** session_id 생성 (ses_ prefix) */
+export function newSessionId(): string { return `ses_${crypto.randomUUID().slice(0, 8)}`; }

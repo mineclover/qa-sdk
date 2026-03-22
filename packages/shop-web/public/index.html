@@ -194,7 +194,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 //  QA SDK — ServiceBootConfig + QaMonitor 패턴
 // ═══════════════════════════════════════════════════
 
-import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole } from './viz-3d-core.js';
+import { track as qaTrackEncode, BROWSER_CATALOG, classifyByRole, newTransmissionId, newLogId, newTraceId, newSessionId, newSpanId } from './viz-3d-core.js';
 
 // ── ServiceBootConfig ──
 const SERVICE_CONFIG = {
@@ -207,15 +207,12 @@ const SERVICE_CONFIG = {
 
 const INGEST_URL = (new URLSearchParams(location.search).get('ingest')) || 'http://localhost:3200';
 
-// ── Session (sessionStorage 기반 지속) ──
+// ── Session (sessionStorage 기반 지속, SDK ID 생성) ──
 function getOrCreateSession() {
   const KEY = 'qa_shop_session';
   const stored = sessionStorage.getItem(KEY);
   if (stored) return JSON.parse(stored);
-  const session = {
-    sessionId: 'ses_' + crypto.randomUUID().slice(0, 8),
-    traceId: 'trc_' + crypto.randomUUID().slice(0, 12),
-  };
+  const session = { sessionId: newSessionId(), traceId: newTraceId() };
   sessionStorage.setItem(KEY, JSON.stringify(session));
   return session;
 }
@@ -247,7 +244,7 @@ function qaTrack(eventKey, prefixes) {
   document.getElementById('qa-status').textContent = `qa: ${eventKey} → sending`;
 
   const envelope = {
-    transmission_id: `tx_${Date.now()}_${spanSeq}`,
+    transmission_id: newTransmissionId(),
     sent_at: new Date().toISOString(),
     owner: TX_OWNER,
     source: TX_SOURCE,
@@ -255,11 +252,11 @@ function qaTrack(eventKey, prefixes) {
     build: TX_BUILD,
     infra_context: infraContext,
     records: [{
-      log_id: `log_${Date.now()}_${spanSeq}`,
+      log_id: newLogId(),
       timestamp: new Date().toISOString(),
       record_kind: 'log',
       trace_id: traceId,
-      span_id: `spn_${spanSeq}`,
+      span_id: newSpanId(),
       event_key: eventKey,
       event_version: '001',
       payload_format: 'json',

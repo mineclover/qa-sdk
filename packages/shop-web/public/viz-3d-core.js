@@ -1,7 +1,8 @@
-var L = Object.defineProperty;
-var N = (i, e, t) => e in i ? L(i, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[e] = t;
-var x = (i, e, t) => N(i, typeof e != "symbol" ? e + "" : e, t);
-const ae = {
+var V = Object.defineProperty;
+var H = (i, e, t) => e in i ? V(i, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[e] = t;
+var x = (i, e, t) => H(i, typeof e != "symbol" ? e + "" : e, t);
+import * as O from "three";
+const de = {
   background: 328968,
   categories: {
     observation: { color: 58879, emissive: 38823 },
@@ -16,125 +17,125 @@ const ae = {
   activeOpacity: 0.85,
   beamOpacity: 0.4
 };
-function oe(i, e, t, s) {
-  var c, p;
+function pe(i, e, t, s) {
+  var c, f;
   const n = [], r = /* @__PURE__ */ new Map();
   for (const o of i) {
-    const _ = [], f = t + s;
+    const m = [], h = t + s;
     if (o.axes3d) {
-      const u = o.axes3d.x.entries, l = ((c = o.axes3d.y) == null ? void 0 : c.entries) ?? ["_"], k = ((p = o.axes3d.z) == null ? void 0 : p.entries) ?? ["_"], m = u.length, w = l.length, h = k.length;
-      for (let d = 0; d < m; d++)
-        for (let y = 0; y < w; y++)
-          for (let v = 0; v < h; v++) {
-            const b = -(m - 1) * f / 2 + d * f, $ = y * f, T = -(h - 1) * f / 2 + v * f, E = w > 1 || h > 1 ? [u[d], l[y] !== "_" ? l[y] : null, k[v] !== "_" ? k[v] : null].filter(Boolean).join("/") : u[d], M = `${o.id}/${E}`;
-            _.push({ key: M, gridId: o.id, entry: E, localX: b, localY: $, localZ: T, col: d, row: y, depth: v }), r.set(M, { gridId: o.id, entry: E, localX: b, localY: $, localZ: T, layer: o.layer, category: o.category });
+      const p = o.axes3d.x.entries, l = ((c = o.axes3d.y) == null ? void 0 : c.entries) ?? ["_"], b = ((f = o.axes3d.z) == null ? void 0 : f.entries) ?? ["_"], g = p.length, k = l.length, u = b.length;
+      for (let d = 0; d < g; d++)
+        for (let y = 0; y < k; y++)
+          for (let v = 0; v < u; v++) {
+            const w = -(g - 1) * h / 2 + d * h, $ = y * h, I = -(u - 1) * h / 2 + v * h, z = k > 1 || u > 1 ? [p[d], l[y] !== "_" ? l[y] : null, b[v] !== "_" ? b[v] : null].filter(Boolean).join("/") : p[d], C = `${o.id}/${z}`;
+            m.push({ key: C, gridId: o.id, entry: z, localX: w, localY: $, localZ: I, col: d, row: y, depth: v }), r.set(C, { gridId: o.id, entry: z, localX: w, localY: $, localZ: I, layer: o.layer, category: o.category });
           }
       n.push({
         id: o.id,
         category: o.category,
         layer: o.layer,
-        cells: _,
-        width: m * f,
-        height: w * f,
-        depth: h * f,
-        cols: m,
-        rows: w,
-        depths: h,
-        is3d: w > 1
+        cells: m,
+        width: g * h,
+        height: k * h,
+        depth: u * h,
+        cols: g,
+        rows: k,
+        depths: u,
+        is3d: k > 1
       });
     } else {
-      const u = Math.ceil(o.entries.length / o.cols);
+      const p = Math.ceil(o.entries.length / o.cols);
       for (let l = 0; l < o.entries.length; l++) {
-        const k = l % o.cols, m = Math.floor(l / o.cols), w = -(o.cols - 1) * f / 2 + k * f, h = -(u - 1) * f / 2 + m * f, d = `${o.id}/${o.entries[l]}`;
-        _.push({ key: d, gridId: o.id, entry: o.entries[l], localX: w, localY: 0, localZ: h, col: k, row: m, depth: 0 }), r.set(d, { gridId: o.id, entry: o.entries[l], localX: w, localY: 0, localZ: h, layer: o.layer, category: o.category });
+        const b = l % o.cols, g = Math.floor(l / o.cols), k = -(o.cols - 1) * h / 2 + b * h, u = -(p - 1) * h / 2 + g * h, d = `${o.id}/${o.entries[l]}`;
+        m.push({ key: d, gridId: o.id, entry: o.entries[l], localX: k, localY: 0, localZ: u, col: b, row: g, depth: 0 }), r.set(d, { gridId: o.id, entry: o.entries[l], localX: k, localY: 0, localZ: u, layer: o.layer, category: o.category });
       }
       n.push({
         id: o.id,
         category: o.category,
         layer: o.layer,
-        cells: _,
-        width: o.cols * f,
-        height: f,
-        depth: u * f,
+        cells: m,
+        width: o.cols * h,
+        height: h,
+        depth: p * h,
         cols: o.cols,
-        rows: u,
+        rows: p,
         depths: 1,
         is3d: !1
       });
     }
   }
-  const a = A(i, e, t, s);
+  const a = q(i, e, t, s);
   return { grids: n, viewPositions: a, cellMap: r };
 }
-function A(i, e, t = 0.42, s = 0.1) {
-  var l, k, m, w;
+function q(i, e, t = 0.42, s = 0.1) {
+  var l, b, g, k;
   const n = {
     layer: {},
     category: {},
     dsl: {},
     service: {}
   }, r = /* @__PURE__ */ new Map();
-  for (const h of i) {
+  for (const u of i) {
     const d = t + s;
-    if (h.axes3d)
-      r.set(h.id, { w: h.axes3d.x.entries.length * d, d: (((l = h.axes3d.z) == null ? void 0 : l.entries.length) ?? 1) * d });
+    if (u.axes3d)
+      r.set(u.id, { w: u.axes3d.x.entries.length * d, d: (((l = u.axes3d.z) == null ? void 0 : l.entries.length) ?? 1) * d });
     else {
-      const y = Math.ceil(h.entries.length / h.cols);
-      r.set(h.id, { w: h.cols * d, d: y * d });
+      const y = Math.ceil(u.entries.length / u.cols);
+      r.set(u.id, { w: u.cols * d, d: y * d });
     }
   }
   const a = e.map(() => []);
-  for (const h of i) (k = a[h.layer]) == null || k.push(h);
+  for (const u of i) (b = a[u.layer]) == null || b.push(u);
   const c = t * 2;
-  for (let h = 0; h < a.length; h++) {
-    const d = a[h], y = Math.min(d.length, 4);
+  for (let u = 0; u < a.length; u++) {
+    const d = a[u], y = Math.min(d.length, 4);
     for (let v = 0; v < d.length; v++) {
-      const b = Math.floor(v / y), $ = d.filter((I, C) => Math.floor(C / y) === b);
-      let E = -$.reduce((I, C) => {
-        var R;
-        return I + (((R = r.get(C.id)) == null ? void 0 : R.w) ?? 2) + c;
+      const w = Math.floor(v / y), $ = d.filter((E, R) => Math.floor(R / y) === w);
+      let z = -$.reduce((E, R) => {
+        var j;
+        return E + (((j = r.get(R.id)) == null ? void 0 : j.w) ?? 2) + c;
       }, -c) / 2;
-      const M = v - b * y;
-      for (let I = 0; I < M; I++)
-        E += (((m = r.get($[I].id)) == null ? void 0 : m.w) ?? 2) + c;
-      const P = ((w = r.get(d[v].id)) == null ? void 0 : w.w) ?? 2;
-      E += P / 2;
-      const j = Math.max(...$.map((I) => {
-        var C;
-        return ((C = r.get(I.id)) == null ? void 0 : C.d) ?? 2;
+      const C = v - w * y;
+      for (let E = 0; E < C; E++)
+        z += (((g = r.get($[E].id)) == null ? void 0 : g.w) ?? 2) + c;
+      const N = ((k = r.get(d[v].id)) == null ? void 0 : k.w) ?? 2;
+      z += N / 2;
+      const D = Math.max(...$.map((E) => {
+        var R;
+        return ((R = r.get(E.id)) == null ? void 0 : R.d) ?? 2;
       }));
       n.layer[d[v].id] = {
-        x: E,
-        y: e[h],
-        z: b * -(j + c * 2)
+        x: z,
+        y: e[u],
+        z: w * -(D + c * 2)
       };
     }
   }
-  [...new Set(i.map((h) => h.category))].forEach((h, d) => {
-    const y = i.filter(($) => $.category === h), v = d % 3, b = Math.floor(d / 3);
-    y.forEach(($, T) => {
-      n.category[$.id] = { x: -12 + v * 12, y: 4 - T * 3.5, z: b * -8 };
+  [...new Set(i.map((u) => u.category))].forEach((u, d) => {
+    const y = i.filter(($) => $.category === u), v = d % 3, w = Math.floor(d / 3);
+    y.forEach(($, I) => {
+      n.category[$.id] = { x: -12 + v * 12, y: 4 - I * 3.5, z: w * -8 };
     });
   });
-  const o = [...new Set(i.map((h) => h.dsl).filter(Boolean))], _ = i.filter((h) => !h.dsl);
-  o.forEach((h, d) => {
-    const y = i.filter(($) => $.dsl === h), v = d % 4, b = Math.floor(d / 4);
-    y.forEach(($, T) => {
-      n.dsl[$.id] = { x: -18 + v * 12, y: 4 - T * 3, z: b * -10 };
+  const o = [...new Set(i.map((u) => u.dsl).filter(Boolean))], m = i.filter((u) => !u.dsl);
+  o.forEach((u, d) => {
+    const y = i.filter(($) => $.dsl === u), v = d % 4, w = Math.floor(d / 4);
+    y.forEach(($, I) => {
+      n.dsl[$.id] = { x: -18 + v * 12, y: 4 - I * 3, z: w * -10 };
     });
-  }), _.forEach((h, d) => {
-    n.dsl[h.id] = { x: 24, y: 4 - d * 3, z: -12 };
+  }), m.forEach((u, d) => {
+    n.dsl[u.id] = { x: 24, y: 4 - d * 3, z: -12 };
   });
-  const f = [...new Set(i.map((h) => h.service).filter(Boolean))], u = i.filter((h) => !h.service);
-  return f.forEach((h, d) => {
-    i.filter((v) => v.service === h).forEach((v, b) => {
-      n.service[v.id] = { x: -16 + d * 8, y: 4 - Math.floor(b / 2) * 3.5, z: b % 2 * -5 };
+  const h = [...new Set(i.map((u) => u.service).filter(Boolean))], p = i.filter((u) => !u.service);
+  return h.forEach((u, d) => {
+    i.filter((v) => v.service === u).forEach((v, w) => {
+      n.service[v.id] = { x: -16 + d * 8, y: 4 - Math.floor(w / 2) * 3.5, z: w % 2 * -5 };
     });
-  }), u.forEach((h, d) => {
-    n.service[h.id] = { x: 24, y: 4, z: -d * 5 };
+  }), p.forEach((u, d) => {
+    n.service[u.id] = { x: 24, y: 4, z: -d * 5 };
   }), n;
 }
-function ce(i, e) {
+function fe(i, e) {
   const t = {};
   for (const s of i)
     s.grids.forEach((n, r) => {
@@ -147,92 +148,92 @@ function ce(i, e) {
     });
   return t;
 }
-function g(i) {
+function _(i) {
   const e = i >> 16 & 255, t = i >> 8 & 255, s = i & 255;
   return { hex: i, css: `#${i.toString(16).padStart(6, "0")}`, rgb: `${e},${t},${s}` };
 }
-const z = {
+const S = {
   // Background / Surface
-  bgDeep: g(328968),
-  bgCard: g(526864),
-  bgSurface: g(790036),
-  bgGrid1: g(1712176),
-  bgGrid2: g(1053984),
-  bgAxis: g(1714232),
+  bgDeep: _(328968),
+  bgCard: _(526864),
+  bgSurface: _(790036),
+  bgGrid1: _(1712176),
+  bgGrid2: _(1053984),
+  bgAxis: _(1714232),
   // Text
-  txtPrimary: g(12634328),
-  txtSecondary: g(6715272),
-  txtDim: g(3359829),
-  txtMuted: g(2241348),
+  txtPrimary: _(12634328),
+  txtSecondary: _(6715272),
+  txtDim: _(3359829),
+  txtMuted: _(2241348),
   // Accent
-  mint: g(6619098),
-  cyan: g(46296),
-  amber: g(16752451),
-  orange: g(16753922),
-  violet: g(8150268),
-  purple: g(7101671),
-  rose: g(16726112),
-  pink: g(15221651),
-  green: g(3069299),
-  red: g(16739179),
+  mint: _(6619098),
+  cyan: _(46296),
+  amber: _(16752451),
+  orange: _(16753922),
+  violet: _(8150268),
+  purple: _(7101671),
+  rose: _(16726112),
+  pink: _(15221651),
+  green: _(3069299),
+  red: _(16739179),
   // State
-  connected: g(3069299),
-  warning: g(16752451),
-  error: g(16726112),
-  info: g(6619098)
-}, V = {
-  observation: { main: g(58879), emissive: g(38823) },
-  event: { main: g(16748800), emissive: g(12545024) },
-  policy: { main: g(58998), emissive: g(38436) },
-  relation: { main: g(11766015), emissive: g(8146431) },
-  entity: { main: g(7901340), emissive: g(11583173) },
-  state: { main: g(9795021), emissive: g(13747433) },
-  table: { main: g(16732754), emissive: g(12986408) }
+  connected: _(3069299),
+  warning: _(16752451),
+  error: _(16726112),
+  info: _(6619098)
+}, B = {
+  observation: { main: _(58879), emissive: _(38823) },
+  event: { main: _(16748800), emissive: _(12545024) },
+  policy: { main: _(58998), emissive: _(38436) },
+  relation: { main: _(11766015), emissive: _(8146431) },
+  entity: { main: _(7901340), emissive: _(11583173) },
+  state: { main: _(9795021), emissive: _(13747433) },
+  table: { main: _(16732754), emissive: _(12986408) }
 };
-function O(i) {
-  return { token: g(i), hex: i };
+function M(i) {
+  return { token: _(i), hex: i };
 }
-const q = {
-  context: O(4906624),
-  trigger: O(16436245),
-  channel: O(6333946),
-  state: O(12616956),
-  guard: O(16020150),
-  effect: O(16486972),
-  data: O(9741240)
-}, D = [
-  g(6619098),
+const U = {
+  context: M(4906624),
+  trigger: M(16436245),
+  channel: M(6333946),
+  state: M(12616956),
+  guard: M(16020150),
+  effect: M(16486972),
+  data: M(9741240)
+}, X = [
+  _(6619098),
   // L0 UI — mint
-  g(16752451),
+  _(16752451),
   // L1 Business — amber
-  g(8150268),
+  _(8150268),
   // L2 Infra — violet
-  g(16726112)
+  _(16726112)
   // L3 Data — rose
 ];
-function le() {
+function he() {
   return [
-    `--bg:${z.bgDeep.css}`,
-    `--card:rgba(${z.bgCard.rgb},0.92)`,
-    `--border:rgba(${z.mint.rgb},0.08)`,
-    `--mint:${z.mint.css}`,
-    `--amber:${z.amber.css}`,
-    `--violet:${z.violet.css}`,
-    `--rose:${z.rose.css}`,
-    `--txt:${z.txtPrimary.css}`,
-    `--dim:${z.txtDim.css}`,
-    `--green:${z.green.css}`,
-    `--red:${z.red.css}`,
-    `--cyan:${z.cyan.css}`,
+    `--bg:${S.bgDeep.css}`,
+    `--card:rgba(${S.bgCard.rgb},0.92)`,
+    `--border:rgba(${S.mint.rgb},0.08)`,
+    `--mint:${S.mint.css}`,
+    `--amber:${S.amber.css}`,
+    `--violet:${S.violet.css}`,
+    `--rose:${S.rose.css}`,
+    `--txt:${S.txtPrimary.css}`,
+    `--dim:${S.txtDim.css}`,
+    `--green:${S.green.css}`,
+    `--red:${S.red.css}`,
+    `--cyan:${S.cyan.css}`,
     // Category
-    ...Object.entries(V).map(([i, e]) => `--cat-${i}:${e.main.css}`),
+    ...Object.entries(B).map(([i, e]) => `--cat-${i}:${e.main.css}`),
     // Signal Role
-    ...Object.entries(q).map(([i, e]) => `--role-${i}:${e.token.css}`),
+    ...Object.entries(U).map(([i, e]) => `--role-${i}:${e.token.css}`),
     // Layer
-    ...D.map((i, e) => `--layer-${e}:${i.css}`)
+    ...X.map((i, e) => `--layer-${e}:${i.css}`)
   ].join(";");
 }
-function de(i, e) {
+function ue(i, e) {
   return {
     type: "scalar",
     prefixId: i,
@@ -240,7 +241,7 @@ function de(i, e) {
     description: `${i}.${e} → 단일 값 표시`
   };
 }
-function pe(i, e) {
+function me(i, e) {
   return {
     type: "row",
     prefixId: i,
@@ -248,7 +249,7 @@ function pe(i, e) {
     description: `${i}.${e} → 가로 행`
   };
 }
-function fe(i, e, t) {
+function ge(i, e, t) {
   return {
     type: "grid",
     prefixId: i,
@@ -259,7 +260,7 @@ function fe(i, e, t) {
     description: `${i}: ${e}(x) × ${t}(z) → 2D 그리드`
   };
 }
-function he(i, e, t, s) {
+function _e(i, e, t, s) {
   return {
     type: "cube",
     prefixId: i,
@@ -271,7 +272,7 @@ function he(i, e, t, s) {
     description: `${i}: ${e}(x) × ${t}(y) × ${s}(z) → 3D 큐브`
   };
 }
-function ue(i, e, t) {
+function ve(i, e, t) {
   return {
     type: "spine",
     prefixId: i,
@@ -282,7 +283,7 @@ function ue(i, e, t) {
     description: `${i}: ${e}(x), [${t.join(",")}] 압축 → 확대 시 큐브`
   };
 }
-function me(i, e, t, s) {
+function ye(i, e, t, s) {
   return {
     type: "shelf",
     prefixId: i,
@@ -294,7 +295,7 @@ function me(i, e, t, s) {
     description: `${i}: ${e}별 선반, 각 선반 = ${t}(x) × ${s}(z) 그리드`
   };
 }
-function ge(i, e, t) {
+function xe(i, e, t) {
   return {
     type: "nested",
     prefixId: i,
@@ -304,51 +305,51 @@ function ge(i, e, t) {
     description: `${i}: ${e}별 그룹, 각 그룹 = ${t}`
   };
 }
-function _e(i, e, t = 0.4, s = 0.08) {
-  const n = t + s, r = [], a = i.mappings.find((d) => d.channel === "x"), c = i.mappings.find((d) => d.channel === "y"), p = i.mappings.find((d) => d.channel === "z"), o = i.mappings.find((d) => d.channel === "group"), _ = i.mappings.filter((d) => d.channel === "collapse").map((d) => d.axis), f = a ? e[a.axis] || [] : ["_"], u = c ? e[c.axis] || [] : ["_"], l = p ? e[p.axis] || [] : ["_"], k = o ? e[o.axis] || [] : ["_"];
+function ke(i, e, t = 0.4, s = 0.08) {
+  const n = t + s, r = [], a = i.mappings.find((d) => d.channel === "x"), c = i.mappings.find((d) => d.channel === "y"), f = i.mappings.find((d) => d.channel === "z"), o = i.mappings.find((d) => d.channel === "group"), m = i.mappings.filter((d) => d.channel === "collapse").map((d) => d.axis), h = a ? e[a.axis] || [] : ["_"], p = c ? e[c.axis] || [] : ["_"], l = f ? e[f.axis] || [] : ["_"], b = o ? e[o.axis] || [] : ["_"];
   switch (i.type) {
     case "scalar":
       r.push({ key: `${i.prefixId}/_`, x: 0, y: 0, z: 0 });
       break;
     case "row":
-      f.forEach((d, y) => {
+      h.forEach((d, y) => {
         r.push({ key: `${i.prefixId}/${d}`, x: y * n, y: 0, z: 0 });
       });
       break;
     case "grid":
-      f.forEach((d, y) => {
-        l.forEach((v, b) => {
-          r.push({ key: `${i.prefixId}/${d}_${v}`, x: y * n, y: 0, z: b * n });
+      h.forEach((d, y) => {
+        l.forEach((v, w) => {
+          r.push({ key: `${i.prefixId}/${d}_${v}`, x: y * n, y: 0, z: w * n });
         });
       });
       break;
     case "cube":
-      f.forEach((d, y) => {
-        u.forEach((v, b) => {
-          l.forEach(($, T) => {
-            r.push({ key: `${i.prefixId}/${d}_${v}_${$}`, x: y * n, y: b * n, z: T * n });
+      h.forEach((d, y) => {
+        p.forEach((v, w) => {
+          l.forEach(($, I) => {
+            r.push({ key: `${i.prefixId}/${d}_${v}_${$}`, x: y * n, y: w * n, z: I * n });
           });
         });
       });
       break;
     case "spine":
-      f.forEach((d, y) => {
+      h.forEach((d, y) => {
         const v = {};
-        for (const b of _)
-          v[b] = `(${(e[b] || []).length} entries)`;
+        for (const w of m)
+          v[w] = `(${(e[w] || []).length} entries)`;
         r.push({ key: `${i.prefixId}/${d}`, x: y * n, y: 0, z: 0, collapsed: v });
       });
       break;
     case "shelf":
-      k.forEach((d, y) => {
+      b.forEach((d, y) => {
         const v = y * (l.length * n + n * 2);
-        f.forEach((b, $) => {
-          l.forEach((T, E) => {
+        h.forEach((w, $) => {
+          l.forEach((I, z) => {
             r.push({
-              key: `${i.prefixId}/${d}_${b}_${T}`,
+              key: `${i.prefixId}/${d}_${w}_${I}`,
               x: $ * n,
               y: v,
-              z: E * n,
+              z: z * n,
               group: d
             });
           });
@@ -356,11 +357,11 @@ function _e(i, e, t = 0.4, s = 0.08) {
       });
       break;
     case "nested":
-      k.forEach((d, y) => {
-        const v = y * (f.length * n + n * 2);
-        f.forEach((b, $) => {
+      b.forEach((d, y) => {
+        const v = y * (h.length * n + n * 2);
+        h.forEach((w, $) => {
           r.push({
-            key: `${i.prefixId}/${d}/${b}`,
+            key: `${i.prefixId}/${d}/${w}`,
             x: v + $ * n,
             y: 0,
             z: 0,
@@ -370,51 +371,51 @@ function _e(i, e, t = 0.4, s = 0.08) {
       });
       break;
   }
-  const m = r.map((d) => d.x), w = r.map((d) => d.y), h = r.map((d) => d.z);
+  const g = r.map((d) => d.x), k = r.map((d) => d.y), u = r.map((d) => d.z);
   return {
     pattern: i,
     cells: r,
     bounds: {
-      width: r.length > 0 ? Math.max(...m) - Math.min(...m) + t : 0,
-      height: r.length > 0 ? Math.max(...w) - Math.min(...w) + t : 0,
-      depth: r.length > 0 ? Math.max(...h) - Math.min(...h) + t : 0
+      width: r.length > 0 ? Math.max(...g) - Math.min(...g) + t : 0,
+      height: r.length > 0 ? Math.max(...k) - Math.min(...k) + t : 0,
+      depth: r.length > 0 ? Math.max(...u) - Math.min(...u) + t : 0
     }
   };
 }
-function H(i, e) {
+function F(i, e) {
   if (e === "prefix_ref" || e === "table_ref") return "context";
   const t = i.toLowerCase();
   return t.includes("step") || t.includes("phase") || t.includes("stage") ? "sequence" : t.includes("variant") || t.includes("version") || t.includes("mode") ? "variant" : t.endsWith("_name") || t === "flow_name" || t === "event_name" || t.endsWith("_type") || t === "resource_type" ? "classify" : (t.includes("action") || t.includes("method") || t.includes("op") || t === "role" || t === "resource", "identity");
 }
-function ve(i, e) {
-  const t = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = t.filter((l) => l.kind === "axis"), n = t.filter((l) => l.kind === "prefix_ref"), r = t.filter((l) => l.kind === "table_ref"), a = s.map((l) => ({ ...l, role: H(l.label, l.kind) })), c = a.filter((l) => l.role === "classify"), p = a.filter((l) => l.role === "sequence"), o = a.filter((l) => l.role === "variant"), _ = a.filter((l) => l.role === "identity"), f = [];
+function be(i, e) {
+  const t = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = t.filter((l) => l.kind === "axis"), n = t.filter((l) => l.kind === "prefix_ref"), r = t.filter((l) => l.kind === "table_ref"), a = s.map((l) => ({ ...l, role: F(l.label, l.kind) })), c = a.filter((l) => l.role === "classify"), f = a.filter((l) => l.role === "sequence"), o = a.filter((l) => l.role === "variant"), m = a.filter((l) => l.role === "identity"), h = [];
   for (const l of n)
-    f.push({ axis: l.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
+    h.push({ axis: l.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
   for (const l of r)
-    f.push({ axis: l.label, channel: "link", role: "context", dimKind: "table_ref" });
+    h.push({ axis: l.label, channel: "link", role: "context", dimKind: "table_ref" });
   if (c.length > 0) {
-    const l = c[0], k = a.filter((h) => h !== l);
-    if (k.length === 0)
-      return f.push({ axis: l.label, channel: "x", role: "classify" }), { type: "row", prefixId: i, mappings: f, description: `${i}: ${l.label}(x) → 행` };
-    if (k.length === 1)
-      return f.push({ axis: l.label, channel: "group", role: "classify", subPattern: "row" }), f.push({ axis: k[0].label, channel: "x", role: k[0].role }), { type: "shelf", prefixId: i, mappings: f, description: `${i}: ${l.label}별 선반, ${k[0].label}(x)` };
-    f.push({ axis: l.label, channel: "group", role: "classify", subPattern: "grid" });
-    const m = p[0] || k[0], w = o[0] || k.find((h) => h !== m) || k[1];
-    return m && f.push({ axis: m.label, channel: "x", role: m.role }), w && w !== m && f.push({ axis: w.label, channel: "z", role: w.role }), { type: "shelf", prefixId: i, mappings: f, description: `${i}: ${l.label}별 선반, ${m == null ? void 0 : m.label}(x) × ${w == null ? void 0 : w.label}(z)` };
+    const l = c[0], b = a.filter((u) => u !== l);
+    if (b.length === 0)
+      return h.push({ axis: l.label, channel: "x", role: "classify" }), { type: "row", prefixId: i, mappings: h, description: `${i}: ${l.label}(x) → 행` };
+    if (b.length === 1)
+      return h.push({ axis: l.label, channel: "group", role: "classify", subPattern: "row" }), h.push({ axis: b[0].label, channel: "x", role: b[0].role }), { type: "shelf", prefixId: i, mappings: h, description: `${i}: ${l.label}별 선반, ${b[0].label}(x)` };
+    h.push({ axis: l.label, channel: "group", role: "classify", subPattern: "grid" });
+    const g = f[0] || b[0], k = o[0] || b.find((u) => u !== g) || b[1];
+    return g && h.push({ axis: g.label, channel: "x", role: g.role }), k && k !== g && h.push({ axis: k.label, channel: "z", role: k.role }), { type: "shelf", prefixId: i, mappings: h, description: `${i}: ${l.label}별 선반, ${g == null ? void 0 : g.label}(x) × ${k == null ? void 0 : k.label}(z)` };
   }
-  const u = [...p, ..._, ...o];
-  return u.length === 0 ? { type: "scalar", prefixId: i, mappings: [{ axis: "_", channel: "color" }], description: `${i}: scalar` } : u.length === 1 ? (f.push({ axis: u[0].label, channel: "x", role: u[0].role }), { type: "row", prefixId: i, mappings: f, description: `${i}: ${u[0].label}(x)` }) : u.length === 2 ? (f.push({ axis: u[0].label, channel: "x", role: u[0].role }), f.push({ axis: u[1].label, channel: "z", role: u[1].role }), { type: "grid", prefixId: i, mappings: f, description: `${i}: ${u[0].label}(x) × ${u[1].label}(z)` }) : (f.push({ axis: u[0].label, channel: "x", role: u[0].role }), f.push({ axis: u[1].label, channel: "y", role: u[1].role }), f.push({ axis: u[2].label, channel: "z", role: u[2].role }), { type: "cube", prefixId: i, mappings: f, description: `${i}: ${u[0].label}(x) × ${u[1].label}(y) × ${u[2].label}(z)` });
+  const p = [...f, ...m, ...o];
+  return p.length === 0 ? { type: "scalar", prefixId: i, mappings: [{ axis: "_", channel: "color" }], description: `${i}: scalar` } : p.length === 1 ? (h.push({ axis: p[0].label, channel: "x", role: p[0].role }), { type: "row", prefixId: i, mappings: h, description: `${i}: ${p[0].label}(x)` }) : p.length === 2 ? (h.push({ axis: p[0].label, channel: "x", role: p[0].role }), h.push({ axis: p[1].label, channel: "z", role: p[1].role }), { type: "grid", prefixId: i, mappings: h, description: `${i}: ${p[0].label}(x) × ${p[1].label}(z)` }) : (h.push({ axis: p[0].label, channel: "x", role: p[0].role }), h.push({ axis: p[1].label, channel: "y", role: p[1].role }), h.push({ axis: p[2].label, channel: "z", role: p[2].role }), { type: "cube", prefixId: i, mappings: h, description: `${i}: ${p[0].label}(x) × ${p[1].label}(y) × ${p[2].label}(z)` });
 }
-function ye(i) {
+function we(i) {
   return Object.entries(i).map(([e, t]) => ({
     label: e,
     kind: t.kind
   }));
 }
-function xe(i) {
+function $e(i) {
   return Object.entries(i).filter(([, e]) => e.kind === "axis").map(([e]) => e);
 }
-const ke = {
+const Ie = {
   context: "어디서",
   trigger: "뭘 했는가",
   channel: "어떤 경로",
@@ -422,7 +423,7 @@ const ke = {
   guard: "어떤 조건",
   effect: "결과",
   data: "데이터 접점"
-}, be = {
+}, Te = {
   context: "#546e7a",
   trigger: "#ff9100",
   channel: "#00e5ff",
@@ -430,7 +431,7 @@ const ke = {
   guard: "#00e676",
   effect: "#ff5252",
   data: "#fd79a8"
-}, B = {
+}, Y = {
   // context
   service: "context",
   page_view: "context",
@@ -465,10 +466,10 @@ const ke = {
   relational: "context",
   content: "context"
 };
-function X(i) {
-  return B[i] ?? "trigger";
+function Z(i) {
+  return Y[i] ?? "trigger";
 }
-function Y(i) {
+function G(i) {
   const e = {
     context: [],
     trigger: [],
@@ -479,12 +480,12 @@ function Y(i) {
     data: []
   };
   for (const [t, s] of Object.entries(i)) {
-    const n = X(t);
+    const n = Z(t);
     e[n].push({ prefixId: t, serialized: s });
   }
   return e;
 }
-const we = [
+const Se = [
   {
     id: "auth.login",
     name: "로그인",
@@ -581,7 +582,7 @@ const we = [
     ]
   }
 ];
-function $e(i, e) {
+function ze(i, e) {
   const t = new Set(Object.keys(e)), s = new Set(i.members.map((c) => c.prefixId));
   let n = 0;
   const r = /* @__PURE__ */ new Set();
@@ -597,7 +598,7 @@ function $e(i, e) {
     totalMembers: i.members.length
   };
 }
-const Te = {
+const Ee = {
   // ── Observation ──
   page_view: {
     id: "page_view",
@@ -875,7 +876,7 @@ const Te = {
     ] }
   }
 };
-function Se(i, e) {
+function Me(i, e) {
   var s, n;
   const t = [];
   if (t.push(`<div style="font-size:11px;font-weight:600;color:#e0e4ec">${i.displayName}</div>`), t.push(`<div style="font-size:9px;color:#556;margin:3px 0">${i.description}</div>`), i.source) {
@@ -888,8 +889,8 @@ function Se(i, e) {
       if (r != null && r.columns) {
         t.push('<div style="margin-top:6px;font-size:8px;color:#445;letter-spacing:1px">SCHEMA</div>');
         for (const a of r.columns) {
-          const c = a.refKind !== "scalar" ? ` <span style="color:${a.refKind === "axis_ref" ? "#00e676" : a.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${a.refTarget}</span>` : "", p = e && a.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
-          t.push(`<div style="font-size:9px;${p}">${a.name} <span style="color:#334">${a.type}</span>${c}</div>`);
+          const c = a.refKind !== "scalar" ? ` <span style="color:${a.refKind === "axis_ref" ? "#00e676" : a.refKind === "table_ref" ? "#ff5252" : "#00e5ff"}">→${a.refTarget}</span>` : "", f = e && a.name === e ? "color:var(--mint);font-weight:600" : "color:#667";
+          t.push(`<div style="font-size:9px;${f}">${a.name} <span style="color:#334">${a.type}</span>${c}</div>`);
         }
       }
       break;
@@ -918,46 +919,46 @@ function Se(i, e) {
   }
   return t.join("");
 }
-function ze(i, e = 0.42, t = 0.1) {
-  const s = e + t, n = i.channels.find((m) => m.channel === "x"), r = i.channels.find((m) => m.channel === "y"), a = i.channels.find((m) => m.channel === "z"), c = i.channels.find((m) => m.channel === "group"), p = i.channels.find((m) => m.channel === "color"), o = (m) => {
-    var h;
-    return m ? ((h = i.filters) == null ? void 0 : h[m.id]) ?? m.entries : ["_"];
-  }, _ = o(n == null ? void 0 : n.axis), f = o(r == null ? void 0 : r.axis), u = o(a == null ? void 0 : a.axis), l = o(c == null ? void 0 : c.axis), k = [];
-  for (const m of l) {
-    const w = l.indexOf(m) * (_.length * s + s * 3);
-    for (const h of _)
-      for (const d of f)
-        for (const y of u) {
-          const v = _.indexOf(h), b = f.indexOf(d), $ = u.indexOf(y), T = {};
-          n && (T[n.axis.id] = h), r && (T[r.axis.id] = d), a && (T[a.axis.id] = y), c && m !== "_" && (T[c.axis.id] = m);
-          const M = Object.values(T).join(":");
-          k.push({
-            coords: T,
-            key: M,
-            x: w + v * s,
-            y: b * s,
+function Oe(i, e = 0.42, t = 0.1) {
+  const s = e + t, n = i.channels.find((g) => g.channel === "x"), r = i.channels.find((g) => g.channel === "y"), a = i.channels.find((g) => g.channel === "z"), c = i.channels.find((g) => g.channel === "group"), f = i.channels.find((g) => g.channel === "color"), o = (g) => {
+    var u;
+    return g ? ((u = i.filters) == null ? void 0 : u[g.id]) ?? g.entries : ["_"];
+  }, m = o(n == null ? void 0 : n.axis), h = o(r == null ? void 0 : r.axis), p = o(a == null ? void 0 : a.axis), l = o(c == null ? void 0 : c.axis), b = [];
+  for (const g of l) {
+    const k = l.indexOf(g) * (m.length * s + s * 3);
+    for (const u of m)
+      for (const d of h)
+        for (const y of p) {
+          const v = m.indexOf(u), w = h.indexOf(d), $ = p.indexOf(y), I = {};
+          n && (I[n.axis.id] = u), r && (I[r.axis.id] = d), a && (I[a.axis.id] = y), c && g !== "_" && (I[c.axis.id] = g);
+          const C = Object.values(I).join(":");
+          b.push({
+            coords: I,
+            key: C,
+            x: k + v * s,
+            y: w * s,
             z: $ * s,
-            group: m !== "_" ? m : void 0,
-            colorValue: p ? T[p.axis.id] : void 0
+            group: g !== "_" ? g : void 0,
+            colorValue: f ? I[f.axis.id] : void 0
           });
         }
   }
   return {
     def: i,
-    cells: k,
-    xEntries: _,
-    yEntries: f,
-    zEntries: u,
-    groups: l.filter((m) => m !== "_"),
-    totalCells: k.length,
+    cells: b,
+    xEntries: m,
+    yEntries: h,
+    zEntries: p,
+    groups: l.filter((g) => g !== "_"),
+    totalCells: b.length,
     bounds: {
-      width: (l.length > 1 ? l.length : 1) * _.length * s,
-      height: f.length * s,
-      depth: u.length * s
+      width: (l.length > 1 ? l.length : 1) * m.length * s,
+      height: h.length * s,
+      depth: p.length * s
     }
   };
 }
-function Ee(i, e) {
+function Ce(i, e) {
   const t = [];
   for (const s of e.cells) {
     let n = !0;
@@ -970,7 +971,7 @@ function Ee(i, e) {
   }
   return t;
 }
-const S = {
+const T = {
   page: { id: "page", name: "페이지", entries: ["home", "product_list", "product_detail", "cart", "checkout", "order_complete", "mypage", "login"], usedBy: ["page_view", "tracking"] },
   flow_step: { id: "flow_step", name: "흐름 단계", entries: ["entry", "processing", "success", "failure", "payment", "complete", "exit"], usedBy: ["flow_point"] },
   flow_name: { id: "flow_name", name: "흐름명", entries: ["checkout", "login", "browse", "payment"], usedBy: ["flow_point"] },
@@ -982,61 +983,61 @@ const S = {
   role: { id: "role", name: "역할", entries: ["admin", "developer", "operator", "viewer", "customer", "auditor"], usedBy: ["permission"] },
   userType: { id: "userType", name: "사용자유형", entries: ["guest", "member", "premium"], usedBy: ["page_view", "tracking"] },
   trackAction: { id: "trackAction", name: "행동", entries: ["click", "view", "scroll", "submit", "navigate", "add_to_cart", "purchase", "close"], usedBy: ["tracking"] }
-}, Ie = [
+}, Re = [
   {
     id: "page-x-flowstep",
     name: "페이지 × 흐름 단계",
     channels: [
-      { axis: S.page, channel: "x" },
-      { axis: S.flow_step, channel: "z" }
+      { axis: T.page, channel: "x" },
+      { axis: T.flow_step, channel: "z" }
     ]
   },
   {
     id: "method-x-verdict",
     name: "HTTP 메서드 × 판정 결과",
     channels: [
-      { axis: S.http_method, channel: "x" },
-      { axis: S.verdict_result, channel: "z" }
+      { axis: T.http_method, channel: "x" },
+      { axis: T.verdict_result, channel: "z" }
     ]
   },
   {
     id: "svc-x-phase-x-health",
     name: "서비스 × 파이프라인 × 헬스 (3D 큐브)",
     channels: [
-      { axis: S.svc_name, channel: "x" },
-      { axis: S.pipeline_phase, channel: "y" },
-      { axis: S.health_status, channel: "z" }
+      { axis: T.svc_name, channel: "x" },
+      { axis: T.pipeline_phase, channel: "y" },
+      { axis: T.health_status, channel: "z" }
     ]
   },
   {
     id: "page-x-action-by-usertype",
     name: "페이지 × 행동, 사용자유형별 그룹",
     channels: [
-      { axis: S.userType, channel: "group" },
-      { axis: S.page, channel: "x" },
-      { axis: S.trackAction, channel: "z" }
+      { axis: T.userType, channel: "group" },
+      { axis: T.page, channel: "x" },
+      { axis: T.trackAction, channel: "z" }
     ]
   },
   {
     id: "role-x-method",
     name: "역할 × HTTP 메서드",
     channels: [
-      { axis: S.role, channel: "x" },
-      { axis: S.http_method, channel: "z" }
+      { axis: T.role, channel: "x" },
+      { axis: T.http_method, channel: "z" }
     ]
   },
   {
     id: "flow-x-step-by-svc",
     name: "흐름 × 단계, 서비스별",
     channels: [
-      { axis: S.svc_name, channel: "group" },
-      { axis: S.flow_name, channel: "x" },
-      { axis: S.flow_step, channel: "z" }
+      { axis: T.svc_name, channel: "group" },
+      { axis: T.flow_name, channel: "x" },
+      { axis: T.flow_step, channel: "z" }
     ],
     filters: { flow_name: ["checkout", "login", "payment"] }
   }
 ];
-class Oe {
+class Ke {
   constructor() {
     x(this, "targets", /* @__PURE__ */ new Map());
     x(this, "positions", {
@@ -1095,12 +1096,12 @@ class Oe {
     return e;
   }
 }
-const Me = {
+const Pe = {
   0: "이벤트 발생",
   1: "이벤트 처리",
   2: "이벤트 소비/생산",
   3: "데이터 도달"
-}, Z = {
+}, W = {
   // T0: 이벤트 발생 (UI 접점)
   page_view: 0,
   tracking: 0,
@@ -1123,29 +1124,29 @@ const Me = {
   // T1 (컨텍스트)
   service: 1
 };
-function F(i) {
-  return Z[i] ?? 2;
+function J(i) {
+  return W[i] ?? 2;
 }
-function Ce(i, e, t) {
+function je(i, e, t) {
   return i.map((s) => {
     const n = [.../* @__PURE__ */ new Set([...s.ownedPrefixes, ...s.consumedPrefixes])], r = { 0: [], 1: [], 2: [], 3: [] };
     for (const c of n) {
-      const p = e.get(c);
-      if (!p) continue;
-      const o = F(c);
+      const f = e.get(c);
+      if (!f) continue;
+      const o = J(c);
       r[o].push({
         prefixId: c,
         tier: o,
-        entries: p.entries,
-        pattern: p.pattern,
-        category: p.category
+        entries: f.entries,
+        pattern: f.pattern,
+        category: f.category
       });
     }
     const a = [];
     if (t)
       for (const c of s.tables) {
-        const p = t[c];
-        p && a.push(...p);
+        const f = t[c];
+        f && a.push(...f);
       }
     return {
       serviceId: s.id,
@@ -1155,14 +1156,14 @@ function Ce(i, e, t) {
     };
   });
 }
-function Re(i, e, t) {
+function Le(i, e, t) {
   const s = t.find((n) => n.axisId === e);
   return s ? s.mode === "show" ? i.filter((n) => s.values.includes(n)) : i.filter((n) => !s.values.includes(n)) : [...i];
 }
-function Ke(i, e) {
+function Ae(i, e) {
   const t = (e == null ? void 0 : e.containerGap) ?? 12, s = (e == null ? void 0 : e.tierGap) ?? 3;
   return i.map((n, r) => {
-    const c = (Object.values(n.tiers).filter((_) => _.length > 0).length + (n.dataEntries.length > 0 ? 1 : 0)) * s, p = Math.max(1, ...Object.values(n.tiers).flatMap((_) => _.map((f) => f.entries.length))), o = Math.max(4, Math.ceil(Math.sqrt(p)) * 1.5);
+    const c = (Object.values(n.tiers).filter((m) => m.length > 0).length + (n.dataEntries.length > 0 ? 1 : 0)) * s, f = Math.max(1, ...Object.values(n.tiers).flatMap((m) => m.map((h) => h.entries.length))), o = Math.max(4, Math.ceil(Math.sqrt(f)) * 1.5);
     return {
       serviceId: n.serviceId,
       position: { x: r * t - (i.length - 1) * t / 2, y: 0, z: 0 },
@@ -1171,7 +1172,7 @@ function Ke(i, e) {
     };
   });
 }
-const Pe = [
+const Ne = [
   {
     id: "shopping-web",
     name: "쇼핑 웹",
@@ -1207,13 +1208,13 @@ const Pe = [
     consumedPrefixes: [],
     tables: ["orgs"]
   }
-], je = {
+], De = {
   prodOnly: { axisId: "env", mode: "show", values: ["prod"] },
   devOnly: { axisId: "env", mode: "show", values: ["dev"] },
   hideTest: { axisId: "env", mode: "hide", values: ["test", "local"] },
   all: { axisId: "env", mode: "show", values: ["dev", "stage", "prod", "test", "local"] }
 };
-class Le {
+class Ve {
   constructor(e) {
     x(this, "states", /* @__PURE__ */ new Map());
     x(this, "_activeSet", /* @__PURE__ */ new Set());
@@ -1253,7 +1254,7 @@ class Le {
     this.states.clear(), this._activeSet.clear(), this._layerHits.fill(0), this._totalHits = 0;
   }
 }
-class Ne {
+class He {
   constructor(e) {
     x(this, "beams");
     x(this, "index", 0);
@@ -1283,7 +1284,7 @@ class Ne {
     return this.beams;
   }
 }
-class Ae {
+class qe {
   constructor(e, t) {
     this.cells = e, this.beams = t;
   }
@@ -1311,17 +1312,17 @@ class Ae {
     };
   }
 }
-function G(i, e) {
+function Q(i, e) {
   const t = new Map(e.map((c) => [c.id, c])), s = {};
   let n = 0, r = 0;
-  i.grids.forEach((c, p) => {
+  i.grids.forEach((c, f) => {
     const o = t.get(c);
     o && (n = Math.max(n, o.width), r = Math.max(r, o.depth));
-    const _ = p * i.gap;
+    const m = f * i.gap;
     s[c] = {
-      x: i.position.x + (i.axis === "x" ? _ : 0),
-      y: i.position.y + (i.axis === "y" ? _ : 0),
-      z: i.position.z + (i.axis === "z" ? _ : 0)
+      x: i.position.x + (i.axis === "x" ? m : 0),
+      y: i.position.y + (i.axis === "y" ? m : 0),
+      z: i.position.z + (i.axis === "z" ? m : 0)
     };
   });
   const a = i.grids.length * i.gap;
@@ -1336,30 +1337,30 @@ function G(i, e) {
     }
   };
 }
-function Ve(i, e) {
+function Be(i, e) {
   const t = [], s = {};
   for (const n of i) {
-    const r = G(n, e);
+    const r = Q(n, e);
     t.push(r), Object.assign(s, r.gridPositions);
   }
   for (const n of e)
     n.id in s || (s[n.id] = { x: 30, y: 0, z: 0 });
   return { layouts: t, viewPositions: s };
 }
-const qe = {
+const Ue = {
   id: "stack-checkout",
   grids: ["page_view", "endpoint", "flow_point", "permission", "order_event", "orders"],
   axis: "y",
   gap: 3,
   position: { x: 0, y: -4, z: 0 }
-}, De = {
+}, Xe = {
   id: "stack-infra",
   grids: ["service", "deploy_event", "health_event", "pipeline_point", "data_policy"],
   axis: "y",
   gap: 3,
   position: { x: 12, y: -4, z: 0 }
 };
-class He {
+class Fe {
   constructor() {
     x(this, "entries", []);
     x(this, "_viewIdx", -1);
@@ -1424,22 +1425,22 @@ class He {
     return this.entries.length === 0 ? "-/-" : `${this._viewIdx === -1 ? this.entries.length : this._viewIdx + 1}/${this.entries.length}`;
   }
 }
-const W = {
+const ee = {
   near: 15,
   mid: 35
 };
-function U(i, e = W) {
+function te(i, e = ee) {
   return i <= e.near ? "near" : i <= e.mid ? "mid" : "far";
 }
-function Be(i, e, t) {
+function Ye(i, e, t) {
   const s = /* @__PURE__ */ new Map();
   for (const [n, r] of e) {
-    const a = i.x - r.x, c = i.y - r.y, p = i.z - r.z, o = Math.sqrt(a * a + c * c + p * p);
-    s.set(n, U(o, t));
+    const a = i.x - r.x, c = i.y - r.y, f = i.z - r.z, o = Math.sqrt(a * a + c * c + f * f);
+    s.set(n, te(o, t));
   }
   return s;
 }
-function Xe(i) {
+function Ze(i) {
   switch (i) {
     case "near":
       return { showLabels: !0, showEdges: !0, showHitCounts: !0, cellOpacityMultiplier: 1 };
@@ -1449,7 +1450,7 @@ function Xe(i) {
       return { showLabels: !1, showEdges: !1, showHitCounts: !1, cellOpacityMultiplier: 0.7 };
   }
 }
-class Ye {
+class Ge {
   constructor() {
     x(this, "frames", 0);
     x(this, "lastTime", performance.now());
@@ -1486,21 +1487,21 @@ class Ye {
     return `${e.fps}fps ${e.frameTime}ms | draw:${e.drawCalls} tri:${e.triangles} | cells:${e.cellCount} active:${e.activeCount}`;
   }
 }
-function Ze(i, e, t) {
+function We(i, e, t) {
   i.innerHTML = "";
   for (const [s, n] of Object.entries(e)) {
     const r = document.createElement("span");
     r.className = "sl-role sl-active", r.dataset.role = s, r.innerHTML = `<span class="sl-dot" style="background:${n.token.css}"></span>${s}`, t && r.addEventListener("click", () => t(s, r)), i.appendChild(r);
   }
 }
-function Fe(i, e) {
+function Je(i, e) {
   i.innerHTML = "";
   for (const [t, s] of Object.entries(e)) {
     const n = document.createElement("span");
     n.style.cssText = `font-size:8px;color:${s.main.css};padding:2px 5px;border:1px solid ${s.main.css}33;border-radius:3px`, n.textContent = t, i.appendChild(n);
   }
 }
-class Ge {
+class Qe {
   constructor(e) {
     x(this, "ws", null);
     x(this, "_connected", !1);
@@ -1518,10 +1519,10 @@ class Ge {
         var a, c;
         this._connected = !0, (c = (a = this.config).onConnectionChange) == null || c.call(a, "connected"), this.ws.send(JSON.stringify({ type: "subscribe", scenarioId: "*" }));
       }, this.ws.onmessage = (a) => {
-        var c, p;
+        var c, f;
         try {
           const o = JSON.parse(a.data);
-          o.type === "record" && o.data ? this.handleRecord(o.data) : o.type === "subscribed" && ((p = (c = this.config).onConnectionChange) == null || p.call(c, "subscribed"));
+          o.type === "record" && o.data ? this.handleRecord(o.data) : o.type === "subscribed" && ((f = (c = this.config).onConnectionChange) == null || f.call(c, "subscribed"));
         } catch {
         }
       }, this.ws.onerror = () => {
@@ -1586,7 +1587,7 @@ class Ge {
     s.length > 0 && this.config.onActivation(s, t);
   }
 }
-function We(i, e) {
+function et(i, e) {
   const t = [];
   if (i === "flow_point" && e.flow_name && e.flow_step)
     t.push(`flow_point/${e.flow_name}/${e.flow_step}`);
@@ -1600,82 +1601,82 @@ function We(i, e) {
       typeof s == "string" && t.push(`${i}/${s}`);
   return t;
 }
-function J(i, e, t) {
+function ie(i, e, t) {
   const s = i[e];
   if (!s) return null;
   const n = [], r = [];
-  for (const p of s.labels) {
-    const o = s.dims[p];
+  for (const f of s.labels) {
+    const o = s.dims[f];
     if (!o) return null;
     if (o.kind === "axis") {
       n.push(o.capacity ?? o.entries.length);
-      const _ = o.entries.indexOf(t[p]);
-      if (_ < 0) return null;
-      r.push(_);
+      const m = o.entries.indexOf(t[f]);
+      if (m < 0) return null;
+      r.push(m);
     } else {
-      const _ = o.values;
-      n.push(_.length);
-      const f = t[p] ?? _[0], u = _.indexOf(f);
-      r.push(u < 0 ? 0 : u);
+      const m = o.values;
+      n.push(m.length);
+      const h = t[f] ?? m[0], p = m.indexOf(h);
+      r.push(p < 0 ? 0 : p);
     }
   }
   const a = new Array(n.length);
   a[n.length - 1] = 1;
-  for (let p = n.length - 2; p >= 0; p--) a[p] = a[p + 1] * n[p + 1];
+  for (let f = n.length - 2; f >= 0; f--) a[f] = a[f + 1] * n[f + 1];
   let c = 0;
-  for (let p = 0; p < r.length; p++) c += r[p] * a[p];
+  for (let f = 0; f < r.length; f++) c += r[f] * a[f];
   return { prefix: e, version: s.version, address: c, serialized: `${e}:${s.version}:${c}` };
 }
-function Q(i, e) {
+function se(i, e) {
   const t = e.split(":"), [s, n, r] = t.length === 4 ? [t[1], t[2], t[3]] : [t[0], t[1], t[2]], a = i[s];
   if (!a) return null;
   let c = parseInt(r);
   if (isNaN(c)) return null;
-  const p = [], o = [];
-  for (const u of a.labels) {
-    const l = a.dims[u];
-    l && (l.kind === "axis" ? p.push(l.capacity ?? l.entries.length) : p.push(l.values.length), o.push({ label: u, dim: l }));
+  const f = [], o = [];
+  for (const p of a.labels) {
+    const l = a.dims[p];
+    l && (l.kind === "axis" ? f.push(l.capacity ?? l.entries.length) : f.push(l.values.length), o.push({ label: p, dim: l }));
   }
-  const _ = new Array(p.length);
-  _[p.length - 1] = 1;
-  for (let u = p.length - 2; u >= 0; u--) _[u] = _[u + 1] * p[u + 1];
-  const f = {};
-  for (let u = 0; u < o.length; u++) {
-    const l = Math.floor(c / _[u]);
-    c %= _[u];
-    const { label: k, dim: m } = o[u];
-    f[k] = m.kind === "axis" ? m.entries[l] ?? `(${l})` : m.values[l] ?? l;
+  const m = new Array(f.length);
+  m[f.length - 1] = 1;
+  for (let p = f.length - 2; p >= 0; p--) m[p] = m[p + 1] * f[p + 1];
+  const h = {};
+  for (let p = 0; p < o.length; p++) {
+    const l = Math.floor(c / m[p]);
+    c %= m[p];
+    const { label: b, dim: g } = o[p];
+    h[b] = g.kind === "axis" ? g.entries[l] ?? `(${l})` : g.values[l] ?? l;
   }
-  return { prefix: s, version: n, values: f };
+  return { prefix: s, version: n, values: h };
 }
-function ee(i, e) {
+function ne(i, e) {
   const t = {};
   for (const [s, n] of Object.entries(e)) {
     const r = i[s];
     if (!r) continue;
     const a = { ...n };
-    for (const p of r.labels) {
-      const o = r.dims[p];
-      (o == null ? void 0 : o.kind) === "prefix_ref" && !(p in a) && (a[p] = o.values[0]);
+    for (const f of r.labels) {
+      const o = r.dims[f];
+      (o == null ? void 0 : o.kind) === "prefix_ref" && !(f in a) && (a[f] = o.values[0]);
     }
-    const c = J(i, s, a);
+    const c = ie(i, s, a);
     c && (t[s] = c.serialized);
   }
   return t;
 }
-function Ue(i, e) {
+function tt(i, e) {
   const t = {};
   for (const [s, n] of Object.entries(e)) {
-    const r = Q(i, n);
+    const r = se(i, n);
     r && (t[s] = { prefix: r.prefix, values: r.values });
   }
   return t;
 }
-function Je(i, e) {
-  const t = ee(i, e), s = Y(t);
+function it(i, e) {
+  const t = ne(i, e), s = G(t);
   return { addressContext: t, byRole: s };
 }
-const K = {
+const L = {
   service: { version: "v1", labels: ["env", "region", "svc_name", "namespace"], dims: { env: { kind: "axis", entries: ["dev", "stage", "prod", "test", "local"], capacity: 32 }, region: { kind: "axis", entries: ["asia", "usa"], capacity: 32 }, svc_name: { kind: "axis", entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway"], capacity: 32 }, namespace: { kind: "axis", entries: ["shop", "cms"], capacity: 32 } } },
   permission: { version: "v4", labels: ["perm_svc", "role"], dims: { perm_svc: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, role: { kind: "axis", entries: ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"], capacity: 32 } } },
   event: { version: "v4", labels: ["evt_svc", "event_name", "initiator"], dims: { evt_svc: { kind: "prefix_ref", values: [0, 32, 64, 96, 128, 65536, 65568, 65600, 65632, 65664] }, event_name: { kind: "axis", entries: ["user.login", "user.logout", "order.created", "order.paid", "payment.failed", "session.expired", "config.changed", "payment.cancel_requested", "payment.cancel_approved", "payment.refunded"], capacity: 64 }, initiator: { kind: "axis", entries: ["web", "mobile"], capacity: 32 } } },
@@ -1716,7 +1717,7 @@ const K = {
   event_classification: { version: "v1", labels: ["svc_ref", "event_category", "event_lifecycle_stage"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, event_category: { kind: "axis", entries: ["user_action", "system_action", "network_action", "data_action", "agent_action", "sdk_action", "error", "state_change"], capacity: 16 }, event_lifecycle_stage: { kind: "axis", entries: ["interaction", "request", "processing", "result", "side_effect", "completion"], capacity: 16 } } },
   metric_point: { version: "v1", labels: ["svc_ref", "metric_type", "record_type"], dims: { svc_ref: { kind: "prefix_ref", values: [65536, 65537, 65568, 65569, 65600, 65601, 65632, 65633, 65664, 65665] }, metric_type: { kind: "axis", entries: ["counter", "gauge", "histogram", "summary"], capacity: 8 }, record_type: { kind: "axis", entries: ["log", "span", "metric"], capacity: 8 } } }
 };
-class Qe {
+class st {
   constructor(e) {
     x(this, "_max");
     x(this, "_containerId");
@@ -1737,8 +1738,8 @@ class Qe {
    */
   feed(e, t, s) {
     for (const [n, r] of Object.entries(e)) {
-      const a = s(n), c = t(r), p = c ? Object.entries(c.values).map(([o, _]) => `${o}=${_}`).join(" ") : r;
-      this.add(n, p, a);
+      const a = s(n), c = t(r), f = c ? Object.entries(c.values).map(([o, m]) => `${o}=${m}`).join(" ") : r;
+      this.add(n, f, a);
     }
   }
   /** role 필터 설정 (null 이면 전체 표시) */
@@ -1765,7 +1766,7 @@ class Qe {
     this._entries.length = 0, this.render();
   }
 }
-class et {
+class nt {
   constructor(e) {
     x(this, "_total");
     x(this, "_interval");
@@ -1800,13 +1801,75 @@ class et {
     this._running && (this._index >= this._total && (this._index = 0), this._onStep(this._index), this._index++, this._timer = setTimeout(() => this._tick(), this._interval));
   }
 }
-async function tt(i) {
+class rt {
+  constructor(e) {
+    x(this, "lines", []);
+    x(this, "index", 0);
+    this.options = e;
+    for (let t = 0; t < e.maxBeams; t++) {
+      const s = new O.BufferGeometry();
+      s.setAttribute("position", new O.BufferAttribute(new Float32Array(6), 3));
+      const n = new O.LineBasicMaterial({
+        color: e.defaultColor,
+        transparent: !0,
+        opacity: 0
+      });
+      e.scene.add(new O.Line(s, n)), this.lines.push({ geo: s, mat: n, life: 0, pinned: !1 });
+    }
+  }
+  /** transient beam — 시간 지나면 fade */
+  spawn(e, t, s) {
+    const n = this.lines[this.index++ % this.options.maxBeams];
+    n.pinned = !1, this.setPositions(n, e, t), n.mat.color.setHex(s), n.life = 4;
+  }
+  /** pinned beam — clearPinned() 전까지 유지 */
+  spawnPinned(e, t, s) {
+    const n = this.lines[this.index++ % this.options.maxBeams];
+    n.pinned = !0, this.setPositions(n, e, t), n.mat.color.setHex(s), n.life = 1, n.mat.opacity = 0.6;
+  }
+  /** 모든 pinned beam 해제 */
+  clearPinned() {
+    for (const e of this.lines)
+      e.pinned && (e.pinned = !1, e.life = 0, e.mat.opacity = 0);
+  }
+  /** 매 프레임 호출 — transient beam fade 처리 */
+  update(e) {
+    for (const t of this.lines)
+      t.pinned || t.life > 0 && (t.life -= e * 0.5, t.mat.opacity = Math.max(0, Math.min(t.life * 0.2, 0.6)));
+  }
+  setPositions(e, t, s) {
+    const n = e.geo.attributes.position.array;
+    n[0] = t.x, n[1] = t.y, n[2] = t.z, n[3] = s.x, n[4] = s.y, n[5] = s.z, e.geo.attributes.position.needsUpdate = !0;
+  }
+}
+const K = new O.Color(), P = new O.Color(), A = new O.Color();
+function at(i, e) {
+  const { elapsedTime: t, dt: s, glowMul: n, activeSet: r, cellRoleColor: a, roleFilter: c, getRoleFn: f } = e, o = e.glowDecay ?? 0.6;
+  for (const m of i) {
+    let h = !1;
+    K.setHex(m.cc.main.hex);
+    for (let p = 0; p < m.count; p++) {
+      const l = m.idxToKey[p];
+      m.glows[p] > 0 && (m.glows[p] = Math.max(0, m.glows[p] - s * o));
+      const g = r.has(l) ? 0.4 + Math.sin(t * 5) * 0.2 : 0, k = Math.max(m.glows[p], g);
+      if (k > 0.01) {
+        const u = a.get(l), d = f(l), y = c != null && c !== d;
+        u && !y ? P.setHex(u) : P.setHex(m.cc.emissive.hex);
+        const v = Math.min(y ? k * n * 0.2 : k * n, 1);
+        A.copy(K).lerp(P, v), m.iMesh.setColorAt(p, A), h = !0;
+      } else
+        m.iMesh.setColorAt(p, K), h = !0;
+    }
+    m.mat.opacity = e.baseOpacity, m.mat.emissiveIntensity = 0.1, h && m.iMesh.instanceColor && (m.iMesh.instanceColor.needsUpdate = !0);
+  }
+}
+async function ot(i) {
   const e = (i == null ? void 0 : i.cacheKey) ?? "qa-sdk-catalog", t = (i == null ? void 0 : i.cacheTtlMs) ?? 300 * 1e3, s = (i == null ? void 0 : i.timeoutMs) ?? 5e3;
   if (i != null && i.registryUrl)
     try {
-      const r = await te(i.registryUrl, s);
+      const r = await re(i.registryUrl, s);
       if (r && Object.keys(r).length > 0)
-        return se(e, r), {
+        return oe(e, r), {
           catalog: r,
           source: "api",
           prefixCount: Object.keys(r).length,
@@ -1814,43 +1877,43 @@ async function tt(i) {
         };
     } catch {
     }
-  const n = ne(e, t);
+  const n = ce(e, t);
   return n ? {
     catalog: n,
     source: "cache",
     prefixCount: Object.keys(n).length,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   } : {
-    catalog: K,
+    catalog: L,
     source: "static",
-    prefixCount: Object.keys(K).length,
+    prefixCount: Object.keys(L).length,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   };
 }
-async function te(i, e) {
+async function re(i, e) {
   const t = new AbortController(), s = setTimeout(() => t.abort(), e);
   try {
     const n = await fetch(`${i}/resolve/active`, { signal: t.signal });
     if (clearTimeout(s), !n.ok) return null;
     const r = await n.json();
-    return ie(r);
+    return ae(r);
   } catch {
     return clearTimeout(s), null;
   }
 }
-function ie(i) {
+function ae(i) {
   var t;
   const e = {};
   for (const [s, n] of Object.entries(i)) {
     if (!n || typeof n != "object") continue;
     const r = n.version ?? n.activeVersion ?? "v1", a = n.labels ?? n.dims ? Object.keys(n.dims) : [], c = {};
     if (n.dims)
-      for (const [p, o] of Object.entries(n.dims))
-        o.kind === "axis" || o.entries ? c[p] = {
+      for (const [f, o] of Object.entries(n.dims))
+        o.kind === "axis" || o.entries ? c[f] = {
           kind: "axis",
           entries: o.entries ?? [],
           capacity: o.capacity ?? ((t = o.entries) == null ? void 0 : t.length) ?? 32
-        } : (o.kind === "prefix_ref" || o.values) && (c[p] = {
+        } : (o.kind === "prefix_ref" || o.values) && (c[f] = {
           kind: "prefix_ref",
           values: o.values ?? []
         });
@@ -1858,14 +1921,14 @@ function ie(i) {
   }
   return e;
 }
-function se(i, e) {
+function oe(i, e) {
   try {
     const t = { catalog: e, savedAt: Date.now() };
     localStorage.setItem(i, JSON.stringify(t));
   } catch {
   }
 }
-function ne(i, e) {
+function ce(i, e) {
   try {
     const t = localStorage.getItem(i);
     if (!t) return null;
@@ -1875,70 +1938,92 @@ function ne(i, e) {
     return null;
   }
 }
+function ct() {
+  return `tx_${crypto.randomUUID()}`;
+}
+function lt() {
+  return `log_${crypto.randomUUID()}`;
+}
+function dt() {
+  return `trc_${crypto.randomUUID().slice(0, 12)}`;
+}
+function pt() {
+  return `spn_${crypto.randomUUID().slice(0, 8)}`;
+}
+function ft() {
+  return `ses_${crypto.randomUUID().slice(0, 8)}`;
+}
 export {
-  Ae as ActivationProcessor,
-  K as BROWSER_CATALOG,
-  Ne as BeamPool,
-  V as CATEGORY_COLORS,
-  Le as CellStateManager,
-  W as DEFAULT_LOD,
-  ae as DEFAULT_THEME,
-  Te as DEMO_PREFIX_META,
-  Pe as DEMO_SERVICES,
-  we as DEMO_SIGNALS,
-  et as DemoRunner,
-  je as ENV_FILTERS,
-  He as FlowHistory,
-  Qe as FlowTimeline,
-  D as LAYER_COLORS,
-  Ge as MonitorAdapter,
-  z as PALETTE,
-  S as PRESET_AXES,
-  Ie as PRESET_VIEWS,
-  Ye as PerfMonitor,
-  q as ROLE_COLORS,
-  be as SIGNAL_ROLE_COLORS,
-  ke as SIGNAL_ROLE_LABELS,
-  qe as STACK_CHECKOUT,
-  De as STACK_INFRA,
-  Me as TIER_NAMES,
-  Oe as ViewEngine,
-  Re as applyFilters,
-  Fe as buildCategoryLegend,
-  oe as buildGridPositions,
-  Ze as buildRoleLegend,
-  Ce as buildServiceContainers,
-  Y as classifyByRole,
-  Ve as computeAllStacks,
-  ze as computeCrossViewLayout,
-  Be as computeGroupLod,
-  U as computeLodLevel,
-  _e as computePatternLayout,
-  Ke as computeScopeLayouts,
-  G as computeStackLayout,
-  ce as computeStackPositions,
-  he as cube,
-  Q as decode,
-  Ue as decodeContext,
-  We as defaultKeyMapper,
-  J as encode,
-  xe as extractAxes,
-  ye as extractDims,
-  Se as formatDetail,
-  le as generateCssVariables,
-  Xe as getLodVisibility,
-  X as getPrefixRole,
-  fe as grid,
-  ve as inferPattern,
-  H as inferRole,
-  tt as loadCatalog,
-  Ee as matchEventToCells,
-  ge as nested,
-  pe as row,
-  de as scalar,
-  me as shelf,
-  ue as spine,
-  ee as track,
-  Je as trackWithSignal,
-  $e as validateSignal
+  qe as ActivationProcessor,
+  L as BROWSER_CATALOG,
+  He as BeamPool,
+  B as CATEGORY_COLORS,
+  Ve as CellStateManager,
+  ee as DEFAULT_LOD,
+  de as DEFAULT_THEME,
+  Ee as DEMO_PREFIX_META,
+  Ne as DEMO_SERVICES,
+  Se as DEMO_SIGNALS,
+  nt as DemoRunner,
+  De as ENV_FILTERS,
+  Fe as FlowHistory,
+  st as FlowTimeline,
+  X as LAYER_COLORS,
+  Qe as MonitorAdapter,
+  S as PALETTE,
+  T as PRESET_AXES,
+  Re as PRESET_VIEWS,
+  Ge as PerfMonitor,
+  U as ROLE_COLORS,
+  Te as SIGNAL_ROLE_COLORS,
+  Ie as SIGNAL_ROLE_LABELS,
+  Ue as STACK_CHECKOUT,
+  Xe as STACK_INFRA,
+  Pe as TIER_NAMES,
+  rt as ThreeBeamRenderer,
+  Ke as ViewEngine,
+  Le as applyFilters,
+  Je as buildCategoryLegend,
+  pe as buildGridPositions,
+  We as buildRoleLegend,
+  je as buildServiceContainers,
+  G as classifyByRole,
+  Be as computeAllStacks,
+  Oe as computeCrossViewLayout,
+  Ye as computeGroupLod,
+  te as computeLodLevel,
+  ke as computePatternLayout,
+  Ae as computeScopeLayouts,
+  Q as computeStackLayout,
+  fe as computeStackPositions,
+  _e as cube,
+  se as decode,
+  tt as decodeContext,
+  et as defaultKeyMapper,
+  ie as encode,
+  $e as extractAxes,
+  we as extractDims,
+  Me as formatDetail,
+  he as generateCssVariables,
+  Ze as getLodVisibility,
+  Z as getPrefixRole,
+  ge as grid,
+  be as inferPattern,
+  F as inferRole,
+  ot as loadCatalog,
+  Ce as matchEventToCells,
+  xe as nested,
+  lt as newLogId,
+  ft as newSessionId,
+  pt as newSpanId,
+  dt as newTraceId,
+  ct as newTransmissionId,
+  me as row,
+  ue as scalar,
+  ye as shelf,
+  ve as spine,
+  ne as track,
+  it as trackWithSignal,
+  at as updateInstancedColors,
+  ze as validateSignal
 };

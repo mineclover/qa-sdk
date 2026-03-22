@@ -1,6 +1,6 @@
-var H = Object.defineProperty;
-var D = (i, e, t) => e in i ? H(i, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[e] = t;
-var x = (i, e, t) => D(i, typeof e != "symbol" ? e + "" : e, t);
+var V = Object.defineProperty;
+var H = (i, e, t) => e in i ? V(i, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : i[e] = t;
+var x = (i, e, t) => H(i, typeof e != "symbol" ? e + "" : e, t);
 import * as O from "three";
 const de = {
   background: 328968,
@@ -27,8 +27,8 @@ function pe(i, e, t, s) {
       for (let d = 0; d < g; d++)
         for (let y = 0; y < k; y++)
           for (let v = 0; v < u; v++) {
-            const w = -(g - 1) * h / 2 + d * h, $ = y * h, T = -(u - 1) * h / 2 + v * h, E = k > 1 || u > 1 ? [p[d], l[y] !== "_" ? l[y] : null, b[v] !== "_" ? b[v] : null].filter(Boolean).join("/") : p[d], C = `${o.id}/${E}`;
-            m.push({ key: C, gridId: o.id, entry: E, localX: w, localY: $, localZ: T, col: d, row: y, depth: v }), r.set(C, { gridId: o.id, entry: E, localX: w, localY: $, localZ: T, layer: o.layer, category: o.category });
+            const w = -(g - 1) * h / 2 + d * h, $ = y * h, I = -(u - 1) * h / 2 + v * h, z = k > 1 || u > 1 ? [p[d], l[y] !== "_" ? l[y] : null, b[v] !== "_" ? b[v] : null].filter(Boolean).join("/") : p[d], C = `${o.id}/${z}`;
+            m.push({ key: C, gridId: o.id, entry: z, localX: w, localY: $, localZ: I, col: d, row: y, depth: v }), r.set(C, { gridId: o.id, entry: z, localX: w, localY: $, localZ: I, layer: o.layer, category: o.category });
           }
       n.push({
         id: o.id,
@@ -90,38 +90,38 @@ function q(i, e, t = 0.42, s = 0.1) {
   for (let u = 0; u < a.length; u++) {
     const d = a[u], y = Math.min(d.length, 4);
     for (let v = 0; v < d.length; v++) {
-      const w = Math.floor(v / y), $ = d.filter((I, R) => Math.floor(R / y) === w);
-      let E = -$.reduce((I, R) => {
+      const w = Math.floor(v / y), $ = d.filter((E, R) => Math.floor(R / y) === w);
+      let z = -$.reduce((E, R) => {
         var j;
-        return I + (((j = r.get(R.id)) == null ? void 0 : j.w) ?? 2) + c;
+        return E + (((j = r.get(R.id)) == null ? void 0 : j.w) ?? 2) + c;
       }, -c) / 2;
       const C = v - w * y;
-      for (let I = 0; I < C; I++)
-        E += (((g = r.get($[I].id)) == null ? void 0 : g.w) ?? 2) + c;
+      for (let E = 0; E < C; E++)
+        z += (((g = r.get($[E].id)) == null ? void 0 : g.w) ?? 2) + c;
       const N = ((k = r.get(d[v].id)) == null ? void 0 : k.w) ?? 2;
-      E += N / 2;
-      const V = Math.max(...$.map((I) => {
+      z += N / 2;
+      const D = Math.max(...$.map((E) => {
         var R;
-        return ((R = r.get(I.id)) == null ? void 0 : R.d) ?? 2;
+        return ((R = r.get(E.id)) == null ? void 0 : R.d) ?? 2;
       }));
       n.layer[d[v].id] = {
-        x: E,
+        x: z,
         y: e[u],
-        z: w * -(V + c * 2)
+        z: w * -(D + c * 2)
       };
     }
   }
   [...new Set(i.map((u) => u.category))].forEach((u, d) => {
     const y = i.filter(($) => $.category === u), v = d % 3, w = Math.floor(d / 3);
-    y.forEach(($, T) => {
-      n.category[$.id] = { x: -12 + v * 12, y: 4 - T * 3.5, z: w * -8 };
+    y.forEach(($, I) => {
+      n.category[$.id] = { x: -12 + v * 12, y: 4 - I * 3.5, z: w * -8 };
     });
   });
   const o = [...new Set(i.map((u) => u.dsl).filter(Boolean))], m = i.filter((u) => !u.dsl);
   o.forEach((u, d) => {
     const y = i.filter(($) => $.dsl === u), v = d % 4, w = Math.floor(d / 4);
-    y.forEach(($, T) => {
-      n.dsl[$.id] = { x: -18 + v * 12, y: 4 - T * 3, z: w * -10 };
+    y.forEach(($, I) => {
+      n.dsl[$.id] = { x: -18 + v * 12, y: 4 - I * 3, z: w * -10 };
     });
   }), m.forEach((u, d) => {
     n.dsl[u.id] = { x: 24, y: 4 - d * 3, z: -12 };
@@ -152,7 +152,7 @@ function _(i) {
   const e = i >> 16 & 255, t = i >> 8 & 255, s = i & 255;
   return { hex: i, css: `#${i.toString(16).padStart(6, "0")}`, rgb: `${e},${t},${s}` };
 }
-const z = {
+const S = {
   // Background / Surface
   bgDeep: _(328968),
   bgCard: _(526864),
@@ -193,7 +193,7 @@ const z = {
 function M(i) {
   return { token: _(i), hex: i };
 }
-const X = {
+const U = {
   context: M(4906624),
   trigger: M(16436245),
   channel: M(6333946),
@@ -201,7 +201,7 @@ const X = {
   guard: M(16020150),
   effect: M(16486972),
   data: M(9741240)
-}, F = [
+}, X = [
   _(6619098),
   // L0 UI — mint
   _(16752451),
@@ -213,24 +213,24 @@ const X = {
 ];
 function he() {
   return [
-    `--bg:${z.bgDeep.css}`,
-    `--card:rgba(${z.bgCard.rgb},0.92)`,
-    `--border:rgba(${z.mint.rgb},0.08)`,
-    `--mint:${z.mint.css}`,
-    `--amber:${z.amber.css}`,
-    `--violet:${z.violet.css}`,
-    `--rose:${z.rose.css}`,
-    `--txt:${z.txtPrimary.css}`,
-    `--dim:${z.txtDim.css}`,
-    `--green:${z.green.css}`,
-    `--red:${z.red.css}`,
-    `--cyan:${z.cyan.css}`,
+    `--bg:${S.bgDeep.css}`,
+    `--card:rgba(${S.bgCard.rgb},0.92)`,
+    `--border:rgba(${S.mint.rgb},0.08)`,
+    `--mint:${S.mint.css}`,
+    `--amber:${S.amber.css}`,
+    `--violet:${S.violet.css}`,
+    `--rose:${S.rose.css}`,
+    `--txt:${S.txtPrimary.css}`,
+    `--dim:${S.txtDim.css}`,
+    `--green:${S.green.css}`,
+    `--red:${S.red.css}`,
+    `--cyan:${S.cyan.css}`,
     // Category
     ...Object.entries(B).map(([i, e]) => `--cat-${i}:${e.main.css}`),
     // Signal Role
-    ...Object.entries(X).map(([i, e]) => `--role-${i}:${e.token.css}`),
+    ...Object.entries(U).map(([i, e]) => `--role-${i}:${e.token.css}`),
     // Layer
-    ...F.map((i, e) => `--layer-${e}:${i.css}`)
+    ...X.map((i, e) => `--layer-${e}:${i.css}`)
   ].join(";");
 }
 function ue(i, e) {
@@ -326,8 +326,8 @@ function ke(i, e, t = 0.4, s = 0.08) {
     case "cube":
       h.forEach((d, y) => {
         p.forEach((v, w) => {
-          l.forEach(($, T) => {
-            r.push({ key: `${i.prefixId}/${d}_${v}_${$}`, x: y * n, y: w * n, z: T * n });
+          l.forEach(($, I) => {
+            r.push({ key: `${i.prefixId}/${d}_${v}_${$}`, x: y * n, y: w * n, z: I * n });
           });
         });
       });
@@ -344,12 +344,12 @@ function ke(i, e, t = 0.4, s = 0.08) {
       b.forEach((d, y) => {
         const v = y * (l.length * n + n * 2);
         h.forEach((w, $) => {
-          l.forEach((T, E) => {
+          l.forEach((I, z) => {
             r.push({
-              key: `${i.prefixId}/${d}_${w}_${T}`,
+              key: `${i.prefixId}/${d}_${w}_${I}`,
               x: $ * n,
               y: v,
-              z: E * n,
+              z: z * n,
               group: d
             });
           });
@@ -382,13 +382,13 @@ function ke(i, e, t = 0.4, s = 0.08) {
     }
   };
 }
-function Y(i, e) {
+function F(i, e) {
   if (e === "prefix_ref" || e === "table_ref") return "context";
   const t = i.toLowerCase();
   return t.includes("step") || t.includes("phase") || t.includes("stage") ? "sequence" : t.includes("variant") || t.includes("version") || t.includes("mode") ? "variant" : t.endsWith("_name") || t === "flow_name" || t === "event_name" || t.endsWith("_type") || t === "resource_type" ? "classify" : (t.includes("action") || t.includes("method") || t.includes("op") || t === "role" || t === "resource", "identity");
 }
 function be(i, e) {
-  const t = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = t.filter((l) => l.kind === "axis"), n = t.filter((l) => l.kind === "prefix_ref"), r = t.filter((l) => l.kind === "table_ref"), a = s.map((l) => ({ ...l, role: Y(l.label, l.kind) })), c = a.filter((l) => l.role === "classify"), f = a.filter((l) => l.role === "sequence"), o = a.filter((l) => l.role === "variant"), m = a.filter((l) => l.role === "identity"), h = [];
+  const t = typeof e[0] == "string" ? e.map((l) => ({ label: l, kind: "axis" })) : e, s = t.filter((l) => l.kind === "axis"), n = t.filter((l) => l.kind === "prefix_ref"), r = t.filter((l) => l.kind === "table_ref"), a = s.map((l) => ({ ...l, role: F(l.label, l.kind) })), c = a.filter((l) => l.role === "classify"), f = a.filter((l) => l.role === "sequence"), o = a.filter((l) => l.role === "variant"), m = a.filter((l) => l.role === "identity"), h = [];
   for (const l of n)
     h.push({ axis: l.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
   for (const l of r)
@@ -415,7 +415,7 @@ function we(i) {
 function $e(i) {
   return Object.entries(i).filter(([, e]) => e.kind === "axis").map(([e]) => e);
 }
-const Te = {
+const Ie = {
   context: "어디서",
   trigger: "뭘 했는가",
   channel: "어떤 경로",
@@ -423,7 +423,7 @@ const Te = {
   guard: "어떤 조건",
   effect: "결과",
   data: "데이터 접점"
-}, Se = {
+}, Te = {
   context: "#546e7a",
   trigger: "#ff9100",
   channel: "#00e5ff",
@@ -431,7 +431,7 @@ const Te = {
   guard: "#00e676",
   effect: "#ff5252",
   data: "#fd79a8"
-}, Z = {
+}, Y = {
   // context
   service: "context",
   page_view: "context",
@@ -466,10 +466,10 @@ const Te = {
   relational: "context",
   content: "context"
 };
-function G(i) {
-  return Z[i] ?? "trigger";
+function Z(i) {
+  return Y[i] ?? "trigger";
 }
-function U(i) {
+function G(i) {
   const e = {
     context: [],
     trigger: [],
@@ -480,12 +480,12 @@ function U(i) {
     data: []
   };
   for (const [t, s] of Object.entries(i)) {
-    const n = G(t);
+    const n = Z(t);
     e[n].push({ prefixId: t, serialized: s });
   }
   return e;
 }
-const ze = [
+const Se = [
   {
     id: "auth.login",
     name: "로그인",
@@ -582,7 +582,7 @@ const ze = [
     ]
   }
 ];
-function Ee(i, e) {
+function ze(i, e) {
   const t = new Set(Object.keys(e)), s = new Set(i.members.map((c) => c.prefixId));
   let n = 0;
   const r = /* @__PURE__ */ new Set();
@@ -598,7 +598,7 @@ function Ee(i, e) {
     totalMembers: i.members.length
   };
 }
-const Ie = {
+const Ee = {
   // ── Observation ──
   page_view: {
     id: "page_view",
@@ -929,17 +929,17 @@ function Oe(i, e = 0.42, t = 0.1) {
     for (const u of m)
       for (const d of h)
         for (const y of p) {
-          const v = m.indexOf(u), w = h.indexOf(d), $ = p.indexOf(y), T = {};
-          n && (T[n.axis.id] = u), r && (T[r.axis.id] = d), a && (T[a.axis.id] = y), c && g !== "_" && (T[c.axis.id] = g);
-          const C = Object.values(T).join(":");
+          const v = m.indexOf(u), w = h.indexOf(d), $ = p.indexOf(y), I = {};
+          n && (I[n.axis.id] = u), r && (I[r.axis.id] = d), a && (I[a.axis.id] = y), c && g !== "_" && (I[c.axis.id] = g);
+          const C = Object.values(I).join(":");
           b.push({
-            coords: T,
+            coords: I,
             key: C,
             x: k + v * s,
             y: w * s,
             z: $ * s,
             group: g !== "_" ? g : void 0,
-            colorValue: f ? T[f.axis.id] : void 0
+            colorValue: f ? I[f.axis.id] : void 0
           });
         }
   }
@@ -971,7 +971,7 @@ function Ce(i, e) {
   }
   return t;
 }
-const S = {
+const T = {
   page: { id: "page", name: "페이지", entries: ["home", "product_list", "product_detail", "cart", "checkout", "order_complete", "mypage", "login"], usedBy: ["page_view", "tracking"] },
   flow_step: { id: "flow_step", name: "흐름 단계", entries: ["entry", "processing", "success", "failure", "payment", "complete", "exit"], usedBy: ["flow_point"] },
   flow_name: { id: "flow_name", name: "흐름명", entries: ["checkout", "login", "browse", "payment"], usedBy: ["flow_point"] },
@@ -988,51 +988,51 @@ const S = {
     id: "page-x-flowstep",
     name: "페이지 × 흐름 단계",
     channels: [
-      { axis: S.page, channel: "x" },
-      { axis: S.flow_step, channel: "z" }
+      { axis: T.page, channel: "x" },
+      { axis: T.flow_step, channel: "z" }
     ]
   },
   {
     id: "method-x-verdict",
     name: "HTTP 메서드 × 판정 결과",
     channels: [
-      { axis: S.http_method, channel: "x" },
-      { axis: S.verdict_result, channel: "z" }
+      { axis: T.http_method, channel: "x" },
+      { axis: T.verdict_result, channel: "z" }
     ]
   },
   {
     id: "svc-x-phase-x-health",
     name: "서비스 × 파이프라인 × 헬스 (3D 큐브)",
     channels: [
-      { axis: S.svc_name, channel: "x" },
-      { axis: S.pipeline_phase, channel: "y" },
-      { axis: S.health_status, channel: "z" }
+      { axis: T.svc_name, channel: "x" },
+      { axis: T.pipeline_phase, channel: "y" },
+      { axis: T.health_status, channel: "z" }
     ]
   },
   {
     id: "page-x-action-by-usertype",
     name: "페이지 × 행동, 사용자유형별 그룹",
     channels: [
-      { axis: S.userType, channel: "group" },
-      { axis: S.page, channel: "x" },
-      { axis: S.trackAction, channel: "z" }
+      { axis: T.userType, channel: "group" },
+      { axis: T.page, channel: "x" },
+      { axis: T.trackAction, channel: "z" }
     ]
   },
   {
     id: "role-x-method",
     name: "역할 × HTTP 메서드",
     channels: [
-      { axis: S.role, channel: "x" },
-      { axis: S.http_method, channel: "z" }
+      { axis: T.role, channel: "x" },
+      { axis: T.http_method, channel: "z" }
     ]
   },
   {
     id: "flow-x-step-by-svc",
     name: "흐름 × 단계, 서비스별",
     channels: [
-      { axis: S.svc_name, channel: "group" },
-      { axis: S.flow_name, channel: "x" },
-      { axis: S.flow_step, channel: "z" }
+      { axis: T.svc_name, channel: "group" },
+      { axis: T.flow_name, channel: "x" },
+      { axis: T.flow_step, channel: "z" }
     ],
     filters: { flow_name: ["checkout", "login", "payment"] }
   }
@@ -1208,13 +1208,13 @@ const Ne = [
     consumedPrefixes: [],
     tables: ["orgs"]
   }
-], Ve = {
+], De = {
   prodOnly: { axisId: "env", mode: "show", values: ["prod"] },
   devOnly: { axisId: "env", mode: "show", values: ["dev"] },
   hideTest: { axisId: "env", mode: "hide", values: ["test", "local"] },
   all: { axisId: "env", mode: "show", values: ["dev", "stage", "prod", "test", "local"] }
 };
-class He {
+class Ve {
   constructor(e) {
     x(this, "states", /* @__PURE__ */ new Map());
     x(this, "_activeSet", /* @__PURE__ */ new Set());
@@ -1254,7 +1254,7 @@ class He {
     this.states.clear(), this._activeSet.clear(), this._layerHits.fill(0), this._totalHits = 0;
   }
 }
-class De {
+class He {
   constructor(e) {
     x(this, "beams");
     x(this, "index", 0);
@@ -1347,20 +1347,20 @@ function Be(i, e) {
     n.id in s || (s[n.id] = { x: 30, y: 0, z: 0 });
   return { layouts: t, viewPositions: s };
 }
-const Xe = {
+const Ue = {
   id: "stack-checkout",
   grids: ["page_view", "endpoint", "flow_point", "permission", "order_event", "orders"],
   axis: "y",
   gap: 3,
   position: { x: 0, y: -4, z: 0 }
-}, Fe = {
+}, Xe = {
   id: "stack-infra",
   grids: ["service", "deploy_event", "health_event", "pipeline_point", "data_policy"],
   axis: "y",
   gap: 3,
   position: { x: 12, y: -4, z: 0 }
 };
-class Ye {
+class Fe {
   constructor() {
     x(this, "entries", []);
     x(this, "_viewIdx", -1);
@@ -1432,7 +1432,7 @@ const ee = {
 function te(i, e = ee) {
   return i <= e.near ? "near" : i <= e.mid ? "mid" : "far";
 }
-function Ze(i, e, t) {
+function Ye(i, e, t) {
   const s = /* @__PURE__ */ new Map();
   for (const [n, r] of e) {
     const a = i.x - r.x, c = i.y - r.y, f = i.z - r.z, o = Math.sqrt(a * a + c * c + f * f);
@@ -1440,7 +1440,7 @@ function Ze(i, e, t) {
   }
   return s;
 }
-function Ge(i) {
+function Ze(i) {
   switch (i) {
     case "near":
       return { showLabels: !0, showEdges: !0, showHitCounts: !0, cellOpacityMultiplier: 1 };
@@ -1450,7 +1450,7 @@ function Ge(i) {
       return { showLabels: !1, showEdges: !1, showHitCounts: !1, cellOpacityMultiplier: 0.7 };
   }
 }
-class Ue {
+class Ge {
   constructor() {
     x(this, "frames", 0);
     x(this, "lastTime", performance.now());
@@ -1673,7 +1673,7 @@ function tt(i, e) {
   return t;
 }
 function it(i, e) {
-  const t = ne(i, e), s = U(t);
+  const t = ne(i, e), s = G(t);
   return { addressContext: t, byRole: s };
 }
 const L = {
@@ -1938,32 +1938,47 @@ function ce(i, e) {
     return null;
   }
 }
+function ct() {
+  return `tx_${crypto.randomUUID()}`;
+}
+function lt() {
+  return `log_${crypto.randomUUID()}`;
+}
+function dt() {
+  return `trc_${crypto.randomUUID().slice(0, 12)}`;
+}
+function pt() {
+  return `spn_${crypto.randomUUID().slice(0, 8)}`;
+}
+function ft() {
+  return `ses_${crypto.randomUUID().slice(0, 8)}`;
+}
 export {
   qe as ActivationProcessor,
   L as BROWSER_CATALOG,
-  De as BeamPool,
+  He as BeamPool,
   B as CATEGORY_COLORS,
-  He as CellStateManager,
+  Ve as CellStateManager,
   ee as DEFAULT_LOD,
   de as DEFAULT_THEME,
-  Ie as DEMO_PREFIX_META,
+  Ee as DEMO_PREFIX_META,
   Ne as DEMO_SERVICES,
-  ze as DEMO_SIGNALS,
+  Se as DEMO_SIGNALS,
   nt as DemoRunner,
-  Ve as ENV_FILTERS,
-  Ye as FlowHistory,
+  De as ENV_FILTERS,
+  Fe as FlowHistory,
   st as FlowTimeline,
-  F as LAYER_COLORS,
+  X as LAYER_COLORS,
   Qe as MonitorAdapter,
-  z as PALETTE,
-  S as PRESET_AXES,
+  S as PALETTE,
+  T as PRESET_AXES,
   Re as PRESET_VIEWS,
-  Ue as PerfMonitor,
-  X as ROLE_COLORS,
-  Se as SIGNAL_ROLE_COLORS,
-  Te as SIGNAL_ROLE_LABELS,
-  Xe as STACK_CHECKOUT,
-  Fe as STACK_INFRA,
+  Ge as PerfMonitor,
+  U as ROLE_COLORS,
+  Te as SIGNAL_ROLE_COLORS,
+  Ie as SIGNAL_ROLE_LABELS,
+  Ue as STACK_CHECKOUT,
+  Xe as STACK_INFRA,
   Pe as TIER_NAMES,
   rt as ThreeBeamRenderer,
   Ke as ViewEngine,
@@ -1972,10 +1987,10 @@ export {
   pe as buildGridPositions,
   We as buildRoleLegend,
   je as buildServiceContainers,
-  U as classifyByRole,
+  G as classifyByRole,
   Be as computeAllStacks,
   Oe as computeCrossViewLayout,
-  Ze as computeGroupLod,
+  Ye as computeGroupLod,
   te as computeLodLevel,
   ke as computePatternLayout,
   Ae as computeScopeLayouts,
@@ -1990,14 +2005,19 @@ export {
   we as extractDims,
   Me as formatDetail,
   he as generateCssVariables,
-  Ge as getLodVisibility,
-  G as getPrefixRole,
+  Ze as getLodVisibility,
+  Z as getPrefixRole,
   ge as grid,
   be as inferPattern,
-  Y as inferRole,
+  F as inferRole,
   ot as loadCatalog,
   Ce as matchEventToCells,
   xe as nested,
+  lt as newLogId,
+  ft as newSessionId,
+  pt as newSpanId,
+  dt as newTraceId,
+  ct as newTransmissionId,
   me as row,
   ue as scalar,
   ye as shelf,
@@ -2005,5 +2025,5 @@ export {
   ne as track,
   it as trackWithSignal,
   at as updateInstancedColors,
-  Ee as validateSignal
+  ze as validateSignal
 };
