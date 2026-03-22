@@ -38,4 +38,23 @@ CREATE TABLE IF NOT EXISTS catalogs (
   created_at   TEXT NOT NULL,
   updated_at   TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS service_endpoint (
+  catalog_id   TEXT NOT NULL DEFAULT 'demo',
+  namespace    TEXT NOT NULL,
+  svc_name     TEXT NOT NULL,
+  env          TEXT NOT NULL,
+  region       TEXT NOT NULL,
+  url          TEXT NOT NULL,
+  updated_at   TEXT NOT NULL,
+  PRIMARY KEY (catalog_id, namespace, svc_name, env, region)
+);
+
+CREATE TABLE IF NOT EXISTS config (
+  catalog_id   TEXT NOT NULL,
+  config_type  TEXT NOT NULL,
+  data         TEXT NOT NULL,
+  updated_at   TEXT NOT NULL,
+  PRIMARY KEY (catalog_id, config_type)
+);
 `;

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createHash } from "node:crypto";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
@@ -48,6 +49,8 @@ async function execDdlStatements(
 
 async function createStores(sqlitePath: string) {
   if (sqlitePath === ":memory:") {
+    const { InMemoryConfigStore } = await import("./stores/in-memory-config-store.js");
+    const { InMemoryServiceEndpointStore } = await import("./stores/in-memory-service-endpoint-store.js");
     return {
       prefixRegistry: new InMemoryPrefixRegistry(),
       versionStore: new InMemoryVersionLifecycleStore(),
@@ -55,6 +58,8 @@ async function createStores(sqlitePath: string) {
       lockStore: new InMemoryDraftLockStore(),
       catalogStore: new InMemoryCatalogStore(),
       axisStore: new InMemoryAxisProfileStore(),
+      configStore: new InMemoryConfigStore(),
+      endpointStore: new InMemoryServiceEndpointStore(),
     };
   }
 
@@ -63,6 +68,9 @@ async function createStores(sqlitePath: string) {
   // registry 전용 테이블 추가 (공개 SqlDriver API 사용)
   await execDdlStatements(driver, REGISTRY_SCHEMA_DDL);
 
+  const { SqlConfigStore } = await import("./stores/sql-config-store.js");
+  const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
+
   return {
     prefixRegistry: new SqlPrefixRegistry(driver),
     versionStore: new SqlVersionLifecycleStore(driver),
@@ -70,6 +78,8 @@ async function createStores(sqlitePath: string) {
     lockStore: new SqlDraftLockStore(driver),
     catalogStore: new SqlCatalogStore(driver),
     axisStore: new SqlAxisProfileStore(driver),
+    configStore: new SqlConfigStore(driver),
+    endpointStore: new SqlServiceEndpointStore(driver),
   };
 }
 
@@ -306,13 +316,9 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
 
 async function main() {
   const stores = await createStores(env.SQLITE_PATH);
-  const { InMemoryConfigStore } = await import("./stores/in-memory-config-store.js");
-  const { InMemoryServiceEndpointStore } = await import("./stores/in-memory-service-endpoint-store.js");
-  const configStore = new InMemoryConfigStore();
-  const endpointStore = new InMemoryServiceEndpointStore();
   await seedDemoCatalog(stores.catalogStore, stores.axisStore);
-  await seedConfigs(configStore);
-  await seedEndpoints(endpointStore);
+  await seedConfigs(stores.configStore);
+  await seedEndpoints(stores.endpointStore);
   const activationGate = await buildActivationGate();
   const postActivationHook = await buildPostActivationHook();
   const devDashboardProvider = await buildDevDashboardProvider();
@@ -322,8 +328,8 @@ async function main() {
     ...(activationGate ? { activationGate } : {}),
     ...(postActivationHook ? { postActivationHook } : {}),
     ...(devDashboardProvider ? { devDashboardProvider } : {}),
-    configStore,
-    endpointStore,
+    configStore: stores.configStore,
+    endpointStore: stores.endpointStore,
     corsOrigin: env.CORS_ORIGIN,
     logger,
   });
