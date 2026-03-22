@@ -181,3 +181,46 @@ function generate(
       return { content: generateTypescript(snapshot), ext: ".d.ts" };
   }
 }
+
+// ── Version Lifecycle 검증 ─────────────────────────────
+
+import { latestPrefixVersion } from "@qa-sdk/core";
+
+/**
+ * registry의 prefix version 상태를 검증.
+ * deprecated/draft version 사용 시 경고.
+ */
+async function validatePrefixVersions(
+  registryUrl: string,
+  catalog: Catalog,
+  lockVersion?: string,
+): Promise<void> {
+  const warnings: string[] = [];
+  const prefixIds = Object.keys(catalog.prefixes).slice(0, 5); // 샘플 검증 (전수는 느림)
+
+  for (const prefixId of prefixIds) {
+    try {
+      const res = await fetch(`${registryUrl}/prefixes/${prefixId}/versions`);
+      if (!res.ok) continue;
+      const versions = await res.json() as Array<{ versionId: string; status: string }>;
+      if (versions.length === 0) continue;
+
+      const targetVersion = lockVersion ?? latestPrefixVersion(catalog, prefixId);
+      const matched = versions.find(v => v.versionId === targetVersion);
+
+      if (matched) {
+        if (matched.status === "deprecated") {
+          warnings.push(`⚠ ${prefixId}:${targetVersion} is deprecated`);
+        } else if (matched.status === "draft") {
+          warnings.push(`⚠ ${prefixId}:${targetVersion} is still draft (not released)`);
+        }
+      }
+    } catch { /* 개별 prefix 검증 실패는 무시 */ }
+  }
+
+  if (warnings.length > 0) {
+    console.warn("\nVersion lifecycle warnings:");
+    for (const w of warnings) console.warn(`  ${w}`);
+    console.warn("");
+  }
+}
