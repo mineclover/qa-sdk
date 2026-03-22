@@ -17,6 +17,8 @@ interface DiagramFns {
   constraintDiagram: Function;
   tableDiagram: Function;
   observationLoopDiagram: Function;
+  transitionSpecDiagram: Function;
+  transitionDagDiagram: Function;
 }
 
 interface ServiceTopologyLike {
@@ -102,6 +104,12 @@ export function createDiagramRoutes(deps: DiagramRouteDeps) {
           break;
         case "observation-loop":
           mmd = viz.observationLoopDiagram(graph, opts);
+          break;
+        case "transition-spec":
+          mmd = viz.transitionSpecDiagram(graph, id, opts);
+          break;
+        case "transition-dag":
+          mmd = viz.transitionDagDiagram(graph, opts);
           break;
         default:
           return c.json({ error: `Unknown diagram kind: ${kind}` }, 400);
