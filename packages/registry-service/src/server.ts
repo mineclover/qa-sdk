@@ -312,9 +312,17 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
       gatewayPath: "/v1/",
       ownedPrefixes: ["ingest_record", "event_classification", "metric_point", "pipeline_point", "pattern_match", "pattern_anomaly"],
       consumedPrefixes: ["service"] },
-    { serviceId: "dashboard", name: "Dev Dashboard", tier: "infra", team: "platform", url: "http://localhost:3300/dev/",
-      ownedPrefixes: [],
-      consumedPrefixes: ["service", "deploy_event", "health_event", "pipeline_point"] },
+    { serviceId: "registry-server", name: "레지스트리 서버 (PG)", tier: "infra", team: "platform", url: "http://localhost:3100",
+      ownedPrefixes: [], consumedPrefixes: ["service"] },
+    { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
+      gatewayPath: "/v1/gate",
+      ownedPrefixes: ["gate_point"], consumedPrefixes: ["service", "version_point"] },
+    { serviceId: "query-service", name: "질의 서비스", tier: "infra", team: "platform", url: "http://localhost:3500",
+      gatewayPath: "/v1/query",
+      ownedPrefixes: [], consumedPrefixes: ["service", "gate_point"] },
+    { serviceId: "decode-service", name: "디코드 서비스", tier: "infra", team: "platform", url: "http://localhost:3600",
+      gatewayPath: "/v1/decode",
+      ownedPrefixes: [], consumedPrefixes: ["service"] },
     // ── 시스템 (CLI / CI / DKG 엔진) ──
     { serviceId: "qa-sdk-cli", name: "QA SDK CLI", tier: "system", team: "platform",
       ownedPrefixes: ["cli_event", "skill_execution"],
@@ -341,24 +349,27 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
   // tier/team은 ServiceRecord(토폴로지)에서 관리
   const endpoints = [
     // dev/asia — 인프라 (3xxx)
-    { catalogId: "demo", namespace: "shop", svcName: "registry",        env: "dev", region: "asia", url: "http://localhost:3300" },
-    { catalogId: "demo", namespace: "shop", svcName: "ingest-server",   env: "dev", region: "asia", url: "http://localhost:3200" },
-    { catalogId: "demo", namespace: "shop", svcName: "dashboard",       env: "dev", region: "asia", url: "http://localhost:3300/dev/" },
-    // dev/asia — 비즈니스 (4xxx)
-    { catalogId: "demo", namespace: "shop", svcName: "shopping-backend", env: "dev", region: "asia", url: "http://localhost:4100" },
-    { catalogId: "demo", namespace: "shop", svcName: "auth",            env: "dev", region: "asia", url: "http://localhost:4200" },
-    { catalogId: "demo", namespace: "shop", svcName: "payment",         env: "dev", region: "asia", url: "http://localhost:4300" },
-    { catalogId: "demo", namespace: "shop", svcName: "gateway",         env: "dev", region: "asia", url: "http://localhost:4400" },
+    { catalogId: "demo", namespace: "shop", svcName: "registry-server",   env: "dev", region: "asia", url: "http://localhost:3100" },
+    { catalogId: "demo", namespace: "shop", svcName: "ingest-server",     env: "dev", region: "asia", url: "http://localhost:3200" },
+    { catalogId: "demo", namespace: "shop", svcName: "registry-service",  env: "dev", region: "asia", url: "http://localhost:3300" },
+    { catalogId: "demo", namespace: "shop", svcName: "gate-service",      env: "dev", region: "asia", url: "http://localhost:3400" },
+    { catalogId: "demo", namespace: "shop", svcName: "query-service",     env: "dev", region: "asia", url: "http://localhost:3500" },
+    { catalogId: "demo", namespace: "shop", svcName: "decode-service",    env: "dev", region: "asia", url: "http://localhost:3600" },
+    // dev/asia — 비즈니스 (3xxx/4xxx)
+    { catalogId: "demo", namespace: "shop", svcName: "shopping-backend",  env: "dev", region: "asia", url: "http://localhost:3201" },
+    { catalogId: "demo", namespace: "shop", svcName: "auth",              env: "dev", region: "asia", url: "http://localhost:4200" },
+    { catalogId: "demo", namespace: "shop", svcName: "payment",           env: "dev", region: "asia", url: "http://localhost:4300" },
+    { catalogId: "demo", namespace: "shop", svcName: "gateway",           env: "dev", region: "asia", url: "http://localhost:4400" },
     // dev/asia — 프론트엔드 (5xxx) + CF Worker (8xxx)
     { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "dev", region: "asia", url: "http://localhost:5220" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "dev", region: "asia", url: "http://localhost:5176" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo-api", env: "dev", region: "asia", url: "http://localhost:8787" },
-    // prod/asia — Cloudflare Pages / Workers / Railway
-    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "prod", region: "asia", url: "https://shop.example.com" },
-    { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "prod", region: "asia", url: "https://platform-demo.pages.dev" },
+    // prod/asia — Cloudflare Pages / Workers
+    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "prod", region: "asia", url: "https://shop-web-7dq.pages.dev" },
+    { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "prod", region: "asia", url: "https://platform-demo-3v1.pages.dev" },
     { catalogId: "demo", namespace: "shop", svcName: "platform-demo-api", env: "prod", region: "asia", url: "https://platform-demo-api.astralclover.workers.dev" },
-    { catalogId: "demo", namespace: "shop", svcName: "ingest-server",     env: "prod", region: "asia", url: "https://ingest.example.com" },
-    { catalogId: "demo", namespace: "shop", svcName: "registry",          env: "prod", region: "asia", url: "https://registry.example.com" },
+    { catalogId: "demo", namespace: "shop", svcName: "registry-service",  env: "prod", region: "asia", url: "https://qa-registry-service.astralclover.workers.dev" },
+    { catalogId: "demo", namespace: "shop", svcName: "gateway",           env: "prod", region: "asia", url: "https://qa-gateway.astralclover.workers.dev" },
   ];
 
   for (const ep of endpoints) {

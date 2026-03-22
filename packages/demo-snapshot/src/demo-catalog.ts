@@ -125,7 +125,7 @@ import {
 const _axes = {
   env:       { entries: ["dev", "stage", "prod", "test", "local"] as const, capacity: 32 },
   region:    { entries: ["asia", "usa"] as const, capacity: 32 },
-  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry", "ingest-server", "monitor", "content-service", "infra-controller"] as const, capacity: 32 },
+  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "registry-server", "platform-demo-api"] as const, capacity: 32 },
   namespace: { entries: ["shop", "cms"] as const, capacity: 32 },
 } as const;
 
@@ -180,7 +180,7 @@ export const DEMO_CATALOG = {
         v1: {
           entries: _axes.svc_name.entries,
           capacity: _axes.svc_name.capacity,
-          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", registry: "레지스트리", "ingest-server": "수집서버", monitor: "모니터", "content-service": "콘텐츠", "infra-controller": "인프라" },
+          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", "registry-service": "레지스트리", "ingest-server": "수집서버", "platform-demo": "데모", "content-service": "콘텐츠", "infra-controller": "인프라", "gate-service": "게이트", "query-service": "질의", "decode-service": "디코드", "registry-server": "레지스트리PG", "platform-demo-api": "데모API" },
         },
       },
     },
@@ -1152,10 +1152,11 @@ export const DEMO_CATALOG = {
     },
     tracking: {
       id: "tracking", name: "사용자 행동 추적",
-      description: "trackAction × page × userType 3차원 이벤트 추적",
-      labels: ["trackAction", "page", "userType"],
+      description: "svc_ref × trackAction × page × userType — 서비스 바인딩 포함 행동 추적",
+      labels: ["svc_ref", "trackAction", "page", "userType"],
       meta: { category: "entity", visualShape: "cube", heightRatio: 1, detailKind: "generic", source: { module: "browser-sdk", file: "auto-capture.ts" } },
       dims: {
+        svc_ref: { kind: "prefix_ref", prefixId: "service" },
         trackAction: { kind: "axis", axisId: "trackAction" },
         page: { kind: "axis", axisId: "page" },
         userType: { kind: "axis", axisId: "userType" },
@@ -1163,6 +1164,7 @@ export const DEMO_CATALOG = {
       versions: [
         { version: "v1", axisVersions: { trackAction: "v1", page: "v1", userType: "v1" } },
         { version: "v2", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" } },
+        { version: "v3", axisVersions: { trackAction: "v2", page: "v2", userType: "v1" } },
       ],
     },
     relational: {
@@ -1339,29 +1341,33 @@ export const DEMO_CATALOG = {
     // ── 이벤트 prefix (table_ref 포함) ──────────────────────────────────
     cart_event: {
       id: "cart_event", name: "장바구니 이벤트",
-      description: "actor(member) × action × target(item) — 이벤트 관계 정의",
-      labels: ["actor", "action", "target"],
+      description: "svc_ref × actor(member) × action × target(item) — 서비스 바인딩 포함 이벤트",
+      labels: ["svc_ref", "actor", "action", "target"],
       meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot", file: "demo-catalog.ts" } },
       dims: {
+        svc_ref: { kind: "prefix_ref", prefixId: "service" },
         actor:  { kind: "table_ref", table: "members" },
         action: { kind: "axis", axisId: "cart_action" },
         target: { kind: "table_ref", table: "items" },
       },
       versions: [
         { version: "v1", axisVersions: { action: "v1" } },
+        { version: "v2", axisVersions: { action: "v1" } },
       ],
     },
     auth_event: {
       id: "auth_event", name: "인증 이벤트",
-      description: "actor(member) × action — 단항 이벤트",
-      labels: ["actor", "action"],
+      description: "svc_ref × actor(member) × action — 서비스 바인딩 포함 인증 이벤트",
+      labels: ["svc_ref", "actor", "action"],
       meta: { category: "event", visualShape: "flat-tile", heightRatio: 0.5, detailKind: "event-def", source: { module: "demo-snapshot" } },
       dims: {
+        svc_ref: { kind: "prefix_ref", prefixId: "service" },
         actor:  { kind: "table_ref", table: "members" },
         action: { kind: "axis", axisId: "auth_action" },
       },
       versions: [
         { version: "v1", axisVersions: { action: "v1" } },
+        { version: "v2", axisVersions: { action: "v1" } },
       ],
     },
     order_event: {
