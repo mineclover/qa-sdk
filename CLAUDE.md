@@ -314,6 +314,13 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
   - `activation-gate.ts` — `checkActivationReadiness(graph, prefixId, options)`: 활성화 전 constraint/observation/domain-health 검사
 - **store/**: DkgSqliteStore (persist + migrate)
 
+### GraphPort 3단 추상화
+- 하나의 그래프 저장소에 대해 소비자마다 노출 범위를 달리하는 의존성 역전 구조
+- **GraphPort** (`shared/graph-port.ts`): convergence/schema 내부용. `GraphNodeLike` (`{ kind, id }`) 반환. DkgNode를 import하지 않음
+- **GraphRegistryPort** (`ingest-server/types/`, `registry-service/types/`): 서비스 동적 import용. `getAllNodes()` + `getNodesByKind()` 2메서드. spec-core가 optional peer이므로 정적 타입 불가
+- **GraphRegistry** (`dkg/graph-registry.ts`): CLI/skills용 구체 구현. `getNodesByKind<K>()` → `Extract<DkgNode, { kind: K }>` 타입 안전 반환. Table 질의, cascade, constraint 등 전체 API
+- 설계 원칙: Port는 얇게 (kind/id만), 구현은 풍부하게 (15종 노드 구체 필드). convergence가 DKG 타입에 결합되지 않음
+
 ### DKG Table 의존 추적
 - `TableNode` (14번째 DKG 노드): catalog의 `tables` 섹션에서 자동 파생. `kind: "table"`, `columns: string[]`
 - `catalog-derive.ts`가 `catalog.tables` 순회 → TableNode 생성 + column-level 엣지:

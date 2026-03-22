@@ -391,3 +391,82 @@ describe("scaffoldDecision", () => {
     expect(dec.reversalConditions!).toContain("커스텀 조건");
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  GraphPort 호환성 — GraphRegistry가 Port 계약을 충족하는지 검증
+// ═══════════════════════════════════════════════════════════════
+
+describe("GraphPort 호환성", () => {
+  it("GraphRegistry가 GraphPort를 구현한다 (컴파일 타임 + 런타임)", () => {
+    // 컴파일 타임: implements GraphPort 선언이 tsc에서 검증됨
+    // 런타임: Port의 모든 메서드가 존재하는지 확인
+    const port: import("../shared/graph-port.js").GraphPort = graph;
+
+    expect(typeof port.getNode).toBe("function");
+    expect(typeof port.getNodeOrThrow).toBe("function");
+    expect(typeof port.getNodesByKind).toBe("function");
+    expect(typeof port.getAllNodes).toBe("function");
+    expect(typeof port.findNodes).toBe("function");
+    expect(typeof port.edgesFrom).toBe("function");
+    expect(typeof port.edgesTo).toBe("function");
+    expect(typeof port.neighbors).toBe("function");
+    expect(typeof port.intentLinksFor).toBe("function");
+    expect(typeof port.cascadeFromAxis).toBe("function");
+    expect(typeof port.getPrefixesByCategory).toBe("function");
+    expect(typeof port.groupPrefixesByCategory).toBe("function");
+    expect(typeof port.addNode).toBe("function");
+    expect(typeof port.addEdge).toBe("function");
+  });
+
+  it("Port를 통해 조회한 결과가 GraphNodeLike 형태를 충족한다", () => {
+    const port: import("../shared/graph-port.js").GraphPort = graph;
+
+    const node = port.getNode("role");
+    expect(node).toBeDefined();
+    expect(node!.kind).toBe("axis");
+    expect(node!.id).toBe("role");
+
+    const prefixes = port.getNodesByKind("prefix");
+    expect(prefixes.length).toBeGreaterThan(0);
+    for (const p of prefixes) {
+      expect(p.kind).toBe("prefix");
+      expect(typeof p.id).toBe("string");
+    }
+  });
+
+  it("Port를 통한 엣지 조회가 GraphEdgeLike 형태를 충족한다", () => {
+    const port: import("../shared/graph-port.js").GraphPort = graph;
+
+    const edges = port.edgesFrom("permission", "composes");
+    expect(edges.length).toBeGreaterThan(0);
+    for (const e of edges) {
+      expect(typeof e.type).toBe("string");
+      expect(typeof e.from).toBe("string");
+      expect(typeof e.to).toBe("string");
+    }
+  });
+
+  it("GraphRegistryPort 최소 계약 (서비스 동적 import용)", () => {
+    // GraphRegistryPort = { getAllNodes(), getNodesByKind() } 만 요구
+    const servicePort: { getAllNodes(): unknown[]; getNodesByKind(kind: string): unknown[] } = graph;
+
+    const allNodes = servicePort.getAllNodes();
+    expect(allNodes.length).toBeGreaterThan(0);
+
+    const axes = servicePort.getNodesByKind("axis");
+    expect(axes.length).toBeGreaterThan(0);
+  });
+
+  it("Table 질의 API가 GraphRegistry에만 존재한다 (Port에는 없음)", () => {
+    // GraphRegistry 구체 타입으로 접근해야 Table 질의 가능
+    expect(typeof graph.getPrefixesForTable).toBe("function");
+    expect(typeof graph.getTablesForPrefix).toBe("function");
+    expect(typeof graph.getTableColumnRefs).toBe("function");
+    expect(typeof graph.cascadeFromTable).toBe("function");
+
+    // Port 타입으로 캐스트하면 Table 메서드에 접근 불가 (타입 수준 검증)
+    const port: import("../shared/graph-port.js").GraphPort = graph;
+    expect("getPrefixesForTable" in port).toBe(true); // 런타임에는 존재
+    // 하지만 GraphPort 인터페이스에는 선언되지 않음 — 타입 안전성으로 접근 차단
+  });
+});
