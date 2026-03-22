@@ -23,9 +23,10 @@ import { createWsHandler } from "./routes/ws.js";
 const PORT = parseInt(process.env["PORT"] ?? "3101", 10);
 
 const broker = new RecordStreamBroker();
+const recordStore = new InMemoryRecordStore();
 
 const app = createApp({
-  recordStore: new InMemoryRecordStore(),
+  recordStore,
   traceStore: new InMemoryTraceStore(),
   graphStore: new InMemoryGraphStore(),
   transmissionStore: new InMemoryTransmissionStore(),
@@ -52,52 +53,48 @@ async function setupConvergence() {
     const specConvergence = await import("@qa-sdk/spec-core/convergence");
     const specDkg = await import("@qa-sdk/spec-core/dkg");
 
-    // InMemory 모드: convergence pipeline 대신 직접 address_context 수집
-    // ingest POST body에서 records의 address_context를 직접 추출
-    const addressBuffer: unknown[] = [];
-    const catalog = provider.getCatalog();
-    const dkgStore = provider.getDkgStore();
+    const pipeline = new ConvergencePipelineRunner({
+      recordStore: recordStore as any,
+      convergenceFns: {
+        aggregateUsageData: specConvergence.aggregateUsageData as any,
+        collectMetrics: specConvergence.collectMetrics as any,
+        metricsToObservations: specConvergence.metricsToObservations as any,
+        traceFlows: specDkg.traceFlows as any,
+      },
+      graphProvider: () => provider.getGraph() as any,
+      catalogProvider: () => provider.getCatalog() as Catalog,
+      dkgStore: provider.getDkgStore() as any,
+    }, { recordThreshold: 5, flushIntervalMs: 5_000 });
 
-    // Middleware: /v1/ingest POST body에서 address_context 추출
-    app.use("/v1/ingest", async (c, next) => {
-      await next();
-      // 응답 후 비동기로 address_context 수집 (요청 처리에 영향 없음)
+    // ingest 완료 시 convergence pipeline에 traceId 알림
+    // recordStore에서 직접 최근 traceId를 주기적으로 수집
+    const seenTraces = new Set<string>();
+    setInterval(async () => {
       try {
-        const body = await c.req.raw.clone().json() as { records?: Array<{ address_context?: Record<string, string>; timestamp?: string; qa_session_id?: string; event_key?: string }> };
-        for (const r of body.records ?? []) {
-          if (r.address_context && Object.keys(r.address_context).length > 0) {
-            addressBuffer.push({
-              address_context: r.address_context,
-              timestamp: r.timestamp ?? new Date().toISOString(),
-              session_id: r.qa_session_id,
-              event_key: r.event_key,
-            });
+        // InMemoryRecordStore의 내부 records Map에서 traceId 추출
+        const allRecords = await recordStore.findBySessionId("*").catch(() => []);
+        // findBySessionId("*")가 작동하지 않으면 빈 배열
+        // 대안: 전체 record를 순회하여 새 traceId 발견
+        const store = recordStore as any;
+        if (store.records instanceof Map) {
+          const newTraceIds: string[] = [];
+          for (const [, record] of store.records as Map<string, any>) {
+            const tid = record.traceId;
+            if (tid && !seenTraces.has(tid)) {
+              seenTraces.add(tid);
+              newTraceIds.push(tid);
+            }
+          }
+          if (newTraceIds.length > 0) {
+            pipeline.notifyCompletion(newTraceIds);
           }
         }
-      } catch { /* 파싱 실패 무시 */ }
-    });
+      } catch { /* 무시 */ }
+    }, 3_000);
 
-    // 주기적 flush — 버퍼에 축적된 address_context를 집계
-    const flushInterval = setInterval(() => {
-      if (addressBuffer.length === 0) return;
-      const records = addressBuffer.splice(0);
-      try {
-        const usage = specConvergence.aggregateUsageData(catalog as any, records as any);
-        const graph = provider.getGraph();
-        if (graph && dkgStore) {
-          const metrics = specConvergence.collectMetrics(catalog as any, graph as any, usage);
-          const observations = specConvergence.metricsToObservations(metrics);
-          (dkgStore as any).saveUsageSnapshotWithObservations(usage, observations);
-          console.log(`[convergence] flush: ${records.length} records, ${metrics.length} metrics, ${observations.length} obs`);
-        }
-      } catch (err) {
-        console.warn("[convergence] flush failed:", err);
-      }
-    }, 5_000);
-
-    process.on("SIGTERM", () => clearInterval(flushInterval));
-    process.on("SIGINT", () => clearInterval(flushInterval));
-    console.log(`[e2e:test-server] convergence pipeline enabled (direct mode, 5s flush)`);
+    process.on("SIGTERM", () => void pipeline.close());
+    process.on("SIGINT", () => void pipeline.close());
+    console.log(`[e2e:test-server] convergence pipeline enabled (threshold=5, interval=5s)`);
   } catch (err) {
     console.warn("[e2e:test-server] convergence setup failed:", err);
   }

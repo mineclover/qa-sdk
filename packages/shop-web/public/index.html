@@ -423,8 +423,9 @@ document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} 
     const res = await fetch(`${regUrl}/api/services/urls`, { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       const urls = await res.json();
-      if (urls.monitor) {
-        document.getElementById('monitor-btn').href = `${urls.monitor}/monitor.html`;
+      const demoUrl = urls['platform-demo'];
+      if (demoUrl) {
+        document.getElementById('monitor-btn').href = `${demoUrl}/monitor.html`;
         return;
       }
     }

@@ -272,17 +272,57 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
   }
 
   // 서비스 목록 seed
+  // prefix는 비즈니스 도메인의 좌표 공간이며 특정 서비스의 배타적 소유가 아님.
+  // svc_ref 차원이 발생 서비스를 인코딩하므로 여러 서비스가 같은 prefix에 이벤트를 쓸 수 있다.
+  // ownedPrefixes = 이 서비스가 주로 produce하는 prefix (Projection 배치 기준)
+  // consumedPrefixes = 이 서비스가 조회/소비하는 prefix
   const demoServices = [
-    { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", url: "http://localhost:5220", ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"] },
-    { serviceId: "shopping-backend", name: "쇼핑 백엔드", tier: "backend", team: "backend", ownedPrefixes: ["order_event", "permission", "event", "endpoint"] },
-    { serviceId: "auth", name: "인증 서비스", tier: "backend", team: "platform", ownedPrefixes: ["rbac"] },
-    { serviceId: "payment", name: "결제 서비스", tier: "backend", team: "backend", ownedPrefixes: [] },
-    { serviceId: "gateway", name: "API 게이트웨이", tier: "backend", team: "platform", ownedPrefixes: ["flow_point"] },
-    { serviceId: "content-service", name: "콘텐츠 서비스", tier: "frontend", team: "frontend", ownedPrefixes: ["content", "relational"] },
-    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300", ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "pattern_match", "pattern_anomaly", "ingest_record"] },
-    { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200", ownedPrefixes: [] },
-    { serviceId: "monitor", name: "3D 모니터", tier: "frontend", team: "frontend", url: "http://localhost:5176", ownedPrefixes: [] },
-    { serviceId: "dashboard", name: "Dev Dashboard", tier: "infra", team: "platform", url: "http://localhost:3300/dev/", ownedPrefixes: [] },
+    // ── 프론트엔드 ──
+    { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", url: "http://localhost:5220",
+      ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"],
+      consumedPrefixes: ["service", "permission"] },
+    { serviceId: "platform-demo", name: "플랫폼 데모", tier: "frontend", team: "frontend", url: "http://localhost:5176",
+      ownedPrefixes: [],
+      consumedPrefixes: ["service", "page_view", "tracking", "endpoint", "flow_point", "order_event"] },
+    { serviceId: "platform-demo-api", name: "플랫폼 데모 API", tier: "backend", team: "frontend", url: "http://localhost:8787",
+      ownedPrefixes: ["execution_context"],
+      consumedPrefixes: ["service", "permission", "endpoint"] },
+    { serviceId: "content-service", name: "콘텐츠 서비스", tier: "frontend", team: "frontend",
+      ownedPrefixes: ["content", "relational"] },
+    // ── 비즈니스 백엔드 ──
+    { serviceId: "shopping-backend", name: "쇼핑 백엔드", tier: "backend", team: "backend",
+      ownedPrefixes: ["order_event", "endpoint", "event"],
+      consumedPrefixes: ["service", "permission", "cart_event"] },
+    { serviceId: "auth", name: "인증 서비스", tier: "backend", team: "platform",
+      ownedPrefixes: ["rbac", "auth_event"],
+      consumedPrefixes: ["service"] },
+    { serviceId: "payment", name: "결제 서비스", tier: "backend", team: "backend",
+      ownedPrefixes: ["flow_point", "permission"],
+      consumedPrefixes: ["service", "order_event"] },
+    { serviceId: "gateway", name: "API 게이트웨이", tier: "backend", team: "platform",
+      ownedPrefixes: ["endpoint", "schema_validation"],
+      consumedPrefixes: ["service", "rbac"] },
+    // ── 인프라 ──
+    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300",
+      ownedPrefixes: ["deploy_event", "health_event", "service", "data_policy", "engine_event", "schema_event"] },
+    { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200",
+      ownedPrefixes: ["ingest_record", "event_classification", "metric_point", "pipeline_point", "pattern_match", "pattern_anomaly"],
+      consumedPrefixes: ["service"] },
+    { serviceId: "dashboard", name: "Dev Dashboard", tier: "infra", team: "platform", url: "http://localhost:3300/dev/",
+      ownedPrefixes: [],
+      consumedPrefixes: ["service", "deploy_event", "health_event", "pipeline_point"] },
+    // ── 시스템 (CLI / CI / DKG 엔진) ──
+    { serviceId: "qa-sdk-cli", name: "QA SDK CLI", tier: "system", team: "platform",
+      ownedPrefixes: ["cli_event", "skill_execution"],
+      consumedPrefixes: ["service", "dkg_event"] },
+    { serviceId: "ci-runner", name: "CI Runner", tier: "system", team: "platform",
+      ownedPrefixes: ["build_event", "test_event", "contract_check"] },
+    { serviceId: "dkg-engine", name: "DKG 엔진", tier: "system", team: "platform",
+      ownedPrefixes: ["dkg_event", "dkg_decision_event", "dkg_observation_event", "observation_event", "spec_event", "edge_activity"],
+      consumedPrefixes: ["service", "build_event", "test_event"] },
+    { serviceId: "registry-service", name: "레지스트리 서비스", tier: "infra", team: "platform", url: "http://localhost:3300",
+      ownedPrefixes: ["version_point", "gate_point"],
+      consumedPrefixes: ["service"] },
   ];
   await configStore.set("demo", "services", JSON.stringify(demoServices));
   logger.info({ count: demoServices.length }, "seeded demo services to config store");
@@ -303,13 +343,16 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
     { catalogId: "demo", namespace: "shop", svcName: "auth",            env: "dev", region: "asia", url: "http://localhost:4200" },
     { catalogId: "demo", namespace: "shop", svcName: "payment",         env: "dev", region: "asia", url: "http://localhost:4300" },
     { catalogId: "demo", namespace: "shop", svcName: "gateway",         env: "dev", region: "asia", url: "http://localhost:4400" },
-    // dev/asia — 프론트엔드 (5xxx)
-    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",    env: "dev", region: "asia", url: "http://localhost:5220" },
-    { catalogId: "demo", namespace: "shop", svcName: "monitor",         env: "dev", region: "asia", url: "http://localhost:5176" },
-    // prod/asia — 예시 (Tailscale/Cloudflare URL)
-    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",    env: "prod", region: "asia", url: "https://shop.example.com" },
-    { catalogId: "demo", namespace: "shop", svcName: "ingest-server",   env: "prod", region: "asia", url: "https://ingest.example.com" },
-    { catalogId: "demo", namespace: "shop", svcName: "registry",        env: "prod", region: "asia", url: "https://registry.example.com" },
+    // dev/asia — 프론트엔드 (5xxx) + CF Worker (8xxx)
+    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "dev", region: "asia", url: "http://localhost:5220" },
+    { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "dev", region: "asia", url: "http://localhost:5176" },
+    { catalogId: "demo", namespace: "shop", svcName: "platform-demo-api", env: "dev", region: "asia", url: "http://localhost:8787" },
+    // prod/asia — Cloudflare Pages / Workers / Railway
+    { catalogId: "demo", namespace: "shop", svcName: "shopping-web",      env: "prod", region: "asia", url: "https://shop.example.com" },
+    { catalogId: "demo", namespace: "shop", svcName: "platform-demo",     env: "prod", region: "asia", url: "https://platform-demo.pages.dev" },
+    { catalogId: "demo", namespace: "shop", svcName: "platform-demo-api", env: "prod", region: "asia", url: "https://platform-demo-api.astralclover.workers.dev" },
+    { catalogId: "demo", namespace: "shop", svcName: "ingest-server",     env: "prod", region: "asia", url: "https://ingest.example.com" },
+    { catalogId: "demo", namespace: "shop", svcName: "registry",          env: "prod", region: "asia", url: "https://registry.example.com" },
   ];
 
   for (const ep of endpoints) {

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { installSimpleShutdown } from "@qa-sdk/core";
 import { env } from "./config/env.js";

@@ -1,1 +1,4 @@
+# Cloudflare Pages / Netlify — API 프록시
+# 배포 시 URL을 실제 백엔드로 교체
 /api/* https://platform-demo-api.astralclover.workers.dev/api/:splat 200
+/v1/*  https://platform-demo-api.astralclover.workers.dev/v1/:splat 200

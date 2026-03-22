@@ -16,12 +16,16 @@
  */
 
 export interface Env {
-  /** 인증 모드: bypass(개발) | api-key | cf-access */
+  /** 인증 모드: bypass(개발) | api-key | cf-access | zero-trust */
   AUTH_MODE?: string;
   /** API Key 목록 (쉼표 구분) */
   AUTH_API_KEYS?: string;
   /** CF Access 팀 도메인 */
   AUTH_CF_TEAM_DOMAIN?: string;
+  /** CF Access 정책 AUD 태그 (선택 — JWT audience 검증) */
+  AUTH_CF_ACCESS_AUD?: string;
+  /** 허용 이메일 도메인 (쉼표 구분, 예: "mycompany.com,partner.io") */
+  AUTH_ALLOWED_DOMAINS?: string;
 
   /** 서비스 URL */
   INGEST_URL?: string;

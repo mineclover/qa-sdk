@@ -64,6 +64,11 @@ input.btn{width:170px;color:#556;text-align:left}
 .sl-role:hover{background:rgba(255,255,255,0.04)}
 .sl-role.sl-active{opacity:1}.sl-role.sl-dimmed{opacity:0.3}
 .sl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── Flow Step Row (hover/click highlight) ── */
+.flow-step-row{padding:3px 6px;border-radius:3px;cursor:pointer;transition:background .15s,color .15s;pointer-events:all;font-size:9px}
+.flow-step-row:hover{background:rgba(100,255,218,0.1);color:var(--mint)}
+.flow-step-row.fs-active{background:rgba(255,159,67,0.15);color:var(--amber);border-left:2px solid var(--amber)}
 </style>
 </head>
 <body>
@@ -76,7 +81,7 @@ input.btn{width:170px;color:#556;text-align:left}
 <canvas id="c"></canvas>
 
 <!-- Info Overlay -->
-<div id="info-overlay" style="display:flex;position:fixed;inset:0;z-index:100;background:rgba(5,5,8,0.92);justify-content:center;align-items:center;pointer-events:all">
+<div id="info-overlay" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(5,5,8,0.92);justify-content:center;align-items:center;pointer-events:all">
   <div style="max-width:640px;width:90%;max-height:80vh;overflow-y:auto;background:rgba(10,12,18,0.95);border:1px solid rgba(100,255,218,0.1);border-radius:8px;padding:32px 36px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
       <div>
@@ -256,7 +261,7 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   var dash = document.getElementById('link-dashboard');
   var wsInput = document.getElementById('ws-url');
   if(dash) dash.href = cfg.DASHBOARD_URL || 'http://localhost:3300/dev/';
-  if(wsInput) wsInput.value = cfg.WS_URL || 'ws://localhost:3100/v1/ws';
+  if(wsInput) wsInput.value = cfg.WS_URL || 'ws://localhost:3200/v1/ws';
 })();
 // ── Info overlay 닫기 (module 로딩 실패와 무관하게 동작) ──
 (function(){
@@ -614,9 +619,44 @@ function updateHUD(step,ctx){
   if(ctx)$('h-ctx').innerHTML=Object.entries(ctx).map(([p,s])=>`<span class="h">${p}</span> ${s}`).join('<br>');
 }
 
+// ── Flow step 개별 하이라이트 ──
+let _fsActiveRow=null;
+function highlightFlowStep(cell,row){
+  // active row 표시
+  if(_fsActiveRow)_fsActiveRow.classList.remove('fs-active');
+  _fsActiveRow=row;row.classList.add('fs-active');
+  // 해당 셀만 활성 + glow
+  aSet=new Set([cell]);setGlow(cell);markCellRoles([cell]);
+  // beam: 현재 entry에서 인접 연결만
+  beamRenderer.clearAll();
+  const cur=FH.current();
+  if(cur&&cur.flow){
+    const idx=cur.flow.findIndex(f=>f.cell===cell);
+    if(idx>0){const a=cellMap[cur.flow[idx-1].cell],b=cellMap[cell];if(a&&b)beam(a,b,cell)}
+    if(idx>=0&&idx<cur.flow.length-1){const a=cellMap[cell],b=cellMap[cur.flow[idx+1].cell];if(a&&b)beam(a,b,cell)}
+  }
+  showCellInfo(cell);
+}
+function restoreFullFlow(){
+  if(_fsActiveRow){_fsActiveRow.classList.remove('fs-active');_fsActiveRow=null}
+  const cur=FH.current();
+  if(cur){aSet=new Set(cur.keys);markCellRoles([...cur.keys])}
+  beamRenderer.clearAll();
+}
+
 function showFlow(entry){
   if(!entry)return;$('h-flow').style.display='block';$('flow-idx').textContent=FH.indexLabel();$('flow-title').textContent=entry.name;
-  if(entry.flow.length)$('flow-steps').innerHTML=entry.flow.map(f=>`<div><span style="color:#889">${f.tier}</span> ${f.l}</div>`).join('');
+  if(!entry.flow.length)return;
+  const container=$('flow-steps');container.innerHTML='';
+  entry.flow.forEach(f=>{
+    const row=document.createElement('div');
+    row.className='flow-step-row m';
+    row.innerHTML=`<span style="color:#889">${f.tier}</span> ${f.l}`;
+    row.addEventListener('mouseenter',()=>highlightFlowStep(f.cell,row));
+    row.addEventListener('click',e=>{e.stopPropagation();highlightFlowStep(f.cell,row)});
+    container.appendChild(row);
+  });
+  container.addEventListener('mouseleave',restoreFullFlow);
 }
 
 function showCellInfo(key){
@@ -859,7 +899,7 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 // ═══════════════════════════════════════════════════
 const moveSpeed=0.5;
 const _isEmbed=new URLSearchParams(location.search).get('embed')==='true';
-let infoVisible=!_isEmbed;
+let infoVisible=false;
 
 function toggleInfo(){if(_isEmbed)return;infoVisible=!infoVisible;$('info-overlay').style.display=infoVisible?'flex':'none'}
 

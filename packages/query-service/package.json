@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
@@ -16,9 +18,10 @@
   "dependencies": {
     "@hono/node-server": "^1.14.1",
     "@qa-sdk/core": "workspace:*",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.39.3",
-    "index-meta": "workspace:*",
     "hono": "^4.7.5",
+    "index-meta": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "zod": "^3.24.2"
   },

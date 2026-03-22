@@ -8,14 +8,21 @@
     "lint": "pnpm -r run lint",
     "clean": "pnpm -r run clean",
     "dev:ingest": "pnpm --filter @qa-sdk/ingest-server dev",
+    "dev:registry": "pnpm --filter @qa-sdk/registry-service dev",
+    "dev:shop": "pnpm --filter @qa-sdk/shop-web dev",
+    "dev:demo": "pnpm --filter platform-demo dev",
     "dev:viz": "pnpm --filter @qa-sdk/viz-web dev",
     "dev:roleplay": "pnpm --filter @qa-sdk/roleplay-web dev",
+    "demo": "concurrently -n reg,ing,shop,demo -c cyan,yellow,green,magenta \"pnpm dev:registry\" \"pnpm dev:ingest\" \"pnpm dev:shop\" \"pnpm dev:demo\"",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "vitest": "^1.6.1"
   }
 }
