@@ -230,6 +230,18 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
 </div>
 
 <script>
+// ── Info overlay 닫기 (module 로딩 실패와 무관하게 동작) ──
+(function(){
+  var overlay=document.getElementById('info-overlay');
+  var btnClose=document.getElementById('btn-close-info');
+  if(!overlay)return;
+  function hide(){overlay.style.display='none';}
+  if(btnClose)btnClose.addEventListener('click',hide);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)hide();});
+  document.addEventListener('keydown',function(e){
+    if(overlay.style.display!=='none'&&(e.key==='Escape'||overlay.style.display==='flex')){hide();}
+  });
+})();
 // ── Embed mode: ?embed=true 시 HUD/컨트롤 숨기고 캔버스만 표시 ──
 (function(){
   if(new URLSearchParams(location.search).get('embed')!=='true')return;
