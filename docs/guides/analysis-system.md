@@ -4,9 +4,43 @@
 
 ---
 
-## 1. Prefix — 좌표 공간의 단위
+## 1. Prefix — 의미의 재사용 단위
 
-prefix는 **축(axis)의 조합으로 구성된 주소 공간**이다. 시스템의 모든 이벤트는 하나 이상의 prefix 주소로 인코딩된다.
+prefix는 **특정 의미를 가진 유한 차원의 조합**이다. 도메인에 소속되기 전에, 그 자체로 독립적인 의미 단위다.
+
+### 본질
+
+prefix는 "이 개념을 어떤 차원들로 분류하는가"를 정의한다.
+
+```
+tracking = trackAction × page × userType
+  → "사용자 행동"이라는 개념을 행위종류 × 페이지 × 사용자유형으로 분류
+
+이 prefix는 쇼핑몰에서도, 블로그에서도, 어디서든 사용 가능하다.
+"사용자 행동의 분류"라는 의미 자체가 도메인에 종속되지 않는다.
+```
+
+### 재사용과 관찰
+
+prefix를 명시적으로 관리하면 **"이 개념이 시스템 전체에서 얼마나 쓰이는가"**를 관찰할 수 있다.
+
+```
+endpoint = svc_ref × resource_type × http_method × api_version
+  → "API 호출 분류"라는 개념
+
+이 prefix를 참조하는 곳:
+  - dsl-checkout (결제 흐름에서 API 호출 추적)
+  - dsl-infra (인프라 변경의 API 영향)
+  - dsl-pipeline (파이프라인 단계의 API 호출)
+  - IL-checkout-flow (결제 흐름 IntentLink)
+  - IL-api-event (API↔이벤트 연결)
+  - IL-infra-impact (인프라 영향)
+
+→ dkg impact endpoint 실행하면:
+  "이 prefix를 변경하면 3개 DSL + 3개 IntentLink + 4개 서비스에 영향"
+```
+
+**prefix가 독립적 의미 단위이기 때문에, 참조하는 모든 곳의 영향을 추적할 수 있다.**
 
 ### 구조
 
@@ -22,30 +56,32 @@ tracking prefix:
 | kind | 의미 | 예시 |
 |------|------|------|
 | `axis` | 유한한 분류 차원 | `trackAction: ["click","view","scroll",...]` |
-| `prefix_ref` | 다른 prefix 주소를 참조 | `svc_ref → service prefix의 주소` |
+| `prefix_ref` | 다른 prefix의 주소를 참조 | `svc_ref → service prefix의 주소` |
 | `table_ref` | DB 테이블을 참조 | `actor → members 테이블` |
+
+`prefix_ref`는 **prefix 간 참조**다. endpoint prefix가 `svc_ref`로 service prefix를 참조하면, "이 API 호출이 어떤 서비스에서 발생했는가"를 좌표에 포함시킨다. prefix가 다른 prefix를 조합하여 더 풍부한 의미를 구성하는 방식이다.
 
 ### 카테고리 (6종)
 
-| 카테고리 | 의미 | 예시 prefix |
-|---------|------|------------|
-| entity | 상태/구성 정보 | service, content, tracking |
-| event | 발생한 행위 | cart_event, auth_event, deploy_event |
-| observation | 관측 포인트 | page_view, endpoint, flow_point |
-| policy | 접근 제어 | permission, rbac |
-| relation | 관계 모델 | relational |
-| state | 상태 전이 | (향후) |
+prefix의 의미적 성격을 분류한다. prefix 자체의 성격이지 소속이 아니다.
 
-### 현재 39 prefix → 6 도메인
+| 카테고리 | 의미 | 예시 |
+|---------|------|------|
+| entity | 상태/구성 — "무엇이 존재하는가" | service, content, tracking |
+| event | 행위 — "무엇이 발생했는가" | cart_event, auth_event, deploy_event |
+| observation | 관측 — "무엇이 관측되었는가" | page_view, endpoint, flow_point |
+| policy | 접근 제어 — "누가 무엇을 할 수 있는가" | permission, rbac |
+| relation | 관계 — "무엇이 어떻게 연결되는가" | relational |
 
-| 도메인 | prefix | 역할 |
-|--------|--------|------|
-| shopping | permission, event, service, rbac | 쇼핑 서비스 접근/이벤트 |
-| tracking | tracking, content, relational | 사용자 행동/콘텐츠 |
-| event | cart_event, auth_event, order_event | 비즈니스 이벤트 (table_ref) |
-| observation | page_view, endpoint, flow_point + 9개 | 관측/패턴/검증 |
-| infra | deploy_event, health_event + 3개 | 인프라/수집/메트릭 |
-| dev | build_event, test_event + 11개 | 자기참조 (DKG/CLI) |
+### 조직 레이어
+
+prefix 위에 3가지 조직 구조가 올라간다. prefix 자체는 이것들에 종속되지 않는다.
+
+| 레이어 | 관계 | 역할 |
+|--------|------|------|
+| Domain | 1 prefix : 1 domain | 관리 편의상 소속 구분 |
+| DSL Bundle | 1 prefix : N DSL | 같은 서비스 맥락에서 협력하는 prefix 묶음 |
+| IntentLink | 1 prefix : N IL | 함께 관측되어야 하는 의도 선언 |
 
 ---
 
