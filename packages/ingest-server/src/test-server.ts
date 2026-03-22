@@ -85,6 +85,47 @@ async function setupConvergence() {
       } catch { /* 무시 */ }
     }, 3_000);
 
+    // ── Transition Engine (Phase 2.5, optional) ──
+    if (process.env["TRANSITION_ENGINE_ENABLED"] === "true") {
+      try {
+        const { createTransitionFunctions, DEMO_TRANSITION_SPECS } = await import("@qa-sdk/spec-core/transition");
+        const transitionEngine = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+        const transitionCatalog = provider.getCatalog();
+
+        // 새 trace 감지 시 transition processing
+        const processedSessions = new Set<string>();
+        setInterval(async () => {
+          try {
+            const allTraceIds = recordStore.getTraceIds();
+            for (const traceId of allTraceIds) {
+              if (processedSessions.has(traceId)) continue;
+              processedSessions.add(traceId);
+
+              const records = await recordStore.findByTraceId(traceId);
+              if (records.length === 0) continue;
+
+              // address_context 디코딩 → 이벤트 좌표 추출
+              const events = records.map(r => ({
+                log_id: r.logId,
+                event_key: r.eventKey,
+                timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
+                address_context: r.addressContext,
+              }));
+
+              const result = transitionEngine.processSession({ sessionId: traceId, events });
+              if (result.instances.length > 0) {
+                console.log(`[transition] trace=${traceId}: ${result.instances.length} transitions, ${result.violations.length} violations, ${result.unmatchedCount} unmatched`);
+              }
+            }
+          } catch { /* 무시 */ }
+        }, 5_000);
+
+        console.log(`[e2e:test-server] transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
+      } catch (err) {
+        console.warn("[e2e:test-server] transition engine setup failed:", err);
+      }
+    }
+
     process.on("SIGTERM", () => void pipeline.close());
     process.on("SIGINT", () => void pipeline.close());
     console.log(`[e2e:test-server] convergence pipeline enabled (threshold=5, interval=5s)`);
