@@ -109,6 +109,74 @@ describe("converge-chain — 4가지 행위 구분", () => {
     expect(result.decisions[0].id).toContain("MERGE");
   });
 
+  it("DEC-SEP 활성 결정이 있으면 merge 제안 억제", () => {
+    const graph = deriveFromCatalog(DEMO_CATALOG);
+
+    // initiator↔channel에 대한 DEC-SEP 추가
+    graph.addNode({
+      kind: "decision",
+      id: "DEC-SEP-initiator-channel",
+      date: "2026-03-20",
+      title: "initiator와 channel 분리 유지",
+      context: "test",
+      rationale: "도메인이 다름",
+      lifecycle: "active",
+    });
+    graph.addEdge("justifies", "DEC-SEP-initiator-channel", "initiator");
+    graph.addEdge("justifies", "DEC-SEP-initiator-channel", "channel");
+
+    const entriesMap = new Map<string, readonly string[]>();
+    for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
+      const versions = Object.keys(axis.versions);
+      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      if (latest?.entries) entriesMap.set(id, [...latest.entries]);
+    }
+
+    const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
+
+    // initiator↔channel이 merge 대상에서 제외되어야 함
+    const mergeTargets = result.actions
+      .filter(a => a.kind === "merge")
+      .flatMap(a => (a as any).targets as string[]);
+
+    const hasInitiatorChannel = mergeTargets.includes("initiator") && mergeTargets.includes("channel");
+    expect(hasInitiatorChannel).toBe(false);
+
+    console.log(`  DEC-SEP 억제 후 merge: ${result.summary.merges}건`);
+  });
+
+  it("DEC-SEP가 superseded이면 merge 제안 재개", () => {
+    const graph = deriveFromCatalog(DEMO_CATALOG);
+
+    // superseded된 DEC-SEP — 억제하지 않아야 함
+    graph.addNode({
+      kind: "decision",
+      id: "DEC-SEP-initiator-channel",
+      date: "2026-03-20",
+      title: "initiator와 channel 분리 유지",
+      context: "test",
+      rationale: "도메인이 다름",
+      lifecycle: "superseded",  // 대체됨 → 재검토 허용
+    });
+
+    const entriesMap = new Map<string, readonly string[]>();
+    for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
+      const versions = Object.keys(axis.versions);
+      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      if (latest?.entries) entriesMap.set(id, [...latest.entries]);
+    }
+
+    const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
+
+    // superseded이므로 initiator↔channel이 다시 merge 후보
+    const mergeTargets = result.actions
+      .filter(a => a.kind === "merge")
+      .flatMap(a => (a as any).targets as string[]);
+
+    expect(mergeTargets).toContain("initiator");
+    expect(mergeTargets).toContain("channel");
+  });
+
   it("각 action.kind가 명확히 분리됨", () => {
     const graph = deriveFromCatalog(DEMO_CATALOG);
     const entriesMap = new Map<string, readonly string[]>();
