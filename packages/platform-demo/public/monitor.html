@@ -718,6 +718,11 @@ canvas.addEventListener('click',e=>{
 });
 
 // ═══════════════════════════════════════════════════
+//  키보드 상태 (RENDER LOOP에서 참조하므로 선행 선언)
+// ═══════════════════════════════════════════════════
+const keyState={};
+
+// ═══════════════════════════════════════════════════
 //  RENDER LOOP
 // ═══════════════════════════════════════════════════
 const clk=new T.Clock();
@@ -793,7 +798,6 @@ addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProje
 //  키보드 네비게이션
 // ═══════════════════════════════════════════════════
 const moveSpeed=0.5;
-const keyState={};
 const _isEmbed=new URLSearchParams(location.search).get('embed')==='true';
 let infoVisible=!_isEmbed;
 
