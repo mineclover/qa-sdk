@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
+// Generated from Catalog "demo" (hash: 1eae1ce8030e) at 2026-03-22T19:56:48
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
@@ -120,7 +120,7 @@ export const CHANNEL = {
 } as const;
 export type Channel = typeof CHANNEL[keyof typeof CHANNEL];
 
-/** cli_domain — CLI 도메인 (entries: 9, capacity: 16) */
+/** cli_domain — CLI 도메인 (entries: 10, capacity: 16) */
 export const CLI_DOMAIN = {
   DKG_GRAPH: "dkg-graph",
   DKG_SKILL: "dkg-skill",
@@ -131,6 +131,7 @@ export const CLI_DOMAIN = {
   CATALOG: "catalog",
   SELF_REF: "self-ref",
   SYSTEM: "system",
+  INGEST: "ingest",
 } as const;
 export type CliDomain = typeof CLI_DOMAIN[keyof typeof CLI_DOMAIN];
 
@@ -146,7 +147,7 @@ export const CLI_INTENT = {
 } as const;
 export type CliIntent = typeof CLI_INTENT[keyof typeof CLI_INTENT];
 
-/** cli_subject — CLI 대상 (entries: 14, capacity: 32) */
+/** cli_subject — CLI 대상 (entries: 16, capacity: 32) */
 export const CLI_SUBJECT = {
   AXIS: "axis",
   PREFIX: "prefix",
@@ -162,6 +163,8 @@ export const CLI_SUBJECT = {
   SPEC: "spec",
   SCHEMA: "schema",
   CATALOG: "catalog",
+  SERVICE: "service",
+  TABLE: "table",
 } as const;
 export type CliSubject = typeof CLI_SUBJECT[keyof typeof CLI_SUBJECT];
 
@@ -755,18 +758,23 @@ export const SUBJECTKIND = {
 } as const;
 export type Subjectkind = typeof SUBJECTKIND[keyof typeof SUBJECTKIND];
 
-/** svc_name — 서비스명 (entries: 10, capacity: 32) */
+/** svc_name — 서비스명 (entries: 15, capacity: 32) */
 export const SVC_NAME = {
   SHOPPING_WEB: "shopping-web",
   SHOPPING_BACKEND: "shopping-backend",
   AUTH: "auth",
   PAYMENT: "payment",
   GATEWAY: "gateway",
-  REGISTRY: "registry",
+  REGISTRY_SERVICE: "registry-service",
   INGEST_SERVER: "ingest-server",
-  MONITOR: "monitor",
+  PLATFORM_DEMO: "platform-demo",
   CONTENT_SERVICE: "content-service",
   INFRA_CONTROLLER: "infra-controller",
+  GATE_SERVICE: "gate-service",
+  QUERY_SERVICE: "query-service",
+  DECODE_SERVICE: "decode-service",
+  REGISTRY_SERVER: "registry-server",
+  PLATFORM_DEMO_API: "platform-demo-api",
 } as const;
 export type SvcName = typeof SVC_NAME[keyof typeof SVC_NAME];
 

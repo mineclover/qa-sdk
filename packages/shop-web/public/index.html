@@ -216,12 +216,35 @@ const monitor = createQaMonitor({
 
 let eventCount = 0, userType = 'guest';
 
+// svc_ref를 사용하는 prefix에 service 주소를 자동 주입
+const SVC_REF_PREFIXES = new Set([
+  'page_view', 'endpoint', 'flow_point', 'permission', 'tracking',
+  'cart_event', 'auth_event', 'order_event', 'event',
+  'pipeline_point', 'data_policy', 'health_event', 'deploy_event',
+  'engine_event', 'schema_event', 'schema_validation',
+  'pattern_match', 'pattern_anomaly', 'version_point', 'gate_point',
+  'execution_context', 'ingest_record', 'event_classification', 'metric_point',
+]);
+const SVC_ADDR = {
+  env: _qs.get('env') || _cfg.ENV || 'dev',
+  region: _qs.get('region') || _cfg.REGION || 'asia',
+  svc_name: 'shopping-web',
+  namespace: 'shop',
+};
+
 function qaTrack(eventKey, prefixes) {
   eventCount++;
   document.getElementById('qa-events').textContent = `events: ${eventCount}`;
   document.getElementById('qa-status').textContent = `qa: ${eventKey}`;
+  // svc_ref 자동 주입 — prefix_ref 차원이 있는 prefix에 service 좌표 바인딩
+  const enriched = {};
+  for (const [pid, dims] of Object.entries(prefixes)) {
+    enriched[pid] = SVC_REF_PREFIXES.has(pid) && !dims.svc_ref
+      ? { svc_ref: SVC_ADDR, ...dims }
+      : dims;
+  }
   // emitWithCoords — 좌표 인코딩 + 전송을 한 번에
-  monitor.emitWithCoords(eventKey, prefixes, { event: eventKey, userType });
+  monitor.emitWithCoords(eventKey, enriched, { event: eventKey, userType });
 }
 
 // ═══════════════════════════════════════════════════

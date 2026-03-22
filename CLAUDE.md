@@ -13,7 +13,7 @@
 - 플랫폼: @qa-sdk/core → @qa-sdk/logger → @qa-sdk/codec → @qa-sdk/context → @qa-sdk/sdk
 
 ### QA 플랫폼 (@qa-sdk/* scoped)
-- 패키지: `@qa-sdk/core`, `@qa-sdk/convergence`, `@qa-sdk/browser-codec`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/registry-server`, `@qa-sdk/cli`
+- 패키지: `@qa-sdk/core`, `@qa-sdk/convergence`, `@qa-sdk/browser-codec`, `@qa-sdk/logger`, `@qa-sdk/codec`, `@qa-sdk/context`, `@qa-sdk/sdk`, `@qa-sdk/engine`, `@qa-sdk/store`, `@qa-sdk/apm`, `@qa-sdk/browser`, `@qa-sdk/registry-client`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `@qa-sdk/cli`
 - 서비스 (unscoped): `gate-service`, `query-service`
 - `@qa-sdk/decode-service`
 - 네이밍: `@qa-sdk/*` scope (내부 플랫폼 서비스)
@@ -442,7 +442,7 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
 - 서비스별 env 설정: `SQLITE_DRIVER` (node|better) — gate-service, query-service만 지원. registry-service는 NodeSqliteDriver 고정
 - `SQLITE_PATH` — 서비스별 분리 (gate-service.sqlite, query-service.sqlite 등). registry-service 기본값 `:memory:` (운영 시 반드시 설정)
 - DkgSqliteStore `catalog_id` 컬럼: dkg_nodes/dkg_edges에 마이그레이션 자동 추가. 기본값 "demo". 멀티 카탈로그 격리용
-- 서비스 포트 레지스트리: registry-server(3100), ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600). 각 서비스 시작 시 충돌 경고
+- 서비스 포트 레지스트리: ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600). 각 서비스 시작 시 충돌 경고
 
 ### index-meta 연동 (1D 주소 저장)
 - 1D integer address → index-meta의 EntryFlagStore (active/inactive, append-only 이력) 활용 가능
@@ -531,7 +531,7 @@ ingest-server Phase 2 완료
 | `REGISTRY_URL` | — | ingest-server | 스키마 검증용 레지스트리 URL |
 | `REGISTRY_VALIDATION_MODE` | `"warn"` | ingest-server | strict/warn/off |
 | `SQLITE_PATH` | `":memory:"` | registry-service | SQLite 경로 (운영: 반드시 설정) |
-| `DATABASE_URL` | — (필수) | registry-server | PostgreSQL 연결 URL |
+| `DATABASE_URL` | — (필수) | ingest-server (TRACE_DATABASE_URL) | PostgreSQL 연결 URL |
 | `GATE_SERVICE_URL` | — | query-service | gate-service 연동 URL |
 | `QUERY_DEFAULT_STRATEGY` | `"most-specific"` | query-service | 질의 전략 |
 | `QUERY_GATE_FAILURE_MODE` | `"fail-open"` | query-service | gate 실패 시 동작 |

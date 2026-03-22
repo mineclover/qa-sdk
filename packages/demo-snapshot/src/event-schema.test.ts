@@ -13,12 +13,13 @@ import {
 
 describe("이벤트 = 관계 정의 (3-slot: actor × action × target)", () => {
 
-  // ── cart_event: table_ref(actor) × axis(action) × table_ref(target) ────
+  // ── cart_event: svc_ref × table_ref(actor) × axis(action) × table_ref(target) ──
 
   describe("cart_event — 기본 이벤트 prefix", () => {
-    it("구조: 3개 label, table_ref 2개 + axis 1개", () => {
+    it("구조: 4개 label, svc_ref(prefix_ref) + table_ref 2개 + axis 1개", () => {
       const s = getPrefixStructure(DEMO_CATALOG, "cart_event");
-      expect(s.labels).toEqual(["actor", "action", "target"]);
+      expect(s.labels).toEqual(["svc_ref", "actor", "action", "target"]);
+      expect(s.dims.svc_ref).toEqual({ kind: "prefix_ref", prefixId: "service" });
       expect(s.dims.actor).toEqual({ kind: "table_ref", table: "members" });
       expect(s.dims.action).toEqual({ kind: "axis", axisId: "cart_action" });
       expect(s.dims.target).toEqual({ kind: "table_ref", table: "items" });

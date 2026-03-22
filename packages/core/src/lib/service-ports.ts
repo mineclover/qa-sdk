@@ -15,7 +15,6 @@ export interface ServicePortEntry {
 /** 서비스별 기본 포트 할당 (SSOT) */
 export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   // ── 인프라 서비스 (3xxx) ──
-  { name: "registry-server",    defaultPort: 3100, description: "Prefix/version 메타데이터 (PostgreSQL)" },
   { name: "ingest-server",      defaultPort: 3200, description: "이벤트 수집 + Phase-2 (PostgreSQL/In-memory)" },
   { name: "registry-service",   defaultPort: 3300, description: "카탈로그/주소 스키마 관리 (SQLite) + Dev Dashboard" },
   { name: "gate-service",       defaultPort: 3400, description: "주소 상태 게이트 (SQLite)" },

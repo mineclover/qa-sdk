@@ -70,6 +70,7 @@ async function createStores(sqlitePath: string) {
 
   const { SqlConfigStore } = await import("./stores/sql-config-store.js");
   const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
+  const { SqlEventSchemaStore } = await import("./stores/sql-event-schema-store.js");
 
   return {
     prefixRegistry: new SqlPrefixRegistry(driver),
@@ -80,6 +81,7 @@ async function createStores(sqlitePath: string) {
     axisStore: new SqlAxisProfileStore(driver),
     configStore: new SqlConfigStore(driver),
     endpointStore: new SqlServiceEndpointStore(driver),
+    eventSchemaStore: new SqlEventSchemaStore(driver),
   };
 }
 

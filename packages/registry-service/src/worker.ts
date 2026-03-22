@@ -15,6 +15,7 @@ import { SqlServiceEndpointStore } from "./stores/sql-service-endpoint-store.js"
 import { SqlPrefixOwnerStore } from "./stores/sql-prefix-owner-store.js";
 import { SqlDraftLockStore } from "./stores/sql-draft-lock-store.js";
 import { SqlAxisProfileStore } from "./stores/sql-axis-profile-store.js";
+import { SqlEventSchemaStore } from "./stores/sql-event-schema-store.js";
 import { SqlPrefixRegistry, SqlVersionLifecycleStore } from "index-meta";
 
 interface Env {
@@ -38,6 +39,7 @@ export default {
       catalogStore: new SqlCatalogStore(driver as any),
       configStore: new SqlConfigStore(driver as any),
       endpointStore: new SqlServiceEndpointStore(driver as any),
+      eventSchemaStore: new SqlEventSchemaStore(driver as any),
       axisStore: new SqlAxisProfileStore(driver as any),
       corsOrigin: "*",
     });

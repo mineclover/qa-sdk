@@ -52,8 +52,8 @@ export async function createDevDkgProvider(
   let lastInit = 0;
 
   // TransitionSpec 로드 (non-blocking, 실패 시 undefined)
-  let transitionSpecs: unknown;
-  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS; }).catch(() => {});
+  let transitionSpecs: readonly unknown[] | undefined;
+  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS as readonly unknown[]; }).catch(() => {});
 
   function ensureInit(): void {
     const now = Date.now();
@@ -70,13 +70,13 @@ export async function createDevDkgProvider(
       }
       const loaded = dkgStore.loadGraph();
       if (loaded.getAllNodes().length === 0) {
-        cachedGraph = (analysis as any).bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
+        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
         dkgStore.saveGraph(cachedGraph!, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
     } else {
-      cachedGraph = (analysis as any).bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
+      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
     }
 
     lastInit = now;

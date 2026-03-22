@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 6554b4a976b6) at 2026-03-22T18:39:49
+// Generated from Catalog "demo" (hash: 1eae1ce8030e) at 2026-03-22T19:56:48
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import { createIndexSDK } from "@qa-sdk/codec";
@@ -54,7 +54,7 @@ const SCHEMA = {
       capacity: 32,
     },
     cli_domain: {
-      entries: ["dkg-graph", "dkg-skill", "convergence", "spec", "coordinate", "registry", "catalog", "self-ref", "system"],
+      entries: ["dkg-graph", "dkg-skill", "convergence", "spec", "coordinate", "registry", "catalog", "self-ref", "system", "ingest"],
       capacity: 16,
     },
     cli_intent: {
@@ -62,7 +62,7 @@ const SCHEMA = {
       capacity: 16,
     },
     cli_subject: {
-      entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog"],
+      entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog", "service", "table"],
       capacity: 32,
     },
     constraint_op: {
@@ -258,7 +258,7 @@ const SCHEMA = {
       capacity: 32,
     },
     svc_name: {
-      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry", "ingest-server", "monitor", "content-service", "infra-controller"],
+      entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "registry-server", "platform-demo-api"],
       capacity: 32,
     },
     tag: {
@@ -346,9 +346,9 @@ export const sdk = createIndexSDK(SCHEMA);
 
 /** prefix별 snapshot supply 전략 */
 export const SNAPSHOT_SUPPLY = {
-  "auth_event": "implicit" as const,
+  "auth_event": "envelope" as const,
   "build_event": "implicit" as const,
-  "cart_event": "implicit" as const,
+  "cart_event": "envelope" as const,
   "cli_event": "implicit" as const,
   "content": "implicit" as const,
   "contract_check": "implicit" as const,
@@ -383,6 +383,6 @@ export const SNAPSHOT_SUPPLY = {
   "skill_execution": "implicit" as const,
   "spec_event": "implicit" as const,
   "test_event": "implicit" as const,
-  "tracking": "implicit" as const,
+  "tracking": "envelope" as const,
   "version_point": "envelope" as const,
 } as const;

@@ -57,4 +57,20 @@ CREATE TABLE IF NOT EXISTS config (
   updated_at   TEXT NOT NULL,
   PRIMARY KEY (catalog_id, config_type)
 );
+
+CREATE TABLE IF NOT EXISTS event_schema (
+  catalog_id     TEXT NOT NULL DEFAULT 'demo',
+  service_id     TEXT NOT NULL,
+  event_key      TEXT NOT NULL,
+  event_version  TEXT NOT NULL DEFAULT '1.0.0',
+  display_name   TEXT NOT NULL,
+  description    TEXT,
+  record_kind    TEXT NOT NULL DEFAULT 'log' CHECK (record_kind IN ('log', 'span', 'both')),
+  status         TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deprecated', 'retired')),
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  PRIMARY KEY (catalog_id, service_id, event_key, event_version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_schema_service ON event_schema(catalog_id, service_id);
 `;

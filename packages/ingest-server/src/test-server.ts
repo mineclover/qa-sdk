@@ -125,6 +125,7 @@ async function setupConvergence() {
               });
               if (events.length > 0) {
                 console.log(`[transition] decoded sample:`, JSON.stringify(events[0].address_context));
+                console.log(`[transition] full event[0]:`, JSON.stringify(events[0]));
               }
 
               const result = transitionEngine.processSession({ sessionId: traceId, events });

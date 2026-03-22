@@ -125,7 +125,7 @@ import {
 const _axes = {
   env:       { entries: ["dev", "stage", "prod", "test", "local"] as const, capacity: 32 },
   region:    { entries: ["asia", "usa"] as const, capacity: 32 },
-  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "registry-server", "platform-demo-api"] as const, capacity: 32 },
+  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "platform-demo-api"] as const, capacity: 32 },
   namespace: { entries: ["shop", "cms"] as const, capacity: 32 },
 } as const;
 
@@ -180,7 +180,7 @@ export const DEMO_CATALOG = {
         v1: {
           entries: _axes.svc_name.entries,
           capacity: _axes.svc_name.capacity,
-          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", "registry-service": "레지스트리", "ingest-server": "수집서버", "platform-demo": "데모", "content-service": "콘텐츠", "infra-controller": "인프라", "gate-service": "게이트", "query-service": "질의", "decode-service": "디코드", "registry-server": "레지스트리PG", "platform-demo-api": "데모API" },
+          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", "registry-service": "레지스트리", "ingest-server": "수집서버", "platform-demo": "데모", "content-service": "콘텐츠", "infra-controller": "인프라", "gate-service": "게이트", "query-service": "질의", "decode-service": "디코드", "platform-demo-api": "데모API" },
         },
       },
     },

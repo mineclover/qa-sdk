@@ -18,10 +18,12 @@ import { createMetricsRoutes } from "./routes/metrics.js";
 import { createDiagramRoutes } from "./routes/diagrams.js";
 import { createServiceRoutes } from "./routes/services.js";
 import { createEndpointRoutes } from "./routes/endpoints.js";
+import { createEventSchemaRoutes } from "./routes/event-schemas.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { ConfigStore } from "./stores/config-store.js";
 import type { ServiceEndpointStore } from "./stores/service-endpoint-store.js";
+import type { EventSchemaStore } from "./stores/event-schema-store.js";
 import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
 import { createDevDashboardRoutes } from "./routes/dev-dashboard.js";
 
@@ -34,6 +36,8 @@ export interface AppDeps extends RegistryServiceDeps {
   configStore?: ConfigStore;
   /** 서비스 엔드포인트 저장소 (좌표계 기반 URL 관리) */
   endpointStore?: ServiceEndpointStore;
+  /** 이벤트 스키마 저장소 (서비스별 이벤트 키/버전 관리) */
+  eventSchemaStore?: EventSchemaStore;
   corsOrigin?: string;
 }
 
@@ -84,6 +88,9 @@ export function createApp(deps: AppDeps) {
   }
   if (deps.endpointStore) {
     app.route("/", createEndpointRoutes({ endpointStore: deps.endpointStore }));
+  }
+  if (deps.eventSchemaStore) {
+    app.route("/", createEventSchemaRoutes({ eventSchemaStore: deps.eventSchemaStore }));
   }
   if (deps.devDashboardProvider) {
     app.route("/", createDevDashboardRoutes({
