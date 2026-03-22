@@ -23,12 +23,18 @@ import {
 // ── 카탈로그 파생값 검증 ─────────────────────────────────────────────────────
 
 describe("DEMO_CATALOG 파생값 검증", () => {
-  it("dimension entries가 기존 상수와 일치", () => {
-    expect([...DEMO_ENVS]).toEqual(["dev", "stage", "prod", "test", "local"]);
-    expect([...DEMO_REGIONS]).toEqual(["asia", "usa"]);
-    expect([...DEMO_SVCS]).toEqual(["shopping-web", "shopping-backend", "auth", "payment", "gateway"]);
-    expect([...DEMO_NSS]).toEqual(["shop", "cms"]);
-    expect([...DEMO_INITIATORS]).toEqual(["web", "mobile"]);
+  it("dimension entries가 DEMO_CATALOG의 축 entries와 일치 (SSOT 파생)", () => {
+    // 축 entries는 DEMO_CATALOG가 SSOT — 하드코딩 비교 대신 catalog에서 파생
+    const latestEntries = (axisId: string) => {
+      const axis = DEMO_CATALOG.axes[axisId];
+      const versions = Object.values(axis.versions);
+      return [...versions[0].entries];
+    };
+    expect([...DEMO_ENVS]).toEqual(latestEntries("env"));
+    expect([...DEMO_REGIONS]).toEqual(latestEntries("region"));
+    expect([...DEMO_SVCS]).toEqual(latestEntries("svc_name"));
+    expect([...DEMO_NSS]).toEqual(latestEntries("namespace"));
+    expect([...DEMO_INITIATORS]).toEqual(latestEntries("initiator"));
   });
 
   it("버전별 role entries/capacity (SSOT 파생)", () => {
