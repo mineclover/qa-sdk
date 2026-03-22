@@ -537,6 +537,10 @@ ingest-server Phase 2 완료
 | `QUERY_GATE_FAILURE_MODE` | `"fail-open"` | query-service | gate 실패 시 동작 |
 | `DECODE_MAP_SOURCE` | — | decode-service | DecodeMap JSON 파일/URL |
 | `CACHE_TTL_MS` | `60000` | decode-service | 디코더 캐시 TTL (ms) |
+| `TRANSITION_ENGINE_ENABLED` | `false` | ingest-server | Phase 2.5 전이 엔진 활성화 |
+| `TRANSITION_VIOLATION_MODE` | `"warn"` | ingest-server | strict=위반 시 에러, warn=로깅만 |
+| `TRANSITION_STATE_PATH` | — | ingest-server | SqliteStateStore 경로 |
+| `CATALOG_ID` | `"demo"` | ingest-server | 패턴 규칙 registry fetch 시 카탈로그 ID |
 
 ### CLI 통합
 - `qa-sdk dkg converge [--persist] [--verbose]` — metrics + convergeChain + systemHealthChain 통합 실행
@@ -580,8 +584,15 @@ ingest-server Phase 2 완료
 
 ### 런타임 이벤트 연결
 - `store/src/db/schema.ts`에 `addressContext` jsonb 컬럼 추가 (event_records 테이블)
-- shop-web의 13개 트래킹 포인트 → ingest-server → convergence pipeline → DKG store
+- shop-web의 13개 트래킹 포인트 → ingest-server → Phase 2.5(transition) + convergence pipeline → DKG store
 - `CONVERGENCE_ENABLED=true` 설정 시 Phase 2 완료 후 자동 실행
+- `TRANSITION_ENGINE_ENABLED=true` 설정 시 Phase 2.5 전이 매칭 활성화
+
+### 관측 루프 자동 해소 (3가지 경로)
+- **metric 복귀**: metric ok → `resolveRecoveredMetrics()` → OBS-METRIC 자동 resolve
+- **skew 복귀**: severity ok → bootstrap refresh 시 OBS-SKEW 자동 resolve
+- **metric→decision prompts**: `dkg converge --persist` 시 OBS-METRIC → 관련 Decision에 prompts 엣지 자동 생성
+- 미해소: OBS-PATTERN, OBS-DSL-UNCOVERED는 수동 `dkg resolve` 필요
 
 ### 설계 원칙
 - spec-core는 라이브러리 — ingest-server/registry-service에 정적 의존 없음
