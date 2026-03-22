@@ -12,7 +12,7 @@ body{background:var(--bg);color:var(--txt);font-family:'Sora',sans-serif;overflo
 canvas{position:fixed;inset:0;z-index:0}
 .hud{position:fixed;z-index:10;pointer-events:none}
 .hud *{pointer-events:none}
-.hud button,.hud input,.hud .vb{pointer-events:all}
+.hud button,.hud input,.hud .vb,.hud [style*="overflow-y:auto"],.hud #h-flow,.hud #h-select,.hud #h-ctx{pointer-events:all}
 .hud-tl{top:14px;left:18px}.hud-tr{top:14px;right:18px;text-align:right;max-width:300px}
 .hud-bl{bottom:14px;left:18px;right:340px;display:flex;gap:8px;align-items:flex-end}
 .hud-br{bottom:14px;right:18px;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
