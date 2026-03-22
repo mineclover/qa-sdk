@@ -41,7 +41,8 @@ describe("converge-chain — 4가지 행위 구분", () => {
   });
 
   it("usage 있음 — 4가지 행위 모두 구분", () => {
-    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+    // deriveFromCatalog 사용 — bootstrapDkg는 DEC-SEP를 생성하여 merge가 억제됨
+    const graph = deriveFromCatalog(DEMO_CATALOG);
     const svcRef = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
 
     // 편향된 트래픽 생성 — page_view에서 home/ko/member만 사용
