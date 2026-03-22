@@ -243,9 +243,26 @@ async function seedDemoCatalog(
   }
 }
 
+/** DkgConfig seed — demo-snapshot에서 DEMO_DKG_CONFIG 로드하여 저장 */
+async function seedDkgConfig(configStore: Map<string, string>) {
+  try {
+    const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+    const configJson = JSON.stringify(DEMO_DKG_CONFIG);
+    configStore.set("demo", configJson);
+    logger.info("seeded DEMO_DKG_CONFIG to config store");
+  } catch (error) {
+    logger.warn(
+      { error: error instanceof Error ? error.message : String(error) },
+      "Failed to seed DEMO_DKG_CONFIG — skipped",
+    );
+  }
+}
+
 async function main() {
   const stores = await createStores(env.SQLITE_PATH);
+  const dkgConfigStore = new Map<string, string>();
   await seedDemoCatalog(stores.catalogStore, stores.axisStore);
+  await seedDkgConfig(dkgConfigStore);
   const activationGate = await buildActivationGate();
   const postActivationHook = await buildPostActivationHook();
   const devDashboardProvider = await buildDevDashboardProvider();
@@ -255,6 +272,7 @@ async function main() {
     ...(activationGate ? { activationGate } : {}),
     ...(postActivationHook ? { postActivationHook } : {}),
     ...(devDashboardProvider ? { devDashboardProvider } : {}),
+    dkgConfigStore,
     logger,
   });
 

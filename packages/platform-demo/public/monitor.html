@@ -275,6 +275,7 @@ import {
   encode, decode, track as codecTrack, BROWSER_CATALOG, loadCatalog,
   classifyByRole, getPrefixRole, SIGNAL_ROLE_LABELS,
   FlowTimeline, DemoRunner,
+  ThreeBeamRenderer, updateInstancedColors,
 } from './viz-3d-core.js';
 
 // ═══════════════════════════════════════════════════
@@ -446,17 +447,22 @@ for(const gl of GP.grids){
 }
 LY.forEach((y,i)=>{const lc=LAYER_COLORS[i];const l=new T.Sprite(new T.SpriteMaterial({map:tx(['L0 UI','L1 Business','L2 Infra','L3 Data'][i],13,lc.css),transparent:true,opacity:0.2}));l.scale.set(5,1,1);l.position.set(-28,y,0);scene.add(l)});
 
-// Beams — pinned(고정) + transient(시간감쇠) 이중 모드
-const bLines=[];for(let i=0;i<50;i++){const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(6),3));const m=new T.LineBasicMaterial({color:PALETTE.mint.hex,transparent:true,opacity:0});scene.add(new T.Line(g,m));bLines.push({g,m,life:0,pinned:false})}
-let bI=0;
+// Beams — ThreeBeamRenderer 모듈 (viz-3d)
+const beamRenderer = new ThreeBeamRenderer({ maxBeams: 50, scene, defaultColor: PALETTE.mint.hex });
 
-/** transient beam — 시간 지나면 fade */
-function beam(a,b,key){const e=bLines[bI++%50];e.pinned=false;const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=4}
+function beam(a, b, key) {
+  const rc = key && cellRoleColor.get(key);
+  beamRenderer.spawn(a.wp(), b.wp(), rc || a.cc.c);
+}
 
-/** pinned beam — clearPinnedBeams() 전까지 유지 */
-function pinnedBeam(a,b,key){const e=bLines[bI++%50];e.pinned=true;const p=e.g.attributes.position.array;const wa=a.wp(),wb=b.wp();p[0]=wa.x;p[1]=wa.y;p[2]=wa.z;p[3]=wb.x;p[4]=wb.y;p[5]=wb.z;e.g.attributes.position.needsUpdate=true;const rc=key&&cellRoleColor.get(key);e.m.color.setHex(rc||a.cc.c);e.life=1;e.m.opacity=0.6}
+function pinnedBeam(a, b, key) {
+  const rc = key && cellRoleColor.get(key);
+  beamRenderer.spawnPinned(a.wp(), b.wp(), rc || a.cc.c);
+}
 
-function clearPinnedBeams(){bLines.forEach(b=>{if(b.pinned){b.pinned=false;b.life=0;b.m.opacity=0}})}
+function clearPinnedBeams() {
+  beamRenderer.clearPinned();
+}
 
 // ═══════════════════════════════════════════════════
 //  DEMO STEPS (compact)
@@ -727,7 +733,6 @@ const keyState={};
 //  RENDER LOOP
 // ═══════════════════════════════════════════════════
 const clk=new T.Clock();
-const baseC=new T.Color(),glowC=new T.Color(),tmpC=new T.Color();
 
 function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapsedTime;
   perf.tick();
@@ -735,37 +740,15 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   VE.update(dt);for(const[id,grp]of groups){const p=VE.getPosition(id);if(p)grp.position.lerp(new T.Vector3(p.x,p.y,p.z),dt*3)}
   CS.decay(dt);
 
-  // InstancedMesh glow update — per-instance color (개별 셀 반짝이, signal role 색상 적용)
-  for(const ig of instancedGrids){
-    let needsUpdate=false;
-    baseC.setHex(ig.cc.main.hex);
-    for(let i=0;i<ig.count;i++){
-      const key=ig.idxToKey[i];
-      if(ig.glows[i]>0)ig.glows[i]=Math.max(0,ig.glows[i]-dt*0.6);
-      const isA=aSet.has(key);
-      const pulse=isA?.4+Math.sin(t*5)*.2:0;
-      const I=Math.max(ig.glows[i],pulse);
-      if(I>0.01){
-        // 활성 셀: signal role 색상 사용 (role filter 적용)
-        const roleHex=cellRoleColor.get(key);
-        const role=getRoleForKey(key);
-        const dimByFilter=FT.roleFilter&&FT.roleFilter!==role;
-        if(roleHex&&!dimByFilter){
-          glowC.setHex(roleHex);
-        }else{
-          glowC.setHex(ig.cc.emissive.hex);
-        }
-        const eff=Math.min(dimByFilter?I*settings.glowMul*0.2:I*settings.glowMul, 1.0);
-        tmpC.copy(baseC).lerp(glowC,eff);
-        ig.iMesh.setColorAt(i,tmpC);needsUpdate=true;
-      } else {
-        ig.iMesh.setColorAt(i,baseC);needsUpdate=true;
-      }
-    }
-    ig.mat.opacity=settings.baseOpacity;
-    ig.mat.emissiveIntensity=0.1;
-    if(needsUpdate&&ig.iMesh.instanceColor)ig.iMesh.instanceColor.needsUpdate=true;
-  }
+  updateInstancedColors(instancedGrids, {
+    elapsedTime: t, dt,
+    glowMul: settings.glowMul,
+    baseOpacity: settings.baseOpacity,
+    activeSet: aSet,
+    cellRoleColor,
+    roleFilter: FT.roleFilter,
+    getRoleFn: getRoleForKey,
+  });
 
   // LOD — 카메라 거리에 따라 라벨 표시/숨김
   const camPos={x:cam.position.x,y:cam.position.y,z:cam.position.z};
@@ -780,7 +763,7 @@ function anim(){requestAnimationFrame(anim);const dt=clk.getDelta(),t=clk.elapse
   }
 
   // Beams
-  bLines.forEach(b=>{if(b.pinned)return;if(b.life>0){b.life-=dt*0.5;b.m.opacity=Math.max(0,Math.min(b.life*0.2,0.6))}});
+  beamRenderer.update(dt);
 
   updateKeyboardNav();
   ctl.update();R.render(scene,cam);

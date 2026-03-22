@@ -177,11 +177,25 @@ describe("종단 E2E: checkout 흐름", () => {
     // constraint: config 정의 + bootstrap 자동 생성분
     const constraints = graph.getNodesByKind("constraint");
     expect(constraints.length).toBeGreaterThanOrEqual(configConstraintCount);
-    // observation, decision: bootstrap 로직이 자동 생성 — 최소값 검증
+    // observation, decision: bootstrap 로직이 자동 생성 + config 정의분
     const observations = graph.getNodesByKind("observation");
     expect(observations.length).toBeGreaterThan(0);
     const decisions = graph.getNodesByKind("decision");
-    expect(decisions.length).toBeGreaterThan(0);
+    const configDecisionCount = DEMO_DKG_CONFIG.decisions?.length ?? 0;
+    expect(decisions.length).toBeGreaterThanOrEqual(configDecisionCount);
+    // config에 정의된 decision이 등록되었는지
+    if (configDecisionCount > 0) {
+      expect(graph.getNode("DEC-NEW-AXIS-resource_location")).toBeDefined();
+    }
+    // transition-spec 노드: config에서 파생
+    const tspecs = graph.getNodesByKind("transition-spec");
+    const configTspecCount = DEMO_DKG_CONFIG.transitionSpecs?.length ?? 0;
+    expect(tspecs.length).toBe(configTspecCount);
+    // consumes 엣지로 축에 연결됨
+    if (configTspecCount > 0) {
+      const edges = graph.edgesFrom("TSPEC-cart-checkout", "consumes");
+      expect(edges.length).toBeGreaterThan(0);
+    }
     // Skew Observation → Decision prompts 엣지 확인 (coverage obs 제외)
     const skewObs = observations.filter(o => (o as any).id?.includes("SKEW"));
     for (const obs of skewObs) {

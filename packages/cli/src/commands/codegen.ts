@@ -55,17 +55,48 @@ async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
 
   console.log(`Fetching catalog "${catalogId}" from ${registryUrl}...`);
 
-  const res = await fetch(`${registryUrl}/catalogs/${catalogId}`);
-  if (!res.ok) {
-    throw new Error(`Registry fetch failed: ${res.status} ${res.statusText} (${registryUrl}/catalogs/${catalogId})`);
+  let catalog: Catalog;
+  let fromRegistry = false;
+
+  try {
+    const res = await fetch(`${registryUrl}/catalogs/${catalogId}`);
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+    const body = await res.json() as { id: string; name: string; data: string };
+    catalog = JSON.parse(body.data) as Catalog;
+    fromRegistry = true;
+    console.log(`Catalog loaded: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes, ${Object.keys(catalog.axes).length} axes)`);
+  } catch (err) {
+    console.warn(`Registry fetch failed: ${(err as Error).message}`);
+    console.warn("Falling back to local catalog...");
+    catalog = await loadCatalog() as Catalog;
+    console.log(`Local fallback: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes)`);
   }
 
-  const body = await res.json() as { id: string; name: string; data: string };
-  const catalog = JSON.parse(body.data) as Catalog;
+  // prefix version lifecycle 검증 (registry에서 로드한 경우)
+  if (fromRegistry) {
+    await validatePrefixVersions(registryUrl, catalog, opts.lockVersion);
+  }
 
-  console.log(`Catalog loaded: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes, ${Object.keys(catalog.axes).length} axes)`);
-
-  const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
+  // DkgConfig: --dkg-config → registry /catalogs/:id/config → 로컬 fallback
+  let dkgConfig: DkgConfig | undefined;
+  if (opts.dkgConfig) {
+    dkgConfig = await loadDkgConfig(opts.dkgConfig);
+  } else {
+    try {
+      const configRes = await fetch(`${registryUrl}/catalogs/${catalogId}/config`);
+      if (configRes.ok) {
+        const configBody = await configRes.json() as { catalogId: string; data: string };
+        dkgConfig = JSON.parse(configBody.data) as DkgConfig;
+        console.log(`DkgConfig loaded from registry (${catalogId})`);
+      }
+    } catch { /* registry에 config 없으면 로컬 fallback */ }
+    if (!dkgConfig) {
+      dkgConfig = await loadDkgConfig() ?? undefined;
+      if (dkgConfig) console.log("DkgConfig: local fallback");
+    }
+  }
 
   const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
     lockVersion: opts.lockVersion,

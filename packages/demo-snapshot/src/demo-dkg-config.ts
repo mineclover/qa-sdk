@@ -538,6 +538,30 @@ export const DEMO_DKG_CONFIG = {
     },
   ],
 
+  transitionSpecs: [
+    {
+      kind: "transition-spec", id: "TSPEC-cart-checkout",
+      transition: "cart.checkout", version: "v1",
+      matchMode: "ordered", coordinateCount: 4,
+      effectKind: "create",
+      slotRefs: ["lifecycle_state", "flow_step", "resource_location", "trackAction", "page", "order_action"],
+    },
+    {
+      kind: "transition-spec", id: "TSPEC-user-login",
+      transition: "user.login", version: "v1",
+      matchMode: "ordered", coordinateCount: 3,
+      effectKind: "open",
+      slotRefs: ["lifecycle_state", "flow_step", "auth_action", "resource_type", "http_method"],
+    },
+    {
+      kind: "transition-spec", id: "TSPEC-payment-capture",
+      transition: "payment.capture", version: "v1",
+      matchMode: "ordered", coordinateCount: 3,
+      effectKind: "close",
+      slotRefs: ["lifecycle_state", "flow_step", "resource_location", "order_action"],
+    },
+  ],
+
   reviewPairs: [
     { a: "tracking", b: "page_view", reason: "tracking은 행동 분석(trackAction), page_view는 서비스별 화면 관측(svc_ref). 목적과 서비스 바인딩이 다름." },
   ],

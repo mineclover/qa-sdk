@@ -91,6 +91,14 @@ export type { TimelineEntry } from "./adapter/flow-timeline.js";
 // Demo Runner
 export { DemoRunner } from "./adapter/demo-runner.js";
 
+// Beam Renderer (Three.js — external로 처리됨)
+export { ThreeBeamRenderer } from "./renderer/beam-renderer.js";
+export type { BeamRendererOptions } from "./renderer/beam-renderer.js";
+
+// Instanced Cell Renderer (Three.js — external)
+export { updateInstancedColors } from "./renderer/instanced-cell-renderer.js";
+export type { InstancedGridState, CellRenderOptions } from "./renderer/instanced-cell-renderer.js";
+
 // Catalog Loader (API → Cache → Static)
 export { loadCatalog } from "./adapter/catalog-loader.js";
 export type { CatalogLoaderConfig, LoadResult } from "./adapter/catalog-loader.js";

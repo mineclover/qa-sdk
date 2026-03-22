@@ -10,7 +10,7 @@
 import type { Catalog, DkgConfig } from "@qa-sdk/core";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
-import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode } from "./dkg.types.js";
+import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode } from "./dkg.types.js";
 import { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
 import { scanAxisOverlaps, comparePrefixes } from "../convergence/symbol-comparator.js";
 import { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
@@ -26,6 +26,8 @@ interface DkgConfigInput {
   readonly intentLinks: readonly IntentLinkNode[];
   readonly skills: readonly SkillNode[];
   readonly specs?: readonly SpecNode[];
+  readonly decisions?: readonly DecisionNode[];
+  readonly transitionSpecs?: readonly TransitionSpecNode[];
   readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
 }
 
@@ -296,6 +298,24 @@ export function bootstrapDkg(options: {
     if (skill.depends) {
       for (const depId of skill.depends) {
         graph.addEdge("depends-on", skill.id, depId);
+      }
+    }
+  }
+
+  // ── Decision 노드 등록 (config 정의분) ─────────────────
+  const configDecisions = config.decisions ?? [];
+  for (const decision of configDecisions) {
+    graph.addNode(decision);
+  }
+
+  // ── TransitionSpec 노드 등록 ───────────────────────────
+  const transitionSpecs = config.transitionSpecs ?? [];
+  for (const tspec of transitionSpecs) {
+    graph.addNode(tspec);
+    // match에서 참조하는 축 → consumes 엣지
+    for (const slotRef of tspec.slotRefs) {
+      if (graph.getNode(slotRef)) {
+        graph.addEdge("consumes", tspec.id, slotRef);
       }
     }
   }

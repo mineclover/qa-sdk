@@ -26,6 +26,8 @@ export interface AppDeps extends RegistryServiceDeps {
   catalogStore?: CatalogStore;
   axisStore?: AxisProfileStore;
   devDashboardProvider?: DevDkgProvider;
+  /** DkgConfig 저장소 (in-memory). catalogId → DkgConfig JSON */
+  dkgConfigStore?: Map<string, string>;
 }
 
 export function createApp(deps: AppDeps) {
@@ -49,11 +51,11 @@ export function createApp(deps: AppDeps) {
       catalogStore: deps.catalogStore,
       onCatalogChange: (catalogId) => {
         logger.info({ catalogId }, "catalog changed — invalidating caches");
-        // dev dashboard DKG 캐시 무효화
         if (deps.devDashboardProvider && typeof deps.devDashboardProvider.refresh === "function") {
           deps.devDashboardProvider.refresh();
         }
       },
+      dkgConfigStore: deps.dkgConfigStore,
     }));
   }
   if (deps.axisStore) {
