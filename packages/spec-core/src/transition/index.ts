@@ -63,7 +63,14 @@ export { TransitionEngine } from "./transition-engine.js";
 export type { TransitionResult, TransitionEvent } from "./transition-engine.js";
 
 // ── DKG Bridge ───────────────────────────────────────
-export { toTransitionSpecNode, toTransitionSpecNodes } from "./dkg-bridge.js";
+export { toTransitionSpecNode, toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "./dkg-bridge.js";
+
+// ── Violation Bridge ─────────────────────────────────
+export { violationsToObservations } from "./violation-bridge.js";
+
+// ── Transition Pipeline ──────────────────────────────
+export type { TransitionFunctions, TransitionSessionInput, TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
+export { createTransitionFunctions } from "./transition-pipeline.js";
 
 // ── Demo Specs ───────────────────────────────────────────
 export {

@@ -9,6 +9,8 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
 import { DEMO_TRANSITION_SPECS } from "../transition/demo-transition-specs.js";
+import { violationsToObservations } from "../transition/violation-bridge.js";
+import { createTransitionFunctions } from "../transition/transition-pipeline.js";
 import { resolve } from "./resolve.js";
 import { defineFlow, serializeFlow, deserializeFlow } from "./flow-definition.js";
 import { analyzeImpact } from "./skills/analyze-impact.js";
@@ -202,5 +204,88 @@ describe("종단 E2E: checkout 흐름", () => {
       const prompted = graph.neighbors(obs.id, "prompts");
       expect(prompted.length).toBe(1);
     }
+  });
+
+  it("8. TransitionSpec 간 depends-on 엣지", () => {
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, transitionSpecs: DEMO_TRANSITION_SPECS });
+
+    // payment.capture는 cart.checkout의 output(lifecycle_state, flow_step)을 input으로 요구
+    const paymentDeps = graph.neighbors("TSPEC-payment-capture", "depends-on");
+    expect(paymentDeps).toContain("TSPEC-cart-checkout");
+
+    // depends-on 엣지의 meta에 sharedAxes 포함
+    const edges = graph.edgesFrom("TSPEC-payment-capture", "depends-on");
+    const cartEdge = edges.find(e => e.to === "TSPEC-cart-checkout");
+    expect(cartEdge).toBeDefined();
+    expect((cartEdge!.meta as any).sharedAxes).toContain("lifecycle_state");
+    expect((cartEdge!.meta as any).sharedAxes).toContain("flow_step");
+    expect((cartEdge!.meta as any).kind).toBe("state-dependency");
+  });
+
+  it("9. TransitionSpec → DSL satisfies 엣지", () => {
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, transitionSpecs: DEMO_TRANSITION_SPECS });
+
+    // cart.checkout은 checkout DSL의 축을 형식화
+    const cartSatisfies = graph.neighbors("TSPEC-cart-checkout", "satisfies");
+    expect(cartSatisfies.length).toBeGreaterThan(0);
+    // dsl-checkout의 member prefixes (page_view, endpoint, flow_point, order_event, permission)의 축과 겹침
+    expect(cartSatisfies).toContain("dsl-checkout");
+
+    // user.login은 auth DSL의 축을 형식화
+    const loginSatisfies = graph.neighbors("TSPEC-user-login", "satisfies");
+    expect(loginSatisfies.length).toBeGreaterThan(0);
+  });
+
+  it("10. violationsToObservations — 위반 → observation 변환", () => {
+    // violationsToObservations — 상단에서 import
+
+    const violations = [
+      { transition: "payment.capture", context_id: "ctx1", resource_id: "res1", axis: "lifecycle_state", operator: "eq", expected: "active", actual: null },
+      { transition: "payment.capture", context_id: "ctx1", resource_id: "res1", axis: "flow_step", operator: "eq", expected: "processing", actual: null },
+    ];
+
+    const obs = violationsToObservations(violations, { date: "2026-03-22" });
+    expect(obs).toHaveLength(1); // 같은 transition → 1개 observation
+    expect(obs[0].id).toBe("OBS-TRANSITION-payment-capture-2026-03-22");
+    expect(obs[0].intent).toBe("action-needed");
+    expect(obs[0].subjects).toContain("TSPEC-payment-capture");
+    expect(obs[0].subjects).toContain("lifecycle_state");
+
+    // 멱등성: 같은 입력 → 같은 ID
+    const obs2 = violationsToObservations(violations, { date: "2026-03-22" });
+    expect(obs2[0].id).toBe(obs[0].id);
+  });
+
+  it("11. createTransitionFunctions — 세션 처리", () => {
+    // createTransitionFunctions — 상단에서 import
+
+    const fns = createTransitionFunctions(DEMO_TRANSITION_SPECS);
+    expect(fns.specs).toHaveLength(3);
+
+    // 정상 세션: login 이벤트 (USER_LOGIN_SPEC 좌표: resource_type/http_method/api_version → auth_action → flow_name/flow_step/flow_variant)
+    const normalResult = fns.processSession({
+      sessionId: "ses1",
+      events: [
+        { log_id: "e1", timestamp: "2026-03-22T10:00:00.000Z", address_context: { resource_type: "api", http_method: "POST", api_version: "v1" }, context_id: "ctx1" },
+        { log_id: "e2", timestamp: "2026-03-22T10:00:00.100Z", address_context: { auth_action: "login" }, context_id: "ctx1", actor_id: "u1" },
+        { log_id: "e3", timestamp: "2026-03-22T10:00:00.200Z", address_context: { flow_name: "login", flow_step: "success", flow_variant: "default" }, context_id: "ctx1" },
+      ],
+    });
+    // 3개 spec 중 user.login만 매칭 가능한 이벤트
+    // instances가 있거나, violations가 있거나, 둘 다 없으면 unmatched
+    expect(normalResult.instances.length + normalResult.violations.length + normalResult.unmatchedCount).toBeGreaterThan(0);
+    // user.login은 lifecycle_state neq "archived" → 빈 상태에서 통과해야 함
+    expect(normalResult.violations).toHaveLength(0);
+
+    // 비정상 세션: payment without checkout (주문 미생성 상태에서 결제 시도)
+    const badResult = fns.processSession({
+      sessionId: "ses2",
+      events: [
+        { log_id: "b1", timestamp: "2026-03-22T10:00:00.000Z", address_context: { flow_name: "checkout", flow_step: "payment", flow_variant: "default" }, context_id: "ctx2" },
+        { log_id: "b2", timestamp: "2026-03-22T10:00:01.000Z", address_context: { order_action: "complete" }, context_id: "ctx2", order_id: "o1" },
+        { log_id: "b3", timestamp: "2026-03-22T10:00:02.000Z", address_context: { flow_name: "checkout", flow_step: "complete", flow_variant: "default" }, context_id: "ctx2" },
+      ],
+    });
+    expect(badResult.violations.length).toBeGreaterThan(0);
   });
 });

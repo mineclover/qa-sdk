@@ -12,7 +12,7 @@ import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
 import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode } from "./dkg.types.js";
 import type { TransitionSpec } from "../transition/transition.types.js";
-import { toTransitionSpecNodes } from "../transition/dkg-bridge.js";
+import { toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "../transition/dkg-bridge.js";
 import { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
 import { scanAxisOverlaps, comparePrefixes } from "../convergence/symbol-comparator.js";
 import { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
@@ -328,6 +328,18 @@ export function bootstrapDkg(options: {
       if (graph.getNode(slotRef)) {
         graph.addEdge("consumes", tspec.id, slotRef);
       }
+    }
+  }
+
+  // ── TransitionSpec 간 상태 의존 + DSL satisfies ──────
+  if (allTspecs.length > 0) {
+    const interSpecEdges = deriveInterSpecEdges(allTspecs);
+    for (const edge of interSpecEdges) {
+      graph.addEdge(edge.type, edge.from, edge.to, edge.meta);
+    }
+    const satisfiesEdges = deriveDslSatisfiesEdges(allTspecs, graph);
+    for (const edge of satisfiesEdges) {
+      graph.addEdge(edge.type, edge.from, edge.to, edge.meta);
     }
   }
 
