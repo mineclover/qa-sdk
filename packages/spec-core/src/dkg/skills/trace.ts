@@ -72,6 +72,8 @@ export interface TraceResult {
   /** 의도 링크 */
   readonly intentLinks: readonly { id: string; intent: string; invariant?: string }[];
 
+  /** 소비 관계 (정방향: 이 노드가 소비하는 대상, 역방향: 이 노드를 소비하는 주체) */
+  readonly consumes: readonly { id: string; kind: string; name: string }[];
   /** 서비스 토폴로지 (prefix인 경우) */
   readonly topology: { owner: string | null; consumers: readonly string[] } | null;
   /** cascade 영향 */
@@ -201,6 +203,23 @@ export function traceNode(
   // ── intent-links (binds 역방향) ──
   const intentLinks = graph.intentLinksFor(nodeId);
 
+  // ── consumes (정방향 + 역방향) ──
+  const consumes: { id: string; kind: string; name: string }[] = [];
+  // 정방향: 이 노드가 소비하는 대상
+  for (const edge of graph.edgesFrom(nodeId, "consumes")) {
+    const target = graph.getNode(edge.to);
+    if (target) {
+      consumes.push({ id: target.id, kind: target.kind, name: extractName(target) });
+    }
+  }
+  // 역방향: 이 노드를 소비하는 주체 (axis → transition-spec 등)
+  for (const edge of graph.edgesTo(nodeId, "consumes")) {
+    const source = graph.getNode(edge.from);
+    if (source) {
+      consumes.push({ id: source.id, kind: source.kind, name: extractName(source) });
+    }
+  }
+
   // ── topology ──
   let topology: TraceResult["topology"] = null;
   if (node.kind === "prefix" && topo) {
@@ -271,6 +290,7 @@ export function traceNode(
     causalChain,
     directDecisions,
     intentLinks,
+    consumes,
     topology,
     cascade,
     claim,

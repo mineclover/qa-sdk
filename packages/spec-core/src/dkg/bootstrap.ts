@@ -11,6 +11,8 @@ import type { Catalog, DkgConfig } from "@qa-sdk/core";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
 import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode } from "./dkg.types.js";
+import type { TransitionSpec } from "../transition/transition.types.js";
+import { toTransitionSpecNodes } from "../transition/dkg-bridge.js";
 import { analyzeHeadroom, applyHeadroomDecisions } from "../convergence/headroom-advisor.js";
 import { scanAxisOverlaps, comparePrefixes } from "../convergence/symbol-comparator.js";
 import { recordSeparation, applySeparationRecord } from "../convergence/separation-record.js";
@@ -70,6 +72,8 @@ export function bootstrapDkg(options: {
   catalog: CatalogInput;
   config: DkgConfigInput;
   date?: string;
+  /** TransitionSpec 배열 → 자동 변환 후 DKG 등록. config.transitionSpecs와 병합. */
+  transitionSpecs?: readonly TransitionSpec[];
 }): GraphRegistry {
   const catalog = options.catalog as CatalogInput;
   const config = options.config as DkgConfigInput;
@@ -309,10 +313,17 @@ export function bootstrapDkg(options: {
   }
 
   // ── TransitionSpec 노드 등록 ───────────────────────────
-  const transitionSpecs = config.transitionSpecs ?? [];
-  for (const tspec of transitionSpecs) {
+  // config.transitionSpecs (직접 정의) + options.transitionSpecs (자동 변환) 병합
+  const configTspecs = config.transitionSpecs ?? [];
+  const derivedTspecs = options.transitionSpecs ? toTransitionSpecNodes(options.transitionSpecs) : [];
+  const seenTspecIds = new Set<string>();
+  const allTspecs = [...configTspecs, ...derivedTspecs].filter(t => {
+    if (seenTspecIds.has(t.id)) return false;
+    seenTspecIds.add(t.id);
+    return true;
+  });
+  for (const tspec of allTspecs) {
     graph.addNode(tspec);
-    // match에서 참조하는 축 → consumes 엣지
     for (const slotRef of tspec.slotRefs) {
       if (graph.getNode(slotRef)) {
         graph.addEdge("consumes", tspec.id, slotRef);

@@ -7,6 +7,7 @@
 
 import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
+import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
 import { CatalogRegistry } from "@qa-sdk/core";
 import type { Catalog } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
@@ -105,14 +106,18 @@ function getStore(catalogId?: string): DkgSqliteStore {
   return storeCache.get(id)!;
 }
 
+/** bootstrap 옵션 생성 — transitionSpecs 주입 DRY */
+function bootstrapOptions(catalogOverride?: unknown) {
+  const catalog = catalogOverride ?? DEMO_CATALOG;
+  const config = (_configOverride ?? DEMO_DKG_CONFIG) as any;
+  return { catalog: catalog as any, config, transitionSpecs: DEMO_TRANSITION_SPECS };
+}
+
 function getGraph(catalogId?: string): GraphRegistry {
   const id = catalogId ?? activeCatalogId;
   if (!graphCache.has(id)) {
     if (registry.has(id) && id !== "demo") {
-      const graph = bootstrapDkg({
-        catalog: registry.getCatalog(id) as any,
-        config: (_configOverride ?? DEMO_DKG_CONFIG) as any,
-      });
+      const graph = bootstrapDkg(bootstrapOptions(registry.getCatalog(id)));
       graphCache.set(id, graph);
       console.log(`  (bootstrapped with custom catalog: ${id})`);
       return graph;
@@ -127,9 +132,7 @@ function getGraph(catalogId?: string): GraphRegistry {
       console.log(`  (loaded from ${STATE_DB} [${id}]: ${stats.nodes} nodes, ${stats.edges} edges)`);
     } else {
       const graph = bootstrapDkg(
-        registry.has(id)
-          ? { catalog: registry.getCatalog(id) as any, config: (_configOverride ?? DEMO_DKG_CONFIG) as any }
-          : { catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG },
+        registry.has(id) ? bootstrapOptions(registry.getCatalog(id)) : bootstrapOptions(),
       );
       const saved = store.saveGraph(graph);
       store.setMeta("last_bootstrap", new Date().toISOString());
@@ -769,7 +772,7 @@ export function dkgRefresh(): void {
   const cleared = store.clearBootstrap();
 
   // 2. 새 bootstrap 그래프 생성 → 저장
-  const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+  const graph = bootstrapDkg(bootstrapOptions());
   const saved = store.saveGraph(graph, "bootstrap");
   store.setMeta("last_bootstrap", new Date().toISOString());
 
@@ -889,6 +892,135 @@ export function dkgSkills(): void {
         console.log(`      소비: ${parts.join(" | ")}`);
       }
     }
+  }
+}
+
+// ── dkg transitions ────────────────────────────────
+
+export function dkgTransitions(specId?: string): void {
+  const graph = getGraph();
+  const tspecs = graph.getNodesByKind("transition-spec");
+
+  if (tspecs.length === 0) {
+    console.log("\n  (transition-spec 노드 없음. dkg refresh로 재부트스트랩하세요.)");
+    return;
+  }
+
+  // 상세 조회
+  if (specId) {
+    const node = tspecs.find(t => t.id === specId || t.transition === specId);
+    if (!node) {
+      console.log(`\n  transition-spec을 찾을 수 없음: ${specId}`);
+      console.log(`  등록된 spec: ${tspecs.map(t => t.transition).join(", ")}`);
+      return;
+    }
+
+    console.log(`\n══ Transition: ${node.transition} (${node.version}) ══`);
+    console.log(`  id:     ${node.id}`);
+    console.log(`  effect: ${node.effectKind}`);
+    console.log(`  match:  ${node.matchMode} (${node.coordinateCount}개 좌표)`);
+
+    console.log(`\n  ── 축 참조 (역할별) ──`);
+    console.log(`    match:  ${node.matchAxes.join(", ") || "(없음)"}`);
+    console.log(`    input:  ${node.inputAxes.join(", ") || "(없음)"}`);
+    console.log(`    output: ${node.outputAxes.join(", ") || "(없음)"}`);
+
+    // 상태 의존성 탐색 기반: output→input 교차
+    const otherSpecs = tspecs.filter(t => t.id !== node.id);
+    const produces = new Set(node.outputAxes);
+    const requires = new Set(node.inputAxes);
+
+    const dependsOn: string[] = [];   // 이 spec의 input을 다른 spec이 output으로 만드는 경우
+    const blocksFor: string[] = [];   // 이 spec의 output을 다른 spec이 input으로 요구하는 경우
+
+    for (const other of otherSpecs) {
+      const otherProduces = new Set(other.outputAxes);
+      const otherRequires = new Set(other.inputAxes);
+
+      const inputOverlap = [...requires].filter(a => otherProduces.has(a));
+      if (inputOverlap.length > 0) {
+        dependsOn.push(`${other.transition} (via ${inputOverlap.join(",")})`);
+      }
+
+      const outputOverlap = [...produces].filter(a => otherRequires.has(a));
+      if (outputOverlap.length > 0) {
+        blocksFor.push(`${other.transition} (via ${outputOverlap.join(",")})`);
+      }
+    }
+
+    if (dependsOn.length > 0 || blocksFor.length > 0) {
+      console.log(`\n  ── 상태 의존성 ──`);
+      if (dependsOn.length > 0) {
+        console.log(`    선행 필요: ${dependsOn.join(", ")}`);
+      }
+      if (blocksFor.length > 0) {
+        console.log(`    후속 가능: ${blocksFor.join(", ")}`);
+      }
+    }
+
+    // DKG consumes 엣지
+    const consumesEdges = graph.edgesFrom(node.id, "consumes");
+    if (consumesEdges.length > 0) {
+      console.log(`\n  ── DKG consumes (${consumesEdges.length}개 축) ──`);
+      for (const e of consumesEdges) {
+        const target = graph.getNode(e.to);
+        console.log(`    → ${e.to} [${target?.kind ?? "?"}]`);
+      }
+    }
+
+    return;
+  }
+
+  // 목록 조회
+  console.log(`\n══ Transition Specs (${tspecs.length}개) ══`);
+
+  // effect별 그룹핑
+  const byEffect = new Map<string, typeof tspecs>();
+  for (const t of tspecs) {
+    const list = byEffect.get(t.effectKind) ?? [];
+    list.push(t);
+    byEffect.set(t.effectKind, list);
+  }
+
+  for (const [effect, specs] of byEffect) {
+    console.log(`\n  [${effect}]`);
+    for (const t of specs) {
+      console.log(`    ${t.transition.padEnd(25)} ${t.matchMode}(${t.coordinateCount}) → match:${t.matchAxes.length} input:${t.inputAxes.length} output:${t.outputAxes.length}`);
+    }
+  }
+
+  // 축 사용 빈도 요약
+  const axisFreq = new Map<string, { match: number; input: number; output: number }>();
+  for (const t of tspecs) {
+    for (const a of t.matchAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.match++;
+      axisFreq.set(a, f);
+    }
+    for (const a of t.inputAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.input++;
+      axisFreq.set(a, f);
+    }
+    for (const a of t.outputAxes) {
+      const f = axisFreq.get(a) ?? { match: 0, input: 0, output: 0 };
+      f.output++;
+      axisFreq.set(a, f);
+    }
+  }
+
+  console.log(`\n  ── 축 사용 빈도 ──`);
+  const sorted = [...axisFreq.entries()].sort((a, b) => {
+    const totalA = a[1].match + a[1].input + a[1].output;
+    const totalB = b[1].match + b[1].input + b[1].output;
+    return totalB - totalA;
+  });
+  for (const [axis, freq] of sorted) {
+    const parts: string[] = [];
+    if (freq.match > 0) parts.push(`match:${freq.match}`);
+    if (freq.input > 0) parts.push(`input:${freq.input}`);
+    if (freq.output > 0) parts.push(`output:${freq.output}`);
+    console.log(`    ${axis.padEnd(20)} ${parts.join(" ")}`);
   }
 }
 
@@ -1448,6 +1580,14 @@ export function dkgTrace(nodeId: string): void {
     }
   }
 
+  // consumes
+  if (result.consumes.length > 0) {
+    console.log(`\n  ── 소비 대상 (consumes) ──`);
+    for (const c of result.consumes) {
+      console.log(`    → ${c.id} [${c.kind}] — ${c.name}`);
+    }
+  }
+
   // topology
   if (result.topology) {
     console.log(`\n  ── 서비스 토폴로지 ──`);
@@ -1476,6 +1616,7 @@ export function dkgTrace(nodeId: string): void {
   if (dsls.length > 0) console.log(`      ├── DSL:        ${dsls.join(", ")}`);
   if (result.constraints.length > 0) console.log(`      ├── 제약:       ${result.constraints.map(c => c.id).join(", ")}`);
   if (result.intentLinks.length > 0) console.log(`      ├── intent:     ${result.intentLinks.map(l => l.id).join(", ")}`);
+  if (result.consumes.length > 0) console.log(`      ├── consumes:   ${result.consumes.map(c => c.id).join(", ")}`);
   if (result.topology) {
     console.log(`      ├── owner:      ${result.topology.owner ?? "-"}`);
     console.log(`      └── consumers:  ${result.topology.consumers.join(", ") || "-"}`);

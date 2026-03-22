@@ -14,7 +14,7 @@ import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
-  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills,
+  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions,
   dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
@@ -305,6 +305,12 @@ async function main() {
       return;
     case "dkg skills":
       dkgSkills();
+      return;
+    case "dkg transitions":
+      dkgTransitions(sub.rest[0]);
+      return;
+    case "dkg transition":
+      dkgTransitions(sub.rest[0]);
       return;
     case "dkg export":
       dkgExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
@@ -621,7 +627,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
-    "dkg tables", "dkg table",
+    "dkg tables", "dkg table", "dkg transitions", "dkg transition",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];

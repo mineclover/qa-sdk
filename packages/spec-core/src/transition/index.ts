@@ -62,6 +62,9 @@ export { applyOutput } from "./output-applier.js";
 export { TransitionEngine } from "./transition-engine.js";
 export type { TransitionResult, TransitionEvent } from "./transition-engine.js";
 
+// ── DKG Bridge ───────────────────────────────────────
+export { toTransitionSpecNode, toTransitionSpecNodes } from "./dkg-bridge.js";
+
 // ── Demo Specs ───────────────────────────────────────────
 export {
   CART_CHECKOUT_SPEC,

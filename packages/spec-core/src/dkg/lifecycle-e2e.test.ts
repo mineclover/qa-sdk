@@ -8,6 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
 import { bootstrapDkg } from "./bootstrap.js";
+import { DEMO_TRANSITION_SPECS } from "../transition/demo-transition-specs.js";
 import { resolve } from "./resolve.js";
 import { defineFlow, serializeFlow, deserializeFlow } from "./flow-definition.js";
 import { analyzeImpact } from "./skills/analyze-impact.js";
@@ -150,7 +151,7 @@ describe("종단 E2E: checkout 흐름", () => {
   });
 
   it("7. 전체 시스템 현황 — self-evaluation", () => {
-    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG, transitionSpecs: DEMO_TRANSITION_SPECS });
 
     const axes = graph.getNodesByKind("axis");
     const prefixes = graph.getNodesByKind("prefix");
@@ -187,12 +188,11 @@ describe("종단 E2E: checkout 흐름", () => {
     if (configDecisionCount > 0) {
       expect(graph.getNode("DEC-NEW-AXIS-resource_location")).toBeDefined();
     }
-    // transition-spec 노드: config에서 파생
+    // transition-spec 노드: DEMO_TRANSITION_SPECS → bridge 자동 변환
     const tspecs = graph.getNodesByKind("transition-spec");
-    const configTspecCount = DEMO_DKG_CONFIG.transitionSpecs?.length ?? 0;
-    expect(tspecs.length).toBe(configTspecCount);
+    expect(tspecs.length).toBe(DEMO_TRANSITION_SPECS.length);
     // consumes 엣지로 축에 연결됨
-    if (configTspecCount > 0) {
+    if (DEMO_TRANSITION_SPECS.length > 0) {
       const edges = graph.edgesFrom("TSPEC-cart-checkout", "consumes");
       expect(edges.length).toBeGreaterThan(0);
     }

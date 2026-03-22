@@ -261,8 +261,14 @@ export interface TransitionSpecNode {
   readonly matchMode: "single" | "ordered" | "unordered" | "windowed";
   readonly coordinateCount: number;
   readonly effectKind: "create" | "update" | "move" | "consume" | "open" | "close";
-  /** input/output에서 참조하는 슬롯 이름 목록 */
+  /** 모든 참조 축 (matchAxes ∪ inputAxes ∪ outputAxes) */
   readonly slotRefs: readonly string[];
+  /** 이벤트 매칭에 사용하는 축 (match.coordinates 차원) */
+  readonly matchAxes: readonly string[];
+  /** 상태 전제조건 축 (input.all 참조) — 읽기 */
+  readonly inputAxes: readonly string[];
+  /** 상태 변경 축 (output.set 참조) — 쓰기 */
+  readonly outputAxes: readonly string[];
 }
 
 // ── 테이블 노드 ──────────────────────────────────────────
