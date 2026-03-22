@@ -159,11 +159,11 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg prefixes":  { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg domains":   { intent: "query", domain: "dkg-graph", subject: "domain" },
   "dkg dsl":       { intent: "query", domain: "dkg-graph", subject: "dsl-bundle" },
-  "dkg service":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg service":   { intent: "query", domain: "dkg-graph", subject: "service" },
   "dkg prefix":    { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg overview":  { intent: "query", domain: "dkg-graph", subject: "system" },
-  "dkg trace":     { intent: "query", domain: "dkg-graph", subject: "prefix" },
-  "dkg claims":    { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg trace":     { intent: "analyze", domain: "dkg-graph", subject: "prefix" },
+  "dkg claims":    { intent: "query", domain: "dkg-graph", subject: "observation" },
   "dkg timeline":  { intent: "query", domain: "dkg-graph", subject: "observation" },
   "dkg skills":    { intent: "query", domain: "dkg-skill", subject: "skill" },
   "dkg history":   { intent: "query", domain: "convergence", subject: "system" },
@@ -214,6 +214,18 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "spec trace":    { intent: "query", domain: "spec", subject: "spec" },
   "spec decode":   { intent: "query", domain: "spec", subject: "prefix" },
   "spec codegen":  { intent: "publish", domain: "spec", subject: "schema" },
+  // service (registry 기반)
+  "service list":      { intent: "query", domain: "registry", subject: "service" },
+  "service show":      { intent: "analyze", domain: "registry", subject: "service" },
+  "service owners":    { intent: "query", domain: "registry", subject: "prefix" },
+  "service endpoints": { intent: "query", domain: "ingest", subject: "service" },
+  // ingest
+  "ingest health":   { intent: "query", domain: "ingest", subject: "system" },
+  "ingest send":     { intent: "mutate", domain: "ingest", subject: "prefix" },
+  "ingest recent":   { intent: "query", domain: "ingest", subject: "prefix" },
+  "ingest trace":    { intent: "query", domain: "ingest", subject: "prefix" },
+  "ingest status":   { intent: "query", domain: "ingest", subject: "system" },
+  "ingest services": { intent: "query", domain: "registry", subject: "service" },
   // system
   "init":          { intent: "init", domain: "system", subject: "catalog" },
   "scan git":      { intent: "init", domain: "system", subject: "schema" },
@@ -236,13 +248,13 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "obs backlinks": { intent: "query", domain: "system", subject: "spec" },
   "obs list":      { intent: "query", domain: "system", subject: "spec" },
   "obs stats":     { intent: "query", domain: "system", subject: "system" },
-  "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "prefix" },
+  "dkg diagram":   { intent: "query", domain: "dkg-graph", subject: "domain" },
   "dkg tables":    { intent: "query", domain: "dkg-graph", subject: "table" },
   "dkg table":     { intent: "query", domain: "dkg-graph", subject: "table" },
   "dkg transitions": { intent: "query", domain: "dkg-graph", subject: "spec" },
   "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
   "dkg scan-tables": { intent: "analyze", domain: "dkg-graph", subject: "table" },
-  "dkg audit":       { intent: "analyze", domain: "dkg-graph", subject: "system" },
+  "dkg audit":       { intent: "analyze", domain: "dkg-graph", subject: "constraint" },
   "dkg discover-links": { intent: "analyze", domain: "convergence", subject: "intent-link" },
 };
 
@@ -4003,54 +4015,70 @@ export function dkgDiscoverLinks(): void {
 
   console.log(`\n══ IntentLink 후보 발견 (co-occurrence 기반) ══`);
 
-  // 1. 최근 스냅샷에서 전체 UsageData 로드
-  const recentSnapshots = store.loadRecentUsageData(5);
+  // 1. 최근 스냅샷에서 co-occurrence 데이터 로드
+  const rawSnapshots = store.getRecentUsageSnapshots(10);
 
-  if (recentSnapshots.length === 0) {
+  if (rawSnapshots.length === 0) {
     console.log("\n  (usage 스냅샷 없음)");
     console.log("  이벤트를 수집하고 dkg converge --persist 를 실행하면 co-occurrence 데이터가 축적됩니다.");
     return;
   }
 
-  // 2. 모든 스냅샷의 coOccurrences를 병합 (같은 쌍이면 count/totalSourceCount 합산)
+  // 2. 스냅샷 JSON 파싱 → coOccurrences 추출 → 병합
   const merged = new Map<string, { sourcePrefix: string; sourceEntry: string; targetPrefix: string; targetEntry: string; count: number; totalSourceCount: number }>();
+  let parsedCount = 0;
 
-  for (const snap of recentSnapshots) {
-    for (const co of snap.usage.coOccurrences ?? []) {
-      const key = `${co.sourcePrefix}:${co.sourceEntry}→${co.targetPrefix}:${co.targetEntry}`;
-      const existing = merged.get(key);
-      if (existing) {
-        existing.count += co.count;
-        existing.totalSourceCount += co.totalSourceCount;
-      } else {
-        merged.set(key, {
-          sourcePrefix: co.sourcePrefix,
-          sourceEntry: co.sourceEntry,
-          targetPrefix: co.targetPrefix,
-          targetEntry: co.targetEntry,
-          count: co.count,
-          totalSourceCount: co.totalSourceCount,
-        });
+  for (const snap of rawSnapshots) {
+    try {
+      const usage = JSON.parse(snap.data) as { coOccurrences?: Array<{ sourcePrefix: string; sourceEntry: string; targetPrefix: string; targetEntry: string; count: number; totalSourceCount: number }> };
+      for (const co of usage.coOccurrences ?? []) {
+        const key = `${co.sourcePrefix}:${co.sourceEntry}→${co.targetPrefix}:${co.targetEntry}`;
+        const existing = merged.get(key);
+        if (existing) {
+          existing.count += co.count;
+          existing.totalSourceCount += co.totalSourceCount;
+        } else {
+          merged.set(key, {
+            sourcePrefix: co.sourcePrefix,
+            sourceEntry: co.sourceEntry,
+            targetPrefix: co.targetPrefix,
+            targetEntry: co.targetEntry,
+            count: co.count,
+            totalSourceCount: co.totalSourceCount,
+          });
+        }
       }
-    }
+      parsedCount++;
+    } catch { /* JSON 파싱 실패 스킵 */ }
   }
 
   const coOccurrences = [...merged.values()];
 
   if (coOccurrences.length === 0) {
-    console.log(`\n  스냅샷 ${recentSnapshots.length}개 로드됨, 그러나 co-occurrence 데이터 없음.`);
-    console.log("  이벤트 수집 시 co-occurrence가 함께 집계되어야 합니다.");
+    console.log(`\n  스냅샷 ${rawSnapshots.length}개 로드됨 (${parsedCount}개 파싱), co-occurrence 데이터 없음.`);
+    console.log("  이벤트 수집 시 address_context에 여러 prefix가 포함되어야 co-occurrence가 집계됩니다.");
     return;
   }
 
-  console.log(`  스냅샷: ${recentSnapshots.length}개, co-occurrence 쌍: ${coOccurrences.length}개`);
+  console.log(`  스냅샷: ${rawSnapshots.length}개 (${parsedCount}개 파싱), co-occurrence 쌍: ${coOccurrences.length}개`);
 
   // 3. 인과 후보 추출
   const candidates = discoverCausality(graph, coOccurrences);
 
   if (candidates.length === 0) {
-    console.log("\n  후보 없음 (임계값 미달 또는 이미 IntentLink로 등록됨).");
-    console.log("  임계값: high(rate>=95%, count>=1000), medium(rate>=80%, count>=500), low(rate>=50%, count>=100)");
+    // 임계값 미달이지만 발견된 co-occurrence 패턴 표시
+    const sorted = coOccurrences.sort((a, b) => b.count - a.count);
+    const top = sorted.slice(0, 10);
+    console.log(`\n  임계값 미달 — 상위 co-occurrence 패턴 (${top.length}건):`);
+    for (const co of top) {
+      const rate = co.totalSourceCount > 0 ? Math.round((co.count / co.totalSourceCount) * 100) : 0;
+      const existingIL = graph.getNodesByKind("intent-link").find((il: any) =>
+        il.endpoints?.includes(co.sourcePrefix) && il.endpoints?.includes(co.targetPrefix),
+      );
+      const tag = existingIL ? ` [이미 등록: ${existingIL.id}]` : "";
+      console.log(`    ${co.sourcePrefix} → ${co.targetPrefix}: ${co.count}건 (rate ${rate}%)${tag}`);
+    }
+    console.log(`\n  임계값: count >= 100 필요 (현재 최대 ${top[0]?.count ?? 0}건). 더 많은 트래픽 축적 필요.`);
     return;
   }
 
