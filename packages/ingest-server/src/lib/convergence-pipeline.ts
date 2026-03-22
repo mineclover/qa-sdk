@@ -38,6 +38,12 @@ export interface ConvergenceFunctions {
   collectMetrics: (catalog: unknown, graph: unknown, usage: unknown) => readonly unknown[];
   metricsToObservations: (metrics: readonly unknown[], options?: { date?: string }) => readonly unknown[];
   resolveRecoveredMetrics?: (metrics: readonly unknown[], existingObs: readonly unknown[], options?: { date?: string }) => readonly unknown[];
+  /** IntentLink invariant 검증 (optional) */
+  traceFlows?: (graph: unknown, records: readonly unknown[], options?: { date?: string }) => {
+    violations: readonly { intentLinkId: string; count: number }[];
+    observations: readonly unknown[];
+    summary: string;
+  };
 }
 
 /** 패턴 분류 관련 함수 (optional — CONVERGENCE_ENABLED일 때만 로드) */
@@ -94,6 +100,7 @@ export interface ConvergenceFlushResult {
   observationsGenerated: number;
   snapshotId?: number;
   pattern?: PatternFlushResult;
+  flowViolations?: number;
 }
 
 // ── Pipeline Runner ──────────────────────────────────
@@ -268,6 +275,24 @@ export class ConvergencePipelineRunner {
       }
     }
 
+    // 5b. IntentLink 흐름 검증 (에러 격리)
+    let flowViolationCount = 0;
+    if (convergenceFns.traceFlows) {
+      try {
+        const flowResult = convergenceFns.traceFlows(graph, addressRecords);
+        flowViolationCount = flowResult.violations.length;
+        if (flowResult.observations.length > 0) {
+          observations.push(...flowResult.observations);
+          logger?.warn(
+            { violations: flowViolationCount, summary: flowResult.summary },
+            "convergence: IntentLink flow violations detected",
+          );
+        }
+      } catch (error) {
+        logger?.warn({ err: error }, "convergence: flow-trace failed");
+      }
+    }
+
     // 6. DKG store 저장
     let snapshotId: number | undefined;
     if (dkgStore && usage) {
@@ -299,6 +324,7 @@ export class ConvergencePipelineRunner {
         metricsCollected: metrics.length,
         observationsGenerated: observations.length,
         autoResolvedCount,
+        flowViolationCount,
         pattern: patternResult,
         snapshotId,
       },
@@ -311,6 +337,7 @@ export class ConvergencePipelineRunner {
       observationsGenerated: observations.length,
       snapshotId,
       pattern: patternResult,
+      flowViolations: flowViolationCount > 0 ? flowViolationCount : undefined,
     };
   }
 

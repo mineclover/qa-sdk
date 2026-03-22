@@ -111,6 +111,7 @@ async function startServer() {
         aggregateUsageData: (specAnalysis as any).aggregateUsageData,
         collectMetrics: (specAnalysis as any).collectMetrics,
         metricsToObservations: (specAnalysis as any).metricsToObservations,
+        traceFlows: (specAnalysis as any).traceFlows,
       };
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)
