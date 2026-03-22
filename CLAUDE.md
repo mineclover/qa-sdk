@@ -345,7 +345,7 @@ qa.encode("permission", { role: "admin" }); // prefix 자동완성
   - `simplification-advisor.ts` — 미사용 차원/저사용 entry/과도 headroom 감지
   - `boundary-recommender.ts` — 새 prefix 경계 추천 (split/extends/independent)
   - `convergence-runner.ts` — `runConvergenceAnalysis()` 5개 서비스 단일 진입점
-  - `self-check-analyzer.ts` — `analyzeSelfCheck()` 순수 함수 + `SYNTHETIC_EVENTS` (전체 도메인 합성 이벤트)
+  - `self-check-analyzer.ts` — `analyzeSelfCheck()` 순수 함수 + `generateSyntheticEvents(catalog)` 자동 합성
   - 집계: usage-aggregator, scoped-aggregator / 측정: entry-coverage, temporal-analysis, deployment-skew / 기록: metric-registry
 
 ### spec-core — 설계 지식 그래프
@@ -871,13 +871,17 @@ intent별 루프 의무:
 - **Layer 2 (FAST)**: `analyzeSelfCheck()` 순수 함수 → 좌표 인코딩 + convergence + invariant (47ms, execSync 없음)
 - **Layer 3 (STORE)**: `--apply` 시 snapshot/observation 저장 (dry-run이 기본)
 
-### SYNTHETIC_EVENTS — 합성 이벤트 기반 커버리지
-- `self-check-analyzer.ts`의 `SYNTHETIC_EVENTS` 배열이 전체 도메인 합성 이벤트를 정의
-- `analyzeSelfCheck()` 호출 시 build/test 결과 + SYNTHETIC_EVENTS를 합산하여 커버리지 계산
-- `dkg self-check`가 `analyzeSelfCheck()`에 위임하여 동일한 SYNTHETIC_EVENTS 사용 (중복 로직 제거)
-- 커버리지 목표: entry 레벨 97%+ (실질 99%, error-path 제외)
-- 새 축/entry 추가 시 SYNTHETIC_EVENTS에도 해당 entry를 포함하는 이벤트 추가 필요
-- error-path entries (build_result:failure, test_result:failed 등)는 coverage 분모에서 제외 (`ERROR_PATH_ENTRIES`)
+### Entry 커버리지 — 자동 합성 이벤트 (표준)
+- `generateSyntheticEvents(catalog)` — 카탈로그에서 합성 이벤트를 **자동 생성**. 수동 관리 불필요
+- 알고리즘: 각 prefix의 각 axis dim에서 모든 entry를 순회. 조합 폭발 방지를 위해 **합(sum) 전략** 사용
+  - base: 각 axis의 첫 번째 entry로 고정
+  - 각 axis를 순회하며 해당 axis의 entry만 변경, 나머지는 base 유지
+  - 총 이벤트 수 = Σ(axis entries count) (곱이 아닌 합)
+- prefix_ref dim은 refEntries 첫 번째 값을 자동 주입. table_ref dim은 스킵
+- 커버리지 측정 단위: **axis entry** (조합이 아님). 각 entry가 최소 1회 인코딩되면 observed
+- `MANUAL_SYNTHETIC_EVENTS` — 자동 생성으로 커버되지 않는 특수 조합만 추가 (현재 빈 배열)
+- error-path entries (`ERROR_PATH_ENTRIES`: failure, timeout 등)는 coverage 분모에서 제외
+- `dkg self-check --fast` — Phase A(빌드/테스트) 스킵, Phase B~E만 실행 (0.3초)
 
 ### CLI 완전 관측
 - 모든 CLI 명령은 `emitCliEvent(command)` → `cli_event` prefix로 자동 기록
