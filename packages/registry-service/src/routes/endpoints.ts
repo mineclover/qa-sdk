@@ -39,7 +39,7 @@ export function createEndpointRoutes(deps: EndpointRouteDeps) {
     if (!record) {
       return c.json({ error: `Endpoint not found: ${namespace}/${name}@${env}.${region}` }, 404);
     }
-    return c.json({ url: record.url, tier: record.tier, team: record.team });
+    return c.json({ url: record.url });
   });
 
   // GET /api/endpoints/:ns/:svc — 서비스별 환경 목록
@@ -64,7 +64,7 @@ export function createEndpointRoutes(deps: EndpointRouteDeps) {
   // PUT /api/endpoints/:ns/:svc/:env/:region — 등록/업데이트
   routes.put("/api/endpoints/:ns/:svc/:env/:region", async (c) => {
     const catalogId = c.req.query("catalog") ?? "demo";
-    const body = await c.req.json<{ url: string; tier?: string; team?: string }>();
+    const body = await c.req.json<{ url: string }>();
     if (!body.url) return c.json({ error: "url 필수" }, 400);
 
     await endpointStore.upsert({
@@ -74,8 +74,6 @@ export function createEndpointRoutes(deps: EndpointRouteDeps) {
       env: c.req.param("env"),
       region: c.req.param("region"),
       url: body.url,
-      tier: body.tier,
-      team: body.team,
       updatedAt: new Date().toISOString(),
     });
     return c.json({ ok: true });

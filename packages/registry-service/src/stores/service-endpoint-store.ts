@@ -7,6 +7,10 @@
  * ServiceBootConfig → 좌표 → DB lookup → URL resolve.
  */
 
+/**
+ * 서비스 엔드포인트 — 순수 URL 매핑.
+ * tier/team 등 메타데이터는 ServiceRecord(토폴로지)에서 관리.
+ */
 export interface ServiceEndpointRecord {
   readonly catalogId: string;
   readonly namespace: string;
@@ -14,8 +18,6 @@ export interface ServiceEndpointRecord {
   readonly env: string;
   readonly region: string;
   readonly url: string;
-  readonly tier?: string;
-  readonly team?: string;
   readonly updatedAt: string;
 }
 
