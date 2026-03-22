@@ -25,6 +25,7 @@ import {
   dkgSpecAdd, dkgSpecList, dkgSpecTransition,
   emitCliEvent,
   dkgPatterns, dkgPatternStats,
+  dkgDiscoverLinks,
   setCatalogContext, getCatalogRegistry,
 } from "./commands/dkg.js";
 import { loadCatalog } from "./catalog-loader.js";
@@ -106,6 +107,7 @@ Usage:
   qa-sdk dkg self-check [--apply]    빌드/테스트 자기 진단 (기본: dry-run)
   qa-sdk dkg patterns                패턴 분류 규칙 목록
   qa-sdk dkg pattern-stats           패턴 통계
+  qa-sdk dkg discover-links          co-occurrence 기반 IntentLink 후보 발견
   qa-sdk dkg run <skillId> [args]    skill 직접 실행
   qa-sdk dkg export [--output path]  SQLite → JSON (전체)
   qa-sdk dkg import <input>          JSON → SQLite (전체)
@@ -507,6 +509,9 @@ async function main() {
     case "dkg pattern-stats":
       dkgPatternStats();
       return;
+    case "dkg discover-links":
+      dkgDiscoverLinks();
+      return;
     case "dkg diagram": {
       const { dkgDiagram } = await import("./commands/dkg.js");
       await dkgDiagram(sub.rest);
@@ -646,7 +651,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
-    "dkg tables", "dkg table", "dkg transitions", "dkg transition", "dkg audit",
+    "dkg tables", "dkg table", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
   ];

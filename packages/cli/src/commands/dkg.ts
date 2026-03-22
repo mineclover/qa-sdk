@@ -54,6 +54,7 @@ import {
   analyzeSelfCheck,
   traceFlows,
   auditSchemaHealth,
+  discoverCausality,
 } from "@qa-sdk/spec-core/analysis";
 import {
   executeEntryAdd,
@@ -61,7 +62,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -176,6 +177,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg self-check": { intent: "analyze", domain: "self-ref", subject: "system" },
   "dkg converge":  { intent: "analyze", domain: "convergence", subject: "system" },
   "dkg promote":   { intent: "analyze", domain: "self-ref", subject: "axis" },
+  "dkg discover-links": { intent: "analyze", domain: "convergence", subject: "intent-link" },
   // dkg mutate
   "dkg decide":    { intent: "mutate", domain: "dkg-graph", subject: "decision" },
   "dkg observe":   { intent: "mutate", domain: "dkg-graph", subject: "observation" },
@@ -3874,6 +3876,123 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       }
     }
   }
+}
+
+// ── dkg discover-links — co-occurrence 기반 IntentLink 후보 발견 ──
+
+/**
+ * usage 스냅샷의 co-occurrence 데이터에서 인과 관계 후보를 추출하고
+ * IntentLink/constraint 등록 후보를 추천한다.
+ */
+export function dkgDiscoverLinks(): void {
+  const graph = getGraph();
+  const store = getStore();
+
+  console.log(`\n══ IntentLink 후보 발견 (co-occurrence 기반) ══`);
+
+  // 1. 최근 스냅샷에서 전체 UsageData 로드
+  const recentSnapshots = store.loadRecentUsageData(5);
+
+  if (recentSnapshots.length === 0) {
+    console.log("\n  (usage 스냅샷 없음)");
+    console.log("  이벤트를 수집하고 dkg converge --persist 를 실행하면 co-occurrence 데이터가 축적됩니다.");
+    return;
+  }
+
+  // 2. 모든 스냅샷의 coOccurrences를 병합 (같은 쌍이면 count/totalSourceCount 합산)
+  const merged = new Map<string, { sourcePrefix: string; sourceEntry: string; targetPrefix: string; targetEntry: string; count: number; totalSourceCount: number }>();
+
+  for (const snap of recentSnapshots) {
+    for (const co of snap.usage.coOccurrences ?? []) {
+      const key = `${co.sourcePrefix}:${co.sourceEntry}→${co.targetPrefix}:${co.targetEntry}`;
+      const existing = merged.get(key);
+      if (existing) {
+        existing.count += co.count;
+        existing.totalSourceCount += co.totalSourceCount;
+      } else {
+        merged.set(key, {
+          sourcePrefix: co.sourcePrefix,
+          sourceEntry: co.sourceEntry,
+          targetPrefix: co.targetPrefix,
+          targetEntry: co.targetEntry,
+          count: co.count,
+          totalSourceCount: co.totalSourceCount,
+        });
+      }
+    }
+  }
+
+  const coOccurrences = [...merged.values()];
+
+  if (coOccurrences.length === 0) {
+    console.log(`\n  스냅샷 ${recentSnapshots.length}개 로드됨, 그러나 co-occurrence 데이터 없음.`);
+    console.log("  이벤트 수집 시 co-occurrence가 함께 집계되어야 합니다.");
+    return;
+  }
+
+  console.log(`  스냅샷: ${recentSnapshots.length}개, co-occurrence 쌍: ${coOccurrences.length}개`);
+
+  // 3. 인과 후보 추출
+  const candidates = discoverCausality(graph, coOccurrences);
+
+  if (candidates.length === 0) {
+    console.log("\n  후보 없음 (임계값 미달 또는 이미 IntentLink로 등록됨).");
+    console.log("  임계값: high(rate>=95%, count>=1000), medium(rate>=80%, count>=500), low(rate>=50%, count>=100)");
+    return;
+  }
+
+  // 4. 결과 표시 — confidence별 그룹
+  const high = candidates.filter(c => c.confidence === "high");
+  const medium = candidates.filter(c => c.confidence === "medium");
+  const low = candidates.filter(c => c.confidence === "low");
+
+  if (high.length > 0) {
+    console.log(`\n  ── HIGH confidence (IntentLink 후보) ── [${high.length}건]`);
+    for (const c of high) {
+      printCandidate(c);
+    }
+  }
+
+  if (medium.length > 0) {
+    console.log(`\n  ── MEDIUM confidence (constraint 후보) ── [${medium.length}건]`);
+    for (const c of medium) {
+      printCandidate(c);
+    }
+  }
+
+  if (low.length > 0) {
+    console.log(`\n  ── LOW confidence (추가 관측 필요) ── [${low.length}건]`);
+    for (const c of low) {
+      printCandidate(c);
+    }
+  }
+
+  // 5. 기존 IntentLink와 비교
+  const intentLinks = graph.getNodesByKind("intent-link") as IntentLinkNode[];
+  if (intentLinks.length > 0) {
+    console.log(`\n  ── 기존 IntentLink (${intentLinks.length}개) ──`);
+    for (const link of intentLinks) {
+      const matchingCo = coOccurrences.find(co =>
+        link.intent.includes(co.sourceEntry) && link.intent.includes(co.targetEntry),
+      );
+      if (matchingCo) {
+        const rate = matchingCo.totalSourceCount > 0
+          ? (matchingCo.count / matchingCo.totalSourceCount * 100).toFixed(1)
+          : "N/A";
+        console.log(`    ${link.id}: ${link.intent} — 관측됨 (rate=${rate}%, count=${matchingCo.count})`);
+      } else {
+        console.log(`    ${link.id}: ${link.intent} — (co-occurrence 데이터 없음)`);
+      }
+    }
+  }
+
+  console.log(`\n  합계: ${candidates.length}건 (high=${high.length}, medium=${medium.length}, low=${low.length})`);
+}
+
+function printCandidate(c: CausalCandidate): void {
+  const ratePercent = (c.coOccurrenceRate * 100).toFixed(1);
+  console.log(`    ${c.source.prefix}:${c.source.entry} → ${c.target.prefix}:${c.target.entry}`);
+  console.log(`      rate=${ratePercent}%  count=${c.observedCount}  추천: ${c.suggestion}`);
 }
 
 /** Mermaid 텍스트를 CDN 기반 self-contained HTML로 래핑 */
