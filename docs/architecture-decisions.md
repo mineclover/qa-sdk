@@ -275,3 +275,76 @@ QA 플랫폼에서 "어떤 이벤트가 발생했는가"는 추적하지만 "이
                                             ↓
                                   통계 → metric-registry → self-check 보고
 ```
+
+---
+
+## ADR-007: GraphPort 3단 추상화
+
+### 결정
+
+DKG 그래프 저장소의 소비자를 3단계로 분리한다.
+
+### 배경
+
+DKG GraphRegistry는 15종 노드 + 18종 엣지의 구체 타입을 가진 그래프 저장소다. convergence 분석 함수(15개), 서비스 동적 import(ingest/registry), CLI/skills가 모두 같은 그래프를 사용하지만 필요한 정보 범위가 다르다.
+
+모든 소비자가 GraphRegistry를 직접 import하면:
+- convergence가 DkgNode 15종에 결합 → 노드 추가 시 빌드 영향 확대
+- 서비스가 optional peer를 정적 import 불가
+- 테스트에서 전체 구현 mock 필요
+
+### 구조
+
+| 레벨 | 인터페이스 | 반환 타입 | 소비자 | 파일 수 |
+|------|-----------|----------|--------|--------|
+| **GraphPort** | `shared/graph-port.ts` | `{ kind, id }` | convergence/schema/skills | 27 |
+| **GraphRegistryPort** | 서비스 `types/spec-core-ports.ts` | `{ kind, id, [key] }` | 동적 import 서비스 | 2 |
+| **GraphRegistry** | `dkg/graph-registry.ts` | `DkgNode` 15종 | bootstrap/store/lifecycle/mermaid | 9 |
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **GraphPort 우선** | 새 함수 작성 시 GraphPort로 충분하면 GraphPort 사용 |
+| **구체 타입 정당성** | `replaceNode`, `hasNode`, Table 질의 등 Port에 없는 메서드가 필요할 때만 GraphRegistry 사용 |
+| **Port 확장 검토** | 3개 이상 파일이 같은 Registry-only 메서드를 사용하면 Port에 승격 검토 |
+| **서비스 포트 최소화** | GraphRegistryPort는 `getAllNodes` + `getNodesByKind` 2메서드만 유지 |
+
+---
+
+## ADR-008: DKG Table 의존 추적
+
+### 결정
+
+Catalog의 `tables` 섹션을 DKG 그래프에 `TableNode`로 자동 파생하고, column-level 엣지로 DB ↔ prefix ↔ service 의존 체인을 추적한다.
+
+### 배경
+
+로깅 시스템이 "어떤 DB가 어떤 이벤트에 영향 받는가"를 질의하려면 테이블-prefix 관계가 구조화되어야 한다. 기존에는 prefix의 `table_ref` dim이 단순 문자열 참조였고, DKG에 테이블 노드가 없어 역추적이 불가능했다.
+
+### 구조
+
+```
+Catalog.tables → catalog-derive → TableNode + column edges
+  column axis_ref  → composes 엣지 (dimKind: "column_axis")
+  column prefix_ref → references 엣지
+  column table_ref  → references 엣지 (meta: { fk: true })
+
+GraphRegistry 전용 질의:
+  getPrefixesForTable(tableId)  — 테이블을 참조하는 prefix
+  getTablesForPrefix(prefixId)  — prefix가 참조하는 테이블
+  getTableColumnRefs(tableId)   — 컬럼별 참조 대상
+  cascadeFromTable(tableId)     — 변경 시 영향 prefix + FK 체인
+
+ServiceTopology 추론:
+  getTablesForService(serviceId, graph)  — prefix 소유에서 추론
+  getServicesForTable(tableId, graph)    — 역방향 추론
+```
+
+### 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **Table 질의는 GraphRegistry 전용** | GraphPort에 Table 메서드를 추가하지 않음. Table은 구체 구현의 확장 기능 |
+| **CLI로 조회** | `dkg tables` (목록), `dkg table <id>` (상세 + impact) |
+| **DEMO_CATALOG 6개 테이블** | members, orgs, items, orders, carts, cart_items |

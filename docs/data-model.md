@@ -20,9 +20,11 @@ TransmissionEnvelope
 EventRecord
   ├─ log_id, timestamp
   ├─ trace_id, span_id, parent_span_id?
-  ├─ record_kind: "log" | "span"
+  ├─ record_kind: "log" | "span" | "metric"
   ├─ event_key, event_version
   ├─ span_name?, start_time?, end_time?, status_code?   ← span 전용
+  ├─ metric_type?: "counter"|"gauge"|"histogram"|"summary"  ← metric 전용
+  ├─ metric_name?, metric_value?, metric_unit?
   ├─ payload_format, payload_encoding
   ├─ payload_masking_applied, payload_masked_fields[]
   ├─ payload: unknown
