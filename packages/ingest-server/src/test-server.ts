@@ -60,9 +60,9 @@ async function setupConvergence() {
       recordStore,
       convergenceFns: {
         aggregateUsageData: specConvergence.aggregateUsageData,
-        collectMetrics: specConvergence.collectMetrics,
+        collectMetrics: (catalog, graph, usage) => specConvergence.collectMetrics(catalog, graph as Parameters<typeof specConvergence.collectMetrics>[1], usage),
         metricsToObservations: specConvergence.metricsToObservations,
-        traceFlows: specDkg.traceFlows,
+        traceFlows: (graph, records, opts) => specDkg.traceFlows(graph as Parameters<typeof specDkg.traceFlows>[0], records, opts),
       },
       graphProvider: () => (graph ?? { getNodesByKind: () => [] }) as ConvergenceGraphPort,
       catalogProvider: () => provider.getCatalog() as Catalog,

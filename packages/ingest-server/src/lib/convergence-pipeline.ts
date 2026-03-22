@@ -41,7 +41,12 @@ export interface ClassifierInputPort {
 /** 그래프 조회 최소 인터페이스 (convergence 함수에 전달) */
 export interface ConvergenceGraphPort {
   getNodesByKind(kind: string): readonly { kind: string; id: string; [key: string]: unknown }[];
-  [key: string]: unknown;
+  getNode?(id: string): { kind: string; id: string; [key: string]: unknown } | undefined;
+  edgesFrom?(id: string, type?: string): readonly { type: string; from: string; to: string }[];
+  edgesTo?(id: string, type?: string): readonly { type: string; from: string; to: string }[];
+  neighbors?(id: string, type: string): string[];
+  addNode?(node: { kind: string; id: string }): void;
+  addEdge?(type: string, from: string, to: string, meta?: Record<string, unknown>): void;
 }
 
 /** convergence 분석 함수 (spec-core/convergence에서 동적 import) */

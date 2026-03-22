@@ -175,12 +175,11 @@ export class DkgSqliteStore {
       `INSERT INTO usage_snapshots (period_from, period_to, total_records, data)
        VALUES (?, ?, ?, ?)`,
     );
-    stmt.run(
-      usage.collectionPeriod.from,
-      usage.collectionPeriod.to,
-      usage.sourceStats?.totalRecords ?? 0,
-      JSON.stringify(usage),
-    );
+    const from = String(usage.collectionPeriod?.from ?? new Date().toISOString());
+    const to = String(usage.collectionPeriod?.to ?? from);
+    const totalRecords = Number(usage.sourceStats?.totalRecords ?? 0);
+    const data = JSON.stringify(usage);
+    stmt.run(from, to, totalRecords, data);
 
     const row = this.db.prepare("SELECT last_insert_rowid() as id").get() as { id: number };
     const snapshotId = row.id;
@@ -192,7 +191,14 @@ export class DkgSqliteStore {
          VALUES (?, ?, ?, ?, ?, ?)`,
       );
       for (const vu of usage.versionUsages) {
-        vuStmt.run(snapshotId, vu.prefix, vu.version, vu.count, vu.lastSeen, JSON.stringify(vu.sessions));
+        vuStmt.run(
+          snapshotId,
+          String(vu.prefix),
+          String(vu.version),
+          Number(vu.count),
+          String(vu.lastSeen ?? new Date().toISOString()),
+          JSON.stringify(vu.sessions ?? []),
+        );
       }
     }
 
