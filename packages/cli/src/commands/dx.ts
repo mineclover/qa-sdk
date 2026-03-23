@@ -11,7 +11,7 @@
 import type { Catalog } from "@qa-sdk/core";
 import {
   parseSerializedAddress, serializeAddress,
-  encodePrefixByValue, decodePrefix, decomposeAddress, resolveAddress,
+  encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities, decomposeAddress, resolveAddress,
   getPrefixShape, getPrefixStructure, latestPrefixVersion,
 } from "@qa-sdk/core";
 import {
@@ -77,10 +77,8 @@ export function cliDecode(catalog: Catalog, args: {
   const { prefix: prefixId, version, address } = parsed;
 
   try {
-    const decoded = decodePrefix(catalog, prefixId, version, address);
-    const values = Object.fromEntries(
-      Object.entries(decoded).map(([k, v]) => [k, v.value]),
-    );
+    const result = decodePrefixAsResult(catalog, prefixId, version, address);
+    const values = decodeResultToEntities(result);
 
     if (args.json) {
       const result: Record<string, unknown> = {

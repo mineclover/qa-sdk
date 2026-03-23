@@ -26,7 +26,8 @@ import {
   generateDtsFromIR,
 } from "@qa-sdk/spec-core/codegen";
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
-import { decodePrefix, resolveAddress, type DemoCatalog } from "demo-snapshot";
+import { resolveAddress, type DemoCatalog } from "demo-snapshot";
+import { decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core";
 
 // ── Shared bootstrap ────────────────────────────────
 
@@ -236,10 +237,13 @@ export async function specDecode(options: {
 
   const catalog = ctx.catalogInput as DemoCatalog;
 
-  // 1단계: decode → positions + values
+  // 1단계: decode → DecodeResult (kind 기반 분기)
   let decoded: Record<string, { position: number; value: string | number }>;
   try {
-    decoded = decodePrefix(catalog, prefixId, version, address);
+    const result = decodePrefixAsResult(catalog, prefixId, version, address);
+    decoded = Object.fromEntries(
+      Object.entries(result.dims).map(([k, d]) => [k, { position: d.position, value: d.value }]),
+    );
   } catch (e) {
     console.error((e as Error).message);
     process.exitCode = 1;

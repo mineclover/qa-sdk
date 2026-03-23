@@ -15,7 +15,8 @@ import type { Catalog, ServiceBootConfig, PrefixIds } from "@qa-sdk/core";
 import {
   parseSerializedAddress,
   encodePrefixByValue,
-  decodePrefix,
+  decodePrefixAsResult,
+  decodeResultToEntities,
   latestPrefixVersion,
 } from "@qa-sdk/core";
 
@@ -185,10 +186,8 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
 
     decode(serialized: string): Record<string, string | number> {
       const { prefix: prefixId, version, address } = parseSerializedAddress(serialized);
-      const decoded = decodePrefix(catalog, prefixId, version, address);
-      return Object.fromEntries(
-        Object.entries(decoded).map(([k, v]) => [k, v.value]),
-      );
+      const result = decodePrefixAsResult(catalog, prefixId, version, address);
+      return decodeResultToEntities(result);
     },
 
     resolve(serialized: string) {
@@ -198,19 +197,17 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
       const latest = latestPrefixVersion(catalog, prefixId);
 
       if (version === latest) {
-        const decoded = decodePrefix(catalog, prefixId, version, address);
+        const result = decodePrefixAsResult(catalog, prefixId, version, address);
         return {
           address: serialized,
-          values: Object.fromEntries(Object.entries(decoded).map(([k, v]) => [k, v.value])),
+          values: decodeResultToEntities(result),
           migrated: false,
         };
       }
 
       // 구버전 → decode → re-encode
-      const decoded = decodePrefix(catalog, prefixId, version, address);
-      const values = Object.fromEntries(
-        Object.entries(decoded).map(([k, v]) => [k, v.value]),
-      ) as Record<string, string | number>;
+      const result = decodePrefixAsResult(catalog, prefixId, version, address);
+      const values = decodeResultToEntities(result) as Record<string, string | number>;
       const newAddr = encodePrefixByValue(catalog, prefixId, latest, values);
 
       return {

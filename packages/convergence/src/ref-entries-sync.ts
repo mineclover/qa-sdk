@@ -11,7 +11,7 @@
  */
 
 import type { Catalog, PrefixDef, PrefixVersionDef } from "@qa-sdk/core";
-import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
+import { encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core";
 
 export interface RefEntrySyncResult {
   readonly prefix: string;
@@ -55,11 +55,8 @@ export function syncRefEntries(
         for (const oldAddr of refEntry.values) {
           try {
             // old address를 decode (현재 shape 기준 — shape이 바뀌었으면 다른 좌표)
-            const decoded = decodePrefix(catalog, refPrefixId, refVersion, oldAddr);
-            const meaning: Record<string, string | number> = {};
-            for (const [label, dim] of Object.entries(decoded)) {
-              meaning[label] = dim.value;
-            }
+            const result = decodePrefixAsResult(catalog, refPrefixId, refVersion, oldAddr);
+            const meaning = decodeResultToEntities(result);
 
             // 같은 의미값으로 re-encode (현재 shape 기준)
             const newAddr = encodePrefixByValue(catalog, refPrefixId, refVersion, meaning);
