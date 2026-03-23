@@ -55,7 +55,7 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
 
     // Schema layer
     const schemaLayer: Array<Record<string, unknown>> = [];
-    for (const [id, axis] of Object.entries(catalog.axes) as [string, any][]) {
+    for (const [id, axis] of Object.entries(catalog.axes)) {
       const versions = Object.keys(axis.versions);
       const latestKey = versions[versions.length - 1];
       const latest = axis.versions[latestKey];

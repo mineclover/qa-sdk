@@ -5,21 +5,23 @@
  * DevDkgProvider에서 graph를 가져오고, spec-core/viz의 다이어그램 함수를 동적 import.
  */
 import { Hono } from "hono";
+import type { GraphRegistryPort } from "../types/spec-core-ports.js";
 
-// Types for dynamic imports
+type MermaidDiagramOptions = { showInvariants?: boolean };
+
 interface DiagramFns {
-  listAllDiagrams: Function;
-  intentLinkDiagram: Function;
-  allIntentLinksDiagram: Function;
-  dslDiagram: Function;
-  domainDiagram: Function;
-  serviceDiagram: Function;
-  constraintDiagram: Function;
-  tableDiagram: Function;
-  observationLoopDiagram: Function;
-  tableErDiagram: Function;
-  transitionSpecDiagram: Function;
-  transitionDagDiagram: Function;
+  listAllDiagrams(graph: GraphRegistryPort, topo?: ServiceTopologyLike): Record<string, unknown>;
+  intentLinkDiagram(graph: GraphRegistryPort, intentLinkId: string, options?: MermaidDiagramOptions): string;
+  allIntentLinksDiagram(graph: GraphRegistryPort, options?: MermaidDiagramOptions): string;
+  dslDiagram(graph: GraphRegistryPort, dslId: string, options?: MermaidDiagramOptions): string;
+  domainDiagram(graph: GraphRegistryPort, domainId: string, options?: MermaidDiagramOptions): string;
+  serviceDiagram(graph: GraphRegistryPort, topo: ServiceTopologyLike, serviceId: string, options?: MermaidDiagramOptions): string;
+  constraintDiagram(graph: GraphRegistryPort, constraintId: string, options?: MermaidDiagramOptions): string;
+  tableDiagram(graph: GraphRegistryPort, tableId: string, options?: MermaidDiagramOptions): string;
+  observationLoopDiagram(graph: GraphRegistryPort, options?: MermaidDiagramOptions): string;
+  tableErDiagram(graph: GraphRegistryPort, options?: MermaidDiagramOptions): string;
+  transitionSpecDiagram(graph: GraphRegistryPort, specId: string, options?: MermaidDiagramOptions): string;
+  transitionDagDiagram(graph: GraphRegistryPort, options?: MermaidDiagramOptions): string;
 }
 
 interface ServiceTopologyLike {
@@ -27,8 +29,12 @@ interface ServiceTopologyLike {
   getConsumers(prefixId: string): string[];
 }
 
+interface AnalysisDiagramModule {
+  createDemoTopology(): ServiceTopologyLike;
+}
+
 export interface DiagramRouteDeps {
-  getGraph: () => any;
+  getGraph: () => GraphRegistryPort;
 }
 
 export function createDiagramRoutes(deps: DiagramRouteDeps) {
@@ -50,8 +56,8 @@ export function createDiagramRoutes(deps: DiagramRouteDeps) {
   async function getTopo(): Promise<ServiceTopologyLike | undefined> {
     if (cachedTopo) return cachedTopo;
     try {
-      const analysis = await import("@qa-sdk/spec-core/analysis");
-      cachedTopo = (analysis as any).createDemoTopology();
+      const analysis = await import("@qa-sdk/spec-core/analysis") as unknown as AnalysisDiagramModule;
+      cachedTopo = analysis.createDemoTopology();
       return cachedTopo ?? undefined;
     } catch {
       return undefined;
@@ -119,8 +125,8 @@ export function createDiagramRoutes(deps: DiagramRouteDeps) {
           return c.json({ error: `Unknown diagram kind: ${kind}` }, 400);
       }
       return c.json({ kind, id, mmd });
-    } catch (err: any) {
-      return c.json({ error: err?.message ?? "diagram generation failed" }, 400);
+    } catch (err: unknown) {
+      return c.json({ error: err instanceof Error ? err.message : "diagram generation failed" }, 400);
     }
   });
 

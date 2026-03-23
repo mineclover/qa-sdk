@@ -30,6 +30,7 @@ import type { ServiceEndpointStore } from "./stores/service-endpoint-store.js";
 import type { EventSchemaStore } from "./stores/event-schema-store.js";
 import type { DevDkgProvider } from "./lib/dev-dkg-provider.js";
 import { createDevDashboardRoutes } from "./routes/dev-dashboard.js";
+import type { CatalogPort, GraphRegistryPort, MetricValuePort } from "./types/spec-core-ports.js";
 
 export interface AppDeps extends RegistryServiceDeps {
   logger?: Logger;
@@ -37,15 +38,17 @@ export interface AppDeps extends RegistryServiceDeps {
   axisStore?: AxisProfileStore;
   devDashboardProvider?: DevDkgProvider;
   /** DKG graph 제공자 — devDashboardProvider 없이도 다이어그램/대시보드 API 활성화 가능 */
-  getGraph?: () => unknown;
-  getCatalog?: () => unknown;
-  collectMetrics?: () => unknown[];
+  getGraph?: () => GraphRegistryPort;
+  getCatalog?: () => CatalogPort;
+  collectMetrics?: () => MetricValuePort[];
   /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
   configStore?: ConfigStore;
   /** 서비스 엔드포인트 저장소 (좌표계 기반 URL 관리) */
   endpointStore?: ServiceEndpointStore;
   /** 이벤트 스키마 저장소 (서비스별 이벤트 키/버전 관리) */
   eventSchemaStore?: EventSchemaStore;
+  /** Service Bindings — 헬스체크 시 Worker→Worker 직접 호출 */
+  serviceBindings?: Record<string, Fetcher>;
   corsOrigin?: string;
 }
 
@@ -93,7 +96,11 @@ export function createApp(deps: AppDeps) {
   }
   if (deps.configStore) {
     app.route("/", createServiceRoutes({ configStore: deps.configStore, endpointStore: deps.endpointStore }));
-    app.route("/", createServiceHealthRoutes({ configStore: deps.configStore, endpointStore: deps.endpointStore }));
+    app.route("/", createServiceHealthRoutes({
+      configStore: deps.configStore,
+      endpointStore: deps.endpointStore,
+      serviceBindings: deps.serviceBindings,
+    }));
   }
   if (deps.endpointStore) {
     app.route("/", createEndpointRoutes({ endpointStore: deps.endpointStore }));
@@ -126,9 +133,9 @@ export function createApp(deps: AppDeps) {
 
     if (catalogGetter) {
       app.route("/api/dashboard", createDashboardApiRoutes({
-        getGraph: graphGetter as () => any,
-        getCatalog: catalogGetter as () => any,
-        collectMetrics: metricsCollector as (() => any[]) | undefined,
+        getGraph: graphGetter,
+        getCatalog: catalogGetter,
+        collectMetrics: metricsCollector,
       }));
     }
   }

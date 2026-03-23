@@ -18,7 +18,23 @@ export interface DkgNodePort {
   readonly kind: string;
   readonly id: string;
   readonly name?: string;
-  [key: string]: unknown;
+  readonly category?: string;
+  readonly lifecycle?: string;
+  readonly resolution?: unknown;
+  readonly title?: string;
+  readonly type?: string;
+  readonly targets?: readonly string[];
+  readonly finding?: string;
+  readonly source?: string;
+  readonly subjects?: readonly string[];
+  readonly date?: string;
+  readonly prefix?: string;
+  readonly subjectId?: string;
+  readonly fromVersion?: string;
+  readonly toVersion?: string;
+  readonly impact?: string;
+  readonly consumedPrefixes?: readonly string[];
+  readonly role?: string;
 }
 
 // ── Edge ────────────────────────────────────────────────
@@ -41,20 +57,23 @@ export interface GraphRegistryPort {
   hasNode(id: string): boolean;
   findNodes(kind: string, predicate: (node: DkgNodePort) => boolean): DkgNodePort[];
   getPrefixesByCategory(category: string): DkgNodePort[];
-  groupPrefixesByCategory(): Map<string, DkgNodePort[]>;
+  groupPrefixesByCategory(): Record<string, DkgNodePort[]>;
 
   // edges
-  edgesFrom(nodeId: string, type: string): DkgEdgePort[];
-  edgesTo(nodeId: string, type: string): DkgEdgePort[];
+  edgesFrom(nodeId: string, type?: string): readonly DkgEdgePort[];
+  edgesTo(nodeId: string, type?: string): readonly DkgEdgePort[];
   neighbors(nodeId: string, type: string): string[];
   reverseNeighbors(nodeId: string, type: string): string[];
-  transitiveNeighbors(nodeId: string, type: string, maxDepth?: number): string[];
-  activeConstraints(): DkgNodePort[];
-  intentLinksFor(prefixId: string): DkgNodePort[];
+  transitiveNeighbors(nodeId: string, type: string, direction?: "forward" | "reverse"): Array<{ id: string; distance: number }>;
+  activeConstraints(targetId: string): Array<{ constraintId: string; rule: string }>;
+  intentLinksFor(prefixId: string): Array<{ id: string; intent: string; invariant?: string }>;
 
   // cascade
-  cascadeFromAxis(axisId: string): { prefixes: string[]; domains: string[]; dsls: string[] };
-  cascadeFromPrefix(prefixId: string): { domains: string[]; consumers: string[]; dsls: string[] };
+  cascadeFromAxis(axisId: string): Array<{ id: string; reason: "composes" | "references"; distance: number }>;
+  cascadeFromPrefix(prefixId: string): {
+    domains: Array<{ id: string; affectedPrefixes: string[] }>;
+    consumers: Array<{ id: string; via: string }>;
+  };
 
   // write
   addNode(node: DkgNodePort): void;
@@ -75,7 +94,7 @@ export interface MetricValuePort {
   readonly status: "ok" | "warning" | "critical";
   readonly detail?: string;
   readonly target?: string;
-  readonly measuredAt: string;
+  readonly measuredAt?: string;
 }
 
 // ── ObservationNode ─────────────────────────────────────

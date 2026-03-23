@@ -6,6 +6,7 @@
  */
 
 import { Hono } from "hono";
+import type { Catalog, PrefixDef } from "@qa-sdk/core";
 import type { CatalogStore } from "../stores/catalog-store.js";
 
 interface DecodeMapDim {
@@ -39,14 +40,13 @@ export function createDecodeMapRoutes(deps: DecodeMapRouteDeps) {
     const record = await catalogStore.get(catalogId);
     if (!record) return c.json({ error: `Catalog '${catalogId}' not found` }, 404);
 
-    const catalog = JSON.parse(record.data);
+    const catalog = JSON.parse(record.data) as Catalog;
     const maps: DecodeMap[] = [];
 
     for (const [prefixId, prefix] of Object.entries(catalog.prefixes ?? {})) {
-      const p = prefix as any;
-      const versions = p.versions ?? [];
+      const versions = prefix.versions ?? [];
       for (const ver of versions) {
-        const map = buildDecodeMap(catalog, prefixId, p, ver.version);
+        const map = buildDecodeMap(catalog, prefixId, prefix, ver.version);
         if (map) maps.push(map);
       }
     }
@@ -63,7 +63,7 @@ export function createDecodeMapRoutes(deps: DecodeMapRouteDeps) {
     const record = await catalogStore.get(catalogId);
     if (!record) return c.json({ error: `Catalog '${catalogId}' not found` }, 404);
 
-    const catalog = JSON.parse(record.data);
+    const catalog = JSON.parse(record.data) as Catalog;
     const prefix = catalog.prefixes?.[prefixId];
     if (!prefix) return c.json({ error: `Prefix '${prefixId}' not found` }, 404);
 
@@ -77,10 +77,10 @@ export function createDecodeMapRoutes(deps: DecodeMapRouteDeps) {
 }
 
 /** catalog prefix 정의에서 DecodeMap 생성 */
-function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: string): DecodeMap | null {
-  const labels: string[] = prefix.labels ?? [];
+function buildDecodeMap(catalog: Catalog, prefixId: string, prefix: PrefixDef, versionId: string): DecodeMap | null {
+  const labels = [...prefix.labels];
   const dims = prefix.dims ?? {};
-  const verDef = (prefix.versions ?? []).find((v: any) => v.version === versionId);
+  const verDef = (prefix.versions ?? []).find((v) => v.version === versionId);
   if (!verDef) return null;
 
   const axisVersions = verDef.axisVersions ?? {};
@@ -127,7 +127,7 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
       // table_ref — 스킵 (디코딩에서는 불필요)
       mapDims.push({
         dimId: label,
-        snapshotId: `table_${dimDef.tableId}`,
+        snapshotId: `table_${dimDef.table}`,
         kind: { type: "string_enum" },
         entries: ["_ref"],
       });
@@ -142,16 +142,16 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
   const refEntriesDef = verDef.refEntries;
   if (refEntriesDef && typeof refEntriesDef === "object") {
     refLabels = {};
-    for (const [dimLabel, ref] of Object.entries(refEntriesDef as Record<string, any>)) {
+    for (const [dimLabel, ref] of Object.entries(refEntriesDef)) {
       const values: number[] = ref.values ? [...ref.values] : [];
       // display label: 참조 prefix의 축 값을 결합 (service의 경우 "env/region/svc_name/namespace")
       const dimDef = dims[dimLabel];
-      const refPrefixId = dimDef?.prefixId;
+      const refPrefixId = dimDef?.kind === "prefix_ref" ? dimDef.prefixId : undefined;
       const refPrefix = refPrefixId ? catalog.prefixes?.[refPrefixId] : null;
       const refLabelsArr: string[] = values.map((addr: number) => {
         if (!refPrefix) return String(addr);
         // 참조 prefix의 labels로 display label 생성
-        const refPrefixLabels: string[] = refPrefix.labels ?? [];
+        const refPrefixLabels = [...refPrefix.labels];
         return refPrefixLabels.length > 0 ? `${refPrefixId}:${addr}` : String(addr);
       });
       refLabels[dimLabel] = { values, labels: refLabelsArr };
@@ -162,14 +162,14 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
 }
 
 /** prefix의 capacity 계산 (shape의 곱, prefix_ref는 참조 prefix의 capacity 곱) */
-function computePrefixCapacity(catalog: any, prefix: any, versionId: string, visited = new Set<string>()): number {
+function computePrefixCapacity(catalog: Catalog, prefix: PrefixDef, versionId: string, visited = new Set<string>()): number {
   const key = `${prefix.id ?? ""}:${versionId}`;
   if (visited.has(key)) return 1; // 순환 참조 방어
   visited.add(key);
 
-  const labels: string[] = prefix.labels ?? [];
+  const labels = [...prefix.labels];
   const dims = prefix.dims ?? {};
-  const verDef = (prefix.versions ?? []).find((v: any) => v.version === versionId);
+  const verDef = (prefix.versions ?? []).find((v) => v.version === versionId);
   if (!verDef) return 0;
 
   const axisVersions = verDef.axisVersions ?? {};
