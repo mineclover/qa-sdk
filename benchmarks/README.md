@@ -55,3 +55,31 @@
 # ingest-server 시작 후
 node benchmarks/logging-transport.js
 ```
+
+## QaLogger 버퍼링 성능 (실제 SDK 사용)
+
+QaLogger.log()를 연속 호출 → 내부 버퍼 → auto batch flush → Transport 전송.
+
+| batchSize | ev/s | ms/event | HTTP 요청 수 | 비고 |
+|----------:|-----:|---------:|:------------:|------|
+| 1 | 3,908 | 0.256 | 200 | 매 이벤트 즉시 전송 |
+| 10 | 41,137 | 0.024 | 20 | **10.5배** |
+| 50 | 51,148 | 0.020 | 10 | **13배** |
+| 100 | 54,335 | 0.018 | 10 | **14배** (수렴) |
+
+### 핵심 수치
+- **batchSize=1 → 50: 13배 성능 차이** (3,908 → 51,148 ev/s)
+- **batchSize=50 이후 수렴** — 50~100 차이 미미
+- **타이머 flush**: 30건 emit (0.7ms) → 버퍼에 쌓임 → 1초 후 자동 전송
+- **이벤트 유실 없음**: flush 실패 시 buffer 재삽입
+
+### 실전 권장 설정
+```typescript
+const logger = new QaLogger({
+  transport: new HttpTransport({ endpoint: "http://ingest:3200/v1/ingest" }),
+  batchSize: 50,          // ← 최적 (50건마다 flush)
+  flushIntervalMs: 5_000, // 5초마다 타이머 flush (저트래픽 대응)
+  maxBufferSize: 500,     // 버퍼 상한 (500건 = 약 10회 전송분)
+  ...config,
+});
+```
