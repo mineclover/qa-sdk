@@ -33,26 +33,27 @@ export async function init(options: InitOptions): Promise<void> {
 async function initFromDemo(): Promise<void> {
   const cwd = process.cwd();
 
-  // 데모 카탈로그 복사
-  let demoCatalogSource: string;
+  let catalogJson: string;
   try {
     const { DEMO_CATALOG } = await import("demo-snapshot");
-    demoCatalogSource = `/**
- * 데모 카탈로그에서 복사됨.
- * 필요에 따라 수정하세요.
- */
-import { DEMO_CATALOG } from "demo-snapshot";
-
-export default DEMO_CATALOG;
-`;
+    catalogJson = JSON.stringify(DEMO_CATALOG, null, 2);
   } catch {
     console.error("demo-snapshot 패키지를 로드할 수 없습니다. pnpm add demo-snapshot 을 실행하세요.");
     process.exit(1);
   }
 
+  // JSON 카탈로그 (jiti/tsx 불필요) + TS 래퍼 (타입 안전)
   const files = [
-    { path: "my-project.catalog.ts", content: demoCatalogSource },
-    { path: "qa-sdk.config.ts", content: generateConfigTs("my-project.catalog.ts") },
+    { path: "my-project.catalog.json", content: catalogJson },
+    { path: "my-project.catalog.ts", content: `/**
+ * 데모 카탈로그 TS 래퍼.
+ * JSON을 수정하거나, 이 파일에서 프로그래밍 방식으로 확장하세요.
+ * codegen은 JSON을 직접 사용: qa-sdk codegen --catalog my-project.catalog.json
+ */
+import catalog from "./my-project.catalog.json" with { type: "json" };
+export default catalog;
+` },
+    { path: "qa-sdk.config.ts", content: generateConfigTs("my-project.catalog.json") },
   ];
 
   for (const file of files) {
@@ -65,7 +66,7 @@ export default DEMO_CATALOG;
     console.log(`✓ ${file.path}`);
   }
 
-  printNextSteps("my-project.catalog.ts");
+  printNextSteps("my-project.catalog.json");
 }
 
 // ── 인터랙티브 초기화 ────────────────────────────────
