@@ -89,3 +89,129 @@ export {
   resolvePolicyConflicts,
   tryAutoSelect,
 } from "./policy.js";
+
+// ── mental-model ─────────────────────────────────────────
+export type {
+  Reversibility,
+  Magnitude,
+  ReversibilityClassification,
+  KnowledgeLayer,
+  LayeredAnalysis,
+  MentalModelId,
+  MentalModel,
+  AutoDecisionPrinciple,
+  EscalationJudgment,
+  ForcingQuestion,
+} from "./mental-model.js";
+
+export {
+  MENTAL_MODELS,
+  FORCING_QUESTIONS,
+  classifyEscalation,
+} from "./mental-model.js";
+
+// ── vocabulary (도메인 단어) ──────────────────────────────
+export {
+  COGNITIVE_PHASE,
+  FLOW_TYPE,
+  EVIDENCE_KIND,
+  MENTAL_MODEL_AXIS,
+  ESCALATION_TYPE,
+  DECISION_OUTCOME,
+  SCOPE_MODE,
+  REVERSIBILITY,
+  MAGNITUDE,
+  CONFIDENCE_BAND,
+  FORCING_QUESTION_AXIS,
+  DECISION_AXES,
+  discretizeConfidence,
+} from "./vocabulary.js";
+
+// ── catalog (prefix 정의) ────────────────────────────────
+export {
+  DECISION_CATALOG,
+  DECISION_PREFIX_IDS,
+  DECISION_AXIS_IDS,
+} from "./catalog.js";
+
+// ── observe (관찰 레이어) ────────────────────────────────
+export type { ObservedEvent } from "./observe.js";
+export {
+  encodeDecisionEvent,
+  encodeDecisionPath,
+  encodeEscalation,
+  encodeModelApplication,
+  encodeForcingResponse,
+  decodeObservedEvent,
+  serializeObservedEvent,
+  parseAndDecodeAddress,
+} from "./observe.js";
+
+// ── boundary (계층 + 컨텍스트 바운더리) ──────────────────
+export type {
+  DecisionLayerId,
+  DecisionLayer,
+  DecisionContext,
+  ContextExport,
+  ContextImport,
+  LayerViolation,
+  EscalationRequest,
+} from "./boundary.js";
+export {
+  DECISION_LAYERS,
+  getLayerForFlow,
+  validateLayerConstraints,
+  propagateScope,
+  createEscalationRequest,
+} from "./boundary.js";
+
+// ── ingest-adapter (수집 파이프라인 연동) ─────────────────
+export type { AddressContext } from "./ingest-adapter.js";
+export {
+  buildSelectionContext,
+  buildPathContext,
+  buildEscalationContext,
+  buildModelContext,
+  buildForcingContext,
+  mergeContexts,
+  buildFlowCompletionContext,
+} from "./ingest-adapter.js";
+
+// ── core-analysis (구조적 분석) ───────────────────────────
+export type {
+  GateProfile,
+  CausalEdge,
+  ImpactAnalysis,
+  CoreDecisionTrace,
+  PivotPoint,
+} from "./core-analysis.js";
+export {
+  analyzeGateStructure,
+  identifyCoreGates,
+  extractCausalGraph,
+  analyzeImpact,
+  traceCorePath,
+} from "./core-analysis.js";
+
+// ── self-analysis (자기참조 분석) ─────────────────────────
+export {
+  COORDINATE_DESIGN_FLOW,
+  getAnnotatedDesignFlow,
+  recordQaSdkDesignDecisions,
+  analyzeRecordedDecisions,
+} from "./self-analysis.js";
+
+// ── sprint (gstack-inspired pipeline) ────────────────────
+export {
+  OFFICE_HOURS_FLOW,
+  CEO_REVIEW_FLOW,
+  ENG_REVIEW_FLOW,
+  DESIGN_REVIEW_FLOW,
+  CODE_REVIEW_FLOW,
+  INVESTIGATION_FLOW,
+  SHIP_FLOW,
+  SPRINT_PIPELINE,
+  AUTOPLAN_POLICIES,
+  ALL_SPRINT_FLOWS,
+  SPRINT_FLOW_REGISTRY,
+} from "./sprint.js";

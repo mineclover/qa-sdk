@@ -63,6 +63,36 @@ export interface BranchSchema {
   readonly terminal?: boolean;
 }
 
+// ─── 구조적 무게 (Structural Weight) ─────────────────────
+
+/**
+ * 분기점의 구조적 영향도.
+ *
+ * core: 이 결정이 후속 모든 결정의 방향을 바꾼다. 되돌리려면 전체 재실행.
+ *       예: scope-mode(확장/축소), 축 정의(5Q), prefix 생성
+ *
+ * structural: 다수의 후속 결정에 영향. 되돌리면 연쇄 변경.
+ *             예: architecture(extend/refactor), risk-level
+ *
+ * tactical: 국소적 영향. 독립적으로 되돌릴 수 있다.
+ *           예: test-strategy, observability-level
+ */
+export type GateWeight = "core" | "structural" | "tactical";
+
+/**
+ * gate 간 인과 의존.
+ * "이 gate의 선택이 저 gate의 선택 범위를 결정한다"
+ */
+export interface GateDependency {
+  /** 의존 대상 gate ID */
+  readonly gateId: string;
+  /** 의존 성격 */
+  readonly kind:
+    | "constrains"   // 이 gate가 대상 gate의 선택 범위를 제약
+    | "enables"      // 이 gate의 특정 branch가 대상 gate를 활성화
+    | "invalidates"; // 이 gate를 변경하면 대상 gate를 무효화
+}
+
 /** 분기점(Gate) = 하나의 의사결정 지점 */
 export interface GateSchema {
   readonly id: string;
@@ -74,6 +104,18 @@ export interface GateSchema {
   readonly subFlowId?: string;
   /** 이 gate에서 수집해야 하는 근거 유형 */
   readonly requiredEvidence?: readonly EvidenceKind[];
+  /** 적용할 인지 프레임워크 (mental-model.ts의 MentalModelId) */
+  readonly mentalModels?: readonly string[];
+  /**
+   * 구조적 무게. 생략 시 "tactical".
+   * core gate는 변경 시 전체 재실행이 필요한 핵심 분기점.
+   */
+  readonly weight?: GateWeight;
+  /**
+   * 이 gate가 다른 gate에 미치는 인과 의존.
+   * "이 gate를 바꾸면 무엇이 영향받는가"
+   */
+  readonly affects?: readonly GateDependency[];
   /** 생략 가능한 gate */
   readonly optional?: boolean;
   /** gate 처리 제한 시간 (ms) */
@@ -123,6 +165,8 @@ export interface GateSelection {
   readonly durationMs: number;          // 이 gate에서 결정까지 걸린 시간
   /** subFlow gate인 경우, 하위 플로우 인스턴스 ID */
   readonly subFlowInstanceId?: string;
+  /** 이 선택의 원인이 된 이전 gate 선택 (인과 추적) */
+  readonly causedBy?: readonly string[];
 }
 
 /**
