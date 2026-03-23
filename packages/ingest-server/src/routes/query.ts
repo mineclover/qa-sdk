@@ -59,6 +59,24 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json({ items: [], total: 0 });
   });
 
+  // POST /v1/traces/bulk-records — 여러 trace의 records를 한 번에 조회 (N+1 해소)
+  app.post("/v1/traces/bulk-records", async (c) => {
+    const body = await c.req.json<{ traceIds: string[]; limit?: number }>();
+    if (!body.traceIds || !Array.isArray(body.traceIds)) {
+      return c.json({ error: "traceIds array required" }, 400);
+    }
+    const limit = body.limit ?? 20;
+    const traceIds = body.traceIds.slice(0, limit);
+
+    const result: Record<string, unknown[]> = {};
+    await Promise.all(traceIds.map(async (traceId) => {
+      const records = await deps.recordStore.findByTraceId(traceId);
+      result[traceId] = records.map(toEventRecord);
+    }));
+
+    return c.json(result);
+  });
+
   app.get("/v1/traces/:traceId", async (c) => {
     const traceId = c.req.param("traceId");
     const trace = await deps.traceStore.findById(traceId);

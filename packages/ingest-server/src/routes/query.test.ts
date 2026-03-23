@@ -397,3 +397,37 @@ describe("GET /v1/debug/sessions/:sessionId/recent", () => {
     });
   });
 });
+
+describe("POST /v1/traces/bulk-records", () => {
+  it("returns records grouped by traceId", async () => {
+    const { app, deps } = buildApp();
+    await deps.traceStore.upsert({ traceId: "t1", recordCount: 1, firstTimestamp: new Date(), lastTimestamp: new Date() });
+    await deps.traceStore.upsert({ traceId: "t2", recordCount: 1, firstTimestamp: new Date(), lastTimestamp: new Date() });
+    await deps.recordStore.insertBatch([
+      { logId: "r1", traceId: "t1", spanId: "s1", timestamp: new Date(), recordKind: "log", eventKey: "page.view", eventVersion: "001", payloadFormat: "json", payloadEncoding: "raw", payloadMaskingApplied: false, payloadMaskedFields: [] },
+      { logId: "r2", traceId: "t2", spanId: "s2", timestamp: new Date(), recordKind: "log", eventKey: "cart.add", eventVersion: "001", payloadFormat: "json", payloadEncoding: "raw", payloadMaskingApplied: false, payloadMaskedFields: [] },
+    ]);
+
+    const res = await app.request("/v1/traces/bulk-records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ traceIds: ["t1", "t2"] }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json() as Record<string, any[]>;
+    expect(body["t1"]).toHaveLength(1);
+    expect(body["t2"]).toHaveLength(1);
+    expect(body["t1"][0].event_key).toBe("page.view");
+    expect(body["t2"][0].event_key).toBe("cart.add");
+  });
+
+  it("returns 400 without traceIds", async () => {
+    const { app } = buildApp();
+    const res = await app.request("/v1/traces/bulk-records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+  });
+});
