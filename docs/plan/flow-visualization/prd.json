@@ -17,9 +17,10 @@
         "diagram.html, events.html, insights.html, dashboard.html nav에 Flow 링크 1줄씩 추가"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "파일: flow.html(신규 ~80줄) + 기존 4파일 nav 링크 추가. 작업량: 소.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -34,11 +35,12 @@
         "prefix 클릭 시 selectedPrefix 상태 업데이트 (US-003에서 사용)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "SVG 캔버스 없이 순수 HTML 리스트만. 작업량: 소.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -54,11 +56,12 @@
         "노드 클릭 → right panel에 prefix 상세 (id, name, category, dimCount, axes 목록)"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "46개 prefix만. axes/consumer는 다음 스토리. 그리드 레이아웃 (6열 x N행). 작업량: 중.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -74,11 +77,12 @@
         "canvas 좌상단에 줌 레벨 표시"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "SVG transform으로 줌/팬. 엣지 수 147개 — <line> 또는 <path>. 작업량: 중.",
       "dependsOn": [
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -94,11 +98,12 @@
         "최대 30개 유지"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "이벤트 도착 시 canvas prefix 노드 pulse는 US-007에서. 여기서는 리스트만. 작업량: 소.",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -114,11 +119,12 @@
         "오버레이 시 관련 없는 노드 dim"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "API: /api/diagrams 에서 intent-links 배열의 id 사용. endpoints는 prefix ID 목록. 작업량: 중.",
       "dependsOn": [
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -132,12 +138,13 @@
         "sidebar event feed와 canvas 노드가 시각적으로 연결됨"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "US-005(event feed) + US-003(canvas nodes) 의존. CSS @keyframes 또는 SVG animate. 작업량: 소.",
       "dependsOn": [
         "US-005",
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -153,11 +160,12 @@
         "이벤트 10초 폴링 시 함께 갱신"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "SVG arc: d='M... A...' 패턴. 원 중심에서 시작/끝 각도 계산. 작업량: 중.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-009",
@@ -173,15 +181,16 @@
         "localhost 참조 0건"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "작업량: 소. 명령어 실행 + curl 검증만.",
       "dependsOn": [
         "US-007",
         "US-008"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-23T15:49:50.232Z"
+    "updatedAt": "2026-03-23T16:46:34.245Z"
   }
 }
