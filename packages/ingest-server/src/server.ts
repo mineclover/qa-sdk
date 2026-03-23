@@ -227,6 +227,9 @@ async function startServer() {
     // demo-snapshot 미사용 환경에서는 무시
   }
 
+  const { createMetricsCollector } = await import("./lib/metrics-collector.js");
+  const metricsCollector = createMetricsCollector();
+
   const app = createApp({
     appLifecycle,
     checkDbHealth: stores.db ? createDbHealthChecker(stores.db) : undefined,
@@ -235,6 +238,7 @@ async function startServer() {
     dlqStore: stores.dlqStore,
     graphStore: stores.graphStore,
     logger,
+    metricsCollector,
     rateLimitMaxRequests: env.RATE_LIMIT_MAX_REQUESTS,
     rateLimitWindowMs: env.RATE_LIMIT_WINDOW_MS,
     recordStore: stores.recordStore,

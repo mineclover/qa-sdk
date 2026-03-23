@@ -16,6 +16,8 @@
     "dev:viz": "pnpm --filter @qa-sdk/viz-web dev",
     "dev:roleplay": "pnpm --filter @qa-sdk/roleplay-web dev",
     "demo": "concurrently -n reg,ing,shop,demo -c cyan,yellow,green,magenta \"pnpm dev:registry\" \"pnpm dev:ingest\" \"pnpm dev:shop\" \"pnpm dev:demo\"",
+    "monitoring": "docker compose -f monitoring/docker-compose.monitoring.yml up -d && echo '  Prometheus: http://localhost:9090\n  Grafana: http://localhost:3000 (admin/admin)'",
+    "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test"
   },
   "pnpm": {
