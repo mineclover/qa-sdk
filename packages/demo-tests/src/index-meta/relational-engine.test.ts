@@ -11,7 +11,7 @@
 import { describe, it, expect } from "vitest";
 import { RelationalEngine } from "index-meta";
 import type { RelationTypeRule } from "index-meta";
-import type { PolicyRule } from "index-meta";
+import type { PatternRule } from "index-meta";
 import type { MetaRegistryInput } from "index-meta";
 import { AXIS } from "demo-snapshot";
 
@@ -101,7 +101,7 @@ describe("RelationalEngine", () => {
     const engine = new RelationalEngine(RBAC_SCHEMA);
     const wi = engine.registry.getWeightedIndex("perm", "v1");
 
-    const rules: PolicyRule<string>[] = [
+    const rules: PatternRule<string>[] = [
       { id: "default", pattern: [null, null, null], value: "deny" },
       { id: "admin-all", pattern: ["1", null, null], value: "allow" },
       { id: "editor-read", pattern: ["2", "1", null], value: "allow" },
@@ -177,7 +177,7 @@ describe("RelationalEngine", () => {
     const engine = new RelationalEngine(RBAC_SCHEMA);
     const wi = engine.registry.getWeightedIndex("perm", "v1");
 
-    const rules: PolicyRule<string>[] = [
+    const rules: PatternRule<string>[] = [
       { id: "admin-all", pattern: ["1", null, null], value: "allow" },
       { id: "settings-deny", pattern: [null, null, "3"], value: "deny" },
     ];

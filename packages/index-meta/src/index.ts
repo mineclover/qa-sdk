@@ -65,17 +65,31 @@ export {
 } from "./migrate-address.js";
 export { RelationalEngine } from "./relational-engine.js";
 export type { RelationTypeRule, RelationResolveResult } from "./relational-engine.js";
+// ── 내부 전용 (position 기반 pattern resolver) ──
 export {
   matchRules,
-  resolvePolicy,
-  detectConflicts,
+  resolvePolicy as resolvePatternPolicy,
+  detectConflicts as detectPatternConflicts,
 } from "./policy-resolver.js";
 export type {
-  PolicyRule,
+  PatternRule,
   ConflictStrategy,
   ResolveResult,
   ConflictReport,
 } from "./policy-resolver.js";
+// ── 공개 API (entity name + 명시적 와일드카드) ──
+export {
+  WILDCARD,
+  matchToConstraints,
+  entitiesToCoord,
+  ruleToPattern,
+  resolvePolicy,
+  detectConflicts,
+} from "./named-policy.js";
+export type {
+  MatchSpec,
+  PolicyRule,
+} from "./named-policy.js";
 export {
   composeQuery,
   deepDecode,

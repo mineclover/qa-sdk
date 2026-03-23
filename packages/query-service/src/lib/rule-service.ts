@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import {
   InMemoryPrefixRegistry,
-  detectConflicts,
+  detectPatternConflicts,
   type ConflictReport,
   type PrefixRegistry,
 } from "index-meta";
@@ -131,7 +131,7 @@ export class RuleService {
     );
     const comparableRules = existingRules.filter((rule) => rule.id !== ignoredId);
 
-    return detectConflicts(
+    return detectPatternConflicts(
       [...comparableRules, candidate],
       shape,
       isDeepStrictEqual,

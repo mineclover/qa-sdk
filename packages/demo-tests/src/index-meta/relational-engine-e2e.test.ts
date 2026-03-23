@@ -21,10 +21,10 @@ import {
   InMemoryAddressRangeCache,
   SqlAddressRangeCache,
   matchRules,
-  resolvePolicy,
+  resolvePatternPolicy,
 } from "index-meta";
 import type { MetaRegistryInput } from "index-meta";
-import type { PolicyRule, ConflictStrategy } from "index-meta";
+import type { PatternRule, ConflictStrategy } from "index-meta";
 import { AXIS } from "demo-snapshot";
 
 // ── 스키마 정의 ──────────────────────────────────────────────────────────────
@@ -240,7 +240,7 @@ describe("Relational Engine E2E — RBAC", () => {
     const shape = [...perm.shape];
 
     // 규칙 정의
-    const rules: PolicyRule<string>[] = [
+    const rules: PatternRule<string>[] = [
       // 기본: 모든 접근 거부
       { pattern: [null, null, null], value: "deny" },
       // admin은 모든 것에 접근 가능
@@ -255,22 +255,22 @@ describe("Relational Engine E2E — RBAC", () => {
 
     // admin + delete + users → allow (admin은 모든 접근 가능)
     const adminCoords = [1, 3, 4];  // admin=1, delete=3, users=4
-    const adminResult = resolvePolicy(adminCoords, rules, shape, "most-specific");
+    const adminResult = resolvePatternPolicy(adminCoords, rules, shape, "most-specific");
     expect(adminResult.value).toBe("allow");
 
     // editor + read + dashboard → allow
     const editorReadCoords = [2, 1, 1];  // editor=2, read=1, dashboard=1
-    const editorReadResult = resolvePolicy(editorReadCoords, rules, shape, "most-specific");
+    const editorReadResult = resolvePatternPolicy(editorReadCoords, rules, shape, "most-specific");
     expect(editorReadResult.value).toBe("allow");
 
     // editor + read + settings → deny (settings 접근 차단이 더 specific)
     const editorSettings = [2, 1, 3];  // editor=2, read=1, settings=3
-    const editorSettingsResult = resolvePolicy(editorSettings, rules, shape, "most-specific");
+    const editorSettingsResult = resolvePatternPolicy(editorSettings, rules, shape, "most-specific");
     expect(editorSettingsResult.value).toBe("deny");
 
     // viewer + read + dashboard → deny (기본 거부)
     const viewerCoords = [3, 1, 1];  // viewer=3, read=1, dashboard=1
-    const viewerResult = resolvePolicy(viewerCoords, rules, shape, "most-specific");
+    const viewerResult = resolvePatternPolicy(viewerCoords, rules, shape, "most-specific");
     expect(viewerResult.value).toBe("deny");
   });
 

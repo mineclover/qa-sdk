@@ -255,6 +255,11 @@ export class MetaCodec {
     return this._dimIds;
   }
 
+  /** dimId로 해당 dim의 entries/kind 정보 조회. 없으면 undefined. */
+  getDimInfo(dimId: string): { dimId: string; entries: EntityId[]; kind: DecodeMap["dims"][number]["kind"] } | undefined {
+    return this._map.dims.find(d => d.dimId === dimId);
+  }
+
   /** 내부 DecodeMap의 복사본 반환. */
   toDecodeMap(): DecodeMap {
     return structuredClone(this._map);

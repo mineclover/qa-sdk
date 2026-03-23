@@ -14,10 +14,10 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "tracking-domain", name: "행동 추적 도메인",
-      prefixes: ["tracking", "content", "relational"],
-      sharedAxes: ["channel", "locale"],
-      boundary: { exports: ["tracking", "relational"], internal: ["content"] },
-      rationale: "사용자 행동과 콘텐츠가 같은 채널/로케일 컨텍스트를 공유. relational은 행동 간 관계 모델.",
+      prefixes: ["tracking", "content", "relational", "tag_lifecycle"],
+      sharedAxes: ["channel", "locale", "tag", "resource_type", "lifecycle_state"],
+      boundary: { exports: ["tracking", "relational", "tag_lifecycle"], internal: ["content"] },
+      rationale: "사용자 행동과 콘텐츠가 같은 채널/로케일 컨텍스트를 공유. relational은 행동 간 관계 모델. tag_lifecycle은 태그 수명 추적.",
     },
     {
       kind: "domain", id: "event-domain", name: "이벤트 도메인",
@@ -28,24 +28,24 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "domain", id: "observation-domain", name: "관측 도메인",
-      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"],
-      sharedAxes: ["behavior_pattern", "identification_mode", "event_category", "event_lifecycle_stage"],
-      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"], internal: [] },
-      rationale: "비즈니스/파이프라인/엔진/스키마 관측 + 패턴 분류 + 이벤트 분류. svc_ref 공유.",
+      prefixes: ["page_view", "endpoint", "flow_point", "tracking", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation", "validation_event", "resource_lifecycle"],
+      sharedAxes: ["behavior_pattern", "identification_mode", "event_category", "event_lifecycle_stage", "validation_layer", "constraint_op", "resource_type", "lifecycle_state", "resource_location"],
+      boundary: { exports: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation", "validation_event", "resource_lifecycle"], internal: [] },
+      rationale: "비즈니스/파이프라인/엔진/스키마 관측 + 패턴 분류 + 이벤트 분류 + 검증 연산 + 리소스 수명. svc_ref 공유.",
     },
     {
       kind: "domain", id: "infra-domain", name: "인프라 도메인",
-      prefixes: ["deploy_event", "health_event", "ingest_record", "metric_point", "execution_context"],
-      sharedAxes: ["deploy_action", "health_status", "record_type", "metric_type", "execution_mode"],
-      boundary: { exports: ["deploy_event", "health_event", "ingest_record", "metric_point"], internal: ["execution_context"] },
-      rationale: "인프라 계측 + 수집/메트릭 관측. 전 환경(dev/stage/prod) 대상.",
+      prefixes: ["deploy_event", "health_event", "ingest_record", "metric_point", "execution_context", "metric_aggregate", "version_state"],
+      sharedAxes: ["deploy_action", "health_status", "record_type", "metric_type", "execution_mode", "version_lifecycle", "address_state"],
+      boundary: { exports: ["deploy_event", "health_event", "ingest_record", "metric_point", "metric_aggregate", "version_state"], internal: ["execution_context"] },
+      rationale: "인프라 계측 + 수집/메트릭 관측 + 다차원 메트릭 집계 + 버전 롤아웃 상태. 전 환경(dev/stage/prod) 대상.",
     },
     {
       kind: "domain", id: "dev-domain", name: "자기참조 개발 도메인",
-      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity", "version_point", "gate_point"],
-      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject", "skill_id", "skill_category", "edge_type", "observation_intent", "version_lifecycle", "address_state"],
-      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity"], internal: ["version_point", "gate_point"] },
-      rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI/내부 로직 관측 전체를 좌표계로 추적. 완전 자기참조 모니터링.",
+      prefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity", "version_point", "gate_point", "test_coverage", "cli_tracking"],
+      sharedAxes: ["qa_pkg", "dkg_op", "dkg_target_kind", "cli_intent", "cli_domain", "cli_subject", "skill_id", "skill_category", "edge_type", "observation_intent", "version_lifecycle", "address_state", "flow_variant", "skill_outcome"],
+      boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity", "test_coverage", "cli_tracking"], internal: ["version_point", "gate_point"] },
+      rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI/내부 로직 관측 전체를 좌표계로 추적. 테스트 커버리지 매트릭스 + CLI 실행 결과 추적 포함. 완전 자기참조 모니터링.",
     },
   ],
 
@@ -100,13 +100,27 @@ export const DEMO_DKG_CONFIG = {
       scope: ["pattern_anomaly"],
       lifecycle: "active",
     },
+    {
+      kind: "constraint", id: "CON-006",
+      rule: "prefix_ref dim은 반드시 refEntries를 명시해야 한다. 미정의 시 capacity 중 미사용 position은 GateEngine의 reserved 상태로 처리되어 encode/decode가 차단된다. getPrefixProfile에서는 entries=undefined로 표기하여 미완성 상태를 감지한다.",
+      formal: "dimKind === 'prefix_ref' → refEntries REQUIRED; 미정의 → GateEngine.buildDimStateSpecs에서 unfilled positions를 reserved로 표기 → computeStateRanges에서 해당 주소 범위 차단",
+      scope: ["getPrefixProfile", "GateEngine"],
+      lifecycle: "active",
+    },
+    {
+      kind: "constraint", id: "CON-007",
+      rule: "prefix의 totalSpace가 Number.MAX_SAFE_INTEGER(2^53 - 1)를 초과하면 safePrecision=false로 표기해야 한다. BigInt 경로(MetaCodecBig, createLayoutProtocolBig)가 필요함을 소비자에게 알린다.",
+      formal: "totalSpace > Number.MAX_SAFE_INTEGER → safePrecision = false",
+      scope: ["getPrefixProfile"],
+      lifecycle: "active",
+    },
   ],
 
   dslBundles: [
     {
       kind: "dsl-bundle", id: "dsl-observation", name: "관측 DSL",
       description: "화면/API/흐름 관측 포인트 + 패턴 분류를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다.",
-      memberPrefixes: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly", "event_classification"],
+      memberPrefixes: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly", "event_classification", "resource_lifecycle"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "모든 관측 prefix의 svc_ref는 동일한 service 주소를 참조해야 한다",
@@ -117,11 +131,12 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-infra", name: "인프라 계측 DSL",
       description: "배포/헬스 이벤트를 서비스 단위로 묶는 DSL. dev/stage/prod 전 환경을 포함한다.",
-      memberPrefixes: ["deploy_event", "health_event", "endpoint"],
+      memberPrefixes: ["deploy_event", "health_event", "endpoint", "metric_aggregate", "version_state"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "deploy_event 직후 health_event(degraded)가 발생하면 배포 실패 후보",
         "health_event(unhealthy) 시 해당 서비스의 endpoint 관측을 중단 감지",
+        "version_state(released) 전환 시 metric_aggregate(healthy)가 관측되어야 한다",
       ],
     },
     {
@@ -149,7 +164,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-content", name: "콘텐츠/행동 DSL",
       description: "콘텐츠 분류와 사용자 행동 추적을 묶는 DSL. content + tracking.",
-      memberPrefixes: ["content", "tracking"],
+      memberPrefixes: ["content", "tracking", "tag_lifecycle"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
     },
     {
@@ -161,18 +176,19 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-pipeline", name: "파이프라인 관측 DSL",
       description: "수집 파이프라인의 처리 경로와 데이터 정책을 묶는 DSL. 어떤 단계에서 어떤 모드로 어떤 결과가 나왔는가.",
-      memberPrefixes: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint"],
+      memberPrefixes: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint", "validation_event"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
         "validation_mode=strict에서 verdict_result=unknown이 나오면 안 된다",
         "schema_event(migrate) 후 engine_event의 constraint_op 평가가 새 스키마 기준이어야 한다",
+        "validation_event는 engine_event와 같은 constraint_op을 공유하되, validation_layer로 레이어를 구분한다",
       ],
     },
     {
       kind: "dsl-bundle", id: "dsl-dev", name: "자기참조 개발 DSL",
       description: "qa-sdk 모노레포의 빌드/테스트/DKG운영/CLI활동을 좌표계로 추적하는 DSL.",
-      memberPrefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check", "skill_execution"],
+      memberPrefixes: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check", "skill_execution", "test_coverage", "cli_tracking"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "build_event(failure) 후 test_event는 발생하면 안 된다 (빌드 실패 시 테스트 불가)",
@@ -183,7 +199,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-internal", name: "내부 로직 관측 DSL",
       description: "버전 생명주기/주소 상태/관측 의도/실행 컨텍스트를 서비스 단위로 추적.",
-      memberPrefixes: ["version_point", "gate_point", "observation_event", "execution_context", "spec_event", "edge_activity"],
+      memberPrefixes: ["version_point", "gate_point", "observation_event", "execution_context", "spec_event", "edge_activity", "version_state", "metric_aggregate"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "version_point(active) 전환 시 gate_point(active)도 동기화되어야 한다",
@@ -193,7 +209,7 @@ export const DEMO_DKG_CONFIG = {
     {
       kind: "dsl-bundle", id: "dsl-ingest", name: "수집 파이프라인 관측 DSL",
       description: "수집 레코드 유형과 스키마 검증을 서비스 단위로 추적.",
-      memberPrefixes: ["ingest_record", "schema_validation", "pipeline_point", "data_policy", "metric_point"],
+      memberPrefixes: ["ingest_record", "schema_validation", "pipeline_point", "data_policy", "metric_point", "metric_aggregate"],
       serviceBindingPrefix: "service", fixedDims: ["env", "region", "svc_name", "namespace"],
       invariants: [
         "ingest_record(metric) 수집 시 schema_validation이 선행되어야 한다",
@@ -272,16 +288,36 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: "intent-link", id: "IL-skill-cli",
-      endpoints: ["skill_execution", "cli_event"],
+      endpoints: ["skill_execution", "cli_event", "cli_tracking"],
       via: "service",
-      intent: "CLI 스킬 실행과 명령 이벤트가 동일 세션에서 추적된다",
+      intent: "CLI 스킬 실행과 명령 이벤트, 실행 결과가 동일 세션에서 추적된다",
     },
     {
       kind: "intent-link", id: "IL-pipeline-flow",
-      endpoints: ["pipeline_point", "engine_event", "schema_event"],
+      endpoints: ["pipeline_point", "engine_event", "schema_event", "validation_event"],
       via: "service",
-      intent: "파이프라인 단계(pipeline_point)와 엔진 평가(engine_event), 스키마 마이그레이션(schema_event)이 동일 서비스에서 순차 추적된다",
+      intent: "파이프라인 단계(pipeline_point)와 엔진 평가(engine_event), 스키마 마이그레이션(schema_event), 검증 연산(validation_event)이 동일 서비스에서 순차 추적된다",
       invariant: "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
+    },
+    {
+      kind: "intent-link", id: "IL-version-rollout",
+      endpoints: ["version_state", "metric_aggregate", "deploy_event", "health_event"],
+      via: "service",
+      intent: "버전 롤아웃 상태(version_state)와 메트릭 집계(metric_aggregate), 배포/헬스가 동일 서비스에서 연결된다",
+      invariant: "version_state(released) 전환 시 metric_aggregate(healthy)가 관측되어야 한다",
+    },
+    {
+      kind: "intent-link", id: "IL-test-matrix",
+      endpoints: ["test_event", "test_coverage", "build_event"],
+      via: "service",
+      intent: "빌드→테스트→커버리지 매트릭스가 동일 패키지 컨텍스트에서 추적된다",
+      invariant: "test_coverage는 test_event의 flow_variant 확장이므로 동일 qa_pkg/qa_module 기준이어야 한다",
+    },
+    {
+      kind: "intent-link", id: "IL-resource-track",
+      endpoints: ["resource_lifecycle", "endpoint", "tag_lifecycle"],
+      via: "service",
+      intent: "리소스 수명(resource_lifecycle)과 엔드포인트(endpoint), 태그 수명(tag_lifecycle)이 동일 서비스 컨텍스트에서 추적된다",
     },
   ],
 

@@ -1658,6 +1658,113 @@ export const DEMO_CATALOG = {
         { version: "v1", axisVersions: { metric_type: "v1", record_type: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
       ],
     },
+
+    // ── 크로스커팅 관측 prefix (기존 축의 새 조합) ────────────────
+
+    version_state: {
+      id: "version_state", name: "버전 롤아웃 상태",
+      description: "svc_ref × version_lifecycle × address_state — 서비스별 버전이 어떤 생명주기/주소 상태에 있는가",
+      labels: ["svc_ref", "version_lifecycle", "address_state"],
+      meta: { category: "observation" as const, visualShape: "flat-tile", heightRatio: 0.6, detailKind: "config" },
+      dims: {
+        svc_ref:           { kind: "prefix_ref" as const, prefixId: "service" },
+        version_lifecycle: { kind: "axis" as const, axisId: "version_lifecycle" },
+        address_state:     { kind: "axis" as const, axisId: "address_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { version_lifecycle: "v1", address_state: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    metric_aggregate: {
+      id: "metric_aggregate", name: "다차원 메트릭 집계",
+      description: "svc_ref × metric_type × execution_mode × health_status — 서비스별 메트릭 유형/실행 모드/건강 상태 교차 관측",
+      labels: ["svc_ref", "metric_type", "execution_mode", "health_status"],
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 0.8, detailKind: "metric" },
+      dims: {
+        svc_ref:        { kind: "prefix_ref" as const, prefixId: "service" },
+        metric_type:    { kind: "axis" as const, axisId: "metric_type" },
+        execution_mode: { kind: "axis" as const, axisId: "execution_mode" },
+        health_status:  { kind: "axis" as const, axisId: "health_status" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { metric_type: "v1", execution_mode: "v1", health_status: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    validation_event: {
+      id: "validation_event", name: "검증 연산 이벤트",
+      description: "svc_ref × validation_layer × constraint_op × verdict_result — 어떤 레이어에서 어떤 연산자로 검증하여 어떤 결과가 나왔는가",
+      labels: ["svc_ref", "validation_layer", "constraint_op", "verdict_result"],
+      meta: { category: "event" as const, visualShape: "flat-tile", heightRatio: 0.5, detailKind: "metric" },
+      dims: {
+        svc_ref:          { kind: "prefix_ref" as const, prefixId: "service" },
+        validation_layer: { kind: "axis" as const, axisId: "validation_layer" },
+        constraint_op:    { kind: "axis" as const, axisId: "constraint_op" },
+        verdict_result:   { kind: "axis" as const, axisId: "verdict_result" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { validation_layer: "v1", constraint_op: "v1", verdict_result: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    resource_lifecycle: {
+      id: "resource_lifecycle", name: "리소스 수명 추적",
+      description: "svc_ref × resource_type × lifecycle_state × resource_location — 리소스가 어떤 유형/상태/위치에 있는가",
+      labels: ["svc_ref", "resource_type", "lifecycle_state", "resource_location"],
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 1, detailKind: "generic" },
+      dims: {
+        svc_ref:           { kind: "prefix_ref" as const, prefixId: "service" },
+        resource_type:     { kind: "axis" as const, axisId: "resource_type" },
+        lifecycle_state:   { kind: "axis" as const, axisId: "lifecycle_state" },
+        resource_location: { kind: "axis" as const, axisId: "resource_location" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { resource_type: "v1", lifecycle_state: "v1", resource_location: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    test_coverage: {
+      id: "test_coverage", name: "테스트 커버리지 매트릭스",
+      description: "qa_pkg × qa_module × test_result × flow_variant — 패키지/모듈별 테스트 결과와 흐름 변형 교차",
+      labels: ["qa_pkg", "qa_module", "test_result", "flow_variant"],
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 0.8, detailKind: "metric" },
+      dims: {
+        qa_pkg:       { kind: "axis" as const, axisId: "qa_pkg" },
+        qa_module:    { kind: "axis" as const, axisId: "qa_module" },
+        test_result:  { kind: "axis" as const, axisId: "test_result" },
+        flow_variant: { kind: "axis" as const, axisId: "flow_variant" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { qa_pkg: "v2", qa_module: "v2", test_result: "v1", flow_variant: "v1" } },
+      ],
+    },
+    cli_tracking: {
+      id: "cli_tracking", name: "CLI 실행 결과 추적",
+      description: "cli_intent × cli_domain × cli_subject × skill_outcome — CLI 명령 실행 결과 4차원 추적",
+      labels: ["cli_intent", "cli_domain", "cli_subject", "skill_outcome"],
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 0.8, detailKind: "metric" },
+      dims: {
+        cli_intent:    { kind: "axis" as const, axisId: "cli_intent" },
+        cli_domain:    { kind: "axis" as const, axisId: "cli_domain" },
+        cli_subject:   { kind: "axis" as const, axisId: "cli_subject" },
+        skill_outcome: { kind: "axis" as const, axisId: "skill_outcome" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { cli_intent: "v1", cli_domain: "v1", cli_subject: "v1", skill_outcome: "v1" } },
+      ],
+    },
+    tag_lifecycle: {
+      id: "tag_lifecycle", name: "태그 수명 추적",
+      description: "svc_ref × tag × resource_type × lifecycle_state — 리소스 태그가 어떤 유형/상태를 거치는가",
+      labels: ["svc_ref", "tag", "resource_type", "lifecycle_state"],
+      meta: { category: "observation" as const, visualShape: "cube", heightRatio: 0.8, detailKind: "generic" },
+      dims: {
+        svc_ref:         { kind: "prefix_ref" as const, prefixId: "service" },
+        tag:             { kind: "axis" as const, axisId: "tag" },
+        resource_type:   { kind: "axis" as const, axisId: "resource_type" },
+        lifecycle_state: { kind: "axis" as const, axisId: "lifecycle_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { tag: "v1", resource_type: "v1", lifecycle_state: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
   },
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -16,7 +16,7 @@ import {
 /**
  * 좌표 공간에서 특정 패턴에 값을 할당하는 규칙.
  */
-export interface PolicyRule<T> {
+export interface PatternRule<T> {
   /** 규칙 식별자 */
   id: string;
   /** 이 규칙이 적용되는 좌표 범위 (CoordConstraint 배열 = 패턴) */
@@ -48,7 +48,7 @@ export interface ResolveResult<T> {
   /** 전략에 따라 결정된 값. 'collect' 전략이면 T[] */
   value: T | T[];
   /** 매칭된 규칙 목록 (구체성 내림차순) */
-  matchedRules: PolicyRule<T>[];
+  matchedRules: PatternRule<T>[];
   /** 사용된 전략 */
   strategy: ConflictStrategy;
 }
@@ -60,7 +60,7 @@ export interface ConflictReport<T> {
   /** 충돌이 발생하는 좌표 범위 (두 패턴의 교집합) */
   overlapPattern: CoordConstraint[];
   /** 겹치는 규칙들 */
-  conflictingRules: PolicyRule<T>[];
+  conflictingRules: PatternRule<T>[];
 }
 
 // ── Core Functions ───────────────────────────────────────────────────────────
@@ -74,9 +74,9 @@ export interface ConflictReport<T> {
  */
 export function matchRules<T>(
   coord: readonly number[],
-  rules: readonly PolicyRule<T>[],
+  rules: readonly PatternRule<T>[],
   shape: readonly number[],
-): PolicyRule<T>[] {
+): PatternRule<T>[] {
   const matched = rules.filter((r) =>
     coordMatchesPattern(coord, r.pattern, shape),
   );
@@ -93,7 +93,7 @@ export function matchRules<T>(
  */
 export function resolvePolicy<T>(
   coord: readonly number[],
-  rules: readonly PolicyRule<T>[],
+  rules: readonly PatternRule<T>[],
   shape: readonly number[],
   strategy: ConflictStrategy,
 ): ResolveResult<T> | null {
@@ -148,7 +148,7 @@ export function resolvePolicy<T>(
  * @param eq  값 동등성 비교 함수. 기본값: ===
  */
 export function detectConflicts<T>(
-  rules: readonly PolicyRule<T>[],
+  rules: readonly PatternRule<T>[],
   shape: readonly number[],
   eq: (a: T, b: T) => boolean = (a, b) => a === b,
 ): ConflictReport<T>[] {

@@ -3,6 +3,7 @@ export interface TraceStore {
   upsert(params: TraceUpsert): Promise<void>;
   findById(traceId: string): Promise<StoredTrace | null>;
   findUnreconstructed(limit?: number): Promise<StoredTrace[]>;
+  findRecent?(limit?: number): Promise<StoredTrace[]>;
   markReconstructed(traceId: string): Promise<void>;
 }
 

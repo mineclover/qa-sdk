@@ -1,6 +1,6 @@
-import type { PolicyRule } from "index-meta";
+import type { PatternRule } from "index-meta";
 
-export interface StoredPolicyRule<T> extends PolicyRule<T> {
+export interface StoredPolicyRule<T> extends PatternRule<T> {
   readonly indexId: string;
   readonly versionId: string;
   readonly createdAt: string;

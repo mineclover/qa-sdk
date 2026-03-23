@@ -4,6 +4,9 @@
  * 모든 외부 요청을 받아 인증 → 서비스 라우팅.
  * ADR-001: 내부 서비스는 인증을 수행하지 않는다. 게이트웨이가 일괄 처리.
  *
+ * Worker-to-Worker: Service Bindings (HTTP 우회, 직접 RPC)
+ * 로컬 dev: binding 없음 → URL fetch fallback
+ *
  * 라우팅:
  *   /v1/ingest/*    → ingest-server
  *   /v1/traces/*    → ingest-server
@@ -27,7 +30,15 @@ export interface Env {
   /** 허용 이메일 도메인 (쉼표 구분, 예: "mycompany.com,partner.io") */
   AUTH_ALLOWED_DOMAINS?: string;
 
-  /** 서비스 URL */
+  /** Service Bindings — Worker-to-Worker 직접 호출 */
+  REGISTRY_SERVICE?: Fetcher;
+  INGEST_SERVICE?: Fetcher;
+  GATE_SERVICE?: Fetcher;
+  QUERY_SERVICE?: Fetcher;
+  DECODE_SERVICE?: Fetcher;
+  DEMO_API_SERVICE?: Fetcher;
+
+  /** Fallback URL — binding 없을 때 (로컬 dev) */
   INGEST_URL?: string;
   REGISTRY_URL?: string;
   GATE_URL?: string;
@@ -35,53 +46,83 @@ export interface Env {
   DECODE_URL?: string;
 }
 
-/** 하드코딩 fallback — registry 미연결 시 사용 */
-const FALLBACK_ROUTES: Array<{ prefix: string; envKey: keyof Env; defaultUrl: string }> = [
-  { prefix: "/v1/ingest", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/v1/traces", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/v1/sessions", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/v1/scenarios", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/v1/streams", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/v1/admin", envKey: "INGEST_URL", defaultUrl: "http://localhost:3200" },
-  { prefix: "/api/", envKey: "REGISTRY_URL", defaultUrl: "http://localhost:3300" },
-  { prefix: "/dev/", envKey: "REGISTRY_URL", defaultUrl: "http://localhost:3300" },
-  { prefix: "/gate/", envKey: "GATE_URL", defaultUrl: "http://localhost:3400" },
-  { prefix: "/query/", envKey: "QUERY_URL", defaultUrl: "http://localhost:3500" },
-  { prefix: "/state/", envKey: "QUERY_URL", defaultUrl: "http://localhost:3500" },
-  { prefix: "/decode/", envKey: "DECODE_URL", defaultUrl: "http://localhost:3600" },
+// ── 라우팅 테이블 ─────────────────────────────────
+
+interface RouteEntry {
+  prefix: string;
+  /** Service Binding env key */
+  bindingKey?: keyof Env;
+  /** strip: prefix 제거 후 서비스에 전달 */
+  strip?: boolean;
+  /** fallback URL env key */
+  urlKey: keyof Env;
+  defaultUrl: string;
+}
+
+const ROUTES: RouteEntry[] = [
+  { prefix: "/v1/ingest",    urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/traces",    urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/sessions",  urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/scenarios", urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/streams",   urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/admin",     urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/insights",  urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/api/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
+  { prefix: "/dev/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
+  { prefix: "/catalogs",     urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
+  { prefix: "/metrics",      urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
+  { prefix: "/health/",      urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
+  { prefix: "/gate/",        urlKey: "GATE_URL",      defaultUrl: "http://localhost:3400", bindingKey: "GATE_SERVICE",    strip: true },
+  { prefix: "/query/",       urlKey: "QUERY_URL",     defaultUrl: "http://localhost:3500", bindingKey: "QUERY_SERVICE",   strip: true },
+  { prefix: "/state/",       urlKey: "QUERY_URL",     defaultUrl: "http://localhost:3500", bindingKey: "QUERY_SERVICE",   strip: true },
+  { prefix: "/decode/",      urlKey: "DECODE_URL",    defaultUrl: "http://localhost:3600", bindingKey: "DECODE_SERVICE",  strip: true },
 ];
 
-/** registry에서 동적 라우팅 테이블 로드 (캐시: 60초) */
-let cachedRoutes: Array<{ path: string; url: string }> | null = null;
-let cacheExpiry = 0;
+// ── 프록시 ──────────────────────────────────────────
 
-async function loadRoutes(env: Env): Promise<Array<{ prefix: string; url: string }>> {
-  const now = Date.now();
-  if (cachedRoutes && now < cacheExpiry) {
-    return cachedRoutes.map(r => ({ prefix: r.path, url: r.url }));
+/**
+ * Service Binding 또는 HTTP fetch로 요청을 프록시한다.
+ *
+ * binding이 있으면 Worker 간 직접 RPC (HTTP 우회, Host 헤더 문제 없음).
+ * 없으면 기존 HTTP fetch fallback (로컬 dev 등).
+ */
+async function proxyRequest(
+  request: Request,
+  url: URL,
+  route: RouteEntry,
+  env: Env,
+  headers: Headers,
+): Promise<Response> {
+  const targetPath = route.strip
+    ? url.pathname.slice(route.prefix.replace(/\/$/, "").length) || "/"
+    : url.pathname;
+
+  const body = request.method !== "GET" && request.method !== "HEAD"
+    ? request.body
+    : undefined;
+
+  // 1) Service Binding — Worker-to-Worker 직접 호출
+  const binding = route.bindingKey ? env[route.bindingKey] as Fetcher | undefined : undefined;
+  if (binding) {
+    const bindingUrl = new URL(`https://internal${targetPath}${url.search}`);
+    return binding.fetch(bindingUrl, {
+      method: request.method,
+      headers,
+      body,
+    });
   }
 
-  const registryUrl = env.REGISTRY_URL ?? "http://localhost:3300";
-  try {
-    const resp = await fetch(`${registryUrl}/api/services/gateway?env=${env.AUTH_MODE === "bypass" ? "dev" : "prod"}`, {
-      signal: AbortSignal.timeout(3_000),
-    });
-    if (resp.ok) {
-      const data = await resp.json() as { routes: Array<{ path: string; url: string }> };
-      if (data.routes.length > 0) {
-        cachedRoutes = data.routes;
-        cacheExpiry = now + 60_000; // 60초 캐시
-        return data.routes.map(r => ({ prefix: r.path, url: r.url }));
-      }
-    }
-  } catch { /* registry 미연결 → fallback */ }
-
-  // fallback: 환경변수 + 하드코딩
-  return FALLBACK_ROUTES.map(r => ({
-    prefix: r.prefix,
-    url: env[r.envKey] ?? r.defaultUrl,
-  }));
+  // 2) HTTP fetch fallback
+  const baseUrl = (env[route.urlKey] as string | undefined) ?? route.defaultUrl;
+  const targetUrl = `${baseUrl}${targetPath}${url.search}`;
+  return fetch(targetUrl, {
+    method: request.method,
+    headers,
+    body,
+  });
 }
+
+// ── Worker 엔트리 ───────────────────────────────────
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -89,30 +130,40 @@ export default {
 
     // /health — 게이트웨이 자체 헬스
     if (url.pathname === "/health") {
-      return Response.json({ status: "ok", service: "gateway", auth: env.AUTH_MODE ?? "bypass" });
+      const bindings = ["REGISTRY_SERVICE", "INGEST_SERVICE", "GATE_SERVICE", "QUERY_SERVICE", "DECODE_SERVICE"]
+        .filter(k => !!(env as Record<string, unknown>)[k]);
+      return Response.json({
+        status: "ok",
+        service: "gateway",
+        auth: env.AUTH_MODE ?? "bypass",
+        serviceBindings: bindings.length > 0 ? bindings : "none (URL fallback)",
+      });
+    }
+
+    // WebSocket upgrade — /v1/ws → ingest-server로 직접 프록시
+    if (url.pathname === "/v1/ws" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
+      const binding = env.INGEST_SERVICE;
+      if (binding) {
+        return binding.fetch(request);
+      }
+      // fallback: 502 (WebSocket은 HTTP fallback 불가)
+      return Response.json({ error: "WebSocket not available (no INGEST_SERVICE binding)" }, { status: 502 });
     }
 
     // 인증
     const authResult = authenticate(request, env);
     if (authResult instanceof Response) return authResult;
 
-    // 서비스 라우팅 (registry 동적 → fallback)
-    const routes = await loadRoutes(env);
-    for (const route of routes) {
+    // 라우팅
+    for (const route of ROUTES) {
       if (url.pathname.startsWith(route.prefix)) {
-        const targetUrl = `${route.url}${url.pathname}${url.search}`;
-
         const headers = new Headers(request.headers);
         headers.set("X-Gateway-Identity", authResult.identity);
         headers.set("X-Gateway-Auth-Method", authResult.method);
-        headers.delete("Authorization"); // 내부 서비스에 인증 헤더 전달 안 함 (ADR-001)
+        headers.delete("Authorization");
 
         try {
-          return await fetch(targetUrl, {
-            method: request.method,
-            headers,
-            body: request.method !== "GET" && request.method !== "HEAD" ? request.body : undefined,
-          });
+          return await proxyRequest(request, url, route, env, headers);
         } catch (err: any) {
           return Response.json(
             { error: "Service unavailable", target: route.prefix, message: err?.message },

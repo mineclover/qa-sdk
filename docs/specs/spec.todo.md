@@ -32,7 +32,8 @@
 | Decorator 2종 | ✅ 완료 | GateAwareVersionLifecycleStore, GateAwareEntryFlagStore |
 | gate-aware-query 합성 | ✅ 완료 | gateFilterRanges, gateAwareResolve, buildDenialSpecs |
 | Store 어댑터 | ✅ 완료 | Memory + SQL 모두 존재 (AddressStateStore, AddressRangeCache, EntryFlagStore) |
-| 테스트 | ✅ 완료 | 24/24 시나리오 (S1-6, GA-1-8, G1-6, E1-4) |
+| CON-006 refEntries 게이팅 | ✅ 완료 | prefix_ref refEntries 미정의 → unfilled positions reserved 처리. GateEngine.buildDimStateSpecs에서 감지 |
+| 테스트 | ✅ 완료 | 38파일/911 tests (GE-1~6 포함) |
 | INV-6/7/8 | ✅ 검증됨 | |
 
 ### 작업 필요 사항: 없음
@@ -73,13 +74,16 @@
 | 항목 | 상태 | 상세 |
 |---|---|---|
 | Pattern Lattice (❶) | ✅ 완료 | 6개 함수 (constraintContains, patternContains, patternMeet, patternJoin, patternSpecificity, coordMatchesPattern) |
-| Policy Resolution (❷) | ✅ 완료 | matchRules, resolvePolicy(4전략), detectConflicts. 타입 4종 |
+| Policy Resolution (❷) | ✅ 완료 | **공개 API**: PolicyRule(match 기반), resolvePolicy, detectConflicts — entity name + 명시적 와일드카드. **내부**: PatternRule(position 기반), resolvePatternPolicy, matchRules |
 | Cross-Index Query (❸-A) | ✅ 완료 | composeQuery(5단계), deepDecode(재귀+visited set) |
 | Version Query (❸-B) | ✅ 완료 | queryAcrossVersions, entityVersionSpan, translateConstraint |
 | RelationalEngine | ✅ 완료 | 12개 facade 메서드, 2-level resolveRelation |
-| 테스트 | ✅ 완료 | 1,557줄 (5개 테스트 파일) |
+| Named Policy Layer | ✅ 완료 | WILDCARD("*"), matchToConstraints, entitiesToCoord, ruleToPattern. dim 누락/unknown dim/없는 entry 검증 |
+| 테스트 | ✅ 완료 | index-meta 39파일/922 tests, named-policy 11 tests 포함 |
 
 ### 작업 필요 사항: 없음
+
+**PolicyRule 인터페이스 고도화 완료** — position 기반 `pattern: CoordConstraint[]`에서 entity name 기반 `match: MatchSpec`으로 전환. 기존 `PolicyRule`은 `PatternRule`로 rename하여 내부 전용. query-service는 DB 저장 시 `PatternRule` 사용 (내부 엔진 레이어).
 
 ---
 
@@ -145,7 +149,7 @@
 | 항목 | 라이브러리 | 서비스 |
 |---|---|---|
 | RelationalEngine | ✅ 226줄, 완전 | ✅ query facade로 래핑 |
-| PolicyResolver | ✅ 170줄, 완전 | ✅ resolve/rule conflict preflight에 사용 |
+| PolicyResolver | ✅ 170줄, 완전 | ✅ resolve/rule conflict preflight에 사용. Named Policy Layer(match 기반) 공개, PatternRule(position 기반) 내부 전용 |
 | CrossIndexQuery | ✅ 206줄, 완전 | ✅ compose-query/resolve-relation에서 사용 |
 | VersionQuery | ✅ 202줄, 완전 | ✅ query-across-versions에서 사용 |
 | 규칙 CRUD 5종 | — | ✅ POST/GET/PUT/DELETE `/rules` + conflict handling |
@@ -371,7 +375,7 @@ batch encoder (GPU offload 가능)
 | permission-engine migration | `permission-engine/migration.spec.md` | 330 | ✅ |
 | partial-binder | `weighted-index/partial-binder.spec.md` | 352 | ✅ |
 
-**최종 게이트**: 5 build ✅ · demo-tests 39 files / 654 tests ✅ · index-meta 37 files / 905 tests ✅ · ingest-server 16 files / 141 tests ✅ · gate-service 14 tests ✅ · query-service 29 tests ✅
+**최종 게이트**: 5 build ✅ · demo-tests 39 files / 654 tests ✅ · index-meta 39 files / 922 tests ✅ · ingest-server 16 files / 141 tests ✅ · gate-service 14 tests ✅ · query-service 29 tests ✅
 
 ### Tier 2 — 서비스 레이어 (라이브러리 → 서비스 전환)
 

@@ -51,7 +51,8 @@ implemented
 │     composeQuery · deepDecode · queryAcrossVersions          │
 ├──────────────────────────────────────────────────────────────┤
 │  ❷ Policy Resolution  (index-meta 신규 모듈)                 │
-│     matchRules · resolvePolicy · detectConflicts             │
+│     resolvePolicy · detectConflicts (match 기반 공개 API)     │
+│     resolvePatternPolicy · matchRules (position 기반 내부)    │
 ├──────────────────────────────────────────────────────────────┤
 │  ❶ Pattern Lattice  (weighted-index/calc.ts 확장)            │
 │     constraintContains · patternMeet · patternJoin           │
@@ -127,15 +128,22 @@ b에서 a를 빼면 아무것도 안 남으면, a가 b를 완전히 포함한다
 
 좌표 공간에 겹치는 규칙(패턴 + 값)이 여러 개 있을 때, 특정 좌표에 어떤 규칙이 적용되는지 결정한다.
 
-#### 핵심 타입
+#### ❷-A 공개 API — entity name + 명시적 와일드카드
+
+사용자는 position 숫자가 아닌 **entity 이름**으로 규칙을 정의한다. 모든 dim을 명시적으로 선언해야 하며, 와일드카드는 `"*"`로 명시한다 (암묵적 와일드카드 금지).
 
 ```ts
+import { WILDCARD } from "index-meta";  // "*"
+
+/** entity name 기반 정책 규칙 */
 interface PolicyRule<T> {
   id: string;
-  pattern: CoordConstraint[];   // 이 규칙이 적용되는 좌표 범위
-  value: T;                      // 규칙이 주장하는 값
-  priority?: number;             // 명시적 우선순위 (선택)
+  match: MatchSpec;     // { [dimId]: EntityId | EntityId[] | "*" }
+  value: T;
+  priority?: number;
 }
+
+type MatchSpec = Record<string, EntityId | readonly EntityId[] | "*">;
 
 type ConflictStrategy =
   | 'most-specific'    // patternSpecificity가 가장 높은 패턴 승리
@@ -144,13 +152,84 @@ type ConflictStrategy =
   | 'first-match';     // 입력 순서 기준 첫 매칭
 ```
 
-#### 핵심 연산
+**규칙 정의 예시:**
+
+```ts
+const rules: PolicyRule<string>[] = [
+  // 기본: 전체 거부 (모든 dim에 "*" 명시)
+  { id: "default", match: { role: "*",     action: "*",    resource: "*" },     value: "deny"  },
+  // admin은 모든 action, 모든 resource 허용
+  { id: "admin",   match: { role: "admin", action: "*",    resource: "*" },     value: "allow" },
+  // 모든 role의 read 허용
+  { id: "read",    match: { role: "*",     action: "read", resource: "*" },     value: "allow" },
+  // editor는 read, write만 허용 (복수 entry 배열)
+  { id: "editor",  match: { role: "editor", action: ["read", "write"], resource: "*" }, value: "allow" },
+];
+```
+
+**dim 누락 → 에러** (암묵적 와일드카드 차단):
+
+```ts
+// ✗ action 누락 → ValidationError
+{ match: { role: "admin", resource: "*" } }
+// → 'match에 dim "action" 누락 — 와일드카드는 "action": "*"로 명시'
+
+// ✗ unknown dim → ValidationError
+{ match: { role: "admin", action: "*", resource: "*", unknown: "x" } }
+// → 'match에 unknown dim "unknown"'
+```
+
+#### ❷-B 핵심 연산
 
 | 연산 | 의미 |
 |---|---|
-| `matchRules(coord, rules, shape)` | 좌표에 매칭되는 모든 규칙 반환 (구체성 내림차순) |
-| `resolvePolicy(coord, rules, shape, strategy)` | 전략에 따라 최종 값 결정 |
-| `detectConflicts(rules, shape)` | 동일 좌표 범위에서 다른 값을 주장하는 규칙 쌍 탐지 |
+| `resolvePolicy(codec, entities, rules, strategy)` | entity name 기반 좌표에 대해 전략에 따라 최종 값 결정 |
+| `detectConflicts(codec, rules)` | 동일 좌표 범위에서 다른 값을 주장하는 규칙 쌍 탐지 |
+| `ruleToPattern(codec, rule)` | PolicyRule(match) → PatternRule(position) 변환 |
+| `matchToConstraints(codec, match)` | MatchSpec → CoordConstraint[] 변환 |
+| `entitiesToCoord(codec, entities)` | entity name → 1-based position 배열 변환 |
+
+**사용 예시:**
+
+```ts
+const codec = engine.codec("perm", "v1");
+
+// 정책 해소
+resolvePolicy(codec, { role: "editor", action: "read", resource: "dashboard" }, rules, "most-specific");
+// → { value: "allow", matchedRules: [editor(구체성2), read(구체성1), default(구체성0)] }
+
+resolvePolicy(codec, { role: "editor", action: "delete", resource: "settings" }, rules, "most-specific");
+// → { value: "deny", matchedRules: [default(구체성0)] }
+
+// 충돌 탐지
+detectConflicts(codec, [
+  { id: "admin",  match: { role: "admin", action: "*", resource: "*" },       value: "allow" },
+  { id: "no-del", match: { role: "*",     action: "delete", resource: "*" },  value: "deny"  },
+]);
+// → [{ overlapPattern: ["1", "3", null], conflictingRules: [admin, no-del] }]
+// → admin × delete에서 allow vs deny 충돌
+```
+
+#### ❷-C 내부 레이어 — PatternRule (position 기반)
+
+공개 `PolicyRule`은 내부에서 `PatternRule`로 변환되어 ❶ Pattern Lattice 위에서 동작한다.
+
+```ts
+/** 내부 전용 — position 기반 규칙 */
+interface PatternRule<T> {
+  id: string;
+  pattern: CoordConstraint[];   // position 범위 (예: ["1", null, "2-5"])
+  value: T;
+  priority?: number;
+}
+
+// 내부 함수 (position 기반)
+resolvePatternPolicy(coord, rules, shape, strategy)
+detectPatternConflicts(rules, shape)
+matchRules(coord, rules, shape)
+```
+
+변환 흐름: `PolicyRule.match → ruleToPattern(codec) → PatternRule.pattern → resolvePatternPolicy`
 
 #### 매칭 판정
 
@@ -161,11 +240,11 @@ type ConflictStrategy =
 두 규칙의 패턴이 `patternMeet`으로 겹치는 영역이 존재하고, 값이 다르면 충돌이다:
 
 ```
-규칙 R1: pattern=[null, "2", null],  value="allow"    ← action=2이면 허용
-규칙 R2: pattern=["3",  null, null], value="deny"     ← role=3이면 거부
+규칙 R1: match={ role: "*",     action: "write", resource: "*" }  value="allow"
+규칙 R2: match={ role: "viewer", action: "*",    resource: "*" }  value="deny"
 
-겹침:    patternMeet(R1, R2) = ["3", "2", null]
-         → role=3이면서 action=2인 좌표에서 R1은 allow, R2는 deny → 충돌
+겹침:    patternMeet(R1, R2) = viewer × write × *
+         → viewer가 write할 때 R1은 allow, R2는 deny → 충돌
 
 해소:    strategy='most-specific' → R2.specificity ≈ 0.88, R1.specificity ≈ 0.75
          → R2 승리 → "deny"
@@ -275,22 +354,28 @@ migration edge가 없으면 EntityId 기반 암묵적 이동을 시도한다.
 
 ### UC-1: RBAC 권한 평가 — "이 사용자가 이 리소스에 접근할 수 있는가?"
 
-```
-shape = [role(8), action(4), resource(16)]
+```ts
+const codec = engine.codec("perm", "v1");
+// perm index: role(8) × action(4) × resource(16)
 
-규칙:
-  R1: [null,  null, null]   → "deny"          (기본 거부)
-  R2: ["1",   null, null]   → "allow"         (admin은 전부 허용)
-  R3: [null,  "4",  null]   → "deny"          (delete는 전부 거부)
-  R4: ["1",   "4",  null]   → "allow"         (admin의 delete는 허용)
+const rules: PolicyRule<string>[] = [
+  { id: "R1", match: { role: "*",     action: "*",      resource: "*" },       value: "deny"  },
+  { id: "R2", match: { role: "admin", action: "*",      resource: "*" },       value: "allow" },
+  { id: "R3", match: { role: "*",     action: "delete", resource: "*" },       value: "deny"  },
+  { id: "R4", match: { role: "admin", action: "delete", resource: "*" },       value: "allow" },
+];
 
-질의: coord=[1, 4, 7] (admin, delete, doc-7)
-  matchRules → [R4, R2, R3, R1]  (구체성 순)
-  resolvePolicy('most-specific') → R4 → "allow"
+resolvePolicy(codec, { role: "admin", action: "delete", resource: "doc-7" }, rules, "most-specific");
+// matchRules → [R4, R2, R3, R1]  (구체성 순)
+// → R4 → "allow"
+
+resolvePolicy(codec, { role: "viewer", action: "delete", resource: "doc-7" }, rules, "most-specific");
+// matchRules → [R3, R1]
+// → R3 → "deny"
 ```
 
 **기존 방법**: 호출자가 규칙 우선순위를 직접 관리하고 if-else 체인으로 판정.
-**이 스펙 적용 후**: 규칙을 선언하고 `resolvePolicy`에 위임. 충돌은 `detectConflicts`로 사전 탐지.
+**이 스펙 적용 후**: entity name으로 규칙을 선언하고 `resolvePolicy`에 위임. 충돌은 `detectConflicts`로 사전 탐지.
 
 ---
 

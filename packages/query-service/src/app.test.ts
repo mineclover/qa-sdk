@@ -8,7 +8,7 @@ import {
   gateAwareResolve,
   gateFilterRanges,
   queryAcrossVersions,
-  resolvePolicy,
+  resolvePatternPolicy,
   type MetaRegistryInput,
   type AddressStateCacheRecord,
   type DimStateSpec,
@@ -441,7 +441,7 @@ describe("query-service", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(
-      resolvePolicy(
+      resolvePatternPolicy(
         [1, 1],
         [
           { id: "broad-high", pattern: [null, null], value: "allow", priority: 10 },
@@ -765,7 +765,7 @@ describe("query-service", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(
       gateAwareResolve(
-        resolvePolicy(
+        resolvePatternPolicy(
           [2, 1, 1],
           rules,
           [3, 2, 2],

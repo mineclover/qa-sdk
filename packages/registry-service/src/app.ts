@@ -20,7 +20,9 @@ import { createServiceRoutes } from "./routes/services.js";
 import { createEndpointRoutes } from "./routes/endpoints.js";
 import { createEventSchemaRoutes } from "./routes/event-schemas.js";
 import { createDecodeMapRoutes } from "./routes/decode-map.js";
+import { createEventCatalogRoutes } from "./routes/event-catalog.js";
 import { createServiceHealthRoutes } from "./routes/service-health.js";
+import { createDashboardApiRoutes } from "./routes/dashboard-api.js";
 import type { CatalogStore } from "./stores/catalog-store.js";
 import type { AxisProfileStore } from "./stores/axis-profile-store.js";
 import type { ConfigStore } from "./stores/config-store.js";
@@ -34,6 +36,10 @@ export interface AppDeps extends RegistryServiceDeps {
   catalogStore?: CatalogStore;
   axisStore?: AxisProfileStore;
   devDashboardProvider?: DevDkgProvider;
+  /** DKG graph 제공자 — devDashboardProvider 없이도 다이어그램/대시보드 API 활성화 가능 */
+  getGraph?: () => unknown;
+  getCatalog?: () => unknown;
+  collectMetrics?: () => unknown[];
   /** 통합 설정 저장소 (DkgConfig, PatternRules 등) */
   configStore?: ConfigStore;
   /** 서비스 엔드포인트 저장소 (좌표계 기반 URL 관리) */
@@ -103,11 +109,28 @@ export function createApp(deps: AppDeps) {
       provider: deps.devDashboardProvider,
       catalogStore: deps.catalogStore,
     }));
+  }
 
-    // DKG 기반 다이어그램 API — devDashboardProvider가 graph를 제공
-    app.route("/api/diagrams", createDiagramRoutes({
-      getGraph: () => deps.devDashboardProvider!.getGraph(),
-    }));
+  // DKG 기반 API — devDashboardProvider 또는 getGraph 중 하나만 있으면 활성화
+  const graphGetter = deps.devDashboardProvider
+    ? () => deps.devDashboardProvider!.getGraph()
+    : deps.getGraph;
+  const catalogGetter = deps.devDashboardProvider
+    ? () => deps.devDashboardProvider!.getCatalog()
+    : deps.getCatalog;
+  const metricsCollector = deps.devDashboardProvider
+    ? () => deps.devDashboardProvider!.collectMetrics()
+    : deps.collectMetrics;
+  if (graphGetter) {
+    app.route("/api/diagrams", createDiagramRoutes({ getGraph: graphGetter }));
+
+    if (catalogGetter) {
+      app.route("/api/dashboard", createDashboardApiRoutes({
+        getGraph: graphGetter as () => any,
+        getCatalog: catalogGetter as () => any,
+        collectMetrics: metricsCollector as (() => any[]) | undefined,
+      }));
+    }
   }
   app.route(
     "/",
@@ -116,6 +139,9 @@ export function createApp(deps: AppDeps) {
       axisStore: deps.axisStore,
     }),
   );
+
+  // Event Catalog API — static import (Worker 호환)
+  app.route("/", createEventCatalogRoutes());
 
   return app;
 }

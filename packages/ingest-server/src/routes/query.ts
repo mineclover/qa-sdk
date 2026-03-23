@@ -49,6 +49,16 @@ export interface QueryDeps {
 export function createQueryRoutes(deps: QueryDeps) {
   const app = new Hono();
 
+  // 최근 trace 목록 — :traceId 보다 먼저 매칭되어야 함
+  app.get("/v1/traces/recent", async (c) => {
+    const limit = parseInt(c.req.query("limit") ?? "50");
+    if (deps.traceStore.findRecent) {
+      const traces = await deps.traceStore.findRecent(limit);
+      return c.json({ items: traces.map(toTraceResponse), total: traces.length });
+    }
+    return c.json({ items: [], total: 0 });
+  });
+
   app.get("/v1/traces/:traceId", async (c) => {
     const traceId = c.req.param("traceId");
     const trace = await deps.traceStore.findById(traceId);

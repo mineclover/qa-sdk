@@ -43,3 +43,27 @@ export {
   v1MinimalSet,
   type V1MinimalEventKey,
 } from "./v1-minimal.js";
+
+// ── Tracking Context ────────────────────────────────────
+export type { TrackingContextConfig, TrackingContextManager } from "./tracking-context.js";
+export { createTrackingContext } from "./tracking-context.js";
+
+// ── Auto Tracker ────────────────────────────────────────
+export type { AutoTrackerConfig, AutoTracker } from "./auto-track.js";
+export { createAutoTracker, createDefaultSvcRefResolver } from "./auto-track.js";
+
+// ── Prefix Mapping ──────────────────────────────────────
+export type {
+  DimSource,
+  PrefixDimMapping,
+  EventPrefixEntry,
+  EventPrefixMapping,
+  TrackingContext,
+} from "./prefix-mapping.js";
+export {
+  resolvePrefixDims,
+  registerMappings,
+  getMapping,
+  getAllMappings,
+  SHOP_EVENT_MAPPINGS,
+} from "./prefix-mapping.js";

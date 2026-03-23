@@ -54,6 +54,7 @@ import {
 import type { DebugStore } from "./lib/debug-store.js";
 import type { ConvergencePipelinePort } from "./lib/phase-two-worker.js";
 import type { MetricsCollector } from "./lib/metrics-collector.js";
+import { createInsightsRoutes } from "./routes/insights.js";
 
 export interface AppDeps {
   appLifecycle?: AppLifecycle;
@@ -85,6 +86,8 @@ export interface AppDeps {
   getUptimeSeconds?: () => number;
   version?: string;
   corsOrigin?: string;
+  /** D1 SqlDriver — insights 집계 쿼리용 (Worker 모드) */
+  sqlDriver?: import("index-meta").SqlDriver;
 }
 
 export function createApp(deps: AppDeps) {
@@ -134,6 +137,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", createScenarioRoutes(deps));
   app.route("/", createSessionRoutes(deps));
   app.route("/", createVerdictRoutes(deps));
+  app.route("/", createInsightsRoutes({ driver: deps.sqlDriver }));
   app.route(
     "/",
     createDlqRoutes({

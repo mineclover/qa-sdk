@@ -303,6 +303,8 @@ body {
   <a class="nav-link" href="/monitor.html">Monitor</a>
   <a class="nav-link active" href="/diagram.html">Diagram</a>
   <a class="nav-link" href="/debugger.html">Debugger</a>
+  <a class="nav-link" href="/dashboard.html">Dashboard</a>
+  <a class="nav-link" href="/events.html">Events</a>
 </nav>
 
 <!-- ── Content ── -->
@@ -561,6 +563,72 @@ function restoreFromUrl() {
 //  Render
 // ═══════════════════════════════════════════════════════════════
 
+// ── Observed prefix 로딩 (insights API에서) ──
+let _observedPrefixes = null;
+
+async function getObservedPrefixes() {
+  if (_observedPrefixes) return _observedPrefixes;
+  try {
+    const base = (window.__QA_CONFIG__||{}).INGEST_URL || (window.__QA_CONFIG__||{}).REGISTRY_URL || '';
+    const r = await fetch(`${base}/v1/insights/prefixes`);
+    if (r.ok) {
+      const data = await r.json();
+      _observedPrefixes = {};
+      data.forEach(p => { _observedPrefixes[p.prefix] = p.count; });
+    }
+  } catch { /* insights 없으면 스킵 */ }
+  return _observedPrefixes || {};
+}
+
+function applyObservedOverlay(viewport) {
+  if (!_observedPrefixes) return;
+  // sequence diagram participants → <text> 요소에 prefix 이름이 있음
+  const texts = viewport.querySelectorAll('text.actor, text');
+  const observed = _observedPrefixes;
+  texts.forEach(t => {
+    const name = (t.textContent || '').trim();
+    if (observed[name]) {
+      // participant rect 찾기 (이전 sibling 또는 부모 g의 rect)
+      const g = t.closest('g');
+      if (g) {
+        const rect = g.querySelector('rect, line');
+        if (rect) {
+          rect.style.stroke = '#3fb950';
+          rect.style.strokeWidth = '2';
+        }
+        t.style.fill = '#3fb950';
+        t.style.fontWeight = 'bold';
+      }
+      // observed 카운트 배지 추가
+      const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      badge.textContent = `${observed[name]}x`;
+      badge.setAttribute('x', t.getAttribute('x') || '0');
+      badge.setAttribute('y', String(parseFloat(t.getAttribute('y') || '0') + 14));
+      badge.setAttribute('text-anchor', t.getAttribute('text-anchor') || 'middle');
+      badge.style.fill = '#3fb950';
+      badge.style.fontSize = '10px';
+      badge.style.fontFamily = 'monospace';
+      t.parentNode?.appendChild(badge);
+    }
+  });
+
+  // legend 추가
+  const svg = viewport.querySelector('svg');
+  if (svg) {
+    const observedCount = Object.keys(observed).length;
+    const allParticipants = new Set();
+    texts.forEach(t => { const n = (t.textContent||'').trim(); if (n && n.length > 1) allParticipants.add(n); });
+    const matchCount = [...allParticipants].filter(p => observed[p]).length;
+    if (matchCount > 0 || allParticipants.size > 0) {
+      const legend = document.createElement('div');
+      legend.style.cssText = 'position:absolute;bottom:8px;left:8px;font-size:11px;color:#8b949e;background:rgba(13,17,23,0.85);padding:4px 8px;border-radius:4px;z-index:5';
+      legend.innerHTML = `<span style="color:#3fb950">●</span> observed (${matchCount}) &nbsp; <span style="color:#8b949e">○</span> unobserved`;
+      viewport.style.position = 'relative';
+      viewport.appendChild(legend);
+    }
+  }
+}
+
 async function renderMermaid(mmd) {
   currentMmd = mmd;
   const viewport = document.getElementById('diagram-viewport');
@@ -572,6 +640,11 @@ async function renderMermaid(mmd) {
     const id = `mmd-${renderCounter}`;
     const { svg } = await mermaid.render(id, mmd);
     viewport.innerHTML = `<div class="mermaid">${svg}</div>`;
+
+    // observed prefix 오버레이 적용
+    await getObservedPrefixes();
+    applyObservedOverlay(viewport);
+
     resetZoom();
   } catch (err) {
     viewport.innerHTML = `<div style="padding:24px;color:#f85149;font-family:'IBM Plex Mono',monospace;font-size:12px;">

@@ -21,3 +21,4 @@ packages/platform-demo/public/diagram-presets.js
 .claude/
 data/
 dist/tarballs/
+verdaccio/storage/

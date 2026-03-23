@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Insights</title>
+<script src="config.js"></script>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
+  --txt: #c9d1d9; --txt2: #8b949e; --blue: #58a6ff; --green: #3fb950;
+  --yellow: #d29922; --red: #f85149; --purple: #bc8cff; --orange: #d18616; --cyan: #56d4dd;
+  --mono: 'SF Mono','Cascadia Code','Fira Code',monospace;
+  --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);line-height:1.5}
+#nav{height:36px;display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;font-size:13px}
+.nav-brand{font-weight:700;color:var(--blue);margin-right:16px;font-size:14px}
+.nav-link{color:var(--txt2);text-decoration:none;padding:6px 12px;border-radius:4px}
+.nav-link:hover{color:var(--txt);background:var(--bg3)}
+.nav-link.active{color:var(--green);background:rgba(63,185,80,0.1)}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+h1{font-size:18px;font-weight:600;margin-bottom:16px}
+.btn{background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px}
+.btn:hover{background:var(--border)}
+
+/* ── Summary Cards ── */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.sum-val{font-size:28px;font-weight:700;color:var(--blue);font-family:var(--mono)}
+.sum-label{font-size:11px;color:var(--txt2);margin-top:2px}
+
+/* ── Sections ── */
+.section{margin-bottom:28px}
+.section-title{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:3px;height:14px;background:var(--blue);border-radius:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px}
+.card-title{font-size:12px;color:var(--txt2);margin-bottom:8px}
+
+/* ── Bar Chart ── */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px}
+.bar-label{width:140px;font-family:var(--mono);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:18px;background:var(--bg);border-radius:3px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:3px;transition:width 300ms}
+.bar-count{position:absolute;right:6px;top:0;line-height:18px;font-size:10px;color:var(--txt);font-family:var(--mono)}
+
+/* ── Flow ── */
+.flow-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.flow-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.flow-svc{color:var(--green);font-size:12px}
+.flow-time{color:var(--txt2);font-size:11px;font-family:var(--mono)}
+.flow-seq{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-bottom:4px}
+.flow-step{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:var(--bg3);color:var(--txt)}
+.flow-step:first-child{background:rgba(63,185,80,0.15);color:var(--green)}
+.flow-arrow{color:var(--border);font-size:9px}
+.flow-prefixes{display:flex;gap:3px;flex-wrap:wrap}
+.flow-prefix{font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:2px;background:rgba(188,140,255,0.1);color:var(--purple)}
+
+/* ── Timeline ── */
+.tl-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px}
+.tl-hour{width:110px;font-family:var(--mono);color:var(--txt2);font-size:11px}
+.tl-bar{height:16px;background:var(--blue);border-radius:2px;min-width:2px;transition:width 300ms}
+.tl-cnt{font-family:var(--mono);font-size:11px;color:var(--txt2)}
+
+.empty{text-align:center;padding:30px;color:var(--txt2)}
+.loading{text-align:center;padding:30px;color:var(--txt2)}
+@media(max-width:768px){.summary-grid{grid-template-columns:repeat(3,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav id="nav">
+  <span class="nav-brand">QA-SDK</span>
+  <a class="nav-link" href="/">Demo</a>
+  <a class="nav-link" href="/monitor.html">Monitor</a>
+  <a class="nav-link" href="/diagram.html">Diagram</a>
+  <a class="nav-link" href="/dashboard.html">Dashboard</a>
+  <a class="nav-link" href="/events.html">Events</a>
+  <a class="nav-link active" href="/insights.html">Insights</a>
+</nav>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h1>Insights</h1>
+    <button class="btn" onclick="loadAll()">Refresh</button>
+  </div>
+
+  <div class="summary-grid" id="summaryGrid">
+    <div class="sum-card"><div class="sum-val" id="sTraces">-</div><div class="sum-label">Traces</div></div>
+    <div class="sum-card"><div class="sum-val" id="sRecords">-</div><div class="sum-label">Records</div></div>
+    <div class="sum-card"><div class="sum-val" id="sManual">-</div><div class="sum-label">Manual Events</div></div>
+    <div class="sum-card"><div class="sum-val" id="sAuto">-</div><div class="sum-label">Auto Captured</div></div>
+    <div class="sum-card"><div class="sum-val" id="sActors">-</div><div class="sum-label">Users</div></div>
+    <div class="sum-card"><div class="sum-val" id="sSessions">-</div><div class="sum-label">Sessions</div></div>
+    <div class="sum-card"><div class="sum-val" id="sServices">-</div><div class="sum-label">Services</div></div>
+    <div class="sum-card"><div class="sum-val" id="sEventKeys">-</div><div class="sum-label">Event Keys</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-title">Service Distribution</div>
+      <div class="card" id="serviceChart"><div class="loading">Loading...</div></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Event Keys</div>
+      <div class="card" id="eventKeyChart"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-title">Coordinate Prefixes</div>
+      <div class="card" id="prefixChart"><div class="loading">Loading...</div></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Event Timeline</div>
+      <div class="card" id="timelineChart"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Event Flows (multi-step traces)</div>
+    <div id="flowList"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Permission History</div>
+    <div class="card" id="permHistory"><div class="loading">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var BASE = (window.__QA_CONFIG__||{}).INGEST_URL || '';
+  var colors = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#56d4dd','#d18616','#8b949e'];
+
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  function barChart(el, items, labelKey, countKey, maxItems) {
+    if (!items.length) { el.innerHTML='<div class="empty">No data</div>'; return; }
+    items = items.slice(0, maxItems || 15);
+    var max = Math.max(...items.map(function(i){return i[countKey]}));
+    el.innerHTML = items.map(function(item, idx){
+      var pct = Math.max(2, (item[countKey]/max)*100);
+      var color = colors[idx % colors.length];
+      return '<div class="bar-row">'
+        + '<span class="bar-label" title="'+esc(item[labelKey])+'">'+esc(item[labelKey])+'</span>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div>'
+        + '<span class="bar-count">'+item[countKey]+'</span></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  async function loadSummary() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/summary');
+      var d = await r.json();
+      document.getElementById('sTraces').textContent = d.traces;
+      document.getElementById('sRecords').textContent = d.records;
+      document.getElementById('sManual').textContent = d.manualRecords ?? '-';
+      document.getElementById('sAuto').textContent = d.autoRecords ?? '-';
+      document.getElementById('sActors').textContent = d.actors ?? '-';
+      document.getElementById('sSessions').textContent = d.sessions;
+      document.getElementById('sServices').textContent = d.services;
+      document.getElementById('sEventKeys').textContent = d.eventKeys;
+    } catch(e) { console.error('summary', e); }
+  }
+
+  async function loadServices() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/services');
+      var items = await r.json();
+      barChart(document.getElementById('serviceChart'), items, 'service', 'records', 10);
+    } catch(e) { document.getElementById('serviceChart').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  var AUTO_EVENTS = new Set(['click','page_view','form_submit','scroll','visibility_change']);
+
+  async function loadEventKeys() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/event-keys');
+      var items = await r.json();
+      // 카테고리 + 자동/수동 분류 태그
+      var catColors = {navigation:'#58a6ff',interaction:'#bc8cff',form:'#d29922',session:'#3fb950',network:'#56d4dd',execution:'#d18616',outcome:'#f85149',quality:'#8b949e',uncategorized:'#6e7681'};
+      items.forEach(function(e){
+        e._source = AUTO_EVENTS.has(e.eventKey) ? 'auto' : 'manual';
+        e._label = e.eventKey;
+        e._category = e.category || 'uncategorized';
+      });
+
+      // 카테고리별 그룹 + 바 차트
+      var el = document.getElementById('eventKeyChart');
+      var max = Math.max(...items.map(function(i){return i.count}));
+      el.innerHTML = items.map(function(item, idx){
+        var pct = Math.max(2, (item.count/max)*100);
+        var color = catColors[item._category] || '#8b949e';
+        var srcTag = item._source === 'auto' ? '<span style="font-size:9px;color:#56d4dd;margin-left:4px">auto</span>' : '';
+        var catTag = '<span style="font-size:9px;color:'+color+';margin-left:4px">'+item._category+'</span>';
+        return '<div class="bar-row">'
+          + '<span class="bar-label" title="'+esc(item._label)+'">'+esc(item._label)+catTag+srcTag+'</span>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div>'
+          + '<span class="bar-count">'+item.count+'</span></div>'
+          + '</div>';
+      }).join('');
+    } catch(e) { document.getElementById('eventKeyChart').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  async function loadPrefixes() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/prefixes');
+      var items = await r.json();
+      barChart(document.getElementById('prefixChart'), items, 'prefix', 'count', 15);
+    } catch(e) { document.getElementById('prefixChart').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  async function loadTimeline() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/timeline');
+      var items = (await r.json()).reverse();
+      var el = document.getElementById('timelineChart');
+      if (!items.length) { el.innerHTML='<div class="empty">No data</div>'; return; }
+      var max = Math.max(...items.map(function(i){return i.count}));
+      el.innerHTML = items.map(function(item){
+        var w = Math.max(2, (item.count/max)*100);
+        var label = item.hour.replace('T',' ')+'h';
+        return '<div class="tl-row">'
+          + '<span class="tl-hour">'+esc(label)+'</span>'
+          + '<div class="tl-bar" style="width:'+w+'%"></div>'
+          + '<span class="tl-cnt">'+item.count+'</span>'
+          + '</div>';
+      }).join('');
+    } catch(e) { document.getElementById('timelineChart').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  async function loadFlows() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/flows?limit=20');
+      var items = await r.json();
+      var el = document.getElementById('flowList');
+      if (!items.length) { el.innerHTML='<div class="empty">No multi-step traces yet</div>'; return; }
+      el.innerHTML = items.map(function(f){
+        var seq = f.sequence.map(function(s,i){
+          return '<span class="flow-step">'+esc(s)+'</span>'
+            + (i < f.sequence.length-1 ? '<span class="flow-arrow">&rarr;</span>' : '');
+        }).join('');
+        var prefixes = f.prefixes.map(function(p){ return '<span class="flow-prefix">'+esc(p)+'</span>'; }).join('');
+        var time = f.firstTimestamp ? new Date(f.firstTimestamp).toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        return '<div class="flow-card">'
+          + '<div class="flow-top"><span class="flow-svc">'+esc(f.service||'?')+'</span><span class="flow-time">'+esc(time)+' &middot; '+f.recordCount+' events</span></div>'
+          + '<div class="flow-seq">'+seq+'</div>'
+          + (prefixes ? '<div class="flow-prefixes">'+prefixes+'</div>' : '')
+          + '</div>';
+      }).join('');
+    } catch(e) { document.getElementById('flowList').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  async function loadPermissions() {
+    try {
+      var r = await fetch(BASE+'/v1/insights/permissions?limit=30');
+      var data = await r.json();
+      var el = document.getElementById('permHistory');
+      var items = data.items || [];
+      if (!items.length) { el.innerHTML='<div class="empty">No permission events yet. Login/navigate on shop-web.</div>'; return; }
+
+      // summary 바
+      var summary = data.summary || {};
+      var summaryHtml = '<div style="display:flex;gap:12px;margin-bottom:12px;font-size:12px">';
+      var eventColors = {'permission.check':'var(--blue)','permission.denied':'var(--red)','auth.login':'var(--green)','auth.logout':'var(--yellow)'};
+      Object.entries(summary).forEach(function(kv){
+        summaryHtml += '<span style="color:'+( eventColors[kv[0]]||'var(--txt2)')+'">'+esc(kv[0])+': <b>'+kv[1]+'</b></span>';
+      });
+      summaryHtml += '</div>';
+
+      // 히스토리 리스트
+      var listHtml = items.map(function(item){
+        var time = new Date(item.timestamp).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        var date = new Date(item.timestamp).toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
+        var icon = item.eventKey === 'permission.denied' ? '🚫'
+          : item.eventKey === 'auth.login' ? '🔑'
+          : item.eventKey === 'auth.logout' ? '🚪'
+          : '✓';
+        var color = eventColors[item.eventKey] || 'var(--txt2)';
+        var user = item.userId || item.actorId || '-';
+
+        return '<div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid var(--bg3);font-size:12px">'
+          + '<span style="width:18px;text-align:center">'+icon+'</span>'
+          + '<span style="width:90px;font-family:var(--mono);color:var(--txt2);font-size:10px">'+esc(date)+' '+esc(time)+'</span>'
+          + '<span style="color:'+color+';width:130px;font-family:var(--mono);font-size:11px">'+esc(item.eventKey)+'</span>'
+          + '<span style="width:120px;color:var(--orange);font-size:11px">'+esc(user)+'</span>'
+          + '<span style="flex:1;color:var(--txt2);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+          + (item.payload ? esc(JSON.stringify(item.payload)) : '')
+          + '</span>'
+          + '</div>';
+      }).join('');
+
+      el.innerHTML = summaryHtml + listHtml;
+    } catch(e) { document.getElementById('permHistory').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  window.loadAll = function(){
+    loadSummary(); loadServices(); loadEventKeys(); loadPrefixes(); loadTimeline(); loadFlows(); loadPermissions();
+  };
+  loadAll();
+})();
+</script>
+</body>
+</html>

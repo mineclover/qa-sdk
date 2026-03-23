@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Event Explorer</title>
+<script src="config.js"></script>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
+  --txt: #c9d1d9; --txt2: #8b949e; --blue: #58a6ff; --green: #3fb950;
+  --yellow: #d29922; --red: #f85149; --purple: #bc8cff; --orange: #d18616;
+  --mono: 'SF Mono','Cascadia Code','Fira Code',monospace;
+  --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);line-height:1.5}
+#nav{height:36px;display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 16px;font-size:13px}
+.nav-brand{font-weight:700;color:var(--blue);margin-right:16px;font-size:14px}
+.nav-link{color:var(--txt2);text-decoration:none;padding:6px 12px;border-radius:4px}
+.nav-link:hover{color:var(--txt);background:var(--bg3)}
+.nav-link.active{color:var(--green);background:rgba(63,185,80,0.1)}
+
+.layout{display:flex;height:calc(100vh - 36px)}
+.main{flex:1;overflow-y:auto;padding:16px}
+.panel{width:440px;border-left:1px solid var(--border);overflow-y:auto;display:none;background:var(--bg2)}
+.panel.open{display:block}
+
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.header h1{font-size:16px;font-weight:600}
+.stats{display:flex;gap:16px;font-size:12px;color:var(--txt2)}
+.stat-val{color:var(--blue);font-weight:600}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.btn{background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+.btn:hover{background:var(--border)}
+.btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+select{background:var(--bg3);border:1px solid var(--border);color:var(--txt);padding:3px 8px;border-radius:4px;font-size:11px}
+.mode-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:4px;padding:2px}
+.mode-tab{padding:3px 10px;border-radius:3px;cursor:pointer;font-size:11px;color:var(--txt2)}
+.mode-tab.active{background:var(--bg);color:var(--txt)}
+
+/* ── Trace Cards ── */
+.trace-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 150ms}
+.trace-card:hover{border-color:var(--blue)}
+.trace-card.selected{border-color:var(--blue);background:rgba(88,166,255,0.05)}
+.tc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tc-svc{color:var(--green);font-size:12px;font-weight:500}
+.tc-time{font-family:var(--mono);color:var(--txt2);font-size:11px}
+.tc-entry{font-family:var(--mono);color:var(--blue);font-size:12px;margin-bottom:4px}
+.tc-flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.tc-flow-item{font-family:var(--mono);font-size:10px;color:var(--txt2);background:var(--bg3);padding:1px 5px;border-radius:3px}
+.tc-flow-arrow{color:var(--border);font-size:10px}
+.tc-meta{display:flex;gap:12px;font-size:11px;color:var(--txt2)}
+.tc-prefix{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--purple);background:rgba(188,140,255,0.1);padding:0 4px;border-radius:2px;margin-right:3px}
+.tc-session{font-family:var(--mono);color:var(--orange);font-size:10px}
+.tc-count{font-weight:600;color:var(--txt)}
+
+/* ── Session Group ── */
+.session-group{margin-bottom:16px}
+.session-header{font-size:12px;color:var(--orange);font-family:var(--mono);padding:4px 8px;background:rgba(209,134,22,0.08);border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between}
+
+/* ── Detail Panel ── */
+.panel-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg2);z-index:10}
+.panel-header h3{font-size:13px;font-weight:600;color:var(--blue)}
+.close{cursor:pointer;color:var(--txt2);font-size:18px;line-height:1}
+.close:hover{color:var(--txt)}
+.panel-body{padding:12px 16px}
+
+.record-item{margin-bottom:10px;padding:8px;background:var(--bg);border-radius:4px;border-left:3px solid var(--border)}
+.record-item.first{border-left-color:var(--green)}
+.ri-top{display:flex;justify-content:space-between;margin-bottom:2px}
+.ri-key{font-family:var(--mono);color:var(--blue);font-size:12px;font-weight:500}
+.ri-badge{font-size:10px;padding:1px 5px;border-radius:3px;font-family:var(--mono)}
+.ri-badge-log{background:rgba(88,166,255,0.12);color:var(--blue)}
+.ri-badge-span{background:rgba(188,140,255,0.12);color:var(--purple)}
+.ri-ts{font-family:var(--mono);color:var(--txt2);font-size:10px}
+.ri-payload{margin-top:4px;font-family:var(--mono);font-size:10px;color:var(--txt2);background:var(--bg2);padding:6px;border-radius:3px;white-space:pre-wrap;word-break:break-all;max-height:120px;overflow-y:auto}
+.ri-addr{margin-top:4px}
+.ri-addr-title{font-size:10px;color:var(--txt2);margin-bottom:2px}
+.ri-addr-tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:2px;margin-right:3px;margin-bottom:2px}
+.ri-addr-prefix{background:rgba(188,140,255,0.1);color:var(--purple)}
+.ri-addr-val{background:var(--bg3);color:var(--txt2)}
+
+.trace-summary{padding:12px;background:var(--bg);border-radius:4px;margin-bottom:12px;font-size:12px}
+.trace-summary dt{color:var(--txt2);font-size:11px}
+.trace-summary dd{margin-bottom:6px;font-family:var(--mono);font-size:12px}
+
+.empty{text-align:center;padding:40px;color:var(--txt2);font-size:13px}
+</style>
+</head>
+<body>
+<nav id="nav">
+  <span class="nav-brand">QA-SDK</span>
+  <a class="nav-link" href="/">Demo</a>
+  <a class="nav-link" href="/monitor.html">Monitor</a>
+  <a class="nav-link" href="/diagram.html">Diagram</a>
+  <a class="nav-link" href="/dashboard.html">Dashboard</a>
+  <a class="nav-link active" href="/events.html">Events</a>
+</nav>
+
+<div class="layout">
+<div class="main" id="mainArea">
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn" id="tab-log" onclick="switchTab('log')" style="border-color:var(--mint);color:var(--mint)">Event Log</button>
+    <button class="btn" id="tab-catalog" onclick="switchTab('catalog')">Event Catalog</button>
+  </div>
+  <div id="view-log">
+  <div class="header">
+    <h1>Event Log</h1>
+    <div class="stats">
+      <span>Traces: <span class="stat-val" id="traceCount">-</span></span>
+      <span>Records: <span class="stat-val" id="recordCount">-</span></span>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="loadTraces()">Refresh</button>
+    <button class="btn" id="btnAuto" onclick="toggleAuto()">Auto 10s</button>
+    <div class="mode-tabs">
+      <span class="mode-tab active" data-mode="timeline" onclick="setMode('timeline')">Timeline</span>
+      <span class="mode-tab" data-mode="session" onclick="setMode('session')">By Session</span>
+    </div>
+    <select id="limitSelect" onchange="loadTraces()">
+      <option value="20">20</option>
+      <option value="50" selected>50</option>
+      <option value="100">100</option>
+    </select>
+  </div>
+  <div id="traceList"></div>
+</div><!-- /view-log -->
+
+<div id="view-catalog" style="display:none">
+  <div class="header">
+    <h1>Event Catalog</h1>
+    <div class="stats">
+      <span>Defined: <span class="stat-val" id="catTotal">-</span></span>
+      <span>Observed: <span class="stat-val" id="catObserved" style="color:var(--green)">-</span></span>
+      <span>Unobserved: <span class="stat-val" id="catUnobserved" style="color:var(--yellow)">-</span></span>
+    </div>
+  </div>
+  <div id="catalog-content"><div class="empty">Loading...</div></div>
+</div>
+
+</div><!-- /mainArea -->
+
+<div class="panel" id="detailPanel">
+  <div class="panel-header">
+    <h3 id="panelTitle">Trace</h3>
+    <span class="close" onclick="closePanel()">&times;</span>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+</div>
+
+<script>
+(function(){
+  var cfg = window.__QA_CONFIG__ || {};
+  var BASE = cfg.INGEST_URL || '';
+  var traces = [];
+  var mode = 'timeline';
+  var autoTimer = null;
+  var selectedTraceId = null;
+
+  function fmt(iso) {
+    if (!iso) return '-';
+    var d = new Date(iso);
+    return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
+  }
+  function dur(a,b) {
+    if (!a||!b) return '-';
+    var ms = new Date(b) - new Date(a);
+    return ms < 1000 ? ms+'ms' : (ms/1000).toFixed(1)+'s';
+  }
+  function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+  function renderCard(t) {
+    var entry = t._firstEvent || t.traceId;
+    var flow = (t._flow || []).map(function(e){ return '<span class="tc-flow-item">'+esc(e)+'</span>'; }).join('<span class="tc-flow-arrow">&rarr;</span>');
+    var prefixes = (t._prefixes || []).map(function(p){ return '<span class="tc-prefix">'+esc(p)+'</span>'; }).join('');
+    var sel = selectedTraceId === t.traceId ? ' selected' : '';
+
+    return '<div class="trace-card'+sel+'" onclick="selectTrace(\''+esc(t.traceId)+'\')">'
+      + '<div class="tc-top">'
+      + '<span class="tc-svc">'+ esc(t.serviceName||'unknown') +'</span>'
+      + '<span class="tc-time">'+ fmtDate(t.firstTimestamp)+' '+fmt(t.firstTimestamp) +'</span>'
+      + '</div>'
+      + '<div class="tc-entry">'+ esc(entry) +'</div>'
+      + (flow ? '<div class="tc-flow">'+flow+'</div>' : '')
+      + '<div class="tc-meta">'
+      + '<span><span class="tc-count">'+t.recordCount+'</span> events</span>'
+      + '<span>'+dur(t.firstTimestamp,t.lastTimestamp)+'</span>'
+      + (t.sessionId ? '<span class="tc-session">'+esc(t.sessionId.slice(0,16))+'</span>' : '')
+      + '</div>'
+      + (prefixes ? '<div style="margin-top:4px">'+prefixes+'</div>' : '')
+      + '</div>';
+  }
+
+  function renderTimeline() {
+    if (traces.length === 0) {
+      document.getElementById('traceList').innerHTML = '<div class="empty">No traces. Send events from <a href="https://shop-web-7dq.pages.dev" target="_blank" style="color:var(--blue)">shop-web</a>.</div>';
+      return;
+    }
+    document.getElementById('traceList').innerHTML = traces.map(renderCard).join('');
+  }
+
+  function renderBySession() {
+    if (traces.length === 0) {
+      document.getElementById('traceList').innerHTML = '<div class="empty">No traces.</div>';
+      return;
+    }
+    var groups = {};
+    var noSession = [];
+    traces.forEach(function(t){
+      if (t.sessionId) {
+        if (!groups[t.sessionId]) groups[t.sessionId] = [];
+        groups[t.sessionId].push(t);
+      } else {
+        noSession.push(t);
+      }
+    });
+
+    var html = '';
+    Object.keys(groups).forEach(function(sid){
+      var g = groups[sid];
+      var total = g.reduce(function(s,t){return s+t.recordCount},0);
+      html += '<div class="session-group">'
+        + '<div class="session-header"><span>Session: '+esc(sid.slice(0,24))+'</span><span>'+g.length+' traces, '+total+' events</span></div>'
+        + g.map(renderCard).join('')
+        + '</div>';
+    });
+    if (noSession.length > 0) {
+      html += '<div class="session-group">'
+        + '<div class="session-header"><span>No Session</span><span>'+noSession.length+' traces</span></div>'
+        + noSession.map(renderCard).join('')
+        + '</div>';
+    }
+    document.getElementById('traceList').innerHTML = html;
+  }
+
+  function render() {
+    if (mode === 'session') renderBySession();
+    else renderTimeline();
+  }
+
+  window.loadTraces = async function() {
+    var limit = document.getElementById('limitSelect').value;
+    try {
+      var r = await fetch(BASE+'/v1/traces/recent?limit='+limit);
+      if (!r.ok) throw new Error('HTTP '+r.status);
+      var data = await r.json();
+      traces = data.items || [];
+      document.getElementById('traceCount').textContent = traces.length;
+      var totalRec = traces.reduce(function(s,t){return s+t.recordCount},0);
+      document.getElementById('recordCount').textContent = totalRec;
+
+      // 각 trace에 records를 가져와서 진입점/흐름/좌표 추출
+      await Promise.all(traces.map(async function(t){
+        try {
+          var rr = await fetch(BASE+'/v1/traces/'+t.traceId+'/records');
+          var rd = await rr.json();
+          var items = rd.items || rd || [];
+          if (items.length > 0) {
+            t._firstEvent = items[0].event_key || items[0].eventKey || '?';
+            t._flow = items.map(function(r){ return r.event_key || r.eventKey; }).filter(Boolean);
+            var pset = {};
+            items.forEach(function(r){
+              var ac = r.address_context || r.addressContext;
+              if (ac) Object.keys(ac).forEach(function(k){ pset[k]=true; });
+            });
+            t._prefixes = Object.keys(pset);
+          }
+        } catch(e) { /* records 로드 실패 무시 */ }
+      }));
+
+      render();
+    } catch(e) {
+      document.getElementById('traceList').innerHTML = '<div class="empty">Error: '+esc(e.message)+'</div>';
+    }
+  };
+
+  window.selectTrace = async function(traceId) {
+    selectedTraceId = traceId;
+    render();
+    var panel = document.getElementById('detailPanel');
+    var title = document.getElementById('panelTitle');
+    var body = document.getElementById('panelBody');
+    panel.classList.add('open');
+
+    var t = traces.find(function(x){return x.traceId===traceId});
+    title.textContent = (t && t._firstEvent ? t._firstEvent : traceId.slice(0,20));
+
+    body.innerHTML = '<div class="empty">Loading...</div>';
+
+    try {
+      var r = await fetch(BASE+'/v1/traces/'+traceId+'/records');
+      var data = await r.json();
+      var items = data.items || data || [];
+
+      // trace summary
+      var html = '<dl class="trace-summary">'
+        + '<dt>Trace ID</dt><dd>'+esc(traceId)+'</dd>'
+        + '<dt>Service</dt><dd style="color:var(--green)">'+ esc(t?t.serviceName||'-':'-') +'</dd>'
+        + (t&&t.sessionId ? '<dt>Session</dt><dd style="color:var(--orange)">'+esc(t.sessionId)+'</dd>' : '')
+        + '<dt>Duration</dt><dd>'+(t?dur(t.firstTimestamp,t.lastTimestamp):'-')+'</dd>'
+        + '<dt>Records</dt><dd>'+items.length+'</dd>'
+        + '</dl>';
+
+      // records timeline
+      items.forEach(function(rec, i){
+        var key = rec.event_key || rec.eventKey || '?';
+        var kind = rec.record_kind || rec.recordKind || 'log';
+        var ts = rec.timestamp;
+        var payload = rec.payload;
+        var ac = rec.address_context || rec.addressContext;
+        var isFirst = i === 0;
+
+        html += '<div class="record-item'+(isFirst?' first':'')+'">'
+          + '<div class="ri-top">'
+          + '<span class="ri-key">'+esc(key)+'</span>'
+          + '<span class="ri-badge ri-badge-'+kind+'">'+kind+'</span>'
+          + '</div>'
+          + '<div class="ri-ts">'+fmt(ts)+(isFirst?' &mdash; entry point':'')+'</div>';
+
+        if (ac && Object.keys(ac).length > 0) {
+          html += '<div class="ri-addr"><div class="ri-addr-title">address_context</div>';
+          Object.entries(ac).forEach(function(kv){
+            html += '<span class="ri-addr-tag ri-addr-prefix">'+esc(kv[0])+'</span>'
+              + '<span class="ri-addr-tag ri-addr-val">'+esc(String(kv[1]))+'</span> ';
+          });
+          html += '</div>';
+        }
+
+        if (payload && Object.keys(payload).length > 0) {
+          html += '<div class="ri-payload">'+esc(JSON.stringify(payload,null,2))+'</div>';
+        }
+
+        html += '</div>';
+      });
+
+      body.innerHTML = html;
+    } catch(e) {
+      body.innerHTML = '<div class="empty">Error: '+esc(e.message)+'</div>';
+    }
+  };
+
+  window.closePanel = function() {
+    document.getElementById('detailPanel').classList.remove('open');
+    selectedTraceId = null;
+    render();
+  };
+
+  window.setMode = function(m) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(function(el){
+      el.classList.toggle('active', el.dataset.mode === m);
+    });
+    render();
+  };
+
+  window.toggleAuto = function() {
+    var btn = document.getElementById('btnAuto');
+    if (autoTimer) { clearInterval(autoTimer); autoTimer=null; btn.classList.remove('active'); }
+    else { autoTimer=setInterval(loadTraces,10000); btn.classList.add('active'); }
+  };
+
+  // ── Tab switching ──
+  var REG_BASE = (cfg.REGISTRY_URL || cfg.INGEST_URL || '');
+  var catalogLoaded = false;
+
+  window.switchTab = function(tab) {
+    document.getElementById('view-log').style.display = tab === 'log' ? '' : 'none';
+    document.getElementById('view-catalog').style.display = tab === 'catalog' ? '' : 'none';
+    document.getElementById('tab-log').style.borderColor = tab === 'log' ? 'var(--blue)' : '';
+    document.getElementById('tab-log').style.color = tab === 'log' ? 'var(--blue)' : '';
+    document.getElementById('tab-catalog').style.borderColor = tab === 'catalog' ? 'var(--blue)' : '';
+    document.getElementById('tab-catalog').style.color = tab === 'catalog' ? 'var(--blue)' : '';
+    if (tab === 'catalog' && !catalogLoaded) loadCatalog();
+  };
+
+  // ── Event Catalog ──
+  async function loadCatalog() {
+    var el = document.getElementById('catalog-content');
+    el.innerHTML = '<div class="empty">Loading catalog...</div>';
+
+    try {
+      // 카탈로그 이벤트 정의
+      var [catRes, keysRes] = await Promise.all([
+        fetch(REG_BASE + '/api/event-catalog/categories'),
+        fetch(BASE + '/v1/insights/event-keys'),
+      ]);
+      var categories = await catRes.json();
+      var observedKeys = {};
+      if (keysRes.ok) {
+        var keysData = await keysRes.json();
+        keysData.forEach(function(k) { observedKeys[k.eventKey] = k.count; });
+      }
+
+      if (!Array.isArray(categories)) {
+        el.innerHTML = '<div class="empty">Event catalog not available: ' + esc(JSON.stringify(categories)) + '</div>';
+        return;
+      }
+
+      var totalDefined = 0, totalObserved = 0;
+      categories.forEach(function(cat) {
+        cat.events.forEach(function(e) {
+          totalDefined++;
+          if (observedKeys[e.event_key]) totalObserved++;
+        });
+      });
+      document.getElementById('catTotal').textContent = totalDefined;
+      document.getElementById('catObserved').textContent = totalObserved;
+      document.getElementById('catUnobserved').textContent = totalDefined - totalObserved;
+
+      var html = categories.map(function(cat) {
+        var catObserved = cat.events.filter(function(e) { return !!observedKeys[e.event_key]; }).length;
+        var pct = cat.events.length > 0 ? Math.round(catObserved / cat.events.length * 100) : 0;
+        var pctColor = pct >= 80 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--red)';
+
+        return '<div style="margin-bottom:16px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          + '<span style="font-size:13px;font-weight:600;color:var(--blue);text-transform:capitalize">' + esc(cat.category) + '</span>'
+          + '<span style="font-size:11px;color:' + pctColor + '">' + catObserved + '/' + cat.events.length + ' observed (' + pct + '%)</span>'
+          + '</div>'
+          + cat.events.map(function(e) {
+            var obs = observedKeys[e.event_key];
+            var status = obs ? '●' : '○';
+            var statusColor = obs ? 'var(--green)' : 'var(--txt2)';
+            var countBadge = obs ? '<span style="font-family:var(--mono);font-size:10px;color:var(--green);margin-left:4px">' + obs + 'x</span>' : '';
+            var autoBadge = e.auto_collectable ? '<span style="font-size:9px;padding:1px 4px;background:rgba(86,212,221,0.15);color:var(--cyan,#56d4dd);border-radius:2px;margin-left:4px">auto</span>' : '';
+
+            return '<div style="display:flex;align-items:center;gap:8px;padding:3px 8px;border-radius:3px;font-size:12px;cursor:pointer" '
+              + 'onclick="showEventDetail(\'' + esc(e.event_key) + '\')" '
+              + 'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'
+              + '<span style="color:' + statusColor + ';font-size:10px">' + status + '</span>'
+              + '<span style="font-family:var(--mono);color:var(--txt);width:180px">' + esc(e.event_key) + '</span>'
+              + '<span style="color:var(--txt2);flex:1;font-size:11px">' + esc(e.display_name || '') + '</span>'
+              + countBadge + autoBadge
+              + '</div>';
+          }).join('')
+          + '</div>';
+      }).join('');
+
+      el.innerHTML = html;
+      catalogLoaded = true;
+    } catch(e) {
+      el.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  // 이벤트 상세 (패널에 표시)
+  window.showEventDetail = async function(eventKey) {
+    var panel = document.getElementById('detailPanel');
+    var title = document.getElementById('panelTitle');
+    var body = document.getElementById('panelBody');
+    panel.classList.add('open');
+    title.textContent = eventKey;
+    body.innerHTML = '<div class="empty">Loading...</div>';
+
+    try {
+      var r = await fetch(REG_BASE + '/api/event-catalog/events/' + encodeURIComponent(eventKey));
+      var data = await r.json();
+
+      var html = '';
+      if (data.event) {
+        var e = data.event;
+        html += '<dl class="trace-summary">'
+          + '<dt>Event Key</dt><dd style="color:var(--blue)">' + esc(e.event_key) + '</dd>'
+          + '<dt>Display Name</dt><dd>' + esc(e.display_name || '-') + '</dd>'
+          + '<dt>Category</dt><dd>' + esc(e.category || '-') + '</dd>'
+          + '<dt>Channel</dt><dd>' + esc((e.channel || []).join(', ')) + '</dd>'
+          + '<dt>Description</dt><dd style="font-family:var(--sans);font-size:12px">' + esc(e.description || '-') + '</dd>'
+          + '<dt>Auto Collectable</dt><dd>' + (e.auto_collectable ? 'Yes' : 'No') + '</dd>'
+          + '</dl>';
+      }
+
+      if (data.payloadGuide) {
+        html += '<div style="margin-top:12px"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Payload Guide</div>'
+          + '<pre style="background:var(--bg);padding:8px;border-radius:4px;font-size:10px;white-space:pre-wrap">'
+          + esc(JSON.stringify(data.payloadGuide, null, 2)) + '</pre></div>';
+      }
+
+      if (data.prefixMapping) {
+        html += '<div style="margin-top:12px"><div style="font-size:11px;color:var(--txt2);margin-bottom:4px">Prefix Mapping</div>';
+        data.prefixMapping.prefixes.forEach(function(p) {
+          html += '<div style="margin-bottom:6px">'
+            + '<span class="tc-prefix">' + esc(p.prefixId) + '</span>';
+          p.dims.forEach(function(d) {
+            html += '<span style="font-family:var(--mono);font-size:10px;margin-left:4px;color:var(--txt2)">'
+              + esc(d.label) + '=' + esc(d.value) + '</span>';
+          });
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // 실제 수집된 데이터 통계
+      try {
+        var kr = await fetch(BASE + '/v1/insights/event-keys');
+        var keys = await kr.json();
+        var match = keys.find(function(k) { return k.eventKey === eventKey; });
+        if (match) {
+          html += '<div style="margin-top:12px;padding:8px;background:rgba(63,185,80,0.08);border-radius:4px;font-size:12px">'
+            + '<span style="color:var(--green)">● Observed</span>: ' + match.count + ' times'
+            + (match.firstSeen ? ' (since ' + match.firstSeen.slice(0,10) + ')' : '')
+            + '</div>';
+        } else {
+          html += '<div style="margin-top:12px;padding:8px;background:rgba(210,153,34,0.08);border-radius:4px;font-size:12px;color:var(--yellow)">'
+            + '○ Not yet observed in production</div>';
+        }
+      } catch {}
+
+      body.innerHTML = html || '<div class="empty">No details available</div>';
+    } catch(e) {
+      body.innerHTML = '<div class="empty">Error: ' + esc(e.message) + '</div>';
+    }
+  };
+
+  loadTraces();
+})();
+
+// ── Tab 전환 ──
+function switchTab(tab) {
+  document.getElementById('view-log').style.display = tab === 'log' ? '' : 'none';
+  document.getElementById('view-catalog').style.display = tab === 'catalog' ? '' : 'none';
+  document.getElementById('tab-log').style.borderColor = tab === 'log' ? 'var(--mint)' : 'var(--border)';
+  document.getElementById('tab-log').style.color = tab === 'log' ? 'var(--mint)' : 'var(--txt2)';
+  document.getElementById('tab-catalog').style.borderColor = tab === 'catalog' ? 'var(--mint)' : 'var(--border)';
+  document.getElementById('tab-catalog').style.color = tab === 'catalog' ? 'var(--mint)' : 'var(--txt2)';
+  if (tab === 'catalog' && !catalogLoaded) loadCatalog();
+}
+
+// ── Event Catalog 탐색 ──
+var catalogLoaded = false;
+async function loadCatalog() {
+  catalogLoaded = true;
+  var api = '/api/event-catalog';
+  try {
+    var summary = await (await fetch(api)).json();
+    var events = await (await fetch(api + '/events')).json();
+    var mappings = await (await fetch(api + '/mappings')).json();
+
+    var html = '<div style="margin-bottom:16px">';
+    html += '<span class="stat-val">' + summary.totalEvents + '</span> events ';
+    html += '<span class="stat-val">' + summary.autoCollectable + '</span> auto ';
+    html += '<span class="stat-val">' + summary.prefixMappings + '</span> mappings';
+    html += '</div>';
+
+    // 카테고리 필터
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+    html += '<button class="btn cat-btn" onclick="filterCat(\'all\')" style="border-color:var(--mint);color:var(--mint)">All</button>';
+    for (var cat of Object.keys(summary.categories)) {
+      html += '<button class="btn cat-btn" onclick="filterCat(\'' + cat + '\')">' + cat + ' (' + summary.categories[cat] + ')</button>';
+    }
+    html += '</div>';
+
+    // 이벤트 그리드
+    html += '<div id="cat-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px">';
+    for (var e of events) {
+      html += '<div class="card event-card-item" data-cat="' + e.category + '" onclick="showEventDetail(\'' + e.event_key + '\')" style="cursor:pointer;padding:10px">';
+      html += '<div style="font-family:IBM Plex Mono,monospace;font-size:12px;font-weight:500;color:var(--txt)">' + e.event_key + '</div>';
+      html += '<div style="font-size:10px;color:var(--txt2);margin-top:2px">' + e.display_name + '</div>';
+      html += '<div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap">';
+      html += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(0,180,216,0.1);color:var(--accent)">' + e.category + '</span>';
+      if (e.auto_collectable) html += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(100,255,218,0.1);color:var(--mint)">auto</span>';
+      if (e.is_v1_minimal) html += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(124,92,252,0.1);color:#7c5cfc">v1</span>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+
+    // Prefix Mappings
+    html += '<h2 style="font-size:14px;color:var(--mint);margin-top:24px;margin-bottom:8px">Prefix Mappings</h2>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px">';
+    for (var m of mappings) {
+      html += '<div class="card" style="padding:10px;cursor:pointer" onclick="showEventDetail(\'' + m.event_key + '\')">';
+      html += '<span style="font-family:IBM Plex Mono,monospace;font-size:12px;color:var(--txt)">' + m.event_key + '</span>';
+      html += '<span style="font-size:10px;color:var(--txt2);margin-left:6px">' + m.domain + '</span>';
+      html += '<div style="margin-top:6px;display:flex;gap:3px;flex-wrap:wrap">';
+      for (var p of m.prefixes) html += '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(255,159,67,0.1);color:#ff9f43">' + p + '</span>';
+      html += '</div></div>';
+    }
+    html += '</div>';
+
+    // 상세 패널
+    html += '<div id="event-detail" class="card" style="margin-top:16px;padding:16px;display:none"></div>';
+
+    document.getElementById('catalog-content').innerHTML = html;
+  } catch (e) {
+    document.getElementById('catalog-content').innerHTML = '<div class="empty">Event Catalog API에 연결할 수 없습니다<br><span style="font-size:11px;color:var(--txt2)">registry-service가 실행 중인지 확인하세요</span></div>';
+  }
+}
+
+function filterCat(cat) {
+  document.querySelectorAll('.cat-btn').forEach(function(b) {
+    b.style.borderColor = b.textContent.startsWith(cat) || (cat === 'all' && b.textContent === 'All') ? 'var(--mint)' : 'var(--border)';
+    b.style.color = b.textContent.startsWith(cat) || (cat === 'all' && b.textContent === 'All') ? 'var(--mint)' : 'var(--txt2)';
+  });
+  document.querySelectorAll('.event-card-item').forEach(function(c) {
+    c.style.display = cat === 'all' || c.dataset.cat === cat ? '' : 'none';
+  });
+}
+
+async function showEventDetail(key) {
+  var api = '/api/event-catalog/events/' + encodeURIComponent(key);
+  var data = await (await fetch(api)).json();
+  var el = document.getElementById('event-detail');
+  el.style.display = 'block';
+  var html = '<div style="font-family:IBM Plex Mono,monospace;font-size:14px;font-weight:600;color:var(--mint)">' + key + '</div>';
+
+  if (data.event) {
+    html += '<div style="margin-top:8px;font-size:12px;color:var(--txt)">' + data.event.description + '</div>';
+    html += '<div style="font-size:10px;color:var(--txt2);margin-top:4px">category: ' + data.event.category + ' | channel: ' + data.event.channel.join(', ') + ' | graph: ' + data.event.graph_hint.role + '</div>';
+  }
+
+  if (data.payloadGuide) {
+    html += '<div style="margin-top:12px;font-size:10px;text-transform:uppercase;color:var(--txt2);letter-spacing:1px">Payload</div>';
+    for (var f of data.payloadGuide.fields) {
+      html += '<div style="font-size:11px;padding:2px 0"><span style="font-family:IBM Plex Mono,monospace;color:' + (f.required ? 'var(--mint)' : 'var(--txt2)') + '">' + f.name + '</span> <span style="color:var(--txt2)">' + f.type + (f.required ? ' (필수)' : '') + '</span> — ' + f.description + '</div>';
+    }
+  }
+
+  if (data.prefixMapping) {
+    html += '<div style="margin-top:12px;font-size:10px;text-transform:uppercase;color:var(--txt2);letter-spacing:1px">Prefix Mapping (' + data.prefixMapping.domain + ')</div>';
+    for (var p of data.prefixMapping.prefixes) {
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;margin-top:3px;background:rgba(255,255,255,0.02);border-radius:4px">';
+      html += '<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#ff9f43;min-width:100px">' + p.prefixId + '</span>';
+      for (var d of p.dims) {
+        var col = d.source === 'fixed' ? 'var(--mint)' : d.source === 'context' ? 'var(--accent)' : '#7c5cfc';
+        html += '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);font-family:IBM Plex Mono,monospace;color:' + col + '">' + d.label + '=' + d.value + '</span>';
+      }
+      html += '</div>';
+    }
+  }
+
+  el.innerHTML = html;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>

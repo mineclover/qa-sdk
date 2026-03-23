@@ -8,7 +8,7 @@ export type {
   DomainDef, ConsumerDef, ConstraintDef, DslBundleDef,
   IntentLinkDef, SkillDef, SpecDef, ReviewPairDef, DkgConfig,
   BrowserDimDef, BrowserPrefixDef, BrowserCatalog,
-  PrefixStructure, PrefixShape, PrefixEntries,
+  PrefixStructure, PrefixShape, PrefixEntries, DimCapacityInfo, PrefixDimProfile,
   DecodedPosition, ResolvedDimValue, ResolvedAddress, DecomposedDim,
 } from "./catalog/index.js";
 
@@ -23,6 +23,7 @@ export {
   getPrefixStructure,
   getPrefixShape,
   getPrefixEntries,
+  getPrefixProfile,
   encodePrefix,
   decodePrefix,
   encodePrefixByValue,

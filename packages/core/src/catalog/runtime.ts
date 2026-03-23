@@ -32,6 +32,44 @@ export interface PrefixEntries {
   readonly ko: Record<string, Record<string, string>>;
 }
 
+/** 축별 entries/capacity/headroom + stride 정보 */
+export interface DimCapacityInfo {
+  readonly label: string;
+  readonly kind: "axis" | "prefix_ref" | "table_ref";
+  readonly axisId?: string;
+  /** 실제 entry 수. prefix_ref에서 refEntries 미정의 시 undefined */
+  readonly entries: number | undefined;
+  readonly capacity: number;
+  /** capacity - entries. entries가 undefined이면 undefined */
+  readonly headroom: number | undefined;
+  /**
+   * mixed-radix stride. Number 경로 기준.
+   * 전체 주소 공간이 Number.MAX_SAFE_INTEGER를 초과하는 prefix에서는
+   * 정밀도 손실 가능 — BigInt 경로는 별도 사용.
+   */
+  readonly stride: number;
+}
+
+/**
+ * prefix의 축별 capacity/headroom/stride 프로파일.
+ *
+ * spec-core/dkg의 PrefixProfile(DKG 그래프 컨텍스트)과는 별개 —
+ * 이 타입은 순수 카탈로그 수준 진단용.
+ */
+export interface PrefixDimProfile {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly dims: readonly DimCapacityInfo[];
+  readonly totalSpace: number;
+  /** entries가 모두 확정된 dim의 곱. undefined dim이 있으면 undefined */
+  readonly usedCombos: number | undefined;
+  /** usedCombos / totalSpace. usedCombos가 undefined이면 undefined */
+  readonly utilization: number | undefined;
+  /** totalSpace가 Number.MAX_SAFE_INTEGER 이내이면 true. false면 BigInt 경로 필요 (CON-007) */
+  readonly safePrecision: boolean;
+}
+
 // ── 내부 헬퍼 ────────────────────────────────────────────────────────────────
 
 /**
@@ -166,6 +204,73 @@ export function getPrefixEntries(catalog: Catalog, prefixId: string, version: st
   }
 
   return { entries, ko };
+}
+
+/** prefix의 축별 프로파일 — entries/capacity/headroom/stride를 한눈에 조회. */
+export function getPrefixProfile(catalog: Catalog, prefixId: string, version?: string): PrefixDimProfile {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  const ver = version ?? latestPrefixVersion(catalog, prefixId);
+  const vdef = prefix.versions.find(v => v.version === ver);
+  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
+
+  const fixedLabels = getFixedLabels(prefix);
+  const { shape, dimCapacities } = getPrefixShape(catalog, prefixId, ver);
+  const strides = calcWeights(shape);
+
+  const dims: DimCapacityInfo[] = [];
+  let usedCombos: number | undefined = 1;
+
+  for (let i = 0; i < fixedLabels.length; i++) {
+    const label = fixedLabels[i];
+    const dim = prefix.dims[label];
+    const capacity = dimCapacities[label];
+
+    let entries: number | undefined;
+    let axisId: string | undefined;
+
+    if (dim.kind === "axis") {
+      axisId = dim.axisId;
+      const axis = catalog.axes[dim.axisId];
+      const axisVer = vdef.axisVersions[label];
+      const snap = axis.versions[axisVer];
+      entries = snap.entries.length;
+    } else if (dim.kind === "prefix_ref") {
+      const ref = vdef.refEntries?.[label];
+      entries = ref ? ref.values.length : undefined;
+    } else {
+      continue;
+    }
+
+    if (usedCombos !== undefined && entries !== undefined) {
+      usedCombos *= entries;
+    } else {
+      usedCombos = undefined;
+    }
+
+    dims.push({
+      label,
+      kind: dim.kind,
+      axisId,
+      entries,
+      capacity,
+      headroom: entries !== undefined ? capacity - entries : undefined,
+      stride: strides[i],
+    });
+  }
+
+  const totalSpace = shape.reduce((a, b) => a * b, 1);
+
+  return {
+    id: prefixId,
+    name: prefix.name,
+    version: ver,
+    dims,
+    totalSpace,
+    usedCombos,
+    utilization: usedCombos !== undefined && totalSpace > 0 ? usedCombos / totalSpace : undefined,
+    safePrecision: totalSpace <= Number.MAX_SAFE_INTEGER,
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

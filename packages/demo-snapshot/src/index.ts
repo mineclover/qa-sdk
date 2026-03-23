@@ -58,11 +58,11 @@ export {
 
 export {
   latestPrefixVersion,
-  getPrefixStructure, getPrefixShape, getPrefixEntries,
+  getPrefixStructure, getPrefixShape, getPrefixEntries, getPrefixProfile,
   encodePrefix, decodePrefix, encodePrefixByValue,
   resolveAddress, decomposeAddress,
   verifyRoundTrip,
-  type PrefixStructure, type PrefixShape, type PrefixEntries,
+  type PrefixStructure, type PrefixShape, type PrefixEntries, type DimCapacityInfo, type PrefixDimProfile,
   type DecodedPosition, type ResolvedDimValue, type ResolvedAddress,
   type DecomposedDim,
 } from "./demo-accessors.js";

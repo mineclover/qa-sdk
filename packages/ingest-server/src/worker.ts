@@ -126,6 +126,7 @@ export default {
       dlqStore: new InMemoryDlqStore(),
       debugStore: new InMemoryDebugStore(),
       recordStreamBroker: broker,
+      sqlDriver: driver,
       corsOrigin: env.CORS_ORIGIN ?? "*",
     });
 

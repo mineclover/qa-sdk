@@ -135,8 +135,9 @@ app.use("*", cors({
   allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
 }));
 
-// GET /api/health
-app.get("/api/health", (c) => c.json({ ok: true }));
+// GET /health, /api/health
+app.get("/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
+app.get("/api/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
 
 // ── Prefix meta route ─────────────────────────────────────────────────────
 

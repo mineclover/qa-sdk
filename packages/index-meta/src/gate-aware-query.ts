@@ -17,13 +17,13 @@ import {
 } from "weighted-index";
 import type { AddressState, DimStateSpec } from "./invalid-ranges.js";
 import type { AddressStateCacheRecord } from "./invalid-range-store.js";
-import type { ResolveResult, PolicyRule, ConflictStrategy } from "./policy-resolver.js";
+import type { ResolveResult, PatternRule, ConflictStrategy } from "./policy-resolver.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface GateAwareResult<T> {
   value: T | T[];
-  matchedRules: PolicyRule<T>[];
+  matchedRules: PatternRule<T>[];
   strategy: ConflictStrategy;
   gateBlocked: boolean;
   gateState: AddressState | null;

@@ -8,7 +8,7 @@ import {
   type ConflictStrategy,
   type EntityId,
   type GateAwareResult,
-  type PolicyRule,
+  type PatternRule,
   type RelationResolveResult,
   type RelationTypeRule,
   type ResolveResult,
@@ -33,7 +33,7 @@ export interface QueryRelationTypeRule<T> extends Omit<RelationTypeRule<T>, "ins
   instanceRules?: {
     indexId: string;
     versionId: string;
-    rules: PolicyRule<T>[];
+    rules: PatternRule<T>[];
     strategy?: ConflictStrategy;
   };
 }
@@ -52,7 +52,7 @@ export interface QueryLookupService {
   readonly defaultStrategy: ConflictStrategy;
   resolvePolicy<T>(
     coord: readonly number[],
-    rules: readonly PolicyRule<T>[],
+    rules: readonly PatternRule<T>[],
     shape: readonly number[],
     strategy?: ConflictStrategy,
     options?: QueryResolveOptions,
@@ -105,7 +105,7 @@ export class QueryService implements QueryLookupService {
 
   async resolvePolicy<T>(
     coord: readonly number[],
-    rules: readonly PolicyRule<T>[],
+    rules: readonly PatternRule<T>[],
     shape: readonly number[],
     strategy?: ConflictStrategy,
     options: QueryResolveOptions = {},

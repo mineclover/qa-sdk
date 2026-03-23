@@ -113,6 +113,23 @@ export class QaMonitor {
     return this._status === "active";
   }
 
+  // ── Actor 설정 ─────────────────────────────────────────
+
+  /** 행위 주체 설정. 이후 모든 이벤트에 actor_id/user_id가 자동 포함. */
+  setUser(opts: { actorId: string; userId?: string; attributes?: Record<string, string> }): void {
+    this.logger.setActor({
+      actor_id: opts.actorId,
+      user_id: opts.userId ?? opts.actorId,
+      identification_mode: "identified",
+      user_attributes: opts.attributes,
+    });
+  }
+
+  /** Actor 해제 (로그아웃). */
+  clearUser(): void {
+    this.logger.clearActor();
+  }
+
   // ── 이벤트 발생 ─────────────────────────────────────────
 
   /**

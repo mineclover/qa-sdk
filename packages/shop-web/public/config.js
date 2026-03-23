@@ -1,12 +1,11 @@
 // ── 배포 환경별 설정 ─────────────────────────────────────────
-// 이 파일을 배포 대상 환경에 맞게 교체하거나,
-// Docker 빌드 시 envsubst로 치환할 수 있다.
-// query parameter (?ingest=...) 는 여전히 최우선 오버라이드로 동작.
+// query parameter (?ingest=...) 는 최우선 오버라이드로 동작.
+// 로컬 개발: ?ingest=http://localhost:3200 으로 오버라이드 가능.
 window.__QA_CONFIG__ = {
-  INGEST_URL: "http://localhost:3200",
-  REGISTRY_URL: "http://localhost:3300",
-  MONITOR_URL: "http://localhost:5176",
-  DASHBOARD_URL: "http://localhost:3300/dev/",
-  ENV: "dev",
+  INGEST_URL: "https://qa-gateway.astralclover.workers.dev",
+  REGISTRY_URL: "https://qa-gateway.astralclover.workers.dev",
+  MONITOR_URL: "https://platform-demo-3v1.pages.dev",
+  DASHBOARD_URL: "https://qa-gateway.astralclover.workers.dev/dev/",
+  ENV: "prod",
   REGION: "asia",
 };

@@ -40,6 +40,13 @@ export class D1TraceStore implements TraceStore {
     return rows.map(toStoredTrace);
   }
 
+  async findRecent(limit?: number): Promise<StoredTrace[]> {
+    const rows = await this.driver.query<RawRow>(
+      `SELECT * FROM traces ORDER BY updated_at DESC LIMIT ${limit ?? 50}`,
+    );
+    return rows.map(toStoredTrace);
+  }
+
   async markReconstructed(traceId: string): Promise<void> {
     await this.driver.execute(
       "UPDATE traces SET reconstructed = 1, updated_at = ? WHERE trace_id = ?",

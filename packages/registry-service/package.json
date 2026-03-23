@@ -35,14 +35,19 @@
     "zod": "^3.24.2"
   },
   "peerDependencies": {
-    "@qa-sdk/spec-core": "workspace:*"
+    "@qa-sdk/spec-core": "workspace:*",
+    "@qa-sdk/event-catalog": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@qa-sdk/spec-core": {
       "optional": true
+    },
+    "@qa-sdk/event-catalog": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "@types/node": "^22.13.10",
     "demo-snapshot": "workspace:*",
