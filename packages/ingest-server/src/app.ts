@@ -30,6 +30,7 @@ import { createVerdictRoutes } from "./routes/verdict.js";
 import { createDlqRoutes } from "./routes/dlq.js";
 import { createCleanupRoutes } from "./routes/cleanup.js";
 import { createMetricsRoutes } from "./routes/metrics.js";
+import { createPatternRoutes, type PatternStatsCache } from "./routes/patterns.js";
 import { createSessionRoutes } from "./routes/session.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import type { RecordStreamBroker } from "./lib/record-stream-broker.js";
@@ -77,6 +78,7 @@ export interface AppDeps {
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
   metricsCollector?: MetricsCollector;
+  getPatternStats?: () => PatternStatsCache | null;
   withTraceTransaction?: TraceTransactionRunner;
   logger?: Logger;
   streamConnectionRegistry?: StreamConnectionRegistry;
@@ -156,6 +158,10 @@ export function createApp(deps: AppDeps) {
       getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
+  app.route("/", createPatternRoutes({
+    getPatternStats: deps.getPatternStats,
+    logger,
+  }));
 
   return app;
 }
