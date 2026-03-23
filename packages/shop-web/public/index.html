@@ -214,7 +214,7 @@ const monitor = createQaMonitor({
   autoCapture: { clicks: true, navigation: true },
 });
 
-let eventCount = 0, userType = 'guest';
+let eventCount = 0, userType = sessionStorage.getItem('shop_userType') || 'guest';
 
 // svc_ref를 사용하는 prefix에 service 주소를 자동 주입
 const SVC_REF_PREFIXES = new Set([
@@ -261,7 +261,7 @@ const PRODUCTS=[
   {id:8,name:'노이즈캔슬링 헤드폰',price:199000,cat:'audio',desc:'오버이어. 30시간 배터리. 멀티포인트.',emoji:'🎵'},
 ];
 
-let cart=[],orders=[],selectedProduct=null,loggedIn=false;
+let cart=[],orders=[],selectedProduct=null,loggedIn=sessionStorage.getItem('shop_loggedIn')==='true';
 
 // ═══════════════════════════════════════════════════
 //  Permission Check — 페이지/기능별 접근 권한 추적
@@ -343,6 +343,9 @@ window.doLogin=function(){
     const emailInput = document.querySelector('[data-testid="login-email"]');
     const email = emailInput ? emailInput.value.trim() : 'user@shop.com';
     loggedIn=true;userType='member';
+    sessionStorage.setItem('shop_loggedIn','true');
+    sessionStorage.setItem('shop_userType','member');
+    sessionStorage.setItem('shop_email',email);
     document.getElementById('user-name').textContent=email;
     document.getElementById('nav').style.display='flex';
     if (monitor && monitor.setUser) monitor.setUser({ userId: email, actorId: email });
@@ -366,6 +369,9 @@ window.doLogout=function(){
     flow_point:{flow_name:'browse',flow_step:'exit',flow_variant:'default'},
   });
   loggedIn=false;userType='guest';
+  sessionStorage.removeItem('shop_loggedIn');
+  sessionStorage.removeItem('shop_userType');
+  sessionStorage.removeItem('shop_email');
   if (monitor.clearUser) monitor.clearUser();
   document.getElementById('user-name').textContent='Guest';
   document.getElementById('nav').style.display='none';
@@ -501,6 +507,19 @@ function renderMypage(){
 // ═══════════════════════════════════════════════════
 const svcConfig = monitor.getSession ? monitor.getSession() : {};
 document.getElementById('qa-status').textContent = `qa: ready → ${INGEST_URL} (session: ${svcConfig.sessionId ?? 'n/a'})`;
+
+// 세션 복원 — 새로고침 시 로그인 상태 유지
+const savedEmail = sessionStorage.getItem('shop_email');
+if (loggedIn && savedEmail) {
+  document.getElementById('user-name').textContent = savedEmail;
+  document.getElementById('nav').style.display = 'flex';
+  if (monitor && monitor.setUser) monitor.setUser({ userId: savedEmail, actorId: savedEmail });
+  go('home');
+} else {
+  loggedIn = false;
+  userType = 'guest';
+  go('login');
+}
 
 // Monitor link — registry에서 URL resolve, fallback config.js
 (async () => {
