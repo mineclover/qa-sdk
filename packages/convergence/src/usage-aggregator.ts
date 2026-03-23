@@ -10,7 +10,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { decodePrefix, parseSerializedAddress, compareTimestamps } from "@qa-sdk/core";
+import { decodePrefixAsResult, decodeResultToEntities, parseSerializedAddress, compareTimestamps, decodePrefix } from "@qa-sdk/core";
 import type { UsageData, EntryUsage, AddressUsage, CoOccurrence, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
@@ -106,13 +106,15 @@ export function aggregateUsageData(
         versionCountMap.set(vKey, { prefix: prefixId, version, count: 1, lastSeen: record.timestamp, sessions });
       }
 
-      // decode → EntryUsage
+      // decode → EntryUsage (DecodeResult 기반 — kind로 axis/prefix_ref 분기)
       try {
-        const decoded = decodePrefix(catalog, prefixId, version, address);
+        const result = decodePrefixAsResult(catalog, prefixId, version, address);
         const entries: Record<string, string | number> = {};
 
-        for (const [label, dim] of Object.entries(decoded)) {
+        for (const [label, dim] of Object.entries(result.dims)) {
           entries[label] = dim.value;
+          // axis 차원만 entry 집계 (prefix_ref는 정수 주소이므로 entry 개념 없음)
+          if (dim.kind !== "axis") continue;
           const entryKey = `${label}:${dim.value}`;
           const ex = entryCountMap.get(entryKey);
           if (ex) {

@@ -78,11 +78,26 @@ export type TraceTransactionRunner = <T>(
 async function deserializeEnvelope(c: { req: { header(name: string): string | undefined; json(): Promise<unknown>; arrayBuffer(): Promise<ArrayBuffer> } }): Promise<TransmissionEnvelope> {
   const ct = c.req.header("content-type") ?? "application/json";
 
-  if (ct.includes("application/x-protobuf")) {
-    const { fromProtoEnvelope } = await import("../lib/proto-codec.js");
+  if (ct.includes("application/x-protobuf") || ct.includes("application/protobuf")) {
     const buf = await c.req.arrayBuffer();
-    const raw = fromProtoEnvelope(new Uint8Array(buf));
-    return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+    const bytes = new Uint8Array(buf);
+
+    // QAPB 프레이밍 감지 (magic: 0x51 0x41 0x50 0x42)
+    if (bytes.length >= 8 && bytes[0] === 0x51 && bytes[1] === 0x41 && bytes[2] === 0x50 && bytes[3] === 0x42) {
+      const { fromProtoEnvelope } = await import("../lib/proto-codec.js");
+      const raw = fromProtoEnvelope(bytes);
+      return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+    }
+
+    // 진짜 Protobuf 바이너리 (codec-proto)
+    try {
+      const { decodeEnvelope } = await import("@qa-sdk/codec-proto");
+      return decodeEnvelope(bytes);
+    } catch {
+      // codec-proto 미설치 시 fallback → JSON 시도
+      const text = new TextDecoder().decode(bytes);
+      return transmissionEnvelopeSchema.parse(JSON.parse(text)) as TransmissionEnvelope;
+    }
   }
 
   if (ct.includes("application/msgpack") || ct.includes("application/x-msgpack")) {

@@ -8,7 +8,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { decodePrefix } from "@qa-sdk/core";
+import { decodePrefixAsResult } from "@qa-sdk/core";
 import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
 import type { UsageData, EntryUsage } from "./convergence.types.js";
 
@@ -164,12 +164,12 @@ export function aggregateByService(
             for (const [, dimRef] of Object.entries(prefix.dims)) {
               if (dimRef.kind === "prefix_ref" && dimRef.prefixId === "service") {
                 try {
-                  const decoded = decodePrefix(catalog, prefixId, version, Number(addr));
+                  const result = decodePrefixAsResult(catalog, prefixId, version, Number(addr));
                   const svcRefLabel = Object.keys(prefix.dims).find(
                     l => prefix.dims[l].kind === "prefix_ref" && (prefix.dims[l] as any).prefixId === "service",
                   );
-                  if (svcRefLabel && decoded[svcRefLabel]) {
-                    svcKey = `svc:${decoded[svcRefLabel].value}`;
+                  if (svcRefLabel && result.dims[svcRefLabel]?.kind === "prefix_ref") {
+                    svcKey = `svc:${result.dims[svcRefLabel].value}`;
                   }
                 } catch { /* ignore */ }
                 break;

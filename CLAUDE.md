@@ -151,7 +151,51 @@
 
 ## 서비스 포트
 
-ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600)
+ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), gRPC debug(50051, GRPC_PORT 설정 시)
+
+## 신규 패키지 (이 세션 추가)
+
+| 패키지 | 용도 |
+|--------|------|
+| `@qa-sdk/codec-proto` | 진짜 Protobuf encode/decode (zero-dependency 순수 구현) |
+| `decision-flow` | 의사결정 흐름 엔진 |
+| `event-catalog` | 이벤트 카탈로그 + auto-track + prefix 매핑 |
+
+## Ingest Store Driver (STORE_DRIVER)
+
+```
+STORE_DRIVER=memory  → InMemory 전체 (기본, 개발/데모)
+STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수)
+STORE_DRIVER=d1      → D1/SQLite via SqlDriver (CF Workers, SQLITE_PATH)
+STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_URL)
+```
+
+- D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
+- ClickHouse store: RecordStore만 구현, 나머지 InMemory
+- store-factory.ts에서 드라이버 선택 + 생성
+
+## Protobuf 전송 (codec-proto)
+
+```
+JSON (기본)          → Content-Type: application/json
+QAPB (레거시)         → Content-Type: application/x-protobuf + QAPB magic header
+진짜 Protobuf         → Content-Type: application/x-protobuf (QAPB magic 없음)
+```
+
+- ingest-server가 자동 감지: QAPB magic 있으면 QAPB, 없으면 진짜 protobuf
+- `@qa-sdk/codec-proto`: `encodeEnvelope(json) → Uint8Array`, `decodeEnvelope(binary) → json`
+- 크기: JSON 대비 55% 절감 (642B → 265B per record)
+- 성능: encode 178K ops/s, decode 102K ops/s (JSON보다 느리지만 네트워크 절감이 큼)
+- 선택 가이드: 로컬 → JSON, 인터넷 경유 → Proto, 대량 아카이빙 → Proto
+
+## Verdaccio 로컬 npm 배포
+
+```bash
+pnpm registry        # Verdaccio 시작 (localhost:4873)
+pnpm publish:local   # 14개 패키지 배포
+```
+
+소비자: `echo "registry=http://localhost:4873" > .npmrc && pnpm install @qa-sdk/core`
 
 ## DKG Constraints
 
