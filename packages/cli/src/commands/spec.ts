@@ -363,14 +363,15 @@ export async function specCodegen(options: {
 
   // codegen 전 스키마 검증
   const validationResult = ctx.validator.validate(
-    ctx.prefixSpecs.length > 0 ? `${(ctx.prefixSpecs[0] as any).category ?? "entity"}.base` : "entity.base",
+    ctx.prefixSpecs.length > 0 ? `${ctx.prefixSpecs[0].schema?.category ?? "entity"}.base` : "entity.base",
     {},
   );
   // prefix specs 자체 구조 검증 (validator가 등록된 schema가 없으면 skip)
   try {
     for (const spec of ctx.prefixSpecs) {
       if (!spec.schema) continue;
-      const result = ctx.validator.validate(spec.schema, {});
+      const schemaId = spec.schema.schemaRef ?? `${spec.schema.category}.base`;
+      const result = ctx.validator.validate(schemaId, {});
       if (!result.valid) {
         console.warn(`  ⚠ ${spec.id} 스키마 검증 경고: ${result.errors.length}건`);
         for (const e of result.errors) {

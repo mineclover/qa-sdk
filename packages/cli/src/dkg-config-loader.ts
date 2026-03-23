@@ -12,6 +12,23 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { DkgConfig } from "@qa-sdk/core";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object";
+}
+
+export function isDkgConfig(value: unknown): value is DkgConfig {
+  if (!isRecord(value)) return false;
+
+  return Array.isArray(value.domains)
+    && Array.isArray(value.consumers)
+    && Array.isArray(value.constraints)
+    && Array.isArray(value.dslBundles)
+    && Array.isArray(value.intentLinks)
+    && Array.isArray(value.skills)
+    && (value.specs === undefined || Array.isArray(value.specs))
+    && (value.reviewPairs === undefined || Array.isArray(value.reviewPairs));
+}
+
 /**
  * DkgConfig를 로드한다.
  *
@@ -47,7 +64,9 @@ async function loadFromPath(filePath: string): Promise<DkgConfig> {
 
   if (absPath.endsWith(".json")) {
     const { readFileSync } = await import("node:fs");
-    return JSON.parse(readFileSync(absPath, "utf-8")) as DkgConfig;
+    const parsed = JSON.parse(readFileSync(absPath, "utf-8")) as unknown;
+    if (isDkgConfig(parsed)) return parsed;
+    throw new Error(`DkgConfig JSON 형식이 올바르지 않습니다: ${absPath}`);
   }
 
   if (absPath.endsWith(".ts")) {
@@ -84,7 +103,7 @@ async function loadFromConfig(configPath: string): Promise<DkgConfig | undefined
   }
 
   if (config.dkgConfig && typeof config.dkgConfig === "object" && "domains" in (config.dkgConfig as object)) {
-    return config.dkgConfig as DkgConfig;
+    if (isDkgConfig(config.dkgConfig)) return config.dkgConfig;
   }
 
   return undefined;
@@ -110,16 +129,13 @@ async function loadTypeScriptFile(filePath: string): Promise<DkgConfig> {
 }
 
 function extractDkgConfig(mod: Record<string, unknown>): DkgConfig {
-  if (mod.default && typeof mod.default === "object" && "domains" in (mod.default as object)) {
-    return mod.default as DkgConfig;
+  if (isDkgConfig(mod.default)) {
+    return mod.default;
   }
 
   for (const value of Object.values(mod)) {
-    if (value && typeof value === "object" && "domains" in (value as object)) {
-      const obj = value as Record<string, unknown>;
-      if ("dslBundles" in obj || "constraints" in obj) {
-        return obj as unknown as DkgConfig;
-      }
+    if (isDkgConfig(value)) {
+      return value;
     }
   }
 
@@ -129,7 +145,7 @@ function extractDkgConfig(mod: Record<string, unknown>): DkgConfig {
 async function loadDemoDkgConfig(): Promise<DkgConfig | undefined> {
   try {
     const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
-    return DEMO_DKG_CONFIG as unknown as DkgConfig;
+    return isDkgConfig(DEMO_DKG_CONFIG) ? DEMO_DKG_CONFIG : undefined;
   } catch {
     return undefined;
   }

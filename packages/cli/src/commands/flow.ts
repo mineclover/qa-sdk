@@ -29,12 +29,17 @@ import {
   type FlowSchema,
   type GateProfile,
   type FlowInstance,
+  type Evidence,
 } from "decision-flow";
 
 // ─── 상태 관리 (세션 내 인메모리) ────────────────────────
 
 const engine = new FlowEngine();
 let initialized = false;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 function ensureInit() {
   if (initialized) return;
@@ -138,9 +143,13 @@ export function flowSelect(argv: string[]) {
     return;
   }
 
-  let evidence: any[] = [];
+  let evidence: Evidence[] = [];
   if (values.evidence) {
-    try { evidence = JSON.parse(values.evidence); } catch {
+    try {
+      const parsed = JSON.parse(values.evidence) as unknown;
+      if (!Array.isArray(parsed)) throw new Error("not-array");
+      evidence = parsed as Evidence[];
+    } catch {
       console.error("--evidence는 유효한 JSON 배열이어야 합니다");
       return;
     }
@@ -162,8 +171,8 @@ export function flowSelect(argv: string[]) {
       const nextGate = engine.getCurrentGate(instanceId);
       if (nextGate) printCurrentGate(nextGate);
     }
-  } catch (e: any) {
-    console.error(`선택 실패: ${e.message}`);
+  } catch (e: unknown) {
+    console.error(`선택 실패: ${errorMessage(e)}`);
   }
 }
 

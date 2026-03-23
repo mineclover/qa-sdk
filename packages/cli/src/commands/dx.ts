@@ -23,7 +23,6 @@ import {
   bootstrapDkg,
   analyzeImpact,
 } from "@qa-sdk/spec-core/analysis";
-import type { DkgConfig } from "@qa-sdk/core";
 
 // ── qa encode ───────────────────────────────────────
 
@@ -230,7 +229,7 @@ export function cliDeriveRefs(catalog: Catalog, args: {
 
 // ── qa impact ───────────────────────────────────────
 
-export function cliImpact(catalog: Catalog, dkgConfig: DkgConfig, args: {
+export function cliImpact(catalog: Catalog, dkgConfig: Parameters<typeof bootstrapDkg>[0]["config"], args: {
   axis?: string;
   prefix?: string;
 }): void {
@@ -317,7 +316,7 @@ export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
   if (args.json) {
     const result = axes.map(([id, a]) => {
       const versions = Object.keys(a.versions);
-      const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions] as any;
+      const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions];
       return {
         id,
         name: a.name,
@@ -333,7 +332,7 @@ export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
   console.log(`\n══ Axes (${axes.length}) ══\n`);
   for (const [id, a] of axes) {
     const versions = Object.keys(a.versions);
-    const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions] as any;
+    const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions];
     const entries = latest.entries?.length ?? 0;
     const cap = latest.capacity ?? entries;
     console.log(`  ${id.padEnd(15)} ${a.name.padEnd(12)} entries=${String(entries).padStart(2)} cap=${String(cap).padStart(3)} headroom=${cap - entries}`);

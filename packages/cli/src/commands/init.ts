@@ -28,6 +28,9 @@ export async function init(options: InitOptions): Promise<void> {
   return initInteractive();
 }
 
+type AxisTemplateInput = NonNullable<CatalogTemplateInput["axes"]>[number];
+type PrefixTemplateInput = NonNullable<CatalogTemplateInput["prefixes"]>[number];
+
 // ── 데모 기반 초기화 ─────────────────────────────────
 
 async function initFromDemo(): Promise<void> {
@@ -89,7 +92,7 @@ async function initInteractive(): Promise<void> {
 
     // 첫 번째 축
     const axisInput = (await ask("첫 번째 축 (이름:항목1,항목2,... 예: warehouse:tokyo,osaka,nagoya): ")).trim();
-    const axes: CatalogTemplateInput["axes"] extends readonly (infer T)[] ? T[] : never = [];
+    const axes: AxisTemplateInput[] = [];
     if (axisInput) {
       const [axisName, entriesStr] = axisInput.split(":");
       const entries = entriesStr?.split(",").map(e => e.trim()).filter(Boolean) ?? [];
@@ -115,7 +118,7 @@ async function initInteractive(): Promise<void> {
 
     // 첫 번째 prefix
     const prefixInput = (await ask(`첫 번째 prefix (이름:축1,축2,... 예: shipment:${axes.map(a => a.id).join(",")}): `)).trim();
-    const prefixes: { id: string; name: string; dims: string[] }[] = [];
+    const prefixes: PrefixTemplateInput[] = [];
     if (prefixInput) {
       const [prefixName, dimsStr] = prefixInput.split(":");
       const dims = dimsStr?.split(",").map(d => d.trim()).filter(Boolean) ?? [];

@@ -9,7 +9,7 @@
 
 import { execaSync, type ExecaSyncError } from "execa";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import type { DimRef, DomainNode } from "demo-snapshot";
+import type { Catalog, DimRef, PrefixDef, VersionedAxis } from "@qa-sdk/core";
 import { bootstrapDkg } from "@qa-sdk/spec-core/analysis";
 
 // ── DimRef 헬퍼 ──────────────────────────────────────
@@ -61,6 +61,19 @@ interface DkgDslBundle {
 
 const domains = DEMO_DKG_CONFIG.domains as readonly DkgDomain[];
 const dslBundles = DEMO_DKG_CONFIG.dslBundles as readonly DkgDslBundle[];
+const CATALOG: Catalog = DEMO_CATALOG;
+
+function getPrefix(id: string): PrefixDef | undefined {
+  return (CATALOG.prefixes as Record<string, PrefixDef>)[id];
+}
+
+function getAxis(id: string): VersionedAxis | undefined {
+  return (CATALOG.axes as Record<string, VersionedAxis>)[id];
+}
+
+function execaErrorText(err: ExecaSyncError): string {
+  return typeof err.stderr === "string" ? err.stderr.trim() : String(err.stderr ?? "").trim();
+}
 
 // ── Signal Role 매핑 ─────────────────────────────────
 
@@ -92,7 +105,7 @@ function obsidianWrite(vault: string, path: string, content: string): void {
     execaSync("obsidian", ["create", `vault=${vault}`, `path=${path}`, `content=${content}`, "silent", "overwrite"], { timeout: 10_000 });
   } catch (err: unknown) {
     const e = err as ExecaSyncError;
-    console.error(`  ✗ ${path}: ${e.stderr?.trim() || e.message}`);
+    console.error(`  ✗ ${path}: ${execaErrorText(e) || e.message}`);
   }
 }
 
@@ -103,7 +116,7 @@ interface SyncNote {
   content: string;
 }
 
-function buildPrefixNote(id: string, prefix: typeof DEMO_CATALOG.prefixes[string]): SyncNote {
+function buildPrefixNote(id: string, prefix: PrefixDef): SyncNote {
   const category = prefix.meta?.category ?? "entity";
   const signalRole = SIGNAL_ROLE_MAP[id];
   const dims = Object.entries(prefix.dims);
@@ -128,7 +141,7 @@ function buildPrefixNote(id: string, prefix: typeof DEMO_CATALOG.prefixes[string
   ).join("\n");
 
   // 이 prefix를 참조하는 다른 prefix 찾기
-  const referencedBy = Object.entries(DEMO_CATALOG.prefixes)
+  const referencedBy = Object.entries(CATALOG.prefixes)
     .filter(([, p]) => Object.values(p.dims).some(d => isPrefixRef(d, id)))
     .map(([refId, p]) => {
       const refLabel = Object.entries(p.dims).find(([, d]) => isPrefixRef(d, id))?.[0];
@@ -169,7 +182,7 @@ function buildPrefixNote(id: string, prefix: typeof DEMO_CATALOG.prefixes[string
   return { path: `prefix/${id}.md`, content: `${frontmatter}\n\n${body}` };
 }
 
-function buildAxisNote(id: string, axis: typeof DEMO_CATALOG.axes[string]): SyncNote {
+function buildAxisNote(id: string, axis: VersionedAxis): SyncNote {
   const versions = Object.keys(axis.versions);
   const latestKey = versions[versions.length - 1];
   const latest = axis.versions[latestKey];
@@ -177,7 +190,7 @@ function buildAxisNote(id: string, axis: typeof DEMO_CATALOG.axes[string]): Sync
   const capacity = latest.capacity ?? entries.length;
 
   // 이 axis를 사용하는 prefix 찾기
-  const usedBy = Object.entries(DEMO_CATALOG.prefixes)
+  const usedBy = Object.entries(CATALOG.prefixes)
     .filter(([, p]) => Object.values(p.dims).some(d => isAxisRef(d, id)))
     .map(([prefixId, p]) => {
       const label = Object.entries(p.dims).find(([, d]) => isAxisRef(d, id))?.[0];
@@ -238,7 +251,7 @@ function buildDslNote(bundle: DkgDslBundle): SyncNote {
   ].join("\n");
 
   const memberTable = bundle.memberPrefixes.map(p => {
-    const prefix = DEMO_CATALOG.prefixes[p];
+    const prefix = getPrefix(p);
     const cat = prefix?.meta?.category ?? "?";
     return `| [[${p}]] | ${cat} | ${prefix?.name ?? p} |`;
   }).join("\n");
@@ -286,7 +299,7 @@ function buildDomainNote(domain: DkgDomain): SyncNote {
   ].join("\n");
 
   const prefixTable = domain.prefixes.map((p: string) => {
-    const prefix = DEMO_CATALOG.prefixes[p];
+    const prefix = getPrefix(p);
     if (!prefix) return `| [[${p}]] | ? | - |`;
     const cat = prefix.meta?.category ?? "entity";
     const pos = domain.boundary.exports.includes(p) ? "exports" : "internal";
@@ -745,10 +758,10 @@ enum, 이벤트 유형, 권한 유형 같은 고정 조합을 전문으로 다�
   };
 }
 
-function buildIndexNote(prefixes: string[], domains: string[], axes: string[]): SyncNote {
+function buildIndexNote(prefixes: string[], domainIds: string[], axes: string[]): SyncNote {
   const byCategory = new Map<string, string[]>();
   for (const id of prefixes) {
-    const cat = DEMO_CATALOG.prefixes[id]?.meta?.category ?? "entity";
+    const cat = getPrefix(id)?.meta?.category ?? "entity";
     if (!byCategory.has(cat)) byCategory.set(cat, []);
     byCategory.get(cat)!.push(id);
   }
@@ -759,13 +772,14 @@ function buildIndexNote(prefixes: string[], domains: string[], axes: string[]): 
     .map(cat => {
       const items = byCategory.get(cat)!;
       const links = items.map(id => {
-        const p = DEMO_CATALOG.prefixes[id];
+        const p = getPrefix(id);
+        if (!p) return `- [[${id}]]`;
         return `- [[${id}]] — ${p.name} (${p.labels.join(" × ")})`;
       }).join("\n");
       return `### ${cat}\n${links}`;
     }).join("\n\n");
 
-  const domainLinks = domains.map(id => {
+  const domainLinks = domainIds.map(id => {
     const d = domains.find(dd => dd.id === id);
     const prefixNames = d?.prefixes?.join(", ") ?? "";
     return `- [[${id}]] — ${d?.name ?? id} (${prefixNames})`;
@@ -792,7 +806,8 @@ source: DEMO_CATALOG + DEMO_DKG_CONFIG
 1차원 축. prefix의 차원이 되는 기본 단위.
 
 ${axes.map(id => {
-      const a = DEMO_CATALOG.axes[id];
+      const a = getAxis(id);
+      if (!a) return `- [[${id}]]`;
       return `- [[${id}]] — ${a.name}`;
     }).join("\n")}
 
@@ -867,15 +882,17 @@ export function syncObsidian(options: SyncObsidianOptions): void {
   const notes: SyncNote[] = [];
 
   // 0. axis 노트 (카탈로그에서 파생)
-  const axisIds = Object.keys(DEMO_CATALOG.axes);
+  const axisIds = Object.keys(CATALOG.axes);
   for (const id of axisIds) {
-    notes.push(buildAxisNote(id, DEMO_CATALOG.axes[id]));
+    const axis = getAxis(id);
+    if (axis) notes.push(buildAxisNote(id, axis));
   }
 
   // 1. prefix 노트 (카탈로그에서 파생)
-  const prefixIds = Object.keys(DEMO_CATALOG.prefixes);
+  const prefixIds = Object.keys(CATALOG.prefixes);
   for (const id of prefixIds) {
-    notes.push(buildPrefixNote(id, DEMO_CATALOG.prefixes[id]));
+    const prefix = getPrefix(id);
+    if (prefix) notes.push(buildPrefixNote(id, prefix));
   }
 
   // 2. domain 노트 (DKG config에서 파생)

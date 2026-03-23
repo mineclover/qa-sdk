@@ -9,7 +9,7 @@ import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
 import { CatalogRegistry, collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "@qa-sdk/core";
-import type { Catalog, DkgConfig, AxisVersionSnapshot } from "@qa-sdk/core";
+import type { Catalog, AxisVersionSnapshot } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
@@ -62,7 +62,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate, ConstraintNode, DkgEdgeType, DkgEdge, SpecNode, ConvergeAction, ChainStepResult, UsageData, EntryUsage, AddressUsage, CoOccurrence, VersionUsage } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate, ConstraintNode, DkgEdgeType, DkgEdge, SpecNode, ConvergeAction, ChainStepResult, UsageData, EntryUsage, AddressUsage, CoOccurrence, VersionUsage, ObservationSuggestion, TransitionSpecNode } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -75,6 +75,10 @@ import { execSync } from "node:child_process";
 const registry = new CatalogRegistry();
 let activeCatalogId = "demo";
 let _configOverride: unknown | undefined;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 export function setCatalogContext(catalog?: unknown, config?: unknown): void {
   if (catalog) {
@@ -255,7 +259,6 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg transition": { intent: "analyze", domain: "dkg-graph", subject: "spec" },
   "dkg scan-tables": { intent: "analyze", domain: "dkg-graph", subject: "table" },
   "dkg audit":       { intent: "analyze", domain: "dkg-graph", subject: "constraint" },
-  "dkg discover-links": { intent: "analyze", domain: "convergence", subject: "intent-link" },
 };
 
 /**
@@ -810,12 +813,11 @@ export function dkgObservations(opts: PageOptions): void {
 
   console.log(`\n══ Observations (${observations.length}) ══`);
   for (const obs of result.items) {
-    const o = obs as any;
-    const status = o.resolution ? `resolved(${o.resolution.outcome})` : "open";
-    const icon = status.startsWith("resolved") ? "✅" : o.intent === "action-needed" ? "🔴" : "🟡";
+    const status = obs.resolution ? `resolved(${obs.resolution.outcome})` : "open";
+    const icon = status.startsWith("resolved") ? "✅" : obs.intent === "action-needed" ? "🔴" : "🟡";
     console.log(`  ${icon} ${obs.id}`);
-    console.log(`     ${o.finding ?? o.description ?? ""}`);
-    console.log(`     intent=${o.intent ?? "?"} status=${status} source=${o.source ?? "?"}`);
+    console.log(`     ${obs.finding}`);
+    console.log(`     intent=${obs.intent ?? "?"} status=${status} source=${obs.source ?? "?"}`);
   }
   console.log(`\n  page ${result.page}/${result.totalPages} (total: ${observations.length})`);
 }
@@ -827,11 +829,10 @@ export function dkgDecisions(opts: PageOptions): void {
 
   console.log(`\n══ Decisions (${decisions.length}) ══`);
   for (const dec of result.items) {
-    const d = dec as any;
-    const icon = d.lifecycle === "active" ? "📋" : d.lifecycle === "superseded" ? "📝" : "📦";
+    const icon = dec.lifecycle === "active" ? "📋" : dec.lifecycle === "superseded" ? "📝" : "📦";
     console.log(`  ${icon} ${dec.id}`);
-    console.log(`     ${d.title ?? ""}`);
-    console.log(`     type=${d.decisionType ?? "?"} lifecycle=${d.lifecycle ?? "?"}`);
+    console.log(`     ${dec.title}`);
+    console.log(`     lifecycle=${dec.lifecycle ?? "?"}`);
   }
   console.log(`\n  page ${result.page}/${result.totalPages} (total: ${decisions.length})`);
 }
@@ -842,10 +843,9 @@ export function dkgConstraints(opts: PageOptions): void {
 
   console.log(`\n══ Constraints (${constraints.length}) ══`);
   for (const c of constraints) {
-    const con = c as any;
-    console.log(`  ${con.id}`);
-    console.log(`     ${con.description ?? con.rule ?? ""}`);
-    if (con.targets?.length) console.log(`     targets: ${con.targets.join(", ")}`);
+    console.log(`  ${c.id}`);
+    console.log(`     ${c.rule}`);
+    if (c.scope?.length) console.log(`     targets: ${c.scope.join(", ")}`);
   }
 }
 
@@ -1253,7 +1253,7 @@ export function dkgAudit(): void {
   // 6. 축 사용 분석 (prefix dims + TransitionSpec)
   {
     // TransitionSpec에서 축 참조 수집
-    const tSpecNodes = graph.getNodesByKind("transition-spec") as Array<{ transition: string; matchAxes: string[]; inputAxes: string[]; outputAxes: string[] }>;
+    const tSpecNodes = graph.getNodesByKind("transition-spec") as TransitionSpecNode[];
     const transitionAxes = tSpecNodes.map(n => ({
       transition: n.transition,
       matchAxes: n.matchAxes ?? [],
@@ -1979,9 +1979,9 @@ export function dkgObserve(opts: {
   const graph = getGraph();
   const store = getStore();
 
-  let suggestion: any;
+  let suggestion: ObservationSuggestion | undefined;
   if (opts.suggestion) {
-    try { suggestion = JSON.parse(opts.suggestion); }
+    try { suggestion = JSON.parse(opts.suggestion) as ObservationSuggestion; }
     catch { console.error("  --suggestion JSON 파싱 실패"); return; }
   }
 
@@ -2652,7 +2652,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
       console.log(`    usage snapshot #${snapResult.snapshotId} 저장 (observations: ${snapResult.observationsWritten})`);
     } else if (autoObs.length > 0) {
       // usage 없어도 observation은 저장
-      const edges = autoObs.flatMap((obs: any) =>
+      const edges = autoObs.flatMap((obs) =>
         (obs.subjects ?? []).map((s: string) => ({ type: "observes" as const, from: obs.id, to: s })),
       );
       store.saveNodes(autoObs, edges, "auto");
@@ -2719,7 +2719,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
         ...obsNode,
         resolution: { decisionId: "auto-expire", outcome: "deferred" as const, note: `${EXPIRE_DAYS}일 이상 변화 없어 자동 만료` },
       };
-      store.updateNode(expired as any);
+      store.updateNode(expired);
       graph.replaceNode(expired);
       expiredCount++;
     }
@@ -2838,8 +2838,8 @@ export async function dkgPublish(opts: { registry?: string; versionId?: string }
     }
 
     emitDkgEvent("promote", "system", "publish");
-  } catch (err: any) {
-    console.error(`  연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  연결 실패: ${errorMessage(err)}`);
     console.error(`  registry-service가 ${registryUrl}에서 실행 중인지 확인하세요.`);
   }
 }
@@ -2859,8 +2859,8 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
         const icon = v.status === "active" ? "✅" : v.status === "draft" ? "📝" : v.status === "locked" ? "🔒" : "⏸";
         console.log(`  ${icon} ${v.versionId.padEnd(8)} [${v.status}] cap=${v.capacity}${v.shape ? ` shape=[${v.shape}]` : ""}${v.stride ? ` stride=[${v.stride}]` : ""}`);
       }
-    } catch (err: any) {
-      console.error(`연결 실패: ${err.message}`);
+    } catch (err: unknown) {
+      console.error(`연결 실패: ${errorMessage(err)}`);
     }
     return;
   }
@@ -2886,8 +2886,8 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
     if (action === "activate" && result) {
       console.log(`  결과:`, JSON.stringify(result, null, 2).slice(0, 200));
     }
-  } catch (err: any) {
-    console.error(`연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`연결 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -3313,6 +3313,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   const now = new Date().toISOString();
   const runId = `self-check-${Date.now()}`;
   const results: SelfCheckResult[] = [];
+  const fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
   const cwd = process.env.HOME ? join(process.env.HOME, "workflow/qa-sdk") : ".";
 
   console.log(`\n══ Self-Check${fast ? " (--fast)" : ""}${apply ? " (--apply)" : ""} ══`);
@@ -3329,8 +3330,6 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
       results.push({ pkg: pkg.name, kind: "build", module: "_all", result: "success", durationMs: 0 });
       if (pkg.hasTest) results.push({ pkg: pkg.name, kind: "test", module: "_all", result: "passed", tests: 0, passed: 0, failed: 0, durationMs: 0 });
     }
-    // fast 모드에서는 contract 검증도 스킵 — 빈 배열로 초기화
-    var fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
   } else {
 
   console.log(`  ── Build ──`);
@@ -3345,8 +3344,9 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     try {
       execSync(`pnpm --filter ${pkg.filter} build`, { cwd, stdio: "pipe", timeout: 60000 });
       result = "success";
-    } catch (err: any) {
-      const stderr = (err.stderr?.toString() ?? "") + (err.stdout?.toString() ?? "");
+    } catch (err: unknown) {
+      const execErr = err as { stderr?: { toString(): string } | string; stdout?: { toString(): string } | string };
+      const stderr = String(execErr.stderr ?? "") + String(execErr.stdout ?? "");
       result = stderr.includes("TS") ? "type-error" : "failure";
     }
     const dur = Date.now() - t0;
@@ -3356,7 +3356,6 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   }
 
   console.log(`\n  ── Test ──`);
-  const fileContracts: Array<{ pkg: string; surface: string; result: string }> = [];
   for (const pkg of SELF_CHECK_PKGS) {
     if (!pkg.hasTest) {
       console.log(`    ⏭ ${pkg.name.padEnd(20)} (no tests)`);
@@ -3544,7 +3543,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
 
   // ── observation 해소/생성 후보 탐색 (읽기 전용) ──
   const existingObs = graph.getNodesByKind("observation");
-  const resolveTargets: Array<{ obs: any; reason: string }> = [];
+  const resolveTargets: Array<{ obs: ObservationNode; reason: string }> = [];
 
   for (const obs of existingObs.filter(o => o.id.startsWith("OBS-SELF-BUILD-") && !o.resolution)) {
     const prevFailed = (obs.subjects as string[]) ?? [];
@@ -3641,7 +3640,10 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     console.log(`    snapshot #${snapshotId} 저장`);
 
     for (const { obs, reason } of resolveTargets) {
-      const resolved = { ...obs, resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}: ${reason}` } };
+      const resolved: ObservationNode = {
+        ...obs,
+        resolution: { decisionId: "auto", outcome: "accepted", note: `${runId}: ${reason}` },
+      };
       store.saveNodes([resolved], [], "auto");
       graph.replaceNode(resolved);
       console.log(`    resolved: ${obs.id} (${reason})`);
@@ -3972,7 +3974,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
         // List available signals from DEMO_DKG_CONFIG
         try {
           const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
-          const skills = (DEMO_DKG_CONFIG as DkgConfig).skills ?? [];
+          const skills = DEMO_DKG_CONFIG.skills ?? [];
           console.log("Available signal IDs require DEMO_SIGNALS from viz-3d.");
           console.log("Signal diagram은 향후 DEMO_SIGNALS 연동 시 지원 예정.");
         } catch { /* ignore */ }
@@ -4067,11 +4069,12 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       const renderOut = outputPath.replace(/\.mmd$/, `.${ext}`);
       await execa("mmdc", ["-i", outputPath, "-o", renderOut]);
       console.log(`  Rendered: ${renderOut}`);
-    } catch (err: any) {
-      if (err?.code === "ENOENT" || err?.message?.includes("ENOENT")) {
+    } catch (err: unknown) {
+      const execErr = err as { code?: string; message?: string };
+      if (execErr.code === "ENOENT" || execErr.message?.includes("ENOENT")) {
         console.log("  mmdc not found. Install with: npm install -g @mermaid-js/mermaid-cli");
       } else {
-        console.error(`  mmdc error: ${err?.message ?? err}`);
+        console.error(`  mmdc error: ${errorMessage(err)}`);
       }
     }
   }
@@ -4146,7 +4149,7 @@ export function dkgDiscoverLinks(): void {
     console.log(`\n  임계값 미달 — 상위 co-occurrence 패턴 (${top.length}건):`);
     for (const co of top) {
       const rate = co.totalSourceCount > 0 ? Math.round((co.count / co.totalSourceCount) * 100) : 0;
-      const existingIL = graph.getNodesByKind("intent-link").find((il: any) =>
+      const existingIL = graph.getNodesByKind("intent-link").find((il) =>
         il.endpoints?.includes(co.sourcePrefix) && il.endpoints?.includes(co.targetPrefix),
       );
       const tag = existingIL ? ` [이미 등록: ${existingIL.id}]` : "";

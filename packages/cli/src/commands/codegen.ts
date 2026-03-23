@@ -6,7 +6,7 @@ import { generateProto, type ProtoGenOptions } from "../generators/proto.js";
 import { generateTypescript } from "../generators/typescript.js";
 import { generateCatalogTypes } from "../generators/catalog-typescript.js";
 import { loadCatalog } from "../catalog-loader.js";
-import { loadDkgConfig } from "../dkg-config-loader.js";
+import { isDkgConfig, loadDkgConfig } from "../dkg-config-loader.js";
 import type { Catalog, DkgConfig } from "@qa-sdk/core";
 
 export type CodegenFormat = "proto" | "ts";
@@ -94,8 +94,13 @@ async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
       const configRes = await fetch(`${registryUrl}/catalogs/${catalogId}/config`);
       if (configRes.ok) {
         const configBody = await configRes.json() as { catalogId: string; data: string };
-        dkgConfig = JSON.parse(configBody.data) as DkgConfig;
-        console.log(`DkgConfig loaded from registry (${catalogId})`);
+        const parsed = JSON.parse(configBody.data) as unknown;
+        if (isDkgConfig(parsed)) {
+          dkgConfig = parsed;
+          console.log(`DkgConfig loaded from registry (${catalogId})`);
+        } else {
+          console.warn(`Registry DkgConfig 형식 불일치: ${catalogId}`);
+        }
       }
     } catch { /* registry에 config 없으면 로컬 fallback */ }
     if (!dkgConfig) {
