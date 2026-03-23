@@ -1,0 +1,2808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK Flow</title>
+<script src="config.js"></script>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --bg4: #10151d;
+  --border: #30363d;
+  --border-muted: rgba(139, 148, 158, 0.22);
+  --txt: #c9d1d9;
+  --txt2: #8b949e;
+  --txt3: #6e7681;
+  --blue: #58a6ff;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --orange: #ff9b54;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--txt);
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+#nav {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  font-size: 13px;
+}
+.nav-brand { font-weight: 700; color: var(--blue); margin-right: 16px; font-size: 14px; }
+.nav-link { color: var(--txt2); text-decoration: none; padding: 6px 12px; border-radius: 4px; }
+.nav-link:hover { color: var(--txt); background: var(--bg3); }
+.nav-link.active { color: var(--green); background: rgba(63, 185, 80, 0.1); }
+.layout {
+  display: flex;
+  height: calc(100vh - 36px);
+}
+.sidebar {
+  width: 340px;
+  flex: 0 0 340px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sidebar-head {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 12px 16px;
+}
+.sidebar-feed {
+  border-top: 1px solid var(--border);
+  padding: 14px 12px 12px;
+  min-height: 240px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.feed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.feed-copy {
+  min-width: 0;
+}
+.feed-note {
+  color: var(--txt2);
+  font-size: 11px;
+}
+.toggle-btn.is-paused {
+  color: var(--yellow);
+  border-color: rgba(210, 153, 34, 0.28);
+}
+.feed-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.feed-list {
+  display: grid;
+  gap: 8px;
+}
+.feed-empty {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--txt2);
+  font-size: 12px;
+  padding: 16px;
+}
+.feed-item {
+  width: 100%;
+  text-align: left;
+  background: linear-gradient(180deg, rgba(33, 38, 45, 0.98), rgba(16, 21, 29, 0.98));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--txt);
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 180ms ease;
+}
+.feed-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(88, 166, 255, 0.45);
+}
+.feed-item.is-selected {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(63, 185, 80, 0.28);
+}
+.feed-item.is-new {
+  animation: feed-fade-in 900ms ease;
+}
+.feed-item.is-linked {
+  border-color: rgba(88, 166, 255, 0.52);
+  box-shadow:
+    inset 0 0 0 1px rgba(88, 166, 255, 0.18),
+    0 0 20px rgba(88, 166, 255, 0.12);
+}
+.feed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.feed-service {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feed-time {
+  color: var(--txt2);
+  font-size: 10px;
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+.feed-title {
+  margin-top: 6px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.feed-meta-item {
+  font-size: 10px;
+  color: var(--txt2);
+  font-family: var(--mono);
+}
+.feed-prefixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.feed-prefix-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(88, 166, 255, 0.18);
+  background: rgba(88, 166, 255, 0.08);
+  color: #b7d9ff;
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.feed-prefix-chip.is-pulsing {
+  animation: feed-link-pulse 1000ms ease-out;
+  background: rgba(88, 166, 255, 0.2);
+  border-color: rgba(136, 203, 255, 0.82);
+  color: #e8f4ff;
+}
+.feed-prefix-loading {
+  margin-top: 8px;
+  color: var(--txt3);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+@keyframes feed-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes feed-link-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(88, 166, 255, 0);
+  }
+  45% {
+    transform: scale(1.04);
+    box-shadow: 0 0 24px rgba(88, 166, 255, 0.18);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(88, 166, 255, 0);
+  }
+}
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  overflow: hidden;
+}
+.section-title {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--txt2);
+  margin-bottom: 8px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  color: var(--txt2);
+  font-size: 12px;
+}
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.coverage-card {
+  margin-top: 12px;
+  background: linear-gradient(180deg, rgba(88, 166, 255, 0.1), rgba(88, 166, 255, 0.02));
+  border: 1px solid rgba(88, 166, 255, 0.22);
+  border-radius: 8px;
+  padding: 12px;
+}
+.coverage-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.coverage-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--blue);
+  font-weight: 700;
+}
+.coverage-note {
+  color: var(--txt2);
+  font-size: 11px;
+  margin-top: 6px;
+}
+.btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--txt);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.btn:hover { background: var(--border); }
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.source-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--txt2);
+}
+.source-list code {
+  color: var(--txt);
+  font-family: var(--mono);
+}
+.overlay-card {
+  margin-top: 12px;
+  background: linear-gradient(180deg, rgba(255, 155, 84, 0.08), rgba(255, 155, 84, 0.02));
+  border: 1px solid rgba(255, 155, 84, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+}
+.overlay-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.overlay-copy {
+  min-width: 0;
+}
+.overlay-note {
+  color: var(--txt2);
+  font-size: 11px;
+}
+.overlay-label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  color: var(--txt2);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.overlay-select {
+  width: 100%;
+  background: var(--bg4);
+  border: 1px solid var(--border);
+  color: var(--txt);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.overlay-select:disabled {
+  opacity: 0.6;
+}
+.overlay-summary {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.82);
+  border: 1px solid rgba(255, 155, 84, 0.14);
+  color: var(--txt);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.overlay-summary strong {
+  font-family: var(--mono);
+  color: #ffbf94;
+}
+.overlay-summary.muted {
+  color: var(--txt2);
+}
+.group {
+  margin-bottom: 16px;
+}
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  margin-bottom: 8px;
+  color: var(--txt2);
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.group-count {
+  font-family: var(--mono);
+}
+.group-list {
+  display: grid;
+  gap: 8px;
+}
+.prefix-item {
+  width: 100%;
+  text-align: left;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--txt);
+}
+.prefix-item:hover {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+}
+.prefix-item.is-selected {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(63, 185, 80, 0.35);
+}
+.prefix-item.is-overlay-observed {
+  border-color: rgba(63, 185, 80, 0.6);
+  background: linear-gradient(180deg, rgba(63, 185, 80, 0.12), rgba(22, 27, 34, 0.96));
+}
+.prefix-item.is-overlay-unobserved {
+  border-color: rgba(255, 155, 84, 0.6);
+  background: linear-gradient(180deg, rgba(255, 155, 84, 0.12), rgba(22, 27, 34, 0.96));
+}
+.prefix-item.is-overlay-dimmed {
+  opacity: 0.42;
+}
+.prefix-item.is-pulsing {
+  border-color: rgba(88, 166, 255, 0.64);
+  background: linear-gradient(180deg, rgba(88, 166, 255, 0.14), rgba(22, 27, 34, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(88, 166, 255, 0.2),
+    0 0 20px rgba(88, 166, 255, 0.1);
+  animation: feed-link-pulse 1000ms ease-out;
+}
+.prefix-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.prefix-id {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+.prefix-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: var(--mono);
+  border: 1px solid transparent;
+}
+.badge-dim {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--blue);
+}
+.badge-observed {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--green);
+  border-color: rgba(63, 185, 80, 0.18);
+}
+.badge-idle {
+  background: rgba(139, 148, 158, 0.1);
+  color: var(--txt2);
+  border-color: rgba(139, 148, 158, 0.16);
+}
+.badge-category {
+  background: rgba(210, 153, 34, 0.12);
+  color: var(--yellow);
+}
+.canvas-column,
+.detail-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.canvas-column {
+  gap: 12px;
+  overflow: hidden;
+}
+.canvas-header {
+  padding: 14px 16px 12px;
+}
+.canvas-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.canvas-stat {
+  background: var(--bg4);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 12px;
+}
+.canvas-stat-label {
+  color: var(--txt2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.canvas-stat-value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+}
+.canvas-card {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 0;
+}
+.canvas-stage {
+  flex: 1;
+  min-height: 520px;
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  cursor: grab;
+  background:
+    radial-gradient(circle at top left, rgba(88, 166, 255, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0));
+  user-select: none;
+}
+.canvas-stage svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.canvas-stage.is-panning {
+  cursor: grabbing;
+}
+.canvas-surface {
+  height: 100%;
+}
+.canvas-hud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+.zoom-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-width: 72px;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--txt);
+  background: rgba(13, 17, 23, 0.86);
+  border: 1px solid rgba(139, 148, 158, 0.26);
+  backdrop-filter: blur(8px);
+}
+.canvas-status {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--txt2);
+  padding: 24px;
+}
+.canvas-status.error {
+  color: #ffb4ab;
+}
+.detail-card {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+}
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.detail-actions .btn {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+.detail-placeholder {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--txt2);
+}
+.detail-grid {
+  display: grid;
+  gap: 10px;
+}
+.detail-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.detail-key {
+  color: var(--txt2);
+  font-size: 12px;
+}
+.detail-val {
+  color: var(--txt);
+  font-size: 12px;
+  text-align: right;
+  word-break: break-word;
+}
+.detail-val-axes {
+  max-width: 220px;
+}
+.detail-val code {
+  font-family: var(--mono);
+  color: var(--txt);
+}
+.detail-heading {
+  margin-bottom: 12px;
+}
+.detail-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.detail-subtitle {
+  color: var(--txt2);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.axis-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.axis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--blue);
+  border: 1px solid rgba(88, 166, 255, 0.22);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.trace-summary {
+  display: grid;
+  gap: 10px;
+}
+.trace-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.trace-summary-card {
+  background: var(--bg4);
+  border: 1px solid var(--border-muted);
+  border-radius: 8px;
+  padding: 10px;
+}
+.trace-summary-label {
+  color: var(--txt2);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.trace-summary-value {
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--mono);
+  word-break: break-word;
+}
+.trace-records {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.trace-record {
+  position: relative;
+  background: rgba(16, 21, 29, 0.92);
+  border: 1px solid var(--border-muted);
+  border-radius: 10px;
+  padding: 12px;
+}
+.trace-record.is-entry {
+  border-color: rgba(88, 166, 255, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(88, 166, 255, 0.12);
+}
+.trace-record-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.trace-record-key {
+  color: var(--txt);
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+.trace-record-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.trace-record-time {
+  color: var(--txt2);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.trace-record-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-family: var(--mono);
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--blue);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+}
+.trace-record-badge-span {
+  background: rgba(63, 185, 80, 0.12);
+  color: var(--green);
+  border-color: rgba(63, 185, 80, 0.18);
+}
+.trace-record-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.trace-context-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: var(--mono);
+  background: rgba(210, 153, 34, 0.12);
+  color: var(--yellow);
+}
+.trace-context-tag strong {
+  color: var(--txt);
+  font-weight: 600;
+}
+.trace-record-payload {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.92);
+  border: 1px solid rgba(139, 148, 158, 0.16);
+  color: var(--txt2);
+  font-size: 11px;
+  font-family: var(--mono);
+  overflow: auto;
+}
+.trace-empty {
+  color: var(--txt2);
+  font-size: 12px;
+  padding: 16px 0;
+  text-align: center;
+}
+.muted {
+  color: var(--txt2);
+}
+.intent-endpoint-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.intent-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(13, 17, 23, 0.88);
+  border: 1px solid rgba(139, 148, 158, 0.16);
+}
+.intent-endpoint.is-observed {
+  border-color: rgba(63, 185, 80, 0.22);
+}
+.intent-endpoint.is-unobserved {
+  border-color: rgba(255, 155, 84, 0.24);
+}
+.intent-endpoint-id {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--txt);
+}
+.intent-endpoint-status {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.intent-endpoint.is-observed .intent-endpoint-status {
+  color: var(--green);
+}
+.intent-endpoint.is-unobserved .intent-endpoint-status {
+  color: var(--orange);
+}
+.prefix-node {
+  cursor: pointer;
+  --node-fill: rgba(110, 118, 129, 0.12);
+  --node-stroke: rgba(139, 148, 158, 0.72);
+  --node-shadow: none;
+  --node-pulse-fill: rgba(88, 166, 255, 0.28);
+  --node-pulse-stroke: rgba(136, 203, 255, 0.96);
+  --node-pulse-shadow: drop-shadow(0 0 18px rgba(88, 166, 255, 0.42));
+}
+.prefix-node .node-transform {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.prefix-node .node-body {
+  fill: var(--node-fill);
+  stroke: var(--node-stroke);
+  filter: var(--node-shadow);
+  transition: stroke-width 120ms ease, filter 120ms ease, fill 120ms ease, opacity 120ms ease;
+}
+.prefix-node:hover .node-body {
+  stroke-width: 3px;
+}
+.prefix-node.is-selected .node-body {
+  stroke-width: 3.5px;
+  --node-shadow: drop-shadow(0 0 10px rgba(88, 166, 255, 0.22));
+}
+.prefix-node.is-observed .node-body {
+  --node-fill: rgba(63, 185, 80, 0.18);
+  --node-stroke: rgba(63, 185, 80, 0.92);
+  --node-pulse-fill: rgba(88, 232, 111, 0.34);
+  --node-pulse-stroke: rgba(173, 255, 187, 0.98);
+  --node-pulse-shadow: drop-shadow(0 0 18px rgba(88, 232, 111, 0.48));
+}
+.prefix-node.is-il-observed .node-body {
+  --node-fill: rgba(63, 185, 80, 0.24);
+  --node-stroke: rgba(63, 185, 80, 0.98);
+  --node-pulse-fill: rgba(112, 239, 131, 0.4);
+  --node-pulse-stroke: rgba(193, 255, 204, 1);
+  --node-pulse-shadow: drop-shadow(0 0 18px rgba(88, 232, 111, 0.52));
+  stroke-width: 3;
+  --node-shadow: drop-shadow(0 0 12px rgba(63, 185, 80, 0.2));
+}
+.prefix-node.is-il-unobserved .node-body {
+  --node-fill: rgba(255, 155, 84, 0.16);
+  --node-stroke: rgba(255, 155, 84, 0.96);
+  --node-pulse-fill: rgba(255, 187, 128, 0.34);
+  --node-pulse-stroke: rgba(255, 219, 191, 0.98);
+  --node-pulse-shadow: drop-shadow(0 0 18px rgba(255, 155, 84, 0.44));
+  stroke-width: 3;
+  --node-shadow: drop-shadow(0 0 12px rgba(255, 155, 84, 0.18));
+}
+.prefix-node.is-idle .node-body {
+  --node-fill: rgba(110, 118, 129, 0.12);
+  --node-stroke: rgba(139, 148, 158, 0.72);
+  --node-pulse-fill: rgba(88, 166, 255, 0.26);
+  --node-pulse-stroke: rgba(136, 203, 255, 0.96);
+  --node-pulse-shadow: drop-shadow(0 0 18px rgba(88, 166, 255, 0.38));
+}
+.prefix-node.is-dimmed {
+  opacity: 0.46;
+}
+.prefix-node.is-pulsing .node-transform {
+  animation: prefix-node-pulse 1000ms ease-out;
+}
+.prefix-node.is-pulsing .node-body {
+  animation: prefix-node-body-pulse 1000ms ease-out;
+}
+@keyframes prefix-node-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.2);
+  }
+  72% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes prefix-node-body-pulse {
+  0% {
+    fill: var(--node-fill);
+    stroke: var(--node-stroke);
+    filter: var(--node-shadow);
+  }
+  45% {
+    fill: var(--node-pulse-fill);
+    stroke: var(--node-pulse-stroke);
+    filter: var(--node-pulse-shadow);
+  }
+  100% {
+    fill: var(--node-fill);
+    stroke: var(--node-stroke);
+    filter: var(--node-shadow);
+  }
+}
+.category-label {
+  fill: var(--txt2);
+  font-size: 12px;
+  font-family: var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.category-rule {
+  stroke: rgba(139, 148, 158, 0.22);
+  stroke-width: 1;
+}
+.node-id {
+  fill: var(--txt);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.node-caption {
+  fill: var(--txt3);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.node-badge-body {
+  fill: rgba(63, 185, 80, 0.22);
+  stroke: rgba(63, 185, 80, 0.38);
+}
+.node-badge-text {
+  fill: #b6f0c3;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.overlay-status-body {
+  stroke-width: 1;
+}
+.overlay-status-body.is-observed {
+  fill: rgba(63, 185, 80, 0.22);
+  stroke: rgba(63, 185, 80, 0.5);
+}
+.overlay-status-body.is-unobserved {
+  fill: rgba(255, 155, 84, 0.18);
+  stroke: rgba(255, 155, 84, 0.5);
+}
+.overlay-status-text {
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.overlay-status-text.is-observed {
+  fill: #b6f0c3;
+}
+.overlay-status-text.is-unobserved {
+  fill: #ffd0b1;
+}
+.edge-path {
+  fill: none;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+.edge-path.is-idle {
+  stroke: rgba(201, 209, 217, 0.24);
+  stroke-width: 1.25;
+}
+.edge-path.is-observed {
+  stroke: rgba(63, 185, 80, 0.66);
+  stroke-width: 1.8;
+}
+.edge-path.is-selected {
+  stroke-width: 2.4;
+}
+.edge-path.is-active {
+  stroke: rgba(88, 166, 255, 0.76);
+}
+.edge-path.is-il-observed {
+  stroke: rgba(63, 185, 80, 0.72);
+  stroke-width: 2.4;
+}
+.edge-path.is-il-unobserved {
+  stroke: rgba(255, 155, 84, 0.76);
+  stroke-width: 2.4;
+}
+.edge-path.is-dimmed {
+  stroke: rgba(110, 118, 129, 0.14);
+  stroke-width: 1;
+}
+.intent-path-segment {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 4;
+  pointer-events: none;
+}
+.intent-path-segment.is-observed {
+  stroke: rgba(63, 185, 80, 0.62);
+}
+.intent-path-segment.is-gap {
+  stroke: rgba(255, 155, 84, 0.74);
+}
+.axis-node .axis-body {
+  fill: rgba(13, 17, 23, 0.86);
+  stroke: rgba(139, 148, 158, 0.42);
+  stroke-width: 1;
+}
+.axis-node .axis-text {
+  fill: var(--txt2);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.axis-node.is-observed .axis-body {
+  stroke: rgba(63, 185, 80, 0.55);
+}
+.axis-node.is-selected .axis-body {
+  stroke: rgba(88, 166, 255, 0.82);
+  stroke-width: 1.6;
+}
+.axis-node.is-dimmed {
+  opacity: 0.5;
+}
+@media (max-width: 1320px) {
+  .content {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .detail-column {
+    min-height: 320px;
+  }
+}
+@media (max-width: 960px) {
+  body {
+    height: auto;
+    overflow: auto;
+  }
+  .layout {
+    height: auto;
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-basis: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-feed {
+    max-height: none;
+  }
+  .canvas-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+</style>
+</head>
+<body>
+<nav id="nav">
+  <span class="nav-brand">QA-SDK</span>
+  <a class="nav-link" href="/">Demo</a>
+  <a class="nav-link" href="/monitor.html">Monitor</a>
+  <a class="nav-link" href="/diagram.html">Diagram</a>
+  <a class="nav-link" href="/dashboard.html">Dashboard</a>
+  <a class="nav-link" href="/events.html">Events</a>
+  <a class="nav-link" href="/insights.html">Insights</a>
+  <a class="nav-link active" href="/flow.html">Flow</a>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="section-title">Flow Map</div>
+      <div class="page-title">Prefix Browser</div>
+      <div class="page-subtitle">46 prefixes arranged by category on a 6-column SVG canvas.</div>
+      <div class="coverage-card">
+        <div class="coverage-row">
+          <span class="muted">Coverage</span>
+          <strong class="coverage-value" id="coverageValue">Loading...</strong>
+        </div>
+        <div class="coverage-note" id="coverageNote">Merging registry flow-map with ingest observations.</div>
+      </div>
+      <div class="source-list">
+        <div>Registry: <code id="registrySource">-</code></div>
+        <div>Ingest: <code id="ingestSource">-</code></div>
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <div class="overlay-card">
+        <div class="overlay-head">
+          <div class="overlay-copy">
+            <div class="section-title" style="margin-bottom:4px">IntentLink Overlay</div>
+            <div class="overlay-note">Fetches <code>/api/diagrams</code> and highlights endpoint gaps on the canvas.</div>
+          </div>
+          <button class="btn" id="clearOverlayBtn" type="button" disabled>Clear</button>
+        </div>
+        <label class="overlay-label" for="intentLinkSelect">IntentLink</label>
+        <select class="overlay-select" id="intentLinkSelect" disabled>
+          <option>Loading IntentLinks...</option>
+        </select>
+        <div class="overlay-summary muted" id="intentLinkSummary">Select an IntentLink to highlight its path.</div>
+      </div>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="canvas-status">Loading prefix list...</div>
+    </div>
+    <section class="sidebar-feed">
+      <div class="feed-head">
+        <div class="feed-copy">
+          <div class="section-title" style="margin-bottom:4px">Event Feed</div>
+          <div class="feed-note" id="eventFeedNote">Polling recent traces every 10s.</div>
+        </div>
+        <button class="btn toggle-btn" id="autoPollBtn" type="button">Pause</button>
+      </div>
+      <div class="feed-body" id="eventFeedList">
+        <div class="feed-empty">Loading recent traces...</div>
+      </div>
+    </section>
+  </aside>
+
+  <main class="content">
+    <section class="canvas-column">
+      <section class="card canvas-header">
+        <div class="section-title">Center Canvas</div>
+        <div class="canvas-summary" id="canvasSummary">
+          <div class="canvas-stat">
+            <div class="canvas-stat-label">Defined</div>
+            <div class="canvas-stat-value">-</div>
+          </div>
+          <div class="canvas-stat">
+            <div class="canvas-stat-label">Observed</div>
+            <div class="canvas-stat-value">-</div>
+          </div>
+          <div class="canvas-stat">
+            <div class="canvas-stat-label">Idle</div>
+            <div class="canvas-stat-value">-</div>
+          </div>
+          <div class="canvas-stat">
+            <div class="canvas-stat-label">Layout</div>
+            <div class="canvas-stat-value">6 x N</div>
+          </div>
+        </div>
+      </section>
+      <section class="card canvas-card">
+        <div class="canvas-toolbar">
+          <div class="section-title" style="margin-bottom:0">SVG Topology</div>
+          <button class="btn" id="fitBtn" type="button">Fit</button>
+        </div>
+        <div class="canvas-stage" id="canvasStage">
+          <div class="canvas-hud"><span class="zoom-indicator" id="zoomLevel">100%</span></div>
+          <div class="canvas-surface" id="canvasSurface">
+            <div class="canvas-status">Building SVG canvas...</div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <aside class="detail-column">
+      <section class="card detail-card">
+        <div class="section-title">Right Panel</div>
+        <div id="detailPanel" class="detail-placeholder">Select a prefix node to inspect metadata.</div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function() {
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var cfg = window.__QA_CONFIG__ || {};
+  var INGEST_URL = cfg.INGEST_URL || '';
+  var REGISTRY_URL = cfg.REGISTRY_URL || '';
+  var FLOW_MAP_URL = REGISTRY_URL + '/api/dashboard/flow-map';
+  var DIAGRAMS_URL = REGISTRY_URL + '/api/diagrams';
+  var PREFIX_INSIGHTS_URL = INGEST_URL + '/v1/insights/prefixes';
+  var TRACE_RECENT_URL = INGEST_URL + '/v1/traces/recent?limit=15';
+  var FEED_MAX_ITEMS = 30;
+  var FEED_POLL_MS = 10000;
+  var PREFIX_PULSE_MS = 1000;
+  var CATEGORY_ORDER = ['observation', 'event', 'policy', 'entity', 'table', 'domain', 'consumer', 'unknown'];
+  var CANVAS_LAYOUT = {
+    columns: 6,
+    paddingX: 30,
+    paddingTop: 34,
+    paddingBottom: 28,
+    groupGap: 30,
+    groupHeaderHeight: 24,
+    nodeWidth: 152,
+    nodeHeight: 64,
+    colGap: 18,
+    rowGap: 18
+  };
+  var state = {
+    flowMap: null,
+    intentLinks: [],
+    observedCounts: {},
+    selectedPrefix: null,
+    selectedIntentLinkId: null,
+    selectedTraceId: null,
+    error: null,
+    loading: true,
+    intentLinksLoading: true,
+    intentLinksError: null,
+    feedLoading: true,
+    feedError: null,
+    feedAuto: true,
+    recentTraces: [],
+    traceFirstEventById: {},
+    traceSummaryLoadingById: {},
+    traceRecordsById: {},
+    traceRecordsRequestById: {},
+    tracePrefixIdsById: {},
+    tracePrefixRequestById: {},
+    tracePrefixesLoadingById: {},
+    traceDetailLoading: false,
+    traceDetailError: null,
+    traceDetailRequestId: 0,
+    feedAnimationIds: {},
+    pulsingPrefixIds: {},
+    pulseTimeoutsByPrefixId: {},
+    canvasLayout: null,
+    viewport: {
+      scale: 1,
+      tx: 0,
+      ty: 0,
+      initialized: false,
+      autoFitPending: true
+    },
+    drag: {
+      active: false,
+      startX: 0,
+      startY: 0,
+      originTx: 0,
+      originTy: 0,
+      moved: false,
+      suppressClickUntil: 0
+    }
+  };
+
+  var sidebarBody = document.getElementById('sidebarBody');
+  var coverageValue = document.getElementById('coverageValue');
+  var coverageNote = document.getElementById('coverageNote');
+  var intentLinkSelect = document.getElementById('intentLinkSelect');
+  var intentLinkSummary = document.getElementById('intentLinkSummary');
+  var clearOverlayBtn = document.getElementById('clearOverlayBtn');
+  var canvasSummary = document.getElementById('canvasSummary');
+  var canvasStage = document.getElementById('canvasStage');
+  var canvasSurface = document.getElementById('canvasSurface');
+  var detailPanel = document.getElementById('detailPanel');
+  var refreshBtn = document.getElementById('refreshBtn');
+  var fitBtn = document.getElementById('fitBtn');
+  var zoomLevel = document.getElementById('zoomLevel');
+  var autoPollBtn = document.getElementById('autoPollBtn');
+  var eventFeedList = document.getElementById('eventFeedList');
+  var eventFeedNote = document.getElementById('eventFeedNote');
+  var currentCanvas = null;
+  var feedTimer = null;
+
+  document.getElementById('registrySource').textContent = FLOW_MAP_URL || '/api/dashboard/flow-map';
+  document.getElementById('ingestSource').textContent = PREFIX_INSIGHTS_URL || '/v1/insights/prefixes';
+
+  window.INGEST_URL = INGEST_URL;
+  window.REGISTRY_URL = REGISTRY_URL;
+  window.selectedPrefix = null;
+
+  function esc(value) {
+    var div = document.createElement('div');
+    div.textContent = value == null ? '' : String(value);
+    return div.innerHTML;
+  }
+
+  function fetchJson(url) {
+    return fetch(url).then(function(response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status + ' on ' + url);
+      return response.json();
+    });
+  }
+
+  function formatTimestamp(iso) {
+    if (!iso) return '-';
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleString('ko-KR', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
+  function formatTimeOnly(iso) {
+    if (!iso) return '-';
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
+  function getTraceTimestamp(trace) {
+    return trace ? (trace.lastTimestamp || trace.firstTimestamp || null) : null;
+  }
+
+  function shortenTraceId(traceId) {
+    if (!traceId) return '-';
+    if (traceId.length <= 16) return traceId;
+    return traceId.slice(0, 7) + '...' + traceId.slice(-6);
+  }
+
+  function getSelectedTrace() {
+    return state.recentTraces.find(function(item) {
+      return item.traceId === state.selectedTraceId;
+    }) || null;
+  }
+
+  function getTraceFirstEvent(traceId) {
+    return state.traceFirstEventById[traceId] || null;
+  }
+
+  function getTracePrefixIds(traceId) {
+    if (!traceId || !Object.prototype.hasOwnProperty.call(state.tracePrefixIdsById, traceId)) return null;
+    return state.tracePrefixIdsById[traceId];
+  }
+
+  function isPrefixPulsing(prefixId) {
+    return !!state.pulsingPrefixIds[prefixId];
+  }
+
+  function isTraceLinked(traceId) {
+    var prefixIds = getTracePrefixIds(traceId);
+    return Array.isArray(prefixIds) && prefixIds.some(isPrefixPulsing);
+  }
+
+  function buildPrefixLookup(prefixes) {
+    var lookup = {};
+    prefixes.forEach(function(item) {
+      if (item && item.id) lookup[item.id] = true;
+    });
+    return lookup;
+  }
+
+  function extractTracePrefixIds(records, allowedLookup) {
+    var seen = {};
+    var prefixIds = [];
+
+    records.forEach(function(record) {
+      var context = record && (record.address_context || record.addressContext);
+      if (!context || typeof context !== 'object') return;
+
+      Object.keys(context).forEach(function(prefixId) {
+        if (allowedLookup && !allowedLookup[prefixId]) return;
+        if (seen[prefixId]) return;
+        seen[prefixId] = true;
+        prefixIds.push(prefixId);
+      });
+    });
+
+    return prefixIds;
+  }
+
+  function refreshPulseViews() {
+    var prefixes = getPrefixes();
+    renderSidebar(prefixes);
+    renderEventFeed();
+    renderCanvas(prefixes);
+  }
+
+  function pulsePrefixes(prefixIds) {
+    if (!prefixIds || !prefixIds.length) return;
+
+    prefixIds.forEach(function(prefixId) {
+      state.pulsingPrefixIds[prefixId] = true;
+      if (state.pulseTimeoutsByPrefixId[prefixId]) {
+        window.clearTimeout(state.pulseTimeoutsByPrefixId[prefixId]);
+      }
+
+      state.pulseTimeoutsByPrefixId[prefixId] = window.setTimeout(function() {
+        delete state.pulsingPrefixIds[prefixId];
+        delete state.pulseTimeoutsByPrefixId[prefixId];
+        refreshPulseViews();
+      }, PREFIX_PULSE_MS);
+    });
+
+    refreshPulseViews();
+  }
+
+  function pruneFeedAnimation(traceId) {
+    window.setTimeout(function() {
+      if (!state.feedAnimationIds[traceId]) return;
+      delete state.feedAnimationIds[traceId];
+      renderEventFeed();
+    }, 1100);
+  }
+
+  function markNewTraces(traceIds) {
+    traceIds.forEach(function(traceId) {
+      state.feedAnimationIds[traceId] = true;
+      pruneFeedAnimation(traceId);
+    });
+  }
+
+  function fetchTraceFirstEvent(traceId) {
+    if (!traceId || state.traceFirstEventById[traceId] || state.traceSummaryLoadingById[traceId]) {
+      return Promise.resolve();
+    }
+
+    state.traceSummaryLoadingById[traceId] = true;
+    return fetchJson(INGEST_URL + '/v1/traces/' + encodeURIComponent(traceId) + '/records?limit=1')
+      .then(function(data) {
+        var items = Array.isArray(data && data.items) ? data.items : [];
+        var first = items[0];
+        state.traceFirstEventById[traceId] = first
+          ? (first.event_key || first.eventKey || '-')
+          : '-';
+      })
+      .catch(function() {
+        state.traceFirstEventById[traceId] = '-';
+      })
+      .finally(function() {
+        delete state.traceSummaryLoadingById[traceId];
+        renderEventFeed();
+      });
+  }
+
+  function fetchAllTraceRecords(traceId) {
+    var items = [];
+    var nextCursor = null;
+
+    function loadPage() {
+      var url = INGEST_URL + '/v1/traces/' + encodeURIComponent(traceId) + '/records?limit=200';
+      if (nextCursor) url += '&cursor=' + encodeURIComponent(nextCursor);
+
+      return fetchJson(url).then(function(data) {
+        var pageItems = Array.isArray(data && data.items) ? data.items : [];
+        items = items.concat(pageItems);
+        if (data && data.has_more && data.next_cursor) {
+          nextCursor = data.next_cursor;
+          return loadPage();
+        }
+        return items;
+      });
+    }
+
+    return loadPage();
+  }
+
+  function loadTraceRecords(traceId) {
+    if (!traceId) return Promise.resolve([]);
+    if (state.traceRecordsById[traceId]) return Promise.resolve(state.traceRecordsById[traceId]);
+    if (state.traceRecordsRequestById[traceId]) return state.traceRecordsRequestById[traceId];
+
+    state.traceRecordsRequestById[traceId] = fetchAllTraceRecords(traceId)
+      .then(function(items) {
+        state.traceRecordsById[traceId] = items;
+        if (items.length) {
+          state.traceFirstEventById[traceId] = items[0].event_key || items[0].eventKey || '-';
+        }
+        return items;
+      })
+      .finally(function() {
+        delete state.traceRecordsRequestById[traceId];
+      });
+
+    return state.traceRecordsRequestById[traceId];
+  }
+
+  function hydrateTracePrefixes(traceId) {
+    if (!traceId) return Promise.resolve([]);
+    if (Object.prototype.hasOwnProperty.call(state.tracePrefixIdsById, traceId)) {
+      return Promise.resolve(state.tracePrefixIdsById[traceId]);
+    }
+    if (state.tracePrefixRequestById[traceId]) return state.tracePrefixRequestById[traceId];
+
+    state.tracePrefixesLoadingById[traceId] = true;
+    state.tracePrefixRequestById[traceId] = loadTraceRecords(traceId)
+      .then(function(records) {
+        var prefixIds = extractTracePrefixIds(records, buildPrefixLookup(getPrefixes()));
+        state.tracePrefixIdsById[traceId] = prefixIds;
+        return prefixIds;
+      })
+      .catch(function() {
+        state.tracePrefixIdsById[traceId] = [];
+        return [];
+      })
+      .finally(function() {
+        delete state.tracePrefixesLoadingById[traceId];
+        delete state.tracePrefixRequestById[traceId];
+        renderEventFeed();
+        if (state.selectedTraceId === traceId) renderDetail(getPrefixes());
+      });
+
+    return state.tracePrefixRequestById[traceId];
+  }
+
+  function getPrefixes() {
+    if (!state.flowMap || !state.flowMap.layers) return [];
+    return Array.isArray(state.flowMap.layers.prefix) ? state.flowMap.layers.prefix : [];
+  }
+
+  function getIntentLinks() {
+    return Array.isArray(state.intentLinks) ? state.intentLinks : [];
+  }
+
+  function getSelectedIntentLink() {
+    return getIntentLinks().find(function(item) {
+      return item.id === state.selectedIntentLinkId;
+    }) || null;
+  }
+
+  function getIntentEndpointLookup(intentLink) {
+    var lookup = {};
+    if (!intentLink || !Array.isArray(intentLink.endpoints)) return lookup;
+    intentLink.endpoints.forEach(function(prefixId) {
+      lookup[prefixId] = true;
+    });
+    return lookup;
+  }
+
+  function summarizeIntentLinkCoverage(intentLink) {
+    var endpoints = intentLink && Array.isArray(intentLink.endpoints) ? intentLink.endpoints : [];
+    var observed = endpoints.filter(function(prefixId) {
+      return getObservedCount(prefixId) > 0;
+    }).length;
+    var total = endpoints.length;
+    return {
+      observed: observed,
+      total: total,
+      pct: total > 0 ? Math.round((observed / total) * 100) : 0
+    };
+  }
+
+  function getSchemaAxes() {
+    if (!state.flowMap || !state.flowMap.layers) return [];
+    var axes = Array.isArray(state.flowMap.layers.schema) ? state.flowMap.layers.schema.slice() : [];
+    return axes.sort(function(a, b) {
+      return String(a.id).localeCompare(String(b.id));
+    });
+  }
+
+  function getComposeEdges(prefixes) {
+    if (state.flowMap && Array.isArray(state.flowMap.edges) && state.flowMap.edges.length) {
+      return state.flowMap.edges.filter(function(edge) {
+        return edge && edge.type === 'composes';
+      });
+    }
+
+    var derived = [];
+    prefixes.forEach(function(item) {
+      var axes = Array.isArray(item.axes) ? item.axes : [];
+      axes.forEach(function(axisId) {
+        derived.push({ from: axisId, to: item.id, type: 'composes' });
+      });
+    });
+    return derived;
+  }
+
+  function getObservedCount(prefixId) {
+    return state.observedCounts[prefixId] || 0;
+  }
+
+  function sortCategories(categories) {
+    return categories.sort(function(a, b) {
+      var left = CATEGORY_ORDER.indexOf(a);
+      var right = CATEGORY_ORDER.indexOf(b);
+      if (left === -1 && right === -1) return String(a).localeCompare(String(b));
+      if (left === -1) return 1;
+      if (right === -1) return -1;
+      return left - right;
+    });
+  }
+
+  function summarizeCoverage(prefixes) {
+    var observed = prefixes.filter(function(item) {
+      return getObservedCount(item.id) > 0;
+    }).length;
+    var total = prefixes.length;
+    var idle = Math.max(total - observed, 0);
+    var pct = total > 0 ? Math.round((observed / total) * 100) : 0;
+    return { total: total, observed: observed, idle: idle, pct: pct };
+  }
+
+  function buildCategoryGroups(prefixes) {
+    var groups = {};
+    prefixes.forEach(function(item) {
+      var category = item.category || 'unknown';
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(item);
+    });
+
+    return sortCategories(Object.keys(groups)).map(function(category) {
+      return {
+        category: category,
+        items: groups[category].slice().sort(function(a, b) {
+          return String(a.id).localeCompare(String(b.id));
+        })
+      };
+    });
+  }
+
+  function computeCanvasLayout(prefixes, schemaAxes) {
+    var groups = buildCategoryGroups(prefixes);
+    var currentY = CANVAS_LAYOUT.paddingTop;
+    var nodes = [];
+    var sections = [];
+    var prefixWidth = (CANVAS_LAYOUT.paddingX * 2)
+      + (CANVAS_LAYOUT.columns * CANVAS_LAYOUT.nodeWidth)
+      + ((CANVAS_LAYOUT.columns - 1) * CANVAS_LAYOUT.colGap);
+
+    groups.forEach(function(group) {
+      var rows = Math.max(1, Math.ceil(group.items.length / CANVAS_LAYOUT.columns));
+      var gridStartY = currentY + CANVAS_LAYOUT.groupHeaderHeight;
+
+      sections.push({
+        category: group.category,
+        y: currentY,
+        ruleY: currentY + 9
+      });
+
+      group.items.forEach(function(item, index) {
+        var col = index % CANVAS_LAYOUT.columns;
+        var row = Math.floor(index / CANVAS_LAYOUT.columns);
+        var x = CANVAS_LAYOUT.paddingX + col * (CANVAS_LAYOUT.nodeWidth + CANVAS_LAYOUT.colGap);
+        var y = gridStartY + row * (CANVAS_LAYOUT.nodeHeight + CANVAS_LAYOUT.rowGap);
+        nodes.push({
+          item: item,
+          x: x,
+          y: y,
+          width: CANVAS_LAYOUT.nodeWidth,
+          height: CANVAS_LAYOUT.nodeHeight,
+          observedCount: getObservedCount(item.id)
+        });
+      });
+
+      currentY = gridStartY
+        + (rows * CANVAS_LAYOUT.nodeHeight)
+        + ((rows - 1) * CANVAS_LAYOUT.rowGap)
+        + CANVAS_LAYOUT.groupGap;
+    });
+
+    var height = Math.max(currentY - CANVAS_LAYOUT.groupGap + CANVAS_LAYOUT.paddingBottom, 180);
+    var axisRows = Math.max(1, Math.floor((height - (CANVAS_LAYOUT.paddingTop + CANVAS_LAYOUT.paddingBottom) + 10) / 40));
+    var axisColumns = Math.max(1, Math.ceil(schemaAxes.length / axisRows));
+    var axisNodeWidth = 154;
+    var axisNodeHeight = 28;
+    var axisColGap = 14;
+    var axisRowGap = 12;
+    var axisStartX = prefixWidth + 72;
+    var axisStartY = CANVAS_LAYOUT.paddingTop + 4;
+    var axisNodes = [];
+
+    schemaAxes.forEach(function(axis, index) {
+      var col = Math.floor(index / axisRows);
+      var row = index % axisRows;
+      axisNodes.push({
+        item: axis,
+        x: axisStartX + col * (axisNodeWidth + axisColGap),
+        y: axisStartY + row * (axisNodeHeight + axisRowGap),
+        width: axisNodeWidth,
+        height: axisNodeHeight
+      });
+    });
+
+    var width = axisNodes.length
+      ? axisStartX + (axisColumns * axisNodeWidth) + ((axisColumns - 1) * axisColGap) + CANVAS_LAYOUT.paddingX
+      : prefixWidth;
+
+    return {
+      width: width,
+      height: height,
+      sections: sections,
+      nodes: nodes,
+      axisNodes: axisNodes,
+      axisStartX: axisStartX
+    };
+  }
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS(SVG_NS, tag);
+    Object.keys(attrs || {}).forEach(function(key) {
+      el.setAttribute(key, String(attrs[key]));
+    });
+    return el;
+  }
+
+  function setStatus(target, message, isError) {
+    target.innerHTML = '<div class="canvas-status' + (isError ? ' error' : '') + '">' + esc(message) + '</div>';
+  }
+
+  function clampScale(scale) {
+    return Math.max(0.3, Math.min(3, scale));
+  }
+
+  function getViewportMetrics() {
+    var rect = canvasStage.getBoundingClientRect();
+    return {
+      width: Math.max(rect.width - 36, 240),
+      height: Math.max(rect.height - 36, 240)
+    };
+  }
+
+  function updateZoomIndicator() {
+    zoomLevel.textContent = Math.round(state.viewport.scale * 100) + '%';
+  }
+
+  function applyViewportTransform() {
+    if (!currentCanvas || !currentCanvas.viewportLayer) return;
+    currentCanvas.viewportLayer.setAttribute(
+      'transform',
+      'translate(' + state.viewport.tx + ' ' + state.viewport.ty + ') scale(' + state.viewport.scale + ')'
+    );
+    updateZoomIndicator();
+  }
+
+  function fitCanvasToViewport() {
+    if (!state.canvasLayout) return;
+
+    var metrics = getViewportMetrics();
+    var scale = clampScale(Math.min(
+      metrics.width / state.canvasLayout.width,
+      metrics.height / state.canvasLayout.height
+    ));
+
+    state.viewport.scale = scale;
+    state.viewport.tx = (metrics.width - (state.canvasLayout.width * scale)) / 2;
+    state.viewport.ty = (metrics.height - (state.canvasLayout.height * scale)) / 2;
+    state.viewport.initialized = true;
+    state.viewport.autoFitPending = false;
+    applyViewportTransform();
+  }
+
+  function setViewport(nextScale, anchorClientX, anchorClientY) {
+    if (!currentCanvas) return;
+
+    var rect = canvasStage.getBoundingClientRect();
+    var localX = anchorClientX - rect.left - 18;
+    var localY = anchorClientY - rect.top - 18;
+    var prevScale = state.viewport.scale;
+    var worldX = (localX - state.viewport.tx) / prevScale;
+    var worldY = (localY - state.viewport.ty) / prevScale;
+
+    state.viewport.scale = clampScale(nextScale);
+    state.viewport.tx = localX - worldX * state.viewport.scale;
+    state.viewport.ty = localY - worldY * state.viewport.scale;
+    state.viewport.initialized = true;
+    state.viewport.autoFitPending = false;
+    applyViewportTransform();
+  }
+
+  function renderSummary(prefixes) {
+    if (state.loading && !prefixes.length) {
+      coverageValue.textContent = 'Loading...';
+      coverageNote.textContent = 'Merging registry flow-map with ingest observations.';
+      canvasSummary.innerHTML = ''
+        + '<div class="canvas-stat"><div class="canvas-stat-label">Defined</div><div class="canvas-stat-value">-</div></div>'
+        + '<div class="canvas-stat"><div class="canvas-stat-label">Observed</div><div class="canvas-stat-value">-</div></div>'
+        + '<div class="canvas-stat"><div class="canvas-stat-label">Idle</div><div class="canvas-stat-value">-</div></div>'
+        + '<div class="canvas-stat"><div class="canvas-stat-label">Edges</div><div class="canvas-stat-value">-</div></div>';
+      return;
+    }
+
+    var coverage = summarizeCoverage(prefixes);
+    var edgeCount = getComposeEdges(prefixes).length;
+    coverageValue.textContent = coverage.observed + '/' + coverage.total + ' observed (' + coverage.pct + '%)';
+    coverageNote.textContent = coverage.idle + ' prefixes remain unobserved in ingest data.';
+
+    canvasSummary.innerHTML = ''
+      + '<div class="canvas-stat"><div class="canvas-stat-label">Defined</div><div class="canvas-stat-value">' + coverage.total + '</div></div>'
+      + '<div class="canvas-stat"><div class="canvas-stat-label">Observed</div><div class="canvas-stat-value">' + coverage.observed + '</div></div>'
+      + '<div class="canvas-stat"><div class="canvas-stat-label">Idle</div><div class="canvas-stat-value">' + coverage.idle + '</div></div>'
+      + '<div class="canvas-stat"><div class="canvas-stat-label">Edges</div><div class="canvas-stat-value">' + edgeCount + '</div></div>';
+  }
+
+  function renderIntentLinkControls() {
+    var intentLinks = getIntentLinks();
+    var selected = getSelectedIntentLink();
+    var options = ['<option value="">Select IntentLink…</option>'];
+
+    intentLinks.forEach(function(item) {
+      options.push('<option value="' + esc(item.id) + '">' + esc(item.id) + '</option>');
+    });
+
+    intentLinkSelect.innerHTML = options.join('');
+    intentLinkSelect.value = selected ? selected.id : '';
+    intentLinkSelect.disabled = state.intentLinksLoading || !intentLinks.length;
+    clearOverlayBtn.disabled = !selected;
+
+    if (state.intentLinksLoading && !intentLinks.length) {
+      intentLinkSummary.className = 'overlay-summary muted';
+      intentLinkSummary.textContent = 'Loading IntentLinks from /api/diagrams...';
+      return;
+    }
+
+    if (state.intentLinksError && !intentLinks.length) {
+      intentLinkSummary.className = 'overlay-summary muted';
+      intentLinkSummary.textContent = state.intentLinksError;
+      return;
+    }
+
+    if (!selected) {
+      intentLinkSummary.className = 'overlay-summary muted';
+      intentLinkSummary.textContent = intentLinks.length
+        ? 'Select an IntentLink to highlight its path.'
+        : 'No IntentLinks available from /api/diagrams.';
+      return;
+    }
+
+    var coverage = summarizeIntentLinkCoverage(selected);
+    var gaps = Math.max(coverage.total - coverage.observed, 0);
+    intentLinkSummary.className = 'overlay-summary';
+    intentLinkSummary.innerHTML = '<strong>' + esc(selected.id) + '</strong>: '
+      + coverage.observed + '/' + coverage.total + ' observed (' + coverage.pct + '%)'
+      + (gaps ? ' · ' + gaps + ' gap' + (gaps === 1 ? '' : 's') + ' remaining' : ' · fully observed');
+  }
+
+  function renderSidebar(prefixes) {
+    if (state.loading && !prefixes.length) {
+      setStatus(sidebarBody, 'Loading prefix list...', false);
+      return;
+    }
+
+    if (state.error && !prefixes.length) {
+      setStatus(sidebarBody, state.error, true);
+      return;
+    }
+
+    if (!prefixes.length) {
+      setStatus(sidebarBody, 'No prefixes returned from flow-map.', false);
+      return;
+    }
+
+    var groups = buildCategoryGroups(prefixes);
+    var selectedIntentLink = getSelectedIntentLink();
+    var hasIntentOverlay = !!selectedIntentLink;
+    var intentEndpointLookup = getIntentEndpointLookup(selectedIntentLink);
+    var html = '';
+
+    groups.forEach(function(group) {
+      html += '<section class="group">';
+      html += '<div class="group-title"><span>' + esc(group.category) + '</span><span class="group-count">' + group.items.length + '</span></div>';
+      html += '<div class="group-list">';
+      group.items.forEach(function(item) {
+        var observedCount = getObservedCount(item.id);
+        var selectedClass = state.selectedPrefix === item.id ? ' is-selected' : '';
+        var pulseClass = isPrefixPulsing(item.id) ? ' is-pulsing' : '';
+        var overlayClass = '';
+        if (hasIntentOverlay) {
+          if (intentEndpointLookup[item.id]) {
+            overlayClass = observedCount > 0 ? ' is-overlay-observed' : ' is-overlay-unobserved';
+          } else if (!isPrefixPulsing(item.id)) {
+            overlayClass = ' is-overlay-dimmed';
+          }
+        }
+        var observedBadge = observedCount > 0
+          ? '<span class="badge badge-observed">' + observedCount + 'x</span>'
+          : '<span class="badge badge-idle">idle</span>';
+        html += '<button class="prefix-item' + selectedClass + pulseClass + overlayClass + '" type="button" data-prefix-id="' + esc(item.id) + '">';
+        html += '<div class="prefix-top"><span class="prefix-id">' + esc(item.id) + '</span>' + observedBadge + '</div>';
+        html += '<div class="prefix-meta">';
+        html += '<span class="badge badge-category">' + esc(group.category) + '</span>';
+        html += '<span class="badge badge-dim">' + esc(item.dimCount || 0) + 'D</span>';
+        html += '</div></button>';
+      });
+      html += '</div></section>';
+    });
+
+    sidebarBody.innerHTML = html;
+  }
+
+  function renderEventFeed() {
+    autoPollBtn.textContent = state.feedAuto ? 'Pause' : 'Auto';
+    autoPollBtn.classList.toggle('is-paused', !state.feedAuto);
+    eventFeedNote.textContent = state.feedAuto
+      ? 'Polling recent traces every 10s.'
+      : 'Polling paused. Click Auto to resume.';
+
+    if (state.feedLoading && !state.recentTraces.length) {
+      eventFeedList.innerHTML = '<div class="feed-empty">Loading recent traces...</div>';
+      return;
+    }
+
+    if (state.feedError && !state.recentTraces.length) {
+      eventFeedList.innerHTML = '<div class="feed-empty">' + esc(state.feedError) + '</div>';
+      return;
+    }
+
+    if (!state.recentTraces.length) {
+      eventFeedList.innerHTML = '<div class="feed-empty">No recent traces yet.</div>';
+      return;
+    }
+
+    var html = '<div class="feed-list">';
+    state.recentTraces.forEach(function(trace) {
+      var timestamp = getTraceTimestamp(trace);
+      var firstEvent = getTraceFirstEvent(trace.traceId);
+      var selectedClass = state.selectedTraceId === trace.traceId ? ' is-selected' : '';
+      var newClass = state.feedAnimationIds[trace.traceId] ? ' is-new' : '';
+      var linkedClass = isTraceLinked(trace.traceId) ? ' is-linked' : '';
+      var tracePrefixIds = getTracePrefixIds(trace.traceId);
+      var prefixHtml = '';
+
+      if (Array.isArray(tracePrefixIds) && tracePrefixIds.length) {
+        var visiblePrefixIds = tracePrefixIds.slice(0, 4);
+        prefixHtml = '<div class="feed-prefixes">'
+          + visiblePrefixIds.map(function(prefixId) {
+            return '<span class="feed-prefix-chip' + (isPrefixPulsing(prefixId) ? ' is-pulsing' : '') + '">' + esc(prefixId) + '</span>';
+          }).join('');
+        if (tracePrefixIds.length > visiblePrefixIds.length) {
+          prefixHtml += '<span class="feed-prefix-chip">+' + esc(tracePrefixIds.length - visiblePrefixIds.length) + '</span>';
+        }
+        prefixHtml += '</div>';
+      } else if (state.tracePrefixesLoadingById[trace.traceId]) {
+        prefixHtml = '<div class="feed-prefix-loading">Mapping address_context to canvas nodes...</div>';
+      }
+
+      html += '<button class="feed-item' + selectedClass + newClass + linkedClass + '" type="button" data-trace-id="' + esc(trace.traceId) + '">';
+      html += '<div class="feed-row">';
+      html += '<span class="feed-service">' + esc(trace.serviceName || 'unknown') + '</span>';
+      html += '<span class="feed-time">' + esc(formatTimestamp(timestamp)) + '</span>';
+      html += '</div>';
+      html += '<div class="feed-title">' + esc(firstEvent || 'Loading first event...') + '</div>';
+      html += prefixHtml;
+      html += '<div class="feed-meta">';
+      html += '<span class="feed-meta-item">' + esc(String(trace.recordCount || 0)) + ' records</span>';
+      html += '<span class="feed-meta-item">' + esc(shortenTraceId(trace.traceId)) + '</span>';
+      html += '</div>';
+      html += '</button>';
+    });
+    html += '</div>';
+
+    eventFeedList.innerHTML = html;
+  }
+
+  function renderCanvas(prefixes) {
+    if (state.loading && !prefixes.length) {
+      setStatus(canvasSurface, 'Building SVG canvas...', false);
+      return;
+    }
+
+    if (state.error && !prefixes.length) {
+      setStatus(canvasSurface, state.error, true);
+      return;
+    }
+
+    if (!prefixes.length) {
+      setStatus(canvasSurface, 'No prefixes available for the center canvas.', false);
+      return;
+    }
+
+    var schemaAxes = getSchemaAxes();
+    var layout = computeCanvasLayout(prefixes, schemaAxes);
+    var composeEdges = getComposeEdges(prefixes);
+    var selectedIntentLink = getSelectedIntentLink();
+    var hasIntentOverlay = !!selectedIntentLink;
+    var intentEndpointLookup = getIntentEndpointLookup(selectedIntentLink);
+    var intentEndpoints = selectedIntentLink && Array.isArray(selectedIntentLink.endpoints)
+      ? selectedIntentLink.endpoints.slice()
+      : [];
+    var hasSelection = !!state.selectedPrefix;
+    var hasFocus = hasIntentOverlay || hasSelection;
+    var observedAxisLookup = {};
+    var selectedAxisLookup = {};
+    var axisNodeById = {};
+    var nodeById = {};
+    var metrics = getViewportMetrics();
+
+    layout.nodes.forEach(function(node) {
+      nodeById[node.item.id] = node;
+    });
+    layout.axisNodes.forEach(function(axisNode) {
+      axisNodeById[axisNode.item.id] = axisNode;
+    });
+    composeEdges.forEach(function(edge) {
+      var prefixId = edge.to;
+      if (getObservedCount(prefixId) > 0) observedAxisLookup[edge.from] = true;
+      if (hasIntentOverlay && intentEndpointLookup[prefixId]) selectedAxisLookup[edge.from] = true;
+      if (!hasIntentOverlay && state.selectedPrefix === prefixId) selectedAxisLookup[edge.from] = true;
+    });
+
+    state.canvasLayout = layout;
+    var svg = svgEl('svg', {
+      viewBox: '0 0 ' + metrics.width + ' ' + metrics.height,
+      'aria-label': 'prefix canvas'
+    });
+    var viewportLayer = svgEl('g', {});
+    var edgeLayer = svgEl('g', {});
+    var intentPathLayer = svgEl('g', {});
+    var sectionLayer = svgEl('g', {});
+    var nodeLayer = svgEl('g', {});
+    var axisLayer = svgEl('g', {});
+
+    layout.sections.forEach(function(section) {
+      var label = svgEl('text', {
+        x: CANVAS_LAYOUT.paddingX,
+        y: section.y + 13,
+        class: 'category-label'
+      });
+      label.textContent = section.category;
+      sectionLayer.appendChild(label);
+
+      var line = svgEl('line', {
+        x1: CANVAS_LAYOUT.paddingX + 108,
+        y1: section.ruleY,
+        x2: layout.axisStartX - 22,
+        y2: section.ruleY,
+        class: 'category-rule'
+      });
+      sectionLayer.appendChild(line);
+    });
+
+    composeEdges.forEach(function(edge) {
+      var prefixNode = nodeById[edge.to];
+      var axisNode = axisNodeById[edge.from];
+      if (!prefixNode || !axisNode) return;
+
+      var isObserved = getObservedCount(edge.to) > 0;
+      var isSelected = state.selectedPrefix === edge.to;
+      var isInIntentOverlay = !!intentEndpointLookup[edge.to];
+      var startX = prefixNode.x + prefixNode.width;
+      var startY = prefixNode.y + (prefixNode.height / 2);
+      var endX = axisNode.x;
+      var endY = axisNode.y + (axisNode.height / 2);
+      var bend = Math.max(34, (endX - startX) * 0.42);
+      var edgeClass = 'edge-path ';
+
+      if (hasIntentOverlay) {
+        edgeClass += isInIntentOverlay
+          ? (isObserved ? 'is-il-observed' : 'is-il-unobserved')
+          : 'is-dimmed';
+      } else if (hasSelection) {
+        edgeClass += isSelected
+          ? 'is-selected ' + (isObserved ? 'is-observed' : 'is-active')
+          : 'is-dimmed';
+      } else {
+        edgeClass += isObserved ? 'is-observed' : 'is-idle';
+      }
+
+      var path = svgEl('path', {
+        d: 'M ' + startX + ' ' + startY
+          + ' C ' + (startX + bend) + ' ' + startY
+          + ', ' + (endX - bend) + ' ' + endY
+          + ', ' + endX + ' ' + endY,
+        class: edgeClass
+      });
+      edgeLayer.appendChild(path);
+    });
+
+    if (hasIntentOverlay) {
+      for (var i = 0; i < intentEndpoints.length - 1; i += 1) {
+        var fromNode = nodeById[intentEndpoints[i]];
+        var toNode = nodeById[intentEndpoints[i + 1]];
+        if (!fromNode || !toNode) continue;
+
+        var startCenterX = fromNode.x + (fromNode.width / 2);
+        var startCenterY = fromNode.y + (fromNode.height / 2);
+        var endCenterX = toNode.x + (toNode.width / 2);
+        var endCenterY = toNode.y + (toNode.height / 2);
+        var midX = (startCenterX + endCenterX) / 2;
+        var segmentObserved = getObservedCount(fromNode.item.id) > 0 && getObservedCount(toNode.item.id) > 0;
+
+        var segment = svgEl('path', {
+          d: 'M ' + startCenterX + ' ' + startCenterY
+            + ' C ' + midX + ' ' + startCenterY
+            + ', ' + midX + ' ' + endCenterY
+            + ', ' + endCenterX + ' ' + endCenterY,
+          class: 'intent-path-segment ' + (segmentObserved ? 'is-observed' : 'is-gap')
+        });
+        intentPathLayer.appendChild(segment);
+      }
+    }
+
+    layout.nodes.forEach(function(node) {
+      var inIntentOverlay = !!intentEndpointLookup[node.item.id];
+      var intentObserved = inIntentOverlay && node.observedCount > 0;
+      var intentUnobserved = inIntentOverlay && !intentObserved;
+      var dimmed = !isPrefixPulsing(node.item.id) && (hasIntentOverlay
+        ? !inIntentOverlay
+        : (hasSelection && state.selectedPrefix !== node.item.id));
+      var group = svgEl('g', {
+        class: 'prefix-node '
+          + (node.observedCount > 0 ? 'is-observed' : 'is-idle')
+          + (intentObserved ? ' is-il-observed' : '')
+          + (intentUnobserved ? ' is-il-unobserved' : '')
+          + (state.selectedPrefix === node.item.id ? ' is-selected' : '')
+          + (isPrefixPulsing(node.item.id) ? ' is-pulsing' : '')
+          + (dimmed ? ' is-dimmed' : ''),
+        'data-prefix-id': node.item.id
+      });
+      var nodeTransform = svgEl('g', { class: 'node-transform' });
+
+      var rect = svgEl('rect', {
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height,
+        rx: 12,
+        ry: 12,
+        class: 'node-body'
+      });
+      nodeTransform.appendChild(rect);
+
+      var idText = svgEl('text', {
+        x: node.x + 14,
+        y: node.y + 28,
+        class: 'node-id'
+      });
+      idText.textContent = node.item.id;
+      nodeTransform.appendChild(idText);
+
+      var metaText = svgEl('text', {
+        x: node.x + 14,
+        y: node.y + 46,
+        class: 'node-caption'
+      });
+      metaText.textContent = (node.item.dimCount || 0) + ' dims';
+      nodeTransform.appendChild(metaText);
+
+      if (node.observedCount > 0) {
+        var badgeText = String(node.observedCount);
+        var badgeWidth = Math.max(30, 16 + (badgeText.length * 8));
+        var badgeX = node.x + node.width - badgeWidth - 8;
+        var badgeY = node.y - 14;
+
+        var badgeRect = svgEl('rect', {
+          x: badgeX,
+          y: badgeY,
+          width: badgeWidth,
+          height: 22,
+          rx: 11,
+          ry: 11,
+          class: 'node-badge-body'
+        });
+        nodeTransform.appendChild(badgeRect);
+
+        var badgeLabel = svgEl('text', {
+          x: badgeX + (badgeWidth / 2),
+          y: badgeY + 14,
+          class: 'node-badge-text',
+          'text-anchor': 'middle'
+        });
+        badgeLabel.textContent = badgeText;
+        nodeTransform.appendChild(badgeLabel);
+      }
+
+      if (inIntentOverlay) {
+        var statusBody = svgEl('rect', {
+          x: node.x + node.width - 30,
+          y: node.y + node.height - 28,
+          width: 22,
+          height: 22,
+          rx: 11,
+          ry: 11,
+          class: 'overlay-status-body ' + (intentObserved ? 'is-observed' : 'is-unobserved')
+        });
+        nodeTransform.appendChild(statusBody);
+
+        var statusLabel = svgEl('text', {
+          x: node.x + node.width - 19,
+          y: node.y + node.height - 13,
+          class: 'overlay-status-text ' + (intentObserved ? 'is-observed' : 'is-unobserved'),
+          'text-anchor': 'middle'
+        });
+        statusLabel.textContent = intentObserved ? '✓' : '✗';
+        nodeTransform.appendChild(statusLabel);
+      }
+
+      group.appendChild(nodeTransform);
+      nodeLayer.appendChild(group);
+    });
+
+    layout.axisNodes.forEach(function(axisNode) {
+      var axisObserved = !!observedAxisLookup[axisNode.item.id];
+      var axisSelected = !!selectedAxisLookup[axisNode.item.id];
+      var axisDimmed = hasFocus && !axisSelected;
+      var group = svgEl('g', {
+        class: 'axis-node'
+          + (axisObserved ? ' is-observed' : '')
+          + (axisSelected ? ' is-selected' : '')
+          + (axisDimmed ? ' is-dimmed' : '')
+      });
+
+      var body = svgEl('rect', {
+        x: axisNode.x,
+        y: axisNode.y,
+        width: axisNode.width,
+        height: axisNode.height,
+        rx: 10,
+        ry: 10,
+        class: 'axis-body'
+      });
+      group.appendChild(body);
+
+      var text = svgEl('text', {
+        x: axisNode.x + 10,
+        y: axisNode.y + 18,
+        class: 'axis-text'
+      });
+      text.textContent = axisNode.item.id;
+      group.appendChild(text);
+
+      axisLayer.appendChild(group);
+    });
+
+    viewportLayer.appendChild(edgeLayer);
+    viewportLayer.appendChild(intentPathLayer);
+    viewportLayer.appendChild(sectionLayer);
+    viewportLayer.appendChild(axisLayer);
+    viewportLayer.appendChild(nodeLayer);
+    svg.appendChild(viewportLayer);
+
+    canvasSurface.innerHTML = '';
+    canvasSurface.appendChild(svg);
+    currentCanvas = {
+      svg: svg,
+      viewportLayer: viewportLayer
+    };
+
+    if (!state.viewport.initialized || state.viewport.autoFitPending) {
+      fitCanvasToViewport();
+    } else {
+      applyViewportTransform();
+    }
+  }
+
+  function renderDetail(prefixes) {
+    if (state.selectedTraceId) {
+      var trace = getSelectedTrace();
+      var traceRecords = state.traceRecordsById[state.selectedTraceId] || [];
+      var traceError = state.traceDetailError;
+
+      detailPanel.className = '';
+
+      if (state.traceDetailLoading && !traceRecords.length) {
+        detailPanel.innerHTML = '<div class="detail-actions"><button class="btn" type="button" id="clearTraceBtn">Back to Prefix</button></div>'
+          + '<div class="trace-empty">Loading trace records...</div>';
+        return;
+      }
+
+      if (traceError) {
+        detailPanel.innerHTML = '<div class="detail-actions"><button class="btn" type="button" id="clearTraceBtn">Back to Prefix</button></div>'
+          + '<div class="trace-empty">' + esc(traceError) + '</div>';
+        return;
+      }
+
+      var summaryCards = ''
+        + '<div class="trace-summary-grid">'
+        + '<div class="trace-summary-card"><div class="trace-summary-label">Service</div><div class="trace-summary-value">' + esc(trace && trace.serviceName || 'unknown') + '</div></div>'
+        + '<div class="trace-summary-card"><div class="trace-summary-label">Timestamp</div><div class="trace-summary-value">' + esc(formatTimestamp(getTraceTimestamp(trace))) + '</div></div>'
+        + '<div class="trace-summary-card"><div class="trace-summary-label">Records</div><div class="trace-summary-value">' + esc(String(trace && trace.recordCount || traceRecords.length || 0)) + '</div></div>'
+        + '<div class="trace-summary-card"><div class="trace-summary-label">First Event</div><div class="trace-summary-value">' + esc(getTraceFirstEvent(state.selectedTraceId) || '-') + '</div></div>'
+        + '</div>';
+
+      var recordsHtml = traceRecords.length
+        ? traceRecords.map(function(record, index) {
+            var eventKey = record.event_key || record.eventKey || '-';
+            var recordKind = record.record_kind || record.recordKind || 'log';
+            var context = record.address_context || record.addressContext || null;
+            var contextHtml = '';
+            var payloadHtml = '';
+
+            if (context && Object.keys(context).length) {
+              contextHtml = '<div class="trace-record-context">' + Object.keys(context).map(function(key) {
+                return '<span class="trace-context-tag">' + esc(key) + '<strong>' + esc(String(context[key])) + '</strong></span>';
+              }).join('') + '</div>';
+            }
+
+            if (record.payload && Object.keys(record.payload).length) {
+              payloadHtml = '<pre class="trace-record-payload">' + esc(JSON.stringify(record.payload, null, 2)) + '</pre>';
+            }
+
+            return ''
+              + '<div class="trace-record' + (index === 0 ? ' is-entry' : '') + '">'
+              + '<div class="trace-record-top">'
+              + '<div class="trace-record-key">' + esc(eventKey) + '</div>'
+              + '<span class="trace-record-badge trace-record-badge-' + esc(recordKind) + '">' + esc(recordKind) + '</span>'
+              + '</div>'
+              + '<div class="trace-record-meta">'
+              + '<span class="trace-record-time">' + esc(formatTimeOnly(record.timestamp)) + '</span>'
+              + '<span class="trace-record-time">' + esc(record.span_id || record.spanId || '-') + '</span>'
+              + '</div>'
+              + contextHtml
+              + payloadHtml
+              + '</div>';
+          }).join('')
+        : '<div class="trace-empty">This trace has no records.</div>';
+
+      detailPanel.innerHTML = ''
+        + '<div class="detail-actions"><button class="btn" type="button" id="clearTraceBtn">Back to Prefix</button></div>'
+        + '<div class="detail-heading">'
+        + '<div class="detail-title">' + esc(getTraceFirstEvent(state.selectedTraceId) || shortenTraceId(state.selectedTraceId)) + '</div>'
+        + '<div class="detail-subtitle">' + esc(state.selectedTraceId) + '</div>'
+        + '</div>'
+        + '<div class="trace-summary">'
+        + summaryCards
+        + '<div class="trace-records">' + recordsHtml + '</div>'
+        + '</div>';
+      return;
+    }
+
+    var selectedIntentLink = getSelectedIntentLink();
+    if (selectedIntentLink) {
+      var coverage = summarizeIntentLinkCoverage(selectedIntentLink);
+      var endpointRows = (selectedIntentLink.endpoints || []).map(function(prefixId) {
+        var observed = getObservedCount(prefixId) > 0;
+        return '<div class="intent-endpoint ' + (observed ? 'is-observed' : 'is-unobserved') + '">'
+          + '<span class="intent-endpoint-id">' + esc(prefixId) + '</span>'
+          + '<span class="intent-endpoint-status">' + (observed ? '✓ observed' : '✗ unobserved') + '</span>'
+          + '</div>';
+      }).join('');
+
+      detailPanel.className = '';
+      detailPanel.innerHTML = ''
+        + '<div class="detail-actions"><button class="btn" type="button" id="clearIntentLinkBtn">Clear Overlay</button></div>'
+        + '<div class="detail-heading">'
+        + '<div class="detail-title">' + esc(selectedIntentLink.id) + '</div>'
+        + '<div class="detail-subtitle">IntentLink path overlay with observed/unobserved endpoint coverage.</div>'
+        + '</div>'
+        + '<div class="detail-grid">'
+        + '<div class="detail-row"><span class="detail-key">endpoints</span><span class="detail-val">' + esc((selectedIntentLink.endpoints || []).length) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">observed</span><span class="detail-val">' + esc(coverage.observed) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">coverage</span><span class="detail-val"><code>' + esc(selectedIntentLink.id) + ': ' + coverage.observed + '/' + coverage.total + ' observed (' + coverage.pct + '%)</code></span></div>'
+        + '</div>'
+        + '<div class="intent-endpoint-list">' + (endpointRows || '<span class="muted">No endpoints defined.</span>') + '</div>';
+      return;
+    }
+
+    var selected = prefixes.find(function(item) {
+      return item.id === state.selectedPrefix;
+    });
+
+    if (!selected) {
+      detailPanel.className = 'detail-placeholder';
+      detailPanel.innerHTML = 'Select a prefix node to inspect metadata.';
+      return;
+    }
+
+    var axes = Array.isArray(selected.axes) ? selected.axes.slice().sort() : [];
+    var observedCount = getObservedCount(selected.id);
+    var axesHtml = axes.length
+      ? '<div class="axis-list">' + axes.map(function(axisId) {
+          return '<span class="axis-chip">' + esc(axisId) + '</span>';
+        }).join('') + '</div>'
+      : '<span class="muted">-</span>';
+
+    detailPanel.className = '';
+    detailPanel.innerHTML = ''
+      + '<div class="detail-heading">'
+      + '<div class="detail-title">' + esc(selected.id) + '</div>'
+      + '<div class="detail-subtitle">' + esc(selected.name || 'Unnamed prefix') + '</div>'
+      + '</div>'
+      + '<div class="detail-grid">'
+      + '<div class="detail-row"><span class="detail-key">id</span><span class="detail-val"><code>' + esc(selected.id) + '</code></span></div>'
+      + '<div class="detail-row"><span class="detail-key">name</span><span class="detail-val">' + esc(selected.name || '-') + '</span></div>'
+      + '<div class="detail-row"><span class="detail-key">category</span><span class="detail-val">' + esc(selected.category || 'unknown') + '</span></div>'
+      + '<div class="detail-row"><span class="detail-key">dimCount</span><span class="detail-val">' + esc(selected.dimCount || 0) + '</span></div>'
+      + '<div class="detail-row"><span class="detail-key">observed events</span><span class="detail-val">' + esc(observedCount || 0) + '</span></div>'
+      + '<div class="detail-row"><span class="detail-key">axes</span><div class="detail-val detail-val-axes">' + axesHtml + '</div></div>'
+      + '</div>';
+  }
+
+  var _lastFlowMapRef = null;
+  var _lastCanvasSvg = null;
+
+  /** 캔버스 스타일만 업데이트 (레이아웃 불변 시) — full re-render 대신 */
+  function updateCanvasStyles(prefixes) {
+    if (!_lastCanvasSvg) return false;
+    var svg = canvasSurface.querySelector('svg');
+    if (!svg) return false;
+
+    var selectedIntentLink = getSelectedIntentLink();
+    var hasIntentOverlay = !!selectedIntentLink;
+    var intentEndpointLookup = getIntentEndpointLookup(selectedIntentLink);
+    var hasSelection = !!state.selectedPrefix;
+    var hasFocus = hasIntentOverlay || hasSelection;
+
+    // prefix 노드 스타일 업데이트
+    prefixes.forEach(function(p) {
+      var g = svg.querySelector('[data-prefix-id="' + p.id + '"]');
+      if (!g) return;
+      var observed = getObservedCount(p.id) > 0;
+      var pulsing = isPrefixPulsing(p.id);
+      var isIntentEndpoint = hasIntentOverlay && intentEndpointLookup[p.id];
+      var isSelected = state.selectedPrefix === p.id;
+      var dimmed = hasFocus && !isIntentEndpoint && !isSelected;
+
+      g.setAttribute('opacity', dimmed ? '0.25' : '1');
+      var rect = g.querySelector('rect');
+      if (rect) {
+        if (pulsing) {
+          rect.setAttribute('stroke', '#58a6ff');
+          rect.setAttribute('stroke-width', '2.5');
+        } else if (isSelected || isIntentEndpoint) {
+          rect.setAttribute('stroke', observed ? '#3fb950' : '#d29922');
+          rect.setAttribute('stroke-width', '2');
+        } else {
+          rect.setAttribute('stroke', observed ? '#3fb950' : '#30363d');
+          rect.setAttribute('stroke-width', observed ? '1.5' : '1');
+        }
+      }
+    });
+
+    return true;
+  }
+
+  function render() {
+    var prefixes = getPrefixes();
+    renderSummary(prefixes);
+    renderIntentLinkControls();
+    renderSidebar(prefixes);
+    renderEventFeed();
+
+    // 캔버스: flowMap이 바뀌지 않았으면 스타일만 업데이트 (diff)
+    var flowMapRef = state.flowMap;
+    if (flowMapRef && flowMapRef === _lastFlowMapRef && _lastCanvasSvg) {
+      updateCanvasStyles(prefixes);
+    } else {
+      renderCanvas(prefixes);
+      _lastFlowMapRef = flowMapRef;
+      _lastCanvasSvg = !!canvasSurface.querySelector('svg');
+    }
+
+    renderDetail(prefixes);
+  }
+
+  function syncSelection(prefixes) {
+    if (!prefixes.length) {
+      state.selectedPrefix = null;
+      window.selectedPrefix = null;
+      return;
+    }
+
+    if (state.selectedPrefix && prefixes.some(function(item) { return item.id === state.selectedPrefix; })) {
+      window.selectedPrefix = state.selectedPrefix;
+      return;
+    }
+
+    state.selectedPrefix = null;
+    window.selectedPrefix = null;
+  }
+
+  function syncIntentLinkSelection() {
+    if (!state.selectedIntentLinkId) return;
+    if (getIntentLinks().some(function(item) { return item.id === state.selectedIntentLinkId; })) return;
+    state.selectedIntentLinkId = null;
+  }
+
+  function setSelectedPrefix(prefixId) {
+    state.selectedTraceId = null;
+    state.traceDetailLoading = false;
+    state.traceDetailError = null;
+    state.selectedIntentLinkId = null;
+    state.selectedPrefix = state.selectedPrefix === prefixId ? null : prefixId;
+    window.selectedPrefix = prefixId;
+    if (state.selectedPrefix == null) window.selectedPrefix = null;
+    render();
+  }
+
+  function setSelectedIntentLink(intentLinkId) {
+    state.selectedTraceId = null;
+    state.traceDetailLoading = false;
+    state.traceDetailError = null;
+    state.selectedPrefix = null;
+    state.selectedIntentLinkId = intentLinkId || null;
+    window.selectedPrefix = null;
+    render();
+  }
+
+  function clearIntentLinkOverlay() {
+    if (!state.selectedIntentLinkId) return;
+    state.selectedIntentLinkId = null;
+    render();
+  }
+
+  function clearSelectedTrace() {
+    state.selectedTraceId = null;
+    state.traceDetailLoading = false;
+    state.traceDetailError = null;
+    render();
+  }
+
+  function setSelectedTrace(traceId) {
+    if (!traceId) return;
+
+    if (state.selectedTraceId === traceId) {
+      clearSelectedTrace();
+      return;
+    }
+
+    state.selectedTraceId = traceId;
+    state.traceDetailError = null;
+    state.traceDetailLoading = !state.traceRecordsById[traceId];
+    render();
+
+    hydrateTracePrefixes(traceId);
+    if (state.traceRecordsById[traceId]) return;
+
+    var requestId = ++state.traceDetailRequestId;
+    loadTraceRecords(traceId)
+      .then(function(items) {
+        if (requestId !== state.traceDetailRequestId || state.selectedTraceId !== traceId) return;
+        state.traceDetailLoading = false;
+        render();
+      })
+      .catch(function(error) {
+        if (requestId !== state.traceDetailRequestId || state.selectedTraceId !== traceId) return;
+        state.traceDetailLoading = false;
+        state.traceDetailError = error && error.message ? error.message : 'Failed to load trace records';
+        render();
+      });
+  }
+
+  function findDataTarget(node, stopNode, attrName) {
+    var current = node;
+    while (current && current !== stopNode && current !== document.body) {
+      if (current.getAttribute && current.hasAttribute(attrName)) return current;
+      current = current.parentNode;
+    }
+    return null;
+  }
+
+  function bindEvents() {
+    intentLinkSelect.addEventListener('change', function(event) {
+      var value = event.target && event.target.value ? event.target.value : '';
+      setSelectedIntentLink(value);
+    });
+
+    clearOverlayBtn.addEventListener('click', clearIntentLinkOverlay);
+
+    sidebarBody.addEventListener('click', function(event) {
+      var button = findDataTarget(event.target, sidebarBody, 'data-prefix-id');
+      if (!button) return;
+      setSelectedPrefix(button.getAttribute('data-prefix-id'));
+    });
+
+    eventFeedList.addEventListener('click', function(event) {
+      var button = findDataTarget(event.target, eventFeedList, 'data-trace-id');
+      if (!button) return;
+      setSelectedTrace(button.getAttribute('data-trace-id'));
+    });
+
+    canvasStage.addEventListener('click', function(event) {
+      if (Date.now() < state.drag.suppressClickUntil) return;
+      var node = findDataTarget(event.target, canvasStage, 'data-prefix-id');
+      if (!node) return;
+      setSelectedPrefix(node.getAttribute('data-prefix-id'));
+    });
+
+    canvasStage.addEventListener('wheel', function(event) {
+      if (!currentCanvas) return;
+      event.preventDefault();
+      var delta = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setViewport(state.viewport.scale * delta, event.clientX, event.clientY);
+    }, { passive: false });
+
+    canvasStage.addEventListener('mousedown', function(event) {
+      if (event.button !== 0 || !currentCanvas) return;
+      state.drag.active = true;
+      state.drag.startX = event.clientX;
+      state.drag.startY = event.clientY;
+      state.drag.originTx = state.viewport.tx;
+      state.drag.originTy = state.viewport.ty;
+      state.drag.moved = false;
+      canvasStage.classList.add('is-panning');
+      event.preventDefault();
+    });
+
+    window.addEventListener('mousemove', function(event) {
+      if (!state.drag.active) return;
+      var dx = event.clientX - state.drag.startX;
+      var dy = event.clientY - state.drag.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) state.drag.moved = true;
+      state.viewport.tx = state.drag.originTx + dx;
+      state.viewport.ty = state.drag.originTy + dy;
+      state.viewport.initialized = true;
+      state.viewport.autoFitPending = false;
+      applyViewportTransform();
+    });
+
+    window.addEventListener('mouseup', function() {
+      if (!state.drag.active) return;
+      state.drag.active = false;
+      canvasStage.classList.remove('is-panning');
+      if (state.drag.moved) state.drag.suppressClickUntil = Date.now() + 80;
+    });
+
+    fitBtn.addEventListener('click', fitCanvasToViewport);
+    autoPollBtn.addEventListener('click', function() {
+      state.feedAuto = !state.feedAuto;
+      syncFeedPolling();
+      renderEventFeed();
+      if (state.feedAuto) loadRecentTraces();
+    });
+    detailPanel.addEventListener('click', function(event) {
+      var target = event.target;
+      if (target && target.id === 'clearTraceBtn') clearSelectedTrace();
+      if (target && target.id === 'clearIntentLinkBtn') clearIntentLinkOverlay();
+    });
+    window.addEventListener('resize', function() {
+      if (!getPrefixes().length) return;
+      renderCanvas(getPrefixes());
+    });
+  }
+
+  function syncFeedPolling() {
+    if (feedTimer) {
+      window.clearInterval(feedTimer);
+      feedTimer = null;
+    }
+
+    if (!state.feedAuto) return;
+    feedTimer = window.setInterval(loadRecentTraces, FEED_POLL_MS);
+  }
+
+  function enrichVisibleTraceSummaries() {
+    var pending = state.recentTraces.filter(function(trace) {
+      return !getTraceFirstEvent(trace.traceId);
+    });
+    if (!pending.length) return;
+
+    var traceIds = pending.map(function(t) { return t.traceId; });
+    // bulk API로 한 번에 records 조회 (N+1 → 1)
+    fetch(INGEST_URL + '/v1/traces/bulk-records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ traceIds: traceIds, limit: 20 }),
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(bulk) {
+        traceIds.forEach(function(traceId) {
+          var records = bulk[traceId] || [];
+          var first = records[0];
+          state.traceFirstEventById[traceId] = first
+            ? (first.event_key || first.eventKey || '-')
+            : '-';
+        });
+        renderEventFeed();
+      })
+      .catch(function() {
+        // fallback: 개별 fetch
+        pending.forEach(function(trace) { fetchTraceFirstEvent(trace.traceId); });
+      });
+  }
+
+  function mergeRecentTraces(items) {
+    var existingById = {};
+    state.recentTraces.forEach(function(trace) {
+      existingById[trace.traceId] = trace;
+    });
+
+    var seen = {};
+    var merged = [];
+
+    items.forEach(function(trace) {
+      seen[trace.traceId] = true;
+      merged.push(Object.assign({}, existingById[trace.traceId] || {}, trace));
+    });
+
+    state.recentTraces.forEach(function(trace) {
+      if (seen[trace.traceId]) return;
+      merged.push(trace);
+    });
+
+    return merged.slice(0, FEED_MAX_ITEMS);
+  }
+
+  function loadRecentTraces() {
+    state.feedLoading = true;
+    if (!state.recentTraces.length) renderEventFeed();
+
+    return fetchJson(TRACE_RECENT_URL)
+      .then(function(data) {
+        var incoming = Array.isArray(data && data.items) ? data.items : [];
+        var existingIds = {};
+        state.recentTraces.forEach(function(trace) {
+          existingIds[trace.traceId] = true;
+        });
+
+        state.feedError = null;
+        var shouldAnimate = state.recentTraces.length > 0;
+        var newTraceIds = incoming
+          .map(function(trace) { return trace.traceId; })
+          .filter(function(traceId) { return !existingIds[traceId]; });
+
+        state.recentTraces = mergeRecentTraces(incoming);
+        if (shouldAnimate && newTraceIds.length) markNewTraces(newTraceIds);
+        if (newTraceIds.length) {
+          newTraceIds.forEach(function(traceId) {
+            hydrateTracePrefixes(traceId).then(function(prefixIds) {
+              if (shouldAnimate && prefixIds.length) pulsePrefixes(prefixIds);
+            });
+          });
+        }
+        enrichVisibleTraceSummaries();
+      })
+      .catch(function(error) {
+        state.feedError = error && error.message ? error.message : 'Failed to load recent traces';
+      })
+      .finally(function() {
+        state.feedLoading = false;
+        renderEventFeed();
+        if (state.selectedTraceId) renderDetail(getPrefixes());
+      });
+  }
+
+  function loadIntentLinks() {
+    state.intentLinksLoading = true;
+    state.intentLinksError = null;
+    renderIntentLinkControls();
+
+    return fetchJson(DIAGRAMS_URL)
+      .then(function(data) {
+        var entries = Array.isArray(data && data['intent-links']) ? data['intent-links'] : [];
+        state.intentLinks = entries
+          .filter(function(item) {
+            return item && item.id && item.id !== '__all__';
+          })
+          .map(function(item) {
+            return {
+              id: item.id,
+              label: item.label || item.id,
+              endpoints: Array.isArray(item.endpoints) ? item.endpoints.slice() : []
+            };
+          })
+          .sort(function(a, b) {
+            return String(a.id).localeCompare(String(b.id));
+          });
+        syncIntentLinkSelection();
+      })
+      .catch(function(error) {
+        state.intentLinks = [];
+        state.intentLinksError = error && error.message ? error.message : 'Failed to load IntentLinks';
+        syncIntentLinkSelection();
+      })
+      .finally(function() {
+        state.intentLinksLoading = false;
+        renderIntentLinkControls();
+        renderDetail(getPrefixes());
+      });
+  }
+
+  function loadFlowMap() {
+    state.loading = true;
+    state.error = null;
+    render();
+
+    Promise.all([
+      fetchJson(FLOW_MAP_URL),
+      fetchJson(PREFIX_INSIGHTS_URL)
+    ]).then(function(results) {
+      var flowMap = results[0];
+      var observedPrefixes = results[1];
+      state.flowMap = flowMap;
+      state.observedCounts = {};
+      observedPrefixes.forEach(function(item) {
+        state.observedCounts[item.prefix] = item.count;
+      });
+      state.viewport.autoFitPending = true;
+      state.viewport.initialized = false;
+      syncSelection(getPrefixes());
+      syncIntentLinkSelection();
+    }).catch(function(error) {
+      state.error = error && error.message ? error.message : 'Failed to load flow-map data';
+    }).finally(function() {
+      state.loading = false;
+      render();
+    });
+  }
+
+  refreshBtn.addEventListener('click', function() {
+    loadFlowMap();
+    loadIntentLinks();
+  });
+  bindEvents();
+  render();
+  syncFeedPolling();
+  loadRecentTraces();
+  loadIntentLinks();
+  loadFlowMap();
+})();
+</script>
+</body>
+</html>
