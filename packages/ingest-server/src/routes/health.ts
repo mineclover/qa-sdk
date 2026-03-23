@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import type { Db } from "@qa-sdk/store";
 import { Hono, type Context } from "hono";
 
@@ -15,11 +14,22 @@ export interface HealthRoutesOptions {
   version?: string;
 }
 
-const packageVersion = readPackageVersion();
+let _packageVersion: string | undefined;
+function getPackageVersion(): string {
+  if (_packageVersion) return _packageVersion;
+  try {
+    const { readFileSync } = require("node:fs");
+    const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+    _packageVersion = pkg.version ?? "0.0.0";
+  } catch {
+    _packageVersion = "0.0.0";
+  }
+  return _packageVersion!;
+}
 
 export function createHealthRoutes(options: HealthRoutesOptions) {
   const routes = new Hono();
-  const version = options.version ?? packageVersion;
+  const version = options.version ?? getPackageVersion();
   const getUptimeSeconds = options.getUptimeSeconds ?? (() => process.uptime());
 
   routes.get("/health", (c) =>
@@ -87,10 +97,3 @@ async function respondWithHealth(
   );
 }
 
-function readPackageVersion() {
-  const packageJson = JSON.parse(
-    readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
-  ) as { version?: string };
-
-  return packageJson.version ?? "0.0.0";
-}

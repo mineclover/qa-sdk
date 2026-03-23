@@ -9,4 +9,4 @@ CORS_ORIGIN = "*"
 [[d1_databases]]
 binding = "DB"
 database_name = "qa-ingest"
-database_id = "" # npx wrangler d1 create qa-ingest 후 ID 입력
+database_id = "ca5920e0-04ac-43ac-85e1-8cd8e15475e3"

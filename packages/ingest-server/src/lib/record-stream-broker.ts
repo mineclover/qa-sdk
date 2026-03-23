@@ -42,6 +42,9 @@ export class RecordStreamBroker {
         record,
       );
     }
+
+    // "*" 와일드카드 시나리오 구독자에게 모든 레코드 전달 (LIVE 모니터링)
+    this.publishToSubscribers(this.scenarioSubscribers, "*", record);
   }
 
   publishToScenario(scenarioId: string, record: StoredRecord): void {

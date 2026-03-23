@@ -73,16 +73,35 @@ export type TraceTransactionRunner = <T>(
   fn: (stores: TracePersistenceStores) => Promise<T>,
 ) => Promise<T>;
 
+/** Content-Type 기반 디시리얼라이즈. JSON/Protobuf/MessagePack 지원. */
+async function deserializeEnvelope(c: { req: { header(name: string): string | undefined; json(): Promise<unknown>; arrayBuffer(): Promise<ArrayBuffer> } }): Promise<TransmissionEnvelope> {
+  const ct = c.req.header("content-type") ?? "application/json";
+
+  if (ct.includes("application/x-protobuf")) {
+    const { fromProtoEnvelope } = await import("../lib/proto-codec.js");
+    const buf = await c.req.arrayBuffer();
+    const raw = fromProtoEnvelope(new Uint8Array(buf));
+    return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+  }
+
+  if (ct.includes("application/msgpack") || ct.includes("application/x-msgpack")) {
+    const { decode } = await import("@msgpack/msgpack");
+    const buf = await c.req.arrayBuffer();
+    const raw = decode(new Uint8Array(buf));
+    return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
+  }
+
+  // Default: application/json
+  const body = await c.req.json();
+  return transmissionEnvelopeSchema.parse(body) as TransmissionEnvelope;
+}
+
 export function createIngestRoutes(deps: IngestDeps) {
   const app = new Hono();
 
   app.post("/v1/ingest", async (c) => {
-    const body = await c.req.json();
-    const parsed = transmissionEnvelopeSchema.parse(body);
-    const envelope = parsed as TransmissionEnvelope;
-
+    const envelope = await deserializeEnvelope(c);
     await processEnvelope(envelope, deps);
-
     return c.json({ accepted: true, record_count: envelope.records.length }, 202);
   });
 
