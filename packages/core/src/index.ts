@@ -273,3 +273,13 @@ export type {
   MetricRollupQuery,
   MetricWindowType,
 } from "./ports/metric-rollup-store.port.js";
+
+// ── Debug Protocol ──────────────────────────────────────
+export type {
+  DebugEventRecord, StreamFilter, DebugCommand, DebugResponse,
+  TraceInfo, ResolvedDim, MsgpackEncode, MsgpackDecode,
+} from "./debug/debug-protocol.js";
+export {
+  TAG_EVENT_RECORD, TAG_DEBUG_COMMAND, TAG_DEBUG_RESPONSE, TAG_HEARTBEAT,
+  encodeFrame, decodeFrame, encodeEventRecord, encodeCommand, encodeResponse, encodeHeartbeat,
+} from "./debug/debug-protocol.js";

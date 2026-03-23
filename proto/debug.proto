@@ -1,0 +1,161 @@
+// QA-SDK Debug Protocol — 개발환경 실시간 로깅/디버깅
+//
+// Transport: WebSocket binary frames
+// 각 프레임: tag(1 byte) + protobuf payload
+//
+// Tag 값:
+//   0x01 = EventRecord (server → client)
+//   0x02 = DebugCommand (client → server)
+//   0x03 = DebugResponse (server → client)
+//   0x04 = Heartbeat (양방향)
+
+syntax = "proto3";
+
+package qa.debug;
+
+// ═══════════════════════════════════════════════════════
+//  이벤트 레코드 — 서버가 클라이언트에 스트리밍
+// ═══════════════════════════════════════════════════════
+
+message EventRecord {
+  string log_id = 1;
+  string trace_id = 2;
+  string span_id = 3;
+  string parent_span_id = 4;
+
+  int64  timestamp_ms = 5;    // epoch ms
+  string record_kind = 6;     // log | span | metric
+
+  string event_key = 7;
+  string event_version = 8;
+
+  // 좌표 컨텍스트 — prefix별 인코딩된 주소
+  map<string, string> address_context = 10;
+
+  // 좌표 디코딩 결과 (서버에서 미리 해석)
+  map<string, string> decoded_dims = 11;
+
+  // 서비스 정보
+  string service_name = 12;
+  string namespace = 13;
+  string env = 14;
+
+  // 세션
+  string qa_session_id = 15;
+  string actor_id = 16;
+
+  // 페이로드 (JSON string)
+  string payload_json = 20;
+
+  // 메트릭 (record_kind == "metric")
+  string metric_name = 30;
+  double metric_value = 31;
+  string metric_unit = 32;
+  map<string, string> metric_labels = 33;
+}
+
+// ═══════════════════════════════════════════════════════
+//  디버그 명령 — 클라이언트가 서버에 전송
+// ═══════════════════════════════════════════════════════
+
+message DebugCommand {
+  oneof command {
+    Subscribe subscribe = 1;
+    Unsubscribe unsubscribe = 2;
+    GetActiveTraces get_active_traces = 3;
+    ResolveAddress resolve_address = 4;
+    SetFilter set_filter = 5;
+    Ping ping = 10;
+  }
+}
+
+message Subscribe {
+  StreamFilter filter = 1;
+}
+
+message Unsubscribe {}
+
+message StreamFilter {
+  repeated string prefix_ids = 1;     // 특정 prefix만 (비어있으면 전체)
+  repeated string service_ids = 2;    // 특정 서비스만
+  repeated string event_keys = 3;     // 특정 event_key만
+  string trace_id = 4;               // 특정 trace만
+  string session_id = 5;             // 특정 세션만
+  bool decode_addresses = 6;          // address_context 자동 디코딩
+  int32 max_records_per_sec = 7;      // 쓰로틀링 (0=무제한)
+}
+
+message GetActiveTraces {}
+
+message ResolveAddress {
+  string prefix = 1;
+  string version = 2;
+  int32 address = 3;
+  bool deep = 4;              // prefix_ref 재귀 해석
+}
+
+message SetFilter {
+  StreamFilter filter = 1;
+}
+
+message Ping {
+  int64 timestamp_ms = 1;
+}
+
+// ═══════════════════════════════════════════════════════
+//  디버그 응답 — 서버가 클라이언트에 전송
+// ═══════════════════════════════════════════════════════
+
+message DebugResponse {
+  oneof response {
+    SubscribeAck subscribe_ack = 1;
+    ActiveTraces active_traces = 2;
+    ResolvedAddress resolved_address = 3;
+    ErrorResponse error = 4;
+    Pong pong = 10;
+  }
+}
+
+message SubscribeAck {
+  string subscription_id = 1;
+  StreamFilter active_filter = 2;
+}
+
+message ActiveTraces {
+  repeated TraceInfo traces = 1;
+}
+
+message TraceInfo {
+  string trace_id = 1;
+  string session_id = 2;
+  string service_name = 3;
+  int32 record_count = 4;
+  int64 first_timestamp_ms = 5;
+  int64 last_timestamp_ms = 6;
+}
+
+message ResolvedAddress {
+  string prefix = 1;
+  string version = 2;
+  int32 address = 3;
+  map<string, DimValue> dims = 4;
+}
+
+message DimValue {
+  string label = 1;
+  string kind = 2;           // axis | prefix_ref | table_ref
+  int32 position = 3;
+  string value = 4;          // axis entry or integer as string
+  string ko = 5;             // 한국어 라벨
+  ResolvedAddress ref = 6;   // prefix_ref deep resolve
+}
+
+message ErrorResponse {
+  string code = 1;
+  string message = 2;
+}
+
+message Pong {
+  int64 timestamp_ms = 1;
+  int64 server_timestamp_ms = 2;
+}

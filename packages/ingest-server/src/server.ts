@@ -49,6 +49,7 @@ import { createStreamConnectionRegistry } from "./lib/stream-connection-registry
 import { installWorkerShutdown } from "./lib/worker-shutdown.js";
 import { createDbHealthChecker } from "./routes/health.js";
 import { createWsHandler } from "./routes/ws.js";
+import { createDebugWsHandler } from "./routes/debug-ws.js";
 import type { ConvergencePipelineRunner, ConvergenceFunctions, ConvergenceGraphPort, PatternFunctions } from "./lib/convergence-pipeline.js";
 import type { TransitionFunctions } from "@qa-sdk/spec-core/transition";
 import type { TransitionEnginePort } from "./lib/phase-two-worker.js";
@@ -265,6 +266,12 @@ async function startServer() {
 
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
   app.get("/v1/ws", upgradeWebSocket(createWsHandler({ recordStreamBroker, logger })));
+  app.get("/v1/debug-ws", upgradeWebSocket(createDebugWsHandler({
+    recordStreamBroker,
+    traceStore: stores.traceStore,
+    recordStore: stores.recordStore,
+    logger,
+  })));
 
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
     logger.info({ port: info.port }, "ingest-server listening");
