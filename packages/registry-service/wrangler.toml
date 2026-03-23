@@ -17,6 +17,10 @@ binding = "DB"
 database_name = "qa-registry"
 database_id = "9bc1407e-0e3a-4d5b-8b48-97513c52702e"
 
+# Cron Trigger — 5분마다 warm up (DKG bootstrap cold start 방지)
+[triggers]
+crons = ["*/5 * * * *"]
+
 # Service Bindings — 헬스체크 시 Worker-to-Worker 직접 호출
 [[services]]
 binding = "INGEST_SERVICE"
