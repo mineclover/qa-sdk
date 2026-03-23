@@ -17,6 +17,10 @@ dist/
 # auto-generated diagram presets
 packages/platform-demo/public/diagram-presets.js
 
+# internal config / archive
+.omx/
+tasks/archive/
+
 # claude code
 .claude/
 data/
