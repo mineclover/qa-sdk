@@ -31,7 +31,7 @@ export interface GraphPort {
   getNodesByKind(kind: string): GraphNodeLike[];
   getNodesByKind<K extends string>(kind: K): GraphNodeLike[];
   getAllNodes(): GraphNodeLike[];
-  findNodes(kind: string, predicate?: (node: any) => boolean): any[];
+  findNodes(kind: string, predicate?: (node: GraphNodeLike) => boolean): GraphNodeLike[];
 
   // ── 읽기: 엣지 ──
   edgesFrom(id: string, type?: string): readonly GraphEdgeLike[];

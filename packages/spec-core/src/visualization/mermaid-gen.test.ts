@@ -57,6 +57,17 @@ describe("listAllDiagrams", () => {
     expect(diagrams["constraint"]!.length).toBe(graph.getNodesByKind("constraint").length);
     expect(diagrams["table"]!.length).toBe(graph.getNodesByKind("table").length);
   });
+
+  it("intent-links 목록은 endpoint prefix 배열을 포함한다", () => {
+    const intentLinks = graph.getNodesByKind("intent-link");
+    const byId = new Map(intentLinks.map((item: any) => [item.id, item]));
+
+    for (const item of diagrams["intent-links"] || []) {
+      const link = byId.get(item.id) as any;
+      expect(Array.isArray(item.endpoints)).toBe(true);
+      expect(item.endpoints).toEqual(link.endpoints);
+    }
+  });
 });
 
 // ── IntentLink ─────────────────────────────────────

@@ -79,7 +79,7 @@ export function executeEntryAdd(
   }
 
   // ── 2. 안전성 검사 ──
-  const check = safeEntryAdd(catalog as any, graph, { axisId, entry });
+  const check = safeEntryAdd(catalog, graph, { axisId, entry });
 
   let capacityExpanded = false;
 

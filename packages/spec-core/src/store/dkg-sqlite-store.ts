@@ -261,8 +261,8 @@ export class DkgSqliteStore {
       for (const obs of autoObservations) {
         upsertNode.run(obs.id, obs.kind, "auto", this.catalogId, JSON.stringify(obs));
         // ObservationNode.subjects → observes 엣지 자동 생성
-        const subjects = (obs as any).subjects as readonly string[] | undefined;
-        if (subjects) {
+        if (obs.kind === "observation") {
+          const subjects = obs.subjects;
           for (const subjectId of subjects) {
             insertEdge.run("observes", obs.id, subjectId, "auto", this.catalogId, null);
           }

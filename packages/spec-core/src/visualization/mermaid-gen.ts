@@ -233,6 +233,7 @@ export interface DiagramEntry {
   readonly kind: string;
   readonly id: string;
   readonly label: string;
+  readonly endpoints?: readonly string[];
 }
 
 /** ServiceTopology duck type (service-topology.ts 직접 의존 없이) */
@@ -642,6 +643,7 @@ export function listAllDiagrams(
       kind: "intent-links",
       id: il.id,
       label: il.intent,
+      endpoints: il.endpoints,
     }));
   }
 
@@ -930,7 +932,7 @@ export function transitionDagDiagram(
   for (const t of tspecs) {
     const deps = graph.edgesFrom(t.id, "depends-on");
     for (const e of deps) {
-      const shared = (e.meta as any)?.sharedAxes as string[] | undefined;
+      const shared = Array.isArray(e.meta?.sharedAxes) ? e.meta.sharedAxes as string[] : undefined;
       const label = shared ? shared.join(",") : "state";
       lines.push(`  ${t.id} -->|${label}| ${e.to}`);
     }

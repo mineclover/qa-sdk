@@ -4,7 +4,7 @@
  * registry-service가 이 순수 함수를 소비하여 활성화 게이트를 구현한다.
  */
 
-import type { GraphPort } from "../shared/graph-port.js";
+import type { GraphPort, GraphNodeLike } from "../shared/graph-port.js";
 import { checkConstraints } from "../dkg/skills/constraint-check.js";
 import { validatePrefixCategory } from "../schema/category-rules.js";
 
@@ -19,6 +19,21 @@ export interface ActivationGateResult {
   readonly allowed: boolean;
   readonly diagnostics: readonly ActivationDiagnostic[];
   readonly constraintViolations: number;
+}
+
+interface ObservationLike {
+  readonly kind: "observation";
+  readonly id: string;
+  readonly finding: string;
+  readonly source?: string;
+  readonly suggestion?: unknown;
+  readonly intent?: string;
+  readonly resolution?: unknown;
+}
+
+function isObservationLike(node: GraphNodeLike | undefined): node is GraphNodeLike & ObservationLike {
+  const record = node as (GraphNodeLike & Record<string, unknown>) | undefined;
+  return node?.kind === "observation" && typeof record?.finding === "string";
 }
 
 /**
@@ -50,8 +65,8 @@ export function checkActivationReadiness(
   // 2. Check unresolved critical observations on this prefix
   const obsEdges = graph.edgesTo(prefixId, "observes");
   for (const edge of obsEdges) {
-    const obs = graph.getNode(edge.from) as any;
-    if (!obs || obs.kind !== "observation") continue;
+    const obs = graph.getNode(edge.from);
+    if (!isObservationLike(obs)) continue;
     if (obs.resolution) continue; // already resolved
 
     // Only report action-needed observations
@@ -71,7 +86,7 @@ export function checkActivationReadiness(
   // 3. Find which domain this prefix belongs to, check domain health
   const domainEdges = graph.edgesTo(prefixId, "contains");
   for (const edge of domainEdges) {
-    const domain = graph.getNode(edge.from) as any;
+    const domain = graph.getNode(edge.from);
     if (!domain || domain.kind !== "domain") continue;
 
     // Check constraints on the domain itself

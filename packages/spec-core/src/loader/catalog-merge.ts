@@ -102,17 +102,21 @@ export function extractServiceCatalog(
   fullCatalog: { axes: Record<string, unknown>; prefixes: Record<string, unknown> },
   prefixIds: readonly string[],
 ): { axes: Record<string, unknown>; prefixes: Record<string, unknown> } {
+  type PrefixLike = {
+    readonly dims?: Record<string, { readonly kind?: string; readonly axisId?: string }>;
+  };
+
   const prefixes: Record<string, unknown> = {};
   const usedAxes = new Set<string>();
 
   for (const id of prefixIds) {
-    const prefix = fullCatalog.prefixes[id] as any;
+    const prefix = fullCatalog.prefixes[id] as PrefixLike | undefined;
     if (!prefix) continue;
     prefixes[id] = prefix;
 
     // 이 prefix가 사용하는 축 추출
     if (prefix.dims) {
-      for (const dimRef of Object.values(prefix.dims) as any[]) {
+      for (const dimRef of Object.values(prefix.dims)) {
         if (dimRef.kind === "axis" && dimRef.axisId) {
           usedAxes.add(dimRef.axisId);
         }
