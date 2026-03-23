@@ -132,4 +132,15 @@ export default {
 
     return app.fetch(request);
   },
+
+  /** Cron Trigger — 5분마다 실행하여 Worker warm 상태 유지 + DDL 초기화 */
+  async scheduled(_event: unknown, env: Env, _ctx: unknown): Promise<void> {
+    if (!ddlInitialized) {
+      for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
+        try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
+      }
+      ddlInitialized = true;
+    }
+    // warm up 완료 — 다음 fetch 요청에서 cold start 없음
+  },
 };

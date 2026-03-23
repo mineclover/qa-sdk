@@ -10,3 +10,7 @@ CORS_ORIGIN = "*"
 binding = "DB"
 database_name = "qa-ingest"
 database_id = "ca5920e0-04ac-43ac-85e1-8cd8e15475e3"
+
+# Cron Trigger — 5분마다 Worker warm up (cold start 방지)
+[triggers]
+crons = ["*/5 * * * *"]
