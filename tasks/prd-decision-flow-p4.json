@@ -1,0 +1,464 @@
+{
+  "name": "Decision Flow P4 — 학습·비교·DKG 통합",
+  "description": "decision-flow 후속 과제: Policy Learning, A/B Path Comparison, DKG FlowSchemaNode, dkg decide ↔ flow 통합. 의존성 순서 6 Phase, 21 User Stories.",
+  "branchName": "ralph/decision-flow-p4",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "결정 이력 저장소 (InstanceStore)",
+      "description": "개발자로서, FlowInstance 실행 이력을 저장하고 조회할 수 있어야 한다. Policy Learning과 A/B 비교의 공통 기반.",
+      "acceptanceCriteria": [
+        "InstanceStore 인터페이스 정의 (save, findBySchema, findByContext, findByTimeRange)",
+        "인메모리 구현 (MemoryInstanceStore)",
+        "FlowEngine에 instanceStore 옵션 추가 — 완료된 인스턴스 자동 저장",
+        "스키마 ID + 컨텍스트 키 기반 조회 지원",
+        "시간 범위 기반 조회 지원 (startedAt 기준)",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Phase 1 — 기반 인프라. packages/decision-flow/src/instance-store.ts",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "FlowSchemaNode 타입 정의",
+      "description": "개발자로서, DKG 그래프에 FlowSchema를 노드로 등록할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "FlowSchemaNode 인터페이스를 spec-core/src/dkg/dkg.types.ts에 정의",
+        "kind: 'flow-schema' 필드",
+        "gates: readonly { id, name, phase, weight }[] — gate 요약",
+        "totalPaths: number — 전체 경로 수",
+        "coreGateIds: readonly string[] — 코어 gate 목록",
+        "DkgNode 유니온 타입에 FlowSchemaNode 추가 (15종 → 16종)",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Phase 1 — 기반 인프라. spec-core/src/dkg/dkg.types.ts",
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "DKG 엣지 타입 확장",
+      "description": "시스템으로서, FlowSchemaNode와 기존 노드 간 관계를 엣지로 표현한다.",
+      "acceptanceCriteria": [
+        "FlowSchemaNode → AxisNode: composes 엣지 (사용하는 관찰 축)",
+        "FlowSchemaNode → PrefixNode: observes 엣지 (관찰하는 prefix)",
+        "FlowSchemaNode → DomainNode: contains 엣지 (소속 도메인)",
+        "FlowSchemaNode → FlowSchemaNode: references 엣지 (subFlow 참조)",
+        "기존 엣지 타입으로 충분한지 확인 — 새 엣지 타입 추가 최소화",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Phase 1 — 기반 인프라",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "bootstrapDkg에서 FlowSchema 자동 생성",
+      "description": "시스템으로서, bootstrapDkg 호출 시 DkgConfig의 flowSchemas에서 FlowSchemaNode를 자동 생성한다.",
+      "acceptanceCriteria": [
+        "DEMO_DKG_CONFIG에 flowSchemas 필드 추가 (FlowSchema[] 또는 참조)",
+        "bootstrapDkg({ catalog, config }) 시 flowSchemas → FlowSchemaNode 변환",
+        "각 FlowSchemaNode의 coreGateIds를 analyzeGateStructure()로 자동 산출",
+        "관련 엣지 (composes, observes, contains) 자동 생성",
+        "subFlow 참조가 있으면 references 엣지 자동 생성",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Phase 2 — DKG 그래프 통합. spec-core/src/dkg/bootstrap.ts + demo-snapshot/src/demo-dkg-config.ts",
+      "dependsOn": [
+        "US-002",
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "GraphRegistry 질의 API 확장",
+      "description": "개발자로서, 기존 DKG 질의 API로 FlowSchemaNode를 조회할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "graph.getNodesByKind('flow-schema') → FlowSchemaNode[] 반환",
+        "graph.neighbors(flowSchemaId, 'composes') → 사용하는 AxisNode",
+        "graph.neighbors(flowSchemaId, 'observes') → 관찰하는 PrefixNode",
+        "graph.cascadeFromFlowSchema(flowSchemaId) — 영향받는 prefix/axis 목록",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Phase 2 — DKG 그래프 통합. spec-core/src/dkg/graph-registry.ts",
+      "dependsOn": [
+        "US-004"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "패턴 감지기 (PatternDetector)",
+      "description": "시스템으로서, 저장된 이력에서 반복 결정 패턴을 감지한다.",
+      "acceptanceCriteria": [
+        "detectPatterns(store, schemaId, options) 함수 구현",
+        "동일 컨텍스트 키 → 동일 gate 선택 경로가 N회(기본 5) 이상 반복되면 패턴 인식",
+        "패턴별 빈도, 평균 confidence, 첫/마지막 발생 시각 산출",
+        "gate별 분기 분포 히스토그램 포함",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "FlowPolicy 후보 자동 생성",
+      "description": "시스템으로서, 감지된 패턴에서 FlowPolicy 후보를 자동 생성한다.",
+      "acceptanceCriteria": [
+        "generatePolicyCandidates(patterns, threshold) 함수 구현",
+        "임계값: 빈도 ≥ N회 AND 평균 confidence ≥ 0.8",
+        "생성된 후보에 status: 'candidate' 필드",
+        "후보의 rationale에 근거 자동 기술 ('N회 반복, 평균 confidence X.XX')",
+        "conditions는 컨텍스트 키에서 자동 추출",
+        "기존 등록 정책과 중복 검사",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "인간 승인 워크플로우",
+      "description": "개발자로서, 정책 후보를 검토하고 승인/거부/수정할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "PolicyCandidate 타입에 status: 'candidate' | 'approved' | 'rejected' | 'modified' 필드",
+        "approveCandidate(id) → FlowPolicy로 변환 + 엔진 등록",
+        "rejectCandidate(id, reason) → 동일 패턴 재제안 억제",
+        "modifyCandidate(id, changes) → 조건/분기 수정 후 승인",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
+      "dependsOn": [
+        "US-007"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "인스턴스 쌍 비교 (Pairwise Diff)",
+      "description": "개발자로서, 동일 스키마의 두 인스턴스를 비교하여 어디서 경로가 갈렸는지 알고 싶다.",
+      "acceptanceCriteria": [
+        "diffInstances(a, b) 함수 구현",
+        "gate별 일치/불일치 표시 (match/diverge)",
+        "첫 번째 분기점(divergence point) 식별",
+        "코어 gate의 분기 차이 강조 (GateWeight 활용)",
+        "각 분기점에서의 evidence 차이 비교",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Gate별 선택 분포 (Distribution Analysis)",
+      "description": "개발자로서, 특정 gate에서 각 branch가 얼마나 선택되었는지 분포를 보고 싶다.",
+      "acceptanceCriteria": [
+        "gateDistribution(store, schemaId, gateId) 함수 구현",
+        "branch별 선택 횟수, 비율, 평균 confidence",
+        "지배적 branch(>70%) 식별 — Policy Learning 후보 힌트",
+        "evidence_kind별 선택 상관 분석",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "시간 범위 비교 (Temporal Comparison)",
+      "description": "개발자로서, 기간 A와 기간 B의 결정 패턴 변화를 비교하고 싶다.",
+      "acceptanceCriteria": [
+        "compareTimeRanges(store, schemaId, rangeA, rangeB) 함수 구현",
+        "gate별 분포 변화율 (shift percentage)",
+        "새로 등장한 경로 / 사라진 경로 감지",
+        "코어 gate의 변화만 필터링하는 옵션",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "비교 보고서 생성",
+      "description": "개발자로서, 비교 분석 결과를 구조화된 보고서로 받고 싶다.",
+      "acceptanceCriteria": [
+        "ComparisonReport 타입 정의 (pairwise diff, distributions, temporal shifts)",
+        "보고서에 '왜 다른가' 추론 포함 (evidence 차이 기반)",
+        "JSON 직렬화 가능",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
+      "dependsOn": [
+        "US-009",
+        "US-010",
+        "US-011"
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "dkg decide → flow 자동 실행 브릿지",
+      "description": "개발자로서, dkg decide를 실행하면 coordinate-design 플로우가 내부적으로 시작되어 각 단계를 안내받고 싶다.",
+      "acceptanceCriteria": [
+        "dkg decide 실행 시 FlowEngine에 coordinate-design 플로우 자동 시작",
+        "--type capacity → axis-definition: reuse-existing, capacity-setting으로 점프",
+        "--type new-axis → axis-definition: new-axis",
+        "--type new-prefix → prefix-design: new-prefix",
+        "--type merge → merge-split: merge",
+        "매핑되지 않는 타입은 플로우의 순차 실행으로 안내",
+        "--legacy 옵션으로 기존 방식 유지",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Phase 5 — dkg decide ↔ flow 브릿지. cli/src/commands/dkg.ts. decision-flow는 동적 import.",
+      "dependsOn": [
+        "US-002",
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "DecisionNode ↔ FlowInstance 양방향 참조",
+      "description": "시스템으로서, 생성된 DecisionNode와 FlowInstance가 서로를 참조한다.",
+      "acceptanceCriteria": [
+        "DecisionNode에 flowInstanceId?: string 필드 추가 (하위 호환)",
+        "FlowInstance.context에 dkgDecisionId 자동 기록",
+        "DKG 그래프에 justifies 엣지 생성: FlowSchemaNode → DecisionNode",
+        "qa-sdk dkg trace 실행 시 연결된 FlowInstance 코어 추적 표시",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
+      "dependsOn": [
+        "US-013"
+      ]
+    },
+    {
+      "id": "US-015",
+      "title": "코어 gate 영향 경고 통합",
+      "description": "개발자로서, axis-definition이나 merge-split 같은 코어 결정을 할 때 영향 범위 경고를 자동으로 받고 싶다.",
+      "acceptanceCriteria": [
+        "코어 gate(weight='core') 선택 시 analyzeImpact() 자동 실행",
+        "영향받는 gate 목록과 무효화 cascade를 dkg decide 출력에 포함",
+        "invalidatesCore: true이면 '⚠ 코어 gate 무효화 — 전체 재설계 필요' 경고",
+        "경고 후 계속 진행 여부 확인 (--force로 경고 무시 가능)",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
+      "dependsOn": [
+        "US-013"
+      ]
+    },
+    {
+      "id": "US-016",
+      "title": "Evidence 자동 수집",
+      "description": "시스템으로서, dkg decide의 기존 입력을 FlowInstance의 Evidence로 자동 변환한다.",
+      "acceptanceCriteria": [
+        "--rationale → Evidence { kind: 'rule', source: 'dkg-decide', content: rationale }",
+        "--alternatives → 사용하지 않은 branch의 description으로 기록",
+        "scaffoldDecision()의 자동 생성 필드도 Evidence로 캡처",
+        "confidence는 사용자 명시 또는 evidence weight에서 자동 산출",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
+      "dependsOn": [
+        "US-013"
+      ]
+    },
+    {
+      "id": "US-017",
+      "title": "address_context 자동 생성",
+      "description": "시스템으로서, dkg decide 완료 시 decision prefix address_context를 자동 생성하여 DKG 이벤트에 첨부한다.",
+      "acceptanceCriteria": [
+        "FlowInstance 완료 시 buildFlowCompletionContext() 자동 호출",
+        "생성된 address_context를 DKG VersionEvent/DecisionNode 메타데이터에 저장",
+        "convergence pipeline이 decision prefix 사용량을 집계할 수 있는 형태로 저장",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
+      "dependsOn": [
+        "US-013"
+      ]
+    },
+    {
+      "id": "US-018",
+      "title": "flow policy CLI",
+      "description": "개발자로서, CLI에서 정책 후보를 관리할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "qa-sdk flow policy candidates — 후보 목록 (빈도, confidence 표시)",
+        "qa-sdk flow policy approve <id> — 승인 + 등록",
+        "qa-sdk flow policy reject <id> — 거부",
+        "qa-sdk flow policy list — 등록된 정책 목록",
+        "qa-sdk flow policy learn <schema-id> — 패턴 감지 + 후보 생성 실행",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Phase 6 — CLI. cli/src/commands/flow.ts",
+      "dependsOn": [
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-019",
+      "title": "flow compare CLI",
+      "description": "개발자로서, CLI에서 비교 분석을 실행할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "qa-sdk flow compare <instance-a> <instance-b> — 쌍 비교",
+        "qa-sdk flow compare --gate <gate-id> --schema <schema-id> — gate 분포",
+        "qa-sdk flow compare --from <date> --to <date> --schema <schema-id> — 시간 비교",
+        "코어 gate 차이에 ★ 표시",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Phase 6 — CLI. cli/src/commands/flow.ts",
+      "dependsOn": [
+        "US-012"
+      ]
+    },
+    {
+      "id": "US-020",
+      "title": "dkg flow-schemas CLI",
+      "description": "개발자로서, DKG에 등록된 FlowSchema를 CLI로 조회할 수 있어야 한다.",
+      "acceptanceCriteria": [
+        "qa-sdk dkg flow-schemas — 등록된 FlowSchemaNode 목록",
+        "qa-sdk dkg flow-schema <id> — 개별 프로파일 (gates, core gates, 관련 prefix/axis)",
+        "qa-sdk dkg diagram flow-schema <id> — Mermaid 다이어그램 (gate 인과 그래프)",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Phase 6 — CLI. cli/src/commands/dkg.ts",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-021",
+      "title": "통합 E2E 테스트",
+      "description": "개발자로서, 전체 파이프라인(dkg decide → flow → DecisionNode → 영향 경고)이 검증되어야 한다.",
+      "acceptanceCriteria": [
+        "E2E: dkg decide --type new-axis → FlowInstance 완료 + DecisionNode 생성",
+        "E2E: dkg decide --type merge → 코어 gate 경고 출력 확인",
+        "E2E: dkg trace <id> → FlowInstance 코어 추적 표시 확인",
+        "하위 호환: dkg decide --legacy → 기존 동작과 동일",
+        "pnpm --filter decision-flow typecheck passes",
+        "pnpm --filter decision-flow test passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter demo-tests test passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Phase 6 — E2E. 전체 파이프라인 검증",
+      "dependsOn": [
+        "US-013",
+        "US-014",
+        "US-015",
+        "US-016",
+        "US-017"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-23T23:32:11.052Z"
+  }
+}
