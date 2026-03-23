@@ -12,6 +12,8 @@ import type { ServiceEndpointStore } from "../stores/service-endpoint-store.js";
 export interface ServiceHealthRouteDeps {
   configStore: ConfigStore;
   endpointStore?: ServiceEndpointStore;
+  /** Service Bindings — Worker→Worker 직접 호출용 (serviceId → Fetcher) */
+  serviceBindings?: Record<string, Fetcher>;
 }
 
 interface ServiceHealthResult {
@@ -34,14 +36,20 @@ interface ServiceRecord {
 async function checkHealth(
   serviceId: string,
   baseUrl: string,
+  binding?: Fetcher,
 ): Promise<ServiceHealthResult> {
   const start = Date.now();
   const url = baseUrl.replace(/\/$/, "");
 
   try {
-    const resp = await fetch(`${url}/health`, {
-      signal: AbortSignal.timeout(5_000),
-    });
+    let resp: Response;
+    if (binding) {
+      // Service Binding — Worker→Worker 직접 호출 (Host 헤더 문제 없음)
+      resp = await binding.fetch(new Request("https://internal/health"));
+    } else {
+      const healthUrl = `${url}/health`;
+      resp = await fetch(healthUrl, { signal: AbortSignal.timeout(5_000) });
+    }
     const latencyMs = Date.now() - start;
 
     if (resp.ok) {
@@ -118,18 +126,35 @@ export function createServiceHealthRoutes(deps: ServiceHealthRouteDeps) {
       }
     }
 
-    // URL이 있는 서비스만 헬스체크 대상
+    // URL이 있고, 접근 가능한 서비스만 헬스체크 대상
+    const bindings = deps.serviceBindings ?? {};
     const targets: Array<{ serviceId: string; url: string; tier?: string }> = [];
     for (const svc of services) {
       const url = epUrls[svc.serviceId] ?? svc.urls?.[envName] ?? svc.url;
-      if (url) {
+      if (!url) continue;
+      // localhost는 Worker에서 접근 불가 → 제외
+      if (url.includes("localhost")) continue;
+      // 자기 자신(registry-service)은 이미 응답 중이므로 직접 up 처리
+      if (svc.serviceId === "registry-service") {
         targets.push({ serviceId: svc.serviceId, url, tier: svc.tier });
+        continue;
       }
+      targets.push({ serviceId: svc.serviceId, url, tier: svc.tier });
     }
 
-    // 병렬 헬스체크
+    // 병렬 헬스체크 (Service Binding 우선, fallback URL)
+    const svcBindings = deps.serviceBindings ?? {};
     const results = await Promise.all(
-      targets.map((t) => checkHealth(t.serviceId, t.url)),
+      targets.map((t) => {
+        // 자기 자신은 이미 응답 중이므로 직접 up
+        if (t.serviceId === "registry-service") {
+          return Promise.resolve({
+            serviceId: t.serviceId, url: t.url, status: "up" as const, latencyMs: 0,
+            detail: { ok: true, self: true },
+          });
+        }
+        return checkHealth(t.serviceId, t.url, svcBindings[t.serviceId]);
+      }),
     );
 
     const up = results.filter((r) => r.status === "up").length;

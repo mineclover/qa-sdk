@@ -17,6 +17,31 @@ binding = "DB"
 database_name = "qa-registry"
 database_id = "9bc1407e-0e3a-4d5b-8b48-97513c52702e"
 
+# Service Bindings — 헬스체크 시 Worker-to-Worker 직접 호출
+[[services]]
+binding = "INGEST_SERVICE"
+service = "qa-ingest-server"
+
+[[services]]
+binding = "GATE_SERVICE"
+service = "qa-gate-service"
+
+[[services]]
+binding = "QUERY_SERVICE"
+service = "qa-query-service"
+
+[[services]]
+binding = "DECODE_SERVICE"
+service = "qa-decode-service"
+
+[[services]]
+binding = "GATEWAY_SERVICE"
+service = "qa-gateway"
+
+[[services]]
+binding = "DEMO_API_SERVICE"
+service = "platform-demo-api"
+
 # 환경별 설정
 # [env.production]
 # name = "qa-registry-service-prod"

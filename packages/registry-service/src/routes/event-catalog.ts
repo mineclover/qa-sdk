@@ -6,13 +6,20 @@
  */
 
 import { Hono } from "hono";
+import type { Channel, DimSource } from "@qa-sdk/event-catalog";
 
 export function createEventCatalogRoutes() {
   const routes = new Hono();
 
   // 동적 import — event-catalog는 optional
-  let _loaded: any = null;
-  async function load() {
+  type EventCatalogModule = typeof import("@qa-sdk/event-catalog");
+
+  function isChannel(value: string): value is Channel {
+    return ["browser", "mobile", "backend", "sdk", "agent", "common", "qa"].includes(value);
+  }
+
+  let _loaded: EventCatalogModule | null = null;
+  async function load(): Promise<EventCatalogModule | null> {
     if (_loaded) return _loaded;
     try {
       _loaded = await import("@qa-sdk/event-catalog");
@@ -29,14 +36,14 @@ export function createEventCatalogRoutes() {
 
     const categories: Record<string, number> = {};
     for (const [cat, evts] of Object.entries(ec.coreEventsByCategory)) {
-      categories[cat] = (evts as any[]).length;
+      categories[cat] = evts.length;
     }
 
     return c.json({
       totalEvents: ec.allCoreEvents.length,
       categories,
       v1MinimalCount: ec.v1MinimalSet.length,
-      autoCollectable: ec.allCoreEvents.filter((e: any) => e.auto_collectable).length,
+      autoCollectable: ec.allCoreEvents.filter((e) => e.auto_collectable).length,
       prefixMappings: ec.getAllMappings().length,
       payloadGuides: ec.payloadGuides.length,
     });
@@ -49,12 +56,12 @@ export function createEventCatalogRoutes() {
 
     const category = c.req.query("category");
     const channel = c.req.query("channel");
-    let events = ec.allCoreEvents as any[];
+    let events = [...ec.allCoreEvents];
 
-    if (category) events = events.filter((e: any) => e.category === category);
-    if (channel) events = events.filter((e: any) => e.channel.includes(channel));
+    if (category) events = events.filter((e) => e.category === category);
+    if (channel && isChannel(channel)) events = events.filter((e) => e.channel.includes(channel));
 
-    return c.json(events.map((e: any) => ({
+    return c.json(events.map((e) => ({
       event_key: e.event_key,
       event_version: e.event_version,
       category: e.category,
@@ -85,9 +92,9 @@ export function createEventCatalogRoutes() {
       prefixMapping: mapping ? {
         event_key: mapping.event_key,
         domain: mapping.domain,
-        prefixes: mapping.prefixes.map((p: any) => ({
+        prefixes: mapping.prefixes.map((p) => ({
           prefixId: p.prefixId,
-          dims: Object.entries(p.dims).map(([label, source]: [string, any]) => ({
+          dims: Object.entries(p.dims).map(([label, source]: [string, DimSource]) => ({
             label,
             source: source.kind,
             value: source.kind === "fixed" ? source.value : source.kind === "context" ? `ctx.${source.contextKey}` : `payload.${source.payloadKey}`,
@@ -103,11 +110,11 @@ export function createEventCatalogRoutes() {
     if (!ec) return c.json({ error: "event-catalog not available" }, 503);
 
     const mappings = ec.getAllMappings();
-    return c.json(mappings.map((m: any) => ({
+    return c.json(mappings.map((m) => ({
       event_key: m.event_key,
       domain: m.domain,
       prefixCount: m.prefixes.length,
-      prefixes: m.prefixes.map((p: any) => p.prefixId),
+      prefixes: m.prefixes.map((p) => p.prefixId),
     })));
   });
 
@@ -118,8 +125,8 @@ export function createEventCatalogRoutes() {
 
     return c.json(Object.entries(ec.coreEventsByCategory).map(([cat, evts]) => ({
       category: cat,
-      count: (evts as any[]).length,
-      events: (evts as any[]).map((e: any) => ({
+      count: evts.length,
+      events: evts.map((e) => ({
         event_key: e.event_key,
         display_name: e.display_name,
         auto_collectable: e.auto_collectable,

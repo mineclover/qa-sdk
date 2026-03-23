@@ -71,7 +71,7 @@ async function createStores(sqlitePath: string) {
   await execDdlStatements(driver, REGISTRY_SCHEMA_DDL);
   // 버전 기반 마이그레이션 실행
   const { runMigrations } = await import("./stores/migrate.js");
-  runMigrations(driver as any, REGISTRY_MIGRATIONS, logger);
+  await runMigrations(driver, REGISTRY_MIGRATIONS, logger);
 
   const { SqlConfigStore } = await import("./stores/sql-config-store.js");
   const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
@@ -271,8 +271,8 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
   }
 
   try {
-    const { DEMO_PATTERN_RULES } = await import("@qa-sdk/spec-core/convergence") as any;
-    await configStore.set("demo", "pattern-rules", JSON.stringify(DEMO_PATTERN_RULES));
+    const convergence = await import("@qa-sdk/spec-core/convergence");
+    await configStore.set("demo", "pattern-rules", JSON.stringify(convergence.DEMO_PATTERN_RULES));
     logger.info("seeded DEMO_PATTERN_RULES to config store");
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : String(error) }, "Failed to seed DEMO_PATTERN_RULES");
@@ -427,7 +427,7 @@ async function seedEventSchemas(store: import("./stores/event-schema-store.js").
 
     // 2. prefix-mapping 이벤트 (11개) — 비즈니스 이벤트
     for (const mapping of ec.getAllMappings()) {
-      const prefixes = mapping.prefixes.map((p: any) => p.prefixId);
+      const prefixes = mapping.prefixes.map((p) => p.prefixId);
       await store.upsert({
         catalogId: "demo",
         serviceId: "shopping-web",
