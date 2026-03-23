@@ -391,7 +391,8 @@ let presetsFromApi = false;
 async function loadPresets() {
   // 1. Try API (live DKG)
   try {
-    const resp = await fetch('/api/diagrams');
+    const _regBase = (window.__QA_CONFIG__||{}).REGISTRY_URL || '';
+    const resp = await fetch(`${_regBase}/api/diagrams`);
     if (resp.ok) {
       const data = await resp.json();
       presets = data;
@@ -517,7 +518,8 @@ async function selectPreset(key, item) {
   } else if (presetsFromApi) {
     // API에서 on-demand로 mmd 가져오기
     try {
-      const resp = await fetch(`/api/diagrams/${encodeURIComponent(key)}/${encodeURIComponent(item.id)}`);
+      const _regBase2 = (window.__QA_CONFIG__||{}).REGISTRY_URL || '';
+      const resp = await fetch(`${_regBase2}/api/diagrams/${encodeURIComponent(key)}/${encodeURIComponent(item.id)}`);
       if (resp.ok) {
         const data = await resp.json();
         item.mmd = data.mmd; // 캐시 (다음 클릭 시 재요청 방지)

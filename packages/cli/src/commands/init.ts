@@ -65,7 +65,7 @@ export default DEMO_CATALOG;
     console.log(`✓ ${file.path}`);
   }
 
-  console.log("\n완료. qa-sdk.config.ts를 수정하여 카탈로그를 커스터마이징하세요.");
+  printNextSteps("my-project.catalog.ts");
 }
 
 // ── 인터랙티브 초기화 ────────────────────────────────
@@ -149,13 +149,56 @@ async function initInteractive(): Promise<void> {
       console.log(`✓ ${file.path}`);
     }
 
-    console.log("\n완료.");
-    console.log(`  카탈로그: ${catalogFileName}`);
-    console.log(`  DKG 설정: ${dkgConfigFileName}`);
-    console.log(`  프로젝트 설정: qa-sdk.config.ts`);
-    console.log(`\n다음 단계: qa-sdk dkg report 로 확인`);
+    printNextSteps(catalogFileName);
   } catch (err) {
     rl.close();
     throw err;
   }
+}
+
+// ── 다음 단계 안내 ──────────────────────────────────────
+
+function printNextSteps(catalogFile: string) {
+  console.log(`
+✅ 프로젝트 초기화 완료
+
+═══ 다음 단계 ═══
+
+  1. 타입 생성 (codegen)
+     $ qa-sdk codegen --output ./generated
+
+  2. SDK 사용 (Node.js)
+     import { sdk, GENERATION } from "./generated";
+     const addr = sdk.encode("permission", { role: "admin" });
+     const dims = sdk.decode("permission", addr);
+
+  3. 브라우저 SDK (qa-browser-sdk.js)
+     import { createQaMonitor } from './qa-browser-sdk.js';
+     const monitor = createQaMonitor({
+       ingestUrl: "http://localhost:3200",
+       serviceConfig: { namespace: "shop", name: "my-web", env: "dev", region: "asia" },
+     });
+     monitor.emitWithCoords('page.home', {
+       page_view: { page: 'home', locale: 'ko', userType: 'member' },
+     });
+
+  4. 레지스트리 연동 (선택)
+     import { createRegistryConfigClient } from "@qa-sdk/registry-client";
+     const registry = createRegistryConfigClient({
+       registryUrl: "http://localhost:3300",
+       env: "dev",
+     });
+     const urls = await registry.fetchServiceUrls();
+
+  5. DKG 탐색
+     $ qa-sdk dkg report
+     $ qa-sdk dkg axes
+     $ qa-sdk dkg prefixes
+
+═══════════════════
+
+  카탈로그: ${catalogFile}
+  설정:     qa-sdk.config.ts
+  문서:     https://github.com/anthropics/qa-sdk
+`);
 }
