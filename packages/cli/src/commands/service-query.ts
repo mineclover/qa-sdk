@@ -9,6 +9,10 @@
 const DEFAULT_GATE_URL = "http://localhost:3400";
 const DEFAULT_QUERY_URL = "http://localhost:3500";
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 async function resolveServiceUrl(args: string[], service: "gate" | "query"): Promise<string> {
   // 1. 직접 지정
   const flag = service === "gate" ? "--gate" : "--query";
@@ -33,13 +37,13 @@ async function resolveServiceUrl(args: string[], service: "gate" | "query"): Pro
   return service === "gate" ? DEFAULT_GATE_URL : DEFAULT_QUERY_URL;
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<any> {
+async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(url, { signal: AbortSignal.timeout(5_000), ...init });
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
     throw new Error(`${resp.status} ${resp.statusText}: ${text.slice(0, 200)}`);
   }
-  return resp.json();
+  return resp.json() as Promise<T>;
 }
 
 // ── gate check ──────────────────────────────────────
@@ -63,12 +67,12 @@ export async function gateCheck(args: string[]): Promise<void> {
       const data = await fetchJson(`${url}/gate/state/${prefix}/${version}`);
       console.log(`  state: ${JSON.stringify(data, null, 2)}`);
     } else {
-      const data = await fetchJson(`${url}/health`);
+      const data = await fetchJson<{ status?: string }>(`${url}/health`);
       console.log(`  health: ${data.status ?? "ok"}`);
       console.log(`\n  (version 지정 시: qa-sdk gate check ${prefix} v1)`);
     }
-  } catch (err: any) {
-    console.error(`  ❌ 조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -94,8 +98,8 @@ export async function gateClassify(args: string[]): Promise<void> {
       body: JSON.stringify({ prefix, version, address }),
     });
     console.log(`  result: ${JSON.stringify(data, null, 2)}`);
-  } catch (err: any) {
-    console.error(`  ❌ 분류 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 분류 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -130,8 +134,8 @@ export async function queryResolve(args: string[]): Promise<void> {
       body: JSON.stringify({ coord, shape: [], rules: [] }),
     });
     console.log(`  result: ${JSON.stringify(data, null, 2)}`);
-  } catch (err: any) {
-    console.error(`  ❌ 질의 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 질의 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -144,7 +148,7 @@ export async function queryRules(args: string[]): Promise<void> {
   console.log(`  URL: ${url}`);
 
   try {
-    const data = await fetchJson(`${url}/rules`);
+    const data = await fetchJson<Record<string, unknown>>(`${url}/rules`);
     const rules = data.rules ?? data.items ?? data;
     if (Array.isArray(rules) && rules.length === 0) {
       console.log("  (등록된 규칙 없음)");
@@ -158,8 +162,8 @@ export async function queryRules(args: string[]): Promise<void> {
     } else {
       console.log(`  ${JSON.stringify(rules).slice(0, 200)}`);
     }
-  } catch (err: any) {
-    console.error(`  ❌ 조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -170,10 +174,10 @@ export async function queryHealth(args: string[]): Promise<void> {
   console.log(`\n══ Query Service Health ══`);
   console.log(`  URL: ${url}`);
   try {
-    const data = await fetchJson(`${url}/health`);
+    const data = await fetchJson<{ status?: string }>(`${url}/health`);
     console.log(`  status: ${data.status ?? "ok"}`);
-  } catch (err: any) {
-    console.error(`  ❌ 연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 연결 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -184,9 +188,9 @@ export async function gateHealth(args: string[]): Promise<void> {
   console.log(`\n══ Gate Service Health ══`);
   console.log(`  URL: ${url}`);
   try {
-    const data = await fetchJson(`${url}/health`);
+    const data = await fetchJson<{ status?: string }>(`${url}/health`);
     console.log(`  status: ${data.status ?? "ok"}`);
-  } catch (err: any) {
-    console.error(`  ❌ 연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 연결 실패: ${errorMessage(err)}`);
   }
 }

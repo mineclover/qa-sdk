@@ -22,6 +22,22 @@ const ENV_PRESETS: Record<string, { registry: string; ingest: string }> = {
   prod:    { registry: "https://registry.qa-sdk.io", ingest: "https://ingest.qa-sdk.io" },
 };
 
+type JsonMap = Record<string, unknown>;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function asRecord(value: unknown): JsonMap {
+  return value && typeof value === "object" ? value as JsonMap : {};
+}
+
+function asRecordArray(value: unknown): JsonMap[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is JsonMap => !!item && typeof item === "object")
+    : [];
+}
+
 function getEnvPreset(args: string[]): string {
   const idx = args.indexOf("--env");
   if (idx !== -1 && args[idx + 1]) return args[idx + 1];
@@ -82,8 +98,8 @@ export async function ingestServices(args: string[]): Promise<void> {
     } else {
       console.log(`  ⚠ registry 응답: ${resp.status}`);
     }
-  } catch (err: any) {
-    console.error(`  ❌ registry 연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ registry 연결 실패: ${errorMessage(err)}`);
     console.log(`\n  프리셋 기본값 (--env ${envName}):`);
     const preset = ENV_PRESETS[envName] ?? ENV_PRESETS.dev;
     console.log(`    ingest:   ${preset.ingest}`);
@@ -91,13 +107,13 @@ export async function ingestServices(args: string[]): Promise<void> {
   }
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<any> {
+async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(url, { signal: AbortSignal.timeout(5_000), ...init });
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
     throw new Error(`${resp.status} ${resp.statusText}: ${text.slice(0, 200)}`);
   }
-  return resp.json();
+  return resp.json() as Promise<T>;
 }
 
 // ── health ──────────────────────────────────────────
@@ -109,13 +125,14 @@ export async function ingestHealth(args: string[]): Promise<void> {
   console.log(`  URL: ${url}`);
 
   try {
-    const data = await fetchJson(`${url}/health`);
-    console.log(`  status: ${data.status ?? "ok"}`);
-    if (data.uptime) console.log(`  uptime: ${data.uptime}s`);
-    if (data.db) console.log(`  db: ${data.db.connected ? "connected" : "disconnected"} (${data.db.latencyMs ?? "?"}ms)`);
-    if (data.version) console.log(`  version: ${data.version}`);
-  } catch (err: any) {
-    console.error(`  ❌ 연결 실패: ${err.message}`);
+    const data = asRecord(await fetchJson(`${url}/health`));
+    const db = asRecord(data.db);
+    console.log(`  status: ${String(data.status ?? "ok")}`);
+    if (data.uptime) console.log(`  uptime: ${String(data.uptime)}s`);
+    if (data.db) console.log(`  db: ${db.connected ? "connected" : "disconnected"} (${String(db.latencyMs ?? "?")}ms)`);
+    if (data.version) console.log(`  version: ${String(data.version)}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 연결 실패: ${errorMessage(err)}`);
     console.log(`\n  서버 주소 확인: --ingest <url> 또는 INGEST_URL 환경변수`);
   }
 }
@@ -176,16 +193,16 @@ export async function ingestSend(args: string[]): Promise<void> {
   }
 
   try {
-    const data = await fetchJson(`${url}/v1/ingest`, {
+    const data = asRecord(await fetchJson(`${url}/v1/ingest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(envelope),
-    });
+    }));
     console.log(`  ✅ 전송 성공`);
-    if (data.transmission_id) console.log(`  transmission: ${data.transmission_id}`);
-    if (data.trace_ids) console.log(`  traces: ${data.trace_ids.join(", ")}`);
-  } catch (err: any) {
-    console.error(`  ❌ 전송 실패: ${err.message}`);
+    if (data.transmission_id) console.log(`  transmission: ${String(data.transmission_id)}`);
+    if (Array.isArray(data.trace_ids)) console.log(`  traces: ${data.trace_ids.map(String).join(", ")}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 전송 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -198,23 +215,23 @@ export async function ingestRecent(args: string[]): Promise<void> {
   console.log(`\n══ Recent Traces ══`);
 
   try {
-    const data = await fetchJson(`${url}/v1/sessions?limit=${limit}`);
-    const traces = data.items ?? data.sessions ?? data.data ?? data;
+    const data = asRecord(await fetchJson(`${url}/v1/sessions?limit=${limit}`));
+    const traces = asRecordArray(data.items ?? data.sessions ?? data.data ?? data);
 
-    if (!Array.isArray(traces) || traces.length === 0) {
+    if (traces.length === 0) {
       console.log("  (수집된 세션 없음)");
       return;
     }
 
     for (const t of traces.slice(0, limit)) {
-      const id = t.sessionId ?? t.session_id ?? t.traceId ?? t.trace_id ?? "?";
-      const scenario = t.scenarioId ?? t.scenario_id ?? "-";
-      const ts = t.createdAt ?? t.created_at ?? t.firstTimestamp ?? "";
+      const id = String(t.sessionId ?? t.session_id ?? t.traceId ?? t.trace_id ?? "?");
+      const scenario = String(t.scenarioId ?? t.scenario_id ?? "-");
+      const ts = String(t.createdAt ?? t.created_at ?? t.firstTimestamp ?? "");
       console.log(`  ${id.slice(0, 25).padEnd(27)} scenario=${scenario.padEnd(20)} ${ts}`);
     }
     console.log(`  (${traces.length}건 조회)`);
-  } catch (err: any) {
-    console.error(`  ❌ 조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -232,23 +249,23 @@ export async function ingestTrace(args: string[]): Promise<void> {
   console.log(`\n══ Trace: ${traceId} ══`);
 
   try {
-    const trace = await fetchJson(`${url}/v1/traces/${traceId}`);
-    console.log(`  session: ${trace.sessionId ?? trace.session_id ?? "-"}`);
-    console.log(`  records: ${trace.recordCount ?? trace.record_count ?? "?"}`);
-    console.log(`  first: ${trace.firstTimestamp ?? "-"}`);
-    console.log(`  last: ${trace.lastTimestamp ?? "-"}`);
+    const trace = asRecord(await fetchJson(`${url}/v1/traces/${traceId}`));
+    console.log(`  session: ${String(trace.sessionId ?? trace.session_id ?? "-")}`);
+    console.log(`  records: ${String(trace.recordCount ?? trace.record_count ?? "?")}`);
+    console.log(`  first: ${String(trace.firstTimestamp ?? "-")}`);
+    console.log(`  last: ${String(trace.lastTimestamp ?? "-")}`);
 
     // records
     try {
-      const records = await fetchJson(`${url}/v1/traces/${traceId}/records`);
-      const recs = records.records ?? records.data ?? records;
-      if (Array.isArray(recs) && recs.length > 0) {
+      const records = asRecord(await fetchJson(`${url}/v1/traces/${traceId}/records`));
+      const recs = asRecordArray(records.records ?? records.data ?? records);
+      if (recs.length > 0) {
         console.log(`\n  ── Records (${recs.length}) ──`);
         for (const r of recs.slice(0, 20)) {
-          const key = r.eventKey ?? r.event_key ?? "?";
-          const ts = r.timestamp ?? "";
-          const addr = r.addressContext ?? r.address_context;
-          const addrKeys = addr ? Object.keys(addr).join(",") : "-";
+          const key = String(r.eventKey ?? r.event_key ?? "?");
+          const ts = String(r.timestamp ?? "");
+          const addr = asRecord(r.addressContext ?? r.address_context);
+          const addrKeys = Object.keys(addr).length > 0 ? Object.keys(addr).join(",") : "-";
           console.log(`    ${key.padEnd(25)} ${addrKeys.padEnd(30)} ${ts}`);
         }
         if (recs.length > 20) console.log(`    ... 외 ${recs.length - 20}건`);
@@ -257,19 +274,19 @@ export async function ingestTrace(args: string[]): Promise<void> {
 
     // verdicts
     try {
-      const verdicts = await fetchJson(`${url}/v1/traces/${traceId}/verdicts`);
-      const vlist = verdicts.verdicts ?? verdicts.data ?? verdicts;
-      if (Array.isArray(vlist) && vlist.length > 0) {
+      const verdicts = asRecord(await fetchJson(`${url}/v1/traces/${traceId}/verdicts`));
+      const vlist = asRecordArray(verdicts.verdicts ?? verdicts.data ?? verdicts);
+      if (vlist.length > 0) {
         console.log(`\n  ── Verdicts (${vlist.length}) ──`);
         for (const v of vlist) {
-          const scenario = v.scenarioId ?? v.scenario_id ?? "?";
-          const verdict = v.overallVerdict ?? v.overall_verdict ?? "?";
+          const scenario = String(v.scenarioId ?? v.scenario_id ?? "?");
+          const verdict = String(v.overallVerdict ?? v.overall_verdict ?? "?");
           console.log(`    ${scenario.padEnd(25)} ${verdict}`);
         }
       }
     } catch { /* verdicts 조회 실패 무시 */ }
-  } catch (err: any) {
-    console.error(`  ❌ 조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -283,8 +300,8 @@ export async function ingestStatus(args: string[]): Promise<void> {
 
   // health
   try {
-    const health = await fetchJson(`${url}/health`);
-    console.log(`  server: ${health.status ?? "ok"}`);
+    const health = asRecord(await fetchJson(`${url}/health`));
+    console.log(`  server: ${String(health.status ?? "ok")}`);
   } catch {
     console.error(`  server: ❌ 연결 불가`);
     return;
@@ -292,7 +309,7 @@ export async function ingestStatus(args: string[]): Promise<void> {
 
   // scenarios
   try {
-    const scenarios = await fetchJson(`${url}/v1/scenarios`);
+    const scenarios = asRecord(await fetchJson(`${url}/v1/scenarios`));
     const list = scenarios.scenarios ?? scenarios.data ?? scenarios;
     console.log(`  scenarios: ${Array.isArray(list) ? list.length : 0}개 등록`);
   } catch {
@@ -301,7 +318,7 @@ export async function ingestStatus(args: string[]): Promise<void> {
 
   // sessions
   try {
-    const sessions = await fetchJson(`${url}/v1/sessions?limit=1`);
+    const sessions = asRecord(await fetchJson(`${url}/v1/sessions?limit=1`));
     const list = sessions.sessions ?? sessions.data ?? sessions;
     console.log(`  sessions: ${Array.isArray(list) ? "활성" : "조회 불가"}`);
   } catch {
@@ -310,7 +327,7 @@ export async function ingestStatus(args: string[]): Promise<void> {
 
   // DLQ
   try {
-    const dlq = await fetchJson(`${url}/v1/admin/dlq`);
+    const dlq = asRecord(await fetchJson(`${url}/v1/admin/dlq`));
     const items = dlq.items ?? dlq.data ?? dlq;
     console.log(`  dlq: ${Array.isArray(items) ? items.length : 0}건`);
   } catch {

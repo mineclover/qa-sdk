@@ -12,6 +12,10 @@ const ENV_PRESETS: Record<string, string> = {
   prod: "https://registry.qa-sdk.io",
 };
 
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function getRegistryUrl(args: string[]): string {
   const idx = args.indexOf("--registry");
   if (idx !== -1 && args[idx + 1]) return args[idx + 1];
@@ -21,10 +25,10 @@ function getRegistryUrl(args: string[]): string {
   return ENV_PRESETS[env] ?? ENV_PRESETS.dev;
 }
 
-async function fetchJson(url: string): Promise<any> {
+async function fetchJson<T>(url: string): Promise<T> {
   const resp = await fetch(url, { signal: AbortSignal.timeout(5_000) });
   if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
-  return resp.json();
+  return resp.json() as Promise<T>;
 }
 
 interface ServiceRecord {
@@ -62,8 +66,8 @@ export async function serviceList(args: string[]): Promise<void> {
         `  ${svc.serviceId.padEnd(22)} ${(svc.name ?? "").padEnd(16)} ${(svc.tier ?? "—").padEnd(10)} ${(svc.team ?? "—").padEnd(10)} ${String(owned).padStart(3)}    ${url}`,
       );
     }
-  } catch (err: any) {
-    console.error(`  registry 연결 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  registry 연결 실패: ${errorMessage(err)}`);
     console.log(`  URL: ${registryUrl}/api/services`);
   }
 }
@@ -97,8 +101,8 @@ export async function serviceShow(args: string[]): Promise<void> {
       console.log(`\n  ── Consumed Prefixes (${svc.consumedPrefixes.length}) ──`);
       for (const p of svc.consumedPrefixes) console.log(`    ${p}`);
     }
-  } catch (err: any) {
-    console.error(`  조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -127,8 +131,8 @@ export async function serviceOwners(args: string[]): Promise<void> {
       }
       console.log(`    ${prefix}`);
     }
-  } catch (err: any) {
-    console.error(`  조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  조회 실패: ${errorMessage(err)}`);
   }
 }
 
@@ -141,7 +145,15 @@ export async function serviceHealth(args: string[]): Promise<void> {
   const env = envIdx !== -1 && args[envIdx + 1] ? args[envIdx + 1] : process.env.QA_ENV ?? "dev";
 
   try {
-    const data = await fetchJson(`${registryUrl}/api/health/services?env=${env}`);
+    const data = await fetchJson<{
+      status: string;
+      up: number;
+      total: number;
+      down: number;
+      env: string;
+      checkedAt: string;
+      services: Array<{ status: string; serviceId: string; tier?: string; latencyMs?: number; error?: string; url: string }>;
+    }>(`${registryUrl}/api/health/services?env=${env}`);
 
     if (json) {
       console.log(JSON.stringify(data, null, 2));
@@ -167,9 +179,9 @@ export async function serviceHealth(args: string[]): Promise<void> {
     if (data.down > 0) {
       console.log(`\n  ⚠ ${data.down}개 서비스 다운`);
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // fallback: registry 자체가 죽으면 직접 호출
-    console.error(`  registry 헬스체크 API 실패: ${err.message}`);
+    console.error(`  registry 헬스체크 API 실패: ${errorMessage(err)}`);
     console.log(`  URL: ${registryUrl}/api/health/services?env=${env}`);
     console.log(`  registry-service가 실행 중인지 확인하세요.`);
   }
@@ -197,7 +209,7 @@ export async function serviceEndpoints(args: string[]): Promise<void> {
     for (const ep of filtered) {
       console.log(`  ${ep.svcName.padEnd(22)} ${ep.env.padEnd(8)} ${ep.region.padEnd(8)} ${ep.url}`);
     }
-  } catch (err: any) {
-    console.error(`  조회 실패: ${err.message}`);
+  } catch (err: unknown) {
+    console.error(`  조회 실패: ${errorMessage(err)}`);
   }
 }
