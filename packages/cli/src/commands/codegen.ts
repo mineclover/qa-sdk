@@ -70,7 +70,13 @@ async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
   } catch (err) {
     console.warn(`Registry fetch failed: ${(err as Error).message}`);
     console.warn("Falling back to local catalog...");
-    catalog = await loadCatalog() as Catalog;
+    try {
+      catalog = await loadCatalog() as Catalog;
+    } catch {
+      // TS config 로드 실패 시 DEMO_CATALOG 최종 fallback
+      const { DEMO_CATALOG } = await import("demo-snapshot");
+      catalog = DEMO_CATALOG as Catalog;
+    }
     console.log(`Local fallback: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes)`);
   }
 

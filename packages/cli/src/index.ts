@@ -217,7 +217,9 @@ async function main() {
 
   // 카탈로그가 필요한 명령 → loadCatalog() 실행
   const DX_COMMANDS = new Set(["encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact"]);
-  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || sub.name === "codegen" || DX_COMMANDS.has(sub.name);
+  // codegen --registry 시에는 로컬 카탈로그 로딩 불필요
+  const hasRegistryFlag = filteredArgs.includes("--registry");
+  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || (sub.name === "codegen" && !hasRegistryFlag) || DX_COMMANDS.has(sub.name);
   if (needsCatalog) {
     loadedCatalog = await loadCatalog(catalogPath);
     setCatalogContext(loadedCatalog);
