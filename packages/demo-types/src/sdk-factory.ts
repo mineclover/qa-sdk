@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
+// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import { createIndexSDK } from "@qa-sdk/codec";
@@ -65,6 +65,14 @@ const SCHEMA = {
       entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system", "version", "spec", "schema", "catalog", "service", "table"],
       capacity: 32,
     },
+    cognitive_phase: {
+      entries: ["perceive", "interpret", "evaluate", "decide", "plan", "execute", "reflect"],
+      capacity: 16,
+    },
+    confidence_band: {
+      entries: ["low", "medium", "high", "exact"],
+      capacity: 8,
+    },
     constraint_op: {
       entries: ["eq", "neq", "exists", "gt", "lt", "contains", "masked"],
       capacity: 32,
@@ -72,6 +80,10 @@ const SCHEMA = {
     constraint_rule: {
       entries: ["required", "maxCount", "minCount", "requiredIf", "exclusive", "type", "multi", "unknownAxis"],
       capacity: 32,
+    },
+    decision_outcome: {
+      entries: ["completed", "abandoned", "blocked", "auto_resolved", "escalated"],
+      capacity: 16,
     },
     decision_type: {
       entries: ["capacity", "new-axis", "new-prefix", "dim-add", "merge", "deprecate", "separation"],
@@ -97,6 +109,10 @@ const SCHEMA = {
       entries: ["dev", "stage", "prod", "test", "local"],
       capacity: 32,
     },
+    escalation_type: {
+      entries: ["standard_pattern", "completeness", "test_coverage", "observability", "security", "taste"],
+      capacity: 16,
+    },
     event_category: {
       entries: ["user_action", "system_action", "network_action", "data_action", "agent_action", "sdk_action", "error", "state_change"],
       capacity: 16,
@@ -108,6 +124,10 @@ const SCHEMA = {
     event_name: {
       entries: ["user.login", "user.logout", "order.created", "order.paid", "payment.failed", "session.expired", "config.changed", "payment.cancel_requested", "payment.cancel_approved", "payment.refunded"],
       capacity: 64,
+    },
+    evidence_kind: {
+      entries: ["data", "rule", "precedent", "intuition", "external"],
+      capacity: 16,
     },
     execution_mode: {
       entries: ["live", "test", "synthetic", "replay"],
@@ -121,9 +141,17 @@ const SCHEMA = {
       entries: ["entry", "processing", "branch", "success", "failure", "timeout", "payment", "complete", "exit"],
       capacity: 32,
     },
+    flow_type: {
+      entries: ["office_hours", "ceo_review", "eng_review", "design_review", "code_review", "investigation", "ship", "custom"],
+      capacity: 16,
+    },
     flow_variant: {
       entries: ["default", "retry", "fallback", "manual"],
       capacity: 32,
+    },
+    forcing_question: {
+      entries: ["demand_reality", "status_quo", "desperate_specificity", "narrowest_wedge", "observation", "future_fit"],
+      capacity: 16,
     },
     health_status: {
       entries: ["healthy", "degraded", "unhealthy", "maintenance"],
@@ -149,8 +177,16 @@ const SCHEMA = {
       entries: ["ko", "en", "ja"],
       capacity: 32,
     },
+    magnitude: {
+      entries: ["minor", "moderate", "major", "critical"],
+      capacity: 8,
+    },
     mask_mode: {
       entries: ["raw", "mask", "drop", "hash"],
+      capacity: 32,
+    },
+    mental_model: {
+      entries: ["bezos_doors", "munger_inversion", "jobs_subtraction", "speed_calibration", "proxy_skepticism", "boil_the_lake", "three_layer", "narrative_coherence", "temporal_depth", "founder_mode", "wartime_awareness", "design_trust", "edge_paranoia"],
       capacity: 32,
     },
     metric_type: {
@@ -225,20 +261,32 @@ const SCHEMA = {
       entries: ["dashboard", "reports", "settings", "users"],
       capacity: 32,
     },
+    resource_location: {
+      entries: ["origin", "cache", "queue", "external"],
+      capacity: 8,
+    },
     resource_type: {
       entries: ["api", "page", "webhook", "grpc"],
       capacity: 32,
     },
+    reversibility: {
+      entries: ["one_way", "two_way"],
+      capacity: 4,
+    },
     role: {
       entries: ["admin", "developer", "operator", "viewer", "readonly", "customer", "auditor"],
       capacity: 32,
+    },
+    scope_mode: {
+      entries: ["expansion", "selective", "hold", "reduction"],
+      capacity: 8,
     },
     skill_category: {
       entries: ["read", "write", "analysis", "chain"],
       capacity: 8,
     },
     skill_id: {
-      entries: ["skill-trace", "skill-explore-service", "skill-explore-prefix", "skill-explore-dsl", "skill-system-overview", "skill-record-decision", "skill-record-observation", "skill-claim", "skill-release", "skill-lifecycle-transition", "skill-checkout-flow-verify", "skill-commerce-skew-audit", "skill-observation-coverage", "skill-infra-impact-verify", "skill-pipeline-phase-verify", "skill-event-action-check", "skill-svc-binding-check", "skill-safe-entry-add", "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health", "skill-pattern-analysis", "skill-schema-health-audit", "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain", "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan", "skill-spec-manage", "skill-registry-publish", "skill-flow-trace", "skill-table-impact"],
+      entries: ["skill-trace", "skill-explore-service", "skill-explore-prefix", "skill-explore-dsl", "skill-system-overview", "skill-record-decision", "skill-record-observation", "skill-claim", "skill-release", "skill-lifecycle-transition", "skill-checkout-flow-verify", "skill-commerce-skew-audit", "skill-observation-coverage", "skill-infra-impact-verify", "skill-pipeline-phase-verify", "skill-event-action-check", "skill-svc-binding-check", "skill-safe-entry-add", "skill-decision-scaffold", "skill-analyze-impact", "skill-infer-migrator", "skill-domain-health", "skill-pattern-analysis", "skill-schema-health-audit", "skill-entry-add-chain", "skill-system-health-chain", "skill-converge-chain", "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan", "skill-spec-manage", "skill-registry-publish", "skill-flow-trace", "skill-table-impact", "skill-prefix-capacity-audit", "skill-policy-rule-verify", "skill-gate-refentries-check"],
       capacity: 64,
     },
     skill_outcome: {
@@ -303,9 +351,12 @@ const SCHEMA = {
     build_event: { dims: ["qa_pkg", "qa_module", "build_result"] },
     cart_event: { dims: ["action"] },
     cli_event: { dims: ["cli_intent", "cli_domain", "cli_subject"] },
+    cli_tracking: { dims: ["cli_intent", "cli_domain", "cli_subject", "skill_outcome"] },
     content: { dims: ["tag", "category", "status", "locale", "channel"] },
     contract_check: { dims: ["qa_pkg", "api_surface", "test_result"] },
     data_policy: { dims: ["mask_mode"] },
+    decision_event: { dims: ["flow_type", "cognitive_phase", "evidence_kind", "confidence_band"] },
+    decision_path: { dims: ["flow_type", "decision_outcome", "scope_mode"] },
     deploy_event: { dims: ["deploy_action"] },
     dkg_decision_event: { dims: ["decision_type", "dkg_target_kind", "node_source"] },
     dkg_event: { dims: ["dkg_op", "dkg_target_kind"] },
@@ -313,14 +364,18 @@ const SCHEMA = {
     edge_activity: { dims: ["edge_type", "dkg_target_kind"] },
     endpoint: { dims: ["resource_type", "http_method", "api_version"] },
     engine_event: { dims: ["constraint_op", "verdict_result"] },
+    escalation_event: { dims: ["flow_type", "escalation_type", "cognitive_phase"] },
     event: { dims: ["event_name", "initiator"] },
     event_classification: { dims: ["event_category", "event_lifecycle_stage"] },
     execution_context: { dims: ["execution_mode"] },
     flow_point: { dims: ["flow_name", "flow_step", "flow_variant"] },
+    forcing_response: { dims: ["forcing_question", "evidence_kind", "confidence_band"] },
     gate_point: { dims: ["address_state"] },
     health_event: { dims: ["health_status"] },
     ingest_record: { dims: ["record_type"] },
+    metric_aggregate: { dims: ["metric_type", "execution_mode", "health_status"] },
     metric_point: { dims: ["metric_type", "record_type"] },
+    model_apply: { dims: ["mental_model", "reversibility", "magnitude"] },
     observation_event: { dims: ["observation_intent", "dkg_target_kind"] },
     order_event: { dims: ["action"] },
     page_view: { dims: ["page", "locale", "userType"] },
@@ -330,14 +385,19 @@ const SCHEMA = {
     pipeline_point: { dims: ["pipeline_phase", "validation_mode", "verdict_result", "temporal_strategy"] },
     rbac: { dims: ["role", "action", "resource"] },
     relational: { dims: ["subjectKind", "predicate", "objectKind"] },
+    resource_lifecycle: { dims: ["resource_type", "lifecycle_state", "resource_location"] },
     schema_event: { dims: ["migration_pattern", "deploy_action"] },
     schema_validation: { dims: ["validation_layer", "constraint_rule", "verdict_result"] },
     service: { dims: ["env", "region", "svc_name", "namespace"] },
     skill_execution: { dims: ["skill_id", "skill_category", "skill_outcome"] },
     spec_event: { dims: ["spec_type", "lifecycle_state"] },
+    tag_lifecycle: { dims: ["tag", "resource_type", "lifecycle_state"] },
+    test_coverage: { dims: ["qa_pkg", "qa_module", "test_result", "flow_variant"] },
     test_event: { dims: ["qa_pkg", "qa_module", "test_result"] },
     tracking: { dims: ["trackAction", "page", "userType"] },
+    validation_event: { dims: ["validation_layer", "constraint_op", "verdict_result"] },
     version_point: { dims: ["version_lifecycle"] },
+    version_state: { dims: ["version_lifecycle", "address_state"] },
   },
 } as const;
 
@@ -350,9 +410,12 @@ export const SNAPSHOT_SUPPLY = {
   "build_event": "implicit" as const,
   "cart_event": "envelope" as const,
   "cli_event": "implicit" as const,
+  "cli_tracking": "implicit" as const,
   "content": "implicit" as const,
   "contract_check": "implicit" as const,
   "data_policy": "envelope" as const,
+  "decision_event": "implicit" as const,
+  "decision_path": "implicit" as const,
   "deploy_event": "envelope" as const,
   "dkg_decision_event": "implicit" as const,
   "dkg_event": "implicit" as const,
@@ -360,14 +423,18 @@ export const SNAPSHOT_SUPPLY = {
   "edge_activity": "implicit" as const,
   "endpoint": "envelope" as const,
   "engine_event": "envelope" as const,
+  "escalation_event": "implicit" as const,
   "event": "envelope" as const,
   "event_classification": "envelope" as const,
   "execution_context": "envelope" as const,
   "flow_point": "envelope" as const,
+  "forcing_response": "implicit" as const,
   "gate_point": "envelope" as const,
   "health_event": "envelope" as const,
   "ingest_record": "envelope" as const,
+  "metric_aggregate": "envelope" as const,
   "metric_point": "envelope" as const,
+  "model_apply": "implicit" as const,
   "observation_event": "implicit" as const,
   "order_event": "envelope" as const,
   "page_view": "envelope" as const,
@@ -377,12 +444,17 @@ export const SNAPSHOT_SUPPLY = {
   "pipeline_point": "envelope" as const,
   "rbac": "implicit" as const,
   "relational": "implicit" as const,
+  "resource_lifecycle": "envelope" as const,
   "schema_event": "envelope" as const,
   "schema_validation": "envelope" as const,
   "service": "implicit" as const,
   "skill_execution": "implicit" as const,
   "spec_event": "implicit" as const,
+  "tag_lifecycle": "envelope" as const,
+  "test_coverage": "implicit" as const,
   "test_event": "implicit" as const,
   "tracking": "envelope" as const,
+  "validation_event": "envelope" as const,
   "version_point": "envelope" as const,
+  "version_state": "envelope" as const,
 } as const;

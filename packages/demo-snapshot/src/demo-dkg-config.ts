@@ -47,6 +47,13 @@ export const DEMO_DKG_CONFIG = {
       boundary: { exports: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "contract_check", "cli_event", "skill_execution", "observation_event", "spec_event", "edge_activity", "test_coverage", "cli_tracking"], internal: ["version_point", "gate_point"] },
       rationale: "qa-sdk 모노레포 자체의 빌드/테스트/DKG운영/CLI/내부 로직 관측 전체를 좌표계로 추적. 테스트 커버리지 매트릭스 + CLI 실행 결과 추적 포함. 완전 자기참조 모니터링.",
     },
+    {
+      kind: "domain", id: "decision-domain", name: "의사결정 분기 도메인",
+      prefixes: ["decision_event", "decision_path", "escalation_event", "model_apply", "forcing_response"],
+      sharedAxes: ["cognitive_phase", "flow_type", "evidence_kind", "mental_model", "escalation_type", "decision_outcome", "scope_mode", "reversibility", "magnitude", "confidence_band", "forcing_question"],
+      boundary: { exports: ["decision_event", "decision_path", "escalation_event", "model_apply", "forcing_response"], internal: [] },
+      rationale: "의사결정 과정을 좌표 공간으로 모델링. 분기 선택, 인지 모델 적용, 에스컬레이션, Forcing Question 응답을 추적. gstack 스프린트 파이프라인 기반.",
+    },
   ],
 
   consumers: [
@@ -425,7 +432,7 @@ export const DEMO_DKG_CONFIG = {
       specialization: {
         domains: ["observation-domain"],
         dslBundles: ["dsl-observation", "dsl-pipeline", "dsl-ingest"],
-        prefixes: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation"],
+        prefixes: ["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy", "engine_event", "schema_event", "pattern_match", "pattern_anomaly", "event_classification", "schema_validation", "validation_event", "resource_lifecycle", "metric_aggregate", "version_state", "tag_lifecycle"],
         metrics: ["metric:coverage"],
       },
     },
@@ -436,8 +443,8 @@ export const DEMO_DKG_CONFIG = {
       input: "address_context records", output: "FlowTraceResult + 위반 ObservationNode",
       specialization: {
         dslBundles: ["dsl-infra"],
-        prefixes: ["deploy_event", "health_event", "endpoint"],
-        intentLinks: ["IL-infra-impact"],
+        prefixes: ["deploy_event", "health_event", "endpoint", "metric_aggregate", "version_state"],
+        intentLinks: ["IL-infra-impact", "IL-version-rollout"],
         invariants: [
           "deploy_event 직후 health_event(degraded)가 발생하면 배포 실패 후보",
           "health_event(unhealthy) 시 해당 서비스의 endpoint 관측을 중단 감지",
@@ -451,7 +458,7 @@ export const DEMO_DKG_CONFIG = {
       input: "address_context records", output: "FlowTraceResult + 위반 ObservationNode",
       specialization: {
         dslBundles: ["dsl-pipeline"],
-        prefixes: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint"],
+        prefixes: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint", "validation_event"],
         invariants: [
           "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
           "validation_mode=strict에서 verdict_result=unknown이 나오면 안 된다",
@@ -612,7 +619,36 @@ export const DEMO_DKG_CONFIG = {
       input: "AddressContextRecord[] + GraphPort", output: "FlowTraceResult (violations + observations)",
       specialization: {
         dslBundles: ["dsl-checkout", "dsl-commerce", "dsl-observation", "dsl-infra", "dsl-pipeline"],
-        intentLinks: ["IL-checkout-flow", "IL-api-event", "IL-infra-impact", "IL-pattern-observation", "IL-cart-abandon", "IL-pipeline-flow"],
+        intentLinks: ["IL-checkout-flow", "IL-api-event", "IL-infra-impact", "IL-pattern-observation", "IL-cart-abandon", "IL-pipeline-flow", "IL-version-rollout", "IL-test-matrix", "IL-resource-track"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-prefix-capacity-audit", name: "prefix 주소 공간 감사",
+      description: "getPrefixProfile 기반으로 전체/개별 prefix의 entries/capacity/headroom/stride/utilization 분석. safePrecision(CON-007) 위반 감지. 주소 공간 활용률이 낮은 prefix와 headroom 부족 축 식별.",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "prefixId? (없으면 전체)", output: "PrefixCapacityAuditResult[]",
+      specialization: {
+        constraints: ["CON-007"],
+        metrics: ["metric:headroom"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-policy-rule-verify", name: "정책 규칙 검증",
+      description: "Named PolicyRule(match 기반)의 dim 완전성, 와일드카드 명시, entry 유효성, 규칙 간 충돌을 검증. detectConflicts로 겹치는 영역 탐지.",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "PolicyRule<T>[] + MetaCodec", output: "PolicyRuleVerifyResult (conflicts + validation errors)",
+      specialization: {
+        dslBundles: ["dsl-access-control"],
+        prefixes: ["permission", "rbac"],
+      },
+    },
+    {
+      kind: "skill", id: "skill-gate-refentries-check", name: "refEntries 게이팅 검사",
+      description: "CON-006 검사: 모든 prefix_ref dim에 refEntries가 정의되어 있는지 확인. 미정의 시 GateEngine에서 reserved 처리되는 position 범위 보고.",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "catalog", output: "RefEntriesCheckResult[] (미정의 prefix_ref + reserved position 범위)",
+      specialization: {
+        constraints: ["CON-006"],
       },
     },
     {
@@ -622,6 +658,29 @@ export const DEMO_DKG_CONFIG = {
       input: "tableId", output: "{ columnRefs, referencingPrefixes, accessingServices, impactSummary }",
       specialization: {
         domains: ["shopping-domain", "infra-domain", "dev-domain"],
+      },
+    },
+    // ── 서비스 종속 skill (prod API 연계) ──
+    {
+      kind: "skill", id: "skill-service-health", name: "서비스 헬스체크",
+      description: "등록된 전체 서비스의 /health 상태를 확인. 다운된 서비스 → observation 자동 생성. registry /api/health/services API 사용.",
+      category: "analysis", targetKinds: ["service"],
+      input: "env (dev|prod)", output: "{ status, up, down, services[] }",
+      specialization: {
+        api: "/api/health/services",
+        autoObservation: true,
+        observationTemplate: "OBS-SVC-DOWN-{serviceId}",
+      },
+    },
+    {
+      kind: "skill", id: "skill-event-coverage", name: "이벤트 수집 커버리지",
+      description: "정의된 prefix 대비 실제 수집된 이벤트의 address_context prefix 커버리지 분석. ingest /v1/insights/prefixes + /v1/insights/coverage API 사용.",
+      category: "analysis", targetKinds: ["prefix"],
+      input: "none", output: "{ definedPrefixes, observedPrefixes, coverage%, unobserved[] }",
+      specialization: {
+        api: ["/v1/insights/prefixes", "/v1/insights/coverage"],
+        autoObservation: true,
+        observationTemplate: "OBS-PREFIX-IDLE-{prefixId}",
       },
     },
   ],

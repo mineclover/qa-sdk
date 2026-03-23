@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
+// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import type { QaContext } from "@qa-sdk/context";

@@ -949,6 +949,7 @@ export const DEMO_CATALOG = {
             "skill-self-check-analyze", "skill-cli-coverage", "skill-promote-scan",
             "skill-spec-manage", "skill-registry-publish",
             "skill-flow-trace", "skill-table-impact",
+            "skill-prefix-capacity-audit", "skill-policy-rule-verify", "skill-gate-refentries-check",
           ],
           capacity: 64,
         },
@@ -1066,6 +1067,118 @@ export const DEMO_CATALOG = {
           entries: ["counter", "gauge", "histogram", "summary"],
           capacity: 8,
           ko: { counter: "카운터", gauge: "게이지", histogram: "히스토그램", summary: "서머리" },
+        },
+      },
+    },
+
+    // ── 의사결정 도메인 축 (decision-flow) ─────────────────────────────────
+    cognitive_phase: {
+      id: "cognitive_phase", name: "인지 단계",
+      versions: {
+        v1: {
+          entries: ["perceive", "interpret", "evaluate", "decide", "plan", "execute", "reflect"],
+          capacity: 16,
+          ko: { perceive: "인지", interpret: "해석", evaluate: "평가", decide: "결정", plan: "계획", execute: "실행", reflect: "성찰" },
+        },
+      },
+    },
+    flow_type: {
+      id: "flow_type", name: "플로우 유형",
+      versions: {
+        v1: {
+          entries: ["office_hours", "ceo_review", "eng_review", "design_review", "code_review", "investigation", "ship", "custom"],
+          capacity: 16,
+          ko: { office_hours: "오피스아워", ceo_review: "전략리뷰", eng_review: "기술리뷰", design_review: "설계리뷰", code_review: "코드리뷰", investigation: "조사", ship: "출시", custom: "커스텀" },
+        },
+      },
+    },
+    evidence_kind: {
+      id: "evidence_kind", name: "근거 유형",
+      versions: {
+        v1: {
+          entries: ["data", "rule", "precedent", "intuition", "external"],
+          capacity: 16,
+          ko: { data: "정량데이터", rule: "규칙", precedent: "선례", intuition: "직관", external: "외부입력" },
+        },
+      },
+    },
+    mental_model: {
+      id: "mental_model", name: "인지 모델",
+      versions: {
+        v1: {
+          entries: ["bezos_doors", "munger_inversion", "jobs_subtraction", "speed_calibration", "proxy_skepticism", "boil_the_lake", "three_layer", "narrative_coherence", "temporal_depth", "founder_mode", "wartime_awareness", "design_trust", "edge_paranoia"],
+          capacity: 32,
+          ko: { bezos_doors: "가역성분류", munger_inversion: "반전사고", jobs_subtraction: "초점빼기", speed_calibration: "속도보정", proxy_skepticism: "대리회의", boil_the_lake: "호수끓이기", three_layer: "3층지식", narrative_coherence: "서사일관", temporal_depth: "시간깊이", founder_mode: "파운더모드", wartime_awareness: "전시인식", design_trust: "신뢰설계", edge_paranoia: "엣지편집증" },
+        },
+      },
+    },
+    escalation_type: {
+      id: "escalation_type", name: "에스컬레이션 유형",
+      versions: {
+        v1: {
+          entries: ["standard_pattern", "completeness", "test_coverage", "observability", "security", "taste"],
+          capacity: 16,
+          ko: { standard_pattern: "표준패턴", completeness: "완전구현", test_coverage: "테스트", observability: "관측성", security: "보안", taste: "미감결정" },
+        },
+      },
+    },
+    decision_outcome: {
+      id: "decision_outcome", name: "결정 결과",
+      versions: {
+        v1: {
+          entries: ["completed", "abandoned", "blocked", "auto_resolved", "escalated"],
+          capacity: 16,
+          ko: { completed: "완료", abandoned: "포기", blocked: "차단", auto_resolved: "자동해결", escalated: "에스컬레이션" },
+        },
+      },
+    },
+    scope_mode: {
+      id: "scope_mode", name: "스코프 모드",
+      versions: {
+        v1: {
+          entries: ["expansion", "selective", "hold", "reduction"],
+          capacity: 8,
+          ko: { expansion: "확장", selective: "선택적확장", hold: "유지", reduction: "축소" },
+        },
+      },
+    },
+    reversibility: {
+      id: "reversibility", name: "가역성",
+      versions: {
+        v1: {
+          entries: ["one_way", "two_way"],
+          capacity: 4,
+          ko: { one_way: "비가역", two_way: "가역" },
+        },
+      },
+    },
+    magnitude: {
+      id: "magnitude", name: "영향 범위",
+      versions: {
+        v1: {
+          entries: ["minor", "moderate", "major", "critical"],
+          capacity: 8,
+          ko: { minor: "경미", moderate: "보통", major: "중대", critical: "치명" },
+        },
+      },
+    },
+    confidence_band: {
+      id: "confidence_band", name: "확신 수준",
+      versions: {
+        v1: {
+          entries: ["low", "medium", "high", "exact"],
+          capacity: 8,
+          ko: { low: "낮음", medium: "보통", high: "높음", exact: "정확" },
+        },
+      },
+    },
+    forcing_question: {
+      id: "forcing_question", name: "강제 질문",
+      versions: {
+        v1: {
+          entries: ["demand_reality", "status_quo", "desperate_specificity", "narrowest_wedge", "observation", "future_fit"],
+          capacity: 16,
+          ko: { demand_reality: "수요현실", status_quo: "현재상태", desperate_specificity: "절박한구체성", narrowest_wedge: "최소쐐기", observation: "관찰", future_fit: "미래적합성" },
         },
       },
     },
@@ -1763,6 +1876,79 @@ export const DEMO_CATALOG = {
       },
       versions: [
         { version: "v1", axisVersions: { tag: "v1", resource_type: "v1", lifecycle_state: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 의사결정 도메인 prefix (decision-flow) ──────────────────────────────
+    decision_event: {
+      id: "decision_event", name: "분기 선택 이벤트",
+      description: "flow_type × cognitive_phase × evidence_kind × confidence_band — 개별 분기 선택",
+      labels: ["flow_type", "cognitive_phase", "evidence_kind", "confidence_band"],
+      meta: { category: "event" as const, layer: 1 as const, visualShape: "flat-tile" as const, detailKind: "event-def" as const },
+      dims: {
+        flow_type:       { kind: "axis" as const, axisId: "flow_type" },
+        cognitive_phase: { kind: "axis" as const, axisId: "cognitive_phase" },
+        evidence_kind:   { kind: "axis" as const, axisId: "evidence_kind" },
+        confidence_band: { kind: "axis" as const, axisId: "confidence_band" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { flow_type: "v1", cognitive_phase: "v1", evidence_kind: "v1", confidence_band: "v1" } },
+      ],
+    },
+    decision_path: {
+      id: "decision_path", name: "의사결정 경로",
+      description: "flow_type × decision_outcome × scope_mode — 플로우 완료 시 전체 경로 요약",
+      labels: ["flow_type", "decision_outcome", "scope_mode"],
+      meta: { category: "observation" as const, layer: 1 as const, visualShape: "cube" as const, detailKind: "flow-step" as const },
+      dims: {
+        flow_type:        { kind: "axis" as const, axisId: "flow_type" },
+        decision_outcome: { kind: "axis" as const, axisId: "decision_outcome" },
+        scope_mode:       { kind: "axis" as const, axisId: "scope_mode" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { flow_type: "v1", decision_outcome: "v1", scope_mode: "v1" } },
+      ],
+    },
+    escalation_event: {
+      id: "escalation_event", name: "에스컬레이션 이벤트",
+      description: "flow_type × escalation_type × cognitive_phase — 자동 판정 실패 → 인간 결정 요청",
+      labels: ["flow_type", "escalation_type", "cognitive_phase"],
+      meta: { category: "event" as const, layer: 2 as const, visualShape: "flat-tile" as const, detailKind: "event-def" as const },
+      dims: {
+        flow_type:       { kind: "axis" as const, axisId: "flow_type" },
+        escalation_type: { kind: "axis" as const, axisId: "escalation_type" },
+        cognitive_phase: { kind: "axis" as const, axisId: "cognitive_phase" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { flow_type: "v1", escalation_type: "v1", cognitive_phase: "v1" } },
+      ],
+    },
+    model_apply: {
+      id: "model_apply", name: "인지 모델 적용",
+      description: "mental_model × reversibility × magnitude — 인지 프레임워크 적용 기록",
+      labels: ["mental_model", "reversibility", "magnitude"],
+      meta: { category: "observation" as const, layer: 1 as const, visualShape: "cube" as const, detailKind: "generic" as const },
+      dims: {
+        mental_model:  { kind: "axis" as const, axisId: "mental_model" },
+        reversibility: { kind: "axis" as const, axisId: "reversibility" },
+        magnitude:     { kind: "axis" as const, axisId: "magnitude" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { mental_model: "v1", reversibility: "v1", magnitude: "v1" } },
+      ],
+    },
+    forcing_response: {
+      id: "forcing_response", name: "강제 질문 응답",
+      description: "forcing_question × evidence_kind × confidence_band — Forcing Question 응답 기록",
+      labels: ["forcing_question", "evidence_kind", "confidence_band"],
+      meta: { category: "event" as const, layer: 1 as const, visualShape: "flat-tile" as const, detailKind: "event-def" as const },
+      dims: {
+        forcing_question: { kind: "axis" as const, axisId: "forcing_question" },
+        evidence_kind:    { kind: "axis" as const, axisId: "evidence_kind" },
+        confidence_band:  { kind: "axis" as const, axisId: "confidence_band" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { forcing_question: "v1", evidence_kind: "v1", confidence_band: "v1" } },
       ],
     },
   },

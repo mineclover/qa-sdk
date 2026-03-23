@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
+// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** action — 액션 (entries: 4, capacity: 32) */
@@ -168,6 +168,27 @@ export const CLI_SUBJECT = {
 } as const;
 export type CliSubject = typeof CLI_SUBJECT[keyof typeof CLI_SUBJECT];
 
+/** cognitive_phase — 인지 단계 (entries: 7, capacity: 16) */
+export const COGNITIVE_PHASE = {
+  PERCEIVE: "perceive",
+  INTERPRET: "interpret",
+  EVALUATE: "evaluate",
+  DECIDE: "decide",
+  PLAN: "plan",
+  EXECUTE: "execute",
+  REFLECT: "reflect",
+} as const;
+export type CognitivePhase = typeof COGNITIVE_PHASE[keyof typeof COGNITIVE_PHASE];
+
+/** confidence_band — 확신 수준 (entries: 4, capacity: 8) */
+export const CONFIDENCE_BAND = {
+  LOW: "low",
+  MEDIUM: "medium",
+  HIGH: "high",
+  EXACT: "exact",
+} as const;
+export type ConfidenceBand = typeof CONFIDENCE_BAND[keyof typeof CONFIDENCE_BAND];
+
 /** constraint_op — 제약 연산자 (entries: 7, capacity: 32) */
 export const CONSTRAINT_OP = {
   EQ: "eq",
@@ -192,6 +213,16 @@ export const CONSTRAINT_RULE = {
   UNKNOWNAXIS: "unknownAxis",
 } as const;
 export type ConstraintRule = typeof CONSTRAINT_RULE[keyof typeof CONSTRAINT_RULE];
+
+/** decision_outcome — 결정 결과 (entries: 5, capacity: 16) */
+export const DECISION_OUTCOME = {
+  COMPLETED: "completed",
+  ABANDONED: "abandoned",
+  BLOCKED: "blocked",
+  AUTO_RESOLVED: "auto_resolved",
+  ESCALATED: "escalated",
+} as const;
+export type DecisionOutcome = typeof DECISION_OUTCOME[keyof typeof DECISION_OUTCOME];
 
 /** decision_type — 의사결정 유형 (entries: 7, capacity: 16) */
 export const DECISION_TYPE = {
@@ -282,6 +313,17 @@ export const ENV = {
 } as const;
 export type Env = typeof ENV[keyof typeof ENV];
 
+/** escalation_type — 에스컬레이션 유형 (entries: 6, capacity: 16) */
+export const ESCALATION_TYPE = {
+  STANDARD_PATTERN: "standard_pattern",
+  COMPLETENESS: "completeness",
+  TEST_COVERAGE: "test_coverage",
+  OBSERVABILITY: "observability",
+  SECURITY: "security",
+  TASTE: "taste",
+} as const;
+export type EscalationType = typeof ESCALATION_TYPE[keyof typeof ESCALATION_TYPE];
+
 /** event_category — 이벤트 카테고리 (entries: 8, capacity: 16) */
 export const EVENT_CATEGORY = {
   USER_ACTION: "user_action",
@@ -321,6 +363,16 @@ export const EVENT_NAME = {
 } as const;
 export type EventName = typeof EVENT_NAME[keyof typeof EVENT_NAME];
 
+/** evidence_kind — 근거 유형 (entries: 5, capacity: 16) */
+export const EVIDENCE_KIND = {
+  DATA: "data",
+  RULE: "rule",
+  PRECEDENT: "precedent",
+  INTUITION: "intuition",
+  EXTERNAL: "external",
+} as const;
+export type EvidenceKind = typeof EVIDENCE_KIND[keyof typeof EVIDENCE_KIND];
+
 /** execution_mode — 실행 모드 (entries: 4, capacity: 8) */
 export const EXECUTION_MODE = {
   LIVE: "live",
@@ -357,6 +409,19 @@ export const FLOW_STEP = {
 } as const;
 export type FlowStep = typeof FLOW_STEP[keyof typeof FLOW_STEP];
 
+/** flow_type — 플로우 유형 (entries: 8, capacity: 16) */
+export const FLOW_TYPE = {
+  OFFICE_HOURS: "office_hours",
+  CEO_REVIEW: "ceo_review",
+  ENG_REVIEW: "eng_review",
+  DESIGN_REVIEW: "design_review",
+  CODE_REVIEW: "code_review",
+  INVESTIGATION: "investigation",
+  SHIP: "ship",
+  CUSTOM: "custom",
+} as const;
+export type FlowType = typeof FLOW_TYPE[keyof typeof FLOW_TYPE];
+
 /** flow_variant — 흐름 변형 (entries: 4, capacity: 32) */
 export const FLOW_VARIANT = {
   DEFAULT: "default",
@@ -365,6 +430,17 @@ export const FLOW_VARIANT = {
   MANUAL: "manual",
 } as const;
 export type FlowVariant = typeof FLOW_VARIANT[keyof typeof FLOW_VARIANT];
+
+/** forcing_question — 강제 질문 (entries: 6, capacity: 16) */
+export const FORCING_QUESTION = {
+  DEMAND_REALITY: "demand_reality",
+  STATUS_QUO: "status_quo",
+  DESPERATE_SPECIFICITY: "desperate_specificity",
+  NARROWEST_WEDGE: "narrowest_wedge",
+  OBSERVATION: "observation",
+  FUTURE_FIT: "future_fit",
+} as const;
+export type ForcingQuestion = typeof FORCING_QUESTION[keyof typeof FORCING_QUESTION];
 
 /** health_status — 헬스 상태 (entries: 4, capacity: 32) */
 export const HEALTH_STATUS = {
@@ -420,6 +496,15 @@ export const LOCALE = {
 } as const;
 export type Locale = typeof LOCALE[keyof typeof LOCALE];
 
+/** magnitude — 영향 범위 (entries: 4, capacity: 8) */
+export const MAGNITUDE = {
+  MINOR: "minor",
+  MODERATE: "moderate",
+  MAJOR: "major",
+  CRITICAL: "critical",
+} as const;
+export type Magnitude = typeof MAGNITUDE[keyof typeof MAGNITUDE];
+
 /** mask_mode — 마스킹 모드 (entries: 4, capacity: 32) */
 export const MASK_MODE = {
   RAW: "raw",
@@ -428,6 +513,24 @@ export const MASK_MODE = {
   HASH: "hash",
 } as const;
 export type MaskMode = typeof MASK_MODE[keyof typeof MASK_MODE];
+
+/** mental_model — 인지 모델 (entries: 13, capacity: 32) */
+export const MENTAL_MODEL = {
+  BEZOS_DOORS: "bezos_doors",
+  MUNGER_INVERSION: "munger_inversion",
+  JOBS_SUBTRACTION: "jobs_subtraction",
+  SPEED_CALIBRATION: "speed_calibration",
+  PROXY_SKEPTICISM: "proxy_skepticism",
+  BOIL_THE_LAKE: "boil_the_lake",
+  THREE_LAYER: "three_layer",
+  NARRATIVE_COHERENCE: "narrative_coherence",
+  TEMPORAL_DEPTH: "temporal_depth",
+  FOUNDER_MODE: "founder_mode",
+  WARTIME_AWARENESS: "wartime_awareness",
+  DESIGN_TRUST: "design_trust",
+  EDGE_PARANOIA: "edge_paranoia",
+} as const;
+export type MentalModel = typeof MENTAL_MODEL[keyof typeof MENTAL_MODEL];
 
 /** metric_type — 메트릭 유형 (entries: 4, capacity: 8) */
 export const METRIC_TYPE = {
@@ -658,6 +761,13 @@ export const RESOURCE_TYPE = {
 } as const;
 export type ResourceType = typeof RESOURCE_TYPE[keyof typeof RESOURCE_TYPE];
 
+/** reversibility — 가역성 (entries: 2, capacity: 4) */
+export const REVERSIBILITY = {
+  ONE_WAY: "one_way",
+  TWO_WAY: "two_way",
+} as const;
+export type Reversibility = typeof REVERSIBILITY[keyof typeof REVERSIBILITY];
+
 /** role — 역할 (entries: 7, capacity: 32) */
 export const ROLE = {
   ADMIN: "admin",
@@ -670,6 +780,15 @@ export const ROLE = {
 } as const;
 export type Role = typeof ROLE[keyof typeof ROLE];
 
+/** scope_mode — 스코프 모드 (entries: 4, capacity: 8) */
+export const SCOPE_MODE = {
+  EXPANSION: "expansion",
+  SELECTIVE: "selective",
+  HOLD: "hold",
+  REDUCTION: "reduction",
+} as const;
+export type ScopeMode = typeof SCOPE_MODE[keyof typeof SCOPE_MODE];
+
 /** skill_category — 스킬 카테고리 (entries: 4, capacity: 8) */
 export const SKILL_CATEGORY = {
   READ: "read",
@@ -679,7 +798,7 @@ export const SKILL_CATEGORY = {
 } as const;
 export type SkillCategory = typeof SKILL_CATEGORY[keyof typeof SKILL_CATEGORY];
 
-/** skill_id — 스킬 ID (entries: 34, capacity: 64) */
+/** skill_id — 스킬 ID (entries: 37, capacity: 64) */
 export const SKILL_ID = {
   SKILL_TRACE: "skill-trace",
   SKILL_EXPLORE_SERVICE: "skill-explore-service",
@@ -715,6 +834,9 @@ export const SKILL_ID = {
   SKILL_REGISTRY_PUBLISH: "skill-registry-publish",
   SKILL_FLOW_TRACE: "skill-flow-trace",
   SKILL_TABLE_IMPACT: "skill-table-impact",
+  SKILL_PREFIX_CAPACITY_AUDIT: "skill-prefix-capacity-audit",
+  SKILL_POLICY_RULE_VERIFY: "skill-policy-rule-verify",
+  SKILL_GATE_REFENTRIES_CHECK: "skill-gate-refentries-check",
 } as const;
 export type SkillId = typeof SKILL_ID[keyof typeof SKILL_ID];
 

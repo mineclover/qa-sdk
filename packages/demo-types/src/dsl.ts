@@ -1,10 +1,10 @@
-// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
+// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 /** 관측 DSL — 화면/API/흐름 관측 포인트 + 패턴 분류를 서비스 단위로 묶는 DSL. 모든 관측 prefix가 동일한 svc_ref를 공유한다. */
 export const DSL_OBSERVATION = {
   id: "dsl-observation" as const,
-  members: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly", "event_classification"] as const,
+  members: ["page_view", "endpoint", "flow_point", "pattern_match", "pattern_anomaly", "event_classification", "resource_lifecycle"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
@@ -17,12 +17,13 @@ export const DSL_OBSERVATION = {
 /** 인프라 계측 DSL — 배포/헬스 이벤트를 서비스 단위로 묶는 DSL. dev/stage/prod 전 환경을 포함한다. */
 export const DSL_INFRA = {
   id: "dsl-infra" as const,
-  members: ["deploy_event", "health_event", "endpoint"] as const,
+  members: ["deploy_event", "health_event", "endpoint", "metric_aggregate", "version_state"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
     "deploy_event 직후 health_event(degraded)가 발생하면 배포 실패 후보",
     "health_event(unhealthy) 시 해당 서비스의 endpoint 관측을 중단 감지",
+    "version_state(released) 전환 시 metric_aggregate(healthy)가 관측되어야 한다",
   ] as const,
 } as const;
 
@@ -57,7 +58,7 @@ export const DSL_COMMERCE = {
 /** 콘텐츠/행동 DSL — 콘텐츠 분류와 사용자 행동 추적을 묶는 DSL. content + tracking. */
 export const DSL_CONTENT = {
   id: "dsl-content" as const,
-  members: ["content", "tracking"] as const,
+  members: ["content", "tracking", "tag_lifecycle"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
 } as const;
@@ -73,20 +74,21 @@ export const DSL_ACCESS_CONTROL = {
 /** 파이프라인 관측 DSL — 수집 파이프라인의 처리 경로와 데이터 정책을 묶는 DSL. 어떤 단계에서 어떤 모드로 어떤 결과가 나왔는가. */
 export const DSL_PIPELINE = {
   id: "dsl-pipeline" as const,
-  members: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint"] as const,
+  members: ["pipeline_point", "data_policy", "engine_event", "schema_event", "endpoint", "validation_event"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
     "pipeline_phase=verdict 이전에 pipeline_phase=reconstruct가 선행되어야 한다",
     "validation_mode=strict에서 verdict_result=unknown이 나오면 안 된다",
     "schema_event(migrate) 후 engine_event의 constraint_op 평가가 새 스키마 기준이어야 한다",
+    "validation_event는 engine_event와 같은 constraint_op을 공유하되, validation_layer로 레이어를 구분한다",
   ] as const,
 } as const;
 
 /** 자기참조 개발 DSL — qa-sdk 모노레포의 빌드/테스트/DKG운영/CLI활동을 좌표계로 추적하는 DSL. */
 export const DSL_DEV = {
   id: "dsl-dev" as const,
-  members: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check", "skill_execution"] as const,
+  members: ["build_event", "test_event", "dkg_event", "dkg_decision_event", "dkg_observation_event", "cli_event", "contract_check", "skill_execution", "test_coverage", "cli_tracking"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
@@ -99,7 +101,7 @@ export const DSL_DEV = {
 /** 내부 로직 관측 DSL — 버전 생명주기/주소 상태/관측 의도/실행 컨텍스트를 서비스 단위로 추적. */
 export const DSL_INTERNAL = {
   id: "dsl-internal" as const,
-  members: ["version_point", "gate_point", "observation_event", "execution_context", "spec_event", "edge_activity"] as const,
+  members: ["version_point", "gate_point", "observation_event", "execution_context", "spec_event", "edge_activity", "version_state", "metric_aggregate"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
@@ -111,7 +113,7 @@ export const DSL_INTERNAL = {
 /** 수집 파이프라인 관측 DSL — 수집 레코드 유형과 스키마 검증을 서비스 단위로 추적. */
 export const DSL_INGEST = {
   id: "dsl-ingest" as const,
-  members: ["ingest_record", "schema_validation", "pipeline_point", "data_policy", "metric_point"] as const,
+  members: ["ingest_record", "schema_validation", "pipeline_point", "data_policy", "metric_point", "metric_aggregate"] as const,
   serviceBindingPrefix: "service" as const,
   fixedDims: ["env", "region", "svc_name", "namespace"] as const,
   invariants: [
@@ -141,7 +143,9 @@ export type ConstraintId =
   | "CON-002"
   | "CON-003"
   | "CON-004"
-  | "CON-005";
+  | "CON-005"
+  | "CON-006"
+  | "CON-007";
 
 /** Domain ID 리터럴 유니온 */
 export type DomainId =
@@ -150,5 +154,6 @@ export type DomainId =
   | "event-domain"
   | "observation-domain"
   | "infra-domain"
-  | "dev-domain";
+  | "dev-domain"
+  | "decision-domain";
 

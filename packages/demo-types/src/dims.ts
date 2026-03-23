@@ -1,4 +1,4 @@
-// Generated from Catalog "demo" (hash: 7e22b98a3ddc) at 2026-03-22T20:14:38
+// Generated from Catalog "demo" (hash: cdd6d61890cb) at 2026-03-23T15:35:18
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
 import type * as Axes from "./axes.js";
@@ -37,6 +37,14 @@ export interface CliEventDims {
   cli_subject: Axes.CliSubject;
 }
 
+/** cli_tracking — CLI 실행 결과 추적 */
+export interface CliTrackingDims {
+  cli_intent: Axes.CliIntent;
+  cli_domain: Axes.CliDomain;
+  cli_subject: Axes.CliSubject;
+  skill_outcome: Axes.SkillOutcome;
+}
+
 /** content — 콘텐츠 플랫폼 */
 export interface ContentDims {
   tag: Axes.Tag;
@@ -58,6 +66,21 @@ export interface DataPolicyDims {
   /** prefix_ref → service */
   svc_ref: number;
   mask_mode: Axes.MaskMode;
+}
+
+/** decision_event — 분기 선택 이벤트 */
+export interface DecisionEventDims {
+  flow_type: Axes.FlowType;
+  cognitive_phase: Axes.CognitivePhase;
+  evidence_kind: Axes.EvidenceKind;
+  confidence_band: Axes.ConfidenceBand;
+}
+
+/** decision_path — 의사결정 경로 */
+export interface DecisionPathDims {
+  flow_type: Axes.FlowType;
+  decision_outcome: Axes.DecisionOutcome;
+  scope_mode: Axes.ScopeMode;
 }
 
 /** deploy_event — 배포 이벤트 */
@@ -112,6 +135,13 @@ export interface EngineEventDims {
   verdict_result: Axes.VerdictResult;
 }
 
+/** escalation_event — 에스컬레이션 이벤트 */
+export interface EscalationEventDims {
+  flow_type: Axes.FlowType;
+  escalation_type: Axes.EscalationType;
+  cognitive_phase: Axes.CognitivePhase;
+}
+
 /** event — 이벤트 */
 export interface EventDims {
   /** prefix_ref → service */
@@ -144,6 +174,13 @@ export interface FlowPointDims {
   flow_variant: Axes.FlowVariant;
 }
 
+/** forcing_response — 강제 질문 응답 */
+export interface ForcingResponseDims {
+  forcing_question: Axes.ForcingQuestion;
+  evidence_kind: Axes.EvidenceKind;
+  confidence_band: Axes.ConfidenceBand;
+}
+
 /** gate_point — 주소 상태 관측 */
 export interface GatePointDims {
   /** prefix_ref → service */
@@ -165,12 +202,28 @@ export interface IngestRecordDims {
   record_type: Axes.RecordType;
 }
 
+/** metric_aggregate — 다차원 메트릭 집계 */
+export interface MetricAggregateDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  metric_type: Axes.MetricType;
+  execution_mode: Axes.ExecutionMode;
+  health_status: Axes.HealthStatus;
+}
+
 /** metric_point — 메트릭 수집 포인트 */
 export interface MetricPointDims {
   /** prefix_ref → service */
   svc_ref: number;
   metric_type: Axes.MetricType;
   record_type: Axes.RecordType;
+}
+
+/** model_apply — 인지 모델 적용 */
+export interface ModelApplyDims {
+  mental_model: Axes.MentalModel;
+  reversibility: Axes.Reversibility;
+  magnitude: Axes.Magnitude;
 }
 
 /** observation_event — 관측 의도 이벤트 */
@@ -248,6 +301,15 @@ export interface RelationalDims {
   objectKind: Axes.Objectkind;
 }
 
+/** resource_lifecycle — 리소스 수명 추적 */
+export interface ResourceLifecycleDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  resource_type: Axes.ResourceType;
+  lifecycle_state: Axes.LifecycleState;
+  resource_location: Axes.ResourceLocation;
+}
+
 /** schema_event — 스키마 마이그레이션 이벤트 */
 export interface SchemaEventDims {
   /** prefix_ref → service */
@@ -286,6 +348,23 @@ export interface SpecEventDims {
   lifecycle_state: Axes.LifecycleState;
 }
 
+/** tag_lifecycle — 태그 수명 추적 */
+export interface TagLifecycleDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  tag: Axes.Tag;
+  resource_type: Axes.ResourceType;
+  lifecycle_state: Axes.LifecycleState;
+}
+
+/** test_coverage — 테스트 커버리지 매트릭스 */
+export interface TestCoverageDims {
+  qa_pkg: Axes.QaPkg;
+  qa_module: Axes.QaModule;
+  test_result: Axes.TestResult;
+  flow_variant: Axes.FlowVariant;
+}
+
 /** test_event — 테스트 이벤트 */
 export interface TestEventDims {
   qa_pkg: Axes.QaPkg;
@@ -302,11 +381,28 @@ export interface TrackingDims {
   userType: Axes.Usertype;
 }
 
+/** validation_event — 검증 연산 이벤트 */
+export interface ValidationEventDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  validation_layer: Axes.ValidationLayer;
+  constraint_op: Axes.ConstraintOp;
+  verdict_result: Axes.VerdictResult;
+}
+
 /** version_point — 버전 생명주기 관측 */
 export interface VersionPointDims {
   /** prefix_ref → service */
   svc_ref: number;
   version_lifecycle: Axes.VersionLifecycle;
+}
+
+/** version_state — 버전 롤아웃 상태 */
+export interface VersionStateDims {
+  /** prefix_ref → service */
+  svc_ref: number;
+  version_lifecycle: Axes.VersionLifecycle;
+  address_state: Axes.AddressState;
 }
 
 /** prefix → dims 매핑 타입 */
@@ -315,9 +411,12 @@ export interface PrefixDimsMap {
   build_event: BuildEventDims;
   cart_event: CartEventDims;
   cli_event: CliEventDims;
+  cli_tracking: CliTrackingDims;
   content: ContentDims;
   contract_check: ContractCheckDims;
   data_policy: DataPolicyDims;
+  decision_event: DecisionEventDims;
+  decision_path: DecisionPathDims;
   deploy_event: DeployEventDims;
   dkg_decision_event: DkgDecisionEventDims;
   dkg_event: DkgEventDims;
@@ -325,14 +424,18 @@ export interface PrefixDimsMap {
   edge_activity: EdgeActivityDims;
   endpoint: EndpointDims;
   engine_event: EngineEventDims;
+  escalation_event: EscalationEventDims;
   event: EventDims;
   event_classification: EventClassificationDims;
   execution_context: ExecutionContextDims;
   flow_point: FlowPointDims;
+  forcing_response: ForcingResponseDims;
   gate_point: GatePointDims;
   health_event: HealthEventDims;
   ingest_record: IngestRecordDims;
+  metric_aggregate: MetricAggregateDims;
   metric_point: MetricPointDims;
+  model_apply: ModelApplyDims;
   observation_event: ObservationEventDims;
   order_event: OrderEventDims;
   page_view: PageViewDims;
@@ -342,12 +445,17 @@ export interface PrefixDimsMap {
   pipeline_point: PipelinePointDims;
   rbac: RbacDims;
   relational: RelationalDims;
+  resource_lifecycle: ResourceLifecycleDims;
   schema_event: SchemaEventDims;
   schema_validation: SchemaValidationDims;
   service: ServiceDims;
   skill_execution: SkillExecutionDims;
   spec_event: SpecEventDims;
+  tag_lifecycle: TagLifecycleDims;
+  test_coverage: TestCoverageDims;
   test_event: TestEventDims;
   tracking: TrackingDims;
+  validation_event: ValidationEventDims;
   version_point: VersionPointDims;
+  version_state: VersionStateDims;
 }
