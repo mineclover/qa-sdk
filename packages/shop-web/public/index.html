@@ -264,9 +264,55 @@ const PRODUCTS=[
 let cart=[],orders=[],selectedProduct=null,loggedIn=false;
 
 // ═══════════════════════════════════════════════════
+//  Permission Check — 페이지/기능별 접근 권한 추적
+// ═══════════════════════════════════════════════════
+const PAGE_PERMISSIONS = {
+  home:     { resource: 'page/home',     action: 'view', minRole: 'guest' },
+  products: { resource: 'page/products', action: 'view', minRole: 'guest' },
+  detail:   { resource: 'page/product',  action: 'view', minRole: 'guest' },
+  cart:     { resource: 'page/cart',     action: 'view', minRole: 'customer' },
+  checkout: { resource: 'page/checkout', action: 'purchase', minRole: 'customer' },
+  mypage:   { resource: 'page/mypage',   action: 'view', minRole: 'customer' },
+  complete: { resource: 'page/order',    action: 'view', minRole: 'customer' },
+};
+const ROLE_LEVEL = { guest: 0, customer: 1, admin: 2 };
+
+function checkPermission(page, action) {
+  const rule = PAGE_PERMISSIONS[page];
+  if (!rule) return { allowed: true, resource: 'page/' + page, action: action || 'view', role: userType };
+  const currentLevel = ROLE_LEVEL[userType] ?? 0;
+  const requiredLevel = ROLE_LEVEL[rule.minRole] ?? 0;
+  const allowed = currentLevel >= requiredLevel;
+  const result = {
+    allowed,
+    resource: rule.resource,
+    action: rule.action,
+    role: userType,
+    requiredRole: rule.minRole,
+  };
+  // 권한 체크 이벤트 — 허용/거부 모두 기록
+  qaTrack('permission.check', {
+    permission: { role: userType },
+    rbac: { role: userType, action: rule.action, resource_type: 'page' },
+  });
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
 //  Navigation
 // ═══════════════════════════════════════════════════
 window.go=function go(page){
+  // 권한 체크 — 거부 시 로그인 페이지로 리다이렉트
+  const perm = checkPermission(page, 'view');
+  if (!perm.allowed) {
+    qaTrack('permission.denied', {
+      permission: { role: userType },
+      auth_event: { action: 'denied' },
+    });
+    go('login');
+    return;
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
@@ -293,17 +339,22 @@ window.addEventListener('hashchange',()=>{
 //  Auth
 // ═══════════════════════════════════════════════════
 window.doLogin=function(){
-  loggedIn=true;userType='member';
-  document.getElementById('user-name').textContent='user@shop.com';
-  document.getElementById('nav').style.display='flex';
-  qaTrack('auth.login',{
-    page_view:{page:'login',locale:'ko',userType:'guest'},
-    tracking:{trackAction:'submit',page:'login',userType:'guest'},
-    auth_event:{action:'login'},
-    endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
-    flow_point:{flow_name:'login',flow_step:'entry',flow_variant:'default'},
-    permission:{role:'customer'},
-  });
+  try {
+    const emailInput = document.querySelector('[data-testid="login-email"]');
+    const email = emailInput ? emailInput.value.trim() : 'user@shop.com';
+    loggedIn=true;userType='member';
+    document.getElementById('user-name').textContent=email;
+    document.getElementById('nav').style.display='flex';
+    if (monitor && monitor.setUser) monitor.setUser({ userId: email, actorId: email });
+    qaTrack('auth.login',{
+      page_view:{page:'login',locale:'ko',userType:'guest'},
+      tracking:{trackAction:'submit',page:'login',userType:'guest'},
+      auth_event:{action:'login'},
+      endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
+      flow_point:{flow_name:'login',flow_step:'entry',flow_variant:'default'},
+      permission:{role:'customer'},
+    });
+  } catch(e) { console.warn('[doLogin] error:', e); loggedIn=true; }
   go('home');
 };
 
@@ -315,6 +366,7 @@ window.doLogout=function(){
     flow_point:{flow_name:'browse',flow_step:'exit',flow_variant:'default'},
   });
   loggedIn=false;userType='guest';
+  if (monitor.clearUser) monitor.clearUser();
   document.getElementById('user-name').textContent='Guest';
   document.getElementById('nav').style.display='none';
   go('login');
@@ -335,7 +387,10 @@ function renderProducts(){
       </div>
     </div>
   `).join('');
-  qaTrack('api.product_list',{endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'}});
+  qaTrack('api.product_list',{
+    tracking:{trackAction:'view',page:'product_list',userType},
+    endpoint:{resource_type:'api',http_method:'GET',api_version:'v1'},
+  });
 }
 
 window.viewProduct=function(id){
@@ -356,6 +411,7 @@ window.viewProduct=function(id){
 // ═══════════════════════════════════════════════════
 window.addToCart=function(){
   if(!selectedProduct)return;
+  checkPermission('cart', 'add_to_cart');
   cart.push({...selectedProduct,qty:1});
   document.getElementById('cart-count').textContent=cart.length;
   qaTrack('cart.add',{
@@ -383,6 +439,8 @@ function renderCart(){
 // ═══════════════════════════════════════════════════
 window.goCheckout=function(){
   if(cart.length===0){alert('장바구니가 비어있습니다');return}
+  const perm = checkPermission('checkout', 'purchase');
+  if (!perm.allowed) { go('login'); return; }
   go('checkout');
   qaTrack('checkout.entry',{
     page_view:{page:'checkout',locale:'ko',userType},
@@ -394,8 +452,10 @@ window.goCheckout=function(){
 };
 
 window.doPayment=function(){
+  checkPermission('checkout', 'payment');
   qaTrack('checkout.process',{
     page_view:{page:'checkout',locale:'ko',userType},
+    tracking:{trackAction:'submit',page:'checkout',userType},
     endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
     flow_point:{flow_name:'checkout',flow_step:'processing',flow_variant:'default'},
     permission:{role:'customer'},
@@ -404,8 +464,10 @@ window.doPayment=function(){
 
   setTimeout(()=>{
     qaTrack('payment.process',{
+      tracking:{trackAction:'submit',page:'checkout',userType},
       endpoint:{resource_type:'api',http_method:'POST',api_version:'v1'},
       flow_point:{flow_name:'payment',flow_step:'payment',flow_variant:'default'},
+      pipeline_point:{pipeline_phase:'ingest',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'},
     });
   },500);
 
@@ -415,9 +477,10 @@ window.doPayment=function(){
     cart=[];document.getElementById('cart-count').textContent='0';
     document.getElementById('order-id').textContent=orderId;
     qaTrack('payment.success',{
+      tracking:{trackAction:'purchase',page:'checkout',userType},
       order_event:{action:'complete'},
       flow_point:{flow_name:'checkout',flow_step:'success',flow_variant:'default'},
-      health_event:{health_status:'healthy',deploy_action:'deploy'},
+      pipeline_point:{pipeline_phase:'verdict',validation_mode:'strict',verdict_result:'pass',temporal_strategy:'span_local'},
     });
     go('complete');
   },1500);
