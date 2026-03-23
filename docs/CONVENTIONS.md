@@ -1,5 +1,95 @@
 # QA-SDK 개발 컨벤션
 
+## 시스템 목적
+
+QA-SDK는 **서비스 간 데이터 흐름의 큰 그림**을 관측하는 도구.
+
+지나치게 세밀한 계측이 아니라, **두 종류의 지점**에 좌표를 부여한다:
+
+1. **인터페이스 계약 지점** — 서비스 간 호출, 이벤트 발행, 메시지 전달이 발생하는 경계
+2. **데이터 저장 지점** — DB write, 상태 변경이 최종적으로 발생하는 위치
+
+이 두 지점을 prefix로 정의하면:
+- axis 차원(유한 enum)으로 **"무슨 종류의 흐름인가"** 를 인코딩
+- table_ref로 **"어떤 데이터가 관련되는가"** 를 참조
+- prefix_ref(svc_ref)로 **"어느 서비스에서 발생했는가"** 를 바인딩
+
+결과적으로 prefix + table_ref 구조가 서비스의 수도코드(pseudocode)를 근사하게 되므로, 흐름 추론 · 구조 파악 · 최적화 분석이 가능해진다.
+
+---
+
+## 계측 원칙
+
+### 어디에 로깅하는가
+
+```
+서비스 A                          서비스 B
+┌──────────┐                    ┌──────────┐
+│          │  ①인터페이스 계약   │          │
+│  로직    │ ──────────────→    │  로직    │
+│          │  endpoint, flow    │          │
+│    ②저장 │                    │    ②저장 │
+│    ↓     │                    │    ↓     │
+│  [DB]    │                    │  [DB]    │
+└──────────┘                    └──────────┘
+```
+
+| 지점 | prefix 예시 | 축 | table_ref | 의미 |
+|------|-----------|-----|-----------|------|
+| **① 계약** | `endpoint` | resource_type, http_method | — | API 호출 종류 |
+| **① 계약** | `flow_point` | flow_name, flow_step | — | 비즈니스 흐름 위치 |
+| **② 저장** | `order_event` | order_action | actor→members, order→orders | 주문 상태 변경 + 관련 데이터 |
+| **② 저장** | `cart_event` | cart_action | actor→members, target→items | 장바구니 변경 + 관련 데이터 |
+
+### 로깅하지 않는 것
+
+- 함수 내부 로직 (if/else 분기마다 로깅하지 않음)
+- 임시 상태 (메모리 캐시 갱신, 로컬 변수)
+- 디버그 로그 (console.log 수준 — 별도 로거 사용)
+
+### table_ref의 역할
+
+table_ref는 **"이 이벤트가 어떤 데이터와 관련되는가"** 를 좌표 밖에서 표현:
+
+```
+cart_event prefix:
+  axis:       action = "add"          ← 좌표 (무슨 행위)
+  table_ref:  actor → members[42]     ← 참조 (누가)
+  table_ref:  target → items[7]       ← 참조 (무엇을)
+```
+
+이 구조가 있으면:
+- 좌표만으로 **"장바구니 담기가 몇 번 발생했는가"** 집계 가능
+- table_ref로 **"member 42가 어떤 item을 담았는가"** 추적 가능
+- 테이블 경로 탐색으로 **"이 member의 org → region → service"** 까지 연결 가능
+
+### prefix가 수도코드를 근사하는 이유
+
+```typescript
+// 실제 서비스 코드
+async function addToCart(memberId: number, itemId: number) {
+  await db.insert(cart_items, { member_id: memberId, item_id: itemId });
+  return { success: true };
+}
+
+// 좌표 관점에서 본 동일한 흐름
+{
+  event_key: "cart.add",
+  address_context: {
+    endpoint: "endpoint:v1:100",     // POST /api/cart (계약 지점)
+    cart_event: "cart_event:v2:0",   // action=add (저장 지점)
+  },
+  payload: {
+    actor_id: memberId,   // table_ref → members (누가)
+    item_id: itemId,      // table_ref → items (무엇을)
+  }
+}
+```
+
+prefix 구조가 서비스의 입출력 계약을 반영하므로, 코드를 읽지 않아도 **"이 서비스가 무엇을 받아서 어디에 저장하는가"** 를 파악할 수 있다.
+
+---
+
 ## 용어집
 
 ### 좌표계

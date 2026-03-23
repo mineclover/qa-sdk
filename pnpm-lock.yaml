@@ -95,6 +95,9 @@ importers:
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
+      decision-flow:
+        specifier: workspace:*
+        version: link:../decision-flow
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot

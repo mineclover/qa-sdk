@@ -216,6 +216,8 @@ export type SkillCategory = "read" | "write" | "analysis" | "chain";
 
 /** Skill이 전문화되는 시나리오 컨텍스트 */
 export interface SkillSpecialization {
+  /** core DkgConfig의 specialization은 확장 가능한 메타데이터를 허용한다. */
+  readonly [key: string]: unknown;
   /** 대상 도메인 */
   readonly domains?: readonly string[];
   /** 대상 DSL 번들 */
@@ -230,6 +232,12 @@ export interface SkillSpecialization {
   readonly invariants?: readonly string[];
   /** 이 skill이 측정하는 metric ID들 */
   readonly metrics?: readonly string[];
+  /** 외부 API 힌트 (서비스 대시보드/자동 관측용) */
+  readonly api?: string | readonly string[];
+  /** 자동 observation 생성 여부 */
+  readonly autoObservation?: boolean;
+  /** 자동 observation ID 템플릿 */
+  readonly observationTemplate?: string;
 }
 
 export interface SkillNode {
