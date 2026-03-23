@@ -18,6 +18,8 @@
     "demo": "concurrently -n reg,ing,shop,demo -c cyan,yellow,green,magenta \"pnpm dev:registry\" \"pnpm dev:ingest\" \"pnpm dev:shop\" \"pnpm dev:demo\"",
     "monitoring": "docker compose -f monitoring/docker-compose.monitoring.yml up -d && echo '  Prometheus: http://localhost:9090\n  Grafana: http://localhost:3000 (admin/admin)'",
     "monitoring:down": "docker compose -f monitoring/docker-compose.monitoring.yml down",
+    "registry": "npx verdaccio --config verdaccio/config.yml",
+    "publish:local": "bash scripts/publish-local.sh",
     "test:e2e": "pnpm --filter @qa-sdk/e2e test"
   },
   "pnpm": {
@@ -28,6 +30,7 @@
   "devDependencies": {
     "concurrently": "^9.2.1",
     "protobufjs-cli": "^2.0.0",
+    "verdaccio": "^6.3.2",
     "vitest": "^1.6.1"
   }
 }
