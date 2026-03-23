@@ -5,7 +5,7 @@
  * 단독 실행 가능 + analyzeImpact에서도 호출.
  */
 
-import type { GraphPort } from "../../shared/graph-port.js";
+import type { GraphPort, GraphNodeLike } from "../../shared/graph-port.js";
 import type { ConstraintNode, ConstraintViolation } from "../dkg.types.js";
 
 export type { ConstraintViolation };
@@ -21,6 +21,17 @@ export interface PassedConstraint {
   readonly rule: string;
 }
 
+function isConstraintNode(node: GraphNodeLike | undefined): node is ConstraintNode {
+  const record = node as (GraphNodeLike & Record<string, unknown>) | undefined;
+  return node?.kind === "constraint"
+    && typeof record?.rule === "string"
+    && Array.isArray(record?.scope);
+}
+
+function isActiveConstraintNode(node: GraphNodeLike): node is ConstraintNode {
+  return isConstraintNode(node) && node.lifecycle === "active";
+}
+
 /**
  * 단일 대상에 대한 constraint 검사.
  */
@@ -34,8 +45,8 @@ export function checkConstraints(
 
   for (const edge of edges) {
     const node = graph.getNode(edge.from);
-    if (!node || node.kind !== "constraint") continue;
-    const cn = node as ConstraintNode;
+    if (!isConstraintNode(node)) continue;
+    const cn = node;
 
     if (cn.lifecycle !== "active") continue;
 
@@ -75,7 +86,7 @@ export function auditAllConstraints(
   violated: number;
   results: ConstraintCheckResult[];
 } {
-  const constraints = graph.findNodes("constraint", c => c.lifecycle === "active");
+  const constraints = graph.getNodesByKind("constraint").filter(isActiveConstraintNode);
   const allTargets = new Set<string>();
 
   for (const c of constraints) {

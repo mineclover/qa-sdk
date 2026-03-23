@@ -37,6 +37,7 @@ export interface SpecNode {
   readonly type: "req" | "feat" | "uc" | "evt" | "ls" | "adr";
   readonly title: string;
   readonly lifecycle: "draft" | "active" | "deprecated";
+  readonly governs?: readonly string[];
 }
 
 export interface SchemaNode {

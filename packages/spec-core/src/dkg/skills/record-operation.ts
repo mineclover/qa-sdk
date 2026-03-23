@@ -5,7 +5,7 @@
  */
 
 import type { GraphRegistry } from "../graph-registry.js";
-import type { DecisionNode, DecisionType, ObservationNode, ObservationSuggestion } from "../dkg.types.js";
+import type { DecisionNode, DecisionType, ObservationNode, ObservationSuggestion, DecisionScaffoldParams } from "../dkg.types.js";
 import { scaffoldDecision } from "./decision-scaffold.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -96,7 +96,7 @@ export function recordDecision(
   };
 }
 
-function buildParams(type: DecisionType, target: string): any {
+function buildParams(type: DecisionType, target: string): DecisionScaffoldParams {
   switch (type) {
     case "capacity": return { axis: target, currentUsed: 0, currentCapacity: 0, proposedCapacity: 0 };
     case "new-axis": return { axisId: target, entries: [], capacity: 32 };

@@ -556,29 +556,29 @@ export function buildTimeline(graph: GraphRegistry): TimelineEvent[] {
   for (const node of graph.getAllNodes()) {
     if (node.kind === "decision") {
       events.push({
-        date: (node as any).date,
+        date: node.date,
         type: "decision",
         id: node.id,
-        title: (node as any).title,
+        title: node.title,
         subjects: graph.neighbors(node.id, "governs").concat(graph.neighbors(node.id, "justifies")),
       });
     }
     if (node.kind === "observation") {
       events.push({
-        date: (node as any).date,
+        date: node.date,
         type: "observation",
         id: node.id,
-        title: (node as any).finding?.slice(0, 60) ?? "",
-        subjects: (node as any).subjects ?? [],
+        title: node.finding.slice(0, 60),
+        subjects: node.subjects,
       });
     }
     if (node.kind === "version-event") {
       events.push({
-        date: (node as any).date,
+        date: node.date,
         type: "version-event",
         id: node.id,
-        title: `${(node as any).subjectId}: ${(node as any).fromVersion} → ${(node as any).toVersion}`,
-        subjects: [(node as any).subjectId],
+        title: `${node.subjectId}: ${node.fromVersion} → ${node.toVersion}`,
+        subjects: [node.subjectId],
       });
     }
   }

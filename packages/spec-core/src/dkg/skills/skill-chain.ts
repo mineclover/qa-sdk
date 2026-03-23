@@ -163,7 +163,7 @@ export function systemHealthChain(
 
   // Step 3: observation 요약
   const observations = graph.getNodesByKind("observation");
-  const unresolved = observations.filter(o => !(o as any).resolution);
+  const unresolved = observations.filter(o => !("resolution" in o && o.resolution));
   steps.push({
     step: "observations",
     status: unresolved.length > 0 ? "warning" : "ok",

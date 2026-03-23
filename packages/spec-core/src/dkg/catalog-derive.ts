@@ -22,6 +22,7 @@ export interface DeriveInput {
     readonly id: string;
     readonly name: string;
     readonly labels: readonly string[];
+    readonly meta?: { readonly category?: PrefixNode["category"] };
     readonly dims: Record<string, {
       readonly kind: "axis" | "prefix_ref" | "table_ref";
       readonly axisId?: string;
@@ -140,8 +141,8 @@ function inferCategory(
   prefix: DeriveInput["prefixes"][string],
 ): PrefixNode["category"] {
   // meta.category가 있으면 우선 사용 (DEMO_CATALOG SSOT)
-  if ((prefix as any).meta?.category) {
-    return (prefix as any).meta.category as PrefixNode["category"];
+  if (prefix.meta?.category) {
+    return prefix.meta.category;
   }
 
   // fallback: 구조 기반 추론

@@ -46,7 +46,7 @@ export function generateDocSyncReport(
   // Catalog
   const axesList = Object.entries(catalog.axes).map(([id, axis]) => {
     const versions = Object.keys(axis.versions);
-    const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+    const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions];
     return {
       id,
       name: axis.name,

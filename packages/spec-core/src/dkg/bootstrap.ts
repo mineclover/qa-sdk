@@ -33,28 +33,6 @@ interface DkgConfigInput {
   readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
 }
 
-// ── Catalog 호환 타입 ────────────────────────────────────────
-
-interface CatalogInput extends DeriveInput {
-  readonly axes: Record<string, {
-    readonly id: string;
-    readonly name: string;
-    readonly versions: Record<string, { readonly entries?: readonly string[]; readonly capacity?: number; [k: string]: unknown }>;
-  }>;
-  readonly prefixes: Record<string, {
-    readonly id: string;
-    readonly name: string;
-    readonly labels: readonly string[];
-    readonly dims: Record<string, {
-      readonly kind: "axis" | "prefix_ref" | "table_ref";
-      readonly axisId?: string;
-      readonly prefixId?: string;
-      readonly table?: string;
-    }>;
-    readonly versions?: readonly { readonly version: string; [k: string]: unknown }[];
-  }>;
-}
-
 /**
  * 완전한 DKG 그래프를 부트스트랩한다.
  *
@@ -69,7 +47,7 @@ interface CatalogInput extends DeriveInput {
  * 5. DSL 버전 스큐 분석 → Observation 자동 생성
  */
 export function bootstrapDkg(options: {
-  catalog: CatalogInput;
+  catalog: Catalog;
   config: DkgConfigInput;
   date?: string;
   /** TransitionSpec 배열 → 자동 변환 후 DKG 등록. config.transitionSpecs와 병합. */
@@ -77,8 +55,8 @@ export function bootstrapDkg(options: {
   /** refresh 시 기존 그래프. resolved observation 재생성 방지용. */
   existingGraph?: GraphRegistry;
 }): GraphRegistry {
-  const catalog = options.catalog as CatalogInput;
-  const config = options.config as DkgConfigInput;
+  const catalog = options.catalog;
+  const config = options.config;
   const date = options?.date ?? "2026-03-20";
   const existing = options.existingGraph;
 
@@ -136,8 +114,8 @@ export function bootstrapDkg(options: {
     const versions = Object.keys(axis.versions);
     const latestKey = versions[versions.length - 1];
     const latest = axis.versions[latestKey];
-    const entries = (latest as any).entries?.length ?? 0;
-    const capacity = (latest as any).capacity ?? entries;
+    const entries = latest.entries.length;
+    const capacity = latest.capacity ?? entries;
     return { id, name: axis.name, entries, capacity };
   });
 
@@ -150,9 +128,7 @@ export function bootstrapDkg(options: {
     const versions = Object.keys(axis.versions);
     const latestKey = versions[versions.length - 1];
     const latest = axis.versions[latestKey];
-    if (latest && "entries" in latest) {
-      entriesMap.set(id, [...(latest as any).entries]);
-    }
+    entriesMap.set(id, [...latest.entries]);
   }
 
   const overlaps = scanAxisOverlaps(graph, entriesMap);
@@ -206,7 +182,7 @@ export function bootstrapDkg(options: {
   const dslRegistry = new DslBundleRegistry();
   for (const bundle of dslBundles) {
     dslRegistry.register(
-      defineDslBundle(catalog as any, {
+      defineDslBundle(catalog, {
         id: bundle.id,
         name: bundle.name,
         description: bundle.description,
@@ -216,7 +192,7 @@ export function bootstrapDkg(options: {
     );
   }
 
-  const skewReports = analyzeAllVersionSkew(catalog as any, dslRegistry);
+  const skewReports = analyzeAllVersionSkew(catalog, dslRegistry);
   for (const report of skewReports) {
     // severity ok → 이전 OBS-SKEW가 있으면 자동 해소
     if (report.severity === "ok") {
@@ -288,7 +264,7 @@ export function bootstrapDkg(options: {
   }
 
   // DSL 커버리지 분석 → uncovered prefix Observation
-  const dslCoverage = analyzeDslCoverage(catalog as any, dslRegistry);
+  const dslCoverage = analyzeDslCoverage(catalog, dslRegistry);
   if (dslCoverage.uncovered.length > 0) {
     const obs: ObservationNode = {
       kind: "observation",
@@ -312,8 +288,8 @@ export function bootstrapDkg(options: {
   for (const spec of specs) {
     graph.addNode(spec);
     // governs 엣지: spec의 governs 필드에서
-    if ("governs" in spec && Array.isArray((spec as any).governs)) {
-      for (const target of (spec as any).governs as string[]) {
+    if (Array.isArray(spec.governs)) {
+      for (const target of spec.governs) {
         graph.addEdge("governs", spec.id, target);
       }
     }

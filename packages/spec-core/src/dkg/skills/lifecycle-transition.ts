@@ -64,7 +64,7 @@ const DECISION_TRANSITIONS: Record<string, readonly string[]> = {
 export function transitionPrefix(
   graph: GraphRegistry,
   prefixId: string,
-  toLifecycle: string,
+  toLifecycle: NonNullable<PrefixNode["lifecycle"]>,
   options?: { date?: string; reason?: string; supersededBy?: string },
 ): TransitionResult {
   const node = graph.getNode(prefixId) as PrefixNode | undefined;
@@ -79,7 +79,7 @@ export function transitionPrefix(
   }
 
   // 노드 교체 (immutable)
-  const updated: PrefixNode = { ...node, lifecycle: toLifecycle as any };
+  const updated: PrefixNode = { ...node, lifecycle: toLifecycle };
   graph.replaceNode(updated);
 
   // deprecated 시 supersedes 엣지
