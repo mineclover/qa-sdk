@@ -96,11 +96,38 @@ export async function createPgStores(databaseUrl: string): Promise<StoreSet> {
   };
 }
 
+/** ClickHouse stores 생성 */
+export async function createClickHouseStores(client: import("./clickhouse-record-store.js").ClickHouseClient): Promise<StoreSet> {
+  const { ClickhouseRecordStore } = await import("./clickhouse-record-store.js");
+  // 부가 stores는 InMemory 사용 (ClickHouse 구현 후순위)
+  const {
+    InMemoryTraceStore,
+    InMemorySessionStore,
+    InMemoryVerdictStore,
+    InMemoryTransmissionStore,
+    InMemoryGraphStore,
+    InMemoryScenarioSpecStore,
+    InMemoryDlqStore,
+  } = await import("@qa-sdk/store");
+
+  return {
+    recordStore: new ClickhouseRecordStore(client),
+    traceStore: new InMemoryTraceStore(),
+    sessionStore: new InMemorySessionStore(),
+    verdictStore: new InMemoryVerdictStore(),
+    transmissionStore: new InMemoryTransmissionStore(),
+    graphStore: new InMemoryGraphStore(),
+    scenarioSpecStore: new InMemoryScenarioSpecStore(),
+    dlqStore: new InMemoryDlqStore(),
+  };
+}
+
 /** STORE_DRIVER + 환경 기반 자동 생성 */
 export async function createStores(opts: {
   driver: StoreDriver;
   databaseUrl?: string;
   sqliteDriver?: import("index-meta").SqlDriver;
+  clickhouseClient?: import("./clickhouse-record-store.js").ClickHouseClient;
 }): Promise<StoreSet> {
   switch (opts.driver) {
     case "pg": {
@@ -111,8 +138,10 @@ export async function createStores(opts: {
       if (!opts.sqliteDriver) throw new Error("STORE_DRIVER=d1 requires SqlDriver instance");
       return createD1Stores(opts.sqliteDriver);
     }
-    case "clickhouse":
-      throw new Error("STORE_DRIVER=clickhouse not yet implemented");
+    case "clickhouse": {
+      if (!opts.clickhouseClient) throw new Error("STORE_DRIVER=clickhouse requires ClickHouseClient instance");
+      return createClickHouseStores(opts.clickhouseClient);
+    }
     case "memory":
     default:
       return createMemoryStores();
