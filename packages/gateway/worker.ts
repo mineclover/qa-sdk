@@ -165,6 +165,10 @@ export default {
         try {
           return await proxyRequest(request, url, route, env, headers);
         } catch (err: any) {
+          // 에러 self-report (fire-and-forget, 순환 방지: /v1/ingest 에러는 스킵)
+          if (!route.prefix.startsWith("/v1/ingest") && env.INGEST_SERVICE) {
+            reportProxyError(env.INGEST_SERVICE, route.prefix, err?.message);
+          }
           return Response.json(
             { error: "Service unavailable", target: route.prefix, message: err?.message },
             { status: 502 },
@@ -220,4 +224,39 @@ function authenticate(request: Request, env: Env): AuthOk | Response {
   }
 
   return Response.json({ error: "Unknown auth mode" }, { status: 500 });
+}
+
+// ── Error Self-Report ─────────────────────────────
+
+function reportProxyError(binding: Fetcher, target: string, message?: string): void {
+  const now = new Date().toISOString();
+  const id = `gerr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    binding.fetch(new Request("https://internal/v1/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transmission_id: id,
+        sent_at: now,
+        source: { service_name: "gateway", sdk_name: "error-reporter", sdk_version: "1.0" },
+        build: { env: "prod" },
+        owner: { owner_type: "agent", owner_id: "error-reporter" },
+        runtime: { platform: "worker" },
+        records: [{
+          log_id: id,
+          trace_id: `err-gw-${Date.now()}`,
+          span_id: "err",
+          timestamp: now,
+          record_kind: "log",
+          event_key: "error.service",
+          event_version: "001",
+          payload_format: "json",
+          payload_encoding: "raw",
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+          payload: { service: "gateway", code: "PROXY_ERROR", message: (message ?? "").slice(0, 500), target },
+        }],
+      }),
+    })).catch(() => {});
+  } catch {}
 }
