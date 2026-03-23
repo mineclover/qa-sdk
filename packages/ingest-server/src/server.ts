@@ -283,6 +283,19 @@ async function startServer() {
 
   injectWebSocket(server);
 
+  // gRPC Debug Server (GRPC_PORT 설정 시 활성화)
+  const grpcPort = process.env["GRPC_PORT"];
+  if (grpcPort) {
+    import("./grpc/debug-server.js").then(({ startGrpcDebugServer }) => {
+      startGrpcDebugServer({
+        recordStreamBroker,
+        traceStore: stores.traceStore,
+        logger,
+        port: parseInt(grpcPort),
+      }).catch(err => logger.warn({ err }, "gRPC server failed to start"));
+    }).catch(() => { /* @grpc/grpc-js not available */ });
+  }
+
   installGracefulShutdown({
     appLifecycle,
     closeDb: async () => {

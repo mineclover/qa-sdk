@@ -159,3 +159,25 @@ message Pong {
   int64 timestamp_ms = 1;
   int64 server_timestamp_ms = 2;
 }
+
+// ═══════════════════════════════════════════════════════
+//  gRPC Service 정의
+// ═══════════════════════════════════════════════════════
+
+service DebugService {
+  // 양방향 스트리밍 — 클라이언트가 DebugCommand 전송, 서버가 EventRecord 스트림 반환
+  rpc StreamEvents (stream DebugCommand) returns (stream EventRecord);
+
+  // 단방향 — 활성 trace 조회
+  rpc GetActiveTraces (GetActiveTracesRequest) returns (ActiveTraces);
+
+  // 단방향 — 주소 resolve
+  rpc ResolveAddr (ResolveAddress) returns (ResolvedAddress);
+
+  // 서버 → 클라이언트 스트리밍 — 필터 기반 이벤트 구독
+  rpc Subscribe (Subscribe) returns (stream EventRecord);
+}
+
+message GetActiveTracesRequest {
+  int32 limit = 1;
+}
