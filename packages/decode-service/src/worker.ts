@@ -91,17 +91,20 @@ function buildDecodeMaps(catalog: any): any[] {
           });
           shape.push(entries.length);
         } else if (dimDef.kind === "prefix_ref") {
-          // prefix_ref: refEntries의 values 크기로 shape 결정
+          // prefix_ref: refEntries 필수 — 없으면 이 prefix 스킵
           const refEntries = ver.refEntries?.[label];
-          const refValues: number[] = refEntries?.values ? [...refEntries.values] : [];
-          const refSize = refValues.length || 1;
+          if (!refEntries?.values?.length) {
+            dims.length = 0; // 이 prefix를 무효화
+            break;
+          }
+          const refValues: number[] = [...refEntries.values];
           dims.push({
             dimId: label,
             snapshotId: `ref_${dimDef.prefixId}`,
             kind: { type: "index_ref", indexId: dimDef.prefixId },
             entries: refValues.map((v: number) => String(v)),
           });
-          shape.push(refSize);
+          shape.push(refValues.length);
         } else if (dimDef.kind === "table_ref") {
           dims.push({ dimId: label, snapshotId: `table_${dimDef.tableId}`, kind: { type: "string_enum" }, entries: ["_ref"] });
           shape.push(1);

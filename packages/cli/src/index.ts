@@ -19,6 +19,7 @@ import {
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
   dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
+  dkgObservations, dkgDecisions, dkgConstraints,
   dkgPromoteScan, dkgScanTables,
   dkgPublish, dkgVersion,
   dkgAddEntry, dkgReset,
@@ -382,6 +383,15 @@ async function main() {
       });
       return;
     }
+    case "dkg observations":
+      dkgObservations(parsePage(sub.rest));
+      return;
+    case "dkg decisions":
+      dkgDecisions(parsePage(sub.rest));
+      return;
+    case "dkg constraints":
+      dkgConstraints(parsePage(sub.rest));
+      return;
     case "dkg service":
       dkgService(sub.rest[0]);
       return;
@@ -740,6 +750,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
     "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
     "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
+    "dkg observations", "dkg decisions", "dkg constraints",
     "service list", "service show", "service health", "service owners", "service endpoints",
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
     "gate health", "gate check", "gate classify",

@@ -109,21 +109,20 @@ function buildDecodeMap(catalog: any, prefixId: string, prefix: any, versionId: 
       });
       shape.push(axisVerDef.capacity ?? entries.length);
     } else if (dimDef.kind === "prefix_ref") {
-      // prefix_ref — 참조 대상 prefix의 주소 공간 크기를 entries로 표현
-      const refPrefixId = dimDef.prefixId;
-      const refPrefix = catalog.prefixes?.[refPrefixId];
-      if (!refPrefix) continue;
-
-      const refVer = (refPrefix.versions ?? [])[0];
-      // prefix_ref: 참조 capacity만 shape에 반영, entries는 빈 배열
-      const refCapacity = refVer ? computePrefixCapacity(catalog, refPrefix, refVer.version) : 1;
+      // prefix_ref: refEntries 필수 — 없으면 이 prefix 스킵
+      const refEntriesDef = verDef.refEntries?.[label];
+      if (!refEntriesDef?.values?.length) {
+        mapDims.length = 0;
+        break;
+      }
+      const refValues: number[] = [...refEntriesDef.values];
       mapDims.push({
         dimId: label,
-        snapshotId: `ref_${refPrefixId}`,
-        kind: { type: "index_ref", indexId: refPrefixId },
-        entries: [],
+        snapshotId: `ref_${dimDef.prefixId}`,
+        kind: { type: "index_ref", indexId: dimDef.prefixId },
+        entries: refValues.map(String),
       });
-      shape.push(refCapacity);
+      shape.push(refValues.length);
     } else if (dimDef.kind === "table_ref") {
       // table_ref — 스킵 (디코딩에서는 불필요)
       mapDims.push({

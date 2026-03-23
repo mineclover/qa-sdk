@@ -4,6 +4,8 @@
  * core 로직(app.ts)은 Node.js와 동일.
  * 드라이버: index-meta D1SqlDriver.
  * 모든 import는 static (CF Workers에서 dynamic import 제한).
+ *
+ * DKG graph를 bootstrap하여 /api/diagrams 엔드포인트 활성화.
  */
 
 import { createApp } from "./app.js";
@@ -17,18 +19,45 @@ import { SqlDraftLockStore } from "./stores/sql-draft-lock-store.js";
 import { SqlAxisProfileStore } from "./stores/sql-axis-profile-store.js";
 import { SqlEventSchemaStore } from "./stores/sql-event-schema-store.js";
 import { SqlPrefixRegistry, SqlVersionLifecycleStore } from "index-meta";
+import { bootstrapDkg } from "@qa-sdk/spec-core/dkg";
+import { collectMetrics } from "@qa-sdk/spec-core/convergence";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 
 interface Env {
   DB: any; // D1Database binding
 }
 
+// ── DKG graph 캐시 (Worker 인스턴스 수명 동안 유지) ──
+let cachedGraph: unknown | null = null;
+
+function getGraph(): unknown {
+  if (!cachedGraph) {
+    cachedGraph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+  }
+  return cachedGraph;
+}
+
+function getCatalog(): unknown {
+  return DEMO_CATALOG;
+}
+
+function getMetrics(): unknown[] {
+  const graph = getGraph();
+  return collectMetrics(DEMO_CATALOG as any, graph as any, null);
+}
+
+let ddlInitialized = false;
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const driver = new D1SqlDriver(env.DB);
 
-    // DDL 초기화 — 개별 문장으로 실행 (D1 안정성)
-    for (const stmt of REGISTRY_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-      try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
+    // DDL 초기화 — 첫 요청에서만 실행
+    if (!ddlInitialized) {
+      for (const stmt of REGISTRY_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
+        try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
+      }
+      ddlInitialized = true;
     }
 
     const app = createApp({
@@ -41,6 +70,9 @@ export default {
       endpointStore: new SqlServiceEndpointStore(driver as any),
       eventSchemaStore: new SqlEventSchemaStore(driver as any),
       axisStore: new SqlAxisProfileStore(driver as any),
+      getGraph,
+      getCatalog,
+      collectMetrics: getMetrics,
       corsOrigin: "*",
     });
 

@@ -801,6 +801,54 @@ export function dkgDecisionsList(opts: { limit?: number; kind?: string }): void 
   }
 }
 
+// ── dkg observations / dkg decisions / dkg constraints ──
+
+export function dkgObservations(opts: PageOptions): void {
+  const graph = getGraph();
+  const observations = graph.getNodesByKind("observation");
+  const result = paginate(observations, opts);
+
+  console.log(`\n══ Observations (${observations.length}) ══`);
+  for (const obs of result.items) {
+    const o = obs as any;
+    const status = o.resolution ? `resolved(${o.resolution.outcome})` : "open";
+    const icon = status.startsWith("resolved") ? "✅" : o.intent === "action-needed" ? "🔴" : "🟡";
+    console.log(`  ${icon} ${obs.id}`);
+    console.log(`     ${o.finding ?? o.description ?? ""}`);
+    console.log(`     intent=${o.intent ?? "?"} status=${status} source=${o.source ?? "?"}`);
+  }
+  console.log(`\n  page ${result.page}/${result.totalPages} (total: ${observations.length})`);
+}
+
+export function dkgDecisions(opts: PageOptions): void {
+  const graph = getGraph();
+  const decisions = graph.getNodesByKind("decision");
+  const result = paginate(decisions, opts);
+
+  console.log(`\n══ Decisions (${decisions.length}) ══`);
+  for (const dec of result.items) {
+    const d = dec as any;
+    const icon = d.lifecycle === "active" ? "📋" : d.lifecycle === "superseded" ? "📝" : "📦";
+    console.log(`  ${icon} ${dec.id}`);
+    console.log(`     ${d.title ?? ""}`);
+    console.log(`     type=${d.decisionType ?? "?"} lifecycle=${d.lifecycle ?? "?"}`);
+  }
+  console.log(`\n  page ${result.page}/${result.totalPages} (total: ${decisions.length})`);
+}
+
+export function dkgConstraints(opts: PageOptions): void {
+  const graph = getGraph();
+  const constraints = graph.getNodesByKind("constraint");
+
+  console.log(`\n══ Constraints (${constraints.length}) ══`);
+  for (const c of constraints) {
+    const con = c as any;
+    console.log(`  ${con.id}`);
+    console.log(`     ${con.description ?? con.rule ?? ""}`);
+    if (con.targets?.length) console.log(`     targets: ${con.targets.join(", ")}`);
+  }
+}
+
 // ── dkg refresh — bootstrap 재실행 → save ─────────────
 
 export function dkgRefresh(): void {
