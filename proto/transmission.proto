@@ -1,0 +1,92 @@
+// QA-SDK Transmission Protocol — 이벤트 수집 바이너리 포맷.
+//
+// JSON TransmissionEnvelope/EventRecord와 1:1 대응.
+// 필드 번호는 변경 금지 (하위 호환).
+
+syntax = "proto3";
+
+package qa.transmission;
+
+message TransmissionEnvelope {
+  string transmission_id = 1;
+  string sent_at = 2;
+  Owner owner = 3;
+  Source source = 4;
+  Runtime runtime = 5;
+  Build build = 6;
+  map<string, string> infra_context = 7;
+  string entry_snapshot = 8;
+  repeated EventRecord records = 10;
+}
+
+message Owner {
+  string owner_type = 1;  // tenant | workspace | user | agent
+  string owner_id = 2;
+}
+
+message Source {
+  string service_name = 1;
+  string sdk_name = 2;
+  string sdk_version = 3;
+}
+
+message Runtime {
+  string platform = 1;
+  string device_ref = 2;
+  string os_version = 3;
+  string app_version = 4;
+}
+
+message Build {
+  string env = 1;
+  string build_ref = 2;
+  string release_version = 3;
+}
+
+message EventRecord {
+  string log_id = 1;
+  string timestamp = 2;
+  string record_kind = 3;  // log | span | metric
+
+  // Trace context
+  string trace_id = 4;
+  string span_id = 5;
+  string parent_span_id = 6;
+
+  // Event identity
+  string event_key = 7;
+  string event_version = 8;
+
+  // Span fields
+  string span_name = 10;
+  string start_time = 11;
+  string end_time = 12;
+  string status_code = 13;  // ok | error | unset
+
+  // Payload
+  string payload_format = 20;    // json | rpc | protobuf | text | binary | stream
+  string payload_encoding = 21;  // raw | base64 | gzip+base64 | protobuf
+  bool payload_masking_applied = 22;
+  repeated string payload_masked_fields = 23;
+  bytes payload_bytes = 24;      // JSON string as bytes (더 작음)
+
+  // Session
+  string qa_session_id = 30;
+
+  // Address context — 핵심: prefix_id → "prefix:ver:addr"
+  map<string, string> address_context = 40;
+
+  // Metric
+  string metric_type = 50;
+  string metric_name = 51;
+  double metric_value = 52;
+  string metric_unit = 53;
+  map<string, string> metric_labels = 54;
+  repeated double metric_buckets = 55;
+  repeated double metric_quantiles = 56;
+
+  // Actor
+  string actor_id = 60;
+  string user_id = 61;
+  map<string, string> user_attributes = 62;
+}
