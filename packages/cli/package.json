@@ -26,6 +26,7 @@
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
+    "decision-flow": "workspace:*",
     "demo-snapshot": "workspace:*",
     "execa": "^9.6.1"
   },

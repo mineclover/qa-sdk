@@ -45,6 +45,7 @@ import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth } from "./commands/service.js";
+import { flowList, flowStart, flowSelect, flowStatus, flowTrace, flowAnalyze } from "./commands/flow.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -714,6 +715,26 @@ async function main() {
       return;
     }
 
+    // Decision Flow
+    case "flow list":
+      flowList();
+      return;
+    case "flow start":
+      flowStart(sub.rest);
+      return;
+    case "flow select":
+      flowSelect(sub.rest);
+      return;
+    case "flow status":
+      flowStatus(sub.rest);
+      return;
+    case "flow trace":
+      flowTrace(sub.rest);
+      return;
+    case "flow analyze":
+      flowAnalyze(sub.rest);
+      return;
+
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
       console.log(USAGE);
@@ -757,6 +778,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "query health", "query resolve", "query rules",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
+    "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
