@@ -57,6 +57,7 @@ export interface IngestDeps {
   withTraceTransaction?: TraceTransactionRunner;
   taskQueue?: TaskQueue<TaskPayload>;
   convergencePipeline?: ConvergencePipelinePort;
+  metricsCollector?: { inc(name: string, labels?: Record<string, string>, delta?: number): void };
   logger?: Logger;
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;
@@ -100,9 +101,16 @@ export function createIngestRoutes(deps: IngestDeps) {
   const app = new Hono();
 
   app.post("/v1/ingest", async (c) => {
-    const envelope = await deserializeEnvelope(c);
-    await processEnvelope(envelope, deps);
-    return c.json({ accepted: true, record_count: envelope.records.length }, 202);
+    try {
+      const envelope = await deserializeEnvelope(c);
+      await processEnvelope(envelope, deps);
+      deps.metricsCollector?.inc("ingest_requests_total", { status: "202" });
+      deps.metricsCollector?.inc("ingest_records_total", {}, envelope.records.length);
+      return c.json({ accepted: true, record_count: envelope.records.length }, 202);
+    } catch (err) {
+      deps.metricsCollector?.inc("ingest_requests_total", { status: "500" });
+      throw err;
+    }
   });
 
   return app;
