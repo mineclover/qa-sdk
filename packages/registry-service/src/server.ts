@@ -22,7 +22,7 @@ import { InMemoryCatalogStore } from "./stores/in-memory-catalog-store.js";
 import { SqlCatalogStore } from "./stores/sql-catalog-store.js";
 import { InMemoryAxisProfileStore } from "./stores/in-memory-axis-profile-store.js";
 import { SqlAxisProfileStore } from "./stores/sql-axis-profile-store.js";
-import { REGISTRY_SCHEMA_DDL } from "./stores/schema.sql.js";
+import { REGISTRY_SCHEMA_DDL, REGISTRY_MIGRATIONS } from "./stores/schema.sql.js";
 import { createActivationGate, type ActivationGatePort } from "./lib/activation-gate-adapter.js";
 import { createPostActivationHook } from "./lib/post-activation-hook.js";
 import type { PostActivationHookPort } from "./lib/registry-service.js";
@@ -69,6 +69,9 @@ async function createStores(sqlitePath: string) {
   const driver = new NodeSqliteDriver(sqlitePath);
   // registry 전용 테이블 추가 (공개 SqlDriver API 사용)
   await execDdlStatements(driver, REGISTRY_SCHEMA_DDL);
+  // 버전 기반 마이그레이션 실행
+  const { runMigrations } = await import("./stores/migrate.js");
+  runMigrations(driver as any, REGISTRY_MIGRATIONS, logger);
 
   const { SqlConfigStore } = await import("./stores/sql-config-store.js");
   const { SqlServiceEndpointStore } = await import("./stores/sql-service-endpoint-store.js");
@@ -398,11 +401,60 @@ async function seedEndpoints(store: import("./stores/service-endpoint-store.js")
   logger.info({ count: endpoints.length }, "seeded service endpoints");
 }
 
+/** EventSchema seed — event-catalog + prefix-mapping 기반 자동 등록 */
+async function seedEventSchemas(store: import("./stores/event-schema-store.js").EventSchemaStore) {
+  try {
+    const ec = await import("@qa-sdk/event-catalog");
+    const now = new Date().toISOString();
+    let count = 0;
+
+    // 1. core events (60개) — SDK 표준 이벤트
+    for (const event of ec.allCoreEvents) {
+      await store.upsert({
+        catalogId: "demo",
+        serviceId: "_core",
+        eventKey: event.event_key,
+        eventVersion: event.event_version.padStart(3, "0"),
+        displayName: event.display_name,
+        description: event.description,
+        recordKind: "log",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+      count++;
+    }
+
+    // 2. prefix-mapping 이벤트 (11개) — 비즈니스 이벤트
+    for (const mapping of ec.getAllMappings()) {
+      const prefixes = mapping.prefixes.map((p: any) => p.prefixId);
+      await store.upsert({
+        catalogId: "demo",
+        serviceId: "shopping-web",
+        eventKey: mapping.event_key,
+        eventVersion: "001",
+        displayName: `${mapping.event_key} (${mapping.domain})`,
+        description: `prefix: ${prefixes.join(", ")}`,
+        recordKind: "log",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+      count++;
+    }
+
+    logger.info({ count }, "seeded event schemas from event-catalog");
+  } catch {
+    logger.debug("event-catalog not available — event schema seed skipped");
+  }
+}
+
 async function main() {
   const stores = await createStores(env.SQLITE_PATH);
   await seedDemoCatalog(stores.catalogStore, stores.axisStore);
   await seedConfigs(stores.configStore);
   await seedEndpoints(stores.endpointStore);
+  await seedEventSchemas(stores.eventSchemaStore);
   const activationGate = await buildActivationGate();
   const postActivationHook = await buildPostActivationHook();
   const devDashboardProvider = await buildDevDashboardProvider();

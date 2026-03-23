@@ -73,4 +73,26 @@ CREATE TABLE IF NOT EXISTS event_schema (
 );
 
 CREATE INDEX IF NOT EXISTS idx_event_schema_service ON event_schema(catalog_id, service_id);
+
+CREATE TABLE IF NOT EXISTS schema_version (
+  version      INTEGER PRIMARY KEY,
+  applied_at   TEXT NOT NULL,
+  description  TEXT
+);
 `;
+
+/**
+ * SQLite 마이그레이션 — 버전 기반 ALTER TABLE.
+ * 신규 컬럼 추가 시 여기에 마이그레이션 추가.
+ * IF NOT EXISTS 로 기존 테이블은 안전.
+ */
+export const REGISTRY_MIGRATIONS: Array<{ version: number; description: string; sql: string }> = [
+  // v1: 초기 스키마 (schema.sql.ts의 CREATE TABLE IF NOT EXISTS로 커버)
+  { version: 1, description: "initial schema", sql: "" },
+  // v2: catalogs 테이블에 hash 컬럼 추가 (seed 자동 갱신용)
+  {
+    version: 2,
+    description: "add catalogs.hash column",
+    sql: `ALTER TABLE catalogs ADD COLUMN hash TEXT;`,
+  },
+];
