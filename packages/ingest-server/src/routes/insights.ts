@@ -34,6 +34,10 @@ export function createInsightsRoutes(deps: InsightsDeps) {
       db.queryOne<{ cnt: number }>("SELECT COUNT(DISTINCT actor_id) as cnt FROM event_records WHERE actor_id IS NOT NULL"),
     ]);
 
+    const errorCount = await db.queryOne<{ cnt: number }>(
+      "SELECT COUNT(*) as cnt FROM event_records WHERE event_key LIKE 'error.%'",
+    );
+
     return c.json({
       traces: traceCount?.cnt ?? 0,
       records: recordCount?.cnt ?? 0,
@@ -43,6 +47,7 @@ export function createInsightsRoutes(deps: InsightsDeps) {
       autoRecords: autoCount?.cnt ?? 0,
       manualRecords: manualCount?.cnt ?? 0,
       actors: actorCount?.cnt ?? 0,
+      errorRecords: errorCount?.cnt ?? 0,
     });
   });
 
@@ -296,6 +301,48 @@ export function createInsightsRoutes(deps: InsightsDeps) {
     }
 
     return c.json({ items, summary, total: items.length });
+  });
+
+  // GET /v1/insights/errors — 에러 이벤트 히스토리
+  app.get("/v1/insights/errors", async (c) => {
+    const limit = parseInt(c.req.query("limit") ?? "50");
+    const rows = await db.query<{
+      log_id: string; trace_id: string; timestamp: string;
+      event_key: string; payload: string | null;
+      actor_id: string | null; qa_session_id: string | null;
+    }>(
+      `SELECT log_id, trace_id, timestamp, event_key, payload, actor_id, qa_session_id
+       FROM event_records
+       WHERE event_key LIKE 'error.%'
+       ORDER BY timestamp DESC
+       LIMIT ${limit}`,
+    );
+
+    const items = rows.map(r => {
+      let payload: Record<string, unknown> | undefined;
+      try { if (r.payload) payload = JSON.parse(r.payload); } catch {}
+      return {
+        logId: r.log_id,
+        traceId: r.trace_id,
+        timestamp: r.timestamp,
+        eventKey: r.event_key,
+        service: payload?.service ?? "unknown",
+        code: payload?.code ?? "UNKNOWN",
+        message: payload?.message ?? "",
+        path: payload?.path,
+        statusCode: payload?.statusCode,
+      };
+    });
+
+    // 서비스별 집계
+    const byService: Record<string, number> = {};
+    const byCode: Record<string, number> = {};
+    for (const item of items) {
+      byService[item.service as string] = (byService[item.service as string] ?? 0) + 1;
+      byCode[item.code as string] = (byCode[item.code as string] ?? 0) + 1;
+    }
+
+    return c.json({ items, total: items.length, byService, byCode });
   });
 
   return app;
