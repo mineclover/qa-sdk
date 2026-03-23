@@ -35,7 +35,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy packages/shop-web/public --project-name=qa-shop-web
+          command: pages deploy packages/shop-web/public --project-name=shop-web --commit-dirty=true
         continue-on-error: true
 
       # platform-demo (vite 빌드 필요)
@@ -48,7 +48,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy packages/platform-demo/dist --project-name=qa-platform-demo
+          command: pages deploy packages/platform-demo/dist --project-name=platform-demo --commit-dirty=true
         continue-on-error: true
 
   deploy-workers:
@@ -71,7 +71,27 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
 
-      # gate-service Worker
+      # ingest-server Worker (D1)
+      - name: Deploy ingest-server Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/ingest-server
+          command: deploy
+        continue-on-error: true
+
+      # registry-service Worker (D1)
+      - name: Deploy registry-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/registry-service
+          command: deploy
+        continue-on-error: true
+
+      # gate-service Worker (D1)
       - name: Deploy gate-service Worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -81,13 +101,33 @@ jobs:
           command: deploy
         continue-on-error: true
 
-      # query-service Worker
+      # query-service Worker (D1)
       - name: Deploy query-service Worker
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           workingDirectory: packages/query-service
+          command: deploy
+        continue-on-error: true
+
+      # decode-service Worker
+      - name: Deploy decode-service Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/decode-service
+          command: deploy
+        continue-on-error: true
+
+      # platform-demo-api Worker (D1)
+      - name: Deploy platform-demo-api Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: packages/platform-demo-api
           command: deploy
         continue-on-error: true
 
