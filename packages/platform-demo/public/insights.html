@@ -47,6 +47,26 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
 .bar-fill{height:100%;border-radius:3px;transition:width 300ms}
 .bar-count{position:absolute;right:6px;top:0;line-height:18px;font-size:10px;color:var(--txt);font-family:var(--mono)}
 
+/* ── Coverage Donut ── */
+.coverage-card{position:relative;height:150px;padding:10px 12px;overflow:hidden}
+.coverage-layout{display:flex;align-items:center;gap:12px;height:100%}
+.coverage-svg{width:128px;height:128px;flex:0 0 auto}
+.coverage-center-total{font-family:var(--mono);font-size:18px;font-weight:700;fill:var(--txt)}
+.coverage-center-label{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;fill:var(--txt2)}
+.coverage-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;min-width:0;flex:1}
+.coverage-legend-item{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px}
+.coverage-legend-main{display:flex;align-items:center;gap:8px;min-width:0}
+.coverage-swatch{width:8px;height:8px;border-radius:999px;flex:0 0 auto}
+.coverage-name{font-family:var(--mono);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coverage-meta{font-family:var(--mono);color:var(--txt2);font-size:10px;flex:0 0 auto}
+.coverage-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--txt2);font-size:12px}
+.coverage-tooltip{
+  position:fixed;display:none;pointer-events:none;z-index:20;max-width:220px;
+  background:rgba(13,17,23,0.96);border:1px solid var(--border);border-radius:6px;
+  padding:6px 8px;font-size:11px;font-family:var(--mono);color:var(--txt);
+  box-shadow:0 10px 28px rgba(0,0,0,0.35)
+}
+
 /* ── Flow ── */
 .flow-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px}
 .flow-top{display:flex;justify-content:space-between;margin-bottom:4px}
@@ -67,7 +87,12 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
 
 .empty{text-align:center;padding:30px;color:var(--txt2)}
 .loading{text-align:center;padding:30px;color:var(--txt2)}
-@media(max-width:768px){.summary-grid{grid-template-columns:repeat(3,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .summary-grid{grid-template-columns:repeat(3,1fr)}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .coverage-card{height:auto;min-height:150px}
+  .coverage-layout{align-items:flex-start}
+}
 </style>
 </head>
 <body>
@@ -79,6 +104,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
   <a class="nav-link" href="/dashboard.html">Dashboard</a>
   <a class="nav-link" href="/events.html">Events</a>
   <a class="nav-link active" href="/insights.html">Insights</a>
+  <a class="nav-link" href="/flow.html">Flow</a>
 </nav>
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -99,24 +125,29 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
 
   <div class="grid-2">
     <div class="section">
-      <div class="section-title">Service Distribution</div>
-      <div class="card" id="serviceChart"><div class="loading">Loading...</div></div>
+      <div class="section-title">Event Categories</div>
+      <div class="card coverage-card" id="coverageChart"><div class="loading">Loading...</div></div>
     </div>
     <div class="section">
-      <div class="section-title">Event Keys</div>
-      <div class="card" id="eventKeyChart"><div class="loading">Loading...</div></div>
+      <div class="section-title">Service Distribution</div>
+      <div class="card" id="serviceChart"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
   <div class="grid-2">
     <div class="section">
+      <div class="section-title">Event Keys</div>
+      <div class="card" id="eventKeyChart"><div class="loading">Loading...</div></div>
+    </div>
+    <div class="section">
       <div class="section-title">Coordinate Prefixes</div>
       <div class="card" id="prefixChart"><div class="loading">Loading...</div></div>
     </div>
-    <div class="section">
-      <div class="section-title">Event Timeline</div>
-      <div class="card" id="timelineChart"><div class="loading">Loading...</div></div>
-    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Event Timeline</div>
+    <div class="card" id="timelineChart"><div class="loading">Loading...</div></div>
   </div>
 
   <div class="section">
@@ -129,13 +160,88 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
     <div class="card" id="permHistory"><div class="loading">Loading...</div></div>
   </div>
 </div>
+<div class="coverage-tooltip" id="coverageTooltip" aria-hidden="true"></div>
 
 <script>
 (function(){
   var BASE = (window.__QA_CONFIG__||{}).INGEST_URL || '';
   var colors = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#56d4dd','#d18616','#8b949e'];
+  var categoryColors = {
+    navigation: '#58a6ff',
+    session: '#3fb950',
+    outcome: '#f85149',
+    interaction: '#bc8cff',
+    form: '#d29922',
+    network: '#56d4dd',
+    execution: '#d18616',
+    quality: '#8b949e',
+    uncategorized: '#6e7681'
+  };
+  var POLL_MS = 10000;
+  var coverageTooltip = document.getElementById('coverageTooltip');
+  var refreshTimer = null;
+  var activeLoad = null;
 
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+  function toNumber(v){return Number(v || 0)}
+  function roundPercent(count, total){return total > 0 ? Math.round((count / total) * 100) : 0}
+  function polarToCartesian(cx, cy, r, angle) {
+    return { x: cx + (r * Math.cos(angle)), y: cy + (r * Math.sin(angle)) };
+  }
+
+  function describeDonutArc(cx, cy, outerR, innerR, startAngle, endAngle) {
+    var startOuter = polarToCartesian(cx, cy, outerR, startAngle);
+    var endOuter = polarToCartesian(cx, cy, outerR, endAngle);
+    var startInner = polarToCartesian(cx, cy, innerR, endAngle);
+    var endInner = polarToCartesian(cx, cy, innerR, startAngle);
+    var largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+    return 'M ' + startOuter.x.toFixed(3) + ' ' + startOuter.y.toFixed(3)
+      + ' A ' + outerR + ' ' + outerR + ' 0 ' + largeArcFlag + ' 1 ' + endOuter.x.toFixed(3) + ' ' + endOuter.y.toFixed(3)
+      + ' L ' + startInner.x.toFixed(3) + ' ' + startInner.y.toFixed(3)
+      + ' A ' + innerR + ' ' + innerR + ' 0 ' + largeArcFlag + ' 0 ' + endInner.x.toFixed(3) + ' ' + endInner.y.toFixed(3)
+      + ' Z';
+  }
+
+  function positionCoverageTooltip(evt) {
+    if (!coverageTooltip || coverageTooltip.style.display !== 'block') return;
+    var left = evt && typeof evt.clientX === 'number' ? evt.clientX + 14 : 16;
+    var top = evt && typeof evt.clientY === 'number' ? evt.clientY + 14 : 16;
+    if ((!evt || typeof evt.clientX !== 'number') && evt && evt.target && typeof evt.target.getBoundingClientRect === 'function') {
+      var rect = evt.target.getBoundingClientRect();
+      left = rect.left + (rect.width / 2) + 14;
+      top = rect.top + 14;
+    }
+    coverageTooltip.style.left = left + 'px';
+    coverageTooltip.style.top = top + 'px';
+  }
+
+  function hideCoverageTooltip() {
+    if (!coverageTooltip) return;
+    coverageTooltip.style.display = 'none';
+    coverageTooltip.setAttribute('aria-hidden', 'true');
+  }
+
+  function showCoverageTooltip(evt, label) {
+    if (!coverageTooltip) return;
+    coverageTooltip.textContent = label;
+    coverageTooltip.style.display = 'block';
+    coverageTooltip.setAttribute('aria-hidden', 'false');
+    positionCoverageTooltip(evt);
+  }
+
+  function bindCoverageTooltip(el) {
+    var segments = el.querySelectorAll('[data-coverage-tooltip]');
+    segments.forEach(function(segment) {
+      segment.addEventListener('mousemove', function(evt) {
+        showCoverageTooltip(evt, segment.getAttribute('data-coverage-tooltip') || '');
+      });
+      segment.addEventListener('mouseleave', hideCoverageTooltip);
+      segment.addEventListener('blur', hideCoverageTooltip);
+      segment.addEventListener('focus', function(evt) {
+        showCoverageTooltip(evt, segment.getAttribute('data-coverage-tooltip') || '');
+      });
+    });
+  }
 
   function barChart(el, items, labelKey, countKey, maxItems) {
     if (!items.length) { el.innerHTML='<div class="empty">No data</div>'; return; }
@@ -173,6 +279,83 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
       var items = await r.json();
       barChart(document.getElementById('serviceChart'), items, 'service', 'records', 10);
     } catch(e) { document.getElementById('serviceChart').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
+  }
+
+  async function loadCoverage() {
+    var el = document.getElementById('coverageChart');
+    try {
+      var r = await fetch(BASE+'/v1/insights/coverage');
+      var data = await r.json();
+      var total = toNumber(data.totalRecords);
+      var categories = (data.categories || [])
+        .map(function(item) {
+          var count = toNumber(item.observedCount);
+          return {
+            category: item.category || 'uncategorized',
+            count: count,
+            pct: roundPercent(count, total),
+            color: categoryColors[item.category] || categoryColors.uncategorized
+          };
+        })
+        .filter(function(item) { return item.count > 0; })
+        .sort(function(a, b) { return b.count - a.count; })
+        ;
+
+      if (!total || !categories.length) {
+        el.innerHTML = '<div class="coverage-empty">No event coverage yet</div>';
+        hideCoverageTooltip();
+        return;
+      }
+
+      var cx = 72;
+      var cy = 72;
+      var outerR = 50;
+      var innerR = 30;
+      var currentAngle = -Math.PI / 2;
+      var svgParts = [
+        '<svg class="coverage-svg" viewBox="0 0 144 144" role="img" aria-label="Event category distribution donut chart">',
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + outerR + '" fill="none" stroke="rgba(139,148,158,0.12)" stroke-width="' + (outerR - innerR) + '"></circle>'
+      ];
+
+      categories.forEach(function(item) {
+        var sliceAngle = Math.min((item.count / total) * Math.PI * 2, (Math.PI * 2) - 0.001);
+        var endAngle = currentAngle + sliceAngle;
+        var label = item.category + ': ' + item.count + ' events (' + item.pct + '%)';
+        svgParts.push(
+          '<path d="' + describeDonutArc(cx, cy, outerR, innerR, currentAngle, endAngle) + '"'
+          + ' fill="' + item.color + '"'
+          + ' data-coverage-tooltip="' + esc(label) + '"'
+          + ' tabindex="0"></path>'
+        );
+        currentAngle = endAngle;
+      });
+
+      svgParts.push(
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + (innerR - 1) + '" fill="var(--bg2)"></circle>',
+        '<text x="' + cx + '" y="' + (cy - 2) + '" class="coverage-center-total" text-anchor="middle">' + total + '</text>',
+        '<text x="' + cx + '" y="' + (cy + 14) + '" class="coverage-center-label" text-anchor="middle">events</text>',
+        '</svg>'
+      );
+
+      var legend = categories.map(function(item) {
+        return '<div class="coverage-legend-item">'
+          + '<div class="coverage-legend-main">'
+          + '<span class="coverage-swatch" style="background:' + item.color + '"></span>'
+          + '<span class="coverage-name">' + esc(item.category) + '</span>'
+          + '</div>'
+          + '<span class="coverage-meta">' + item.count + ' · ' + item.pct + '%</span>'
+          + '</div>';
+      }).join('');
+
+      el.innerHTML = '<div class="coverage-layout">'
+        + svgParts.join('')
+        + '<div class="coverage-legend">' + legend + '</div>'
+        + '</div>';
+      bindCoverageTooltip(el);
+    } catch(e) {
+      el.innerHTML = '<div class="coverage-empty">' + esc(e.message) + '</div>';
+      hideCoverageTooltip();
+    }
   }
 
   var AUTO_EVENTS = new Set(['click','page_view','form_submit','scroll','visibility_change']);
@@ -299,9 +482,25 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
   }
 
   window.loadAll = function(){
-    loadSummary(); loadServices(); loadEventKeys(); loadPrefixes(); loadTimeline(); loadFlows(); loadPermissions();
+    if (activeLoad) return activeLoad;
+    activeLoad = Promise.allSettled([
+      loadSummary(),
+      loadCoverage(),
+      loadServices(),
+      loadEventKeys(),
+      loadPrefixes(),
+      loadTimeline(),
+      loadFlows(),
+      loadPermissions()
+    ]).finally(function() {
+      activeLoad = null;
+    });
+    return activeLoad;
   };
   loadAll();
+  refreshTimer = window.setInterval(function() {
+    window.loadAll();
+  }, POLL_MS);
 })();
 </script>
 </body>
