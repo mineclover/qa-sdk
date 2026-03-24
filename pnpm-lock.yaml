@@ -521,6 +521,19 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/motion-content:
+    dependencies:
+      gsap:
+        specifier: ^3.14.2
+        version: 3.14.2
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/permission-engine:
     dependencies:
       bit-index:
@@ -557,9 +570,6 @@ importers:
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
-      gsap:
-        specifier: ^3.14.2
-        version: 3.14.2
       permission-engine:
         specifier: workspace:*
         version: link:../permission-engine
