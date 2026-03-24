@@ -2,6 +2,16 @@ import type { SchemaDef, SchemaAxis, SchemaConstraint } from "./schema.types.js"
 import type { SchemaRegistry } from "./schema.registry.js";
 import type { ValidationErrorDetail } from "../shared/errors.js";
 
+type ValidationInputValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly ValidationInputValue[]
+  | { readonly [key: string]: ValidationInputValue };
+
+type ValidationInputMap = Record<string, ValidationInputValue>;
+
 /** 검증 결과 */
 export interface ValidationResult {
   valid: boolean;
@@ -28,7 +38,7 @@ export class SchemaValidator {
    */
   validate(
     schemaId: string,
-    data: Record<string, unknown>,
+    data: ValidationInputMap,
   ): ValidationResult {
     const schema = this.registry.resolveSchema(schemaId);
     const errors: ValidationErrorDetail[] = [];
@@ -43,7 +53,7 @@ export class SchemaValidator {
   /** Layer 0: vocabulary 값 유효성 */
   private validateLayer0(
     schema: SchemaDef,
-    data: Record<string, unknown>,
+    data: ValidationInputMap,
   ): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
@@ -61,7 +71,7 @@ export class SchemaValidator {
   /** Layer 1: 좌표 구조 정규성 (unknown axis 검출) */
   private validateLayer1(
     schema: SchemaDef,
-    data: Record<string, unknown>,
+    data: ValidationInputMap,
   ): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
@@ -82,7 +92,7 @@ export class SchemaValidator {
   /** Layer 2: 구조적 제약 */
   private validateLayer2(
     schema: SchemaDef,
-    data: Record<string, unknown>,
+    data: ValidationInputMap,
   ): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
@@ -113,7 +123,7 @@ export class SchemaValidator {
   private validateAxisType(
     axis: SchemaAxis,
     key: string,
-    value: unknown,
+    value: ValidationInputValue,
   ): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
@@ -169,7 +179,7 @@ export class SchemaValidator {
   /** 개별 constraint 검증 */
   private validateConstraint(
     constraint: SchemaConstraint,
-    data: Record<string, unknown>,
+    data: ValidationInputMap,
   ): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
     const value = data[constraint.axis];
