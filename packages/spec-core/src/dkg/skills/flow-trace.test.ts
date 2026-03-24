@@ -11,44 +11,19 @@ describe("traceFlows — IntentLink invariant 검증", () => {
   const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
   it("IL-checkout-flow 전체 endpoint 포함 시 해당 IL 위반 없음", () => {
-    // IL-checkout-flow의 5개 endpoint 전부 포함 + cart/tracking도 포함해 다른 IL도 충족
+    // 전체 prefix를 DKG에서 파생하여 address_context 구성 (SSOT)
+    const allPrefixes = graph.getNodesByKind("prefix");
+    const ac: Record<string, string> = {};
+    for (const p of allPrefixes) {
+      ac[p.id] = `${p.id}:v1:0`;
+    }
+
     const records: AddressContextRecord[] = [
-      {
-        address_context: {
-          page_view: "page_view:v2:0",
-          endpoint: "endpoint:v1:0",
-          flow_point: "flow_point:v2:0",
-          order_event: "order_event:v1:0",
-          permission: "permission:v4:0",
-          cart_event: "cart_event:v1:0",
-          tracking: "tracking:v2:0",
-          pattern_match: "pattern_match:v1:0",
-          pattern_anomaly: "pattern_anomaly:v2:0",
-          deploy_event: "deploy_event:v1:0",
-          health_event: "health_event:v1:0",
-          pipeline_point: "pipeline_point:v1:0",
-          engine_event: "engine_event:v1:0",
-          schema_event: "schema_event:v1:0",
-          schema_validation: "schema_validation:v1:0",
-          event: "event:v4:0",
-          auth_event: "auth_event:v1:0",
-          rbac: "rbac:v1:0",
-          content: "content:v1:0",
-          skill_execution: "skill_execution:v1:0",
-          cli_event: "cli_event:v1:0",
-          dkg_event: "dkg_event:v1:0",
-          dkg_decision_event: "dkg_decision_event:v1:0",
-          dkg_observation_event: "dkg_observation_event:v1:0",
-          build_event: "build_event:v1:0",
-          test_event: "test_event:v1:0",
-          contract_check: "contract_check:v1:0",
-        },
-        timestamp: "2026-03-20T00:00:00Z",
-        session_id: "test-session",
-      },
+      { address_context: ac, timestamp: "2026-03-20T00:00:00Z", session_id: "test-session" },
     ];
 
     const result = traceFlows(graph, records);
+    // 전체 prefix 포함이므로 어떤 IL도 위반하지 않아야 함
     expect(result.violations.length).toBe(0);
     expect(result.checkedRecords).toBe(1);
   });

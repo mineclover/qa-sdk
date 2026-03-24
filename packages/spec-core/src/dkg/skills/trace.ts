@@ -6,10 +6,11 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "../../shared/graph-port.js";
+import type { GraphPort, GraphNodeLike } from "../../shared/graph-port.js";
 import type { ServiceTopologyRegistry } from "../service-topology.js";
 import type {
   DkgNodeKind,
+  DkgNode,
   PrefixNode,
   AxisNode,
   DslBundleNode,
@@ -17,6 +18,7 @@ import type {
   ObservationNode,
   ConstraintNode,
   DomainNode,
+  ObservationSuggestion,
 } from "../dkg.types.js";
 
 // ═══════════════════════════════════════════════════════════════
@@ -33,7 +35,7 @@ export interface CompositionEntry {
 }
 
 export interface CausalLink {
-  readonly observation: { id: string; finding: string; suggestion?: unknown };
+  readonly observation: { id: string; finding: string; suggestion?: ObservationSuggestion };
   readonly decisions: readonly {
     id: string;
     title: string;
@@ -55,13 +57,13 @@ export interface TraceResult {
   readonly id: string;
   readonly kind: DkgNodeKind;
   readonly name: string;
-  readonly details: Record<string, unknown>;
+  readonly details: Partial<Omit<DkgNode, "id" | "kind" | "name">>;
 
   /** 구성 축/참조 (prefix 기준) */
   readonly composition: readonly CompositionEntry[];
   /** 참조하는 prefix (references edge) */
   readonly references: readonly string[];
-  /** 소속 (domain, dsl-bundle — contains 역방향) */
+  /** 소속 (contains 역방향 + flow-schema의 경우 contains 정방향 domain) */
   readonly membership: readonly { id: string; kind: string; name: string }[];
   /** 적용되는 제약 */
   readonly constraints: readonly { id: string; rule: string }[];
@@ -138,12 +140,23 @@ export function traceNode(
   // ── references ──
   const references = graph.edgesFrom(nodeId, "references").map(e => e.to);
 
-  // ── membership (contains 역방향) ──
+  // ── membership (contains 역방향 + flow-schema contains 정방향) ──
   const membership: { id: string; kind: string; name: string }[] = [];
+  const seenMembership = new Set<string>();
+  const pushMembership = (memberId: string): void => {
+    if (seenMembership.has(memberId)) return;
+    const member = graph.getNode(memberId);
+    if (!member) return;
+    seenMembership.add(memberId);
+    membership.push({ id: member.id, kind: member.kind, name: extractName(member) });
+  };
+
   for (const edge of graph.edgesTo(nodeId, "contains")) {
-    const parent = graph.getNode(edge.from);
-    if (parent) {
-      membership.push({ id: parent.id, kind: parent.kind, name: extractName(parent) });
+    pushMembership(edge.from);
+  }
+  if (node.kind === "flow-schema") {
+    for (const edge of graph.edgesFrom(nodeId, "contains")) {
+      pushMembership(edge.to);
     }
   }
 
@@ -302,13 +315,16 @@ export function traceNode(
 //  Helpers
 // ═══════════════════════════════════════════════════════════════
 
-function extractName(node: unknown): string {
-  if (!node || typeof node !== "object") return "";
-  const n = node as Record<string, unknown>;
-  return (n.name as string) ?? (n.title as string) ?? (n.finding as string)?.slice(0, 50) ?? (n.id as string) ?? "";
+function extractName(node: GraphNodeLike | undefined): string {
+  if (!node) return "";
+  const record = node as GraphNodeLike & Partial<Record<"name" | "title" | "finding", unknown>>;
+  if (typeof record.name === "string") return record.name;
+  if (typeof record.title === "string") return record.title;
+  if (typeof record.finding === "string") return record.finding.slice(0, 50);
+  return node.id;
 }
 
-function extractDetails(node: object): Record<string, unknown> {
+function extractDetails(node: GraphNodeLike): Record<string, unknown> {
   const skip = new Set(["kind", "id", "name"]);
   const details: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {

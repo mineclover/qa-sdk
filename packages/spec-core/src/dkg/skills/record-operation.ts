@@ -17,6 +17,7 @@ export interface RecordDecisionInput {
   readonly type: DecisionType;
   readonly title: string;
   readonly rationale: string;
+  readonly alternatives?: readonly string[];
   readonly date?: string;
 }
 
@@ -86,6 +87,7 @@ export function recordDecision(
     title: input.title,
     rationale: input.rationale,
     params: buildParams(input.type, input.targetId),
+    additionalAlternatives: input.alternatives,
   });
 
   return {

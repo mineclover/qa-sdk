@@ -53,6 +53,19 @@ describe("recordDecision", () => {
     });
     expect(result.decision!.alternatives!.length).toBeGreaterThan(0);
   });
+
+  it("추가 alternatives를 scaffold alternatives에 병합한다", () => {
+    const result = recordDecision(graph, {
+      targetId: "order_event",
+      type: "dim-add",
+      title: "t",
+      rationale: "r",
+      alternatives: ["수동 대안 A", "수동 대안 B"],
+    });
+    expect(result.decision!.alternatives).toEqual(
+      expect.arrayContaining(["수동 대안 A", "수동 대안 B"]),
+    );
+  });
 });
 
 describe("recordObservation", () => {
