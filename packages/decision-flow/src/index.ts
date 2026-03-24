@@ -44,6 +44,7 @@
 // ── types ────────────────────────────────────────────────
 export type {
   CognitivePhase,
+  GateWeight,
   EvidenceKind,
   Evidence,
   Condition,
@@ -60,6 +61,12 @@ export type {
   DecodedPath,
 } from "./types.js";
 
+export type {
+  InstanceContextQuery,
+  InstanceTimeRangeQuery,
+  InstanceStore,
+} from "./instance-store.js";
+
 // ── schema ───────────────────────────────────────────────
 export {
   FlowSchemaBuilder,
@@ -70,6 +77,9 @@ export {
 
 // ── engine ───────────────────────────────────────────────
 export { FlowEngine } from "./engine.js";
+export type { FlowEngineOptions } from "./engine.js";
+
+export { MemoryInstanceStore } from "./instance-store.js";
 
 // ── coordinate ───────────────────────────────────────────
 export {
@@ -89,6 +99,60 @@ export {
   resolvePolicyConflicts,
   tryAutoSelect,
 } from "./policy.js";
+
+// ── policy-learning (패턴 학습) ──────────────────────────
+export type {
+  PatternContextValue,
+  PatternGateSelection,
+  PatternDetectionOptions,
+  DetectedPattern,
+  PolicyCandidateStatus,
+  PolicyCandidate,
+  PolicyCandidateThreshold,
+  PolicyCandidateChanges,
+  PolicyRegistrar,
+  PolicyCandidateWorkflowOptions,
+} from "./policy-learning.js";
+export {
+  detectPatterns,
+  generatePolicyCandidates,
+  PolicyCandidateWorkflow,
+} from "./policy-learning.js";
+
+// ── comparison (인스턴스 비교) ───────────────────────────
+export type {
+  GateDiffStatus,
+  GateDiffEmphasis,
+  EvidenceDiff,
+  GateDiff,
+  InstancePairDiff,
+  BranchDistribution,
+  DominantBranchHint,
+  EvidenceKindBranchCorrelation,
+  EvidenceKindCorrelation,
+  GateDistribution,
+  ComparisonTimeRange,
+  TimeRangeComparisonOptions,
+  ComparedRangeSummary,
+  GateBranchShift,
+  GateDistributionShift,
+  ComparedPathSegment,
+  TimeRangePathChange,
+  TimeRangeComparison,
+  ComparisonReportInput,
+  DifferenceReasonType,
+  DifferenceReasoning,
+  DistributionInsight,
+  TemporalShiftInsight,
+  ComparisonReportSummary,
+  ComparisonReport,
+} from "./comparison.js";
+export {
+  diffInstances,
+  gateDistribution,
+  compareTimeRanges,
+  createComparisonReport,
+} from "./comparison.js";
 
 // ── mental-model ─────────────────────────────────────────
 export type {

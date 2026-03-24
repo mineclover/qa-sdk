@@ -6,6 +6,8 @@
  */
 
 import { encodeSelections } from "./coordinate.js";
+import { buildFlowCompletionContext } from "./ingest-adapter.js";
+import type { InstanceStore } from "./instance-store.js";
 import { tryAutoSelect } from "./policy.js";
 import type {
   Evidence,
@@ -32,6 +34,11 @@ export class FlowEngine {
   private readonly instances = new Map<string, MutableFlowInstance>();
   private readonly policies = new Map<string, FlowPolicy[]>(); // flowId → policies
   private readonly subFlowCapacities = new Map<string, number>();
+  private readonly instanceStore?: InstanceStore;
+
+  constructor(options: FlowEngineOptions = {}) {
+    this.instanceStore = options.instanceStore;
+  }
 
   // ── 스키마 관리 ────────────────────────────────────────
 
@@ -322,7 +329,28 @@ export class FlowEngine {
         // 인코딩 실패 시 좌표 없이 완료 (비정상 경로 등)
       }
     }
+
+    try {
+      const scopeMode = typeof instance.context.scopeMode === "string"
+        ? instance.context.scopeMode
+        : typeof instance.context.scope_mode === "string"
+        ? instance.context.scope_mode
+        : undefined;
+      instance.addressContext = buildFlowCompletionContext(
+        schema,
+        toImmutable(instance),
+        scopeMode,
+      );
+    } catch {
+      // address_context 생성 실패는 완료를 막지 않는다.
+    }
+
+    this.instanceStore?.save(toImmutable(instance));
   }
+}
+
+export interface FlowEngineOptions {
+  readonly instanceStore?: InstanceStore;
 }
 
 // ─── 내부 타입 + 유틸 ────────────────────────────────────
@@ -339,6 +367,7 @@ interface MutableFlowInstance {
   startedAt: string;
   completedAt?: string;
   coordinateAddress?: number;
+  addressContext?: Record<string, string>;
 }
 
 /** 내부 인스턴스 → 불변 공개 인터페이스 */
@@ -354,6 +383,7 @@ function toImmutable(inst: MutableFlowInstance): FlowInstance {
     startedAt: inst.startedAt,
     completedAt: inst.completedAt,
     coordinateAddress: inst.coordinateAddress,
+    addressContext: inst.addressContext ? { ...inst.addressContext } : undefined,
   };
 }
 

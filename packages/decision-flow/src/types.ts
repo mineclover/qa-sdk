@@ -185,6 +185,8 @@ export interface FlowInstance {
   readonly completedAt?: string;
   /** 전체 결정 경로를 좌표로 인코딩한 값 */
   readonly coordinateAddress?: number;
+  /** 완료 시점 관찰용 address_context 캐시 */
+  readonly addressContext?: Record<string, string>;
 }
 
 // ─── 정책 ────────────────────────────────────────────────
