@@ -48,6 +48,7 @@
   "dependencies": {
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
+    "decision-flow": "workspace:*",
     "index-meta": "workspace:*",
     "weighted-index": "workspace:*"
   },
