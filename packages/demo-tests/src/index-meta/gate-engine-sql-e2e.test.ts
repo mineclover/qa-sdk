@@ -240,12 +240,12 @@ describe("[E3] GateEngine SQL — composite cascade", () => {
     expect(roleRecord).not.toBeNull();
     expect(permRecord).not.toBeNull();
 
-    // perm에서 role의 open(pos 3-4) 반영 확인
+    // perm에서 role의 headroom(pos 3-4)은 refEntries 미정의라 reserved로 승격된다
     // role=1(active) × action=1(active) → addr 0 → active
     expect(checkGate(0, permRecord!.reservedRanges, permRecord!.inactiveRanges, permRecord!.openRanges).state).toBe("active");
 
-    // role=3(open) × action=1(active) → addr 2*3+0=6 → open
-    expect(checkGate(6, permRecord!.reservedRanges, permRecord!.inactiveRanges, permRecord!.openRanges).state).toBe("open");
+    // role=3(headroom) × action=1(active) → addr 2*3+0=6 → reserved
+    expect(checkGate(6, permRecord!.reservedRanges, permRecord!.inactiveRanges, permRecord!.openRanges).state).toBe("reserved");
   });
 
   it("leaf flexible setFlag → composite SQL cascade", async () => {
