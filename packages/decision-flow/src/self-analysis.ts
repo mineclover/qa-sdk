@@ -42,10 +42,10 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "축 정의 (5Q Checklist)",
     "decide",
     [
-      { id: "new-axis", label: "새 축 생성 (5Q 통과)" },
-      { id: "reuse-existing", label: "기존 축 재사용" },
-      { id: "table-ref", label: "축이 아닌 table_ref로 처리 (5Q 미통과)" },
-      { id: "defer", label: "결정 보류 — 데이터 더 필요" },
+      { id: "new-axis", label: "새 축 생성 (5Q 통과)", description: "Q1~Q5를 모두 통과해 독립 axis로 승격한다." },
+      { id: "reuse-existing", label: "기존 축 재사용", description: "의미적으로 대응하는 기존 axis를 찾아 재사용한다." },
+      { id: "table-ref", label: "축이 아닌 table_ref로 처리 (5Q 미통과)", description: "값 공간이 무한하거나 불안정해 좌표 대신 참조형 필드로 다룬다." },
+      { id: "defer", label: "결정 보류 — 데이터 더 필요", description: "근거가 부족하므로 추가 관측 전까지 구조 결정을 보류한다." },
     ],
     { requiredEvidence: ["data", "rule"] },
   )
@@ -54,9 +54,9 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "prefix 설계 (주소 공간 구성)",
     "decide",
     [
-      { id: "new-prefix", label: "새 prefix 생성" },
-      { id: "extend-existing", label: "기존 prefix에 dim 추가" },
-      { id: "split-prefix", label: "기존 prefix 분할" },
+      { id: "new-prefix", label: "새 prefix 생성", description: "독립된 주소 공간이 필요하므로 새로운 prefix를 만든다." },
+      { id: "extend-existing", label: "기존 prefix에 dim 추가", description: "기존 prefix를 유지한 채 차원만 확장한다." },
+      { id: "split-prefix", label: "기존 prefix 분할", description: "서로 다른 의미 축을 분리해 별도 prefix들로 나눈다." },
     ],
     { requiredEvidence: ["data", "rule"] },
   )
@@ -65,9 +65,9 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "capacity 설정 (headroom 관리)",
     "evaluate",
     [
-      { id: "minimum", label: "nextPowerOf2(entries × 2) — 최소" },
-      { id: "generous", label: "넉넉하게 (4× headroom)" },
-      { id: "exact", label: "정확히 맞춤 (headroom 0, 위험)" },
+      { id: "minimum", label: "nextPowerOf2(entries × 2) — 최소", description: "현재 entry 수의 2배를 만족하는 최소 power-of-two capacity를 택한다." },
+      { id: "generous", label: "넉넉하게 (4× headroom)", description: "향후 확장을 위해 여유 capacity를 크게 확보한다." },
+      { id: "exact", label: "정확히 맞춤 (headroom 0, 위험)", description: "추가 headroom 없이 현재 수요에만 맞춰 설정한다." },
     ],
   )
   .gate(
@@ -75,9 +75,9 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "버전 전략",
     "plan",
     [
-      { id: "in-place", label: "현재 버전 수정 (개발 중)" },
-      { id: "new-version", label: "새 버전 생성 (릴리즈됨)" },
-      { id: "migration", label: "마이그레이션 경로 구축" },
+      { id: "in-place", label: "현재 버전 수정 (개발 중)", description: "아직 소비자 호환성이 엄격하지 않으므로 현재 버전을 직접 수정한다." },
+      { id: "new-version", label: "새 버전 생성 (릴리즈됨)", description: "기존 소비자를 보호하기 위해 새 버전을 발급한다." },
+      { id: "migration", label: "마이그레이션 경로 구축", description: "버전 전환 비용을 줄이기 위해 이행 경로를 함께 설계한다." },
     ],
   )
   .gate(
@@ -85,9 +85,9 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "merge/split 판정",
     "decide",
     [
-      { id: "keep-separate", label: "분리 유지 (DEC-SEP)" },
-      { id: "merge", label: "병합 (DEC-MERGE)" },
-      { id: "not-applicable", label: "해당 없음" },
+      { id: "keep-separate", label: "분리 유지 (DEC-SEP)", description: "의미 경계가 다르므로 현재 구조를 유지한다." },
+      { id: "merge", label: "병합 (DEC-MERGE)", description: "중복과 혼동을 줄이기 위해 두 구조를 하나로 합친다." },
+      { id: "not-applicable", label: "해당 없음", description: "현재 대상에는 merge/split 판단이 적용되지 않는다." },
     ],
   )
   .gate(
@@ -95,9 +95,9 @@ export const COORDINATE_DESIGN_FLOW: FlowSchema = new FlowSchemaBuilder(
     "서비스 바인딩",
     "plan",
     [
-      { id: "single-owner", label: "단일 서비스 소유" },
-      { id: "shared", label: "복수 서비스 공유" },
-      { id: "cross-cutting", label: "크로스커팅 (도메인 무관)" },
+      { id: "single-owner", label: "단일 서비스 소유", description: "한 서비스가 명확한 오너십을 갖고 수명주기를 관리한다." },
+      { id: "shared", label: "복수 서비스 공유", description: "둘 이상의 서비스가 공동 책임을 진다." },
+      { id: "cross-cutting", label: "크로스커팅 (도메인 무관)", description: "특정 도메인에 귀속되지 않고 플랫폼 전반에서 사용된다." },
     ],
   )
   .build();

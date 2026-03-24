@@ -36,6 +36,7 @@ import {
   serializeObservedEvent,
 } from "./observe.js";
 import type { AutoDecisionPrinciple } from "./mental-model.js";
+import { FLOW_TYPE } from "./vocabulary.js";
 
 // ─── AddressContext 빌더 ─────────────────────────────────
 
@@ -44,6 +45,23 @@ import type { AutoDecisionPrinciple } from "./mental-model.js";
  * key=prefix_id, value="prefix:version:address" (SemanticAddress)
  */
 export type AddressContext = Record<string, string>;
+
+const KNOWN_FLOW_TYPE_BY_SCHEMA_ID: Record<string, string> = {
+  "office-hours": "office_hours",
+  "ceo-review": "ceo_review",
+  "eng-review": "eng_review",
+  "design-review": "design_review",
+  "code-review": "code_review",
+  investigation: "investigation",
+  ship: "ship",
+};
+
+function resolveObservedFlowType(flowId: string): string {
+  const mapped = KNOWN_FLOW_TYPE_BY_SCHEMA_ID[flowId] ?? flowId.replace(/-/g, "_");
+  return FLOW_TYPE.entries.includes(mapped as (typeof FLOW_TYPE.entries)[number])
+    ? mapped
+    : "custom";
+}
 
 /**
  * 분기 선택 이벤트를 address_context로 변환한다.
@@ -149,10 +167,11 @@ export function buildFlowCompletionContext(
   scopeMode?: string,
 ): AddressContext {
   const contexts: AddressContext[] = [];
+  const flowType = resolveObservedFlowType(schema.id);
 
   // 경로 요약
   contexts.push(buildPathContext(
-    instance.schemaId.replace(/-/g, "_"),
+    flowType,
     instance,
     scopeMode,
   ));
@@ -163,7 +182,7 @@ export function buildFlowCompletionContext(
     const gate = schema.gates.find((g) => g.id === lastSel.gateId);
     if (gate) {
       contexts.push(buildSelectionContext(
-        instance.schemaId.replace(/-/g, "_"),
+        flowType,
         gate.phase,
         lastSel,
       ));
