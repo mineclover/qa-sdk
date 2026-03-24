@@ -25,7 +25,7 @@
     {
       "id": "US-002",
       "title": "flow-map 데이터 로드 + prefix 목록 렌더링",
-      "description": "As a user, I want to see all 46 prefixes listed in the sidebar grouped by category so I can browse the coordinate system.",
+      "description": "As a user, I want to see all 51 prefixes listed in the sidebar grouped by category so I can browse the coordinate system.",
       "acceptanceCriteria": [
         "fetch(REGISTRY_URL + '/api/dashboard/flow-map') 호출",
         "fetch(INGEST_URL + '/v1/insights/prefixes') 호출",

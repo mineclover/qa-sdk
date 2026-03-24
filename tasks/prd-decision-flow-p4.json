@@ -19,9 +19,10 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 1 — 기반 인프라. packages/decision-flow/src/instance-store.ts",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -40,9 +41,10 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 1 — 기반 인프라. spec-core/src/dkg/dkg.types.ts",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -60,11 +62,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 1 — 기반 인프라",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -82,12 +85,13 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 2 — DKG 그래프 통합. spec-core/src/dkg/bootstrap.ts + demo-snapshot/src/demo-dkg-config.ts",
       "dependsOn": [
         "US-002",
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -104,11 +108,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 2 — DKG 그래프 통합. spec-core/src/dkg/graph-registry.ts",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -125,11 +130,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -148,11 +154,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
       "dependsOn": [
         "US-006"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -169,11 +176,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 3 — 패턴 분석. packages/decision-flow/src/policy-learning.ts",
       "dependsOn": [
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-009",
@@ -191,11 +199,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-010",
@@ -212,11 +221,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-011",
@@ -233,11 +243,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-012",
@@ -253,13 +264,14 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 4 — 경로 비교. packages/decision-flow/src/comparison.ts",
       "dependsOn": [
         "US-009",
         "US-010",
         "US-011"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-013",
@@ -279,12 +291,13 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — dkg decide ↔ flow 브릿지. cli/src/commands/dkg.ts. decision-flow는 동적 import.",
       "dependsOn": [
         "US-002",
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-014",
@@ -301,11 +314,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
       "dependsOn": [
         "US-013"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-015",
@@ -322,11 +336,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
       "dependsOn": [
         "US-013"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-016",
@@ -343,11 +358,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
       "dependsOn": [
         "US-013"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-017",
@@ -363,11 +379,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — dkg decide ↔ flow 브릿지",
       "dependsOn": [
         "US-013"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-018",
@@ -385,11 +402,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 6 — CLI. cli/src/commands/flow.ts",
       "dependsOn": [
         "US-008"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-019",
@@ -406,11 +424,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 6 — CLI. cli/src/commands/flow.ts",
       "dependsOn": [
         "US-012"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-020",
@@ -426,11 +445,12 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 6 — CLI. cli/src/commands/dkg.ts",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-021",
@@ -447,7 +467,7 @@
         "pnpm --filter demo-tests test passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 6 — E2E. 전체 파이프라인 검증",
       "dependsOn": [
         "US-013",
@@ -455,10 +475,11 @@
         "US-015",
         "US-016",
         "US-017"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-23T23:32:11.052Z"
+    "updatedAt": "2026-03-24T02:17:39.716Z"
   }
 }

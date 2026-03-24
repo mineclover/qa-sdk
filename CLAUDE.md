@@ -32,11 +32,32 @@
 
 - **Catalog이 유일한 입력** — 나머지(codegen, DKG, DecodeMap, 브라우저 카탈로그)는 전부 파생
 - `demo-snapshot`은 참조 구현. 인프라가 아님
-- `DEMO_CATALOG` — 74축, 46 prefix, 19 tables
+- `DEMO_CATALOG` — 축/prefix/table 수는 하드코딩 금지, `Object.keys()` 등으로 동적 파생
 - `demo-types`는 codegen 자동 생성. 직접 수정 금지
 - `BROWSER_CATALOG`는 자동 생성. 직접 수정 금지
 - 인라인 encode 코드 금지 — `import { track } from '@qa-sdk/browser-codec'`
 - 데이터 상수는 demo-snapshot SSOT에서 import. 하드코딩/복사 금지
+
+### SSOT 파생 체인
+
+```
+DEMO_CATALOG (demo-snapshot)
+  ├── codegen → demo-types (TS 타입 자동 생성)
+  ├── bootstrapDkg → DKG graph (노드 + 엣지)
+  │     ├── listAllDiagrams → 다이어그램 목록 (registry-service /api/diagrams)
+  │     ├── collectMetrics → 메트릭 (registry-service /api/dashboard/metrics)
+  │     └── service-skills → 관측 자동 생성
+  ├── BROWSER_CATALOG → shop-web viz-3d-core.js
+  ├── registry seed → D1 서비스/엔드포인트/이벤트스키마
+  └── tests → DEMO_CATALOG에서 파생하여 검증 (카운트 하드코딩 금지)
+```
+
+### 서비스 단위 소유권 (ownedPrefixes)
+
+- 각 서비스는 registry에 `ownedPrefixes`로 생산하는 prefix를 선언
+- 이벤트 수집 시 `address_context`의 prefix가 어떤 서비스에서 온 것인지 추적 가능
+- `GET /v1/insights/service-prefixes` — 서비스별 실제 prefix 사용 현황
+- 정의(`ownedPrefixes`)와 실제 사용(`insights`)의 gap이 관측 피드백의 기반
 
 ## 소스 위치 규칙
 
@@ -144,10 +165,100 @@
 - `compareTimestamps(a, b)` 사용 (`@qa-sdk/core`)
 - 외부 입력은 `normalizeTimestamp()` 후 비교
 
-### 테스트
-- 카탈로그 파생 카운트 하드코딩 금지 — SSOT에서 파생
-- bootstrap 자동 생성 노드 → `toBeGreaterThan(0)` 또는 불변조건 검증
-- 테스트 시나리오 주입 데이터 기반 카운트는 하드코딩 허용
+### 테스트 — SSOT 파생 표준
+
+#### 원칙: "카탈로그가 바뀌어도 테스트는 깨지지 않아야 한다"
+
+#### 1. 카운트는 SSOT에서 파생
+
+```typescript
+// ❌ 하드코딩 (카탈로그 변경 시 깨짐)
+expect(axes.length).toBe(74);
+expect(prefixes.length).toBe(46);
+
+// ✅ SSOT 파생
+expect(axes.length).toBe(Object.keys(DEMO_CATALOG.axes).length);
+expect(prefixes.length).toBe(Object.keys(DEMO_CATALOG.prefixes).length);
+```
+
+#### 2. DKG bootstrap 결과는 범위 검증
+
+```typescript
+// ❌ 정확한 노드 수 하드코딩 (DKG 설정 변경 시 깨짐)
+expect(nodes.length).toBe(267);
+
+// ✅ 범위 또는 불변조건
+expect(nodes.length).toBeGreaterThan(100);
+expect(graph.getNodesByKind("prefix").length).toBe(
+  Object.keys(DEMO_CATALOG.prefixes).length
+);
+```
+
+#### 3. export surface / dim 목록은 구조 기반 검증
+
+```typescript
+// ❌ dim 이름 하드코딩 (svc_ref 추가 시 깨짐)
+expect(spec.export.dims).toEqual(["action"]);
+
+// ✅ 제외 조건으로 검증
+for (const dim of spec.export.dims) {
+  expect(dim).not.toBe("actor");  // table_ref 제외 확인
+}
+expect(spec.export.dims).toContain("action");  // 핵심 dim 포함 확인
+```
+
+#### 4. prefix_ref 포함 테스트는 DKG에서 파생
+
+```typescript
+// ❌ address_context를 수동 나열 (prefix 추가 시 누락)
+const ac = { page_view: "pv:v2:0", endpoint: "ep:v1:0" /* ... 30개 */ };
+
+// ✅ DKG에서 전체 prefix 자동 생성
+const ac: Record<string, string> = {};
+for (const p of graph.getNodesByKind("prefix")) {
+  ac[p.id] = `${p.id}:v1:0`;
+}
+```
+
+#### 5. 하드코딩이 허용되는 경우
+
+| 패턴 | 이유 |
+|------|------|
+| HTTP status (`toBe(200)`) | 프로토콜 상수 |
+| 테스트 fixture의 주입 데이터 (`3 records inserted → toBe(3)`) | 테스트가 데이터를 제어 |
+| 특정 prefix/axis ID (`"tracking"`, `"cart_event"`) | 테스트 시나리오 컨텍스트 |
+| 에러 메시지/코드 (`"INVALID_INPUT"`) | API 계약 |
+
+#### 6. 서비스 단위 테스트 (NestJS 패턴)
+
+```typescript
+// 의존성 주입으로 격리 테스트
+function buildApp(deps: Partial<AppDeps> = {}) {
+  return createApp({
+    configStore: new InMemoryConfigStore(),  // 실제 인메모리 구현
+    ...deps,
+  });
+}
+
+// mock: 외부 서비스 호출만
+const bindings = { "ingest-server": { fetch: vi.fn().mockResolvedValue(new Response("ok")) } };
+```
+
+#### 7. D1 Store 테스트
+
+```typescript
+// NodeSqliteDriver(:memory:)로 D1 시뮬레이션
+const driver = new NodeSqliteDriver(":memory:");
+for (const stmt of DDL.split(";").filter(s => s.trim())) {
+  await driver.execute(stmt);
+}
+const store = new D1RecordStore(driver);
+```
+
+#### 8. convergence 복사본 동기화
+
+- `spec-core/shared/graph-port.ts` 변경 시 `convergence/graph-port.ts` 동기화 필수
+- `copy-drift.test.ts`가 자동 감지
 
 ## 서비스 포트
 

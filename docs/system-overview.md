@@ -66,7 +66,7 @@ DEMO_CATALOG = {
 }
 ```
 
-현재: 74축, 39 prefix, 19 tables.
+현재: 85축, 51 prefix, 19 tables.
 
 ---
 
