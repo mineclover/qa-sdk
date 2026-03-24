@@ -303,6 +303,44 @@ export function createInsightsRoutes(deps: InsightsDeps) {
     return c.json({ items, summary, total: items.length });
   });
 
+  // GET /v1/insights/service-prefixes — 서비스별 prefix 활성도
+  // registry의 ownedPrefixes + 실제 수집된 address_context를 매칭
+  app.get("/v1/insights/service-prefixes", async (c) => {
+    // 1. 실제 수집된 prefix별 카운트
+    const rows = await db.query<{ address_context: string; service_name: string }>(
+      `SELECT e.address_context, t.service_name
+       FROM event_records e
+       JOIN traces t ON e.trace_id = t.trace_id
+       WHERE e.address_context IS NOT NULL
+       LIMIT 1000`,
+    );
+
+    // 서비스별 prefix 사용 집계
+    const servicePrefixMap: Record<string, Record<string, number>> = {};
+    for (const r of rows) {
+      const svc = r.service_name ?? "unknown";
+      if (!servicePrefixMap[svc]) servicePrefixMap[svc] = {};
+      try {
+        const ac = JSON.parse(r.address_context);
+        for (const prefix of Object.keys(ac)) {
+          servicePrefixMap[svc][prefix] = (servicePrefixMap[svc][prefix] ?? 0) + 1;
+        }
+      } catch { /* skip */ }
+    }
+
+    // 서비스별 요약
+    const services = Object.entries(servicePrefixMap).map(([svc, prefixes]) => ({
+      service: svc,
+      activePrefixes: Object.keys(prefixes),
+      prefixCounts: prefixes,
+      totalEvents: Object.values(prefixes).reduce((s, c) => s + c, 0),
+    }));
+
+    services.sort((a, b) => b.totalEvents - a.totalEvents);
+
+    return c.json(services);
+  });
+
   // GET /v1/insights/errors — 에러 이벤트 히스토리
   app.get("/v1/insights/errors", async (c) => {
     const limit = parseInt(c.req.query("limit") ?? "50");
