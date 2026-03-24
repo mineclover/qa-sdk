@@ -67,11 +67,19 @@ describe("MemoryDefinitionRegistry", () => {
       expect(updated.title).toBe("v2");
     });
 
-    it("lifecycle 변경 시 좌표가 재계산된다", () => {
+    it("lifecycle 변경 시 좌표는 불변이다 (주소 안정성)", () => {
       const entry = registry.register(makeEntry({ id: "doc-1", lifecycle: "draft" }));
       const updated = registry.update("doc-1", { lifecycle: "approved" });
-      expect(updated.address).not.toBe(entry.address);
+      expect(updated.address).toBe(entry.address);
+      expect(updated.serialized).toBe(entry.serialized);
       expect(updated.lifecycle).toBe("approved");
+    });
+
+    it("depth 변경 시 좌표가 재계산된다", () => {
+      const entry = registry.register(makeEntry({ id: "doc-2", depth: "overview" }));
+      const updated = registry.update("doc-2", { depth: "specification" });
+      expect(updated.address).not.toBe(entry.address);
+      expect(updated.depth).toBe("specification");
     });
 
     it("미등록 ID 수정 시 에러", () => {

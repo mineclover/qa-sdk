@@ -227,16 +227,22 @@ decision-flow의 결정 판정이 문서 생명주기에 자연스럽게 매핑�
 
 | prefix | dims | totalSpace | 역할 |
 |--------|------|-----------|------|
-| def_document | scope(16) × aspect(64) × depth(8) × lifecycle(16) | 131,072 | 문서 메타데이터 좌표 |
+| def_document | scope(16) × aspect(64) × depth(8) | 8,192 | 문서 불변 정체성 좌표 |
 | def_link | scope(16) × aspect(64) × link_type(16) | 16,384 | 관계 좌표 |
+
+**설계 결정: lifecycle은 좌표에 포함하지 않는다.**
+
+좌표는 **불변 정체성**을 인코딩한다. "이 문서는 UI/컴포넌트/명세다"는 바뀌지 않는다.
+lifecycle(draft → approved)은 **변하는 상태**이므로 메타데이터 필드로만 관리한다.
+이렇게 하면 lifecycle이 바뀌어도 주소가 안정적으로 유지되어 외부 참조가 깨지지 않는다.
 
 ### 직렬화
 
 기존 qa-sdk SemanticAddress와 동일:
 
 ```
-"def_document:v1:1057"     → ui/component/specification/draft
-"def_document:v1:7683"     → data/domain_data/overview/approved
+"def_document:v1:65"       → ui/component/specification
+"def_document:v1:481"      → data/domain_data/overview
 "def_link:v1:145"          → feature/func_def/depends_on
 ```
 

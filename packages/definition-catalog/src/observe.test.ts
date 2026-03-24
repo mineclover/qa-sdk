@@ -14,7 +14,7 @@ import { allValidCombinations } from "./taxonomy.js";
 
 describe("def_document 좌표 인코딩/디코딩", () => {
   it("라운드트립: 인코딩 → 디코딩 → 원본 복원", () => {
-    const coord = { scope: "ui" as const, aspect: "layout" as const, depth: "specification" as const, lifecycle: "draft" as const };
+    const coord = { scope: "ui" as const, aspect: "layout" as const, depth: "specification" as const };
     const address = encodeDocument(coord);
     const decoded = decodeDocument(address);
     expect(decoded).toEqual(coord);
@@ -23,7 +23,7 @@ describe("def_document 좌표 인코딩/디코딩", () => {
   it("모든 유효 scope-aspect 조합의 라운드트립 통과", () => {
     for (const { scope, aspect } of allValidCombinations()) {
       for (const depth of DEF_DEPTH.entries) {
-        const coord = { scope, aspect, depth, lifecycle: "approved" as const };
+        const coord = { scope, aspect, depth };
         const address = encodeDocument(coord);
         const decoded = decodeDocument(address);
         expect(decoded).toEqual(coord);
@@ -32,12 +32,19 @@ describe("def_document 좌표 인코딩/디코딩", () => {
   });
 
   it("다른 좌표는 다른 주소를 생성한다", () => {
-    const a = encodeDocument({ scope: "ui", aspect: "layout", depth: "overview", lifecycle: "draft" });
-    const b = encodeDocument({ scope: "ui", aspect: "component", depth: "overview", lifecycle: "draft" });
-    const c = encodeDocument({ scope: "data", aspect: "domain_data", depth: "overview", lifecycle: "draft" });
+    const a = encodeDocument({ scope: "ui", aspect: "layout", depth: "overview" });
+    const b = encodeDocument({ scope: "ui", aspect: "component", depth: "overview" });
+    const c = encodeDocument({ scope: "data", aspect: "domain_data", depth: "overview" });
     expect(a).not.toBe(b);
     expect(a).not.toBe(c);
     expect(b).not.toBe(c);
+  });
+
+  it("lifecycle이 달라도 좌표는 같다 (불변 정체성)", () => {
+    const a = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
+    const b = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
+    expect(a).toBe(b);
+    // lifecycle은 좌표에 포함하지 않으므로, 같은 scope×aspect×depth는 항상 같은 주소
   });
 
   it("존재하지 않는 entry로 인코딩하면 에러", () => {
@@ -45,20 +52,19 @@ describe("def_document 좌표 인코딩/디코딩", () => {
       scope: "invalid" as any,
       aspect: "layout",
       depth: "overview",
-      lifecycle: "draft",
     })).toThrow();
   });
 });
 
 describe("직렬화/파싱", () => {
   it("직렬화 형식: def_document:v1:<address>", () => {
-    const address = encodeDocument({ scope: "ui", aspect: "layout", depth: "overview", lifecycle: "draft" });
+    const address = encodeDocument({ scope: "ui", aspect: "layout", depth: "overview" });
     const serialized = serializeDocumentAddress(address);
     expect(serialized).toMatch(/^def_document:v1:\d+$/);
   });
 
   it("파싱 라운드트립", () => {
-    const address = encodeDocument({ scope: "feature", aspect: "func_def", depth: "specification", lifecycle: "approved" });
+    const address = encodeDocument({ scope: "feature", aspect: "func_def", depth: "specification" });
     const serialized = serializeDocumentAddress(address);
     const parsed = parseDocumentAddress(serialized);
     expect(parsed).toBe(address);
@@ -90,8 +96,8 @@ describe("def_link 좌표 인코딩/디코딩", () => {
 });
 
 describe("주소 공간", () => {
-  it("def_document totalSpace = scope.cap × aspect.cap × depth.cap × lifecycle.cap", () => {
-    const expected = DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity * DEF_LIFECYCLE.capacity;
+  it("def_document totalSpace = scope.cap × aspect.cap × depth.cap (lifecycle 제외)", () => {
+    const expected = DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity;
     expect(documentTotalSpace()).toBe(expected);
   });
 

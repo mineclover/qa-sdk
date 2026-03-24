@@ -58,8 +58,8 @@ export interface DefinitionCatalog {
  * axes: def_scope(16), def_aspect(64), def_depth(8), def_lifecycle(16), link_type(16)
  *
  * prefixes:
- *   def_document: scope(16) × aspect(64) × depth(8) × lifecycle(16) = 131,072
- *   def_link:     scope(16) × aspect(64) × link_type(16)            = 16,384
+ *   def_document: scope(16) × aspect(64) × depth(8) = 8,192  (lifecycle은 메타데이터)
+ *   def_link:     scope(16) × aspect(64) × link_type(16) = 16,384
  */
 export const DEFINITION_CATALOG: DefinitionCatalog = {
   id: "definition",
@@ -68,13 +68,12 @@ export const DEFINITION_CATALOG: DefinitionCatalog = {
     def_document: {
       id: "def_document",
       name: "정의 문서",
-      description: "소프트웨어 정의 문서의 메타데이터 좌표",
-      labels: ["def_scope", "def_aspect", "def_depth", "def_lifecycle"],
+      description: "소프트웨어 정의 문서의 불변 정체성 좌표 (lifecycle은 메타데이터)",
+      labels: ["def_scope", "def_aspect", "def_depth"],
       dims: {
         def_scope: { kind: "axis", axisId: "def_scope" },
         def_aspect: { kind: "axis", axisId: "def_aspect" },
         def_depth: { kind: "axis", axisId: "def_depth" },
-        def_lifecycle: { kind: "axis", axisId: "def_lifecycle" },
       },
       versions: [{
         version: "v1",
@@ -82,7 +81,6 @@ export const DEFINITION_CATALOG: DefinitionCatalog = {
           def_scope: "v1",
           def_aspect: "v1",
           def_depth: "v1",
-          def_lifecycle: "v1",
         },
       }],
       meta: { category: "entity", layer: 1 },

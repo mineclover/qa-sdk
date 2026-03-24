@@ -95,12 +95,11 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     // scope-aspect 유효성 검증
     validateScopeAspect(input.scope, input.aspect);
 
-    // 좌표 계산
+    // 좌표 계산 (불변 정체성: scope × aspect × depth)
     const address = encodeDocument({
       scope: input.scope,
       aspect: input.aspect,
       depth: input.depth,
-      lifecycle: input.lifecycle,
     });
     const serialized = serializeDocumentAddress(address);
 
@@ -117,16 +116,15 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       throw new Error(`등록되지 않은 ID: "${id}"`);
     }
 
-    // depth나 lifecycle이 변경되면 좌표 재계산
+    // depth 변경 시만 좌표 재계산 (lifecycle은 좌표에 영향 없음)
     const depth = patch.depth ?? existing.depth;
     const lifecycle = patch.lifecycle ?? existing.lifecycle;
-    const needsReencode = patch.depth !== undefined || patch.lifecycle !== undefined;
+    const needsReencode = patch.depth !== undefined;
 
     let address = existing.address;
     let serialized = existing.serialized;
 
     if (needsReencode) {
-      // 이전 주소 인덱스 제거
       if (existing.address !== undefined) {
         this.addressIndex.delete(existing.address);
       }
@@ -135,7 +133,6 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
         scope: existing.scope,
         aspect: existing.aspect,
         depth,
-        lifecycle,
       });
       serialized = serializeDocumentAddress(address);
       this.addressIndex.set(address, id);

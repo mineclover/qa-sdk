@@ -18,19 +18,25 @@
  */
 
 import { WeightedIndex } from "weighted-index";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DEF_LIFECYCLE, LINK_TYPE } from "./vocabulary.js";
-import type { DefScope, DefAspect, DefDepth, DefLifecycle, LinkType } from "./types.js";
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, LINK_TYPE } from "./vocabulary.js";
+import type { DefScope, DefAspect, DefDepth, LinkType } from "./types.js";
 
 // ─── 좌표 인덱스 (lazy init) ─────────────────────────────
 
 let _documentIdx: WeightedIndex | undefined;
 let _linkIdx: WeightedIndex | undefined;
 
-/** def_document prefix의 WeightedIndex */
+/**
+ * def_document prefix의 WeightedIndex.
+ *
+ * lifecycle은 좌표에 포함하지 않는다 — 변하는 상태이므로 주소를 불변으로 유지.
+ * 좌표 = scope × aspect × depth (불변 정체성)
+ * lifecycle = 메타데이터 필드로만 관리
+ */
 function documentIndex(): WeightedIndex {
   return (_documentIdx ??= new WeightedIndex(
-    [DEF_SCOPE.capacity, DEF_ASPECT.capacity, DEF_DEPTH.capacity, DEF_LIFECYCLE.capacity],
-    ["def_scope", "def_aspect", "def_depth", "def_lifecycle"],
+    [DEF_SCOPE.capacity, DEF_ASPECT.capacity, DEF_DEPTH.capacity],
+    ["def_scope", "def_aspect", "def_depth"],
   ));
 }
 
@@ -53,12 +59,11 @@ function indexOf(entries: readonly string[], value: string): number {
 
 // ─── def_document 인코딩/디코딩 ──────────────────────────
 
-/** def_document 인코딩 입력 */
+/** def_document 인코딩 입력 (불변 정체성만 — lifecycle 제외) */
 export interface DocumentCoordinate {
   readonly scope: DefScope;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
-  readonly lifecycle: DefLifecycle;
 }
 
 /** 디코딩 결과 */
@@ -66,27 +71,26 @@ export interface DecodedDocument {
   readonly scope: DefScope;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
-  readonly lifecycle: DefLifecycle;
 }
 
 /**
  * 문서 메타데이터를 1D 정수 주소로 인코딩한다.
  *
- * scope × aspect × depth × lifecycle → 정수
+ * scope × aspect × depth → 정수 (불변)
+ * lifecycle은 좌표에 포함하지 않는다.
  */
 export function encodeDocument(coord: DocumentCoordinate): number {
   return documentIndex().encode([
     indexOf(DEF_SCOPE.entries, coord.scope),
     indexOf(DEF_ASPECT.entries, coord.aspect),
     indexOf(DEF_DEPTH.entries, coord.depth),
-    indexOf(DEF_LIFECYCLE.entries, coord.lifecycle),
   ]);
 }
 
 /**
  * 1D 정수 주소를 문서 메타데이터로 디코딩한다.
  *
- * 정수 → scope × aspect × depth × lifecycle
+ * 정수 → scope × aspect × depth
  */
 export function decodeDocument(address: number): DecodedDocument {
   const coords = documentIndex().decode(address);
@@ -94,7 +98,6 @@ export function decodeDocument(address: number): DecodedDocument {
     scope: DEF_SCOPE.entries[coords[0] - 1] as DefScope,
     aspect: DEF_ASPECT.entries[coords[1] - 1] as DefAspect,
     depth: DEF_DEPTH.entries[coords[2] - 1] as DefDepth,
-    lifecycle: DEF_LIFECYCLE.entries[coords[3] - 1] as DefLifecycle,
   };
 }
 
