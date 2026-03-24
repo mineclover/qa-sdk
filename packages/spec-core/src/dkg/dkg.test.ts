@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog } from "./catalog-derive.js";
+import { bootstrapDkg } from "./bootstrap.js";
 import { analyzeImpact } from "./skills/analyze-impact.js";
 import { inferMigrator } from "./skills/infer-migrator.js";
 import { versionEventFromDiff } from "./skills/version-event-derive.js";
@@ -145,6 +146,59 @@ describe("GraphRegistry", () => {
     const links = graph.intentLinksFor("permission");
     expect(links).toHaveLength(1);
     expect(links[0].invariant).toContain("service");
+  });
+});
+
+describe("bootstrapDkg flowSchemas", () => {
+  it("DEMO_DKG_CONFIG.flowSchemas에서 FlowSchemaNode와 관계 엣지를 자동 생성한다", () => {
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+
+    const flowSchemas = graph.getNodesByKind("flow-schema");
+    expect(flowSchemas.length).toBe(DEMO_DKG_CONFIG.flowSchemas.length);
+    expect(flowSchemas[0]?.gates.length ?? 0).toBeGreaterThan(0);
+
+    const coordinateDesign = graph.getNode("coordinate-design");
+    expect(coordinateDesign?.kind).toBe("flow-schema");
+    if (coordinateDesign?.kind !== "flow-schema") return;
+
+    expect(coordinateDesign.coreGateIds).toEqual(
+      expect.arrayContaining(["axis-definition", "prefix-design", "merge-split"]),
+    );
+    expect(coordinateDesign.totalPaths).toBe(972);
+    expect(graph.neighbors("coordinate-design", "contains")).toEqual(["decision-domain"]);
+    expect(graph.neighbors("coordinate-design", "observes")).toEqual(
+      expect.arrayContaining(["decision_event", "decision_path", "escalation_event", "model_apply"]),
+    );
+    expect(graph.neighbors("coordinate-design", "composes")).toEqual(
+      expect.arrayContaining(["flow_type", "cognitive_phase", "decision_outcome", "mental_model"]),
+    );
+
+    const officeHours = graph.getNode("office-hours");
+    expect(officeHours?.kind).toBe("flow-schema");
+    expect(graph.neighbors("office-hours", "observes")).toContain("forcing_response");
+
+    expect(graph.neighbors("sprint-pipeline", "references")).toEqual(
+      expect.arrayContaining(["office-hours", "ceo-review", "eng-review", "design-review", "code-review", "ship"]),
+    );
+  });
+
+  it("cascadeFromFlowSchema가 subFlow까지 따라 영향받는 axis/prefix를 모은다", () => {
+    const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+
+    const cascade = graph.cascadeFromFlowSchema("sprint-pipeline");
+
+    expect(cascade.axes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "flow_type", reason: "composes", distance: 1 }),
+        expect.objectContaining({ id: "forcing_question", reason: "references", distance: 2 }),
+      ]),
+    );
+    expect(cascade.prefixes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "decision_event", reason: "observes", distance: 1 }),
+        expect.objectContaining({ id: "forcing_response", reason: "references", distance: 2 }),
+      ]),
+    );
   });
 });
 
@@ -463,6 +517,7 @@ describe("GraphPort 호환성", () => {
     expect(typeof graph.getTablesForPrefix).toBe("function");
     expect(typeof graph.getTableColumnRefs).toBe("function");
     expect(typeof graph.cascadeFromTable).toBe("function");
+    expect(typeof graph.cascadeFromFlowSchema).toBe("function");
 
     // Port 타입으로 캐스트하면 Table 메서드에 접근 불가 (타입 수준 검증)
     const port: import("../shared/graph-port.js").GraphPort = graph;

@@ -1,12 +1,12 @@
 /**
- * Design Knowledge Graph — 노드 14종 + 엣지 18종 타입 정의.
+ * Design Knowledge Graph — 노드 16종 + 엣지 18종 타입 정의.
  *
  * 좌표 시스템의 성장 나선을 추적하는 설계 시점 메타데이터 그래프.
  * 스펙: docs/specs/spec-engine/design-knowledge-graph.md
  */
 
 // ═══════════════════════════════════════════════════════════════
-//  Node Types (13종)
+//  Node Types (16종)
 // ═══════════════════════════════════════════════════════════════
 
 // ── 승계: DEMO_CATALOG + spec-engine (4종) ──────────────────
@@ -56,6 +56,10 @@ export interface DecisionNode {
   readonly title: string;
   readonly context: string;
   readonly rationale: string;
+  /** coordinate-design 등 FlowInstance와 연결된 경우 역참조 */
+  readonly flowInstanceId?: string;
+  /** address_context 등 DKG 외부 브릿지 메타데이터 */
+  readonly metadata?: Readonly<Record<string, unknown>>;
   readonly alternatives?: readonly string[];
   readonly reversalConditions?: readonly string[];
   readonly lifecycle: "active" | "superseded" | "reversed";
@@ -71,6 +75,8 @@ export interface VersionEventNode {
   readonly date: string;
   readonly changes: readonly VersionChange[];
   readonly impact: string;
+  /** address_context 등 DKG 외부 브릿지 메타데이터 */
+  readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
 export interface VersionChange {
@@ -290,6 +296,36 @@ export interface TableNode {
   readonly columns: readonly string[];
 }
 
+// ── FlowSchema 노드 ──────────────────────────────────────
+
+export type FlowSchemaGatePhase =
+  | "perceive"
+  | "interpret"
+  | "evaluate"
+  | "decide"
+  | "plan"
+  | "execute"
+  | "reflect";
+
+export type FlowSchemaGateWeight = "core" | "structural" | "tactical";
+
+export interface FlowSchemaGateSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly phase: FlowSchemaGatePhase;
+  readonly weight: FlowSchemaGateWeight;
+}
+
+export interface FlowSchemaNode {
+  readonly kind: "flow-schema";
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly gates: readonly FlowSchemaGateSummary[];
+  readonly totalPaths: number;
+  readonly coreGateIds: readonly string[];
+}
+
 // ── 노드 유니온 ───────────────────────────────────────────
 
 export type DkgNode =
@@ -307,7 +343,8 @@ export type DkgNode =
   | DslBundleNode
   | SkillNode
   | TransitionSpecNode
-  | TableNode;
+  | TableNode
+  | FlowSchemaNode;
 
 export type DkgNodeKind = DkgNode["kind"];
 
