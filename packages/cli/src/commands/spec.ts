@@ -27,9 +27,34 @@ import {
 } from "@qa-sdk/spec-core/codegen";
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { resolveAddress, type DemoCatalog } from "demo-snapshot";
-import { decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core";
+import { decodePrefixAsResult, decodeResultToEntities, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
 
 // ── Shared bootstrap ────────────────────────────────
+
+export type CatalogInputLike = Parameters<typeof catalogToPrefixSpecs>[0];
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue };
+
+export type SchemaValidationInput = Record<string, JsonValue>;
+
+interface ResolvedRefJson {
+  address: string;
+  prefix: string;
+  version: string;
+  dims: Record<string, ResolvedDimJson>;
+}
+
+interface ResolvedDimJson {
+  value: string | number;
+  position: number;
+  ko?: string;
+  ref?: ResolvedRefJson;
+}
 
 interface SpecContext {
   surfaces: ExportSurfaceRegistry;
@@ -37,7 +62,7 @@ interface SpecContext {
   validator: SchemaValidator;
   specDocs: SpecDocumentRegistry;
   prefixSpecs: PrefixSpec[];
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
 }
 
 /** 싱글턴 캐시 — 같은 옵션이면 재생성하지 않음 */
@@ -49,7 +74,7 @@ let cachedKey = "";
  * catalogInput이 있으면 catalog bridge, specPath가 있으면 파일 로딩.
  */
 export async function createSpecContext(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
 }): Promise<SpecContext> {
   const key = JSON.stringify({ catalog: !!options.catalogInput, specPath: options.specPath });
@@ -105,7 +130,7 @@ export async function createSpecContext(options: {
 // ── spec list ───────────────────────────────────────
 
 export async function specList(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
 }): Promise<void> {
   const ctx = await createSpecContext(options);
@@ -162,7 +187,7 @@ export async function specList(options: {
 // ── spec resolve ────────────────────────────────────
 
 export async function specResolve(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   prefixId: string;
   values: Record<string, string>;
@@ -175,10 +200,10 @@ export async function specResolve(options: {
 // ── spec validate ───────────────────────────────────
 
 export async function specValidate(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   schemaId: string;
-  data: Record<string, unknown>;
+  data: SchemaValidationInput;
 }): Promise<void> {
   const ctx = await createSpecContext(options);
 
@@ -205,7 +230,7 @@ export async function specValidate(options: {
 // ── spec decode ─────────────────────────────────────
 
 export async function specDecode(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   address: string;   // "prefix:version:address" 형식
   deep?: boolean;
@@ -269,20 +294,29 @@ export async function specDecode(options: {
 
   // ── JSON 출력 ─────────────────────────────────────
   if (options.format === "json") {
-    const result: Record<string, unknown> = {
+    const result: {
+      address: string;
+      title: string;
+      prefix: string;
+      version: string;
+      index: number;
+      dims: Record<string, { value: string | number; position: number }>;
+      export?: { dims: readonly string[]; pattern: string };
+      resolved?: Record<string, ResolvedDimJson>;
+    } = {
       address: `${prefixId}:${version}:${address}`,
       title,
       prefix: prefixId,
       version,
       index: address,
-      dims: {} as Record<string, unknown>,
+      dims: {},
     };
 
     if (spec) {
-      (result as Record<string, unknown>).export = { dims: spec.export.dims, pattern: spec.export.pattern };
+      result.export = { dims: spec.export.dims, pattern: spec.export.pattern };
     }
 
-    const dims: Record<string, unknown> = {};
+    const dims: Record<string, { value: string | number; position: number }> = {};
     for (const [label, dim] of Object.entries(decoded)) {
       dims[label] = { value: dim.value, position: dim.position };
     }
@@ -310,16 +344,18 @@ export async function specDecode(options: {
 }
 
 function buildResolvedJson(
-  dims: Record<string, { label: string; position: number; value: string | number; ko?: string; ref?: unknown }>,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+  dims: Record<string, ResolvedDimValue>,
+): Record<string, ResolvedDimJson> {
+  const result: Record<string, ResolvedDimJson> = {};
   for (const [label, dim] of Object.entries(dims)) {
-    const entry: Record<string, unknown> = { value: dim.value, position: dim.position };
+    const entry: ResolvedDimJson = { value: dim.value, position: dim.position };
     if (dim.ko) entry.ko = dim.ko;
-    if (dim.ref && typeof dim.ref === "object") {
-      const ref = dim.ref as { prefix: string; version: string; address: number; dims: typeof dims };
+    if (dim.ref) {
+      const ref: ResolvedAddress = dim.ref;
       entry.ref = {
         address: `${ref.prefix}:${ref.version}:${ref.address}`,
+        prefix: ref.prefix,
+        version: ref.version,
         dims: buildResolvedJson(ref.dims),
       };
     }
@@ -329,14 +365,14 @@ function buildResolvedJson(
 }
 
 function printResolved(
-  dims: Record<string, { label: string; position: number; value: string | number; ko?: string; ref?: unknown }>,
+  dims: Record<string, ResolvedDimValue>,
   indent: string,
 ): void {
   for (const [label, dim] of Object.entries(dims)) {
     const ko = dim.ko ? ` (${dim.ko})` : "";
     console.log(`${indent}${label}: ${dim.value}${ko} [pos:${dim.position}]`);
-    if (dim.ref && typeof dim.ref === "object") {
-      const ref = dim.ref as { prefix: string; version: string; address: number; dims: typeof dims };
+    if (dim.ref) {
+      const ref: ResolvedAddress = dim.ref;
       console.log(`${indent}  → ${ref.prefix}:${ref.version}:${ref.address}`);
       printResolved(ref.dims, indent + "    ");
     }
@@ -348,7 +384,7 @@ function printResolved(
 export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema" | "dts";
 
 export async function specCodegen(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   output?: string;
   format?: CodegenFormat;
@@ -458,7 +494,7 @@ export async function specCodegen(options: {
 // ── spec trace ──────────────────────────────────────
 
 export async function specTrace(options: {
-  catalogInput?: unknown;
+  catalogInput?: CatalogInputLike;
   specPath?: string;
   specId: string;
 }): Promise<void> {
