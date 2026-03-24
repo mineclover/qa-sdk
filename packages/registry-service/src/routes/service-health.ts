@@ -9,6 +9,16 @@ import { Hono } from "hono";
 import type { ConfigStore } from "../stores/config-store.js";
 import type { ServiceEndpointStore } from "../stores/service-endpoint-store.js";
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue };
+
+type HealthDetail = { readonly [key: string]: JsonValue };
+
 export interface ServiceHealthRouteDeps {
   configStore: ConfigStore;
   endpointStore?: ServiceEndpointStore;
@@ -21,7 +31,7 @@ interface ServiceHealthResult {
   url: string;
   status: "up" | "down" | "unknown";
   latencyMs: number;
-  detail?: Record<string, unknown>;
+  detail?: HealthDetail;
   error?: string;
 }
 
@@ -53,9 +63,9 @@ async function checkHealth(
     const latencyMs = Date.now() - start;
 
     if (resp.ok) {
-      let detail: Record<string, unknown> | undefined;
+      let detail: HealthDetail | undefined;
       try {
-        detail = await resp.json() as Record<string, unknown>;
+        detail = await resp.json() as HealthDetail;
       } catch { /* non-json response */ }
       return { serviceId, url, status: "up", latencyMs, detail };
     }

@@ -21,6 +21,59 @@ export interface DevDashboardDeps {
   catalogStore?: CatalogStore;
 }
 
+interface SchemaLayerEntry {
+  id: string;
+  name: string;
+  version: string;
+  entries: number;
+  capacity: number;
+  headroom: number;
+  status: "ok" | "warning" | "critical";
+}
+
+interface PrefixLayerEntry {
+  id: string;
+  name?: string;
+  category: string;
+  lifecycle: string;
+  dimCount: number;
+  axes: string[];
+  consumers: string[];
+}
+
+interface ConsumerLayerEntry {
+  id: string;
+  name?: string;
+  prefixes: readonly string[];
+  role: string;
+}
+
+interface DiagramEdgeEntry {
+  from: string;
+  to: string;
+  type: "composes" | "consumes";
+}
+
+interface TimelineEventEntry {
+  date: string;
+  kind: string;
+  id: string;
+  title?: string;
+  type?: string;
+  targets?: readonly string[];
+  lifecycle?: string;
+  finding?: string;
+  source?: string;
+  resolved?: boolean;
+  subjects?: readonly string[];
+  linkedDecision?: string;
+  loopClosed?: boolean;
+  prefix?: string;
+  fromVersion?: string;
+  toVersion?: string;
+  impact?: string;
+}
+
 // ── WebSocket 핸들러 (server.ts에서 upgradeWebSocket으로 등록) ──
 
 export interface DevWsClient {
@@ -180,8 +233,8 @@ export function createDevDashboardRoutes(deps: DevDashboardDeps) {
     const nodes = graph.getAllNodes();
 
     // Schema layer (axes)
-    const schemaLayer: Array<Record<string, unknown>> = [];
-    for (const [id, axis] of Object.entries(catalog.axes) as [string, any][]) {
+    const schemaLayer: SchemaLayerEntry[] = [];
+    for (const [id, axis] of Object.entries(catalog.axes)) {
       const versions = Object.keys(axis.versions);
       const latestKey = versions[versions.length - 1];
       const latest = axis.versions[latestKey];
@@ -201,7 +254,7 @@ export function createDevDashboardRoutes(deps: DevDashboardDeps) {
     }
 
     // Prefix layer
-    const prefixLayer: Array<Record<string, unknown>> = [];
+    const prefixLayer: PrefixLayerEntry[] = [];
     const prefixNodes = nodes.filter((n: DkgNodePort) => n.kind === "prefix");
     for (const pn of prefixNodes) {
       const composes = graph.neighbors(pn.id, "composes") as string[];
@@ -231,7 +284,7 @@ export function createDevDashboardRoutes(deps: DevDashboardDeps) {
     }
 
     // Consumer layer
-    const consumerLayer: Array<Record<string, unknown>> = [];
+    const consumerLayer: ConsumerLayerEntry[] = [];
     const consumerNodes = nodes.filter((n: DkgNodePort) => n.kind === "consumer");
     for (const cn of consumerNodes) {
       consumerLayer.push({
@@ -243,7 +296,7 @@ export function createDevDashboardRoutes(deps: DevDashboardDeps) {
     }
 
     // Edges (composes + consumes)
-    const edges: Array<Record<string, unknown>> = [];
+    const edges: DiagramEdgeEntry[] = [];
     for (const pn of prefixNodes) {
       for (const axis of (graph.neighbors(pn.id, "composes") as string[])) {
         edges.push({ from: axis, to: pn.id, type: "composes" });
@@ -316,12 +369,12 @@ export function createDevDashboardRoutes(deps: DevDashboardDeps) {
 
     // decision, observation, version-event 노드 수집
     const timelineKinds = ["decision", "observation", "version-event"];
-    const events: Array<Record<string, unknown>> = [];
+    const events: TimelineEventEntry[] = [];
 
     for (const n of nodes) {
       if (!timelineKinds.includes(n.kind)) continue;
 
-      const base: Record<string, unknown> = {
+      const base: TimelineEventEntry = {
         date: n.date ?? "unknown",
         kind: n.kind,
         id: n.id,

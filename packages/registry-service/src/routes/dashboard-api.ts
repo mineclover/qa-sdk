@@ -19,6 +19,58 @@ export interface DashboardApiDeps {
   collectMetrics?: () => MetricValuePort[];
 }
 
+interface SchemaLayerEntry {
+  id: string;
+  name: string;
+  version: string;
+  entries: number;
+  capacity: number;
+  headroom: number;
+  status: "ok" | "warning" | "critical";
+}
+
+interface PrefixLayerEntry {
+  id: string;
+  name?: string;
+  category: string;
+  lifecycle: string;
+  dimCount: number;
+  axes: string[];
+  consumers: string[];
+}
+
+interface ConsumerLayerEntry {
+  id: string;
+  name?: string;
+  prefixes: readonly string[];
+  role: string;
+}
+
+interface DiagramEdgeEntry {
+  from: string;
+  to: string;
+  type: "composes" | "consumes";
+}
+
+interface TimelineEventEntry {
+  date: string;
+  kind: string;
+  id: string;
+  title?: string;
+  type?: string;
+  targets?: readonly string[];
+  lifecycle?: string;
+  finding?: string;
+  source?: string;
+  resolved?: boolean;
+  subjects?: readonly string[];
+  linkedDecision?: string;
+  loopClosed?: boolean;
+  prefix?: string;
+  fromVersion?: string;
+  toVersion?: string;
+}
+
 export function createDashboardApiRoutes(deps: DashboardApiDeps) {
   const app = new Hono();
 
@@ -54,7 +106,7 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
     const nodes = graph.getAllNodes();
 
     // Schema layer
-    const schemaLayer: Array<Record<string, unknown>> = [];
+    const schemaLayer: SchemaLayerEntry[] = [];
     for (const [id, axis] of Object.entries(catalog.axes)) {
       const versions = Object.keys(axis.versions);
       const latestKey = versions[versions.length - 1];
@@ -93,7 +145,7 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
     }));
 
     // Edges
-    const edges: Array<Record<string, unknown>> = [];
+    const edges: DiagramEdgeEntry[] = [];
     for (const pn of prefixNodes) {
       for (const axis of (graph.neighbors(pn.id, "composes") as string[])) {
         edges.push({ from: axis, to: pn.id, type: "composes" });
@@ -153,11 +205,11 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
     const nodes = graph.getAllNodes();
 
     const timelineKinds = ["decision", "observation", "version-event"];
-    const events: Array<Record<string, unknown>> = [];
+    const events: TimelineEventEntry[] = [];
 
     for (const n of nodes) {
       if (!timelineKinds.includes(n.kind)) continue;
-      const base: Record<string, unknown> = { date: n.date ?? "unknown", kind: n.kind, id: n.id };
+      const base: TimelineEventEntry = { date: n.date ?? "unknown", kind: n.kind, id: n.id };
 
       if (n.kind === "decision") {
         Object.assign(base, { title: n.title, type: n.type, targets: n.targets, lifecycle: n.lifecycle });
