@@ -72,6 +72,54 @@ function buildServiceBindings(env: Env): Record<string, Fetcher> {
   return bindings;
 }
 
+/**
+ * 전체 prefix를 커버하는 synthetic 이벤트를 ingest에 전송.
+ * 5분마다 cron에서 호출 — 모든 prefix가 최소 1회 수집되어 insights에서 관측됨.
+ * 자기 루프 방지: event_key="synthetic.coverage"는 error reporter에서 제외됨.
+ */
+async function sendSyntheticEvents(ingestBinding: Fetcher): Promise<void> {
+  const prefixes = Object.keys(DEMO_CATALOG.prefixes);
+  const now = new Date().toISOString();
+
+  // 모든 prefix를 address_context에 포함하는 단일 레코드
+  const addressContext: Record<string, string> = {};
+  for (const p of prefixes) {
+    const versions = Object.keys(DEMO_CATALOG.prefixes[p].versions);
+    const ver = versions[versions.length - 1] ?? "v1";
+    addressContext[p] = `${p}:${ver}:0`;
+  }
+
+  const body = {
+    transmission_id: `synthetic-${Date.now()}`,
+    sent_at: now,
+    source: { service_name: "registry-service", sdk_name: "synthetic-coverage", sdk_version: "1.0" },
+    build: { env: "prod" },
+    owner: { owner_type: "agent", owner_id: "coverage-cron" },
+    runtime: { platform: "worker" },
+    records: [{
+      log_id: `syn-${Date.now()}`,
+      trace_id: `synthetic-coverage-${new Date().toISOString().slice(0, 13)}`, // 시간대별 1 trace
+      span_id: "cron",
+      timestamp: now,
+      record_kind: "log",
+      event_key: "synthetic.coverage",
+      event_version: "001",
+      payload_format: "json",
+      payload_encoding: "raw",
+      payload_masking_applied: false,
+      payload_masked_fields: [] as string[],
+      payload: { prefixCount: prefixes.length, source: "cron" },
+      address_context: addressContext,
+    }],
+  };
+
+  await ingestBinding.fetch(new Request("https://internal/v1/ingest", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }));
+}
+
 let ddlInitialized = false;
 
 export default {
@@ -105,5 +153,23 @@ export default {
     });
 
     return app.fetch(request);
+  },
+
+  /** Cron Trigger — 5분마다 warm up + synthetic 이벤트 수집 */
+  async scheduled(_event: unknown, env: Env, _ctx: unknown): Promise<void> {
+    if (!ddlInitialized) {
+      for (const stmt of REGISTRY_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
+        try { await env.DB.exec(stmt + ";"); } catch {}
+      }
+      ddlInitialized = true;
+    }
+    getGraph();
+
+    // 전체 prefix synthetic 이벤트 — ingest에 전송하여 커버리지 확보
+    if (env.INGEST_SERVICE) {
+      try {
+        await sendSyntheticEvents(env.INGEST_SERVICE);
+      } catch { /* 실패 무시 — warm up 목적 */ }
+    }
   },
 };

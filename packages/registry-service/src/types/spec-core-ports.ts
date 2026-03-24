@@ -20,7 +20,7 @@ export interface DkgNodePort {
   readonly name?: string;
   readonly category?: string;
   readonly lifecycle?: string;
-  readonly resolution?: unknown;
+  readonly resolution?: { decisionId: string; outcome: string; note?: string };
   readonly title?: string;
   readonly type?: string;
   readonly targets?: readonly string[];
@@ -43,7 +43,13 @@ export interface DkgEdgePort {
   readonly type: string;
   readonly from: string;
   readonly to: string;
-  readonly meta?: Record<string, unknown>;
+  readonly meta?: {
+    readonly dimKind?: string;
+    readonly label?: string;
+    readonly column?: string;
+    readonly fk?: boolean;
+    readonly sharedAxes?: readonly string[];
+  };
 }
 
 // ── GraphRegistry ───────────────────────────────────────
@@ -78,7 +84,7 @@ export interface GraphRegistryPort {
   // write
   addNode(node: DkgNodePort): void;
   replaceNode(node: DkgNodePort): void;
-  addEdge(type: string, from: string, to: string, meta?: Record<string, unknown>): void;
+  addEdge(type: string, from: string, to: string, meta?: DkgEdgePort["meta"]): void;
 
   // counts
   readonly nodeCount: number;
@@ -121,7 +127,7 @@ export interface DkgSqliteStorePort {
     edges: readonly DkgEdgePort[],
     source: string,
   ): void;
-  saveUsageSnapshotWithObservations(usage: unknown, observations: readonly DkgNodePort[]): { snapshotId: number };
+  saveUsageSnapshotWithObservations(usage: UsageDataPort, observations: readonly DkgNodePort[]): { snapshotId: number };
   setMeta(key: string, value: string): void;
   getMeta?(key: string): string | null;
   updateNode?(node: DkgNodePort): void;
@@ -136,12 +142,12 @@ export interface DkgSqliteStoreConstructor {
 
 export interface AnalysisModulePort {
   bootstrapDkg(options: {
-    catalog: unknown;
-    config: unknown;
+    catalog: CatalogPort;
+    config: DkgConfigPort;
     date?: string;
-    transitionSpecs?: readonly unknown[];
+    transitionSpecs?: readonly TransitionSpecPort[];
   }): GraphRegistryPort;
-  collectMetrics(catalog: CatalogPort, graph: GraphRegistryPort, usage: unknown | null): MetricValuePort[];
+  collectMetrics(catalog: CatalogPort, graph: GraphRegistryPort, usage: UsageDataPort | null): MetricValuePort[];
   metricsToObservations(metrics: readonly MetricValuePort[], options?: { date?: string }): ObservationNodePort[];
 }
 
@@ -178,9 +184,59 @@ export interface CatalogPort {
     readonly id: string;
     readonly name: string;
     readonly labels: readonly string[];
-    readonly dims?: Record<string, unknown>;
-    readonly versions?: readonly unknown[];
-    readonly meta?: Record<string, unknown>;
+    readonly dims?: Record<string, {
+      readonly kind: "axis" | "prefix_ref" | "table_ref";
+      readonly axisId?: string;
+      readonly prefixId?: string;
+      readonly table?: string;
+    }>;
+    readonly versions?: readonly {
+      readonly version: string;
+      readonly axisVersions?: Record<string, string>;
+      readonly refEntries?: Record<string, { readonly values: readonly number[]; readonly refVersion: string }>;
+    }[];
+    readonly meta?: {
+      readonly category?: string;
+      readonly layer?: number;
+      readonly visualShape?: string;
+      readonly heightRatio?: number;
+      readonly detailKind?: string;
+    };
   }>;
-  readonly tables?: Record<string, unknown>;
+  readonly tables?: Record<string, {
+    readonly table: string;
+    readonly columns: Record<string, {
+      readonly kind: "scalar" | "prefix_ref" | "table_ref" | "axis_ref";
+      readonly type?: string;
+      readonly prefixId?: string;
+      readonly table?: string;
+      readonly axisId?: string;
+    }>;
+  }>;
+}
+
+export interface DkgConfigPort {
+  readonly domains: readonly object[];
+  readonly consumers: readonly object[];
+  readonly constraints: readonly object[];
+  readonly dslBundles: readonly object[];
+  readonly intentLinks: readonly object[];
+  readonly skills: readonly object[];
+  readonly specs?: readonly object[];
+  readonly decisions?: readonly object[];
+  readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
+}
+
+export interface TransitionSpecPort {
+  readonly id?: string;
+  readonly transition: string;
+  readonly version?: string;
+}
+
+export interface UsageDataPort {
+  readonly collectionPeriod?: { readonly from: string; readonly to: string };
+  readonly entryUsages: readonly object[];
+  readonly addressUsages: readonly object[];
+  readonly coOccurrences: readonly object[];
+  readonly versionUsages: readonly object[];
 }
