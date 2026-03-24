@@ -6,14 +6,22 @@ import {
   type MotionLayerDef,
   type ResolvedMotionComposition,
 } from "./model.js";
+import type {
+  MotionDebugSnapshot,
+  MotionResolvedAssetSnapshot,
+} from "./editor.js";
 
 export interface MotionPlayer {
   play(): void;
   pause(): void;
   restart(): void;
   seek(ms: number): void;
+  setPlaybackRate(rate: number): void;
+  setLoop(loop: boolean): void;
   progress(): number;
+  currentTimeMs(): number;
   durationMs(): number;
+  snapshot(): MotionDebugSnapshot;
   destroy(): void;
 }
 
@@ -59,17 +67,21 @@ function getCueVars(cue: MotionCueDef): {
 function applyAssets(
   root: HTMLElement,
   composition: ResolvedMotionComposition,
-): void {
+): MotionResolvedAssetSnapshot[] {
+  const resolved: MotionResolvedAssetSnapshot[] = [];
   for (const asset of composition.assets) {
     const target = root.querySelector<HTMLElement>(asset.target);
     if (!target) continue;
     const rendered = applyMotionTemplate(asset.template, composition.values);
     if (asset.type === "text") {
       target.textContent = rendered;
+      resolved.push({ id: asset.id, type: "text", target: asset.target, value: rendered });
     } else {
       target.style[asset.property] = rendered;
+      resolved.push({ id: asset.id, type: "style", target: asset.target, value: rendered });
     }
   }
+  return resolved;
 }
 
 function activeCaptionAt(
@@ -133,11 +145,13 @@ export function createMotionPlayer(
   composition: ResolvedMotionComposition,
   captionEl: HTMLElement,
 ): MotionPlayer {
-  applyAssets(root, composition);
+  const resolvedAssets = applyAssets(root, composition);
+  let loop = false;
 
   const timeline = gsap.timeline({
     paused: true,
     defaults: { ease: "power2.out" },
+    repeat: 0,
     onUpdate: () => {
       const timeMs = timeline.time() * 1000;
       const active = activeCaptionAt(composition.captions, timeMs);
@@ -164,11 +178,39 @@ export function createMotionPlayer(
     seek(ms: number) {
       timeline.time(Math.max(0, Math.min(ms, composition.durationMs)) / 1000, false);
     },
+    setPlaybackRate(rate: number) {
+      timeline.timeScale(rate);
+    },
+    setLoop(nextLoop: boolean) {
+      loop = nextLoop;
+      timeline.repeat(loop ? -1 : 0);
+    },
     progress() {
       return timeline.progress();
     },
+    currentTimeMs() {
+      return timeline.time() * 1000;
+    },
     durationMs() {
       return composition.durationMs;
+    },
+    snapshot() {
+      const timeMs = timeline.time() * 1000;
+      const activeCaption = activeCaptionAt(composition.captions, timeMs);
+      const activeLayerIds = composition.layers
+        .filter((layer) => timeMs >= layer.startMs && timeMs <= (layer.startMs + layer.durationMs))
+        .map((layer) => layer.id);
+      const activeSequenceIds = composition.sequences
+        .filter((sequence) => timeMs >= sequence.startMs && timeMs <= (sequence.startMs + sequence.durationMs))
+        .map((sequence) => sequence.id);
+      return {
+        timeMs,
+        activeSequenceIds,
+        activeLayerIds,
+        activeCaptionId: activeCaption?.id ?? null,
+        captionText: activeCaption?.text ?? "",
+        resolvedAssets,
+      };
     },
     destroy() {
       timeline.kill();
@@ -177,4 +219,3 @@ export function createMotionPlayer(
     },
   };
 }
-
