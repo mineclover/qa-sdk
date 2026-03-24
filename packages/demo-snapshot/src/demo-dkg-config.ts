@@ -3,6 +3,44 @@
  * bootstrap.ts의 하드코딩 데이터를 선언적 구조로 추출.
  */
 
+import {
+  ALL_SPRINT_FLOWS,
+  getAnnotatedDesignFlow,
+} from "decision-flow";
+
+const DEFAULT_FLOW_OBSERVED_PREFIXES = [
+  "decision_event",
+  "decision_path",
+  "escalation_event",
+  "model_apply",
+] as const;
+
+const OFFICE_HOURS_OBSERVED_PREFIXES = [
+  ...DEFAULT_FLOW_OBSERVED_PREFIXES,
+  "forcing_response",
+] as const;
+
+function flowSchemaRef(
+  schema: (typeof ALL_SPRINT_FLOWS)[number] | ReturnType<typeof getAnnotatedDesignFlow>,
+  observedPrefixIds: readonly string[] = DEFAULT_FLOW_OBSERVED_PREFIXES,
+) {
+  return {
+    schema,
+    observedPrefixIds,
+    domainId: "decision-domain",
+  };
+}
+
+const DEMO_FLOW_SCHEMAS = [
+  flowSchemaRef(getAnnotatedDesignFlow()),
+  ...ALL_SPRINT_FLOWS.map((schema) =>
+    flowSchemaRef(
+      schema,
+      schema.id === "office-hours" ? OFFICE_HOURS_OBSERVED_PREFIXES : DEFAULT_FLOW_OBSERVED_PREFIXES,
+    ),
+  ),
+] as const;
+
 export const DEMO_DKG_CONFIG = {
   domains: [
     {
@@ -694,6 +732,8 @@ export const DEMO_DKG_CONFIG = {
     { kind: "spec", id: "SPEC-PROPAGATION", type: "feat", title: "스펙 전파 파이프라인 (publish→seal→activate)", lifecycle: "active", governs: ["service"] },
     { kind: "spec", id: "SPEC-TEMPORAL", type: "req", title: "시간 순서와 데이터 흐름 수집", lifecycle: "draft", governs: [] },
   ],
+
+  flowSchemas: DEMO_FLOW_SCHEMAS,
 
   decisions: [
     {

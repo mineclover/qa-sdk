@@ -15,6 +15,7 @@
   "files": ["dist"],
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
+    "decision-flow": "workspace:*",
     "weighted-index": "workspace:*"
   },
   "scripts": {
