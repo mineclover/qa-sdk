@@ -73,42 +73,80 @@ function buildServiceBindings(env: Env): Record<string, Fetcher> {
 }
 
 /**
- * 전체 prefix를 커버하는 synthetic 이벤트를 ingest에 전송.
- * 5분마다 cron에서 호출 — 모든 prefix가 최소 1회 수집되어 insights에서 관측됨.
- * 자기 루프 방지: event_key="synthetic.coverage"는 error reporter에서 제외됨.
+ * 변화 기반 이벤트 수집.
+ *
+ * DKG 메트릭/헬스 상태를 이전 스냅샷과 비교하여
+ * 변화가 있을 때만 이벤트를 ingest에 전송.
+ *
+ * 트리거: /api/dashboard/overview 조회 시 (사용자 주도)
+ *         또는 /api/dashboard/collect 명시적 호출
  */
-async function sendSyntheticEvents(ingestBinding: Fetcher): Promise<void> {
-  const prefixes = Object.keys(DEMO_CATALOG.prefixes);
-  const now = new Date().toISOString();
+let _lastSnapshot: { nodeCount: number; metricSummary: string; healthHash: string } | null = null;
 
-  // 모든 prefix를 address_context에 포함하는 단일 레코드
+function buildSnapshot(): { nodeCount: number; metricSummary: string; healthHash: string; changes: string[] } {
+  const graph = getGraph();
+  const nodes = graph.getAllNodes();
+  const metrics = getMetrics() as Array<{ id: string; status: string }>;
+
+  const nodeCount = nodes.length;
+  const metricSummary = metrics.map(m => `${m.id}:${m.status}`).sort().join("|");
+
+  const observations = nodes.filter((n: any) => n.kind === "observation");
+  const healthHash = `obs:${observations.length},nodes:${nodeCount},metrics:${metrics.length}`;
+
+  const changes: string[] = [];
+  if (_lastSnapshot) {
+    if (_lastSnapshot.nodeCount !== nodeCount) changes.push(`nodes: ${_lastSnapshot.nodeCount} → ${nodeCount}`);
+    if (_lastSnapshot.metricSummary !== metricSummary) changes.push("metrics changed");
+    if (_lastSnapshot.healthHash !== healthHash) changes.push("health changed");
+  } else {
+    changes.push("initial snapshot");
+  }
+
+  return { nodeCount, metricSummary, healthHash, changes };
+}
+
+async function collectChanges(ingestBinding: Fetcher): Promise<{ collected: boolean; changes: string[] }> {
+  const snapshot = buildSnapshot();
+  if (snapshot.changes.length === 0) {
+    return { collected: false, changes: [] };
+  }
+
+  // 변화 있음 → 이벤트 전송
+  const now = new Date().toISOString();
+  const prefixIds = Object.keys(DEMO_CATALOG.prefixes);
   const addressContext: Record<string, string> = {};
-  for (const p of prefixes) {
-    const versions = Object.keys(DEMO_CATALOG.prefixes[p].versions);
+  for (const p of prefixIds) {
+    const def = (DEMO_CATALOG.prefixes as Record<string, { versions: Record<string, unknown> }>)[p];
+    const versions = Object.keys(def.versions);
     const ver = versions[versions.length - 1] ?? "v1";
     addressContext[p] = `${p}:${ver}:0`;
   }
 
   const body = {
-    transmission_id: `synthetic-${Date.now()}`,
+    transmission_id: `change-${Date.now()}`,
     sent_at: now,
-    source: { service_name: "registry-service", sdk_name: "synthetic-coverage", sdk_version: "1.0" },
+    source: { service_name: "registry-service", sdk_name: "change-detector", sdk_version: "1.0" },
     build: { env: "prod" },
-    owner: { owner_type: "agent", owner_id: "coverage-cron" },
+    owner: { owner_type: "agent", owner_id: "change-detector" },
     runtime: { platform: "worker" },
     records: [{
-      log_id: `syn-${Date.now()}`,
-      trace_id: `synthetic-coverage-${new Date().toISOString().slice(0, 13)}`, // 시간대별 1 trace
-      span_id: "cron",
+      log_id: `chg-${Date.now()}`,
+      trace_id: `change-${now.slice(0, 13)}`,
+      span_id: "detect",
       timestamp: now,
       record_kind: "log",
-      event_key: "synthetic.coverage",
+      event_key: "system.change",
       event_version: "001",
       payload_format: "json",
       payload_encoding: "raw",
       payload_masking_applied: false,
       payload_masked_fields: [] as string[],
-      payload: { prefixCount: prefixes.length, source: "cron" },
+      payload: {
+        changes: snapshot.changes,
+        nodeCount: snapshot.nodeCount,
+        prefixCount: prefixIds.length,
+      },
       address_context: addressContext,
     }],
   };
@@ -118,6 +156,9 @@ async function sendSyntheticEvents(ingestBinding: Fetcher): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }));
+
+  _lastSnapshot = { nodeCount: snapshot.nodeCount, metricSummary: snapshot.metricSummary, healthHash: snapshot.healthHash };
+  return { collected: true, changes: snapshot.changes };
 }
 
 let ddlInitialized = false;
@@ -149,6 +190,7 @@ export default {
       getCatalog,
       collectMetrics: getMetrics,
       serviceBindings: buildServiceBindings(env),
+      onCollect: env.INGEST_SERVICE ? () => collectChanges(env.INGEST_SERVICE!) : undefined,
       corsOrigin: "*",
     });
 
@@ -165,11 +207,11 @@ export default {
     }
     getGraph();
 
-    // 전체 prefix synthetic 이벤트 — ingest에 전송하여 커버리지 확보
+    // 변화 감지 — 이전 스냅샷과 diff, 변화 있을 때만 이벤트 전송
     if (env.INGEST_SERVICE) {
       try {
-        await sendSyntheticEvents(env.INGEST_SERVICE);
-      } catch { /* 실패 무시 — warm up 목적 */ }
+        await collectChanges(env.INGEST_SERVICE);
+      } catch { /* 실패 무시 */ }
     }
   },
 };

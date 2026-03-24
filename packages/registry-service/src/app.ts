@@ -49,6 +49,8 @@ export interface AppDeps extends RegistryServiceDeps {
   eventSchemaStore?: EventSchemaStore;
   /** Service Bindings — 헬스체크 시 Worker→Worker 직접 호출 */
   serviceBindings?: Record<string, Fetcher>;
+  /** 변화 감지 이벤트 수집 콜백 */
+  onCollect?: () => Promise<{ collected: boolean; changes: string[] }>;
   corsOrigin?: string;
 }
 
@@ -136,6 +138,7 @@ export function createApp(deps: AppDeps) {
         getGraph: graphGetter,
         getCatalog: catalogGetter,
         collectMetrics: metricsCollector,
+        onCollect: deps.onCollect,
       }));
     }
   }

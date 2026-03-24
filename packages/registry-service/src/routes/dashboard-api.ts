@@ -17,6 +17,8 @@ export interface DashboardApiDeps {
   getGraph: () => GraphRegistryPort;
   getCatalog: () => CatalogPort;
   collectMetrics?: () => MetricValuePort[];
+  /** 변화 감지 후 이벤트 수집 (Worker 모드에서 주입) */
+  onCollect?: () => Promise<{ collected: boolean; changes: string[] }>;
 }
 
 interface SchemaLayerEntry {
@@ -228,6 +230,15 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
 
     events.sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")));
     return c.json({ events: events.slice(0, limit), total: events.length });
+  });
+
+  // POST /collect — 변화 감지 + 이벤트 수집 (사용자 주도)
+  app.post("/collect", async (c) => {
+    if (!deps.onCollect) {
+      return c.json({ collected: false, reason: "collector not configured" });
+    }
+    const result = await deps.onCollect();
+    return c.json(result);
   });
 
   return app;

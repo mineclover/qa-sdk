@@ -271,6 +271,7 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), gRP
 | `@qa-sdk/codec-proto` | 진짜 Protobuf encode/decode (zero-dependency 순수 구현) |
 | `decision-flow` | 의사결정 흐름 엔진 |
 | `event-catalog` | 이벤트 카탈로그 + auto-track + prefix 매핑 |
+| `motion-content` | 모션 콘텐츠 (platform-demo에서 분리) |
 
 ## Ingest Store Driver (STORE_DRIVER)
 
