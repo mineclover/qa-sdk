@@ -134,4 +134,4 @@ health:     건전성 100%, invariant 통과
 | G5 | self-check → 전문 skill 전달 (AddressContextRecord 경유) | 중 | **완료** — flow-trace skill이 직접 소비 |
 | R2 | self-check 결과로 dsl-dev 외 DSL 불변조건 검증 | 중 | **완료** — validateDslInvariants() Phase F + converge 5.5 |
 | R3 | coOccurrence 활용 (빌드+테스트 cross-event) | 낮 | 보류 |
-| R5 | completed observation 수동 정리 | 낮 | 미착수 |
+| R5 | completed observation 수동 정리 | 낮 | **완료** — pruneResolvedObservations() + converge --persist 자동 실행 |
