@@ -29,6 +29,7 @@ import { renderRangePage } from "./pages/range.js";
 import { renderAccessPage } from "./pages/access.js";
 import { renderLoggingPage } from "./pages/logging.js";
 import { renderLayoutPage } from "./pages/layout.js";
+import { renderMotionPage } from "./pages/motion.js";
 import { renderCasbinPage } from "./pages/casbin.js";
 import { renderPermEnginePage } from "./pages/perm-engine.js";
 import { renderPrefixMetaPage } from "./pages/prefix-meta.js";
@@ -43,10 +44,10 @@ import { resetGrants } from "./registry.js";
 //  App state
 // ═══════════════════════════════════════════════════════════════════════════
 
-type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "version" | "perm-engine" | "prefix-meta";
+type SheetId = "overview" | "service" | "permission" | "event" | "scenario" | "grant" | "casbin" | "range" | "access" | "logging" | "layout" | "motion" | "version" | "perm-engine" | "prefix-meta";
 type Ver = "v1" | "v2" | "v3" | "v4";
 
-const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "version", "perm-engine", "prefix-meta"] as const;
+const SHEET_IDS: readonly SheetId[] = ["overview", "range", "access", "service", "permission", "event", "scenario", "grant", "casbin", "logging", "layout", "motion", "version", "perm-engine", "prefix-meta"] as const;
 
 // Sheets that depend on the active version
 const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = ["permission", "event", "scenario", "grant", "casbin", "access", "logging", "version", "perm-engine"];
@@ -139,6 +140,7 @@ const loggingContainer = document.getElementById("logging-container")!;
 
 // Layout sheet refs
 const layoutContainer = document.getElementById("layout-container")!;
+const motionContainer = document.getElementById("motion-container")!;
 
 // Version sheet refs
 const versionContainer = document.getElementById("version-container")!;
@@ -175,6 +177,7 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
     case "access":     return { shape: `perm_svc(${psc}) × role(${rc}) + event(${ec}×${ic})`, slots: "접근 제어" };
     case "logging":    return { shape: "구조화 로그 · svc+perm+evt 주소 태깅", slots: `로깅 통합 (${ver})` };
     case "layout":     return { shape: "UUID 레이아웃 시뮬레이터", slots: "N차원 인덱스 → UUID PK 매핑" };
+    case "motion":     return { shape: "GSAP motion composition", slots: "scene + sequence + caption" };
     case "version":    return { shape: "MetaRegistry 스냅샷 v1 / v2", slots: "버전 비교" };
     case "perm-engine": return { shape: "PermissionSet · bitmask [feature × role]", slots: "마이그레이션 비교" };
     case "prefix-meta": return { shape: "Prefix 메타 · dim/index capacity", slots: "축 + 합성 prefix 조회" };
@@ -248,6 +251,9 @@ function updateFormulaBar(): void {
   } else if (sheet === "layout") {
     nameBox.textContent = "—";
     fbFormula.textContent = `simPackUUID(prefix, version, shard, encode(coords)) → UUID PK  |  N차원 커버리지 시뮬레이터`;
+  } else if (sheet === "motion") {
+    nameBox.textContent = "GSAP";
+    fbFormula.textContent = "composition → sequence → transition → caption  |  runtime = gsap.timeline()";
   } else if (sheet === "version") {
     nameBox.textContent = "—";
     fbFormula.textContent = `활성 버전: ${ver}  |  role ${demoRolesFor(ver).length}개 (cap ${DEMO_ROLE_CAP[ver]}) · event ${demoEventsFor(ver).length}개 (cap ${DEMO_EVENT_CAP[ver]}) · feature ${demoFeatures(ver).length}개`;
@@ -343,6 +349,7 @@ function switchSheet(id: SheetId, pushState = true): void {
     if (id === "access")     renderAccessPage(accessContainer, state.ver);
     if (id === "logging")    renderLoggingPage(loggingContainer, state.ver);
     if (id === "layout")     renderLayoutPage(layoutContainer);
+    if (id === "motion")     renderMotionPage(motionContainer);
     if (id === "version")    renderVersionPage(versionContainer, handleVersionChange, state.ver);
     if (id === "perm-engine") renderPermEnginePage(permEngineContainer, state.ver);
     if (id === "prefix-meta") renderPrefixMetaPage(prefixMetaContainer);
