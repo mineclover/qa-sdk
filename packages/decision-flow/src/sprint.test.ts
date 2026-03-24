@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FORCING_QUESTIONS_FLOW,
   OFFICE_HOURS_FLOW,
   CEO_REVIEW_FLOW,
   ENG_REVIEW_FLOW,
@@ -58,34 +59,41 @@ describe("sprint flow schemas", () => {
 // ─── Office Hours 좌표 인코딩 ────────────────────────────
 
 describe("office-hours flow", () => {
-  it("6개 gate, 좌표 공간 올바르게 구성", () => {
-    const space = buildCoordinateSpace(OFFICE_HOURS_FLOW);
+  // diagnostic은 forcing-questions subFlow를 참조 (3^6 = 729 경로)
+  const fqCapacity = FORCING_QUESTIONS_FLOW.gates.reduce(
+    (acc, g) => acc * (g.branches?.length ?? 1), 1,
+  );
+  const subFlowCapacities = new Map([["forcing-questions", fqCapacity]]);
+
+  it("6개 gate, 좌표 공간 올바르게 구성 (diagnostic=subFlow)", () => {
+    const space = buildCoordinateSpace(OFFICE_HOURS_FLOW, subFlowCapacities);
     expect(space.labels).toEqual(["context", "mode", "diagnostic", "landscape", "premise", "approach"]);
-    // context(3) × mode(2) × diagnostic(3) × landscape(2) × premise(3) × approach(4)
-    expect(space.totalPaths).toBe(3 * 2 * 3 * 2 * 3 * 4);
+    // context(3) × mode(2) × diagnostic(729=FQ subFlow) × landscape(2) × premise(3) × approach(4)
+    expect(space.totalPaths).toBe(3 * 2 * fqCapacity * 2 * 3 * 4);
   });
 
-  it("구체적 경로 라운드트립", () => {
+  it("구체적 경로 라운드트립 (subFlow 주소 포함)", () => {
+    const subFlowAddr = 42; // FQ subFlow 내 특정 경로 주소
     const selections: GateSelection[] = [
       { gateId: "context", branchId: "new-idea", evidence: [], confidence: 0.8, timestamp: "", durationMs: 0 },
       { gateId: "mode", branchId: "startup", evidence: [], confidence: 0.9, timestamp: "", durationMs: 0 },
-      { gateId: "diagnostic", branchId: "full", evidence: [], confidence: 0.7, timestamp: "", durationMs: 0 },
+      { gateId: "diagnostic", branchId: "fq-result", evidence: [], confidence: 0.7, timestamp: "", durationMs: 0 },
       { gateId: "landscape", branchId: "search", evidence: [], confidence: 0.6, timestamp: "", durationMs: 0 },
       { gateId: "premise", branchId: "validated", evidence: [], confidence: 0.85, timestamp: "", durationMs: 0 },
       { gateId: "approach", branchId: "recommended", evidence: [], confidence: 0.9, timestamp: "", durationMs: 0 },
     ];
 
-    const address = encodeSelections(OFFICE_HOURS_FLOW, selections);
-    const decoded = decodePath(OFFICE_HOURS_FLOW, address);
+    const subFlowAddresses = new Map([["diagnostic", subFlowAddr]]);
+    const address = encodeSelections(OFFICE_HOURS_FLOW, selections, subFlowAddresses, subFlowCapacities);
+    const decoded = decodePath(OFFICE_HOURS_FLOW, address, subFlowCapacities);
 
-    expect(decoded.selections).toEqual({
-      context: "new-idea",
-      mode: "startup",
-      diagnostic: "full",
-      landscape: "search",
-      premise: "validated",
-      approach: "recommended",
-    });
+    expect(decoded.selections.context).toBe("new-idea");
+    expect(decoded.selections.mode).toBe("startup");
+    // diagnostic은 subFlow 주소(0-based 문자열)
+    expect(decoded.selections.diagnostic).toBe(String(subFlowAddr));
+    expect(decoded.selections.landscape).toBe("search");
+    expect(decoded.selections.premise).toBe("validated");
+    expect(decoded.selections.approach).toBe("recommended");
   });
 });
 

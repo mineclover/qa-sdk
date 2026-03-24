@@ -52,6 +52,47 @@ DEMO_CATALOG (demo-snapshot)
   └── tests → DEMO_CATALOG에서 파생하여 검증 (카운트 하드코딩 금지)
 ```
 
+### 관측 체계 3단계: IntentLink → Auto IL → ScenarioSpec
+
+좌표 시스템의 관측은 3가지 레벨로 구분된다.
+
+**1. IntentLink (수동 선언 — "이것들이 함께 관측되어야 한다")**
+
+- DKG config에 사람이 직접 정의하는 prefix 공출현 조건
+- **순서 없음** — 같은 서비스 컨텍스트에서 동시에 나타나기만 하면 됨
+- 위반 감지: `traceFlows(graph, records)` — endpoint 누락 시 invariant violation
+- 예: `IL-checkout-flow: page_view + endpoint + flow_point + order_event + permission`
+- 의미: "결제 흐름에서 이 5개 prefix가 모두 관측되어야 정상"
+
+**2. Auto IntentLink (데이터 기반 발견 — "실제로 이것들이 함께 나타남")**
+
+- `GET /v1/insights/correlations` — prefix 공출현 Jaccard 분석 + 클러스터링
+- **세션 단위 그룹핑**: 같은 `qa_session_id` 안에서 관측 (세션 없으면 trace_id fallback)
+- trace가 아닌 session인 이유: trace는 SDK flush 타이밍(전송 단위), session이 사용자 행동 단위
+- synthetic/system 이벤트 자동 제외
+- Jaccard ≥ 0.5인 쌍에서 connected component → IntentLink 후보
+- 라벨링: `GET/POST /v1/labels` — confirmed/rejected/investigating
+
+**3. ScenarioSpec (이상적 경로 — "이 순서로 진행되어야 한다")**
+
+- 시간 순서가 있는 step 기반 시나리오 (`step 1 → step 2 → step 3`)
+- verdict 계산: pass/fail/pending (engine 패키지)
+- 예: `checkout-flow: auth.login(step1) → page.home(step2) → cart.add(step3) → checkout.entry(step4)`
+- ScenarioSpec은 **최적화된 의도 경로** — 시스템이 기대하는 정상 흐름
+
+**3단계 관계:**
+
+```
+IntentLink (수동)     "이 prefix들이 함께 있어야 한다" (공출현 조건)
+     ↑ 발견                    ↓ 위반 감지
+Auto IL (데이터)      "실제로 이렇게 쓰인다" (session 공출현 패턴)
+     ↓ gap
+ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로)
+```
+
+- Auto IL과 ScenarioSpec의 gap = 실 사용과 이상적 설계의 차이 = **인사이트**
+- Auto IL에서 ScenarioSpec으로의 직접 승격은 하지 않는다 — 실 사용 패턴이 최적 경로와 다를 수 있기 때문
+
 ### 서비스 단위 소유권 (ownedPrefixes)
 
 - 각 서비스는 registry에 `ownedPrefixes`로 생산하는 prefix를 선언
@@ -266,6 +307,47 @@ const store = new D1RecordStore(driver);
 
 - `spec-core/shared/graph-port.ts` 변경 시 `convergence/graph-port.ts` 동기화 필수
 - `copy-drift.test.ts`가 자동 감지
+
+## Decision Flow 컨벤션
+
+### 의사결정이 필요할 때
+
+일상 개발에서 다음 질문이 나오면 decision-flow를 사용한다:
+
+| 질문 | 플로우 | 자동 판정 가능한 경우 |
+|------|--------|-------------------|
+| "테스트가 필요한가?" | `test-needed` | 문서만→불필요, 리팩터+국소+충분→불필요, 신규+시스템→E2E |
+| "기획을 확장할까?" | `scope-expansion` | 미완성+수요없음→보류 |
+| "안정화가 필요한가?" | `stabilization` | 버그빈도 높음→개선필요 |
+| "기존에 뭐가 있지?" | `ContextProvider.lookup(keyword)` | — |
+| "무슨 종류의 결정이지?" | `decision-router` | — |
+
+### 결정 기록 원칙
+
+- 모든 결정에 **evidence**를 첨부한다. `{ kind, source, content, weight }`
+- evidence.kind: `data`(정량) / `rule`(규칙) / `precedent`(선례) / `intuition`(직관) / `external`(외부)
+- 코어 gate(weight="core")에서는 **mentalModel 질문에 답하는 evidence** 포함 권장
+- confidence < 0.3이면 모니터가 경고 발행 — 근거를 보강하거나 에스컬레이션
+- 자동 판정 가능한 결정은 autoSelect()로 처리. 자동 불가 = 사람이 결정
+
+### 컨텍스트 축적
+
+- 결정 시작 전 `ContextProvider.provide(schemaId, context)` 호출하여 이전 맥락 확인
+- 결정할수록 다음 결정의 컨텍스트가 풍부해짐 (패턴 감지 → 정책 후보 → 자동화)
+- 서사(narrative)는 지워지지 않는다. 결정이 바뀌면 새 서사가 쌓인다
+
+### 스프린트 결정 (gstack)
+
+프로젝트 수준의 결정은 gstack sprint 파이프라인:
+- Think(`office-hours`) → Plan(`ceo-review`, `eng-review`, `design-review`) → Build(`build`) → Review(`code-review`) → Ship(`ship`) → Reflect(`reflect`)
+- 6 autoplan principles: standard-pattern, completeness, test-coverage, observability, security, taste
+
+### 참조
+
+- 스펙: `docs/specs/decision-flow/decision-flow.spec.md`
+- 서사: `docs/specs/decision-flow/narrative.md`
+- 증명: `packages/decision-flow/src/proof.test.ts`
+- 평가: `packages/decision-flow/src/evaluation.test.ts`, `dev-decisions.test.ts`
 
 ## 서비스 포트
 

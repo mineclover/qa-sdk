@@ -35,9 +35,36 @@ export class FlowEngine {
   private readonly policies = new Map<string, FlowPolicy[]>(); // flowId → policies
   private readonly subFlowCapacities = new Map<string, number>();
   private readonly instanceStore?: InstanceStore;
+  private readonly listeners: FlowEngineListener[] = [];
 
   constructor(options: FlowEngineOptions = {}) {
     this.instanceStore = options.instanceStore;
+  }
+
+  // ── 이벤트 리스너 ──────────────────────────────────────
+
+  /**
+   * 이벤트 리스너 등록.
+   * 결정이 일어나는 순간을 관찰할 수 있다.
+   * @returns 해제 함수
+   */
+  addListener(listener: FlowEngineListener): () => void {
+    this.listeners.push(listener);
+    return () => {
+      const idx = this.listeners.indexOf(listener);
+      if (idx >= 0) this.listeners.splice(idx, 1);
+    };
+  }
+
+  private emit(event: keyof FlowEngineListener, ...args: unknown[]): void {
+    for (const listener of this.listeners) {
+      try {
+        const handler = listener[event] as ((...a: unknown[]) => void) | undefined;
+        if (handler) handler.apply(listener, args);
+      } catch {
+        // 리스너 에러가 엔진을 멈추지 않는다 (fail-open)
+      }
+    }
   }
 
   // ── 스키마 관리 ────────────────────────────────────────
@@ -104,7 +131,9 @@ export class FlowEngine {
     };
 
     this.instances.set(instance.id, instance);
-    return toImmutable(instance);
+    const immutable = toImmutable(instance);
+    this.emit("onFlowStarted", immutable);
+    return immutable;
   }
 
   /** 인스턴스 조회 */
@@ -190,6 +219,7 @@ export class FlowEngine {
     };
 
     instance.selections.push(selection);
+    this.emit("onGateSelected", toImmutable(instance), selection, currentGate);
 
     // 모든 gate 완료 확인
     const schema = this.getSchemaOrThrow(instance.schemaId);
@@ -220,6 +250,8 @@ export class FlowEngine {
     );
 
     if (!action) return null;
+
+    this.emit("onAutoSelected", toImmutable(instance), currentGate, action);
 
     return this.selectBranch(instanceId, action.branchId, [
       {
@@ -345,12 +377,32 @@ export class FlowEngine {
       // address_context 생성 실패는 완료를 막지 않는다.
     }
 
-    this.instanceStore?.save(toImmutable(instance));
+    const completed = toImmutable(instance);
+    this.instanceStore?.save(completed);
+    this.emit("onFlowCompleted", completed);
   }
 }
 
 export interface FlowEngineOptions {
   readonly instanceStore?: InstanceStore;
+}
+
+/**
+ * FlowEngine 이벤트 리스너.
+ *
+ * 결정이 일어나는 순간을 관찰한다.
+ * 모든 메서드는 선택적 — 관심 있는 이벤트만 구현하면 된다.
+ * 리스너에서 발생한 에러는 엔진을 멈추지 않는다 (fail-open).
+ */
+export interface FlowEngineListener {
+  /** 플로우 시작 */
+  onFlowStarted?(instance: FlowInstance): void;
+  /** gate에서 분기 선택 (수동 또는 자동) */
+  onGateSelected?(instance: FlowInstance, selection: GateSelection, gate: GateSchema): void;
+  /** 정책 기반 자동 선택 시도 (selectBranch 호출 전) */
+  onAutoSelected?(instance: FlowInstance, gate: GateSchema, action: { branchId: string; confidence: number }): void;
+  /** 플로우 완료 */
+  onFlowCompleted?(instance: FlowInstance): void;
 }
 
 // ─── 내부 타입 + 유틸 ────────────────────────────────────

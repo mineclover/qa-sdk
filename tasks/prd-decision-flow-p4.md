@@ -1,6 +1,17 @@
 [PRD]
 # PRD: Decision Flow P4 — 학습·비교·DKG 통합
 
+> **상태: ✅ 완료** — 21/21 US 구현 + 4/4 Quality Gate 통과 (2026-03-24 검증)
+
+## Quality Gate 검증 결과 (2026-03-24)
+
+| QG | 명령 | 결과 |
+|----|------|------|
+| QG-1 | `pnpm --filter decision-flow typecheck` | ✅ pass |
+| QG-2 | `pnpm --filter decision-flow test` | ✅ 107 tests passed (5 files) |
+| QG-3 | `pnpm --filter @qa-sdk/cli build` | ✅ ESM + DTS build success |
+| QG-4 | `pnpm --filter demo-tests test` | ✅ 846 tests passed (52 files) |
+
 ## Overview
 
 decision-flow 시스템의 네 가지 후속 과제를 의존성 순서로 통합한 에픽.
@@ -65,23 +76,23 @@ Phase 6 ─ CLI + E2E
 **Description:** 개발자로서, FlowInstance 실행 이력을 저장하고 조회할 수 있어야 한다. Policy Learning과 A/B 비교의 공통 기반.
 
 **Acceptance Criteria:**
-- [ ] `InstanceStore` 인터페이스 정의 (save, findBySchema, findByContext, findByTimeRange)
-- [ ] 인메모리 구현 (`MemoryInstanceStore`)
-- [ ] FlowEngine에 `instanceStore` 옵션 추가 — 완료된 인스턴스 자동 저장
-- [ ] 스키마 ID + 컨텍스트 키 기반 조회 지원
-- [ ] 시간 범위 기반 조회 지원 (startedAt 기준)
+- [x] `InstanceStore` 인터페이스 정의 (save, findBySchema, findByContext, findByTimeRange)
+- [x] 인메모리 구현 (`MemoryInstanceStore`)
+- [x] FlowEngine에 `instanceStore` 옵션 추가 — 완료된 인스턴스 자동 저장
+- [x] 스키마 ID + 컨텍스트 키 기반 조회 지원
+- [x] 시간 범위 기반 조회 지원 (startedAt 기준)
 
 ### US-002: FlowSchemaNode 타입 정의
 
 **Description:** 개발자로서, DKG 그래프에 FlowSchema를 노드로 등록할 수 있어야 한다.
 
 **Acceptance Criteria:**
-- [ ] `FlowSchemaNode` 인터페이스를 `spec-core/src/dkg/dkg.types.ts`에 정의
-- [ ] `kind: "flow-schema"` 필드
-- [ ] `gates: readonly { id, name, phase, weight }[]` — gate 요약
-- [ ] `totalPaths: number` — 전체 경로 수
-- [ ] `coreGateIds: readonly string[]` — 코어 gate 목록
-- [ ] DkgNode 유니온 타입에 FlowSchemaNode 추가 (15종 → 16종)
+- [x] `FlowSchemaNode` 인터페이스를 `spec-core/src/dkg/dkg.types.ts`에 정의
+- [x] `kind: "flow-schema"` 필드
+- [x] `gates: readonly { id, name, phase, weight }[]` — gate 요약
+- [x] `totalPaths: number` — 전체 경로 수
+- [x] `coreGateIds: readonly string[]` — 코어 gate 목록
+- [x] DkgNode 유니온 타입에 FlowSchemaNode 추가 (15종 → 16종)
 
 ### US-003: DKG 엣지 타입 확장
 
@@ -90,11 +101,11 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-002
 
 **Acceptance Criteria:**
-- [ ] FlowSchemaNode → AxisNode: `composes` 엣지 (사용하는 관찰 축)
-- [ ] FlowSchemaNode → PrefixNode: `observes` 엣지 (관찰하는 prefix)
-- [ ] FlowSchemaNode → DomainNode: `contains` 엣지 (소속 도메인)
-- [ ] FlowSchemaNode → FlowSchemaNode: `references` 엣지 (subFlow 참조)
-- [ ] 기존 엣지 타입으로 충분한지 확인 — 새 엣지 타입 추가 최소화
+- [x] FlowSchemaNode → AxisNode: `composes` 엣지 (사용하는 관찰 축)
+- [x] FlowSchemaNode → PrefixNode: `observes` 엣지 (관찰하는 prefix)
+- [x] FlowSchemaNode → DomainNode: `contains` 엣지 (소속 도메인)
+- [x] FlowSchemaNode → FlowSchemaNode: `references` 엣지 (subFlow 참조)
+- [x] 기존 엣지 타입으로 충분한지 확인 — 새 엣지 타입 추가 최소화
 
 ---
 
@@ -107,11 +118,11 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-002, US-003
 
 **Acceptance Criteria:**
-- [ ] `DEMO_DKG_CONFIG`에 `flowSchemas` 필드 추가 (FlowSchema[] 또는 참조)
-- [ ] `bootstrapDkg({ catalog, config })` 시 flowSchemas → FlowSchemaNode 변환
-- [ ] 각 FlowSchemaNode의 coreGateIds를 analyzeGateStructure()로 자동 산출
-- [ ] 관련 엣지 (composes, observes, contains) 자동 생성
-- [ ] subFlow 참조가 있으면 references 엣지 자동 생성
+- [x] `DEMO_DKG_CONFIG`에 `flowSchemas` 필드 추가 (FlowSchema[] 또는 참조)
+- [x] `bootstrapDkg({ catalog, config })` 시 flowSchemas → FlowSchemaNode 변환
+- [x] 각 FlowSchemaNode의 coreGateIds를 analyzeGateStructure()로 자동 산출
+- [x] 관련 엣지 (composes, observes, contains) 자동 생성
+- [x] subFlow 참조가 있으면 references 엣지 자동 생성
 
 ### US-005: GraphRegistry 질의 API 확장
 
@@ -120,10 +131,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-004
 
 **Acceptance Criteria:**
-- [ ] `graph.getNodesByKind("flow-schema")` → FlowSchemaNode[] 반환
-- [ ] `graph.neighbors(flowSchemaId, "composes")` → 사용하는 AxisNode
-- [ ] `graph.neighbors(flowSchemaId, "observes")` → 관찰하는 PrefixNode
-- [ ] `graph.cascadeFromFlowSchema(flowSchemaId)` — 영향받는 prefix/axis 목록
+- [x] `graph.getNodesByKind("flow-schema")` → FlowSchemaNode[] 반환
+- [x] `graph.neighbors(flowSchemaId, "composes")` → 사용하는 AxisNode
+- [x] `graph.neighbors(flowSchemaId, "observes")` → 관찰하는 PrefixNode
+- [x] `graph.cascadeFromFlowSchema(flowSchemaId)` — 영향받는 prefix/axis 목록
 
 ---
 
@@ -136,10 +147,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-001
 
 **Acceptance Criteria:**
-- [ ] `detectPatterns(store, schemaId, options)` 함수 구현
-- [ ] 동일 컨텍스트 키 → 동일 gate 선택 경로가 N회(기본 5) 이상 반복되면 패턴으로 인식
-- [ ] 패턴별 빈도, 평균 confidence, 첫/마지막 발생 시각 산출
-- [ ] gate별 분기 분포 히스토그램 포함
+- [x] `detectPatterns(store, schemaId, options)` 함수 구현
+- [x] 동일 컨텍스트 키 → 동일 gate 선택 경로가 N회(기본 5) 이상 반복되면 패턴으로 인식
+- [x] 패턴별 빈도, 평균 confidence, 첫/마지막 발생 시각 산출
+- [x] gate별 분기 분포 히스토그램 포함
 
 ### US-007: FlowPolicy 후보 자동 생성
 
@@ -148,12 +159,12 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-006
 
 **Acceptance Criteria:**
-- [ ] `generatePolicyCandidates(patterns, threshold)` 함수 구현
-- [ ] 임계값: 빈도 ≥ N회 AND 평균 confidence ≥ 0.8
-- [ ] 생성된 후보에 `status: "candidate"` 필드
-- [ ] 후보의 `rationale`에 근거 자동 기술 ("N회 반복, 평균 confidence X.XX")
-- [ ] conditions는 컨텍스트 키에서 자동 추출
-- [ ] 기존 등록 정책과 중복 검사
+- [x] `generatePolicyCandidates(patterns, threshold)` 함수 구현
+- [x] 임계값: 빈도 ≥ N회 AND 평균 confidence ≥ 0.8
+- [x] 생성된 후보에 `status: "candidate"` 필드
+- [x] 후보의 `rationale`에 근거 자동 기술 ("N회 반복, 평균 confidence X.XX")
+- [x] conditions는 컨텍스트 키에서 자동 추출
+- [x] 기존 등록 정책과 중복 검사
 
 ### US-008: 인간 승인 워크플로우
 
@@ -162,10 +173,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-007
 
 **Acceptance Criteria:**
-- [ ] `PolicyCandidate` 타입에 `status: "candidate" | "approved" | "rejected" | "modified"` 필드
-- [ ] `approveCandidate(id)` → FlowPolicy로 변환 + 엔진 등록
-- [ ] `rejectCandidate(id, reason)` → 동일 패턴 재제안 억제
-- [ ] `modifyCandidate(id, changes)` → 조건/분기 수정 후 승인
+- [x] `PolicyCandidate` 타입에 `status: "candidate" | "approved" | "rejected" | "modified"` 필드
+- [x] `approveCandidate(id)` → FlowPolicy로 변환 + 엔진 등록
+- [x] `rejectCandidate(id, reason)` → 동일 패턴 재제안 억제
+- [x] `modifyCandidate(id, changes)` → 조건/분기 수정 후 승인
 
 ---
 
@@ -178,11 +189,11 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-001
 
 **Acceptance Criteria:**
-- [ ] `diffInstances(a, b)` 함수 구현
-- [ ] gate별 일치/불일치 표시 (match/diverge)
-- [ ] 첫 번째 분기점(divergence point) 식별
-- [ ] 코어 gate의 분기 차이 강조 (GateWeight 활용)
-- [ ] 각 분기점에서의 evidence 차이 비교
+- [x] `diffInstances(a, b)` 함수 구현
+- [x] gate별 일치/불일치 표시 (match/diverge)
+- [x] 첫 번째 분기점(divergence point) 식별
+- [x] 코어 gate의 분기 차이 강조 (GateWeight 활용)
+- [x] 각 분기점에서의 evidence 차이 비교
 
 ### US-010: Gate별 선택 분포 (Distribution Analysis)
 
@@ -191,10 +202,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-001
 
 **Acceptance Criteria:**
-- [ ] `gateDistribution(store, schemaId, gateId)` 함수 구현
-- [ ] branch별 선택 횟수, 비율, 평균 confidence
-- [ ] 지배적 branch(>70%) 식별 — Policy Learning 후보 힌트
-- [ ] evidence_kind별 선택 상관 분석 (어떤 근거가 어떤 선택과 연관되는가)
+- [x] `gateDistribution(store, schemaId, gateId)` 함수 구현
+- [x] branch별 선택 횟수, 비율, 평균 confidence
+- [x] 지배적 branch(>70%) 식별 — Policy Learning 후보 힌트
+- [x] evidence_kind별 선택 상관 분석 (어떤 근거가 어떤 선택과 연관되는가)
 
 ### US-011: 시간 범위 비교 (Temporal Comparison)
 
@@ -203,10 +214,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-001
 
 **Acceptance Criteria:**
-- [ ] `compareTimeRanges(store, schemaId, rangeA, rangeB)` 함수 구현
-- [ ] gate별 분포 변화율 (shift percentage)
-- [ ] 새로 등장한 경로 / 사라진 경로 감지
-- [ ] 코어 gate의 변화만 필터링하는 옵션
+- [x] `compareTimeRanges(store, schemaId, rangeA, rangeB)` 함수 구현
+- [x] gate별 분포 변화율 (shift percentage)
+- [x] 새로 등장한 경로 / 사라진 경로 감지
+- [x] 코어 gate의 변화만 필터링하는 옵션
 
 ### US-012: 비교 보고서 생성
 
@@ -215,9 +226,9 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-009, US-010, US-011
 
 **Acceptance Criteria:**
-- [ ] `ComparisonReport` 타입 정의 (pairwise diff, distributions, temporal shifts)
-- [ ] 보고서에 "왜 다른가" 추론 포함 (evidence 차이 기반)
-- [ ] JSON 직렬화 가능
+- [x] `ComparisonReport` 타입 정의 (pairwise diff, distributions, temporal shifts)
+- [x] 보고서에 "왜 다른가" 추론 포함 (evidence 차이 기반)
+- [x] JSON 직렬화 가능
 
 ---
 
@@ -230,15 +241,15 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-002, US-005
 
 **Acceptance Criteria:**
-- [ ] `dkg decide` 실행 시 FlowEngine에 coordinate-design 플로우 자동 시작
-- [ ] 기존 `--type` 옵션이 플로우의 첫 gate 선택으로 매핑
+- [x] `dkg decide` 실행 시 FlowEngine에 coordinate-design 플로우 자동 시작
+- [x] 기존 `--type` 옵션이 플로우의 첫 gate 선택으로 매핑
   - `--type capacity` → axis-definition: reuse-existing, capacity-setting으로 점프
   - `--type new-axis` → axis-definition: new-axis
   - `--type new-prefix` → axis-definition: reuse-existing, prefix-design: new-prefix
   - `--type merge` → merge-split: merge
   - `--type deprecate` → merge-split: keep-separate (+ 별도 처리)
-- [ ] 매핑되지 않는 타입은 플로우의 순차 실행으로 안내
-- [ ] `--legacy` 옵션으로 기존 방식(플로우 없이 직접 DecisionNode 생성) 유지
+- [x] 매핑되지 않는 타입은 플로우의 순차 실행으로 안내
+- [x] `--legacy` 옵션으로 기존 방식(플로우 없이 직접 DecisionNode 생성) 유지
 
 ### US-014: DecisionNode ↔ FlowInstance 양방향 참조
 
@@ -247,10 +258,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-013
 
 **Acceptance Criteria:**
-- [ ] DecisionNode에 `flowInstanceId?: string` 필드 추가 (기존 DecisionNode 하위 호환)
-- [ ] FlowInstance.context에 `dkgDecisionId` 자동 기록
-- [ ] DKG 그래프에 `justifies` 엣지 생성: FlowSchemaNode → DecisionNode
-- [ ] `qa-sdk dkg trace <decision-id>` 실행 시 연결된 FlowInstance의 코어 추적 표시
+- [x] DecisionNode에 `flowInstanceId?: string` 필드 추가 (기존 DecisionNode 하위 호환)
+- [x] FlowInstance.context에 `dkgDecisionId` 자동 기록
+- [x] DKG 그래프에 `justifies` 엣지 생성: FlowSchemaNode → DecisionNode
+- [x] `qa-sdk dkg trace <decision-id>` 실행 시 연결된 FlowInstance의 코어 추적 표시
 
 ### US-015: 코어 gate 영향 경고 통합
 
@@ -259,10 +270,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-013
 
 **Acceptance Criteria:**
-- [ ] 코어 gate(weight="core") 선택 시 analyzeImpact() 자동 실행
-- [ ] 영향받는 gate 목록과 무효화 cascade를 dkg decide 출력에 포함
-- [ ] `invalidatesCore: true`이면 `⚠ 코어 gate 무효화 — 전체 재설계 필요` 경고
-- [ ] 경고 후 계속 진행 여부 확인 (--force로 경고 무시 가능)
+- [x] 코어 gate(weight="core") 선택 시 analyzeImpact() 자동 실행
+- [x] 영향받는 gate 목록과 무효화 cascade를 dkg decide 출력에 포함
+- [x] `invalidatesCore: true`이면 `⚠ 코어 gate 무효화 — 전체 재설계 필요` 경고
+- [x] 경고 후 계속 진행 여부 확인 (--force로 경고 무시 가능)
 
 ### US-016: Evidence 자동 수집
 
@@ -271,10 +282,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-013
 
 **Acceptance Criteria:**
-- [ ] `--rationale` → Evidence { kind: "rule", source: "dkg-decide", content: rationale }
-- [ ] `--alternatives` → 사용하지 않은 branch의 description으로 기록
-- [ ] scaffoldDecision()의 자동 생성 필드도 Evidence로 캡처
-- [ ] confidence는 사용자 명시 또는 evidence weight에서 자동 산출
+- [x] `--rationale` → Evidence { kind: "rule", source: "dkg-decide", content: rationale }
+- [x] `--alternatives` → 사용하지 않은 branch의 description으로 기록
+- [x] scaffoldDecision()의 자동 생성 필드도 Evidence로 캡처
+- [x] confidence는 사용자 명시 또는 evidence weight에서 자동 산출
 
 ### US-017: address_context 자동 생성
 
@@ -283,9 +294,9 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-013
 
 **Acceptance Criteria:**
-- [ ] FlowInstance 완료 시 buildFlowCompletionContext() 자동 호출
-- [ ] 생성된 address_context를 DKG VersionEvent/DecisionNode의 메타데이터에 저장
-- [ ] convergence pipeline이 decision prefix 사용량을 집계할 수 있는 형태로 저장
+- [x] FlowInstance 완료 시 buildFlowCompletionContext() 자동 호출
+- [x] 생성된 address_context를 DKG VersionEvent/DecisionNode의 메타데이터에 저장
+- [x] convergence pipeline이 decision prefix 사용량을 집계할 수 있는 형태로 저장
 
 ---
 
@@ -298,11 +309,11 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-008
 
 **Acceptance Criteria:**
-- [ ] `qa-sdk flow policy candidates` — 후보 목록 (빈도, confidence 표시)
-- [ ] `qa-sdk flow policy approve <id>` — 승인 + 등록
-- [ ] `qa-sdk flow policy reject <id>` — 거부
-- [ ] `qa-sdk flow policy list` — 등록된 정책 목록
-- [ ] `qa-sdk flow policy learn <schema-id>` — 패턴 감지 + 후보 생성 실행
+- [x] `qa-sdk flow policy candidates` — 후보 목록 (빈도, confidence 표시)
+- [x] `qa-sdk flow policy approve <id>` — 승인 + 등록
+- [x] `qa-sdk flow policy reject <id>` — 거부
+- [x] `qa-sdk flow policy list` — 등록된 정책 목록
+- [x] `qa-sdk flow policy learn <schema-id>` — 패턴 감지 + 후보 생성 실행
 
 ### US-019: flow compare CLI
 
@@ -311,10 +322,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-012
 
 **Acceptance Criteria:**
-- [ ] `qa-sdk flow compare <instance-a> <instance-b>` — 쌍 비교
-- [ ] `qa-sdk flow compare --gate <gate-id> --schema <schema-id>` — gate 분포
-- [ ] `qa-sdk flow compare --from <date> --to <date> --schema <schema-id>` — 시간 비교
-- [ ] 코어 gate 차이에 ★ 표시
+- [x] `qa-sdk flow compare <instance-a> <instance-b>` — 쌍 비교
+- [x] `qa-sdk flow compare --gate <gate-id> --schema <schema-id>` — gate 분포
+- [x] `qa-sdk flow compare --from <date> --to <date> --schema <schema-id>` — 시간 비교
+- [x] 코어 gate 차이에 ★ 표시
 
 ### US-020: dkg flow-schemas CLI
 
@@ -323,9 +334,9 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-005
 
 **Acceptance Criteria:**
-- [ ] `qa-sdk dkg flow-schemas` — 등록된 FlowSchemaNode 목록
-- [ ] `qa-sdk dkg flow-schema <id>` — 개별 프로파일 (gates, core gates, 관련 prefix/axis)
-- [ ] `qa-sdk dkg diagram flow-schema <id>` — Mermaid 다이어그램 (gate 인과 그래프)
+- [x] `qa-sdk dkg flow-schemas` — 등록된 FlowSchemaNode 목록
+- [x] `qa-sdk dkg flow-schema <id>` — 개별 프로파일 (gates, core gates, 관련 prefix/axis)
+- [x] `qa-sdk dkg diagram flow-schema <id>` — Mermaid 다이어그램 (gate 인과 그래프)
 
 ### US-021: 통합 E2E 테스트
 
@@ -334,10 +345,10 @@ Phase 6 ─ CLI + E2E
 **Depends on:** US-013, US-014, US-015, US-016, US-017
 
 **Acceptance Criteria:**
-- [ ] E2E: `dkg decide --type new-axis` → FlowInstance 완료 + DecisionNode 생성
-- [ ] E2E: `dkg decide --type merge` → 코어 gate 경고 출력 확인
-- [ ] E2E: `dkg trace <id>` → FlowInstance 코어 추적 표시 확인
-- [ ] 하위 호환: `dkg decide --legacy` → 기존 동작과 동일
+- [x] E2E: `dkg decide --type new-axis` → FlowInstance 완료 + DecisionNode 생성
+- [x] E2E: `dkg decide --type merge` → 코어 gate 경고 출력 확인
+- [x] E2E: `dkg trace <id>` → FlowInstance 코어 추적 표시 확인
+- [x] 하위 호환: `dkg decide --legacy` → 기존 동작과 동일
 
 ---
 

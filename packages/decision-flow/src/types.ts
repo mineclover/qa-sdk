@@ -143,6 +143,47 @@ export interface FlowSchema {
   readonly version: string;
   readonly gates: readonly GateSchema[];
   readonly outcomes?: readonly OutcomeSchema[];
+  /** 의사결정 단위 — 이 플로우의 주제, 목적, 성공 기준 */
+  readonly unit?: DecisionUnit;
+}
+
+// ─── 의사결정 단위 (Decision Unit) ────────────────────────
+
+/**
+ * 의사결정의 명확한 단위.
+ *
+ * 모든 의사결정은 세 가지가 명확해야 한다:
+ * 1. topic — 무엇에 대한 결정인가
+ * 2. objective — 이 결정으로 무엇을 달성하려 하는가
+ * 3. successCriteria — 이 결정이 성공했다고 판단할 기준은 무엇인가
+ *
+ * 결정이 완료된 후 verdict로 성공 여부를 기록한다.
+ * verdict가 없으면 아직 결론이 나지 않은 것.
+ */
+export interface DecisionUnit {
+  /** 무엇에 대한 결정인가 (예: "event-catalog 패키지 추가 여부") */
+  readonly topic: string;
+  /** 이 결정으로 무엇을 달성하려 하는가 (예: "이벤트 정의 중복 제거 + 키 충돌 방지") */
+  readonly objective: string;
+  /** 성공 판단 기준 (예: "5개 서비스의 이벤트가 중앙 카탈로그에서 관리됨") */
+  readonly successCriteria: readonly string[];
+  /** 실패 시 대안 (선택적) */
+  readonly fallback?: string;
+}
+
+/** 의사결정 판정 — 결정 완료 후 성공/실패/보류를 기록 */
+export type DecisionVerdict = "success" | "failure" | "deferred" | "superseded";
+
+/** 의사결정 판정 기록 */
+export interface DecisionVerdictRecord {
+  /** 판정 */
+  readonly verdict: DecisionVerdict;
+  /** 판정 근거 */
+  readonly reason: string;
+  /** 성공 기준 충족 여부 (기준별) */
+  readonly criteriaResults: readonly { criterion: string; met: boolean; evidence?: string }[];
+  /** 판정 시각 */
+  readonly judgedAt: string;
 }
 
 // ─── 플로우 인스턴스 (런타임) ─────────────────────────────
@@ -172,6 +213,10 @@ export interface GateSelection {
 /**
  * FlowInstance = 의사결정 과정의 구체적 실행.
  * 완료 시 coordinateAddress에 전체 경로가 1D 정수로 인코딩된다.
+ *
+ * 생명주기:
+ *   pending → active → completed → (시간 경과) → verdict 기록
+ *   과정(active→completed)과 결론(verdict)은 시간축이 다르다.
  */
 export interface FlowInstance {
   readonly id: string;
@@ -187,6 +232,10 @@ export interface FlowInstance {
   readonly coordinateAddress?: number;
   /** 완료 시점 관찰용 address_context 캐시 */
   readonly addressContext?: Record<string, string>;
+  /** 의사결정 단위 (FlowSchema.unit의 스냅샷) */
+  readonly unit?: DecisionUnit;
+  /** 사후 판정 — 완료 후 시간이 지나서 기록 (성공/실패/보류) */
+  readonly verdict?: DecisionVerdictRecord;
 }
 
 // ─── 정책 ────────────────────────────────────────────────
@@ -236,4 +285,144 @@ export interface DecodedPath {
   readonly flowId: string;
   readonly address: number;
   readonly selections: Record<string, string>;
+}
+
+// ─── 서사 (Decision Narrative) ────────────────────────────
+
+/**
+ * 의사결정 서사 — 개별 결정이 모여 결정 공간의 한 점에 도달하고,
+ * 그 여정이 서사로 기록되는 구조.
+ *
+ * 흐름:
+ *   배경(context) → 여정(journey) → 도달(destination) → 산출(outcome) → 회고(reflection)
+ *
+ * 배경:  왜 이 결정이 필요했는가 (비즈니스 요구, 관측, 사건)
+ * 여정:  각 gate에서 무엇을 선택하고 왜 그랬는가 (개별 결정의 축적)
+ * 도달:  결정 공간에서의 최종 위치 (좌표 주소 = 서사의 압축)
+ * 산출:  이 결정이 만들어낸 것 (기술 구현, 변경, 문서)
+ * 회고:  이 서사에서 배운 것 (패턴, 교훈, 열린 질문)
+ *
+ * 서사는 지워지지 않는다. 결정이 바뀌면 새 서사가 추가된다.
+ */
+/**
+ * 의사결정 서사.
+ *
+ * 흐름:
+ *   배경 → 여정 → 도달 → 산출 → [시간 경과] → 판정 → 회고
+ *
+ * 과정(배경~산출)과 결론(판정)은 시간축이 다르다.
+ * 판정은 나중에 추가된다. 회고는 판정 후에야 의미가 있다.
+ */
+export interface DecisionNarrative {
+  /** 서사 고유 ID */
+  readonly id: string;
+  /** 기록 시각 (ISO-8601) */
+  readonly recordedAt: string;
+
+  /** 의사결정 단위 — 이 결정의 주제/목적/성공 기준 (선택적) */
+  readonly unit?: DecisionUnit;
+  /** 배경: 왜 이 결정이 필요했는가 */
+  readonly context: NarrativeContext;
+  /** 여정: 개별 결정의 축적 — gate를 하나씩 통과하며 쌓인 선택들 */
+  readonly journey: readonly NarrativeStep[];
+  /** 도달: 결정 공간에서의 최종 위치 */
+  readonly destination: NarrativeDestination;
+  /** 산출: 이 결정이 만들어낸 것 */
+  readonly outcome: NarrativeOutcome;
+  /** 판정: 성공/실패/보류 — 산출 후 시간이 지나서 기록 (선택적) */
+  readonly verdict?: DecisionVerdictRecord;
+  /** 회고: 이 서사에서 배운 것 (선택적 — 판정 후 추가) */
+  readonly reflection?: NarrativeReflection;
+}
+
+/** 배경 — 서사의 시작점 */
+export interface NarrativeContext {
+  /** 요구의 출처 (예: "capacity-alert", "feature-request", "tech-debt") */
+  readonly source: string;
+  /** 무엇이 이 결정을 촉발했는가 */
+  readonly trigger: string;
+  /** 관련 DKG 관측 ID (있으면) */
+  readonly observationId?: string;
+}
+
+/** 여정의 한 걸음 — 하나의 gate에서의 선택 */
+export interface NarrativeStep {
+  /** gate ID */
+  readonly gateId: string;
+  /** gate 이름 */
+  readonly gateName: string;
+  /** 선택한 branch ID */
+  readonly choice: string;
+  /** 왜 이 선택을 했는가 (evidence에서 추출한 한 줄 요약) */
+  readonly reason: string;
+  /** 확신도 (0-1) */
+  readonly confidence: number;
+  /** 이 gate가 코어인가 (결정 공간의 주요 차원) */
+  readonly isCore: boolean;
+  /** 이 선택의 근거 유형 */
+  readonly evidenceKinds: readonly string[];
+}
+
+/** 도달 — 결정 공간의 한 점 */
+export interface NarrativeDestination {
+  /** FlowInstance ID */
+  readonly instanceId: string;
+  /** 플로우 스키마 ID */
+  readonly schemaId: string;
+  /** 1D 정수 주소 — 서사 전체의 압축 (있으면) */
+  readonly address?: number;
+  /** gate별 선택 (decoded path) */
+  readonly selections: Record<string, string>;
+  /** 코어 gate 선택만 추출 — 서사의 핵심 */
+  readonly coreSelections: Record<string, string>;
+}
+
+/** 산출 — 결정이 만들어낸 것 */
+export interface NarrativeOutcome {
+  /** 산출물 유형 (예: "axis", "prefix", "module", "config-change") */
+  readonly artifactType: string;
+  /** 산출물 참조 (예: 파일 경로, DKG 노드 ID 등) */
+  readonly artifactRef: string;
+  /** DKG DecisionNode ID (있으면) */
+  readonly decisionNodeId?: string;
+  /** 변경된 파일 목록 (구현 추적) */
+  readonly filesChanged?: readonly string[];
+  /** 관련 커밋 해시 (구현 추적) */
+  readonly commits?: readonly string[];
+  /** 테스트 결과 요약 (구현 추적) */
+  readonly testResult?: NarrativeTestResult;
+}
+
+/** 테스트 결과 요약 */
+export interface NarrativeTestResult {
+  readonly passed: number;
+  readonly failed: number;
+  readonly skipped: number;
+  /** 실패 시 실패 테스트 목록 */
+  readonly failedTests?: readonly string[];
+}
+
+/** 회고 — 서사에서 배운 것 (나중에 추가 가능) */
+export interface NarrativeReflection {
+  /** 이 결정에서 발견된 패턴 (있으면) */
+  readonly patternFound?: string;
+  /** 다음에 비슷한 결정을 할 때 참고할 교훈 */
+  readonly lesson?: string;
+  /** 아직 답하지 못한 질문 */
+  readonly openQuestions?: readonly string[];
+}
+
+// ─── 하위 호환: DecisionTrace (DecisionNarrative의 간소화 뷰) ──
+
+/** DecisionTrace — DecisionNarrative의 X→좌표→Y 간소화 뷰 */
+export interface DecisionTrace {
+  readonly requirement: { source: string; description: string; observationId?: string };
+  readonly coordinate: {
+    instanceId: string;
+    address?: number;
+    selections: Record<string, string>;
+    coreSelections: Record<string, string>;
+    addressContext?: Record<string, string>;
+  };
+  readonly implementation: { artifactType: string; artifactRef: string; decisionNodeId?: string };
 }

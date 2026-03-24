@@ -7,7 +7,9 @@ import type {
   CognitivePhase,
   EvidenceKind,
   FlowSchema,
+  GateDependency,
   GateSchema,
+  GateWeight,
   OutcomeSchema,
 } from "./types.js";
 
@@ -179,7 +181,14 @@ export class FlowSchemaBuilder {
     name: string,
     phase: CognitivePhase,
     branches: readonly BranchInput[],
-    options?: { requiredEvidence?: readonly EvidenceKind[]; optional?: boolean; timeoutMs?: number },
+    options?: {
+      weight?: GateWeight;
+      affects?: readonly GateDependency[];
+      mentalModels?: readonly string[];
+      requiredEvidence?: readonly EvidenceKind[];
+      optional?: boolean;
+      timeoutMs?: number;
+    },
   ): this {
     this._gates.push({
       id,
@@ -192,6 +201,9 @@ export class FlowSchemaBuilder {
         nextGateId: b.nextGateId,
         terminal: b.terminal,
       })),
+      weight: options?.weight,
+      affects: options?.affects,
+      mentalModels: options?.mentalModels,
       requiredEvidence: options?.requiredEvidence,
       optional: options?.optional,
       timeoutMs: options?.timeoutMs,

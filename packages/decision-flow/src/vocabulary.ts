@@ -1,9 +1,12 @@
 /**
- * 의사결정 도메인 단어 정의 (Vocabulary)
+ * 의사결정 도메인 축 정의 (Vocabulary)
  *
- * 좌표계의 축(axis)이 되는 유한한 단어 집합.
- * 각 축은 5Q Checklist를 통과해야 한다:
- *   Q1 유한? Q2 의사결정 관련? Q3 공유? Q4 안정? Q5 capacity 관리 가능?
+ * 소프트웨어/시스템 설계에서 반복되는 의사결정 과정의 핵심 축을 사전 정의한다.
+ * 개별 결정은 일회성처럼 보이지만, 축으로 투영하면 반복 패턴이 드러난다.
+ *
+ * 각 축은 두 단계를 통과해야 한다:
+ *   1. 자격 검증 (5Q): 유한? 의사결정 관련? 공유? 안정? capacity 관리 가능?
+ *   2. 설명력 판단: 결정의 "왜"를 얼마나 잘 구분하는가? 기존 축과 직교하는가?
  *
  * 모든 entries는 snake_case. capacity는 nextPowerOf2(entries.length * 2) 이상.
  */
@@ -17,6 +20,36 @@ export interface VersionedAxis {
     readonly capacity?: number;
     readonly ko?: Record<string, string>;
   }>;
+}
+
+// ─── 축 설명력 메타데이터 ─────────────────────────────────
+
+/**
+ * 축의 설명력 역할.
+ *
+ * primary:     결정의 구조를 결정하는 축 — 이 축이 다르면 결정의 성격이 근본적으로 달라진다
+ * secondary:   결정의 성격을 한정하는 축 — primary 내에서 세부 분류를 제공
+ * contextual:  결정의 강도/상황을 측정하는 축 — 결정 자체보다 결정의 메타 정보
+ */
+export type ExplanatoryRole = "primary" | "secondary" | "contextual";
+
+/**
+ * 축의 설명력 메타데이터.
+ *
+ * 5Q가 축의 "자격"을 검증한다면, 이 메타데이터는 축의 "의미"를 기술한다.
+ * - 이 축이 결정의 어떤 측면을 설명하는가 (explains)
+ * - 왜 다른 후보 축보다 설명력이 높은가 (designRationale)
+ * - 어떤 축과 독립인가 (orthogonalTo)
+ */
+export interface AxisExplanatoryMeta {
+  /** 설명력 역할 (primary > secondary > contextual) */
+  readonly role: ExplanatoryRole;
+  /** 이 축이 결정의 어떤 측면을 설명하는가 */
+  readonly explains: string;
+  /** 왜 이 축이 다른 후보보다 설명력이 높은가 */
+  readonly designRationale: string;
+  /** 직교 관계가 보장되는 축 ID 목록 */
+  readonly orthogonalTo: readonly string[];
 }
 
 // ─── 축 정의 ─────────────────────────────────────────────
@@ -215,6 +248,117 @@ export const DECISION_AXES: Record<string, VersionedAxis> = {
   magnitude:         toVersionedAxis("magnitude", "영향 범위", MAGNITUDE),
   confidence_band:   toVersionedAxis("confidence_band", "확신 수준", CONFIDENCE_BAND),
   forcing_question:  toVersionedAxis("forcing_question", "강제 질문", FORCING_QUESTION_AXIS),
+};
+
+// ─── 축 설명력 레지스트리 ──────────────────────────────────
+
+/**
+ * 11개 축의 설명력 메타데이터.
+ *
+ * 소프트웨어 설계 의사결정에서 반복되는 패턴을 가장 잘 구분하는
+ * 주성분(principal component)으로서의 근거를 기록한다.
+ */
+export const AXIS_META: Record<string, AxisExplanatoryMeta> = {
+  // ── Primary: 결정의 구조를 결정 ──
+
+  cognitive_phase: {
+    role: "primary",
+    explains: "결정이 어떤 인지 과정에서 발생했는가",
+    designRationale:
+      "같은 결론이라도 perceive에서 한 것과 reflect에서 한 것은 품질이 다르다. " +
+      "단계가 다르면 필요한 근거 유형이 달라진다. " +
+      "후보 축 decision_speed(빠름/보통/느림)보다 설명력이 높은 이유: " +
+      "속도는 phase의 파생값이지 독립 차원이 아니다",
+    orthogonalTo: ["evidence_kind", "flow_type", "confidence_band", "escalation_type"],
+  },
+  flow_type: {
+    role: "primary",
+    explains: "결정이 어떤 맥락의 플로우에서 발생했는가",
+    designRationale:
+      "전략 리뷰(ceo_review)의 '위험 높음'과 코드 리뷰(code_review)의 '위험 높음'은 의미가 다르다. " +
+      "플로우 유형이 결정의 해석 프레임을 결정한다",
+    orthogonalTo: ["cognitive_phase", "evidence_kind", "escalation_type", "decision_outcome", "scope_mode"],
+  },
+  evidence_kind: {
+    role: "primary",
+    explains: "결정의 근거 유형이 무엇인가",
+    designRationale:
+      "data 근거의 결정과 intuition 근거의 결정은 검증 방법이 다르다. " +
+      "결정의 재현 가능성을 결정하는 핵심 축. " +
+      "후보 축 evidence_count(근거 수)보다 설명력이 높은 이유: " +
+      "수가 아니라 종류가 결정 품질을 좌우한다",
+    orthogonalTo: ["cognitive_phase", "flow_type", "confidence_band", "forcing_question"],
+  },
+
+  // ── Secondary: 결정의 성격을 한정 ──
+
+  mental_model: {
+    role: "secondary",
+    explains: "어떤 사고 도구로 판단했는가",
+    designRationale:
+      "같은 정보를 bezos-doors로 보면 속도 결정, munger-inversion으로 보면 리스크 회피가 된다. " +
+      "사고 도구가 결정의 방향을 틀어놓는다",
+    orthogonalTo: ["reversibility", "magnitude"],
+  },
+  escalation_type: {
+    role: "secondary",
+    explains: "왜 자동 판정이 실패했는가",
+    designRationale:
+      "자동화 가능 영역과 인간 개입 필수 영역을 구분하는 축. " +
+      "에스컬레이션 사유에 따라 자동화 전략이 달라진다",
+    orthogonalTo: ["flow_type", "cognitive_phase"],
+  },
+  decision_outcome: {
+    role: "secondary",
+    explains: "결정이 어떤 결과로 끝났는가",
+    designRationale:
+      "결정 경로의 최종 상태. 학습 루프의 피드백 신호. " +
+      "같은 경로여도 completed와 abandoned는 다음 결정에 주는 교훈이 다르다",
+    orthogonalTo: ["flow_type", "scope_mode"],
+  },
+  scope_mode: {
+    role: "secondary",
+    explains: "결정의 범위 전략이 무엇인가",
+    designRationale:
+      "expansion/selective/hold/reduction — 결정의 방향성을 구분. " +
+      "같은 기술 결정이라도 확장 중인지 축소 중인지에 따라 의미가 달라진다",
+    orthogonalTo: ["decision_outcome", "flow_type"],
+  },
+
+  // ── Contextual: 결정의 강도/상황 측정 ──
+
+  reversibility: {
+    role: "contextual",
+    explains: "결정이 되돌릴 수 있는가",
+    designRationale:
+      "one-way/two-way — Bezos Doors 프레임워크. " +
+      "결정 속도를 보정하는 메타 축. two-way이면 70% 정보로 충분",
+    orthogonalTo: ["magnitude", "mental_model"],
+  },
+  magnitude: {
+    role: "contextual",
+    explains: "결정의 영향 범위가 얼마인가",
+    designRationale:
+      "minor~critical — reversibility와 교차하여 결정 전략을 결정. " +
+      "two-way이면서 critical일 수 있다 (대규모 A/B 테스트)",
+    orthogonalTo: ["reversibility", "mental_model"],
+  },
+  confidence_band: {
+    role: "contextual",
+    explains: "결정의 확신도",
+    designRationale:
+      "low~exact — evidence weight의 이산화. " +
+      "패턴 학습의 임계값이자 자동 선택 가능 여부의 기준",
+    orthogonalTo: ["cognitive_phase", "evidence_kind", "forcing_question"],
+  },
+  forcing_question: {
+    role: "contextual",
+    explains: "어떤 강제 질문에 답했는가",
+    designRationale:
+      "Office Hours 6 Forcing Questions — 전략 결정의 구조화된 입력. " +
+      "질문이 다르면 같은 정보에서도 다른 결정이 나온다",
+    orthogonalTo: ["evidence_kind", "confidence_band"],
+  },
 };
 
 // ─── 연속값 이산화 ───────────────────────────────────────

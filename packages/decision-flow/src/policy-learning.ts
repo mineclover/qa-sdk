@@ -670,3 +670,78 @@ function isPatternContextValue(value: unknown): value is PatternContextValue {
 function compareTimestamps(a: string, b: string): number {
   return new Date(a).getTime() - new Date(b).getTime();
 }
+
+// ─── 패턴 분류 (Pattern Classification) ──────────────────
+
+/**
+ * 결정 경로 패턴의 분류.
+ *
+ * routine:      고빈도 + 고confidence. 자동화 후보. "항상 이렇게 결정한다"
+ * exploratory:  저빈도 + 다양한 경로. 탐색 중. "아직 최적 경로를 찾는 중"
+ * escalation:   confidence가 낮거나 하락 중. 주의 필요. "확신 없이 결정하고 있다"
+ * anomaly:      기존 패턴에서 벗어남. 새 경로 또는 비정상. "이전과 다르게 결정했다"
+ */
+export type PatternClass = "routine" | "exploratory" | "escalation" | "anomaly";
+
+/** 분류된 패턴 */
+export interface ClassifiedPattern {
+  readonly pattern: DetectedPattern;
+  readonly classification: PatternClass;
+  readonly reason: string;
+  /** 자동 정책 후보 적합도 (0-1). routine이 가장 높음 */
+  readonly policyFitness: number;
+}
+
+/**
+ * 감지된 패턴을 자동 분류한다.
+ *
+ * 분류 기준:
+ * - routine:      frequency ≥ 5 AND confidence ≥ 0.7
+ * - escalation:   confidence < 0.5
+ * - anomaly:      frequency = 1 (한 번만 발생)
+ * - exploratory:  그 외 (빈도 낮거나 confidence 중간)
+ */
+export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
+  const { frequency, averageConfidence } = pattern;
+
+  if (frequency === 1) {
+    return {
+      pattern,
+      classification: "anomaly",
+      reason: `1회만 발생 — 기존 패턴에서 벗어난 새 경로`,
+      policyFitness: 0,
+    };
+  }
+
+  if (averageConfidence < 0.5) {
+    return {
+      pattern,
+      classification: "escalation",
+      reason: `평균 confidence ${averageConfidence.toFixed(2)} — 확신 없이 결정하고 있다`,
+      policyFitness: 0.1,
+    };
+  }
+
+  if (frequency >= 5 && averageConfidence >= 0.7) {
+    return {
+      pattern,
+      classification: "routine",
+      reason: `${frequency}회 반복, confidence ${averageConfidence.toFixed(2)} — 자동 정책 후보`,
+      policyFitness: Math.min(1, (frequency / 10) * averageConfidence),
+    };
+  }
+
+  return {
+    pattern,
+    classification: "exploratory",
+    reason: `${frequency}회, confidence ${averageConfidence.toFixed(2)} — 아직 패턴 확립 중`,
+    policyFitness: 0.3,
+  };
+}
+
+/**
+ * 여러 패턴을 한 번에 분류한다.
+ */
+export function classifyPatterns(patterns: readonly DetectedPattern[]): readonly ClassifiedPattern[] {
+  return patterns.map(classifyPattern);
+}

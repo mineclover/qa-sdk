@@ -235,6 +235,100 @@ export function classifyEscalation(
   };
 }
 
+// ─── mentalModel 답변 검증 ────────────────────────────────
+
+/**
+ * gate에 연결된 mentalModel의 핵심 질문에 답변했는지 검증한다.
+ *
+ * 강제하지 않는다 (fail-open). 경고만 반환.
+ * "이 mentalModel을 의식하고 결정했는가"를 사후 검증.
+ *
+ * 답변 여부 판단: evidence 중 하나라도 mentalModel의 id를 source나 content에 포함하면 답변한 것으로 간주.
+ */
+export interface ModelAnswerCheck {
+  readonly modelId: MentalModelId;
+  readonly modelName: string;
+  readonly question: string;
+  readonly answered: boolean;
+  /** 답변한 evidence (있으면) */
+  readonly matchedEvidence?: string;
+}
+
+export interface GateModelValidation {
+  readonly gateId: string;
+  readonly checks: readonly ModelAnswerCheck[];
+  readonly allAnswered: boolean;
+  readonly unansweredCount: number;
+}
+
+/**
+ * 특정 gate에서 mentalModel 질문에 답변했는지 검증한다.
+ */
+export function validateMentalModelAnswers(
+  gateId: string,
+  mentalModelIds: readonly string[],
+  evidenceList: readonly { kind: string; source: string; content: string }[],
+): GateModelValidation {
+  const checks: ModelAnswerCheck[] = mentalModelIds.map((modelId) => {
+    const model = MENTAL_MODELS[modelId as MentalModelId];
+    if (!model) {
+      return {
+        modelId: modelId as MentalModelId,
+        modelName: modelId,
+        question: "(알 수 없는 모델)",
+        answered: false,
+      };
+    }
+
+    // evidence에서 모델 참조 검색
+    const matched = evidenceList.find((ev) => {
+      const haystack = `${ev.source} ${ev.content}`.toLowerCase();
+      // 모델 ID 또는 모델 이름 포함 여부
+      return haystack.includes(modelId.replace(/-/g, ""))
+        || haystack.includes(modelId)
+        || haystack.includes(model.name);
+    });
+
+    return {
+      modelId: modelId as MentalModelId,
+      modelName: model.name,
+      question: model.question,
+      answered: matched !== undefined,
+      matchedEvidence: matched?.content,
+    };
+  });
+
+  const unansweredCount = checks.filter((c) => !c.answered).length;
+
+  return {
+    gateId,
+    checks,
+    allAnswered: unansweredCount === 0,
+    unansweredCount,
+  };
+}
+
+/**
+ * FlowInstance 전체에서 mentalModel 답변 현황을 검증한다.
+ */
+export function validateInstanceModelCoverage(
+  instance: { selections: readonly { gateId: string; evidence: readonly { kind: string; source: string; content: string }[] }[] },
+  schema: { gates: readonly { id: string; mentalModels?: readonly string[] }[] },
+): readonly GateModelValidation[] {
+  const results: GateModelValidation[] = [];
+
+  for (const gate of schema.gates) {
+    if (!gate.mentalModels || gate.mentalModels.length === 0) continue;
+
+    const selection = instance.selections.find((s) => s.gateId === gate.id);
+    const evidence = selection?.evidence ?? [];
+
+    results.push(validateMentalModelAnswers(gate.id, gate.mentalModels, evidence));
+  }
+
+  return results;
+}
+
 // ─── Forcing Question (Office Hours) ─────────────────────
 
 /**
