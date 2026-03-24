@@ -7,6 +7,26 @@
 
 import type { BindDef } from "./transition.types.js";
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonObject
+  | readonly JsonValue[];
+
+interface JsonObject {
+  readonly [key: string]: JsonValue;
+}
+
+export interface BindEventObject {
+  readonly [key: string]: JsonValue;
+}
+
+function isJsonObject(value: JsonValue | undefined): value is JsonObject {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
 /** bind 경로 파싱 결과 */
 interface ParsedPath {
   readonly eventIndex: number;
@@ -24,13 +44,13 @@ function parsePath(path: string): ParsedPath | null {
 }
 
 /** 객체에서 중첩 필드 추출 (깊이 2까지) */
-function extractField(obj: unknown, fieldPath: readonly string[]): unknown {
-  let current: unknown = obj;
+function extractField(obj: JsonValue, fieldPath: readonly string[]): JsonValue | undefined {
+  let current: JsonValue = obj;
   for (const key of fieldPath) {
-    if (current === null || current === undefined || typeof current !== "object") {
+    if (!isJsonObject(current)) {
       return undefined;
     }
-    current = (current as Record<string, unknown>)[key];
+    current = current[key];
   }
   return current;
 }
@@ -56,7 +76,7 @@ export interface BindError {
  */
 export function extractBind(
   bind: BindDef,
-  events: readonly Record<string, unknown>[],
+  events: readonly BindEventObject[],
 ): { ok: true; result: BindResult } | { ok: false; errors: BindError[] } {
   const errors: BindError[] = [];
   const result: Record<string, string> = {};

@@ -17,9 +17,17 @@ import type {
 import type { StateStore } from "./state-store.js";
 import type { InputViolation } from "./input-validator.js";
 import { TransitionRegistry } from "./transition.registry.js";
-import { extractBind } from "./bind-extractor.js";
+import { extractBind, type BindEventObject } from "./bind-extractor.js";
 import { validateInput } from "./input-validator.js";
 import { applyOutput } from "./output-applier.js";
+
+type TransitionEventValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly TransitionEventValue[]
+  | { readonly [key: string]: TransitionEventValue };
 
 // ── 결과 타입 ────────────────────────────────────────────
 
@@ -51,8 +59,8 @@ export interface TransitionEvent {
   readonly event_key?: string;
   /** 디코딩된 축 이름 → entry 값 매핑. 인코딩된 prefix 주소가 아님. */
   readonly address_context?: Readonly<Record<string, string>>;
-  readonly payload?: unknown;
-  readonly [key: string]: unknown;
+  readonly payload?: TransitionEventValue;
+  readonly [key: string]: TransitionEventValue | undefined;
 }
 
 // ── 내부 타입 ─────────────────────────────────────────────
@@ -102,7 +110,7 @@ export class TransitionEngine {
       const matched = this.matchEvents(spec.match, sorted);
       if (!matched) continue;
 
-      const matchedEvents = matched.map((e) => e as Record<string, unknown>);
+      const matchedEvents: BindEventObject[] = matched.map((e) => e as BindEventObject);
       const bindResult = extractBind(spec.bind, matchedEvents);
       if (!bindResult.ok) continue;
 

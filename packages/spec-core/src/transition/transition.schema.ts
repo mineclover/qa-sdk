@@ -27,6 +27,12 @@ const BIND_PATH_RE = /^\$\.events\[\d+\]\.[a-zA-Z_][a-zA-Z0-9_.]*$/;
 /** 축 이름 규칙: snake_case (DEMO_CATALOG 축 이름 형식) */
 const AXIS_NAME_RE = /^[a-z][a-z0-9_]*$/;
 
+type JsonObject = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonObject {
+  return !!value && typeof value === "object";
+}
+
 // ── 검증 함수 ────────────────────────────────────────────────
 
 export function validateTransitionSpec(spec: unknown): ValidationResult {
@@ -36,7 +42,7 @@ export function validateTransitionSpec(spec: unknown): ValidationResult {
     return { valid: false, issues: [{ path: "", message: "spec must be an object" }] };
   }
 
-  const s = spec as Record<string, unknown>;
+  const s = spec as JsonObject;
 
   // transition name
   validateTransitionName(s.transition, issues);
@@ -85,7 +91,7 @@ function validateMatch(match: unknown, issues: ValidationIssue[]): void {
     return;
   }
 
-  const m = match as Record<string, unknown>;
+  const m = match as JsonObject;
 
   if (!MATCH_MODES.includes(m.mode as MatchMode)) {
     issues.push({
@@ -99,20 +105,21 @@ function validateMatch(match: unknown, issues: ValidationIssue[]): void {
     return;
   }
 
-  if (m.mode === "single" && (m.coordinates as unknown[]).length !== 1) {
+  const coordinates = Array.isArray(m.coordinates) ? m.coordinates : [];
+  if (m.mode === "single" && coordinates.length !== 1) {
     issues.push({
       path: "match.coordinates",
       message: "single mode requires exactly 1 coordinate pattern",
     });
   }
 
-  for (let i = 0; i < (m.coordinates as unknown[]).length; i++) {
-    const coord = (m.coordinates as unknown[])[i];
-    if (coord === null || typeof coord !== "object") {
+  for (let i = 0; i < coordinates.length; i++) {
+    const coord = coordinates[i];
+    if (!isRecord(coord)) {
       issues.push({ path: `match.coordinates[${i}]`, message: "coordinate must be an object" });
       continue;
     }
-    const entries = Object.entries(coord as Record<string, unknown>);
+    const entries = Object.entries(coord);
     if (entries.length === 0) {
       issues.push({ path: `match.coordinates[${i}]`, message: "coordinate must have at least one dimension" });
     }
@@ -139,7 +146,7 @@ function validateBind(bind: unknown, issues: ValidationIssue[]): void {
     return;
   }
 
-  const b = bind as Record<string, unknown>;
+  const b = bind as JsonObject;
 
   for (const required of ["context_id", "resource_id"] as const) {
     if (typeof b[required] !== "string") {
@@ -171,15 +178,15 @@ function validateInput(input: unknown, issues: ValidationIssue[]): void {
     return;
   }
 
-  const inp = input as Record<string, unknown>;
+  const inp = input as JsonObject;
   if (!Array.isArray(inp.all)) {
     issues.push({ path: "input.all", message: "input.all must be an array" });
     return;
   }
 
   for (let i = 0; i < inp.all.length; i++) {
-    const cond = inp.all[i] as Record<string, unknown> | null;
-    if (cond === null || typeof cond !== "object") {
+    const cond = inp.all[i];
+    if (!isRecord(cond)) {
       issues.push({ path: `input.all[${i}]`, message: "condition must be an object" });
       continue;
     }
@@ -210,8 +217,8 @@ function validateInput(input: unknown, issues: ValidationIssue[]): void {
       if (!Array.isArray(cond.in)) {
         issues.push({ path: `input.all[${i}].in`, message: "in must be an array" });
       } else {
-        for (let j = 0; j < (cond.in as unknown[]).length; j++) {
-          if (typeof (cond.in as unknown[])[j] !== "string") {
+        for (let j = 0; j < cond.in.length; j++) {
+          if (typeof cond.in[j] !== "string") {
             issues.push({ path: `input.all[${i}].in[${j}]`, message: "in values must be strings" });
           }
         }
@@ -229,15 +236,15 @@ function validateOutput(output: unknown, issues: ValidationIssue[]): void {
     return;
   }
 
-  const out = output as Record<string, unknown>;
+  const out = output as JsonObject;
   if (!Array.isArray(out.set)) {
     issues.push({ path: "output.set", message: "output.set must be an array" });
     return;
   }
 
   for (let i = 0; i < out.set.length; i++) {
-    const assign = out.set[i] as Record<string, unknown> | null;
-    if (assign === null || typeof assign !== "object") {
+    const assign = out.set[i];
+    if (!isRecord(assign)) {
       issues.push({ path: `output.set[${i}]`, message: "assignment must be an object" });
       continue;
     }
