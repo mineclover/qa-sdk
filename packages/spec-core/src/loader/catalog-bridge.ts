@@ -26,9 +26,14 @@ export interface CatalogPrefix {
   readonly name: string;
   readonly description?: string;
   readonly labels: readonly string[];
-  readonly dims: Record<string, { readonly kind: "axis" | "prefix_ref" | "table_ref"; readonly [key: string]: unknown }>;
+  readonly dims: Record<string, CatalogDimRef>;
   readonly versions: readonly { readonly version: string }[];
 }
+
+export type CatalogDimRef =
+  | { readonly kind: "axis"; readonly axisId: string }
+  | { readonly kind: "prefix_ref"; readonly prefixId: string }
+  | { readonly kind: "table_ref"; readonly table: string };
 
 /**
  * 카탈로그의 모든 prefix를 PrefixSpec으로 변환한다.
@@ -60,7 +65,7 @@ export function prefixToPrefixSpec(prefix: CatalogPrefix): PrefixSpec {
         break;
       case "prefix_ref":
         exportDims.push(label);
-        imports[label] = (dimRef as unknown as { prefixId: string }).prefixId;
+        imports[label] = dimRef.prefixId;
         break;
       case "table_ref":
         // export에서 제외 — 런타임 데이터, 좌표에 인코딩 안 됨
@@ -133,16 +138,14 @@ function inferSchemaCategory(prefix: CatalogPrefix): SchemaCategory {
   return "entity";
 }
 
-function convertDimRef(raw: { readonly kind: string; readonly [key: string]: unknown }): DimRef {
+function convertDimRef(raw: CatalogDimRef): DimRef {
   switch (raw.kind) {
     case "axis":
-      return { kind: "axis", axisId: raw.axisId as string };
+      return { kind: "axis", axisId: raw.axisId };
     case "prefix_ref":
-      return { kind: "prefix_ref", prefixId: raw.prefixId as string };
+      return { kind: "prefix_ref", prefixId: raw.prefixId };
     case "table_ref":
-      return { kind: "table_ref", table: raw.table as string };
-    default:
-      throw new Error(`Unknown DimRef kind: ${raw.kind}`);
+      return { kind: "table_ref", table: raw.table };
   }
 }
 

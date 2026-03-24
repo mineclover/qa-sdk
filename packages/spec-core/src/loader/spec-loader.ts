@@ -7,10 +7,58 @@
 
 import { readdir, readFile } from "node:fs/promises";
 import { join, extname } from "node:path";
-import type { SpecDocument } from "../spec/spec.types.js";
+import type { SpecDocument, SpecRelation } from "../spec/spec.types.js";
 import type { PrefixSpec } from "../spec/prefix-spec.types.js";
-import type { SchemaDef, SchemaFragment } from "../schema/schema.types.js";
+import type { ExportSurface } from "../export-surface/export-surface.types.js";
+import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaConstraint, SchemaAxis } from "../schema/schema.types.js";
 import { SpecError } from "../shared/errors.js";
+
+type JsonScalar = string | number | boolean | null;
+type JsonValue = JsonScalar | JsonObject | JsonValue[];
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isSpecRelation(value: unknown): value is SpecRelation {
+  return isJsonObject(value)
+    && typeof value.from === "string"
+    && typeof value.to === "string"
+    && typeof value.type === "string";
+}
+
+function isExportSurface(value: unknown): value is ExportSurface {
+  return isJsonObject(value)
+    && isStringArray(value.dims)
+    && typeof value.pattern === "string";
+}
+
+function isSchemaAxes(value: unknown): value is Record<string, SchemaAxis> {
+  if (!isJsonObject(value)) return false;
+  return Object.values(value).every((axis) =>
+    isJsonObject(axis)
+    && typeof axis.axisId === "string"
+    && typeof axis.required === "boolean"
+    && typeof axis.multi === "boolean"
+    && typeof axis.valueType === "string",
+  );
+}
+
+function isSchemaConstraints(value: unknown): value is readonly SchemaConstraint[] {
+  return Array.isArray(value)
+    && value.every((item) =>
+      isJsonObject(item)
+      && typeof item.rule === "string"
+      && typeof item.axis === "string",
+    );
+}
 
 /** 로딩 결과 */
 export interface LoadResult {
@@ -37,7 +85,7 @@ export async function loadSpecs(dirPath: string): Promise<LoadResult> {
 
   let entries: string[];
   try {
-    entries = await readdir(dirPath, { recursive: true }) as unknown as string[];
+    entries = await readdir(dirPath, { recursive: true });
   } catch {
     result.errors.push({ file: dirPath, message: `Directory not found: ${dirPath}` });
     return result;
@@ -86,21 +134,21 @@ export type ParseResult =
  */
 export function parseSpecFile(filePath: string, content: string): ParseResult {
   const ext = extname(filePath).toLowerCase();
-  let raw: unknown;
+  let raw: JsonObject;
 
   if (ext === ".json") {
-    raw = JSON.parse(content);
+    const parsed = JSON.parse(content) as unknown;
+    if (!isJsonObject(parsed)) {
+      throw new SpecError("INVALID_SPEC", `Invalid spec file: ${filePath}`);
+    }
+    raw = parsed;
   } else if (ext === ".yaml" || ext === ".yml") {
     raw = parseSimpleYaml(content);
   } else {
     throw new SpecError("UNSUPPORTED_FORMAT", `Unsupported file format: ${ext}`);
   }
 
-  if (!raw || typeof raw !== "object") {
-    throw new SpecError("INVALID_SPEC", `Invalid spec file: ${filePath}`);
-  }
-
-  const obj = raw as Record<string, unknown>;
+  const obj = raw;
 
   // SchemaDef: has "category" + "axes"
   if ("category" in obj && "axes" in obj && "id" in obj) {
@@ -131,7 +179,7 @@ const SPEC_TYPES = new Set(["req", "feat", "uc", "evt", "ls", "adr"]);
 const LIFECYCLES = new Set(["draft", "active", "deprecated"]);
 const SCHEMA_CATEGORIES = new Set(["entity", "event", "relation", "state", "policy", "observation"]);
 
-function validateSpecDocument(obj: Record<string, unknown>, filePath: string): SpecDocument {
+function validateSpecDocument(obj: JsonObject, filePath: string): SpecDocument {
   const errors: string[] = [];
 
   if (typeof obj.id !== "string") errors.push("missing or invalid 'id'");
@@ -153,11 +201,16 @@ function validateSpecDocument(obj: Record<string, unknown>, filePath: string): S
     title: obj.title as string,
     lifecycle: obj.lifecycle as SpecDocument["lifecycle"],
     rationale: typeof obj.rationale === "string" ? obj.rationale : undefined,
-    relations: Array.isArray(obj.relations) ? obj.relations as SpecDocument["relations"] : undefined,
+    relations: Array.isArray(obj.relations)
+      ? obj.relations.reduce<SpecRelation[]>((acc, item) => {
+          if (isSpecRelation(item)) acc.push(item);
+          return acc;
+        }, [])
+      : undefined,
   };
 }
 
-function validatePrefixSpec(obj: Record<string, unknown>, filePath: string): PrefixSpec {
+function validatePrefixSpec(obj: JsonObject, filePath: string): PrefixSpec {
   const errors: string[] = [];
 
   if (typeof obj.id !== "string") errors.push("missing or invalid 'id'");
@@ -169,10 +222,26 @@ function validatePrefixSpec(obj: Record<string, unknown>, filePath: string): Pre
     throw new SpecError("INVALID_PREFIX_SPEC", `Invalid PrefixSpec in ${filePath}: ${errors.join("; ")}`);
   }
 
-  return obj as unknown as PrefixSpec;
+  return {
+    id: obj.id as string,
+    version: obj.version as string,
+    dims: obj.dims as PrefixSpec["dims"],
+    export: isExportSurface(obj.export)
+      ? obj.export
+      : { dims: [], pattern: "" },
+    imports: isJsonObject(obj.imports) ? obj.imports as PrefixSpec["imports"] : undefined,
+    schema: isJsonObject(obj.schema) && typeof obj.schema.category === "string"
+      ? {
+          category: obj.schema.category as SchemaCategory,
+          schemaRef: typeof obj.schema.schemaRef === "string" ? obj.schema.schemaRef : undefined,
+        }
+      : undefined,
+    rationale: typeof obj.rationale === "string" ? obj.rationale : undefined,
+    specRef: typeof obj.specRef === "string" ? obj.specRef : undefined,
+  };
 }
 
-function validateSchemaDef(obj: Record<string, unknown>, filePath: string): SchemaDef {
+function validateSchemaDef(obj: JsonObject, filePath: string): SchemaDef {
   const errors: string[] = [];
 
   if (typeof obj.id !== "string") errors.push("missing or invalid 'id'");
@@ -186,10 +255,17 @@ function validateSchemaDef(obj: Record<string, unknown>, filePath: string): Sche
     throw new SpecError("INVALID_SCHEMA_DEF", `Invalid SchemaDef in ${filePath}: ${errors.join("; ")}`);
   }
 
-  return obj as unknown as SchemaDef;
+  return {
+    id: obj.id as string,
+    version: obj.version as string,
+    category: obj.category as SchemaCategory,
+    axes: isSchemaAxes(obj.axes) ? obj.axes : {},
+    use: isStringArray(obj.use) ? obj.use : undefined,
+    constraints: isSchemaConstraints(obj.constraints) ? obj.constraints : undefined,
+  };
 }
 
-function validateSchemaFragment(obj: Record<string, unknown>, filePath: string): SchemaFragment {
+function validateSchemaFragment(obj: JsonObject, filePath: string): SchemaFragment {
   const errors: string[] = [];
 
   if (typeof obj.id !== "string") errors.push("missing or invalid 'id'");
@@ -199,7 +275,10 @@ function validateSchemaFragment(obj: Record<string, unknown>, filePath: string):
     throw new SpecError("INVALID_SCHEMA_FRAGMENT", `Invalid SchemaFragment in ${filePath}: ${errors.join("; ")}`);
   }
 
-  return obj as unknown as SchemaFragment;
+  return {
+    id: obj.id as string,
+    axes: isSchemaAxes(obj.axes) ? obj.axes : {},
+  };
 }
 
 // ── Helpers ─────────────────────────────────────────
@@ -213,8 +292,8 @@ function isSpecFile(filename: string): boolean {
  * 최소한의 YAML 파서 — key: value 형태의 flat YAML만 지원.
  * 중첩 구조가 필요하면 JSON을 사용하거나 별도 YAML 파서 의존 추가.
  */
-function parseSimpleYaml(content: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+function parseSimpleYaml(content: string): JsonObject {
+  const result: JsonObject = {};
   const lines = content.split("\n");
 
   for (const line of lines) {
