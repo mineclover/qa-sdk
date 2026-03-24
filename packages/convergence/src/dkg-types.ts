@@ -27,6 +27,8 @@ export interface DecisionNode {
   readonly title: string;
   readonly context: string;
   readonly rationale: string;
+  readonly flowInstanceId?: string;
+  readonly metadata?: Readonly<Record<string, unknown>>;
   readonly alternatives?: readonly string[];
   readonly reversalConditions?: readonly string[];
   readonly lifecycle: "active" | "superseded" | "reversed";
