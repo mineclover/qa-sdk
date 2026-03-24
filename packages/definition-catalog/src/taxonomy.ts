@@ -9,7 +9,7 @@
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
-import type { DefScope, DefAspect } from "./types.js";
+import type { DefScope, DefAspect, ConcernTag, StructuralTag, KnownTag } from "./types.js";
 
 // ─── 분류 체계 트리 ──────────────────────────────────────
 
@@ -173,3 +173,114 @@ export function allValidCombinations(): readonly { scope: DefScope; aspect: DefA
     ([scope, aspects]) => aspects.map(aspect => ({ scope: scope as DefScope, aspect })),
   );
 }
+
+// ─── 태그 레지스트리 ─────────────────────────────────────
+
+/** 횡단 관심사 태그 목록 */
+export const CONCERN_TAGS: readonly ConcernTag[] = [
+  "security", "performance", "accessibility",
+  "observability", "testing", "migration", "deprecation",
+];
+
+/** 구조 태그 목록 */
+export const STRUCTURAL_TAGS: readonly StructuralTag[] = [
+  "cross-scope", "entry-point", "decision", "generated",
+];
+
+/** 알려진 태그 전체 목록 */
+export const KNOWN_TAGS: readonly KnownTag[] = [...CONCERN_TAGS, ...STRUCTURAL_TAGS];
+
+/**
+ * 태그가 알려진 태그인지 확인한다.
+ * 알려지지 않은 태그도 허용하되, 알려진 태그 사용을 권장한다.
+ */
+export function isKnownTag(tag: string): tag is KnownTag {
+  return (KNOWN_TAGS as readonly string[]).includes(tag);
+}
+
+/**
+ * tags 배열에서 cross-scope 여부를 감지한다.
+ * scope 이름이 3개 이상 태그에 포함되면 분리 후보로 경고한다.
+ */
+export function detectCrossScope(tags: readonly string[]): {
+  isCrossScope: boolean;
+  scopeRefs: readonly DefScope[];
+  shouldSplit: boolean;
+} {
+  const allScopes: DefScope[] = ["ui", "feature", "flow", "state", "constraint", "data", "interface"];
+  const scopeRefs = allScopes.filter(s => tags.includes(s));
+  return {
+    isCrossScope: tags.includes("cross-scope") || scopeRefs.length >= 2,
+    scopeRefs,
+    shouldSplit: scopeRefs.length >= 3,
+  };
+}
+
+// ─── 운영 컨벤션 ─────────────────────────────────────────
+
+/**
+ * 문서 분류 운영 컨벤션.
+ *
+ * 코드가 아닌 규칙이지만, 코드 옆에 두어 참조를 강제한다.
+ */
+export const CLASSIFICATION_CONVENTIONS = {
+  /**
+   * 컨벤션 1: scope 결정 기준 — "주 독자가 누구인가"
+   *
+   * 같은 주제라도 독자에 따라 scope가 다르다:
+   * - API를 호출하는 사람 → interface/api_contract
+   * - 흐름을 이해하려는 사람 → flow/process_flow
+   * - 상태를 설계하는 사람 → state/domain_state
+   */
+  scopeByAudience: "주 독자 기준으로 scope를 결정한다",
+
+  /**
+   * 컨벤션 2: 여러 scope에 걸치면 — 쪼개고 link로 연결
+   *
+   * 하나의 문서에 scope 2개 이상이 걸리면:
+   * 1. scope별로 독립 문서로 분리
+   * 2. refines / depends_on / constrains 로 연결
+   * 3. 정말 쪼갤 수 없으면: 주 scope 1개 + tags: ["cross-scope", ...]
+   */
+  splitAndLink: "여러 scope에 걸치면 분리 후 link. 불가능하면 cross-scope 태그",
+
+  /**
+   * 컨벤션 3: 횡단 관심사는 scope가 아니라 tag
+   *
+   * 보안, 성능, 접근성 등은 여러 scope에 걸치는 관심사다.
+   * scope로 만들면 분류가 깨진다. tag로 횡단 추적한다.
+   * query({ tags: ["security"] }) → 보안 관련 문서 전체 조회
+   */
+  concernAsTag: "횡단 관심사(보안, 성능 등)는 scope가 아니라 ConcernTag로 관리",
+
+  /**
+   * 컨벤션 4: aspect 추가 시 — 기존 scope의 성격과 비교
+   *
+   * 새 aspect가 필요할 때:
+   * 1. "주 독자/성격"이 기존 scope의 aspect들과 동류인가?
+   * 2. 동류면 해당 scope에 추가 (headroom 내)
+   * 3. 아니면 다른 scope를 검토하거나 신규 scope 후보
+   */
+  aspectFitCheck: "새 aspect는 기존 scope의 동류 aspect와 성격 비교 후 배치",
+
+  /**
+   * 컨벤션 5: aspect 이동은 파괴적 — 마이그레이션 프로토콜
+   *
+   * scope 간 aspect 이동이 필요할 때:
+   * 1. 기존 aspect는 유지 (주소 안정성)
+   * 2. 새 aspect를 대상 scope에 추가
+   * 3. 기존 문서를 새 좌표로 마이그레이션 (새 entry + 구 entry deprecated)
+   * 4. traces_to 링크로 이전↔이후 추적
+   */
+  aspectMigration: "aspect 이동 = 새 entry 등록 + 구 entry deprecated + traces_to",
+
+  /**
+   * 컨벤션 6: cross-scope 3개 이상이면 분리 후보
+   *
+   * tags에 scope 이름이 3개 이상 들어가면:
+   * → 이 문서는 너무 많은 관심사를 다루고 있다
+   * → 분리하면 각각 더 명확한 좌표를 가진다
+   * → detectCrossScope()로 자동 감지
+   */
+  splitThreshold: "tags에 scope 3개 이상 → 분리 후보 (detectCrossScope로 감지)",
+} as const;

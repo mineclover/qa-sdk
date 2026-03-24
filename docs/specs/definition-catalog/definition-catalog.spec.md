@@ -249,14 +249,10 @@ lifecycle(draft → approved)은 **변하는 상태**이므로 메타데이터 �
 ### 라운드트립
 
 ```typescript
-const address = encodeDocument({
-  scope: "ui", aspect: "component",
-  depth: "specification", lifecycle: "draft"
-});
-// → 1057
-
-const decoded = decodeDocument(1057);
-// → { scope: "ui", aspect: "component", depth: "specification", lifecycle: "draft" }
+const address = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
+const decoded = decodeDocument(address);
+// → { scope: "ui", aspect: "component", depth: "specification" }
+// lifecycle이 draft → approved로 바뀌어도 address는 불변
 ```
 
 ---
@@ -328,7 +324,89 @@ const ctx = buildDefinitionContext(entry);
 
 ---
 
-## 10. 구현 현황
+## 10. 태그 체계 (Tags)
+
+### 횡단 관심사 태그 (ConcernTag)
+
+scope를 횡단하는 관심사를 표현한다. scope로 만들면 분류가 깨지지만, tag로 묶으면 각 문서의 정체성은 유지된다.
+
+| 태그 | 의미 | 걸리는 scope 예시 |
+|------|------|-----------------|
+| `security` | 인증, 인가, 암호화, 감사 | interface + constraint + state |
+| `performance` | 지연, 처리량, 최적화 | data + flow + constraint |
+| `accessibility` | a11y, WCAG, 스크린리더 | ui + constraint |
+| `observability` | 로깅, 메트릭, 트레이싱 | data + flow + interface |
+| `testing` | 검증 전략, 커버리지 | feature + flow |
+| `migration` | 스키마 변경, 데이터 이전 | data + constraint |
+| `deprecation` | 대체 계획, 이전 가이드 | 모든 scope |
+
+### 구조 태그 (StructuralTag)
+
+문서의 구조적 특성을 표시한다.
+
+| 태그 | 의미 |
+|------|------|
+| `cross-scope` | 여러 scope에 걸치는 통합 문서 |
+| `entry-point` | 이 주제의 시작 문서 (진입점) |
+| `decision` | 의사결정 기록이 포함됨 |
+| `generated` | codegen 등으로 자동 생성된 문서 |
+
+### cross-scope 감지
+
+`detectCrossScope(tags)`가 태그에서 scope 참조를 감지한다:
+- scope 이름 2개 이상 → `isCrossScope: true`
+- scope 이름 3개 이상 → `shouldSplit: true` (분리 후보)
+
+---
+
+## 11. 운영 컨벤션 (Classification Conventions)
+
+### C1. scope 결정 기준 — "주 독자가 누구인가"
+
+같은 주제라도 독자에 따라 scope가 다르다.
+- API를 호출하는 사람이 볼 문서 → `interface/api_contract`
+- 흐름을 이해하려는 사람이 볼 문서 → `flow/process_flow`
+- 상태를 설계하는 사람이 볼 문서 → `state/domain_state`
+
+### C2. 여러 scope에 걸치면 — 쪼개고 link로 연결
+
+하나의 문서에 scope 2개 이상이 걸리면:
+1. scope별로 독립 문서로 분리
+2. `refines` / `depends_on` / `constrains`로 연결
+3. 정말 쪼갤 수 없으면: 주 scope 1개 + `tags: ["cross-scope", "ui", "state", ...]`
+
+### C3. 횡단 관심사는 scope가 아니라 tag
+
+보안, 성능, 접근성 등은 여러 scope에 걸치는 관심사.
+scope로 만들면 분류가 깨진다. `ConcernTag`로 횡단 추적한다.
+
+```typescript
+registry.query({ tags: ["security"] });  // 보안 관련 문서 전체
+```
+
+### C4. aspect 추가 시 — 기존 동류와 성격 비교
+
+새 aspect가 필요할 때:
+1. "주 독자/성격"이 기존 scope의 aspect들과 동류인가?
+2. 동류면 해당 scope에 추가 (def_aspect headroom 44칸 내)
+3. 아니면 다른 scope를 검토하거나 신규 scope 후보
+
+### C5. aspect 이동은 파괴적 — 마이그레이션 프로토콜
+
+scope 간 aspect 이동이 필요할 때:
+1. 기존 aspect는 유지 (주소 안정성)
+2. 새 aspect를 대상 scope에 추가
+3. 기존 문서를 새 좌표로 마이그레이션 (새 entry + 구 entry deprecated)
+4. `traces_to` 링크로 이전↔이후 추적
+
+### C6. cross-scope 3개 이상이면 분리 후보
+
+`detectCrossScope()`로 자동 감지. tags에 scope 이름이 3개 이상이면
+이 문서는 너무 많은 관심사를 다루고 있다 → 분리하면 각각 더 명확한 좌표를 가진다.
+
+---
+
+## 12. 구현 현황
 
 | 구현 | 파일 |
 |------|------|
@@ -343,17 +421,17 @@ const ctx = buildDefinitionContext(entry);
 
 ---
 
-## 11. Quality Gates
+## 13. Quality Gates
 
 ```
 pnpm --filter definition-catalog typecheck   # 타입 체크
-pnpm --filter definition-catalog test        # 52 tests (3 files)
+pnpm --filter definition-catalog test        # 62 tests (3 files)
 pnpm --filter definition-catalog build       # ESM + CJS 빌드
 ```
 
 ---
 
-## 12. 후속 과제
+## 14. 후속 과제
 
 | 과제 | 설명 |
 |------|------|

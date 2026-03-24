@@ -70,6 +70,40 @@ export type LinkType =
   | "constrains"   // 제약
   | "traces_to";   // 추적
 
+// ─── 태그 체계 ───────────────────────────────────────────
+
+/**
+ * 횡단 관심사 태그 (Cross-Cutting Concern Tags).
+ *
+ * scope는 "무엇에 대한 정의인가"를 분류한다.
+ * tag는 scope를 횡단하는 **관심사**를 표현한다.
+ *
+ * 예: "보안"은 interface(인증 API) + constraint(권한 규칙) + state(세션)에 걸친다.
+ *    scope를 만들면 분류가 깨지지만, tag로 묶으면 각 문서의 정체성은 유지된다.
+ */
+export type ConcernTag =
+  | "security"       // 보안 — 인증, 인가, 암호화, 감사
+  | "performance"    // 성능 — 지연, 처리량, 최적화
+  | "accessibility"  // 접근성 — a11y, WCAG, 스크린리더
+  | "observability"  // 관측성 — 로깅, 메트릭, 트레이싱
+  | "testing"        // 테스트 — 검증 전략, 커버리지
+  | "migration"      // 마이그레이션 — 스키마 변경, 데이터 이전
+  | "deprecation";   // 폐기 — 대체 계획, 이전 가이드
+
+/**
+ * 구조 태그 (Structural Tags).
+ *
+ * 문서의 구조적 특성을 표시한다.
+ */
+export type StructuralTag =
+  | "cross-scope"    // 여러 scope에 걸치는 통합 문서
+  | "entry-point"    // 진입점 — 이 주제의 시작 문서
+  | "decision"       // 의사결정 기록이 포함됨
+  | "generated";     // codegen 등으로 자동 생성된 문서
+
+/** 알려진 태그 전체 (자유 문자열도 허용하되, 이 목록을 우선 사용) */
+export type KnownTag = ConcernTag | StructuralTag;
+
 // ─── 문서 메타데이터 ─────────────────────────────────────
 
 /** decision-flow 연결 참조 */
@@ -84,7 +118,8 @@ export interface DecisionRef {
  * 정의 문서 메타데이터.
  *
  * 실제 문서 내용이 아니라 **메타데이터**만 관리한다.
- * 좌표(address)는 등록 시 scope × aspect × depth × lifecycle에서 자동 계산된다.
+ * 좌표(address)는 등록 시 scope × aspect × depth에서 자동 계산된다 (불변 정체성).
+ * lifecycle은 좌표에 포함하지 않는다 — 변하는 상태이므로 메타데이터 필드로만 관리.
  */
 export interface DefinitionEntry {
   readonly id: string;

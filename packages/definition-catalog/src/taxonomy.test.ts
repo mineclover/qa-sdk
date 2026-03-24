@@ -6,6 +6,12 @@ import {
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
+  CONCERN_TAGS,
+  STRUCTURAL_TAGS,
+  KNOWN_TAGS,
+  isKnownTag,
+  detectCrossScope,
+  CLASSIFICATION_CONVENTIONS,
 } from "./taxonomy.js";
 import { DEF_SCOPE, DEF_ASPECT } from "./vocabulary.js";
 
@@ -106,8 +112,67 @@ describe("isValidScopeAspect", () => {
 });
 
 describe("allValidCombinations", () => {
-  it("17개 유효 조합을 반환한다", () => {
+  it("유효 조합 수 = aspect 수", () => {
     const combos = allValidCombinations();
     expect(combos.length).toBe(DEF_ASPECT.entries.length);
+  });
+});
+
+// ─── 태그 체계 ──────────────────────────────────────────
+
+describe("태그 레지스트리", () => {
+  it("KNOWN_TAGS = CONCERN_TAGS + STRUCTURAL_TAGS", () => {
+    expect(KNOWN_TAGS.length).toBe(CONCERN_TAGS.length + STRUCTURAL_TAGS.length);
+    for (const t of CONCERN_TAGS) expect(KNOWN_TAGS).toContain(t);
+    for (const t of STRUCTURAL_TAGS) expect(KNOWN_TAGS).toContain(t);
+  });
+
+  it("태그 간 중복 없음", () => {
+    expect(new Set(KNOWN_TAGS).size).toBe(KNOWN_TAGS.length);
+  });
+
+  it("isKnownTag는 알려진 태그에 true", () => {
+    expect(isKnownTag("security")).toBe(true);
+    expect(isKnownTag("cross-scope")).toBe(true);
+    expect(isKnownTag("unknown-tag")).toBe(false);
+  });
+});
+
+describe("detectCrossScope", () => {
+  it("cross-scope 태그가 있으면 감지", () => {
+    const result = detectCrossScope(["cross-scope", "ui"]);
+    expect(result.isCrossScope).toBe(true);
+  });
+
+  it("scope 이름이 2개 이상이면 cross-scope", () => {
+    const result = detectCrossScope(["ui", "data"]);
+    expect(result.isCrossScope).toBe(true);
+    expect(result.scopeRefs).toEqual(["ui", "data"]);
+    expect(result.shouldSplit).toBe(false);
+  });
+
+  it("scope 이름이 3개 이상이면 분리 후보", () => {
+    const result = detectCrossScope(["ui", "state", "interface"]);
+    expect(result.shouldSplit).toBe(true);
+    expect(result.scopeRefs.length).toBe(3);
+  });
+
+  it("scope 이름이 없으면 cross-scope 아님", () => {
+    const result = detectCrossScope(["security", "testing"]);
+    expect(result.isCrossScope).toBe(false);
+    expect(result.shouldSplit).toBe(false);
+  });
+});
+
+describe("CLASSIFICATION_CONVENTIONS", () => {
+  it("6개 컨벤션이 정의되어 있다", () => {
+    const keys = Object.keys(CLASSIFICATION_CONVENTIONS);
+    expect(keys.length).toBe(6);
+    expect(keys).toContain("scopeByAudience");
+    expect(keys).toContain("splitAndLink");
+    expect(keys).toContain("concernAsTag");
+    expect(keys).toContain("aspectFitCheck");
+    expect(keys).toContain("aspectMigration");
+    expect(keys).toContain("splitThreshold");
   });
 });

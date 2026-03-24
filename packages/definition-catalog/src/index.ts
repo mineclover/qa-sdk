@@ -27,6 +27,9 @@ export type {
   DefDepth,
   DefLifecycle,
   LinkType,
+  ConcernTag,
+  StructuralTag,
+  KnownTag,
   DecisionRef,
   DefinitionEntry,
   DefinitionEntryInput,
@@ -57,6 +60,12 @@ export {
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
+  CONCERN_TAGS,
+  STRUCTURAL_TAGS,
+  KNOWN_TAGS,
+  isKnownTag,
+  detectCrossScope,
+  CLASSIFICATION_CONVENTIONS,
 } from "./taxonomy.js";
 
 // ─── 카탈로그 ───────────────────────────────────────────
