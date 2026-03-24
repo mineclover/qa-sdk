@@ -1,12 +1,12 @@
 # Realization Plan: 파이프라인 실체화
 
-> Status: **mostly-completed**
+> Status: **completed**
 > DKG-Ref: OBS-MANUAL-service-mmz1ay93, OBS-MANUAL-service-mmz1n7ak, OBS-MANUAL-dsl-dev-mmzwyfbc, DEC-CAPACITY-dsl-dev-mmzyw4go
 > Created: 2026-03-21
-> Last verified: 2026-03-22
+> Last verified: 2026-03-24
 >
-> **달성**: G1~G4 해결, R3/R5 완료. 현재 74축, 39 prefix, 225 nodes, 472 edges.
-> **잔여**: G5 (skill→AddressContextRecord 미구현 — 설계상 불필요할 수 있음), R2 (non-dev DSL invariant 검증 — dsl-dev만 검증 중).
+> **달성**: G1~G5 해결, R3/R5 완료. 현재 74축, 46 prefix, 225+ nodes, 472+ edges.
+> **G5 해소**: flow-trace skill이 AddressContextRecord를 직접 소비 (CLI self-check + ingest convergence pipeline). 나머지 skill은 UsageData(집계 결과) 소비가 올바른 설계.
 
 ## 1. 배경
 
@@ -20,7 +20,7 @@
 | G2 | convergence 함수 미연결 | `analyzeCollectionHealth` + `analyzeEntryCoverage` 호출 | 건전성 100%, build 88%, test 76% |
 | G3 | 관측 자동 해소 없음 | self-check에서 이전 observation 조건 비교 + `resolveRecoveredMetrics` | auto-resolve 동작 확인 |
 | G4 | dsl-dev 불변조건 미검증 | self-check에서 2개 불변조건 검사 | 통과. registry-service 실제 위반 감지 후 수정 |
-| G5 | 전문 skill 실행 불가 | 미착수 | AddressContextRecord → skill 전달 경로 필요 |
+| G5 | 전문 skill 실행 불가 | **해소** | flow-trace가 AddressContextRecord 직접 소비. CLI(dkg.ts:4068) + ingest(convergence-pipeline.ts:296) 연결 완료. |
 
 ## 3. 현재 파이프라인
 
@@ -131,7 +131,7 @@ health:     건전성 100%, invariant 통과
 
 | # | 항목 | 우선순위 | 상태 |
 |---|------|---------|------|
-| G5 | self-check → 전문 skill 전달 (AddressContextRecord 경유) | 중 | 미착수 |
+| G5 | self-check → 전문 skill 전달 (AddressContextRecord 경유) | 중 | **완료** — flow-trace skill이 직접 소비 |
 | R2 | self-check 결과로 dsl-dev 외 DSL 불변조건 검증 | 중 | 미착수 |
 | R3 | coOccurrence 활용 (빌드+테스트 cross-event) | 낮 | 보류 |
 | R5 | completed observation 수동 정리 | 낮 | 미착수 |
