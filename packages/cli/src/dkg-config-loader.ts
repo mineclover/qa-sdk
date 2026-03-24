@@ -12,6 +12,12 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { DkgConfig } from "@qa-sdk/core";
 
+type ModuleShape = {
+  readonly default?: unknown;
+  readonly dkgConfig?: unknown;
+  readonly [key: string]: unknown;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object";
 }
@@ -26,6 +32,7 @@ export function isDkgConfig(value: unknown): value is DkgConfig {
     && Array.isArray(value.intentLinks)
     && Array.isArray(value.skills)
     && (value.specs === undefined || Array.isArray(value.specs))
+    && (value.flowSchemas === undefined || Array.isArray(value.flowSchemas))
     && (value.reviewPairs === undefined || Array.isArray(value.reviewPairs));
 }
 
@@ -78,25 +85,25 @@ async function loadFromPath(filePath: string): Promise<DkgConfig> {
 }
 
 async function loadFromConfig(configPath: string): Promise<DkgConfig | undefined> {
-  let mod: Record<string, unknown>;
+  let mod: ModuleShape;
 
   if (configPath.endsWith(".ts")) {
     try {
       const { createJiti } = await import("jiti" as string);
       const jiti = createJiti(import.meta.url);
-      mod = await jiti.import(configPath) as Record<string, unknown>;
+      mod = await jiti.import(configPath) as ModuleShape;
     } catch {
       try {
-        mod = await import(pathToFileURL(configPath).href) as Record<string, unknown>;
+        mod = await import(pathToFileURL(configPath).href) as ModuleShape;
       } catch {
         return undefined;
       }
     }
   } else {
-    mod = await import(pathToFileURL(configPath).href) as Record<string, unknown>;
+    mod = await import(pathToFileURL(configPath).href) as ModuleShape;
   }
 
-  const config = (mod.default ?? mod) as Record<string, unknown>;
+  const config = isRecord(mod.default) ? mod.default : mod;
 
   if (config.dkgConfig && typeof config.dkgConfig === "string") {
     return loadFromPath(config.dkgConfig);
@@ -113,11 +120,11 @@ async function loadTypeScriptFile(filePath: string): Promise<DkgConfig> {
   try {
     const { createJiti } = await import("jiti" as string);
     const jiti = createJiti(import.meta.url);
-    const mod = await jiti.import(filePath) as Record<string, unknown>;
+    const mod = await jiti.import(filePath) as ModuleShape;
     return extractDkgConfig(mod);
   } catch {
     try {
-      const mod = await import(pathToFileURL(filePath).href) as Record<string, unknown>;
+      const mod = await import(pathToFileURL(filePath).href) as ModuleShape;
       return extractDkgConfig(mod);
     } catch {
       throw new Error(
@@ -128,7 +135,7 @@ async function loadTypeScriptFile(filePath: string): Promise<DkgConfig> {
   }
 }
 
-function extractDkgConfig(mod: Record<string, unknown>): DkgConfig {
+function extractDkgConfig(mod: ModuleShape): DkgConfig {
   if (isDkgConfig(mod.default)) {
     return mod.default;
   }

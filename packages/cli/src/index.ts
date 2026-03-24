@@ -15,7 +15,7 @@ import { register } from "./commands/register.js";
 import {
   dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
   dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions, dkgTransitionAnalysis, dkgAudit,
-  dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable,
+  dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable, dkgFlowSchemas, dkgFlowSchema,
   dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
   dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
   dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
@@ -40,12 +40,26 @@ import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
 import { schemaPull } from "./commands/schema-pull.js";
 import { codegen, runMigrationTest, type CodegenFormat } from "./commands/codegen.js";
 import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
+import type { CatalogInputLike, SchemaValidationInput } from "./commands/spec.js";
 import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth } from "./commands/service.js";
-import { flowList, flowStart, flowSelect, flowStatus, flowTrace, flowAnalyze } from "./commands/flow.js";
+import {
+  flowList,
+  flowStart,
+  flowSelect,
+  flowStatus,
+  flowTrace,
+  flowAnalyze,
+  flowCompare,
+  flowPolicyCandidates,
+  flowPolicyApprove,
+  flowPolicyReject,
+  flowPolicyList,
+  flowPolicyLearn,
+} from "./commands/flow.js";
 
 // ── Usage ────────────────────────────────────────────
 
@@ -83,6 +97,8 @@ Usage:
   qa-sdk dkg axes [--page N]         축 목록
   qa-sdk dkg prefixes [--page N]     prefix 목록
   qa-sdk dkg domains                 도메인 목록
+  qa-sdk dkg flow-schemas [--page N] FlowSchemaNode 목록
+  qa-sdk dkg flow-schema <id>        FlowSchema 프로파일
   qa-sdk dkg impact <axis>           영향 분석
   qa-sdk dkg overlaps                축 중복 스캔
   qa-sdk dkg history [--limit N]     스냅샷 히스토리
@@ -128,6 +144,19 @@ Usage:
   qa-sdk dkg decisions export [--output path]  의사결정만 백업
   qa-sdk dkg decisions import <input>          의사결정 복원 (머지)
   qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회
+
+  qa-sdk flow list                              플로우 스키마 목록
+  qa-sdk flow start <schema-id>                 플로우 시작
+  qa-sdk flow select <branch-id>                현재 gate 선택
+  qa-sdk flow status [instance-id]              실행 상태 조회
+  qa-sdk flow trace <instance-id>               코어 경로 추적
+  qa-sdk flow analyze <schema-id>               구조/영향 분석
+  qa-sdk flow compare [options]                 쌍/분포/시간 비교
+  qa-sdk flow policy learn <schema-id>          패턴 감지 + 후보 생성
+  qa-sdk flow policy candidates                 정책 후보 목록
+  qa-sdk flow policy approve <id>               후보 승인 + 정책 등록
+  qa-sdk flow policy reject <id>                후보 거부
+  qa-sdk flow policy list                       등록된 정책 목록
 
   qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)
   qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)
@@ -326,6 +355,13 @@ async function main() {
       return;
     case "dkg domains":
       dkgDomains(parsePage(sub.rest));
+      return;
+    case "dkg flow-schemas":
+      dkgFlowSchemas(parsePage(sub.rest));
+      return;
+    case "dkg flow-schema":
+      if (sub.rest[0]) dkgFlowSchema(sub.rest[0]);
+      else console.error("Usage: qa-sdk dkg flow-schema <id>");
       return;
     case "dkg impact":
       if (sub.rest[0]) dkgImpact(sub.rest[0]);
@@ -567,17 +603,35 @@ async function main() {
       const titleIdx = sub.rest.indexOf("--title");
       const rationaleIdx = sub.rest.indexOf("--rationale");
       if (targetIdx < 0 || typeIdx < 0 || titleIdx < 0 || rationaleIdx < 0) {
-        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..." [--spec <specId>]');
+        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..." [--alternatives "alt1|alt2"] [--confidence 0.8] [--spec <specId>] [--legacy] [--force]');
         console.error("  types: capacity, new-axis, new-prefix, dim-add, merge, deprecate");
         return;
       }
       const specIdx = sub.rest.indexOf("--spec");
-      dkgDecide({
+      const alternativesIdx = sub.rest.indexOf("--alternatives");
+      const confidenceIdx = sub.rest.indexOf("--confidence");
+      const confidence = confidenceIdx >= 0 ? Number.parseFloat(sub.rest[confidenceIdx + 1] ?? "") : undefined;
+      const hasValidConfidence = confidence !== undefined && Number.isFinite(confidence);
+      if (confidenceIdx >= 0 && (!hasValidConfidence || confidence < 0 || confidence > 1)) {
+        console.error('  --confidence는 0~1 숫자여야 합니다.');
+        return;
+      }
+      if (alternativesIdx >= 0 && !sub.rest[alternativesIdx + 1]) {
+        console.error('  --alternatives는 "alt1|alt2" 형식으로 전달하세요.');
+        return;
+      }
+      await dkgDecide({
         target: sub.rest[targetIdx + 1],
         type: sub.rest[typeIdx + 1],
         title: sub.rest[titleIdx + 1],
         rationale: sub.rest[rationaleIdx + 1],
+        alternatives: alternativesIdx >= 0
+          ? sub.rest[alternativesIdx + 1].split("|").map((value) => value.trim()).filter(Boolean)
+          : undefined,
+        confidence,
         spec: specIdx >= 0 ? sub.rest[specIdx + 1] : undefined,
+        legacy: sub.rest.includes("--legacy"),
+        force: sub.rest.includes("--force"),
       });
       return;
     }
@@ -734,6 +788,24 @@ async function main() {
     case "flow analyze":
       flowAnalyze(sub.rest);
       return;
+    case "flow compare":
+      flowCompare(sub.rest);
+      return;
+    case "flow policy candidates":
+      flowPolicyCandidates(sub.rest);
+      return;
+    case "flow policy approve":
+      flowPolicyApprove(sub.rest);
+      return;
+    case "flow policy reject":
+      flowPolicyReject(sub.rest);
+      return;
+    case "flow policy list":
+      flowPolicyList();
+      return;
+    case "flow policy learn":
+      flowPolicyLearn(sub.rest);
+      return;
 
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
@@ -754,6 +826,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   const threeWord = [
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
     "dkg spec add", "dkg spec list", "dkg spec transition",
+    "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
   ];
   if (args.length >= 3) {
     const candidate = `${args[0]} ${args[1]} ${args[2]}`;
@@ -765,7 +838,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   const twoWord = [
     "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
     "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
-    "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import",
+    "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import", "dkg flow-schemas", "dkg flow-schema",
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
     "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
     "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
@@ -778,7 +851,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "query health", "query resolve", "query rules",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
-    "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze",
+    "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
@@ -1005,7 +1078,11 @@ const SPEC_BASE_OPTIONS = {
   catalog: { type: "boolean" as const, default: false },
 };
 
-async function loadCatalogInput(): Promise<unknown | undefined> {
+function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
   try {
     const { DEMO_CATALOG } = await import("demo-snapshot");
     return DEMO_CATALOG;
@@ -1070,9 +1147,11 @@ async function runSpecValidate(argv: string[]) {
     process.exit(1);
   }
 
-  let parsed: Record<string, unknown>;
+  let parsed: SchemaValidationInput;
   try {
-    parsed = JSON.parse(values.data) as Record<string, unknown>;
+    const raw = JSON.parse(values.data) as unknown;
+    if (!isSchemaValidationInput(raw)) throw new Error("invalid");
+    parsed = raw;
   } catch {
     console.error("--data JSON 파싱 실패");
     process.exit(1);
