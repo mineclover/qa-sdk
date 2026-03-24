@@ -54,6 +54,7 @@ import {
   scanPromotionCandidates,
   analyzeSelfCheck,
   traceFlows,
+  validateDslInvariants,
   auditSchemaHealth,
   discoverCausality,
 } from "@qa-sdk/spec-core/analysis";
@@ -3095,6 +3096,24 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
     console.log(`    ${icon} ${step.step}: ${step.message}`);
   }
 
+  // 5.5. DSL 번들 불변조건 검증 (usage snapshot의 versionUsage에서 파생)
+  if (usage && usage.versionUsages.length > 0) {
+    // versionUsage → 간이 AddressContextRecord 변환 (prefix 존재만 체크)
+    const prefixSet = new Set(usage.versionUsages.map(v => v.prefixId));
+    const syntheticRecord: AddressContextRecord = {
+      address_context: Object.fromEntries([...prefixSet].map(p => [p, `${p}:v1:0`])),
+      timestamp: new Date().toISOString(),
+      session_id: "converge",
+    };
+    const dslResult = validateDslInvariants(graph, [syntheticRecord]);
+    console.log(`\n  dsl invariants: ${dslResult.summary}`);
+    if (opts.verbose && dslResult.violations.length > 0) {
+      for (const v of dslResult.violations) {
+        console.log(`    ⚠ ${v.bundleId}: ${v.invariant.slice(0, 80)}`);
+      }
+    }
+  }
+
   // 6. Persist (--persist)
   if (opts.persist) {
     console.log(`\n  ── 저장 ──`);
@@ -4073,6 +4092,28 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     }
   } else {
     console.log(`    ✅ IntentLink 흐름 정상 (${flowResult.checkedRecords}건 검사, ${graph.getNodesByKind("intent-link").length}개 링크)`);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Phase F: DSL 번들 불변조건 검증
+  // ════════════════════════════════════════════════════════════
+
+  console.log(`\n  ── Phase F: DSL invariant ──`);
+  // self-check에서 생성된 레코드로 DSL 번들 불변조건 검증
+  // dsl-dev는 Phase D invariant 검증에서 이미 처리하므로 제외
+  const dslResult = validateDslInvariants(graph, liveRecords, {
+    date: now.slice(0, 10),
+    excludeBundles: ["dsl-dev"],
+  });
+  if (dslResult.violations.length > 0) {
+    console.log(`    ⚠ DSL 불변조건 위반 ${dslResult.violations.length}종 (${dslResult.violations.reduce((s, v) => s + v.count, 0)}건):`);
+    for (const v of dslResult.violations) {
+      console.log(`      ${v.bundleId}: ${v.invariant.slice(0, 80)}`);
+    }
+  } else {
+    const bundleCount = (graph.getNodesByKind("dsl-bundle") as { invariants?: readonly string[] }[])
+      .filter(b => b.invariants && b.invariants.length > 0).length - 1; // dsl-dev 제외
+    console.log(`    ✅ DSL 불변조건 정상 (${bundleCount}개 번들, ${dslResult.checkedRecords}건 검사)`);
   }
 
   // ════════════════════════════════════════════════════════════

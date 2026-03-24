@@ -8,7 +8,7 @@
  */
 
 import type { GraphPort, AddressContextRecord } from "@qa-sdk/convergence";
-import type { IntentLinkNode, ObservationNode } from "../dkg.types.js";
+import type { DslBundleNode, IntentLinkNode, ObservationNode } from "../dkg.types.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -23,6 +23,22 @@ export interface FlowViolation {
   readonly missingPrefixes: readonly string[];
   /** 위반 횟수 */
   readonly count: number;
+}
+
+export interface DslInvariantViolation {
+  readonly bundleId: string;
+  readonly invariant: string;
+  readonly presentPrefixes: readonly string[];
+  readonly missingPrefixes: readonly string[];
+  readonly count: number;
+}
+
+export interface DslInvariantResult {
+  readonly totalRecords: number;
+  readonly checkedRecords: number;
+  readonly violations: readonly DslInvariantViolation[];
+  readonly observations: readonly ObservationNode[];
+  readonly summary: string;
 }
 
 export interface FlowTraceResult {
@@ -129,6 +145,106 @@ export function traceFlows(
     summary: violations.length > 0
       ? `${violations.length}종 흐름 위반 (${violations.reduce((s, v) => s + v.count, 0)}건)`
       : `흐름 위반 없음 (${checkedRecords}건 검사)`,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DSL Bundle Invariant Validation
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * DSL 번들의 invariant를 AddressContextRecord와 대조하여 위반을 감지한다.
+ *
+ * IntentLink 검증(traceFlows)과 보완적:
+ * - traceFlows: IntentLink의 endpoint 순서/포함 검증
+ * - validateDslInvariants: DSL 번들의 memberPrefixes 간 불변조건 검증
+ *
+ * dsl-dev 외 모든 DSL 번들(dsl-checkout, dsl-observation, dsl-infra 등)에 적용.
+ */
+export function validateDslInvariants(
+  graph: GraphPort,
+  records: readonly AddressContextRecord[],
+  options?: { date?: string; excludeBundles?: readonly string[] },
+): DslInvariantResult {
+  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const exclude = new Set(options?.excludeBundles ?? []);
+
+  const bundles = (graph.getNodesByKind("dsl-bundle") as DslBundleNode[])
+    .filter(b => b.invariants && b.invariants.length > 0 && !exclude.has(b.id));
+
+  const violationMap = new Map<string, Omit<DslInvariantViolation, "count">>();
+  const countMap = new Map<string, number>();
+  let checkedRecords = 0;
+
+  for (const record of records) {
+    const ctx = record.address_context;
+    if (!ctx || Object.keys(ctx).length === 0) continue;
+
+    const presentPrefixes = new Set(Object.keys(ctx));
+    checkedRecords++;
+
+    for (const bundle of bundles) {
+      // 이 레코드가 DSL 번들의 memberPrefix 중 하나라도 포함하는가
+      const matched = bundle.memberPrefixes.filter(p => presentPrefixes.has(p));
+      if (matched.length === 0) continue;
+
+      const missing = bundle.memberPrefixes.filter(p => !presentPrefixes.has(p));
+
+      for (const invariant of bundle.invariants!) {
+        const hasViolation = checkInvariantViolation(
+          invariant,
+          presentPrefixes,
+          bundle.memberPrefixes,
+        );
+        if (!hasViolation) continue;
+
+        const key = `${bundle.id}:${invariant.slice(0, 60)}`;
+        countMap.set(key, (countMap.get(key) ?? 0) + 1);
+        if (!violationMap.has(key)) {
+          violationMap.set(key, {
+            bundleId: bundle.id,
+            invariant,
+            presentPrefixes: [...matched],
+            missingPrefixes: missing,
+          });
+        }
+      }
+    }
+  }
+
+  const violations: DslInvariantViolation[] = [...violationMap.entries()]
+    .map(([key, v]) => ({ ...v, count: countMap.get(key) ?? 1 }))
+    .sort((a, b) => b.count - a.count);
+
+  // Observation 자동 생성
+  const observations: ObservationNode[] = [];
+  for (const v of violations) {
+    const obs: ObservationNode = {
+      kind: "observation",
+      id: `OBS-DSL-${v.bundleId}-${v.invariant.slice(0, 30).replace(/[^a-zA-Z0-9_가-힣]/g, "_")}`,
+      date,
+      source: "runtime",
+      subjects: [v.bundleId, ...v.presentPrefixes, ...v.missingPrefixes],
+      finding: `${v.bundleId} invariant 위반 ${v.count}건: ${v.invariant}`,
+      suggestion: {
+        kind: "revise-decision",
+        decisionId: v.bundleId,
+        reason: v.invariant,
+      },
+    };
+    observations.push(obs);
+    graph.addNode(obs);
+    graph.addEdge("observes", obs.id, v.bundleId);
+  }
+
+  return {
+    totalRecords: records.length,
+    checkedRecords,
+    violations,
+    observations,
+    summary: violations.length > 0
+      ? `${violations.length}종 DSL 불변조건 위반 (${violations.reduce((s, v) => s + v.count, 0)}건)`
+      : `DSL 불변조건 위반 없음 (${bundles.length}개 번들, ${checkedRecords}건 검사)`,
   };
 }
 

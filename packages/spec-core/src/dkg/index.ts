@@ -121,8 +121,8 @@ export type { ServiceOwnership, SharedContract, ServiceRegistration, TopologyRep
 export { buildDependencyGraph, buildTimeline } from "./service-topology.js";
 export { auditCoverage } from "./skills/coverage-audit.js";
 export type { CoverageAuditResult } from "./skills/coverage-audit.js";
-export { traceFlows } from "./skills/flow-trace.js";
-export type { FlowViolation, FlowTraceResult } from "./skills/flow-trace.js";
+export { traceFlows, validateDslInvariants } from "./skills/flow-trace.js";
+export type { FlowViolation, FlowTraceResult, DslInvariantViolation, DslInvariantResult } from "./skills/flow-trace.js";
 export { checkConstraints, checkAllConstraints, auditAllConstraints } from "./skills/constraint-check.js";
 export type { ConstraintCheckResult, PassedConstraint } from "./skills/constraint-check.js";
 export { safeEntryAdd } from "./skills/safe-entry-add.js";
