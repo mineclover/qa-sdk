@@ -117,7 +117,7 @@ async function collectChanges(ingestBinding: Fetcher): Promise<{ collected: bool
   const prefixIds = Object.keys(DEMO_CATALOG.prefixes);
   const addressContext: Record<string, string> = {};
   for (const p of prefixIds) {
-    const def = (DEMO_CATALOG.prefixes as Record<string, { versions: Record<string, unknown> }>)[p];
+    const def = (DEMO_CATALOG.prefixes as unknown as Record<string, { versions: Record<string, unknown> }>)[p];
     const versions = Object.keys(def.versions);
     const ver = versions[versions.length - 1] ?? "v1";
     addressContext[p] = `${p}:${ver}:0`;

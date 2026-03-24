@@ -107,12 +107,9 @@ export default {
 
     const driver = new D1SqlDriver(env.DB);
 
-    // DDL 초기화 — 첫 요청에서만 실행
-    if (!ddlInitialized) {
-      for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-        try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
-      }
-      ddlInitialized = true;
+    // DDL 초기화 — IF NOT EXISTS이므로 매 요청 안전 실행
+    for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
+      try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
     }
 
     const app = createApp({

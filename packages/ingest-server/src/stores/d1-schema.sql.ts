@@ -112,4 +112,19 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
 );
 
 CREATE INDEX IF NOT EXISTS idx_dlq_pending ON dead_letter_queue(resolved_at, created_at);
+
+CREATE TABLE IF NOT EXISTS insight_labels (
+  id               TEXT PRIMARY KEY,
+  kind             TEXT NOT NULL,
+  target_id        TEXT NOT NULL,
+  label            TEXT NOT NULL,
+  status           TEXT NOT NULL DEFAULT 'pending',
+  notes            TEXT,
+  metadata         TEXT,
+  created_at       TEXT NOT NULL,
+  updated_at       TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_insight_labels_kind ON insight_labels(kind);
+CREATE INDEX IF NOT EXISTS idx_insight_labels_target ON insight_labels(target_id);
 `;

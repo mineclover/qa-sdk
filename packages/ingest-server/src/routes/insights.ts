@@ -341,6 +341,137 @@ export function createInsightsRoutes(deps: InsightsDeps) {
     return c.json(services);
   });
 
+  // GET /v1/insights/correlations — prefix 공출현 분석 + IntentLink 자동 제안
+  app.get("/v1/insights/correlations", async (c) => {
+    const minSupport = parseInt(c.req.query("min_support") ?? "2");
+
+    // 1. address_context가 있는 records (synthetic/system 이벤트 제외 — 실 사용자 데이터만)
+    const rows = await db.query<{ address_context: string; trace_id: string }>(
+      `SELECT address_context, trace_id FROM event_records
+       WHERE address_context IS NOT NULL
+         AND event_key NOT IN ('synthetic.coverage', 'system.change', 'error.service', 'health.check')
+       LIMIT 2000`,
+    );
+
+    // 2. trace별 prefix set 구성
+    const tracePrefixes: Map<string, Set<string>> = new Map();
+    for (const r of rows) {
+      try {
+        const ac = JSON.parse(r.address_context);
+        const prefixes = Object.keys(ac);
+        if (prefixes.length === 0) continue;
+
+        if (!tracePrefixes.has(r.trace_id)) tracePrefixes.set(r.trace_id, new Set());
+        const set = tracePrefixes.get(r.trace_id)!;
+        for (const p of prefixes) set.add(p);
+      } catch { /* skip */ }
+    }
+
+    // 3. prefix 쌍 공출현 카운트
+    const pairCounts: Record<string, number> = {};
+    const prefixCounts: Record<string, number> = {};
+    for (const [, prefixes] of tracePrefixes) {
+      const arr = [...prefixes].sort();
+      for (const p of arr) {
+        prefixCounts[p] = (prefixCounts[p] ?? 0) + 1;
+      }
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          const key = `${arr[i]}|${arr[j]}`;
+          pairCounts[key] = (pairCounts[key] ?? 0) + 1;
+        }
+      }
+    }
+
+    // 4. 상관 점수 계산 (Jaccard similarity)
+    const correlations: Array<{
+      prefixA: string; prefixB: string; cooccurrence: number;
+      jaccard: number; support: number;
+    }> = [];
+
+    for (const [key, count] of Object.entries(pairCounts)) {
+      if (count < minSupport) continue;
+      const [a, b] = key.split("|");
+      const countA = prefixCounts[a] ?? 0;
+      const countB = prefixCounts[b] ?? 0;
+      const union = countA + countB - count;
+      const jaccard = union > 0 ? Math.round((count / union) * 100) / 100 : 0;
+      correlations.push({ prefixA: a, prefixB: b, cooccurrence: count, jaccard, support: count });
+    }
+
+    correlations.sort((a, b) => b.jaccard - a.jaccard || b.cooccurrence - a.cooccurrence);
+
+    // 5. IntentLink 자동 제안: 높은 상관의 prefix 클러스터
+    const suggestions: Array<{
+      id: string; endpoints: string[]; avgJaccard: number; evidence: number;
+    }> = [];
+
+    // 클러스터링: Jaccard >= 0.5인 쌍에서 connected component 추출
+    const graph: Record<string, Set<string>> = {};
+    for (const c of correlations) {
+      if (c.jaccard < 0.5) continue;
+      if (!graph[c.prefixA]) graph[c.prefixA] = new Set();
+      if (!graph[c.prefixB]) graph[c.prefixB] = new Set();
+      graph[c.prefixA].add(c.prefixB);
+      graph[c.prefixB].add(c.prefixA);
+    }
+
+    const visited = new Set<string>();
+    let clusterId = 0;
+    for (const node of Object.keys(graph)) {
+      if (visited.has(node)) continue;
+      // BFS
+      const cluster: string[] = [];
+      const queue = [node];
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        if (visited.has(curr)) continue;
+        visited.add(curr);
+        cluster.push(curr);
+        for (const neighbor of graph[curr] ?? []) {
+          if (!visited.has(neighbor)) queue.push(neighbor);
+        }
+      }
+      if (cluster.length >= 3) {
+        // 클러스터 내 평균 jaccard
+        let totalJaccard = 0;
+        let pairCount = 0;
+        for (let i = 0; i < cluster.length; i++) {
+          for (let j = i + 1; j < cluster.length; j++) {
+            const key = `${[cluster[i], cluster[j]].sort().join("|")}`;
+            const pair = correlations.find(c => `${c.prefixA}|${c.prefixB}` === key);
+            if (pair) { totalJaccard += pair.jaccard; pairCount++; }
+          }
+        }
+        suggestions.push({
+          id: `IL-AUTO-${++clusterId}`,
+          endpoints: cluster.sort(),
+          avgJaccard: pairCount > 0 ? Math.round((totalJaccard / pairCount) * 100) / 100 : 0,
+          evidence: tracePrefixes.size,
+        });
+      }
+    }
+
+    // 6. prefix별 단독 출현 비율 (다른 prefix 없이 혼자 나타나는 빈도)
+    const soloRates: Record<string, number> = {};
+    for (const [, prefixes] of tracePrefixes) {
+      if (prefixes.size === 1) {
+        const p = [...prefixes][0];
+        soloRates[p] = (soloRates[p] ?? 0) + 1;
+      }
+    }
+
+    return c.json({
+      totalTraces: tracePrefixes.size,
+      totalPairs: correlations.length,
+      correlations: correlations.slice(0, 50),
+      suggestions,
+      prefixFrequency: Object.entries(prefixCounts)
+        .map(([prefix, count]) => ({ prefix, count, soloRate: soloRates[prefix] ?? 0 }))
+        .sort((a, b) => b.count - a.count),
+    });
+  });
+
   // GET /v1/insights/errors — 에러 이벤트 히스토리
   app.get("/v1/insights/errors", async (c) => {
     const limit = parseInt(c.req.query("limit") ?? "50");

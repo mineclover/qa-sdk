@@ -85,10 +85,11 @@ export class QaMonitor {
       this.emit("session_start", { scenario_id: config.scenarioId });
     }
 
-    // 자동 수집
+    // 자동 수집 — infraContext(서비스 좌표)를 자동 주입하여 prefix 커버리지에 기여
     if (config.autoCapture) {
+      const autoCaptureContext = infraContext ? { address_context: infraContext } : undefined;
       this.destroyAutoCapture = createAutoCapture(config.autoCapture, (key, payload) => {
-        this.emit(key, payload);
+        this.emit(key, payload, autoCaptureContext);
       });
     }
 

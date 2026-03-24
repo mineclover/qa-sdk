@@ -653,6 +653,46 @@ async function renderMermaid(mmd) {
       <pre style="margin-top:8px;white-space:pre-wrap;">${err.message || err}</pre>
       <pre style="margin-top:12px;color:var(--dim);white-space:pre-wrap;">${mmd}</pre>
     </div>`;
+
+    // Mermaid 렌더링 에러를 ingest에 수집
+    const _ingestBase = (window.__QA_CONFIG__||{}).INGEST_URL || '';
+    if (_ingestBase) {
+      try {
+        const presetEl = document.querySelector('.preset-item.active');
+        const presetId = presetEl ? presetEl.getAttribute('data-id') || '' : 'custom';
+        fetch(_ingestBase + '/v1/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transmission_id: 'mmd-err-' + Date.now(),
+            sent_at: new Date().toISOString(),
+            source: { service_name: 'platform-demo', sdk_name: 'diagram-viewer', sdk_version: '1.0' },
+            build: { env: 'prod' },
+            owner: { owner_type: 'agent', owner_id: 'diagram-viewer' },
+            runtime: { platform: 'browser' },
+            records: [{
+              log_id: 'mmd-err-' + Date.now(),
+              trace_id: 'mmd-errors',
+              span_id: 'render',
+              timestamp: new Date().toISOString(),
+              record_kind: 'log',
+              event_key: 'error.diagram',
+              event_version: '001',
+              payload_format: 'json',
+              payload_encoding: 'raw',
+              payload_masking_applied: false,
+              payload_masked_fields: [],
+              payload: {
+                preset: presetId,
+                error: (err.message || String(err)).slice(0, 500),
+                mmdLength: mmd.length,
+                mmdPreview: mmd.slice(0, 200),
+              },
+            }],
+          }),
+        }).catch(() => {});
+      } catch { /* 수집 실패 무시 */ }
+    }
   }
 }
 

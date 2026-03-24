@@ -66,7 +66,7 @@ DEMO_CATALOG = {
 }
 ```
 
-현재: 85축, 51 prefix, 19 tables. DKG: 267 nodes, 625 edges.
+현재: 85축, 51 prefix, 19 tables. DKG: 16종 노드 (FlowSchemaNode 포함).
 
 ---
 
@@ -90,6 +90,21 @@ CLI (qa-sdk dkg ...)
   ▼
 인간 판단
   │ observe → decide → resolve (관측 루프)
+
+────────────────────── 의사결정 플로우 ──────────────────────
+
+dkg decide --type <t>
+  │ → FlowEngine (coordinate-design 플로우 자동 시작)
+  │ → gate 순회: 코어 gate 경고, evidence 자동 수집
+  │ → FlowInstance 완료: address_context 자동 생성
+  ▼
+DecisionNode ← justifies → FlowSchemaNode (DKG 16종째)
+  │ flowInstanceId 양방향 참조
+  ▼
+InstanceStore (이력 저장)
+  │
+  ├── PatternDetector → PolicyCandidate → 인간 승인 → FlowPolicy
+  └── Comparison (쌍 비교 / gate 분포 / 시간 범위) → ComparisonReport
 ```
 
 ---
@@ -170,7 +185,7 @@ user.login TransitionSpec:
 
 좌표 시스템의 **"왜"**를 보존하는 설계 시점 그래프.
 
-### 노드 15종
+### 노드 16종
 
 | 계층 | 노드 |
 |------|------|
@@ -178,6 +193,7 @@ user.login TransitionSpec:
 | 설계 | Decision, Constraint, VersionEvent, Observation |
 | 조직 | Domain, Consumer, IntentLink, DslBundle, Skill |
 | 확장 | TransitionSpec |
+| 의사결정 | FlowSchema |
 
 ### 관측 루프
 
@@ -196,7 +212,7 @@ user.login TransitionSpec:
 |------|--------|----------|
 | GraphPort | convergence/schema | `{ kind, id }` |
 | GraphRegistryPort | 서비스 동적 import | 최소 2메서드 |
-| GraphRegistry | CLI/skills | DkgNode 15종 구체 타입 |
+| GraphRegistry | CLI/skills | DkgNode 16종 구체 타입 |
 
 ---
 
@@ -207,7 +223,8 @@ user.login TransitionSpec:
 Core ──────────── @qa-sdk/core (타입, catalog runtime)
 SDK 레이어 ────── logger → codec → context → sdk → apm
 Browser ────────── browser-codec (encode/decode SSOT) → browser-sdk
-분석 ──────────── convergence (독립) → spec-core (DKG + skills)
+의사결정 ────────── decision-flow (분기 엔진, 패턴 학습, 경로 비교)
+분석 ──────────── convergence (독립) → spec-core (DKG + skills + FlowSchemaNode)
 서비스 ──────────── ingest, registry-server, registry-service, gate, query, decode
 데모/참조 ────────── demo-snapshot, demo-types, shop-web, viz-3d
 ```
@@ -238,8 +255,26 @@ qa-sdk dkg scan-tables             # DB 스키마 drift 감지
 # 변경
 qa-sdk dkg add-entry <axis> <entry>    # 축 entry 추가
 qa-sdk dkg observe --target <id>       # 관측 기록
-qa-sdk dkg decide --type <t>           # 의사결정 기록
+qa-sdk dkg decide --type <t>           # 의사결정 기록 (→ flow 자동 실행)
+qa-sdk dkg decide --legacy             # 기존 방식 (flow 없이 직접 DecisionNode)
 qa-sdk dkg resolve <obs>               # 관측 루프 닫기
+
+# 의사결정 플로우
+qa-sdk flow list                       # FlowSchema 목록
+qa-sdk flow start <id>                 # 플로우 시작
+qa-sdk flow select <branch>            # 분기 선택
+qa-sdk flow status                     # 인스턴스 상태
+qa-sdk flow trace <id>                 # 코어 결정 추적
+qa-sdk flow analyze <id>               # 구조적 분석
+qa-sdk flow policy learn <schema>      # 패턴 감지 → 정책 후보 생성
+qa-sdk flow policy candidates          # 후보 목록
+qa-sdk flow policy approve/reject <id> # 후보 승인/거부
+qa-sdk flow compare <a> <b>            # 인스턴스 쌍 비교
+
+# DKG FlowSchema 조회
+qa-sdk dkg flow-schemas                # FlowSchemaNode 목록
+qa-sdk dkg flow-schema <id>            # 개별 프로파일
+qa-sdk dkg diagram flow-schema <id>    # Mermaid 다이어그램
 
 # 인코딩
 qa-sdk encode <prefix> --dim val       # 좌표 인코딩

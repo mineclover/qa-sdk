@@ -232,6 +232,77 @@ export function createDashboardApiRoutes(deps: DashboardApiDeps) {
     return c.json({ events: events.slice(0, limit), total: events.length });
   });
 
+  // GET /schema — 테이블 스키마 상세 (DDL 상태 + column ref + axis entries)
+  app.get("/schema", (c) => {
+    const graph = deps.getGraph();
+    const catalog = deps.getCatalog();
+    const tables = graph.getNodesByKind("table");
+
+    const DDL_DEPLOYED: Record<string, string> = {
+      // ingest D1
+      event_records: "qa-ingest", traces: "qa-ingest", qa_sessions: "qa-ingest",
+      transmissions: "qa-ingest", verdict_reports: "qa-ingest",
+      dead_letter_queue: "qa-ingest", insight_labels: "qa-ingest",
+      // registry D1
+      prefix: "qa-registry", draft_lock: "qa-registry", axis_profile: "qa-registry",
+      catalogs: "qa-registry", config: "qa-registry", service_endpoint: "qa-registry",
+      event_schema: "qa-registry", schema_version: "qa-registry",
+    };
+
+    const result = tables.map((t: any) => {
+      const refs = graph.getTableColumnRefs(t.id);
+      const columns = (t.columns as string[]).map((col: string) => {
+        const ref = refs.find((r: any) => r.column === col);
+        const colDef: Record<string, unknown> = { name: col };
+
+        if (!ref) {
+          colDef.type = "scalar";
+        } else if (ref.refKind === "fk") {
+          colDef.type = "table_ref";
+          colDef.target = ref.targetId;
+        } else if (ref.refKind === "column_axis") {
+          colDef.type = "axis_ref";
+          colDef.axis = ref.targetId;
+          // axis entries 추가
+          const axisDef = (catalog.axes as Record<string, any>)[ref.targetId];
+          if (axisDef) {
+            const vers = Object.keys(axisDef.versions);
+            const latest = axisDef.versions[vers[vers.length - 1]];
+            colDef.entries = latest?.entries?.length ?? 0;
+            colDef.capacity = latest?.capacity ?? 0;
+          }
+        } else {
+          colDef.type = "prefix_ref";
+          colDef.prefix = ref.targetId;
+        }
+        return colDef;
+      });
+
+      return {
+        id: t.id,
+        name: t.name,
+        columns,
+        ddlStatus: DDL_DEPLOYED[t.id] ? "deployed" : "catalog-only",
+        d1Database: DDL_DEPLOYED[t.id] ?? null,
+        columnCount: columns.length,
+        refCount: refs.length,
+        axisRefs: columns.filter((c: any) => c.type === "axis_ref").length,
+        tableRefs: columns.filter((c: any) => c.type === "table_ref").length,
+        prefixRefs: columns.filter((c: any) => c.type === "prefix_ref").length,
+      };
+    });
+
+    const deployed = result.filter((t: any) => t.ddlStatus === "deployed").length;
+    const catalogOnly = result.filter((t: any) => t.ddlStatus === "catalog-only").length;
+
+    return c.json({
+      total: result.length,
+      deployed,
+      catalogOnly,
+      tables: result,
+    });
+  });
+
   // POST /collect — 변화 감지 + 이벤트 수집 (사용자 주도)
   app.post("/collect", async (c) => {
     if (!deps.onCollect) {

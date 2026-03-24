@@ -2478,6 +2478,8 @@ body {
     state.selectedPrefix = state.selectedPrefix === prefixId ? null : prefixId;
     window.selectedPrefix = prefixId;
     if (state.selectedPrefix == null) window.selectedPrefix = null;
+    // 선택 변경 → 엣지 하이라이트 갱신 필요
+    _lastFlowMapRef = null;
     render();
   }
 
@@ -2488,12 +2490,15 @@ body {
     state.selectedPrefix = null;
     state.selectedIntentLinkId = intentLinkId || null;
     window.selectedPrefix = null;
+    // IL 변경 → 엣지 스타일이 바뀌므로 full re-render 강제
+    _lastFlowMapRef = null;
     render();
   }
 
   function clearIntentLinkOverlay() {
     if (!state.selectedIntentLinkId) return;
     state.selectedIntentLinkId = null;
+    _lastFlowMapRef = null;
     render();
   }
 

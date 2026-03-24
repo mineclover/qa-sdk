@@ -67,6 +67,7 @@ const ROUTES: RouteEntry[] = [
   { prefix: "/v1/streams",   urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
   { prefix: "/v1/admin",     urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
   { prefix: "/v1/insights",  urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
+  { prefix: "/v1/labels",   urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
   { prefix: "/api/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
   { prefix: "/dev/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
   { prefix: "/catalogs",     urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },

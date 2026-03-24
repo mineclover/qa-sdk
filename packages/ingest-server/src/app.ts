@@ -55,6 +55,7 @@ import type { DebugStore } from "./lib/debug-store.js";
 import type { ConvergencePipelinePort } from "./lib/phase-two-worker.js";
 import type { MetricsCollector } from "./lib/metrics-collector.js";
 import { createInsightsRoutes } from "./routes/insights.js";
+import { createLabelsRoutes } from "./routes/labels.js";
 
 export interface AppDeps {
   appLifecycle?: AppLifecycle;
@@ -138,6 +139,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", createSessionRoutes(deps));
   app.route("/", createVerdictRoutes(deps));
   app.route("/", createInsightsRoutes({ driver: deps.sqlDriver }));
+  app.route("/", createLabelsRoutes({ driver: deps.sqlDriver }));
   app.route(
     "/",
     createDlqRoutes({

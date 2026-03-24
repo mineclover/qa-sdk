@@ -520,26 +520,34 @@ export function tableDiagram(
  */
 export function tableErDiagram(
   graph: GraphRegistry,
-  options?: MermaidDiagramOptions,
+  options?: MermaidDiagramOptions & { ddlStatus?: Record<string, "deployed" | "catalog-only" | "ddl-only"> },
 ): string {
   const allTables = graph.getNodesByKind("table") as TableNode[];
   if (allTables.length === 0) return "erDiagram\n  %% No tables";
 
+  const ddl = options?.ddlStatus ?? {};
   const lines: string[] = ["erDiagram"];
   const title = options?.title ?? `All Tables (${allTables.length})`;
   lines.push(`  %% ${title}`);
 
   // 모든 테이블 엔티티
   for (const t of allTables) {
+    const status = ddl[t.id];
+    const statusTag = status === "deployed" ? " [D1]" : status === "catalog-only" ? " [catalog]" : "";
     lines.push(`  ${safeId(t.id)} {`);
     for (const col of t.columns) {
       const refs = graph.getTableColumnRefs(t.id);
       const colRef = refs.find(r => r.column === col);
-      const typeLabel = colRef
-        ? colRef.refKind === "fk" ? "FK"
-        : colRef.refKind === "column_axis" ? `axis`
-        : `ref`
-        : "scalar";
+      let typeLabel: string;
+      if (!colRef) {
+        typeLabel = "scalar";
+      } else if (colRef.refKind === "fk") {
+        typeLabel = `FK(${colRef.targetId})`;
+      } else if (colRef.refKind === "column_axis") {
+        typeLabel = `axis(${colRef.targetId})`;
+      } else {
+        typeLabel = `ref(${colRef.targetId})`;
+      }
       lines.push(`    string ${col} "${typeLabel}"`);
     }
     lines.push(`  }`);
@@ -562,9 +570,20 @@ export function tableErDiagram(
   return lines.join("\n");
 }
 
-/** Mermaid ID에 안전한 문자열 변환 (하이픈/언더스코어 허용, 특수문자 제거) */
+/** Mermaid erDiagram 예약어 — 엔티티 이름으로 사용 불가 */
+const MERMAID_RESERVED = new Set([
+  "entry", "order", "group", "index", "table", "key", "type",
+  "string", "int", "float", "boolean", "date", "datetime",
+]);
+
+/** Mermaid ID에 안전한 문자열 변환 (예약어 + 특수문자 처리) */
 function safeId(id: string): string {
-  return id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const cleaned = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  // 예약어 충돌 시 접두사 추가
+  if (MERMAID_RESERVED.has(cleaned.toLowerCase())) {
+    return `tbl_${cleaned}`;
+  }
+  return cleaned;
 }
 
 // ── Observation Loop Diagram ────────────────────────────────

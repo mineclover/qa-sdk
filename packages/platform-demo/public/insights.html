@@ -67,6 +67,19 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
   box-shadow:0 10px 28px rgba(0,0,0,0.35)
 }
 
+/* ── Label Actions ── */
+.label-actions{display:flex;gap:4px;margin-top:4px}
+.label-btn{font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--txt2);font-family:var(--mono)}
+.label-btn:hover{background:var(--border);color:var(--txt)}
+.label-btn.confirmed{background:rgba(63,185,80,0.15);border-color:#3fb950;color:#3fb950}
+.label-btn.rejected{background:rgba(248,81,73,0.15);border-color:#f85149;color:#f85149}
+.label-btn.investigating{background:rgba(210,153,34,0.15);border-color:#d29922;color:#d29922}
+.label-status{font-size:9px;padding:1px 5px;border-radius:2px;font-family:var(--mono)}
+.label-status.confirmed{background:rgba(63,185,80,0.15);color:#3fb950}
+.label-status.rejected{background:rgba(248,81,73,0.15);color:#f85149}
+.label-status.investigating{background:rgba(210,153,34,0.15);color:#d29922}
+.label-status.pending{background:var(--bg3);color:var(--txt2)}
+
 /* ── Flow ── */
 .flow-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:8px}
 .flow-top{display:flex;justify-content:space-between;margin-bottom:4px}
@@ -158,6 +171,32 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
   <div class="section">
     <div class="section-title">Permission History</div>
     <div class="card" id="permHistory"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Table Schema (ERD)</div>
+    <div class="card" id="schemaView" style="max-height:400px;overflow-y:auto"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Funnel Conversion</div>
+    <div class="card" id="funnelChart"><div class="loading">Loading...</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="section">
+      <div class="section-title">Prefix Correlations</div>
+      <div class="card" id="correlationChart"><div class="loading">Loading...</div></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Auto IntentLink Suggestions</div>
+      <div class="card" id="intentSuggestions"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Service Coupling</div>
+    <div class="card" id="couplingChart"><div class="loading">Loading...</div></div>
   </div>
 </div>
 <div class="coverage-tooltip" id="coverageTooltip" aria-hidden="true"></div>
@@ -481,6 +520,226 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
     } catch(e) { document.getElementById('permHistory').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
   }
 
+  // ── Schema ──
+
+  var REG_BASE = (window.__QA_CONFIG__||{}).REGISTRY_URL || '';
+
+  async function loadSchema() {
+    var el = document.getElementById('schemaView');
+    try {
+      var r = await fetch(REG_BASE + '/api/dashboard/schema');
+      var d = await r.json();
+
+      var html = '<div style="display:flex;gap:12px;margin-bottom:10px;font-size:12px">'
+        + '<span>Total: <b>' + d.total + '</b></span>'
+        + '<span style="color:#3fb950">Deployed: <b>' + d.deployed + '</b></span>'
+        + '<span style="color:#d29922">Catalog-only: <b>' + d.catalogOnly + '</b></span>'
+        + '</div>';
+
+      var refColors = { axis_ref: '#58a6ff', prefix_ref: '#bc8cff', table_ref: '#d29922', scalar: '#6e7681' };
+
+      d.tables.forEach(function(t) {
+        var statusColor = t.ddlStatus === 'deployed' ? '#3fb950' : '#d29922';
+        var statusIcon = t.ddlStatus === 'deployed' ? '●' : '○';
+        var db = t.d1Database ? ' (' + t.d1Database + ')' : '';
+
+        html += '<div style="margin-bottom:8px;padding:8px;background:var(--bg);border-radius:4px;border-left:3px solid ' + statusColor + '">'
+          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+          + '<span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--txt)">'
+          + statusIcon + ' ' + esc(t.id) + '</span>'
+          + '<span style="font-size:10px;color:' + statusColor + '">' + t.ddlStatus + db + '</span>'
+          + '</div>'
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+
+        t.columns.forEach(function(col) {
+          var color = refColors[col.type] || refColors.scalar;
+          var tip = col.type;
+          if (col.axis) tip += ': ' + col.axis + ' (' + (col.entries||0) + '/' + (col.capacity||0) + ')';
+          if (col.target) tip += ' → ' + col.target;
+          if (col.prefix) tip += ' → ' + col.prefix;
+
+          html += '<span title="' + esc(tip) + '" style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:2px;background:rgba(0,0,0,0.3);border:1px solid ' + color + '30;color:' + color + '">'
+            + esc(col.name) + '</span>';
+        });
+
+        html += '</div></div>';
+      });
+
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
+    }
+  }
+
+  // ── Labeling ──
+
+  var labelsCache = {};
+
+  async function loadLabels() {
+    try {
+      var r = await fetch(BASE + '/v1/labels');
+      var items = await r.json();
+      labelsCache = {};
+      items.forEach(function(l) { labelsCache[l.targetId] = l; });
+    } catch { /* labels API 없으면 무시 */ }
+  }
+
+  window.labelItem = async function(kind, targetId, status, label) {
+    var existing = labelsCache[targetId];
+    try {
+      if (existing) {
+        await fetch(BASE + '/v1/labels/' + existing.id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: status }),
+        });
+      } else {
+        await fetch(BASE + '/v1/labels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: kind, targetId: targetId, label: label || targetId, status: status }),
+        });
+      }
+      await loadLabels();
+      loadCorrelations();
+    } catch(e) { console.error('label error', e); }
+  };
+
+  function labelButtons(kind, targetId, label) {
+    var existing = labelsCache[targetId];
+    var currentStatus = existing ? existing.status : 'pending';
+    return '<div class="label-actions">'
+      + '<span class="label-status ' + currentStatus + '">' + currentStatus + '</span>'
+      + '<button class="label-btn' + (currentStatus === 'confirmed' ? ' confirmed' : '') + '" onclick="labelItem(\'' + kind + '\',\'' + esc(targetId) + '\',\'confirmed\',\'' + esc(label) + '\')">✓</button>'
+      + '<button class="label-btn' + (currentStatus === 'rejected' ? ' rejected' : '') + '" onclick="labelItem(\'' + kind + '\',\'' + esc(targetId) + '\',\'rejected\',\'' + esc(label) + '\')">✗</button>'
+      + '<button class="label-btn' + (currentStatus === 'investigating' ? ' investigating' : '') + '" onclick="labelItem(\'' + kind + '\',\'' + esc(targetId) + '\',\'investigating\',\'' + esc(label) + '\')">?</button>'
+      + '</div>';
+  }
+
+  // ── Correlation Analysis ──
+
+  var FUNNEL_STAGES = [
+    { label: '방문', prefix: 'page_view', color: '#58a6ff' },
+    { label: '장바구니', prefix: 'cart_event', color: '#3fb950' },
+    { label: '결제진입', prefix: 'flow_point', color: '#d29922' },
+    { label: '주문완료', prefix: 'order_event', color: '#f85149' },
+    { label: '권한확인', prefix: 'permission', color: '#bc8cff' },
+  ];
+
+  async function loadCorrelations() {
+    try {
+      var r = await fetch(BASE + '/v1/insights/correlations');
+      var d = await r.json();
+      var corrs = d.correlations || [];
+      var freqs = {};
+      (d.prefixFrequency || []).forEach(function(p) { freqs[p.prefix] = p; });
+      var totalTraces = d.totalTraces || 1;
+
+      // 1. Funnel
+      var funnelEl = document.getElementById('funnelChart');
+      var funnelHtml = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">checkout 흐름 전환율 (' + totalTraces + ' traces)</div>';
+      var prevCount = totalTraces;
+      FUNNEL_STAGES.forEach(function(stage, i) {
+        var count = (freqs[stage.prefix] || {}).count || 0;
+        var pct = Math.round(count / totalTraces * 100);
+        var dropPct = prevCount > 0 ? Math.round((1 - count / prevCount) * 100) : 0;
+        var w = Math.max(20, pct);
+        funnelHtml += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+          + '<span style="width:70px;font-size:11px;color:var(--txt2);text-align:right">' + esc(stage.label) + '</span>'
+          + '<div style="flex:1;height:24px;background:var(--bg);border-radius:3px;overflow:hidden;position:relative">'
+          + '<div style="width:' + w + '%;height:100%;background:' + stage.color + ';border-radius:3px;opacity:0.7"></div>'
+          + '<span style="position:absolute;left:8px;top:0;line-height:24px;font-family:var(--mono);font-size:11px;color:var(--txt)">' + count + ' (' + pct + '%)</span>'
+          + '</div>';
+        if (i > 0 && dropPct > 0) {
+          funnelHtml += '<span style="font-size:10px;color:var(--red);width:50px">-' + dropPct + '%</span>';
+        } else {
+          funnelHtml += '<span style="width:50px"></span>';
+        }
+        funnelHtml += '</div>';
+        prevCount = count;
+      });
+      funnelEl.innerHTML = funnelHtml;
+
+      // 2. Correlations (top pairs)
+      var corrEl = document.getElementById('correlationChart');
+      if (!corrs.length) {
+        corrEl.innerHTML = '<div class="empty">No correlation data yet</div>';
+      } else {
+        var corrHtml = '';
+        corrs.slice(0, 12).forEach(function(c) {
+          var jPct = Math.round(c.jaccard * 100);
+          var color = c.jaccard >= 0.8 ? '#3fb950' : c.jaccard >= 0.5 ? '#d29922' : '#8b949e';
+          var pairId = c.prefixA + '|' + c.prefixB;
+          corrHtml += '<div style="margin-bottom:6px">'
+            + '<div style="display:flex;align-items:center;gap:6px;font-size:11px">'
+            + '<span style="width:130px;font-family:var(--mono);color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(c.prefixA) + ' ↔ ' + esc(c.prefixB) + '">'
+            + esc(c.prefixA.slice(0,12)) + '↔' + esc(c.prefixB.slice(0,12)) + '</span>'
+            + '<div style="flex:1;height:14px;background:var(--bg);border-radius:2px;overflow:hidden">'
+            + '<div style="width:' + jPct + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
+            + '<span style="font-family:var(--mono);color:' + color + ';width:35px;text-align:right">' + jPct + '%</span>'
+            + '</div>'
+            + labelButtons('correlation', pairId, c.prefixA + ' ↔ ' + c.prefixB)
+            + '</div>';
+        });
+        corrEl.innerHTML = corrHtml;
+      }
+
+      // 3. Auto IntentLink suggestions
+      var sugEl = document.getElementById('intentSuggestions');
+      var suggestions = d.suggestions || [];
+      if (!suggestions.length) {
+        sugEl.innerHTML = '<div class="empty">데이터가 쌓이면 자동으로 IntentLink 후보를 발견합니다.<br><span style="font-size:10px;color:var(--txt2)">조건: Jaccard ≥ 0.5인 3+ prefix 클러스터</span></div>';
+      } else {
+        var sugHtml = '';
+        suggestions.forEach(function(s) {
+          sugHtml += '<div style="margin-bottom:10px;padding:8px;background:var(--bg);border-radius:4px;border-left:3px solid var(--green)">'
+            + '<div style="font-family:var(--mono);font-size:12px;color:var(--green);margin-bottom:4px">' + esc(s.id) + '</div>'
+            + '<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-bottom:4px">';
+          s.endpoints.forEach(function(ep, i) {
+            sugHtml += '<span style="font-family:var(--mono);font-size:10px;padding:1px 5px;background:var(--bg3);border-radius:3px;color:var(--txt)">' + esc(ep) + '</span>';
+            if (i < s.endpoints.length - 1) sugHtml += '<span style="color:var(--border);font-size:9px">&rarr;</span>';
+          });
+          sugHtml += '</div>'
+            + '<div style="font-size:10px;color:var(--txt2)">avgJaccard=' + s.avgJaccard + ', evidence=' + s.evidence + ' traces</div>'
+            + labelButtons('intent-link', s.id, s.id)
+            + '</div>';
+        });
+        sugEl.innerHTML = sugHtml;
+      }
+
+      // 4. Service Coupling
+      var couplingEl = document.getElementById('couplingChart');
+      var svcPairs = corrs.filter(function(c) { return c.prefixA === 'service' || c.prefixB === 'service'; });
+      if (!svcPairs.length) {
+        couplingEl.innerHTML = '<div class="empty">No service coupling data</div>';
+      } else {
+        var cpHtml = '';
+        svcPairs.slice(0, 10).forEach(function(c) {
+          var other = c.prefixA === 'service' ? c.prefixB : c.prefixA;
+          var jPct = Math.round(c.jaccard * 100);
+          var strength = c.jaccard >= 0.5 ? 'strong' : 'weak';
+          var color = c.jaccard >= 0.5 ? '#3fb950' : '#8b949e';
+          cpHtml += '<div style="margin-bottom:6px">'
+            + '<div style="display:flex;align-items:center;gap:8px;font-size:11px">'
+            + '<span style="font-family:var(--mono);width:140px;color:var(--txt)">' + esc(other) + '</span>'
+            + '<div style="flex:1;height:14px;background:var(--bg);border-radius:2px;overflow:hidden">'
+            + '<div style="width:' + jPct + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
+            + '<span style="font-size:10px;color:' + color + ';width:50px;text-align:right">' + strength + '</span>'
+            + '</div>'
+            + labelButtons('coupling', 'service|' + other, 'service ↔ ' + other)
+            + '</div>';
+        });
+        couplingEl.innerHTML = cpHtml;
+      }
+
+    } catch(e) {
+      ['funnelChart','correlationChart','intentSuggestions','couplingChart'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = '<div class="empty">' + esc(e.message) + '</div>';
+      });
+    }
+  }
+
   window.loadAll = function(){
     if (activeLoad) return activeLoad;
     activeLoad = Promise.allSettled([
@@ -491,7 +750,9 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
       loadPrefixes(),
       loadTimeline(),
       loadFlows(),
-      loadPermissions()
+      loadPermissions(),
+      loadSchema(),
+      loadLabels().then(loadCorrelations)
     ]).finally(function() {
       activeLoad = null;
     });

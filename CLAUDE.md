@@ -59,6 +59,13 @@ DEMO_CATALOG (demo-snapshot)
 - `GET /v1/insights/service-prefixes` — 서비스별 실제 prefix 사용 현황
 - 정의(`ownedPrefixes`)와 실제 사용(`insights`)의 gap이 관측 피드백의 기반
 
+### Table 식별자 충돌 전략
+
+- 카탈로그 원본 table ID는 변경하지 않는다 (`entry`, `orders` 유지)
+- 외부 도구(Mermaid, SQL, TypeScript)의 예약어 충돌은 **schema-builder의 dialect가 흡수**
+- 현재 임시: `mermaid-gen.ts` `safeId()`에서 `tbl_` 접두사 (schema-builder 구현 시 이관)
+- 설계 상세: `docs/plan/schema-builder/purpose.md` §5
+
 ## 소스 위치 규칙
 
 - `weighted-index/src/index.ts` — 모든 public export 관리. 새 함수 추가 시 여기도 갱신

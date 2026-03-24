@@ -228,8 +228,31 @@ select{background:var(--bg3);border:1px solid var(--border);color:var(--txt);pad
     Object.keys(groups).forEach(function(sid){
       var g = groups[sid];
       var total = g.reduce(function(s,t){return s+t.recordCount},0);
+
+      // 세션 내 이벤트 흐름 타임라인
+      var allFlows = g.filter(function(t) { return t._flow && t._flow.length > 0; });
+      var journeySteps = [];
+      allFlows.forEach(function(t) {
+        (t._flow || []).forEach(function(ev, idx) {
+          journeySteps.push({ event: ev, isEntry: idx === 0, service: t.serviceName, prefixes: t._prefixes || [] });
+        });
+      });
+
+      var journeyHtml = '';
+      if (journeySteps.length > 0) {
+        journeyHtml = '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;background:var(--bg);border-radius:4px;margin-bottom:6px">';
+        journeySteps.forEach(function(step, i) {
+          var bgColor = step.isEntry ? 'rgba(63,185,80,0.15)' : 'var(--bg3)';
+          var textColor = step.isEntry ? 'var(--green)' : 'var(--txt)';
+          journeyHtml += '<span style="font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:' + bgColor + ';color:' + textColor + '">' + esc(step.event) + '</span>';
+          if (i < journeySteps.length - 1) journeyHtml += '<span style="color:var(--border);font-size:9px">&rarr;</span>';
+        });
+        journeyHtml += '</div>';
+      }
+
       html += '<div class="session-group">'
         + '<div class="session-header"><span>Session: '+esc(sid.slice(0,24))+'</span><span>'+g.length+' traces, '+total+' events</span></div>'
+        + journeyHtml
         + g.map(renderCard).join('')
         + '</div>';
     });
