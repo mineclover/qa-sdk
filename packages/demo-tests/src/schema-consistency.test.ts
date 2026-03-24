@@ -59,15 +59,15 @@ describe("ROLE_POS 일관성", () => {
 });
 
 describe("Feature 정의 일관성", () => {
-  it("v1 feature의 svcValue가 PERM_SVC에 존재", () => {
+  it("v1 feature의 permSvcPos가 PERM_SVC 범위 안에 존재", () => {
     for (const f of DEMO_FEATURES_V1) {
-      expect(DEMO_PERM_SVC_VALUES).toContain(f.svcValue);
+      expect(DEMO_PERM_SVC_VALUES[f.permSvcPos - 1], `${f.id}: invalid permSvcPos`).toBeDefined();
     }
   });
 
-  it("v2 feature의 svcValue가 PERM_SVC에 존재", () => {
+  it("v2 feature의 permSvcPos가 PERM_SVC 범위 안에 존재", () => {
     for (const f of DEMO_FEATURES_V2) {
-      expect(DEMO_PERM_SVC_VALUES).toContain(f.svcValue);
+      expect(DEMO_PERM_SVC_VALUES[f.permSvcPos - 1], `${f.id}: invalid permSvcPos`).toBeDefined();
     }
   });
 

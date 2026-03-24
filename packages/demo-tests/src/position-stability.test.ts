@@ -10,8 +10,6 @@ import {
   buildDemoRegistryInput,
   DEMO_ROLES_V1, DEMO_ROLES_V2,
   DEMO_EVENTS_V1, DEMO_EVENTS_V2,
-  DEMO_PERM_SVC_VALUES,
-  demoCalcPermAddr, demoCalcEvtAddr,
 } from "demo-snapshot";
 
 const registry = new MetaRegistry(buildDemoRegistryInput());
@@ -54,8 +52,8 @@ describe("위치 안정성 — MetaRegistry 수준", () => {
     const permSvcPos = 7; // payment:shop
     const viewerPos = DEMO_ROLES_V1.indexOf("viewer") + 1;
 
-    const v1Addr = demoCalcPermAddr(permSvcPos, viewerPos, "v1");
-    const v2Addr = demoCalcPermAddr(permSvcPos, viewerPos, "v2");
+    const v1Addr = (permSvcPos - 1) * DEMO_ROLES_V1.length + (viewerPos - 1);
+    const v2Addr = (permSvcPos - 1) * DEMO_ROLES_V2.length + (viewerPos - 1);
 
     // position 동일 → 주소 차이는 stride 변경(5→6)에서만 발생
     expect(v1Addr).toBe((permSvcPos - 1) * 5 + (viewerPos - 1));
