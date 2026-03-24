@@ -4,7 +4,7 @@
  * 3단 추상화:
  *   GraphPort (shared/)     → convergence/schema 레이어가 사용. GraphNodeLike 반환.
  *   GraphRegistryPort       → 서비스(ingest/registry)가 동적 import 시 사용. 최소 2메서드.
- *   GraphRegistry (dkg/)    → CLI/skills가 직접 사용. DkgNode 15종 구체 타입 반환.
+ *   GraphRegistry (dkg/)    → CLI/skills가 직접 사용. DkgNode 16종 구체 타입 반환.
  *
  * GraphPort는 DkgNode를 import하지 않는다.
  * convergence 함수들은 kind/id만으로 그래프를 질의하고,

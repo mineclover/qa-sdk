@@ -14,6 +14,37 @@ import { DKG_SCHEMA_DDL } from "./dkg-schema.sql.js";
 
 export type NodeSource = "bootstrap" | "manual" | "auto";
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | JsonObject;
+
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+type PersistedEdgeInput = {
+  type: string;
+  from: string;
+  to: string;
+  meta?: JsonObject;
+};
+
+interface ExportNodePayload extends JsonObject {
+  id: string;
+  kind: string;
+}
+
+interface ExportEdgePayload {
+  type: string;
+  from: string;
+  to: string;
+  meta?: JsonObject;
+}
+
 export class DkgSqliteStore {
   private db: DatabaseSyncInstance;
   readonly catalogId: string;
@@ -104,7 +135,7 @@ export class DkgSqliteStore {
    */
   saveNodes(
     nodes: readonly DkgNode[],
-    edges: readonly { type: string; from: string; to: string; meta?: Record<string, unknown> }[],
+    edges: readonly PersistedEdgeInput[],
     source: NodeSource = "manual",
   ): void {
     const upsertNode = this.db.prepare(
@@ -361,8 +392,8 @@ export class DkgSqliteStore {
   /** JSON에서 상태를 import. 기존 데이터에 머지. */
   importJson(json: string): { nodesImported: number; edgesImported: number } {
     const data = JSON.parse(json) as {
-      nodes: Array<{ id: string; kind: string; [k: string]: unknown }>;
-      edges: Array<{ type: string; from: string; to: string; meta?: Record<string, unknown> }>;
+      nodes: ExportNodePayload[];
+      edges: ExportEdgePayload[];
     };
 
     const upsertNode = this.db.prepare(
@@ -432,8 +463,8 @@ export class DkgSqliteStore {
   importDecisions(json: string): { nodesImported: number; edgesImported: number } {
     const data = JSON.parse(json) as {
       type?: string;
-      nodes: Array<{ id: string; kind: string; source?: string; [k: string]: unknown }>;
-      edges: Array<{ type: string; from: string; to: string; source?: string; meta?: Record<string, unknown> }>;
+      nodes: Array<ExportNodePayload & { source?: string }>;
+      edges: Array<ExportEdgePayload & { source?: string }>;
     };
 
     const upsertNode = this.db.prepare(
@@ -471,7 +502,7 @@ export class DkgSqliteStore {
   listRecentDecisions(
     limit: number = 20,
     kinds: readonly string[] = ["decision", "observation"],
-  ): Array<{ id: string; kind: string; source: string; date: string; data: Record<string, unknown> }> {
+  ): Array<{ id: string; kind: string; source: string; date: string; data: JsonObject }> {
     const placeholders = kinds.map(() => "?").join(",");
     const rows = this.db.prepare(
       `SELECT id, kind, source, data, updated_at FROM dkg_nodes
@@ -482,7 +513,7 @@ export class DkgSqliteStore {
     }>;
 
     return rows.map(r => {
-      const parsed = JSON.parse(r.data) as Record<string, unknown>;
+      const parsed = JSON.parse(r.data) as JsonObject;
       return {
         id: r.id,
         kind: r.kind,
