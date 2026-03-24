@@ -3124,6 +3124,12 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
       console.log(`    stale observation ${cleaned}건 정리 (timestamp→결정적 ID 전환)`);
     }
 
+    // Resolved observation 정리 (30일 이상 경과)
+    const pruned = store.pruneResolvedObservations(30);
+    if (pruned > 0) {
+      console.log(`    resolved observation ${pruned}건 정리 (30일 이상 경과)`);
+    }
+
     // Usage snapshot + auto observations
     if (usage) {
       const snapResult = store.saveUsageSnapshotWithObservations(usage, autoObs);

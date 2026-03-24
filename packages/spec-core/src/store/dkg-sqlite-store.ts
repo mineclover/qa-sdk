@@ -347,6 +347,36 @@ export class DkgSqliteStore {
     return stale.length;
   }
 
+  /**
+   * resolution이 설정된(닫힌) observation을 정리한다.
+   * daysOld 이상 경과한 resolved observation만 삭제. 기본 30일.
+   */
+  pruneResolvedObservations(daysOld = 30): number {
+    // resolution이 있는 observation 중 date가 daysOld 이전인 것
+    const cutoff = new Date(Date.now() - daysOld * 86_400_000).toISOString().slice(0, 10);
+    const resolved = this.db.prepare(
+      `SELECT id FROM dkg_nodes WHERE catalog_id=? AND kind='observation' AND data LIKE '%"resolution":%' AND data LIKE '%"outcome":%'`,
+    ).all(this.catalogId) as Array<{ id: string }>;
+
+    let pruned = 0;
+    for (const row of resolved) {
+      // date 확인 — JSON에서 date 추출
+      const nodeData = this.db.prepare(
+        "SELECT data FROM dkg_nodes WHERE catalog_id=? AND id=?",
+      ).get(this.catalogId, row.id) as { data: string } | undefined;
+      if (!nodeData) continue;
+      try {
+        const parsed = JSON.parse(nodeData.data);
+        if (parsed.date && parsed.date <= cutoff) {
+          this.db.prepare("DELETE FROM dkg_edges WHERE catalog_id=? AND (from_id=? OR to_id=?)").run(this.catalogId, row.id, row.id);
+          this.db.prepare("DELETE FROM dkg_nodes WHERE catalog_id=? AND id=?").run(this.catalogId, row.id);
+          pruned++;
+        }
+      } catch { /* JSON 파싱 실패 시 건너뜀 */ }
+    }
+    return pruned;
+  }
+
   // ── Stats ────────────────────────────────────────────
 
   stats(): {
