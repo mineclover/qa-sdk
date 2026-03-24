@@ -6,6 +6,7 @@
  * - transitive 순회 지원 (깊이 제한 10)
  * - getNodesByKind<K>() → Extract<DkgNode, { kind: K }> 타입 안전 반환
  * - Table 의존 질의: getPrefixesForTable, getTablesForPrefix, cascadeFromTable
+ * - FlowSchema 질의: cascadeFromFlowSchema
  *
  * CLI/skills는 이 클래스를 직접 사용하고,
  * convergence/schema 레이어는 GraphPort 인터페이스만 참조한다.
@@ -226,6 +227,64 @@ export class GraphRegistry implements GraphPort {
     }
 
     return { domains, consumers };
+  }
+
+  /**
+   * flow-schema 변경 시 직접/하위 subFlow를 따라 영향받는 axis/prefix를 추적.
+   *
+   * 1단계: FlowSchema ─composes→ Axis, ─observes→ Prefix
+   * 2단계+: FlowSchema ─references→ subFlow 를 재귀 순회하며 동일 규칙 반복
+   */
+  cascadeFromFlowSchema(flowSchemaId: string): {
+    axes: Array<{ id: string; reason: "composes" | "references"; distance: number }>;
+    prefixes: Array<{ id: string; reason: "observes" | "references"; distance: number }>;
+  } {
+    const axes: Array<{ id: string; reason: "composes" | "references"; distance: number }> = [];
+    const prefixes: Array<{ id: string; reason: "observes" | "references"; distance: number }> = [];
+    const seenAxes = new Set<string>();
+    const seenPrefixes = new Set<string>();
+    const visitedFlows = new Set<string>();
+    let frontier: Array<{ id: string; flowDistance: number }> = [{ id: flowSchemaId, flowDistance: 0 }];
+
+    while (frontier.length > 0) {
+      const next: Array<{ id: string; flowDistance: number }> = [];
+
+      for (const current of frontier) {
+        if (visitedFlows.has(current.id)) continue;
+        visitedFlows.add(current.id);
+
+        const directAxisDistance = current.flowDistance + 1;
+        const axisReason = current.flowDistance === 0 ? "composes" : "references";
+        for (const axisId of this.neighbors(current.id, "composes")) {
+          if (!seenAxes.has(axisId)) {
+            seenAxes.add(axisId);
+            axes.push({ id: axisId, reason: axisReason, distance: directAxisDistance });
+          }
+        }
+
+        const directPrefixDistance = current.flowDistance + 1;
+        const prefixReason = current.flowDistance === 0 ? "observes" : "references";
+        for (const prefixId of this.neighbors(current.id, "observes")) {
+          if (!seenPrefixes.has(prefixId)) {
+            seenPrefixes.add(prefixId);
+            prefixes.push({ id: prefixId, reason: prefixReason, distance: directPrefixDistance });
+          }
+        }
+
+        if (current.flowDistance >= MAX_TRANSITIVE_DEPTH) continue;
+
+        for (const referencedId of this.neighbors(current.id, "references")) {
+          const node = this.getNode(referencedId);
+          if (node?.kind === "flow-schema" && !visitedFlows.has(referencedId)) {
+            next.push({ id: referencedId, flowDistance: current.flowDistance + 1 });
+          }
+        }
+      }
+
+      frontier = next;
+    }
+
+    return { axes, prefixes };
   }
 
   // ── Query: constraint / intent-link 검사 ─────────────────

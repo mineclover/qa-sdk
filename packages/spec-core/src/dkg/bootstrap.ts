@@ -7,10 +7,12 @@
  * 기본값: DEMO_CATALOG + DEMO_DKG_CONFIG (하위 호환).
  */
 
-import type { Catalog, DkgConfig } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
+import { analyzeGateStructure, identifyCoreGates, type FlowSchema } from "decision-flow";
 import { GraphRegistry } from "./graph-registry.js";
 import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
-import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode } from "./dkg.types.js";
+import { attachFlowSchemaEdges } from "./flow-schema-relations.js";
+import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode, FlowSchemaNode } from "./dkg.types.js";
 import type { TransitionSpec } from "../transition/transition.types.js";
 import { toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "../transition/dkg-bridge.js";
 import { analyzeHeadroom, applyHeadroomDecisions } from "@qa-sdk/convergence";
@@ -29,8 +31,16 @@ interface DkgConfigInput {
   readonly skills: readonly SkillNode[];
   readonly specs?: readonly SpecNode[];
   readonly decisions?: readonly DecisionNode[];
+  readonly flowSchemas?: readonly FlowSchemaEntry[];
   readonly transitionSpecs?: readonly TransitionSpecNode[];
   readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
+}
+
+interface FlowSchemaEntry {
+  readonly schema: FlowSchema;
+  readonly observedPrefixIds?: readonly string[];
+  readonly axisIds?: readonly string[];
+  readonly domainId?: string;
 }
 
 /**
@@ -107,6 +117,51 @@ export function bootstrapDkg(options: {
     for (const endpoint of link.endpoints) {
       graph.addEdge("binds", link.id, endpoint);
     }
+  }
+
+  // ── FlowSchema 등록 + 자동 관계 생성 ─────────────────────
+  const flowSchemas = config.flowSchemas ?? [];
+  const flowSchemaMap = new Map(flowSchemas.map((entry) => [entry.schema.id, entry.schema]));
+  const flowSchemaTotalPaths = new Map<string, number>();
+
+  for (const entry of flowSchemas) {
+    const schema = entry.schema as FlowSchema;
+    const gateProfiles = analyzeGateStructure(schema);
+    const node: FlowSchemaNode = {
+      kind: "flow-schema",
+      id: schema.id,
+      name: schema.name,
+      version: schema.version,
+      gates: schema.gates.map((gate) => ({
+        id: gate.id,
+        name: gate.name,
+        phase: gate.phase,
+        weight: gate.weight ?? "tactical",
+      })),
+      totalPaths: resolveFlowSchemaTotalPaths(schema.id, flowSchemaMap, flowSchemaTotalPaths, new Set()),
+      coreGateIds: identifyCoreGates(gateProfiles).map((profile) => profile.gateId),
+    };
+    graph.addNode(node);
+  }
+
+  for (const entry of flowSchemas) {
+    const observedPrefixIds = dedupeIds(entry.observedPrefixIds ?? []);
+    const axisIds = dedupeIds([
+      ...deriveAxisIdsFromObservedPrefixes(catalog, observedPrefixIds),
+      ...(entry.axisIds ?? []),
+    ]);
+    const domainId = entry.domainId ?? inferFlowSchemaDomainId(domains, observedPrefixIds);
+    const subFlowIds = dedupeIds(
+      entry.schema.gates.flatMap((gate: FlowSchema["gates"][number]) => (gate.subFlowId ? [gate.subFlowId] : [])),
+    );
+
+    attachFlowSchemaEdges(graph, {
+      flowSchemaId: entry.schema.id,
+      axisIds,
+      observedPrefixIds,
+      domainId,
+      subFlowIds,
+    });
   }
 
   // ── Headroom Decision 자동 생성 ────────────────────────
@@ -366,4 +421,81 @@ export function bootstrapDkg(options: {
 function getUsedBy(graph: GraphRegistry, axisId: string): string {
   const prefixes = graph.reverseNeighbors(axisId, "composes");
   return prefixes.join(",") || "미사용";
+}
+
+function dedupeIds(ids: readonly string[]): string[] {
+  return [...new Set(ids)];
+}
+
+function deriveAxisIdsFromObservedPrefixes(
+  catalog: Catalog,
+  prefixIds: readonly string[],
+): string[] {
+  const axisIds = new Set<string>();
+
+  for (const prefixId of prefixIds) {
+    const prefix = catalog.prefixes[prefixId];
+    const latest = prefix?.versions[prefix.versions.length - 1];
+    if (!prefix || !latest) continue;
+
+    for (const label of prefix.labels) {
+      const dim = prefix.dims[label];
+      if (dim?.kind === "axis") {
+        axisIds.add(dim.axisId);
+      }
+    }
+  }
+
+  return [...axisIds];
+}
+
+function inferFlowSchemaDomainId(
+  domains: readonly DomainNode[],
+  observedPrefixIds: readonly string[],
+): string | undefined {
+  if (observedPrefixIds.length === 0) return undefined;
+
+  const exactMatch = domains.find((domain) =>
+    observedPrefixIds.every((prefixId) => domain.prefixes.includes(prefixId)),
+  );
+  if (exactMatch) return exactMatch.id;
+
+  const partialMatch = domains.find((domain) =>
+    observedPrefixIds.some((prefixId) => domain.prefixes.includes(prefixId)),
+  );
+  return partialMatch?.id;
+}
+
+function resolveFlowSchemaTotalPaths(
+  schemaId: string,
+  schemas: ReadonlyMap<string, FlowSchema>,
+  memo: Map<string, number>,
+  visiting: Set<string>,
+): number {
+  const cached = memo.get(schemaId);
+  if (cached !== undefined) return cached;
+  if (visiting.has(schemaId)) {
+    throw new Error(`FlowSchema subFlow cycle detected: ${schemaId}`);
+  }
+
+  const schema = schemas.get(schemaId);
+  if (!schema) {
+    throw new Error(`FlowSchema "${schemaId}" not found in DkgConfig.flowSchemas`);
+  }
+
+  visiting.add(schemaId);
+
+  let totalPaths = 1;
+  for (const gate of schema.gates) {
+    if (gate.subFlowId) {
+      totalPaths *= resolveFlowSchemaTotalPaths(gate.subFlowId, schemas, memo, visiting);
+      continue;
+    }
+
+    totalPaths *= gate.branches?.length ?? 0;
+  }
+
+  visiting.delete(schemaId);
+  memo.set(schemaId, totalPaths);
+  return totalPaths;
 }

@@ -30,6 +30,10 @@ export type {
   DomainNode,
   ConsumerNode,
   IntentLinkNode,
+  FlowSchemaNode,
+  FlowSchemaGateSummary,
+  FlowSchemaGatePhase,
+  FlowSchemaGateWeight,
   TransitionSpecNode,
   TableNode,
   ImpactAnalysisInput,
@@ -47,6 +51,8 @@ export type {
 } from "./dkg.types.js";
 
 export { GraphRegistry } from "./graph-registry.js";
+export { deriveFlowSchemaEdges, attachFlowSchemaEdges } from "./flow-schema-relations.js";
+export type { FlowSchemaRelationInput, GraphEdgeWriter } from "./flow-schema-relations.js";
 
 // ── Derivation + Bootstrap ─────────────────────────
 export { deriveFromCatalog } from "./catalog-derive.js";
