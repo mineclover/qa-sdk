@@ -10,9 +10,8 @@
     "prebuild-diagrams": "tsx scripts/generate-diagram-presets.ts"
   },
   "dependencies": {
-    "bit-index": "workspace:*",
     "demo-snapshot": "workspace:*",
-    "gsap": "^3.14.2",
+    "bit-index": "workspace:*",
     "permission-engine": "workspace:*",
     "weighted-index": "workspace:*",
     "weighted-ui": "workspace:*"
