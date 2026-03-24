@@ -7,6 +7,7 @@
 
 import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
+import { extractCausalGraph, type FlowSchema } from "decision-flow";
 import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
 import { CatalogRegistry, collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "@qa-sdk/core";
 import type { Catalog, AxisVersionSnapshot } from "@qa-sdk/core";
@@ -67,6 +68,16 @@ import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
+import { createInterface } from "node:readline";
+import {
+  buildDkgFlowAddressMetadata,
+  collectDkgCoreGateWarnings,
+  formatDkgCoreGateWarnings,
+  formatFlowInstanceCoreTrace,
+  loadFlowInstanceMeta,
+  saveFlowInstanceMeta,
+  startDkgDecisionFlowBridge,
+} from "./dkg-decision-flow.js";
 
 // ── Catalog Context ──────────────────────────────────
 // CLI에서 --catalog 옵션으로 주입된 카탈로그.
@@ -74,17 +85,26 @@ import { execSync } from "node:child_process";
 
 const registry = new CatalogRegistry();
 let activeCatalogId = "demo";
-let _configOverride: unknown | undefined;
+type BootstrapConfigInput = Parameters<typeof bootstrapDkg>[0]["config"];
+type BootstrapCatalogInput = Parameters<typeof bootstrapDkg>[0]["catalog"];
+type FlowSchemaConfigEntry = NonNullable<BootstrapConfigInput["flowSchemas"]>[number];
+type DecisionListData = {
+  title?: string;
+  finding?: string;
+  lifecycle?: string;
+  resolution?: { outcome?: string };
+};
+
+let _configOverride: BootstrapConfigInput | undefined;
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-export function setCatalogContext(catalog?: unknown, config?: unknown): void {
+export function setCatalogContext(catalog?: BootstrapCatalogInput, config?: BootstrapConfigInput): void {
   if (catalog) {
-    const cat = catalog as Catalog;
-    registry.register(cat);
-    activeCatalogId = cat.id;
+    registry.register(catalog);
+    activeCatalogId = catalog.id;
     registry.setDefault(activeCatalogId);
     graphCache.delete(activeCatalogId);
   }
@@ -114,12 +134,10 @@ function getStore(catalogId?: string): DkgSqliteStore {
 }
 
 /** bootstrap 옵션 생성 — transitionSpecs 주입 DRY */
-function bootstrapOptions(catalogOverride?: unknown) {
+function bootstrapOptions(catalogOverride?: BootstrapCatalogInput) {
   const catalog = catalogOverride ?? DEMO_CATALOG;
   const config = _configOverride ?? DEMO_DKG_CONFIG;
-  // NOTE: Catalog/DkgConfig → CatalogInput/DkgConfigInput 구조적 호환.
-  // bootstrapDkg 내부에서 duck-typing으로 소비하므로 Parameters<> 캐스트 사용.
-  return { catalog, config, transitionSpecs: DEMO_TRANSITION_SPECS } as Parameters<typeof bootstrapDkg>[0];
+  return { catalog, config, transitionSpecs: DEMO_TRANSITION_SPECS };
 }
 
 function getGraph(catalogId?: string): GraphRegistry {
@@ -162,6 +180,8 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   "dkg axes":      { intent: "query", domain: "dkg-graph", subject: "axis" },
   "dkg prefixes":  { intent: "query", domain: "dkg-graph", subject: "prefix" },
   "dkg domains":   { intent: "query", domain: "dkg-graph", subject: "domain" },
+  "dkg flow-schemas": { intent: "query", domain: "dkg-graph", subject: "flow-schema" },
+  "dkg flow-schema": { intent: "query", domain: "dkg-graph", subject: "flow-schema" },
   "dkg dsl":       { intent: "query", domain: "dkg-graph", subject: "dsl-bundle" },
   "dkg service":   { intent: "query", domain: "dkg-graph", subject: "service" },
   "dkg prefix":    { intent: "query", domain: "dkg-graph", subject: "prefix" },
@@ -647,6 +667,272 @@ export function dkgDomains(opts: PageOptions): void {
   printPageInfo(result);
 }
 
+// ── dkg flow-schemas / dkg flow-schema ───────────────
+
+export interface FlowSchemaListEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly gateCount: number;
+  readonly coreGateCount: number;
+  readonly totalPaths: number;
+  readonly axisCount: number;
+  readonly prefixCount: number;
+}
+
+export interface FlowSchemaGateProfile {
+  readonly id: string;
+  readonly name: string;
+  readonly phase: string;
+  readonly weight: string;
+  readonly branchCount: number;
+  readonly subFlowId?: string;
+}
+
+export interface FlowSchemaProfileView {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly totalPaths: number;
+  readonly gateCount: number;
+  readonly coreGateIds: readonly string[];
+  readonly gates: readonly FlowSchemaGateProfile[];
+  readonly directAxisIds: readonly string[];
+  readonly directPrefixIds: readonly string[];
+  readonly transitiveAxisIds: readonly string[];
+  readonly transitivePrefixIds: readonly string[];
+  readonly subFlowIds: readonly string[];
+  readonly domainIds: readonly string[];
+}
+
+function activeDkgConfig(configOverride?: BootstrapConfigInput): BootstrapConfigInput {
+  return configOverride ?? _configOverride ?? DEMO_DKG_CONFIG;
+}
+
+function getConfiguredFlowSchemaEntries(configOverride?: BootstrapConfigInput): readonly FlowSchemaConfigEntry[] {
+  return activeDkgConfig(configOverride).flowSchemas ?? [];
+}
+
+function getConfiguredFlowSchema(flowSchemaId: string, configOverride?: BootstrapConfigInput): FlowSchema | undefined {
+  return getConfiguredFlowSchemaEntries(configOverride)
+    .find((entry) => entry.schema.id === flowSchemaId)
+    ?.schema as FlowSchema | undefined;
+}
+
+function getFlowSchemaNode(graph: GraphRegistry, flowSchemaId: string): Extract<DkgNode, { kind: "flow-schema" }> | null {
+  const node = graph.getNode(flowSchemaId);
+  if (!node || node.kind !== "flow-schema") {
+    return null;
+  }
+  return node;
+}
+
+function sortIds(ids: readonly string[]): string[] {
+  return [...ids].sort((a, b) => a.localeCompare(b));
+}
+
+function uniqueIds(ids: readonly string[]): string[] {
+  return [...new Set(ids)];
+}
+
+function summarizeFlowSchemaGate(
+  gate: Extract<DkgNode, { kind: "flow-schema" }>["gates"][number],
+  schema?: FlowSchema,
+): FlowSchemaGateProfile {
+  const resolved = schema?.gates.find((candidate) => candidate.id === gate.id);
+  return {
+    id: gate.id,
+    name: gate.name,
+    phase: gate.phase,
+    weight: gate.weight,
+    branchCount: resolved?.branches?.length ?? 0,
+    subFlowId: resolved?.subFlowId,
+  };
+}
+
+export function listFlowSchemas(
+  graph: GraphRegistry,
+  configOverride?: BootstrapConfigInput,
+): FlowSchemaListEntry[] {
+  return graph.getNodesByKind("flow-schema")
+    .map((node) => {
+      const schema = getConfiguredFlowSchema(node.id, configOverride);
+      const gateCount = schema?.gates.length ?? node.gates.length;
+      return {
+        id: node.id,
+        name: node.name,
+        version: node.version,
+        gateCount,
+        coreGateCount: node.coreGateIds.length,
+        totalPaths: node.totalPaths,
+        axisCount: graph.neighbors(node.id, "composes").length,
+        prefixCount: graph.neighbors(node.id, "observes").length,
+      };
+    })
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function getFlowSchemaProfile(
+  graph: GraphRegistry,
+  flowSchemaId: string,
+  configOverride?: BootstrapConfigInput,
+): FlowSchemaProfileView | null {
+  const node = getFlowSchemaNode(graph, flowSchemaId);
+  if (!node) {
+    return null;
+  }
+
+  const schema = getConfiguredFlowSchema(flowSchemaId, configOverride);
+  const cascade = graph.cascadeFromFlowSchema(flowSchemaId);
+
+  return {
+    id: node.id,
+    name: node.name,
+    version: node.version,
+    totalPaths: node.totalPaths,
+    gateCount: schema?.gates.length ?? node.gates.length,
+    coreGateIds: [...node.coreGateIds],
+    gates: node.gates.map((gate) => summarizeFlowSchemaGate(gate, schema)),
+    directAxisIds: sortIds(graph.neighbors(flowSchemaId, "composes")),
+    directPrefixIds: sortIds(graph.neighbors(flowSchemaId, "observes")),
+    transitiveAxisIds: sortIds(uniqueIds(cascade.axes.map((axis) => axis.id))),
+    transitivePrefixIds: sortIds(uniqueIds(cascade.prefixes.map((prefix) => prefix.id))),
+    subFlowIds: sortIds(graph.neighbors(flowSchemaId, "references")),
+    domainIds: sortIds(graph.neighbors(flowSchemaId, "contains")),
+  };
+}
+
+function mermaidSafeId(raw: string): string {
+  return raw.replace(/[^A-Za-z0-9_]/g, "_");
+}
+
+function mermaidLabel(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
+export function renderFlowSchemaDiagramMermaid(
+  graph: GraphRegistry,
+  flowSchemaId: string,
+  configOverride?: BootstrapConfigInput,
+): string {
+  const node = getFlowSchemaNode(graph, flowSchemaId);
+  if (!node) {
+    throw new Error(`flow-schema를 찾을 수 없음: ${flowSchemaId}`);
+  }
+
+  const schema = getConfiguredFlowSchema(flowSchemaId, configOverride);
+  if (!schema) {
+    throw new Error(`DkgConfig.flowSchemas에 등록되지 않은 flow-schema: ${flowSchemaId}`);
+  }
+
+  const causalGraph = extractCausalGraph(schema);
+  const lines: string[] = [
+    "flowchart LR",
+    `  %% FlowSchema: ${schema.id} (${schema.version})`,
+    "  classDef core fill:#fde68a,stroke:#92400e,color:#451a03;",
+    "  classDef structural fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a;",
+    "  classDef tactical fill:#f3f4f6,stroke:#6b7280,color:#111827;",
+  ];
+
+  const nodeIds: string[] = [];
+
+  for (const gate of schema.gates) {
+    const mermaidId = mermaidSafeId(gate.id);
+    nodeIds.push(mermaidId);
+    const weight = gate.weight ?? "tactical";
+    const labelParts = [
+      gate.id,
+      gate.name,
+      `${gate.phase} / ${weight}`,
+    ];
+    if (gate.subFlowId) {
+      labelParts.push(`subFlow: ${gate.subFlowId}`);
+    } else if (gate.branches) {
+      labelParts.push(`branches: ${gate.branches.length}`);
+    }
+    lines.push(`  ${mermaidId}["${mermaidLabel(labelParts.join("<br/>"))}"]`);
+    lines.push(`  class ${mermaidId} ${weight};`);
+  }
+
+  for (const edge of causalGraph.edges) {
+    lines.push(
+      `  ${mermaidSafeId(edge.from)} -->|${edge.kind}| ${mermaidSafeId(edge.to)}`,
+    );
+  }
+
+  if (causalGraph.roots.length > 0) {
+    lines.push(`  %% roots: ${causalGraph.roots.join(", ")}`);
+  }
+  if (causalGraph.leaves.length > 0) {
+    lines.push(`  %% leaves: ${causalGraph.leaves.join(", ")}`);
+  }
+  if (nodeIds.length === 0) {
+    lines.push("  empty[\"gate 없음\"]");
+  }
+
+  return lines.join("\n");
+}
+
+export function dkgFlowSchemas(opts: PageOptions): void {
+  const graph = getGraph();
+  const flows = listFlowSchemas(graph);
+  const result = paginate(flows, opts);
+
+  console.log(`\n══ Flow Schemas ══`);
+  for (const flow of result.items) {
+    console.log(
+      `  ${flow.id.padEnd(20)} ${flow.name.padEnd(18)} version=${flow.version} gates=${flow.gateCount} core=${flow.coreGateCount} paths=${flow.totalPaths} axes=${flow.axisCount} prefixes=${flow.prefixCount}`,
+    );
+  }
+
+  printPageInfo(result);
+}
+
+export function dkgFlowSchema(flowSchemaId: string): void {
+  const graph = getGraph();
+  const profile = getFlowSchemaProfile(graph, flowSchemaId);
+
+  if (!profile) {
+    console.error(`  flow-schema를 찾을 수 없음: ${flowSchemaId}`);
+    return;
+  }
+
+  console.log(`\n══ Flow Schema: ${profile.id} ══`);
+  console.log(`  name:       ${profile.name}`);
+  console.log(`  version:    ${profile.version}`);
+  console.log(`  gates:      ${profile.gateCount}`);
+  console.log(`  totalPaths: ${profile.totalPaths}`);
+
+  console.log(`\n  ── Core Gates (${profile.coreGateIds.length}) ──`);
+  if (profile.coreGateIds.length === 0) {
+    console.log("    없음");
+  } else {
+    console.log(`    ${profile.coreGateIds.join(", ")}`);
+  }
+
+  console.log(`\n  ── Gates (${profile.gates.length}) ──`);
+  for (const gate of profile.gates) {
+    const extras = [
+      `phase=${gate.phase}`,
+      `weight=${gate.weight}`,
+      gate.subFlowId ? `subFlow=${gate.subFlowId}` : `branches=${gate.branchCount}`,
+    ].join(" ");
+    console.log(`    ${gate.id.padEnd(20)} ${gate.name} (${extras})`);
+  }
+
+  console.log(`\n  ── Related Axes ──`);
+  console.log(`    direct:     ${profile.directAxisIds.join(", ") || "-"}`);
+  console.log(`    transitive: ${profile.transitiveAxisIds.join(", ") || "-"}`);
+
+  console.log(`\n  ── Related Prefixes ──`);
+  console.log(`    direct:     ${profile.directPrefixIds.join(", ") || "-"}`);
+  console.log(`    transitive: ${profile.transitivePrefixIds.join(", ") || "-"}`);
+
+  console.log(`\n  ── Relations ──`);
+  console.log(`    domains:    ${profile.domainIds.join(", ") || "-"}`);
+  console.log(`    subFlows:   ${profile.subFlowIds.join(", ") || "-"}`);
+}
+
 // ── dkg impact ──────────────────────────────────────
 
 export function dkgImpact(axisId: string): void {
@@ -794,10 +1080,10 @@ export function dkgDecisionsList(opts: { limit?: number; kind?: string }): void 
 
   console.log(`\n══ 최근 의사결정 (${rows.length}건) ══\n`);
   for (const r of rows) {
-    const data = r.data as Record<string, unknown>;
+    const data = r.data as DecisionListData;
     const icon = r.kind === "decision" ? "📋" : r.kind === "observation" ? "👁" : "📦";
-    const title = (data.title as string) ?? (data.finding as string) ?? r.id;
-    const lifecycle = (data.lifecycle as string) ?? (data.resolution ? "resolved" : "open");
+    const title = data.title ?? data.finding ?? r.id;
+    const lifecycle = data.lifecycle ?? (data.resolution ? "resolved" : "open");
     console.log(`  ${icon} [${r.date.slice(0, 10)}] ${r.id}`);
     console.log(`     ${title}`);
     console.log(`     source=${r.source} lifecycle=${lifecycle}`);
@@ -1721,6 +2007,7 @@ export function dkgOverview(): void {
 
 export function dkgTrace(nodeId: string): void {
   const graph = getGraph();
+  const store = getStore();
   const topo = createDemoTopology();
 
   const result = traceNode(graph, DEMO_CATALOG, nodeId, {
@@ -1759,6 +2046,9 @@ export function dkgTrace(nodeId: string): void {
     console.log(`  lifecycle: ${d.lifecycle}`);
     console.log(`  context:   ${d.context}`);
     console.log(`  rationale: ${d.rationale}`);
+    if (typeof d.flowInstanceId === "string") {
+      console.log(`  flow:      ${d.flowInstanceId}`);
+    }
   } else if (result.kind === "observation") {
     const d = result.details;
     console.log(`  finding: ${d.finding}`);
@@ -1817,6 +2107,31 @@ export function dkgTrace(nodeId: string): void {
       console.log(`    [${d.edgeType}] ${d.id}: ${d.title}`);
       console.log(`      context:   ${d.context}`);
       console.log(`      rationale: ${d.rationale.slice(0, 120)}`);
+    }
+  }
+
+  if (result.kind === "decision") {
+    const flowInstanceId = typeof result.details.flowInstanceId === "string"
+      ? result.details.flowInstanceId
+      : undefined;
+    if (flowInstanceId) {
+      console.log(`\n  ── 연결된 FlowInstance 코어 추적 ──`);
+      const instance = loadFlowInstanceMeta(store, flowInstanceId);
+      if (!instance) {
+        console.log(`    저장된 FlowInstance를 찾을 수 없음: ${flowInstanceId}`);
+      } else {
+        const linkedFlows = graph
+          .reverseNeighbors(result.id, "justifies")
+          .map((id) => graph.getNode(id))
+          .filter((node): node is Extract<DkgNode, { kind: "flow-schema" }> => node?.kind === "flow-schema");
+
+        for (const flow of linkedFlows) {
+          console.log(`    flow-schema: ${flow.id} (${flow.name})`);
+        }
+        for (const line of formatFlowInstanceCoreTrace(instance)) {
+          console.log(line);
+        }
+      }
     }
   }
 
@@ -1907,13 +2222,14 @@ export function dkgTrace(nodeId: string): void {
 
 // ── dkg decide ──────────────────────────────────────
 
-export function dkgDecide(opts: {
+function recordLegacyDecision(opts: {
   target: string;
   type: string;
   title: string;
   rationale: string;
+  alternatives?: readonly string[];
   spec?: string;
-}): void {
+}): DecisionNode | null {
   const graph = getGraph();
   const store = getStore();
 
@@ -1926,7 +2242,7 @@ export function dkgDecide(opts: {
 
   if (result.verdict === "blocked") {
     console.error(`  ${result.reason}`);
-    return;
+    return null;
   }
 
   // skill이 반환한 노드/엣지를 그래프 + SQLite에 적용
@@ -1967,6 +2283,149 @@ export function dkgDecide(opts: {
   }
   if (opts.spec) console.log(`  spec:      ${opts.spec} (traces-to)`);
   console.log(`  (source: manual — refresh 시 보존됨)`);
+  return dec;
+}
+
+function printBridgeGate(gate: { id: string; name: string; phase: string; branches?: readonly { id: string; label: string }[]; weight?: string }) {
+  const weight = gate.weight ?? "tactical";
+  const marker = weight === "core" ? "★" : weight === "structural" ? "◆" : "·";
+  console.log(`\n  ${marker} 현재 gate: ${gate.id} (${gate.name}) [${gate.phase}]`);
+  if (!gate.branches || gate.branches.length === 0) return;
+
+  console.log("  선택지:");
+  for (const branch of gate.branches) {
+    console.log(`    - ${branch.id.padEnd(20)} ${branch.label}`);
+  }
+}
+
+export async function dkgDecide(opts: {
+  target: string;
+  type: string;
+  title: string;
+  rationale: string;
+  alternatives?: readonly string[];
+  confidence?: number;
+  spec?: string;
+  legacy?: boolean;
+  force?: boolean;
+  confirmProceed?: () => Promise<boolean>;
+}): Promise<void> {
+  const warnings = collectDkgCoreGateWarnings(opts.type);
+  if (warnings.length > 0) {
+    for (const line of formatDkgCoreGateWarnings(warnings)) {
+      console.log(line);
+    }
+
+    if (opts.force) {
+      console.log("  --force 지정으로 경고 확인을 건너뜀");
+    } else {
+      const confirmed = await (opts.confirmProceed?.() ?? confirmDkgProceed());
+      if (!confirmed) {
+        console.log("  중단: 코어 gate 경고 확인 후 다시 실행하세요.");
+        console.log("  자동 진행이 필요하면 --force를 사용하세요.");
+        return;
+      }
+    }
+  }
+
+  const decision = recordLegacyDecision(opts);
+  if (!decision) {
+    return;
+  }
+
+  if (opts.legacy) {
+    console.log(`  flow:      legacy 모드 — coordinate-design 브릿지 생략`);
+    return;
+  }
+
+  try {
+    const targetKind = getGraph().getNode(opts.target)?.kind;
+    const bridge = await startDkgDecisionFlowBridge({
+      type: opts.type,
+      decisionId: decision.id,
+      context: {
+        source: "dkg-decide",
+        target: opts.target,
+        ...(targetKind ? { targetKind } : {}),
+        decisionType: opts.type,
+        title: opts.title,
+        rationale: opts.rationale,
+        alternatives: opts.alternatives,
+        spec: opts.spec,
+      },
+      evidence: {
+        rationale: opts.rationale,
+        scaffoldContext: decision.context,
+        alternatives: decision.alternatives,
+        reversalConditions: decision.reversalConditions,
+        confidence: opts.confidence,
+      },
+      completeDefaults: true,
+    });
+
+    const graph = getGraph();
+    const store = getStore();
+    const bridgeMetadata = buildDkgFlowAddressMetadata(bridge.instance);
+    const linkedDecision: DecisionNode = decision;
+    graph.replaceNode(linkedDecision);
+
+    const bridgeEdges: Array<{ type: DkgEdgeType; from: string; to: string }> = [];
+    if (
+      graph.hasNode(bridge.instance.schemaId)
+      && !graph.edgesFrom(bridge.instance.schemaId, "justifies").some((edge) => edge.to === linkedDecision.id)
+    ) {
+      graph.addEdge("justifies", bridge.instance.schemaId, linkedDecision.id);
+      bridgeEdges.push({ type: "justifies", from: bridge.instance.schemaId, to: linkedDecision.id });
+    }
+
+    store.saveNodes([linkedDecision], bridgeEdges, "manual");
+    saveFlowInstanceMeta(store, bridge.instance);
+
+    console.log(`\n══ coordinate-design 브릿지 ══`);
+    console.log(`  decision:      ${linkedDecision.id}`);
+    console.log(`  flow instance: ${bridge.instance.id}`);
+    console.log(`  schema:        ${bridge.instance.schemaId} (${bridge.instance.schemaVersion})`);
+
+    if (bridge.appliedSteps.length > 0) {
+      console.log("  자동 매핑:");
+      for (const step of bridge.appliedSteps) {
+        console.log(`    - ${step.gateId.padEnd(20)} → ${step.branchId}`);
+      }
+    } else {
+      console.log("  자동 매핑: 없음 — 순차 실행으로 안내");
+    }
+
+    if (bridge.currentGate) {
+      printBridgeGate(bridge.currentGate);
+    } else {
+      console.log("\n  ✓ 플로우 완료");
+    }
+  } catch (err) {
+    console.warn(`\n  ⚠ coordinate-design 브릿지 시작 실패: ${errorMessage(err)}`);
+    console.warn("  --legacy로 기존 방식만 실행할 수 있습니다.");
+  }
+}
+
+async function confirmDkgProceed(): Promise<boolean> {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    console.warn("  비대화형 환경에서는 --force가 필요합니다.");
+    return false;
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await new Promise<string>((resolve) => {
+      rl.question("  계속 진행하시겠습니까? [y/N] ", resolve);
+    });
+    const normalized = answer.trim().toLowerCase();
+    return normalized === "y" || normalized === "yes";
+  } finally {
+    rl.close();
+  }
 }
 
 // ── dkg observe ─────────────────────────────────────
@@ -3900,10 +4359,10 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   const kind = positionals[0];
   const id = positionals[1];
 
-  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "table-er", "observation-loop", "transition-spec", "transition-dag", "list"];
+  const validKinds = ["intent-links", "dsl", "signal", "domain", "service", "constraint", "table", "table-er", "observation-loop", "transition-spec", "transition-dag", "flow-schema", "list"];
   if (!kind || !validKinds.includes(kind)) {
     console.log("Usage: qa-sdk dkg diagram <kind> [id] [--output path] [--format mmd|html|svg|png] [--no-invariants]");
-    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop | transition-spec | transition-dag");
+    console.log("  kind: list | intent-links | dsl | signal | domain | service | constraint | table | observation-loop | transition-spec | transition-dag | flow-schema");
     console.log("");
     console.log("Examples:");
     console.log("  qa-sdk dkg diagram list                        선택 가능한 다이어그램 리스트");
@@ -3915,6 +4374,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
     console.log("  qa-sdk dkg diagram constraint CON-001          constraint 대상");
     console.log("  qa-sdk dkg diagram table tbl-orders            테이블 참조 관계");
     console.log("  qa-sdk dkg diagram observation-loop            observation→decision 루프");
+    console.log("  qa-sdk dkg diagram flow-schema coordinate-design  FlowSchema gate 인과 그래프");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd   파일 출력");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
     return;
@@ -3926,6 +4386,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
   if (kind === "list") {
     const topo = createDemoTopology();
     const allDiagrams = listAllDiagrams(graph, topo);
+    const flowSchemas = listFlowSchemas(graph);
 
     console.log("");
     console.log("══ Available Diagrams ══");
@@ -3939,6 +4400,14 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       }
     }
 
+    if (flowSchemas.length > 0) {
+      console.log("");
+      console.log(`[flow-schema] (${flowSchemas.length}개)`);
+      for (const flow of flowSchemas) {
+        console.log(`  ${flow.id.padEnd(28)} ${flow.name}`);
+      }
+    }
+
     console.log("");
     console.log("Usage:");
     console.log("  qa-sdk dkg diagram intent-links              전체 IntentLink 시퀀스");
@@ -3949,6 +4418,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
     console.log("  qa-sdk dkg diagram constraint CON-001        constraint 대상");
     console.log("  qa-sdk dkg diagram table tbl-orders          테이블 참조 관계");
     console.log("  qa-sdk dkg diagram observation-loop          observation→decision 루프");
+    console.log("  qa-sdk dkg diagram flow-schema coordinate-design  FlowSchema gate 인과 그래프");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout -o f.mmd 파일 출력");
     console.log("  qa-sdk dkg diagram dsl dsl-checkout --format html -o f.html  HTML 출력");
     return;
@@ -4021,6 +4491,11 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       mmd = transitionDagDiagram(graph, opts);
       break;
     }
+    case "flow-schema": {
+      if (!id) { console.error("Usage: qa-sdk dkg diagram flow-schema <flowSchemaId>"); return; }
+      mmd = renderFlowSchemaDiagramMermaid(graph, id);
+      break;
+    }
     default:
       console.error(`Unknown diagram kind: ${kind}`);
       return;
@@ -4041,6 +4516,7 @@ export async function dkgDiagram(argv: string[]): Promise<void> {
       : kind === "observation-loop" ? "Observation Loop"
       : kind === "transition-spec" ? `Transition: ${id}`
       : kind === "transition-dag" ? "Transition DAG"
+      : kind === "flow-schema" ? `Flow Schema: ${id}`
       : kind;
     const html = wrapMermaidHtml(mmd, title);
     if (outputPath) {
