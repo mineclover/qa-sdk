@@ -1,7 +1,16 @@
+---
+def:
+  id: registry-service-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: deprecated
+---
 # Registry Service 스펙
 
-> Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하는 서비스.
-> 모든 서비스가 prefix/버전 정보를 등록하고, draft 파급 효과를 시뮬레이션하고, 배포 시점에 active 버전을 조회하는 단일 진입점.
+## 목적 ^purpose
+
+Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하는 서비스. (deprecated — registry-system/ 문서로 분할됨)
 
 관련 문서: [../indexing/version-operations.md](../indexing/version-operations.md) · [../indexing/foundation.md](../indexing/foundation.md) §2–§3
 관련 스펙: [../indexing/index-meta/registry.spec.md](../indexing/index-meta/registry.spec.md) · [gate-service.spec.md](gate-service.spec.md) · [query-service.spec.md](query-service.spec.md)

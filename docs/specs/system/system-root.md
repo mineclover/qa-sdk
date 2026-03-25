@@ -23,6 +23,12 @@ def:
       type: contains
     - target: permission-system
       type: contains
+    - target: decode-system
+      type: contains
+    - target: query-system
+      type: contains
+    - target: registry-system
+      type: contains
 ---
 # QA-SDK 시스템
 
@@ -32,4 +38,4 @@ def:
 
 ## 구성 ^overview
 
-5개 하위 시스템: ingest(수집), gate(주소 유효성), decision-flow(의사결정), pipeline(처리 흐름), permission(권한). 핵심 개념: 이벤트, 좌표, 축, Prefix, prefix_ref.
+8개 하위 시스템: ingest(수집), gate(주소 유효성), decision-flow(의사결정), pipeline(처리 흐름), permission(권한), decode(디코딩), query(질의), registry(중앙 등록). 핵심 개념: 이벤트, 좌표, 축, Prefix, prefix_ref.
