@@ -93,14 +93,6 @@ NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종 ^overview
 
 모든 엔드포인트는 서비스 간 내부 호출 전용. 외부 노출 금지.
 
-## 엔드포인트 ^endpoints
+## OpenAPI
 
-<!-- auto-generated from OpenAPI: Gate Service API v1.0.0 -->
-
-- POST /gate/check — 주소 encode/decode 가능 여부 확인
-- POST /gate/classify — 주소 상태 분류
-- POST /gate/recompute — 단일 prefix 상태 재계산
-- POST /gate/cascade-recompute — leaf → composite cascade 전파
-- POST /gate/filter-ranges — gate 차단 범위 제거
-- GET /gate/state/{prefix}/{version} — prefix 전체 상태 범위 조회
-- GET /health — Health check
+개별 엔드포인트 상세는 OpenAPI 스펙을 참조: `packages/gate-service/openapi.json`
