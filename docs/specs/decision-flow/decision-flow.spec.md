@@ -4,7 +4,7 @@ def:
   scope: state
   aspect: domain_state
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [decision]
 ---
 # Decision Flow — 의사결정 좌표계
