@@ -20,6 +20,10 @@ def:
 `PartialBinder`는 `PrefixCodec` 위에서 동작하는 차원 부분 바인딩(curried encoder) 레이어다.
 전체 경로 중 고정 차원은 부트 시점에 캐시하고, 런타임에는 남은 차원만 받아 같은 1D address space 안에서 최종 주소를 계산한다.
 
+
+
+## 참조
+
 패키지: `weighted-index`
 패키지 인덱스: [README.md](README.md)
 

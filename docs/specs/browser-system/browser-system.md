@@ -8,13 +8,11 @@ def:
   svc: shopping-web
   tags: [entry-point, tier-frontend]
   links:
-    - target: auto-capture-spec
+    - target: browser-runtime-system
       type: contains
     - target: browser-transport-spec
       type: contains
-    - target: browser-lifecycle-spec
-      type: contains
-    - target: browser-monitor-spec
+    - target: browser-lifecycle-system
       type: contains
     - target: trace-context-spec
       type: contains
@@ -26,9 +24,8 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 5개 멤버.
-- `auto-capture-spec`: opt-in DOM 이벤트 자동 수집.
+overview: 총 4개 멤버.
+- `browser-runtime-system`: opt-in DOM 자동 수집과 monitor 초기화/오류 처리 규칙을 묶은 그룹.
 - `browser-transport-spec`: 브라우저 언로드 타이밍에서도 이벤트를 누락하지 않는 전송 구현체.
-- `browser-lifecycle-spec`: QaMonitor의 상태 전환 규칙, 각 단계의 계약, 올바른 사용 패턴을 정의한다.
-- `browser-monitor-spec`: `@qa-sdk/browser` 패키지의 단일 진입점.
+- `browser-lifecycle-system`: QaMonitor의 상태 전이와 세션 사용 패턴을 분리한 그룹.
 - `trace-context-spec`: trace_id, span stack, qa_session_id를 관리하는 런타임 컨텍스트 객체.

@@ -4,7 +4,7 @@ def:
   scope: state
   aspect: system_state
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-frontend]
   links:
     - target: trace-context-spec

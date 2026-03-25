@@ -17,9 +17,13 @@ def:
 
 MetaRegistry의 VersionedValue를 UUID 등 고정 포맷 PK로 직렬화하는 설정과 동작 규칙.
 
-패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 weighted-index 측 통합 문서: [../weighted-index/pack-format.spec.md](../weighted-index/pack-format.spec.md) §11
+
+
+## 참조
+
+패키지 인덱스: [README.md](README.md)
 
 ## 상태
 

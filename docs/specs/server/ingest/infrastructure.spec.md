@@ -4,7 +4,7 @@ def:
   scope: constraint
   aspect: infra_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [performance, observability]
   links:
     - target: ingest-api-spec

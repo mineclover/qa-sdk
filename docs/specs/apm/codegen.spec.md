@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [observability, tier-system]
   links:
     - target: dsl-schemas-spec

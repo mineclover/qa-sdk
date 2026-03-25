@@ -4,7 +4,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [observability]
   links:
     - target: address-context-spec

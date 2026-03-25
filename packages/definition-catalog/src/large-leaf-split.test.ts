@@ -12,6 +12,7 @@ type DocMeta = {
   file: string;
   lines: number;
   depth: string | null;
+  lifecycle: string | null;
 };
 
 const docMetaById = new Map<string, DocMeta>();
@@ -41,6 +42,7 @@ function buildDocMeta(): void {
       file,
       lines: content.split("\n").length,
       depth: extractValue(frontmatter, "depth"),
+      lifecycle: extractValue(frontmatter, "lifecycle"),
     });
   }
 }
@@ -59,6 +61,13 @@ function longLeafCount(groupId: string): number {
     .length;
 }
 
+function approvedLongLeafCount(): number {
+  return [...docMetaById.values()]
+    .filter(doc => doc.lifecycle === "approved")
+    .filter(doc => doc.depth !== "overview" && doc.lines >= 150)
+    .length;
+}
+
 beforeAll(async () => {
   buildDocMeta();
   result = await scanAndBuild(ROOT, [join(ROOT, "docs")]);
@@ -71,6 +80,10 @@ function expectPurposeMarker(id: string): void {
 }
 
 describe("US-012/013 large leaf split", () => {
+  it("전체 approved 150줄 이상 leaf 수가 40건 이하로 줄었다", () => {
+    expect(approvedLongLeafCount()).toBeLessThanOrEqual(40);
+  });
+
   it("일곱 루트 그룹의 150줄 이상 leaf 수가 목표 이하로 줄었다", () => {
     expect(longLeafCount("indexing-core-system")).toBeLessThanOrEqual(8);
     expect(longLeafCount("index-meta-system")).toBeLessThanOrEqual(5);
@@ -124,6 +137,38 @@ describe("US-012/013 large leaf split", () => {
     expect(containsTargets("dkg-system")).toEqual(expect.arrayContaining([
       "dkg-skills-system",
     ]));
+
+    expect(containsTargets("apm-system")).toEqual(expect.arrayContaining([
+      "apm-codegen-system",
+      "apm-schema-system",
+      "apm-runtime-system",
+    ]));
+
+    expect(containsTargets("browser-system")).toEqual(expect.arrayContaining([
+      "browser-runtime-system",
+      "browser-lifecycle-system",
+    ]));
+
+    expect(containsTargets("ingest-system")).toEqual(expect.arrayContaining([
+      "ingest-api-system",
+      "admin-api-system",
+      "ingest-infra-system",
+    ]));
+
+    expect(containsTargets("spec-engine-system")).toEqual(expect.arrayContaining([
+      "spec-reference-system",
+      "spec-architecture-system",
+    ]));
+
+    expect(containsTargets("df-system")).toEqual(expect.arrayContaining([
+      "decision-standard-group",
+    ]));
+
+    expect(containsTargets("viz-system")).toEqual(expect.arrayContaining([
+      "viz-surface-system",
+      "viz-roleplay-system",
+      "viz-language-system",
+    ]));
   });
 
   it("permission subgroup overview도 frontmatter contains를 선언한다", () => {
@@ -164,6 +209,28 @@ describe("US-012/013 large leaf split", () => {
       "perm-codec-spec",
       "perm-migration-spec",
       "dkg-skills-spec",
+      "codegen-spec",
+      "dsl-schemas-spec",
+      "address-context-spec",
+      "runtime-flows-spec",
+      "logger-spec",
+      "viz-panels-spec",
+      "graph-renderer-spec",
+      "rlsc-spec",
+      "form-builder-spec",
+      "qa-bridge-spec",
+      "motion-content-glossary",
+      "auto-capture-spec",
+      "browser-lifecycle-spec",
+      "browser-monitor-spec",
+      "ingest-api-spec",
+      "admin-api-spec",
+      "ingest-infra-spec",
+      "spec-linking-standard",
+      "spec-system-architecture",
+      "axis-boundary-spec",
+      "temporal-relations",
+      "decision-standard",
     ]) {
       expect(result.registry.get(id)?.lifecycle, `${id} lifecycle`).toBe("deprecated");
     }

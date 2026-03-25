@@ -18,11 +18,15 @@ def:
 
 사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`conventions.md`](conventions.md) · 설계 구조: [`data-design.md`](data-design.md)
 
-관련 스펙:
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)
 
 ---
+
+
+## 참조
+
+관련 스펙:
 
 ## 1. 닫힌 조합 공간
 

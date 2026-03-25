@@ -4,7 +4,7 @@ def:
   scope: ui
   aspect: layout
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-frontend]
   links:
     - target: graph-renderer-spec

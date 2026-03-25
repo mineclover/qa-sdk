@@ -24,6 +24,10 @@ MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합
 
 외부 시스템 통합 시나리오 (AddressProtocolManager): [scenarios-address.spec.md](scenarios-address.spec.md)
 
+
+
+## 참조
+
 패키지 인덱스: [README.md](README.md)
 
 ## 상태

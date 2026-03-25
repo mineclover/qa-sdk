@@ -4,7 +4,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-frontend]
   links:
     - target: system-concepts

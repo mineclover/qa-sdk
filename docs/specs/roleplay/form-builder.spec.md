@@ -4,7 +4,7 @@ def:
   scope: ui
   aspect: component
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-frontend]
   links:
     - target: iframe-protocol-spec

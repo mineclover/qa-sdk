@@ -22,9 +22,13 @@ DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구�
 "이 prefix들을 이 서비스 컨텍스트에서 이렇게 조합해서 쓴다"의 선언.
 
 기반 문서: [dimension-operations.md](dimension-operations.md) · [table-system.md](table-system.md)
-관련 스펙: `packages/spec-core/src/dkg/dsl-bundle.ts`
 
 ---
+
+
+## 참조
+
+관련 스펙: `packages/spec-core/src/dkg/dsl-bundle.ts`
 
 ## 1. DSL이란
 

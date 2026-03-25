@@ -27,9 +27,13 @@ prefix가 이 관계의 **고정된 구조**를 정의하고, table_ref가 **동
 CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coordinate-states.md)에서 정의한다.
 table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
 
-기반: [coordinate-states.md](coordinate-states.md) · [behavioral-traversal.md](behavioral-traversal.md) · [ontology-evaluation.md](ontology-evaluation.md)
 
 ---
+
+
+## 참조
+
+기반: [coordinate-states.md](coordinate-states.md) · [behavioral-traversal.md](behavioral-traversal.md) · [ontology-evaluation.md](ontology-evaluation.md)
 
 ## 이벤트 = 타입이 있는 관계
 

@@ -18,9 +18,13 @@ def:
 
 서사의 구조: 배경(context) → 여정(journey) → 도달(destination) → 산출(outcome) → 회고(reflection). 코어 전환점이 서사의 주요 차원을 결정한다.
 
-증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ---
+
+
+## 참조
+
+증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ## 서사의 구조
 

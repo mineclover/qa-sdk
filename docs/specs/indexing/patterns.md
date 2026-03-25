@@ -20,11 +20,15 @@ def:
 시스템을 **어떻게 쓰는가** — 버전 이동, index 합성, 필터링 패턴.
 기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
 
-관련 스펙:
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)
 
 ---
+
+
+## 참조
+
+관련 스펙:
 
 ## 1. EntityId 기반 식별
 

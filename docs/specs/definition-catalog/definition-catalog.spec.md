@@ -17,6 +17,10 @@ def:
 
 비즈니스 로직 정의를 좌표 주소로 분류하고, contains 계층으로 조립하는 문서 메타데이터 시스템.
 
+
+
+## 참조
+
 관련 스펙: [decision-flow.spec.md](../decision-flow/decision-flow.spec.md)
 구현: `packages/definition-catalog/src/`
 

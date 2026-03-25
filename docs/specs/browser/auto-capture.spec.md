@@ -4,7 +4,7 @@ def:
   scope: ui
   aspect: interaction
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-frontend]
   links:
     - target: browser-monitor-spec

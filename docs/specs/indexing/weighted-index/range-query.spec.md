@@ -20,8 +20,12 @@ def:
 `calcAddressRanges` — 부분 좌표 제약에서 주소 구간 계산.
 디코딩 없이 1D 주소 공간을 직접 필터링한다.
 
-패키지: `weighted-index`
 관련: [core.spec.md](core.spec.md), [../index-meta/store.spec.md](../index-meta/store.spec.md)
+
+
+## 참조
+
+패키지: `weighted-index`
 
 ## 상태
 

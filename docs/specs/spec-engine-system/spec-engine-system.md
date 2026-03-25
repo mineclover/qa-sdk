@@ -9,21 +9,17 @@ def:
   links:
     - target: spec-arch-group
       type: contains
-    - target: spec-linking-standard
+    - target: spec-reference-system
       type: contains
     - target: spec-phases-group
       type: contains
-    - target: spec-system-architecture
-      type: contains
-    - target: axis-boundary-spec
+    - target: spec-architecture-system
       type: contains
     - target: prefix-guide
       type: contains
     - target: spec-next-phase
       type: contains
     - target: spec-core-types-group
-      type: contains
-    - target: temporal-relations
       type: contains
     - target: convergence-layer-group
       type: contains
@@ -37,15 +33,13 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 11개 멤버.
+overview: 총 9개 멤버.
 - `spec-arch-group`: spec-core/spec-server 구조를 계층, NestJS, 인터셉터로 분할한 그룹.
-- `spec-linking-standard`: 스펙 문서, Decision, prefix, axis 간의 참조를 표준화한다.
+- `spec-reference-system`: 스펙 링크 규칙과 axis 판정 기준을 reference 계층으로 분리한 그룹.
 - `spec-phases-group`: 구현 단계 계획을 로드맵과 선택적 확장/runtime 단계로 나눈 그룹.
-- `spec-system-architecture`: 차원 압축 기반 DSL DB의 전체 구현 구조를 정의한다.
-- `axis-boundary-spec`: 이 시스템의 핵심 판단: 무엇이 axis이고 무엇이 아닌가.
+- `spec-architecture-system`: 전체 시스템 구조와 시간 관계 수집 경로를 architecture 계층으로 분리한 그룹.
 - `prefix-guide`: Status: DESIGN prefix가 실제로 무엇을 표현하는지, 환경 변수로 어떻게 오버라이드하는지, 비즈니스 로직의 관측 포인트를 어떻게 정의하는지.
 - `spec-next-phase`: prefix의 3가지 사용 모드를 인프라로 연결하고, skills/문서 자체도 prefix 기반으로 관리하며, 이벤트 수집이 실제로 동작하는지 검증한다.
 - `spec-core-types-group`: 공개 식별자/스키마와 registry/IR을 분리한 core type 그룹.
-- `temporal-relations`: 현재 co-occurrence는 "같은 EventRecord에 함께 나타남"만 감지한다.
 - `convergence-layer-group`: 비교 도구와 추천 도구를 분리한 수렴 계층 그룹.
 - `spec-prop-system`: PrefixSpec 변경의 publish -> notify -> codegen -> DKG record 전파 그룹.

@@ -17,11 +17,15 @@ def:
 
 상태: **구현 완료** (2026-03-18)
 
-관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
 계약 테스트: `packages/demo-tests/src/merge-contract/`
 영향 패키지: weighted-index, permission-engine, index-meta, decode-service
 
 ---
+
+
+## 참조
+
+관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
 
 ## 맥락
 

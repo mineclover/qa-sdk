@@ -25,9 +25,13 @@ def:
 이 시스템은 온톨로지 엔진이 아니라 그 앞단의 **스키마 시스템**이다.
 "의미를 추론하는 시스템"이 아니라 "의미가 올라탈 구조를 고정하는 시스템".
 
-기반: [coordinate-states.md](coordinate-states.md) · [event-schema.md](event-schema.md)
 
 ---
+
+
+## 참조
+
+기반: [coordinate-states.md](coordinate-states.md) · [event-schema.md](event-schema.md)
 
 ## 4-Layer 아키텍처
 

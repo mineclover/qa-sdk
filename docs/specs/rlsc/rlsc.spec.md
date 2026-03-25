@@ -4,7 +4,7 @@ def:
   scope: ui
   aspect: layout
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-infra]
   links:
     - target: motion-content-glossary

@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-system]
   links:
     - target: convergence-layer-spec

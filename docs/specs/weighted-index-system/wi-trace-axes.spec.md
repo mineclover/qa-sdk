@@ -18,9 +18,13 @@ def:
 
 추적성의 3축: 역할(producer/consumer/auditor), 변경 유형(additive/reductive/structural), 고정(stride/capacity/shape).
 
-기반: [wi-math.spec.md](wi-math.spec.md) · [../../spec-engine/design-knowledge-graph.md](../../spec-engine/design-knowledge-graph.md)
 
 ---
+
+
+## 참조
+
+기반: [wi-math.spec.md](wi-math.spec.md) · [../../spec-engine/design-knowledge-graph.md](../../spec-engine/design-knowledge-graph.md)
 
 ## 역할 정의
 

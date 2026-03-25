@@ -18,9 +18,13 @@ def:
 
 ContextProvider — 결정 시작 시 이전 맥락을 표면화하여 같은 조사를 반복하지 않게 만드는 기능. 컨텍스트가 쌓일수록 다음 결정이 쉬워진다.
 
-증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ---
+
+
+## 참조
+
+증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ## 장 8: 시스템의 역할은 결정을 쉽게 만드는 것이다
 

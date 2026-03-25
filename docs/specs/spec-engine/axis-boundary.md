@@ -4,7 +4,7 @@ def:
   scope: constraint
   aspect: tech_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [tier-system]
   links:
     - target: convergence-layer-spec

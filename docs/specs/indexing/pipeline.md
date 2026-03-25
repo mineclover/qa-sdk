@@ -20,7 +20,6 @@ def:
 entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 각 단계가 어떤 패키지의 어떤 메서드에 의해 수행되는지, 어떤 정보가 필요한지를 명시한다.
 
-관련 문서:
 - 레이어 분리 원리: [`foundation.md`](foundation.md) §3
 - 수학 엔진: [`weighted-index/core.spec.md`](weighted-index/core.spec.md)
 - 스키마 레이어: [`index-meta/registry.spec.md`](index-meta/registry.spec.md)
@@ -28,6 +27,11 @@ entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 - 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md)
 
 ---
+
+
+## 참조
+
+관련 문서:
 
 ## 레이어 구성
 

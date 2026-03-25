@@ -21,6 +21,10 @@ prefix가 실제로 무엇을 표현하는지,
 환경 변수로 어떻게 오버라이드하는지,
 비즈니스 로직의 관측 포인트를 어떻게 정의하는지.
 
+
+
+## 참조
+
 기반: [decision-standard.md](decision-standard.md) · [README.md](README.md)
 
 ## 구성 ^overview

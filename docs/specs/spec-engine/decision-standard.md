@@ -4,7 +4,7 @@ def:
   scope: constraint
   aspect: biz_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [decision]
   links:
     - target: df-axis-model

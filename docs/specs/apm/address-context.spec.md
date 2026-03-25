@@ -4,7 +4,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [observability, tier-system]
   links:
     - target: record-spec

@@ -18,9 +18,13 @@ def:
 
 서사 증명 10장. 축 압축, 반복 패턴, 벡터 차이, 코어 gate, 직교성 검증, 축 선택 근거, 서사 조립, 컨텍스트 제공, 계층 통합, 실제 판단.
 
-증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ---
+
+
+## 참조
+
+증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 
 ## 장 1: 축은 결정의 구조를 압축한다
 
