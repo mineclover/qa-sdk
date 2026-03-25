@@ -4,7 +4,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # 테이블 시스템 — 좌표 세계와 관계형 세계의 양방향 연결
 

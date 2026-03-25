@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # 슬롯 마커(Slot Marker)
 

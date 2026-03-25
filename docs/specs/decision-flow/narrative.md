@@ -4,7 +4,7 @@ def:
   scope: state
   aspect: domain_state
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [decision]
 ---
 # Decision Flow — 서사 (Narrative)

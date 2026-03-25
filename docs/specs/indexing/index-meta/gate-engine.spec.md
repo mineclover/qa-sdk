@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # GateEngine 스펙
 

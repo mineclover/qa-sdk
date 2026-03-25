@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # Spec Engine — 아키텍처 + NestJS 모듈 매핑
 

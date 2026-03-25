@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: scenario
   depth: validation
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [testing]
 ---
 # weighted-index 변경 전파 추적성

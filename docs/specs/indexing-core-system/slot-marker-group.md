@@ -1,0 +1,35 @@
+---
+def:
+  id: slot-marker-group
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  links:
+    - target: slot-marker-concept
+      type: contains
+    - target: slot-marker-patterns
+      type: contains
+    - target: slot-marker-capacity
+      type: contains
+---
+# 슬롯 마커 시스템
+
+## 목적 ^purpose
+
+닫힌 축 패턴에서 열린 상황(미분류 항목)을 처리하는 슬롯 마커 시스템.
+
+## 구성 ^overview
+
+3개: 슬롯 마커 개념/설계 원칙, 실제 사용 패턴, 용량 영향.
+
+| 문서 | 핵심 |
+|------|------|
+| [slot-marker-concept](slot-marker-concept.spec.md) | 닫힌 축에서 '기타(other)' 항목을 명시적으로 표현하는 설계 패턴 |
+| [slot-marker-patterns](slot-marker-patterns.spec.md) | 카테고리 외 항목 수집 전략과 테스트 패턴 |
+| [slot-marker-capacity](slot-marker-capacity.spec.md) | headroom 계산과 reserved slot 규칙 |
+
+## 관련 스펙
+
+- [`weighted-index`](../weighted-index/README.md) — 수학 레이어 (마커를 일반 좌표로 처리)
+- [`index-meta`](../index-meta/README.md) — 스키마 레이어 (마커를 일반 entry로 처리)
