@@ -154,7 +154,21 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 
 ## 문서 시스템 (definition-catalog)
 
-모든 스펙 문서는 frontmatter + `## 목적 ^purpose`로 관리된다. 5개 스킬로 조회/생성/분할:
+모든 스펙 문서는 frontmatter + `## 목적 ^purpose`로 관리된다.
+
+### 스킬 설치
+
+**SSOT**: `skills/` 디렉토리가 스킬 원본. 에이전트 환경에 없으면 복사:
+
+```bash
+# Claude Code
+cp -r skills/def-* ~/.claude/skills/
+
+# Codex
+cp -r skills/def-* ~/.codex/skills/
+```
+
+### 7개 스킬
 
 | 스킬 | 용도 | 트리거 예시 |
 |------|------|-----------|
@@ -163,6 +177,8 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 | `/def-context <문서ID>` | 작업 전 컨텍스트 수집 | "gate-api 컨텍스트 줘" |
 | `/def-split` | 대형 문서(150줄+) 분할 | "이 문서 분할해줘" |
 | `/def-new` | 새 스펙 문서 생성 | "새 문서 만들어줘" |
+| `/def-link` | 문서 간 링크 연결 | "관계 연결해줘" |
+| `/def-audit` | 문서 품질 감사 | "문서 점검해줘" |
 
 ### 문서 frontmatter 형식
 

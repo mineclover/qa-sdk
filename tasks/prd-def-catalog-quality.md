@@ -21,7 +21,20 @@
 ## User Stories
 
 ### US-001: 스킬 구성
-**Description:** skills/ 디렉토리에 7개 def-* 스킬을 skills.sh 호환 형식으로 배치한다.
+**Description:** repo의 skills/ 디렉토리에서 7개 def-* 스킬을 확인하고, 에이전트 환경에 설치한다.
+
+**스킬 SSOT**: `skills/` 디렉토리가 유일한 원본이다.
+에이전트별 설치 경로에 없으면 repo에서 복사한다:
+```bash
+# Claude Code
+cp -r skills/def-* ~/.claude/skills/
+
+# Codex
+cp -r skills/def-* ~/.codex/skills/
+
+# 기타 에이전트 (skills.sh 호환)
+npx skills add . --local
+```
 
 **Acceptance Criteria:**
 - [ ] skills/def-topdown/SKILL.md 존재 확인
@@ -32,7 +45,9 @@
 - [ ] skills/def-link/SKILL.md 존재 확인
 - [ ] skills/def-audit/SKILL.md 존재 확인
 - [ ] AGENTS.md에 문서 시스템 섹션 존재 확인
-- [ ] 각 스킬의 절차가 실행 가능한지 검증 (grep/awk 명령 실행)
+- [ ] 에이전트 환경에 스킬 설치 완료 (cp 또는 npx skills add)
+- [ ] 스킬 절차 검증: `grep -rl "depth: overview" docs/specs/ | head -3` 실행 성공
+- [ ] 스킬 절차 검증: `awk '/^  links:/,/^---/{if(/target:/)t=$NF; if(/type: contains/)print t}' docs/specs/gate/gate-system.md` 실행 시 6건+ 출력
 
 ### US-002: 전체 품질 리포트 생성
 **Description:** /def-audit를 실행하여 현재 문서 품질 기준선을 확인한다.
