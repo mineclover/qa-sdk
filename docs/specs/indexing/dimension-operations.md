@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 
 # 차원 운영 — 축 교차, 환경 주입, 배포 시점 해석

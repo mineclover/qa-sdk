@@ -4,7 +4,7 @@ def:
   scope: data
   aspect: system_data
   depth: validation
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [performance]
 ---
 

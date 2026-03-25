@@ -4,7 +4,7 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # IndexSDK 스펙
 

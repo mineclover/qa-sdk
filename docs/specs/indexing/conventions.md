@@ -4,7 +4,7 @@ def:
   scope: constraint
   aspect: tech_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 # 인덱싱 시스템 관례
 
