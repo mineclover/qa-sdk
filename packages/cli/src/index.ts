@@ -743,6 +743,7 @@ async function main() {
     case "def validate": await cliDef(["validate"]); return;
     case "def stats":    await cliDef(["stats"]); return;
     case "def sync":     await cliDef(["sync", ...sub.rest]); return;
+    case "def read":     await cliDef(["read", ...sub.rest]); return;
     case "def":          await cliDef(sub.rest); return;
 
     // Catalog 명령어
@@ -881,7 +882,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
-    "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync",
+    "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",

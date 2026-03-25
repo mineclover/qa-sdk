@@ -225,6 +225,24 @@ export async function cliDefStats(): Promise<void> {
   });
 }
 
+export async function cliDefRead(docId: string): Promise<void> {
+  const root = getRootDir();
+  const result = await scan();
+  const entry = result.registry.get(docId);
+  if (!entry || !entry.ref) {
+    console.log(`문서 "${docId}"를 찾을 수 없습니다.`);
+    return;
+  }
+
+  const content = await readFile(join(root, entry.ref), "utf-8");
+  const fmMatch = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+  if (!fmMatch) { console.log("frontmatter 파싱 실패"); return; }
+
+  // 마커 제거하고 본문 출력
+  const body = fmMatch[1].replace(/\s*\^[a-z][a-z0-9-]*\s*$/gm, "");
+  console.log(body);
+}
+
 export async function cliDefSync(serviceUrl: string, docId: string): Promise<void> {
   // 1. OpenAPI JSON fetch
   const openapiUrl = serviceUrl.replace(/\/$/, "") + "/openapi.json";
@@ -340,6 +358,9 @@ export async function cliDef(args: string[]): Promise<void> {
     case "sync":
       if (rest.length < 2) { console.log("Usage: qa-sdk def sync <openapi-url-or-file> <문서ID>"); return; }
       return cliDefSync(rest[0], rest[1]);
+    case "read":
+      if (!rest[0]) { console.log("Usage: qa-sdk def read <문서ID>"); return; }
+      return cliDefRead(rest[0]);
     default:
       console.log(`qa-sdk def — 문서 관리
 
@@ -351,6 +372,7 @@ export async function cliDef(args: string[]): Promise<void> {
   qa-sdk def audit                 품질 리포트
   qa-sdk def validate              깨진 링크/순환 검증
   qa-sdk def stats                 분포 통계
+  qa-sdk def read <문서ID>         문서 전문 읽기
   qa-sdk def sync <url|file> <ID>  OpenAPI → 문서 ^endpoints 갱신`);
   }
 }
