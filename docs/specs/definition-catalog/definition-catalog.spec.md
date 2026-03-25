@@ -212,16 +212,16 @@ concern은 단순 태그가 아니라 **link 그래프를 타고 전파되는 �
 
 | concern | 전파 경로 |
 |---------|----------|
-| security | refines↓, implements↓, depends_on↑, constrains↓ |
-| performance | refines↓, implements↓, depends_on↑ |
-| accessibility | refines↓, implements↓, constrains↓ |
-| observability | refines↓, implements↓ |
-| testing | refines↓, implements↓ |
-| migration | depends_on↑, refines↓ |
-| deprecation | refines↓, implements↓, depends_on↑ |
+| security | refines↓, implements↓, depends_on↑, constrains↓, **contains↓** |
+| performance | refines↓, implements↓, depends_on↑, **contains↓** |
+| accessibility | refines↓, implements↓, constrains↓, **contains↓** |
+| observability | refines↓, implements↓, **contains↓** |
+| testing | refines↓, implements↓, **contains↓** |
+| migration | depends_on↑, refines↓, **contains↓** |
+| deprecation | refines↓, implements↓, depends_on↑, **contains↓** |
 
 ↓ = downstream (상위→하위), ↑ = upstream (의존대상→의존자)
-`traces_to`는 전파하지 않는다 — 추적 관계이지 구조적 제약이 아니다.
+`contains↓` = 그룹→멤버 전파. `traces_to`는 전파하지 않는다.
 
 ### EffectiveConcerns
 
@@ -240,7 +240,60 @@ const concerns = computeEffectiveConcerns(
 
 ---
 
-## 7. 운영 컨벤션
+## 7. 계층 구조 (contains)
+
+`contains` 링크로 문서를 그룹으로 묶는다. 그룹도 문서(overview depth).
+
+```
+gate-system (flow/overview, tags: [security])
+  ├── contains → gate-constraint (constraint/specification)
+  ├── contains → gate-state-model (state/specification)
+  ├── contains → gate-engine-func (feature/specification)
+  ├── contains → gate-flow (flow/specification)
+  ├── contains → gate-api (interface/specification)
+  └── contains → gate-scenario (feature/validation)
+```
+
+3가지 패턴:
+- **묶음**: 그룹이 멤버를 contains
+- **교집합**: 1개 문서가 여러 그룹에 소속 (DAG)
+- **상속**: 그룹의 concern이 모든 멤버에 contains↓ 전파
+
+---
+
+## 8. 마커 기반 요약 추출
+
+줄 끝 `^purpose` / `^overview` 마커로 추출 수준을 작성자가 명시.
+
+```markdown
+> RPC 엔드포인트 명세. ^purpose
+
+6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges ^overview
+```
+
+| 수준 | 추출 대상 | 용도 |
+|------|----------|------|
+| purpose | `^purpose` 줄만 | "무엇을 하는가" 1줄 |
+| overview | `^purpose` + `^overview` | 핵심 사실 포함 |
+| full | 전체 (마커만 제거) | 상세 내용 |
+
+---
+
+## 9. 문서 조립 (assembleFeature)
+
+그룹의 contains 멤버를 purpose/overview 수준으로 조립.
+
+```typescript
+const assembled = assembleFeature("gate-system", getEntry, getLinks, getBody, "purpose");
+// → 그룹 purpose + 멤버별 { scope, purpose } (scope 순서 정렬)
+```
+
+scope 정렬: constraint → state → data → feature → flow → interface → ui
+(제약이 뭐고 → 상태가 뭐고 → 기능이 뭐고 → 어떻게 접근하는가)
+
+---
+
+## 10. 운영 컨벤션
 
 ### C1. 1개 문서 = 1개 좌표 = 1개 비즈니스 로직
 
@@ -277,7 +330,7 @@ scope별 독립 문서로 분리 → link로 연결.
 
 ---
 
-## 8. 구현 현황
+## 11. 구현 현황
 
 | 구현 | 파일 |
 |------|------|
@@ -288,51 +341,77 @@ scope별 독립 문서로 분리 → link로 연결.
 | 좌표 인코딩/디코딩 | `observe.ts` |
 | 인메모리 레지스트리 | `registry.ts` |
 | concern 전파 엔진 | `concern.ts` |
+| 마커 기반 추출 | `extract.ts` |
+| 문서 조립 | `assemble.ts` |
 | frontmatter 파서 + 스캐너 | `frontmatter.ts` |
 | decision-flow 브릿지 | `bridge.ts` |
 | public exports | `index.ts` |
 
-### 검증 문서
+### 검증
 
-| 테스트 | 파일 | 검증 내용 |
-|--------|------|----------|
-| 분류 체계 | `taxonomy.test.ts` | scope-aspect 제약, 태그, 컨벤션, cross-scope 감지 |
-| 좌표 인코딩 | `observe.test.ts` | 라운드트립, capacity 규칙 |
-| 레지스트리 | `registry.test.ts` | CRUD, 질의, 관계, 통계 |
-| 주소 충돌 | `address-collision.test.ts` | 같은 유형 문서 다수 등록/삭제 |
-| concern 전파 | `concern.test.ts` | 7종 concern 전파 규칙, 순환 안전 |
-| 결제 시나리오 | `sample.test.ts` | 9문서 × 10관계 E2E |
-| qa-sdk 문서 | `real-docs.test.ts` | 20문서 수동 등록 질의 |
-| frontmatter | `frontmatter.test.ts` | 파서 단위 + 스캔 통합 |
-| 실제 스캔 | `scan-real.test.ts` | docs/ 디렉토리 스캔 |
-| gate 분리 | `gate-docs.test.ts` | 6문서 scope 분리 + concern 전파 |
+| 테스트 | 검증 내용 |
+|--------|----------|
+| `taxonomy.test.ts` | scope-aspect 제약, 태그, 컨벤션, cross-scope 감지 |
+| `observe.test.ts` | 라운드트립, capacity 규칙 |
+| `registry.test.ts` | CRUD, 질의, 관계, 통계 |
+| `address-collision.test.ts` | 같은 유형 문서 다수 등록/삭제 |
+| `concern.test.ts` | 7종 concern 전파 규칙, 순환 안전 |
+| `extract.test.ts` | ^purpose/^overview 마커 추출 |
+| `hierarchy.test.ts` | contains 묶음, 교집합, 계층 상속 전파 |
+| `assemble.test.ts` | assembleFeature 조립 + 마커 커버리지 100% |
+| `sample.test.ts` | 결제 시나리오 9문서 × 10관계 |
+| `real-docs.test.ts` | qa-sdk 20문서 수동 등록 질의 |
+| `frontmatter.test.ts` | 파서 단위 + 스캔 통합 |
+| `scan-real.test.ts` | docs/ 디렉토리 스캔 |
+| `gate-docs.test.ts` | gate 7문서 scope 분리 + 그룹 + concern |
+
+### 운영 문서
+
+| 문서 | frontmatter | ^purpose | contains |
+|------|:-----------:|:--------:|:--------:|
+| system-overview | ✓ | ✓ | — |
+| record-spec | ✓ | ✓ | — |
+| ingest-api-spec | ✓ | ✓ | — |
+| decision-flow-spec | ✓ | ✓ | — |
+| gate-service-spec | ✓ | ✓ | — |
+| definition-catalog-spec | ✓ | ✓ | — |
+| **gate-system** | ✓ | ✓ | **6 멤버** |
+| gate-api | ✓ | ✓ | — |
+| gate-state-model | ✓ | ✓ | — |
+| gate-engine-func | ✓ | ✓ | — |
+| gate-flow | ✓ | ✓ | — |
+| gate-constraint | ✓ | ✓ | — |
+| gate-scenario | ✓ | ✓ | — |
 
 ---
 
-## 9. Quality Gates
+## 12. Quality Gates
 
 ```
 pnpm --filter definition-catalog typecheck   # 타입 체크
-pnpm --filter definition-catalog test        # 195 tests (10 files)
+pnpm --filter definition-catalog test        # 234 tests (13 files)
 pnpm --filter definition-catalog build       # ESM + CJS 빌드
 ```
 
 ---
 
-## 10. 현재 범위와 경계
+## 13. 현재 범위와 경계
 
 ### 현재 범위
 
-- 1개 비즈니스 로직을 1개 좌표로 분류
-- 문서 메타데이터 등록/조회/관계/concern 전파
-- frontmatter 기반 영속성
+- 1개 비즈니스 로직 = 1개 좌표 = 1개 문서
+- contains 계층으로 그룹 조립 (묶음/교집합/상속)
+- ^purpose/^overview 마커로 요약 추출
+- assembleFeature()로 그룹의 목적+멤버 요약 자동 조립
+- frontmatter SSOT → scanAndBuild → registry 파생
+- concern 전파: 7종 × 7개 link type (contains 포함)
 
-### 현재 범위 밖 (후속 과제)
+### 후속 과제
 
 | 과제 | 설명 |
 |------|------|
-| **여러 로직 간 구조** | 비즈니스 로직 간 깊이/상속/조합 — 현재는 개별 분류만 |
 | DEMO_CATALOG 통합 | definition 축/prefix를 DEMO_CATALOG에 추가 |
-| CLI 연동 | `qa-sdk def scan/query/stats` 명령 |
+| CLI 연동 | `qa-sdk def scan/query/assemble` 명령 |
 | 자동 link 추론 | 좌표 유형 간 구조적 관계에서 link를 자동 생성 |
 | 커버리지 히트맵 | scope × aspect별 문서 존재/부재 시각화 |
+| 나머지 문서 frontmatter 주입 | docs/specs/ 200+건에 점진적 frontmatter 추가 |
