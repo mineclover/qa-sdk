@@ -8,7 +8,9 @@ def:
 ---
 # Trace + TraceStore
 
-> trace_id 단위 메타데이터 집계와 reconstruction 상태 관리. ^purpose
+## 목적 ^purpose
+
+trace_id 단위 메타데이터 집계와 reconstruction 상태 관리.
 
 ## 상태
 

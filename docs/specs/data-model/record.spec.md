@@ -8,7 +8,9 @@ def:
 ---
 # EventRecord + RecordStore
 
-> core package의 canonical event record 구조와 저장/조회 동작. ^purpose
+## 목적 ^purpose
+
+core package의 canonical event record 구조와 저장/조회 동작을 정의한다.
 
 ## 상태
 

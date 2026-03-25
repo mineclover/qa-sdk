@@ -8,7 +8,9 @@ def:
 ---
 # Scenario API
 
-> ScenarioSpec CRUD — 시나리오 스펙 등록, 조회, 삭제. ^purpose
+## 목적 ^purpose
+
+ScenarioSpec CRUD — 시나리오 스펙 등록, 조회, 삭제.
 
 ## 상태
 

@@ -14,11 +14,17 @@ def:
 ---
 # Gate Service API 계약
 
-> RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구만 기술한다. ^purpose
+## 목적 ^purpose
+
+RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구를 정의한다.
+모든 호출은 서비스 간 내부 전용이며 외부 노출을 금지한다.
+
+## 구성 ^overview
+
+6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges.
+에러 코드: NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종.
 
 ## 엔드포인트
-
-6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges ^overview
 
 ### POST /gate/check
 

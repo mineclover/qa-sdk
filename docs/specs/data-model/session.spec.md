@@ -8,7 +8,9 @@ def:
 ---
 # QA Session + SessionStore
 
-> qa_session_id 기반 세션 식별 — 테스트/검증 세션 단위 추적. ^purpose
+## 목적 ^purpose
+
+qa_session_id 기반 세션 식별. 테스트/검증 세션 단위 추적.
 
 ## 상태
 

@@ -71,7 +71,10 @@ export function assembleFeature(
   // 그룹 본문에서 purpose/overview 추출
   const groupBody = getBody(groupId);
   const groupPurpose = groupBody ? extractByLevel(groupBody, "purpose").text || null : null;
-  const groupOverview = groupBody ? extractByLevel(groupBody, "overview").lines.filter(l => l.length > 0) : [];
+  const groupOverviewSections = groupBody
+    ? extractByLevel(groupBody, "overview").sections.filter(s => s.marker === "overview")
+    : [];
+  const groupOverview = groupOverviewSections.map(s => s.body).filter(b => b.length > 0);
 
   // contains 멤버 수집
   const containsLinks = getLinks(groupId, "outgoing").filter(l => l.linkType === "contains");
@@ -86,14 +89,15 @@ export function assembleFeature(
     let overview: string[] = [];
 
     if (body) {
-      const extracted = extractByLevel(body, level);
-      if (level === "purpose") {
-        purpose = extracted.text || null;
-      } else {
-        // overview에서 purpose 줄과 overview 줄을 분리
-        const purposeResult = extractByLevel(body, "purpose");
-        purpose = purposeResult.text || null;
-        overview = extracted.lines.filter(l => l.length > 0 && l !== purpose);
+      const purposeResult = extractByLevel(body, "purpose");
+      purpose = purposeResult.text || null;
+
+      if (level !== "purpose") {
+        const overviewResult = extractByLevel(body, "overview");
+        overview = overviewResult.sections
+          .filter(s => s.marker === "overview")
+          .map(s => s.body)
+          .filter(b => b.length > 0);
       }
     }
 

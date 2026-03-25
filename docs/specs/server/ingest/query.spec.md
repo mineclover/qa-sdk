@@ -15,7 +15,9 @@ def:
 ---
 # Query API
 
-> trace, session, record를 cursor 기반 pagination으로 조회하는 읽기 전용 API. ^purpose
+## 목적 ^purpose
+
+trace, session, record를 cursor 기반 pagination으로 조회하는 읽기 전용 API.
 
 ## 상태
 

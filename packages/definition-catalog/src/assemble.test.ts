@@ -88,8 +88,8 @@ describe("assembleFeature: gate-system", () => {
 
     // text에 핵심 키워드
     expect(assembled!.text).toContain("RPC");
-    expect(assembled!.text).toContain("active");
-    expect(assembled!.text).toContain("fail-open");
+    expect(assembled!.text).toContain("상태");
+    expect(assembled!.text).toContain("불변 조건");
   });
 
   it("overview 수준으로 조립하면 핵심 사실도 포함된다", () => {

@@ -8,7 +8,9 @@ def:
 ---
 # Verdict API
 
-> 시나리오 verdict 조회 및 강제 재계산 API. ^purpose
+## 목적 ^purpose
+
+시나리오 verdict 조회 및 강제 재계산 API.
 
 ## 상태
 

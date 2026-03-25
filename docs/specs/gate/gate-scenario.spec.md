@@ -14,9 +14,13 @@ def:
 ---
 # Gate 테스트 시나리오
 
-> 정상 encode, inactive dim, cascade, fail-open 등 gate 검증 시나리오. ^purpose
+## 목적 ^purpose
 
-5개 시나리오: 정상encode, inactive dim, composite cascade, fail-open, filterRanges ^overview
+gate 시스템의 핵심 경로를 검증하는 시나리오와 기대 결과를 정의한다.
+
+## 구성 ^overview
+
+5개 시나리오: 정상 encode, inactive dim 차단, composite cascade 전파, fail-open 안전장치, filterRanges 범위 필터.
 
 ## 시나리오 1: 정상 encode
 

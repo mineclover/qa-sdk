@@ -11,11 +11,17 @@ def:
 ---
 # Gate 4-State 모델
 
-> 주소 공간의 active/inactive/open/reserved 4가지 상태와 전이 규칙. ^purpose
+## 목적 ^purpose
+
+주소 공간의 4가지 상태(active, inactive, open, reserved)와 전이 규칙을 정의한다.
+encode/decode 허용 여부가 상태에 의해 결정된다.
+
+## 구성 ^overview
+
+4-state: active(허용/허용), inactive(차단/허용), open(허용/차단), reserved(차단/차단).
+전이: active↔inactive(flag/release), active↔open(entry 추가/제거), inactive∩open→reserved.
 
 ## 상태 정의
-
-active(허용/허용), inactive(차단/허용), open(허용/차단), reserved(차단/차단) ^overview
 
 | 상태 | encode | decode | 의미 |
 |------|--------|--------|------|

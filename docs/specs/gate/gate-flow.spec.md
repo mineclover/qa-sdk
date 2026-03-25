@@ -13,9 +13,13 @@ def:
 ---
 # Gate 운영 흐름
 
-> encode/recompute/query 경로별 gate 상태 확인과 전파 순서. ^purpose
+## 목적 ^purpose
 
-3개 경로: encode(checkGate→허용/차단), 상태변경(recompute→cascade), query(filterRanges) ^overview
+encode, 상태변경, query 3개 경로에서 gate 상태가 어떤 순서로 확인되고 전파되는지를 정의한다.
+
+## 구성 ^overview
+
+3개 경로: encode(checkGate→허용/차단), 상태변경(recompute→cascade→캐시무효화), query(filterRanges).
 
 ## 흐름 1: encode 경로
 

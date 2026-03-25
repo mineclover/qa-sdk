@@ -9,7 +9,9 @@ def:
 ---
 # Decision Flow — 의사결정 좌표계
 
-> 인간의 복잡한 결정 과정을 사전 설계된 직교 축으로 투영하여, "왜 이 결정을 했는가"를 좌표 주소로 증명하는 다차원 벡터 공간 모델. ^purpose
+## 목적 ^purpose
+
+인간의 복잡한 결정 과정을 사전 설계된 직교 축으로 투영하여, "왜 이 결정을 했는가"를 좌표 주소로 증명하는 다차원 벡터 공간 모델.
 
 관련 스펙: [coordinate-query.spec.md](../indexing/coordinate-query.spec.md)
 서사 문서: [narrative.md](./narrative.md) — 질문 → 증명 → 결론이 쌓이는 문서
@@ -756,13 +758,29 @@ flow verdict → SELECT ... WHERE id = ?
 | flow judge (판정 기록 + verdict SQLite 영속) | `cli/commands/flow.ts`, `cli/stores/flow-sqlite-store.ts` |
 | evidence 없이 코어 gate 선택 시 경고 + mentalModel 힌트 | `cli/commands/flow.ts` |
 
+### P10: ingest 전송 — ✅ 완료 (2026-03-25)
+
+| 구현 | 파일 |
+|------|------|
+| FlowIngestEmitter (onGateSelected/onFlowCompleted → /v1/ingest POST) | `cli/stores/flow-ingest-emitter.ts` |
+| INGEST_URL 환경변수 또는 localhost:3200 기본값 | |
+| fail-open: 전송 실패해도 flow 진행 차단 안 함 | |
+
+구조:
+```
+flow select → FlowEngine
+  ├── instanceStore.save() → SQLite (로컬 캐시)
+  └── FlowIngestEmitter   → ingest-server (localhost 또는 prod)
+                              └── Phase 1 저장 → Phase 2 verdict → convergence
+```
+
 ### 잔여 후속 과제
 
-| 과제 | 설명 |
-|------|------|
-| convergence 연동 | decision prefix가 DEMO_CATALOG에 있으므로 기존 파이프라인 자동 수집 |
-| GateEngine 연동 | decision prefix에 gate 4-state 적용 |
-| codegen 연동 | `qa-sdk codegen` 재실행 시 decision 타입 자동 생성 |
+| 과제 | 상태 | 설명 |
+|------|------|------|
+| convergence 연동 | ingest 전송 연결됨 → 서버 기동 시 자동 동작 | convergence pipeline이 decision prefix를 자동 수집 |
+| GateEngine 연동 | 보류 | FlowSchema 레벨 관리가 현재 적합. 좌표 게이팅은 서버 운영 단계에서 |
+| codegen 연동 | 필요 시 | `pnpm codegen` 실행하면 decision 타입 자동 생성 |
 
 ### Non-Goals
 

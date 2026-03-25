@@ -11,11 +11,17 @@ def:
 ---
 # GateEngine 기능 명세
 
-> 주소 상태 자동 계산 엔진의 기능과 동작 규칙. ^purpose
+## 목적 ^purpose
+
+주소 상태를 자동으로 계산하고, 변경을 전파하고, 질의에 gate 필터를 적용하는 엔진.
+순수 함수 기반으로 같은 입력이면 같은 출력을 보장한다.
+
+## 구성 ^overview
+
+3개 핵심 함수: recompute(단일 재계산), cascadeRecompute(composite 전파), gateFilterRanges(범위 필터).
+2개 deactivation 모드: strict(release 시만), flexible(setFlag 시에도).
 
 ## 핵심 기능
-
-recompute(단일 재계산), cascadeRecompute(전파), gateFilterRanges(범위 필터) ^overview
 
 ### 상태 계산 (recompute)
 

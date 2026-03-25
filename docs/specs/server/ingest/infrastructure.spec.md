@@ -9,7 +9,9 @@ def:
 ---
 # Infrastructure
 
-> health check, rate limiting, request ID, graceful shutdown 등 ingest 서비스 인프라 제약. ^purpose
+## 목적 ^purpose
+
+health check, rate limiting, request ID, graceful shutdown 등 ingest 서비스 인프라 제약.
 
 ## 상태
 

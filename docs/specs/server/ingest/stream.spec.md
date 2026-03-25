@@ -8,7 +8,9 @@ def:
 ---
 # SSE 실시간 스트리밍
 
-> 특정 trace 또는 session을 SSE로 구독하여 새 이벤트를 실시간 수신. ^purpose
+## 목적 ^purpose
+
+특정 trace 또는 session을 SSE로 구독하여 새 이벤트를 실시간 수신.
 
 ## 상태
 

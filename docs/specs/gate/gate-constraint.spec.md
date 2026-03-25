@@ -12,9 +12,15 @@ def:
 ---
 # Gate 기술적 제약
 
-> fail-open, 읽기 전용 캐시, composite AND 등 gate 불변 조건과 보안/성능 제약. ^purpose
+## 목적 ^purpose
 
-4개 불변조건: fail-open, 읽기전용캐시, composite AND, inactive∩open→reserved ^overview
+gate 시스템에 부과되는 기술적 불변 조건과 보안/성능 제약을 정의한다.
+이 제약을 위반하는 구현은 허용되지 않는다.
+
+## 구성 ^overview
+
+4개 불변조건: fail-open, 읽기전용캐시, composite AND, inactive∩open→reserved.
+보안: 내부 호출 전용, flag 변경은 관리자 API만. 성능: checkGate < 5ms, recompute 비동기.
 
 ## 불변 조건
 
