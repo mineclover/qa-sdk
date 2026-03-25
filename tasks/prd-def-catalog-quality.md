@@ -24,14 +24,15 @@
 **Description:** skills/ 디렉토리에 7개 def-* 스킬을 skills.sh 호환 형식으로 배치한다.
 
 **Acceptance Criteria:**
-- [x] skills/def-topdown/SKILL.md 존재
-- [x] skills/def-bottomup/SKILL.md 존재
-- [x] skills/def-context/SKILL.md 존재
-- [x] skills/def-split/SKILL.md 존재
-- [x] skills/def-new/SKILL.md 존재
-- [x] skills/def-link/SKILL.md 존재
-- [x] skills/def-audit/SKILL.md 존재
-- [x] AGENTS.md에 문서 시스템 섹션 추가
+- [ ] skills/def-topdown/SKILL.md 존재 확인
+- [ ] skills/def-bottomup/SKILL.md 존재 확인
+- [ ] skills/def-context/SKILL.md 존재 확인
+- [ ] skills/def-split/SKILL.md 존재 확인
+- [ ] skills/def-new/SKILL.md 존재 확인
+- [ ] skills/def-link/SKILL.md 존재 확인
+- [ ] skills/def-audit/SKILL.md 존재 확인
+- [ ] AGENTS.md에 문서 시스템 섹션 존재 확인
+- [ ] 각 스킬의 절차가 실행 가능한지 검증 (grep/awk 명령 실행)
 
 ### US-002: 전체 품질 리포트 생성
 **Description:** /def-audit를 실행하여 현재 문서 품질 기준선을 확인한다.
