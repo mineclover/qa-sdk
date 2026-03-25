@@ -363,6 +363,16 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/docs-explorer:
+    dependencies:
+      definition-catalog:
+        specifier: workspace:*
+        version: link:../definition-catalog
+    devDependencies:
+      vite:
+        specifier: ^5.4.19
+        version: 5.4.21(@types/node@25.5.0)
+
   packages/e2e:
     devDependencies:
       '@playwright/test':
