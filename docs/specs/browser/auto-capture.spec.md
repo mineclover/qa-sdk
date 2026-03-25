@@ -1,7 +1,16 @@
+---
+def:
+  id: auto-capture-spec
+  scope: ui
+  aspect: interaction
+  depth: specification
+  lifecycle: approved
+---
 # AutoCapture
 
-> opt-in DOM 이벤트 자동 수집. `createAutoCapture(config, emit)` 로 리스너를 등록하고,
-> 반환된 cleanup 함수로 정리한다.
+## 목적 ^purpose
+
+opt-in DOM 이벤트 자동 수집. createAutoCapture(config, emit)로 리스너를 등록하고, 반환된 cleanup 함수로 정리한다.
 
 ## 상태
 

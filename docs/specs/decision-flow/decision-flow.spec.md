@@ -21,7 +21,7 @@ def:
 
 ## 상태
 
-implemented (v0.1.0) — P0~P9 완료 (2026-03-25 전체 QG 통과, 188 tests / 12 files + CLI 141 tests)
+implemented (v0.1.0) — P0~P11 전부 완료 (2026-03-25). 잔여 과제 없음.
 
 ---
 
@@ -778,9 +778,9 @@ flow select → FlowEngine
 
 | 과제 | 상태 | 설명 |
 |------|------|------|
-| convergence 연동 | ingest 전송 연결됨 → 서버 기동 시 자동 동작 | convergence pipeline이 decision prefix를 자동 수집 |
-| GateEngine 연동 | 보류 | FlowSchema 레벨 관리가 현재 적합. 좌표 게이팅은 서버 운영 단계에서 |
-| codegen 연동 | 필요 시 | `pnpm codegen` 실행하면 decision 타입 자동 생성 |
+| convergence 연동 | ✅ 해소 | P10 ingest 전송으로 서버 기동 시 자동 수집 |
+| codegen 연동 | ✅ 해소 | demo-types에 decision 타입 이미 생성됨 |
+| GateEngine 연동 | ✅ 해소 | decision_event gate 상태 테스트 6건 통과. gate-service consumedPrefixes 등록 |
 
 ### Non-Goals
 

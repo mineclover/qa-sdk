@@ -1,6 +1,17 @@
+---
+def:
+  id: metrics-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+  tags: [observability, performance]
+---
 # Metric RecordKind — 메트릭 수집 및 집계
 
-> EventRecord의 RecordKind를 `"metric"`으로 확장하고, 메트릭 전용 필드와 Phase 2 집계 모델을 정의한다.
+## 목적 ^purpose
+
+EventRecord의 RecordKind를 "metric"으로 확장하고, 메트릭 전용 필드와 Phase 2 집계 모델을 정의한다.
 
 ## RecordKind 확장
 

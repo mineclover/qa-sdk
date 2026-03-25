@@ -1,6 +1,16 @@
+---
+def:
+  id: viz-panels-spec
+  scope: ui
+  aspect: layout
+  depth: specification
+  lifecycle: approved
+---
 # 시각화 UI 패널 — 시나리오 선택, 이벤트 로그, Verdict 표시
 
-> viz-web의 세 보조 패널: 시나리오 선택기, 실시간 이벤트 로그, 판정 결과 표시 패널.
+## 목적 ^purpose
+
+viz-web의 세 보조 패널 레이아웃. 시나리오 선택기, 실시간 이벤트 로그, 판정 결과 표시 패널의 배치와 구조.
 
 ## 상태
 

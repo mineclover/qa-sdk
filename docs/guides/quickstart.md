@@ -1,7 +1,17 @@
+---
+def:
+  id: quickstart-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point]
+---
 # Quickstart — 차원 압축 기반 DSL DB
 
-> 시스템 내 enum, 이벤트, 권한, API, 화면 경로를 prefix로 관리한다.
-> 개발자는 문자열만 다루고, 정수는 시스템이 파생한다.
+## 목적 ^purpose
+
+시스템 내 enum, 이벤트, 권한, API, 화면 경로를 prefix로 관리하는 개발자 시작 가이드. 문자열만 다루고, 정수는 시스템이 파생한다.
 
 ---
 

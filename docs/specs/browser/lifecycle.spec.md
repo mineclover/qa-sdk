@@ -1,6 +1,16 @@
+---
+def:
+  id: browser-lifecycle-spec
+  scope: state
+  aspect: system_state
+  depth: specification
+  lifecycle: approved
+---
 # 브라우저 모니터링 SDK — 표준 생명주기
 
-> `QaMonitor`의 상태 전환 규칙, 각 단계의 계약, 올바른 사용 패턴을 정의한다.
+## 목적 ^purpose
+
+QaMonitor의 상태 전환 규칙, 각 단계의 계약, 올바른 사용 패턴을 정의한다.
 
 ## 상태
 

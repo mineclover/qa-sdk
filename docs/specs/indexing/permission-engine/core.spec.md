@@ -1,7 +1,17 @@
+---
+def:
+  id: permission-engine-spec
+  scope: constraint
+  aspect: biz_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+---
 # permission-engine core 스펙
 
-> `PermissionSet`, `TernaryMask`, `ScopedEngine`는 `permission-engine`의 core layer를 이룬다.
-> 내부 닫힌 권한 공간은 bitmask로 압축하고, 계층 상속과 외부 컨텍스트 분리를 별도 타입으로 분리해 `[S2]` 권한 해소 경로를 단순화한다.
+## 목적 ^purpose
+
+PermissionSet, TernaryMask, ScopedEngine로 구성된 권한 엔진 core layer. 닫힌 권한 공간을 bitmask로 압축하고, 계층 상속과 외부 컨텍스트를 분리한다.
 
 패키지: `permission-engine`
 운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)

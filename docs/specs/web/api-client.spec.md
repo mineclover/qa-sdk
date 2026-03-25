@@ -1,6 +1,16 @@
+---
+def:
+  id: api-client-spec
+  scope: data
+  aspect: external_data
+  depth: specification
+  lifecycle: approved
+---
 # API 클라이언트 — REST 래퍼 + SSE 구독
 
-> viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼와 EventSource 기반 SSE 구독 클라이언트.
+## 목적 ^purpose
+
+viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼와 EventSource 기반 SSE 구독 클라이언트.
 
 ## 상태
 

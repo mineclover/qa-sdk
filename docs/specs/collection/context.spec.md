@@ -1,6 +1,16 @@
+---
+def:
+  id: trace-context-spec
+  scope: state
+  aspect: app_state
+  depth: specification
+  lifecycle: approved
+---
 # TraceContext
 
-> trace_id, span stack, qa_session_id를 관리하는 컨텍스트 객체.
+## 목적 ^purpose
+
+trace_id, span stack, qa_session_id를 관리하는 런타임 컨텍스트 객체.
 
 ## 상태
 

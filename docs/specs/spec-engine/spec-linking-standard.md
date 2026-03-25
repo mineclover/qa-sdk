@@ -1,9 +1,16 @@
+---
+def:
+  id: spec-linking-standard
+  scope: flow
+  aspect: relation
+  depth: specification
+  lifecycle: approved
+---
 # Spec Linking Standard — 문서 간 참조 규칙
 
-> **Status: ACTIVE**
->
-> 스펙 문서, Decision, prefix, axis 간의 참조를 표준화한다.
-> 문서가 서로 어떻게 연결되는지, 어떤 형식으로 참조하는지.
+## 목적 ^purpose
+
+스펙 문서, Decision, prefix, axis 간의 참조를 표준화한다.
 
 ---
 

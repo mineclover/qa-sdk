@@ -1,6 +1,17 @@
+---
+def:
+  id: logger-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+  tags: [observability]
+---
 # QaLogger
 
-> 이벤트 수집의 핵심 진입점. log/span 기록, 배치 버퍼링, 자동/수동 flush.
+## 목적 ^purpose
+
+이벤트 수집의 핵심 진입점. log/span 기록, 배치 버퍼링, 자동/수동 flush.
 
 ## 상태
 
