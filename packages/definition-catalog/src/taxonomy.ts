@@ -1,11 +1,11 @@
 /**
  * 소프트웨어 정의 분류 체계 (Taxonomy)
  *
- * 6대 분류(scope) × 세부 측면(aspect)의 트리 구조를 정의한다.
+ * 7대 분류(scope) × 세부 측면(aspect)의 트리 구조를 정의한다.
  * def_scope와 def_aspect는 독립 축이지만 유효 조합이 제한된다.
  * VALID_SCOPE_ASPECTS가 이 제약을 표현한다.
  *
- * 좌표 공간(16×64)에서 실제 유효한 조합은 17개뿐이다 (나머지 79개는 무효).
+ * 좌표 공간(16×64)에서 실제 유효한 조합은 20개뿐이다.
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
@@ -116,7 +116,7 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
  * scope별 유효한 aspect 목록.
  *
  * def_scope × def_aspect 좌표 공간에서 유효한 조합만 허용한다.
- * 16 × 64 = 1,024 가능한 조합 중 17개만 유효.
+ * 16 × 64 = 1,024 가능한 조합 중 20개만 유효.
  */
 export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
   ui: ["layout", "component", "interaction"],

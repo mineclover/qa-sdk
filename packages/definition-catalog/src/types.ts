@@ -17,7 +17,7 @@ export type DefScope =
   | "data"
   | "interface";
 
-/** 세부 측면 — 어떤 측면을 정의하는가 (17종, flat) */
+/** 세부 측면 — 어떤 측면을 정의하는가 (20종, flat) */
 export type DefAspect =
   // ui
   | "layout"

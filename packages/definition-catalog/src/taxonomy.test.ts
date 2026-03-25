@@ -16,7 +16,7 @@ import {
 import { DEF_SCOPE, DEF_ASPECT } from "./vocabulary.js";
 
 describe("DEFINITION_TAXONOMY", () => {
-  it("6대 분류(scope)를 포함한다", () => {
+  it("7대 분류(scope)를 포함한다", () => {
     expect(DEFINITION_TAXONOMY.scopes.length).toBe(DEF_SCOPE.entries.length);
     const scopeIds = DEFINITION_TAXONOMY.scopes.map(s => s.id);
     for (const entry of DEF_SCOPE.entries) {
@@ -26,7 +26,7 @@ describe("DEFINITION_TAXONOMY", () => {
 
   it("모든 aspect가 정확히 하나의 scope에 속한다", () => {
     const allAspects = DEFINITION_TAXONOMY.scopes.flatMap(s => s.aspects.map(a => a.id));
-    // 총 17개 aspect
+    // 총 20개 aspect
     expect(allAspects.length).toBe(DEF_ASPECT.entries.length);
     // 모든 aspect가 DEF_ASPECT.entries에 포함
     for (const aspect of allAspects) {

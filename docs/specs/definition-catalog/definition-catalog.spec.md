@@ -8,7 +8,7 @@
 
 ## 상태
 
-implemented (v0.1.0) — 52 tests / 3 files (2026-03-25)
+implemented (v0.1.0) — 106 tests / 5 files (2026-03-25)
 
 ---
 
