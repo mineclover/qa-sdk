@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: user_scenario
   depth: overview
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 
 # 분석 시스템 상세 가이드

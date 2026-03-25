@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
 ---
 
 # DKG Skills — 종단 파이프라인과 자동화 가능 연산

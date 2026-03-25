@@ -55,6 +55,12 @@ def:
       type: contains
     - target: definition-catalog-spec
       type: contains
+    - target: analysis-system
+      type: contains
+    - target: wi-pack-format-system
+      type: contains
+    - target: dkg-skills-system
+      type: contains
 ---
 # QA-SDK 시스템
 
