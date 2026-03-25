@@ -103,6 +103,10 @@ export {
   computeEffectiveConcerns,
 } from "./concern.js";
 
+// ─── 영향 분석 (바텀업 역추적) ───────────────────────────
+export type { ImpactedDoc, ImpactAnalysis } from "./impact.js";
+export { analyzeImpact } from "./impact.js";
+
 // ─── 문서 조립 ──────────────────────────────────────────
 export type { MemberSummary, AssembledFeature } from "./assemble.js";
 export { assembleFeature } from "./assemble.js";
