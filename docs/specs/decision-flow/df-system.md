@@ -29,6 +29,18 @@ def:
       type: contains
     - target: df-narrative-group
       type: contains
+    - target: df-cli-persistence
+      type: contains
+    - target: df-cli-query
+      type: contains
+    - target: df-ingest-emission
+      type: contains
+    - target: df-dev-decisions
+      type: contains
+    - target: df-time-analysis
+      type: contains
+    - target: df-gate-integration
+      type: contains
 ---
 
 # Decision Flow 시스템
@@ -39,14 +51,33 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 10개 멤버.
+overview: 총 17개 멤버.
+
+코어:
 - `df-axis-model`: 의사결정 도메인의 11개 축 정의.
 - `df-observation-space`: 5개 prefix가 의사결정의 관찰 가능한 좌표 공간을 구성한다.
-- `df-vector-analysis`: 투영된 결정 벡터들의 분포, 차이, 이동, 패턴을 분석하는 기능.
-- `df-constraint`: 게이트 무게(core/structural/tactical), 인과 그래프(GateDependency), 결정 계층(strategic→tactical→operational→execution)과 컨텍스트 바운더리를 정의한다.
-- `df-state-model`: FlowInstance의 생명주기(pending→active→completed/abandoned/blocked)와 서사 구조(배경→여정→도달→산출→회고)를 정의한다.
+- `df-constraint`: 게이트 무게, 인과 그래프, 결정 계층, 컨텍스트 바운더리.
+- `df-state-model`: FlowInstance 생명주기 + 서사 구조.
 - `df-serialization`: 의사결정 좌표의 직렬화 형식.
-- `df-causal-mapping`: 비즈니스 요구(X)와 기술 구현(Y)을 의사결정 좌표로 연결하는 인과 증명 경로.
-- `decision-standard-group`: 새로운 요구사항을 기존 prefix 재사용/신규 prefix 정의 프로세스와 체크리스트로 분리한 그룹.
-- `df-narrative`: 이 문서는 서사가 쌓이는 문서다.
-- `axis-decision-guide`: 이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.
+
+분석:
+- `df-vector-analysis`: 투영된 결정 벡터들의 분포, 차이, 이동, 패턴 분석.
+- `df-causal-mapping`: 비즈니스 요구(X) ↔ 기술 구현(Y) 인과 매핑.
+- `df-time-analysis`: gate별 소요 시간, 완료→판정 지연, 시간 기반 패턴.
+
+응용:
+- `df-dev-decisions`: 5개 일상 결정 FlowSchema + 자동 정책 + 라우터.
+- `df-gate-integration`: GateEngine 4-state × decision prefix 연동.
+- `df-narrative-group`: 서사 구조 + 컨텍스트 + 증명.
+- `decision-standard-group`: 표준 프로세스 + 체크리스트.
+
+CLI:
+- `df-cli-persistence`: SQLite 영속 (WAL + active 복원 + verdict).
+- `df-cli-query`: lookup/history/verdict/judge 조회 명령.
+- `df-ingest-emission`: ingest-server 이벤트 전송 (fail-open).
+
+서사:
+- `df-narrative`: 서사가 쌓이는 문서 (구현 변경과 무관).
+
+가이드:
+- `axis-decision-guide`: 축 판단 프레임워크 (범용 재사용 가능).
