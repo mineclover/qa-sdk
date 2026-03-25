@@ -158,20 +158,22 @@ export const DEF_LIFECYCLE = {
 } as const;
 
 /**
- * link_type — 정의 간 관계 유형 (5 entries, capacity 16)
+ * link_type — 정의 간 관계 유형 (6 entries, capacity 16)
  *
- * 5Q: ✓유한(5) ✓분류 관련(관계 종류) ✓공유(def_link) ✓안정 ✓capacity
+ * 5Q: ✓유한(6) ✓분류 관련(관계 종류) ✓공유(def_link) ✓안정 ✓capacity
  * 설명력: 정의 간 관계의 성격을 구분한다. 의존과 구체화는 방향과 의미가 다르다.
+ * contains는 그룹→멤버 포함 관계로, 계층 구조와 concern 전파의 경로가 된다.
  */
 export const LINK_TYPE = {
-  entries: ["depends_on", "implements", "refines", "constrains", "traces_to"] as const,
-  capacity: 16,  // nextPowerOf2(5 * 2 = 10) = 16
+  entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains"] as const,
+  capacity: 16,  // nextPowerOf2(6 * 2 = 12) = 16
   ko: {
     depends_on: "의존",
     implements: "구현",
     refines: "구체화",
     constrains: "제약",
     traces_to: "추적",
+    contains: "포함",
   } as Record<string, string>,
 } as const;
 

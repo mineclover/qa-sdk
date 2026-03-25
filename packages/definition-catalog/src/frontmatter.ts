@@ -239,7 +239,7 @@ function parseScalar(value: string): string | number | boolean {
 const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface"]);
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
-const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to"]);
+const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains"]);
 
 /**
  * 파싱된 YAML에서 FrontmatterDef를 추출하고 검증한다.

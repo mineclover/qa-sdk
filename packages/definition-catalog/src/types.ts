@@ -68,7 +68,8 @@ export type LinkType =
   | "implements"   // 구현
   | "refines"      // 구체화
   | "constrains"   // 제약
-  | "traces_to";   // 추적
+  | "traces_to"    // 추적
+  | "contains";    // 포함 — 그룹이 멤버를 포함
 
 // ─── 태그 체계 ───────────────────────────────────────────
 

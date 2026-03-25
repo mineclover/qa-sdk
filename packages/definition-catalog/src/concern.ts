@@ -47,6 +47,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
       { linkType: "implements", direction: "downstream" },
       { linkType: "depends_on", direction: "upstream" },
       { linkType: "constrains", direction: "downstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -57,6 +58,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
       { linkType: "refines", direction: "downstream" },
       { linkType: "implements", direction: "downstream" },
       { linkType: "depends_on", direction: "upstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -67,6 +69,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
       { linkType: "refines", direction: "downstream" },
       { linkType: "implements", direction: "downstream" },
       { linkType: "constrains", direction: "downstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -76,6 +79,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
     propagation: [
       { linkType: "refines", direction: "downstream" },
       { linkType: "implements", direction: "downstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -85,6 +89,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
     propagation: [
       { linkType: "refines", direction: "downstream" },
       { linkType: "implements", direction: "downstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -94,6 +99,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
     propagation: [
       { linkType: "depends_on", direction: "upstream" },
       { linkType: "refines", direction: "downstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
   {
@@ -104,6 +110,7 @@ export const CONCERN_DEFS: readonly ConcernDef[] = [
       { linkType: "refines", direction: "downstream" },
       { linkType: "implements", direction: "downstream" },
       { linkType: "depends_on", direction: "upstream" },
+      { linkType: "contains", direction: "downstream" },
     ],
   },
 ];
@@ -135,6 +142,7 @@ export function extractDirectConcerns(entry: DefinitionEntry): readonly ConcernT
  * | implements | downstream | target(=명세)에서 concern 상속         | —                                     |
  * | depends_on | upstream   | target(=의존대상)에서 concern 상속     | —                                     |
  * | constrains | downstream | —                                     | source(=제약자)에서 concern 상속       |
+ * | contains   | downstream | —                                     | source(=그룹)에서 concern 상속         |
  */
 function findConcernSources(
   targetId: string,
@@ -144,10 +152,17 @@ function findConcernSources(
   incoming: readonly DefinitionLink[],
 ): readonly string[] {
   if (linkType === "constrains" && direction === "downstream") {
-    // constrains는 특수: source(제약자)가 target(피제약자)에게 concern을 준다
-    // 대상이 incoming constrains의 target → source가 concern 출처
+    // constrains: source(제약자)가 target(피제약자)에게 concern을 준다
     return incoming
       .filter(l => l.linkType === "constrains")
+      .map(l => l.sourceId);
+  }
+
+  if (linkType === "contains" && direction === "downstream") {
+    // contains: source(그룹)가 target(멤버)에게 concern을 준다
+    // 멤버 입장에서 incoming contains의 source(=그룹)가 concern 출처
+    return incoming
+      .filter(l => l.linkType === "contains")
       .map(l => l.sourceId);
   }
 
