@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA-SDK 문서 탐색기</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; display: flex; height: 100vh; }
+
+  /* 사이드바 */
+  #sidebar { width: 360px; border-right: 1px solid #30363d; display: flex; flex-direction: column; flex-shrink: 0; }
+  #breadcrumb { padding: 12px 16px; border-bottom: 1px solid #30363d; font-size: 13px; color: #8b949e; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 42px; }
+  #breadcrumb span { cursor: pointer; color: #58a6ff; }
+  #breadcrumb span:hover { text-decoration: underline; }
+  #breadcrumb .sep { color: #484f58; cursor: default; }
+  #tree { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+  .node { padding: 8px 16px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .node:hover { background: #161b22; }
+  .node.selected { background: #1c2128; border-left-color: #58a6ff; }
+  .node-title { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .node-purpose { font-size: 12px; color: #8b949e; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .node-meta { font-size: 11px; color: #484f58; margin-top: 3px; display: flex; gap: 8px; }
+  .scope-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .scope-constraint { background: #f8514926; color: #f85149; }
+  .scope-state { background: #a371f726; color: #a371f7; }
+  .scope-data { background: #f0883e26; color: #f0883e; }
+  .scope-feature { background: #3fb95026; color: #3fb950; }
+  .scope-flow { background: #58a6ff26; color: #58a6ff; }
+  .scope-interface { background: #79c0ff26; color: #79c0ff; }
+  .scope-ui { background: #d2a8ff26; color: #d2a8ff; }
+  .group-icon { font-size: 12px; }
+
+  /* 메인 */
+  #main { flex: 1; overflow-y: auto; padding: 32px 48px; }
+  #main h1 { font-size: 24px; margin-bottom: 8px; }
+  #main .meta-bar { font-size: 13px; color: #8b949e; margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+  #main .section { margin-bottom: 24px; }
+  #main .section h2 { font-size: 16px; color: #58a6ff; margin-bottom: 8px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+  #main .section pre { background: #161b22; padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  #main .section p { font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+  #main .section table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  #main .section th, #main .section td { border: 1px solid #30363d; padding: 6px 10px; text-align: left; }
+  #main .section th { background: #161b22; }
+  #main .tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; background: #30363d; color: #8b949e; margin-right: 4px; }
+  #main .link-item { font-size: 13px; padding: 4px 0; }
+  #main .link-item a { color: #58a6ff; cursor: pointer; text-decoration: none; }
+  #main .link-item a:hover { text-decoration: underline; }
+  #main .link-type { color: #8b949e; font-size: 11px; }
+  #main .members { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .member-card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; cursor: pointer; transition: border-color 0.15s; }
+  .member-card:hover { border-color: #58a6ff; }
+  .member-card .mc-title { font-size: 13px; font-weight: 500; }
+  .member-card .mc-scope { font-size: 11px; color: #8b949e; }
+  .member-card .mc-purpose { font-size: 12px; color: #8b949e; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  #empty { text-align: center; margin-top: 120px; color: #484f58; font-size: 16px; }
+
+  /* 검색 */
+  #search-box { padding: 8px 16px; border-bottom: 1px solid #30363d; }
+  #search-box input { width: 100%; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 6px 10px; color: #e6edf3; font-size: 13px; outline: none; }
+  #search-box input:focus { border-color: #58a6ff; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="search-box"><input id="search" placeholder="문서 검색..." /></div>
+  <div id="breadcrumb"></div>
+  <div id="tree"></div>
+</div>
+<div id="main"><div id="empty">← 문서를 선택하세요</div></div>
+
+<script>
+const SCOPE_ORDER = ['constraint','state','data','feature','flow','interface','ui'];
+
+let DATA = null;
+let nodeMap = {};
+let currentPath = []; // breadcrumb path
+let selectedId = null;
+
+async function init() {
+  const resp = await fetch('/def-catalog-data.json');
+  DATA = await resp.json();
+  DATA.nodes.forEach(n => nodeMap[n.id] = n);
+  navigate('system-root');
+}
+
+function navigate(groupId) {
+  const node = nodeMap[groupId];
+  if (!node) return;
+
+  // breadcrumb 갱신
+  const idx = currentPath.findIndex(p => p.id === groupId);
+  if (idx >= 0) {
+    currentPath = currentPath.slice(0, idx + 1);
+  } else {
+    currentPath.push({ id: groupId, title: node.title });
+  }
+  renderBreadcrumb();
+  renderTree(groupId);
+}
+
+function renderBreadcrumb() {
+  const el = document.getElementById('breadcrumb');
+  el.innerHTML = '';
+  currentPath.forEach((p, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'sep';
+      sep.textContent = '›';
+      el.appendChild(sep);
+    }
+    const span = document.createElement('span');
+    span.textContent = p.title;
+    span.onclick = () => navigate(p.id);
+    el.appendChild(span);
+  });
+}
+
+function renderTree(groupId) {
+  const group = nodeMap[groupId];
+  const tree = document.getElementById('tree');
+  tree.innerHTML = '';
+
+  const members = (group.contains || [])
+    .map(id => nodeMap[id])
+    .filter(Boolean)
+    .sort((a, b) => SCOPE_ORDER.indexOf(a.scope) - SCOPE_ORDER.indexOf(b.scope));
+
+  members.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'node' + (m.id === selectedId ? ' selected' : '');
+    div.innerHTML = `
+      <div class="node-title">
+        ${m.isGroup ? '<span class="group-icon">📁</span>' : ''}
+        <span class="scope-badge scope-${m.scope}">${m.scope}</span>
+        ${m.title}
+      </div>
+      <div class="node-purpose">${m.purpose || ''}</div>
+      <div class="node-meta">${m.depth}${m.tags.length ? ' · ' + m.tags.join(', ') : ''}</div>
+    `;
+    div.onclick = () => {
+      selectedId = m.id;
+      if (m.isGroup) {
+        navigate(m.id);
+        renderDetail(m.id);
+      } else {
+        renderTree(groupId);
+        renderDetail(m.id);
+      }
+    };
+    tree.appendChild(div);
+  });
+}
+
+function renderDetail(docId) {
+  const node = nodeMap[docId];
+  if (!node) return;
+  const main = document.getElementById('main');
+
+  let html = `<h1>${node.title}</h1>`;
+  html += `<div class="meta-bar">
+    <span class="scope-badge scope-${node.scope}">${node.scope}/${node.aspect}</span>
+    <span>depth: ${node.depth}</span>
+    ${node.serviceId ? `<span>svc: ${node.serviceId}</span>` : ''}
+    ${node.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+  </div>`;
+
+  // purpose
+  if (node.purpose) {
+    html += `<div class="section"><h2>목적</h2><p>${escapeHtml(node.purpose)}</p></div>`;
+  }
+
+  // overview
+  if (node.overview) {
+    html += `<div class="section"><h2>구성</h2><p>${escapeHtml(node.overview)}</p></div>`;
+  }
+
+  // contains 멤버 (그룹인 경우)
+  if (node.isGroup && node.contains.length > 0) {
+    const members = node.contains.map(id => nodeMap[id]).filter(Boolean)
+      .sort((a, b) => SCOPE_ORDER.indexOf(a.scope) - SCOPE_ORDER.indexOf(b.scope));
+    html += `<div class="section"><h2>멤버 (${members.length}건)</h2><div class="members">`;
+    members.forEach(m => {
+      html += `<div class="member-card" onclick="selectedId='${m.id}';${m.isGroup ? `navigate('${m.id}');` : ''}renderDetail('${m.id}')">
+        <div class="mc-title"><span class="scope-badge scope-${m.scope}">${m.scope}</span> ${m.title}</div>
+        <div class="mc-purpose">${escapeHtml(m.purpose || '')}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // links
+  if (node.links.length > 0) {
+    html += `<div class="section"><h2>관계</h2>`;
+    node.links.forEach(l => {
+      const target = nodeMap[l.target];
+      const title = target ? target.title : l.target;
+      html += `<div class="link-item"><span class="link-type">[${l.type}]</span> <a onclick="selectedId='${l.target}';renderDetail('${l.target}')">${title}</a></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // 소속 그룹
+  if (node.parents.length > 0) {
+    html += `<div class="section"><h2>소속</h2>`;
+    node.parents.forEach(pid => {
+      const parent = nodeMap[pid];
+      const title = parent ? parent.title : pid;
+      html += `<div class="link-item"><a onclick="navigate('${pid}');renderDetail('${pid}')">${title}</a></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // 전문
+  if (node.body) {
+    html += `<div class="section"><h2>전문</h2><pre>${escapeHtml(node.body)}</pre></div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 검색
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  if (!q) {
+    const last = currentPath[currentPath.length - 1];
+    if (last) renderTree(last.id);
+    return;
+  }
+  const tree = document.getElementById('tree');
+  tree.innerHTML = '';
+  const matched = DATA.nodes.filter(n =>
+    n.lifecycle !== 'deprecated' &&
+    (n.title.toLowerCase().includes(q) || n.id.includes(q) || (n.purpose || '').toLowerCase().includes(q))
+  ).slice(0, 30);
+
+  matched.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'node';
+    div.innerHTML = `
+      <div class="node-title">
+        ${m.isGroup ? '<span class="group-icon">📁</span>' : ''}
+        <span class="scope-badge scope-${m.scope}">${m.scope}</span>
+        ${m.title}
+      </div>
+      <div class="node-purpose">${m.purpose || ''}</div>
+    `;
+    div.onclick = () => {
+      selectedId = m.id;
+      if (m.isGroup) navigate(m.id);
+      else if (m.parents[0]) { navigate(m.parents[0]); }
+      renderDetail(m.id);
+      e.target.value = '';
+    };
+    tree.appendChild(div);
+  });
+});
+
+init();
+</script>
+</body>
+</html>
