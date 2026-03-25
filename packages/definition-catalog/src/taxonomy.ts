@@ -283,4 +283,43 @@ export const CLASSIFICATION_CONVENTIONS = {
    * → detectCrossScope()로 자동 감지
    */
   splitThreshold: "tags에 scope 3개 이상 → 분리 후보 (detectCrossScope로 감지)",
+
+  // ── 문서 작성 컨벤션 ──────────────────────────────────
+
+  /**
+   * 컨벤션 8: 모든 문서에 frontmatter + `## 목적 ^purpose` 필수
+   *
+   * frontmatter의 def 블록이 좌표를 정의하고,
+   * 본문 첫 ## 섹션이 `## 목적 ^purpose`이어야 한다.
+   */
+  frontmatterRequired: "모든 문서에 def frontmatter + ## 목적 ^purpose 필수",
+
+  /**
+   * 컨벤션 9: `## 목적 ^purpose` — 이 문서가 무엇인가 (섹션 분량)
+   *
+   * assembleFeature()가 이 섹션을 수집하여 그룹 요약을 조립한다.
+   * 작성자가 요약에 포함할 내용을 명시적으로 통제한다.
+   */
+  purposeSection: "## 목적 ^purpose에 문서의 존재 이유를 섹션 분량으로 작성",
+
+  /**
+   * 컨벤션 10: `## 구성 ^overview` — 핵심 사실 나열 (선택)
+   *
+   * 무엇이 있는가, 몇 개인가, 주요 항목 목록.
+   * purpose보다 구체적이지만 상세는 아닌 수준.
+   */
+  overviewSection: "## 구성 ^overview에 핵심 사실을 나열 (선택, purpose보다 구체적)",
+
+  /**
+   * 컨벤션 11: 마커 없는 섹션은 detail (full에서만 보임)
+   */
+  unmarkedIsDetail: "마커 없는 섹션은 full 추출에서만 보임",
+
+  /**
+   * 컨벤션 12: 그룹 문서는 overview depth + contains 링크
+   *
+   * 그룹 문서의 목적에 시스템 전체 목적,
+   * 구성에 멤버 목록과 구성 요약.
+   */
+  groupDocument: "그룹 문서 = overview depth + contains 링크 + 목적/구성 섹션",
 } as const;

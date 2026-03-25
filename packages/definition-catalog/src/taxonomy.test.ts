@@ -165,14 +165,21 @@ describe("detectCrossScope", () => {
 });
 
 describe("CLASSIFICATION_CONVENTIONS", () => {
-  it("6개 컨벤션이 정의되어 있다", () => {
+  it("11개 컨벤션이 정의되어 있다 (분류 6 + 작성 5)", () => {
     const keys = Object.keys(CLASSIFICATION_CONVENTIONS);
-    expect(keys.length).toBe(6);
+    expect(keys.length).toBe(11);
+    // 분류 컨벤션
     expect(keys).toContain("scopeByAudience");
     expect(keys).toContain("splitAndLink");
     expect(keys).toContain("concernAsTag");
     expect(keys).toContain("aspectFitCheck");
     expect(keys).toContain("aspectMigration");
     expect(keys).toContain("splitThreshold");
+    // 작성 컨벤션
+    expect(keys).toContain("frontmatterRequired");
+    expect(keys).toContain("purposeSection");
+    expect(keys).toContain("overviewSection");
+    expect(keys).toContain("unmarkedIsDetail");
+    expect(keys).toContain("groupDocument");
   });
 });

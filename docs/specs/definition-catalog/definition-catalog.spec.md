@@ -265,19 +265,29 @@ gate-system (flow/overview, tags: [security])
 
 ## 8. 마커 기반 요약 추출
 
-줄 끝 `^purpose` / `^overview` 마커로 추출 수준을 작성자가 명시.
+**헤더에 `^marker`를 붙이면 해당 섹션 전체**가 추출 대상이 된다.
+작성자가 요약할 내용을 섹션으로 명시적으로 작성한다.
 
 ```markdown
-> RPC 엔드포인트 명세. ^purpose
+## 목적 ^purpose
 
-6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges ^overview
+RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구를 정의한다.
+모든 호출은 서비스 간 내부 전용이며 외부 노출을 금지한다.
+
+## 구성 ^overview
+
+6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges.
+에러 코드: NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종.
+
+## 엔드포인트
+...상세...
 ```
 
 | 수준 | 추출 대상 | 용도 |
 |------|----------|------|
-| purpose | `^purpose` 줄만 | "무엇을 하는가" 1줄 |
-| overview | `^purpose` + `^overview` | 핵심 사실 포함 |
-| full | 전체 (마커만 제거) | 상세 내용 |
+| purpose | `## ... ^purpose` 섹션 본문 | 이 문서가 무엇인가 (섹션 분량) |
+| overview | `^purpose` + `^overview` 섹션 본문 | 핵심 사실 포함 |
+| full | 전체 (마커 표기만 제거) | 상세 내용 |
 
 ---
 
@@ -297,38 +307,90 @@ scope 정렬: constraint → state → data → feature → flow → interface �
 
 ## 10. 운영 컨벤션
 
-### C1. 1개 문서 = 1개 좌표 = 1개 비즈니스 로직
+### 분류 컨벤션
+
+**C1. 1개 문서 = 1개 좌표 = 1개 비즈니스 로직**
 
 문서의 좌표가 정의하는 주제의 내용**만** 담는다.
-다른 scope의 내용은 1줄 요약 + link로 대체.
-2줄 이상 서술하면 분리 신호.
+다른 scope의 내용은 link로 참조. 본문에 2줄 이상 서술하면 분리 신호.
 
-### C2. scope 결정 기준 — "주 독자가 누구인가"
+**C2. scope 결정 기준 — "주 독자가 누구인가"**
 
 - API를 호출하는 사람 → `interface/api_contract`
 - 흐름을 이해하려는 사람 → `flow/process_flow`
 - 상태를 설계하는 사람 → `state/domain_state`
 
-### C3. 여러 scope에 걸치면 — 쪼개고 link로 연결
+**C3. 여러 scope에 걸치면 — 쪼개고 link로 연결**
 
 scope별 독립 문서로 분리 → link로 연결.
 정말 쪼갤 수 없으면: 주 scope 1개 + `tags: ["cross-scope", ...]`
 
-### C4. 횡단 관심사는 scope가 아니라 ConcernTag
+**C4. 횡단 관심사는 scope가 아니라 ConcernTag**
 
 보안, 성능, 접근성 등은 tag로 횡단 추적. link 그래프를 통해 자동 전파.
 
-### C5. aspect 추가 시 — 기존 동류와 성격 비교
+**C5. aspect 추가 시 — 기존 동류와 성격 비교**
 
 새 aspect는 "주 독자/성격"이 기존 aspect와 동류인지 확인 후 배치.
 
-### C6. aspect 이동은 파괴적 — 마이그레이션 프로토콜
+**C6. aspect 이동은 파괴적 — 마이그레이션 프로토콜**
 
 기존 aspect 유지 → 새 aspect 추가 → 마이그레이션 → traces_to 추적.
 
-### C7. cross-scope 3개 이상이면 분리 후보
+**C7. cross-scope 3개 이상이면 분리 후보**
 
 `detectCrossScope()`로 자동 감지.
+
+### 문서 작성 컨벤션
+
+**C8. 모든 문서에 frontmatter + `## 목적 ^purpose` 필수**
+
+```yaml
+---
+def:
+  id: <고유 ID>
+  scope: <scope>
+  aspect: <aspect>
+  depth: <depth>
+  lifecycle: <lifecycle>
+  tags: [<태그들>]          # 선택
+  links:                    # 선택
+    - target: <대상 ID>
+      type: <관계 유형>
+---
+```
+
+본문 첫 번째 `##` 섹션은 반드시 `## 목적 ^purpose`.
+
+**C9. `## 목적 ^purpose` — 이 문서가 무엇인가를 서술**
+
+섹션 분량으로 작성. 작성자가 요약에 포함할 내용을 통제한다.
+assembleFeature()가 이 섹션을 수집하여 그룹 요약을 조립한다.
+
+**C10. `## 구성 ^overview` — 핵심 사실을 나열** (선택)
+
+무엇이 있는가, 몇 개인가, 주요 항목 목록.
+purpose보다 구체적이지만 상세 내용은 아닌 수준.
+
+**C11. 마커 없는 섹션 = detail (full에서만 보임)**
+
+`## 엔드포인트`, `## 상태 정의` 등 마커 없는 섹션은 full 추출에서만 보인다.
+
+**C12. 그룹 문서는 overview depth + contains 링크**
+
+```yaml
+def:
+  id: <시스템>-system
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  links:
+    - target: <멤버 ID>
+      type: contains
+```
+
+그룹 문서의 `## 목적 ^purpose`에 시스템 전체 목적,
+`## 구성 ^overview`에 멤버 목록과 구성 요약.
 
 ---
 
@@ -366,24 +428,35 @@ scope별 독립 문서로 분리 → link로 연결.
 | `frontmatter.test.ts` | 파서 단위 + 스캔 통합 |
 | `scan-real.test.ts` | docs/ 디렉토리 스캔 |
 | `gate-docs.test.ts` | gate 7문서 scope 분리 + 그룹 + concern |
+| `ingest-docs.test.ts` | ingest 12문서 분할 + 조립 + concern 전파 |
 
-### 운영 문서
+### 운영 문서 (24건)
 
-| 문서 | frontmatter | ^purpose | contains |
-|------|:-----------:|:--------:|:--------:|
-| system-overview | ✓ | ✓ | — |
-| record-spec | ✓ | ✓ | — |
-| ingest-api-spec | ✓ | ✓ | — |
-| decision-flow-spec | ✓ | ✓ | — |
-| gate-service-spec | ✓ | ✓ | — |
-| definition-catalog-spec | ✓ | ✓ | — |
-| **gate-system** | ✓ | ✓ | **6 멤버** |
-| gate-api | ✓ | ✓ | — |
-| gate-state-model | ✓ | ✓ | — |
-| gate-engine-func | ✓ | ✓ | — |
-| gate-flow | ✓ | ✓ | — |
-| gate-constraint | ✓ | ✓ | — |
-| gate-scenario | ✓ | ✓ | — |
+| 그룹 | 문서 | scope | contains |
+|------|------|-------|:--------:|
+| — | system-overview | flow/overview | — |
+| — | definition-catalog-spec | data/specification | — |
+| — | decision-flow-spec | state/specification | — |
+| — | gate-service-spec | interface/specification | — |
+| **gate** | gate-system | flow/overview | **6 멤버** |
+| | gate-api | interface/specification | — |
+| | gate-state-model | state/specification | — |
+| | gate-engine-func | feature/specification | — |
+| | gate-flow | flow/specification | — |
+| | gate-constraint | constraint/specification | — |
+| | gate-scenario | feature/validation | — |
+| **ingest** | ingest-system | flow/overview | **11 멤버** |
+| | ingest-api-spec | interface/specification | — |
+| | query-api-spec | interface/specification | — |
+| | scenario-api-spec | interface/specification | — |
+| | stream-api-spec | interface/event_contract | — |
+| | verdict-api-spec | interface/specification | — |
+| | admin-api-spec | interface/specification | — |
+| | record-spec | data/specification | — |
+| | trace-spec | data/specification | — |
+| | session-spec | data/specification | — |
+| | ingest-pipeline-flow | flow/specification | — |
+| | ingest-infra-spec | constraint/specification | — |
 
 ---
 
@@ -391,7 +464,7 @@ scope별 독립 문서로 분리 → link로 연결.
 
 ```
 pnpm --filter definition-catalog typecheck   # 타입 체크
-pnpm --filter definition-catalog test        # 234 tests (13 files)
+pnpm --filter definition-catalog test        # 248 tests (14 files)
 pnpm --filter definition-catalog build       # ESM + CJS 빌드
 ```
 
