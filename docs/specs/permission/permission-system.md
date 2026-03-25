@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: auth
-  tags: [security, entry-point]
+  tags: [security, entry-point, tier-backend]
   links:
     - target: permission-model
       type: contains

@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: decode-service
-  tags: [entry-point]
+  tags: [entry-point, tier-infra]
   links:
     - target: decode-api
       type: contains

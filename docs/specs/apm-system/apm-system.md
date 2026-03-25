@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: qa-sdk-cli
-  tags: [entry-point]
+  tags: [entry-point, tier-system]
   links:
     - target: codegen-spec
       type: contains

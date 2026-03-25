@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: platform-demo
-  tags: [entry-point]
+  tags: [entry-point, tier-frontend]
   links:
     - target: viz-panels-spec
       type: contains

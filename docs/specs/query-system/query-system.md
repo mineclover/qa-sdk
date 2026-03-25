@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: query-service
-  tags: [entry-point]
+  tags: [entry-point, tier-infra]
   links:
     - target: query-api
       type: contains

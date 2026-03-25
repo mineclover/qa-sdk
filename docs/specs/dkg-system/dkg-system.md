@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: dkg-engine
-  tags: [observability, entry-point]
+  tags: [observability, entry-point, tier-system]
   links:
     - target: dkg-node-types
       type: contains

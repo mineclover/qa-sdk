@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: gate-service
-  tags: [security, entry-point]
+  tags: [security, entry-point, tier-infra]
   links:
     - target: gate-api
       type: contains

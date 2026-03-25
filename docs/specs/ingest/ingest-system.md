@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: ingest-server
-  tags: [performance, observability, entry-point]
+  tags: [performance, observability, entry-point, tier-infra]
   links:
     - target: ingest-api-spec
       type: contains

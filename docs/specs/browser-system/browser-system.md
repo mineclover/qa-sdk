@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: shopping-web
-  tags: [entry-point]
+  tags: [entry-point, tier-frontend]
   links:
     - target: auto-capture-spec
       type: contains

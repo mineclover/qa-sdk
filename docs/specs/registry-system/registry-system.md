@@ -6,7 +6,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: registry-service
-  tags: [entry-point]
+  tags: [entry-point, tier-infra]
   links:
     - target: registry-api
       type: contains
