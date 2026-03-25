@@ -54,6 +54,9 @@ export interface DefinitionRegistry {
   /** lifecycle로 필터 */
   findByLifecycle(lifecycle: DefLifecycle): readonly DefinitionEntry[];
 
+  /** 서비스 ID로 조회 */
+  findByService(serviceId: string): readonly DefinitionEntry[];
+
   /** 좌표 주소로 조회 (같은 유형의 문서가 여럿일 수 있음) */
   findByAddress(address: number): readonly DefinitionEntry[];
 
@@ -239,6 +242,10 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     return [...this.entries.values()].filter(e => e.lifecycle === lifecycle);
   }
 
+  findByService(serviceId: string): readonly DefinitionEntry[] {
+    return [...this.entries.values()].filter(e => e.serviceId === serviceId);
+  }
+
   findByAddress(address: number): readonly DefinitionEntry[] {
     const ids = this.addressIndex.get(address);
     if (!ids) return [];
@@ -254,6 +261,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       if (filter.tags && filter.tags.length > 0) {
         if (!e.tags || !filter.tags.every(t => e.tags!.includes(t))) return false;
       }
+      if (filter.serviceId && e.serviceId !== filter.serviceId) return false;
       return true;
     });
   }

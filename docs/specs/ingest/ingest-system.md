@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: ingest-server
   tags: [performance, observability, entry-point]
   links:
     - target: ingest-api-spec

@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: dkg-engine
   tags: [observability, entry-point]
   links:
     - target: dkg-node-types

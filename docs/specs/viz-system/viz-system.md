@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: platform-demo
   tags: [entry-point]
   links:
     - target: viz-panels-spec

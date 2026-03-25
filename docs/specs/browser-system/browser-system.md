@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: shopping-web
   tags: [entry-point]
   links:
     - target: auto-capture-spec

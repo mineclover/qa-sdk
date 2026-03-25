@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: auth
   tags: [security, entry-point]
   links:
     - target: permission-model

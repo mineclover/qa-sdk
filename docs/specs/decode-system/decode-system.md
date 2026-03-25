@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: decode-service
   tags: [entry-point]
   links:
     - target: decode-api

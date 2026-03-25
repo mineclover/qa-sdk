@@ -55,6 +55,8 @@ export interface FrontmatterDef {
   readonly lifecycle: DefLifecycle;
   readonly tags?: readonly string[];
   readonly links?: readonly FrontmatterLink[];
+  /** 서비스 레지스트리 연결 (serviceId) */
+  readonly svc?: string;
 }
 
 /** 파싱 결과 */
@@ -295,6 +297,9 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
     }
   }
 
+  // svc (서비스 레지스트리 연결)
+  const svc = typeof d.svc === "string" ? d.svc : undefined;
+
   return {
     id: id as string,
     scope: scope as DefScope,
@@ -303,6 +308,7 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
     lifecycle: lifecycle as DefLifecycle,
     ...(tags && tags.length > 0 ? { tags } : {}),
     ...(links.length > 0 ? { links } : {}),
+    ...(svc ? { svc } : {}),
   };
 }
 
@@ -393,6 +399,7 @@ export async function scanAndBuild(
         lifecycle: def.lifecycle,
         tags: def.tags ? [...def.tags] : undefined,
         ref: relPath,
+        serviceId: def.svc,
         createdAt: now,
         updatedAt: now,
       });

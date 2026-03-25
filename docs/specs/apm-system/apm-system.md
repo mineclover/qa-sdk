@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: qa-sdk-cli
   tags: [entry-point]
   links:
     - target: codegen-spec

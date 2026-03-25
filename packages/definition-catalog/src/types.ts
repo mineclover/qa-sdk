@@ -196,6 +196,10 @@ export interface DefinitionEntry {
 
   // decision-flow 연결 (선택)
   readonly decisionRef?: DecisionRef;
+
+  // 서비스 레지스트리 연결 (선택)
+  /** 이 문서가 관련된 서비스 ID (registry-service의 serviceId) */
+  readonly serviceId?: string;
 }
 
 /** 정의 간 관계 */
@@ -217,6 +221,7 @@ export interface DefinitionFilter {
   readonly depth?: DefDepth;
   readonly lifecycle?: DefLifecycle;
   readonly tags?: readonly string[];
+  readonly serviceId?: string;
 }
 
 /** 통계 */

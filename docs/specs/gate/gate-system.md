@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: gate-service
   tags: [security, entry-point]
   links:
     - target: gate-api
