@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: overview
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [cross-scope, flow, data, interface, state, entry-point]
 ---
 # QA-SDK 시스템 개요

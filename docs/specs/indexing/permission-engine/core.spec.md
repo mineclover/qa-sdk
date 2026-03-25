@@ -4,7 +4,7 @@ def:
   scope: constraint
   aspect: biz_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [security]
 ---
 # permission-engine core 스펙
