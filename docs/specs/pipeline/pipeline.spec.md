@@ -1,6 +1,17 @@
+---
+def:
+  id: pipeline-spec-original
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # Engine Pipeline
 
-> `EventRecord[]`를 `RuntimeGraph`로 재구성하고, `SpecGraph` 매칭 결과를 `VerdictReport`로 계산하는 canonical pipeline spec.
+## 목적 ^purpose
+
+`EventRecord[]`를 `RuntimeGraph`로 재구성하고, `SpecGraph` 매칭 결과를 `VerdictReport`로 계산하는 canonical pipeline spec.
 
 ## 상태
 

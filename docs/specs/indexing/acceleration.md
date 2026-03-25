@@ -1,8 +1,20 @@
+---
+def:
+  id: acceleration-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  tags: [performance]
+---
+
 # 하드웨어 가속 비전 — FPGA/PCIe 가속기를 위한 데이터 아키텍처
 
-> 현재 인덱싱 시스템의 구조적 특성이 왜 하드웨어 가속에 적합한지를 정리하고,
-> 향후 FPGA/PCIe 가속기를 위한 인터페이스 확장 방향을 제시한다.
-> 이 문서는 장기 로드맵이며, 현재 구현에 대한 설계 제약을 부과하지 않는다.
+## 목적 ^purpose
+
+현재 인덱싱 시스템의 구조적 특성이 왜 하드웨어 가속에 적합한지를 정리하고,
+향후 FPGA/PCIe 가속기를 위한 인터페이스 확장 방향을 제시한다.
+이 문서는 장기 로드맵이며, 현재 구현에 대한 설계 제약을 부과하지 않는다.
 
 상태: `vision`
 

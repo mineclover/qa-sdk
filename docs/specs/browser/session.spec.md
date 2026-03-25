@@ -1,7 +1,18 @@
+---
+def:
+  id: browser-session-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # SessionManager
 
-> 브라우저 탭 범위의 세션을 `sessionStorage`에 영속화한다.
-> 탭 내 새로고침 후에도 동일 세션을 복원하고, 탭 닫힘 시 자동 만료된다.
+## 목적 ^purpose
+
+브라우저 탭 범위의 세션을 `sessionStorage`에 영속화한다.
+탭 내 새로고침 후에도 동일 세션을 복원하고, 탭 닫힘 시 자동 만료된다.
 
 ## 상태
 

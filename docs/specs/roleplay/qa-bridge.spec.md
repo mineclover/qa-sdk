@@ -1,6 +1,17 @@
+---
+def:
+  id: qa-bridge-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # QA Bridge + Event Emitter
 
-> roleplay-web에서 사용자 폼 상호작용을 QA 이벤트로 변환하고 ingest-server로 전송하는 SDK 통합 계층.
+## 목적 ^purpose
+
+roleplay-web에서 사용자 폼 상호작용을 QA 이벤트로 변환하고 ingest-server로 전송하는 SDK 통합 계층.
 
 ## 상태
 

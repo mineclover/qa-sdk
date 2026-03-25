@@ -1,6 +1,17 @@
+---
+def:
+  id: storage-schema-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # DB Schema
 
-> PostgreSQL 테이블 정의. Drizzle ORM `pgTable` 기반.
+## 목적 ^purpose
+
+PostgreSQL 테이블 정의. Drizzle ORM `pgTable` 기반.
 
 ## 상태
 

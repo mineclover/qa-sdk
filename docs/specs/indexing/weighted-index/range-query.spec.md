@@ -1,7 +1,18 @@
+---
+def:
+  id: range-query-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # Range Query 스펙
 
-> `calcAddressRanges` — 부분 좌표 제약에서 주소 구간 계산.
-> 디코딩 없이 1D 주소 공간을 직접 필터링한다.
+## 목적 ^purpose
+
+`calcAddressRanges` — 부분 좌표 제약에서 주소 구간 계산.
+디코딩 없이 1D 주소 공간을 직접 필터링한다.
 
 패키지: `weighted-index`
 관련: [core.spec.md](core.spec.md), [../index-meta/store.spec.md](../index-meta/store.spec.md)

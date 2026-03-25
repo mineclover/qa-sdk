@@ -1,9 +1,18 @@
+---
+def:
+  id: axis-boundary-spec
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+---
+
 # Axis Boundary — 축에 넣을 것과 넣지 않을 것
 
-> **Status: ACTIVE**
->
-> 이 시스템의 핵심 판단: 무엇이 axis이고 무엇이 아닌가.
-> 잘못 구분하면 시스템이 방해가 된다.
+## 목적 ^purpose
+
+이 시스템의 핵심 판단: 무엇이 axis이고 무엇이 아닌가.
+잘못 구분하면 시스템이 방해가 된다.
 
 ---
 

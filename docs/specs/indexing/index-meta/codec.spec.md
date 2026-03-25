@@ -1,7 +1,18 @@
+---
+def:
+  id: index-codec-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # MetaCodec 스펙
 
-> DecodeMap 기반 독립 encode/decode 모듈.
-> MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
+## 목적 ^purpose
+
+DecodeMap 기반 독립 encode/decode 모듈.
+MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
 패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)

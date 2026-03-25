@@ -1,7 +1,18 @@
+---
+def:
+  id: indexing-pipeline
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # 인코딩/디코딩 파이프라인
 
-> entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
-> 각 단계가 어떤 패키지의 어떤 메서드에 의해 수행되는지, 어떤 정보가 필요한지를 명시한다.
+## 목적 ^purpose
+
+entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
+각 단계가 어떤 패키지의 어떤 메서드에 의해 수행되는지, 어떤 정보가 필요한지를 명시한다.
 
 관련 문서:
 - 레이어 분리 원리: [`foundation.md`](foundation.md) §3

@@ -1,10 +1,19 @@
+---
+def:
+  id: spec-next-phase
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+---
+
 # Next Phase — Skills + 인프라 + 수집 테스트
 
-> **Status: PLANNING**
->
-> prefix의 3가지 사용 모드를 인프라로 연결하고,
-> skills/문서 자체도 prefix 기반으로 관리하며,
-> 이벤트 수집이 실제로 동작하는지 검증한다.
+## 목적 ^purpose
+
+prefix의 3가지 사용 모드를 인프라로 연결하고,
+skills/문서 자체도 prefix 기반으로 관리하며,
+이벤트 수집이 실제로 동작하는지 검증한다.
 
 ---
 

@@ -1,6 +1,17 @@
+---
+def:
+  id: storage-adapters-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Store Adapters
 
-> core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
+## 목적 ^purpose
+
+core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
 
 ## 상태
 

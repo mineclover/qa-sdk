@@ -1,6 +1,17 @@
+---
+def:
+  id: iframe-protocol-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # iframe 통신 프로토콜
 
-> viz-web(부모)과 roleplay-web(자식 iframe) 간의 `postMessage` 기반 양방향 통신 프로토콜.
+## 목적 ^purpose
+
+viz-web(부모)과 roleplay-web(자식 iframe) 간의 `postMessage` 기반 양방향 통신 프로토콜.
 
 ## 상태
 

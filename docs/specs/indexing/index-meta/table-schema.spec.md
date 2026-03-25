@@ -1,8 +1,19 @@
+---
+def:
+  id: table-schema-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # TableDef / compileSchema 스펙
 
-> 테이블 단위 스키마 선언 레이어.
-> `MetaRegistry`가 런타임 encode/decode를 담당한다면,
-> 이 레이어는 **외부 DB의 주소 공간(address space)을 정의하고 버전을 관리**한다.
+## 목적 ^purpose
+
+테이블 단위 스키마 선언 레이어.
+`MetaRegistry`가 런타임 encode/decode를 담당한다면,
+이 레이어는 **외부 DB의 주소 공간(address space)을 정의하고 버전을 관리**한다.
 
 패키지 인덱스: [README.md](README.md)
 저장소 레이어: [store.spec.md](store.spec.md)

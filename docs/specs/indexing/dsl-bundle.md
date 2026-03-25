@@ -1,9 +1,19 @@
+---
+def:
+  id: dsl-bundle-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # DSL Bundle — prefix 묶음의 사용 패턴 정의
 
-> prefix는 차원 교차의 **원자 단위**다.
-> DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구성한다.
->
-> "이 prefix들을 이 서비스 컨텍스트에서 이렇게 조합해서 쓴다"의 선언.
+## 목적 ^purpose
+
+prefix는 차원 교차의 **원자 단위**다.
+DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구성한다.
+"이 prefix들을 이 서비스 컨텍스트에서 이렇게 조합해서 쓴다"의 선언.
 
 기반 문서: [dimension-operations.md](dimension-operations.md) · [table-system.md](table-system.md)
 관련 스펙: `packages/spec-core/src/dkg/dsl-bundle.ts`

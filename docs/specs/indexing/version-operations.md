@@ -1,7 +1,18 @@
+---
+def:
+  id: version-operations
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # 버전 운영 — Draft Cycle, 배포, 다중 버전 관리
 
-> 버전의 수학적 원리(stride, capacity, headroom)는 [`foundation.md`](foundation.md) §2–§3을 참조한다.
-> 이 문서는 **대규모 분산 시스템에서 버전을 운영하는 방법**을 다룬다.
+## 목적 ^purpose
+
+버전의 수학적 원리(stride, capacity, headroom)는 [`foundation.md`](foundation.md) §2–§3을 참조한다.
+이 문서는 **대규모 분산 시스템에서 버전을 운영하는 방법**을 다룬다.
 
 ---
 

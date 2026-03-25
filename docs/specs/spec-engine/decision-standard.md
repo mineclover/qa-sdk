@@ -1,10 +1,20 @@
+---
+def:
+  id: decision-standard
+  scope: constraint
+  aspect: biz_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [decision]
+---
+
 # 의사결정 표준 프로세스
 
-> **Status: DESIGN**
->
-> 새로운 요구사항이 들어왔을 때,
-> 기존 prefix를 재사용할지 새 prefix를 만들지를 판단하고,
-> DSL(prefix)을 정의하여 비즈니스 로직의 경우의 수를 제어하는 표준 프로세스.
+## 목적 ^purpose
+
+새로운 요구사항이 들어왔을 때,
+기존 prefix를 재사용할지 새 prefix를 만들지를 판단하고,
+DSL(prefix)을 정의하여 비즈니스 로직의 경우의 수를 제어하는 표준 프로세스.
 
 기반: [README.md](README.md) · [design-knowledge-graph.md](design-knowledge-graph.md) · [dkg-skills.md](dkg-skills.md) · [convergence-layer.md](convergence-layer.md)
 

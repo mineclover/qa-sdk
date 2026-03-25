@@ -1,9 +1,18 @@
+---
+def:
+  id: spec-system-architecture
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # System Architecture — 구현 구조 스펙
 
-> **Status: ACTIVE**
->
-> 차원 압축 기반 DSL DB의 전체 구현 구조를 정의한다.
-> 3개 패키지(spec-core, sdk, cli)의 모듈 구성, 의존 관계, 타입 계층.
+## 목적 ^purpose
+
+차원 압축 기반 DSL DB의 전체 구현 구조를 정의한다.
+3개 패키지(spec-core, sdk, cli)의 모듈 구성, 의존 관계, 타입 계층.
 
 ---
 

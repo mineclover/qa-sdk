@@ -1,6 +1,17 @@
+---
+def:
+  id: address-context-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Address Context — 주소 태깅 계약
 
-> EventRecord와 TransmissionEnvelope에 n차원 주소 컨텍스트를 부착하는 계약을 정의한다. 기존 필드(`source.service_name`, `build.env`)를 유지하면서 인덱싱 주소 공간으로의 확장을 제공한다.
+## 목적 ^purpose
+
+EventRecord와 TransmissionEnvelope에 n차원 주소 컨텍스트를 부착하는 계약을 정의한다. 기존 필드(`source.service_name`, `build.env`)를 유지하면서 인덱싱 주소 공간으로의 확장을 제공한다.
 
 ## 기존 타입 현황
 

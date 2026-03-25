@@ -1,7 +1,18 @@
+---
+def:
+  id: browser-monitor-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # QaMonitor
 
-> `@qa-sdk/browser` 패키지의 단일 진입점.
-> `QaLogger` + `BeaconTransport` + `SessionManager` + `AutoCapture` 를 조합한 브라우저 모니터링 SDK.
+## 목적 ^purpose
+
+`@qa-sdk/browser` 패키지의 단일 진입점.
+`QaLogger` + `BeaconTransport` + `SessionManager` + `AutoCapture` 를 조합한 브라우저 모니터링 SDK.
 
 ## 상태
 

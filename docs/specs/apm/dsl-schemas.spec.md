@@ -1,6 +1,17 @@
+---
+def:
+  id: dsl-schemas-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # DSL Schemas — Git/K8s/APM Signal 축 정의
 
-> registry-service의 SchemaSnapshot 형식으로 Git, K8s, APM Signal 도메인 축과 composite를 정의한다.
+## 목적 ^purpose
+
+registry-service의 SchemaSnapshot 형식으로 Git, K8s, APM Signal 도메인 축과 composite를 정의한다.
 
 ## 설계 원칙
 

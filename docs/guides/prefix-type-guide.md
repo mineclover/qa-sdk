@@ -1,4 +1,18 @@
+---
+def:
+  id: prefix-type-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point]
+---
+
 # Prefix 유형 가이드 — 프로젝트 분석 → prefix 설계
+
+## 목적 ^purpose
+
+프로젝트를 분석하여 적절한 prefix를 설계하는 가이드. prefix 유형별 축 조합 패턴과 설계 의사결정 기준.
 
 ## 1. prefix가 뭔가
 

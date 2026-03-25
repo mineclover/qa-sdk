@@ -1,10 +1,22 @@
+---
+def:
+  id: sdk-scenarios
+  scope: feature
+  aspect: scenario
+  depth: validation
+  lifecycle: approved
+  tags: [testing]
+---
+
 # SDK 라이프사이클 유저 시나리오
 
-> IndexSDK 기반 클라이언트·서버 운영 시나리오.
-> 테스트: `sdk-lifecycle.e2e.test.ts`, `index-sdk.test.ts`
-> SDK 스펙: [sdk.spec.md](sdk.spec.md)
-> DX 라이프사이클: [dx-lifecycle.spec.md](dx-lifecycle.spec.md)
-> Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
+## 목적 ^purpose
+
+IndexSDK 기반 클라이언트·서버 운영 시나리오.
+테스트: `sdk-lifecycle.e2e.test.ts`, `index-sdk.test.ts`
+SDK 스펙: [sdk.spec.md](sdk.spec.md)
+DX 라이프사이클: [dx-lifecycle.spec.md](dx-lifecycle.spec.md)
+Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
 
 ---
 

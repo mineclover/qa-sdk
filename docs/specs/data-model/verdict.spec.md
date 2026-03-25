@@ -1,6 +1,17 @@
+---
+def:
+  id: verdict-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # VerdictReport + VerdictStore
 
-> spec/runtime 매칭 결과와 최종 판정 보고서의 canonical 구조.
+## 목적 ^purpose
+
+spec/runtime 매칭 결과와 최종 판정 보고서의 canonical 구조.
 
 ## 상태
 

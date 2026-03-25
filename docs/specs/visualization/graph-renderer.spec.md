@@ -1,6 +1,17 @@
+---
+def:
+  id: graph-renderer-spec
+  scope: ui
+  aspect: component
+  depth: specification
+  lifecycle: approved
+---
+
 # SpecGraph 시각화 — 레이아웃, 렌더링, 실시간 업데이트
 
-> `SpecGraph`를 dagre 기반 DAG 레이아웃으로 배치하고, SVG로 렌더링하며, SSE 이벤트 스트림에 따라 그래프 상태를 실시간 갱신하는 시각화 파이프라인.
+## 목적 ^purpose
+
+`SpecGraph`를 dagre 기반 DAG 레이아웃으로 배치하고, SVG로 렌더링하며, SSE 이벤트 스트림에 따라 그래프 상태를 실시간 갱신하는 시각화 파이프라인.
 
 ## 상태
 

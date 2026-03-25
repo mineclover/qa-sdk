@@ -1,6 +1,17 @@
+---
+def:
+  id: form-builder-spec
+  scope: ui
+  aspect: component
+  depth: specification
+  lifecycle: approved
+---
+
 # Form Builder — DOM 트리 모델 + 비주얼 에디터
 
-> roleplay-web의 핵심 UI: DOM 트리 데이터 모델, DevTools 스타일 트리 뷰, 속성 편집기, Figma 스타일 auto-layout, 실시간 폼 프리뷰.
+## 목적 ^purpose
+
+roleplay-web의 핵심 UI: DOM 트리 데이터 모델, DevTools 스타일 트리 뷰, 속성 편집기, Figma 스타일 auto-layout, 실시간 폼 프리뷰.
 
 ## 상태
 

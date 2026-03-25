@@ -1,7 +1,18 @@
+---
+def:
+  id: task-pipeline-unit
+  scope: flow
+  aspect: process_flow
+  depth: implementation
+  lifecycle: approved
+---
+
 # Unit 2 — 이벤트 수집 + 집계 파이프라인
 
-> A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축하여
-> 인덱싱 시스템의 packed_key 기반 운영 분석을 가능하게 한다.
+## 목적 ^purpose
+
+A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축하여
+인덱싱 시스템의 packed_key 기반 운영 분석을 가능하게 한다.
 
 ## 흐름 심볼
 

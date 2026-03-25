@@ -1,6 +1,15 @@
+---
+def:
+  id: invariants-spec
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+---
+
 # 변환 불변조건 (Invariants) 명세
 
-## 목적
+## 목적 ^purpose
 
 산재된 불변조건을 단일 스펙으로 통합하여 시스템의 정합성 보증을 명문화한다.
 

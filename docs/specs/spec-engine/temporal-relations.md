@@ -1,10 +1,19 @@
+---
+def:
+  id: temporal-relations
+  scope: flow
+  aspect: relation
+  depth: specification
+  lifecycle: approved
+---
+
 # Temporal Relations — 시간 순서와 데이터 흐름 수집
 
-> **Status: DESIGN**
->
-> 현재 co-occurrence는 "같은 EventRecord에 함께 나타남"만 감지한다.
-> 시간 순서("A 후에 B")와 데이터 흐름("A의 출력이 B의 입력")은 수집하지 않는다.
-> 이 문서는 이 두 가지 관계를 어떻게 수집하고 분석할지 정의한다.
+## 목적 ^purpose
+
+현재 co-occurrence는 "같은 EventRecord에 함께 나타남"만 감지한다.
+시간 순서("A 후에 B")와 데이터 흐름("A의 출력이 B의 입력")은 수집하지 않는다.
+이 문서는 이 두 가지 관계를 어떻게 수집하고 분석할지 정의한다.
 
 기반: [convergence-layer.md](convergence-layer.md) · [prefix-guide.md](prefix-guide.md)
 

@@ -1,4 +1,15 @@
+---
+def:
+  id: motion-content-glossary
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Motion Content V1 개념 용어집과 패키지 계약
+
+## 목적 ^purpose
 
 `motion-content` 계열 패키지는 Remotion식 개념층을 참고하되 런타임은 GSAP으로만 실행하는 선언형 모션 편집 스택이다. V1의 목적은 "작동하는 데모"를 넘어서 다른 앱이 붙일 수 있는 편집기/런타임 계약을 닫는 것이다.
 

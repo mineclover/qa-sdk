@@ -1,6 +1,17 @@
+---
+def:
+  id: graph-hint-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Graph Hint — 이벤트 그래프 의미론
 
-> Core Event가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다. engine의 reconstruction/matching이 이 힌트를 활용하여 그래프 구조를 더 정확히 해석할 수 있다.
+## 목적 ^purpose
+
+Core Event가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다. engine의 reconstruction/matching이 이 힌트를 활용하여 그래프 구조를 더 정확히 해석할 수 있다.
 
 ## 상태
 

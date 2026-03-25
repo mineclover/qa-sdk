@@ -1,7 +1,18 @@
+---
+def:
+  id: layout-sim-formats
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # 레이아웃 시뮬레이터 — 포맷 선택 및 인덱스 타입 가이드
 
-> UUID만이 아닌 다양한 PackFormat에서 차원 배치를 시뮬레이션하고,
-> 인덱스 저장 타입(Number vs BigInt)에 따른 도달 가능 범위를 시각화한다.
+## 목적 ^purpose
+
+UUID만이 아닌 다양한 PackFormat에서 차원 배치를 시뮬레이션하고,
+인덱스 저장 타입(Number vs BigInt)에 따른 도달 가능 범위를 시각화한다.
 
 ## 1. 배경
 

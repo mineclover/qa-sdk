@@ -1,7 +1,18 @@
+---
+def:
+  id: meta-registry-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # MetaRegistry 스펙
 
-> MetaRegistry — 주소 게이트웨이. 스키마 관리 + 직렬화 + 코덱 생성.
-> entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)이 담당한다.
+## 목적 ^purpose
+
+MetaRegistry — 주소 게이트웨이. 스키마 관리 + 직렬화 + 코덱 생성.
+entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)이 담당한다.
 
 패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)

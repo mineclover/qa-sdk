@@ -1,6 +1,17 @@
+---
+def:
+  id: analysis-system-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+---
+
 # 분석 시스템 상세 가이드
 
-> Self-Check, Convergence, IntentLink, Co-occurrence, TransitionSpec — 각 구성 요소의 목적, 동작 방식, prefix와의 관계를 설명한다.
+## 목적 ^purpose
+
+Self-Check, Convergence, IntentLink, Co-occurrence, TransitionSpec — 각 구성 요소의 목적, 동작 방식, prefix와의 관계를 설명한다.
 
 ---
 

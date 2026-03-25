@@ -1,7 +1,18 @@
+---
+def:
+  id: browser-transport-spec
+  scope: interface
+  aspect: event_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # BeaconTransport
 
-> 브라우저 언로드 타이밍에서도 이벤트를 누락하지 않는 전송 구현체.
-> `navigator.sendBeacon` 을 우선 시도하고, 미지원/실패 시 `fetch keepalive` 로 fallback.
+## 목적 ^purpose
+
+브라우저 언로드 타이밍에서도 이벤트를 누락하지 않는 전송 구현체.
+`navigator.sendBeacon` 을 우선 시도하고, 미지원/실패 시 `fetch keepalive` 로 fallback.
 
 ## 상태
 

@@ -1,6 +1,18 @@
+---
+def:
+  id: infra-logger-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+  tags: [observability]
+---
+
 # Logger
 
-> 구조화 JSON 로깅. pino 호환 인터페이스 제공.
+## 목적 ^purpose
+
+구조화 JSON 로깅. pino 호환 인터페이스 제공.
 
 ## 상태
 

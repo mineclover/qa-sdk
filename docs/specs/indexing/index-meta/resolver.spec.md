@@ -1,6 +1,17 @@
+---
+def:
+  id: resolver-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # MetaResolver 스펙
 
-> MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexRange, MetaDataset)로 변환한다.
+## 목적 ^purpose
+
+MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexRange, MetaDataset)로 변환한다.
 
 패키지 인덱스: [README.md](README.md)
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)

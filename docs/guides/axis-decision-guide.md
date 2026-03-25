@@ -1,7 +1,19 @@
+---
+def:
+  id: axis-decision-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, decision]
+---
+
 # Axis Decision Guide — 축에 넣을 것과 넣지 않을 것
 
-> **이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.**
-> 새로운 데이터 항목을 다룰 때, 이것이 axis인지 아닌지를 판단하는 표준 프레임워크.
+## 목적 ^purpose
+
+**이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.**
+새로운 데이터 항목을 다룰 때, 이것이 axis인지 아닌지를 판단하는 표준 프레임워크.
 
 ---
 

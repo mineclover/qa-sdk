@@ -1,12 +1,23 @@
+---
+def:
+  id: event-core-pattern
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Event Registry Core Pattern v1
 
-> QA Scenario DSL과 Runtime Matching Engine이 공통으로 참조할 수 있는 최소 실행 패턴 집합.
+## 목적 ^purpose
+
+QA Scenario DSL과 Runtime Matching Engine이 공통으로 참조할 수 있는 최소 실행 패턴 집합.
 
 ## 상태
 
 implemented
 
-## 목적
+## 설계 목적
 
 - QA 시나리오 DSL의 공통 언어
 - SDK 자동 수집의 기본 타깃

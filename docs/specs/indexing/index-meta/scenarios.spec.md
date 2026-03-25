@@ -1,11 +1,23 @@
+---
+def:
+  id: user-scenarios
+  scope: feature
+  aspect: scenario
+  depth: validation
+  lifecycle: approved
+  tags: [testing]
+---
+
 # 유저 시나리오 테스트 커버리지
 
-> MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합 시나리오.
-> 파일: `meta-codec.test.ts`, `meta-resolver.test.ts`, `meta-registry.test.ts`,
->       `prefix-registry.test.ts`, `table-flow.e2e.test.ts`, `address-resolver.test.ts`,
->       `migrate-address.test.ts`
->
-> 외부 시스템 통합 시나리오 (AddressProtocolManager): [scenarios-address.spec.md](scenarios-address.spec.md)
+## 목적 ^purpose
+
+MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합 시나리오.
+파일: `meta-codec.test.ts`, `meta-resolver.test.ts`, `meta-registry.test.ts`,
+      `prefix-registry.test.ts`, `table-flow.e2e.test.ts`, `address-resolver.test.ts`,
+      `migrate-address.test.ts`
+
+외부 시스템 통합 시나리오 (AddressProtocolManager): [scenarios-address.spec.md](scenarios-address.spec.md)
 
 패키지 인덱스: [README.md](README.md)
 

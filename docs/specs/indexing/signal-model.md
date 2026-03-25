@@ -1,12 +1,22 @@
+---
+def:
+  id: signal-model-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Signal Model — 트래킹의 상위 개념 구조
 
-> **Signal = 시스템에서 발생한 의미있는 순간.**
->
-> 1번의 qaTrack() 호출 = 1개의 Signal.
-> 각 prefix는 Signal의 다른 측면(role)을 설명한다.
->
-> "트래킹 포인트"는 코드의 호출 지점이지 좌표계의 개념이 아니다.
-> 좌표계의 상위 개념은 Signal.
+## 목적 ^purpose
+
+Signal = 시스템에서 발생한 의미있는 순간.
+1번의 qaTrack() 호출 = 1개의 Signal.
+각 prefix는 Signal의 다른 측면(role)을 설명한다.
+
+"트래킹 포인트"는 코드의 호출 지점이지 좌표계의 개념이 아니다.
+좌표계의 상위 개념은 Signal.
 
 기반 문서: [dimension-operations.md](dimension-operations.md) · [dsl-bundle.md](dsl-bundle.md) · [table-system.md](table-system.md)
 소스: `packages/viz-3d/src/core/signal-model.ts`

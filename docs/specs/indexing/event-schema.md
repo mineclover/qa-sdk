@@ -1,14 +1,23 @@
+---
+def:
+  id: event-schema-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # 이벤트 스키마 — 관계 정의로서의 이벤트
 
-> **Status: DRAFT — PERIPHERAL (CORE 좌표 결정의 확장)**
->
-> 이벤트 스키마는 온톨로지의 관계 정의와 같은 개념이다.
-> "누가(subject) 무엇을(predicate) 어디에(object) 했다"를 타입으로 선언한다.
-> prefix가 이 관계의 **고정된 구조**를 정의하고, table_ref가 **동적 엔티티 타입**을 연결한다.
->
-> **참고**: 이 문서의 내용은 좌표 결정 CORE가 아니라 PERIPHERAL 확장이다.
-> CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coordinate-states.md)에서 정의한다.
-> table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
+## 목적 ^purpose
+
+이벤트 스키마는 온톨로지의 관계 정의와 같은 개념이다.
+"누가(subject) 무엇을(predicate) 어디에(object) 했다"를 타입으로 선언한다.
+prefix가 이 관계의 **고정된 구조**를 정의하고, table_ref가 **동적 엔티티 타입**을 연결한다.
+
+**참고**: 이 문서의 내용은 좌표 결정 CORE가 아니라 PERIPHERAL 확장이다.
+CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coordinate-states.md)에서 정의한다.
+table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
 
 기반: [coordinate-states.md](coordinate-states.md) · [behavioral-traversal.md](behavioral-traversal.md) · [ontology-evaluation.md](ontology-evaluation.md)
 

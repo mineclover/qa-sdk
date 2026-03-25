@@ -1,6 +1,18 @@
+---
+def:
+  id: cookbook-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point]
+---
+
 # Cookbook — 자주 쓰는 레시피
 
----
+## 목적 ^purpose
+
+entry 추가, 축 생성, prefix 설계, capacity 확장 등 자주 쓰는 좌표 시스템 조작 레시피 모음.
 
 ## entry 추가 (capacity 내)
 

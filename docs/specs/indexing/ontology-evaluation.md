@@ -1,7 +1,18 @@
+---
+def:
+  id: ontology-eval
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # 좌표 시스템의 온톨로지 스키마 표현력 평가
 
-> 좌표 시스템(Coordinate System)이 RDF/OWL 온톨로지의 **스키마 영역**을 어디까지 담을 수 있는지 평가한다.
-> 이 평가는 좌표 시스템의 경계를 확인하고, 그 위에 구축될 데이터 저장 계층의 요구사항을 도출하기 위한 것이다.
+## 목적 ^purpose
+
+좌표 시스템(Coordinate System)이 RDF/OWL 온톨로지의 **스키마 영역**을 어디까지 담을 수 있는지 평가한다.
+이 평가는 좌표 시스템의 경계를 확인하고, 그 위에 구축될 데이터 저장 계층의 요구사항을 도출하기 위한 것이다.
 
 기반 문서: [data-design.md](data-design.md) · [foundation.md](foundation.md)
 
