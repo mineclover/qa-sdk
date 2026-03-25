@@ -15,6 +15,14 @@ def:
       type: contains
     - target: wi-constraint
       type: contains
+    - target: wi-traceability-spec
+      type: contains
+    - target: partial-binder-spec
+      type: contains
+    - target: wi-pack-format
+      type: contains
+    - target: range-query-spec
+      type: contains
 ---
 # Weighted-Index 시스템
 

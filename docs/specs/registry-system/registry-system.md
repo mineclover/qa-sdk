@@ -15,6 +15,14 @@ def:
       type: contains
     - target: registry-constraint
       type: contains
+    - target: registry-services-api-spec
+      type: contains
+    - target: registry-events-spec
+      type: contains
+    - target: registry-client-spec
+      type: contains
+    - target: meta-registry-spec
+      type: contains
 ---
 # Registry 시스템
 

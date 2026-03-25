@@ -21,6 +21,12 @@ def:
       type: contains
     - target: df-causal-mapping
       type: contains
+    - target: decision-standard
+      type: contains
+    - target: df-narrative
+      type: contains
+    - target: axis-decision-guide
+      type: contains
 ---
 # Decision Flow 시스템
 

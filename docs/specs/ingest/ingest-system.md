@@ -29,6 +29,12 @@ def:
       type: contains
     - target: ingest-infra-spec
       type: contains
+    - target: browser-session-spec
+      type: contains
+    - target: dlq-store-spec
+      type: contains
+    - target: transmission-spec
+      type: contains
 ---
 # Ingest 시스템
 

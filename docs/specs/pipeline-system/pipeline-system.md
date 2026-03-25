@@ -17,6 +17,10 @@ def:
       type: contains
     - target: pipeline-monitoring
       type: contains
+    - target: task-pipeline-unit
+      type: contains
+    - target: indexing-pipeline
+      type: contains
 ---
 # 파이프라인 시스템
 

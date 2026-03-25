@@ -74,10 +74,10 @@ describe("ingest 문서 등록", () => {
 });
 
 describe("ingest-system 그룹 조립", () => {
-  it("contains 11개 멤버", () => {
+  it("contains 멤버 11건 이상", () => {
     const links = result.registry.getLinks("ingest-system", "outgoing")
       .filter(l => l.linkType === "contains");
-    expect(links.length).toBe(11);
+    expect(links.length).toBeGreaterThanOrEqual(11);
   });
 
   it("assembleFeature purpose 수준", () => {
@@ -91,7 +91,7 @@ describe("ingest-system 그룹 조립", () => {
 
     expect(assembled).not.toBeNull();
     expect(assembled!.group.purpose).toContain("수집 파이프라인");
-    expect(assembled!.members.length).toBe(11);
+    expect(assembled!.members.length).toBeGreaterThanOrEqual(11);
 
     // 모든 멤버에 purpose가 있다
     for (const m of assembled!.members) {

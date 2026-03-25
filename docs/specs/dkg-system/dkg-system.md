@@ -17,6 +17,8 @@ def:
       type: contains
     - target: dkg-growth-spiral
       type: contains
+    - target: dkg-skills-spec
+      type: contains
 ---
 # DKG (Design Knowledge Graph) 시스템
 

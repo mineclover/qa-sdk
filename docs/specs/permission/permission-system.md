@@ -13,6 +13,14 @@ def:
       type: contains
     - target: permission-constraint
       type: contains
+    - target: masking-spec
+      type: contains
+    - target: perm-codec-spec
+      type: contains
+    - target: perm-migration-spec
+      type: contains
+    - target: perm-resource-spec
+      type: contains
 ---
 # 권한 엔진 시스템
 
