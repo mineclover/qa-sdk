@@ -126,6 +126,9 @@ export {
   computeAllConcerns,
 } from "./frontmatter.js";
 
+// ─── CLI 도구 ───────────────────────────────────────────
+export { topdown, bottomup, context } from "./cli-tools.js";
+
 // ─── 브릿지 (decision-flow 연결) ────────────────────────
 export {
   suggestScopeFromArtifact,
