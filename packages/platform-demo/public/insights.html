@@ -118,6 +118,7 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
   <a class="nav-link" href="/events.html">Events</a>
   <a class="nav-link active" href="/insights.html">Insights</a>
   <a class="nav-link" href="/flow.html">Flow</a>
+  <a class="nav-link" href="/debugger.html">Debugger</a>
 </nav>
 <div class="container">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -633,15 +634,15 @@ h1{font-size:18px;font-weight:600;margin-bottom:16px}
       var corrs = d.correlations || [];
       var freqs = {};
       (d.prefixFrequency || []).forEach(function(p) { freqs[p.prefix] = p; });
-      var totalTraces = d.totalTraces || 1;
+      var totalGroups = d.totalGroups || 1;
 
       // 1. Funnel
       var funnelEl = document.getElementById('funnelChart');
-      var funnelHtml = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">checkout 흐름 전환율 (' + totalTraces + ' traces)</div>';
-      var prevCount = totalTraces;
+      var funnelHtml = '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">checkout 전환율 (' + (d.sessionGroups || 0) + ' sessions, ' + (d.traceGroups || 0) + ' traces)</div>';
+      var prevCount = totalGroups;
       FUNNEL_STAGES.forEach(function(stage, i) {
         var count = (freqs[stage.prefix] || {}).count || 0;
-        var pct = Math.round(count / totalTraces * 100);
+        var pct = Math.round(count / totalGroups * 100);
         var dropPct = prevCount > 0 ? Math.round((1 - count / prevCount) * 100) : 0;
         var w = Math.max(20, pct);
         funnelHtml += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'

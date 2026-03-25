@@ -15,20 +15,36 @@ import { assembleFeature } from "./assemble.js";
 import { analyzeImpact } from "./impact.js";
 import { computeEffectiveConcerns } from "./concern.js";
 
-/** 문서 본문 캐시 구성 */
+/** 문서 본문 캐시 구성 — 모든 frontmatter 문서의 body를 로드 */
 async function loadBodies(
   registry: MemoryDefinitionRegistry,
   rootDir: string,
 ): Promise<Map<string, string>> {
   const bodies = new Map<string, string>();
+
+  // 1차: registry에서 ref 경로로 로드
   for (const entry of registry.all()) {
     if (!entry.ref) continue;
     try {
       const content = await readFile(join(rootDir, entry.ref), "utf-8");
       const fm = extractFrontmatter(content);
-      if (fm) bodies.set(entry.id, fm.body);
+      if (fm && fm.body.trim().length > 0) bodies.set(entry.id, fm.body);
     } catch { /* skip */ }
   }
+
+  // 2차: body가 비어있는 entry에 대해 재시도 (deprecated가 아닌 파일에서)
+  for (const entry of registry.all()) {
+    if (bodies.has(entry.id) && bodies.get(entry.id)!.includes("^purpose")) continue;
+    if (!entry.ref) continue;
+    try {
+      const content = await readFile(join(rootDir, entry.ref), "utf-8");
+      const fm = extractFrontmatter(content);
+      if (fm && fm.body.includes("^purpose")) {
+        bodies.set(entry.id, fm.body);
+      }
+    } catch { /* skip */ }
+  }
+
   return bodies;
 }
 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motion Content Editor Demo</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", sans-serif;
+        background: #0d1117;
+        color: #f4f7fb;
+      }
+      .demo-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+      .demo-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: radial-gradient(circle at 20% 0%, rgba(240,143,32,0.2), transparent 32%), #121820;
+      }
+      .demo-header h1 {
+        margin: 0 0 6px;
+        font-size: 24px;
+      }
+      .demo-header p {
+        margin: 0;
+        color: rgba(244,247,251,0.72);
+      }
+      #app {
+        padding: 24px;
+      }
+      .demo-workflow {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px 18px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(23,30,41,0.95), rgba(14,19,27,0.92));
+        box-shadow: 0 18px 32px rgba(0,0,0,0.18);
+      }
+      .demo-workflow__main {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+      }
+      .demo-workflow__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+      }
+      .demo-field {
+        display: grid;
+        gap: 6px;
+      }
+      .demo-field span {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(244,247,251,0.62);
+      }
+      .demo-field select,
+      .demo-button {
+        height: 40px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.06);
+        color: #f4f7fb;
+        padding: 0 16px;
+        font: inherit;
+      }
+      .demo-field select {
+        min-width: 220px;
+      }
+      .demo-button {
+        cursor: pointer;
+      }
+      .demo-button--ghost {
+        background: transparent;
+      }
+      .demo-status {
+        color: #f4f7fb;
+        font-size: 14px;
+      }
+      .demo-status[data-tone="warning"] {
+        color: #ffb38a;
+      }
+      .demo-status--muted {
+        color: rgba(244,247,251,0.62);
+      }
+      .demo-note {
+        margin: 0;
+        color: rgba(244,247,251,0.74);
+        font-size: 14px;
+      }
+      .demo-note strong {
+        color: #f4f7fb;
+      }
+      @media (max-width: 900px) {
+        #app {
+          padding: 16px;
+        }
+        .demo-header {
+          padding: 16px;
+        }
+        .demo-workflow__main {
+          align-items: stretch;
+        }
+        .demo-field select,
+        .demo-button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-shell">
+      <header class="demo-header">
+        <h1>Motion Content Editor Demo</h1>
+        <p>Remotion 개념층을 참고한 GSAP 기반 composition editor sandbox</p>
+      </header>
+      <main id="app"></main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+  </html>

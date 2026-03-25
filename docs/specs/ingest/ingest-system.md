@@ -26,7 +26,7 @@ def:
       type: contains
     - target: session-spec
       type: contains
-    - target: ingest-pipeline-flow
+    - target: pipeline-phase-flow
       type: contains
     - target: ingest-infra-system
       type: contains

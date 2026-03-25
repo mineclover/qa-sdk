@@ -1,3 +1,13 @@
+/** 시간축 위의 구간을 가진 아이템의 공용 인터페이스 */
+export interface MotionTimeSpan {
+  readonly id: string;
+  readonly startMs: number;
+  readonly durationMs: number;
+}
+
+/** 타임라인 아이템의 종류 (transition 제외 — 별도 처리) */
+export type MotionItemKind = "layer" | "sequence" | "caption";
+
 export type MotionParameterType = "text" | "color" | "number" | "select";
 
 export interface MotionParameterDef {
@@ -11,11 +21,8 @@ export interface MotionParameterDef {
   readonly options?: readonly { readonly value: string; readonly label: string }[];
 }
 
-export interface MotionCaptionCue {
-  readonly id: string;
+export interface MotionCaptionCue extends MotionTimeSpan {
   readonly text: string;
-  readonly startMs: number;
-  readonly endMs: number;
   readonly tone?: "neutral" | "accent" | "warning";
 }
 
@@ -35,26 +42,142 @@ export interface MotionCueDef {
   readonly overlapMs?: number;
 }
 
-export interface MotionLayerDef {
+/** 재사용 가능한 cue 프리셋 */
+export interface MotionCuePreset extends MotionCueDef {
   readonly id: string;
   readonly label: string;
-  readonly selector: string;
-  readonly startMs: number;
-  readonly durationMs: number;
-  readonly enter: MotionCueDef;
-  readonly exit?: MotionCueDef;
 }
 
-export interface MotionSequenceDef {
-  readonly id: string;
+/** Cue 참조 — preset id 또는 인라인 정의 */
+export type MotionCueRef =
+  | MotionCueDef
+  | { readonly preset: string };
+
+/** CueRef가 preset 참조인지 판별한다 */
+export function isCuePresetRef(ref: MotionCueRef): ref is { readonly preset: string } {
+  return "preset" in ref && !("kind" in ref);
+}
+
+export interface MotionStageTargetV1 {
+  readonly kind: "stage-node";
+  readonly nodeId: string;
+}
+
+export function createMotionStageNodeTarget(
+  nodeId: string,
+): MotionStageTargetV1 {
+  return { kind: "stage-node", nodeId };
+}
+
+/** Layer가 감싸는 콘텐츠의 종류 */
+export type MotionLayerContentType = "dom" | "image" | "video" | "svg" | "canvas";
+
+export interface MotionDomContent {
+  readonly type: "dom";
+}
+
+export interface MotionImageContent {
+  readonly type: "image";
+  readonly src: string;
+  readonly alt?: string;
+  readonly objectFit?: "cover" | "contain" | "fill" | "none";
+}
+
+export interface MotionVideoContent {
+  readonly type: "video";
+  readonly src: string;
+  readonly poster?: string;
+  readonly muted?: boolean;
+  readonly loop?: boolean;
+}
+
+export interface MotionSvgContent {
+  readonly type: "svg";
+  readonly viewBox?: string;
+}
+
+export interface MotionCanvasContent {
+  readonly type: "canvas";
+  readonly width?: number;
+  readonly height?: number;
+}
+
+/** Layer 콘텐츠 유니온. 생략하면 "dom" 기본 */
+export type MotionLayerContent =
+  | MotionDomContent
+  | MotionImageContent
+  | MotionVideoContent
+  | MotionSvgContent
+  | MotionCanvasContent;
+
+export interface MotionLayerDef extends MotionTimeSpan {
+  readonly label: string;
+  readonly target: MotionStageTargetV1;
+  /** 콘텐츠 타입. 생략하면 "dom" (범용 DOM 요소) */
+  readonly content?: MotionLayerContent;
+  /** 진입 애니메이션. 인라인 MotionCueDef 또는 { preset: "id" } */
+  readonly enter: MotionCueRef;
+  /** 퇴장 애니메이션. 생략 가능 */
+  readonly exit?: MotionCueRef;
+}
+
+/** Sequence 안에서 Layer의 시간 좌표계와 역할을 지정하는 슬롯 */
+export interface SequenceLayerSlot {
+  readonly layerId: string;
+  /** sequence.startMs 기준 상대 오프셋 (ms).
+   *  지정하면 상대 좌표: 실효 startMs = sequence.startMs + offsetMs.
+   *  생략하면 절대 좌표: 실효 startMs = layer.startMs. */
+  readonly offsetMs?: number;
+  /** 시각적 쌓기 순서. 높을수록 위. 기본 = 배열 인덱스 */
+  readonly zIndex?: number;
+  /** 의미적 역할 */
+  readonly role?: "background" | "content" | "overlay" | "accent";
+}
+
+export type SequenceLayerSlotRole = SequenceLayerSlot["role"];
+
+/** Stagger 패턴 — slot 배열 순서대로 일정 간격으로 offsetMs를 자동 파생 */
+export interface SequenceStaggerPattern {
+  /** 첫 layer의 시작 오프셋 (ms) */
+  readonly startOffsetMs: number;
+  /** layer 간 간격 (ms) */
+  readonly intervalMs: number;
+}
+
+export interface MotionSequenceDef extends MotionTimeSpan {
   readonly title: string;
-  readonly startMs: number;
-  readonly durationMs: number;
+  /** 슬롯 기반 layer 구성 (우선).
+   *  layers가 있으면 이것이 유일한 진실 원천 — layerIds는 자동 파생.
+   *  layers가 없으면 layerIds가 진실 원천 (절대좌표 전용). */
+  readonly layers?: readonly SequenceLayerSlot[];
+  /** Stagger 패턴. 지정하면 slot.offsetMs를 자동 파생한다.
+   *  개별 slot에 offsetMs가 명시되어 있으면 해당 slot은 stagger 대신 명시값을 사용. */
+  readonly stagger?: SequenceStaggerPattern;
+  /** layer id 목록. layers가 있으면 정규화 시 자동 파생되므로 직접 지정하지 않는다. */
   readonly layerIds: readonly string[];
   readonly captionIds?: readonly string[];
 }
 
 export type MotionTransitionStyle = "crossfade" | "flash" | "lift";
+
+export interface CrossfadeParams {
+  /** brightness 최저값 (기본 0.86) */
+  readonly brightness?: number;
+}
+
+export interface FlashParams {
+  /** 글로우 색상 (기본 "rgba(240,143,32,0.24)") */
+  readonly glowColor?: string;
+  /** 글로우 크기 px (기본 120) */
+  readonly glowSize?: number;
+}
+
+export interface LiftParams {
+  /** Y축 이동량 px (기본 18) */
+  readonly liftY?: number;
+}
+
+export type MotionTransitionParams = CrossfadeParams | FlashParams | LiftParams;
 
 export interface MotionTransitionDef {
   readonly id: string;
@@ -62,19 +185,21 @@ export interface MotionTransitionDef {
   readonly toSequenceId: string;
   readonly style: MotionTransitionStyle;
   readonly durationMs: number;
+  /** 스타일별 파라미터. 생략하면 기본값 사용 */
+  readonly params?: MotionTransitionParams;
 }
 
 export interface MotionTextAsset {
   readonly id: string;
   readonly type: "text";
-  readonly target: string;
+  readonly target: MotionStageTargetV1;
   readonly template: string;
 }
 
 export interface MotionStyleAsset {
   readonly id: string;
   readonly type: "style";
-  readonly target: string;
+  readonly target: MotionStageTargetV1;
   readonly property: "background" | "color" | "borderColor";
   readonly template: string;
 }
@@ -87,6 +212,8 @@ export interface MotionCompositionDef {
   readonly description: string;
   readonly durationMs: number;
   readonly parameters: readonly MotionParameterDef[];
+  /** 재사용 가능한 cue 프리셋 라이브러리 */
+  readonly cuePresets?: readonly MotionCuePreset[];
   readonly assets: readonly MotionAssetDef[];
   readonly layers: readonly MotionLayerDef[];
   readonly sequences: readonly MotionSequenceDef[];
@@ -111,10 +238,21 @@ export function resolveMotionComposition(
   return { ...composition, values };
 }
 
+/** CueRef를 실제 MotionCueDef로 해석한다. preset 참조 시 composition.cuePresets에서 조회 */
+export function resolveCue(
+  ref: MotionCueRef,
+  presets: readonly MotionCuePreset[] = [],
+): MotionCueDef | null {
+  if (!isCuePresetRef(ref)) return ref;
+  const preset = presets.find((p) => p.id === ref.preset);
+  if (!preset) return null;
+  const { id: _id, label: _label, ...cue } = preset;
+  return cue;
+}
+
 export function applyMotionTemplate(
   template: string,
   values: MotionParameterValues,
 ): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => String(values[key] ?? ""));
 }
-

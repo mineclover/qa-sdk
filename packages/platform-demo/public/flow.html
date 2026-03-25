@@ -69,12 +69,12 @@ body {
 }
 .sidebar-feed {
   border-top: 1px solid var(--border);
-  padding: 14px 12px 12px;
-  min-height: 240px;
-  max-height: 340px;
+  padding: 10px 12px 10px;
+  min-height: 140px;
+  max-height: 260px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .feed-head {
   display: flex;
@@ -1087,6 +1087,7 @@ body {
   <a class="nav-link" href="/events.html">Events</a>
   <a class="nav-link" href="/insights.html">Insights</a>
   <a class="nav-link active" href="/flow.html">Flow</a>
+  <a class="nav-link" href="/debugger.html">Debugger</a>
 </nav>
 <div class="layout">
   <aside class="sidebar">
@@ -2227,10 +2228,11 @@ body {
       axisLayer.appendChild(group);
     });
 
-    viewportLayer.appendChild(edgeLayer);
-    viewportLayer.appendChild(intentPathLayer);
+    // z-order: 배경 → 엣지 → IL 경로 → axis → prefix (앞)
     viewportLayer.appendChild(sectionLayer);
+    viewportLayer.appendChild(edgeLayer);
     viewportLayer.appendChild(axisLayer);
+    viewportLayer.appendChild(intentPathLayer);
     viewportLayer.appendChild(nodeLayer);
     svg.appendChild(viewportLayer);
 

@@ -9,7 +9,7 @@ def:
   links:
     - target: quickstart-guide
       type: contains
-    - target: analysis-system-guide
+    - target: analysis-system
       type: contains
     - target: prefix-type-guide
       type: contains

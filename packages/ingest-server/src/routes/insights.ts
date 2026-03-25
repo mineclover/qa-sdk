@@ -342,35 +342,40 @@ export function createInsightsRoutes(deps: InsightsDeps) {
   });
 
   // GET /v1/insights/correlations — prefix 공출현 분석 + IntentLink 자동 제안
+  // 세션 단위: 같은 qa_session_id 안에서 어떤 prefix가 함께 관측되는지 분석
+  // 세션 없는 records는 trace_id로 fallback
   app.get("/v1/insights/correlations", async (c) => {
     const minSupport = parseInt(c.req.query("min_support") ?? "2");
 
-    // 1. address_context가 있는 records (synthetic/system 이벤트 제외 — 실 사용자 데이터만)
-    const rows = await db.query<{ address_context: string; trace_id: string }>(
-      `SELECT address_context, trace_id FROM event_records
+    // 1. address_context가 있는 records (synthetic/system 이벤트 제외)
+    const rows = await db.query<{ address_context: string; trace_id: string; qa_session_id: string | null }>(
+      `SELECT address_context, trace_id, qa_session_id FROM event_records
        WHERE address_context IS NOT NULL
          AND event_key NOT IN ('synthetic.coverage', 'system.change', 'error.service', 'health.check')
        LIMIT 2000`,
     );
 
-    // 2. trace별 prefix set 구성
-    const tracePrefixes: Map<string, Set<string>> = new Map();
+    // 2. 세션별 prefix set 구성 (세션 없으면 trace_id fallback)
+    const sessionPrefixes: Map<string, Set<string>> = new Map();
     for (const r of rows) {
       try {
         const ac = JSON.parse(r.address_context);
         const prefixes = Object.keys(ac);
         if (prefixes.length === 0) continue;
 
-        if (!tracePrefixes.has(r.trace_id)) tracePrefixes.set(r.trace_id, new Set());
-        const set = tracePrefixes.get(r.trace_id)!;
+        const groupKey = r.qa_session_id ?? r.trace_id;
+        if (!sessionPrefixes.has(groupKey)) sessionPrefixes.set(groupKey, new Set());
+        const set = sessionPrefixes.get(groupKey)!;
         for (const p of prefixes) set.add(p);
       } catch { /* skip */ }
     }
+    const sessionCount = [...sessionPrefixes.keys()].filter(k => !k.startsWith("trace-") && !k.startsWith("sim-")).length;
+    const traceCount = sessionPrefixes.size - sessionCount;
 
     // 3. prefix 쌍 공출현 카운트
     const pairCounts: Record<string, number> = {};
     const prefixCounts: Record<string, number> = {};
-    for (const [, prefixes] of tracePrefixes) {
+    for (const [, prefixes] of sessionPrefixes) {
       const arr = [...prefixes].sort();
       for (const p of arr) {
         prefixCounts[p] = (prefixCounts[p] ?? 0) + 1;
@@ -447,14 +452,14 @@ export function createInsightsRoutes(deps: InsightsDeps) {
           id: `IL-AUTO-${++clusterId}`,
           endpoints: cluster.sort(),
           avgJaccard: pairCount > 0 ? Math.round((totalJaccard / pairCount) * 100) / 100 : 0,
-          evidence: tracePrefixes.size,
+          evidence: sessionPrefixes.size,
         });
       }
     }
 
     // 6. prefix별 단독 출현 비율 (다른 prefix 없이 혼자 나타나는 빈도)
     const soloRates: Record<string, number> = {};
-    for (const [, prefixes] of tracePrefixes) {
+    for (const [, prefixes] of sessionPrefixes) {
       if (prefixes.size === 1) {
         const p = [...prefixes][0];
         soloRates[p] = (soloRates[p] ?? 0) + 1;
@@ -462,7 +467,9 @@ export function createInsightsRoutes(deps: InsightsDeps) {
     }
 
     return c.json({
-      totalTraces: tracePrefixes.size,
+      totalGroups: sessionPrefixes.size,
+      sessionGroups: sessionCount,
+      traceGroups: traceCount,
       totalPairs: correlations.length,
       correlations: correlations.slice(0, 50),
       suggestions,

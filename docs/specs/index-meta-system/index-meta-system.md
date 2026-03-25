@@ -33,7 +33,7 @@ def:
       type: contains
     - target: dx-lifecycle-group
       type: contains
-    - target: indexing-benchmarks
+    - target: benchmark-system
       type: contains
 ---
 
