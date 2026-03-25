@@ -86,37 +86,43 @@ function createFlowCliState(): FlowCliState {
   };
 }
 
-let state = createFlowCliState();
+let state = undefined as unknown as FlowCliState;
+
+function getState(): FlowCliState {
+  if (!state || !state.engine) state = createFlowCliState();
+  return state;
+}
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
 function ensureInit() {
-  if (state.initialized) return;
+  const s = getState();
+  if (s.initialized) return;
   // 스프린트 파이프라인 스키마 등록
   for (const flow of ALL_SPRINT_FLOWS) {
-    state.engine.registerSchema(flow);
+    s.engine.registerSchema(flow);
   }
   // 일상 개발 의사결정 플로우 등록
   for (const flow of ALL_DEV_DECISION_FLOWS) {
-    if (!state.engine.getSchema(flow.id)) {
-      state.engine.registerSchema(flow);
+    if (!s.engine.getSchema(flow.id)) {
+      s.engine.registerSchema(flow);
     }
   }
   // coordinate-design (annotated with weights/affects)
-  state.engine.registerSchema(getAnnotatedDesignFlow());
+  s.engine.registerSchema(getAnnotatedDesignFlow());
   // autoplan 정책 등록
   for (const policy of AUTOPLAN_POLICIES) {
-    state.engine.registerPolicy(policy);
+    s.engine.registerPolicy(policy);
   }
   for (const policy of DEV_DECISION_POLICIES) {
-    state.engine.registerPolicy(policy);
+    s.engine.registerPolicy(policy);
   }
   // SQLite에서 active 인스턴스 복원 → 엔진에 로드
-  const activeInstances = state.store.findActive();
+  const activeInstances = s.store.findActive();
   for (const inst of activeInstances) {
-    const schema = state.engine.getSchema(inst.schemaId);
+    const schema = s.engine.getSchema(inst.schemaId);
     if (!schema) {
       console.warn(`[flow] 스키마 미등록으로 복원 스킵: ${inst.id} (schema: ${inst.schemaId})`);
       continue;
@@ -126,12 +132,12 @@ function ensureInit() {
       continue;
     }
     try {
-      state.engine.loadInstance(inst);
+      s.engine.loadInstance(inst);
     } catch (e) {
       console.warn(`[flow] 인스턴스 복원 실패: ${inst.id} — ${e instanceof Error ? e.message : e}`);
     }
   }
-  state.initialized = true;
+  s.initialized = true;
 }
 
 export function resetFlowCliStateForTest() {
@@ -149,7 +155,7 @@ export function resetFlowCliStateForTest() {
 
 export function getFlowCliStateForTest() {
   ensureInit();
-  return state;
+  return getState();
 }
 
 // ─── flow list ───────────────────────────────────────────

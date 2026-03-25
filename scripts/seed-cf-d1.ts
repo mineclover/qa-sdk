@@ -82,7 +82,7 @@ async function main() {
       consumedPrefixes: ["service", "build_event", "test_event"] },
     { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
       // 읽기 전용 게이트 상태 캐시 — gate_point는 GateEngine 라이브러리가 계산
-      ownedPrefixes: [], consumedPrefixes: ["service", "version_point"] },
+      ownedPrefixes: [], consumedPrefixes: ["service", "version_point", "decision_event", "decision_path", "escalation_event", "model_apply", "forcing_response"] },
     { serviceId: "query-service", name: "쿼리 서비스", tier: "infra", team: "platform", url: "http://localhost:3500",
       ownedPrefixes: [], consumedPrefixes: ["service", "gate_point", "endpoint"] },
     { serviceId: "decode-service", name: "디코드 서비스", tier: "infra", team: "platform", url: "http://localhost:3600",

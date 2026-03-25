@@ -21,7 +21,7 @@ def:
       type: contains
     - target: df-causal-mapping
       type: contains
-    - target: decision-standard
+    - target: decision-standard-group
       type: contains
     - target: df-narrative
       type: contains
@@ -47,6 +47,6 @@ overview: 총 10개 멤버.
 - `df-state-model`: FlowInstance의 생명주기(pending→active→completed/abandoned/blocked)와 서사 구조(배경→여정→도달→산출→회고)를 정의한다.
 - `df-serialization`: 의사결정 좌표의 직렬화 형식.
 - `df-causal-mapping`: 비즈니스 요구(X)와 기술 구현(Y)을 의사결정 좌표로 연결하는 인과 증명 경로.
-- `decision-standard`: 새로운 요구사항이 들어왔을 때, 기존 prefix를 재사용할지 새 prefix를 만들지를 판단하고, DSL(prefix)을 정의하여 비즈니스 로직의 경우의 수를 제어하는 표준 프로세스.
+- `decision-standard-group`: 새로운 요구사항을 기존 prefix 재사용/신규 prefix 정의 프로세스와 체크리스트로 분리한 그룹.
 - `df-narrative`: 이 문서는 서사가 쌓이는 문서다.
 - `axis-decision-guide`: 이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.

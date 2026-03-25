@@ -347,12 +347,13 @@ const store = new D1RecordStore(driver);
 - Think(`office-hours`) → Plan(`ceo-review`, `eng-review`, `design-review`) → Build(`build`) → Review(`code-review`) → Ship(`ship`) → Reflect(`reflect`)
 - 6 autoplan principles: standard-pattern, completeness, test-coverage, observability, security, taste
 
-### CLI 영속
+### CLI 영속 + 이벤트 전송
 
-- 의사결정 이력은 `~/.qa-sdk/decision-flow.sqlite`에 영속 (세션 간 유지)
-- `flow start` → SQLite에 active 저장 → 프로세스 종료 → `flow select`로 이어서 진행 가능
-- `flow history/lookup/verdict` → SQLite에서 이전 이력 조회
-- decision-flow 라이브러리 자체는 순수 (SQLite 의존 없음). 영속은 CLI의 책임
+- 의사결정 이력은 `~/.qa-sdk/decision-flow.sqlite`에 영속 (세션 간 유지, 로컬 캐시)
+- 모든 gate 선택 / 플로우 완료 이벤트는 **ingest-server로 전송** (`INGEST_URL` 또는 localhost:3200)
+- 전송 실패해도 flow 진행 차단 안 함 (fail-open)
+- `flow start` → SQLite에 active 저장 + ingest 전송 → 프로세스 종료 → `flow select`로 이어서 진행 가능
+- decision-flow 라이브러리 자체는 순수 (SQLite/fetch 의존 없음). 영속과 전송은 CLI의 책임
 
 ### 참조
 
