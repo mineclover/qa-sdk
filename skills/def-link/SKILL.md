@@ -5,170 +5,52 @@ description: "definition-catalog 문서 간 링크 연결. 고아 문서에 depe
 
 # Definition Catalog — 문서 링크 연결
 
-links가 없는 리프 문서에 횡방향 관계(depends_on, implements, refines, constrains)를 추가한다.
+links가 없는 리프 문서에 횡방향 관계를 추가한다.
 
-## 사용법
-
-```
-/def-link <문서ID>        — 특정 문서의 링크 추론 + 추가
-/def-link --audit         — 링크 없는 문서 전체 목록
-/def-link --batch <시스템> — 시스템 그룹 내 멤버 일괄 연결
-```
-
-## 링크 없는 문서 찾기
+## 현황 확인
 
 ```bash
-node -e '
-const fs=require("fs"),cp=require("child_process");
-const files=cp.execSync("grep -rl \"lifecycle: approved\" docs/ 2>/dev/null",{encoding:"utf-8"}).trim().split("\n");
-for(const f of files){
-  const c=fs.readFileSync(f,"utf-8");
-  const fm=(c.match(/^---\n([\s\S]*?)\n---/)||["",""])[1];
-  if(fm.includes("type: contains")) continue;
-  if(!fm.includes("target:")){
-    const id=(c.match(/  id: (.+)/)||["",""])[1];
-    const scope=(c.match(/scope: (\w+)/)||["",""])[1];
-    console.log(id+" ("+scope+")  "+f);
-  }
-}
-'
+qa-sdk def audit       # links 없는 문서 수 확인
+qa-sdk def validate    # 고아 문서 경고 확인
 ```
 
-## 링크 추론 규칙
+## 자동 연결 가능 (scope만으로 결정, 같은 그룹 내)
 
-문서의 scope와 본문 내용을 기반으로 관계를 추론한다.
+| 패턴 | 안전도 |
+|------|--------|
+| constraint → interface (constrains) | 높음 |
+| constraint → feature (constrains) | 높음 |
+| flow → interface (refines) | 높음 |
+| flow → feature (refines) | 높음 |
+| scenario → feature (traces_to) | 높음 |
 
-### scope 기반 추론
-
-| 이 문서의 scope | 가능한 관계 | 대상 scope |
-|----------------|-----------|-----------|
-| interface | implements → | feature (구현하는 기능) |
-| interface | depends_on → | data (사용하는 스키마) |
-| feature | depends_on → | data (사용하는 데이터 모델) |
-| feature | depends_on → | state (참조하는 상태) |
-| flow | refines → | feature 또는 interface (상세화하는 대상) |
-| flow | depends_on → | data, state |
-| constraint | constrains → | interface, feature (제약하는 대상) |
-| state | depends_on → | data (상태가 저장되는 스키마) |
-| data | depends_on → | data (참조하는 다른 데이터) |
-
-### 본문 키워드 추론
-
-문서 본문에서 다른 문서의 ID나 제목이 언급되면 관계 후보:
-
-```bash
-# 대상 문서의 본문에서 다른 문서 ID 참조 찾기
-node -e '
-const fs=require("fs"),cp=require("child_process");
-const targetId = "<문서ID>";
-const targetFile = cp.execSync(`grep -rl "  id: ${targetId}$" docs/ 2>/dev/null`,{encoding:"utf-8"}).trim().split("\n")[0];
-const content = fs.readFileSync(targetFile,"utf-8");
-
-// 모든 문서 ID 수집
-const allFiles = cp.execSync("grep -rl \"^def:\" docs/ 2>/dev/null",{encoding:"utf-8"}).trim().split("\n");
-const allIds = new Set();
-for(const f of allFiles){
-  const c=fs.readFileSync(f,"utf-8");
-  const id=(c.match(/  id: (.+)/)||["",""])[1];
-  if(id && id !== targetId) allIds.add(id);
-}
-
-// 본문에서 다른 문서 ID 참조 찾기
-for(const id of allIds){
-  if(content.includes(id)){
-    console.log("참조 발견: "+id);
-  }
-}
-'
-```
-
-### 같은 그룹 멤버 간 관계 추론
-
-같은 시스템 그룹에 소속된 문서 간 관계:
-
-```
-constraint → constrains → interface, feature (같은 그룹 내)
-state → (다른 멤버가) depends_on → state
-data → (다른 멤버가) depends_on → data
-feature → implements → interface (같은 그룹 내)
-flow → refines → feature, interface (같은 그룹 내)
-```
-
-## 링크 추가 방법
-
-frontmatter에 links 섹션을 추가하거나 기존에 추가:
-
-```yaml
----
-def:
-  id: some-doc
-  scope: feature
-  aspect: func_def
-  depth: specification
-  lifecycle: approved
-  links:
-    - target: some-data-model
-      type: depends_on
-    - target: some-api
-      type: implements
----
-```
-
-이미 links가 있으면 기존 항목 아래에 추가.
-links가 없으면 `lifecycle:` 다음 줄에 `links:` 섹션 생성.
-
-## 자동 vs 수동 판별
-
-### 자동 연결 가능 (scope만으로 결정)
-
-같은 그룹 내에서 scope 쌍으로 관계가 결정되는 경우:
-
-| 패턴 | 예시 | 안전도 |
-|------|------|--------|
-| constraint → interface (constrains) | gate-constraint → gate-api | 높음 |
-| constraint → feature (constrains) | gate-constraint → gate-engine-func | 높음 |
-| flow → interface (refines) | gate-flow → gate-api | 높음 |
-| flow → feature (refines) | gate-flow → gate-engine-func | 높음 |
-| scenario → feature (traces_to) | gate-scenario → gate-engine-func | 높음 |
-
-**이 패턴은 scope만 보고 자동 적용해도 안전하다.**
-
-### 수동 검토 필요 (본문 확인 필요)
+## 수동 검토 필요 (본문 확인)
 
 | 패턴 | 이유 |
 |------|------|
-| feature → data (depends_on) | 어떤 data 모델에 의존하는지 본문을 읽어야 함 |
-| interface → data (depends_on) | 어떤 스키마를 사용하는지 확인 필요 |
-| state → data (depends_on) | 어떤 데이터에 저장되는지 확인 필요 |
-| 다른 그룹 간 관계 | 반드시 본문/코드 참조 확인 |
+| feature → data (depends_on) | 어떤 data에 의존하는지 본문 확인 |
+| interface → data (depends_on) | 어떤 스키마를 사용하는지 확인 |
+| 다른 그룹 간 관계 | 반드시 본문 참조 확인 |
 
-**이 패턴은 본문의 키워드 참조 기반으로 추론하되, 불확실하면 추가하지 않는다.**
+## 링크 추가
+
+frontmatter에 links 섹션 추가:
+
+```yaml
+  links:
+    - target: <대상 ID>
+      type: <depends_on|implements|refines|constrains|traces_to>
+```
 
 ## 검증
 
 ```bash
-# 깨진 링크 검증 (target이 존재하지 않는 문서를 참조)
-node -e '
-const fs=require("fs"),cp=require("child_process");
-const allIds=new Set();
-const files=cp.execSync("grep -rl \"^def:\" docs/ 2>/dev/null",{encoding:"utf-8"}).trim().split("\n");
-files.forEach(f=>{const c=fs.readFileSync(f,"utf-8");const id=(c.match(/  id: (.+)/)||["",""])[1];if(id)allIds.add(id)});
-let broken=0;
-files.forEach(f=>{const c=fs.readFileSync(f,"utf-8");const targets=(c.match(/target: ([a-z][a-z0-9-]*)/g)||[]);
-  targets.forEach(t=>{const id=t.replace("target: ","");if(!allIds.has(id)){console.log("BROKEN: "+id+" in "+f);broken++}})});
-console.log("\n깨진 링크: "+broken+"건");
-'
-
-# blast radius 변화 확인
-# /def-bottomup <문서ID>
-
-# 전체 테스트
-pnpm --filter definition-catalog test
+qa-sdk def validate    # 깨진 링크 0건, 순환 참조 0건
+qa-sdk def bottomup <문서ID>   # blast radius 확인
 ```
 
 ## 주의
 
-- traces_to는 추적 관계일 뿐 — 영향 전파 안 됨. 테스트/시나리오 문서에만 사용
-- 순환 참조 주의: A depends_on B, B depends_on A는 피한다
-- 관계가 불확실하면 추가하지 않는다 — 잘못된 링크가 없는 것보다 나쁨
-- **자동 연결 가능 패턴만 먼저 적용**하고, 수동 검토 필요한 것은 별도로 처리
+- 순환 참조 금지 (A→B, B→A)
+- 불확실하면 추가하지 않음
+- 자동 패턴 먼저, 수동은 별도 처리

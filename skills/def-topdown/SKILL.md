@@ -5,43 +5,23 @@ description: "definition-catalog 탑다운 조회. 시스템/그룹에서 시작
 
 # Definition Catalog — 탑다운 조회
 
-시스템/그룹 문서에서 시작하여 contains 멤버의 purpose/overview를 수집하고, scope 순서(constraint → state → data → feature → flow → interface → ui)로 조립한다.
+시스템/그룹 문서에서 시작하여 contains 멤버의 purpose/overview를 scope 순서로 조립한다.
 
-## 사용법
-
-```
-/def-topdown <그룹ID>
-```
-
-예: `/def-topdown gate-system`, `/def-topdown ingest-system`, `/def-topdown system-root`
-
-## 절차
-
-### 1단계: 그룹 문서 찾기
+## 실행
 
 ```bash
-grep -rl "depth: overview" docs/specs/ | xargs grep -l "type: contains"
+qa-sdk def topdown <그룹ID>
+qa-sdk def topdown <그룹ID> --overview
 ```
 
-### 2단계: contains 멤버 수집
-
+예:
 ```bash
-awk '/^  links:/,/^---/{if(/target:/)t=$NF; if(/type: contains/)print t}' <그룹파일>
+qa-sdk def topdown gate-system
+qa-sdk def topdown ingest-system
+qa-sdk def topdown system-root
 ```
 
-### 3단계: 각 멤버의 ^purpose 섹션 수집
-
-`## 목적 ^purpose` 헤더 아래 ~ 다음 `##` 전까지 본문 추출.
-
-### 4단계: scope 순서로 정렬
-
-```
-constraint → state → data → feature → flow → interface → ui
-```
-
-"제약 → 상태 → 데이터 → 기능 → 흐름 → 접근"의 자연스러운 설명 순서.
-
-### 5단계: 출력
+## 출력
 
 ```
 # <그룹 제목>
@@ -53,9 +33,17 @@ concerns: <tags>
 
 ## [state] <제목>
 <purpose>
+
+## [feature] <제목>
 ...
 ```
 
-## 사용 가능한 그룹 (system-root 하위)
+scope 정렬: constraint → state → data → feature → flow → interface → ui
 
-ingest-system, gate-system, df-system, pipeline-system, permission-system, decode-system, query-system, registry-system, dkg-system, wi-system, cq-system, browser-system, spec-engine-system, indexing-core-system, index-meta-system, viz-system, apm-system, storage-system, event-vocab-system, guides-system, analysis-system
+## 사용 가능한 그룹
+
+```bash
+qa-sdk def stats
+```
+
+그룹 목록이 하단에 출력된다.
