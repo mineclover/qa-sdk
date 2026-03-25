@@ -1,7 +1,17 @@
+---
+def:
+  id: slot-marker-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
 # 슬롯 마커(Slot Marker)
 
-> 닫힌 패턴의 주소 공간에서 **"선택하지 않음"을 선택하는** 공식 메커니즘.
-> 규범적 요약은 [`conventions.md` §2](conventions.md#2-예약-항목reserved-entry)를 참조한다.
+## 목적 ^purpose
+
+닫힌 패턴의 주소 공간에서 **"선택하지 않음"을 선택하는** 공식 메커니즘.
+규범적 요약은 [`conventions.md` §2](conventions.md#2-예약-항목reserved-entry)를 참조한다.
 
 관련 스펙:
 - [`weighted-index`](weighted-index/README.md) — 수학 레이어 (마커를 일반 좌표로 처리)

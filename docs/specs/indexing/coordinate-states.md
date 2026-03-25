@@ -1,10 +1,18 @@
+---
+def:
+  id: coordinate-states-spec
+  scope: state
+  aspect: system_state
+  depth: specification
+  lifecycle: approved
+---
 # 좌표 상태 모델 — 용어집 및 전이 규칙
 
-> **Status: DRAFT**
->
-> 이 좌표계는 **닫힌 계의 경우의 수를 결정하는 시스템**이다.
-> 특정 정보 축이 다른 정보 축을 추가로 가질 때, 그 축들의 조합으로 발생하는 경우의 수를 유일한 정수(좌표)로 결정한다.
-> 이 특성은 온톨로지 시스템에서 실제 좌표를 결정하는 구조와 닿아있고, 정적 타입 시스템과 잘 맞는다.
+## 목적 ^purpose
+
+이 좌표계는 **닫힌 계의 경우의 수를 결정하는 시스템**이다.
+특정 정보 축이 다른 정보 축을 추가로 가질 때, 그 축들의 조합으로 발생하는 경우의 수를 유일한 정수(좌표)로 결정한다.
+이 특성은 온톨로지 시스템에서 실제 좌표를 결정하는 구조와 닿아있고, 정적 타입 시스템과 잘 맞는다.
 
 기반: [foundation.md](foundation.md) · [version-operations.md](version-operations.md) · [data-design.md](data-design.md)
 

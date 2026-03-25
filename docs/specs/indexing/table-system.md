@@ -1,9 +1,19 @@
+---
+def:
+  id: table-system-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
 # 테이블 시스템 — 좌표 세계와 관계형 세계의 양방향 연결
 
-> 좌표 시스템(유한 조합의 정수 주소)과 관계형 데이터(테이블 행)를 **양방향으로 연결**하는 메타데이터 레이어.
->
-> 좌표 시스템은 "의사결정의 경우의 수"를 인코딩하고, 테이블은 "런타임 엔티티"를 저장한다.
-> 이 문서는 두 세계를 어떻게 연결하고, 그 연결로 무엇을 할 수 있는지 설명한다.
+## 목적 ^purpose
+
+좌표 시스템(유한 조합의 정수 주소)과 관계형 데이터(테이블 행)를 **양방향으로 연결**하는 메타데이터 레이어.
+
+좌표 시스템은 "의사결정의 경우의 수"를 인코딩하고, 테이블은 "런타임 엔티티"를 저장한다.
+이 문서는 두 세계를 어떻게 연결하고, 그 연결로 무엇을 할 수 있는지 설명한다.
 
 기반 문서: [foundation.md](foundation.md) · [event-schema.md](event-schema.md) · [schema-layer.md](schema-layer.md)
 관련 스펙: [dimension-operations.md](dimension-operations.md) · [coordinate-query.spec.md](coordinate-query.spec.md)

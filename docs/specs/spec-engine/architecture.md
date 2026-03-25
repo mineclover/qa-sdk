@@ -1,10 +1,18 @@
+---
+def:
+  id: spec-engine-architecture
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
 # Spec Engine — 아키텍처 + NestJS 모듈 매핑
 
-> **Status: DESIGN**
->
-> 2-패키지 분리: **spec-core** (순수 TS 커널) + **spec-server** (NestJS 호스트).
-> CLI는 spec-core를 직접 import. 서버만 NestJS.
-> decorator는 binding metadata이고, source of truth는 spec/registry.
+## 목적 ^purpose
+
+2-패키지 분리: **spec-core** (순수 TS 커널) + **spec-server** (NestJS 호스트).
+CLI는 spec-core를 직접 import. 서버만 NestJS.
+decorator는 binding metadata이고, source of truth는 spec/registry.
 
 ---
 

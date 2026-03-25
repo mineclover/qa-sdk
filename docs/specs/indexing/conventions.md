@@ -1,7 +1,17 @@
+---
+def:
+  id: indexing-conventions
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+---
 # 인덱싱 시스템 관례
 
-> `weighted-index`와 `index-meta`를 사용하는 프로젝트에서 따라야 하는 규칙.
-> 기반 원리는 [`foundation.md`](foundation.md), 사용 패턴은 [`patterns.md`](patterns.md)를 참조한다.
+## 목적 ^purpose
+
+`weighted-index`와 `index-meta`를 사용하는 프로젝트에서 따라야 하는 규칙.
+기반 원리는 [`foundation.md`](foundation.md), 사용 패턴은 [`patterns.md`](patterns.md)를 참조한다.
 
 ---
 

@@ -1,8 +1,16 @@
+---
+def:
+  id: dimension-operations
+  scope: feature
+  aspect: func_def
+  depth: specification
+---
+
 # 차원 운영 — 축 교차, 환경 주입, 배포 시점 해석
 
-> 여러 축을 교차시켜 특정 값을 선택하고, 환경(env)을 도구 사이에 주입하고, 배포 시점에 결정되는 차원(region 등)을 지원하는 **런타임 차원 운영** 도구 가이드.
->
-> 이 문서는 개별 패키지 스펙을 읽기 전에 "무엇이 가능한가"를 먼저 파악하기 위한 횡단 가이드다.
+## 목적 ^purpose
+
+여러 축을 교차시켜 특정 값을 선택하고, 환경(env)을 도구 사이에 주입하고, 배포 시점에 결정되는 차원을 지원하는 런타임 차원 운영 도구 가이드.
 
 기반 문서: [foundation.md](foundation.md) · [patterns.md](patterns.md)
 관련 스펙: [permission-engine/core.spec.md](permission-engine/core.spec.md) · [permission-engine/resource.spec.md](permission-engine/resource.spec.md) · [weighted-index/partial-binder.spec.md](weighted-index/partial-binder.spec.md)

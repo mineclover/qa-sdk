@@ -1,13 +1,17 @@
+---
+def:
+  id: dkg-original
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: deprecated
+---
+
 # Design Knowledge Graph — 설계 시점 메타데이터 그래프
 
-> **Status: DESIGN**
->
-> 고정 축을 정의하고, 운용하고, 운용에서 새 기능을 발견하고,
-> 그 기능이 다시 고정 축이 되는 **누적적 성장 나선**을 추적하는
-> 설계 시점 메타데이터 그래프다.
->
-> 매 회전에서 "왜 이것을 닫았는가"를 구조적으로 보존하여
-> 나선이 과거를 훼손하지 않게 한다.
+## 목적 ^purpose
+
+고정 축을 정의하고, 운용하고, 운용에서 새 기능을 발견하는 설계 시점 메타데이터 그래프. (deprecated — dkg-system/ 문서로 분할됨)
 
 기반: [README.md](README.md) · [core-types.md](core-types.md) · [../indexing/coordinate-states.md](../indexing/coordinate-states.md) · [../indexing/ontology-evaluation.md](../indexing/ontology-evaluation.md)
 

@@ -1,11 +1,16 @@
+---
+def:
+  id: spec-core-types
+  scope: data
+  aspect: domain_data
+  depth: specification
+---
+
 # Spec Engine — 코어 타입 정의
 
-> **Status: IMPLEMENTED** (61 tests pass)
->
-> framework-agnostic 순수 TypeScript 타입. NestJS 의존 없음.
-> CLI, 테스트, 다른 런타임에서 직접 import하여 사용 중.
->
-> 구현: `packages/spec-core/src/`
+## 목적 ^purpose
+
+framework-agnostic 순수 TypeScript 타입. NestJS 의존 없음. CLI, 테스트, 다른 런타임에서 직접 import하여 사용 중.
 
 ---
 

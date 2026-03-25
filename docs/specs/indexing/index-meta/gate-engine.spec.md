@@ -1,7 +1,17 @@
+---
+def:
+  id: gate-engine-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
 # GateEngine 스펙
 
-> 주소 상태 자동 재계산 — **invalid-ranges**(순수 함수) + **GateEngine**(오케스트레이션) + **gate-aware-query**(합성).
-> 주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정한다.
+## 목적 ^purpose
+
+주소 상태 자동 재계산 — **invalid-ranges**(순수 함수) + **GateEngine**(오케스트레이션) + **gate-aware-query**(합성).
+주소 공간의 물리적 유효성을 관리하여 encode/decode 가능 여부를 결정한다.
 
 패키지 인덱스: [README.md](README.md)
 관련 스펙: [codec.spec.md](codec.spec.md) · [registry.spec.md](registry.spec.md) · [../coordinate-query.spec.md](../coordinate-query.spec.md)

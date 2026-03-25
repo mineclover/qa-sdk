@@ -1,6 +1,17 @@
+---
+def:
+  id: indexing-benchmarks
+  scope: data
+  aspect: system_data
+  depth: validation
+  tags: [performance]
+---
+
 # 인덱싱 시스템 벤치마크
 
-> encode/decode 성능, 차원 확장 한계, cross-index 종단 탐사, 정보 디코딩 파이프라인, 리소스 사용량의 실측 데이터.
+## 목적 ^purpose
+
+encode/decode 성능, 차원 확장 한계, cross-index 종단 탐사, 정보 디코딩 파이프라인, 리소스 사용량의 실측 데이터.
 
 테스트 환경: Node.js, vitest, Apple Silicon
 테스트 파일:

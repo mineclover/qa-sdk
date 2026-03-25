@@ -1,12 +1,16 @@
+---
+def:
+  id: spec-propagation
+  scope: flow
+  aspect: process_flow
+  depth: specification
+---
+
 # Spec Propagation Pipeline — 스펙 작성 → 고정 → 전파
 
-> **Status: DESIGN**
->
-> PrefixSpec 작성에서 시작하여 registry-service에 고정하고,
-> 소비자에게 전파하기까지의 종단 파이프라인을 정의한다.
->
-> 기존 조각(spec-core, registry-service, decode-service, codegen)을
-> 하나의 흐름으로 연결한다.
+## 목적 ^purpose
+
+PrefixSpec 작성에서 시작하여 registry-service에 고정하고, 소비자에게 전파하기까지의 종단 파이프라인을 정의한다.
 
 기반: [core-types.md](core-types.md) · [design-knowledge-graph.md](design-knowledge-graph.md) · [dkg-skills.md](dkg-skills.md) · [../services/registry-service.spec.md](../services/registry-service.spec.md)
 

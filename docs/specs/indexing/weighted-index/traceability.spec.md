@@ -1,10 +1,19 @@
+---
+def:
+  id: wi-traceability-spec
+  scope: feature
+  aspect: scenario
+  depth: validation
+  lifecycle: approved
+  tags: [testing]
+---
 # weighted-index 변경 전파 추적성
 
-> **Status: DESIGN**
->
-> weighted-index가 DKG 성장 나선의 가장 안쪽 고리로서
-> 단일 축/prefix 내부의 변경 전파를 어떻게 추적하고,
-> 상위 계층에 어떤 계약을 제공하는지 정의한다.
+## 목적 ^purpose
+
+weighted-index가 DKG 성장 나선의 가장 안쪽 고리로서
+단일 축/prefix 내부의 변경 전파를 어떻게 추적하고,
+상위 계층에 어떤 계약을 제공하는지 정의한다.
 
 기반: [core.spec.md](core.spec.md) · [../../spec-engine/design-knowledge-graph.md](../../spec-engine/design-knowledge-graph.md) · [../foundation.md](../foundation.md) · [../coordinate-states.md](../coordinate-states.md)
 

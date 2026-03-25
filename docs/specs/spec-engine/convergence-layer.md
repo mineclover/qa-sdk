@@ -1,13 +1,21 @@
+---
+def:
+  id: convergence-layer-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
 # Convergence Layer — 수렴/비교/인과 발견
 
-> **Status: IMPLEMENTED** (2026-03-21)
->
-> 좌표 시스템의 심볼들이 점차 수렴하도록 돕는 분석 계층.
-> 관측 데이터와 DKG 그래프를 조합하여 수렴 기회를 발견하고,
-> prefix가 최소 가짓수를 유지하면서 로직을 보존하게 한다.
->
-> 모든 것이 고유 심볼이면서도, 인과관계가 발견되면 이어지고,
-> 데이터의 흐름이 prefix를 중심으로 결정되게 한다.
+## 목적 ^purpose
+
+좌표 시스템의 심볼들이 점차 수렴하도록 돕는 분석 계층.
+관측 데이터와 DKG 그래프를 조합하여 수렴 기회를 발견하고,
+prefix가 최소 가짓수를 유지하면서 로직을 보존하게 한다.
+
+모든 것이 고유 심볼이면서도, 인과관계가 발견되면 이어지고,
+데이터의 흐름이 prefix를 중심으로 결정되게 한다.
 
 기반: [design-knowledge-graph.md](design-knowledge-graph.md) · [dkg-skills.md](dkg-skills.md) · [spec-propagation.md](spec-propagation.md) · [../indexing/weighted-index/traceability.spec.md](../indexing/weighted-index/traceability.spec.md)
 

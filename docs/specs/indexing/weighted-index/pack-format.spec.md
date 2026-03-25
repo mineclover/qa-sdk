@@ -1,8 +1,16 @@
+---
+def:
+  id: wi-pack-format
+  scope: data
+  aspect: domain_data
+  depth: specification
+---
+
 # pack-format 스펙
 
-> ID 컨테이너 포맷 정의, 수평 확장 가능한 레지스트리, hex 직렬화, shape 용량 적합성 분석,
-> 프로토콜 독립 SemanticAddress 표현, 양방향 프로토콜 변환.
-> 인코딩 결과(정수)를 **어떤 크기·형식의 컨테이너에 담고, 어떤 프로토콜로 직렬화할 것인가**를 설계 시점에 결정하기 위한 도구.
+## 목적 ^purpose
+
+ID 컨테이너 포맷 정의, 수평 확장 가능한 레지스트리, hex 직렬화, shape 용량 적합성 분석, 프로토콜 독립 SemanticAddress 표현, 양방향 프로토콜 변환.
 
 패키지: `weighted-index`
 

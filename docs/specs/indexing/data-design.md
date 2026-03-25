@@ -1,9 +1,19 @@
+---
+def:
+  id: data-design-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
 # 좌표 시스템 설계 구조
 
-> 유한한 개념 조합에 정수 주소를 부여하는 **좌표 시스템(Coordinate System)**의 설계 구조.
-> 닫힌 공간 압축, 차원 편입, 범위 기반 주소 연산, 캐싱 전략이 하나의 좌표 체계로 결합된다.
->
-> **이 시스템은 데이터를 저장하지 않는다.** 주소를 부여하고 해석할 뿐이다. 데이터 저장은 별도 계층의 책임이다.
+## 목적 ^purpose
+
+유한한 개념 조합에 정수 주소를 부여하는 **좌표 시스템(Coordinate System)**의 설계 구조.
+닫힌 공간 압축, 차원 편입, 범위 기반 주소 연산, 캐싱 전략이 하나의 좌표 체계로 결합된다.
+
+**이 시스템은 데이터를 저장하지 않는다.** 주소를 부여하고 해석할 뿐이다. 데이터 저장은 별도 계층의 책임이다.
 
 기반 원리: [`foundation.md`](foundation.md) · 파이프라인: [`pipeline.md`](pipeline.md) · 사용 패턴: [`patterns.md`](patterns.md) · 벤치마크: [`benchmarks.md`](benchmarks.md) · 온톨로지 대응: [`ontology-evaluation.md`](ontology-evaluation.md)
 

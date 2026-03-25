@@ -1,7 +1,17 @@
+---
+def:
+  id: wi-original
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: deprecated
+---
+
 # weighted-index 스펙
 
-> 가중진법(weighted positional notation) 기반 다차원 인덱스 ↔ 정수 변환 라이브러리.
-> 레이블 조합(역할, 액션, API, 테넌트 등)을 단일 정수 ID로 인코딩/디코딩하고, 버전 관리를 통해 DB 연결성을 유지한다.
+## 목적 ^purpose
+
+가중진법 기반 다차원 인덱스 ↔ 정수 변환 라이브러리. (deprecated — wi-system/ 문서로 분할됨)
 
 패키지: `weighted-index`
 

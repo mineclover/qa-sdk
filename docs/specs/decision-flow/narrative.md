@@ -1,8 +1,19 @@
+---
+def:
+  id: df-narrative
+  scope: state
+  aspect: domain_state
+  depth: specification
+  lifecycle: approved
+  tags: [decision]
+---
 # Decision Flow — 서사 (Narrative)
 
-> 이 문서는 **서사가 쌓이는 문서**다.
-> 구현은 바뀔 수 있지만, 서사는 지워지지 않는다.
-> 새로운 발견이 있으면 새 장이 추가된다.
+## 목적 ^purpose
+
+이 문서는 **서사가 쌓이는 문서**다.
+구현은 바뀔 수 있지만, 서사는 지워지지 않는다.
+새로운 발견이 있으면 새 장이 추가된다.
 
 증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 

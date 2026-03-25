@@ -1,7 +1,17 @@
+---
+def:
+  id: cq-original
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: deprecated
+---
+
 # Coordinate Query 스펙
 
-> 닫힌 공간 위의 **패턴 포함 관계, 정책 해소, cross-index 합성 질의, 버전 횡단 탐색**을 다루는 n차원 연산 계층.
-> 기존 `calcAddressRanges` 범위 대수(range algebra) 위에 lattice, policy, join, version 연산을 쌓는다.
+## 목적 ^purpose
+
+n차원 좌표 공간의 패턴 포함 관계, 정책 해소, cross-index 합성 질의. (deprecated — cq-system/ 문서로 분할됨)
 
 기반 문서: [foundation.md](foundation.md) · [data-design.md](data-design.md) · [patterns.md](patterns.md)
 관련 스펙: [range-query.spec.md](weighted-index/range-query.spec.md) · [codec.spec.md](index-meta/codec.spec.md) · [resolver.spec.md](index-meta/resolver.spec.md)

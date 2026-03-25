@@ -1,7 +1,17 @@
+---
+def:
+  id: index-meta-sdk-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
 # IndexSDK 스펙
 
-> MetaRegistryInput 하나로 즉시 사용 가능한 경량 소비 레이어.
-> 개발자는 entity name만 입력하면, 내부에서 VersionedValue로 압축·해석한다.
+## 목적 ^purpose
+
+MetaRegistryInput 하나로 즉시 사용 가능한 경량 소비 레이어.
+개발자는 entity name만 입력하면, 내부에서 VersionedValue로 압축·해석한다.
 
 패키지 인덱스: [README.md](README.md)
 코덱: [codec.spec.md](codec.spec.md)

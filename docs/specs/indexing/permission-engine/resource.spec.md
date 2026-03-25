@@ -1,7 +1,18 @@
+---
+def:
+  id: perm-resource-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+---
 # permission-engine resource identity 스펙
 
-> `resource.ts`, `service-ref.ts`, `permission-code.ts`는 `permission-engine`의 외부 식별자 레이어를 이룬다.
-> 서비스 경계, resource 규칙, 최종 permission code 문자열을 분리하여 `[S2]` 권한 해소 경로의 텍스트 계약을 안정화한다.
+## 목적 ^purpose
+
+`resource.ts`, `service-ref.ts`, `permission-code.ts`는 `permission-engine`의 외부 식별자 레이어를 이룬다.
+서비스 경계, resource 규칙, 최종 permission code 문자열을 분리하여 `[S2]` 권한 해소 경로의 텍스트 계약을 안정화한다.
 
 패키지: `permission-engine`
 운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)

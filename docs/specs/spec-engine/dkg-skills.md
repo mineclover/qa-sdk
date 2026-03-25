@@ -1,10 +1,16 @@
+---
+def:
+  id: dkg-skills-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+---
+
 # DKG Skills — 종단 파이프라인과 자동화 가능 연산
 
-> **Status: DESIGN**
->
-> DKG 성장 나선의 반복 연산을 skill로 패키징한다.
-> weighted-index(수학)와 DKG(그래프)를 종단으로 연결하여
-> "축 변경 → 서비스 영향 알림"까지를 하나의 호출로 실행할 수 있게 한다.
+## 목적 ^purpose
+
+DKG 성장 나선의 반복 연산을 skill로 패키징한다. weighted-index(수학)와 DKG(그래프)를 종단으로 연결하여 "축 변경 → 서비스 영향 알림"까지를 하나의 호출로 실행할 수 있게 한다.
 
 기반: [design-knowledge-graph.md](design-knowledge-graph.md) · [../indexing/weighted-index/traceability.spec.md](../indexing/weighted-index/traceability.spec.md) · [core-types.md](core-types.md)
 
