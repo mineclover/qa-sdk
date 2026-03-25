@@ -1,7 +1,7 @@
 {
   "name": "Definition Catalog 문서 품질 고도화",
-  "branchName": "ralph/def-catalog-quality",
   "description": "265건 문서의 링크/purpose/태그 품질을 7개 def-* 스킬로 개선한다. links 169→0, purpose 짧음 5→0, overview 28→100%, tags 34→50%+",
+  "branchName": "ralph/def-catalog-quality",
   "userStories": [
     {
       "id": "US-001",
@@ -40,7 +40,9 @@
       "priority": 2,
       "passes": false,
       "notes": "skills/def-audit/SKILL.md의 '전체 품질 리포트' 섹션 참조.",
-      "dependsOn": ["US-001"]
+      "dependsOn": [
+        "US-001"
+      ]
     },
     {
       "id": "US-003",
@@ -57,7 +59,9 @@
       "priority": 3,
       "passes": false,
       "notes": "skills/def-link/SKILL.md의 'scope 기반 추론' 규칙 참조. 순환 참조 금지.",
-      "dependsOn": ["US-002"]
+      "dependsOn": [
+        "US-002"
+      ]
     },
     {
       "id": "US-004",
@@ -72,7 +76,9 @@
       "priority": 4,
       "passes": false,
       "notes": "US-003의 패턴을 따른다.",
-      "dependsOn": ["US-003"]
+      "dependsOn": [
+        "US-003"
+      ]
     },
     {
       "id": "US-005",
@@ -88,7 +94,9 @@
       "priority": 5,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-003"]
+      "dependsOn": [
+        "US-003"
+      ]
     },
     {
       "id": "US-006",
@@ -103,7 +111,9 @@
       "priority": 6,
       "passes": false,
       "notes": "20건으로 가장 큰 그룹. coord-foundation이 핵심 의존 대상.",
-      "dependsOn": ["US-003"]
+      "dependsOn": [
+        "US-003"
+      ]
     },
     {
       "id": "US-007",
@@ -117,7 +127,11 @@
       "priority": 7,
       "passes": false,
       "notes": "US-003~006의 패턴을 나머지 15개 그룹에 일괄 적용.",
-      "dependsOn": ["US-004", "US-005", "US-006"]
+      "dependsOn": [
+        "US-004",
+        "US-005",
+        "US-006"
+      ]
     },
     {
       "id": "US-008",
@@ -134,7 +148,9 @@
       "priority": 8,
       "passes": false,
       "notes": "skills/def-audit/SKILL.md의 'purpose 보강 가이드' 참조. 무엇+왜+범위 패턴.",
-      "dependsOn": ["US-002"]
+      "dependsOn": [
+        "US-002"
+      ]
     },
     {
       "id": "US-009",
@@ -149,7 +165,9 @@
       "priority": 9,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-002"]
+      "dependsOn": [
+        "US-002"
+      ]
     },
     {
       "id": "US-010",
@@ -165,7 +183,9 @@
       "priority": 10,
       "passes": false,
       "notes": "태그는 packages/definition-catalog/src/taxonomy.ts의 KNOWN_TAGS에 정의된 것을 사용.",
-      "dependsOn": ["US-002"]
+      "dependsOn": [
+        "US-002"
+      ]
     },
     {
       "id": "US-011",
@@ -180,23 +200,68 @@
       "priority": 11,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-007", "US-008", "US-009", "US-010"]
+      "dependsOn": [
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010"
+      ]
     },
     {
       "id": "US-012",
-      "title": "150줄+ 잔여 리프 분할",
-      "description": "skills/def-split/SKILL.md 절차로 남은 대형 리프 문서를 분할한다.",
+      "title": "리프 분할 — indexing-core/index-meta/spec-engine 그룹",
+      "description": "indexing-core-system, index-meta-system, spec-engine-system 소속 150줄+ 리프를 분할한다. 가장 큰 그룹 3개를 먼저 처리.",
       "acceptanceCriteria": [
-        "150줄+ 리프 문서 수 50% 감소 (def-split의 대상 찾기 스크립트로 확인)",
+        "indexing-core-system 소속 150줄+ 리프 수 50% 감소",
+        "index-meta-system 소속 150줄+ 리프 수 50% 감소",
+        "spec-engine-system 소속 150줄+ 리프 수 50% 감소",
         "분할된 원본은 lifecycle: deprecated",
         "새 멤버 문서에 ## 목적 ^purpose 있음",
-        "새 그룹 문서에 ## 구성 ^overview 있음",
         "pnpm --filter definition-catalog test 통과"
       ],
       "priority": 12,
       "passes": false,
-      "notes": "skills/def-split/SKILL.md의 전체 절차(대상 식별 → 섹션 분석 → 그룹 생성 → 멤버 생성 → deprecated → 검증) 참조.",
-      "dependsOn": ["US-011"]
+      "notes": "skills/def-split/SKILL.md 절차 참조. 한 그룹씩 순차 처리.",
+      "dependsOn": [
+        "US-011"
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "리프 분할 — wi/permission/dkg/gate 그룹",
+      "description": "wi-system, permission-system, dkg-system, gate-system 소속 150줄+ 리프를 분할한다.",
+      "acceptanceCriteria": [
+        "해당 그룹 소속 150줄+ 리프 수 50% 감소",
+        "분할된 원본은 lifecycle: deprecated",
+        "새 멤버 문서에 ## 목적 ^purpose 있음",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-012"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "리프 분할 — 나머지 그룹 + 최종 검증",
+      "description": "나머지 그룹의 150줄+ 리프를 분할하고, 깨진 링크 검증(validateGraph)을 실행한다.",
+      "acceptanceCriteria": [
+        "전체 150줄+ 리프 수 40건 이하",
+        "분할된 원본은 lifecycle: deprecated",
+        "깨진 링크 검증: node -e로 BROKEN 0건 확인",
+        "pnpm --filter definition-catalog test 통과"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "skills/def-link/SKILL.md의 깨진 링크 검증 스크립트 실행.",
+      "dependsOn": [
+        "US-013"
+      ]
     }
-  ]
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-25T12:01:14.996Z"
+  }
 }

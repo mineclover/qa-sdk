@@ -103,6 +103,10 @@ export {
   computeEffectiveConcerns,
 } from "./concern.js";
 
+// ─── 검증 ───────────────────────────────────────────────
+export type { ValidationIssue, ValidationResult } from "./validate.js";
+export { validateGraph } from "./validate.js";
+
 // ─── 영향 분석 (바텀업 역추적) ───────────────────────────
 export type { ImpactedDoc, ImpactAnalysis } from "./impact.js";
 export { analyzeImpact } from "./impact.js";

@@ -129,13 +129,27 @@ npx skills add . --local
 - [ ] /def-context로 주요 문서(gate-api, record-spec, ingest-api-spec) 컨텍스트 정상
 - [ ] /def-bottomup record-spec blast radius가 이전보다 증가
 
-### US-012: 150줄+ 잔여 리프 분할
-**Description:** /def-split으로 남은 대형 리프 문서를 분할한다.
+### US-012: 리프 분할 — indexing-core/index-meta/spec-engine
+**Description:** 가장 큰 3개 그룹의 150줄+ 리프를 분할한다.
 
 **Acceptance Criteria:**
-- [ ] 150줄+ 리프 문서 수 50% 감소
+- [ ] indexing-core/index-meta/spec-engine 소속 150줄+ 리프 각 50% 감소
 - [ ] 분할된 원본은 lifecycle: deprecated
 - [ ] 새 멤버 문서에 ^purpose 있음
+
+### US-013: 리프 분할 — wi/permission/dkg/gate
+**Description:** 4개 그룹의 150줄+ 리프를 분할한다.
+
+**Acceptance Criteria:**
+- [ ] 해당 그룹 소속 150줄+ 리프 50% 감소
+- [ ] 분할된 원본은 lifecycle: deprecated
+
+### US-014: 리프 분할 — 나머지 + 깨진 링크 검증
+**Description:** 나머지 그룹 분할 + validateGraph로 전체 정합성 확인.
+
+**Acceptance Criteria:**
+- [ ] 전체 150줄+ 리프 40건 이하
+- [ ] 깨진 링크 0건 (validateGraph 통과)
 
 ## Functional Requirements
 

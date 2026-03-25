@@ -117,14 +117,50 @@ def:
 이미 links가 있으면 기존 항목 아래에 추가.
 links가 없으면 `lifecycle:` 다음 줄에 `links:` 섹션 생성.
 
+## 자동 vs 수동 판별
+
+### 자동 연결 가능 (scope만으로 결정)
+
+같은 그룹 내에서 scope 쌍으로 관계가 결정되는 경우:
+
+| 패턴 | 예시 | 안전도 |
+|------|------|--------|
+| constraint → interface (constrains) | gate-constraint → gate-api | 높음 |
+| constraint → feature (constrains) | gate-constraint → gate-engine-func | 높음 |
+| flow → interface (refines) | gate-flow → gate-api | 높음 |
+| flow → feature (refines) | gate-flow → gate-engine-func | 높음 |
+| scenario → feature (traces_to) | gate-scenario → gate-engine-func | 높음 |
+
+**이 패턴은 scope만 보고 자동 적용해도 안전하다.**
+
+### 수동 검토 필요 (본문 확인 필요)
+
+| 패턴 | 이유 |
+|------|------|
+| feature → data (depends_on) | 어떤 data 모델에 의존하는지 본문을 읽어야 함 |
+| interface → data (depends_on) | 어떤 스키마를 사용하는지 확인 필요 |
+| state → data (depends_on) | 어떤 데이터에 저장되는지 확인 필요 |
+| 다른 그룹 간 관계 | 반드시 본문/코드 참조 확인 |
+
+**이 패턴은 본문의 키워드 참조 기반으로 추론하되, 불확실하면 추가하지 않는다.**
+
 ## 검증
 
 ```bash
-# 링크 추가 후 확인
-grep -A2 "target:" <수정파일>
+# 깨진 링크 검증 (target이 존재하지 않는 문서를 참조)
+node -e '
+const fs=require("fs"),cp=require("child_process");
+const allIds=new Set();
+const files=cp.execSync("grep -rl \"^def:\" docs/ 2>/dev/null",{encoding:"utf-8"}).trim().split("\n");
+files.forEach(f=>{const c=fs.readFileSync(f,"utf-8");const id=(c.match(/  id: (.+)/)||["",""])[1];if(id)allIds.add(id)});
+let broken=0;
+files.forEach(f=>{const c=fs.readFileSync(f,"utf-8");const targets=(c.match(/target: ([a-z][a-z0-9-]*)/g)||[]);
+  targets.forEach(t=>{const id=t.replace("target: ","");if(!allIds.has(id)){console.log("BROKEN: "+id+" in "+f);broken++}})});
+console.log("\n깨진 링크: "+broken+"건");
+'
 
 # blast radius 변화 확인
-/def-bottomup <문서ID>
+# /def-bottomup <문서ID>
 
 # 전체 테스트
 pnpm --filter definition-catalog test
@@ -135,3 +171,4 @@ pnpm --filter definition-catalog test
 - traces_to는 추적 관계일 뿐 — 영향 전파 안 됨. 테스트/시나리오 문서에만 사용
 - 순환 참조 주의: A depends_on B, B depends_on A는 피한다
 - 관계가 불확실하면 추가하지 않는다 — 잘못된 링크가 없는 것보다 나쁨
+- **자동 연결 가능 패턴만 먼저 적용**하고, 수동 검토 필요한 것은 별도로 처리
