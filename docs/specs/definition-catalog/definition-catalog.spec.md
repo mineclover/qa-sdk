@@ -1,41 +1,50 @@
+---
+def:
+  id: definition-catalog-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+  tags: [entry-point]
+---
 # Definition Catalog — 소프트웨어 정의 좌표계
 
-> 소프트웨어를 구성하는 정의(화면, 기능, 흐름, 상태, 제약, 데이터)를
-> **좌표 주소**로 분류하고 관리하는 문서 메타데이터 시스템.
+> 1개의 비즈니스 로직 정의를 **좌표 주소**로 분류하는 문서 메타데이터 시스템.
+> 문서 유형 축(scope × aspect × depth)이 "이 문서는 무엇을 정의하는가"를 인코딩한다.
 
 관련 스펙: [decision-flow.spec.md](../decision-flow/decision-flow.spec.md)
 구현: `packages/definition-catalog/src/`
 
 ## 상태
 
-implemented (v0.1.0) — 106 tests / 5 files (2026-03-25)
+implemented (v0.1.0) — 195 tests / 10 files (2026-03-25)
 
 ---
 
 ## 1. 모델 정체성
 
-### 왜 좌표계인가
+### 1개 문서 = 1개 비즈니스 로직
 
-소프트웨어를 정의하는 문서는 종류가 많다 — 화면 설계, 기능 명세, 상태 모델, 제약 사항, 데이터 스키마.
-이 문서들이 흩어져 있으면 "이 기능의 명세가 있는가?", "어떤 제약이 걸려 있는가?"를 파악하기 어렵다.
+이 시스템의 단위는 **1개의 비즈니스 로직 정의**다.
+각 문서는 정확히 하나의 좌표(scope × aspect × depth)에 위치하고,
+그 좌표가 정의하는 주제의 내용만 담는다.
 
-**소수의 축으로 분류하면 모든 정의 문서에 고유 주소가 생긴다.**
+```
+좌표 = 문서의 정체성 = "이 문서는 무엇을 정의하는가"
+내용 = 그 정체성에 맞는 비즈니스 로직만
+```
 
-이것이 qa-sdk 좌표 인코딩과 동형인 이유:
-데이터 이벤트의 "어디서"를 좌표로 표현하듯, 정의 문서의 "무엇을"을 좌표로 표현한다.
+여러 비즈니스 로직 간의 구조(깊이, 상속, 조합)는 이 시스템의 현재 범위가 아니다.
+현재 단계에서는 개별 로직의 분류와 추적에 집중한다.
 
 ### decision-flow와의 관계
 
 ```
-definition-catalog   "무엇(what)을 정의하는가"    → def_document:v1:1057
+definition-catalog   "무엇(what)을 정의하는가"    → def_document:v1:65
 decision-flow        "왜(why) 그렇게 결정했는가"  → decision_event:v1:1234
 
 what × why = 추적 가능한 소프트웨어 정의
 ```
-
-decision-flow는 결정의 "왜"를 좌표로 증명한다.
-definition-catalog는 결정의 "산출물"이 어떤 종류의 정의인지를 좌표로 분류한다.
-두 좌표가 연결되면 "이 컴포넌트 명세는 왜 이렇게 작성되었는가"를 주소 쌍으로 추적할 수 있다.
 
 ### 좌표 동형
 
@@ -56,42 +65,23 @@ VALID_SCOPE_ASPECTS    ≡  SchemaConstraint  (유효 조합 제약)
 - Q1 유한한가? Q2 정의 분류와 관련있는가? Q3 여러 문서에서 공유되는가?
 - Q4 안정적인가? Q5 capacity 관리가 가능한가?
 
+좌표는 **불변 정체성**만 인코딩한다. 변하는 상태(lifecycle)는 좌표에 포함하지 않는다.
+
 ### 축 카탈로그
 
-4개 core 축 + 1개 관계 축. 설명력 역할(role) 기준 분류.
-
-#### Primary — 문서의 정체성을 결정하는 축
-
-| 축 | entries | cap | 설명 |
-|---|---|---|---|
-| **def_scope** | 7 | 16 | 무엇에 대한 정의인가 — 대분류 |
-| **def_aspect** | 20 | 64 | 어떤 세부 측면인가 — scope 내 세부 유형 |
-
-#### Secondary — 문서의 성격을 한정하는 축
-
-| 축 | entries | cap | 설명 |
-|---|---|---|---|
-| **def_depth** | 4 | 8 | 얼마나 상세한가 — 개요/명세/구현/검증 |
-
-#### Contextual — 문서의 상태를 측정하는 축
-
-| 축 | entries | cap | 설명 |
-|---|---|---|---|
-| **def_lifecycle** | 5 | 16 | 현재 어떤 상태인가 — 초안/검토/승인/폐기/보관 |
-
-#### Relation — 문서 간 관계를 표현하는 축
-
-| 축 | entries | cap | 설명 |
-|---|---|---|---|
-| **link_type** | 5 | 16 | 두 정의 사이의 관계 성격 |
+| 축 | role | entries | cap | 설명 |
+|---|---|---|---|---|
+| **def_scope** | primary | 7 | 16 | 무엇에 대한 정의인가 — 대분류 |
+| **def_aspect** | primary | 20 | 64 | 어떤 세부 측면인가 — scope 내 유형 |
+| **def_depth** | secondary | 4 | 8 | 얼마나 상세한가 |
+| **def_lifecycle** | contextual | 5 | 16 | 문서의 현재 상태 (좌표 외 메타데이터) |
+| **link_type** | relation | 5 | 16 | 정의 간 관계 성격 |
 
 ---
 
-## 3. 분류 체계 (Taxonomy)
+## 3. 분류 체계
 
 ### 7대 분류 × 20 세부 유형
-
-scope-aspect는 **트리 구조**다. 유효한 조합은 20개뿐이다.
 
 ```
 소프트웨어 정의
@@ -125,22 +115,14 @@ scope-aspect는 **트리 구조**다. 유효한 조합은 20개뿐이다.
 │   └── 외부데이터 (external_data)    외부 API, 서드파티 데이터 연동
 │
 └── 인터페이스 (interface)
-    ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마, 인증
-    ├── CLI계약 (cli_contract)       커맨드, 플래그, 옵션, 출력 형식 정의
+    ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마
+    ├── CLI계약 (cli_contract)       커맨드, 플래그, 옵션, 출력 형식
     └── 이벤트계약 (event_contract)  이벤트 스키마, 메시지 포맷, 발행/구독 규약
 ```
 
-### scope-aspect 제약
+scope-aspect 유효 조합: 20개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
 
-좌표 공간은 16 × 64 = 1,024이지만 유효 조합은 20개.
-`VALID_SCOPE_ASPECTS`가 이 제약을 표현하고, `validateScopeAspect()`가 등록 시 검증한다.
-aspect만 알면 scope를 역추론할 수 있다 (`ASPECT_TO_SCOPE`).
-
----
-
-## 4. 깊이 (Depth)
-
-같은 scope × aspect 내에서 문서의 상세도를 구분한다.
+### 깊이 (depth)
 
 ```
 overview         전체 그림, 목적과 범위
@@ -152,291 +134,206 @@ implementation   구현 세부, 코드 수준 설계
 validation       테스트 계획, 검증 기준
 ```
 
-예: `ui/component`에 대해
-- overview: "인증 컴포넌트가 필요하다"
-- specification: "입력 필드 3개, 유효성 규칙, API 호출 명세"
-- implementation: "React Hook Form + zod 스키마, 파일 구조"
-- validation: "단위 테스트 시나리오, 접근성 검증 기준"
+### 생명주기 (lifecycle) — 좌표 외 메타데이터
+
+```
+draft → review → approved → deprecated → archived
+```
+
+좌표에 포함하지 않는다. lifecycle이 바뀌어도 주소가 안정적으로 유지된다.
 
 ---
 
-## 5. 생명주기 (Lifecycle)
+## 4. 좌표 인코딩
 
-문서의 현재 상태를 추적한다.
-
-```
-draft → review → approved
-                    ↓
-               deprecated → archived
-```
-
-| 상태 | 의미 | 신뢰도 |
-|------|------|--------|
-| draft | 작성 중, 미완성 | 참조 주의 |
-| review | 리뷰 대기/진행 | 변경 가능 |
-| approved | 확정, 참조 가능 | 신뢰 |
-| deprecated | 대체됨, 참조 비권장 | 이력용 |
-| archived | 이력 보존, 비활성 | 읽기 전용 |
-
-### decision-flow verdict 매핑
-
-decision-flow의 결정 판정이 문서 생명주기에 자연스럽게 매핑된다:
-
-| verdict | → lifecycle | 이유 |
-|---------|-------------|------|
-| success | approved | 결정 성공 → 관련 문서도 확정 |
-| failure | deprecated | 결정 실패 → 관련 문서는 폐기 후보 |
-| deferred | draft | 결정 보류 → 문서는 아직 초안 |
-| superseded | archived | 결정 대체 → 문서는 보관 |
-
----
-
-## 6. 관계 (Links)
-
-정의 문서 간 관계를 5가지 유형으로 표현한다.
-
-| 유형 | 방향 | 의미 | 전이성 |
-|------|------|------|--------|
-| depends_on | A → B | A는 B 없이 성립하지 않음 | 전이적 |
-| implements | A → B | A는 B의 구현체 | 비전이적 |
-| refines | A → B | A는 B를 더 구체화 | 전이적 |
-| constrains | A → B | A가 B의 범위를 제한 | 비전이적 |
-| traces_to | A → B | A와 B가 추적 관계 (decision-flow 등) | 비전이적 |
-
-### 관계 예시: 로그인 기능
-
-```
-로그인 흐름(flow/user_scenario)
-    │ refines
-    ▼
-로그인 기능정의(feature/func_def)
-    │ implements          │ depends_on
-    ▼                     ▼
-로그인 컴포넌트           인증 상태 모델
-(ui/component)           (state/domain_state)
-    ▲ constrains              ▲ constrains
-    │                         │
-보안 제약(constraint/tech_constraint)
-```
-
----
-
-## 7. 좌표 인코딩
-
-### Prefix 정의
+### Prefix
 
 | prefix | dims | totalSpace | 역할 |
 |--------|------|-----------|------|
-| def_document | scope(16) × aspect(64) × depth(8) | 8,192 | 문서 불변 정체성 좌표 |
+| def_document | scope(16) × aspect(64) × depth(8) | 8,192 | 문서 불변 정체성 |
 | def_link | scope(16) × aspect(64) × link_type(16) | 16,384 | 관계 좌표 |
-
-**설계 결정: lifecycle은 좌표에 포함하지 않는다.**
-
-좌표는 **불변 정체성**을 인코딩한다. "이 문서는 UI/컴포넌트/명세다"는 바뀌지 않는다.
-lifecycle(draft → approved)은 **변하는 상태**이므로 메타데이터 필드로만 관리한다.
-이렇게 하면 lifecycle이 바뀌어도 주소가 안정적으로 유지되어 외부 참조가 깨지지 않는다.
 
 ### 직렬화
 
-기존 qa-sdk SemanticAddress와 동일:
-
 ```
-"def_document:v1:65"       → ui/component/specification
-"def_document:v1:481"      → data/domain_data/overview
-"def_link:v1:145"          → feature/func_def/depends_on
+"def_document:v1:65"   → ui/component/specification
+"def_document:v1:481"  → data/domain_data/overview
 ```
 
-### 라운드트립
-
-```typescript
-const address = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
-const decoded = decodeDocument(address);
-// → { scope: "ui", aspect: "component", depth: "specification" }
-// lifecycle이 draft → approved로 바뀌어도 address는 불변
-```
+같은 scope × aspect × depth인 문서 여러 건은 **같은 좌표**를 공유한다.
+좌표는 문서 유형의 정체성이고, 개별 문서는 `id`로 구분한다.
+`findByAddress()`는 해당 유형의 모든 문서를 반환한다.
 
 ---
 
-## 8. 레지스트리
+## 5. 영속성 — Frontmatter SSOT
 
-`MemoryDefinitionRegistry`가 문서 메타데이터의 CRUD + 좌표 기반 질의를 제공한다.
+문서 파일의 YAML frontmatter가 SSOT. registry는 파생 인덱스.
 
-### 등록
-
-```typescript
-const entry = registry.register({
-  id: "login-component-spec",
-  title: "로그인 컴포넌트 명세",
-  scope: "ui", aspect: "component",
-  depth: "specification", lifecycle: "draft",
-  createdAt: "2026-03-25T00:00:00Z",
-  updatedAt: "2026-03-25T00:00:00Z",
-});
-// entry.address = 1057
-// entry.serialized = "def_document:v1:1057"
+```yaml
+---
+def:
+  id: gate-api
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+  links:
+    - target: gate-engine-func
+      type: implements
+---
+# Gate Service API 계약
+...본문...
 ```
 
-- scope-aspect 유효성 자동 검증 (무효 조합은 에러)
-- 좌표 자동 계산
-
-### 질의
+### 스캔
 
 ```typescript
-registry.findByScope("ui");                           // 모든 UI 문서
-registry.findByAddress(1057);                         // 좌표로 직접 조회
-registry.query({ scope: "ui", lifecycle: "approved" }); // 복합 필터
-registry.stats();                                     // 분포 통계
+const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
+// result.registry: 자동 구성된 MemoryDefinitionRegistry
+// result.registered: 등록된 문서 수
+// result.linked: 연결된 관계 수
+// result.errors: 파싱 에러 목록
 ```
 
-### 관계
-
-```typescript
-registry.link("login-spec", "auth-state", "depends_on");
-registry.getLinks("login-spec", "outgoing");
-```
+1. 디렉토리 재귀 스캔 → .md 파일에서 frontmatter 추출
+2. `def` 블록 파싱 + scope-aspect 검증
+3. registry 자동 등록 (좌표 자동 계산)
+4. links 자동 연결 (모든 문서 등록 후)
+5. frontmatter 없는 파일은 건너뜀
 
 ---
 
-## 9. Bridge — decision-flow 연결
+## 6. Concern 전파
 
-### 산출 유형 매핑
+concern은 단순 태그가 아니라 **link 그래프를 타고 전파되는 구조적 제약**이다.
 
-decision-flow의 `NarrativeOutcome.artifactType` → `DefScope`:
+### 전파 규칙
 
-| artifactType | → scope | 이유 |
-|-------------|---------|------|
-| component, page, screen | ui | 시각적 산출물 |
-| module, service, package | feature | 기능 산출물 |
-| plan, workflow, pipeline | flow | 흐름 산출물 |
-| state, model, entity | state | 상태 모델 산출물 |
-| config, policy, rule | constraint | 제약/정책 산출물 |
-| schema, axis, prefix, table | data | 데이터 구조 산출물 |
-| api, endpoint, cli, event-schema | interface | 접근 계약 산출물 |
+| concern | 전파 경로 |
+|---------|----------|
+| security | refines↓, implements↓, depends_on↑, constrains↓ |
+| performance | refines↓, implements↓, depends_on↑ |
+| accessibility | refines↓, implements↓, constrains↓ |
+| observability | refines↓, implements↓ |
+| testing | refines↓, implements↓ |
+| migration | depends_on↑, refines↓ |
+| deprecation | refines↓, implements↓, depends_on↑ |
 
-### address_context 빌더
+↓ = downstream (상위→하위), ↑ = upstream (의존대상→의존자)
+`traces_to`는 전파하지 않는다 — 추적 관계이지 구조적 제약이 아니다.
 
-```typescript
-const ctx = buildDefinitionContext(entry);
-// → { def_document: "def_document:v1:1057" }
-```
-
-기존 수집 파이프라인(ingest)에 그대로 연결 가능.
-
----
-
-## 10. 태그 체계 (Tags)
-
-### 횡단 관심사 태그 (ConcernTag)
-
-scope를 횡단하는 관심사를 표현한다. scope로 만들면 분류가 깨지지만, tag로 묶으면 각 문서의 정체성은 유지된다.
-
-| 태그 | 의미 | 걸리는 scope 예시 |
-|------|------|-----------------|
-| `security` | 인증, 인가, 암호화, 감사 | interface + constraint + state |
-| `performance` | 지연, 처리량, 최적화 | data + flow + constraint |
-| `accessibility` | a11y, WCAG, 스크린리더 | ui + constraint |
-| `observability` | 로깅, 메트릭, 트레이싱 | data + flow + interface |
-| `testing` | 검증 전략, 커버리지 | feature + flow |
-| `migration` | 스키마 변경, 데이터 이전 | data + constraint |
-| `deprecation` | 대체 계획, 이전 가이드 | 모든 scope |
-
-### 구조 태그 (StructuralTag)
-
-문서의 구조적 특성을 표시한다.
-
-| 태그 | 의미 |
-|------|------|
-| `cross-scope` | 여러 scope에 걸치는 통합 문서 |
-| `entry-point` | 이 주제의 시작 문서 (진입점) |
-| `decision` | 의사결정 기록이 포함됨 |
-| `generated` | codegen 등으로 자동 생성된 문서 |
-
-### cross-scope 감지
-
-`detectCrossScope(tags)`가 태그에서 scope 참조를 감지한다:
-- scope 이름 2개 이상 → `isCrossScope: true`
-- scope 이름 3개 이상 → `shouldSplit: true` (분리 후보)
-
----
-
-## 11. 운영 컨벤션 (Classification Conventions)
-
-### C1. scope 결정 기준 — "주 독자가 누구인가"
-
-같은 주제라도 독자에 따라 scope가 다르다.
-- API를 호출하는 사람이 볼 문서 → `interface/api_contract`
-- 흐름을 이해하려는 사람이 볼 문서 → `flow/process_flow`
-- 상태를 설계하는 사람이 볼 문서 → `state/domain_state`
-
-### C2. 여러 scope에 걸치면 — 쪼개고 link로 연결
-
-하나의 문서에 scope 2개 이상이 걸리면:
-1. scope별로 독립 문서로 분리
-2. `refines` / `depends_on` / `constrains`로 연결
-3. 정말 쪼갤 수 없으면: 주 scope 1개 + `tags: ["cross-scope", "ui", "state", ...]`
-
-### C3. 횡단 관심사는 scope가 아니라 tag
-
-보안, 성능, 접근성 등은 여러 scope에 걸치는 관심사.
-scope로 만들면 분류가 깨진다. `ConcernTag`로 횡단 추적한다.
+### EffectiveConcerns
 
 ```typescript
-registry.query({ tags: ["security"] });  // 보안 관련 문서 전체
+const concerns = computeEffectiveConcerns(
+  "gate-api",
+  id => registry.get(id),
+  (id, dir) => registry.getLinks(id, dir),
+);
+// concerns.direct: ["security"]         — 직접 부여
+// concerns.inherited: [{ concern: "security", from: "gate-constraint", via: "constrains", path: [...] }]
+// concerns.all: ["security"]            — 합집합
 ```
 
-### C4. aspect 추가 시 — 기존 동류와 성격 비교
-
-새 aspect가 필요할 때:
-1. "주 독자/성격"이 기존 scope의 aspect들과 동류인가?
-2. 동류면 해당 scope에 추가 (def_aspect headroom 44칸 내)
-3. 아니면 다른 scope를 검토하거나 신규 scope 후보
-
-### C5. aspect 이동은 파괴적 — 마이그레이션 프로토콜
-
-scope 간 aspect 이동이 필요할 때:
-1. 기존 aspect는 유지 (주소 안정성)
-2. 새 aspect를 대상 scope에 추가
-3. 기존 문서를 새 좌표로 마이그레이션 (새 entry + 구 entry deprecated)
-4. `traces_to` 링크로 이전↔이후 추적
-
-### C6. cross-scope 3개 이상이면 분리 후보
-
-`detectCrossScope()`로 자동 감지. tags에 scope 이름이 3개 이상이면
-이 문서는 너무 많은 관심사를 다루고 있다 → 분리하면 각각 더 명확한 좌표를 가진다.
+다단계 전이적 전파(BFS), 순환 참조 안전.
 
 ---
 
-## 12. 구현 현황
+## 7. 운영 컨벤션
+
+### C1. 1개 문서 = 1개 좌표 = 1개 비즈니스 로직
+
+문서의 좌표가 정의하는 주제의 내용**만** 담는다.
+다른 scope의 내용은 1줄 요약 + link로 대체.
+2줄 이상 서술하면 분리 신호.
+
+### C2. scope 결정 기준 — "주 독자가 누구인가"
+
+- API를 호출하는 사람 → `interface/api_contract`
+- 흐름을 이해하려는 사람 → `flow/process_flow`
+- 상태를 설계하는 사람 → `state/domain_state`
+
+### C3. 여러 scope에 걸치면 — 쪼개고 link로 연결
+
+scope별 독립 문서로 분리 → link로 연결.
+정말 쪼갤 수 없으면: 주 scope 1개 + `tags: ["cross-scope", ...]`
+
+### C4. 횡단 관심사는 scope가 아니라 ConcernTag
+
+보안, 성능, 접근성 등은 tag로 횡단 추적. link 그래프를 통해 자동 전파.
+
+### C5. aspect 추가 시 — 기존 동류와 성격 비교
+
+새 aspect는 "주 독자/성격"이 기존 aspect와 동류인지 확인 후 배치.
+
+### C6. aspect 이동은 파괴적 — 마이그레이션 프로토콜
+
+기존 aspect 유지 → 새 aspect 추가 → 마이그레이션 → traces_to 추적.
+
+### C7. cross-scope 3개 이상이면 분리 후보
+
+`detectCrossScope()`로 자동 감지.
+
+---
+
+## 8. 구현 현황
 
 | 구현 | 파일 |
 |------|------|
-| 핵심 타입 | `types.ts` |
+| 핵심 타입 (축, concern, entry, link, filter) | `types.ts` |
 | 5축 정의 + AXIS_META | `vocabulary.ts` |
-| 분류 체계 트리 + 제약 맵 | `taxonomy.ts` |
+| 분류 체계 트리 + 제약 맵 + 컨벤션 + 태그 | `taxonomy.ts` |
 | 카탈로그 (axes + 2 prefixes) | `catalog.ts` |
 | 좌표 인코딩/디코딩 | `observe.ts` |
 | 인메모리 레지스트리 | `registry.ts` |
+| concern 전파 엔진 | `concern.ts` |
+| frontmatter 파서 + 스캐너 | `frontmatter.ts` |
 | decision-flow 브릿지 | `bridge.ts` |
 | public exports | `index.ts` |
 
+### 검증 문서
+
+| 테스트 | 파일 | 검증 내용 |
+|--------|------|----------|
+| 분류 체계 | `taxonomy.test.ts` | scope-aspect 제약, 태그, 컨벤션, cross-scope 감지 |
+| 좌표 인코딩 | `observe.test.ts` | 라운드트립, capacity 규칙 |
+| 레지스트리 | `registry.test.ts` | CRUD, 질의, 관계, 통계 |
+| 주소 충돌 | `address-collision.test.ts` | 같은 유형 문서 다수 등록/삭제 |
+| concern 전파 | `concern.test.ts` | 7종 concern 전파 규칙, 순환 안전 |
+| 결제 시나리오 | `sample.test.ts` | 9문서 × 10관계 E2E |
+| qa-sdk 문서 | `real-docs.test.ts` | 20문서 수동 등록 질의 |
+| frontmatter | `frontmatter.test.ts` | 파서 단위 + 스캔 통합 |
+| 실제 스캔 | `scan-real.test.ts` | docs/ 디렉토리 스캔 |
+| gate 분리 | `gate-docs.test.ts` | 6문서 scope 분리 + concern 전파 |
+
 ---
 
-## 13. Quality Gates
+## 9. Quality Gates
 
 ```
 pnpm --filter definition-catalog typecheck   # 타입 체크
-pnpm --filter definition-catalog test        # 62 tests (3 files)
+pnpm --filter definition-catalog test        # 195 tests (10 files)
 pnpm --filter definition-catalog build       # ESM + CJS 빌드
 ```
 
 ---
 
-## 14. 후속 과제
+## 10. 현재 범위와 경계
+
+### 현재 범위
+
+- 1개 비즈니스 로직을 1개 좌표로 분류
+- 문서 메타데이터 등록/조회/관계/concern 전파
+- frontmatter 기반 영속성
+
+### 현재 범위 밖 (후속 과제)
 
 | 과제 | 설명 |
 |------|------|
+| **여러 로직 간 구조** | 비즈니스 로직 간 깊이/상속/조합 — 현재는 개별 분류만 |
 | DEMO_CATALOG 통합 | definition 축/prefix를 DEMO_CATALOG에 추가 |
-| DKG 노드 생성 | DefinitionNode 타입 + bootstrapDkg 자동 등록 |
-| CLI 연동 | `qa-sdk def register/query/stats` 명령 |
-| 영속 레지스트리 | D1/SQLite 기반 DefinitionStore |
-| 커버리지 분석 | scope × aspect별 문서 존재 여부 히트맵 |
+| CLI 연동 | `qa-sdk def scan/query/stats` 명령 |
+| 자동 link 추론 | 좌표 유형 간 구조적 관계에서 link를 자동 생성 |
+| 커버리지 히트맵 | scope × aspect별 문서 존재/부재 시각화 |
