@@ -1,7 +1,16 @@
+---
+def:
+  id: decode-service-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
 # Decode Service 스펙
 
-> MetaRegistry 없이 DecodeMap 번들로 독립 decode를 수행하는 경량 서비스.
-> PrefixDecoder facade를 기반으로, Edge Worker부터 Standalone Node.js까지 다양한 배포 형태를 지원한다.
+## 목적 ^purpose
+
+MetaRegistry 없이 DecodeMap 번들로 독립 decode를 수행하는 경량 서비스. Edge Worker부터 Standalone Node.js까지 다양한 배포 형태를 지원한다.
 
 관련 스펙: [../indexing/index-meta/codec.spec.md](../indexing/index-meta/codec.spec.md) · [../indexing/index-meta/resolver.spec.md](../indexing/index-meta/resolver.spec.md)
 기반 라이브러리: `packages/index-meta/src/prefix-decoder.ts`, `decode.ts`, `meta-resolver.ts`

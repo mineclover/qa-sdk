@@ -1,7 +1,21 @@
+---
+def:
+  id: query-service-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: gate-api
+      type: depends_on
+    - target: coord-query-spec
+      type: implements
+---
 # Query Service 스펙
 
-> 관계형 질의, 정책 해소, gate 통합을 제공하는 중앙 질의 서비스.
-> RelationalEngine + policy-resolver + gate-aware-query를 네트워크 서비스로 노출한다.
+## 목적 ^purpose
+
+관계형 질의, 정책 해소, gate 통합을 제공하는 중앙 질의 서비스. RelationalEngine + policy-resolver + gate-aware-query를 네트워크 서비스로 노출한다.
 
 관련 스펙: [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md) · [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md)
 참조 구현: `packages/index-meta/src/relational-engine.ts`, `policy-resolver.ts`, `cross-index-query.ts`, `version-query.ts`, `packages/query-service/src/lib/query-service.ts`, `packages/query-service/src/lib/rule-service.ts`

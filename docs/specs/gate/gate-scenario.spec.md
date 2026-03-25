@@ -22,6 +22,13 @@ gate 시스템의 핵심 경로를 검증하는 시나리오와 기대 결과를
 
 5개 시나리오: 정상 encode, inactive dim 차단, composite cascade 전파, fail-open 안전장치, filterRanges 범위 필터.
 
+## 변경 트리거 ^update-trigger
+
+이 시나리오는 다음 문서가 변경될 때 재검토가 필요하다:
+- gate-api: 엔드포인트 요청/응답 스키마 변경 시
+- gate-engine-func: 계산 로직 변경 시
+- gate-constraint: 불변 조건 변경 시 (특히 fail-open, composite AND)
+
 ## 시나리오 1: 정상 encode
 
 - 전제: prefix "tracking" v2, 주소 42, dim 모두 active
