@@ -1,6 +1,17 @@
+---
+def:
+  id: scenario-store-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # ScenarioSpec + ScenarioSpecStore
 
-> 검증 완료된 `ScenarioSpec` 문서를 저장하고 조회하는 core 포트 계약.
+## 목적 ^purpose
+
+검증 완료된 `ScenarioSpec` 문서를 저장하고 조회하는 core 포트 계약.
 
 ## 상태
 

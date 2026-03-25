@@ -1,6 +1,17 @@
+---
+def:
+  id: payload-guide
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Payload Field Guide
 
-> Core Event별 권장 payload 필드 가이드. SDK, 엔진, DSL이 같은 필드 이름으로 소통하기 위한 규격.
+## 목적 ^purpose
+
+Core Event별 권장 payload 필드 가이드. SDK, 엔진, DSL이 같은 필드 이름으로 소통하기 위한 규격.
 
 ## 상태
 

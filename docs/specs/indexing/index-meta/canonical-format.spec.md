@@ -1,6 +1,15 @@
+---
+def:
+  id: canonical-format-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Canonical Format Specification
 
-## 목적
+## 목적 ^purpose
 
 4-표현 체계(A=tuple key, B=packed int, C=hierarchical id, D=hash/uuid)에서 **C 표현(hierarchical id)**의 정규 형식을 지정한다.
 

@@ -1,6 +1,17 @@
+---
+def:
+  id: collection-transport-spec
+  scope: interface
+  aspect: event_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # Transport
 
-> SDK의 전송 계층 인터페이스와 구현체.
+## 목적 ^purpose
+
+SDK의 전송 계층 인터페이스와 구현체.
 
 ## 상태
 

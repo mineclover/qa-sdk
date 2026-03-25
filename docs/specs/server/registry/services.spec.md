@@ -1,6 +1,17 @@
+---
+def:
+  id: registry-services-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # Services API
 
-> 서비스 메타데이터 CRUD.
+## 목적 ^purpose
+
+서비스 메타데이터 CRUD.
 
 ## 상태
 

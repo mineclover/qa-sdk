@@ -1,7 +1,18 @@
+---
+def:
+  id: coord-patterns
+  scope: flow
+  aspect: user_scenario
+  depth: specification
+  lifecycle: approved
+---
+
 # 인덱싱 시스템 사용 패턴
 
-> 시스템을 **어떻게 쓰는가** — 버전 이동, index 합성, 필터링 패턴.
-> 기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
+## 목적 ^purpose
+
+시스템을 **어떻게 쓰는가** — 버전 이동, index 합성, 필터링 패턴.
+기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
 
 관련 스펙:
 - [`weighted-index/`](weighted-index/README.md)

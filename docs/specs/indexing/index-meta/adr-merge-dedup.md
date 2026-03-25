@@ -1,10 +1,22 @@
+---
+def:
+  id: adr-merge-dedup
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [decision]
+---
+
 # ADR: 의미적 중복 제거 — Indexing Merge Plan
 
-> 상태: **구현 완료** (2026-03-18)
->
-> 관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
-> 계약 테스트: `packages/demo-tests/src/merge-contract/`
-> 영향 패키지: weighted-index, permission-engine, index-meta, decode-service
+## 목적 ^purpose
+
+상태: **구현 완료** (2026-03-18)
+
+관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
+계약 테스트: `packages/demo-tests/src/merge-contract/`
+영향 패키지: weighted-index, permission-engine, index-meta, decode-service
 
 ---
 

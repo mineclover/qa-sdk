@@ -1,6 +1,18 @@
+---
+def:
+  id: masking-spec
+  scope: constraint
+  aspect: biz_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+---
+
 # applyMasking
 
-> 클라이언트 측 payload 마스킹. 민감정보 보호.
+## 목적 ^purpose
+
+클라이언트 측 payload 마스킹. 민감정보 보호.
 
 ## 상태
 

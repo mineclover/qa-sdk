@@ -1,6 +1,17 @@
+---
+def:
+  id: registry-client-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # RegistryClient
 
-> 이벤트 레지스트리에 대한 검증 HTTP 클라이언트. TTL+LRU 캐시로 중복 호출 방지.
+## 목적 ^purpose
+
+이벤트 레지스트리에 대한 검증 HTTP 클라이언트. TTL+LRU 캐시로 중복 호출 방지.
 
 ## 상태
 

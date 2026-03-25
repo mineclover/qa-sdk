@@ -1,6 +1,17 @@
+---
+def:
+  id: dlq-store-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+---
+
 # DlqStore
 
-> reconstruction / verdict 후처리 실패를 적재하는 dead-letter queue 포트 계약.
+## 목적 ^purpose
+
+reconstruction / verdict 후처리 실패를 적재하는 dead-letter queue 포트 계약.
 
 ## 상태
 

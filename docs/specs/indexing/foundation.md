@@ -1,8 +1,20 @@
+---
+def:
+  id: coord-foundation
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+  tags: [entry-point]
+---
+
 # 좌표 시스템 기반 원리
 
-> 이 시스템은 **좌표 시스템(Coordinate System)**이다.
-> 유한한 개념 조합에 정수 주소를 부여하고, 주소를 해석하고, 주소 공간을 버전 관리한다.
-> **데이터를 저장하지 않는다.** 저장은 이 좌표 위에 구축되는 별도 계층의 책임이다.
+## 목적 ^purpose
+
+이 시스템은 **좌표 시스템(Coordinate System)**이다.
+유한한 개념 조합에 정수 주소를 부여하고, 주소를 해석하고, 주소 공간을 버전 관리한다.
+**데이터를 저장하지 않는다.** 저장은 이 좌표 위에 구축되는 별도 계층의 책임이다.
 
 사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`conventions.md`](conventions.md) · 설계 구조: [`data-design.md`](data-design.md)
 

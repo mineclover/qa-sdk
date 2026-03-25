@@ -1,6 +1,17 @@
+---
+def:
+  id: transmission-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # TransmissionEnvelope + TransmissionStore
 
-> SDK가 전송하는 배치 단위와 수신 메타데이터 감사 저장소.
+## 목적 ^purpose
+
+SDK가 전송하는 배치 단위와 수신 메타데이터 감사 저장소.
 
 ## 상태
 

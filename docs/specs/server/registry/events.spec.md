@@ -1,6 +1,17 @@
+---
+def:
+  id: registry-events-spec
+  scope: interface
+  aspect: event_contract
+  depth: specification
+  lifecycle: approved
+---
+
 # Events API
 
-> 이벤트 정의 CRUD. event_key + event_version 으로 시맨틱 버전 관리.
+## 목적 ^purpose
+
+이벤트 정의 CRUD. event_key + event_version 으로 시맨틱 버전 관리.
 
 ## 상태
 

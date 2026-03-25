@@ -1,6 +1,17 @@
+---
+def:
+  id: graph-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # SpecGraph / RuntimeGraph + GraphStore
 
-> 기대 행동 그래프(`SpecGraph`)와 실행 그래프(`RuntimeGraph`)의 canonical 구조.
+## 목적 ^purpose
+
+기대 행동 그래프(`SpecGraph`)와 실행 그래프(`RuntimeGraph`)의 canonical 구조.
 
 ## 상태
 

@@ -1,6 +1,16 @@
+---
+def:
+  id: utils-spec
+  scope: data
+  aspect: system_data
+  depth: specification
+  lifecycle: approved
+---
 # Utils (ID + Clock)
 
-> ULID 기반 prefix ID 생성 및 타임스탬프 유틸리티.
+## 목적 ^purpose
+
+ULID 기반 prefix ID 생성 및 타임스탬프 유틸리티.
 
 ## 상태
 
