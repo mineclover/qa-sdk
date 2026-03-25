@@ -152,6 +152,44 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 5. **관찰** — 도움 없이 사용하는 걸 본 적 있는가?
 6. **미래 적합성** — 3년 뒤 더 필수적인가?
 
+## 문서 시스템 (definition-catalog)
+
+모든 스펙 문서는 frontmatter + `## 목적 ^purpose`로 관리된다. 5개 스킬로 조회/생성/분할:
+
+| 스킬 | 용도 | 트리거 예시 |
+|------|------|-----------|
+| `/def-topdown <그룹ID>` | 시스템 탑다운 조립 | "gate 시스템 설명해줘" |
+| `/def-bottomup <문서ID>` | 변경 시 영향 역추적 | "이거 바꾸면 뭐가 깨져?" |
+| `/def-context <문서ID>` | 작업 전 컨텍스트 수집 | "gate-api 컨텍스트 줘" |
+| `/def-split` | 대형 문서(150줄+) 분할 | "이 문서 분할해줘" |
+| `/def-new` | 새 스펙 문서 생성 | "새 문서 만들어줘" |
+
+### 문서 frontmatter 형식
+
+```yaml
+---
+def:
+  id: <고유 ID>
+  scope: <ui|feature|flow|state|constraint|data|interface>
+  aspect: <세부 유형>
+  depth: <overview|specification|implementation|validation>
+  lifecycle: approved
+  svc: <serviceId>      # 선택 — 서비스 레지스트리 연결
+  tags: [<태그들>]      # 선택
+  links:                # 선택
+    - target: <대상 ID>
+      type: <depends_on|implements|refines|constrains|traces_to|contains>
+---
+```
+
+### 핵심 규칙
+
+- 모든 approved 문서에 `## 목적 ^purpose` 필수
+- 그룹 문서 = `depth: overview` + `type: contains` 링크
+- 150줄 이상이면 `/def-split`으로 분할
+- `svc:` 필드로 서비스 레지스트리와 연결
+- `tags: [tier-infra]` 등으로 서비스 기획 단위 분류
+
 ## 작업 시 필수 확인
 
 - [ ] 축 추가 → 5Q Checklist 통과 확인
