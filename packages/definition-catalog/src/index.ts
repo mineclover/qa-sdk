@@ -103,6 +103,17 @@ export {
   computeEffectiveConcerns,
 } from "./concern.js";
 
+// ─── Frontmatter 파서 + 스캐너 ──────────────────────────
+export type { FrontmatterDef, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
+export {
+  extractFrontmatter,
+  parseYaml,
+  extractDef,
+  parseDocument,
+  scanAndBuild,
+  computeAllConcerns,
+} from "./frontmatter.js";
+
 // ─── 브릿지 (decision-flow 연결) ────────────────────────
 export {
   suggestScopeFromArtifact,

@@ -1,3 +1,15 @@
+---
+def:
+  id: ingest-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  tags: [performance]
+  links:
+    - target: record-spec
+      type: depends_on
+---
 # POST /v1/ingest
 
 > SDK로부터 Transmission Envelope을 수신하고 store에 저장.

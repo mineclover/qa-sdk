@@ -1,3 +1,12 @@
+---
+def:
+  id: decision-flow-spec
+  scope: state
+  aspect: domain_state
+  depth: specification
+  lifecycle: approved
+  tags: [decision]
+---
 # Decision Flow — 의사결정 좌표계
 
 > 인간의 복잡한 결정 과정을 **사전 설계된 직교 축**으로 투영하여,

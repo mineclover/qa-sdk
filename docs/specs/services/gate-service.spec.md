@@ -1,3 +1,15 @@
+---
+def:
+  id: gate-service-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+  links:
+    - target: gate-engine-spec
+      type: depends_on
+---
 # Gate Service 스펙
 
 > 주소 상태 관리 분산 서비스 — GateEngine의 상태 계산·캐시·cascade 전파를 네트워크 경계 너머로 확장한다.

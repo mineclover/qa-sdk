@@ -1,3 +1,11 @@
+---
+def:
+  id: record-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
 # EventRecord + RecordStore
 
 > core package의 canonical event record 구조와 저장/조회 동작.
