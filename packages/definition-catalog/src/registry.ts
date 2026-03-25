@@ -54,8 +54,8 @@ export interface DefinitionRegistry {
   /** lifecycle로 필터 */
   findByLifecycle(lifecycle: DefLifecycle): readonly DefinitionEntry[];
 
-  /** 좌표 주소로 조회 */
-  findByAddress(address: number): DefinitionEntry | undefined;
+  /** 좌표 주소로 조회 (같은 유형의 문서가 여럿일 수 있음) */
+  findByAddress(address: number): readonly DefinitionEntry[];
 
   /** 복합 필터 */
   query(filter: DefinitionFilter): readonly DefinitionEntry[];
@@ -85,7 +85,21 @@ function linkKey(sourceId: string, targetId: string, linkType: LinkType): string
 export class MemoryDefinitionRegistry implements DefinitionRegistry {
   private readonly entries = new Map<string, DefinitionEntry>();
   private readonly links = new Map<string, DefinitionLink>();
-  private readonly addressIndex = new Map<number, string>(); // address → id
+  /** address → Set<id>. 같은 유형(scope×aspect×depth)의 문서가 여럿일 수 있다. */
+  private readonly addressIndex = new Map<number, Set<string>>();
+
+  private addToAddressIndex(address: number, id: string): void {
+    let ids = this.addressIndex.get(address);
+    if (!ids) { ids = new Set(); this.addressIndex.set(address, ids); }
+    ids.add(id);
+  }
+
+  private removeFromAddressIndex(address: number, id: string): void {
+    const ids = this.addressIndex.get(address);
+    if (!ids) return;
+    ids.delete(id);
+    if (ids.size === 0) this.addressIndex.delete(address);
+  }
 
   register(input: DefinitionEntryInput): DefinitionEntry {
     if (this.entries.has(input.id)) {
@@ -105,7 +119,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
 
     const entry: DefinitionEntry = { ...input, address, serialized };
     this.entries.set(entry.id, entry);
-    this.addressIndex.set(address, entry.id);
+    this.addToAddressIndex(address, entry.id);
 
     return entry;
   }
@@ -126,7 +140,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
 
     if (needsReencode) {
       if (existing.address !== undefined) {
-        this.addressIndex.delete(existing.address);
+        this.removeFromAddressIndex(existing.address, id);
       }
 
       address = encodeDocument({
@@ -135,7 +149,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
         depth,
       });
       serialized = serializeDocumentAddress(address);
-      this.addressIndex.set(address, id);
+      this.addToAddressIndex(address, id);
     }
 
     const updated: DefinitionEntry = {
@@ -162,7 +176,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
 
     // 주소 인덱스에서 제거
     if (entry.address !== undefined) {
-      this.addressIndex.delete(entry.address);
+      this.removeFromAddressIndex(entry.address, id);
     }
 
     // 관련 관계 제거
@@ -225,9 +239,10 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     return [...this.entries.values()].filter(e => e.lifecycle === lifecycle);
   }
 
-  findByAddress(address: number): DefinitionEntry | undefined {
-    const id = this.addressIndex.get(address);
-    return id ? this.entries.get(id) : undefined;
+  findByAddress(address: number): readonly DefinitionEntry[] {
+    const ids = this.addressIndex.get(address);
+    if (!ids) return [];
+    return [...ids].map(id => this.entries.get(id)!);
   }
 
   query(filter: DefinitionFilter): readonly DefinitionEntry[] {

@@ -332,8 +332,8 @@ describe("쇼핑몰 결제 시스템 — 샘플 문서 구성", () => {
     it("좌표 주소로 직접 조회", () => {
       const entry = reg.get("checkout-flow")!;
       const found = reg.findByAddress(entry.address!);
-      expect(found).toBeDefined();
-      expect(found!.id).toBe("checkout-flow");
+      expect(found.length).toBe(1);
+      expect(found[0].id).toBe("checkout-flow");
     });
 
     it("통계", () => {

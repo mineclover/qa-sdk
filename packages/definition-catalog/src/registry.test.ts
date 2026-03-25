@@ -177,12 +177,12 @@ describe("MemoryDefinitionRegistry", () => {
     it("좌표 주소로 문서를 찾는다", () => {
       const entry = registry.register(makeEntry({ id: "addr-test" }));
       const found = registry.findByAddress(entry.address!);
-      expect(found).toBeDefined();
-      expect(found!.id).toBe("addr-test");
+      expect(found.length).toBe(1);
+      expect(found[0].id).toBe("addr-test");
     });
 
-    it("존재하지 않는 주소는 undefined", () => {
-      expect(registry.findByAddress(999999)).toBeUndefined();
+    it("존재하지 않는 주소는 빈 배열", () => {
+      expect(registry.findByAddress(999999)).toEqual([]);
     });
   });
 
