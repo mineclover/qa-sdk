@@ -23,11 +23,9 @@ def:
       type: contains
     - target: decision-standard-group
       type: contains
-    - target: df-narrative
+    - target: df-narrative-group
       type: contains
     - target: axis-decision-guide
-      type: contains
-    - target: df-narrative-group
       type: contains
     - target: df-cli-persistence
       type: contains
@@ -51,7 +49,7 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 17개 멤버.
+overview: 총 16개 멤버.
 
 코어:
 - `df-axis-model`: 의사결정 도메인의 11개 축 정의.
@@ -76,8 +74,27 @@ CLI:
 - `df-cli-query`: lookup/history/verdict/judge 조회 명령.
 - `df-ingest-emission`: ingest-server 이벤트 전송 (fail-open).
 
-서사:
-- `df-narrative`: 서사가 쌓이는 문서 (구현 변경과 무관).
-
 가이드:
 - `axis-decision-guide`: 축 판단 프레임워크 (범용 재사용 가능).
+
+## 구현 상태
+
+P0~P11 전부 완료 (2026-03-25).
+
+| Phase | 내용 | 상태 |
+|-------|------|:----:|
+| P0 | 코어 타입 + 엔진 | ✅ |
+| P1 | DEMO_CATALOG 통합 | ✅ |
+| P2 | 수집 파이프라인 연동 | ✅ |
+| P3 | 런타임 자동화 | ✅ |
+| P4 | 학습·비교·DKG 통합 (21 US) | ✅ |
+| P5 | 정보 체계 정체성 (축 메타/직교성/서사) | ✅ |
+| P6 | gstack 약점 해소 (mentalModels/Build/Reflect) | ✅ |
+| P7 | 후속 과제 해소 (벡터 프레이밍/패턴 분류/DecisionUnit) | ✅ |
+| P8 | CLI 영속 + 조회 (SQLite/lookup/history/verdict/judge) | ✅ |
+| P9 | 안정화 + 시간축 + 라우터 (9 bugfix + durationMs + architecture-decision) | ✅ |
+| P10 | ingest 전송 (FlowIngestEmitter, fail-open) | ✅ |
+| P11 | GateEngine 연동 (4-state × decision prefix) | ✅ |
+
+테스트: 188 decision-flow + 141 CLI + 852 demo-tests.
+QG: `pnpm --filter decision-flow typecheck && pnpm --filter decision-flow test && pnpm --filter @qa-sdk/cli build && pnpm --filter demo-tests test`
