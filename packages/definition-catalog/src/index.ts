@@ -103,6 +103,10 @@ export {
   computeEffectiveConcerns,
 } from "./concern.js";
 
+// ─── 문서 조립 ──────────────────────────────────────────
+export type { MemberSummary, AssembledFeature } from "./assemble.js";
+export { assembleFeature } from "./assemble.js";
+
 // ─── 마커 기반 추출 ─────────────────────────────────────
 export type { ExtractLevel, Marker, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";
 export { findMarkers, extractByLevel, summarizeDocument } from "./extract.js";

@@ -9,8 +9,7 @@ def:
 ---
 # Decision Flow — 의사결정 좌표계
 
-> 인간의 복잡한 결정 과정을 **사전 설계된 직교 축**으로 투영하여,
-> "왜 이 결정을 했는가"를 좌표 주소로 증명하는 다차원 벡터 공간 모델.
+> 인간의 복잡한 결정 과정을 사전 설계된 직교 축으로 투영하여, "왜 이 결정을 했는가"를 좌표 주소로 증명하는 다차원 벡터 공간 모델. ^purpose
 
 관련 스펙: [coordinate-query.spec.md](../indexing/coordinate-query.spec.md)
 서사 문서: [narrative.md](./narrative.md) — 질문 → 증명 → 결론이 쌓이는 문서

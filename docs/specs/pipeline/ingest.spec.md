@@ -12,7 +12,7 @@ def:
 ---
 # POST /v1/ingest
 
-> SDK로부터 Transmission Envelope을 수신하고 store에 저장.
+> SDK로부터 Transmission Envelope을 수신하고 store에 저장. ^purpose
 
 ## 상태
 

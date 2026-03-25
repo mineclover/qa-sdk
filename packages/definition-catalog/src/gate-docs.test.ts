@@ -225,6 +225,6 @@ describe("주제 분리 컨벤션 검증", () => {
       }
     }
 
-    expect(visited.size).toBe(6); // 6개 gate 문서 모두 연결
+    expect(visited.size).toBe(7); // gate-system(그룹) + 6개 멤버
   });
 });

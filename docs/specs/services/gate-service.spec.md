@@ -12,7 +12,7 @@ def:
 ---
 # Gate Service 스펙
 
-> 주소 상태 관리 분산 서비스 — GateEngine의 상태 계산·캐시·cascade 전파를 네트워크 경계 너머로 확장한다.
+> 주소 상태 관리 분산 서비스 — GateEngine의 상태 계산·캐시·cascade 전파를 네트워크 경계 너머로 확장한다. ^purpose
 
 관련 스펙: [../indexing/index-meta/gate-engine.spec.md](../indexing/index-meta/gate-engine.spec.md) · [../indexing/coordinate-query.spec.md](../indexing/coordinate-query.spec.md)
 참조 구현: `packages/index-meta/src/gate-engine.ts`, `invalid-ranges.ts`, `gate-aware-query.ts`, `packages/gate-service/src/lib/gate-service.ts`, `packages/gate-service/src/routes/gate.ts`

@@ -9,8 +9,7 @@ def:
 ---
 # Definition Catalog — 소프트웨어 정의 좌표계
 
-> 1개의 비즈니스 로직 정의를 **좌표 주소**로 분류하는 문서 메타데이터 시스템.
-> 문서 유형 축(scope × aspect × depth)이 "이 문서는 무엇을 정의하는가"를 인코딩한다.
+> 비즈니스 로직 정의를 좌표 주소로 분류하고, contains 계층으로 조립하는 문서 메타데이터 시스템. ^purpose
 
 관련 스펙: [decision-flow.spec.md](../decision-flow/decision-flow.spec.md)
 구현: `packages/definition-catalog/src/`
