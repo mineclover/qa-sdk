@@ -225,6 +225,94 @@ export async function cliDefStats(): Promise<void> {
   });
 }
 
+export async function cliDefSync(serviceUrl: string, docId: string): Promise<void> {
+  // 1. OpenAPI JSON fetch
+  const openapiUrl = serviceUrl.replace(/\/$/, "") + "/openapi.json";
+  console.log(`OpenAPI 스펙 가져오기: ${openapiUrl}`);
+
+  let spec: any;
+  try {
+    const resp = await fetch(openapiUrl, { signal: AbortSignal.timeout(5_000) });
+    if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+    spec = await resp.json();
+  } catch (e) {
+    // 서버가 안 떠있으면 로컬 파일에서 시도
+    const localPath = join(getRootDir(), serviceUrl);
+    try {
+      spec = JSON.parse(await readFile(localPath, "utf-8"));
+      console.log(`로컬 파일에서 로드: ${localPath}`);
+    } catch {
+      console.log(`OpenAPI 스펙을 가져올 수 없습니다: ${(e as Error).message}`);
+      console.log(`서버 URL 또는 로컬 JSON 경로를 확인하세요.`);
+      return;
+    }
+  }
+
+  // 2. 엔드포인트 추출
+  const paths = spec.paths || {};
+  const endpoints: string[] = [];
+
+  for (const [path, methods] of Object.entries(paths)) {
+    for (const [method, detail] of Object.entries(methods as Record<string, any>)) {
+      if (["get", "post", "put", "delete", "patch"].includes(method)) {
+        const summary = detail.summary || "";
+        const line = `${method.toUpperCase()} ${path}` + (summary ? ` — ${summary}` : "");
+        endpoints.push(line);
+      }
+    }
+  }
+
+  console.log(`\n${endpoints.length}개 엔드포인트 추출됨:\n`);
+  endpoints.forEach(e => console.log(`  ${e}`));
+
+  // 3. 대상 문서 찾기
+  const root = getRootDir();
+  const result = await scan();
+  const entry = result.registry.get(docId);
+  if (!entry || !entry.ref) {
+    console.log(`\n문서 "${docId}"를 찾을 수 없습니다.`);
+    return;
+  }
+
+  const docPath = join(root, entry.ref);
+  const content = await readFile(docPath, "utf-8");
+
+  // 4. ^endpoints 섹션 생성
+  const endpointSection = `## 엔드포인트 ^endpoints\n\n<!-- auto-generated from OpenAPI: ${spec.info?.title || "unknown"} v${spec.info?.version || "?"} -->\n\n${endpoints.map(e => `- ${e}`).join("\n")}\n`;
+
+  // 5. 기존 ^endpoints 교체 또는 추가
+  const { writeFile } = await import("node:fs/promises");
+  let updated: string;
+
+  if (content.includes("^endpoints")) {
+    // 기존 섹션 교체
+    const lines = content.split("\n");
+    const newLines: string[] = [];
+    let skipping = false;
+
+    for (const line of lines) {
+      if (/^## .*\^endpoints/.test(line)) {
+        skipping = true;
+        newLines.push(endpointSection);
+        continue;
+      }
+      if (skipping && /^## /.test(line)) {
+        skipping = false;
+      }
+      if (!skipping) {
+        newLines.push(line);
+      }
+    }
+    updated = newLines.join("\n");
+  } else {
+    // 문서 끝에 추가
+    updated = content.trimEnd() + "\n\n" + endpointSection;
+  }
+
+  await writeFile(docPath, updated, "utf-8");
+  console.log(`\n✓ ${entry.ref}에 ^endpoints 섹션 갱신 (${endpoints.length}개)`);
+}
+
 // ── 라우터 ────────────────────────────────────────────
 
 export async function cliDef(args: string[]): Promise<void> {
@@ -249,6 +337,9 @@ export async function cliDef(args: string[]): Promise<void> {
       return cliDefValidate();
     case "stats":
       return cliDefStats();
+    case "sync":
+      if (rest.length < 2) { console.log("Usage: qa-sdk def sync <openapi-url-or-file> <문서ID>"); return; }
+      return cliDefSync(rest[0], rest[1]);
     default:
       console.log(`qa-sdk def — 문서 관리
 
@@ -259,6 +350,7 @@ export async function cliDef(args: string[]): Promise<void> {
   qa-sdk def context <문서ID>      작업 전 컨텍스트
   qa-sdk def audit                 품질 리포트
   qa-sdk def validate              깨진 링크/순환 검증
-  qa-sdk def stats                 분포 통계`);
+  qa-sdk def stats                 분포 통계
+  qa-sdk def sync <url|file> <ID>  OpenAPI → 문서 ^endpoints 갱신`);
   }
 }
