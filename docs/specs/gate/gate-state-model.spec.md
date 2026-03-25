@@ -11,10 +11,9 @@ def:
 ---
 # Gate 4-State 모델
 
-> 주소 공간의 상태 모델. active/inactive/open/reserved 4가지 상태와 전이 규칙만 기술한다.
-> API 엔드포인트는 gate-api, 계산 로직은 gate-engine-func를 참조.
+> 주소 공간의 active/inactive/open/reserved 4가지 상태와 전이 규칙. ^purpose
 
-## 상태 정의
+## 상태 정의 ^overview
 
 | 상태 | encode | decode | 의미 |
 |------|--------|--------|------|

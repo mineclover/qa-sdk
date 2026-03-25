@@ -14,10 +14,9 @@ def:
 ---
 # Gate Service API 계약
 
-> RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구만 기술한다.
-> 상태 모델의 의미나 계산 로직은 gate-state-model, gate-engine-func를 참조.
+> RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구만 기술한다. ^purpose
 
-## 엔드포인트
+## 엔드포인트 ^overview
 
 ### POST /gate/check
 
@@ -72,7 +71,7 @@ leaf 변경을 composite까지 전파한다.
 응답: { ranges: [number,number][] }
 ```
 
-## 에러 코드
+## 에러 코드 ^overview
 
 | 코드 | 의미 |
 |------|------|

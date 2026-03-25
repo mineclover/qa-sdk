@@ -11,10 +11,9 @@ def:
 ---
 # GateEngine 기능 명세
 
-> 주소 상태 자동 계산 엔진의 기능과 동작 규칙.
-> 상태 모델 정의는 gate-state-model, API 계약은 gate-api를 참조.
+> 주소 상태 자동 계산 엔진의 기능과 동작 규칙. ^purpose
 
-## 핵심 기능
+## 핵심 기능 ^overview
 
 ### 상태 계산 (recompute)
 

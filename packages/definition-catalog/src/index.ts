@@ -103,6 +103,10 @@ export {
   computeEffectiveConcerns,
 } from "./concern.js";
 
+// ─── 마커 기반 추출 ─────────────────────────────────────
+export type { ExtractLevel, Marker, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";
+export { findMarkers, extractByLevel, summarizeDocument } from "./extract.js";
+
 // ─── Frontmatter 파서 + 스캐너 ──────────────────────────
 export type { FrontmatterDef, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
 export {

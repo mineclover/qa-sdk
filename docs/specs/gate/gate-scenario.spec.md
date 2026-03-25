@@ -14,10 +14,9 @@ def:
 ---
 # Gate 테스트 시나리오
 
-> gate 시스템의 검증 시나리오와 기대 결과.
-> 기능 명세는 gate-engine-func, API 스펙은 gate-api를 참조.
+> 정상 encode, inactive dim, cascade, fail-open 등 gate 검증 시나리오. ^purpose
 
-## 시나리오 1: 정상 encode
+## 시나리오 1: 정상 encode ^overview
 
 - 전제: prefix "tracking" v2, 주소 42, dim 모두 active
 - 기대: checkGate → { allowed: true, state: "active", shouldVerify: false }

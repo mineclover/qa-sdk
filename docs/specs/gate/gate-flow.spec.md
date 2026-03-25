@@ -13,10 +13,9 @@ def:
 ---
 # Gate 운영 흐름
 
-> encode/decode 시 gate 상태가 어떤 순서로 확인되고 전파되는지.
-> 개별 엔드포인트 스펙은 gate-api, 기능 명세는 gate-engine-func를 참조.
+> encode/recompute/query 경로별 gate 상태 확인과 전파 순서. ^purpose
 
-## 흐름 1: encode 경로
+## 흐름 1: encode 경로 ^overview
 
 ```
 클라이언트 → encode 요청
