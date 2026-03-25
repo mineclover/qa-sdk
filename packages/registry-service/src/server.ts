@@ -10,7 +10,7 @@ import {
   SqlVersionLifecycleStore,
   type SqlDriver,
 } from "index-meta";
-import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
+import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { createLogger } from "./lib/logger.js";
@@ -317,12 +317,14 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
     { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200",
       urls: { dev: "http://localhost:3200", staging: "https://ingest.staging.qa-sdk.io", prod: "https://ingest.qa-sdk.io" },
       gatewayPath: "/v1/",
-      ownedPrefixes: ["ingest_record", "event_classification", "metric_point", "pipeline_point", "pattern_match", "pattern_anomaly", "metric_aggregate", "validation_event"],
+      // 파이프라인 자체 이벤트만 생산 — 나머지(ingest_record 등)는 소비/저장 대상
+      ownedPrefixes: ["pipeline_point"],
       consumedPrefixes: ["service"] },
     { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
       urls: { dev: "http://localhost:3400", prod: "https://qa-gate-service.astralclover.workers.dev" },
       gatewayPath: "/gate/", stripPrefix: true,
-      ownedPrefixes: ["gate_point"], consumedPrefixes: ["service", "version_point"] },
+      // 읽기 전용 게이트 상태 캐시 — gate_point는 GateEngine 라이브러리가 계산
+      ownedPrefixes: [], consumedPrefixes: ["service", "version_point"] },
     { serviceId: "query-service", name: "질의 서비스", tier: "infra", team: "platform", url: "http://localhost:3500",
       urls: { dev: "http://localhost:3500", prod: "https://qa-query-service.astralclover.workers.dev" },
       gatewayPath: "/query/", stripPrefix: true,
@@ -343,7 +345,8 @@ async function seedConfigs(configStore: import("./stores/config-store.js").Confi
     { serviceId: "registry-service", name: "레지스트리 서비스", tier: "infra", team: "platform", url: "http://localhost:3300",
       urls: { dev: "http://localhost:3300", staging: "https://registry.staging.qa-sdk.io", prod: "https://registry.qa-sdk.io" },
       gatewayPath: "/api/",
-      ownedPrefixes: ["version_point", "gate_point", "version_state", "tag_lifecycle"],
+      // 메타데이터 관리 전용 — 이벤트 생산 없음
+      ownedPrefixes: [],
       consumedPrefixes: ["service"] },
     // ── 모니터링 ──
     { serviceId: "prometheus", name: "Prometheus", tier: "infra", team: "devops", url: "http://localhost:9090",
@@ -488,8 +491,14 @@ async function main() {
     logger.info("dev dashboard WebSocket enabled at /dev/ws");
   }
 
+  const serviceConfig = createServiceBootConfig("registry-service");
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-    logger.info(`registry-service listening on port ${info.port}`);
+    logger.info({
+      port: info.port,
+      service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+      env: serviceConfig.env,
+      region: serviceConfig.region,
+    }, "registry-service listening");
     warnPortConflict("registry-service", env.PORT, logger);
   });
 

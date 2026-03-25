@@ -383,6 +383,42 @@ stabilization flow 실행:
 
 ---
 
+## 장 11: 세션을 넘어서 — 결정 이력이 영속된다
+
+### 질문
+
+CLI는 매 명령마다 새 프로세스다. 결정을 시작하고, 중간에 생각하고, 다음 프로세스에서 이어서 선택할 수 있는가?
+그리고 완료된 결정을 다음 달에도 조회할 수 있는가?
+
+### 증명
+
+`~/.qa-sdk/decision-flow.sqlite`에 모든 FlowInstance를 영속.
+
+```
+프로세스 1: flow start test-needed     → SQLite INSERT (active)
+프로세스 2: flow status                → SQLite에서 active 복원 → 진행 상태 표시
+프로세스 3: flow select new-feature    → 복원 → 선택 → SQLite UPDATE
+프로세스 4: flow select module         → 복원 → 선택 → SQLite UPDATE
+프로세스 5: flow select partial        → 복원 → 선택 → SQLite UPDATE
+프로세스 6: flow select add-integration → 복원 → 완료 → SQLite UPDATE (completed)
+프로세스 7: flow history               → SQLite에서 완료 이력 조회
+```
+
+7개 프로세스에 걸쳐 하나의 결정이 진행되고 완료됨.
+
+### 결론
+
+**결정은 프로세스 수명에 묶이지 않는다.**
+
+- active 인스턴스: 프로세스 종료 → SQLite에 보존 → 다음 프로세스에서 복원
+- completed 인스턴스: 영구 보존 → history/lookup/verdict로 조회
+- decision-flow 라이브러리 자체는 순수 유지 (SQLite 의존 없음). 영속은 소비자(CLI)의 책임
+
+이것은 "시스템의 역할은 결정을 쉽게 만드는 것"의 또 다른 측면:
+생각하는 시간이 CLI 프로세스의 수명에 제한받지 않는다.
+
+---
+
 > **다음 장을 위한 열린 질문:**
 > - 서사 간의 인과 관계를 DKG 그래프로 표현할 수 있는가?
 > - 서사의 회고가 다음 서사의 축 설계에 피드백되는 경로는?

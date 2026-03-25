@@ -95,8 +95,11 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 
 ### 서비스 단위 소유권 (ownedPrefixes)
 
-- 각 서비스는 registry에 `ownedPrefixes`로 생산하는 prefix를 선언
-- 이벤트 수집 시 `address_context`의 prefix가 어떤 서비스에서 온 것인지 추적 가능
+- ownedPrefixes = 이 서비스가 **실제로 이벤트를 생산하는** prefix만
+- 저장/조회/캐시만 하는 서비스는 ownedPrefixes: [] (읽기 전용)
+- 라이브러리(SDK, codec)는 서비스가 아님 — ownedPrefixes 선언 없음. 사용하는 서비스가 소유
+- 같은 prefix를 두 서비스가 동시에 소유하면 안 됨 (생산자 단일 책임)
+- 미구현 prefix는 ownedPrefixes에서 제거하고 TODO 주석으로 표시
 - `GET /v1/insights/service-prefixes` — 서비스별 실제 prefix 사용 현황
 - 정의(`ownedPrefixes`)와 실제 사용(`insights`)의 gap이 관측 피드백의 기반
 
@@ -200,6 +203,8 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 - `emitWithCoords`/`browserTrack` try-catch 필수 — UI 크래시 방지
 - 인코딩 실패 시 coordinate 없이 emit (이벤트 유실보다 좌표 누락이 낫다)
 - `createQaMonitorAsync` registry fetch 실패 → console.warn + 로컬 fallback
+- **browser-sdk는 범용 SDK — 특정 도메인 prefix/데이터가 들어가면 안 됨**
+- ownedPrefixes는 SDK가 아닌 **사용하는 서비스**가 선언 (예: shopping-web이 page_view/tracking/cart_event/auth_event 소유)
 
 ### 서비스 네트워크 호출
 - 서버 시작 시 외부 fetch: `AbortSignal.timeout(5_000)` 필수
@@ -341,6 +346,13 @@ const store = new D1RecordStore(driver);
 프로젝트 수준의 결정은 gstack sprint 파이프라인:
 - Think(`office-hours`) → Plan(`ceo-review`, `eng-review`, `design-review`) → Build(`build`) → Review(`code-review`) → Ship(`ship`) → Reflect(`reflect`)
 - 6 autoplan principles: standard-pattern, completeness, test-coverage, observability, security, taste
+
+### CLI 영속
+
+- 의사결정 이력은 `~/.qa-sdk/decision-flow.sqlite`에 영속 (세션 간 유지)
+- `flow start` → SQLite에 active 저장 → 프로세스 종료 → `flow select`로 이어서 진행 가능
+- `flow history/lookup/verdict` → SQLite에서 이전 이력 조회
+- decision-flow 라이브러리 자체는 순수 (SQLite 의존 없음). 영속은 CLI의 책임
 
 ### 참조
 

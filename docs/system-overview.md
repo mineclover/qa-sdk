@@ -143,13 +143,22 @@ IL-checkout-flow:
   invariant: "checkout page_view 없이 checkout flow_point(success)가 관측되면 안 됨"
 ```
 
-현재 6개 IntentLink:
+현재 15개 IntentLink:
 - IL-checkout-flow (결제 흐름)
 - IL-api-event (API ↔ 이벤트)
 - IL-infra-impact (인프라 변경 → API 영향)
 - IL-pattern-observation (패턴 ↔ 흐름 관측)
 - IL-cart-abandon (장바구니 ↔ 주문)
 - IL-pipeline-flow (파이프라인 단계)
+- IL-dkg-operation (DKG 운영 순차 추적)
+- IL-build-test (빌드→테스트→계약 검증)
+- IL-auth-permission (인증 ↔ 권한)
+- IL-content-track (콘텐츠 ↔ 추적)
+- IL-schema-engine (스키마 변경 → 엔진 평가)
+- IL-skill-cli (CLI 스킬 실행 추적)
+- IL-version-rollout (버전 롤아웃 추적)
+- IL-test-matrix (테스트 매트릭스)
+- IL-resource-track (리소스 추적)
 
 **위반 감지**: self-check Phase E에서 `traceFlows()`가 실 트래픽의 IntentLink invariant 위반을 자동 감지.
 
@@ -177,7 +186,7 @@ user.login TransitionSpec:
   output: lifecycle_state = "active"
 ```
 
-현재 32개 TransitionSpec. 실 트래픽에서 `user.login` 매칭 성공 검증 완료.
+현재 19개 TransitionSpec (`spec-core/transition/demo-transition-specs.ts`).
 
 ---
 
@@ -222,7 +231,7 @@ user.login TransitionSpec:
 수학/인코딩 ────── weighted-index → bit-index → permission-engine
 Core ──────────── @qa-sdk/core (타입, catalog runtime)
 SDK 레이어 ────── logger → codec → context → sdk → apm
-Browser ────────── browser-codec (encode/decode SSOT) → browser-sdk
+Browser ────────── browser-codec (encode/decode SSOT) → browser-sdk (범용 SDK — 도메인 데이터 없음)
 의사결정 ────────── decision-flow (분기 엔진, 패턴 학습, 경로 비교)
 분석 ──────────── convergence (독립) → spec-core (DKG + skills + FlowSchemaNode)
 서비스 ──────────── ingest, registry-server, registry-service, gate, query, decode
@@ -270,6 +279,9 @@ qa-sdk flow policy learn <schema>      # 패턴 감지 → 정책 후보 생성
 qa-sdk flow policy candidates          # 후보 목록
 qa-sdk flow policy approve/reject <id> # 후보 승인/거부
 qa-sdk flow compare <a> <b>            # 인스턴스 쌍 비교
+qa-sdk flow lookup <keyword>           # 키워드로 의사결정 이력 조회
+qa-sdk flow history [schema-id]        # 완료된 인스턴스 이력
+qa-sdk flow verdict <instance-id>      # 판정 상태 + 성공 기준
 
 # DKG FlowSchema 조회
 qa-sdk dkg flow-schemas                # FlowSchemaNode 목록

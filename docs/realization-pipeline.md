@@ -119,9 +119,10 @@ CLI: `dkg converge [--persist] [--verbose]`
 ## 6. 현재 수치
 
 ```
-DKG:        267 nodes, 625 edges (85 axes, 51 prefixes, 11 DSL bundles, 15 intent-links)
+DKG:        85 axes, 51 prefixes, 19 tables, 11 DSL bundles, 15 intent-links, 19 transition-specs
 spec-core:  48 test files, 535 tests
 demo-tests: 54 test files, 928 tests (846 passed, 82 skipped)
+decision-flow: 12 test files, 185 tests
 build:      성공
 health:     건전성 100%, invariant 통과
 ```

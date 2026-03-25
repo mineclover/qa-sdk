@@ -5,7 +5,7 @@ import {
   createSqliteDriver,
 } from "index-meta";
 import { serve } from "@hono/node-server";
-import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
+import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { HttpGateStateClient } from "./lib/gate-client.js";
@@ -53,8 +53,14 @@ const app = createApp({
   stateRoutes: stateRoutesDeps,
 });
 
+const serviceConfig = createServiceBootConfig("query-service");
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info({ port: info.port }, "query-service listening");
+  logger.info({
+    port: info.port,
+    service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+    env: serviceConfig.env,
+    region: serviceConfig.region,
+  }, "query-service listening");
   warnPortConflict("query-service", env.PORT, logger);
 });
 

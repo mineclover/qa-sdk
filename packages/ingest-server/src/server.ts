@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import {
   newDlqId,
+  createServiceBootConfig,
   type DlqStore,
   type GraphStore,
   type RecordStore,
@@ -277,8 +278,14 @@ async function startServer() {
     logger,
   })));
 
+  const serviceConfig = createServiceBootConfig("ingest-server");
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-    logger.info({ port: info.port }, "ingest-server listening");
+    logger.info({
+      port: info.port,
+      service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+      env: serviceConfig.env,
+      region: serviceConfig.region,
+    }, "ingest-server listening");
   });
 
   injectWebSocket(server);

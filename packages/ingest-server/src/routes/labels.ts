@@ -39,6 +39,7 @@ interface LabelRow {
   metadata: string | null;
   created_at: string;
   updated_at: string;
+  [key: string]: unknown;
 }
 
 export function createLabelsRoutes(deps: LabelsDeps) {

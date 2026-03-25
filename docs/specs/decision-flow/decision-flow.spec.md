@@ -11,7 +11,7 @@
 
 ## 상태
 
-implemented (v0.1.0) — P0~P7 완료 (2026-03-24 전체 QG 통과, 185 tests / 12 files)
+implemented (v0.1.0) — P0~P8 완료 (2026-03-25 전체 QG 통과, 185 tests / 12 files)
 
 ---
 
@@ -640,6 +640,29 @@ spec-core 구현:      service-explorer skill이 Port를 충족
 | DecisionUnit 타입 (topic/objective/successCriteria/fallback) | `types.ts` |
 | DecisionVerdictRecord (success/failure/deferred/superseded + criteriaResults) | `types.ts` |
 | DEV_DECISION_UNITS — 4개 플로우별 의사결정 단위 정의 | `dev-decisions.ts` |
+
+### P8: CLI 영속 + 조회 — ✅ 완료 (2026-03-25)
+
+| 구현 | 파일 |
+|------|------|
+| SqliteInstanceStore (CLI 전용 SQLite 영속) | `cli/src/stores/flow-sqlite-store.ts` |
+| FlowEngine.loadInstance() (외부 인스턴스 주입) | `decision-flow/src/engine.ts` |
+| active 인스턴스 세션 간 유지 (start→종료→select 이어서) | `cli/src/commands/flow.ts` |
+| `flow lookup <keyword>` (키워드 의사결정 이력 조회) | `cli/src/commands/flow.ts` |
+| `flow history [schema-id]` (완료 인스턴스 이력) | `cli/src/commands/flow.ts` |
+| `flow verdict <instance-id>` (판정 상태 + 성공 기준) | `cli/src/commands/flow.ts` |
+
+영속 구조:
+```
+~/.qa-sdk/decision-flow.sqlite
+  flow_instances: id, schema_id, status, context(JSON), selections(JSON), address, ...
+
+flow start   → INSERT (active)
+flow select  → UPDATE (active → active or completed)
+flow history → SELECT ... ORDER BY started_at DESC
+flow lookup  → SELECT ... WHERE context LIKE '%keyword%'
+flow verdict → SELECT ... WHERE id = ?
+```
 
 ### 잔여 후속 과제
 

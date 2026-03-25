@@ -59,6 +59,9 @@ import {
   flowPolicyReject,
   flowPolicyList,
   flowPolicyLearn,
+  flowLookup,
+  flowHistory,
+  flowVerdict,
 } from "./commands/flow.js";
 
 // ── Usage ────────────────────────────────────────────
@@ -157,6 +160,9 @@ Usage:
   qa-sdk flow policy approve <id>               후보 승인 + 정책 등록
   qa-sdk flow policy reject <id>                후보 거부
   qa-sdk flow policy list                       등록된 정책 목록
+  qa-sdk flow lookup <keyword>                  키워드로 의사결정 이력 조회
+  qa-sdk flow history [schema-id]               완료된 인스턴스 이력 (-n 20)
+  qa-sdk flow verdict <instance-id>             판정 상태 + 성공 기준 조회
 
   qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)
   qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)
@@ -806,6 +812,15 @@ async function main() {
     case "flow policy learn":
       flowPolicyLearn(sub.rest);
       return;
+    case "flow lookup":
+      flowLookup(sub.rest);
+      return;
+    case "flow history":
+      flowHistory(sub.rest);
+      return;
+    case "flow verdict":
+      flowVerdict(sub.rest);
+      return;
 
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
@@ -852,6 +867,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",
+    "flow lookup", "flow history", "flow verdict",
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;

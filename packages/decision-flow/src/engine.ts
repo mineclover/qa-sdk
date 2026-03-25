@@ -142,6 +142,27 @@ export class FlowEngine {
     return inst ? toImmutable(inst) : undefined;
   }
 
+  /**
+   * 외부에서 생성된 인스턴스를 엔진에 로드한다.
+   * SQLite 등 영속 저장소에서 복원할 때 사용.
+   * active 인스턴스를 복원하면 이어서 selectBranch 가능.
+   */
+  loadInstance(instance: FlowInstance): void {
+    this.instances.set(instance.id, {
+      id: instance.id,
+      schemaId: instance.schemaId,
+      schemaVersion: instance.schemaVersion,
+      status: instance.status,
+      context: { ...instance.context },
+      selections: [...instance.selections],
+      outcome: instance.outcome,
+      startedAt: instance.startedAt,
+      completedAt: instance.completedAt,
+      coordinateAddress: instance.coordinateAddress,
+      addressContext: instance.addressContext ? { ...instance.addressContext } : undefined,
+    });
+  }
+
   // ── 분기 선택 ──────────────────────────────────────────
 
   /**

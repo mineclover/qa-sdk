@@ -4,7 +4,7 @@ import {
   createSqliteDriver,
   SqlAddressStateStore,
 } from "index-meta";
-import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
+import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { createGateService } from "./lib/gate-service.js";
@@ -27,8 +27,14 @@ const app = createApp({
   getUptimeSeconds: () => Math.floor((Date.now() - startedAt) / 1000),
 });
 
+const serviceConfig = createServiceBootConfig("gate-service");
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info({ port: info.port }, "gate-service listening");
+  logger.info({
+    port: info.port,
+    service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+    env: serviceConfig.env,
+    region: serviceConfig.region,
+  }, "gate-service listening");
   warnPortConflict("gate-service", env.PORT, logger);
 });
 

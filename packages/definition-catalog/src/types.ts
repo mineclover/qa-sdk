@@ -104,6 +104,57 @@ export type StructuralTag =
 /** 알려진 태그 전체 (자유 문자열도 허용하되, 이 목록을 우선 사용) */
 export type KnownTag = ConcernTag | StructuralTag;
 
+// ─── Concern 전파 (Structural Constraint Propagation) ────
+
+/** 전파 방향 */
+export type PropagationDirection = "downstream" | "upstream";
+
+/**
+ * Concern 전파 규칙.
+ *
+ * "이 concern은 이 관계 유형을 타고 이 방향으로 전파된다."
+ * 예: security는 refines를 타고 downstream(부모→자식)으로 전파.
+ */
+export interface ConcernPropagation {
+  readonly linkType: LinkType;
+  readonly direction: PropagationDirection;
+}
+
+/**
+ * Concern 정의.
+ *
+ * 단순 태그가 아니라 **전파 규칙을 가진 구조적 제약**.
+ * link 그래프를 타고 관련 문서에 자동으로 상속된다.
+ */
+export interface ConcernDef {
+  readonly id: ConcernTag;
+  readonly name: string;
+  readonly description: string;
+  readonly propagation: readonly ConcernPropagation[];
+}
+
+/** 상속된 concern 1건 */
+export interface InheritedConcern {
+  /** concern 식별자 */
+  readonly concern: ConcernTag;
+  /** 출처 문서 ID (이 문서에 직접 부여된 concern) */
+  readonly from: string;
+  /** 어떤 관계를 통해 전파되었는가 */
+  readonly via: LinkType;
+  /** 전파 경로 (출처 → ... → 현재 문서) */
+  readonly path: readonly string[];
+}
+
+/** 문서의 effective concerns = 직접 ∪ 상속 */
+export interface EffectiveConcerns {
+  /** 이 문서에 직접 부여된 concern */
+  readonly direct: readonly ConcernTag[];
+  /** link 그래프를 타고 상속된 concern */
+  readonly inherited: readonly InheritedConcern[];
+  /** 전체 (direct ∪ inherited의 unique concern ID) */
+  readonly all: readonly ConcernTag[];
+}
+
 // ─── 문서 메타데이터 ─────────────────────────────────────
 
 /** decision-flow 연결 참조 */

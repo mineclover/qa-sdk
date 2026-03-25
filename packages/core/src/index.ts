@@ -64,6 +64,7 @@ export {
   toTransmissionBuild,
   catalogEnvToBuildEnv,
   buildEnvToCatalogEnv,
+  createServiceBootConfig,
 } from "./types/service-identity.js";
 
 export type {

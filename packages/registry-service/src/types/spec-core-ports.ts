@@ -86,6 +86,13 @@ export interface GraphRegistryPort {
   replaceNode(node: DkgNodePort): void;
   addEdge(type: string, from: string, to: string, meta?: DkgEdgePort["meta"]): void;
 
+  // table column refs
+  getTableColumnRefs(tableId: string): Array<{
+    column: string;
+    targetId: string;
+    refKind: "column_axis" | "prefix_ref" | "fk";
+  }>;
+
   // counts
   readonly nodeCount: number;
   readonly edgeCount: number;

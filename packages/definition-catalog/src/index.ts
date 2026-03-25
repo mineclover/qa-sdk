@@ -30,6 +30,11 @@ export type {
   ConcernTag,
   StructuralTag,
   KnownTag,
+  PropagationDirection,
+  ConcernPropagation,
+  ConcernDef,
+  InheritedConcern,
+  EffectiveConcerns,
   DecisionRef,
   DefinitionEntry,
   DefinitionEntryInput,
@@ -88,6 +93,14 @@ export {
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";
 export { MemoryDefinitionRegistry } from "./registry.js";
+
+// ─── Concern 전파 엔진 ──────────────────────────────────
+export {
+  CONCERN_DEFS,
+  getConcernDef,
+  extractDirectConcerns,
+  computeEffectiveConcerns,
+} from "./concern.js";
 
 // ─── 브릿지 (decision-flow 연결) ────────────────────────
 export {

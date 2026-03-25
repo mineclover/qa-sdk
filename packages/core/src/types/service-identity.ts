@@ -129,3 +129,33 @@ export function catalogEnvToBuildEnv(catalogEnv: string): string {
 export function buildEnvToCatalogEnv(buildEnv: string): string {
   return BUILD_TO_CATALOG[buildEnv] ?? buildEnv;
 }
+
+// ── ServiceBootConfig from env ──────────────────────────────────────────────
+
+/**
+ * 환경변수에서 ServiceBootConfig를 생성한다.
+ *
+ * 인프라 서비스 공통 패턴. 환경변수:
+ *   QA_SVC_NAMESPACE (기본: "shop")
+ *   QA_SVC_NAME (필수 — 서비스 이름)
+ *   QA_SVC_ENV (기본: "dev")
+ *   QA_SVC_REGION (기본: "asia")
+ *   QA_SVC_BUILD (선택)
+ *   QA_SVC_RELEASE (선택)
+ *
+ * @param svcName — fallback 서비스 이름 (환경변수 미설정 시)
+ * @param source — 환경변수 소스 (기본: process.env)
+ */
+export function createServiceBootConfig(
+  svcName: string,
+  source: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {},
+): ServiceBootConfig {
+  return {
+    namespace: source.QA_SVC_NAMESPACE ?? "shop",
+    name: source.QA_SVC_NAME ?? svcName,
+    env: source.QA_SVC_ENV ?? "dev",
+    region: source.QA_SVC_REGION ?? "asia",
+    build: source.QA_SVC_BUILD,
+    releaseVersion: source.QA_SVC_RELEASE,
+  };
+}

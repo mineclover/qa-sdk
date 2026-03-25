@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { serve } from "@hono/node-server";
-import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
+import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
@@ -42,8 +42,14 @@ const app = createApp({
   getUptimeSeconds: () => Math.floor((Date.now() - startedAt) / 1000),
 });
 
+const serviceConfig = createServiceBootConfig("decode-service");
 const server = serve({ fetch: app.fetch, port: env.PORT }, async (info) => {
-  logger.info({ port: info.port }, "decode-service listening");
+  logger.info({
+    port: info.port,
+    service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+    env: serviceConfig.env,
+    region: serviceConfig.region,
+  }, "decode-service listening");
   warnPortConflict("decode-service", env.PORT, logger);
 
   // registry에서 DecodeMap 자동 로드
