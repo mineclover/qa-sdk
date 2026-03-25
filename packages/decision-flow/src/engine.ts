@@ -146,8 +146,15 @@ export class FlowEngine {
    * 외부에서 생성된 인스턴스를 엔진에 로드한다.
    * SQLite 등 영속 저장소에서 복원할 때 사용.
    * active 인스턴스를 복원하면 이어서 selectBranch 가능.
+   *
+   * @throws 스키마가 등록되지 않았으면 에러
    */
   loadInstance(instance: FlowInstance): void {
+    if (!this.schemas.has(instance.schemaId)) {
+      throw new Error(
+        `인스턴스 "${instance.id}"의 스키마 "${instance.schemaId}"가 등록되지 않았다`,
+      );
+    }
     this.instances.set(instance.id, {
       id: instance.id,
       schemaId: instance.schemaId,
@@ -207,7 +214,7 @@ export class FlowEngine {
     instanceId: string,
     branchId: string,
     evidence: Evidence[] = [],
-    options: { confidence?: number; subFlowInstanceId?: string } = {},
+    options: { confidence?: number; subFlowInstanceId?: string; durationMs?: number } = {},
   ): FlowInstance {
     const instance = this.getInstanceOrThrow(instanceId);
     if (instance.status !== "active") {
@@ -235,7 +242,7 @@ export class FlowEngine {
       evidence,
       confidence: options.confidence ?? computeConfidence(evidence),
       timestamp: new Date().toISOString(),
-      durationMs: 0, // 외부에서 측정하여 전달하는 것이 정확
+      durationMs: options.durationMs ?? 0,
       subFlowInstanceId: options.subFlowInstanceId,
     };
 

@@ -14,6 +14,8 @@
  * - 자동 선택 비율이 급변
  * - 코어 gate에서 이전과 다른 경로 선택
  * - 결정 공간의 새 영역에 처음 도달
+ *
+ * 단일 스레드 전용 (Node.js 기본). 멀티스레드 환경에서는 외부 동기화 필요.
  */
 
 import type { FlowEngineListener } from "./engine.js";

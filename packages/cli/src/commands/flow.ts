@@ -50,7 +50,8 @@ import {
 
 // ─── 상태 관리 (SQLite 영속) ──────────────────────────────
 
-const FLOW_STATE_DIR = join(process.env.HOME ?? ".", ".qa-sdk");
+const FLOW_HOME = process.env.HOME ?? process.env.USERPROFILE ?? ".";
+const FLOW_STATE_DIR = join(FLOW_HOME, ".qa-sdk");
 const FLOW_STATE_DB = join(FLOW_STATE_DIR, "decision-flow.sqlite");
 
 interface CandidateInsight {
@@ -111,13 +112,35 @@ function ensureInit() {
   // SQLite에서 active 인스턴스 복원 → 엔진에 로드
   const activeInstances = state.store.findActive();
   for (const inst of activeInstances) {
-    state.engine.loadInstance(inst);
+    const schema = state.engine.getSchema(inst.schemaId);
+    if (!schema) {
+      console.warn(`[flow] 스키마 미등록으로 복원 스킵: ${inst.id} (schema: ${inst.schemaId})`);
+      continue;
+    }
+    if (schema.version !== inst.schemaVersion) {
+      console.warn(`[flow] 스키마 버전 불일치로 복원 스킵: ${inst.id} (${inst.schemaVersion} → ${schema.version})`);
+      continue;
+    }
+    try {
+      state.engine.loadInstance(inst);
+    } catch (e) {
+      console.warn(`[flow] 인스턴스 복원 실패: ${inst.id} — ${e instanceof Error ? e.message : e}`);
+    }
   }
   state.initialized = true;
 }
 
-export function resetFlowCliStateForTest(useMemory = false) {
-  state = createFlowCliState();
+export function resetFlowCliStateForTest() {
+  // 테스트용: 인메모리 SQLite로 상태 초기화
+  const store = new SqliteInstanceStore(":memory:");
+  const engine = new FlowEngine({ instanceStore: store });
+  state = {
+    engine,
+    store,
+    workflow: new PolicyCandidateWorkflow({ engine }),
+    candidateInsights: new Map(),
+    initialized: false,
+  };
 }
 
 export function getFlowCliStateForTest() {
@@ -228,8 +251,28 @@ export function flowSelect(argv: string[]) {
 
   const confidence = values.confidence ? parseFloat(values.confidence) : undefined;
 
+  // 코어 gate에서 evidence 없이 선택하면 경고
+  const currentGate = state.engine.getCurrentGate(instanceId);
+  if (currentGate && evidence.length === 0) {
+    if (currentGate.weight === "core") {
+      console.log(`\n  ⚠ 코어 gate "${currentGate.id}"에서 evidence 없이 선택 — 근거 첨부를 권장합니다`);
+    }
+    if (currentGate.mentalModels && currentGate.mentalModels.length > 0) {
+      console.log(`  💡 이 gate의 인지 모델: ${currentGate.mentalModels.join(", ")}`);
+    }
+  }
+
+  // durationMs 자동 측정: 이전 selection timestamp ~ 현재
+  const instBefore = state.engine.getInstance(instanceId);
+  const lastTimestamp = instBefore && instBefore.selections.length > 0
+    ? instBefore.selections[instBefore.selections.length - 1].timestamp
+    : instBefore?.startedAt;
+  const durationMs = lastTimestamp
+    ? Math.max(0, Date.now() - new Date(lastTimestamp).getTime())
+    : 0;
+
   try {
-    const result = state.engine.selectBranch(instanceId, branchId, evidence, { confidence });
+    const result = state.engine.selectBranch(instanceId, branchId, evidence, { confidence, durationMs });
     // 선택마다 SQLite 갱신 (active → 진행 상태 보존, completed → 최종 저장)
     state.store.save(result);
     const schema = state.engine.getSchema(result.schemaId)!;
@@ -240,6 +283,24 @@ export function flowSelect(argv: string[]) {
 
     if (result.status === "completed") {
       printCompletion(schema, result);
+      // 라우터 완료 → 하위 플로우 자동 시작
+      if (result.schemaId === "decision-router") {
+        const selectedType = result.selections.find((s) => s.gateId === "decision-type")?.branchId;
+        if (selectedType && selectedType !== "feature-lookup" && selectedType !== "custom" && state.engine.getSchema(selectedType)) {
+          console.log(`\n  → 하위 플로우 "${selectedType}" 자동 시작`);
+          const subInst = state.engine.startFlow(selectedType, {
+            ...result.context,
+            routerInstanceId: result.id,
+            urgency: result.selections.find((s) => s.gateId === "urgency")?.branchId,
+            reversibility: result.selections.find((s) => s.gateId === "reversibility")?.branchId,
+          });
+          state.store.save(subInst);
+          console.log(`  인스턴스: ${subInst.id}`);
+          const firstGate = state.engine.getCurrentGate(subInst.id);
+          if (firstGate) printCurrentGate(firstGate);
+          console.log(`\n  다음: qa-sdk flow select <branch-id>`);
+        }
+      }
     } else {
       const nextGate = state.engine.getCurrentGate(instanceId);
       if (nextGate) printCurrentGate(nextGate);
@@ -653,13 +714,12 @@ export function flowPolicyLearn(argv: string[]) {
 // ─── 내부 유틸 ───────────────────────────────────────────
 
 function findActiveInstance(): string | undefined {
-  // 엔진 인메모리에서 먼저 찾고, 없으면 SQLite에서 검색
+  // 1. 엔진 인메모리 (현재 세션에서 시작한 것 — 우선)
   const inMemory = state.engine.listInstances({ status: "active" });
   if (inMemory.length > 0) return inMemory[inMemory.length - 1].id;
-  // SQLite에서 active 인스턴스 복원
-  const persisted = state.store.recent(1, undefined);
-  const active = persisted.find((i) => i.status === "active");
-  return active?.id;
+  // 2. SQLite fallback (이전 세션에서 복원된 것)
+  const persisted = state.store.findActive();
+  return persisted.length > 0 ? persisted[0].id : undefined;
 }
 
 function listRegisteredPolicies(): FlowPolicy[] {
@@ -963,6 +1023,14 @@ function formatConfidence(value: number | undefined): string {
   return value === undefined ? "-" : value.toFixed(2);
 }
 
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ${Math.floor((ms % 60_000) / 1000)}s`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
+  return `${Math.floor(ms / 86_400_000)}d ${Math.floor((ms % 86_400_000) / 3_600_000)}h`;
+}
+
 function parseOptionalInteger(value: string | undefined, flagName: string): number | null | undefined {
   if (value === undefined) {
     return undefined;
@@ -1045,7 +1113,7 @@ export function flowLookup(argv: string[]) {
   }
 
   console.log(`  ${allInstances.length}건 발견\n`);
-  console.log(`${"ID".padEnd(35)} ${"Schema".padEnd(22)} ${"Status".padEnd(12)} 완료`);
+  console.log(`${"ID".padEnd(42)} ${"Schema".padEnd(22)} ${"Status".padEnd(12)} 완료`);
   console.log("─".repeat(85));
 
   const sorted = [...allInstances].sort((a, b) =>
@@ -1061,7 +1129,7 @@ export function flowLookup(argv: string[]) {
       .join(", ");
 
     console.log(
-      `${inst.id.slice(0, 33).padEnd(35)} ${inst.schemaId.padEnd(22)} ${inst.status.padEnd(12)} ${inst.completedAt?.slice(0, 10) ?? "-"}`,
+      `${inst.id.padEnd(42)} ${inst.schemaId.padEnd(22)} ${inst.status.padEnd(12)} ${inst.completedAt?.slice(0, 10) ?? "-"}`,
     );
     if (coreSelections) {
       console.log(`  코어: ${coreSelections}`);
@@ -1136,14 +1204,17 @@ export function flowHistory(argv: string[]) {
     return;
   }
 
-  console.log(`${"ID".padEnd(35)} ${"Schema".padEnd(22)} ${"Status".padEnd(12)} ${"Addr".padStart(6)} 시각`);
-  console.log("─".repeat(90));
+  console.log(`${"ID".padEnd(42)} ${"Schema".padEnd(22)} ${"Status".padEnd(12)} ${"Addr".padStart(6)} ${"소요".padStart(8)} 시각`);
+  console.log("─".repeat(100));
 
   for (const inst of instances) {
     const addr = inst.coordinateAddress !== undefined ? String(inst.coordinateAddress) : "-";
     const time = (inst.completedAt ?? inst.startedAt).slice(0, 16);
+    const dur = inst.completedAt
+      ? formatDuration(new Date(inst.completedAt).getTime() - new Date(inst.startedAt).getTime())
+      : "진행중";
     console.log(
-      `${inst.id.slice(0, 33).padEnd(35)} ${inst.schemaId.padEnd(22)} ${inst.status.padEnd(12)} ${addr.padStart(6)} ${time}`,
+      `${inst.id.padEnd(42)} ${inst.schemaId.padEnd(22)} ${inst.status.padEnd(12)} ${addr.padStart(6)} ${dur.padStart(8)} ${time}`,
     );
   }
 
@@ -1171,11 +1242,21 @@ export function flowVerdict(argv: string[]) {
   const schema = state.engine.getSchema(inst.schemaId);
   const unit = schema?.unit ?? DEV_DECISION_UNITS[inst.schemaId];
 
+  // 시간 분석
+  const totalMs = inst.completedAt
+    ? new Date(inst.completedAt).getTime() - new Date(inst.startedAt).getTime()
+    : Date.now() - new Date(inst.startedAt).getTime();
+  const totalDurationStr = formatDuration(totalMs);
+  const verdictDelay = inst.verdict && inst.completedAt
+    ? formatDuration(new Date(inst.verdict.judgedAt).getTime() - new Date(inst.completedAt).getTime())
+    : undefined;
+
   console.log(`\n══ Flow Verdict: ${instanceId} ══\n`);
   console.log(`  스키마: ${inst.schemaId}`);
   console.log(`  상태: ${inst.status}`);
   console.log(`  시작: ${inst.startedAt}`);
   console.log(`  완료: ${inst.completedAt ?? "-"}`);
+  console.log(`  소요: ${totalDurationStr}`);
 
   if (inst.coordinateAddress !== undefined) {
     console.log(`  좌표: ${inst.coordinateAddress}`);
@@ -1188,8 +1269,10 @@ export function flowVerdict(argv: string[]) {
     const isCore = gate?.weight === "core";
     const marker = isCore ? "★" : "·";
     const evKinds = [...new Set(sel.evidence.map((e) => e.kind))].join(",") || "-";
+    const dur = sel.durationMs > 0 ? ` ${formatDuration(sel.durationMs)}` : "";
+    const conf = typeof sel.confidence === "number" ? sel.confidence.toFixed(2) : "-";
     console.log(
-      `    ${marker} ${sel.gateId.padEnd(22)} → ${sel.branchId.padEnd(18)} conf:${sel.confidence.toFixed(2)} [${evKinds}]`,
+      `    ${marker} ${sel.gateId.padEnd(22)} → ${sel.branchId.padEnd(18)} conf:${conf} [${evKinds}]${dur}`,
     );
   }
 
@@ -1214,12 +1297,132 @@ export function flowVerdict(argv: string[]) {
     console.log(`\n  📊 판정: ${v.verdict} (${metCount}/${v.criteriaResults.length} 기준 충족)`);
     console.log(`    근거: ${v.reason}`);
     console.log(`    판정 시각: ${v.judgedAt}`);
+    if (verdictDelay) console.log(`    완료→판정: ${verdictDelay}`);
     for (const cr of v.criteriaResults) {
       console.log(`      ${cr.met ? "✅" : "❌"} ${cr.criterion}${cr.evidence ? ` — ${cr.evidence}` : ""}`);
     }
   } else {
     console.log(`\n  📊 판정: 아직 기록 전`);
+    if (unit) {
+      console.log(`  → qa-sdk flow judge ${instanceId} 로 판정을 기록하세요`);
+    }
   }
 
+  console.log();
+}
+
+/**
+ * flow judge <instance-id> — 의사결정 판정 기록
+ *
+ * 완료된 인스턴스에 대해 성공/실패/보류를 기록한다.
+ * 성공 기준이 있으면 각 기준별 충족 여부를 대화형으로 입력받거나
+ * --result JSON으로 한 번에 입력.
+ */
+export function flowJudge(argv: string[]) {
+  ensureInit();
+  const { positionals, values } = parseArgs({
+    args: argv,
+    options: {
+      result: { type: "string", short: "r" },
+      reason: { type: "string" },
+    },
+    allowPositionals: true,
+  });
+
+  const instanceId = positionals[0];
+  if (!instanceId) {
+    console.error("Usage: qa-sdk flow judge <instance-id> --result '[{\"criterion\":\"...\",\"met\":true,\"evidence\":\"...\"}]' [--reason '...']");
+    return;
+  }
+
+  // SQLite에서 조회
+  const inst = state.engine.getInstance(instanceId) ?? state.store.findById(instanceId);
+  if (!inst) {
+    console.error(`인스턴스를 찾을 수 없음: ${instanceId}`);
+    return;
+  }
+  if (inst.status !== "completed") {
+    console.error(`완료된 인스턴스만 판정할 수 있습니다 (현재: ${inst.status})`);
+    return;
+  }
+  if (inst.verdict) {
+    console.log(`이미 판정됨: ${inst.verdict.verdict} (${inst.verdict.judgedAt})`);
+    return;
+  }
+
+  const schema = state.engine.getSchema(inst.schemaId);
+  const unit = schema?.unit ?? DEV_DECISION_UNITS[inst.schemaId];
+
+  if (!values.result) {
+    // --result 없으면 성공 기준 안내 출력
+    console.log(`\n══ Flow Judge: ${instanceId} ══\n`);
+    if (unit) {
+      console.log(`  주제: ${unit.topic}`);
+      console.log(`  성공 기준:`);
+      for (let i = 0; i < unit.successCriteria.length; i++) {
+        console.log(`    [${i}] ${unit.successCriteria[i]}`);
+      }
+      console.log(`\n  --result로 각 기준의 충족 여부를 전달하세요:`);
+      console.log(`  qa-sdk flow judge ${instanceId} --result '[`);
+      for (let i = 0; i < unit.successCriteria.length; i++) {
+        const comma = i < unit.successCriteria.length - 1 ? "," : "";
+        console.log(`    {"criterion":"${unit.successCriteria[i].slice(0, 40)}...","met":true}${comma}`);
+      }
+      console.log(`  ]'`);
+    } else {
+      console.log(`  의사결정 단위가 없습니다. 범용 판정:`);
+      console.log(`  qa-sdk flow judge ${instanceId} --result '[{"criterion":"성공","met":true}]' --reason '판정 사유'`);
+    }
+    return;
+  }
+
+  // --result JSON 파싱
+  let criteriaResults: { criterion: string; met: boolean; evidence?: string }[];
+  try {
+    criteriaResults = JSON.parse(values.result);
+    if (!Array.isArray(criteriaResults)) throw new Error("not-array");
+  } catch {
+    console.error("--result는 유효한 JSON 배열이어야 합니다");
+    return;
+  }
+
+  // 판정 생성
+  const allMet = criteriaResults.every((r) => r.met);
+  const noneMet = criteriaResults.every((r) => !r.met);
+  const metCount = criteriaResults.filter((r) => r.met).length;
+
+  let verdict: string;
+  let reason: string;
+  if (values.reason) {
+    verdict = allMet ? "success" : noneMet ? "failure" : "deferred";
+    reason = values.reason;
+  } else if (allMet) {
+    verdict = "success";
+    reason = `${criteriaResults.length}개 기준 전부 충족`;
+  } else if (noneMet) {
+    verdict = "failure";
+    reason = `${criteriaResults.length}개 기준 전부 미충족`;
+  } else {
+    verdict = "deferred";
+    reason = `${criteriaResults.length}개 기준 중 ${metCount}개 충족 — 추가 검증 필요`;
+  }
+
+  // FlowInstance에 verdict 기록하여 SQLite 갱신
+  const updatedInst: FlowInstance = {
+    ...inst,
+    verdict: {
+      verdict: verdict as "success" | "failure" | "deferred" | "superseded",
+      reason,
+      criteriaResults,
+      judgedAt: new Date().toISOString(),
+    },
+  };
+  state.store.save(updatedInst);
+
+  console.log(`\n✓ 판정 기록: ${verdict}`);
+  console.log(`  근거: ${reason}`);
+  for (const cr of criteriaResults) {
+    console.log(`  ${cr.met ? "✅" : "❌"} ${cr.criterion}${cr.evidence ? ` — ${cr.evidence}` : ""}`);
+  }
   console.log();
 }

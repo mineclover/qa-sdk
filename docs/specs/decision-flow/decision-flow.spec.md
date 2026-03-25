@@ -19,7 +19,7 @@ def:
 
 ## 상태
 
-implemented (v0.1.0) — P0~P8 완료 (2026-03-25 전체 QG 통과, 185 tests / 12 files)
+implemented (v0.1.0) — P0~P9 완료 (2026-03-25 전체 QG 통과, 188 tests / 12 files + CLI 141 tests)
 
 ---
 
@@ -458,7 +458,73 @@ coordinate-design (루트)
 
 ---
 
-## 9. 구현 현황
+## 9. 패키지 구조
+
+소스 8,776줄 / 24파일 + 테스트 5,508줄 / 12파일 + CLI 1,685줄 / 2파일.
+
+```
+packages/decision-flow/src/         # unscoped, tsup dual format (ESM+CJS)
+
+Layer 0: 타입 정의
+  types.ts                           핵심 타입 (FlowSchema, DecisionNarrative, DecisionUnit, DecisionTrace)
+
+Layer 1: 스키마 + 좌표
+  schema.ts                          FlowSchemaBuilder + validate
+  coordinate.ts                      WeightedIndex 연동 (encode/decode/라운드트립)
+  vocabulary.ts                      11축 정의 + AxisExplanatoryMeta (Primary/Secondary/Contextual)
+  catalog.ts                         5 prefix 정의 (관찰 좌표)
+
+Layer 2: 실행 엔진
+  engine.ts                          FlowEngine (start/select/complete/load + 이벤트 리스너)
+  policy.ts                          조건 평가, 자동 선택
+  instance-store.ts                  InstanceStore 인터페이스 + MemoryInstanceStore
+
+Layer 3: 분석
+  comparison.ts                      벡터 차이 / 차원 분포 / 시간 비교 / 보고서
+  policy-learning.ts                 패턴 감지 + 후보 워크플로우 + 분류 (routine/exploratory/escalation/anomaly)
+  core-analysis.ts                   gate 구조 분석, 인과 그래프, 영향 분석
+  orthogonality.ts                   Cramér's V 직교성 검증
+
+Layer 4: 서사 + 컨텍스트
+  narrative.ts                       buildNarrative / verdict / summarize / divergence
+  context-provider.ts                ContextProvider (이력+패턴+정책+모델 표면화) + FeatureLookup
+  monitor.ts                         DecisionMonitor (메트릭 집계 + 알림)
+  hierarchical-context.ts            5레벨 수직 관통 (Domain→DSL→Category→Prefix→Dim)
+
+Layer 5: 응용 (FlowSchema 정의)
+  sprint.ts                          gstack 파이프라인 (10 FlowSchema + 6 policies)
+  dev-decisions.ts                   일상 결정 (5 FlowSchema + 6 policies + DecisionUnits)
+  mental-model.ts                    13 인지 모델 + escalation + Forcing Questions
+  boundary.ts                        4 계층 + 바운더리
+  observe.ts                         이벤트 인코딩 (5 prefix)
+  ingest-adapter.ts                  address_context 빌더
+  self-analysis.ts                   qa-sdk 설계 결정 자기참조
+
+index.ts                             barrel export (42 export groups)
+```
+
+CLI 영속 (packages/cli/):
+
+```
+cli/src/stores/
+  flow-sqlite-store.ts               SqliteInstanceStore (WAL + busy_timeout + migrate)
+
+cli/src/commands/
+  flow.ts                            18 commands (list/start/select/status/trace/analyze/
+                                     compare/policy×5/lookup/history/verdict/judge)
+```
+
+의존 방향:
+
+```
+decision-flow → weighted-index (좌표 인코딩)
+@qa-sdk/cli   → decision-flow + node:sqlite (CLI 영속)
+spec-core     → decision-flow (optional peer, 동적 import)
+```
+
+---
+
+## 10. 구현 현황
 
 ### P0: 코어 타입 + 엔진 — ✅
 
@@ -513,7 +579,7 @@ PRD: `tasks/prd-decision-flow-p4.md` — 21 US / 78 AC 전부 완료
 
 ---
 
-## 10. Quality Gates
+## 11. Quality Gates
 
 ```
 pnpm --filter decision-flow typecheck   # 타입 체크
@@ -524,7 +590,7 @@ pnpm --filter demo-tests test           # 846 tests (52 files)
 
 ---
 
-## 11. 후속 과제 (P5 후보)
+## 12. 후속 과제 (P5 후보)
 
 ### P5: 정보 체계 정체성 — ✅ 완료 (2026-03-24)
 
@@ -671,6 +737,24 @@ flow history → SELECT ... ORDER BY started_at DESC
 flow lookup  → SELECT ... WHERE context LIKE '%keyword%'
 flow verdict → SELECT ... WHERE id = ?
 ```
+
+### P9: 안정화 + 시간축 + 라우터 개선 — ✅ 완료 (2026-03-25)
+
+| 구현 | 파일 |
+|------|------|
+| SQLite JSON parse 안전 + WAL + busy_timeout | `cli/stores/flow-sqlite-store.ts` |
+| loadInstance 스키마 검증 + 복원 시 버전 체크 | `engine.ts`, `cli/commands/flow.ts` |
+| buildNarrative 0 selections 방어 | `narrative.ts` |
+| SqliteInstanceStore 10 tests | `cli/stores/flow-sqlite-store.test.ts` |
+| loadInstance + buildNarrative 방어 3 tests | `decision-flow.test.ts` |
+| ARCHITECTURE_DECISION_FLOW (4 gates) | `dev-decisions.ts` |
+| decision-router 유형 확장 (8유형) | `dev-decisions.ts` |
+| 라우터 → 하위 플로우 자동 시작 | `cli/commands/flow.ts` |
+| gate별 durationMs 자동 측정 | `engine.ts`, `cli/commands/flow.ts` |
+| flow history 소요 시간 컬럼 | `cli/commands/flow.ts` |
+| flow verdict 시간 분석 (총 소요, gate별, 완료→판정) | `cli/commands/flow.ts` |
+| flow judge (판정 기록 + verdict SQLite 영속) | `cli/commands/flow.ts`, `cli/stores/flow-sqlite-store.ts` |
+| evidence 없이 코어 gate 선택 시 경고 + mentalModel 힌트 | `cli/commands/flow.ts` |
 
 ### 잔여 후속 과제
 

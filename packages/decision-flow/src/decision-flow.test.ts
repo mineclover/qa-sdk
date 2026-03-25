@@ -20,6 +20,7 @@ import {
   gateDistribution,
   compareTimeRanges,
   createComparisonReport,
+  buildNarrative,
 } from "./index.js";
 import type { FlowSchema, FlowPolicy, FlowInstance } from "./types.js";
 
@@ -2011,5 +2012,81 @@ describe("comparison", () => {
     });
 
     expect(JSON.parse(JSON.stringify(report))).toEqual(report);
+  });
+});
+
+// ─── 안정화 테스트 ──────────────────────────────────────
+
+describe("FlowEngine.loadInstance", () => {
+  it("등록된 스키마의 인스턴스를 로드하면 이어서 selectBranch 가능", () => {
+    const schema = createApprovalSchema();
+    const engine = new FlowEngine();
+    engine.registerSchema(schema);
+
+    // 외부에서 만든 인스턴스 (SQLite에서 복원된 것처럼)
+    // risk(gate 0)만 선택된 상태 — priority(gate 1)부터 이어서
+    const fakeInstance: FlowInstance = {
+      id: "restored-001",
+      schemaId: "feature-approval",
+      schemaVersion: "v1",
+      status: "active",
+      context: { team: "platform" },
+      selections: [
+        { gateId: "risk", branchId: "low", evidence: [], confidence: 0.8, timestamp: new Date().toISOString(), durationMs: 0 },
+      ],
+      startedAt: new Date().toISOString(),
+    };
+
+    engine.loadInstance(fakeInstance);
+
+    // 로드된 인스턴스 조회 가능
+    const loaded = engine.getInstance("restored-001");
+    expect(loaded).toBeDefined();
+    expect(loaded!.selections.length).toBe(1);
+
+    // 이어서 selectBranch (priority → approval)
+    engine.selectBranch("restored-001", "p1");
+    const result = engine.selectBranch("restored-001", "lead");
+    expect(result.status).toBe("completed");
+    expect(result.selections.length).toBe(3);
+  });
+
+  it("미등록 스키마의 인스턴스를 로드하면 에러", () => {
+    const engine = new FlowEngine();
+
+    const fakeInstance: FlowInstance = {
+      id: "bad-001",
+      schemaId: "nonexistent-schema",
+      schemaVersion: "v1",
+      status: "active",
+      context: {},
+      selections: [],
+      startedAt: new Date().toISOString(),
+    };
+
+    expect(() => engine.loadInstance(fakeInstance)).toThrow("등록되지 않았다");
+  });
+});
+
+describe("buildNarrative 방어", () => {
+  it("0 selections + completed 인스턴스 → 에러", () => {
+    const schema = createApprovalSchema();
+    const emptyInstance: FlowInstance = {
+      id: "empty-001",
+      schemaId: "feature-approval",
+      schemaVersion: "v1",
+      status: "completed",
+      context: {},
+      selections: [],
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+
+    expect(() => buildNarrative({
+      instance: emptyInstance,
+      schema,
+      context: { source: "test", trigger: "test" },
+      outcome: { artifactType: "test", artifactRef: "test" },
+    })).toThrow("선택 이력이 없다");
   });
 });

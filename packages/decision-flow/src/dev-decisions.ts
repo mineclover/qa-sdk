@@ -127,13 +127,50 @@ export const STABILIZATION_FLOW: FlowSchema = new FlowSchemaBuilder(
   ], { mentalModels: ["bezos-doors", "boil-the-lake"] })
   .build();
 
+// ─── 아키텍처 결정 ───────────────────────────────────────
+
+/**
+ * "어떤 방식/패턴/기술을 선택할 것인가?"
+ *
+ * 대안 비교, 트레이드오프 분석, 최종 선택.
+ * 코어 결정: alternatives (어떤 대안이 있는가)
+ */
+export const ARCHITECTURE_DECISION_FLOW: FlowSchema = new FlowSchemaBuilder(
+  "architecture-decision",
+  "아키텍처 결정",
+)
+  .description("방식/패턴/기술 선택 — 대안 비교 + 트레이드오프 분석")
+  .gate("alternatives", "대안 목록", "perceive", [
+    { id: "two", label: "2개 대안" },
+    { id: "three-plus", label: "3개 이상 대안" },
+    { id: "single", label: "사실상 1개 (다른 선택지 없음)" },
+  ], { weight: "core", mentalModels: ["munger-inversion", "jobs-subtraction"] })
+  .gate("tradeoff", "트레이드오프", "evaluate", [
+    { id: "clear-winner", label: "명확한 우위 — 하나가 모든 면에서 나음" },
+    { id: "balanced", label: "균형 — 각각 장단점" },
+    { id: "constraint-driven", label: "제약 조건이 선택을 결정" },
+  ], { weight: "structural", mentalModels: ["temporal-depth", "boil-the-lake"] })
+  .gate("migration-cost", "전환 비용", "evaluate", [
+    { id: "none", label: "전환 비용 없음 (신규)" },
+    { id: "low", label: "낮음 (점진적 전환 가능)" },
+    { id: "high", label: "높음 (빅뱅 전환 필요)" },
+  ], { mentalModels: ["bezos-doors"] })
+  .gate("verdict", "최종 선택", "decide", [
+    { id: "option-a", label: "대안 A 선택" },
+    { id: "option-b", label: "대안 B 선택" },
+    { id: "option-c", label: "대안 C 선택" },
+    { id: "defer", label: "보류 — 정보 부족" },
+    { id: "spike", label: "탐색 먼저 — PoC 필요" },
+  ], { mentalModels: ["speed-calibration", "narrative-coherence"] })
+  .build();
+
 // ─── 범용 의사결정 라우터 ────────────────────────────────
 
 /**
  * "지금 무슨 종류의 결정을 해야 하는가?"
  *
  * 모든 일상 개발 의사결정의 진입점.
- * decision-type에서 분류 후, 해당 subFlow로 진입.
+ * decision-type에서 분류 후, 해당 플로우로 안내.
  */
 export const DECISION_ROUTER: FlowSchema = new FlowSchemaBuilder(
   "decision-router",
@@ -144,10 +181,11 @@ export const DECISION_ROUTER: FlowSchema = new FlowSchemaBuilder(
     { id: "test-needed", label: "테스트가 필요한가?" },
     { id: "scope-expansion", label: "기획을 확장할 것인가?" },
     { id: "stabilization", label: "기능을 안정화할 것인가?" },
+    { id: "architecture-decision", label: "방식/패턴/기술을 선택할 것인가?" },
     { id: "feature-lookup", label: "기존에 뭐가 있는가? (조회)" },
     { id: "sprint", label: "스프린트 결정 (gstack 파이프라인)" },
     { id: "coordinate-design", label: "좌표계 설계 결정" },
-    { id: "custom", label: "그 외 (커스텀)" },
+    { id: "custom", label: "그 외" },
   ], { weight: "core" })
   .gate("urgency", "긴급도", "evaluate", [
     { id: "blocking", label: "차단 — 지금 안 하면 진행 불가" },
@@ -250,6 +288,7 @@ export const ALL_DEV_DECISION_FLOWS: readonly FlowSchema[] = [
   TEST_NEEDED_FLOW,
   SCOPE_EXPANSION_FLOW,
   STABILIZATION_FLOW,
+  ARCHITECTURE_DECISION_FLOW,
   DECISION_ROUTER,
 ];
 
@@ -299,6 +338,17 @@ export const DEV_DECISION_UNITS: Readonly<Record<string, DecisionUnit>> = {
       "조치 후 버그 빈도가 감소하거나, 안정 판정 후 1개월 내 인시던트 없음",
     ],
     fallback: "판단 불가 시 → 개선 필요 (안전한 방향)",
+  },
+  "architecture-decision": {
+    topic: "어떤 방식/패턴/기술을 선택할 것인가",
+    objective: "대안을 비교하고 트레이드오프를 분석하여 근거 있는 기술 선택을 한다",
+    successCriteria: [
+      "2개 이상 대안이 식별됨",
+      "각 대안의 트레이드오프가 명시적으로 비교됨",
+      "전환 비용이 올바르게 평가됨",
+      "선택 후 6개월 내 재선택(재설계) 없음",
+    ],
+    fallback: "판단 불가 시 → spike (PoC 먼저 진행)",
   },
   "decision-router": {
     topic: "지금 무슨 종류의 결정을 해야 하는가",

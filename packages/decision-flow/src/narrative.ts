@@ -50,6 +50,10 @@ export interface BuildNarrativeInput {
 export function buildNarrative(input: BuildNarrativeInput): DecisionNarrative {
   const { instance, schema, context, outcome, reflection } = input;
 
+  if (instance.selections.length === 0 && instance.status !== "active") {
+    throw new Error(`인스턴스 "${instance.id}"에 선택 이력이 없다 (status: ${instance.status})`);
+  }
+
   // gate 메타데이터 매핑
   const gateMap = new Map(schema.gates.map((g) => [g.id, g]));
 

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS flow_instances (
   outcome      TEXT,
   address      INTEGER,
   address_context TEXT,
+  verdict      TEXT,
   started_at   TEXT NOT NULL,
   completed_at TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
@@ -61,14 +62,28 @@ export class SqliteInstanceStore implements InstanceStore {
 
   constructor(path: string) {
     this.db = createDatabase(path);
+    // WAL 모드: 읽기와 쓰기가 동시에 가능 (여러 CLI 프로세스 동시 사용)
+    this.db.exec("PRAGMA journal_mode = WAL");
+    // busy timeout: 다른 프로세스가 쓰는 중이면 3초까지 대기
+    this.db.exec("PRAGMA busy_timeout = 3000");
     this.db.exec(FLOW_SCHEMA_DDL);
+    this.migrate();
+  }
+
+  /** 기존 DB에 verdict 컬럼이 없으면 추가 */
+  private migrate(): void {
+    try {
+      this.db.exec("ALTER TABLE flow_instances ADD COLUMN verdict TEXT");
+    } catch {
+      // 이미 존재하면 무시
+    }
   }
 
   save(instance: FlowInstance): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO flow_instances
-        (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, started_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       instance.id,
@@ -80,6 +95,7 @@ export class SqliteInstanceStore implements InstanceStore {
       instance.outcome ?? null,
       instance.coordinateAddress ?? null,
       instance.addressContext ? JSON.stringify(instance.addressContext) : null,
+      instance.verdict ? JSON.stringify(instance.verdict) : null,
       instance.startedAt,
       instance.completedAt ?? null,
     );
@@ -180,11 +196,16 @@ export class SqliteInstanceStore implements InstanceStore {
 
   /** 통계 */
   stats(): { total: number; completed: number; active: number; schemas: number } {
-    const total = (this.db.prepare("SELECT COUNT(*) as cnt FROM flow_instances").get() as any).cnt;
-    const completed = (this.db.prepare("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'completed'").get() as any).cnt;
-    const active = (this.db.prepare("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'active'").get() as any).cnt;
-    const schemas = (this.db.prepare("SELECT COUNT(DISTINCT schema_id) as cnt FROM flow_instances").get() as any).cnt;
-    return { total, completed, active, schemas };
+    const count = (sql: string): number => {
+      const row = this.db.prepare(sql).get() as Record<string, unknown> | undefined;
+      return typeof row?.cnt === "number" ? row.cnt : 0;
+    };
+    return {
+      total: count("SELECT COUNT(*) as cnt FROM flow_instances"),
+      completed: count("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'completed'"),
+      active: count("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'active'"),
+      schemas: count("SELECT COUNT(DISTINCT schema_id) as cnt FROM flow_instances"),
+    };
   }
 
   close(): void {
@@ -204,6 +225,7 @@ interface RawRow {
   outcome: string | null;
   address: number | null;
   address_context: string | null;
+  verdict: string | null;
   started_at: string;
   completed_at: string | null;
 }
@@ -214,12 +236,22 @@ function toFlowInstance(row: RawRow): FlowInstance {
     schemaId: row.schema_id,
     schemaVersion: row.schema_version,
     status: row.status as FlowInstance["status"],
-    context: JSON.parse(row.context),
-    selections: JSON.parse(row.selections),
+    context: safeJsonParse(row.context, {}),
+    selections: safeJsonParse(row.selections, []),
     outcome: row.outcome ?? undefined,
     coordinateAddress: row.address ?? undefined,
-    addressContext: row.address_context ? JSON.parse(row.address_context) : undefined,
+    addressContext: row.address_context ? safeJsonParse(row.address_context, undefined) : undefined,
+    verdict: row.verdict ? safeJsonParse(row.verdict, undefined) : undefined,
     startedAt: row.started_at,
     completedAt: row.completed_at ?? undefined,
   };
+}
+
+function safeJsonParse<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    console.warn(`[flow-sqlite] JSON 파싱 실패 — fallback 사용: ${json.slice(0, 50)}`);
+    return fallback;
+  }
 }
