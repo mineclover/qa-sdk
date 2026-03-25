@@ -108,8 +108,8 @@ export type { MemberSummary, AssembledFeature } from "./assemble.js";
 export { assembleFeature } from "./assemble.js";
 
 // ─── 마커 기반 추출 ─────────────────────────────────────
-export type { ExtractLevel, Marker, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";
-export { findMarkers, extractByLevel, summarizeDocument } from "./extract.js";
+export type { ExtractLevel, StandardMarker, Marker, MarkedSection, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";
+export { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
 
 // ─── Frontmatter 파서 + 스캐너 ──────────────────────────
 export type { FrontmatterDef, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";

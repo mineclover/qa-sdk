@@ -287,12 +287,13 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 문서 작성 컨벤션 ──────────────────────────────────
 
   /**
-   * 컨벤션 8: 모든 문서에 frontmatter + `## 목적 ^purpose` 필수
+   * 컨벤션 8: frontmatter 필수, 마커 섹션은 있으면 수집
    *
-   * frontmatter의 def 블록이 좌표를 정의하고,
-   * 본문 첫 ## 섹션이 `## 목적 ^purpose`이어야 한다.
+   * frontmatter의 def 블록은 필수 (좌표 정의).
+   * ^purpose, ^overview 등 마커 섹션은 작성하면 수집된다.
+   * 모든 문서에 모든 마커가 필요한 것은 아니다.
    */
-  frontmatterRequired: "모든 문서에 def frontmatter + ## 목적 ^purpose 필수",
+  frontmatterRequired: "frontmatter 필수. 마커 섹션은 있으면 수집 (전부 작성할 필요 없음)",
 
   /**
    * 컨벤션 9: `## 목적 ^purpose` — 이 문서가 무엇인가 (섹션 분량)
@@ -322,4 +323,17 @@ export const CLASSIFICATION_CONVENTIONS = {
    * 구성에 멤버 목록과 구성 요약.
    */
   groupDocument: "그룹 문서 = overview depth + contains 링크 + 목적/구성 섹션",
+
+  /**
+   * 컨벤션 13: 자유 마커로 scope별 핵심 내용 수집
+   *
+   * purpose/overview 외에 scope에 맞는 자유 마커를 사용한다.
+   * - constraint 문서: `## 불변 조건 ^constraint` → 제약 규칙 수집
+   * - state 문서: `## 상태 정의 ^state-def` → 상태 정의 수집
+   * - interface 문서: `## 엔드포인트 ^endpoints` → API 목록 수집
+   *
+   * extractByMarker(body, "constraint") → 해당 섹션만 추출.
+   * 마커 이름은 lowercase + 하이픈: ^my-marker
+   */
+  customMarkers: "자유 마커(^constraint, ^state-def 등)로 scope별 핵심 내용 수집 가능",
 } as const;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findMarkedSections, findMarkers, extractByLevel, summarizeDocument } from "./extract.js";
+import { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
 
 const SAMPLE_BODY = `# Gate Service API 계약
 
@@ -157,5 +157,74 @@ describe("여러 문서의 purpose 모아보기", () => {
       .filter(d => d.scope !== "constraint")
       .map(d => ({ id: d.id, purpose: extractByLevel(d.body, "purpose").text }));
     expect(filtered.length).toBe(2);
+  });
+});
+
+describe("자유 마커 (extractByMarker)", () => {
+  const CONSTRAINT_DOC = `# Gate 제약
+
+## 목적 ^purpose
+
+gate 불변 조건.
+
+## 불변 조건 ^constraint
+
+1. Fail-open: gate check 실패 시 허용.
+2. Composite AND: 어느 dim이라도 차단이면 전체 차단.
+
+## 보안 제약 ^constraint
+
+- 내부 호출 전용
+- flag 변경은 관리자 API만
+
+## 성능 제약
+
+- checkGate < 5ms
+`;
+
+  it("^constraint 마커 섹션만 추출", () => {
+    const result = extractByMarker(CONSTRAINT_DOC, "constraint");
+    expect(result.sections.length).toBe(2);
+    expect(result.text).toContain("Fail-open");
+    expect(result.text).toContain("내부 호출 전용");
+    // purpose와 성능 제약은 포함하지 않음
+    expect(result.text).not.toContain("gate 불변 조건");
+    expect(result.text).not.toContain("checkGate");
+  });
+
+  const STATE_DOC = `# Gate 상태 모델
+
+## 목적 ^purpose
+
+4-state 모델.
+
+## 상태 정의 ^state-def
+
+active, inactive, open, reserved
+
+## 전이 규칙 ^state-def
+
+active ↔ inactive (flag/release)
+`;
+
+  it("^state-def 마커 섹션만 추출", () => {
+    const result = extractByMarker(STATE_DOC, "state-def");
+    expect(result.sections.length).toBe(2);
+    expect(result.text).toContain("active, inactive, open, reserved");
+    expect(result.text).toContain("active ↔ inactive");
+    expect(result.text).not.toContain("4-state 모델");
+  });
+
+  it("여러 마커를 동시에 추출", () => {
+    const result = extractByMarker(CONSTRAINT_DOC, "purpose", "constraint");
+    expect(result.sections.length).toBe(3); // purpose 1 + constraint 2
+    expect(result.text).toContain("gate 불변 조건");
+    expect(result.text).toContain("Fail-open");
+  });
+
+  it("존재하지 않는 마커는 빈 결과", () => {
+    const result = extractByMarker(CONSTRAINT_DOC, "nonexistent");
+    expect(result.sections.length).toBe(0);
+    expect(result.text).toBe("");
   });
 });

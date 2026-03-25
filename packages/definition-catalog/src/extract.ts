@@ -32,13 +32,20 @@
  *   level="full"     → 전체 (마커 표기만 제거)
  */
 
-/** 추출 수준 */
+/** 추출 수준 (표준 마커 기반) */
 export type ExtractLevel = "purpose" | "overview" | "full";
 
-/** 마커 유형 */
-export type Marker = "purpose" | "overview";
+/** 표준 마커 유형 */
+export type StandardMarker = "purpose" | "overview";
 
-const MARKER_REGEX = /\s*\^(purpose|overview)\s*$/;
+/**
+ * 마커 유형.
+ * purpose/overview가 표준이고, 그 외 자유 마커(constraint, state-def 등)도 허용.
+ */
+export type Marker = string;
+
+/** 자유 마커를 포함하는 정규식: ^word 또는 ^word-word */
+const MARKER_REGEX = /\s*\^([a-z][a-z0-9-]*)\s*$/;
 
 /** 마커가 붙은 섹션 */
 export interface MarkedSection {
@@ -152,7 +159,7 @@ export function extractByLevel(body: string, level: ExtractLevel): ExtractResult
   const allSections = findMarkedSections(body);
 
   if (level === "full") {
-    const cleaned = body.replace(/\s*\^(purpose|overview)\s*$/gm, "");
+    const cleaned = body.replace(/\s*\^([a-z][a-z0-9-]*)\s*$/gm, "");
     return {
       level,
       sections: allSections,
@@ -172,6 +179,27 @@ export function extractByLevel(body: string, level: ExtractLevel): ExtractResult
 
   return {
     level,
+    sections: filtered,
+    text,
+    noMarkers: allSections.length === 0,
+  };
+}
+
+/**
+ * 특정 마커 이름으로 섹션을 추출한다.
+ *
+ * extractByMarker(body, "constraint") → ^constraint 섹션 본문
+ * extractByMarker(body, "state-def") → ^state-def 섹션 본문
+ *
+ * 표준 마커(purpose, overview)와 자유 마커 모두 사용 가능.
+ */
+export function extractByMarker(body: string, ...markers: string[]): ExtractResult {
+  const allSections = findMarkedSections(body);
+  const filtered = allSections.filter(s => markers.includes(s.marker));
+  const text = filtered.map(s => s.body).join("\n\n");
+
+  return {
+    level: "full",
     sections: filtered,
     text,
     noMarkers: allSections.length === 0,
