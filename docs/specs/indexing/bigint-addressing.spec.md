@@ -1,7 +1,18 @@
+---
+def:
+  id: bigint-addressing
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # BigInt 주소 체계 스펙
 
-> `Number.MAX_SAFE_INTEGER`(2^53)를 초과하는 shape product에 대한 BigInt 기반 주소 인코딩/디코딩.
-> weighted-index와 index-meta 양쪽에 걸치는 횡단 스펙.
+## 목적 ^purpose
+
+`Number.MAX_SAFE_INTEGER`(2^53)를 초과하는 shape product에 대한 BigInt 기반 주소 인코딩/디코딩.
+weighted-index와 index-meta 양쪽에 걸치는 횡단 스펙.
 
 관련 스펙: [weighted-index/core.spec.md](weighted-index/core.spec.md) · [index-meta/codec.spec.md](index-meta/codec.spec.md) · [index-meta/registry.spec.md](index-meta/registry.spec.md)
 용량 가드 문서: [index-meta/docs/capacity-guard.md](../../../packages/index-meta/docs/capacity-guard.md)

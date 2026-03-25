@@ -4,6 +4,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
+  lifecycle: approved
 ---
 
 # Spec Propagation Pipeline — 스펙 작성 → 고정 → 전파

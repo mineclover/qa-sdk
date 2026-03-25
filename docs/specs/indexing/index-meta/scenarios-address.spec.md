@@ -1,9 +1,21 @@
+---
+def:
+  id: address-scenarios
+  scope: feature
+  aspect: scenario
+  depth: validation
+  lifecycle: approved
+  tags: [testing]
+---
+
 # 외부 시스템 통합 시나리오 (AddressProtocolManager)
 
-> 구현: `AddressProtocolManager` (`address-protocol-manager.ts`)
-> 테스트: `address-protocol-manager.test.ts`
-> ADR: [adr-address-separation.md](adr-address-separation.md)
-> Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
+## 목적 ^purpose
+
+구현: `AddressProtocolManager` (`address-protocol-manager.ts`)
+테스트: `address-protocol-manager.test.ts`
+ADR: [adr-address-separation.md](adr-address-separation.md)
+Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
 
 ## 상태
 

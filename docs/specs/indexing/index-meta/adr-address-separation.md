@@ -1,10 +1,22 @@
+---
+def:
+  id: adr-address-separation
+  scope: constraint
+  aspect: tech_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [decision]
+---
+
 # ADR: Address 직렬화 — AddressProtocolManager 분리
 
-> 상태: **구현 완료** (2026-03-15)
->
-> 관련 스펙: [registry.spec.md](registry.spec.md), [address.spec.md](address.spec.md)
-> 유저 시나리오: [scenarios.spec.md](scenarios.spec.md) §17–19
-> 구현: `address-protocol-manager.ts`, `address-protocol-manager.test.ts`
+## 목적 ^purpose
+
+상태: **구현 완료** (2026-03-15)
+
+관련 스펙: [registry.spec.md](registry.spec.md), [address.spec.md](address.spec.md)
+유저 시나리오: [scenarios.spec.md](scenarios.spec.md) §17–19
+구현: `address-protocol-manager.ts`, `address-protocol-manager.test.ts`
 
 ---
 

@@ -1,11 +1,22 @@
+---
+def:
+  id: spec-engine-phases
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # Spec Engine — 구현 단계 계획
 
-> **Status: IN PROGRESS**
->
-> 목표: 작은 세계를 구체화하는 도구 인프라
->
-> indexing 레이어(수학/어휘/버전/프로토콜)는 변경 없이 유지.
-> spec-engine은 그 위에서 "왜 이 구성인가, 밖에서 뭘 보는가"를 정의한다.
+## 목적 ^purpose
+
+**Status: IN PROGRESS**
+
+목표: 작은 세계를 구체화하는 도구 인프라
+
+indexing 레이어(수학/어휘/버전/프로토콜)는 변경 없이 유지.
+spec-engine은 그 위에서 "왜 이 구성인가, 밖에서 뭘 보는가"를 정의한다.
 
 ---
 

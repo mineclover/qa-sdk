@@ -1,11 +1,22 @@
+---
+def:
+  id: indexing-architecture
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # 시스템 아키텍처 — 구조 운영 시스템 전체 설계
 
-> **Status: DRAFT**
->
-> **고정 좌표계 기반의 구조 스키마 및 추적 시스템.**
-> 문서 정의, 구조 스키마, 식별자, 런타임 로그를 하나의 canonical coordinate system 위에 정렬하는 구조 운영 시스템.
->
-> **이 시스템은 의미를 소유하지 않는다.** 구조를 정의하고, 식별 가능하게 만들고, 기록하고, 추적 가능하게 만든다.
+## 목적 ^purpose
+
+**Status: DRAFT**
+
+**고정 좌표계 기반의 구조 스키마 및 추적 시스템.**
+문서 정의, 구조 스키마, 식별자, 런타임 로그를 하나의 canonical coordinate system 위에 정렬하는 구조 운영 시스템.
+
+**이 시스템은 의미를 소유하지 않는다.** 구조를 정의하고, 식별 가능하게 만들고, 기록하고, 추적 가능하게 만든다.
 
 기반: [coordinate-states.md](coordinate-states.md) · [schema-layer.md](schema-layer.md) · [event-schema.md](event-schema.md)
 

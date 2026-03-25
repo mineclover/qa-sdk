@@ -1,7 +1,18 @@
+---
+def:
+  id: runtime-flows-spec
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+
 # 런타임 흐름 스펙
 
-> 운영 시나리오를 **동기 / 비동기 / 디버깅** 3개 경로로 분리하여 정의한다.
-> 각 경로의 단계에 심볼을 부여하고, 모듈 스펙에서 cross-reference로 사용한다.
+## 목적 ^purpose
+
+운영 시나리오를 **동기 / 비동기 / 디버깅** 3개 경로로 분리하여 정의한다.
+각 경로의 단계에 심볼을 부여하고, 모듈 스펙에서 cross-reference로 사용한다.
 
 ## 상태
 

@@ -1,8 +1,19 @@
+---
+def:
+  id: dx-lifecycle-spec
+  scope: flow
+  aspect: user_scenario
+  depth: specification
+  lifecycle: approved
+---
+
 # DX 라이프사이클 스펙
 
-> CLI, 코드젠, 타입 추론, 와이어 포맷을 아우르는 개발자 경험(DX) 전체 동선.
-> IndexSDK 기반 소비 패턴: [sdk.spec.md](sdk.spec.md)
-> 슬롯 마커: [../slot-marker.spec.md](../slot-marker.spec.md)
+## 목적 ^purpose
+
+CLI, 코드젠, 타입 추론, 와이어 포맷을 아우르는 개발자 경험(DX) 전체 동선.
+IndexSDK 기반 소비 패턴: [sdk.spec.md](sdk.spec.md)
+슬롯 마커: [../slot-marker.spec.md](../slot-marker.spec.md)
 
 ---
 

@@ -1,12 +1,23 @@
+---
+def:
+  id: schema-layer-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # Schema Layer — 구조 정의 시스템
 
-> **Status: DRAFT**
->
-> **"스키마 시스템은 구조를 정의하고 검증하지만, 그 구조의 의미를 소유하지 않는다."**
-> **Schema validates composition, not truth.**
->
-> 이 시스템은 온톨로지 엔진이 아니라 그 앞단의 **스키마 시스템**이다.
-> "의미를 추론하는 시스템"이 아니라 "의미가 올라탈 구조를 고정하는 시스템".
+## 목적 ^purpose
+
+**Status: DRAFT**
+
+**"스키마 시스템은 구조를 정의하고 검증하지만, 그 구조의 의미를 소유하지 않는다."**
+**Schema validates composition, not truth.**
+
+이 시스템은 온톨로지 엔진이 아니라 그 앞단의 **스키마 시스템**이다.
+"의미를 추론하는 시스템"이 아니라 "의미가 올라탈 구조를 고정하는 시스템".
 
 기반: [coordinate-states.md](coordinate-states.md) · [event-schema.md](event-schema.md)
 

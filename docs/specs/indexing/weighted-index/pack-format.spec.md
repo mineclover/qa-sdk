@@ -4,6 +4,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  lifecycle: approved
 ---
 
 # pack-format 스펙

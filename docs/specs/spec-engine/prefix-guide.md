@@ -1,10 +1,22 @@
+---
+def:
+  id: prefix-guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point]
+---
+
 # Prefix 실용 가이드 — 페이지, API, 환경, 관측 포인트
 
-> **Status: DESIGN**
->
-> prefix가 실제로 무엇을 표현하는지,
-> 환경 변수로 어떻게 오버라이드하는지,
-> 비즈니스 로직의 관측 포인트를 어떻게 정의하는지.
+## 목적 ^purpose
+
+**Status: DESIGN**
+
+prefix가 실제로 무엇을 표현하는지,
+환경 변수로 어떻게 오버라이드하는지,
+비즈니스 로직의 관측 포인트를 어떻게 정의하는지.
 
 기반: [decision-standard.md](decision-standard.md) · [README.md](README.md)
 

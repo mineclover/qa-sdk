@@ -1,7 +1,18 @@
+---
+def:
+  id: index-meta-store
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+
 # IndexMetaStore 스펙
 
-> index-meta의 DB 저장 레이어.
-> 테이블 버전 메타(schema_version)와 실제 entry 데이터(entry)를 저장하고 조회한다.
+## 목적 ^purpose
+
+index-meta의 DB 저장 레이어.
+테이블 버전 메타(schema_version)와 실제 entry 데이터(entry)를 저장하고 조회한다.
 
 패키지 인덱스: [README.md](README.md)
 스키마 선언 레이어: [table-schema.spec.md](table-schema.spec.md)

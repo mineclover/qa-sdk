@@ -1,14 +1,25 @@
+---
+def:
+  id: behavioral-traversal
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # 행위 축 탐색 — 데이터 흐름 경로 추적
 
-> **Status: DRAFT — 목표 스펙 (전제 조건 미충족)**
->
-> 좌표 타입 시스템이 "어떤 타입이 존재하는가"(정적)를 정의한다면,
-> 행위 축 탐색은 "그 타입이 어떤 경로로 흘러가는가"(동적)를 정의한다.
->
-> 서비스가 어떤 generate → transfer → consume → store를 하느냐,
-> 어떻게 데이터가 전이되어 저장되고, 어떤 enum 데이터가 활용되느냐의 흐름.
-> 결과적으로 **어떤 prefix가 단일 원천으로 존재하는가**를 담는다.
-> 그래서 로깅 시스템이 들어간다.
+## 목적 ^purpose
+
+**Status: DRAFT — 목표 스펙 (전제 조건 미충족)**
+
+좌표 타입 시스템이 "어떤 타입이 존재하는가"(정적)를 정의한다면,
+행위 축 탐색은 "그 타입이 어떤 경로로 흘러가는가"(동적)를 정의한다.
+
+서비스가 어떤 generate → transfer → consume → store를 하느냐,
+어떻게 데이터가 전이되어 저장되고, 어떤 enum 데이터가 활용되느냐의 흐름.
+결과적으로 **어떤 prefix가 단일 원천으로 존재하는가**를 담는다.
+그래서 로깅 시스템이 들어간다.
 
 기반: [coordinate-states.md](coordinate-states.md) · [data-design.md](data-design.md)
 

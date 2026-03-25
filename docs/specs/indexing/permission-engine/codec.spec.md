@@ -1,7 +1,19 @@
+---
+def:
+  id: perm-codec-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  tags: [security]
+---
+
 # permission-engine codec 스펙
 
-> `PermissionCodec`은 `permission-engine`의 address codec layer다.
-> Tier 1 text permission code, Tier 2 1D integer address, Tier 3 binary bitmask를 같은 닫힌 주소 공간으로 연결한다.
+## 목적 ^purpose
+
+`PermissionCodec`은 `permission-engine`의 address codec layer다.
+Tier 1 text permission code, Tier 2 1D integer address, Tier 3 binary bitmask를 같은 닫힌 주소 공간으로 연결한다.
 
 패키지: `permission-engine`
 운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)

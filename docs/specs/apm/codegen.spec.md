@@ -1,6 +1,17 @@
+---
+def:
+  id: codegen-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+---
+
 # Codegen — Protobuf + CLI 타입 공급 파이프라인
 
-> Registry의 SchemaSnapshot에서 protobuf 메시지 정의와 TypeScript 타입을 자동 생성하는 CLI codegen 파이프라인을 정의한다.
+## 목적 ^purpose
+
+Registry의 SchemaSnapshot에서 protobuf 메시지 정의와 TypeScript 타입을 자동 생성하는 CLI codegen 파이프라인을 정의한다.
 
 ## 파이프라인 개요
 

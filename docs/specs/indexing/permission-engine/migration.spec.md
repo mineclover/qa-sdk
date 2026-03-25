@@ -1,7 +1,19 @@
+---
+def:
+  id: perm-migration-spec
+  scope: feature
+  aspect: func_def
+  depth: specification
+  lifecycle: approved
+  tags: [migration]
+---
+
 # permission-engine migration 스펙
 
-> `migration.ts`는 `PermissionSet`의 shape가 바뀔 때 기존 grant bit를 새 `[feature, role]` 좌표계로 재배치하는 적응 레이어다.
-> 기본 경로는 ID 매칭 기반 자동 변환이고, rename/split/merge 같은 비호환 변경은 `CoordMapper`로 호출자가 명시적으로 보정한다.
+## 목적 ^purpose
+
+`migration.ts`는 `PermissionSet`의 shape가 바뀔 때 기존 grant bit를 새 `[feature, role]` 좌표계로 재배치하는 적응 레이어다.
+기본 경로는 ID 매칭 기반 자동 변환이고, rename/split/merge 같은 비호환 변경은 `CoordMapper`로 호출자가 명시적으로 보정한다.
 
 패키지: `permission-engine`
 운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
