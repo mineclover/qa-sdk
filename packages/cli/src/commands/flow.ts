@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
 import { compareTimestamps, normalizeTimestamp } from "@qa-sdk/core";
 import { SqliteInstanceStore } from "../stores/flow-sqlite-store.js";
+import { FlowIngestEmitter } from "../stores/flow-ingest-emitter.js";
 import {
   FlowEngine,
   ALL_SPRINT_FLOWS,
@@ -72,6 +73,9 @@ function createFlowCliState(): FlowCliState {
   if (!existsSync(FLOW_STATE_DIR)) mkdirSync(FLOW_STATE_DIR, { recursive: true });
   const store = new SqliteInstanceStore(FLOW_STATE_DB);
   const engine = new FlowEngine({ instanceStore: store });
+
+  // ingest-server로 이벤트 전송 (INGEST_URL 또는 localhost:3200)
+  engine.addListener(new FlowIngestEmitter());
 
   return {
     engine,

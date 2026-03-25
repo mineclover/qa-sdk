@@ -27,6 +27,7 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "decision-flow": "workspace:*",
+    "definition-catalog": "workspace:*",
     "demo-snapshot": "workspace:*",
     "execa": "^9.6.1"
   },

@@ -110,6 +110,9 @@ importers:
       decision-flow:
         specifier: workspace:*
         version: link:../decision-flow
+      definition-catalog:
+        specifier: workspace:*
+        version: link:../definition-catalog
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot

@@ -46,6 +46,7 @@ import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth } from "./commands/service.js";
+import { cliDef } from "./commands/def.js";
 import {
   flowList,
   flowStart,
@@ -733,6 +734,16 @@ async function main() {
       await queryRules(sub.rest);
       return;
 
+    // Definition Catalog 명령어
+    case "def scan":     await cliDef(["scan"]); return;
+    case "def topdown":  await cliDef(["topdown", ...sub.rest]); return;
+    case "def bottomup": await cliDef(["bottomup", ...sub.rest]); return;
+    case "def context":  await cliDef(["context", ...sub.rest]); return;
+    case "def audit":    await cliDef(["audit"]); return;
+    case "def validate": await cliDef(["validate"]); return;
+    case "def stats":    await cliDef(["stats"]); return;
+    case "def":          await cliDef(sub.rest); return;
+
     // Catalog 명령어
     case "catalog list": {
       const reg = getCatalogRegistry();
@@ -869,6 +880,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
+    "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",
