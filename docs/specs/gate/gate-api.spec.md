@@ -16,7 +16,9 @@ def:
 
 > RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요구만 기술한다. ^purpose
 
-## 엔드포인트 ^overview
+## 엔드포인트
+
+6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges ^overview
 
 ### POST /gate/check
 
@@ -71,7 +73,9 @@ leaf 변경을 composite까지 전파한다.
 응답: { ranges: [number,number][] }
 ```
 
-## 에러 코드 ^overview
+## 에러 코드
+
+NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종 ^overview
 
 | 코드 | 의미 |
 |------|------|

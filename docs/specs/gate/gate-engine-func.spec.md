@@ -13,7 +13,9 @@ def:
 
 > 주소 상태 자동 계산 엔진의 기능과 동작 규칙. ^purpose
 
-## 핵심 기능 ^overview
+## 핵심 기능
+
+recompute(단일 재계산), cascadeRecompute(전파), gateFilterRanges(범위 필터) ^overview
 
 ### 상태 계산 (recompute)
 

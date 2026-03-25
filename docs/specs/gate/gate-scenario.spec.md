@@ -16,7 +16,9 @@ def:
 
 > 정상 encode, inactive dim, cascade, fail-open 등 gate 검증 시나리오. ^purpose
 
-## 시나리오 1: 정상 encode ^overview
+5개 시나리오: 정상encode, inactive dim, composite cascade, fail-open, filterRanges ^overview
+
+## 시나리오 1: 정상 encode
 
 - 전제: prefix "tracking" v2, 주소 42, dim 모두 active
 - 기대: checkGate → { allowed: true, state: "active", shouldVerify: false }

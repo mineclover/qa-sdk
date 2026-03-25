@@ -15,7 +15,9 @@ def:
 
 > encode/recompute/query 경로별 gate 상태 확인과 전파 순서. ^purpose
 
-## 흐름 1: encode 경로 ^overview
+3개 경로: encode(checkGate→허용/차단), 상태변경(recompute→cascade), query(filterRanges) ^overview
+
+## 흐름 1: encode 경로
 
 ```
 클라이언트 → encode 요청

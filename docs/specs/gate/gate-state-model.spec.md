@@ -13,7 +13,9 @@ def:
 
 > 주소 공간의 active/inactive/open/reserved 4가지 상태와 전이 규칙. ^purpose
 
-## 상태 정의 ^overview
+## 상태 정의
+
+active(허용/허용), inactive(차단/허용), open(허용/차단), reserved(차단/차단) ^overview
 
 | 상태 | encode | decode | 의미 |
 |------|--------|--------|------|

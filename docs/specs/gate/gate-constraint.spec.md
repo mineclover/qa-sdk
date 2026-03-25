@@ -14,7 +14,9 @@ def:
 
 > fail-open, 읽기 전용 캐시, composite AND 등 gate 불변 조건과 보안/성능 제약. ^purpose
 
-## 불변 조건 ^overview
+4개 불변조건: fail-open, 읽기전용캐시, composite AND, inactive∩open→reserved ^overview
+
+## 불변 조건
 
 1. **Fail-open**: gate check 실패 시 허용 + warning diagnostic. 차단하지 않는다.
 2. **gate-service = 읽기 전용 캐시**: GateEngine 인스턴스를 직접 보유하지 않는다. 계산은 index-meta가 수행.
