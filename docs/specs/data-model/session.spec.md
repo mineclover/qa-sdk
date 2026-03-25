@@ -1,6 +1,14 @@
+---
+def:
+  id: session-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
 # QA Session + SessionStore
 
-> QA 세션 단위 식별. 하나의 테스트/검증 세션을 추적한다.
+> qa_session_id 기반 세션 식별 — 테스트/검증 세션 단위 추적. ^purpose
 
 ## 상태
 

@@ -1,6 +1,14 @@
+---
+def:
+  id: verdict-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
 # Verdict API
 
-> Verdict 조회 및 강제 재계산.
+> 시나리오 verdict 조회 및 강제 재계산 API. ^purpose
 
 ## 상태
 

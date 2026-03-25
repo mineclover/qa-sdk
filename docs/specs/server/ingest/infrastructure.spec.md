@@ -1,7 +1,15 @@
+---
+def:
+  id: ingest-infra-spec
+  scope: constraint
+  aspect: infra_constraint
+  depth: specification
+  lifecycle: approved
+  tags: [performance, observability]
+---
 # Infrastructure
 
-> 횡단 관심사 — health check, rate limiting, request ID, graceful shutdown.
-> 인증은 게이트웨이 레벨에서 처리하며 내부 서비스는 투명하게 동작한다.
+> health check, rate limiting, request ID, graceful shutdown 등 ingest 서비스 인프라 제약. ^purpose
 
 ## 상태
 

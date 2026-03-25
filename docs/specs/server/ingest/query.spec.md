@@ -1,6 +1,21 @@
+---
+def:
+  id: query-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: record-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
+---
 # Query API
 
-> 저장된 trace, session, record를 cursor 기반 pagination으로 조회.
+> trace, session, record를 cursor 기반 pagination으로 조회하는 읽기 전용 API. ^purpose
 
 ## 상태
 

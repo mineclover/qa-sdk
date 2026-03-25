@@ -1,6 +1,14 @@
+---
+def:
+  id: admin-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
 # Admin API
 
-> 운영 관리용 내부 엔드포인트. DLQ 조회/재시도, 만료 데이터 정리.
+> 운영 관리용 내부 엔드포인트 — DLQ 조회/재시도, 만료 데이터 정리. ^purpose
 
 ## 상태
 

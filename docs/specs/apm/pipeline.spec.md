@@ -1,6 +1,20 @@
+---
+def:
+  id: ingest-pipeline-flow
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  tags: [observability, performance]
+  links:
+    - target: ingest-api-spec
+      type: refines
+    - target: record-spec
+      type: depends_on
+---
 # Pipeline — 파이프라인 고도화
 
-> 기존 텔레메트리 파이프라인(Phase 1 ingest + Phase 2 async worker)을 APM 주소 체계 위에서 동작하도록 확장한다. enrichAddressContext 미들웨어, metric aggregation, Range Query, SSE 축별 구독을 정의한다.
+> Phase 1(동기 저장) + Phase 2(비동기 재구성/판정) 2단계 파이프라인 처리 흐름. ^purpose
 
 ## 현재 파이프라인
 

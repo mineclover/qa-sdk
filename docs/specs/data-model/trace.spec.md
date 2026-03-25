@@ -1,6 +1,14 @@
+---
+def:
+  id: trace-spec
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
 # Trace + TraceStore
 
-> trace_id 단위 메타데이터 집계와 reconstruction 상태 관리.
+> trace_id 단위 메타데이터 집계와 reconstruction 상태 관리. ^purpose
 
 ## 상태
 

@@ -1,6 +1,14 @@
+---
+def:
+  id: stream-api-spec
+  scope: interface
+  aspect: event_contract
+  depth: specification
+  lifecycle: approved
+---
 # SSE 실시간 스트리밍
 
-> 디버그 모드에서 특정 trace 또는 session을 구독하여 새 이벤트를 실시간 수신.
+> 특정 trace 또는 session을 SSE로 구독하여 새 이벤트를 실시간 수신. ^purpose
 
 ## 상태
 

@@ -1,6 +1,14 @@
+---
+def:
+  id: scenario-api-spec
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+---
 # Scenario API
 
-> ScenarioSpec CRUD — 시나리오 스펙 등록, 조회, 삭제.
+> ScenarioSpec CRUD — 시나리오 스펙 등록, 조회, 삭제. ^purpose
 
 ## 상태
 
