@@ -1,7 +1,7 @@
 /**
  * Ingest 시스템 기능 분할 검증
  *
- * 11개 문서를 scope별로 분할한 ingest 시스템이
+ * 14개 멤버 문서를 scope별로 분할한 ingest 시스템이
  * 올바르게 등록, 조립, 전파되는지 확인한다.
  */
 
@@ -17,6 +17,19 @@ const ROOT = join(import.meta.dirname, "../../..");
 
 let result: ScanResult;
 let bodies: Map<string, string>;
+
+const INGEST_MEMBER_IDS = [
+  "ingest-api-spec", "query-api-spec", "scenario-api-spec",
+  "stream-api-spec", "verdict-api-spec", "admin-api-spec",
+  "record-spec", "trace-spec", "session-spec",
+  "ingest-pipeline-flow", "ingest-infra-spec",
+  "browser-session-spec", "dlq-store-spec", "transmission-spec",
+];
+
+const INGEST_IDS = [
+  "ingest-system",
+  ...INGEST_MEMBER_IDS,
+];
 
 beforeAll(async () => {
   result = await scanAndBuild(ROOT, [join(ROOT, "docs")]);
@@ -34,15 +47,7 @@ beforeAll(async () => {
 });
 
 describe("ingest 문서 등록", () => {
-  const INGEST_IDS = [
-    "ingest-system",
-    "ingest-api-spec", "query-api-spec", "scenario-api-spec",
-    "stream-api-spec", "verdict-api-spec", "admin-api-spec",
-    "record-spec", "trace-spec", "session-spec",
-    "ingest-pipeline-flow", "ingest-infra-spec",
-  ];
-
-  it("12건 모두 등록된다 (그룹 1 + 멤버 11)", () => {
+  it("15건 모두 등록된다 (그룹 1 + 멤버 14)", () => {
     for (const id of INGEST_IDS) {
       expect(result.registry.get(id), `${id} 미등록`).toBeDefined();
     }
@@ -55,29 +60,27 @@ describe("ingest 문서 등록", () => {
     expect(ingestErrors).toEqual([]);
   });
 
-  it("scope 분포: interface 6, data 3, flow 2, constraint 1", () => {
+  it("scope 분포: interface 6, data 5, flow 2, constraint 1, feature 1", () => {
     const ingestDocs = result.registry.all().filter(e =>
-      ["ingest-system", "ingest-api-spec", "query-api-spec", "scenario-api-spec",
-       "stream-api-spec", "verdict-api-spec", "admin-api-spec",
-       "record-spec", "trace-spec", "session-spec",
-       "ingest-pipeline-flow", "ingest-infra-spec"].includes(e.id),
+      INGEST_IDS.includes(e.id),
     );
     const byScope: Record<string, number> = {};
     for (const d of ingestDocs) {
       byScope[d.scope] = (byScope[d.scope] ?? 0) + 1;
     }
     expect(byScope.interface).toBe(6);
-    expect(byScope.data).toBe(3);
+    expect(byScope.data).toBe(5);
     expect(byScope.flow).toBe(2); // ingest-system(overview) + pipeline(specification)
     expect(byScope.constraint).toBe(1);
+    expect(byScope.feature).toBe(1);
   });
 });
 
 describe("ingest-system 그룹 조립", () => {
-  it("contains 멤버 11건 이상", () => {
+  it("contains 멤버 14건", () => {
     const links = result.registry.getLinks("ingest-system", "outgoing")
       .filter(l => l.linkType === "contains");
-    expect(links.length).toBeGreaterThanOrEqual(11);
+    expect(links.length).toBe(14);
   });
 
   it("assembleFeature purpose 수준", () => {
@@ -91,7 +94,7 @@ describe("ingest-system 그룹 조립", () => {
 
     expect(assembled).not.toBeNull();
     expect(assembled!.group.purpose).toContain("수집 파이프라인");
-    expect(assembled!.members.length).toBeGreaterThanOrEqual(11);
+    expect(assembled!.members.length).toBe(14);
 
     // 모든 멤버에 purpose가 있다
     for (const m of assembled!.members) {
@@ -124,6 +127,8 @@ describe("ingest-system 그룹 조립", () => {
     expect(text).toContain("qa_session_id");           // session-spec
     expect(text).toContain("Phase 1");                 // pipeline
     expect(text).toContain("health check");            // infra
+    expect(text).toContain("브라우저 탭");             // browser-session
+    expect(text).toContain("배치 단위");               // transmission-spec
   });
 });
 
@@ -157,6 +162,17 @@ describe("concern 전파", () => {
 });
 
 describe("link 연결", () => {
+  it("ingest-system 멤버 14건 모두 outgoing links가 있다", () => {
+    for (const id of INGEST_MEMBER_IDS) {
+      expect(result.registry.getLinks(id, "outgoing").length, `${id} links 없음`).toBeGreaterThan(0);
+    }
+  });
+
+  it("ingest-api-spec → transmission-spec (depends_on)", () => {
+    const links = result.registry.getLinks("ingest-api-spec", "outgoing");
+    expect(links.some(l => l.targetId === "transmission-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
   it("query-api-spec → record-spec (depends_on)", () => {
     const links = result.registry.getLinks("query-api-spec", "outgoing");
     expect(links.some(l => l.targetId === "record-spec" && l.linkType === "depends_on")).toBe(true);
@@ -170,5 +186,45 @@ describe("link 연결", () => {
   it("ingest-pipeline-flow → ingest-api-spec (refines)", () => {
     const links = result.registry.getLinks("ingest-pipeline-flow", "outgoing");
     expect(links.some(l => l.targetId === "ingest-api-spec" && l.linkType === "refines")).toBe(true);
+  });
+
+  it("scenario-api-spec → scenario-store-spec (depends_on)", () => {
+    const links = result.registry.getLinks("scenario-api-spec", "outgoing");
+    expect(links.some(l => l.targetId === "scenario-store-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("stream-api-spec → session-spec (depends_on)", () => {
+    const links = result.registry.getLinks("stream-api-spec", "outgoing");
+    expect(links.some(l => l.targetId === "session-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("verdict-api-spec → trace-spec (depends_on)", () => {
+    const links = result.registry.getLinks("verdict-api-spec", "outgoing");
+    expect(links.some(l => l.targetId === "trace-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("admin-api-spec → dlq-store-spec (depends_on)", () => {
+    const links = result.registry.getLinks("admin-api-spec", "outgoing");
+    expect(links.some(l => l.targetId === "dlq-store-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("ingest-infra-spec → ingest-api-spec (constrains)", () => {
+    const links = result.registry.getLinks("ingest-infra-spec", "outgoing");
+    expect(links.some(l => l.targetId === "ingest-api-spec" && l.linkType === "constrains")).toBe(true);
+  });
+
+  it("browser-session-spec → session-spec (depends_on)", () => {
+    const links = result.registry.getLinks("browser-session-spec", "outgoing");
+    expect(links.some(l => l.targetId === "session-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("transmission-spec → record-spec (depends_on)", () => {
+    const links = result.registry.getLinks("transmission-spec", "outgoing");
+    expect(links.some(l => l.targetId === "record-spec" && l.linkType === "depends_on")).toBe(true);
+  });
+
+  it("dlq-store-spec → trace-spec (depends_on)", () => {
+    const links = result.registry.getLinks("dlq-store-spec", "outgoing");
+    expect(links.some(l => l.targetId === "trace-spec" && l.linkType === "depends_on")).toBe(true);
   });
 });

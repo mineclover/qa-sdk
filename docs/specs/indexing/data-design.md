@@ -4,7 +4,11 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 # 좌표 시스템 설계 구조
 

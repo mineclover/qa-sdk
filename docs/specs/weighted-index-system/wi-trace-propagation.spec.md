@@ -5,11 +5,16 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: wi-trace-group
       type: member_of
     - target: wi-trace-axes
       type: depends_on
+    - target: wi-codec
+      type: refines
+    - target: partial-binder-spec
+      type: refines
 ---
 # weighted-index 변경 전파 경로
 

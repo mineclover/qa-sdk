@@ -5,6 +5,10 @@ def:
   aspect: component
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: motion-content-glossary
+      type: depends_on
 ---
 # Motion Content Editor 컴포넌트
 

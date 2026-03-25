@@ -4,6 +4,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  lifecycle: deprecated
+  links:
+    - target: definition-catalog-spec
+      type: depends_on
 ---
 
 # Spec Engine — 코어 타입 정의

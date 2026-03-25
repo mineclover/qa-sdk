@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: registry-data-model
+      type: depends_on
 ---
 # 규칙 영속화 (PolicyRule Store)
 

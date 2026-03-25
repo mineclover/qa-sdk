@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: wi-api
+      type: depends_on
+    - target: wi-math
+      type: depends_on
 ---
 
 # weighted-index partial-binder 스펙

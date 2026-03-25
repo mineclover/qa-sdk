@@ -4,7 +4,11 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 
 # BigInt 주소 체계 스펙

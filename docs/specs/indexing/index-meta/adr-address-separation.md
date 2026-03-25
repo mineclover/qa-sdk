@@ -4,8 +4,15 @@ def:
   scope: constraint
   aspect: tech_constraint
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [decision]
+  links:
+    - target: index-codec-spec
+      type: constrains
+    - target: resolver-spec
+      type: constrains
+    - target: index-meta-sdk-spec
+      type: constrains
 ---
 
 # ADR: Address 직렬화 — AddressProtocolManager 분리

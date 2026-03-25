@@ -5,6 +5,10 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: convergence-layer-spec
+      type: constrains
 ---
 
 # Axis Boundary — 축에 넣을 것과 넣지 않을 것

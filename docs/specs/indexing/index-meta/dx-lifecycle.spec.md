@@ -4,7 +4,15 @@ def:
   scope: flow
   aspect: user_scenario
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: index-codec-spec
+      type: refines
+    - target: resolver-spec
+      type: refines
+    - target: index-meta-sdk-spec
+      type: refines
 ---
 
 # DX 라이프사이클 스펙

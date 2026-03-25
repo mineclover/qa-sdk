@@ -5,6 +5,11 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: dkg-node-types
+      type: depends_on
+    - target: dkg-edge-types
+      type: depends_on
 ---
 
 # DKG Skills — 종단 파이프라인과 자동화 가능 연산

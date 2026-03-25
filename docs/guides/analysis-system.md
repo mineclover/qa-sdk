@@ -5,6 +5,9 @@ def:
   aspect: user_scenario
   depth: overview
   lifecycle: deprecated
+  links:
+    - target: analysis-convergence
+      type: refines
 ---
 
 # 분석 시스템 상세 가이드

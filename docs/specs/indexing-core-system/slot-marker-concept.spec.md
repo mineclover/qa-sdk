@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: wi-pack-format-def
+      type: depends_on
 ---
 # 슬롯 마커의 개념
 

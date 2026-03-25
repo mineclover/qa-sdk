@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: pipeline-enrichment
+      type: refines
+    - target: pipeline-metric-agg
+      type: refines
 ---
 
 # 인코딩/디코딩 파이프라인

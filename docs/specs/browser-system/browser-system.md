@@ -26,4 +26,9 @@ def:
 
 ## 구성 ^overview
 
-5개 정의: AutoCapture(DOM 이벤트), Transport(전송), Lifecycle(상태 전환), Monitor(모니터링), TraceContext(컨텍스트).
+overview: 총 5개 멤버.
+- `auto-capture-spec`: opt-in DOM 이벤트 자동 수집.
+- `browser-transport-spec`: 브라우저 언로드 타이밍에서도 이벤트를 누락하지 않는 전송 구현체.
+- `browser-lifecycle-spec`: QaMonitor의 상태 전환 규칙, 각 단계의 계약, 올바른 사용 패턴을 정의한다.
+- `browser-monitor-spec`: `@qa-sdk/browser` 패키지의 단일 진입점.
+- `trace-context-spec`: trace_id, span stack, qa_session_id를 관리하는 런타임 컨텍스트 객체.

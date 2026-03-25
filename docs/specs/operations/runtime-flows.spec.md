@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: cli-contract-spec
+      type: refines
+    - target: codegen-spec
+      type: refines
 ---
 
 # 런타임 흐름 스펙

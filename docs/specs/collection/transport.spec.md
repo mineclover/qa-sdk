@@ -5,13 +5,17 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: address-context-spec
+      type: depends_on
 ---
 
 # Transport
 
 ## 목적 ^purpose
 
-SDK의 전송 계층 인터페이스와 구현체.
+SDK가 수집 envelope을 외부 수집기로 전달하는 전송 계층의 역할, 공통 인터페이스, 기본 구현 범위를 정의한다.
 
 ## 상태
 

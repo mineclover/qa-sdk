@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: deprecated
   tags: [decision]
+  links:
+    - target: df-state-model
+      type: depends_on
 ---
 # Decision Flow — 서사 (Narrative)
 

@@ -5,6 +5,10 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 
 # Next Phase — Skills + 인프라 + 수집 테스트
@@ -14,6 +18,16 @@ def:
 prefix의 3가지 사용 모드를 인프라로 연결하고,
 skills/문서 자체도 prefix 기반으로 관리하며,
 이벤트 수집이 실제로 동작하는지 검증한다.
+
+## 구성 ^overview
+
+overview: 총 6개 멤버.
+- `prefix의 3가지 사용 모드`: prefix를 enum 공유, 이벤트 로깅, 권한 bitmask라는 세 가지 런타임 진입점으로 묶어 설명한다.
+- `skills/문서를 prefix로 관리`: skill과 문서 메타데이터를 prefix 주소로 승격해 DKG와 propagation에 연결하는 방향을 정리한다.
+- `환경 주입 — 3단계 PartialBinder`: 빌드, 배포, 런타임 단계별로 환경 차원을 주입하는 QaContext 연동 모델을 설명한다.
+- `이벤트 수집 인프라 — E2E 검증 필요`: SDK에서 ingest와 UsageData, convergence까지 이어지는 종단 수집 체인을 검증 대상으로 묶는다.
+- `구현 우선순위`: Phase A-D 순서로 수집, 권한, skill/doc prefix화, codegen 자동화 로드맵을 고정한다.
+- `3가지 사용 모드 × 진입점 매핑`: CLI, SDK, Server, DKG가 어떤 prefix 사용 모드를 담당하는지 한 표로 정리한다.
 
 ---
 

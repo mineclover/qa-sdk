@@ -9,6 +9,8 @@ def:
   links:
     - target: df-narrative-group
       type: member_of
+    - target: df-state-model
+      type: depends_on
 ---
 # Decision Flow — 서사 구조
 

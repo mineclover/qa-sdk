@@ -5,11 +5,19 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [security, tier-infra]
   contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
   links:
+    - target: gate-engine-core
+      type: contains
+    - target: gate-engine-aware-query
+      type: contains
+    - target: gate-engine-decorator
+      type: contains
     - target: gate-state-model
       type: depends_on
 ---
+
 # GateEngine 그룹
 
 ## 목적 ^purpose
@@ -18,7 +26,10 @@ index-meta 패키지의 GateEngine 라이브러리. 주소 상태 자동 재계�
 
 ## 구성 ^overview
 
-3개: GateEngine 코어(recompute/cascade), Decorator(DimStateSpec 주입), gate-aware-query(정책 합성).
+overview: 총 3개 멤버.
+- `gate-engine-core`: GateEngine 클래스의 코어 기능.
+- `gate-engine-decorator`: GateEngine Decorator 패턴.
+- `gate-engine-aware-query`: gate-aware-query — 정책 해소 결과에 gate 상태를 합성하여 최종 허용 범위를 결정하는 질의 레이어.
 
 | 문서 | 내용 |
 |------|------|

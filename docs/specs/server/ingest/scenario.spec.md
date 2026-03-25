@@ -5,6 +5,10 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: scenario-store-spec
+      type: depends_on
 ---
 # Scenario API
 

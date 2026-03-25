@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: range-query-spec
+      type: depends_on
+    - target: wi-hex-ops
+      type: depends_on
 ---
 
 # 벤치마크 — calcAddressRanges + BigInt/UUID

@@ -5,6 +5,14 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coordinate-states-spec
+      type: depends_on
+    - target: behavioral-traversal
+      type: depends_on
+    - target: ontology-eval
+      type: depends_on
 ---
 
 # 이벤트 스키마 — 관계 정의로서의 이벤트

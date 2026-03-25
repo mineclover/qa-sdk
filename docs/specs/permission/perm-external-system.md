@@ -5,26 +5,30 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [security, tier-backend]
+  links:
+    - target: perm-resource-model
+      type: contains
+    - target: perm-service-ref
+      type: contains
+    - target: perm-permission-code
+      type: contains
+    - target: perm-resource-spec
+      type: refines
 ---
+
 # perm-external-system
 
 ## 목적 ^purpose
 
-권한 엔진의 외부 식별자 레이어. resource, service-ref, permission-code로 권한을 외부 시스템에 노출한다.
+권한 엔진의 외부 식별자 레이어를 resource, service-ref, permission-code 세 문서로 분리해 외부 텍스트 계약과 서비스 경계를 안정적으로 유지한다.
 
-권한 엔진의 외부 식별자 레이어. resource, service-ref, permission-code로 권한을 외부 시스템에 노출한다.
+## 구성 ^overview
 
-## contains
-
-| 문서 | id | 설명 |
-|------|-----|------|
-| [perm-resource-model.spec.md](perm-resource-model.spec.md) | perm-resource-model | 리소스 식별자 모델 |
-| [perm-service-ref.spec.md](perm-service-ref.spec.md) | perm-service-ref | 서비스 참조(ServiceRef) 타입 |
-| [perm-permission-code.spec.md](perm-permission-code.spec.md) | perm-permission-code | 권한 코드 형식 |
-
-## overview
-
-3개: resource(리소스 식별), service-ref(서비스 참조), permission-code(권한 코드 형식).
+overview: 총 3개 멤버.
+- `perm-resource-model`: 리소스 식별자 모델과 path-like resource 규칙을 정의한다.
+- `perm-service-ref`: 서비스 참조(ServiceRef)와 배포 컨텍스트 표현을 정의한다.
+- `perm-permission-code`: service, type, resource, action을 결합한 permission code 형식을 정의한다.
 
 `resource.ts`, `service-ref.ts`, `permission-code.ts`는 `permission-engine`의 외부 식별자 레이어를 이룬다.
 서비스 경계, resource 규칙, 최종 permission code 문자열을 분리하여 `[S2]` 권한 해소 경로의 텍스트 계약을 안정화한다.

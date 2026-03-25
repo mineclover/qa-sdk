@@ -5,6 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: dimension-operations
+      type: depends_on
+    - target: table-system-spec
+      type: depends_on
 ---
 
 # DSL Bundle — prefix 묶음의 사용 패턴 정의

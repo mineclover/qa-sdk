@@ -15,6 +15,7 @@ def:
     - target: query-gate-integration
       type: contains
 ---
+
 # Query 시스템
 
 ## 목적 ^purpose
@@ -23,4 +24,7 @@ def:
 
 ## 구성 ^overview
 
-3개 정의: 질의 API(resolve/match/compose), 규칙 영속화(PolicyRule CRUD + 충돌 전략), Gate 통합(gateMode/withGate).
+overview: 총 3개 멤버.
+- `query-api`: 좌표 질의를 수행하는 REST 엔드포인트.
+- `query-rules`: PolicyRule의 CRUD와 충돌 전략을 정의한다.
+- `query-gate-integration`: 질의 결과에 gate 상태를 합성하는 통합 경로.

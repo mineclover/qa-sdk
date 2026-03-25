@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: table-dimref-types
+      type: depends_on
+    - target: wi-api
+      type: depends_on
 ---
 
 # 축 교차 선택

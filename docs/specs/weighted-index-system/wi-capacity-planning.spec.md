@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: wi-pack-format-def
+      type: depends_on
+    - target: wi-semantic-address
+      type: depends_on
 ---
 # Capacity 계획
 

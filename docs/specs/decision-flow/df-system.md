@@ -27,7 +27,10 @@ def:
       type: contains
     - target: axis-decision-guide
       type: contains
+    - target: df-narrative-group
+      type: contains
 ---
+
 # Decision Flow 시스템
 
 ## 목적 ^purpose
@@ -36,4 +39,14 @@ def:
 
 ## 구성 ^overview
 
-7개 정의로 구성: 축 모델(11축 3층), 관찰 공간(5 prefix), 벡터 분석(diff/distribution/pattern), 구조적 제약(게이트 무게/계층), 상태 모델(서사 구조), 직렬화(SemanticAddress), 인과 매핑(X↔Y).
+overview: 총 10개 멤버.
+- `df-axis-model`: 의사결정 도메인의 11개 축 정의.
+- `df-observation-space`: 5개 prefix가 의사결정의 관찰 가능한 좌표 공간을 구성한다.
+- `df-vector-analysis`: 투영된 결정 벡터들의 분포, 차이, 이동, 패턴을 분석하는 기능.
+- `df-constraint`: 게이트 무게(core/structural/tactical), 인과 그래프(GateDependency), 결정 계층(strategic→tactical→operational→execution)과 컨텍스트 바운더리를 정의한다.
+- `df-state-model`: FlowInstance의 생명주기(pending→active→completed/abandoned/blocked)와 서사 구조(배경→여정→도달→산출→회고)를 정의한다.
+- `df-serialization`: 의사결정 좌표의 직렬화 형식.
+- `df-causal-mapping`: 비즈니스 요구(X)와 기술 구현(Y)을 의사결정 좌표로 연결하는 인과 증명 경로.
+- `decision-standard`: 새로운 요구사항이 들어왔을 때, 기존 prefix를 재사용할지 새 prefix를 만들지를 판단하고, DSL(prefix)을 정의하여 비즈니스 로직의 경우의 수를 제어하는 표준 프로세스.
+- `df-narrative`: 이 문서는 서사가 쌓이는 문서다.
+- `axis-decision-guide`: 이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.

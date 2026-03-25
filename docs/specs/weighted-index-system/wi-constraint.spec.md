@@ -5,15 +5,22 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: wi-api
+      type: constrains
+    - target: wi-codec
+      type: constrains
+    - target: partial-binder-spec
+      type: constrains
+    - target: range-query-spec
       type: constrains
 ---
 # Weighted-Index 제약
 
 ## 목적 ^purpose
 
-좌표 인코딩의 검증 규칙과 에러 계층을 정의한다.
+WeightedIndex 좌표 인코딩의 안전성을 보장하기 위한 검증 규칙, 용량 한계, 에러 경계를 정의한다.
 
 ## 검증 규칙 ^constraint
 

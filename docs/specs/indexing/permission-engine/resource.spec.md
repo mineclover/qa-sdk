@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: deprecated
   tags: [security]
+  links:
+    - target: perm-resource-model
+      type: depends_on
+    - target: perm-service-ref
+      type: depends_on
 ---
 # permission-engine resource identity 스펙
 

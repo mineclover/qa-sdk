@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [observability]
+  links:
+    - target: logger-spec
+      type: depends_on
 ---
 
 # Logger

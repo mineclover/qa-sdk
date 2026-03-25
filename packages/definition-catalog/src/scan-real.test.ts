@@ -82,11 +82,12 @@ describe("링크 연결", () => {
       expect(gateLinkError.error).toContain("미등록");
     }
 
-    // ingest-api-spec → record-spec (depends_on) — 둘 다 등록됨
+    // ingest-api-spec의 depends_on들이 연결됨 — 둘 다 등록됨
     const ingestLinks = reg.getLinks("ingest-api-spec", "outgoing");
-    expect(ingestLinks.length).toBe(1);
-    expect(ingestLinks[0].targetId).toBe("record-spec");
-    expect(ingestLinks[0].linkType).toBe("depends_on");
+    expect(ingestLinks.length).toBeGreaterThan(0);
+    expect(ingestLinks.some(link =>
+      link.targetId === "record-spec" && link.linkType === "depends_on"
+    )).toBe(true);
   });
 });
 

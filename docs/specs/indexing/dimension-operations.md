@@ -5,6 +5,9 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 
 # 차원 운영 — 축 교차, 환경 주입, 배포 시점 해석

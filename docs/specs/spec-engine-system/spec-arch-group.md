@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-system]
   links:
     - target: spec-arch-layers
       type: contains
@@ -13,6 +14,7 @@ def:
     - target: spec-arch-interceptors
       type: contains
 ---
+
 # Spec Engine 아키텍처
 
 ## 목적 ^purpose
@@ -21,7 +23,10 @@ spec-engine의 계층 분리 원칙, NestJS 모듈 구성, Decorator/Interceptor
 
 ## 구성 ^overview
 
-3개: 계층 분리, NestJS 모듈 의존 그래프, Decorator/Interceptor 패턴.
+overview: 총 3개 멤버.
+- `spec-arch-layers`: spec-engine의 계층 분리 원칙.
+- `spec-arch-nestjs`: NestJS 모듈 구성과 의존 그래프.
+- `spec-arch-interceptors`: Decorator와 Interceptor 설계.
 
 | 문서 | 핵심 |
 |------|------|

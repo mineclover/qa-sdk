@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [security]
+  links:
+    - target: registry-services-api-spec
+      type: depends_on
 ---
 # perm-service-ref
 

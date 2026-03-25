@@ -5,6 +5,10 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: registry-data-model
+      type: depends_on
 ---
 # Registry 버전 라이프사이클
 

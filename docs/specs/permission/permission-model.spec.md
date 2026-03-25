@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [security]
+  links:
+    - target: perm-resource-model
+      type: depends_on
+    - target: perm-service-ref
+      type: depends_on
 ---
 # 권한 모델
 

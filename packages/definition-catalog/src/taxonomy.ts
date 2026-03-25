@@ -9,7 +9,7 @@
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
-import type { DefScope, DefAspect, ConcernTag, StructuralTag, KnownTag } from "./types.js";
+import type { DefScope, DefAspect, ConcernTag, StructuralTag, TierTag, KnownTag } from "./types.js";
 
 // ─── 분류 체계 트리 ──────────────────────────────────────
 
@@ -187,8 +187,13 @@ export const STRUCTURAL_TAGS: readonly StructuralTag[] = [
   "cross-scope", "entry-point", "decision", "generated",
 ];
 
+/** 계층 태그 목록 */
+export const TIER_TAGS: readonly TierTag[] = [
+  "tier-frontend", "tier-backend", "tier-infra", "tier-system",
+];
+
 /** 알려진 태그 전체 목록 */
-export const KNOWN_TAGS: readonly KnownTag[] = [...CONCERN_TAGS, ...STRUCTURAL_TAGS];
+export const KNOWN_TAGS: readonly KnownTag[] = [...CONCERN_TAGS, ...STRUCTURAL_TAGS, ...TIER_TAGS];
 
 /**
  * 태그가 알려진 태그인지 확인한다.

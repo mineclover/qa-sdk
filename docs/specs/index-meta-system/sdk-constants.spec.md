@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: canonical-format-spec
+      type: depends_on
+    - target: sdk-dim-views
+      type: depends_on
 ---
 # sdk-constants
 

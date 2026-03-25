@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: cq-policy-resolver
       type: depends_on

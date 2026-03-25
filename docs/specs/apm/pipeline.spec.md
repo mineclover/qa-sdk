@@ -9,7 +9,17 @@ def:
   links:
     - target: ingest-api-spec
       type: refines
+    - target: transmission-spec
+      type: depends_on
     - target: record-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
+    - target: scenario-store-spec
+      type: depends_on
+    - target: dlq-store-spec
       type: depends_on
 ---
 # Pipeline — 파이프라인 고도화

@@ -5,6 +5,12 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: trace-context-spec
+      type: depends_on
+    - target: address-context-spec
+      type: depends_on
 ---
 
 # BeaconTransport

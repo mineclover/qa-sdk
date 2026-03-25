@@ -4,7 +4,11 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-system]
+  links:
+    - target: spec-core-types
+      type: depends_on
 ---
 # Convergence Layer — 수렴/비교/인과 발견
 

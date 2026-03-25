@@ -5,6 +5,13 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: coord-foundation
+      type: depends_on
+    - target: event-schema-spec
+      type: depends_on
+    - target: schema-layer-spec
+      type: depends_on
 ---
 # 테이블 시스템 — 좌표 세계와 관계형 세계의 양방향 연결
 

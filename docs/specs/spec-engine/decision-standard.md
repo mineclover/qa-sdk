@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: df-axis-model
+      type: constrains
+    - target: df-observation-space
+      type: constrains
 ---
 
 # 의사결정 표준 프로세스

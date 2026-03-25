@@ -6,7 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [entry-point]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
+
 # Definition Catalog — 소프트웨어 정의 좌표계
 
 ## 목적 ^purpose
@@ -276,7 +280,13 @@ RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요�
 
 ## 구성 ^overview
 
-6개 RPC: check, classify, getState, recompute, cascadeRecompute, filterRanges.
+overview: 총 6개 멤버.
+- `모델 정체성`: 문서 1개를 좌표 1개와 대응시키는 definition-catalog의 정체성과 decision-flow와의 관계를 정의한다.
+- `축 설계`: def_scope, def_aspect, def_depth, lifecycle, link_type 축과 5Q 자격 검증 원칙을 정리한다.
+- `분류 체계`: 7대 scope와 20개 aspect 조합으로 문서 좌표계를 운영하는 분류 규칙을 설명한다.
+- `Frontmatter 계약`: 문서 메타데이터, links, contains, tags를 YAML frontmatter로 선언하는 SSOT 계약을 다룬다.
+- `Registry와 조립`: Registry 인덱스, concern 전파, group/contains DAG, assembleFeature 조립 규칙을 설명한다.
+- `운영 컨벤션`: scope 선택, 링크 방향, 문서 분리, concern 태깅 같은 실전 작성 규칙과 구현 현황을 정리한다.
 에러 코드: NOT_FOUND, NOT_COMPUTED, STALE_CACHE 3종.
 
 ## 엔드포인트

@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [security]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
 # perm-resource-model
 

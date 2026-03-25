@@ -5,6 +5,10 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: slot-marker-concept
+      type: depends_on
 ---
 # 슬롯 마커의 실제 사용 패턴
 

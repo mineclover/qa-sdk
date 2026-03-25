@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
 # DKG 노드 유형
 

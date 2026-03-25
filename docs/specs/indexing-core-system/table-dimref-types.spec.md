@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: table-schema-def
+      type: depends_on
 ---
 # DimRef 두 종류 — axis vs table_ref
 

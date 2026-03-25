@@ -9,6 +9,8 @@ def:
   links:
     - target: gate-api
       type: constrains
+    - target: gate-engine-func
+      type: constrains
 ---
 # Gate 기술적 제약
 

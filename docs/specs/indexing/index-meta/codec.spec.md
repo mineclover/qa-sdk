@@ -5,6 +5,14 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: address-spec
+      type: depends_on
+    - target: canonical-format-spec
+      type: depends_on
+    - target: index-meta-store
+      type: depends_on
 ---
 
 # MetaCodec 스펙

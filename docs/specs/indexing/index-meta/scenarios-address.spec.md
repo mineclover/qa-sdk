@@ -4,8 +4,11 @@ def:
   scope: feature
   aspect: scenario
   depth: validation
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [testing]
+  links:
+    - target: index-codec-spec
+      type: traces_to
 ---
 
 # 외부 시스템 통합 시나리오 (AddressProtocolManager)

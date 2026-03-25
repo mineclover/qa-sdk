@@ -5,6 +5,14 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: index-codec-spec
+      type: constrains
+    - target: table-accessor-api
+      type: constrains
+    - target: index-meta-sdk-spec
+      type: constrains
 ---
 # conv-naming
 

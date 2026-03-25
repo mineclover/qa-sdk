@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [observability]
+  links:
+    - target: metrics-spec
+      type: depends_on
 ---
 # 파이프라인 자체 모니터링
 

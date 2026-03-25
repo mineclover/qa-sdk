@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: df-constraint
+      type: depends_on
 ---
 # Decision Flow 상태 모델
 

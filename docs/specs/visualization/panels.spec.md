@@ -5,6 +5,10 @@ def:
   aspect: layout
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: graph-renderer-spec
+      type: depends_on
 ---
 # 시각화 UI 패널 — 시나리오 선택, 이벤트 로그, Verdict 표시
 

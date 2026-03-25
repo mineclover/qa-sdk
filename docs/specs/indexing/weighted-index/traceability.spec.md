@@ -6,6 +6,11 @@ def:
   depth: validation
   lifecycle: deprecated
   tags: [testing]
+  links:
+    - target: wi-codec
+      type: traces_to
+    - target: range-query-spec
+      type: traces_to
 ---
 # weighted-index 변경 전파 추적성
 

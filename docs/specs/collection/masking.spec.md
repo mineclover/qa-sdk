@@ -6,13 +6,18 @@ def:
   depth: specification
   lifecycle: approved
   tags: [security]
+  links:
+    - target: perm-codec-spec
+      type: constrains
+    - target: perm-permission-code
+      type: constrains
 ---
 
 # applyMasking
 
 ## 목적 ^purpose
 
-클라이언트 측 payload 마스킹. 민감정보 보호.
+클라이언트 측 payload의 민감정보를 마스킹해 전송 전 노출을 줄이는 보안 규칙과 적용 범위를 정의한다.
 
 ## 상태
 

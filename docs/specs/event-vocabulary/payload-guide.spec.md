@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: event-core-pattern
+      type: depends_on
 ---
 
 # Payload Field Guide

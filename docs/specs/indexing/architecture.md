@@ -4,7 +4,15 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: coordinate-states-spec
+      type: depends_on
+    - target: schema-layer-spec
+      type: depends_on
+    - target: event-schema-spec
+      type: depends_on
 ---
 
 # 시스템 아키텍처 — 구조 운영 시스템 전체 설계

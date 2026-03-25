@@ -5,6 +5,14 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: dim-ops-cross-select
+      type: refines
+    - target: dim-ops-env-inject
+      type: refines
+    - target: dim-ops-deploy-resolve
+      type: refines
 ---
 
 # 차원 조합 패턴

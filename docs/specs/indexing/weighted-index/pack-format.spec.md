@@ -5,6 +5,9 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: wi-pack-format-def
+      type: depends_on
 ---
 
 # pack-format 스펙

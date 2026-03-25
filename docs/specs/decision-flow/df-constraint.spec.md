@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: df-vector-analysis
+      type: constrains
+    - target: df-causal-mapping
+      type: constrains
 ---
 # Decision Flow 구조적 제약
 

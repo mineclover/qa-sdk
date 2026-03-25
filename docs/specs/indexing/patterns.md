@@ -5,6 +5,12 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
+    - target: indexing-conventions
+      type: depends_on
 ---
 
 # 인덱싱 시스템 사용 패턴

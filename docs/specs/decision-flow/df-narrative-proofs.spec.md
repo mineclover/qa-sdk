@@ -9,6 +9,8 @@ def:
   links:
     - target: df-narrative-group
       type: member_of
+    - target: df-narrative-context
+      type: traces_to
 ---
 # Decision Flow — 서사 증명
 

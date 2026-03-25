@@ -5,12 +5,26 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: verdict-spec
+      type: depends_on
+    - target: graph-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
+    - target: scenario-store-spec
+      type: depends_on
+    - target: dlq-store-spec
+      type: depends_on
 ---
 # Verdict API
 
 ## 목적 ^purpose
 
-시나리오 verdict 조회 및 강제 재계산 API.
+trace와 session 단위의 시나리오 verdict를 조회하고 강제 재계산하는 서버 API 계약과 의존 범위를 정의한다.
 
 ## 상태
 

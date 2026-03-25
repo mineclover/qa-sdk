@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: analysis-prefix
+      type: depends_on
+    - target: analysis-transition
+      type: depends_on
 ---
 # Co-occurrence — 세션 기반 공출현 패턴
 

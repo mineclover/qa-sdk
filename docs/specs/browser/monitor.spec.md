@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: browser-lifecycle-spec
+      type: depends_on
+    - target: trace-context-spec
+      type: depends_on
 ---
 
 # QaMonitor

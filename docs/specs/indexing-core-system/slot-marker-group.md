@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: slot-marker-concept
       type: contains
@@ -13,6 +14,7 @@ def:
     - target: slot-marker-capacity
       type: contains
 ---
+
 # 슬롯 마커 시스템
 
 ## 목적 ^purpose
@@ -21,7 +23,10 @@ def:
 
 ## 구성 ^overview
 
-3개: 슬롯 마커 개념/설계 원칙, 실제 사용 패턴, 용량 영향.
+overview: 총 3개 멤버.
+- `slot-marker-concept`: 슬롯 마커의 개념.
+- `slot-marker-patterns`: 슬롯 마커의 실제 사용 패턴.
+- `slot-marker-capacity`: 슬롯 마커가 용량(capacity)에 미치는 영향.
 
 | 문서 | 핵심 |
 |------|------|

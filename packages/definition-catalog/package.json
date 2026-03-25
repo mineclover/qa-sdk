@@ -27,6 +27,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "audit:docs": "node ./scripts/quality-report.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

@@ -5,6 +5,10 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: storage-schema-spec
+      type: depends_on
 ---
 # Utils (ID + Clock)
 

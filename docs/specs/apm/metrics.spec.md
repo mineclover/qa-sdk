@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [observability, performance]
+  links:
+    - target: address-context-spec
+      type: depends_on
+    - target: record-spec
+      type: depends_on
 ---
 # Metric RecordKind — 메트릭 수집 및 집계
 

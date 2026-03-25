@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-system]
   links:
     - target: dkg-skill-cascade
       type: contains
@@ -17,6 +18,7 @@ def:
     - target: dkg-skill-catalog
       type: contains
 ---
+
 # DKG Skills 시스템
 
 ## 목적 ^purpose
@@ -25,4 +27,9 @@ DKG 그래프의 빈 곳을 자동으로 채우는 5개 skill. 종단 cascade, m
 
 ## 구성 ^overview
 
-5개 skill: analyzeImpact(종단 cascade), inferMigrator(마이그레이션 추론), VersionEvent.fromDiff(버전 이벤트 자동 파생), Decision.scaffold(의사결정 템플릿), Skill Catalog(skill 등록/조회).
+overview: 총 5개 멤버.
+- `dkg-skill-cascade`: DKG 그래프에서 특정 노드 변경의 영향을 종단까지 추적하는 skill.
+- `dkg-skill-migrator`: 축/prefix 변경 시 필요한 마이그레이션 경로를 자동 추론하는 skill.
+- `dkg-skill-version-event`: 두 버전 간 diff에서 VersionEvent를 자동 생성하는 skill.
+- `dkg-skill-decision`: 구조화된 의사결정 문서를 자동 생성하는 skill.
+- `dkg-skill-catalog`: DKG skill을 등록/조회/실행하는 카탈로그.

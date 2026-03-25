@@ -6,6 +6,13 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: range-query-spec
+      type: constrains
+    - target: resolver-spec
+      type: constrains
+    - target: cq-relational-engine
+      type: constrains
 ---
 # conv-acceleration
 

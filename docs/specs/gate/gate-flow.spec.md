@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [security, tier-infra]
   links:
     - target: gate-api
       type: refines

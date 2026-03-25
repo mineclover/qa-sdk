@@ -5,6 +5,12 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: registry-data-model
+      type: depends_on
+    - target: registry-version-lifecycle
+      type: depends_on
 ---
 
 # Events API

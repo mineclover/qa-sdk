@@ -5,6 +5,10 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 
 # System Architecture — 구현 구조 스펙

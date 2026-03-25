@@ -5,8 +5,15 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: registry-api
+      type: constrains
+    - target: registry-services-api-spec
+      type: constrains
+    - target: registry-events-spec
+      type: constrains
+    - target: registry-client-spec
       type: constrains
 ---
 # Registry 기술적 제약

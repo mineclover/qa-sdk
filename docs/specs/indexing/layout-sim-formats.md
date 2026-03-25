@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: bigint-addressing
+      type: depends_on
 ---
 
 # 레이아웃 시뮬레이터 — 포맷 선택 및 인덱스 타입 가이드

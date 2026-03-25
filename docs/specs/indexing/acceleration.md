@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 
 # 하드웨어 가속 비전 — FPGA/PCIe 가속기를 위한 데이터 아키텍처

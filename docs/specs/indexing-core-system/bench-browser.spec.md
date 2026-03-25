@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance, testing]
+  links:
+    - target: wi-layout-protocol
+      type: depends_on
+    - target: browser-monitor-spec
+      type: depends_on
 ---
 
 # 벤치마크 — 브라우저 실행 검증

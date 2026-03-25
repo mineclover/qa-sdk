@@ -5,11 +5,18 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: wi-trace-group
       type: member_of
     - target: wi-trace-axes
       type: depends_on
+    - target: wi-codec
+      type: constrains
+    - target: partial-binder-spec
+      type: constrains
+    - target: range-query-spec
+      type: constrains
 ---
 # weighted-index 수정 프로토콜
 

@@ -5,6 +5,16 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-prop-publish
+      type: contains
+    - target: spec-prop-notify
+      type: contains
+    - target: spec-prop-codegen
+      type: contains
+    - target: spec-prop-dkg-record
+      type: contains
 ---
 
 # Spec Propagation 시스템
@@ -13,9 +23,13 @@ def:
 
 PrefixSpec 변경이 publish -> notify -> codegen -> DKG record로 종단 전파되는 파이프라인.
 
-## 개요 ^overview
+## 구성 ^overview
 
-4단계: publish(RegistryService), notify(소비자 전파), generate(Codegen), record(DKG 기록).
+overview: 총 4개 멤버.
+- `spec-prop-publish`: PrefixSpec을 RegistryService에 발행하는 1단계.
+- `spec-prop-notify`: Registry 변경을 소비자 서비스에 전파하는 2단계.
+- `spec-prop-codegen`: 변경된 스펙에서 TypeScript 타입을 자동 생성하는 3단계.
+- `spec-prop-dkg-record`: 스펙 변경을 DKG 그래프에 기록하는 4단계.
 
 기반: [core-types.md](../spec-engine/core-types.md) · [design-knowledge-graph.md](../spec-engine/design-knowledge-graph.md) · [dkg-skills.md](../spec-engine/dkg-skills.md) · [registry-service.spec.md](../services/registry-service.spec.md)
 

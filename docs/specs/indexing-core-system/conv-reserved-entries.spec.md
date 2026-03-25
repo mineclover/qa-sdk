@@ -5,6 +5,14 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: sdk-constants
+      type: constrains
+    - target: slot-marker-patterns
+      type: constrains
+    - target: wi-format-registry
+      type: constrains
 ---
 # conv-reserved-entries
 

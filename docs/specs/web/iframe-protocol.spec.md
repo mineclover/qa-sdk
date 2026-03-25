@@ -5,6 +5,10 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: motion-content-glossary
+      type: depends_on
 ---
 
 # iframe 통신 프로토콜

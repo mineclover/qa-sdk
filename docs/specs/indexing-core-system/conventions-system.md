@@ -5,7 +5,16 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: conv-naming
+      type: contains
+    - target: conv-reserved-entries
+      type: contains
+    - target: conv-acceleration
+      type: contains
 ---
+
 # conventions-system
 
 ## 목적 ^purpose
@@ -14,7 +23,7 @@ def:
 
 좌표 시스템의 ID 네이밍, 예약 항목, 가속 지향 설계 등 핵심 컨벤션.
 
-## contains
+## 구성 문서
 
 | 문서 | id | 설명 |
 |------|-----|------|
@@ -22,9 +31,12 @@ def:
 | [conv-reserved-entries.spec.md](conv-reserved-entries.spec.md) | conv-reserved-entries | Reserved Entry 규칙 |
 | [conv-acceleration.spec.md](conv-acceleration.spec.md) | conv-acceleration | 가속 지향 설계 규칙 |
 
-## overview
+## 구성 ^overview
 
-3개: ID 네이밍 제약, 예약 항목(Reserved Entry), 가속 지향 설계 규칙.
+overview: 총 3개 멤버.
+- `conv-naming`: 축/entry/prefix ID의 네이밍 제약.
+- `conv-reserved-entries`: Reserved Entry 규칙.
+- `conv-acceleration`: 가속 지향 설계 규칙.
 
 `weighted-index`와 `index-meta`를 사용하는 프로젝트에서 따라야 하는 규칙.
 기반 원리는 `foundation.md`, 사용 패턴은 `patterns.md`를 참조한다.

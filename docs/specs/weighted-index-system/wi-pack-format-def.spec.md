@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: wi-math
+      type: depends_on
 ---
 # PackFormat 포맷 정의
 

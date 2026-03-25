@@ -5,6 +5,13 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: address-spec
+      type: depends_on
+    - target: table-schema-spec
+      type: depends_on
+    - target: index-meta-store
+      type: depends_on
 ---
 # IndexSDK 스펙
 

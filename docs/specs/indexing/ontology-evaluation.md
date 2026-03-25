@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
+    - target: data-design-spec
+      type: depends_on
 ---
 
 # 좌표 시스템의 온톨로지 스키마 표현력 평가

@@ -5,6 +5,14 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: record-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
 ---
 # SSE 실시간 스트리밍
 

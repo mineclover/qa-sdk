@@ -5,6 +5,10 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-arch-interceptors
+      type: refines
 ---
 # NestJS 모듈 구성과 의존 그래프
 

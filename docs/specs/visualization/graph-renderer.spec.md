@@ -5,6 +5,10 @@ def:
   aspect: component
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: api-client-spec
+      type: depends_on
 ---
 
 # SpecGraph 시각화 — 레이아웃, 렌더링, 실시간 업데이트

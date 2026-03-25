@@ -5,6 +5,10 @@ def:
   aspect: system_state
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: trace-context-spec
+      type: depends_on
 ---
 # 브라우저 모니터링 SDK — 표준 생명주기
 

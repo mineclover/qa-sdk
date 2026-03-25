@@ -5,6 +5,9 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 
 # Spec Propagation Pipeline — 스펙 작성 → 고정 → 전파

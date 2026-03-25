@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
 
 # SpecGraph / RuntimeGraph + GraphStore

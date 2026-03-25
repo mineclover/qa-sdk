@@ -5,6 +5,10 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 
 # 버전 운영 — Draft Cycle, 배포, 다중 버전 관리

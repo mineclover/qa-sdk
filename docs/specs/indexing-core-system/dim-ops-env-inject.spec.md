@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: perm-service-ref
+      type: depends_on
+    - target: perm-permission-code
+      type: depends_on
 ---
 
 # 환경 주입

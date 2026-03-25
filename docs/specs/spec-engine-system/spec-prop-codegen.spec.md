@@ -5,6 +5,10 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-core-types
+      type: depends_on
 ---
 
 # Spec Propagation — 3단계: Codegen

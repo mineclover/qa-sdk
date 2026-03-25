@@ -5,6 +5,10 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-infra]
+  links:
+    - target: pipeline-monitoring
+      type: depends_on
 ---
 # enrichAddressContext 미들웨어
 

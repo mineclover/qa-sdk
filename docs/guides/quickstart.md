@@ -6,6 +6,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [entry-point]
+  links:
+    - target: system-data-flow
+      type: refines
 ---
 # Quickstart — 차원 압축 기반 DSL DB
 

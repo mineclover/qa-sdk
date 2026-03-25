@@ -5,6 +5,10 @@ def:
   aspect: external_data
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: ingest-api-spec
+      type: depends_on
 ---
 # API 클라이언트 — REST 래퍼 + SSE 구독
 

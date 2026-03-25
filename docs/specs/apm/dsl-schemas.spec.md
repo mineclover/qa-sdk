@@ -5,6 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: address-context-spec
+      type: depends_on
+    - target: meta-registry-spec
+      type: depends_on
 ---
 
 # DSL Schemas — Git/K8s/APM Signal 축 정의

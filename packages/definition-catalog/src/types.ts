@@ -102,8 +102,20 @@ export type StructuralTag =
   | "decision"       // 의사결정 기록이 포함됨
   | "generated";     // codegen 등으로 자동 생성된 문서
 
+/**
+ * 계층 태그 (Delivery Tier Tags).
+ *
+ * 문서가 주로 속한 실행 계층을 표시한다.
+ * concern처럼 횡단 전파되지는 않지만, 묶음 탐색과 coverage 측정의 기준으로 사용한다.
+ */
+export type TierTag =
+  | "tier-frontend"  // 브라우저/UI/시각화 계층
+  | "tier-backend"   // 권한/도메인 서버 계층
+  | "tier-infra"     // 파이프라인/서비스/저수준 런타임 계층
+  | "tier-system";   // 시스템 설계/운영/메타 계층
+
 /** 알려진 태그 전체 (자유 문자열도 허용하되, 이 목록을 우선 사용) */
-export type KnownTag = ConcernTag | StructuralTag;
+export type KnownTag = ConcernTag | StructuralTag | TierTag;
 
 // ─── Concern 전파 (Structural Constraint Propagation) ────
 

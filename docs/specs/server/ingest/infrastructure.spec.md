@@ -6,6 +6,21 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance, observability]
+  links:
+    - target: ingest-api-spec
+      type: constrains
+    - target: query-api-spec
+      type: constrains
+    - target: scenario-api-spec
+      type: constrains
+    - target: stream-api-spec
+      type: constrains
+    - target: verdict-api-spec
+      type: constrains
+    - target: admin-api-spec
+      type: constrains
+    - target: ingest-pipeline-flow
+      type: constrains
 ---
 # Infrastructure
 

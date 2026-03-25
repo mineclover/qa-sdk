@@ -25,6 +25,7 @@ def:
     - target: meta-registry-spec
       type: contains
 ---
+
 # Registry 시스템
 
 ## 목적 ^purpose
@@ -33,4 +34,12 @@ Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하�
 
 ## 구성 ^overview
 
-4개 정의: REST API(prefix/version CRUD + DAG 질의), 데이터 모델(PrefixRecord/VersionRecord/DimRef), 버전 라이프사이클(draft→locked→released→active→deprecated), 제약(DAG 순환 금지, capacity 불변).
+overview: 총 8개 멤버.
+- `registry-api`: Prefix 등록/조회, 버전 생성/전이, DAG 관계 질의를 제공하는 REST 엔드포인트.
+- `registry-data-model`: PrefixRecord(prefix 메타데이터), VersionRecord(버전별 상태/capacity/refs), DimRef(DAG 참조)의 3개 핵심 엔티티를 정의한다.
+- `registry-version-lifecycle`: prefix 버전의 상태 전이 규칙.
+- `registry-constraint`: Registry 시스템의 기술적 불변 조건.
+- `registry-services-api-spec`: 서비스 디스커버리에 쓰이는 서비스 메타데이터를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
+- `registry-events-spec`: 이벤트 정의 CRUD.
+- `registry-client-spec`: 이벤트 레지스트리에 대한 검증 HTTP 클라이언트.
+- `meta-registry-spec`: MetaRegistry — 주소 게이트웨이.

@@ -5,6 +5,10 @@ def:
   aspect: relation
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 # Spec Linking Standard — 문서 간 참조 규칙
 

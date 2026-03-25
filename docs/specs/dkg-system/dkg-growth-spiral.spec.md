@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: dkg-queries
+      type: refines
+    - target: dkg-skills-spec
+      type: refines
 ---
 # DKG 성장 나선
 

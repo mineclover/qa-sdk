@@ -5,6 +5,9 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 # Spec Engine — 아키텍처 + NestJS 모듈 매핑
 

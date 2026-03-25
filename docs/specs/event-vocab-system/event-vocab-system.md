@@ -21,4 +21,7 @@ def:
 
 ## 구성 ^overview
 
-3개 정의: 코어 패턴, 그래프 힌트, 페이로드 가이드.
+overview: 총 3개 멤버.
+- `graph-hint-spec`: Core Event가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다.
+- `event-core-pattern`: QA Scenario DSL과 Runtime Matching Engine이 공통으로 참조할 수 있는 최소 실행 패턴 집합.
+- `payload-guide`: Core Event별 권장 payload 필드 가이드.

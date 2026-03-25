@@ -18,9 +18,10 @@ def:
       type: contains
     - target: dkg-growth-spiral
       type: contains
-    - target: dkg-skills-spec
+    - target: dkg-skills-system
       type: contains
 ---
+
 # DKG (Design Knowledge Graph) 시스템
 
 ## 목적 ^purpose
@@ -29,4 +30,10 @@ def:
 
 ## 구성 ^overview
 
-5개 정의: 노드 16종(prefix/axis/domain/service 등), 엣지 18종(composes/observes/contains 등), 설계 시점 질의(listAllDiagrams/collectMetrics), 불변식(7개 CON 규칙), 성장 나선 모델(발견→닫힘→관측→새 발견).
+overview: 총 6개 멤버.
+- `dkg-node-types`: DKG 그래프를 구성하는 16종 노드 타입.
+- `dkg-edge-types`: DKG 노드 간 관계를 표현하는 18종 엣지 타입.
+- `dkg-queries`: DKG 그래프에서 설계 시점 정보를 추출하는 질의 함수.
+- `dkg-constraint`: DKG 그래프의 구조적 불변 조건 7종(CON-001~CON-007).
+- `dkg-growth-spiral`: 고정 축 정의 → 운용 → 새 기능 발견 → 새 고정 축 순환의 성장 모델.
+- `dkg-skills-system`: 종단 cascade, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그를 묶는 subgroup overview.

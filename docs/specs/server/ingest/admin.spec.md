@@ -5,6 +5,20 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: dlq-store-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: record-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
+    - target: verdict-spec
+      type: depends_on
+    - target: graph-spec
+      type: depends_on
 ---
 # Admin API
 

@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: decode-bundle
       type: depends_on

@@ -5,6 +5,12 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-core-types
+      type: depends_on
+    - target: registry-data-model
+      type: depends_on
 ---
 
 # Spec Propagation — 1단계: Publish

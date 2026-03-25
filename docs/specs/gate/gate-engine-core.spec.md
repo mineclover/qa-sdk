@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [security, tier-infra]
   links:
     - target: gate-engine-group
       type: member_of

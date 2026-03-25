@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: implementation
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: pipeline-enrichment
+      type: refines
+    - target: pipeline-metric-agg
+      type: refines
 ---
 
 # Unit 2 — 이벤트 수집 + 집계 파이프라인

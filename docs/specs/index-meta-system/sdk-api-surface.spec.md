@@ -5,6 +5,12 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: sdk-dim-views
+      type: depends_on
+    - target: index-meta-store
+      type: depends_on
 ---
 # sdk-api-surface
 

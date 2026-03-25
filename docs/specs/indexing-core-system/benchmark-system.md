@@ -6,6 +6,15 @@ def:
   depth: overview
   lifecycle: approved
   tags: [performance, testing]
+  links:
+    - target: bench-encode-decode
+      type: contains
+    - target: bench-cross-index
+      type: contains
+    - target: bench-range-calc
+      type: contains
+    - target: bench-browser
+      type: contains
 ---
 
 # 벤치마크 시스템
@@ -14,9 +23,13 @@ def:
 
 좌표 시스템의 성능 한계를 측정하는 벤치마크. 차원 수, encode/decode, cross-index, 브라우저 실행.
 
-## 개요 ^overview
+## 구성 ^overview
 
-4개: encode/decode 처리량, cross-index 종단 탐사, calcAddressRanges, 브라우저 검증.
+overview: 총 4개 멤버.
+- `bench-encode-decode`: WeightedIndex encode/decode 처리량과 차원 수 한계 측정.
+- `bench-cross-index`: cross-index 종단 좌표 탐사의 응답 시간과 메모리 사용량 측정.
+- `bench-range-calc`: calcAddressRanges 범위 연산의 처리량과 BigInt/UUID 직렬화 성능 측정.
+- `bench-browser`: 브라우저 환경에서의 좌표 연산 실행 검증.
 
 테스트 환경: Node.js, vitest, Apple Silicon
 테스트 파일:

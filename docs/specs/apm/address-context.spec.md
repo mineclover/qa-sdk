@@ -5,6 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: record-spec
+      type: depends_on
+    - target: transmission-spec
+      type: depends_on
 ---
 
 # Address Context — 주소 태깅 계약

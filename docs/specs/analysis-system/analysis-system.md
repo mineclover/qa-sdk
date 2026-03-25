@@ -20,6 +20,7 @@ def:
     - target: analysis-transition
       type: contains
 ---
+
 # 분석 시스템
 
 ## 목적 ^purpose
@@ -28,4 +29,10 @@ def:
 
 ## 구성 ^overview
 
-6개 정의: Prefix(의미 재사용 단위), Self-Check(건강 상태), Convergence(수렴/낭비 감지), IntentLink(공출현 조건), Co-occurrence(세션 패턴), TransitionSpec(상태 전이).
+overview: 총 6개 멤버.
+- `analysis-prefix`: 분석 시스템에서 prefix가 어떻게 분류되고, DSL Bundle/IntentLink/Domain 3개 조직 레이어 위에서 그룹핑되는지를 정의한다.
+- `analysis-self-check`: 좌표 시스템의 건강 상태를 자동 점검하는 기능.
+- `analysis-convergence`: prefix 간 중복이나 낭비를 감지하는 수렴 분석.
+- `analysis-intent-link`: 특정 prefix들이 함께 관측되어야 하는 조건(IntentLink)을 정의하고, 위반 시 invariant violation을 감지한다.
+- `analysis-cooccurrence`: 세션 단위로 어떤 prefix가 함께 나타나는지 Jaccard 분석.
+- `analysis-transition`: 이벤트로 인해 엔티티의 상태가 어떻게 전이되는지를 정의하는 스펙.

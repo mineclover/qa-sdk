@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: wi-pack-format-def
+      type: depends_on
+    - target: wi-semantic-address
+      type: depends_on
 ---
 # Hex 연산
 

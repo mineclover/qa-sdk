@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: axis-decision-guide
+      type: depends_on
 ---
 # Decision Flow 축 모델
 

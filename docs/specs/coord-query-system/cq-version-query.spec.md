@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: wi-api
+      type: depends_on
+    - target: registry-version-lifecycle
+      type: depends_on
 ---
 # Version Query
 

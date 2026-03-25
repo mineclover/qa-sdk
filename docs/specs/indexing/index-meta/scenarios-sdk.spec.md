@@ -6,6 +6,11 @@ def:
   depth: validation
   lifecycle: approved
   tags: [testing]
+  links:
+    - target: resolver-spec
+      type: traces_to
+    - target: index-meta-sdk-spec
+      type: traces_to
 ---
 
 # SDK 라이프사이클 유저 시나리오

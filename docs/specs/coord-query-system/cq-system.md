@@ -16,6 +16,7 @@ def:
     - target: cq-relational-engine
       type: contains
 ---
+
 # Coordinate Query 시스템
 
 ## 목적 ^purpose
@@ -24,4 +25,8 @@ def:
 
 ## 구성 ^overview
 
-4개 정의: policy-resolver(정책 해소), cross-index-query(교차 인덱스 합성), version-query(버전 횡단), RelationalEngine(관계형 질의 통합).
+overview: 총 4개 멤버.
+- `cq-policy-resolver`: PolicyRule 집합에서 특정 좌표에 적용되는 정책을 해소하는 함수.
+- `cq-cross-index`: 서로 다른 prefix 간 공유 축을 기반으로 합성 질의를 수행하는 함수.
+- `cq-version-query`: 동일 prefix의 여러 버전을 횡단하여 주소 변환, 히스토리 조회, 마이그레이션 경로 탐색을 수행하는 함수.
+- `cq-relational-engine`: policy-resolver, cross-index-query, version-query를 통합하여 단일 질의 인터페이스를 제공하는 오케스트레이터.

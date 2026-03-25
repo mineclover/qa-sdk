@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: dsl-schemas-spec
+      type: depends_on
+    - target: address-context-spec
+      type: depends_on
 ---
 
 # Codegen — Protobuf + CLI 타입 공급 파이프라인

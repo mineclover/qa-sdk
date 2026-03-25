@@ -27,4 +27,10 @@ def:
 
 ## 구성 ^overview
 
-6개 정의: 저장 어댑터, 스키마, 시나리오 스토어, verdict 스토어, 그래프 스토어, ID/Clock 유틸.
+overview: 총 6개 멤버.
+- `storage-adapters-spec`: core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
+- `storage-schema-spec`: PostgreSQL 테이블 정의.
+- `scenario-store-spec`: 검증 완료된 `ScenarioSpec` 문서를 저장하고 조회하는 core 포트 계약.
+- `verdict-spec`: spec/runtime 매칭 결과와 최종 판정 보고서의 canonical 구조.
+- `graph-spec`: 기대 행동 그래프(`SpecGraph`)와 실행 그래프(`RuntimeGraph`)의 canonical 구조.
+- `utils-spec`: ULID 기반 prefix ID 생성 및 타임스탬프 유틸리티.

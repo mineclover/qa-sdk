@@ -5,6 +5,10 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: analysis-prefix
+      type: depends_on
 ---
 # TransitionSpec — 상태 전이
 

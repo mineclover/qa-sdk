@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: graph-spec
+      type: depends_on
 ---
 
 # Event Registry Core Pattern v1

@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: verdict-spec
+      type: depends_on
 ---
 
 # ScenarioSpec + ScenarioSpecStore

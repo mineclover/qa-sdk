@@ -5,6 +5,7 @@ def:
   aspect: relation
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: gate-api
       type: depends_on

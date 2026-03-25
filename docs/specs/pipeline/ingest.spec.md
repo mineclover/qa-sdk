@@ -7,7 +7,15 @@ def:
   lifecycle: approved
   tags: [performance]
   links:
+    - target: transmission-spec
+      type: depends_on
     - target: record-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
+    - target: session-spec
+      type: depends_on
+    - target: dlq-store-spec
       type: depends_on
 ---
 # POST /v1/ingest

@@ -5,6 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: graph-spec
+      type: depends_on
+    - target: verdict-spec
+      type: depends_on
 ---
 
 # DB Schema

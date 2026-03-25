@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
 
 # Motion Content V1 개념 용어집과 패키지 계약

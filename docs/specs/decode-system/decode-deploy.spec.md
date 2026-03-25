@@ -5,6 +5,10 @@ def:
   aspect: infra_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: decode-api
+      type: constrains
 ---
 # Decode 배포 토폴로지
 

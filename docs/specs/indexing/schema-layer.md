@@ -5,6 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coordinate-states-spec
+      type: depends_on
+    - target: event-schema-spec
+      type: depends_on
 ---
 
 # Schema Layer — 구조 정의 시스템

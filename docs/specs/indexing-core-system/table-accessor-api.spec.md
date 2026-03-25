@@ -5,6 +5,12 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: table-dimref-types
+      type: depends_on
+    - target: table-schema-def
+      type: depends_on
 ---
 # accessor API에서의 table_ref 처리
 

@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: ingest-api-spec
+      type: refines
+    - target: browser-monitor-spec
+      type: refines
 ---
 # 데이터 흐름
 

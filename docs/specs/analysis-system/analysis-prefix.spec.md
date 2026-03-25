@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-system]
+  links:
+    - target: system-concepts
+      type: depends_on
 ---
 # Prefix — 의미의 재사용 단위
 

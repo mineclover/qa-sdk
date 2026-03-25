@@ -6,6 +6,13 @@ def:
   depth: specification
   lifecycle: approved
   tags: [migration]
+  links:
+    - target: dkg-skill-catalog
+      type: depends_on
+    - target: dkg-node-types
+      type: depends_on
+    - target: dkg-edge-types
+      type: depends_on
 ---
 # inferMigrator — 마이그레이션 추론
 

@@ -15,6 +15,7 @@ def:
     - target: decode-deploy
       type: contains
 ---
+
 # Decode 시스템
 
 ## 목적 ^purpose
@@ -23,4 +24,7 @@ MetaRegistry 없이 DecodeMap 번들로 독립 decode를 수행하는 경량 서
 
 ## 구성 ^overview
 
-3개 정의: REST API(decode/batch/deep), DecodeMap 번들 관리, 배포 토폴로지(embedded/sidecar/standalone).
+overview: 총 3개 멤버.
+- `decode-api`: 주소 정수를 entity ID 매핑으로 변환하는 REST 엔드포인트.
+- `decode-bundle`: decode에 필요한 최소 데이터(entity name → ID 매핑)를 DecodeMap 번들로 패키징하고, 캐시/갱신을 관리한다.
+- `decode-deploy`: Decode Service의 3가지 배포 형태와 각각의 제약 조건을 정의한다.

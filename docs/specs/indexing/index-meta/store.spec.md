@@ -4,7 +4,13 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: table-schema-spec
+      type: depends_on
+    - target: address-spec
+      type: depends_on
 ---
 
 # IndexMetaStore 스펙

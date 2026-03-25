@@ -6,6 +6,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [entry-point]
+  links:
+    - target: decision-standard
+      type: refines
 ---
 
 # Prefix 유형 가이드 — 프로젝트 분석 → prefix 설계

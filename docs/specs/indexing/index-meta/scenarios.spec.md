@@ -6,6 +6,11 @@ def:
   depth: validation
   lifecycle: approved
   tags: [testing]
+  links:
+    - target: index-codec-spec
+      type: traces_to
+    - target: resolver-spec
+      type: traces_to
 ---
 
 # 유저 시나리오 테스트 커버리지

@@ -5,6 +5,16 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: dim-ops-cross-select
+      type: contains
+    - target: dim-ops-env-inject
+      type: contains
+    - target: dim-ops-deploy-resolve
+      type: contains
+    - target: dim-ops-patterns
+      type: contains
 ---
 
 # 차원 연산 시스템
@@ -13,9 +23,13 @@ def:
 
 축 교차 선택, 환경 주입, 배포 시점 차원 해석, 조합 패턴 — 좌표 차원 연산의 4가지 핵심 패턴.
 
-## 개요 ^overview
+## 구성 ^overview
 
-4개: 축 교차 선택, 환경 주입, 배포 시점 해석, 조합 패턴.
+overview: 총 4개 멤버.
+- `dim-ops-cross-select`: N개 축에서 특정 차원만 선택하여 부분 좌표를 구성하는 교차 선택 연산.
+- `dim-ops-env-inject`: 런타임 환경(env, region)을 좌표 차원에 자동 주입하는 연산.
+- `dim-ops-deploy-resolve`: 배포 시점에 차원 값을 해석하여 concrete 좌표를 생성하는 연산.
+- `dim-ops-patterns`: PartialBinder, FixedDims, ServiceBinder 등 차원 조합의 실용 패턴.
 
 기반 문서: [foundation.md](../indexing/foundation.md) · [patterns.md](../indexing/patterns.md)
 관련 스펙: [permission-engine/core.spec.md](../indexing/permission-engine/core.spec.md) · [permission-engine/resource.spec.md](../indexing/permission-engine/resource.spec.md) · [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)

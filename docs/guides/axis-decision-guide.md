@@ -6,6 +6,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [entry-point, decision]
+  links:
+    - target: decision-standard
+      type: refines
 ---
 
 # Axis Decision Guide — 축에 넣을 것과 넣지 않을 것

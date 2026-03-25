@@ -6,6 +6,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [entry-point]
+  links:
+    - target: spec-linking-standard
+      type: refines
 ---
 
 # Cookbook — 자주 쓰는 레시피

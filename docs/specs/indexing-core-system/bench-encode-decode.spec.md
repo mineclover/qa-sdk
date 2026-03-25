@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: wi-api
+      type: depends_on
+    - target: index-codec-spec
+      type: depends_on
 ---
 
 # 벤치마크 — Encode/Decode 처리량

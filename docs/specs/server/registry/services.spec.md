@@ -5,13 +5,17 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: registry-data-model
+      type: depends_on
 ---
 
 # Services API
 
 ## 목적 ^purpose
 
-서비스 메타데이터 CRUD.
+서비스 디스커버리에 쓰이는 서비스 메타데이터를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
 
 ## 상태
 

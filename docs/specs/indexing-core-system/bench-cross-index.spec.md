@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [performance]
+  links:
+    - target: cq-relational-engine
+      type: depends_on
+    - target: resolver-spec
+      type: depends_on
 ---
 
 # 벤치마크 — Cross-index 종단 탐사

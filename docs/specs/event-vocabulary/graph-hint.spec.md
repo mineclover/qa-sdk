@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: event-core-pattern
+      type: depends_on
 ---
 
 # Graph Hint — 이벤트 그래프 의미론

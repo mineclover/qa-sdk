@@ -5,6 +5,10 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: trace-spec
+      type: depends_on
 ---
 
 # DlqStore

@@ -5,6 +5,10 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-arch-interceptors
+      type: constrains
 ---
 # spec-engine 계층 분리 원칙
 

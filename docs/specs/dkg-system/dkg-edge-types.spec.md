@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
   links:
     - target: dkg-node-types
       type: depends_on

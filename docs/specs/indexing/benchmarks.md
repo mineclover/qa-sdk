@@ -6,6 +6,11 @@ def:
   depth: validation
   lifecycle: deprecated
   tags: [performance]
+  links:
+    - target: index-codec-spec
+      type: depends_on
+    - target: resolver-spec
+      type: depends_on
 ---
 
 # 인덱싱 시스템 벤치마크

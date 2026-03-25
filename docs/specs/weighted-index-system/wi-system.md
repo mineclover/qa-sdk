@@ -15,15 +15,18 @@ def:
       type: contains
     - target: wi-constraint
       type: contains
-    - target: wi-traceability-spec
+    - target: wi-trace-group
       type: contains
     - target: partial-binder-spec
       type: contains
-    - target: wi-pack-format
+    - target: wi-pack-format-system
       type: contains
     - target: range-query-spec
       type: contains
+    - target: wi-trace-group
+      type: contains
 ---
+
 # Weighted-Index 시스템
 
 ## 목적 ^purpose
@@ -32,4 +35,12 @@ def:
 
 ## 구성 ^overview
 
-4개 정의: 핵심 수학(mixed-radix 공식, stride 계산), 퍼블릭 API(WeightedIndex/LabelRegistry), PrefixCodec(시맨틱 주소 직렬화), 제약(검증 규칙, 에러 계층).
+overview: 총 8개 멤버.
+- `wi-math`: mixed-radix 기반 좌표 인코딩의 수학적 기반.
+- `wi-api`: WeightedIndex(encode/decode/encodeFromRecord/decodeToRecord), LabelRegistry(레이블 관리), PrefixCodec(시맨틱 주소 직렬화/파싱)의 퍼블릭 API.
+- `wi-codec`: 시맨틱 주소(prefix:version:address)를 다양한 포맷으로 직렬화/파싱하는 코덱.
+- `wi-constraint`: WeightedIndex 좌표 인코딩의 안전성을 보장하기 위한 검증 규칙, 용량 한계, 에러 경계를 정의한다.
+- `wi-trace-group`: weighted-index 변경 전파의 추적성 축, 전파 경로, 수정 프로토콜을 묶는 subgroup overview.
+- `partial-binder-spec`: `PartialBinder`는 `PrefixCodec` 위에서 동작하는 차원 부분 바인딩(curried encoder) 레이어다.
+- `wi-pack-format-system`: PackFormat 정의, 레지스트리, hex 연산, capacity 계획, SemanticAddress/레이아웃 프로토콜을 묶는 subgroup overview.
+- `range-query-spec`: `calcAddressRanges` — 부분 좌표 제약에서 주소 구간 계산.

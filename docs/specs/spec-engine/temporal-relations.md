@@ -5,6 +5,10 @@ def:
   aspect: relation
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: convergence-layer-spec
+      type: refines
 ---
 
 # Temporal Relations — 시간 순서와 데이터 흐름 수집

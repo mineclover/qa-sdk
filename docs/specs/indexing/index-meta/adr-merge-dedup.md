@@ -6,6 +6,9 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: dimension-operations
+      type: constrains
 ---
 
 # ADR: 의미적 중복 제거 — Indexing Merge Plan

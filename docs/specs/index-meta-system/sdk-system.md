@@ -5,7 +5,16 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: sdk-api-surface
+      type: contains
+    - target: sdk-constants
+      type: contains
+    - target: sdk-dim-views
+      type: contains
 ---
+
 # sdk-system
 
 ## 목적 ^purpose
@@ -14,7 +23,7 @@ index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants �
 
 index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants 빌드, 용량/주소 뷰.
 
-## contains
+## 구성 문서
 
 | 문서 | id | 설명 |
 |------|-----|------|
@@ -22,9 +31,12 @@ index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants �
 | [sdk-constants.spec.md](sdk-constants.spec.md) | sdk-constants | constants() 빌드 로직과 RESERVED_TOKENS |
 | [sdk-dim-views.spec.md](sdk-dim-views.spec.md) | sdk-dim-views | DimCapacityInfo와 DimFullView |
 
-## overview
+## 구성 ^overview
 
-3개: API surface(MetaCodec 통합), constants(빌드 로직), DimCapacityInfo/DimFullView.
+overview: 총 3개 멤버.
+- `sdk-api-surface`: index-meta SDK의 퍼블릭 API.
+- `sdk-constants`: constants() 빌드 로직과 RESERVED_TOKENS.
+- `sdk-dim-views`: DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰).
 
 MetaRegistryInput 하나로 즉시 사용 가능한 경량 소비 레이어.
 개발자는 entity name만 입력하면, 내부에서 VersionedValue로 압축/해석한다.

@@ -5,6 +5,12 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: api-client-spec
+      type: depends_on
+    - target: iframe-protocol-spec
+      type: depends_on
 ---
 
 # QA Bridge + Event Emitter

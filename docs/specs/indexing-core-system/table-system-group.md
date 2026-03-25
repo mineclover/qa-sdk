@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: table-dimref-types
       type: contains
@@ -13,6 +14,7 @@ def:
     - target: table-accessor-api
       type: contains
 ---
+
 # 테이블 시스템
 
 ## 목적 ^purpose
@@ -21,7 +23,10 @@ def:
 
 ## 구성 ^overview
 
-3개: DimRef 두 종류(axis vs table_ref), 테이블 스키마 선언, accessor API 처리.
+overview: 총 3개 멤버.
+- `table-dimref-types`: 두 종류의 DimRef — axis(닫힌 어휘 참조)와 table_ref(외부 관계형 테이블 참조)의 차이와 사용 규칙.
+- `table-schema-def`: TableDef — 관계형 세계의 구조 선언.
+- `table-accessor-api`: accessor API에서 table_ref를 처리하는 방법.
 
 | 문서 | 핵심 |
 |------|------|

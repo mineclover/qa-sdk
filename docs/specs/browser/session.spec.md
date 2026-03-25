@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: session-spec
+      type: depends_on
+    - target: trace-spec
+      type: depends_on
 ---
 
 # SessionManager

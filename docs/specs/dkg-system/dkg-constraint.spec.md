@@ -5,8 +5,13 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
   links:
     - target: dkg-node-types
+      type: constrains
+    - target: dkg-queries
+      type: constrains
+    - target: dkg-skills-spec
       type: constrains
 ---
 # DKG 불변식

@@ -5,6 +5,12 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-infra]
+  links:
+    - target: pipeline-enrichment
+      type: constrains
+    - target: pipeline-metric-agg
+      type: constrains
 ---
 # 파이프라인 에러 처리
 

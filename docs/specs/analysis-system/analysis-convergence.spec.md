@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [observability]
+  links:
+    - target: analysis-prefix
+      type: depends_on
+    - target: analysis-transition
+      type: depends_on
 ---
 # Convergence — 수렴 분석
 

@@ -5,6 +5,12 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [tier-system]
+  links:
+    - target: spec-prop-publish
+      type: refines
+    - target: spec-prop-codegen
+      type: refines
 ---
 
 # Spec Propagation — 2단계: Notify

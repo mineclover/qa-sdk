@@ -5,6 +5,10 @@ def:
   aspect: app_state
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: session-spec
+      type: depends_on
 ---
 # TraceContext
 

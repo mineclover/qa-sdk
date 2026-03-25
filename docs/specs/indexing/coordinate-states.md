@@ -4,7 +4,13 @@ def:
   scope: state
   aspect: system_state
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
+    - target: data-design-spec
+      type: depends_on
 ---
 # 좌표 상태 모델 — 용어집 및 전이 규칙
 

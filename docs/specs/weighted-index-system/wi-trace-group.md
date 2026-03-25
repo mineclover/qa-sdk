@@ -6,8 +6,15 @@ def:
   depth: overview
   lifecycle: approved
   tags: [testing]
-  contains: [wi-trace-axes, wi-trace-propagation, wi-trace-protocol]
+  links:
+    - target: wi-trace-axes
+      type: contains
+    - target: wi-trace-propagation
+      type: contains
+    - target: wi-trace-protocol
+      type: contains
 ---
+
 # weighted-index 추적성 그룹
 
 ## 목적 ^purpose
@@ -16,7 +23,10 @@ weighted-index의 추적성. 변경 유형별 전파 경로, 버전 고정, 수�
 
 ## 구성 ^overview
 
-3개: 추적성의 3축(역할/변경/고정), 전파 경로, 수정 프로토콜.
+overview: 총 3개 멤버.
+- `wi-trace-axes`: 추적성의 3축: 역할(producer/consumer/auditor), 변경 유형(additive/reductive/structural), 고정(stride/capacity/shape).
+- `wi-trace-propagation`: 변경 유형별 전파 경로.
+- `wi-trace-protocol`: 수정의 프로토콜.
 
 | 문서 | 내용 |
 |------|------|

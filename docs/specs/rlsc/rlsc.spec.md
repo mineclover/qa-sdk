@@ -5,6 +5,10 @@ def:
   aspect: layout
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: motion-content-glossary
+      type: depends_on
 ---
 
 # R.L.S.C.™ — Relative Layout Structured Content

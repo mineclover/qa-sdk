@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  tags: [observability, tier-infra]
   links:
     - target: ingest-api-spec
       type: depends_on

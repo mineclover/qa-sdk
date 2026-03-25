@@ -5,6 +5,14 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: dimension-operations
+      type: depends_on
+    - target: dsl-bundle-spec
+      type: depends_on
+    - target: table-system-spec
+      type: depends_on
 ---
 
 # Signal Model — 트래킹의 상위 개념 구조

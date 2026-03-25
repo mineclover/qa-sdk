@@ -5,9 +5,12 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: wi-trace-group
       type: member_of
+    - target: wi-math
+      type: depends_on
 ---
 # weighted-index 추적성의 3축
 

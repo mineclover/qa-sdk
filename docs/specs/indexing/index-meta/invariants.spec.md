@@ -5,6 +5,14 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: index-codec-spec
+      type: constrains
+    - target: resolver-spec
+      type: constrains
+    - target: index-meta-sdk-spec
+      type: constrains
 ---
 
 # 변환 불변조건 (Invariants) 명세

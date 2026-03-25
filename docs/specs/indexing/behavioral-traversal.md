@@ -4,7 +4,13 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
+  tags: [tier-infra]
+  links:
+    - target: coordinate-states-spec
+      type: depends_on
+    - target: data-design-spec
+      type: depends_on
 ---
 
 # 행위 축 탐색 — 데이터 흐름 경로 추적

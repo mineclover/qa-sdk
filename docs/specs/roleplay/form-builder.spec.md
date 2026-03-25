@@ -5,6 +5,12 @@ def:
   aspect: component
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: iframe-protocol-spec
+      type: depends_on
+    - target: qa-bridge-spec
+      type: depends_on
 ---
 
 # Form Builder — DOM 트리 모델 + 비주얼 에디터

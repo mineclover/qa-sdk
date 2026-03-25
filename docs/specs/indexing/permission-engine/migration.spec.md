@@ -4,8 +4,13 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [migration]
+  links:
+    - target: permission-model
+      type: depends_on
+    - target: permission-encoding
+      type: depends_on
 ---
 
 # permission-engine migration 스펙

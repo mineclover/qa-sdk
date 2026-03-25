@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  tags: [tier-infra]
   links:
     - target: wi-pack-format-def
       type: contains
@@ -19,6 +20,7 @@ def:
     - target: wi-layout-protocol
       type: contains
 ---
+
 # Pack Format 시스템
 
 ## 목적 ^purpose
@@ -27,4 +29,10 @@ WeightedIndex 주소를 다양한 이진 포맷으로 직렬화하고, capacity 
 
 ## 구성 ^overview
 
-6개 정의: PackFormat(포맷 정의), FormatRegistry(수평 확장), hex 연산(경계/자릿수), capacity 계획(fitShape/fitLayout/planCapacity), SemanticAddress(프로토콜 독립), createLayoutProtocol(hex container).
+overview: 총 6개 멤버.
+- `wi-pack-format-def`: shape을 이진 필드에 배치하는 포맷 규칙.
+- `wi-format-registry`: PackFormat을 등록/조회하는 수평 확장 레지스트리.
+- `wi-hex-ops`: formatHex/parseHex(포맷별 직렬화), hexBoundary/hexCeil/hexFloor(hex 자릿수 경계 연산).
+- `wi-capacity-planning`: fitShape(shape 용량 맞춤), fitLayout(shape + layout 통합), planCapacity(growth-aware capacity 제안).
+- `wi-semantic-address`: 프로토콜 독립적인 정보 좌표.
+- `wi-layout-protocol`: SemanticAddress를 UUID/hex 컨테이너에 패킹하는 레이아웃 프로토콜 팩토리.

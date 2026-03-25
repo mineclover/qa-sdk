@@ -5,6 +5,10 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: slot-marker-patterns
+      type: constrains
 ---
 # 슬롯 마커의 용량 영향
 

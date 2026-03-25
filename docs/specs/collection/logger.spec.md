@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [observability]
+  links:
+    - target: address-context-spec
+      type: depends_on
+    - target: collection-transport-spec
+      type: depends_on
 ---
 # QaLogger
 

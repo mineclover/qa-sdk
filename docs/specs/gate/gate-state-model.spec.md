@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  tags: [security, tier-infra]
   links:
     - target: gate-constraint
       type: depends_on

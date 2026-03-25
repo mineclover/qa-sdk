@@ -5,6 +5,12 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: partial-binder-spec
+      type: depends_on
+    - target: table-dimref-types
+      type: depends_on
 ---
 
 # 배포 시점 차원 해석

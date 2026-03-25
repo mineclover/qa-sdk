@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [entry-point]
+  links:
+    - target: dsl-schemas-spec
+      type: depends_on
+    - target: address-context-spec
+      type: depends_on
 ---
 # QA-SDK CLI 계약
 

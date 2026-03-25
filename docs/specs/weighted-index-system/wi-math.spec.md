@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 # Weighted-Index 핵심 수학
 

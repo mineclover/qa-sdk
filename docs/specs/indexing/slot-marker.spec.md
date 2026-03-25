@@ -5,6 +5,9 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: coord-foundation
+      type: depends_on
 ---
 # 슬롯 마커(Slot Marker)
 

@@ -5,6 +5,12 @@ def:
   aspect: interaction
   depth: specification
   lifecycle: approved
+  tags: [tier-frontend]
+  links:
+    - target: browser-monitor-spec
+      type: depends_on
+    - target: browser-transport-spec
+      type: depends_on
 ---
 # AutoCapture
 

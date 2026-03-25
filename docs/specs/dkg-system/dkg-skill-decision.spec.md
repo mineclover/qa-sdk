@@ -6,6 +6,11 @@ def:
   depth: specification
   lifecycle: approved
   tags: [decision]
+  links:
+    - target: dkg-skill-catalog
+      type: depends_on
+    - target: dkg-node-types
+      type: depends_on
 ---
 # Decision.scaffold — 의사결정 템플릿
 

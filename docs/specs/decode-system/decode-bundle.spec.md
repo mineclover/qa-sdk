@@ -5,6 +5,10 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: meta-registry-spec
+      type: depends_on
 ---
 # DecodeMap 번들 관리
 

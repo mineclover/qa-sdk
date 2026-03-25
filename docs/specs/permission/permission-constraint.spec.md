@@ -6,6 +6,13 @@ def:
   depth: specification
   lifecycle: approved
   tags: [security]
+  links:
+    - target: perm-codec-spec
+      type: constrains
+    - target: perm-migration-spec
+      type: constrains
+    - target: perm-permission-code
+      type: constrains
 ---
 # 권한 비즈니스 제약
 

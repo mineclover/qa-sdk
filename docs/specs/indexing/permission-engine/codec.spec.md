@@ -4,8 +4,13 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [security]
+  links:
+    - target: permission-model
+      type: depends_on
+    - target: perm-resource-spec
+      type: depends_on
 ---
 
 # permission-engine codec 스펙

@@ -5,6 +5,12 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  tags: [tier-infra]
+  links:
+    - target: storage-schema-spec
+      type: depends_on
+    - target: scenario-store-spec
+      type: depends_on
 ---
 
 # Store Adapters

@@ -5,6 +5,13 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: deprecated
+  links:
+    - target: acceleration-spec
+      type: constrains
+    - target: dimension-operations
+      type: constrains
+    - target: slot-marker-spec
+      type: constrains
 ---
 # 인덱싱 시스템 관례
 
