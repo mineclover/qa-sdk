@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: index-codec-spec
@@ -21,6 +22,16 @@ def:
 축/entry/prefix ID의 네이밍 제약. snake_case, EntityId 정규화, 충돌 방지 규칙.
 
 축/entry/prefix ID의 네이밍 제약. snake_case, EntityId 정규화, 충돌 방지 규칙.
+
+## 구성 ^overview
+
+- **콜론 금지**: 직렬화 형식 `{indexId}:{versionId}:{value}`의 구분자 충돌 방지를 위해 모든 ID에서 `:` 문자 사용 불가
+- **MetaRegistry 강제**: 콜론 포함 ID는 생성자에서 ValidationError 발생으로 원천 차단
+- **EntityId 정규화**: `-0`은 `0`으로 자동 정규화되며, 동일 snapshot 내 중복 EntityId는 ValidationError
+- **커스텀 PackFormat 등록**: defineFormat → 용량 검증 → FormatRegistry 등록 → 프로토콜 생성 → AddressConverter 등록 → round-trip 검증 6단계 절차
+- **defineFormat 검증**: name 비어있거나 chars ≤ 0이거나 groups 합계 ≠ chars이면 RangeError
+- **이름 규칙**: PackFormat.name은 lowercase+하이픈, AddressProtocol.name은 `layout:{format.name}` 자동 생성
+- **groups 설계**: 내부 저장용은 생략, API 노출용은 4~8자 단위, UUID 호환은 RFC 4122 고정 그룹
 
 그룹: [conventions-system.md](conventions-system.md)
 원본: `docs/specs/indexing/conventions.md` SS1, SS3, SS4

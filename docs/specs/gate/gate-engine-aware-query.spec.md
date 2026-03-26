@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security, tier-infra]
   links:
     - target: gate-engine-group
@@ -17,6 +18,13 @@ def:
 ## 목적 ^purpose
 
 gate-aware-query — 정책 해소 결과에 gate 상태를 합성하여 최종 허용 범위를 결정하는 질의 레이어.
+
+## 구성 ^overview
+
+- **gateFilterRanges**: 주소 범위에서 gate 차단 범위를 제거하여 유효 범위만 반환
+- **3가지 모드**: encodable(active+open), decodable(active+inactive), active(active만)
+- **정책 합성 흐름**: resolvePolicy() → gateFilterRanges() → 교집합 = 최종 허용 범위
+- **Fail-open**: gate check 실패 시 허용 + warning diagnostic (gate-service는 읽기 전용 캐시)
 
 ---
 

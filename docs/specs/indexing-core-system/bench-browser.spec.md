@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [performance, testing]
   links:
     - target: wi-layout-protocol
@@ -23,6 +24,16 @@ def:
 검증 로직: `packages/weighted-index/src/layout-fit.ts` -> `computeLayoutViewModel()`
 테스트: `packages/weighted-index/src/layout-fit.test.ts`
 접근: `http://localhost:5178/layout` -> 인덱스 순차 진행 패널
+
+## 구성 ^overview
+
+- **테스트 우선 설계**: 모든 수치 계산은 computeLayoutViewModel() 순수 함수에서 수행, UI는 ViewModel을 그대로 렌더링
+- **Number/BigInt 이중 모드**: Number 모드는 MAX_SAFE_INTEGER 제한, BigInt 모드는 16^budget UUID 실제 용량 사용
+- **정합성 불변식**: 오버플로우 없음, utilization 100% 도달 가능, 라운드트립 보장 등 테스트로 증명
+- **시간 예산 배치 처리**: requestAnimationFrame 기반 프레임당 12ms 예산 내 최대 처리 후 자동 중단
+- **WeightedIndex 메모리**: 52차원에서도 4KB 미만, 100개 동시 보유 시 약 106KB
+- **MetaCodec 메모리**: 3Dx500 구성에서 41KB, 10개 독립 코덱 동시 보유 시 코덱당 약 21KB
+- **DecodeMap 와이어 크기**: entry ID 문자열 길이에 비례, gzip으로 50~70% 압축 가능
 
 ---
 

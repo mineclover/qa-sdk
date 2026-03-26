@@ -1,11 +1,12 @@
 ---
 def:
   id: analysis-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [observability, entry-point]
+  svc: spec-core
+  tags: [structural, observability, entry-point]
   links:
     - target: analysis-prefix
       type: contains
@@ -29,7 +30,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `analysis-prefix`: 분석 시스템에서 prefix가 어떻게 분류되고, DSL Bundle/IntentLink/Domain 3개 조직 레이어 위에서 그룹핑되는지를 정의한다.
 - `analysis-self-check`: 좌표 시스템의 건강 상태를 자동 점검하는 기능.
 - `analysis-convergence`: prefix 간 중복이나 낭비를 감지하는 수렴 분석.

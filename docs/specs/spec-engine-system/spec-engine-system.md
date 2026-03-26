@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: spec-core
+  tags: [structural, entry-point]
   links:
     - target: spec-arch-group
       type: contains
@@ -33,7 +34,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 9개 멤버.
 - `spec-arch-group`: spec-core/spec-server 구조를 계층, NestJS, 인터셉터로 분할한 그룹.
 - `spec-reference-system`: 스펙 링크 규칙과 axis 판정 기준을 reference 계층으로 분리한 그룹.
 - `spec-phases-group`: 구현 단계 계획을 로드맵과 선택적 확장/runtime 단계로 나눈 그룹.

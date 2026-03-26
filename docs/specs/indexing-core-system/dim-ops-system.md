@@ -1,11 +1,12 @@
 ---
 def:
   id: dim-ops-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: dim-ops-cross-select
       type: contains
@@ -15,6 +16,12 @@ def:
       type: contains
     - target: dim-ops-patterns
       type: contains
+    - target: table-system-group
+      type: depends_on
+    - target: wi-system
+      type: depends_on
+    - target: perm-external-system
+      type: depends_on
 ---
 
 # 차원 연산 시스템
@@ -25,7 +32,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `dim-ops-cross-select`: N개 축에서 특정 차원만 선택하여 부분 좌표를 구성하는 교차 선택 연산.
 - `dim-ops-env-inject`: 런타임 환경(env, region)을 좌표 차원에 자동 주입하는 연산.
 - `dim-ops-deploy-resolve`: 배포 시점에 차원 값을 해석하여 concrete 좌표를 생성하는 연산.

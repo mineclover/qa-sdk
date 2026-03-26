@@ -23,41 +23,11 @@ EventRecord와 TransmissionEnvelope에 n차원 주소 컨텍스트를 부착하�
 
 ### EventRecord (현재)
 
-```typescript
-interface EventRecord {
-  log_id: string;
-  timestamp: string;
-  record_kind: RecordKind;        // "log" | "span"
-  trace_id: string;
-  span_id: string;
-  parent_span_id?: string;
-  event_key: string;
-  event_version: string;
-  payload_format: PayloadFormat;
-  payload_encoding: PayloadEncoding;
-  payload_masking_applied: boolean;
-  payload_masked_fields: string[];
-  payload: unknown;
-  qa_session_id?: string;
-  actor_id?: string;
-  user_id?: string;
-  user_attributes?: Record<string, string>;
-}
-```
+> 타입 정의: `packages/core/src/types/record.ts` — `EventRecord`
 
 ### TransmissionEnvelope (현재)
 
-```typescript
-interface TransmissionEnvelope {
-  transmission_id: string;
-  sent_at: string;
-  owner: TransmissionOwner;
-  source: TransmissionSource;     // { service_name, sdk_name, sdk_version }
-  runtime: TransmissionRuntime;
-  build: TransmissionBuild;       // { env, build_ref?, release_version? }
-  records: EventRecord[];
-}
-```
+> 타입 정의: `packages/core/src/types/envelope.ts` — `TransmissionEnvelope`
 
 ---
 
@@ -65,38 +35,15 @@ interface TransmissionEnvelope {
 
 ### EventRecord 확장
 
-```typescript
-interface EventRecord {
-  // ... 기존 필드 유지 ...
-
-  /**
-   * n차원 주소 컨텍스트.
-   * key: prefix_id (composite 또는 axis ID)
-   * value: "prefix:generation:address" 형식의 인코딩된 주소 문자열
-   *        generation = capacity/stride 세대, address에 schema_version 축 포함
-   *
-   * 예: { "k8s_workload_addr": "k8s_workload_addr:v1:17043713" }
-   */
-  address_context?: Record<string, string>;
-}
-```
+> 타입 정의: `packages/core/src/types/record.ts` — `EventRecord.address_context`
+>
+> `address_context?: Record<string, string>` — key: prefix_id, value: `"prefix:v:address"` 형식의 인코딩된 주소 문자열
 
 ### TransmissionEnvelope 확장
 
-```typescript
-interface TransmissionEnvelope {
-  // ... 기존 필드 유지 ...
-
-  /**
-   * 엔벨로프 전체에 적용되는 인프라 컨텍스트.
-   * SDK boot-time에 PartialBinder로 고정된 차원을 여기에 배치.
-   * 개별 레코드의 address_context가 이를 override 가능.
-   *
-   * 예: { "k8s_workload_addr": "k8s_workload_addr:v1:17043713" }
-   */
-  infra_context?: Record<string, string>;
-}
-```
+> 타입 정의: `packages/core/src/types/envelope.ts` — `TransmissionEnvelope.infra_context`
+>
+> `infra_context?: Record<string, string>` — SDK boot-time에 PartialBinder로 고정된 차원. 개별 레코드의 `address_context`가 override 가능.
 
 ---
 
@@ -122,21 +69,9 @@ Phase 1 ingest 시점에서 `enrichAddressContext` 미들웨어가 적용하는 
 
 ### Zero-Allocation 최적화
 
-```typescript
-// infra_context도 address_context도 없으면 skip
-if (!envelope.infra_context && !record.address_context) {
-  return record; // 기존 동작 그대로
-}
-
-// infra_context만 있으면 참조 공유 (복사 없음)
-if (!record.address_context) {
-  record.address_context = envelope.infra_context;
-  return record;
-}
-
-// 양쪽 다 있으면 머지
-record.address_context = { ...envelope.infra_context, ...record.address_context };
-```
+> 구현: `packages/ingest-server/src/lib/enrich-address-context.ts` — `enrichAddressContext()`
+>
+> zero-allocation 최적화: infra_context만 있으면 참조 공유, 양쪽 다 있으면 spread 머지 (record 우선)
 
 ---
 
@@ -178,7 +113,7 @@ v3 생성 → stride 변경 (capacity 변경) → v = "v3"
 prefix 등록 시 **capacity 배열과 stride 배열이 함께 저장**된다. v 세그먼트만으로 stride를 조회할 수 있고, stride가 있으면 index를 디코드할 수 있다.
 
 ```typescript
-// registry에 저장되는 prefix 메타
+// 개념 예시 — registry에 저장되는 prefix 메타
 {
   prefix: "k8s_workload_addr",
   v: "v1",
@@ -199,6 +134,7 @@ git_commit_addr:v1:262145        → v1 stride로 디코드 → [repo=qa-sdk, ..
 ### 파싱
 
 ```typescript
+// 개념 예시 — 주소 문자열 파싱
 function parseAddressString(s: string): { prefix: string; generation: string; address: number } {
   const [prefix, generation, addr] = s.split(":");
   return { prefix, generation, address: Number(addr) };
@@ -298,19 +234,9 @@ logger.info("deploy.completed", {
 
 ## Zod 스키마 확장
 
-```typescript
-// record.ts
-export const eventRecordSchema = z.object({
-  // ... 기존 필드 ...
-  address_context: z.record(z.string(), z.string()).optional(),
-});
-
-// envelope.ts
-export const transmissionEnvelopeSchema = z.object({
-  // ... 기존 필드 ...
-  infra_context: z.record(z.string(), z.string()).optional(),
-});
-```
+> Zod 스키마: `packages/core/src/schema/record.schema.ts` — `eventRecordSchema` (`address_context` 포함)
+>
+> Zod 스키마: `packages/core/src/schema/envelope.schema.ts` — `transmissionEnvelopeSchema` (`infra_context` 포함)
 
 ## 하위 호환성
 

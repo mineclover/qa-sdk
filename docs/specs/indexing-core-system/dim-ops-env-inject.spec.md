@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: perm-service-ref
@@ -20,6 +21,16 @@ def:
 런타임 환경(env, region)을 좌표 차원에 자동 주입하는 연산.
 
 앱 초기화 시 환경(env), 리전(region) 등을 한 번 설정하면, 이후 모든 인코딩/디코딩/권한 코드 생성에 자동으로 반영되는 패턴.
+
+## 구성 ^overview
+
+- **ServiceRef**: 서비스를 `(namespace, name)` 식별자와 `(env, build, region)` 배포 컨텍스트로 분리하여 캡슐화
+- **ref() vs refFull()**: `ref()`는 환경 정보를 숨겨 코드 간 전달용, `refFull()`은 디버그/로그/트레이스 전용
+- **PermCodeFactory**: ServiceContext를 바인딩하여 매 호출마다 service ref 반복 없이 permission code 생성
+- **ScopedEngine**: `env:region` 키로 환경별 권한을 격리 관리
+- **통합 흐름**: 앱 부트 시 1회 설정 → PermCodeFactory, Binder, ScopedEngine에 자동 전파 → 이후 env/region 반복 불필요
+- **관측 prefix의 svc_ref**: page_view, endpoint, flow_point 등 모든 관측 prefix가 `svc_ref` 차원을 공유하여 서비스 단위 필터링 가능
+- **인프라 이벤트**: deploy_event, health_event가 동일 svc_ref를 참조하여 배포→성능 저하→비즈니스 영향을 좌표만으로 교차 추적
 
 ---
 

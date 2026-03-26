@@ -1,11 +1,12 @@
 ---
 def:
   id: wi-pack-format-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: wi-pack-format-def
       type: contains
@@ -29,7 +30,6 @@ WeightedIndex 주소를 다양한 이진 포맷으로 직렬화하고, capacity 
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `wi-pack-format-def`: shape을 이진 필드에 배치하는 포맷 규칙.
 - `wi-format-registry`: PackFormat을 등록/조회하는 수평 확장 레지스트리.
 - `wi-hex-ops`: formatHex/parseHex(포맷별 직렬화), hexBoundary/hexCeil/hexFloor(hex 자릿수 경계 연산).

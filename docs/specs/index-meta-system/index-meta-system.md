@@ -1,11 +1,12 @@
 ---
 def:
   id: index-meta-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: index-meta
+  tags: [structural, entry-point]
   links:
     - target: table-schema-spec
       type: contains
@@ -35,6 +36,10 @@ def:
       type: contains
     - target: benchmark-system
       type: contains
+    - target: registry-system
+      type: depends_on
+    - target: wi-system
+      type: depends_on
 ---
 
 ## 목적 ^purpose
@@ -43,7 +48,6 @@ MetaRegistry, PrefixDecoder, 주소 직렬화 등 좌표 시스템의 런타임 
 
 ## 구성 ^overview
 
-overview: 총 14개 멤버.
 - `table-schema-spec`: 테이블 단위 스키마 선언 레이어.
 - `resolver-spec`: MetaRegistry의 데이터를 외부 소비용 번들(DecodeMap, DimRange, IndexRange, MetaDataset)로 변환한다.
 - `index-codec-spec`: DecodeMap 기반 독립 encode/decode 모듈.

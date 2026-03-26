@@ -5,7 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  tags: [structural, entry-point]
   links:
     - target: permission-system
       type: contains

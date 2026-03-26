@@ -17,6 +17,13 @@ def:
 
 Core Event별 권장 payload 필드 가이드. SDK, 엔진, DSL이 같은 필드 이름으로 소통하기 위한 규격.
 
+## 구성 ^overview
+
+- **대상 이벤트 20종**: Navigation(4), Interaction(2), Form(2), Session(2), Network(2), Execution(4), Outcome(2), Quality(2)
+- **필드 3계층**: 필수(이벤트 의미 식별 핵심), 권장(DSL constraint 공통 축), 확장(서비스별 자유)
+- **PayloadFieldDef 구조**: name, required, type(string/number/boolean/string[]), description
+- **정책**: required 필드 누락 시 경고만(거부 안 함), 민감값은 `_present`/`_masked` 검증 우선, 가이드 외 필드도 payload 확장 가능
+
 ## 상태
 
 implemented

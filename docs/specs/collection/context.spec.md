@@ -16,6 +16,13 @@ def:
 
 trace_id, span stack, qa_session_id를 관리하는 런타임 컨텍스트 객체.
 
+## 구성 ^overview
+
+- **TraceContext 클래스**: trace_id(readonly, 자동 생성), qa_session_id(선택적, mutable) 관리
+- **Span 스택**: LIFO 구조 — pushSpan(생성+push), popSpan(pop+반환), currentSpanId(빈 스택 시 자동 생성)
+- **parentSpanId**: depth < 2이면 undefined(root span), depth >= 2이면 stack[length-2] 반환
+- **컨텍스트 전파**: 외부 trace context 주입 시 생성자로 주입 후 logger.setContext() 호출
+
 ## 상태
 
 implemented

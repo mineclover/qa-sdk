@@ -21,6 +21,17 @@ def:
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)
 
+## 구성 ^overview
+
+- **닫힌 조합 공간**: 설계 시점에 상한이 고정된 유한 차원만 WeightedIndex 대상. 무한값(UUID, 타임스텝)은 외부 키로 관리
+- **전단사(bijection) 보장**: `[0, size-1]` 범위의 정수가 모든 조합에 1:1 대응 — 역변환 가능, 비트마스크 호환, 범위 쿼리 지원
+- **Stride 공식과 주소 안정성**: `address = Σ coord[i] × stride[i]`, 단일 축은 항상 안정, 복합 축은 capacity 변경 시 stride 변동으로 주소 무효화
+- **Capacity Headroom**: headroom 내 entries 추가는 shape 불변 → stride 불변 → 주소 보존. 소진 시 새 버전 + 마이그레이션 필요
+- **2-Phase 운영 모델**: Phase 1(평시, headroom 내 append) / Phase 2(Draft Cycle, capacity 조정 → release → read-repair 마이그레이션)
+- **3-레이어 분리**: 수학(weighted-index, 정수↔좌표) → 스키마(index-meta, 축 의미/엔티티) → 데이터(사용자 구현, DB 저장)
+- **가속 지향 설계**: 문자열은 스키마 레이어에서 정수로 변환, 수학 레이어 이하는 정수만 — 하드웨어 가속 경계가 자연스럽게 형성
+- **packed key = identity**: 동일 의미는 항상 동일 key — 캐시 키, DB PK, 비교 연산의 기반
+
 ---
 
 

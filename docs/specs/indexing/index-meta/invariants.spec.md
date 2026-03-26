@@ -21,6 +21,13 @@ def:
 
 산재된 불변조건을 단일 스펙으로 통합하여 시스템의 정합성 보증을 명문화한다.
 
+## 구성 ^overview
+
+- **불변조건 12종**: encode/decode roundtrip(INV-1~2), serialize/parse roundtrip(INV-3), obfuscation roundtrip(INV-4), migration 보존(INV-5), gate 상태 3종(INV-6~8), BigInt 동등성(INV-9), 순환 방지(INV-10), full stack/cross-protocol roundtrip(INV-11~12)
+- **조건 분류**: 무조건 적용(대부분)과 gate 활성 시/version 호환 시 조건부 적용으로 구분
+- **검증 전략**: 기존 단위 테스트 커버 + `invariants.test.ts` 갭 보강(INV-G1~G4)
+- **핵심 보증**: 어떤 경로(encode→serialize→parse→decode)로든 원본 데이터가 손실 없이 복원됨
+
 ## 불변조건 목록
 
 | ID | 불변조건 | 조건 |

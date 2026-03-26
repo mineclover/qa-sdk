@@ -19,6 +19,14 @@ def:
 
 이벤트 레지스트리에 대한 검증 HTTP 클라이언트. TTL+LRU 캐시로 중복 호출 방지.
 
+## 구성 ^overview
+
+- **validateEvent**: serviceName + eventKey + eventVersion 조합으로 레지스트리에 등록 여부 검증 → ValidationResult(valid, reason?)
+- **캐시**: TTL(기본 5분) + LRU(기본 1000개) in-memory 캐시, 성공(200)과 실패(404) 모두 저장
+- **Fail-Open**: 네트워크 에러·5xx 등 장애 시 valid: true 반환 + 경고 로깅 (이벤트 차단하지 않음)
+- **HTTP 경로**: GET {baseUrl}/services/{serviceName}/events/{eventKey}/versions/{eventVersion}
+- **제약**: 단일 인스턴스 내 in-process 캐시 (서버 간 공유 없음), 캐시 무효화 API 없이 TTL 만료에 의존
+
 ## 상태
 
 implemented

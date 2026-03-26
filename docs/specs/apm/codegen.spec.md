@@ -280,13 +280,7 @@ export interface K8sWorkloadAddrDims {
 
 ### payload_encoding 확장
 
-```typescript
-// 현재
-export type PayloadEncoding = "raw" | "base64" | "gzip+base64";
-
-// 확장
-export type PayloadEncoding = "raw" | "base64" | "gzip+base64" | "protobuf";
-```
+> 타입 정의: packages/core/src/types/payload.ts — PayloadEncoding
 
 ### protobuf 인코딩 흐름
 

@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: index-arch-layers

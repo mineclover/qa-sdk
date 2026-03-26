@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: table-dimref-types
@@ -20,6 +21,15 @@ def:
 N개 축에서 특정 차원만 선택하여 부분 좌표를 구성하는 교차 선택 연산.
 
 여러 축의 값을 동시에 지정하여 해당하는 주소만 골라내는 연산. 3개 레이어가 추상화 수준별로 제공된다.
+
+## 구성 ^overview
+
+- **BitIndex**: 패킹된 정수에서 shift+mask로 O(1) 단일 축 값 추출
+- **BitMaskSet**: grant된 주소 집합에서 다축 AND 조건 필터링 및 고유값 조회
+- **ScopedEngine**: env/region 등 외부 차원별 독립 PermissionSet 관리 + 교집합/합집합
+- **queryGranted**: CoordConstraint 문법으로 범위 조건을 걸어 grant된 주소만 반환
+- **추상화 계층**: BitIndex(비트 연산) → BitMaskSet(집합 필터) → ScopedEngine(스코프 관리) 순으로 상위
+- **선택 기준**: 단일 축 추출, 다축 AND 필터, 스코프 교차, 범위 패턴 질의 등 상황별 도구 구분
 
 ---
 

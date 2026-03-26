@@ -71,28 +71,9 @@ Phase 1 (동기)
 
 ### enrichAddressContext 로직
 
-```typescript
-function enrichAddressContext(
-  envelope: TransmissionEnvelope,
-  records: EventRecord[],
-): EventRecord[] {
-  const infraCtx = envelope.infra_context;
-
-  // fast path: 컨텍스트 없으면 skip
-  if (!infraCtx) return records;
-
-  return records.map((record) => {
-    if (!record.address_context) {
-      // infra_context만 있으면 참조 공유 (zero-allocation)
-      record.address_context = infraCtx;
-    } else {
-      // 양쪽 다 있으면 머지 (record 우선)
-      record.address_context = { ...infraCtx, ...record.address_context };
-    }
-    return record;
-  });
-}
-```
+> 구현: `packages/ingest-server/src/lib/enrich-address-context.ts` — `enrichAddressContext()`
+>
+> infra_context + record.address_context 머지. fast path: 컨텍스트 없으면 skip, infra만 있으면 참조 공유 (zero-allocation), 양쪽 다 있으면 spread 머지 (record 우선).
 
 ### 성능 특성
 
@@ -120,6 +101,7 @@ Phase 2 (비동기)
 ### 분기 전략
 
 ```typescript
+// 개념 예시 — Phase 2 worker 분기 전략
 async function phase2Worker(traceId: string): Promise<void> {
   const records = await recordStore.findByTraceId(traceId);
 
@@ -143,6 +125,7 @@ async function phase2Worker(traceId: string): Promise<void> {
 ### aggregatePendingMetrics
 
 ```typescript
+// 개념 예시 — metric aggregation 흐름
 async function aggregatePendingMetrics(metrics: EventRecord[]): Promise<void> {
   // 1. metric_name + address_context 기준으로 그룹핑
   const groups = groupBy(metrics, (m) =>
@@ -166,30 +149,11 @@ async function aggregatePendingMetrics(metrics: EventRecord[]): Promise<void> {
     });
   }
 }
-
-function aggregateByType(type: MetricType, records: EventRecord[]): RollupFields {
-  switch (type) {
-    case "counter":
-      return {
-        agg_sum: records.reduce((s, r) => s + r.metric_value!, 0),
-        agg_count: records.length,
-      };
-    case "gauge":
-      return {
-        agg_last: records.at(-1)!.metric_value!,
-        agg_min: Math.min(...records.map((r) => r.metric_value!)),
-        agg_max: Math.max(...records.map((r) => r.metric_value!)),
-        agg_avg: records.reduce((s, r) => s + r.metric_value!, 0) / records.length,
-        agg_count: records.length,
-      };
-    case "histogram":
-      return mergeHistogramBuckets(records);
-    case "summary":
-      // summary는 집계 불가, 원본 보존
-      return { agg_quantiles: records.at(-1)!.metric_quantiles };
-  }
-}
 ```
+
+> 구현: `packages/ingest-server/src/lib/metric-aggregator.ts` — `aggregateByType()`
+>
+> MetricType별 집계 전략: counter(sum), gauge(last/min/max/avg), histogram(bucket merge), summary(원본 보존)
 
 ### Rollup 스케줄
 
@@ -212,6 +176,7 @@ POST /v1/apm/query
 ### 요청
 
 ```typescript
+// 개념 예시 — Range Query 요청 인터페이스
 interface ApmQueryRequest {
   /** composite prefix ID */
   prefix_id: string;
@@ -220,25 +185,20 @@ interface ApmQueryRequest {
   v: string;
 
   /** 축별 제약. null = wildcard (모든 값 허용) */
-  /** axis 전략 composite: schema_version도 일반 축으로 제약 가능 */
-  /** envelope 전략: entry_snapshot 별도 필터 */
   constraints: Record<string, string | null>;
 
   /** envelope 전략 composite용 snapshot 필터 */
   entry_snapshot?: string;
 
   /** 시간 범위 */
-  time_range: {
-    from: string;  // ISO 8601
-    to: string;
-  };
+  time_range: { from: string; to: string };
 
   /** 결과 종류 */
-  record_kind?: RecordKind;  // 필터. 생략 시 전체
+  record_kind?: RecordKind;
 
   /** 페이지네이션 */
-  limit?: number;   // 기본 100, 최대 1000
-  cursor?: string;  // 이전 응답의 next_cursor
+  limit?: number;
+  cursor?: string;
 }
 ```
 
@@ -265,37 +225,14 @@ interface ApmQueryRequest {
 
 ### calcAddressRanges 연동
 
-```typescript
-import { calcAddressRanges } from "@qa-sdk/weighted-index";
-
-function buildAddressRanges(
-  codec: PrefixCodec,
-  prefixId: string,
-  v: string,
-  constraints: Record<string, string | null>,
-): [number, number][] {
-  const prefix = codec.getPrefix(prefixId, v);
-  const shape = prefix.shape;
-
-  // constraints를 CoordConstraint[] 로 변환
-  const coordConstraints = prefix.dims.map((dim, i) => {
-    const value = constraints[dim.id];
-    if (value === null || value === undefined) {
-      // wildcard: 1..shape[i] 전체
-      return { positions: null };
-    }
-    // label → 1-based index
-    const idx = dim.labelToIndex(value);
-    return { positions: [idx] };
-  });
-
-  return calcAddressRanges(shape, coordConstraints);
-}
-```
+> 구현: `packages/apm/src/address-ranges.ts` — `buildAddressRanges()`
+>
+> `calcAddressRanges` (weighted-index) 활용. constraints를 `CoordConstraint[]`로 변환 후 주소 범위 계산.
 
 ### 응답
 
 ```typescript
+// 개념 예시 — Range Query 응답 인터페이스
 interface ApmQueryResponse {
   records: EventRecord[];
   total: number;
@@ -354,7 +291,7 @@ GET /v1/apm/streams?prefix_id=k8s_workload_addr&v=v1&constraints=schema_version:
 ### 서버 측 필터링
 
 ```typescript
-// stream broker에서 수신한 레코드를 축 기준으로 필터
+// 개념 예시 — stream broker에서 수신한 레코드를 축 기준으로 필터
 function matchesSubscription(
   record: EventRecord,
   subscription: ApmSubscription,

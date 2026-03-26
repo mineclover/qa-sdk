@@ -19,6 +19,13 @@ def:
 
 이벤트 정의 CRUD. event_key + event_version 으로 시맨틱 버전 관리.
 
+## 구성 ^overview
+
+- **이벤트 CRUD**: 서비스별 이벤트 정의 생성, 조회, 수정 엔드포인트 제공
+- **버전 자동 발급**: event_version은 3자리 문자열로 자동 증가 (e.g. "001" → "002")
+- **복합 유일성**: (service_id, event_key, event_version) 조합이 unique 제약
+- **내부 계층**: EventService(비즈니스 로직) → EventRepository(데이터 접근) + Zod 검증 스키마
+
 ## 상태
 
 implemented

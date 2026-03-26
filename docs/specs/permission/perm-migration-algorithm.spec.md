@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [migration, tier-backend]
   links:
     - target: permission-model
@@ -20,6 +21,13 @@ def:
 ## 목적 ^purpose
 
 `migratePermissions()`의 자동 ID 매칭 규칙을 분리해, PermissionSet shape가 바뀔 때 기존 grant를 어떤 조건에서 보존·삭제하는지 명확히 정의한다.
+
+## 구성 ^overview
+
+- **기본 알고리즘**: old shape의 feature/role ID를 순회하며 new shape에 동일 ID가 존재하는 grant만 새 위치에 재기록 (ID 매칭 기반)
+- **shape 변경 5가지**: 추가(기본 deny), 제거(grant 소멸), 순서 변경(ID 동일하면 보존), rename/split/merge(자동 불가, mapper 필요)
+- **복잡도**: O(oldFeatureCount × oldRoleCount), 개별 has/grant는 O(1) bit 연산
+- **불변 원칙**: source 미변경, target은 기본 deny에서 시작, bit 위치가 아닌 ID 의미 기반으로 변환
 
 ## 1. 함수 계약
 

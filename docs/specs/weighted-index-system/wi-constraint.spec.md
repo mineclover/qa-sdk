@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: wi-api

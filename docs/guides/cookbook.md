@@ -17,6 +17,16 @@ def:
 
 entry 추가, 축 생성, prefix 설계, capacity 확장 등 자주 쓰는 좌표 시스템 조작 레시피 모음.
 
+## 구성 ^overview
+
+- **entry 추가**: 현재 headroom 확인 → 중복 검사 → impact 분석(stride-break 여부) → encode 테스트
+- **새 prefix 생성**: 기존 prefix/축 확인 → 새 축 정의(capacity=nextPowerOf2) → prefix 조합 설계 → DKG 영향 확인
+- **capacity 확장**: headroom 확인 → capacity 변경(2배 이상) → stride-break 영향 분석 → refEntries 재계산 검증
+- **FlowDefinition**: prefix + version + values로 비즈니스 흐름의 관측 포인트(entry/branches)를 정의하여 정수 주소 기반 추적
+- **자동 마이그레이션**: resolve()로 구버전 주소를 최신 버전으로 변환하고, migrated 플래그로 DB 업데이트 판단
+- **중복 축 검토**: dkg overlaps로 entries 유사도를 분석하여 merge 후보(100%) / review 대상(50%) 식별
+- **서비스별 환경 구성**: QA_ENV/QA_REGION/QA_SERVICE/QA_NAMESPACE 환경변수로 같은 코드에서 다른 service 주소를 자동 생성
+
 ## entry 추가 (capacity 내)
 
 **상황:** role에 "auditor" 추가

@@ -5,6 +5,7 @@ def:
   aspect: system_state
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: coord-foundation

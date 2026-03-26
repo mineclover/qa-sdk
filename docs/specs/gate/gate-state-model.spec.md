@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security, tier-infra]
   links:
     - target: gate-constraint

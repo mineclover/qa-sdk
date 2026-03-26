@@ -23,6 +23,16 @@ def:
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)
 
+## 구성 ^overview
+
+- **암묵적 버전 이동**: EntityId가 양쪽 스냅샷에 존재하면 decode→re-encode로 자동 좌표 대응
+- **명시적 좌표 이동**: DimSnapshotMigration의 indexMap으로 좌표 변환 동선을 직접 기록, BFS로 다중 버전 체인 가능
+- **Cross-index 참조**: 한 index의 encode 결과를 다른 index의 차원 값으로 사용하여 계층 형성
+- **dim-level vs entry-level**: 축 전체가 특정 index 참조(DimKind.index_ref)이거나 개별 entry가 참조(entryRefs)
+- **차원 고정 탐색**: cross-index 참조 + partialQueryBase로 특정 차원을 스코프로 고정하고 나머지를 순회
+- **활성/비활성 분리**: entryFlags로 inactive 처리 — encode/decode는 검사하지 않고 소비자가 manifest로 필터
+- **설계 흐름**: 닫힌 공간 정수화 → 명명+버전화 → 변화 추적 → 공간 연결 → 차원 고정 → 활성 필터링
+
 ---
 
 

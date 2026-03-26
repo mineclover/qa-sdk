@@ -20,6 +20,16 @@ def:
 브라우저 언로드 타이밍에서도 이벤트를 누락하지 않는 전송 구현체.
 `navigator.sendBeacon` 을 우선 시도하고, 미지원/실패 시 `fetch keepalive` 로 fallback.
 
+## 구성 ^overview
+
+- **전송 체인**: sendBeacon 우선 시도 → false/미지원 시 fetch keepalive fallback
+- **인터페이스**: Transport 구현체로 send, flush(no-op), shutdown(no-op) 제공
+- **요청 포맷**: POST + application/json, sendBeacon은 Blob, fetch는 JSON.stringify
+- **에러 시맨틱**: sendBeacon false → fallback, fetch 4xx/5xx → throw, network error → 전파
+- **버퍼 미보유**: BeaconTransport 자체는 버퍼 없음, QaLogger가 버퍼 관리 담당
+- **SSR 제약**: Node.js에서는 navigator 부재로 fetch 경로 동작, keepalive 무시됨
+- **재시도 없음**: 실패 레코드 재삽입은 QaLogger 책임
+
 ## 상태
 
 implemented

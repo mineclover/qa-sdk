@@ -24,6 +24,16 @@ MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 
+## 구성 ^overview
+
+- **관심사 분리**: MetaRegistry는 스키마/주소 직렬화, MetaCodec은 entity ID ↔ 1차원 주소 변환만 담당
+- **위임 구조**: 내부적으로 weighted-index의 LabelRegistry + PrefixCodec에 위임하여 로직 중복 제거
+- **생성 경로 2가지**: MetaRegistry.createCodec() 또는 DecodeMap 직접 전달로 독립 생성 가능
+- **API 4종**: encode(entityIds→VV), decode(VV→entityIds), decodeValue(value만으로 decode), toDecodeMap(deep clone)
+- **에러 매핑**: weighted-index 에러(EntityNotFoundError, CoordError)를 index-meta 에러(EntryNotFoundError, ValidationError)로 변환
+- **버전 이동**: v1 decode → v2 re-encode로 버전 간 마이그레이션 지원
+- **독립 운용**: 서버에서 수신한 DecodeMap JSON만으로 MetaRegistry 없이 decode 가능
+- **불변성 보장**: decode 반환값은 Object.freeze(), toDecodeMap()은 structuredClone deep copy
 
 ## 참조
 
@@ -178,3 +188,44 @@ const ids = codec.decodeValue(valueFromDB);
 
 - `decode()`, `decodeValue()` 반환값은 `Object.freeze()` 적용.
 - `toDecodeMap()`은 `structuredClone`으로 deep copy 반환.
+
+---
+
+## MetaCodecBig — BigInt 대응
+
+`meta-codec-big.ts`의 `MetaCodecBig` 클래스. `Number.MAX_SAFE_INTEGER(2^53)` 한계를 초과하는 주소 공간을 지원한다.
+
+### MetaCodec과의 차이
+
+| | MetaCodec | MetaCodecBig |
+|---|---|---|
+| 내부 구현 | LabelRegistry + PrefixCodec 위임 | WeightedIndexBig + 직접 label 매핑 |
+| value 타입 | `number` | `bigint` |
+| 반환 타입 | `VersionedValue` | `VersionedValueBig` |
+| 추가 API | - | `matchRanges(partial)` → `[bigint, bigint][]` |
+| 사용 기준 | totalSpace <= 2^53 | totalSpace > 2^53 |
+
+### API
+
+```ts
+class MetaCodecBig {
+  constructor(map: DecodeMap)
+
+  encode(entityIds: Record<string, EntityId>): VersionedValueBig
+  decode(vvb: VersionedValueBig): Readonly<Record<string, EntityId>>
+  decodeValue(value: bigint): Readonly<Record<string, EntityId>>
+  matchRanges(partial: Record<string, EntityId>): readonly [bigint, bigint][]
+  toDecodeMap(): DecodeMap
+
+  get indexId(): string
+  get versionId(): string
+  get size(): bigint
+  get shape(): readonly number[]
+}
+```
+
+### 사용 가이드
+
+- Capacity Guard(`capacity-guard.ts`)가 safePrecision 판정 — totalSpace > 2^53이면 `MetaCodecBig` 필수.
+- `MetaRegistry.createCodecBig(indexId, versionId)` 또는 `new MetaCodecBig(decodeMap)` 로 생성.
+- `matchRanges(partial)`: 부분 entity 조건으로 주소 범위 쿼리. `calcAddressRangesBig`에 위임.

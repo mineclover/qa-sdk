@@ -2,7 +2,7 @@
 def:
   id: df-cli-persistence
   scope: interface
-  aspect: api_contract
+  aspect: cli_contract
   depth: specification
   lifecycle: approved
   svc: qa-sdk-cli

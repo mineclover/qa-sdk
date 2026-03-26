@@ -1,11 +1,12 @@
 ---
 def:
   id: indexing-core-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: weighted-index
+  tags: [structural, entry-point]
   links:
     - target: coord-foundation
       type: contains
@@ -49,6 +50,10 @@ def:
       type: contains
     - target: benchmark-system
       type: contains
+    - target: permission-system
+      type: depends_on
+    - target: wi-system
+      type: depends_on
 ---
 
 ## 목적 ^purpose
@@ -57,7 +62,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 20개 멤버.
 - `coord-foundation`: 이 시스템은 좌표 시스템(Coordinate System)이다.
 - `data-design-group`: 좌표 시스템의 압축, 편입, 카탈로그 운영을 데이터 설계 관점에서 분할한 그룹.
 - `index-arch-group`: vocabulary부터 semantic까지 인덱싱 레이어와 추적 경계를 정리한 그룹.

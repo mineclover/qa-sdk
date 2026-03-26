@@ -1,11 +1,12 @@
 ---
 def:
   id: apm-runtime-system
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: infra_constraint
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: qa-sdk-cli
+  tags: [structural, tier-system]
   links:
     - target: runtime-flow-paths
       type: contains
@@ -25,7 +26,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `runtime-flow-paths`: 동기, 비동기, 디버깅 경로와 내부 참여 모듈을 정리한 문서.
 - `runtime-flow-rollout`: 구현 현황, 도입 순서, 운영 중 빠른 참조 규칙을 정리한 문서.
 - `logger-contract`: QaLogger의 인터페이스, 설정, 파라미터 계약을 정리한 문서.

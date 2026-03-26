@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: convergence-layer-spec

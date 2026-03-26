@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [migration, tier-backend]
   links:
     - target: perm-migration-algorithm
@@ -18,6 +19,13 @@ def:
 ## 목적 ^purpose
 
 `CoordMapper`의 커스텀 보정 규칙과 한계를 분리해, rename/split/merge 같은 비호환 PermissionSet 변경을 호출자가 안전하게 보정하는 범위를 정의한다.
+
+## 구성 ^overview
+
+- **CoordMapper 계약**: old shape 1-based 좌표를 입력받아 new shape 좌표 또는 null(삭제)을 반환하는 함수 타입
+- **실행 규칙**: source bit가 1인 slot만 mapper에 전달, null이면 삭제, 좌표 반환 시 target.grant() 호출
+- **지원 패턴**: one-to-one(rename 포함), many-to-one, drop 가능 — one-to-many는 불가 (후처리 필요)
+- **composite 경계**: migration API는 [feature, role] 2D grant 재배치에 한정, composite-address는 비공개 맥락
 
 ## 1. CoordMapper 계약
 

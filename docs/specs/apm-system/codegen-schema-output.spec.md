@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: qa-sdk-cli
   tags: [tier-system]
   links:
     - target: codegen-spec

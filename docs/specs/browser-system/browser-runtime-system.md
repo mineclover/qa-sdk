@@ -1,11 +1,12 @@
 ---
 def:
   id: browser-runtime-system
-  scope: flow
-  aspect: process_flow
+  scope: interface
+  aspect: api_contract
   depth: overview
   lifecycle: approved
-  tags: [tier-frontend]
+  svc: browser-sdk
+  tags: [structural, tier-frontend]
   links:
     - target: browser-capture-contract
       type: contains
@@ -23,7 +24,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `browser-capture-contract`: opt-in DOM 이벤트 자동 수집 모드와 cleanup 규칙을 정리한 문서.
 - `browser-monitor-api`: `@qa-sdk/browser`의 공개 API와 초기화 절차를 정리한 문서.
 - `browser-monitor-operations`: monitor의 내부 파라미터, 오류 처리, 빌드/사용 예시를 정리한 문서.

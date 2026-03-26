@@ -5,6 +5,7 @@ def:
   aspect: scenario
   depth: validation
   lifecycle: approved
+  svc: index-meta
   tags: [testing]
   links:
     - target: address-spec

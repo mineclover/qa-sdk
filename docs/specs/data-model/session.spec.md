@@ -16,6 +16,13 @@ def:
 
 qa_session_id 기반 세션 식별. 테스트/검증 세션 단위 추적.
 
+## 구성 ^overview
+
+- **SessionStore 포트**: upsert(멱등 생성), findById(조회), close(종료 마킹) 3개 메서드
+- **자동 생성**: ingest 시 record에 qa_session_id가 있으면 자동 upsert
+- **StoredSession**: sessionId(PK, qas_ULID), scenarioId(선택), labels(자유 KV), startedAt/closedAt
+- **verdict 연계**: close 시 closedAt 설정으로 verdict 산출 트리거 가능
+
 ## 상태
 
 implemented

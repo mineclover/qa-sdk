@@ -20,6 +20,16 @@ def:
 
 trace, session, record를 cursor 기반 pagination으로 조회하는 읽기 전용 API.
 
+## 구성 ^overview
+
+- **리소스**: trace, session, record 3종의 읽기 전용 조회 엔드포인트 제공
+- **페이지네이션**: base64url 인코딩된 cursor 기반, 기본 50건 / 최대 200건
+- **정렬**: items는 timestamp 오름차순 고정
+- **그래프 조회**: trace 단위 reconstruction된 RuntimeGraph(노드+엣지) 반환
+- **의존 포트**: GraphStore, RecordStore, TraceStore, SessionStore 4개 Store 포트 주입
+- **에러 처리**: 유효하지 않은 cursor는 400, 존재하지 않는 리소스는 404 반환
+- **클램핑**: limit > 200이면 200으로 자동 클램핑, 0 또는 음수는 400 에러
+
 ## 상태
 
 implemented

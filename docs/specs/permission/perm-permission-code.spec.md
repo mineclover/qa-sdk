@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [security]
   links:
     - target: perm-resource-model
@@ -23,6 +24,15 @@ def:
 소스: `packages/permission-engine/src/permission-code.ts`
 그룹: [perm-external-system.md](perm-external-system.md)
 원본: `docs/specs/indexing/permission-engine/resource.spec.md` SS4
+
+## 구성 ^overview
+
+- **canonical 형식**: `{service-ref}.{type}.{resource}.{action}` — 외부 시스템이 권한을 참조하는 표준 포맷
+- **파싱 규칙**: service-ref는 `/` 포함 가능하나 `.` 불포함, resource도 `.` 불포함 — 첫/두번째/마지막 `.` 기준으로 모호하지 않게 분리
+- **formatPermCode / parsePermCode**: 구조화된 PermissionCode 객체와 Tier 1 텍스트 간 양방향 변환. parsePermCode는 구조적 split만 수행하며 semantic validation은 별도
+- **PermCodeFactory**: ServiceContext를 바인딩하여 service-ref를 자동 주입하는 factory. resource에 canonicalizeResource() 적용
+- **deploy context 분리**: factory 생성 시 service는 `ctx.ref()` 기준이며, deploy context는 문자열에 포함되지 않음
+- **5개 공개 export**: PermissionCode, PermCodeFactory, formatPermCode, parsePermCode, createPermCodeFactory
 
 ## 상태
 

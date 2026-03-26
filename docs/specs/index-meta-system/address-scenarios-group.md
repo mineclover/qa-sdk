@@ -1,11 +1,12 @@
 ---
 def:
   id: address-scenarios-group
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [testing]
+  svc: index-meta
+  tags: [structural, testing]
   links:
     - target: address-scenarios-parse
       type: contains
@@ -21,7 +22,6 @@ AddressProtocolManager 시나리오를 파싱 계층과 런타임 프로토콜 �
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `address-scenarios-parse`: loose parse와 validated parse, registry 없는 주소 파싱 시나리오를 정리한 문서.
 - `address-scenarios-runtime`: protocol lifecycle management와 schema-only consumer 시나리오를 정리한 문서.
 

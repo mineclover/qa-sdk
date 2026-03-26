@@ -17,6 +17,17 @@ def:
 
 Core Event가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다. engine의 reconstruction/matching이 이 힌트를 활용하여 그래프 구조를 더 정확히 해석할 수 있다.
 
+## 구성 ^overview
+
+- **핵심 개념**: GraphHint는 이벤트가 실행 그래프에서 어떤 역할을 하는지 정적으로 선언하는 메타데이터로, engine이 그래프 구조를 해석할 때 참고한다
+- **GraphRole 4종**: entry(흐름 시작점 10개), transition(흐름 전진 23개), terminal(흐름 종착점 17개), observation(방향 불변 관측 10개)
+- **goal_eligible**: 시나리오 goal node 후보 표시 — success, complete, conversion, form_submit_success 4개만 해당
+- **loopable**: 단일 trace 내 반복 발생이 자연스러운 이벤트 표시 — 60개 중 40개가 loopable, false인 이벤트의 반복은 anomaly 후보
+- **8개 카테고리별 매핑**: navigation, interaction, form, session, network, execution, outcome, quality — 총 60개 core event에 hint 할당
+- **설계 원칙**: 힌트이지 규칙이 아님(engine override 가능), 정적 데이터(런타임 컨텍스트 불필요), category와 직교, custom event에도 적용 가능
+- **Custom Event 기본값**: graph_hint 없이 등록된 custom event에는 `{ role: "transition", goal_eligible: false, loopable: false }` 적용
+- **소비 패턴**: trace 시작점 추정(entry role), goal reachability 판단(goal_eligible), 비정상 반복 감지(loopable=false + 반복 발생)
+
 ## 상태
 
 implemented
@@ -38,15 +49,7 @@ event-catalog는 이벤트를 "무엇(what)"으로 정의한다 — category, ch
 
 ## 타입 정의
 
-```typescript
-type GraphRole = "entry" | "transition" | "terminal" | "observation";
-
-interface GraphHint {
-  role: GraphRole;
-  goal_eligible: boolean;
-  loopable: boolean;
-}
-```
+> 타입 정의: packages/event-catalog/src/types.ts — GraphRole, GraphHint
 
 ### GraphRole
 
@@ -195,19 +198,7 @@ engine이 loop 감지 시 이 플래그가 false인 이벤트의 반복을 anoma
 
 ## CoreEventDef 확장
 
-```typescript
-interface CoreEventDef {
-  event_key: string;
-  event_version: string;
-  mode: "core";
-  category: EventCategory;
-  channel: Channel[];
-  display_name: string;
-  description: string;
-  auto_collectable: boolean;
-  graph_hint: GraphHint;        // ← 추가
-}
-```
+> 타입 정의: packages/event-catalog/src/types.ts — CoreEventDef
 
 ## 소비 패턴
 

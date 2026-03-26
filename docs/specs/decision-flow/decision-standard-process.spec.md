@@ -20,7 +20,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `진입: 컨텍스트 확인`: ContextProvider로 기존 결정 이력과 패턴을 조회하는 단계를 정의한다.
 - `분기: 기존 vs 신규`: 기존 prefix 재사용과 신규 prefix 정의를 판별하는 기준을 기술한다.
 - `기존 변경 경로`: entry 추가, version 승격, capacity 확장의 산출물을 명시한다.

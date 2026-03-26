@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: index-meta
+  tags: [structural, tier-infra]
   links:
     - target: dx-lifecycle-tooling
       type: contains
@@ -21,7 +22,6 @@ index-meta 개발자 경험 문서를 도구 동선과 출력 계약으로 분�
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `dx-lifecycle-tooling`: 문제 정의, DX 전체 동선, CLI, codegen 흐름을 정리한 문서.
 - `dx-lifecycle-contract`: 와이어 포맷, 타입 추론, 제약 조건을 정리한 문서.
 

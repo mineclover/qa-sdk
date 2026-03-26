@@ -63,41 +63,7 @@ prefix가 최소 가짓수를 유지하면서 로직을 보존하게 한다.
 
 수렴 레이어의 입력이 되는 관측 집계 데이터. qa-sdk의 EventRecord.address_context에서 파생된다.
 
-```typescript
-/** 축 entry별 사용 빈도 */
-interface EntryUsage {
-  readonly axisId: string;
-  readonly entry: string;
-  readonly count: number;
-  readonly lastSeen: string;  // ISO-8601
-}
-
-/** prefix 주소별 사용 빈도 */
-interface AddressUsage {
-  readonly prefix: string;
-  readonly version: string;
-  readonly address: number;
-  readonly count: number;
-}
-
-/** 두 prefix 주소의 동시 출현 */
-interface CoOccurrence {
-  readonly sourcePrefix: string;
-  readonly sourceEntry: string;
-  readonly targetPrefix: string;
-  readonly targetEntry: string;
-  readonly count: number;
-  readonly totalSourceCount: number;  // source 단독 출현 횟수
-}
-
-/** 관측 집계 데이터 전체 */
-interface UsageData {
-  readonly entryUsages: readonly EntryUsage[];
-  readonly addressUsages: readonly AddressUsage[];
-  readonly coOccurrences: readonly CoOccurrence[];
-  readonly collectionPeriod: { from: string; to: string };
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — EntryUsage, AddressUsage, CoOccurrence, UsageData
 
 이 데이터는 수렴 레이어가 **소비할 뿐 생성하지 않는다.** 생성은 qa-sdk의 관측 계층이 담당한다 (다음 스펙).
 
@@ -111,18 +77,7 @@ interface UsageData {
 
 ### 축 비교
 
-```typescript
-interface AxisOverlap {
-  readonly a: string;
-  readonly b: string;
-  readonly sharedEntries: readonly string[];
-  readonly aOnly: readonly string[];
-  readonly bOnly: readonly string[];
-  readonly overlapRatio: number;
-  readonly recommendation: "merge" | "alias" | "keep-separate" | "review";
-  readonly reason: string;
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — AxisOverlap
 
 **비교 로직:**
 
@@ -138,17 +93,7 @@ interface AxisOverlap {
 
 ### prefix 비교
 
-```typescript
-interface PrefixOverlap {
-  readonly a: string;
-  readonly b: string;
-  readonly sharedAxes: readonly string[];
-  readonly sharedRefs: readonly string[];
-  readonly structuralSimilarity: number;  // 0~1
-  readonly recommendation: "merge" | "split" | "keep-separate" | "review";
-  readonly reason: string;
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — PrefixOverlap
 
 **비교 로직:**
 
@@ -170,15 +115,7 @@ interface PrefixOverlap {
 
 같은 대상에 대한 두 결정이 충돌하거나 중복되는지 검사한다. Decision 노드의 lifecycle과 justifies 대상을 기반으로 비교한다.
 
-```typescript
-interface DecisionConflict {
-  readonly a: string;
-  readonly b: string;
-  readonly sharedTargets: readonly string[];
-  readonly conflict: "contradictory" | "redundant" | "superseding" | "compatible";
-  readonly resolution: string;
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — DecisionConflict
 
 **비교 로직:**
 
@@ -194,10 +131,7 @@ interface DecisionConflict {
 
 ### 전체 결정 스캔
 
-```typescript
-/** 활성 Decision 전체에서 충돌/중복 쌍을 찾는다 */
-function scanDecisionConflicts(graph: GraphRegistry): DecisionConflict[];
-```
+> 함수 정의: packages/convergence/src/decision-comparator.ts — scanDecisionConflicts()
 
 ---
 
@@ -207,16 +141,7 @@ function scanDecisionConflicts(graph: GraphRegistry): DecisionConflict[];
 
 관측 데이터의 co-occurrence에서 인과 관계 후보를 추출하고, 확인되면 DKG에 IntentLink로 고정한다.
 
-```typescript
-interface CausalCandidate {
-  readonly source: { prefix: string; entry: string };
-  readonly target: { prefix: string; entry: string };
-  readonly coOccurrenceRate: number;  // target 출현 / source 출현
-  readonly observedCount: number;
-  readonly confidence: "high" | "medium" | "low";
-  readonly suggestion: "intent-link" | "constraint" | "observe-more";
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — CausalCandidate
 
 **발견 로직:**
 
@@ -253,29 +178,7 @@ constraint check에서 이 invariant 위반 감지 가능
 
 prefix가 로직을 유지하면서 최소 가짓수를 유지하도록 돕는다. 미사용 차원, 저사용 entry, 과도한 주소 공간을 감지한다.
 
-```typescript
-interface SimplificationCandidate {
-  readonly prefix: string;
-  readonly addressSpaceSize: number;
-  readonly activeAddressCount: number;
-  readonly utilizationRate: number;  // active / total
-
-  /** 미사용 차원 (모든 관측에서 단일 값만 사용) */
-  readonly singleValueDims: readonly { dim: string; value: string }[];
-
-  /** 저사용 entry (사용률 5% 미만) */
-  readonly lowUsageEntries: readonly { axis: string; entry: string; usageRate: number }[];
-
-  /** 제안 */
-  readonly suggestions: readonly SimplificationSuggestion[];
-}
-
-type SimplificationSuggestion =
-  | { kind: "remove-dim"; dim: string; reason: string }
-  | { kind: "deactivate-entry"; axis: string; entry: string; reason: string }
-  | { kind: "split-prefix"; newPrefixes: string[]; reason: string }
-  | { kind: "ok"; reason: string };
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — SimplificationCandidate, SimplificationSuggestion
 
 **분석 로직:**
 
@@ -297,19 +200,7 @@ type SimplificationSuggestion =
 
 새 prefix가 필요한 시점과 위치를 추천한다. 기존 prefix의 복잡도 증가, 새로운 관측 패턴, 도메인 경계 변화를 감지한다.
 
-```typescript
-interface BoundaryRecommendation {
-  readonly reason: string;
-  readonly suggestedDomain: string | null;
-  readonly suggestedDims: readonly string[];
-  readonly relatedPrefixes: readonly {
-    id: string;
-    relation: "extends" | "splits-from" | "independent";
-  }[];
-  readonly estimatedCapacity: number;
-  readonly confidence: "high" | "medium" | "low";
-}
-```
+> 타입 정의: packages/convergence/src/convergence.types.ts — BoundaryRecommendation
 
 **추천 로직:**
 

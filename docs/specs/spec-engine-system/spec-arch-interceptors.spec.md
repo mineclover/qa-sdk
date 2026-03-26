@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-core-types
@@ -15,6 +16,13 @@ def:
 ## 목적 ^purpose
 
 Decorator와 Interceptor 설계. 횡단 관심사(로깅, 검증, 캐시)를 모듈 수준에서 처리.
+
+## 구성 ^overview
+
+- **Decorator 3종**: @Boundary(경계 바인딩, controller), @Contract(계약 바인딩, handler), @Schema(스키마 바인딩, handler) — SetMetadata 기반
+- **DiscoveryService**: 런타임에 controller의 boundary_id, contract_id 메타데이터를 자동 수집·인덱싱
+- **TraceInterceptor**: trace ID 추출 또는 생성 후 TraceContextService.run()으로 전파
+- **ContractBindingInterceptor**: Reflector로 boundary_id·contract_id를 읽어 TraceContext에 바인딩
 
 ---
 

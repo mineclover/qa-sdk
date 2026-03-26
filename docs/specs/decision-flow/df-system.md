@@ -1,26 +1,20 @@
 ---
 def:
   id: df-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
   svc: decision-flow
-  tags: [decision, entry-point]
+  tags: [structural, decision, entry-point]
   links:
-    - target: df-axis-model
+    - target: df-model-group
       type: contains
-    - target: df-observation-space
+    - target: df-analysis-group
       type: contains
-    - target: df-vector-analysis
+    - target: df-interface-group
       type: contains
     - target: df-constraint
-      type: contains
-    - target: df-state-model
-      type: contains
-    - target: df-serialization
-      type: contains
-    - target: df-causal-mapping
       type: contains
     - target: decision-standard-group
       type: contains
@@ -28,15 +22,7 @@ def:
       type: contains
     - target: axis-decision-guide
       type: contains
-    - target: df-cli-persistence
-      type: contains
-    - target: df-cli-query
-      type: contains
-    - target: df-ingest-emission
-      type: contains
     - target: df-dev-decisions
-      type: contains
-    - target: df-time-analysis
       type: contains
     - target: df-gate-integration
       type: contains
@@ -50,33 +36,15 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 16개 멤버.
-
-코어:
-- `df-axis-model`: 의사결정 도메인의 11개 축 정의.
-- `df-observation-space`: 5개 prefix가 의사결정의 관찰 가능한 좌표 공간을 구성한다.
+- `df-model-group`: 축 정의, 관측 공간, 상태 전이, 직렬화 — 핵심 모델 계층.
+- `df-analysis-group`: 벡터 비교, 시간 패턴, 인과 매핑 — 분석 계층.
+- `df-interface-group`: CLI 영속화, CLI 조회, ingest 전송 — 외부 인터페이스 계층.
 - `df-constraint`: 게이트 무게, 인과 그래프, 결정 계층, 컨텍스트 바운더리.
-- `df-state-model`: FlowInstance 생명주기 + 서사 구조.
-- `df-serialization`: 의사결정 좌표의 직렬화 형식.
-
-분석:
-- `df-vector-analysis`: 투영된 결정 벡터들의 분포, 차이, 이동, 패턴 분석.
-- `df-causal-mapping`: 비즈니스 요구(X) ↔ 기술 구현(Y) 인과 매핑.
-- `df-time-analysis`: gate별 소요 시간, 완료→판정 지연, 시간 기반 패턴.
-
-응용:
+- `decision-standard-group`: 표준 프로세스 + 체크리스트.
+- `df-narrative-group`: 서사 구조 + 컨텍스트 + 증명.
+- `axis-decision-guide`: 축 판단 프레임워크 (범용 재사용 가능).
 - `df-dev-decisions`: 5개 일상 결정 FlowSchema + 자동 정책 + 라우터.
 - `df-gate-integration`: GateEngine 4-state × decision prefix 연동.
-- `df-narrative-group`: 서사 구조 + 컨텍스트 + 증명.
-- `decision-standard-group`: 표준 프로세스 + 체크리스트.
-
-CLI:
-- `df-cli-persistence`: SQLite 영속 (WAL + active 복원 + verdict).
-- `df-cli-query`: lookup/history/verdict/judge 조회 명령.
-- `df-ingest-emission`: ingest-server 이벤트 전송 (fail-open).
-
-가이드:
-- `axis-decision-guide`: 축 판단 프레임워크 (범용 재사용 가능).
 
 ## 구현 상태
 

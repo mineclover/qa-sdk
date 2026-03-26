@@ -20,6 +20,13 @@ def:
 계약 테스트: `packages/demo-tests/src/merge-contract/`
 영향 패키지: weighted-index, permission-engine, index-meta, decode-service
 
+## 구성 ^overview
+
+- **5가지 의미적 중복 식별**: String→index 맵(D-1), shape 배열(D-2), capacity 곱셈 경로(D-3), stride 공식(D-4), unresolved ref(D-5)
+- **해결 전략**: D-1은 LabelRegistry 위임, D-2는 _buildShape() 추출, D-3은 계약 테스트로 일치 보장, D-4는 calcWeights() canonical 승격, D-5는 decodeDeepDetailed() 추가
+- **의도적 분리 유지**: MetaRegistry vs defineTable(런타임 vs 빌드타임), PermissionCodec vs MetaCodec(고정 4D vs 임의 N-D) — 역할 상이하므로 병합하지 않음
+- **검증**: 5개 패키지 2,429 테스트 전체 통과
+
 ---
 
 

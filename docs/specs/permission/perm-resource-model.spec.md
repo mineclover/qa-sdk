@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [security]
   links:
     - target: system-concepts
@@ -17,6 +18,16 @@ def:
 리소스 식별자 모델. 소문자, / 구분, depth <= 4, :param 허용. leading/trailing slash 금지.
 
 리소스 식별자 모델. 소문자, / 구분, depth <= 4, :param 허용. leading/trailing slash 금지.
+
+## 구성 ^overview
+
+- **canonical resource 형식**: `segment(/segment)*` 구조로 소문자, `/` 구분, leading/trailing slash 금지, depth 기본 4 이하
+- **세그먼트 규칙**: 일반 세그먼트는 `[a-z0-9_-]+`, 파라미터 세그먼트는 `:[A-Za-z][A-Za-z0-9_]*` 형식
+- **validateResource()**: 누적 오류 반환 방식으로 12종의 rule 위반(non-empty, no-leading-slash, max-depth 등)을 검사
+- **canonicalizeResource()**: trim 후 검증, 실패 시 RangeError 발생
+- **parseResource()**: canonical resource를 `{ raw, segments, depth, hasParams, paramNames }` 구조로 파싱
+- **타입별 패턴**: page(depth 3, param 불가), api(depth 4, param 허용), action(depth 3, param 불가) 세 가지 기본 ResourcePattern 제공
+- **validateResourceForType()**: 타입별 maxDepth/allowParams를 자동 적용하며, 미등록 타입은 일반 규칙으로 fallback
 
 소스: `packages/permission-engine/src/resource.ts`
 그룹: [perm-external-system.md](perm-external-system.md)

@@ -18,6 +18,13 @@ def:
 
 core package의 canonical event record 구조와 저장/조회 동작을 정의한다.
 
+## 구성 ^overview
+
+- **EventRecord 구조**: log_id(ULID), trace context(trace_id/span_id/parent_span_id), event identity(event_key/event_version), span 전용 필드, payload descriptor 4종 + 자유 payload
+- **PayloadFormat 6종**: json, rpc, protobuf, text, binary, stream — PayloadEncoding(raw/base64/gzip+base64)과 독립 축으로 조합
+- **RecordStore 동작**: batch 단위 저장, trace_id/session_id/event_key 기준 조회, timestamp+log_id cursor 기반 페이지네이션
+- **설계 원칙**: 모든 필드명 snake_case, payload 자유 구조 허용하되 descriptor 필드는 항상 동반, 중복 삽입 처리는 adapter 위임
+
 ## 상태
 
 implemented

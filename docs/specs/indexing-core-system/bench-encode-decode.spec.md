@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [performance]
   links:
     - target: wi-api
@@ -18,6 +19,15 @@ def:
 ## 목적 ^purpose
 
 WeightedIndex encode/decode 처리량과 차원 수 한계 측정.
+
+## 구성 ^overview
+
+- **차원 수 한계**: `Number.MAX_SAFE_INTEGER` (2^53-1) 제약 하에서 dimSize별 최대 차원 수 정의
+- **WI 좌표 encode/decode**: 순수 수학 레이어(O(d) 곱셈/나눗셈) 성능 — 차원 수에 선형 감소, dimSize는 encode에 무영향
+- **MetaCodec 파이프라인**: integer → entity 이름까지 전체 디코딩 레이어별 오버헤드 분리 (WI → PrefixCodec → MetaCodec)
+- **WI→MetaCodec 오버헤드**: ~160ns (Map lookup + 객체 생성), 차원당 ~40ns 추가
+- **엔트리 수 무관**: LabelRegistry가 Map 기반 O(1) lookup이므로 엔트리 수는 성능에 거의 영향 없음
+- **종합 워크로드**: 10x20x50 공간에서 encode 5.8M ops/s, decode 5.3M ops/s, 전체 라운드트립 1.6M ops/s
 
 ---
 

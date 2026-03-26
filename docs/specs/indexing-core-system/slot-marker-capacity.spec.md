@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: slot-marker-patterns
@@ -15,6 +16,13 @@ def:
 ## 목적 ^purpose
 
 슬롯 마커가 용량(capacity)에 미치는 영향. headroom 계산과 reserved slot 규칙.
+
+## 구성 ^overview
+
+- **shape 증가**: 마커는 각 차원의 shape을 증가시켜 전체 주소 공간이 기하급수적으로 커진다
+- **capacity planner 반영**: 용량 계획 시 마커 수를 current에 반드시 합산해야 한다
+- **마커 수 선택**: 1개(최소, null만), 2개(표준, 대부분 운영), 3개(확장, 파싱 실패 구분)
+- **오버헤드 규모**: 마커 2개 기준 주소 공간 +110% — 차원 수가 많을수록 비용 급증
 
 ---
 

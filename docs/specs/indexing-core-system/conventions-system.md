@@ -1,11 +1,12 @@
 ---
 def:
   id: conventions-system
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: tech_constraint
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: conv-naming
       type: contains
@@ -13,6 +14,10 @@ def:
       type: contains
     - target: conv-acceleration
       type: contains
+    - target: index-meta-system
+      type: constrains
+    - target: wi-system
+      type: constrains
 ---
 
 # conventions-system
@@ -33,7 +38,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `conv-naming`: 축/entry/prefix ID의 네이밍 제약.
 - `conv-reserved-entries`: Reserved Entry 규칙.
 - `conv-acceleration`: 가속 지향 설계 규칙.

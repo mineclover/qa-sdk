@@ -19,6 +19,14 @@ def:
 
 클라이언트 측 payload의 민감정보를 마스킹해 전송 전 노출을 줄이는 보안 규칙과 적용 범위를 정의한다.
 
+## 구성 ^overview
+
+- **4가지 마스킹 모드**: raw(원본 유지), mask(존재 여부만 보존), drop(필드 삭제), hash(비가역 해시 변환)
+- **MaskingRule 인터페이스**: field(대상 필드명) + mode(변환 방식)로 규칙 선언
+- **hash 구현**: `simpleHash()` non-cryptographic 해시, `h_<8자리 hex>` 형식, deterministic 단방향
+- **반환값**: masked(변환된 payload shallow copy) + maskedFields(적용된 필드명 배열, raw 포함)
+- **제약**: top-level 필드만 지원, nested path 미지원, payload에 없는 field의 rule은 무시
+
 ## 상태
 
 implemented

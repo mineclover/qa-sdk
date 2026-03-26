@@ -24,6 +24,17 @@ MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합
 
 외부 시스템 통합 시나리오 (AddressProtocolManager): [scenarios-address.spec.md](scenarios-address.spec.md)
 
+## 구성 ^overview
+
+- **핵심 개념**: MetaCodec/MetaResolver/MetaRegistry/PrefixRegistry 전체 통합 시나리오를 16개 카테고리로 검증한다
+- **DecodeMap 자립 디코딩**: MetaRegistry 없이 DecodeMap + address 번들만으로 UUID → entity ID 전체 복원 가능 (DM-E2E 시리즈)
+- **RDB 저장/복원 사이클**: UUID PK 생성 → 저장 → 복원의 bijection 보장, 전체 공간 27조합 유일성 검증
+- **버전 마이그레이션**: v1 PK → v2 PK 전환 시 entity ID 보존, batch 일괄 변환 지원
+- **주소 해석**: `"perm:v1:1345"` 문자열에서 capacity/shape/refs를 즉시 복원하고 유효 범위 검증
+- **디코딩 없는 주소 재사용**: 1D 정수를 다른 composite의 dim으로 직접 재사용하여 DB range scan 가능 (Graph-DB 효율)
+- **PrefixRegistry DAG**: composite 등록 시 refs DAG 영속화, cascade/역방향 조회, capacity 일관성 검증
+- **즉시 마이그레이션(read-repair)**: DB에서 읽은 주소를 접근 시점에 최신 버전으로 즉각 변환, 혼재 버전 batch 처리 지원
+
 
 
 ## 참조

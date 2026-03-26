@@ -1,11 +1,12 @@
 ---
 def:
   id: table-system-group
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: table-dimref-types
       type: contains
@@ -23,7 +24,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `table-dimref-types`: 두 종류의 DimRef — axis(닫힌 어휘 참조)와 table_ref(외부 관계형 테이블 참조)의 차이와 사용 규칙.
 - `table-schema-def`: TableDef — 관계형 세계의 구조 선언.
 - `table-accessor-api`: accessor API에서 table_ref를 처리하는 방법.

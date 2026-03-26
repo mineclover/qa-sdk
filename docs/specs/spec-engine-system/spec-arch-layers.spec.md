@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-arch-interceptors
@@ -15,6 +16,16 @@ def:
 ## 목적 ^purpose
 
 spec-engine의 계층 분리 원칙. core → adapter → service 방향으로만 의존 허용.
+
+## 구성 ^overview
+
+- **2패키지 분리**: spec-core(순수 TS 커널, NestJS 의존 없음) + spec-server(NestJS 호스트, spec-core의 adapter)
+- **4계층 런타임 스택**: spec-server(서버 전용) → spec-core(공용 커널) → Indexing Layer(수학/어휘/프로토콜) → External Semantic(플러그인)
+- **의존 방향 원칙**: NestJS App → spec-core → 좌표 레이어 단방향만 허용. 코어가 NestJS에 역방향 의존 금지
+- **3가지 소비 경로**: spec-server(HTTP API + DI), CLI(직접 import, DI 없이 경량), 테스트/다른 패키지(직접 import)
+- **spec-core 내부 구조**: export-surface, schema(registry/validator/fragments), spec(document/prefix), loader(catalog-bridge), codegen(IR→TS/JS/Proto/JSON Schema)
+- **기존 패키지 통합**: weighted-index(encode/decode), demo-snapshot(DEMO_CATALOG로 registry 초기화), index-meta(버전 lifecycle 동기화)
+- **함정 방지**: decorator가 source of truth 되는 것 금지, 코어 registry는 반드시 singleton, core에 @nestjs/* import 금지, CQRS 조기 도입 금지
 
 ---
 

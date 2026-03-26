@@ -20,6 +20,16 @@ def:
 A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축하여
 인덱싱 시스템의 packed_key 기반 운영 분석을 가능하게 한다.
 
+## 구성 ^overview
+
+- **파이프라인 경로**: A1(이벤트 생성) → A5(집계) → A6(메트릭 저장), MQ 인프라는 Unit 1 선행
+- **4단계 Phase**: A(포트 인터페이스) → B(집계 로직) → C(저장+캐시) → D(MQ 연결)
+- **핵심 포트**: KeyCache(bigint 키 캐시), Aggregator(groupByKey + projectAxis)
+- **집계 로직**: Transition(전이 쌍 추출+window 버킷), Path(trace 기준 시퀀스 정규화+해시)
+- **projectAxis()**: 전체 decode 없이 packed_key에서 특정 축 값만 추출하는 함수
+- **캐시 어댑터**: InMemory, Redis, Cloudflare KV 3종 지원
+- **산출물**: key-cache 패키지, pipeline 패키지, A 흐름 커버리지 57%→100% 달성 목표
+
 ## 흐름 심볼
 
 `[A1]` Event Create · `[A5]` Aggregate · `[A6]` Metrics Store

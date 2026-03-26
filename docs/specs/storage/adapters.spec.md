@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: storage-schema-spec
@@ -18,6 +19,16 @@ def:
 ## 목적 ^purpose
 
 core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
+
+## 구성 ^overview
+
+- **8개 Store 어댑터**: RecordStore, TraceStore, SessionStore, TransmissionStore, ScenarioSpecStore, GraphStore, VerdictStore, DlqStore — 각각 Drizzle(PostgreSQL)과 InMemory 구현체 제공
+- **공통 패턴**: Drizzle adapter는 `DbExecutor` 주입, InMemory adapter는 Map/배열 기반 테스트용이며, 모든 adapter가 core port interface를 구현
+- **멱등 쓰기**: RecordStore는 `ON CONFLICT DO NOTHING`, TraceStore/SessionStore는 `ON CONFLICT DO UPDATE`로 중복 안전한 upsert 지원
+- **커서 기반 페이지네이션**: RecordStore의 `findByTraceIdPaginated`/`findBySessionIdPaginated`는 `(timestamp, log_id)` 복합 커서 + `LIMIT+1` 패턴으로 hasMore 판정
+- **CleanupStore**: cascade 없이 관련 record → graph → verdict → trace → orphan session 순서로 수동 삭제하는 전용 포트 (ingest-server 내부 정의)
+- **DlqStore**: Dead Letter Queue — phase(`reconstruction`/`verdict`), 재시도 횟수 추적, resolved_at null이면 pending
+- **제약 사항**: TransmissionStore는 insert only(감사 로그), ScenarioSpec은 JSONB 전체 저장(개별 필드 쿼리 불가), VerdictStore는 `(scenario_id, trace_id)` 복합 unique
 
 ## 상태
 

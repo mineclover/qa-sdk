@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security]
   links:
     - target: gate-state-model

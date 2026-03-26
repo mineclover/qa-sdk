@@ -17,6 +17,13 @@ def:
 
 reconstruction / verdict 후처리 실패를 적재하는 dead-letter queue 포트 계약.
 
+## 구성 ^overview
+
+- **DlqPhase 2종**: reconstruction(재구성 실패)과 verdict(판정 실패) 단계 구분
+- **DlqStore 포트 4종**: insert(pending 생성), findPending(미해결 조회), markAttempted(재시도 카운트 증가), markResolved(해결 완료 처리)
+- **생명주기**: 생성(attemptCount=0) → 재시도(attemptCount 증가 + lastAttemptedAt 갱신) → 해결(resolvedAt 설정, findPending에서 제외)
+- **제약**: DLQ 항목 1개 = trace 1개 대응, 재시도 정책과 최대 시도 횟수 관리는 상위 계층 책임
+
 ## 상태
 
 implemented

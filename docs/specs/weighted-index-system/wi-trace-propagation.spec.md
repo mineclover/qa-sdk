@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: wi-trace-group
@@ -21,6 +22,16 @@ def:
 ## 목적 ^purpose
 
 변경 유형별 전파 경로. entry 추가(additive), entry 삭제(reductive), shape 변경(structural)이 상위 계층에 미치는 영향.
+
+## 구성 ^overview
+
+- **유형 1 — headroom 내 entry 추가**: shape/stride 불변, 기존 주소 보존, 전파 없음 (안전)
+- **유형 2 — capacity 변경 (stride-break)**: stride는 동일하지만 주소 공간 크기 변경, bitmask 재생성 필요
+- **유형 3 — shape 재구성 (full stride-break)**: 차원 추가 등으로 stride 완전 변경, 모든 기존 주소 re-encode 필요
+- **유형 4 — prefix_ref 대상 변경**: 참조 prefix의 shape 변경 시 상위 계층(DKG)이 감지·처리해야 하는 경계
+- **전파 시나리오 — entry 추가**: LabelRegistry에 entry 추가 → shape 불변 확인 → DKG 4단계 cascade → 서비스 마이그레이션 불필요
+- **전파 시나리오 — capacity 확장**: max 초과 시 capacity 확장 → 새 prefix version 생성 → bitmask 크기 변경 → 소비자 갱신 필요
+- **weighted-index 경계**: prefix 간 참조 전파는 weighted-index가 아닌 호출자(demo-accessors, DKG)의 책임
 
 ---
 

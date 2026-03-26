@@ -1,11 +1,12 @@
 ---
 def:
   id: index-meta-store-group
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: index-meta
+  tags: [structural, tier-infra]
   links:
     - target: index-meta-store-contract
       type: contains
@@ -21,8 +22,8 @@ index-meta 저장소 문서를 저장 계약과 주소 해석/재사용 경로�
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
-- `index-meta-store-contract`: 설계 목적, 역할 분리, 저장 타입, 인터페이스, 동작 규칙을 정리한 문서.
-- `index-meta-store-resolution`: 구현 예시, DB 상태, 주소 해석, decode 없는 재사용 전략을 정리한 문서.
+총 2개 멤버.
+- `index-meta-store-contract`: 설계 목적, 역할 분리, 저장 타입, IndexMetaStore/SqlDriver/SqlDialect 인터페이스, 동작 규칙, SQL 어댑터 구현체 목록을 정리한 문서.
+- `index-meta-store-resolution`: VersionLifecycleStore, MigrationStore, PrefixRouter, CrossVersionEntrySync, 주소 해석, decode 없는 재사용 전략을 정리한 문서.
 
 원본: `docs/specs/indexing/index-meta/store.spec.md` (`index-meta-store`)

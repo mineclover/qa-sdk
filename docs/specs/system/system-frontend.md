@@ -5,7 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-frontend]
+  tags: [structural, tier-frontend]
   links:
     - target: browser-system
       type: contains

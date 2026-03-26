@@ -20,6 +20,16 @@ def:
 `calcAddressRanges` — 부분 좌표 제약에서 주소 구간 계산.
 디코딩 없이 1D 주소 공간을 직접 필터링한다.
 
+## 구성 ^overview
+
+- **핵심 개념**: n차원 좌표를 단일 정수로 인코딩한 WeightedIndex에서, 특정 차원을 고정하면 예측 가능한 정수 구간이 생성되어 DB `BETWEEN` 쿼리로 디코딩 없이 필터링 가능
+- **CoordConstraint 문법**: `null`(와일드카드), `"n"`(단일), `"a-b"`(범위), `"a,b"`(이산 OR), `"a-b,c-d"`(범위 OR) 5종 표현식 지원
+- **API 3종**: `calcAddressRanges`(제약 → 구간 목록), `mergeRanges`(합집합), `intersectRanges`(교집합)
+- **차원 위치와 성능**: 외부 차원(낮은 index, 높은 weight)을 고정하면 연속 구간 1개, 내부 차원일수록 구간 수 폭발 — 자주 필터링하는 차원을 외부에 배치하는 것이 최적
+- **OR/AND 조합 연산**: 합집합은 `mergeRanges`, 교집합은 `intersectRanges` 또는 단일 호출에 여러 dim 고정으로 수행
+- **중첩 prefix 활용**: PrefixCodec과 결합하여 composite prefix를 디코딩 없이 순수 산술로 필터링하며, 비율은 `1/shape[dimIndex]`로 예측 가능
+- **사용 예**: role/env 필터링, OR 조건, AND 조건, SQL `BETWEEN` 생성까지의 전체 코드 예시 포함
+
 관련: [core.spec.md](core.spec.md), [../index-meta/store.spec.md](../index-meta/store.spec.md)
 
 

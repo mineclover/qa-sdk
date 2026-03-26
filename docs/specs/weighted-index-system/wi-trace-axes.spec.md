@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: wi-trace-group
@@ -18,6 +19,15 @@ def:
 
 추적성의 3축: 역할(producer/consumer/auditor), 변경 유형(additive/reductive/structural), 고정(stride/capacity/shape).
 
+## 구성 ^overview
+
+- **주소 항등성**: 같은 shape + 같은 좌표 = 항상 같은 정수 (stride가 shape의 결정론적 함수)
+- **버전 격리**: prefix:version:id 삼중체가 decode의 열쇠, 서로 다른 version의 주소는 독립적
+- **변경 감지**: diff()로 두 버전 간 changedLabels, fromMax→toMax를 구조적으로 기술
+- **5단계 cascade**: weighted-index(diff) → DKG composes → DKG contains/references → DKG consumes → qa-sdk 런타임
+- **3-tier 핀 구조**: label version(어휘 고정) → prefix version(shape 고정) → WeightedIndex(stride 고정)
+- **핀 불변식**: ids 배열 append-only, labelVersions 스냅샷 생성 후 불변, shape→stride→encode/decode 불변
+- **연쇄 규칙**: label version 변경 → 새 prefix version 필요 → 새 WeightedIndex 생성, 기존 핀은 절대 수정 불가
 
 ---
 

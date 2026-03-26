@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: index-meta
   tags: [tier-infra]
   links:
     - target: canonical-format-spec
@@ -22,6 +23,15 @@ constants() 빌드 로직과 RESERVED_TOKENS. 모든 예약 토큰은 constants(
 
 그룹: [sdk-system.md](sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
+
+## 구성 ^overview
+
+- **예약 토큰 3종**: `"_"`(null/값 없음), `"~"`(other/분류 불가), `"?"`(unknown/식별 불가) — RESERVED_TOKENS Set으로 관리
+- **오버라이드 가능**: 테이블별로 예약 토큰 커스터마이징 지원 (예: number_enum에서 `"NaN"` 추가, 또는 빈 Set으로 필터링 비활성화)
+- **3가지 접근 메서드**: entries()(전체 포함), constants()(예약 토큰+inactive 제외), dimFullView()(빈 슬롯+capacity 포함)
+- **constants() 빌드 로직**: entries 순회하며 예약 토큰과 inactive 항목을 제외한 정규 도메인 값만 `{ key: value }` 형태로 반환
+- **inactive 필터링**: entryFlags로 deprecated 표시된 항목은 constants에서 제외되지만, entries/encode/decode에서는 유효 (기존 데이터 호환)
+- **SDK-level constants**: IndexClient 바인딩 없이 dim + snapshot을 직접 지정하여 상수 추출 가능
 
 ## 상태
 

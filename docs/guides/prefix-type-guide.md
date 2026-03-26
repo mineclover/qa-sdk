@@ -17,6 +17,16 @@ def:
 
 프로젝트를 분석하여 적절한 prefix를 설계하는 가이드. prefix 유형별 축 조합 패턴과 설계 의사결정 기준.
 
+## 구성 ^overview
+
+- **핵심 개념**: prefix는 N개 축의 조합으로 만든 주소 공간이며, 시스템의 특정 지점에서 발생한 일을 좌표로 표현한다
+- **6종 카테고리**: entity(정체성 5개), event(발생 15개), observation(관측 11개), policy(권한 2개), relation(관계 1개), state(상태 0개)로 모든 prefix를 분류
+- **프로젝트 분석 6단계**: 명사(entity) → 동사(event/observation) → 규칙(policy) → 관계(relation) → 축 설계(5Q Checklist) → DSL 번들 구성
+- **dim 3종**: axis(유한 열거형, 정수 position), prefix_ref(다른 prefix 주소 참조), table_ref(외부 DB 참조, 인코딩 안 됨)
+- **5Q Checklist**: 유한성, 의사결정 사용 여부, 공유 여부, 안정성, capacity 합리성 — 전부 YES이면 axis
+- **capacity 공식**: `nextPowerOf2(entries × 2)` — entries 수에 따라 8/16/32/64 등으로 설정
+- **카테고리 판정**: `category-rules.ts`의 `CATEGORY_RULES` 기반, `inferCategory()`가 meta.category 우선 → 구조 기반 fallback 순으로 결정
+
 ## 1. prefix가 뭔가
 
 prefix는 **N개 축의 조합으로 만든 주소 공간**. 어떤 시스템의 "이 지점에서 이런 일이 일어났다"를 좌표로 표현.

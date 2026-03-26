@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security, tier-infra]
   links:
     - target: gate-engine-group
@@ -17,6 +18,13 @@ def:
 ## 목적 ^purpose
 
 GateEngine Decorator 패턴. DimStateSpec을 외부에서 주입하여 gate 상태 계산을 확장.
+
+## 구성 ^overview
+
+- **DimStateSpec**: dim별 inactive/open 좌표 목록을 담는 값 객체로, 외부에서 GateEngine에 주입
+- **순수 변환**: GateEngine은 상태 출처를 모르며 DimStateSpec → AddressStateCacheRecord 변환만 수행
+- **확장 소스**: EntryFlagStore, 운영 설정, prefix_ref 전파 등에서 DimStateSpec을 생성
+- **불변식**: 같은 DimStateSpec은 항상 같은 결과를 보장하며, Decorator는 생성만 담당하고 recompute에 개입하지 않는다
 
 ---
 

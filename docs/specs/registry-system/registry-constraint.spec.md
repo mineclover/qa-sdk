@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: registry-service
   tags: [tier-infra]
   links:
     - target: registry-api

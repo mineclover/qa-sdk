@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: wi-trace-group
@@ -23,6 +24,14 @@ def:
 ## 목적 ^purpose
 
 수정의 프로토콜. 변경 시 반드시 따라야 하는 절차 — 영향 분석 → 호환성 확인 → 마이그레이션 → 검증.
+
+## 구성 ^overview
+
+- **entry 추가 (headroom 내)**: shape 불변 확인 후 LabelRegistry에 새 version append, 기존 prefix version 유지
+- **entry 추가 (headroom 초과)**: 새 capacity 설정 + 새 prefix version 생성 + migrate()로 기존 주소 마이그레이션
+- **차원 추가/제거**: 차원 추가는 full stride-break + 전체 re-encode, 차원 제거는 금지하고 비활성화만 허용 (position 항등성 보존)
+- **상위 계층 계약**: DKG에 변경 감지(diff), 영향 판정, 마이그레이션 경로, 범위 산출 제공; qa-sdk에 인코딩/디코딩/직렬화/부분 바인딩 제공
+- **7대 불변식**: calcWeights 유일성, ids append-only, v 필드 필수, labelVersions 스냅샷 불변, diff/migrate 순수성, prefix_ref 전파 비책임
 
 ---
 

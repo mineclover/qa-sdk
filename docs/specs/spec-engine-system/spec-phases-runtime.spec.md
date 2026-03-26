@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-engine-phases

@@ -1,12 +1,12 @@
 ---
 def:
   id: registry-system
-  scope: flow
-  aspect: process_flow
+  scope: interface
+  aspect: api_contract
   depth: overview
   lifecycle: approved
   svc: registry-service
-  tags: [entry-point, tier-infra]
+  tags: [structural, entry-point, tier-infra]
   links:
     - target: registry-api
       type: contains
@@ -34,7 +34,6 @@ Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하�
 
 ## 구성 ^overview
 
-overview: 총 8개 멤버.
 - `registry-api`: Prefix 등록/조회, 버전 생성/전이, DAG 관계 질의를 제공하는 REST 엔드포인트.
 - `registry-data-model`: PrefixRecord(prefix 메타데이터), VersionRecord(버전별 상태/capacity/refs), DimRef(DAG 참조)의 3개 핵심 엔티티를 정의한다.
 - `registry-version-lifecycle`: prefix 버전의 상태 전이 규칙.

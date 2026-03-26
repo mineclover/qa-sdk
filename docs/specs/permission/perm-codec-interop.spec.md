@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [security, tier-backend]
   links:
     - target: perm-codec-stack
@@ -20,6 +21,13 @@ def:
 ## 목적 ^purpose
 
 PermissionCodec이 PrefixCodec, SemanticAddress, MetaCodec과 같은 address space를 공유하도록 만드는 상호운용 계약을 분리해, permission 주소의 저장·전송 경계를 안정적으로 맞춘다.
+
+## 구성 ^overview
+
+- **PrefixCodec 동등성**: prefix name `perm`, label 순서 `[service, type, resource, action]`, entry 순서 일치 시 동일 Tier 2 address 생성
+- **SemanticAddress 대응**: `perm:v1:42` 형식으로 schema/version/index 매핑, version 생략 단축형(`perm:42`) 지원
+- **MetaCodec 호환**: DecodeMap의 indexId/versionId/dims 순서/shape가 조건을 만족하면 동일 address space 공유
+- **호출자 책임**: strict schema/version 검증과 catalog drift 방지는 PermissionCodec이 아닌 호출자가 담당
 
 ## 1. PrefixCodec과의 주소 동등성
 

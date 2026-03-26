@@ -18,15 +18,21 @@ def:
 
 EventRecord의 RecordKind를 "metric"으로 확장하고, 메트릭 전용 필드와 Phase 2 집계 모델을 정의한다.
 
+## 구성 ^overview
+
+- **RecordKind 확장**: 기존 `"log" | "span"`에 `"metric"`을 추가하여 메트릭 수집 경로 활성화
+- **4가지 MetricType**: counter(단조 증가 합산), gauge(현재값 last-value), histogram(버킷별 분포), summary(클라이언트 분위수, 서버 집계 불가)
+- **네이밍 규칙**: `{domain}.{resource}.{measurement}` dot-notation (예: `k8s.pod.cpu_usage`, `http.request.duration_ms`)
+- **필수 필드**: record_kind가 "metric"일 때 metric_type, metric_name, metric_value 3개 필수 + metric_labels/unit/buckets/quantiles 선택
+- **3단계 집계 윈도우**: 1분(raw, 7일 보존) → 1시간(90일) → 1일(1년) 롤업, MetricType별 전략 차별화
+- **하위 호환성**: metric 전용 필드 전부 optional이며, 기존 log/span 처리 코드에 영향 없음. verdict 경로는 log/span 전용 유지
+- **Zod 검증**: refine()으로 record_kind === "metric" 시 필수 필드 존재를 런타임 검증
+
 ## RecordKind 확장
 
-```typescript
-// 현재
-export type RecordKind = "log" | "span";
-
-// 확장
-export type RecordKind = "log" | "span" | "metric";
-```
+> 타입 정의: `packages/core/src/types/record.ts` — `RecordKind`
+>
+> `"log" | "span" | "metric"` — metric 타입이 추가된 상태.
 
 ---
 
@@ -34,23 +40,7 @@ export type RecordKind = "log" | "span" | "metric";
 
 ### EventRecord 확장
 
-```typescript
-interface EventRecord {
-  // ... 기존 필드 ...
-  record_kind: RecordKind;  // "log" | "span" | "metric"
-
-  // Metric 전용 (record_kind === "metric" 일 때만 유효)
-  metric_type?: MetricType;
-  metric_name?: string;
-  metric_value?: number;
-  metric_unit?: string;
-  metric_labels?: Record<string, string>;
-  metric_buckets?: number[];
-  metric_quantiles?: number[];
-}
-
-type MetricType = "counter" | "gauge" | "histogram" | "summary";
-```
+> 타입 정의: `packages/core/src/types/record.ts` — `EventRecord` (metric 전용 필드 포함), `MetricType`
 
 ### 필드 명세
 
@@ -190,7 +180,7 @@ CREATE INDEX idx_metric_rollups_address
 Unit 2의 Aggregator 포트 인터페이스를 확장:
 
 ```typescript
-// Unit 2 기존 인터페이스
+// 개념 예시 — Unit 2 Aggregator 포트 인터페이스 확장
 interface Aggregator {
   projectAxis(index: number, axis: number): number;
   aggregate(window: TimeWindow, records: EventRecord[]): AggregateResult;
@@ -205,24 +195,9 @@ interface Aggregator {
 
 ## Zod 스키마
 
-```typescript
-export const metricTypeSchema = z.enum(["counter", "gauge", "histogram", "summary"]);
-
-export const eventRecordSchema = z.object({
-  // ... 기존 필드 ...
-  record_kind: z.enum(["log", "span", "metric"]),
-  metric_type: metricTypeSchema.optional(),
-  metric_name: z.string().optional(),
-  metric_value: z.number().optional(),
-  metric_unit: z.string().optional(),
-  metric_labels: z.record(z.string(), z.string()).optional(),
-  metric_buckets: z.array(z.number()).optional(),
-  metric_quantiles: z.array(z.number()).optional(),
-}).refine(
-  (r) => r.record_kind !== "metric" || (r.metric_type && r.metric_name && r.metric_value !== undefined),
-  { message: "metric_type, metric_name, metric_value are required when record_kind is 'metric'" },
-);
-```
+> Zod 스키마: `packages/core/src/schema/record.schema.ts` — `metricTypeSchema`, `eventRecordSchema`
+>
+> `record_kind === "metric"` 시 `metric_type`, `metric_name`, `metric_value` 필수 검증 (`.refine()`).
 
 ## 하위 호환성
 

@@ -20,6 +20,16 @@ entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)
 
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 
+## 구성 ^overview
+
+- **엔티티 계층**: MetaRegistryInput → dims(DimInput + snapshots) → indices(IndexInput + versions)의 계층 구조로 스키마를 선언한다.
+- **DimKind 3종**: string_enum(문자열 고유 키), number_enum(숫자 고유 키), index_ref(다른 WeightedIndex의 1D 압축 결과)로 축 값 타입을 분류한다.
+- **DimSnapshot**: 버전화된 항목 목록으로, entries는 append-only 불변이며 entryFlags로 활성/비활성을 관리하고 entryRefs로 셀 수준 index 참조를 지원한다.
+- **1D 복원 경로**: VersionedValue → IndexDef → IndexVersion → DimSnapshot → WeightedIndex.decode → EntityId로 이어지는 결정론적 디코딩 체인을 정의한다.
+- **MetaRegistry API**: createCodec/createCodecBig(코덱 생성), serialize/parse(주소 직렬화), getActiveManifest/getCapacityInfo(조회), traceMigration(BFS 마이그레이션)을 제공한다.
+- **마이그레이션 이중 경로**: EntityId 기반 암묵적 이동(decode → re-encode)과 DimSnapshotMigration의 좌표 수준 명시적 이동(indexMap + BFS)을 모두 지원한다.
+- **검증 규칙**: ID 형식, entries 중복·비어있음, DimKind 타입 불일치, migration bijection, index_ref 교차 검증 등 생성자에서 전수 검증한다.
+- **에러 계층**: IndexMetaError를 기반으로 DimNotFound, EntryNotFound, ValidationError, ParseError 등 8종의 세분화된 에러를 제공한다.
 
 ## 참조
 

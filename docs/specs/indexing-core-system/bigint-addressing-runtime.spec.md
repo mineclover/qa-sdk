@@ -2,9 +2,10 @@
 def:
   id: bigint-addressing-runtime
   scope: data
-  aspect: domain_data
+  aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: coord-foundation

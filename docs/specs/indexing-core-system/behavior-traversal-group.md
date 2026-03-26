@@ -1,11 +1,12 @@
 ---
 def:
   id: behavior-traversal-group
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: behavior-traversal-axis
       type: contains
@@ -21,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `behavior-traversal-axis`: 좌표 타입 시스템과 행위 축의 관계, 최소 탐색 단위를 정리한 문서.
 - `behavior-traversal-query`: 질의 패턴, DSL, 내부 모델, 다음 단계 구현 포인트를 정리한 문서.
 

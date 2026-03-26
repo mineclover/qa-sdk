@@ -1,12 +1,12 @@
 ---
 def:
   id: df-narrative-group
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
   svc: decision-flow
-  tags: [decision]
+  tags: [structural, decision]
   links:
     - target: df-narrative-structure
       type: contains
@@ -24,7 +24,6 @@ decision-flow 서사 문서. 질문 → 증명 → 결론이 쌓이는 누적적
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `df-narrative-structure`: 서사의 구조: 배경(context) → 여정(journey) → 도달(destination) → 산출(outcome) → 회고(reflection).
 - `df-narrative-proofs`: 서사 증명 10장.
 - `df-narrative-context`: ContextProvider — 결정 시작 시 이전 맥락을 표면화하여 같은 조사를 반복하지 않게 만드는 기능.

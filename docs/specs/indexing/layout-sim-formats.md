@@ -18,6 +18,15 @@ def:
 UUID만이 아닌 다양한 PackFormat에서 차원 배치를 시뮬레이션하고,
 인덱스 저장 타입(Number vs BigInt)에 따른 도달 가능 범위를 시각화한다.
 
+## 구성 ^overview
+
+- **지원 포맷 5종**: int64(64bit), objectId(96bit), uuid(128bit), sha1(160bit), sha256(256bit) — 각 포맷별 hex chars와 Number 커버 범위가 다름
+- **인덱스 타입 자동 결정**: indexBudget ≤ 13 hex chars(52bit)이면 Number 허용, 초과 시 BigInt 필수 — 수동 토글 불필요
+- **BigInt 필수 근거**: Number는 2^53 직후부터 정밀도 손실 발생, BigInt는 128bit 전체를 정확히 표현하며 성능도 ~2x로 실용적
+- **LayoutSimConfig 확장**: format 파라미터 추가로 totalChars가 포맷에서 자동 결정되고 indexBudget/indexType이 파생
+- **구조 바 시각화**: Number 갭과 index fill ratio를 오버레이하여 실제 사용량 대비 인덱스 영역을 시각적으로 표현
+- **Number 다중 결합 보류**: 116bit를 Number 청크로 분할하는 방식은 BigInt 나눗셈이 결국 필요하므로 복잡도 대비 이점 없음
+
 ## 1. 배경
 
 레이아웃 시뮬레이터는 원래 UUID(128bit) 전용이었다.

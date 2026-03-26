@@ -1,11 +1,12 @@
 ---
 def:
   id: coord-states-group
-  scope: flow
-  aspect: process_flow
+  scope: state
+  aspect: domain_state
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: coord-states-taxonomy
       type: contains
@@ -21,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `coord-states-taxonomy`: CORE/EXTENSION/PERIPHERAL과 활성 영역 선언을 정리한 상태 분류 문서.
 - `coord-states-versioning`: 버전 스냅샷, diff, composite, 불변식을 묶은 운영 문서.
 

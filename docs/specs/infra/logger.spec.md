@@ -17,6 +17,14 @@ def:
 
 구조화 JSON 로깅. pino 호환 인터페이스 제공.
 
+## 구성 ^overview
+
+- **팩토리**: `pino(options?, destination?)` — options 생략 시 기본값, destination 생략 시 stdout
+- **로그 레벨**: trace(10) ~ fatal(60) + silent, 설정 레벨 이상만 출력 (기본: info)
+- **LoggerOptions**: level, base(고정 필드), mixin(동적 필드), serializers(값 변환), messageKey/errorKey 커스터마이징
+- **child logger**: 부모 바인딩 상속 + 추가 바인딩 병합, 체이닝 가능
+- **Destination**: `write(message: string)` 인터페이스로 출력 대상 추상화
+
 ## 상태
 
 implemented

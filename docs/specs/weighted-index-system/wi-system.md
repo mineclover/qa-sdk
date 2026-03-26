@@ -1,11 +1,12 @@
 ---
 def:
   id: wi-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: weighted-index
+  tags: [structural, entry-point]
   links:
     - target: wi-math
       type: contains
@@ -35,7 +36,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 8개 멤버.
 - `wi-math`: mixed-radix 기반 좌표 인코딩의 수학적 기반.
 - `wi-api`: WeightedIndex(encode/decode/encodeFromRecord/decodeToRecord), LabelRegistry(레이블 관리), PrefixCodec(시맨틱 주소 직렬화/파싱)의 퍼블릭 API.
 - `wi-codec`: 시맨틱 주소(prefix:version:address)를 다양한 포맷으로 직렬화/파싱하는 코덱.

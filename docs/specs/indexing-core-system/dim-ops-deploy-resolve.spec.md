@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: partial-binder-spec
@@ -23,6 +24,15 @@ PartialBinder는 차원을 **여러 시점에 걸쳐 점진적으로 고정**하
 
 소스: `packages/weighted-index/src/vocab/partial-binder.ts`
 상세 스펙: [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)
+
+## 구성 ^overview
+
+- **수학적 원리**: mixed-radix 주소에서 고정 차원의 fixedBase를 캐시하고, 런타임에는 자유 차원의 delta만 더하여 전체 encode와 동일한 결과 도출
+- **3단계 바인딩**: 빌드 시점(코드 고정) → 배포 시점(K8s env var) → 런타임(HTTP 요청)으로 차원을 점진적으로 고정
+- **K8s 통합**: Pod 시작 시 DEPLOY_ENV, DEPLOY_REGION 등 환경 변수로 배포 차원을 바인딩하고, 이후 모든 요청에서 binder 재사용
+- **체이닝 vs 일괄**: 모든 고정값을 한 시점에 알면 일괄 바인딩, 시점이 다르면 `.bind()` 체이닝 — 결과는 동일
+- **멀티서비스**: 하나의 codec을 공유하면서 서비스별로 다른 binder를 생성하여 서로 다른 주소 공간 확보
+- **version 핀**: 배포 시점에 prefix version을 고정하여 롤링 배포에서 구버전과 신버전이 공존 가능
 
 ---
 

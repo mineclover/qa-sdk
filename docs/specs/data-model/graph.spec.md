@@ -17,6 +17,14 @@ def:
 
 기대 행동 그래프(`SpecGraph`)와 실행 그래프(`RuntimeGraph`)의 canonical 구조.
 
+## 구성 ^overview
+
+- **RuntimeGraph**: trace_id 기반 실행 그래프 — RuntimeNode(log/span, 타임스탬프, payload 마스킹 정보)와 RuntimeEdge(temporal/parent_child/causal)
+- **SpecGraph**: ScenarioSpec을 판정용 경량 그래프로 컴파일 — SpecNode(step_id, event_key, required, timeout_ms)와 SpecEdge(sequence/branch/optional)
+- **GraphStore**: RuntimeGraph만 trace_id 기준 upsert 저장, SpecGraph는 engine 내부 투영 구조
+- **edge 규칙**: source/target이 canonical endpoint (from/to 미사용), causal 타입 고정 (derived 미사용)
+- **SpecNode 설계**: ScenarioStep 전체 참조 없이 판정 필수 필드만 보유, 네비게이션은 SpecEdge로만 표현
+
 ## 상태
 
 implemented

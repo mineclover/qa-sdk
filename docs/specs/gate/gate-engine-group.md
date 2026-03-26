@@ -1,11 +1,12 @@
 ---
 def:
   id: gate-engine-group
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [security, tier-infra]
+  svc: gate-service
+  tags: [structural, security, tier-infra]
   contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
   links:
     - target: gate-engine-core
@@ -26,7 +27,6 @@ index-meta 패키지의 GateEngine 라이브러리. 주소 상태 자동 재계�
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `gate-engine-core`: GateEngine 클래스의 코어 기능.
 - `gate-engine-decorator`: GateEngine Decorator 패턴.
 - `gate-engine-aware-query`: gate-aware-query — 정책 해소 결과에 gate 상태를 합성하여 최종 허용 범위를 결정하는 질의 레이어.

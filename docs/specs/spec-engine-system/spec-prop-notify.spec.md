@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-prop-publish
@@ -18,6 +19,15 @@ def:
 ## 목적 ^purpose
 
 Registry 변경을 소비자 서비스에 전파하는 2단계. 웹훅/이벤트 기반 알림.
+
+## 구성 ^overview
+
+- **설계 분리**: "알림 생성"(spec-propagation, 순수 함수)과 "알림 전송"(qa-sdk 트래커, 런타임)을 분리
+- **VersionNotification 타입**: event 유형(activated/deprecated/released), 대상 prefix+version, 변경 요약, 영향받는 소비자, 마이그레이션 가이드 포함
+- **buildNotification 함수**: registryService와 dkgGraph를 입력받아 diff 생성 → 소비자 조회 → action 판정 → 알림 객체 구성
+- **소비자별 action 판정**: migrationRequired → "migration-required", capacityChanged → "update-recommended", 그 외 → "no-action"
+- **마이그레이션 가이드**: migrationRequired 시 inferMigrator로 패턴 추론 및 autoMigratable 여부 판정
+- **DKG 연동**: dkgGraph.reverseQuery("consumes", prefix)로 영향받는 소비자 서비스를 자동 조회
 
 ---
 

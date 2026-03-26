@@ -26,20 +26,8 @@ implemented
 
 ## 함수 시그니처
 
-```typescript
-function createAutoCapture(
-  config: AutoCaptureConfig,
-  emit: (eventKey: string, payload?: Record<string, unknown>) => void,
-): () => void; // cleanup 함수
-```
-
-```typescript
-interface AutoCaptureConfig {
-  clicks?: boolean;      // button, a, [data-qa-event] 클릭
-  forms?: boolean;       // form submit
-  navigation?: boolean;  // history.pushState + popstate
-}
-```
+> 함수 정의: packages/browser-sdk/src/auto-capture.ts — createAutoCapture()
+> 타입 정의: packages/browser-sdk/src/types.ts — AutoCaptureConfig
 
 모든 필드가 `false` / 미지정이면 어떤 DOM 이벤트도 수집하지 않는다.
 

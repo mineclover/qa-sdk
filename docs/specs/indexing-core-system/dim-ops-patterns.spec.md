@@ -5,6 +5,7 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: dim-ops-cross-select
@@ -22,6 +23,15 @@ def:
 PartialBinder, FixedDims, ServiceBinder 등 차원 조합의 실용 패턴.
 
 세 도구(축 교차 선택, 환경 주입, 배포 시점 해석)를 조합하는 실전 패턴.
+
+## 구성 ^overview
+
+- **환경 권한 조회**: ScopedEngine으로 환경 선택 후 BitMaskSet 축 교차 필터로 특정 역할의 권한 목록 추출
+- **배포 권한 코드 생성**: ServiceRef 배포 컨텍스트 + PermCodeFactory + PartialBinder를 조합하여 환경별 권한 코드와 1D 주소를 동시 생성
+- **리전 교집합**: ScopedEngine.intersectScopes로 다수 리전 공통 권한을 구한 뒤 축 필터 적용
+- **세 도구 조합**: 축 교차 선택(dim-ops-cross-select), 환경 주입(dim-ops-env-inject), 배포 시점 해석(dim-ops-deploy-resolve)의 실전 결합
+- **PartialBinder 역할**: 네임스페이스/서비스/환경 차원을 부분 바인딩하여 나머지 차원만으로 주소 해석 가능
+- **컨텍스트 공유**: factory(텍스트 식별자)와 binder(정수 주소)가 동일한 환경 컨텍스트를 공유하여 일관성 보장
 
 ---
 

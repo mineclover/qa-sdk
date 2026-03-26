@@ -17,6 +17,13 @@ def:
 
 4-표현 체계(A=tuple key, B=packed int, C=hierarchical id, D=hash/uuid)에서 **C 표현(hierarchical id)**의 정규 형식을 지정한다.
 
+## 구성 ^overview
+
+- **C-text (colon)**: `{schema}:{version}:{index}` — API/로그/디버깅용 사람이 읽는 정규 형식
+- **C-binary (layout)**: hex 컨테이너(UUID, int64) — DB PK/바이너리 저장/네트워크 전송용
+- **동등성 원칙**: 모든 텍스트 프로토콜(colon, uri, compact)은 의미적으로 동등, colon은 기본값일 뿐
+- **선택 근거**: colon은 hex 패턴과 충돌 없고 기존 PrefixCodec/MetaRegistry 직렬화와 호환
+
 ## C-text: colon protocol
 
 ```

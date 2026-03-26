@@ -41,77 +41,7 @@ weighted-index의 `diff()`는 단일 prefix 내부 변경만 알려준다. DKG�
 
 ### API
 
-```typescript
-interface ImpactAnalysisInput {
-  /** 변경 유형 */
-  type:
-    | "entry-added"
-    | "entry-deactivated"
-    | "capacity-changed"
-    | "dim-added"
-    | "ref-changed"
-    | "version-bump";
-
-  /** 변경 대상 */
-  target: {
-    axis?: string;         // 축 변경 시
-    prefix?: string;       // prefix 직접 변경 시
-    fromVersion?: string;  // 이전 버전
-    toVersion?: string;    // 새 버전
-  };
-
-  /** 변경 상세 (entry-added의 경우 entry 이름 등) */
-  detail?: string;
-}
-
-interface ImpactAnalysisResult {
-  /** stride-break 여부 */
-  strideBreak: boolean;
-
-  /** shape 변경 내용 (있으면) */
-  shapeChange?: {
-    from: number[];
-    to: number[];
-  };
-
-  /** 직접 영향받는 prefix 목록 */
-  affectedPrefixes: Array<{
-    id: string;
-    reason: "composes" | "references";
-    diff?: PrefixVersionDiff;
-  }>;
-
-  /** 영향받는 도메인 */
-  affectedDomains: Array<{
-    id: string;
-    affectedPrefixes: string[];
-  }>;
-
-  /** 영향받는 소비자 */
-  affectedConsumers: Array<{
-    id: string;
-    via: string;  // 어떤 domain/prefix를 통해
-  }>;
-
-  /** 마이그레이션 필요 여부 */
-  migrationRequired: boolean;
-
-  /** 자동 migrator 추론 가능 여부 */
-  autoMigratable: boolean;
-
-  /** constraint 위반 목록 */
-  constraintViolations: Array<{
-    constraintId: string;
-    rule: string;
-  }>;
-
-  /** 깨지는 IntentLink */
-  brokenIntentLinks: Array<{
-    id: string;
-    invariant: string;
-  }>;
-}
-```
+> 타입 정의: packages/spec-core/src/dkg/dkg.types.ts — ImpactAnalysisInput, ImpactAnalysisResult
 
 ### 실행 경로
 
@@ -188,32 +118,8 @@ analyzeImpact(input)
 
 ### API
 
-```typescript
-interface InferredMigrator {
-  /** 추론된 패턴 */
-  pattern: "identity" | "append-dim" | "remove-dim" | "reorder" | "composite" | "unknown";
-
-  /** 자동 생성된 migrator (unknown이면 null) */
-  migrator: CoordMigrator | null;
-
-  /** 패턴 설명 (사람이 검토할 수 있도록) */
-  description: string;
-
-  /** 주의사항 (있으면) */
-  warnings?: string[];
-}
-
-function inferMigrator(
-  codec: PrefixCodec,
-  prefix: string,
-  fromVersion: string,
-  toVersion: string,
-  options?: {
-    /** append-dim 시 새 차원의 기본값 (default: 1) */
-    defaultValue?: number;
-  }
-): InferredMigrator;
-```
+> 타입 정의: packages/spec-core/src/dkg/dkg.types.ts — InferredMigrator
+> 함수 정의: packages/spec-core/src/dkg/skills/infer-migrator.ts — inferMigrator()
 
 ### 추론 로직
 
@@ -264,16 +170,7 @@ PrefixCodec.diff() 결과를 수동으로 YAML에 옮겨 적어야 한다. diff�
 
 ### API
 
-```typescript
-function versionEventFromDiff(
-  diff: PrefixVersionDiff,
-  meta: {
-    date: string;
-    /** 추가 컨텍스트 (선택) */
-    note?: string;
-  }
-): VersionEventNode;
-```
+> 함수 정의: packages/spec-core/src/dkg/skills/version-event-derive.ts — versionEventFromDiff()
 
 ### 변환 규칙
 
@@ -305,6 +202,7 @@ PrefixVersionDiff → VersionEventNode 매핑:
 축(axis) 변경은 PrefixCodec.diff가 직접 지원하지 않는다. 축 변경 → 영향받는 prefix 각각에 대해 diff를 호출하는 패턴:
 
 ```typescript
+// 개념 예시
 function versionEventsFromAxisChange(
   codec: PrefixCodec,
   graph: GraphRegistry,
@@ -346,64 +244,9 @@ Decision 노드를 자유 형식으로 작성하면 패턴이 재사용되지 �
 
 ### API
 
-```typescript
-interface DecisionScaffoldInput {
-  type: "capacity" | "new-axis" | "new-prefix" | "dim-add" | "merge" | "deprecate";
-  date: string;
-  title: string;
-
-  /** 유형별 파라미터 */
-  params: CapacityParams | NewAxisParams | NewPrefixParams
-        | DimAddParams | MergeParams | DeprecateParams;
-
-  /** 인간이 작성하는 핵심 근거 (필수) */
-  rationale: string;
-
-  /** 추가 대안 (자동 생성에 더해서) */
-  additionalAlternatives?: string[];
-
-  /** 추가 역전 조건 (자동 생성에 더해서) */
-  additionalReversalConditions?: string[];
-}
-
-interface CapacityParams {
-  axis: string;
-  currentUsed: number;
-  currentCapacity: number;
-  proposedCapacity: number;
-}
-
-interface NewAxisParams {
-  axisId: string;
-  entries: string[];
-  capacity: number;
-}
-
-interface NewPrefixParams {
-  prefixId: string;
-  dims: string[];
-  domain?: string;
-}
-
-interface DimAddParams {
-  prefix: string;
-  newDim: string;
-  defaultValue?: number;
-}
-
-interface MergeParams {
-  targets: string[];
-  into: string;
-  overlapEntries?: string[];
-}
-
-interface DeprecateParams {
-  target: string;
-  replacement?: string;
-}
-
-function scaffoldDecision(input: DecisionScaffoldInput): DecisionNode;
-```
+> 타입 정의: packages/spec-core/src/shared/decision-scaffold.ts — ScaffoldInput
+> 타입 정의: packages/spec-core/src/dkg/dkg.types.ts — DecisionType, CapacityParams, NewAxisParams, NewPrefixParams, DimAddParams, MergeParams, DeprecateParams, DecisionScaffoldParams
+> 함수 정의: packages/spec-core/src/shared/decision-scaffold.ts — scaffoldDecision()
 
 ### 자동 생성 규칙
 

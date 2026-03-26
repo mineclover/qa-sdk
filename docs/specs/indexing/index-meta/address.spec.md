@@ -20,6 +20,15 @@ MetaRegistry의 VersionedValue를 UUID 등 고정 포맷 PK로 직렬화하는 �
 디코딩 파이프라인: [../pipeline.md](../pipeline.md)
 weighted-index 측 통합 문서: [../weighted-index/pack-format.spec.md](../weighted-index/pack-format.spec.md) §11
 
+## 구성 ^overview
+
+- **위임 원칙**: 프로토콜 변환 로직은 `weighted-index`의 `AddressConverter`에만 존재하며, MetaRegistry는 생성·위임·검증만 수행한다
+- **AddressConfig**: `format`(uuid/int64), `schemaChars`, `versionChars`, `schemas`/`versions` 매핑으로 직렬화 형식을 정의한다
+- **기본 프로토콜**: address 미설정 시 `colon`(`"perm:v1:42"`), uuid 설정 시 UUID 포맷, int64 설정 시 hex 포맷
+- **검증 규칙**: indexId/versionId 매핑 필수, 값은 non-negative integer, 매핑 값 중복 불가
+- **PK 디코딩**: UUID는 인덱스/버전 식별까지만 자기 설명적이며, 정수→엔티티 변환은 MetaRegistry(shape + entries)가 필수
+- **BigInt 지원**: shape product > 2^53인 인덱스는 `serializeBig()`/`parseBig()`와 `createLayoutProtocolBig` 사용
+- **프로토콜 변환**: `serialize(vv, protocol)` 호출로 colon, uuid, int64, uri 등 프로토콜 간 변환이 가능하다
 
 ## 참조
 

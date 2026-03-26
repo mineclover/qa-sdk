@@ -1,12 +1,12 @@
 ---
 def:
   id: permission-system
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: biz_constraint
   depth: overview
   lifecycle: approved
   svc: auth
-  tags: [security, entry-point, tier-backend]
+  tags: [structural, security, entry-point, tier-backend]
   links:
     - target: permission-model
       type: contains
@@ -34,7 +34,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 7개 멤버.
 - `permission-model`: PermissionSet(권한 집합), TernaryMask(3진 마스크: allow/deny/unset), ScopedEngine(범위 해소)의 3개 코어 타입으로 구성된 권한 상태 모델.
 - `permission-encoding`: 권한 데이터를 WeightedIndex(DB+범위 질의), BitIndex(인메모리 필터), IndexBridge(양쪽 호환)로 인코딩하는 데이터 구조.
 - `permission-constraint`: 권한 시스템의 비즈니스 규칙과 제약.

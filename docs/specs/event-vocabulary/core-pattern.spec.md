@@ -17,6 +17,14 @@ def:
 
 QA Scenario DSL과 Runtime Matching Engine이 공통으로 참조할 수 있는 최소 실행 패턴 집합.
 
+## 구성 ^overview
+
+- **카테고리**: 8개 카테고리(navigation, interaction, form, session, network, execution, outcome, quality)로 총 60개 이벤트 분류
+- **v1 핵심 세트**: page_view, click, session_start 등 20개 최소 핵심 이벤트 정의
+- **Core vs Custom 분기**: 여러 서비스에서 반복되고 자동 수집 가능한 것만 core, 도메인 특화는 custom
+- **graph_hint**: 각 이벤트에 entry/transition/terminal/observation 역할과 goal_eligible, loopable 플래그 부여
+- **제약**: 런타임 의존성 0개 순수 타입 + const 데이터, registry-server가 import하여 DB seed
+
 ## 상태
 
 implemented

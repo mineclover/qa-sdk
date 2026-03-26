@@ -2,9 +2,10 @@
 def:
   id: storage-schema-spec
   scope: data
-  aspect: domain_data
+  aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: graph-spec
@@ -18,6 +19,17 @@ def:
 ## 목적 ^purpose
 
 PostgreSQL 테이블 정의. Drizzle ORM `pgTable` 기반.
+
+## 구성 ^overview
+
+- **qa_sessions**: 세션 단위 관리 (session_id PK, scenario 연결, labels, 시작/종료 시각)
+- **traces**: 트레이스 저장 (session FK, service_name, record_count, 재구성 여부 추적)
+- **event_records**: 이벤트 레코드 본체 (trace FK, span 계층, payload 마스킹, registry_warning)
+- **transmissions**: SDK 전송 메타데이터 (owner, service, sdk 버전, 플랫폼, 환경 정보)
+- **runtime_graphs**: 트레이스별 런타임 그래프 (jsonb 저장, 노드/엣지 수 집계)
+- **verdict_reports**: 시나리오 판정 결과 (scenario_id + trace_id UNIQUE, overall_verdict, jsonb report)
+- **scenario_specs**: 시나리오 스펙 정의 (버전, 도메인, ScenarioSpec JSON 전체 저장)
+- **dead_letter_queue**: 실패 레코드 재처리 큐 (reconstruction/verdict 단계, 시도 횟수 추적)
 
 ## 상태
 

@@ -22,6 +22,14 @@ def:
 
 기반 문서: [data-design.md](data-design.md) · [foundation.md](foundation.md)
 
+## 구성 ^overview
+
+- **CAN (직접 표현 가능)**: rdfs:Class → VersionedAxis, Named Individuals → entries[position], Versioning → headroom 기반 구조적 진화, N-ary Relations → 다차원 PrefixDef
+- **PARTIAL (표현 가능하나 미강제)**: rdf:Property → relational prefix, rdfs:domain/range → dims 선언, Namespace → PrefixDef.id (외부 참조 불가)
+- **GAP (표현 불가)**: rdfs:subClassOf(계층), owl:Restriction(카디널리티), TransitiveProperty(추론) — 인코딩 코어 변경 없이 타입 필드 추가로 해결 가능
+- **고유 강점**: 산술적 identity(정수), O(1) 주소 연산, headroom 기반 진화, 재귀 주소 해석, 차원 합성·분해 동치
+- **경계**: 좌표는 주소를 부여할 뿐, 저장·질의·추론은 데이터 저장 계층의 책임
+
 ---
 
 ## 전제: 좌표 시스템이란

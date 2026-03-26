@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: spec-core
+  tags: [structural, tier-system]
   links:
     - target: spec-prop-publish
       type: contains
@@ -15,6 +16,10 @@ def:
       type: contains
     - target: spec-prop-dkg-record
       type: contains
+    - target: registry-system
+      type: depends_on
+    - target: dkg-system
+      type: depends_on
 ---
 
 # Spec Propagation 시스템
@@ -25,7 +30,6 @@ PrefixSpec 변경이 publish -> notify -> codegen -> DKG record로 종단 전파
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `spec-prop-publish`: PrefixSpec을 RegistryService에 발행하는 1단계.
 - `spec-prop-notify`: Registry 변경을 소비자 서비스에 전파하는 2단계.
 - `spec-prop-codegen`: 변경된 스펙에서 TypeScript 타입을 자동 생성하는 3단계.

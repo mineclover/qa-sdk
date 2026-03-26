@@ -17,6 +17,13 @@ def:
 
 SDK가 전송하는 배치 단위와 수신 메타데이터 감사 저장소.
 
+## 구성 ^overview
+
+- **TransmissionEnvelope**: SDK flush() 시 전송 단위 — transmission_id, owner, source, runtime, build, records 포함
+- **TransmissionStore**: insert 단일 메서드 포트 — envelope 메타데이터만 저장 (records는 RecordStore로 분리)
+- **감사 목적**: receivedAt(서버 수신 시각)으로 전송 이력 추적, 빈 records 배열도 허용
+- **Zod 검증**: transmissionEnvelopeSchema로 ingest-server POST /v1/ingest 요청 body 검증
+
 ## 상태
 
 implemented

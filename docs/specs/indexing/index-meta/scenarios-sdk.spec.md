@@ -23,6 +23,17 @@ SDK 스펙: [sdk.spec.md](sdk.spec.md)
 DX 라이프사이클: [dx-lifecycle.spec.md](dx-lifecycle.spec.md)
 Core 시나리오: [scenarios.spec.md](scenarios.spec.md)
 
+## 구성 ^overview
+
+- **SDK 소비 라이프사이클**: MetaRegistryInput 작성 → createIndexSDK → client → constants → encode/decode 전체 경로의 라운드트립 정확성을 보장한다.
+- **Client vs Full 모드**: 프론트엔드는 entries/constants만, 백엔드는 dimFullView로 capacity·headroom·position 종류(reserved/normal/empty)까지 제공하는 이중 엔트리 제공 모드를 정의한다.
+- **스키마 진화와 SDK 동기화**: entry 추가 → headroom 감소 → SDK 재생성(immutable 스냅샷) → 마이그레이션의 전체 동선을 검증한다.
+- **멀티 서비스 스키마 공유**: 프론트엔드·백엔드·분석 서비스가 동일 스키마로 독립 운용하며, DecodeMap 전달로 SDK 없이도 decode가 가능하다.
+- **CLI 시뮬레이션**: info, capacity, constants, diff, fullview 등 CLI 명령어가 SDK API로 동일한 결과를 산출할 수 있음을 사전 증명한다.
+- **inactive 항목 운영**: deprecated entry는 constants에서 제외하되 entries와 encode/decode에는 유지하여 기존 데이터 호환성을 보장한다.
+- **reservedTokens 오버라이드**: 테이블별 커스텀 예약 토큰 셋을 설정하여 constants 제외 대상과 fullView 분류를 제어할 수 있다.
+- **테스트 커버리지**: E2E 시나리오 30건 + SDK 단위 테스트 77건으로 전체 107개 테스트가 검증한다.
+
 ---
 
 ## 영역 구조

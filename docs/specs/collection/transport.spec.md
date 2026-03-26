@@ -17,6 +17,13 @@ def:
 
 SDK가 수집 envelope을 외부 수집기로 전달하는 전송 계층의 역할, 공통 인터페이스, 기본 구현 범위를 정의한다.
 
+## 구성 ^overview
+
+- **Transport 인터페이스**: send(envelope 전송), flush(버퍼 비우기), shutdown(종료) 세 메서드로 구성
+- **HttpTransport**: HTTP POST + JSON 직렬화, 비-2xx 응답 시 에러 throw, AbortSignal timeout 적용, 재시도/백오프는 v1 scope 외
+- **NoopTransport**: 전송 없이 sent 배열에 누적하는 테스트/dry-run용 구현
+- **확장 정책**: Transport 인터페이스만 만족하면 WebSocket/gRPC 등 커스텀 구현 가능, 에러 처리는 호출자 책임
+
 ## 상태
 
 implemented

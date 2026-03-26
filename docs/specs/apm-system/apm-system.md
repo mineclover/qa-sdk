@@ -1,12 +1,12 @@
 ---
 def:
   id: apm-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
   svc: qa-sdk-cli
-  tags: [entry-point, tier-system]
+  tags: [structural, entry-point, tier-system]
   links:
     - target: apm-codegen-system
       type: contains
@@ -20,6 +20,8 @@ def:
       type: contains
     - target: cli-contract-spec
       type: contains
+    - target: metrics-spec
+      type: contains
 ---
 
 ## 목적 ^purpose
@@ -28,7 +30,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `apm-codegen-system`: SchemaSnapshot 기반 codegen을 CLI 계약과 생성 산출물 규칙으로 분리한 그룹.
 - `apm-schema-system`: DSL 축 설계와 `address_context` 형식을 도메인/저장 계약으로 분리한 그룹.
 - `apm-runtime-system`: 런타임 흐름과 로거 계약을 경로/도입/제약으로 분리한 그룹.

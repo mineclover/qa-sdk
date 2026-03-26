@@ -1,12 +1,12 @@
 ---
 def:
   id: query-system
-  scope: flow
-  aspect: process_flow
+  scope: interface
+  aspect: api_contract
   depth: overview
   lifecycle: approved
   svc: query-service
-  tags: [entry-point, tier-infra]
+  tags: [structural, entry-point, tier-infra]
   links:
     - target: query-api
       type: contains
@@ -14,6 +14,8 @@ def:
       type: contains
     - target: query-gate-integration
       type: contains
+    - target: gate-system
+      type: depends_on
 ---
 
 # Query 시스템
@@ -24,7 +26,44 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `query-api`: 좌표 질의를 수행하는 REST 엔드포인트.
 - `query-rules`: PolicyRule의 CRUD와 충돌 전략을 정의한다.
 - `query-gate-integration`: 질의 결과에 gate 상태를 합성하는 통합 경로.
+
+## 운영 개요
+
+### 서비스 정체성
+
+- `ServiceBootConfig`: `createServiceBootConfig("query-service")`
+- ownedPrefixes: `[]` — 질의 전용, 이벤트 생산 없음
+- 포트: 3500 (기본)
+
+### 저장소 레이어
+
+| 환경 | 드라이버 | PolicyRuleStore |
+|------|---------|-----------------|
+| Node.js | `createSqliteDriver` (`node`/`better`) | `SqlPolicyRuleStore` |
+| CF Workers | `D1SqlDriver` | `SqlPolicyRuleStore` |
+| 테스트 | - | `InMemoryPolicyRuleStore` |
+
+### 서비스 의존
+
+```
+query-service
+  → gate-service (HttpGateStateClient, GATE_SERVICE_URL 설정 시)
+  → spec-core/transition (선택적, InMemoryStateStore)
+```
+
+- `GATE_SERVICE_URL` 미설정 → `NoopGateStateClient` (gate 통합 비활성)
+- gate 호출 실패 시 `gateFailureMode`에 따라 fail-open 또는 fail-closed
+
+### 환경 변수
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `PORT` | `3500` | 서비스 포트 |
+| `SQLITE_DRIVER` | `node` | SQLite 드라이버 (`node` / `better`) |
+| `SQLITE_PATH` | `data/query-service.sqlite` | PolicyRuleStore SQLite 경로 |
+| `GATE_SERVICE_URL` | - | gate-service URL (gate 통합 시 필수) |
+| `QUERY_DEFAULT_STRATEGY` | `most-specific` | 기본 충돌 해소 전략 |
+| `QUERY_GATE_FAILURE_MODE` | `fail-open` | gate 호출 실패 시 동작 |

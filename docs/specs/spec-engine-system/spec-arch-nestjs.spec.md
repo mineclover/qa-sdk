@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-arch-interceptors
@@ -15,6 +16,16 @@ def:
 ## 목적 ^purpose
 
 NestJS 모듈 구성과 의존 그래프. Request Context와 Core Registry의 분리.
+
+## 구성 ^overview
+
+- **CoreStructureModule**: ExportSurfaceRegistry, SchemaRegistry, SchemaValidator, SpecDocumentRegistry를 singleton으로 관리하는 코어 모듈
+- **SpecRegistryModule**: forRoot 패턴으로 spec 파일(YAML/JSON/TS)을 로딩하고 OnModuleInit에서 registry에 적재
+- **RuntimeObservationModule**: ALS 기반 TraceContextService와 ObservationWriterService로 trace/logging/observation 처리
+- **SemanticAdaptersModule**: 정책/온톨로지/전이 검증기를 custom provider로 교체 가능한 외부 의미 엔진 어댑터
+- **Feature Modules**: 코어를 사용만 하고 정의하지 않는 도메인 기능 모듈(TeamModule, AuthModule 등)
+- **singleton 원칙**: 코어 registry를 request-scoped로 만들면 NestJS scope 전파로 성능 저하 발생, 반드시 singleton 유지
+- **Request Context 분리**: trace_id/boundary_id/contract_id/actor_ref는 ALS 기반 request scope로, 코어 registry와 명확히 분리
 
 ---
 

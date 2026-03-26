@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  svc: registry-service
   tags: [tier-infra]
   links:
     - target: registry-data-model

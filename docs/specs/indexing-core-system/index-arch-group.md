@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: index-arch-layers
       type: contains
@@ -21,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `index-arch-layers`: vocabulary에서 semantic까지 레이어별 책임과 완료 상태를 정리한 문서.
 - `index-arch-traceability`: 문서 투영, 식별자 규약, 검증 파이프라인, 구현 추적을 정리한 문서.
 

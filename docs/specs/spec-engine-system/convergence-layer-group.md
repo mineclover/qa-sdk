@@ -1,11 +1,12 @@
 ---
 def:
   id: convergence-layer-group
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: spec-core
+  tags: [structural, tier-system]
   links:
     - target: convergence-comparators
       type: contains
@@ -21,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `convergence-comparators`: symbol/decision 비교와 causal discovery를 정리한 문서.
 - `convergence-advisors`: simplification, boundary 추천, cycle, 구현 매핑을 정리한 문서.
 

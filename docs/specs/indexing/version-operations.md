@@ -18,6 +18,16 @@ def:
 버전의 수학적 원리(stride, capacity, headroom)는 [`foundation.md`](foundation.md) §2–§3을 참조한다.
 이 문서는 **대규모 분산 시스템에서 버전을 운영하는 방법**을 다룬다.
 
+## 구성 ^overview
+
+- **2-Phase 운영 모델**: 평시(Phase 1, headroom 내 append)와 Draft Cycle(Phase 2, capacity 조정 + 마이그레이션)을 반복하는 버전 관리 체계를 정의한다.
+- **DraftWorkspace**: 중앙 PrefixRegistry 위에 draft 버전의 파급 효과를 DAG 순회로 계산하며, Impact Graph·Capacity Simulation·Readiness Gate·Release Coordinator를 포함한다.
+- **Capacity Simulation**: draft capacity 조합으로 전체 stride/product를 재계산하고, Number/BigInt 경계 판단과 주소 공간 크기를 예측한다.
+- **Diagnostics 체계**: error(Number overflow, 순환 참조), warn(BigInt 임계점, stride 변경), info(stride 불변) 등 draft 단계에서 문제를 사전 식별한다.
+- **배포 워크플로**: Draft Lock → Readiness Gate → Release(위상정렬 순서)의 3단계로 진행하며, 버전 결정은 런타임이 아닌 배포 시점에 확정한다.
+- **배포 시점 버전 결정**: 프론트엔드는 빌드 타임, 백엔드는 배포 타임에 버전을 고정하여 런타임 레지스트리 의존성을 제거한다.
+- **저장값 마이그레이션**: 서비스 간 통신은 송신 시 변환으로 즉시 해결하고, 자체 DB 마이그레이션은 read-repair 또는 배치로 독립 진행한다.
+
 ---
 
 ## 1. 2-Phase 운영 모델

@@ -2,9 +2,10 @@
 def:
   id: slot-marker-patterns
   scope: feature
-  aspect: func_def
+  aspect: scenario
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: slot-marker-concept
@@ -15,6 +16,17 @@ def:
 ## 목적 ^purpose
 
 슬롯 마커의 실제 사용 패턴. 카테고리 외 항목 수집 전략과 테스트 패턴.
+
+## 구성 ^overview
+
+- **3분류 체계**: 주소 공간의 모든 position을 normal(정규 도메인 값), reserved(슬롯 마커), empty(빈 headroom)로 분류하며, buildFullView로 전체 뷰를 구성한다.
+- **index-label 매핑 제외**: 서비스 레이어는 정규 엔티티만 index-label 매핑에 포함하고, 마커는 매핑에서 제외하되 주소 공간에는 유지한다.
+- **sparse 배치**: 1D 테이블(capacity 기반)에서 마커는 position을 자유롭게 배치할 수 있으며, composite index의 dim entries에서만 선두 배치가 중요하다.
+- **분산 환경 적재**: 마커(`_`, `~`)는 정규 entry와 동일한 형식으로 D1에 적재되며, 분산 환경에서도 특별 처리 경로가 없다.
+- **encode/decode 동일 동작**: 마커는 일반 entry와 완전히 동일하게 encode/decode round-trip이 동작하며, matchRanges로 마커 레코드만 범위 선택할 수 있다.
+- **카테고리 외 항목 수집 전략**: `~`(즉시 수용 → 나중 재분류), `_`(새 차원 추가 시 기존 데이터 채움), `?`(파싱 실패 분리) 등 마커별 수집 전략을 정의한다.
+- **게이트 시스템 조합**: 마커 position도 active/inactive/open/reserved 게이트 상태의 대상이며, inactive 전환 시 새 encode를 차단하되 기존 decode는 보존한다.
+- **안티패턴**: `~` 마커 레코드의 영구 방치(임시 수용 목적 위반)와 composite dim entries에서의 후미 배치를 금지한다.
 
 ---
 

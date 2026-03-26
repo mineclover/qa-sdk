@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security]
   links:
     - target: gate-api

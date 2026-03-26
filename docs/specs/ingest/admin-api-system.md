@@ -1,12 +1,12 @@
 ---
 def:
   id: admin-api-system
-  scope: flow
-  aspect: process_flow
+  scope: interface
+  aspect: api_contract
   depth: overview
   lifecycle: approved
   svc: ingest-server
-  tags: [observability, tier-infra]
+  tags: [structural, observability, tier-infra]
   links:
     - target: ingest-admin-endpoints
       type: contains
@@ -22,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `ingest-admin-endpoints`: 운영자가 호출하는 admin 엔드포인트와 조회/재시도 계약.
 - `ingest-admin-operations`: DLQ 삽입 시점, 설정, 의존 포트를 정리한 운영 문서.
 

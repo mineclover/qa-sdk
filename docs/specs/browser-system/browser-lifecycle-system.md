@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-frontend]
+  svc: browser-sdk
+  tags: [structural, tier-frontend]
   links:
     - target: browser-lifecycle-states
       type: contains
@@ -21,7 +22,6 @@ QaMonitor의 상태 전이와 세션 사용 패턴을 분리해 브라우저 SDK
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `browser-lifecycle-states`: 상태 다이어그램과 단계별 계약을 정리한 문서.
 - `browser-session-patterns`: 세션 생명주기와 표준 사용 패턴을 정리한 문서.
 

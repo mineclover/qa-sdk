@@ -1,11 +1,12 @@
 ---
 def:
   id: spec-reference-system
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: tech_constraint
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: spec-core
+  tags: [structural, entry-point]
   links:
     - target: spec-linking-rules
       type: contains
@@ -23,7 +24,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `spec-linking-rules`: 문서 유형별 필수 참조와 관계 방향을 정리한 문서.
 - `axis-boundary-criteria`: 무엇이 axis인지 판단하는 기준과 분류표를 정리한 문서.
 - `axis-boundary-patterns`: prefix 재설계와 자동 태깅 패턴 같은 적용 사례를 정리한 문서.

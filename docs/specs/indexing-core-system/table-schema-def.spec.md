@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: system-concepts
@@ -15,6 +16,15 @@ def:
 ## 목적 ^purpose
 
 TableDef — 관계형 세계의 구조 선언. 컬럼, 타입, FK, 인덱스를 정의하고 양방향 그래프 탐색을 지원.
+
+## 구성 ^overview
+
+- **ColumnRef 4종**: `scalar`(일반 데이터), `axis_ref`(축 값 참조), `table_ref`(FK), `prefix_ref`(좌표 주소 저장) — 컬럼이 무엇을 참조하는지 타입으로 선언
+- **DEMO_CATALOG 테이블**: members, orgs, items, orders, carts, cart_items 6개 테이블로 구성된 참조 구현
+- **양방향 그래프 탐색**: 좌표→테이블(table_ref dim), 테이블→좌표(prefix_ref), 테이블→축(axis_ref), 테이블→테이블(FK) 4종 연결로 좌표 세계와 관계형 세계를 오가는 그래프 형성
+- **경로 탐색 증명**: `cart_event → members[42] → orgs[7] → service:40` 경로로 이벤트에서 출발하여 FK를 따라 좌표 세계로 복귀하는 전체 경로를 테스트로 증명
+- **불변조건**: ColumnRef는 메타데이터일 뿐 런타임 제약을 강제하지 않으며, prefix→table→table→prefix 순환 경로가 허용됨
+- **소스 위치**: `demo-snapshot/demo-catalog.ts`(타입+정의), `demo-snapshot/event-schema.test.ts`(증명)
 
 ---
 

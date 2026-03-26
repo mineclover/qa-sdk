@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: table-schema-def
@@ -15,6 +16,16 @@ def:
 ## 목적 ^purpose
 
 두 종류의 DimRef — axis(닫힌 어휘 참조)와 table_ref(외부 관계형 테이블 참조)의 차이와 사용 규칙.
+
+## 구성 ^overview
+
+- **DimRef 3종류**: axis(유한 열거값, 좌표 인코딩), prefix_ref(다른 좌표 공간 참조, 좌표 인코딩), table_ref(DB 테이블 참조, 좌표에서 제외)
+- **테이블 시스템 필요성**: 좌표는 유한한 경우의 수만 인코딩하므로, 무한히 증가하는 런타임 엔티티(회원, 상품, 주문)는 table_ref로 분리
+- **이벤트 3-slot 구조**: actor(누가) × action(무엇을) × target(어디에) 패턴으로, actor/target은 table_ref, action은 axis
+- **shape 계산 규칙**: table_ref는 shape/encode/decode 산술에서 완전히 제외되며, axis와 prefix_ref만 주소 공간을 결정
+- **런타임 인스턴스 분리**: 같은 좌표 주소(address) + 다른 refs = 같은 종류의 이벤트지만 다른 대상
+- **온톨로지 대응**: actor→rdfs:domain, action→rdf:Property, target→rdfs:range로 RDF/OWL과 구조적으로 대응
+- **불변조건**: table_ref 추가는 기존 prefix를 깨지 않으며, 구조 정보(labels/dims)에는 존재하되 좌표 산술에는 참여하지 않음
 
 ---
 

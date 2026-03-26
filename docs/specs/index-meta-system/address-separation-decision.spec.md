@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: index-meta
   tags: [decision]
   links:
     - target: index-codec-spec

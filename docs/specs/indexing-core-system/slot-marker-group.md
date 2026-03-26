@@ -1,11 +1,12 @@
 ---
 def:
   id: slot-marker-group
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: weighted-index
+  tags: [structural, tier-infra]
   links:
     - target: slot-marker-concept
       type: contains
@@ -23,7 +24,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `slot-marker-concept`: 슬롯 마커의 개념.
 - `slot-marker-patterns`: 슬롯 마커의 실제 사용 패턴.
 - `slot-marker-capacity`: 슬롯 마커가 용량(capacity)에 미치는 영향.

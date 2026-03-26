@@ -5,7 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [cross-scope, entry-point]
+  tags: [structural, cross-scope, entry-point]
   links:
     - target: system-concepts
       type: contains

@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-core-types
@@ -16,6 +17,13 @@ def:
 ## 목적 ^purpose
 
 변경된 스펙에서 TypeScript 타입을 자동 생성하는 3단계.
+
+## 구성 ^overview
+
+- **연결 경로**: registry-service → resolveManifest() → buildIR() → generateFromIR() (TS/Proto/JSON Schema 출력)
+- **입력**: GenerateFromRegistryInput — registryService 인스턴스, 출력 포맷 배열, outDir, 선택적 prefix 필터
+- **출력**: GenerateFromRegistryResult — 생성된 파일 경로 목록 + manifest(versions, generatedAt)
+- **실행 5단계**: manifest 조회 → prefix별 registryToPrefixSpec 역변환 → buildIR → 포맷별 코드 생성 → 파일 기록
 
 ---
 

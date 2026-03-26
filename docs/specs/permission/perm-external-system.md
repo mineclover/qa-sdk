@@ -1,11 +1,12 @@
 ---
 def:
   id: perm-external-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [security, tier-backend]
+  svc: permission-engine
+  tags: [structural, security, tier-backend]
   links:
     - target: perm-resource-model
       type: contains
@@ -25,7 +26,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `perm-resource-model`: 리소스 식별자 모델과 path-like resource 규칙을 정의한다.
 - `perm-service-ref`: 서비스 참조(ServiceRef)와 배포 컨텍스트 표현을 정의한다.
 - `perm-permission-code`: service, type, resource, action을 결합한 permission code 형식을 정의한다.

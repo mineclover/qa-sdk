@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [observability, performance, entry-point]
+  svc: ingest-server
+  tags: [structural, observability, performance, entry-point]
   links:
     - target: pipeline-phase-flow
       type: contains
@@ -21,6 +22,8 @@ def:
       type: contains
     - target: indexing-pipeline
       type: contains
+    - target: ingest-system
+      type: depends_on
 ---
 
 # 파이프라인 시스템
@@ -31,7 +34,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 7개 멤버.
 - `pipeline-phase-flow`: Phase 1(동기 저장: envelope 검증 → record 저장 → trace upsert)과 Phase 2(비동기 재구성: reconstruction → scenario verdict → 알림)의 처리 순서와 전이 조건.
 - `pipeline-enrichment`: 수집된 이벤트의 address_context를 보강하는 Phase 1 미들웨어.
 - `pipeline-metric-agg`: Phase 2 비동기 워커에서 metric RecordKind를 집계하는 기능.

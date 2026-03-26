@@ -26,6 +26,13 @@ def:
 
 trace와 session 단위의 시나리오 verdict를 조회하고 강제 재계산하는 서버 API 계약과 의존 범위를 정의한다.
 
+## 구성 ^overview
+
+- **조회 API**: GET /v1/traces/:traceId/verdicts, GET /v1/sessions/:sessionId/verdicts — verdict 목록(id, scenarioId, overallVerdict, report, computedAt) 반환
+- **재계산 API**: POST /v1/traces/:traceId/verdicts/recompute — 기존 verdict 삭제 후 computePendingVerdicts(force: true) 실행, computed/skipped/failed 분류 반환
+- **의존 포트**: VerdictStore, TraceStore, SessionStore, GraphStore, ScenarioSpecStore, DlqStore 6개 스토어 주입
+- **테스트**: verdict 조회/404/recompute 단위 테스트 + SDK→ingest 전체 파이프라인 E2E 검증
+
 ## 상태
 
 implemented

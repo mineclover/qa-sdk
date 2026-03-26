@@ -21,12 +21,22 @@ prefix는 차원 교차의 **원자 단위**다.
 DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구성한다.
 "이 prefix들을 이 서비스 컨텍스트에서 이렇게 조합해서 쓴다"의 선언.
 
+## 구성 ^overview
+
+- **DSL 정의**: prefix 묶음 + 서비스 바인딩(fixedDims) + 사용 패턴 + 불변조건의 조합. 개별 prefix는 독립 사용 가능하되 DSL이 조합 의도를 명시
+- **4개 등록 번들**: observation(화면/API/흐름 관측), infra(배포/헬스 추적), checkout(결제 종단 흐름), auth(인증/권한 접근 제어)
+- **멤버 역할 5종**: observation, permission, event, infra, context — 각 prefix의 DSL 내 역할을 구분
+- **svcRefLabel 자동 감지**: defineDslBundle()이 멤버 prefix의 dims에서 prefix_ref → service인 차원을 자동으로 찾아 서비스 바인딩
+- **DKG 노드 타입**: dsl-bundle은 DKG 12번째 노드 타입으로 등록. DomainNode(소유 경계)와 달리 사용 패턴을 표현하며, 하나의 prefix가 여러 DSL에 포함 가능
+- **커버리지 분석**: analyzeDslCoverage()로 카탈로그 prefix의 DSL 배치 현황(covered/uncovered/unbound) 파악
+- **불변조건 선언**: 번들별로 prefix 간 선후 관계나 필수 공출현 조건을 명시 (예: checkout page_view 없이 flow_point success 관측 금지)
+
 기반 문서: [dimension-operations.md](dimension-operations.md) · [table-system.md](table-system.md)
 
 ---
 
 
-## 참조
+## 관련 소스
 
 관련 스펙: `packages/spec-core/src/dkg/dsl-bundle.ts`
 
@@ -215,7 +225,80 @@ const report = analyzeDslCoverage(DEMO_CATALOG, registry);
 
 ---
 
-## 6. 소스 위치
+## 6. 버전 스큐 분석 (analyzeDslVersionSkew)
+
+DSL 번들 내 멤버 prefix 간 버전 스큐를 감지한다.
+
+### 감지 항목
+
+1. **축 버전 충돌**: 같은 축을 다른 버전으로 참조하는 멤버 쌍 (예: permission은 role:v4, rbac은 role:v1)
+2. **prefix 버전 수 차이**: 멤버 간 prefix 버전 수 격차 (예: permission은 4개 버전, endpoint는 1개)
+3. **심각도 자동 판정**: `spread ≥ 3` → major, 충돌 존재 또는 `maxVersionSpread ≥ 3` → minor
+
+### 반환 타입 (DslVersionSkewReport)
+
+```typescript
+interface DslVersionSkewReport {
+  bundleId: string;
+  members: MemberVersionInfo[];        // 멤버별 버전 정보
+  axisConflicts: AxisVersionConflict[]; // 같은 축의 다른 버전 참조
+  maxVersionSpread: number;            // prefix 버전 수 차이 (max - min)
+  severity: "ok" | "minor" | "major";
+  summary: string;                     // 사람이 읽을 수 있는 요약
+}
+```
+
+### 사용
+
+```typescript
+import { analyzeDslVersionSkew, analyzeAllVersionSkew } from "spec-core";
+
+// 단일 번들
+const report = analyzeDslVersionSkew(DEMO_CATALOG, bundle);
+
+// 전체 번들 일괄
+const reports = analyzeAllVersionSkew(DEMO_CATALOG, registry);
+```
+
+---
+
+## 7. 실행 컨텍스트 (ExecutionContext)
+
+DslBundle은 선택적으로 `executionContext`를 가질 수 있다. 데이터 출처와 목적을 식별하는 3가지 독립 관심사를 분리한다:
+
+| 관심사 | 위치 | 의미 |
+|--------|------|------|
+| env (axis) | 좌표에 인코딩 | 서비스가 어디서 돌아가는가 (인프라) |
+| build | envelope에 포함 | 코드가 어떻게 빌드됐는가 (CI/CD) |
+| execution | ExecutionContext | 이 데이터가 왜 존재하는가 (필터/격리 기준) |
+
+```typescript
+type ExecutionMode = "live" | "test" | "synthetic" | "replay";
+
+interface ExecutionContext {
+  mode: ExecutionMode;
+  executionId?: string;   // 테스트 suite ID, 시나리오 ID 등
+  tags?: string[];        // 필터/그룹핑용 자유 태그
+}
+```
+
+---
+
+## 8. DslBundleRegistry API
+
+| 메서드 | 설명 |
+|--------|------|
+| `register(bundle)` | 번들 등록 (중복 ID 시 에러) |
+| `get(id)` | ID로 조회. 없으면 `undefined` |
+| `getOrThrow(id)` | ID로 조회. 없으면 에러 |
+| `list()` | 전체 번들 목록 |
+| `findByPrefix(prefixId)` | 특정 prefix가 포함된 모든 DSL |
+| `findByRole(role)` | 특정 역할의 멤버를 가진 모든 DSL |
+| `listServiceBoundPrefixes()` | svcRefLabel이 있는 모든 멤버 목록 (prefixId, svcRefLabel, bundleId) |
+
+---
+
+## 9. 소스 위치
 
 | 파일 | 역할 |
 |---|---|

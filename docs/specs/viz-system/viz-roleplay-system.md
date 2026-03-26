@@ -1,11 +1,11 @@
 ---
 def:
   id: viz-roleplay-system
-  scope: flow
-  aspect: process_flow
+  scope: ui
+  aspect: component
   depth: overview
   lifecycle: approved
-  tags: [tier-frontend]
+  tags: [structural, tier-frontend]
   links:
     - target: form-builder-structure
       type: contains
@@ -23,7 +23,6 @@ roleplay-web의 form-builder와 QA bridge를 구조 모델, 렌더링, 이벤트
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `form-builder-structure`: DOM 트리와 편집기 패널의 구조 모델을 정리한 문서.
 - `form-builder-renderer`: auto-layout과 폼 렌더러 연결 규칙을 정리한 문서.
 - `qa-bridge-runtime`: 사용자 상호작용을 QA 이벤트로 변환하고 템플릿과 통합하는 런타임 문서.

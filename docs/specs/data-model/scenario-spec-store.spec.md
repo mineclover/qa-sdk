@@ -2,7 +2,7 @@
 def:
   id: scenario-store-spec
   scope: data
-  aspect: domain_data
+  aspect: system_data
   depth: specification
   lifecycle: approved
   tags: [tier-infra]
@@ -16,6 +16,13 @@ def:
 ## 목적 ^purpose
 
 검증 완료된 `ScenarioSpec` 문서를 저장하고 조회하는 core 포트 계약.
+
+## 구성 ^overview
+
+- **ScenarioSpec 구조**: scenario_id(유일 키), version, domain, entry_conditions(선택), steps(순서 기반 시나리오 단계)
+- **ScenarioSpecStore 포트 5종**: upsert(전체 문서 덮어쓰기), findById(단건 조회), findAll(전체 조회), findByDomain(도메인 필터), remove(삭제)
+- **설계 원칙**: partial patch 미지원(항상 전체 spec 전달), schema/의미 검증은 상위 계층(compileSpec) 책임, 반환 순서 미보장
+- **격리 제약**: adapter는 저장된 객체 참조를 외부에 노출하지 않아야 하며, 반환값 수정이 저장본을 오염시키면 안 됨
 
 ## 상태
 

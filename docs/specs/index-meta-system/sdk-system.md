@@ -1,11 +1,12 @@
 ---
 def:
   id: sdk-system
-  scope: flow
-  aspect: process_flow
+  scope: interface
+  aspect: api_contract
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  svc: index-meta
+  tags: [structural, tier-infra]
   links:
     - target: sdk-api-surface
       type: contains
@@ -33,7 +34,6 @@ index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants �
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `sdk-api-surface`: index-meta SDK의 퍼블릭 API.
 - `sdk-constants`: constants() 빌드 로직과 RESERVED_TOKENS.
 - `sdk-dim-views`: DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰).

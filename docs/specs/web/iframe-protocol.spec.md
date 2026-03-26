@@ -17,6 +17,17 @@ def:
 
 viz-web(부모)과 roleplay-web(자식 iframe) 간의 `postMessage` 기반 양방향 통신 프로토콜.
 
+## 구성 ^overview
+
+- **통신 채널**: postMessage는 SSE 파이프라인의 보조 채널로, 즉시 UI 피드백 전용으로 사용한다
+- **메시지 방향**: ContextMessage(부모→자식, 시나리오 컨텍스트 전달)와 EventEmittedMessage(자식→부모, 이벤트 발생 알림) 2종
+- **보안**: origin 검증으로 cross-origin 메시지를 필터링하며, iframe sandbox에 `allow-scripts allow-same-origin allow-forms` 적용
+- **부모 측 API**: `createRoleplayHost(container)` — iframe 생성, 컨텍스트 전송, 이벤트 수신, 토글 UI 제공
+- **자식 측 API**: `createChildBridge(vizOrigin)` — 컨텍스트 수신, 이벤트 알림 전송, 비-iframe 환경 안전 처리
+- **타이밍**: postMessage(~1ms 즉시 하이라이트) 후 SSE(~50-200ms 정식 그래프 업데이트) 순서로 도착
+- **타입 공유 전략**: 메시지 타입 정의를 양쪽 패키지에 각각 유지하며, 공유 패키지로 추출하지 않는다
+- **타입 가드**: 구조적 타입 검사(`typeof` + `data.type` 문자열 비교 + 필드 타입 확인)로 메시지를 검증한다
+
 ## 상태
 
 implemented
@@ -34,14 +45,8 @@ implemented
 
 시나리오 컨텍스트를 자식 iframe에 전달한다.
 
-```typescript
-interface ContextMessage {
-  type: "context";
-  traceId: string;
-  sessionId: string;
-  scenarioId: string;
-}
-```
+> 타입 정의: packages/viz-web/src/iframe/message-protocol.ts — ContextMessage
+> 타입 정의: packages/roleplay-web/src/iframe/message-protocol.ts — ContextMessage (동일 복사본)
 
 - viz-web에서 사용자가 trace에 연결할 때 전송한다.
 - roleplay-web은 이 메시지를 수신하면 `QaBridge.startSession(scenarioId)`를 호출하여 동일 trace 컨텍스트로 이벤트를 발생시킨다.
@@ -50,45 +55,28 @@ interface ContextMessage {
 
 QA 이벤트 발생 알림을 부모에게 전달한다.
 
-```typescript
-interface EventEmittedMessage {
-  type: "event:emitted";
-  eventKey: string;
-  timestamp: string;    // ISO-8601 UTC
-}
-```
+> 타입 정의: packages/viz-web/src/iframe/message-protocol.ts — EventEmittedMessage
+> 타입 정의: packages/roleplay-web/src/iframe/message-protocol.ts — EventEmittedMessage (동일 복사본)
 
 - roleplay-web에서 사용자 상호작용 → QA 이벤트 발생 시 동시에 전송한다.
 - viz-web은 이 메시지를 수신하면 해당 `event_key` 노드를 즉시 `"active"` 상태로 하이라이트한다.
 
 ### 타입 합성
 
-```typescript
-type ParentMessage = ContextMessage;
-type ChildMessage = EventEmittedMessage;
-```
+> 타입 정의: packages/viz-web/src/iframe/message-protocol.ts — ParentMessage, ChildMessage
+> 타입 정의: packages/roleplay-web/src/iframe/message-protocol.ts — ParentMessage, ChildMessage (동일 복사본)
 
 ## 타입 가드
 
-```typescript
-function isContextMessage(data: unknown): data is ContextMessage;
-function isChildMessage(data: unknown): data is ChildMessage;       // viz-web
-function isEventEmittedMessage(data: unknown): data is EventEmittedMessage;  // roleplay-web
-```
+> 함수 정의: packages/viz-web/src/iframe/message-protocol.ts — isChildMessage()
+> 함수 정의: packages/roleplay-web/src/iframe/message-protocol.ts — isContextMessage(), isEventEmittedMessage()
 
 - 구조적 타입 검사: `typeof data === "object"` + `data.type` 문자열 비교 + 필드 타입 확인.
 
 ## viz-web 측 (roleplay-host.ts)
 
-```typescript
-interface RoleplayHost {
-  sendContext(ctx: { traceId: string; sessionId: string; scenarioId: string }): void;
-  onEvent(handler: (msg: ChildMessage) => void): void;
-  destroy(): void;
-}
-
-function createRoleplayHost(container: HTMLElement): RoleplayHost;
-```
+> 타입 정의: packages/viz-web/src/iframe/roleplay-host.ts — RoleplayHost
+> 함수 정의: packages/viz-web/src/iframe/roleplay-host.ts — createRoleplayHost()
 
 ### 동작
 
@@ -101,15 +89,8 @@ function createRoleplayHost(container: HTMLElement): RoleplayHost;
 
 ## roleplay-web 측 (child-bridge.ts)
 
-```typescript
-interface ChildBridge {
-  notifyEvent(eventKey: string): void;
-  onContext(handler: (ctx: ContextMessage) => void): void;
-  destroy(): void;
-}
-
-function createChildBridge(vizOrigin: string): ChildBridge;
-```
+> 타입 정의: packages/roleplay-web/src/iframe/child-bridge.ts — ChildBridge
+> 함수 정의: packages/roleplay-web/src/iframe/child-bridge.ts — createChildBridge()
 
 ### 동작
 

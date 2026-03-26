@@ -1,11 +1,12 @@
 ---
 def:
   id: apm-schema-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: qa-sdk-cli
+  tags: [structural, tier-system]
   links:
     - target: dsl-schema-domain-model
       type: contains
@@ -25,7 +26,6 @@ APM DSL 스키마와 `address_context` 계약을 도메인 축, 버전 정책, �
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `dsl-schema-domain-model`: Git, K8s, APM signal 축과 composite가 snapshot에서 어떻게 표현되는지 정리한 문서.
 - `dsl-schema-versioning`: 축 공유, payload 배치, 버전 고정처럼 스키마 운영에 필요한 제약을 정리한 문서.
 - `address-context-format`: EventRecord와 TransmissionEnvelope에 넣는 주소 문자열/머지 규칙을 정리한 문서.

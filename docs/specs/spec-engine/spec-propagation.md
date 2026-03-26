@@ -108,38 +108,7 @@ spec-core의 PrefixSpec과 registry-service의 registerPrefix/createDraft는 다
 
 ### API
 
-```typescript
-interface PublishInput {
-  /** PrefixSpec (spec-core에서 정의) */
-  spec: PrefixSpec;
-
-  /** prefix 소유자 */
-  owner: string;
-
-  /** 기존 prefix의 새 버전인가, 완전히 새 prefix인가 */
-  mode: "new" | "version";
-
-  /** version 모드일 때 기반 버전 */
-  baseVersion?: string;
-}
-
-interface PublishResult {
-  prefix: string;
-  versionId: string;
-  status: "draft";
-
-  /** spec에서 추론한 capacity */
-  capacity: number;
-
-  /** spec에서 추론한 refs */
-  refs: Array<{ prefix: string; versionId: string }>;
-}
-
-async function publishSpec(
-  registryService: RegistryService,
-  input: PublishInput,
-): Promise<PublishResult>;
-```
+> 타입 정의: packages/spec-core/src/propagation/publish.ts — PublishInput, PublishResult, publishSpec
 
 ### 변환 로직
 
@@ -206,56 +175,11 @@ qa-sdk 트래커:             알림을 실제로 전송한다 (런타임)
 
 ### Notification 타입
 
-```typescript
-interface VersionNotification {
-  /** 이벤트 유형 */
-  event: "activated" | "deprecated" | "released";
-
-  /** 대상 prefix + version */
-  prefix: string;
-  versionId: string;
-
-  /** 이전 active version (있으면) */
-  previousVersion?: string;
-
-  /** 변경 요약 (diffVersions에서 파생) */
-  summary: {
-    capacityChanged: boolean;
-    strideChanged: boolean;
-    migrationRequired: boolean;
-    addedDims: string[];
-    removedDims: string[];
-  };
-
-  /** 영향받는 소비자 (DKG consumes에서 파생) */
-  affectedConsumers: Array<{
-    id: string;
-    action: "update-recommended" | "migration-required" | "no-action";
-  }>;
-
-  /** 자동 생성된 마이그레이션 가이드 (있으면) */
-  migrationGuide?: {
-    pattern: string;          // inferMigrator 패턴
-    autoMigratable: boolean;
-    manualSteps?: string[];
-  };
-
-  /** 생성된 codegen 산출물 경로 (있으면) */
-  codegenOutputs?: string[];
-}
-```
+> 타입 정의: packages/spec-core/src/propagation/types.ts — VersionNotification
 
 ### 알림 생성 함수
 
-```typescript
-async function buildNotification(
-  registryService: RegistryService,
-  dkgGraph: GraphRegistry,
-  prefix: string,
-  versionId: string,
-  event: "activated" | "deprecated" | "released",
-): Promise<VersionNotification>;
-```
+> 타입 정의: packages/spec-core/src/propagation/lifecycle.ts — buildNotification
 
 ### 실행 경로
 

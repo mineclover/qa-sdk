@@ -29,6 +29,17 @@ Signal = 시스템에서 발생한 의미있는 순간.
 기반 문서: [dimension-operations.md](dimension-operations.md) · [dsl-bundle.md](dsl-bundle.md) · [table-system.md](table-system.md)
 소스: `packages/viz-3d/src/core/signal-model.ts`
 
+## 구성 ^overview
+
+- **핵심 개념**: Signal은 1번의 qaTrack() 호출로 생성되는 "시스템에서 발생한 의미있는 순간"이며, 각 prefix는 Signal의 다른 측면(role)을 설명한다
+- **7가지 역할(Role)**: context(어디서), trigger(뭘 했는가), channel(어떤 경로), state(흐름 어디), guard(어떤 조건), effect(결과), data(데이터 접점)
+- **Signal 정의**: id, name, description, members(prefix + role + 고정값), requires(선행 Signal), dsl(소속 DSL)로 구성
+- **Signal 체인**: `requires`로 순서 관계를 정의하여 flow-trace skill이 invariant 위반을 감지 (예: 로그인 없이 장바구니 담기 불가)
+- **Signal 검증**: 런타임 address_context가 SignalDef에 맞는지 검증하여 누락된 role과 매칭된 member 수를 반환
+- **계층 구조**: DSL(prefix 묶음) → Signal(prefix + role + 순서) → address_context(인코딩된 좌표) → prefix(좌표 공간) → 축 값(entry)
+- **프리셋 카탈로그**: auth.login, page.view, cart.add, checkout.entry/process, payment.success 등 8개 표준 Signal 정의
+- **3D 시각화 연동**: monitor.html에서 Signal 발생 시 L0(UI)/L1(Business)/L3(Data) 레이어별로 role 기반 색상 구분 표시
+
 ---
 
 ## 1. 왜 Signal인가
@@ -259,4 +270,7 @@ Data Flow                    ◄ 5/13 ►
 - [dimension-operations.md](dimension-operations.md) — 축 교차/환경 주입
 - [dsl-bundle.md](dsl-bundle.md) — DSL 번들 (Signal의 상위 묶음)
 - [table-system.md](table-system.md) — data role의 테이블 연결
+
+## 관련 소스
+
 - `packages/viz-3d/src/core/signal-model.ts` — 구현

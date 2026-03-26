@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [performance]
   links:
     - target: range-query-spec
@@ -18,6 +19,16 @@ def:
 ## 목적 ^purpose
 
 calcAddressRanges 범위 연산의 처리량과 BigInt/UUID 직렬화 성능 측정.
+
+## 구성 ^overview
+
+- **calcAddressRanges 성능**: 연속 제약은 1.8M~2.4M ops/s, 비연속 OR 다중 차원 조합 시 범위 수가 곱으로 폭발하여 6D 복합 OR(4,608 ranges)는 898 ops/s까지 하락
+- **사전 계산 최적화**: 복합 OR은 빌드 타임 1회 계산(~1ms) + 런타임 `containsAddress` O(log n) binary search 패턴으로 해결하며, 4,608 ranges 캐시도 ~342KB로 메모리 부담 미미
+- **BigInt mixed-radix**: Number 대비 encode ~3x, decode ~2x 느리지만 8D에서도 17M+ ops/s로 병목 아님
+- **UUID pack 성능**: BigInt `simPackUUIDBig`(7.5M ops/s)가 Number 버전(1.7M ops/s)보다 ~4x 빠름 — 비트 연산 단일 경로가 char 배열 조합보다 효율적
+- **레이아웃 계산**: `dimMaxBig`는 BigInt 정밀 계산으로 Number 대비 ~20x 느리나, 단발 호출(UI 갱신)용이므로 무관
+- **UUID 문자열 변환**: `toUUID`/`fromUUID` 라운드트립 ~2.4M ops/s(420ns), 필드 수 증가 시 선형 감소하나 6필드에서도 1.4M ops/s
+- **E2E 종합**: BigInt 경로(encodeBig→packUUIDBig→parse→decodeBig)가 2.3M ops/s로 Number 경로(1.4M ops/s)보다 빠름 — `simPackUUIDBig` 비트 연산 효율 덕분
 
 ---
 

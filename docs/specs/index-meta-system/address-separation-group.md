@@ -1,11 +1,12 @@
 ---
 def:
   id: address-separation-group
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: tech_constraint
   depth: overview
   lifecycle: approved
-  tags: [decision]
+  svc: index-meta
+  tags: [structural, decision]
   links:
     - target: address-separation-decision
       type: contains
@@ -21,7 +22,6 @@ address/registry 분리 ADR을 결정 근거와 도입 시점/후속 설계로 �
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `address-separation-decision`: 맥락, 결정, 근거를 정리한 문서.
 - `address-separation-rollout`: 분리가 필요한 시점, 예상 설계, 참고 구현을 정리한 문서.
 

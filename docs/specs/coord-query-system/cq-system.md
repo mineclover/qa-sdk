@@ -1,11 +1,11 @@
 ---
 def:
   id: cq-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  tags: [structural, entry-point]
   links:
     - target: cq-policy-resolver
       type: contains
@@ -15,6 +15,8 @@ def:
       type: contains
     - target: cq-relational-engine
       type: contains
+    - target: wi-system
+      type: depends_on
 ---
 
 # Coordinate Query 시스템
@@ -25,7 +27,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `cq-policy-resolver`: PolicyRule 집합에서 특정 좌표에 적용되는 정책을 해소하는 함수.
 - `cq-cross-index`: 서로 다른 prefix 간 공유 축을 기반으로 합성 질의를 수행하는 함수.
 - `cq-version-query`: 동일 prefix의 여러 버전을 횡단하여 주소 변환, 히스토리 조회, 마이그레이션 경로 탐색을 수행하는 함수.

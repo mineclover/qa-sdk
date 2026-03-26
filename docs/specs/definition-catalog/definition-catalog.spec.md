@@ -5,7 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
-  tags: [entry-point]
+  tags: [structural, entry-point]
   links:
     - target: system-concepts
       type: depends_on
@@ -22,7 +22,10 @@ def:
 ## 참조
 
 관련 스펙: [decision-flow.spec.md](../decision-flow/decision-flow.spec.md)
-구현: `packages/definition-catalog/src/`
+
+## 관련 소스
+
+- `packages/definition-catalog/src/` — 구현
 
 ## 상태
 
@@ -187,7 +190,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
-  tags: [security]
+  tags: [structural, security]
   links:
     - target: gate-engine-func
       type: implements
@@ -284,7 +287,6 @@ RPC 엔드포인트 명세. 요청/응답 스키마, 에러 코드, 인증 요�
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `모델 정체성`: 문서 1개를 좌표 1개와 대응시키는 definition-catalog의 정체성과 decision-flow와의 관계를 정의한다.
 - `축 설계`: def_scope, def_aspect, def_depth, lifecycle, link_type 축과 5Q 자격 검증 원칙을 정리한다.
 - `분류 체계`: 7대 scope와 20개 aspect 조합으로 문서 좌표계를 운영하는 분류 규칙을 설명한다.

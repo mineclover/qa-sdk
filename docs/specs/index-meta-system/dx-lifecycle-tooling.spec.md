@@ -5,6 +5,7 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: approved
+  svc: index-meta
   tags: [tier-infra]
   links:
     - target: index-codec-spec

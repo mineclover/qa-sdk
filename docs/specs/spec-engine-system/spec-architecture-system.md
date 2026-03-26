@@ -5,7 +5,8 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  svc: spec-core
+  tags: [structural, entry-point]
   links:
     - target: spec-architecture-stack
       type: contains
@@ -23,7 +24,6 @@ spec-engine의 전체 구조와 시간 관계 수집 경로를 스택 구조, ca
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `spec-architecture-stack`: 패키지 구성, DKG 타입, skills, convergence, SDK/CLI/store 구조를 정리한 문서.
 - `spec-temporal-capture`: 시간 순서/데이터 흐름 수집과 FlowDefinition 연결을 정리한 문서.
 - `spec-temporal-infra`: 구현 우선순위, 수집 인프라, 불변식을 정리한 문서.

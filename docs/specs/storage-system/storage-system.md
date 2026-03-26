@@ -1,11 +1,11 @@
 ---
 def:
   id: storage-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: system_data
   depth: overview
   lifecycle: approved
-  tags: [entry-point]
+  tags: [structural, entry-point]
   links:
     - target: storage-adapters-spec
       type: contains
@@ -27,7 +27,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `storage-adapters-spec`: core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
 - `storage-schema-spec`: PostgreSQL 테이블 정의.
 - `scenario-store-spec`: 검증 완료된 `ScenarioSpec` 문서를 저장하고 조회하는 core 포트 계약.

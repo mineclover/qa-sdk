@@ -16,6 +16,13 @@ def:
 
 trace_id 단위 메타데이터 집계와 reconstruction 상태 관리.
 
+## 구성 ^overview
+
+- **TraceStore 포트**: upsert / findById / findUnreconstructed / markReconstructed 4개 메서드 정의
+- **upsert 동작**: 동일 traceId 존재 시 recordCount 누적 + firstTimestamp/lastTimestamp min/max 갱신
+- **reconstruction 폴링**: findUnreconstructed로 미복원 trace 목록을 엔진 스케줄러가 조회
+- **StoredTrace 구조**: traceId(PK), sessionId(FK, nullable), recordCount, reconstructed 플래그 등 포함
+
 ## 상태
 
 implemented

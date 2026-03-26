@@ -61,12 +61,7 @@ orders 테이블:   무한히 증가
 
 prefix의 각 차원은 `DimRef`로 참조 대상을 선언한다. 3종류가 있다:
 
-```typescript
-type DimRef =
-  | { kind: "axis";       axisId: string }    // 유한 열거값 → 좌표 인코딩
-  | { kind: "prefix_ref"; prefixId: string }  // 다른 좌표 공간 → 좌표 인코딩
-  | { kind: "table_ref";  table: string }     // DB 테이블 타입 → 좌표에서 제외
-```
+> 타입 정의: `packages/core/src/catalog/catalog.types.ts` — `DimRef`
 
 | DimRef | 인코딩 여부 | 유한/무한 | 역할 |
 |---|---|---|---|
@@ -92,7 +87,7 @@ type DimRef =
 ### 3.1 기본 형태: actor × action × target
 
 ```typescript
-// DEMO_CATALOG.prefixes.cart_event
+// 개념 예시 — DEMO_CATALOG.prefixes.cart_event 구조
 cart_event: {
   labels: ["actor", "action", "target"],
   dims: {
@@ -118,7 +113,7 @@ capacity: 32
 ### 3.2 단항 이벤트: actor만
 
 ```typescript
-// auth_event: "회원이 로그인했다" — target 없음 (자동사)
+// 개념 예시 — auth_event: "회원이 로그인했다" — target 없음 (자동사)
 auth_event: {
   labels: ["actor", "action"],
   dims: {
@@ -132,7 +127,7 @@ auth_event: {
 ### 3.3 다항 이벤트: prefix_ref + table_ref 혼합
 
 ```typescript
-// order_event: "특정 서비스 환경에서 회원이 주문에 대해 행위를 했다"
+// 개념 예시 — order_event: "특정 서비스 환경에서 회원이 주문에 대해 행위를 했다"
 order_event: {
   labels: ["service_ctx", "actor", "action", "order"],
   dims: {
@@ -185,13 +180,7 @@ prefix는 **타입**을 정의한다. 런타임에 발생하는 **인스턴스**
 
 테이블의 각 컬럼이 무엇을 참조하는지 타입으로 선언한다:
 
-```typescript
-type ColumnRef =
-  | { kind: "scalar";     type: string }     // 일반 데이터 (int, string, number)
-  | { kind: "axis_ref";   axisId: string }   // 축 값 참조 (행의 값이 축 entry)
-  | { kind: "table_ref";  table: string }    // 다른 테이블 FK
-  | { kind: "prefix_ref"; prefixId: string } // 좌표 공간 주소 저장
-```
+> 타입 정의: `packages/core/src/catalog/catalog.types.ts` — `ColumnRef`
 
 | ColumnRef | 의미 | 예시 |
 |---|---|---|
@@ -203,6 +192,7 @@ type ColumnRef =
 ### 4.2 DEMO_CATALOG의 테이블 정의
 
 ```typescript
+// 개념 예시 — DEMO_CATALOG.tables 구조
 tables: {
   members: {
     columns: {
@@ -345,11 +335,7 @@ const serviceResolved = resolveAddress(DEMO_CATALOG, "service", "v1", org7.regio
 
 소스: `packages/demo-snapshot/src/demo-accessors.ts`
 
-```typescript
-function getFixedLabels(prefix): string[] {
-  return prefix.labels.filter(l => prefix.dims[l].kind !== "table_ref");
-}
-```
+> 함수 정의: `packages/core/src/catalog/runtime.ts` — `getFixedLabels()`
 
 | API | table_ref 처리 |
 |---|---|

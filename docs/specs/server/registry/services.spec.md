@@ -17,6 +17,12 @@ def:
 
 서비스 디스커버리에 쓰이는 서비스 메타데이터를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
 
+## 구성 ^overview
+
+- **엔드포인트**: POST /services(생성), GET /services/:serviceName(조회), PATCH /services/:serviceId(수정)
+- **내부 계층**: ServiceService(비즈니스 로직) → ServiceRepository(데이터 접근) + Zod 스키마 검증
+- **제약**: service_name은 unique, serviceId는 서버 내부 생성(클라이언트 지정 불가)
+
 ## 상태
 
 implemented

@@ -20,6 +20,17 @@ def:
 브라우저 탭 범위의 세션을 `sessionStorage`에 영속화한다.
 탭 내 새로고침 후에도 동일 세션을 복원하고, 탭 닫힘 시 자동 만료된다.
 
+## 구성 ^overview
+
+- **핵심 API**: `getOrCreateSession(storageKey?)` — 기존 세션 복원 또는 신규 생성, `clearSession(storageKey?)` — 세션 강제 만료
+- **세션 구조**: `MonitorSession { sessionId: "ses_" ULID, traceId: "trc_" ULID }` — sessionStorage에 JSON으로 영속
+- **탭 격리**: sessionStorage 특성에 따라 탭별 독립 세션이 보장되며, 탭 닫기 시 자동 삭제된다
+- **복원 전략**: 새로고침 시 sessionStorage에서 복원하고, JSON 파싱 실패·필드 누락 시 신규 세션을 생성한다
+- **키 격리**: `storageKey`를 다르게 설정하면 같은 탭 내에서 독립 세션을 운용할 수 있다
+- **에러 처리**: sessionStorage write quota 초과 시 silently ignore하며, 메모리에만 세션이 존재한다
+- **SSR 안전**: Node.js 환경에서는 sessionStorage가 없으므로 호출자가 브라우저 환경을 보장해야 한다
+- **불변성**: sessionId/traceId는 생성 후 불변이며, clearSession + getOrCreateSession으로만 갱신한다
+
 ## 상태
 
 implemented

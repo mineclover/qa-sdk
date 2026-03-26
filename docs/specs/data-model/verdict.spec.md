@@ -17,6 +17,16 @@ def:
 
 spec/runtime 매칭 결과와 최종 판정 보고서의 canonical 구조.
 
+## 구성 ^overview
+
+- **Verdict 5종**: pass, fail, warn, degraded, unknown — step 단위 및 전체 판정에 사용
+- **StepMatch**: 각 spec step의 매칭 노드, verdict, constraint별 상세 결과를 보관
+- **MatchResult**: 그래프 매칭 단계의 중간 산출물 — missing_steps, unmatched_nodes 포함
+- **VerdictReport**: 최종 보고서 — step_matches가 canonical breakdown이며 별도 passed/failed 배열 없음
+- **VerdictStore 포트**: insert, remove, find_by_scenario_and_trace, find_by_trace_id, find_by_session_id 5개 메서드
+- **재계산 지원**: 동일 (scenario_id, trace_id) 조합의 기존 결과를 교체 가능
+- **필드 규약**: 모든 verdict 관련 필드명은 snake_case, computed_at은 ISO-8601 UTC
+
 ## 상태
 
 implemented

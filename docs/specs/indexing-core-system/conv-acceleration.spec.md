@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [performance]
   links:
     - target: range-query-spec
@@ -19,6 +20,13 @@ def:
 ## 목적 ^purpose
 
 가속 지향 설계 규칙. Snapshot Supply 전략, 캐시 친화적 구조, 불필요한 계산 회피.
+
+## 구성 ^overview
+
+- **분기 금지**: encode/decode 연산 경로에 조건 분기, 예외 처리, 동적 dispatch 삽입 금지 — 검증은 진입 전에 수행
+- **불변성 유지**: shape/weights/entries는 확정 후 Object.freeze — 변경 시 새 version 생성
+- **정수 전달 원칙**: 문자열→정수 변환은 스키마 레이어에서 완결, 수학 레이어는 정수 좌표만 수신
+- **결정론적 packed key**: encode 결과에 난수/타임스탬프 혼합 금지, 동일 입력 = 동일 key (INV-1)
 
 가속 지향 설계 규칙. Snapshot Supply 전략, 캐시 친화적 구조, 불필요한 계산 회피.
 

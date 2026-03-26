@@ -16,6 +16,13 @@ def:
 
 ScenarioSpec CRUD — 시나리오 스펙 등록, 조회, 삭제.
 
+## 구성 ^overview
+
+- **CRUD 엔드포인트**: POST(upsert), GET(목록/단건 조회), DELETE — 모두 /v1/scenarios 경로
+- **구조 검증**: 등록 시 compileSpec()으로 ScenarioSpec 구조 검증, 실패 시 400 반환
+- **목록 필터링**: domain 파라미터로 도메인 필터, limit(기본 100, 최대 100)으로 결과 수 제한
+- **의존 포트**: ScenarioSpecStore 단일 인터페이스에 의존
+
 ## 상태
 
 implemented

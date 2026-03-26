@@ -1,11 +1,12 @@
 ---
 def:
   id: apm-codegen-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: qa-sdk-cli
+  tags: [structural, tier-system]
   links:
     - target: codegen-cli-contract
       type: contains
@@ -21,7 +22,6 @@ SchemaSnapshot 기반 codegen을 CLI 실행 계약과 protobuf/TypeScript 산출
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `codegen-cli-contract`: 스냅샷 입력, 명령 실행, 생성 순서를 담당하는 CLI 계약.
 - `codegen-schema-output`: protobuf 메시지와 TypeScript 타입 산출물의 구조와 확장 포인트를 정리한 문서.
 

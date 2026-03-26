@@ -20,6 +20,13 @@ def:
 
 특정 trace 또는 session을 SSE로 구독하여 새 이벤트를 실시간 수신.
 
+## 구성 ^overview
+
+- **엔드포인트**: `GET /v1/streams/traces/:traceId`와 `GET /v1/streams/sessions/:sessionId` 두 종류의 SSE 구독 제공
+- **RecordStreamBroker**: `Map<string, Set<RecordListener>>` 기반 in-process pub/sub로 record를 `structuredClone`하여 구독자 간 데이터 격리
+- **연결 관리**: 15초 heartbeat comment, 동일 key 동시 구독 최대 10개(SSE_SUBSCRIPTION_LIMIT 설정 가능), 초과 시 429 반환
+- **설계 제약**: 연결 이후 새 record만 전송하며, Last-Event-ID 기반 재연결 복구는 v1 scope 외
+
 ## 상태
 
 implemented

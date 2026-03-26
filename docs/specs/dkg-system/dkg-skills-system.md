@@ -1,11 +1,12 @@
 ---
 def:
   id: dkg-skills-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: spec-core
+  tags: [structural, tier-system]
   links:
     - target: dkg-skill-cascade
       type: contains
@@ -27,7 +28,6 @@ DKG 그래프의 빈 곳을 자동으로 채우는 5개 skill. 종단 cascade, m
 
 ## 구성 ^overview
 
-overview: 총 5개 멤버.
 - `dkg-skill-cascade`: DKG 그래프에서 특정 노드 변경의 영향을 종단까지 추적하는 skill.
 - `dkg-skill-migrator`: 축/prefix 변경 시 필요한 마이그레이션 경로를 자동 추론하는 skill.
 - `dkg-skill-version-event`: 두 버전 간 diff에서 VersionEvent를 자동 생성하는 skill.

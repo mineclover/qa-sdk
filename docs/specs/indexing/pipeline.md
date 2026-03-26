@@ -20,6 +20,16 @@ def:
 entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 각 단계가 어떤 패키지의 어떤 메서드에 의해 수행되는지, 어떤 정보가 필요한지를 명시한다.
 
+## 구성 ^overview
+
+- **4계층 레이어**: 프로토콜(PK 문자열) → 주소 게이트웨이(MetaRegistry) → 정보 해석(MetaCodec) → 수학(WeightedIndex) 순으로 관심사 분리
+- **인코딩 경로**: entity ID → 좌표(MetaCodec.encode) → 정수(WeightedIndex.encode) → SemanticAddress → PK 문자열(AddressConverter.serialize) 4단계
+- **디코딩 경로**: PK 문자열 → hex 파싱 → SemanticAddress → 레지스트리 검증 → 좌표 복원 → entity ID로 역방향 4단계
+- **UUID 자기 설명성**: schema(which) + version(when) + index(what)는 UUID에서 추출 가능하나, meaning(의미 해석)은 MetaCodec/DecodeMap 필수
+- **외부 디코딩**: MetaResolver.getDecodeMap()이 shape + entries 번들을 생성하여 MetaRegistry 없이 독립 decode 가능
+- **프로토콜 변환**: colon, uri, compact, uuid, int64 간 변환은 AddressConverter가 SemanticAddress 3필드만으로 수행
+- **합성 메서드**: `reg.serialize(codec.encode(entityIds))`로 인코딩 전체 경로, `codec.decode(reg.parse(pk))`로 디코딩 전체 경로 1줄 합성
+
 - 레이어 분리 원리: [`foundation.md`](foundation.md) §3
 - 수학 엔진: [`weighted-index/core.spec.md`](weighted-index/core.spec.md)
 - 스키마 레이어: [`index-meta/registry.spec.md`](index-meta/registry.spec.md)

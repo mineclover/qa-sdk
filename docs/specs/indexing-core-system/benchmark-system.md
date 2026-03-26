@@ -1,11 +1,12 @@
 ---
 def:
   id: benchmark-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: system_data
   depth: overview
   lifecycle: approved
-  tags: [performance, testing]
+  svc: weighted-index
+  tags: [structural, performance, testing]
   links:
     - target: bench-encode-decode
       type: contains
@@ -15,6 +16,10 @@ def:
       type: contains
     - target: bench-browser
       type: contains
+    - target: wi-system
+      type: depends_on
+    - target: wi-pack-format-system
+      type: depends_on
 ---
 
 # 벤치마크 시스템
@@ -25,7 +30,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 4개 멤버.
 - `bench-encode-decode`: WeightedIndex encode/decode 처리량과 차원 수 한계 측정.
 - `bench-cross-index`: cross-index 종단 좌표 탐사의 응답 시간과 메모리 사용량 측정.
 - `bench-range-calc`: calcAddressRanges 범위 연산의 처리량과 BigInt/UUID 직렬화 성능 측정.

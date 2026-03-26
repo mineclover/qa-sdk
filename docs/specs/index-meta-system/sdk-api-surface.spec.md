@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: index-meta
   tags: [tier-infra]
   links:
     - target: sdk-dim-views
@@ -22,6 +23,16 @@ index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolv
 
 그룹: [sdk-system.md](sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
+
+## 구성 ^overview
+
+- **createIndexSDK**: MetaRegistryInput으로 SDK 인스턴스를 생성하며, reservedTokens 오버라이드 옵션 지원
+- **IndexSDK**: client(index+version 바인딩), constants(dim+snapshot 직접 상수 추출), registry(내부 MetaRegistry 접근) 제공
+- **IndexClient 핵심 API**: encode(entity→정수), decode(정수→entity), matchRanges(부분 매칭 범위 쿼리), toDecodeMap(독립 decode용 맵 전달)
+- **상수 기반 코딩**: constants()로 enum-like 객체를 반환하여 IDE 자동완성과 타입 안전성 확보
+- **캐싱 전략**: SDK는 immutable 스냅샷이며, IndexClient와 constants는 키 기반 캐싱으로 재생성 시에만 무효화
+- **진입점 분리**: index-meta/client(브라우저/Edge/Node.js, Node 전용 의존성 제외)와 index-meta(SQL 어댑터/마이그레이션 포함, Node.js 전용)
+- **에러 체계**: DimNotFoundError, IndexNotFoundError, IndexVersionNotFoundError, EntryNotFoundError 4종으로 명확한 발생 조건 구분
 
 ## 상태
 

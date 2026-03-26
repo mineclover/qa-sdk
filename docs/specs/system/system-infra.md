@@ -5,7 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-infra]
+  tags: [structural, tier-infra]
   links:
     - target: ingest-system
       type: contains
@@ -19,6 +19,8 @@ def:
       type: contains
     - target: pipeline-system
       type: contains
+    - target: system-libraries
+      type: depends_on
 ---
 # 인프라 서비스 계층
 

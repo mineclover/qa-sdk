@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: dkg-node-types
@@ -16,6 +17,13 @@ def:
 ## 목적 ^purpose
 
 스펙 변경을 DKG 그래프에 기록하는 4단계. VersionEvent + Decision 노드 생성.
+
+## 구성 ^overview
+
+- **기록 트리거**: activate 시 DKG에 VersionEvent 노드를 자동 생성한다
+- **diff 기반**: registryService.diffVersions()로 이전/현재 버전 차이를 산출하여 VE 노드에 기록
+- **Decision 연결**: scaffoldDecision()으로 사전 생성한 DEC 노드가 있으면 justifies 엣지로 연결
+- **시나리오**: 첫 버전(VE-xxx-none-v1)과 업그레이드(VE-xxx-v4-v5) 두 종단 경로를 지원
 
 ---
 

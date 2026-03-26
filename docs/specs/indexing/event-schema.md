@@ -27,6 +27,16 @@ prefix가 이 관계의 **고정된 구조**를 정의하고, table_ref가 **동
 CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coordinate-states.md)에서 정의한다.
 table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
 
+## 구성 ^overview
+
+- **이벤트 = 온톨로지 관계**: 이벤트를 (subject, predicate, object) 트리플, 즉 "누가(actor) 무엇을(action) 어디에(target) 했다"로 타입 선언하는 구조를 정의한다.
+- **3-slot 구조**: 모든 이벤트는 actor(table_ref, 주체), action(axis, 행위), target(table_ref, 대상)의 3개 슬롯으로 구성된다.
+- **인코딩 분리 원칙**: axis와 prefix_ref는 좌표에 인코딩하고, table_ref(actor_id, target_id)는 좌표 밖 런타임 데이터(refs)로 분리하여 좌표 공간을 유한하게 유지한다.
+- **이벤트 패턴 확장**: 단항(actor만), 다항(target 여러 타입), 컨텍스트(prefix_ref 바인딩) 등 다양한 이벤트 구조를 동일한 prefix 체계로 표현한다.
+- **EventInstance 인터페이스**: event_type(prefix ID), address(고정 차원 좌표), refs(타입 차원 런타임 ID), timestamp, context_id로 구성된 이벤트 인스턴스 구조를 명세한다.
+- **관계 유형 분류**: 행위(action), 소유(ownership), 포함(containment), 상태 전이(transition) 등 모든 관계를 동일한 3-slot 구조로 표현할 수 있다.
+- **책임 경계**: 이벤트 타입 정의와 인코딩 분리 규칙만 담당하며, 인스턴스 기록·관계 정의·상태 추적·제약·수집은 상위 계층의 책임이다.
+
 
 ---
 

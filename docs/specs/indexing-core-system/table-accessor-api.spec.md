@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: table-dimref-types
@@ -17,6 +18,16 @@ def:
 ## 목적 ^purpose
 
 accessor API에서 table_ref를 처리하는 방법. MetaRegistry/PrefixCodec으로의 외부 전파 경로.
+
+## 구성 ^overview
+
+- **getFixedLabels**: 모든 accessor에서 table_ref 차원을 제외하는 공통 헬퍼
+- **구조 vs 산술 분리**: getPrefixStructure에서는 table_ref가 보이지만, shape/encode/decode에서는 투명하게 제외
+- **외부 전파 차단**: catalogToRegistryInput, catalogToPrefixCodecInput 변환 시 table_ref 건너뜀
+- **이벤트 타입 선언**: prefix로 actor(누가) x action(무엇을) x target(어디에) 관계를 타입으로 정의
+- **좌표-엔티티 연결**: table_ref/axis_ref를 통해 차원과 테이블 행 간 정적 타입 안전 참조
+- **그래프 탐색**: ColumnRef + DimRef를 결합하여 좌표-테이블-좌표 간 영향 분석 및 데이터 흐름 추적
+- **인코딩 분리**: table_ref를 좌표 공간에서 제외하여 유한 좌표 + 무한 엔티티 참조 구조 보장
 
 ---
 

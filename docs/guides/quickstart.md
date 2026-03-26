@@ -16,6 +16,15 @@ def:
 
 시스템 내 enum, 이벤트, 권한, API, 화면 경로를 prefix로 관리하는 개발자 시작 가이드. 문자열만 다루고, 정수는 시스템이 파생한다.
 
+## 구성 ^overview
+
+- **prefix 개념**: 각 prefix는 차원의 조합(role×action, method×path 등)으로 유일한 정수 주소를 파생하는 의사결정 단위
+- **CLI 6종**: encode(문자열→주소), decode(주소→문자열), resolve(자동 마이그레이션), find-version(버전 탐색), impact(영향 분석), derive-refs(정합성 검증)
+- **SDK 사용법**: createQaContext로 초기화 후 encode/decode/resolve 호출, env·region·service는 SDK가 자동 주입
+- **환경 변수**: QA_ENV, QA_REGION, QA_SERVICE, QA_NAMESPACE 4종으로 런타임 컨텍스트 설정
+- **의사결정 7단계**: 기존 축/prefix 존재 여부 → 확장 vs 신규 → Domain 소속 → 연결 관계 → capacity → 소비자 영향 순서로 판단
+- **핵심 원칙**: 문자열은 영원히 고정, 정수는 shape에서 파생, 마이그레이션은 decode→re-encode로 항상 성공
+
 ---
 
 ## 핵심 개념

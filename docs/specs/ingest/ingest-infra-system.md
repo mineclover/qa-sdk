@@ -1,12 +1,12 @@
 ---
 def:
   id: ingest-infra-system
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: infra_constraint
   depth: overview
   lifecycle: approved
   svc: ingest-server
-  tags: [performance, observability, tier-infra]
+  tags: [structural, performance, observability, tier-infra]
   links:
     - target: ingest-runtime-middleware
       type: contains
@@ -22,7 +22,6 @@ health check, rate limiting, request ID, graceful shutdown 등 ingest 서비스 
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `ingest-runtime-middleware`: health check, rate limiting, request ID, error handler 미들웨어 규칙.
 - `ingest-runtime-operations`: graceful shutdown과 적용 순서 같은 운영 절차 규칙.
 

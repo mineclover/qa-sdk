@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [performance]
   links:
     - target: cq-relational-engine
@@ -20,6 +21,15 @@ def:
 cross-index 종단 좌표 탐사의 응답 시간과 메모리 사용량 측정.
 
 하위 인덱스 압축값이 상위 인덱스의 차원으로 편입될 때의 종단 decode/encode.
+
+## 구성 ^overview
+
+- **레벨 깊이별 성능**: 2~4레벨 cross-index 종단 encode/decode — 레벨당 ~10ns 추가로 병목 아님
+- **대규모 시나리오**: SaaS 권한(1M 공간) 21M ops/s, 4레벨 대규모(5M 공간) 12M ops/s 달성
+- **flat vs nested 비교**: 동일 6차원에서 flat 대비 2레벨 ~1.4배, 3레벨 ~1.6배 수준의 오버헤드
+- **종단 정보 디코딩**: SaaS 대규모(1M)에서 E2E decode 409ns, E2E encode 335ns
+- **리소스 사용량**: 비용 핵심은 entries 배열 크기 — 하위 공간이 클수록 상위 DecodeMap이 커짐
+- **zero-alloc 최적화**: 대규모 4레벨에서 zero-alloc 적용 시 decode 12M → 16M ops/s 향상
 
 ---
 

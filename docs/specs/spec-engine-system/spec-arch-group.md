@@ -1,11 +1,12 @@
 ---
 def:
   id: spec-arch-group
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: tech_constraint
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  svc: spec-core
+  tags: [structural, tier-system]
   links:
     - target: spec-arch-layers
       type: contains
@@ -23,7 +24,6 @@ spec-engine의 계층 분리 원칙, NestJS 모듈 구성, Decorator/Interceptor
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `spec-arch-layers`: spec-engine의 계층 분리 원칙.
 - `spec-arch-nestjs`: NestJS 모듈 구성과 의존 그래프.
 - `spec-arch-interceptors`: Decorator와 Interceptor 설계.

@@ -1,11 +1,12 @@
 ---
 def:
   id: wi-trace-group
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [testing]
+  svc: weighted-index
+  tags: [structural, testing]
   links:
     - target: wi-trace-axes
       type: contains
@@ -23,7 +24,6 @@ weighted-index의 추적성. 변경 유형별 전파 경로, 버전 고정, 수�
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `wi-trace-axes`: 추적성의 3축: 역할(producer/consumer/auditor), 변경 유형(additive/reductive/structural), 고정(stride/capacity/shape).
 - `wi-trace-propagation`: 변경 유형별 전파 경로.
 - `wi-trace-protocol`: 수정의 프로토콜.

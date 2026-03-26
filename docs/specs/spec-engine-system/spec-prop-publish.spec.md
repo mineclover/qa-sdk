@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: spec-core
   tags: [tier-system]
   links:
     - target: spec-core-types
@@ -18,6 +19,16 @@ def:
 ## 목적 ^purpose
 
 PrefixSpec을 RegistryService에 발행하는 1단계. 스키마 검증 + 버전 생성.
+
+## 구성 ^overview
+
+- **Publish 파이프라인**: PrefixSpec → DimRef 분류 → capacity 계산 → RegistryService.registerPrefix + createDraft 순서로 발행
+- **PublishInput 모드**: "new"(신규 prefix 등록)와 "version"(기존 prefix의 새 버전, baseVersion 지정)을 구분
+- **DimRef 변환 규칙**: axis→leaf capacity, prefix_ref→composite ref(참조 prefix capacity를 곱), table_ref→무시(인코딩 제외)
+- **PublishResult**: prefix, versionId, status("draft"), capacity, refs를 반환하며 초기 상태는 항상 draft
+- **발행 후 흐름**: publish → review(analyzeImpact) → seal(lockDraft + release) → activate의 4단계 라이프사이클
+- **신규 prefix 시나리오**: 기존 시스템에 stride-break 없이 안전하게 추가 가능
+- **버전 업그레이드 시나리오**: capacity 변경 시 migrationRequired/autoMigratable 분석과 affectedConsumers 목록 제공
 
 ---
 

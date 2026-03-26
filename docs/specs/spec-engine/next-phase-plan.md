@@ -5,7 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
-  tags: [tier-system]
+  tags: [structural, tier-system]
   links:
     - target: convergence-layer-spec
       type: refines
@@ -21,7 +21,6 @@ skills/문서 자체도 prefix 기반으로 관리하며,
 
 ## 구성 ^overview
 
-overview: 총 6개 멤버.
 - `prefix의 3가지 사용 모드`: prefix를 enum 공유, 이벤트 로깅, 권한 bitmask라는 세 가지 런타임 진입점으로 묶어 설명한다.
 - `skills/문서를 prefix로 관리`: skill과 문서 메타데이터를 prefix 주소로 승격해 DKG와 propagation에 연결하는 방향을 정리한다.
 - `환경 주입 — 3단계 PartialBinder`: 빌드, 배포, 런타임 단계별로 환경 차원을 주입하는 QaContext 연동 모델을 설명한다.

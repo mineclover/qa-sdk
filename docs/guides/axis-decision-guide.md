@@ -18,6 +18,15 @@ def:
 **이 가이드는 qa-sdk 뿐 아니라 어떤 서비스에서든 재사용 가능하다.**
 새로운 데이터 항목을 다룰 때, 이것이 axis인지 아닌지를 판단하는 표준 프레임워크.
 
+## 구성 ^overview
+
+- **5-Question Checklist**: 유한성(Q1) → 의사결정(Q2) → 공유성(Q3) → 안정성(Q4) → capacity(Q5) 순서로 축 여부를 판정하는 표준 프레임워크
+- **판정표**: 5Q 결과 조합별로 axis / table_ref / payload / dynamic enum / 로컬 enum 중 하나로 분류
+- **Anti-Patterns**: API 경로를 축에 넣기, 자주 바뀌는 값 축 등록, 단일 서비스 전용 값을 전역 축에 넣기, 프레임워크 제공 값 수동 입력 — 4가지 금지 패턴
+- **경계선 사례**: flow_name(axis), svc_name(axis), event_name(axis + 넉넉한 capacity) 등 실제 판단 예시 제공
+- **의사결정 기록 템플릿**: 축 추가/제거 시 DEC-AXIS-XXX 형식으로 5Q 답변과 근거를 기록
+- **범용 적용 가이드**: qa-sdk 외 서비스에서도 5Q를 적용하여 데이터 항목을 prefix로 정리하고 전역 좌표 체계에 합류하는 절차
+
 ---
 
 ## 5-Question Checklist

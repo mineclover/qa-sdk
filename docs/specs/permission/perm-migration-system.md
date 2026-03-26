@@ -1,11 +1,12 @@
 ---
 def:
   id: perm-migration-system
-  scope: flow
-  aspect: process_flow
+  scope: feature
+  aspect: func_def
   depth: overview
   lifecycle: approved
-  tags: [migration, tier-backend]
+  svc: permission-engine
+  tags: [structural, migration, tier-backend]
   links:
     - target: perm-migration-algorithm
       type: contains
@@ -23,7 +24,6 @@ PermissionSet shape migration을 자동 재배치 규칙과 CoordMapper 보정 �
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `perm-migration-algorithm`: `migratePermissions()`의 자동 ID 매칭, shape 변경 시나리오, 시간 복잡도를 정의한다.
 - `perm-migration-mapper`: `CoordMapper`의 커스텀 매핑 규칙, 한계, composite address와의 경계를 정의한다.
 

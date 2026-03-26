@@ -16,6 +16,17 @@ def:
 
 viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼와 EventSource 기반 SSE 구독 클라이언트.
 
+## 구성 ^overview
+
+- **REST 클라이언트**: 단일 `request<T>(path, init?)` 헬퍼로 모든 REST 호출에 일관된 에러 처리를 적용한다
+- **엔드포인트**: scenarios CRUD, trace 메타/레코드/그래프/verdicts 조회, session 레코드/verdicts 조회, verdicts 재계산 등 10개 함수
+- **SSE 구독**: `subscribeToTrace(traceId, handlers)` — EventSource로 실시간 레코드 수신, close 이벤트 처리, unsubscribe 함수 반환
+- **페이지네이션**: `getSessionRecords`는 cursor 기반으로 limit=200씩 요청하며 최대 1,000개까지 수집한다
+- **설정**: `INGEST_SERVER_URL`/`ROLEPLAY_WEB_URL`은 config.ts에서 읽으며, `VITE_*` 환경변수로 오버라이드 가능하다
+- **무상태 설계**: 클라이언트는 상태를 갖지 않으며, 인증/세션 관리는 범위 밖이다
+- **재시도 전략**: REST는 재시도 미포함(호출자 책임), SSE는 EventSource 내장 재연결에 의존한다
+- **와이어 포맷**: SSE는 `event: record`/`event: close` + heartbeat 프레임 구조를 따른다
+
 ## 상태
 
 implemented
@@ -31,9 +42,7 @@ implemented
 
 ### 내부 헬퍼
 
-```typescript
-async function request<T>(path: string, init?: RequestInit): Promise<T>;
-```
+> 타입 정의: packages/viz-web/src/api/ingest-client.ts — request
 
 - `INGEST_SERVER_URL + path`로 fetch 호출
 - 기본 헤더: `Content-Type: application/json`
@@ -60,39 +69,14 @@ cursor 기반 페이지네이션으로 세션의 모든 레코드를 수집한�
 
 ### 보조 타입
 
-```typescript
-interface TraceMetadata {
-  trace_id: string;
-  service_name?: string;
-  started_at?: string;
-  record_count?: number;
-}
-
-interface TraceRecordsPage {
-  items: StoredRecord[];
-  nextCursor: { timestamp: string; logId: string } | null;
-  hasMore: boolean;
-}
-
-interface VerdictList {
-  verdicts: VerdictReport[];
-}
-```
+> 타입 정의: packages/viz-web/src/api/ingest-client.ts — TraceMetadata, TraceRecordsPage, VerdictList
 
 - URL 경로 파라미터는 `encodeURIComponent()`로 인코딩한다.
 - 쿼리 파라미터는 `URLSearchParams`로 구성한다.
 
 ## SSE 클라이언트 (sse-client.ts)
 
-```typescript
-interface SseHandlers {
-  onRecord: (record: StoredRecord) => void;
-  onClose: (reason: string) => void;
-  onError: (error: Event) => void;
-}
-
-function subscribeToTrace(traceId: string, handlers: SseHandlers): () => void;
-```
+> 타입 정의: packages/viz-web/src/api/sse-client.ts — SseHandlers, subscribeToTrace
 
 ### 동작
 
@@ -116,10 +100,7 @@ data: {"reason":"server_shutdown"}
 
 ## 설정 (config.ts)
 
-```typescript
-export const INGEST_SERVER_URL: string;   // default: "http://localhost:3100"
-export const ROLEPLAY_WEB_URL: string;    // default: "http://localhost:5174"
-```
+> 타입 정의: packages/viz-web/src/config.ts — INGEST_SERVER_URL, ROLEPLAY_WEB_URL
 
 - Vite 환경변수 `VITE_INGEST_SERVER_URL`, `VITE_ROLEPLAY_WEB_URL`로 오버라이드 가능.
 - `/// <reference types="vite/client" />`로 `import.meta.env` 타입을 보장한다.

@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  svc: weighted-index
   tags: [tier-infra]
   links:
     - target: sdk-constants
@@ -21,6 +22,17 @@ def:
 Reserved Entry 규칙. 시스템 예약 entry와 커스텀 PackFormat 등록 절차.
 
 Reserved Entry 규칙. 시스템 예약 entry와 커스텀 PackFormat 등록 절차.
+
+## 구성 ^overview
+
+- **핵심 개념**: 슬롯 마커(slot marker)로 "값 없음/분류 불가/식별 불가" 같은 열린 상황을 닫힌 주소 공간 안에서 표현한다
+- **표준 토큰 3종**: `"_"`(null, 값 없음), `"~"`(other, 해당 없음), `"?"`(unknown, 식별 불가) — 예약어이므로 도메인 값으로 사용 금지
+- **선두 배치 규칙**: 마커는 entries 배열 앞쪽에 `_` → `~` → `?` → 커스텀 → 정규 엔티티 순서로 배치
+- **코덱 투명성**: 코덱에 마커 특별 처리 로직을 삽입하지 않으며, 의미 해석은 도메인 레이어 책임
+- **Snapshot Supply 4전략**: axis(index 안 인코딩), envelope(전송 메타 태깅), context(address_context 별도 키), implicit(추적 안 함)
+- **axis 전략**: schema_version 축을 첫 번째 차원에 배치하여 자기 설명적 주소를 생성하고 네이티브 범위 쿼리 지원
+- **주소 3세그먼트 형식**: `{prefix}:{v}:{index}` — 모든 전략에서 동일하며, v 세그먼트는 stride가 변경된 version ID
+- **전략 선택 기준**: 크로스-버전 분석 → axis, 수집/감사 → envelope, 혼합 워크로드 → context, 개발/내부 → implicit
 
 그룹: [conventions-system.md](conventions-system.md)
 원본: `docs/specs/indexing/conventions.md` SS2, SS5

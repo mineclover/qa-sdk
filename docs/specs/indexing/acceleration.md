@@ -19,6 +19,16 @@ def:
 향후 FPGA/PCIe 가속기를 위한 인터페이스 확장 방향을 제시한다.
 이 문서는 장기 로드맵이며, 현재 구현에 대한 설계 제약을 부과하지 않는다.
 
+## 구성 ^overview
+
+- **가속 적합성**: WeightedIndex encode/decode는 분기 없는 순수 곱셈/나눗셈/모듈러 연산이며, shape 불변 시 single-cycle encode 가능
+- **현재 성능**: encode 22M ops/s, decode 8.3M ops/s, E2E 1.4M ops/s — FPGA 가속 시 수십 배 향상 여지
+- **FPGA 경계 원칙**: 문자열은 절대 FPGA로 내려가지 않으며, CPU에서 정수로 정규화한 후에만 가속 경로에 진입
+- **Write/Read 경로 분리**: Write는 Packed Key 생성, Read는 Packed Key 생성 + Cache Lookup + Policy를 FPGA 가속 대상으로 식별
+- **3대 핵심 요소**: Resolver(문자열→정수 SSOT), Schema(불변 구조 보장), Encoder(분기 없는 순수 산술) — 세 가지가 맞으면 FPGA 가속은 인터페이스 추가 수준
+- **로드맵 4단계**: P1 coord bypass API → P2 batch encode/decode → P3 binary axis format → P4 FPGA prototype (P1~P3는 FPGA 없이도 성능 최적화 가치 있음)
+- **packed key 캐시 우위**: 고정 크기 정수로 해시 불필요, 정렬 가능, 결정론적이며 L1(process)→L2(distributed)→L3(DB) 계층 캐시에 최적
+
 상태: `vision`
 
 ---

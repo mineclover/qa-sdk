@@ -5,6 +5,7 @@ def:
   aspect: scenario
   depth: validation
   lifecycle: approved
+  svc: gate-service
   tags: [testing]
   links:
     - target: gate-engine-func

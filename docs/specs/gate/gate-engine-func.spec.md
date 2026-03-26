@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security, tier-infra]
   links:
     - target: gate-state-model

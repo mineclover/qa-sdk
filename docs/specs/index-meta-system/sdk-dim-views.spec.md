@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: index-meta
   tags: [tier-infra]
   links:
     - target: address-spec
@@ -20,6 +21,16 @@ DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰). 축별 
 
 그룹: [sdk-system.md](sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
+
+## 구성 ^overview
+
+- **DimCapacityInfo**: 축별 `total`(등록 entries 수), `capacity`(할당 주소 공간), `headroom`(추가 가능 슬롯 수)을 제공한다
+- **headroom 의미**: headroom > 0이면 버전 변경 없이 새 entry 추가가 가능하며, 0이면 새 version 생성이 필요하다
+- **DimFullView**: 전체 capacity 범위의 position별 상태(`normal`/`reserved`/`empty`)를 포함하는 주소 공간 뷰
+- **Client 모드**: `entries()`, `constants()` — 등록된 entries만 반환하며 capacity 정보를 노출하지 않는다 (프론트엔드용)
+- **Full 모드**: `dimFullView()` — 모든 position(1..capacity)의 상태를 포함하여 백엔드 주소 추론에 사용한다
+- **kind 분류**: `reserved`(슬롯 마커, `_`/`~` 등), `normal`(정규 도메인 값), `empty`(headroom 빈 슬롯)
+- **BigInt 대응**: Number 범위를 초과하는 용량은 `registry.getCapacityInfo()`의 `VersionCapacityInfo`(sizeBigInt 포함)로 별도 조회한다
 
 ## 상태
 

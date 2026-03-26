@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: gate-service
   tags: [security, tier-infra]
   links:
     - target: gate-engine-group
@@ -17,6 +18,14 @@ def:
 ## 목적 ^purpose
 
 GateEngine 클래스의 코어 기능. recompute(단일 재계산), cascadeRecompute(composite 전파), AddressStateCacheRecord 관리.
+
+## 구성 ^overview
+
+- **4-state 모델**: active(정상) / inactive(인코딩 차단, 디코딩 가능) / open(인코딩 가능, 디코딩 불가) / reserved(완전 차단)
+- **recompute**: DimStateSpec 기반 순수 함수 — dim별 inactive/open 좌표로 전체 주소 범위 상태 계산
+- **cascadeRecompute**: leaf prefix 상태 변경을 composite prefix까지 DFS 순회로 전파, AND 규칙 적용
+- **Deactivation 모드**: strict(release 시에만 재계산) / flexible(setFlag 시에도 재계산)
+- **CON-006**: prefix_ref refEntries 미정의 시 unfilled positions는 reserved 처리
 
 ---
 

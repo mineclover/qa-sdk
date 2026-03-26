@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  svc: permission-engine
   tags: [security]
   links:
     - target: registry-services-api-spec
@@ -17,6 +18,16 @@ def:
 서비스 참조(ServiceRef) 타입. ServiceBootConfig와 구조적 호환으로 자동 할당 가능.
 
 서비스 참조(ServiceRef) 타입. ServiceBootConfig와 구조적 호환으로 자동 할당 가능.
+
+## 구성 ^overview
+
+- **ServiceIdentity**: `{ namespace, name }` 필수 식별자로 서비스를 고유하게 식별
+- **DeployContext**: `{ env?, build?, region? }` 선택적 배포 컨텍스트로 identity와 분리
+- **식별자 규칙**: namespace/name 모두 `[a-z][a-z0-9_-]*` 패턴 (소문자 시작, 대문자/숫자 시작 금지)
+- **formatServiceRef()**: 기본은 `namespace/name`, includeContext 시 `namespace/name@env.region.build` 형식으로 직렬화
+- **parseServiceRef()**: `@` 기준으로 identity/context를 분리하고 position 기반으로 env.region.build 순서 해석
+- **ServiceContext**: 앱 부트 시 1회 생성하여 `ref()`(identity만)와 `refFull()`(context 포함)을 제공
+- **createPermCodeFactory 연동**: ServiceContext의 `ref()`만 사용하므로 permission code에 deploy context가 기본 포함되지 않음
 
 소스: `packages/permission-engine/src/service-ref.ts`
 그룹: [perm-external-system.md](perm-external-system.md)

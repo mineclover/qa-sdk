@@ -137,7 +137,7 @@ interface HierarchySource {
 
 ---
 
-## 참조
+## 관련 소스
 
 증명 코드: `packages/decision-flow/src/proof.test.ts` (125 tests)
 

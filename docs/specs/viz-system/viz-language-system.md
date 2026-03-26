@@ -1,11 +1,11 @@
 ---
 def:
   id: viz-language-system
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: domain_data
   depth: overview
   lifecycle: approved
-  tags: [tier-frontend]
+  tags: [structural, tier-frontend]
   links:
     - target: rlsc-core-model
       type: contains
@@ -23,7 +23,6 @@ RLSC와 motion-content 계약을 핵심 모델, 좌표계 통합, 런타임 경�
 
 ## 구성 ^overview
 
-overview: 총 3개 멤버.
 - `rlsc-core-model`: RLSC의 정체성, 핵심 개념, 마크업 포맷을 정리한 문서.
 - `rlsc-integration`: context engineering, 기존 좌표계 통합, API/패키지 구조를 정리한 문서.
 - `motion-content-contract`: motion-content 스택의 용어집, 패키지 경계, done definition을 정리한 문서.

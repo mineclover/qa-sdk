@@ -1,12 +1,12 @@
 ---
 def:
   id: decision-standard-group
-  scope: flow
-  aspect: process_flow
+  scope: constraint
+  aspect: biz_constraint
   depth: overview
   lifecycle: approved
   svc: decision-flow
-  tags: [decision]
+  tags: [structural, decision]
   links:
     - target: decision-standard-process
       type: contains
@@ -22,7 +22,6 @@ def:
 
 ## 구성 ^overview
 
-overview: 총 2개 멤버.
 - `decision-standard-process`: 상황 분류와 표준 프로세스를 정리한 문서.
 - `decision-standard-checklist`: 마이그레이션 단순함, 질문 리스트, skill 매핑을 정리한 문서.
 
