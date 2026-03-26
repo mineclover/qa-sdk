@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [performance, observability, tier-infra]
   links:
     - target: ingest-infra-spec

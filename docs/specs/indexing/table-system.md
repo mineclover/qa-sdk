@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
   links:
     - target: coord-foundation
       type: depends_on

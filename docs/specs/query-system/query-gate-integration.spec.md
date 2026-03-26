@@ -5,6 +5,7 @@ def:
   aspect: relation
   depth: specification
   lifecycle: approved
+  layer: mediation
   svc: query-service
   tags: [tier-infra]
   links:

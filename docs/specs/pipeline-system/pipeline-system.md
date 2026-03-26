@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: operation
   svc: ingest-server
   tags: [structural, observability, performance, entry-point]
   links:

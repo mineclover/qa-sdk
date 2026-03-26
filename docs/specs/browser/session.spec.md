@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [tier-frontend]
   links:
     - target: session-spec

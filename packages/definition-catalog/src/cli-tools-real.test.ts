@@ -69,9 +69,9 @@ describe("definition-catalog CLI tools", () => {
 
     expect(blastRadius).toBeGreaterThan(PRE_US007_RECORD_SPEC_BLAST_RADIUS);
     expect(text).toContain("## 그룹 영향");
-    expect(text).toContain("apm-system");
-    expect(text).toContain("browser-system");
-    expect(text).toContain("viz-system");
-    expect(text).toContain("guides-system");
+    // record-spec(data → business)에서 같은 business layer 그룹에 영향
+    expect(text).toContain("ingest-system");
+    // layer 전파 규칙: business → interaction 직접 영향 없음 (binding 경유 필요)
+    // viz-system(ui → interaction)은 binding 문서 없이는 직접 도달하지 않음
   });
 });

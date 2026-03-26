@@ -5,6 +5,7 @@ def:
   aspect: biz_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [decision]
   links:
     - target: df-axis-model

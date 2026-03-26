@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: operation
   svc: spec-core
   tags: [structural, tier-system]
   links:

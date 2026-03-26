@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: operation
   tags: [tier-infra]
   links:
     - target: ingest-interface-pipeline

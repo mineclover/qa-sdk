@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: index-meta
   tags: [structural, testing]
   links:

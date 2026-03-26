@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: gate-service
   tags: [structural, security, entry-point, tier-infra]
   links:

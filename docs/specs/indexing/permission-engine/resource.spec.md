@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [security]
   links:
     - target: perm-resource-model

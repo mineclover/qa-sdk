@@ -20,6 +20,7 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "gate-service",       defaultPort: 3400, description: "주소 상태 게이트 (SQLite)" },
   { name: "query-service",      defaultPort: 3500, description: "정책 규칙 질의 (SQLite)" },
   { name: "decode-service",     defaultPort: 3600, description: "좌표 디코더 캐시 (Stateless)" },
+  { name: "definition-service", defaultPort: 3700, description: "문서/prefix 정의 관리 (NestJS + SQLite)" },
   // ── 비즈니스 서비스 (4xxx) ── (데모용, 실제 배포 시 변경)
   { name: "shopping-backend",   defaultPort: 4100, description: "쇼핑 백엔드 API" },
   { name: "auth",               defaultPort: 4200, description: "인증 서비스" },
@@ -29,6 +30,17 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "shopping-web",       defaultPort: 5220, description: "쇼핑 데모 사이트" },
   { name: "platform-demo",      defaultPort: 5176, description: "3D 모니터 + 다이어그램 뷰어" },
 ] as const;
+
+/** 이름으로 포트 조회 */
+export function getServicePort(name: string): number | undefined {
+  return SERVICE_PORTS.find(e => e.name === name)?.defaultPort;
+}
+
+/** 이름으로 dev URL 조회 */
+export function getServiceDevUrl(name: string): string | undefined {
+  const port = getServicePort(name);
+  return port ? `http://localhost:${port}` : undefined;
+}
 
 /**
  * 현재 서비스의 포트가 다른 서비스 기본 포트와 충돌하는지 검사.

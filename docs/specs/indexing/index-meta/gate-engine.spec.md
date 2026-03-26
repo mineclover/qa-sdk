@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  layer: domain
 ---
 # GateEngine 스펙
 

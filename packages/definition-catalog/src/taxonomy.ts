@@ -95,6 +95,8 @@ export const DEFINITION_TAXONOMY: DefinitionTaxonomy = {
         { id: "domain_data", name: "도메인데이터", description: "비즈니스 도메인 엔티티와 스키마" },
         { id: "system_data", name: "시스템데이터", description: "설정, 로그, 메트릭 등 시스템 데이터" },
         { id: "external_data", name: "외부데이터", description: "외부 API, 서드파티 데이터 연동" },
+        { id: "prefix_schema", name: "Prefix스키마", description: "좌표 prefix의 차원 구성, 버전, capacity 정의" },
+        { id: "axis_catalog", name: "Axis카탈로그", description: "좌표 축의 entries, capacity, headroom 정의" },
       ],
     },
     {
@@ -124,7 +126,7 @@ export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
   flow: ["user_scenario", "process_flow", "relation"],
   state: ["app_state", "domain_state", "system_state"],
   constraint: ["tech_constraint", "biz_constraint", "infra_constraint"],
-  data: ["domain_data", "system_data", "external_data"],
+  data: ["domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog"],
   interface: ["api_contract", "cli_contract", "event_contract"],
 } as const;
 
@@ -373,17 +375,35 @@ export const CLASSIFICATION_CONVENTIONS = {
   /**
    * 컨벤션 16: scope별 권장 마커
    *
-   * | scope      | 필수 마커          | 권장 마커      |
-   * |------------|-------------------|---------------|
-   * | constraint | ^constraint       | —             |
-   * | state      | ^state-def        | —             |
-   * | interface  | ^api-surface      | ^error-codes  |
-   * | feature    | —                 | ^behavior     |
-   * | data       | —                 | ^schema       |
-   * | flow       | —                 | ^flow-steps   |
-   * | ui         | —                 | ^interaction  |
+   * | scope      | 필수 마커          | 권장 마커                          |
+   * |------------|-------------------|---------------------------------|
+   * | constraint | ^constraint       | ^precondition, ^postcondition   |
+   * | state      | ^state-def        | ^failure                        |
+   * | interface  | ^api-surface      | ^error-codes, ^inputs, ^outputs |
+   * | feature    | —                 | ^behavior, ^evidence            |
+   * | data       | —                 | ^schema                         |
+   * | flow       | —                 | ^flow-steps, ^decision-point    |
+   * | ui         | —                 | ^interaction                    |
    *
    * 모든 scope: ^purpose (필수), ^overview (권장)
+   *
+   * 계약 마커 (Contract Markers):
+   * 문서 기반 계약 추출을 위한 전용 마커. depth와 조합하여 HyEvo 계약 레이어를 표현한다.
+   * ^inputs, ^outputs — 입출력 정의 (interface scope, specification depth)
+   * ^precondition — 사전 조건 (constraint scope, specification depth)
+   * ^postcondition — 사후 조건 (constraint scope, validation depth)
+   * ^decision-point — 분기 지점 (flow scope, specification depth)
+   * ^failure — 실패 조건 (state scope, specification depth)
+   * ^evidence — 증거 요구사항 (feature scope, validation depth)
+   * ^flow-steps — 실행 단계 (flow scope, implementation depth)
+   *
+   * Prefix/Axis 문서 전용 마커:
+   * ^intent — 설계 의도 (data/prefix_schema, 모든 depth). 코드에서 파생 불가능한 "왜"를 기록
+   *
+   * Experience 계층 전용 마커:
+   * ^context — 사용 맥락 (언제/어떤 상황에서 이 도구를 쓰는가)
+   * ^feedback — 피드백 규칙 (CLI 사용 패턴에 따른 개선 기준)
+   * ^caveat — 주의사항 (한계, 오용 패턴, 잘못된 기대)
    */
   scopeMarkers: "scope별 표준 마커: constraint→^constraint, state→^state-def, interface→^api-surface",
 
@@ -409,6 +429,15 @@ export const CLASSIFICATION_CONVENTIONS = {
    *
    * flow/*:
    *   ^purpose → ^overview → 단계 설명 → 관련 소스
+   *
+   * data/prefix_schema:
+   *   ^purpose → ^overview → ^intent (설계 의도) → ^inputs (차원 정의) → ^constraint → 관련 소스
+   *
+   * data/axis_catalog:
+   *   ^purpose → ^overview → ^intent (축 선택 근거) → entries 목록 → 관련 소스
+   *
+   * experience 계층 (layer:experience) — skill/CLI 문서:
+   *   ^purpose → ^context (사용 맥락) → ^intent (설계 의도) → ^feedback (피드백 규칙) → ^caveat → 관련 소스
    */
   scopeTemplates: "scope별 최소 구조: purpose → overview → scope 고유 섹션 → 관련 소스",
 
@@ -496,4 +525,197 @@ export const CLASSIFICATION_CONVENTIONS = {
    * - 무리한 재분류(의미 왜곡)는 집중보다 나쁨
    */
   aspectDistribution: "scope 내 aspect 집중도 80% 이상이면 점검. 도메인 특성이면 허용, 오류면 재분류",
+
+  // ── 계약 조립 컨벤션 ──────────────────────────────────
+
+  /**
+   * 컨벤션 25: 계약 문서는 그룹 + 멤버 구조
+   *
+   * 계약(Contract)은 단일 문서가 아니라, 기존 좌표 공간의 문서 constellation이다.
+   * 그룹 문서(overview depth)가 contains 링크로 멤버를 포함한다.
+   * 각 멤버는 자신의 scope × aspect × depth 좌표를 가진다.
+   *
+   * 계약 멤버의 scope → 역할 매핑:
+   * - interface → inputs/outputs (입출력 정의)
+   * - constraint → preconditions/postconditions (사전/사후 조건)
+   * - flow → steps/decision-points (실행 단계/분기)
+   * - state → failure conditions (실패 조건)
+   * - feature → evidence requirements (증거 요구)
+   * - data → schema definitions (데이터 스키마)
+   *
+   * depth → 계약 추출 레벨 매핑:
+   * - overview → 계약 존재 선언
+   * - specification → 계약 상세 (inputs, preconditions, boundaries)
+   * - implementation → 계약 실행 (step decomposition, workflow)
+   * - validation → 계약 검증 (evidence, postconditions, assertions)
+   */
+  contractAsConstellation: "계약 = 그룹 문서 + 좌표별 멤버. 각 멤버가 독립 좌표로 concern 전파/impact 역추적 가능",
+
+  // ── 존재론적 계층 (Layer) ──────────────────────────────
+
+  /**
+   * 컨벤션 26: layer는 존재 이유, scope는 구조 — 직교
+   *
+   * scope(무엇에 대한 정의인가)와 layer(왜 존재하는가)는 직교한다.
+   *
+   * 4계층 — "이것을 삭제해도 비즈니스 진실이 바뀌는가?"
+   *
+   * | layer       | 존재 이유                          | 삭제 시 영향        |
+   * |-------------|----------------------------------|-------------------|
+   * | domain      | "이것이 참이다" — 비즈니스 본질        | 진실 자체가 사라짐    |
+   * | operation   | "시스템이 돌아가게 한다" — 운영 인프라   | 성능/안정성 저하     |
+   * | mediation   | "진실을 소비 가능하게 변환" — 중재      | 유저가 불편해짐      |
+   * | experience  | "사용자 행동을 유도한다" — 경험 설계    | 유도가 없어질 뿐     |
+   *
+   * 자동 분류:
+   *   domain:     constraint/*, data/*, state/domain_state, state/system_state
+   *   experience: ui/*
+   *   operation, mediation: 수동 판단 필요
+   *
+   * 미지정(layer 없음)은 제한 없음으로 동작한다 (기존 호환).
+   */
+  layerOrthogonal: "layer는 존재 이유(domain/operation/mediation/experience), scope는 구조. 직교",
+
+  /**
+   * 컨벤션 27: layer 영향 전파 규칙
+   *
+   * domain 변경     → domain + operation + mediation (experience 직접 영향 없음)
+   * operation 변경  → operation 내부만 (인프라 변경이 다른 계층에 영향 주면 안 됨)
+   * mediation 변경  → mediation + experience (domain 역전파 없음)
+   * experience 변경 → experience 내부만 (상향 전파 없음)
+   *
+   * 핵심 원리: 데이터의 본질(0/1로 표현 가능한 것)과
+   * 유저 편의를 위한 제약/유도(구조 복잡성의 원인)를 분리한다.
+   *
+   * LLM step도 동일 원칙:
+   * - experience LLM: 입력 해석, 요약, 의도 분류, 추천 → 허용
+   * - mediation LLM: 비정형 입력을 구조화 스키마로 정규화 → 허용
+   * - domain decision LLM: 승인 여부, 계약 충족 최종 판정 → 금지
+   */
+  layerPropagation: "domain→operation(독립)→mediation→experience 방향으로만 영향 전파",
 } as const;
+
+// ─── 계약 마커 레지스트리 ──────────────────────────────────
+
+/**
+ * 계약 추출을 위한 마커 분류.
+ *
+ * HyEvo Contract Layer와 기존 scope 체계의 교차점.
+ * 기존 자유 마커(extractByMarker)를 분류하여 계약 구조로 조립할 때 사용한다.
+ */
+export type ContractMarkerKind =
+  | "inputs"          // 입력 정의
+  | "outputs"         // 출력 정의
+  | "precondition"    // 사전 조건
+  | "postcondition"   // 사후 조건
+  | "decision-point"  // 분기 지점
+  | "failure"         // 실패 조건
+  | "evidence"        // 증거 요구사항
+  | "flow-steps";     // 실행 단계
+
+/** 계약 마커 정의 */
+export interface ContractMarkerDef {
+  /** 마커 이름 (^marker 형식에서 ^ 제외) */
+  readonly marker: ContractMarkerKind;
+  /** 이 마커가 자연스러운 scope */
+  readonly naturalScope: DefScope;
+  /** 이 마커가 자연스러운 depth */
+  readonly naturalDepth: "specification" | "implementation" | "validation";
+  /** 설명 */
+  readonly description: string;
+  /** HyEvo 계약 역할 */
+  readonly contractRole: string;
+  /** 실행 모드 힌트 — code: 결정론적, llm: 의미 해석 필요 */
+  readonly modeHint: "code" | "llm";
+}
+
+/**
+ * 계약 마커 레지스트리.
+ *
+ * extractByMarker()와 함께 사용하여 문서에서 계약 요소를 추출한다.
+ * modeHint는 HyEvo의 LLM/Code node 분리 결정에 사용된다.
+ */
+export const CONTRACT_MARKERS: readonly ContractMarkerDef[] = [
+  {
+    marker: "inputs",
+    naturalScope: "interface",
+    naturalDepth: "specification",
+    description: "입력 필드, 요청 스키마, 파라미터 정의",
+    contractRole: "boundary.inputs",
+    modeHint: "code",
+  },
+  {
+    marker: "outputs",
+    naturalScope: "interface",
+    naturalDepth: "specification",
+    description: "출력 필드, 응답 스키마, 반환값 정의",
+    contractRole: "boundary.outputs",
+    modeHint: "code",
+  },
+  {
+    marker: "precondition",
+    naturalScope: "constraint",
+    naturalDepth: "specification",
+    description: "실행 전 충족해야 할 조건",
+    contractRole: "guard.pre",
+    modeHint: "code",
+  },
+  {
+    marker: "postcondition",
+    naturalScope: "constraint",
+    naturalDepth: "validation",
+    description: "실행 후 보장해야 할 조건",
+    contractRole: "guard.post",
+    modeHint: "code",
+  },
+  {
+    marker: "decision-point",
+    naturalScope: "flow",
+    naturalDepth: "specification",
+    description: "분기 지점 — 조건에 따라 경로가 달라지는 곳",
+    contractRole: "topology.branch",
+    modeHint: "llm",
+  },
+  {
+    marker: "failure",
+    naturalScope: "state",
+    naturalDepth: "specification",
+    description: "허용되지 않는 실패 조건과 에러 상태",
+    contractRole: "guard.failure",
+    modeHint: "code",
+  },
+  {
+    marker: "evidence",
+    naturalScope: "feature",
+    naturalDepth: "validation",
+    description: "검증에 필요한 증거, 트레이스, 로그 요구사항",
+    contractRole: "trace.evidence",
+    modeHint: "code",
+  },
+  {
+    marker: "flow-steps",
+    naturalScope: "flow",
+    naturalDepth: "implementation",
+    description: "실행 순서가 있는 처리 단계",
+    contractRole: "topology.steps",
+    modeHint: "code",
+  },
+] as const;
+
+/** 계약 마커 이름 목록 */
+export const CONTRACT_MARKER_NAMES: readonly string[] =
+  CONTRACT_MARKERS.map(m => m.marker);
+
+/**
+ * 마커 이름이 계약 마커인지 확인한다.
+ */
+export function isContractMarker(marker: string): marker is ContractMarkerKind {
+  return (CONTRACT_MARKER_NAMES as readonly string[]).includes(marker);
+}
+
+/**
+ * 마커 이름으로 계약 마커 정의를 찾는다.
+ */
+export function getContractMarkerDef(marker: string): ContractMarkerDef | undefined {
+  return CONTRACT_MARKERS.find(m => m.marker === marker);
+}

@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: overview
   lifecycle: approved
+  layer: mediation
   svc: index-meta
   tags: [structural, tier-infra]
   links:

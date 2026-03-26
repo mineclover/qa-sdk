@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [tier-infra]
   links:
     - target: admin-api-spec

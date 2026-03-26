@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: permission-engine
   tags: [security]
   links:

@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
 ---
 
 # Design Knowledge Graph — 설계 시점 메타데이터 그래프
@@ -290,6 +291,7 @@ interface SpecNode {
   type: SpecType;        // "req" | "feat" | "uc" | "evt" | "ls" | "adr"
   title: string;
   lifecycle: "draft" | "active" | "deprecated";
+  layer: domain
 }
 ```
 
@@ -334,6 +336,7 @@ interface DecisionNode {
   reversalConditions?: string[];
 
   lifecycle: "active" | "superseded" | "reversed";
+  layer: domain
 }
 ```
 
@@ -351,6 +354,7 @@ DEC-001:
     - "8개 역할이 모두 사용되고 9번째가 필요할 때"
     - "bitmask 정렬보다 주소 밀도가 더 중요해질 때"
   lifecycle: active
+  layer: domain
 ```
 
 #### VersionEvent — 진화의 기록
@@ -417,6 +421,7 @@ interface ConstraintNode {
   scope: string[];
 
   lifecycle: "active" | "suspended" | "retired";
+  layer: domain
 }
 ```
 
@@ -427,12 +432,14 @@ CON-001:
   formal: "NOT EXISTS(prefix p WHERE p.dims HAS 'rbac_role' AND p.dims HAS 'role')"
   scope: [rbac_role, role]
   lifecycle: active
+  layer: domain
 
 CON-002:
   rule: "이벤트 prefix의 action 차원은 반드시 해당 도메인의 *_action 축을 사용해야 한다"
   formal: "event_prefix.action.axisId ENDS_WITH '_action'"
   scope: [cart_event, auth_event, order_event]
   lifecycle: active
+  layer: domain
 ```
 
 #### Observation — 운영 피드백
@@ -1264,6 +1271,7 @@ FEAT-DKG-001:
   type: feat
   title: "Design Knowledge Graph 초기 설계"
   lifecycle: active
+  layer: domain
   rationale: "좌표 시스템의 성장 나선에서 설계 결정의 추적성 부여"
   relations:
     - { from: FEAT-DKG-001, to: REQ-DKG-001, type: satisfies }
@@ -1273,6 +1281,7 @@ FEAT-DKG-002:
   type: feat
   title: "소비자·연결 의도·도메인 바운더리 추가"
   lifecycle: active
+  layer: domain
   rationale: |
     내부 구조만 추적하면 외부 소비자 영향 분석과
     도메인 경계 추적이 불가.
@@ -1287,6 +1296,7 @@ ADR-DKG-001:
   type: adr
   title: "런타임 상태는 DKG에 넣지 않는다"
   lifecycle: active
+  layer: domain
   rationale: "런타임 추적은 qa-sdk 역할. DKG는 설계 의도만."
   reversalConditions:
     - "qa-sdk의 런타임 추적이 설계 의도와 괴리되어 DKG에서 런타임 정합성을 직접 검증해야 할 때"

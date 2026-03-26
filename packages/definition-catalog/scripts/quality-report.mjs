@@ -191,7 +191,9 @@ export function collectQualityStats(rootDir = DEFAULT_ROOT) {
   }
 
   const purposeCovered = approvedDocs.filter(doc => doc.hasPurpose);
-  const linksMissingLeafDocs = sortById(approvedDocs.filter(doc => !doc.isGroup && doc.links.length === 0));
+  const linksMissingLeafDocs = sortById(approvedDocs.filter(doc =>
+    !doc.isGroup && doc.links.length === 0 && !doc.tags.includes("generated"),
+  ));
   const purposeTooShort = sortById(
     approvedDocs.filter(doc => doc.hasPurpose && doc.purposeLength < 30),
   );
@@ -199,7 +201,7 @@ export function collectQualityStats(rootDir = DEFAULT_ROOT) {
     approvedDocs.filter(doc => doc.isGroup && !doc.hasOverview),
   );
   const tagsMissingDocs = sortById(
-    approvedDocs.filter(doc => doc.tags.length === 0),
+    approvedDocs.filter(doc => doc.tags.length === 0 && !doc.tags.includes("generated")),
   );
 
   return {

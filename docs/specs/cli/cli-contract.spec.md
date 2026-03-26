@@ -5,6 +5,7 @@ def:
   aspect: cli_contract
   depth: specification
   lifecycle: approved
+  layer: mediation
   tags: [entry-point]
   links:
     - target: dsl-schemas-spec

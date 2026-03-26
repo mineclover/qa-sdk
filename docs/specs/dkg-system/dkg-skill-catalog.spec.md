@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [tier-system]
   links:

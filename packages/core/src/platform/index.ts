@@ -143,7 +143,7 @@ export type {
 } from "../ports/metric-rollup-store.port.js";
 
 // ── Server Utilities ─────────────────────────────────────
-export { SERVICE_PORTS, detectPortConflicts, warnPortConflict } from "../lib/service-ports.js";
+export { SERVICE_PORTS, getServicePort, getServiceDevUrl, detectPortConflicts, warnPortConflict } from "../lib/service-ports.js";
 export type { ServicePortEntry } from "../lib/service-ports.js";
 
 export { createLogger } from "../lib/create-logger.js";

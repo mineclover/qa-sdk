@@ -5,6 +5,7 @@ def:
   aspect: component
   depth: specification
   lifecycle: approved
+  layer: experience
   tags: [tier-system, observability]
   links:
     - target: dkg-node-types

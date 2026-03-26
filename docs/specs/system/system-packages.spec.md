@@ -5,6 +5,7 @@ def:
   aspect: relation
   depth: overview
   lifecycle: approved
+  layer: operation
   tags: [tier-system]
   links:
     - target: spec-engine-architecture

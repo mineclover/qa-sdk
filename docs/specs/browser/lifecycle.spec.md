@@ -5,6 +5,7 @@ def:
   aspect: system_state
   depth: specification
   lifecycle: deprecated
+  layer: operation
   tags: [tier-frontend]
   links:
     - target: trace-context-spec

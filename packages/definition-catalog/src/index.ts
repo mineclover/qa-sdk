@@ -26,6 +26,7 @@ export type {
   DefScope,
   DefAspect,
   DefDepth,
+  DefLayer,
   DefLifecycle,
   LinkType,
   ConcernTag,
@@ -59,7 +60,7 @@ export {
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────
-export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy } from "./taxonomy.js";
+export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef } from "./taxonomy.js";
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
@@ -74,6 +75,10 @@ export {
   isKnownTag,
   detectCrossScope,
   CLASSIFICATION_CONVENTIONS,
+  CONTRACT_MARKERS,
+  CONTRACT_MARKER_NAMES,
+  isContractMarker,
+  getContractMarkerDef,
 } from "./taxonomy.js";
 
 // ─── 카탈로그 ───────────────────────────────────────────
@@ -116,6 +121,44 @@ export { analyzeImpact } from "./impact.js";
 // ─── 문서 조립 ──────────────────────────────────────────
 export type { MemberSummary, AssembledFeature } from "./assemble.js";
 export { assembleFeature } from "./assemble.js";
+
+// ─── 계약 조립 (Contract Assembly) ──────────────────────
+export type { Reversibility, EvidenceItem, ContractSection, AssembledContract, ContractStats } from "./contract.js";
+export { parseEvidenceItems, assembleContract } from "./contract.js";
+
+// ─── 주소 의도 + 소비율 ─────────────────────────────────
+export type {
+  DimSlice,
+  SliceIntent,
+  DimConsumption,
+  PrefixConsumption,
+  ConsumptionSeverity,
+  ConsumptionDiagnosis,
+} from "./address-intent.js";
+export {
+  sliceDepth,
+  sliceContains,
+  resolveIntents,
+  computeConsumption,
+  diagnoseConsumption,
+} from "./address-intent.js";
+
+// ─── 워크플로우 합성 (HyEvo L4) ─────────────────────────
+export type {
+  StepMode,
+  WorkflowNode,
+  WorkflowEdge,
+  ValidatorBinding,
+  WorkflowMetadata,
+  WorkflowSpec,
+  SpecContext,
+  ReflectionResult,
+} from "./workflow.js";
+export { compileWorkflow, reflect } from "./workflow.js";
+
+// ─── 테스트 추적 ────────────────────────────────────────
+export type { TestRef, TestTraceResult } from "./test-trace.js";
+export { traceTests } from "./test-trace.js";
 
 // ─── 마커 기반 추출 ─────────────────────────────────────
 export type { ExtractLevel, StandardMarker, Marker, MarkedSection, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";

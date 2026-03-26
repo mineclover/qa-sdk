@@ -13,6 +13,10 @@ import {
   isKnownTag,
   detectCrossScope,
   CLASSIFICATION_CONVENTIONS,
+  CONTRACT_MARKERS,
+  CONTRACT_MARKER_NAMES,
+  isContractMarker,
+  getContractMarkerDef,
 } from "./taxonomy.js";
 import { DEF_SCOPE, DEF_ASPECT } from "./vocabulary.js";
 
@@ -168,9 +172,9 @@ describe("detectCrossScope", () => {
 });
 
 describe("CLASSIFICATION_CONVENTIONS", () => {
-  it("23개 컨벤션이 정의되어 있다", () => {
+  it("26개 컨벤션이 정의되어 있다", () => {
     const keys = Object.keys(CLASSIFICATION_CONVENTIONS);
-    expect(keys.length).toBe(23);
+    expect(keys.length).toBe(26);
     // 분류 (C1-C6)
     expect(keys).toContain("scopeByAudience");
     expect(keys).toContain("splitThreshold");
@@ -187,5 +191,68 @@ describe("CLASSIFICATION_CONVENTIONS", () => {
     expect(keys).toContain("svcMapping");
     expect(keys).toContain("accuracyOverVolume");
     expect(keys).toContain("aspectDistribution");
+    // 계약 조립 (C25)
+    expect(keys).toContain("contractAsConstellation");
+  });
+});
+
+// ─── 계약 마커 레지스트리 ──────────────────────────────────
+
+describe("CONTRACT_MARKERS", () => {
+  it("8개 계약 마커가 정의되어 있다", () => {
+    expect(CONTRACT_MARKERS.length).toBe(8);
+    expect(CONTRACT_MARKER_NAMES.length).toBe(8);
+  });
+
+  it("모든 마커의 naturalScope가 유효한 scope이다", () => {
+    for (const m of CONTRACT_MARKERS) {
+      expect(VALID_SCOPE_ASPECTS[m.naturalScope]).toBeDefined();
+    }
+  });
+
+  it("마커 이름에 중복이 없다", () => {
+    expect(new Set(CONTRACT_MARKER_NAMES).size).toBe(CONTRACT_MARKER_NAMES.length);
+  });
+
+  it("isContractMarker는 계약 마커에 true", () => {
+    expect(isContractMarker("inputs")).toBe(true);
+    expect(isContractMarker("outputs")).toBe(true);
+    expect(isContractMarker("precondition")).toBe(true);
+    expect(isContractMarker("postcondition")).toBe(true);
+    expect(isContractMarker("decision-point")).toBe(true);
+    expect(isContractMarker("failure")).toBe(true);
+    expect(isContractMarker("evidence")).toBe(true);
+    expect(isContractMarker("flow-steps")).toBe(true);
+  });
+
+  it("isContractMarker는 비계약 마커에 false", () => {
+    expect(isContractMarker("purpose")).toBe(false);
+    expect(isContractMarker("overview")).toBe(false);
+    expect(isContractMarker("constraint")).toBe(false);
+    expect(isContractMarker("unknown")).toBe(false);
+  });
+
+  it("getContractMarkerDef는 정의를 반환한다", () => {
+    const def = getContractMarkerDef("inputs");
+    expect(def).toBeDefined();
+    expect(def!.naturalScope).toBe("interface");
+    expect(def!.modeHint).toBe("code");
+    expect(def!.contractRole).toBe("boundary.inputs");
+  });
+
+  it("getContractMarkerDef는 비계약 마커에 undefined", () => {
+    expect(getContractMarkerDef("purpose")).toBeUndefined();
+  });
+
+  it("modeHint: decision-point만 llm, 나머지는 code", () => {
+    const llmMarkers = CONTRACT_MARKERS.filter(m => m.modeHint === "llm");
+    expect(llmMarkers.length).toBe(1);
+    expect(llmMarkers[0].marker).toBe("decision-point");
+  });
+
+  it("scope 분포: 각 naturalScope가 최소 1개 마커를 가진다", () => {
+    const scopeSet = new Set(CONTRACT_MARKERS.map(m => m.naturalScope));
+    // interface, constraint, flow, state, feature
+    expect(scopeSet.size).toBeGreaterThanOrEqual(4);
   });
 });

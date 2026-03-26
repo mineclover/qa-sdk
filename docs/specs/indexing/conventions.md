@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   links:
     - target: acceleration-spec
       type: constrains

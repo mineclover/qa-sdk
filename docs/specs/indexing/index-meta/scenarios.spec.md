@@ -5,6 +5,7 @@ def:
   aspect: scenario
   depth: validation
   lifecycle: approved
+  layer: domain
   tags: [testing]
   links:
     - target: index-codec-spec

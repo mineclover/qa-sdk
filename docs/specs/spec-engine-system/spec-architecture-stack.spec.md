@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [entry-point]
   links:

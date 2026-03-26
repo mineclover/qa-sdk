@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: gate-service
   tags: [security, tier-infra]
   links:

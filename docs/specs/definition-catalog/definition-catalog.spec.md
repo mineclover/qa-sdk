@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [structural, entry-point]
   links:
     - target: system-concepts

@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [observability]
   links:
     - target: address-context-spec

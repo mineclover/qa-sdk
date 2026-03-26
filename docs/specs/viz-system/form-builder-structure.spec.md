@@ -5,6 +5,7 @@ def:
   aspect: component
   depth: specification
   lifecycle: approved
+  layer: experience
   tags: [tier-frontend]
   links:
     - target: form-builder-spec

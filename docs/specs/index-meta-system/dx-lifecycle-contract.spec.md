@@ -5,6 +5,7 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: approved
+  layer: operation
   svc: index-meta
   tags: [tier-infra]
   links:

@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: overview
   lifecycle: approved
+  layer: operation
   svc: shopping-web
   tags: [structural, entry-point, tier-frontend]
   links:

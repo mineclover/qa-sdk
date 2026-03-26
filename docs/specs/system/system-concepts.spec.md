@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [entry-point]
   links:
     - target: coord-foundation

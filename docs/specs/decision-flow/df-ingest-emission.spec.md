@@ -5,6 +5,7 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  layer: mediation
   svc: qa-sdk-cli
   tags: [decision, ingest, event]
   links:

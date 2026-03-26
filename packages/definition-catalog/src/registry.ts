@@ -258,6 +258,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       if (filter.aspect && e.aspect !== filter.aspect) return false;
       if (filter.depth && e.depth !== filter.depth) return false;
       if (filter.lifecycle && e.lifecycle !== filter.lifecycle) return false;
+      if (filter.layer && e.layer !== filter.layer) return false;
       if (filter.tags && filter.tags.length > 0) {
         if (!e.tags || !filter.tags.every(t => e.tags!.includes(t))) return false;
       }

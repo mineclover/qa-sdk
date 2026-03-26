@@ -30,6 +30,7 @@ import type {
   DefAspect,
   DefDepth,
   DefLifecycle,
+  DefLayer,
   LinkType,
   DefinitionEntryInput,
 } from "./types.js";
@@ -53,6 +54,8 @@ export interface FrontmatterDef {
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
   readonly lifecycle: DefLifecycle;
+  /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
+  readonly layer?: DefLayer;
   readonly tags?: readonly string[];
   readonly links?: readonly FrontmatterLink[];
   /** 서비스 레지스트리 연결 (serviceId) */
@@ -241,6 +244,7 @@ function parseScalar(value: string): string | number | boolean {
 const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface"]);
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
+const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);
 const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains"]);
 
 /**
@@ -300,12 +304,16 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   // svc (서비스 레지스트리 연결)
   const svc = typeof d.svc === "string" ? d.svc : undefined;
 
+  // layer (존재론적 계층 — 선택, 기본 없음)
+  const layer = typeof d.layer === "string" && VALID_LAYERS.has(d.layer) ? d.layer as DefLayer : undefined;
+
   return {
     id: id as string,
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
     depth: depth as DefDepth,
     lifecycle: lifecycle as DefLifecycle,
+    ...(layer ? { layer } : {}),
     ...(tags && tags.length > 0 ? { tags } : {}),
     ...(links.length > 0 ? { links } : {}),
     ...(svc ? { svc } : {}),
@@ -397,6 +405,7 @@ export async function scanAndBuild(
         aspect: def.aspect,
         depth: def.depth,
         lifecycle: def.lifecycle,
+        layer: def.layer,
         tags: def.tags ? [...def.tags] : undefined,
         ref: relPath,
         serviceId: def.svc,

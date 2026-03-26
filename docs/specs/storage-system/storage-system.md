@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [structural, entry-point]
   links:
     - target: storage-adapters-spec

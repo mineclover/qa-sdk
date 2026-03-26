@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: implementation
   lifecycle: approved
+  layer: operation
   tags: [tier-infra]
   links:
     - target: pipeline-enrichment

@@ -398,6 +398,34 @@ const store = new D1RecordStore(driver);
 - 증명: `packages/decision-flow/src/proof.test.ts`
 - 평가: `packages/decision-flow/src/evaluation.test.ts`, `dev-decisions.test.ts`
 
+## Definition 시스템 (문서 기반 관리 체계)
+
+### 4계층 (DefLayer) — "이것이 왜 존재하는가"
+
+| layer | 존재 이유 | 삭제 시 영향 | 영향 전파 |
+|---|---|---|---|
+| `domain` | "이것이 참이다" — 비즈니스 본질 | 진실 소멸 | → domain + operation + mediation |
+| `operation` | "시스템이 돌아가게 한다" — 인프라 | 성능 저하 | → operation 내부만 (독립) |
+| `mediation` | "진실을 소비 가능하게 변환" — 중재 | 유저 불편 | → mediation + experience |
+| `experience` | "사용자 행동을 유도한다" — 경험 설계 | 유도 소멸 | → experience 내부만 |
+
+- scope(구조) × layer(존재 이유) 직교. 같은 scope도 layer가 다를 수 있음
+- `definition-catalog/src/types.ts` `DefLayer`, `impact.ts` `canPropagate()`
+
+### definition-service (port 3700, NestJS)
+
+- 7 NestJS 모듈: docs, prefixes, intents, consumption, graph, sync, tests
+- DB: SQLite 파일 기반 (`data/definition-service.sqlite`)
+- prefix 공급: registry-service → fetch → DB. registry 실패 시 DB 캐시
+- prefix SDK: `@qa-sdk/definition-client` (순수 HTTP + NestJS DI)
+
+### definition-catalog 문서 규모
+
+- 453건 (approved 390 + deprecated 63)
+- prefix 문서 57건 (docs/specs/prefix-catalog/)
+- skill 문서 20건 (docs/specs/skill-catalog/)
+- 22 aspect (7 scope), 4 depth, 6 link_type
+
 ## 서비스 포트
 
 ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), gRPC debug(50051, GRPC_PORT 설정 시)

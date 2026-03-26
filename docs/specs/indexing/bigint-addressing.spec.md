@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-infra]
   links:
     - target: coord-foundation

@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: weighted-index
   tags: [structural, performance, testing]
   links:

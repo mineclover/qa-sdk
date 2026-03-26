@@ -5,6 +5,7 @@ def:
   aspect: biz_constraint
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: auth
   tags: [structural, security, entry-point, tier-backend]
   links:

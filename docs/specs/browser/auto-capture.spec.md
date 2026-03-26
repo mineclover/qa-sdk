@@ -5,6 +5,7 @@ def:
   aspect: interaction
   depth: specification
   lifecycle: deprecated
+  layer: experience
   tags: [tier-frontend]
   links:
     - target: browser-monitor-spec

@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: ingest-server
   tags: [observability, tier-infra]
   links:

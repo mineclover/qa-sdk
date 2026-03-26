@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: qa-sdk-cli
   tags: [tier-system]
   links:

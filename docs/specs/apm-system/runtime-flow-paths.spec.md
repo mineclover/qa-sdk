@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: operation
   svc: qa-sdk-cli
   tags: [tier-system]
   links:

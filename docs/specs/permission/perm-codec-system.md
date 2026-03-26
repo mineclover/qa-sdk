@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: permission-engine
   tags: [structural, security, tier-backend]
   links:

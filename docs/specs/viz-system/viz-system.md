@@ -5,6 +5,7 @@ def:
   aspect: component
   depth: overview
   lifecycle: approved
+  layer: experience
   svc: platform-demo
   tags: [structural, entry-point, tier-frontend]
   links:

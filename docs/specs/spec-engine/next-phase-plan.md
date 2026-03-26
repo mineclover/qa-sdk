@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [structural, tier-system]
   links:
     - target: convergence-layer-spec

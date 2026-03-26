@@ -5,6 +5,7 @@ def:
   aspect: external_data
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [tier-frontend]
   links:
     - target: ingest-api-spec

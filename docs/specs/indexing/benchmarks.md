@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: validation
   lifecycle: deprecated
+  layer: domain
   tags: [performance]
   links:
     - target: index-codec-spec

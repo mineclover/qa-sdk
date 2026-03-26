@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: overview
   lifecycle: approved
+  layer: operation
   svc: browser-sdk
   tags: [structural, tier-frontend]
   links:

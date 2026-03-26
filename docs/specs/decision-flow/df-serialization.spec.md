@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  layer: mediation
   svc: decision-flow
   tags: [decision]
   links:

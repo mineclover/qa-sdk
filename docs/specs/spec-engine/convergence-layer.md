@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-system]
   links:
     - target: spec-core-types

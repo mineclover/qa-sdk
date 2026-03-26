@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: decode-service
   tags: [tier-infra]
   links:

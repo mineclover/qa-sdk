@@ -5,6 +5,7 @@ def:
   aspect: user_scenario
   depth: overview
   lifecycle: approved
+  layer: mediation
   tags: [entry-point]
   links:
     - target: spec-linking-standard

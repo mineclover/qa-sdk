@@ -70,6 +70,8 @@ describe("관심사 태그 회귀", () => {
       const name = basename(ref);
       // perm-migration-* 은 migration concern이지 security가 아님
       if (entry.id.includes("migration")) return false;
+      // 자동 생성 prefix 문서는 concern 태그 대상이 아님
+      if (entry.tags?.includes("generated")) return false;
       return name.startsWith("perm-") || name.includes("rbac") || entry.serviceId === "auth";
     });
 

@@ -5,6 +5,7 @@ def:
   aspect: biz_constraint
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: decision-flow
   tags: [structural, decision]
   links:

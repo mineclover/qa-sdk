@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-system]
   links:
     - target: convergence-layer-spec

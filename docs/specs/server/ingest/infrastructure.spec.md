@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [performance, observability]
   links:
     - target: ingest-api-spec

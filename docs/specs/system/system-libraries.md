@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: operation
   tags: [structural, entry-point]
   links:
     - target: wi-system

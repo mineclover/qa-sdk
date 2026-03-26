@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: overview
   lifecycle: approved
+  layer: mediation
   svc: ingest-server
   tags: [structural, observability, tier-infra]
   links:

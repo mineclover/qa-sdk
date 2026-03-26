@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [structural, tier-frontend]
   links:
     - target: rlsc-core-model

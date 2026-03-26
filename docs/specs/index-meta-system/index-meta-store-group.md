@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: index-meta
   tags: [structural, tier-infra]
   links:

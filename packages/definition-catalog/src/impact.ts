@@ -12,7 +12,7 @@
  *   impact:  "이 문서가 바뀌면 무엇이 깨지는가?" (아래→위)
  */
 
-import type { DefinitionEntry, DefinitionLink, LinkType } from "./types.js";
+import type { DefLayer, DefinitionEntry, DefinitionLink, LinkType } from "./types.js";
 
 /** 영향받는 문서 1건 */
 export interface ImpactedDoc {
@@ -26,18 +26,26 @@ export interface ImpactedDoc {
   readonly direction: "upstream" | "downstream";
   /** 영향 깊이 (hop 수) */
   readonly depth: number;
+  /** 영향받는 문서의 layer (있으면) */
+  readonly layer?: DefLayer;
+  /** layer 경계를 넘었는가 (business→binding→interaction) */
+  readonly crossLayer: boolean;
 }
 
 /** 영향 분석 결과 */
 export interface ImpactAnalysis {
   /** 변경된 문서 ID */
   readonly sourceId: string;
+  /** 변경 문서의 layer */
+  readonly sourceLayer?: DefLayer;
   /** 영향받는 문서 목록 */
   readonly impacted: readonly ImpactedDoc[];
   /** 영향받는 그룹 (contains 역추적) */
   readonly affectedGroups: readonly string[];
   /** 영향 범위 요약: 총 영향 문서 수 */
   readonly blastRadius: number;
+  /** layer별 영향 수 */
+  readonly byLayer: { domain: number; operation: number; mediation: number; experience: number; unspecified: number };
 }
 
 /**
@@ -55,6 +63,35 @@ export interface ImpactAnalysis {
  * | contains   | source (그룹)             | 멤버가 바뀌면 그룹 요약이 stale |
  * | traces_to  | (영향 없음)               | 추적 관계일 뿐 |
  */
+/**
+ * 4계층 영향 전파 규칙:
+ *
+ * | source layer | 전파 대상 layer                    | 이유 |
+ * |-------------|----------------------------------|------|
+ * | domain      | domain, operation, mediation     | experience 직접 영향 없음 |
+ * | operation   | operation                        | 독립 — 인프라 변경이 다른 계층에 영향 주면 안 됨 |
+ * | mediation   | mediation, experience            | domain 역전파 없음 |
+ * | experience  | experience                       | 상향 전파 없음 |
+ * | 미지정       | 모두                              | layer 미지정은 제한 없음 (기존 호환) |
+ */
+function canPropagate(sourceLayer: DefLayer | undefined, targetLayer: DefLayer | undefined): boolean {
+  if (!sourceLayer || !targetLayer) return true;
+
+  if (sourceLayer === "domain") {
+    return targetLayer === "domain" || targetLayer === "operation" || targetLayer === "mediation";
+  }
+  if (sourceLayer === "operation") {
+    return targetLayer === "operation";
+  }
+  if (sourceLayer === "mediation") {
+    return targetLayer === "mediation" || targetLayer === "experience";
+  }
+  if (sourceLayer === "experience") {
+    return targetLayer === "experience";
+  }
+  return true;
+}
+
 export function analyzeImpact(
   sourceId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
@@ -62,82 +99,89 @@ export function analyzeImpact(
 ): ImpactAnalysis {
   const source = getEntry(sourceId);
   if (!source) {
-    return { sourceId, impacted: [], affectedGroups: [], blastRadius: 0 };
+    return { sourceId, impacted: [], affectedGroups: [], blastRadius: 0, byLayer: { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 } };
   }
 
+  const sourceLayer = source.layer;
   const impacted: ImpactedDoc[] = [];
   const visited = new Set<string>([sourceId]);
   const affectedGroups: string[] = [];
+  const byLayer = { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 };
 
   // BFS로 영향 전파
-  const queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number }[] = [];
+  const queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number; propagatingLayer: DefLayer | undefined }[] = [];
 
   // 초기 영향 수집
-  seedImpact(sourceId, getLinks, queue);
+  seedImpact(sourceId, getLinks, queue, [], 0, sourceLayer);
 
   while (queue.length > 0) {
-    const { docId, path, via, direction, depth } = queue.shift()!;
+    const { docId, path, via, direction, depth, propagatingLayer } = queue.shift()!;
     if (visited.has(docId)) continue;
     visited.add(docId);
 
     const doc = getEntry(docId);
     if (!doc) continue;
 
-    impacted.push({ id: docId, via, path, direction, depth });
+    // layer 전파 규칙 적용
+    if (!canPropagate(propagatingLayer, doc.layer)) continue;
+
+    const crossLayer = !!propagatingLayer && !!doc.layer && propagatingLayer !== doc.layer;
+
+    impacted.push({ id: docId, via, path, direction, depth, layer: doc.layer, crossLayer });
+
+    // layer 통계
+    if (doc.layer) byLayer[doc.layer]++;
+    else byLayer.unspecified++;
 
     // contains 역추적으로 올라간 그룹 기록
     if (via === "contains" && direction === "upstream") {
       affectedGroups.push(docId);
     }
 
-    // 전이적 전파: 영향받는 문서에서 다시 영향 탐색
-    seedImpact(docId, getLinks, queue, path, depth);
+    // 전이적 전파: 현재 문서의 layer로 전파
+    seedImpact(docId, getLinks, queue, path, depth, doc.layer ?? propagatingLayer);
   }
 
   return {
     sourceId,
+    sourceLayer,
     impacted,
     affectedGroups,
     blastRadius: impacted.length,
+    byLayer,
   };
 }
 
 function seedImpact(
   docId: string,
   getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
-  queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number }[],
+  queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number; propagatingLayer: DefLayer | undefined }[],
   basePath: string[] = [],
   baseDepth: number = 0,
+  propagatingLayer: DefLayer | undefined = undefined,
 ): void {
   const incoming = getLinks(docId, "incoming");
   const outgoing = getLinks(docId, "outgoing");
   const path = [...basePath, docId];
   const depth = baseDepth + 1;
 
-  // depends_on: source가 docId에 의존 → source 영향
   for (const l of incoming.filter(l => l.linkType === "depends_on")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "depends_on", direction: "downstream", depth });
+    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "depends_on", direction: "downstream", depth, propagatingLayer });
   }
 
-  // implements: source가 docId를 구현 → source 영향
   for (const l of incoming.filter(l => l.linkType === "implements")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "implements", direction: "downstream", depth });
+    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "implements", direction: "downstream", depth, propagatingLayer });
   }
 
-  // refines: source가 docId를 구체화 → source 영향
   for (const l of incoming.filter(l => l.linkType === "refines")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "refines", direction: "downstream", depth });
+    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "refines", direction: "downstream", depth, propagatingLayer });
   }
 
-  // constrains: docId가 target을 제약 → target 영향 (제약이 바뀌면 피제약자 재검토)
   for (const l of outgoing.filter(l => l.linkType === "constrains")) {
-    queue.push({ docId: l.targetId, path: [...path, l.targetId], via: "constrains", direction: "downstream", depth });
+    queue.push({ docId: l.targetId, path: [...path, l.targetId], via: "constrains", direction: "downstream", depth, propagatingLayer });
   }
 
-  // contains: source(그룹)가 docId를 포함 → 그룹 영향 (멤버 변경 → 그룹 요약 stale)
   for (const l of incoming.filter(l => l.linkType === "contains")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "contains", direction: "upstream", depth });
+    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "contains", direction: "upstream", depth, propagatingLayer });
   }
-
-  // traces_to: 영향 없음 — 전파하지 않음
 }

@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-frontend]
   links:
     - target: browser-lifecycle-spec

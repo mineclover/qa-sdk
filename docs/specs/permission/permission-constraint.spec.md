@@ -5,6 +5,7 @@ def:
   aspect: biz_constraint
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: permission-engine
   tags: [security]
   links:

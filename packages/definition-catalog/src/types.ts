@@ -17,7 +17,7 @@ export type DefScope =
   | "data"
   | "interface";
 
-/** 세부 측면 — 어떤 측면을 정의하는가 (20종, flat) */
+/** 세부 측면 — 어떤 측면을 정의하는가 (22종, flat) */
 export type DefAspect =
   // ui
   | "layout"
@@ -42,6 +42,8 @@ export type DefAspect =
   | "domain_data"
   | "system_data"
   | "external_data"
+  | "prefix_schema"
+  | "axis_catalog"
   // interface
   | "api_contract"
   | "cli_contract"
@@ -53,6 +55,27 @@ export type DefDepth =
   | "specification"   // 명세
   | "implementation"  // 구현
   | "validation";     // 검증
+
+/**
+ * 존재론적 계층 — "이것이 왜 존재하는가"
+ *
+ * scope × aspect × depth는 구조(무엇에 대한 정의인가)를 표현하고,
+ * layer는 존재 이유(왜 이것이 존재하는가)를 표현한다. 직교.
+ *
+ * 구분 기준 — "이 코드/문서/DB를 삭제해도 비즈니스 진실이 바뀌는가?"
+ *   예 → domain, 아니오+성능↓ → operation, 아니오+불편↑ → mediation, 아니오+유도↓ → experience
+ *
+ * 영향 전파:
+ *   domain     → domain + operation + mediation (experience 직접 영향 없음)
+ *   operation  → operation 내부만 (domain/mediation/experience 영향 없음)
+ *   mediation  → mediation + experience (domain 역전파 없음)
+ *   experience → experience 내부만 (상향 전파 없음)
+ */
+export type DefLayer =
+  | "domain"       // 비즈니스 본질 — "이것이 참이다" (엔티티, 상태, 정책, 계약, 결정)
+  | "operation"    // 시스템 운영 — "시스템이 돌아가게 한다" (DB 스키마, 캐시, 큐, 모니터링)
+  | "mediation"    // 중재/번역 — "진실을 소비 가능하게 변환" (API 포맷, 에러 매핑, 검색 인덱스, 편의 캐시)
+  | "experience";  // 경험 설계 — "사용자 행동을 유도한다" (UI 흐름, 위자드, 힌트, CTA)
 
 /** 문서 생명주기 */
 export type DefLifecycle =
@@ -195,6 +218,8 @@ export interface DefinitionEntry {
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
   readonly lifecycle: DefLifecycle;
+  /** 존재론적 계층 — business / interaction / binding (선택, 기본: business) */
+  readonly layer?: DefLayer;
 
   // 좌표 (인코딩 결과 — register 시 자동 계산)
   readonly address?: number;
@@ -232,6 +257,7 @@ export interface DefinitionFilter {
   readonly aspect?: DefAspect;
   readonly depth?: DefDepth;
   readonly lifecycle?: DefLifecycle;
+  readonly layer?: DefLayer;
   readonly tags?: readonly string[];
   readonly serviceId?: string;
 }

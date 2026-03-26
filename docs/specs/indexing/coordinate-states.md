@@ -5,6 +5,7 @@ def:
   aspect: system_state
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-infra]
   links:
     - target: coord-foundation

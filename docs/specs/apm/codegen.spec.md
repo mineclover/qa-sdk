@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [observability, tier-system]
   links:
     - target: dsl-schemas-spec

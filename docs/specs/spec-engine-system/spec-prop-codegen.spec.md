@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  layer: operation
   svc: spec-core
   tags: [tier-system]
   links:

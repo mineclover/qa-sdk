@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  layer: operation
   svc: ingest-server
   tags: [observability, tier-infra]
   links:

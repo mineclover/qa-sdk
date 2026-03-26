@@ -197,7 +197,7 @@ export {
 } from "./lib/address-parser.js";
 export type { ParsedAddress } from "./lib/address-parser.js";
 
-export { SERVICE_PORTS, detectPortConflicts, warnPortConflict } from "./lib/service-ports.js";
+export { SERVICE_PORTS, getServicePort, getServiceDevUrl, detectPortConflicts, warnPortConflict } from "./lib/service-ports.js";
 export type { ServicePortEntry } from "./lib/service-ports.js";
 
 export { identifyActorMode } from "./lib/identify-actor.js";

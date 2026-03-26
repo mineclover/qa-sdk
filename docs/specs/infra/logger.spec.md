@@ -5,6 +5,7 @@ def:
   aspect: system_data
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [observability]
   links:
     - target: logger-spec

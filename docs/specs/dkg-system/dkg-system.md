@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: dkg-engine
   tags: [structural, observability, entry-point, tier-system]
   links:

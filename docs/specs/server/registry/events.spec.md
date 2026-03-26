@@ -5,6 +5,7 @@ def:
   aspect: event_contract
   depth: specification
   lifecycle: approved
+  layer: mediation
   tags: [tier-infra]
   links:
     - target: registry-data-model

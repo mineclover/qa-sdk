@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: operation
   svc: browser-sdk
   tags: [tier-frontend]
   links:

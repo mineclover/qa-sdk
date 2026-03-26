@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: operation
   tags: [structural, tier-infra]
   links:
     - target: ingest-system

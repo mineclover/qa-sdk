@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: decision-flow
   tags: [decision]
   links:

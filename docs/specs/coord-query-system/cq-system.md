@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [structural, entry-point]
   links:
     - target: cq-policy-resolver

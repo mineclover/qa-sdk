@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: experience
   tags: [structural, tier-frontend]
   links:
     - target: browser-system

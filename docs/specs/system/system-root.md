@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: domain
   tags: [structural, cross-scope, entry-point]
   links:
     - target: system-concepts

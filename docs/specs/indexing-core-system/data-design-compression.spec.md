@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: weighted-index
   tags: [tier-infra]
   links:

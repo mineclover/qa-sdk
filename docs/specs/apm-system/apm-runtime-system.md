@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: qa-sdk-cli
   tags: [structural, tier-system]
   links:

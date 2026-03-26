@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: weighted-index
   tags: [structural, tier-infra]
   links:

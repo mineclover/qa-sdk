@@ -5,6 +5,7 @@ def:
   aspect: infra_constraint
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: ingest-server
   tags: [structural, performance, observability, tier-infra]
   links:

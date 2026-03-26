@@ -5,6 +5,7 @@ def:
   aspect: scenario
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [entry-point]
   links:

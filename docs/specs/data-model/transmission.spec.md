@@ -5,6 +5,7 @@ def:
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  layer: domain
   tags: [tier-infra]
   links:
     - target: record-spec

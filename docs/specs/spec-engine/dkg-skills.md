@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: deprecated
+  layer: domain
   links:
     - target: dkg-node-types
       type: depends_on

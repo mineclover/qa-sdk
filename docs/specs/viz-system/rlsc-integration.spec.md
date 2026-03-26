@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: mediation
   tags: [tier-frontend]
   links:
     - target: rlsc-spec

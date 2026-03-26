@@ -55,11 +55,13 @@ export interface DefinitionCatalog {
 /**
  * DEFINITION_CATALOG — 소프트웨어 정의 메타데이터 카탈로그.
  *
- * axes: def_scope(16), def_aspect(64), def_depth(8), def_lifecycle(16), link_type(16)
+ * axes: def_scope(16), def_aspect(64, 22 entries), def_depth(8), def_lifecycle(16), link_type(16)
  *
  * prefixes:
  *   def_document: scope(16) × aspect(64) × depth(8) = 8,192  (lifecycle은 메타데이터)
  *   def_link:     scope(16) × aspect(64) × link_type(16) = 16,384
+ *
+ * data scope에 prefix_schema, axis_catalog aspect 포함 → prefix 정의 문서도 좌표 관리
  */
 export const DEFINITION_CATALOG: DefinitionCatalog = {
   id: "definition",

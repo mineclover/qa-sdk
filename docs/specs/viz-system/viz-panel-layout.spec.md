@@ -5,6 +5,7 @@ def:
   aspect: layout
   depth: specification
   lifecycle: approved
+  layer: experience
   tags: [tier-frontend]
   links:
     - target: viz-panels-spec

@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: decision-flow
   tags: [decision, gate]
   links:

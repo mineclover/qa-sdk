@@ -5,6 +5,7 @@ def:
   aspect: biz_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [security]
 ---
 # permission-engine core 스펙

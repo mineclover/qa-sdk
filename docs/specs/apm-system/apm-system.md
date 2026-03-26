@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  layer: domain
   svc: qa-sdk-cli
   tags: [structural, entry-point, tier-system]
   links:

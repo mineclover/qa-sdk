@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: approved
+  layer: mediation
   tags: [tier-infra]
   links:
     - target: ingest-api-spec

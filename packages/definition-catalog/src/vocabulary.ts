@@ -74,9 +74,9 @@ export const DEF_SCOPE = {
 } as const;
 
 /**
- * def_aspect — 세부 측면 (20 entries, capacity 64)
+ * def_aspect — 세부 측면 (22 entries, capacity 64)
  *
- * 5Q: ✓유한(20) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
+ * 5Q: ✓유한(22) ✓분류 관련(세부 유형 결정) ✓공유(전 prefix) ✓안정(느린 변화) ✓capacity
  * 설명력: 대분류 내 세부 유형. scope와 함께 문서의 정확한 주제를 결정한다.
  * 주의: scope-aspect 간 유효 조합 제약 있음 (taxonomy.ts VALID_SCOPE_ASPECTS 참조).
  */
@@ -92,12 +92,12 @@ export const DEF_ASPECT = {
     "app_state", "domain_state", "system_state",
     // constraint (3)
     "tech_constraint", "biz_constraint", "infra_constraint",
-    // data (3)
-    "domain_data", "system_data", "external_data",
+    // data (5)
+    "domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog",
     // interface (3)
     "api_contract", "cli_contract", "event_contract",
   ] as const,
-  capacity: 64,  // nextPowerOf2(20 * 2 = 40) = 64
+  capacity: 64,  // nextPowerOf2(22 * 2 = 44) = 64
   ko: {
     layout: "레이아웃",
     component: "컴포넌트",
@@ -116,6 +116,8 @@ export const DEF_ASPECT = {
     domain_data: "도메인데이터",
     system_data: "시스템데이터",
     external_data: "외부데이터",
+    prefix_schema: "Prefix스키마",
+    axis_catalog: "Axis카탈로그",
     api_contract: "API계약",
     cli_contract: "CLI계약",
     event_contract: "이벤트계약",
@@ -205,7 +207,8 @@ export const AXIS_META: Record<string, AxisExplanatoryMeta> = {
     explains: "대분류 내에서 구체적으로 어떤 세부 유형을 정의하는가",
     designRationale: "레이아웃 정의와 컴포넌트 정의는 같은 UI지만 다른 문서다. " +
       "scope만으로는 문서의 정확한 주제를 특정할 수 없다. " +
-      "scope-aspect 쌍이 함께 문서의 정체성을 결정한다.",
+      "scope-aspect 쌍이 함께 문서의 정체성을 결정한다. " +
+      "data scope에 prefix_schema/axis_catalog를 두어 좌표 정의 문서도 관리한다.",
     orthogonalTo: ["def_depth", "def_lifecycle"],
   },
   def_depth: {

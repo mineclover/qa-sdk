@@ -5,6 +5,7 @@ def:
   aspect: tech_constraint
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [decision]
   links:
     - target: index-codec-spec
