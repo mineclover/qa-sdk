@@ -186,6 +186,9 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 | **분류** | PatternClassification | 축 값 기반 패턴 분류 | `evidence_kind=data + freq≥5 → routine` |
 | **계층** | LayerMap | 축 값으로 시각화 배치 | `svc_name=shopping-web → Layer 0 (UI)` |
 | **전파** | ConcernDef (def-catalog) | 축 값이 link 그래프를 타고 상속 | `security → 의존 문서에 자동 전파` |
+| **태깅** | ServiceAttributes, def frontmatter | 대상에 축 값을 다중 부여 (1:N) | `auth → concerns: [security, observability]` |
+
+**태깅 패턴 참고**: 하나의 대상(서비스, 문서 등)이 하나의 축에서 여러 값을 동시에 가짐. 좌표 소비(1:1 매핑)와 달리 1:N 관계. 구체적인 태그 관리 방식(저장, 조회, 전파, 제거)은 추가 설계 필요.
 
 ## 좌표 컨벤션
 
