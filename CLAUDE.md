@@ -164,14 +164,21 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 - `GraphPort` vs `ConvergenceGraphPort`: 서비스는 최소 포트, CLI는 GraphRegistry(최대)
 - `as unknown as ConcreteType`: 동적 import 구조적 캐스트. `as any` 금지
 
-## Axis vs Tag
+## Axis 소비 방식
 
-- **Axis**: 유한 분류 차원. 다른 Axis와 곱(×)하여 좌표 공간 형성. 주소에 인코딩됨
-- **Tag**: 유한 분류 차원이지만 다른 축과 곱하지 않음. 필터/그룹핑/전파에만 사용. 주소에 인코딩 안 됨
-- 둘 다 "유한한 분류"이지만, Tag는 곱 조합이 무의미한 축
-- 판단: 5Q 통과 + 곱 조합에 의미 있음 → Axis. 5Q 통과하지만 곱 무의미 → Tag
-- Tag 3종: ConcernTag(security, performance...), TierTag(tier-frontend...), StructuralTag(entry-point...)
-- SSOT: `definition-catalog/src/taxonomy.ts`의 `KNOWN_TAGS`
+Axis는 하나의 유한 분류 차원. **소비 방식이 다양할 뿐, 별도 개념이 아니다.**
+
+| 소비 방식 | 설명 | 구현 |
+|----------|------|------|
+| **좌표 소비** | Axis × Axis → 주소 (prefix dims에 포함) | WeightedIndex, prefix address |
+| **필터 소비** | 단독 필터/그룹핑 (tag처럼) | ServiceAttributes.concerns, tierTag |
+| **권한 소비** | PolicyRule.match 조건으로 사용 | permission-engine |
+| **게이트 소비** | entry별 active/inactive 판정 | GateEngine 4-state |
+
+- Tag(ConcernTag/TierTag/StructuralTag)는 Axis를 "필터 모드"로 소비하는 것
+- 좌표 곱에 참여시킬지 여부는 **소비자(prefix)가 결정** — prefix dims에 포함하면 좌표, 아니면 필터
+- 새 분류 추가 시: Axis로 정의 → 어떤 소비 방식으로 쓸지 결정
+- SSOT: `definition-catalog/src/taxonomy.ts`의 `KNOWN_TAGS` (필터 소비용 축 목록)
 
 ## 좌표 컨벤션
 
