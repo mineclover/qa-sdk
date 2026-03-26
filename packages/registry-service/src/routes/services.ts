@@ -24,6 +24,40 @@ export interface ServiceRecord {
   readonly stripPrefix?: boolean;
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes?: readonly string[];
+  /** 소속 Application ID */
+  readonly applicationId?: string;
+  /** 가변 속성 (App Hub Attributes) */
+  readonly attributes?: ServiceAttributes;
+}
+
+/** 가변 속성 — 사람이 부여하는 메타데이터 (App Hub Attributes 모델) */
+export interface ServiceAttributes {
+  readonly criticality?: "critical" | "high" | "medium" | "low";
+  readonly owner?: {
+    readonly developer?: string;
+    readonly operator?: string;
+    readonly business?: string;
+  };
+  readonly environment?: "production" | "staging" | "development" | "test";
+  readonly tags?: readonly string[];
+}
+
+/**
+ * Application — 서비스를 묶는 비즈니스 기능 단위 (App Hub Application 모델).
+ *
+ * 여러 서비스가 함께 하나의 비즈니스 기능을 구성한다.
+ */
+export interface ApplicationRecord {
+  readonly applicationId: string;
+  readonly name: string;
+  readonly description?: string;
+  readonly serviceIds: readonly string[];
+  readonly criticality?: "critical" | "high" | "medium" | "low";
+  readonly owner?: {
+    readonly team?: string;
+    readonly developer?: string;
+    readonly business?: string;
+  };
 }
 
 export interface ServiceRouteDeps {
@@ -191,6 +225,48 @@ export function createServiceRoutes(deps: ServiceRouteDeps) {
     }
     await configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(filtered));
     return c.json({ ok: true, serviceId });
+  });
+
+  // ── Application 라우트 ──────────────────────────────
+
+  const APP_CONFIG_TYPE = "applications";
+
+  function parseApplications(data: string): ApplicationRecord[] | null {
+    try { return JSON.parse(data); } catch { return null; }
+  }
+
+  // GET /api/applications — 전체 Application 목록
+  routes.get("/api/applications", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const record = await configStore.get(catalogId, APP_CONFIG_TYPE);
+    if (!record) return c.json([]);
+    return c.json(parseApplications(record.data) ?? []);
+  });
+
+  // GET /api/applications/:id — Application 상세 (서비스 목록 포함)
+  routes.get("/api/applications/:id", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const appId = c.req.param("id");
+    const record = await configStore.get(catalogId, APP_CONFIG_TYPE);
+    if (!record) return c.json({ error: "Applications not found" }, 404);
+    const apps = parseApplications(record.data) ?? [];
+    const app = apps.find((a) => a.applicationId === appId);
+    if (!app) return c.json({ error: `Application '${appId}' not found` }, 404);
+
+    // 서비스 상세 조합
+    const svcRecord = await configStore.get(catalogId, CONFIG_TYPE);
+    const services = svcRecord ? (parseServices(svcRecord.data) ?? []) : [];
+    const appServices = services.filter((s) => app.serviceIds.includes(s.serviceId));
+
+    return c.json({ ...app, services: appServices });
+  });
+
+  // PUT /api/applications — 전체 교체
+  routes.put("/api/applications", async (c) => {
+    const catalogId = c.req.query("catalog") ?? "demo";
+    const body = await c.req.json<{ applications: ApplicationRecord[] }>();
+    await configStore.set(catalogId, APP_CONFIG_TYPE, JSON.stringify(body.applications));
+    return c.json({ ok: true, count: body.applications.length });
   });
 
   return routes;

@@ -213,3 +213,49 @@ export async function serviceEndpoints(args: string[]): Promise<void> {
     console.error(`  조회 실패: ${errorMessage(err)}`);
   }
 }
+
+// ── applications ────────────────────────────────
+
+export async function serviceAppList(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const json = args.includes("--json");
+  try {
+    const apps: Array<{
+      applicationId: string; name: string; description?: string;
+      serviceIds: string[]; criticality?: string; owner?: { team?: string };
+    }> = await fetchJson(`${registryUrl}/api/applications`);
+    if (json) { console.log(JSON.stringify(apps, null, 2)); return; }
+    console.log(`\n══ Applications (${apps.length}) ══\n`);
+    console.log(`  ${"ID".padEnd(18)} ${"이름".padEnd(12)} ${"중요도".padEnd(10)} ${"팀".padEnd(12)} ${"서비스".padStart(6)}`);
+    console.log("  " + "─".repeat(65));
+    for (const app of apps) {
+      console.log(`  ${app.applicationId.padEnd(18)} ${app.name.padEnd(12)} ${(app.criticality ?? "-").padEnd(10)} ${(app.owner?.team ?? "-").padEnd(12)} ${String(app.serviceIds.length).padStart(6)}`);
+    }
+    console.log();
+  } catch (err: unknown) { console.error(`  조회 실패: ${errorMessage(err)}`); }
+}
+
+export async function serviceAppShow(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const appId = args.find(a => !a.startsWith("-"));
+  if (!appId) { console.error("Usage: qa-sdk service app show <application-id>"); return; }
+  try {
+    const app: {
+      applicationId: string; name: string; description?: string;
+      serviceIds: string[]; criticality?: string;
+      owner?: { team?: string };
+      services: Array<{ serviceId: string; name: string; tier?: string; ownedPrefixes: string[] }>;
+    } = await fetchJson(`${registryUrl}/api/applications/${appId}`);
+    console.log(`\n══ Application: ${app.name} (${app.applicationId}) ══\n`);
+    if (app.description) console.log(`  ${app.description}`);
+    console.log(`  중요도: ${app.criticality ?? "-"}`);
+    if (app.owner?.team) console.log(`  팀: ${app.owner.team}`);
+    console.log(`\n  서비스 (${app.services.length}):`);
+    console.log(`  ${"ID".padEnd(22)} ${"이름".padEnd(14)} ${"Tier".padEnd(10)} Owned Prefixes`);
+    console.log("  " + "─".repeat(75));
+    for (const svc of app.services) {
+      console.log(`  ${svc.serviceId.padEnd(22)} ${svc.name.padEnd(14)} ${(svc.tier ?? "-").padEnd(10)} ${svc.ownedPrefixes.join(", ") || "-"}`);
+    }
+    console.log();
+  } catch (err: unknown) { console.error(`  조회 실패: ${errorMessage(err)}`); }
+}

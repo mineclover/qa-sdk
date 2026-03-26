@@ -53,46 +53,83 @@ async function main() {
   // 3. 서비스 목록
   console.log("\n── 3. Services ──");
   const services = [
+    // shopping-app
     { serviceId: "shopping-web", name: "쇼핑 웹", tier: "frontend", team: "frontend", url: "http://localhost:5220",
+      applicationId: "shopping-app",
       ownedPrefixes: ["page_view", "tracking", "cart_event", "auth_event"], consumedPrefixes: ["service", "permission"] },
-    { serviceId: "platform-demo", name: "플랫폼 데모", tier: "frontend", team: "frontend", url: "http://localhost:5176",
-      ownedPrefixes: [], consumedPrefixes: ["service", "page_view", "tracking", "endpoint", "flow_point", "order_event"] },
     { serviceId: "shopping-backend", name: "쇼핑 백엔드", tier: "backend", team: "backend",
+      applicationId: "shopping-app",
       ownedPrefixes: ["order_event", "endpoint", "event"], consumedPrefixes: ["service", "permission", "cart_event"] },
+    { serviceId: "content-service", name: "콘텐츠 서비스", tier: "backend", team: "frontend",
+      applicationId: "shopping-app",
+      ownedPrefixes: ["content"], consumedPrefixes: ["service", "tracking"] },
+    // member-app
     { serviceId: "auth", name: "인증 서비스", tier: "backend", team: "platform",
+      applicationId: "member-app",
       ownedPrefixes: ["rbac", "auth_event"], consumedPrefixes: ["service"] },
     { serviceId: "payment", name: "결제 서비스", tier: "backend", team: "backend",
+      applicationId: "member-app",
       ownedPrefixes: ["flow_point", "permission"], consumedPrefixes: ["service", "order_event"] },
     { serviceId: "gateway", name: "API 게이트웨이", tier: "backend", team: "platform",
+      applicationId: "member-app",
       ownedPrefixes: ["endpoint", "schema_validation"], consumedPrefixes: ["service", "rbac"] },
-    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300",
-      ownedPrefixes: ["deploy_event", "health_event", "service", "data_policy", "engine_event", "schema_event"] },
+    // platform-app
     { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200",
-      // 파이프라인 자체 이벤트만 생산 — 나머지(ingest_record 등)는 소비/저장 대상
-      ownedPrefixes: ["pipeline_point"],
-      consumedPrefixes: ["service"] },
+      applicationId: "platform-app",
+      ownedPrefixes: ["pipeline_point"], consumedPrefixes: ["service"] },
     { serviceId: "registry-service", name: "레지스트리 서비스", tier: "infra", team: "platform", url: "http://localhost:3300",
-      // 메타데이터 관리 전용 — 이벤트 생산 없음
+      applicationId: "platform-app",
       ownedPrefixes: [], consumedPrefixes: ["service"] },
-    { serviceId: "qa-sdk-cli", name: "QA SDK CLI", tier: "system", team: "platform",
-      // skill_execution, cli_tracking — 후속 구현 예정
-      ownedPrefixes: ["cli_event"], consumedPrefixes: ["service", "dkg_event"] },
-    { serviceId: "dkg-engine", name: "DKG 엔진", tier: "system", team: "platform",
-      ownedPrefixes: ["dkg_event", "dkg_decision_event", "dkg_observation_event", "observation_event", "spec_event", "edge_activity"],
-      consumedPrefixes: ["service", "build_event", "test_event"] },
     { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
-      // 읽기 전용 게이트 상태 캐시 — gate_point는 GateEngine 라이브러리가 계산
+      applicationId: "platform-app",
       ownedPrefixes: [], consumedPrefixes: ["service", "version_point", "decision_event", "decision_path", "escalation_event", "model_apply", "forcing_response"] },
     { serviceId: "query-service", name: "쿼리 서비스", tier: "infra", team: "platform", url: "http://localhost:3500",
+      applicationId: "platform-app",
       ownedPrefixes: [], consumedPrefixes: ["service", "gate_point", "endpoint"] },
     { serviceId: "decode-service", name: "디코드 서비스", tier: "infra", team: "platform", url: "http://localhost:3600",
+      applicationId: "platform-app",
       ownedPrefixes: [], consumedPrefixes: ["service"] },
-    { serviceId: "content-service", name: "콘텐츠 서비스", tier: "backend", team: "frontend",
-      ownedPrefixes: ["content"], consumedPrefixes: ["service", "tracking"] },
+    { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300",
+      applicationId: "platform-app",
+      ownedPrefixes: ["deploy_event", "health_event", "service", "data_policy", "engine_event", "schema_event"] },
+    // devtools-app
+    { serviceId: "qa-sdk-cli", name: "QA SDK CLI", tier: "system", team: "platform",
+      applicationId: "devtools-app",
+      ownedPrefixes: ["cli_event"], consumedPrefixes: ["service", "dkg_event"] },
+    { serviceId: "dkg-engine", name: "DKG 엔진", tier: "system", team: "platform",
+      applicationId: "devtools-app",
+      ownedPrefixes: ["dkg_event", "dkg_decision_event", "dkg_observation_event", "observation_event", "spec_event", "edge_activity"],
+      consumedPrefixes: ["service", "build_event", "test_event"] },
+    // demo-app
+    { serviceId: "platform-demo", name: "플랫폼 데모", tier: "frontend", team: "frontend", url: "http://localhost:5176",
+      applicationId: "demo-app",
+      ownedPrefixes: [], consumedPrefixes: ["service", "page_view", "tracking", "endpoint", "flow_point", "order_event"] },
     { serviceId: "platform-demo-api", name: "플랫폼 데모 API", tier: "backend", team: "frontend", url: "http://localhost:5176",
+      applicationId: "demo-app",
       ownedPrefixes: [], consumedPrefixes: ["service", "page_view", "endpoint"] },
   ];
   await put("/api/services", { services });
+
+  // 3-1. Applications
+  console.log("\n── 3-1. Applications ──");
+  const applications = [
+    { applicationId: "shopping-app", name: "쇼핑", description: "쇼핑 비즈니스 — 상품 탐색, 장바구니, 주문",
+      serviceIds: ["shopping-web", "shopping-backend", "content-service"],
+      criticality: "high", owner: { team: "commerce" } },
+    { applicationId: "member-app", name: "회원 관리", description: "인증, 결제, API 게이트웨이",
+      serviceIds: ["auth", "payment", "gateway"],
+      criticality: "critical", owner: { team: "platform" } },
+    { applicationId: "platform-app", name: "플랫폼 인프라", description: "수집, 레지스트리, 게이트, 쿼리, 디코드, 인프라 관리",
+      serviceIds: ["ingest-server", "registry-service", "gate-service", "query-service", "decode-service", "infra-controller"],
+      criticality: "critical", owner: { team: "platform" } },
+    { applicationId: "devtools-app", name: "개발 도구", description: "CLI, DKG 엔진",
+      serviceIds: ["qa-sdk-cli", "dkg-engine"],
+      criticality: "medium", owner: { team: "platform" } },
+    { applicationId: "demo-app", name: "데모", description: "플랫폼 데모 + 시각화",
+      serviceIds: ["platform-demo", "platform-demo-api"],
+      criticality: "low", owner: { team: "frontend" } },
+  ];
+  await put("/api/applications", { applications });
 
   // 4. Endpoints
   console.log("\n── 4. Endpoints ──");

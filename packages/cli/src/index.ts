@@ -45,7 +45,7 @@ import { init } from "./commands/init.js";
 import { syncObsidian } from "./commands/sync-obsidian.js";
 import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
-import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth } from "./commands/service.js";
+import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth, serviceAppList, serviceAppShow } from "./commands/service.js";
 import { cliDef } from "./commands/def.js";
 import {
   flowList,
@@ -172,6 +172,8 @@ Usage:
   qa-sdk service health [--env dev]  전체 서비스 헬스체크 (registry 경유)
   qa-sdk service owners [--json]     prefix → 소유 서비스 맵
   qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
+  qa-sdk service app list [--json]     Application 목록
+  qa-sdk service app show <id>         Application 상세 (서비스 포함)
 
   qa-sdk ingest health [--env dev|prod|staging]  수집 서버 헬스체크
   qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송
@@ -688,6 +690,12 @@ async function main() {
     case "service owners":
       await serviceOwners(sub.rest);
       return;
+    case "service app list":
+      serviceAppList(sub.rest);
+      return;
+    case "service app show":
+      serviceAppShow(sub.rest);
+      return;
     case "service endpoints":
       await serviceEndpoints(sub.rest);
       return;
@@ -860,6 +868,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
     "dkg spec add", "dkg spec list", "dkg spec transition",
     "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
+    "service app list", "service app show",
   ];
   if (args.length >= 3) {
     const candidate = `${args[0]} ${args[1]} ${args[2]}`;
