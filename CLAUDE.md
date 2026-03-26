@@ -164,6 +164,15 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 - `GraphPort` vs `ConvergenceGraphPort`: 서비스는 최소 포트, CLI는 GraphRegistry(최대)
 - `as unknown as ConcreteType`: 동적 import 구조적 캐스트. `as any` 금지
 
+## Axis vs Tag
+
+- **Axis**: 유한 분류 차원. 다른 Axis와 곱(×)하여 좌표 공간 형성. 주소에 인코딩됨
+- **Tag**: 유한 분류 차원이지만 다른 축과 곱하지 않음. 필터/그룹핑/전파에만 사용. 주소에 인코딩 안 됨
+- 둘 다 "유한한 분류"이지만, Tag는 곱 조합이 무의미한 축
+- 판단: 5Q 통과 + 곱 조합에 의미 있음 → Axis. 5Q 통과하지만 곱 무의미 → Tag
+- Tag 3종: ConcernTag(security, performance...), TierTag(tier-frontend...), StructuralTag(entry-point...)
+- SSOT: `definition-catalog/src/taxonomy.ts`의 `KNOWN_TAGS`
+
 ## 좌표 컨벤션
 
 ### Prefix Version
