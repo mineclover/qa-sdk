@@ -79,6 +79,19 @@ DEMO_CATALOG = {
 
 현재: 85축, 51 prefix, 19 tables. DKG: 16종 노드 (FlowSchemaNode 포함).
 
+### Axis 소비 방식
+
+Axis = 비즈니스 정보의 유한 분류. **소비 방식은 소비자가 결정한다.**
+
+- **좌표 소비**: Axis × Axis → 1D 주소 (prefix dims)
+- **필터 소비 (태깅)**: 대상에 축 값을 1:N 다중 부여 (concerns, structural, def.tags)
+- **권한 소비**: PolicyRule.match 조건
+- **게이트 소비**: entry별 active/inactive 판정
+- **의사결정 소비**: FlowSchema의 Gate=Axis, Branch=Entry
+- **전파 소비**: ConcernTag가 depends_on 링크를 타고 하위 상속
+
+태깅 관리: 대상이 사는 곳에 함께 저장. 카디널리티는 축별 (단일/다중). 상세: `docs/specs/system/tag-management.spec.md`
+
 ---
 
 ## 데이터 흐름

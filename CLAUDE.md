@@ -13,6 +13,8 @@
 | `docs/getting-started.md` | 산출물 단위, codegen, CLI 사용법 |
 | `docs/data-model.md` | 데이터 모델, 테이블 스키마 |
 | `docs/specs/` | 모듈/서비스별 상세 스펙 (gate-engine, coordinate-query, decode-service 등) |
+| `docs/specs/system/tag-management.spec.md` | 태그 관리 설계 — 저장/조회/전파/충돌/카디널리티 |
+| `docs/specs/decision-flow/df-system.md` | decision-flow 시스템 (16멤버, P0~P11) |
 
 ## 패키지 규칙
 
@@ -188,7 +190,15 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 | **전파** | ConcernDef (def-catalog) | 축 값이 link 그래프를 타고 상속 | `security → 의존 문서에 자동 전파` |
 | **태깅** | ServiceAttributes, def frontmatter | 대상에 축 값을 다중 부여 (1:N) | `auth → concerns: [security, observability]` |
 
-**태깅 패턴 참고**: 하나의 대상(서비스, 문서 등)이 하나의 축에서 여러 값을 동시에 가짐. 좌표 소비(1:1 매핑)와 달리 1:N 관계. 구체적인 태그 관리 방식(저장, 조회, 전파, 제거)은 추가 설계 필요.
+### 태깅 관리 규칙
+
+태깅 = Axis를 1:N 다중 부여로 소비하는 패턴. 설계: `docs/specs/system/tag-management.spec.md`
+
+- **저장**: 대상이 사는 곳에 함께. 별도 태그 store 없음
+- **카디널리티**: 배타적이면 단일(tierTag, category, criticality), 공존이면 다중(concerns, structural, def.tags)
+- **전파**: ConcernTag만 depends_on 링크 따라 하위 전파. 나머지 불전파
+- **제거**: 직접 태그만 제거. 전파된 것은 다음 계산에서 자동 소멸
+- **SSOT**: `definition-catalog/src/taxonomy.ts` KNOWN_TAGS
 
 ## 좌표 컨벤션
 
@@ -390,7 +400,7 @@ const store = new D1RecordStore(driver);
 
 ## 서비스 포트
 
-ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), gRPC debug(50051, GRPC_PORT 설정 시)
+ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), gRPC debug(50051, GRPC_PORT 설정 시)
 
 ## 신규 패키지 (이 세션 추가)
 
@@ -400,6 +410,8 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), gRP
 | `decision-flow` | 의사결정 흐름 엔진 |
 | `event-catalog` | 이벤트 카탈로그 + auto-track + prefix 매핑 |
 | `motion-content` | 모션 콘텐츠 (platform-demo에서 분리) |
+| `@qa-sdk/definition-service` | 문서/prefix 정의 관리 서비스 (NestJS + SQLite, port 3700) |
+| `@qa-sdk/definition-client` | definition-service HTTP 클라이언트 + NestJS DI 모듈 |
 
 ## Ingest Store Driver (STORE_DRIVER)
 
