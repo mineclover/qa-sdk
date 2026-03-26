@@ -18,6 +18,15 @@ def:
 
 ContextProvider — 결정 시작 시 이전 맥락을 표면화하여 같은 조사를 반복하지 않게 만드는 기능. 컨텍스트가 쌓일수록 다음 결정이 쉬워진다.
 
+## 구성 ^overview
+
+- **provide()**: 스키마 기준 이력 요약, 패턴 힌트, 정책 힌트, 인지 모델 힌트, 열린 질문 5가지를 표면화
+- **provideForGate()**: 특정 gate의 이전 선택 분포(비율)까지 추가 제공
+- **축적 사이클**: 결정 1건마다 이력이 쌓이고, 5건 이후 패턴 감지 및 매칭 자동 활성화
+- **계층적 컨텍스트**: assembleHierarchicalContext()로 도메인→DSL→prefix→dim→entry 5레벨 구조 정보를 한 번에 조합
+- **통합 지점**: catalog, DKG, GateEngine, decode, registry, convergence, spec-core, ContextProvider 8곳의 구조 정보를 결정 시점에 병합
+- **비강제 원칙**: 컨텍스트를 무시하고 결정해도 무방 — 시스템은 맥락을 보여줄 뿐
+- **핵심 가치**: 기록이 아닌 컨텍스트 제공 — 과거가 미래의 결정을 쉽게 만드는 좌표계
 
 ---
 

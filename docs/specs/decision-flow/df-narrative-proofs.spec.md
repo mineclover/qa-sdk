@@ -18,6 +18,16 @@ def:
 
 서사 증명 11장. 축 압축, 반복 패턴, 벡터 차이, 코어 gate, 직교성 검증, 축 선택 근거, 서사 조립, 컨텍스트 제공, 계층 통합, 실제 판단, 세션 영속.
 
+## 구성 ^overview
+
+- **축 압축 (장1)**: 3개 축(scope/architecture/testing)이 27가지 결정 경로를 정수 하나로 압축 — 결정론적, 라운드트립 보장
+- **반복 패턴 발견 (장2)**: PatternDetector가 동일 좌표 반복 투영을 감지하여 자동 정책 후보 생성
+- **벡터 차이 분석 (장3)**: 두 FlowInstance 비교로 divergencePoint(분기 축)와 evidence diff(근거 차이) 추출
+- **코어 gate 식별 (장4)**: weight=core인 gate(예: scope)가 후속 결정 전체를 cascade — "무엇을"이 "어떻게"를 결정
+- **직교성 검증 (장5)**: 사전 설계(a priori) + 사후 검증(Cramér's V)으로 축 간 독립성 확인
+- **서사 구조 (장7)**: buildNarrative()로 배경→여정→도달→산출→회고 구조 추출, 서사는 누적되어 패턴→정책→자동화로 진화
+- **세션 영속 (장11)**: `~/.qa-sdk/decision-flow.sqlite`에 FlowInstance 영속, 복수 프로세스에 걸쳐 결정 진행 가능
+- **실제 판단 사례 (장10)**: Auto IntentLink 안정화 판단 — stabilization flow로 버그빈도/성능/코드품질 평가, deferred 판정
 
 ---
 
