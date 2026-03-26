@@ -168,10 +168,24 @@ describe("detectCrossScope", () => {
 });
 
 describe("CLASSIFICATION_CONVENTIONS", () => {
-  it("12개 컨벤션이 정의되어 있다 (분류 6 + 작성 6)", () => {
+  it("23개 컨벤션이 정의되어 있다", () => {
     const keys = Object.keys(CLASSIFICATION_CONVENTIONS);
-    expect(keys.length).toBe(12);
+    expect(keys.length).toBe(23);
+    // 분류 (C1-C6)
     expect(keys).toContain("scopeByAudience");
+    expect(keys).toContain("splitThreshold");
+    // 작성 (C8-C13)
     expect(keys).toContain("customMarkers");
+    // 코드 참조 (C14-C18)
+    expect(keys).toContain("noInlineCode");
+    expect(keys).toContain("scopeTemplates");
+    // 그룹 분류 (C19-C21)
+    expect(keys).toContain("groupScopeByResponsibility");
+    expect(keys).toContain("flowOnlyForFlow");
+    expect(keys).toContain("structuralTag");
+    // 코드-문서 연결 (C22-C24)
+    expect(keys).toContain("svcMapping");
+    expect(keys).toContain("accuracyOverVolume");
+    expect(keys).toContain("aspectDistribution");
   });
 });

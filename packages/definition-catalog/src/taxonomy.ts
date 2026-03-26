@@ -341,4 +341,159 @@ export const CLASSIFICATION_CONVENTIONS = {
    * 마커 이름은 lowercase + 하이픈: ^my-marker
    */
   customMarkers: "자유 마커(^constraint, ^state-def 등)로 scope별 핵심 내용 수집 가능",
+
+  // ── 코드 참조 컨벤션 ──────────────────────────────────
+
+  /**
+   * 컨벤션 14: 인라인 코드 블록 금지 — 코드 위치 참조로 대체
+   *
+   * 문서에 TypeScript/코드를 직접 작성하면:
+   * - 코드 변경 시 문서가 stale 됨 (이중 관리)
+   * - 문서가 코드의 복사본이 되어 부정확해짐
+   *
+   * 대신 두 가지 방법 중 하나를 사용한다:
+   * 1. 소스 경로 참조: `참조: packages/permission-engine/src/ternary-mask.ts:38-40`
+   * 2. 코드-문서 공유 마커: 코드에 `// @def:marker-name` 주석, 문서에서 같은 마커 참조
+   *
+   * 예외: 의사 코드(pseudo-code)나 호출 패턴 예시는 허용 (실제 API가 아닌 개념 설명)
+   */
+  noInlineCode: "인라인 코드 블록 금지. 소스 경로 참조 또는 코드-문서 공유 마커 사용",
+
+  /**
+   * 컨벤션 15: 소스 위치 표기 — `## 관련 소스` 섹션 통일
+   *
+   * 문서 하단에 `## 관련 소스` 섹션을 두고 소스 파일 경로를 나열한다.
+   * 형식: `- packages/<pkg>/src/<path>.ts — <한줄 설명>`
+   * 이 섹션이 문서와 코드의 연결점 역할을 한다.
+   */
+  sourceSection: "문서 하단에 `## 관련 소스` 섹션으로 코드 위치를 통일된 형식으로 나열",
+
+  // ── scope별 표준 마커 ──────────────────────────────────
+
+  /**
+   * 컨벤션 16: scope별 권장 마커
+   *
+   * | scope      | 필수 마커          | 권장 마커      |
+   * |------------|-------------------|---------------|
+   * | constraint | ^constraint       | —             |
+   * | state      | ^state-def        | —             |
+   * | interface  | ^api-surface      | ^error-codes  |
+   * | feature    | —                 | ^behavior     |
+   * | data       | —                 | ^schema       |
+   * | flow       | —                 | ^flow-steps   |
+   * | ui         | —                 | ^interaction  |
+   *
+   * 모든 scope: ^purpose (필수), ^overview (권장)
+   */
+  scopeMarkers: "scope별 표준 마커: constraint→^constraint, state→^state-def, interface→^api-surface",
+
+  // ── scope별 작성 템플릿 ─────────────────────────────────
+
+  /**
+   * 컨벤션 17: scope별 최소 구조
+   *
+   * feature/func_def:
+   *   ^purpose → ^overview → 입출력 테이블 → 동작 규칙 → 관련 소스
+   *
+   * data/domain_data:
+   *   ^purpose → ^overview → 필드 테이블(소스 참조) → 관계 → 관련 소스
+   *
+   * constraint/*:
+   *   ^purpose → ^overview → ^constraint (번호 + 규칙 + 위반 시 동작) → 관련 소스
+   *
+   * interface/api_contract:
+   *   ^purpose → ^overview → ^api-surface (엔드포인트 테이블) → 관련 소스
+   *
+   * state/*:
+   *   ^purpose → ^overview → ^state-def (상태 테이블 + 전이 규칙) → 관련 소스
+   *
+   * flow/*:
+   *   ^purpose → ^overview → 단계 설명 → 관련 소스
+   */
+  scopeTemplates: "scope별 최소 구조: purpose → overview → scope 고유 섹션 → 관련 소스",
+
+  /**
+   * 컨벤션 18: overview 그룹 문서 — 자동 파생 가능 정보 생략
+   *
+   * "overview: 총 N개 멤버." 같은 기계적 prefix 금지.
+   * contains 링크에서 멤버 수는 자동 파생된다.
+   * overview에는 멤버 목록 + 각 역할 요약만 작성한다.
+   */
+  overviewNoBoilerplate: "그룹 overview에서 '총 N개 멤버' 등 파생 가능 정보 생략",
+
+  // ── 그룹 분류 컨벤션 ──────────────────────────────────
+
+  /**
+   * 컨벤션 19: 그룹 scope는 멤버 투표가 아니라 그룹의 주 책임
+   *
+   * 그룹 문서의 scope/aspect는 멤버의 다수결이 아니라
+   * "이 그룹이 존재하는 이유(주 책임)"로 결정한다.
+   *
+   * - gate-system → feature/func_def (gate는 기능이다)
+   * - permission-system → constraint/biz_constraint (권한은 제약이다)
+   * - ingest-system → data/domain_data (데이터 수집이 핵심)
+   * - registry-system → interface/api_contract (레지스트리는 서비스 계약)
+   *
+   * 혼합 scope 그룹이 존재하는 것 자체가 의사결정의 결과다.
+   * "왜 이 관심사들이 하나의 그룹인가"가 그룹 문서의 핵심 정보.
+   */
+  groupScopeByResponsibility: "그룹 scope는 멤버 투표가 아니라 그룹의 주 책임으로 결정",
+
+  /**
+   * 컨벤션 20: flow/process_flow는 실제 흐름에만 사용
+   *
+   * 순수 조직 계층(system-root, system-infra 등)과 실제 시간 순서가 있는
+   * 프로세스 흐름(pipeline, lifecycle, spec-phases)을 구분한다.
+   *
+   * - 순수 조직: flow/process_flow + structural 태그
+   * - 실제 흐름: flow/process_flow (structural 태그 없음)
+   * - 기능 그룹: feature/func_def, data/domain_data 등 주 책임에 맞는 scope
+   *
+   * flow/process_flow가 전체의 15~20%를 초과하면 분류 점검 신호.
+   */
+  flowOnlyForFlow: "flow/process_flow는 실제 시간 순서 흐름에만. 조직 그룹은 주 책임 scope 사용",
+
+  /**
+   * 컨벤션 21: structural 태그로 조직 계층 식별
+   *
+   * depth: overview + contains 링크를 가진 그룹 문서에 structural 태그를 부여한다.
+   * query({ tags: ["structural"] }) → 조직 그룹만 조회
+   * query({ excludeTags: ["structural"] }) → 실질 콘텐츠만 조회
+   */
+  structuralTag: "그룹 overview 문서에 structural 태그. 조직 계층 필터링용",
+
+  // ── 코드-문서 연결 컨벤션 ─────────────────────────────
+
+  /**
+   * 컨벤션 22: svc 필드로 패키지 연결
+   *
+   * frontmatter의 svc 필드가 문서를 코드 패키지에 연결한다.
+   * 한 패키지에 명확히 속하는 문서에만 부여.
+   * 여러 패키지에 걸치는 문서는 svc를 생략한다.
+   *
+   * svc 값 = packages/ 디렉토리 이름 또는 ServiceBootConfig serviceId.
+   * query({ serviceId: "gate-service" }) → gate 관련 문서 전체 조회.
+   */
+  svcMapping: "svc 필드로 문서-패키지 연결. 단일 패키지 소속일 때만 부여",
+
+  /**
+   * 컨벤션 23: 정확성 > 분량
+   *
+   * 짧은 문서는 문제가 아니다. 부정확한 문서가 문제다.
+   * - purpose 1줄이라도 코드와 일치하면 유효
+   * - 100줄이라도 코드와 다르면 유해
+   * - 코드 변경 시 문서 드리프트를 감지하는 것이 중요
+   *   → svc 필드 + 소스 참조로 변경 영향 추적 가능
+   */
+  accuracyOverVolume: "정확성 > 분량. 짧아도 정확하면 유효, 길어도 부정확하면 유해",
+
+  /**
+   * 컨벤션 24: scope 내 aspect 분포를 모니터링
+   *
+   * 하나의 scope에서 특정 aspect가 80% 이상 집중되면 점검한다.
+   * - 도메인 특성(좌표 시스템 = feature가 많음)이면 허용
+   * - 분류 오류(store 계약이 domain_data로 분류)면 재분류
+   * - 무리한 재분류(의미 왜곡)는 집중보다 나쁨
+   */
+  aspectDistribution: "scope 내 aspect 집중도 80% 이상이면 점검. 도메인 특성이면 허용, 오류면 재분류",
 } as const;

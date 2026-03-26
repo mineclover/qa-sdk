@@ -54,10 +54,15 @@ describe("decision-flow 문서 등록", () => {
 });
 
 describe("df-system 그룹 조립", () => {
-  it("contains 멤버 10건", () => {
+  it("contains 멤버 9건 (3 서브그룹 + 6 직접 멤버)", () => {
     const links = result.registry.getLinks("df-system", "outgoing")
       .filter(l => l.linkType === "contains");
-    expect(links.length).toBeGreaterThanOrEqual(10);
+    expect(links.length).toBeGreaterThanOrEqual(9);
+    // 서브그룹 확인
+    const memberIds = links.map(l => l.targetId);
+    expect(memberIds).toContain("df-model-group");
+    expect(memberIds).toContain("df-analysis-group");
+    expect(memberIds).toContain("df-interface-group");
   });
 });
 
