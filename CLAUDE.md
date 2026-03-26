@@ -169,10 +169,23 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 **Axis = 비즈니스 로직에서 사용하는 정보의 유한 분류. 소비 방식은 소비자가 결정한다.**
 
 - Axis는 정보의 **정의**. 소비 방식은 소비자의 **책임**
-- 소비자가 dims에 포함시키면 좌표 소비, PolicyRule에서 쓰면 권한 소비, ServiceAttributes에서 쓰면 필터 소비
-- 소비 방식은 현재 4가지이지만 고정이 아님 — 비즈니스 요구에 따라 늘어남
+- 소비 방식은 고정이 아님 — 비즈니스 요구에 따라 늘어남
 - Tag는 별도 개념이 아니라 Axis를 필터 모드로 소비하는 것
 - 새 분류 추가 시: Axis로 정의 → 소비자가 어떻게 쓸지는 소비자가 결정
+
+### 현재 관찰된 소비 패턴
+
+| 패턴 | 소비자 | Axis 사용 방식 | 예시 |
+|------|--------|--------------|------|
+| **좌표** | PrefixDef.dims | Axis × Axis → 1D 주소 (WeightedIndex) | `env × region × svc_name → service:v1:42` |
+| **필터** | ServiceAttributes | 단독 값으로 필터/그룹핑 | `concerns: ["security"]`, `tierTag: "tier-infra"` |
+| **권한** | PolicyRule.match | 조건식으로 접근 제어 판정 | `{ field: "role", op: "eq", value: "admin" }` |
+| **게이트** | GateEngine | entry별 active/inactive/open/reserved | `flow_type=custom → inactive (deprecated)` |
+| **의사결정** | FlowSchema.gates | Gate=Axis, Branch=Entry, Path=Address | `scope=new, arch=layered → coordinateAddress` |
+| **관측** | DKG ObservationNode | subjects/finding에서 축 값 참조 | `subjects: ["cart_event"], finding: "skew detected"` |
+| **분류** | PatternClassification | 축 값 기반 패턴 분류 | `evidence_kind=data + freq≥5 → routine` |
+| **계층** | LayerMap | 축 값으로 시각화 배치 | `svc_name=shopping-web → Layer 0 (UI)` |
+| **전파** | ConcernDef (def-catalog) | 축 값이 link 그래프를 타고 상속 | `security → 의존 문서에 자동 전파` |
 
 ## 좌표 컨벤션
 
