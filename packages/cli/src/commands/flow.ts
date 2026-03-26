@@ -293,6 +293,36 @@ export function flowSelect(argv: string[]) {
 
     if (result.status === "completed") {
       printCompletion(schema, result);
+      // test-needed 완료 → TestPlan 자동 생성
+      if (result.schemaId === "test-needed") {
+        const verdictBranch = result.selections.find((s) => s.gateId === "verdict")?.branchId;
+        if (verdictBranch && verdictBranch !== "not-needed") {
+          const changeType = result.selections.find((s) => s.gateId === "change-type")?.branchId ?? "unknown";
+          const impactScope = result.selections.find((s) => s.gateId === "impact-scope")?.branchId ?? "unknown";
+          const feature = typeof result.context.feature === "string" ? result.context.feature : "unknown";
+
+          const testPlan: import("decision-flow").TestPlan = {
+            sourceDecisionId: result.id,
+            verdict: verdictBranch,
+            targets: buildTestTargets(verdictBranch, changeType, impactScope, feature),
+            runCommand: buildTestCommand(verdictBranch, feature),
+            createdAt: new Date().toISOString(),
+          };
+
+          // testPlan을 FlowInstance에 기록
+          const withPlan: FlowInstance = { ...result, testPlan };
+          state.store.save(withPlan);
+
+          console.log(`\n  📋 테스트 계획 생성:`);
+          console.log(`    유형: ${verdictBranch}`);
+          for (const t of testPlan.targets) {
+            console.log(`    • [${t.type}] ${t.ref} — ${t.description}`);
+          }
+          if (testPlan.runCommand) {
+            console.log(`    실행: ${testPlan.runCommand}`);
+          }
+        }
+      }
       // 라우터 완료 → 하위 플로우 자동 시작
       if (result.schemaId === "decision-router") {
         const selectedType = result.selections.find((s) => s.gateId === "decision-type")?.branchId;
@@ -1033,6 +1063,65 @@ function formatConfidence(value: number | undefined): string {
   return value === undefined ? "-" : value.toFixed(2);
 }
 
+// ─── TestPlan 빌더 ──────────────────────────────────────
+
+function buildTestTargets(
+  verdict: string,
+  changeType: string,
+  impactScope: string,
+  feature: string,
+): import("decision-flow").TestTarget[] {
+  const targets: import("decision-flow").TestTarget[] = [];
+
+  if (verdict === "add-unit") {
+    targets.push({
+      type: "file",
+      ref: `packages/${feature}/src/*.test.ts`,
+      description: `${feature} 단위 테스트 추가`,
+    });
+  } else if (verdict === "add-integration") {
+    targets.push({
+      type: "module",
+      ref: feature,
+      description: `${feature} 모듈 통합 테스트 — ${impactScope} 범위`,
+    });
+    if (impactScope === "module" || impactScope === "system") {
+      targets.push({
+        type: "module",
+        ref: `${feature}-integration`,
+        description: "import하는 모듈과의 연동 검증",
+      });
+    }
+  } else if (verdict === "add-e2e") {
+    targets.push({
+      type: "flow",
+      ref: `e2e/${feature}`,
+      description: `${feature} E2E 시나리오 — 전체 파이프라인 검증`,
+    });
+  } else if (verdict === "strengthen") {
+    targets.push({
+      type: "file",
+      ref: `packages/${feature}/src/*.test.ts`,
+      description: "기존 테스트 케이스 강화 (엣지 케이스 추가)",
+    });
+  }
+
+  return targets;
+}
+
+function buildTestCommand(verdict: string, feature: string): string | undefined {
+  if (verdict === "add-unit" || verdict === "strengthen") {
+    return `pnpm --filter ${feature} test`;
+  }
+  if (verdict === "add-integration") {
+    return `pnpm --filter ${feature} test && pnpm --filter demo-tests test`;
+  }
+  if (verdict === "add-e2e") {
+    return `pnpm --filter ${feature} test && pnpm --filter demo-tests test && pnpm --filter e2e test`;
+  }
+  return undefined;
+}
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
@@ -1315,6 +1404,22 @@ export function flowVerdict(argv: string[]) {
     console.log(`\n  📊 판정: 아직 기록 전`);
     if (unit) {
       console.log(`  → qa-sdk flow judge ${instanceId} 로 판정을 기록하세요`);
+    }
+  }
+
+  // 테스트 계획
+  if (inst.testPlan) {
+    const tp = inst.testPlan;
+    console.log(`\n  📋 테스트 계획: ${tp.verdict}`);
+    for (const t of tp.targets) {
+      console.log(`    • [${t.type}] ${t.ref} — ${t.description}`);
+    }
+    if (tp.runCommand) console.log(`    실행: ${tp.runCommand}`);
+    if (tp.result) {
+      console.log(`    결과: ${tp.result.passed} passed, ${tp.result.failed} failed`);
+    }
+    if (tp.executedAt) {
+      console.log(`    실행 시각: ${tp.executedAt}`);
     }
   }
 

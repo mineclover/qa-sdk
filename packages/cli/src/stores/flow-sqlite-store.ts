@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS flow_instances (
   address      INTEGER,
   address_context TEXT,
   verdict      TEXT,
+  test_plan    TEXT,
   started_at   TEXT NOT NULL,
   completed_at TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
@@ -70,20 +71,22 @@ export class SqliteInstanceStore implements InstanceStore {
     this.migrate();
   }
 
-  /** 기존 DB에 verdict 컬럼이 없으면 추가 */
+  /** 기존 DB에 새 컬럼이 없으면 추가 */
   private migrate(): void {
-    try {
-      this.db.exec("ALTER TABLE flow_instances ADD COLUMN verdict TEXT");
-    } catch {
-      // 이미 존재하면 무시
+    for (const col of ["verdict", "test_plan"]) {
+      try {
+        this.db.exec(`ALTER TABLE flow_instances ADD COLUMN ${col} TEXT`);
+      } catch {
+        // 이미 존재하면 무시
+      }
     }
   }
 
   save(instance: FlowInstance): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO flow_instances
-        (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, test_plan, started_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       instance.id,
@@ -96,6 +99,7 @@ export class SqliteInstanceStore implements InstanceStore {
       instance.coordinateAddress ?? null,
       instance.addressContext ? JSON.stringify(instance.addressContext) : null,
       instance.verdict ? JSON.stringify(instance.verdict) : null,
+      instance.testPlan ? JSON.stringify(instance.testPlan) : null,
       instance.startedAt,
       instance.completedAt ?? null,
     );
@@ -226,6 +230,7 @@ interface RawRow {
   address: number | null;
   address_context: string | null;
   verdict: string | null;
+  test_plan: string | null;
   started_at: string;
   completed_at: string | null;
 }
@@ -242,6 +247,7 @@ function toFlowInstance(row: RawRow): FlowInstance {
     coordinateAddress: row.address ?? undefined,
     addressContext: row.address_context ? safeJsonParse(row.address_context, undefined) : undefined,
     verdict: row.verdict ? safeJsonParse(row.verdict, undefined) : undefined,
+    testPlan: row.test_plan ? safeJsonParse(row.test_plan, undefined) : undefined,
     startedAt: row.started_at,
     completedAt: row.completed_at ?? undefined,
   };

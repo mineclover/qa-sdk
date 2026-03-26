@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision]
   links:
     - target: df-state-model
@@ -115,4 +116,4 @@ reason = `${criteriaResults.length}개 기준 중 ${metCount}개 충족 — 추�
 - `from`/`to`는 ISO-8601 문자열
 - SQLite: `started_at >= ? AND started_at <= ?` 조건
 - Memory: `compareTimestamps()` — `new Date().getTime()` 기반 비교 (문자열 비교 금지)
-- `compareTimeRanges()` (comparison.ts): 두 시간 범위의 결정 분포 변화를 분석
+- `compareTimeRanges(store, schemaId, rangeA, rangeB, options?)` (comparison.ts): 두 시간 범위의 결정 분포 변화를 분석. 각 범위에 완료 인스턴스 2건 이상 필요. `coreOnly` 옵션 사용 시 schema 필수. 상세: `df-vector-analysis.spec.md` §temporal

@@ -5,6 +5,7 @@ def:
   aspect: relation
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision]
   links:
     - target: df-observation-space

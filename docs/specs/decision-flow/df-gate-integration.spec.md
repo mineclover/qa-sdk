@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision, gate]
   links:
     - target: df-observation-space

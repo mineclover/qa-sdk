@@ -60,6 +60,8 @@ export type {
   DecisionUnit,
   DecisionVerdict,
   DecisionVerdictRecord,
+  TestPlan,
+  TestTarget,
   DecisionTrace,
   DecisionNarrative,
   NarrativeContext,

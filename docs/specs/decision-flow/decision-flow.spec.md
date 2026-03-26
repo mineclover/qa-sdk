@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: deprecated
+  svc: decision-flow
   tags: [decision]
 ---
 # Decision Flow — 의사결정 좌표계 (레거시)

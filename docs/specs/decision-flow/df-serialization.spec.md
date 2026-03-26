@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision]
   links:
     - target: df-observation-space

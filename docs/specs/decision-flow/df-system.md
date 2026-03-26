@@ -5,6 +5,7 @@ def:
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  svc: decision-flow
   tags: [decision, entry-point]
   links:
     - target: df-axis-model

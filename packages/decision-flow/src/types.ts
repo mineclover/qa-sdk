@@ -234,6 +234,8 @@ export interface FlowInstance {
   readonly addressContext?: Record<string, string>;
   /** 의사결정 단위 (FlowSchema.unit의 스냅샷) */
   readonly unit?: DecisionUnit;
+  /** 테스트 계획 — TEST_NEEDED_FLOW 판정에서 파생 (있으면) */
+  readonly testPlan?: TestPlan;
   /** 사후 판정 — 완료 후 시간이 지나서 기록 (성공/실패/보류) */
   readonly verdict?: DecisionVerdictRecord;
 }
@@ -400,6 +402,41 @@ export interface NarrativeTestResult {
   readonly skipped: number;
   /** 실패 시 실패 테스트 목록 */
   readonly failedTests?: readonly string[];
+}
+
+// ─── 테스트 계획 (Test Plan) ──────────────────────────────
+
+/**
+ * 테스트 계획 — "무엇을, 어디서, 어떻게 테스트할 것인가"
+ *
+ * TEST_NEEDED_FLOW의 판정 결과에서 파생.
+ * 의사결정(verdict) → 테스트 계획(plan) → 실행(result) → 판정(judge)의 흐름.
+ */
+export interface TestPlan {
+  /** 테스트 필요 여부 판정에서 파생 */
+  readonly sourceDecisionId: string;
+  /** 판정 유형 (add-unit/add-integration/add-e2e/strengthen/not-needed) */
+  readonly verdict: string;
+  /** 테스트 대상 — 어떤 기능/모듈/파일을 테스트하는가 */
+  readonly targets: readonly TestTarget[];
+  /** 실행 명령 (있으면) */
+  readonly runCommand?: string;
+  /** 생성 시각 */
+  readonly createdAt: string;
+  /** 실행 결과 (테스트 실행 후 기록) */
+  readonly result?: NarrativeTestResult;
+  /** 실행 시각 */
+  readonly executedAt?: string;
+}
+
+/** 테스트 대상 */
+export interface TestTarget {
+  /** 대상 유형 (file/module/api/flow) */
+  readonly type: "file" | "module" | "api" | "flow";
+  /** 대상 참조 (파일 경로, 모듈 이름 등) */
+  readonly ref: string;
+  /** 테스트 설명 */
+  readonly description: string;
 }
 
 /** 회고 — 서사에서 배운 것 (나중에 추가 가능) */

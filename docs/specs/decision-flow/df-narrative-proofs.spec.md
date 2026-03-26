@@ -5,6 +5,7 @@ def:
   aspect: scenario
   depth: validation
   lifecycle: approved
+  svc: decision-flow
   tags: [decision, testing]
   links:
     - target: df-narrative-group

@@ -5,6 +5,7 @@ def:
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision]
   links:
     - target: df-constraint

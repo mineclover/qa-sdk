@@ -5,6 +5,7 @@ def:
   aspect: func_def
   depth: specification
   lifecycle: approved
+  svc: decision-flow
   tags: [decision]
   links:
     - target: df-narrative-group
@@ -30,6 +31,111 @@ ContextProvider — 결정 시작 시 이전 맥락을 표면화하여 같은 �
 
 ---
 
+## ContextProvider API ^api
+
+`context-provider.ts`의 `ContextProvider` 클래스.
+
+### 생성
+
+```ts
+interface ContextProviderDeps {
+  readonly store: InstanceStore;
+  readonly policies: ReadonlyMap<string, readonly FlowPolicy[]>;   // schemaId → policies
+  readonly schemas: ReadonlyMap<string, FlowSchema>;                // schemaId → schema
+  readonly mentalModels?: ReadonlyMap<string, { question: string }>; // modelId → question
+}
+
+const provider = new ContextProvider(deps);
+```
+
+### provide(schemaId, context?)
+
+결정 시작 시 전체 컨텍스트를 반환한다.
+
+```ts
+interface DecisionContext {
+  readonly history: HistorySummary;           // 이전 결정 이력 요약
+  readonly patterns: readonly PatternHint[];  // 감지된 반복 패턴
+  readonly activePolicies: readonly PolicyHint[];  // 적용 가능한 자동 정책
+  readonly modelHints: readonly ModelHint[];   // 인지 모델 힌트
+  readonly openQuestions: readonly string[];   // 열린 질문 (최근 5건에서 추출)
+}
+```
+
+- `history.mostCommonPath`: 가장 빈번한 gate 선택 경로
+- `patterns`: `detectPatterns(store, schemaId, { minFrequency: 3 })` 상위 5건
+- `patterns[].matchesCurrent`: 현재 context의 key/value와 패턴의 contextKey/contextValue 일치 여부
+
+### provideForGate(schemaId, gateId, context?)
+
+특정 gate에 도달했을 때 해당 gate의 상세 컨텍스트를 반환한다.
+
+```ts
+interface GateContext {
+  readonly gateId: string;
+  readonly gateName: string;
+  readonly isCore: boolean;
+  readonly branchDistribution: readonly { branchId: string; count: number; ratio: number }[];
+  readonly modelHints: readonly ModelHint[];
+  readonly autoPolicy?: { name: string; branchId: string; rationale: string };
+  readonly previousChoiceCount: number;
+}
+```
+
+- `branchDistribution`: 완료된 인스턴스에서 해당 gate의 branch 선택 분포 (count 내림차순)
+
+### lookup(query)
+
+키워드로 관련 결정 이력, 정책, 패턴을 종합 조회한다. 결정 전 "이미 무엇을 알고 있는가" 확인용.
+
+```ts
+interface FeatureLookup {
+  readonly query: string;
+  readonly relatedInstances: readonly FeatureInstance[];  // 최신순 정렬
+  readonly relatedPolicies: readonly FlowPolicy[];
+  readonly relatedPatterns: readonly PatternHint[];
+  readonly lastDecision?: FeatureInstance;
+  readonly openQuestions: readonly string[];
+}
+```
+
+- 검색 범위: 모든 스키마의 인스턴스 context 값 + schemaId + 정책 name/rationale
+- FeatureInstance.summary: 코어 gate 선택 요약 (`"scope=extend, integration=integrated"`)
+
+## assembleHierarchicalContext API ^hierarchical-api
+
+`hierarchical-context.ts`의 `assembleHierarchicalContext(prefixId, source)` 함수.
+
+5개 레벨을 수직으로 관통하여 정제된 맥락을 조합한다.
+
+### 입력: HierarchySource
+
+```ts
+interface HierarchySource {
+  readonly domains: readonly DomainInfo[];
+  readonly dslBundles: readonly DslBundleInfo[];
+  readonly prefixes: ReadonlyMap<string, PrefixInfo>;
+  readonly axes: ReadonlyMap<string, DimInfo>;
+}
+```
+
+### 출력: HierarchicalContext
+
+| 필드 | 레벨 | 설명 |
+|------|------|------|
+| `domain` | L1 | 소속 도메인 — 공유 축, 경계(exports/internal) |
+| `dslBundles` | L2 | 소속 DSL 번들 (복수 가능) — fixedDims, invariants |
+| `prefix` | L3 | prefix 자체 — dims, category, totalSpace |
+| `dimensions` | L4-5 | 차원별 entries, capacity, headroom (axis kind만) |
+| `constraints` | 조합 | 도메인 경계 + DSL 불변조건 + headroom 경고 |
+| `sharedAxes` | 조합 | 도메인 sharedAxes + DSL fixedDims 합집합 |
+| `summary` | - | 한 줄 요약 (`"prefixId | 도메인:X | DSL:[Y,Z] | N차원 | 총headroom:M"`) |
+
+### assembleMultiPrefixContext
+
+`assembleMultiPrefixContext(prefixIds, source)` — 여러 prefix의 계층 컨텍스트를 한 번에 조합. 결정에 관련된 prefix가 복수일 때 사용.
+
+---
 
 ## 참조
 
