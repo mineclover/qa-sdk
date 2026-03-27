@@ -1,0 +1,305 @@
+{
+  "name": "registry-service NestJS 전환 + prefix SDK 자체 적용",
+  "description": "registry-service를 Hono에서 NestJS로 전환. 9개 모듈 분리 + definition-client 자체 적용 + Hono 제거",
+  "branchName": "ralph/registry-nestjs-migration",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "DatabaseModule + AppModule + HealthController 뼈대",
+      "description": "As a developer, I want NestJS 엔트리포인트를 생성하여 기존 Hono와 병행 기동할 수 있게 한다.",
+      "acceptanceCriteria": [
+        "src/main.ts — NestJS bootstrap (FastifyAdapter, port는 SERVICE_PORTS에서 파생)",
+        "src/app.module.ts — 빈 루트 모듈 + DatabaseModule import",
+        "src/database.module.ts — @Global SQLite provider (기존 createStores의 NodeSqliteDriver 패턴 재사용)",
+        "src/health.controller.ts — GET /health → { ok: true, service: 'registry-service' }",
+        "tsconfig.json에 experimentalDecorators + emitDecoratorMetadata 추가",
+        "package.json에 @nestjs/common, @nestjs/core, @nestjs/platform-fastify, reflect-metadata 추가",
+        "PORT=3301로 main.ts 기동 시 /health 정상 응답",
+        "기존 server.ts (Hono, 3300)는 그대로 유지",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과 (기존 170건)",
+        "pnpm --filter definition-catalog exec vitest run 통과",
+        "pnpm --filter @qa-sdk/definition-client exec vitest run 통과"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "definition-service의 database.module.ts 패턴 참조. DATABASE 토큰은 문자열('DATABASE') 사용 (ESM 호환). 모든 constructor에 명시적 @Inject() 필수 (tsx emitDecoratorMetadata 미지원).",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "PrefixesModule — /prefixes CRUD",
+      "description": "As a developer, I want /prefixes CRUD를 NestJS PrefixesModule로 옮겨서 definition-service와 동일한 패턴으로 관리한다.",
+      "acceptanceCriteria": [
+        "modules/prefixes/ 디렉토리에 PrefixController, PrefixService, PrefixModule 생성",
+        "POST /prefixes — register (owner, kind, numberType)",
+        "GET /prefixes — list all",
+        "GET /prefixes/:prefix — get + versions",
+        "PATCH /prefixes/:prefix — patch (name, category, meta, labels)",
+        "DELETE /prefixes/:prefix — delete (dependents 검사)",
+        "PrefixService는 lib/registry-service.ts의 registerPrefix/getPrefix/listPrefixes/patchPrefix/deletePrefix를 래핑",
+        "PrefixOwnerStore는 @Inject(DATABASE)로 Sql 구현 생성",
+        "기존 Hono prefix 테스트와 동일한 응답 반환 (NestJS 포트에서 확인)",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "lib/registry-service.ts의 RegistryService 클래스를 NestJS Service가 래핑. Store는 변경하지 않고 @Inject로 주입만.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "CatalogModule — /catalogs CRUD + config",
+      "description": "As a developer, I want /catalogs CRUD와 config/pattern-rules API를 CatalogModule로 분리한다.",
+      "acceptanceCriteria": [
+        "modules/catalog/ 디렉토리에 CatalogController, CatalogService, CatalogModule 생성",
+        "POST/GET/PUT/DELETE /catalogs",
+        "GET /catalogs/:id/prefixes — prefix 목록",
+        "GET/PUT /catalogs/:id/config — DkgConfig",
+        "GET/PUT /catalogs/:id/pattern-rules — PatternRules",
+        "GET /catalogs/:id/configs — 전체 config 타입 목록",
+        "CatalogStore + ConfigStore를 @Inject(DATABASE)로 생성",
+        "onCatalogChange 콜백은 NestJS 메서드 호출로 대체",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "기존 routes/catalog.ts의 로직을 CatalogService로 이동. ConfigStore는 catalogId + configType 복합 키.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "VersionsModule — 드래프트 라이프사이클",
+      "description": "As a developer, I want /prefixes/:prefix/versions 라이프사이클을 VersionsModule로 분리한다.",
+      "acceptanceCriteria": [
+        "modules/versions/ 디렉토리에 VersionController, VersionService, VersionModule 생성",
+        "POST /prefixes/:prefix/versions — createDraft",
+        "GET /prefixes/:prefix/versions?status= — listVersions",
+        "GET /prefixes/:prefix/versions/:versionId — getVersion (capacity reconcile)",
+        "PATCH /prefixes/:prefix/versions/:versionId — patchDraft",
+        "POST .../lock, .../unlock — 드래프트 잠금",
+        "POST .../release, .../activate, .../deprecate — 라이프사이클 전환",
+        "ActivationGateService — optional (CONSTRAINT_GATE_ENABLED, dynamic import @qa-sdk/spec-core)",
+        "PostActivationHookService — optional (POST_ACTIVATION_HOOK_ENABLED)",
+        "capacity SSOT: prefixRegistry 우선, versionStore와 reconcile",
+        "DraftLockStore 주입",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "lib/registry-service.ts의 createDraft/activate/release/deprecate 등을 VersionService가 래핑. optional 기능은 기존 dynamic import 패턴 유지.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "AxesModule — /catalogs/:catalogId/axes",
+      "description": "As a developer, I want axis 프로필 CRUD를 AxesModule로 분리한다.",
+      "acceptanceCriteria": [
+        "modules/axes/ 디렉토리에 AxisController, AxisService, AxisModule 생성",
+        "GET /catalogs/:catalogId/axes — 전체 axis 목록",
+        "GET /catalogs/:catalogId/axes/:id — 단건 조회",
+        "POST /catalogs/:catalogId/axes — 등록",
+        "PATCH /catalogs/:catalogId/axes/:id — 수정 (name, capacity, entryCount, meta)",
+        "AxisProfileStore를 @Inject(DATABASE)로 생성",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "ServiceModule — /api/services + /api/endpoints",
+      "description": "As a developer, I want 서비스 토폴로지와 엔드포인트를 ServiceModule로 분리한다.",
+      "acceptanceCriteria": [
+        "modules/services/ 디렉토리에 ServiceController, EndpointController, ServiceModule 생성",
+        "GET/POST/PATCH /api/services — 토폴로지 CRUD",
+        "GET /api/services/:serviceId — 상세",
+        "GET /api/endpoints?catalog= — 전체 목록",
+        "GET /api/endpoints/resolve?catalog&namespace&name&env&region — URL 해석",
+        "GET /api/endpoints/:ns/:svc — 서비스별 목록",
+        "ConfigStore (services) + ServiceEndpointStore를 @Inject로 주입",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "EventModule — /api/event-schemas + /api/event-catalog",
+      "description": "As a developer, I want 이벤트 스키마와 카탈로그를 EventModule로 분리한다.",
+      "acceptanceCriteria": [
+        "modules/events/ 디렉토리에 EventSchemaController, EventCatalogController, EventModule 생성",
+        "GET /api/event-schemas?catalog&service — 목록",
+        "GET/PUT/DELETE /api/event-schemas/:serviceId/:eventKey/:version — CRUD",
+        "GET /api/event-catalog — 정적 이벤트 카탈로그",
+        "EventSchemaStore를 @Inject로 주입",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "event-catalog는 static import. @qa-sdk/event-catalog 패키지.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "WorkspaceModule — 드래프트 분석 + DashboardModule + WebSocket",
+      "description": "As a developer, I want workspace 분석과 dev dashboard를 모듈로 분리하고 WebSocket을 @nestjs/websockets로 전환한다.",
+      "acceptanceCriteria": [
+        "modules/workspace/ — WorkspaceController (simulate, analyze), WorkspaceService",
+        "WorkspaceService는 lib/draft-workspace.ts의 simulate/analyze를 래핑",
+        "modules/dashboard/ — DiagramController, DashboardController, DevDashboardGateway",
+        "DevDashboardGateway — @nestjs/websockets 기반 /dev/ws WebSocket",
+        "@nestjs/websockets 의존 추가",
+        "DEV_DASHBOARD_ENABLED 환경변수로 optional 제어",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "dashboard는 DKG graph 의존 (dynamic import). DEV_DASHBOARD_DKG_PATH 자동 감지 기존 패턴 유지.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "SeedModule — OnModuleInit 시작 시 seed",
+      "description": "As a developer, I want seed 로직을 SeedModule의 OnModuleInit으로 이관한다.",
+      "acceptanceCriteria": [
+        "modules/seed/ — SeedService (implements OnModuleInit), SeedModule",
+        "SeedService가 core/seed-catalog, seed-config, seed-endpoints, seed-events 호출",
+        "hash 기반 auto-reseed 로직 유지 (DEMO_CATALOG contentHash 비교)",
+        "CatalogStore, ConfigStore, ServiceEndpointStore, EventSchemaStore, AxisProfileStore 주입",
+        "seed 완료 후 콘솔 로그 (seeded X axes, seeded DEMO_CATALOG 등)",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과",
+        "서버 기동 시 catalogs 1건 + prefixes 0건(owner 등록 전) + endpoints N건 확인"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "core/ 함수를 호출만 하는 얇은 래퍼. 모든 Store를 주입받아야 하므로 imports에 여러 모듈 필요.",
+      "dependsOn": [
+        "US-003",
+        "US-005",
+        "US-006",
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "prefix SDK 자체 적용 — definition-client 연동",
+      "description": "As a developer, I want registry-service가 @qa-sdk/definition-client를 사용하여 자기 변경을 definition-service에 보고한다.",
+      "acceptanceCriteria": [
+        "package.json에 @qa-sdk/definition-client 의존 추가",
+        "AppModule에 DefinitionModule.forRoot({ baseUrl: getServiceDevUrl('definition-service') }) import",
+        "VersionService.activate() 성공 시 → defClient.recordConsumption() 호출",
+        "PrefixService.deletePrefix() 시 → 로그 기록",
+        "ServiceModule 토폴로지 변경 시 → defClient.getAffectedTests() 호출 + 로그",
+        "SeedService 완료 시 → defClient.triggerSync() 호출",
+        "definition-service 미기동 시 fail-open (try-catch + console.warn, 동작 차단 없음)",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과",
+        "pnpm --filter @qa-sdk/definition-client exec vitest run 통과"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "definition-service는 3700에서 기동 중이어야 실제 동작. 미기동 시 경고만. getServiceDevUrl은 @qa-sdk/core에서 import.",
+      "dependsOn": [
+        "US-002",
+        "US-004",
+        "US-009"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "Hono 제거 + 테스트 전환",
+      "description": "As a developer, I want 모든 라우트가 NestJS로 전환된 후 Hono를 제거하고 테스트를 정리한다.",
+      "acceptanceCriteria": [
+        "src/routes/ 디렉토리 삭제",
+        "src/app.ts 삭제",
+        "src/server.ts 삭제",
+        "package.json에서 hono, @hono/node-server, @hono/node-ws 제거",
+        "기존 170건 Hono 테스트를 NestJS TestingModule 기반으로 전환",
+        "새 테스트 170건 이상 통과",
+        "서버 기동 스모크: health, prefixes, catalogs, versions, services, endpoints, event-schemas 정상 응답",
+        "pnpm --filter @qa-sdk/registry-service exec tsc --noEmit 통과",
+        "pnpm --filter @qa-sdk/registry-service exec vitest run 통과",
+        "pnpm --filter definition-catalog exec vitest run 통과",
+        "pnpm --filter @qa-sdk/definition-client exec vitest run 통과"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "기존 app.test.ts의 buildApp() 패턴을 TestingModule.createNestApplication()으로 교체. InMemory store 사용하는 패턴은 동일.",
+      "dependsOn": [
+        "US-001",
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "NestJS 모듈별 definition-catalog 문서 생성",
+      "description": "As a developer, I want 각 NestJS 모듈에 대응하는 definition-catalog 문서를 생성하여 코드-문서 1:1 매핑을 완성한다.",
+      "acceptanceCriteria": [
+        "docs/specs/registry-service/ 디렉토리 생성",
+        "9개 모듈 문서: registry-catalog-module, registry-prefixes-module, registry-versions-module, registry-axes-module, registry-services-module, registry-events-module, registry-workspace-module, registry-dashboard-module, registry-seed-module",
+        "각 문서 frontmatter: scope, aspect, depth, lifecycle:approved, layer (domain/operation/mediation/experience)",
+        "^purpose + ^intent + ^context 마커 섹션",
+        "그룹 문서 (registry-service-modules.md) + contains 링크",
+        "scanAndBuild 시 정상 등록 (에러 0건)",
+        "definition-service sync 시 문서 반영 확인",
+        "pnpm --filter definition-catalog exec vitest run 통과"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "각 모듈의 layer: catalog/prefixes/versions/axes → domain, services/events → mediation, seed → operation, workspace → domain, dashboard → experience",
+      "dependsOn": [
+        "US-011"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-26T17:53:25.524Z"
+  }
+}
