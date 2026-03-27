@@ -26,7 +26,7 @@ export interface DocRecord {
 /** 문서 이력 레코드 (body 포함) */
 export interface DocHistoryRecord extends DocRecord {
   body: string;
-  changeType: "created" | "updated" | "marker_edit";
+  changeType: "created" | "updated" | "marker_edit" | "metadata_edit";
 }
 
 /** 주소 슬라이스 의도 레코드 */

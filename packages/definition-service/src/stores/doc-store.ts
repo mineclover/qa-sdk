@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import type { DocRecord, DocHistoryRecord } from "../core/types.js";
-import type { DocStore } from "../core/interfaces.js";
+import type { DocStore, DocMetadataUpdate } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
 
 /** SQLite row → DocRecord 변환 */
@@ -107,7 +107,76 @@ export class SqlDocStore implements DocStore {
       change_type: changeType,
     });
 
-    return { action: changeType === "marker_edit" ? "updated" : changeType, version };
+    const action = changeType === "created" ? "created" as const : "updated" as const;
+    return { action, version };
+  }
+
+  updateMetadata(
+    docId: string,
+    patch: DocMetadataUpdate,
+  ): { action: "updated" | "unchanged"; version: number } | null {
+    const existing = this.get(docId);
+    if (!existing) return null;
+
+    const updated: DocRecord = {
+      ...existing,
+      scope: patch.scope ?? existing.scope,
+      aspect: patch.aspect ?? existing.aspect,
+      depth: patch.depth ?? existing.depth,
+      lifecycle: patch.lifecycle ?? existing.lifecycle,
+      layer: patch.layer === null ? undefined : (patch.layer ?? existing.layer),
+      tags: patch.tags ?? existing.tags,
+      links: patch.links ?? existing.links,
+      svc: patch.svc === null ? undefined : (patch.svc ?? existing.svc),
+      syncedAt: new Date().toISOString(),
+    };
+
+    // 변경 여부 확인
+    const same =
+      updated.scope === existing.scope &&
+      updated.aspect === existing.aspect &&
+      updated.depth === existing.depth &&
+      updated.lifecycle === existing.lifecycle &&
+      (updated.layer ?? null) === (existing.layer ?? null) &&
+      JSON.stringify(updated.tags) === JSON.stringify(existing.tags) &&
+      JSON.stringify(updated.links) === JSON.stringify(existing.links) &&
+      (updated.svc ?? null) === (existing.svc ?? null);
+
+    if (same) return { action: "unchanged", version: existing.version };
+
+    const version = existing.version + 1;
+    const params = {
+      doc_id: updated.docId,
+      scope: updated.scope,
+      aspect: updated.aspect,
+      depth: updated.depth,
+      lifecycle: updated.lifecycle,
+      layer: updated.layer ?? null,
+      tags_json: JSON.stringify(updated.tags),
+      links_json: JSON.stringify(updated.links),
+      svc: updated.svc ?? null,
+      version,
+      body_hash: updated.bodyHash,
+      purpose: updated.purpose ?? null,
+      intent: updated.intent ?? null,
+      context: updated.context ?? null,
+      caveat: updated.caveat ?? null,
+      synced_at: updated.syncedAt,
+      source_path: updated.sourcePath ?? null,
+    };
+
+    this.stmtUpsert.run(params);
+
+    // history: body는 이전 버전에서 가져옴
+    const lastHistory = this.stmtGetVersion.get(docId, existing.version) as Record<string, unknown> | undefined;
+    const body = (lastHistory?.["body"] as string) ?? "";
+    this.stmtInsertHistory.run({
+      ...params,
+      body,
+      change_type: "metadata_edit",
+    });
+
+    return { action: "updated", version };
   }
 
   get(docId: string): DocRecord | null {

@@ -1,5 +1,5 @@
 import type { DocRecord, DocHistoryRecord, SliceIntentRecord, ConsumptionSnapshot } from "../core/types.js";
-import type { DocStore, IntentStore, ConsumptionStore } from "../core/interfaces.js";
+import type { DocStore, DocMetadataUpdate, IntentStore, ConsumptionStore } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
 import { diagnoseSnapshot } from "../core/consumption-diagnostics.js";
 
@@ -30,6 +30,52 @@ export class InMemoryDocStore implements DocStore {
     this.history.set(doc.docId, entries);
 
     return { action: decision.action, version };
+  }
+
+  updateMetadata(
+    docId: string,
+    patch: DocMetadataUpdate,
+  ): { action: "updated" | "unchanged"; version: number } | null {
+    const existing = this.docs.get(docId);
+    if (!existing) return null;
+
+    const updated: DocRecord = {
+      ...existing,
+      scope: patch.scope ?? existing.scope,
+      aspect: patch.aspect ?? existing.aspect,
+      depth: patch.depth ?? existing.depth,
+      lifecycle: patch.lifecycle ?? existing.lifecycle,
+      layer: patch.layer === null ? undefined : (patch.layer ?? existing.layer),
+      tags: patch.tags ?? existing.tags,
+      links: patch.links ?? existing.links,
+      svc: patch.svc === null ? undefined : (patch.svc ?? existing.svc),
+      syncedAt: new Date().toISOString(),
+    };
+
+    const same =
+      updated.scope === existing.scope &&
+      updated.aspect === existing.aspect &&
+      updated.depth === existing.depth &&
+      updated.lifecycle === existing.lifecycle &&
+      (updated.layer ?? null) === (existing.layer ?? null) &&
+      JSON.stringify(updated.tags) === JSON.stringify(existing.tags) &&
+      JSON.stringify(updated.links) === JSON.stringify(existing.links) &&
+      (updated.svc ?? null) === (existing.svc ?? null);
+
+    if (same) return { action: "unchanged", version: existing.version };
+
+    const version = existing.version + 1;
+    const record: DocRecord = { ...updated, version };
+    this.docs.set(docId, record);
+
+    const lastHistory = (this.history.get(docId) ?? []).at(-1);
+    const body = lastHistory?.body ?? "";
+    const historyEntry: DocHistoryRecord = { ...record, body, changeType: "metadata_edit" };
+    const entries = this.history.get(docId) ?? [];
+    entries.push(historyEntry);
+    this.history.set(docId, entries);
+
+    return { action: "updated", version };
   }
 
   get(docId: string): DocRecord | null {

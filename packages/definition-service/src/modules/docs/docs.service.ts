@@ -3,7 +3,7 @@ import type Database from "better-sqlite3";
 import { DATABASE } from "../../database.module.js";
 import { SqlDocStore } from "../../stores/doc-store.js";
 import type { DocRecord, DocHistoryRecord } from "../../core/types.js";
-import type { DocStore } from "../../core/interfaces.js";
+import type { DocStore, DocMetadataUpdate } from "../../core/interfaces.js";
 
 @Injectable()
 export class DocsService {
@@ -32,5 +32,9 @@ export class DocsService {
 
   getVersion(docId: string, version: number): DocHistoryRecord | null {
     return this.store.getVersion(docId, version);
+  }
+
+  updateMetadata(docId: string, patch: DocMetadataUpdate) {
+    return this.store.updateMetadata(docId, patch);
   }
 }
