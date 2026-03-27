@@ -16,7 +16,7 @@ export function getClient(url: string) {
 }
 
 export function createDb(url: string) {
-  return drizzle(getClient(url), { schema });
+  return drizzle({ client: getClient(url), schema });
 }
 
 export async function closeClient(url: string) {

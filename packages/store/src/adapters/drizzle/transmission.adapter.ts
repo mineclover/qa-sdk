@@ -18,6 +18,6 @@ export class DrizzleTransmissionStore implements TransmissionStore {
       platform: params.platform,
       env: params.env,
       recordCount: params.recordCount,
-    });
+    }).comment({ adapter: "TransmissionStore", method: "insert" });
   }
 }

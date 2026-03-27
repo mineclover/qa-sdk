@@ -20,7 +20,7 @@ export class DrizzleVerdictStore implements VerdictStore {
       pathObservation: pathObs ?? null,
       loopDetected: pathObs?.loop_detected ?? null,
       terminalReason: pathObs?.terminal_reason ?? null,
-    });
+    }).comment({ adapter: "VerdictStore", method: "insert" });
   }
 
   async removeByScenarioAndTrace(
@@ -35,7 +35,8 @@ export class DrizzleVerdictStore implements VerdictStore {
           eq(verdictReports.traceId, traceId),
         ),
       )
-      .returning({ id: verdictReports.id });
+      .returning({ id: verdictReports.id })
+      .comment({ adapter: "VerdictStore", method: "removeByScenarioAndTrace" });
     return result.length > 0;
   }
 
@@ -51,7 +52,8 @@ export class DrizzleVerdictStore implements VerdictStore {
           eq(verdictReports.scenarioId, scenarioId),
           eq(verdictReports.traceId, traceId),
         ),
-      );
+      )
+      .comment({ adapter: "VerdictStore", method: "findByScenarioAndTrace" });
     return row ? toStoredVerdict(row) : null;
   }
 
@@ -59,7 +61,8 @@ export class DrizzleVerdictStore implements VerdictStore {
     const rows = await this.db
       .select()
       .from(verdictReports)
-      .where(eq(verdictReports.traceId, traceId));
+      .where(eq(verdictReports.traceId, traceId))
+      .comment({ adapter: "VerdictStore", method: "findByTraceId" });
     return rows.map(toStoredVerdict);
   }
 
@@ -67,7 +70,8 @@ export class DrizzleVerdictStore implements VerdictStore {
     const rows = await this.db
       .select()
       .from(verdictReports)
-      .where(eq(verdictReports.qaSessionId, sessionId));
+      .where(eq(verdictReports.qaSessionId, sessionId))
+      .comment({ adapter: "VerdictStore", method: "findBySessionId" });
     return rows.map(toStoredVerdict);
   }
 }

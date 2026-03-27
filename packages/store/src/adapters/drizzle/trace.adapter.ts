@@ -23,7 +23,8 @@ export class DrizzleTraceStore implements TraceStore {
           recordCount: params.recordCount,
           firstTimestamp: params.firstTimestamp,
           lastTimestamp: params.lastTimestamp,
-        });
+        })
+        .comment({ adapter: "TraceStore", method: "upsert.insert" });
       return;
     }
 
@@ -45,14 +46,16 @@ export class DrizzleTraceStore implements TraceStore {
         lastTimestamp: newLast,
         updatedAt: new Date(),
       })
-      .where(eq(traces.traceId, params.traceId));
+      .where(eq(traces.traceId, params.traceId))
+      .comment({ adapter: "TraceStore", method: "upsert.update" });
   }
 
   async findById(traceId: string): Promise<StoredTrace | null> {
     const [row] = await this.db
       .select()
       .from(traces)
-      .where(eq(traces.traceId, traceId));
+      .where(eq(traces.traceId, traceId))
+      .comment({ adapter: "TraceStore", method: "findById" });
     return row ? toStoredTrace(row) : null;
   }
 
@@ -62,7 +65,8 @@ export class DrizzleTraceStore implements TraceStore {
       .from(traces)
       .where(eq(traces.reconstructed, false))
       .orderBy(asc(traces.createdAt))
-      .limit(limit);
+      .limit(limit)
+      .comment({ adapter: "TraceStore", method: "findUnreconstructed" });
     return rows.map(toStoredTrace);
   }
 
@@ -70,7 +74,8 @@ export class DrizzleTraceStore implements TraceStore {
     await this.db
       .update(traces)
       .set({ reconstructed: true, updatedAt: new Date() })
-      .where(eq(traces.traceId, traceId));
+      .where(eq(traces.traceId, traceId))
+      .comment({ adapter: "TraceStore", method: "markReconstructed" });
   }
 }
 

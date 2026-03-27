@@ -40,10 +40,10 @@ export const traces = pgTable("traces", {
   reconstructed: boolean("reconstructed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxSessionId: index("idx_traces_session_id").on(table.sessionId),
-  idxReconstructed: index("idx_traces_reconstructed").on(table.reconstructed),
-}));
+}, (table) => [
+  index("idx_traces_session_id").on(table.sessionId),
+  index("idx_traces_reconstructed").on(table.reconstructed),
+]);
 
 // ── Event Records ───────────────────────────────────────
 // SDK가 전송한 개별 이벤트 레코드. ingestion 시 저장된다.
@@ -79,15 +79,15 @@ export const eventRecords = pgTable("event_records", {
   userAttributes: jsonb("user_attributes").$type<Record<string, string>>(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxTraceId: index("idx_event_records_trace_id").on(table.traceId),
-  idxTraceTimestamp: index("idx_event_records_trace_timestamp").on(
+}, (table) => [
+  index("idx_event_records_trace_id").on(table.traceId),
+  index("idx_event_records_trace_timestamp").on(
     table.traceId,
     table.timestamp,
   ),
-  idxEventKey: index("idx_event_records_event_key").on(table.eventKey),
-  idxSessionId: index("idx_event_records_session_id").on(table.qaSessionId),
-}));
+  index("idx_event_records_event_key").on(table.eventKey),
+  index("idx_event_records_session_id").on(table.qaSessionId),
+]);
 
 // ── Transmissions ───────────────────────────────────────
 // 수신한 envelope 메타데이터. 감사/디버깅용.
@@ -128,9 +128,9 @@ export const scenarioSpecs = pgTable("scenario_specs", {
   spec: jsonb("spec").notNull(), // Full ScenarioSpec JSON
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxDomain: index("idx_scenario_specs_domain").on(table.domain),
-}));
+}, (table) => [
+  index("idx_scenario_specs_domain").on(table.domain),
+]);
 
 // ── Verdict Reports ─────────────────────────────────────
 // matching + verdict 결과.
@@ -147,13 +147,13 @@ export const verdictReports = pgTable("verdict_reports", {
   loopDetected: boolean("loop_detected"),
   terminalReason: text("terminal_reason"),
   computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  idxScenarioId: index("idx_verdict_reports_scenario_id").on(table.scenarioId),
-  idxTraceId: index("idx_verdict_reports_trace_id").on(table.traceId),
-  idxSessionId: index("idx_verdict_reports_session_id").on(table.qaSessionId),
-  idxVerdict: index("idx_verdict_reports_verdict").on(table.overallVerdict),
-  uniqScenarioTrace: unique().on(table.scenarioId, table.traceId),
-}));
+}, (table) => [
+  index("idx_verdict_reports_scenario_id").on(table.scenarioId),
+  index("idx_verdict_reports_trace_id").on(table.traceId),
+  index("idx_verdict_reports_session_id").on(table.qaSessionId),
+  index("idx_verdict_reports_verdict").on(table.overallVerdict),
+  unique().on(table.scenarioId, table.traceId),
+]);
 
 // ── Dead Letter Queue ───────────────────────────────────
 // reconstruction / verdict 후처리 실패를 추적한다.
@@ -167,13 +167,13 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
   lastAttemptedAt: timestamp("last_attempted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
-}, (table) => ({
-  idxPending: index("idx_dead_letter_queue_pending").on(
+}, (table) => [
+  index("idx_dead_letter_queue_pending").on(
     table.resolvedAt,
     table.createdAt,
   ),
-  idxTracePhase: index("idx_dead_letter_queue_trace_phase").on(
+  index("idx_dead_letter_queue_trace_phase").on(
     table.traceId,
     table.phase,
   ),
-}));
+]);

@@ -27,19 +27,22 @@ export class DrizzleScenarioSpecStore implements ScenarioSpecStore {
           spec,
           updatedAt: new Date(),
         },
-      });
+      })
+      .comment({ adapter: "ScenarioSpecStore", method: "upsert" });
   }
 
   async findById(scenarioId: string): Promise<ScenarioSpec | null> {
     const [row] = await this.db
       .select()
       .from(scenarioSpecs)
-      .where(eq(scenarioSpecs.scenarioId, scenarioId));
+      .where(eq(scenarioSpecs.scenarioId, scenarioId))
+      .comment({ adapter: "ScenarioSpecStore", method: "findById" });
     return row ? (row.spec as ScenarioSpec) : null;
   }
 
   async findAll(limit?: number): Promise<ScenarioSpec[]> {
-    const query = this.db.select().from(scenarioSpecs);
+    const query = this.db.select().from(scenarioSpecs)
+      .comment({ adapter: "ScenarioSpecStore", method: "findAll" });
     const rows = limit ? await query.limit(limit) : await query;
     return rows.map((row) => row.spec as ScenarioSpec);
   }
@@ -48,7 +51,8 @@ export class DrizzleScenarioSpecStore implements ScenarioSpecStore {
     const query = this.db
       .select()
       .from(scenarioSpecs)
-      .where(eq(scenarioSpecs.domain, domain));
+      .where(eq(scenarioSpecs.domain, domain))
+      .comment({ adapter: "ScenarioSpecStore", method: "findByDomain" });
     const rows = limit ? await query.limit(limit) : await query;
     return rows.map((row) => row.spec as ScenarioSpec);
   }
@@ -57,7 +61,8 @@ export class DrizzleScenarioSpecStore implements ScenarioSpecStore {
     const result = await this.db
       .delete(scenarioSpecs)
       .where(eq(scenarioSpecs.scenarioId, scenarioId))
-      .returning({ id: scenarioSpecs.scenarioId });
+      .returning({ id: scenarioSpecs.scenarioId })
+      .comment({ adapter: "ScenarioSpecStore", method: "remove" });
     return result.length > 0;
   }
 }
