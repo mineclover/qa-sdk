@@ -1,12 +1,22 @@
 import type {
   MotionCaptionCue,
+  MotionCueRef,
   MotionCompositionDef,
+  MotionCompositionDefV2,
   MotionCueKind,
   MotionItemKind,
+  MotionLayerContent,
   MotionLayerContentType,
+  MotionSceneDef,
   MotionParameterValues,
+  ResolvedMotionCompositionV2,
+  SceneLayerPlacement,
+  MotionSequenceDef,
   MotionStageTargetV1,
+  MotionTransitionDef,
+  MotionTransitionStyle,
   ResolvedMotionComposition,
+  SequenceLayerSlotRole,
 } from "./model.js";
 
 export type MotionEditorSelection =
@@ -14,7 +24,25 @@ export type MotionEditorSelection =
   | { readonly kind: "layer"; readonly id: string }
   | { readonly kind: "sequence"; readonly id: string }
   | { readonly kind: "caption"; readonly id: string }
+  | { readonly kind: "cue-preset"; readonly id: string }
   | { readonly kind: "transition"; readonly id: string };
+
+export type MotionCompositionSchema = MotionCompositionDef | MotionCompositionDefV2;
+
+export type ResolvedMotionCompositionSchema =
+  | ResolvedMotionComposition
+  | ResolvedMotionCompositionV2;
+
+/** V2 탐색/편집 확장용 선택 타입. 기존 MotionEditorSelection은 V1 surface로 유지한다. */
+export type MotionEditorSelectionV2 =
+  | MotionEditorSelection
+  | { readonly kind: "target"; readonly id: string }
+  | { readonly kind: "scene"; readonly id: MotionSceneDef["id"] }
+  | {
+    readonly kind: "scene-layer";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly targetId: SceneLayerPlacement["targetId"];
+  };
 
 export interface MotionTransportState {
   readonly playing: boolean;
@@ -51,8 +79,93 @@ export type MotionEditorCommand =
   | { readonly type: "play" }
   | { readonly type: "pause" }
   | { readonly type: "restart" }
+  | {
+    readonly type: "add-layer";
+    readonly id: string;
+    readonly label: string;
+    readonly target: MotionStageTargetV1;
+    readonly content: MotionLayerContent;
+    readonly enter?: MotionCueRef;
+    readonly durationMs: number;
+  }
+  | { readonly type: "remove-layer"; readonly layerId: string }
+  | {
+    readonly type: "add-sequence";
+    readonly id: string;
+    readonly title: string;
+    readonly startMs: number;
+    readonly durationMs: number;
+    readonly layerIds: readonly string[];
+    readonly layers?: MotionSequenceDef["layers"];
+    readonly stagger?: MotionSequenceDef["stagger"];
+    readonly captionIds?: MotionSequenceDef["captionIds"];
+  }
+  | { readonly type: "remove-sequence"; readonly sequenceId: string }
+  | {
+    readonly type: "add-caption";
+    readonly id: string;
+    readonly text: string;
+    readonly startMs: number;
+    readonly durationMs: number;
+    readonly tone?: MotionCaptionCue["tone"];
+  }
+  | { readonly type: "remove-caption"; readonly captionId: string }
+  | {
+    readonly type: "add-transition";
+    readonly id: string;
+    readonly fromSequenceId: string;
+    readonly toSequenceId: string;
+    readonly style: MotionTransitionDef["style"];
+    readonly durationMs: number;
+    readonly params?: MotionTransitionDef["params"];
+  }
+  | { readonly type: "remove-transition"; readonly transitionId: string }
+  | { readonly type: "update-item-string"; readonly itemKind: MotionItemKind; readonly itemId: string; readonly value: string }
   | { readonly type: "update-item-timing"; readonly itemKind: MotionItemKind; readonly itemId: string; readonly startMs: number; readonly durationMs: number }
-  | { readonly type: "update-transition-duration"; readonly transitionId: string; readonly durationMs: number };
+  | {
+    readonly type: "update-sequence-stagger";
+    readonly sequenceId: string;
+    readonly field: "startOffsetMs" | "intervalMs";
+    readonly value: number;
+  }
+  | {
+    readonly type: "update-sequence-layer-slot";
+    readonly sequenceId: string;
+    readonly layerId: string;
+    readonly field: "offsetMs" | "zIndex";
+    readonly value: number;
+  }
+  | {
+    readonly type: "update-sequence-layer-role";
+    readonly sequenceId: string;
+    readonly layerId: string;
+    readonly role: SequenceLayerSlotRole | null;
+  }
+  | {
+    readonly type: "update-layer-cue-kind";
+    readonly layerId: string;
+    readonly cue: "enter" | "exit";
+    readonly kind: MotionCueKind;
+  }
+  | {
+    readonly type: "update-layer-cue-preset";
+    readonly layerId: string;
+    readonly cue: "enter" | "exit";
+    readonly presetId: string;
+  }
+  | {
+    readonly type: "update-layer-content-type";
+    readonly layerId: string;
+    readonly contentType: MotionLayerContentType;
+  }
+  | { readonly type: "update-transition-style"; readonly transitionId: string; readonly style: MotionTransitionStyle }
+  | { readonly type: "update-transition-duration"; readonly transitionId: string; readonly durationMs: number }
+  | {
+    readonly type: "update-transition-param";
+    readonly transitionId: string;
+    readonly param: "brightness" | "glowColor" | "glowSize" | "liftY";
+    readonly value: string | number;
+  };
 
 export interface MotionResolvedAssetSnapshot {
   readonly id: string;

@@ -9,6 +9,7 @@ import {
   isMotionEditorSessionDirty,
   previewMotionEditorSessionCommand,
 } from "./history.js";
+import { createMotionStageNodeTarget } from "./model.js";
 import { createPromoGridComposition } from "./presets.js";
 
 describe("motion editor history", () => {
@@ -69,6 +70,202 @@ describe("motion editor history", () => {
     expect(committed).toBe(session);
     expect(canUndoMotionEditorSession(committed)).toBe(false);
     expect(isMotionEditorSessionDirty(committed)).toBe(false);
+  });
+
+  it("treats layer add/remove as append checkpoints", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("flash"));
+
+    const added = applyMotionEditorSessionCommand(session, {
+      type: "add-layer",
+      id: "layer-8",
+      label: "Layer 8",
+      target: createMotionStageNodeTarget("layer-8"),
+      content: { type: "dom" },
+      durationMs: 960,
+    });
+
+    expect(getMotionEditorCheckpointStrategy({
+      type: "add-layer",
+      id: "layer-8",
+      label: "Layer 8",
+      target: createMotionStageNodeTarget("layer-8"),
+      content: { type: "dom" },
+      durationMs: 960,
+    })).toBe("append");
+    expect(added.past).toHaveLength(1);
+
+    const removed = applyMotionEditorSessionCommand(added, {
+      type: "remove-layer",
+      layerId: "layer-8",
+    });
+
+    expect(getMotionEditorCheckpointStrategy({
+      type: "remove-layer",
+      layerId: "layer-8",
+    })).toBe("append");
+    expect(removed.past).toHaveLength(2);
+    expect(removed.present.composition.layers.some((layer) => layer.id === "layer-8")).toBe(false);
+  });
+
+  it("treats sequence/caption/transition CRUD as append checkpoints", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("crossfade"));
+
+    const withSequence = applyMotionEditorSessionCommand(session, {
+      type: "add-sequence",
+      id: "sequence-4",
+      title: "Sequence 4",
+      startMs: 5400,
+      durationMs: 1200,
+      layerIds: [],
+      captionIds: [],
+    });
+    expect(withSequence.past).toHaveLength(1);
+
+    const withCaption = applyMotionEditorSessionCommand(withSequence, {
+      type: "add-caption",
+      id: "cap-5",
+      text: "새 캡션 5",
+      startMs: 5200,
+      durationMs: 900,
+      tone: "neutral",
+    });
+    expect(withCaption.past).toHaveLength(2);
+
+    const withTransition = applyMotionEditorSessionCommand(withCaption, {
+      type: "add-transition",
+      id: "intro-cards-2",
+      fromSequenceId: "intro",
+      toSequenceId: "cards",
+      style: "flash",
+      durationMs: 280,
+      params: { glowSize: 96 },
+    });
+    expect(withTransition.past).toHaveLength(3);
+
+    const withoutTransition = applyMotionEditorSessionCommand(withTransition, {
+      type: "remove-transition",
+      transitionId: "intro-cards-2",
+    });
+    expect(withoutTransition.past).toHaveLength(4);
+
+    const withoutCaption = applyMotionEditorSessionCommand(withoutTransition, {
+      type: "remove-caption",
+      captionId: "cap-5",
+    });
+    expect(withoutCaption.past).toHaveLength(5);
+
+    const withoutSequence = applyMotionEditorSessionCommand(withoutCaption, {
+      type: "remove-sequence",
+      sequenceId: "sequence-4",
+    });
+    expect(withoutSequence.past).toHaveLength(6);
+  });
+
+  it("treats selection detail numeric edits as append checkpoints", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("flash"));
+
+    const slotEdited = applyMotionEditorSessionCommand(session, {
+      type: "update-sequence-layer-slot",
+      sequenceId: "intro",
+      layerId: "headline",
+      field: "offsetMs",
+      value: 180,
+    });
+    expect(slotEdited.past).toHaveLength(1);
+
+    const staggerEdited = applyMotionEditorSessionCommand(slotEdited, {
+      type: "update-sequence-stagger",
+      sequenceId: "cards",
+      field: "intervalMs",
+      value: 320,
+    });
+    expect(staggerEdited.past).toHaveLength(2);
+
+    const transitionEdited = applyMotionEditorSessionCommand(staggerEdited, {
+      type: "update-transition-param",
+      transitionId: "intro-cards",
+      param: "glowSize",
+      value: 144,
+    });
+    expect(transitionEdited.past).toHaveLength(3);
+  });
+
+  it("treats selection detail string edits as append checkpoints", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("crossfade"));
+
+    const labelEdited = applyMotionEditorSessionCommand(session, {
+      type: "update-item-string",
+      itemKind: "layer",
+      itemId: "headline",
+      value: "새 레이어 라벨",
+    });
+    expect(labelEdited.past).toHaveLength(1);
+
+    const titleEdited = applyMotionEditorSessionCommand(labelEdited, {
+      type: "update-item-string",
+      itemKind: "sequence",
+      itemId: "cards",
+      value: "카드 시퀀스",
+    });
+    expect(titleEdited.past).toHaveLength(2);
+
+    const textEdited = applyMotionEditorSessionCommand(titleEdited, {
+      type: "update-item-string",
+      itemKind: "caption",
+      itemId: "cap-2",
+      value: "두 번째 캡션",
+    });
+    expect(textEdited.past).toHaveLength(3);
+  });
+
+  it("treats selection detail enum/color edits as append checkpoints", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("crossfade"));
+
+    const cueEdited = applyMotionEditorSessionCommand(session, {
+      type: "update-layer-cue-kind",
+      layerId: "headline",
+      cue: "enter",
+      kind: "scale-pop",
+    });
+    expect(cueEdited.past).toHaveLength(1);
+
+    const contentEdited = applyMotionEditorSessionCommand(cueEdited, {
+      type: "update-layer-content-type",
+      layerId: "headline",
+      contentType: "video",
+    });
+    expect(contentEdited.past).toHaveLength(2);
+
+    const roleEdited = applyMotionEditorSessionCommand(contentEdited, {
+      type: "update-sequence-layer-role",
+      sequenceId: "intro",
+      layerId: "headline",
+      role: "overlay",
+    });
+    expect(roleEdited.past).toHaveLength(3);
+
+    const styleEdited = applyMotionEditorSessionCommand(roleEdited, {
+      type: "update-transition-style",
+      transitionId: "intro-cards",
+      style: "flash",
+    });
+    expect(styleEdited.past).toHaveLength(4);
+
+    const colorEdited = applyMotionEditorSessionCommand(styleEdited, {
+      type: "update-transition-param",
+      transitionId: "intro-cards",
+      param: "glowColor",
+      value: "rgba(17,34,51,0.24)",
+    });
+    expect(colorEdited.past).toHaveLength(5);
+
+    const presetEdited = applyMotionEditorSessionCommand(colorEdited, {
+      type: "update-layer-cue-preset",
+      layerId: "card-a",
+      cue: "enter",
+      presetId: "slide-up-default",
+    });
+    expect(presetEdited.past).toHaveLength(6);
   });
 
   it("treats set-composition as a fresh clean checkpoint", () => {
