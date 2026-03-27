@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { MotionItemKind } from "motion-content";
-import { type MotionTimelineDragState, updateMotionTimelineDrag } from "./timeline.js";
+import {
+  createMotionEditorSession,
+  createPromoGridComposition,
+  type MotionItemKind,
+} from "motion-content";
+import {
+  renderMotionTimeline,
+  type MotionTimelineDragState,
+  updateMotionTimelineDrag,
+} from "./timeline.js";
 
 // 공통 트랙 파라미터: 0~1000px 범위, totalDuration 6600ms
 const TRACK = { trackLeft: 0, trackWidth: 1000, totalDurationMs: 6600 } as const;
@@ -171,5 +179,32 @@ describe("updateMotionTimelineDrag", () => {
         expect(cmd.durationMs).toBeGreaterThanOrEqual(60);
       }
     });
+  });
+});
+
+describe("renderMotionTimeline", () => {
+  it("renders a ruler and full-height playhead for the bottom timeline", () => {
+    const session = createMotionEditorSession(createPromoGridComposition("lift"));
+    const state = {
+      ...session.present,
+      transport: {
+        ...session.present.transport,
+        currentTimeMs: 1800,
+      },
+    };
+    const markup = renderMotionTimeline(state);
+    const host = document.createElement("div");
+    host.innerHTML = markup;
+
+    const ruler = host.querySelector<HTMLElement>('[data-timeline-ruler="true"]');
+    const ticks = host.querySelectorAll<HTMLElement>("[data-ruler-tick]");
+    const playhead = host.querySelector<HTMLElement>('[data-timeline-playhead="true"]');
+    const introBar = host.querySelector<HTMLElement>('[data-bar-kind="sequence"][data-bar-id="intro"]');
+
+    expect(ruler).toBeTruthy();
+    expect(ticks.length).toBeGreaterThan(2);
+    expect(playhead).toBeTruthy();
+    expect(playhead?.getAttribute("style")).toContain("var(--mce-timeline-playhead-ratio)");
+    expect(introBar).toBeTruthy();
   });
 });

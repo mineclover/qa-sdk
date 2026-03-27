@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "motion-content": "workspace:*"
+    "motion-content": "workspace:*",
+    "motion-workspace": "workspace:*"
   },
   "devDependencies": {
     "happy-dom": "^20.8.4",

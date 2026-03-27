@@ -62,33 +62,6 @@ interface MotionTimelineBarOptions {
   readonly resizeEnd: boolean;
 }
 
-function timelineBar(
-  id: string,
-  label: string,
-  startMs: number,
-  durationMs: number,
-  totalDurationMs: number,
-  kind: ResizableKind,
-  active: boolean,
-  detail: string,
-  options: MotionTimelineBarOptions,
-): string {
-  const start = (startMs / totalDurationMs) * 100;
-  const width = (durationMs / totalDurationMs) * 100;
-  return `
-    <div class="mce-lane">
-      <div class="mce-lane-label">${label}</div>
-      <div class="mce-track">
-        <div class="mce-bar ${active ? "is-active" : ""}" data-bar-kind="${kind}" data-bar-id="${id}" data-bar-moveable="${options.moveable ? "true" : "false"}" style="left:${start}%;width:${Math.max(width, 3)}%">
-          ${options.resizeStart ? `<span class="mce-bar-handle" data-resize-start="${kind}:${id}">⋮</span>` : ""}
-          <strong>${detail}</strong>
-          ${options.resizeEnd ? `<span class="mce-bar-handle" data-resize-end="${kind}:${id}">⋮</span>` : ""}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
 function timeFromPointer(
   clientX: number,
   trackLeft: number,
@@ -151,15 +124,133 @@ function makeTimingCommand(
   return { type: "update-item-timing", itemKind: kind, itemId: id, startMs, durationMs };
 }
 
+interface MotionTimelineTick {
+  readonly timeMs: number;
+  readonly edge: "start" | "middle" | "end";
+  readonly major: boolean;
+}
+
+function formatTimelineTickLabel(timeMs: number): string {
+  const totalSeconds = timeMs / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes > 0) {
+    const wholeSeconds = Math.floor(seconds);
+    const tenths = Math.round((seconds - wholeSeconds) * 10);
+    return tenths === 0
+      ? `${minutes}:${String(wholeSeconds).padStart(2, "0")}`
+      : `${minutes}:${String(wholeSeconds).padStart(2, "0")}.${tenths}`;
+  }
+
+  const rounded = Number.isInteger(totalSeconds)
+    ? totalSeconds.toFixed(0)
+    : totalSeconds.toFixed(totalSeconds >= 10 ? 1 : 2).replace(/0+$/, "").replace(/\.$/, "");
+  return `${rounded}s`;
+}
+
+function chooseTimelineTickStep(totalDurationMs: number): number {
+  const candidates = [250, 500, 1000, 2000, 5000, 10000, 15000, 30000, 60000];
+  for (const candidate of candidates) {
+    if (totalDurationMs / candidate <= 10) {
+      return candidate;
+    }
+  }
+  return candidates[candidates.length - 1]!;
+}
+
+function buildTimelineTicks(totalDurationMs: number): MotionTimelineTick[] {
+  const clampedDurationMs = Math.max(totalDurationMs, 1);
+  const step = chooseTimelineTickStep(clampedDurationMs);
+  const ticks: MotionTimelineTick[] = [];
+
+  for (let timeMs = 0; timeMs <= clampedDurationMs; timeMs += step) {
+    ticks.push({
+      timeMs,
+      edge: timeMs === 0 ? "start" : "middle",
+      major: timeMs === 0 || timeMs % (step * 2) === 0,
+    });
+  }
+
+  if (ticks[ticks.length - 1]?.timeMs !== clampedDurationMs) {
+    ticks.push({
+      timeMs: clampedDurationMs,
+      edge: "end",
+      major: true,
+    });
+  } else if (ticks.length > 0) {
+    const lastTick = ticks[ticks.length - 1]!;
+    ticks[ticks.length - 1] = {
+      ...lastTick,
+      edge: lastTick.timeMs === 0 ? "start" : "end",
+      major: true,
+    };
+  }
+
+  return ticks;
+}
+
+function renderTimelineRuler(totalDurationMs: number): string {
+  const safeDurationMs = Math.max(totalDurationMs, 1);
+  return `
+    <div class="mce-timeline-ruler" data-timeline-ruler="true" aria-hidden="true">
+      ${buildTimelineTicks(safeDurationMs)
+        .map((tick) => {
+          const left = (tick.timeMs / safeDurationMs) * 100;
+          return `
+            <div
+              class="mce-ruler-tick"
+              data-ruler-tick="${tick.major ? "major" : "minor"}"
+              data-ruler-edge="${tick.edge}"
+              style="left:${left}%"
+            >
+              <span class="mce-ruler-tick-label">${formatTimelineTickLabel(tick.timeMs)}</span>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderTimelineRow(
+  id: string,
+  label: string,
+  startMs: number,
+  durationMs: number,
+  totalDurationMs: number,
+  kind: ResizableKind,
+  active: boolean,
+  detail: string,
+  options: MotionTimelineBarOptions,
+): string {
+  const safeDurationMs = Math.max(totalDurationMs, 1);
+  const start = (startMs / safeDurationMs) * 100;
+  const width = (durationMs / safeDurationMs) * 100;
+
+  return `
+    <div class="mce-lane-label" data-lane-kind="${kind}">${label}</div>
+    <div class="mce-track" data-track-kind="${kind}">
+      <div class="mce-bar ${active ? "is-active" : ""}" data-bar-kind="${kind}" data-bar-id="${id}" data-bar-moveable="${options.moveable ? "true" : "false"}" style="left:${start}%;width:${Math.max(width, 3)}%">
+        ${options.resizeStart ? `<span class="mce-bar-handle" data-resize-start="${kind}:${id}">⋮</span>` : ""}
+        <strong>${detail}</strong>
+        ${options.resizeEnd ? `<span class="mce-bar-handle" data-resize-end="${kind}:${id}">⋮</span>` : ""}
+      </div>
+    </div>
+  `;
+}
+
 export function renderMotionTimeline(state: MotionEditorState): string {
-  return [
+  const totalDurationMs = Math.max(state.transport.durationMs, 1);
+  const playheadRatio = Math.max(0, Math.min(1, state.transport.currentTimeMs / totalDurationMs));
+  const rows = [
     ...state.composition.sequences.map((sequence) =>
-      timelineBar(
+      renderTimelineRow(
         sequence.id,
         sequence.title,
         sequence.startMs,
         sequence.durationMs,
-        state.transport.durationMs,
+        totalDurationMs,
         "sequence",
         state.selection?.kind === "sequence" && state.selection.id === sequence.id,
         `${sequence.startMs} / ${sequence.durationMs}`,
@@ -168,12 +259,12 @@ export function renderMotionTimeline(state: MotionEditorState): string {
     ),
     ...state.composition.transitions.map((transition) => {
       const window = resolveTransitionWindow(state.composition, transition);
-      return timelineBar(
+      return renderTimelineRow(
         transition.id,
         window.label,
         window.startMs,
         window.durationMs,
-        state.transport.durationMs,
+        totalDurationMs,
         "transition",
         state.selection?.kind === "transition" && state.selection.id === transition.id,
         window.detail,
@@ -181,12 +272,12 @@ export function renderMotionTimeline(state: MotionEditorState): string {
       );
     }),
     ...state.composition.layers.map((layer) =>
-      timelineBar(
+      renderTimelineRow(
         layer.id,
         layer.label,
         layer.startMs,
         layer.durationMs,
-        state.transport.durationMs,
+        totalDurationMs,
         "layer",
         state.selection?.kind === "layer" && state.selection.id === layer.id,
         `${layer.startMs} / ${layer.durationMs}`,
@@ -194,12 +285,12 @@ export function renderMotionTimeline(state: MotionEditorState): string {
       ),
     ),
     ...state.composition.captions.map((caption: MotionCaptionCue) =>
-      timelineBar(
+      renderTimelineRow(
         caption.id,
         "Caption",
         caption.startMs,
         caption.durationMs,
-        state.transport.durationMs,
+        totalDurationMs,
         "caption",
         state.selection?.kind === "caption" && state.selection.id === caption.id,
         `${caption.startMs} / ${caption.durationMs}`,
@@ -207,6 +298,19 @@ export function renderMotionTimeline(state: MotionEditorState): string {
       ),
     ),
   ].join("");
+
+  return `
+    <div class="mce-timeline-surface" style="--mce-timeline-playhead-ratio:${playheadRatio}" data-timeline-surface="true">
+      <div class="mce-timeline-grid">
+        <div class="mce-timeline-ruler-label">Time</div>
+        ${renderTimelineRuler(totalDurationMs)}
+        ${rows}
+      </div>
+      <div class="mce-timeline-playhead" data-timeline-playhead="true" style="left:calc(var(--mce-timeline-label-width) + var(--mce-timeline-grid-gap) + ((100% - var(--mce-timeline-label-width) - var(--mce-timeline-grid-gap)) * var(--mce-timeline-playhead-ratio)))">
+        <span class="mce-timeline-playhead__head"></span>
+      </div>
+    </div>
+  `;
 }
 
 export function beginMotionTimelineDrag(
