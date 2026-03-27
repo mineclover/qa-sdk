@@ -986,6 +986,9 @@ importers:
       '@qa-sdk/event-catalog':
         specifier: workspace:*
         version: link:../event-catalog
+      '@qa-sdk/otel':
+        specifier: workspace:*
+        version: link:../otel
       definition-catalog:
         specifier: workspace:*
         version: link:../definition-catalog
