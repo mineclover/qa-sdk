@@ -10,6 +10,7 @@
  */
 
 import { parseArgs } from "node:util";
+import { pathToFileURL } from "node:url";
 import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
 import {
@@ -47,6 +48,17 @@ import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, inge
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth, serviceAppList, serviceAppShow } from "./commands/service.js";
 import { cliDef } from "./commands/def.js";
+import { motionInspect, motionValidate } from "./commands/motion.js";
+import {
+  motionApply,
+  motionExport,
+  motionImport,
+  motionPreview,
+  motionWorkspaceCreate,
+  motionWorkspaceDelete,
+  motionWorkspaceList,
+  motionWorkspaceShow,
+} from "./commands/motion-workspace.js";
 import {
   flowList,
   flowStart,
@@ -68,7 +80,7 @@ import {
 
 // ── Usage ────────────────────────────────────────────
 
-const USAGE = `
+export const USAGE = `
 qa-sdk — DSL 접근 도구
 
 Global Options:
@@ -81,6 +93,16 @@ Usage:
   qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)
   qa-sdk codegen [options]           SchemaSnapshot → 타입 인터페이스 생성
   qa-sdk inspect [options]           Registry 상태 조회
+  qa-sdk motion validate <file>      Motion composition/workspace 문서 검증
+  qa-sdk motion inspect <file>       Motion composition/workspace 요약
+  qa-sdk motion workspace list       Remote motion workspace 목록
+  qa-sdk motion workspace show <id>  Remote motion workspace 상세
+  qa-sdk motion workspace create <id>  Remote motion workspace 생성
+  qa-sdk motion workspace delete <id>  Remote motion workspace 삭제
+  qa-sdk motion export --workspace <id> --out <file>  Remote workspace → composition JSON
+  qa-sdk motion import <file> --workspace <id>        composition JSON → remote workspace
+  qa-sdk motion apply --workspace <id> --command <json>  Remote workspace command 적용
+  qa-sdk motion preview [--workspace <id>]  Online workspace preview 실행
   qa-sdk spec list [options]         Prefix spec 목록 + schema + spec docs
   qa-sdk spec resolve <prefix> ...   Export title 생성
   qa-sdk spec validate <schema> ...  스키마 검증
@@ -238,8 +260,8 @@ let loadedCatalog: Catalog | undefined;
 
 // ── Main ─────────────────────────────────────────────
 
-async function main() {
-  const args = process.argv.slice(2);
+export async function main(argv = process.argv.slice(2)) {
+  const args = argv;
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(USAGE);
@@ -283,6 +305,26 @@ async function main() {
       return runCodegen(sub.rest);
     case "inspect":
       return runInspect(sub.rest);
+    case "motion validate":
+      return motionValidate(sub.rest);
+    case "motion inspect":
+      return motionInspect(sub.rest);
+    case "motion workspace list":
+      return motionWorkspaceList(sub.rest);
+    case "motion workspace show":
+      return motionWorkspaceShow(sub.rest);
+    case "motion workspace create":
+      return motionWorkspaceCreate(sub.rest);
+    case "motion workspace delete":
+      return motionWorkspaceDelete(sub.rest);
+    case "motion export":
+      return motionExport(sub.rest);
+    case "motion import":
+      return motionImport(sub.rest);
+    case "motion apply":
+      return motionApply(sub.rest);
+    case "motion preview":
+      return motionPreview(sub.rest);
     case "spec list":
       return runSpecList(sub.rest);
     case "spec resolve":
@@ -862,9 +904,10 @@ interface Subcommand {
   rest: string[];
 }
 
-function resolveSubcommand(args: string[]): Subcommand {
+export function resolveSubcommand(args: string[]): Subcommand {
   // 3단어: "dkg decisions export" 등
   const threeWord = [
+    "motion workspace list", "motion workspace show", "motion workspace create", "motion workspace delete",
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
     "dkg spec add", "dkg spec list", "dkg spec transition",
     "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
@@ -878,6 +921,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   }
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
   const twoWord = [
+    "motion validate", "motion inspect", "motion export", "motion import", "motion apply", "motion preview",
     "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
     "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import", "dkg flow-schemas", "dkg flow-schema",
@@ -1373,7 +1417,14 @@ function parsePage(argv: string[]): { page?: number; limit?: number } {
 
 // ── Entry ────────────────────────────────────────────
 
-main().catch((err) => {
-  console.error(err.message ?? err);
-  process.exit(1);
-});
+const isDirectExecution = (() => {
+  const entry = process.argv[1];
+  return !!entry && pathToFileURL(entry).href === import.meta.url;
+})();
+
+if (isDirectExecution) {
+  main().catch((err) => {
+    console.error(err.message ?? err);
+    process.exit(1);
+  });
+}

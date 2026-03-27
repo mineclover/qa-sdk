@@ -2367,7 +2367,18 @@ export async function dkgDecide(opts: {
     const graph = getGraph();
     const store = getStore();
     const bridgeMetadata = buildDkgFlowAddressMetadata(bridge.instance);
-    const linkedDecision: DecisionNode = decision;
+    const linkedDecision: DecisionNode = {
+      ...decision,
+      flowInstanceId: bridge.instance.id,
+      ...((decision.metadata || bridgeMetadata)
+        ? {
+          metadata: {
+            ...(decision.metadata ?? {}),
+            ...(bridgeMetadata ?? {}),
+          },
+        }
+        : {}),
+    };
     graph.replaceNode(linkedDecision);
 
     const bridgeEdges: Array<{ type: DkgEdgeType; from: string; to: string }> = [];

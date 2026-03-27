@@ -29,9 +29,13 @@
     "decision-flow": "workspace:*",
     "definition-catalog": "workspace:*",
     "demo-snapshot": "workspace:*",
-    "execa": "^9.6.1"
+    "execa": "^9.6.1",
+    "motion-content": "workspace:*",
+    "motion-workspace": "workspace:*",
+    "motion-workspace-client": "workspace:*"
   },
   "devDependencies": {
+    "@qa-sdk/motion-workspace-service": "workspace:*",
     "@types/node": "^22.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
