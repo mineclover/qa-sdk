@@ -51,6 +51,9 @@
     }
   },
   "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
+    "@opentelemetry/sdk-trace-node": "^1.30.0",
     "@qa-sdk/spec-core": "workspace:*",
     "@types/node": "^22.13.10",
     "demo-snapshot": "workspace:*",

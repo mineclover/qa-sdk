@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import type { DocRecord, DocHistoryRecord } from "../core/types.js";
 import type { DocStore, DocMetadataUpdate } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
+import { computeDocumentAddress } from "../core/compute-address.js";
 
 /** SQLite row → DocRecord 변환 */
 function rowToDoc(row: Record<string, unknown>): DocRecord {
@@ -15,6 +16,7 @@ function rowToDoc(row: Record<string, unknown>): DocRecord {
     tags: JSON.parse((row["tags_json"] as string) || "[]"),
     links: JSON.parse((row["links_json"] as string) || "[]"),
     svc: (row["svc"] as string) || undefined,
+    address: (row["address"] as string) || undefined,
     version: row["version"] as number,
     bodyHash: row["body_hash"] as string,
     purpose: (row["purpose"] as string) || undefined,
@@ -48,11 +50,11 @@ export class SqlDocStore implements DocStore {
       `SELECT * FROM documents WHERE doc_id = ?`,
     );
     this.stmtUpsert = db.prepare(`
-      INSERT INTO documents (doc_id, scope, aspect, depth, lifecycle, layer, tags_json, links_json, svc, version, body_hash, purpose, intent, context, caveat, synced_at, source_path)
-      VALUES (@doc_id, @scope, @aspect, @depth, @lifecycle, @layer, @tags_json, @links_json, @svc, @version, @body_hash, @purpose, @intent, @context, @caveat, @synced_at, @source_path)
+      INSERT INTO documents (doc_id, scope, aspect, depth, lifecycle, layer, tags_json, links_json, svc, address, version, body_hash, purpose, intent, context, caveat, synced_at, source_path)
+      VALUES (@doc_id, @scope, @aspect, @depth, @lifecycle, @layer, @tags_json, @links_json, @svc, @address, @version, @body_hash, @purpose, @intent, @context, @caveat, @synced_at, @source_path)
       ON CONFLICT(doc_id) DO UPDATE SET
         scope=@scope, aspect=@aspect, depth=@depth, lifecycle=@lifecycle, layer=@layer,
-        tags_json=@tags_json, links_json=@links_json, svc=@svc, version=@version,
+        tags_json=@tags_json, links_json=@links_json, svc=@svc, address=@address, version=@version,
         body_hash=@body_hash, purpose=@purpose, intent=@intent, context=@context,
         caveat=@caveat, synced_at=@synced_at, source_path=@source_path
     `);
@@ -80,6 +82,7 @@ export class SqlDocStore implements DocStore {
     }
 
     const { version, changeType } = decision;
+    const address = computeDocumentAddress(doc.scope, doc.aspect, doc.depth);
     const params = {
       doc_id: doc.docId,
       scope: doc.scope,
@@ -90,6 +93,7 @@ export class SqlDocStore implements DocStore {
       tags_json: JSON.stringify(doc.tags),
       links_json: JSON.stringify(doc.links),
       svc: doc.svc ?? null,
+      address: address ?? doc.address ?? null,
       version,
       body_hash: doc.bodyHash,
       purpose: doc.purpose ?? null,
