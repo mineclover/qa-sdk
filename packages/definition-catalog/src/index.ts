@@ -175,6 +175,10 @@ export {
   computeAllConcerns,
 } from "./frontmatter.js";
 
+// ─── Frontmatter Writer (DB → file 역동기화) ────────────
+export type { DbMetadata } from "./frontmatter-writer.js";
+export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.js";
+
 // ─── CLI 도구 ───────────────────────────────────────────
 export { topdown, bottomup, context } from "./cli-tools.js";
 
