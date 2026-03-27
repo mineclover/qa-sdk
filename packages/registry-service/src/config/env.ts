@@ -1,7 +1,10 @@
 import { z } from "zod";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
-import { booleanWithDefaultFalse } from "@qa-sdk/core";
+import { booleanWithDefaultFalse, getServicePort } from "@qa-sdk/core";
+import { otelEnvSchema } from "@qa-sdk/otel";
+
+const DEFAULT_PORT = getServicePort("registry-service") ?? 3300;
 
 /** ~/.qa-sdk/state.sqlite 기본 DKG 경로 */
 function defaultDkgPath(): string | undefined {
@@ -12,7 +15,7 @@ function defaultDkgPath(): string | undefined {
 }
 
 export const envSchema = z.object({
-  PORT: z.coerce.number().default(3300),
+  PORT: z.coerce.number().int().default(DEFAULT_PORT),
   CORS_ORIGIN: z.string().default("*"),
   SQLITE_PATH: z.string().default(":memory:"),
   CONSTRAINT_GATE_ENABLED: booleanWithDefaultFalse,
@@ -29,7 +32,7 @@ export const envSchema = z.object({
     (v) => v || defaultDkgPath(),
     z.string().optional(),
   ),
-});
+}).merge(otelEnvSchema);
 
 export function parseEnv(source: NodeJS.ProcessEnv) {
   return envSchema.parse(source);

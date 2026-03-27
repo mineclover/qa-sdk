@@ -5,48 +5,26 @@
  * DDL, CRUD, lifecycle, DAG, workspace, resolve 전체 경로를 검증한다.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { Hono } from "hono";
-import {
-  NodeSqliteDriver,
-  SqlPrefixRegistry,
-  SqlVersionLifecycleStore,
-  type SqlDriver,
-} from "index-meta";
-import pino from "pino";
-import { createApp } from "./app.js";
-import { SqlPrefixOwnerStore } from "./stores/sql-prefix-owner-store.js";
-import { SqlDraftLockStore } from "./stores/sql-draft-lock-store.js";
-import { REGISTRY_SCHEMA_DDL } from "./stores/schema.sql.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { AppModule } from "./app.module.js";
+import { createNestTestApp, wrapNestApp, type CompatApp } from "./test/nest-helpers.js";
 
 // ── Helper ───────────────────────────────────────────
 
-async function execDdl(driver: SqlDriver, ddl: string) {
-  const stmts = ddl.split(";").map((s) => s.trim()).filter((s) => s.length > 0);
-  for (const stmt of stmts) await driver.execute(stmt);
+const nestApps: Array<Awaited<ReturnType<typeof createNestTestApp>>> = [];
+
+async function buildSqlApp() {
+  const nestApp = await createNestTestApp({ imports: [AppModule] });
+  nestApps.push(nestApp);
+  return { app: wrapNestApp(nestApp) };
 }
 
-function buildSqlApp() {
-  const driver = new NodeSqliteDriver(":memory:");
-  // registry-service 전용 DDL (index-meta DDL은 NodeSqliteDriver 생성자에서 자동 적용)
-  execDdl(driver, REGISTRY_SCHEMA_DDL);
-
-  const prefixRegistry = new SqlPrefixRegistry(driver);
-  const versionStore = new SqlVersionLifecycleStore(driver);
-  const ownerStore = new SqlPrefixOwnerStore(driver);
-  const lockStore = new SqlDraftLockStore(driver);
-  const logger = pino({ level: "silent" });
-
-  const app = createApp({ prefixRegistry, versionStore, ownerStore, lockStore, logger });
-  return { app, driver };
-}
-
-async function json(res: Response) {
+async function json(res: { json(): Promise<unknown> }): Promise<any> {
   return res.json();
 }
 
 async function registerPrefix(
-  app: Hono, prefix: string,
+  app: CompatApp, prefix: string,
   opts?: { owner?: string; kind?: string; numberType?: string },
 ) {
   return app.request("/prefixes", {
@@ -62,7 +40,7 @@ async function registerPrefix(
 }
 
 async function createDraft(
-  app: Hono, prefix: string, versionId: string, capacity: number,
+  app: CompatApp, prefix: string, versionId: string, capacity: number,
   opts?: { refs?: { prefix: string; versionId: string }[] },
 ) {
   return app.request(`/prefixes/${prefix}/versions`, {
@@ -72,13 +50,19 @@ async function createDraft(
   });
 }
 
+afterEach(async () => {
+  while (nestApps.length > 0) {
+    await nestApps.pop()!.close();
+  }
+});
+
 // ══════════════════════════════════════════════════════
 //  SQL 통합 테스트
 // ══════════════════════════════════════════════════════
 
 describe("SQL Integration — Prefix CRUD", () => {
   it("등록, 조회, 목록, 삭제", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     // 등록
     const res1 = await registerPrefix(app, "env");
@@ -112,7 +96,7 @@ describe("SQL Integration — Prefix CRUD", () => {
 
 describe("SQL Integration — Version Lifecycle", () => {
   it("draft → lock → release → activate → deprecate", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 8);
@@ -155,7 +139,7 @@ describe("SQL Integration — Version Lifecycle", () => {
 
 describe("SQL Integration — Composite DAG + Workspace", () => {
   it("leaf 등록 → composite 생성 → simulate → analyze → release-all", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     // leaf 등록
     await registerPrefix(app, "svc", { kind: "leaf" });
@@ -213,7 +197,7 @@ describe("SQL Integration — Composite DAG + Workspace", () => {
 
 describe("SQL Integration — Schema Import/Export", () => {
   it("import → export roundtrip", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     const snapshot = {
       id: "test-schema",
@@ -249,7 +233,7 @@ describe("SQL Integration — Schema Import/Export", () => {
 
 describe("SQL Integration — Lock 동시성", () => {
   it("lock 상태에서 patch 차단", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 8);
@@ -281,7 +265,7 @@ describe("SQL Integration — Lock 동시성", () => {
 
 describe("SQL Integration — Capacity SSOT 정합성", () => {
   it("prefixRegistry capacity가 versionStore와 동기화됨", async () => {
-    const { app } = buildSqlApp();
+    const { app } = await buildSqlApp();
 
     await registerPrefix(app, "tag");
     await createDraft(app, "tag", "v1", 16);

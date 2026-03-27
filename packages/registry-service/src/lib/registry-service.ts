@@ -110,6 +110,19 @@ export class RegistryService {
     if (!record) throw prefixNotFound(prefix);
 
     const versions = await this.versionStore.getVersions(prefix);
+    const dependents = new Set<string>();
+    for (const version of versions) {
+      const reverseRefs = await this.prefixRegistry.getReverseRefs(prefix, version.versionId);
+      for (const ref of reverseRefs) {
+        dependents.add(`${ref.prefix}/${ref.versionId}`);
+      }
+    }
+    if (dependents.size > 0) {
+      throw invalidTransition(
+        `Cannot delete prefix '${prefix}': referenced by ${dependents.size} dependent version(s)`,
+      );
+    }
+
     const nonDeprecated = versions.filter((v) => v.status !== "deprecated");
     if (nonDeprecated.length > 0) {
       throw invalidTransition(

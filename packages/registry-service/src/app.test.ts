@@ -1,31 +1,25 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { Hono } from "hono";
-import { InMemoryPrefixRegistry, InMemoryVersionLifecycleStore } from "index-meta";
-import { createApp } from "./app.js";
-import { InMemoryPrefixOwnerStore } from "./stores/in-memory-prefix-owner-store.js";
-import { InMemoryDraftLockStore } from "./stores/in-memory-draft-lock-store.js";
-import { createErrorHandler } from "./middleware/error-handler.js";
-import pino from "pino";
+import { afterEach, describe, expect, it } from "vitest";
+import { AppModule } from "./app.module.js";
+import { createNestTestApp, wrapNestApp, type CompatApp } from "./test/nest-helpers.js";
 
-function buildApp() {
-  const prefixRegistry = new InMemoryPrefixRegistry();
-  const versionStore = new InMemoryVersionLifecycleStore();
-  const ownerStore = new InMemoryPrefixOwnerStore();
-  const lockStore = new InMemoryDraftLockStore();
-  const logger = pino({ level: "silent" });
+const nestApps: Array<Awaited<ReturnType<typeof createNestTestApp>>> = [];
 
-  const app = createApp({ prefixRegistry, versionStore, ownerStore, lockStore, logger });
-  return { app, prefixRegistry, versionStore, ownerStore, lockStore };
+async function buildApp() {
+  const nestApp = await createNestTestApp({ imports: [AppModule] });
+  nestApps.push(nestApp);
+  return {
+    app: wrapNestApp(nestApp),
+  };
 }
 
-async function json(res: Response) {
+async function json(res: { json(): Promise<unknown> }): Promise<any> {
   return res.json();
 }
 
 // ── Helper: prefix 등록 ─────────────────────────────────
 
 async function registerPrefix(
-  app: Hono,
+  app: CompatApp,
   prefix: string,
   opts?: { owner?: string; kind?: string; numberType?: string },
 ) {
@@ -42,7 +36,7 @@ async function registerPrefix(
 }
 
 async function createDraft(
-  app: Hono,
+  app: CompatApp,
   prefix: string,
   versionId: string,
   capacity: number,
@@ -60,13 +54,19 @@ async function createDraft(
   });
 }
 
+afterEach(async () => {
+  while (nestApps.length > 0) {
+    await nestApps.pop()!.close();
+  }
+});
+
 // ══════════════════════════════════════════════════════════
 // Phase 1: Health + Prefix CRUD
 // ══════════════════════════════════════════════════════════
 
 describe("Health", () => {
   it("GET /health returns ok", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     const res = await app.request("/health");
     expect(res.status).toBe(200);
     expect(await json(res)).toMatchObject({ ok: true });
@@ -75,7 +75,7 @@ describe("Health", () => {
 
 describe("Prefix CRUD", () => {
   it("POST /prefixes → 201", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     const res = await registerPrefix(app, "role");
     expect(res.status).toBe(201);
     const body = await json(res);
@@ -85,14 +85,14 @@ describe("Prefix CRUD", () => {
   });
 
   it("POST duplicate → 409", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     const res = await registerPrefix(app, "role");
     expect(res.status).toBe(409);
   });
 
   it("GET /prefixes → list all", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "action", { owner: "service-b" });
     const res = await app.request("/prefixes");
@@ -102,7 +102,7 @@ describe("Prefix CRUD", () => {
   });
 
   it("GET /prefixes/:prefix → 200", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     const res = await app.request("/prefixes/role");
     expect(res.status).toBe(200);
@@ -112,20 +112,20 @@ describe("Prefix CRUD", () => {
   });
 
   it("GET /prefixes/:prefix → 404 unknown", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     const res = await app.request("/prefixes/unknown");
     expect(res.status).toBe(404);
   });
 
   it("DELETE /prefixes/:prefix → 200", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     const res = await app.request("/prefixes/role", { method: "DELETE" });
     expect(res.status).toBe(200);
   });
 
   it("DELETE with non-deprecated versions → 409", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 10);
     const res = await app.request("/prefixes/role", { method: "DELETE" });
@@ -139,7 +139,7 @@ describe("Prefix CRUD", () => {
 
 describe("Version Lifecycle", () => {
   it("POST draft → 201", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     const res = await createDraft(app, "role", "v1", 10);
     expect(res.status).toBe(201);
@@ -151,7 +151,7 @@ describe("Version Lifecycle", () => {
   });
 
   it("GET versions list", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 10);
     const res = await app.request("/prefixes/role/versions");
@@ -162,7 +162,7 @@ describe("Version Lifecycle", () => {
   });
 
   it("GET single version", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 10);
     const res = await app.request("/prefixes/role/versions/v1");
@@ -172,7 +172,7 @@ describe("Version Lifecycle", () => {
   });
 
   it("PATCH draft capacity", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 10);
     const res = await app.request("/prefixes/role/versions/v1", {
@@ -186,7 +186,7 @@ describe("Version Lifecycle", () => {
   });
 
   it("draft → release → activate → deprecate", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await createDraft(app, "role", "v1", 10);
 
@@ -201,7 +201,7 @@ describe("Version Lifecycle", () => {
   });
 
   it("composite draft auto-calculates capacity from refs", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await registerPrefix(app, "perm", { kind: "composite" });
@@ -226,7 +226,7 @@ describe("Version Lifecycle", () => {
 
 describe("DAG", () => {
   it("getDeps returns composite refs", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await registerPrefix(app, "perm", { kind: "composite" });
@@ -249,7 +249,7 @@ describe("DAG", () => {
   });
 
   it("getReverseRefs returns composites referencing a leaf", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await registerPrefix(app, "perm", { kind: "composite" });
@@ -271,7 +271,7 @@ describe("DAG", () => {
   });
 
   it("DAG graph includes nodes and edges", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "perm", { kind: "composite" });
 
@@ -294,7 +294,7 @@ describe("DAG", () => {
 // ══════════════════════════════════════════════════════════
 
 describe("Workspace", () => {
-  async function setupScenario(app: Hono) {
+  async function setupScenario(app: CompatApp) {
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await registerPrefix(app, "perm", { kind: "composite", owner: "service-c" });
@@ -310,7 +310,7 @@ describe("Workspace", () => {
   }
 
   it("GET /workspace/drafts lists all drafts", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupScenario(app);
 
     const res = await app.request("/workspace/drafts");
@@ -320,7 +320,7 @@ describe("Workspace", () => {
   });
 
   it("POST /workspace/simulate returns impact", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupScenario(app);
 
     const res = await app.request("/workspace/simulate", {
@@ -342,7 +342,7 @@ describe("Workspace", () => {
   });
 
   it("simulate detects stride change", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupScenario(app);
 
     // action capacity 변경 → stride 변경
@@ -362,7 +362,7 @@ describe("Workspace", () => {
   });
 
   it("POST /workspace/analyze returns readiness", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupScenario(app);
 
     const res = await app.request("/workspace/analyze", { method: "POST" });
@@ -386,7 +386,7 @@ describe("Workspace", () => {
 // ══════════════════════════════════════════════════════════
 
 describe("Lock & Release", () => {
-  async function setupAndDraft(app: Hono) {
+  async function setupAndDraft(app: CompatApp) {
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await createDraft(app, "role", "v1", 10);
@@ -394,7 +394,7 @@ describe("Lock & Release", () => {
   }
 
   it("lock → PATCH rejected", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupAndDraft(app);
 
     let res = await app.request("/prefixes/role/versions/v1/lock", { method: "POST" });
@@ -412,7 +412,7 @@ describe("Lock & Release", () => {
   });
 
   it("unlock → PATCH allowed", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupAndDraft(app);
 
     await app.request("/prefixes/role/versions/v1/lock", { method: "POST" });
@@ -427,7 +427,7 @@ describe("Lock & Release", () => {
   });
 
   it("lock-all → release-all", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupAndDraft(app);
 
     let res = await app.request("/workspace/lock-all", { method: "POST" });
@@ -447,7 +447,7 @@ describe("Lock & Release", () => {
   });
 
   it("locked version shows locked status", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupAndDraft(app);
 
     await app.request("/prefixes/role/versions/v1/lock", { method: "POST" });
@@ -464,7 +464,7 @@ describe("Lock & Release", () => {
 // ══════════════════════════════════════════════════════════
 
 describe("Resolve", () => {
-  async function setupActive(app: Hono) {
+  async function setupActive(app: CompatApp) {
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await createDraft(app, "role", "v1", 10);
@@ -478,7 +478,7 @@ describe("Resolve", () => {
   }
 
   it("GET /resolve/active returns all active versions", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupActive(app);
 
     const res = await app.request("/resolve/active");
@@ -492,7 +492,7 @@ describe("Resolve", () => {
   });
 
   it("GET /resolve/active/:prefix returns enriched data", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupActive(app);
 
     const res = await app.request("/resolve/active/role");
@@ -504,14 +504,14 @@ describe("Resolve", () => {
   });
 
   it("GET /resolve/active/:prefix → 404 no active", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     const res = await app.request("/resolve/active/role");
     expect(res.status).toBe(404);
   });
 
   it("GET /resolve/manifest", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await setupActive(app);
 
     const res = await app.request("/resolve/manifest");
@@ -524,7 +524,7 @@ describe("Resolve", () => {
   });
 
   it("manifest includes shape/stride for composite", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
     await registerPrefix(app, "role");
     await registerPrefix(app, "action");
     await registerPrefix(app, "perm", { kind: "composite" });
@@ -559,7 +559,7 @@ describe("Resolve", () => {
 
 describe("E2E: Full Workflow", () => {
   it("register → draft → simulate → analyze → lock-all → release-all → resolve", async () => {
-    const { app } = buildApp();
+    const { app } = await buildApp();
 
     // 1. Register prefixes
     await registerPrefix(app, "role");
