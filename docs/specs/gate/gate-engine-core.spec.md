@@ -9,8 +9,6 @@ def:
   svc: gate-service
   tags: [security, tier-infra]
   links:
-    - target: gate-engine-group
-      type: member_of
     - target: gate-state-model
       type: depends_on
 ---

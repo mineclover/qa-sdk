@@ -7,9 +7,6 @@ def:
   lifecycle: approved
   layer: domain
   tags: [cross-scope]
-  links:
-    - target: system-root
-      type: member_of
 ---
 # 태그 관리 설계
 

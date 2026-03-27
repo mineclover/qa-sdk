@@ -5,6 +5,7 @@ def:
   aspect: layout
   depth: specification
   lifecycle: deprecated
+  layer: experience
   tags: [tier-infra]
   links:
     - target: motion-content-glossary

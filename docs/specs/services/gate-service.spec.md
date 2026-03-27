@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
+  layer: mediation
   tags: [security]
   links:
     - target: gate-engine-spec

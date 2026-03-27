@@ -5,6 +5,7 @@ def:
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
+  layer: mediation
 ---
 # Decode Service 스펙
 

@@ -9,8 +9,6 @@ def:
   svc: decision-flow
   tags: [decision, testing]
   links:
-    - target: df-narrative-group
-      type: member_of
     - target: df-narrative-context
       type: traces_to
 ---

@@ -25,8 +25,6 @@ def:
       type: contains
     - target: range-query-spec
       type: contains
-    - target: wi-trace-group
-      type: contains
 ---
 
 # Weighted-Index 시스템

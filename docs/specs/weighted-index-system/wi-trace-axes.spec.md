@@ -9,8 +9,6 @@ def:
   svc: weighted-index
   tags: [tier-infra]
   links:
-    - target: wi-trace-group
-      type: member_of
     - target: wi-math
       type: depends_on
 ---

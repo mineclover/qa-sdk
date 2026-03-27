@@ -5,6 +5,7 @@ def:
   aspect: component
   depth: specification
   lifecycle: deprecated
+  layer: experience
   tags: [tier-frontend]
   links:
     - target: api-client-spec

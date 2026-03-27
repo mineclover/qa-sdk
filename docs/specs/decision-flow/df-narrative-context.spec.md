@@ -9,8 +9,6 @@ def:
   svc: decision-flow
   tags: [decision]
   links:
-    - target: df-narrative-group
-      type: member_of
     - target: df-narrative-structure
       type: depends_on
 ---

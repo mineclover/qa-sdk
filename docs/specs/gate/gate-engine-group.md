@@ -8,7 +8,6 @@ def:
   layer: domain
   svc: gate-service
   tags: [structural, security, tier-infra]
-  contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
   links:
     - target: gate-engine-core
       type: contains
@@ -18,6 +17,7 @@ def:
       type: contains
     - target: gate-state-model
       type: depends_on
+  contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
 ---
 
 # GateEngine 그룹

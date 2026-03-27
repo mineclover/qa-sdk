@@ -23,8 +23,6 @@ def:
       type: contains
     - target: perm-migration-system
       type: contains
-    - target: perm-external-system
-      type: contains
 ---
 
 # 권한 엔진 시스템
