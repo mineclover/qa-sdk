@@ -22,6 +22,7 @@
     "@qa-sdk/codec-proto": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/engine": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/registry-client": "workspace:*",
     "@qa-sdk/store": "workspace:*",
     "bullmq": "^5.0.0",

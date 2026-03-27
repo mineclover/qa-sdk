@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse } from "@qa-sdk/core";
+import { otelEnvSchema } from "@qa-sdk/otel";
 
 export const envSchema = z.object({
   /** Store 드라이버: memory(기본) | pg | d1 | clickhouse */
@@ -37,7 +38,7 @@ export const envSchema = z.object({
   TRANSITION_ENGINE_ENABLED: booleanWithDefaultFalse,
   TRANSITION_VIOLATION_MODE: z.enum(["strict", "warn"]).default("warn"),
   TRANSITION_STATE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
-}).superRefine((value, ctx) => {
+}).merge(otelEnvSchema).superRefine((value, ctx) => {
   if (value.TASK_QUEUE_ENABLED && !value.REDIS_URL) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
