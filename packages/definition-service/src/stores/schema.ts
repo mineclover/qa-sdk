@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS documents (
   tags_json   TEXT NOT NULL DEFAULT '[]',
   links_json  TEXT NOT NULL DEFAULT '[]',
   svc         TEXT,
+  address     TEXT,
   version     INTEGER NOT NULL DEFAULT 1,
   body_hash   TEXT NOT NULL,
   purpose     TEXT,

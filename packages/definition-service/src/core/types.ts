@@ -13,6 +13,8 @@ export interface DocRecord {
   tags: string[];
   links: { target: string; type: string }[];
   svc?: string;
+  /** 좌표 주소 — scope×aspect×depth로 계산 (def_document:v1:<N>) */
+  address?: string;
   version: number;
   bodyHash: string;
   purpose?: string;
