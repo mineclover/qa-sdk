@@ -8,7 +8,30 @@
 import type { SqlDriver, ExecuteResult } from "./sql-store.js";
 import { getDatabaseSync, type DatabaseSyncInstance } from "./database-sync-loader.js";
 import { SQLITE_DIALECT, runTransaction } from "./sqlite-shared.js";
+import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
 
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/**
+ * 패키지 루트의 drizzle/ 폴더를 찾는다.
+ * tsup 번들(dist/) 또는 vitest(src/adapters/) 어디서든 동작.
+ */
+function findMigrationsFolder(): string | null {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 5; i++) {
+    const candidate = join(dir, "drizzle");
+    if (existsSync(candidate)) return candidate;
+    dir = dirname(dir);
+  }
+  return null;
+}
+
+const indexMetaMigrationsFolder = findMigrationsFolder();
+
+/** @deprecated drizzle migrate로 대체됨. 외부 참조용으로만 유지 */
 const SCHEMA_DDL = `
 CREATE TABLE IF NOT EXISTS prefix_registry (
   prefix        TEXT    NOT NULL,
@@ -144,6 +167,8 @@ CREATE INDEX IF NOT EXISTS idx_range_cache_version
 `;
 
 export class NodeSqliteDriver implements SqlDriver {
+  /** @internal drizzle migrate 등 low-level 접근용 */
+  readonly $client: DatabaseSyncInstance;
   private readonly db: DatabaseSyncInstance;
 
   readonly dialect = SQLITE_DIALECT;
@@ -156,8 +181,30 @@ export class NodeSqliteDriver implements SqlDriver {
   constructor(path: string = ":memory:", schema?: string | null) {
     const DatabaseSync = getDatabaseSync();
     this.db = new DatabaseSync(path);
-    const ddl = schema === undefined ? SCHEMA_DDL : schema;
-    if (ddl) this.db.exec(ddl);
+    this.$client = this.db;
+    this.db.exec("PRAGMA journal_mode = WAL");
+    this.db.exec("PRAGMA busy_timeout = 3000");
+    this.db.exec("PRAGMA foreign_keys = ON");
+
+    if (schema === undefined) {
+      if (indexMetaMigrationsFolder) {
+        // drizzle-kit 마이그레이션으로 index-meta 스키마 적용
+        try {
+          const drizzleDb = drizzle({ client: this.db });
+          migrate(drizzleDb, { migrationsFolder: indexMetaMigrationsFolder });
+        } catch (err) {
+          console.warn("[index-meta] drizzle 마이그레이션 실패, SCHEMA_DDL 폴백:", err);
+          this.db.exec(SCHEMA_DDL);
+        }
+      } else {
+        // drizzle/ 폴더 없음 (번들 환경) → DDL 직접 적용
+        console.warn("[index-meta] drizzle/ 폴더 미발견, SCHEMA_DDL 폴백 사용");
+        this.db.exec(SCHEMA_DDL);
+      }
+    } else if (schema) {
+      this.db.exec(schema);
+    }
+    // schema === null → bare driver (DDL 없음)
   }
 
   async query<T extends Record<string, unknown>>(
@@ -202,6 +249,8 @@ export class NodeSqliteDriver implements SqlDriver {
   }
 }
 
-function toSqlParams(params: unknown[]): any[] {
-  return params as any[];
+type SqliteBindValue = string | number | bigint | Uint8Array | null;
+
+function toSqlParams(params: unknown[]): SqliteBindValue[] {
+  return params as SqliteBindValue[];
 }
