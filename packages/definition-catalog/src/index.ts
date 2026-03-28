@@ -60,7 +60,7 @@ export {
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────
-export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef } from "./taxonomy.js";
+export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef, LinkTypeRule } from "./taxonomy.js";
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
@@ -68,6 +68,9 @@ export {
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
+  LINK_TYPE_RULES,
+  isLinkCycleAllowed,
+  isLinkMultiParentAllowed,
   CONCERN_TAGS,
   STRUCTURAL_TAGS,
   TIER_TAGS,
@@ -178,6 +181,16 @@ export {
 // ─── Frontmatter Writer (DB → file 역동기화) ────────────
 export type { DbMetadata } from "./frontmatter-writer.js";
 export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.js";
+
+// ─── 데이터 소스 인터페이스 (서버/로컬 추상화) ───────────
+export type {
+  DefDoc,
+  DefIncomingLink,
+  DefListFilter,
+  DefValidationIssue,
+  DefValidationResult,
+  DefDataSource,
+} from "./data-source.js";
 
 // ─── CLI 도구 ───────────────────────────────────────────
 export { topdown, bottomup, context } from "./cli-tools.js";

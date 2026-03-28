@@ -21,11 +21,13 @@ export interface DbMetadata {
   readonly tags?: readonly string[];
   readonly links?: readonly { target: string; type: string }[];
   readonly svc?: string;
+  /** 좌표 주소 — scope×aspect×depth로 계산 */
+  readonly address?: string;
 }
 
 /** DB 소유 필드 목록 — 이 필드만 덮어씀 */
 const DB_OWNED_FIELDS = new Set([
-  "scope", "aspect", "depth", "lifecycle", "layer", "svc", "tags", "links",
+  "address", "scope", "aspect", "depth", "lifecycle", "layer", "svc", "tags", "links",
 ]);
 
 /**
@@ -46,6 +48,7 @@ export function mergeFrontmatter(
 
   // DB 소유 필드를 먼저 직렬화
   const dbLines: string[] = [];
+  if (metadata.address) dbLines.push(`  address: ${metadata.address}`);
   dbLines.push(`  scope: ${metadata.scope}`);
   dbLines.push(`  aspect: ${metadata.aspect}`);
   dbLines.push(`  depth: ${metadata.depth}`);

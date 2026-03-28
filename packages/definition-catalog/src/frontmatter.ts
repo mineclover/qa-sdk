@@ -50,6 +50,8 @@ export interface FrontmatterLink {
 /** frontmatter에서 파싱된 def 블록 */
 export interface FrontmatterDef {
   readonly id: string;
+  /** 좌표 주소 — def_document:v1:<N> (파일 소유, DB에서도 계산) */
+  readonly address?: string;
   readonly scope: DefScope;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
@@ -307,8 +309,12 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   // layer (존재론적 계층 — 선택, 기본 없음)
   const layer = typeof d.layer === "string" && VALID_LAYERS.has(d.layer) ? d.layer as DefLayer : undefined;
 
+  // address (좌표 주소 — 파일 소유, 선택)
+  const address = typeof d.address === "string" ? d.address : undefined;
+
   return {
     id: id as string,
+    ...(address ? { address } : {}),
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
     depth: depth as DefDepth,
