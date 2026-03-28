@@ -1,15 +1,16 @@
 import { Hono } from "hono";
 import { describe, expect, it, beforeEach } from "vitest";
 import { NodeSqliteDriver } from "index-meta";
-import { INGEST_D1_SCHEMA_DDL } from "../stores/d1-schema.sql.js";
+import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { createInsightsRoutes } from "./insights.js";
 
+const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+
 async function createDb() {
-  const driver = new NodeSqliteDriver(":memory:");
-  // DDL 초기화
-  for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-    await driver.execute(stmt);
-  }
+  const driver = new NodeSqliteDriver(":memory:", null);
+  const drizzleDb = drizzle({ client: driver.$client });
+  migrate(drizzleDb, { migrationsFolder });
   return driver;
 }
 

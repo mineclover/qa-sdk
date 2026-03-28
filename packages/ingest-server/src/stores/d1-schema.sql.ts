@@ -1,7 +1,14 @@
 /**
  * D1용 DDL — PG schema.ts의 SQLite 호환 버전.
  *
- * 차이점:
+ * ⚠️ 이 DDL은 src/db/schema.ts (Drizzle 스키마)와 동일해야 합니다.
+ * 스키마 변경 시 src/db/schema.ts를 먼저 수정하고 drizzle-kit generate로
+ * 마이그레이션을 생성한 뒤, 이 파일도 동기화하세요.
+ *
+ * Workers 환경에서는 파일시스템 접근이 불가하여 drizzle migrate() 사용 불가.
+ * Node.js 테스트에서는 drizzle migrate 사용을 권장합니다.
+ *
+ * 차이점 (PG vs SQLite):
  * - jsonb → TEXT (JSON string)
  * - timestamp with timezone → TEXT (ISO-8601)
  * - boolean → INTEGER (0/1)
