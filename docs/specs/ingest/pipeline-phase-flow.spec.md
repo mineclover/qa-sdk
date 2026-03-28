@@ -1,11 +1,13 @@
 ---
 def:
   id: pipeline-phase-flow
+  address: def_document:v1:1073
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: approved
   layer: operation
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: ingest-interface-pipeline

@@ -1,11 +1,13 @@
 ---
 def:
   id: viz-panel-layout
+  address: def_document:v1:1
   scope: ui
   aspect: layout
   depth: specification
   lifecycle: approved
   layer: experience
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: viz-panels-spec

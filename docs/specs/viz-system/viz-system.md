@@ -1,6 +1,7 @@
 ---
 def:
   id: viz-system
+  address: def_document:v1:8
   scope: ui
   aspect: component
   depth: overview
@@ -9,19 +10,25 @@ def:
   svc: platform-demo
   tags: [structural, entry-point, tier-frontend]
   links:
-    - target: viz-surface-system
+    - target: api-client-spec
+      type: contains
+    - target: docs-explorer-spec
+      type: contains
+    - target: iframe-protocol-spec
+      type: contains
+    - target: mermaid-gen-spec
       type: contains
     - target: motion-editor-component
+      type: contains
+    - target: platform-demo-api-spec
+      type: contains
+    - target: registry-ui-spec
       type: contains
     - target: viz-language-system
       type: contains
     - target: viz-roleplay-system
       type: contains
-    - target: api-client-spec
-      type: contains
-    - target: iframe-protocol-spec
-      type: contains
-    - target: mermaid-gen-spec
+    - target: viz-surface-system
       type: contains
 ---
 

@@ -1,6 +1,7 @@
 ---
 def:
   id: event-prefix-group
+  address: def_document:v1:2696
   scope: data
   aspect: prefix_schema
   depth: overview

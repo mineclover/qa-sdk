@@ -1,24 +1,28 @@
 ---
 def:
   id: storage-system
+  address: def_document:v1:2680
   scope: data
   aspect: system_data
   depth: overview
   lifecycle: approved
   layer: domain
+  svc: ingest-server
   tags: [structural, entry-point]
   links:
+    - target: graph-spec
+      type: contains
+    - target: scenario-store-spec
+      type: contains
     - target: storage-adapters-spec
       type: contains
     - target: storage-schema-spec
       type: contains
-    - target: scenario-store-spec
-      type: contains
-    - target: verdict-spec
-      type: contains
-    - target: graph-spec
+    - target: tag-management-spec
       type: contains
     - target: utils-spec
+      type: contains
+    - target: verdict-spec
       type: contains
 ---
 

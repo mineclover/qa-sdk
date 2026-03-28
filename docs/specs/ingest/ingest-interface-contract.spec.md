@@ -1,11 +1,13 @@
 ---
 def:
   id: ingest-interface-contract
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: ingest-api-spec

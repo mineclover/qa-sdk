@@ -1,6 +1,7 @@
 ---
 def:
   id: decode-system
+  address: def_document:v1:3224
   scope: interface
   aspect: api_contract
   depth: overview

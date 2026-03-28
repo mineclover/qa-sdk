@@ -1,6 +1,7 @@
 ---
 def:
   id: coord-states-group
+  address: def_document:v1:1608
   scope: state
   aspect: domain_state
   depth: overview

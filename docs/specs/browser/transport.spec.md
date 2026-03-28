@@ -1,11 +1,13 @@
 ---
 def:
   id: browser-transport-spec
+  address: def_document:v1:3241
   scope: interface
   aspect: event_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: shopping-web
   tags: [tier-frontend]
   links:
     - target: trace-context-spec

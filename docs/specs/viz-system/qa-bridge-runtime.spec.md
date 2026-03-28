@@ -1,11 +1,13 @@
 ---
 def:
   id: qa-bridge-runtime
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: qa-bridge-spec

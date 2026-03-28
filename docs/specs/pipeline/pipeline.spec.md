@@ -1,10 +1,12 @@
 ---
 def:
   id: pipeline-spec-original
+  address: def_document:v1:1073
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: deprecated
+  svc: ingest-server
 ---
 
 # Engine Pipeline

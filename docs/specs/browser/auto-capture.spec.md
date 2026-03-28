@@ -1,11 +1,13 @@
 ---
 def:
   id: auto-capture-spec
+  address: def_document:v1:17
   scope: ui
   aspect: interaction
   depth: specification
   lifecycle: deprecated
   layer: experience
+  svc: shopping-web
   tags: [tier-frontend]
   links:
     - target: browser-monitor-spec

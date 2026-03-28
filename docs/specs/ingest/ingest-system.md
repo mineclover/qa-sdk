@@ -1,6 +1,7 @@
 ---
 def:
   id: ingest-system
+  address: def_document:v1:1072
   scope: flow
   aspect: process_flow
   depth: overview
@@ -28,7 +29,7 @@ def:
     - target: session-spec
       type: contains
     - target: pipeline-phase-flow
-      type: contains
+      type: depends_on
     - target: ingest-infra-system
       type: contains
     - target: browser-session-spec

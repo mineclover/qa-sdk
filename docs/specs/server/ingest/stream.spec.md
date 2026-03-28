@@ -1,11 +1,13 @@
 ---
 def:
   id: stream-api-spec
+  address: def_document:v1:3241
   scope: interface
   aspect: event_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: record-spec

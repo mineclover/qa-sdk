@@ -1,11 +1,13 @@
 ---
 def:
   id: ingest-api-spec
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
   layer: mediation
+  svc: ingest-server
   tags: [performance]
   links:
     - target: transmission-spec

@@ -1,6 +1,7 @@
 ---
 def:
   id: prefix-cli_event
+  address: def_document:v1:2697
   scope: data
   aspect: prefix_schema
   depth: specification

@@ -1,6 +1,7 @@
 ---
 def:
   id: coord-states-versioning
+  address: def_document:v1:1617
   scope: state
   aspect: system_state
   depth: specification

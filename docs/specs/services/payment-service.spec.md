@@ -1,0 +1,23 @@
+---
+def:
+  id: payment-service-spec
+  scope: feature
+  aspect: func_def
+  depth: overview
+  lifecycle: approved
+  layer: domain
+  svc: payment
+  tags: [tier-backend]
+  links:
+    - target: shopping-backend-spec
+      type: depends_on
+    - target: payment-api
+      type: contains
+    - target: payment-data
+      type: contains
+---
+# Payment Service
+
+## 목적 ^purpose
+
+결제 처리 서비스. 주문 완료 후 결제 트랜잭션을 처리하고, 결제 상태 변경 이벤트를 생산한다. shopping-backend와 협력하여 주문-결제 흐름을 구성한다.

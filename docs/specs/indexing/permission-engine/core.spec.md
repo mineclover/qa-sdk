@@ -1,6 +1,7 @@
 ---
 def:
   id: permission-engine-spec
+  address: def_document:v1:2145
   scope: constraint
   aspect: biz_constraint
   depth: specification

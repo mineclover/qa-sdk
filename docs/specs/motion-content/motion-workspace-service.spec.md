@@ -1,6 +1,7 @@
 ---
 def:
   id: motion-workspace-service-spec
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -11,6 +12,10 @@ def:
   links:
     - target: motion-workspace-spec
       type: depends_on
+    - target: mws-api
+      type: contains
+    - target: mws-data
+      type: contains
 ---
 # Motion Workspace Service
 

@@ -1,6 +1,7 @@
 ---
 def:
   id: motion-editor-component
+  address: def_document:v1:9
   scope: ui
   aspect: component
   depth: specification

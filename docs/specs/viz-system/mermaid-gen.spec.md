@@ -1,11 +1,13 @@
 ---
 def:
   id: mermaid-gen-spec
+  address: def_document:v1:9
   scope: ui
   aspect: component
   depth: specification
   lifecycle: approved
   layer: experience
+  svc: platform-demo
   tags: [tier-system, observability]
   links:
     - target: dkg-node-types

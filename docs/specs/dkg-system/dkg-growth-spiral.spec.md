@@ -1,6 +1,7 @@
 ---
 def:
   id: dkg-growth-spiral
+  address: def_document:v1:1073
   scope: flow
   aspect: process_flow
   depth: specification

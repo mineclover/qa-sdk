@@ -1,6 +1,7 @@
 ---
 def:
   id: dkg-node-types
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification

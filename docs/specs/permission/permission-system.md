@@ -1,6 +1,7 @@
 ---
 def:
   id: permission-system
+  address: def_document:v1:2144
   scope: constraint
   aspect: biz_constraint
   depth: overview

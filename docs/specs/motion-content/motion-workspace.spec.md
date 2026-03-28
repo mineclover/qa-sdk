@@ -1,6 +1,7 @@
 ---
 def:
   id: motion-workspace-spec
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -10,6 +11,8 @@ def:
   links:
     - target: motion-content-glossary
       type: refines
+    - target: motion-workspace-client-spec
+      type: contains
 ---
 # Motion Workspace
 

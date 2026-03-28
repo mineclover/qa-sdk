@@ -1,6 +1,7 @@
 ---
 def:
   id: prefix-catalog-system
+  address: def_document:v1:2696
   scope: data
   aspect: prefix_schema
   depth: overview
@@ -18,6 +19,10 @@ def:
       type: contains
     - target: observation-prefix-group
       type: contains
+    - target: definition-service-system
+      type: depends_on
+    - target: registry-system
+      type: depends_on
 ---
 
 ## 목적 ^purpose

@@ -1,11 +1,13 @@
 ---
 def:
   id: trace-context-spec
+  address: def_document:v1:1601
   scope: state
   aspect: app_state
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: ingest-server
   tags: [tier-frontend]
   links:
     - target: session-spec

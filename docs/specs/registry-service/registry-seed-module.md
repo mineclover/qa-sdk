@@ -1,6 +1,7 @@
 ---
 def:
   id: registry-seed-module
+  address: def_document:v1:538
   scope: feature
   aspect: func_def
   depth: implementation

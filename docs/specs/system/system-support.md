@@ -1,6 +1,7 @@
 ---
 def:
   id: system-support
+  address: def_document:v1:1072
   scope: flow
   aspect: process_flow
   depth: overview
@@ -15,6 +16,10 @@ def:
     - target: event-vocab-system
       type: contains
     - target: guides-system
+      type: contains
+    - target: skill-catalog-system
+      type: contains
+    - target: auth-service-spec
       type: contains
 ---
 # 지원 계층

@@ -1,11 +1,13 @@
 ---
 def:
   id: viz-panels-spec
+  address: def_document:v1:1
   scope: ui
   aspect: layout
   depth: specification
   lifecycle: deprecated
   layer: experience
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: graph-renderer-spec

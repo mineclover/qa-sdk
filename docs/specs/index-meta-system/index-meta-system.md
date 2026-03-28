@@ -1,6 +1,7 @@
 ---
 def:
   id: index-meta-system
+  address: def_document:v1:536
   scope: feature
   aspect: func_def
   depth: overview
@@ -36,7 +37,7 @@ def:
     - target: dx-lifecycle-group
       type: contains
     - target: benchmark-system
-      type: contains
+      type: depends_on
     - target: registry-system
       type: depends_on
     - target: wi-system

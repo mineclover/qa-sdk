@@ -1,11 +1,13 @@
 ---
 def:
   id: api-client-spec
+  address: def_document:v1:2689
   scope: data
   aspect: external_data
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: shopping-web
   tags: [tier-frontend]
   links:
     - target: ingest-api-spec

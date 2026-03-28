@@ -1,11 +1,13 @@
 ---
 def:
   id: cq-cross-index
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: query-service
   tags: [tier-infra]
   links:
     - target: wi-api

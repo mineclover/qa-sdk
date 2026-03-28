@@ -1,11 +1,13 @@
 ---
 def:
   id: graph-renderer-live
+  address: def_document:v1:2137
   scope: constraint
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: graph-renderer-spec

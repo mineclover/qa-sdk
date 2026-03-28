@@ -1,11 +1,13 @@
 ---
 def:
   id: registry-services-api-spec
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: registry-service
   tags: [tier-infra]
   links:
     - target: registry-data-model

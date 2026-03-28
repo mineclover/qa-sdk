@@ -1,11 +1,13 @@
 ---
 def:
   id: definition-catalog-spec
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: definition-service
   tags: [structural, entry-point]
   links:
     - target: system-concepts

@@ -1,6 +1,7 @@
 ---
 def:
   id: bigint-addressing-group
+  address: def_document:v1:2672
   scope: data
   aspect: domain_data
   depth: overview
