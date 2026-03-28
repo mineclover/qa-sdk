@@ -1,6 +1,7 @@
 ---
 def:
   id: wi-capacity-planning
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification

@@ -1,6 +1,8 @@
 ---
 def:
   id: indexing-core-system
+  level: unit
+  address: def_document:v1:2672
   scope: data
   aspect: domain_data
   depth: overview
@@ -9,50 +11,54 @@ def:
   svc: weighted-index
   tags: [structural, entry-point]
   links:
-    - target: coord-foundation
-      type: contains
-    - target: data-design-group
-      type: contains
-    - target: index-arch-group
-      type: contains
-    - target: schema-layer-spec
-      type: contains
-    - target: dsl-bundle-spec
-      type: contains
-    - target: conventions-system
-      type: contains
-    - target: table-system-group
-      type: contains
-    - target: event-schema-spec
-      type: contains
-    - target: signal-model-spec
-      type: contains
-    - target: coord-states-group
-      type: contains
-    - target: bigint-addressing-group
-      type: contains
     - target: acceleration-spec
       type: contains
-    - target: coord-patterns
+    - target: address-index-spec
+      type: contains
+    - target: adr-merge-dedup
       type: contains
     - target: behavior-traversal-group
       type: contains
-    - target: version-operations
+    - target: benchmark-system
+      type: contains
+    - target: bigint-addressing-group
+      type: contains
+    - target: conventions-system
+      type: contains
+    - target: coord-foundation
+      type: contains
+    - target: coord-patterns
+      type: contains
+    - target: coord-states-group
+      type: contains
+    - target: data-design-group
       type: contains
     - target: dim-ops-system
+      type: contains
+    - target: dsl-bundle-spec
+      type: contains
+    - target: event-schema-spec
+      type: contains
+    - target: index-arch-group
       type: contains
     - target: layout-sim-formats
       type: contains
     - target: ontology-eval
       type: contains
-    - target: slot-marker-group
-      type: contains
-    - target: adr-merge-dedup
-      type: contains
-    - target: benchmark-system
-      type: contains
     - target: permission-system
       type: depends_on
+    - target: schema-layer-spec
+      type: contains
+    - target: signal-model-spec
+      type: contains
+    - target: slot-marker-group
+      type: contains
+    - target: table-system-group
+      type: contains
+    - target: tag-search-spec
+      type: contains
+    - target: version-operations
+      type: contains
     - target: wi-system
       type: depends_on
 ---

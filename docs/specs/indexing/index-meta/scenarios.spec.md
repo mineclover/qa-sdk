@@ -1,6 +1,7 @@
 ---
 def:
   id: user-scenarios
+  address: def_document:v1:547
   scope: feature
   aspect: scenario
   depth: validation

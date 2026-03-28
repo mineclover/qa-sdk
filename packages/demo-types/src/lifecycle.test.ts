@@ -90,9 +90,15 @@ describe("SNAPSHOT_SUPPLY", () => {
   });
 
   it("axis-only prefix는 implicit 전략이다", () => {
-    // service는 axis만 있으므로 implicit
-    expect(SNAPSHOT_SUPPLY.service).toBe("implicit");
-    expect(SNAPSHOT_SUPPLY.tracking).toBe("implicit");
+    // prefix_ref가 없는 prefix만 implicit — 카탈로그에서 동적 파생
+    const axisOnlyPrefixes = Object.entries(DEMO_CATALOG.prefixes)
+      .filter(([, def]) => Object.values(def.dims).every((d: any) => d.kind === "axis"))
+      .map(([id]) => id);
+    for (const id of axisOnlyPrefixes) {
+      if (id in SNAPSHOT_SUPPLY) {
+        expect(SNAPSHOT_SUPPLY[id as keyof typeof SNAPSHOT_SUPPLY], `${id}는 implicit이어야 함`).toBe("implicit");
+      }
+    }
   });
 
   it("전략은 envelope 또는 implicit만 존재한다", () => {

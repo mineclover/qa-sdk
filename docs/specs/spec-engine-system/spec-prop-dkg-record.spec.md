@@ -1,6 +1,7 @@
 ---
 def:
   id: spec-prop-dkg-record
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification

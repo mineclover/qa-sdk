@@ -21,9 +21,10 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "design-tokens.ts에 dark/light 토큰과 theme apply/read/write 유틸을 추가하고 styles.ts를 var(--mce-*) 기반으로 전환했다. build 3종과 motion-content/motion-content-editor vitest를 다시 통과시켰고 2026-03-26 로컬 브라우저 QA에서 dark 기본값과 light 전환을 확인했다."
     },
     {
       "id": "US-002",
@@ -42,11 +43,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "panel-layout.ts에 PanelGroup/Splitter를 추가하고 shell.ts에 좌/중/우/하단 도킹 레이아웃, 탭 전환, collapse, 최소 크기 clamp를 연결했다. motion-content-editor vitest와 데모 브라우저 QA에서 좌측/하단 splitter 드래그와 collapse 동작을 확인했다."
     },
     {
       "id": "US-003",
@@ -62,11 +64,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "shell.ts에서 mce-layout/v1 localStorage 저장/복원/초기화 흐름을 구현했다. shell.test의 저장/복원/초기화 케이스와 2026-03-26 브라우저 리로드 QA로 탭/크기/collapse 상태가 유지되는 것을 확인했다."
     },
     {
       "id": "US-004",
@@ -83,11 +86,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "타임라인을 하단 전체 폭 패널로 이동하고 ruler/playhead를 추가했으며 하단 splitter로 높이 조절되도록 연결했다. timeline/shell 테스트와 브라우저 스크린샷에서 전체 폭 타임라인과 playhead/ruler 렌더링을 확인했다."
     },
     {
       "id": "US-005",
@@ -103,11 +107,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "툴바에 테마 토글을 추가하고 mce-theme/v1 저장/복원 및 stage preview isolation 변수를 연결했다. shell.test와 2026-03-26 브라우저 QA에서 dark→light 전환, reload 복원, stage preview가 테마 변경 영향을 받지 않는 것을 확인했다."
     },
     {
       "id": "US-006",
@@ -127,11 +132,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "motion-content의 command/type/state/history에 add-layer/remove-layer를 추가하고 layers 패널에 +/삭제 버튼을 연결했다. state/history/shell 테스트와 브라우저 QA에서 layer 추가, label 편집, scrub 조정, 삭제까지 확인했다."
     },
     {
       "id": "US-007",
@@ -149,11 +155,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-006"
-      ]
+      ],
+      "completionNotes": "add/remove sequence, caption, transition command와 상태 정리 로직 및 각 패널의 +/삭제 버튼을 구현했다. state/history/shell 테스트와 브라우저 QA에서 sequence/caption/transition CRUD가 실제로 동작함을 확인했다."
     },
     {
       "id": "US-008",
@@ -170,12 +177,13 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002",
         "US-006"
-      ]
+      ],
+      "completionNotes": "scrub-input.ts를 추가해 drag/Shift/Alt/double-click 숫자 편집을 만들고 selection detail의 숫자 필드에 연결했다. shell/state/history 테스트와 브라우저 QA에서 layer startMs scrub 변경이 로컬 저장 문서에 반영되는 것을 확인했다."
     },
     {
       "id": "US-009",
@@ -194,11 +202,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-008"
-      ]
+      ],
+      "completionNotes": "selection detail에 cue kind/content type/slot role/transition style/cue preset 드롭다운과 네이티브 color input을 연결하고 parameter color input도 네이티브로 전환했다. shell/state/history 테스트와 브라우저 QA에서 transition style/color 변경이 로컬 저장 문서에 반영되는 것을 확인했다."
     },
     {
       "id": "US-010",
@@ -214,11 +223,12 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-008"
-      ]
+      ],
+      "completionNotes": "inline-text-input.ts로 layer label, sequence title, caption text의 클릭 편집/Enter 확정/Escape 취소/빈값 방지를 구현했다. shell/state/history 테스트와 브라우저 QA에서 layer label 인라인 수정이 저장 문서에 반영되는 것을 확인했다."
     },
     {
       "id": "US-011",
@@ -234,12 +244,13 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-009",
         "US-010"
-      ]
+      ],
+      "completionNotes": "CuePreset 선택 시 selection detail에 kind/durationMs/ease/amount 편집 UI를 노출하고 set-composition dispatch로 cuePresets 교체가 반영되도록 구현했다. shell.test와 브라우저 QA에서 preset kind/ease/amount 수정 후 참조 상태가 로컬 저장 문서에 반영되는 것을 확인했다."
     },
     {
       "id": "US-012",
@@ -258,17 +269,18 @@
         "cd packages/motion-content-editor && npx vitest run passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-001",
         "US-002",
         "US-004"
-      ]
+      ],
+      "completionNotes": "styles.ts에 22px row height, 4px/8px padding, monospace typography, tabular-nums, 활성 left border/highlight, 50% inactive opacity, theme별 divider 색을 반영했다. design-tokens.test와 2026-03-26 브라우저 스크린샷 검토에서 고밀도 레이아웃 가독성을 확인했다."
     }
   ],
   "metadata": {
     "createdAt": "2026-03-26T14:30:00.000Z",
-    "updatedAt": "2026-03-25T23:55:41.967Z"
+    "updatedAt": "2026-03-26T14:34:12.739Z"
   }
 }

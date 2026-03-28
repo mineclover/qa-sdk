@@ -1,10 +1,12 @@
 ---
 def:
   id: analysis-convergence
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [observability]
   links:

@@ -1,11 +1,13 @@
 ---
 def:
   id: ingest-runtime-operations
+  address: def_document:v1:2153
   scope: constraint
   aspect: infra_constraint
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: ingest-server
   tags: [observability, tier-infra]
   links:
     - target: ingest-infra-spec

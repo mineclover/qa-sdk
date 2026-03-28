@@ -1,15 +1,15 @@
 ---
 def:
   id: query-service-spec
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
+  layer: mediation
   links:
     - target: gate-api
       type: depends_on
-    - target: coord-query-spec
-      type: implements
 ---
 # Query Service 스펙
 

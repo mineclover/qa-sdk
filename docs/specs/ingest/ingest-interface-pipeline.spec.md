@@ -1,11 +1,13 @@
 ---
 def:
   id: ingest-interface-pipeline
+  address: def_document:v1:1073
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: ingest-server
   tags: [tier-infra]
   links:
     - target: ingest-api-spec

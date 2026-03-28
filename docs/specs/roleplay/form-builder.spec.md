@@ -1,10 +1,12 @@
 ---
 def:
   id: form-builder-spec
+  address: def_document:v1:9
   scope: ui
   aspect: component
   depth: specification
   lifecycle: deprecated
+  layer: experience
   tags: [tier-frontend]
   links:
     - target: iframe-protocol-spec

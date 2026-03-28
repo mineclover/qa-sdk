@@ -1,6 +1,8 @@
 ---
 def:
   id: event-vocab-system
+  level: unit
+  address: def_document:v1:2672
   scope: data
   aspect: domain_data
   depth: overview
@@ -16,6 +18,8 @@ def:
     - target: payload-guide
       type: contains
     - target: storage-system
+      type: depends_on
+    - target: registry-events-spec
       type: depends_on
 ---
 

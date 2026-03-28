@@ -13,7 +13,7 @@ export class DrizzleDlqStore implements DlqStore {
       traceId: params.traceId,
       phase: params.phase,
       errorMessage: params.errorMessage,
-    });
+    }).comment({ adapter: "DlqStore", method: "insert" });
   }
 
   async findPending(limit = 100): Promise<StoredDlqItem[]> {
@@ -22,7 +22,8 @@ export class DrizzleDlqStore implements DlqStore {
       .from(deadLetterQueue)
       .where(isNull(deadLetterQueue.resolvedAt))
       .orderBy(asc(deadLetterQueue.createdAt))
-      .limit(limit);
+      .limit(limit)
+      .comment({ adapter: "DlqStore", method: "findPending" });
 
     return rows.map(toStoredDlqItem);
   }
@@ -34,14 +35,16 @@ export class DrizzleDlqStore implements DlqStore {
         attemptCount: sql`${deadLetterQueue.attemptCount} + 1`,
         lastAttemptedAt: new Date(),
       })
-      .where(eq(deadLetterQueue.id, id));
+      .where(eq(deadLetterQueue.id, id))
+      .comment({ adapter: "DlqStore", method: "markAttempted" });
   }
 
   async markResolved(id: string): Promise<void> {
     await this.db
       .update(deadLetterQueue)
       .set({ resolvedAt: new Date() })
-      .where(eq(deadLetterQueue.id, id));
+      .where(eq(deadLetterQueue.id, id))
+      .comment({ adapter: "DlqStore", method: "markResolved" });
   }
 }
 

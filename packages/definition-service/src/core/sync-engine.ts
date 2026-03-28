@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto";
 import { extractByMarker, type DefinitionEntry } from "definition-catalog";
 import type { DocRecord } from "./types.js";
+import { computeDocumentAddress } from "./compute-address.js";
 
 /** body 문자열의 SHA-256 해시 */
 export function hashBody(body: string): string {
@@ -52,6 +53,12 @@ export function buildDocRecord(
   sourcePath: string,
 ): DocRecord {
   const markers = extractMarkers(body);
+  const address = computeDocumentAddress(entry.scope, entry.aspect, entry.depth);
+  // prefix_schema 문서의 target_prefix 자동 추론: prefix-<id> → <id>
+  const targetPrefix = entry.aspect === "prefix_schema" && entry.id.startsWith("prefix-")
+    ? entry.id.slice("prefix-".length)
+    : undefined;
+
   return {
     docId: entry.id,
     scope: entry.scope,
@@ -62,6 +69,8 @@ export function buildDocRecord(
     tags: entry.tags ? [...entry.tags] : [],
     links,
     svc: entry.serviceId,
+    address: address ?? undefined,
+    targetPrefix,
     version: 0, // upsert가 결정
     bodyHash: hashBody(body),
     ...markers,

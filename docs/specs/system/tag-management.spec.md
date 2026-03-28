@@ -1,15 +1,13 @@
 ---
 def:
   id: tag-management-spec
+  address: def_document:v1:2681
   scope: data
   aspect: system_data
   depth: specification
   lifecycle: approved
   layer: domain
   tags: [cross-scope]
-  links:
-    - target: system-root
-      type: member_of
 ---
 # 태그 관리 설계
 

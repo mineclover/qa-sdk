@@ -113,6 +113,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     validateScopeAspect(input.scope, input.aspect);
 
     // 좌표 계산 (불변 정체성: scope × aspect × depth)
+    // level은 메타데이터 — 분해 깊이가 변할 수 있으므로 주소에 포함하지 않음
     const address = encodeDocument({
       scope: input.scope,
       aspect: input.aspect,

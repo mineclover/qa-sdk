@@ -14,7 +14,10 @@ import type { MemoryDefinitionRegistry } from "./registry.js";
 /** 검증 이슈 1건 */
 export interface ValidationIssue {
   readonly severity: "error" | "warning";
-  readonly type: "broken-link" | "circular-ref" | "self-ref" | "orphan" | "missing-purpose" | "short-purpose";
+  readonly type:
+    | "broken-link" | "circular-ref" | "self-ref" | "orphan"
+    | "missing-purpose" | "short-purpose"
+    | "multi-parent" | "contains-depth-violation";
   readonly docId: string;
   readonly message: string;
 }
@@ -104,9 +107,66 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
   }
 
-  // 고아 문서 (system-root 제외)
+  // contains 다중 부모 감지
+  // - cross-scope 태그가 있는 문서는 의도적 공유 소속 → 허용 (info만)
+  // - 태그 없이 다중 소속이면 비의도적 중복 가능 → warning
+  const containsParentCount = new Map<string, string[]>();
+  for (const entry of allEntries) {
+    const outgoing = registry.getLinks(entry.id, "outgoing");
+    for (const link of outgoing) {
+      if (link.linkType === "contains") {
+        const parents = containsParentCount.get(link.targetId) ?? [];
+        parents.push(entry.id);
+        containsParentCount.set(link.targetId, parents);
+      }
+    }
+  }
+  for (const [childId, parents] of containsParentCount) {
+    if (parents.length > 1) {
+      const child = allEntries.find(e => e.id === childId);
+      const hasCrossScope = child?.tags?.includes("cross-scope") ?? false;
+      if (!hasCrossScope) {
+        issues.push({
+          severity: "warning",
+          type: "multi-parent",
+          docId: childId,
+          message: `contains 다중 부모: [${parents.join(", ")}] — 의도적이면 cross-scope 태그 추가, 아니면 하나를 depends_on으로 전환`,
+        });
+      }
+    }
+  }
+
+  // contains 깊이 제한 — 4단계 이상 중첩이면 경고 (과도한 계층)
+  function containsDepth(id: string, visited: Set<string>): number {
+    if (visited.has(id)) return 0;
+    visited.add(id);
+    const outgoing = registry.getLinks(id, "outgoing");
+    let maxChild = 0;
+    for (const link of outgoing) {
+      if (link.linkType === "contains" && allIds.has(link.targetId)) {
+        maxChild = Math.max(maxChild, containsDepth(link.targetId, visited));
+      }
+    }
+    return 1 + maxChild;
+  }
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
+    if (entry.depth !== "overview") continue;
+    const depth = containsDepth(entry.id, new Set());
+    if (depth > 4) {
+      issues.push({
+        severity: "warning",
+        type: "contains-depth-violation",
+        docId: entry.id,
+        message: `contains 계층 ${depth}단계 — 4단계 이하 권장`,
+      });
+    }
+  }
+
+  // 고아 문서 (system-root, draft/review 제외)
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    if (entry.lifecycle === "draft" || entry.lifecycle === "review") continue;
     if (entry.id === "system-root") continue;
     if (!referenced.has(entry.id)) {
       issues.push({

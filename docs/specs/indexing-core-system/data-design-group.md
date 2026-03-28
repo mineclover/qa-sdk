@@ -1,6 +1,8 @@
 ---
 def:
   id: data-design-group
+  level: module
+  address: def_document:v1:2672
   scope: data
   aspect: domain_data
   depth: overview

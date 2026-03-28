@@ -54,6 +54,25 @@ function toVersionedAxis(
 // ─── 축 정의 ─────────────────────────────────────────────
 
 /**
+ * def_level — 분해 레벨 (5 entries, capacity 8)
+ *
+ * 5Q: ✓유한(5) ✓분류 관련(분해 단위 결정) ✓공유(전 prefix) ✓안정(시스템 구조 안정) ✓capacity
+ * 설명력: 문서가 전체-부분 분해 구조에서 어느 레벨인지. scope보다 상위 개념.
+ * L0~L1에서는 scope가 의미 약화, L2 이하에서 scope가 본래 역할 수행.
+ */
+export const DEF_LEVEL = {
+  entries: ["system", "area", "unit", "module", "leaf"] as const,
+  capacity: 16,  // nextPowerOf2(5 * 2 = 10) = 16
+  ko: {
+    system: "시스템",
+    area: "영역",
+    unit: "단위",
+    module: "모듈",
+    leaf: "리프",
+  } as Record<string, string>,
+} as const;
+
+/**
  * def_scope — 정의 대분류 (7 entries, capacity 16)
  *
  * 5Q: ✓유한(7) ✓분류 관련(문서 종류 결정) ✓공유(전 prefix) ✓안정(SW 정의 기본 분류) ✓capacity
@@ -179,10 +198,22 @@ export const LINK_TYPE = {
   } as Record<string, string>,
 } as const;
 
+/**
+ * doc_seq — 문서 순번 (유형 내 유일 식별)
+ *
+ * 같은 scope×aspect×depth 내에서 개별 문서를 구분하는 순번.
+ * capacity 128 → 같은 유형에 최대 128건.
+ * 주소 = scope × aspect × depth × doc_seq → 유일 식별자.
+ */
+export const DOC_SEQ = {
+  capacity: 128,
+} as const;
+
 // ─── VersionedAxis 변환 ──────────────────────────────────
 
 /** 카탈로그 호환 VersionedAxis 목록 */
 export const DEFINITION_AXES: Record<string, VersionedAxis> = {
+  def_level: toVersionedAxis("def_level", "분해 레벨", DEF_LEVEL),
   def_scope: toVersionedAxis("def_scope", "정의 대분류", DEF_SCOPE),
   def_aspect: toVersionedAxis("def_aspect", "세부 측면", DEF_ASPECT),
   def_depth: toVersionedAxis("def_depth", "정의 깊이", DEF_DEPTH),

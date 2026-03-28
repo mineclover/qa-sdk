@@ -1,10 +1,12 @@
 ---
 def:
   id: motion-content-glossary
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification
   lifecycle: deprecated
+  layer: domain
   tags: [tier-frontend]
   links:
     - target: system-concepts

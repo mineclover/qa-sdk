@@ -1,6 +1,8 @@
 ---
 def:
   id: system-root
+  level: system
+  address: def_document:v1:1072
   scope: flow
   aspect: process_flow
   depth: overview
@@ -12,15 +14,17 @@ def:
       type: contains
     - target: system-data-flow
       type: contains
-    - target: system-packages
+    - target: system-design-tools
+      type: contains
+    - target: system-frontend
       type: contains
     - target: system-infra
       type: contains
     - target: system-libraries
       type: contains
-    - target: system-design-tools
+    - target: system-narrative
       type: contains
-    - target: system-frontend
+    - target: system-packages
       type: contains
     - target: system-support
       type: contains

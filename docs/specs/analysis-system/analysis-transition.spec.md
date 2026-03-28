@@ -1,10 +1,12 @@
 ---
 def:
   id: analysis-transition
+  address: def_document:v1:1609
   scope: state
   aspect: domain_state
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [observability, tier-system]
   links:

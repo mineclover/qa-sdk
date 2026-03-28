@@ -1,6 +1,7 @@
 ---
 def:
   id: df-narrative-context
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -9,8 +10,6 @@ def:
   svc: decision-flow
   tags: [decision]
   links:
-    - target: df-narrative-group
-      type: member_of
     - target: df-narrative-structure
       type: depends_on
 ---

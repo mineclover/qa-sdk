@@ -1,3 +1,5 @@
+// DEPRECATED: Hono createApp → NestJS 전환으로 비활성화. registry-service 자체 테스트(25파일, 212건)로 대체.
+
 /**
  * Registry Service — 서비스 등록 포맷 탐색
  *
@@ -126,6 +128,7 @@ async function json(res: Response) {
 //  단점: 패키지 속성(tier/runtime/scope) 조회 불가, 범위 질의 불가
 // ══════════════════════════════════════════════════════════════
 
+describe.skip("Registry Service — 서비스 등록 포맷 탐색", () => {
 describe("Format A: 단일 pkg 축 — leaf prefix로 등록", () => {
   it("모든 패키지를 leaf prefix로 등록", async () => {
     const { app } = buildDeps();
@@ -627,3 +630,4 @@ describe("포맷 비교 — 결론 도출", () => {
     expect(true).toBe(true);
   });
 });
+}); // describe.skip("Registry Service — 서비스 등록 포맷 탐색")

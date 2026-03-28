@@ -1,11 +1,14 @@
 ---
 def:
   id: viz-language-system
+  level: module
+  address: def_document:v1:2672
   scope: data
   aspect: domain_data
   depth: overview
   lifecycle: approved
   layer: domain
+  svc: platform-demo
   tags: [structural, tier-frontend]
   links:
     - target: rlsc-core-model

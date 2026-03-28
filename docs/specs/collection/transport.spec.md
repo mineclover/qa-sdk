@@ -1,11 +1,13 @@
 ---
 def:
   id: collection-transport-spec
+  address: def_document:v1:3241
   scope: interface
   aspect: event_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: ingest-server
   tags: [tier-frontend]
   links:
     - target: address-context-spec

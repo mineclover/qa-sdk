@@ -23,6 +23,7 @@
 
 // ─── 타입 ────────────────────────────────────────────────
 export type {
+  DefLevel,
   DefScope,
   DefAspect,
   DefDepth,
@@ -50,6 +51,7 @@ export type {
 // ─── 축 정의 ────────────────────────────────────────────
 export type { VersionedAxis, ExplanatoryRole, AxisExplanatoryMeta } from "./vocabulary.js";
 export {
+  DEF_LEVEL,
   DEF_SCOPE,
   DEF_ASPECT,
   DEF_DEPTH,
@@ -60,7 +62,7 @@ export {
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────
-export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef } from "./taxonomy.js";
+export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef, LinkTypeRule } from "./taxonomy.js";
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
@@ -68,6 +70,9 @@ export {
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
+  LINK_TYPE_RULES,
+  isLinkCycleAllowed,
+  isLinkMultiParentAllowed,
   CONCERN_TAGS,
   STRUCTURAL_TAGS,
   TIER_TAGS,
@@ -86,17 +91,34 @@ export type { DimRef, PrefixVersionDef, PrefixMeta, PrefixDef, DefinitionCatalog
 export { DEFINITION_CATALOG } from "./catalog.js";
 
 // ─── 좌표 인코딩/디코딩 ─────────────────────────────────
-export type { DocumentCoordinate, DecodedDocument, LinkCoordinate, DecodedLink } from "./observe.js";
+export type {
+  DocumentCoordinate, DecodedDocument,
+  UniqueDocumentCoordinate, DecodedUniqueDocument,
+  LinkCoordinate, DecodedLink,
+} from "./observe.js";
 export {
   encodeDocument,
   decodeDocument,
   serializeDocumentAddress,
   parseDocumentAddress,
+  encodeUniqueDocument,
+  decodeUniqueDocument,
+  serializeUniqueDocumentAddress,
+  parseUniqueDocumentAddress,
   encodeLink,
   decodeLink,
   documentTotalSpace,
+  uniqueDocumentTotalSpace,
   linkTotalSpace,
 } from "./observe.js";
+
+// ─── 설정 파일 ─────────────────────────────────────────
+export type { DefConfig, DriftEntry } from "./def-config.js";
+export { readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath } from "./def-config.js";
+
+// ─── 유일 주소 할당 ────────────────────────────────────
+export type { AddressAssignment } from "./address-assign.js";
+export { assignUniqueAddresses, buildIdToAddressMap, buildAddressToIdMap } from "./address-assign.js";
 
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";
@@ -174,6 +196,20 @@ export {
   scanAndBuild,
   computeAllConcerns,
 } from "./frontmatter.js";
+
+// ─── Frontmatter Writer (DB → file 역동기화) ────────────
+export type { DbMetadata } from "./frontmatter-writer.js";
+export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.js";
+
+// ─── 데이터 소스 인터페이스 (서버/로컬 추상화) ───────────
+export type {
+  DefDoc,
+  DefIncomingLink,
+  DefListFilter,
+  DefValidationIssue,
+  DefValidationResult,
+  DefDataSource,
+} from "./data-source.js";
 
 // ─── CLI 도구 ───────────────────────────────────────────
 export { topdown, bottomup, context } from "./cli-tools.js";

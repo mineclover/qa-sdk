@@ -1,6 +1,7 @@
 ---
 def:
   id: coordinate-states-spec
+  address: def_document:v1:1617
   scope: state
   aspect: system_state
   depth: specification

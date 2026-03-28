@@ -9,7 +9,7 @@
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
-import type { DefScope, DefAspect, ConcernTag, StructuralTag, TierTag, KnownTag } from "./types.js";
+import type { DefScope, DefAspect, LinkType, ConcernTag, StructuralTag, TierTag, KnownTag } from "./types.js";
 
 // ─── 분류 체계 트리 ──────────────────────────────────────
 
@@ -174,6 +174,111 @@ export function allValidCombinations(): readonly { scope: DefScope; aspect: DefA
   return Object.entries(VALID_SCOPE_ASPECTS).flatMap(
     ([scope, aspects]) => aspects.map(aspect => ({ scope: scope as DefScope, aspect })),
   );
+}
+
+// ─── LinkType 사용 규칙 ─────────────────────────────────
+
+/**
+ * LinkType별 의미와 사용 규칙.
+ *
+ * 관계 유형을 선택할 때 이 정의를 기준으로 판단한다.
+ * 순환 허용 여부는 validateGraph()에서 사용.
+ */
+export interface LinkTypeRule {
+  readonly id: LinkType;
+  readonly name: string;
+  /** 관계 읽는 법: "A {verb} B" */
+  readonly verb: string;
+  readonly description: string;
+  /** true면 source에서 target으로만 흐르고, 역방향은 다른 의미 */
+  readonly directional: boolean;
+  /** 순환 참조 허용 여부 */
+  readonly allowCycle: boolean;
+  /** 1:N 제약 (target이 이 유형으로 여러 source를 가질 수 있는가) */
+  readonly multiParent: boolean;
+  /** 사용 기준 — 언제 이 유형을 선택하는가 */
+  readonly when: string;
+  /** 혼동 주의 — 다른 유형과의 구분 */
+  readonly notTo: string;
+}
+
+export const LINK_TYPE_RULES: readonly LinkTypeRule[] = [
+  {
+    id: "contains",
+    name: "포함",
+    verb: "포함한다",
+    description: "그룹이 멤버를 소속시키는 트리 관계. 그룹 overview → 멤버.",
+    directional: true,
+    allowCycle: false,
+    multiParent: false,
+    when: "시스템/그룹 문서가 하위 문서를 조직할 때. cross-scope 태그가 있으면 다중 소속 의도적 허용",
+    notTo: "depends_on과 혼동 금지. '사용한다'는 depends_on, '소속시킨다'는 contains",
+  },
+  {
+    id: "depends_on",
+    name: "의존",
+    verb: "의존한다",
+    description: "A가 B 없이 동작할 수 없는 기능적 의존. 빌드/런타임 필수.",
+    directional: true,
+    allowCycle: false,
+    multiParent: true,
+    when: "A가 B의 API/타입/데이터를 직접 사용할 때",
+    notTo: "refines와 혼동 금지. '구체화한다'는 refines, '필요로 한다'는 depends_on",
+  },
+  {
+    id: "implements",
+    name: "구현",
+    verb: "구현한다",
+    description: "A가 B에서 정의한 계약/인터페이스를 구현. specification → implementation.",
+    directional: true,
+    allowCycle: false,
+    multiParent: true,
+    when: "interface spec을 코드가 구현할 때, 추상 계약을 구체 모듈이 이행할 때",
+    notTo: "refines와 혼동 금지. refines는 같은 추상도에서 상세화, implements는 추상→구체",
+  },
+  {
+    id: "refines",
+    name: "구체화",
+    verb: "구체화한다",
+    description: "A가 B의 범위를 좁혀 더 상세하게 기술. 같은 계층 내 상세화.",
+    directional: true,
+    allowCycle: false,
+    multiParent: true,
+    when: "overview → specification, 서비스 모듈이 시스템 문서를 상세화할 때",
+    notTo: "implements와 혼동 금지. implements는 계약→코드, refines는 문서→상세문서",
+  },
+  {
+    id: "constrains",
+    name: "제약",
+    verb: "제약한다",
+    description: "A가 B에 규칙/제한을 부과. constraint 문서가 대상을 제약.",
+    directional: true,
+    allowCycle: false,
+    multiParent: true,
+    when: "constraint/* 문서가 다른 문서의 동작을 제한할 때",
+    notTo: "depends_on과 혼동 금지. 제약은 '규칙 부과', 의존은 '기능 필요'",
+  },
+  {
+    id: "traces_to",
+    name: "추적",
+    verb: "추적한다",
+    description: "A의 이력이 B로 이어진다. 마이그레이션, 버전 이전 추적.",
+    directional: true,
+    allowCycle: false,
+    multiParent: true,
+    when: "deprecated 문서가 대체 문서를 가리킬 때, 버전 이전 추적",
+    notTo: "depends_on과 혼동 금지. 런타임 의존이 아닌 이력 추적",
+  },
+] as const;
+
+/** LinkType이 순환을 허용하는지 확인 */
+export function isLinkCycleAllowed(lt: LinkType): boolean {
+  return LINK_TYPE_RULES.find(r => r.id === lt)?.allowCycle ?? false;
+}
+
+/** LinkType이 다중 부모를 허용하는지 확인 */
+export function isLinkMultiParentAllowed(lt: LinkType): boolean {
+  return LINK_TYPE_RULES.find(r => r.id === lt)?.multiParent ?? true;
 }
 
 // ─── 태그 레지스트리 ─────────────────────────────────────

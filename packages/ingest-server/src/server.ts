@@ -1,3 +1,4 @@
+import { initTelemetry, withQueryTracing } from "@qa-sdk/otel";
 import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
@@ -82,6 +83,7 @@ async function main(argv = process.argv.slice(2)) {
 }
 
 async function startServer() {
+  const shutdownTelemetry = initTelemetry({ serviceName: "ingest-server", env });
   const logger = createLogger("ingest-server");
   const stores = createRuntimeStores();
   const appLifecycle = createAppLifecycle();
@@ -311,6 +313,7 @@ async function startServer() {
       cleanupScheduler?.stop();
       await taskQueue?.close();
       if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
+      await shutdownTelemetry();
     },
     logger,
     recordStreamBroker,
@@ -320,6 +323,7 @@ async function startServer() {
 }
 
 async function startWorker() {
+  const shutdownTelemetry = initTelemetry({ serviceName: "ingest-worker", env });
   const logger = createLogger("ingest-worker");
   const stores = createRuntimeStores();
   const taskQueue = createTaskQueue({
@@ -374,6 +378,7 @@ async function startWorker() {
     close: async () => {
       await taskQueue.close();
       if (env.TRACE_DATABASE_URL) await closeClient(env.TRACE_DATABASE_URL);
+      await shutdownTelemetry();
     },
     logger,
   });
@@ -395,7 +400,9 @@ function createRuntimeStores(): RuntimeStores {
     };
   }
 
-  const db = createDb(env.TRACE_DATABASE_URL);
+  const rawDb = createDb(env.TRACE_DATABASE_URL);
+  // OTel span 자동 생성을 위한 계측 래퍼
+  const db = withQueryTracing(rawDb);
 
   return {
     db,

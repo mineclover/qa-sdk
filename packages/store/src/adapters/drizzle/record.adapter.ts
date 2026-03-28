@@ -42,7 +42,8 @@ export class DrizzleRecordStore implements RecordStore {
         userId: r.userId,
         userAttributes: r.userAttributes,
       })),
-    ).onConflictDoNothing({ target: eventRecords.logId });
+    ).onConflictDoNothing({ target: eventRecords.logId })
+      .comment({ adapter: "RecordStore", method: "insertBatch" });
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
@@ -50,7 +51,8 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.traceId, traceId))
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findByTraceId" });
     return rows.map(toStoredRecord);
   }
 
@@ -64,7 +66,8 @@ export class DrizzleRecordStore implements RecordStore {
       .from(eventRecords)
       .where(buildPaginatedWhere(eq(eventRecords.traceId, traceId), params.cursor))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .limit(limit + 1);
+      .limit(limit + 1)
+      .comment({ adapter: "RecordStore", method: "findByTraceIdPaginated" });
 
     return toStoredRecordPage(rows, limit);
   }
@@ -74,7 +77,8 @@ export class DrizzleRecordStore implements RecordStore {
       .select()
       .from(eventRecords)
       .where(eq(eventRecords.qaSessionId, sessionId))
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findBySessionId" });
     return rows.map(toStoredRecord);
   }
 
@@ -90,7 +94,8 @@ export class DrizzleRecordStore implements RecordStore {
         buildPaginatedWhere(eq(eventRecords.qaSessionId, sessionId), params.cursor),
       )
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .limit(limit + 1);
+      .limit(limit + 1)
+      .comment({ adapter: "RecordStore", method: "findBySessionIdPaginated" });
 
     return toStoredRecordPage(rows, limit);
   }
@@ -108,7 +113,8 @@ export class DrizzleRecordStore implements RecordStore {
           eq(eventRecords.eventKey, eventKey),
         ),
       )
-      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId));
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .comment({ adapter: "RecordStore", method: "findByTraceAndEventKey" });
     return rows.map(toStoredRecord);
   }
 }

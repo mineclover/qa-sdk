@@ -1,6 +1,8 @@
 ---
 def:
   id: system-design-tools
+  level: area
+  address: def_document:v1:1072
   scope: flow
   aspect: process_flow
   depth: overview
@@ -17,6 +19,8 @@ def:
     - target: analysis-system
       type: contains
     - target: definition-catalog-spec
+      type: contains
+    - target: prefix-catalog-system
       type: contains
 ---
 # 설계 도구 계층

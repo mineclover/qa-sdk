@@ -1,6 +1,7 @@
 ---
 def:
   id: layout-sim-formats
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification

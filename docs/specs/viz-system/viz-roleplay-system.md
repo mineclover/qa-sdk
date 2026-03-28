@@ -1,11 +1,14 @@
 ---
 def:
   id: viz-roleplay-system
+  level: module
+  address: def_document:v1:8
   scope: ui
   aspect: component
   depth: overview
   lifecycle: approved
   layer: experience
+  svc: platform-demo
   tags: [structural, tier-frontend]
   links:
     - target: form-builder-structure

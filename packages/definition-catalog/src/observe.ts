@@ -18,7 +18,7 @@
  */
 
 import { WeightedIndex } from "weighted-index";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, LINK_TYPE } from "./vocabulary.js";
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DOC_SEQ, LINK_TYPE } from "./vocabulary.js";
 import type { DefScope, DefAspect, DefDepth, LinkType } from "./types.js";
 
 // ─── 좌표 인덱스 (lazy init) ─────────────────────────────
@@ -29,9 +29,9 @@ let _linkIdx: WeightedIndex | undefined;
 /**
  * def_document prefix의 WeightedIndex.
  *
- * lifecycle은 좌표에 포함하지 않는다 — 변하는 상태이므로 주소를 불변으로 유지.
+ * lifecycle, level은 좌표에 포함하지 않는다 — 변하는 상태이므로 주소를 불변으로 유지.
  * 좌표 = scope × aspect × depth (불변 정체성)
- * lifecycle = 메타데이터 필드로만 관리
+ * lifecycle, level = 메타데이터 필드로만 관리
  */
 function documentIndex(): WeightedIndex {
   return (_documentIdx ??= new WeightedIndex(
@@ -159,11 +159,74 @@ export function decodeLink(address: number): DecodedLink {
   };
 }
 
+// ─── v2 유일 주소 (scope × aspect × depth × seq) ────────
+
+let _uniqueIdx: WeightedIndex | undefined;
+
+function uniqueDocumentIndex(): WeightedIndex {
+  return (_uniqueIdx ??= new WeightedIndex(
+    [DEF_SCOPE.capacity, DEF_ASPECT.capacity, DEF_DEPTH.capacity, DOC_SEQ.capacity],
+    ["def_scope", "def_aspect", "def_depth", "doc_seq"],
+  ));
+}
+
+/** v2 유일 주소 인코딩 입력 */
+export interface UniqueDocumentCoordinate extends DocumentCoordinate {
+  readonly seq: number;
+}
+
+/** v2 유일 주소 디코딩 결과 */
+export interface DecodedUniqueDocument extends DecodedDocument {
+  readonly seq: number;
+}
+
+/**
+ * v2 유일 주소 인코딩.
+ * scope × aspect × depth × seq → 유일한 정수 주소.
+ */
+export function encodeUniqueDocument(coord: UniqueDocumentCoordinate): number {
+  return uniqueDocumentIndex().encode([
+    indexOf(DEF_SCOPE.entries, coord.scope),
+    indexOf(DEF_ASPECT.entries, coord.aspect),
+    indexOf(DEF_DEPTH.entries, coord.depth),
+    coord.seq,
+  ]);
+}
+
+/**
+ * v2 유일 주소 디코딩.
+ */
+export function decodeUniqueDocument(address: number): DecodedUniqueDocument {
+  const coords = uniqueDocumentIndex().decode(address);
+  return {
+    scope: DEF_SCOPE.entries[coords[0] - 1] as DefScope,
+    aspect: DEF_ASPECT.entries[coords[1] - 1] as DefAspect,
+    depth: DEF_DEPTH.entries[coords[2] - 1] as DefDepth,
+    seq: coords[3],
+  };
+}
+
+/** v2 유일 주소 직렬화 */
+export function serializeUniqueDocumentAddress(address: number): string {
+  return `def_document:v2:${address}`;
+}
+
+/** v2 유일 주소 파싱 */
+export function parseUniqueDocumentAddress(serialized: string): number | null {
+  const match = serialized.match(/^def_document:v2:(\d+)$/);
+  return match ? Number(match[1]) : null;
+}
+
 // ─── 주소 공간 정보 ──────────────────────────────────────
 
-/** def_document prefix의 총 주소 공간 크기 */
+/** def_document v1(분류) prefix의 총 주소 공간 크기 */
 export function documentTotalSpace(): number {
   return documentIndex().size;
+}
+
+/** def_document v2(유일) prefix의 총 주소 공간 크기 */
+export function uniqueDocumentTotalSpace(): number {
+  return uniqueDocumentIndex().size;
 }
 
 /** def_link prefix의 총 주소 공간 크기 */

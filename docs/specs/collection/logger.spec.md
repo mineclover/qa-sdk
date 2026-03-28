@@ -1,11 +1,13 @@
 ---
 def:
   id: logger-spec
+  address: def_document:v1:2681
   scope: data
   aspect: system_data
   depth: specification
   lifecycle: deprecated
   layer: domain
+  svc: ingest-server
   tags: [observability]
   links:
     - target: address-context-spec

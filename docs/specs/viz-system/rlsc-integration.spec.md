@@ -1,11 +1,13 @@
 ---
 def:
   id: rlsc-integration
+  address: def_document:v1:1073
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: rlsc-spec

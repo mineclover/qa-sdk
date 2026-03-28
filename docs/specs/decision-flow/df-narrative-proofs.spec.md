@@ -1,6 +1,7 @@
 ---
 def:
   id: df-narrative-proofs
+  address: def_document:v1:547
   scope: feature
   aspect: scenario
   depth: validation
@@ -9,8 +10,6 @@ def:
   svc: decision-flow
   tags: [decision, testing]
   links:
-    - target: df-narrative-group
-      type: member_of
     - target: df-narrative-context
       type: traces_to
 ---

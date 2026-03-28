@@ -7,249 +7,259 @@
  * 저장 위치: ~/.qa-sdk/decision-flow.sqlite
  */
 
-import { createRequire } from "node:module";
 import type {
   InstanceStore,
   InstanceContextQuery,
   InstanceTimeRangeQuery,
   FlowInstance,
 } from "decision-flow";
+import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
+import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
+import { flowInstances } from "../db/schema.js";
+import {
+  eq,
+  and,
+  desc,
+  asc,
+  gte,
+  lte,
+  sql,
+  count,
+  countDistinct,
+  type SQL,
+} from "drizzle-orm";
 
-// node:sqlite 동적 로드 (Node.js 내장, 실험적)
-interface DatabaseSyncInstance {
-  exec(sql: string): void;
-  prepare(sql: string): {
-    run(...params: unknown[]): unknown;
-    all(...params: unknown[]): unknown[];
-    get(...params: unknown[]): unknown;
-  };
-  close(): void;
-}
-
-function createDatabase(path: string): DatabaseSyncInstance {
-  const require = createRequire(import.meta.url);
-  const { DatabaseSync } = require("node:sqlite") as { DatabaseSync: new (path: string) => DatabaseSyncInstance };
-  return new DatabaseSync(path);
-}
-
-// ─── DDL ─────────────────────────────────────────────────
-
-const FLOW_SCHEMA_DDL = `
-CREATE TABLE IF NOT EXISTS flow_instances (
-  id           TEXT NOT NULL PRIMARY KEY,
-  schema_id    TEXT NOT NULL,
-  schema_version TEXT NOT NULL,
-  status       TEXT NOT NULL,
-  context      TEXT NOT NULL DEFAULT '{}',
-  selections   TEXT NOT NULL DEFAULT '[]',
-  outcome      TEXT,
-  address      INTEGER,
-  address_context TEXT,
-  verdict      TEXT,
-  test_plan    TEXT,
-  started_at   TEXT NOT NULL,
-  completed_at TEXT,
-  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_fi_schema ON flow_instances (schema_id);
-CREATE INDEX IF NOT EXISTS idx_fi_status ON flow_instances (status);
-CREATE INDEX IF NOT EXISTS idx_fi_started ON flow_instances (started_at);
-`;
+// drizzle() 반환 타입
+type DrizzleDb = ReturnType<typeof drizzle>;
 
 // ─── Store ───────────────────────────────────────────────
 
 export class SqliteInstanceStore implements InstanceStore {
-  private db: DatabaseSyncInstance;
+  private rawDb: DatabaseSyncInstance;
+  private db: DrizzleDb;
 
   constructor(path: string) {
-    this.db = createDatabase(path);
-    // WAL 모드: 읽기와 쓰기가 동시에 가능 (여러 CLI 프로세스 동시 사용)
-    this.db.exec("PRAGMA journal_mode = WAL");
-    // busy timeout: 다른 프로세스가 쓰는 중이면 3초까지 대기
-    this.db.exec("PRAGMA busy_timeout = 3000");
-    this.db.exec(FLOW_SCHEMA_DDL);
-    this.migrate();
-  }
-
-  /** 기존 DB에 새 컬럼이 없으면 추가 */
-  private migrate(): void {
-    for (const col of ["verdict", "test_plan"]) {
-      try {
-        this.db.exec(`ALTER TABLE flow_instances ADD COLUMN ${col} TEXT`);
-      } catch {
-        // 이미 존재하면 무시
-      }
+    const DatabaseSync = getDatabaseSync();
+    this.rawDb = new DatabaseSync(path);
+    this.rawDb.exec("PRAGMA journal_mode = WAL");
+    this.rawDb.exec("PRAGMA busy_timeout = 3000");
+    // drizzle 인스턴스 생성 + 마이그레이션 실행
+    try {
+      this.db = drizzle({ client: this.rawDb });
+      migrate(this.db, {
+        migrationsFolder: new URL("../../drizzle", import.meta.url).pathname,
+      });
+    } catch (err) {
+      console.error("[cli] drizzle 마이그레이션 실패:", err);
+      throw err;
     }
   }
 
   save(instance: FlowInstance): void {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO flow_instances
-        (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, test_plan, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run(
-      instance.id,
-      instance.schemaId,
-      instance.schemaVersion,
-      instance.status,
-      JSON.stringify(instance.context),
-      JSON.stringify(instance.selections),
-      instance.outcome ?? null,
-      instance.coordinateAddress ?? null,
-      instance.addressContext ? JSON.stringify(instance.addressContext) : null,
-      instance.verdict ? JSON.stringify(instance.verdict) : null,
-      instance.testPlan ? JSON.stringify(instance.testPlan) : null,
-      instance.startedAt,
-      instance.completedAt ?? null,
-    );
+    const values = {
+      id: instance.id,
+      schemaId: instance.schemaId,
+      schemaVersion: instance.schemaVersion,
+      status: instance.status,
+      context: JSON.stringify(instance.context),
+      selections: JSON.stringify(instance.selections),
+      outcome: instance.outcome ?? null,
+      address: instance.coordinateAddress ?? null,
+      addressContext: instance.addressContext
+        ? JSON.stringify(instance.addressContext)
+        : null,
+      verdict: instance.verdict ? JSON.stringify(instance.verdict) : null,
+      testPlan: instance.testPlan ? JSON.stringify(instance.testPlan) : null,
+      startedAt: instance.startedAt,
+      completedAt: instance.completedAt ?? null,
+    };
+    this.db
+      .insert(flowInstances)
+      .values(values)
+      .onConflictDoUpdate({
+        target: flowInstances.id,
+        set: {
+          schemaId: values.schemaId,
+          schemaVersion: values.schemaVersion,
+          status: values.status,
+          context: values.context,
+          selections: values.selections,
+          outcome: values.outcome,
+          address: values.address,
+          addressContext: values.addressContext,
+          verdict: values.verdict,
+          testPlan: values.testPlan,
+          startedAt: values.startedAt,
+          completedAt: values.completedAt,
+        },
+      })
+      .run();
   }
 
   findBySchema(schemaId: string): FlowInstance[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE schema_id = ? ORDER BY started_at ASC",
-    ).all(schemaId) as RawRow[];
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.schemaId, schemaId))
+      .orderBy(asc(flowInstances.startedAt))
+      .all();
     return rows.map(toFlowInstance);
   }
 
   findByContext(query: InstanceContextQuery): FlowInstance[] {
-    // SQLite에서 JSON 필드 검색 — json_extract 사용
-    let sql = "SELECT * FROM flow_instances WHERE 1=1";
-    const params: unknown[] = [];
-
+    const conditions: SQL[] = [];
     if (query.schemaId) {
-      sql += " AND schema_id = ?";
-      params.push(query.schemaId);
+      conditions.push(eq(flowInstances.schemaId, query.schemaId));
     }
-
-    // context 키 검색: json_extract(context, '$.key')
+    // SQLite에서 JSON 필드 검색 — json_extract 사용
     const jsonPath = `$.${query.key}`;
     if (Object.prototype.hasOwnProperty.call(query, "value")) {
-      sql += ` AND json_extract(context, ?) = ?`;
-      params.push(jsonPath, query.value as string);
+      conditions.push(
+        sql`json_extract(${flowInstances.context}, ${jsonPath}) = ${String(query.value)}`,
+      );
     } else {
-      sql += ` AND json_extract(context, ?) IS NOT NULL`;
-      params.push(jsonPath);
+      conditions.push(
+        sql`json_extract(${flowInstances.context}, ${jsonPath}) IS NOT NULL`,
+      );
     }
-
-    sql += " ORDER BY started_at ASC";
-    const rows = this.db.prepare(sql).all(...params) as RawRow[];
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(and(...conditions))
+      .orderBy(asc(flowInstances.startedAt))
+      .all();
     return rows.map(toFlowInstance);
   }
 
   findByTimeRange(query: InstanceTimeRangeQuery): FlowInstance[] {
-    let sql = "SELECT * FROM flow_instances WHERE 1=1";
-    const params: unknown[] = [];
-
+    const conditions: SQL[] = [];
     if (query.schemaId) {
-      sql += " AND schema_id = ?";
-      params.push(query.schemaId);
+      conditions.push(eq(flowInstances.schemaId, query.schemaId));
     }
     if (query.from) {
-      sql += " AND started_at >= ?";
-      params.push(query.from);
+      conditions.push(gte(flowInstances.startedAt, query.from));
     }
     if (query.to) {
-      sql += " AND started_at <= ?";
-      params.push(query.to);
+      conditions.push(lte(flowInstances.startedAt, query.to));
     }
-
-    sql += " ORDER BY started_at ASC";
-    const rows = this.db.prepare(sql).all(...params) as RawRow[];
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(asc(flowInstances.startedAt))
+      .all();
     return rows.map(toFlowInstance);
   }
 
   /** 키워드로 context 값 또는 schema_id 검색 */
   search(keyword: string): FlowInstance[] {
-    const like = `%${keyword}%`;
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE schema_id LIKE ? OR context LIKE ? ORDER BY started_at DESC LIMIT 50",
-    ).all(like, like) as RawRow[];
+    const pattern = `%${keyword}%`;
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(
+        sql`${flowInstances.schemaId} LIKE ${pattern} OR ${flowInstances.context} LIKE ${pattern}`,
+      )
+      .orderBy(desc(flowInstances.startedAt))
+      .limit(50)
+      .all();
     return rows.map(toFlowInstance);
   }
 
   /** 최근 N건 조회 */
   recent(limit: number = 20, schemaId?: string): FlowInstance[] {
-    let sql = "SELECT * FROM flow_instances";
-    const params: unknown[] = [];
-    if (schemaId) {
-      sql += " WHERE schema_id = ?";
-      params.push(schemaId);
-    }
-    sql += " ORDER BY started_at DESC LIMIT ?";
-    params.push(limit);
-    const rows = this.db.prepare(sql).all(...params) as RawRow[];
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(schemaId ? eq(flowInstances.schemaId, schemaId) : undefined)
+      .orderBy(desc(flowInstances.startedAt))
+      .limit(limit)
+      .all();
     return rows.map(toFlowInstance);
   }
 
   /** 인스턴스 단건 조회 */
   findById(id: string): FlowInstance | undefined {
-    const row = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE id = ?",
-    ).get(id) as RawRow | undefined;
+    const row = this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.id, id))
+      .get();
     return row ? toFlowInstance(row) : undefined;
   }
 
   /** active 인스턴스 목록 (세션 간 복원용) */
   findActive(): FlowInstance[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE status = 'active' ORDER BY started_at DESC",
-    ).all() as RawRow[];
+    const rows = this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.status, "active"))
+      .orderBy(desc(flowInstances.startedAt))
+      .all();
     return rows.map(toFlowInstance);
   }
 
   /** 통계 */
-  stats(): { total: number; completed: number; active: number; schemas: number } {
-    const count = (sql: string): number => {
-      const row = this.db.prepare(sql).get() as Record<string, unknown> | undefined;
-      return typeof row?.cnt === "number" ? row.cnt : 0;
-    };
+  stats(): {
+    total: number;
+    completed: number;
+    active: number;
+    schemas: number;
+  } {
+    const totalRow = this.db
+      .select({ cnt: count() })
+      .from(flowInstances)
+      .get();
+    const completedRow = this.db
+      .select({ cnt: count() })
+      .from(flowInstances)
+      .where(eq(flowInstances.status, "completed"))
+      .get();
+    const activeRow = this.db
+      .select({ cnt: count() })
+      .from(flowInstances)
+      .where(eq(flowInstances.status, "active"))
+      .get();
+    const schemasRow = this.db
+      .select({ cnt: countDistinct(flowInstances.schemaId) })
+      .from(flowInstances)
+      .get();
     return {
-      total: count("SELECT COUNT(*) as cnt FROM flow_instances"),
-      completed: count("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'completed'"),
-      active: count("SELECT COUNT(*) as cnt FROM flow_instances WHERE status = 'active'"),
-      schemas: count("SELECT COUNT(DISTINCT schema_id) as cnt FROM flow_instances"),
+      total: totalRow?.cnt ?? 0,
+      completed: completedRow?.cnt ?? 0,
+      active: activeRow?.cnt ?? 0,
+      schemas: schemasRow?.cnt ?? 0,
     };
   }
 
   close(): void {
-    this.db.close();
+    this.rawDb.close();
   }
 }
 
 // ─── 내부 ────────────────────────────────────────────────
 
-interface RawRow {
-  id: string;
-  schema_id: string;
-  schema_version: string;
-  status: string;
-  context: string;
-  selections: string;
-  outcome: string | null;
-  address: number | null;
-  address_context: string | null;
-  verdict: string | null;
-  test_plan: string | null;
-  started_at: string;
-  completed_at: string | null;
-}
+/** Drizzle select 결과 → FlowInstance 변환 */
+type DrizzleRow = typeof flowInstances.$inferSelect;
 
-function toFlowInstance(row: RawRow): FlowInstance {
+function toFlowInstance(row: DrizzleRow): FlowInstance {
   return {
     id: row.id,
-    schemaId: row.schema_id,
-    schemaVersion: row.schema_version,
+    schemaId: row.schemaId,
+    schemaVersion: row.schemaVersion,
     status: row.status as FlowInstance["status"],
     context: safeJsonParse(row.context, {}),
     selections: safeJsonParse(row.selections, []),
     outcome: row.outcome ?? undefined,
     coordinateAddress: row.address ?? undefined,
-    addressContext: row.address_context ? safeJsonParse(row.address_context, undefined) : undefined,
+    addressContext: row.addressContext
+      ? safeJsonParse(row.addressContext, undefined)
+      : undefined,
     verdict: row.verdict ? safeJsonParse(row.verdict, undefined) : undefined,
-    testPlan: row.test_plan ? safeJsonParse(row.test_plan, undefined) : undefined,
-    startedAt: row.started_at,
-    completedAt: row.completed_at ?? undefined,
+    testPlan: row.testPlan ? safeJsonParse(row.testPlan, undefined) : undefined,
+    startedAt: row.startedAt,
+    completedAt: row.completedAt ?? undefined,
   };
 }
 
@@ -257,7 +267,9 @@ function safeJsonParse<T>(json: string, fallback: T): T {
   try {
     return JSON.parse(json) as T;
   } catch {
-    console.warn(`[flow-sqlite] JSON 파싱 실패 — fallback 사용: ${json.slice(0, 50)}`);
+    console.warn(
+      `[flow-sqlite] JSON 파싱 실패 — fallback 사용: ${json.slice(0, 50)}`,
+    );
     return fallback;
   }
 }

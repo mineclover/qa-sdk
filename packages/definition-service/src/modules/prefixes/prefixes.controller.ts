@@ -72,6 +72,22 @@ export class PrefixesController {
     return { prefixId: body.prefixId, action };
   }
 
+  /** POST /prefixes/validate-batch — prefix ID 배치 존재 확인 (OTEL/ingest 연동용) */
+  @Post("validate-batch")
+  validateBatch(@Body() body: { prefixIds: string[] }) {
+    const results: Record<string, { exists: boolean; hasDoc: boolean }> = {};
+    for (const id of body.prefixIds ?? []) {
+      const record = this.prefixes.get(id);
+      results[id] = {
+        exists: !!record,
+        hasDoc: !!this.prefixes.getDocByPrefix(id),
+      };
+    }
+    const missing = Object.entries(results).filter(([, v]) => !v.exists).map(([k]) => k);
+    const undocumented = Object.entries(results).filter(([, v]) => v.exists && !v.hasDoc).map(([k]) => k);
+    return { results, missing, undocumented };
+  }
+
   /** DELETE /prefixes/:prefixId — prefix 제거 */
   @Delete(":prefixId")
   remove(@Param("prefixId") prefixId: string) {

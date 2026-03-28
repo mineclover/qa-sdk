@@ -13,19 +13,19 @@ export const policyRules = sqliteTable(
     updatedAt: text("updated_at").notNull(),
     ruleSetId: text("rule_set_id"),
   },
-  (table) => ({
-    lookup: index("idx_policy_rule_lookup").on(
+  (table) => [
+    index("idx_policy_rule_lookup").on(
       table.indexId,
       table.versionId,
       table.createdAt,
       table.id,
     ),
-    byRuleSet: index("idx_policy_rule_ruleset").on(
+    index("idx_policy_rule_ruleset").on(
       table.indexId,
       table.versionId,
       table.ruleSetId,
     ),
-  }),
+  ],
 );
 
 export const POLICY_RULE_SCHEMA_STATEMENTS = [

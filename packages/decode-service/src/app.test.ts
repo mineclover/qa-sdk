@@ -186,16 +186,15 @@ describe("decode-service", () => {
       expect(json.error.code).toBe("DECODER_NOT_LOADED");
     });
 
-    it("범위 초과 value → 에러 (index-meta IndexRangeError)", async () => {
+    it("범위 초과 value → 400 RANGE_EXCEEDED", async () => {
       const res = await req(app, "POST", "/decode", {
         input: 9999,
         prefix: "perm",
         version: "v1",
       });
-      // IndexRangeError는 IndexMetaError 하위가 아닌 weighted-index 에러 → 500
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json.error.code).toBe("INTERNAL_ERROR");
+      expect(json.error.code).toBe("RANGE_EXCEEDED");
     });
 
     it("잘못된 JSON body → 400", async () => {
@@ -270,13 +269,13 @@ describe("decode-service", () => {
       expect(res.status).toBe(400);
     });
 
-    it("batch 내 범위 초과 value → 에러", async () => {
+    it("batch 내 범위 초과 value → 400 RANGE_EXCEEDED", async () => {
       const res = await req(app, "POST", "/decode/batch", {
         prefix: "perm",
         version: "v1",
         inputs: [0, 9999],
       });
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400);
     });
   });
 

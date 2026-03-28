@@ -1,0 +1,425 @@
+{
+  "name": "Motion Editor Scene-Based Concurrent Editing",
+  "description": "motion editor에 씬(Scene) 개념을 도입하여 캔버스를 시간 구간으로 분할하고, 씬 단위 동시 편집 + WebSocket 실시간 동기화 + 멀티트랙 재생을 구현한다.",
+  "branchName": "ralph/motion-editor-scene-concurrent",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "composition v2 target/scene 스키마 정의",
+      "description": "As a developer, I need a v2 composition schema that separates layer identity/content from timing/animation so that scenes can independently own visual behavior.",
+      "acceptanceCriteria": [
+        "MotionTargetDef가 정의된다 (id, target, content — 타이밍 없음)",
+        "MotionSceneDef가 정의된다 (id, title, startMs, durationMs)",
+        "SceneLayerPlacement가 정의된다 (targetId, startMs, durationMs, enter, exit — 씬 내 상대좌표)",
+        "씬 내부에 sequences, captions이 포함된다",
+        "MotionCompositionDefV2가 targets[] + scenes[]를 포함한다",
+        "씬 겹침이 스키마 수준에서 허용된다 (startMs 제약 없음)",
+        "pnpm --filter motion-content build passes",
+        "cd packages/motion-content && npx vitest run passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Target files: packages/motion-content/src/model.ts, packages/motion-content/src/types.ts. MotionTargetDef = 기존 MotionLayerDef에서 startMs/durationMs/enter/exit 제거. SceneLayerPlacement가 타이밍과 애니메이션을 소유. 씬은 글로벌 타임라인 위 자유 배치 (겹침 허용).",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "composition v2 IO (parse/validate/serialize)",
+      "description": "As a developer, I want v2 composition IO helpers so that scene-based compositions can be safely parsed, validated, and serialized.",
+      "acceptanceCriteria": [
+        "v2 composition parse/serialize/validate API가 추가된다",
+        "targetId 참조 무결성이 검증된다 (placement.targetId → targets[].id)",
+        "씬 내 sequence/caption referential integrity가 검증된다",
+        "잘못된 스키마에 대한 에러 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "cd packages/motion-content && npx vitest run passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Target files: packages/motion-content/src/io.ts. v2 envelope schemaVersion은 'qa-sdk.motion-composition/v2'. 기존 v1 IO는 유지하고 v2를 별도 entrypoint로 추가.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "v1 → v2 마이그레이션 + v2 → v1 어셈블리",
+      "description": "As a developer, I need v1↔v2 conversion so that existing documents are compatible and v2 compositions can be played by the existing GSAP player.",
+      "acceptanceCriteria": [
+        "migrateCompositionV1toV2가 추가된다: layer → target 분리, 단일 main 씬 생성",
+        "assembleComposition이 추가된다: v2 scenes → v1 flat composition",
+        "어셈블리가 겹치는 씬의 레이어를 글로벌 절대 좌표로 변환한다",
+        "v1 → v2 → assemble → v1 라운드트립 테스트가 추가된다",
+        "기존 v1 프리셋(createPromoGridComposition)에 대한 호환성 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "cd packages/motion-content && npx vitest run passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Target files: packages/motion-content/src/migrate-v2.ts, packages/motion-content/src/assemble.ts. 어셈블리 시 씬 startMs를 각 placement.startMs에 더해 글로벌 절대 좌표 생성. 겹치는 씬의 레이어는 모두 같은 시간대에 배치.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "씬 CRUD 커맨드 추가",
+      "description": "As a developer, I need scene CRUD commands so that scenes can be added, removed, renamed, and repositioned on the global timeline.",
+      "acceptanceCriteria": [
+        "add-scene, remove-scene, update-scene-timing 커맨드가 추가된다",
+        "rename-scene 커맨드가 추가된다",
+        "씬 삭제 시 씬 내 placements/sequences/captions이 함께 제거된다",
+        "커맨드 적용 + undo/redo 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "cd packages/motion-content && npx vitest run passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Target files: packages/motion-content/src/types.ts (command union 확장), packages/motion-content/src/state.ts (applyMotionEditorCommand 확장). 기존 27개 커맨드에 씬 관련 커맨드를 추가. checkpoint strategy는 'append'.",
+      "dependsOn": [
+        "US-003"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "씬 내 placement CRUD 커맨드 추가",
+      "description": "As a developer, I need placement commands so that targets can be placed, removed, and adjusted within a scene.",
+      "acceptanceCriteria": [
+        "add-scene-placement, remove-scene-placement 커맨드가 추가된다",
+        "update-scene-placement-timing, update-scene-placement-cue 커맨드가 추가된다",
+        "공유 타겟 풀에서 타겟을 선택하여 씬에 배치하는 흐름이 지원된다",
+        "placement 커맨드 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "cd packages/motion-content && npx vitest run passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Target files: packages/motion-content/src/types.ts, packages/motion-content/src/state.ts. placement 커맨드는 sceneId + targetId를 필수로 받는다. 같은 타겟이 여러 씬에 배치 가능.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "씬 단위 editor session + undo/redo",
+      "description": "As a developer, I need per-scene undo/redo stacks so that editing one scene does not affect another scene's history.",
+      "acceptanceCriteria": [
+        "씬별 MotionEditorSession이 관리된다",
+        "씬 A에서 undo해도 씬 B의 히스토리에 영향 없다",
+        "씬 전환 시 해당 씬의 session이 복원된다",
+        "씬별 dirty 상태가 개별 추적된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-workspace build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-workspace && npx vitest run passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/controller.ts. 씬별 session Map<sceneId, MotionEditorSession> 관리. 글로벌 구조 변경(씬 추가/삭제)은 별도 글로벌 session에서 관리.",
+      "dependsOn": [
+        "US-005"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "workspace v2 씬별 revision 스키마",
+      "description": "As a developer, I need a workspace snapshot v2 with per-scene revisions so that concurrent scene editing does not create false conflicts.",
+      "acceptanceCriteria": [
+        "MotionWorkspaceSnapshotV2가 씬별 revision을 포함한다",
+        "globalRevision은 구조 변경(씬 추가/삭제)에만 증가한다",
+        "씬 내용 변경은 해당 씬 revision만 증가시킨다",
+        "workspace v1 → v2 마이그레이션이 추가된다",
+        "pnpm --filter motion-workspace build passes",
+        "cd packages/motion-workspace && npx vitest run passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/types.ts. 기존 MotionWorkspaceSnapshotV1은 유지하고 V2를 추가. schemaVersion: 'qa-sdk.motion-workspace/v2'.",
+      "dependsOn": [
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "repository 씬 단위 저장 + conflict",
+      "description": "As a developer, I need scene-level persistence with per-scene optimistic concurrency so that different scenes can be saved independently.",
+      "acceptanceCriteria": [
+        "saveScene(workspaceId, sceneId, sceneData, expectedRevision) API가 추가된다",
+        "씬별 WHERE revision = ? 가드가 적용된다",
+        "다른 씬 저장은 서로 충돌하지 않는다 (테스트 증명)",
+        "씬 conflict error shape가 sceneId를 포함한다",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src/sqlite-repository.ts. 씬별 별도 row 또는 별도 테이블로 저장. workspace row는 globalRevision + 메타데이터만.",
+      "dependsOn": [
+        "US-007"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "service 씬 단위 endpoint 추가",
+      "description": "As a developer, I need HTTP endpoints for scene-level CRUD so that clients can read and save individual scenes.",
+      "acceptanceCriteria": [
+        "GET /workspaces/:id/scenes — 씬 목록",
+        "GET /workspaces/:id/scenes/:sceneId — 개별 씬",
+        "PUT /workspaces/:id/scenes/:sceneId — 씬 저장 (revision guard)",
+        "POST /workspaces/:id/scenes — 씬 추가",
+        "DELETE /workspaces/:id/scenes/:sceneId — 씬 삭제",
+        "씬 conflict 409 응답 테스트가 추가된다",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src/ route layer. PUT은 revision guard 필수. POST/DELETE는 globalRevision을 증가시킨다.",
+      "dependsOn": [
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "client 씬 API 추가",
+      "description": "As a developer, I want the typed client to support scene-level CRUD so that browser and CLI can manage scenes consistently.",
+      "acceptanceCriteria": [
+        "client에 listScenes, getScene, updateScene, createScene, deleteScene 메서드가 추가된다",
+        "씬 conflict error를 감지하는 helper가 추가된다",
+        "씬 API 테스트가 추가된다",
+        "pnpm --filter motion-workspace-client build passes",
+        "cd packages/motion-workspace-client && npx vitest run passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-client/src/client.ts. 기존 workspace CRUD와 동일한 패턴. conflict helper는 sceneId를 포함하는 error shape 감지.",
+      "dependsOn": [
+        "US-009"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "workspace service WS hub 구축",
+      "description": "As a developer, I need a WebSocket hub per workspace so that connected clients can exchange real-time messages.",
+      "acceptanceCriteria": [
+        "workspace service에 ws://host/workspaces/:id/ws endpoint가 추가된다",
+        "연결별 userId + workspaceId가 관리된다",
+        "hub가 같은 workspace의 모든 연결에 broadcast할 수 있다",
+        "연결 해제 시 자동 정리된다",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src/ws-hub.ts. Hono의 WebSocket 지원 또는 별도 ws 라이브러리 사용. workspace당 Set<WebSocket> 관리.",
+      "dependsOn": [
+        "US-009"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "씬 lock/unlock 프로토콜",
+      "description": "As a developer, I need a scene lock/unlock protocol so that concurrent editors are aware when someone is editing a scene.",
+      "acceptanceCriteria": [
+        "scene:lock { sceneId, userId } 메시지가 정의된다",
+        "scene:unlock { sceneId, userId } 메시지가 정의된다",
+        "같은 씬에 lock이 있으면 경고를 표시한다 (hard block은 아님)",
+        "연결 끊김 시 lock이 자동 해제된다",
+        "lock/unlock 프로토콜 테스트가 추가된다",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Soft lock — 경고만 표시하고 편집은 허용. Hard block 하지 않음. 연결 끊김 시 heartbeat timeout 후 자동 해제.",
+      "dependsOn": [
+        "US-011"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-013",
+      "title": "presence + 변경 알림",
+      "description": "As a user, I want to see who is editing which scene and be notified when someone saves so that I can stay in sync.",
+      "acceptanceCriteria": [
+        "presence { userId, activeSceneId?, cursor? } 메시지가 정의된다",
+        "scene:updated { sceneId, revision } 알림이 저장 시 broadcast된다",
+        "resource:updated { revision } 알림이 공유 리소스 변경 시 broadcast된다",
+        "클라이언트가 알림 수신 시 해당 씬/리소스를 pull할 수 있다",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "데이터 전송은 기존 HTTP API, 알림만 WS. scene:updated 수신 → client가 getScene() HTTP 호출로 최신 데이터 fetch.",
+      "dependsOn": [
+        "US-012"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-014",
+      "title": "client WebSocket 통합",
+      "description": "As a developer, I want the typed client to support WebSocket connections so that browser and CLI can receive real-time notifications.",
+      "acceptanceCriteria": [
+        "client에 connectWorkspace(workspaceId, handlers) 메서드가 추가된다",
+        "auto-reconnect + exponential backoff가 구현된다",
+        "lockScene, unlockScene, sendPresence 메서드가 추가된다",
+        "WS 메시지 수신 핸들러 인터페이스가 정의된다",
+        "pnpm --filter motion-workspace-client build passes",
+        "cd packages/motion-workspace-client && npx vitest run passes"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-client/src/ws-client.ts. browser는 native WebSocket, Node는 ws 패키지 또는 동등. 핸들러 인터페이스로 추상화.",
+      "dependsOn": [
+        "US-013"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-015",
+      "title": "멀티씬 타임라인 뷰",
+      "description": "As a user, I want to see multiple scenes as tracks on the timeline so that I can visualize and adjust scene timing.",
+      "acceptanceCriteria": [
+        "타임라인에 씬 트랙이 표시된다 (글로벌 시간축 위 블록)",
+        "씬 블록을 드래그하여 startMs/durationMs를 조정할 수 있다",
+        "겹치는 씬이 시각적으로 구분된다",
+        "씬 클릭으로 해당 씬 편집 모드에 진입한다",
+        "pnpm --filter motion-content-editor build passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor/src/timeline.ts. 기존 timeline에 scene lane 추가. 씬 블록은 기존 sequence drag와 동일한 패턴.",
+      "dependsOn": [
+        "US-006",
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-016",
+      "title": "씬 편집 패널 + 포커스 모드",
+      "description": "As a user, I want to focus on a single scene so that I can edit its placements, sequences, and captions in isolation.",
+      "acceptanceCriteria": [
+        "씬 목록 패널이 추가된다 (추가/삭제/이름변경)",
+        "씬 선택 시 타임라인이 해당 씬 내부 뷰로 전환된다",
+        "씬 포커스 모드에서는 해당 씬의 placement만 표시된다",
+        "공유 타겟 풀에서 씬에 타겟을 배치하는 UI가 추가된다",
+        "pnpm --filter motion-content-editor build passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor/src/shell.ts, packages/motion-content-editor/src/panels.ts. 기존 dock 패널에 scenes 패널 추가.",
+      "dependsOn": [
+        "US-015"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-017",
+      "title": "presence UI + 씬 lock 표시",
+      "description": "As a user, I want to see which scenes other users are editing so that I can avoid conflicts.",
+      "acceptanceCriteria": [
+        "씬 블록/패널에 편집 중인 사용자 아바타/이름이 표시된다",
+        "다른 사용자가 lock한 씬은 시각적으로 구분된다 (배경색, 아이콘 등)",
+        "사용자 접속/해제 시 UI가 실시간 갱신된다",
+        "브라우저 QA로 2개 탭 동시 접속 시나리오를 검증한다",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor/src/shell.ts, packages/motion-content-editor-demo/src/main.ts. 최소한의 presence UI — 아바타 + 색상 배지.",
+      "dependsOn": [
+        "US-014",
+        "US-016"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-018",
+      "title": "어셈블리 미리보기 (전체 재생)",
+      "description": "As a user, I want to preview the assembled composition so that I can verify the full animation across all scenes.",
+      "acceptanceCriteria": [
+        "전체 재생 모드가 추가된다 (모든 씬 → v1 어셈블리 → GSAP 플레이어)",
+        "개별 씬 미리보기도 가능하다 (해당 씬만 v1 변환 → 재생)",
+        "겹치는 씬의 레이어가 동시에 재생된다",
+        "어셈블리 결과를 v1 JSON으로 export할 수 있다",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": "기존 GSAP 플레이어(createMotionPlayer)는 v1 MotionCompositionDef를 받으므로, assembleComposition()으로 v1 변환 후 그대로 사용. 플레이어 수정 불필요.",
+      "dependsOn": [
+        "US-003",
+        "US-016"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-019",
+      "title": "CLI 씬 관리 커맨드",
+      "description": "As a developer, I want CLI scene management commands so that I can manage scenes from the terminal.",
+      "acceptanceCriteria": [
+        "qa-sdk motion scene list --workspace <id> 가 추가된다",
+        "qa-sdk motion scene show --workspace <id> --scene <id> 가 추가된다",
+        "qa-sdk motion scene create --workspace <id> 가 추가된다",
+        "qa-sdk motion scene delete --workspace <id> --scene <id> 가 추가된다",
+        "CLI 테스트가 추가된다",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": "Target files: packages/cli/src/commands/motion-workspace.ts 확장 또는 별도 motion-scene.ts. 기존 workspace 커맨드 패턴 재사용.",
+      "dependsOn": [
+        "US-010"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-020",
+      "title": "기존 workspace를 씬 기반으로 마이그레이션",
+      "description": "As a user, I want my existing v1 workspaces to automatically upgrade to v2 scene-based format without losing data.",
+      "acceptanceCriteria": [
+        "workspace 로드 시 v1 snapshot이 v2로 자동 마이그레이션된다",
+        "기존 composition은 단일 main 씬으로 변환된다",
+        "마이그레이션 후 기존 편집/재생 동작이 유지된다",
+        "마이그레이션 라운드트립 테스트가 추가된다",
+        "CLI에서 v1 export가 여전히 가능하다 (어셈블리 경유)",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "cd packages/motion-workspace && npx vitest run passes",
+        "cd packages/motion-workspace-service && npx vitest run passes"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/migrate.ts 확장. 기존 migrateMotionWorkspace에 v1→v2 경로 추가. service 로드 시 자동 업그레이드.",
+      "dependsOn": [
+        "US-003",
+        "US-007",
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-27T16:37:28.281Z"
+  }
+}

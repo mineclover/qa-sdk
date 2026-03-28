@@ -1,6 +1,8 @@
 ---
 def:
   id: permission-system
+  level: unit
+  address: def_document:v1:2144
   scope: constraint
   aspect: biz_constraint
   depth: overview
@@ -22,8 +24,6 @@ def:
     - target: perm-codec-system
       type: contains
     - target: perm-migration-system
-      type: contains
-    - target: perm-external-system
       type: contains
 ---
 

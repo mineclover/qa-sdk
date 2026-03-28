@@ -7,6 +7,26 @@
 
 // ─── 축 값 타입 (Dimension Value Types) ─────────────────
 
+/**
+ * 분해 레벨 — 전체-부분 분해 구조에서의 위치
+ *
+ * scope보다 상위 개념. 먼저 "어떤 단위인가"가 결정되고, 그 안에서 scope가 의미를 가진다.
+ *
+ * | level  | 역할                  | 기차 비유     | scope 동작 |
+ * |--------|-----------------------|-------------|-----------|
+ * | system | 전체 시스템 자체        | 기차         | 무의미     |
+ * | area   | 시스템의 대분류 영역    | 객실칸, 추진기관 | 불안정     |
+ * | unit   | 영역 내 독립 단위      | 엔진, 연료공급  | 작동 시작  |
+ * | module | 단위 내 구성 요소      | 실린더, 밸브   | 잘 동작    |
+ * | leaf   | 개별 명세             | 피스톤 규격    | 완전 작동  |
+ */
+export type DefLevel =
+  | "system"     // 전체 시스템
+  | "area"       // 대분류 영역 (인프라, 설계 도구, 프론트엔드)
+  | "unit"       // 독립 단위 (서비스, 엔진)
+  | "module"     // 구성 요소 (API 그룹, 모듈)
+  | "leaf";      // 개별 명세 (스펙, 데이터 스키마)
+
 /** 대분류 — 무엇에 대한 정의인가 */
 export type DefScope =
   | "ui"
@@ -213,8 +233,10 @@ export interface DefinitionEntry {
   readonly title: string;
   readonly description?: string;
 
-  // 좌표 차원 (인코딩 입력)
+  // 좌표 차원 (인코딩 입력 — scope × aspect × depth)
   readonly scope: DefScope;
+  // 분해 레벨 (메타데이터 — 좌표에 인코딩하지 않음. 변할 수 있으므로)
+  readonly level?: DefLevel;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
   readonly lifecycle: DefLifecycle;

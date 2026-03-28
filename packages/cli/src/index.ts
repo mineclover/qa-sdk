@@ -10,6 +10,7 @@
  */
 
 import { parseArgs } from "node:util";
+import { pathToFileURL } from "node:url";
 import { gitScan } from "./commands/git-scan.js";
 import { register } from "./commands/register.js";
 import {
@@ -47,6 +48,21 @@ import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, inge
 import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
 import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth, serviceAppList, serviceAppShow } from "./commands/service.js";
 import { cliDef } from "./commands/def.js";
+import { motionInspect, motionValidate } from "./commands/motion.js";
+import {
+  motionApply,
+  motionExport,
+  motionImport,
+  motionPreview,
+  motionSceneCreate,
+  motionSceneDelete,
+  motionSceneList,
+  motionSceneShow,
+  motionWorkspaceCreate,
+  motionWorkspaceDelete,
+  motionWorkspaceList,
+  motionWorkspaceShow,
+} from "./commands/motion-workspace.js";
 import {
   flowList,
   flowStart,
@@ -68,7 +84,7 @@ import {
 
 // ── Usage ────────────────────────────────────────────
 
-const USAGE = `
+export const USAGE = `
 qa-sdk — DSL 접근 도구
 
 Global Options:
@@ -81,6 +97,20 @@ Usage:
   qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)
   qa-sdk codegen [options]           SchemaSnapshot → 타입 인터페이스 생성
   qa-sdk inspect [options]           Registry 상태 조회
+  qa-sdk motion validate <file>      Motion composition/workspace 문서 검증
+  qa-sdk motion inspect <file>       Motion composition/workspace 요약
+  qa-sdk motion workspace list       Remote motion workspace 목록
+  qa-sdk motion workspace show <id>  Remote motion workspace 상세
+  qa-sdk motion workspace create <id>  Remote motion workspace 생성
+  qa-sdk motion workspace delete <id>  Remote motion workspace 삭제
+  qa-sdk motion scene list --workspace <id>  Remote motion scene 목록
+  qa-sdk motion scene show --workspace <id> --scene <id>  Remote motion scene 상세
+  qa-sdk motion scene create --workspace <id>  Remote motion scene 생성
+  qa-sdk motion scene delete --workspace <id> --scene <id>  Remote motion scene 삭제
+  qa-sdk motion export --workspace <id> --out <file>  Remote workspace → composition JSON
+  qa-sdk motion import <file> --workspace <id>        composition JSON → remote workspace
+  qa-sdk motion apply --workspace <id> --command <json>  Remote workspace command 적용
+  qa-sdk motion preview [--workspace <id>]  Online workspace preview 실행
   qa-sdk spec list [options]         Prefix spec 목록 + schema + spec docs
   qa-sdk spec resolve <prefix> ...   Export title 생성
   qa-sdk spec validate <schema> ...  스키마 검증
@@ -99,7 +129,7 @@ Usage:
 
   qa-sdk dkg report                  전체 현황 + SQLite 상태
   qa-sdk dkg refresh                 bootstrap 재실행
-  qa-sdk dkg axes [--page N]         축 목록
+  qa-sdk dkg axes [--page N] [--group-by prefix|domain]  축 목록
   qa-sdk dkg prefixes [--page N]     prefix 목록
   qa-sdk dkg domains                 도메인 목록
   qa-sdk dkg flow-schemas [--page N] FlowSchemaNode 목록
@@ -238,8 +268,8 @@ let loadedCatalog: Catalog | undefined;
 
 // ── Main ─────────────────────────────────────────────
 
-async function main() {
-  const args = process.argv.slice(2);
+export async function main(argv = process.argv.slice(2)) {
+  const args = argv;
 
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(USAGE);
@@ -283,6 +313,34 @@ async function main() {
       return runCodegen(sub.rest);
     case "inspect":
       return runInspect(sub.rest);
+    case "motion validate":
+      return motionValidate(sub.rest);
+    case "motion inspect":
+      return motionInspect(sub.rest);
+    case "motion workspace list":
+      return motionWorkspaceList(sub.rest);
+    case "motion workspace show":
+      return motionWorkspaceShow(sub.rest);
+    case "motion workspace create":
+      return motionWorkspaceCreate(sub.rest);
+    case "motion workspace delete":
+      return motionWorkspaceDelete(sub.rest);
+    case "motion scene list":
+      return motionSceneList(sub.rest);
+    case "motion scene show":
+      return motionSceneShow(sub.rest);
+    case "motion scene create":
+      return motionSceneCreate(sub.rest);
+    case "motion scene delete":
+      return motionSceneDelete(sub.rest);
+    case "motion export":
+      return motionExport(sub.rest);
+    case "motion import":
+      return motionImport(sub.rest);
+    case "motion apply":
+      return motionApply(sub.rest);
+    case "motion preview":
+      return motionPreview(sub.rest);
     case "spec list":
       return runSpecList(sub.rest);
     case "spec resolve":
@@ -358,9 +416,12 @@ async function main() {
     case "dkg refresh":
       dkgRefresh();
       return;
-    case "dkg axes":
-      dkgAxes(parsePage(sub.rest));
+    case "dkg axes": {
+      const groupIdx = sub.rest.indexOf("--group-by");
+      const groupBy = groupIdx >= 0 ? sub.rest[groupIdx + 1] : undefined;
+      dkgAxes({ ...parsePage(sub.rest), groupBy });
       return;
+    }
     case "dkg prefixes":
       dkgPrefixes(parsePage(sub.rest));
       return;
@@ -752,6 +813,18 @@ async function main() {
     case "def stats":    await cliDef(["stats"]); return;
     case "def sync":     await cliDef(["sync", ...sub.rest]); return;
     case "def read":     await cliDef(["read", ...sub.rest]); return;
+    case "def list":     await cliDef(["list", ...sub.rest]); return;
+    case "def get":      await cliDef(["get", ...sub.rest]); return;
+    case "def children": await cliDef(["children", ...sub.rest]); return;
+    case "def parent":   await cliDef(["parent", ...sub.rest]); return;
+    case "def incoming": await cliDef(["incoming", ...sub.rest]); return;
+    case "def search":   await cliDef(["search", ...sub.rest]); return;
+    case "def impact":   await cliDef(["impact", ...sub.rest]); return;
+    case "def check":    await cliDef(["check", ...sub.rest]); return;
+    case "def audit-db": await cliDef(["audit-db"]); return;
+    case "def overview": await cliDef(["overview"]); return;
+    case "def link-rules": await cliDef(["link-rules"]); return;
+    case "def find-by-file": await cliDef(["find-by-file", ...sub.rest]); return;
     case "def":          await cliDef(sub.rest); return;
 
     // Catalog 명령어
@@ -862,9 +935,11 @@ interface Subcommand {
   rest: string[];
 }
 
-function resolveSubcommand(args: string[]): Subcommand {
+export function resolveSubcommand(args: string[]): Subcommand {
   // 3단어: "dkg decisions export" 등
   const threeWord = [
+    "motion workspace list", "motion workspace show", "motion workspace create", "motion workspace delete",
+    "motion scene list", "motion scene show", "motion scene create", "motion scene delete",
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
     "dkg spec add", "dkg spec list", "dkg spec transition",
     "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
@@ -878,6 +953,7 @@ function resolveSubcommand(args: string[]): Subcommand {
   }
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
   const twoWord = [
+    "motion validate", "motion inspect", "motion export", "motion import", "motion apply", "motion preview",
     "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
     "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import", "dkg flow-schemas", "dkg flow-schema",
@@ -892,6 +968,7 @@ function resolveSubcommand(args: string[]): Subcommand {
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
     "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
+    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules", "def find-by-file",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",
@@ -1373,7 +1450,14 @@ function parsePage(argv: string[]): { page?: number; limit?: number } {
 
 // ── Entry ────────────────────────────────────────────
 
-main().catch((err) => {
-  console.error(err.message ?? err);
-  process.exit(1);
-});
+const isDirectExecution = (() => {
+  const entry = process.argv[1];
+  return !!entry && pathToFileURL(entry).href === import.meta.url;
+})();
+
+if (isDirectExecution) {
+  main().catch((err) => {
+    console.error(err.message ?? err);
+    process.exit(1);
+  });
+}

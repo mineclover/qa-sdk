@@ -1,10 +1,12 @@
 ---
 def:
   id: analysis-prefix
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification
   lifecycle: approved
+  layer: domain
   svc: spec-core
   tags: [observability, tier-system]
   links:

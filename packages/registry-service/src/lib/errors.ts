@@ -5,6 +5,7 @@ import { AppError } from "@qa-sdk/core";
 export type ErrorCode =
   | "INVALID_INPUT"
   | "PREFIX_NOT_FOUND"
+  | "NO_ACTIVE_VERSION"
   | "VERSION_NOT_FOUND"
   | "INVALID_TRANSITION"
   | "DRAFT_LOCKED"
@@ -22,6 +23,10 @@ export function badRequest(message: string): AppError {
 
 export function prefixNotFound(prefix: string): AppError {
   return new AppError("PREFIX_NOT_FOUND", `prefix '${prefix}' not found`, 404);
+}
+
+export function noActiveVersion(prefix: string): AppError {
+  return new AppError("NO_ACTIVE_VERSION", `no active version for prefix '${prefix}'`, 404);
 }
 
 export function versionNotFound(prefix: string, versionId: string): AppError {

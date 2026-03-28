@@ -42,12 +42,18 @@ export class DefinitionClient {
 
   // ─── 문서 ─────────────────────────────────────────────
 
-  /** 문서 목록 조회 */
-  async listDocs(filter?: { scope?: string; aspect?: string; lifecycle?: string }): Promise<DocListResponse> {
+  /** 문서 목록 조회 (확장 필터 + pagination + 전문검색) */
+  async listDocs(filter?: {
+    scope?: string; aspect?: string; depth?: string; lifecycle?: string;
+    layer?: string; svc?: string; tag?: string; address?: string;
+    q?: string; limit?: number; offset?: number;
+  }): Promise<DocListResponse> {
     const params = new URLSearchParams();
-    if (filter?.scope) params.set("scope", filter.scope);
-    if (filter?.aspect) params.set("aspect", filter.aspect);
-    if (filter?.lifecycle) params.set("lifecycle", filter.lifecycle);
+    if (filter) {
+      for (const [k, v] of Object.entries(filter)) {
+        if (v !== undefined && v !== null) params.set(k, String(v));
+      }
+    }
     const qs = params.toString();
     return this.get(`/docs${qs ? `?${qs}` : ""}`);
   }
@@ -55,6 +61,57 @@ export class DefinitionClient {
   /** 단일 문서 조회 */
   async getDoc(docId: string): Promise<DocRecord> {
     return this.get(`/docs/${docId}`);
+  }
+
+  /** 문서 메타데이터 업데이트 (DB가 SSOT) */
+  async updateMetadata(docId: string, patch: {
+    scope?: string; aspect?: string; depth?: string; lifecycle?: string;
+    layer?: string | null; tags?: string[]; links?: { target: string; type: string }[];
+    svc?: string | null;
+  }): Promise<{ action: "updated" | "unchanged"; version: number }> {
+    return this.patch(`/docs/${docId}`, patch);
+  }
+
+  // ── 계층 구조 + 링크 ────────────────────────────────
+
+  /** contains 링크 자식 문서 */
+  async getChildren(docId: string): Promise<{ docId: string; children: DocRecord[] }> {
+    return this.get(`/docs/${docId}/children`);
+  }
+
+  /** contains 링크 부모 문서 */
+  async getParent(docId: string): Promise<{ docId: string; parent: DocRecord | null }> {
+    return this.get(`/docs/${docId}/parent`);
+  }
+
+  /** 이 문서를 참조하는 문서 (역링크) */
+  async getIncomingLinks(docId: string): Promise<{ docId: string; links: { source: string; type: string }[] }> {
+    return this.get(`/docs/${docId}/incoming-links`);
+  }
+
+  /** 이 문서가 참조하는 문서 */
+  async getOutgoingLinks(docId: string): Promise<{ docId: string; links: { target: string; type: string }[] }> {
+    return this.get(`/docs/${docId}/outgoing-links`);
+  }
+
+  /** 단일 링크 추가 */
+  async addLink(docId: string, target: string, type: string): Promise<{ action: string; version?: number }> {
+    return this.post(`/docs/${docId}/links`, { target, type });
+  }
+
+  /** 단일 링크 삭제 */
+  async removeLink(docId: string, target: string, type: string): Promise<{ action: string; version?: number }> {
+    return this.del(`/docs/${docId}/links/${target}/${type}`);
+  }
+
+  /** 단일 태그 추가 */
+  async addTag(docId: string, tag: string): Promise<{ action: string; version?: number }> {
+    return this.post(`/docs/${docId}/tags/${tag}`, {});
+  }
+
+  /** 단일 태그 삭제 */
+  async removeTag(docId: string, tag: string): Promise<{ action: string; version?: number }> {
+    return this.del(`/docs/${docId}/tags/${tag}`);
   }
 
   /** 문서 버전 이력 */
@@ -151,9 +208,14 @@ export class DefinitionClient {
 
   // ─── 동기화 ───────────────────────────────────────────
 
-  /** 동기화 실행 */
+  /** file → DB 동기화 */
   async triggerSync(): Promise<SyncResult> {
     return this.post("/sync", {});
+  }
+
+  /** DB → file 역동기화 (메타데이터를 frontmatter에 기록) */
+  async triggerReverseSync(): Promise<{ total: number; updated: number; skipped: number; errors: string[] }> {
+    return this.post("/sync/to-files", {});
   }
 
   /** 마지막 동기화 상태 */
@@ -218,6 +280,17 @@ export class DefinitionClient {
   private async post<T>(path: string, body: unknown): Promise<T> {
     const res = await this._fetch(`${this.baseUrl}${path}`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(this.timeoutMs),
+    });
+    if (!res.ok) throw new DefinitionClientError(res.status, await res.text(), path);
+    return res.json() as Promise<T>;
+  }
+
+  private async patch<T>(path: string, body: unknown): Promise<T> {
+    const res = await this._fetch(`${this.baseUrl}${path}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(this.timeoutMs),

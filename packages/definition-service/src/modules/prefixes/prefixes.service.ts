@@ -18,8 +18,10 @@ interface CatalogPrefixDef {
 @Injectable()
 export class PrefixesService implements OnModuleInit {
   private readonly store: PrefixStore;
+  private readonly db: Database.Database;
 
   constructor(@Inject(DATABASE) db: Database.Database) {
+    this.db = db;
     this.store = new SqlPrefixStore(db);
   }
 
@@ -138,5 +140,13 @@ export class PrefixesService implements OnModuleInit {
 
   remove(prefixId: string): boolean {
     return this.store.remove(prefixId);
+  }
+
+  /** prefix에 연결된 definition 문서 확인 (target_prefix 컬럼) */
+  getDocByPrefix(prefixId: string): boolean {
+    const row = this.db.prepare(
+      "SELECT doc_id FROM documents WHERE target_prefix = ? AND lifecycle = 'approved' LIMIT 1",
+    ).get(prefixId) as Record<string, unknown> | undefined;
+    return !!row;
   }
 }

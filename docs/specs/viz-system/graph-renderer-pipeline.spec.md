@@ -1,11 +1,13 @@
 ---
 def:
   id: graph-renderer-pipeline
+  address: def_document:v1:9
   scope: ui
   aspect: component
   depth: specification
   lifecycle: approved
   layer: experience
+  svc: platform-demo
   tags: [tier-frontend]
   links:
     - target: graph-renderer-spec

@@ -1,11 +1,13 @@
 ---
 def:
   id: browser-lifecycle-spec
+  address: def_document:v1:1617
   scope: state
   aspect: system_state
   depth: specification
   lifecycle: deprecated
   layer: operation
+  svc: shopping-web
   tags: [tier-frontend]
   links:
     - target: trace-context-spec

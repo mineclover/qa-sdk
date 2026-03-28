@@ -7,17 +7,19 @@
 
 import { describe, expect, it, beforeEach } from "vitest";
 import { NodeSqliteDriver } from "index-meta";
-import { INGEST_D1_SCHEMA_DDL } from "./d1-schema.sql.js";
 import { D1RecordStore } from "./d1-record-store.js";
 import { D1TraceStore } from "./d1-trace-store.js";
 import { D1SessionStore } from "./d1-session-store.js";
 import { D1VerdictStore } from "./d1-verdict-store.js";
+import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
+
+const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 
 async function createDb() {
-  const driver = new NodeSqliteDriver(":memory:");
-  for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-    await driver.execute(stmt);
-  }
+  const driver = new NodeSqliteDriver(":memory:", null);
+  const drizzleDb = drizzle({ client: driver.$client });
+  migrate(drizzleDb, { migrationsFolder });
   return driver;
 }
 

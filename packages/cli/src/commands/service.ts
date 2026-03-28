@@ -69,6 +69,9 @@ export async function serviceList(args: string[]): Promise<void> {
   } catch (err: unknown) {
     console.error(`  registry 연결 실패: ${errorMessage(err)}`);
     console.log(`  URL: ${registryUrl}/api/services`);
+    console.log(`\n  registry-service가 실행 중이 아니라면 로컬 DKG로 조회할 수 있습니다:`);
+    console.log(`    qa-sdk dkg service          서비스 목록 (로컬 SQLite)`);
+    console.log(`    qa-sdk dkg service <id>      서비스 상세`);
   }
 }
 

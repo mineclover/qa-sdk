@@ -1,6 +1,7 @@
 ---
 def:
   id: gate-engine-decorator
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -9,8 +10,6 @@ def:
   svc: gate-service
   tags: [security, tier-infra]
   links:
-    - target: gate-engine-group
-      type: member_of
     - target: gate-engine-core
       type: depends_on
 ---

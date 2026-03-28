@@ -110,6 +110,14 @@ export type MotionLayerContent =
   | MotionSvgContent
   | MotionCanvasContent;
 
+/** V2 target — 식별자와 콘텐츠만 소유한다. 타이밍/애니메이션은 scene placement로 이동한다. */
+export interface MotionTargetDef {
+  readonly id: string;
+  readonly target: MotionStageTargetV1;
+  /** 콘텐츠 타입. 생략하면 "dom" (범용 DOM 요소) */
+  readonly content?: MotionLayerContent;
+}
+
 export interface MotionLayerDef extends MotionTimeSpan {
   readonly label: string;
   readonly target: MotionStageTargetV1;
@@ -156,6 +164,42 @@ export interface MotionSequenceDef extends MotionTimeSpan {
   /** layer id 목록. layers가 있으면 정규화 시 자동 파생되므로 직접 지정하지 않는다. */
   readonly layerIds: readonly string[];
   readonly captionIds?: readonly string[];
+}
+
+/** Scene 안에서 target의 상대 시간/애니메이션을 정의한다. */
+export interface SceneLayerPlacement {
+  readonly targetId: string;
+  /** scene.startMs 기준 상대 오프셋 (ms) */
+  readonly startMs: number;
+  /** scene 내부 지속 시간 (ms) */
+  readonly durationMs: number;
+  readonly enter: MotionCueRef;
+  readonly exit?: MotionCueRef;
+}
+
+/** Scene sequence 안에서 target 배치의 상대 순서와 역할을 지정한다. */
+export interface SceneSequenceTargetSlot {
+  readonly targetId: string;
+  readonly offsetMs?: number;
+  readonly zIndex?: number;
+  readonly role?: SequenceLayerSlotRole;
+}
+
+/** V2 scene 내부 sequence — scene.startMs 기준 상대 좌표계를 쓴다. */
+export interface MotionSceneSequenceDef extends MotionTimeSpan {
+  readonly title: string;
+  readonly layers?: readonly SceneSequenceTargetSlot[];
+  readonly stagger?: SequenceStaggerPattern;
+  readonly targetIds: readonly string[];
+  readonly captionIds?: readonly string[];
+}
+
+/** V2 scene — 글로벌 타임라인 위에 자유롭게 배치되며 서로 겹칠 수 있다. */
+export interface MotionSceneDef extends MotionTimeSpan {
+  readonly title: string;
+  readonly layers: readonly SceneLayerPlacement[];
+  readonly sequences: readonly MotionSceneSequenceDef[];
+  readonly captions: readonly MotionCaptionCue[];
 }
 
 export type MotionTransitionStyle = "crossfade" | "flash" | "lift";
@@ -221,21 +265,58 @@ export interface MotionCompositionDef {
   readonly transitions: readonly MotionTransitionDef[];
 }
 
+export interface MotionCompositionDefV2 {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly durationMs: number;
+  readonly parameters: readonly MotionParameterDef[];
+  /** 재사용 가능한 cue 프리셋 라이브러리 */
+  readonly cuePresets?: readonly MotionCuePreset[];
+  readonly assets: readonly MotionAssetDef[];
+  readonly targets: readonly MotionTargetDef[];
+  readonly scenes: readonly MotionSceneDef[];
+}
+
 export type MotionParameterValues = Record<string, string | number>;
 
 export interface ResolvedMotionComposition extends MotionCompositionDef {
   readonly values: MotionParameterValues;
 }
 
+export interface ResolvedMotionCompositionV2 extends MotionCompositionDefV2 {
+  readonly values: MotionParameterValues;
+}
+
+function resolveMotionParameterValues(
+  parameters: readonly MotionParameterDef[],
+  overrides: Partial<MotionParameterValues> = {},
+): MotionParameterValues {
+  const values: MotionParameterValues = {};
+  for (const param of parameters) {
+    values[param.id] = overrides[param.id] ?? param.defaultValue;
+  }
+  return values;
+}
+
 export function resolveMotionComposition(
   composition: MotionCompositionDef,
   overrides: Partial<MotionParameterValues> = {},
 ): ResolvedMotionComposition {
-  const values: MotionParameterValues = {};
-  for (const param of composition.parameters) {
-    values[param.id] = overrides[param.id] ?? param.defaultValue;
-  }
-  return { ...composition, values };
+  return {
+    ...composition,
+    values: resolveMotionParameterValues(composition.parameters, overrides),
+  };
+}
+
+export function resolveMotionCompositionV2(
+  composition: MotionCompositionDefV2,
+  overrides: Partial<MotionParameterValues> = {},
+): ResolvedMotionCompositionV2 {
+  return {
+    ...composition,
+    values: resolveMotionParameterValues(composition.parameters, overrides),
+  };
 }
 
 /** CueRef를 실제 MotionCueDef로 해석한다. preset 참조 시 composition.cuePresets에서 조회 */

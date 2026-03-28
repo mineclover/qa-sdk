@@ -348,6 +348,24 @@ export type DkgNode =
 
 export type DkgNodeKind = DkgNode["kind"];
 
+/**
+ * kind → node details (id/kind/name 제외) 맵.
+ * TraceResult.details의 타입 안전한 접근에 사용.
+ *
+ * @example
+ * ```ts
+ * function getPrefixDetails(result: TraceResult): DkgNodeDetails<"prefix"> {
+ *   return result.details as DkgNodeDetails<"prefix">;
+ * }
+ * ```
+ */
+export type DkgNodeDetailsMap = {
+  [K in DkgNode["kind"]]: Omit<Extract<DkgNode, { kind: K }>, "id" | "kind" | "name">;
+};
+
+/** 특정 kind의 details 타입 */
+export type DkgNodeDetails<K extends DkgNodeKind> = DkgNodeDetailsMap[K];
+
 // ═══════════════════════════════════════════════════════════════
 //  Edge Types (18종)
 // ═══════════════════════════════════════════════════════════════

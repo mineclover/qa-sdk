@@ -1,10 +1,12 @@
 ---
 def:
   id: gate-service-spec
+  address: def_document:v1:3225
   scope: interface
   aspect: api_contract
   depth: specification
   lifecycle: deprecated
+  layer: mediation
   tags: [security]
   links:
     - target: gate-engine-spec

@@ -1,6 +1,7 @@
 ---
 def:
   id: wi-trace-protocol
+  address: def_document:v1:2137
   scope: constraint
   aspect: tech_constraint
   depth: specification
@@ -9,8 +10,6 @@ def:
   svc: weighted-index
   tags: [tier-infra]
   links:
-    - target: wi-trace-group
-      type: member_of
     - target: wi-trace-axes
       type: depends_on
     - target: wi-codec

@@ -1,11 +1,13 @@
 ---
 def:
   id: masking-spec
+  address: def_document:v1:2145
   scope: constraint
   aspect: biz_constraint
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: ingest-server
   tags: [security]
   links:
     - target: perm-codec-spec

@@ -1,0 +1,516 @@
+{
+  "name": "Motion Editor Online Control Surface",
+  "description": "motion editor를 온라인 에디터 전제로 재구성해 코드 API, 온라인 workspace 저장, CLI 제어 표면을 같은 계약 위에 올린다.",
+  "branchName": "ralph/motion-editor-online-control",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "workspace snapshot schema 정의",
+      "description": "As a developer, I need a dedicated workspace snapshot schema so that portable composition documents and online editor state are modeled separately.",
+      "acceptanceCriteria": [
+        "MotionCompositionDocumentV1는 기존 qa-sdk.motion-composition/v1 envelope를 유지한다",
+        "MotionWorkspaceSnapshotV1 또는 동등 계약이 document, source metadata, revision, editor-local preference boundary를 표현한다",
+        "composition document와 workspace snapshot의 책임 차이가 문서화된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/types.ts, packages/motion-workspace/src/index.ts, docs/specs/motion-content/v1-glossary-and-contracts.md. Keep motion-content focused on composition/runtime core.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "workspace IO parse/serialize/validate 추가",
+      "description": "As a developer, I want workspace IO helpers so that a workspace snapshot can be parsed, serialized, and validated consistently in every runtime.",
+      "acceptanceCriteria": [
+        "workspace parse/serialize/validate API가 추가된다",
+        "잘못된 schemaVersion과 누락 필드에 대한 테스트가 추가된다",
+        "composition document parser와 workspace parser가 분리된 entrypoint를 가진다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/io.ts, packages/motion-workspace/src/index.ts, and matching tests. Keep composition document IO backward compatible in motion-content and add separate workspace entrypoints here.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-003",
+      "title": "workspace migration helper 추가",
+      "description": "As a developer, I need workspace migration helpers so that legacy or future schema revisions can be upgraded without baking migration logic into the UI.",
+      "acceptanceCriteria": [
+        "workspace migrate API가 추가된다",
+        "revision conflict 또는 unknown schemaVersion 입력에 대한 오류 shape가 정의된다",
+        "migration 단위 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/migrate.ts plus matching tests and exports in packages/motion-workspace/src/index.ts.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-004",
+      "title": "headless workspace controller 기본 API 추가",
+      "description": "As a developer, I want a headless controller so that browser and CLI can load and save a workspace without depending on the DOM shell.",
+      "acceptanceCriteria": [
+        "MotionWorkspaceController 또는 동등 API가 추가된다",
+        "controller가 workspace load/save/export entrypoint를 제공한다",
+        "controller가 MotionEditorSession을 내부에 소유한다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/controller.ts and tests, update packages/motion-workspace/src/index.ts. Keep controller headless and free of DOM/browser globals.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-005",
+      "title": "controller command apply surface 추가",
+      "description": "As a developer, I want the controller to apply editor commands so that CLI and browser code can mutate workspaces through the same orchestration layer.",
+      "acceptanceCriteria": [
+        "controller가 set-parameter, update-item-timing, CRUD command, set-composition 적용을 지원한다",
+        "dirty, revision, checkpoint count를 읽을 수 있다",
+        "controller command apply 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace/src/controller.ts plus tests, with reuse of motion-content history/state/session APIs. Do not invent a second mutation path.",
+      "dependsOn": [
+        "US-004"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-006",
+      "title": "typed workspace HTTP client CRUD 추가",
+      "description": "As a developer, I want a typed workspace HTTP client so that browser and CLI can call the same online editor storage API for CRUD operations.",
+      "acceptanceCriteria": [
+        "typed workspace client가 추가된다",
+        "list/get/create/update/delete 메서드를 제공한다",
+        "browser/Node에서 모두 사용할 수 있는 fetch 기반 구현이다",
+        "client CRUD 단위 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-client/src/client.ts, packages/motion-workspace-client/src/types.ts, packages/motion-workspace-client/src/index.ts. Include tests for browser and Node usage assumptions.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-007",
+      "title": "typed workspace HTTP client apply-command/conflict 추가",
+      "description": "As a developer, I want client-side apply-command and conflict handling so that optimistic concurrency is exposed consistently to browser and CLI callers.",
+      "acceptanceCriteria": [
+        "client가 apply-command 메서드를 제공한다",
+        "revision 기반 optimistic concurrency 에러 shape를 노출한다",
+        "apply-command 및 conflict 단위 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-client/src/client.ts and tests for conflict/error handling. Keep error shape serializable for CLI and browser display.",
+      "dependsOn": [
+        "US-005",
+        "US-006"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-008",
+      "title": "workspace service persistence/repository 추가",
+      "description": "As a developer, I need a server-side workspace repository so that online editor state can be stored remotely with revision tracking.",
+      "acceptanceCriteria": [
+        "workspace snapshot 저장소 abstraction이 추가된다",
+        "기본 영속 저장은 SQLite 또는 동등한 서버 측 저장소를 사용한다",
+        "revision 필드가 저장 구조에 포함된다",
+        "repository 단위 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src plus any repository module introduced under that package. Keep revision semantics explicit in repository contract.",
+      "dependsOn": [
+        "US-001"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-009",
+      "title": "workspace service CRUD endpoint 추가",
+      "description": "As a developer, I want CRUD endpoints for workspaces so that online editor clients can create, list, read, update, and delete remote workspaces.",
+      "acceptanceCriteria": [
+        "workspace CRUD endpoint가 추가된다",
+        "service health 및 기본 오류 응답 테스트가 추가된다",
+        "typed workspace client CRUD 테스트가 실제 endpoint와 roundtrip 된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src route/controller layer plus integration tests. Align endpoint shapes with motion-workspace-client.",
+      "dependsOn": [
+        "US-006",
+        "US-008"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-010",
+      "title": "workspace service apply-command endpoint 추가",
+      "description": "As a developer, I want an apply-command endpoint so that remote workspaces can be mutated through the same command model as the browser shell and CLI.",
+      "acceptanceCriteria": [
+        "workspace apply-command endpoint가 추가된다",
+        "revision mismatch 시 conflict 응답을 돌려준다",
+        "apply-command endpoint 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Target files: packages/motion-workspace-service/src apply-command handler plus integration tests. Route should delegate to motion-workspace controller logic.",
+      "dependsOn": [
+        "US-005",
+        "US-007",
+        "US-009"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-011",
+      "title": "shell layout/theme prefs store 분리",
+      "description": "As a developer, I want layout and theme persistence extracted into a local prefs store so that UI preferences remain local while document state moves online.",
+      "acceptanceCriteria": [
+        "layout/theme persistence가 local prefs store로 분리된다",
+        "shell 내부 localStorage 하드코딩이 prefs store 경유로 바뀐다",
+        "기존 layout/theme 동작 테스트가 유지되거나 갱신된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor/src/design-tokens.ts, packages/motion-content-editor/src/shell.ts, packages/motion-content-editor/src/index.ts, related tests. This story is only about local prefs, not remote document save.",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-012",
+      "title": "shell controller 주입 구조로 리팩터",
+      "description": "As a developer, I want the editor shell to consume an injected workspace controller so that document persistence is no longer owned by the DOM shell.",
+      "acceptanceCriteria": [
+        "createMotionEditorShell()이 workspace/controller 훅을 받는다",
+        "문서 저장 책임이 shell 내부에서 제거된다",
+        "기존 undo/redo, selection detail, timeline 동작이 유지된다",
+        "shell 테스트가 새 주입 구조에 맞게 갱신된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor/src/shell.ts, packages/motion-content-editor/src/shell.test.ts, possibly a new controller binding helper module. Do not regress existing timeline/detail panel behavior.",
+      "dependsOn": [
+        "US-005",
+        "US-011"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-013",
+      "title": "demo workspace bootstrap/open/create 흐름 추가",
+      "description": "As a user, I want the demo app to open or create an online workspace so that the app behaves like an online editor instead of a local sandbox.",
+      "acceptanceCriteria": [
+        "demo 앱이 workspace id 또는 신규 workspace 생성 흐름을 가진다",
+        "preset은 새 workspace seed 또는 import source로 동작한다",
+        "document 저장은 원격 workspace client를 통해 수행된다",
+        "layout/theme 같은 UI preference만 로컬에 남는다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor-demo/src/main.ts and demo README. Focus on workspace open/create/bootstrap before autosave polish.",
+      "dependsOn": [
+        "US-009",
+        "US-011",
+        "US-012"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-014",
+      "title": "demo autosave/status/conflict UI 추가",
+      "description": "As a user, I want explicit autosave and conflict feedback so that the online editor clearly communicates when remote workspace persistence succeeds or fails.",
+      "acceptanceCriteria": [
+        "autosave 상태, last saved, conflict/error 상태가 UI에 표시된다",
+        "revision conflict 시 사용자에게 복구 또는 재시도 가능한 상태를 노출한다",
+        "브라우저 QA로 저장/에러 상태를 검증한다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor-demo/src/main.ts and any demo UI/status components. Keep conflict UI minimal but explicit.",
+      "dependsOn": [
+        "US-010",
+        "US-013"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-015",
+      "title": "CLI motion document validate/inspect 추가",
+      "description": "As a developer, I want motion document inspection commands so that I can validate and inspect composition or workspace files from the terminal.",
+      "acceptanceCriteria": [
+        "qa-sdk motion validate <file>가 추가된다",
+        "qa-sdk motion inspect <file>가 추가된다",
+        "CLI help/usage와 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": "Target files: packages/cli/src/index.ts and a new packages/cli/src/commands/motion.ts. Start with document-only read/validate commands before remote mutation commands.",
+      "dependsOn": [
+        "US-002"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-016",
+      "title": "CLI workspace CRUD/import/export 추가",
+      "description": "As a developer, I want CLI workspace CRUD and import/export commands so that I can manage online workspaces from the terminal.",
+      "acceptanceCriteria": [
+        "qa-sdk motion workspace list/show/create/delete가 추가된다",
+        "qa-sdk motion export --workspace <id> --out <file>가 추가된다",
+        "qa-sdk motion import <file> --workspace <id>가 추가된다",
+        "CLI가 typed workspace client를 사용한다",
+        "CLI 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "Target files: packages/cli/src/index.ts, new motion command module(s), typed client usage. Keep import/export behavior consistent with composition document envelope.",
+      "dependsOn": [
+        "US-009",
+        "US-015"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-017",
+      "title": "CLI workspace apply/preview 추가",
+      "description": "As a developer, I want CLI apply and preview commands so that I can mutate and launch an online workspace without opening the browser app manually first.",
+      "acceptanceCriteria": [
+        "qa-sdk motion apply --workspace <id> --command <json>가 추가된다",
+        "qa-sdk motion preview [--workspace <id>]가 추가된다",
+        "CLI가 typed workspace client apply-command를 사용한다",
+        "preview orchestration 테스트 또는 smoke verification이 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": "Target files: CLI motion command module(s) and preview orchestration helpers. Preview should orchestrate an existing app/server rather than embedding browser logic into the CLI.",
+      "dependsOn": [
+        "US-010",
+        "US-016"
+      ],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-018",
+      "title": "기존 localStorage demo 상태를 online workspace로 마이그레이션",
+      "description": "As a returning user, I want my existing local demo state to have a migration path so that moving to the online editor model does not silently discard prior work.",
+      "acceptanceCriteria": [
+        "기존 qa-sdk.motion-content-editor-demo/v1 상태를 읽어 import 가능한 마이그레이션 경로를 제공한다",
+        "기존 mce-layout/v1, mce-theme/v1은 local prefs로 계속 동작한다",
+        "online workspace 저장 이후 demo 앱 reload에서 원격 상태가 복원된다",
+        "CLI import/export와 demo 브라우저 QA를 포함한 end-to-end 테스트가 추가된다",
+        "pnpm --filter motion-content build passes",
+        "pnpm --filter motion-content-editor build passes",
+        "pnpm --filter motion-workspace build passes",
+        "pnpm --filter motion-workspace-client build passes",
+        "pnpm --filter @qa-sdk/motion-workspace-service build passes",
+        "pnpm --filter @qa-sdk/cli build passes",
+        "pnpm --filter @qa-sdk/motion-content-editor-demo build passes",
+        "cd packages/motion-content && npx vitest run passes",
+        "cd packages/motion-content-editor && npx vitest run passes",
+        "cd packages/cli && npx vitest run passes",
+        "Verify in browser using motion-content-editor-demo preview"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": "Target files: packages/motion-content-editor-demo/src/main.ts, migration helpers in motion-workspace, CLI integration tests, browser QA scripts. Migrate document state only; layout/theme remain local prefs.",
+      "dependsOn": [
+        "US-014",
+        "US-016"
+      ],
+      "completionNotes": "Completed by agent"
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-26T18:52:19.226Z"
+  }
+}

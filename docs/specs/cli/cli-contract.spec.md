@@ -1,11 +1,13 @@
 ---
 def:
   id: cli-contract-spec
+  address: def_document:v1:3233
   scope: interface
   aspect: cli_contract
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: qa-sdk-cli
   tags: [entry-point]
   links:
     - target: dsl-schemas-spec

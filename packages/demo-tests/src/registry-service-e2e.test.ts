@@ -1,3 +1,5 @@
+// DEPRECATED: Hono createApp → NestJS 전환으로 비활성화. registry-service 자체 테스트(25파일, 212건)로 대체.
+
 /**
  * Registry Service E2E — 데모 쇼핑 플랫폼 데이터 기반 검증
  *
@@ -102,7 +104,7 @@ async function createDraft(
 // §1. 쇼핑 플랫폼 prefix 등록 + DAG 구성
 // ══════════════════════════════════════════════════════════════
 
-describe("Registry Service — 쇼핑 플랫폼 데모", () => {
+describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
   let app: Hono;
 
   async function setupV1() {

@@ -1,5 +1,11 @@
-// ── App ─────────────────────────────────────────────────
-export { createApp, type AppDeps } from "./app.js";
+// ── Runtime ─────────────────────────────────────────────
+export { AppModule } from "./app.module.js";
+export { RuntimeModule } from "./runtime.module.js";
+export { bootstrapNestApp } from "./main.js";
+export {
+  createRegistryDatabaseDriver,
+  createRegistryStores,
+} from "./bootstrap/stores.js";
 
 // ── Service ─────────────────────────────────────────────
 export { RegistryService, type RegistryServiceDeps } from "./lib/registry-service.js";

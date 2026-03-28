@@ -15,6 +15,11 @@
 | `docs/specs/` | 모듈/서비스별 상세 스펙 (gate-engine, coordinate-query, decode-service 등) |
 | `docs/specs/system/tag-management.spec.md` | 태그 관리 설계 — 저장/조회/전파/충돌/카디널리티 |
 | `docs/specs/decision-flow/df-system.md` | decision-flow 시스템 (16멤버, P0~P11) |
+| `docs/guides/testing-patterns.md` | 테스트 SSOT 파생 코드 예시 (8패턴) |
+| `docs/definition-system-philosophy.md` | Definition 시스템 철학 — 좌표 기반 문서화 원리 |
+| `docs/specs/system/decision-definition-bridge.spec.md` | Decision↔Definition 순환 구조 |
+| `docs/guides/scope-classification-guide.md` | scope 7종 판별 + aspect 선택 기준 |
+| `tasks/prd-drizzle-standardization-remaining.md` | Drizzle 표준화 잔여 작업 PRD (7 US) |
 
 ## 패키지 규칙
 
@@ -54,46 +59,19 @@ DEMO_CATALOG (demo-snapshot)
   └── tests → DEMO_CATALOG에서 파생하여 검증 (카운트 하드코딩 금지)
 ```
 
-### 관측 체계 3단계: IntentLink → Auto IL → ScenarioSpec
-
-좌표 시스템의 관측은 3가지 레벨로 구분된다.
-
-**1. IntentLink (수동 선언 — "이것들이 함께 관측되어야 한다")**
-
-- DKG config에 사람이 직접 정의하는 prefix 공출현 조건
-- **순서 없음** — 같은 서비스 컨텍스트에서 동시에 나타나기만 하면 됨
-- 위반 감지: `traceFlows(graph, records)` — endpoint 누락 시 invariant violation
-- 예: `IL-checkout-flow: page_view + endpoint + flow_point + order_event + permission`
-- 의미: "결제 흐름에서 이 5개 prefix가 모두 관측되어야 정상"
-
-**2. Auto IntentLink (데이터 기반 발견 — "실제로 이것들이 함께 나타남")**
-
-- `GET /v1/insights/correlations` — prefix 공출현 Jaccard 분석 + 클러스터링
-- **세션 단위 그룹핑**: 같은 `qa_session_id` 안에서 관측 (세션 없으면 trace_id fallback)
-- trace가 아닌 session인 이유: trace는 SDK flush 타이밍(전송 단위), session이 사용자 행동 단위
-- synthetic/system 이벤트 자동 제외
-- Jaccard ≥ 0.5인 쌍에서 connected component → IntentLink 후보
-- 라벨링: `GET/POST /v1/labels` — confirmed/rejected/investigating
-
-**3. ScenarioSpec (이상적 경로 — "이 순서로 진행되어야 한다")**
-
-- 시간 순서가 있는 step 기반 시나리오 (`step 1 → step 2 → step 3`)
-- verdict 계산: pass/fail/pending (engine 패키지)
-- 예: `checkout-flow: auth.login(step1) → page.home(step2) → cart.add(step3) → checkout.entry(step4)`
-- ScenarioSpec은 **최적화된 의도 경로** — 시스템이 기대하는 정상 흐름
-
-**3단계 관계:**
+### 관측 체계 3단계
 
 ```
-IntentLink (수동)     "이 prefix들이 함께 있어야 한다" (공출현 조건)
-     ↑ 발견                    ↓ 위반 감지
-Auto IL (데이터)      "실제로 이렇게 쓰인다" (session 공출현 패턴)
-     ↓ gap
-ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로)
+IntentLink (수동)     "이 prefix들이 함께 있어야 한다" (공출현, 순서 없음)
+     ↑ 발견                    ↓ 위반: traceFlows()
+Auto IL (데이터)      "실제로 이렇게 쓰인다" (session 공출현, Jaccard ≥ 0.5)
+     ↓ gap = 인사이트
+ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, verdict 계산)
 ```
 
-- Auto IL과 ScenarioSpec의 gap = 실 사용과 이상적 설계의 차이 = **인사이트**
-- Auto IL에서 ScenarioSpec으로의 직접 승격은 하지 않는다 — 실 사용 패턴이 최적 경로와 다를 수 있기 때문
+- Auto IL → ScenarioSpec 직접 승격 금지 (실 사용 ≠ 최적 경로)
+- 세션 단위 그룹핑: `qa_session_id` (trace는 전송 단위, session이 행동 단위)
+- 상세: `docs/specs/analysis-system/`
 
 ### 서비스 단위 소유권 (ownedPrefixes)
 
@@ -235,6 +213,14 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 - **라이브러리**: constructor 인자 우선, `process.env` 최소화
 - **테스트**: 직접 접근 허용
 
+### 서비스 로깅
+- **서비스**: `createLogger("서비스명")` 필수. `console.log/warn/error` 사용 금지
+- pino 구조화 JSON 로깅: `logger.info({ key: value }, "메시지")`
+- 에러 로깅: `logger.error({ error }, "설명")` — Error 객체는 error 키에
+- **브라우저 SDK**: `console.warn` 허용 (pino 미사용)
+- **CLI**: `console.log` 허용 (사용자 출력)
+- **테스트**: 제약 없음
+
 ### 브라우저 SDK 에러 처리
 - `emitWithCoords`/`browserTrack` try-catch 필수 — UI 크래시 방지
 - 인코딩 실패 시 coordinate 없이 emit (이벤트 유실보다 좌표 누락이 낫다)
@@ -256,149 +242,91 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (이상적 경로
 
 ### 테스트 — SSOT 파생 표준
 
-#### 원칙: "카탈로그가 바뀌어도 테스트는 깨지지 않아야 한다"
+원칙: "카탈로그가 바뀌어도 테스트는 깨지지 않아야 한다"
 
-#### 1. 카운트는 SSOT에서 파생
-
-```typescript
-// ❌ 하드코딩 (카탈로그 변경 시 깨짐)
-expect(axes.length).toBe(74);
-expect(prefixes.length).toBe(46);
-
-// ✅ SSOT 파생
-expect(axes.length).toBe(Object.keys(DEMO_CATALOG.axes).length);
-expect(prefixes.length).toBe(Object.keys(DEMO_CATALOG.prefixes).length);
-```
-
-#### 2. DKG bootstrap 결과는 범위 검증
-
-```typescript
-// ❌ 정확한 노드 수 하드코딩 (DKG 설정 변경 시 깨짐)
-expect(nodes.length).toBe(267);
-
-// ✅ 범위 또는 불변조건
-expect(nodes.length).toBeGreaterThan(100);
-expect(graph.getNodesByKind("prefix").length).toBe(
-  Object.keys(DEMO_CATALOG.prefixes).length
-);
-```
-
-#### 3. export surface / dim 목록은 구조 기반 검증
-
-```typescript
-// ❌ dim 이름 하드코딩 (svc_ref 추가 시 깨짐)
-expect(spec.export.dims).toEqual(["action"]);
-
-// ✅ 제외 조건으로 검증
-for (const dim of spec.export.dims) {
-  expect(dim).not.toBe("actor");  // table_ref 제외 확인
-}
-expect(spec.export.dims).toContain("action");  // 핵심 dim 포함 확인
-```
-
-#### 4. prefix_ref 포함 테스트는 DKG에서 파생
-
-```typescript
-// ❌ address_context를 수동 나열 (prefix 추가 시 누락)
-const ac = { page_view: "pv:v2:0", endpoint: "ep:v1:0" /* ... 30개 */ };
-
-// ✅ DKG에서 전체 prefix 자동 생성
-const ac: Record<string, string> = {};
-for (const p of graph.getNodesByKind("prefix")) {
-  ac[p.id] = `${p.id}:v1:0`;
-}
-```
-
-#### 5. 하드코딩이 허용되는 경우
-
-| 패턴 | 이유 |
-|------|------|
-| HTTP status (`toBe(200)`) | 프로토콜 상수 |
-| 테스트 fixture의 주입 데이터 (`3 records inserted → toBe(3)`) | 테스트가 데이터를 제어 |
-| 특정 prefix/axis ID (`"tracking"`, `"cart_event"`) | 테스트 시나리오 컨텍스트 |
-| 에러 메시지/코드 (`"INVALID_INPUT"`) | API 계약 |
-
-#### 6. 서비스 단위 테스트 (NestJS 패턴)
-
-```typescript
-// 의존성 주입으로 격리 테스트
-function buildApp(deps: Partial<AppDeps> = {}) {
-  return createApp({
-    configStore: new InMemoryConfigStore(),  // 실제 인메모리 구현
-    ...deps,
-  });
-}
-
-// mock: 외부 서비스 호출만
-const bindings = { "ingest-server": { fetch: vi.fn().mockResolvedValue(new Response("ok")) } };
-```
-
-#### 7. D1 Store 테스트
-
-```typescript
-// NodeSqliteDriver(:memory:)로 D1 시뮬레이션
-const driver = new NodeSqliteDriver(":memory:");
-for (const stmt of DDL.split(";").filter(s => s.trim())) {
-  await driver.execute(stmt);
-}
-const store = new D1RecordStore(driver);
-```
-
-#### 8. convergence 복사본 동기화
-
-- `spec-core/shared/graph-port.ts` 변경 시 `convergence/graph-port.ts` 동기화 필수
-- `copy-drift.test.ts`가 자동 감지
+- 카운트 → SSOT에서 파생 (`Object.keys(DEMO_CATALOG.axes).length`). 하드코딩 금지
+- DKG 결과 → 범위 검증 (`toBeGreaterThan`) 또는 불변조건. 정확한 노드 수 금지
+- dim 목록 → 구조 기반 (포함/제외 조건). 전체 목록 하드코딩 금지
+- prefix_ref → DKG에서 자동 생성. 수동 나열 금지
+- 하드코딩 허용: HTTP status, fixture 주입 데이터, 특정 ID(시나리오용), 에러 코드
+- NestJS 테스트: InMemory store 주입, mock은 외부 서비스 호출만
+- D1 테스트: `NodeSqliteDriver(":memory:")` + DDL 실행
+- convergence 복사본: `spec-core/shared/graph-port.ts` 변경 시 동기화 필수 (`copy-drift.test.ts`)
+- 코드 예시: `docs/guides/testing-patterns.md`
 
 ## Decision Flow 컨벤션
 
-### 의사결정이 필요할 때
-
-일상 개발에서 다음 질문이 나오면 decision-flow를 사용한다:
-
-| 질문 | 플로우 | 자동 판정 가능한 경우 |
-|------|--------|-------------------|
-| "테스트가 필요한가?" | `test-needed` | 문서만→불필요, 리팩터+국소+충분→불필요, 신규+시스템→E2E |
+| 질문 | 플로우 | 자동 판정 |
+|------|--------|----------|
+| "테스트가 필요한가?" | `test-needed` | 문서만→불필요, 신규+시스템→E2E |
 | "기획을 확장할까?" | `scope-expansion` | 미완성+수요없음→보류 |
 | "안정화가 필요한가?" | `stabilization` | 버그빈도 높음→개선필요 |
 | "기존에 뭐가 있지?" | `ContextProvider.lookup(keyword)` | — |
-| "무슨 종류의 결정이지?" | `decision-router` | — |
 
-### 결정 기록 원칙
+- 모든 결정에 evidence 첨부: `{ kind: data|rule|precedent|intuition|external, source, content, weight }`
+- confidence < 0.3 → 경고. 자동 판정 가능하면 `autoSelect()`, 불가 → 사람이 결정
+- 라이브러리는 순수 (SQLite/fetch 없음). 영속(`~/.qa-sdk/decision-flow.sqlite`)과 ingest 전송은 CLI 책임
+- **Decision → Definition 순환**: 의사결정 outcome(artifactType) → 문서 scope 추론, 문서(컨텍스트) → 다음 의사결정 입력
+- bridge: `suggestScopeFromArtifact()`, `suggestLifecycleFromVerdict()`, `buildDefinitionContext()`
+- 상세: `docs/specs/decision-flow/`, `docs/specs/system/decision-definition-bridge.spec.md`
 
-- 모든 결정에 **evidence**를 첨부한다. `{ kind, source, content, weight }`
-- evidence.kind: `data`(정량) / `rule`(규칙) / `precedent`(선례) / `intuition`(직관) / `external`(외부)
-- 코어 gate(weight="core")에서는 **mentalModel 질문에 답하는 evidence** 포함 권장
-- confidence < 0.3이면 모니터가 경고 발행 — 근거를 보강하거나 에스컬레이션
-- 자동 판정 가능한 결정은 autoSelect()로 처리. 자동 불가 = 사람이 결정
+## Definition 시스템 (좌표 기반 문서 관리 체계)
 
-### 컨텍스트 축적
+좌표계(scope×aspect×depth)로 문서를 분류하고, 분해 레벨(level)로 전체-부분 구조에서의 위치를 표현한다. DB가 메타데이터 SSOT, 파일이 본문 SSOT. 상세: `docs/definition-system-philosophy.md`
 
-- 결정 시작 전 `ContextProvider.provide(schemaId, context)` 호출하여 이전 맥락 확인
-- 결정할수록 다음 결정의 컨텍스트가 풍부해짐 (패턴 감지 → 정책 후보 → 자동화)
-- 서사(narrative)는 지워지지 않는다. 결정이 바뀌면 새 서사가 쌓인다
+### 분해 레벨 (DefLevel) — "이것은 어떤 단위인가"
 
-### 스프린트 결정 (gstack)
+scope보다 상위 개념. 먼저 "어떤 단위인가"가 결정되고, 그 안에서 scope가 의미를 가진다. **좌표에 인코딩하지 않음** (메타데이터, lifecycle과 동일 취급). 분해 시 변할 수 있으므로 주소 불변성 보존.
 
-프로젝트 수준의 결정은 gstack sprint 파이프라인:
-- Think(`office-hours`) → Plan(`ceo-review`, `eng-review`, `design-review`) → Build(`build`) → Review(`code-review`) → Ship(`ship`) → Reflect(`reflect`)
-- 6 autoplan principles: standard-pattern, completeness, test-coverage, observability, security, taste
+| level | 의미 | 예시 | scope 동작 |
+|---|---|---|---|
+| `system` | 전체 시스템 | system-root | 무의미 |
+| `area` | 대분류 영역 | system-infra, system-design-tools | 불안정 |
+| `unit` | 독립 단위 | ingest-system, dkg-system | 작동 시작 |
+| `module` | 구성 요소 | ingest-api-system, gate-engine-group | 잘 동작 |
+| `leaf` | 개별 명세 (기본값) | record-spec, trace-spec | 완전 작동 |
 
-### CLI 영속 + 이벤트 전송
+- module은 **재귀 가능** — module이 하위 module을 포함할 수 있음
+- leaf가 나중에 분해되면 → module로 변경 (주소 불변)
+- frontmatter에 `level: unit` 선언. 없으면 기본값 `leaf`
 
-- 의사결정 이력은 `~/.qa-sdk/decision-flow.sqlite`에 영속 (세션 간 유지, 로컬 캐시)
-- 모든 gate 선택 / 플로우 완료 이벤트는 **ingest-server로 전송** (`INGEST_URL` 또는 localhost:3200)
-- 전송 실패해도 flow 진행 차단 안 함 (fail-open)
-- `flow start` → SQLite에 active 저장 + ingest 전송 → 프로세스 종료 → `flow select`로 이어서 진행 가능
-- decision-flow 라이브러리 자체는 순수 (SQLite/fetch 의존 없음). 영속과 전송은 CLI의 책임
+### 좌표 주소 (이중 관리)
 
-### 참조
+| 역할 | 필드 | 특성 |
+|------|------|------|
+| **불변 식별자** | `address` (정수) | 한번 부여 후 불변. 링크/참조의 앵커 |
+| **표시 라벨** | `id` (kebab-case) | 사람이 읽는 이름. 변경 가능 |
 
-- 스펙: `docs/specs/decision-flow/decision-flow.spec.md`
-- 서사: `docs/specs/decision-flow/narrative.md`
-- 증명: `packages/decision-flow/src/proof.test.ts`
-- 평가: `packages/decision-flow/src/evaluation.test.ts`, `dev-decisions.test.ts`
+```
+v1 (분류): scope(16) × aspect(64) × depth(8) = 8,192 (유형 분류용)
+v2 (유일): scope(16) × aspect(64) × depth(8) × seq(128) = 1,048,576 (문서별 유일)
+```
 
-## Definition 시스템 (문서 기반 관리 체계)
+좌표에 포함: scope, aspect, depth, seq(v2)
+메타데이터: level, lifecycle, layer, tags, svc
+config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별 해시
+
+### LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
+
+| 유형 | 읽는 법 | 순환 | 사용 기준 |
+|------|---------|------|----------|
+| `contains` | A가 B를 포함한다 | 금지 | 그룹→멤버 소속 (트리). 다중 부모 시 cross-scope 태그 필요 |
+| `depends_on` | A가 B에 의존한다 | 금지 | A가 B 없이 동작 불가 |
+| `implements` | A가 B를 구현한다 | 금지 | 추상 계약→구체 코드 |
+| `refines` | A가 B를 구체화한다 | 금지 | 같은 계층 내 상세화 (문서→상세문서) |
+| `constrains` | A가 B를 제약한다 | 금지 | constraint 문서가 규칙 부과 |
+| `traces_to` | A가 B로 추적한다 | 금지 | deprecated→대체 문서, 이력 추적 |
+
+### 문서 그래프 검증 (validateGraph)
+
+| 검증 | 심각도 | 설명 |
+|------|--------|------|
+| broken-link | error | target 미존재 |
+| circular-ref | error | depends_on/implements/refines 순환 |
+| self-ref | error | 자기 참조 |
+| orphan | warning | approved 문서인데 아무도 참조 안 함 (draft/review 제외) |
+| multi-parent | warning | contains 다중 부모 (cross-scope 태그 있으면 허용) |
+| contains-depth | warning | contains 계층 4단계 초과 |
 
 ### 4계층 (DefLayer) — "이것이 왜 존재하는가"
 
@@ -414,21 +342,40 @@ const store = new D1RecordStore(driver);
 
 ### definition-service (port 3700, NestJS)
 
-- 7 NestJS 모듈: docs, prefixes, intents, consumption, graph, sync, tests
-- DB: SQLite 파일 기반 (`data/definition-service.sqlite`)
+- 9 NestJS 모듈: docs, search, prefixes, intents, consumption, graph, sync, graphql, tests
+- DB: drizzle ORM (정규 테이블) + SearchModule (FTS5, drizzle 미지원 → onModuleInit에서 독립 생성)
+- **메타데이터 SSOT: DB** — frontmatter는 읽기 전용 캐시 (id + address만 파일 소유)
 - prefix 공급: registry-service → fetch → DB. registry 실패 시 DB 캐시
 - prefix SDK: `@qa-sdk/definition-client` (순수 HTTP + NestJS DI)
 
+### definition-service API
+
+| Method | Path | 기능 |
+|---|---|---|
+| GET | `/docs?scope=&aspect=&depth=&layer=&svc=&tag=&q=&limit=&offset=` | 확장 필터 + 전문검색 + pagination |
+| GET | `/docs/:id` | 단건 조회 |
+| PATCH | `/docs/:id` | 메타데이터 업데이트 (DB SSOT, address 자동 계산) |
+| GET | `/docs/:id/children` | contains 자식 |
+| GET | `/docs/:id/parent` | contains 부모 |
+| GET | `/docs/:id/incoming-links` | 역링크 |
+| POST/DELETE | `/docs/:id/links`, `/docs/:id/tags/:tag` | 원자적 link/tag 추가/삭제 |
+| POST | `/sync` | file → DB |
+| POST | `/sync/to-files` | DB → file (frontmatter 역동기화) |
+| POST | `/graph/validate` | 깨진 링크, 순환 참조, 고아 문서 검증 |
+| GET | `/graph/:id/impact` | blast radius 분석 |
+| GET | `/graph/:id/concerns` | concern 전파 조회 |
+
 ### definition-catalog 문서 규모
 
-- 453건 (approved 390 + deprecated 63)
+- 471건 (축/prefix registry-service에 seed 포함)
 - prefix 문서 57건 (docs/specs/prefix-catalog/)
 - skill 문서 20건 (docs/specs/skill-catalog/)
 - 22 aspect (7 scope), 4 depth, 6 link_type
+- 좌표 주소: `def_document:v1:<N>` (scope × aspect × depth 인코딩)
 
 ## 서비스 포트
 
-ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), gRPC debug(50051, GRPC_PORT 설정 시)
+ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), motion-workspace(3710), decision(3800), gRPC debug(50051, GRPC_PORT 설정 시)
 
 ## 신규 패키지 (이 세션 추가)
 
@@ -440,12 +387,13 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), def
 | `motion-content` | 모션 콘텐츠 (platform-demo에서 분리) |
 | `@qa-sdk/definition-service` | 문서/prefix 정의 관리 서비스 (NestJS + SQLite, port 3700) |
 | `@qa-sdk/definition-client` | definition-service HTTP 클라이언트 + NestJS DI 모듈 |
+| `@qa-sdk/decision-service` | 의사결정 스키마/인스턴스/문서연결 관리 (NestJS + SQLite, port 3800) |
 
 ## Ingest Store Driver (STORE_DRIVER)
 
 ```
 STORE_DRIVER=memory  → InMemory 전체 (기본, 개발/데모)
-STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수)
+STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수, packages/store)
 STORE_DRIVER=d1      → D1/SQLite via SqlDriver (CF Workers, SQLITE_PATH)
 STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_URL)
 ```
@@ -453,6 +401,21 @@ STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_UR
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
 - ClickHouse store: RecordStore만 구현, 나머지 InMemory
 - store-factory.ts에서 드라이버 선택 + 생성
+
+## Drizzle 마이그레이션 규칙
+
+- **버전**: `drizzle-orm` / `drizzle-kit` 모두 `1.0.0-beta.20` 고정
+- **스키마 파일**: 각 패키지 `src/db/schema.ts` (예외 없음)
+- **설정 파일**: 각 패키지 루트 `drizzle.config.ts` (`dialect: "sqlite"`, `out: "./drizzle"`)
+- **마이그레이션 폴더 경로**: `new URL("../../drizzle", import.meta.url).pathname` (process.cwd 금지)
+- **IF NOT EXISTS**: 모든 SQLite 마이그레이션 SQL에 필수. drizzle-kit generate 후 수동 추가
+- **PRAGMA**: 모든 SQLite 서비스에 WAL + busy_timeout=3000. FK 있으면 foreign_keys=ON
+- **드라이버**: NestJS 서비스는 `drizzle-orm/better-sqlite3`, 나머지는 `drizzle-orm/node-sqlite`
+- **node:sqlite 타입**: `getDatabaseSync()` + `DatabaseSyncInstance`를 index-meta에서 import. 자체 인터페이스 정의 금지
+- **쿼리 빌더**: 신규 코드는 drizzle query builder 사용. raw SQL 금지 (기존 definition-service 예외)
+- **에러 핸들링**: migrate() 호출은 try/catch + throw 필수. 에러 삼킴 금지 (index-meta SCHEMA_DDL 폴백 제외)
+- **D1 (Workers)**: 파일시스템 접근 불가하므로 런타임 migrate() 불가. DDL 문자열은 src/db/schema.ts와 수동 동기화
+- **tsup 번들**: drizzle/ 폴더는 `onSuccess` 훅으로 dist에 복사 (publicDir 아님)
 
 ## Protobuf 전송 (codec-proto)
 

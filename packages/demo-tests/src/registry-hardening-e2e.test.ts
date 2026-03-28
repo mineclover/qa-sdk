@@ -1,3 +1,5 @@
+// DEPRECATED: Hono createApp → NestJS 전환으로 비활성화. registry-service 자체 테스트(25파일, 212건)로 대체.
+
 /**
  * Registry Hardening E2E — 서비스 경화 검증
  *
@@ -61,6 +63,7 @@ async function createDraft(
 // §1. 순환참조 검증
 // ══════════════════════════════════════════════════════════════
 
+describe.skip("Registry Hardening E2E", () => {
 describe("Circular Reference Detection", () => {
   it("자기 참조 — createDraft에서 거부", async () => {
     const { app } = buildApp();
@@ -303,3 +306,4 @@ describe("Lock Store Behavior", () => {
     expect(ver.status).toBe("released");
   });
 });
+}); // describe.skip("Registry Hardening E2E")

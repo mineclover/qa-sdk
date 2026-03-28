@@ -1,6 +1,7 @@
 ---
 def:
   id: wi-trace-axes
+  address: def_document:v1:2673
   scope: data
   aspect: domain_data
   depth: specification
@@ -9,8 +10,6 @@ def:
   svc: weighted-index
   tags: [tier-infra]
   links:
-    - target: wi-trace-group
-      type: member_of
     - target: wi-math
       type: depends_on
 ---

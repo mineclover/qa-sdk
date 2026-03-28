@@ -11,7 +11,8 @@
     "build": "tsc",
     "test": "vitest run",
     "start": "node dist/server.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
@@ -22,6 +23,7 @@
     "@qa-sdk/codec-proto": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/engine": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/registry-client": "workspace:*",
     "@qa-sdk/store": "workspace:*",
     "bullmq": "^5.0.0",
@@ -30,6 +32,7 @@
     "index-meta": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "ws": "^8.19.0",
+    "drizzle-orm": "1.0.0-beta.20",
     "zod": "^3.24.2"
   },
   "peerDependencies": {
@@ -51,6 +54,7 @@
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/ws": "^8.18.1",
+    "drizzle-kit": "1.0.0-beta.20",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "wrangler": "^4.76.0"

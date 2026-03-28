@@ -1,0 +1,618 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "54d8a6cd-908d-460c-8b29-a5218e6b63bb",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "axis_profile",
+      "entityType": "tables"
+    },
+    {
+      "name": "catalogs",
+      "entityType": "tables"
+    },
+    {
+      "name": "config",
+      "entityType": "tables"
+    },
+    {
+      "name": "draft_lock",
+      "entityType": "tables"
+    },
+    {
+      "name": "event_schema",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_endpoint",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'v1'",
+      "generated": null,
+      "name": "current_version",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "32",
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "entry_count",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "meta_json",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "axis_profile"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "data",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "hash",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "catalogs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "config_type",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "data",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "config"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "locked_at",
+      "entityType": "columns",
+      "table": "draft_lock"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "service_id",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "event_key",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'1.0.0'",
+      "generated": null,
+      "name": "event_version",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "display_name",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'log'",
+      "generated": null,
+      "name": "record_kind",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'active'",
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "event_schema"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'number'",
+      "generated": null,
+      "name": "number_type",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "meta_json",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "labels_json",
+      "entityType": "columns",
+      "table": "prefix"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'demo'",
+      "generated": null,
+      "name": "catalog_id",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "namespace",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "svc_name",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "env",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "region",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "url",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "service_endpoint"
+    },
+    {
+      "columns": [
+        "id",
+        "catalog_id"
+      ],
+      "nameExplicit": false,
+      "name": "axis_profile_pk",
+      "entityType": "pks",
+      "table": "axis_profile"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "config_type"
+      ],
+      "nameExplicit": false,
+      "name": "config_pk",
+      "entityType": "pks",
+      "table": "config"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "draft_lock_pk",
+      "entityType": "pks",
+      "table": "draft_lock"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "service_id",
+        "event_key",
+        "event_version"
+      ],
+      "nameExplicit": false,
+      "name": "event_schema_pk",
+      "entityType": "pks",
+      "table": "event_schema"
+    },
+    {
+      "columns": [
+        "catalog_id",
+        "namespace",
+        "svc_name",
+        "env",
+        "region"
+      ],
+      "nameExplicit": false,
+      "name": "service_endpoint_pk",
+      "entityType": "pks",
+      "table": "service_endpoint"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "catalogs_pk",
+      "table": "catalogs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "prefix"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_pk",
+      "table": "prefix",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "catalog_id",
+          "isExpression": false
+        },
+        {
+          "value": "service_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_event_schema_service",
+      "entityType": "indexes",
+      "table": "event_schema"
+    },
+    {
+      "columns": [
+        {
+          "value": "owner",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_prefix_owner",
+      "entityType": "indexes",
+      "table": "prefix"
+    },
+    {
+      "value": "record_kind IN ('log', 'span', 'both')",
+      "name": "chk_event_schema_record_kind",
+      "entityType": "checks",
+      "table": "event_schema"
+    },
+    {
+      "value": "status IN ('active', 'deprecated', 'retired')",
+      "name": "chk_event_schema_status",
+      "entityType": "checks",
+      "table": "event_schema"
+    },
+    {
+      "value": "kind IN ('leaf', 'composite')",
+      "name": "chk_prefix_kind",
+      "entityType": "checks",
+      "table": "prefix"
+    },
+    {
+      "value": "number_type IN ('number', 'bigint')",
+      "name": "chk_prefix_number_type",
+      "entityType": "checks",
+      "table": "prefix"
+    }
+  ],
+  "renames": []
+}

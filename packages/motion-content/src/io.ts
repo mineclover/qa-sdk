@@ -2,20 +2,31 @@ import type {
   MotionAssetDef,
   MotionCaptionCue,
   MotionCompositionDef,
+  MotionCompositionDefV2,
   MotionCueDef,
   MotionLayerDef,
+  MotionSceneDef,
+  MotionSceneSequenceDef,
   MotionParameterDef,
   MotionSequenceDef,
   MotionStageTargetV1,
+  MotionTargetDef,
+  SceneLayerPlacement,
   MotionTransitionDef,
 } from "./model.js";
 import { CONTENT_TYPE_AXIS, CONTENT_TYPE_IDS } from "./content-types.js";
 
 export const MOTION_COMPOSITION_SCHEMA_V1 = "qa-sdk.motion-composition/v1";
+export const MOTION_COMPOSITION_SCHEMA_V2 = "qa-sdk.motion-composition/v2";
 
 export interface MotionCompositionDocumentV1 {
   readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V1;
   readonly composition: MotionCompositionDef;
+}
+
+export interface MotionCompositionDocumentV2 {
+  readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V2;
+  readonly composition: MotionCompositionDefV2;
 }
 
 const MOTION_PARAMETER_TYPES = ["text", "color", "number", "select"] as const;
@@ -431,9 +442,11 @@ function validateTransition(value: unknown, path: string, issues: string[]): val
   return true;
 }
 
-function validateMotionCompositionAtPath(value: unknown, path: string, issues: string[]): void {
-  if (!requireRecord(value, path, issues)) return;
-
+function validateSharedCompositionFields(
+  value: Record<string, unknown>,
+  path: string,
+  issues: string[],
+): void {
   requireString(value, "id", path, issues);
   requireString(value, "title", path, issues);
   requireString(value, "description", path, issues);
@@ -459,6 +472,123 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
   assets?.forEach((entry, index) => {
     validateAsset(entry, `${path}.assets[${index}]`, issues);
   });
+}
+
+function validateMotionTarget(value: unknown, path: string, issues: string[]): value is MotionTargetDef {
+  if (!requireRecord(value, path, issues)) return false;
+  requireString(value, "id", path, issues);
+  if (!hasOwn(value, "target")) {
+    pushMissingIssue(issues, formatPath(path, "target"), "object");
+  } else {
+    validateStageTarget(value.target, formatPath(path, "target"), issues);
+  }
+  if (hasOwn(value, "content") && value.content !== undefined) {
+    validateLayerContent(value.content, formatPath(path, "content"), issues);
+  }
+  return true;
+}
+
+function validateSceneLayerPlacement(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is SceneLayerPlacement {
+  if (!requireRecord(value, path, issues)) return false;
+  requireString(value, "targetId", path, issues);
+  requireNumber(value, "startMs", path, issues);
+  requireNumber(value, "durationMs", path, issues);
+
+  if (!hasOwn(value, "enter")) {
+    pushMissingIssue(issues, formatPath(path, "enter"), "object");
+  } else {
+    validateCueRef(value.enter, formatPath(path, "enter"), issues);
+  }
+
+  if (hasOwn(value, "exit") && value.exit !== undefined) {
+    validateCueRef(value.exit, formatPath(path, "exit"), issues);
+  }
+
+  return true;
+}
+
+function validateSceneSequenceTargetSlot(value: unknown, path: string, issues: string[]): boolean {
+  if (!requireRecord(value, path, issues)) return false;
+  requireString(value, "targetId", path, issues);
+  optionalNumber(value, "offsetMs", path, issues);
+  optionalNumber(value, "zIndex", path, issues);
+  optionalEnum(value, "role", path, issues, SEQUENCE_LAYER_SLOT_ROLES);
+  return true;
+}
+
+function validateSceneSequence(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionSceneSequenceDef {
+  if (!requireRecord(value, path, issues)) return false;
+  requireString(value, "id", path, issues);
+  requireString(value, "title", path, issues);
+  requireNumber(value, "startMs", path, issues);
+  requireNumber(value, "durationMs", path, issues);
+
+  const targetIds = requireArray(value, "targetIds", path, issues);
+  targetIds?.forEach((entry, index) => {
+    if (!isString(entry)) {
+      pushTypeIssue(issues, `${formatPath(path, "targetIds")}[${index}]`, "string", entry);
+    }
+  });
+
+  if (hasOwn(value, "layers") && value.layers !== undefined) {
+    if (!Array.isArray(value.layers)) {
+      pushTypeIssue(issues, formatPath(path, "layers"), "array", value.layers);
+    } else {
+      value.layers.forEach((entry, index) => {
+        validateSceneSequenceTargetSlot(entry, `${formatPath(path, "layers")}[${index}]`, issues);
+      });
+    }
+  }
+
+  if (hasOwn(value, "stagger") && value.stagger !== undefined) {
+    const staggerPath = formatPath(path, "stagger");
+    if (requireRecord(value.stagger, staggerPath, issues)) {
+      requireNumber(value.stagger, "startOffsetMs", staggerPath, issues);
+      requireNumber(value.stagger, "intervalMs", staggerPath, issues);
+    }
+  }
+
+  optionalStringArray(value, "captionIds", path, issues);
+  return true;
+}
+
+function validateScene(value: unknown, path: string, issues: string[]): value is MotionSceneDef {
+  if (!requireRecord(value, path, issues)) return false;
+  requireString(value, "id", path, issues);
+  requireString(value, "title", path, issues);
+  requireNumber(value, "startMs", path, issues);
+  requireNumber(value, "durationMs", path, issues);
+
+  const layers = requireArray(value, "layers", path, issues);
+  layers?.forEach((entry, index) => {
+    validateSceneLayerPlacement(entry, `${path}.layers[${index}]`, issues);
+  });
+
+  const sequences = requireArray(value, "sequences", path, issues);
+  sequences?.forEach((entry, index) => {
+    validateSceneSequence(entry, `${path}.sequences[${index}]`, issues);
+  });
+
+  const captions = requireArray(value, "captions", path, issues);
+  captions?.forEach((entry, index) => {
+    validateCaption(entry, `${path}.captions[${index}]`, issues);
+  });
+
+  return true;
+}
+
+function validateMotionCompositionAtPath(value: unknown, path: string, issues: string[]): void {
+  if (!requireRecord(value, path, issues)) return;
+
+  validateSharedCompositionFields(value, path, issues);
 
   const layers = requireArray(value, "layers", path, issues);
   layers?.forEach((entry, index) => {
@@ -565,9 +695,100 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
   );
 }
 
+function validateMotionCompositionV2AtPath(value: unknown, path: string, issues: string[]): void {
+  if (!requireRecord(value, path, issues)) return;
+
+  validateSharedCompositionFields(value, path, issues);
+
+  const targets = requireArray(value, "targets", path, issues);
+  targets?.forEach((entry, index) => {
+    validateMotionTarget(entry, `${path}.targets[${index}]`, issues);
+  });
+
+  const scenes = requireArray(value, "scenes", path, issues);
+  scenes?.forEach((entry, index) => {
+    validateScene(entry, `${path}.scenes[${index}]`, issues);
+  });
+
+  if (issues.length > 0) return;
+
+  const comp = value as Record<string, unknown>;
+  const targetIds = new Set(
+    (comp.targets as readonly { id: string }[]).map((target) => target.id),
+  );
+  const cuePresetIds = new Set(
+    Array.isArray(comp.cuePresets)
+      ? (comp.cuePresets as readonly { id: string }[]).map((preset) => preset.id)
+      : [],
+  );
+
+  type SceneLike = {
+    layers: readonly { targetId: string; enter: { preset?: string }; exit?: { preset?: string } }[];
+    sequences: readonly {
+      targetIds: readonly string[];
+      layers?: readonly { targetId: string }[];
+      captionIds?: readonly string[];
+    }[];
+    captions: readonly { id: string }[];
+  };
+
+  (comp.scenes as readonly SceneLike[]).forEach((scene, sceneIndex) => {
+    const sceneTargetIds = new Set(scene.layers.map((layer) => layer.targetId));
+    const sceneCaptionIds = new Set(scene.captions.map((caption) => caption.id));
+
+    scene.layers.forEach((placement, placementIndex) => {
+      if (!targetIds.has(placement.targetId)) {
+        issues.push(
+          `${path}.scenes[${sceneIndex}].layers[${placementIndex}].targetId: 존재하지 않는 target "${placement.targetId}"를 참조합니다.`,
+        );
+      }
+      if (placement.enter?.preset && !cuePresetIds.has(placement.enter.preset)) {
+        issues.push(
+          `${path}.scenes[${sceneIndex}].layers[${placementIndex}].enter.preset: 존재하지 않는 cuePreset "${placement.enter.preset}"를 참조합니다.`,
+        );
+      }
+      if (placement.exit?.preset && !cuePresetIds.has(placement.exit.preset)) {
+        issues.push(
+          `${path}.scenes[${sceneIndex}].layers[${placementIndex}].exit.preset: 존재하지 않는 cuePreset "${placement.exit.preset}"를 참조합니다.`,
+        );
+      }
+    });
+
+    scene.sequences.forEach((sequence, sequenceIndex) => {
+      for (const targetId of sequence.targetIds) {
+        if (!sceneTargetIds.has(targetId)) {
+          issues.push(
+            `${path}.scenes[${sceneIndex}].sequences[${sequenceIndex}].targetIds: scene.layers에 배치되지 않은 target "${targetId}"를 참조합니다.`,
+          );
+        }
+      }
+      for (const slot of sequence.layers ?? []) {
+        if (!sceneTargetIds.has(slot.targetId)) {
+          issues.push(
+            `${path}.scenes[${sceneIndex}].sequences[${sequenceIndex}].layers: scene.layers에 배치되지 않은 target "${slot.targetId}"를 참조합니다.`,
+          );
+        }
+      }
+      for (const captionId of sequence.captionIds ?? []) {
+        if (!sceneCaptionIds.has(captionId)) {
+          issues.push(
+            `${path}.scenes[${sceneIndex}].sequences[${sequenceIndex}].captionIds: scene.captions에 없는 caption "${captionId}"를 참조합니다.`,
+          );
+        }
+      }
+    });
+  });
+}
+
 export function validateMotionComposition(value: unknown): string[] {
   const issues: string[] = [];
   validateMotionCompositionAtPath(value, "$", issues);
+  return issues;
+}
+
+export function validateMotionCompositionV2(value: unknown): string[] {
+  const issues: string[] = [];
+  validateMotionCompositionV2AtPath(value, "$", issues);
   return issues;
 }
 
@@ -576,6 +797,15 @@ export function createMotionCompositionDocument(
 ): MotionCompositionDocumentV1 {
   return {
     schemaVersion: MOTION_COMPOSITION_SCHEMA_V1,
+    composition,
+  };
+}
+
+export function createMotionCompositionDocumentV2(
+  composition: MotionCompositionDefV2,
+): MotionCompositionDocumentV2 {
+  return {
+    schemaVersion: MOTION_COMPOSITION_SCHEMA_V2,
     composition,
   };
 }
@@ -603,12 +833,43 @@ export function validateMotionCompositionDocument(value: unknown): string[] {
   return issues;
 }
 
+export function validateMotionCompositionDocumentV2(value: unknown): string[] {
+  const issues: string[] = [];
+  if (!requireRecord(value, "$", issues)) return issues;
+
+  if (!hasOwn(value, "schemaVersion")) {
+    pushMissingIssue(issues, "$.schemaVersion", "string");
+  } else if (!isString(value.schemaVersion)) {
+    pushTypeIssue(issues, "$.schemaVersion", "string", value.schemaVersion);
+  } else if (value.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2) {
+    issues.push(
+      `$.schemaVersion: ${MOTION_COMPOSITION_SCHEMA_V2}여야 하지만 ${JSON.stringify(value.schemaVersion)}입니다.`,
+    );
+  }
+
+  if (!hasOwn(value, "composition")) {
+    pushMissingIssue(issues, "$.composition", "object");
+  } else {
+    validateMotionCompositionV2AtPath(value.composition, "$.composition", issues);
+  }
+
+  return issues;
+}
+
 export function isMotionCompositionDef(value: unknown): value is MotionCompositionDef {
   return validateMotionComposition(value).length === 0;
 }
 
+export function isMotionCompositionDefV2(value: unknown): value is MotionCompositionDefV2 {
+  return validateMotionCompositionV2(value).length === 0;
+}
+
 export function isMotionCompositionDocumentV1(value: unknown): value is MotionCompositionDocumentV1 {
   return validateMotionCompositionDocument(value).length === 0;
+}
+
+export function isMotionCompositionDocumentV2(value: unknown): value is MotionCompositionDocumentV2 {
+  return validateMotionCompositionDocumentV2(value).length === 0;
 }
 
 export class MotionCompositionParseError extends Error {
@@ -629,6 +890,12 @@ export function serializeMotionComposition(
   composition: MotionCompositionDef,
 ): string {
   return JSON.stringify(createMotionCompositionDocument(composition), null, 2);
+}
+
+export function serializeMotionCompositionV2(
+  composition: MotionCompositionDefV2,
+): string {
+  return JSON.stringify(createMotionCompositionDocumentV2(composition), null, 2);
 }
 
 /** layers 슬롯 기준으로 layerIds 파생 + 상대좌표 layer.startMs 동기화 */
@@ -682,4 +949,21 @@ export function parseMotionComposition(
     throw new MotionCompositionParseError(issues);
   }
   return normalizeFromSlots((parsed as MotionCompositionDocumentV1).composition);
+}
+
+export function parseMotionCompositionV2(
+  json: string,
+): MotionCompositionDefV2 {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json) as unknown;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new MotionCompositionParseError([`$: JSON 파싱에 실패했습니다. ${reason}`]);
+  }
+  const issues = validateMotionCompositionDocumentV2(parsed);
+  if (issues.length > 0) {
+    throw new MotionCompositionParseError(issues);
+  }
+  return (parsed as MotionCompositionDocumentV2).composition;
 }

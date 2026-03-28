@@ -1,0 +1,1027 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "a1898311-9301-4094-825d-9f379893b90e",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "address_range_cache",
+      "entityType": "tables"
+    },
+    {
+      "name": "address_state_cache",
+      "entityType": "tables"
+    },
+    {
+      "name": "entry",
+      "entityType": "tables"
+    },
+    {
+      "name": "entry_flag",
+      "entityType": "tables"
+    },
+    {
+      "name": "migration_mapping",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix_ref",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix_registry",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix_route",
+      "entityType": "tables"
+    },
+    {
+      "name": "schema_version",
+      "entityType": "tables"
+    },
+    {
+      "name": "version_lifecycle",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "label",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ranges_json",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "constraints_json",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "computed_at",
+      "entityType": "columns",
+      "table": "address_range_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "specs_json",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reserved_json",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "inactive_json",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "open_json",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "computed_at",
+      "entityType": "columns",
+      "table": "address_state_cache"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "entry"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "entry"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "position",
+      "entityType": "columns",
+      "table": "entry"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "value",
+      "entityType": "columns",
+      "table": "entry"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "entry"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "position",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reason",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "entry_flag"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "from_version_id",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "to_version_id",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "position",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "change_type",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "old_entity_id",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "new_entity_id",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "migration_mapping"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "parent_prefix",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "parent_version_id",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "dim_order",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ref_prefix",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ref_version_id",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ref_capacity",
+      "entityType": "columns",
+      "table": "prefix_ref"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "prefix_registry"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "prefix_registry"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "prefix_registry"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "registered_at",
+      "entityType": "columns",
+      "table": "prefix_registry"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "prefix_route"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "d1_database_id",
+      "entityType": "columns",
+      "table": "prefix_route"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "routed_at",
+      "entityType": "columns",
+      "table": "prefix_route"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "schema_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "schema_version"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "schema_version"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "changelog",
+      "entityType": "columns",
+      "table": "schema_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "schema_version"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version_id",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "base_version_id",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "capacity",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deactivation_mode",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "released_at",
+      "entityType": "columns",
+      "table": "version_lifecycle"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "tableTo": "schema_version",
+      "columnsTo": [
+        "prefix",
+        "version_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_entry_prefix_version_id_schema_version_prefix_version_id_fk",
+      "entityType": "fks",
+      "table": "entry"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id",
+        "position"
+      ],
+      "tableTo": "entry",
+      "columnsTo": [
+        "prefix",
+        "version_id",
+        "position"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_entry_flag_prefix_version_id_position_entry_prefix_version_id_position_fk",
+      "entityType": "fks",
+      "table": "entry_flag"
+    },
+    {
+      "columns": [
+        "parent_prefix",
+        "parent_version_id"
+      ],
+      "tableTo": "prefix_registry",
+      "columnsTo": [
+        "prefix",
+        "version_id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_prefix_ref_parent_prefix_parent_version_id_prefix_registry_prefix_version_id_fk",
+      "entityType": "fks",
+      "table": "prefix_ref"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id",
+        "label"
+      ],
+      "nameExplicit": false,
+      "name": "address_range_cache_pk",
+      "entityType": "pks",
+      "table": "address_range_cache"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "address_state_cache_pk",
+      "entityType": "pks",
+      "table": "address_state_cache"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id",
+        "position"
+      ],
+      "nameExplicit": false,
+      "name": "entry_pk",
+      "entityType": "pks",
+      "table": "entry"
+    },
+    {
+      "columns": [
+        "prefix",
+        "from_version_id",
+        "to_version_id",
+        "position"
+      ],
+      "nameExplicit": false,
+      "name": "migration_mapping_pk",
+      "entityType": "pks",
+      "table": "migration_mapping"
+    },
+    {
+      "columns": [
+        "parent_prefix",
+        "parent_version_id",
+        "dim_order"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_ref_pk",
+      "entityType": "pks",
+      "table": "prefix_ref"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_registry_pk",
+      "entityType": "pks",
+      "table": "prefix_registry"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "schema_version_pk",
+      "entityType": "pks",
+      "table": "schema_version"
+    },
+    {
+      "columns": [
+        "prefix",
+        "version_id"
+      ],
+      "nameExplicit": false,
+      "name": "version_lifecycle_pk",
+      "entityType": "pks",
+      "table": "version_lifecycle"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "entry_flag_pk",
+      "table": "entry_flag",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "prefix"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_route_pk",
+      "table": "prefix_route",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_range_cache_version",
+      "entityType": "indexes",
+      "table": "address_range_cache"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        },
+        {
+          "value": "position",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_entry_range",
+      "entityType": "indexes",
+      "table": "entry"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        },
+        {
+          "value": "value",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_entry_value",
+      "entityType": "indexes",
+      "table": "entry"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "version_id",
+          "isExpression": false
+        },
+        {
+          "value": "position",
+          "isExpression": false
+        },
+        {
+          "value": "updated_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_entry_flag_lookup",
+      "entityType": "indexes",
+      "table": "entry_flag"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "position",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        },
+        {
+          "value": "from_version_id",
+          "isExpression": false
+        },
+        {
+          "value": "to_version_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_migration_mapping_history",
+      "entityType": "indexes",
+      "table": "migration_mapping"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "from_version_id",
+          "isExpression": false
+        },
+        {
+          "value": "to_version_id",
+          "isExpression": false
+        },
+        {
+          "value": "position",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_migration_mapping_edge",
+      "entityType": "indexes",
+      "table": "migration_mapping"
+    },
+    {
+      "columns": [
+        {
+          "value": "d1_database_id",
+          "isExpression": false
+        },
+        {
+          "value": "routed_at",
+          "isExpression": false
+        },
+        {
+          "value": "prefix",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_prefix_route_database",
+      "entityType": "indexes",
+      "table": "prefix_route"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_version_lifecycle_prefix_created",
+      "entityType": "indexes",
+      "table": "version_lifecycle"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix",
+          "isExpression": false
+        },
+        {
+          "value": "status",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_version_lifecycle_prefix_status",
+      "entityType": "indexes",
+      "table": "version_lifecycle"
+    },
+    {
+      "value": "\"status\" IN ('active', 'inactive')",
+      "name": "entry_flag_status_check",
+      "entityType": "checks",
+      "table": "entry_flag"
+    },
+    {
+      "value": "\"change_type\" IN ('modified', 'deactivated')",
+      "name": "migration_mapping_change_type_check",
+      "entityType": "checks",
+      "table": "migration_mapping"
+    },
+    {
+      "value": "\"status\" IN ('draft', 'released', 'active', 'deprecated')",
+      "name": "version_lifecycle_status_check",
+      "entityType": "checks",
+      "table": "version_lifecycle"
+    },
+    {
+      "value": "\"deactivation_mode\" IN ('strict', 'flexible')",
+      "name": "version_lifecycle_deactivation_mode_check",
+      "entityType": "checks",
+      "table": "version_lifecycle"
+    }
+  ],
+  "renames": []
+}

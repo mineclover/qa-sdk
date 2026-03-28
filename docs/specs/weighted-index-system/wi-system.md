@@ -1,6 +1,8 @@
 ---
 def:
   id: wi-system
+  level: unit
+  address: def_document:v1:536
   scope: feature
   aspect: func_def
   depth: overview
@@ -24,8 +26,6 @@ def:
     - target: wi-pack-format-system
       type: contains
     - target: range-query-spec
-      type: contains
-    - target: wi-trace-group
       type: contains
 ---
 

@@ -1,19 +1,24 @@
 ---
 def:
   id: guides-system
+  level: unit
+  address: def_document:v1:1072
   scope: flow
   aspect: process_flow
   depth: overview
   lifecycle: approved
+  layer: mediation
   tags: [structural, entry-point]
   links:
-    - target: quickstart-guide
-      type: contains
     - target: analysis-system
+      type: depends_on
+    - target: cookbook-guide
       type: contains
     - target: prefix-type-guide
       type: contains
-    - target: cookbook-guide
+    - target: quickstart-guide
+      type: contains
+    - target: scope-classification-guide
       type: contains
 ---
 

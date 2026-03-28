@@ -13,6 +13,10 @@ export interface DocRecord {
   tags: string[];
   links: { target: string; type: string }[];
   svc?: string;
+  /** 좌표 주소 — scope×aspect×depth로 계산 (def_document:v1:<N>) */
+  address?: string;
+  /** 이 문서가 기술하는 대상 prefix (이중 좌표 참조) */
+  targetPrefix?: string;
   version: number;
   bodyHash: string;
   purpose?: string;
@@ -26,7 +30,7 @@ export interface DocRecord {
 /** 문서 이력 레코드 (body 포함) */
 export interface DocHistoryRecord extends DocRecord {
   body: string;
-  changeType: "created" | "updated" | "marker_edit";
+  changeType: "created" | "updated" | "marker_edit" | "metadata_edit";
 }
 
 /** 주소 슬라이스 의도 레코드 */
