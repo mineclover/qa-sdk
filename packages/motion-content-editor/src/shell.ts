@@ -1,4 +1,6 @@
 import {
+  assembleComposition,
+  createMotionCompositionDocument,
   createMotionStageNodeTarget,
   createMotionDomStageAdapter,
   createMotionPlayer,
@@ -8,11 +10,16 @@ import {
   findTransitionById,
   resolveMotionComposition,
   serializeMotionComposition,
+  serializeMotionCompositionV2,
   syncMotionEditorState,
   type MotionCompositionDef,
+  type MotionCompositionDefV2,
+  type MotionCompositionSchema,
+  type MotionCompositionDocumentV1,
   type MotionEditorCommand,
   type MotionEditorSession,
   type MotionEditorSelection,
+  type MotionEditorSelectionV2,
   type MotionEditorState,
   type MotionCueKind,
   type MotionItemKind,
@@ -20,9 +27,13 @@ import {
   type MotionParameterValues,
   type MotionPlayer,
   type MotionRuntimeSnapshot,
+  type MotionSceneDef,
   type MotionStageAdapter,
   type MotionTransitionStyle,
   type MotionEventLog,
+  type ResolvedMotionComposition,
+  type ResolvedMotionCompositionSchema,
+  type ResolvedMotionCompositionV2,
   type SequenceLayerSlotRole,
   createMotionEventLog,
 } from "motion-content";
@@ -32,6 +43,10 @@ import {
   renderCaptionPanel,
   renderImportDiagnosticsPanel,
   renderLayerPanel,
+  renderSceneCaptionPanel,
+  renderScenePlacementPanel,
+  renderSceneSequencePanel,
+  renderScenesPanel,
   renderSelectionDetail,
   type MotionFrameDiagnosticsState,
   type MotionImportDiagnosticsState,
@@ -58,6 +73,7 @@ import { PanelGroup, Splitter } from "./panel-layout.js";
 import { bindScrubInputs, type ScrubInputConfig } from "./scrub-input.js";
 import { composeMotionColorValue } from "./color-input.js";
 import { bindInlineTextInputs } from "./inline-text-input.js";
+import { type MotionEditorScenePresenceEntry } from "./scene-presence.js";
 import {
   MOTION_EDITOR_LAYOUT_STORAGE_KEY,
   clearMotionEditorPref,
@@ -77,17 +93,21 @@ export interface MotionEditorShellStage {
 
 export interface MotionEditorShellOptions {
   readonly container: HTMLElement;
-  readonly composition?: MotionCompositionDef;
+  readonly composition?: MotionCompositionSchema;
   readonly values?: Partial<MotionParameterValues>;
   readonly workspace?: MotionEditorShellWorkspace;
-  readonly renderStage?: (host: HTMLElement, state: MotionEditorState) => MotionEditorShellStage;
-  readonly onStateChange?: (state: MotionEditorState) => void;
+  readonly scenePresence?: readonly MotionEditorScenePresenceEntry[];
+  readonly renderStage?: (host: HTMLElement, state: MotionEditorState<ResolvedMotionCompositionSchema>) => MotionEditorShellStage;
+  readonly onStateChange?: (state: MotionEditorState<ResolvedMotionCompositionSchema>) => void;
+  readonly onFocusedSceneChange?: (sceneId: string | null) => void;
   /** 로컬 이벤트 로그. 제공하면 사용, 미제공 시 내부 생성 */
   readonly eventLog?: MotionEventLog;
 }
 
 export interface MotionEditorShell {
-  getState(): MotionEditorState;
+  getState(): MotionEditorState<ResolvedMotionCompositionSchema>;
+  getFocusedSceneId(): string | null;
+  setScenePresence(presence: readonly MotionEditorScenePresenceEntry[]): void;
   dispatch(command: MotionEditorCommand): void;
   readonly eventLog: MotionEventLog;
   destroy(): void;
@@ -102,6 +122,7 @@ const DEFAULT_BOTTOM_HEIGHT = 220;
 const DEFAULT_NEW_LAYER_DURATION_MS = 1200;
 const DEFAULT_NEW_SEQUENCE_DURATION_MS = 1200;
 const DEFAULT_NEW_CAPTION_DURATION_MS = 1200;
+const DEFAULT_NEW_SCENE_DURATION_MS = 1200;
 const DEFAULT_NEW_TRANSITION_DURATION_MS = 320;
 const COLLAPSED_SIDE_SIZE = 72;
 const COLLAPSED_BOTTOM_SIZE = 56;
@@ -123,6 +144,193 @@ interface MotionEditorDockLayoutState {
   readonly collapsed: boolean;
 }
 
+type ShellState = MotionEditorState<ResolvedMotionCompositionSchema>;
+type LinearShellState = MotionEditorState<ResolvedMotionComposition>;
+type SceneShellState = MotionEditorState<ResolvedMotionCompositionV2>;
+type MotionEditorPreviewMode = "full" | "scene";
+type MotionEditorPreviewTarget =
+  | { readonly mode: "full" }
+  | { readonly mode: "scene"; readonly sceneId: string };
+
+const FULL_PREVIEW_TARGET: MotionEditorPreviewTarget = { mode: "full" };
+
+function isSceneComposition(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+): composition is MotionCompositionDefV2 | ResolvedMotionCompositionV2 {
+  return "targets" in composition && "scenes" in composition;
+}
+
+function isLinearShellState(
+  state: ShellState,
+): state is LinearShellState {
+  return !isSceneComposition(state.composition);
+}
+
+function serializeMotionCompositionSchema(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+): string {
+  return isSceneComposition(composition)
+    ? serializeMotionCompositionV2(composition)
+    : serializeMotionComposition(composition as MotionCompositionDef);
+}
+
+function createSetCompositionCommand(
+  composition: MotionCompositionSchema,
+  values: MotionParameterValues,
+): MotionEditorCommand {
+  return isSceneComposition(composition)
+    ? { type: "set-composition", composition, values }
+    : { type: "set-composition", composition, values };
+}
+
+function describeSelectionId(
+  selection: MotionEditorSelectionV2,
+): string {
+  return "id" in selection ? selection.id : `${selection.sceneId}:${selection.targetId}`;
+}
+
+function deriveSceneIdFromSelection(
+  selection: MotionEditorSelectionV2 | null,
+): string | null {
+  if (!selection) {
+    return null;
+  }
+  if (selection.kind === "scene") {
+    return selection.id;
+  }
+  if (selection.kind === "scene-layer") {
+    return selection.sceneId;
+  }
+  return null;
+}
+
+function indexScenePresenceEntries(
+  entries: readonly MotionEditorScenePresenceEntry[] | undefined,
+): ReadonlyMap<string, MotionEditorScenePresenceEntry> {
+  return new Map(
+    (entries ?? []).map((entry) => [entry.sceneId, entry] as const),
+  );
+}
+
+function clampTimeMs(
+  timeMs: number,
+  durationMs: number,
+): number {
+  return Math.max(0, Math.min(timeMs, durationMs));
+}
+
+function findSceneForPreview(
+  composition: MotionCompositionDefV2 | ResolvedMotionCompositionV2,
+  sceneId: string,
+): MotionSceneDef | null {
+  return composition.scenes.find((scene) => scene.id === sceneId) ?? null;
+}
+
+function createScenePreviewSourceComposition(
+  composition: MotionCompositionDefV2 | ResolvedMotionCompositionV2,
+  sceneId: string,
+): MotionCompositionDefV2 | null {
+  const scene = findSceneForPreview(composition, sceneId);
+  if (!scene) {
+    return null;
+  }
+
+  const targetIds = new Set(scene.layers.map((placement) => placement.targetId));
+
+  return {
+    ...composition,
+    id: `${composition.id}-${scene.id}`,
+    title: `${composition.title} · ${scene.title}`,
+    description: composition.description.length > 0
+      ? `${composition.description} · ${scene.title} 씬 미리보기`
+      : `${scene.title} 씬 미리보기`,
+    durationMs: scene.durationMs,
+    targets: composition.targets.filter((target) => targetIds.has(target.id)),
+    scenes: [
+      {
+        ...scene,
+        startMs: 0,
+      },
+    ],
+  };
+}
+
+function resolvePreviewTarget(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  previewMode: MotionEditorPreviewMode,
+  focusedSceneId: string | null,
+): MotionEditorPreviewTarget {
+  if (!isSceneComposition(composition) || previewMode === "full" || !focusedSceneId) {
+    return FULL_PREVIEW_TARGET;
+  }
+
+  return composition.scenes.some((scene) => scene.id === focusedSceneId)
+    ? { mode: "scene", sceneId: focusedSceneId }
+    : FULL_PREVIEW_TARGET;
+}
+
+function assemblePreviewComposition(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  previewTarget: MotionEditorPreviewTarget,
+): MotionCompositionDef {
+  if (!isSceneComposition(composition)) {
+    return composition as MotionCompositionDef;
+  }
+
+  if (previewTarget.mode === "scene") {
+    const scenePreview = createScenePreviewSourceComposition(composition, previewTarget.sceneId);
+    if (scenePreview) {
+      return assembleComposition(scenePreview);
+    }
+  }
+
+  return assembleComposition(composition);
+}
+
+function createPreviewDocument(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  previewTarget: MotionEditorPreviewTarget,
+): MotionCompositionDocumentV1 {
+  return createMotionCompositionDocument(
+    assemblePreviewComposition(composition, previewTarget),
+  );
+}
+
+function mapPreviewTimeMs(
+  composition: MotionCompositionDefV2 | ResolvedMotionCompositionV2,
+  currentTarget: MotionEditorPreviewTarget,
+  nextTarget: MotionEditorPreviewTarget,
+  currentTimeMs: number,
+): number {
+  if (currentTarget.mode === nextTarget.mode) {
+    if (currentTarget.mode === "full") {
+      return clampTimeMs(currentTimeMs, composition.durationMs);
+    }
+    if (nextTarget.mode === "scene" && currentTarget.sceneId === nextTarget.sceneId) {
+      const currentScene = findSceneForPreview(composition, currentTarget.sceneId);
+      return currentScene
+        ? clampTimeMs(currentTimeMs, currentScene.durationMs)
+        : clampTimeMs(currentTimeMs, composition.durationMs);
+    }
+  }
+
+  const currentScene = currentTarget.mode === "scene"
+    ? findSceneForPreview(composition, currentTarget.sceneId)
+    : null;
+  const nextScene = nextTarget.mode === "scene"
+    ? findSceneForPreview(composition, nextTarget.sceneId)
+    : null;
+  const globalTimeMs = currentScene
+    ? clampTimeMs(currentScene.startMs + currentTimeMs, composition.durationMs)
+    : clampTimeMs(currentTimeMs, composition.durationMs);
+
+  if (!nextScene) {
+    return globalTimeMs;
+  }
+
+  return clampTimeMs(globalTimeMs - nextScene.startMs, nextScene.durationMs);
+}
+
 interface MotionEditorLayoutState {
   readonly left: MotionEditorDockLayoutState;
   readonly right: MotionEditorDockLayoutState;
@@ -130,7 +338,7 @@ interface MotionEditorLayoutState {
 }
 
 const LAYOUT_TAB_IDS = {
-  left: ["properties", "layers", "sequences"],
+  left: ["properties", "scenes", "layers", "sequences"],
   right: ["selection-detail", "active-state"],
   bottom: ["timeline"],
 } as const;
@@ -289,7 +497,7 @@ function createUniqueId(
 }
 
 function createNextLayerDraft(
-  state: MotionEditorState,
+  state: LinearShellState,
 ): { readonly id: string; readonly label: string } {
   const { id, index } = createNextIndexedId(
     "layer",
@@ -302,7 +510,7 @@ function createNextLayerDraft(
 }
 
 function createNextSequenceDraft(
-  state: MotionEditorState,
+  state: LinearShellState,
 ): { readonly id: string; readonly title: string; readonly startMs: number; readonly durationMs: number } {
   const { id, index } = createNextIndexedId(
     "sequence",
@@ -323,7 +531,7 @@ function createNextSequenceDraft(
 }
 
 function createNextCaptionDraft(
-  state: MotionEditorState,
+  state: LinearShellState,
 ): { readonly id: string; readonly text: string; readonly startMs: number; readonly durationMs: number; readonly tone: "neutral" } {
   const { id, index } = createNextIndexedId(
     "cap",
@@ -331,8 +539,9 @@ function createNextCaptionDraft(
   );
   const durationMs = Math.min(DEFAULT_NEW_CAPTION_DURATION_MS, state.composition.durationMs);
   const maxStartMs = Math.max(0, state.composition.durationMs - durationMs);
-  const selectedSequence = state.selection?.kind === "sequence"
-    ? state.composition.sequences.find((sequence) => sequence.id === state.selection?.id)
+  const selectedSequenceId = state.selection?.kind === "sequence" ? state.selection.id : null;
+  const selectedSequence = selectedSequenceId
+    ? state.composition.sequences.find((sequence) => sequence.id === selectedSequenceId)
     : undefined;
   const rawStartMs = selectedSequence?.startMs ?? Math.round(state.transport.currentTimeMs);
   return {
@@ -345,7 +554,7 @@ function createNextCaptionDraft(
 }
 
 function resolveDefaultTransitionStyle(
-  state: MotionEditorState,
+  state: LinearShellState,
 ): "crossfade" | "flash" | "lift" {
   const value = state.values["transitionStyle"];
   if (value === "crossfade" || value === "flash" || value === "lift") {
@@ -355,7 +564,7 @@ function resolveDefaultTransitionStyle(
 }
 
 function createNextTransitionDraft(
-  state: MotionEditorState,
+  state: LinearShellState,
 ): {
   readonly id: string;
   readonly fromSequenceId: string;
@@ -397,6 +606,120 @@ function createNextTransitionDraft(
     toSequenceId: pair.toSequenceId,
     style: resolveDefaultTransitionStyle(state),
     durationMs: DEFAULT_NEW_TRANSITION_DURATION_MS,
+  };
+}
+
+function createNextSceneDraft(
+  state: SceneShellState,
+): { readonly id: string; readonly title: string; readonly startMs: number; readonly durationMs: number } {
+  const { id, index } = createNextIndexedId(
+    "scene",
+    state.composition.scenes.map((scene) => scene.id),
+  );
+  const durationMs = Math.min(DEFAULT_NEW_SCENE_DURATION_MS, state.composition.durationMs);
+  const maxStartMs = Math.max(0, state.composition.durationMs - durationMs);
+  const lastSceneEndMs = state.composition.scenes.reduce(
+    (max, scene) => Math.max(max, scene.startMs + scene.durationMs),
+    0,
+  );
+  return {
+    id,
+    title: `Scene ${index}`,
+    startMs: Math.min(lastSceneEndMs, maxStartMs),
+    durationMs,
+  };
+}
+
+function createSceneFocusTimelineState(
+  state: SceneShellState,
+  sceneId: string,
+): LinearShellState | null {
+  const scene = state.composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    return null;
+  }
+
+  const targetById = new Map(
+    state.composition.targets.map((target) => [target.id, target]),
+  );
+  const layers = scene.layers.flatMap((placement) => {
+    const target = targetById.get(placement.targetId);
+    if (!target) {
+      return [];
+    }
+    return [{
+      id: placement.targetId,
+      label: placement.targetId,
+      target: target.target,
+      content: target.content,
+      startMs: placement.startMs,
+      durationMs: placement.durationMs,
+      enter: placement.enter,
+      ...(placement.exit ? { exit: placement.exit } : {}),
+    }];
+  });
+
+  return {
+    composition: {
+      id: `${state.composition.id}#scene:${scene.id}`,
+      title: scene.title,
+      description: `${state.composition.title} / ${scene.title}`,
+      durationMs: scene.durationMs,
+      parameters: state.composition.parameters,
+      cuePresets: state.composition.cuePresets,
+      assets: [],
+      layers,
+      sequences: [],
+      captions: [],
+      transitions: [],
+      values: state.values,
+    },
+    values: state.values,
+    selection: state.selection?.kind === "scene-layer" && state.selection.sceneId === scene.id
+      ? { kind: "layer", id: state.selection.targetId }
+      : null,
+    transport: {
+      ...state.transport,
+      currentTimeMs: Math.max(0, Math.min(state.transport.currentTimeMs - scene.startMs, scene.durationMs)),
+      durationMs: scene.durationMs,
+    },
+    viewport: state.viewport,
+    activeSequenceIds: [],
+    activeLayerIds: [],
+    activeCaptionId: null,
+  };
+}
+
+function mapSceneFocusTimelineSelection(
+  sceneId: string,
+  selection: MotionEditorSelectionV2,
+): MotionEditorSelectionV2 | null {
+  if (selection.kind === "layer") {
+    return {
+      kind: "scene-layer",
+      sceneId,
+      targetId: selection.id,
+    };
+  }
+  return {
+    kind: "scene",
+    id: sceneId,
+  };
+}
+
+function mapSceneFocusTimelineCommand(
+  sceneId: string,
+  command: MotionEditorCommand,
+): MotionEditorCommand | null {
+  if (command.type !== "update-item-timing" || command.itemKind !== "layer") {
+    return null;
+  }
+  return {
+    type: "update-scene-placement-timing",
+    sceneId,
+    targetId: command.itemId,
+    startMs: command.startMs,
+    durationMs: command.durationMs,
   };
 }
 
@@ -473,7 +796,7 @@ function isSequenceLayerSlotRole(value: string | undefined): value is SequenceLa
 }
 
 function findCuePresetById(
-  composition: MotionCompositionDef,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
   presetId: string,
 ) {
   return composition.cuePresets?.find((preset) => preset.id === presetId);
@@ -481,17 +804,17 @@ function findCuePresetById(
 
 function createCuePresetSelection(
   presetId: string | undefined,
-): MotionEditorSelection | null {
+): MotionEditorSelectionV2 | null {
   return presetId
     ? { kind: "cue-preset", id: presetId }
     : null;
 }
 
 function buildCuePresetComposition(
-  state: MotionEditorState,
+  state: ShellState,
   presetId: string,
   updater: (preset: NonNullable<MotionCompositionDef["cuePresets"]>[number]) => NonNullable<MotionCompositionDef["cuePresets"]>[number],
-): MotionCompositionDef | null {
+): MotionCompositionSchema | null {
   const presets = state.composition.cuePresets;
   if (!presets) {
     return null;
@@ -518,7 +841,7 @@ function buildCuePresetComposition(
 }
 
 function createSelectionDetailCommand(
-  state: MotionEditorState,
+  state: ShellState,
   field: HTMLElement,
   nextValue: number,
 ): MotionEditorCommand | null {
@@ -529,6 +852,9 @@ function createSelectionDetailCommand(
   }
 
   if (command === "item-timing") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const itemKind = field.dataset["itemKind"];
     const itemId = field.dataset["itemId"];
     if (!isMotionItemKind(itemKind) || !itemId) {
@@ -551,7 +877,53 @@ function createSelectionDetailCommand(
     };
   }
 
+  if (command === "scene-timing") {
+    if (!isSceneComposition(state.composition)) {
+      return null;
+    }
+    const sceneId = field.dataset["sceneId"];
+    if (!sceneId || (scrubField !== "startMs" && scrubField !== "durationMs")) {
+      return null;
+    }
+    const scene = state.composition.scenes.find((entry) => entry.id === sceneId);
+    if (!scene) {
+      return null;
+    }
+    return {
+      type: "update-scene-timing",
+      sceneId,
+      startMs: scrubField === "startMs" ? nextValue : scene.startMs,
+      durationMs: scrubField === "durationMs" ? nextValue : scene.durationMs,
+    };
+  }
+
+  if (command === "scene-placement-timing") {
+    if (!isSceneComposition(state.composition)) {
+      return null;
+    }
+    const sceneId = field.dataset["sceneId"];
+    const targetId = field.dataset["targetId"];
+    if (!sceneId || !targetId || (scrubField !== "startMs" && scrubField !== "durationMs")) {
+      return null;
+    }
+    const scene = state.composition.scenes.find((entry) => entry.id === sceneId);
+    const placement = scene?.layers.find((entry) => entry.targetId === targetId);
+    if (!scene || !placement) {
+      return null;
+    }
+    return {
+      type: "update-scene-placement-timing",
+      sceneId,
+      targetId,
+      startMs: scrubField === "startMs" ? nextValue : placement.startMs,
+      durationMs: scrubField === "durationMs" ? nextValue : placement.durationMs,
+    };
+  }
+
   if (command === "layer-relative-start") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const sequenceId = field.dataset["sequenceId"];
     const layerId = field.dataset["layerId"];
     if (!sequenceId || !layerId) {
@@ -571,6 +943,9 @@ function createSelectionDetailCommand(
   }
 
   if (command === "sequence-stagger") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const sequenceId = field.dataset["sequenceId"];
     if (!sequenceId || (scrubField !== "startOffsetMs" && scrubField !== "intervalMs")) {
       return null;
@@ -584,6 +959,9 @@ function createSelectionDetailCommand(
   }
 
   if (command === "sequence-layer-slot") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const sequenceId = field.dataset["sequenceId"];
     const layerId = field.dataset["layerId"];
     if (!sequenceId || !layerId || (scrubField !== "offsetMs" && scrubField !== "zIndex")) {
@@ -599,6 +977,9 @@ function createSelectionDetailCommand(
   }
 
   if (command === "transition-duration") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const transitionId = field.dataset["transitionId"];
     if (!transitionId || !findTransitionById(state.composition, transitionId)) {
       return null;
@@ -611,6 +992,9 @@ function createSelectionDetailCommand(
   }
 
   if (command === "transition-param") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const transitionId = field.dataset["transitionId"];
     const param = field.dataset["transitionParam"];
     if (
@@ -651,23 +1035,37 @@ function createSelectionDetailCommand(
     if (!composition) {
       return null;
     }
-    return {
-      type: "set-composition",
-      composition,
-      values: state.values,
-    };
+    return createSetCompositionCommand(composition, state.values);
   }
 
   return null;
 }
 
 function createSelectionDetailTextCommand(
-  state: MotionEditorState,
+  state: ShellState,
   field: HTMLElement,
   nextValue: string,
 ): MotionEditorCommand | null {
   const command = field.dataset["inlineTextCommand"];
+  if (command === "scene-title") {
+    if (!isSceneComposition(state.composition)) {
+      return null;
+    }
+    const sceneId = field.dataset["sceneId"];
+    if (!sceneId || nextValue.trim().length === 0 || !state.composition.scenes.some((scene) => scene.id === sceneId)) {
+      return null;
+    }
+    return {
+      type: "rename-scene",
+      sceneId,
+      title: nextValue,
+    };
+  }
+
   if (command === "item-string") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const itemKind = field.dataset["itemKind"];
     const itemId = field.dataset["itemId"];
     if (!isMotionItemKind(itemKind) || !itemId || nextValue.trim().length === 0) {
@@ -714,18 +1112,14 @@ function createSelectionDetailTextCommand(
     if (!composition) {
       return null;
     }
-    return {
-      type: "set-composition",
-      composition,
-      values: state.values,
-    };
+    return createSetCompositionCommand(composition, state.values);
   }
 
   return null;
 }
 
 function createSelectionDetailControlCommand(
-  state: MotionEditorState,
+  state: ShellState,
   control: HTMLInputElement | HTMLSelectElement,
 ): MotionEditorCommand | null {
   const kind = control.dataset["selectionControl"];
@@ -734,6 +1128,9 @@ function createSelectionDetailControlCommand(
   }
 
   if (kind === "layer-cue-kind") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const layerId = control.dataset["layerId"];
     const cue = control.dataset["cueField"];
     if (!layerId || !isCueField(cue) || !isMotionCueKind(control.value) || !findLayerById(state.composition, layerId)) {
@@ -748,6 +1145,9 @@ function createSelectionDetailControlCommand(
   }
 
   if (kind === "layer-cue-preset") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const layerId = control.dataset["layerId"];
     const cue = control.dataset["cueField"];
     const presetId = control.value;
@@ -768,6 +1168,9 @@ function createSelectionDetailControlCommand(
   }
 
   if (kind === "layer-content-type") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const layerId = control.dataset["layerId"];
     if (!layerId || !isMotionLayerContentType(control.value) || !findLayerById(state.composition, layerId)) {
       return null;
@@ -780,6 +1183,9 @@ function createSelectionDetailControlCommand(
   }
 
   if (kind === "sequence-layer-role") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const sequenceId = control.dataset["sequenceId"];
     const layerId = control.dataset["layerId"];
     if (!sequenceId || !layerId || !findSequenceById(state.composition, sequenceId)) {
@@ -797,6 +1203,9 @@ function createSelectionDetailControlCommand(
   }
 
   if (kind === "transition-style") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const transitionId = control.dataset["transitionId"];
     if (!transitionId || !isMotionTransitionStyle(control.value) || !findTransitionById(state.composition, transitionId)) {
       return null;
@@ -826,14 +1235,13 @@ function createSelectionDetailControlCommand(
     if (!composition) {
       return null;
     }
-    return {
-      type: "set-composition",
-      composition,
-      values: state.values,
-    };
+    return createSetCompositionCommand(composition, state.values);
   }
 
   if (kind === "transition-param-color") {
+    if (!isLinearShellState(state)) {
+      return null;
+    }
     const transitionId = control.dataset["transitionId"];
     const param = control.dataset["transitionParam"];
     if (
@@ -893,11 +1301,12 @@ export function createMotionEditorShell(
     composition: options.composition,
     values: options.values,
   });
-  let session: MotionEditorSession = workspace.controller.getSession();
-  let state = session.present;
+  let session: MotionEditorSession<ResolvedMotionCompositionSchema> = workspace.controller.getSession();
+  let state: ShellState = session.present;
   let player: MotionPlayer | null = null;
   let dragCommand: MotionEditorCommand | null = null;
   let dragState: MotionTimelineDragState | null = null;
+  let dragSceneId: string | null = null;
   let lastSnapshot: MotionRuntimeSnapshot | null = null;
   let importDiagnostics: MotionImportDiagnosticsState = {
     status: "idle",
@@ -906,6 +1315,12 @@ export function createMotionEditorShell(
   };
   let frameDiagnostics = createFrameDiagnosticsState();
   let lastPlaybackFrameAt: number | null = null;
+  let focusedSceneId: string | null = isSceneComposition(state.composition)
+    ? deriveSceneIdFromSelection(state.selection)
+    : null;
+  let previewMode: MotionEditorPreviewMode = "full";
+  let lastEmittedFocusedSceneId: string | null | undefined = undefined;
+  let scenePresence = indexScenePresenceEntries(options.scenePresence);
   const initialLayoutState = readStoredLayoutState() ?? createDefaultLayoutState();
 
   const root = document.createElement("div");
@@ -941,7 +1356,14 @@ export function createMotionEditorShell(
           <span>Speed</span>
           <input data-action="playback-rate" type="number" min="0.25" max="4" step="0.25" value="${DEFAULT_PLAYBACK_RATE}" />
         </label>
+        <div class="mce-toolbar-field" data-preview-controls hidden>
+          <span>Preview</span>
+          <button type="button" class="mce-secondary" data-action="preview-full">전체</button>
+          <button type="button" class="mce-secondary" data-action="preview-scene">씬</button>
+          <span data-preview-label>전체 어셈블리</span>
+        </div>
         <button class="mce-secondary" data-action="download-json">Download</button>
+        <button class="mce-secondary" data-action="export-v1">Export v1</button>
         <button class="mce-secondary" data-action="open-file">Upload</button>
         <button class="mce-secondary" data-action="import-json">Apply</button>
         <button class="mce-secondary" data-action="reset-layout">레이아웃 초기화</button>
@@ -1001,6 +1423,13 @@ export function createMotionEditorShell(
           </div>
           <div class="mce-section"><h3>Cue Presets</h3><div class="mce-list" data-panel="cue-presets"></div></div>
           <div class="mce-section"><h3>Composition JSON</h3><textarea class="mce-json" data-panel="json"></textarea><div class="mce-error" data-panel="json-error"></div></div>
+        `),
+      },
+      {
+        id: "scenes",
+        label: "Scenes",
+        content: createPanelStack(`
+          <div class="mce-list" data-panel="scenes"></div>
         `),
       },
       {
@@ -1310,6 +1739,7 @@ export function createMotionEditorShell(
   applyStagePreviewTheme(stageHost);
   const stageMount = options.renderStage?.(stageHost, state) ?? renderDefaultStage(stageHost);
   const paramPanel = root.querySelector<HTMLElement>('[data-panel="params"]')!;
+  const scenesPanel = root.querySelector<HTMLElement>('[data-panel="scenes"]')!;
   const sequencePanel = root.querySelector<HTMLElement>('[data-panel="sequences"]')!;
   const layerPanel = root.querySelector<HTMLElement>('[data-panel="layers"]')!;
   const transitionPanel = root.querySelector<HTMLElement>('[data-panel="transitions"]')!;
@@ -1327,14 +1757,84 @@ export function createMotionEditorShell(
   const playbackRateInput = root.querySelector<HTMLInputElement>('[data-action="playback-rate"]')!;
   const themeToggleButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-theme"]')!;
   const fileInput = root.querySelector<HTMLInputElement>('[data-action="file-input"]')!;
+  const previewControls = root.querySelector<HTMLElement>('[data-preview-controls]')!;
+  const previewFullButton = root.querySelector<HTMLButtonElement>('[data-action="preview-full"]')!;
+  const previewSceneButton = root.querySelector<HTMLButtonElement>('[data-action="preview-scene"]')!;
+  const previewLabel = root.querySelector<HTMLElement>("[data-preview-label]")!;
+  const syncFocusedScene = () => {
+    if (!isSceneComposition(state.composition)) {
+      focusedSceneId = null;
+      previewMode = "full";
+      return;
+    }
+    const selectedSceneId = deriveSceneIdFromSelection(state.selection);
+    if (selectedSceneId) {
+      focusedSceneId = selectedSceneId;
+    }
+    focusedSceneId = focusedSceneId && state.composition.scenes.some((scene) => scene.id === focusedSceneId)
+      ? focusedSceneId
+      : null;
+    if (!focusedSceneId && previewMode === "scene") {
+      previewMode = "full";
+    }
+  };
+  const getFocusedScene = () => (
+    isSceneComposition(state.composition) && focusedSceneId
+      ? state.composition.scenes.find((scene) => scene.id === focusedSceneId) ?? null
+      : null
+  );
+  const getPreviewTarget = () =>
+    resolvePreviewTarget(state.composition, previewMode, focusedSceneId);
+  const getTimelineRenderState = () => {
+    if (!isSceneComposition(state.composition) || !focusedSceneId) {
+      return {
+        sceneId: null,
+        state,
+      };
+    }
+    const focusedTimelineState = createSceneFocusTimelineState(
+      state as SceneShellState,
+      focusedSceneId,
+    );
+    return focusedTimelineState
+      ? {
+          sceneId: focusedSceneId,
+          state: focusedTimelineState,
+        }
+      : {
+          sceneId: null,
+          state,
+        };
+  };
+  const renderTimelinePanel = () => {
+    const focusedScene = getFocusedScene();
+    const timelineState = getTimelineRenderState().state;
+    if (!focusedScene) {
+      return renderMotionTimeline(timelineState, { scenePresence });
+    }
+    return `
+      <div class="mce-section">
+        <div class="mce-section-head">
+          <h3>Scene Focus</h3>
+          <button type="button" class="mce-inline-action" data-action="clear-scene-focus">전체 보기</button>
+        </div>
+        <div class="mce-diag-card" data-tone="accent">
+          <strong>${focusedScene.title}</strong>
+          <p>global ${focusedScene.startMs}-${focusedScene.startMs + focusedScene.durationMs}ms · local 0-${focusedScene.durationMs}ms</p>
+        </div>
+      </div>
+      ${renderMotionTimeline(timelineState, { scenePresence })}
+    `;
+  };
   let dragPointerId: number | null = null;
   const syncControllerSession = () => {
     session = workspace.controller.getSession();
     state = session.present;
+    syncFocusedScene();
   };
   const preservePreviewSelection = (
     command: MotionEditorCommand,
-    selection: MotionEditorSelection | null,
+    selection: MotionEditorSelectionV2 | null,
   ) => {
     state = workspace.controller.preview(command);
     if (
@@ -1349,7 +1849,7 @@ export function createMotionEditorShell(
   };
   const dispatchSelectionDetailCommand = (
     command: MotionEditorCommand | null,
-    selection: MotionEditorSelection | null = null,
+    selection: MotionEditorSelectionV2 | null = null,
   ) => {
     if (!command) {
       return;
@@ -1436,9 +1936,13 @@ export function createMotionEditorShell(
   const mountPlayer = () => {
     lastPlaybackFrameAt = null;
     player?.destroy();
+    const playbackComposition = resolveMotionComposition(
+      assemblePreviewComposition(state.composition, getPreviewTarget()),
+      state.values,
+    );
     player = createMotionPlayer(
       stageMount.adapter,
-      resolveMotionComposition(state.composition, state.values),
+      playbackComposition,
       {
         onTimeUpdate() {
           recordPlaybackFrame();
@@ -1458,6 +1962,7 @@ export function createMotionEditorShell(
       player.play();
     }
     lastSnapshot = player.snapshot();
+    state = syncMotionEditorState(state, lastSnapshot);
   };
 
   const renderEventLogPanel = () => {
@@ -1476,14 +1981,84 @@ export function createMotionEditorShell(
       + (eventLog.size() > 30 ? `<div class="mce-diag-row"><span>… ${eventLog.size() - 30}건 더</span></div>` : "");
   };
 
+  const setPreviewMode = (
+    mode: MotionEditorPreviewMode,
+    currentTargetOverride?: MotionEditorPreviewTarget,
+  ) => {
+    if (!isSceneComposition(state.composition)) {
+      return;
+    }
+
+    if (mode === "scene" && !focusedSceneId) {
+      return;
+    }
+
+    const currentTarget = currentTargetOverride ?? getPreviewTarget();
+    previewMode = mode;
+    const nextTarget = getPreviewTarget();
+
+    if (
+      currentTarget.mode !== nextTarget.mode
+      || (currentTarget.mode === "scene"
+        && nextTarget.mode === "scene"
+        && currentTarget.sceneId !== nextTarget.sceneId)
+    ) {
+      workspace.controller.apply({
+        type: "set-current-time",
+        timeMs: mapPreviewTimeMs(
+          state.composition,
+          currentTarget,
+          nextTarget,
+          state.transport.currentTimeMs,
+        ),
+      });
+      syncControllerSession();
+    }
+
+    eventLog.push("system", "set_preview_mode", {
+      mode: nextTarget.mode,
+      ...(nextTarget.mode === "scene" ? { sceneId: nextTarget.sceneId } : {}),
+    });
+    frameDiagnostics = createFrameDiagnosticsState();
+    lastPlaybackFrameAt = null;
+    mountPlayer();
+    renderPanels();
+    emitState();
+  };
+
   const renderPanels = () => {
     paramPanel.innerHTML = renderParameterControls(state.composition.parameters, state.values);
-    sequencePanel.innerHTML = renderSequencePanel(state.composition.sequences, state.selection);
-    layerPanel.innerHTML = renderLayerPanel(state.composition.layers, state.selection);
-    transitionPanel.innerHTML = renderTransitionPanel(state.composition.transitions, state.selection);
-    captionPanel.innerHTML = renderCaptionPanel(state.composition.captions, state.selection);
+    const previewTarget = getPreviewTarget();
+    if (isSceneComposition(state.composition)) {
+      const focusedScene = getFocusedScene();
+      scenesPanel.innerHTML = renderScenesPanel(state.composition, state.selection, focusedSceneId, scenePresence);
+      sequencePanel.innerHTML = focusedScene
+        ? renderSceneSequencePanel(state.composition, focusedScene.id)
+        : `<div class="mce-diag-empty">scene을 선택하면 scene-local sequence를 보여줍니다.</div>`;
+      layerPanel.innerHTML = focusedScene
+        ? renderScenePlacementPanel(state.composition, focusedScene.id, state.selection)
+        : `<div class="mce-diag-empty">scene을 선택하면 해당 scene의 placement만 편집합니다.</div>`;
+      transitionPanel.innerHTML = `<div class="mce-diag-empty">scene composition에는 전역 transition panel이 없습니다.</div>`;
+      captionPanel.innerHTML = focusedScene
+        ? renderSceneCaptionPanel(state.composition, focusedScene.id)
+        : `<div class="mce-diag-empty">scene을 선택하면 scene-local caption을 보여줍니다.</div>`;
+    } else {
+      scenesPanel.innerHTML = `<div class="mce-diag-empty">scene composition에서만 사용합니다.</div>`;
+      sequencePanel.innerHTML = renderSequencePanel(state.composition.sequences, state.selection);
+      layerPanel.innerHTML = renderLayerPanel(state.composition.layers, state.selection);
+      transitionPanel.innerHTML = renderTransitionPanel(state.composition.transitions, state.selection);
+      captionPanel.innerHTML = renderCaptionPanel(state.composition.captions, state.selection);
+    }
+    previewControls.hidden = !isSceneComposition(state.composition);
+    previewFullButton.disabled = !isSceneComposition(state.composition);
+    previewSceneButton.disabled = !isSceneComposition(state.composition) || !focusedSceneId;
+    previewFullButton.classList.toggle("mce-secondary", previewTarget.mode !== "full");
+    previewSceneButton.classList.toggle("mce-secondary", previewTarget.mode !== "scene");
+    previewLabel.textContent = previewTarget.mode === "scene"
+      ? `${getFocusedScene()?.title ?? previewTarget.sceneId} 씬`
+      : "전체 어셈블리";
     cuePresetsPanel.innerHTML = renderCuePresetsPanel(state.composition, state.selection);
-    jsonPanel.value = serializeMotionComposition(state.composition);
+    jsonPanel.value = serializeMotionCompositionSchema(state.composition);
     selectionDetailPanel.innerHTML = renderSelectionDetail(state.composition, state.selection);
     diagnosticsPanel.innerHTML = renderDiagnosticsPanel(lastSnapshot, frameDiagnostics);
     importDiagnosticsPanel.innerHTML = renderImportDiagnosticsPanel(importDiagnostics);
@@ -1492,15 +2067,27 @@ export function createMotionEditorShell(
     scrub.value = String(Math.round(state.transport.currentTimeMs));
     loopToggle.checked = state.transport.loop;
     playbackRateInput.value = String(state.transport.playbackRate);
-    timelinePanel.innerHTML = renderMotionTimeline(state);
+    timelinePanel.innerHTML = renderTimelinePanel();
 
     const undoButton = root.querySelector<HTMLButtonElement>('[data-action="undo"]');
     const redoButton = root.querySelector<HTMLButtonElement>('[data-action="redo"]');
     if (undoButton) undoButton.disabled = !workspace.controller.canUndo();
     if (redoButton) redoButton.disabled = !workspace.controller.canRedo();
+
+    const linearOnlyActions = ["add-layer", "add-sequence", "add-caption", "add-transition"] as const;
+    for (const action of linearOnlyActions) {
+      const button = root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`);
+      if (button) {
+        button.disabled = isSceneComposition(state.composition);
+      }
+    }
   };
 
   const emitState = () => {
+    if (lastEmittedFocusedSceneId !== focusedSceneId) {
+      lastEmittedFocusedSceneId = focusedSceneId;
+      options.onFocusedSceneChange?.(focusedSceneId);
+    }
     options.onStateChange?.(state);
   };
 
@@ -1515,6 +2102,7 @@ export function createMotionEditorShell(
     if (player) {
       lastSnapshot = player.snapshot();
       state = syncMotionEditorState(state, lastSnapshot);
+      syncFocusedScene();
     }
     renderPanels();
     emitState();
@@ -1522,6 +2110,7 @@ export function createMotionEditorShell(
 
   const preview = (command: MotionEditorCommand) => {
     state = workspace.controller.preview(command);
+    syncFocusedScene();
     mountPlayer();
     refreshFromPlayer();
   };
@@ -1544,7 +2133,39 @@ export function createMotionEditorShell(
       case "set-loop": player?.setLoop(command.loop); eventLog.push("transport", "set_loop", { loop: command.loop }); break;
       // 편집 커맨드 → 트래킹 + full sync
       case "select":
-        if (command.selection) eventLog.push("edit", "select", { kind: command.selection.kind, id: command.selection.id });
+        if (command.selection) eventLog.push("edit", "select", { kind: command.selection.kind, id: describeSelectionId(command.selection) });
+        break;
+      case "add-scene":
+        eventLog.push("edit", "add_scene", { sceneId: command.id });
+        sync();
+        break;
+      case "remove-scene":
+        eventLog.push("edit", "remove_scene", { sceneId: command.sceneId });
+        sync();
+        break;
+      case "rename-scene":
+        eventLog.push("edit", "rename_scene", { sceneId: command.sceneId });
+        sync();
+        break;
+      case "update-scene-timing":
+        eventLog.push("edit", "edit_scene", { sceneId: command.sceneId, field: "timing" });
+        sync();
+        break;
+      case "add-scene-placement":
+        eventLog.push("edit", "add_scene_placement", { sceneId: command.sceneId, targetId: command.targetId });
+        sync();
+        break;
+      case "remove-scene-placement":
+        eventLog.push("edit", "remove_scene_placement", { sceneId: command.sceneId, targetId: command.targetId });
+        sync();
+        break;
+      case "update-scene-placement-timing":
+        eventLog.push("edit", "edit_scene_placement", { sceneId: command.sceneId, targetId: command.targetId, field: "timing" });
+        sync();
+        break;
+      case "update-scene-placement-cue":
+        eventLog.push("edit", "edit_scene_placement", { sceneId: command.sceneId, targetId: command.targetId, field: command.cue });
+        sync();
         break;
       case "set-parameter":
         eventLog.push("edit", "edit_parameter", { parameterId: command.parameterId });
@@ -1732,7 +2353,23 @@ export function createMotionEditorShell(
       sync();
       return;
     }
+    if (button?.dataset["action"] === "clear-scene-focus") {
+      const previousTarget = getPreviewTarget();
+      focusedSceneId = null;
+      if (previousTarget.mode === "scene") {
+        setPreviewMode("full", previousTarget);
+        return;
+      }
+      if (state.selection?.kind === "scene" || state.selection?.kind === "scene-layer") {
+        dispatch({ type: "select", selection: null });
+      } else {
+        renderPanels();
+        emitState();
+      }
+      return;
+    }
     if (button?.dataset["action"] === "add-layer") {
+      if (!isLinearShellState(state)) return;
       const draft = createNextLayerDraft(state);
       dispatch({
         type: "add-layer",
@@ -1746,6 +2383,7 @@ export function createMotionEditorShell(
       return;
     }
     if (button?.dataset["action"] === "add-sequence") {
+      if (!isLinearShellState(state)) return;
       const draft = createNextSequenceDraft(state);
       dispatch({
         type: "add-sequence",
@@ -1760,6 +2398,7 @@ export function createMotionEditorShell(
       return;
     }
     if (button?.dataset["action"] === "add-caption") {
+      if (!isLinearShellState(state)) return;
       const draft = createNextCaptionDraft(state);
       dispatch({
         type: "add-caption",
@@ -1773,6 +2412,7 @@ export function createMotionEditorShell(
       return;
     }
     if (button?.dataset["action"] === "add-transition") {
+      if (!isLinearShellState(state)) return;
       const draft = createNextTransitionDraft(state);
       if (!draft) {
         return;
@@ -1788,9 +2428,34 @@ export function createMotionEditorShell(
       dispatch({ type: "select", selection: { kind: "transition", id: draft.id } });
       return;
     }
+    if (button?.dataset["action"] === "add-scene") {
+      if (!isSceneComposition(state.composition)) return;
+      const draft = createNextSceneDraft(state as SceneShellState);
+      focusedSceneId = draft.id;
+      dispatch({
+        type: "add-scene",
+        id: draft.id,
+        title: draft.title,
+        startMs: draft.startMs,
+        durationMs: draft.durationMs,
+        layers: [],
+        sequences: [],
+        captions: [],
+      });
+      dispatch({ type: "select", selection: { kind: "scene", id: draft.id } });
+      return;
+    }
     if (button?.dataset["action"] === "play") dispatch({ type: "play" });
     if (button?.dataset["action"] === "pause") dispatch({ type: "pause" });
     if (button?.dataset["action"] === "restart") dispatch({ type: "restart" });
+    if (button?.dataset["action"] === "preview-full") {
+      setPreviewMode("full");
+      return;
+    }
+    if (button?.dataset["action"] === "preview-scene") {
+      setPreviewMode("scene");
+      return;
+    }
     if (button?.dataset["action"] === "download-json") {
       workspace.exportDocument({
         document: workspace.controller.exportDocument(),
@@ -1798,6 +2463,23 @@ export function createMotionEditorShell(
         state,
       });
       eventLog.push("composition", "export", { compositionId: state.composition.id });
+    }
+    if (button?.dataset["action"] === "export-v1") {
+      const previewTarget = getPreviewTarget();
+      const fileName = previewTarget.mode === "scene"
+        ? `${state.composition.id}.${previewTarget.sceneId}.assembled.v1.json`
+        : `${state.composition.id}.assembled.v1.json`;
+      workspace.exportDocument({
+        document: createPreviewDocument(state.composition, previewTarget),
+        fileName,
+        state,
+      });
+      eventLog.push("composition", "export_v1", {
+        compositionId: state.composition.id,
+        mode: previewTarget.mode,
+        ...(previewTarget.mode === "scene" ? { sceneId: previewTarget.sceneId } : {}),
+      });
+      return;
     }
     if (button?.dataset["action"] === "open-file") fileInput.click();
     if (button?.dataset["action"] === "import-json") commitJson(jsonPanel.value, "textarea");
@@ -1807,6 +2489,62 @@ export function createMotionEditorShell(
       return;
     }
 
+    const addScenePlacementTargetId = target.closest<HTMLElement>("[data-add-scene-placement]")?.dataset["addScenePlacement"];
+    if (addScenePlacementTargetId) {
+      const sceneId = target.closest<HTMLElement>("[data-add-scene-placement]")?.dataset["sceneId"];
+      if (!sceneId || !isSceneComposition(state.composition)) {
+        return;
+      }
+      focusedSceneId = sceneId;
+      dispatch({
+        type: "add-scene-placement",
+        sceneId,
+        targetId: addScenePlacementTargetId,
+      });
+      dispatch({
+        type: "select",
+        selection: {
+          kind: "scene-layer",
+          sceneId,
+          targetId: addScenePlacementTargetId,
+        },
+      });
+      return;
+    }
+    const removeSceneId = target.closest<HTMLElement>("[data-remove-scene]")?.dataset["removeScene"];
+    if (removeSceneId) {
+      dispatch({ type: "remove-scene", sceneId: removeSceneId });
+      return;
+    }
+    const renameSceneId = target.closest<HTMLElement>("[data-rename-scene]")?.dataset["renameScene"];
+    if (renameSceneId && isSceneComposition(state.composition)) {
+      const scene = state.composition.scenes.find((entry) => entry.id === renameSceneId);
+      if (!scene) {
+        return;
+      }
+      const nextTitle = typeof window.prompt === "function"
+        ? window.prompt("씬 이름", scene.title)
+        : scene.title;
+      if (nextTitle !== null) {
+        focusedSceneId = renameSceneId;
+        dispatch({ type: "rename-scene", sceneId: renameSceneId, title: nextTitle });
+      }
+      return;
+    }
+    const removeScenePlacementTargetId = target.closest<HTMLElement>("[data-remove-scene-placement]")?.dataset["removeScenePlacement"];
+    if (removeScenePlacementTargetId) {
+      const sceneId = target.closest<HTMLElement>("[data-remove-scene-placement]")?.dataset["sceneId"];
+      if (!sceneId) {
+        return;
+      }
+      focusedSceneId = sceneId;
+      dispatch({
+        type: "remove-scene-placement",
+        sceneId,
+        targetId: removeScenePlacementTargetId,
+      });
+      return;
+    }
     const removeLayerId = target.closest<HTMLElement>("[data-remove-layer]")?.dataset["removeLayer"];
     if (removeLayerId) {
       dispatch({ type: "remove-layer", layerId: removeLayerId });
@@ -1828,6 +2566,29 @@ export function createMotionEditorShell(
       return;
     }
 
+    const sceneId = target.closest<HTMLElement>("[data-scene]")?.dataset["scene"];
+    if (sceneId) {
+      focusedSceneId = sceneId;
+      dispatch({ type: "select", selection: { kind: "scene", id: sceneId } });
+      return;
+    }
+    const sceneLayerButton = target.closest<HTMLElement>("[data-scene-layer]");
+    if (sceneLayerButton) {
+      const sceneLayerSceneId = sceneLayerButton.dataset["sceneId"];
+      const sceneLayerTargetId = sceneLayerButton.dataset["targetId"];
+      if (sceneLayerSceneId && sceneLayerTargetId) {
+        focusedSceneId = sceneLayerSceneId;
+        dispatch({
+          type: "select",
+          selection: {
+            kind: "scene-layer",
+            sceneId: sceneLayerSceneId,
+            targetId: sceneLayerTargetId,
+          },
+        });
+      }
+      return;
+    }
     const sequenceId = target.closest<HTMLElement>("[data-sequence]")?.dataset["sequence"];
     if (sequenceId) dispatch({ type: "select", selection: { kind: "sequence", id: sequenceId } });
     const layerId = target.closest<HTMLElement>("[data-layer]")?.dataset["layer"];
@@ -1838,6 +2599,8 @@ export function createMotionEditorShell(
     if (captionId) dispatch({ type: "select", selection: { kind: "caption", id: captionId } });
     const cuePresetId = target.closest<HTMLElement>("[data-cue-preset]")?.dataset["cuePreset"];
     if (cuePresetId) dispatch({ type: "select", selection: { kind: "cue-preset", id: cuePresetId } });
+    const targetId = target.closest<HTMLElement>("[data-target]")?.dataset["target"];
+    if (targetId) dispatch({ type: "select", selection: { kind: "target", id: targetId } });
   });
 
   scrub.addEventListener("input", () => {
@@ -1868,10 +2631,17 @@ export function createMotionEditorShell(
 
   timelinePanel.addEventListener("pointerdown", (event) => {
     const target = event.target as HTMLElement;
-    const start = beginMotionTimelineDrag(state, target, event.clientX);
+    const timelineState = getTimelineRenderState();
+    const start = beginMotionTimelineDrag(timelineState.state, target, event.clientX);
     if (!start) return;
 
-    dispatch({ type: "select", selection: start.selection });
+    dragSceneId = timelineState.sceneId;
+    const nextSelection = timelineState.sceneId
+      ? mapSceneFocusTimelineSelection(timelineState.sceneId, start.selection)
+      : start.selection;
+    if (nextSelection) {
+      dispatch({ type: "select", selection: nextSelection });
+    }
     dragState = start.dragState;
     dragCommand = null;
 
@@ -1887,8 +2657,13 @@ export function createMotionEditorShell(
 
   timelinePanel.addEventListener("pointermove", (event) => {
     if (!dragState || dragPointerId !== event.pointerId) return;
-    dragCommand = updateMotionTimelineDrag(dragState, event.clientX);
-    preview(dragCommand);
+    const nextDragCommand = updateMotionTimelineDrag(dragState, event.clientX);
+    dragCommand = dragSceneId
+      ? mapSceneFocusTimelineCommand(dragSceneId, nextDragCommand)
+      : nextDragCommand;
+    if (dragCommand) {
+      preview(dragCommand);
+    }
   });
 
   const endDrag = (event?: PointerEvent) => {
@@ -1897,6 +2672,7 @@ export function createMotionEditorShell(
     const nextDragCommand = dragCommand;
     dragCommand = null;
     dragState = null;
+    dragSceneId = null;
     dragPointerId = null;
 
     if (nextDragCommand) {
@@ -1920,6 +2696,13 @@ export function createMotionEditorShell(
   return {
     getState() {
       return state;
+    },
+    getFocusedSceneId() {
+      return focusedSceneId;
+    },
+    setScenePresence(presence) {
+      scenePresence = indexScenePresenceEntries(presence);
+      renderPanels();
     },
     dispatch,
     eventLog,

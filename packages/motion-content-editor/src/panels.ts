@@ -4,21 +4,32 @@ import type {
   LiftParams,
   MotionCaptionCue,
   MotionCompositionDef,
+  MotionCompositionDefV2,
+  MotionCompositionSchema,
   MotionCueRef,
   MotionCuePreset,
-  MotionEditorSelection,
+  MotionEditorSelectionV2,
   MotionLayerDef,
   MotionParameterDef,
   MotionParameterValues,
   MotionRuntimeSnapshot,
+  MotionSceneDef,
+  MotionSceneSequenceDef,
   MotionSequenceDef,
+  MotionTargetDef,
   MotionTransitionDef,
+  SceneLayerPlacement,
+  ResolvedMotionCompositionSchema,
 } from "motion-content";
 import {
   getSequenceLayerSlots,
   isCuePresetRef,
 } from "motion-content";
 import { parseMotionColorControlValue } from "./color-input.js";
+import {
+  renderScenePresenceBadges,
+  type MotionEditorScenePresenceEntry,
+} from "./scene-presence.js";
 
 interface SelectOption {
   readonly value: string;
@@ -83,11 +94,85 @@ function describeCueRef(ref: MotionCueRef): string {
 }
 
 function isSelected(
-  selection: MotionEditorSelection | null,
-  kind: MotionEditorSelection["kind"],
+  selection: MotionEditorSelectionV2 | null,
+  kind: MotionEditorSelectionV2["kind"],
   id: string,
 ): boolean {
-  return selection?.kind === kind && selection.id === id;
+  return selection?.kind === kind && "id" in selection && selection.id === id;
+}
+
+function isSceneSelectionActive(
+  selection: MotionEditorSelectionV2 | null,
+  sceneId: string,
+): boolean {
+  return (
+    (selection?.kind === "scene" && selection.id === sceneId)
+    || (selection?.kind === "scene-layer" && selection.sceneId === sceneId)
+  );
+}
+
+function isSceneLayerSelected(
+  selection: MotionEditorSelectionV2 | null,
+  sceneId: string,
+  targetId: string,
+): boolean {
+  return (
+    selection?.kind === "scene-layer"
+    && selection.sceneId === sceneId
+    && selection.targetId === targetId
+  );
+}
+
+function isSceneComposition(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+): composition is MotionCompositionDefV2 {
+  return "targets" in composition && "scenes" in composition;
+}
+
+function countCuePresetReferences(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  presetId: string,
+): number {
+  if (isSceneComposition(composition)) {
+    return composition.scenes.reduce(
+      (count, scene) =>
+        count + scene.layers.filter(
+          (placement) =>
+            (isCuePresetRef(placement.enter) && placement.enter.preset === presetId)
+            || (placement.exit && isCuePresetRef(placement.exit) && placement.exit.preset === presetId),
+        ).length,
+      0,
+    );
+  }
+
+  return composition.layers.filter(
+    (layer) =>
+      (isCuePresetRef(layer.enter) && layer.enter.preset === presetId)
+      || (layer.exit && isCuePresetRef(layer.exit) && layer.exit.preset === presetId),
+  ).length;
+}
+
+function findCuePresetReferenceLabels(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  presetId: string,
+): readonly string[] {
+  if (isSceneComposition(composition)) {
+    return composition.scenes.flatMap((scene) =>
+      scene.layers.flatMap((placement) =>
+        (isCuePresetRef(placement.enter) && placement.enter.preset === presetId)
+          || (placement.exit && isCuePresetRef(placement.exit) && placement.exit.preset === presetId)
+          ? [`${scene.title}:${placement.targetId}`]
+          : [],
+      )
+    );
+  }
+
+  return composition.layers.flatMap((layer) =>
+    (isCuePresetRef(layer.enter) && layer.enter.preset === presetId)
+      || (layer.exit && isCuePresetRef(layer.exit) && layer.exit.preset === presetId)
+      ? [layer.label]
+      : [],
+  );
 }
 
 export interface MotionImportDiagnosticsState {
@@ -375,7 +460,7 @@ export function renderParameterControls(
 
 export function renderLayerPanel(
   layers: readonly MotionLayerDef[],
-  selection: MotionEditorSelection | null,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   if (layers.length === 0) {
     return `<div class="mce-diag-empty">layer 없음</div>`;
@@ -406,7 +491,7 @@ export function renderLayerPanel(
 
 export function renderCaptionPanel(
   captions: readonly MotionCaptionCue[],
-  selection: MotionEditorSelection | null,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   if (captions.length === 0) {
     return `<div class="mce-diag-empty">caption 없음</div>`;
@@ -431,18 +516,14 @@ export function renderCaptionPanel(
 }
 
 export function renderCuePresetsPanel(
-  composition: MotionCompositionDef,
-  selection: MotionEditorSelection | null,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   const presets = composition.cuePresets ?? [];
   if (presets.length === 0) return `<div class="mce-diag-empty">cue preset 없음</div>`;
   return presets
     .map((preset) => {
-      const refCount = composition.layers.filter(
-        (layer) =>
-          (isCuePresetRef(layer.enter) && layer.enter.preset === preset.id) ||
-          (layer.exit && isCuePresetRef(layer.exit) && layer.exit.preset === preset.id),
-      ).length;
+      const refCount = countCuePresetReferences(composition, preset.id);
       return `
         <button
           type="button"
@@ -457,22 +538,238 @@ export function renderCuePresetsPanel(
     .join("");
 }
 
-function findPresetReferences(
-  composition: MotionCompositionDef,
-  presetId: string,
-): readonly MotionLayerDef[] {
-  return composition.layers.filter(
-    (layer) =>
-      (isCuePresetRef(layer.enter) && layer.enter.preset === presetId)
-      || (layer.exit && isCuePresetRef(layer.exit) && layer.exit.preset === presetId),
-  );
+function renderSceneSequenceSummary(
+  sequence: MotionSceneSequenceDef,
+): string {
+  const layerCount = sequence.layers?.length ?? sequence.targetIds.length;
+  const staggerInfo = sequence.stagger
+    ? `stagger(${sequence.stagger.startOffsetMs}+${sequence.stagger.intervalMs}ms)`
+    : `${layerCount} targets`;
+  return `
+    <div class="mce-diag-card" data-tone="neutral">
+      <strong>${escapeHtml(sequence.title)}</strong>
+      <p>${sequence.startMs}/${sequence.durationMs} · ${staggerInfo}</p>
+    </div>
+  `;
+}
+
+function renderSceneCaptionSummary(
+  caption: MotionCaptionCue,
+): string {
+  return `
+    <div class="mce-diag-card" data-tone="${escapeHtml(caption.tone ?? "neutral")}">
+      <strong>${escapeHtml(caption.id)}</strong>
+      <p>${caption.startMs}/${caption.durationMs} · ${escapeHtml(caption.text)}</p>
+    </div>
+  `;
+}
+
+export function renderScenesPanel(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  selection: MotionEditorSelectionV2 | null,
+  focusedSceneId: string | null,
+  scenePresence: ReadonlyMap<string, MotionEditorScenePresenceEntry>,
+): string {
+  if (!isSceneComposition(composition)) {
+    return `<div class="mce-diag-empty">scene composition에서만 scene panel을 사용합니다.</div>`;
+  }
+
+  const focusedScene = focusedSceneId
+    ? composition.scenes.find((scene) => scene.id === focusedSceneId) ?? null
+    : null;
+  const focusedTargetIds = new Set(focusedScene?.layers.map((placement) => placement.targetId) ?? []);
+
+  const sceneRows = composition.scenes.length > 0
+    ? composition.scenes
+        .map((scene) => {
+          const presence = scenePresence.get(scene.id);
+          return `
+          <div class="mce-item-row mce-item-row--scene">
+            <button
+              type="button"
+              class="mce-item mce-item--scene ${isSceneSelectionActive(selection, scene.id) || focusedSceneId === scene.id ? "is-active" : ""}"
+              data-scene="${escapeHtml(scene.id)}"
+              data-scene-locked="${presence?.locked ? "true" : "false"}"
+            >
+              <span class="mce-item-copy">
+                <strong>${escapeHtml(scene.title)}</strong>
+                <span>${scene.startMs}/${scene.durationMs} · ${scene.layers.length} placements</span>
+              </span>
+              ${renderScenePresenceBadges(presence, { showNames: true })}
+            </button>
+            <button
+              type="button"
+              class="mce-item-action"
+              data-rename-scene="${escapeHtml(scene.id)}"
+              aria-label="${escapeHtml(scene.title)} 이름 변경"
+              title="${escapeHtml(scene.title)} 이름 변경"
+            >이름</button>
+            <button
+              type="button"
+              class="mce-item-action"
+              data-remove-scene="${escapeHtml(scene.id)}"
+              aria-label="${escapeHtml(scene.title)} 삭제"
+              title="${escapeHtml(scene.title)} 삭제"
+            >✕</button>
+          </div>
+        `;
+        })
+        .join("")
+    : `<div class="mce-diag-empty">scene 없음</div>`;
+
+  const targetRows = composition.targets.length > 0
+    ? composition.targets
+        .map((target) => {
+          const sceneCount = composition.scenes.filter((scene) =>
+            scene.layers.some((placement) => placement.targetId === target.id)
+          ).length;
+          const placedInFocusedScene = focusedTargetIds.has(target.id);
+          return `
+            <div class="mce-item-row">
+              <button
+                type="button"
+                class="mce-item ${isSelected(selection, "target", target.id) ? "is-active" : ""}"
+                data-target="${escapeHtml(target.id)}"
+              >
+                <strong>${escapeHtml(target.id)}</strong>
+                <span>${escapeHtml(target.content?.type ?? "dom")} · ${sceneCount} scenes</span>
+              </button>
+              <button
+                type="button"
+                class="mce-item-action"
+                data-add-scene-placement="${escapeHtml(target.id)}"
+                ${focusedScene ? `data-scene-id="${escapeHtml(focusedScene.id)}"` : ""}
+                aria-label="${escapeHtml(target.id)} 배치"
+                title="${escapeHtml(target.id)} 배치"
+                ${!focusedScene || placedInFocusedScene ? "disabled" : ""}
+              >${placedInFocusedScene ? "배치됨" : "배치"}</button>
+            </div>
+          `;
+        })
+        .join("")
+    : `<div class="mce-diag-empty">shared target 없음</div>`;
+
+  const targetContext = focusedScene
+    ? `${focusedScene.title}에 배치`
+    : "씬을 선택하면 배치 가능";
+
+  return `
+    <div class="mce-section">
+      <div class="mce-section-head">
+        <h3>Scenes</h3>
+        <div>
+          ${focusedScene ? `<button type="button" class="mce-inline-action" data-action="clear-scene-focus">전체 보기</button>` : ""}
+          <button type="button" class="mce-inline-action" data-action="add-scene">+ 추가</button>
+        </div>
+      </div>
+      <div class="mce-list">${sceneRows}</div>
+    </div>
+    <div class="mce-section">
+      <div class="mce-section-head">
+        <h3>Shared Targets</h3>
+        <span>${escapeHtml(targetContext)}</span>
+      </div>
+      <div class="mce-list">${targetRows}</div>
+    </div>
+  `;
+}
+
+function findScenePlacementTarget(
+  targets: readonly MotionTargetDef[],
+  placement: SceneLayerPlacement,
+): MotionTargetDef | undefined {
+  return targets.find((target) => target.id === placement.targetId);
+}
+
+export function renderScenePlacementPanel(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  sceneId: string,
+  selection: MotionEditorSelectionV2 | null,
+): string {
+  if (!isSceneComposition(composition)) {
+    return `<div class="mce-diag-empty">scene composition에서만 placement를 표시합니다.</div>`;
+  }
+
+  const scene = composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    return `<div class="mce-diag-empty">선택된 scene이 없습니다.</div>`;
+  }
+  if (scene.layers.length === 0) {
+    return `<div class="mce-diag-empty">placement 없음</div>`;
+  }
+
+  return scene.layers
+    .map((placement) => {
+      const target = findScenePlacementTarget(composition.targets, placement);
+      return `
+        <div class="mce-item-row">
+          <button
+            type="button"
+            class="mce-item ${isSceneLayerSelected(selection, scene.id, placement.targetId) ? "is-active" : ""}"
+            data-scene-layer="true"
+            data-scene-id="${escapeHtml(scene.id)}"
+            data-target-id="${escapeHtml(placement.targetId)}"
+          >
+            <strong>${escapeHtml(placement.targetId)}</strong>
+            <span>${escapeHtml(target?.content?.type ?? "dom")} · ${placement.startMs}/${placement.durationMs}</span>
+          </button>
+          <button
+            type="button"
+            class="mce-item-action"
+            data-remove-scene-placement="${escapeHtml(placement.targetId)}"
+            data-scene-id="${escapeHtml(scene.id)}"
+            aria-label="${escapeHtml(placement.targetId)} 삭제"
+            title="${escapeHtml(placement.targetId)} 삭제"
+          >✕</button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+export function renderSceneSequencePanel(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  sceneId: string,
+): string {
+  if (!isSceneComposition(composition)) {
+    return `<div class="mce-diag-empty">scene composition에서만 sequence를 표시합니다.</div>`;
+  }
+
+  const scene = composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    return `<div class="mce-diag-empty">선택된 scene이 없습니다.</div>`;
+  }
+  if (scene.sequences.length === 0) {
+    return `<div class="mce-diag-empty">scene sequence 없음</div>`;
+  }
+
+  return scene.sequences.map((sequence) => renderSceneSequenceSummary(sequence)).join("");
+}
+
+export function renderSceneCaptionPanel(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  sceneId: string,
+): string {
+  if (!isSceneComposition(composition)) {
+    return `<div class="mce-diag-empty">scene composition에서만 caption을 표시합니다.</div>`;
+  }
+
+  const scene = composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    return `<div class="mce-diag-empty">선택된 scene이 없습니다.</div>`;
+  }
+  if (scene.captions.length === 0) {
+    return `<div class="mce-diag-empty">scene caption 없음</div>`;
+  }
+
+  return scene.captions.map((caption) => renderSceneCaptionSummary(caption)).join("");
 }
 
 function renderCuePresetSelectionDetail(
-  composition: MotionCompositionDef,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
   preset: MotionCuePreset,
 ): string {
-  const references = findPresetReferences(composition, preset.id);
+  const references = findCuePresetReferenceLabels(composition, preset.id);
   const amount = preset.amount ?? 48;
   return [
     textRow("id", preset.id),
@@ -519,7 +816,7 @@ function renderCuePresetSelectionDetail(
     textRow(
       "references",
       references.length > 0
-        ? references.map((layer) => layer.label).join(", ")
+        ? references.join(", ")
         : "없음",
     ),
   ].join("");
@@ -527,7 +824,7 @@ function renderCuePresetSelectionDetail(
 
 export function renderSequencePanel(
   sequences: readonly MotionSequenceDef[],
-  selection: MotionEditorSelection | null,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   if (sequences.length === 0) {
     return `<div class="mce-diag-empty">sequence 없음</div>`;
@@ -559,7 +856,7 @@ export function renderSequencePanel(
 
 export function renderTransitionPanel(
   transitions: readonly MotionTransitionDef[],
-  selection: MotionEditorSelection | null,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   if (transitions.length === 0) {
     return `<div class="mce-diag-empty">transition 없음</div>`;
@@ -591,8 +888,8 @@ export function renderTransitionPanel(
 }
 
 export function renderSelectionDetail(
-  composition: MotionCompositionDef,
-  selection: MotionEditorSelection | null,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  selection: MotionEditorSelectionV2 | null,
 ): string {
   if (!selection) return `<div class="mce-diag-empty">선택된 항목 없음</div>`;
   const presets = composition.cuePresets ?? [];
@@ -601,6 +898,100 @@ export function renderSelectionDetail(
     const preset = presets.find((entry) => entry.id === selection.id);
     if (!preset) return textRow("CuePreset", `${selection.id} (없음)`);
     return renderCuePresetSelectionDetail(composition, preset);
+  }
+
+  if (isSceneComposition(composition)) {
+    if (selection.kind === "scene") {
+      const scene = composition.scenes.find((entry) => entry.id === selection.id);
+      if (!scene) return textRow("Scene", `${selection.id} (없음)`);
+      return [
+        textRow("id", scene.id),
+        inlineTextRow("title", {
+          value: scene.title,
+          command: "scene-title",
+          field: "title",
+          metadata: {
+            "data-scene-id": scene.id,
+          },
+        }),
+        numericRow("startMs", {
+          value: scene.startMs,
+          unit: "ms",
+          min: 0,
+          command: "scene-timing",
+          field: "startMs",
+          metadata: {
+            "data-scene-id": scene.id,
+          },
+        }),
+        numericRow("durationMs", {
+          value: scene.durationMs,
+          unit: "ms",
+          min: 0,
+          command: "scene-timing",
+          field: "durationMs",
+          metadata: {
+            "data-scene-id": scene.id,
+          },
+        }),
+        textRow("placements", String(scene.layers.length)),
+        textRow("sequences", String(scene.sequences.length)),
+        textRow("captions", String(scene.captions.length)),
+      ].join("");
+    }
+
+    if (selection.kind === "scene-layer") {
+      const scene = composition.scenes.find((entry) => entry.id === selection.sceneId);
+      const placement = scene?.layers.find((entry) => entry.targetId === selection.targetId);
+      const target = composition.targets.find((entry) => entry.id === selection.targetId);
+      if (!scene || !placement) {
+        return textRow("SceneLayer", `${selection.sceneId}:${selection.targetId} (없음)`);
+      }
+      return [
+        textRow("scene", scene.title),
+        textRow("targetId", placement.targetId),
+        textRow("contentType", target?.content?.type ?? "dom"),
+        numericRow("startMs", {
+          value: placement.startMs,
+          unit: "ms",
+          min: 0,
+          command: "scene-placement-timing",
+          field: "startMs",
+          metadata: {
+            "data-scene-id": scene.id,
+            "data-target-id": placement.targetId,
+          },
+        }),
+        numericRow("durationMs", {
+          value: placement.durationMs,
+          unit: "ms",
+          min: 0,
+          command: "scene-placement-timing",
+          field: "durationMs",
+          metadata: {
+            "data-scene-id": scene.id,
+            "data-target-id": placement.targetId,
+          },
+        }),
+        textRow("enter", describeCueRef(placement.enter)),
+        textRow("exit", placement.exit ? describeCueRef(placement.exit) : "없음"),
+      ].join("");
+    }
+
+    if (selection.kind === "target") {
+      const target = composition.targets.find((entry) => entry.id === selection.id);
+      if (!target) return textRow("Target", `${selection.id} (없음)`);
+      const scenes = composition.scenes
+        .filter((scene) => scene.layers.some((placement) => placement.targetId === target.id))
+        .map((scene) => scene.title);
+      return [
+        textRow("id", target.id),
+        textRow("contentType", target.content?.type ?? "dom"),
+        textRow("scenes", scenes.length > 0 ? scenes.join(", ") : "없음"),
+      ].join("");
+    }
+
+    return textRow("Composition", composition.title);
   }
 
   if (selection.kind === "layer") {

@@ -1,9 +1,16 @@
 import {
   createPromoGridComposition,
+  MOTION_COMPOSITION_SCHEMA_V2,
   parseMotionComposition,
+  parseMotionCompositionV2,
   serializeMotionComposition,
+  serializeMotionCompositionV2,
   type MotionCompositionDef,
+  type MotionCompositionDefV2,
   type MotionCompositionDocumentV1,
+  type MotionCompositionDocumentV2,
+  type MotionCompositionSchema,
+  type ResolvedMotionCompositionSchema,
   type MotionEditorState,
   type MotionParameterValues,
 } from "motion-content";
@@ -18,9 +25,9 @@ export interface MotionEditorShellDocumentImportContext {
 }
 
 export interface MotionEditorShellDocumentExportContext {
-  readonly document: MotionCompositionDocumentV1;
+  readonly document: MotionCompositionDocumentV1 | MotionCompositionDocumentV2;
   readonly fileName: string;
-  readonly state: MotionEditorState;
+  readonly state: MotionEditorState<ResolvedMotionCompositionSchema>;
 }
 
 export interface MotionEditorShellWorkspace {
@@ -31,7 +38,7 @@ export interface MotionEditorShellWorkspace {
 
 export interface MotionEditorShellWorkspaceOptions {
   readonly controller?: MotionWorkspaceController;
-  readonly composition?: MotionCompositionDef;
+  readonly composition?: MotionCompositionSchema;
   readonly values?: Partial<MotionParameterValues>;
   readonly source?: MotionWorkspaceSourceMetadataV1;
   readonly savedAt?: string;
@@ -52,17 +59,30 @@ function defaultImportDocument(
   source: string,
   controller: MotionWorkspaceController,
 ): void {
+  const isV2Document = /"schemaVersion"\s*:\s*"qa-sdk\.motion-composition\/v2"/.test(source);
+  const values = controller.exportWorkspace().editor.values;
+  if (isV2Document) {
+    controller.apply({
+      type: "set-composition",
+      composition: parseMotionCompositionV2(source),
+      values,
+    });
+    return;
+  }
   controller.apply({
     type: "set-composition",
     composition: parseMotionComposition(source),
-    values: controller.exportWorkspace().editor.values,
+    values,
   });
 }
 
 function defaultExportDocument(
   context: MotionEditorShellDocumentExportContext,
 ): void {
-  const blob = new Blob([serializeMotionComposition(context.document.composition)], {
+  const source = context.document.schemaVersion === MOTION_COMPOSITION_SCHEMA_V2
+    ? serializeMotionCompositionV2(context.document.composition as MotionCompositionDefV2)
+    : serializeMotionComposition(context.document.composition as MotionCompositionDef);
+  const blob = new Blob([source], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);

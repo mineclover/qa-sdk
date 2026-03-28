@@ -1,76 +1,85 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const { createMotionPlayerSpy } = vi.hoisted(() => ({
+  createMotionPlayerSpy: vi.fn(),
+}));
+
 vi.mock("motion-content", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion-content")>();
 
+  createMotionPlayerSpy.mockImplementation((
+    _adapter: import("motion-content").MotionStageAdapter,
+    composition: import("motion-content").ResolvedMotionComposition,
+  ): import("motion-content").MotionPlayer => {
+    const transport: import("motion-content").MotionTransportState = {
+      playing: false,
+      currentTimeMs: 0,
+      durationMs: composition.durationMs,
+      loop: false,
+      playbackRate: 1,
+    };
+
+    const snapshot = () => ({
+      ...actual.createMotionDebugSnapshot(
+        composition,
+        transport.currentTimeMs,
+        actual.resolveMotionAssetSnapshots(composition),
+      ),
+      transport: { ...transport },
+    });
+
+    return {
+      play() {
+        transport.playing = true;
+      },
+      pause() {
+        transport.playing = false;
+      },
+      restart() {
+        transport.playing = true;
+        transport.currentTimeMs = 0;
+      },
+      seek(ms) {
+        transport.currentTimeMs = Math.max(0, Math.min(ms, composition.durationMs));
+      },
+      setPlaybackRate(playbackRate) {
+        transport.playbackRate = Number.isFinite(playbackRate) && playbackRate > 0 ? playbackRate : 1;
+      },
+      setLoop(loop) {
+        transport.loop = loop;
+      },
+      getTransportState() {
+        return { ...transport };
+      },
+      progress() {
+        return composition.durationMs === 0 ? 0 : transport.currentTimeMs / composition.durationMs;
+      },
+      currentTimeMs() {
+        return transport.currentTimeMs;
+      },
+      durationMs() {
+        return composition.durationMs;
+      },
+      snapshot,
+      destroy() {
+        return;
+      },
+    };
+  });
+
   return {
     ...actual,
-    createMotionPlayer(
-      adapter: import("motion-content").MotionStageAdapter,
-      composition: import("motion-content").ResolvedMotionComposition,
-    ): import("motion-content").MotionPlayer {
-      const transport: import("motion-content").MotionTransportState = {
-        playing: false,
-        currentTimeMs: 0,
-        durationMs: composition.durationMs,
-        loop: false,
-        playbackRate: 1,
-      };
-
-      const snapshot = () => ({
-        ...actual.createMotionDebugSnapshot(
-          composition,
-          transport.currentTimeMs,
-          actual.resolveMotionAssetSnapshots(composition),
-        ),
-        transport: { ...transport },
-      });
-
-      return {
-        play() {
-          transport.playing = true;
-        },
-        pause() {
-          transport.playing = false;
-        },
-        restart() {
-          transport.playing = true;
-          transport.currentTimeMs = 0;
-        },
-        seek(ms) {
-          transport.currentTimeMs = Math.max(0, Math.min(ms, composition.durationMs));
-        },
-        setPlaybackRate(playbackRate) {
-          transport.playbackRate = Number.isFinite(playbackRate) && playbackRate > 0 ? playbackRate : 1;
-        },
-        setLoop(loop) {
-          transport.loop = loop;
-        },
-        getTransportState() {
-          return { ...transport };
-        },
-        progress() {
-          return composition.durationMs === 0 ? 0 : transport.currentTimeMs / composition.durationMs;
-        },
-        currentTimeMs() {
-          return transport.currentTimeMs;
-        },
-        durationMs() {
-          return composition.durationMs;
-        },
-        snapshot,
-        destroy() {
-          return;
-        },
-      };
-    },
+    createMotionPlayer: createMotionPlayerSpy,
   };
 });
 
 import {
+  createMotionStageNodeTarget,
   createPromoGridComposition,
+  migrateCompositionV1toV2,
   resolveCue,
   serializeMotionComposition,
+  type MotionCompositionDefV2,
 } from "motion-content";
 import {
   MOTION_EDITOR_THEMES,
@@ -94,6 +103,92 @@ function createMotionEditorShell(options: MotionEditorShellOptions) {
       values: options.values,
     }),
   });
+}
+
+function createOverlappingSceneComposition(): MotionCompositionDefV2 {
+  return {
+    id: "overlap-v2",
+    title: "Overlap V2",
+    description: "겹치는 scene 전체 재생 fixture",
+    durationMs: 3200,
+    parameters: [],
+    cuePresets: [
+      { id: "fade-in", label: "Fade In", kind: "fade", durationMs: 240 },
+    ],
+    assets: [],
+    targets: [
+      {
+        id: "hero",
+        target: createMotionStageNodeTarget("hero"),
+        content: { type: "dom" },
+      },
+      {
+        id: "badge",
+        target: createMotionStageNodeTarget("badge"),
+        content: { type: "svg", viewBox: "0 0 24 24" },
+      },
+    ],
+    scenes: [
+      {
+        id: "intro",
+        title: "Intro",
+        startMs: 0,
+        durationMs: 1800,
+        layers: [
+          {
+            targetId: "hero",
+            startMs: 120,
+            durationMs: 1200,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [
+          {
+            id: "intro-seq",
+            title: "Intro sequence",
+            startMs: 0,
+            durationMs: 1200,
+            targetIds: ["hero"],
+            layers: [{ targetId: "hero", offsetMs: 120, role: "content", zIndex: 1 }],
+            captionIds: ["cap-1"],
+          },
+        ],
+        captions: [
+          {
+            id: "cap-1",
+            text: "Hero scene",
+            startMs: 160,
+            durationMs: 720,
+          },
+        ],
+      },
+      {
+        id: "overlap",
+        title: "Overlap",
+        startMs: 900,
+        durationMs: 1400,
+        layers: [
+          {
+            targetId: "badge",
+            startMs: 120,
+            durationMs: 700,
+            enter: { kind: "scale-pop", durationMs: 240, amount: 0.92 },
+          },
+        ],
+        sequences: [
+          {
+            id: "badge-seq",
+            title: "Badge reveal",
+            startMs: 40,
+            durationMs: 800,
+            targetIds: ["badge"],
+            layers: [{ targetId: "badge", offsetMs: 80, role: "accent", zIndex: 3 }],
+          },
+        ],
+        captions: [],
+      },
+    ],
+  };
 }
 
 function installPointerCapturePolyfill(): void {
@@ -192,6 +287,7 @@ describe("motion editor shell", () => {
 
   beforeEach(() => {
     installPointerCapturePolyfill();
+    createMotionPlayerSpy.mockClear();
 
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -279,6 +375,103 @@ describe("motion editor shell", () => {
     expect(importDiagnosticsPanel?.textContent).toContain("성공");
     expect(importDiagnosticsPanel?.textContent).toContain("schemaVersion 검증 및 composition import가 완료되었습니다.");
     expect(onStateChange).toHaveBeenCalled();
+
+    shell.destroy();
+  });
+
+  it("assembles full playback and scene playback separately, then exports the assembled v1 json", async () => {
+    const shell = createMotionEditorShell({
+      container,
+      composition: createOverlappingSceneComposition(),
+    });
+
+    const previewLabel = container.querySelector<HTMLElement>("[data-preview-label]");
+    const previewFullButton = container.querySelector<HTMLButtonElement>('[data-action="preview-full"]');
+    const previewSceneButton = container.querySelector<HTMLButtonElement>('[data-action="preview-scene"]');
+    const exportV1Button = container.querySelector<HTMLButtonElement>('[data-action="export-v1"]');
+    const overlapSceneButton = container.querySelector<HTMLElement>('[data-scene="overlap"]');
+
+    const initialComposition = createMotionPlayerSpy.mock.calls.at(-1)?.[1];
+    expect(initialComposition?.durationMs).toBe(3200);
+    expect(initialComposition?.layers.map((layer) => ({ id: layer.id, startMs: layer.startMs }))).toEqual([
+      { id: "hero", startMs: 120 },
+      { id: "badge", startMs: 1020 },
+    ]);
+    expect(initialComposition?.sequences.map((sequence) => sequence.id)).toEqual(["intro-seq", "badge-seq"]);
+    expect(previewSceneButton?.disabled).toBe(true);
+    expect(previewLabel?.textContent).toContain("전체 어셈블리");
+
+    overlapSceneButton?.click();
+    expect(previewSceneButton?.disabled).toBe(false);
+
+    previewSceneButton?.click();
+
+    const scenePreviewComposition = createMotionPlayerSpy.mock.calls.at(-1)?.[1];
+    expect(scenePreviewComposition?.durationMs).toBe(1400);
+    expect(scenePreviewComposition?.layers.map((layer) => ({ id: layer.id, startMs: layer.startMs }))).toEqual([
+      { id: "badge", startMs: 120 },
+    ]);
+    expect(scenePreviewComposition?.sequences.map((sequence) => sequence.id)).toEqual(["badge-seq"]);
+    expect(shell.getState().transport.durationMs).toBe(1400);
+    expect(previewLabel?.textContent).toContain("Overlap 씬");
+
+    exportV1Button?.click();
+
+    const sceneExportBlob = urlCreateObjectUrl.mock.calls[0]?.[0] as Blob;
+    const sceneExportDocument = JSON.parse(await sceneExportBlob.text()) as {
+      readonly schemaVersion: string;
+      readonly composition: {
+        readonly id: string;
+        readonly durationMs: number;
+        readonly layers: readonly { readonly id: string; readonly startMs: number }[];
+        readonly sequences: readonly { readonly id: string }[];
+      };
+    };
+    expect(sceneExportDocument.schemaVersion).toBe("qa-sdk.motion-composition/v1");
+    expect(sceneExportDocument.composition.id).toBe("overlap-v2-overlap");
+    expect(sceneExportDocument.composition.durationMs).toBe(1400);
+    expect(sceneExportDocument.composition.layers.map((layer) => ({ id: layer.id, startMs: layer.startMs }))).toEqual([
+      { id: "badge", startMs: 120 },
+    ]);
+    expect(sceneExportDocument.composition.sequences.map((sequence) => ({ id: sequence.id }))).toEqual([
+      { id: "badge-seq" },
+    ]);
+
+    previewFullButton?.click();
+
+    const fullPreviewComposition = createMotionPlayerSpy.mock.calls.at(-1)?.[1];
+    expect(fullPreviewComposition?.durationMs).toBe(3200);
+    expect(fullPreviewComposition?.layers.map((layer) => ({ id: layer.id, startMs: layer.startMs }))).toEqual([
+      { id: "hero", startMs: 120 },
+      { id: "badge", startMs: 1020 },
+    ]);
+    expect(previewLabel?.textContent).toContain("전체 어셈블리");
+
+    exportV1Button?.click();
+
+    const fullExportBlob = urlCreateObjectUrl.mock.calls[1]?.[0] as Blob;
+    const fullExportDocument = JSON.parse(await fullExportBlob.text()) as {
+      readonly schemaVersion: string;
+      readonly composition: {
+        readonly id: string;
+        readonly durationMs: number;
+        readonly layers: readonly { readonly id: string; readonly startMs: number }[];
+        readonly sequences: readonly { readonly id: string }[];
+      };
+    };
+    expect(fullExportDocument.schemaVersion).toBe("qa-sdk.motion-composition/v1");
+    expect(fullExportDocument.composition.id).toBe("overlap-v2");
+    expect(fullExportDocument.composition.durationMs).toBe(3200);
+    expect(fullExportDocument.composition.layers.map((layer) => ({ id: layer.id, startMs: layer.startMs }))).toEqual([
+      { id: "hero", startMs: 120 },
+      { id: "badge", startMs: 1020 },
+    ]);
+    expect(fullExportDocument.composition.sequences.map((sequence) => ({ id: sequence.id }))).toEqual([
+      { id: "intro-seq" },
+      { id: "badge-seq" },
+    ]);
+
+    expect(anchorClick).toHaveBeenCalledTimes(2);
 
     shell.destroy();
   });
@@ -878,6 +1071,189 @@ describe("motion editor shell", () => {
     expect(restoredRoot?.style.getPropertyValue("--mce-left-size")).toBe("400px");
 
     restoredShell.destroy();
+  });
+
+  it("adds scenes, renames them, and places shared targets from the scenes panel", () => {
+    vi.stubGlobal("prompt", vi.fn(() => "Stinger Focus"));
+
+    const shell = createMotionEditorShell({
+      container,
+      composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
+    });
+
+    container.querySelector<HTMLButtonElement>('[data-panel-tab="scenes"]')?.click();
+
+    const addSceneButton = container.querySelector<HTMLButtonElement>('[data-action="add-scene"]');
+    expect(addSceneButton).toBeTruthy();
+
+    addSceneButton!.click();
+
+    expect(shell.getState().selection).toEqual({ kind: "scene", id: "scene-2" });
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    expect(shell.getState().composition.scenes.find((scene) => scene.id === "scene-2")).toMatchObject({
+      id: "scene-2",
+      title: "Scene 2",
+      layers: [],
+    });
+
+    const addPlacementButton = container.querySelector<HTMLButtonElement>(
+      '[data-add-scene-placement="headline"][data-scene-id="scene-2"]',
+    );
+    expect(addPlacementButton?.disabled).toBe(false);
+    addPlacementButton!.click();
+
+    expect(shell.getState().selection).toEqual({
+      kind: "scene-layer",
+      sceneId: "scene-2",
+      targetId: "headline",
+    });
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    expect(
+      shell.getState().composition.scenes.find((scene) => scene.id === "scene-2")?.layers.some((placement) => placement.targetId === "headline"),
+    ).toBe(true);
+
+    const renameSceneButton = container.querySelector<HTMLButtonElement>('[data-rename-scene="scene-2"]');
+    expect(renameSceneButton).toBeTruthy();
+    renameSceneButton!.click();
+
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    expect(shell.getState().composition.scenes.find((scene) => scene.id === "scene-2")?.title).toBe("Stinger Focus");
+
+    const removeSceneButton = container.querySelector<HTMLButtonElement>('[data-remove-scene="scene-2"]');
+    expect(removeSceneButton).toBeTruthy();
+    removeSceneButton!.click();
+
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    expect(shell.getState().composition.scenes.some((scene) => scene.id === "scene-2")).toBe(false);
+
+    shell.destroy();
+  });
+
+  it("switches the timeline into focused scene placement view and edits placements in isolation", () => {
+    const shell = createMotionEditorShell({
+      container,
+      composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
+    });
+    const timelinePanel = container.querySelector<HTMLElement>('[data-panel="timeline"]');
+
+    expect(timelinePanel).toBeTruthy();
+
+    stubTimelineGeometry(container);
+
+    const sceneBar = container.querySelector<HTMLElement>('[data-bar-kind="scene"][data-bar-id="main"]');
+    expect(sceneBar).toBeTruthy();
+
+    dispatchPointerEvent(sceneBar!, "pointerdown", 61, 12);
+    dispatchPointerEvent(timelinePanel!, "pointerup", 61, 12);
+
+    expect(shell.getState().selection).toEqual({ kind: "scene", id: "main" });
+    expect(timelinePanel?.textContent).toContain("Scene Focus");
+    expect(timelinePanel?.querySelector('[data-bar-kind="scene"]')).toBeNull();
+    expect(timelinePanel?.querySelectorAll('[data-bar-kind="layer"]').length).toBeGreaterThan(0);
+
+    stubTimelineGeometry(container);
+
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    const beforeStartMs = shell.getState().composition.scenes
+      .find((scene) => scene.id === "main")
+      ?.layers.find((placement) => placement.targetId === "headline")
+      ?.startMs;
+
+    const headlineBar = timelinePanel?.querySelector<HTMLElement>('[data-bar-kind="layer"][data-bar-id="headline"]');
+    expect(headlineBar).toBeTruthy();
+
+    dispatchPointerEvent(headlineBar!, "pointerdown", 62, 20);
+    dispatchPointerEvent(timelinePanel!, "pointermove", 62, 120);
+
+    expect(shell.getState().selection).toEqual({
+      kind: "scene-layer",
+      sceneId: "main",
+      targetId: "headline",
+    });
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    const previewStartMs = shell.getState().composition.scenes
+      .find((scene) => scene.id === "main")
+      ?.layers.find((placement) => placement.targetId === "headline")
+      ?.startMs;
+    expect(previewStartMs).not.toBe(beforeStartMs);
+
+    dispatchPointerEvent(timelinePanel!, "pointerup", 62, 120);
+
+    if (!("scenes" in shell.getState().composition)) {
+      throw new Error("expected scene composition");
+    }
+    const committedStartMs = shell.getState().composition.scenes
+      .find((scene) => scene.id === "main")
+      ?.layers.find((placement) => placement.targetId === "headline")
+      ?.startMs;
+    expect(committedStartMs).not.toBe(beforeStartMs);
+
+    shell.destroy();
+  });
+
+  it("renders scene presence badges and emits focused scene changes", () => {
+    const onFocusedSceneChange = vi.fn();
+    const shell = createMotionEditorShell({
+      container,
+      composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
+      scenePresence: [
+        {
+          sceneId: "main",
+          users: [
+            { userId: "alpha", name: "alpha", color: "#ff8a5b" },
+            { userId: "beta", name: "beta", color: "#4db6ac" },
+          ],
+          locked: true,
+        },
+      ],
+      onFocusedSceneChange,
+    });
+
+    const scenesPanel = container.querySelector<HTMLElement>('[data-panel="scenes"]');
+    const sceneButton = container.querySelector<HTMLElement>('[data-scene="main"]');
+    const sceneBar = container.querySelector<HTMLElement>('[data-bar-kind="scene"][data-bar-id="main"]');
+
+    expect(scenesPanel?.textContent).toContain("alpha");
+    expect(scenesPanel?.textContent).toContain("beta");
+    expect(sceneButton?.dataset["sceneLocked"]).toBe("true");
+    expect(sceneBar?.querySelector(".mce-user-badge")?.textContent).toBeTruthy();
+    expect(sceneBar?.querySelector(".mce-lock-pill")?.textContent).toContain("LOCK");
+
+    shell.setScenePresence([
+      {
+        sceneId: "main",
+        users: [{ userId: "charlie", name: "charlie", color: "#7c9cff" }],
+        locked: false,
+      },
+    ]);
+
+    const refreshedSceneButton = container.querySelector<HTMLElement>('[data-scene="main"]');
+    const refreshedSceneBar = container.querySelector<HTMLElement>('[data-bar-kind="scene"][data-bar-id="main"]');
+    expect(scenesPanel?.textContent).toContain("charlie");
+    expect(refreshedSceneButton?.dataset["sceneLocked"]).toBe("false");
+    expect(refreshedSceneBar?.querySelector(".mce-lock-pill")).toBeNull();
+
+    refreshedSceneButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(onFocusedSceneChange).toHaveBeenLastCalledWith("main");
+
+    const clearFocusButton = container.querySelector<HTMLButtonElement>('[data-action="clear-scene-focus"]');
+    expect(clearFocusButton).toBeTruthy();
+    clearFocusButton?.click();
+    expect(onFocusedSceneChange).toHaveBeenLastCalledWith(null);
+
+    shell.destroy();
   });
 
   it("resets the layout to defaults and clears stored layout state", () => {

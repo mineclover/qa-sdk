@@ -1,17 +1,25 @@
 import type {
   MotionCaptionCue,
   MotionCompositionDef,
+  MotionCompositionDefV2,
   MotionEditorCommand,
-  MotionEditorSelection,
+  MotionEditorSelectionV2,
   MotionEditorState,
   MotionItemKind,
+  MotionSceneDef,
   MotionTransitionDef,
+  ResolvedMotionCompositionSchema,
+  ResolvedMotionCompositionV2,
 } from "motion-content";
 import { clamp, endMs, findTimeSpanById, resolveMotionTransitionWindow } from "motion-content";
+import {
+  renderScenePresenceBadges,
+  type MotionEditorScenePresenceEntry,
+} from "./scene-presence.js";
 
 /** 드래그 대상의 참조 */
 interface TimelineItemRef {
-  readonly kind: MotionItemKind;
+  readonly kind: MotionItemKind | "scene";
   readonly id: string;
 }
 
@@ -50,16 +58,25 @@ export type MotionTimelineDragState =
     };
 
 interface MotionTimelineStartResult {
-  readonly selection: MotionEditorSelection;
+  readonly selection: MotionEditorSelectionV2;
   readonly dragState: MotionTimelineDragState | null;
 }
 
-type ResizableKind = Exclude<MotionEditorSelection["kind"], "composition">;
+type TimelineBarKind = MotionItemKind | "scene" | "transition";
+type ResizableKind = Exclude<TimelineBarKind, "transition">;
 
 interface MotionTimelineBarOptions {
   readonly moveable: boolean;
   readonly resizeStart: boolean;
   readonly resizeEnd: boolean;
+  readonly sceneLane?: number;
+  readonly stackedScene?: boolean;
+  readonly locked?: boolean;
+  readonly presenceHtml?: string;
+}
+
+interface MotionTimelineRenderOptions {
+  readonly scenePresence?: ReadonlyMap<string, MotionEditorScenePresenceEntry>;
 }
 
 function timeFromPointer(
@@ -86,6 +103,12 @@ function resolveTransitionWindow(
     detail: `${transition.style} / ${window.durationMs}`,
     maxDurationMs: window.maxDurationMs,
   };
+}
+
+function isSceneComposition(
+  composition: MotionCompositionDef | MotionCompositionDefV2 | ResolvedMotionCompositionSchema,
+): composition is MotionCompositionDefV2 | ResolvedMotionCompositionV2 {
+  return "targets" in composition && "scenes" in composition;
 }
 
 function clampWindowStart(
@@ -116,12 +139,14 @@ function clampWindowMove(
 
 /** kind + id → 통합 타임라인 커맨드 */
 function makeTimingCommand(
-  kind: MotionItemKind,
+  kind: MotionItemKind | "scene",
   id: string,
   startMs: number,
   durationMs: number,
 ): MotionEditorCommand {
-  return { type: "update-item-timing", itemKind: kind, itemId: id, startMs, durationMs };
+  return kind === "scene"
+    ? { type: "update-scene-timing", sceneId: id, startMs, durationMs }
+    : { type: "update-item-timing", itemKind: kind, itemId: id, startMs, durationMs };
 }
 
 interface MotionTimelineTick {
@@ -213,13 +238,12 @@ function renderTimelineRuler(totalDurationMs: number): string {
   `;
 }
 
-function renderTimelineRow(
+function renderTimelineBar(
   id: string,
-  label: string,
   startMs: number,
   durationMs: number,
   totalDurationMs: number,
-  kind: ResizableKind,
+  kind: TimelineBarKind,
   active: boolean,
   detail: string,
   options: MotionTimelineBarOptions,
@@ -229,74 +253,184 @@ function renderTimelineRow(
   const width = (durationMs / safeDurationMs) * 100;
 
   return `
-    <div class="mce-lane-label" data-lane-kind="${kind}">${label}</div>
-    <div class="mce-track" data-track-kind="${kind}">
-      <div class="mce-bar ${active ? "is-active" : ""}" data-bar-kind="${kind}" data-bar-id="${id}" data-bar-moveable="${options.moveable ? "true" : "false"}" style="left:${start}%;width:${Math.max(width, 3)}%">
-        ${options.resizeStart ? `<span class="mce-bar-handle" data-resize-start="${kind}:${id}">⋮</span>` : ""}
-        <strong>${detail}</strong>
-        ${options.resizeEnd ? `<span class="mce-bar-handle" data-resize-end="${kind}:${id}">⋮</span>` : ""}
-      </div>
+    <div
+      class="mce-bar ${active ? "is-active" : ""}"
+      data-bar-kind="${kind}"
+      data-bar-id="${id}"
+      data-bar-moveable="${options.moveable ? "true" : "false"}"
+      data-scene-lane="${options.sceneLane ?? 0}"
+      data-scene-stacked="${options.stackedScene ? "true" : "false"}"
+      data-scene-locked="${options.locked ? "true" : "false"}"
+      style="left:${start}%;width:${Math.max(width, 3)}%"
+    >
+      ${options.resizeStart ? `<span class="mce-bar-handle" data-resize-start="${kind}:${id}">⋮</span>` : ""}
+      <strong>${detail}</strong>
+      ${options.presenceHtml ? `<span class="mce-bar-presence">${options.presenceHtml}</span>` : ""}
+      ${options.resizeEnd ? `<span class="mce-bar-handle" data-resize-end="${kind}:${id}">⋮</span>` : ""}
     </div>
   `;
 }
 
-export function renderMotionTimeline(state: MotionEditorState): string {
+function renderTimelineTrack(
+  label: string,
+  kind: TimelineBarKind,
+  bars: string,
+): string {
+  return `
+    <div class="mce-lane-label" data-lane-kind="${kind}">${label}</div>
+    <div class="mce-track" data-track-kind="${kind}">
+      ${bars}
+    </div>
+  `;
+}
+
+function packSceneTracks(
+  scenes: readonly MotionSceneDef[],
+): readonly (readonly MotionSceneDef[])[] {
+  const lanes: MotionSceneDef[][] = [];
+  const laneEndMs: number[] = [];
+  const orderedScenes = [...scenes].sort((left, right) =>
+    left.startMs - right.startMs
+    || right.durationMs - left.durationMs
+    || left.id.localeCompare(right.id)
+  );
+
+  for (const scene of orderedScenes) {
+    const sceneStartMs = scene.startMs;
+    const laneIndex = laneEndMs.findIndex((laneEnd) => laneEnd <= sceneStartMs);
+    if (laneIndex === -1) {
+      lanes.push([scene]);
+      laneEndMs.push(endMs(scene));
+      continue;
+    }
+
+    lanes[laneIndex]!.push(scene);
+    laneEndMs[laneIndex] = endMs(scene);
+  }
+
+  return lanes;
+}
+
+function renderSceneTracks(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  totalDurationMs: number,
+  scenePresence: ReadonlyMap<string, MotionEditorScenePresenceEntry>,
+): string {
+  if (!isSceneComposition(state.composition)) {
+    return "";
+  }
+
+  const lanes = packSceneTracks(state.composition.scenes);
+  return lanes
+    .map((lane, laneIndex) =>
+      renderTimelineTrack(
+        laneIndex === 0 ? "Scenes" : "",
+        "scene",
+        lane.map((scene) =>
+          renderTimelineBar(
+            scene.id,
+            scene.startMs,
+            scene.durationMs,
+            totalDurationMs,
+            "scene",
+            state.selection?.kind === "scene" && state.selection.id === scene.id,
+            `${scene.title} · ${scene.startMs} / ${scene.durationMs}`,
+            {
+              moveable: true,
+              resizeStart: true,
+              resizeEnd: true,
+              sceneLane: laneIndex,
+              stackedScene: lanes.length > 1,
+              locked: scenePresence.get(scene.id)?.locked,
+              presenceHtml: renderScenePresenceBadges(scenePresence.get(scene.id), { compact: true }),
+            },
+          )
+        ).join(""),
+      ))
+    .join("");
+}
+
+export function renderMotionTimeline(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  options: MotionTimelineRenderOptions = {},
+): string {
   const totalDurationMs = Math.max(state.transport.durationMs, 1);
   const playheadRatio = Math.max(0, Math.min(1, state.transport.currentTimeMs / totalDurationMs));
+  const scenePresence = options.scenePresence ?? new Map<string, MotionEditorScenePresenceEntry>();
   const rows = [
-    ...state.composition.sequences.map((sequence) =>
-      renderTimelineRow(
-        sequence.id,
-        sequence.title,
-        sequence.startMs,
-        sequence.durationMs,
-        totalDurationMs,
-        "sequence",
-        state.selection?.kind === "sequence" && state.selection.id === sequence.id,
-        `${sequence.startMs} / ${sequence.durationMs}`,
-        { moveable: true, resizeStart: true, resizeEnd: true },
-      ),
-    ),
-    ...state.composition.transitions.map((transition) => {
-      const window = resolveTransitionWindow(state.composition, transition);
-      return renderTimelineRow(
-        transition.id,
-        window.label,
-        window.startMs,
-        window.durationMs,
-        totalDurationMs,
-        "transition",
-        state.selection?.kind === "transition" && state.selection.id === transition.id,
-        window.detail,
-        { moveable: false, resizeStart: true, resizeEnd: false },
-      );
-    }),
-    ...state.composition.layers.map((layer) =>
-      renderTimelineRow(
-        layer.id,
-        layer.label,
-        layer.startMs,
-        layer.durationMs,
-        totalDurationMs,
-        "layer",
-        state.selection?.kind === "layer" && state.selection.id === layer.id,
-        `${layer.startMs} / ${layer.durationMs}`,
-        { moveable: true, resizeStart: true, resizeEnd: true },
-      ),
-    ),
-    ...state.composition.captions.map((caption: MotionCaptionCue) =>
-      renderTimelineRow(
-        caption.id,
-        "Caption",
-        caption.startMs,
-        caption.durationMs,
-        totalDurationMs,
-        "caption",
-        state.selection?.kind === "caption" && state.selection.id === caption.id,
-        `${caption.startMs} / ${caption.durationMs}`,
-        { moveable: true, resizeStart: true, resizeEnd: true },
-      ),
-    ),
+    renderSceneTracks(state, totalDurationMs, scenePresence),
+    ...(!isSceneComposition(state.composition)
+      ? (() => {
+          const composition = state.composition as MotionCompositionDef;
+          return [
+          ...composition.sequences.map((sequence) =>
+            renderTimelineTrack(
+              sequence.title,
+              "sequence",
+              renderTimelineBar(
+                sequence.id,
+                sequence.startMs,
+                sequence.durationMs,
+                totalDurationMs,
+                "sequence",
+                state.selection?.kind === "sequence" && state.selection.id === sequence.id,
+                `${sequence.startMs} / ${sequence.durationMs}`,
+                { moveable: true, resizeStart: true, resizeEnd: true },
+              ),
+            ),
+          ),
+          ...composition.transitions.map((transition) => {
+            const window = resolveTransitionWindow(composition, transition);
+            return renderTimelineTrack(
+              window.label,
+              "transition",
+              renderTimelineBar(
+                transition.id,
+                window.startMs,
+                window.durationMs,
+                totalDurationMs,
+                "transition",
+                state.selection?.kind === "transition" && state.selection.id === transition.id,
+                window.detail,
+                { moveable: false, resizeStart: true, resizeEnd: false },
+              ),
+            );
+          }),
+          ...composition.layers.map((layer) =>
+            renderTimelineTrack(
+              layer.label,
+              "layer",
+              renderTimelineBar(
+                layer.id,
+                layer.startMs,
+                layer.durationMs,
+                totalDurationMs,
+                "layer",
+                state.selection?.kind === "layer" && state.selection.id === layer.id,
+                `${layer.startMs} / ${layer.durationMs}`,
+                { moveable: true, resizeStart: true, resizeEnd: true },
+              ),
+            ),
+          ),
+          ...composition.captions.map((caption: MotionCaptionCue) =>
+            renderTimelineTrack(
+              "Caption",
+              "caption",
+              renderTimelineBar(
+                caption.id,
+                caption.startMs,
+                caption.durationMs,
+                totalDurationMs,
+                "caption",
+                state.selection?.kind === "caption" && state.selection.id === caption.id,
+                `${caption.startMs} / ${caption.durationMs}`,
+                { moveable: true, resizeStart: true, resizeEnd: true },
+              ),
+            ),
+          ),
+        ];
+      })()
+      : []),
   ].join("");
 
   return `
@@ -314,14 +448,14 @@ export function renderMotionTimeline(state: MotionEditorState): string {
 }
 
 export function beginMotionTimelineDrag(
-  state: MotionEditorState,
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
   target: HTMLElement,
   clientX: number,
 ): MotionTimelineStartResult | null {
   const bar = target.closest<HTMLElement>("[data-bar-id]");
   if (!bar) return null;
 
-  const kind = bar.dataset["barKind"] as ResizableKind | undefined;
+  const kind = bar.dataset["barKind"] as TimelineBarKind | undefined;
   const id = bar.dataset["barId"];
   if (!kind || !id) return null;
 
@@ -333,10 +467,58 @@ export function beginMotionTimelineDrag(
   const resizeStart = target.closest<HTMLElement>("[data-resize-start]");
   const resizeEnd = target.closest<HTMLElement>("[data-resize-end]");
   const moveable = bar.dataset["barMoveable"] === "true";
-  const selection: MotionEditorSelection = { kind, id };
+  const selection: MotionEditorSelectionV2 = { kind, id } as MotionEditorSelectionV2;
+
+  if (kind === "scene") {
+    if (!isSceneComposition(state.composition)) return null;
+    const scene = state.composition.scenes.find((entry) => entry.id === id);
+    if (!scene) return null;
+
+    const dragState: MotionTimelineDragState | null = resizeStart
+      ? {
+          operation: "resize-start",
+          target: { kind: "scene", id },
+          anchorMs,
+          originalStartMs: scene.startMs,
+          originalEndMs: endMs(scene),
+          minDurationMs: 120,
+          trackLeft: rect.left,
+          trackWidth: rect.width,
+          totalDurationMs: state.transport.durationMs,
+        }
+      : resizeEnd
+        ? {
+            operation: "resize-end",
+            target: { kind: "scene", id },
+            anchorMs,
+            originalStartMs: scene.startMs,
+            originalEndMs: endMs(scene),
+            minDurationMs: 120,
+            trackLeft: rect.left,
+            trackWidth: rect.width,
+            totalDurationMs: state.transport.durationMs,
+          }
+        : moveable
+          ? {
+              operation: "move",
+              target: { kind: "scene", id },
+              anchorMs,
+              originalStartMs: scene.startMs,
+              spanMs: scene.durationMs,
+              trackLeft: rect.left,
+              trackWidth: rect.width,
+              totalDurationMs: state.transport.durationMs,
+            }
+          : null;
+
+    return { selection, dragState };
+  }
 
   // transition은 별도 처리 (move 불가, resize-start만 가능)
   if (kind === "transition") {
+    if (isSceneComposition(state.composition)) {
+      return null;
+    }
     const transition = state.composition.transitions.find((entry) => entry.id === id);
     if (!transition) return null;
     const window = resolveTransitionWindow(state.composition, transition);
@@ -359,6 +541,9 @@ export function beginMotionTimelineDrag(
   }
 
   // layer / sequence / caption — 통합 경로
+  if (isSceneComposition(state.composition)) {
+    return null;
+  }
   const itemKind = kind as MotionItemKind;
   const timing = findTimeSpanById(state.composition, itemKind, id);
   if (!timing) return null;
