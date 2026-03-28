@@ -1,0 +1,179 @@
+{
+  "name": "Drizzle 마이그레이션 표준화 잔여 작업",
+  "branchName": "ralph/drizzle-standardization-remaining",
+  "description": "definition-service IF NOT EXISTS 수정, query-service drizzle-kit 완성, decision-service query builder 전환, index-meta SCHEMA_DDL 이중 소스 제거, better-sqlite3 통일, 죽은 코드 정리",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "definition-service 마이그레이션 SQL IF NOT EXISTS 추가",
+      "description": "유지보수자로서, definition-service의 drizzle 마이그레이션 SQL에 IF NOT EXISTS가 누락된 문제를 수정하여 기존 데이터가 있는 DB에서도 안전하게 마이그레이션이 실행되도록 한다.",
+      "acceptanceCriteria": [
+        "packages/definition-service/drizzle/ 기존 마이그레이션 삭제 후 재생성",
+        "생성된 migration.sql의 모든 CREATE TABLE에 IF NOT EXISTS 추가",
+        "생성된 migration.sql의 모든 CREATE INDEX에 IF NOT EXISTS 추가",
+        "FTS5 virtual table DDL이 migration.sql 끝에 포함됨",
+        "pnpm --filter @qa-sdk/definition-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "query-service drizzle-kit 셋업 완성",
+      "description": "유지보수자로서, query-service에 drizzle-kit + drizzle.config.ts + 마이그레이션 폴더를 추가하여 POLICY_RULE_SCHEMA_STATEMENTS 이중 관리를 제거한다.",
+      "acceptanceCriteria": [
+        "packages/query-service/package.json에 drizzle-kit: 1.0.0-beta.20 devDependency 추가",
+        "기존 policy-rule.schema.ts의 스키마를 src/db/schema.ts로 이동",
+        "packages/query-service/drizzle.config.ts 생성 (dialect: sqlite, schema: ./src/db/schema.ts)",
+        "POLICY_RULE_SCHEMA_STATEMENTS 배열 제거",
+        "SqlPolicyRuleStore의 ensureSchema()를 drizzle migrate()로 대체",
+        "db:generate 스크립트 추가",
+        "초기 마이그레이션 생성 + IF NOT EXISTS 추가",
+        "pnpm --filter query-service build 통과",
+        "pnpm --filter query-service test 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "decision-service 컬럼명 통일 (context_json → context)",
+      "description": "유지보수자로서, decision-service의 컬럼명을 CLI 패턴(context, selections, outcome)으로 통일하여 같은 도메인 엔티티(FlowInstance)의 저장 컨벤션을 일치시킨다.",
+      "acceptanceCriteria": [
+        "packages/decision-service/src/db/schema.ts 컬럼명 변경: context_json→context, selections_json→selections, outcome_json→outcome, gates_json→gates, outcomes_json→outcomes, meta_json→meta",
+        "drizzle-kit generate로 ALTER TABLE RENAME COLUMN 마이그레이션 생성",
+        "생성된 SQL에 컬럼 리네임 구문 확인",
+        "instances.service.ts, schemas.service.ts, links.service.ts의 raw SQL에서 old 컬럼명 → new 컬럼명 반영",
+        "pnpm --filter @qa-sdk/decision-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "SQLite 3.51.2에서 ALTER TABLE RENAME COLUMN 지원 확인 완료. drizzle-kit 자동 감지 여부는 구현 시 확인.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-004",
+      "title": "decision-service SchemasService drizzle query builder 전환",
+      "description": "유지보수자로서, decision-service의 SchemasService(register, get, list, delete)를 drizzle query builder로 전환한다.",
+      "acceptanceCriteria": [
+        "database.module.ts에서 drizzle DB 인스턴스(BetterSQLite3Database)를 DI 토큰으로 제공",
+        "SchemasService의 register(upsert)를 db.insert().values().onConflictDoUpdate()로 전환",
+        "SchemasService의 get을 db.select().from().where().get()으로 전환",
+        "SchemasService의 list를 db.select().from().all()로 전환",
+        "SchemasService의 delete를 db.delete().from().where()로 전환",
+        "수동 JSON.stringify/JSON.parse 제거 — drizzle text 타입으로 처리",
+        "pnpm --filter @qa-sdk/decision-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-003"]
+    },
+    {
+      "id": "US-005",
+      "title": "decision-service InstancesService drizzle query builder 전환",
+      "description": "유지보수자로서, decision-service의 InstancesService(save, get, findBySchema, findByStatus, list)를 drizzle query builder로 전환한다.",
+      "acceptanceCriteria": [
+        "InstancesService의 save(upsert)를 db.insert().values().onConflictDoUpdate()로 전환",
+        "InstancesService의 get을 db.select().from().where().get()으로 전환",
+        "InstancesService의 findBySchema를 db.select().from().where(eq()).all()로 전환",
+        "InstancesService의 findByStatus를 db.select().from().where(eq()).all()로 전환",
+        "InstancesService의 list를 db.select().from().orderBy().all()로 전환",
+        "수동 JSON.stringify/JSON.parse 제거",
+        "pnpm --filter @qa-sdk/decision-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-004"]
+    },
+    {
+      "id": "US-006",
+      "title": "decision-service LinksService drizzle query builder 전환",
+      "description": "유지보수자로서, decision-service의 LinksService(link, findByInstance, findByDoc, unlink)를 drizzle query builder로 전환한다.",
+      "acceptanceCriteria": [
+        "LinksService의 link를 db.insert().values().onConflictDoNothing()로 전환",
+        "LinksService의 findByInstance를 db.select().from().where(eq()).all()로 전환",
+        "LinksService의 findByDoc를 db.select().from().where(eq()).all()로 전환",
+        "LinksService의 unlink을 db.delete().from().where(and()).run()으로 전환",
+        "pnpm --filter @qa-sdk/decision-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-004"]
+    },
+    {
+      "id": "US-007",
+      "title": "index-meta SCHEMA_DDL 제거 + drizzle/ 폴더 tsup 번들 포함",
+      "description": "유지보수자로서, index-meta의 167줄 SCHEMA_DDL 폴백을 제거하고 drizzle/ 폴더를 tsup 번들에 포함시켜 이중 소스 문제를 해결한다.",
+      "acceptanceCriteria": [
+        "packages/index-meta/tsup.config.ts에 onSuccess 훅으로 cp -r drizzle dist/drizzle 추가",
+        "NodeSqliteDriver constructor에서 SCHEMA_DDL 폴백 분기 제거",
+        "findMigrationsFolder() 유틸이 dist/drizzle 경로도 탐색하도록 확인",
+        "SCHEMA_DDL 상수 제거 (167줄)",
+        "pnpm --filter index-meta build 후 dist/drizzle/ 폴더 존재 확인",
+        "pnpm --filter index-meta test — 922건 통과",
+        "pnpm --filter @qa-sdk/registry-service test — 212건 통과 (소비자 검증)",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "tsup onSuccess 훅에서 cp -r drizzle dist/drizzle 사용. publicDir은 전체 파일 복사라 비효율적.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-008",
+      "title": "better-sqlite3 ^12 통일",
+      "description": "유지보수자로서, decision-service(^11.0.0)와 definition-service(^11.7.0)의 better-sqlite3를 ^12로 업그레이드하여 모노레포 전체 버전을 통일한다.",
+      "acceptanceCriteria": [
+        "packages/decision-service/package.json better-sqlite3 → ^12.8.0",
+        "packages/definition-service/package.json better-sqlite3 → ^12.8.0",
+        "@types/better-sqlite3도 ^7.6.13으로 통일",
+        "pnpm install 후 lock 파일에 better-sqlite3 단일 메이저 버전",
+        "pnpm --filter @qa-sdk/decision-service build 통과",
+        "pnpm --filter @qa-sdk/definition-service build 통과",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-009",
+      "title": "죽은 코드 + 타입 캐스트 정리",
+      "description": "유지보수자로서, 이전 라운드에서 남은 죽은 코드와 불필요한 타입 캐스트를 정리하여 코드 품질을 개선한다.",
+      "acceptanceCriteria": [
+        "motion-workspace-service/src/sqlite-repository.ts의 미사용 SQLITE_TIMESTAMP_SQL 상수 제거",
+        "motion-workspace-service/src/sqlite-repository.ts의 createDatabase 헬퍼 인라인화",
+        "cli/src/stores/flow-sqlite-store.ts의 as FlowInstance[\"status\"] 캐스트를 스키마 $type<>() 어노테이션으로 대체",
+        "타임스탬프 기본값을 strftime('%Y-%m-%dT%H:%M:%fZ', 'now') (ISO-8601)로 통일 — cli schema 수정 + 마이그레이션 재생성",
+        "pnpm --filter ...[origin/main] build 통과",
+        "pnpm --filter ...[origin/main] test 통과"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "",
+      "dependsOn": ["US-004", "US-007"]
+    }
+  ]
+}
