@@ -9,7 +9,7 @@ import {
   documentTotalSpace,
   linkTotalSpace,
 } from "./observe.js";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DEF_LIFECYCLE, LINK_TYPE } from "./vocabulary.js";
+import { DEF_LEVEL, DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DEF_LIFECYCLE, LINK_TYPE } from "./vocabulary.js";
 import { allValidCombinations } from "./taxonomy.js";
 
 describe("def_document 좌표 인코딩/디코딩", () => {
@@ -40,11 +40,12 @@ describe("def_document 좌표 인코딩/디코딩", () => {
     expect(b).not.toBe(c);
   });
 
-  it("lifecycle이 달라도 좌표는 같다 (불변 정체성)", () => {
-    const a = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
-    const b = encodeDocument({ scope: "ui", aspect: "component", depth: "specification" });
+  it("level은 좌표에 포함하지 않는다 (메타데이터)", () => {
+    // level이 달라도 같은 scope×aspect×depth면 같은 주소
+    const a = encodeDocument({ scope: "feature", aspect: "func_def", depth: "overview" });
+    const b = encodeDocument({ scope: "feature", aspect: "func_def", depth: "overview" });
     expect(a).toBe(b);
-    // lifecycle은 좌표에 포함하지 않으므로, 같은 scope×aspect×depth는 항상 같은 주소
+    // level은 frontmatter에서 파싱되지만 주소 인코딩에 사용되지 않음
   });
 
   it("존재하지 않는 entry로 인코딩하면 에러", () => {
@@ -96,7 +97,7 @@ describe("def_link 좌표 인코딩/디코딩", () => {
 });
 
 describe("주소 공간", () => {
-  it("def_document totalSpace = scope.cap × aspect.cap × depth.cap (lifecycle 제외)", () => {
+  it("def_document totalSpace = scope.cap × aspect.cap × depth.cap (level, lifecycle 제외)", () => {
     const expected = DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity;
     expect(documentTotalSpace()).toBe(expected);
   });
@@ -121,6 +122,7 @@ describe("축 capacity 규칙", () => {
 
   it("모든 축이 nextPowerOf2(entries.length * 2) 이상", () => {
     const axes = [
+      { name: "def_level", entries: DEF_LEVEL.entries, capacity: DEF_LEVEL.capacity },
       { name: "def_scope", entries: DEF_SCOPE.entries, capacity: DEF_SCOPE.capacity },
       { name: "def_aspect", entries: DEF_ASPECT.entries, capacity: DEF_ASPECT.capacity },
       { name: "def_depth", entries: DEF_DEPTH.entries, capacity: DEF_DEPTH.capacity },

@@ -1,6 +1,8 @@
 ---
 def:
   id: def-svc-search-module
+  level: leaf
+  address: def_document:v1:538
   scope: feature
   aspect: func_def
   depth: implementation
@@ -24,9 +26,16 @@ drizzle이 관리하지 않는 FTS5 VIRTUAL TABLE의 lifecycle을 독립 관리�
 
 - `SearchService` (@Global): onModuleInit에서 FTS5 테이블 CREATE IF NOT EXISTS
 - `index(docId, purpose, intent, context, caveat)`: 문서 인덱싱 (upsert 후 호출)
-- `search(query, limit)`: FTS5 MATCH 쿼리 → DocRecord[] 반환
-- SyncService가 sync 완료 후 rebuildSearchIndex() 호출 (525건 벌크)
+- `search(query, limit, offset)`: FTS5 MATCH → LIKE fallback → DocRecord[]
+- `searchCount(query)`: 검색 전체 매칭 건수 (pagination용)
+- SyncService가 sync 완료 후 rebuildSearchIndex() 호출 (549건 벌크)
 - DocsService가 `?q=` 필터 시 SearchService.search()로 위임
+
+### 토크나이저 전략
+
+- **기본**: FTS5 `trigram` 토크나이저 — 3글자 단위 토큰으로 CJK(한국어/중국어/일본어) 부분 문자열 매칭 지원
+- **fallback**: trigram 미지원 환경에서는 기본 토크나이저로 생성
+- **LIKE fallback**: FTS5 MATCH 결과가 0건이거나 실패 시 `WHERE purpose LIKE ? OR intent LIKE ? ...` 쿼리로 자동 전환
 
 ### 아키텍처 컨벤션
 

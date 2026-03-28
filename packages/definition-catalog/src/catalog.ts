@@ -58,7 +58,7 @@ export interface DefinitionCatalog {
  * axes: def_scope(16), def_aspect(64, 22 entries), def_depth(8), def_lifecycle(16), link_type(16)
  *
  * prefixes:
- *   def_document: scope(16) × aspect(64) × depth(8) = 8,192  (lifecycle은 메타데이터)
+ *   def_document: scope(16) × aspect(64) × depth(8) = 8,192  (lifecycle, level은 메타데이터)
  *   def_link:     scope(16) × aspect(64) × link_type(16) = 16,384
  *
  * data scope에 prefix_schema, axis_catalog aspect 포함 → prefix 정의 문서도 좌표 관리

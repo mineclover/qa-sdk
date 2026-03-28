@@ -23,6 +23,7 @@
 
 // ─── 타입 ────────────────────────────────────────────────
 export type {
+  DefLevel,
   DefScope,
   DefAspect,
   DefDepth,
@@ -50,6 +51,7 @@ export type {
 // ─── 축 정의 ────────────────────────────────────────────
 export type { VersionedAxis, ExplanatoryRole, AxisExplanatoryMeta } from "./vocabulary.js";
 export {
+  DEF_LEVEL,
   DEF_SCOPE,
   DEF_ASPECT,
   DEF_DEPTH,
@@ -89,17 +91,34 @@ export type { DimRef, PrefixVersionDef, PrefixMeta, PrefixDef, DefinitionCatalog
 export { DEFINITION_CATALOG } from "./catalog.js";
 
 // ─── 좌표 인코딩/디코딩 ─────────────────────────────────
-export type { DocumentCoordinate, DecodedDocument, LinkCoordinate, DecodedLink } from "./observe.js";
+export type {
+  DocumentCoordinate, DecodedDocument,
+  UniqueDocumentCoordinate, DecodedUniqueDocument,
+  LinkCoordinate, DecodedLink,
+} from "./observe.js";
 export {
   encodeDocument,
   decodeDocument,
   serializeDocumentAddress,
   parseDocumentAddress,
+  encodeUniqueDocument,
+  decodeUniqueDocument,
+  serializeUniqueDocumentAddress,
+  parseUniqueDocumentAddress,
   encodeLink,
   decodeLink,
   documentTotalSpace,
+  uniqueDocumentTotalSpace,
   linkTotalSpace,
 } from "./observe.js";
+
+// ─── 설정 파일 ─────────────────────────────────────────
+export type { DefConfig, DriftEntry } from "./def-config.js";
+export { readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath } from "./def-config.js";
+
+// ─── 유일 주소 할당 ────────────────────────────────────
+export type { AddressAssignment } from "./address-assign.js";
+export { assignUniqueAddresses, buildIdToAddressMap, buildAddressToIdMap } from "./address-assign.js";
 
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";

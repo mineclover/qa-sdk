@@ -1,6 +1,8 @@
 ---
 def:
   id: spec-analyzer-system
+  level: module
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -16,10 +18,6 @@ def:
     - target: spec-analyzer-types
       type: contains
     - target: spec-analyzer-extractor
-      type: contains
-    - target: spec-analyzer-scanner
-      type: contains
-    - target: spec-analyzer-drift
       type: contains
 ---
 # Spec Analyzer — 정적 코드 분석기
@@ -50,62 +48,17 @@ def:
 
 ## 핵심 타입 ^inputs
 
-```typescript
-/** 문서에서 추출한 선언 1건 */
-interface DeclaredSymbol {
-  name: string;                      // 함수명, 타입명, API 경로
-  kind: "function" | "type" | "endpoint" | "class";
-  marker: ContractMarkerKind;        // 어떤 마커에서 추출했는지
-  specId: string;                    // 출처 문서 ID
-  line?: number;                     // 문서 내 라인 번호
-}
+참조: `packages/spec-analyzer/src/types.ts` — DeclaredSymbol, ImplementedSymbol, DriftReport, AnalysisSummary
 
-/** 코드에서 발견된 구현 1건 */
-interface ImplementedSymbol {
-  name: string;
-  kind: "function" | "type" | "endpoint" | "class";
-  filePath: string;                  // 소스 파일 경로
-  line?: number;
-  exported: boolean;                 // export 여부
-}
-
-/** spec 1건의 drift 분석 결과 */
-interface DriftReport {
-  specId: string;
-  svc: string;
-  declared: readonly DeclaredSymbol[];       // 문서에 선언됨
-  implemented: readonly ImplementedSymbol[]; // 코드에 존재함
-  missing: readonly DeclaredSymbol[];        // 문서 O, 코드 X
-  undocumented: readonly ImplementedSymbol[];// 코드 O, 문서 X (정보용)
-  coverage: number;                          // declared 중 implemented 비율 (0~1)
-}
-
-/** 전체 분석 결과 */
-interface AnalysisSummary {
-  reports: readonly DriftReport[];
-  totalSpecs: number;
-  totalDeclared: number;
-  totalMissing: number;
-  overallCoverage: number;
-  generatedAt: string;
-}
-```
+3계층: 선언(DeclaredSymbol) + 구현(ImplementedSymbol) → gap 분석(DriftReport) → 전체 요약(AnalysisSummary)
 
 ## 퍼블릭 API ^api-surface
 
-```typescript
-/** 마크다운에서 계약 선언 추출 */
-extractDeclarations(specDir: string, filter?: { svc?: string }): DeclaredSymbol[];
+참조: `packages/spec-analyzer/src/index.ts` — 전체 export surface
 
-/** 코드에서 export 심볼 수집 */
-scanImplementations(packageDir: string): ImplementedSymbol[];
-
-/** 선언 vs 구현 gap 분석 */
-analyzeDrift(declarations: DeclaredSymbol[], implementations: ImplementedSymbol[]): DriftReport;
-
-/** 전체 분석 (scan + extract + drift) */
-analyzeAll(options: { docsDir: string; packagesDir: string; svc?: string }): AnalysisSummary;
-```
+- `extractDeclarations(markdown, specId)` — 마크다운 마커에서 선언 추출 (`packages/spec-analyzer/src/extractor.ts`)
+- `scanImplementations(packageDir)` — TS 소스에서 export 심볼 수집 (`packages/spec-analyzer/src/scanner.ts`)
+- `analyzeDrift(specId, svc, declared, implemented)` — gap 분석 (`packages/spec-analyzer/src/drift.ts`)
 
 ## CLI 인터페이스
 

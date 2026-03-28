@@ -37,13 +37,15 @@ export class DocsController {
     @Query("q") q?: string,
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
+    @Query("sort") sort?: string,
   ) {
-    const docs = this.docs.list({
+    const result = this.docs.listPaginated({
       scope, aspect, depth, lifecycle, layer, svc, tag, address, q,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
+      sort: sort as "doc_id" | "synced_at" | "synced_at_desc" | undefined,
     });
-    return { docs, total: docs.length };
+    return result;
   }
 
   @Get(":docId")

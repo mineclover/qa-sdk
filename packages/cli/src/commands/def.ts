@@ -24,8 +24,9 @@
  *   qa-sdk def audit
  */
 
-import { join } from "node:path";
+import { join, resolve, relative } from "node:path";
 import { readFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import {
   scanAndBuild,
   extractFrontmatter,
@@ -37,6 +38,7 @@ import {
   LINK_TYPE_RULES,
   type ScanResult,
   type DefDataSource,
+  type DefDoc,
 } from "definition-catalog";
 import { createDataSource, type DataSourceOptions } from "../data-sources/index.js";
 
@@ -80,6 +82,7 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
     depth: flags["depth"],
     lifecycle: flags["lifecycle"],
     layer: flags["layer"],
+    level: flags["level"],
     svc: flags["svc"],
     tag: flags["tag"],
     q: flags["q"],
@@ -110,6 +113,7 @@ async function cmdGet(source: DefDataSource, docId: string) {
   const doc = await source.get(docId);
   if (!doc) { console.log(`문서 "${docId}" 없음`); return; }
   console.log(`[${source.mode}] ${doc.docId}`);
+  if (doc.level && doc.level !== "leaf") console.log(`  level:     ${doc.level}`);
   console.log(`  scope:     ${doc.scope}/${doc.aspect}`);
   console.log(`  depth:     ${doc.depth}`);
   console.log(`  lifecycle: ${doc.lifecycle}`);
@@ -476,8 +480,17 @@ async function legacyAudit() {
   // 그래프 검증
   const validation = validateGraph(result.registry);
 
+  // level 분포
+  const byLevel: Record<string, number> = {};
+  for (const entry of reg.all()) {
+    if (entry.lifecycle === "deprecated") continue;
+    const level = entry.level ?? "leaf";
+    byLevel[level] = (byLevel[level] || 0) + 1;
+  }
+
   console.log(`=== 품질 리포트 ===`);
   console.log(`문서 ${total}건 | purpose ${withPurpose} | links ${withLinks} | tags ${withTags}`);
+  console.log(`level: ${Object.entries(byLevel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
 
   if (validation.issues.length > 0) {
     const byType: Record<string, typeof validation.issues[number][]> = {};
@@ -507,7 +520,7 @@ export async function cliDef(args: string[]): Promise<void> {
   const rest = positional.slice(1);
 
   // DataSource 기반 커맨드
-  const dsCommands = new Set(["list", "get", "children", "parent", "incoming", "validate", "search", "stats", "impact", "check", "audit-db", "overview"]);
+  const dsCommands = new Set(["list", "get", "children", "parent", "incoming", "validate", "search", "stats", "impact", "check", "audit-db", "overview", "find-by-file"]);
   if (dsCommands.has(sub)) {
     let source: DefDataSource;
     try {
@@ -531,6 +544,7 @@ export async function cliDef(args: string[]): Promise<void> {
         case "check": return await cmdCheck(source, rest[0]);
         case "audit-db": return await cmdAuditDb(source);
         case "overview": return await cmdOverview(source);
+        case "find-by-file": return await cmdFindByFile(source, rest[0] ?? "");
       }
     } finally {
       if ("close" in source && typeof source.close === "function") (source as { close(): void }).close();
@@ -556,7 +570,7 @@ export async function cliDef(args: string[]): Promise<void> {
       console.log(`qa-sdk def — 문서 관리
 
 DataSource 커맨드 (DB/서버 자동 감지, --local/--server 선택 가능):
-  list [--scope=X] [--layer=Y] [--tag=Z] [--q=검색어]  목록 조회
+  list [--scope=X] [--layer=Y] [--level=Z] [--tag=T] [--q=검색어]  목록 조회
   get <ID>          단건 조회
   children <ID>     자식 문서
   parent <ID>       부모 문서
@@ -566,6 +580,7 @@ DataSource 커맨드 (DB/서버 자동 감지, --local/--server 선택 가능):
   stats             분포 통계
   impact <ID>       변경 영향 분석
   check <ID>        문서 정합성 점검
+  find-by-file <경로>  코드 파일 → 관련 문서 탐색
 
 레거시 (파일 스캔 기반):
   scan              파일 스캔
@@ -575,8 +590,108 @@ DataSource 커맨드 (DB/서버 자동 감지, --local/--server 선택 가능):
   audit             품질 리포트 + 그래프 검증
 
 참조:
-  link-rules        LinkType 사용 규칙 조회`);
+  link-rules        LinkType 사용 규칙 조회
+
+코드 → 문서 탐색:
+  1. 코드 파일의 패키지 확인 (package.json name)
+  2. def list --svc=<패키지명>  → 관련 문서 목록
+  3. def context <문서ID>       → 상위/하위/의존 컨텍스트
+  4. def search <키워드>        → 전문 검색`);
   }
+}
+
+async function cmdFindByFile(source: DefDataSource, filePath: string) {
+  const root = getRootDir();
+  const absPath = resolve(root, filePath);
+  const relPath = relative(root, absPath);
+
+  // 1. packages/ 디렉토리에서 패키지 이름 추출
+  const match = relPath.match(/^packages\/([^/]+)\//);
+  if (!match) {
+    console.log(`"${relPath}"는 packages/ 디렉토리에 속하지 않습니다.`);
+    return;
+  }
+
+  const pkgDir = match[1]!;
+  const pkgJsonPath = join(root, "packages", pkgDir, "package.json");
+
+  let pkgName = pkgDir;
+  if (existsSync(pkgJsonPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+      pkgName = (pkg.name as string ?? pkgDir).replace(/^@qa-sdk\//, "");
+    } catch { /* fallback to dir name */ }
+  }
+
+  console.log(`파일: ${relPath}`);
+  console.log(`패키지: ${pkgDir} (${pkgName})`);
+  console.log("");
+
+  // 패키지 디렉토리 → svc 별칭 매핑 (패키지명과 svc가 다른 경우)
+  const SVC_ALIASES: Record<string, string[]> = {
+    "cli": ["qa-sdk-cli"],
+    "shop-web": ["shopping-web"],
+    "definition-catalog": ["definition-service"],
+    "definition-client": ["definition-service"],
+    "motion-content": ["motion-workspace-service"],
+    "motion-workspace": ["motion-workspace-service"],
+    "motion-workspace-client": ["motion-workspace-service"],
+    "motion-content-editor": ["motion-workspace-service"],
+  };
+
+  // 2. svc 필드로 문서 검색 — 패키지 디렉토리명, 패키지 이름, 별칭 모두 시도
+  const candidates = new Set([pkgDir, pkgName, ...(SVC_ALIASES[pkgDir] ?? [])]);
+  let docs: DefDoc[] = [];
+
+  for (const svc of candidates) {
+    const found = await source.list({ svc, limit: 100 });
+    for (const d of found) {
+      if (!docs.some(existing => existing.docId === d.docId)) {
+        docs.push(d);
+      }
+    }
+  }
+
+  if (docs.length === 0) {
+    console.log(`svc="${pkgDir}" 또는 "${pkgName}"에 연결된 문서가 없습니다.`);
+    console.log(`  → frontmatter에 svc: ${pkgDir} 를 추가하세요.`);
+    return;
+  }
+
+  // 3. 파일 경로에서 모듈 힌트 추출
+  const fileName = relPath.split("/").pop()?.replace(/\.tsx?$/, "") ?? "";
+  const fileHints = fileName.split(/[-_.]/).filter(h => h.length > 2);
+
+  // 4. 결과 출력 — 관련도 순서 (파일명과 문서 ID가 겹치는 것 우선)
+  docs.sort((a, b) => {
+    const aRelevance = fileHints.some(h => a.docId.includes(h)) ? 1 : 0;
+    const bRelevance = fileHints.some(h => b.docId.includes(h)) ? 1 : 0;
+    return bRelevance - aRelevance;
+  });
+
+  console.log(`관련 문서 ${docs.length}건:`);
+  for (const d of docs) {
+    const levelStr = d.level && d.level !== "leaf" ? `[${d.level}] ` : "";
+    const relevance = fileHints.some(h => d.docId.includes(h)) ? " ← 파일명 매칭" : "";
+    console.log(`  ${levelStr}${d.docId}  ${d.scope}/${d.aspect}  ${d.depth}${relevance}`);
+    if (d.purpose) {
+      console.log(`    ${d.purpose.slice(0, 100)}`);
+    }
+  }
+
+  // 5. 코드 심볼 요약
+  try {
+    const source = readFileSync(absPath, "utf-8");
+    const exports = source.match(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+(\w+)/gm);
+    if (exports && exports.length > 0) {
+      console.log(`\n코드 export (${exports.length}건):`);
+      for (const exp of exports.slice(0, 10)) {
+        const name = exp.replace(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+/, "");
+        console.log(`  ${name}`);
+      }
+      if (exports.length > 10) console.log(`  ... 외 ${exports.length - 10}건`);
+    }
+  } catch { /* 파일 읽기 실패 무시 */ }
 }
 
 function cmdLinkRules() {

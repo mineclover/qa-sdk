@@ -45,17 +45,33 @@ function rowToDoc(row: Record<string, unknown>): DocRecord {
 export class SearchService implements OnModuleInit {
   private stmtUpsert!: Database.Statement;
   private stmtDelete!: Database.Statement;
+  private ftsMode: "trigram" | "default" = "default";
 
   constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
 
   /** FTS5 테이블 생성 — drizzle 마이그레이션과 독립 */
   onModuleInit() {
-    this.db.exec(`
-      CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-        doc_id, purpose, intent, context, caveat,
-        content='documents', content_rowid='rowid'
-      )
-    `);
+    // trigram 토크나이저: CJK(한국어/중국어/일본어) 검색 지원
+    // trigram은 3글자 단위로 토큰을 생성하여 부분 문자열 매칭 가능
+    try {
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+          doc_id, purpose, intent, context, caveat,
+          content='documents', content_rowid='rowid',
+          tokenize='trigram'
+        )
+      `);
+      this.ftsMode = "trigram";
+    } catch {
+      // trigram 미지원 환경 fallback (구버전 SQLite)
+      this.db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+          doc_id, purpose, intent, context, caveat,
+          content='documents', content_rowid='rowid'
+        )
+      `);
+      this.ftsMode = "default";
+    }
 
     this.stmtUpsert = this.db.prepare(
       "INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat) VALUES (?, ?, ?, ?, ?)",
@@ -64,7 +80,7 @@ export class SearchService implements OnModuleInit {
       "INSERT INTO documents_fts (documents_fts, doc_id, purpose, intent, context, caveat) VALUES ('delete', ?, ?, ?, ?, ?)",
     );
 
-    logger.info("FTS5 search index 준비 완료");
+    logger.info({ tokenizer: this.ftsMode }, "FTS5 search index 준비 완료");
   }
 
   /** 문서 인덱싱 (upsert 후 호출) */
@@ -90,13 +106,57 @@ export class SearchService implements OnModuleInit {
   }
 
   /** 전문 검색 */
-  search(query: string, limit = 50): DocRecord[] {
+  search(query: string, limit = 50, offset = 0): DocRecord[] {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT d.* FROM documents d
+        JOIN documents_fts fts ON fts.doc_id = d.doc_id
+        WHERE documents_fts MATCH ?
+        LIMIT ? OFFSET ?
+      `);
+      const results = (stmt.all(query, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
+      if (results.length > 0) return results;
+    } catch {
+      // FTS MATCH 실패 시 LIKE fallback
+    }
+
+    // LIKE fallback — FTS5 매칭 실패 또는 결과 없을 때 (한국어 등)
+    return this.searchByLike(query, limit, offset);
+  }
+
+  /** 검색 결과 전체 건수 */
+  searchCount(query: string): number {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT COUNT(*) as cnt FROM documents d
+        JOIN documents_fts fts ON fts.doc_id = d.doc_id
+        WHERE documents_fts MATCH ?
+      `);
+      const row = stmt.get(query) as { cnt: number };
+      if (row.cnt > 0) return row.cnt;
+    } catch {
+      // FTS MATCH 실패 시 LIKE fallback
+    }
+    return this.searchCountByLike(query);
+  }
+
+  /** LIKE 기반 검색 (CJK fallback) */
+  private searchByLike(query: string, limit: number, offset: number): DocRecord[] {
+    const pattern = `%${query}%`;
     const stmt = this.db.prepare(`
-      SELECT d.* FROM documents d
-      JOIN documents_fts fts ON fts.doc_id = d.doc_id
-      WHERE documents_fts MATCH ?
-      LIMIT ?
+      SELECT * FROM documents
+      WHERE purpose LIKE ? OR intent LIKE ? OR context LIKE ? OR caveat LIKE ? OR doc_id LIKE ?
+      ORDER BY doc_id LIMIT ? OFFSET ?
     `);
-    return (stmt.all(query, limit) as Record<string, unknown>[]).map(rowToDoc);
+    return (stmt.all(pattern, pattern, pattern, pattern, pattern, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
+  }
+
+  private searchCountByLike(query: string): number {
+    const pattern = `%${query}%`;
+    const stmt = this.db.prepare(`
+      SELECT COUNT(*) as cnt FROM documents
+      WHERE purpose LIKE ? OR intent LIKE ? OR context LIKE ? OR caveat LIKE ? OR doc_id LIKE ?
+    `);
+    return (stmt.get(pattern, pattern, pattern, pattern, pattern) as { cnt: number }).cnt;
   }
 }

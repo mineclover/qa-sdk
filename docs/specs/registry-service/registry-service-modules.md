@@ -30,6 +30,8 @@ def:
       type: contains
     - target: registry-seed-module
       type: contains
+    - target: registry-ui
+      type: contains
 ---
 # Registry Service Nest 모듈 구성
 

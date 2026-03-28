@@ -1,6 +1,7 @@
 ---
 def:
   id: df-interface-group
+  level: module
   address: def_document:v1:3224
   scope: interface
   aspect: api_contract

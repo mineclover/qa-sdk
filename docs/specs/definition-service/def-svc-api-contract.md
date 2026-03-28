@@ -1,6 +1,7 @@
 ---
 def:
   id: def-svc-api-contract
+  level: leaf
   address: def_document:v1:3225
   scope: interface
   aspect: api_contract
@@ -25,7 +26,7 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 
 | Method | Path | 설명 |
 |--------|------|------|
-| GET | `/docs` | 목록 (scope, aspect, depth, lifecycle, layer, svc, tag, address, q, limit, offset) |
+| GET | `/docs` | 목록 (scope, aspect, depth, lifecycle, layer, svc, tag, address, q, limit, offset, sort) |
 | GET | `/docs/:id` | 단건 조회 |
 | PATCH | `/docs/:id` | 메타데이터 업데이트 (AxisRegistry 검증 + address 재계산) |
 | GET | `/docs/:id/children` | contains 자식 |
@@ -74,6 +75,31 @@ type Doc {
   incomingLinks: [IncomingLink!]!  # lazy — 역링크
 }
 ```
+
+### GET /docs 응답 형식
+
+```json
+{
+  "docs": [{ "docId": "...", "scope": "...", ... }],
+  "total": 151,   // 필터 조건 전체 매칭 건수 (limit 무관)
+  "offset": 0,    // 현재 오프셋
+  "limit": 50     // 요청된 페이지 크기
+}
+```
+
+### sort 파라미터
+
+| 값 | 정렬 기준 |
+|---|---|
+| `doc_id` (기본) | 문서 ID 알파벳순 |
+| `synced_at` | 동기화 시각 오름차순 |
+| `synced_at_desc` | 동기화 시각 내림차순 (최근 변경 우선) |
+
+### 검색 (q 파라미터)
+
+- FTS5 trigram 토크나이저로 한국어/영어 부분 문자열 매칭
+- FTS5 결과 0건 시 LIKE fallback 자동 전환
+- 검색 대상: purpose, intent, context, caveat, doc_id
 
 ### 에러 코드
 

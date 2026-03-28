@@ -1,6 +1,7 @@
 ---
 def:
   id: browser-runtime-system
+  level: module
   address: def_document:v1:3224
   scope: interface
   aspect: api_contract

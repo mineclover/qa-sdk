@@ -1,6 +1,7 @@
 ---
 def:
   id: platform-demo-api-spec
+  level: module
   address: def_document:v1:3224
   scope: interface
   aspect: api_contract
@@ -12,6 +13,8 @@ def:
   links:
     - target: motion-content-glossary
       type: refines
+    - target: platform-demo-api
+      type: contains
 ---
 # Platform Demo API
 

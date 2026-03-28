@@ -102,6 +102,17 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
       // 문서/prefix 의도/소비율 관리 — 이벤트 생산 없음
       ownedPrefixes: [],
       consumedPrefixes: ["service"] },
+    { serviceId: "motion-workspace-service", name: "워크스페이스 서비스", tier: "backend", team: "frontend", url: "http://localhost:3900",
+      urls: { dev: "http://localhost:3900" },
+      ownedPrefixes: [],
+      consumedPrefixes: ["service"] },
+    // ── 프론트엔드 (UI) ──
+    { serviceId: "registry-ui", name: "레지스트리 UI", tier: "frontend", team: "platform",
+      ownedPrefixes: [],
+      consumedPrefixes: ["service"] },
+    { serviceId: "docs-explorer", name: "문서 탐색기", tier: "frontend", team: "platform",
+      ownedPrefixes: [],
+      consumedPrefixes: ["service"] },
     // ── 모니터링 ──
     { serviceId: "prometheus", name: "Prometheus", tier: "infra", team: "devops", url: "http://localhost:9090",
       urls: { dev: "http://localhost:9090" },

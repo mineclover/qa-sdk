@@ -51,6 +51,15 @@ export interface DocListFilter {
   q?: string;
   limit?: number;
   offset?: number;
+  sort?: "doc_id" | "synced_at" | "synced_at_desc";
+}
+
+/** 페이지네이션 포함 목록 결과 */
+export interface DocListResult {
+  docs: import("./types.js").DocRecord[];
+  total: number;
+  offset: number;
+  limit: number;
 }
 
 /** 슬라이스 의도 저장소 */

@@ -1,6 +1,7 @@
 ---
 def:
   id: def-svc-docs-module
+  level: leaf
   address: def_document:v1:538
   scope: feature
   aspect: func_def
@@ -31,8 +32,15 @@ def:
 
 | 기능 | 메서드 | 특징 |
 |------|--------|------|
-| 확장 필터 | list(scope, aspect, depth, layer, svc, tag, q, limit, offset) | FTS5 전문검색 포함 |
+| 확장 필터 | list(scope, aspect, depth, layer, svc, tag, q, limit, offset, sort) | FTS5 전문검색 포함 |
+| 페이지네이션 조회 | listPaginated(filter) → `{docs, total, offset, limit}` | COUNT(*) 별도 실행, 정확한 total |
 | 메타데이터 변경 | updateMetadata(docId, patch) | address 자동 재계산, version +1 |
 | 계층 탐색 | getChildren, getParent | document_links JOIN |
 | 역링크 | getIncomingLinks, getOutgoingLinks | edge 테이블 조회 |
 | 원자적 link/tag | addLink, removeLink, addTag, removeTag | read-then-write 없이 단일 연산 |
+
+### SqlDocStore 확장
+
+- `count(filter)`: 필터 조건에 매칭되는 전체 건수
+- `buildWhereClause(filter)`: WHERE 절 생성 (list + count 공유)
+- `resolveOrderBy(sort)`: 정렬 옵션 — `doc_id`(기본), `synced_at`, `synced_at_desc`

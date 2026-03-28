@@ -1,6 +1,7 @@
 ---
 def:
   id: definition-catalog-spec
+  level: unit
   address: def_document:v1:2673
   scope: data
   aspect: domain_data
@@ -12,6 +13,8 @@ def:
   links:
     - target: system-concepts
       type: depends_on
+    - target: definition-taxonomy
+      type: contains
 ---
 
 # Definition Catalog — 소프트웨어 정의 좌표계

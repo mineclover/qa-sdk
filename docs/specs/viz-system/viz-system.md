@@ -1,6 +1,7 @@
 ---
 def:
   id: viz-system
+  level: unit
   address: def_document:v1:8
   scope: ui
   aspect: component

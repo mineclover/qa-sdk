@@ -1,6 +1,7 @@
 ---
 def:
   id: dim-ops-system
+  level: module
   address: def_document:v1:536
   scope: feature
   aspect: func_def

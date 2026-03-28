@@ -17,6 +17,7 @@ import type {
 function rowToDoc(row: Record<string, unknown>): DefDoc {
   return {
     docId: row["doc_id"] as string,
+    level: (row["level"] as string) || undefined,
     scope: row["scope"] as string,
     aspect: row["aspect"] as string,
     depth: row["depth"] as string,
@@ -68,6 +69,7 @@ export class LocalDataSource implements DefDataSource {
     if (filter?.depth) { conditions.push("depth = ?"); params.push(filter.depth); }
     if (filter?.lifecycle) { conditions.push("lifecycle = ?"); params.push(filter.lifecycle); }
     if (filter?.layer) { conditions.push("layer = ?"); params.push(filter.layer); }
+    if (filter?.level) { conditions.push("level = ?"); params.push(filter.level); }
     if (filter?.svc) { conditions.push("svc = ?"); params.push(filter.svc); }
     if (filter?.address) { conditions.push("address = ?"); params.push(filter.address); }
     if (filter?.tag) { conditions.push("tags_json LIKE ?"); params.push(`%"${filter.tag}"%`); }

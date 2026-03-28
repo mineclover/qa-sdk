@@ -1,6 +1,7 @@
 ---
 def:
   id: permission-system
+  level: unit
   address: def_document:v1:2144
   scope: constraint
   aspect: biz_constraint

@@ -26,6 +26,7 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import type {
+  DefLevel,
   DefScope,
   DefAspect,
   DefDepth,
@@ -52,6 +53,8 @@ export interface FrontmatterDef {
   readonly id: string;
   /** 좌표 주소 — def_document:v1:<N> (파일 소유, DB에서도 계산) */
   readonly address?: string;
+  /** 분해 레벨 — 전체-부분 구조에서의 위치 (기본: leaf) */
+  readonly level: DefLevel;
   readonly scope: DefScope;
   readonly aspect: DefAspect;
   readonly depth: DefDepth;
@@ -243,6 +246,7 @@ function parseScalar(value: string): string | number | boolean {
 
 // ─── Frontmatter → DefinitionEntryInput 변환 ────────────
 
+const VALID_LEVELS = new Set(["system", "area", "unit", "module", "leaf"]);
 const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface"]);
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
@@ -306,6 +310,10 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   // svc (서비스 레지스트리 연결)
   const svc = typeof d.svc === "string" ? d.svc : undefined;
 
+  // level (분해 레벨 — 선택, 기본 "leaf")
+  const rawLevel = d.level;
+  const level = typeof rawLevel === "string" && VALID_LEVELS.has(rawLevel) ? rawLevel : "leaf";
+
   // layer (존재론적 계층 — 선택, 기본 없음)
   const layer = typeof d.layer === "string" && VALID_LAYERS.has(d.layer) ? d.layer as DefLayer : undefined;
 
@@ -315,6 +323,7 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   return {
     id: id as string,
     ...(address ? { address } : {}),
+    level: level as DefLevel,
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
     depth: depth as DefDepth,
@@ -407,6 +416,7 @@ export async function scanAndBuild(
       registry.register({
         id: def.id,
         title: fm.body.match(/^#\s+(.+)/m)?.[1] ?? def.id,
+        level: def.level,
         scope: def.scope,
         aspect: def.aspect,
         depth: def.depth,

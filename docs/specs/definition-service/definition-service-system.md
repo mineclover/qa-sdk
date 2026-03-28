@@ -1,6 +1,7 @@
 ---
 def:
   id: definition-service-system
+  level: unit
   address: def_document:v1:536
   scope: feature
   aspect: func_def
@@ -27,6 +28,8 @@ def:
     - target: def-svc-constraints
       type: contains
     - target: def-svc-search-module
+      type: contains
+    - target: docs-explorer
       type: contains
 ---
 # Definition Service — 시스템 개요

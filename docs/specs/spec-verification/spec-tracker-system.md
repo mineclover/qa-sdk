@@ -1,6 +1,8 @@
 ---
 def:
   id: spec-tracker-system
+  level: module
+  address: def_document:v1:537
   scope: feature
   aspect: func_def
   depth: specification
@@ -46,74 +48,24 @@ def:
 
 ## 핵심 타입 ^inputs
 
-```typescript
-/** 계약 증거 1건 — 테스트 또는 런타임에서 수집 */
-interface ContractEvidence {
-  specId: string;                    // definition-catalog 문서 ID
-  marker?: ContractMarkerKind;       // inputs, precondition 등 (선택)
-  status: "pass" | "fail" | "skip";
-  source: "test" | "runtime";
-  testFile?: string;                 // 테스트 파일 경로
-  testName?: string;                 // 테스트 이름
-  timestamp: string;                 // ISO-8601
-}
+참조: `packages/spec-tracker/src/types.ts` — ContractEvidence, ContractReport, VerificationSummary
 
-/** specId별 집계 리포트 */
-interface ContractReport {
-  specId: string;
-  evidences: number;                 // 총 증거 수
-  passed: number;
-  failed: number;
-  skipped: number;
-  markers: Record<string, { total: number; passed: number; failed: number }>;
-  coverage: number;                  // 0~1 (passed / (passed + failed))
-  lastVerified: string;              // 가장 최근 증거 시각
-}
-
-/** 전체 리포트 */
-interface VerificationSummary {
-  reports: readonly ContractReport[];
-  totalSpecs: number;
-  verifiedSpecs: number;             // 1건 이상 evidence가 있는 spec
-  fullyPassed: number;               // failed=0인 spec
-  generatedAt: string;
-}
-```
+3계층: 증거(ContractEvidence) → specId별 집계(ContractReport) → 전체 요약(VerificationSummary)
 
 ## 퍼블릭 API ^api-surface
 
-```typescript
-/** 수집기 생성 */
-createSpecTracker(options?: { autoSync?: boolean }): SpecTracker;
+참조: `packages/spec-tracker/src/index.ts` — 전체 export surface
 
-/** vitest describe/it에 연결하는 헬퍼 */
-spec(specId: string): { describe: typeof describe; it: typeof it };
-
-/** 수동 증거 기록 */
-tracker.record(evidence: ContractEvidence): void;
-
-/** specId별 리포트 집계 */
-tracker.report(specIds?: string[]): VerificationSummary;
-
-/** definition-service에 결과 전송 */
-tracker.sync(serviceUrl: string): Promise<void>;
-```
+- `SpecCollector` — 인메모리 증거 수집기 (`packages/spec-tracker/src/collector.ts`)
+- `generateReport()` — 수집된 증거를 specId별로 집계 (`packages/spec-tracker/src/reporter.ts`)
+- `spec(specId)` — vitest describe/it 래퍼 (`packages/spec-tracker/src/vitest-adapter.ts`)
+- `getGlobalCollector()` — 프로세스 글로벌 수집기
 
 ## 사용 예시
 
-```typescript
-import { spec } from "spec-tracker";
+참조: `packages/spec-tracker/src/spec-tracker.test.ts` — 전체 사용 패턴
 
-const { describe, it } = spec("registry-api");
-
-describe("POST /prefixes", () => {
-  it("prefix를 등록한다", async () => {
-    // 이 테스트가 통과하면 registry-api spec의 증거로 기록
-    const res = await api.post("/prefixes", body);
-    expect(res.status).toBe(201);
-  });
-});
-```
+기본 패턴: `spec(specId)` → `s.describe()` / `s.it()` / `s.marker("inputs").it()`
 
 ## 제약 조건 ^constraint
 

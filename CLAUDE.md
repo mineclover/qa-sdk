@@ -272,7 +272,39 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 
 ## Definition 시스템 (좌표 기반 문서 관리 체계)
 
-좌표계(scope×aspect×depth)로 문서를 분류하고, 소비 방식(상수/구현/분기/UX/비즈니스)으로 관점을 분해한다. 하나의 서비스를 여러 scope로 해석(상태→state, 기능→feature, 흐름→flow, 제약→constraint, API→interface)하여 중복 없이 식별 가능한 문서 체계를 구성. DB가 메타데이터 SSOT, 파일이 본문 SSOT. 상세: `docs/definition-system-philosophy.md`
+좌표계(scope×aspect×depth)로 문서를 분류하고, 분해 레벨(level)로 전체-부분 구조에서의 위치를 표현한다. DB가 메타데이터 SSOT, 파일이 본문 SSOT. 상세: `docs/definition-system-philosophy.md`
+
+### 분해 레벨 (DefLevel) — "이것은 어떤 단위인가"
+
+scope보다 상위 개념. 먼저 "어떤 단위인가"가 결정되고, 그 안에서 scope가 의미를 가진다. **좌표에 인코딩하지 않음** (메타데이터, lifecycle과 동일 취급). 분해 시 변할 수 있으므로 주소 불변성 보존.
+
+| level | 의미 | 예시 | scope 동작 |
+|---|---|---|---|
+| `system` | 전체 시스템 | system-root | 무의미 |
+| `area` | 대분류 영역 | system-infra, system-design-tools | 불안정 |
+| `unit` | 독립 단위 | ingest-system, dkg-system | 작동 시작 |
+| `module` | 구성 요소 | ingest-api-system, gate-engine-group | 잘 동작 |
+| `leaf` | 개별 명세 (기본값) | record-spec, trace-spec | 완전 작동 |
+
+- module은 **재귀 가능** — module이 하위 module을 포함할 수 있음
+- leaf가 나중에 분해되면 → module로 변경 (주소 불변)
+- frontmatter에 `level: unit` 선언. 없으면 기본값 `leaf`
+
+### 좌표 주소 (이중 관리)
+
+| 역할 | 필드 | 특성 |
+|------|------|------|
+| **불변 식별자** | `address` (정수) | 한번 부여 후 불변. 링크/참조의 앵커 |
+| **표시 라벨** | `id` (kebab-case) | 사람이 읽는 이름. 변경 가능 |
+
+```
+v1 (분류): scope(16) × aspect(64) × depth(8) = 8,192 (유형 분류용)
+v2 (유일): scope(16) × aspect(64) × depth(8) × seq(128) = 1,048,576 (문서별 유일)
+```
+
+좌표에 포함: scope, aspect, depth, seq(v2)
+메타데이터: level, lifecycle, layer, tags, svc
+config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별 해시
 
 ### LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
 

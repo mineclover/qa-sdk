@@ -3,7 +3,7 @@ import type Database from "better-sqlite3";
 import { DATABASE } from "../../database.module.js";
 import { SqlDocStore } from "../../stores/doc-store.js";
 import type { DocRecord, DocHistoryRecord } from "../../core/types.js";
-import type { DocStore, DocMetadataUpdate, DocListFilter } from "../../core/interfaces.js";
+import type { DocStore, DocMetadataUpdate, DocListFilter, DocListResult } from "../../core/interfaces.js";
 import { SearchService } from "../search/search.service.js";
 
 @Injectable()
@@ -25,9 +25,25 @@ export class DocsService {
   list(filter?: DocListFilter): DocRecord[] {
     // 전문 검색은 SearchService로 위임
     if (filter?.q && this.search) {
-      return this.search.search(filter.q, filter?.limit ?? 50);
+      return this.search.search(filter.q, filter?.limit ?? 50, filter?.offset ?? 0);
     }
     return this.store.list(filter);
+  }
+
+  /** 페이지네이션 포함 목록 조회 */
+  listPaginated(filter?: DocListFilter): DocListResult {
+    const limit = filter?.limit ?? 500;
+    const offset = filter?.offset ?? 0;
+
+    if (filter?.q && this.search) {
+      const docs = this.search.search(filter.q, limit, offset);
+      const total = this.search.searchCount(filter.q);
+      return { docs, total, offset, limit };
+    }
+
+    const docs = this.store.list(filter);
+    const total = this.store.count(filter);
+    return { docs, total, offset, limit };
   }
 
   get(docId: string): DocRecord | null {

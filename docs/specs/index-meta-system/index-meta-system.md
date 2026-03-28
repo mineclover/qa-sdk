@@ -1,6 +1,7 @@
 ---
 def:
   id: index-meta-system
+  level: unit
   address: def_document:v1:536
   scope: feature
   aspect: func_def
@@ -42,6 +43,8 @@ def:
       type: depends_on
     - target: wi-system
       type: depends_on
+    - target: address-index
+      type: contains
 ---
 
 ## 목적 ^purpose

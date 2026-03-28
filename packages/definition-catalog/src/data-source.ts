@@ -8,6 +8,7 @@
 /** 문서 메타데이터 (DB 기준) */
 export interface DefDoc {
   docId: string;
+  level?: string;
   scope: string;
   aspect: string;
   depth: string;
@@ -38,6 +39,7 @@ export interface DefListFilter {
   depth?: string;
   lifecycle?: string;
   layer?: string;
+  level?: string;
   svc?: string;
   tag?: string;
   address?: string;

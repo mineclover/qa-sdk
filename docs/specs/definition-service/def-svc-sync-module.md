@@ -1,6 +1,7 @@
 ---
 def:
   id: def-svc-sync-module
+  level: leaf
   address: def_document:v1:1074
   scope: flow
   aspect: process_flow

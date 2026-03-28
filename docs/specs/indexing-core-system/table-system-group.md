@@ -1,6 +1,7 @@
 ---
 def:
   id: table-system-group
+  level: module
   address: def_document:v1:2672
   scope: data
   aspect: domain_data

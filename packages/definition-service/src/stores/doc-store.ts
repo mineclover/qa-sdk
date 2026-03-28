@@ -252,7 +252,24 @@ export class SqlDocStore implements DocStore {
   }
 
   list(filter?: DocListFilter): DocRecord[] {
+    const { where, params } = this.buildWhereClause(filter);
+    const limit = filter?.limit ?? 500;
+    const offset = filter?.offset ?? 0;
+    const orderBy = this.resolveOrderBy(filter?.sort);
+    const stmt = this.db.prepare(`SELECT * FROM documents ${where} ${orderBy} LIMIT ? OFFSET ?`);
+    const rows = stmt.all(...params, limit, offset) as Record<string, unknown>[];
+    return rows.map(rowToDoc);
+  }
 
+  /** 필터 조건에 매칭되는 전체 건수 (pagination용) */
+  count(filter?: DocListFilter): number {
+    const { where, params } = this.buildWhereClause(filter);
+    const stmt = this.db.prepare(`SELECT COUNT(*) as cnt FROM documents ${where}`);
+    const row = stmt.get(...params) as { cnt: number };
+    return row.cnt;
+  }
+
+  private buildWhereClause(filter?: DocListFilter): { where: string; params: unknown[] } {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
@@ -264,17 +281,20 @@ export class SqlDocStore implements DocStore {
     if (filter?.svc) { conditions.push("svc = ?"); params.push(filter.svc); }
     if (filter?.address) { conditions.push("address = ?"); params.push(filter.address); }
     if (filter?.tag) {
-      // JSON 배열 내 태그 검색
       conditions.push("tags_json LIKE ?");
       params.push(`%"${filter.tag}"%`);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    const limit = filter?.limit ?? 500;
-    const offset = filter?.offset ?? 0;
-    const stmt = this.db.prepare(`SELECT * FROM documents ${where} ORDER BY doc_id LIMIT ? OFFSET ?`);
-    const rows = stmt.all(...params, limit, offset) as Record<string, unknown>[];
-    return rows.map(rowToDoc);
+    return { where, params };
+  }
+
+  private resolveOrderBy(sort?: string): string {
+    switch (sort) {
+      case "synced_at": return "ORDER BY synced_at ASC";
+      case "synced_at_desc": return "ORDER BY synced_at DESC";
+      default: return "ORDER BY doc_id";
+    }
   }
 
   getHistory(docId: string, limit = 50): DocHistoryRecord[] {
