@@ -5,7 +5,6 @@ export { bootstrapNestApp } from "./main.js";
 export {
   createRegistryDatabaseDriver,
   createRegistryStores,
-  execDdlStatements,
 } from "./bootstrap/stores.js";
 
 // ── Service ─────────────────────────────────────────────

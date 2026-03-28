@@ -20,7 +20,8 @@
     "build": "tsc",
     "test": "vitest run",
     "start": "node dist/main.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -34,6 +35,7 @@
     "@qa-sdk/event-catalog": "workspace:*",
     "definition-catalog": "workspace:*",
     "dotenv": "^17.3.1",
+    "drizzle-orm": "1.0.0-beta.20",
     "index-meta": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "reflect-metadata": "^0.2.2",
@@ -51,6 +53,7 @@
     }
   },
   "devDependencies": {
+    "drizzle-kit": "1.0.0-beta.20",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@opentelemetry/sdk-trace-node": "^1.30.0",
