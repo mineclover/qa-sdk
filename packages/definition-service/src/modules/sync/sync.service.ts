@@ -1,35 +1,57 @@
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
+import { createLogger } from "@qa-sdk/core";
 import { DocsService } from "../docs/docs.service.js";
+import { SearchService } from "../search/search.service.js";
 import { syncDocsToDb, type SyncResult } from "../../sync/scanner.js";
 import { syncDbToFiles, type ReverseSyncResult } from "../../sync/reverse-sync.js";
 import { env } from "../../config/env.js";
+
+const logger = createLogger("definition-service");
 
 @Injectable()
 export class SyncService implements OnModuleInit {
   private lastResult: (SyncResult & { timestamp: string }) | null = null;
   private lastReverseResult: (ReverseSyncResult & { timestamp: string }) | null = null;
 
-  constructor(@Inject(DocsService) private readonly docs: DocsService) {}
+  constructor(
+    @Inject(DocsService) private readonly docs: DocsService,
+    @Inject(SearchService) private readonly search: SearchService,
+  ) {}
 
-  /** 서비스 시작 시 자동 sync (SYNC_ON_START=true) */
   async onModuleInit() {
     if (!env.SYNC_ON_START) return;
     try {
       await this.run();
-      console.log(`[sync] 시작 시 동기화 완료: created=${this.lastResult!.created}, synced=${this.lastResult!.synced}`);
+      logger.info({
+        created: this.lastResult!.created,
+        synced: this.lastResult!.synced,
+      }, "시작 시 동기화 완료");
     } catch (err) {
-      console.warn("[sync] 시작 시 동기화 실패 — 서비스는 정상 기동", err);
+      logger.warn({ error: err }, "시작 시 동기화 실패 — 서비스는 정상 기동");
     }
   }
 
-  /** file → DB 동기화 */
   async run(): Promise<SyncResult> {
     const result = await syncDocsToDb(env.DOCS_DIR, env.ROOT_DIR, this.docs.getStore());
     this.lastResult = { ...result, timestamp: new Date().toISOString() };
+
+    // sync 완료 후 검색 인덱스 재구축
+    this.rebuildSearchIndex();
+
     return result;
   }
 
-  /** DB → file 역동기화 (메타데이터를 frontmatter에 기록) */
+  /** 전체 문서 검색 인덱스 재구축 */
+  private rebuildSearchIndex() {
+    const allDocs = this.docs.list({ limit: 10000 });
+    let indexed = 0;
+    for (const doc of allDocs) {
+      this.search.index(doc.docId, doc.purpose, doc.intent, doc.context, doc.caveat);
+      indexed++;
+    }
+    logger.info({ indexed }, "검색 인덱스 재구축 완료");
+  }
+
   async runReverse(): Promise<ReverseSyncResult> {
     const result = await syncDbToFiles(env.ROOT_DIR, this.docs.getStore());
     this.lastReverseResult = { ...result, timestamp: new Date().toISOString() };

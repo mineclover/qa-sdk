@@ -54,6 +54,7 @@ export async function syncDbToFiles(
       tags: doc.tags,
       links: doc.links,
       svc: doc.svc,
+      address: doc.address,
     };
 
     try {

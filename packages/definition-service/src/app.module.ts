@@ -1,7 +1,10 @@
 import { Module } from "@nestjs/common";
+import { GraphQLModule } from "@nestjs/graphql";
+import { MercuriusDriver, type MercuriusDriverConfig } from "@nestjs/mercurius";
 import { DatabaseModule } from "./database.module.js";
 import { HealthController } from "./health.controller.js";
 import { AxisRegistry } from "./core/axis-registry.js";
+import { AXIS_REGISTRY } from "./core/tokens.js";
 import { env } from "./config/env.js";
 import { PrefixesModule } from "./modules/prefixes/prefixes.module.js";
 import { DocsModule } from "./modules/docs/docs.module.js";
@@ -10,12 +13,19 @@ import { ConsumptionModule } from "./modules/consumption/consumption.module.js";
 import { SyncModule } from "./modules/sync/sync.module.js";
 import { GraphModule } from "./modules/graph/graph.module.js";
 import { TestsModule } from "./modules/tests/tests.module.js";
-
-export const AXIS_REGISTRY = "AXIS_REGISTRY";
+import { DefinitionGraphQLModule } from "./modules/graphql/graphql.module.js";
+import { SearchModule } from "./modules/search/search.module.js";
 
 @Module({
   imports: [
     DatabaseModule,
+    SearchModule,
+    GraphQLModule.forRoot<MercuriusDriverConfig>({
+      driver: MercuriusDriver,
+      autoSchemaFile: true,
+      graphiql: true,
+      path: "/graphql",
+    }),
     PrefixesModule,
     DocsModule,
     IntentsModule,
@@ -23,6 +33,7 @@ export const AXIS_REGISTRY = "AXIS_REGISTRY";
     SyncModule,
     GraphModule,
     TestsModule,
+    DefinitionGraphQLModule,
   ],
   controllers: [HealthController],
   providers: [

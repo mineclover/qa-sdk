@@ -1,5 +1,6 @@
 import type { DocRecord, DocHistoryRecord, SliceIntentRecord, ConsumptionSnapshot } from "../core/types.js";
-import type { DocStore, DocMetadataUpdate, IntentStore, ConsumptionStore } from "../core/interfaces.js";
+import type { DocStore, DocMetadataUpdate, DocListFilter, IntentStore, ConsumptionStore } from "../core/interfaces.js";
+import { computeDocumentAddress } from "../core/compute-address.js";
 import { decideVersion } from "../core/doc-versioner.js";
 import { diagnoseSnapshot } from "../core/consumption-diagnostics.js";
 
@@ -65,7 +66,8 @@ export class InMemoryDocStore implements DocStore {
     if (same) return { action: "unchanged", version: existing.version };
 
     const version = existing.version + 1;
-    const record: DocRecord = { ...updated, version };
+    const address = computeDocumentAddress(updated.scope, updated.aspect, updated.depth);
+    const record: DocRecord = { ...updated, address: address ?? updated.address, version };
     this.docs.set(docId, record);
 
     const lastHistory = (this.history.get(docId) ?? []).at(-1);
@@ -82,16 +84,29 @@ export class InMemoryDocStore implements DocStore {
     return this.docs.get(docId) ?? null;
   }
 
-  list(filter?: {
-    scope?: string;
-    aspect?: string;
-    lifecycle?: string;
-  }): DocRecord[] {
+  list(filter?: DocListFilter): DocRecord[] {
     let result = Array.from(this.docs.values());
     if (filter?.scope) result = result.filter((d) => d.scope === filter.scope);
     if (filter?.aspect) result = result.filter((d) => d.aspect === filter.aspect);
+    if (filter?.depth) result = result.filter((d) => d.depth === filter.depth);
     if (filter?.lifecycle) result = result.filter((d) => d.lifecycle === filter.lifecycle);
-    return result.sort((a, b) => a.docId.localeCompare(b.docId));
+    if (filter?.layer) result = result.filter((d) => d.layer === filter.layer);
+    if (filter?.svc) result = result.filter((d) => d.svc === filter.svc);
+    if (filter?.tag) result = result.filter((d) => d.tags.includes(filter.tag!));
+    if (filter?.address) result = result.filter((d) => d.address === filter.address);
+    if (filter?.q) {
+      const q = filter.q.toLowerCase();
+      result = result.filter((d) =>
+        d.purpose?.toLowerCase().includes(q) ||
+        d.intent?.toLowerCase().includes(q) ||
+        d.context?.toLowerCase().includes(q) ||
+        d.docId.toLowerCase().includes(q),
+      );
+    }
+    result = result.sort((a, b) => a.docId.localeCompare(b.docId));
+    const offset = filter?.offset ?? 0;
+    const limit = filter?.limit ?? 500;
+    return result.slice(offset, offset + limit);
   }
 
   getHistory(docId: string, limit = 50): DocHistoryRecord[] {

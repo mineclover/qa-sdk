@@ -33,13 +33,24 @@ export interface DocStore {
     patch: DocMetadataUpdate,
   ): { action: "updated" | "unchanged"; version: number } | null;
   get(docId: string): DocRecord | null;
-  list(filter?: {
-    scope?: string;
-    aspect?: string;
-    lifecycle?: string;
-  }): DocRecord[];
+  list(filter?: DocListFilter): DocRecord[];
   getHistory(docId: string, limit?: number): DocHistoryRecord[];
   getVersion(docId: string, version: number): DocHistoryRecord | null;
+}
+
+/** 확장 문서 목록 필터 */
+export interface DocListFilter {
+  scope?: string;
+  aspect?: string;
+  depth?: string;
+  lifecycle?: string;
+  layer?: string;
+  svc?: string;
+  tag?: string;
+  address?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
 }
 
 /** 슬라이스 의도 저장소 */

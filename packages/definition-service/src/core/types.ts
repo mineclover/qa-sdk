@@ -15,6 +15,8 @@ export interface DocRecord {
   svc?: string;
   /** 좌표 주소 — scope×aspect×depth로 계산 (def_document:v1:<N>) */
   address?: string;
+  /** 이 문서가 기술하는 대상 prefix (이중 좌표 참조) */
+  targetPrefix?: string;
   version: number;
   bodyHash: string;
   purpose?: string;
