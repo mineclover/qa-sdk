@@ -3,13 +3,70 @@ import {
   createMotionStageNodeTarget,
   createMotionCompositionDocument,
   createPromoGridComposition,
+  migrateCompositionV1toV2,
 } from "motion-content";
 import * as workspaceEntry from "./index.js";
 import { createMotionWorkspaceController } from "./controller.js";
 import { createMotionWorkspaceSnapshot } from "./io.js";
 
+type MotionWorkspaceControllerInstance = ReturnType<typeof createMotionWorkspaceController>;
+
+function createSceneWorkspaceComposition() {
+  const base = migrateCompositionV1toV2(createPromoGridComposition("crossfade"));
+
+  return {
+    ...base,
+    scenes: [
+      ...base.scenes,
+      {
+        id: "stinger",
+        title: "Stinger",
+        startMs: 5200,
+        durationMs: 800,
+        layers: [
+          {
+            targetId: "card-a",
+            startMs: 0,
+            durationMs: 600,
+            enter: { preset: "pop-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+    ],
+  };
+}
+
+function getLegacyComposition(controller: MotionWorkspaceControllerInstance) {
+  const composition = controller.getSession().present.composition;
+  if ("scenes" in composition) {
+    throw new Error("expected legacy composition");
+  }
+  return composition;
+}
+
+function getSceneComposition(controller: MotionWorkspaceControllerInstance) {
+  const composition = controller.getSession().present.composition;
+  if (!("scenes" in composition)) {
+    throw new Error("expected scene composition");
+  }
+  return composition;
+}
+
+function findScenePlacement(
+  controller: MotionWorkspaceControllerInstance,
+  sceneId: string,
+  targetId: string,
+) {
+  return getSceneComposition(controller)
+    .scenes
+    .find((scene) => scene.id === sceneId)
+    ?.layers.find((layer) => layer.targetId === targetId);
+}
+
 describe("motion workspace controller", () => {
-  it("loads workspace snapshots and restores persisted editor state into the internal session", () => {
+  it("loads legacy workspace snapshots into scene-based sessions while preserving editor state", () => {
     const snapshot = {
       ...createMotionWorkspaceSnapshot({
         composition: createPromoGridComposition("flash"),
@@ -28,7 +85,7 @@ describe("motion workspace controller", () => {
           accent: "#445566",
           transitionStyle: "flash",
         },
-        selection: { kind: "sequence", id: "cards" } as const,
+        selection: { kind: "layer", id: "headline" } as const,
         viewport: {
           zoom: 1.75,
           scrollLeftMs: 240,
@@ -37,7 +94,7 @@ describe("motion workspace controller", () => {
         loop: true,
         playbackRate: 1.25,
       },
-      revision: 4,
+      globalRevision: 4,
     };
 
     const controller = createMotionWorkspaceController({
@@ -46,15 +103,48 @@ describe("motion workspace controller", () => {
 
     const loaded = controller.loadWorkspace(JSON.stringify(snapshot));
 
-    expect(loaded).toEqual({
-      workspace: snapshot,
+    expect(loaded).toMatchObject({
       dirty: false,
       checkpointCount: 0,
+      workspace: {
+        schemaVersion: "qa-sdk.motion-workspace/v2",
+        globalRevision: 4,
+        sceneRevisions: {
+          main: 4,
+        },
+        document: {
+          schemaVersion: "qa-sdk.motion-composition/v2",
+          composition: {
+            scenes: [
+              {
+                id: "main",
+                title: "Main",
+              },
+            ],
+          },
+        },
+        editor: {
+          values: snapshot.editor.values,
+          selection: {
+            kind: "scene-layer",
+            sceneId: "main",
+            targetId: "headline",
+          },
+          viewport: snapshot.editor.viewport,
+          loop: true,
+          playbackRate: 1.25,
+        },
+      },
     });
-    expect(controller.getSession().present.selection).toEqual(snapshot.editor.selection);
+    expect(controller.getSession().present.selection).toEqual({
+      kind: "scene-layer",
+      sceneId: "main",
+      targetId: "headline",
+    });
     expect(controller.getSession().present.viewport).toEqual(snapshot.editor.viewport);
     expect(controller.getSession().present.transport.loop).toBe(true);
     expect(controller.getSession().present.transport.playbackRate).toBe(1.25);
+    expect(findScenePlacement(controller, "main", "headline")).toBeDefined();
     expect(controller.isDirty()).toBe(false);
     expect(controller.getRevision()).toBe(4);
     expect(controller.getCheckpointCount()).toBe(0);
@@ -91,7 +181,7 @@ describe("motion workspace controller", () => {
 
     expect(beforeSave.dirty).toBe(true);
     expect(beforeSave.checkpointCount).toBe(1);
-    expect(beforeSave.workspace.revision).toBe(0);
+    expect(beforeSave.workspace.globalRevision).toBe(0);
     expect(beforeSave.workspace.savedAt).toBe("2026-03-27T00:00:00.000Z");
     expect(beforeSave.workspace.editor.values.headline).toBe("Saved headline");
     expect(beforeSave.workspace.editor.selection).toEqual({ kind: "layer", id: "headline" });
@@ -109,7 +199,7 @@ describe("motion workspace controller", () => {
     // save는 undo/redo 히스토리를 보존해야 한다 (past/future 유지)
     expect(saved.dirty).toBe(true);
     expect(saved.checkpointCount).toBe(1);
-    expect(saved.workspace.revision).toBe(1);
+    expect(saved.workspace.globalRevision).toBe(1);
     expect(saved.workspace.savedAt).toBe("2026-03-27T01:00:00.000Z");
     expect(saved.workspace.editor.values.headline).toBe("Saved headline");
     expect(saved.workspace.editor.selection).toEqual({ kind: "layer", id: "headline" });
@@ -142,7 +232,7 @@ describe("motion workspace controller", () => {
     });
 
     expect(parameterApplied.dirty).toBe(true);
-    expect(parameterApplied.workspace.revision).toBe(0);
+    expect(parameterApplied.workspace.globalRevision).toBe(0);
     expect(parameterApplied.workspace.editor.values.headline).toBe("Controller headline");
     expect(controller.getSession().present.values.headline).toBe("Controller headline");
     expect(controller.isDirty()).toBe(true);
@@ -158,7 +248,7 @@ describe("motion workspace controller", () => {
     });
 
     expect(timingApplied.checkpointCount).toBe(2);
-    expect(controller.getSession().present.composition.sequences.find((sequence) => sequence.id === "intro")).toMatchObject({
+    expect(getLegacyComposition(controller).sequences.find((sequence) => sequence.id === "intro")).toMatchObject({
       startMs: 120,
       durationMs: 1680,
     });
@@ -172,14 +262,14 @@ describe("motion workspace controller", () => {
       durationMs: 960,
     });
     expect(controller.getCheckpointCount()).toBe(3);
-    expect(controller.getSession().present.composition.layers.some((layer) => layer.id === "layer-8")).toBe(true);
+    expect(getLegacyComposition(controller).layers.some((layer) => layer.id === "layer-8")).toBe(true);
 
     controller.apply({
       type: "remove-layer",
       layerId: "layer-8",
     });
     expect(controller.getCheckpointCount()).toBe(4);
-    expect(controller.getSession().present.composition.layers.some((layer) => layer.id === "layer-8")).toBe(false);
+    expect(getLegacyComposition(controller).layers.some((layer) => layer.id === "layer-8")).toBe(false);
 
     controller.apply({
       type: "add-sequence",
@@ -191,14 +281,14 @@ describe("motion workspace controller", () => {
       captionIds: [],
     });
     expect(controller.getCheckpointCount()).toBe(5);
-    expect(controller.getSession().present.composition.sequences.some((sequence) => sequence.id === "sequence-4")).toBe(true);
+    expect(getLegacyComposition(controller).sequences.some((sequence) => sequence.id === "sequence-4")).toBe(true);
 
     controller.apply({
       type: "remove-sequence",
       sequenceId: "sequence-4",
     });
     expect(controller.getCheckpointCount()).toBe(6);
-    expect(controller.getSession().present.composition.sequences.some((sequence) => sequence.id === "sequence-4")).toBe(false);
+    expect(getLegacyComposition(controller).sequences.some((sequence) => sequence.id === "sequence-4")).toBe(false);
 
     controller.apply({
       type: "add-caption",
@@ -209,14 +299,14 @@ describe("motion workspace controller", () => {
       tone: "neutral",
     });
     expect(controller.getCheckpointCount()).toBe(7);
-    expect(controller.getSession().present.composition.captions.some((caption) => caption.id === "cap-5")).toBe(true);
+    expect(getLegacyComposition(controller).captions.some((caption) => caption.id === "cap-5")).toBe(true);
 
     controller.apply({
       type: "remove-caption",
       captionId: "cap-5",
     });
     expect(controller.getCheckpointCount()).toBe(8);
-    expect(controller.getSession().present.composition.captions.some((caption) => caption.id === "cap-5")).toBe(false);
+    expect(getLegacyComposition(controller).captions.some((caption) => caption.id === "cap-5")).toBe(false);
 
     controller.apply({
       type: "add-transition",
@@ -228,14 +318,14 @@ describe("motion workspace controller", () => {
       params: { glowSize: 96 },
     });
     expect(controller.getCheckpointCount()).toBe(9);
-    expect(controller.getSession().present.composition.transitions.some((transition) => transition.id === "intro-cards-2")).toBe(true);
+    expect(getLegacyComposition(controller).transitions.some((transition) => transition.id === "intro-cards-2")).toBe(true);
 
     controller.apply({
       type: "remove-transition",
       transitionId: "intro-cards-2",
     });
     expect(controller.getCheckpointCount()).toBe(10);
-    expect(controller.getSession().present.composition.transitions.some((transition) => transition.id === "intro-cards-2")).toBe(false);
+    expect(getLegacyComposition(controller).transitions.some((transition) => transition.id === "intro-cards-2")).toBe(false);
 
     const imported = controller.apply({
       type: "set-composition",
@@ -253,7 +343,7 @@ describe("motion workspace controller", () => {
       dirty: false,
       checkpointCount: 0,
       workspace: {
-        revision: 0,
+        globalRevision: 0,
       },
     });
     expect(controller.isDirty()).toBe(false);
@@ -317,6 +407,230 @@ describe("motion workspace controller", () => {
     });
     expect(controller.exportDocument()).toEqual(document);
     expect(controller.exportWorkspace().document).toEqual(document);
+  });
+
+  it("keeps undo/redo and dirty state isolated per scene session", () => {
+    const controller = createMotionWorkspaceController({
+      composition: createSceneWorkspaceComposition(),
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "main" },
+    });
+    controller.apply({
+      type: "update-scene-placement-timing",
+      sceneId: "main",
+      targetId: "headline",
+      startMs: 240,
+      durationMs: 2100,
+    });
+
+    expect(controller.isDirty()).toBe(true);
+    expect(controller.getCheckpointCount()).toBe(1);
+    expect(findScenePlacement(controller, "main", "headline")).toMatchObject({
+      startMs: 240,
+      durationMs: 2100,
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "stinger" },
+    });
+
+    expect(controller.isDirty()).toBe(false);
+    expect(controller.getCheckpointCount()).toBe(0);
+    expect(findScenePlacement(controller, "main", "headline")).toMatchObject({
+      startMs: 240,
+      durationMs: 2100,
+    });
+
+    controller.apply({
+      type: "update-scene-placement-timing",
+      sceneId: "stinger",
+      targetId: "card-a",
+      startMs: 120,
+      durationMs: 480,
+    });
+
+    expect(controller.isDirty()).toBe(true);
+    expect(controller.getCheckpointCount()).toBe(1);
+
+    controller.undo();
+
+    expect(controller.isDirty()).toBe(false);
+    expect(controller.getCheckpointCount()).toBe(0);
+    expect(findScenePlacement(controller, "stinger", "card-a")).toMatchObject({
+      startMs: 0,
+      durationMs: 600,
+    });
+    expect(findScenePlacement(controller, "main", "headline")).toMatchObject({
+      startMs: 240,
+      durationMs: 2100,
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "main" },
+    });
+
+    expect(controller.isDirty()).toBe(true);
+    expect(controller.getCheckpointCount()).toBe(1);
+
+    controller.undo();
+
+    expect(controller.isDirty()).toBe(false);
+    expect(controller.getCheckpointCount()).toBe(0);
+    expect(findScenePlacement(controller, "main", "headline")).toMatchObject({
+      startMs: 120,
+      durationMs: 2400,
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "stinger" },
+    });
+
+    expect(controller.isDirty()).toBe(false);
+    expect(controller.getCheckpointCount()).toBe(0);
+    expect(findScenePlacement(controller, "stinger", "card-a")).toMatchObject({
+      startMs: 0,
+      durationMs: 600,
+    });
+  });
+
+  it("restores the active scene session when switching between scenes", () => {
+    const controller = createMotionWorkspaceController({
+      composition: createSceneWorkspaceComposition(),
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "main", targetId: "headline" },
+    });
+    controller.apply({
+      type: "set-current-time",
+      timeMs: 900,
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "stinger", targetId: "card-a" },
+    });
+    controller.apply({
+      type: "set-current-time",
+      timeMs: 3400,
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "main", targetId: "headline" },
+    });
+
+    expect(controller.getSession().present.selection).toEqual({
+      kind: "scene-layer",
+      sceneId: "main",
+      targetId: "headline",
+    });
+    expect(controller.getSession().present.transport.currentTimeMs).toBe(900);
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "stinger", targetId: "card-a" },
+    });
+
+    expect(controller.getSession().present.selection).toEqual({
+      kind: "scene-layer",
+      sceneId: "stinger",
+      targetId: "card-a",
+    });
+    expect(controller.getSession().present.transport.currentTimeMs).toBe(3400);
+  });
+
+  it("increments only the touched scene revision and reserves globalRevision for scene structure changes", () => {
+    const controller = createMotionWorkspaceController({
+      composition: createSceneWorkspaceComposition(),
+    });
+
+    expect(controller.exportWorkspace()).toMatchObject({
+      globalRevision: 0,
+      sceneRevisions: {
+        main: 0,
+        stinger: 0,
+      },
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "main" },
+    });
+    controller.apply({
+      type: "update-scene-placement-timing",
+      sceneId: "main",
+      targetId: "headline",
+      startMs: 240,
+      durationMs: 2100,
+    });
+
+    const mainSaved = controller.saveWorkspace({
+      savedAt: "2026-03-27T02:00:00.000Z",
+    });
+
+    expect(mainSaved.workspace).toMatchObject({
+      globalRevision: 0,
+      sceneRevisions: {
+        main: 1,
+        stinger: 0,
+      },
+    });
+
+    controller.apply({
+      type: "select",
+      selection: { kind: "scene", id: "stinger" },
+    });
+    controller.apply({
+      type: "update-scene-placement-timing",
+      sceneId: "stinger",
+      targetId: "card-a",
+      startMs: 120,
+      durationMs: 480,
+    });
+
+    const stingerSaved = controller.saveWorkspace({
+      savedAt: "2026-03-27T02:10:00.000Z",
+    });
+
+    expect(stingerSaved.workspace).toMatchObject({
+      globalRevision: 0,
+      sceneRevisions: {
+        main: 1,
+        stinger: 1,
+      },
+    });
+
+    controller.apply({
+      type: "add-scene",
+      id: "outro",
+      title: "Outro",
+      startMs: 6800,
+      durationMs: 900,
+      layers: [],
+      sequences: [],
+      captions: [],
+    });
+
+    const structureSaved = controller.saveWorkspace({
+      savedAt: "2026-03-27T02:20:00.000Z",
+    });
+
+    expect(structureSaved.workspace).toMatchObject({
+      globalRevision: 1,
+      sceneRevisions: {
+        main: 1,
+        stinger: 1,
+        outro: 0,
+      },
+    });
   });
 
   it("exports controller helpers from the public entrypoint", () => {

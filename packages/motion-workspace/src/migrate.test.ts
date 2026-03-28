@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { createPromoGridComposition, serializeMotionComposition } from "motion-content";
+import {
+  assembleComposition,
+  createPromoGridComposition,
+  migrateCompositionV1toV2,
+  serializeMotionComposition,
+} from "motion-content";
 import * as workspaceEntry from "./index.js";
-import { createMotionWorkspaceSnapshot } from "./io.js";
+import {
+  createMotionWorkspaceSnapshot,
+  createMotionWorkspaceSnapshotV1,
+} from "./io.js";
 import {
   LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
   MotionWorkspaceMigrationError,
@@ -10,12 +18,15 @@ import {
   migrateMotionWorkspaceSnapshot,
   parseLegacyMotionEditorDemoState,
 } from "./migrate.js";
-import { MOTION_WORKSPACE_SCHEMA_V1 } from "./types.js";
+import {
+  MOTION_WORKSPACE_SCHEMA_V1,
+  MOTION_WORKSPACE_SCHEMA_V2,
+} from "./types.js";
 
 describe("motion workspace migration", () => {
-  it("passes through current snapshots and reports migration metadata", () => {
+  it("passes through current v2 snapshots and reports migration metadata", () => {
     const snapshot = createMotionWorkspaceSnapshot({
-      composition: createPromoGridComposition("lift"),
+      composition: migrateCompositionV1toV2(createPromoGridComposition("lift")),
       savedAt: "2026-03-27T00:00:00.000Z",
     });
 
@@ -24,19 +35,112 @@ describe("motion workspace migration", () => {
     expect(result).toEqual({
       workspace: snapshot,
       migrated: false,
-      fromSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
-      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+      fromSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
     });
     expect(migrateMotionWorkspaceSnapshot(snapshot)).toEqual(snapshot);
+  });
+
+  it("migrates v1 snapshots into v2 scene revision envelopes", () => {
+    const snapshot = {
+      ...createMotionWorkspaceSnapshotV1({
+        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
+        savedAt: "2026-03-27T00:00:00.000Z",
+      }),
+      revision: 7,
+    };
+
+    const result = migrateMotionWorkspace(snapshot, { expectedRevision: 7 });
+
+    expect(result).toMatchObject({
+      migrated: true,
+      fromSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+      workspace: {
+        schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+        globalRevision: 7,
+        sceneRevisions: {
+          main: 7,
+        },
+      },
+    });
+  });
+
+  it("migrates legacy v1 workspace compositions into a single main scene", () => {
+    const original = createPromoGridComposition("flash");
+    const snapshot = {
+      ...createMotionWorkspaceSnapshotV1({
+        composition: original,
+        savedAt: "2026-03-27T00:00:00.000Z",
+      }),
+      revision: 3,
+      editor: {
+        ...createMotionWorkspaceSnapshotV1({
+          composition: original,
+          savedAt: "2026-03-27T00:00:00.000Z",
+        }).editor,
+        selection: {
+          kind: "layer",
+          id: "headline",
+        } as const,
+      },
+    };
+
+    const result = migrateMotionWorkspace(snapshot, { expectedRevision: 3 });
+
+    expect(result).toMatchObject({
+      migrated: true,
+      fromSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+      workspace: {
+        schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+        globalRevision: 3,
+        sceneRevisions: {
+          main: 3,
+        },
+        document: {
+          schemaVersion: "qa-sdk.motion-composition/v2",
+          composition: {
+            scenes: [
+              {
+                id: "main",
+                title: "Main",
+                durationMs: original.durationMs,
+              },
+            ],
+          },
+        },
+        editor: {
+          selection: {
+            kind: "scene-layer",
+            sceneId: "main",
+            targetId: "headline",
+          },
+        },
+      },
+    });
+  });
+
+  it("roundtrips migrated legacy workspaces back to the original v1 assembly", () => {
+    const original = createPromoGridComposition("lift");
+    const snapshot = createMotionWorkspaceSnapshotV1({
+      composition: original,
+      savedAt: "2026-03-27T00:00:00.000Z",
+    });
+
+    const migrated = migrateMotionWorkspaceSnapshot(snapshot);
+
+    expect(migrated.document.schemaVersion).toBe("qa-sdk.motion-composition/v2");
+    expect(assembleComposition(migrated.document.composition)).toEqual(original);
   });
 
   it("throws a typed revision conflict error when expectedRevision does not match", () => {
     const snapshot = {
       ...createMotionWorkspaceSnapshot({
-        composition: createPromoGridComposition("crossfade"),
+        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
         savedAt: "2026-03-27T00:00:00.000Z",
       }),
-      revision: 7,
+      globalRevision: 7,
     };
 
     try {
@@ -57,7 +161,7 @@ describe("motion workspace migration", () => {
   it("throws a typed unknown schemaVersion error for unsupported inputs", () => {
     const unsupported = JSON.stringify({
       ...createMotionWorkspaceSnapshot({
-        composition: createPromoGridComposition("crossfade"),
+        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
         savedAt: "2026-03-27T00:00:00.000Z",
       }),
       schemaVersion: "qa-sdk.motion-workspace/v99",
@@ -89,10 +193,10 @@ describe("motion workspace migration", () => {
     expect(result).toMatchObject({
       migrated: true,
       fromSchemaVersion: LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
-      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+      toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
       workspace: {
-        schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
-        revision: 0,
+        schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+        globalRevision: 0,
         savedAt: "2026-03-26T23:59:59.000Z",
         source: {
           presetId: "promo-grid",

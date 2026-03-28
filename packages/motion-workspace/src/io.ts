@@ -1,13 +1,23 @@
 import {
   createMotionCompositionDocument,
+  createMotionCompositionDocumentV2,
+  MOTION_COMPOSITION_SCHEMA_V2,
   validateMotionCompositionDocument,
+  validateMotionCompositionDocumentV2,
   type MotionCompositionDef,
+  type MotionCompositionDefV2,
   type MotionCompositionDocumentV1,
+  type MotionCompositionDocumentV2,
 } from "motion-content";
 import {
   MOTION_WORKSPACE_SCHEMA_V1,
+  MOTION_WORKSPACE_SCHEMA_V2,
   type MotionWorkspaceCreateOptions,
+  type MotionWorkspaceDocument,
+  type MotionWorkspaceSceneRevisions,
+  type MotionWorkspaceSnapshot,
   type MotionWorkspaceSnapshotV1,
+  type MotionWorkspaceSnapshotV2,
 } from "./types.js";
 
 const MOTION_EDITOR_SELECTION_KINDS = [
@@ -17,6 +27,9 @@ const MOTION_EDITOR_SELECTION_KINDS = [
   "caption",
   "cue-preset",
   "transition",
+  "target",
+  "scene",
+  "scene-layer",
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -33,6 +46,29 @@ function isFiniteNumber(value: unknown): value is number {
 
 function hasOwn(record: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(record, key);
+}
+
+function isMotionCompositionV2(
+  composition: MotionCompositionDef | MotionCompositionDefV2,
+): composition is MotionCompositionDefV2 {
+  return "targets" in composition && "scenes" in composition;
+}
+
+function getWorkspaceSceneIds(document: MotionWorkspaceDocument): readonly string[] {
+  return document.schemaVersion === MOTION_COMPOSITION_SCHEMA_V2
+    ? document.composition.scenes.map((scene) => scene.id)
+    : [];
+}
+
+function createSceneRevisions(
+  document: MotionWorkspaceDocument,
+  seed: MotionWorkspaceSceneRevisions = {},
+): MotionWorkspaceSceneRevisions {
+  const revisions: Record<string, number> = {};
+  for (const sceneId of getWorkspaceSceneIds(document)) {
+    revisions[sceneId] = seed[sceneId] ?? 0;
+  }
+  return revisions;
 }
 
 function describeValue(value: unknown): string {
@@ -145,6 +181,11 @@ function validateMotionWorkspaceSelection(
   if (kind !== null && !MOTION_EDITOR_SELECTION_KINDS.includes(kind as (typeof MOTION_EDITOR_SELECTION_KINDS)[number])) {
     pushEnumIssue(issues, `${path}.kind`, MOTION_EDITOR_SELECTION_KINDS, kind);
   }
+  if (kind === "scene-layer") {
+    requireString(value, "sceneId", path, issues);
+    requireString(value, "targetId", path, issues);
+    return;
+  }
   requireString(value, "id", path, issues);
 }
 
@@ -232,8 +273,26 @@ function validateMotionWorkspaceSource(
   }
 }
 
-function validateMotionWorkspaceSnapshotAtPath(
+function validateMotionWorkspaceDocument(
   value: unknown,
+  path: string,
+  issues: string[],
+): MotionWorkspaceDocument | null {
+  if (!isRecord(value)) {
+    pushTypeIssue(issues, path, "object", value);
+    return null;
+  }
+
+  const documentIssues = value["schemaVersion"] === MOTION_COMPOSITION_SCHEMA_V2
+    ? validateMotionCompositionDocumentV2(value)
+    : validateMotionCompositionDocument(value);
+  issues.push(...documentIssues.map((issue) => prefixNestedIssue(path, issue)));
+  return documentIssues.length === 0 ? value as unknown as MotionWorkspaceDocument : null;
+}
+
+function validateMotionWorkspaceSceneRevisions(
+  value: unknown,
+  document: MotionWorkspaceDocument | null,
   path: string,
   issues: string[],
 ): void {
@@ -241,6 +300,35 @@ function validateMotionWorkspaceSnapshotAtPath(
     return;
   }
 
+  for (const [sceneId, revision] of Object.entries(value)) {
+    if (!isFiniteNumber(revision)) {
+      pushTypeIssue(issues, `${path}.${sceneId}`, "number", revision);
+    }
+  }
+
+  if (!document) {
+    return;
+  }
+
+  const sceneIds = new Set(getWorkspaceSceneIds(document));
+  for (const sceneId of sceneIds) {
+    if (!hasOwn(value, sceneId)) {
+      pushMissingIssue(issues, `${path}.${sceneId}`, "number");
+    }
+  }
+
+  for (const sceneId of Object.keys(value)) {
+    if (!sceneIds.has(sceneId)) {
+      issues.push(`${path}.${sceneId}: document.scenes에 없는 sceneId입니다.`);
+    }
+  }
+}
+
+function validateMotionWorkspaceSnapshotV1AtPath(
+  value: Record<string, unknown>,
+  path: string,
+  issues: string[],
+): void {
   const schemaVersion = requireString(value, "schemaVersion", path, issues);
   if (schemaVersion !== null && schemaVersion !== MOTION_WORKSPACE_SCHEMA_V1) {
     issues.push(
@@ -251,8 +339,7 @@ function validateMotionWorkspaceSnapshotAtPath(
   if (!hasOwn(value, "document")) {
     pushMissingIssue(issues, `${path}.document`, "object");
   } else {
-    const documentIssues = validateMotionCompositionDocument(value["document"]);
-    issues.push(...documentIssues.map((issue) => prefixNestedIssue(`${path}.document`, issue)));
+    validateMotionWorkspaceDocument(value["document"], `${path}.document`, issues);
   }
 
   if (!hasOwn(value, "editor")) {
@@ -266,7 +353,79 @@ function validateMotionWorkspaceSnapshotAtPath(
   validateMotionWorkspaceSource(value["source"], `${path}.source`, issues);
 }
 
-function assertWorkspaceShape(value: unknown): asserts value is MotionWorkspaceSnapshotV1 {
+function validateMotionWorkspaceSnapshotV2AtPath(
+  value: Record<string, unknown>,
+  path: string,
+  issues: string[],
+): void {
+  const schemaVersion = requireString(value, "schemaVersion", path, issues);
+  if (schemaVersion !== null && schemaVersion !== MOTION_WORKSPACE_SCHEMA_V2) {
+    issues.push(
+      `${path}.schemaVersion: ${MOTION_WORKSPACE_SCHEMA_V2}여야 하지만 ${JSON.stringify(schemaVersion)}입니다.`,
+    );
+  }
+
+  let document: MotionWorkspaceDocument | null = null;
+  if (!hasOwn(value, "document")) {
+    pushMissingIssue(issues, `${path}.document`, "object");
+  } else {
+    document = validateMotionWorkspaceDocument(value["document"], `${path}.document`, issues);
+  }
+
+  if (!hasOwn(value, "editor")) {
+    pushMissingIssue(issues, `${path}.editor`, "object");
+  } else {
+    validateMotionWorkspaceEditorState(value["editor"], `${path}.editor`, issues);
+  }
+
+  requireNumber(value, "globalRevision", path, issues);
+  if (!hasOwn(value, "sceneRevisions")) {
+    pushMissingIssue(issues, `${path}.sceneRevisions`, "object");
+  } else {
+    validateMotionWorkspaceSceneRevisions(
+      value["sceneRevisions"],
+      document,
+      `${path}.sceneRevisions`,
+      issues,
+    );
+  }
+  requireString(value, "savedAt", path, issues);
+  validateMotionWorkspaceSource(value["source"], `${path}.source`, issues);
+}
+
+function validateMotionWorkspaceSnapshotAtPath(
+  value: unknown,
+  path: string,
+  issues: string[],
+): void {
+  if (!requireRecord(value, path, issues)) {
+    return;
+  }
+
+  const schemaVersion = value["schemaVersion"];
+  if (schemaVersion === MOTION_WORKSPACE_SCHEMA_V1) {
+    validateMotionWorkspaceSnapshotV1AtPath(value, path, issues);
+    return;
+  }
+  if (schemaVersion === MOTION_WORKSPACE_SCHEMA_V2) {
+    validateMotionWorkspaceSnapshotV2AtPath(value, path, issues);
+    return;
+  }
+
+  if (!hasOwn(value, "schemaVersion")) {
+    pushMissingIssue(issues, `${path}.schemaVersion`, `string (${MOTION_WORKSPACE_SCHEMA_V1} | ${MOTION_WORKSPACE_SCHEMA_V2})`);
+    return;
+  }
+
+  pushEnumIssue(
+    issues,
+    `${path}.schemaVersion`,
+    [MOTION_WORKSPACE_SCHEMA_V1, MOTION_WORKSPACE_SCHEMA_V2],
+    schemaVersion,
+  );
+}
+
+function assertWorkspaceShape(value: unknown): asserts value is MotionWorkspaceSnapshot {
   const issues = validateMotionWorkspaceSnapshot(value);
   if (issues.length > 0) {
     throw new MotionWorkspaceParseError(issues);
@@ -283,9 +442,9 @@ export class MotionWorkspaceParseError extends Error {
   }
 }
 
-export function createMotionWorkspaceSnapshot(
+function createPersistedEditorState(
   options: MotionWorkspaceCreateOptions,
-): MotionWorkspaceSnapshotV1 {
+): MotionWorkspaceSnapshotV1["editor"] {
   const values = Object.fromEntries(
     options.composition.parameters.map((parameter) => [parameter.id, parameter.defaultValue]),
   ) as Record<string, string | number>;
@@ -297,31 +456,71 @@ export function createMotionWorkspaceSnapshot(
   }
 
   return {
-    schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
-    document: createMotionCompositionDocument(options.composition),
-    editor: {
-      values,
-      selection: null,
-      viewport: {
-        zoom: 1,
-        scrollLeftMs: 0,
-        visibleDurationMs: Math.min(4000, options.composition.durationMs),
-      },
-      loop: false,
-      playbackRate: 1,
+    values,
+    selection: null,
+    viewport: {
+      zoom: 1,
+      scrollLeftMs: 0,
+      visibleDurationMs: Math.min(4000, options.composition.durationMs),
     },
+    loop: false,
+    playbackRate: 1,
+  };
+}
+
+export function createMotionWorkspaceSnapshotV1(
+  options: MotionWorkspaceCreateOptions,
+): MotionWorkspaceSnapshotV1 {
+  const document = isMotionCompositionV2(options.composition)
+    ? createMotionCompositionDocumentV2(options.composition)
+    : createMotionCompositionDocument(options.composition);
+
+  return {
+    schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+    document,
+    editor: createPersistedEditorState(options),
     revision: 0,
     savedAt: options.savedAt ?? new Date().toISOString(),
     source: options.source,
   };
 }
 
+export function createMotionWorkspaceSnapshotV2(
+  options: MotionWorkspaceCreateOptions,
+): MotionWorkspaceSnapshotV2 {
+  const document = isMotionCompositionV2(options.composition)
+    ? createMotionCompositionDocumentV2(options.composition)
+    : createMotionCompositionDocument(options.composition);
+
+  return {
+    schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+    document,
+    editor: createPersistedEditorState(options),
+    globalRevision: 0,
+    sceneRevisions: createSceneRevisions(document),
+    savedAt: options.savedAt ?? new Date().toISOString(),
+    source: options.source,
+  };
+}
+
+export function createMotionWorkspaceSnapshot(
+  options: MotionWorkspaceCreateOptions,
+): MotionWorkspaceSnapshotV2 {
+  return createMotionWorkspaceSnapshotV2(options);
+}
+
 export function createMotionWorkspaceDocument(
-  composition: MotionCompositionDef | MotionCompositionDocumentV1,
-): MotionWorkspaceSnapshotV1 {
+  composition:
+    | MotionCompositionDef
+    | MotionCompositionDefV2
+    | MotionCompositionDocumentV1
+    | MotionCompositionDocumentV2,
+): MotionWorkspaceSnapshotV2 {
   const document = "schemaVersion" in composition
     ? composition
-    : createMotionCompositionDocument(composition);
+    : isMotionCompositionV2(composition)
+      ? createMotionCompositionDocumentV2(composition)
+      : createMotionCompositionDocument(composition);
   return createMotionWorkspaceSnapshot({
     composition: document.composition,
   });
@@ -336,18 +535,22 @@ export function validateMotionWorkspaceSnapshot(
 }
 
 export function isMotionWorkspaceSnapshotV1(value: unknown): value is MotionWorkspaceSnapshotV1 {
-  return validateMotionWorkspaceSnapshot(value).length === 0;
+  return isRecord(value) && value["schemaVersion"] === MOTION_WORKSPACE_SCHEMA_V1 && validateMotionWorkspaceSnapshot(value).length === 0;
+}
+
+export function isMotionWorkspaceSnapshotV2(value: unknown): value is MotionWorkspaceSnapshotV2 {
+  return isRecord(value) && value["schemaVersion"] === MOTION_WORKSPACE_SCHEMA_V2 && validateMotionWorkspaceSnapshot(value).length === 0;
 }
 
 export function serializeMotionWorkspaceSnapshot(
-  snapshot: MotionWorkspaceSnapshotV1,
+  snapshot: MotionWorkspaceSnapshot,
 ): string {
   return JSON.stringify(snapshot, null, 2);
 }
 
 export function parseMotionWorkspaceSnapshot(
   json: string,
-): MotionWorkspaceSnapshotV1 {
+): MotionWorkspaceSnapshot {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json) as unknown;

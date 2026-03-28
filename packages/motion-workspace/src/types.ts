@@ -3,13 +3,16 @@ import {
 } from "motion-content";
 import type {
   MotionCompositionDef,
+  MotionCompositionDefV2,
   MotionCompositionDocumentV1,
-  MotionEditorSelection,
+  MotionCompositionDocumentV2,
+  MotionEditorSelectionV2,
   MotionEditorViewport,
   MotionParameterValues,
 } from "motion-content";
 
 export const MOTION_WORKSPACE_SCHEMA_V1 = "qa-sdk.motion-workspace/v1";
+export const MOTION_WORKSPACE_SCHEMA_V2 = "qa-sdk.motion-workspace/v2";
 export const MOTION_WORKSPACE_PERSISTED_EDITOR_FIELDS_V1 = [
   "values",
   "selection",
@@ -43,7 +46,7 @@ export interface MotionWorkspaceSource extends MotionWorkspaceSourceMetadataV1 {
  */
 export interface MotionWorkspacePersistedEditorStateV1 {
   readonly values: MotionParameterValues;
-  readonly selection: MotionEditorSelection | null;
+  readonly selection: MotionEditorSelectionV2 | null;
   readonly viewport: MotionEditorViewport;
   readonly loop: boolean;
   readonly playbackRate: number;
@@ -69,6 +72,16 @@ export const MOTION_WORKSPACE_PERSISTENCE_BOUNDARY_V1 = {
   localPreferenceKeys: MOTION_WORKSPACE_LOCAL_PREFERENCE_KEYS,
 } satisfies MotionWorkspacePersistenceBoundaryV1;
 
+export type MotionWorkspaceDocument =
+  | MotionCompositionDocumentV1
+  | MotionCompositionDocumentV2;
+
+export type MotionWorkspaceComposition =
+  | MotionCompositionDef
+  | MotionCompositionDefV2;
+
+export type MotionWorkspaceSceneRevisions = Readonly<Record<string, number>>;
+
 /**
  * Online workspace state. The embedded composition document keeps the original
  * `qa-sdk.motion-composition/v1` envelope unchanged while revision/provenance
@@ -76,12 +89,31 @@ export const MOTION_WORKSPACE_PERSISTENCE_BOUNDARY_V1 = {
  */
 export interface MotionWorkspaceSnapshotV1 {
   readonly schemaVersion: typeof MOTION_WORKSPACE_SCHEMA_V1;
-  readonly document: MotionCompositionDocumentV1;
+  readonly document: MotionWorkspaceDocument;
   readonly editor: MotionWorkspacePersistedEditorStateV1;
   readonly revision: number;
   readonly savedAt: string;
   readonly source?: MotionWorkspaceSourceMetadataV1;
 }
+
+/**
+ * Scene-aware workspace state for concurrent editing. `globalRevision` tracks
+ * structural changes such as scene add/remove, while `sceneRevisions` tracks
+ * content changes for each individual scene.
+ */
+export interface MotionWorkspaceSnapshotV2 {
+  readonly schemaVersion: typeof MOTION_WORKSPACE_SCHEMA_V2;
+  readonly document: MotionWorkspaceDocument;
+  readonly editor: MotionWorkspacePersistedEditorStateV1;
+  readonly globalRevision: number;
+  readonly sceneRevisions: MotionWorkspaceSceneRevisions;
+  readonly savedAt: string;
+  readonly source?: MotionWorkspaceSourceMetadataV1;
+}
+
+export type MotionWorkspaceSnapshot =
+  | MotionWorkspaceSnapshotV1
+  | MotionWorkspaceSnapshotV2;
 
 export interface MotionWorkspaceDescriptor {
   readonly id: string;
@@ -91,20 +123,20 @@ export interface MotionWorkspaceDescriptor {
 }
 
 export interface MotionWorkspaceStore {
-  load(id: string): Promise<MotionWorkspaceSnapshotV1 | null>;
-  save(id: string, snapshot: MotionWorkspaceSnapshotV1): Promise<void>;
+  load(id: string): Promise<MotionWorkspaceSnapshot | null>;
+  save(id: string, snapshot: MotionWorkspaceSnapshot): Promise<void>;
   remove(id: string): Promise<void>;
   list(): Promise<readonly MotionWorkspaceDescriptor[]>;
 }
 
 export interface MotionWorkspaceControllerSnapshot {
-  readonly workspace: MotionWorkspaceSnapshotV1;
+  readonly workspace: MotionWorkspaceSnapshotV2;
   readonly dirty: boolean;
   readonly checkpointCount: number;
 }
 
 export interface MotionWorkspaceCreateOptions {
-  readonly composition: MotionCompositionDef;
+  readonly composition: MotionWorkspaceComposition;
   readonly values?: Partial<MotionParameterValues>;
   readonly source?: MotionWorkspaceSourceMetadataV1;
   readonly savedAt?: string;

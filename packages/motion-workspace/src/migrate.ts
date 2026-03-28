@@ -1,13 +1,24 @@
-import { parseMotionComposition } from "motion-content";
+import {
+  MOTION_COMPOSITION_SCHEMA_V2,
+  createMotionCompositionDocumentV2,
+  migrateCompositionV1toV2,
+  parseMotionComposition,
+  type MotionCompositionDocumentV2,
+  type MotionEditorSelectionV2,
+} from "motion-content";
 import {
   createMotionWorkspaceSnapshot,
+  createMotionWorkspaceSnapshotV2,
   MotionWorkspaceParseError,
   validateMotionWorkspaceSnapshot,
 } from "./io.js";
 import {
   MOTION_WORKSPACE_SCHEMA_V1,
+  MOTION_WORKSPACE_SCHEMA_V2,
   type MotionWorkspaceSourceMetadataV1,
+  type MotionWorkspaceSnapshot,
   type MotionWorkspaceSnapshotV1,
+  type MotionWorkspaceSnapshotV2,
 } from "./types.js";
 
 export const LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY = "qa-sdk.motion-content-editor-demo/v1";
@@ -40,10 +51,10 @@ export type MotionWorkspaceMigrationErrorShape =
   | MotionWorkspaceUnknownSchemaVersionErrorShape;
 
 export interface MotionWorkspaceMigrationResult {
-  readonly workspace: MotionWorkspaceSnapshotV1;
+  readonly workspace: MotionWorkspaceSnapshotV2;
   readonly migrated: boolean;
   readonly fromSchemaVersion: string;
-  readonly toSchemaVersion: typeof MOTION_WORKSPACE_SCHEMA_V1;
+  readonly toSchemaVersion: typeof MOTION_WORKSPACE_SCHEMA_V2;
 }
 
 export class MotionWorkspaceMigrationError extends Error {
@@ -72,7 +83,7 @@ function describeValue(value: unknown): string {
 }
 
 function parseMigrationInput(
-  input: string | MotionWorkspaceSnapshotV1 | LegacyMotionEditorDemoStateV1 | Record<string, unknown>,
+  input: string | MotionWorkspaceSnapshot | LegacyMotionEditorDemoStateV1 | Record<string, unknown>,
 ): unknown {
   if (typeof input !== "string") {
     return input;
@@ -113,6 +124,131 @@ function createRevisionConflictError(
     expectedRevision,
     actualRevision,
   });
+}
+
+function getSceneIdsFromDocument(
+  document: MotionWorkspaceSnapshotV2["document"] | MotionWorkspaceSnapshotV1["document"],
+): readonly string[] {
+  return document.schemaVersion === MOTION_COMPOSITION_SCHEMA_V2
+    ? document.composition.scenes.map((scene) => scene.id)
+    : [];
+}
+
+function readCompatLayerId(
+  value: unknown,
+): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const candidate = (value as Record<string, unknown>)["layerId"];
+  return typeof candidate === "string" ? candidate : undefined;
+}
+
+function migrateWorkspaceSelection(
+  selection: MotionEditorSelectionV2 | null,
+  document: MotionWorkspaceSnapshot["document"],
+): MotionEditorSelectionV2 | null {
+  if (!selection) {
+    return null;
+  }
+
+  if (document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2 || selection.kind !== "layer") {
+    return selection;
+  }
+
+  for (const scene of document.composition.scenes) {
+    const placement = scene.layers.find((layer) =>
+      layer.targetId === selection.id || readCompatLayerId(layer) === selection.id
+    );
+    if (placement) {
+      return {
+        kind: "scene-layer",
+        sceneId: scene.id,
+        targetId: placement.targetId,
+      };
+    }
+  }
+
+  return selection;
+}
+
+function migrateWorkspaceDocument(
+  document: MotionWorkspaceSnapshot["document"],
+): MotionCompositionDocumentV2 {
+  if (document.schemaVersion === MOTION_COMPOSITION_SCHEMA_V2) {
+    return document;
+  }
+
+  return createMotionCompositionDocumentV2(
+    migrateCompositionV1toV2(document.composition),
+  );
+}
+
+function createSceneRevisions(
+  workspace: MotionWorkspaceSnapshot,
+  document: MotionCompositionDocumentV2,
+): MotionWorkspaceSnapshotV2["sceneRevisions"] {
+  const sceneIds = getSceneIdsFromDocument(document);
+  const defaultRevision = getWorkspaceBaseRevision(workspace);
+
+  if (
+    workspace.schemaVersion === MOTION_WORKSPACE_SCHEMA_V2
+    && workspace.document.schemaVersion === MOTION_COMPOSITION_SCHEMA_V2
+  ) {
+    return Object.fromEntries(
+      sceneIds.map((sceneId) => [sceneId, workspace.sceneRevisions[sceneId] ?? defaultRevision]),
+    );
+  }
+
+  return Object.fromEntries(
+    sceneIds.map((sceneId) => [sceneId, defaultRevision]),
+  );
+}
+
+function migrateWorkspaceV1ToV2(
+  workspace: MotionWorkspaceSnapshotV1,
+): MotionWorkspaceSnapshotV2 {
+  const document = migrateWorkspaceDocument(workspace.document);
+  const migrated = createMotionWorkspaceSnapshotV2({
+    composition: document.composition,
+    values: workspace.editor.values,
+    source: workspace.source,
+    savedAt: workspace.savedAt,
+  });
+
+  return {
+    ...migrated,
+    document,
+    editor: {
+      ...workspace.editor,
+      selection: migrateWorkspaceSelection(workspace.editor.selection, document),
+    },
+    globalRevision: workspace.revision,
+    sceneRevisions: createSceneRevisions(workspace, document),
+  };
+}
+
+function normalizeWorkspaceV2(
+  workspace: MotionWorkspaceSnapshotV2,
+): MotionWorkspaceSnapshotV2 {
+  const document = migrateWorkspaceDocument(workspace.document);
+
+  return {
+    ...workspace,
+    document,
+    editor: {
+      ...workspace.editor,
+      selection: migrateWorkspaceSelection(workspace.editor.selection, document),
+    },
+    sceneRevisions: createSceneRevisions(workspace, document),
+  };
+}
+
+function getWorkspaceBaseRevision(workspace: MotionWorkspaceSnapshot): number {
+  return workspace.schemaVersion === MOTION_WORKSPACE_SCHEMA_V2
+    ? workspace.globalRevision
+    : workspace.revision;
 }
 
 function validateLegacyMotionEditorDemoState(value: unknown): readonly string[] {
@@ -186,25 +322,30 @@ export function migrateLegacyMotionEditorDemoState(
   }
 
   return {
-    workspace: createMotionWorkspaceSnapshot({
-      composition,
-      source: createLegacyMotionEditorSource(legacyState),
-      savedAt: legacyState.savedAt,
-    }),
+    workspace: migrateMotionWorkspaceSnapshot(
+      createMotionWorkspaceSnapshot({
+        composition,
+        source: createLegacyMotionEditorSource(legacyState),
+        savedAt: legacyState.savedAt,
+      }),
+    ),
     migrated: true,
     fromSchemaVersion: LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
-    toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+    toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
   };
 }
 
 export function migrateMotionWorkspace(
-  input: string | MotionWorkspaceSnapshotV1 | Record<string, unknown>,
+  input: string | MotionWorkspaceSnapshot | Record<string, unknown>,
   options: MotionWorkspaceMigrateOptions = {},
 ): MotionWorkspaceMigrationResult {
   const candidate = parseMigrationInput(input);
   const schemaVersion = readSchemaVersion(candidate);
 
-  if (schemaVersion === null || schemaVersion !== MOTION_WORKSPACE_SCHEMA_V1) {
+  if (
+    schemaVersion === null
+    || (schemaVersion !== MOTION_WORKSPACE_SCHEMA_V1 && schemaVersion !== MOTION_WORKSPACE_SCHEMA_V2)
+  ) {
     throw createUnknownSchemaVersionError(schemaVersion);
   }
 
@@ -213,25 +354,33 @@ export function migrateMotionWorkspace(
     throw new MotionWorkspaceParseError(issues);
   }
 
-  const workspace = candidate as MotionWorkspaceSnapshotV1;
+  const workspace = candidate as MotionWorkspaceSnapshot;
+  const actualRevision = getWorkspaceBaseRevision(workspace);
   if (
     options.expectedRevision !== undefined
-    && workspace.revision !== options.expectedRevision
+    && actualRevision !== options.expectedRevision
   ) {
-    throw createRevisionConflictError(options.expectedRevision, workspace.revision);
+    throw createRevisionConflictError(options.expectedRevision, actualRevision);
   }
 
+  const migratedWorkspace = workspace.schemaVersion === MOTION_WORKSPACE_SCHEMA_V2
+    ? normalizeWorkspaceV2(workspace)
+    : migrateWorkspaceV1ToV2(workspace);
+  const migrated = workspace.schemaVersion !== MOTION_WORKSPACE_SCHEMA_V2
+    || workspace.document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2
+    || migratedWorkspace.editor.selection !== workspace.editor.selection;
+
   return {
-    workspace,
-    migrated: false,
+    workspace: migratedWorkspace,
+    migrated,
     fromSchemaVersion: workspace.schemaVersion,
-    toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
+    toSchemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
   };
 }
 
 export function migrateMotionWorkspaceSnapshot(
-  input: string | MotionWorkspaceSnapshotV1 | Record<string, unknown>,
+  input: string | MotionWorkspaceSnapshot | Record<string, unknown>,
   options: MotionWorkspaceMigrateOptions = {},
-): MotionWorkspaceSnapshotV1 {
+): MotionWorkspaceSnapshotV2 {
   return migrateMotionWorkspace(input, options).workspace;
 }
