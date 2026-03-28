@@ -2,7 +2,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createPromoGridComposition } from "motion-content";
+import {
+  createPromoGridComposition,
+  migrateCompositionV1toV2,
+  type MotionCompositionDefV2,
+  type MotionSceneDef,
+} from "motion-content";
 import {
   MotionWorkspaceClient,
   MotionWorkspaceClientError,
@@ -10,16 +15,19 @@ import {
 } from "motion-workspace-client";
 import {
   createMotionWorkspaceSnapshot,
-  type MotionWorkspaceSnapshotV1,
+  createMotionWorkspaceSnapshotV1,
+  type MotionWorkspaceSnapshotV2,
 } from "motion-workspace";
 import { createApp, type MotionWorkspaceAppDeps } from "../src/app.js";
+import { createWorkspaceWsEvents } from "../src/routes/workspaces.js";
 import { createMotionWorkspaceRepository } from "../src/sqlite-repository.js";
+import { createWorkspaceWsHub } from "../src/ws-hub.js";
 
 function createWorkspaceSnapshot(
-  overrides: Partial<MotionWorkspaceSnapshotV1> = {},
-): MotionWorkspaceSnapshotV1 {
+  overrides: Partial<MotionWorkspaceSnapshotV2> = {},
+): MotionWorkspaceSnapshotV2 {
   const base = createMotionWorkspaceSnapshot({
-    composition: createPromoGridComposition("flash"),
+    composition: migrateCompositionV1toV2(createPromoGridComposition("flash")),
     values: {
       headline: "Remote headline",
     },
@@ -34,8 +42,126 @@ function createWorkspaceSnapshot(
     ...overrides,
     document: overrides.document ?? base.document,
     editor: overrides.editor ?? base.editor,
+    sceneRevisions: overrides.sceneRevisions ?? base.sceneRevisions,
     source: overrides.source ?? base.source,
   };
+}
+
+function createSceneComposition(): MotionCompositionDefV2 {
+  return {
+    id: "scene-http-demo",
+    title: "Scene HTTP Demo",
+    description: "Scene route integration fixture",
+    durationMs: 4000,
+    parameters: [
+      {
+        id: "headline",
+        label: "Headline",
+        type: "text",
+        defaultValue: "Scene headline",
+      },
+    ],
+    cuePresets: [
+      {
+        id: "fade-in",
+        label: "Fade In",
+        kind: "fade",
+        durationMs: 240,
+      },
+    ],
+    assets: [],
+    targets: [
+      {
+        id: "hero-target",
+        target: { kind: "stage-node", nodeId: "hero" },
+        content: { type: "dom" },
+      },
+      {
+        id: "cta-target",
+        target: { kind: "stage-node", nodeId: "cta" },
+        content: { type: "dom" },
+      },
+      {
+        id: "badge-target",
+        target: { kind: "stage-node", nodeId: "badge" },
+        content: { type: "dom" },
+      },
+    ],
+    scenes: [
+      {
+        id: "scene-a",
+        title: "Scene A",
+        startMs: 0,
+        durationMs: 1800,
+        layers: [
+          {
+            targetId: "hero-target",
+            startMs: 0,
+            durationMs: 1800,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+      {
+        id: "scene-b",
+        title: "Scene B",
+        startMs: 1800,
+        durationMs: 2200,
+        layers: [
+          {
+            targetId: "cta-target",
+            startMs: 0,
+            durationMs: 2200,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+    ],
+  };
+}
+
+function createSceneWorkspaceSnapshot(
+  overrides: Partial<MotionWorkspaceSnapshotV2> = {},
+): MotionWorkspaceSnapshotV2 {
+  const base = createMotionWorkspaceSnapshot({
+    composition: createSceneComposition(),
+    values: {
+      headline: "Scene route headline",
+    },
+    source: {
+      storageKey: "workspace:scene-routes",
+    },
+    savedAt: "2026-03-27T00:00:00.000Z",
+  });
+
+  return {
+    ...base,
+    ...overrides,
+    document: overrides.document ?? base.document,
+    editor: overrides.editor ?? base.editor,
+    sceneRevisions: overrides.sceneRevisions ?? base.sceneRevisions,
+    source: overrides.source ?? base.source,
+  };
+}
+
+function getScene(
+  workspace: MotionWorkspaceSnapshotV2,
+  sceneId: string,
+): MotionSceneDef {
+  if (workspace.document.schemaVersion !== "qa-sdk.motion-composition/v2") {
+    throw new Error(`scene document가 아닙니다: ${workspace.document.schemaVersion}`);
+  }
+
+  const scene = workspace.document.composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    throw new Error(`scene를 찾을 수 없습니다: ${sceneId}`);
+  }
+
+  return scene;
 }
 
 const tempDirs: string[] = [];
@@ -66,6 +192,27 @@ function createTestApp(
   });
 
   return { app, repository };
+}
+
+class FakeWsContext {
+  readonly messages: string[] = [];
+
+  send(message: string): void {
+    this.messages.push(message);
+  }
+}
+
+function createWsContext(workspaceId: string, userId: string) {
+  return {
+    req: {
+      param(name: string) {
+        return name === "id" ? workspaceId : undefined;
+      },
+      query(name: string) {
+        return name === "userId" ? userId : undefined;
+      },
+    },
+  } as Parameters<typeof createWorkspaceWsEvents>[0];
 }
 
 describe("motion workspace service health and CRUD routes", () => {
@@ -107,7 +254,7 @@ describe("motion workspace service health and CRUD routes", () => {
         {
           id: workspaceId,
           title: initial.document.composition.title,
-          revision: initial.revision,
+          revision: initial.globalRevision,
           savedAt: initial.savedAt,
         },
       ],
@@ -118,7 +265,7 @@ describe("motion workspace service health and CRUD routes", () => {
     expect(await getResponse.json()).toEqual({ workspace: initial });
 
     const updated = createWorkspaceSnapshot({
-      revision: 1,
+      globalRevision: 1,
       savedAt: "2026-03-27T01:00:00.000Z",
       editor: {
         ...initial.editor,
@@ -153,6 +300,92 @@ describe("motion workspace service health and CRUD routes", () => {
     repository.close();
   });
 
+  it("upgrades legacy workspace payloads to scene-based v2 snapshots on create/load", async () => {
+    const { app, repository } = createTestApp();
+    const workspaceId = "demo/workspace-legacy";
+    const workspacePath = `/workspaces/${encodeURIComponent(workspaceId)}`;
+    const legacyComposition = createPromoGridComposition("lift");
+    const legacyWorkspaceBase = createMotionWorkspaceSnapshotV1({
+      composition: legacyComposition,
+      values: {
+        headline: "Legacy headline",
+      },
+      source: {
+        storageKey: "workspace:legacy-http",
+      },
+      savedAt: "2026-03-27T00:00:00.000Z",
+    });
+    const legacyWorkspace = {
+      ...legacyWorkspaceBase,
+      revision: 2,
+      editor: {
+        ...legacyWorkspaceBase.editor,
+        selection: {
+          kind: "layer",
+          id: "headline",
+        } as const,
+      },
+    };
+
+    const createResponse = await app.request(workspacePath, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace: legacyWorkspace }),
+    });
+
+    expect(createResponse.status).toBe(200);
+    expect(await createResponse.json()).toMatchObject({
+      workspace: {
+        schemaVersion: "qa-sdk.motion-workspace/v2",
+        globalRevision: 2,
+        sceneRevisions: {
+          main: 2,
+        },
+        document: {
+          schemaVersion: "qa-sdk.motion-composition/v2",
+          composition: {
+            scenes: [
+              {
+                id: "main",
+                title: "Main",
+              },
+            ],
+          },
+        },
+        editor: {
+          values: {
+            headline: "Legacy headline",
+          },
+          selection: {
+            kind: "scene-layer",
+            sceneId: "main",
+            targetId: "headline",
+          },
+        },
+        source: {
+          storageKey: "workspace:legacy-http",
+        },
+      },
+    });
+
+    const getResponse = await app.request(workspacePath);
+    expect(getResponse.status).toBe(200);
+    expect(await getResponse.json()).toMatchObject({
+      workspace: {
+        schemaVersion: "qa-sdk.motion-workspace/v2",
+        globalRevision: 2,
+        sceneRevisions: {
+          main: 2,
+        },
+        document: {
+          schemaVersion: "qa-sdk.motion-composition/v2",
+        },
+      },
+    });
+
+    repository.close();
+  });
+
   it("applies workspace commands over HTTP through the shared controller flow", async () => {
     const { app, repository } = createTestApp({
       getNow: () => "2026-03-27T02:30:00.000Z",
@@ -172,7 +405,7 @@ describe("motion workspace service health and CRUD routes", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        revision: initial.revision,
+        revision: initial.globalRevision,
         command: {
           type: "set-parameter",
           parameterId: "headline",
@@ -184,7 +417,7 @@ describe("motion workspace service health and CRUD routes", () => {
     expect(await applyResponse.json()).toEqual({
       workspace: {
         ...initial,
-        revision: 1,
+        globalRevision: 0,
         savedAt: "2026-03-27T02:30:00.000Z",
         editor: {
           ...initial.editor,
@@ -200,7 +433,7 @@ describe("motion workspace service health and CRUD routes", () => {
     expect(await getResponse.json()).toEqual({
       workspace: {
         ...initial,
-        revision: 1,
+        globalRevision: 0,
         savedAt: "2026-03-27T02:30:00.000Z",
         editor: {
           ...initial.editor,
@@ -285,11 +518,14 @@ describe("motion workspace service error responses", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        revision: workspace.revision,
+        revision: workspace.globalRevision,
         command: {
-          type: "set-parameter",
-          parameterId: "headline",
-          value: "Conflict baseline",
+          type: "set-composition",
+          composition: {
+            ...createPromoGridComposition("lift"),
+            id: "promo-grid-conflict",
+            title: "Promo Grid Conflict",
+          },
         },
       }),
     });
@@ -299,11 +535,14 @@ describe("motion workspace service error responses", () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        revision: workspace.revision,
+        revision: workspace.globalRevision,
         command: {
-          type: "set-parameter",
-          parameterId: "headline",
-          value: "Conflict retry",
+          type: "set-composition",
+          composition: {
+            ...createPromoGridComposition("flash"),
+            id: "promo-grid-conflict-retry",
+            title: "Promo Grid Conflict Retry",
+          },
         },
       }),
     });
@@ -311,6 +550,191 @@ describe("motion workspace service error responses", () => {
     expect(await staleApplyResponse.json()).toEqual({
       code: "revision_conflict",
       message: "workspace revision이 충돌했습니다. expectedRevision=0, actualRevision=1.",
+      expectedRevision: 0,
+      actualRevision: 1,
+    });
+
+    repository.close();
+  });
+});
+
+describe("motion workspace service scene routes", () => {
+  it("lists, reads, updates, creates, and deletes scenes over HTTP", async () => {
+    const { app, repository } = createTestApp({
+      getNow: () => "2026-03-27T05:00:00.000Z",
+    });
+    const workspaceId = "demo/workspace-scenes-http";
+    const workspacePath = `/workspaces/${encodeURIComponent(workspaceId)}`;
+    const initial = createSceneWorkspaceSnapshot();
+
+    const createResponse = await app.request(workspacePath, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace: initial }),
+    });
+    expect(createResponse.status).toBe(200);
+
+    const listResponse = await app.request(`${workspacePath}/scenes`);
+    expect(listResponse.status).toBe(200);
+    expect(await listResponse.json()).toEqual({
+      scenes: [
+        {
+          scene: getScene(initial, "scene-a"),
+          revision: 0,
+        },
+        {
+          scene: getScene(initial, "scene-b"),
+          revision: 0,
+        },
+      ],
+      globalRevision: 0,
+    });
+
+    const getResponse = await app.request(`${workspacePath}/scenes/scene-a`);
+    expect(getResponse.status).toBe(200);
+    expect(await getResponse.json()).toEqual({
+      scene: getScene(initial, "scene-a"),
+      revision: 0,
+      globalRevision: 0,
+    });
+
+    const updatedSceneA: MotionSceneDef = {
+      ...getScene(initial, "scene-a"),
+      title: "Scene A updated",
+      durationMs: 2000,
+    };
+    const updateResponse = await app.request(`${workspacePath}/scenes/scene-a`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: updatedSceneA,
+      }),
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(await updateResponse.json()).toEqual({
+      scene: updatedSceneA,
+      revision: 1,
+      globalRevision: 0,
+    });
+
+    const createdScene: MotionSceneDef = {
+      id: "scene-c",
+      title: "Scene C",
+      startMs: 3200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "badge-target",
+          startMs: 0,
+          durationMs: 800,
+          enter: { preset: "fade-in" },
+        },
+      ],
+      sequences: [],
+      captions: [],
+    };
+    const createSceneResponse = await app.request(`${workspacePath}/scenes`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: createdScene,
+      }),
+    });
+    expect(createSceneResponse.status).toBe(200);
+    expect(await createSceneResponse.json()).toEqual({
+      scene: createdScene,
+      revision: 0,
+      globalRevision: 1,
+    });
+
+    const listAfterCreate = await app.request(`${workspacePath}/scenes`);
+    expect(listAfterCreate.status).toBe(200);
+    expect(await listAfterCreate.json()).toEqual({
+      scenes: [
+        {
+          scene: updatedSceneA,
+          revision: 1,
+        },
+        {
+          scene: getScene(initial, "scene-b"),
+          revision: 0,
+        },
+        {
+          scene: createdScene,
+          revision: 0,
+        },
+      ],
+      globalRevision: 1,
+    });
+
+    const deleteSceneResponse = await app.request(`${workspacePath}/scenes/scene-b`, {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ revision: 1 }),
+    });
+    expect(deleteSceneResponse.status).toBe(200);
+    expect(await deleteSceneResponse.json()).toEqual({
+      deletedSceneId: "scene-b",
+      globalRevision: 2,
+    });
+
+    const deletedGetResponse = await app.request(`${workspacePath}/scenes/scene-b`);
+    expect(deletedGetResponse.status).toBe(404);
+    expect(await deletedGetResponse.json()).toEqual({
+      code: "scene_not_found",
+      message: `scene를 찾을 수 없습니다: ${workspaceId}/scene-b.`,
+      id: workspaceId,
+      sceneId: "scene-b",
+    });
+
+    repository.close();
+  });
+
+  it("returns a 409 scene revision_conflict for stale scene saves", async () => {
+    const { app, repository } = createTestApp();
+    const workspaceId = "demo/workspace-scenes-conflict";
+    const workspacePath = `/workspaces/${encodeURIComponent(workspaceId)}`;
+    const initial = createSceneWorkspaceSnapshot();
+
+    const createResponse = await app.request(workspacePath, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace: initial }),
+    });
+    expect(createResponse.status).toBe(200);
+
+    const baselineScene: MotionSceneDef = {
+      ...getScene(initial, "scene-a"),
+      title: "Scene A baseline",
+    };
+    const firstSave = await app.request(`${workspacePath}/scenes/scene-a`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: baselineScene,
+      }),
+    });
+    expect(firstSave.status).toBe(200);
+
+    const staleSave = await app.request(`${workspacePath}/scenes/scene-a`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: {
+          ...getScene(initial, "scene-a"),
+          title: "Scene A stale retry",
+        },
+      }),
+    });
+    expect(staleSave.status).toBe(409);
+    expect(await staleSave.json()).toEqual({
+      code: "revision_conflict",
+      message: "scene revision이 충돌했습니다. sceneId=scene-a, expectedRevision=0, actualRevision=1.",
+      sceneId: "scene-a",
       expectedRevision: 0,
       actualRevision: 1,
     });
@@ -342,7 +766,7 @@ describe("motion workspace client roundtrip against real endpoints", () => {
     });
 
     const updated = createWorkspaceSnapshot({
-      revision: 1,
+      globalRevision: 1,
       savedAt: "2026-03-27T02:00:00.000Z",
       editor: {
         ...initial.editor,
@@ -361,7 +785,7 @@ describe("motion workspace client roundtrip against real endpoints", () => {
         {
           id: workspaceId,
           title: updated.document.composition.title,
-          revision: updated.revision,
+          revision: updated.globalRevision,
           savedAt: updated.savedAt,
         },
       ],
@@ -405,21 +829,33 @@ describe("motion workspace client roundtrip against real endpoints", () => {
     await client.create(workspaceId, initial);
 
     const applied = await client.applyCommand(workspaceId, {
-      type: "set-parameter",
-      parameterId: "headline",
-      value: "Client applied headline",
-    }, initial.revision);
+      type: "set-composition",
+      composition: {
+        ...createPromoGridComposition("lift"),
+        id: "promo-grid-client",
+        title: "Promo Grid Client",
+      },
+    }, initial.globalRevision);
 
-    expect(applied).toEqual({
+    expect(applied).toMatchObject({
       workspace: {
-        ...initial,
-        revision: 1,
+        schemaVersion: "qa-sdk.motion-workspace/v2",
+        globalRevision: 1,
+        sceneRevisions: {
+          main: 1,
+        },
         savedAt: "2026-03-27T04:00:00.000Z",
-        editor: {
-          ...initial.editor,
-          values: {
-            ...initial.editor.values,
-            headline: "Client applied headline",
+        document: {
+          schemaVersion: "qa-sdk.motion-composition/v2",
+          composition: {
+            id: "promo-grid-client",
+            title: "Promo Grid Client",
+            scenes: [
+              {
+                id: "main",
+                title: "Main",
+              },
+            ],
           },
         },
       },
@@ -429,10 +865,13 @@ describe("motion workspace client roundtrip against real endpoints", () => {
     let caught: unknown;
     try {
       await client.applyCommand(workspaceId, {
-        type: "set-parameter",
-        parameterId: "headline",
-        value: "Stale client headline",
-      }, initial.revision);
+        type: "set-composition",
+        composition: {
+          ...createPromoGridComposition("flash"),
+          id: "promo-grid-client-stale",
+          title: "Promo Grid Client Stale",
+        },
+      }, initial.globalRevision);
     } catch (error) {
       caught = error;
     }
@@ -449,5 +888,303 @@ describe("motion workspace client roundtrip against real endpoints", () => {
     });
 
     repository.close();
+  });
+});
+
+describe("motion workspace service websocket routes", () => {
+  it("registers GET /workspaces/:id/ws on the app", () => {
+    const { app, repository } = createTestApp();
+    expect(app.routes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        method: "GET",
+        path: "/workspaces/:id/ws",
+      }),
+    ]));
+    repository.close();
+  });
+
+  it("broadcasts scene/resource notifications and clients can pull the latest data over HTTP", async () => {
+    const { app, repository } = createTestApp({
+      getNow: () => "2026-03-27T06:00:00.000Z",
+    });
+    const client = new MotionWorkspaceClient({
+      baseUrl: "https://workspace.qa",
+      fetch: (input, init) => {
+        const url = new URL(input);
+        return app.request(url.pathname, init);
+      },
+    });
+    const workspaceId = "demo/workspace-notify";
+    const workspacePath = `/workspaces/${encodeURIComponent(workspaceId)}`;
+    const initial = createSceneWorkspaceSnapshot();
+    const wsSocket = new FakeWsContext();
+    const wsEvents = createWorkspaceWsEvents(createWsContext(workspaceId, "alice"), app.wsHub);
+
+    await client.create(workspaceId, initial);
+    wsEvents.onOpen?.(new Event("open"), wsSocket as never);
+
+    const updatedSceneA: MotionSceneDef = {
+      ...getScene(initial, "scene-a"),
+      title: "Scene A remote updated",
+      durationMs: 2100,
+    };
+    const sceneSaveResponse = await app.request(`${workspacePath}/scenes/scene-a`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: updatedSceneA,
+      }),
+    });
+    expect(sceneSaveResponse.status).toBe(200);
+    expect(JSON.parse(wsSocket.messages[1]!)).toEqual({
+      type: "scene:updated",
+      workspaceId,
+      sceneId: "scene-a",
+      revision: 1,
+    });
+    expect(await client.getScene(workspaceId, "scene-a")).toEqual({
+      scene: updatedSceneA,
+      revision: 1,
+      globalRevision: 0,
+    });
+
+    const createdScene: MotionSceneDef = {
+      id: "scene-c",
+      title: "Scene C",
+      startMs: 3200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "badge-target",
+          startMs: 0,
+          durationMs: 800,
+          enter: { preset: "fade-in" },
+        },
+      ],
+      sequences: [],
+      captions: [],
+    };
+    const createSceneResponse = await app.request(`${workspacePath}/scenes`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        revision: 0,
+        scene: createdScene,
+      }),
+    });
+    expect(createSceneResponse.status).toBe(200);
+    expect(JSON.parse(wsSocket.messages[2]!)).toEqual({
+      type: "resource:updated",
+      workspaceId,
+      revision: 1,
+    });
+
+    const workspaceAfterCreate = (await client.get(workspaceId)).workspace;
+    if (workspaceAfterCreate.document.schemaVersion !== "qa-sdk.motion-composition/v2") {
+      throw new Error(`scene document가 아닙니다: ${workspaceAfterCreate.document.schemaVersion}`);
+    }
+
+    const resourceUpdatedWorkspace: MotionWorkspaceSnapshotV2 = {
+      ...workspaceAfterCreate,
+      globalRevision: workspaceAfterCreate.globalRevision + 1,
+      document: {
+        ...workspaceAfterCreate.document,
+        composition: {
+          ...workspaceAfterCreate.document.composition,
+          parameters: workspaceAfterCreate.document.composition.parameters.map((parameter) =>
+            parameter.id === "headline"
+              ? { ...parameter, label: "Headline v2" }
+              : parameter
+          ),
+        },
+      },
+    };
+    const resourceUpdateResponse = await app.request(workspacePath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workspace: resourceUpdatedWorkspace }),
+    });
+    expect(resourceUpdateResponse.status).toBe(200);
+    expect(JSON.parse(wsSocket.messages[3]!)).toEqual({
+      type: "resource:updated",
+      workspaceId,
+      revision: 2,
+    });
+
+    const pulledWorkspace = await client.get(workspaceId);
+    if (pulledWorkspace.workspace.document.schemaVersion !== "qa-sdk.motion-composition/v2") {
+      throw new Error(`scene document가 아닙니다: ${pulledWorkspace.workspace.document.schemaVersion}`);
+    }
+    expect(pulledWorkspace.workspace.document.composition.parameters[0]).toMatchObject({
+      id: "headline",
+      label: "Headline v2",
+    });
+
+    repository.close();
+  });
+
+  it("broadcasts messages and cleans up connections through workspace ws events", () => {
+    const workspaceId = "demo/workspace-live-ws";
+    const otherWorkspaceId = "demo/workspace-live-ws-other";
+    const hub = createWorkspaceWsHub();
+    const aliceSocket = new FakeWsContext();
+    const bobSocket = new FakeWsContext();
+    const carolSocket = new FakeWsContext();
+
+    const aliceEvents = createWorkspaceWsEvents(createWsContext(workspaceId, "alice"), hub);
+    const bobEvents = createWorkspaceWsEvents(createWsContext(workspaceId, "bob"), hub);
+    const carolEvents = createWorkspaceWsEvents(createWsContext(otherWorkspaceId, "carol"), hub);
+
+    aliceEvents.onOpen?.(new Event("open"), aliceSocket as never);
+    expect(JSON.parse(aliceSocket.messages[0]!)).toEqual({
+      type: "connected",
+      workspaceId,
+      userId: "alice",
+      sceneLocks: [],
+      presences: [],
+    });
+
+    aliceEvents.onMessage?.({
+      data: JSON.stringify({
+        type: "scene:lock",
+        sceneId: "scene-a",
+        userId: "alice",
+      }),
+    } as MessageEvent, aliceSocket as never);
+
+    expect(JSON.parse(aliceSocket.messages[1]!)).toEqual({
+      type: "scene:lock",
+      workspaceId,
+      sceneId: "scene-a",
+      userId: "alice",
+      holders: ["alice"],
+      warning: false,
+    });
+
+    aliceEvents.onMessage?.({
+      data: JSON.stringify({
+        type: "presence",
+        userId: "alice",
+        activeSceneId: "scene-a",
+        cursor: { x: 120, y: 44 },
+      }),
+    } as MessageEvent, aliceSocket as never);
+
+    expect(JSON.parse(aliceSocket.messages[2]!)).toEqual({
+      type: "presence",
+      workspaceId,
+      userId: "alice",
+      activeSceneId: "scene-a",
+      cursor: { x: 120, y: 44 },
+    });
+
+    bobEvents.onOpen?.(new Event("open"), bobSocket as never);
+    carolEvents.onOpen?.(new Event("open"), carolSocket as never);
+
+    expect(JSON.parse(bobSocket.messages[0]!)).toEqual({
+      type: "connected",
+      workspaceId,
+      userId: "bob",
+      sceneLocks: [
+        {
+          sceneId: "scene-a",
+          userId: "alice",
+        },
+      ],
+      presences: [
+        {
+          userId: "alice",
+          activeSceneId: "scene-a",
+          cursor: { x: 120, y: 44 },
+        },
+      ],
+    });
+    expect(JSON.parse(carolSocket.messages[0]!)).toEqual({
+      type: "connected",
+      workspaceId: otherWorkspaceId,
+      userId: "carol",
+      sceneLocks: [],
+      presences: [],
+    });
+    expect(hub.getWorkspaceConnectionCount(workspaceId)).toBe(2);
+    expect(hub.getWorkspaceConnectionCount(otherWorkspaceId)).toBe(1);
+
+    bobEvents.onMessage?.({
+      data: JSON.stringify({
+        type: "scene:lock",
+        sceneId: "scene-a",
+        userId: "bob",
+      }),
+    } as MessageEvent, bobSocket as never);
+
+    expect(JSON.parse(aliceSocket.messages[3]!)).toEqual({
+      type: "scene:lock",
+      workspaceId,
+      sceneId: "scene-a",
+      userId: "bob",
+      holders: ["alice", "bob"],
+      warning: true,
+    });
+    expect(JSON.parse(bobSocket.messages[1]!)).toEqual({
+      type: "scene:lock",
+      workspaceId,
+      sceneId: "scene-a",
+      userId: "bob",
+      holders: ["alice", "bob"],
+      warning: true,
+    });
+
+    aliceEvents.onMessage?.({
+      data: JSON.stringify({
+        type: "cursor-update",
+        x: 120,
+        y: 44,
+      }),
+    } as MessageEvent, aliceSocket as never);
+
+    expect(JSON.parse(aliceSocket.messages[4]!)).toEqual({
+      type: "workspace-message",
+      workspaceId,
+      userId: "alice",
+      payload: {
+        type: "cursor-update",
+        x: 120,
+        y: 44,
+      },
+    });
+    expect(JSON.parse(bobSocket.messages[2]!)).toEqual({
+      type: "workspace-message",
+      workspaceId,
+      userId: "alice",
+      payload: {
+        type: "cursor-update",
+        x: 120,
+        y: 44,
+      },
+    });
+    expect(carolSocket.messages).toHaveLength(1);
+
+    aliceEvents.onClose?.(new Event("close"), aliceSocket as never);
+    expect(hub.getWorkspaceConnectionCount(workspaceId)).toBe(1);
+    expect(JSON.parse(bobSocket.messages[3]!)).toEqual({
+      type: "presence",
+      workspaceId,
+      userId: "alice",
+    });
+    expect(JSON.parse(bobSocket.messages[4]!)).toEqual({
+      type: "scene:unlock",
+      workspaceId,
+      sceneId: "scene-a",
+      userId: "alice",
+      holders: ["bob"],
+      reason: "disconnect",
+    });
+
+    carolEvents.onError?.(new Event("error"), carolSocket as never);
+    expect(hub.getWorkspaceConnectionCount(otherWorkspaceId)).toBe(0);
+
+    bobEvents.onClose?.(new Event("close"), bobSocket as never);
+    expect(hub.getWorkspaceConnectionCount(workspaceId)).toBe(0);
   });
 });

@@ -54,6 +54,7 @@ export function createInvalidRequestError(message: string): MotionWorkspaceServi
 
 function fromRepositoryError(error: MotionWorkspaceRepositoryError): MotionWorkspaceServiceError {
   const statusCode = error.shape.code === "workspace_not_found"
+    || error.shape.code === "scene_not_found"
     ? 404
     : 409;
 

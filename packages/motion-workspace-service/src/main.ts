@@ -25,6 +25,7 @@ const server = serve({
     `[${info.serviceId}] ${info.status} (${info.defaultPersistence}) port=${serverInfo.port}`,
   );
 });
+app.injectWebSocket(server);
 
 async function shutdown(): Promise<void> {
   server.close();
