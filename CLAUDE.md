@@ -16,6 +16,10 @@
 | `docs/specs/system/tag-management.spec.md` | 태그 관리 설계 — 저장/조회/전파/충돌/카디널리티 |
 | `docs/specs/decision-flow/df-system.md` | decision-flow 시스템 (16멤버, P0~P11) |
 | `docs/guides/testing-patterns.md` | 테스트 SSOT 파생 코드 예시 (8패턴) |
+| `docs/definition-system-philosophy.md` | Definition 시스템 철학 — 좌표 기반 문서화 원리 |
+| `docs/specs/system/decision-definition-bridge.spec.md` | Decision↔Definition 순환 구조 |
+| `docs/guides/scope-classification-guide.md` | scope 7종 판별 + aspect 선택 기준 |
+| `tasks/prd-drizzle-standardization-remaining.md` | Drizzle 표준화 잔여 작업 PRD (7 US) |
 
 ## 패키지 규칙
 
@@ -209,6 +213,14 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - **라이브러리**: constructor 인자 우선, `process.env` 최소화
 - **테스트**: 직접 접근 허용
 
+### 서비스 로깅
+- **서비스**: `createLogger("서비스명")` 필수. `console.log/warn/error` 사용 금지
+- pino 구조화 JSON 로깅: `logger.info({ key: value }, "메시지")`
+- 에러 로깅: `logger.error({ error }, "설명")` — Error 객체는 error 키에
+- **브라우저 SDK**: `console.warn` 허용 (pino 미사용)
+- **CLI**: `console.log` 허용 (사용자 출력)
+- **테스트**: 제약 없음
+
 ### 브라우저 SDK 에러 처리
 - `emitWithCoords`/`browserTrack` try-catch 필수 — UI 크래시 방지
 - 인코딩 실패 시 coordinate 없이 emit (이벤트 유실보다 좌표 누락이 낫다)
@@ -254,9 +266,35 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - 모든 결정에 evidence 첨부: `{ kind: data|rule|precedent|intuition|external, source, content, weight }`
 - confidence < 0.3 → 경고. 자동 판정 가능하면 `autoSelect()`, 불가 → 사람이 결정
 - 라이브러리는 순수 (SQLite/fetch 없음). 영속(`~/.qa-sdk/decision-flow.sqlite`)과 ingest 전송은 CLI 책임
-- 상세: `docs/specs/decision-flow/`
+- **Decision → Definition 순환**: 의사결정 outcome(artifactType) → 문서 scope 추론, 문서(컨텍스트) → 다음 의사결정 입력
+- bridge: `suggestScopeFromArtifact()`, `suggestLifecycleFromVerdict()`, `buildDefinitionContext()`
+- 상세: `docs/specs/decision-flow/`, `docs/specs/system/decision-definition-bridge.spec.md`
 
-## Definition 시스템 (문서 기반 관리 체계)
+## Definition 시스템 (좌표 기반 문서 관리 체계)
+
+좌표계(scope×aspect×depth)로 문서를 분류하고, 소비 방식(상수/구현/분기/UX/비즈니스)으로 관점을 분해한다. 하나의 서비스를 여러 scope로 해석(상태→state, 기능→feature, 흐름→flow, 제약→constraint, API→interface)하여 중복 없이 식별 가능한 문서 체계를 구성. DB가 메타데이터 SSOT, 파일이 본문 SSOT. 상세: `docs/definition-system-philosophy.md`
+
+### LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
+
+| 유형 | 읽는 법 | 순환 | 사용 기준 |
+|------|---------|------|----------|
+| `contains` | A가 B를 포함한다 | 금지 | 그룹→멤버 소속 (트리). 다중 부모 시 cross-scope 태그 필요 |
+| `depends_on` | A가 B에 의존한다 | 금지 | A가 B 없이 동작 불가 |
+| `implements` | A가 B를 구현한다 | 금지 | 추상 계약→구체 코드 |
+| `refines` | A가 B를 구체화한다 | 금지 | 같은 계층 내 상세화 (문서→상세문서) |
+| `constrains` | A가 B를 제약한다 | 금지 | constraint 문서가 규칙 부과 |
+| `traces_to` | A가 B로 추적한다 | 금지 | deprecated→대체 문서, 이력 추적 |
+
+### 문서 그래프 검증 (validateGraph)
+
+| 검증 | 심각도 | 설명 |
+|------|--------|------|
+| broken-link | error | target 미존재 |
+| circular-ref | error | depends_on/implements/refines 순환 |
+| self-ref | error | 자기 참조 |
+| orphan | warning | approved 문서인데 아무도 참조 안 함 (draft/review 제외) |
+| multi-parent | warning | contains 다중 부모 (cross-scope 태그 있으면 허용) |
+| contains-depth | warning | contains 계층 4단계 초과 |
 
 ### 4계층 (DefLayer) — "이것이 왜 존재하는가"
 
@@ -272,21 +310,40 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 
 ### definition-service (port 3700, NestJS)
 
-- 7 NestJS 모듈: docs, prefixes, intents, consumption, graph, sync, tests
-- DB: SQLite 파일 기반 (`data/definition-service.sqlite`)
+- 9 NestJS 모듈: docs, search, prefixes, intents, consumption, graph, sync, graphql, tests
+- DB: drizzle ORM (정규 테이블) + SearchModule (FTS5, drizzle 미지원 → onModuleInit에서 독립 생성)
+- **메타데이터 SSOT: DB** — frontmatter는 읽기 전용 캐시 (id + address만 파일 소유)
 - prefix 공급: registry-service → fetch → DB. registry 실패 시 DB 캐시
 - prefix SDK: `@qa-sdk/definition-client` (순수 HTTP + NestJS DI)
 
+### definition-service API
+
+| Method | Path | 기능 |
+|---|---|---|
+| GET | `/docs?scope=&aspect=&depth=&layer=&svc=&tag=&q=&limit=&offset=` | 확장 필터 + 전문검색 + pagination |
+| GET | `/docs/:id` | 단건 조회 |
+| PATCH | `/docs/:id` | 메타데이터 업데이트 (DB SSOT, address 자동 계산) |
+| GET | `/docs/:id/children` | contains 자식 |
+| GET | `/docs/:id/parent` | contains 부모 |
+| GET | `/docs/:id/incoming-links` | 역링크 |
+| POST/DELETE | `/docs/:id/links`, `/docs/:id/tags/:tag` | 원자적 link/tag 추가/삭제 |
+| POST | `/sync` | file → DB |
+| POST | `/sync/to-files` | DB → file (frontmatter 역동기화) |
+| POST | `/graph/validate` | 깨진 링크, 순환 참조, 고아 문서 검증 |
+| GET | `/graph/:id/impact` | blast radius 분석 |
+| GET | `/graph/:id/concerns` | concern 전파 조회 |
+
 ### definition-catalog 문서 규모
 
-- 453건 (approved 390 + deprecated 63)
+- 471건 (축/prefix registry-service에 seed 포함)
 - prefix 문서 57건 (docs/specs/prefix-catalog/)
 - skill 문서 20건 (docs/specs/skill-catalog/)
 - 22 aspect (7 scope), 4 depth, 6 link_type
+- 좌표 주소: `def_document:v1:<N>` (scope × aspect × depth 인코딩)
 
 ## 서비스 포트
 
-ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), motion-workspace(3710), gRPC debug(50051, GRPC_PORT 설정 시)
+ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), motion-workspace(3710), decision(3800), gRPC debug(50051, GRPC_PORT 설정 시)
 
 ## 신규 패키지 (이 세션 추가)
 
@@ -298,12 +355,13 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), def
 | `motion-content` | 모션 콘텐츠 (platform-demo에서 분리) |
 | `@qa-sdk/definition-service` | 문서/prefix 정의 관리 서비스 (NestJS + SQLite, port 3700) |
 | `@qa-sdk/definition-client` | definition-service HTTP 클라이언트 + NestJS DI 모듈 |
+| `@qa-sdk/decision-service` | 의사결정 스키마/인스턴스/문서연결 관리 (NestJS + SQLite, port 3800) |
 
 ## Ingest Store Driver (STORE_DRIVER)
 
 ```
 STORE_DRIVER=memory  → InMemory 전체 (기본, 개발/데모)
-STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수)
+STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수, packages/store)
 STORE_DRIVER=d1      → D1/SQLite via SqlDriver (CF Workers, SQLITE_PATH)
 STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_URL)
 ```
@@ -311,6 +369,21 @@ STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_UR
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
 - ClickHouse store: RecordStore만 구현, 나머지 InMemory
 - store-factory.ts에서 드라이버 선택 + 생성
+
+## Drizzle 마이그레이션 규칙
+
+- **버전**: `drizzle-orm` / `drizzle-kit` 모두 `1.0.0-beta.20` 고정
+- **스키마 파일**: 각 패키지 `src/db/schema.ts` (예외 없음)
+- **설정 파일**: 각 패키지 루트 `drizzle.config.ts` (`dialect: "sqlite"`, `out: "./drizzle"`)
+- **마이그레이션 폴더 경로**: `new URL("../../drizzle", import.meta.url).pathname` (process.cwd 금지)
+- **IF NOT EXISTS**: 모든 SQLite 마이그레이션 SQL에 필수. drizzle-kit generate 후 수동 추가
+- **PRAGMA**: 모든 SQLite 서비스에 WAL + busy_timeout=3000. FK 있으면 foreign_keys=ON
+- **드라이버**: NestJS 서비스는 `drizzle-orm/better-sqlite3`, 나머지는 `drizzle-orm/node-sqlite`
+- **node:sqlite 타입**: `getDatabaseSync()` + `DatabaseSyncInstance`를 index-meta에서 import. 자체 인터페이스 정의 금지
+- **쿼리 빌더**: 신규 코드는 drizzle query builder 사용. raw SQL 금지 (기존 definition-service 예외)
+- **에러 핸들링**: migrate() 호출은 try/catch + throw 필수. 에러 삼킴 금지 (index-meta SCHEMA_DDL 폴백 제외)
+- **D1 (Workers)**: 파일시스템 접근 불가하므로 런타임 migrate() 불가. DDL 문자열은 src/db/schema.ts와 수동 동기화
+- **tsup 번들**: drizzle/ 폴더는 `onSuccess` 훅으로 dist에 복사 (publicDir 아님)
 
 ## Protobuf 전송 (codec-proto)
 
