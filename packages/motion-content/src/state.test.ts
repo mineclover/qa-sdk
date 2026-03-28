@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createMotionStageNodeTarget } from "./model.js";
+import { migrateCompositionV1toV2 } from "./migrate-v2.js";
 import { createPromoGridComposition } from "./presets.js";
 import { applyMotionEditorCommand, createMotionEditorState } from "./state.js";
+
+function createSceneEditorState() {
+  return createMotionEditorState(
+    migrateCompositionV1toV2(createPromoGridComposition()),
+  );
+}
 
 describe("motion editor timeline normalization", () => {
   it("preserves parameter overrides when the shell dispatches a set-parameter command", () => {
@@ -487,5 +494,267 @@ describe("motion editor timeline normalization", () => {
       glowColor: "rgba(240,143,32,0.3)",
       glowSize: 144,
     });
+  });
+
+  it("adds, renames, and retimes scenes on the global timeline", () => {
+    const state = createSceneEditorState();
+
+    const added = applyMotionEditorCommand(state, {
+      type: "add-scene",
+      id: "stinger",
+      title: "  Stinger  ",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "chip",
+          startMs: 40,
+          durationMs: 600,
+          enter: { preset: "slide-up-default" },
+        },
+      ],
+      sequences: [
+        {
+          id: "stinger-seq",
+          title: "Stinger Sequence",
+          startMs: 20,
+          durationMs: 700,
+          targetIds: [],
+          layers: [{ targetId: "chip", role: "accent", zIndex: 2 }],
+          captionIds: ["stinger-cap"],
+        },
+      ],
+      captions: [
+        {
+          id: "stinger-cap",
+          text: "씬 캡션",
+          startMs: 80,
+          durationMs: 500,
+          tone: "accent",
+        },
+      ],
+    });
+
+    expect(added.composition.scenes.at(-1)).toMatchObject({
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+    });
+    expect(added.composition.scenes.at(-1)?.sequences[0]?.targetIds).toEqual(["chip"]);
+
+    const renamed = applyMotionEditorCommand(added, {
+      type: "rename-scene",
+      sceneId: "stinger",
+      title: "  Stinger Final  ",
+    });
+    expect(renamed.composition.scenes.find((scene) => scene.id === "stinger")?.title).toBe("Stinger Final");
+
+    const retimed = applyMotionEditorCommand(renamed, {
+      type: "update-scene-timing",
+      sceneId: "stinger",
+      startMs: 6500,
+      durationMs: 900,
+    });
+    expect(retimed.composition.scenes.find((scene) => scene.id === "stinger")).toMatchObject({
+      startMs: 6480,
+      durationMs: 120,
+    });
+  });
+
+  it("adds a placement from the shared target pool and promotes target selection to scene-layer", () => {
+    let state = createSceneEditorState();
+
+    state = applyMotionEditorCommand(state, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [],
+      sequences: [],
+      captions: [],
+    });
+    state = applyMotionEditorCommand(state, {
+      type: "select",
+      selection: { kind: "target", id: "chip" },
+    });
+
+    const placed = applyMotionEditorCommand(state, {
+      type: "add-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    });
+
+    expect(placed.composition.scenes.find((scene) => scene.id === "stinger")?.layers).toContainEqual({
+      targetId: "chip",
+      startMs: 0,
+      durationMs: 800,
+      enter: { preset: "slide-up-default" },
+    });
+    expect(placed.selection).toEqual({ kind: "scene-layer", sceneId: "stinger", targetId: "chip" });
+  });
+
+  it("updates placement timing and cue within a scene", () => {
+    let state = createSceneEditorState();
+
+    state = applyMotionEditorCommand(state, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [],
+      sequences: [],
+      captions: [],
+    });
+    state = applyMotionEditorCommand(state, {
+      type: "add-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    });
+
+    const retimed = applyMotionEditorCommand(state, {
+      type: "update-scene-placement-timing",
+      sceneId: "stinger",
+      targetId: "chip",
+      startMs: 780,
+      durationMs: 200,
+    });
+    const enterUpdated = applyMotionEditorCommand(retimed, {
+      type: "update-scene-placement-cue",
+      sceneId: "stinger",
+      targetId: "chip",
+      cue: "enter",
+      cueRef: { kind: "scale-pop", durationMs: 360 },
+    });
+    const exitAdded = applyMotionEditorCommand(enterUpdated, {
+      type: "update-scene-placement-cue",
+      sceneId: "stinger",
+      targetId: "chip",
+      cue: "exit",
+      cueRef: { preset: "fade-out-quick" },
+    });
+    const exitCleared = applyMotionEditorCommand(exitAdded, {
+      type: "update-scene-placement-cue",
+      sceneId: "stinger",
+      targetId: "chip",
+      cue: "exit",
+      cueRef: null,
+    });
+
+    expect(retimed.composition.scenes.find((scene) => scene.id === "stinger")?.layers[0]).toMatchObject({
+      targetId: "chip",
+      startMs: 680,
+      durationMs: 120,
+    });
+    expect(exitAdded.composition.scenes.find((scene) => scene.id === "stinger")?.layers[0]).toMatchObject({
+      targetId: "chip",
+      enter: { kind: "scale-pop", durationMs: 360 },
+      exit: { preset: "fade-out-quick" },
+    });
+    expect(exitCleared.composition.scenes.find((scene) => scene.id === "stinger")?.layers[0]?.exit).toBeUndefined();
+  });
+
+  it("removes a placement, prunes scene sequence references, and clears selection", () => {
+    let state = createSceneEditorState();
+
+    state = applyMotionEditorCommand(state, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "chip",
+          startMs: 40,
+          durationMs: 600,
+          enter: { preset: "slide-up-default" },
+        },
+      ],
+      sequences: [
+        {
+          id: "stinger-seq",
+          title: "Stinger Sequence",
+          startMs: 20,
+          durationMs: 700,
+          targetIds: ["chip"],
+          layers: [{ targetId: "chip", role: "accent", zIndex: 2 }],
+          captionIds: [],
+        },
+      ],
+      captions: [],
+    });
+    state = applyMotionEditorCommand(state, {
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "stinger", targetId: "chip" },
+    });
+
+    const removed = applyMotionEditorCommand(state, {
+      type: "remove-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    });
+
+    const scene = removed.composition.scenes.find((entry) => entry.id === "stinger");
+    expect(scene?.layers).toEqual([]);
+    expect(scene?.sequences[0]?.targetIds).toEqual([]);
+    expect(scene?.sequences[0]?.layers).toEqual([]);
+    expect(removed.selection).toBeNull();
+  });
+
+  it("removes a scene and drops its placements, sequences, captions, and selection", () => {
+    let state = createSceneEditorState();
+
+    state = applyMotionEditorCommand(state, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "chip",
+          startMs: 40,
+          durationMs: 600,
+          enter: { preset: "slide-up-default" },
+        },
+      ],
+      sequences: [
+        {
+          id: "stinger-seq",
+          title: "Stinger Sequence",
+          startMs: 20,
+          durationMs: 700,
+          targetIds: ["chip"],
+          layers: [{ targetId: "chip", role: "accent", zIndex: 2 }],
+          captionIds: ["stinger-cap"],
+        },
+      ],
+      captions: [
+        {
+          id: "stinger-cap",
+          text: "씬 캡션",
+          startMs: 80,
+          durationMs: 500,
+          tone: "accent",
+        },
+      ],
+    });
+    state = applyMotionEditorCommand(state, {
+      type: "select",
+      selection: { kind: "scene-layer", sceneId: "stinger", targetId: "chip" },
+    });
+
+    const removed = applyMotionEditorCommand(state, {
+      type: "remove-scene",
+      sceneId: "stinger",
+    });
+
+    expect(removed.composition.scenes.some((scene) => scene.id === "stinger")).toBe(false);
+    expect(removed.composition.scenes.flatMap((scene) => scene.sequences.map((sequence) => sequence.id))).not.toContain("stinger-seq");
+    expect(removed.composition.scenes.flatMap((scene) => scene.captions.map((caption) => caption.id))).not.toContain("stinger-cap");
+    expect(removed.selection).toBeNull();
   });
 });

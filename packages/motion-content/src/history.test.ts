@@ -8,9 +8,18 @@ import {
   getMotionEditorCheckpointStrategy,
   isMotionEditorSessionDirty,
   previewMotionEditorSessionCommand,
+  redoMotionEditorSession,
+  undoMotionEditorSession,
 } from "./history.js";
+import { migrateCompositionV1toV2 } from "./migrate-v2.js";
 import { createMotionStageNodeTarget } from "./model.js";
 import { createPromoGridComposition } from "./presets.js";
+
+function createSceneEditorSession() {
+  return createMotionEditorSession(
+    migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
+  );
+}
 
 describe("motion editor history", () => {
   it("does not push selection into the undo stack", () => {
@@ -266,6 +275,160 @@ describe("motion editor history", () => {
       presetId: "slide-up-default",
     });
     expect(presetEdited.past).toHaveLength(6);
+  });
+
+  it("treats scene CRUD as append checkpoints and supports undo/redo", () => {
+    const session = createSceneEditorSession();
+
+    const added = applyMotionEditorSessionCommand(session, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "chip",
+          startMs: 40,
+          durationMs: 600,
+          enter: { preset: "slide-up-default" },
+        },
+      ],
+      sequences: [
+        {
+          id: "stinger-seq",
+          title: "Stinger Sequence",
+          startMs: 20,
+          durationMs: 700,
+          targetIds: ["chip"],
+          layers: [{ targetId: "chip", role: "accent", zIndex: 2 }],
+          captionIds: ["stinger-cap"],
+        },
+      ],
+      captions: [
+        {
+          id: "stinger-cap",
+          text: "씬 캡션",
+          startMs: 80,
+          durationMs: 500,
+          tone: "accent",
+        },
+      ],
+    });
+    expect(getMotionEditorCheckpointStrategy({
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [],
+      sequences: [],
+      captions: [],
+    })).toBe("append");
+
+    const renamed = applyMotionEditorSessionCommand(added, {
+      type: "rename-scene",
+      sceneId: "stinger",
+      title: "Stinger Final",
+    });
+    const retimed = applyMotionEditorSessionCommand(renamed, {
+      type: "update-scene-timing",
+      sceneId: "stinger",
+      startMs: 6500,
+      durationMs: 900,
+    });
+    const removed = applyMotionEditorSessionCommand(retimed, {
+      type: "remove-scene",
+      sceneId: "stinger",
+    });
+
+    expect(removed.past).toHaveLength(4);
+    expect(removed.present.composition.scenes.some((scene) => scene.id === "stinger")).toBe(false);
+    expect(canUndoMotionEditorSession(removed)).toBe(true);
+
+    const undoneRemove = undoMotionEditorSession(removed);
+    expect(undoneRemove.present.composition.scenes.find((scene) => scene.id === "stinger")).toMatchObject({
+      title: "Stinger Final",
+      startMs: 6480,
+      durationMs: 120,
+    });
+    expect(canRedoMotionEditorSession(undoneRemove)).toBe(true);
+
+    const undoneRetime = undoMotionEditorSession(undoneRemove);
+    expect(undoneRetime.present.composition.scenes.find((scene) => scene.id === "stinger")).toMatchObject({
+      title: "Stinger Final",
+      startMs: 5200,
+      durationMs: 800,
+    });
+
+    const redoneRetime = redoMotionEditorSession(undoneRetime);
+    const redoneRemove = redoMotionEditorSession(redoneRetime);
+    expect(redoneRemove.present.composition.scenes.some((scene) => scene.id === "stinger")).toBe(false);
+    expect(canRedoMotionEditorSession(redoneRemove)).toBe(false);
+  });
+
+  it("treats scene placement commands as append checkpoints and supports undo/redo", () => {
+    const session = createSceneEditorSession();
+
+    const withScene = applyMotionEditorSessionCommand(session, {
+      type: "add-scene",
+      id: "stinger",
+      title: "Stinger",
+      startMs: 5200,
+      durationMs: 800,
+      layers: [],
+      sequences: [],
+      captions: [],
+    });
+    const withPlacement = applyMotionEditorSessionCommand(withScene, {
+      type: "add-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    });
+    expect(getMotionEditorCheckpointStrategy({
+      type: "add-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    })).toBe("append");
+
+    const retimed = applyMotionEditorSessionCommand(withPlacement, {
+      type: "update-scene-placement-timing",
+      sceneId: "stinger",
+      targetId: "chip",
+      startMs: 780,
+      durationMs: 200,
+    });
+    const cueEdited = applyMotionEditorSessionCommand(retimed, {
+      type: "update-scene-placement-cue",
+      sceneId: "stinger",
+      targetId: "chip",
+      cue: "enter",
+      cueRef: { kind: "scale-pop", durationMs: 360 },
+    });
+    const removed = applyMotionEditorSessionCommand(cueEdited, {
+      type: "remove-scene-placement",
+      sceneId: "stinger",
+      targetId: "chip",
+    });
+
+    expect(removed.past).toHaveLength(5);
+    expect(
+      removed.present.composition.scenes.find((scene) => scene.id === "stinger")?.layers.some((placement) => placement.targetId === "chip"),
+    ).toBe(false);
+
+    const undoneRemove = undoMotionEditorSession(removed);
+    expect(undoneRemove.present.composition.scenes.find((scene) => scene.id === "stinger")?.layers[0]).toMatchObject({
+      targetId: "chip",
+      startMs: 680,
+      durationMs: 120,
+      enter: { kind: "scale-pop", durationMs: 360 },
+    });
+    expect(canRedoMotionEditorSession(undoneRemove)).toBe(true);
+
+    const redoneRemove = redoMotionEditorSession(undoneRemove);
+    expect(
+      redoneRemove.present.composition.scenes.find((scene) => scene.id === "stinger")?.layers.some((placement) => placement.targetId === "chip"),
+    ).toBe(false);
   });
 
   it("treats set-composition as a fresh clean checkpoint", () => {

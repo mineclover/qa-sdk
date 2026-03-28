@@ -7,21 +7,30 @@ import {
   resolveMotionTransitionWindow,
   type MotionEditorCommand,
   type MotionEditorState,
+  type MotionSetCompositionCommand,
+  type MotionCompositionSchema,
+  type ResolvedMotionCompositionSchema,
   type MotionRuntimeSnapshot,
   type MotionTransportState,
 } from "./editor.js";
 import {
   resolveMotionComposition,
+  resolveMotionCompositionV2,
   isCuePresetRef,
   type MotionCompositionDef,
+  type MotionCompositionDefV2,
   type MotionCueKind,
   type MotionCueRef,
   type MotionLayerContent,
   type MotionLayerContentType,
   type MotionParameterValues,
+  type MotionSceneDef,
+  type MotionSceneSequenceDef,
   type MotionSequenceDef,
   type MotionTransitionParams,
   type MotionTransitionStyle,
+  type ResolvedMotionComposition,
+  type ResolvedMotionCompositionV2,
   type SequenceLayerSlot,
   type SequenceLayerSlotRole,
 } from "./model.js";
@@ -39,8 +48,8 @@ function createTransport(durationMs: number): MotionTransportState {
   };
 }
 
-function createDefaultLayerEnterCue(
-  composition: MotionCompositionDef,
+function createDefaultEnterCue(
+  composition: { readonly cuePresets?: readonly { readonly id: string }[] },
 ): MotionCueRef {
   const defaultPresetId = composition.cuePresets?.find((preset) => preset.id === "slide-up-default")?.id
     ?? composition.cuePresets?.[0]?.id;
@@ -124,6 +133,62 @@ function normalizeMotionCompositionTimeline(
     durationMs: resolveMotionTransitionWindow(draft, transition).durationMs,
   }));
   return { ...draft, transitions };
+}
+
+function isMotionCompositionV2(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+): composition is MotionCompositionDefV2 | ResolvedMotionCompositionV2 {
+  return "targets" in composition && "scenes" in composition;
+}
+
+function normalizeSceneTimeline(
+  scene: MotionSceneDef,
+  compositionDurationMs: number,
+): MotionSceneDef {
+  const clampedScene = clampTimelineWindow(scene.startMs, scene.durationMs, compositionDurationMs);
+  return {
+    ...scene,
+    ...clampedScene,
+    layers: scene.layers.map((placement) => ({
+      ...placement,
+      ...clampTimelineWindow(placement.startMs, placement.durationMs, clampedScene.durationMs),
+    })),
+    sequences: scene.sequences.map((sequence) => {
+      const clamped = clampTimelineWindow(sequence.startMs, sequence.durationMs, clampedScene.durationMs);
+      if (!sequence.layers || sequence.layers.length === 0) {
+        return { ...sequence, ...clamped };
+      }
+      return {
+        ...sequence,
+        ...clamped,
+        targetIds: sequence.layers.map((slot) => slot.targetId),
+      };
+    }),
+    captions: scene.captions.map((caption) => ({
+      ...caption,
+      ...clampTimelineWindow(caption.startMs, caption.durationMs, clampedScene.durationMs),
+    })),
+  };
+}
+
+function normalizeMotionCompositionTimelineV2(
+  composition: MotionCompositionDefV2,
+): MotionCompositionDefV2 {
+  return {
+    ...composition,
+    scenes: composition.scenes.map((scene) =>
+      normalizeSceneTimeline(scene, composition.durationMs)
+    ),
+  };
+}
+
+function resolveMotionCompositionSchema(
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  overrides: Partial<MotionParameterValues> = {},
+): ResolvedMotionCompositionSchema {
+  return isMotionCompositionV2(composition)
+    ? resolveMotionCompositionV2(normalizeMotionCompositionTimelineV2(composition), overrides)
+    : resolveMotionComposition(normalizeMotionCompositionTimeline(composition), overrides);
 }
 
 function removeLayerReferencesFromSequence(
@@ -222,6 +287,69 @@ function removeTransitionFromComposition(
     ...composition,
     transitions: nextTransitions,
   };
+}
+
+function findSceneById(
+  composition: MotionCompositionDefV2,
+  sceneId: string,
+): MotionSceneDef | undefined {
+  return composition.scenes.find((scene) => scene.id === sceneId);
+}
+
+function removeSceneFromComposition(
+  composition: MotionCompositionDefV2,
+  sceneId: string,
+): MotionCompositionDefV2 {
+  const nextScenes = composition.scenes.filter((scene) => scene.id !== sceneId);
+  if (nextScenes.length === composition.scenes.length) {
+    return composition;
+  }
+  return {
+    ...composition,
+    scenes: nextScenes,
+  };
+}
+
+function removeTargetReferencesFromSceneSequence(
+  sequence: MotionSceneSequenceDef,
+  targetId: string,
+): MotionSceneSequenceDef {
+  const nextTargetIds = sequence.targetIds.filter((entry) => entry !== targetId);
+  const nextLayers = sequence.layers?.filter((slot) => slot.targetId !== targetId);
+  const changed = nextTargetIds.length !== sequence.targetIds.length
+    || (sequence.layers ? nextLayers!.length !== sequence.layers.length : false);
+  if (!changed) {
+    return sequence;
+  }
+  return {
+    ...sequence,
+    targetIds: nextTargetIds,
+    layers: nextLayers,
+  };
+}
+
+function removePlacementFromScene(
+  scene: MotionSceneDef,
+  targetId: string,
+): MotionSceneDef {
+  const nextLayers = scene.layers.filter((placement) => placement.targetId !== targetId);
+  if (nextLayers.length === scene.layers.length) {
+    return scene;
+  }
+  return {
+    ...scene,
+    layers: nextLayers,
+    sequences: scene.sequences.map((sequence) =>
+      removeTargetReferencesFromSceneSequence(sequence, targetId)
+    ),
+  };
+}
+
+function cueRefsEqual(
+  left: MotionCueRef | undefined,
+  right: MotionCueRef | undefined,
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function createEditableSequenceLayers(
@@ -427,12 +555,21 @@ function normalizeInlineStringValue(
 
 export function createMotionEditorState(
   composition: MotionCompositionDef,
+  overrides?: Partial<MotionParameterValues>,
+): MotionEditorState<ResolvedMotionComposition>;
+export function createMotionEditorState(
+  composition: MotionCompositionDefV2,
+  overrides?: Partial<MotionParameterValues>,
+): MotionEditorState<ResolvedMotionCompositionV2>;
+export function createMotionEditorState(
+  composition: MotionCompositionSchema,
+  overrides?: Partial<MotionParameterValues>,
+): MotionEditorState<ResolvedMotionCompositionSchema>;
+export function createMotionEditorState(
+  composition: MotionCompositionSchema,
   overrides: Partial<MotionParameterValues> = {},
-): MotionEditorState {
-  const resolved = resolveMotionComposition(
-    normalizeMotionCompositionTimeline(composition),
-    overrides,
-  );
+): MotionEditorState<ResolvedMotionCompositionSchema> {
+  const resolved = resolveMotionCompositionSchema(composition, overrides);
   return {
     composition: resolved,
     values: resolved.values,
@@ -449,10 +586,10 @@ export function createMotionEditorState(
   };
 }
 
-export function syncMotionEditorState(
-  state: MotionEditorState,
+export function syncMotionEditorState<TComposition extends ResolvedMotionCompositionSchema>(
+  state: MotionEditorState<TComposition>,
   snapshot: MotionRuntimeSnapshot,
-): MotionEditorState {
+): MotionEditorState<TComposition> {
   return {
     ...state,
     transport: snapshot.transport,
@@ -463,14 +600,26 @@ export function syncMotionEditorState(
 }
 
 function withResolvedComposition(
-  state: MotionEditorState,
-  composition: MotionCompositionDef,
+  state: MotionEditorState<ResolvedMotionComposition>,
+  composition: MotionCompositionDef | ResolvedMotionComposition,
+  values?: MotionParameterValues,
+): MotionEditorState<ResolvedMotionComposition>;
+function withResolvedComposition(
+  state: MotionEditorState<ResolvedMotionCompositionV2>,
+  composition: MotionCompositionDefV2 | ResolvedMotionCompositionV2,
+  values?: MotionParameterValues,
+): MotionEditorState<ResolvedMotionCompositionV2>;
+function withResolvedComposition(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
+  values?: MotionParameterValues,
+): MotionEditorState<ResolvedMotionCompositionSchema>;
+function withResolvedComposition(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
   values: MotionParameterValues = state.values,
-): MotionEditorState {
-  const resolved = resolveMotionComposition(
-    normalizeMotionCompositionTimeline(composition),
-    values,
-  );
+): MotionEditorState<ResolvedMotionCompositionSchema> {
+  const resolved = resolveMotionCompositionSchema(composition, values);
   return {
     ...state,
     composition: resolved,
@@ -483,10 +632,32 @@ function withResolvedComposition(
   };
 }
 
+type MotionEditorCommandWithoutSetComposition = Exclude<MotionEditorCommand, MotionSetCompositionCommand>;
+
 export function applyMotionEditorCommand(
-  state: MotionEditorState,
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  command: MotionSetCompositionCommand & { readonly composition: MotionCompositionDef },
+): MotionEditorState<ResolvedMotionComposition>;
+export function applyMotionEditorCommand(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  command: MotionSetCompositionCommand & { readonly composition: MotionCompositionDefV2 },
+): MotionEditorState<ResolvedMotionCompositionV2>;
+export function applyMotionEditorCommand(
+  state: MotionEditorState<ResolvedMotionComposition>,
+  command: MotionEditorCommandWithoutSetComposition,
+): MotionEditorState<ResolvedMotionComposition>;
+export function applyMotionEditorCommand(
+  state: MotionEditorState<ResolvedMotionCompositionV2>,
+  command: MotionEditorCommandWithoutSetComposition,
+): MotionEditorState<ResolvedMotionCompositionV2>;
+export function applyMotionEditorCommand(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
   command: MotionEditorCommand,
-): MotionEditorState {
+): MotionEditorState<ResolvedMotionCompositionSchema>;
+export function applyMotionEditorCommand(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+  command: MotionEditorCommand,
+): MotionEditorState<ResolvedMotionCompositionSchema> {
   switch (command.type) {
     case "select":
       return { ...state, selection: command.selection };
@@ -494,8 +665,7 @@ export function applyMotionEditorCommand(
       return createMotionEditorState(command.composition, command.values ?? state.values);
     case "set-parameter": {
       const nextValues = { ...state.values, [command.parameterId]: command.value };
-      const composition = resolveMotionComposition(state.composition, nextValues);
-      return withResolvedComposition(state, composition, nextValues);
+      return withResolvedComposition(state, state.composition, nextValues);
     }
     case "set-current-time":
       return {
@@ -524,14 +694,260 @@ export function applyMotionEditorCommand(
         ...state,
         transport: { ...state.transport, playing: true, currentTimeMs: 0 },
       };
-    case "add-layer": {
-      if (state.composition.layers.some((layer) => layer.id === command.id)) {
+    case "add-scene": {
+      if (!isMotionCompositionV2(state.composition) || state.composition.scenes.some((scene) => scene.id === command.id)) {
         return state;
       }
-      return withResolvedComposition(state, {
-        ...state.composition,
+      const nextTitle = normalizeInlineStringValue(command.title);
+      if (!nextTitle) {
+        return state;
+      }
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      return withResolvedComposition(v2State, {
+        ...v2State.composition,
+        scenes: [
+          ...v2State.composition.scenes,
+          {
+            id: command.id,
+            title: nextTitle,
+            startMs: command.startMs,
+            durationMs: command.durationMs,
+            layers: command.layers ?? [],
+            sequences: command.sequences ?? [],
+            captions: command.captions ?? [],
+          },
+        ],
+      });
+    }
+    case "remove-scene": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const composition = removeSceneFromComposition(v2State.composition, command.sceneId);
+      if (composition === v2State.composition) {
+        return state;
+      }
+      const next = withResolvedComposition(v2State, composition);
+      const shouldClearSelection = (
+        state.selection?.kind === "scene" && state.selection.id === command.sceneId
+      ) || (
+        state.selection?.kind === "scene-layer" && state.selection.sceneId === command.sceneId
+      );
+      return {
+        ...next,
+        selection: shouldClearSelection ? null : next.selection,
+      };
+    }
+    case "rename-scene": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const nextTitle = normalizeInlineStringValue(command.title);
+      if (!nextTitle) {
+        return state;
+      }
+      let changed = false;
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scenes = v2State.composition.scenes.map((scene) => {
+        if (scene.id !== command.sceneId || scene.title === nextTitle) {
+          return scene;
+        }
+        changed = true;
+        return { ...scene, title: nextTitle };
+      });
+      return changed
+        ? withResolvedComposition(v2State, { ...v2State.composition, scenes })
+        : state;
+    }
+    case "update-scene-timing": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      let changed = false;
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scenes = v2State.composition.scenes.map((scene) => {
+        if (scene.id !== command.sceneId) {
+          return scene;
+        }
+        if (scene.startMs === command.startMs && scene.durationMs === command.durationMs) {
+          return scene;
+        }
+        changed = true;
+        return {
+          ...scene,
+          startMs: command.startMs,
+          durationMs: command.durationMs,
+        };
+      });
+      return changed
+        ? withResolvedComposition(v2State, { ...v2State.composition, scenes })
+        : state;
+    }
+    case "add-scene-placement": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scene = findSceneById(v2State.composition, command.sceneId);
+      if (
+        !scene
+        || scene.layers.some((placement) => placement.targetId === command.targetId)
+        || !v2State.composition.targets.some((target) => target.id === command.targetId)
+      ) {
+        return state;
+      }
+
+      const scenes = v2State.composition.scenes.map((entry) => {
+        if (entry.id !== command.sceneId) {
+          return entry;
+        }
+        return {
+          ...entry,
+          layers: [
+            ...entry.layers,
+            {
+              targetId: command.targetId,
+              startMs: command.startMs ?? 0,
+              durationMs: command.durationMs ?? entry.durationMs,
+              enter: command.enter ?? createDefaultEnterCue(v2State.composition),
+              ...(command.exit ? { exit: command.exit } : {}),
+            },
+          ],
+        };
+      });
+
+      const next = withResolvedComposition(v2State, { ...v2State.composition, scenes });
+      const shouldSelectPlacement = (
+        state.selection?.kind === "target"
+        && state.selection.id === command.targetId
+      );
+      return {
+        ...next,
+        selection: shouldSelectPlacement
+          ? { kind: "scene-layer", sceneId: command.sceneId, targetId: command.targetId }
+          : next.selection,
+      };
+    }
+    case "remove-scene-placement": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      let changed = false;
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scenes = v2State.composition.scenes.map((scene) => {
+        if (scene.id !== command.sceneId) {
+          return scene;
+        }
+        const nextScene = removePlacementFromScene(scene, command.targetId);
+        if (nextScene !== scene) {
+          changed = true;
+        }
+        return nextScene;
+      });
+      if (!changed) {
+        return state;
+      }
+      const next = withResolvedComposition(v2State, { ...v2State.composition, scenes });
+      const shouldClearSelection = (
+        state.selection?.kind === "scene-layer"
+        && state.selection.sceneId === command.sceneId
+        && state.selection.targetId === command.targetId
+      );
+      return {
+        ...next,
+        selection: shouldClearSelection ? null : next.selection,
+      };
+    }
+    case "update-scene-placement-timing": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      let changed = false;
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scenes = v2State.composition.scenes.map((scene) => {
+        if (scene.id !== command.sceneId) {
+          return scene;
+        }
+        const layers = scene.layers.map((placement) => {
+          if (placement.targetId !== command.targetId) {
+            return placement;
+          }
+          if (
+            placement.startMs === command.startMs
+            && placement.durationMs === command.durationMs
+          ) {
+            return placement;
+          }
+          changed = true;
+          return {
+            ...placement,
+            startMs: command.startMs,
+            durationMs: command.durationMs,
+          };
+        });
+        return changed ? { ...scene, layers } : scene;
+      });
+      return changed
+        ? withResolvedComposition(v2State, { ...v2State.composition, scenes })
+        : state;
+    }
+    case "update-scene-placement-cue": {
+      if (!isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      if (command.cue === "enter" && command.cueRef === null) {
+        return state;
+      }
+      let changed = false;
+      const v2State = state as MotionEditorState<ResolvedMotionCompositionV2>;
+      const scenes = v2State.composition.scenes.map((scene) => {
+        if (scene.id !== command.sceneId) {
+          return scene;
+        }
+        const layers = scene.layers.map((placement) => {
+          if (placement.targetId !== command.targetId) {
+            return placement;
+          }
+          if (command.cue === "enter") {
+            if (cueRefsEqual(placement.enter, command.cueRef ?? undefined)) {
+              return placement;
+            }
+            changed = true;
+            return { ...placement, enter: command.cueRef! };
+          }
+          if (command.cueRef === null) {
+            if (placement.exit === undefined) {
+              return placement;
+            }
+            changed = true;
+            const { exit: _exit, ...nextPlacement } = placement;
+            return nextPlacement;
+          }
+          if (cueRefsEqual(placement.exit, command.cueRef)) {
+            return placement;
+          }
+          changed = true;
+          return { ...placement, exit: command.cueRef };
+        });
+        return changed ? { ...scene, layers } : scene;
+      });
+      return changed
+        ? withResolvedComposition(v2State, { ...v2State.composition, scenes })
+        : state;
+    }
+    case "add-layer": {
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      if (v1State.composition.layers.some((layer) => layer.id === command.id)) {
+        return state;
+      }
+      return withResolvedComposition(v1State, {
+        ...v1State.composition,
         layers: [
-          ...state.composition.layers,
+          ...v1State.composition.layers,
           {
             id: command.id,
             label: command.label,
@@ -539,17 +955,21 @@ export function applyMotionEditorCommand(
             content: command.content,
             startMs: 0,
             durationMs: command.durationMs,
-            enter: command.enter ?? createDefaultLayerEnterCue(state.composition),
+            enter: command.enter ?? createDefaultEnterCue(v1State.composition),
           },
         ],
       });
     }
     case "remove-layer": {
-      const composition = removeLayerFromComposition(state.composition, command.layerId);
-      if (composition === state.composition) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      const next = withResolvedComposition(state, composition);
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const composition = removeLayerFromComposition(v1State.composition, command.layerId);
+      if (composition === v1State.composition) {
+        return state;
+      }
+      const next = withResolvedComposition(v1State, composition);
       return {
         ...next,
         selection: state.selection?.kind === "layer" && state.selection.id === command.layerId
@@ -559,13 +979,17 @@ export function applyMotionEditorCommand(
       };
     }
     case "add-sequence": {
-      if (state.composition.sequences.some((sequence) => sequence.id === command.id)) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      return withResolvedComposition(state, {
-        ...state.composition,
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      if (v1State.composition.sequences.some((sequence) => sequence.id === command.id)) {
+        return state;
+      }
+      return withResolvedComposition(v1State, {
+        ...v1State.composition,
         sequences: [
-          ...state.composition.sequences,
+          ...v1State.composition.sequences,
           {
             id: command.id,
             title: command.title,
@@ -580,19 +1004,23 @@ export function applyMotionEditorCommand(
       });
     }
     case "remove-sequence": {
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
       const removedTransitionIds = new Set(
-        state.composition.transitions
+        v1State.composition.transitions
           .filter((transition) =>
             transition.fromSequenceId === command.sequenceId
             || transition.toSequenceId === command.sequenceId
           )
           .map((transition) => transition.id),
       );
-      const composition = removeSequenceFromComposition(state.composition, command.sequenceId);
-      if (composition === state.composition) {
+      const composition = removeSequenceFromComposition(v1State.composition, command.sequenceId);
+      if (composition === v1State.composition) {
         return state;
       }
-      const next = withResolvedComposition(state, composition);
+      const next = withResolvedComposition(v1State, composition);
       const shouldClearSelection = (
         state.selection?.kind === "sequence" && state.selection.id === command.sequenceId
       ) || (
@@ -605,13 +1033,17 @@ export function applyMotionEditorCommand(
       };
     }
     case "add-caption": {
-      if (state.composition.captions.some((caption) => caption.id === command.id)) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      return withResolvedComposition(state, {
-        ...state.composition,
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      if (v1State.composition.captions.some((caption) => caption.id === command.id)) {
+        return state;
+      }
+      return withResolvedComposition(v1State, {
+        ...v1State.composition,
         captions: [
-          ...state.composition.captions,
+          ...v1State.composition.captions,
           {
             id: command.id,
             text: command.text,
@@ -623,11 +1055,15 @@ export function applyMotionEditorCommand(
       });
     }
     case "remove-caption": {
-      const composition = removeCaptionFromComposition(state.composition, command.captionId);
-      if (composition === state.composition) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      const next = withResolvedComposition(state, composition);
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const composition = removeCaptionFromComposition(v1State.composition, command.captionId);
+      if (composition === v1State.composition) {
+        return state;
+      }
+      const next = withResolvedComposition(v1State, composition);
       return {
         ...next,
         selection: state.selection?.kind === "caption" && state.selection.id === command.captionId
@@ -637,13 +1073,17 @@ export function applyMotionEditorCommand(
       };
     }
     case "add-transition": {
-      if (state.composition.transitions.some((transition) => transition.id === command.id)) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      return withResolvedComposition(state, {
-        ...state.composition,
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      if (v1State.composition.transitions.some((transition) => transition.id === command.id)) {
+        return state;
+      }
+      return withResolvedComposition(v1State, {
+        ...v1State.composition,
         transitions: [
-          ...state.composition.transitions,
+          ...v1State.composition.transitions,
           {
             id: command.id,
             fromSequenceId: command.fromSequenceId,
@@ -656,11 +1096,15 @@ export function applyMotionEditorCommand(
       });
     }
     case "remove-transition": {
-      const composition = removeTransitionFromComposition(state.composition, command.transitionId);
-      if (composition === state.composition) {
+      if (isMotionCompositionV2(state.composition)) {
         return state;
       }
-      const next = withResolvedComposition(state, composition);
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const composition = removeTransitionFromComposition(v1State.composition, command.transitionId);
+      if (composition === v1State.composition) {
+        return state;
+      }
+      const next = withResolvedComposition(v1State, composition);
       return {
         ...next,
         selection: state.selection?.kind === "transition" && state.selection.id === command.transitionId
@@ -669,14 +1113,18 @@ export function applyMotionEditorCommand(
       };
     }
     case "update-item-string": {
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
       const nextValue = normalizeInlineStringValue(command.value);
       if (!nextValue) {
         return state;
       }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
 
       if (command.itemKind === "layer") {
         let changed = false;
-        const layers = state.composition.layers.map((layer) => {
+        const layers = v1State.composition.layers.map((layer) => {
           if (layer.id !== command.itemId || layer.label === nextValue) {
             return layer;
           }
@@ -684,13 +1132,13 @@ export function applyMotionEditorCommand(
           return { ...layer, label: nextValue };
         });
         return changed
-          ? withResolvedComposition(state, { ...state.composition, layers })
+          ? withResolvedComposition(v1State, { ...v1State.composition, layers })
           : state;
       }
 
       if (command.itemKind === "sequence") {
         let changed = false;
-        const sequences = state.composition.sequences.map((sequence) => {
+        const sequences = v1State.composition.sequences.map((sequence) => {
           if (sequence.id !== command.itemId || sequence.title === nextValue) {
             return sequence;
           }
@@ -698,12 +1146,12 @@ export function applyMotionEditorCommand(
           return { ...sequence, title: nextValue };
         });
         return changed
-          ? withResolvedComposition(state, { ...state.composition, sequences })
+          ? withResolvedComposition(v1State, { ...v1State.composition, sequences })
           : state;
       }
 
       let changed = false;
-      const captions = state.composition.captions.map((caption) => {
+      const captions = v1State.composition.captions.map((caption) => {
         if (caption.id !== command.itemId || caption.text === nextValue) {
           return caption;
         }
@@ -711,27 +1159,35 @@ export function applyMotionEditorCommand(
         return { ...caption, text: nextValue };
       });
       return changed
-        ? withResolvedComposition(state, { ...state.composition, captions })
+        ? withResolvedComposition(v1State, { ...v1State.composition, captions })
         : state;
     }
     case "update-item-timing": {
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
       const { itemKind, itemId, startMs, durationMs } = command;
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
       const update = <T extends { readonly id: string }>(items: readonly T[]) =>
         items.map((item) =>
           item.id === itemId ? { ...item, startMs, durationMs } : item,
         );
       switch (itemKind) {
         case "layer":
-          return withResolvedComposition(state, { ...state.composition, layers: update(state.composition.layers) });
+          return withResolvedComposition(v1State, { ...v1State.composition, layers: update(v1State.composition.layers) });
         case "sequence":
-          return withResolvedComposition(state, { ...state.composition, sequences: update(state.composition.sequences) });
+          return withResolvedComposition(v1State, { ...v1State.composition, sequences: update(v1State.composition.sequences) });
         case "caption":
-          return withResolvedComposition(state, { ...state.composition, captions: update(state.composition.captions) });
+          return withResolvedComposition(v1State, { ...v1State.composition, captions: update(v1State.composition.captions) });
       }
       break;
     }
     case "update-sequence-stagger": {
-      const sequences = state.composition.sequences.map((sequence) => {
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const sequences = v1State.composition.sequences.map((sequence) => {
         if (sequence.id !== command.sequenceId || !sequence.stagger) {
           return sequence;
         }
@@ -747,44 +1203,76 @@ export function applyMotionEditorCommand(
           },
         };
       });
-      return withResolvedComposition(state, { ...state.composition, sequences });
+      return withResolvedComposition(v1State, { ...v1State.composition, sequences });
     }
     case "update-sequence-layer-slot": {
-      const sequences = state.composition.sequences.map((sequence) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const sequences = v1State.composition.sequences.map((sequence) =>
         sequence.id === command.sequenceId
           ? updateSequenceSlot(sequence, command.layerId, command.field, command.value)
           : sequence,
       );
-      return withResolvedComposition(state, { ...state.composition, sequences });
+      return withResolvedComposition(v1State, { ...v1State.composition, sequences });
     }
     case "update-sequence-layer-role": {
-      const sequences = state.composition.sequences.map((sequence) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const sequences = v1State.composition.sequences.map((sequence) =>
         sequence.id === command.sequenceId
           ? updateSequenceSlotRole(sequence, command.layerId, command.role)
           : sequence,
       );
-      return withResolvedComposition(state, { ...state.composition, sequences });
+      return withResolvedComposition(v1State, { ...v1State.composition, sequences });
     }
     case "update-layer-cue-kind":
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
       return withResolvedComposition(
-        state,
-        updateLayerCueKind(state.composition, command.layerId, command.cue, command.kind),
+        state as MotionEditorState<ResolvedMotionComposition>,
+        updateLayerCueKind(
+          (state as MotionEditorState<ResolvedMotionComposition>).composition,
+          command.layerId,
+          command.cue,
+          command.kind,
+        ),
       );
     case "update-layer-cue-preset":
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
       return withResolvedComposition(
-        state,
-        updateLayerCuePreset(state.composition, command.layerId, command.cue, command.presetId),
+        state as MotionEditorState<ResolvedMotionComposition>,
+        updateLayerCuePreset(
+          (state as MotionEditorState<ResolvedMotionComposition>).composition,
+          command.layerId,
+          command.cue,
+          command.presetId,
+        ),
       );
     case "update-layer-content-type": {
-      const layers = state.composition.layers.map((layer) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const layers = v1State.composition.layers.map((layer) =>
         layer.id === command.layerId
           ? { ...layer, content: createLayerContentForType(command.contentType, layer.content) }
           : layer,
       );
-      return withResolvedComposition(state, { ...state.composition, layers });
+      return withResolvedComposition(v1State, { ...v1State.composition, layers });
     }
     case "update-transition-style": {
-      const transitions = state.composition.transitions.map((transition) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const transitions = v1State.composition.transitions.map((transition) =>
         transition.id === command.transitionId
           ? {
             ...transition,
@@ -793,18 +1281,26 @@ export function applyMotionEditorCommand(
           }
           : transition,
       );
-      return withResolvedComposition(state, { ...state.composition, transitions });
+      return withResolvedComposition(v1State, { ...v1State.composition, transitions });
     }
     case "update-transition-duration": {
-      const transitions = state.composition.transitions.map((transition) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const transitions = v1State.composition.transitions.map((transition) =>
         transition.id === command.transitionId
           ? { ...transition, durationMs: command.durationMs }
           : transition,
       );
-      return withResolvedComposition(state, { ...state.composition, transitions });
+      return withResolvedComposition(v1State, { ...v1State.composition, transitions });
     }
     case "update-transition-param": {
-      const transitions = state.composition.transitions.map((transition) =>
+      if (isMotionCompositionV2(state.composition)) {
+        return state;
+      }
+      const v1State = state as MotionEditorState<ResolvedMotionComposition>;
+      const transitions = v1State.composition.transitions.map((transition) =>
         transition.id === command.transitionId
           ? {
             ...transition,
@@ -815,20 +1311,35 @@ export function applyMotionEditorCommand(
           }
           : transition,
       );
-      return withResolvedComposition(state, { ...state.composition, transitions });
+      return withResolvedComposition(v1State, { ...v1State.composition, transitions });
     }
   }
 }
 
-export function describeMotionSelection(state: MotionEditorState): string {
+export function describeMotionSelection(
+  state: MotionEditorState<ResolvedMotionCompositionSchema>,
+): string {
   const selection = state.selection;
   if (!selection) return "Nothing selected";
   if (selection.kind === "composition") return `${state.composition.title}`;
-  if (selection.kind === "layer") return findLayerById(state.composition, selection.id)?.label ?? selection.id;
-  if (selection.kind === "sequence") return findSequenceById(state.composition, selection.id)?.title ?? selection.id;
-  if (selection.kind === "caption") return findCaptionById(state.composition, selection.id)?.text ?? selection.id;
   if (selection.kind === "cue-preset") {
     return state.composition.cuePresets?.find((preset) => preset.id === selection.id)?.label ?? selection.id;
   }
-  return findTransitionById(state.composition, selection.id)?.id ?? selection.id;
+  if (selection.kind === "scene" && isMotionCompositionV2(state.composition)) {
+    return findSceneById(state.composition, selection.id)?.title ?? selection.id;
+  }
+  if (selection.kind === "scene-layer" && isMotionCompositionV2(state.composition)) {
+    const scene = findSceneById(state.composition, selection.sceneId);
+    return scene?.layers.find((layer) => layer.targetId === selection.targetId)?.targetId ?? selection.targetId;
+  }
+  if (selection.kind === "target" && isMotionCompositionV2(state.composition)) {
+    return state.composition.targets.find((target) => target.id === selection.id)?.id ?? selection.id;
+  }
+  if (!isMotionCompositionV2(state.composition)) {
+    if (selection.kind === "layer") return findLayerById(state.composition, selection.id)?.label ?? selection.id;
+    if (selection.kind === "sequence") return findSequenceById(state.composition, selection.id)?.title ?? selection.id;
+    if (selection.kind === "caption") return findCaptionById(state.composition, selection.id)?.text ?? selection.id;
+    if (selection.kind === "transition") return findTransitionById(state.composition, selection.id)?.id ?? selection.id;
+  }
+  return "id" in selection ? selection.id : selection.targetId;
 }

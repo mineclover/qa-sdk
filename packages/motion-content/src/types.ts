@@ -58,10 +58,12 @@ export interface MotionEditorViewport {
   readonly visibleDurationMs: number;
 }
 
-export interface MotionEditorState {
-  readonly composition: ResolvedMotionComposition;
+export interface MotionEditorState<
+  TComposition extends ResolvedMotionCompositionSchema = ResolvedMotionComposition,
+> {
+  readonly composition: TComposition;
   readonly values: MotionParameterValues;
-  readonly selection: MotionEditorSelection | null;
+  readonly selection: MotionEditorSelectionV2 | null;
   readonly transport: MotionTransportState;
   readonly viewport: MotionEditorViewport;
   readonly activeSequenceIds: readonly string[];
@@ -69,9 +71,21 @@ export interface MotionEditorState {
   readonly activeCaptionId: string | null;
 }
 
+export type MotionSetCompositionCommand =
+  | {
+    readonly type: "set-composition";
+    readonly composition: MotionCompositionDef;
+    readonly values?: Partial<MotionParameterValues>;
+  }
+  | {
+    readonly type: "set-composition";
+    readonly composition: MotionCompositionDefV2;
+    readonly values?: Partial<MotionParameterValues>;
+  };
+
 export type MotionEditorCommand =
-  | { readonly type: "select"; readonly selection: MotionEditorSelection | null }
-  | { readonly type: "set-composition"; readonly composition: MotionCompositionDef; readonly values?: Partial<MotionParameterValues> }
+  | { readonly type: "select"; readonly selection: MotionEditorSelectionV2 | null }
+  | MotionSetCompositionCommand
   | { readonly type: "set-parameter"; readonly parameterId: string; readonly value: string | number }
   | { readonly type: "set-current-time"; readonly timeMs: number }
   | { readonly type: "set-loop"; readonly loop: boolean }
@@ -120,6 +134,56 @@ export type MotionEditorCommand =
     readonly params?: MotionTransitionDef["params"];
   }
   | { readonly type: "remove-transition"; readonly transitionId: string }
+  | {
+    readonly type: "add-scene";
+    readonly id: MotionSceneDef["id"];
+    readonly title: string;
+    readonly startMs: number;
+    readonly durationMs: number;
+    readonly layers?: MotionSceneDef["layers"];
+    readonly sequences?: MotionSceneDef["sequences"];
+    readonly captions?: MotionSceneDef["captions"];
+  }
+  | { readonly type: "remove-scene"; readonly sceneId: MotionSceneDef["id"] }
+  | {
+    readonly type: "rename-scene";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly title: string;
+  }
+  | {
+    readonly type: "update-scene-timing";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly startMs: number;
+    readonly durationMs: number;
+  }
+  | {
+    readonly type: "add-scene-placement";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly targetId: SceneLayerPlacement["targetId"];
+    readonly startMs?: number;
+    readonly durationMs?: number;
+    readonly enter?: SceneLayerPlacement["enter"];
+    readonly exit?: SceneLayerPlacement["exit"];
+  }
+  | {
+    readonly type: "remove-scene-placement";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly targetId: SceneLayerPlacement["targetId"];
+  }
+  | {
+    readonly type: "update-scene-placement-timing";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly targetId: SceneLayerPlacement["targetId"];
+    readonly startMs: number;
+    readonly durationMs: number;
+  }
+  | {
+    readonly type: "update-scene-placement-cue";
+    readonly sceneId: MotionSceneDef["id"];
+    readonly targetId: SceneLayerPlacement["targetId"];
+    readonly cue: "enter" | "exit";
+    readonly cueRef: MotionCueRef | null;
+  }
   | { readonly type: "update-item-string"; readonly itemKind: MotionItemKind; readonly itemId: string; readonly value: string }
   | { readonly type: "update-item-timing"; readonly itemKind: MotionItemKind; readonly itemId: string; readonly startMs: number; readonly durationMs: number }
   | {
