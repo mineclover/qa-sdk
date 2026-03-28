@@ -1,7 +1,8 @@
-import type { MotionEditorCommand } from "motion-content";
+import type { MotionEditorCommand, MotionSceneDef } from "motion-content";
 import type {
   MotionWorkspaceDescriptor,
-  MotionWorkspaceSnapshotV1,
+  MotionWorkspaceSnapshot,
+  MotionWorkspaceSnapshotV2,
 } from "motion-workspace";
 export type { MotionWorkspaceConflictErrorShape } from "motion-workspace";
 
@@ -35,10 +36,52 @@ export interface MotionWorkspaceApplyRequest {
   readonly command: MotionEditorCommand;
 }
 
+export interface MotionWorkspaceSceneMutationRequest {
+  readonly revision: number;
+  readonly scene: MotionSceneDef;
+}
+
+export interface MotionWorkspaceSceneStructureRequest {
+  readonly revision: number;
+}
+
 export interface MotionWorkspaceListResponse {
   readonly workspaces: readonly MotionWorkspaceDescriptor[];
 }
 
 export interface MotionWorkspaceGetResponse {
-  readonly workspace: MotionWorkspaceSnapshotV1;
+  readonly workspace: MotionWorkspaceSnapshotV2;
+}
+
+export interface MotionWorkspaceCreateRequest {
+  readonly workspace: MotionWorkspaceSnapshot;
+}
+
+export interface MotionWorkspaceSceneDescriptor {
+  readonly scene: MotionSceneDef;
+  readonly revision: number;
+}
+
+export interface MotionWorkspaceSceneListResponse {
+  readonly scenes: readonly MotionWorkspaceSceneDescriptor[];
+  readonly globalRevision: number;
+}
+
+export interface MotionWorkspaceSceneGetResponse {
+  readonly scene: MotionSceneDef;
+  readonly revision: number;
+  readonly globalRevision: number;
+}
+
+export interface MotionWorkspaceDeleteSceneResponse {
+  readonly deletedSceneId: string;
+  readonly globalRevision: number;
+}
+
+export interface MotionWorkspaceSceneConflictErrorShape {
+  readonly code: "revision_conflict";
+  readonly message: string;
+  readonly sceneId: string;
+  readonly expectedRevision?: number;
+  readonly actualRevision?: number;
 }

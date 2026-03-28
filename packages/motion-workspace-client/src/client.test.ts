@@ -1,17 +1,27 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { createPromoGridComposition } from "motion-content";
-import { createMotionWorkspaceSnapshot } from "motion-workspace";
+import {
+  createPromoGridComposition,
+  type MotionCompositionDefV2,
+  type MotionSceneDef,
+} from "motion-content";
+import {
+  createMotionWorkspaceSnapshot,
+  type MotionWorkspaceSnapshotV2,
+} from "motion-workspace";
 import {
   MotionWorkspaceClient,
   MotionWorkspaceClientError,
   isMotionWorkspaceConflictError,
   isMotionWorkspaceConflictErrorShape,
+  isMotionWorkspaceSceneConflictError,
+  isMotionWorkspaceSceneConflictErrorShape,
 } from "./client.js";
 import type {
   MotionWorkspaceClientFetch,
   MotionWorkspaceClientRequestInit,
   MotionWorkspaceClientResponse,
   MotionWorkspaceConflictErrorShape,
+  MotionWorkspaceSceneConflictErrorShape,
 } from "./types.js";
 
 interface RecordedRequest {
@@ -56,7 +66,7 @@ function createFetchHarness(responses: readonly MotionWorkspaceClientResponse[])
   return { fetch, requests };
 }
 
-function createWorkspaceSnapshot() {
+function createWorkspaceSnapshot(): MotionWorkspaceSnapshotV2 {
   return createMotionWorkspaceSnapshot({
     composition: createPromoGridComposition("flash"),
     values: {
@@ -67,6 +77,112 @@ function createWorkspaceSnapshot() {
     },
     savedAt: "2026-03-27T00:00:00.000Z",
   });
+}
+
+function createSceneComposition(): MotionCompositionDefV2 {
+  return {
+    id: "scene-client-demo",
+    title: "Scene Client Demo",
+    description: "Scene client fixture",
+    durationMs: 4000,
+    parameters: [
+      {
+        id: "headline",
+        label: "Headline",
+        type: "text",
+        defaultValue: "Scene headline",
+      },
+    ],
+    cuePresets: [
+      {
+        id: "fade-in",
+        label: "Fade In",
+        kind: "fade",
+        durationMs: 240,
+      },
+    ],
+    assets: [],
+    targets: [
+      {
+        id: "hero-target",
+        target: { kind: "stage-node", nodeId: "hero" },
+        content: { type: "dom" },
+      },
+      {
+        id: "cta-target",
+        target: { kind: "stage-node", nodeId: "cta" },
+        content: { type: "dom" },
+      },
+      {
+        id: "badge-target",
+        target: { kind: "stage-node", nodeId: "badge" },
+        content: { type: "dom" },
+      },
+    ],
+    scenes: [
+      {
+        id: "scene-a",
+        title: "Scene A",
+        startMs: 0,
+        durationMs: 1800,
+        layers: [
+          {
+            targetId: "hero-target",
+            startMs: 0,
+            durationMs: 1800,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+      {
+        id: "scene-b",
+        title: "Scene B",
+        startMs: 1800,
+        durationMs: 2200,
+        layers: [
+          {
+            targetId: "cta-target",
+            startMs: 0,
+            durationMs: 2200,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+    ],
+  };
+}
+
+function createSceneWorkspaceSnapshot(): MotionWorkspaceSnapshotV2 {
+  return createMotionWorkspaceSnapshot({
+    composition: createSceneComposition(),
+    values: {
+      headline: "Scene route headline",
+    },
+    source: {
+      storageKey: "workspace:scene-client",
+    },
+    savedAt: "2026-03-27T00:00:00.000Z",
+  });
+}
+
+function getScene(
+  workspace: MotionWorkspaceSnapshotV2,
+  sceneId: string,
+): MotionSceneDef {
+  if (workspace.document.schemaVersion !== "qa-sdk.motion-composition/v2") {
+    throw new Error(`scene document가 아닙니다: ${workspace.document.schemaVersion}`);
+  }
+
+  const scene = workspace.document.composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    throw new Error(`scene를 찾을 수 없습니다: ${sceneId}`);
+  }
+
+  return scene;
 }
 
 afterEach(() => {
@@ -86,7 +202,7 @@ describe("motion workspace client CRUD", () => {
           {
             id: "demo/workspace 1",
             title: workspace.document.composition.title,
-            revision: workspace.revision,
+            revision: workspace.globalRevision,
             savedAt: workspace.savedAt,
           },
         ],
@@ -112,7 +228,7 @@ describe("motion workspace client CRUD", () => {
         {
           id: "demo/workspace 1",
           title: workspace.document.composition.title,
-          revision: workspace.revision,
+          revision: workspace.globalRevision,
           savedAt: workspace.savedAt,
         },
       ],
@@ -196,16 +312,20 @@ describe("motion workspace client CRUD", () => {
     ]);
   });
 
-  it("throws a concrete initialization error when no fetch implementation is available", () => {
+  it("throws a concrete request error when no fetch implementation is available", async () => {
     Object.defineProperty(globalThis, "fetch", {
       value: undefined,
       configurable: true,
       writable: true,
     });
 
-    expect(() => new MotionWorkspaceClient({
+    const client = new MotionWorkspaceClient({
       baseUrl: "https://workspace.qa/api",
-    })).toThrowError("global fetch가 없어 MotionWorkspaceClient를 초기화할 수 없습니다.");
+    });
+
+    await expect(client.get("missing-fetch")).rejects.toThrowError(
+      "global fetch가 없어 MotionWorkspaceClient를 초기화할 수 없습니다.",
+    );
   });
 });
 
@@ -214,7 +334,7 @@ describe("motion workspace client apply-command and conflict handling", () => {
     const workspace = createWorkspaceSnapshot();
     const nextWorkspace = {
       ...workspace,
-      revision: workspace.revision + 1,
+      globalRevision: workspace.globalRevision + 1,
     };
     const { fetch, requests } = createFetchHarness([
       createMockResponse(200, { workspace: nextWorkspace }),
@@ -230,7 +350,7 @@ describe("motion workspace client apply-command and conflict handling", () => {
       value: "Remote headline v2",
     } as const;
 
-    const applied = await client.applyCommand("demo/workspace 1", command, workspace.revision);
+    const applied = await client.applyCommand("demo/workspace 1", command, workspace.globalRevision);
 
     expect(applied).toEqual({ workspace: nextWorkspace });
     expect(requests).toEqual([
@@ -240,7 +360,7 @@ describe("motion workspace client apply-command and conflict handling", () => {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            revision: workspace.revision,
+            revision: workspace.globalRevision,
             command,
           }),
         },
@@ -270,7 +390,7 @@ describe("motion workspace client apply-command and conflict handling", () => {
         type: "set-parameter",
         parameterId: "headline",
         value: "Conflict headline",
-      }, workspace.revision);
+      }, workspace.globalRevision);
     } catch (error) {
       caught = error;
     }
@@ -289,5 +409,196 @@ describe("motion workspace client apply-command and conflict handling", () => {
       status: 409,
       payload: conflict,
     });
+  });
+});
+
+describe("motion workspace client scene CRUD", () => {
+  it("sends typed scene list/get/update/create/delete requests through an injected fetch implementation", async () => {
+    const workspace = createSceneWorkspaceSnapshot();
+    const updatedScene: MotionSceneDef = {
+      ...getScene(workspace, "scene-a"),
+      title: "Scene A updated",
+      durationMs: 2000,
+    };
+    const createdScene: MotionSceneDef = {
+      id: "scene-c",
+      title: "Scene C",
+      startMs: 3200,
+      durationMs: 800,
+      layers: [
+        {
+          targetId: "badge-target",
+          startMs: 0,
+          durationMs: 800,
+          enter: { preset: "fade-in" },
+        },
+      ],
+      sequences: [],
+      captions: [],
+    };
+    const { fetch, requests } = createFetchHarness([
+      createMockResponse(200, {
+        scenes: [
+          {
+            scene: getScene(workspace, "scene-a"),
+            revision: 0,
+          },
+          {
+            scene: getScene(workspace, "scene-b"),
+            revision: 0,
+          },
+        ],
+        globalRevision: 0,
+      }),
+      createMockResponse(200, {
+        scene: getScene(workspace, "scene-a"),
+        revision: 0,
+        globalRevision: 0,
+      }),
+      createMockResponse(200, {
+        scene: updatedScene,
+        revision: 1,
+        globalRevision: 0,
+      }),
+      createMockResponse(200, {
+        scene: createdScene,
+        revision: 0,
+        globalRevision: 1,
+      }),
+      createMockResponse(200, {
+        deletedSceneId: "scene-b",
+        globalRevision: 2,
+      }),
+    ]);
+    const client = new MotionWorkspaceClient({
+      baseUrl: "https://workspace.qa/api/",
+      fetch,
+    });
+
+    const listed = await client.listScenes("demo/workspace 1");
+    const loaded = await client.getScene("demo/workspace 1", "scene-a");
+    const updated = await client.updateScene("demo/workspace 1", "scene-a", updatedScene, 0);
+    const created = await client.createScene("demo/workspace 1", createdScene, 0);
+    const deleted = await client.deleteScene("demo/workspace 1", "scene-b", 1);
+
+    expect(listed).toEqual({
+      scenes: [
+        {
+          scene: getScene(workspace, "scene-a"),
+          revision: 0,
+        },
+        {
+          scene: getScene(workspace, "scene-b"),
+          revision: 0,
+        },
+      ],
+      globalRevision: 0,
+    });
+    expect(loaded).toEqual({
+      scene: getScene(workspace, "scene-a"),
+      revision: 0,
+      globalRevision: 0,
+    });
+    expect(updated).toEqual({
+      scene: updatedScene,
+      revision: 1,
+      globalRevision: 0,
+    });
+    expect(created).toEqual({
+      scene: createdScene,
+      revision: 0,
+      globalRevision: 1,
+    });
+    expect(deleted).toEqual({
+      deletedSceneId: "scene-b",
+      globalRevision: 2,
+    });
+
+    expect(requests).toEqual([
+      {
+        input: "https://workspace.qa/api/workspaces/demo%2Fworkspace%201/scenes",
+        init: {
+          method: "GET",
+          headers: {},
+          body: undefined,
+        },
+      },
+      {
+        input: "https://workspace.qa/api/workspaces/demo%2Fworkspace%201/scenes/scene-a",
+        init: {
+          method: "GET",
+          headers: {},
+          body: undefined,
+        },
+      },
+      {
+        input: "https://workspace.qa/api/workspaces/demo%2Fworkspace%201/scenes/scene-a",
+        init: {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            revision: 0,
+            scene: updatedScene,
+          }),
+        },
+      },
+      {
+        input: "https://workspace.qa/api/workspaces/demo%2Fworkspace%201/scenes",
+        init: {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            revision: 0,
+            scene: createdScene,
+          }),
+        },
+      },
+      {
+        input: "https://workspace.qa/api/workspaces/demo%2Fworkspace%201/scenes/scene-b",
+        init: {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ revision: 1 }),
+        },
+      },
+    ]);
+  });
+
+  it("detects typed scene revision_conflict payloads that include sceneId", async () => {
+    const workspace = createSceneWorkspaceSnapshot();
+    const conflict: MotionWorkspaceSceneConflictErrorShape = {
+      code: "revision_conflict",
+      message: "scene revision이 충돌했습니다. sceneId=scene-a, expectedRevision=0, actualRevision=1.",
+      sceneId: "scene-a",
+      expectedRevision: 0,
+      actualRevision: 1,
+    };
+    const { fetch } = createFetchHarness([
+      createMockResponse(409, conflict),
+    ]);
+    const client = new MotionWorkspaceClient({
+      baseUrl: "https://workspace.qa/api",
+      fetch,
+    });
+
+    let caught: unknown;
+    try {
+      await client.updateScene("demo/workspace 1", "scene-a", {
+        ...getScene(workspace, "scene-a"),
+        title: "Scene A stale retry",
+      }, 0);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(MotionWorkspaceClientError);
+    expect(isMotionWorkspaceConflictError(caught)).toBe(true);
+    expect(isMotionWorkspaceSceneConflictError(caught)).toBe(true);
+    expect(isMotionWorkspaceSceneConflictErrorShape(conflict)).toBe(true);
+
+    const error = caught as MotionWorkspaceClientError;
+    expect(error.status).toBe(409);
+    expect(error.message).toBe(conflict.message);
+    expect(error.payload).toEqual(conflict);
   });
 });

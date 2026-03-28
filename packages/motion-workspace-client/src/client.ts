@@ -1,14 +1,26 @@
 import type { MotionEditorCommand } from "motion-content";
-import type { MotionWorkspaceSnapshotV1 } from "motion-workspace";
+import type { MotionSceneDef } from "motion-content";
+import type { MotionWorkspaceSnapshot } from "motion-workspace";
 import type {
   MotionWorkspaceApplyRequest,
+  MotionWorkspaceCreateRequest,
   MotionWorkspaceClientFetch,
   MotionWorkspaceClientOptions,
   MotionWorkspaceClientRequestInit,
   MotionWorkspaceConflictErrorShape,
+  MotionWorkspaceDeleteSceneResponse,
   MotionWorkspaceGetResponse,
   MotionWorkspaceListResponse,
+  MotionWorkspaceSceneConflictErrorShape,
+  MotionWorkspaceSceneGetResponse,
+  MotionWorkspaceSceneListResponse,
+  MotionWorkspaceSceneMutationRequest,
+  MotionWorkspaceSceneStructureRequest,
 } from "./types.js";
+import {
+  MotionWorkspaceWsConnection,
+  type MotionWorkspaceWsHandlers,
+} from "./ws-client.js";
 
 export class MotionWorkspaceClientError extends Error {
   readonly status: number;
@@ -56,6 +68,14 @@ export function isMotionWorkspaceConflictErrorShape(
     );
 }
 
+export function isMotionWorkspaceSceneConflictErrorShape(
+  payload: unknown,
+): payload is MotionWorkspaceSceneConflictErrorShape {
+  return isMotionWorkspaceConflictErrorShape(payload)
+    && isRecord(payload)
+    && typeof payload["sceneId"] === "string";
+}
+
 export function isMotionWorkspaceConflictError(
   error: unknown,
 ): error is MotionWorkspaceClientError & {
@@ -63,6 +83,15 @@ export function isMotionWorkspaceConflictError(
 } {
   return error instanceof MotionWorkspaceClientError
     && isMotionWorkspaceConflictErrorShape(error.payload);
+}
+
+export function isMotionWorkspaceSceneConflictError(
+  error: unknown,
+): error is MotionWorkspaceClientError & {
+  readonly payload: MotionWorkspaceSceneConflictErrorShape;
+} {
+  return error instanceof MotionWorkspaceClientError
+    && isMotionWorkspaceSceneConflictErrorShape(error.payload);
 }
 
 function resolveFetch(
@@ -91,11 +120,11 @@ async function parseResponse(response: Awaited<ReturnType<MotionWorkspaceClientF
 
 export class MotionWorkspaceClient {
   private readonly baseUrl: string;
-  private readonly fetchImpl: MotionWorkspaceClientFetch;
+  private fetchImpl?: MotionWorkspaceClientFetch;
 
   constructor(options: MotionWorkspaceClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
-    this.fetchImpl = resolveFetch(options.fetch);
+    this.fetchImpl = options.fetch;
   }
 
   async list(): Promise<MotionWorkspaceListResponse> {
@@ -106,17 +135,19 @@ export class MotionWorkspaceClient {
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`);
   }
 
-  async create(id: string, workspace: MotionWorkspaceSnapshotV1): Promise<MotionWorkspaceGetResponse> {
+  async create(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
+    const payload: MotionWorkspaceCreateRequest = { workspace };
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`, {
       method: "PUT",
-      body: JSON.stringify({ workspace }),
+      body: JSON.stringify(payload),
     });
   }
 
-  async update(id: string, workspace: MotionWorkspaceSnapshotV1): Promise<MotionWorkspaceGetResponse> {
+  async update(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
+    const payload: MotionWorkspaceCreateRequest = { workspace };
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`, {
       method: "POST",
-      body: JSON.stringify({ workspace }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -137,11 +168,83 @@ export class MotionWorkspaceClient {
     });
   }
 
+  async listScenes(workspaceId: string): Promise<MotionWorkspaceSceneListResponse> {
+    return this.request<MotionWorkspaceSceneListResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/scenes`,
+    );
+  }
+
+  async getScene(
+    workspaceId: string,
+    sceneId: string,
+  ): Promise<MotionWorkspaceSceneGetResponse> {
+    return this.request<MotionWorkspaceSceneGetResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
+    );
+  }
+
+  async updateScene(
+    workspaceId: string,
+    sceneId: string,
+    scene: MotionSceneDef,
+    revision: number,
+  ): Promise<MotionWorkspaceSceneGetResponse> {
+    const payload: MotionWorkspaceSceneMutationRequest = { revision, scene };
+    return this.request<MotionWorkspaceSceneGetResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  async createScene(
+    workspaceId: string,
+    scene: MotionSceneDef,
+    revision: number,
+  ): Promise<MotionWorkspaceSceneGetResponse> {
+    const payload: MotionWorkspaceSceneMutationRequest = { revision, scene };
+    return this.request<MotionWorkspaceSceneGetResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/scenes`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  async deleteScene(
+    workspaceId: string,
+    sceneId: string,
+    revision: number,
+  ): Promise<MotionWorkspaceDeleteSceneResponse> {
+    const payload: MotionWorkspaceSceneStructureRequest = { revision };
+    return this.request<MotionWorkspaceDeleteSceneResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
+      {
+        method: "DELETE",
+        body: JSON.stringify(payload),
+      },
+    );
+  }
+
+  connectWorkspace(
+    workspaceId: string,
+    handlers: MotionWorkspaceWsHandlers,
+  ): MotionWorkspaceWsConnection {
+    return new MotionWorkspaceWsConnection({
+      baseUrl: this.baseUrl,
+      workspaceId,
+      handlers,
+    });
+  }
+
   private async request<T = void>(
     path: string,
     init: MotionWorkspaceClientRequestInit = {},
   ): Promise<T> {
-    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+    const response = await this.getFetchImpl()(`${this.baseUrl}${path}`, {
       method: init.method ?? "GET",
       headers: {
         ...(init.body !== undefined ? { "content-type": "application/json" } : {}),
@@ -160,5 +263,11 @@ export class MotionWorkspaceClient {
       );
     }
     return (payload ?? {}) as T;
+  }
+
+  private getFetchImpl(): MotionWorkspaceClientFetch {
+    const fetchImpl = this.fetchImpl ?? resolveFetch();
+    this.fetchImpl = fetchImpl;
+    return fetchImpl;
   }
 }
