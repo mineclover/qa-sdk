@@ -569,34 +569,36 @@ export async function cliDef(args: string[]): Promise<void> {
     default:
       console.log(`qa-sdk def — 문서 관리
 
-DataSource 커맨드 (DB/서버 자동 감지, --local/--server 선택 가능):
-  list [--scope=X] [--layer=Y] [--level=Z] [--tag=T] [--q=검색어]  목록 조회
-  get <ID>          단건 조회
-  children <ID>     자식 문서
-  parent <ID>       부모 문서
-  incoming <ID>     역링크
-  search <검색어>   전문 검색
-  validate          그래프 검증
-  stats             분포 통계
-  impact <ID>       변경 영향 분석
-  check <ID>        문서 정합성 점검
-  find-by-file <경로>  코드 파일 → 관련 문서 탐색
+시작하기:
+  def list --level=system     전체 시스템 (루트)
+  def list --level=area       영역 목록 (인프라/설계도구/프론트엔드/...)
+  def list --level=unit       서비스/엔진 목록
+  def topdown <ID>            하위 문서 조립
+  def search <키워드>         개념 검색
+  def get definition-taxonomy 문서 분류 체계
+  def get definition-level    분해 레벨 설명
 
-레거시 (파일 스캔 기반):
-  scan              파일 스캔
-  topdown <ID>      탑다운 조립
-  bottomup <ID>     영향 역추적
-  context <ID>      작업 전 컨텍스트
-  audit             품질 리포트 + 그래프 검증
+조회:
+  list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
+  get <ID>            단건 조회
+  children <ID>       자식 문서
+  parent <ID>         부모 문서
+  incoming <ID>       역링크
+  search <검색어>     전문 검색
+  find-by-file <경로>  코드 파일 → 관련 문서
 
-참조:
-  link-rules        LinkType 사용 규칙 조회
+분석:
+  context <ID>        작업 전 컨텍스트 (소속/의존/영향)
+  impact <ID>         변경 영향 분석
+  topdown <ID>        탑다운 조립
+  bottomup <ID>       영향 역추적
 
-코드 → 문서 탐색:
-  1. 코드 파일의 패키지 확인 (package.json name)
-  2. def list --svc=<패키지명>  → 관련 문서 목록
-  3. def context <문서ID>       → 상위/하위/의존 컨텍스트
-  4. def search <키워드>        → 전문 검색`);
+품질:
+  audit               품질 리포트 + 그래프 검증
+  validate            깨진 링크/순환/고아 검증
+  stats               분포 통계
+  check <ID>          문서 정합성 점검
+  link-rules          LinkType 사용 규칙`);
   }
 }
 
