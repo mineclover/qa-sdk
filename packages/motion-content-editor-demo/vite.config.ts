@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 const workspaceServiceTarget = process.env["MOTION_WORKSPACE_SERVICE_ORIGIN"] ?? "http://localhost:3710";
@@ -10,10 +11,16 @@ const workspaceProxy = {
 
 export default defineConfig({
   root: ".",
-  appType: "spa",
+  appType: "mpa",
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        inspector: resolve(__dirname, "inspector.html"),
+      },
+    },
   },
   server: {
     port: 5179,

@@ -1,16 +1,21 @@
 import {
   createMotionDomStageAdapter,
   createMotionEventLog,
+  migrateCompositionV1toV2,
   MOTION_COMPOSITION_PRESET_DOCUMENTS,
   parseMotionComposition,
-  serializeMotionComposition,
+  parseMotionCompositionV2,
+  serializeMotionCompositionV2,
   type MotionCompositionDef,
+  type MotionCompositionDefV2,
 } from "motion-content";
 import {
   applyMotionEditorTheme,
   createMotionEditorShell,
   createMotionEditorShellWorkspace,
   readStoredMotionEditorTheme,
+  type MotionEditorScenePresenceEntry,
+  type MotionEditorScenePresenceUser,
   type MotionEditorShell,
   type MotionEditorShellWorkspace,
 } from "motion-content-editor";
@@ -18,23 +23,36 @@ import {
   LEGACY_MOTION_EDITOR_DEMO_STORAGE_KEY,
   createMotionWorkspaceSnapshot,
   migrateLegacyMotionEditorDemoState,
-  type MotionWorkspaceSnapshotV1,
+  type MotionWorkspaceSnapshotV2,
 } from "motion-workspace";
 import {
   MotionWorkspaceClient,
   MotionWorkspaceClientError,
   isMotionWorkspaceConflictError,
   type MotionWorkspaceConflictErrorShape,
+  type MotionWorkspacePresenceInfo,
+  type MotionWorkspaceWsConnection,
+  type MotionWorkspaceWsSceneLockInfo,
 } from "motion-workspace-client";
 
 const CUSTOM_PRESET_ID = "custom";
 const WORKSPACE_QUERY_KEY = "workspace";
 const PRESET_QUERY_KEY = "preset";
+const USER_QUERY_KEY = "user";
+const USER_SESSION_KEY = "motion-content-editor-demo:user";
 const WORKSPACE_CLIENT_BASE_URL = "/api/motion-workspace";
 const IMPORT_SOURCE_PATH = {
   file: "import:file",
   textarea: "import:textarea",
 } as const;
+const USER_PRESENCE_COLORS = [
+  "#ff8a5b",
+  "#4db6ac",
+  "#7c9cff",
+  "#f6c453",
+  "#f37ca0",
+  "#7dd36f",
+] as const;
 
 applyMotionEditorTheme(readStoredMotionEditorTheme());
 
@@ -47,14 +65,14 @@ interface DemoPresetRecord {
   readonly id: DemoPresetId;
   readonly label: string;
   readonly document: string;
-  readonly composition: MotionCompositionDef;
+  readonly composition: MotionCompositionDefV2;
   readonly normalized: string;
 }
 
 interface PendingSaveFailureBase {
   readonly kind: "conflict" | "error";
   readonly workspaceId: string;
-  readonly snapshot: MotionWorkspaceSnapshotV1;
+  readonly snapshot: MotionWorkspaceSnapshotV2;
   readonly workspaceToken: number;
 }
 
@@ -71,12 +89,31 @@ interface PendingSaveError extends PendingSaveFailureBase {
 type PendingSaveFailure = PendingSaveConflict | PendingSaveError;
 
 interface PendingLegacyMigration {
-  readonly snapshot: MotionWorkspaceSnapshotV1;
+  readonly snapshot: MotionWorkspaceSnapshotV2;
+}
+
+interface SceneRealtimeState {
+  readonly presences: Map<string, MotionWorkspacePresenceInfo>;
+  readonly sceneLocks: Map<string, Set<string>>;
 }
 
 function isDemoPresetId(value: string | null | undefined): value is DemoPresetId {
   return typeof value === "string"
     && MOTION_COMPOSITION_PRESET_DOCUMENTS.some((preset) => preset.id === value);
+}
+
+function isSceneComposition(
+  composition: MotionCompositionDef | MotionCompositionDefV2,
+): composition is MotionCompositionDefV2 {
+  return "targets" in composition && "scenes" in composition;
+}
+
+function toSceneComposition(
+  composition: MotionCompositionDef | MotionCompositionDefV2,
+): MotionCompositionDefV2 {
+  return isSceneComposition(composition)
+    ? composition
+    : migrateCompositionV1toV2(composition);
 }
 
 function formatSavedAt(savedAt: string | null): string {
@@ -101,6 +138,18 @@ function createWorkspaceId(): string {
   return `demo/${suffix}`;
 }
 
+function createUserId(): string {
+  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID().split("-")[0] ?? "editor"
+    : Math.random().toString(36).slice(2, 8);
+  return `editor-${suffix}`;
+}
+
+function normalizeUserId(value: string | null | undefined): string | null {
+  const normalized = value?.trim() ?? "";
+  return normalized.length > 0 ? normalized : null;
+}
+
 function readUrlWorkspaceId(): string | null {
   const value = new URLSearchParams(window.location.search).get(WORKSPACE_QUERY_KEY)?.trim();
   return value && value.length > 0 ? value : null;
@@ -111,14 +160,45 @@ function readUrlPresetId(): DemoPresetId | null {
   return isDemoPresetId(value) ? value : null;
 }
 
-function writeUrlState(workspaceId: string, presetId: DemoPresetSelection): void {
+function readUrlUserId(): string | null {
+  return normalizeUserId(new URLSearchParams(window.location.search).get(USER_QUERY_KEY));
+}
+
+function readStoredUserId(): string | null {
+  try {
+    return normalizeUserId(window.sessionStorage.getItem(USER_SESSION_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredUserId(userId: string): void {
+  try {
+    window.sessionStorage.setItem(USER_SESSION_KEY, userId);
+  } catch {
+    // noop
+  }
+}
+
+function writeUrlState(
+  workspaceId: string,
+  presetId: DemoPresetSelection,
+  userId: string,
+): void {
   const url = new URL(window.location.href);
   url.searchParams.set(WORKSPACE_QUERY_KEY, workspaceId);
+  url.searchParams.set(USER_QUERY_KEY, userId);
   if (presetId === CUSTOM_PRESET_ID) {
     url.searchParams.delete(PRESET_QUERY_KEY);
   } else {
     url.searchParams.set(PRESET_QUERY_KEY, presetId);
   }
+  window.history.replaceState({}, "", url);
+}
+
+function writeUserUrlState(userId: string): void {
+  const url = new URL(window.location.href);
+  url.searchParams.set(USER_QUERY_KEY, userId);
   window.history.replaceState({}, "", url);
 }
 
@@ -160,11 +240,11 @@ function describeAutosavePhase(phase: DemoAutosavePhase): string {
 }
 
 const presetDocuments: readonly DemoPresetRecord[] = MOTION_COMPOSITION_PRESET_DOCUMENTS.map((preset) => {
-  const composition = parseMotionComposition(preset.document);
+  const composition = toSceneComposition(parseMotionComposition(preset.document));
   return {
     ...preset,
     composition,
-    normalized: serializeMotionComposition(composition),
+    normalized: serializeMotionCompositionV2(composition),
   };
 });
 
@@ -174,29 +254,32 @@ function findPresetById(presetId: DemoPresetId): DemoPresetRecord {
   return presetDocuments.find((preset) => preset.id === presetId) ?? defaultPreset;
 }
 
-function findMatchingPresetId(documentSource: string): DemoPresetId | null {
+function parseDemoComposition(source: string): MotionCompositionDefV2 {
   try {
-    const normalized = serializeMotionComposition(parseMotionComposition(documentSource));
-    const matched = presetDocuments.find((preset) => preset.normalized === normalized);
-    return matched?.id ?? null;
+    const isV2Document = /"schemaVersion"\s*:\s*"qa-sdk\.motion-composition\/v2"/.test(source);
+    return isV2Document
+      ? parseMotionCompositionV2(source)
+      : migrateCompositionV1toV2(parseMotionComposition(source));
   } catch {
-    return null;
+    return migrateCompositionV1toV2(parseMotionComposition(source));
   }
 }
 
-function resolvePresetSelection(snapshot: MotionWorkspaceSnapshotV1): DemoPresetSelection {
+function findMatchingPresetId(
+  composition: MotionCompositionDef | MotionCompositionDefV2,
+): DemoPresetId | null {
+  const normalized = serializeMotionCompositionV2(toSceneComposition(composition));
+  return presetDocuments.find((preset) => preset.normalized === normalized)?.id ?? null;
+}
+
+function resolvePresetSelection(snapshot: MotionWorkspaceSnapshotV2): DemoPresetSelection {
   if (isDemoPresetId(snapshot.source?.presetId)) {
     return snapshot.source.presetId;
   }
-
-  const matchedPresetId = findMatchingPresetId(
-    serializeMotionComposition(snapshot.document.composition),
-  );
-
-  return matchedPresetId ?? CUSTOM_PRESET_ID;
+  return findMatchingPresetId(snapshot.document.composition) ?? CUSTOM_PRESET_ID;
 }
 
-function describeWorkspaceSource(snapshot: MotionWorkspaceSnapshotV1): string {
+function describeWorkspaceSource(snapshot: MotionWorkspaceSnapshotV2): string {
   const presetId = snapshot.source?.presetId;
   if (isDemoPresetId(presetId)) {
     return `${findPresetById(presetId).label} preset seed`;
@@ -216,10 +299,10 @@ function describeWorkspaceSource(snapshot: MotionWorkspaceSnapshotV1): string {
 function createSeedWorkspaceSnapshot(
   presetId: DemoPresetId,
   options: {
-    readonly revision?: number;
+    readonly globalRevision?: number;
     readonly savedAt?: string;
   } = {},
-): MotionWorkspaceSnapshotV1 {
+): MotionWorkspaceSnapshotV2 {
   const preset = findPresetById(presetId);
   const snapshot = createMotionWorkspaceSnapshot({
     composition: preset.composition,
@@ -229,21 +312,22 @@ function createSeedWorkspaceSnapshot(
     savedAt: options.savedAt,
   });
 
-  return options.revision === undefined
+  return options.globalRevision === undefined
     ? snapshot
     : {
       ...snapshot,
-      revision: options.revision,
+      globalRevision: options.globalRevision,
     };
 }
 
 function createImportedWorkspaceSnapshot(
   source: string,
   origin: "textarea" | "file",
-  current: MotionWorkspaceSnapshotV1,
-): MotionWorkspaceSnapshotV1 {
+  current: MotionWorkspaceSnapshotV2,
+): MotionWorkspaceSnapshotV2 {
   const snapshot = createMotionWorkspaceSnapshot({
-    composition: parseMotionComposition(source),
+    composition: parseDemoComposition(source),
+    values: current.editor.values,
     source: {
       path: IMPORT_SOURCE_PATH[origin],
     },
@@ -252,8 +336,41 @@ function createImportedWorkspaceSnapshot(
 
   return {
     ...snapshot,
-    revision: current.revision,
+    globalRevision: current.globalRevision,
     savedAt: current.savedAt,
+  };
+}
+
+function hashUserId(input: string): number {
+  let hash = 0;
+  for (const char of input) {
+    hash = ((hash * 33) + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
+}
+
+function pickUserColor(userId: string): string {
+  return USER_PRESENCE_COLORS[hashUserId(userId) % USER_PRESENCE_COLORS.length]!;
+}
+
+function deriveUserInitials(userId: string): string {
+  const parts = userId.split(/[\s/_-]+/).filter((part) => part.length > 0);
+  if (parts.length >= 2) {
+    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.slice(0, 2).toUpperCase();
+  }
+  return userId.slice(0, 2).toUpperCase();
+}
+
+function createScenePresenceUser(
+  userId: string,
+  currentUserId: string,
+): MotionEditorScenePresenceUser {
+  return {
+    userId,
+    name: userId,
+    color: pickUserColor(userId),
+    initials: deriveUserInitials(userId),
+    isCurrentUser: userId === currentUserId,
   };
 }
 
@@ -278,6 +395,10 @@ app.innerHTML = `
   <section class="demo-workflow">
     <div class="demo-workflow__main">
       <label class="demo-field">
+        <span>User</span>
+        <input data-demo="user-id" placeholder="editor-a" />
+      </label>
+      <label class="demo-field">
         <span>Workspace ID</span>
         <input data-demo="workspace-id" placeholder="demo/abc12345" />
       </label>
@@ -300,6 +421,7 @@ app.innerHTML = `
       <div class="demo-autosave-pill" data-demo="autosave-state"></div>
       <div class="demo-status" data-demo="status"></div>
       <div class="demo-status demo-status--muted" data-demo="workspace-meta"></div>
+      <div class="demo-status demo-status--muted" data-demo="presence-meta"></div>
       <div class="demo-status demo-status--muted" data-demo="saved-at"></div>
       <div class="demo-status demo-status--detail" data-demo="save-detail" hidden></div>
       <div class="demo-actions" data-demo="save-actions" hidden>
@@ -318,6 +440,7 @@ app.innerHTML = `
   <div data-demo="editor"></div>
 `;
 
+const userIdInput = app.querySelector<HTMLInputElement>('[data-demo="user-id"]');
 const workspaceIdInput = app.querySelector<HTMLInputElement>('[data-demo="workspace-id"]');
 const openWorkspaceButton = app.querySelector<HTMLButtonElement>('[data-demo="open-workspace"]');
 const createWorkspaceButton = app.querySelector<HTMLButtonElement>('[data-demo="create-workspace"]');
@@ -326,6 +449,7 @@ const presetSelect = app.querySelector<HTMLSelectElement>('[data-demo="preset"]'
 const autosaveStateNode = app.querySelector<HTMLElement>('[data-demo="autosave-state"]');
 const statusNode = app.querySelector<HTMLElement>('[data-demo="status"]');
 const workspaceMetaNode = app.querySelector<HTMLElement>('[data-demo="workspace-meta"]');
+const presenceMetaNode = app.querySelector<HTMLElement>('[data-demo="presence-meta"]');
 const savedAtNode = app.querySelector<HTMLElement>('[data-demo="saved-at"]');
 const saveDetailNode = app.querySelector<HTMLElement>('[data-demo="save-detail"]');
 const saveActionsNode = app.querySelector<HTMLElement>('[data-demo="save-actions"]');
@@ -337,7 +461,8 @@ const importLegacyButton = app.querySelector<HTMLButtonElement>('[data-demo="imp
 const editorHost = app.querySelector<HTMLElement>('[data-demo="editor"]');
 
 if (
-  !workspaceIdInput
+  !userIdInput
+  || !workspaceIdInput
   || !openWorkspaceButton
   || !createWorkspaceButton
   || !applyPresetButton
@@ -345,6 +470,7 @@ if (
   || !autosaveStateNode
   || !statusNode
   || !workspaceMetaNode
+  || !presenceMetaNode
   || !savedAtNode
   || !saveDetailNode
   || !saveActionsNode
@@ -358,10 +484,15 @@ if (
   throw new Error("demo controls failed to mount");
 }
 
+const userIdInputEl = userIdInput;
+const openWorkspaceButtonEl = openWorkspaceButton;
+const createWorkspaceButtonEl = createWorkspaceButton;
+const applyPresetButtonEl = applyPresetButton;
 const presetSelectEl = presetSelect;
 const autosaveStateNodeEl = autosaveStateNode;
 const statusNodeEl = statusNode;
 const workspaceMetaNodeEl = workspaceMetaNode;
+const presenceMetaNodeEl = presenceMetaNode;
 const savedAtNodeEl = savedAtNode;
 const saveDetailNodeEl = saveDetailNode;
 const saveActionsNodeEl = saveActionsNode;
@@ -371,6 +502,7 @@ const migrationDetailNodeEl = migrationDetailNode;
 const migrationActionsNodeEl = migrationActionsNode;
 const importLegacyButtonEl = importLegacyButton;
 const workspaceIdInputEl = workspaceIdInput;
+const editorHostEl = editorHost;
 
 const workspaceClient = new MotionWorkspaceClient({
   baseUrl: WORKSPACE_CLIENT_BASE_URL,
@@ -379,14 +511,22 @@ const workspaceClient = new MotionWorkspaceClient({
 let activeWorkspaceId: string | null = null;
 let activeShell: MotionEditorShell | null = null;
 let activeShellWorkspace: MotionEditorShellWorkspace | null = null;
-let activeRemoteSnapshot: MotionWorkspaceSnapshotV1 | null = null;
+let activeRemoteSnapshot: MotionWorkspaceSnapshotV2 | null = null;
+let activeRealtimeConnection: MotionWorkspaceWsConnection | null = null;
+let activeLockedSceneId: string | null = null;
 let persistQueue: Promise<void> = Promise.resolve();
 let activeWorkspaceToken = 0;
 let lastWrittenWorkspaceId: string | null = null;
 let lastWrittenPresetId: DemoPresetSelection | null = null;
+let lastWrittenUserId: string | null = null;
 let pendingSaveFailure: PendingSaveFailure | null = null;
 let pendingLegacyMigration: PendingLegacyMigration | null = null;
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+let collaborationState: SceneRealtimeState = {
+  presences: new Map(),
+  sceneLocks: new Map(),
+};
+let collaborationMessage = "협업 WS 연결 전";
 
 function setStatus(message: string, tone: DemoStatusTone = "neutral"): void {
   statusNodeEl.textContent = message;
@@ -398,27 +538,122 @@ function setAutosavePhase(phase: DemoAutosavePhase): void {
   autosaveStateNodeEl.dataset["phase"] = phase;
 }
 
+function getCurrentUserId(): string {
+  return normalizeUserId(userIdInputEl.value) ?? createUserId();
+}
+
 function writeUrlStateIfNeeded(
   workspaceId: string,
   presetId: DemoPresetSelection,
+  userId: string,
 ): void {
-  if (lastWrittenWorkspaceId === workspaceId && lastWrittenPresetId === presetId) {
+  if (
+    lastWrittenWorkspaceId === workspaceId
+    && lastWrittenPresetId === presetId
+    && lastWrittenUserId === userId
+  ) {
     return;
   }
 
-  writeUrlState(workspaceId, presetId);
+  writeUrlState(workspaceId, presetId, userId);
   lastWrittenWorkspaceId = workspaceId;
   lastWrittenPresetId = presetId;
+  lastWrittenUserId = userId;
 }
 
-function readLocalWorkspaceSnapshot(): MotionWorkspaceSnapshotV1 | null {
+function writeUserState(userId: string): void {
+  userIdInputEl.value = userId;
+  writeStoredUserId(userId);
+  if (activeWorkspaceId && activeRemoteSnapshot) {
+    writeUrlStateIfNeeded(activeWorkspaceId, resolvePresetSelection(activeRemoteSnapshot), userId);
+    return;
+  }
+  writeUserUrlState(userId);
+  lastWrittenUserId = userId;
+}
+
+function readLocalWorkspaceSnapshot(): MotionWorkspaceSnapshotV2 | null {
   return activeShellWorkspace?.controller.exportWorkspace() ?? null;
+}
+
+function buildScenePresenceEntries(): readonly MotionEditorScenePresenceEntry[] {
+  const composition = activeShell?.getState().composition;
+  if (!composition || !("targets" in composition && "scenes" in composition)) {
+    return [];
+  }
+
+  return composition.scenes.flatMap((scene) => {
+    const userIds = new Set<string>();
+    for (const presence of collaborationState.presences.values()) {
+      if (presence.activeSceneId === scene.id) {
+        userIds.add(presence.userId);
+      }
+    }
+    for (const userId of collaborationState.sceneLocks.get(scene.id) ?? []) {
+      userIds.add(userId);
+    }
+
+    const users = Array.from(userIds)
+      .sort((left, right) => left.localeCompare(right))
+      .map((userId) => createScenePresenceUser(userId, getCurrentUserId()));
+    const locked = users.some((user) => user.userId !== getCurrentUserId())
+      && (collaborationState.sceneLocks.get(scene.id)?.size ?? 0) > 0;
+
+    if (users.length === 0 && !locked) {
+      return [];
+    }
+
+    return [{
+      sceneId: scene.id,
+      users,
+      locked,
+      lockLabel: locked ? "다른 사용자가 lock한 scene" : undefined,
+    }];
+  });
+}
+
+function renderCollaborationMeta(): void {
+  const activeScenePresence = Array.from(collaborationState.presences.values())
+    .filter((presence) => presence.activeSceneId)
+    .sort((left, right) =>
+      (left.activeSceneId ?? "").localeCompare(right.activeSceneId ?? "")
+      || left.userId.localeCompare(right.userId)
+    );
+
+  if (!activeWorkspaceId) {
+    presenceMetaNodeEl.textContent = "협업 WS 연결 전";
+    return;
+  }
+
+  if (activeScenePresence.length === 0) {
+    presenceMetaNodeEl.textContent = `${collaborationMessage} · 활성 편집 scene 없음`;
+    return;
+  }
+
+  const grouped = new Map<string, string[]>();
+  for (const presence of activeScenePresence) {
+    const sceneId = presence.activeSceneId!;
+    const names = grouped.get(sceneId) ?? [];
+    names.push(presence.userId);
+    grouped.set(sceneId, names);
+  }
+
+  const summary = Array.from(grouped.entries())
+    .map(([sceneId, userIds]) => `${sceneId}: ${userIds.join(", ")}`)
+    .join(" · ");
+  presenceMetaNodeEl.textContent = `${collaborationMessage} · ${summary}`;
+}
+
+function applyRealtimePresenceToShell(): void {
+  activeShell?.setScenePresence(buildScenePresenceEntries());
+  renderCollaborationMeta();
 }
 
 function renderWorkspaceMeta(): void {
   const localSnapshot = readLocalWorkspaceSnapshot() ?? activeRemoteSnapshot;
   if (!activeWorkspaceId || !localSnapshot) {
     workspaceMetaNodeEl.textContent = "workspace 연결 전";
+    presenceMetaNodeEl.textContent = collaborationMessage;
     savedAtNodeEl.textContent = `마지막 원격 저장: ${formatSavedAt(null)}`;
     return;
   }
@@ -426,22 +661,24 @@ function renderWorkspaceMeta(): void {
   const presetSelection = resolvePresetSelection(localSnapshot);
   const parts = [
     `workspace: ${activeWorkspaceId}`,
-    `로컬 revision ${localSnapshot.revision}`,
+    `로컬 global ${localSnapshot.globalRevision}`,
   ];
 
   if (activeRemoteSnapshot) {
-    parts.push(`원격 revision ${activeRemoteSnapshot.revision}`);
+    parts.push(`원격 global ${activeRemoteSnapshot.globalRevision}`);
   }
-  if (activeRemoteSnapshot && activeRemoteSnapshot.revision !== localSnapshot.revision) {
+  if (activeShellWorkspace?.controller.isDirty()) {
     parts.push("미동기화");
   }
   parts.push(`source ${describeWorkspaceSource(localSnapshot)}`);
 
+  userIdInputEl.value = getCurrentUserId();
   workspaceIdInputEl.value = activeWorkspaceId;
   presetSelectEl.value = presetSelection;
   workspaceMetaNodeEl.textContent = parts.join(" · ");
   savedAtNodeEl.textContent = `마지막 원격 저장: ${formatSavedAt(activeRemoteSnapshot?.savedAt ?? null)}`;
-  writeUrlStateIfNeeded(activeWorkspaceId, presetSelection);
+  writeUrlStateIfNeeded(activeWorkspaceId, presetSelection, getCurrentUserId());
+  renderCollaborationMeta();
 }
 
 function renderPendingSaveFailure(): void {
@@ -507,7 +744,7 @@ function clearLegacyMigration(clearStorage = false): void {
 
 function updateWorkspaceUi(
   workspaceId: string | null,
-  remoteSnapshot: MotionWorkspaceSnapshotV1 | null,
+  remoteSnapshot: MotionWorkspaceSnapshotV2 | null,
 ): void {
   activeWorkspaceId = workspaceId;
   activeRemoteSnapshot = remoteSnapshot;
@@ -522,11 +759,12 @@ function clearPendingSaveFailure(): void {
 }
 
 function setBusy(isBusy: boolean): void {
+  userIdInputEl.disabled = isBusy;
   workspaceIdInputEl.disabled = isBusy;
   presetSelectEl.disabled = isBusy;
-  openWorkspaceButton.disabled = isBusy;
-  createWorkspaceButton.disabled = isBusy;
-  applyPresetButton.disabled = isBusy;
+  openWorkspaceButtonEl.disabled = isBusy;
+  createWorkspaceButtonEl.disabled = isBusy;
+  applyPresetButtonEl.disabled = isBusy;
   retrySaveButtonEl.disabled = isBusy;
   reloadRemoteButtonEl.disabled = isBusy;
   importLegacyButtonEl.disabled = isBusy;
@@ -571,15 +809,166 @@ function buildStage(host: HTMLElement) {
   };
 }
 
+function replacePresenceSnapshot(
+  presences: readonly MotionWorkspacePresenceInfo[],
+): void {
+  collaborationState = {
+    ...collaborationState,
+    presences: new Map(
+      presences.map((presence) => [
+        presence.userId,
+        {
+          userId: presence.userId,
+          ...(presence.activeSceneId ? { activeSceneId: presence.activeSceneId } : {}),
+        },
+      ]),
+    ),
+  };
+}
+
+function replaceSceneLocksSnapshot(
+  sceneLocks: readonly MotionWorkspaceWsSceneLockInfo[],
+): void {
+  const nextSceneLocks = new Map<string, Set<string>>();
+  for (const lock of sceneLocks) {
+    const holders = nextSceneLocks.get(lock.sceneId) ?? new Set<string>();
+    holders.add(lock.userId);
+    nextSceneLocks.set(lock.sceneId, holders);
+  }
+  collaborationState = {
+    ...collaborationState,
+    sceneLocks: nextSceneLocks,
+  };
+}
+
+function setSceneLockHolders(
+  sceneId: string,
+  holders: readonly string[],
+): void {
+  const nextSceneLocks = new Map(collaborationState.sceneLocks);
+  if (holders.length === 0) {
+    nextSceneLocks.delete(sceneId);
+  } else {
+    nextSceneLocks.set(sceneId, new Set(holders));
+  }
+  collaborationState = {
+    ...collaborationState,
+    sceneLocks: nextSceneLocks,
+  };
+}
+
+function setRealtimePresence(
+  userId: string,
+  activeSceneId?: string,
+): void {
+  const nextPresences = new Map(collaborationState.presences);
+  nextPresences.set(
+    userId,
+    activeSceneId
+      ? { userId, activeSceneId }
+      : { userId },
+  );
+  collaborationState = {
+    ...collaborationState,
+    presences: nextPresences,
+  };
+}
+
+function disconnectWorkspaceRealtime(): void {
+  activeRealtimeConnection?.disconnect();
+  activeRealtimeConnection = null;
+  activeLockedSceneId = null;
+  collaborationState = {
+    presences: new Map(),
+    sceneLocks: new Map(),
+  };
+  collaborationMessage = activeWorkspaceId ? "협업 WS 미연결" : "협업 WS 연결 전";
+  applyRealtimePresenceToShell();
+}
+
+function syncActiveScenePresence(): void {
+  const currentUserId = getCurrentUserId();
+  const nextSceneId = activeShell?.getFocusedSceneId() ?? null;
+
+  if (activeLockedSceneId !== nextSceneId) {
+    if (activeLockedSceneId) {
+      const previousHolders = new Set(collaborationState.sceneLocks.get(activeLockedSceneId) ?? []);
+      previousHolders.delete(currentUserId);
+      setSceneLockHolders(activeLockedSceneId, Array.from(previousHolders));
+      activeRealtimeConnection?.unlockScene(activeLockedSceneId);
+    }
+    if (nextSceneId) {
+      const nextHolders = new Set(collaborationState.sceneLocks.get(nextSceneId) ?? []);
+      nextHolders.add(currentUserId);
+      setSceneLockHolders(nextSceneId, Array.from(nextHolders));
+      activeRealtimeConnection?.lockScene(nextSceneId);
+    }
+    activeLockedSceneId = nextSceneId;
+  }
+
+  setRealtimePresence(currentUserId, nextSceneId ?? undefined);
+  activeRealtimeConnection?.sendPresence(nextSceneId ? { activeSceneId: nextSceneId } : {});
+  applyRealtimePresenceToShell();
+}
+
+function connectWorkspaceRealtime(workspaceId: string): void {
+  disconnectWorkspaceRealtime();
+  const userId = getCurrentUserId();
+  collaborationMessage = `협업 WS 연결 중 · user ${userId}`;
+  renderCollaborationMeta();
+
+  activeRealtimeConnection = workspaceClient.connectWorkspace(workspaceId, {
+    userId,
+    onConnected(message) {
+      collaborationMessage = `협업 WS 연결됨 · user ${message.userId}`;
+      replacePresenceSnapshot(message.presences);
+      replaceSceneLocksSnapshot(message.sceneLocks);
+      syncActiveScenePresence();
+    },
+    onPresence(message) {
+      setRealtimePresence(message.userId, message.activeSceneId);
+      applyRealtimePresenceToShell();
+    },
+    onSceneLock(message) {
+      setSceneLockHolders(message.sceneId, message.holders);
+      applyRealtimePresenceToShell();
+    },
+    onSceneUnlock(message) {
+      setSceneLockHolders(message.sceneId, message.holders);
+      applyRealtimePresenceToShell();
+    },
+    onReconnect(event) {
+      collaborationMessage = `협업 WS 재연결 ${event.attempt}회차`;
+      renderCollaborationMeta();
+    },
+    onDisconnected() {
+      collaborationMessage = "협업 WS 재연결 대기";
+      renderCollaborationMeta();
+    },
+    onTransportError(error) {
+      collaborationMessage = "협업 WS 전송 오류";
+      console.warn("[mce-demo] realtime transport error", error);
+      renderCollaborationMeta();
+    },
+    onServerError(message) {
+      collaborationMessage = `협업 WS 서버 오류: ${message.message}`;
+      renderCollaborationMeta();
+    },
+  });
+
+  syncActiveScenePresence();
+}
+
 function mountWorkspace(
   workspaceId: string,
-  snapshot: MotionWorkspaceSnapshotV1,
+  snapshot: MotionWorkspaceSnapshotV2,
 ): void {
   activeWorkspaceToken += 1;
   const workspaceToken = activeWorkspaceToken;
 
+  disconnectWorkspaceRealtime();
   activeShell?.destroy();
-  editorHost.innerHTML = "";
+  editorHostEl.innerHTML = "";
 
   const shellWorkspace = createMotionEditorShellWorkspace({
     composition: snapshot.document.composition,
@@ -597,7 +986,7 @@ function mountWorkspace(
   updateWorkspaceUi(workspaceId, snapshot);
 
   activeShell = createMotionEditorShell({
-    container: editorHost,
+    container: editorHostEl,
     workspace: shellWorkspace,
     eventLog: (() => {
       const log = createMotionEventLog();
@@ -605,21 +994,28 @@ function mountWorkspace(
       return log;
     })(),
     onStateChange() {
+      renderWorkspaceMeta();
       if (autosaveTimer !== null) clearTimeout(autosaveTimer);
       autosaveTimer = setTimeout(() => {
         autosaveTimer = null;
         void persistActiveWorkspace(workspaceId, shellWorkspace, workspaceToken);
       }, 1800);
     },
+    onFocusedSceneChange() {
+      syncActiveScenePresence();
+    },
     renderStage(host) {
       return buildStage(host);
     },
   });
+
+  applyRealtimePresenceToShell();
+  connectWorkspaceRealtime(workspaceId);
 }
 
 async function fetchWorkspace(
   workspaceId: string,
-): Promise<MotionWorkspaceSnapshotV1 | null> {
+): Promise<MotionWorkspaceSnapshotV2 | null> {
   try {
     const response = await workspaceClient.get(workspaceId);
     return response.workspace;
@@ -637,7 +1033,7 @@ async function createRemoteWorkspace(
   options: {
     readonly openOnConflict?: boolean;
   } = {},
-): Promise<MotionWorkspaceSnapshotV1> {
+): Promise<MotionWorkspaceSnapshotV2> {
   try {
     const response = await workspaceClient.create(
       workspaceId,
@@ -675,7 +1071,7 @@ async function importLegacyDemoState(): Promise<void> {
     const nextSnapshot = existing
       ? {
         ...currentLegacySnapshot,
-        revision: existing.revision + 1,
+        globalRevision: existing.globalRevision + 1,
         savedAt: new Date().toISOString(),
       }
       : currentLegacySnapshot;
@@ -738,12 +1134,12 @@ async function reloadRemoteWorkspaceFromFailure(): Promise<void> {
 }
 
 function createRetrySnapshot(
-  localSnapshot: MotionWorkspaceSnapshotV1,
-  remoteSnapshot: MotionWorkspaceSnapshotV1,
-): MotionWorkspaceSnapshotV1 {
+  localSnapshot: MotionWorkspaceSnapshotV2,
+  remoteSnapshot: MotionWorkspaceSnapshotV2,
+): MotionWorkspaceSnapshotV2 {
   return {
     ...localSnapshot,
-    revision: remoteSnapshot.revision + 1,
+    globalRevision: remoteSnapshot.globalRevision + 1,
     savedAt: new Date().toISOString(),
   };
 }
@@ -818,11 +1214,10 @@ async function persistActiveWorkspace(
     return;
   }
 
-  const beforeRevision = shellWorkspace.controller.getRevision();
-  const nextSnapshot = shellWorkspace.controller.saveWorkspace().workspace;
-  if (nextSnapshot.revision === beforeRevision) {
+  if (!shellWorkspace.controller.isDirty()) {
     return;
   }
+  const nextSnapshot = shellWorkspace.controller.saveWorkspace().workspace;
 
   pendingSaveFailure = null;
   renderWorkspaceMeta();
@@ -972,7 +1367,7 @@ async function applyPresetToActiveWorkspace(): Promise<void> {
   const presetId = getSelectedSeedPresetId();
   const current = activeShellWorkspace.controller.exportWorkspace();
   const nextSnapshot = createSeedWorkspaceSnapshot(presetId, {
-    revision: current.revision + 1,
+    globalRevision: current.globalRevision + 1,
     savedAt: new Date().toISOString(),
   });
 
@@ -1008,15 +1403,24 @@ async function applyPresetToActiveWorkspace(): Promise<void> {
   }
 }
 
-openWorkspaceButton.addEventListener("click", () => {
+function commitUserIdentity(): void {
+  const nextUserId = normalizeUserId(userIdInputEl.value) ?? createUserId();
+  writeUserState(nextUserId);
+  renderWorkspaceMeta();
+  if (activeWorkspaceId) {
+    connectWorkspaceRealtime(activeWorkspaceId);
+  }
+}
+
+openWorkspaceButtonEl.addEventListener("click", () => {
   void openWorkspace(workspaceIdInputEl.value);
 });
 
-createWorkspaceButton.addEventListener("click", () => {
+createWorkspaceButtonEl.addEventListener("click", () => {
   void createWorkspaceFromSelection();
 });
 
-applyPresetButton.addEventListener("click", () => {
+applyPresetButtonEl.addEventListener("click", () => {
   void applyPresetToActiveWorkspace();
 });
 
@@ -1032,12 +1436,23 @@ importLegacyButtonEl.addEventListener("click", () => {
   void importLegacyDemoState();
 });
 
+userIdInputEl.addEventListener("change", () => {
+  commitUserIdentity();
+});
+
+userIdInputEl.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    commitUserIdentity();
+  }
+});
+
 workspaceIdInputEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     void openWorkspace(workspaceIdInputEl.value);
   }
 });
 
+writeUserState(readUrlUserId() ?? readStoredUserId() ?? createUserId());
 updateWorkspaceUi(null, null);
 setAutosavePhase("idle");
 setStatus("workspace bootstrap을 준비 중입니다.");

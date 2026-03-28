@@ -91,6 +91,7 @@
         text-transform: uppercase;
         color: color-mix(in srgb, var(--mce-color-text-primary, #eef3f8) 62%, transparent);
       }
+      .demo-field input,
       .demo-field select,
       .demo-button {
         height: 40px;
@@ -101,6 +102,7 @@
         padding: 0 var(--mce-space-4, 16px);
         font: inherit;
       }
+      .demo-field input,
       .demo-field select {
         min-width: 220px;
       }
@@ -163,6 +165,7 @@
         .demo-workflow__main {
           align-items: stretch;
         }
+        .demo-field input,
         .demo-field select,
         .demo-button {
           width: 100%;
@@ -176,9 +179,15 @@
   </head>
   <body>
     <div class="demo-shell">
-      <header class="demo-header">
-        <h1>Motion Content Editor Demo</h1>
-        <p>Remotion 개념층을 참고한 GSAP 기반 composition editor sandbox</p>
+      <header class="demo-header" style="display:flex;align-items:center;gap:20px">
+        <div style="flex:1">
+          <h1>Motion Content Editor Demo</h1>
+          <p>Remotion 개념층을 참고한 GSAP 기반 composition editor sandbox</p>
+        </div>
+        <nav style="display:flex;gap:4px">
+          <a href="/" style="padding:6px 14px;border-radius:999px;font-size:12px;text-decoration:none;color:var(--mce-color-accent-primary,#f08f20);border:1px solid rgba(240,143,32,0.18);background:rgba(240,143,32,0.18)">Editor</a>
+          <a href="/inspector.html" style="padding:6px 14px;border-radius:999px;font-size:12px;text-decoration:none;color:rgba(238,243,248,0.55);border:1px solid transparent">Inspector</a>
+        </nav>
       </header>
       <main id="app"></main>
     </div>
