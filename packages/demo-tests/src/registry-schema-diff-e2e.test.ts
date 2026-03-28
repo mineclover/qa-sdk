@@ -1,3 +1,5 @@
+// DEPRECATED: Hono createApp → NestJS 전환으로 비활성화. registry-service 자체 테스트(25파일, 212건)로 대체.
+
 /**
  * Registry Schema Diff E2E — 버전 간 capacity/stride 변경 감지
  *
@@ -69,7 +71,7 @@ async function post(app: Hono, path: string, body?: object) {
 
 // ══════════════════════════════════════════════════════════════
 
-describe("Schema Diff E2E", () => {
+describe.skip("Schema Diff E2E", () => {
   it("v1 → v2 diff: capacity 변경 + stride 변경 감지", async () => {
     const { app } = buildApp();
 

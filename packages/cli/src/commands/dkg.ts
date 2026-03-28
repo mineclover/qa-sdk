@@ -602,9 +602,66 @@ export function dkgReport(): void {
 
 // ── dkg axes ────────────────────────────────────────
 
-export function dkgAxes(opts: PageOptions): void {
+export function dkgAxes(opts: PageOptions & { groupBy?: string }): void {
   const graph = getGraph();
   const axes = graph.getNodesByKind("axis");
+
+  if (opts.groupBy === "prefix") {
+    // 축별 사용 prefix를 역추적하여 prefix 기준으로 그룹핑
+    const prefixToAxes = new Map<string, string[]>();
+    const usedAxes = new Set<string>();
+    for (const prefix of graph.getNodesByKind("prefix")) {
+      const edges = graph.edgesFrom(prefix.id, "composes");
+      const axisIds = edges
+        .filter(e => e.meta?.dimKind === "axis")
+        .map(e => e.to);
+      if (axisIds.length > 0) {
+        prefixToAxes.set(prefix.id, axisIds);
+        for (const a of axisIds) usedAxes.add(a);
+      }
+    }
+    console.log(`\n══ Axes by Prefix ══`);
+    for (const [prefixId, axisIds] of [...prefixToAxes.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      console.log(`  ${prefixId}`);
+      for (const axisId of axisIds) {
+        console.log(`    ${axisId}`);
+      }
+    }
+    const unused = axes.filter(a => !usedAxes.has(a.id));
+    if (unused.length > 0) {
+      console.log(`\n  ── 미사용 축 (${unused.length}) ──`);
+      for (const a of unused) console.log(`    ${a.id}`);
+    }
+    return;
+  }
+
+  if (opts.groupBy === "domain") {
+    // 도메인별: domain → prefix → axis 경로로 그룹핑
+    const domains = graph.getNodesByKind("domain");
+    console.log(`\n══ Axes by Domain ══`);
+    const domainAxes = new Set<string>();
+    for (const domain of domains) {
+      const axisSet = new Set<string>();
+      for (const prefixId of domain.prefixes) {
+        const edges = graph.edgesFrom(prefixId, "composes");
+        for (const e of edges) {
+          if (e.meta?.dimKind === "axis") axisSet.add(e.to);
+        }
+      }
+      for (const a of axisSet) domainAxes.add(a);
+      console.log(`  ${domain.id} (${axisSet.size}개 축)`);
+      for (const axisId of [...axisSet].sort()) {
+        console.log(`    ${axisId}`);
+      }
+    }
+    const allAxisIds = new Set(axes.map(a => a.id));
+    const orphan = [...allAxisIds].filter(a => !domainAxes.has(a));
+    if (orphan.length > 0) {
+      console.log(`\n  ── 도메인 미소속 축 (${orphan.length}) ──`);
+      for (const a of orphan) console.log(`    ${a}`);
+    }
+    return;
+  }
 
   const result = paginate(axes, opts);
 
@@ -645,6 +702,18 @@ export function dkgPrefixes(opts: PageOptions): void {
   }
 
   printPageInfo(result);
+
+  // Catalog vs DKG gap 표시 (마지막 페이지에서만)
+  const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
+  const catalogPrefixIds = Object.keys(catalog.prefixes);
+  const dkgPrefixIds = new Set(prefixes.map(p => p.id));
+  const gap = catalogPrefixIds.filter(id => !dkgPrefixIds.has(id));
+  if (gap.length > 0) {
+    console.log(`\n  ── Catalog에만 존재 (DKG 미등록: ${gap.length}건) ──`);
+    for (const id of gap) {
+      console.log(`    ${id}`);
+    }
+  }
 }
 
 // ── dkg domains ─────────────────────────────────────
@@ -1747,6 +1816,17 @@ export function dkgPrefix(prefixId: string): void {
       console.log(`    ${l.id}: ${l.intent.slice(0, 70)}`);
     }
   }
+
+  // definition-catalog 문서 연결
+  const specRelPath = `docs/specs/prefix-catalog/prefix-${prefixId}.spec.md`;
+  try {
+    const repoRoot = execSync("git rev-parse --show-toplevel", { encoding: "utf8" }).trim();
+    const specAbsPath = join(repoRoot, specRelPath);
+    if (existsSync(specAbsPath)) {
+      console.log(`\n  ── Spec Document ──`);
+      console.log(`    ${specRelPath}`);
+    }
+  } catch { /* git 밖에서 실행 시 무시 */ }
 }
 
 // ── dkg tables / dkg table ───────────────────────────
@@ -2022,6 +2102,14 @@ export function dkgTrace(nodeId: string): void {
 
   if (!result) {
     console.error(`  노드를 찾을 수 없음: ${nodeId}`);
+    console.log(`\n  trace는 DKG 그래프의 노드 ID를 직접 받습니다.`);
+    console.log(`  노드 ID 확인 방법:`);
+    console.log(`    qa-sdk dkg prefixes     prefix 노드 ID 목록`);
+    console.log(`    qa-sdk dkg axes         axis 노드 ID 목록`);
+    console.log(`    qa-sdk dkg domains      domain 노드 ID 목록`);
+    console.log(`    qa-sdk dkg service      service 노드 ID 목록`);
+    console.log(`    qa-sdk dkg dsl          DSL 번들 노드 ID 목록`);
+    console.log(`    qa-sdk dkg decisions list  decision 노드 ID 목록`);
     return;
   }
 
@@ -3229,16 +3317,32 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   const total = autoObs.length + convergeResult.observations.length + convergeResult.decisions.length;
   console.log(`\n  총 ${metrics.length} metrics, ${total} observations/decisions 생성, ${autoResolved.length} auto-resolved${opts.persist ? " (저장됨)" : " (--persist로 저장)"}`);
 
-  // 미해결 observation 안내
+  // 미해결 observation 카테고리별 안내
   const unresolvedObs = existingObs.filter(o => !o.resolution);
   if (unresolvedObs.length > 0) {
-    console.log(`\n  ── 미해결 observation (${unresolvedObs.length}건) ──`);
-    const top = unresolvedObs.slice(0, 3);
-    for (const obs of top) {
-      console.log(`    ${obs.id}: ${obs.finding?.slice(0, 70) ?? "?"}`);
+    // ID 접두사 기반 카테고리 분류 (실제 ID 패턴에서 파생)
+    const groups: Record<string, typeof unresolvedObs> = {};
+    for (const obs of unresolvedObs) {
+      let category: string;
+      if (obs.id.startsWith("OBS-METRIC-metric-coverage-")) category = "coverage-gap";
+      else if (obs.id.startsWith("OBS-METRIC-metric-health-")) category = "domain-health";
+      else if (obs.id.startsWith("OBS-METRIC-")) category = "metric";
+      else if (obs.id.startsWith("OBS-FLOW-")) category = "flow-violation";
+      else if (obs.id.startsWith("OBS-SELF-")) category = "self-check";
+      else category = "other";
+      (groups[category] ??= []).push(obs);
     }
-    if (unresolvedObs.length > 3) {
-      console.log(`    ... 외 ${unresolvedObs.length - 3}건`);
+
+    console.log(`\n  ── 미해결 observation (${unresolvedObs.length}건) ──`);
+    for (const [category, items] of Object.entries(groups)) {
+      console.log(`\n    [${category}] ${items.length}건`);
+      const top = items.slice(0, 2);
+      for (const obs of top) {
+        console.log(`      ${obs.id}: ${obs.finding?.slice(0, 60) ?? "?"}`);
+      }
+      if (items.length > 2) {
+        console.log(`      ... 외 ${items.length - 2}건`);
+      }
     }
     console.log(`\n  해소 방법: qa-sdk dkg resolve <obsId> --decision <decId> --outcome accepted`);
   }

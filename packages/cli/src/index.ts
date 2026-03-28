@@ -129,7 +129,7 @@ Usage:
 
   qa-sdk dkg report                  전체 현황 + SQLite 상태
   qa-sdk dkg refresh                 bootstrap 재실행
-  qa-sdk dkg axes [--page N]         축 목록
+  qa-sdk dkg axes [--page N] [--group-by prefix|domain]  축 목록
   qa-sdk dkg prefixes [--page N]     prefix 목록
   qa-sdk dkg domains                 도메인 목록
   qa-sdk dkg flow-schemas [--page N] FlowSchemaNode 목록
@@ -416,9 +416,12 @@ export async function main(argv = process.argv.slice(2)) {
     case "dkg refresh":
       dkgRefresh();
       return;
-    case "dkg axes":
-      dkgAxes(parsePage(sub.rest));
+    case "dkg axes": {
+      const groupIdx = sub.rest.indexOf("--group-by");
+      const groupBy = groupIdx >= 0 ? sub.rest[groupIdx + 1] : undefined;
+      dkgAxes({ ...parsePage(sub.rest), groupBy });
       return;
+    }
     case "dkg prefixes":
       dkgPrefixes(parsePage(sub.rest));
       return;
@@ -821,6 +824,7 @@ export async function main(argv = process.argv.slice(2)) {
     case "def audit-db": await cliDef(["audit-db"]); return;
     case "def overview": await cliDef(["overview"]); return;
     case "def link-rules": await cliDef(["link-rules"]); return;
+    case "def find-by-file": await cliDef(["find-by-file", ...sub.rest]); return;
     case "def":          await cliDef(sub.rest); return;
 
     // Catalog 명령어
@@ -964,7 +968,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
     "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
-    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules",
+    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules", "def find-by-file",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",

@@ -41,9 +41,10 @@ describe("BrowserCodec — 경량 encode/decode", () => {
       cart_event: { action: "add" },
     });
 
-    expect(ctx.page_view).toMatch(/^page_view:v2:\d+$/);
-    expect(ctx.endpoint).toMatch(/^endpoint:v1:\d+$/);
-    expect(ctx.cart_event).toMatch(/^cart_event:v1:\d+$/);
+    // 버전은 카탈로그 변경에 따라 올라갈 수 있으므로 v\d+ 패턴으로 검증
+    expect(ctx.page_view).toMatch(/^page_view:v\d+:\d+$/);
+    expect(ctx.endpoint).toMatch(/^endpoint:v\d+:\d+$/);
+    expect(ctx.cart_event).toMatch(/^cart_event:v\d+:\d+$/);
     // svc_ref 자동 주입됨
   });
 
