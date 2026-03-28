@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-svc-state-model
-  address: def_document:v1:1609
+  address: def_document:v2:205955
   scope: state
   aspect: domain_state
   depth: specification

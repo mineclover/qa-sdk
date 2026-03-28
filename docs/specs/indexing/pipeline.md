@@ -1,7 +1,7 @@
 ---
 def:
   id: indexing-pipeline
-  address: def_document:v1:1073
+  address: def_document:v2:137353
   scope: flow
   aspect: process_flow
   depth: specification

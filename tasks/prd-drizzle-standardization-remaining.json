@@ -1,7 +1,7 @@
 {
   "name": "Drizzle 마이그레이션 표준화 잔여 작업",
-  "branchName": "ralph/drizzle-standardization-remaining",
   "description": "definition-service IF NOT EXISTS 수정, query-service drizzle-kit 완성, decision-service query builder 전환, index-meta SCHEMA_DDL 이중 소스 제거, better-sqlite3 통일, 죽은 코드 정리",
+  "branchName": "ralph/drizzle-standardization-remaining",
   "userStories": [
     {
       "id": "US-001",
@@ -17,9 +17,10 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-002",
@@ -39,9 +40,10 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-003",
@@ -79,7 +81,9 @@
       "priority": 4,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-003"]
+      "dependsOn": [
+        "US-003"
+      ]
     },
     {
       "id": "US-005",
@@ -99,7 +103,9 @@
       "priority": 5,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-004"]
+      "dependsOn": [
+        "US-004"
+      ]
     },
     {
       "id": "US-006",
@@ -117,7 +123,9 @@
       "priority": 6,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-004"]
+      "dependsOn": [
+        "US-004"
+      ]
     },
     {
       "id": "US-007",
@@ -173,7 +181,13 @@
       "priority": 9,
       "passes": false,
       "notes": "",
-      "dependsOn": ["US-004", "US-007"]
+      "dependsOn": [
+        "US-004",
+        "US-007"
+      ]
     }
-  ]
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-28T16:05:44.332Z"
+  }
 }

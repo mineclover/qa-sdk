@@ -1,7 +1,7 @@
 ---
 def:
   id: sdk-scenarios
-  address: def_document:v1:547
+  address: def_document:v2:70022
   scope: feature
   aspect: scenario
   depth: validation

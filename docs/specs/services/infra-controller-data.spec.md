@@ -1,7 +1,7 @@
 ---
 def:
   id: infra-controller-data
-  address: def_document:v1:2680
+  address: def_document:v2:343042
   scope: data
   aspect: system_data
   depth: overview

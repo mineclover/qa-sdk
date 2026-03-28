@@ -137,6 +137,12 @@ importers:
       motion-workspace-client:
         specifier: workspace:*
         version: link:../motion-workspace-client
+      spec-analyzer:
+        specifier: workspace:*
+        version: link:../spec-analyzer
+      spec-tracker:
+        specifier: workspace:*
+        version: link:../spec-tracker
     devDependencies:
       '@qa-sdk/motion-workspace-service':
         specifier: workspace:*
@@ -1046,6 +1052,9 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.15
+      drizzle-kit:
+        specifier: 1.0.0-beta.20
+        version: 1.0.0-beta.20
       tsx:
         specifier: ^4.19.3
         version: 4.21.0

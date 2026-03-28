@@ -1,7 +1,7 @@
 ---
 def:
   id: decision-standard
-  address: def_document:v1:2145
+  address: def_document:v2:274560
   scope: constraint
   aspect: biz_constraint
   depth: specification

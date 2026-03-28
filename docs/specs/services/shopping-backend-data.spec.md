@@ -1,7 +1,7 @@
 ---
 def:
   id: shopping-backend-data
-  address: def_document:v1:2672
+  address: def_document:v2:342030
   scope: data
   aspect: domain_data
   depth: overview

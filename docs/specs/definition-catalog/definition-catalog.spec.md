@@ -2,7 +2,7 @@
 def:
   id: definition-catalog-spec
   level: unit
-  address: def_document:v1:2673
+  address: def_document:v2:342162
   scope: data
   aspect: domain_data
   depth: specification

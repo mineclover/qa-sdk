@@ -2,7 +2,7 @@
 def:
   id: registry-system
   level: unit
-  address: def_document:v1:3224
+  address: def_document:v2:412687
   scope: interface
   aspect: api_contract
   depth: overview

@@ -1,7 +1,7 @@
 ---
 def:
   id: registry-events-spec
-  address: def_document:v1:3241
+  address: def_document:v2:414851
   scope: interface
   aspect: event_contract
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: dec-svc-links-module
-  address: def_document:v1:1082
+  address: def_document:v2:138496
   scope: flow
   aspect: relation
   depth: implementation

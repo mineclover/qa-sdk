@@ -1,7 +1,7 @@
 ---
 def:
   id: auto-capture-spec
-  address: def_document:v1:17
+  address: def_document:v2:2176
   scope: ui
   aspect: interaction
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: gateway-config
-  address: def_document:v1:2672
+  address: def_document:v2:342024
   scope: data
   aspect: domain_data
   depth: overview

@@ -1,7 +1,7 @@
 ---
 def:
   id: axis-boundary-patterns
-  address: def_document:v1:545
+  address: def_document:v2:69760
   scope: feature
   aspect: scenario
   depth: specification

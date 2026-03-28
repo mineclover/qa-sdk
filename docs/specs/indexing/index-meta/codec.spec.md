@@ -1,7 +1,7 @@
 ---
 def:
   id: index-codec-spec
-  address: def_document:v1:537
+  address: def_document:v2:68775
   scope: feature
   aspect: func_def
   depth: specification

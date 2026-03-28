@@ -27,9 +27,9 @@ function rowToInstance(row: Record<string, unknown>): FlowInstanceRecord {
     schemaId: row["schema_id"] as string,
     schemaVersion: row["schema_version"] as string,
     status: row["status"] as string,
-    context: JSON.parse((row["context_json"] as string) || "{}"),
-    selections: JSON.parse((row["selections_json"] as string) || "[]"),
-    outcome: row["outcome_json"] ? JSON.parse(row["outcome_json"] as string) : undefined,
+    context: JSON.parse((row["context"] as string) || "{}"),
+    selections: JSON.parse((row["selections"] as string) || "[]"),
+    outcome: row["outcome"] ? JSON.parse(row["outcome"] as string) : undefined,
     address: (row["address"] as number) || undefined,
     addressContext: (row["address_context"] as string) || undefined,
     verdict: (row["verdict"] as string) || undefined,
@@ -44,11 +44,11 @@ export class InstancesService {
 
   save(instance: FlowInstanceRecord): FlowInstanceRecord {
     this.db.prepare(`
-      INSERT INTO flow_instances (id, schema_id, schema_version, status, context_json, selections_json, outcome_json, address, address_context, verdict, started_at, completed_at)
+      INSERT INTO flow_instances (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, started_at, completed_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
-        status=excluded.status, context_json=excluded.context_json, selections_json=excluded.selections_json,
-        outcome_json=excluded.outcome_json, address=excluded.address, address_context=excluded.address_context,
+        status=excluded.status, context=excluded.context, selections=excluded.selections,
+        outcome=excluded.outcome, address=excluded.address, address_context=excluded.address_context,
         verdict=excluded.verdict, completed_at=excluded.completed_at
     `).run(
       instance.id, instance.schemaId, instance.schemaVersion, instance.status,

@@ -1,7 +1,7 @@
 ---
 def:
   id: dual-coordinate-system
-  address: def_document:v1:2673
+  address: def_document:v2:342175
   scope: data
   aspect: domain_data
   depth: specification

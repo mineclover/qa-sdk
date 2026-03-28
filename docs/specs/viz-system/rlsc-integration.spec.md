@@ -1,7 +1,7 @@
 ---
 def:
   id: rlsc-integration
-  address: def_document:v1:1073
+  address: def_document:v2:137358
   scope: flow
   aspect: process_flow
   depth: specification

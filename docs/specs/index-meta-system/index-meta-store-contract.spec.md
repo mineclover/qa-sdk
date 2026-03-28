@@ -1,7 +1,7 @@
 ---
 def:
   id: index-meta-store-contract
-  address: def_document:v1:2681
+  address: def_document:v2:343174
   scope: data
   aspect: system_data
   depth: specification

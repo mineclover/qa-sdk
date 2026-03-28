@@ -1,7 +1,7 @@
 ---
 def:
   id: stream-api-spec
-  address: def_document:v1:3241
+  address: def_document:v2:414852
   scope: interface
   aspect: event_contract
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: analysis-transition
-  address: def_document:v1:1609
+  address: def_document:v2:205952
   scope: state
   aspect: domain_state
   depth: specification

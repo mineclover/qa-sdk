@@ -1,7 +1,7 @@
 ---
 def:
   id: payload-guide
-  address: def_document:v1:2673
+  address: def_document:v2:342184
   scope: data
   aspect: domain_data
   depth: specification

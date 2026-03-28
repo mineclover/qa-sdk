@@ -1,7 +1,7 @@
 ---
 def:
   id: logger-runtime-rules
-  address: def_document:v1:2153
+  address: def_document:v2:275589
   scope: constraint
   aspect: infra_constraint
   depth: specification

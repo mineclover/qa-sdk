@@ -1,7 +1,7 @@
 ---
 def:
   id: dec-svc-schemas-module
-  address: def_document:v1:538
+  address: def_document:v2:68865
   scope: feature
   aspect: func_def
   depth: implementation

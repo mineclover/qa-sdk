@@ -2,7 +2,7 @@
 def:
   id: indexing-core-system
   level: unit
-  address: def_document:v1:2672
+  address: def_document:v2:342026
   scope: data
   aspect: domain_data
   depth: overview

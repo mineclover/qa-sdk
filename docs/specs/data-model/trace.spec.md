@@ -1,7 +1,7 @@
 ---
 def:
   id: trace-spec
-  address: def_document:v1:2673
+  address: def_document:v2:342209
   scope: data
   aspect: domain_data
   depth: specification

@@ -2,7 +2,7 @@
 def:
   id: storage-system
   level: unit
-  address: def_document:v1:2680
+  address: def_document:v2:343044
   scope: data
   aspect: system_data
   depth: overview

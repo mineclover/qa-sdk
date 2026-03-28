@@ -1,7 +1,7 @@
 ---
 def:
   id: metrics-spec
-  address: def_document:v1:2681
+  address: def_document:v2:343178
   scope: data
   aspect: system_data
   depth: specification

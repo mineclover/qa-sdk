@@ -1,7 +1,7 @@
 ---
 def:
   id: registry-workspace-module
-  address: def_document:v1:538
+  address: def_document:v2:68878
   scope: feature
   aspect: func_def
   depth: implementation

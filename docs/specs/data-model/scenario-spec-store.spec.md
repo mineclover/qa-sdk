@@ -1,7 +1,7 @@
 ---
 def:
   id: scenario-store-spec
-  address: def_document:v1:2681
+  address: def_document:v2:343180
   scope: data
   aspect: system_data
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: wi-traceability-spec
-  address: def_document:v1:547
+  address: def_document:v2:70024
   scope: feature
   aspect: scenario
   depth: validation

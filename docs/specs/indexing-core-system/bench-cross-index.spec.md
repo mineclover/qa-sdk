@@ -1,7 +1,7 @@
 ---
 def:
   id: bench-cross-index
-  address: def_document:v1:2681
+  address: def_document:v2:343169
   scope: data
   aspect: system_data
   depth: specification

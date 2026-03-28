@@ -100,8 +100,12 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
 
   console.log(`[${source.mode}] ${from}-${to} / ${total}건${remaining > 0 ? ` (미표시 ${remaining}건)` : ""}`);
   for (const d of docs) {
+    const levelBadge = d.level && d.level !== "leaf" ? `[${d.level}] ` : "";
     const tags = d.tags.length > 0 ? ` [${d.tags.join(",")}]` : "";
-    console.log(`  ${d.docId}  ${d.scope}/${d.aspect}  ${d.lifecycle}${tags}`);
+    console.log(`  ${levelBadge}${d.docId}  ${d.scope}/${d.aspect}  ${d.lifecycle}${tags}`);
+    if (d.purpose) {
+      console.log(`    ${d.purpose.slice(0, 100)}`);
+    }
   }
 
   if (remaining > 0) {
@@ -121,9 +125,15 @@ async function cmdGet(source: DefDataSource, docId: string) {
   if (doc.svc) console.log(`  svc:       ${doc.svc}`);
   if (doc.address) console.log(`  address:   ${doc.address}`);
   if (doc.tags.length > 0) console.log(`  tags:      ${doc.tags.join(", ")}`);
-  if (doc.links.length > 0) {
+  const containsLinks = doc.links.filter(l => l.type === "contains");
+  const otherLinks = doc.links.filter(l => l.type !== "contains");
+  if (containsLinks.length > 0) {
+    console.log(`  children (${containsLinks.length}):`);
+    for (const l of containsLinks) console.log(`    ├── ${l.target}`);
+  }
+  if (otherLinks.length > 0) {
     console.log(`  links:`);
-    for (const l of doc.links) console.log(`    → ${l.target} (${l.type})`);
+    for (const l of otherLinks) console.log(`    → ${l.target} (${l.type})`);
   }
   if (doc.purpose) console.log(`\n  purpose: ${doc.purpose.slice(0, 200)}`);
 }
@@ -131,7 +141,11 @@ async function cmdGet(source: DefDataSource, docId: string) {
 async function cmdChildren(source: DefDataSource, docId: string) {
   const children = await source.getChildren(docId);
   console.log(`[${source.mode}] ${docId} → ${children.length} children`);
-  for (const c of children) console.log(`  ${c.docId}  ${c.scope}/${c.aspect}  ${c.lifecycle}`);
+  for (const c of children) {
+    const levelBadge = c.level && c.level !== "leaf" ? `[${c.level}] ` : "";
+    console.log(`  ${levelBadge}${c.docId}  ${c.scope}/${c.aspect}  ${c.lifecycle}`);
+    if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
+  }
 }
 
 async function cmdParent(source: DefDataSource, docId: string) {
@@ -454,7 +468,7 @@ async function legacyContext(docId: string) {
   console.log(await context(getRootDir(), docId));
 }
 
-async function legacyAudit() {
+async function legacyAudit(fix = false) {
   const result = await scan();
   const root = getRootDir();
   const bodies = await loadBodies(result, root);
@@ -510,6 +524,50 @@ async function legacyAudit() {
     issues.slice(0, 10).forEach(i => console.log(`  ${i}`));
     if (issues.length > 10) console.log(`  ... 외 ${issues.length - 10}건`);
   }
+
+  // --fix: DB 동기화
+  if (fix) {
+    console.log("\n=== 자동 보강 ===");
+    const DB_PATHS = ["data/definition-service.sqlite", "packages/definition-service/data/definition-service.sqlite"];
+    let synced = 0;
+
+    for (const dbPath of DB_PATHS) {
+      const fullPath = join(getRootDir(), dbPath);
+      if (!existsSync(fullPath)) continue;
+
+      try {
+        const Database = (await import("better-sqlite3")).default;
+        const db = new Database(fullPath);
+
+        // level 컬럼 확보
+        try { db.exec("ALTER TABLE documents ADD COLUMN level TEXT DEFAULT 'leaf'"); } catch { /* already exists */ }
+
+        // level 동기화
+        for (const entry of reg.all()) {
+          if (entry.level) {
+            db.prepare("UPDATE documents SET level = ? WHERE doc_id = ?").run(entry.level, entry.id);
+          }
+        }
+
+        // FTS 재구축
+        db.exec("DROP TABLE IF EXISTS documents_fts");
+        db.exec("CREATE VIRTUAL TABLE documents_fts USING fts5(doc_id, purpose, intent, context, caveat, content=documents, content_rowid=rowid)");
+        db.exec("INSERT INTO documents_fts(documents_fts) VALUES('rebuild')");
+
+        db.close();
+        synced++;
+        console.log(`  DB 동기화 완료: ${dbPath}`);
+      } catch (e) {
+        console.log(`  DB 동기화 실패: ${dbPath} — ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    console.log(`\n리포트: errors=${validation.errors} warnings=${validation.warnings} purpose=${withPurpose}/${total} DB=${synced}개 동기화`);
+  }
+}
+
+async function legacyAuditFix() {
+  return legacyAudit(true);
 }
 
 // ── 라우터 ────────────────────────────────────────────
@@ -520,7 +578,7 @@ export async function cliDef(args: string[]): Promise<void> {
   const rest = positional.slice(1);
 
   // DataSource 기반 커맨드
-  const dsCommands = new Set(["list", "get", "children", "parent", "incoming", "validate", "search", "stats", "impact", "check", "audit-db", "overview", "find-by-file"]);
+  const dsCommands = new Set(["list", "get", "children", "parent", "incoming", "validate", "search", "stats", "impact", "check", "audit-db", "overview", "find-by-file", "guide"]);
   if (dsCommands.has(sub)) {
     let source: DefDataSource;
     try {
@@ -545,6 +603,7 @@ export async function cliDef(args: string[]): Promise<void> {
         case "audit-db": return await cmdAuditDb(source);
         case "overview": return await cmdOverview(source);
         case "find-by-file": return await cmdFindByFile(source, rest[0] ?? "");
+        case "guide": return await cmdGuide(source, rest[0]);
       }
     } finally {
       if ("close" in source && typeof source.close === "function") (source as { close(): void }).close();
@@ -564,19 +623,17 @@ export async function cliDef(args: string[]): Promise<void> {
     case "context":
       if (!rest[0]) { console.log("Usage: qa-sdk def context <문서ID>"); return; }
       return legacyContext(rest[0]);
-    case "audit": return legacyAudit();
+    case "audit": return flags["fix"] ? legacyAuditFix() : legacyAudit();
     case "link-rules": return cmdLinkRules();
     default:
       console.log(`qa-sdk def — 문서 관리
 
 시작하기:
-  def list --level=system     전체 시스템 (루트)
-  def list --level=area       영역 목록 (인프라/설계도구/프론트엔드/...)
-  def list --level=unit       서비스/엔진 목록
-  def topdown <ID>            하위 문서 조립
-  def search <키워드>         개념 검색
-  def get definition-taxonomy 문서 분류 체계
-  def get definition-level    분해 레벨 설명
+  guide                       시스템 전체 구조 안내
+  guide concepts              핵심 개념 (좌표, prefix, 축)
+  guide classification        문서 분류 체계 (scope, level, layer)
+  guide services              서비스 구조
+  guide philosophy            시스템 철학
 
 조회:
   list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
@@ -694,6 +751,102 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
       if (exports.length > 10) console.log(`  ... 외 ${exports.length - 10}건`);
     }
   } catch { /* 파일 읽기 실패 무시 */ }
+}
+
+async function cmdGuide(source: DefDataSource, topic?: string) {
+  switch (topic) {
+    case "concepts": {
+      const doc = await source.get("system-concepts");
+      console.log("=== 핵심 개념 ===\n");
+      console.log(doc?.purpose ?? "(system-concepts 문서 없음)");
+      console.log("\n더 알아보기:");
+      console.log("  def get system-concepts");
+      console.log("  def search \"좌표\"");
+      console.log("  def search \"prefix\"");
+      return;
+    }
+    case "classification": {
+      const taxonomy = await source.get("definition-taxonomy");
+      const level = await source.get("definition-level");
+      console.log("=== 문서 분류 체계 ===\n");
+      console.log("분류 축:");
+      console.log("  scope (7종)  — 무엇에 대한 정의인가 (ui/feature/flow/state/constraint/data/interface)");
+      console.log("  aspect (22종) — 어떤 측면을 정의하는가 (scope별 2~5종)");
+      console.log("  depth (4종)  — 얼마나 상세한가 (overview/specification/implementation/validation)");
+      console.log("\n메타데이터:");
+      console.log("  level (5종)  — 어떤 분해 단위인가 (system/area/unit/module/leaf)");
+      console.log("  layer (4종)  — 왜 존재하는가 (domain/operation/mediation/experience)");
+      console.log("  lifecycle    — 현재 상태 (draft/review/approved/deprecated/archived)");
+      console.log("\n더 알아보기:");
+      console.log("  def get definition-taxonomy   # 전체 분류 체계");
+      console.log("  def get definition-level      # 분해 레벨 설계 근거");
+      console.log("  def link-rules                # 관계 유형 규칙");
+      console.log("  def stats                     # 현재 분포");
+      return;
+    }
+    case "services": {
+      const children = await source.getChildren("system-infra");
+      console.log("=== 인프라 서비스 ===\n");
+      for (const c of children) {
+        const levelBadge = c.level && c.level !== "leaf" ? `[${c.level}] ` : "";
+        console.log(`  ${levelBadge}${c.docId}`);
+        if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
+      }
+      const support = await source.getChildren("system-support");
+      console.log("\n=== 보조 서비스 ===\n");
+      for (const c of support) {
+        const levelBadge = c.level && c.level !== "leaf" ? `[${c.level}] ` : "";
+        console.log(`  ${levelBadge}${c.docId}`);
+        if (c.purpose) console.log(`    ${c.purpose.slice(0, 90)}`);
+      }
+      console.log("\n더 알아보기:");
+      console.log("  def get <서비스ID>     # 서비스 상세");
+      console.log("  def topdown <서비스ID> # 서비스 내부 조립");
+      return;
+    }
+    case "philosophy": {
+      const doc = await source.get("definition-system-philosophy");
+      console.log("=== 시스템 철학 ===\n");
+      console.log(doc?.purpose ?? "(문서 없음)");
+      console.log("\n더 알아보기:");
+      console.log("  def get definition-system-philosophy");
+      console.log("  def get dual-coordinate-system");
+      console.log("  def search \"철학\"");
+      return;
+    }
+    default: {
+      // 전체 구조 안내
+      const root = await source.get("system-root");
+      const areas = await source.getChildren("system-root");
+      const allDocs = await source.list({ limit: 100000 });
+      const approved = allDocs.filter(d => d.lifecycle === "approved").length;
+      const deprecated = allDocs.filter(d => d.lifecycle === "deprecated").length;
+
+      const byLevel: Record<string, number> = {};
+      for (const d of allDocs) byLevel[d.level ?? "leaf"] = (byLevel[d.level ?? "leaf"] ?? 0) + 1;
+
+      console.log("=== qa-sdk 시스템 가이드 ===\n");
+      console.log(root?.purpose ?? "");
+      console.log(`\n문서 ${allDocs.length}건 (approved ${approved}, deprecated ${deprecated})`);
+      console.log(`level: ${Object.entries(byLevel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
+
+      console.log("\n=== 영역 구조 ===\n");
+      for (const a of areas) {
+        const childCount = (await source.getChildren(a.docId)).length;
+        console.log(`  [area] ${a.docId} (${childCount} children)`);
+        if (a.purpose) console.log(`    ${a.purpose.slice(0, 80)}`);
+      }
+
+      console.log("\n=== 다음 단계 ===\n");
+      console.log("  def guide concepts        핵심 개념 (좌표, prefix, 축)");
+      console.log("  def guide classification  문서 분류 체계 (scope, level, layer)");
+      console.log("  def guide services        서비스 구조");
+      console.log("  def guide philosophy      시스템 철학");
+      console.log("  def children <area-id>    영역 내부 탐색");
+      console.log("  def search <키워드>       개념 검색");
+      return;
+    }
+  }
 }
 
 function cmdLinkRules() {

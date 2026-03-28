@@ -1,7 +1,7 @@
 ---
 def:
   id: api-client-spec
-  address: def_document:v1:2689
+  address: def_document:v2:344192
   scope: data
   aspect: external_data
   depth: specification

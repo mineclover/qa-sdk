@@ -1,7 +1,7 @@
 ---
 def:
   id: dkg-skill-catalog
-  address: def_document:v1:2673
+  address: def_document:v2:342171
   scope: data
   aspect: domain_data
   depth: specification

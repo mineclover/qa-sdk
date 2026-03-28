@@ -20,9 +20,9 @@ function rowToSchema(row: Record<string, unknown>): FlowSchemaRecord {
     name: row["name"] as string,
     description: (row["description"] as string) || undefined,
     version: row["version"] as string,
-    gates: JSON.parse((row["gates_json"] as string) || "[]"),
-    outcomes: JSON.parse((row["outcomes_json"] as string) || "[]"),
-    meta: JSON.parse((row["meta_json"] as string) || "{}"),
+    gates: JSON.parse((row["gates"] as string) || "[]"),
+    outcomes: JSON.parse((row["outcomes"] as string) || "[]"),
+    meta: JSON.parse((row["meta"] as string) || "{}"),
     registeredAt: row["registered_at"] as string,
     updatedAt: row["updated_at"] as string,
   };
@@ -43,12 +43,12 @@ export class SchemasService {
   }): FlowSchemaRecord {
     const now = new Date().toISOString();
     this.db.prepare(`
-      INSERT INTO flow_schemas (schema_id, name, description, version, gates_json, outcomes_json, meta_json, registered_at, updated_at)
+      INSERT INTO flow_schemas (schema_id, name, description, version, gates, outcomes, meta, registered_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(schema_id) DO UPDATE SET
         name=excluded.name, description=excluded.description, version=excluded.version,
-        gates_json=excluded.gates_json, outcomes_json=excluded.outcomes_json,
-        meta_json=excluded.meta_json, updated_at=excluded.updated_at
+        gates=excluded.gates, outcomes=excluded.outcomes,
+        meta=excluded.meta, updated_at=excluded.updated_at
     `).run(
       input.schemaId, input.name, input.description ?? null,
       input.version ?? "v1",

@@ -36,7 +36,9 @@
     "execa": "^9.6.1",
     "motion-content": "workspace:*",
     "motion-workspace": "workspace:*",
-    "motion-workspace-client": "workspace:*"
+    "motion-workspace-client": "workspace:*",
+    "spec-analyzer": "workspace:*",
+    "spec-tracker": "workspace:*"
   },
   "devDependencies": {
     "@qa-sdk/motion-workspace-service": "workspace:*",

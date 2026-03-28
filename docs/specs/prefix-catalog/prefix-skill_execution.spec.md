@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-skill_execution
-  address: def_document:v1:2697
+  address: def_document:v2:345258
   scope: data
   aspect: prefix_schema
   depth: specification

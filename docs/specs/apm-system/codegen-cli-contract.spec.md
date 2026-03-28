@@ -1,7 +1,7 @@
 ---
 def:
   id: codegen-cli-contract
-  address: def_document:v1:3233
+  address: def_document:v2:413825
   scope: interface
   aspect: cli_contract
   depth: specification

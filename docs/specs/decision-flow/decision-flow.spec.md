@@ -1,7 +1,7 @@
 ---
 def:
   id: decision-flow-spec
-  address: def_document:v1:1609
+  address: def_document:v2:205954
   scope: state
   aspect: domain_state
   depth: specification

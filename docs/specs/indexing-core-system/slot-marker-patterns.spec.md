@@ -1,7 +1,7 @@
 ---
 def:
   id: slot-marker-patterns
-  address: def_document:v1:545
+  address: def_document:v2:69761
   scope: feature
   aspect: scenario
   depth: specification

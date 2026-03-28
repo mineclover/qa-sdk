@@ -2,7 +2,7 @@
 def:
   id: prefix-catalog-system
   level: unit
-  address: def_document:v1:2696
+  address: def_document:v2:345092
   scope: data
   aspect: prefix_schema
   depth: overview

@@ -1,7 +1,7 @@
 ---
 def:
   id: viz-panel-layout
-  address: def_document:v1:1
+  address: def_document:v2:129
   scope: ui
   aspect: layout
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: platform-demo-api
-  address: def_document:v1:3224
+  address: def_document:v2:412684
   scope: interface
   aspect: api_contract
   depth: overview

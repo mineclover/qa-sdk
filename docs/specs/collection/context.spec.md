@@ -1,7 +1,7 @@
 ---
 def:
   id: trace-context-spec
-  address: def_document:v1:1601
+  address: def_document:v2:204928
   scope: state
   aspect: app_state
   depth: specification

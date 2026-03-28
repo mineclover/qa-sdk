@@ -1,7 +1,7 @@
 ---
 def:
   id: motion-workspace-client
-  address: def_document:v1:3224
+  address: def_document:v2:412681
   scope: interface
   aspect: api_contract
   depth: overview

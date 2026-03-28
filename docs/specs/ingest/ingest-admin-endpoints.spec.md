@@ -1,7 +1,7 @@
 ---
 def:
   id: ingest-admin-endpoints
-  address: def_document:v1:3225
+  address: def_document:v2:412814
   scope: interface
   aspect: api_contract
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: browser-capture-contract
-  address: def_document:v1:3225
+  address: def_document:v2:412802
   scope: interface
   aspect: api_contract
   depth: specification

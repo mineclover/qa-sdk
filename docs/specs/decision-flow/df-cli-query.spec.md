@@ -1,7 +1,7 @@
 ---
 def:
   id: df-cli-query
-  address: def_document:v1:3233
+  address: def_document:v2:413827
   scope: interface
   aspect: cli_contract
   depth: specification

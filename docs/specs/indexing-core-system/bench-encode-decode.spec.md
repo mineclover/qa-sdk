@@ -1,7 +1,7 @@
 ---
 def:
   id: bench-encode-decode
-  address: def_document:v1:2681
+  address: def_document:v2:343170
   scope: data
   aspect: system_data
   depth: specification

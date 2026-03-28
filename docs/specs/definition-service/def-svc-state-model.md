@@ -2,7 +2,7 @@
 def:
   id: def-svc-state-model
   level: leaf
-  address: def_document:v1:1609
+  address: def_document:v2:205956
   scope: state
   aspect: domain_state
   depth: specification

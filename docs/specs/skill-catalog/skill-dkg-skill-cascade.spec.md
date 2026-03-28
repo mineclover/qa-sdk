@@ -1,7 +1,7 @@
 ---
 def:
   id: skill-dkg-skill-cascade
-  address: def_document:v1:537
+  address: def_document:v2:68801
   scope: feature
   aspect: func_def
   depth: specification

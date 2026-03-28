@@ -1,7 +1,7 @@
 ---
 def:
   id: graph-renderer-pipeline
-  address: def_document:v1:9
+  address: def_document:v2:1155
   scope: ui
   aspect: component
   depth: specification

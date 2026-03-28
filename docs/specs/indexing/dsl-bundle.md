@@ -1,7 +1,7 @@
 ---
 def:
   id: dsl-bundle-spec
-  address: def_document:v1:2673
+  address: def_document:v2:342172
   scope: data
   aspect: domain_data
   depth: specification

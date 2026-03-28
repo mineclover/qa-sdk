@@ -1,7 +1,7 @@
 ---
 def:
   id: rlsc-spec
-  address: def_document:v1:1
+  address: def_document:v2:128
   scope: ui
   aspect: layout
   depth: specification

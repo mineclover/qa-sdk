@@ -1,7 +1,7 @@
 ---
 def:
   id: docs-explorer-spec
-  address: def_document:v1:8
+  address: def_document:v2:1025
   scope: ui
   aspect: component
   depth: overview

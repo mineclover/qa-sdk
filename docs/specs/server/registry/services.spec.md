@@ -1,7 +1,7 @@
 ---
 def:
   id: registry-services-api-spec
-  address: def_document:v1:3225
+  address: def_document:v2:412829
   scope: interface
   aspect: api_contract
   depth: specification

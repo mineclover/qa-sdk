@@ -1,7 +1,7 @@
 ---
 def:
   id: index-meta-store-resolution
-  address: def_document:v1:2681
+  address: def_document:v2:343175
   scope: data
   aspect: system_data
   depth: specification

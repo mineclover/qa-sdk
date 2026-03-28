@@ -49,7 +49,7 @@ export class SearchService implements OnModuleInit {
 
   constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
 
-  /** FTS5 테이블 생성 — drizzle 마이그레이션과 독립 */
+  /** FTS5 테이블 생성 보장 — 마이그레이션 직접 DDL + 런타임 fallback */
   onModuleInit() {
     // trigram 토크나이저: CJK(한국어/중국어/일본어) 검색 지원
     // trigram은 3글자 단위로 토큰을 생성하여 부분 문자열 매칭 가능

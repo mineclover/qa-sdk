@@ -2,7 +2,7 @@
 def:
   id: admin-api-system
   level: module
-  address: def_document:v1:3224
+  address: def_document:v2:412672
   scope: interface
   aspect: api_contract
   depth: overview

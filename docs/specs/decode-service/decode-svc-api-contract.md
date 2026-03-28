@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-svc-api-contract
-  address: def_document:v1:3225
+  address: def_document:v2:412807
   scope: interface
   aspect: api_contract
   depth: specification

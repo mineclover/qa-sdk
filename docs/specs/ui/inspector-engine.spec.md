@@ -1,7 +1,7 @@
 ---
 def:
   id: inspector-engine
-  address: def_document:v1:9
+  address: def_document:v2:1157
   scope: ui
   aspect: component
   depth: specification

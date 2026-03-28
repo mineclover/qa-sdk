@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-tracker-types
-  address: def_document:v1:2673
+  address: def_document:v2:342203
   scope: data
   aspect: domain_data
   depth: specification

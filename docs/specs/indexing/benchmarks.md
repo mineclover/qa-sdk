@@ -1,7 +1,7 @@
 ---
 def:
   id: indexing-benchmarks
-  address: def_document:v1:2683
+  address: def_document:v2:343424
   scope: data
   aspect: system_data
   depth: validation

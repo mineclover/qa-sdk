@@ -1,7 +1,7 @@
 ---
 def:
   id: cli-contract-spec
-  address: def_document:v1:3233
+  address: def_document:v2:413824
   scope: interface
   aspect: cli_contract
   depth: specification

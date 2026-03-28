@@ -1,7 +1,7 @@
 ---
 def:
   id: policy-prefix-group
-  address: def_document:v1:2696
+  address: def_document:v2:345091
   scope: data
   aspect: prefix_schema
   depth: overview

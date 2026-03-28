@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-tracker-vitest-adapter
-  address: def_document:v1:3226
+  address: def_document:v2:412928
   scope: interface
   aspect: api_contract
   depth: implementation

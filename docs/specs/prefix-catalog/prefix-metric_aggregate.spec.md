@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-metric_aggregate
-  address: def_document:v1:2697
+  address: def_document:v2:345242
   scope: data
   aspect: prefix_schema
   depth: specification

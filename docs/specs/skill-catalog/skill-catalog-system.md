@@ -2,7 +2,7 @@
 def:
   id: skill-catalog-system
   level: unit
-  address: def_document:v1:536
+  address: def_document:v2:68645
   scope: feature
   aspect: func_def
   depth: overview

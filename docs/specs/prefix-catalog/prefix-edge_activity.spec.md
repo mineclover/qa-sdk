@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-edge_activity
-  address: def_document:v1:2697
+  address: def_document:v2:345230
   scope: data
   aspect: prefix_schema
   depth: specification

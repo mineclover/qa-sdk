@@ -1,7 +1,7 @@
 ---
 def:
   id: cq-version-query
-  address: def_document:v1:537
+  address: def_document:v2:68754
   scope: feature
   aspect: func_def
   depth: specification

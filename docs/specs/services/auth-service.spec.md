@@ -1,7 +1,7 @@
 ---
 def:
   id: auth-service-spec
-  address: def_document:v1:536
+  address: def_document:v2:68612
   scope: feature
   aspect: func_def
   depth: overview

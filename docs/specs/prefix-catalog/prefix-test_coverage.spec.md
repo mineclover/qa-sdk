@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-test_coverage
-  address: def_document:v1:2697
+  address: def_document:v2:345261
   scope: data
   aspect: prefix_schema
   depth: specification

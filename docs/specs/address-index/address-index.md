@@ -1,7 +1,7 @@
 ---
 def:
   id: address-index
-  address: def_document:v1:2672
+  address: def_document:v2:342016
   scope: data
   aspect: domain_data
   depth: overview

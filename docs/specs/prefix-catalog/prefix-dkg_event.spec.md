@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-dkg_event
-  address: def_document:v1:2697
+  address: def_document:v2:345228
   scope: data
   aspect: prefix_schema
   depth: specification

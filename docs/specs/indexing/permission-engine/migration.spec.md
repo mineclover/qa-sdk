@@ -1,7 +1,7 @@
 ---
 def:
   id: perm-migration-spec
-  address: def_document:v1:537
+  address: def_document:v2:68784
   scope: feature
   aspect: func_def
   depth: specification

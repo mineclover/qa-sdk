@@ -1,7 +1,7 @@
 ---
 def:
   id: prefix-spec_event
-  address: def_document:v1:2697
+  address: def_document:v2:345259
   scope: data
   aspect: prefix_schema
   depth: specification

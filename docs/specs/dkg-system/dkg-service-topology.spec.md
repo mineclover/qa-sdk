@@ -1,7 +1,7 @@
 ---
 def:
   id: dkg-service-topology
-  address: def_document:v1:2673
+  address: def_document:v2:342170
   scope: data
   aspect: domain_data
   depth: specification

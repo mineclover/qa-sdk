@@ -1,7 +1,7 @@
 ---
 def:
   id: invariants-spec
-  address: def_document:v1:2137
+  address: def_document:v2:273555
   scope: constraint
   aspect: tech_constraint
   depth: specification

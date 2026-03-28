@@ -1,7 +1,7 @@
 ---
 def:
   id: browser-lifecycle-spec
-  address: def_document:v1:1617
+  address: def_document:v2:206976
   scope: state
   aspect: system_state
   depth: specification

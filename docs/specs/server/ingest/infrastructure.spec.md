@@ -1,7 +1,7 @@
 ---
 def:
   id: ingest-infra-spec
-  address: def_document:v1:2153
+  address: def_document:v2:275586
   scope: constraint
   aspect: infra_constraint
   depth: specification

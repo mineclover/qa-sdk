@@ -1,7 +1,7 @@
 ---
 def:
   id: address-scenarios-runtime
-  address: def_document:v1:547
+  address: def_document:v2:70018
   scope: feature
   aspect: scenario
   depth: validation

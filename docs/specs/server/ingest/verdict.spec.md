@@ -1,7 +1,7 @@
 ---
 def:
   id: verdict-api-spec
-  address: def_document:v1:3225
+  address: def_document:v2:412834
   scope: interface
   aspect: api_contract
   depth: specification

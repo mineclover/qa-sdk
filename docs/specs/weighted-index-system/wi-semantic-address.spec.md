@@ -1,7 +1,7 @@
 ---
 def:
   id: wi-semantic-address
-  address: def_document:v1:2673
+  address: def_document:v2:342216
   scope: data
   aspect: domain_data
   depth: specification

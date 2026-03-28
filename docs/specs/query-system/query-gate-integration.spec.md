@@ -1,7 +1,7 @@
 ---
 def:
   id: query-gate-integration
-  address: def_document:v1:1081
+  address: def_document:v2:138370
   scope: flow
   aspect: relation
   depth: specification

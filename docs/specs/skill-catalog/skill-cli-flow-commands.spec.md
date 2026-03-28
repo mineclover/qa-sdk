@@ -1,7 +1,7 @@
 ---
 def:
   id: skill-cli-flow-commands
-  address: def_document:v1:537
+  address: def_document:v2:68793
   scope: feature
   aspect: func_def
   depth: specification

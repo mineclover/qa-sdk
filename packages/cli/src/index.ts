@@ -353,6 +353,10 @@ export async function main(argv = process.argv.slice(2)) {
       return runSpecDecode(sub.rest);
     case "spec codegen":
       return runSpecCodegen(sub.rest);
+    case "spec drift": {
+      const { cliSpecDrift } = await import("./commands/spec-drift.js");
+      return cliSpecDrift(sub.rest);
+    }
 
     // Obsidian 동기화
     case "sync-obsidian":
@@ -808,7 +812,7 @@ export async function main(argv = process.argv.slice(2)) {
     case "def topdown":  await cliDef(["topdown", ...sub.rest]); return;
     case "def bottomup": await cliDef(["bottomup", ...sub.rest]); return;
     case "def context":  await cliDef(["context", ...sub.rest]); return;
-    case "def audit":    await cliDef(["audit"]); return;
+    case "def audit":    await cliDef(["audit", ...sub.rest]); return;
     case "def validate": await cliDef(["validate"]); return;
     case "def stats":    await cliDef(["stats"]); return;
     case "def sync":     await cliDef(["sync", ...sub.rest]); return;
@@ -825,6 +829,7 @@ export async function main(argv = process.argv.slice(2)) {
     case "def overview": await cliDef(["overview"]); return;
     case "def link-rules": await cliDef(["link-rules"]); return;
     case "def find-by-file": await cliDef(["find-by-file", ...sub.rest]); return;
+    case "def guide": await cliDef(["guide", ...sub.rest]); return;
     case "def":          await cliDef(sub.rest); return;
 
     // Catalog 명령어
@@ -954,7 +959,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
   const twoWord = [
     "motion validate", "motion inspect", "motion export", "motion import", "motion apply", "motion preview",
-    "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen",
+    "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen", "spec drift",
     "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
     "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import", "dkg flow-schemas", "dkg flow-schema",
     "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
@@ -968,7 +973,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
     "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
-    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules", "def find-by-file",
+    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules", "def find-by-file", "def guide",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",

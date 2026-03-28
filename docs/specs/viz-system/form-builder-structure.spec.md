@@ -1,7 +1,7 @@
 ---
 def:
   id: form-builder-structure
-  address: def_document:v1:9
+  address: def_document:v2:1154
   scope: ui
   aspect: component
   depth: specification

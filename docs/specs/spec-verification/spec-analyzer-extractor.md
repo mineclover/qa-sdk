@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-analyzer-extractor
-  address: def_document:v1:538
+  address: def_document:v2:68880
   scope: feature
   aspect: func_def
   depth: implementation

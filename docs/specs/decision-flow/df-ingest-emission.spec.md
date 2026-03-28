@@ -1,7 +1,7 @@
 ---
 def:
   id: df-ingest-emission
-  address: def_document:v1:3241
+  address: def_document:v2:414850
   scope: interface
   aspect: event_contract
   depth: specification

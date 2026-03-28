@@ -2,7 +2,7 @@
 def:
   id: coord-states-group
   level: module
-  address: def_document:v1:1608
+  address: def_document:v2:205824
   scope: state
   aspect: domain_state
   depth: overview

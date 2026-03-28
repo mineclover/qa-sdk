@@ -1,7 +1,7 @@
 ---
 def:
   id: monitor-service-spec
-  address: def_document:v1:8
+  address: def_document:v2:1026
   scope: ui
   aspect: component
   depth: overview

@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-temporal-infra
-  address: def_document:v1:2153
+  address: def_document:v2:275590
   scope: constraint
   aspect: infra_constraint
   depth: specification

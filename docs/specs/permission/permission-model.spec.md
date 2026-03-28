@@ -1,7 +1,7 @@
 ---
 def:
   id: permission-model
-  address: def_document:v1:1609
+  address: def_document:v2:205961
   scope: state
   aspect: domain_state
   depth: specification

@@ -1,7 +1,7 @@
 ---
 def:
   id: sdk-constants
-  address: def_document:v1:537
+  address: def_document:v2:68789
   scope: feature
   aspect: func_def
   depth: specification

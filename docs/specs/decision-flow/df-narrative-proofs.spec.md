@@ -1,7 +1,7 @@
 ---
 def:
   id: df-narrative-proofs
-  address: def_document:v1:547
+  address: def_document:v2:70020
   scope: feature
   aspect: scenario
   depth: validation

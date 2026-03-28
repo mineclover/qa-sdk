@@ -1,7 +1,7 @@
 ---
 def:
   id: df-narrative
-  address: def_document:v1:1609
+  address: def_document:v2:205957
   scope: state
   aspect: domain_state
   depth: specification

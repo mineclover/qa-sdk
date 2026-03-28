@@ -50,15 +50,20 @@ export class LocalDataSource implements DefDataSource {
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
-    // 전문 검색
+    // 전문 검색 — 한글 토크나이저 보정: 각 단어에 * 와일드카드 추가
     if (filter?.q) {
+      const ftsQuery = filter.q
+        .split(/\s+/)
+        .filter(t => t.length > 0)
+        .map(t => t.endsWith("*") ? t : `${t}*`)
+        .join(" ");
       const stmt = this.db.prepare(`
         SELECT d.* FROM documents d
         JOIN documents_fts fts ON fts.doc_id = d.doc_id
         WHERE documents_fts MATCH ?
         LIMIT ?
       `);
-      return (stmt.all(filter.q, filter?.limit ?? 50) as Record<string, unknown>[]).map(rowToDoc);
+      return (stmt.all(ftsQuery, filter?.limit ?? 50) as Record<string, unknown>[]).map(rowToDoc);
     }
 
     const conditions: string[] = [];
