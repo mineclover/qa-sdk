@@ -64,7 +64,7 @@ import {
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
 import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
-import type { DkgNode, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate, ConstraintNode, DkgEdgeType, DkgEdge, SpecNode, ConvergeAction, ChainStepResult, UsageData, EntryUsage, AddressUsage, CoOccurrence, VersionUsage, ObservationSuggestion, TransitionSpecNode } from "@qa-sdk/spec-core/analysis";
+import type { DkgNode, DkgNodeDetails, AxisNode, PrefixNode, DomainNode, ConsumerNode, DslBundleNode, IntentLinkNode, DecisionType, ClaimData, ObservationNode, DecisionNode, SkillNode, MetricValue, TableNode, CausalCandidate, ConstraintNode, DkgEdgeType, DkgEdge, SpecNode, ConvergeAction, ChainStepResult, UsageData, EntryUsage, AddressUsage, CoOccurrence, VersionUsage, ObservationSuggestion, TransitionSpecNode } from "@qa-sdk/spec-core/analysis";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
@@ -2033,29 +2033,28 @@ export function dkgTrace(nodeId: string): void {
     console.log(`  ⚠ 작업중: ${result.claim.by} (${result.claim.at})`);
   }
 
-  // kind-specific details
+  // kind-specific details — DkgNodeDetails<K> 타입으로 안전하게 접근
   if (result.kind === "prefix") {
-    const d = result.details;
+    const d = result.details as DkgNodeDetails<"prefix">;
     console.log(`  category:  ${d.category ?? "unknown"}`);
     console.log(`  lifecycle: ${d.lifecycle ?? "active"}`);
-    console.log(`  dims:      ${(d.dimLabels as string[] ?? []).join(", ")}`);
+    console.log(`  dims:      ${(d.dimLabels ?? []).join(", ")}`);
   } else if (result.kind === "axis") {
-    const d = result.details;
-    console.log(`  versions: ${(d.currentVersions as string[] ?? []).join(", ")}`);
+    const d = result.details as DkgNodeDetails<"axis">;
+    console.log(`  versions: ${(d.currentVersions ?? []).join(", ")}`);
   } else if (result.kind === "decision") {
-    const d = result.details;
+    const d = result.details as DkgNodeDetails<"decision">;
     console.log(`  lifecycle: ${d.lifecycle}`);
     console.log(`  context:   ${d.context}`);
     console.log(`  rationale: ${d.rationale}`);
-    if (typeof d.flowInstanceId === "string") {
+    if (d.flowInstanceId) {
       console.log(`  flow:      ${d.flowInstanceId}`);
     }
   } else if (result.kind === "observation") {
-    const d = result.details;
+    const d = result.details as DkgNodeDetails<"observation">;
     console.log(`  finding: ${d.finding}`);
     console.log(`  source:  ${d.source}`);
-    const res = d.resolution as { outcome: string; decisionId: string } | undefined;
-    if (res) console.log(`  resolved: ${res.outcome} → ${res.decisionId}`);
+    if (d.resolution) console.log(`  resolved: ${d.resolution.outcome} → ${d.resolution.decisionId}`);
   }
 
   // composition
@@ -2112,8 +2111,8 @@ export function dkgTrace(nodeId: string): void {
   }
 
   if (result.kind === "decision") {
-    const flowInstanceId = typeof result.details.flowInstanceId === "string"
-      ? result.details.flowInstanceId
+    const flowInstanceId = result.kind === "decision"
+      ? (result.details as DkgNodeDetails<"decision">).flowInstanceId
       : undefined;
     if (flowInstanceId) {
       console.log(`\n  ── 연결된 FlowInstance 코어 추적 ──`);
@@ -3110,7 +3109,7 @@ export function dkgConverge(opts: { persist?: boolean; verbose?: boolean }): voi
   // 5.5. DSL 번들 불변조건 검증 (usage snapshot의 versionUsage에서 파생)
   if (usage && usage.versionUsages.length > 0) {
     // versionUsage → 간이 AddressContextRecord 변환 (prefix 존재만 체크)
-    const prefixSet = new Set(usage.versionUsages.map(v => v.prefixId));
+    const prefixSet = new Set(usage.versionUsages.map(v => v.prefix));
     const syntheticRecord: AddressContextRecord = {
       address_context: Object.fromEntries([...prefixSet].map(p => [p, `${p}:v1:0`])),
       timestamp: new Date().toISOString(),

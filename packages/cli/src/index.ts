@@ -54,6 +54,10 @@ import {
   motionExport,
   motionImport,
   motionPreview,
+  motionSceneCreate,
+  motionSceneDelete,
+  motionSceneList,
+  motionSceneShow,
   motionWorkspaceCreate,
   motionWorkspaceDelete,
   motionWorkspaceList,
@@ -99,6 +103,10 @@ Usage:
   qa-sdk motion workspace show <id>  Remote motion workspace 상세
   qa-sdk motion workspace create <id>  Remote motion workspace 생성
   qa-sdk motion workspace delete <id>  Remote motion workspace 삭제
+  qa-sdk motion scene list --workspace <id>  Remote motion scene 목록
+  qa-sdk motion scene show --workspace <id> --scene <id>  Remote motion scene 상세
+  qa-sdk motion scene create --workspace <id>  Remote motion scene 생성
+  qa-sdk motion scene delete --workspace <id> --scene <id>  Remote motion scene 삭제
   qa-sdk motion export --workspace <id> --out <file>  Remote workspace → composition JSON
   qa-sdk motion import <file> --workspace <id>        composition JSON → remote workspace
   qa-sdk motion apply --workspace <id> --command <json>  Remote workspace command 적용
@@ -317,6 +325,14 @@ export async function main(argv = process.argv.slice(2)) {
       return motionWorkspaceCreate(sub.rest);
     case "motion workspace delete":
       return motionWorkspaceDelete(sub.rest);
+    case "motion scene list":
+      return motionSceneList(sub.rest);
+    case "motion scene show":
+      return motionSceneShow(sub.rest);
+    case "motion scene create":
+      return motionSceneCreate(sub.rest);
+    case "motion scene delete":
+      return motionSceneDelete(sub.rest);
     case "motion export":
       return motionExport(sub.rest);
     case "motion import":
@@ -794,6 +810,17 @@ export async function main(argv = process.argv.slice(2)) {
     case "def stats":    await cliDef(["stats"]); return;
     case "def sync":     await cliDef(["sync", ...sub.rest]); return;
     case "def read":     await cliDef(["read", ...sub.rest]); return;
+    case "def list":     await cliDef(["list", ...sub.rest]); return;
+    case "def get":      await cliDef(["get", ...sub.rest]); return;
+    case "def children": await cliDef(["children", ...sub.rest]); return;
+    case "def parent":   await cliDef(["parent", ...sub.rest]); return;
+    case "def incoming": await cliDef(["incoming", ...sub.rest]); return;
+    case "def search":   await cliDef(["search", ...sub.rest]); return;
+    case "def impact":   await cliDef(["impact", ...sub.rest]); return;
+    case "def check":    await cliDef(["check", ...sub.rest]); return;
+    case "def audit-db": await cliDef(["audit-db"]); return;
+    case "def overview": await cliDef(["overview"]); return;
+    case "def link-rules": await cliDef(["link-rules"]); return;
     case "def":          await cliDef(sub.rest); return;
 
     // Catalog 명령어
@@ -908,6 +935,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
   // 3단어: "dkg decisions export" 등
   const threeWord = [
     "motion workspace list", "motion workspace show", "motion workspace create", "motion workspace delete",
+    "motion scene list", "motion scene show", "motion scene create", "motion scene delete",
     "dkg decisions export", "dkg decisions import", "dkg decisions list",
     "dkg spec add", "dkg spec list", "dkg spec transition",
     "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
@@ -936,6 +964,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     "gate health", "gate check", "gate classify",
     "query health", "query resolve", "query rules",
     "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
+    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules",
     "catalog list", "catalog info",
     "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
     "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",

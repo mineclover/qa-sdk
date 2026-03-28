@@ -122,7 +122,7 @@ describe("SqliteInstanceStore", () => {
 
   it("손상된 JSON은 fallback으로 처리 (크래시 안 함)", () => {
     // 직접 SQL로 손상 데이터 삽입
-    const db = (store as any).db;
+    const db = (store as any).rawDb;
     db.prepare(`
       INSERT INTO flow_instances (id, schema_id, schema_version, status, context, selections, started_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)

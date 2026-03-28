@@ -10,6 +10,7 @@ import {
 import {
   createMotionWorkspaceSnapshot,
   MOTION_WORKSPACE_SCHEMA_V1,
+  MOTION_WORKSPACE_SCHEMA_V2,
   serializeMotionWorkspaceSnapshot,
 } from "motion-workspace";
 import { USAGE, resolveSubcommand } from "../index.js";
@@ -106,7 +107,7 @@ describe("motion CLI", () => {
     const output = await captureConsole(() => motionInspect([filePath]));
 
     expect(output.stdout).toContain("Motion Workspace Snapshot");
-    expect(output.stdout).toContain(`schemaVersion: ${MOTION_WORKSPACE_SCHEMA_V1}`);
+    expect(output.stdout).toContain(`schemaVersion: ${MOTION_WORKSPACE_SCHEMA_V2}`);
     expect(output.stdout).toContain("source: presetId=promo-grid, storageKey=workspace:demo");
     expect(output.stdout).toContain(`composition.id: ${composition.id}`);
     expect(output.stdout).toContain(`composition.layers: ${composition.layers.length}`);

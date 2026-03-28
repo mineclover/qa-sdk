@@ -1,4 +1,4 @@
-import type { MotionWorkspaceSnapshotV1 } from "motion-workspace";
+import type { MotionWorkspaceSnapshot } from "motion-workspace";
 
 export interface MotionCompositionSummary {
   readonly id: string;
@@ -6,6 +6,8 @@ export interface MotionCompositionSummary {
   readonly durationMs: number;
   readonly parameters: number;
   readonly assets: number;
+  readonly targets?: number;
+  readonly scenes?: number;
   readonly layers: number;
   readonly sequences: number;
   readonly captions: number;
@@ -20,7 +22,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function formatWorkspaceSource(snapshot: MotionWorkspaceSnapshotV1): string {
+export function formatWorkspaceSource(snapshot: MotionWorkspaceSnapshot): string {
   if (!snapshot.source) {
     return "(none)";
   }

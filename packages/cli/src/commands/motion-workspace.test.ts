@@ -3,21 +3,28 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  createPromoGridComposition,
   MOTION_COMPOSITION_SCHEMA_V1,
+  MOTION_COMPOSITION_SCHEMA_V2,
+  createPromoGridComposition,
   serializeMotionComposition,
+  type MotionCompositionDefV2,
+  type MotionSceneDef,
 } from "motion-content";
 import {
-  createMotionWorkspaceSnapshot,
+  MOTION_WORKSPACE_SCHEMA_V2,
   createMotionWorkspaceController,
-  MOTION_WORKSPACE_SCHEMA_V1,
-  type MotionWorkspaceSnapshotV1,
+  createMotionWorkspaceSnapshot,
+  type MotionWorkspaceSnapshot,
+  type MotionWorkspaceSnapshotV2,
 } from "motion-workspace";
 import {
   MotionWorkspaceClient,
   MotionWorkspaceClientError,
+  type MotionWorkspaceDeleteSceneResponse,
   type MotionWorkspaceGetResponse,
   type MotionWorkspaceListResponse,
+  type MotionWorkspaceSceneGetResponse,
+  type MotionWorkspaceSceneListResponse,
 } from "motion-workspace-client";
 import { createApp, createMotionWorkspaceRepository } from "@qa-sdk/motion-workspace-service";
 import { USAGE, resolveSubcommand } from "../index.js";
@@ -26,6 +33,10 @@ import {
   MOTION_EXPORT_USAGE,
   MOTION_IMPORT_USAGE,
   MOTION_PREVIEW_USAGE,
+  MOTION_SCENE_CREATE_USAGE,
+  MOTION_SCENE_DELETE_USAGE,
+  MOTION_SCENE_LIST_USAGE,
+  MOTION_SCENE_SHOW_USAGE,
   MOTION_WORKSPACE_CREATE_USAGE,
   MOTION_WORKSPACE_DELETE_USAGE,
   MOTION_WORKSPACE_LIST_USAGE,
@@ -34,6 +45,10 @@ import {
   motionExport,
   motionImport,
   motionPreview,
+  motionSceneCreate,
+  motionSceneDelete,
+  motionSceneList,
+  motionSceneShow,
   motionWorkspaceCreate,
   motionWorkspaceDelete,
   motionWorkspaceList,
@@ -42,10 +57,10 @@ import {
 } from "./motion-workspace.js";
 
 interface MockClientState {
-  readonly workspaces: Map<string, MotionWorkspaceSnapshotV1>;
+  readonly workspaces: Map<string, MotionWorkspaceSnapshotV2>;
   readonly requests: string[];
-  readonly created: MotionWorkspaceSnapshotV1[];
-  readonly updated: MotionWorkspaceSnapshotV1[];
+  readonly created: MotionWorkspaceSnapshotV2[];
+  readonly updated: MotionWorkspaceSnapshotV2[];
   readonly deleted: string[];
   readonly applied: Array<{
     readonly id: string;
@@ -55,8 +70,8 @@ interface MockClientState {
 }
 
 function createWorkspaceSnapshot(
-  overrides: Partial<MotionWorkspaceSnapshotV1> = {},
-): MotionWorkspaceSnapshotV1 {
+  overrides: Partial<MotionWorkspaceSnapshotV2> = {},
+): MotionWorkspaceSnapshotV2 {
   const base = createMotionWorkspaceSnapshot({
     composition: createPromoGridComposition("flash"),
     source: {
@@ -70,12 +85,170 @@ function createWorkspaceSnapshot(
     ...overrides,
     document: overrides.document ?? base.document,
     editor: overrides.editor ?? base.editor,
+    sceneRevisions: overrides.sceneRevisions ?? base.sceneRevisions,
     source: overrides.source ?? base.source,
   };
 }
 
+function createSceneComposition(): MotionCompositionDefV2 {
+  return {
+    id: "scene-cli-demo",
+    title: "Scene CLI Demo",
+    description: "Scene CLI fixture",
+    durationMs: 4000,
+    parameters: [
+      {
+        id: "headline",
+        label: "Headline",
+        type: "text",
+        defaultValue: "Scene headline",
+      },
+    ],
+    cuePresets: [
+      {
+        id: "fade-in",
+        label: "Fade In",
+        kind: "fade",
+        durationMs: 240,
+      },
+    ],
+    assets: [],
+    targets: [
+      {
+        id: "hero-target",
+        target: { kind: "stage-node", nodeId: "hero" },
+        content: { type: "dom" },
+      },
+      {
+        id: "cta-target",
+        target: { kind: "stage-node", nodeId: "cta" },
+        content: { type: "dom" },
+      },
+      {
+        id: "badge-target",
+        target: { kind: "stage-node", nodeId: "badge" },
+        content: { type: "dom" },
+      },
+    ],
+    scenes: [
+      {
+        id: "scene-a",
+        title: "Scene A",
+        startMs: 0,
+        durationMs: 1800,
+        layers: [
+          {
+            targetId: "hero-target",
+            startMs: 0,
+            durationMs: 1800,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+      {
+        id: "scene-b",
+        title: "Scene B",
+        startMs: 1800,
+        durationMs: 2200,
+        layers: [
+          {
+            targetId: "cta-target",
+            startMs: 0,
+            durationMs: 2200,
+            enter: { preset: "fade-in" },
+          },
+        ],
+        sequences: [],
+        captions: [],
+      },
+    ],
+  };
+}
+
+function createSceneWorkspaceSnapshot(
+  overrides: Partial<MotionWorkspaceSnapshotV2> = {},
+): MotionWorkspaceSnapshotV2 {
+  const base = createMotionWorkspaceSnapshot({
+    composition: createSceneComposition(),
+    values: {
+      headline: "Scene CLI headline",
+    },
+    source: {
+      storageKey: "workspace:scene-cli",
+    },
+    savedAt: "2026-03-27T00:00:00.000Z",
+  });
+
+  return {
+    ...base,
+    ...overrides,
+    document: overrides.document ?? base.document,
+    editor: overrides.editor ?? base.editor,
+    sceneRevisions: overrides.sceneRevisions ?? base.sceneRevisions,
+    source: overrides.source ?? base.source,
+  };
+}
+
+function getScene(
+  workspace: MotionWorkspaceSnapshotV2,
+  sceneId: string,
+): MotionSceneDef {
+  if (workspace.document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2) {
+    throw new Error(`scene document가 아닙니다: ${workspace.document.schemaVersion}`);
+  }
+
+  const scene = workspace.document.composition.scenes.find((entry) => entry.id === sceneId);
+  if (!scene) {
+    throw new Error(`scene를 찾을 수 없습니다: ${sceneId}`);
+  }
+
+  return scene;
+}
+
 function createMockClientFactory(state: MockClientState) {
   const seenBaseUrls: string[] = [];
+
+  const getSceneWorkspace = (
+    id: string,
+  ): MotionWorkspaceSnapshotV2 & {
+    readonly document: MotionWorkspaceSnapshotV2["document"] & {
+      readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V2;
+      readonly composition: MotionCompositionDefV2;
+    };
+  } => {
+    const workspace = state.workspaces.get(id);
+    if (!workspace) {
+      throw new MotionWorkspaceClientError(
+        `workspace를 찾을 수 없습니다: ${id}.`,
+        404,
+        {
+          code: "workspace_not_found",
+          message: `workspace를 찾을 수 없습니다: ${id}.`,
+          id,
+        },
+      );
+    }
+
+    if (workspace.document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2) {
+      throw new MotionWorkspaceClientError(
+        "scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.",
+        400,
+        {
+          code: "invalid_request",
+          message: "scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.",
+        },
+      );
+    }
+
+    return workspace as MotionWorkspaceSnapshotV2 & {
+      readonly document: MotionWorkspaceSnapshotV2["document"] & {
+        readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V2;
+        readonly composition: MotionCompositionDefV2;
+      };
+    };
+  };
 
   return {
     seenBaseUrls,
@@ -88,7 +261,7 @@ function createMockClientFactory(state: MockClientState) {
             workspaces: [...state.workspaces.entries()].map(([id, workspace]) => ({
               id,
               title: workspace.document.composition.title,
-              revision: workspace.revision,
+              revision: workspace.globalRevision,
               savedAt: workspace.savedAt,
             })),
           };
@@ -109,17 +282,19 @@ function createMockClientFactory(state: MockClientState) {
           }
           return { workspace };
         },
-        async create(id: string, workspace: MotionWorkspaceSnapshotV1): Promise<MotionWorkspaceGetResponse> {
+        async create(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
           state.requests.push(`create:${id}`);
-          state.created.push(workspace);
-          state.workspaces.set(id, workspace);
-          return { workspace };
+          const nextWorkspace = workspace as MotionWorkspaceSnapshotV2;
+          state.created.push(nextWorkspace);
+          state.workspaces.set(id, nextWorkspace);
+          return { workspace: nextWorkspace };
         },
-        async update(id: string, workspace: MotionWorkspaceSnapshotV1): Promise<MotionWorkspaceGetResponse> {
+        async update(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
           state.requests.push(`update:${id}`);
-          state.updated.push(workspace);
-          state.workspaces.set(id, workspace);
-          return { workspace };
+          const nextWorkspace = workspace as MotionWorkspaceSnapshotV2;
+          state.updated.push(nextWorkspace);
+          state.workspaces.set(id, nextWorkspace);
+          return { workspace: nextWorkspace };
         },
         async delete(id: string): Promise<void> {
           state.requests.push(`delete:${id}`);
@@ -168,6 +343,145 @@ function createMockClientFactory(state: MockClientState) {
           }).workspace;
           state.workspaces.set(id, nextWorkspace);
           return { workspace: nextWorkspace };
+        },
+        async listScenes(workspaceId: string): Promise<MotionWorkspaceSceneListResponse> {
+          state.requests.push(`list-scenes:${workspaceId}`);
+          const workspace = getSceneWorkspace(workspaceId);
+          return {
+            scenes: workspace.document.composition.scenes.map((scene) => ({
+              scene,
+              revision: workspace.sceneRevisions[scene.id] ?? 0,
+            })),
+            globalRevision: workspace.globalRevision,
+          };
+        },
+        async getScene(workspaceId: string, sceneId: string): Promise<MotionWorkspaceSceneGetResponse> {
+          state.requests.push(`get-scene:${workspaceId}:${sceneId}`);
+          const workspace = getSceneWorkspace(workspaceId);
+          const scene = workspace.document.composition.scenes.find((entry) => entry.id === sceneId);
+          if (!scene) {
+            throw new MotionWorkspaceClientError(
+              `scene를 찾을 수 없습니다: ${workspaceId}/${sceneId}.`,
+              404,
+              {
+                code: "scene_not_found",
+                message: `scene를 찾을 수 없습니다: ${workspaceId}/${sceneId}.`,
+                id: workspaceId,
+                sceneId,
+              },
+            );
+          }
+          return {
+            scene,
+            revision: workspace.sceneRevisions[sceneId] ?? 0,
+            globalRevision: workspace.globalRevision,
+          };
+        },
+        async createScene(
+          workspaceId: string,
+          scene: MotionSceneDef,
+          revision: number,
+        ): Promise<MotionWorkspaceSceneGetResponse> {
+          state.requests.push(`create-scene:${workspaceId}:r${revision}:${scene.id}`);
+          const workspace = getSceneWorkspace(workspaceId);
+          if (revision !== workspace.globalRevision) {
+            throw new MotionWorkspaceClientError(
+              `workspace revision이 충돌했습니다. expectedRevision=${revision}, actualRevision=${workspace.globalRevision}.`,
+              409,
+              {
+                code: "revision_conflict",
+                message: `workspace revision이 충돌했습니다. expectedRevision=${revision}, actualRevision=${workspace.globalRevision}.`,
+                expectedRevision: revision,
+                actualRevision: workspace.globalRevision,
+              },
+            );
+          }
+          if (workspace.document.composition.scenes.some((entry) => entry.id === scene.id)) {
+            throw new MotionWorkspaceClientError(
+              `scene가 이미 존재합니다: ${workspaceId}/${scene.id}.`,
+              400,
+              {
+                code: "invalid_request",
+                message: `scene가 이미 존재합니다: ${workspaceId}/${scene.id}.`,
+              },
+            );
+          }
+
+          const nextWorkspace: MotionWorkspaceSnapshotV2 = {
+            ...workspace,
+            globalRevision: workspace.globalRevision + 1,
+            document: {
+              ...workspace.document,
+              composition: {
+                ...workspace.document.composition,
+                scenes: [...workspace.document.composition.scenes, scene],
+              },
+            },
+            sceneRevisions: {
+              ...workspace.sceneRevisions,
+              [scene.id]: 0,
+            },
+          };
+          state.workspaces.set(workspaceId, nextWorkspace);
+
+          return {
+            scene,
+            revision: 0,
+            globalRevision: nextWorkspace.globalRevision,
+          };
+        },
+        async deleteScene(
+          workspaceId: string,
+          sceneId: string,
+          revision: number,
+        ): Promise<MotionWorkspaceDeleteSceneResponse> {
+          state.requests.push(`delete-scene:${workspaceId}:r${revision}:${sceneId}`);
+          const workspace = getSceneWorkspace(workspaceId);
+          if (revision !== workspace.globalRevision) {
+            throw new MotionWorkspaceClientError(
+              `workspace revision이 충돌했습니다. expectedRevision=${revision}, actualRevision=${workspace.globalRevision}.`,
+              409,
+              {
+                code: "revision_conflict",
+                message: `workspace revision이 충돌했습니다. expectedRevision=${revision}, actualRevision=${workspace.globalRevision}.`,
+                expectedRevision: revision,
+                actualRevision: workspace.globalRevision,
+              },
+            );
+          }
+          if (!workspace.document.composition.scenes.some((entry) => entry.id === sceneId)) {
+            throw new MotionWorkspaceClientError(
+              `scene를 찾을 수 없습니다: ${workspaceId}/${sceneId}.`,
+              404,
+              {
+                code: "scene_not_found",
+                message: `scene를 찾을 수 없습니다: ${workspaceId}/${sceneId}.`,
+                id: workspaceId,
+                sceneId,
+              },
+            );
+          }
+
+          const nextSceneRevisions = { ...workspace.sceneRevisions };
+          delete nextSceneRevisions[sceneId];
+          const nextWorkspace: MotionWorkspaceSnapshotV2 = {
+            ...workspace,
+            globalRevision: workspace.globalRevision + 1,
+            document: {
+              ...workspace.document,
+              composition: {
+                ...workspace.document.composition,
+                scenes: workspace.document.composition.scenes.filter((entry) => entry.id !== sceneId),
+              },
+            },
+            sceneRevisions: nextSceneRevisions,
+          };
+          state.workspaces.set(workspaceId, nextWorkspace);
+
+          return {
+            deletedSceneId: sceneId,
+            globalRevision: nextWorkspace.globalRevision,
+          };
         },
       };
     },
@@ -227,7 +541,7 @@ describe("motion workspace CLI", () => {
   it("shows a remote workspace summary", async () => {
     const workspaceId = "demo/workspace-show";
     state.workspaces.set(workspaceId, createWorkspaceSnapshot({
-      revision: 3,
+      globalRevision: 3,
       savedAt: "2026-03-27T03:00:00.000Z",
     }));
     const mock = createMockClientFactory(state);
@@ -238,7 +552,7 @@ describe("motion workspace CLI", () => {
 
     expect(output.stdout).toContain("Remote Motion Workspace");
     expect(output.stdout).toContain(`workspace: ${workspaceId}`);
-    expect(output.stdout).toContain(`schemaVersion: ${MOTION_WORKSPACE_SCHEMA_V1}`);
+    expect(output.stdout).toContain(`schemaVersion: ${MOTION_WORKSPACE_SCHEMA_V2}`);
     expect(output.stdout).toContain("revision: 3");
     expect(output.stdout).toContain("composition.title: Promo Grid");
   });
@@ -255,8 +569,8 @@ describe("motion workspace CLI", () => {
     expect(output.stdout).toContain(`workspace 생성 완료: ${workspaceId}`);
     expect(state.created).toHaveLength(1);
     expect(state.created[0]).toMatchObject({
-      schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
-      revision: 0,
+      schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+      globalRevision: 0,
       savedAt: "2026-03-27T04:00:00.000Z",
       source: {
         presetId: "promo-grid",
@@ -277,6 +591,103 @@ describe("motion workspace CLI", () => {
     expect(output.stdout).toContain(`workspace 삭제 완료: ${workspaceId}`);
     expect(state.deleted).toEqual([workspaceId]);
     expect(state.workspaces.has(workspaceId)).toBe(false);
+  });
+
+  it("lists remote scenes through the typed client", async () => {
+    const workspaceId = "demo/workspace-scenes";
+    state.workspaces.set(workspaceId, createSceneWorkspaceSnapshot());
+    const mock = createMockClientFactory(state);
+
+    const output = await captureConsole(() => motionSceneList([
+      "--workspace",
+      workspaceId,
+    ], {
+      clientFactory: mock.clientFactory,
+    }));
+
+    expect(output.stdout).toContain("Remote Motion Scenes (2)");
+    expect(output.stdout).toContain(`workspace: ${workspaceId}`);
+    expect(output.stdout).toContain("scene-a");
+    expect(output.stdout).toContain("scene-b");
+    expect(state.requests).toEqual([`list-scenes:${workspaceId}`]);
+  });
+
+  it("shows a remote scene summary", async () => {
+    const workspaceId = "demo/workspace-scene-show";
+    state.workspaces.set(workspaceId, createSceneWorkspaceSnapshot());
+    const mock = createMockClientFactory(state);
+
+    const output = await captureConsole(() => motionSceneShow([
+      "--workspace",
+      workspaceId,
+      "--scene",
+      "scene-b",
+    ], {
+      clientFactory: mock.clientFactory,
+    }));
+
+    expect(output.stdout).toContain("Remote Motion Scene");
+    expect(output.stdout).toContain(`workspace: ${workspaceId}`);
+    expect(output.stdout).toContain("scene: scene-b");
+    expect(output.stdout).toContain("title: Scene B");
+    expect(output.stdout).toContain("globalRevision: 0");
+    expect(state.requests).toEqual([`get-scene:${workspaceId}:scene-b`]);
+  });
+
+  it("creates a default remote scene draft", async () => {
+    const workspaceId = "demo/workspace-scene-create";
+    state.workspaces.set(workspaceId, createSceneWorkspaceSnapshot());
+    const mock = createMockClientFactory(state);
+
+    const output = await captureConsole(() => motionSceneCreate([
+      "--workspace",
+      workspaceId,
+    ], {
+      clientFactory: mock.clientFactory,
+    }));
+
+    expect(output.stdout).toContain(`scene 생성 완료: ${workspaceId}/scene-3`);
+    expect(output.stdout).toContain("scene: scene-3");
+    expect(output.stdout).toContain("title: Scene 3");
+    expect(output.stdout).toContain("globalRevision: 1");
+    expect(getScene(state.workspaces.get(workspaceId)!, "scene-3")).toMatchObject({
+      id: "scene-3",
+      title: "Scene 3",
+      startMs: 2800,
+      durationMs: 1200,
+      layers: [],
+      sequences: [],
+      captions: [],
+    });
+    expect(state.requests).toEqual([
+      `get:${workspaceId}`,
+      `create-scene:${workspaceId}:r0:scene-3`,
+    ]);
+  });
+
+  it("deletes a remote scene", async () => {
+    const workspaceId = "demo/workspace-scene-delete";
+    state.workspaces.set(workspaceId, createSceneWorkspaceSnapshot());
+    const mock = createMockClientFactory(state);
+
+    const output = await captureConsole(() => motionSceneDelete([
+      "--workspace",
+      workspaceId,
+      "--scene",
+      "scene-b",
+    ], {
+      clientFactory: mock.clientFactory,
+    }));
+
+    expect(output.stdout).toContain(`scene 삭제 완료: ${workspaceId}/scene-b`);
+    expect(output.stdout).toContain("globalRevision: 1");
+    expect(() => getScene(state.workspaces.get(workspaceId)!, "scene-b")).toThrow(
+      "scene를 찾을 수 없습니다: scene-b",
+    );
+    expect(state.requests).toEqual([
+      `get:${workspaceId}`,
+      `delete-scene:${workspaceId}:r0:scene-b`,
+    ]);
   });
 
   it("exports a remote workspace as a composition document envelope", async () => {
@@ -301,10 +712,41 @@ describe("motion workspace CLI", () => {
     expect(exported).not.toHaveProperty("editor");
   });
 
+  it("exports scene-based workspaces through the v1 assembly bridge", async () => {
+    const workspaceId = "demo/workspace-export-scene";
+    state.workspaces.set(workspaceId, createSceneWorkspaceSnapshot());
+    const mock = createMockClientFactory(state);
+    const outPath = join(tempDir, "exported-scene-composition.json");
+
+    const output = await captureConsole(() => motionExport([
+      "--workspace",
+      workspaceId,
+      "--out",
+      outPath,
+    ], {
+      clientFactory: mock.clientFactory,
+    }));
+
+    const exported = JSON.parse(await readFile(outPath, "utf-8")) as {
+      readonly schemaVersion: string;
+      readonly composition?: Record<string, unknown>;
+    };
+    const composition = exported.composition;
+
+    expect(output.stdout).toContain(`motion export 완료: ${workspaceId}`);
+    expect(exported.schemaVersion).toBe(MOTION_COMPOSITION_SCHEMA_V1);
+    expect(composition).toBeDefined();
+    expect(Array.isArray(composition?.layers)).toBe(true);
+    expect(Array.isArray(composition?.sequences)).toBe(true);
+    expect(Array.isArray(composition?.captions)).toBe(true);
+    expect(composition).not.toHaveProperty("targets");
+    expect(composition).not.toHaveProperty("scenes");
+  });
+
   it("imports a composition document into an existing remote workspace via update", async () => {
     const workspaceId = "demo/workspace-import";
     state.workspaces.set(workspaceId, createWorkspaceSnapshot({
-      revision: 5,
+      globalRevision: 5,
       savedAt: "2026-03-27T05:00:00.000Z",
     }));
     const mock = createMockClientFactory(state);
@@ -327,8 +769,8 @@ describe("motion workspace CLI", () => {
     expect(output.stdout).toContain(`motion import 완료: ${filePath} -> ${workspaceId} (updated)`);
     expect(state.updated).toHaveLength(1);
     expect(state.updated[0]).toMatchObject({
-      schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
-      revision: 6,
+      schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
+      globalRevision: 6,
       savedAt: "2026-03-27T06:00:00.000Z",
       source: {
         path: filePath,
@@ -359,7 +801,7 @@ describe("motion workspace CLI", () => {
     expect(output.stdout).toContain(`motion import 완료: ${filePath} -> ${workspaceId} (created)`);
     expect(state.created).toHaveLength(1);
     expect(state.created[0]).toMatchObject({
-      revision: 0,
+      globalRevision: 0,
       savedAt: "2026-03-27T07:00:00.000Z",
       source: {
         path: filePath,
@@ -428,7 +870,7 @@ describe("motion workspace CLI", () => {
       expect(importOutput.stdout).toContain(`motion import 완료: ${outPath} -> ${workspaceId} (updated)`);
       const remote = await client.get(workspaceId);
       expect(remote.workspace).toMatchObject({
-        revision: 1,
+        globalRevision: 1,
         savedAt: "2026-03-27T09:30:00.000Z",
         source: {
           path: outPath,
@@ -456,7 +898,7 @@ describe("motion workspace CLI", () => {
 
     expect(output.stdout).toContain(`motion apply 완료: ${workspaceId} (set-loop)`);
     expect(output.stdout).toContain(`workspace: ${workspaceId}`);
-    expect(output.stdout).toContain("revision: 1");
+    expect(output.stdout).toContain("revision: 0");
     expect(output.stdout).toContain("editor.loop: true");
     expect(state.applied).toEqual([
       {
@@ -518,6 +960,18 @@ describe("motion workspace CLI", () => {
     const deleteOutput = await captureConsole(() => motionWorkspaceDelete([], {
       clientFactory: createMockClientFactory(state).clientFactory,
     }));
+    const sceneListOutput = await captureConsole(() => motionSceneList([], {
+      clientFactory: createMockClientFactory(state).clientFactory,
+    }));
+    const sceneShowOutput = await captureConsole(() => motionSceneShow([], {
+      clientFactory: createMockClientFactory(state).clientFactory,
+    }));
+    const sceneCreateOutput = await captureConsole(() => motionSceneCreate([], {
+      clientFactory: createMockClientFactory(state).clientFactory,
+    }));
+    const sceneDeleteOutput = await captureConsole(() => motionSceneDelete([], {
+      clientFactory: createMockClientFactory(state).clientFactory,
+    }));
     const exportOutput = await captureConsole(() => motionExport([], {
       clientFactory: createMockClientFactory(state).clientFactory,
     }));
@@ -535,17 +989,25 @@ describe("motion workspace CLI", () => {
     expect(showOutput.stderr).toContain(MOTION_WORKSPACE_SHOW_USAGE);
     expect(createOutput.stderr).toContain(MOTION_WORKSPACE_CREATE_USAGE);
     expect(deleteOutput.stderr).toContain(MOTION_WORKSPACE_DELETE_USAGE);
+    expect(sceneListOutput.stderr).toContain(MOTION_SCENE_LIST_USAGE);
+    expect(sceneShowOutput.stderr).toContain(MOTION_SCENE_SHOW_USAGE);
+    expect(sceneCreateOutput.stderr).toContain(MOTION_SCENE_CREATE_USAGE);
+    expect(sceneDeleteOutput.stderr).toContain(MOTION_SCENE_DELETE_USAGE);
     expect(exportOutput.stderr).toContain(MOTION_EXPORT_USAGE);
     expect(importOutput.stderr).toContain(MOTION_IMPORT_USAGE);
     expect(applyOutput.stderr).toContain(MOTION_APPLY_USAGE);
     expect(previewOutput.stderr).toContain(MOTION_PREVIEW_USAGE);
   });
 
-  it("exposes workspace/import/export motion commands in CLI usage and subcommand parsing", () => {
+  it("exposes scene/workspace motion commands in CLI usage and subcommand parsing", () => {
     expect(USAGE).toContain("qa-sdk motion workspace list");
     expect(USAGE).toContain("qa-sdk motion workspace show <id>");
     expect(USAGE).toContain("qa-sdk motion workspace create <id>");
     expect(USAGE).toContain("qa-sdk motion workspace delete <id>");
+    expect(USAGE).toContain("qa-sdk motion scene list --workspace <id>");
+    expect(USAGE).toContain("qa-sdk motion scene show --workspace <id> --scene <id>");
+    expect(USAGE).toContain("qa-sdk motion scene create --workspace <id>");
+    expect(USAGE).toContain("qa-sdk motion scene delete --workspace <id> --scene <id>");
     expect(USAGE).toContain("qa-sdk motion export --workspace <id> --out <file>");
     expect(USAGE).toContain("qa-sdk motion import <file> --workspace <id>");
     expect(USAGE).toContain("qa-sdk motion apply --workspace <id> --command <json>");
@@ -565,6 +1027,22 @@ describe("motion workspace CLI", () => {
     expect(resolveSubcommand(["motion", "workspace", "delete", "demo.json"])).toEqual({
       name: "motion workspace delete",
       rest: ["demo.json"],
+    });
+    expect(resolveSubcommand(["motion", "scene", "list", "--workspace", "demo"])).toEqual({
+      name: "motion scene list",
+      rest: ["--workspace", "demo"],
+    });
+    expect(resolveSubcommand(["motion", "scene", "show", "--workspace", "demo", "--scene", "scene-a"])).toEqual({
+      name: "motion scene show",
+      rest: ["--workspace", "demo", "--scene", "scene-a"],
+    });
+    expect(resolveSubcommand(["motion", "scene", "create", "--workspace", "demo"])).toEqual({
+      name: "motion scene create",
+      rest: ["--workspace", "demo"],
+    });
+    expect(resolveSubcommand(["motion", "scene", "delete", "--workspace", "demo", "--scene", "scene-a"])).toEqual({
+      name: "motion scene delete",
+      rest: ["--workspace", "demo", "--scene", "scene-a"],
     });
     expect(resolveSubcommand(["motion", "export", "--workspace", "demo", "--out", "file.json"])).toEqual({
       name: "motion export",
