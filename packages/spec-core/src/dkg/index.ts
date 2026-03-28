@@ -8,6 +8,8 @@
 export type {
   DkgNode,
   DkgNodeKind,
+  DkgNodeDetailsMap,
+  DkgNodeDetails,
   DkgEdge,
   DkgEdgeType,
   DslBundleNode,

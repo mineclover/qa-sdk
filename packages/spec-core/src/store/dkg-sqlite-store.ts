@@ -7,10 +7,11 @@
  */
 
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
+import { drizzle } from "drizzle-orm/node-sqlite";
+import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { GraphRegistry } from "../dkg/graph-registry.js";
 import type { DkgNode, DkgEdge } from "../dkg/dkg.types.js";
 import type { UsageData, VersionUsage } from "@qa-sdk/convergence";
-import { DKG_SCHEMA_DDL } from "./dkg-schema.sql.js";
 
 export type NodeSource = "bootstrap" | "manual" | "auto";
 
@@ -53,37 +54,19 @@ export class DkgSqliteStore {
     this.catalogId = catalogId;
     const Ctor = getDatabaseSync();
     this.db = new Ctor(path);
-    this.db.exec(DKG_SCHEMA_DDL);
-    this.migrate();
-  }
+    this.db.exec("PRAGMA journal_mode = WAL");
+    this.db.exec("PRAGMA busy_timeout = 3000");
+    this.db.exec("PRAGMA foreign_keys = ON");
 
-  /** 기존 DB에 source 컬럼이 없으면 추가 */
-  private migrate(): void {
+    // drizzle-kit 마이그레이션 실행
     try {
-      // source 컬럼 존재 여부 확인
-      this.db.prepare("SELECT source FROM dkg_nodes LIMIT 1").get();
-    } catch {
-      // 컬럼 없으면 추가
-      this.db.exec("ALTER TABLE dkg_nodes ADD COLUMN source TEXT NOT NULL DEFAULT 'bootstrap'");
-    }
-    try {
-      this.db.prepare("SELECT source FROM dkg_edges LIMIT 1").get();
-    } catch {
-      this.db.exec("ALTER TABLE dkg_edges ADD COLUMN source TEXT NOT NULL DEFAULT 'bootstrap'");
-    }
-
-    // catalog_id 컬럼 마이그레이션
-    try {
-      this.db.prepare("SELECT catalog_id FROM dkg_nodes LIMIT 1").get();
-    } catch {
-      this.db.exec("ALTER TABLE dkg_nodes ADD COLUMN catalog_id TEXT NOT NULL DEFAULT 'demo'");
-      this.db.exec("CREATE INDEX IF NOT EXISTS idx_dkg_nodes_catalog ON dkg_nodes(catalog_id)");
-    }
-    try {
-      this.db.prepare("SELECT catalog_id FROM dkg_edges LIMIT 1").get();
-    } catch {
-      this.db.exec("ALTER TABLE dkg_edges ADD COLUMN catalog_id TEXT NOT NULL DEFAULT 'demo'");
-      this.db.exec("CREATE INDEX IF NOT EXISTS idx_dkg_edges_catalog ON dkg_edges(catalog_id)");
+      const drizzleDb = drizzle({ client: this.db });
+      migrate(drizzleDb, {
+        migrationsFolder: new URL("../../drizzle", import.meta.url).pathname,
+      });
+    } catch (err) {
+      console.error("[dkg-store] drizzle 마이그레이션 실패:", err);
+      throw err;
     }
   }
 
