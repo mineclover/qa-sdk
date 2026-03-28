@@ -19,7 +19,6 @@ export const decodeDeepRequestSchema = z.object({
   input: z.union([z.number(), z.string()]),
   prefix: z.string().optional(),
   version: z.string().optional(),
-  maxDepth: z.number().int().min(1).max(16).optional(),
 });
 
 export type DecodeRequest = z.infer<typeof decodeRequestSchema>;

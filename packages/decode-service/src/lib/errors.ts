@@ -6,6 +6,7 @@ import {
   ValidationError,
   IndexMetaError,
 } from "index-meta";
+import { IndexRangeError } from "weighted-index";
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";
 
@@ -13,6 +14,7 @@ export type ErrorCode =
   | "INVALID_INPUT"
   | "NOT_FOUND"
   | "PARSE_ERROR"
+  | "RANGE_EXCEEDED"
   | "DECODER_NOT_LOADED"
   | "INTERNAL_ERROR";
 
@@ -44,6 +46,9 @@ export function fromIndexMetaError(err: unknown): AppError {
   }
   if (err instanceof ValidationError) {
     return new AppError("INVALID_INPUT", err.message, 400);
+  }
+  if (err instanceof IndexRangeError) {
+    return new AppError("RANGE_EXCEEDED", err.message, 400);
   }
   if (err instanceof IndexMetaError) {
     return new AppError("INTERNAL_ERROR", err.message, 500);
