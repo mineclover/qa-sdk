@@ -3,8 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
+    "lib": ["ES2023"],
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true
   },
   "include": ["src"]
 }
