@@ -96,6 +96,7 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - `weighted-index/src/index.ts` — 모든 public export 관리. 새 함수 추가 시 여기도 갱신
 - `@qa-sdk/core/catalog/runtime.ts` — canonical runtime 함수 (encodePrefix, decodePrefix 등). demo-accessors는 re-export
 - 의존: demo-catalog → demo-compat → demo-snapshot/demo-domains (순환 금지)
+- **Skills**: `docs/skills/` 가 소스 (git tracked). `.claude/skills/`는 배포 위치 (gitignore). `pnpm sync:skills`로 동기화. 새 skill 생성/수정 시 `docs/skills/`에 작성
 
 ## 설계 원칙
 
@@ -159,7 +160,7 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 | 패턴 | 소비자 | Axis 사용 방식 | 예시 |
 |------|--------|--------------|------|
 | **좌표** | PrefixDef.dims | Axis × Axis → 1D 주소 (WeightedIndex) | `env × region × svc_name → service:v1:42` |
-| **필터** | ServiceAttributes | 단독 값으로 필터/그룹핑 | `concerns: ["security"]`, `tierTag: "tier-infra"` |
+| **필터** | ServiceAttributes | 단독 값으로 필터/그룹핑 | `concerns: ["security"]`, `category: "core"` |
 | **권한** | PolicyRule.match | 조건식으로 접근 제어 판정 | `{ field: "role", op: "eq", value: "admin" }` |
 | **게이트** | GateEngine | entry별 active/inactive/open/reserved | `flow_type=custom → inactive (deprecated)` |
 | **의사결정** | FlowSchema.gates | Gate=Axis, Branch=Entry, Path=Address | `scope=new, arch=layered → coordinateAddress` |
@@ -174,7 +175,7 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 태깅 = Axis를 1:N 다중 부여로 소비하는 패턴. 설계: `docs/specs/system/tag-management.spec.md`
 
 - **저장**: 대상이 사는 곳에 함께. 별도 태그 store 없음
-- **카디널리티**: 배타적이면 단일(tierTag, category, criticality), 공존이면 다중(concerns, structural, def.tags)
+- **카디널리티**: 배타적이면 단일(category, criticality), 공존이면 다중(concerns, structural, def.tags). 배포 계층은 `layer` 필드가 담당 (tier 태그 제거됨)
 - **전파**: ConcernTag만 depends_on 링크 따라 하위 전파. 나머지 불전파
 - **제거**: 직접 태그만 제거. 전파된 것은 다음 계산에서 자동 소멸
 - **SSOT**: `definition-catalog/src/taxonomy.ts` KNOWN_TAGS
@@ -225,10 +226,20 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 
 ### 서비스 로깅
 - **서비스**: `createLogger("서비스명")` 필수. `console.log/warn/error` 사용 금지
+- **라이브러리**: `createLogger` 사용 또는 생성자로 logger 주입. `console.*` 금지
 - pino 구조화 JSON 로깅: `logger.info({ key: value }, "메시지")`
 - **브라우저 SDK**: `console.warn` 허용 (pino 미사용)
 - **CLI**: `console.log` 허용 (사용자 출력)
 - **테스트**: 제약 없음
+
+### 로그 → Ingest 브릿지 (IngestForwarder)
+- pino 로그 중 `addressContext` 키가 있는 것만 필터 → `EventRecord`로 변환 → `POST /v1/ingest`
+- 활성화: `createLogger("서비스명", { destinations: [{ stream: createIngestForwarder({...}), level: "info" }] })`
+- 환경변수: `QA_INGEST_ENDPOINT` 설정 시 서비스가 자체 판단하여 활성화
+- **fail-open**: forwarder 실패가 로그 출력(stdout)을 절대 차단하지 않음
+- **ingest-server 자기 참조 금지**: ingest-server는 자기에게 forward하지 않는다
+- event_key 규칙: 명시(`eventKey` 필드) > 자동(`svc_log.{level}`)
+- 코드 위치: `@qa-sdk/logger` (IngestForwarder), `@qa-sdk/core` (createLogger destinations 옵션)
 
 ### 브라우저 SDK 에러 처리
 - `emitWithCoords`/`browserTrack` try-catch 필수 — UI 크래시 방지
@@ -279,25 +290,56 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - bridge: `suggestScopeFromArtifact()`, `suggestLifecycleFromVerdict()`, `buildDefinitionContext()`
 - 상세: `docs/specs/decision-flow/`, `docs/specs/system/decision-definition-bridge.spec.md`
 
+## Cross-Loop 피드백 아키텍처
+
+6개 피드백 루프가 서로의 출력을 입력으로 사용하여 순환한다. 브릿지 코드: `definition-catalog/src/cross-loop-bridge.ts`
+
+### 6개 루프
+
+| # | 루프 | 관측 prefix | 트래커 |
+|---|------|------------|--------|
+| ① | 사용자 행동 | page_view, tracking, endpoint, flow_point 등 | autoTrack (event-catalog) |
+| ② | 상태 머신 (11-machine) | harness_transition, harness_guard, harness_process_step | harness-tracker.ts |
+| ③ | 품질 게이트 | gate_execution, bundle_observation | gate-tracker.ts |
+| ④ | 수렴 분석 | convergence_event, pattern_match, metric_point 등 | convergence-pipeline.ts |
+| ⑤ | 의사결정 | decision_path, model_apply | decision-flow/observe.ts |
+| ⑥ | 인프라 생명주기 | version_point, gate_point, resource_lifecycle 등 | gate-aware-query.ts |
+
+### 루프 간 브릿지
+
+| 연결 | 브릿지 | 사용법 |
+|------|--------|--------|
+| ③→② Gate→Harness | `createGateHarnessBridge()` | BundleState `complete` → convention `compliant` 자동 전이 |
+| ②→⑤ Harness→Decision | `buildHarnessContext()` | 하네스 상태를 ContextProvider context에 주입 |
+| ⑤→⑥ Decision→Infra | `createDecisionInfraBridge()` | verdict → doc-lifecycle 전이 제안 |
+| ⑥→① Infra→User | `gateFilterRanges("encodable")` | inactive/reserved 주소 encode 차단 (fail-open) |
+| ①→④ User→Convergence | HTTP ingest → recordStore → flush | 자동 (ingest-server 내장) |
+| ④→⑥ Convergence→Infra | `metricsToObservations()` → DKG store | 자동 (convergence-pipeline 내장) |
+
+### guard 의존 순서
+
+- convention → compliant 전이에는 `doc-lifecycle: approved` guard 필요
+- 전체 루프 순서: Decision success → Doc approved → Gate complete → Convention compliant
+
 ## Definition 시스템 (좌표 기반 문서 관리 체계)
 
 좌표계(scope×aspect×depth)로 문서를 분류하고, 분해 레벨(level)로 전체-부분 구조에서의 위치를 표현한다. DB가 메타데이터 SSOT, 파일이 본문 SSOT. 상세: `docs/definition-system-philosophy.md`
 
-### 분해 레벨 (DefLevel) — "이것은 어떤 단위인가"
+### 분해 레벨 (DefLevel) — 3단계
 
-scope보다 상위 개념. 먼저 "어떤 단위인가"가 결정되고, 그 안에서 scope가 의미를 가진다. **좌표에 인코딩하지 않음** (메타데이터, lifecycle과 동일 취급). 분해 시 변할 수 있으므로 주소 불변성 보존.
+**원칙: 모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다.**
 
-| level | 의미 | 예시 | scope 동작 |
-|---|---|---|---|
-| `system` | 전체 시스템 | system-root | 무의미 |
-| `area` | 대분류 영역 | system-infra, system-design-tools | 불안정 |
-| `unit` | 독립 단위 | ingest-system, dkg-system | 작동 시작 |
-| `module` | 구성 요소 | ingest-api-system, gate-engine-group | 잘 동작 |
-| `leaf` | 개별 명세 (기본값) | record-spec, trace-spec | 완전 작동 |
+| level | 질문 | 정의하는 것 |
+|---|---|---|
+| `group` | "왜 이것들이 함께 있는가" | 묶임의 이유 (조직적 경계). 재귀 가능 |
+| `module` | "이 개념은 무엇인가" | 단일 개념 + 구성 요소 참조 (개념적 경계) |
+| `leaf` | "이 구성 요소는 어떻게 동작하는가" | 최종 명세 (구현 경계). 기본값 |
 
-- module은 **재귀 가능** — module이 하위 module을 포함할 수 있음
-- leaf가 나중에 분해되면 → module로 변경 (주소 불변)
-- frontmatter에 `level: unit` 선언. 없으면 기본값 `leaf`
+- contains 계층: group → group \| module, module → module \| leaf, leaf → 자식 없음
+- group은 재귀 가능 (group → group → module → leaf)
+- **좌표에 인코딩하지 않음** — 변할 수 있으므로 주소 불변성 보존
+- frontmatter에 `level: module` 선언. 없으면 기본값 `leaf`
+- **검증**: group/module은 자식 1건 이상 필수, leaf는 자식 금지 (`validateGraph`)
 
 ### 좌표 주소 (이중 관리)
 
@@ -374,13 +416,40 @@ config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별
 | GET | `/graph/:id/impact` | blast radius 분석 |
 | GET | `/graph/:id/concerns` | concern 전파 조회 |
 
-### definition-catalog 문서 규모
+### definition-catalog 좌표 주소
 
-- 471건 (축/prefix registry-service에 seed 포함)
-- prefix 문서 57건 (docs/specs/prefix-catalog/)
-- skill 문서 20건 (docs/specs/skill-catalog/)
-- 22 aspect (7 scope), 4 depth, 6 link_type
-- 좌표 주소: `def_document:v1:<N>` (scope × aspect × depth 인코딩)
+- `def_document:v2:<N>` (scope × aspect × depth × seq 인코딩)
+- 규모 확인: `node -e "..." | scanAndBuild` 또는 `qa-sdk def stats`
+
+### 하네스 상태 관리 (harness)
+
+11개 상태 머신을 통합 관리하는 접착층. 코드 모듈 구조:
+
+| 모듈 | 파일 | 역할 |
+|------|------|------|
+| FSM 엔진 | `state-model.ts` | 범용 전이 함수 |
+| 머신 선언 | `harness-machines.ts` | 7개 시스템 머신 정의 |
+| guard/cascade | `harness-guards.ts` | 의존 관계 검증 |
+| 상태 파생 | `harness-derive.ts` | 11개 derive 함수 (순수) |
+| SDK 수집 | `harness-tracker.ts` | 이벤트 emit |
+| CLI | `cli/commands/def.ts:cmdState` | `qa-sdk def state` |
+| 영속화 | `def-config.ts` (states 필드) | 머신 상태 저장 |
+| Gate FSM | `work-domain/gate-fsm.ts` | GateState 9종 + BundleState |
+| Gate 도출 | `work-domain/contract-to-gates.ts` | scope×aspect → GateKind |
+| 계획 | `work-domain/harness.ts` | buildHarnessPlan + 런타임 |
+
+### 스펙 문서 3역할 마커
+
+모든 스펙 문서에 개념 흐름 방향을 표시:
+- `^defines` — 이 문서가 새로 정의하는 개념/함수/타입
+- `^consumes` — 외부에서 가져다 쓰는 것 (코드의 import)
+- `^delegates` — 자식에게 위임하는 것 (module/unit만, 코드의 re-export)
+
+leaf = defines + consumes. module = defines + consumes + delegates. unit = defines + delegates.
+
+### 범용 유틸
+
+- `definition-catalog/src/yaml-lite.ts` — zero-dep YAML 파서 (frontmatter에서 추출, 범용 재사용 가능)
 
 ## 서비스 포트
 
@@ -418,6 +487,21 @@ STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_UR
 - D1 store: 4개 core (Record, Trace, Session, Verdict) + 나머지 InMemory
 - ClickHouse store: RecordStore만 구현, 나머지 InMemory
 - store-factory.ts에서 드라이버 선택 + 생성
+
+## Insights Driver (INSIGHTS_DRIVER)
+
+```
+INSIGHTS_DRIVER=local    → DrizzleInsightsStore (SQLite, 기본)
+INSIGHTS_DRIVER=app-hub  → AppHubInsightsStore (Google App Hub)
+```
+
+- `InsightsStore` 포트: `ingest-server/src/ports/insights-store.port.ts` — 읽기 12메서드 + `collect()` 쓰기
+- local 모드: ingest pipeline이 같은 SQLite DB에 기록, `collect()` no-op
+- app-hub 모드: `collect()`에서 App Hub API로 전달, 읽기도 App Hub
+- 프로필: `~/.qa-sdk/ingest-profile.json` — CLI `qa-sdk ingest mode dev|prod`로 전환
+- 서버는 시작 시 프로필 파일을 환경변수 기본값으로 로딩 (환경변수 명시 설정 시 우선)
+- App Hub 설정: `APP_HUB_ENDPOINT`, `APP_HUB_PROJECT_ID`, `APP_HUB_CREDENTIAL`
+- fail-open: insights 수집 실패가 ingest 파이프라인을 차단하지 않음
 
 ## Drizzle 마이그레이션 규칙
 
