@@ -213,10 +213,18 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - **라이브러리**: constructor 인자 우선, `process.env` 최소화
 - **테스트**: 직접 접근 허용
 
+### 에러 처리 — 상세: `docs/specs/system/error-handling-convention.spec.md`
+
+- **에러 3계층**: AppError(서비스, code+statusCode+extras), ServiceClientError(클라이언트, status+payload), 라이브러리 에러(독립)
+- **에러 코드**: INVALID_INPUT(400), NOT_FOUND(404), CONFLICT(409), INTERNAL_ERROR(500)
+- **에러 로깅**: `logger.error({ err }, "설명")` — `err` 키 사용 (pino 자동 직렬화). `error` 키 사용 금지 (`{}`로 출력됨)
+- **fail-open**: gate check 실패 → 허용 + warning. 차단하지 않음
+- **에러 삼킴 금지**: 빈 catch 블록 금지. 최소 logger.warn
+- **라이브러리→서비스 변환**: catch 후 AppError로 wrap (`fromIndexMetaError()` 패턴)
+
 ### 서비스 로깅
 - **서비스**: `createLogger("서비스명")` 필수. `console.log/warn/error` 사용 금지
 - pino 구조화 JSON 로깅: `logger.info({ key: value }, "메시지")`
-- 에러 로깅: `logger.error({ error }, "설명")` — Error 객체는 error 키에
 - **브라우저 SDK**: `console.warn` 허용 (pino 미사용)
 - **CLI**: `console.log` 허용 (사용자 출력)
 - **테스트**: 제약 없음
@@ -377,7 +385,7 @@ config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별
 
 ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), definition(3700), motion-workspace(3710), decision(3800), gRPC debug(50051, GRPC_PORT 설정 시)
 
-## 신규 패키지 (이 세션 추가)
+## 신규 패키지
 
 | 패키지 | 용도 |
 |--------|------|
@@ -388,6 +396,14 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), def
 | `@qa-sdk/definition-service` | 문서/prefix 정의 관리 서비스 (NestJS + SQLite, port 3700) |
 | `@qa-sdk/definition-client` | definition-service HTTP 클라이언트 + NestJS DI 모듈 |
 | `@qa-sdk/decision-service` | 의사결정 스키마/인스턴스/문서연결 관리 (NestJS + SQLite, port 3800) |
+| `codegen-core` | SchemaSnapshot/Catalog → TypeScript/Proto 코드 생성 순수 함수 (CLI에서 추출) |
+| `config-loader` | Catalog/DkgConfig .ts/.js/.json 파일 로더 — 자동 감지 + 폴백 체인 (CLI에서 추출) |
+| `decision-flow-store` | decision-flow InstanceStore SQLite 영속 — drizzle + node:sqlite (CLI에서 추출) |
+| `definition-data-source` | DefDataSource 팩토리 — SQLite local + HTTP 서버 자동 감지 (CLI에서 추출) |
+| `git-utils` | Git 메타데이터 추출 — conventional commits, semver tags, scope 집계 (execa 기반, CLI에서 추출) |
+| `package-classifier` | 모노레포 패키지 tier/runtime/scope 분류 (CLI에서 추출) |
+| `snapshot-io` | SchemaSnapshot JSON 읽기/쓰기/검증 (CLI에서 추출) |
+| `review-ledger` | 파일별 커밋 기준 리뷰 완료 기록 원장 — SQLite + drizzle (신규) |
 
 ## Ingest Store Driver (STORE_DRIVER)
 
