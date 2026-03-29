@@ -10,6 +10,7 @@ links가 없는 리프 문서에 횡방향 관계를 추가한다.
 ## 현황 확인
 
 ```bash
+qa-sdk def sync        # 최근 docs 변경 반영
 qa-sdk def audit       # links 없는 문서 수 확인
 qa-sdk def validate    # 고아/multi-parent 경고 확인
 ```
@@ -61,23 +62,24 @@ frontmatter에 links 섹션 추가:
       type: <depends_on|implements|refines|constrains|traces_to>
 ```
 
+## synthetic 관계 주의
+
+- `feedback_request`나 synthetic incoming link는 datasource가 계산한 읽기 전용 관계다.
+- 이런 관계는 frontmatter에 직접 쓰지 않는다.
+- 문서 기반 feedback 연결이 필요하면 `review request`나 관련 문서 매핑 흐름을 사용한다.
+
 ## multi-parent 해소
 
 한 문서가 2곳에서 `contains`로 참조되면:
 
 1. "이 문서의 주 책임은 어디인가" → 주 소속 1곳만 `contains` 유지
 2. 나머지는 `depends_on`으로 전환 (참조 관계)
-3. DB도 함께 업데이트: `data/definition-service.sqlite`
-
-```sql
--- contains → depends_on 전환
-DELETE FROM document_links WHERE source_id='<부모>' AND target_id='<자식>' AND link_type='contains';
-INSERT OR IGNORE INTO document_links (source_id, target_id, link_type) VALUES ('<부모>', '<자식>', 'depends_on');
-```
+3. repo 문서를 수정한 뒤 `qa-sdk def sync`로 local datasource를 갱신
 
 ## 검증
 
 ```bash
+qa-sdk def sync
 qa-sdk def validate    # 깨진 링크 0건, 순환 참조 0건, multi-parent 0건
 qa-sdk def bottomup <문서ID>   # blast radius 확인
 ```
@@ -86,5 +88,6 @@ qa-sdk def bottomup <문서ID>   # blast radius 확인
 
 - 순환 참조 금지 (A→B, B→A)
 - contains 다중 부모 금지 (소속은 1곳만)
+- DB나 실행 환경의 캐시를 직접 고치지 않는다. `docs/`와 frontmatter가 SSOT다.
 - 불확실하면 추가하지 않음
 - 자동 패턴 먼저, 수동은 별도 처리

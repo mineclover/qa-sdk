@@ -10,10 +10,19 @@ description: "definition-catalog 문서 품질 감사. purpose 품질, 링크 �
 ## 실행
 
 ```bash
+qa-sdk def sync        # 최근 docs 변경을 local datasource에 반영
 qa-sdk def audit       # 전체 품질 리포트 (level 분포 포함)
 qa-sdk def validate    # 깨진 링크/순환/고아/multi-parent/depth 검증
 qa-sdk def stats       # 분포 통계
 qa-sdk def link-rules  # LinkType 사용 규칙 조회
+```
+
+권장 순서:
+
+```bash
+qa-sdk def sync
+qa-sdk def validate
+qa-sdk def audit
 ```
 
 ## audit 출력 예시
@@ -37,6 +46,8 @@ level: leaf(402) module(71) group(10)
 ### links
 
 리프 문서에 최소 1개 횡방향 관계. `/def-link`로 추가.
+
+synthetic feedback 관계는 보조 신호일 뿐이며, frontmatter 기반 authored link를 대체하지 않는다.
 
 ### tags
 
