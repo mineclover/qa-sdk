@@ -154,31 +154,63 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 
 ## 문서 시스템 (definition-catalog)
 
-모든 스펙 문서는 frontmatter + `## 목적 ^purpose`로 관리된다.
+모든 문서는 **좌표 체계**(scope × aspect × depth)로 식별되고, **역할(level)**과 **주제(scope)** 두 축으로 분류된다.
 
-### 스킬 설치
+**원칙: 모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다.**
 
-**SSOT**: `skills/` 디렉토리가 스킬 원본. 에이전트 환경에 없으면 복사:
+### 문서 역할 (DefLevel 3단계)
+
+| level | 질문 | 정의하는 것 | contains |
+|-------|------|-----------|----------|
+| **group** | "왜 함께 있는가" | 묶임의 이유 | → group \| module |
+| **module** | "이 개념은 무엇인가" | 단일 개념 + 구성 참조 | → module \| leaf |
+| **leaf** | "어떻게 동작하는가" | 최종 명세 (기본값) | → (없음) |
+
+- group은 재귀 가능 (group → group → module → leaf)
+- group/module: contains 자식 1건 이상 필수 (`validateGraph` 검증)
+- leaf: contains 자식 금지. 150줄 초과 시 분할 경고
+
+### 문서 유형 (DocType)
+
+| type | 기록하는 것 |
+|------|-----------|
+| **spec** (기본) | 코드에서 파생 가능한 사실 — "시스템이 무엇으로 구성되어 있는가" |
+| **knowledge** | 사람만이 기록할 수 있는 판단 — "왜 이렇게 설계했는가" |
+
+knowledge 문서는 `knowledge_kind`로 세분화: philosophy, adr, guide, narrative, convention, pattern
+
+### 스킬 관리
+
+**SSOT**: `skills/` 디렉토리가 스킬 원본. 수정은 항상 repo에서 하고 동기화 스크립트로 전파.
 
 ```bash
-# Claude Code
-cp -r skills/def-* ~/.claude/skills/
+# 동기화 (repo → 실행 환경)
+./scripts/sync-skills.sh
 
-# Codex
+# Claude Code 실행 환경
+~/.claude/skills/
+
+# Codex 실행 환경 (수동 복사)
 cp -r skills/def-* ~/.codex/skills/
 ```
 
-### 7개 스킬
+스킬 수정 흐름: `skills/<name>/SKILL.md` 수정 → git commit → `sync-skills.sh` → 실행 환경에 반영
 
-| 스킬 | 용도 | 트리거 예시 |
-|------|------|-----------|
-| `/def-topdown <그룹ID>` | 시스템 탑다운 조립 | "gate 시스템 설명해줘" |
-| `/def-bottomup <문서ID>` | 변경 시 영향 역추적 | "이거 바꾸면 뭐가 깨져?" |
-| `/def-context <문서ID>` | 작업 전 컨텍스트 수집 | "gate-api 컨텍스트 줘" |
-| `/def-split` | 대형 문서(150줄+) 분할 | "이 문서 분할해줘" |
-| `/def-new` | 새 스펙 문서 생성 | "새 문서 만들어줘" |
-| `/def-link` | 문서 간 링크 연결 | "관계 연결해줘" |
-| `/def-audit` | 문서 품질 감사 | "문서 점검해줘" |
+### 주요 스킬
+
+| 스킬 | 용도 |
+|------|------|
+| `/def-topdown <그룹ID>` | 시스템 탑다운 조립 |
+| `/def-bottomup <문서ID>` | 변경 시 영향 역추적 |
+| `/def-context <문서ID>` | 작업 전 컨텍스트 수집 |
+| `/def-split` | 대형 문서(150줄+) 분할 → module + leaf |
+| `/def-new` | 새 스펙 문서 생성 |
+| `/def-link` | 문서 간 링크 연결 |
+| `/def-audit` | 문서 품질 감사 (level 검증 포함) |
+| `/def-level` | level 판별 + 검증 |
+| `/def-state` | 11개 상태 머신 + 게이트 + Cross-Loop |
+| `/def-knowledge` | 지식 문서 조회/생성 유도 |
+| `/def-explore` | 시스템 구조 탐색 |
 
 ### 문서 frontmatter 형식
 
@@ -186,10 +218,14 @@ cp -r skills/def-* ~/.codex/skills/
 ---
 def:
   id: <고유 ID>
+  type: <spec|knowledge>              # 선택 (기본: spec)
+  knowledge_kind: <philosophy|adr|guide|narrative|convention|pattern>  # knowledge만
+  level: <group|module|leaf>          # 선택 (기본: leaf)
   scope: <ui|feature|flow|state|constraint|data|interface>
   aspect: <세부 유형>
   depth: <overview|specification|implementation|validation>
   lifecycle: approved
+  layer: <domain|operation|mediation|experience>  # 선택
   svc: <serviceId>      # 선택 — 서비스 레지스트리 연결
   tags: [<태그들>]      # 선택
   links:                # 선택
@@ -201,10 +237,19 @@ def:
 ### 핵심 규칙
 
 - 모든 approved 문서에 `## 목적 ^purpose` 필수
-- 그룹 문서 = `depth: overview` + `type: contains` 링크
-- 150줄 이상이면 `/def-split`으로 분할
+- group/module 문서는 `^overview` + `contains` 링크 필수
+- 150줄 이상이면 `/def-split`으로 분할 → module + leaf
 - `svc:` 필드로 서비스 레지스트리와 연결
-- `tags: [tier-infra]` 등으로 서비스 기획 단위 분류
+- concern 태그(7종)만 BFS 전파. structural 태그(4종)는 비전파
+
+### Cross-Loop 피드백 (하네스)
+
+```
+③ Gate complete → ② Harness compliant → ⑤ Decision context → ⑥ Doc lifecycle
+```
+
+초기화: `createDefinitionRuntime({ logger })` — 1호출로 전체 브릿지 연결.
+상세: `docs/guides/definition-runtime-guide.md`
 
 ## 작업 시 필수 확인
 
@@ -214,13 +259,19 @@ def:
 - [ ] 계층 횡단 → 에스컬레이션 요청 생성 (직접 변경 금지)
 - [ ] 경계 횡단 → import/export 프로토콜 확인
 - [ ] address_context → `buildSelectionContext()` 등으로 생성 (하드코딩 금지)
+- [ ] 문서 생성 → level(group/module/leaf) + scope + aspect 결정. 참조: `definition-management.spec.md`
+- [ ] group/module → contains 자식 1건 이상 확인
+- [ ] leaf → 150줄 초과 시 `/def-split`으로 분할
+- [ ] 품질 게이트 → `createGateTracker({ listener: runtime.gateListener })` 패턴 사용
+- [ ] 스킬 수정 → `skills/` 디렉토리에서 수정 후 `sync-skills.sh`로 전파 (실행 환경 직접 수정 금지)
 
 ## 참조
 
 | 문서 | 위치 |
 |------|------|
+| 좌표 체계 관리 가이드 | `docs/specs/definition-catalog/definition-management.spec.md` |
+| 런타임 초기화 가이드 | `docs/guides/definition-runtime-guide.md` |
+| 하네스 아키텍처 | `docs/specs/definition-catalog/definition-harness-architecture.spec.md` |
 | decision-flow 스펙 | `docs/specs/decision-flow/decision-flow.spec.md` |
 | 프로젝트 규칙 | `CLAUDE.md` |
 | gstack 레퍼런스 | [garrytan/gstack](https://github.com/garrytan/gstack) |
-| P4 PRD | `tasks/prd-decision-flow-p4.md` |
-| P4 JSON | `tasks/prd-decision-flow-p4.json` |
