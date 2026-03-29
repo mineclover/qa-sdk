@@ -9,6 +9,7 @@
     "test": "pnpm -r --workspace-concurrency=1 run test",
     "lint": "pnpm -r run lint",
     "clean": "pnpm -r run clean",
+    "sync:skills": "bash scripts/sync-skills.sh",
     "def:check": "node packages/cli/dist/index.js def validate && node packages/cli/dist/index.js def check",
     "dev:ingest": "pnpm --filter @qa-sdk/ingest-server dev",
     "dev:registry": "pnpm --filter @qa-sdk/registry-service dev",

@@ -190,11 +190,11 @@ knowledge 문서는 `knowledge_kind`로 세분화: philosophy, adr, guide, narra
 # Claude Code 실행 환경
 ~/.claude/skills/
 
-# Codex 실행 환경 (수동 복사)
-cp -r skills/def-* ~/.codex/skills/
+# Codex 실행 환경
+~/.codex/skills/
 ```
 
-스킬 수정 흐름: `skills/<name>/SKILL.md` 수정 → git commit → `sync-skills.sh` → 실행 환경에 반영
+스킬 수정 흐름: `skills/<name>/SKILL.md` 수정 → git commit → `./scripts/sync-skills.sh` → `~/.claude/skills/`, `~/.codex/skills/` 반영
 
 ### 주요 스킬
 
