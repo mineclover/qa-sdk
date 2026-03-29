@@ -9,7 +9,7 @@
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
-import type { DefScope, DefAspect, LinkType, ConcernTag, StructuralTag, TierTag, KnownTag } from "./types.js";
+import type { DefScope, DefAspect, LinkType, ConcernTag, StructuralTag, KnownTag } from "./types.js";
 
 // ─── 분류 체계 트리 ──────────────────────────────────────
 
@@ -294,13 +294,8 @@ export const STRUCTURAL_TAGS: readonly StructuralTag[] = [
   "cross-scope", "entry-point", "decision", "generated",
 ];
 
-/** 계층 태그 목록 */
-export const TIER_TAGS: readonly TierTag[] = [
-  "tier-frontend", "tier-backend", "tier-infra", "tier-system",
-];
-
 /** 알려진 태그 전체 목록 */
-export const KNOWN_TAGS: readonly KnownTag[] = [...CONCERN_TAGS, ...STRUCTURAL_TAGS, ...TIER_TAGS];
+export const KNOWN_TAGS: readonly KnownTag[] = [...CONCERN_TAGS, ...STRUCTURAL_TAGS];
 
 /**
  * 태그가 알려진 태그인지 확인한다.
@@ -823,4 +818,81 @@ export function isContractMarker(marker: string): marker is ContractMarkerKind {
  */
 export function getContractMarkerDef(marker: string): ContractMarkerDef | undefined {
   return CONTRACT_MARKERS.find(m => m.marker === marker);
+}
+
+// ─── 시나리오 마커 ─────────────────────────────────────────
+
+/**
+ * 시나리오 마커 — 유저 시나리오 문서의 구조화된 섹션.
+ *
+ * 계약 마커(CONTRACT_MARKERS)가 "무엇이 보장되어야 하는가"를 정의한다면,
+ * 시나리오 마커(SCENARIO_MARKERS)는 "사용자가 어떻게 사용하는가"를 정의한다.
+ *
+ * e2e-test skill에서 시나리오 문서를 읽어 테스트를 자동 생성할 때 소비된다.
+ */
+export type ScenarioMarkerKind =
+  | "actor"          // 행위자 정의
+  | "preconditions"  // 사전 상태
+  | "steps"          // 실행 스텝 시퀀스
+  | "assertions"     // 기대 결과 검증
+  | "variants"       // 변형 시나리오 (에러, 엣지 케이스)
+  | "update-trigger"; // 재검토 트리거
+
+export interface ScenarioMarkerDef {
+  readonly marker: ScenarioMarkerKind;
+  readonly description: string;
+  /** e2e 변환 시 역할 */
+  readonly e2eRole: string;
+  /** 필수 여부 */
+  readonly required: boolean;
+}
+
+export const SCENARIO_MARKERS: readonly ScenarioMarkerDef[] = [
+  {
+    marker: "actor",
+    description: "시나리오의 행위자 — 누가 이 흐름을 실행하는가",
+    e2eRole: "test.describe context",
+    required: false,
+  },
+  {
+    marker: "preconditions",
+    description: "시나리오 시작 전 필요한 상태 — 인증, 데이터, 설정",
+    e2eRole: "beforeEach / setup",
+    required: true,
+  },
+  {
+    marker: "steps",
+    description: "실행 스텝 시퀀스 — 번호 매긴 행동 목록",
+    e2eRole: "test steps (page.goto, click, fill)",
+    required: true,
+  },
+  {
+    marker: "assertions",
+    description: "기대 결과 검증 — 각 스텝 또는 최종 상태의 기대값",
+    e2eRole: "expect() assertions",
+    required: true,
+  },
+  {
+    marker: "variants",
+    description: "변형 시나리오 — 에러 케이스, 엣지 케이스, 대안 경로",
+    e2eRole: "additional test cases",
+    required: false,
+  },
+  {
+    marker: "update-trigger",
+    description: "이 시나리오를 재검토해야 하는 변경 목록",
+    e2eRole: "test maintenance trigger",
+    required: false,
+  },
+];
+
+export const SCENARIO_MARKER_NAMES: readonly string[] =
+  SCENARIO_MARKERS.map(m => m.marker);
+
+export function isScenarioMarker(marker: string): marker is ScenarioMarkerKind {
+  return SCENARIO_MARKER_NAMES.includes(marker);
+}
+
+export function getScenarioMarkerDef(marker: string): ScenarioMarkerDef | undefined {
+  return SCENARIO_MARKERS.find(m => m.marker === marker);
 }

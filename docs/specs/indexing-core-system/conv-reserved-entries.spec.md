@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [tier-infra]
+  tags: []
   links:
     - target: sdk-constants
       type: constrains

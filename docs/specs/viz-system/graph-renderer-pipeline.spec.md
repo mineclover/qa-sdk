@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: graph-renderer-spec
       type: refines

@@ -6,7 +6,7 @@ def:
   aspect: user_scenario
   depth: specification
   lifecycle: deprecated
-  tags: [tier-infra]
+  tags: []
   links:
     - target: index-codec-spec
       type: refines

@@ -5,9 +5,10 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
+  svc: ingest-server
   lifecycle: approved
   layer: operation
-  tags: [tier-infra]
+  tags: []
   links:
     - target: pipeline-enrichment
       type: refines

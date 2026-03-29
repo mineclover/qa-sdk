@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: [tier-infra]
+  tags: []
   links:
     - target: verdict-spec
       type: depends_on

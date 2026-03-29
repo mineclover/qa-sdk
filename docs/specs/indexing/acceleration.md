@@ -5,6 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
   tags: [performance]

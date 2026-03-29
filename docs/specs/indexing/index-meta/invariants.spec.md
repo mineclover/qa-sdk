@@ -5,9 +5,10 @@ def:
   scope: constraint
   aspect: tech_constraint
   depth: specification
+  svc: index-meta
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: index-codec-spec
       type: constrains

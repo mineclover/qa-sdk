@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: form-builder-spec
       type: refines

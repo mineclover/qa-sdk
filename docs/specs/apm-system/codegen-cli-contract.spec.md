@@ -7,8 +7,8 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: qa-sdk-cli
-  tags: [tier-system]
+  svc: cli
+  tags: []
   links:
     - target: codegen-spec
       type: refines

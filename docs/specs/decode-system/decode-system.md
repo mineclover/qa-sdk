@@ -1,7 +1,7 @@
 ---
 def:
   id: decode-system
-  level: unit
+  level: module
   address: def_document:v2:412676
   scope: interface
   aspect: api_contract
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: [structural, entry-point, tier-infra]
+  tags: [structural, entry-point]
   links:
     - target: decode-api
       type: contains

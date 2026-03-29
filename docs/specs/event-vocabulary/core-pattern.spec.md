@@ -1,13 +1,16 @@
 ---
 def:
   id: event-core-pattern
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:342176
   scope: data
   aspect: domain_data
   depth: specification
+  svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: [tier-system]
+  tags: []
   links:
     - target: graph-spec
       type: depends_on

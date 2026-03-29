@@ -6,7 +6,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: deprecated
-  tags: [tier-system]
+  tags: []
   links:
     - target: cli-contract-spec
       type: refines

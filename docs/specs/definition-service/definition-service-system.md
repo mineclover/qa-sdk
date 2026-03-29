@@ -1,7 +1,7 @@
 ---
 def:
   id: definition-service-system
-  level: unit
+  level: module
   address: def_document:v2:68622
   scope: feature
   aspect: func_def
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [structural, entry-point, tier-infra]
+  tags: [structural, entry-point]
   links:
     - target: definition-catalog-spec
       type: depends_on

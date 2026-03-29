@@ -1,6 +1,8 @@
 ---
 def:
   id: df-narrative-proofs
+  type: knowledge
+  knowledge_kind: narrative
   address: def_document:v2:70020
   scope: feature
   aspect: scenario

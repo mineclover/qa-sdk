@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: [tier-system]
+  tags: []
   links:
     - target: event-core-pattern
       type: depends_on

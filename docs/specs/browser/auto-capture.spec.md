@@ -8,7 +8,7 @@ def:
   lifecycle: deprecated
   layer: experience
   svc: shopping-web
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: browser-monitor-spec
       type: depends_on

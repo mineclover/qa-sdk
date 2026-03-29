@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [tier-infra]
+  tags: []
   links:
     - target: index-arch-layers
       type: depends_on

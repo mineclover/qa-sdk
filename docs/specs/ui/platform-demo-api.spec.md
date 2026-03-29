@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: [tier-app]
+  tags: []
   links:
     - target: motion-content-glossary
       type: refines

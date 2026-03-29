@@ -1,7 +1,7 @@
 ---
 def:
   id: system-design-tools
-  level: area
+  level: group
   address: def_document:v2:137228
   scope: flow
   aspect: process_flow

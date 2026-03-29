@@ -1,7 +1,7 @@
 ---
 def:
   id: gate-system
-  level: unit
+  level: module
   address: def_document:v2:68631
   scope: feature
   aspect: func_def
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: gate-service
-  tags: [structural, security, entry-point, tier-infra]
+  tags: [structural, security, entry-point]
   links:
     - target: gate-api
       type: contains

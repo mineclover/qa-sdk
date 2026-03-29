@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-edge_activity
-  address: def_document:v2:345230
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
 source: packages/demo-snapshot/src/demo-catalog.ts:DEMO_CATALOG.prefixes.edge_activity
 ---

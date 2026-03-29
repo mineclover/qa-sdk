@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: definition-service
-  tags: [tier-infra]
+  tags: []
   links:
     - target: definition-service-system
       type: refines
@@ -32,7 +32,9 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 | GET | `/docs/:id/children` | contains 자식 |
 | GET | `/docs/:id/parent` | contains 부모 |
 | GET | `/docs/:id/incoming-links` | 역링크 |
+| GET | `/docs/:id/synthetic-incoming-links` | synthetic 역링크 (`feedback_request`) |
 | GET | `/docs/:id/outgoing-links` | 순방향 링크 |
+| GET | `/docs/:id/feedback-requests` | 문서와 연결된 feedback request 요약 |
 | POST | `/docs/:id/links` | 단일 링크 추가 `{target, type}` |
 | DELETE | `/docs/:id/links/:target/:type` | 단일 링크 삭제 |
 | POST | `/docs/:id/tags/:tag` | 단일 태그 추가 |

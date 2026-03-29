@@ -1,6 +1,7 @@
 ---
 def:
   id: motion-workspace-service-spec
+  level: module
   address: def_document:v2:68776
   scope: feature
   aspect: func_def
@@ -8,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: motion-workspace-service
-  tags: [tier-infra, structural]
+  tags: [ structural]
   links:
     - target: motion-workspace-spec
       type: depends_on

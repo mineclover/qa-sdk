@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [structural, tier-frontend]
+  tags: [structural]
   links:
     - target: form-builder-structure
       type: contains

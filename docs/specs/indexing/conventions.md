@@ -1,6 +1,8 @@
 ---
 def:
   id: indexing-conventions
+  type: knowledge
+  knowledge_kind: convention
   address: def_document:v2:273554
   scope: constraint
   aspect: tech_constraint

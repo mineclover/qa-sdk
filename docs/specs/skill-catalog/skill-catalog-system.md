@@ -1,7 +1,7 @@
 ---
 def:
   id: skill-catalog-system
-  level: unit
+  level: module
   address: def_document:v2:68645
   scope: feature
   aspect: func_def

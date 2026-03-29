@@ -1,6 +1,8 @@
 ---
 def:
   id: scope-classification-guide
+  type: knowledge
+  knowledge_kind: guide
   address: def_document:v2:136198
   scope: flow
   aspect: user_scenario

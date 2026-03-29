@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: query-service
-  tags: [tier-infra]
+  tags: []
   links:
     - target: registry-data-model
       type: depends_on

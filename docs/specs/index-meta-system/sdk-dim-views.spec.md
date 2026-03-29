@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: index-meta
-  tags: [tier-infra]
+  tags: []
   links:
     - target: address-spec
       type: depends_on
@@ -16,8 +16,6 @@ def:
 # sdk-dim-views
 
 ## 목적 ^purpose
-
-DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰). 축별 capacity, headroom, stride를 조회한다.
 
 DimCapacityInfo(용량 정보)와 DimFullView(전체 주소 공간 뷰). 축별 capacity, headroom, stride를 조회한다.
 

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: dashboard
-  tags: [tier-frontend]
+  tags: [external]
   links:
     - target: dashboard-service-spec
       type: refines
@@ -18,3 +18,7 @@ def:
 ## 목적 ^purpose
 
 DKG 대시보드 기능. 노드 요약, 흐름 맵, 메트릭 집계, 타임라인.
+
+## 구성 ^overview
+
+Dashboard — feature/func_def의 핵심 책임, 경계, 주요 구성 요소를 한 문서에서 빠르게 파악할 수 있도록 정리한다.

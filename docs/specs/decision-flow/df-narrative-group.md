@@ -1,6 +1,8 @@
 ---
 def:
   id: df-narrative-group
+  type: knowledge
+  knowledge_kind: narrative
   level: module
   address: def_document:v2:68624
   scope: feature

@@ -1,15 +1,15 @@
 ---
 def:
   id: apm-system
-  level: unit
+  level: module
   address: def_document:v2:68611
   scope: feature
   aspect: func_def
   depth: overview
   lifecycle: approved
   layer: domain
-  svc: qa-sdk-cli
-  tags: [structural, entry-point, tier-system]
+  svc: cli
+  tags: [structural, entry-point]
   links:
     - target: apm-codegen-system
       type: contains

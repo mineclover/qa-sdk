@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [observability, tier-system]
+  tags: [observability]
   links:
     - target: dkg-node-types
       type: depends_on

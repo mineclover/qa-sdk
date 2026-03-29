@@ -8,8 +8,8 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  svc: qa-sdk-cli
-  tags: [structural, tier-system]
+  svc: cli
+  tags: [structural]
   links:
     - target: codegen-cli-contract
       type: contains

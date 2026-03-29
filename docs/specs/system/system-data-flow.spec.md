@@ -1,14 +1,14 @@
 ---
 def:
   id: system-data-flow
-  level: area
+  level: leaf
   address: def_document:v2:137371
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: approved
   layer: operation
-  tags: [tier-system]
+  tags: []
   links:
     - target: ingest-api-spec
       type: refines

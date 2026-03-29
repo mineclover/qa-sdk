@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: coord-foundation
       type: depends_on

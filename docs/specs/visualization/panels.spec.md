@@ -8,7 +8,7 @@ def:
   lifecycle: deprecated
   layer: experience
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: graph-renderer-spec
       type: depends_on

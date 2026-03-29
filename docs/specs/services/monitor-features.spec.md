@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: monitor
-  tags: [tier-frontend]
+  tags: [external]
   links:
     - target: monitor-service-spec
       type: refines
@@ -18,3 +18,7 @@ def:
 ## 목적 ^purpose
 
 이벤트 모니터링 핵심 기능. 실시간 스트림 필터, 세션 탐색, 트레이스 재구성.
+
+## 구성 ^overview
+
+Monitor — feature/func_def의 핵심 책임, 경계, 주요 구성 요소를 한 문서에서 빠르게 파악할 수 있도록 정리한다.

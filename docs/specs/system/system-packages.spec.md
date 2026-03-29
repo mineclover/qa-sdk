@@ -1,14 +1,14 @@
 ---
 def:
   id: system-packages
-  level: area
+  level: leaf
   address: def_document:v2:138240
   scope: flow
   aspect: relation
   depth: overview
   lifecycle: approved
   layer: operation
-  tags: [tier-system]
+  tags: []
   links:
     - target: spec-engine-architecture
       type: refines

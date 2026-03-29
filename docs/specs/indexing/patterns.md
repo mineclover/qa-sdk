@@ -1,13 +1,16 @@
 ---
 def:
   id: coord-patterns
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:136320
   scope: flow
   aspect: user_scenario
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: coord-foundation
       type: depends_on

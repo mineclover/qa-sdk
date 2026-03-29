@@ -1,7 +1,7 @@
 ---
 def:
   id: viz-system
-  level: unit
+  level: module
   address: def_document:v2:1030
   scope: ui
   aspect: component
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [structural, entry-point, tier-frontend]
+  tags: [structural, entry-point]
   links:
     - target: api-client-spec
       type: contains
@@ -20,6 +20,8 @@ def:
     - target: mermaid-gen-spec
       type: contains
     - target: motion-editor-component
+      type: contains
+    - target: inspector-engine
       type: contains
     - target: platform-demo-api-spec
       type: contains

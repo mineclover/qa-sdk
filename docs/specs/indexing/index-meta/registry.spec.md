@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  svc: registry-service
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: registry-data-model
       type: depends_on

@@ -1,6 +1,8 @@
 ---
 def:
   id: axis-boundary-patterns
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:69760
   scope: feature
   aspect: scenario

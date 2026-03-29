@@ -8,7 +8,7 @@ def:
   lifecycle: deprecated
   layer: experience
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: api-client-spec
       type: depends_on

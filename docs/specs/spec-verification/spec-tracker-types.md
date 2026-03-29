@@ -5,10 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: spec-tracker
-  tags: [testing, tier-system]
+  tags: [testing]
   links:
     - target: spec-tracker-system
       type: refines

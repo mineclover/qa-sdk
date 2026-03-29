@@ -1,6 +1,8 @@
 ---
 def:
   id: df-narrative
+  type: knowledge
+  knowledge_kind: narrative
   address: def_document:v2:205957
   scope: state
   aspect: domain_state

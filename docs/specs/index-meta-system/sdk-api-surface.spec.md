@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: index-meta
-  tags: [tier-infra]
+  tags: []
   links:
     - target: sdk-dim-views
       type: depends_on

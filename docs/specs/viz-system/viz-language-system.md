@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: platform-demo
-  tags: [structural, tier-frontend]
+  tags: [structural]
   links:
     - target: rlsc-core-model
       type: contains

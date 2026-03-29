@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: rlsc-spec
       type: refines

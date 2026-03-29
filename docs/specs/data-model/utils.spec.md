@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: system_data
   depth: specification
+  svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: storage-schema-spec
       type: depends_on

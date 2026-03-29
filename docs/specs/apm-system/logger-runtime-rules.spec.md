@@ -7,8 +7,8 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: qa-sdk-cli
-  tags: [observability, tier-system]
+  svc: cli
+  tags: [observability]
   links:
     - target: logger-spec
       type: refines

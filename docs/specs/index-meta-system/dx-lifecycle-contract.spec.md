@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: index-meta
-  tags: [tier-infra]
+  tags: []
   links:
     - target: resolver-spec
       type: refines

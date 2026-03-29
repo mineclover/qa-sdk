@@ -1,6 +1,7 @@
 ---
 def:
   id: motion-workspace-spec
+  level: module
   address: def_document:v2:68777
   scope: feature
   aspect: func_def

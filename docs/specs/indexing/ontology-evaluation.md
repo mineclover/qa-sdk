@@ -5,9 +5,10 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: coord-foundation
       type: depends_on

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: registry-service
-  tags: [tier-app]
+  tags: []
   links:
     - target: registry-service-modules
       type: depends_on

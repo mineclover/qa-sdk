@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: table-schema-spec
       type: depends_on

@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: domain
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: system-concepts
       type: depends_on

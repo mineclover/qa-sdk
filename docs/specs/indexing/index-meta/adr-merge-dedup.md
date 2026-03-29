@@ -1,10 +1,13 @@
 ---
 def:
   id: adr-merge-dedup
+  type: knowledge
+  knowledge_kind: adr
   address: def_document:v2:273539
   scope: constraint
   aspect: tech_constraint
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
   tags: [decision]

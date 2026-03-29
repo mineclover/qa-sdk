@@ -5,10 +5,10 @@ def:
   scope: interface
   aspect: api_contract
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: mediation
   svc: spec-tracker
-  tags: [testing, tier-system]
+  tags: [testing]
   links:
     - target: spec-tracker-system
       type: refines

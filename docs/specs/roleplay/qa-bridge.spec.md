@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: mediation
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: api-client-spec
       type: depends_on

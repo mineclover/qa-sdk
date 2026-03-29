@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: graph-spec
       type: depends_on

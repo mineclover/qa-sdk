@@ -1,6 +1,7 @@
 ---
 def:
   id: wi-trace-group
+  level: module
   address: def_document:v2:342037
   scope: data
   aspect: domain_data

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: [performance, observability, tier-infra]
+  tags: [performance, observability]
   links:
     - target: ingest-infra-spec
       type: refines

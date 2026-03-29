@@ -1,7 +1,7 @@
 ---
 def:
   id: index-meta-system
-  level: unit
+  level: module
   address: def_document:v2:68633
   scope: feature
   aspect: func_def

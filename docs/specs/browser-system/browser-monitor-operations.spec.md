@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: browser-sdk
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: browser-monitor-spec
       type: refines

@@ -1,6 +1,8 @@
 ---
 def:
   id: dim-ops-patterns
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:136321
   scope: flow
   aspect: user_scenario
@@ -8,7 +10,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [tier-infra]
+  tags: []
   links:
     - target: dim-ops-cross-select
       type: refines

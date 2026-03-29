@@ -1,6 +1,7 @@
 ---
 def:
   id: registry-service-modules
+  level: module
   address: def_document:v2:68642
   scope: feature
   aspect: func_def
@@ -8,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: registry-service
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: registry-system
       type: refines

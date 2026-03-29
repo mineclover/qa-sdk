@@ -1,6 +1,8 @@
 ---
 def:
   id: adr-address-separation
+  type: knowledge
+  knowledge_kind: adr
   address: def_document:v2:273538
   scope: constraint
   aspect: tech_constraint

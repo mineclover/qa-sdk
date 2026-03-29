@@ -1,14 +1,14 @@
 ---
 def:
   id: system-frontend
-  level: area
+  level: group
   address: def_document:v2:137229
   scope: flow
   aspect: process_flow
   depth: overview
   lifecycle: approved
   layer: experience
-  tags: [structural, tier-frontend]
+  tags: [structural]
   links:
     - target: browser-system
       type: contains

@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  svc: index-meta
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: meta-registry-spec
       type: depends_on

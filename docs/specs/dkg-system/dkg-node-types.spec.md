@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [tier-system]
+  tags: []
   links:
     - target: system-concepts
       type: depends_on

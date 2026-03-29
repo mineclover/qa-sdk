@@ -6,7 +6,7 @@ def:
   aspect: relation
   depth: specification
   lifecycle: deprecated
-  tags: [tier-system]
+  tags: []
   links:
     - target: convergence-layer-spec
       type: refines

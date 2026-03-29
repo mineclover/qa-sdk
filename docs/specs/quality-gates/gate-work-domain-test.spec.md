@@ -6,7 +6,7 @@ def:
   depth: validation
   lifecycle: approved
   layer: operation
-  svc: qa-sdk-cli
+  svc: cli
   tags: [testing, quality-gate, gate-kind:unit-test, work-domain:productivity]
   links:
     - target: work-domain-quality-contract

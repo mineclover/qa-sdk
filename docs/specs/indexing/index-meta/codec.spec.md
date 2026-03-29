@@ -5,9 +5,10 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  svc: index-meta
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: address-spec
       type: depends_on

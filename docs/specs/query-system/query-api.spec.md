@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: query-service
-  tags: [tier-infra]
+  tags: []
   links:
     - target: query-rules
       type: depends_on

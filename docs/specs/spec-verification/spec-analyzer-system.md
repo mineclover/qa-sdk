@@ -6,15 +6,17 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: spec-analyzer
-  tags: [testing, tier-system]
+  tags: [testing]
   links:
     - target: spec-verification-system
       type: refines
     - target: definition-catalog-spec
       type: depends_on
+    - target: spec-analyzer-drift
+      type: contains
     - target: spec-analyzer-types
       type: contains
     - target: spec-analyzer-extractor

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [tier-system]
+  tags: []
   links:
     - target: convergence-layer-spec
       type: refines

@@ -1,7 +1,7 @@
 ---
 def:
   id: system-concepts
-  level: area
+  level: leaf
   address: def_document:v2:342033
   scope: data
   aspect: domain_data

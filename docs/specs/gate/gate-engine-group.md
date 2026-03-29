@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: gate-service
-  tags: [structural, security, tier-infra]
+  tags: [structural, security]
   links:
     - target: gate-engine-core
       type: contains

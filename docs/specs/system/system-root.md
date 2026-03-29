@@ -1,7 +1,7 @@
 ---
 def:
   id: system-root
-  level: system
+  level: group
   address: def_document:v2:137234
   scope: flow
   aspect: process_flow
@@ -10,10 +10,6 @@ def:
   layer: domain
   tags: [structural, cross-scope, entry-point]
   links:
-    - target: system-concepts
-      type: contains
-    - target: system-data-flow
-      type: contains
     - target: system-design-tools
       type: contains
     - target: system-frontend

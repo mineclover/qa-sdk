@@ -1,12 +1,10 @@
 ---
 def:
   id: observation-prefix-group
-  address: def_document:v2:345090
   scope: data
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  layer: domain
   tags: [structural, entry-point, generated]
   links:
     - target: prefix-page_view
@@ -51,6 +49,30 @@ def:
       type: contains
     - target: prefix-model_apply
       type: contains
+    - target: prefix-harness_transition
+      type: contains
+    - target: prefix-harness_guard
+      type: contains
+    - target: prefix-harness_process_step
+      type: contains
+    - target: prefix-quality_event
+      type: contains
+    - target: prefix-task_event
+      type: contains
+    - target: prefix-sdk_lifecycle
+      type: contains
+    - target: prefix-rpc_event
+      type: contains
+    - target: prefix-gate_execution
+      type: contains
+    - target: prefix-bundle_observation
+      type: contains
+    - target: prefix-transition_event
+      type: contains
+    - target: prefix-convergence_event
+      type: contains
+    - target: prefix-graph_event
+      type: contains
 ---
 
 ## 목적 ^purpose
@@ -81,3 +103,15 @@ category: observation에 해당하는 prefix를 모아 관리한다.
 - `tag_lifecycle`
 - `decision_path`
 - `model_apply`
+- `harness_transition`
+- `harness_guard`
+- `harness_process_step`
+- `quality_event`
+- `task_event`
+- `sdk_lifecycle`
+- `rpc_event`
+- `gate_execution`
+- `bundle_observation`
+- `transition_event`
+- `convergence_event`
+- `graph_event`

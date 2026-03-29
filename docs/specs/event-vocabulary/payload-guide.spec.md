@@ -1,13 +1,16 @@
 ---
 def:
   id: payload-guide
+  type: knowledge
+  knowledge_kind: guide
   address: def_document:v2:342184
   scope: data
   aspect: domain_data
   depth: specification
+  svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: [tier-system]
+  tags: []
   links:
     - target: event-core-pattern
       type: depends_on

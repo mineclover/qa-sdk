@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: index-meta
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: index-meta-store-contract
       type: contains

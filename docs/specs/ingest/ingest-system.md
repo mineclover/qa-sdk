@@ -1,7 +1,7 @@
 ---
 def:
   id: ingest-system
-  level: unit
+  level: module
   address: def_document:v2:137221
   scope: flow
   aspect: process_flow
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: ingest-server
-  tags: [structural, performance, observability, entry-point, tier-infra]
+  tags: [structural, performance, observability, entry-point]
   links:
     - target: ingest-api-system
       type: contains
@@ -38,6 +38,8 @@ def:
     - target: dlq-store-spec
       type: contains
     - target: transmission-spec
+      type: contains
+    - target: insights-api-spec
       type: contains
     - target: storage-system
       type: depends_on

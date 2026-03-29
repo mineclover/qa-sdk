@@ -1,7 +1,7 @@
 ---
 def:
   id: query-system
-  level: unit
+  level: module
   address: def_document:v2:412686
   scope: interface
   aspect: api_contract
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: query-service
-  tags: [structural, entry-point, tier-infra]
+  tags: [structural, entry-point]
   links:
     - target: query-api
       type: contains

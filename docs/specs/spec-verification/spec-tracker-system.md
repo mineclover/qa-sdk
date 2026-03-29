@@ -6,10 +6,10 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: spec-tracker
-  tags: [testing, observability, tier-system]
+  tags: [testing, observability]
   links:
     - target: spec-verification-system
       type: refines

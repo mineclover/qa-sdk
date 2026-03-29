@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-pattern_anomaly
-  address: def_document:v2:345248
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
   links:
     - target: prefix-service

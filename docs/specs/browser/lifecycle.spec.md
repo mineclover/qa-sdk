@@ -8,7 +8,7 @@ def:
   lifecycle: deprecated
   layer: operation
   svc: shopping-web
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: trace-context-spec
       type: depends_on

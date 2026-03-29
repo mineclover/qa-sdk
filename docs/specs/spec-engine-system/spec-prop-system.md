@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: [structural, tier-system]
+  tags: [structural]
   links:
     - target: spec-prop-publish
       type: contains

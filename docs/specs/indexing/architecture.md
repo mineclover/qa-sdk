@@ -6,7 +6,7 @@ def:
   aspect: process_flow
   depth: specification
   lifecycle: deprecated
-  tags: [tier-infra]
+  tags: []
   links:
     - target: coordinate-states-spec
       type: depends_on

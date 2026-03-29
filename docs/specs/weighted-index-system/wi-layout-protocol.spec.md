@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: weighted-index
-  tags: [tier-infra]
+  tags: []
   links:
     - target: wi-semantic-address
       type: depends_on

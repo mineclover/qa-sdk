@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: domain
-  tags: [observability, tier-system]
+  tags: [observability]
   links:
     - target: record-spec
       type: depends_on

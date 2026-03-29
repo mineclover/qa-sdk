@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: [structural, observability, tier-infra]
+  tags: [structural, observability]
   links:
     - target: ingest-admin-endpoints
       type: contains

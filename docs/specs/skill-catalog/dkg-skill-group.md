@@ -1,6 +1,7 @@
 ---
 def:
   id: dkg-skill-group
+  level: module
   address: def_document:v2:68627
   scope: feature
   aspect: func_def

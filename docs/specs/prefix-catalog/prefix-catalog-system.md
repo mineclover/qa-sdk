@@ -1,13 +1,10 @@
 ---
 def:
   id: prefix-catalog-system
-  level: unit
-  address: def_document:v2:345092
   scope: data
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  layer: domain
   tags: [structural, entry-point, generated]
   links:
     - target: entity-prefix-group
@@ -20,10 +17,6 @@ def:
       type: contains
     - target: observation-prefix-group
       type: contains
-    - target: definition-service-system
-      type: depends_on
-    - target: registry-system
-      type: depends_on
 ---
 
 ## 목적 ^purpose
@@ -33,6 +26,6 @@ DEMO_CATALOG이 코드 SSOT이고, 이 문서 체계는 탐색/조립/영향분�
 
 ## 구성 ^overview
 
-- 총 51개 prefix
+- 총 63개 prefix
 - 5개 도메인 그룹: entity, policy, event, relation, observation
 - 자동 생성: scripts/gen-prefix-docs.mjs

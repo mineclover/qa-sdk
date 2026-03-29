@@ -7,8 +7,8 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: qa-sdk-cli
-  tags: [observability, tier-system]
+  svc: cli
+  tags: [observability]
   links:
     - target: logger-spec
       type: refines
@@ -83,10 +83,11 @@ interface Transport {
 }
 ```
 
-구현체 6종: HttpTransport, ProtobufTransport, OtlpTransport, MsgpackTransport, DebugWsTransport, NoopTransport.
+구현체 7종: HttpTransport, ProtobufTransport, OtlpTransport, MsgpackTransport, DebugWsTransport, NoopTransport, IngestForwarder.
 
 - HttpTransport: JSON Content-Type, AbortController 기반 timeout
 - ProtobufTransport: QAPB magic header + JSON-in-binary (application/x-protobuf)
+- IngestForwarder: pino destination으로 동작. addressContext 포함 로그만 필터 → EventRecord 변환 → ingest-server 전달 (상세: `log-ingest-bridge`)
 - NoopTransport: 테스트용 빈 구현
 
 ## Actor 주입

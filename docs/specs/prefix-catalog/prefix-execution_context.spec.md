@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-execution_context
-  address: def_document:v2:345236
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
   links:
     - target: prefix-service

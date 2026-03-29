@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   svc: docs-explorer
-  tags: [experience, frontend, definition]
+  tags: [planned, experience, frontend, definition]
   links:
     - target: definition-service-system
       type: depends_on

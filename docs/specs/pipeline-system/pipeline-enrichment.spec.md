@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: ingest-server
-  tags: [observability, tier-infra]
+  tags: [observability]
   links:
     - target: pipeline-monitoring
       type: depends_on

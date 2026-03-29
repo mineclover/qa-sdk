@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: browser-sdk
-  tags: [structural, tier-frontend]
+  tags: [structural]
   links:
     - target: browser-lifecycle-states
       type: contains

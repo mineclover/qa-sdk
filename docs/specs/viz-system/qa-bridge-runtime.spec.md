@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: qa-bridge-spec
       type: refines

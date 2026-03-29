@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: permission-engine
-  tags: [structural, security, tier-backend]
+  tags: [structural, security]
   links:
     - target: perm-resource-model
       type: contains

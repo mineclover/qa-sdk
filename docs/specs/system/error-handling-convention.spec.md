@@ -1,13 +1,15 @@
 ---
 def:
   id: error-handling-convention
+  type: knowledge
+  knowledge_kind: convention
   level: leaf
   scope: constraint
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
   layer: domain
-  tags: [cross-scope, entry-point, tier-system]
+  tags: [cross-scope, entry-point]
   links:
     - target: system-concepts
       type: constrains

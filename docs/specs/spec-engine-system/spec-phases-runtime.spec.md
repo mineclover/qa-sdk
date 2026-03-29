@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: [tier-system]
+  tags: []
   links:
     - target: spec-engine-phases
       type: refines

@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-dkg_event
-  address: def_document:v2:345228
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
 source: packages/demo-snapshot/src/demo-catalog.ts:DEMO_CATALOG.prefixes.dkg_event
 ---

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: registry-service
-  tags: [tier-infra]
+  tags: []
   links:
     - target: registry-service-modules
       type: refines

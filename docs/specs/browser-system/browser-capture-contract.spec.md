@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: browser-sdk
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: auto-capture-spec
       type: refines

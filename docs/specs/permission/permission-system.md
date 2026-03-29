@@ -1,7 +1,7 @@
 ---
 def:
   id: permission-system
-  level: unit
+  level: module
   address: def_document:v2:274433
   scope: constraint
   aspect: biz_constraint
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: auth
-  tags: [structural, security, entry-point, tier-backend]
+  tags: [external, structural, security, entry-point]
   links:
     - target: permission-model
       type: contains

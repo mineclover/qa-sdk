@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: index-meta
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: sdk-api-surface
       type: contains

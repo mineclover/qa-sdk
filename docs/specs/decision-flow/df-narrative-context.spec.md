@@ -1,6 +1,8 @@
 ---
 def:
   id: df-narrative-context
+  type: knowledge
+  knowledge_kind: narrative
   address: def_document:v2:68757
   scope: feature
   aspect: func_def

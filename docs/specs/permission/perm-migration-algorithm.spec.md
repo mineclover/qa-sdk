@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: permission-engine
-  tags: [migration, tier-backend]
+  tags: [migration]
   links:
     - target: permission-model
       type: depends_on

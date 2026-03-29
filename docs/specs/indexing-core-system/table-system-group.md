@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: table-dimref-types
       type: contains

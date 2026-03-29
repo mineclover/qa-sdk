@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: gate-service
-  tags: [security, tier-infra]
+  tags: [security]
   links:
     - target: gate-api
       type: refines

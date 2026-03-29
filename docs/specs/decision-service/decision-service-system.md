@@ -1,6 +1,7 @@
 ---
 def:
   id: decision-service-system
+  level: module
   address: def_document:v2:68620
   scope: feature
   aspect: func_def
@@ -8,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: decision-service
-  tags: [structural, entry-point, tier-infra, decision]
+  tags: [structural, entry-point, decision]
   links:
     - target: df-system
       type: depends_on

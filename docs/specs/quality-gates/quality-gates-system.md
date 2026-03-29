@@ -1,15 +1,21 @@
 ---
 def:
   id: quality-gates-system
-  level: unit
+  level: module
   scope: flow
   aspect: process_flow
   depth: overview
   lifecycle: approved
   layer: operation
-  svc: qa-sdk-cli
+  svc: cli
   tags: [testing, entry-point]
   links:
+    - target: gate-kind-taxonomy
+      type: contains
+    - target: gate-tracker-spec
+      type: contains
+    - target: harness-model-spec
+      type: contains
     - target: harness-state-model
       type: contains
     - target: work-domain-quality-bundle

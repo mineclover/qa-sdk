@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-event_classification
-  address: def_document:v2:345235
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
   links:
     - target: prefix-service

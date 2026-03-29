@@ -1,6 +1,8 @@
 ---
 def:
   id: slot-marker-patterns
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:69761
   scope: feature
   aspect: scenario
@@ -8,7 +10,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [tier-infra]
+  tags: []
   links:
     - target: slot-marker-concept
       type: depends_on

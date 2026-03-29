@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: shopping-web
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: trace-context-spec
       type: depends_on

@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
-  tags: [structural, tier-system]
+  tags: [structural]
   links:
     - target: convergence-layer-spec
       type: refines

@@ -1,6 +1,7 @@
 ---
 def:
   id: decode-service-system
+  level: module
   address: def_document:v2:68621
   scope: feature
   aspect: func_def
@@ -8,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: [structural, entry-point, tier-infra]
+  tags: [structural, entry-point]
   links:
     - target: decode-svc-data-model
       type: contains

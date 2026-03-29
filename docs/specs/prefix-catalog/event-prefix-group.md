@@ -1,12 +1,10 @@
 ---
 def:
   id: event-prefix-group
-  address: def_document:v2:345089
   scope: data
   aspect: prefix_schema
   depth: overview
   lifecycle: approved
-  layer: domain
   tags: [structural, entry-point, generated]
   links:
     - target: prefix-event

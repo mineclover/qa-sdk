@@ -2,12 +2,13 @@
 def:
   id: inspector-engine
   address: def_document:v2:1157
+  svc: motion-content-editor
   scope: ui
   aspect: component
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: mediation
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: motion-editor-component
       type: depends_on

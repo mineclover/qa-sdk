@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: index-meta
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: dx-lifecycle-tooling
       type: contains

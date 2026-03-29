@@ -5,9 +5,10 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: bigint-addressing
       type: depends_on

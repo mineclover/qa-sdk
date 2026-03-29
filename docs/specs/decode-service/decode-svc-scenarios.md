@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: [testing, tier-infra]
+  tags: [testing]
   links:
     - target: decode-service-system
       type: refines

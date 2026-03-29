@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: decision-service
-  tags: [tier-infra, decision]
+  tags: [ decision]
   links:
     - target: decision-service-system
       type: constrains

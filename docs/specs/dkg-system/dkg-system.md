@@ -1,7 +1,7 @@
 ---
 def:
   id: dkg-system
-  level: unit
+  level: module
   address: def_document:v2:342022
   scope: data
   aspect: domain_data
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: dkg-engine
-  tags: [structural, observability, entry-point, tier-system]
+  tags: [external, external, structural, observability, entry-point]
   links:
     - target: dkg-node-types
       type: contains

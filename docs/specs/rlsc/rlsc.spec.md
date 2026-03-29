@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: experience
-  tags: [tier-infra]
+  tags: []
   links:
     - target: motion-content-glossary
       type: depends_on

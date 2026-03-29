@@ -1,7 +1,7 @@
 ---
 def:
   id: system-support
-  level: area
+  level: group
   address: def_document:v2:137235
   scope: flow
   aspect: process_flow
@@ -23,6 +23,10 @@ def:
     - target: auth-service-spec
       type: contains
     - target: error-handling-convention
+      type: contains
+    - target: review-ledger-spec
+      type: contains
+    - target: tag-search
       type: contains
 ---
 # 지원 계층

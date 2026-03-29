@@ -1,7 +1,7 @@
 ---
 def:
   id: cq-system
-  level: unit
+  level: module
   address: def_document:v2:68618
   scope: feature
   aspect: func_def

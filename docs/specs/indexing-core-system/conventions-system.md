@@ -1,6 +1,8 @@
 ---
 def:
   id: conventions-system
+  type: knowledge
+  knowledge_kind: convention
   level: module
   address: def_document:v2:273409
   scope: constraint
@@ -9,7 +11,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: conv-naming
       type: contains

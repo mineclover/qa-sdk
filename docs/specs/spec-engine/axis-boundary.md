@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: domain
-  tags: [tier-system]
+  tags: []
   links:
     - target: convergence-layer-spec
       type: constrains

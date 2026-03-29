@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: [tier-system, observability]
+  tags: [ observability]
   links:
     - target: dkg-node-types
       type: depends_on

@@ -1,7 +1,7 @@
 ---
 def:
   id: indexing-core-system
-  level: unit
+  level: module
   address: def_document:v2:342026
   scope: data
   aspect: domain_data

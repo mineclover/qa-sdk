@@ -1,7 +1,7 @@
 ---
 def:
   id: event-vocab-system
-  level: unit
+  level: module
   address: def_document:v2:342023
   scope: data
   aspect: domain_data

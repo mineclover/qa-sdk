@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [tier-system]
+  tags: []
   links:
     - target: dkg-skill-catalog
       type: depends_on
@@ -28,7 +28,6 @@ def:
 DiffInput에서 VersionChange 목록을 파생하고, impact를 자동 판정하여 VersionEventNode를 생성한다. 5종 변경 분류와 4종 impact 판정으로 구성된다.
 
 ## 입력 타입
-
 소스 위치: `packages/spec-core/src/dkg/skills/version-event-derive.ts`
 
 ```typescript

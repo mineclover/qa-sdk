@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: qa-sdk-cli
+  svc: cli
   tags: [decision, ingest, event]
   links:
     - target: df-serialization

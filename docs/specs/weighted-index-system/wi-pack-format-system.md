@@ -1,6 +1,7 @@
 ---
 def:
   id: wi-pack-format-system
+  level: module
   address: def_document:v2:68647
   scope: feature
   aspect: func_def
@@ -8,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: wi-pack-format-def
       type: contains

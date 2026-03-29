@@ -5,9 +5,10 @@ def:
   scope: ui
   aspect: component
   depth: specification
+  svc: platform-demo
   lifecycle: approved
   layer: experience
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: motion-content-glossary
       type: depends_on

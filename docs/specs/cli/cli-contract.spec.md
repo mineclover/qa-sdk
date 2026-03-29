@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: qa-sdk-cli
+  svc: cli
   tags: [entry-point]
   links:
     - target: dsl-schemas-spec
@@ -24,12 +24,14 @@ CLI는 시스템을 제어하지 않는다 — 외부 상태를 스캔하고, DS
 
 ## 구성 ^overview
 
-16개 커맨드 그룹, 80+ 서브커맨드:
+17개 커맨드 그룹, 84+ 서브커맨드:
 scan/register/dry-run/codegen (스키마 파이프라인),
 encode/decode/resolve/list-prefixes/list-axes (좌표 DX),
 spec list/resolve/validate/trace (스펙 조작),
 dkg 20+ (DKG 진단/분석),
 flow 12+ (의사결정 흐름),
+quality 5 (품질 게이트 조회/실행/추천/claim 감사),
+quality bundle 1 (개념 번들 조회),
 service/ingest/gate/query (서비스 토폴로지),
 sync-obsidian (볼트 동기화).
 
@@ -72,6 +74,17 @@ sync-obsidian (볼트 동기화).
 | `flow trace <instance-id>` | 코어 결정 추적 |
 | `flow analyze <schema-id>` | 구조 분석 |
 | `flow policy learn/list/compare` | 정책 학습/비교 |
+
+### 품질 게이트
+
+| 커맨드 | 역할 |
+|--------|------|
+| `quality list` | gate 문서 목록과 필터 조회 |
+| `quality bundle <bundle-id>` | level/scope 기준 번들 문서 조회 |
+| `quality claims <bundle-id>` | contract marker 기반 claim 감사표 출력 |
+| `quality show <gate-id>` | gate 문서 상세 + 추천 흐름 조회 |
+| `quality run <gate-id>` | gate 명령 실행 + quality-ledger 기록 |
+| `quality next <gate-id>` | 성공/실패 기준 다음 gate/doc 추천 |
 
 ### 서비스 토폴로지
 

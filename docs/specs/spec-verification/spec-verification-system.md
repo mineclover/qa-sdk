@@ -1,12 +1,12 @@
 ---
 def:
   id: spec-verification-system
-  level: unit
+  level: module
   address: def_document:v2:68646
   scope: feature
   aspect: func_def
   depth: overview
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   tags: [structural, entry-point, testing, observability]
   links:

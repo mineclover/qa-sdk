@@ -1,12 +1,18 @@
 ---
 def:
   id: tag-search
+  level: leaf
   address: def_document:v2:342035
   scope: data
   aspect: domain_data
   depth: overview
   lifecycle: approved
   tags: [domain, tagging, search]
+  links:
+    - target: tag-search-spec
+      type: refines
+    - target: tag-management-spec
+      type: depends_on
 ---
 # tag-search
 

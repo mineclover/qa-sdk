@@ -1,7 +1,7 @@
 ---
 def:
   id: storage-system
-  level: unit
+  level: module
   address: def_document:v2:343044
   scope: data
   aspect: system_data

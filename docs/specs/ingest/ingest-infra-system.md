@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: [structural, performance, observability, tier-infra]
+  tags: [structural, performance, observability]
   links:
     - target: ingest-runtime-middleware
       type: contains

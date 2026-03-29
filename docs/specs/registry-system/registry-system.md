@@ -1,7 +1,7 @@
 ---
 def:
   id: registry-system
-  level: unit
+  level: module
   address: def_document:v2:412687
   scope: interface
   aspect: api_contract
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: registry-service
-  tags: [structural, entry-point, tier-infra]
+  tags: [structural, entry-point]
   links:
     - target: registry-api
       type: contains

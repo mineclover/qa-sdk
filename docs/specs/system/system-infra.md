@@ -1,14 +1,14 @@
 ---
 def:
   id: system-infra
-  level: area
+  level: group
   address: def_document:v2:137230
   scope: flow
   aspect: process_flow
   depth: overview
   lifecycle: approved
   layer: operation
-  tags: [structural, tier-infra]
+  tags: [structural]
   links:
     - target: ingest-system
       type: contains

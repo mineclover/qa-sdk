@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: permission-engine
-  tags: [migration, tier-backend]
+  tags: [migration]
   links:
     - target: perm-migration-algorithm
       type: depends_on

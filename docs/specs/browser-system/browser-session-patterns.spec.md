@@ -1,6 +1,8 @@
 ---
 def:
   id: browser-session-patterns
+  type: knowledge
+  knowledge_kind: pattern
   address: def_document:v2:137345
   scope: flow
   aspect: process_flow
@@ -8,7 +10,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: browser-sdk
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: browser-lifecycle-spec
       type: refines

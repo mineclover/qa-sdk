@@ -5,6 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
+  svc: ingest-server
   lifecycle: approved
   layer: domain
   tags: [cross-scope]

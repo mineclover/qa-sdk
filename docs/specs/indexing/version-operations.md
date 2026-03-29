@@ -5,9 +5,10 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
+  svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: [tier-infra]
+  tags: []
   links:
     - target: coord-foundation
       type: depends_on

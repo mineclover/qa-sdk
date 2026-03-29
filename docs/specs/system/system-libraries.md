@@ -1,7 +1,7 @@
 ---
 def:
   id: system-libraries
-  level: area
+  level: group
   address: def_document:v2:137231
   scope: flow
   aspect: process_flow
@@ -19,6 +19,8 @@ def:
     - target: index-meta-system
       type: contains
     - target: storage-system
+      type: contains
+    - target: platform-chain-system
       type: contains
 ---
 # 좌표 라이브러리 계층

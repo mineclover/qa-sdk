@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: shopping-web
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: session-spec
       type: depends_on

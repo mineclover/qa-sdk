@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: [tier-infra]
+  tags: []
   links:
     - target: decode-bundle
       type: depends_on

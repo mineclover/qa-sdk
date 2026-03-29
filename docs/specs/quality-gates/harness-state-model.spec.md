@@ -1,9 +1,11 @@
 ---
 def:
   id: harness-state-model
+  level: leaf
   scope: state
   aspect: system_state
   depth: specification
+  svc: cli
   lifecycle: approved
   layer: operation
   tags: [testing, quality-harness, entry-point]

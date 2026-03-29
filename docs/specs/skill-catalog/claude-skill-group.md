@@ -1,6 +1,7 @@
 ---
 def:
   id: claude-skill-group
+  level: module
   address: def_document:v2:68614
   scope: feature
   aspect: func_def
@@ -17,11 +18,19 @@ def:
       type: contains
     - target: skill-def-audit
       type: contains
+    - target: skill-def-explore
+      type: contains
+    - target: skill-def-knowledge
+      type: contains
+    - target: skill-def-level
+      type: contains
     - target: skill-def-new
       type: contains
     - target: skill-def-link
       type: contains
     - target: skill-def-split
+      type: contains
+    - target: skill-def-state
       type: contains
 ---
 

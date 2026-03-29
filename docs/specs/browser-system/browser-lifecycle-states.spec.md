@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: browser-sdk
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: browser-lifecycle-spec
       type: refines

@@ -1,12 +1,10 @@
 ---
 def:
   id: prefix-order_event
-  address: def_document:v2:345246
   scope: data
   aspect: prefix_schema
   depth: specification
   lifecycle: approved
-  layer: domain
   tags: [generated]
   links:
     - target: prefix-service

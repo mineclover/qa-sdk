@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: [structural, tier-system]
+  tags: [structural]
   links:
     - target: convergence-comparators
       type: contains

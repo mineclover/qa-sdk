@@ -8,7 +8,7 @@ def:
   lifecycle: deprecated
   layer: mediation
   svc: ingest-server
-  tags: [tier-infra]
+  tags: []
   links:
     - target: dlq-store-spec
       type: depends_on

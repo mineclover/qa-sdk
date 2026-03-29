@@ -1,7 +1,7 @@
 ---
 def:
   id: analysis-system
-  level: unit
+  level: module
   address: def_document:v2:68609
   scope: feature
   aspect: func_def

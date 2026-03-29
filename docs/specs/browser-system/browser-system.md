@@ -1,7 +1,7 @@
 ---
 def:
   id: browser-system
-  level: unit
+  level: module
   address: def_document:v2:412674
   scope: interface
   aspect: api_contract
@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: shopping-web
-  tags: [structural, entry-point, tier-frontend]
+  tags: [structural, entry-point]
   links:
     - target: browser-runtime-system
       type: contains

@@ -7,8 +7,8 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
-  svc: qa-sdk-cli
-  tags: [tier-system]
+  svc: cli
+  tags: []
   links:
     - target: codegen-spec
       type: refines

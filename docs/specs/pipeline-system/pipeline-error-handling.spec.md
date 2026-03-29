@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: [observability, tier-infra]
+  tags: [observability]
   links:
     - target: pipeline-enrichment
       type: constrains

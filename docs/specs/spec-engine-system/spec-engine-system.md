@@ -1,7 +1,7 @@
 ---
 def:
   id: spec-engine-system
-  level: unit
+  level: module
   address: def_document:v2:137224
   scope: flow
   aspect: process_flow

@@ -5,6 +5,7 @@ def:
   scope: feature
   aspect: scenario
   depth: validation
+  svc: index-meta
   lifecycle: approved
   layer: domain
   tags: [testing]

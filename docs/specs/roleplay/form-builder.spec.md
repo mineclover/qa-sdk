@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: deprecated
   layer: experience
-  tags: [tier-frontend]
+  tags: []
   links:
     - target: iframe-protocol-spec
       type: depends_on

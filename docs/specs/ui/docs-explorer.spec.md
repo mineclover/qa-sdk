@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
-  tags: [tier-app]
+  tags: []
   links:
     - target: definition-catalog-spec
       type: depends_on

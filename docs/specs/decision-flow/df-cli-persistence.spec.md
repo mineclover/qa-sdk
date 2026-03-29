@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  svc: qa-sdk-cli
+  svc: cli
   tags: [decision, persistence]
   links:
     - target: df-state-model
@@ -44,7 +44,7 @@ interface InstanceStore {
 ```
 
 - `MemoryInstanceStore` — 인메모리 구현. 테스트/라이브러리 용도
-- `SqliteInstanceStore` — SQLite 구현. CLI 전용 (`packages/cli/src/stores/flow-sqlite-store.ts`)
+- `SqliteInstanceStore` — SQLite 구현. 독립 패키지 (`packages/decision-flow-store/src/store.ts`)
 - FlowEngine 생성 시 `{ instanceStore }` 옵션으로 주입. 플로우 완료 시 자동 `save()` 호출
 
 ## 스키마 (DDL) ^schema

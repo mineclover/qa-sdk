@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: permission-engine
-  tags: [security, tier-backend]
+  tags: [security]
   links:
     - target: perm-codec-stack
       type: depends_on
