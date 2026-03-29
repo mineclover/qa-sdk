@@ -2,9 +2,18 @@
  * 도메인 타입 — HTTP/DB 무관한 순수 데이터 구조
  */
 
+import type { QualityGateSpec } from "work-domain";
+
 /** 문서 메타데이터 레코드 (최신 버전) */
 export interface DocRecord {
   docId: string;
+  title: string;
+  /** spec | knowledge */
+  docType?: string;
+  /** philosophy | adr | guide | narrative | convention | pattern */
+  knowledgeKind?: string;
+  /** group | module | leaf */
+  level?: string;
   scope: string;
   aspect: string;
   depth: string;
@@ -23,6 +32,7 @@ export interface DocRecord {
   intent?: string;
   context?: string;
   caveat?: string;
+  gate?: QualityGateSpec;
   syncedAt: string;
   sourcePath?: string;
 }

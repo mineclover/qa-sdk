@@ -8,6 +8,31 @@
  * NOTE: documents_fts (FTS5 virtual table)는 Drizzle에서 지원하지 않으므로
  * 마이그레이션 SQL에서 직접 관리한다.
  */
+
+// ── JSON 컬럼 내부 타입 ─────────────────────────────────────────
+// parseJsonArray/parseJsonObject 호출 시 제네릭 인자로 사용
+
+/** documents.tagsJson 내부 타입 */
+export type DocTagsJson = string[];
+
+/** documents.linksJson 내부 타입 */
+export type DocLinkJson = { target: string; type: string };
+
+/** prefix_registry.labelsJson 내부 타입 */
+export type PrefixLabelsJson = string[];
+
+/** prefix_registry.dimsJson 내부 타입 */
+export type PrefixDimsJson = Record<
+  string,
+  { kind: string; axisId?: string; prefixId?: string; table?: string }
+>;
+
+/** prefix_registry.versionsJson 내부 타입 */
+export type PrefixVersionJson = {
+  version: string;
+  axisVersions: Record<string, string>;
+};
+
 import {
   sqliteTable,
   text,
@@ -27,11 +52,11 @@ export const prefixRegistry = sqliteTable(
     name: text("name").notNull(),
     description: text("description"),
     category: text("category"),
-    labelsJson: text("labels_json").notNull().default("[]"),
-    dimsJson: text("dims_json").notNull().default("{}"),
-    versionsJson: text("versions_json").notNull().default("[]"),
-    metaJson: text("meta_json").notNull().default("{}"),
-    depPrefixIds: text("dep_prefix_ids").notNull().default("[]"),
+    labelsJson: text("labels_json", { mode: "json" }).$type<PrefixLabelsJson>().notNull().default([]),
+    dimsJson: text("dims_json", { mode: "json" }).$type<PrefixDimsJson>().notNull().default({}),
+    versionsJson: text("versions_json", { mode: "json" }).$type<PrefixVersionJson[]>().notNull().default([]),
+    metaJson: text("meta_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    depPrefixIds: text("dep_prefix_ids", { mode: "json" }).$type<string[]>().notNull().default([]),
     version: integer("version").notNull().default(1),
     registeredAt: text("registered_at").notNull(),
     updatedAt: text("updated_at").notNull(),
@@ -44,14 +69,21 @@ export const documents = sqliteTable(
   "documents",
   {
     docId: text("doc_id").primaryKey(),
+    title: text("title"),
+    /** spec | knowledge */
+    docType: text("doc_type"),
+    /** philosophy | adr | guide | narrative | convention | pattern (knowledge 문서만) */
+    knowledgeKind: text("knowledge_kind"),
+    /** group | module | leaf */
+    level: text("level"),
     scope: text("scope").notNull(),
     aspect: text("aspect").notNull(),
     depth: text("depth").notNull(),
     lifecycle: text("lifecycle").notNull(),
     targetPrefix: text("target_prefix"),
     layer: text("layer"),
-    tagsJson: text("tags_json").notNull().default("[]"),
-    linksJson: text("links_json").notNull().default("[]"),
+    tagsJson: text("tags_json", { mode: "json" }).$type<DocTagsJson>().notNull().default([]),
+    linksJson: text("links_json", { mode: "json" }).$type<DocLinkJson[]>().notNull().default([]),
     svc: text("svc"),
     address: text("address"),
     version: integer("version").notNull().default(1),
@@ -60,6 +92,7 @@ export const documents = sqliteTable(
     intent: text("intent"),
     context: text("context"),
     caveat: text("caveat"),
+    gateJson: text("gate_json"),
     syncedAt: text("synced_at").notNull(),
     sourcePath: text("source_path"),
   },
@@ -71,8 +104,14 @@ export const documents = sqliteTable(
     index("idx_doc_address").on(table.address),
     index("idx_doc_depth").on(table.depth),
     index("idx_doc_target_prefix").on(table.targetPrefix),
+    index("idx_doc_type").on(table.docType),
+    index("idx_doc_knowledge_kind").on(table.knowledgeKind),
+    index("idx_doc_level").on(table.level),
   ],
 );
+
+export type PrefixRegistryRow = typeof prefixRegistry.$inferSelect;
+export type DocumentRow = typeof documents.$inferSelect;
 
 // ── document_links ───────────────────────────────────────────────
 export const documentLinks = sqliteTable(
@@ -96,19 +135,24 @@ export const documentHistory = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     docId: text("doc_id").notNull(),
     version: integer("version").notNull(),
+    title: text("title"),
+    docType: text("doc_type"),
+    knowledgeKind: text("knowledge_kind"),
+    level: text("level"),
     scope: text("scope").notNull(),
     aspect: text("aspect").notNull(),
     depth: text("depth").notNull(),
     lifecycle: text("lifecycle").notNull(),
     layer: text("layer"),
-    tagsJson: text("tags_json").notNull(),
-    linksJson: text("links_json").notNull(),
+    tagsJson: text("tags_json", { mode: "json" }).$type<DocTagsJson>().notNull(),
+    linksJson: text("links_json", { mode: "json" }).$type<DocLinkJson[]>().notNull(),
     bodyHash: text("body_hash").notNull(),
     body: text("body").notNull(),
     purpose: text("purpose"),
     intent: text("intent"),
     context: text("context"),
     caveat: text("caveat"),
+    gateJson: text("gate_json"),
     changeType: text("change_type").notNull(),
     syncedAt: text("synced_at").notNull(),
   },
@@ -120,6 +164,9 @@ export const documentHistory = sqliteTable(
     index("idx_dh_doc").on(table.docId, table.version),
   ],
 );
+
+export type DocumentHistoryRow = typeof documentHistory.$inferSelect;
+export type DocumentLinkRow = typeof documentLinks.$inferSelect;
 
 // ── slice_intents ────────────────────────────────────────────────
 export const sliceIntents = sqliteTable(

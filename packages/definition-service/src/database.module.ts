@@ -2,12 +2,17 @@ import { Module, Global } from "@nestjs/common";
 import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import Database from "better-sqlite3";
-import { createLogger } from "@qa-sdk/core";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { createLogger } from "./lib/logger.js";
 import { env } from "./config/env.js";
+import * as schema from "./db/schema.js";
 
 const logger = createLogger("definition-service");
 
 export const DATABASE = "DATABASE";
+export const DRIZZLE_DB = "DRIZZLE_DB";
+export type DefinitionServiceDatabase = BetterSQLite3Database<typeof schema>;
 
 /**
  * drizzle/폴더의 migration.sql 파일을 직접 실행.
@@ -18,7 +23,7 @@ function applyMigrations(db: Database.Database, migrationsDir: string) {
 
   const dirs = readdirSync(migrationsDir, { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.startsWith(".") && d.name !== "meta")
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .toSorted((a, b) => a.name.localeCompare(b.name));
 
   for (const dir of dirs) {
     const sqlFile = join(migrationsDir, dir.name, "migration.sql");
@@ -36,7 +41,7 @@ function applyMigrations(db: Database.Database, migrationsDir: string) {
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (!msg.includes("already exists")) {
-            logger.warn({ stmt: stmt.slice(0, 80), error: msg }, "migration statement 실패");
+            logger.warn({ stmt: stmt.slice(0, 80), err: msg }, "migration statement 실패");
           }
         }
       }
@@ -68,7 +73,13 @@ function applyMigrations(db: Database.Database, migrationsDir: string) {
         return db;
       },
     },
+    {
+      provide: DRIZZLE_DB,
+      inject: [DATABASE],
+      useFactory: (db: Database.Database): DefinitionServiceDatabase =>
+        drizzle({ client: db, schema }),
+    },
   ],
-  exports: [DATABASE],
+  exports: [DATABASE, DRIZZLE_DB],
 })
 export class DatabaseModule {}

@@ -1,17 +1,21 @@
 import { Injectable, Inject, Optional } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlDocStore } from "../../stores/doc-store.js";
 import type { DocRecord, DocHistoryRecord } from "../../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter, DocListResult } from "../../core/interfaces.js";
+import type { DefFeedbackRequestSummary, DefSyntheticIncomingLink } from "definition-catalog";
 import { SearchService } from "../search/search.service.js";
+import {
+  getFeedbackRequestSummariesForDoc,
+  getSyntheticIncomingLinksForDoc,
+} from "./review-feedback.js";
 
 @Injectable()
 export class DocsService {
   private readonly store: SqlDocStore;
 
   constructor(
-    @Inject(DATABASE) db: Database.Database,
+    @Inject(DRIZZLE_DB) db: DefinitionServiceDatabase,
     @Optional() @Inject(SearchService) private readonly search?: SearchService,
   ) {
     this.store = new SqlDocStore(db);
@@ -82,8 +86,16 @@ export class DocsService {
     return this.store.getIncomingLinks(docId);
   }
 
+  getSyntheticIncomingLinks(docId: string): DefSyntheticIncomingLink[] {
+    return getSyntheticIncomingLinksForDoc(docId);
+  }
+
   getOutgoingLinks(docId: string) {
     return this.store.getOutgoingLinks(docId);
+  }
+
+  getFeedbackRequests(docId: string, limit = 10): DefFeedbackRequestSummary[] {
+    return getFeedbackRequestSummariesForDoc(docId, limit);
   }
 
   // ── 단일 link/tag 원자적 mutation ─────────────────────

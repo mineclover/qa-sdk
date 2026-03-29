@@ -61,6 +61,10 @@ export function buildDocRecord(
 
   return {
     docId: entry.id,
+    title: entry.title,
+    docType: entry.type,
+    knowledgeKind: entry.knowledgeKind,
+    level: entry.level,
     scope: entry.scope,
     aspect: entry.aspect,
     depth: entry.depth,
@@ -74,6 +78,7 @@ export function buildDocRecord(
     version: 0, // upsert가 결정
     bodyHash: hashBody(body),
     ...markers,
+    gate: entry.gate,
     syncedAt: new Date().toISOString(),
     sourcePath,
   };

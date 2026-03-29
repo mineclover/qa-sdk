@@ -25,7 +25,7 @@ export class ServerDataSource implements DefDataSource {
       return await this.fetchJson(`/docs/${docId}`);
     } catch (e) {
       if (e instanceof Error && e.message.includes("404")) return null;
-      throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`);
+      throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
     }
   }
 
@@ -33,7 +33,11 @@ export class ServerDataSource implements DefDataSource {
     const params = new URLSearchParams();
     if (filter) {
       for (const [k, v] of Object.entries(filter)) {
-        if (v !== undefined && v !== null) params.set(k, String(v));
+        if (v !== undefined && v !== null) {
+          // camelCase → kebab-case (knowledgeKind → knowledge-kind)
+          const key = k.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`);
+          params.set(key, String(v));
+        }
       }
     }
     const qs = params.toString();

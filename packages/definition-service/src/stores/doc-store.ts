@@ -1,81 +1,96 @@
-import type Database from "better-sqlite3";
+import type { DefinitionServiceDatabase } from "../database.module.js";
 import type { DocRecord, DocHistoryRecord } from "../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
 import { computeDocumentAddress } from "../core/compute-address.js";
+import {
+  documents,
+  documentLinks,
+  documentHistory,
+} from "../db/schema.js";
+import {
+  eq,
+  and,
+  asc,
+  desc,
+  like,
+  count,
+  type SQL,
+} from "drizzle-orm";
 
-/** SQLite row → DocRecord 변환 */
-function rowToDoc(row: Record<string, unknown>): DocRecord {
+/** Drizzle select 결과 → DocRecord 변환 */
+type DocRow = typeof documents.$inferSelect;
+
+function rowToDoc(row: DocRow): DocRecord {
   return {
-    docId: row["doc_id"] as string,
-    scope: row["scope"] as string,
-    aspect: row["aspect"] as string,
-    depth: row["depth"] as string,
-    lifecycle: row["lifecycle"] as string,
-    layer: (row["layer"] as string) || undefined,
-    tags: JSON.parse((row["tags_json"] as string) || "[]"),
-    links: JSON.parse((row["links_json"] as string) || "[]"),
-    svc: (row["svc"] as string) || undefined,
-    address: (row["address"] as string) || undefined,
-    targetPrefix: (row["target_prefix"] as string) || undefined,
-    version: row["version"] as number,
-    bodyHash: row["body_hash"] as string,
-    purpose: (row["purpose"] as string) || undefined,
-    intent: (row["intent"] as string) || undefined,
-    context: (row["context"] as string) || undefined,
-    caveat: (row["caveat"] as string) || undefined,
-    syncedAt: row["synced_at"] as string,
-    sourcePath: (row["source_path"] as string) || undefined,
+    docId: row.docId,
+    title: row.title || row.docId,
+    docType: row.docType || undefined,
+    knowledgeKind: row.knowledgeKind || undefined,
+    level: row.level || undefined,
+    scope: row.scope,
+    aspect: row.aspect,
+    depth: row.depth,
+    lifecycle: row.lifecycle,
+    layer: row.layer || undefined,
+    tags: row.tagsJson,
+    links: row.linksJson,
+    svc: row.svc || undefined,
+    address: row.address || undefined,
+    targetPrefix: row.targetPrefix || undefined,
+    version: row.version,
+    bodyHash: row.bodyHash,
+    purpose: row.purpose || undefined,
+    intent: row.intent || undefined,
+    context: row.context || undefined,
+    caveat: row.caveat || undefined,
+    gate: row.gateJson
+      ? JSON.parse(row.gateJson) as DocRecord["gate"]
+      : undefined,
+    syncedAt: row.syncedAt,
+    sourcePath: row.sourcePath || undefined,
   };
 }
 
-/** SQLite row → DocHistoryRecord 변환 */
-function rowToHistory(row: Record<string, unknown>): DocHistoryRecord {
+/** Drizzle select 결과 → DocHistoryRecord 변환 */
+type HistoryRow = typeof documentHistory.$inferSelect;
+
+function rowToHistory(row: HistoryRow): DocHistoryRecord {
   return {
-    ...rowToDoc(row),
-    body: row["body"] as string,
-    changeType: row["change_type"] as DocHistoryRecord["changeType"],
+    docId: row.docId,
+    title: row.title || row.docId,
+    docType: row.docType || undefined,
+    knowledgeKind: row.knowledgeKind || undefined,
+    level: row.level || undefined,
+    scope: row.scope,
+    aspect: row.aspect,
+    depth: row.depth,
+    lifecycle: row.lifecycle,
+    layer: row.layer || undefined,
+    tags: row.tagsJson,
+    links: row.linksJson,
+    svc: undefined,
+    address: undefined,
+    targetPrefix: undefined,
+    version: row.version,
+    bodyHash: row.bodyHash,
+    purpose: row.purpose || undefined,
+    intent: row.intent || undefined,
+    context: row.context || undefined,
+    caveat: row.caveat || undefined,
+    gate: row.gateJson
+      ? JSON.parse(row.gateJson) as DocRecord["gate"]
+      : undefined,
+    syncedAt: row.syncedAt,
+    sourcePath: undefined,
+    body: row.body,
+    changeType: row.changeType as DocHistoryRecord["changeType"],
   };
 }
 
-/** better-sqlite3 기반 문서 저장소 */
+/** drizzle/better-sqlite3 기반 문서 저장소 */
 export class SqlDocStore implements DocStore {
-  private readonly stmtGet;
-  private readonly stmtUpsert;
-  private readonly stmtInsertHistory;
-  private readonly stmtGetHistory;
-  private readonly stmtGetVersion;
-  private readonly stmtDeleteLinks;
-  private readonly stmtInsertLink;
-
-  constructor(private readonly db: Database.Database) {
-    this.stmtGet = db.prepare(
-      `SELECT * FROM documents WHERE doc_id = ?`,
-    );
-    this.stmtDeleteLinks = db.prepare(`DELETE FROM document_links WHERE source_id = ?`);
-    this.stmtInsertLink = db.prepare(
-      `INSERT OR IGNORE INTO document_links (source_id, target_id, link_type) VALUES (?, ?, ?)`,
-    );
-    this.stmtUpsert = db.prepare(`
-      INSERT INTO documents (doc_id, scope, aspect, depth, lifecycle, layer, tags_json, links_json, svc, address, target_prefix, version, body_hash, purpose, intent, context, caveat, synced_at, source_path)
-      VALUES (@doc_id, @scope, @aspect, @depth, @lifecycle, @layer, @tags_json, @links_json, @svc, @address, @target_prefix, @version, @body_hash, @purpose, @intent, @context, @caveat, @synced_at, @source_path)
-      ON CONFLICT(doc_id) DO UPDATE SET
-        scope=@scope, aspect=@aspect, depth=@depth, lifecycle=@lifecycle, layer=@layer,
-        tags_json=@tags_json, links_json=@links_json, svc=@svc, address=@address, target_prefix=@target_prefix, version=@version,
-        body_hash=@body_hash, purpose=@purpose, intent=@intent, context=@context,
-        caveat=@caveat, synced_at=@synced_at, source_path=@source_path
-    `);
-    this.stmtInsertHistory = db.prepare(`
-      INSERT INTO document_history (doc_id, version, scope, aspect, depth, lifecycle, layer, tags_json, links_json, body_hash, body, purpose, intent, context, caveat, change_type, synced_at)
-      VALUES (@doc_id, @version, @scope, @aspect, @depth, @lifecycle, @layer, @tags_json, @links_json, @body_hash, @body, @purpose, @intent, @context, @caveat, @change_type, @synced_at)
-    `);
-    this.stmtGetHistory = db.prepare(
-      `SELECT * FROM document_history WHERE doc_id = ? ORDER BY version DESC LIMIT ?`,
-    );
-    this.stmtGetVersion = db.prepare(
-      `SELECT * FROM document_history WHERE doc_id = ? AND version = ?`,
-    );
-  }
+  constructor(private readonly db: DefinitionServiceDatabase) {}
 
   upsert(
     doc: DocRecord,
@@ -90,34 +105,94 @@ export class SqlDocStore implements DocStore {
 
     const { version, changeType } = decision;
     const address = computeDocumentAddress(doc.scope, doc.aspect, doc.depth);
-    const params = {
-      doc_id: doc.docId,
+
+    const values = {
+      docId: doc.docId,
+      title: doc.title,
+      docType: doc.docType ?? null,
+      knowledgeKind: doc.knowledgeKind ?? null,
+      level: doc.level ?? null,
       scope: doc.scope,
       aspect: doc.aspect,
       depth: doc.depth,
       lifecycle: doc.lifecycle,
       layer: doc.layer ?? null,
-      tags_json: JSON.stringify(doc.tags),
-      links_json: JSON.stringify(doc.links),
+      tagsJson: doc.tags,
+      linksJson: doc.links,
       svc: doc.svc ?? null,
       address: address ?? doc.address ?? null,
-      target_prefix: doc.targetPrefix ?? null,
+      targetPrefix: doc.targetPrefix ?? null,
       version,
-      body_hash: doc.bodyHash,
+      bodyHash: doc.bodyHash,
       purpose: doc.purpose ?? null,
       intent: doc.intent ?? null,
       context: doc.context ?? null,
       caveat: doc.caveat ?? null,
-      synced_at: doc.syncedAt,
-      source_path: doc.sourcePath ?? null,
+      gateJson: doc.gate ? JSON.stringify(doc.gate) : null,
+      syncedAt: doc.syncedAt,
+      sourcePath: doc.sourcePath ?? null,
     };
 
-    this.stmtUpsert.run(params);
-    this.stmtInsertHistory.run({
-      ...params,
-      body,
-      change_type: changeType,
-    });
+    this.db
+      .insert(documents)
+      .values(values)
+      .onConflictDoUpdate({
+        target: documents.docId,
+        set: {
+          title: values.title,
+          docType: values.docType,
+          knowledgeKind: values.knowledgeKind,
+          level: values.level,
+          scope: values.scope,
+          aspect: values.aspect,
+          depth: values.depth,
+          lifecycle: values.lifecycle,
+          layer: values.layer,
+          tagsJson: values.tagsJson,
+          linksJson: values.linksJson,
+          svc: values.svc,
+          address: values.address,
+          targetPrefix: values.targetPrefix,
+          version: values.version,
+          bodyHash: values.bodyHash,
+          purpose: values.purpose,
+          intent: values.intent,
+          context: values.context,
+          caveat: values.caveat,
+          gateJson: values.gateJson,
+          syncedAt: values.syncedAt,
+          sourcePath: values.sourcePath,
+        },
+      })
+      .run();
+
+    this.db
+      .insert(documentHistory)
+      .values({
+        docId: doc.docId,
+        version,
+        title: values.title,
+        docType: values.docType,
+        knowledgeKind: values.knowledgeKind,
+        level: values.level,
+        scope: values.scope,
+        aspect: values.aspect,
+        depth: values.depth,
+        lifecycle: values.lifecycle,
+        layer: values.layer,
+        tagsJson: values.tagsJson,
+        linksJson: values.linksJson,
+        bodyHash: values.bodyHash,
+        body,
+        purpose: values.purpose,
+        intent: values.intent,
+        context: values.context,
+        caveat: values.caveat,
+        gateJson: values.gateJson,
+        changeType,
+        syncedAt: values.syncedAt,
+      })
+      .run();
 
     this.syncLinks(doc.docId, doc.links);
 
@@ -134,6 +209,7 @@ export class SqlDocStore implements DocStore {
 
     const updated: DocRecord = {
       ...existing,
+      level: patch.level === null ? undefined : (patch.level ?? existing.level),
       scope: patch.scope ?? existing.scope,
       aspect: patch.aspect ?? existing.aspect,
       depth: patch.depth ?? existing.depth,
@@ -147,6 +223,7 @@ export class SqlDocStore implements DocStore {
 
     // 변경 여부 확인
     const same =
+      (updated.level ?? null) === (existing.level ?? null) &&
       updated.scope === existing.scope &&
       updated.aspect === existing.aspect &&
       updated.depth === existing.depth &&
@@ -160,50 +237,131 @@ export class SqlDocStore implements DocStore {
 
     const version = existing.version + 1;
     const address = computeDocumentAddress(updated.scope, updated.aspect, updated.depth);
-    const params = {
-      doc_id: updated.docId,
+
+    const values = {
+      docId: updated.docId,
+      title: updated.title,
+      docType: updated.docType ?? null,
+      knowledgeKind: updated.knowledgeKind ?? null,
+      level: updated.level ?? null,
       scope: updated.scope,
       aspect: updated.aspect,
       depth: updated.depth,
       lifecycle: updated.lifecycle,
       layer: updated.layer ?? null,
-      tags_json: JSON.stringify(updated.tags),
-      links_json: JSON.stringify(updated.links),
+      tagsJson: updated.tags,
+      linksJson: updated.links,
       svc: updated.svc ?? null,
       address: address ?? updated.address ?? null,
-      target_prefix: updated.targetPrefix ?? null,
+      targetPrefix: updated.targetPrefix ?? null,
       version,
-      body_hash: updated.bodyHash,
+      bodyHash: updated.bodyHash,
       purpose: updated.purpose ?? null,
       intent: updated.intent ?? null,
       context: updated.context ?? null,
       caveat: updated.caveat ?? null,
-      synced_at: updated.syncedAt,
-      source_path: updated.sourcePath ?? null,
+      gateJson: updated.gate ? JSON.stringify(updated.gate) : null,
+      syncedAt: updated.syncedAt,
+      sourcePath: updated.sourcePath ?? null,
     };
 
-    this.stmtUpsert.run(params);
+    this.db
+      .insert(documents)
+      .values(values)
+      .onConflictDoUpdate({
+        target: documents.docId,
+        set: {
+          title: values.title,
+          docType: values.docType,
+          knowledgeKind: values.knowledgeKind,
+          level: values.level,
+          scope: values.scope,
+          aspect: values.aspect,
+          depth: values.depth,
+          lifecycle: values.lifecycle,
+          layer: values.layer,
+          tagsJson: values.tagsJson,
+          linksJson: values.linksJson,
+          svc: values.svc,
+          address: values.address,
+          targetPrefix: values.targetPrefix,
+          version: values.version,
+          bodyHash: values.bodyHash,
+          purpose: values.purpose,
+          intent: values.intent,
+          context: values.context,
+          caveat: values.caveat,
+          gateJson: values.gateJson,
+          syncedAt: values.syncedAt,
+          sourcePath: values.sourcePath,
+        },
+      })
+      .run();
 
     // history: body는 이전 버전에서 가져옴
-    const lastHistory = this.stmtGetVersion.get(docId, existing.version) as Record<string, unknown> | undefined;
-    const body = (lastHistory?.["body"] as string) ?? "";
-    this.stmtInsertHistory.run({
-      ...params,
-      body,
-      change_type: "metadata_edit",
-    });
+    const lastHistory = this.db
+      .select()
+      .from(documentHistory)
+      .where(
+        and(
+          eq(documentHistory.docId, docId),
+          eq(documentHistory.version, existing.version),
+        ),
+      )
+      .get();
+    const body = lastHistory?.body ?? "";
+
+    this.db
+      .insert(documentHistory)
+      .values({
+        docId,
+        version,
+        title: values.title,
+        docType: values.docType,
+        knowledgeKind: values.knowledgeKind,
+        level: values.level,
+        scope: values.scope,
+        aspect: values.aspect,
+        depth: values.depth,
+        lifecycle: values.lifecycle,
+        layer: values.layer,
+        tagsJson: values.tagsJson,
+        linksJson: values.linksJson,
+        bodyHash: values.bodyHash,
+        body,
+        purpose: values.purpose,
+        intent: values.intent,
+        context: values.context,
+        caveat: values.caveat,
+        gateJson: values.gateJson,
+        changeType: "metadata_edit",
+        syncedAt: values.syncedAt,
+      })
+      .run();
 
     this.syncLinks(docId, updated.links);
 
     return { action: "updated", version };
   }
 
-  // ── Edge + FTS 동기화 ──────────────────────────────────
+  // ── Edge 동기화 ──────────────────────────────────
 
   private syncLinks(docId: string, links: { target: string; type: string }[]) {
-    this.stmtDeleteLinks.run(docId);
+    this.db
+      .delete(documentLinks)
+      .where(eq(documentLinks.sourceId, docId))
+      .run();
+
     for (const link of links) {
-      this.stmtInsertLink.run(docId, link.target, link.type);
+      this.db
+        .insert(documentLinks)
+        .values({
+          sourceId: docId,
+          targetId: link.target,
+          linkType: link.type,
+        })
+        .onConflictDoNothing()
+        .run();
     }
   }
 
@@ -211,99 +369,162 @@ export class SqlDocStore implements DocStore {
 
   /** 특정 문서에서 나가는 링크 */
   getOutgoingLinks(docId: string): { target: string; type: string }[] {
-    const stmt = this.db.prepare(`SELECT target_id, link_type FROM document_links WHERE source_id = ?`);
-    return (stmt.all(docId) as { target_id: string; link_type: string }[])
-      .map(r => ({ target: r.target_id, type: r.link_type }));
+    return this.db
+      .select({
+        target: documentLinks.targetId,
+        type: documentLinks.linkType,
+      })
+      .from(documentLinks)
+      .where(eq(documentLinks.sourceId, docId))
+      .all()
+      .map(r => ({ target: r.target, type: r.type }));
   }
 
   /** 특정 문서로 들어오는 링크 */
   getIncomingLinks(docId: string): { source: string; type: string }[] {
-    const stmt = this.db.prepare(`SELECT source_id, link_type FROM document_links WHERE target_id = ?`);
-    return (stmt.all(docId) as { source_id: string; link_type: string }[])
-      .map(r => ({ source: r.source_id, type: r.link_type }));
+    return this.db
+      .select({
+        source: documentLinks.sourceId,
+        type: documentLinks.linkType,
+      })
+      .from(documentLinks)
+      .where(eq(documentLinks.targetId, docId))
+      .all()
+      .map(r => ({ source: r.source, type: r.type }));
   }
 
   /** contains 링크로 연결된 자식 문서 */
   getChildren(docId: string): DocRecord[] {
-    const stmt = this.db.prepare(`
-      SELECT d.* FROM documents d
-      JOIN document_links dl ON dl.target_id = d.doc_id
-      WHERE dl.source_id = ? AND dl.link_type = 'contains'
-      ORDER BY d.doc_id
-    `);
-    return (stmt.all(docId) as Record<string, unknown>[]).map(rowToDoc);
+    const rows = this.db
+      .select({
+        doc: documents,
+      })
+      .from(documents)
+      .innerJoin(
+        documentLinks,
+        eq(documentLinks.targetId, documents.docId),
+      )
+      .where(
+        and(
+          eq(documentLinks.sourceId, docId),
+          eq(documentLinks.linkType, "contains"),
+        ),
+      )
+      .orderBy(asc(documents.docId))
+      .all();
+    return rows.map(r => rowToDoc(r.doc));
   }
 
   /** contains 링크로 연결된 부모 문서 */
   getParent(docId: string): DocRecord | null {
-    const stmt = this.db.prepare(`
-      SELECT d.* FROM documents d
-      JOIN document_links dl ON dl.source_id = d.doc_id
-      WHERE dl.target_id = ? AND dl.link_type = 'contains'
-      LIMIT 1
-    `);
-    const row = stmt.get(docId) as Record<string, unknown> | undefined;
-    return row ? rowToDoc(row) : null;
+    const row = this.db
+      .select({
+        doc: documents,
+      })
+      .from(documents)
+      .innerJoin(
+        documentLinks,
+        eq(documentLinks.sourceId, documents.docId),
+      )
+      .where(
+        and(
+          eq(documentLinks.targetId, docId),
+          eq(documentLinks.linkType, "contains"),
+        ),
+      )
+      .limit(1)
+      .get();
+    return row ? rowToDoc(row.doc) : null;
   }
 
   get(docId: string): DocRecord | null {
-    const row = this.stmtGet.get(docId) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(documents)
+      .where(eq(documents.docId, docId))
+      .get();
     return row ? rowToDoc(row) : null;
   }
 
   list(filter?: DocListFilter): DocRecord[] {
-    const { where, params } = this.buildWhereClause(filter);
+    const conditions = this.buildConditions(filter);
     const limit = filter?.limit ?? 500;
     const offset = filter?.offset ?? 0;
-    const orderBy = this.resolveOrderBy(filter?.sort);
-    const stmt = this.db.prepare(`SELECT * FROM documents ${where} ${orderBy} LIMIT ? OFFSET ?`);
-    const rows = stmt.all(...params, limit, offset) as Record<string, unknown>[];
+    const orderByClause = this.resolveOrderBy(filter?.sort);
+
+    const rows = this.db
+      .select()
+      .from(documents)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset)
+      .all();
     return rows.map(rowToDoc);
   }
 
   /** 필터 조건에 매칭되는 전체 건수 (pagination용) */
   count(filter?: DocListFilter): number {
-    const { where, params } = this.buildWhereClause(filter);
-    const stmt = this.db.prepare(`SELECT COUNT(*) as cnt FROM documents ${where}`);
-    const row = stmt.get(...params) as { cnt: number };
-    return row.cnt;
+    const conditions = this.buildConditions(filter);
+
+    const row = this.db
+      .select({ cnt: count() })
+      .from(documents)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .get();
+    return row?.cnt ?? 0;
   }
 
-  private buildWhereClause(filter?: DocListFilter): { where: string; params: unknown[] } {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
+  private buildConditions(filter?: DocListFilter): SQL[] {
+    const conditions: SQL[] = [];
 
-    if (filter?.scope) { conditions.push("scope = ?"); params.push(filter.scope); }
-    if (filter?.aspect) { conditions.push("aspect = ?"); params.push(filter.aspect); }
-    if (filter?.depth) { conditions.push("depth = ?"); params.push(filter.depth); }
-    if (filter?.lifecycle) { conditions.push("lifecycle = ?"); params.push(filter.lifecycle); }
-    if (filter?.layer) { conditions.push("layer = ?"); params.push(filter.layer); }
-    if (filter?.svc) { conditions.push("svc = ?"); params.push(filter.svc); }
-    if (filter?.address) { conditions.push("address = ?"); params.push(filter.address); }
+    if (filter?.type) conditions.push(eq(documents.docType, filter.type));
+    if (filter?.knowledgeKind) conditions.push(eq(documents.knowledgeKind, filter.knowledgeKind));
+    if (filter?.level) conditions.push(eq(documents.level, filter.level));
+    if (filter?.scope) conditions.push(eq(documents.scope, filter.scope));
+    if (filter?.aspect) conditions.push(eq(documents.aspect, filter.aspect));
+    if (filter?.depth) conditions.push(eq(documents.depth, filter.depth));
+    if (filter?.lifecycle) conditions.push(eq(documents.lifecycle, filter.lifecycle));
+    if (filter?.layer) conditions.push(eq(documents.layer, filter.layer));
+    if (filter?.svc) conditions.push(eq(documents.svc, filter.svc));
+    if (filter?.address) conditions.push(eq(documents.address, filter.address));
     if (filter?.tag) {
-      conditions.push("tags_json LIKE ?");
-      params.push(`%"${filter.tag}"%`);
+      conditions.push(like(documents.tagsJson, `%"${filter.tag}"%`));
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    return { where, params };
+    return conditions;
   }
 
-  private resolveOrderBy(sort?: string): string {
+  private resolveOrderBy(sort?: string) {
     switch (sort) {
-      case "synced_at": return "ORDER BY synced_at ASC";
-      case "synced_at_desc": return "ORDER BY synced_at DESC";
-      default: return "ORDER BY doc_id";
+      case "synced_at": return asc(documents.syncedAt);
+      case "synced_at_desc": return desc(documents.syncedAt);
+      default: return asc(documents.docId);
     }
   }
 
   getHistory(docId: string, limit = 50): DocHistoryRecord[] {
-    const rows = this.stmtGetHistory.all(docId, limit) as Record<string, unknown>[];
+    const rows = this.db
+      .select()
+      .from(documentHistory)
+      .where(eq(documentHistory.docId, docId))
+      .orderBy(desc(documentHistory.version))
+      .limit(limit)
+      .all();
     return rows.map(rowToHistory);
   }
 
   getVersion(docId: string, version: number): DocHistoryRecord | null {
-    const row = this.stmtGetVersion.get(docId, version) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(documentHistory)
+      .where(
+        and(
+          eq(documentHistory.docId, docId),
+          eq(documentHistory.version, version),
+        ),
+      )
+      .get();
     return row ? rowToHistory(row) : null;
   }
 }

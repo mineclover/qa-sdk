@@ -26,6 +26,9 @@ export class DocsController {
 
   @Get()
   list(
+    @Query("type") type?: string,
+    @Query("knowledge-kind") knowledgeKind?: string,
+    @Query("level") level?: string,
     @Query("scope") scope?: string,
     @Query("aspect") aspect?: string,
     @Query("depth") depth?: string,
@@ -40,7 +43,7 @@ export class DocsController {
     @Query("sort") sort?: string,
   ) {
     const result = this.docs.listPaginated({
-      scope, aspect, depth, lifecycle, layer, svc, tag, address, q,
+      type, knowledgeKind, level, scope, aspect, depth, lifecycle, layer, svc, tag, address, q,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
       sort: sort as "doc_id" | "synced_at" | "synced_at_desc" | undefined,
@@ -85,9 +88,22 @@ export class DocsController {
     return { docId, links: this.docs.getIncomingLinks(docId) };
   }
 
+  @Get(":docId/synthetic-incoming-links")
+  getSyntheticIncomingLinks(@Param("docId") docId: string) {
+    return { docId, links: this.docs.getSyntheticIncomingLinks(docId) };
+  }
+
   @Get(":docId/outgoing-links")
   getOutgoingLinks(@Param("docId") docId: string) {
     return { docId, links: this.docs.getOutgoingLinks(docId) };
+  }
+
+  @Get(":docId/feedback-requests")
+  getFeedbackRequests(@Param("docId") docId: string, @Query("limit") limit?: string) {
+    return {
+      docId,
+      items: this.docs.getFeedbackRequests(docId, limit ? Number(limit) : undefined),
+    };
   }
 
   // ── 단일 link/tag 원자적 추가/삭제 ────────────────────

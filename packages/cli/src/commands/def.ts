@@ -6,46 +6,63 @@
  *   --server: definition-service API (기본: localhost:3700)
  *   생략:     DB 파일 있으면 local, 없으면 server 시도
  *
- * Usage:
- *   qa-sdk def list [--scope=X] [--layer=Y] [--tag=Z] [--q=검색어]
- *   qa-sdk def get <문서ID>
- *   qa-sdk def children <문서ID>
- *   qa-sdk def parent <문서ID>
- *   qa-sdk def incoming <문서ID>
- *   qa-sdk def validate
- *   qa-sdk def stats
- *   qa-sdk def search <검색어>
- *
- * 레거시 (scanAndBuild 기반, DB 불필요):
- *   qa-sdk def scan
- *   qa-sdk def topdown <그룹ID>
- *   qa-sdk def bottomup <문서ID>
- *   qa-sdk def context <문서ID>
- *   qa-sdk def audit
+ * 모든 조회/분석 명령은 DefDataSource 기반. scan만 파일 직접 스캔.
  */
 
 import { join, resolve, relative } from "node:path";
-import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import {
   scanAndBuild,
-  extractFrontmatter,
-  topdown,
-  bottomup,
-  context,
-  validateGraph,
-  extractByLevel,
   LINK_TYPE_RULES,
-  type ScanResult,
+  readDefConfig,
+  detectDrift,
+  hashFrontmatter,
+  computeDistribution,
+  createInstance,
+  createHarnessRegistry,
+  deriveDocLifecycle,
+  deriveSpecImplState,
+  deriveConventionState,
+  deriveSyncState,
   type DefDataSource,
   type DefDoc,
+  type DefFeedbackRequestSummary,
+  type StateMachineInstance,
 } from "definition-catalog";
-import { createDataSource, type DataSourceOptions } from "../data-sources/index.js";
+import { createDataSource, syncDocsToLocalDb, type DataSourceOptions } from "definition-data-source";
 
 // ── 유틸 ──────────────────────────────────────────────
 
 function getRootDir(): string {
   return process.cwd();
+}
+
+type FeedbackTraceMatch = {
+  anchorDocId: string;
+  request: DefFeedbackRequestSummary;
+};
+
+async function collectFeedbackMatches(
+  source: DefDataSource,
+  docIds: readonly string[],
+): Promise<FeedbackTraceMatch[]> {
+
+  const seen = new Set<string>();
+  const matches: FeedbackTraceMatch[] = [];
+
+  for (const docId of docIds) {
+    const requests = await source.getFeedbackRequestsByDocId(docId, 20);
+    for (const request of requests) {
+      const key = `${docId}:${request.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      matches.push({ anchorDocId: docId, request });
+    }
+  }
+
+  return matches.toSorted((left, right) =>
+    right.request.createdAt.localeCompare(left.request.createdAt),
+  );
 }
 
 function parseFlags(args: string[]): { positional: string[]; options: DataSourceOptions; flags: Record<string, string> } {
@@ -77,6 +94,8 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
   const limit = flags["limit"] ? Number(flags["limit"]) : 50;
   const offset = flags["offset"] ? Number(flags["offset"]) : 0;
   const filter = {
+    type: flags["type"],
+    knowledgeKind: flags["knowledge-kind"],
     scope: flags["scope"],
     aspect: flags["aspect"],
     depth: flags["depth"],
@@ -136,6 +155,15 @@ async function cmdGet(source: DefDataSource, docId: string) {
     for (const l of otherLinks) console.log(`    → ${l.target} (${l.type})`);
   }
   if (doc.purpose) console.log(`\n  purpose: ${doc.purpose.slice(0, 200)}`);
+
+  const requests = await source.getFeedbackRequestsByDocId(docId, 5);
+  if (requests.length > 0) {
+    console.log(`\n  feedback requests:`);
+    for (const request of requests) {
+      const model = request.targetModel ? ` [${request.targetModel}]` : "";
+      console.log(`    - ${request.id}${model}: ${request.purpose}`);
+    }
+  }
 }
 
 async function cmdChildren(source: DefDataSource, docId: string) {
@@ -158,6 +186,15 @@ async function cmdIncoming(source: DefDataSource, docId: string) {
   const links = await source.getIncomingLinks(docId);
   console.log(`[${source.mode}] ${docId} ← ${links.length} incoming`);
   for (const l of links) console.log(`  ${l.source} (${l.type})`);
+
+  const syntheticIncoming = await source.getSyntheticIncomingLinks(docId);
+  if (syntheticIncoming.length > 0) {
+    console.log(`\n  feedback_request:`);
+    for (const link of syntheticIncoming) {
+      const model = link.targetModel ? ` [${link.targetModel}]` : "";
+      console.log(`  ${link.source}${model} (${link.type})`);
+    }
+  }
 }
 
 async function cmdValidate(source: DefDataSource) {
@@ -192,14 +229,14 @@ async function cmdImpact(source: DefDataSource, docId: string) {
   const incoming = await source.getIncomingLinks(docId);
   const outgoing = await source.getOutgoingLinks(docId);
   const parent = await source.getParent(docId);
-  const children = await source.getChildren(docId);
+  const _children = await source.getChildren(docId);
 
   // 주 기능 의존자 = depends_on으로 이 노드를 참조하는 문서
   const primary = incoming.filter(l => l.type === "depends_on" || l.type === "implements");
   // 제약 = constrains로 이 노드를 제한하는 문서
   const constraints = incoming.filter(l => l.type === "constrains");
   // 구조 = contains (부모/자식)
-  const structural = incoming.filter(l => l.type === "contains");
+  const _structural = incoming.filter(l => l.type === "contains");
   // 추적 = traces_to
   const traces = incoming.filter(l => l.type === "traces_to" || l.type === "refines");
 
@@ -250,6 +287,22 @@ async function cmdImpact(source: DefDataSource, docId: string) {
 
   if (constraints.length > 0) {
     console.log(`\n  ⚠ 제약 ${constraints.length}건 존재 — 위반 여부 확인 필수`);
+  }
+
+  const feedbackMatches = await collectFeedbackMatches(
+    source,
+    [docId, ...primary.map((link) => link.source)],
+  );
+  if (feedbackMatches.length > 0) {
+    console.log(`\n  ── Feedback Trace ──`);
+    for (const match of feedbackMatches.slice(0, 10)) {
+      const model = match.request.targetModel ? ` [${match.request.targetModel}]` : "";
+      console.log(`    ${match.request.id}${model} ← ${match.anchorDocId}`);
+      console.log(`      ${match.request.purpose}`);
+    }
+    if (feedbackMatches.length > 10) {
+      console.log(`    ... 외 ${feedbackMatches.length - 10}건`);
+    }
   }
 }
 
@@ -322,9 +375,9 @@ async function cmdStats(source: DefDataSource) {
 
   console.log(`[${source.mode}] 총 ${all.length}건 (approved ${approved.length}, deprecated ${deprecated.length})\n`);
   console.log("scope:");
-  Object.entries(byScope).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log(`  ${k}: ${v}`));
+  Object.entries(byScope).toSorted((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log(`  ${k}: ${v}`));
   console.log("\nlayer:");
-  Object.entries(byLayer).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log(`  ${k}: ${v}`));
+  Object.entries(byLayer).toSorted((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log(`  ${k}: ${v}`));
 }
 
 async function cmdOverview(source: DefDataSource) {
@@ -364,18 +417,18 @@ async function cmdOverview(source: DefDataSource) {
 
   // scope×aspect 매트릭스
   console.log("scope×aspect 분포:");
-  for (const [scope, aspects] of Object.entries(matrix).sort((a, b) => Object.values(b[1]).reduce((s, v) => s + v, 0) - Object.values(a[1]).reduce((s, v) => s + v, 0))) {
+  for (const [scope, aspects] of Object.entries(matrix).toSorted((a, b) => Object.values(b[1]).reduce((s, v) => s + v, 0) - Object.values(a[1]).reduce((s, v) => s + v, 0))) {
     const total = Object.values(aspects).reduce((s, v) => s + v, 0);
-    const detail = Object.entries(aspects).sort((a, b) => b[1] - a[1]).map(([a, c]) => `${a}(${c})`).join(", ");
+    const detail = Object.entries(aspects).toSorted((a, b) => b[1] - a[1]).map(([a, c]) => `${a}(${c})`).join(", ");
     console.log(`  ${scope}: ${total} — ${detail}`);
   }
   console.log();
 
   // svc 커버리지
   console.log("서비스별 (scope 커버리지):");
-  const svcEntries = Object.entries(bySvc).sort((a, b) => b[1].count - a[1].count);
+  const svcEntries = Object.entries(bySvc).toSorted((a, b) => b[1].count - a[1].count);
   for (const [svc, { count, scopes }] of svcEntries.slice(0, 15)) {
-    const scopeList = [...scopes].sort().join(",");
+    const scopeList = [...scopes].toSorted().join(",");
     console.log(`  ${svc.padEnd(25)} ${String(count).padStart(3)}건  scopes: ${scopeList}`);
   }
   if (svcEntries.length > 15) console.log(`  ... 외 ${svcEntries.length - 15}건`);
@@ -427,91 +480,230 @@ async function cmdAuditDb(source: DefDataSource) {
   }
 }
 
-// ── 레거시 (scanAndBuild 기반) ────────────────────────
+// ── topdown (DefDataSource 기반) ──────────────────────
 
-async function scan(): Promise<ScanResult> {
-  const root = getRootDir();
-  return scanAndBuild(root, [join(root, "docs")]);
-}
+async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpose" | "overview" = "purpose") {
+  const group = await source.get(groupId);
+  if (!group) { console.log(`문서 "${groupId}" 없음`); return; }
 
-async function loadBodies(result: ScanResult, root: string): Promise<Map<string, string>> {
-  const bodies = new Map<string, string>();
-  for (const entry of result.registry.all()) {
-    if (!entry.ref) continue;
-    try {
-      const content = await readFile(join(root, entry.ref), "utf-8");
-      const fm = extractFrontmatter(content);
-      if (fm) bodies.set(entry.id, fm.body);
-    } catch { /* skip */ }
-  }
-  return bodies;
-}
+  console.log(`# ${group.title ?? group.docId}\n`);
+  if (group.purpose) console.log(`${group.purpose}\n`);
+  const tags = group.tags.length > 0 ? `concerns: ${group.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated").join(", ")}` : "";
+  if (tags) console.log(`${tags}\n`);
 
-async function legacyScan() {
-  const result = await scan();
-  console.log(`스캔 완료: ${result.registered}건 등록, ${result.linked}건 링크`);
-  if (result.errors.length > 0) {
-    console.log(`\n파싱 에러 ${result.errors.length}건:`);
-    result.errors.slice(0, 5).forEach(e => console.log(`  ${e.file}: ${e.error}`));
-  }
-}
+  const children = await source.getChildren(groupId);
+  // scope 순서: constraint → data → feature → flow → interface → state → ui
+  const sorted = children.toSorted((a, b) => a.scope.localeCompare(b.scope) || a.docId.localeCompare(b.docId));
 
-async function legacyTopdown(groupId: string, level: "purpose" | "overview" = "purpose") {
-  console.log(await topdown(getRootDir(), groupId, level));
-}
-
-async function legacyBottomup(docId: string) {
-  console.log(await bottomup(getRootDir(), docId));
-}
-
-async function legacyContext(docId: string) {
-  console.log(await context(getRootDir(), docId));
-}
-
-async function legacyAudit(fix = false) {
-  const result = await scan();
-  const root = getRootDir();
-  const bodies = await loadBodies(result, root);
-  const reg = result.registry;
-
-  let total = 0, withPurpose = 0, withLinks = 0, withTags = 0;
-  const issues: string[] = [];
-
-  for (const entry of reg.all()) {
-    if (entry.lifecycle === "deprecated") continue;
-    total++;
-    const body = bodies.get(entry.id);
-    if (body) {
-      const p = extractByLevel(body, "purpose");
-      if (p.text.length > 0) withPurpose++;
-      else issues.push(`[high] ${entry.id}: ^purpose 없음`);
+  for (const child of sorted) {
+    const prefix = child.level === "module" || child.level === "unit" ? `[${child.level}] ` : "";
+    const scopeTag = `[${child.scope.split("/")[0]}]`;
+    console.log(`## ${scopeTag} ${prefix}${child.title ?? child.docId}`);
+    if (level === "purpose" && child.purpose) {
+      console.log(child.purpose);
+    } else if (level === "overview") {
+      if (child.purpose) console.log(child.purpose);
+      // overview 레벨에서는 하위 children도 간략히 표시
+      const grandchildren = await source.getChildren(child.docId);
+      if (grandchildren.length > 0) {
+        for (const gc of grandchildren) {
+          console.log(`  - ${gc.docId}: ${gc.purpose?.slice(0, 100) ?? "(purpose 없음)"}`);
+        }
+      }
     }
-    const outgoing = reg.getLinks(entry.id, "outgoing");
-    if (outgoing.some(l => l.linkType !== "contains")) withLinks++;
-    if (entry.tags && entry.tags.length > 0) withTags++;
+    console.log();
+  }
+}
+
+// ── bottomup (DefDataSource 기반) ─────────────────────
+
+async function cmdBottomup(source: DefDataSource, docId: string) {
+  const doc = await source.get(docId);
+  if (!doc) { console.log(`문서 "${docId}" 없음`); return; }
+
+  // BFS로 영향 범위 역추적
+  const visited = new Set<string>();
+  const queue: Array<{ id: string; depth: number; via: string }> = [{ id: docId, depth: 0, via: "" }];
+  const affected: Array<{ id: string; depth: number; via: string }> = [];
+  const groups = new Set<string>();
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (visited.has(current.id)) continue;
+    visited.add(current.id);
+    if (current.depth > 0) affected.push(current);
+
+    const incoming = await source.getIncomingLinks(current.id);
+    for (const link of incoming) {
+      if (visited.has(link.source)) continue;
+      const srcDoc = await source.get(link.source);
+      if (srcDoc && (srcDoc.level === "module" || srcDoc.level === "unit" || srcDoc.level === "area")) {
+        groups.add(link.source);
+      }
+      queue.push({ id: link.source, depth: current.depth + 1, via: `${link.type} ↑` });
+    }
   }
 
-  // 그래프 검증
-  const validation = validateGraph(result.registry);
+  console.log(`# 영향 분석: ${docId}\n`);
+  console.log(`blast radius: ${affected.length}건`);
+
+  if (groups.size > 0) {
+    console.log(`\n## 그룹 영향`);
+    for (const g of groups) console.log(`- ${g}`);
+  }
+
+  if (affected.length > 0) {
+    console.log(`\n## 영향받는 문서`);
+    const sorted = affected.toSorted((a, b) => a.depth - b.depth);
+    for (const a of sorted) {
+      console.log(`- [${a.via}] ${a.id} (depth ${a.depth})`);
+    }
+  }
+
+  const feedbackMatches = await collectFeedbackMatches(
+    source,
+    [docId, ...affected.map((item) => item.id)],
+  );
+  if (feedbackMatches.length > 0) {
+    console.log(`\n## Feedback Trace`);
+    for (const match of feedbackMatches.slice(0, 10)) {
+      const model = match.request.targetModel ? ` [${match.request.targetModel}]` : "";
+      console.log(`- ${match.request.id}${model} ← ${match.anchorDocId}`);
+      console.log(`  ${match.request.purpose}`);
+    }
+    if (feedbackMatches.length > 10) {
+      console.log(`  ... 외 ${feedbackMatches.length - 10}건`);
+    }
+  }
+}
+
+// ── context (DefDataSource 기반) ──────────────────────
+
+async function cmdContext(source: DefDataSource, docId: string) {
+  const doc = await source.get(docId);
+  if (!doc) { console.log(`문서 "${docId}" 없음`); return; }
+
+  const parent = await source.getParent(docId);
+  const outgoing = await source.getOutgoingLinks(docId);
+  const incoming = await source.getIncomingLinks(docId);
+
+  console.log(`# 컨텍스트: ${doc.title ?? doc.docId}\n`);
+  const typeLabel = doc.type === "knowledge" && doc.knowledgeKind
+    ? `type: knowledge/${doc.knowledgeKind}`
+    : doc.type ? `type: ${doc.type}` : "";
+  console.log(`scope: ${doc.scope}/${doc.aspect}  depth: ${doc.depth}  lifecycle: ${doc.lifecycle}`);
+  if (typeLabel) console.log(typeLabel);
+  if (doc.layer) console.log(`layer: ${doc.layer}`);
+  if (doc.svc) console.log(`svc: ${doc.svc}`);
+  if (doc.address) console.log(`address: ${doc.address}`);
+
+  // 목적
+  if (doc.purpose) {
+    console.log(`\n## 이 문서의 목적`);
+    console.log(doc.purpose);
+  }
+
+  // 소속 (부모 그룹)
+  if (parent) {
+    console.log(`\n## 소속`);
+    console.log(`- ${parent.docId}: ${parent.purpose?.slice(0, 120) ?? ""}`);
+  }
+
+  // 적용되는 제약
+  const constraints = outgoing.filter(l => l.type === "constrains" || l.type === "implements");
+  const constraintIncoming = incoming.filter(l => l.type === "constrains");
+  if (constraints.length > 0 || constraintIncoming.length > 0) {
+    console.log(`\n## 적용되는 제약`);
+    for (const c of constraintIncoming) {
+      const cDoc = await source.get(c.source);
+      console.log(`- [${c.source}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+    }
+  }
+
+  // 의존 대상
+  const deps = outgoing.filter(l => l.type === "depends_on" || l.type === "implements" || l.type === "refines");
+  if (deps.length > 0) {
+    console.log(`\n## 의존 대상`);
+    for (const d of deps) {
+      const dDoc = await source.get(d.target);
+      console.log(`- [${d.type}] ${d.target}: ${dDoc?.purpose?.slice(0, 100) ?? ""}`);
+    }
+  }
+
+  // concerns (태그 기반 — 직접 + 상속)
+  const directConcerns = doc.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated");
+  const inheritedConcerns: string[] = [];
+  for (const link of [...deps, ...(parent ? [{ target: parent.docId, type: "contains" }] : [])]) {
+    const target = await source.get(link.target);
+    if (!target) continue;
+    const tConcerns = target.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated");
+    for (const c of tConcerns) {
+      inheritedConcerns.push(`${c} from ${link.target} via ${link.type}`);
+    }
+  }
+  if (directConcerns.length > 0 || inheritedConcerns.length > 0) {
+    console.log(`\n## concerns`);
+    if (directConcerns.length > 0) console.log(`직접: ${directConcerns.join(", ")}`);
+    if (inheritedConcerns.length > 0) {
+      for (const ic of [...new Set(inheritedConcerns)]) {
+        console.log(`상속: ${ic}`);
+      }
+    }
+  }
+
+  // 영향 범위
+  const blastRadius = incoming.filter(l => l.type !== "contains");
+  console.log(`\n## 영향 범위`);
+  console.log(`blast radius: ${blastRadius.length}건`);
+  for (const b of blastRadius.slice(0, 10)) {
+    console.log(`- [${b.type}] ${b.source}`);
+  }
+  if (blastRadius.length > 10) console.log(`  ... 외 ${blastRadius.length - 10}건`);
+
+  const requests = await source.getFeedbackRequestsByDocId(docId, 5);
+  if (requests.length > 0) {
+    console.log(`\n## 최근 Feedback Requests`);
+    for (const request of requests) {
+      const model = request.targetModel ? ` [${request.targetModel}]` : "";
+      console.log(`- ${request.id}${model}: ${request.purpose}`);
+    }
+  }
+}
+
+// ── audit (DefDataSource 기반, 레거시 통합) ───────────
+
+async function cmdAudit(source: DefDataSource) {
+  const all = await source.list({ limit: 2000 });
+  const active = all.filter(d => d.lifecycle !== "deprecated" && d.lifecycle !== "archived");
+
+  let withPurpose = 0, withTags = 0;
+  // links 카운트: DefDoc.links 필드에 이미 outgoing links가 포함됨
+  let withLinks = 0;
+  for (const d of active) {
+    if (d.purpose && d.purpose.length > 0) withPurpose++;
+    if (d.links.some(l => l.type !== "contains")) withLinks++;
+    if (d.tags.length > 0) withTags++;
+  }
 
   // level 분포
   const byLevel: Record<string, number> = {};
-  for (const entry of reg.all()) {
-    if (entry.lifecycle === "deprecated") continue;
-    const level = entry.level ?? "leaf";
+  for (const d of active) {
+    const level = d.level ?? "leaf";
     byLevel[level] = (byLevel[level] || 0) + 1;
   }
 
   console.log(`=== 품질 리포트 ===`);
-  console.log(`문서 ${total}건 | purpose ${withPurpose} | links ${withLinks} | tags ${withTags}`);
-  console.log(`level: ${Object.entries(byLevel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
+  console.log(`문서 ${active.length}건 | purpose ${withPurpose} | links ${withLinks} | tags ${withTags}`);
+  console.log(`level: ${Object.entries(byLevel).toSorted((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
 
+  // 그래프 검증
+  const validation = await source.validate();
   if (validation.issues.length > 0) {
     const byType: Record<string, typeof validation.issues[number][]> = {};
     for (const i of validation.issues) (byType[i.type] ??= []).push(i);
 
     console.log(`\n=== 그래프 검증 (errors=${validation.errors} warnings=${validation.warnings}) ===`);
-    for (const [type, items] of Object.entries(byType).sort((a, b) => b[1].length - a[1].length)) {
+    for (const [type, items] of Object.entries(byType).toSorted((a, b) => b[1].length - a[1].length)) {
       console.log(`\n[${items[0]!.severity}] ${type}: ${items.length}건`);
       for (const i of items) console.log(`  ${i.docId}: ${i.message}`);
     }
@@ -519,55 +711,39 @@ async function legacyAudit(fix = false) {
     console.log(`\n그래프 검증 통과 (이슈 0건)`);
   }
 
-  if (issues.length > 0) {
-    console.log(`\n=== purpose 이슈 ${issues.length}건 ===`);
-    issues.slice(0, 10).forEach(i => console.log(`  ${i}`));
-    if (issues.length > 10) console.log(`  ... 외 ${issues.length - 10}건`);
-  }
-
-  // --fix: DB 동기화
-  if (fix) {
-    console.log("\n=== 자동 보강 ===");
-    const DB_PATHS = ["data/definition-service.sqlite", "packages/definition-service/data/definition-service.sqlite"];
-    let synced = 0;
-
-    for (const dbPath of DB_PATHS) {
-      const fullPath = join(getRootDir(), dbPath);
-      if (!existsSync(fullPath)) continue;
-
-      try {
-        const Database = (await import("better-sqlite3")).default;
-        const db = new Database(fullPath);
-
-        // level 컬럼 확보
-        try { db.exec("ALTER TABLE documents ADD COLUMN level TEXT DEFAULT 'leaf'"); } catch { /* already exists */ }
-
-        // level 동기화
-        for (const entry of reg.all()) {
-          if (entry.level) {
-            db.prepare("UPDATE documents SET level = ? WHERE doc_id = ?").run(entry.level, entry.id);
-          }
-        }
-
-        // FTS 재구축
-        db.exec("DROP TABLE IF EXISTS documents_fts");
-        db.exec("CREATE VIRTUAL TABLE documents_fts USING fts5(doc_id, purpose, intent, context, caveat, content=documents, content_rowid=rowid)");
-        db.exec("INSERT INTO documents_fts(documents_fts) VALUES('rebuild')");
-
-        db.close();
-        synced++;
-        console.log(`  DB 동기화 완료: ${dbPath}`);
-      } catch (e) {
-        console.log(`  DB 동기화 실패: ${dbPath} — ${e instanceof Error ? e.message : String(e)}`);
-      }
-    }
-
-    console.log(`\n리포트: errors=${validation.errors} warnings=${validation.warnings} purpose=${withPurpose}/${total} DB=${synced}개 동기화`);
+  // purpose 이슈
+  const noPurpose = active.filter(d => !d.purpose || d.purpose.length === 0);
+  if (noPurpose.length > 0) {
+    console.log(`\n=== purpose 이슈 ${noPurpose.length}건 ===`);
+    noPurpose.slice(0, 10).forEach(d => console.log(`  [high] ${d.docId}: ^purpose 없음`));
+    if (noPurpose.length > 10) console.log(`  ... 외 ${noPurpose.length - 10}건`);
   }
 }
 
-async function legacyAuditFix() {
-  return legacyAudit(true);
+// ── scan (파일 스캔 유틸) ──────────────────────────────
+
+/** 파일 시스템에서 docs/ 하위 .md를 스캔하여 ScanResult 반환 */
+async function scan() {
+  const root = getRootDir();
+  return scanAndBuild(root, [join(root, "docs")]);
+}
+
+/** scan = sync의 alias. 파일 스캔 + DB 동기화를 한번에 수행. */
+async function cmdScan(flags: Record<string, string>) {
+  return cmdSync(flags);
+}
+
+async function cmdSync(flags: Record<string, string>) {
+  const root = getRootDir();
+  const dbPath = flags["db"] ?? flags["db-path"];
+  const docsDir = flags["docs"] ?? "docs";
+  const result = await syncDocsToLocalDb({
+    rootDir: root,
+    docsDir,
+    ...(dbPath ? { dbPath } : {}),
+  });
+  console.log(`동기화 완료: ${result.synced}건 문서, ${result.links}건 링크`);
+  console.log(`DB: ${result.dbPath}`);
 }
 
 // ── 라우터 ────────────────────────────────────────────
@@ -577,8 +753,18 @@ export async function cliDef(args: string[]): Promise<void> {
   const sub = positional[0];
   const rest = positional.slice(1);
 
-  // DataSource 기반 커맨드
-  const dsCommands = new Set(["list", "get", "children", "parent", "incoming", "validate", "search", "stats", "impact", "check", "audit-db", "overview", "find-by-file", "guide"]);
+  // scan은 파일 스캔 전용 (DB 불필요)
+  if (sub === "scan") return cmdScan(flags);
+  if (sub === "sync") return cmdSync(flags);
+  if (sub === "link-rules") return cmdLinkRules();
+  if (sub === "state") return cmdState(rest, flags);
+
+  // DefDataSource 기반 커맨드 (전체 통합)
+  const dsCommands = new Set([
+    "list", "get", "children", "parent", "incoming", "validate", "search", "stats",
+    "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide",
+    "topdown", "bottomup", "context",
+  ]);
   if (dsCommands.has(sub)) {
     let source: DefDataSource;
     try {
@@ -600,10 +786,20 @@ export async function cliDef(args: string[]): Promise<void> {
         case "stats": return await cmdStats(source);
         case "impact": return await cmdImpact(source, rest[0]);
         case "check": return await cmdCheck(source, rest[0]);
+        case "audit": return await cmdAudit(source);
         case "audit-db": return await cmdAuditDb(source);
         case "overview": return await cmdOverview(source);
         case "find-by-file": return await cmdFindByFile(source, rest[0] ?? "");
         case "guide": return await cmdGuide(source, rest[0]);
+        case "topdown":
+          if (!rest[0]) { console.log("Usage: qa-sdk def topdown <그룹ID>"); return; }
+          return await cmdTopdown(source, rest[0], flags["overview"] === "true" ? "overview" : "purpose");
+        case "bottomup":
+          if (!rest[0]) { console.log("Usage: qa-sdk def bottomup <문서ID>"); return; }
+          return await cmdBottomup(source, rest[0]);
+        case "context":
+          if (!rest[0]) { console.log("Usage: qa-sdk def context <문서ID>"); return; }
+          return await cmdContext(source, rest[0]);
       }
     } finally {
       if ("close" in source && typeof source.close === "function") (source as { close(): void }).close();
@@ -611,20 +807,8 @@ export async function cliDef(args: string[]): Promise<void> {
     return;
   }
 
-  // 레거시 (scanAndBuild 기반)
+  // 알 수 없는 명령
   switch (sub) {
-    case "scan": return legacyScan();
-    case "topdown":
-      if (!rest[0]) { console.log("Usage: qa-sdk def topdown <그룹ID>"); return; }
-      return legacyTopdown(rest[0], rest.includes("--overview") ? "overview" : "purpose");
-    case "bottomup":
-      if (!rest[0]) { console.log("Usage: qa-sdk def bottomup <문서ID>"); return; }
-      return legacyBottomup(rest[0]);
-    case "context":
-      if (!rest[0]) { console.log("Usage: qa-sdk def context <문서ID>"); return; }
-      return legacyContext(rest[0]);
-    case "audit": return flags["fix"] ? legacyAuditFix() : legacyAudit();
-    case "link-rules": return cmdLinkRules();
     default:
       console.log(`qa-sdk def — 문서 관리
 
@@ -655,7 +839,13 @@ export async function cliDef(args: string[]): Promise<void> {
   validate            깨진 링크/순환/고아 검증
   stats               분포 통계
   check <ID>          문서 정합성 점검
-  link-rules          LinkType 사용 규칙`);
+  link-rules          LinkType 사용 규칙
+
+상태:
+  state               전체 머신 상태 분포
+  state <머신ID>      특정 머신 분포
+  state <문서ID>      문서별 상태
+  state --deps        머신 간 의존 관계`);
   }
 }
 
@@ -671,6 +861,7 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
     return;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- !match 검사 통과 후 캡처 그룹 [1] 존재 보장
   const pkgDir = match[1]!;
   const pkgJsonPath = join(root, "packages", pkgDir, "package.json");
 
@@ -740,8 +931,8 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
 
   // 5. 코드 심볼 요약
   try {
-    const source = readFileSync(absPath, "utf-8");
-    const exports = source.match(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+(\w+)/gm);
+    const fileContent = readFileSync(absPath, "utf-8");
+    const exports = fileContent.match(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+(\w+)/gm);
     if (exports && exports.length > 0) {
       console.log(`\n코드 export (${exports.length}건):`);
       for (const exp of exports.slice(0, 10)) {
@@ -766,15 +957,15 @@ async function cmdGuide(source: DefDataSource, topic?: string) {
       return;
     }
     case "classification": {
-      const taxonomy = await source.get("definition-taxonomy");
-      const level = await source.get("definition-level");
+      const _taxonomy = await source.get("definition-taxonomy");
+      const _level = await source.get("definition-level");
       console.log("=== 문서 분류 체계 ===\n");
       console.log("분류 축:");
       console.log("  scope (7종)  — 무엇에 대한 정의인가 (ui/feature/flow/state/constraint/data/interface)");
       console.log("  aspect (22종) — 어떤 측면을 정의하는가 (scope별 2~5종)");
       console.log("  depth (4종)  — 얼마나 상세한가 (overview/specification/implementation/validation)");
       console.log("\n메타데이터:");
-      console.log("  level (5종)  — 어떤 분해 단위인가 (system/area/unit/module/leaf)");
+      console.log("  level (3종)  — 문서의 역할 (group/module/leaf)");
       console.log("  layer (4종)  — 왜 존재하는가 (domain/operation/mediation/experience)");
       console.log("  lifecycle    — 현재 상태 (draft/review/approved/deprecated/archived)");
       console.log("\n더 알아보기:");
@@ -828,7 +1019,7 @@ async function cmdGuide(source: DefDataSource, topic?: string) {
       console.log("=== qa-sdk 시스템 가이드 ===\n");
       console.log(root?.purpose ?? "");
       console.log(`\n문서 ${allDocs.length}건 (approved ${approved}, deprecated ${deprecated})`);
-      console.log(`level: ${Object.entries(byLevel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
+      console.log(`level: ${Object.entries(byLevel).toSorted((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
 
       console.log("\n=== 영역 구조 ===\n");
       for (const a of areas) {
@@ -861,9 +1052,180 @@ function cmdLinkRules() {
   }
 }
 
-// 하위 호환
-export { legacyScan as cliDefScan };
-export { legacyTopdown as cliDefTopdown };
-export { legacyBottomup as cliDefBottomup };
-export { legacyContext as cliDefContext };
-export { legacyAudit as cliDefAudit };
+// ── def state — 하네스 상태 분포 ───────────────────────
+
+async function cmdState(rest: string[], flags: Record<string, string>) {
+  const root = getRootDir();
+  const registry = createHarnessRegistry();
+
+  // --deps: 의존 관계만 출력
+  if (flags["deps"]) {
+    printDeps(registry);
+    return;
+  }
+
+  // 문서 스캔 + config 로드
+  const scanResult = await scan();
+  const config = await readDefConfig(root);
+  const configExists = config.lastSyncedAt !== "";
+
+  // checksum 비교 — drift 감지
+  const currentChecksums: Record<string, string> = {};
+  for (const entry of scanResult.registry.all()) {
+    const id = entry.id;
+    currentChecksums[id] = hashFrontmatter(
+      `${entry.scope}:${entry.aspect}:${entry.depth}:${entry.level ?? "leaf"}:${entry.lifecycle}`,
+    );
+  }
+  const drift = detectDrift(config, currentChecksums);
+  const checksumMatch = drift.length === 0;
+
+  // 전역 sync 상태
+  const syncState = deriveSyncState({
+    configExists,
+    configCount: config.documentCount,
+    scanCount: scanResult.registered,
+    checksumMatch,
+  });
+
+  // 각 문서별 상태 파생
+  const docStates: { id: string; lifecycle: string; specImpl: string; convention: string }[] = [];
+  for (const entry of scanResult.registry.all()) {
+    const id = entry.id;
+    const lifecycle = deriveDocLifecycle(entry.lifecycle);
+
+    const hasSvc = !!entry.svc;
+    const svcDir = entry.svc ? join(root, "packages", entry.svc) : null;
+    let hasCode = false;
+    let hasTests = false;
+    if (svcDir) {
+      try {
+        const { readdirSync } = await import("node:fs");
+        const srcDir = join(svcDir, "src");
+        hasCode = existsSync(srcDir) && readdirSync(srcDir).some(f => f.endsWith(".ts"));
+        hasTests = existsSync(srcDir) && readdirSync(srcDir).some(f => f.endsWith(".test.ts"));
+      } catch { /* 디렉토리 없음 */ }
+    }
+
+    const specImpl = deriveSpecImplState({
+      hasSvc,
+      hasCode,
+      hasTests,
+      testsPass: null,
+      isSourceReferenced: entry.depth === "implementation" || entry.depth === "validation",
+    });
+
+    // convention: 현재 spec-tracker 미연동 → unverified
+    const convention = deriveConventionState({
+      evidenceCount: 0,
+      coverage: 0,
+      hasFailures: false,
+    });
+
+    docStates.push({ id, lifecycle, specImpl, convention });
+  }
+
+  const target = rest[0];
+
+  // 특정 머신 분포
+  if (target && registry.machines.has(target)) {
+    printMachineDistribution(target, docStates, syncState);
+    return;
+  }
+
+  // 특정 문서 상태
+  if (target) {
+    const doc = docStates.find(d => d.id === target);
+    if (!doc) { console.log(`문서 "${target}" 없음`); return; }
+    console.log(`${doc.id}`);
+    console.log(`  doc-lifecycle:          ${doc.lifecycle}`);
+    console.log(`  spec-impl:              ${doc.specImpl}`);
+    console.log(`  convention-compliance:   ${doc.convention}`);
+    console.log(`  db-sync:                ${syncState}`);
+    return;
+  }
+
+  // 전체 분포
+  console.log(`── 문서 계층 (${docStates.length}건) ──────────────────────`);
+  printDistributionLine("doc-lifecycle", docStates.map(d => d.lifecycle));
+  printDistributionLine("spec-impl", docStates.map(d => d.specImpl));
+  printDistributionLine("convention", docStates.map(d => d.convention));
+  console.log(`db-sync              ${syncState}`);
+
+  console.log(`\n── 시스템 계층 ────────────────────────`);
+  console.log(`address-state        (외부 서비스 연결 필요)`);
+  console.log(`version-lifecycle    (외부 서비스 연결 필요)`);
+  console.log(`service-status       (외부 서비스 연결 필요)`);
+  console.log(`event-status         (외부 서비스 연결 필요)`);
+  console.log(`metric-health        (외부 서비스 연결 필요)`);
+
+  console.log(`\n── 프로세스 계층 ──────────────────────`);
+  console.log(`decision-flow        (외부 서비스 연결 필요)`);
+  console.log(`policy-candidate     (외부 서비스 연결 필요)`);
+}
+
+function printDistributionLine(label: string, states: string[]) {
+  const counts = new Map<string, number>();
+  for (const s of states) {
+    counts.set(s, (counts.get(s) ?? 0) + 1);
+  }
+  const parts = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([state, count]) => `${state}(${count})`);
+  console.log(`${label.padEnd(21)}${parts.join(" ")}`);
+}
+
+function printMachineDistribution(
+  machineId: string,
+  docStates: { id: string; lifecycle: string; specImpl: string; convention: string }[],
+  syncState: string,
+) {
+  const docMachineField: Record<string, keyof typeof docStates[0]> = {
+    "doc-lifecycle": "lifecycle",
+    "spec-impl": "specImpl",
+    "convention-compliance": "convention",
+  };
+
+  const field = docMachineField[machineId];
+  if (field) {
+    const values = docStates.map(d => d[field]);
+    printDistributionLine(machineId, values);
+    console.log(`\n상세:`);
+    for (const d of docStates) {
+      console.log(`  ${d.id.padEnd(40)} ${d[field]}`);
+    }
+    return;
+  }
+
+  if (machineId === "db-sync") {
+    console.log(`db-sync: ${syncState}`);
+    return;
+  }
+
+  console.log(`${machineId}: 외부 서비스 연결 필요`);
+}
+
+function printDeps(registry: ReturnType<typeof createHarnessRegistry>) {
+  const cascade = registry.dependencies.filter(d => d.kind === "cascade");
+  const guard = registry.dependencies.filter(d => d.kind === "guard");
+  const notify = registry.dependencies.filter(d => d.kind === "notify");
+
+  if (cascade.length > 0) {
+    console.log("cascade:");
+    for (const d of cascade) {
+      console.log(`  ${d.sourceMachine}:${d.sourceState} → ${d.targetMachine}:${d.targetState}  (${d.label})`);
+    }
+  }
+  if (guard.length > 0) {
+    console.log("guard:");
+    for (const d of guard) {
+      console.log(`  ${d.sourceMachine}:${d.sourceState} → ${d.targetMachine}:${d.targetState}  (${d.label})`);
+    }
+  }
+  if (notify.length > 0) {
+    console.log("notify:");
+    for (const d of notify) {
+      console.log(`  ${d.sourceMachine}:${d.sourceState} → ${d.targetMachine}:${d.targetState}  (${d.label})`);
+    }
+  }
+}
