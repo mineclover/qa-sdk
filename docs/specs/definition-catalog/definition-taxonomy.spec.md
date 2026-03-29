@@ -17,6 +17,8 @@ def:
       type: contains
     - target: definition-addressing
       type: contains
+    - target: definition-state-model
+      type: contains
 ---
 # Definition Taxonomy — 문서 분류 체계
 

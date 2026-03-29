@@ -120,6 +120,17 @@ export { readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath
 export type { AddressAssignment } from "./address-assign.js";
 export { assignUniqueAddresses, buildIdToAddressMap, buildAddressToIdMap } from "./address-assign.js";
 
+// ─── 상태 모델 ─────────────────────────────────────────
+export type {
+  StateDefinition, TransitionRule, StateMachineDefinition,
+  StateMachineInstance, StateTransitionRecord, StateDistribution,
+  DocLifecycleState, SpecImplState, ConventionState, SyncState,
+} from "./state-model.js";
+export {
+  createInstance, transition, availableTransitions, computeDistribution,
+  DOC_LIFECYCLE_MACHINE, SPEC_IMPL_MACHINE, CONVENTION_MACHINE, SYNC_MACHINE,
+} from "./state-model.js";
+
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";
 export { MemoryDefinitionRegistry } from "./registry.js";
@@ -187,11 +198,12 @@ export type { ExtractLevel, StandardMarker, Marker, MarkedSection, MarkedLine, E
 export { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
 
 // ─── Frontmatter 파서 + 스캐너 ──────────────────────────
-export type { FrontmatterDef, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
+export type { FrontmatterDef, FrontmatterGate, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
 export {
   extractFrontmatter,
   parseYaml,
   extractDef,
+  extractGate,
   parseDocument,
   scanAndBuild,
   computeAllConcerns,
