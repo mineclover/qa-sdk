@@ -15,7 +15,7 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
     await configStore.set("demo", "dkg-config", JSON.stringify(DEMO_DKG_CONFIG));
     logger.info("seeded DEMO_DKG_CONFIG to config store");
   } catch (error) {
-    logger.warn({ error: error instanceof Error ? error.message : String(error) }, "Failed to seed DEMO_DKG_CONFIG");
+    logger.warn({ err: error }, "Failed to seed DEMO_DKG_CONFIG");
   }
 
   try {
@@ -23,7 +23,7 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
     await configStore.set("demo", "pattern-rules", JSON.stringify(convergence.DEMO_PATTERN_RULES));
     logger.info("seeded DEMO_PATTERN_RULES to config store");
   } catch (error) {
-    logger.warn({ error: error instanceof Error ? error.message : String(error) }, "Failed to seed DEMO_PATTERN_RULES");
+    logger.warn({ err: error }, "Failed to seed DEMO_PATTERN_RULES");
   }
 
   // 서비스 목록 seed

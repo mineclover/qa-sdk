@@ -1,36 +1,35 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { eq } from "drizzle-orm";
+import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
+import {
+  flowSchemas,
+  type FlowSchemaGate,
+  type FlowSchemaOutcome,
+  type FlowSchemaRow,
+} from "../../db/schema.js";
 
 export interface FlowSchemaRecord {
   schemaId: string;
   name: string;
   description?: string;
   version: string;
-  gates: { id: string; label: string; weight: string; phase: string; branches: { id: string; label: string }[] }[];
-  outcomes: { id: string; label: string }[];
+  gates: FlowSchemaGate[];
+  outcomes: FlowSchemaOutcome[];
   meta: Record<string, unknown>;
   registeredAt: string;
   updatedAt: string;
 }
 
-function rowToSchema(row: Record<string, unknown>): FlowSchemaRecord {
+function rowToSchema(row: FlowSchemaRow): FlowSchemaRecord {
   return {
-    schemaId: row["schema_id"] as string,
-    name: row["name"] as string,
-    description: (row["description"] as string) || undefined,
-    version: row["version"] as string,
-    gates: JSON.parse((row["gates"] as string) || "[]"),
-    outcomes: JSON.parse((row["outcomes"] as string) || "[]"),
-    meta: JSON.parse((row["meta"] as string) || "{}"),
-    registeredAt: row["registered_at"] as string,
-    updatedAt: row["updated_at"] as string,
+    ...row,
+    description: row.description ?? undefined,
   };
 }
 
 @Injectable()
 export class SchemasService {
-  constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
+  constructor(@Inject(DATABASE) private readonly db: DecisionServiceDatabase) {}
 
   register(input: {
     schemaId: string;
@@ -42,34 +41,62 @@ export class SchemasService {
     meta?: Record<string, unknown>;
   }): FlowSchemaRecord {
     const now = new Date().toISOString();
-    this.db.prepare(`
-      INSERT INTO flow_schemas (schema_id, name, description, version, gates, outcomes, meta, registered_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(schema_id) DO UPDATE SET
-        name=excluded.name, description=excluded.description, version=excluded.version,
-        gates=excluded.gates, outcomes=excluded.outcomes,
-        meta=excluded.meta, updated_at=excluded.updated_at
-    `).run(
-      input.schemaId, input.name, input.description ?? null,
-      input.version ?? "v1",
-      JSON.stringify(input.gates), JSON.stringify(input.outcomes ?? []),
-      JSON.stringify(input.meta ?? {}), now, now,
-    );
+    const values = {
+      schemaId: input.schemaId,
+      name: input.name,
+      description: input.description ?? null,
+      version: input.version ?? "v1",
+      gates: input.gates,
+      outcomes: input.outcomes ?? [],
+      meta: input.meta ?? {},
+      registeredAt: now,
+      updatedAt: now,
+    };
+
+    this.db
+      .insert(flowSchemas)
+      .values(values)
+      .onConflictDoUpdate({
+        target: flowSchemas.schemaId,
+        set: {
+          name: values.name,
+          description: values.description,
+          version: values.version,
+          gates: values.gates,
+          outcomes: values.outcomes,
+          meta: values.meta,
+          updatedAt: values.updatedAt,
+        },
+      })
+      .run();
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row was just inserted/upserted above
     return this.get(input.schemaId)!;
   }
 
   get(schemaId: string): FlowSchemaRecord | null {
-    const row = this.db.prepare("SELECT * FROM flow_schemas WHERE schema_id = ?").get(schemaId) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(flowSchemas)
+      .where(eq(flowSchemas.schemaId, schemaId))
+      .get();
     return row ? rowToSchema(row) : null;
   }
 
   list(): FlowSchemaRecord[] {
-    const rows = this.db.prepare("SELECT * FROM flow_schemas ORDER BY schema_id").all() as Record<string, unknown>[];
-    return rows.map(rowToSchema);
+    return this.db
+      .select()
+      .from(flowSchemas)
+      .orderBy(flowSchemas.schemaId)
+      .all()
+      .map(rowToSchema);
   }
 
   delete(schemaId: string): boolean {
-    const result = this.db.prepare("DELETE FROM flow_schemas WHERE schema_id = ?").run(schemaId);
+    const result = this.db
+      .delete(flowSchemas)
+      .where(eq(flowSchemas.schemaId, schemaId))
+      .run();
     return result.changes > 0;
   }
 }

@@ -27,12 +27,12 @@ async function loadFromRegistry(registryUrl: string) {
         pool.loadMap(map);
         loaded++;
       } catch (err) {
-        logger.warn({ indexId: map.indexId, error: String(err) }, "decode-map load failed");
+        logger.warn({ indexId: map.indexId, err }, "decode-map load failed");
       }
     }
     logger.info({ loaded, total: maps.length }, "loaded decode-maps from registry");
   } catch (err) {
-    logger.warn({ error: String(err) }, "registry decode-map fetch failed — starting with empty pool");
+    logger.warn({ err }, "registry decode-map fetch failed — starting with empty pool");
   }
 }
 

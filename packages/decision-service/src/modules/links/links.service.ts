@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { and, asc, desc, eq } from "drizzle-orm";
+import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
+import { flowLinks, type FlowLinkRow } from "../../db/schema.js";
 import { createLogger } from "../../lib/logger.js";
 import { env } from "../../config/env.js";
 
@@ -16,19 +17,19 @@ export interface FlowLinkRecord {
   createdAt: string;
 }
 
-function rowToLink(row: Record<string, unknown>): FlowLinkRecord {
+function rowToLink(row: FlowLinkRow): FlowLinkRecord {
   return {
-    id: row["id"] as number,
-    instanceId: row["instance_id"] as string,
-    docId: row["doc_id"] as string,
-    linkType: row["link_type"] as FlowLinkType,
-    createdAt: row["created_at"] as string,
+    id: row.id,
+    instanceId: row.instanceId,
+    docId: row.docId,
+    linkType: row.linkType as FlowLinkType,
+    createdAt: row.createdAt,
   };
 }
 
 @Injectable()
 export class LinksService {
-  constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
+  constructor(@Inject(DATABASE) private readonly db: DecisionServiceDatabase) {}
 
   /** 의사결정 → 문서 연결 등록 */
   async link(instanceId: string, docId: string, linkType: FlowLinkType): Promise<FlowLinkRecord> {
@@ -38,37 +39,65 @@ export class LinksService {
       logger.warn({ docId, instanceId }, "문서 미확인 — 연결은 생성 (fail-open)");
     }
 
-    this.db.prepare(
-      "INSERT OR IGNORE INTO flow_links (instance_id, doc_id, link_type) VALUES (?, ?, ?)",
-    ).run(instanceId, docId, linkType);
+    this.db
+      .insert(flowLinks)
+      .values({ instanceId, docId, linkType })
+      .onConflictDoNothing()
+      .run();
 
-    const row = this.db.prepare(
-      "SELECT * FROM flow_links WHERE instance_id = ? AND doc_id = ? AND link_type = ?",
-    ).get(instanceId, docId, linkType) as Record<string, unknown>;
+    const row = this.db
+      .select()
+      .from(flowLinks)
+      .where(
+        and(
+          eq(flowLinks.instanceId, instanceId),
+          eq(flowLinks.docId, docId),
+          eq(flowLinks.linkType, linkType),
+        ),
+      )
+      .get();
+
+    if (!row) {
+      throw new Error("flow_links insert/select 결과를 찾지 못했습니다");
+    }
+
     return rowToLink(row);
   }
 
   /** 의사결정이 만든 문서 목록 */
   findByInstance(instanceId: string): FlowLinkRecord[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_links WHERE instance_id = ? ORDER BY created_at",
-    ).all(instanceId) as Record<string, unknown>[];
-    return rows.map(rowToLink);
+    return this.db
+      .select()
+      .from(flowLinks)
+      .where(eq(flowLinks.instanceId, instanceId))
+      .orderBy(asc(flowLinks.createdAt))
+      .all()
+      .map(rowToLink);
   }
 
   /** 문서에 연결된 의사결정 목록 */
   findByDoc(docId: string): FlowLinkRecord[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_links WHERE doc_id = ? ORDER BY created_at DESC",
-    ).all(docId) as Record<string, unknown>[];
-    return rows.map(rowToLink);
+    return this.db
+      .select()
+      .from(flowLinks)
+      .where(eq(flowLinks.docId, docId))
+      .orderBy(desc(flowLinks.createdAt))
+      .all()
+      .map(rowToLink);
   }
 
   /** 연결 삭제 */
   unlink(instanceId: string, docId: string, linkType: FlowLinkType): boolean {
-    const result = this.db.prepare(
-      "DELETE FROM flow_links WHERE instance_id = ? AND doc_id = ? AND link_type = ?",
-    ).run(instanceId, docId, linkType);
+    const result = this.db
+      .delete(flowLinks)
+      .where(
+        and(
+          eq(flowLinks.instanceId, instanceId),
+          eq(flowLinks.docId, docId),
+          eq(flowLinks.linkType, linkType),
+        ),
+      )
+      .run();
     return result.changes > 0;
   }
 

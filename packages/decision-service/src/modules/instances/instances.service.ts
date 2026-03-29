@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { desc, eq } from "drizzle-orm";
+import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
+import { flowInstances, type FlowInstanceRow, type FlowInstanceSelection } from "../../db/schema.js";
 import { createLogger } from "../../lib/logger.js";
 import { env } from "../../config/env.js";
 
@@ -12,7 +13,7 @@ export interface FlowInstanceRecord {
   schemaVersion: string;
   status: string;
   context: Record<string, unknown>;
-  selections: { gateId: string; branchId: string; evidence: unknown[]; selectedAt: string }[];
+  selections: FlowInstanceSelection[];
   outcome?: Record<string, unknown>;
   address?: number;
   addressContext?: string;
@@ -21,43 +22,56 @@ export interface FlowInstanceRecord {
   completedAt?: string;
 }
 
-function rowToInstance(row: Record<string, unknown>): FlowInstanceRecord {
+function rowToInstance(row: FlowInstanceRow): FlowInstanceRecord {
   return {
-    id: row["id"] as string,
-    schemaId: row["schema_id"] as string,
-    schemaVersion: row["schema_version"] as string,
-    status: row["status"] as string,
-    context: JSON.parse((row["context"] as string) || "{}"),
-    selections: JSON.parse((row["selections"] as string) || "[]"),
-    outcome: row["outcome"] ? JSON.parse(row["outcome"] as string) : undefined,
-    address: (row["address"] as number) || undefined,
-    addressContext: (row["address_context"] as string) || undefined,
-    verdict: (row["verdict"] as string) || undefined,
-    startedAt: row["started_at"] as string,
-    completedAt: (row["completed_at"] as string) || undefined,
+    ...row,
+    outcome: row.outcome ?? undefined,
+    address: row.address ?? undefined,
+    addressContext: row.addressContext ?? undefined,
+    verdict: row.verdict ?? undefined,
+    completedAt: row.completedAt ?? undefined,
   };
 }
 
 @Injectable()
 export class InstancesService {
-  constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
+  constructor(@Inject(DATABASE) private readonly db: DecisionServiceDatabase) {}
 
   save(instance: FlowInstanceRecord): FlowInstanceRecord {
-    this.db.prepare(`
-      INSERT INTO flow_instances (id, schema_id, schema_version, status, context, selections, outcome, address, address_context, verdict, started_at, completed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        status=excluded.status, context=excluded.context, selections=excluded.selections,
-        outcome=excluded.outcome, address=excluded.address, address_context=excluded.address_context,
-        verdict=excluded.verdict, completed_at=excluded.completed_at
-    `).run(
-      instance.id, instance.schemaId, instance.schemaVersion, instance.status,
-      JSON.stringify(instance.context), JSON.stringify(instance.selections),
-      instance.outcome ? JSON.stringify(instance.outcome) : null,
-      instance.address ?? null, instance.addressContext ?? null, instance.verdict ?? null,
-      instance.startedAt, instance.completedAt ?? null,
-    );
+    const values = {
+      id: instance.id,
+      schemaId: instance.schemaId,
+      schemaVersion: instance.schemaVersion,
+      status: instance.status,
+      context: instance.context,
+      selections: instance.selections,
+      outcome: instance.outcome ?? null,
+      address: instance.address ?? null,
+      addressContext: instance.addressContext ?? null,
+      verdict: instance.verdict ?? null,
+      startedAt: instance.startedAt,
+      completedAt: instance.completedAt ?? null,
+    };
 
+    this.db
+      .insert(flowInstances)
+      .values(values)
+      .onConflictDoUpdate({
+        target: flowInstances.id,
+        set: {
+          status: values.status,
+          context: values.context,
+          selections: values.selections,
+          outcome: values.outcome,
+          address: values.address,
+          addressContext: values.addressContext,
+          verdict: values.verdict,
+          completedAt: values.completedAt,
+        },
+      })
+      .run();
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row was just inserted/upserted above
     const saved = this.get(instance.id)!;
 
     // 완료 + outcome이 있으면 definition-service에 문서 stub 생성 트리거
@@ -96,28 +110,44 @@ export class InstancesService {
   }
 
   get(id: string): FlowInstanceRecord | null {
-    const row = this.db.prepare("SELECT * FROM flow_instances WHERE id = ?").get(id) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.id, id))
+      .get();
     return row ? rowToInstance(row) : null;
   }
 
   findBySchema(schemaId: string, limit = 50): FlowInstanceRecord[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE schema_id = ? ORDER BY started_at DESC LIMIT ?",
-    ).all(schemaId, limit) as Record<string, unknown>[];
-    return rows.map(rowToInstance);
+    return this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.schemaId, schemaId))
+      .orderBy(desc(flowInstances.startedAt))
+      .limit(limit)
+      .all()
+      .map(rowToInstance);
   }
 
   findByStatus(status: string, limit = 50): FlowInstanceRecord[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances WHERE status = ? ORDER BY started_at DESC LIMIT ?",
-    ).all(status, limit) as Record<string, unknown>[];
-    return rows.map(rowToInstance);
+    return this.db
+      .select()
+      .from(flowInstances)
+      .where(eq(flowInstances.status, status))
+      .orderBy(desc(flowInstances.startedAt))
+      .limit(limit)
+      .all()
+      .map(rowToInstance);
   }
 
   list(limit = 50, offset = 0): FlowInstanceRecord[] {
-    const rows = this.db.prepare(
-      "SELECT * FROM flow_instances ORDER BY started_at DESC LIMIT ? OFFSET ?",
-    ).all(limit, offset) as Record<string, unknown>[];
-    return rows.map(rowToInstance);
+    return this.db
+      .select()
+      .from(flowInstances)
+      .orderBy(desc(flowInstances.startedAt))
+      .limit(limit)
+      .offset(offset)
+      .all()
+      .map(rowToInstance);
   }
 }

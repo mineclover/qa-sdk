@@ -19,6 +19,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  logger.error({ error }, "decision-service 시작 실패");
+  logger.error({ err: error }, "decision-service 시작 실패");
   process.exit(1);
 });

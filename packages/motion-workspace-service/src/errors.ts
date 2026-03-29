@@ -2,6 +2,7 @@ import {
   MotionWorkspaceMigrationError,
   MotionWorkspaceParseError,
 } from "motion-workspace";
+import { AppError } from "@qa-sdk/core";
 import { MotionWorkspaceRepositoryError } from "./repository.js";
 
 export type MotionWorkspaceServiceErrorShape = Readonly<Record<string, unknown>> & {
@@ -17,14 +18,12 @@ export interface MotionWorkspaceServiceHealthResponse {
   readonly version?: string;
 }
 
-export class MotionWorkspaceServiceError extends Error {
-  readonly statusCode: number;
+export class MotionWorkspaceServiceError extends AppError {
   readonly shape: MotionWorkspaceServiceErrorShape;
 
   constructor(statusCode: number, shape: MotionWorkspaceServiceErrorShape) {
-    super(shape.message);
+    super(shape.code, shape.message, statusCode, shape as unknown as Record<string, unknown>);
     this.name = "MotionWorkspaceServiceError";
-    this.statusCode = statusCode;
     this.shape = shape;
   }
 }

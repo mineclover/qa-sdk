@@ -21,13 +21,13 @@ export class SyncService implements OnModuleInit {
   async onModuleInit() {
     if (!env.SYNC_ON_START) return;
     try {
-      await this.run();
+      const result = await this.run();
       logger.info({
-        created: this.lastResult!.created,
-        synced: this.lastResult!.synced,
+        created: result.created,
+        synced: result.synced,
       }, "시작 시 동기화 완료");
     } catch (err) {
-      logger.warn({ error: err }, "시작 시 동기화 실패 — 서비스는 정상 기동");
+      logger.warn({ err }, "시작 시 동기화 실패 — 서비스는 정상 기동");
     }
   }
 
