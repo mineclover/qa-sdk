@@ -5,27 +5,56 @@
  * 좌표계로 분류하고 관리하기 위한 타입 정의.
  */
 
+import type { QualityGateSpec } from "work-domain";
+
 // ─── 축 값 타입 (Dimension Value Types) ─────────────────
 
 /**
- * 분해 레벨 — 전체-부분 분해 구조에서의 위치
+ * 분해 레벨 — 문서의 역할을 3단계로 분류.
  *
- * scope보다 상위 개념. 먼저 "어떤 단위인가"가 결정되고, 그 안에서 scope가 의미를 가진다.
+ * 원칙: 모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다.
  *
- * | level  | 역할                  | 기차 비유     | scope 동작 |
- * |--------|-----------------------|-------------|-----------|
- * | system | 전체 시스템 자체        | 기차         | 무의미     |
- * | area   | 시스템의 대분류 영역    | 객실칸, 추진기관 | 불안정     |
- * | unit   | 영역 내 독립 단위      | 엔진, 연료공급  | 작동 시작  |
- * | module | 단위 내 구성 요소      | 실린더, 밸브   | 잘 동작    |
- * | leaf   | 개별 명세             | 피스톤 규격    | 완전 작동  |
+ * | level  | 질문                         | 정의하는 것                    |
+ * |--------|-----------------------------|-----------------------------|
+ * | group  | "왜 이것들이 함께 있는가"      | 묶임의 이유 (조직적 경계)       |
+ * | module | "이 개념은 무엇인가"          | 단일 개념 + 구성 요소 참조       |
+ * | leaf   | "이 구성 요소는 어떻게 동작하는가" | 최종 명세 (더 이상 분해 안 함)   |
+ *
+ * contains 계층:
+ *   group  → group | module  (그룹은 재귀 가능)
+ *   module → module | leaf   (개념은 하위 개념 또는 구성 요소를 포함)
+ *   leaf   → (없음)          (최종 명세는 자식 없음)
  */
 export type DefLevel =
-  | "system"     // 전체 시스템
-  | "area"       // 대분류 영역 (인프라, 설계 도구, 프론트엔드)
-  | "unit"       // 독립 단위 (서비스, 엔진)
-  | "module"     // 구성 요소 (API 그룹, 모듈)
-  | "leaf";      // 개별 명세 (스펙, 데이터 스키마)
+  | "group"      // 묶임의 이유를 설명 (재귀 가능)
+  | "module"     // 단일 개념을 정의 (구성 요소를 포함)
+  | "leaf";      // 구성 요소의 최종 명세 (자식 없음, 기본값)
+
+/**
+ * 문서 유형 — spec(무엇) vs knowledge(왜)
+ *
+ * spec: 현재 시스템이 무엇으로 구성되어 있는가 (코드에서 파생 가능)
+ * knowledge: 왜 이렇게 설계했는가 (사람만이 기록할 수 있는 정보)
+ */
+export type DefDocType = "spec" | "knowledge";
+
+/**
+ * 지식 문서 종류
+ *
+ * philosophy: 시스템 철학/본질 ("왜 좌표계인가")
+ * adr: 아키텍처 결정 기록 ("ADR-001: 불변 주소")
+ * guide: 사용법/판단 기준 ("scope 선택 가이드")
+ * narrative: 진화 과정/맥락 ("시스템이 어떻게 여기까지 왔는가")
+ * convention: 합의된 규칙 ("에러 코드 컨벤션")
+ * pattern: 반복되는 설계 패턴 ("이벤트 수집 패턴")
+ */
+export type KnowledgeKind =
+  | "philosophy"
+  | "adr"
+  | "guide"
+  | "narrative"
+  | "convention"
+  | "pattern";
 
 /** 대분류 — 무엇에 대한 정의인가 */
 export type DefScope =
@@ -112,7 +141,9 @@ export type LinkType =
   | "refines"      // 구체화
   | "constrains"   // 제약
   | "traces_to"    // 추적
-  | "contains";    // 포함 — 그룹이 멤버를 포함
+  | "contains"     // 포함 — 그룹이 멤버를 포함
+  | "evolves_from" // 개정/버전 진화
+  | "supersedes";  // 이전 개정 대체
 
 // ─── 태그 체계 ───────────────────────────────────────────
 
@@ -145,20 +176,8 @@ export type StructuralTag =
   | "decision"       // 의사결정 기록이 포함됨
   | "generated";     // codegen 등으로 자동 생성된 문서
 
-/**
- * 계층 태그 (Delivery Tier Tags).
- *
- * 문서가 주로 속한 실행 계층을 표시한다.
- * concern처럼 횡단 전파되지는 않지만, 묶음 탐색과 coverage 측정의 기준으로 사용한다.
- */
-export type TierTag =
-  | "tier-frontend"  // 브라우저/UI/시각화 계층
-  | "tier-backend"   // 권한/도메인 서버 계층
-  | "tier-infra"     // 파이프라인/서비스/저수준 런타임 계층
-  | "tier-system";   // 시스템 설계/운영/메타 계층
-
 /** 알려진 태그 전체 (자유 문자열도 허용하되, 이 목록을 우선 사용) */
-export type KnownTag = ConcernTag | StructuralTag | TierTag;
+export type KnownTag = ConcernTag | StructuralTag;
 
 // ─── Concern 전파 (Structural Constraint Propagation) ────
 
@@ -232,6 +251,15 @@ export interface DefinitionEntry {
   readonly id: string;
   readonly title: string;
   readonly description?: string;
+  /** 사람 기준 버전 ID (예: "v1", "2026.03") */
+  readonly version?: string;
+  /** 문서 개정 번호 (기본: 1) */
+  readonly revision?: number;
+
+  // 문서 유형 (기본: spec)
+  readonly type?: DefDocType;
+  /** knowledge 문서의 세부 종류 (type=knowledge일 때만 유의미) */
+  readonly knowledgeKind?: KnowledgeKind;
 
   // 좌표 차원 (인코딩 입력 — scope × aspect × depth)
   readonly scope: DefScope;
@@ -259,6 +287,10 @@ export interface DefinitionEntry {
   // 서비스 레지스트리 연결 (선택)
   /** 이 문서가 관련된 서비스 ID (registry-service의 serviceId) */
   readonly serviceId?: string;
+
+  // 품질 게이트 연결 (선택)
+  /** validation 문서가 실행 가능한 품질 게이트를 함께 정의할 때 사용 */
+  readonly gate?: QualityGateSpec;
 }
 
 /** 정의 간 관계 */
@@ -275,6 +307,8 @@ export interface DefinitionLink {
 
 /** 필터 조건 */
 export interface DefinitionFilter {
+  readonly type?: DefDocType;
+  readonly knowledgeKind?: KnowledgeKind;
   readonly scope?: DefScope;
   readonly aspect?: DefAspect;
   readonly depth?: DefDepth;
@@ -299,5 +333,5 @@ export type DefinitionEntryInput = Omit<DefinitionEntry, "address" | "serialized
 /** 수정 가능한 필드 */
 export type DefinitionEntryPatch = Partial<Pick<
   DefinitionEntry,
-  "title" | "description" | "depth" | "lifecycle" | "ref" | "tags" | "decisionRef"
+  "title" | "description" | "version" | "revision" | "depth" | "lifecycle" | "ref" | "tags" | "decisionRef"
 >>;

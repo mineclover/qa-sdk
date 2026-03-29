@@ -5,11 +5,13 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [entry-point, tier-system]
+  tags: [entry-point]
   links:
+    - target: definition-catalog-spec
+      type: refines
     - target: definition-state-model
       type: depends_on
     - target: definition-taxonomy
@@ -27,7 +29,27 @@ def:
 
 ## 목적 ^purpose
 
-유한 상태 모델(state-model)을 실제 시스템에 적용하는 접착층. 11개 머신을 통합 관리하고, 머신 간 의존 관계(cascade/guard/notify)를 선언적으로 처리하며, SDK 이벤트로 모든 전이를 수집한다. state-model이 엔진이라면 harness는 엔진을 차에 장착하고 텔레메트리를 연결하는 것이다.
+유한 상태 모델(definition-state-model)을 실제 시스템에 적용하는 접착층. 11개 머신의 **정의**는 state-model이 소유하고, 이 문서는 머신 간 의존 관계(cascade/guard/notify), 복합 프로세스, SDK 이벤트 수집을 담당한다. state-model이 엔진이라면 harness는 엔진을 차에 장착하고 텔레메트리를 연결하는 것이다.
+
+## 정의 ^defines
+
+- cascade/guard/notify 3종 의존 유형 (MachineDependency)
+- SYSTEM_DEPENDENCIES 7건 의존 관계
+- 3개 프로세스 (prefix-release, doc-approval, service-deprecation)
+- SDK 이벤트 3종 (harness.transition, harness.process_step, harness.guard_check)
+- harness_transition prefix 좌표 정의
+
+## 소비 ^consumes
+
+- state-model — 11개 머신 정의 (StateMachineDefinition)
+- taxonomy — 분류 체계 (scope, aspect)
+- spec-verification-system — 스펙 검증 증거
+
+## 위임 ^delegates
+
+- **harness-cli** → CLI 조회/전이/프로세스 실행
+- **harness-persistence** → 상태 영속화 (def-config + SDK 이벤트)
+- **harness-derive** → 11개 머신 상태 자동 파생
 
 ## 구성 ^overview
 
@@ -39,30 +61,9 @@ def:
 
 SDK 수집: `harness-tracker.ts` → `harness.transition` / `harness.process_step` / `harness.guard_check` 이벤트 → ingest-server
 
-## 11개 상태 머신 ^constraint
+## 11개 상태 머신
 
-state-model의 4개 기존 머신 + 7개 시스템 머신을 통합 관리한다.
-
-### 기존 4개 (state-model.ts)
-
-| 머신 ID | 엔티티 | 상태 | 초기 |
-|---------|--------|------|------|
-| `doc-lifecycle` | 문서 | draft→review→approved→deprecated→archived | draft |
-| `spec-impl` | 스펙 문서 | designed→implementing→implemented→verified→source-referenced | designed |
-| `convention-compliance` | 컨벤션 문서 | unverified→partial→compliant→violated | unverified |
-| `db-sync` | 시스템 | out-of-sync→syncing→synced→drift-detected | out-of-sync |
-
-### 신규 7개 (harness-state-model.ts)
-
-| 머신 ID | 엔티티 | 상태 | 초기 |
-|---------|--------|------|------|
-| `address-state` | prefix 주소 | active/inactive/open/reserved | open |
-| `version-lifecycle` | prefix 버전 | draft→released→active→deprecated | draft |
-| `decision-flow` | 의사결정 인스턴스 | pending→active→completed/abandoned/blocked | pending |
-| `service-status` | 서비스 | active→deprecated→retired | active |
-| `event-status` | 이벤트 | active→deprecated→retired | active |
-| `metric-health` | 메트릭 | ok→warning→critical | ok |
-| `policy-candidate` | 정책 후보 | candidate→approved/rejected/modified | candidate |
+머신 정의(상태, 전이, 초기값)는 **definition-state-model** 참조. 이 문서는 머신 간 **의존 관계**와 **프로세스**를 정의한다.
 
 ## 머신 간 의존 관계 ^intent
 
@@ -160,47 +161,9 @@ tracker.runProcess("prefix-release", "service:v2");
 tracker.transition("version-lifecycle", "service:v2", "deprecated", "api_call");
 ```
 
-## 품질 게이트 통합 — 문서 그래프 기반 검증
+## 품질 게이트
 
-상태 머신 관리와 별개로, anchor 문서(unit/module/leaf)의 **완성도**를 계약 문서 기반으로 검증하는 경로가 존재한다.
-
-### 문서 그래프 → 게이트 도출
-
-anchor 문서의 하위 문서는 두 역할로 나뉜다:
-
-| 역할 | 문서 유형 | 하네스에서의 기능 |
-|------|----------|-----------------|
-| **개념 보조** | feature, flow, state, data | anchor의 의미를 구성 |
-| **계약 선언** | interface, constraint | 품질 게이트의 근거 — anchor 완성도의 증명 |
-
-계약 문서의 scope × aspect가 어떤 GateKind가 필요한지를 결정한다 (`work-domain/harness.ts:deriveGateKinds()`).
-
-### 6단계 프로세스
-
-```
-1. Define    — anchor 문서 그래프를 루트로 시작, contains/constrains 탐색
-2. Resolve   — 계약 문서에서 contract markers 추출, GateKind 도출
-3. Gather    — 계약/제약/scope 관련 문서 컨텍스트 조립
-4. Execute   — 비용 순 실행 (static → unit → integration → system)
-5. Judge     — 각 gate 결과를 계약 문서 기준과 대조
-6. Route     — 미통과 → lifecycle 피드백, 전체 통과 → anchor 검증 완료
-```
-
-### 2계층 상태 모델
-
-| 계층 | 질문 | 상태 | 코드 SSOT |
-|------|------|------|----------|
-| **구조적** | "문서가 충분한가" | concept-defined → contract-bound → gate-bound → verified | `work-domain/harness-model.ts` |
-| **런타임** | "게이트가 통과했는가" | idle → blocked → ready → gathering → running → passed/failed/stale | `work-domain/harness.ts` |
-
-연결: 구조적 `verified` = 런타임 `BundleState === "complete"`. 11개 머신 중 `convention-compliance` 머신이 이 결과를 소비한다 (gate verified → convention compliant).
-
-### CLI 접근 경로
-
-- `qa-sdk def state` — 11개 머신 상태 분포 (상태 관리 경로)
-- `qa-sdk quality list/run/show` — 게이트 문서 실행 (품질 검증 경로)
-
-두 경로는 독립적으로 동작하되, `convention-compliance` 머신을 통해 합류한다.
+상세: `definition-quality-gates` 문서 참조. 두 경로는 독립적으로 동작하되, `convention-compliance` 머신을 통해 합류한다.
 
 ## 관련 소스
 

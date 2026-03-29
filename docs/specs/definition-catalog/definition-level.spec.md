@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: definition-service
-  tags: [entry-point, tier-system]
+  tags: [entry-point]
   links:
     - target: definition-taxonomy
       type: refines
@@ -20,71 +20,70 @@ def:
 
 시스템의 전체-부분 분해 구조에서 문서가 어떤 단위인지 표현한다. scope가 "분해된 후의 성격"을 분류한다면, level은 "어떤 단위로 분해되었는가"를 표현하는 상위 개념이다.
 
+## 정의 ^defines
+
+- DefLevel 3종 (group, module, leaf)
+- 재귀 분해 규칙 (group → group, module → module)
+- 좌표 미인코딩 원칙 (불변성 보존)
+- 검증 행동 (group/module 자식 필수, leaf 자식 금지)
+
+## 소비 ^consumes
+
+- scope (taxonomy) — level과 직교. level은 역할, scope는 주제.
+
 ## 구성 ^overview
 
-- 5종 레벨: system, area, unit, module, leaf
+- 3종 레벨: group(묶임의 이유), module(개념 정의), leaf(구성 요소 명세)
 - 좌표에 인코딩하지 않음 — lifecycle과 동일한 메타데이터
+- group은 재귀 가능 — group이 하위 group을 포함
 - module은 재귀 가능 — module이 하위 module을 포함
 - 기본값: leaf (미선언 시)
 
 ## 설계 근거 ^intent
 
-### level이 필요한 이유
+### level과 scope의 분리 — 두 축의 직교
 
-scope×aspect는 문서의 **성격**(기능인가, 데이터인가, API인가)을 분류한다. 하지만 분해 구조의 **상위 컨테이너 문서**는 성격 분류가 불안정하다.
+level은 **"이 문서의 역할"**(묶임 설명 / 개념 정의 / 구성 요소 명세)을 결정한다.
+scope는 **"이 문서의 관점"**(기능인가, 데이터인가, API인가)을 분류한다.
 
-```
-system-root     → scope=flow/process_flow  (실제 흐름이 아님)
-system-infra    → scope=flow/process_flow  (실제 흐름이 아님)
-ingest-system   → scope=flow/process_flow  (얼추 맞음)
-record-spec     → scope=data/domain_data   (정확함)
-```
-
-상위 레벨에서 scope가 작동하지 않는 이유: 영역 문서는 "어떤 종류의 것인가"보다 "시스템의 어떤 부분인가"가 본질적 정체성이다.
-
-level은 이 **분해 위치**를 명시적으로 선언하여, scope가 불안정한 상위 문서도 정확히 식별할 수 있게 한다.
-
-### scope와의 관계
+두 축은 직교한다. module(개념 정의)의 자식 leaf들이 서로 다른 scope를 가지는 것이 정상이다:
 
 ```
-분해 먼저:  "이것은 전체에서 어떤 단위인가?" → level
-분류 다음:  "이 단위는 어떤 종류인가?" → scope
+ingest-system (module, scope: flow)       ← 개념: "수집 시스템"
+  ├── ingest-api (leaf, scope: interface)  ← API 관점
+  ├── ingest-data (leaf, scope: data)      ← 데이터 관점
+  └── ingest-constraint (leaf, scope: constraint) ← 제약 관점
 ```
 
-level이 결정된 후에 scope가 의미를 가진다:
+level은 문서가 **트리에서 하는 역할**이고, scope는 **설명하는 대상**이다.
 
-| level | scope 동작 |
-|-------|-----------|
-| system | 무의미 — 전체는 분류 대상 아님 |
-| area | 불안정 — 주제보다 소속이 중요 |
-| unit | 작동 시작 — feature/interface/data 분산 |
-| module | 잘 동작 — 세부 분류 가능 |
-| leaf | 완전 작동 — scope가 정체성 결정 |
+### 3종 level의 역할
+
+| level | 질문 | 정의하는 것 | 검증 |
+|-------|------|-----------|------|
+| group | "왜 함께 있는가" | 묶임의 이유 | 자식 1건 이상 필수 |
+| module | "이 개념은 무엇인가" | 단일 개념 + 구성 참조 | 자식 1건 이상 필수 |
+| leaf | "어떻게 동작하는가" | 최종 명세 | 자식 금지 |
 
 ### 좌표에 인코딩하지 않는 이유
 
 level은 **변할 수 있다**:
 
 1. leaf 문서가 분해되면 module로 변경
-2. module이 더 분해되면 module 유지 (재귀)
-3. 시스템 구조가 재편되면 area↔unit이 바뀔 수 있음
+2. module이 상위 구조를 설명하게 되면 group으로 변경
+3. group이 개념 수준으로 축소되면 module로 변경
 
-좌표 주소는 불변이어야 한다 (모든 참조의 앵커). level이 주소에 포함되면 분해할 때마다 주소가 바뀌고 모든 링크가 깨진다.
-
-따라서 level은 lifecycle과 동일하게 **메타데이터 필드**로 관리한다:
-- 변경 가능 (주소 불변)
-- 필터/검색에 사용 가능
-- 검증에 사용 가능 (contains 체인과 level의 일관성)
+좌표 주소는 불변이어야 한다 (모든 참조의 앵커). level이 주소에 포함되면 역할이 바뀔 때마다 주소가 바뀌고 모든 링크가 깨진다.
 
 ### 재귀적 분해
 
-고정된 5단계 계층이 아니다. 같은 level이 중첩될 수 있다:
+고정된 계층이 아니다. 같은 level이 중첩될 수 있다:
 
 ```
-unit → module → module → leaf     # module 중첩
-unit → module → leaf              # 얕은 분해
-unit → leaf                       # 직접 리프
-module → module → module → leaf   # 깊은 재귀
+group → group → module → leaf     # 그룹 중첩
+group → module → leaf             # 얕은 구조
+group → module → module → leaf    # module 재귀
+module → leaf                     # 직접 명세
 ```
 
 level은 "현재 이 문서가 어떤 역할인가"의 선언이지, "트리의 몇 번째 깊이인가"의 절대 위치가 아니다.

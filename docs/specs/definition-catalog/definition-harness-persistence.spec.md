@@ -5,10 +5,10 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [tier-system]
+  tags: []
   links:
     - target: definition-harness
       type: refines
@@ -20,6 +20,18 @@ def:
 ## 목적 ^purpose
 
 11개 머신의 StateMachineInstance를 영속화하여, 프로세스 종료 후에도 엔티티별 상태와 전이 이력을 유지한다. 두 가지 영속화 경로를 제공한다.
+
+## 정의 ^defines
+
+- def-config.json states 확장 스키마 (MachineEntityState)
+- readMachineState() / writeMachineState() / readAllMachineStates()
+- SDK 이벤트 경로 (harness-tracker → ingest → eventRecords)
+- 저장 규칙 (initial 미저장, history는 이벤트 시계열)
+
+## 소비 ^consumes
+
+- def-config (def-config.ts) — JSON 파일 I/O
+- harness-tracker (harness-tracker.ts) — 이벤트 emit
 
 ## 영속화 경로 ^overview
 
@@ -81,34 +93,6 @@ insights API GET /v1/insights/event-keys
 - config 파일 크기가 1MB를 초과하면 warning
 - 동시 쓰기 보호: 파일 잠금 또는 compare-and-swap (해시 기반)
 
-## 품질 게이트 상태 영속화 ^quality
+## 품질 게이트 영속화
 
-gate 문서 실행 결과(GateState, BundleState)도 동일한 경로로 영속화한다.
-
-### def-config.json 확장
-
-```json
-{
-  "states": {
-    "...기존 11개 머신...",
-    "quality-gates": {
-      "gate-work-domain-typecheck": { "current": "passed", "updatedAt": "..." },
-      "gate-work-domain-build":     { "current": "passed", "updatedAt": "..." },
-      "gate-work-domain-test":      { "current": "stale",  "updatedAt": "..." }
-    },
-    "quality-bundles": {
-      "work-domain-quality-bundle": { "current": "degraded", "updatedAt": "..." }
-    }
-  }
-}
-```
-
-### GateState 값
-
-`idle` | `blocked` | `ready` | `gathering` | `running` | `passed` | `failed` | `stale` | `skipped`
-
-### BundleState 값 (하위 gate에서 파생)
-
-`empty` | `pending` | `gathering` | `partial` | `complete` | `degraded`
-
-코드 SSOT: `work-domain/src/harness.ts` (transitionGate, deriveBundleState)
+상세: `definition-quality-gates` 문서 참조. GateState/BundleState 값 정의 + def-config.json 확장은 해당 문서에 통합.

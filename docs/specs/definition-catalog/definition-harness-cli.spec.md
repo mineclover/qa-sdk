@@ -5,10 +5,10 @@ def:
   scope: interface
   aspect: cli_contract
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: mediation
   svc: definition-service
-  tags: [tier-system]
+  tags: []
   links:
     - target: definition-harness
       type: refines
@@ -20,6 +20,26 @@ def:
 ## 목적 ^purpose
 
 CLI에서 11개 머신의 상태 분포를 조회하고, 단일 전이를 실행하고, 프로세스(복수 머신 전이 시퀀스)를 실행한다. `def state` 서브커맨드로 통합.
+
+## 구성 ^overview
+
+`qa-sdk def state` 서브커맨드가 3가지 모드를 제공한다: (1) 전체 머신 분포 조회 — 11개 머신별 상태 카운트, (2) 단일 엔티티 상태 조회/전이 — `--to` 옵션으로 특정 상태로 전이, (3) 프로세스 실행 — `--process` 옵션으로 prefix-release, doc-approval, service-deprecation 등 복수 머신 전이 시퀀스를 한번에 실행. `--dry-run`으로 실제 전이 없이 시뮬레이션 가능.
+
+## 사용 맥락 ^context
+
+CLI에서 하네스 상태를 직접 관리할 때 사용한다. 자동 파생(`harness-derive`)이 대부분의 상태를 결정하지만, 수동 전이가 필요한 경우(검토 요청, 폐기 선언 등) 이 CLI를 사용한다. definition-service가 실행 중이면 HTTP 모드, 아니면 로컬 SQLite 모드로 동작.
+
+## 정의 ^defines
+
+- `qa-sdk def state` 서브커맨드 (조회/전이/프로세스/진단)
+- 3종 출력 형식 (전체 분포, 엔티티 상태, dry-run)
+- 의존 관계 시각화 (`--deps`)
+
+## 소비 ^consumes
+
+- state-model — computeDistribution(), 머신 정의
+- harness-derive — deriveDocLifecycle, deriveSpecImplState 등 11개 파생 함수
+- def-config — readDefConfig(), detectDrift()
 
 ## CLI 인터페이스 ^api-surface
 
@@ -122,32 +142,7 @@ notify:
   metric:critical    → flow:blocked
   flow:completed     → doc:review
 ```
-
-## 품질 게이트 CLI (quality 커맨드) ^quality
-
-문서 상태 관리(`def state`)와 별개로, 게이트 문서 실행 경로가 존재한다.
-
-```bash
-# gate 문서 목록 (필터: --domain, --kind, --story, --pkg, --q)
-qa-sdk quality list [--domain=backend-logic] [--kind=typecheck]
-
-# gate 문서 상세 (kind, domain, contract 참조, references, next 추천)
-qa-sdk quality show <gate-doc-id>
-
-# gate 명령 실행 + pass/fail 기반 다음 추천
-qa-sdk quality run <gate-doc-id> [--dry-run]
-
-# 번들 구조 조회 (contract + gates)
-qa-sdk quality bundle <bundle-doc-id>
-
-# pass/fail 기반 다음 gate 추천
-qa-sdk quality next <gate-doc-id> [--outcome=pass|fail]
-```
-
-gate 문서는 definition-catalog의 `gate:` frontmatter로 정의된다. `quality run`은 명령을 실행하고, 결과에 따라 `suggestOnPass`/`suggestOnFail`로 다음 gate를 추천한다.
-
-코드 SSOT: `cli/src/commands/quality.ts`
-
+## 품질 게이트 CLI
+상세: `definition-quality-gates` 문서 참조. `qa-sdk quality list/show/run/bundle/next` 커맨드.
 ## SDK 이벤트 emit ^constraint
-
 모든 전이 실행 시 `harness.transition` 이벤트가 자동 emit된다. 프로세스의 각 스텝은 `harness.process_step`으로, guard 검증은 `harness.guard_check`로 emit.

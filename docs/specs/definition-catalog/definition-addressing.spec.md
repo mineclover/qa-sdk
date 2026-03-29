@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: definition-service
-  tags: [entry-point, tier-system]
+  tags: [entry-point]
   links:
     - target: definition-taxonomy
       type: refines
@@ -19,6 +19,17 @@ def:
 ## 목적 ^purpose
 
 문서마다 유일한 정수 주소를 부여하여, 주소가 곧 불변 식별자가 되게 한다. kebab-case id는 사람이 읽는 라벨로 전환하고, 링크/참조/저장은 주소 기반으로 통합한다.
+
+## 정의 ^defines
+
+- 이중 관리 원칙 (address 불변 + id 가변)
+- v2 주소 공간: scope(16) × aspect(64) × depth(8) × seq(128) = 1,048,576
+- 마이그레이션 프로토콜 (v1→v2)
+- tombstone 삭제 정책
+
+## 소비 ^consumes
+
+- scope, aspect, depth (taxonomy) — 주소 공간의 차원
 
 ## 설계 근거 ^intent
 

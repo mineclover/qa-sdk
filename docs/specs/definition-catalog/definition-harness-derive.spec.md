@@ -5,10 +5,10 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [tier-system]
+  tags: []
   links:
     - target: definition-harness
       type: refines
@@ -22,6 +22,32 @@ def:
 ## 목적 ^purpose
 
 코드/테스트/문서/시스템의 현재 상태를 분석하여 11개 머신의 상태를 자동으로 결정한다. 수동 상태 관리 없이 관찰 가능한 사실에서 상태를 파생한다.
+
+## 구성 ^overview
+
+4가지 파생 전략으로 11개 머신 상태를 자동 결정한다: (A) 직접 매핑 — frontmatter lifecycle 필드를 그대로 사용, (B) 규칙 기반 추론 — svc/코드/테스트 존재 여부로 spec-impl 판단, (C) 외부 Store 읽기 — version/flow/policy 상태를 Store에서 읽음, (D) 시스템 관측 — GateEngine encode/decode 플래그로 address-state 파생. 입력이 null이면 해당 머신은 미연결로 판단하여 skip.
+
+## 사용 맥락 ^context
+
+CLI `qa-sdk def state --derive`나 definition-service의 sync 과정에서 호출된다. 모든 함수는 순수(I/O 금지)하므로, CLI/서비스가 입력을 수집하여 전달하는 책임을 진다.
+
+## 정의 ^defines
+
+- 11개 순수 derive 함수 (deriveDocLifecycle ~ derivePolicyState)
+- deriveAllStates() — 전체 파생 오케스트레이터
+- DeriveInputs / DerivedStates 인터페이스
+- 4가지 파생 전략 (직접 매핑, 규칙 추론, Store 읽기, 시스템 관측)
+
+## 소비 ^consumes
+
+- frontmatter (lifecycle 필드) — doc-lifecycle 직접 매핑
+- def-config (checksums) — db-sync drift 감지
+- spec-tracker — convention coverage/failures
+- GateEngine (index-meta) — address-state computeStateRanges
+- VersionLifecycleStore (index-meta) — version status
+- FlowInstance (decision-flow-store) — flow status
+- MetricRegistry (convergence) — metric 값/임계값
+- event-catalog — isCoreEvent, deprecated 마커
 
 ## 파생 규칙 ^constraint
 
@@ -163,43 +189,6 @@ deriveAllStates(ctx: DeriveAllContext): Map<string, CompositeInstance>
 4. **메트릭 평가**: 수치 기반 임계값 비교 (metric-health)
 5. **문서 그래프 기반**: anchor 하위 계약 문서에서 GateKind 자동 도출 (quality-gates)
 
-## 품질 게이트 자동 도출 ^quality
+## 품질 게이트 도출
 
-anchor 문서(unit/module/leaf)의 하위 문서 그래프에서 계약 문서를 식별하고 GateKind를 도출하는 경로.
-
-### 도출 프로세스
-
-```
-1. anchor 문서 ID 입력
-2. contains/constrains 링크를 재귀 탐색 → 하위 문서 수집
-3. scope가 interface 또는 constraint인 문서 식별 (= 계약 문서)
-4. 계약 문서의 scope × aspect → GateKind 도출
-5. concern tag(security, accessibility, performance) → 추가 GateKind
-6. 비용 순 정렬 (static → unit → integration → system)
-```
-
-### scope × aspect → GateKind 매핑
-
-| 계약 문서 유형 | 도출 GateKind |
-|--------------|--------------|
-| interface/api_contract | typecheck, api-contract |
-| interface/cli_contract | typecheck, integration-test |
-| interface/event_contract | typecheck, unit-test |
-| constraint/tech_constraint | unit-test, static-analysis |
-| constraint/biz_constraint | integration-test |
-| constraint/infra_constraint | build, integration-test |
-
-### 구조적 상태 도출
-
-번들 내 문서 역할(concept/contract/gate/support)에서 하네스 구조 상태를 파생:
-
-| 조건 | 파생 상태 |
-|------|----------|
-| concept 문서만 있음 | `concept-defined` |
-| + contract 문서 있음 | `contract-bound` |
-| + gate 문서 있음 | `gate-bound` |
-| + 모든 gate passed | `verified` |
-
-코드 SSOT:
-- `work-domain/src/harness.ts` — buildHarnessPlan(), deriveGateKinds(), isContractDoc()
-- `work-domain/src/harness-model.ts` — deriveHarnessState(), classifyHarnessDocRole()
+상세: `definition-quality-gates` 문서 참조. GateKind 도출 + 구조적 상태 파생은 해당 문서에 통합.

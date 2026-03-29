@@ -25,20 +25,27 @@
 
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+import {
+  ALL_DOMAIN_IDS,
+  ALL_GATE_KIND_IDS,
+  getSubDomain,
+  type QualityGateSpec,
+} from "work-domain";
 import type {
   DefLevel,
   DefScope,
   DefAspect,
+  DefDocType,
+  KnowledgeKind,
   DefDepth,
   DefLifecycle,
   DefLayer,
   LinkType,
-  DefinitionEntryInput,
+  EffectiveConcerns,
 } from "./types.js";
 import { isValidScopeAspect } from "./taxonomy.js";
 import { MemoryDefinitionRegistry } from "./registry.js";
 import { computeEffectiveConcerns } from "./concern.js";
-import type { EffectiveConcerns } from "./types.js";
 
 // ─── Frontmatter 타입 ────────────────────────────────────
 
@@ -53,6 +60,14 @@ export interface FrontmatterDef {
   readonly id: string;
   /** 좌표 주소 — def_document:v1:<N> (파일 소유, DB에서도 계산) */
   readonly address?: string;
+  /** 사람 기준 버전 ID (예: v1, 2026.03) */
+  readonly version?: string;
+  /** 개정 번호 (기본: 1) */
+  readonly revision?: number;
+  /** 문서 유형 — spec(기본) | knowledge */
+  readonly type?: DefDocType;
+  /** knowledge 문서의 세부 종류 */
+  readonly knowledge_kind?: KnowledgeKind;
   /** 분해 레벨 — 전체-부분 구조에서의 위치 (기본: leaf) */
   readonly level: DefLevel;
   readonly scope: DefScope;
@@ -67,10 +82,15 @@ export interface FrontmatterDef {
   readonly svc?: string;
 }
 
+/** frontmatter에서 파싱된 gate 블록 */
+export type FrontmatterGate = QualityGateSpec;
+
 /** 파싱 결과 */
 export interface ParsedDocument {
   /** frontmatter def 블록 */
   readonly def: FrontmatterDef;
+  /** 선택적 품질 게이트 블록 */
+  readonly gate?: FrontmatterGate;
   /** 파일 경로 (baseDir 기준 상대) */
   readonly filePath: string;
   /** frontmatter 이후 본문 */
@@ -115,143 +135,23 @@ export function extractFrontmatter(content: string): { yaml: string; body: strin
  *  - 블록 시퀀스 (- item)
  *  - 1단계 중첩 (def: ... 아래 키)
  *  - 2단계 중첩 (links: - target: ... type: ...)
+ *
+ * 구현은 yaml-lite.ts에 분리. re-export로 하위 호환 유지.
  */
-export function parseYaml(yaml: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  const lines = yaml.split("\n");
+import { parseYaml, parseScalar } from "./yaml-lite.js";
+export { parseYaml, parseScalar };
 
-  let currentKey = "";
-  let currentObj: Record<string, unknown> = result;
-  let inArray = false;
-  let arrayKey = "";
-  let arrayItems: Record<string, string>[] = [];
-  let currentArrayItem: Record<string, string> = {};
-
-  for (const rawLine of lines) {
-    const line = rawLine.replace(/\r$/, "");
-
-    // 빈 줄, 주석 무시
-    if (line.trim() === "" || line.trim().startsWith("#")) continue;
-
-    const indent = line.length - line.trimStart().length;
-    const trimmed = line.trim();
-
-    // 배열 항목 처리 (- key: value)
-    if (inArray && indent >= 4 && trimmed.startsWith("- ")) {
-      // 이전 아이템 저장
-      if (Object.keys(currentArrayItem).length > 0) {
-        arrayItems.push(currentArrayItem);
-      }
-      currentArrayItem = {};
-      const kvMatch = trimmed.slice(2).match(/^(\w+):\s*(.+)$/);
-      if (kvMatch) {
-        currentArrayItem[kvMatch[1]] = kvMatch[2].trim();
-      }
-      continue;
-    }
-
-    // 배열 항목 연속 키 (target 다음 줄의 type 등)
-    if (inArray && indent >= 6 && !trimmed.startsWith("- ")) {
-      const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
-      if (kvMatch) {
-        currentArrayItem[kvMatch[1]] = kvMatch[2].trim();
-      }
-      continue;
-    }
-
-    // 배열 끝 감지 (인덴트가 줄었을 때)
-    if (inArray && indent < 4) {
-      if (Object.keys(currentArrayItem).length > 0) {
-        arrayItems.push(currentArrayItem);
-        currentArrayItem = {};
-      }
-      (currentObj as Record<string, unknown>)[arrayKey] = arrayItems;
-      inArray = false;
-      arrayItems = [];
-    }
-
-    // 최상위 키 (indent 0)
-    if (indent === 0) {
-      const keyMatch = trimmed.match(/^(\w+):\s*$/);
-      if (keyMatch) {
-        // 중첩 객체 시작
-        currentKey = keyMatch[1];
-        const nested: Record<string, unknown> = {};
-        result[currentKey] = nested;
-        currentObj = nested;
-        continue;
-      }
-      // 최상위 스칼라
-      const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
-      if (kvMatch) {
-        result[kvMatch[1]] = parseScalar(kvMatch[2]);
-        currentObj = result;
-        continue;
-      }
-    }
-
-    // 중첩 키 (indent 2)
-    if (indent === 2 && currentKey) {
-      // 블록 배열 시작 확인 (다음 줄이 - 로 시작하는 경우)
-      const keyOnly = trimmed.match(/^(\w+):\s*$/);
-      if (keyOnly) {
-        inArray = true;
-        arrayKey = keyOnly[1];
-        arrayItems = [];
-        currentArrayItem = {};
-        continue;
-      }
-
-      const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
-      if (kvMatch) {
-        const value = kvMatch[2].trim();
-        // 인라인 배열 [a, b, c]
-        if (value.startsWith("[") && value.endsWith("]")) {
-          currentObj[kvMatch[1]] = value
-            .slice(1, -1)
-            .split(",")
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
-        } else {
-          currentObj[kvMatch[1]] = parseScalar(value);
-        }
-        continue;
-      }
-    }
-  }
-
-  // 마지막 배열 항목 정리
-  if (inArray) {
-    if (Object.keys(currentArrayItem).length > 0) {
-      arrayItems.push(currentArrayItem);
-    }
-    (currentObj as Record<string, unknown>)[arrayKey] = arrayItems;
-  }
-
-  return result;
-}
-
-function parseScalar(value: string): string | number | boolean {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  const num = Number(value);
-  if (!isNaN(num) && value.trim() !== "") return num;
-  // 따옴표 제거
-  if ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))) {
-    return value.slice(1, -1);
-  }
-  return value;
-}
 
 // ─── Frontmatter → DefinitionEntryInput 변환 ────────────
 
-const VALID_LEVELS = new Set(["system", "area", "unit", "module", "leaf"]);
+const VALID_LEVELS = new Set(["group", "module", "leaf"]);
 const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface"]);
 const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
 const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
 const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);
-const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains"]);
+const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes"]);
+const VALID_WORK_DOMAINS = new Set<string>(ALL_DOMAIN_IDS);
+const VALID_GATE_KINDS = new Set<string>(ALL_GATE_KIND_IDS);
 
 /**
  * 파싱된 YAML에서 FrontmatterDef를 추출하고 검증한다.
@@ -319,10 +219,28 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
 
   // address (좌표 주소 — 파일 소유, 선택)
   const address = typeof d.address === "string" ? d.address : undefined;
+  const version = typeof d.version === "string" ? d.version : undefined;
+  const revision = typeof d.revision === "number"
+    ? d.revision
+    : typeof d.revision === "string" && /^\d+$/.test(d.revision)
+      ? Number(d.revision)
+      : undefined;
+
+  // type (문서 유형 — spec | knowledge, 기본: spec)
+  const VALID_DOC_TYPES = new Set(["spec", "knowledge"]);
+  const docType = typeof d.type === "string" && VALID_DOC_TYPES.has(d.type) ? d.type as DefDocType : undefined;
+
+  // knowledge_kind (knowledge 문서 세부 종류)
+  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern"]);
+  const knowledgeKind = typeof d.knowledge_kind === "string" && VALID_KNOWLEDGE_KINDS.has(d.knowledge_kind) ? d.knowledge_kind as KnowledgeKind : undefined;
 
   return {
     id: id as string,
     ...(address ? { address } : {}),
+    ...(version ? { version } : {}),
+    ...(revision !== undefined ? { revision } : {}),
+    ...(docType ? { type: docType } : {}),
+    ...(knowledgeKind ? { knowledge_kind: knowledgeKind } : {}),
     level: level as DefLevel,
     scope: scope as DefScope,
     aspect: aspect as DefAspect,
@@ -336,6 +254,67 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
 }
 
 /**
+ * 파싱된 YAML에서 gate 블록을 추출하고 검증한다.
+ *
+ * gate 블록은 validation 문서가 실행 가능한 단일 품질 게이트를
+ * 1:1로 정의할 때 사용한다.
+ */
+export function extractGate(
+  parsed: Record<string, unknown>,
+  filePath: string,
+): FrontmatterGate | undefined {
+  const gate = parsed.gate;
+  if (gate === undefined) return undefined;
+  if (typeof gate !== "object" || gate === null || Array.isArray(gate)) {
+    throw new Error(`${filePath}: 'gate' 블록이 올바르지 않습니다`);
+  }
+
+  const g = gate as Record<string, unknown>;
+
+  const kind = g.kind;
+  if (typeof kind !== "string" || !VALID_GATE_KINDS.has(kind)) {
+    throw new Error(`${filePath}: gate.kind 유효하지 않음: "${kind}"`);
+  }
+
+  const workDomain = g.workDomain;
+  if (typeof workDomain !== "string" || !VALID_WORK_DOMAINS.has(workDomain)) {
+    throw new Error(`${filePath}: gate.workDomain 유효하지 않음: "${workDomain}"`);
+  }
+
+  const command = g.command;
+  if (typeof command !== "string" || command.trim().length === 0) {
+    throw new Error(`${filePath}: gate.command 필수`);
+  }
+
+  const pickString = (value: unknown): string | undefined =>
+    typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  const pickStringArray = (value: unknown): readonly string[] | undefined =>
+    Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : undefined;
+  const subDomainId = pickString(g.subDomainId);
+  if (subDomainId && !getSubDomain(
+    workDomain as FrontmatterGate["workDomain"],
+    subDomainId,
+  )) {
+    throw new Error(`${filePath}: gate.subDomainId 유효하지 않음: "${subDomainId}"`);
+  }
+
+  return {
+    kind: kind as FrontmatterGate["kind"],
+    workDomain: workDomain as FrontmatterGate["workDomain"],
+    command: command,
+    ...(subDomainId ? { subDomainId } : {}),
+    ...(pickString(g.storyId) ? { storyId: pickString(g.storyId) } : {}),
+    ...(pickString(g.package) ? { package: pickString(g.package) } : {}),
+    ...(pickString(g.successPattern) ? { successPattern: pickString(g.successPattern) } : {}),
+    ...(pickStringArray(g.references)?.length ? { references: pickStringArray(g.references) } : {}),
+    ...(pickStringArray(g.suggestOnPass)?.length ? { suggestOnPass: pickStringArray(g.suggestOnPass) } : {}),
+    ...(pickStringArray(g.suggestOnFail)?.length ? { suggestOnFail: pickStringArray(g.suggestOnFail) } : {}),
+  };
+}
+
+/**
  * 마크다운 파일 내용을 파싱하여 ParsedDocument를 반환한다.
  */
 export function parseDocument(content: string, filePath: string): ParsedDocument {
@@ -344,8 +323,14 @@ export function parseDocument(content: string, filePath: string): ParsedDocument
 
   const parsed = parseYaml(fm.yaml);
   const def = extractDef(parsed, filePath);
+  const gate = extractGate(parsed, filePath);
 
-  return { def, filePath, body: fm.body };
+  return {
+    def,
+    ...(gate ? { gate } : {}),
+    filePath,
+    body: fm.body,
+  };
 }
 
 // ─── 파일 시스템 스캐너 ──────────────────────────────────
@@ -410,12 +395,15 @@ export async function scanAndBuild(
       const parsed = parseYaml(fm.yaml);
       if (!parsed.def) continue; // def 블록 없으면 건너뜀
 
-      const def = extractDef(parsed, filePath);
+      const doc = parseDocument(content, filePath);
+      const def = doc.def;
       const relPath = relative(baseDir, filePath);
 
       registry.register({
         id: def.id,
         title: fm.body.match(/^#\s+(.+)/m)?.[1] ?? def.id,
+        type: def.type,
+        knowledgeKind: def.knowledge_kind,
         level: def.level,
         scope: def.scope,
         aspect: def.aspect,
@@ -425,6 +413,7 @@ export async function scanAndBuild(
         tags: def.tags ? [...def.tags] : undefined,
         ref: relPath,
         serviceId: def.svc,
+        gate: doc.gate,
         createdAt: now,
         updatedAt: now,
       });

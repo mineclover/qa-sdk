@@ -9,15 +9,13 @@ def:
   lifecycle: approved
   layer: domain
   svc: definition-service
-  tags: [entry-point, tier-system]
+  tags: [entry-point]
   links:
     - target: definition-catalog-spec
       type: refines
     - target: definition-level
       type: contains
     - target: definition-addressing
-      type: contains
-    - target: definition-state-model
       type: contains
 ---
 # Definition Taxonomy — 문서 분류 체계
@@ -26,13 +24,26 @@ def:
 
 문서를 분류하는 축(scope, aspect, depth, level, layer, link_type)의 정의, 유효 조합, 판단 기준을 기술한다. 이 문서 자체가 분류 체계의 메타 정의이며, 코드 SSOT는 `definition-catalog/src/taxonomy.ts`.
 
+## 정의 ^defines
+
+- scope 7종, aspect 22종, depth 4종, lifecycle 5종, layer 4종, link_type 6종
+- VALID_SCOPE_ASPECTS 유효 조합 제약
+- v1/v2 주소 공간 개요
+
+## 위임 ^delegates
+
+- **definition-level** → 분해 레벨(5종) 상세
+- **definition-addressing** → 주소 체계 상세 (이중 관리, 마이그레이션)
+
 ## 구성 ^overview
 
 7개 축이 문서의 정체성을 결정한다:
 
-- **좌표 축** (주소에 인코딩 — 불변): scope × aspect × depth × seq
-- **메타데이터** (변할 수 있음): level, lifecycle, layer
+- **좌표 축** (주소에 인코딩 — 불변): scope(7) × aspect(22) × depth(4) × seq(128)
+- **메타데이터** (변할 수 있음): level(5), lifecycle(5), layer(4)
+- **관계**: link_type(6)
 - **이중 관리**: address(불변 식별자) + id(표시 라벨)
+- **하위 문서**: definition-level(분해 레벨), definition-addressing(주소 체계)
 
 ## 좌표 축
 
@@ -54,7 +65,44 @@ def:
 
 참조: `definition-catalog/src/vocabulary.ts:DEF_ASPECT`
 
-scope별 유효 조합: `definition-catalog/src/taxonomy.ts:VALID_SCOPE_ASPECTS`
+```
+소프트웨어 정의
+├── 화면/UI (ui)
+│   ├── 레이아웃 (layout)         화면의 공간 배치와 구조
+│   ├── 컴포넌트 (component)      재사용 가능한 UI 구성 요소
+│   └── 인터랙션 (interaction)    사용자 상호작용 동작과 피드백
+│
+├── 기능 (feature)
+│   ├── 기능정의 (func_def)       기능의 명세와 동작 규칙
+│   └── 시나리오 (scenario)       기능의 사용 시나리오와 기대 결과
+│
+├── 흐름 (flow)
+│   ├── 사용자시나리오 (user_scenario)  사용자 관점의 작업 흐름
+│   ├── 프로세스흐름 (process_flow)     시스템 내부 처리 순서
+│   └── 연관관계 (relation)             엔티티/기능 간 연결과 의존성
+│
+├── 상태 (state)
+│   ├── 앱상태 (app_state)        프론트엔드 애플리케이션 상태
+│   ├── 도메인상태 (domain_state)  비즈니스 도메인 상태 모델
+│   └── 시스템상태 (system_state)  인프라/런타임 수준 상태
+│
+├── 제약조건 (constraint)
+│   ├── 기술적제약 (tech_constraint)   기술 스택, 성능, 호환성 제약
+│   ├── 비즈니스제약 (biz_constraint)  비즈니스 규칙, 정책, 규정 제약
+│   └── 인프라제약 (infra_constraint)  인프라, 배포, 운영 환경 제약
+│
+├── 데이터 (data)
+│   ├── 도메인데이터 (domain_data)    비즈니스 도메인 엔티티와 스키마
+│   ├── 시스템데이터 (system_data)    설정, 로그, 메트릭 등 시스템 데이터
+│   └── 외부데이터 (external_data)    외부 API, 서드파티 데이터 연동
+│
+└── 인터페이스 (interface)
+    ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마
+    ├── CLI계약 (cli_contract)       커맨드, 플래그, 옵션, 출력 형식
+    └── 이벤트계약 (event_contract)  이벤트 스키마, 메시지 포맷, 발행/구독 규약
+```
+
+scope-aspect 유효 조합: 20개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
 
 ### depth (4종) — "얼마나 상세한가"
 

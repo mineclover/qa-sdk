@@ -8,7 +8,6 @@
  * - 고아 문서: 어디에도 참조되지 않는 approved 문서
  */
 
-import type { DefinitionEntry, DefinitionLink } from "./types.js";
 import type { MemoryDefinitionRegistry } from "./registry.js";
 
 /** 검증 이슈 1건 */
@@ -17,7 +16,8 @@ export interface ValidationIssue {
   readonly type:
     | "broken-link" | "circular-ref" | "self-ref" | "orphan"
     | "missing-purpose" | "short-purpose"
-    | "multi-parent" | "contains-depth-violation";
+    | "multi-parent" | "contains-depth-violation"
+    | "level-violation";
   readonly docId: string;
   readonly message: string;
 }
@@ -71,7 +71,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
 
     const incoming = registry.getLinks(entry.id, "incoming");
-    for (const link of incoming) {
+    for (const _link of incoming) {
       referenced.add(entry.id);
     }
   }
@@ -84,6 +84,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     const stack = [entry.id];
 
     while (stack.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures stack is non-empty
       const current = stack.pop()!;
       if (visited.has(current)) {
         if (current === entry.id && visited.size > 0) {
@@ -159,6 +160,39 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
         type: "contains-depth-violation",
         docId: entry.id,
         message: `contains 계층 ${depth}단계 — 4단계 이하 권장`,
+      });
+    }
+  }
+
+  // level 행동 검증 (group/module/leaf)
+  for (const entry of allEntries) {
+    if (entry.lifecycle === "deprecated") continue;
+    const level = entry.level ?? "leaf";
+    const containsChildren = registry.getLinks(entry.id, "outgoing")
+      .filter(l => l.linkType === "contains");
+
+    if (level === "group" && containsChildren.length === 0) {
+      issues.push({
+        severity: "warning",
+        type: "level-violation" as ValidationIssue["type"],
+        docId: entry.id,
+        message: `level=group인데 contains 자식이 없음 — 묶임의 이유를 설명하려면 자식이 필요`,
+      });
+    }
+    if (level === "module" && containsChildren.length === 0) {
+      issues.push({
+        severity: "warning",
+        type: "level-violation" as ValidationIssue["type"],
+        docId: entry.id,
+        message: `level=module인데 contains 자식이 없음 — 개념 정의에는 구성 요소(leaf)가 필요`,
+      });
+    }
+    if (level === "leaf" && containsChildren.length > 0) {
+      issues.push({
+        severity: "warning",
+        type: "level-violation" as ValidationIssue["type"],
+        docId: entry.id,
+        message: `level=leaf인데 contains 자식 ${containsChildren.length}건 — module 또는 group으로 변경 필요`,
       });
     }
   }

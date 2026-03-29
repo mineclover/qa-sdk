@@ -23,6 +23,8 @@
 
 // ─── 타입 ────────────────────────────────────────────────
 export type {
+  DefDocType,
+  KnowledgeKind,
   DefLevel,
   DefScope,
   DefAspect,
@@ -32,7 +34,6 @@ export type {
   LinkType,
   ConcernTag,
   StructuralTag,
-  TierTag,
   KnownTag,
   PropagationDirection,
   ConcernPropagation,
@@ -62,7 +63,7 @@ export {
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────
-export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef, LinkTypeRule } from "./taxonomy.js";
+export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef, ScenarioMarkerKind, ScenarioMarkerDef, LinkTypeRule } from "./taxonomy.js";
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
@@ -75,7 +76,6 @@ export {
   isLinkMultiParentAllowed,
   CONCERN_TAGS,
   STRUCTURAL_TAGS,
-  TIER_TAGS,
   KNOWN_TAGS,
   isKnownTag,
   detectCrossScope,
@@ -84,6 +84,10 @@ export {
   CONTRACT_MARKER_NAMES,
   isContractMarker,
   getContractMarkerDef,
+  SCENARIO_MARKERS,
+  SCENARIO_MARKER_NAMES,
+  isScenarioMarker,
+  getScenarioMarkerDef,
 } from "./taxonomy.js";
 
 // ─── 카탈로그 ───────────────────────────────────────────
@@ -113,8 +117,11 @@ export {
 } from "./observe.js";
 
 // ─── 설정 파일 ─────────────────────────────────────────
-export type { DefConfig, DriftEntry } from "./def-config.js";
-export { readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath } from "./def-config.js";
+export type { DefConfig, MachineEntityState, DriftEntry } from "./def-config.js";
+export {
+  readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath,
+  readMachineState, writeMachineState, readAllMachineStates,
+} from "./def-config.js";
 
 // ─── 유일 주소 할당 ────────────────────────────────────
 export type { AddressAssignment } from "./address-assign.js";
@@ -130,6 +137,56 @@ export {
   createInstance, transition, availableTransitions, computeDistribution,
   DOC_LIFECYCLE_MACHINE, SPEC_IMPL_MACHINE, CONVENTION_MACHINE, SYNC_MACHINE,
 } from "./state-model.js";
+
+// ─── 하네스 상태 모델 (11개 머신 + 의존 + 프로세스) ─────
+export type {
+  DependencyKind, MachineDependency, ProcessStep, ProcessDefinition,
+  HarnessRegistry, CompositeInstance, TransitionResult, ProcessResult,
+  AddressState, VersionLifecycleState, FlowState,
+  ServiceState, EventState, MetricHealthState, PolicyState,
+} from "./harness-state-model.js";
+export {
+  checkGuards, collectCascades, validateProcess,
+  ADDRESS_STATE_MACHINE, VERSION_LIFECYCLE_MACHINE, FLOW_STATE_MACHINE,
+  SERVICE_STATE_MACHINE, EVENT_STATE_MACHINE, METRIC_HEALTH_MACHINE,
+  POLICY_STATE_MACHINE, SYSTEM_DEPENDENCIES,
+  PREFIX_RELEASE_PROCESS, DOC_APPROVAL_PROCESS, SERVICE_DEPRECATION_PROCESS,
+  createHarnessRegistry, createCompositeInstance,
+} from "./harness-state-model.js";
+
+// ─── 하네스 트래커 (SDK 이벤트 수집) ────────────────────
+export type { HarnessLogger, HarnessTracker } from "./harness-tracker.js";
+export { createHarnessTracker } from "./harness-tracker.js";
+
+// ─── Cross-Loop 브릿지 ─────────────────────────────────
+export type {
+  GateHarnessBridgeConfig, GateHarnessBridge,
+  HarnessContextSnapshot,
+  DecisionOutcome, DecisionInfraBridgeConfig, DecisionInfraBridge,
+} from "./cross-loop-bridge.js";
+export {
+  createGateHarnessBridge,
+  buildHarnessContext,
+  createDecisionInfraBridge,
+} from "./cross-loop-bridge.js";
+
+// ─── Definition Runtime (단일 초기화 진입점) ───────────
+export type { DefinitionRuntimeConfig, DefinitionRuntime } from "./runtime.js";
+export { createDefinitionRuntime } from "./runtime.js";
+
+// ─── 하네스 상태 파생 ──────────────────────────────────
+export type {
+  SyncDeriveInput, SpecImplDeriveInput, ConventionDeriveInput,
+  AddressDeriveInput, ServiceDeriveInput, EventDeriveInput, MetricDeriveInput,
+  DeriveInputs, DerivedStates,
+} from "./harness-derive.js";
+export {
+  deriveDocLifecycle, deriveSyncState,
+  deriveSpecImplState, deriveConventionState,
+  deriveVersionLifecycle, deriveFlowState, derivePolicyState,
+  deriveAddressState, deriveServiceStatus, deriveEventStatus, deriveMetricHealth,
+  deriveAllStates,
+} from "./harness-derive.js";
 
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";
@@ -216,8 +273,10 @@ export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.j
 // ─── 데이터 소스 인터페이스 (서버/로컬 추상화) ───────────
 export type {
   DefDoc,
+  DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefSyntheticIncomingLink,
   DefValidationIssue,
   DefValidationResult,
   DefDataSource,
