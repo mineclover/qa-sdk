@@ -149,8 +149,21 @@ if (err instanceof AppError) {
 return c.json({ code: "INTERNAL_ERROR", message: "internal server error" }, 500);
 ```
 
+## 준수 검증
+
+`packages/core/src/error-convention.test.ts`에서 spec-tracker로 이 컨벤션의 준수를 검증한다.
+
+검증 항목:
+- AppError/ServiceClientError 인터페이스 계약
+- 에러 코드→HTTP 상태 매핑
+- 7개 서비스 소스 코드 정적 스캔 (잘못된 로깅 패턴 0건)
+- 에러 핸들러 AppError 사용 확인
+
+실행: `cd packages/core && npx vitest run src/error-convention.test.ts`
+
 ## 관련 소스
 
 - `packages/core/src/lib/app-error.ts` — AppError, ServiceClientError
+- `packages/core/src/error-convention.test.ts` — 컨벤션 준수 테스트 + spec-tracker 연동
 - `packages/decode-service/src/lib/errors.ts` — fromIndexMetaError (라이브러리→서비스 변환)
 - `packages/decode-service/src/middleware/error-handler.ts` — 에러 핸들러 참조 구현

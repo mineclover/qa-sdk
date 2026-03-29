@@ -22,6 +22,8 @@ def:
       type: contains
     - target: auth-service-spec
       type: contains
+    - target: error-handling-convention
+      type: contains
 ---
 # 지원 계층
 

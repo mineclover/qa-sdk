@@ -58,14 +58,35 @@ def:
 
 - `SpecCollector` — 인메모리 증거 수집기 (`packages/spec-tracker/src/collector.ts`)
 - `generateReport()` — 수집된 증거를 specId별로 집계 (`packages/spec-tracker/src/reporter.ts`)
-- `spec(specId)` — vitest describe/it 래퍼 (`packages/spec-tracker/src/vitest-adapter.ts`)
+- `linkSpec(specId)` — 파일 단위 specId 연결 (`packages/spec-tracker/src/vitest-adapter.ts`)
+- `specIt(specId, name, fn)` — 개별 테스트 specId 연결
 - `getGlobalCollector()` — 프로세스 글로벌 수집기
+- `spec(specId)` — deprecated, linkSpec/specIt 사용 권장
 
 ## 사용 예시
 
-참조: `packages/spec-tracker/src/spec-tracker.test.ts` — 전체 사용 패턴
+참조: `packages/core/src/error-convention.test.ts` — 실제 사용 예시
 
-기본 패턴: `spec(specId)` → `s.describe()` / `s.it()` / `s.marker("inputs").it()`
+vitest describe/it을 그대로 사용하되, collector.record()로 증거를 기록:
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { SpecCollector, generateReport } from "spec-tracker";
+
+const collector = new SpecCollector();
+
+describe("컨벤션 준수", () => {
+  it("AppError 인터페이스", () => {
+    expect(err.code).toBe("NOT_FOUND");
+    collector.record({ specId: "error-handling-convention", status: "pass", testName: "AppError" });
+  });
+
+  it("리포트", () => {
+    const report = generateReport(collector, ["error-handling-convention"]);
+    // coverage: 100%
+  });
+});
+```
 
 ## 제약 조건 ^constraint
 
