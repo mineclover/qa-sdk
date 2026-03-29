@@ -32,6 +32,7 @@
 ## 빌드
 
 - `pnpm --filter <pkg> build` — 개별 빌드
+- TypeScript target: **ES2023** 전체 통일 (루트 + 32개 패키지)
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상
 - platform-demo: `pnpm --filter platform-demo exec vite build --mode development`
 
