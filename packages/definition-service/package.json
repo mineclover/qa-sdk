@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsc --watch --preserveWatchOutput & sleep 2 && node --watch dist/main.js",
     "build": "tsc",
     "start": "node dist/main.js",
     "test": "vitest run",
@@ -17,7 +17,7 @@
     "@nestjs/mercurius": "^13.2.4",
     "@nestjs/platform-fastify": "^11.0.0",
     "@qa-sdk/core": "workspace:*",
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^12.8.0",
     "drizzle-orm": "1.0.0-beta.20",
     "definition-catalog": "workspace:*",
     "graphql": "^16.13.2",
@@ -27,7 +27,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
+    "@types/better-sqlite3": "^7.6.13",
     "drizzle-kit": "1.0.0-beta.20",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",

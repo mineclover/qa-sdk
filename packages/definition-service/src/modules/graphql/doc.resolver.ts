@@ -27,22 +27,22 @@ export class DocResolver {
   // ── Query ─────────────────────────────────────────────
 
   @Query(() => Doc, { nullable: true, description: "단일 문서 조회" })
-  doc(@Args("id") id: string): Doc | null {
+  doc(@Args("id", { type: () => String }) id: string): Doc | null {
     const record = this.docsService.get(id);
     return record ? this.toDoc(record) : null;
   }
 
   @Query(() => [Doc], { description: "문서 목록 (확장 필터 + 전문검색 + pagination)" })
   docList(
-    @Args("scope", { nullable: true }) scope?: string,
-    @Args("aspect", { nullable: true }) aspect?: string,
-    @Args("depth", { nullable: true }) depth?: string,
-    @Args("lifecycle", { nullable: true }) lifecycle?: string,
-    @Args("layer", { nullable: true }) layer?: string,
-    @Args("svc", { nullable: true }) svc?: string,
-    @Args("tag", { nullable: true }) tag?: string,
-    @Args("address", { nullable: true }) address?: string,
-    @Args("q", { nullable: true }) q?: string,
+    @Args("scope", { type: () => String, nullable: true }) scope?: string,
+    @Args("aspect", { type: () => String, nullable: true }) aspect?: string,
+    @Args("depth", { type: () => String, nullable: true }) depth?: string,
+    @Args("lifecycle", { type: () => String, nullable: true }) lifecycle?: string,
+    @Args("layer", { type: () => String, nullable: true }) layer?: string,
+    @Args("svc", { type: () => String, nullable: true }) svc?: string,
+    @Args("tag", { type: () => String, nullable: true }) tag?: string,
+    @Args("address", { type: () => String, nullable: true }) address?: string,
+    @Args("q", { type: () => String, nullable: true }) q?: string,
     @Args("limit", { type: () => Int, nullable: true }) limit?: number,
     @Args("offset", { type: () => Int, nullable: true }) offset?: number,
   ): Doc[] {
@@ -53,7 +53,7 @@ export class DocResolver {
   }
 
   @Query(() => ImpactAnalysisResult, { nullable: true, description: "영향 분석 (blast radius)" })
-  impact(@Args("docId") docId: string): ImpactAnalysisResult | null {
+  impact(@Args("docId", { type: () => String }) docId: string): ImpactAnalysisResult | null {
     const result = this.graphService.impact(docId);
     if (!result) return null;
     return {
@@ -70,7 +70,7 @@ export class DocResolver {
   }
 
   @Query(() => ConcernsResult, { nullable: true, description: "concern 전파 조회" })
-  concerns(@Args("docId") docId: string): ConcernsResult | null {
+  concerns(@Args("docId", { type: () => String }) docId: string): ConcernsResult | null {
     const result = this.graphService.concerns(docId);
     if (!result) return null;
     return {
