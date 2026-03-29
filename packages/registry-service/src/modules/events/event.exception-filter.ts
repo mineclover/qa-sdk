@@ -3,15 +3,18 @@ import {
   Catch,
   type ExceptionFilter,
 } from "@nestjs/common";
-import { EventHttpError } from "./event-http-error.js";
+import { AppError } from "@qa-sdk/core";
 
-@Catch(EventHttpError)
+@Catch(AppError)
 export class EventExceptionFilter implements ExceptionFilter {
-  catch(exception: EventHttpError, host: ArgumentsHost) {
+  catch(exception: AppError, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<{
       status(code: number): { send(body: unknown): unknown };
     }>();
 
-    return response.status(exception.status).send(exception.body);
+    return response.status(exception.statusCode).send({
+      error: exception.message,
+      ...(Object.keys(exception.extras).length > 0 ? exception.extras : {}),
+    });
   }
 }

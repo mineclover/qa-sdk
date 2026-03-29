@@ -47,7 +47,7 @@ describe("HttpGateStateClient", () => {
     await expect(client.getStateRanges("perm", "v1")).rejects.toMatchObject({
       name: "GateServiceClientError",
       message: "gate unavailable",
-      statusCode: 503,
+      status: 503,
     } satisfies Partial<GateServiceClientError>);
   });
 });

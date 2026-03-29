@@ -1,4 +1,4 @@
-import type { PrefixRegistry, VersionLifecycleStore, DimRef } from "index-meta";
+import type { PrefixRegistry, VersionLifecycleStore } from "index-meta";
 import { calcWeights } from "weighted-index";
 import type { PrefixOwnerStore } from "../stores/prefix-owner-store.js";
 import type {
@@ -352,6 +352,7 @@ async function computeSimulateReleaseOrder(
     for (const dep of deps) {
       if (allPrefixes.has(dep.prefix)) {
         if (!adj.has(prefix)) adj.set(prefix, new Set());
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Map.get() right after set()
         adj.get(prefix)!.add(dep.prefix);
       }
     }
@@ -369,10 +370,12 @@ async function computeAnalyzeReleaseOrder(
 
   for (const d of drafts) {
     if (!adj.has(d.prefix)) adj.set(d.prefix, new Set());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Map.get() right after set()
+    const prefixAdj = adj.get(d.prefix)!;
     const deps = await registry.getDeps(d.prefix, d.versionId);
     for (const dep of deps) {
       if (allPrefixes.has(dep.prefix)) {
-        adj.get(d.prefix)!.add(dep.prefix);
+        prefixAdj.add(dep.prefix);
       }
     }
   }

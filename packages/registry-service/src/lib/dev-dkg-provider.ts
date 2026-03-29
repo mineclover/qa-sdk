@@ -162,7 +162,7 @@ export async function createDevDkgProvider(
       const loaded = dkgStore.loadGraph();
       if (loaded.getAllNodes().length === 0) {
         cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
-        dkgStore.saveGraph(cachedGraph!, "bootstrap");
+        dkgStore.saveGraph(cachedGraph, "bootstrap");
       } else {
         cachedGraph = loaded;
       }
@@ -210,10 +210,12 @@ export async function createDevDkgProvider(
   return {
     getGraph() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees cachedGraph is set
       return cachedGraph!;
     },
     getCatalog() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees cachedCatalog is set
       return cachedCatalog!;
     },
     getStore() {
@@ -222,6 +224,7 @@ export async function createDevDkgProvider(
     },
     collectMetrics() {
       ensureInit();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ensureInit() guarantees both are set
       return analysis.collectMetrics(cachedCatalog!, cachedGraph!, null);
     },
     metricsToObservations(metrics: MetricValuePort[]) {

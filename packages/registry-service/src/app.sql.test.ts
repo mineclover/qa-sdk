@@ -164,7 +164,7 @@ describe("SQL Integration — Composite DAG + Workspace", () => {
     const depsRes = await app.request("/dag/perm/v1/deps");
     const deps = await json(depsRes);
     expect(deps).toHaveLength(2);
-    expect(deps.map((d: any) => d.prefix).sort()).toEqual(["role", "svc"]);
+    expect(deps.map((d: any) => d.prefix).toSorted()).toEqual(["role", "svc"]);
 
     // simulate: role 5→8
     const simRes = await app.request("/workspace/simulate", {

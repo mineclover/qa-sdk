@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { Catalog, PrefixDef } from "@qa-sdk/core";
-import { CATALOG_STORE, CatalogHttpError } from "./catalog.service.js";
+import { AppError } from "@qa-sdk/core";
+import { CATALOG_STORE } from "./catalog.service.js";
 import type { CatalogStore } from "../../stores/catalog-store.js";
 
 export interface DecodeMapDim {
@@ -44,12 +45,12 @@ export class DecodeMapService {
     const catalog = await this.requireCatalog(catalogId);
     const prefix = catalog.prefixes?.[prefixId];
     if (!prefix) {
-      throw new CatalogHttpError(404, { error: `Prefix '${prefixId}' not found` });
+      throw new AppError("NOT_FOUND", `Prefix '${prefixId}' not found`, 404);
     }
 
     const map = this.buildDecodeMap(catalog, prefixId, prefix, versionId);
     if (!map) {
-      throw new CatalogHttpError(404, { error: `Version '${versionId}' not found for prefix '${prefixId}'` });
+      throw new AppError("NOT_FOUND", `Version '${versionId}' not found for prefix '${prefixId}'`, 404);
     }
 
     return map;
@@ -58,7 +59,7 @@ export class DecodeMapService {
   private async requireCatalog(catalogId: string) {
     const record = await this.catalogStore.get(catalogId);
     if (!record) {
-      throw new CatalogHttpError(404, { error: `Catalog '${catalogId}' not found` });
+      throw new AppError("NOT_FOUND", `Catalog '${catalogId}' not found`, 404);
     }
 
     return JSON.parse(record.data) as Catalog;

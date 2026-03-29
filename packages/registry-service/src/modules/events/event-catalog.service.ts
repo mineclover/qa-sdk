@@ -11,7 +11,7 @@ import {
   v1MinimalSet,
 } from "@qa-sdk/event-catalog";
 import type { Channel, DimSource } from "@qa-sdk/event-catalog";
-import { EventHttpError } from "./event-http-error.js";
+import { AppError } from "@qa-sdk/core";
 
 type EventCatalogFilters = {
   category?: string;
@@ -67,7 +67,7 @@ export class EventCatalogService {
     const prefixMapping = getMapping(key);
 
     if (!event && !prefixMapping) {
-      throw new EventHttpError(404, { error: `Event '${key}' not found` });
+      throw new AppError("NOT_FOUND", `Event '${key}' not found`, 404);
     }
 
     return {

@@ -28,7 +28,7 @@ export class InMemoryPrefixOwnerStore implements PrefixOwnerStore {
     if (!existing) throw new Error(`Prefix '${prefix}' not found`);
 
     const mergedMeta: Record<string, unknown> | undefined = patch.meta
-      ? { ...(existing.meta ?? {}), ...patch.meta }
+      ? { ...existing.meta, ...patch.meta }
       : existing.meta ? { ...existing.meta } : undefined;
     if (patch.name && mergedMeta) {
       mergedMeta.name = patch.name;

@@ -5,12 +5,12 @@
  * 어떤 런타임에서든 사용 가능 (Node, Bun, Cloudflare Workers, 브라우저).
  */
 
+import { ServiceClientError } from "@qa-sdk/core";
 import type {
   DocRecord,
   DocHistoryRecord,
   DocListResponse,
   DocHistoryResponse,
-  SliceIntentRecord,
   IntentListResponse,
   IntentResolveResponse,
   IntentCreateInput,
@@ -321,13 +321,14 @@ export class DefinitionClient {
 }
 
 /** definition-service 통신 에러 */
-export class DefinitionClientError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly body: string,
-    public readonly path: string,
-  ) {
-    super(`definition-service ${path} → ${status}: ${body}`);
+export class DefinitionClientError extends ServiceClientError {
+  public readonly body: string;
+  public readonly path: string;
+
+  constructor(status: number, body: string, path: string) {
+    super(`definition-service ${path} → ${status}: ${body}`, status, { body, path });
     this.name = "DefinitionClientError";
+    this.body = body;
+    this.path = path;
   }
 }

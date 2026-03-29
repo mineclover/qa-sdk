@@ -23,8 +23,9 @@ export async function buildPostActivationHookPort(
     const storeModule = await (options.loadStoreModule
       ?? (async () => import("@qa-sdk/spec-core/store") as unknown as StoreModulePort))();
 
-    const dkgStore = options.dkgPath ?? env.POST_ACTIVATION_DKG_PATH
-      ? new storeModule.DkgSqliteStore((options.dkgPath ?? env.POST_ACTIVATION_DKG_PATH)!)
+    const dkgPath = options.dkgPath ?? env.POST_ACTIVATION_DKG_PATH;
+    const dkgStore = dkgPath
+      ? new storeModule.DkgSqliteStore(dkgPath)
       : undefined;
 
     const hook = createPostActivationHook({

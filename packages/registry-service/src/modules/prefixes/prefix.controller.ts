@@ -44,7 +44,7 @@ export class PrefixController {
     if (body.category || body.meta) {
       patch.meta = {
         ...(body.category ? { category: body.category } : {}),
-        ...(body.meta ?? {}),
+        ...body.meta,
       };
     }
 

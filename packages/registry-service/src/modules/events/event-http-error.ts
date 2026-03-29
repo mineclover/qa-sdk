@@ -1,8 +1,2 @@
-export class EventHttpError extends Error {
-  constructor(
-    readonly status: number,
-    readonly body: { error: string },
-  ) {
-    super(body.error);
-  }
-}
+// EventHttpError 삭제됨 — AppError(@qa-sdk/core)로 대체
+export { AppError } from "@qa-sdk/core";

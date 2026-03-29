@@ -132,7 +132,7 @@ describe("Axis Routes (Nest)", () => {
     expect(res.status).toBe(200);
     const list = await res.json<any[]>();
     expect(list).toHaveLength(2);
-    expect(list.map((axis) => axis.id).sort()).toEqual(["env", "region"]);
+    expect(list.map((axis) => axis.id).toSorted()).toEqual(["env", "region"]);
   });
 
   it("GET /catalogs/:cid/axes 빈 카탈로그 → 빈 배열", async () => {
@@ -349,7 +349,7 @@ describe("Axis Profile API + Prefix PATCH (Nest)", () => {
     expect(res.status).toBe(200);
     const list = await res.json<any[]>();
     expect(list).toHaveLength(2);
-    expect(list.map((axis) => axis.id).sort()).toEqual(["action", "role"]);
+    expect(list.map((axis) => axis.id).toSorted()).toEqual(["action", "role"]);
   });
 
   it("5. GET /catalogs/demo/axes/:id → 단건 조회", async () => {

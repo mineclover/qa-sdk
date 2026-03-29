@@ -1,5 +1,4 @@
 import type { SqlDriver } from "index-meta";
-import { POLICY_RULE_SCHEMA_STATEMENTS } from "./policy-rule.schema.js";
 import {
   cloneStoredPolicyRule,
   compareStoredPolicyRules,
@@ -20,6 +19,8 @@ interface PolicyRuleRow extends Record<string, unknown> {
   updated_at: string;
   rule_set_id: string | null;
 }
+
+const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 
 export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
   private schemaReady: Promise<void> | null = null;
@@ -79,7 +80,7 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
 
     return rows
       .map((row) => toStoredPolicyRule<T>(row))
-      .sort(compareStoredPolicyRules);
+      .toSorted(compareStoredPolicyRules);
   }
 
   async update(rule: StoredPolicyRule<T>): Promise<StoredPolicyRule<T>> {
@@ -122,12 +123,13 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
   }
 
   private async ensureSchema(): Promise<void> {
+    if (this.driver.dialect.name === "d1") {
+      // Workers/D1는 런타임 파일시스템 접근이 불가해 배포 시점에 migration을 적용해야 한다.
+      return;
+    }
+
     if (!this.schemaReady) {
-      this.schemaReady = (async () => {
-        for (const statement of POLICY_RULE_SCHEMA_STATEMENTS) {
-          await this.driver.execute(statement);
-        }
-      })();
+      this.schemaReady = migratePolicyRuleSchema(this.driver);
     }
     await this.schemaReady;
   }
@@ -159,4 +161,44 @@ function toParams<T>(rule: StoredPolicyRule<T>): unknown[] {
     rule.updatedAt,
     rule.ruleSetId ?? null,
   ];
+}
+
+async function migratePolicyRuleSchema(driver: SqlDriver): Promise<void> {
+  const [{ drizzle }, { migrate }] = await Promise.all([
+    import("drizzle-orm/sqlite-proxy"),
+    import("drizzle-orm/sqlite-proxy/migrator"),
+  ]);
+
+  const db = drizzle(async (sql, params, method) => {
+    switch (method) {
+      case "run":
+        await driver.execute(sql, params);
+        return { rows: [] };
+      case "get": {
+        const row = await driver.queryOne<Record<string, unknown>>(sql, params);
+        return { rows: row ? [row] : [] };
+      }
+      case "values": {
+        const rows = await driver.query<Record<string, unknown>>(sql, params);
+        return { rows: rows.map((row) => Object.values(row)) };
+      }
+      case "all":
+      default:
+        return {
+          rows: await driver.query<Record<string, unknown>>(sql, params),
+        };
+    }
+  });
+
+  await migrate(
+    db,
+    async (queries) => {
+      await driver.transaction(async (tx) => {
+        for (const query of queries) {
+          await tx.execute(query);
+        }
+      });
+    },
+    { migrationsFolder },
+  );
 }

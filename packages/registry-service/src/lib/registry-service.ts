@@ -102,6 +102,7 @@ export class RegistryService {
     const record = await this.ownerStore.get(prefix);
     if (!record) throw prefixNotFound(prefix);
     await this.ownerStore.patch(prefix, patch);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- existence verified above, patch does not delete
     return (await this.ownerStore.get(prefix))!;
   }
 
@@ -821,8 +822,10 @@ export class RegistryService {
       for (const d of drafts) {
         const deps = await this.prefixRegistry.getDeps(p.prefix, d.versionId);
         if (!adj.has(p.prefix)) adj.set(p.prefix, new Set());
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- Map.get() right after set()
+        const prefixAdj = adj.get(p.prefix)!;
         for (const dep of deps) {
-          adj.get(p.prefix)!.add(dep.prefix);
+          prefixAdj.add(dep.prefix);
         }
       }
     }

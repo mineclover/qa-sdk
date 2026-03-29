@@ -39,7 +39,7 @@ export class InMemoryPolicyRuleStore<T = unknown>
         (rule) =>
           rule.indexId === indexId && rule.versionId === versionId,
       )
-      .sort(compareStoredPolicyRules)
+      .toSorted(compareStoredPolicyRules)
       .map(cloneStoredPolicyRule);
   }
 

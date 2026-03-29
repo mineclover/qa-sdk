@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { AppError } from "@qa-sdk/core";
 import { DefinitionClient } from "@qa-sdk/definition-client";
 import { runDefinitionClientCall } from "../../lib/definition-client-fail-open.js";
 import { createLogger } from "../../lib/logger.js";
@@ -16,15 +17,6 @@ const logger = createLogger("registry-service");
 type ServiceListPayload = {
   services?: unknown;
 };
-
-export class ServiceModuleHttpError extends Error {
-  constructor(
-    readonly status: number,
-    readonly body: { error: string },
-  ) {
-    super(body.error);
-  }
-}
 
 @Injectable()
 export class ServiceTopologyService {
@@ -55,7 +47,7 @@ export class ServiceTopologyService {
     const services = await this.requireServices(catalogId);
     const found = services.find((service) => service.serviceId === serviceId);
     if (!found) {
-      throw new ServiceModuleHttpError(404, { error: `Service '${serviceId}' not found` });
+      throw new AppError("NOT_FOUND", `Service '${serviceId}' not found`, 404);
     }
 
     return found;
@@ -64,7 +56,7 @@ export class ServiceTopologyService {
   async replaceAll(catalogId: string, input: unknown) {
     const body = this.asListPayload(input);
     if (!Array.isArray(body.services)) {
-      throw new ServiceModuleHttpError(400, { error: "services 배열 필수" });
+      throw new AppError("INVALID_INPUT", "services 배열 필수", 400);
     }
 
     await this.configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(body.services));
@@ -78,7 +70,7 @@ export class ServiceTopologyService {
   async upsert(catalogId: string, input: unknown) {
     const body = this.asRecord(input) as Partial<ServiceRecord>;
     if (!body.serviceId || !body.name) {
-      throw new ServiceModuleHttpError(400, { error: "serviceId, name 필수" });
+      throw new AppError("INVALID_INPUT", "serviceId, name 필수", 400);
     }
 
     const services = await this.list(catalogId);
@@ -104,7 +96,7 @@ export class ServiceTopologyService {
     const services = await this.requireServices(catalogId);
     const filtered = services.filter((service) => service.serviceId !== serviceId);
     if (filtered.length === services.length) {
-      throw new ServiceModuleHttpError(404, { error: `Service '${serviceId}' not found` });
+      throw new AppError("NOT_FOUND", `Service '${serviceId}' not found`, 404);
     }
 
     await this.configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(filtered));
@@ -185,9 +177,9 @@ export class ServiceTopologyService {
     const services = await this.list(catalogId);
     return {
       routes: services
-        .filter((service) => service.gatewayPath)
+        .filter((service): service is typeof service & { gatewayPath: string } => !!service.gatewayPath)
         .map((service) => ({
-          path: service.gatewayPath!,
+          path: service.gatewayPath,
           serviceId: service.serviceId,
           url: endpointUrls[service.serviceId] ?? service.urls?.[query.envName] ?? service.url ?? "",
           tier: service.tier ?? "backend",
@@ -200,7 +192,7 @@ export class ServiceTopologyService {
   private async requireServices(catalogId: string) {
     const record = await this.configStore.get(catalogId, CONFIG_TYPE);
     if (!record) {
-      throw new ServiceModuleHttpError(404, { error: "Services not found" });
+      throw new AppError("NOT_FOUND", "Services not found", 404);
     }
 
     return this.parseServices(record.data) ?? [];

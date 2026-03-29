@@ -3,15 +3,18 @@ import {
   Catch,
   type ExceptionFilter,
 } from "@nestjs/common";
-import { AxisHttpError } from "./axis.service.js";
+import { AppError } from "@qa-sdk/core";
 
-@Catch(AxisHttpError)
+@Catch(AppError)
 export class AxisExceptionFilter implements ExceptionFilter {
-  catch(exception: AxisHttpError, host: ArgumentsHost) {
+  catch(exception: AppError, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<{
       status(code: number): { send(body: unknown): unknown };
     }>();
 
-    return response.status(exception.status).send(exception.body);
+    return response.status(exception.statusCode).send({
+      error: exception.message,
+      ...(Object.keys(exception.extras).length > 0 ? exception.extras : {}),
+    });
   }
 }

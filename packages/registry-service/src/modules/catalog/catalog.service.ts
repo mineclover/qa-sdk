@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { AppError } from "@qa-sdk/core";
 import type { CatalogRecord, CatalogStore } from "../../stores/catalog-store.js";
 import type { ConfigStore } from "../../stores/config-store.js";
 
@@ -24,15 +25,6 @@ export interface CatalogChangeHandler {
   catalogChanged(catalogId: string): void | Promise<void>;
 }
 
-export class CatalogHttpError extends Error {
-  constructor(
-    readonly status: number,
-    readonly body: { error: string },
-  ) {
-    super(body.error);
-  }
-}
-
 @Injectable()
 export class CatalogService {
   constructor(
@@ -46,13 +38,12 @@ export class CatalogService {
     configStore?: ConfigStore;
     onCatalogChange?: (catalogId: string) => void | Promise<void>;
   }) {
+    const handler = deps.onCatalogChange;
     return new CatalogService(
       deps.catalogStore,
       deps.configStore,
-      deps.onCatalogChange
-        ? {
-            catalogChanged: (catalogId: string) => deps.onCatalogChange!(catalogId),
-          }
+      handler
+        ? { catalogChanged: (catalogId: string) => handler(catalogId) }
         : undefined,
     );
   }
@@ -60,12 +51,12 @@ export class CatalogService {
   async register(input: unknown) {
     const body = this.asCatalogPayload(input);
     if (!body.id || !body.name || !body.data) {
-      throw new CatalogHttpError(400, { error: "id, name, data 필수" });
+      throw new AppError("INVALID_INPUT", "id, name, data 필수", 400);
     }
 
     const existing = await this.catalogStore.get(body.id);
     if (existing) {
-      throw new CatalogHttpError(409, { error: `Catalog '${body.id}' already exists` });
+      throw new AppError("CONFLICT", `Catalog '${body.id}' already exists`, 409);
     }
 
     const now = new Date().toISOString();
@@ -130,7 +121,7 @@ export class CatalogService {
         dims: Array.isArray(prefix.labels) ? prefix.labels.length : 0,
       }));
     } catch {
-      throw new CatalogHttpError(500, { error: "카탈로그 데이터 파싱 실패" });
+      throw new AppError("INTERNAL_ERROR", "카탈로그 데이터 파싱 실패", 500);
     }
   }
 
@@ -181,7 +172,7 @@ export class CatalogService {
     const configStore = this.requireConfigStore();
     const record = await configStore.get(id, configType);
     if (!record) {
-      throw new CatalogHttpError(404, { error: notFoundMessage });
+      throw new AppError("NOT_FOUND", notFoundMessage, 404);
     }
 
     return {
@@ -201,7 +192,7 @@ export class CatalogService {
     const configStore = this.requireConfigStore();
     const body = this.asConfigPayload(input);
     if (!body.data) {
-      throw new CatalogHttpError(400, { error: missingDataMessage });
+      throw new AppError("INVALID_INPUT", missingDataMessage, 400);
     }
 
     await configStore.set(id, configType, body.data);
@@ -214,7 +205,7 @@ export class CatalogService {
   private async requireCatalog(id: string): Promise<CatalogRecord> {
     const record = await this.catalogStore.get(id);
     if (!record) {
-      throw new CatalogHttpError(404, { error: `Catalog '${id}' not found` });
+      throw new AppError("NOT_FOUND", `Catalog '${id}' not found`, 404);
     }
 
     return record;
@@ -222,7 +213,7 @@ export class CatalogService {
 
   private requireConfigStore(): ConfigStore {
     if (!this.configStore) {
-      throw new CatalogHttpError(503, { error: "configStore not available" });
+      throw new AppError("SERVICE_UNAVAILABLE", "configStore not available", 503);
     }
 
     return this.configStore;

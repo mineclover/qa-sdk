@@ -7,7 +7,7 @@ import type {
   GraphRegistryPort,
   MetricValuePort,
 } from "../../types/spec-core-ports.js";
-import { DashboardHttpError } from "./dashboard-http-error.js";
+import { AppError } from "@qa-sdk/core";
 
 interface SchemaLayerEntry {
   id: string;
@@ -353,7 +353,7 @@ export class DashboardService {
 
   refresh() {
     if (!this.deps.provider) {
-      throw new DashboardHttpError(503, { error: "dev dashboard not enabled" });
+      throw new AppError("SERVICE_UNAVAILABLE", "dev dashboard not enabled", 503);
     }
     this.deps.provider.refresh();
     return { ok: true, message: "Cache invalidated. Next request will re-bootstrap." };
@@ -378,14 +378,14 @@ export class DashboardService {
 
   getHtml() {
     if (!this.deps.provider) {
-      throw new DashboardHttpError(503, { error: "dev dashboard not enabled" });
+      throw new AppError("SERVICE_UNAVAILABLE", "dev dashboard not enabled", 503);
     }
     if (!this.cachedHtml) {
       try {
         const dir = dirname(fileURLToPath(import.meta.url));
         this.cachedHtml = readFileSync(join(dir, "../../../public/dev-dashboard.html"), "utf-8");
       } catch {
-        throw new DashboardHttpError(404, { error: "Dashboard HTML not found" });
+        throw new AppError("NOT_FOUND", "Dashboard HTML not found", 404);
       }
     }
     return this.cachedHtml;
@@ -416,7 +416,7 @@ export class DashboardService {
   private getGraph() {
     const graph = this.deps.provider?.getGraph() ?? this.deps.getGraph?.();
     if (!graph) {
-      throw new DashboardHttpError(503, { error: "DKG graph not initialized" });
+      throw new AppError("SERVICE_UNAVAILABLE", "DKG graph not initialized", 503);
     }
     return graph;
   }
@@ -424,7 +424,7 @@ export class DashboardService {
   private getCatalog() {
     const catalog = this.deps.provider?.getCatalog() ?? this.deps.getCatalog?.();
     if (!catalog) {
-      throw new DashboardHttpError(503, { error: "catalog not available" });
+      throw new AppError("SERVICE_UNAVAILABLE", "catalog not available", 503);
     }
     return catalog;
   }
@@ -434,7 +434,7 @@ export class DashboardService {
       ? this.deps.provider.collectMetrics()
       : this.deps.collectMetrics?.();
     if (!metrics) {
-      throw new DashboardHttpError(503, { error: "metrics not available (no analysis module)" });
+      throw new AppError("SERVICE_UNAVAILABLE", "metrics not available (no analysis module)", 503);
     }
     return metrics;
   }

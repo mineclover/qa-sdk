@@ -1,10 +1,10 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { AppError } from "@qa-sdk/core";
 import type { ConfigStore } from "../../stores/config-store.js";
 import type { ServiceEndpointStore } from "../../stores/service-endpoint-store.js";
 import {
   SERVICE_CONFIG_STORE,
   SERVICE_ENDPOINT_STORE,
-  ServiceModuleHttpError,
 } from "./service-topology.service.js";
 
 type JsonValue =
@@ -51,14 +51,14 @@ export class ServiceHealthService {
   }) {
     const record = await this.configStore.get(query.catalogId, "services");
     if (!record) {
-      throw new ServiceModuleHttpError(404, { error: "No services registered" });
+      throw new AppError("NOT_FOUND", "No services registered", 404);
     }
 
     let services: ServiceRecord[];
     try {
       services = JSON.parse(record.data) as ServiceRecord[];
     } catch {
-      throw new ServiceModuleHttpError(500, { error: "Invalid services data" });
+      throw new AppError("INTERNAL_ERROR", "Invalid services data", 500);
     }
 
     const endpointUrls: Record<string, string> = {};

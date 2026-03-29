@@ -1,11 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { AppError } from "@qa-sdk/core";
 import {
   SERVICE_CONFIG_STORE,
-  ServiceModuleHttpError,
   ServiceTopologyService,
 } from "./service-topology.service.js";
 import type { ConfigStore } from "../../stores/config-store.js";
-import type { ServiceRecord } from "./service.types.js";
 
 const APPLICATIONS_CONFIG_TYPE = "applications";
 
@@ -46,7 +45,7 @@ export class ApplicationService {
     const applications = await this.list(catalogId);
     const found = applications.find((application) => application.applicationId === applicationId);
     if (!found) {
-      throw new ServiceModuleHttpError(404, { error: `Application '${applicationId}' not found` });
+      throw new AppError("NOT_FOUND", `Application '${applicationId}' not found`, 404);
     }
 
     const services = await this.serviceTopology.list(catalogId);
@@ -60,7 +59,7 @@ export class ApplicationService {
     const body = this.asListPayload(input);
     const applications = Array.isArray(body.applications) ? body.applications as ApplicationRecord[] : null;
     if (!applications) {
-      throw new ServiceModuleHttpError(400, { error: "applications 배열 필수" });
+      throw new AppError("INVALID_INPUT", "applications 배열 필수", 400);
     }
 
     await this.configStore.set(catalogId, APPLICATIONS_CONFIG_TYPE, JSON.stringify(applications));

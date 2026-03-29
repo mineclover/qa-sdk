@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { AppError } from "@qa-sdk/core";
 import type { EventSchemaRecord, EventSchemaStore } from "../../stores/event-schema-store.js";
-import { EventHttpError } from "./event-http-error.js";
 
 export const EVENT_SCHEMA_STORE = "EVENT_SCHEMA_STORE";
 
@@ -29,7 +29,7 @@ export class EventSchemaService {
     const records = await this.eventSchemaStore.listByService(catalogId, serviceId);
     const versions = records.filter((record) => record.eventKey === eventKey);
     if (versions.length === 0) {
-      throw new EventHttpError(404, { error: `Event '${serviceId}/${eventKey}' not found` });
+      throw new AppError("NOT_FOUND", `Event '${serviceId}/${eventKey}' not found`, 404);
     }
 
     return {
@@ -42,7 +42,7 @@ export class EventSchemaService {
   async get(catalogId: string, serviceId: string, eventKey: string, eventVersion: string) {
     const record = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!record) {
-      throw new EventHttpError(404, { error: "Event schema not found" });
+      throw new AppError("NOT_FOUND", "Event schema not found", 404);
     }
 
     return record;
@@ -82,7 +82,7 @@ export class EventSchemaService {
   async remove(catalogId: string, serviceId: string, eventKey: string, eventVersion: string) {
     const existing = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!existing) {
-      throw new EventHttpError(404, { error: "Event schema not found" });
+      throw new AppError("NOT_FOUND", "Event schema not found", 404);
     }
 
     await this.eventSchemaStore.delete(catalogId, serviceId, eventKey, eventVersion);
@@ -90,10 +90,11 @@ export class EventSchemaService {
   }
 
   async validateLegacyRoute(catalogId: string, rawName: string, eventKey: string, eventVersion: string) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split("/") on a string containing "/" always yields ≥2 elements
     const serviceId = rawName.includes("/") ? rawName.split("/").pop()! : rawName;
     const record = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!record) {
-      throw new EventHttpError(404, { error: "Event not found" });
+      throw new AppError("NOT_FOUND", "Event not found", 404);
     }
 
     return record;

@@ -10,11 +10,10 @@ import {
 import { runDefinitionClientCall } from "../../lib/definition-client-fail-open.js";
 import { RegistryService, type PostActivationHookPort } from "../../lib/registry-service.js";
 import { createLogger } from "../../lib/logger.js";
-import type { PatchDraftInput } from "../../schemas/version.js";
+import type { PatchDraftInput, CreateDraftInput } from "../../schemas/version.js";
 import type { DraftLockStore } from "../../stores/draft-lock-store.js";
 import type { PrefixOwnerStore } from "../../stores/prefix-owner-store.js";
 import type { ActivationGatePort } from "../../lib/activation-gate-adapter.js";
-import type { CreateDraftInput } from "../../schemas/version.js";
 import type { ExtendedVersionStatus } from "../../types/index.js";
 
 export const ACTIVATION_GATE = "ACTIVATION_GATE";

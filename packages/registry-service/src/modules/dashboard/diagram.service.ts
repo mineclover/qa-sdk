@@ -1,6 +1,6 @@
+import { AppError } from "@qa-sdk/core";
 import type { DevDkgProvider } from "../../lib/dev-dkg-provider.js";
 import type { GraphRegistryPort } from "../../types/spec-core-ports.js";
-import { DashboardHttpError } from "./dashboard-http-error.js";
 
 type MermaidDiagramOptions = { showInvariants?: boolean };
 
@@ -71,7 +71,7 @@ export class DiagramService {
           break;
         case "service":
           if (!topo) {
-            throw new DashboardHttpError(503, { error: "topology not available" });
+            throw new AppError("SERVICE_UNAVAILABLE", "topology not available", 503);
           }
           mmd = viz.serviceDiagram(graph, topo, id, opts);
           break;
@@ -94,23 +94,21 @@ export class DiagramService {
           mmd = viz.transitionDagDiagram(graph, opts);
           break;
         default:
-          throw new DashboardHttpError(400, { error: `Unknown diagram kind: ${kind}` });
+          throw new AppError("INVALID_INPUT", `Unknown diagram kind: ${kind}`, 400);
       }
       return { kind, id, mmd };
     } catch (error) {
-      if (error instanceof DashboardHttpError) {
+      if (error instanceof AppError) {
         throw error;
       }
-      throw new DashboardHttpError(400, {
-        error: error instanceof Error ? error.message : "diagram generation failed",
-      });
+      throw new AppError("INVALID_INPUT", error instanceof Error ? error.message : "diagram generation failed", 400);
     }
   }
 
   private getGraph() {
     const graph = this.deps.provider?.getGraph() ?? this.deps.getGraph?.();
     if (!graph) {
-      throw new DashboardHttpError(503, { error: "DKG graph not initialized" });
+      throw new AppError("SERVICE_UNAVAILABLE", "DKG graph not initialized", 503);
     }
     return graph;
   }
@@ -122,7 +120,7 @@ export class DiagramService {
       this.vizFns = mod as unknown as DiagramFns;
       return this.vizFns;
     } catch {
-      throw new DashboardHttpError(503, { error: "spec-core/viz not available" });
+      throw new AppError("SERVICE_UNAVAILABLE", "spec-core/viz not available", 503);
     }
   }
 

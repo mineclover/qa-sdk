@@ -206,7 +206,7 @@ export type { IdentifyActorInput } from "./lib/identify-actor.js";
 export { createLogger } from "./lib/create-logger.js";
 export type { Logger } from "./lib/create-logger.js";
 
-export { AppError } from "./lib/app-error.js";
+export { AppError, ServiceClientError } from "./lib/app-error.js";
 
 export {
   emptyStringToUndefined,
