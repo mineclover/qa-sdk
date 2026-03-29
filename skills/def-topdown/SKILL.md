@@ -5,7 +5,7 @@ description: "definition-catalog 탑다운 조회. 시스템/그룹에서 시작
 
 # Definition Catalog — 탑다운 조회
 
-시스템/그룹 문서에서 시작하여 contains 멤버의 purpose/overview를 scope 순서로 조립한다.
+group/module 문서에서 시작하여 contains 멤버의 purpose/overview를 scope 순서로 조립한다.
 
 ## 실행
 

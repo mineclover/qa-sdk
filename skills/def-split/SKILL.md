@@ -1,11 +1,13 @@
 ---
 name: def-split
-description: "definition-catalog 대형 문서 분할. 150줄 이상인 리프 문서를 scope별로 분할하여 그룹 + 멤버 구조로 만든다."
+description: "definition-catalog 대형 문서 분할. 150줄 이상인 leaf 문서를 scope별로 분할하여 module + leaf 구조로 만든다."
 ---
 
 # Definition Catalog — 문서 분할
 
-150줄+ 리프 문서를 scope별로 분할한다.
+150줄+ leaf 문서를 scope별로 분할한다. 분할 시 원본 leaf는 module로 변경된다.
+
+원칙: "모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다."
 
 ## 분할 대상 찾기
 
@@ -18,9 +20,9 @@ qa-sdk def audit    # 대형 리프 이슈 확인
 
 1. `grep "^## " <파일>`로 섹션 구조 분석
 2. 각 섹션의 scope 분류
-3. 그룹 문서 생성 (depth: overview + contains)
-4. 멤버 문서 생성 (depth: specification + `## 목적 ^purpose`)
-5. 원본 lifecycle: deprecated
+3. 원본 문서의 level을 `leaf` → `module`로 변경 (depth: overview + contains 추가)
+4. 멤버 leaf 문서 생성 (depth: specification + `## 목적 ^purpose`)
+5. 검증: module은 contains 자식 1건 이상 필수, leaf는 자식 금지
 6. `qa-sdk def validate`로 검증
 
 ## frontmatter 형식

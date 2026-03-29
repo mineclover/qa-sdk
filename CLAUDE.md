@@ -36,6 +36,15 @@
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상
 - platform-demo: `pnpm --filter platform-demo exec vite build --mode development`
 
+## Skills 관리
+
+- **SSOT**: `skills/` 디렉토리가 skill 정의의 유일한 원본
+- **실행 위치**: `~/.claude/skills/` — Claude Code가 읽는 곳
+- **동기화**: `./scripts/sync-skills.sh` — repo → home 단방향 전파
+- skill 수정은 항상 `skills/<name>/SKILL.md`에서 하고, `sync-skills.sh`로 전파
+- `~/.claude/skills/`를 직접 수정하면 다음 sync에서 덮어쓰기됨
+- `~/.claude/skills/`에만 있는 skill(다른 프로젝트용)은 건드리지 않음
+
 ## SSOT 원칙
 
 - **Catalog이 유일한 입력** — 나머지(codegen, DKG, DecodeMap, 브라우저 카탈로그)는 전부 파생
