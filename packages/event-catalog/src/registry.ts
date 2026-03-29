@@ -7,6 +7,7 @@ import { networkEvents } from "./categories/network.js";
 import { executionEvents } from "./categories/execution.js";
 import { outcomeEvents } from "./categories/outcome.js";
 import { qualityEvents } from "./categories/quality.js";
+import { infrastructureEvents } from "./categories/infrastructure.js";
 
 /** All core events by category. */
 export const coreEventsByCategory = {
@@ -18,6 +19,7 @@ export const coreEventsByCategory = {
   execution: executionEvents,
   outcome: outcomeEvents,
   quality: qualityEvents,
+  infrastructure: infrastructureEvents,
 } as const;
 
 /** Flat list of all core events. */
@@ -30,6 +32,7 @@ export const allCoreEvents: readonly CoreEventDef[] = [
   ...executionEvents,
   ...outcomeEvents,
   ...qualityEvents,
+  ...infrastructureEvents,
 ];
 
 /** Lookup map: event_key → CoreEventDef */

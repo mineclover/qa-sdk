@@ -19,6 +19,7 @@ export { networkEvents } from "./categories/network.js";
 export { executionEvents } from "./categories/execution.js";
 export { outcomeEvents } from "./categories/outcome.js";
 export { qualityEvents } from "./categories/quality.js";
+export { infrastructureEvents } from "./categories/infrastructure.js";
 
 // ── Registry ───────────────────────────────────────────
 export {

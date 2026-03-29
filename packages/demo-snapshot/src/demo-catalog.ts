@@ -125,7 +125,7 @@ import {
 const _axes = {
   env:       { entries: ["dev", "stage", "prod", "test", "local"] as const, capacity: 32 },
   region:    { entries: ["asia", "usa"] as const, capacity: 32 },
-  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "platform-demo-api"] as const, capacity: 32 },
+  svc_name:  { entries: ["shopping-web", "shopping-backend", "auth", "payment", "gateway", "registry-service", "ingest-server", "platform-demo", "content-service", "infra-controller", "gate-service", "query-service", "decode-service", "platform-demo-api", "roleplay-web", "viteplus-sdk-smoke"] as const, capacity: 32 },
   namespace: { entries: ["shop", "cms"] as const, capacity: 32 },
 } as const;
 
@@ -180,7 +180,7 @@ export const DEMO_CATALOG = {
         v1: {
           entries: _axes.svc_name.entries,
           capacity: _axes.svc_name.capacity,
-          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", "registry-service": "레지스트리", "ingest-server": "수집서버", "platform-demo": "데모", "content-service": "콘텐츠", "infra-controller": "인프라", "gate-service": "게이트", "query-service": "질의", "decode-service": "디코드", "platform-demo-api": "데모API" },
+          ko: { "shopping-web": "쇼핑웹", "shopping-backend": "쇼핑BE", auth: "인증", payment: "결제", gateway: "GW", "registry-service": "레지스트리", "ingest-server": "수집서버", "platform-demo": "데모", "content-service": "콘텐츠", "infra-controller": "인프라", "gate-service": "게이트", "query-service": "질의", "decode-service": "디코드", "platform-demo-api": "데모API", "roleplay-web": "롤플레이웹", "viteplus-sdk-smoke": "Vite+스모크" },
         },
       },
     },
@@ -1182,6 +1182,264 @@ export const DEMO_CATALOG = {
         },
       },
     },
+
+    // ── 하네스 상태 모델 축 ────────────────────────────────────────────────────
+    harness_machine: {
+      id: "harness_machine", name: "상태 머신",
+      versions: {
+        v1: {
+          entries: ["doc-lifecycle", "spec-impl", "convention-compliance", "db-sync", "address-state", "version-lifecycle", "decision-flow", "service-status", "event-status", "metric-health", "policy-candidate"],
+          capacity: 16,
+          ko: { "doc-lifecycle": "문서생명주기", "spec-impl": "스펙구현", "convention-compliance": "컨벤션준수", "db-sync": "DB동기화", "address-state": "주소상태", "version-lifecycle": "버전생명주기", "decision-flow": "의사결정흐름", "service-status": "서비스상태", "event-status": "이벤트상태", "metric-health": "메트릭건강도", "policy-candidate": "정책후보" },
+        },
+      },
+    },
+    harness_state: {
+      id: "harness_state", name: "엔티티 상태",
+      versions: {
+        v1: {
+          entries: ["draft", "review", "approved", "deprecated", "archived", "active", "inactive", "open", "reserved", "released", "pending", "completed", "abandoned", "blocked", "retired", "ok", "warning", "critical", "designed", "implementing", "implemented", "verified", "source-referenced", "unverified", "partial", "compliant", "violated", "out-of-sync", "syncing", "synced", "drift-detected", "candidate", "rejected", "modified"],
+          capacity: 64,
+          ko: { draft: "초안", review: "검토중", approved: "승인", deprecated: "폐기예정", archived: "보관", active: "활성", inactive: "비활성", open: "개방", reserved: "예약", released: "확정", pending: "대기", completed: "완료", abandoned: "포기", blocked: "차단", retired: "종료", ok: "정상", warning: "경고", critical: "위험", designed: "설계완료", implementing: "구현중", implemented: "구현완료", verified: "검증완료", "source-referenced": "소스참조", unverified: "미검증", partial: "부분검증", compliant: "준수", violated: "위반", "out-of-sync": "미동기화", syncing: "동기화중", synced: "동기화완료", "drift-detected": "drift감지", candidate: "후보", rejected: "거부", modified: "수정승인" },
+        },
+      },
+    },
+    harness_trigger: {
+      id: "harness_trigger", name: "전이 트리거",
+      versions: {
+        v1: {
+          entries: ["user_action", "system_auto", "cascade", "guard_pass", "guard", "notify", "timeout", "error", "schedule", "api_call"],
+          capacity: 16,
+          ko: { user_action: "사용자액션", system_auto: "시스템자동", cascade: "연쇄전이", guard_pass: "가드통과", guard: "가드검증", notify: "알림전파", timeout: "시간초과", error: "에러", schedule: "스케줄", api_call: "API호출" },
+        },
+      },
+    },
+    harness_verdict: {
+      id: "harness_verdict", name: "검증 결과",
+      versions: {
+        v1: {
+          entries: ["pass", "fail"],
+          capacity: 4,
+          ko: { pass: "통과", fail: "실패" },
+        },
+      },
+    },
+    harness_process: {
+      id: "harness_process", name: "하네스 프로세스",
+      versions: {
+        v1: {
+          entries: ["prefix-release", "doc-approval", "service-deprecation"],
+          capacity: 8,
+          ko: { "prefix-release": "프리픽스릴리스", "doc-approval": "문서승인", "service-deprecation": "서비스폐기" },
+        },
+      },
+    },
+
+    // ── 품질 관측 축 ──────────────────────────────────────────────────────────
+    quality_severity: {
+      id: "quality_severity", name: "품질 심각도",
+      versions: {
+        v1: {
+          entries: ["error", "warning", "info"],
+          capacity: 8,
+          ko: { error: "오류", warning: "경고", info: "정보" },
+        },
+      },
+    },
+    quality_kind: {
+      id: "quality_kind", name: "품질 유형",
+      versions: {
+        v1: {
+          entries: ["error", "assertion", "mask", "field_check", "policy_violation", "unexpected"],
+          capacity: 8,
+          ko: { error: "오류", assertion: "검증", mask: "마스킹", field_check: "필드점검", policy_violation: "정책위반", unexpected: "예상외" },
+        },
+      },
+    },
+
+    // ── 실행 관측 축 ──────────────────────────────────────────────────────────
+    task_type: {
+      id: "task_type", name: "작업 유형",
+      versions: {
+        v1: {
+          entries: ["task", "job", "cron", "pipeline"],
+          capacity: 8,
+          ko: { task: "태스크", job: "잡", cron: "크론", pipeline: "파이프라인" },
+        },
+      },
+    },
+    task_phase: {
+      id: "task_phase", name: "작업 단계",
+      versions: {
+        v1: {
+          entries: ["start", "finish", "retry", "timeout", "cancel"],
+          capacity: 8,
+          ko: { start: "시작", finish: "종료", retry: "재시도", timeout: "시간초과", cancel: "취소" },
+        },
+      },
+    },
+
+    // ── SDK 생명주기 축 ───────────────────────────────────────────────────────
+    sdk_action: {
+      id: "sdk_action", name: "SDK 동작",
+      versions: {
+        v1: {
+          entries: ["init", "flush", "error", "reconnect"],
+          capacity: 8,
+          ko: { init: "초기화", flush: "전송", error: "오류", reconnect: "재연결" },
+        },
+      },
+    },
+    sdk_channel: {
+      id: "sdk_channel", name: "SDK 채널",
+      versions: {
+        v1: {
+          entries: ["browser", "node", "mobile", "agent"],
+          capacity: 8,
+          ko: { browser: "브라우저", node: "노드", mobile: "모바일", agent: "에이전트" },
+        },
+      },
+    },
+
+    // ── RPC/WebSocket 관측 축 ─────────────────────────────────────────────────
+    rpc_protocol: {
+      id: "rpc_protocol", name: "RPC 프로토콜",
+      versions: {
+        v1: {
+          entries: ["grpc", "websocket", "http2"],
+          capacity: 8,
+          ko: { grpc: "gRPC", websocket: "웹소켓", http2: "HTTP/2" },
+        },
+      },
+    },
+    rpc_phase: {
+      id: "rpc_phase", name: "RPC 단계",
+      versions: {
+        v1: {
+          entries: ["open", "message", "close", "request", "response", "error"],
+          capacity: 8,
+          ko: { open: "연결", message: "메시지", close: "종료", request: "요청", response: "응답", error: "오류" },
+        },
+      },
+    },
+
+    // ── 게이트 런타임 축 ──────────────────────────────────────────────────────
+    gate_kind: {
+      id: "gate_kind", name: "게이트 유형",
+      versions: {
+        v1: {
+          entries: ["typecheck", "lint", "static-analysis", "unit-test", "snapshot-test", "integration-test", "transaction-test", "api-contract", "e2e-test", "visual-check", "perf-benchmark", "build", "build-affected", "security-audit", "a11y-check", "doc-build", "license-check", "eval-benchmark", "cost-track"],
+          capacity: 32,
+          ko: { typecheck: "타입검사", lint: "린트", "static-analysis": "정적분석", "unit-test": "단위테스트", "snapshot-test": "스냅샷테스트", "integration-test": "통합테스트", "transaction-test": "트랜잭션테스트", "api-contract": "API계약", "e2e-test": "E2E테스트", "visual-check": "시각검증", "perf-benchmark": "성능벤치마크", build: "빌드", "build-affected": "영향빌드", "security-audit": "보안감사", "a11y-check": "접근성검증", "doc-build": "문서빌드", "license-check": "라이선스검증", "eval-benchmark": "AI평가", "cost-track": "비용추적" },
+        },
+      },
+    },
+    gate_scope: {
+      id: "gate_scope", name: "게이트 범위",
+      versions: {
+        v1: {
+          entries: ["static", "unit", "integration", "system", "build", "audit", "ai"],
+          capacity: 16,
+          ko: { static: "정적", unit: "단위", integration: "통합", system: "시스템", build: "빌드", audit: "감사", ai: "AI" },
+        },
+      },
+    },
+    gate_state: {
+      id: "gate_state", name: "게이트 상태",
+      versions: {
+        v1: {
+          entries: ["idle", "blocked", "ready", "gathering", "running", "passed", "failed", "stale", "skipped"],
+          capacity: 16,
+          ko: { idle: "대기", blocked: "차단", ready: "준비", gathering: "수집중", running: "실행중", passed: "통과", failed: "실패", stale: "무효", skipped: "건너뜀" },
+        },
+      },
+    },
+    // ── 문서 그래프 관측 축 ──────────────────────────────────────────────────
+    def_level: {
+      id: "def_level", name: "문서 역할",
+      versions: {
+        v1: {
+          entries: ["group", "module", "leaf"],
+          capacity: 4,
+          ko: { group: "그룹", module: "모듈", leaf: "리프" },
+        },
+      },
+    },
+    graph_action: {
+      id: "graph_action", name: "그래프 액션",
+      versions: {
+        v1: {
+          entries: ["link_add", "link_remove", "promote", "demote", "split", "merge"],
+          capacity: 8,
+          ko: { link_add: "링크추가", link_remove: "링크제거", promote: "승격", demote: "강등", split: "분할", merge: "병합" },
+        },
+      },
+    },
+    link_type: {
+      id: "link_type", name: "관계 유형",
+      versions: {
+        v1: {
+          entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes"],
+          capacity: 16,
+          ko: { depends_on: "의존", implements: "구현", refines: "구체화", constrains: "제약", traces_to: "추적", contains: "포함", evolves_from: "진화", supersedes: "대체" },
+        },
+      },
+    },
+
+    bundle_state: {
+      id: "bundle_state", name: "번들 상태",
+      versions: {
+        v1: {
+          entries: ["empty", "pending", "gathering", "partial", "complete", "degraded"],
+          capacity: 8,
+          ko: { empty: "비어있음", pending: "대기", gathering: "수집중", partial: "부분완료", complete: "완료", degraded: "열화" },
+        },
+      },
+    },
+
+    // ── 전이 엔진 축 ──────────────────────────────────────────────────────────
+    effect_kind: {
+      id: "effect_kind", name: "전이 효과 유형",
+      versions: {
+        v1: {
+          entries: ["create", "update", "move", "consume", "open", "close"],
+          capacity: 8,
+          ko: { create: "생성", update: "변경", move: "이동", consume: "소비", open: "개방", close: "닫기" },
+        },
+      },
+    },
+    match_mode: {
+      id: "match_mode", name: "매칭 모드",
+      versions: {
+        v1: {
+          entries: ["single", "ordered", "unordered", "windowed"],
+          capacity: 8,
+          ko: { single: "단일", ordered: "순차", unordered: "비순차", windowed: "시간창" },
+        },
+      },
+    },
+
+    // ── 수렴 파이프라인 축 ────────────────────────────────────────────────────
+    convergence_phase: {
+      id: "convergence_phase", name: "수렴 단계",
+      versions: {
+        v1: {
+          entries: ["buffer", "flush", "aggregate", "classify", "metrics", "observations", "persist"],
+          capacity: 8,
+          ko: { buffer: "버퍼", flush: "플러시", aggregate: "집계", classify: "분류", metrics: "메트릭", observations: "관측", persist: "저장" },
+        },
+      },
+    },
+    convergence_result: {
+      id: "convergence_result", name: "수렴 결과",
+      versions: {
+        v1: {
+          entries: ["ok", "partial", "empty", "error"],
+          capacity: 8,
+          ko: { ok: "정상", partial: "부분", empty: "빈결과", error: "오류" },
+        },
+      },
+    },
   },
 
   prefixes: {
@@ -1949,6 +2207,196 @@ export const DEMO_CATALOG = {
       },
       versions: [
         { version: "v1", axisVersions: { forcing_question: "v1", evidence_kind: "v1", confidence_band: "v1" } },
+      ],
+    },
+
+    // ── 하네스 상태 모델 prefix ──────────────────────────────────────────────
+    harness_transition: {
+      id: "harness_transition", name: "하네스 상태 전이",
+      description: "svc_ref × harness_machine × harness_state × harness_trigger — 상태 머신 전이 추적",
+      labels: ["svc_ref", "harness_machine", "harness_state", "harness_trigger"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:          { kind: "prefix_ref" as const, prefixId: "service" },
+        harness_machine:  { kind: "axis" as const, axisId: "harness_machine" },
+        harness_state:    { kind: "axis" as const, axisId: "harness_state" },
+        harness_trigger:  { kind: "axis" as const, axisId: "harness_trigger" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { harness_machine: "v1", harness_state: "v1", harness_trigger: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+    harness_guard: {
+      id: "harness_guard", name: "하네스 가드 검증",
+      description: "svc_ref × harness_machine × harness_state × harness_verdict — 머신 간 가드 의존성 검증 이력",
+      labels: ["svc_ref", "harness_machine", "harness_state", "harness_verdict"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:          { kind: "prefix_ref" as const, prefixId: "service" },
+        harness_machine:  { kind: "axis" as const, axisId: "harness_machine" },
+        harness_state:    { kind: "axis" as const, axisId: "harness_state" },
+        harness_verdict:  { kind: "axis" as const, axisId: "harness_verdict" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { harness_machine: "v1", harness_state: "v1", harness_verdict: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+    harness_process_step: {
+      id: "harness_process_step", name: "하네스 프로세스 스텝",
+      description: "svc_ref × harness_process × harness_machine × harness_verdict — 명명된 프로세스 스텝 실행 이력",
+      labels: ["svc_ref", "harness_process", "harness_machine", "harness_verdict"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:          { kind: "prefix_ref" as const, prefixId: "service" },
+        harness_process:  { kind: "axis" as const, axisId: "harness_process" },
+        harness_machine:  { kind: "axis" as const, axisId: "harness_machine" },
+        harness_verdict:  { kind: "axis" as const, axisId: "harness_verdict" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { harness_process: "v1", harness_machine: "v1", harness_verdict: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 품질 관측 prefix ──────────────────────────────────────────────────────
+    quality_event: {
+      id: "quality_event", name: "품질 이벤트",
+      description: "svc_ref × quality_severity × quality_kind — 오류/경고/정책위반 등 품질 관측",
+      labels: ["svc_ref", "quality_severity", "quality_kind"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:          { kind: "prefix_ref" as const, prefixId: "service" },
+        quality_severity: { kind: "axis" as const, axisId: "quality_severity" },
+        quality_kind:     { kind: "axis" as const, axisId: "quality_kind" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { quality_severity: "v1", quality_kind: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 실행 관측 prefix ──────────────────────────────────────────────────────
+    task_event: {
+      id: "task_event", name: "작업 이벤트",
+      description: "svc_ref × task_type × task_phase — 태스크/잡/크론 실행 생명주기 추적",
+      labels: ["svc_ref", "task_type", "task_phase"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:    { kind: "prefix_ref" as const, prefixId: "service" },
+        task_type:  { kind: "axis" as const, axisId: "task_type" },
+        task_phase: { kind: "axis" as const, axisId: "task_phase" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { task_type: "v1", task_phase: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── SDK 생명주기 prefix ───────────────────────────────────────────────────
+    sdk_lifecycle: {
+      id: "sdk_lifecycle", name: "SDK 생명주기",
+      description: "svc_ref × sdk_action × sdk_channel — SDK 초기화/전송/재연결 추적",
+      labels: ["svc_ref", "sdk_action", "sdk_channel"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:     { kind: "prefix_ref" as const, prefixId: "service" },
+        sdk_action:  { kind: "axis" as const, axisId: "sdk_action" },
+        sdk_channel: { kind: "axis" as const, axisId: "sdk_channel" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { sdk_action: "v1", sdk_channel: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── RPC/WebSocket 관측 prefix ─────────────────────────────────────────────
+    rpc_event: {
+      id: "rpc_event", name: "RPC 이벤트",
+      description: "svc_ref × rpc_protocol × rpc_phase — gRPC/WebSocket/HTTP2 통신 관측",
+      labels: ["svc_ref", "rpc_protocol", "rpc_phase"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:      { kind: "prefix_ref" as const, prefixId: "service" },
+        rpc_protocol: { kind: "axis" as const, axisId: "rpc_protocol" },
+        rpc_phase:    { kind: "axis" as const, axisId: "rpc_phase" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { rpc_protocol: "v1", rpc_phase: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 게이트 런타임 prefix ──────────────────────────────────────────────────
+    gate_execution: {
+      id: "gate_execution", name: "게이트 실행",
+      description: "svc_ref × gate_kind × gate_scope × gate_state — 품질 게이트 실행 상태 추적",
+      labels: ["svc_ref", "gate_kind", "gate_scope", "gate_state"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:    { kind: "prefix_ref" as const, prefixId: "service" },
+        gate_kind:  { kind: "axis" as const, axisId: "gate_kind" },
+        gate_scope: { kind: "axis" as const, axisId: "gate_scope" },
+        gate_state: { kind: "axis" as const, axisId: "gate_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { gate_kind: "v1", gate_scope: "v1", gate_state: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+    bundle_observation: {
+      id: "bundle_observation", name: "번들 관측",
+      description: "svc_ref × bundle_state — anchor 문서의 번들 완성도 추적",
+      labels: ["svc_ref", "bundle_state"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:      { kind: "prefix_ref" as const, prefixId: "service" },
+        bundle_state: { kind: "axis" as const, axisId: "bundle_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { bundle_state: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 전이 엔진 prefix ──────────────────────────────────────────────────────
+    transition_event: {
+      id: "transition_event", name: "전이 이벤트",
+      description: "svc_ref × effect_kind × match_mode — 좌표 전이 엔진 실행 추적",
+      labels: ["svc_ref", "effect_kind", "match_mode"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:     { kind: "prefix_ref" as const, prefixId: "service" },
+        effect_kind: { kind: "axis" as const, axisId: "effect_kind" },
+        match_mode:  { kind: "axis" as const, axisId: "match_mode" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { effect_kind: "v1", match_mode: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 수렴 파이프라인 prefix ────────────────────────────────────────────────
+    convergence_event: {
+      id: "convergence_event", name: "수렴 파이프라인 이벤트",
+      description: "svc_ref × convergence_phase × convergence_result — 수렴 분석 단계별 추적",
+      labels: ["svc_ref", "convergence_phase", "convergence_result"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:             { kind: "prefix_ref" as const, prefixId: "service" },
+        convergence_phase:   { kind: "axis" as const, axisId: "convergence_phase" },
+        convergence_result:  { kind: "axis" as const, axisId: "convergence_result" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { convergence_phase: "v1", convergence_result: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 문서 그래프 관측 prefix ────────────────────────────────────────────────
+    graph_event: {
+      id: "graph_event", name: "그래프 이벤트",
+      description: "svc_ref × def_level × graph_action × link_type — 문서 그래프 구조 변경 관측",
+      labels: ["svc_ref", "def_level", "graph_action", "link_type"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.5, detailKind: "metric" as const },
+      dims: {
+        svc_ref:      { kind: "prefix_ref" as const, prefixId: "service" },
+        def_level:    { kind: "axis" as const, axisId: "def_level" },
+        graph_action: { kind: "axis" as const, axisId: "graph_action" },
+        link_type:    { kind: "axis" as const, axisId: "link_type" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { def_level: "v1", graph_action: "v1", link_type: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
       ],
     },
   },

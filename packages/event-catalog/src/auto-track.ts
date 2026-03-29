@@ -16,19 +16,45 @@
 import { getMapping, resolvePrefixDims } from "./prefix-mapping.js";
 import type { TrackingContextManager } from "./tracking-context.js";
 
+// ── 카탈로그 최소 타입 (event-catalog는 외부 의존 없음) ──
+
+/** prefix 차원 정의 최소 인터페이스 */
+interface CatalogDimRef {
+  kind: string;
+  prefixId?: string;
+}
+
+/** prefix 버전 정의 최소 인터페이스 */
+interface CatalogPrefixVersion {
+  version: string;
+  refEntries?: Record<string, { values: number[] }>;
+}
+
+/** prefix 정의 최소 인터페이스 */
+interface CatalogPrefixDef {
+  dims?: Record<string, CatalogDimRef>;
+  versions?: CatalogPrefixVersion[];
+}
+
+/** AutoTracker가 사용하는 카탈로그 최소 인터페이스 */
+export interface AutoTrackCatalog {
+  prefixes?: Record<string, CatalogPrefixDef>;
+  [key: string]: unknown;
+}
+
 // ── 타입 ──────────────────────────────────────────
 
 export interface AutoTrackerConfig {
   /** DEMO_CATALOG 등 카탈로그 객체 */
-  catalog: any;
+  catalog: AutoTrackCatalog;
   /** TrackingContextManager 인스턴스 */
   context: TrackingContextManager;
   /** svc_ref 차원에 주입할 service 주소 값 (refEntries 기반 정수) */
   svcRefResolver?: (prefixId: string) => number | undefined;
   /** 인코딩 함수 */
-  encodePrefixByValue: (catalog: any, prefixId: string, version: string, dims: Record<string, any>) => number;
+  encodePrefixByValue: (catalog: AutoTrackCatalog, prefixId: string, version: string, dims: Record<string, unknown>) => number;
   /** 최신 버전 조회 함수 */
-  latestPrefixVersion: (catalog: any, prefixId: string) => string;
+  latestPrefixVersion: (catalog: AutoTrackCatalog, prefixId: string) => string;
   /** 인코딩된 address_context를 받아 전송하는 함수 */
   emit: (eventKey: string, addressContext: Record<string, string>, payload: Record<string, unknown>) => void;
 }
@@ -42,10 +68,10 @@ export interface AutoTracker {
 
 // ── svc_ref 주입용 prefix_ref label 탐색 ──────────
 
-function findSvcRefLabel(catalog: any, prefixId: string): string | undefined {
+function findSvcRefLabel(catalog: AutoTrackCatalog, prefixId: string): string | undefined {
   const dims = catalog.prefixes?.[prefixId]?.dims;
   if (!dims) return undefined;
-  for (const [label, d] of Object.entries(dims) as [string, any][]) {
+  for (const [label, d] of Object.entries(dims)) {
     if (d.kind === "prefix_ref" && d.prefixId === "service") return label;
   }
   return undefined;
@@ -54,7 +80,7 @@ function findSvcRefLabel(catalog: any, prefixId: string): string | undefined {
 // ── 기본 svcRefResolver ──────────────────────────
 
 /** catalog에서 각 prefix의 refEntries 첫 번째 값을 가져오는 기본 resolver */
-export function createDefaultSvcRefResolver(catalog: any): (prefixId: string) => number | undefined {
+export function createDefaultSvcRefResolver(catalog: AutoTrackCatalog): (prefixId: string) => number | undefined {
   return (prefixId: string) => {
     const p = catalog.prefixes?.[prefixId];
     if (!p) return undefined;

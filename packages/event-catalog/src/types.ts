@@ -8,7 +8,8 @@ export type EventCategory =
   | "network"
   | "execution"
   | "outcome"
-  | "quality";
+  | "quality"
+  | "infrastructure";
 
 // ── Channel ────────────────────────────────────────────
 

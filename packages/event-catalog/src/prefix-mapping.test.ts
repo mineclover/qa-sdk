@@ -111,7 +111,7 @@ describe("prefix-mapping", () => {
       const prefixDims = resolvePrefixDims(mapping!, context, payload);
 
       // 결과: 개발자가 일일이 지정하지 않아도 3개 prefix 자동 생성
-      expect(Object.keys(prefixDims).sort()).toEqual(["cart_event", "endpoint", "tracking"]);
+      expect(Object.keys(prefixDims).toSorted()).toEqual(["cart_event", "endpoint", "tracking"]);
       expect(prefixDims.cart_event.action).toBe("add");
     });
   });
