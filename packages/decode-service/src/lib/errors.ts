@@ -6,6 +6,7 @@ import {
   ValidationError,
   IndexMetaError,
 } from "index-meta";
+// @ts-expect-error weighted-index DTS 미생성 (기존 빌드 에러, ESM/CJS는 정상)
 import { IndexRangeError } from "weighted-index";
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";
@@ -48,7 +49,7 @@ export function fromIndexMetaError(err: unknown): AppError {
     return new AppError("INVALID_INPUT", err.message, 400);
   }
   if (err instanceof IndexRangeError) {
-    return new AppError("RANGE_EXCEEDED", err.message, 400);
+    return new AppError("RANGE_EXCEEDED", (err as Error).message, 400);
   }
   if (err instanceof IndexMetaError) {
     return new AppError("INTERNAL_ERROR", err.message, 500);

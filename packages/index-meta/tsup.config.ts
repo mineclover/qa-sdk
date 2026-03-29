@@ -11,4 +11,5 @@ export default defineConfig({
   treeshake: true,
   ignoreWatch: ["**/*.test.ts"],
   external: ["better-sqlite3", "node:sqlite"],
+  onSuccess: "rm -rf dist/drizzle && cp -r drizzle dist/drizzle",
 });
