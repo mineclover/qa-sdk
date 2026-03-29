@@ -64,6 +64,10 @@ export {
   nextReadyGates,
 } from "./harness.js";
 
+// 게이트 트래커 (런타임 수집)
+export type { GateLogger, GateTrackerConfig, GateTracker, BundleStateListener } from "./gate-tracker.js";
+export { createGateTracker } from "./gate-tracker.js";
+
 // 레지스트리
 export { WORK_DOMAINS, ALL_DOMAIN_IDS, getDomainDef, getSubDomain } from "./registry.js";
 
@@ -71,7 +75,7 @@ export { WORK_DOMAINS, ALL_DOMAIN_IDS, getDomainDef, getSubDomain } from "./regi
 export { resolveQualityGates, gatesToCriteria, mergeQualityGates } from "./quality-gates.js";
 
 // definition-catalog 매핑
-export type { ScopeMapping, DocQueryParams, DefScope, DefLayer, ConcernTag, TierTag } from "./mapping.js";
+export type { ScopeMapping, DocQueryParams, DefScope, DefLayer, ConcernTag } from "./mapping.js";
 export { DOMAIN_TO_DEF_MAP, buildDocQuery, suggestDomainFromArtifact } from "./mapping.js";
 
 // 자동 분류

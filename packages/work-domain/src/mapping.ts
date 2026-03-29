@@ -22,9 +22,6 @@ export type DefLayer = "domain" | "operation" | "mediation" | "experience";
 /** definition-catalog ConcernTag 7종 (참조용) */
 export type ConcernTag = "security" | "performance" | "accessibility" | "observability" | "testing" | "migration" | "deprecation";
 
-/** definition-catalog TierTag 4종 (참조용) */
-export type TierTag = "tier-frontend" | "tier-backend" | "tier-infra" | "tier-system";
-
 // ─── 매핑 인터페이스 ────────────────────────────────────
 
 /** Work Domain → Definition 분류 체계 매핑 */
@@ -35,8 +32,6 @@ export interface ScopeMapping {
   readonly primaryLayer: DefLayer;
   /** 관련 횡단 관심사 */
   readonly concerns: readonly ConcernTag[];
-  /** 배포 계층 */
-  readonly tier: TierTag;
 }
 
 // ─── 매핑 테이블 ────────────────────────────────────────
@@ -52,61 +47,51 @@ export const DOMAIN_TO_DEF_MAP: Record<WorkDomainId, ScopeMapping> = {
     primaryScopes: ["data"],
     primaryLayer: "operation",
     concerns: ["migration"],
-    tier: "tier-infra",
   },
   "backend-logic": {
     primaryScopes: ["feature", "interface"],
     primaryLayer: "domain",
     concerns: [],
-    tier: "tier-backend",
   },
   "ui-component": {
     primaryScopes: ["ui"],
     primaryLayer: "experience",
     concerns: ["accessibility"],
-    tier: "tier-frontend",
   },
   "frontend-app": {
     primaryScopes: ["ui", "flow"],
     primaryLayer: "experience",
     concerns: ["performance"],
-    tier: "tier-frontend",
   },
   "ai-engineering": {
     primaryScopes: ["feature", "data"],
     primaryLayer: "domain",
     concerns: ["performance"],
-    tier: "tier-backend",
   },
   "observability": {
     primaryScopes: ["state"],
     primaryLayer: "operation",
     concerns: ["observability"],
-    tier: "tier-infra",
   },
   "global-inclusion": {
     primaryScopes: ["constraint"],
     primaryLayer: "experience",
     concerns: ["accessibility"],
-    tier: "tier-frontend",
   },
   "security-guardrail": {
     primaryScopes: ["constraint"],
     primaryLayer: "domain",
     concerns: ["security"],
-    tier: "tier-system",
   },
   "productivity": {
     primaryScopes: ["constraint", "flow"],
     primaryLayer: "operation",
     concerns: ["testing"],
-    tier: "tier-system",
   },
   "tech-docs": {
     primaryScopes: ["data", "interface"],
     primaryLayer: "mediation",
     concerns: [],
-    tier: "tier-system",
   },
 };
 
@@ -129,7 +114,7 @@ export function buildDocQuery(domainId: WorkDomainId): DocQueryParams {
   return {
     scopes: mapping.primaryScopes,
     layer: mapping.primaryLayer,
-    tags: [...mapping.concerns, mapping.tier],
+    tags: [...mapping.concerns],
   };
 }
 

@@ -13,127 +13,15 @@
 
 import type { GateKindId, GateScope } from "./gate-kind.js";
 
+// ── Gate FSM + BundleState는 gate-fsm.ts에 분리. re-export로 하위 호환 유지. ──
+import type { GateState, GateEvent, BundleState } from "./gate-fsm.js";
+import { transitionGate, deriveBundleState } from "./gate-fsm.js";
+export type { GateState, GateEvent, BundleState } from "./gate-fsm.js";
+export { transitionGate, deriveBundleState };
 
-// ─── 게이트 상태 머신 ──────────────────────────────────
-
-/**
- * 단일 게이트 상태.
- *
- * | 상태       | 의미                                |
- * |-----------|-------------------------------------|
- * | idle      | 문서 정의됨, 아직 스케줄되지 않음        |
- * | blocked   | 선행 gate 미통과                      |
- * | ready     | 선행 없음 또는 전부 passed, 실행 가능    |
- * | gathering | 컨텍스트 수집 중 (계약 문서 로드)        |
- * | running   | 명령 실행 중                          |
- * | passed    | 검증 통과                             |
- * | failed    | 검증 실패                             |
- * | stale     | 이전 passed 무효 (소스/문서 변경)       |
- * | skipped   | 의도적 건너뜀                          |
- */
-export type GateState =
-  | "idle"
-  | "blocked"
-  | "ready"
-  | "gathering"
-  | "running"
-  | "passed"
-  | "failed"
-  | "stale"
-  | "skipped";
-
-/** 게이트 상태 전이 이벤트 */
-export type GateEvent =
-  | { type: "schedule" }           // idle → ready 또는 blocked
-  | { type: "prereqs_met" }        // blocked → ready
-  | { type: "prereqs_blocked" }    // idle/ready → blocked
-  | { type: "gather_start" }       // ready → gathering
-  | { type: "gather_done" }        // gathering → running
-  | { type: "gather_invalid" }     // gathering → blocked (수집 중 선행 무효화 발견)
-  | { type: "exit"; code: number } // running → passed(0) / failed(≠0)
-  | { type: "source_changed" }     // passed → stale
-  | { type: "retry" }             // failed/stale → ready
-  | { type: "skip" }              // * → skipped
-  | { type: "reset" };            // * → idle
-
-/** 순수 전이 함수. 유효하지 않은 전이는 현재 상태를 그대로 반환. */
-export function transitionGate(state: GateState, event: GateEvent): GateState {
-  if (event.type === "skip") return "skipped";
-  if (event.type === "reset") return "idle";
-
-  switch (state) {
-    case "idle":
-      if (event.type === "schedule") return "ready";
-      if (event.type === "prereqs_blocked") return "blocked";
-      break;
-    case "blocked":
-      if (event.type === "prereqs_met") return "ready";
-      break;
-    case "ready":
-      if (event.type === "gather_start") return "gathering";
-      if (event.type === "prereqs_blocked") return "blocked";
-      break;
-    case "gathering":
-      if (event.type === "gather_done") return "running";
-      if (event.type === "gather_invalid") return "blocked";
-      break;
-    case "running":
-      if (event.type === "exit") return event.code === 0 ? "passed" : "failed";
-      break;
-    case "passed":
-      if (event.type === "source_changed") return "stale";
-      break;
-    case "failed":
-      if (event.type === "retry") return "ready";
-      break;
-    case "stale":
-      if (event.type === "retry") return "ready";
-      break;
-    case "skipped":
-      if (event.type === "schedule") return "ready";
-      break;
-  }
-
-  return state;
-}
-
-// ─── 번들 상태 (파생) ──────────────────────────────────
-
-/**
- * 번들(anchor 문서) 상태.
- *
- * 하위 gate 상태의 합산으로 파생된다.
- */
-export type BundleState =
-  | "empty"     // 하위 gate 0건
-  | "pending"   // 전부 idle/blocked/skipped
-  | "gathering" // 1개 이상 gathering/ready, 나머지 미완
-  | "partial"   // 1개 이상 passed, 나머지 미완
-  | "complete"  // 전부 passed (또는 skipped)
-  | "degraded"; // 1개 이상 failed 또는 stale
-
-/** 하위 gate 상태 배열에서 번들 상태를 파생한다. */
-export function deriveBundleState(gateStates: readonly GateState[]): BundleState {
-  if (gateStates.length === 0) return "empty";
-
-  const active = gateStates.filter((s) => s !== "skipped");
-  if (active.length === 0) return "complete"; // 전부 skipped
-
-  const hasFailed = active.some((s) => s === "failed");
-  const hasStale = active.some((s) => s === "stale");
-  if (hasFailed || hasStale) return "degraded";
-
-  const allPassed = active.every((s) => s === "passed");
-  if (allPassed) return "complete";
-
-  const hasPassed = active.some((s) => s === "passed");
-  if (hasPassed) return "partial";
-
-  const hasGathering = active.some((s) => s === "gathering" || s === "running");
-  if (hasGathering) return "gathering";
-
-  return "pending";
-}
+// ── 계약 문서 식별 + GateKind 도출은 contract-to-gates.ts에 분리. ──
+import { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP } from "./contract-to-gates.js";
+export { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP };
 
 // ─── 문서 그래프 인터페이스 ─────────────────────────────
 
@@ -145,7 +33,7 @@ export interface DocNode {
   /** 문서 ID (kebab-case) */
   readonly id: string;
   /** 분해 레벨 */
-  readonly level: "system" | "area" | "unit" | "module" | "leaf";
+  readonly level: "group" | "module" | "leaf";
   /** 대분류 */
   readonly scope: string;
   /** 세부 측면 */
@@ -182,62 +70,6 @@ export interface DocGraphPort {
   getDependencies(id: string): readonly DocNode[];
   /** 나가는 링크 전체 */
   getOutgoingLinks(id: string): readonly DocLink[];
-}
-
-// ─── 계약 문서 식별 ────────────────────────────────────
-
-/** 계약 성격 문서인지 판별. interface, constraint scope가 계약을 선언한다. */
-export function isContractDoc(doc: DocNode): boolean {
-  return doc.scope === "interface" || doc.scope === "constraint";
-}
-
-/** 계약 문서에서 필요한 GateKind를 도출한다. */
-export function deriveGateKinds(doc: DocNode): readonly GateKindId[] {
-  const kinds: GateKindId[] = [];
-
-  // scope × aspect → GateKind 매핑
-  switch (doc.scope) {
-    case "interface":
-      switch (doc.aspect) {
-        case "api_contract":
-          kinds.push("typecheck", "api-contract");
-          break;
-        case "cli_contract":
-          kinds.push("typecheck", "integration-test");
-          break;
-        case "event_contract":
-          kinds.push("typecheck", "unit-test");
-          break;
-        default:
-          kinds.push("typecheck");
-      }
-      break;
-
-    case "constraint":
-      switch (doc.aspect) {
-        case "tech_constraint":
-          kinds.push("unit-test", "static-analysis");
-          break;
-        case "biz_constraint":
-          kinds.push("integration-test");
-          break;
-        case "infra_constraint":
-          kinds.push("build", "integration-test");
-          break;
-        default:
-          kinds.push("unit-test");
-      }
-      break;
-  }
-
-  // concern tag → 추가 GateKind
-  const tags = doc.tags ?? [];
-  if (tags.includes("security")) kinds.push("security-audit");
-  if (tags.includes("accessibility")) kinds.push("a11y-check");
-  if (tags.includes("performance")) kinds.push("perf-benchmark");
-
-  // 중복 제거
-  return [...new Set(kinds)];
 }
 
 // ─── 하네스 계획 (Define + Resolve 단계) ────────────────
@@ -358,29 +190,6 @@ export function buildHarnessPlan(
     requirements,
   };
 }
-
-/** GateKindId → GateScope 역매핑 (gate-kind.ts의 GATE_KINDS에서 파생) */
-const GATE_KIND_SCOPE_MAP: Record<GateKindId, GateScope> = {
-  "typecheck": "static",
-  "lint": "static",
-  "static-analysis": "static",
-  "unit-test": "unit",
-  "snapshot-test": "unit",
-  "integration-test": "integration",
-  "transaction-test": "integration",
-  "api-contract": "integration",
-  "e2e-test": "system",
-  "visual-check": "system",
-  "perf-benchmark": "system",
-  "build": "build",
-  "build-affected": "build",
-  "security-audit": "audit",
-  "a11y-check": "audit",
-  "doc-build": "audit",
-  "license-check": "audit",
-  "eval-benchmark": "ai",
-  "cost-track": "ai",
-};
 
 // ─── 하네스 런타임 상태 ────────────────────────────────
 
