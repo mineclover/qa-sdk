@@ -18,61 +18,62 @@ pnpm add @qa-sdk/sdk
 ## 기본 구성
 
 ```ts
-import { QaLogger, HttpTransport } from "@qa-sdk/sdk";
+import { QaLogger, HttpTransport } from '@qa-sdk/sdk';
 
 const logger = new QaLogger({
   transport: new HttpTransport({
-    endpoint: "https://collector.example.com/v1/ingest",
-    headers: { "x-api-key": "..." },
-    timeout_ms: 10_000,           // default 10s
+    endpoint: 'https://collector.example.com/v1/ingest',
+    headers: { 'x-api-key': '...' },
+    timeout_ms: 10_000, // default 10s
   }),
 
   owner: {
-    owner_type: "tenant",         // tenant | workspace | user | agent
-    owner_id: "tenant_abc",
+    owner_type: 'tenant', // tenant | workspace | user | agent
+    owner_id: 'tenant_abc',
   },
 
   source: {
-    service_name: "checkout_web",
-    sdk_name: "@qa-sdk/sdk",
-    sdk_version: "0.1.0",
+    service_name: 'checkout_web',
+    sdk_name: '@qa-sdk/sdk',
+    sdk_version: '0.1.0',
   },
 
   runtime: {
-    platform: "browser",          // browser | node | edge | react-native ...
-    device_ref: "iPhone 15",      // optional
-    os_version: "iOS 18.3",       // optional
-    app_version: "2.4.1",         // optional
+    platform: 'browser', // browser | node | edge | react-native ...
+    device_ref: 'iPhone 15', // optional
+    os_version: 'iOS 18.3', // optional
+    app_version: '2.4.1', // optional
   },
 
   build: {
-    env: "staging",               // local | dev | staging | production
-    build_ref: "abc123",          // optional — git sha, build id 등
-    release_version: "2.4.1",     // optional
+    env: 'staging', // local | dev | staging | production
+    build_ref: 'abc123', // optional — git sha, build id 등
+    release_version: '2.4.1', // optional
   },
 
   // ── 선택 옵션 ──────────────────────────────────────
-  maskingRules: [                 // optional — 전역 마스킹 규칙
-    { field: "email", mode: "mask" },
-    { field: "ssn", mode: "drop" },
+  maskingRules: [
+    // optional — 전역 마스킹 규칙
+    { field: 'email', mode: 'mask' },
+    { field: 'ssn', mode: 'drop' },
   ],
-  batchSize: 50,                  // default 50 — 이 개수가 차면 자동 flush
-  flushIntervalMs: 5_000,         // default 5000ms — 주기적 flush (0이면 비활성)
+  batchSize: 50, // default 50 — 이 개수가 차면 자동 flush
+  flushIntervalMs: 5_000, // default 5000ms — 주기적 flush (0이면 비활성)
 });
 ```
 
 ### Config 필드 요약
 
-| 필드 | 필수 | 설명 |
-|---|---|---|
-| `transport` | O | 전송 계층. `HttpTransport`, `NoopTransport` 또는 커스텀 구현 |
-| `owner` | O | 이 transmission의 소유자 (tenant, workspace, user, agent) |
-| `source` | O | 서비스/SDK 식별 (service_name, sdk_name, sdk_version) |
-| `runtime` | O | 실행 환경 정보 (platform 필수, 나머지 optional) |
-| `build` | O | 빌드/배포 정보 (env 필수, 나머지 optional) |
-| `maskingRules` | - | 전역 payload 마스킹 규칙 배열 |
-| `batchSize` | - | 자동 flush 트리거 레코드 수 (default: 50) |
-| `flushIntervalMs` | - | 주기적 flush 간격 ms (default: 5000, 0이면 비활성) |
+| 필드              | 필수 | 설명                                                         |
+| ----------------- | ---- | ------------------------------------------------------------ |
+| `transport`       | O    | 전송 계층. `HttpTransport`, `NoopTransport` 또는 커스텀 구현 |
+| `owner`           | O    | 이 transmission의 소유자 (tenant, workspace, user, agent)    |
+| `source`          | O    | 서비스/SDK 식별 (service_name, sdk_name, sdk_version)        |
+| `runtime`         | O    | 실행 환경 정보 (platform 필수, 나머지 optional)              |
+| `build`           | O    | 빌드/배포 정보 (env 필수, 나머지 optional)                   |
+| `maskingRules`    | -    | 전역 payload 마스킹 규칙 배열                                |
+| `batchSize`       | -    | 자동 flush 트리거 레코드 수 (default: 50)                    |
+| `flushIntervalMs` | -    | 주기적 flush 간격 ms (default: 5000, 0이면 비활성)           |
 
 ---
 
@@ -84,24 +85,24 @@ trace를 시작하면 이후 log/span은 해당 trace에 자동 연결된다.
 ```ts
 // 새 trace 시작
 const ctx = logger.startTrace({
-  qa_session_id: "qas_01JTEST...",   // optional — QA 세션 식별자
+  qa_session_id: 'qas_01JTEST...', // optional — QA 세션 식별자
 });
 
 // trace_id는 자동 생성되거나, 외부에서 주입 가능
 const ctx2 = logger.startTrace({
-  trace_id: "trc_01JEXTERNAL...",    // 상위 시스템에서 전파된 trace
-  qa_session_id: "qas_01JTEST...",
+  trace_id: 'trc_01JEXTERNAL...', // 상위 시스템에서 전파된 trace
+  qa_session_id: 'qas_01JTEST...',
 });
 ```
 
 외부에서 전파된 context를 직접 설정할 수도 있다.
 
 ```ts
-import { TraceContext } from "@qa-sdk/sdk";
+import { TraceContext } from '@qa-sdk/sdk';
 
 const propagated = new TraceContext({
-  trace_id: "trc_01JUPSTREAM...",
-  qa_session_id: "qas_01JTEST...",
+  trace_id: 'trc_01JUPSTREAM...',
+  qa_session_id: 'qas_01JTEST...',
 });
 logger.setContext(propagated);
 ```
@@ -114,25 +115,25 @@ logger.setContext(propagated);
 
 ```ts
 logger.log({
-  event_key: "page_view",
-  event_version: "001",
+  event_key: 'page_view',
+  event_version: '001',
   payload: {
-    path: "/checkout",
-    referrer: "/cart",
+    path: '/checkout',
+    referrer: '/cart',
   },
 });
 ```
 
 ### log() 파라미터
 
-| 필드 | 필수 | 설명 |
-|---|---|---|
-| `event_key` | O | Event Registry에 등록된 이벤트 키 |
-| `event_version` | O | 이벤트 버전 (3자리, e.g. `"001"`) |
-| `payload` | - | 자유 구조 JSON payload |
-| `payload_format` | - | default `"json"` |
-| `payload_encoding` | - | default `"raw"` |
-| `qa_session_id` | - | 레코드 단위 override (없으면 context에서 상속) |
+| 필드               | 필수 | 설명                                           |
+| ------------------ | ---- | ---------------------------------------------- |
+| `event_key`        | O    | Event Registry에 등록된 이벤트 키              |
+| `event_version`    | O    | 이벤트 버전 (3자리, e.g. `"001"`)              |
+| `payload`          | -    | 자유 구조 JSON payload                         |
+| `payload_format`   | -    | default `"json"`                               |
+| `payload_encoding` | -    | default `"raw"`                                |
+| `qa_session_id`    | -    | 레코드 단위 override (없으면 context에서 상속) |
 
 ---
 
@@ -143,17 +144,17 @@ span은 시작/종료가 있는 실행 구간이다.
 
 ```ts
 const span = logger.startSpan({
-  event_key: "http_request",
-  event_version: "001",
-  span_name: "POST /api/orders",
-  payload: { method: "POST", url: "/api/orders" },
+  event_key: 'http_request',
+  event_version: '001',
+  span_name: 'POST /api/orders',
+  payload: { method: 'POST', url: '/api/orders' },
 });
 
 // ... 실제 작업 수행 ...
 
 span.end({
-  status_code: "ok",              // ok | error | unset
-  payload: { status: 201 },       // start payload와 merge됨
+  status_code: 'ok', // ok | error | unset
+  payload: { status: 201 }, // start payload와 merge됨
 });
 ```
 
@@ -161,19 +162,19 @@ span은 자동으로 **parent-child 관계**를 형성한다.
 
 ```ts
 const outer = logger.startSpan({
-  event_key: "checkout_flow",
-  event_version: "001",
-  span_name: "checkout",
+  event_key: 'checkout_flow',
+  event_version: '001',
+  span_name: 'checkout',
 });
 
-  const inner = logger.startSpan({
-    event_key: "payment_process",
-    event_version: "001",
-    span_name: "payment",
-  });
-  inner.end({ status_code: "ok" });
+const inner = logger.startSpan({
+  event_key: 'payment_process',
+  event_version: '001',
+  span_name: 'payment',
+});
+inner.end({ status_code: 'ok' });
 
-outer.end({ status_code: "ok" });
+outer.end({ status_code: 'ok' });
 // inner.parent_span_id === outer.span_id
 ```
 
@@ -186,31 +187,31 @@ config의 `maskingRules`로 전역 규칙을 설정한다.
 
 ### 마스킹 모드
 
-| 모드 | 동작 | 결과 예시 |
-|---|---|---|
-| `raw` | 원본 유지 | `"email": "a@b.com"` |
+| 모드   | 동작                      | 결과 예시                                        |
+| ------ | ------------------------- | ------------------------------------------------ |
+| `raw`  | 원본 유지                 | `"email": "a@b.com"`                             |
 | `mask` | 값 제거, 존재 여부만 보존 | `"email": { "_masked": true, "_present": true }` |
-| `drop` | 필드 자체 삭제 | (필드 없음) |
-| `hash` | 비가역 해시로 변환 | `"email": "h_3a7f2b01"` |
+| `drop` | 필드 자체 삭제            | (필드 없음)                                      |
+| `hash` | 비가역 해시로 변환        | `"email": "h_3a7f2b01"`                          |
 
 ```ts
 const logger = new QaLogger({
   // ...
   maskingRules: [
-    { field: "email", mode: "mask" },
-    { field: "password", mode: "drop" },
-    { field: "user_id", mode: "hash" },
+    { field: 'email', mode: 'mask' },
+    { field: 'password', mode: 'drop' },
+    { field: 'user_id', mode: 'hash' },
   ],
 });
 
 logger.log({
-  event_key: "signup",
-  event_version: "001",
+  event_key: 'signup',
+  event_version: '001',
   payload: {
-    email: "user@example.com",
-    password: "secret123",
-    user_id: "usr_abc",
-    plan: "pro",
+    email: 'user@example.com',
+    password: 'secret123',
+    user_id: 'usr_abc',
+    plan: 'pro',
   },
 });
 
@@ -239,6 +240,7 @@ await logger.shutdown();
 ```
 
 자동 flush는 두 조건에서 발생한다:
+
 1. 버퍼가 `batchSize`에 도달
 2. `flushIntervalMs` 주기 도달
 
@@ -251,11 +253,11 @@ await logger.shutdown();
 HTTP POST로 envelope를 JSON 전송한다.
 
 ```ts
-import { HttpTransport } from "@qa-sdk/sdk";
+import { HttpTransport } from '@qa-sdk/sdk';
 
 const transport = new HttpTransport({
-  endpoint: "https://collector.example.com/v1/ingest",
-  headers: { "x-api-key": "key_..." },
+  endpoint: 'https://collector.example.com/v1/ingest',
+  headers: { 'x-api-key': 'key_...' },
   timeout_ms: 10_000,
 });
 ```
@@ -265,11 +267,11 @@ const transport = new HttpTransport({
 전송하지 않고 메모리에 쌓는다. 테스트/dry-run용.
 
 ```ts
-import { NoopTransport } from "@qa-sdk/sdk";
+import { NoopTransport } from '@qa-sdk/sdk';
 
 const transport = new NoopTransport();
 // logger 사용 후:
-console.log(transport.sent);  // TransmissionEnvelope[]
+console.log(transport.sent); // TransmissionEnvelope[]
 ```
 
 ### 커스텀 Transport
@@ -277,13 +279,19 @@ console.log(transport.sent);  // TransmissionEnvelope[]
 `Transport` 인터페이스를 구현하면 된다.
 
 ```ts
-import type { Transport } from "@qa-sdk/sdk";
-import type { TransmissionEnvelope } from "@qa-sdk/core";
+import type { Transport } from '@qa-sdk/sdk';
+import type { TransmissionEnvelope } from '@qa-sdk/core';
 
 class WebSocketTransport implements Transport {
-  async send(envelope: TransmissionEnvelope): Promise<void> { /* ... */ }
-  async flush(): Promise<void> { /* ... */ }
-  async shutdown(): Promise<void> { /* ... */ }
+  async send(envelope: TransmissionEnvelope): Promise<void> {
+    /* ... */
+  }
+  async flush(): Promise<void> {
+    /* ... */
+  }
+  async shutdown(): Promise<void> {
+    /* ... */
+  }
 }
 ```
 
@@ -328,16 +336,16 @@ class WebSocketTransport implements Transport {
 실서비스 환경에서 테스트 세션을 식별하려면 `qa_session_id`를 주입한다.
 
 ```ts
-import { newQaSessionId } from "@qa-sdk/sdk";
+import { newQaSessionId } from '@qa-sdk/sdk';
 
 // 1. 세션 생성
-const sessionId = newQaSessionId();  // "qas_01J..."
+const sessionId = newQaSessionId(); // "qas_01J..."
 
 // 2. trace에 주입
 logger.startTrace({ qa_session_id: sessionId });
 
 // 3. 이후 모든 log/span에 자동 전파
-logger.log({ event_key: "checkout_start", event_version: "001" });
+logger.log({ event_key: 'checkout_start', event_version: '001' });
 // → record.qa_session_id === sessionId
 ```
 
@@ -347,12 +355,45 @@ logger.log({ event_key: "checkout_start", event_version: "001" });
 
 ## ID 체계
 
-| prefix | 생성 함수 | 용도 |
-|---|---|---|
+| prefix | 생성 함수             | 용도                     |
+| ------ | --------------------- | ------------------------ |
 | `txm_` | `newTransmissionId()` | Transmission Envelope ID |
-| `log_` | `newLogId()` | Event Record ID |
-| `trc_` | `newTraceId()` | Trace ID |
-| `spn_` | `newSpanId()` | Span ID |
-| `qas_` | `newQaSessionId()` | QA Session ID |
+| `log_` | `newLogId()`          | Event Record ID          |
+| `trc_` | `newTraceId()`        | Trace ID                 |
+| `spn_` | `newSpanId()`         | Span ID                  |
+| `qas_` | `newQaSessionId()`    | QA Session ID            |
 
 모든 ID는 ULID 기반이라 시간순 정렬이 가능하다.
+
+---
+
+## 현재 레포 기준 레퍼런스
+
+`@qa-sdk/sdk`를 새 소비처에 붙일 때는 아래 3개를 우선 본다.
+
+| 목적                   | 레퍼런스                                       | 포인트                                                                            |
+| ---------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------- |
+| Vite bridge template   | `packages/viteplus-sdk-smoke/src/qa-bridge.ts` | `HttpTransport`/`NoopTransport`, session 시작, event version fallback, debug 조회 |
+| 최소 import/번들 검증  | `packages/viteplus-sdk-smoke/src/smoke.ts`     | 브리지 기반 smoke event/metric, `shutdown()`                                      |
+| 브라우저 앱 facade     | `packages/roleplay-web/src/sdk/qa-bridge.ts`   | `HttpTransport`, `event_version` 조회, start/flush/shutdown 래핑                  |
+| 자동 수집 브라우저 SDK | `packages/browser-sdk/src/monitor.ts`          | session persistence, `pagehide` flush, fail-open                                  |
+
+이 순서를 권장한다.
+
+1. 새 앱을 붙일 때는 `viteplus-sdk-smoke/src/qa-bridge.ts`를 먼저 복사하고, `smoke.ts` 수준으로 import/빌드 스모크를 만든다.
+2. 실제 이벤트 전송이 필요해지면 `qa-bridge` 같은 작은 facade를 둔다.
+3. 브라우저 자동 수집이 필요하면 `@qa-sdk/browser`를 쓴다.
+
+---
+
+## 베스트 프랙티스
+
+- `@qa-sdk/sdk`를 통합 진입점으로 사용한다. 소비처 코드가 `@qa-sdk/logger`, `@qa-sdk/context`를 직접 조합하지 않게 한다.
+- `source.service_name`은 소비처 앱 이름으로, `source.sdk_name`은 `@qa-sdk/sdk`로 둔다.
+- 개발/테스트는 `NoopTransport`, 실전 전송은 `HttpTransport` 또는 `@qa-sdk/browser`를 사용한다.
+- `qa_session_id`는 `newQaSessionId()`로 만들고 `startTrace()`에 주입한다.
+- `event_version`은 가능하면 event-catalog에서 조회하고, fallback은 `padStart(3, "0")` 규칙으로 맞춘다.
+- 브라우저 소비처는 SDK 실패가 UI 크래시로 이어지지 않게 fail-open으로 감싼다.
+- 페이지 종료나 테스트 종료 전에 `flush()` 또는 `shutdown()`을 호출한다.
+- `address_context`는 문자열 하드코딩 대신 전용 builder나 codec helper로 생성한다.
+- 현재 모노레포의 Vite+ 소비처는 pnpm `catalog:`를 쓰지 않으므로 `vite`, `vite-plus` 버전을 명시적으로 지정한다.

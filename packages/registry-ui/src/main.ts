@@ -7,11 +7,13 @@ type TabId = "glossary" | "prefix-builder" | "dsl-builder";
 const tabs = document.querySelectorAll<HTMLButtonElement>(".rui-tab");
 const pages = document.querySelectorAll<HTMLElement>(".rui-page");
 
+/* eslint-disable typescript/no-non-null-assertion -- getElementById for elements guaranteed in index.html */
 const containers: Record<TabId, HTMLElement> = {
   glossary: document.getElementById("glossary-container")!,
   "prefix-builder": document.getElementById("prefix-builder-container")!,
   "dsl-builder": document.getElementById("dsl-builder-container")!,
 };
+/* eslint-enable typescript/no-non-null-assertion */
 
 const rendered = new Set<TabId>();
 

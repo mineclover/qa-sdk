@@ -18,7 +18,7 @@ def:
   lifecycle: approved
   layer: <domain|operation|mediation|experience>  # 선택
   svc: <serviceId>           # 선택
-  tags: [<태그들>]           # 선택
+  tags: [<태그들>]           # 선택 — 예: entry-point, testing, contract, runtime
   links:                     # 선택
     - target: <대상 ID>
       type: <depends_on|implements|refines|constrains|traces_to|contains>
@@ -78,3 +78,23 @@ qa-sdk def audit       # purpose + level 분포 확인
 - `group` 또는 `module`이면 `## 구성 ^overview`를 실제로 채우고 `contains` 자식을 가져야 한다.
 - `leaf`면 `contains` 자식을 만들지 않는다.
 - 새 문서를 생성한 뒤 실행 환경의 `~/.codex/skills/`나 DB를 직접 고치지 않는다. repo 문서와 `def sync`가 기준이다.
+
+## tags 선택 규칙
+
+먼저 붙일 태그:
+
+- StructuralTag: `entry-point`, `cross-scope`, `decision`
+- ConcernTag: `security`, `performance`, `accessibility`, `observability`, `testing`, `migration`, `deprecation`
+
+그 다음 필요할 때만 붙일 태그:
+
+- 운영 관례 태그: `runtime`, `persistence`, `contract`, `versioning`
+- 제품/영역 태그: `frontend`, `registry`, `motion`
+- 품질 하네스 태그: `quality-bundle`, `quality-gate`, `gate-kind:*`
+
+규칙:
+
+- 태그는 보통 2~5개면 충분하다.
+- `cross-scope`는 다중 소속이나 통합 설계 문서일 때만 쓴다.
+- `entry-point`는 해당 주제의 시작 문서에만 준다.
+- 자세한 taxonomy는 `docs/specs/system/tag-management.spec.md`를 따른다.

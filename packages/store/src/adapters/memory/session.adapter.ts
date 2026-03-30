@@ -38,7 +38,7 @@ export class InMemorySessionStore implements SessionStore {
       }
       if (results.length >= limit) break;
     }
-    return results.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+    return results.toSorted((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
   }
 
   async close(sessionId: string): Promise<void> {

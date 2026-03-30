@@ -29,6 +29,13 @@ export interface AuthContext {
   method: AuthMode;
 }
 
+/** Hono Context 최소 인터페이스 (hono에 직접 의존하지 않기 위해 복제) */
+interface HonoContextLike {
+  req: { url: string; header: (name: string) => string | undefined };
+  set: (key: string, value: unknown) => void;
+  json: (body: unknown, status: number) => Response;
+}
+
 /**
  * Hono 미들웨어 팩토리.
  *
@@ -39,7 +46,7 @@ export interface AuthContext {
 export function createAuthMiddleware(config: AuthConfig) {
   const excludePaths = new Set(config.excludePaths ?? ["/health", "/health/live"]);
 
-  return async (c: any, next: () => Promise<void>) => {
+  return async (c: HonoContextLike, next: () => Promise<void>) => {
     // 제외 경로
     const path = new URL(c.req.url).pathname;
     if (excludePaths.has(path)) return next();

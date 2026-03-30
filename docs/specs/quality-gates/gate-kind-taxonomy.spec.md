@@ -13,6 +13,13 @@ def:
       type: implements
 ---
 
+
+## 탐색 ^navigation
+
+quality-gates-system > **gate-kind-taxonomy**
+
+형제: `gate-tracker-spec` · `harness-model-spec` · `harness-state-model` · `work-domain-quality-bundle` · `definition-quality-gates` · `decision-flow-quality-bundle` · `ingest-quality-bundle` · `query-quality-bundle` · `definition-service-quality-bundle` · `decode-quality-bundle` · `registry-quality-bundle` · `quality-ledger` · `dkg-harness-bridge`
+
 ## 목적 ^purpose
 
 품질 게이트의 **유형(kind)**과 **검증 범위(scope)**를 정의한다. "이 검증은 무엇을 어떤 범위에서 확인하는가"에 대한 택소노미. 계약 문서의 scope × aspect에서 필요한 게이트 유형을 자동 도출하는 기반.

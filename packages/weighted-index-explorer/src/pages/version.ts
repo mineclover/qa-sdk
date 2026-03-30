@@ -3,9 +3,8 @@
 //  cross-index migration, address state gate, sparse migration warning
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { SCHEMA_VERSIONS, getVersion } from "../data.js";
+import { SCHEMA_VERSIONS, getVersion, type DimKey } from "../data.js";
 import { dimBadge } from "../utils/badge.js";
-import { encodeRowsHtml } from "../utils/encode-html.js";
 import {
   WeightedIndex,
   calcAddressRanges,
@@ -76,7 +75,7 @@ function buildVersionMatrix(): string {
   const rows = SCHEMA_VERSIONS.map((vd) => {
     const newEntries = Object.entries(vd.newDimValues)
       .map(([dim, set]) => {
-        const vals = Array.from(set!).map((v) => dimBadge(dim as any, v)).join(" ");
+        const vals = Array.from(set ?? []).map((v) => dimBadge(dim as DimKey, v)).join(" ");
         return `<span class="vt-dim-tag">${dim}</span> ${vals}`;
       }).join("<br/>");
 
@@ -530,11 +529,12 @@ function buildSparseMigrationWarning(): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireDemo(container: HTMLElement): void {
-  const fromSel = container.querySelector<HTMLSelectElement>("#rc-from")!;
-  const toSel   = container.querySelector<HTMLSelectElement>("#rc-to")!;
-  const idInput = container.querySelector<HTMLInputElement>("#rc-id")!;
-  const runBtn  = container.querySelector<HTMLButtonElement>("#rc-run")!;
-  const result  = container.querySelector<HTMLDivElement>("#rc-result")!;
+  const fromSel = container.querySelector<HTMLSelectElement>("#rc-from");
+  const toSel   = container.querySelector<HTMLSelectElement>("#rc-to");
+  const idInput = container.querySelector<HTMLInputElement>("#rc-id");
+  const runBtn  = container.querySelector<HTMLButtonElement>("#rc-run");
+  const result  = container.querySelector<HTMLDivElement>("#rc-result");
+  if (!fromSel || !toSel || !idInput || !runBtn || !result) return;
 
   function run(): void {
     const fromV   = fromSel.value;
@@ -624,12 +624,13 @@ function wireDemo(container: HTMLElement): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireCrossIndexDemo(container: HTMLElement): void {
-  const sourceSel  = container.querySelector<HTMLSelectElement>("#ci-source")!;
-  const targetSel  = container.querySelector<HTMLSelectElement>("#ci-target")!;
-  const srcDimsDiv = container.querySelector<HTMLDivElement>("#ci-source-dims")!;
-  const missDimsDiv = container.querySelector<HTMLDivElement>("#ci-missing-dims")!;
-  const runBtn     = container.querySelector<HTMLButtonElement>("#ci-run")!;
-  const resultDiv  = container.querySelector<HTMLDivElement>("#ci-result")!;
+  const sourceSel  = container.querySelector<HTMLSelectElement>("#ci-source");
+  const targetSel  = container.querySelector<HTMLSelectElement>("#ci-target");
+  const srcDimsDiv = container.querySelector<HTMLDivElement>("#ci-source-dims");
+  const missDimsDiv = container.querySelector<HTMLDivElement>("#ci-missing-dims");
+  const runBtn     = container.querySelector<HTMLButtonElement>("#ci-run");
+  const resultDiv  = container.querySelector<HTMLDivElement>("#ci-result");
+  if (!sourceSel || !targetSel || !srcDimsDiv || !missDimsDiv || !runBtn || !resultDiv) return;
 
   function buildSourceDimSelectors(): void {
     const src = getCiIndex(sourceSel.value);
@@ -671,7 +672,10 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     // Collect source coords
     const srcDimSels = srcDimsDiv.querySelectorAll<HTMLSelectElement>(".ci-src-dim");
     const sourceEntities: Record<string, string> = {};
-    srcDimSels.forEach((sel) => { sourceEntities[sel.dataset.dim!] = sel.value; });
+    srcDimSels.forEach((sel) => {
+      const dim = sel.dataset.dim;
+      if (dim) sourceEntities[dim] = sel.value;
+    });
 
     // Encode source
     const srcCoords = src.dims.map((d) => {
@@ -697,7 +701,10 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     // Collect missing dim values
     const missingEntities: Record<string, string> = {};
     const missDimSels = missDimsDiv.querySelectorAll<HTMLSelectElement>(".ci-miss-dim");
-    missDimSels.forEach((sel) => { missingEntities[sel.dataset.dim!] = sel.value; });
+    missDimSels.forEach((sel) => {
+      const dim = sel.dataset.dim;
+      if (dim) missingEntities[dim] = sel.value;
+    });
 
     // Merge all entities for target
     const allEntities = { ...carryOver, ...missingEntities };
@@ -805,10 +812,11 @@ function wireAddressStateGate(container: HTMLElement): void {
   resourceStates[4] = "inactive";
   envStates[2] = "open";
 
-  const resCtrls = container.querySelector<HTMLDivElement>("#gate-resource-ctrls")!;
-  const envCtrls = container.querySelector<HTMLDivElement>("#gate-env-ctrls")!;
-  const gridDiv  = container.querySelector<HTMLDivElement>("#gate-grid")!;
-  const summaryDiv = container.querySelector<HTMLDivElement>("#gate-range-summary")!;
+  const resCtrls = container.querySelector<HTMLDivElement>("#gate-resource-ctrls");
+  const envCtrls = container.querySelector<HTMLDivElement>("#gate-env-ctrls");
+  const gridDiv  = container.querySelector<HTMLDivElement>("#gate-grid");
+  const summaryDiv = container.querySelector<HTMLDivElement>("#gate-range-summary");
+  if (!resCtrls || !envCtrls || !gridDiv || !summaryDiv) return;
 
   function buildControls(): void {
     resCtrls.innerHTML = RESOURCE_NAMES.map((name, i) => `
@@ -835,7 +843,7 @@ function wireAddressStateGate(container: HTMLElement): void {
 
     container.querySelectorAll<HTMLSelectElement>(".gate-dim-sel").forEach((sel) => {
       sel.addEventListener("change", () => {
-        const dim = sel.dataset.dim!;
+        const dim = sel.dataset.dim ?? "";
         const idx = Number(sel.dataset.idx);
         const val = sel.value as GateState;
         if (dim === "resource") resourceStates[idx] = val;
@@ -1001,8 +1009,9 @@ function wireAddressStateGate(container: HTMLElement): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireSparseMigrationDemo(container: HTMLElement): void {
-  const rowsDiv   = container.querySelector<HTMLDivElement>("#sparse-demo-rows")!;
-  const summaryDiv = container.querySelector<HTMLDivElement>("#sparse-demo-summary")!;
+  const rowsDiv   = container.querySelector<HTMLDivElement>("#sparse-demo-rows");
+  const summaryDiv = container.querySelector<HTMLDivElement>("#sparse-demo-summary");
+  if (!rowsDiv || !summaryDiv) return;
 
   // v1: [A, B, C]  →  v2: [A, C, B, D]
   // Correct map: { 2→3, 3→2 }  (B and C swapped)

@@ -13,7 +13,7 @@
 
 import type { GraphPort } from "../shared/graph-port.js";
 import type { ObservationNode, DecisionNode } from "../dkg/dkg.types.js";
-import { validateAllCategories, type CategoryValidationResult } from "./category-rules.js";
+import { validateAllCategories } from "./category-rules.js";
 
 // ═══════════════════════════════════════════════════════════════
 

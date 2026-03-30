@@ -7,13 +7,12 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { DefinitionEntry, DefinitionLink } from "./types.js";
 import { MemoryDefinitionRegistry } from "./registry.js";
 import { scanAndBuild, extractFrontmatter } from "./frontmatter.js";
 import { extractByLevel, extractByMarker } from "./extract.js";
-import { assembleFeature } from "./assemble.js";
-import { analyzeImpact } from "./impact.js";
-import { computeEffectiveConcerns } from "./concern.js";
+import { assembleBoundary, assembleFeature } from "./assemble.js";
+import { analyzeImpact, selectImpactContext } from "./impact.js";
+import { computeEffectiveConcerns, selectConcernContext } from "./concern.js";
 
 /** 문서 본문 캐시 구성 — 모든 frontmatter 문서의 body를 로드 */
 async function loadBodies(
@@ -34,7 +33,7 @@ async function loadBodies(
 
   // 2차: body가 비어있는 entry에 대해 재시도 (deprecated가 아닌 파일에서)
   for (const entry of registry.all()) {
-    if (bodies.has(entry.id) && bodies.get(entry.id)!.includes("^purpose")) continue;
+    if (bodies.get(entry.id)?.includes("^purpose")) continue;
     if (!entry.ref) continue;
     try {
       const content = await readFile(join(rootDir, entry.ref), "utf-8");
@@ -132,8 +131,9 @@ export async function context(
   if (containsIncoming.length > 0) {
     lines.push(`## 소속`);
     for (const l of containsIncoming) {
-      const group = reg.get(l.sourceId);
-      const groupPurpose = bodies.get(l.sourceId) ? extractByLevel(bodies.get(l.sourceId)!, "purpose").text : "";
+      const _group = reg.get(l.sourceId);
+      const groupBody = bodies.get(l.sourceId);
+      const groupPurpose = groupBody ? extractByLevel(groupBody, "purpose").text : "";
       lines.push(`- ${l.sourceId}: ${groupPurpose.split("\n")[0] || "(purpose 없음)"}`);
     }
     lines.push(``);
@@ -190,6 +190,89 @@ export async function context(
   if (impact.impacted.length > 0) {
     const top3 = impact.impacted.slice(0, 5);
     for (const i of top3) lines.push(`- [${i.via}] ${i.id}`);
+  }
+
+  return lines.join("\n");
+}
+
+/** 바운더리 단위 조회 결과 (텍스트) */
+export async function boundary(
+  rootDir: string,
+  docId: string,
+  level: "purpose" | "overview" = "overview",
+): Promise<string> {
+  const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
+  const bodies = await loadBodies(result.registry, rootDir);
+
+  const assembled = assembleBoundary(
+    docId,
+    id => result.registry.get(id),
+    (id, dir) => result.registry.getLinks(id, dir),
+    id => bodies.get(id),
+    level,
+  );
+
+  if (!assembled) return `바운더리 문서 "${docId}"를 찾을 수 없습니다.`;
+  return assembled.text;
+}
+
+/** 바운더리 컨텍스트 조회 결과 (텍스트) */
+export async function boundaryContext(
+  rootDir: string,
+  docId: string,
+  level: "purpose" | "overview" = "overview",
+  mode: "direct" | "transitive" = "transitive",
+): Promise<string> {
+  const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
+  const reg = result.registry;
+  const bodies = await loadBodies(reg, rootDir);
+
+  const assembled = assembleBoundary(
+    docId,
+    id => reg.get(id),
+    (id, dir) => reg.getLinks(id, dir),
+    id => bodies.get(id),
+    level,
+  );
+  if (!assembled) return `바운더리 문서 "${docId}"를 찾을 수 없습니다.`;
+
+  const concerns = selectConcernContext(computeEffectiveConcerns(
+    docId,
+    (id) => reg.get(id),
+    (id, dir) => reg.getLinks(id, dir),
+  ), mode);
+  const impact = selectImpactContext(analyzeImpact(
+    docId,
+    (id) => reg.get(id),
+    (id, dir) => reg.getLinks(id, dir),
+  ), mode);
+
+  const lines: string[] = [];
+  lines.push(assembled.text);
+  lines.push("");
+  lines.push(`mode: ${mode}`);
+
+  lines.push("");
+  lines.push("## concerns");
+  lines.push(`직접: ${concerns.direct.length > 0 ? concerns.direct.join(", ") : "(없음)"}`);
+  if (concerns.inherited.length === 0) {
+    lines.push("상속: (없음)");
+  } else {
+    for (const item of concerns.inherited) {
+      lines.push(`상속: ${item.concern} from ${item.from} via ${item.via}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## impact");
+  lines.push(`blast radius: ${impact.blastRadius}건`);
+  if (impact.affectedGroups.length > 0) {
+    lines.push(`groups: ${impact.affectedGroups.join(", ")}`);
+  }
+  for (const item of impact.impacted.slice(0, 10)) {
+    lines.push(
+      `- [${item.via}] ${item.id} (${item.direction}, depth ${item.depth})`,
+    );
   }
 
   return lines.join("\n");

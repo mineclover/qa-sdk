@@ -74,7 +74,7 @@ def:
 
 ## 참조
 
-관련 스펙: [decision-flow.spec.md](../decision-flow/decision-flow.spec.md)
+관련 스펙: [df-system.md](../decision-flow/df-system.md)
 
 ## 관련 소스
 
@@ -333,8 +333,8 @@ def:
 |------|------|-------|:--------:|
 | — | system-overview | flow/overview | — |
 | — | definition-catalog-spec | data/specification | — |
-| — | decision-flow-spec | state/specification | — |
-| — | gate-service-spec | interface/specification | — |
+| — | df-state-model | state/specification | — |
+| — | gate-api | interface/specification | — |
 | **gate** | gate-system | flow/overview | **6 멤버** |
 | | gate-api | interface/specification | — |
 | | gate-state-model | state/specification | — |

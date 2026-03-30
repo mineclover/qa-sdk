@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: definition-service
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: definition-service-system
       type: refines
@@ -35,6 +35,7 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 | GET | `/docs/:id/synthetic-incoming-links` | synthetic 역링크 (`feedback_request`) |
 | GET | `/docs/:id/outgoing-links` | 순방향 링크 |
 | GET | `/docs/:id/feedback-requests` | 문서와 연결된 feedback request 요약 |
+| GET | `/docs/:id/boundary` | 바운더리 구조 + direct coupling (`level=purpose|overview`) |
 | POST | `/docs/:id/links` | 단일 링크 추가 `{target, type}` |
 | DELETE | `/docs/:id/links/:target/:type` | 단일 링크 삭제 |
 | POST | `/docs/:id/tags/:tag` | 단일 태그 추가 |
@@ -55,6 +56,7 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 |--------|------|------|
 | GET | `/graph/:id/impact` | 영향 분석 (blast radius, BFS) |
 | GET | `/graph/:id/concerns` | concern 전파 (직접 + 상속) |
+| GET | `/graph/:id/boundary-context` | boundary + concerns + impact + feedback trace (`level`, `mode=direct|transitive`) |
 | POST | `/graph/validate` | 깨진 링크, 순환 참조, 고아 문서 |
 
 ## GraphQL API
@@ -65,6 +67,8 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 type Query {
   doc(id: String!): Doc
   docList(scope, aspect, depth, layer, svc, tag, q, limit, offset): [Doc!]!
+  boundary(docId: String!, level: String): BoundaryResultType
+  boundaryContext(docId: String!, level: String, mode: String): BoundaryContextResultType
   impact(docId: String!): ImpactAnalysisResult
   concerns(docId: String!): ConcernsResult
   validateGraph: ValidationResultType
@@ -75,6 +79,32 @@ type Doc {
   children: [Doc!]!       # lazy — contains 링크 자식
   parent: Doc             # lazy — contains 링크 부모
   incomingLinks: [IncomingLink!]!  # lazy — 역링크
+  syntheticIncomingLinks: [SyntheticIncomingLink!]!  # lazy — feedback_request 등 synthetic 역링크
+  feedbackRequests: [FeedbackRequestSummary!]!       # lazy — 연결된 feedback request 요약
+  boundary: BoundaryResultType       # lazy — 이 문서의 boundary 구조 + direct coupling
+  boundaryContext: BoundaryContextResultType  # lazy — 이 문서의 복합 boundary context (기본 overview/transitive)
+}
+
+type BoundaryResultType {
+  boundary: BoundaryDoc!
+  members: [BoundaryMember!]!
+  couplings: BoundaryCouplings!
+}
+
+type BoundaryContextResultType {
+  mode: String!
+  level: String!
+  boundary: BoundaryResultType!
+  concerns: BoundaryContextConcernsResultType!
+  impact: BoundaryContextImpactResultType!
+  feedbackTrace: [FeedbackRequestSummary!]!
+}
+
+type ImpactAnalysisResult {
+  sourceId: String!
+  impacted: [ImpactedDoc!]!
+  blastRadius: Int!
+  feedbackTrace: [FeedbackRequestSummary!]!          # source + impacted docs에 걸린 최근 feedback request 집계
 }
 ```
 
@@ -88,6 +118,42 @@ type Doc {
   "limit": 50     // 요청된 페이지 크기
 }
 ```
+
+### GET /docs/:id/boundary 응답 형식
+
+```json
+{
+  "boundary": {
+    "docId": "viteplus-playbook-template-implementation",
+    "title": "Vite+ Playbook Template 구현",
+    "scope": "feature",
+    "aspect": "func_def",
+    "depth": "implementation",
+    "lifecycle": "approved",
+    "purpose": "..."
+  },
+  "members": [
+    { "docId": "child-doc", "scope": "state", "aspect": "app_state", "summary": "..." }
+  ],
+  "couplings": {
+    "outgoing": [
+      { "type": "depends_on", "target": "sdk-usage-guide", "summary": "..." }
+    ],
+    "incoming": [
+      { "type": "depends_on", "source": "feature-doc", "summary": "..." }
+    ]
+  }
+}
+```
+
+- `level=purpose`
+  `purpose` 기준 구조 요약만 반환
+- `level=overview` (기본)
+  `purpose` + `overview`를 함께 사용해 summary를 만든다
+- `mode=direct`
+  one-hop direct coupling, direct concern, depth 1 impact만 반환
+- `mode=transitive` (기본)
+  concern/impact 전파를 전체 그래프 기준으로 확장한다
 
 ### sort 파라미터
 

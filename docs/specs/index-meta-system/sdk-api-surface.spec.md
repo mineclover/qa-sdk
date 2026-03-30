@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: index-meta
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: sdk-dim-views
       type: depends_on

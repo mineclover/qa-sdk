@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: shopping-web
-  tags: []
+  tags: [contract, runtime, frontend]
   links:
     - target: motion-content-glossary
       type: depends_on

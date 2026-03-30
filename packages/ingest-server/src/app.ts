@@ -54,7 +54,9 @@ import {
 import type { DebugStore } from "./lib/debug-store.js";
 import type { ConvergencePipelinePort } from "./lib/phase-two-worker.js";
 import type { MetricsCollector } from "./lib/metrics-collector.js";
+import type { CatalogValidator } from "./lib/catalog-validator.js";
 import { createInsightsRoutes } from "./routes/insights.js";
+import type { InsightsStore } from "./ports/insights-store.port.js";
 import { createLabelsRoutes } from "./routes/labels.js";
 
 export interface AppDeps {
@@ -87,8 +89,12 @@ export interface AppDeps {
   getUptimeSeconds?: () => number;
   version?: string;
   corsOrigin?: string;
-  /** D1 SqlDriver — insights 집계 쿼리용 (Worker 모드) */
+  /** D1 SqlDriver — labels 등 raw SQL 쿼리용 (Worker 모드) */
   sqlDriver?: import("index-meta").SqlDriver;
+  /** InsightsStore — 인사이트 조회/수집 (INSIGHTS_DRIVER로 구현체 선택) */
+  insightsStore?: InsightsStore;
+  /** 카탈로그 기반 event/prefix 검증 (fail-open) */
+  catalogValidator?: CatalogValidator;
 }
 
 export function createApp(deps: AppDeps) {
@@ -138,7 +144,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", createScenarioRoutes(deps));
   app.route("/", createSessionRoutes(deps));
   app.route("/", createVerdictRoutes(deps));
-  app.route("/", createInsightsRoutes({ driver: deps.sqlDriver }));
+  app.route("/", createInsightsRoutes({ store: deps.insightsStore }));
   app.route("/", createLabelsRoutes({ driver: deps.sqlDriver }));
   app.route(
     "/",

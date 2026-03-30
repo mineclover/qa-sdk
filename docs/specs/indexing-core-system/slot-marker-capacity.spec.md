@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [structural, performance, runtime]
   links:
     - target: slot-marker-patterns
       type: constrains

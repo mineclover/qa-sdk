@@ -33,6 +33,7 @@
     "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/definition-client": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
     "definition-catalog": "workspace:*",
     "dotenv": "^17.3.1",
     "drizzle-orm": "1.0.0-beta.20",
@@ -53,6 +54,7 @@
     }
   },
   "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
     "drizzle-kit": "1.0.0-beta.20",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.30.0",

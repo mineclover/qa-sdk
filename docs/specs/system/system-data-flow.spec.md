@@ -8,11 +8,11 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
-  tags: []
+  tags: [cross-scope, observability, runtime]
   links:
     - target: ingest-api-spec
       type: refines
-    - target: browser-monitor-spec
+    - target: browser-runtime-system
       type: refines
 ---
 # 데이터 흐름

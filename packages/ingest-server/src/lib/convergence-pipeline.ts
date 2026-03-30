@@ -389,7 +389,7 @@ export class ConvergencePipelineRunner {
     // 2. 각 세션을 패턴으로 분류
     const classifications: PatternClassification[] = [];
     for (const [sessionId, records] of sessionMap) {
-      const sorted = [...records].sort((a, b) =>
+      const sorted = [...records].toSorted((a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
 

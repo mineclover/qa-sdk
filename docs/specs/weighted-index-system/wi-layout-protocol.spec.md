@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: weighted-index
-  tags: []
+  tags: [contract, runtime, structural]
   links:
     - target: wi-semantic-address
       type: depends_on

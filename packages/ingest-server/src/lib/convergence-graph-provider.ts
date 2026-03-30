@@ -80,7 +80,7 @@ export async function createGraphProvider(
     }
   }
 
-  let registryFetchDone = false;
+  let _registryFetchDone = false;
   let registryCatalog: unknown = null;
 
   function ensureInit(): void {
@@ -117,7 +117,7 @@ export async function createGraphProvider(
   // registry fetch를 한 번 시도 (비동기 → 프로바이더 생성 시)
   if (config.registryUrl) {
     registryCatalog = await fetchCatalogFromRegistry();
-    registryFetchDone = true;
+    _registryFetchDone = true;
   }
 
   return {

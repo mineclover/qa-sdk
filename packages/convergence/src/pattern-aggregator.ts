@@ -58,7 +58,7 @@ export function aggregatePatternStats(
       avgDurationMs: Math.round(g.totalDuration / g.count),
       lastSeen: g.lastSeen,
     }))
-    .sort((a, b) => b.count - a.count);
+    .toSorted((a, b) => b.count - a.count);
 }
 
 /**

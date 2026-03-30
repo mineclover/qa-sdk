@@ -37,6 +37,7 @@
   },
   "peerDependencies": {
     "@qa-sdk/convergence": "workspace:*",
+    "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "demo-snapshot": "workspace:*"
   },
@@ -45,6 +46,9 @@
       "optional": true
     },
     "@qa-sdk/convergence": {
+      "optional": true
+    },
+    "@qa-sdk/event-catalog": {
       "optional": true
     },
     "demo-snapshot": {

@@ -42,7 +42,7 @@ describe("같은 scope×aspect×depth 문서 주소 관리", () => {
 
     const found = reg.findByAddress(reg.get("gate-api")!.address!);
     expect(found.length).toBe(3);
-    expect(found.map(e => e.id).sort()).toEqual(["decode-api", "gate-api", "query-api"]);
+    expect(found.map(e => e.id).toSorted()).toEqual(["decode-api", "gate-api", "query-api"]);
   });
 
   it("1건 삭제 후에도 나머지 문서를 주소로 찾을 수 있다", () => {
@@ -55,7 +55,7 @@ describe("같은 scope×aspect×depth 문서 주소 관리", () => {
     reg.remove("gate-api");
     const remaining = reg.findByAddress(addr);
     expect(remaining.length).toBe(2);
-    expect(remaining.map(e => e.id).sort()).toEqual(["decode-api", "query-api"]);
+    expect(remaining.map(e => e.id).toSorted()).toEqual(["decode-api", "query-api"]);
   });
 
   it("전부 삭제하면 빈 배열", () => {

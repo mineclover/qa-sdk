@@ -126,7 +126,9 @@ class R { private p = 0; constructor(private b: Uint8Array) {}
 function decodeMapEntry(r: R): [string, string] { let k = "", v = ""; while (!r.done) { const { f, w } = r.tag(); if (f===1) k = r.str(); else if (f===2) v = r.str(); else r.skip(w); } return [k, v]; }
 
 function decodeRec(r: R): EventRecord {
-  const o: any = { payload_masking_applied: false, payload_masked_fields: [] };
+  // protobuf 디코드: 필드를 점진적으로 채우므로 Record 타입 사용
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- protobuf progressive build
+  const o = { payload_masking_applied: false, payload_masked_fields: [] as string[] } as Record<string, unknown> & { payload_masking_applied: boolean; payload_masked_fields: string[] };
   const ac: Record<string,string> = {}, ua: Record<string,string> = {};
   while (!r.done) { const {f,w} = r.tag();
     if (f===1&&w===2) o.log_id=r.str(); else if (f===2&&w===2) o.timestamp=r.str();
@@ -144,19 +146,26 @@ function decodeRec(r: R): EventRecord {
   }
   if (Object.keys(ac).length) o.address_context=ac;
   if (Object.keys(ua).length) o.user_attributes=ua;
-  return o;
+  return o as unknown as EventRecord;
 }
 
 export function decodeEnvelope(buf: Uint8Array): TransmissionEnvelope {
-  const r = new R(buf), e: any = { records: [] };
+  // protobuf 디코드: 필드를 점진적으로 채우므로 mutable 중간 타입 사용
+  const r = new R(buf);
+  let transmission_id = "", sent_at = "";
+  let owner = { owner_type: "", owner_id: "" };
+  let source = { service_name: "", sdk_name: "", sdk_version: "" };
+  let runtime = { platform: "" };
+  let build = { env: "" };
+  const records: EventRecord[] = [];
   while (!r.done) { const {f,w} = r.tag();
-    if (f===1&&w===2) e.transmission_id=r.str(); else if (f===2&&w===2) e.sent_at=r.str();
-    else if (f===3&&w===2) { const s=r.sub(); e.owner={owner_type:"",owner_id:""}; while(!s.done){const{f:sf,w:sw}=s.tag(); if(sf===1)e.owner.owner_type=s.str();else if(sf===2)e.owner.owner_id=s.str();else s.skip(sw);} }
-    else if (f===4&&w===2) { const s=r.sub(); e.source={service_name:"",sdk_name:"",sdk_version:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)e.source.service_name=s.str();else if(sf===2)e.source.sdk_name=s.str();else if(sf===3)e.source.sdk_version=s.str();else s.skip(2);} }
-    else if (f===5&&w===2) { const s=r.sub(); e.runtime={platform:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)e.runtime.platform=s.str();else s.skip(2);} }
-    else if (f===6&&w===2) { const s=r.sub(); e.build={env:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)e.build.env=s.str();else s.skip(2);} }
-    else if (f===10&&w===2) e.records.push(decodeRec(r.sub()));
+    if (f===1&&w===2) transmission_id=r.str(); else if (f===2&&w===2) sent_at=r.str();
+    else if (f===3&&w===2) { const s=r.sub(); owner={owner_type:"",owner_id:""}; while(!s.done){const{f:sf,w:sw}=s.tag(); if(sf===1)owner.owner_type=s.str();else if(sf===2)owner.owner_id=s.str();else s.skip(sw);} }
+    else if (f===4&&w===2) { const s=r.sub(); source={service_name:"",sdk_name:"",sdk_version:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)source.service_name=s.str();else if(sf===2)source.sdk_name=s.str();else if(sf===3)source.sdk_version=s.str();else s.skip(2);} }
+    else if (f===5&&w===2) { const s=r.sub(); runtime={platform:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)runtime.platform=s.str();else s.skip(2);} }
+    else if (f===6&&w===2) { const s=r.sub(); build={env:""}; while(!s.done){const{f:sf}=s.tag(); if(sf===1)build.env=s.str();else s.skip(2);} }
+    else if (f===10&&w===2) records.push(decodeRec(r.sub()));
     else r.skip(w);
   }
-  return e;
+  return { transmission_id, sent_at, owner, source, runtime, build, records } as unknown as TransmissionEnvelope;
 }

@@ -10,7 +10,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: slot-marker-concept
       type: depends_on

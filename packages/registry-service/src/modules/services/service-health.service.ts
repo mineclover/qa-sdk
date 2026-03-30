@@ -17,7 +17,7 @@ type JsonValue =
 
 type HealthDetail = { readonly [key: string]: JsonValue };
 
-interface ServiceHealthResult {
+export interface ServiceHealthResult {
   serviceId: string;
   url: string;
   status: "up" | "down" | "unknown";
@@ -113,8 +113,7 @@ export class ServiceHealthService {
       down,
       checkedAt: new Date().toISOString(),
       env: query.envName,
-      services: results.map((result) => ({
-        ...result,
+      services: results.map((result) => Object.assign({}, result, {
         tier: targets.find((target) => target.serviceId === result.serviceId)?.tier,
       })),
     };

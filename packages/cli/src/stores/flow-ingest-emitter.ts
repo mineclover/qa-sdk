@@ -12,8 +12,7 @@
  */
 
 import { createServiceBootConfig, toTransmissionSource } from "@qa-sdk/core";
-import type { FlowEngineListener } from "decision-flow";
-import type { FlowInstance, GateSchema, GateSelection } from "decision-flow";
+import type { FlowEngineListener, FlowInstance, GateSchema, GateSelection } from "decision-flow";
 
 const DEFAULT_INGEST_URL = "http://localhost:3200";
 

@@ -15,6 +15,7 @@
 
 import { Hono } from "hono";
 import type { SqlDriver } from "index-meta";
+import { parseJsonColumn, type InsightMetadataJson } from "../db/json-types.js";
 
 export interface LabelsDeps {
   driver?: SqlDriver;
@@ -145,7 +146,7 @@ function toLabel(row: LabelRow) {
     label: row.label,
     status: row.status,
     notes: row.notes,
-    metadata: row.metadata ? JSON.parse(row.metadata) : null,
+    metadata: parseJsonColumn<InsightMetadataJson | null>(row.metadata, null),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

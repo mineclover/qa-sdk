@@ -245,7 +245,7 @@ describe("[단위] diff", () => {
 
   it("pv1→pv3: role + api 두 label 변경", () => {
     const d = registry.diff("api_perm", "pv1", "pv3");
-    expect(d.changedLabels.map((c) => c.label).sort()).toEqual(["api", "role"]);
+    expect(d.changedLabels.map((c) => c.label).toSorted()).toEqual(["api", "role"]);
   });
 
   it("동일 버전 diff → changedLabels 없음", () => {

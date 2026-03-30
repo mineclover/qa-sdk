@@ -357,12 +357,12 @@ describe("WorkflowMetadata (MAP-Elites axes)", () => {
 describe("reflect", () => {
   const contract = buildContract();
   const workflow = compileWorkflow(contract);
-  const steps = workflow.nodes.filter(n => n.sourceMarker === "flow-steps");
+  const firstStep = workflow.nodes.find(n => n.sourceMarker === "flow-steps");
 
   it("code 노드에서 의미 해석 에러 → mode 문제 분류", () => {
     const results = reflect(
       workflow,
-      [steps[0].nodeId],
+      [firstStep!.nodeId],
       ["ambiguous input detected"],
     );
     expect(results.length).toBe(1);
@@ -371,10 +371,10 @@ describe("reflect", () => {
 
   it("post-validator 없는 노드 실패 → validator 문제 분류", () => {
     // guard 노드에는 pre-validator만 있고 post는 없음
-    const guards = workflow.nodes.filter(n => n.sourceMarker === "guard");
+    const firstGuard = workflow.nodes.find(n => n.sourceMarker === "guard");
     const results = reflect(
       workflow,
-      [guards[0].nodeId],
+      [firstGuard!.nodeId],
       ["validation failed"],
     );
     expect(results.length).toBe(1);

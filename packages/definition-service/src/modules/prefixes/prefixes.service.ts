@@ -1,8 +1,12 @@
 import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { eq, and } from "drizzle-orm";
+import { createLogger } from "../../lib/logger.js";
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlPrefixStore, type PrefixStore, type PrefixRecord } from "../../stores/prefix-store.js";
+import { documents } from "../../db/schema.js";
 import { env } from "../../config/env.js";
+
+const logger = createLogger("definition-service");
 
 /** registry-service /catalogs/:id 응답에서 prefix 구조 */
 interface CatalogPrefixDef {
@@ -18,10 +22,10 @@ interface CatalogPrefixDef {
 @Injectable()
 export class PrefixesService implements OnModuleInit {
   private readonly store: PrefixStore;
-  private readonly db: Database.Database;
 
-  constructor(@Inject(DATABASE) db: Database.Database) {
-    this.db = db;
+  constructor(
+    @Inject(DRIZZLE_DB) private readonly db: DefinitionServiceDatabase,
+  ) {
     this.store = new SqlPrefixStore(db);
   }
 
@@ -39,7 +43,7 @@ export class PrefixesService implements OnModuleInit {
       });
 
       if (!res.ok) {
-        console.warn(`[prefixes] registry-service 응답 ${res.status} — prefix seed 건너뜀`);
+        logger.warn({ status: res.status }, "registry-service 응답 실패 — prefix seed 건너뜀");
         return;
       }
 
@@ -49,7 +53,7 @@ export class PrefixesService implements OnModuleInit {
       };
 
       if (!catalog.prefixes) {
-        console.warn("[prefixes] 카탈로그에 prefixes 없음");
+        logger.warn("카탈로그에 prefixes 없음");
         return;
       }
 
@@ -86,19 +90,17 @@ export class PrefixesService implements OnModuleInit {
         else if (action === "updated") updated++;
       }
 
-      console.log(`[prefixes] registry-service(${env.CATALOG_ID}) → ${created} created, ${updated} updated (${prefixes.length} total)`);
+      logger.info({ catalogId: env.CATALOG_ID, created, updated, total: prefixes.length }, "prefix seed 완료");
     } catch (err) {
       // registry 실패 → DB에 이미 데이터가 있으면 그대로 사용
       const existing = this.store.list();
       if (existing.length > 0) {
-        console.warn(`[prefixes] registry fetch 실패 — DB 캐시 ${existing.length}건으로 운영`);
+        logger.warn({ cached: existing.length }, "registry fetch 실패 — DB 캐시로 운영");
         return;
       }
 
       // DB도 비어있으면 에러 로그만 출력. fallback 없음.
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[prefixes] registry fetch 실패 + DB 캐시 없음 — prefix 0건: ${msg}`);
-      console.error(`[prefixes] registry-service가 기동 중인지 확인: ${env.REGISTRY_URL}/health`);
+      logger.error({ err, registryUrl: env.REGISTRY_URL }, "registry fetch 실패 + DB 캐시 없음 — prefix 0건");
     }
   }
 
@@ -144,9 +146,17 @@ export class PrefixesService implements OnModuleInit {
 
   /** prefix에 연결된 definition 문서 확인 (target_prefix 컬럼) */
   getDocByPrefix(prefixId: string): boolean {
-    const row = this.db.prepare(
-      "SELECT doc_id FROM documents WHERE target_prefix = ? AND lifecycle = 'approved' LIMIT 1",
-    ).get(prefixId) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select({ docId: documents.docId })
+      .from(documents)
+      .where(
+        and(
+          eq(documents.targetPrefix, prefixId),
+          eq(documents.lifecycle, "approved"),
+        ),
+      )
+      .limit(1)
+      .get();
     return !!row;
   }
 }

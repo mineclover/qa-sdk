@@ -5,7 +5,7 @@
  */
 
 import type { MetricDef, MetricValue, MetricStatus } from "./metric.types.js";
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort, GraphNodeLike } from "./graph-port.js";
 import type { ObservationNode } from "./dkg-types.js";
 import type { UsageData } from "./convergence.types.js";
 import type { Catalog } from "@qa-sdk/core";
@@ -14,6 +14,12 @@ import { analyzeDeploymentSkew } from "./deployment-skew.js";
 import { analyzeEntryCoverage } from "./entry-coverage.js";
 import { scanAxisOverlaps } from "./symbol-comparator.js";
 import { scanDecisionConflicts } from "./decision-comparator.js";
+
+/** axis version snapshot의 최소 형태 (convergence가 catalog.types에 직접 의존하지 않으므로 복제) */
+interface AxisVersionSnapshotLike {
+  readonly entries?: readonly string[];
+  readonly capacity?: number;
+}
 
 /** 스키마 건전성 감사 결과 (schema-health-audit에서 주입) */
 export interface SchemaHealthReportLike {
@@ -162,13 +168,14 @@ export function collectMetrics(
   const results: MetricValue[] = [];
 
   // ── headroom ──
+  // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
   const headroomDef = METRIC_DEFS.find(m => m.id === "metric:headroom")!;
   const axisData = Object.entries(catalog.axes).map(([id, axis]) => {
     const versions = Object.keys(axis.versions);
     const latestKey = versions[versions.length - 1] as keyof typeof axis.versions;
     const latest = axis.versions[latestKey];
-    const entries = (latest as any).entries?.length ?? 0;
-    const capacity = (latest as any).capacity ?? entries;
+    const entries = "entries" in latest ? (latest as AxisVersionSnapshotLike).entries?.length ?? 0 : 0;
+    const capacity = "capacity" in latest ? (latest as AxisVersionSnapshotLike).capacity ?? entries : entries;
     return { id, name: axis.name, entries, capacity };
   });
   const headroomReport = analyzeHeadroom(axisData, { graph });
@@ -202,6 +209,7 @@ export function collectMetrics(
 
   // ── skew ── (only if usage data available)
   if (usage && usage.versionUsages.length > 0) {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
     const skewDef = METRIC_DEFS.find(m => m.id === "metric:skew")!;
     const skews = analyzeDeploymentSkew(usage.versionUsages);
     for (const s of skews) {
@@ -219,6 +227,7 @@ export function collectMetrics(
 
   // ── coverage ── (only if usage data available)
   if (usage && usage.entryUsages.length > 0) {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
     const covDef = METRIC_DEFS.find(m => m.id === "metric:coverage")!;
     const report = analyzeEntryCoverage(catalog, usage.entryUsages, usage.addressUsages);
     for (const p of report.prefixes) {
@@ -237,6 +246,7 @@ export function collectMetrics(
 
   // ── overlap ──
   // Decision(DEC-SEP-*)으로 수용된 overlap은 warning으로 다운그레이드.
+  // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
   const overlapDef = METRIC_DEFS.find(m => m.id === "metric:overlap")!;
   const entriesMap = new Map<string, readonly string[]>();
   for (const [id, axis] of Object.entries(catalog.axes)) {
@@ -244,7 +254,7 @@ export function collectMetrics(
     const latestKey = versions[versions.length - 1] as keyof typeof axis.versions;
     const latest = axis.versions[latestKey];
     if (latest && "entries" in latest) {
-      entriesMap.set(id, [...(latest as any).entries]);
+      entriesMap.set(id, [...((latest as AxisVersionSnapshotLike).entries ?? [])]);
     }
   }
   const overlaps = scanAxisOverlaps(graph, entriesMap);
@@ -261,7 +271,7 @@ export function collectMetrics(
         `DEC-SEP-${o.b}-${o.a}`,
       ];
       const sepDec = candidates
-        .map(id => graph.getNode(id) as any)
+        .map(id => graph.getNode(id) as GraphNodeLike & Record<string, unknown> | undefined)
         .find(d => d && d.kind === "decision" && d.lifecycle === "active");
       if (sepDec) {
         status = "ok"; // Decision으로 수용됨
@@ -280,6 +290,7 @@ export function collectMetrics(
   }
 
   // ── conflict ──
+  // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
   const conflictDef = METRIC_DEFS.find(m => m.id === "metric:conflict:decisions")!;
   const conflicts = scanDecisionConflicts(graph);
   results.push({
@@ -304,6 +315,7 @@ export function collectMetrics(
   //   6. prompts 엣지로 active Decision에 연결된 observation → acknowledged, 건너뜀
   //
   // health metric은 action-needed만 issue로 집계한다.
+  // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
   const healthDef = METRIC_DEFS.find(m => m.id === "metric:health")!;
   const domains = graph.getNodesByKind("domain") as Array<{ kind: string; id: string; name: string; prefixes: readonly string[] }>;
   for (const domain of domains) {
@@ -312,14 +324,14 @@ export function collectMetrics(
     for (const prefixId of domain.prefixes) {
       const obsEdges = graph.edgesTo(prefixId, "observes");
       for (const obsEdge of obsEdges) {
-        const obs = graph.getNode(obsEdge.from) as any;
+        const obs = graph.getNode(obsEdge.from) as (GraphNodeLike & Partial<ObservationNode>) | undefined;
         if (!obs || obs.kind !== "observation") continue;
         // 이미 해결됨
         if (obs.resolution) continue;
         // prompts 엣지로 active Decision에 연결됨 → acknowledged
         const prompted = graph.neighbors(obs.id, "prompts");
         const hasActiveDecision = prompted.some(decId => {
-          const dec = graph.getNode(decId) as any;
+          const dec = graph.getNode(decId) as (GraphNodeLike & Record<string, unknown>) | undefined;
           return dec && dec.kind === "decision" && dec.lifecycle === "active";
         });
         if (hasActiveDecision) continue;
@@ -355,6 +367,7 @@ export function collectMetrics(
   // ── schema violations ── (schemaHealthAuditor 주입 시에만 실행)
   const auditFn = options?.schemaHealthAuditor;
   if (auditFn) {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
     const schemaDef = METRIC_DEFS.find(m => m.id === "metric:schema:violations")!;
     const schemaReport = auditFn(graph, { date: now });
     results.push({
@@ -393,7 +406,7 @@ export function metricsToObservations(
 
     const obs: ObservationNode = {
       kind: "observation",
-      id: `OBS-METRIC-${m.id.replace(/[:\/]/g, "-")}`,
+      id: `OBS-METRIC-${m.id.replace(/[:/]/g, "-")}`,
       date,
       source: "metric",
       subjects: m.target ? [m.target] : [],
@@ -425,14 +438,14 @@ export function resolveRecoveredMetrics(
   const okMetricObsIds = new Set<string>();
   for (const m of metrics) {
     if (m.status === "ok") {
-      okMetricObsIds.add(`OBS-METRIC-${m.id.replace(/[:\/]/g, "-")}`);
+      okMetricObsIds.add(`OBS-METRIC-${m.id.replace(/[:/]/g, "-")}`);
     }
   }
 
   // 기존 미해결 observation 중 ok 복귀 대상을 찾아 resolve
   for (const obs of existingObservations) {
     if (obs.kind !== "observation") continue;
-    if ((obs as any).resolution) continue; // 이미 해결됨
+    if (obs.resolution) continue; // 이미 해결됨
     if (!obs.id.startsWith("OBS-METRIC-")) continue; // metric observation만
     if (!okMetricObsIds.has(obs.id)) continue; // ok 복귀 대상만
 
@@ -444,7 +457,7 @@ export function resolveRecoveredMetrics(
         outcome: "accepted",
         note: `metric이 ok로 복귀하여 자동 해소 (${date})`,
       },
-    } as any);
+    } as ObservationNode);
   }
 
   return resolved;

@@ -21,10 +21,13 @@ import {
   PACK_FORMATS,
   type AddressProtocol,
 } from "weighted-index";
-import { MetaRegistry } from "index-meta";
-import { deepDecode } from "index-meta";
-import { computeStateRanges, checkGate } from "index-meta";
-import type { DimStateSpec } from "index-meta";
+import {
+  MetaRegistry,
+  deepDecode,
+  computeStateRanges,
+  checkGate,
+  type DimStateSpec,
+} from "index-meta";
 
 // ── 공통 픽스처 ──────────────────────────────────────────────
 

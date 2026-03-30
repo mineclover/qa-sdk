@@ -5,12 +5,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
-import { scanAndBuild } from "./frontmatter.js";
-import { extractFrontmatter } from "./frontmatter.js";
-import { assembleFeature } from "./assemble.js";
+import { scanAndBuild, extractFrontmatter, type ScanResult } from "./frontmatter.js";
+import { assembleBoundary, assembleFeature } from "./assemble.js";
 import { extractByLevel } from "./extract.js";
 import { computeEffectiveConcerns } from "./concern.js";
-import type { ScanResult } from "./frontmatter.js";
 
 const ROOT = join(import.meta.dirname, "../../..");
 
@@ -30,7 +28,7 @@ beforeAll(async () => {
       } catch { /* skip */ }
     }
   }
-});
+}, 60_000);
 
 // ─── gate-system 조립 ────────────────────────────────────
 
@@ -139,6 +137,40 @@ describe("assembleFeature: gate-system", () => {
     expect(text).toContain("concerns: security");
     expect(text).toContain("## [constraint]");
     expect(text).toContain("## [interface]");
+  });
+});
+
+describe("assembleBoundary: viteplus playbook", () => {
+  it("viteplus-sdk-smoke-system boundary는 direct 구조와 direct outgoing coupling만 조립한다", () => {
+    const assembled = assembleBoundary(
+      "viteplus-sdk-smoke-system",
+      id => result.registry.get(id),
+      (id, dir) => result.registry.getLinks(id, dir),
+      id => bodies.get(id),
+    );
+
+    expect(assembled).not.toBeNull();
+    expect(assembled!.members.some(m => m.id === "viteplus-playbook-template-implementation")).toBe(true);
+    expect(assembled!.members.some(m => m.id === "viteplus-playbook-provider-stack")).toBe(true);
+    expect(assembled!.couplings.outgoing.some(c => c.doc.id === "sdk-usage-guide")).toBe(true);
+    expect(assembled!.couplings.outgoing.some(c => c.doc.id === "sdk-vite-onboarding-guide")).toBe(true);
+    expect(assembled!.text).toContain("## 구조");
+    expect(assembled!.text).toContain("## 직접 결합");
+  });
+
+  it("template implementation boundary는 incoming refines와 outgoing depends_on을 분리해 보여준다", () => {
+    const assembled = assembleBoundary(
+      "viteplus-playbook-template-implementation",
+      id => result.registry.get(id),
+      (id, dir) => result.registry.getLinks(id, dir),
+      id => bodies.get(id),
+    );
+
+    expect(assembled).not.toBeNull();
+    expect(assembled!.couplings.incoming.some(c => c.linkType === "depends_on" && c.doc.id === "viteplus-playbook-template-flow")).toBe(true);
+    expect(assembled!.couplings.incoming.some(c => c.doc.id === "viteplus-canonical-review-implementation")).toBe(true);
+    expect(assembled!.couplings.outgoing.some(c => c.linkType === "depends_on" && c.doc.id === "sdk-usage-guide")).toBe(true);
+    expect(assembled!.couplings.outgoing.some(c => c.doc.id === "viteplus-playbook-boundary-relation")).toBe(true);
   });
 });
 

@@ -5,7 +5,7 @@
  * 렌더러가 이 결과를 받아 Three.js 오브젝트를 생성한다.
  */
 
-import type { CellGridDef, ViewMode, ViewPosition, MatrixStackDef, CellState } from "./types.js";
+import type { CellGridDef, ViewMode, ViewPosition, MatrixStackDef } from "./types.js";
 
 // ═══════════════════════════════════════════════════
 //  셀 위치 계산 결과
@@ -159,7 +159,7 @@ function computeViewPositions(
 
     // 행별 x 위치 계산 (실제 너비 기반)
     for (let gi = 0; gi < grps.length; gi++) {
-      const col = gi % perRow;
+      const _col = gi % perRow;
       const row = Math.floor(gi / perRow);
 
       // 같은 줄의 grid들 총 너비
@@ -229,7 +229,7 @@ function computeViewPositions(
 
 export function computeStackPositions(
   stacks: readonly MatrixStackDef[],
-  grids: readonly GridLayout[],
+  _grids: readonly GridLayout[],
 ): Record<string, ViewPosition> {
   const positions: Record<string, ViewPosition> = {};
 

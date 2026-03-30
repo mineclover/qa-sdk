@@ -10,8 +10,8 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { decodePrefixAsResult, decodeResultToEntities, parseSerializedAddress, compareTimestamps, decodePrefix } from "@qa-sdk/core";
-import type { UsageData, EntryUsage, AddressUsage, CoOccurrence, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
+import { decodePrefixAsResult, parseSerializedAddress, compareTimestamps, decodePrefix } from "@qa-sdk/core";
+import type { UsageData, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
@@ -171,17 +171,17 @@ export function aggregateUsageData(
   }
 
   // 결과 정렬
-  const timestamps = records.map(r => r.timestamp).filter(Boolean).sort();
+  const timestamps = records.map(r => r.timestamp).filter(Boolean).toSorted();
 
   // versionUsages 정리
   const versionUsages = [...versionCountMap.values()]
     .map(v => ({ prefix: v.prefix, version: v.version, count: v.count, lastSeen: v.lastSeen, sessions: [...v.sessions] }))
-    .sort((a, b) => b.count - a.count);
+    .toSorted((a, b) => b.count - a.count);
 
   return {
-    entryUsages: [...entryCountMap.values()].sort((a, b) => b.count - a.count),
-    addressUsages: [...addressCountMap.values()].sort((a, b) => b.count - a.count),
-    coOccurrences: [...coOccurrenceMap.values()].sort((a, b) => b.count - a.count),
+    entryUsages: [...entryCountMap.values()].toSorted((a, b) => b.count - a.count),
+    addressUsages: [...addressCountMap.values()].toSorted((a, b) => b.count - a.count),
+    coOccurrences: [...coOccurrenceMap.values()].toSorted((a, b) => b.count - a.count),
     versionUsages,
     collectionPeriod: {
       from: timestamps[0] ?? "",
@@ -295,8 +295,8 @@ export function analyzeCollectionHealth(
     }
   }
 
-  const orphanList = [...orphans.values()].sort((a, b) => b.count - a.count);
-  const staleList = [...staleMap.values()].sort((a, b) => b.versionGap - a.versionGap);
+  const orphanList = [...orphans.values()].toSorted((a, b) => b.count - a.count);
+  const staleList = [...staleMap.values()].toSorted((a, b) => b.versionGap - a.versionGap);
   const healthRate = totalAddresses > 0 ? validAddresses / totalAddresses : 1;
 
   const summaryParts: string[] = [];

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [runtime, structural, observability]
   links:
     - target: perm-service-ref
       type: depends_on

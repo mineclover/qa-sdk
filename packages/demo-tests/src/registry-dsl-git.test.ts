@@ -293,7 +293,7 @@ describe("§3 인덱스 구성 — 커밋 패턴 추적", () => {
     }
 
     // 가장 활발한 커밋 패턴: feat(index-meta) = 23건
-    const topCommit = addressMap.sort((a, b) => b.count - a.count)[0];
+    const topCommit = addressMap.toSorted((a, b) => b.count - a.count)[0];
     expect(topCommit.type).toBe("feat");
     expect(topCommit.pkg).toBe("index-meta");
     expect(topCommit.count).toBe(23);
@@ -435,7 +435,7 @@ describe("§5 패키지 의존성 그래프를 주소 공간에 반영", () => {
     expect(depth.get("platform-demo")).toBe(3);
 
     // 위상정렬: depth 순서로 정렬하면 release 순서
-    const sorted = [...depth.entries()].sort((a, b) => a[1] - b[1]);
+    const sorted = [...depth.entries()].toSorted((a, b) => a[1] - b[1]);
     const releaseOrder = sorted.map(([name]) => name);
 
     // 첫 번째는 depth 0 패키지들

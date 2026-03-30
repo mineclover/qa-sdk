@@ -97,7 +97,7 @@ export class TransitionEngine {
    */
   process(events: readonly TransitionEvent[]): TransitionResult {
     // Step 1: collect — timestamp 정렬
-    const sorted = [...events].sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
+    const sorted = [...events].toSorted((a, b) => compareTimestamps(a.timestamp, b.timestamp));
 
     const specs = this.registry.list();
     const matchedEventIds = new Set<string>();

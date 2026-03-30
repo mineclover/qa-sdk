@@ -916,7 +916,7 @@ describe("motion editor shell", () => {
       ...base,
       layers: base.layers.map((layer) =>
         layer.id === "card-a"
-          ? { ...layer, enter: { preset: "slide-up-default" } }
+          ? Object.assign({}, layer, { enter: { preset: "slide-up-default" } })
           : layer
       ),
     };

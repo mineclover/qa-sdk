@@ -1,49 +1,30 @@
-import type Database from "better-sqlite3";
+import type { DefinitionServiceDatabase } from "../database.module.js";
 import type { SliceIntentRecord } from "../core/types.js";
 import type { IntentStore } from "../core/interfaces.js";
+import { sliceIntents } from "../db/schema.js";
+import { eq, asc, sql } from "drizzle-orm";
 
-/** SQLite row → SliceIntentRecord 변환 */
-function rowToIntent(row: Record<string, unknown>): SliceIntentRecord {
+/** Drizzle select 결과 → SliceIntentRecord 변환 */
+type IntentRow = typeof sliceIntents.$inferSelect;
+
+function rowToIntent(row: IntentRow): SliceIntentRecord {
   return {
-    id: row["id"] as number,
-    prefixId: row["prefix_id"] as string,
-    sliceJson: row["slice_json"] as string,
-    sliceDepth: row["slice_depth"] as number,
-    intent: row["intent"] as string,
-    observationGoal: (row["observation_goal"] as string) || undefined,
-    owner: (row["owner"] as string) || undefined,
-    version: row["version"] as number,
-    createdAt: row["created_at"] as string,
-    updatedAt: row["updated_at"] as string,
+    id: row.id,
+    prefixId: row.prefixId,
+    sliceJson: row.sliceJson,
+    sliceDepth: row.sliceDepth,
+    intent: row.intent,
+    observationGoal: row.observationGoal || undefined,
+    owner: row.owner || undefined,
+    version: row.version,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
-/** better-sqlite3 기반 슬라이스 의도 저장소 */
+/** drizzle/better-sqlite3 기반 슬라이스 의도 저장소 */
 export class SqlIntentStore implements IntentStore {
-  private readonly stmtInsert;
-  private readonly stmtUpdate;
-  private readonly stmtDelete;
-  private readonly stmtListByPrefix;
-
-  constructor(private readonly db: Database.Database) {
-    this.stmtInsert = db.prepare(`
-      INSERT INTO slice_intents (prefix_id, slice_json, slice_depth, intent, observation_goal, owner)
-      VALUES (@prefix_id, @slice_json, @slice_depth, @intent, @observation_goal, @owner)
-    `);
-    this.stmtUpdate = db.prepare(`
-      UPDATE slice_intents
-      SET intent = COALESCE(@intent, intent),
-          observation_goal = COALESCE(@observation_goal, observation_goal),
-          owner = COALESCE(@owner, owner),
-          version = version + 1,
-          updated_at = datetime('now')
-      WHERE id = @id
-    `);
-    this.stmtDelete = db.prepare(`DELETE FROM slice_intents WHERE id = ?`);
-    this.stmtListByPrefix = db.prepare(
-      `SELECT * FROM slice_intents WHERE prefix_id = ? ORDER BY slice_depth ASC, id ASC`,
-    );
-  }
+  constructor(private readonly db: DefinitionServiceDatabase) {}
 
   create(intent: {
     prefixId: string;
@@ -53,14 +34,17 @@ export class SqlIntentStore implements IntentStore {
     observationGoal?: string;
     owner?: string;
   }): number {
-    const result = this.stmtInsert.run({
-      prefix_id: intent.prefixId,
-      slice_json: intent.sliceJson,
-      slice_depth: intent.sliceDepth,
-      intent: intent.intent,
-      observation_goal: intent.observationGoal ?? null,
-      owner: intent.owner ?? null,
-    });
+    const result = this.db
+      .insert(sliceIntents)
+      .values({
+        prefixId: intent.prefixId,
+        sliceJson: intent.sliceJson,
+        sliceDepth: intent.sliceDepth,
+        intent: intent.intent,
+        observationGoal: intent.observationGoal ?? null,
+        owner: intent.owner ?? null,
+      })
+      .run();
     return Number(result.lastInsertRowid);
   }
 
@@ -68,21 +52,35 @@ export class SqlIntentStore implements IntentStore {
     id: number,
     patch: { intent?: string; observationGoal?: string; owner?: string },
   ): void {
-    this.stmtUpdate.run({
-      id,
-      intent: patch.intent ?? null,
-      observation_goal: patch.observationGoal ?? null,
-      owner: patch.owner ?? null,
-    });
+    // COALESCE 로직: 제공된 값만 업데이트, 나머지는 기존 값 유지
+    this.db
+      .update(sliceIntents)
+      .set({
+        intent: patch.intent !== undefined ? patch.intent : sql`${sliceIntents.intent}`,
+        observationGoal: patch.observationGoal !== undefined ? patch.observationGoal : sql`${sliceIntents.observationGoal}`,
+        owner: patch.owner !== undefined ? patch.owner : sql`${sliceIntents.owner}`,
+        version: sql`${sliceIntents.version} + 1`,
+        updatedAt: sql`datetime('now')`,
+      })
+      .where(eq(sliceIntents.id, id))
+      .run();
   }
 
   remove(id: number): boolean {
-    const result = this.stmtDelete.run(id);
+    const result = this.db
+      .delete(sliceIntents)
+      .where(eq(sliceIntents.id, id))
+      .run();
     return result.changes > 0;
   }
 
   listByPrefix(prefixId: string): SliceIntentRecord[] {
-    const rows = this.stmtListByPrefix.all(prefixId) as Record<string, unknown>[];
-    return rows.map(rowToIntent);
+    return this.db
+      .select()
+      .from(sliceIntents)
+      .where(eq(sliceIntents.prefixId, prefixId))
+      .orderBy(asc(sliceIntents.sliceDepth), asc(sliceIntents.id))
+      .all()
+      .map(rowToIntent);
   }
 }

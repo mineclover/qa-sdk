@@ -2,7 +2,7 @@
  * SqlPrefixRegistry — 범용 SQLite/PostgreSQL 호환 PrefixRegistry 구현
  *
  * prefix_registry + prefix_ref 테이블을 SqlDriver로 읽고 쓴다.
- * node-sqlite-driver.ts의 SCHEMA_DDL이 먼저 적용된 DB가 필요하다.
+ * NodeSqliteDriver 기본 마이그레이션 또는 동등한 스키마가 적용된 DB가 필요하다.
  */
 
 import { ValidationError } from "../errors.js";

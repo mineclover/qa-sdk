@@ -10,9 +10,9 @@ def:
   svc: ingest-server
   tags: [performance, observability]
   links:
-    - target: ingest-infra-spec
+    - target: ingest-infra-system
       type: refines
-    - target: ingest-api-spec
+    - target: ingest-api-system
       type: constrains
 ---
 

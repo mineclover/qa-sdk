@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: []
+  tags: [runtime, structural, entry-point]
   links:
     - target: definition-service-system
       type: refines

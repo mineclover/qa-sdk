@@ -41,7 +41,7 @@ def:
 - `dim-ops-patterns`: PartialBinder, FixedDims, ServiceBinder 등 차원 조합의 실용 패턴.
 
 기반 문서: [foundation.md](../indexing/foundation.md) · [patterns.md](../indexing/patterns.md)
-관련 스펙: [permission-engine/core.spec.md](../indexing/permission-engine/core.spec.md) · [permission-engine/resource.spec.md](../indexing/permission-engine/resource.spec.md) · [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)
+관련 스펙: [../permission/permission-system.md](../permission/permission-system.md) · [../permission/perm-external-system.md](../permission/perm-external-system.md) · [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)
 
 ## 전체 그림
 
@@ -94,8 +94,8 @@ def:
 
 ## 참조
 
-- [permission-engine/core.spec.md](../indexing/permission-engine/core.spec.md) — PermissionSet, TernaryMask, ScopedEngine 상세
+- [../permission/permission-system.md](../permission/permission-system.md) — PermissionSet, TernaryMask, ScopedEngine 상세
 - [permission-engine/resource.spec.md](../indexing/permission-engine/resource.spec.md) — ServiceRef, PermCodeFactory, resource 규칙
 - [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md) — PartialBinder 상세, PrefixCodec 연동
 - [patterns.md](../indexing/patterns.md) — EntityId 기반 이동, cross-index 참조
-- [coordinate-query.spec.md](../indexing/coordinate-query.spec.md) — 좌표 질의 (lattice, policy, cross-index)
+- [../query-system/query-system.md](../query-system/query-system.md) — 좌표 질의 (lattice, policy, cross-index)

@@ -1,6 +1,5 @@
 import type { InstanceStore } from "./instance-store.js";
-import type { Condition, FlowPolicy } from "./types.js";
-import type { FlowInstance, GateSelection } from "./types.js";
+import type { Condition, FlowPolicy, FlowInstance, GateSelection } from "./types.js";
 
 export type PatternContextValue = string | number | boolean | null;
 
@@ -140,7 +139,7 @@ export class PolicyCandidateWorkflow {
   listCandidates(status?: PolicyCandidateStatus): PolicyCandidate[] {
     return [...this.candidates.values()]
       .filter((candidate) => status === undefined || candidate.status === status)
-      .sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id))
+      .toSorted((a, b) => b.priority - a.priority || a.id.localeCompare(b.id))
       .map((candidate) => cloneCandidate(candidate));
   }
 
@@ -240,7 +239,7 @@ export function detectPatterns(
 
     const gatePath = buildGatePath(instance.selections);
     const pathKey = buildPathKey(gatePath);
-    const occurrenceConfidence = averageConfidence(instance.selections);
+    const occurrenceConfidence = calcAverageConfidence(instance.selections);
     const occurredAt = resolveOccurrenceTimestamp(instance);
     const contextEntries = collectPatternContextEntries(instance.context, options.contextKeys);
 
@@ -280,7 +279,7 @@ export function detectPatterns(
       lastSeenAt: bucket.lastSeenAt,
       histogram: histogramToRecord(bucket.histogram),
     }))
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       b.frequency - a.frequency
       || compareTimestamps(b.lastSeenAt, a.lastSeenAt)
       || a.contextKey.localeCompare(b.contextKey)
@@ -309,7 +308,7 @@ export function generatePolicyCandidates(
     )
     .map((pattern) => createPolicyCandidate(pattern, normalized.priority))
     .filter((candidate) => !isDuplicatePolicy(candidate, normalized.existingPolicies))
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       b.priority - a.priority
       || a.flowId.localeCompare(b.flowId)
       || a.id.localeCompare(b.id),
@@ -494,7 +493,7 @@ function applyCandidateChanges(
     conditions: changes.conditions ? [...changes.conditions] : [...candidate.conditions],
     action: {
       ...candidate.action,
-      ...(changes.action ?? {}),
+      ...changes.action,
     },
     rationale: changes.rationale ?? candidate.rationale,
   };
@@ -528,7 +527,7 @@ function isDuplicatePolicy(
 function buildPolicySignature(policy: FlowPolicy): string {
   const serializedConditions = [...policy.conditions]
     .map((condition) => serializeCondition(condition))
-    .sort()
+    .toSorted()
     .join("|");
 
   return [
@@ -593,7 +592,7 @@ function serializeUnknown(value: unknown): string {
   }
   if (typeof value === "object") {
     return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([a], [b]) => a.localeCompare(b))
+      .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([key, entry]) => `${key}:${serializeUnknown(entry)}`)
       .join(",")}}`;
   }
@@ -601,7 +600,7 @@ function serializeUnknown(value: unknown): string {
   return String(value);
 }
 
-function averageConfidence(
+function calcAverageConfidence(
   selections: readonly GateSelection[],
 ): number {
   if (selections.length === 0) {
@@ -640,7 +639,7 @@ function histogramToRecord(
   return Object.fromEntries(
     [...histogram.entries()].map(([gateId, branches]) => [
       gateId,
-      Object.fromEntries([...branches.entries()].sort(([a], [b]) => a.localeCompare(b))),
+      Object.fromEntries([...branches.entries()].toSorted(([a], [b]) => a.localeCompare(b))),
     ]),
   );
 }

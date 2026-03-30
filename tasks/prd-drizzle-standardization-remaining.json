@@ -59,9 +59,10 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "SQLite 3.51.2에서 ALTER TABLE RENAME COLUMN 지원 확인 완료. drizzle-kit 자동 감지 여부는 구현 시 확인.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -79,11 +80,12 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -101,11 +103,12 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -121,11 +124,12 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -143,9 +147,10 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "tsup onSuccess 훅에서 cp -r drizzle dist/drizzle 사용. publicDir은 전체 파일 복사라 비효율적.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -162,9 +167,10 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-009",
@@ -179,15 +185,16 @@
         "pnpm --filter ...[origin/main] test 통과"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-004",
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-28T16:05:44.332Z"
+    "updatedAt": "2026-03-28T17:02:15.628Z"
   }
 }

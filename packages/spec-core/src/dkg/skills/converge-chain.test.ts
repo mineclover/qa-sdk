@@ -26,7 +26,7 @@ describe("converge-chain — 4가지 행위 구분", () => {
     console.log(`  simplify: ${result.summary.simplifications}`);
     console.log(`  observe: ${result.summary.observations}`);
 
-    for (const a of result.actions.filter(a => a.kind === "merge")) {
+    for (const a of result.actions.filter(act => act.kind === "merge")) {
       const m = a as { kind: "merge"; targets: string[] };
       console.log(`  🔀 merge: ${m.targets.join(" ↔ ")}`);
     }
@@ -136,11 +136,11 @@ describe("converge-chain — 4가지 행위 구분", () => {
     const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
 
     // initiator↔channel이 merge 대상에서 제외되어야 함
-    const mergeTargets = result.actions
+    const mergeTargets = new Set(result.actions
       .filter(a => a.kind === "merge")
-      .flatMap(a => (a as any).targets as string[]);
+      .flatMap(a => (a as any).targets as string[]));
 
-    const hasInitiatorChannel = mergeTargets.includes("initiator") && mergeTargets.includes("channel");
+    const hasInitiatorChannel = mergeTargets.has("initiator") && mergeTargets.has("channel");
     expect(hasInitiatorChannel).toBe(false);
 
     console.log(`  DEC-SEP 억제 후 merge: ${result.summary.merges}건`);

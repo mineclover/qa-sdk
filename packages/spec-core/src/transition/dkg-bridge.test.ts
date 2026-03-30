@@ -62,9 +62,9 @@ describe("toTransitionSpecNode", () => {
 
   it("축 정렬: 알파벳순", () => {
     const node = toTransitionSpecNode(CART_CHECKOUT_SPEC);
-    const sortedMatch = [...node.matchAxes].sort();
+    const sortedMatch = [...node.matchAxes].toSorted();
     expect(node.matchAxes).toEqual(sortedMatch);
-    const sortedSlots = [...node.slotRefs].sort();
+    const sortedSlots = [...node.slotRefs].toSorted();
     expect(node.slotRefs).toEqual(sortedSlots);
   });
 

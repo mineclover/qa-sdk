@@ -1,6 +1,6 @@
-import { now } from "@qa-sdk/core";
-import type { ContextMessage, EventEmittedMessage, ReadyMessage } from "./message-protocol.js";
-import { isContextMessage } from "./message-protocol.js";
+import { now } from '@qa-sdk/core';
+import type { ContextMessage, EventEmittedMessage, ReadyMessage } from './message-protocol.js';
+import { isContextMessage } from './message-protocol.js';
 
 export interface ChildBridge {
   notifyEvent(eventKey: string): void;
@@ -18,18 +18,18 @@ export function createChildBridge(vizOrigin: string): ChildBridge {
     }
   }
 
-  window.addEventListener("message", handleMessage);
+  window.addEventListener('message', handleMessage);
 
   // Signal readiness to viz-web so it can send context immediately
   if (window.parent !== window) {
-    const readyMsg: ReadyMessage = { type: "ready" };
+    const readyMsg: ReadyMessage = { type: 'ready' };
     window.parent.postMessage(readyMsg, vizOrigin);
   }
 
   return {
     notifyEvent(eventKey: string): void {
       const message: EventEmittedMessage = {
-        type: "event:emitted",
+        type: 'event:emitted',
         eventKey,
         timestamp: now(),
       };
@@ -43,7 +43,7 @@ export function createChildBridge(vizOrigin: string): ChildBridge {
     },
 
     destroy(): void {
-      window.removeEventListener("message", handleMessage);
+      window.removeEventListener('message', handleMessage);
       contextHandler = null;
     },
   };

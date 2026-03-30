@@ -1,6 +1,6 @@
 import {
   RESOURCES, ACTIONS, ROLES, ENVS, WI4, WEIGHTS4,
-  RESOURCE_KO, ACTION_KO, ROLE_KO, ENV_KO,
+  RESOURCE_KO, ACTION_KO,
 } from "../data.js";
 import {
   RESOURCE_FILL, RESOURCE_INK,
@@ -214,7 +214,7 @@ function renderDim3(): string {
     const rFill = ROLE_FILL[role] ?? "#f2f2f2";
     const rInk  = ROLE_INK[role]  ?? "#595959";
 
-    const colH = ACTIONS.slice(0, 3).map((act, ai) => {
+    const colH = ACTIONS.slice(0, 3).map((act, _ai) => {
       const fill = ACTION_FILL[act] ?? "#f2f2f2";
       const ink  = ACTION_INK[act]  ?? "#595959";
       return `<th style="background:${fill};color:${ink};padding:3px 6px;font-size:0.65rem;min-width:52px">${act}</th>`;

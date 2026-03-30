@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [structural, runtime, contract]
   links:
     - target: sdk-constants
       type: constrains
@@ -45,7 +45,7 @@ implemented
 
 ## 1. 예약 항목(Reserved Entry)
 
-> 상세 스펙: `slot-marker.spec.md` — 설계 원리, 테스트 코드, 수집 전략, 용량 영향.
+> 상세 스펙: `slot-marker-group.md` — 설계 원리, 테스트 코드, 수집 전략, 용량 영향.
 
 entries에 **슬롯 마커(slot marker)**를 포함하여 "값 없음", "분류 불가", "선택하지 않음" 같은 열린 상황을 닫힌 패턴의 주소 공간 안에서 표현한다. 시스템은 마커를 특별 취급하지 않으며, 의미 해석은 도메인 레이어의 책임이다.
 

@@ -1,6 +1,8 @@
 ---
 def:
   id: axis-decision-guide
+  type: knowledge
+  knowledge_kind: guide
   address: def_document:v2:136193
   scope: flow
   aspect: user_scenario
@@ -9,7 +11,7 @@ def:
   layer: mediation
   tags: [entry-point, decision]
   links:
-    - target: decision-standard
+    - target: decision-standard-group
       type: refines
 ---
 

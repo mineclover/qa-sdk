@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: cli
-  tags: []
+  tags: [entry-point, contract, structural]
   links:
     - target: codegen-spec
       type: refines

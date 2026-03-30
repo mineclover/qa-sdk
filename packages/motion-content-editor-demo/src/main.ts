@@ -241,11 +241,10 @@ function describeAutosavePhase(phase: DemoAutosavePhase): string {
 
 const presetDocuments: readonly DemoPresetRecord[] = MOTION_COMPOSITION_PRESET_DOCUMENTS.map((preset) => {
   const composition = toSceneComposition(parseMotionComposition(preset.document));
-  return {
-    ...preset,
+  return Object.assign({}, preset, {
     composition,
     normalized: serializeMotionCompositionV2(composition),
-  };
+  });
 });
 
 const defaultPreset = presetDocuments[0];
@@ -350,13 +349,16 @@ function hashUserId(input: string): number {
 }
 
 function pickUserColor(userId: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- modular arithmetic → 유효 인덱스 보장
   return USER_PRESENCE_COLORS[hashUserId(userId) % USER_PRESENCE_COLORS.length]!;
 }
 
 function deriveUserInitials(userId: string): string {
   const parts = userId.split(/[\s/_-]+/).filter((part) => part.length > 0);
   if (parts.length >= 2) {
-    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.slice(0, 2).toUpperCase();
+    const first = parts[0] ?? "";
+    const second = parts[1] ?? "";
+    return `${first[0] ?? ""}${second[0] ?? ""}`.slice(0, 2).toUpperCase();
   }
   return userId.slice(0, 2).toUpperCase();
 }
@@ -594,7 +596,7 @@ function buildScenePresenceEntries(): readonly MotionEditorScenePresenceEntry[] 
     }
 
     const users = Array.from(userIds)
-      .sort((left, right) => left.localeCompare(right))
+      .toSorted((left, right) => left.localeCompare(right))
       .map((userId) => createScenePresenceUser(userId, getCurrentUserId()));
     const locked = users.some((user) => user.userId !== getCurrentUserId())
       && (collaborationState.sceneLocks.get(scene.id)?.size ?? 0) > 0;
@@ -615,7 +617,7 @@ function buildScenePresenceEntries(): readonly MotionEditorScenePresenceEntry[] 
 function renderCollaborationMeta(): void {
   const activeScenePresence = Array.from(collaborationState.presences.values())
     .filter((presence) => presence.activeSceneId)
-    .sort((left, right) =>
+    .toSorted((left, right) =>
       (left.activeSceneId ?? "").localeCompare(right.activeSceneId ?? "")
       || left.userId.localeCompare(right.userId)
     );
@@ -632,6 +634,7 @@ function renderCollaborationMeta(): void {
 
   const grouped = new Map<string, string[]>();
   for (const presence of activeScenePresence) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .filter(p => p.activeSceneId) 직후 truthy 보장
     const sceneId = presence.activeSceneId!;
     const names = grouped.get(sceneId) ?? [];
     names.push(presence.userId);
@@ -1229,12 +1232,13 @@ async function persistActiveWorkspace(
     .then(async () => {
       const response = await workspaceClient.update(workspaceId, nextSnapshot);
       if (workspaceToken !== activeWorkspaceToken || activeWorkspaceId !== workspaceId) {
-        return;
+        return undefined;
       }
       clearPendingSaveFailure();
       updateWorkspaceUi(workspaceId, response.workspace);
       setAutosavePhase("saved");
       setStatus(`workspace ${workspaceId}를 원격 저장했습니다.`, "success");
+      return undefined;
     })
     .catch((error: unknown) => {
       if (workspaceToken !== activeWorkspaceToken || activeWorkspaceId !== workspaceId) {

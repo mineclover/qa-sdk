@@ -1,5 +1,5 @@
 import type { RLSCDocument, RLSCNode, RLSCQuery, LayoutRect } from "./types.js";
-import { flattenTree } from "./collector.js";
+import { flattenTree } from "./tree-utils.js";
 
 /**
  * 조건에 맞는 노드를 검색한다.

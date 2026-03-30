@@ -25,15 +25,12 @@ export function getGlobalCollector(): SpecCollector {
   return globalCollector;
 }
 
-/** 현재 파일에 연결된 specId */
-let currentFileSpecId: string | undefined;
 
 /**
  * 파일 단위로 specId를 연결한다.
  * 이후 같은 파일의 모든 테스트가 이 specId에 증거를 기록한다.
  */
 export function linkSpec(specId: string, collector?: SpecCollector): void {
-  currentFileSpecId = specId;
   const col = collector ?? globalCollector;
 
   // vitest afterEach 훅이 있으면 자동 수집

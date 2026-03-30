@@ -248,7 +248,7 @@ function toFlowInstance(row: DrizzleRow): FlowInstance {
     id: row.id,
     schemaId: row.schemaId,
     schemaVersion: row.schemaVersion,
-    status: row.status as FlowInstance["status"],
+    status: row.status,
     context: safeJsonParse(row.context, {}),
     selections: safeJsonParse(row.selections, []),
     outcome: row.outcome ?? undefined,

@@ -8,7 +8,7 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: dimension-operations
       type: depends_on
@@ -315,4 +315,4 @@ interface ExecutionContext {
 - [dimension-operations.md](dimension-operations.md) — 축 교차 선택, 환경 주입, 배포 시점 해석, 인프라 계측
 - [table-system.md](table-system.md) — 좌표↔관계형 양방향 연결, 이벤트 인코딩 분리
 - `docs/specs/spec-engine/prefix-guide.md` — prefix 실용 가이드, 환경 오버라이드 패턴
-- `docs/specs/spec-engine/decision-standard.md` — 의사결정 표준 프로세스
+- `docs/specs/decision-flow/decision-standard-group.md` — 의사결정 표준 프로세스

@@ -16,7 +16,6 @@ import {
 } from "@qa-sdk/spec-core";
 import type { PrefixSpec } from "@qa-sdk/spec-core";
 import {
-  generateTypescriptFile,
   buildIR,
   generateFromIR,
   generateJSFromIR,
@@ -27,7 +26,7 @@ import {
 } from "@qa-sdk/spec-core/codegen";
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { resolveAddress, type DemoCatalog } from "demo-snapshot";
-import { decodePrefixAsResult, decodeResultToEntities, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
+import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
 
 // ── Shared bootstrap ────────────────────────────────
 
@@ -398,7 +397,7 @@ export async function specCodegen(options: {
   }
 
   // codegen 전 스키마 검증
-  const validationResult = ctx.validator.validate(
+  const _validationResult = ctx.validator.validate(
     ctx.prefixSpecs.length > 0 ? `${ctx.prefixSpecs[0].schema?.category ?? "entity"}.base` : "entity.base",
     {},
   );

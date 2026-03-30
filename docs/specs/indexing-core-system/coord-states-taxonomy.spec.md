@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [structural, runtime, observability]
   links:
     - target: coord-foundation
       type: depends_on

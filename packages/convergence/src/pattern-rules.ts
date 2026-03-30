@@ -183,5 +183,5 @@ export function combinePatternRules(...domainRules: readonly (readonly PatternRu
   for (const rules of domainRules) {
     all.push(...rules);
   }
-  return all.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  return all.toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 }

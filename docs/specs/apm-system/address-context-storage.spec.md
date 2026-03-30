@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: cli
-  tags: []
+  tags: [observability, persistence, runtime]
   links:
-    - target: address-context-spec
+    - target: apm-schema-system
       type: refines
 ---
 

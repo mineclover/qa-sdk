@@ -154,7 +154,7 @@ function ensureUrl(value: string, label: string): string {
     return new URL(value).toString().replace(/\/+$/, "");
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`${label} URL이 올바르지 않습니다: ${value} (${reason})`);
+    throw new Error(`${label} URL이 올바르지 않습니다: ${value} (${reason})`, { cause: error });
   }
 }
 

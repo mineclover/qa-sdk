@@ -8,7 +8,10 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: [cross-scope]
+  tags: [cross-scope, entry-point]
+  links:
+    - target: storage-system
+      type: refines
 ---
 # 태그 관리 설계
 
@@ -105,3 +108,55 @@ auth (security 직접 부여)
 registry-service의 `ServiceConcernTag/ServiceTierTag/ServiceStructuralTag`는
 definition-catalog의 KNOWN_TAGS와 **동일 값**을 사용하되, 패키지 의존 없이 자체 타입으로 정의.
 값 동기화는 수동 (태그 추가 시 양쪽 갱신).
+
+## 문서 태그 taxonomy ^document-tags
+
+문서의 `def.tags[]`는 두 층으로 읽는다.
+
+### 1. SSOT 태그 (코드로 정의된 KnownTag)
+
+이 값들은 `definition-catalog/src/types.ts`와 `taxonomy.ts`에 정의돼 있고, 새 값을 추가하면 코드와 문서를 함께 갱신해야 한다.
+
+| 분류 | 태그 | 의미 |
+|------|------|------|
+| StructuralTag | `entry-point` | 이 주제의 시작 문서 |
+| StructuralTag | `cross-scope` | 여러 scope를 가로지르는 통합 문서 |
+| StructuralTag | `decision` | 의사결정 기록/판단 문맥이 핵심인 문서 |
+| StructuralTag | `generated` | codegen 등 자동 생성 문서 |
+| ConcernTag | `security` | 인증/인가/암호화/감사 |
+| ConcernTag | `performance` | 지연/처리량/최적화 |
+| ConcernTag | `accessibility` | a11y, WCAG, 스크린리더 |
+| ConcernTag | `observability` | 로그, 메트릭, 트레이싱 |
+| ConcernTag | `testing` | 테스트 전략, 품질 게이트, 검증 |
+| ConcernTag | `migration` | 스키마 변경, 데이터 이전, 호환성 |
+| ConcernTag | `deprecation` | 폐기, 대체 계획, 이전 가이드 |
+
+### 2. 운영 관례 태그 (프로젝트 로컬 탐색용)
+
+이 값들은 코드 SSOT는 아니지만, 문서 탐색과 묶음 조회를 위해 일관되게 쓴다.
+
+| 관례 | 예시 | 용도 |
+|------|------|------|
+| 실행/운영 성격 | `runtime`, `persistence`, `contract`, `versioning` | 런타임 경로, 저장소, 공개 계약, 버전 이슈를 빠르게 찾기 |
+| 제품/영역 이름 | `frontend`, `registry`, `motion` | 특정 도메인/제품군 문서 묶기 |
+| 품질 하네스 | `quality-bundle`, `quality-gate`, `gate-kind:build` | quality 문서군을 별도 필터로 탐색 |
+| work domain | `work-domain:productivity` | gate/contract 문서를 사용자 스토리 분류와 연결 |
+
+운영 관례 태그는 검색 편의를 위한 보조 신호다. 좌표 축이나 KnownTag를 대체하지 않는다.
+
+## 문서 태그 선택 규칙 ^document-tag-rules
+
+문서에 태그를 붙일 때는 다음 순서를 권장한다.
+
+1. StructuralTag가 필요한지 먼저 본다.
+2. 횡단 관심사가 명확하면 ConcernTag를 1~2개 붙인다.
+3. 그래도 탐색성이 부족할 때만 운영 관례 태그를 추가한다.
+
+권장 수량은 보통 2~5개다. 너무 많은 태그는 검색 신호를 흐리게 만든다.
+
+예시:
+
+- quality gate 문서: `testing`, `quality-gate`, `gate-kind:unit-test`
+- 공개 API 계약 문서: `entry-point`, `contract`
+- 로컬 SQLite 상태 저장 문서: `observability`, `persistence`, `data`
+- 통합 설계 문서: `cross-scope`, `decision`

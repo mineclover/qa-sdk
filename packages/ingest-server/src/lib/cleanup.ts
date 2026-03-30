@@ -364,7 +364,7 @@ export function createInMemoryCleanupStore(
     async listExpiredTraceIds(cutoff, limit) {
       return Array.from(traceMap.values())
         .filter((trace) => trace.createdAt.getTime() < cutoff.getTime())
-        .sort(
+        .toSorted(
           (left, right) =>
             left.createdAt.getTime() - right.createdAt.getTime() ||
             left.traceId.localeCompare(right.traceId),
@@ -401,7 +401,7 @@ export function createInMemoryCleanupStore(
     async listExpiredVerdictIds(cutoff, limit) {
       return Array.from(verdictMap.values())
         .filter((verdict) => verdict.computedAt.getTime() < cutoff.getTime())
-        .sort(
+        .toSorted(
           (left, right) =>
             left.computedAt.getTime() - right.computedAt.getTime() ||
             left.id.localeCompare(right.id),
@@ -422,7 +422,7 @@ export function createInMemoryCleanupStore(
               (trace) => trace.sessionId === session.sessionId,
             ),
         )
-        .sort(
+        .toSorted(
           (left, right) =>
             left.startedAt.getTime() - right.startedAt.getTime() ||
             left.sessionId.localeCompare(right.sessionId),

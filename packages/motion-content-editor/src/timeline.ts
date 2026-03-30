@@ -63,7 +63,7 @@ interface MotionTimelineStartResult {
 }
 
 type TimelineBarKind = MotionItemKind | "scene" | "transition";
-type ResizableKind = Exclude<TimelineBarKind, "transition">;
+type _ResizableKind = Exclude<TimelineBarKind, "transition">;
 
 interface MotionTimelineBarOptions {
   readonly moveable: boolean;
@@ -181,6 +181,7 @@ function chooseTimelineTickStep(totalDurationMs: number): number {
       return candidate;
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- candidates 배열이 비어있지 않음
   return candidates[candidates.length - 1]!;
 }
 
@@ -204,6 +205,7 @@ function buildTimelineTicks(totalDurationMs: number): MotionTimelineTick[] {
       major: true,
     });
   } else if (ticks.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ticks.length > 0 검사 직후
     const lastTick = ticks[ticks.length - 1]!;
     ticks[ticks.length - 1] = {
       ...lastTick,
@@ -289,7 +291,7 @@ function packSceneTracks(
 ): readonly (readonly MotionSceneDef[])[] {
   const lanes: MotionSceneDef[][] = [];
   const laneEndMs: number[] = [];
-  const orderedScenes = [...scenes].sort((left, right) =>
+  const orderedScenes = [...scenes].toSorted((left, right) =>
     left.startMs - right.startMs
     || right.durationMs - left.durationMs
     || left.id.localeCompare(right.id)
@@ -304,6 +306,7 @@ function packSceneTracks(
       continue;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- findIndex 결과 유효 인덱스
     lanes[laneIndex]!.push(scene);
     laneEndMs[laneIndex] = endMs(scene);
   }

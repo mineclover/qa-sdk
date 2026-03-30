@@ -115,6 +115,7 @@ export function analyzeImpact(
   seedImpact(sourceId, getLinks, queue, [], 0, sourceLayer);
 
   while (queue.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
     const { docId, path, via, direction, depth, propagatingLayer } = queue.shift()!;
     if (visited.has(docId)) continue;
     visited.add(docId);
@@ -165,23 +166,50 @@ function seedImpact(
   const path = [...basePath, docId];
   const depth = baseDepth + 1;
 
-  for (const l of incoming.filter(l => l.linkType === "depends_on")) {
+  for (const l of incoming.filter(lnk => lnk.linkType === "depends_on")) {
     queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "depends_on", direction: "downstream", depth, propagatingLayer });
   }
 
-  for (const l of incoming.filter(l => l.linkType === "implements")) {
+  for (const l of incoming.filter(lnk => lnk.linkType === "implements")) {
     queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "implements", direction: "downstream", depth, propagatingLayer });
   }
 
-  for (const l of incoming.filter(l => l.linkType === "refines")) {
+  for (const l of incoming.filter(lnk => lnk.linkType === "refines")) {
     queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "refines", direction: "downstream", depth, propagatingLayer });
   }
 
-  for (const l of outgoing.filter(l => l.linkType === "constrains")) {
+  for (const l of outgoing.filter(lnk => lnk.linkType === "constrains")) {
     queue.push({ docId: l.targetId, path: [...path, l.targetId], via: "constrains", direction: "downstream", depth, propagatingLayer });
   }
 
-  for (const l of incoming.filter(l => l.linkType === "contains")) {
+  for (const l of incoming.filter(lnk => lnk.linkType === "contains")) {
     queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "contains", direction: "upstream", depth, propagatingLayer });
   }
+}
+
+export function selectImpactContext(
+  impact: ImpactAnalysis,
+  mode: "direct" | "transitive",
+): ImpactAnalysis {
+  if (mode === "transitive") {
+    return impact;
+  }
+
+  const impacted = impact.impacted.filter((item) => item.depth === 1);
+  const byLayer = { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 };
+  for (const item of impacted) {
+    if (item.layer) byLayer[item.layer]++;
+    else byLayer.unspecified++;
+  }
+
+  return {
+    sourceId: impact.sourceId,
+    sourceLayer: impact.sourceLayer,
+    impacted,
+    affectedGroups: impacted
+      .filter((item) => item.via === "contains" && item.direction === "upstream")
+      .map((item) => item.id),
+    blastRadius: impacted.length,
+    byLayer,
+  };
 }

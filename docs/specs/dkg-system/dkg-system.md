@@ -25,6 +25,8 @@ def:
       type: contains
     - target: dkg-service-topology
       type: contains
+    - target: dkg-state-store
+      type: contains
 ---
 
 # DKG (Design Knowledge Graph) 시스템
@@ -42,3 +44,4 @@ def:
 - `dkg-growth-spiral`: 고정 축 정의 → 운용 → 새 기능 발견 → 새 고정 축 순환의 성장 모델.
 - `dkg-skills-system`: 종단 cascade, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그를 묶는 subgroup overview.
 - `dkg-service-topology`: 마이크로서비스 prefix 소유권, 공유 계약, 의존 그래프, draining/해제 관리.
+- `dkg-state-store`: 로컬 SQLite 상태 저장소와 usage/version/meta 테이블 구조.

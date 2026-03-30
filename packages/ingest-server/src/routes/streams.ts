@@ -174,7 +174,7 @@ function createStreamWriter(stream: SSEStreamingApi) {
   const enqueueWrite = (write: () => Promise<unknown>) => {
     writeChain = writeChain.then(async () => {
       if (stream.aborted || stream.closed) {
-        return;
+        return undefined;
       }
 
       try {
@@ -182,6 +182,7 @@ function createStreamWriter(stream: SSEStreamingApi) {
       } catch {
         // Transport errors are expected once clients disconnect.
       }
+      return undefined;
     });
 
     return writeChain;

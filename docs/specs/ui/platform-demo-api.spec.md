@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: []
+  tags: [entry-point, contract, frontend]
   links:
     - target: motion-content-glossary
       type: refines

@@ -15,21 +15,21 @@ function collectMatchAxes(spec: TransitionSpec): string[] {
   for (const coord of spec.match.coordinates) {
     for (const dim of Object.keys(coord)) axes.add(dim);
   }
-  return [...axes].sort();
+  return [...axes].toSorted();
 }
 
 /** input.all에서 축 이름 수집 */
 function collectInputAxes(spec: TransitionSpec): string[] {
   const axes = new Set<string>();
   for (const cond of spec.input.all) axes.add(cond.axis);
-  return [...axes].sort();
+  return [...axes].toSorted();
 }
 
 /** output.set에서 축 이름 수집 */
 function collectOutputAxes(spec: TransitionSpec): string[] {
   const axes = new Set<string>();
   for (const assign of spec.output.set) axes.add(assign.axis);
-  return [...axes].sort();
+  return [...axes].toSorted();
 }
 
 /**
@@ -53,7 +53,7 @@ export function toTransitionSpecNode(spec: TransitionSpec): TransitionSpecNode {
     matchMode: spec.match.mode,
     coordinateCount: spec.match.coordinates.length,
     effectKind: spec.effect.kind,
-    slotRefs: [...all].sort(),
+    slotRefs: [...all].toSorted(),
     matchAxes,
     inputAxes,
     outputAxes,

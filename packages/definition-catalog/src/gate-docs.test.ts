@@ -19,6 +19,14 @@ import { scanAndBuild, computeAllConcerns } from "./frontmatter.js";
 import type { ScanResult } from "./frontmatter.js";
 
 const ROOT = join(import.meta.dirname, "../../..");
+const CLASSIC_GATE_IDS = new Set([
+  "gate-api",
+  "gate-state-model",
+  "gate-engine-func",
+  "gate-flow",
+  "gate-constraint",
+  "gate-scenario",
+]);
 
 let result: ScanResult;
 
@@ -26,16 +34,15 @@ beforeAll(async () => {
   result = await scanAndBuild(ROOT, [join(ROOT, "docs")]);
 });
 
+function classicGateDocs() {
+  return result.registry.all().filter((entry) => CLASSIC_GATE_IDS.has(entry.id));
+}
+
 // ─── 1. 등록 확인 ───────────────────────────────────────
 
 describe("gate 문서 등록", () => {
-  const GATE_IDS = [
-    "gate-api", "gate-state-model", "gate-engine-func",
-    "gate-flow", "gate-constraint", "gate-scenario",
-  ];
-
   it("gate 문서 6건이 모두 등록된다", () => {
-    for (const id of GATE_IDS) {
+    for (const id of CLASSIC_GATE_IDS) {
       expect(result.registry.get(id), `${id} 미등록`).toBeDefined();
     }
   });
@@ -110,15 +117,13 @@ describe("gate 관계 그래프", () => {
 
 describe("scope 기반 질의", () => {
   it("'gate' 키워드가 포함된 interface 문서 조회", () => {
-    const apis = result.registry.findByScope("interface")
-      .filter(e => e.id.startsWith("gate"));
+    const apis = classicGateDocs().filter((entry) => entry.scope === "interface");
     expect(apis.length).toBeGreaterThanOrEqual(1);
     expect(apis[0].id).toBe("gate-api");
   });
 
   it("feature scope에 gate 문서 (func_def + scenario 포함)", () => {
-    const features = result.registry.findByScope("feature")
-      .filter(e => e.id.startsWith("gate"));
+    const features = classicGateDocs().filter((entry) => entry.scope === "feature");
     expect(features.length).toBeGreaterThanOrEqual(2);
     const aspects = features.map(e => e.aspect);
     expect(aspects).toContain("func_def");
@@ -126,8 +131,7 @@ describe("scope 기반 질의", () => {
   });
 
   it("validation depth 문서 조회 → gate-scenario만", () => {
-    const validations = result.registry.query({ depth: "validation" })
-      .filter(e => e.id.startsWith("gate"));
+    const validations = classicGateDocs().filter((entry) => entry.depth === "validation");
     expect(validations.length).toBe(1);
     expect(validations[0].id).toBe("gate-scenario");
   });
@@ -193,17 +197,13 @@ describe("concern 전파", () => {
 
 describe("주제 분리 컨벤션 검증", () => {
   it("같은 기능을 다루는 문서가 5개 scope에 분포한다", () => {
-    const gateScopes = new Set(
-      result.registry.all()
-        .filter(e => e.id.startsWith("gate"))
-        .map(e => e.scope)
-    );
+    const gateScopes = new Set(classicGateDocs().map((entry) => entry.scope));
     // gate 관련 문서가 최소 3개 scope에 분포하면 주제 분리 달성
     expect(gateScopes.size).toBeGreaterThanOrEqual(3);
   });
 
   it("각 문서가 정확히 하나의 scope×aspect에만 속한다", () => {
-    const gateDocs = result.registry.all().filter(e => e.id.startsWith("gate"));
+    const gateDocs = classicGateDocs();
     for (const doc of gateDocs) {
       // cross-scope 태그가 없어야 함 (각자 자기 scope만)
       expect(doc.tags?.includes("cross-scope") ?? false).toBe(false);
@@ -218,16 +218,16 @@ describe("주제 분리 컨벤션 검증", () => {
     while (queue.length > 0) {
       const id = queue.shift()!;
       if (visited.has(id)) continue;
-      if (!id.startsWith("gate")) continue;
+      if (!CLASSIC_GATE_IDS.has(id)) continue;
       visited.add(id);
 
       const links = result.registry.getLinks(id, "both");
       for (const link of links) {
-        if (link.sourceId.startsWith("gate")) queue.push(link.sourceId);
-        if (link.targetId.startsWith("gate")) queue.push(link.targetId);
+        if (CLASSIC_GATE_IDS.has(link.sourceId)) queue.push(link.sourceId);
+        if (CLASSIC_GATE_IDS.has(link.targetId)) queue.push(link.targetId);
       }
     }
 
-    expect(visited.size).toBeGreaterThanOrEqual(7); // gate-system(그룹) + 멤버들
+    expect(visited.size).toBe(CLASSIC_GATE_IDS.size);
   });
 });

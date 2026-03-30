@@ -70,12 +70,21 @@ function parseFlags(args: string[]): { positional: string[]; options: DataSource
   const flags: Record<string, string> = {};
   let mode: DataSourceOptions["mode"];
 
-  for (const arg of args) {
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]!;
     if (arg === "--local") { mode = "local"; continue; }
     if (arg === "--server") { mode = "server"; continue; }
     if (arg.startsWith("--")) {
-      const [k, v] = arg.slice(2).split("=", 2);
-      flags[k] = v ?? "true";
+      const [k, inline] = arg.slice(2).split("=", 2);
+      const next = args[index + 1];
+      if (inline !== undefined) {
+        flags[k] = inline;
+      } else if (next && !next.startsWith("--")) {
+        flags[k] = next;
+        index += 1;
+      } else {
+        flags[k] = "true";
+      }
       continue;
     }
     positional.push(arg);
@@ -670,6 +679,135 @@ async function cmdContext(source: DefDataSource, docId: string) {
   }
 }
 
+// ── boundary (DefDataSource 기반) ─────────────────────
+
+async function cmdBoundary(source: DefDataSource, docId: string, flags: Record<string, string>) {
+  const level = flags["level"] === "purpose" ? "purpose" : "overview";
+  const boundaryData = await source.getBoundary(docId, level);
+  if (!boundaryData) { console.log(`문서 "${docId}" 없음`); return; }
+
+  if (flags["json"] === "true") {
+    console.log(JSON.stringify(boundaryData, null, 2));
+    return;
+  }
+
+  console.log(`# 바운더리: ${boundaryData.boundary.title}\n`);
+  console.log(`scope: ${boundaryData.boundary.scope}/${boundaryData.boundary.aspect}  depth: ${boundaryData.boundary.depth}  lifecycle: ${boundaryData.boundary.lifecycle}`);
+  if (boundaryData.boundary.layer) console.log(`layer: ${boundaryData.boundary.layer}`);
+  if (boundaryData.boundary.svc) console.log(`svc: ${boundaryData.boundary.svc}`);
+
+  if (boundaryData.boundary.purpose) {
+    console.log(`\n## 목적`);
+    console.log(boundaryData.boundary.purpose);
+  }
+
+  if (level === "overview" && boundaryData.boundary.overview) {
+    console.log(`\n## 개요`);
+    console.log(`- ${boundaryData.boundary.overview.split("\n")[0]?.trim() || "(요약 없음)"}`);
+  }
+
+  console.log(`\n## 구조`);
+  if (boundaryData.members.length === 0) {
+    console.log(`- (contains 멤버 없음)`);
+  } else {
+    for (const child of boundaryData.members) {
+      console.log(`- [${child.scope}/${child.aspect}] ${child.docId}: ${child.summary}`);
+    }
+  }
+
+  console.log(`\n## 직접 결합`);
+  console.log(`### outgoing`);
+  if (boundaryData.couplings.outgoing.length === 0) {
+    console.log(`- (없음)`);
+  } else {
+    for (const link of boundaryData.couplings.outgoing) {
+      console.log(`- [${link.type}] ${link.target}: ${link.summary}`);
+    }
+  }
+
+  console.log(`\n### incoming`);
+  if (boundaryData.couplings.incoming.length === 0) {
+    console.log(`- (없음)`);
+  } else {
+    for (const link of boundaryData.couplings.incoming) {
+      console.log(`- [${link.type}] ${link.source}: ${link.summary}`);
+    }
+  }
+}
+
+async function cmdBoundaryContext(source: DefDataSource, docId: string, flags: Record<string, string>) {
+  const level = flags["level"] === "purpose" ? "purpose" : "overview";
+  const mode = flags["mode"] === "direct" ? "direct" : "transitive";
+  const result = await source.getBoundaryContext(docId, level, mode);
+  if (!result) { console.log(`문서 "${docId}" 없음`); return; }
+
+  if (flags["json"] === "true") {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  const boundary = result.boundary.boundary;
+
+  console.log(`# 바운더리 컨텍스트: ${boundary.title}\n`);
+  console.log(`scope: ${boundary.scope}/${boundary.aspect}  depth: ${boundary.depth}  lifecycle: ${boundary.lifecycle}`);
+  console.log(`mode: ${result.mode}`);
+  if (boundary.layer) console.log(`layer: ${boundary.layer}`);
+  if (boundary.svc) console.log(`svc: ${boundary.svc}`);
+
+  if (boundary.purpose) {
+    console.log(`\n## 목적`);
+    console.log(boundary.purpose);
+  }
+
+  if (level === "overview" && boundary.overview) {
+    console.log(`\n## 개요`);
+    console.log(`- ${boundary.overview.split("\n")[0]?.trim() || "(요약 없음)"}`);
+  }
+
+  console.log(`\n## 구조`);
+  if (result.boundary.members.length === 0) console.log(`- (contains 멤버 없음)`);
+  else for (const member of result.boundary.members) {
+    console.log(`- [${member.scope}/${member.aspect}] ${member.docId}: ${member.summary}`);
+  }
+
+  console.log(`\n## 직접 결합`);
+  console.log(`### outgoing`);
+  if (result.boundary.couplings.outgoing.length === 0) console.log(`- (없음)`);
+  else for (const link of result.boundary.couplings.outgoing) {
+    console.log(`- [${link.type}] ${link.target}: ${link.summary}`);
+  }
+
+  console.log(`\n### incoming`);
+  if (result.boundary.couplings.incoming.length === 0) console.log(`- (없음)`);
+  else for (const link of result.boundary.couplings.incoming) {
+    console.log(`- [${link.type}] ${link.source}: ${link.summary}`);
+  }
+
+  console.log(`\n## concerns`);
+  console.log(`직접: ${result.concerns.direct.length > 0 ? result.concerns.direct.join(", ") : "(없음)"}`);
+  if (result.concerns.inherited.length === 0) console.log(`상속: (없음)`);
+  else for (const item of result.concerns.inherited) {
+    console.log(`상속: ${item.tag} from ${item.source} via ${item.via}`);
+  }
+
+  console.log(`\n## impact`);
+  console.log(`blast radius: ${result.impact.blastRadius}건`);
+  if (result.impact.affectedGroups.length > 0) {
+    console.log(`groups: ${result.impact.affectedGroups.join(", ")}`);
+  }
+  for (const item of result.impact.impacted.slice(0, 10)) {
+    console.log(`- [${item.via}] ${item.docId} (${item.direction}, depth ${item.distance})`);
+  }
+
+  if (result.feedbackTrace.length > 0) {
+    console.log(`\n## feedback trace`);
+    for (const item of result.feedbackTrace.slice(0, 10)) {
+      const model = item.targetModel ? ` [${item.targetModel}]` : "";
+      console.log(`- ${item.id}${model}: ${item.purpose}`);
+    }
+  }
+}
+
 // ── audit (DefDataSource 기반, 레거시 통합) ───────────
 
 async function cmdAudit(source: DefDataSource) {
@@ -763,7 +901,7 @@ export async function cliDef(args: string[]): Promise<void> {
   const dsCommands = new Set([
     "list", "get", "children", "parent", "incoming", "validate", "search", "stats",
     "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide",
-    "topdown", "bottomup", "context",
+    "topdown", "bottomup", "context", "boundary", "boundary-context",
   ]);
   if (dsCommands.has(sub)) {
     let source: DefDataSource;
@@ -800,6 +938,12 @@ export async function cliDef(args: string[]): Promise<void> {
         case "context":
           if (!rest[0]) { console.log("Usage: qa-sdk def context <문서ID>"); return; }
           return await cmdContext(source, rest[0]);
+        case "boundary":
+          if (!rest[0]) { console.log("Usage: qa-sdk def boundary <문서ID> [--level purpose|overview] [--json]"); return; }
+          return await cmdBoundary(source, rest[0], flags);
+        case "boundary-context":
+          if (!rest[0]) { console.log("Usage: qa-sdk def boundary-context <문서ID> [--level purpose|overview] [--mode direct|transitive] [--json]"); return; }
+          return await cmdBoundaryContext(source, rest[0], flags);
       }
     } finally {
       if ("close" in source && typeof source.close === "function") (source as { close(): void }).close();
@@ -830,6 +974,8 @@ export async function cliDef(args: string[]): Promise<void> {
 
 분석:
   context <ID>        작업 전 컨텍스트 (소속/의존/영향)
+  boundary <ID>       바운더리 구조 + direct coupling (--level, --json 가능)
+  boundary-context <ID> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)
   impact <ID>         변경 영향 분석
   topdown <ID>        탑다운 조립
   bottomup <ID>       영향 역추적
@@ -1094,8 +1240,8 @@ async function cmdState(rest: string[], flags: Record<string, string>) {
     const id = entry.id;
     const lifecycle = deriveDocLifecycle(entry.lifecycle);
 
-    const hasSvc = !!entry.svc;
-    const svcDir = entry.svc ? join(root, "packages", entry.svc) : null;
+    const hasSvc = !!entry.serviceId;
+    const svcDir = entry.serviceId ? join(root, "packages", entry.serviceId) : null;
     let hasCode = false;
     let hasTests = false;
     if (svcDir) {

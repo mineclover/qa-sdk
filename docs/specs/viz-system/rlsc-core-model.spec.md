@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: platform-demo
-  tags: []
+  tags: [data, structural, runtime]
   links:
-    - target: rlsc-spec
+    - target: viz-language-system
       type: refines
 ---
 

@@ -85,7 +85,7 @@ export function analyzeHeadroom(
     // 하지만 실제로는 shape이 바뀌면 size만 바뀌고 stride는 보존될 수도 있음
     // 정확한 판정은 prefix별 shape을 봐야 하지만, 보수적으로:
     // sealed + 영향 prefix 있음 → stride-break 가능
-    const sealed = axis.sealed ?? (axis.capacity > axis.entries ? false : true);
+    const sealed = axis.sealed ?? axis.capacity <= axis.entries;
     const strideBreakOnChange = sealed && affectedPrefixes > 0;
 
     let migrationCost: HeadroomIssue["migrationCost"];

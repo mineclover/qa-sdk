@@ -11,50 +11,60 @@
 
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
-import { createLogger } from "@qa-sdk/core";
+import { sql, eq, like, or, asc, count } from "drizzle-orm";
+import { DATABASE, DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
+import { documents } from "../../db/schema.js";
+import { createLogger } from "../../lib/logger.js";
 import type { DocRecord } from "../../core/types.js";
 
 const logger = createLogger("definition-service");
 
-function rowToDoc(row: Record<string, unknown>): DocRecord {
+/** drizzle SELECT 결과 row → DocRecord 변환 */
+function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
   return {
-    docId: row["doc_id"] as string,
-    scope: row["scope"] as string,
-    aspect: row["aspect"] as string,
-    depth: row["depth"] as string,
-    lifecycle: row["lifecycle"] as string,
-    layer: (row["layer"] as string) || undefined,
-    tags: JSON.parse((row["tags_json"] as string) || "[]"),
-    links: JSON.parse((row["links_json"] as string) || "[]"),
-    svc: (row["svc"] as string) || undefined,
-    address: (row["address"] as string) || undefined,
-    targetPrefix: (row["target_prefix"] as string) || undefined,
-    version: row["version"] as number,
-    bodyHash: row["body_hash"] as string,
-    purpose: (row["purpose"] as string) || undefined,
-    intent: (row["intent"] as string) || undefined,
-    context: (row["context"] as string) || undefined,
-    caveat: (row["caveat"] as string) || undefined,
-    syncedAt: row["synced_at"] as string,
-    sourcePath: (row["source_path"] as string) || undefined,
+    docId: row.docId,
+    title: row.title || row.docId,
+    level: row.level || undefined,
+    scope: row.scope,
+    aspect: row.aspect,
+    depth: row.depth,
+    lifecycle: row.lifecycle,
+    layer: row.layer || undefined,
+    tags: row.tagsJson,
+    links: row.linksJson,
+    svc: row.svc || undefined,
+    address: row.address || undefined,
+    targetPrefix: row.targetPrefix || undefined,
+    version: row.version,
+    bodyHash: row.bodyHash,
+    purpose: row.purpose || undefined,
+    intent: row.intent || undefined,
+    context: row.context || undefined,
+    caveat: row.caveat || undefined,
+    gate: row.gateJson
+      ? JSON.parse(row.gateJson) as DocRecord["gate"]
+      : undefined,
+    syncedAt: row.syncedAt,
+    sourcePath: row.sourcePath || undefined,
   };
 }
 
 @Injectable()
 export class SearchService implements OnModuleInit {
-  private stmtUpsert!: Database.Statement;
-  private stmtDelete!: Database.Statement;
   private ftsMode: "trigram" | "default" = "default";
 
-  constructor(@Inject(DATABASE) private readonly db: Database.Database) {}
+  constructor(
+    /** FTS5 DDL용 — drizzle이 VIRTUAL TABLE을 지원하지 않으므로 raw exec 필요 */
+    @Inject(DATABASE) private readonly rawDb: Database.Database,
+    @Inject(DRIZZLE_DB) private readonly db: DefinitionServiceDatabase,
+  ) {}
 
   /** FTS5 테이블 생성 보장 — 마이그레이션 직접 DDL + 런타임 fallback */
   onModuleInit() {
     // trigram 토크나이저: CJK(한국어/중국어/일본어) 검색 지원
     // trigram은 3글자 단위로 토큰을 생성하여 부분 문자열 매칭 가능
     try {
-      this.db.exec(`
+      this.rawDb.exec(`
         CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
           doc_id, purpose, intent, context, caveat,
           content='documents', content_rowid='rowid',
@@ -64,7 +74,7 @@ export class SearchService implements OnModuleInit {
       this.ftsMode = "trigram";
     } catch {
       // trigram 미지원 환경 fallback (구버전 SQLite)
-      this.db.exec(`
+      this.rawDb.exec(`
         CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
           doc_id, purpose, intent, context, caveat,
           content='documents', content_rowid='rowid'
@@ -73,13 +83,6 @@ export class SearchService implements OnModuleInit {
       this.ftsMode = "default";
     }
 
-    this.stmtUpsert = this.db.prepare(
-      "INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat) VALUES (?, ?, ?, ?, ?)",
-    );
-    this.stmtDelete = this.db.prepare(
-      "INSERT INTO documents_fts (documents_fts, doc_id, purpose, intent, context, caveat) VALUES ('delete', ?, ?, ?, ?, ?)",
-    );
-
     logger.info({ tokenizer: this.ftsMode }, "FTS5 search index 준비 완료");
   }
 
@@ -87,19 +90,29 @@ export class SearchService implements OnModuleInit {
   index(docId: string, purpose?: string, intent?: string, context?: string, caveat?: string) {
     try {
       // 기존 엔트리 삭제 시도 (없으면 무시)
-      const existing = this.db.prepare("SELECT purpose, intent, context, caveat FROM documents WHERE doc_id = ?").get(docId) as Record<string, unknown> | undefined;
+      const existing = this.db
+        .select({
+          purpose: documents.purpose,
+          intent: documents.intent,
+          context: documents.context,
+          caveat: documents.caveat,
+        })
+        .from(documents)
+        .where(eq(documents.docId, docId))
+        .get();
+
       if (existing) {
         try {
-          this.stmtDelete.run(
-            docId,
-            existing["purpose"] ?? "",
-            existing["intent"] ?? "",
-            existing["context"] ?? "",
-            existing["caveat"] ?? "",
-          );
+          this.db.run(sql`
+            INSERT INTO documents_fts (documents_fts, doc_id, purpose, intent, context, caveat)
+            VALUES ('delete', ${docId}, ${existing.purpose ?? ""}, ${existing.intent ?? ""}, ${existing.context ?? ""}, ${existing.caveat ?? ""})
+          `);
         } catch { /* 첫 인덱싱 시 삭제할 것 없음 */ }
       }
-      this.stmtUpsert.run(docId, purpose ?? "", intent ?? "", context ?? "", caveat ?? "");
+      this.db.run(sql`
+        INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat)
+        VALUES (${docId}, ${purpose ?? ""}, ${intent ?? ""}, ${context ?? ""}, ${caveat ?? ""})
+      `);
     } catch {
       // FTS 인덱싱 실패가 저장을 차단하지 않음
     }
@@ -108,14 +121,14 @@ export class SearchService implements OnModuleInit {
   /** 전문 검색 */
   search(query: string, limit = 50, offset = 0): DocRecord[] {
     try {
-      const stmt = this.db.prepare(`
+      // FTS5 MATCH — 가상 테이블 JOIN은 drizzle 스키마에 없으므로 sql 태그 사용
+      const results = this.db.all<typeof documents.$inferSelect>(sql`
         SELECT d.* FROM documents d
         JOIN documents_fts fts ON fts.doc_id = d.doc_id
-        WHERE documents_fts MATCH ?
-        LIMIT ? OFFSET ?
+        WHERE documents_fts MATCH ${query}
+        LIMIT ${limit} OFFSET ${offset}
       `);
-      const results = (stmt.all(query, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
-      if (results.length > 0) return results;
+      if (results.length > 0) return results.map(rowToDoc);
     } catch {
       // FTS MATCH 실패 시 LIKE fallback
     }
@@ -127,13 +140,12 @@ export class SearchService implements OnModuleInit {
   /** 검색 결과 전체 건수 */
   searchCount(query: string): number {
     try {
-      const stmt = this.db.prepare(`
+      const row = this.db.get<{ cnt: number }>(sql`
         SELECT COUNT(*) as cnt FROM documents d
         JOIN documents_fts fts ON fts.doc_id = d.doc_id
-        WHERE documents_fts MATCH ?
+        WHERE documents_fts MATCH ${query}
       `);
-      const row = stmt.get(query) as { cnt: number };
-      if (row.cnt > 0) return row.cnt;
+      if (row && row.cnt > 0) return row.cnt;
     } catch {
       // FTS MATCH 실패 시 LIKE fallback
     }
@@ -143,20 +155,40 @@ export class SearchService implements OnModuleInit {
   /** LIKE 기반 검색 (CJK fallback) */
   private searchByLike(query: string, limit: number, offset: number): DocRecord[] {
     const pattern = `%${query}%`;
-    const stmt = this.db.prepare(`
-      SELECT * FROM documents
-      WHERE purpose LIKE ? OR intent LIKE ? OR context LIKE ? OR caveat LIKE ? OR doc_id LIKE ?
-      ORDER BY doc_id LIMIT ? OFFSET ?
-    `);
-    return (stmt.all(pattern, pattern, pattern, pattern, pattern, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
+    return this.db
+      .select()
+      .from(documents)
+      .where(
+        or(
+          like(documents.purpose, pattern),
+          like(documents.intent, pattern),
+          like(documents.context, pattern),
+          like(documents.caveat, pattern),
+          like(documents.docId, pattern),
+        ),
+      )
+      .orderBy(asc(documents.docId))
+      .limit(limit)
+      .offset(offset)
+      .all()
+      .map(rowToDoc);
   }
 
   private searchCountByLike(query: string): number {
     const pattern = `%${query}%`;
-    const stmt = this.db.prepare(`
-      SELECT COUNT(*) as cnt FROM documents
-      WHERE purpose LIKE ? OR intent LIKE ? OR context LIKE ? OR caveat LIKE ? OR doc_id LIKE ?
-    `);
-    return (stmt.get(pattern, pattern, pattern, pattern, pattern) as { cnt: number }).cnt;
+    const result = this.db
+      .select({ cnt: count() })
+      .from(documents)
+      .where(
+        or(
+          like(documents.purpose, pattern),
+          like(documents.intent, pattern),
+          like(documents.context, pattern),
+          like(documents.caveat, pattern),
+          like(documents.docId, pattern),
+        ),
+      )
+      .get();
+    return result?.cnt ?? 0;
   }
 }

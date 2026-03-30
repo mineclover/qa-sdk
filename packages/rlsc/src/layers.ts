@@ -19,6 +19,7 @@ export function classifyLayers(nodes: readonly RLSCNode[]): LayerStack[] {
     if (!node.visible) continue;
     const z = node.zIndex;
     if (!groups.has(z)) groups.set(z, []);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
     groups.get(z)!.push(node);
   }
 

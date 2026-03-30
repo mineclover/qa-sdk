@@ -9,10 +9,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { RelationalEngine } from "index-meta";
-import type { RelationTypeRule } from "index-meta";
-import type { PatternRule } from "index-meta";
-import type { MetaRegistryInput } from "index-meta";
+import {
+  RelationalEngine,
+  type RelationTypeRule,
+  type PatternRule,
+  type MetaRegistryInput,
+} from "index-meta";
 import { AXIS } from "demo-snapshot";
 
 // ── 공통 픽스처 ──────────────────────────────────────────────────────────────

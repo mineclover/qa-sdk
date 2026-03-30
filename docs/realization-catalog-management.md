@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-catalog-mgmt
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [runtime, migration, observability]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 카탈로그 생명주기 관리
+
+## 목적 ^purpose
+
+카탈로그 관리 실현 계획. definition-service와 prefix registry의 운영 워크플로우를 기술한다.
+
 
 > Status: **completed**
 > Created: 2026-03-22

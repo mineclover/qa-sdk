@@ -7,11 +7,23 @@
 
 import Database from "better-sqlite3";
 import type {
+  DefBoundaryContextResult,
+  DefBoundaryResult,
   DefDataSource,
   DefDoc,
+  DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefSyntheticIncomingLink,
   DefValidationResult,
+  DefinitionEntry,
+  DefinitionLink,
+} from "definition-catalog";
+import {
+  analyzeImpact,
+  computeEffectiveConcerns,
+  selectConcernContext,
+  selectImpactContext,
 } from "definition-catalog";
 
 function rowToDoc(row: Record<string, unknown>): DefDoc {
@@ -113,10 +125,213 @@ export class LocalDataSource implements DefDataSource {
       .map(r => ({ source: r.source_id, type: r.link_type }));
   }
 
+  async getSyntheticIncomingLinks(_docId: string): Promise<DefSyntheticIncomingLink[]> {
+    return [];
+  }
+
   async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
     const stmt = this.db.prepare("SELECT target_id, link_type FROM document_links WHERE source_id = ?");
     return (stmt.all(docId) as { target_id: string; link_type: string }[])
       .map(r => ({ target: r.target_id, type: r.link_type }));
+  }
+
+  async getFeedbackRequestsByDocId(
+    _docId: string,
+    _limit = 10,
+  ): Promise<DefFeedbackRequestSummary[]> {
+    return [];
+  }
+
+  async getBoundary(
+    docId: string,
+    level: "purpose" | "overview" = "overview",
+  ): Promise<DefBoundaryResult | null> {
+    const doc = await this.get(docId);
+    if (!doc) return null;
+
+    const scopeOrder = ["constraint", "state", "data", "feature", "flow", "interface", "ui"];
+    const linkOrder = ["constrains", "depends_on", "refines"];
+    const summary = (purpose?: string, overview?: string) =>
+      (level === "purpose" ? purpose : (purpose ?? overview))
+        ?.split("\n")[0]
+        ?.trim() || "(요약 없음)";
+    const scopeIndex = (scope: string) => {
+      const idx = scopeOrder.indexOf(scope);
+      return idx === -1 ? 999 : idx;
+    };
+    const linkIndex = (type: string) => {
+      const idx = linkOrder.indexOf(type);
+      return idx === -1 ? 999 : idx;
+    };
+
+    const children = (await this.getChildren(docId))
+      .toSorted((left, right) =>
+        scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
+      )
+      .map((child) => ({
+        docId: child.docId,
+        title: child.title ?? child.docId,
+        scope: child.scope,
+        aspect: child.aspect,
+        depth: child.depth,
+        summary: summary(child.purpose, child.context),
+      }));
+
+    const outgoing = (await this.getOutgoingLinks(docId))
+      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
+      .toSorted((left, right) =>
+        linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
+      );
+
+    const incoming = (await this.getIncomingLinks(docId))
+      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
+      .toSorted((left, right) =>
+        linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
+      );
+
+    return {
+      boundary: {
+        docId: doc.docId,
+        title: doc.title ?? doc.docId,
+        scope: doc.scope,
+        aspect: doc.aspect,
+        depth: doc.depth,
+        lifecycle: doc.lifecycle,
+        ...(doc.layer ? { layer: doc.layer } : {}),
+        ...(doc.svc ? { svc: doc.svc } : {}),
+        ...(doc.purpose ? { purpose: doc.purpose } : {}),
+        ...(level === "overview" && doc.context ? { overview: doc.context } : {}),
+      },
+      members: children,
+      couplings: {
+        outgoing: await Promise.all(outgoing.map(async (link) => {
+          const target = await this.get(link.target);
+          return {
+            type: link.type,
+            target: link.target,
+            summary: summary(target?.purpose, target?.context),
+          };
+        })),
+        incoming: await Promise.all(incoming.map(async (link) => {
+          const source = await this.get(link.source);
+          return {
+            type: link.type,
+            source: link.source,
+            summary: summary(source?.purpose, source?.context),
+          };
+        })),
+      },
+    };
+  }
+
+  async getBoundaryContext(
+    docId: string,
+    level: "purpose" | "overview" = "overview",
+    mode: "direct" | "transitive" = "transitive",
+  ): Promise<DefBoundaryContextResult | null> {
+    const boundary = await this.getBoundary(docId, level);
+    if (!boundary) return null;
+
+    const entryCache = new Map<string, DefinitionEntry | undefined>();
+    const linkCache = new Map<string, readonly DefinitionLink[]>();
+
+    const getEntry = (id: string): DefinitionEntry | undefined => entryCache.get(id);
+    const getLinks = (id: string, direction: "outgoing" | "incoming"): readonly DefinitionLink[] =>
+      linkCache.get(`${direction}:${id}`) ?? [];
+
+    const seedIds = mode === "transitive"
+      ? new Set((await this.list({ limit: 10000 })).map((doc) => doc.docId))
+      : new Set<string>([
+          docId,
+          ...boundary.members.map((member) => member.docId),
+          ...boundary.couplings.outgoing.map((coupling) => coupling.target),
+          ...boundary.couplings.incoming.map((coupling) => coupling.source),
+        ]);
+
+    for (const id of seedIds) {
+      const doc = await this.get(id);
+      entryCache.set(
+        id,
+        doc
+          ? {
+              id: doc.docId,
+              title: doc.title ?? doc.docId,
+              scope: doc.scope as DefinitionEntry["scope"],
+              aspect: doc.aspect as DefinitionEntry["aspect"],
+              depth: doc.depth as DefinitionEntry["depth"],
+              lifecycle: doc.lifecycle as DefinitionEntry["lifecycle"],
+              layer: doc.layer as DefinitionEntry["layer"],
+              tags: doc.tags,
+              serviceId: doc.svc,
+              address: 0,
+              serialized: doc.address ?? "",
+              createdAt: "",
+              updatedAt: "",
+            }
+          : undefined,
+      );
+      linkCache.set(
+        `outgoing:${id}`,
+        (await this.getOutgoingLinks(id)).map((link) => ({
+          sourceId: id,
+          targetId: link.target,
+          linkType: link.type as DefinitionLink["linkType"],
+          address: 0,
+          serialized: "",
+        })),
+      );
+      linkCache.set(
+        `incoming:${id}`,
+        (await this.getIncomingLinks(id)).map((link) => ({
+          sourceId: link.source,
+          targetId: id,
+          linkType: link.type as DefinitionLink["linkType"],
+          address: 0,
+          serialized: "",
+        })),
+      );
+    }
+
+    const concerns = selectConcernContext(
+      computeEffectiveConcerns(docId, getEntry, getLinks),
+      mode,
+    );
+    const impact = selectImpactContext(
+      analyzeImpact(docId, getEntry, getLinks),
+      mode,
+    );
+
+    return {
+      mode,
+      level,
+      boundary,
+      concerns: {
+        docId,
+        direct: [...concerns.direct],
+        inherited: concerns.inherited.map((item) => ({
+          tag: item.concern,
+          source: item.from,
+          via: item.via,
+        })),
+        all: [...concerns.all],
+      },
+      impact: {
+        sourceId: impact.sourceId,
+        impacted: impact.impacted.map((item) => ({
+          docId: item.id,
+          via: item.via,
+          path: item.path.join(" → "),
+          direction: item.direction,
+          distance: item.depth,
+          ...(item.layer ? { layer: item.layer } : {}),
+          crossLayer: item.crossLayer,
+        })),
+        affectedGroups: [...impact.affectedGroups],
+        blastRadius: impact.blastRadius,
+        byLayer: impact.byLayer,
+      },
+      feedbackTrace: [],
+    };
   }
 
   async validate(): Promise<DefValidationResult> {

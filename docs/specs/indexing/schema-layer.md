@@ -9,7 +9,7 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [entry-point, structural, data]
   links:
     - target: coordinate-states-spec
       type: depends_on

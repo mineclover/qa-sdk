@@ -16,11 +16,12 @@
  * 5. 기본값 (localhost dev)
  */
 
-const ENV_PRESETS: Record<string, { registry: string; ingest: string }> = {
-  dev:     { registry: "http://localhost:3300", ingest: "http://localhost:3200" },
-  staging: { registry: "https://registry.staging.qa-sdk.io", ingest: "https://ingest.staging.qa-sdk.io" },
-  prod:    { registry: "https://registry.qa-sdk.io", ingest: "https://ingest.qa-sdk.io" },
-};
+import {
+  PROFILE_PRESETS,
+  getCurrentMode,
+  getServiceUrl,
+  loadProfile,
+} from "../lib/service-profile.js";
 
 type JsonMap = Record<string, unknown>;
 
@@ -38,42 +39,55 @@ function asRecordArray(value: unknown): JsonMap[] {
     : [];
 }
 
-function getEnvPreset(args: string[]): string {
-  const idx = args.indexOf("--env");
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
-  return process.env.QA_ENV ?? "dev";
-}
-
 function getRegistryUrl(args: string[]): string {
   const idx = args.indexOf("--registry");
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
-  if (process.env.QA_REGISTRY_URL) return process.env.QA_REGISTRY_URL;
-  const preset = ENV_PRESETS[getEnvPreset(args)];
-  return preset?.registry ?? ENV_PRESETS.dev.registry;
+  const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+  return getServiceUrl("registry-service", override);
 }
 
 async function getIngestUrl(args: string[]): Promise<string> {
-  // 1. --ingest 직접 지정
-  const ingestIdx = args.indexOf("--ingest");
-  if (ingestIdx !== -1 && args[ingestIdx + 1]) return args[ingestIdx + 1];
+  const idx = args.indexOf("--ingest");
+  const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+  return getServiceUrl("ingest-server", override);
+}
 
-  // 2. 환경변수 직접 지정
-  if (process.env.INGEST_URL) return process.env.INGEST_URL;
+type IngestEnvPreset = "local" | "dev" | "staging" | "prod";
 
-  // 3. registry에서 자동 탐색
-  const registryUrl = getRegistryUrl(args);
-  try {
-    const resp = await fetch(`${registryUrl}/api/services/urls`, { signal: AbortSignal.timeout(3_000) });
-    if (resp.ok) {
-      const urls = await resp.json() as Record<string, string>;
-      const ingestUrl = urls["ingest-server"] ?? urls["ingest"];
-      if (ingestUrl) return ingestUrl;
-    }
-  } catch { /* registry 연결 실패 → fallback */ }
+const ENV_PRESETS = {
+  local: {
+    ingest: PROFILE_PRESETS.local.services["ingest-server"],
+    registry: PROFILE_PRESETS.local.services["registry-service"],
+  },
+  dev: {
+    ingest: PROFILE_PRESETS.local.services["ingest-server"],
+    registry: PROFILE_PRESETS.local.services["registry-service"],
+  },
+  staging: {
+    ingest: PROFILE_PRESETS.staging.services["ingest-server"],
+    registry: PROFILE_PRESETS.staging.services["registry-service"],
+  },
+  prod: {
+    ingest: PROFILE_PRESETS.prod.services["ingest-server"],
+    registry: PROFILE_PRESETS.prod.services["registry-service"],
+  },
+} satisfies Record<IngestEnvPreset, { ingest: string; registry: string }>;
 
-  // 4. 환경 프리셋 기본값
-  const preset = ENV_PRESETS[getEnvPreset(args)];
-  return preset?.ingest ?? ENV_PRESETS.dev.ingest;
+function getEnvPreset(args: string[]): IngestEnvPreset {
+  const idx = args.indexOf("--env");
+  const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+  const raw = override ?? process.env.QA_ENV ?? getCurrentMode();
+  switch (raw) {
+    case "prod":
+    case "production":
+      return "prod";
+    case "staging":
+    case "stage":
+      return "staging";
+    case "dev":
+      return "dev";
+    default:
+      return "local";
+  }
 }
 
 /** 서비스 URL 맵 전체 조회 (registry 기반) */
@@ -287,6 +301,93 @@ export async function ingestTrace(args: string[]): Promise<void> {
     } catch { /* verdicts 조회 실패 무시 */ }
   } catch (err: unknown) {
     console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
+  }
+}
+
+// ── status ──────────────────────────────────────────
+
+// ── mode ───────────────────────────────────────────
+
+/**
+ * qa-sdk ingest mode [dev|staging|prod] [--set key=value]
+ *
+ * 인수 없음     → 현재 프로필 표시
+ * dev/staging/prod → 프리셋으로 전환
+ * --set key=value  → 개별 필드 수정
+ *
+ * 예시:
+ *   qa-sdk ingest mode                          # 현재 설정 확인
+ *   qa-sdk ingest mode dev                      # 개발 모드로 전환
+ *   qa-sdk ingest mode prod                     # 프로덕션(App Hub)으로 전환
+ *   qa-sdk ingest mode --set appHub.projectId=my-proj
+ *   qa-sdk ingest mode --set insightsDriver=app-hub
+ */
+/** `ingest mode` → `service mode`로 위임 (하위 호환) */
+export { serviceMode as ingestMode } from "./service.js";
+
+// ── insights ───────────────────────────────────────
+
+/**
+ * qa-sdk ingest insights [--limit N]
+ *
+ * 현재 프로필의 ingest 서버에서 인사이트 데이터를 조회한다.
+ */
+export async function ingestInsights(args: string[]): Promise<void> {
+  const url = await getIngestUrl(args);
+  const profile = loadProfile();
+
+  console.log(`\n══ Insights (${profile.mode}, driver: ${profile.insightsDriver}) ══`);
+  console.log(`  URL: ${url}`);
+
+  // summary
+  try {
+    const summary = asRecord(await fetchJson(`${url}/v1/insights/summary`));
+    console.log(`\n  ── 요약 ──`);
+    console.log(`  traces:    ${String(summary.traces ?? 0)}`);
+    console.log(`  records:   ${String(summary.records ?? 0)}`);
+    console.log(`  sessions:  ${String(summary.sessions ?? 0)}`);
+    console.log(`  services:  ${String(summary.services ?? 0)}`);
+    console.log(`  eventKeys: ${String(summary.eventKeys ?? 0)}`);
+  } catch {
+    console.log(`  요약: 조회 불가 (insights 비활성 또는 데이터 없음)`);
+  }
+
+  // service-prefixes
+  try {
+    const svcPrefixes = asRecordArray(await fetchJson(`${url}/v1/insights/service-prefixes`));
+    if (svcPrefixes.length > 0) {
+      console.log(`\n  ── 서비스별 Prefix 사용 ──`);
+      for (const sp of svcPrefixes) {
+        const svc = String(sp.service ?? "?");
+        const prefixes = Array.isArray(sp.activePrefixes) ? sp.activePrefixes.join(", ") : "-";
+        const total = Number(sp.totalEvents ?? 0);
+        console.log(`  ${svc.padEnd(22)} [${total}건] ${prefixes}`);
+      }
+    }
+  } catch {
+    console.log(`  서비스 prefix: 조회 불가`);
+  }
+
+  // correlations
+  try {
+    const corr = asRecord(await fetchJson(`${url}/v1/insights/correlations?min_support=1`));
+    const pairs = asRecordArray(corr.correlations);
+    if (pairs.length > 0) {
+      console.log(`\n  ── Prefix 공출현 (상위 10) ──`);
+      for (const p of pairs.slice(0, 10)) {
+        console.log(`  ${String(p.prefixA).padEnd(18)} ↔ ${String(p.prefixB).padEnd(18)} Jaccard=${String(p.jaccard)}`);
+      }
+    }
+    const suggestions = asRecordArray(corr.suggestions);
+    if (suggestions.length > 0) {
+      console.log(`\n  ── IntentLink 자동 제안 ──`);
+      for (const s of suggestions) {
+        const endpoints = Array.isArray(s.endpoints) ? s.endpoints.join(", ") : "-";
+        console.log(`  ${String(s.id)}: [${endpoints}] (avgJaccard=${String(s.avgJaccard)})`);
+      }
+    }
+  } catch {
+    console.log(`  공출현: 조회 불가`);
   }
 }
 

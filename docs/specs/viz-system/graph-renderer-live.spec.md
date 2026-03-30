@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: platform-demo
-  tags: []
+  tags: [observability, runtime, performance]
   links:
-    - target: graph-renderer-spec
+    - target: viz-surface-system
       type: refines
 ---
 

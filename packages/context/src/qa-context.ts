@@ -13,12 +13,15 @@
 
 import type { Catalog, ServiceBootConfig, PrefixIds } from "@qa-sdk/core";
 import {
+  createLogger,
   parseSerializedAddress,
   encodePrefixByValue,
   decodePrefixAsResult,
   decodeResultToEntities,
   latestPrefixVersion,
 } from "@qa-sdk/core";
+
+const logger = createLogger("qa-context");
 
 /** 실행 모드 */
 export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
@@ -139,9 +142,9 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
 
   // generation 검증 (fail-open)
   if (userConfig.generation) {
-    const [genCatalogId, genHash] = userConfig.generation.split(":");
+    const [genCatalogId, _genHash] = userConfig.generation.split(":");
     if (genCatalogId && genCatalogId !== catalog.id) {
-      console.warn(`[QaContext] GENERATION catalog "${genCatalogId}" ≠ loaded catalog "${catalog.id}". 생성된 타입이 다른 카탈로그 기준일 수 있습니다.`);
+      logger.warn({ genCatalogId, catalogId: catalog.id }, "GENERATION catalog ≠ loaded catalog. 생성된 타입이 다른 카탈로그 기준일 수 있습니다.");
     }
     // content hash 검증은 runtime에서 hash 재계산 비용이 크므로 catalogId만 검증
     // 정밀 검증이 필요하면 registry API에서 확인
@@ -262,6 +265,7 @@ export function createQaContext<C extends Catalog = Catalog>(userConfig?: QaCont
 
     useDsl(dslId: string, memberPrefixes: readonly string[]): DslSession {
       const members = new Set(memberPrefixes);
+      // eslint-disable-next-line typescript/no-this-alias -- object literal 내부 function에서 outer this 접근
       const self = this;
 
       return {
@@ -334,9 +338,9 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(userConf
               const catalogId = catalog.id ?? "demo";
               const registryHash = genData.generations?.[catalogId]?.catalogHash;
               if (registryHash && registryHash !== genHash) {
-                console.warn(
-                  `[QaContext] GENERATION hash "${genHash}" ≠ registry hash "${registryHash}". ` +
-                  `codegen 재실행이 필요할 수 있습니다: qa-sdk codegen --registry ${registryUrl}`,
+                logger.warn(
+                  { genHash, registryHash, registryUrl },
+                  "GENERATION hash ≠ registry hash. codegen 재실행이 필요할 수 있습니다.",
                 );
               }
             }
@@ -346,7 +350,7 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(userConf
 
       return createQaContext({ ...userConfig, catalog });
     } catch (err) {
-      console.warn(`[QaContext] Registry fetch failed (${registryUrl}): ${err instanceof Error ? err.message : String(err)}. Falling back to local catalog.`);
+      logger.warn({ err, registryUrl }, "Registry fetch 실패. 로컬 catalog fallback.");
     }
   }
 

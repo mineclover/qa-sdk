@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: []
+  tags: [testing, structural, runtime]
   links:
     - target: definition-quality-gates
       type: refines

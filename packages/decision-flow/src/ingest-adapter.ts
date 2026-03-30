@@ -26,7 +26,6 @@
  */
 
 import type { FlowInstance, GateSelection, FlowSchema } from "./types.js";
-import type { ObservedEvent } from "./observe.js";
 import {
   encodeDecisionEvent,
   encodeDecisionPath,

@@ -159,6 +159,7 @@ export function createIndexSDK<const S extends SdkSchema>(schema: S): TypedIndex
         if (value === undefined) {
           throw new Error(`Missing dim "${label}" for prefix "${prefix}"`);
         }
+        // eslint-disable-next-line typescript/no-non-null-assertion -- label은 dimLabels에서 가져왔고 entryToIndex는 동일 키로 구축됨
         const e2i = rt.entryToIndex.get(label)!;
         const idx = e2i.get(value);
         if (idx === undefined) {
@@ -184,6 +185,7 @@ export function createIndexSDK<const S extends SdkSchema>(schema: S): TypedIndex
       for (let i = 0; i < rt.dimLabels.length; i++) {
         const label = rt.dimLabels[i];
         const idx = coords[i];
+        // eslint-disable-next-line typescript/no-non-null-assertion -- label은 dimLabels에서 가져왔고 indexToEntry는 동일 키로 구축됨
         const i2e = rt.indexToEntry.get(label)!;
         const entry = i2e.get(idx);
         if (entry === undefined) {

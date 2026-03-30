@@ -101,7 +101,7 @@ describe("[S1] Git 개발자 — CI/CD 파이프라인 주소 코드 생성", ()
     });
 
     const files = await readdir(output);
-    expect(files.sort()).toEqual(["git-dsl-v1.d.ts", "git-dsl-v1.proto"]);
+    expect(files.toSorted()).toEqual(["git-dsl-v1.d.ts", "git-dsl-v1.proto"]);
   });
 
   it("proto: Conventional Commits 축이 올바른 enum으로 변환된다", async () => {
@@ -251,7 +251,7 @@ describe("[S3] APM 통합 — 멀티 DSL 디렉토리 일괄 코드 생성", () 
       output,
     });
 
-    const files = (await readdir(output)).sort();
+    const files = (await readdir(output)).toSorted();
     expect(files).toEqual([
       "apm-signal-v1.d.ts",
       "apm-signal-v1.proto",
@@ -404,7 +404,7 @@ describe("[S4] 스키마 진화 — v1 → v2 축 entry 추가 후 양쪽 코드
 
     await codegen({ formats: ["proto", "ts"], input, output });
 
-    const files = (await readdir(output)).sort();
+    const files = (await readdir(output)).toSorted();
     expect(files).toEqual([
       "k8s-dsl-v1.d.ts",
       "k8s-dsl-v1.proto",
@@ -424,7 +424,7 @@ describe("[S4] 스키마 진화 — v1 → v2 축 entry 추가 후 양쪽 코드
         ?.split("\n")
         .map((l) => l.trim())
         .filter((l) => l.includes(":"))
-        .sort();
+        .toSorted();
     };
 
     expect(extractDims(v1Ts, "K8sWorkloadAddrDims")).toEqual(
@@ -509,7 +509,7 @@ describe("[S5] Schema Pull → Codegen 파이프라인 (mock registry)", () => {
 
     const snapshots = await readSnapshots(dir);
     expect(snapshots).toHaveLength(2);
-    expect(snapshots.map((s) => s.id).sort()).toEqual(["git-dsl-v1", "k8s-dsl-v1"]);
+    expect(snapshots.map((s) => s.id).toSorted()).toEqual(["git-dsl-v1", "k8s-dsl-v1"]);
   });
 });
 

@@ -302,6 +302,7 @@ export class FlowEngine {
       if (!next) break;
       result = next;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- instance exists since autoSelect was called on it
     return this.getInstance(instanceId)!;
   }
 

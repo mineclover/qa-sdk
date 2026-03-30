@@ -71,7 +71,7 @@ export interface WorkspaceWsHub {
 export const DEFAULT_SCENE_LOCK_HEARTBEAT_TIMEOUT_MS = 10_000;
 
 function sortUsers(userIds: Iterable<string>): string[] {
-  return Array.from(userIds).sort((left, right) => left.localeCompare(right));
+  return Array.from(userIds).toSorted((left, right) => left.localeCompare(right));
 }
 
 function toPresenceInfo(entry: WorkspacePresenceState): WorkspacePresenceInfo {
@@ -430,7 +430,7 @@ export function createWorkspaceWsHub(
 
       return Array.from(workspacePresence.values())
         .map((entry) => toPresenceInfo(entry))
-        .sort((left, right) => left.userId.localeCompare(right.userId));
+        .toSorted((left, right) => left.userId.localeCompare(right.userId));
     },
 
     getSceneLocks(workspaceId) {
@@ -446,7 +446,7 @@ export function createWorkspaceWsHub(
         }
       }
 
-      return result.sort((left, right) => {
+      return result.toSorted((left, right) => {
         const sceneCompare = left.sceneId.localeCompare(right.sceneId);
         if (sceneCompare !== 0) {
           return sceneCompare;

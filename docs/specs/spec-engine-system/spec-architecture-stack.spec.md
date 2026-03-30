@@ -10,7 +10,7 @@ def:
   svc: spec-core
   tags: [entry-point]
   links:
-    - target: spec-system-architecture
+    - target: spec-architecture-system
       type: refines
 ---
 

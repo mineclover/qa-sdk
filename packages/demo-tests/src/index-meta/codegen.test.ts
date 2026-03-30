@@ -5,10 +5,14 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { generateTypes, lintSchema, formatSchemaDiff } from "index-meta";
-import { defineTable } from "index-meta";
-import { compileSchema } from "index-meta";
-import type { MetaRegistryInput } from "index-meta";
+import {
+  generateTypes,
+  lintSchema,
+  formatSchemaDiff,
+  defineTable,
+  compileSchema,
+  type MetaRegistryInput,
+} from "index-meta";
 
 // ── 공통 픽스처 ──────────────────────────────────────────────────────────────
 

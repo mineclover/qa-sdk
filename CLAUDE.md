@@ -8,16 +8,17 @@
 |------|------|
 | `docs/system-overview.md` | 시스템 개요, 패키지 구조, DKG, 수집 파이프라인 |
 | `docs/CONVENTIONS.md` | 용어집, DimRef 3종, ColumnRef, 좌표 컨벤션, env var 테이블 |
+| `docs/getting-started.md` | 산출물 단위, codegen, CLI 사용법 |
 | `docs/architecture-decisions.md` | ADR-001~009 |
 | `docs/msa-architecture.md` | 서비스 토폴로지, 패턴 분류, 전이 엔진 |
-| `docs/getting-started.md` | 산출물 단위, codegen, CLI 사용법 |
 | `docs/data-model.md` | 데이터 모델, 테이블 스키마 |
-| `docs/specs/` | 모듈/서비스별 상세 스펙 (gate-engine, coordinate-query, decode-service 등) |
-| `docs/specs/system/tag-management.spec.md` | 태그 관리 설계 — 저장/조회/전파/충돌/카디널리티 |
-| `docs/specs/decision-flow/df-system.md` | decision-flow 시스템 (16멤버, P0~P11) |
-| `docs/guides/testing-patterns.md` | 테스트 SSOT 파생 코드 예시 (8패턴) |
+| `docs/specs/` | 모듈/서비스별 상세 스펙 — 진입점: `docs/specs/README.md` |
+| `docs/skills/` | 운영 플레이북 + DKG skill 사용 가이드 — 진입점: `docs/skills/README.md` |
 | `docs/definition-system-philosophy.md` | Definition 시스템 철학 — 좌표 기반 문서화 원리 |
+| `docs/specs/decision-flow/df-system.md` | decision-flow 시스템 (16멤버, P0~P11) |
+| `docs/specs/system/tag-management.spec.md` | 태그 관리 설계 — 저장/조회/전파/충돌/카디널리티 |
 | `docs/specs/system/decision-definition-bridge.spec.md` | Decision↔Definition 순환 구조 |
+| `docs/guides/testing-patterns.md` | 테스트 SSOT 파생 코드 예시 (8패턴) |
 | `docs/guides/scope-classification-guide.md` | scope 7종 판별 + aspect 선택 기준 |
 | `tasks/prd-drizzle-standardization-remaining.md` | Drizzle 표준화 잔여 작업 PRD (7 US) |
 
@@ -35,15 +36,17 @@
 - TypeScript target: **ES2023** 전체 통일 (루트 + 32개 패키지)
 - weighted-index DTS 빌드에 기존 에러 있음 (calc.js exports); ESM/CJS는 정상
 - platform-demo: `pnpm --filter platform-demo exec vite build --mode development`
+- **CLI tsup 번들 제약**: CLI는 tsup 단일 번들 (`dist/index.js`). 내부 `import("./other.js")` 동적 import 불가 — 정적 import 또는 re-export 사용
+- **async createRuntimeStores**: ingest-server의 `createRuntimeStores`는 async (D1 stores 동적 import). 호출부에 `await` 필수
 
 ## Skills 관리
 
 - **SSOT**: `skills/` 디렉토리가 skill 정의의 유일한 원본
-- **실행 위치**: `~/.claude/skills/` — Claude Code가 읽는 곳
+- **실행 위치**: `~/.claude/skills/`, `~/.codex/skills/`
 - **동기화**: `./scripts/sync-skills.sh` — repo → home 단방향 전파
 - skill 수정은 항상 `skills/<name>/SKILL.md`에서 하고, `sync-skills.sh`로 전파
-- `~/.claude/skills/`를 직접 수정하면 다음 sync에서 덮어쓰기됨
-- `~/.claude/skills/`에만 있는 skill(다른 프로젝트용)은 건드리지 않음
+- `~/.claude/skills/`, `~/.codex/skills/`를 직접 수정하면 다음 sync에서 덮어쓰기됨
+- home 쪽에만 있는 skill(다른 프로젝트용)은 건드리지 않음
 
 ## SSOT 원칙
 
@@ -428,7 +431,13 @@ config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별
 ### definition-catalog 좌표 주소
 
 - `def_document:v2:<N>` (scope × aspect × depth × seq 인코딩)
-- 규모 확인: `node -e "..." | scanAndBuild` 또는 `qa-sdk def stats`
+- 규모 확인: `qa-sdk def stats`
+
+### CLI def 명령
+
+- 모든 def 명령은 DefDataSource(SQLite/HTTP) 기반. 레거시 scanAndBuild 경로 제거됨
+- `def scan` = `def sync`의 alias (파일→DB 동기화). 실행 후 `def get/list/search` 즉시 사용 가능
+- `def state` — 11개 FSM 상태 분포 조회 (scanAndBuild + config 기반, 파일 직접 스캔)
 
 ### 하네스 상태 관리 (harness)
 
@@ -487,7 +496,7 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), def
 ## Ingest Store Driver (STORE_DRIVER)
 
 ```
-STORE_DRIVER=memory  → InMemory 전체 (기본, 개발/데모)
+STORE_DRIVER=memory  → D1+:memory: 자동 업그레이드 (기본, insights 활성). 실패 시 InMemory fallback
 STORE_DRIVER=pg      → Drizzle + PostgreSQL (운영, TRACE_DATABASE_URL 필수, packages/store)
 STORE_DRIVER=d1      → D1/SQLite via SqlDriver (CF Workers, SQLITE_PATH)
 STORE_DRIVER=clickhouse → ClickHouse RecordStore (대량 분석, CLICKHOUSE_URL)
@@ -507,17 +516,28 @@ INSIGHTS_DRIVER=app-hub  → AppHubInsightsStore (Google App Hub)
 - `InsightsStore` 포트: `ingest-server/src/ports/insights-store.port.ts` — 읽기 12메서드 + `collect()` 쓰기
 - local 모드: ingest pipeline이 같은 SQLite DB에 기록, `collect()` no-op
 - app-hub 모드: `collect()`에서 App Hub API로 전달, 읽기도 App Hub
-- 프로필: `~/.qa-sdk/ingest-profile.json` — CLI `qa-sdk ingest mode dev|prod`로 전환
+- 프로필: `~/.qa-sdk/service-profile.json` — CLI `qa-sdk service mode local|prod`로 전환
 - 서버는 시작 시 프로필 파일을 환경변수 기본값으로 로딩 (환경변수 명시 설정 시 우선)
 - App Hub 설정: `APP_HUB_ENDPOINT`, `APP_HUB_PROJECT_ID`, `APP_HUB_CREDENTIAL`
 - fail-open: insights 수집 실패가 ingest 파이프라인을 차단하지 않음
+- memory 모드에서 D1+:memory: 자동 업그레이드 — insights 기본 활성화
+- D1 초기화 실패 시 순수 InMemory fallback (insights 비활성)
+
+## Service Profile (서비스 URL 중앙 관리)
+
+- `~/.qa-sdk/service-profile.json` — 모든 CLI 명령의 서비스 URL 소스
+- `qa-sdk service mode local|staging|prod` — 전체 URL 일괄 전환
+- `qa-sdk service mode --set <serviceId>=<url>` — 개별 URL 커스텀
+- URL 우선순위: 환경변수 > --flag > service-profile > local 기본값
+- `ingest mode`는 `service mode`의 alias (하위 호환)
+- `service-profile.ts` (`cli/src/lib/`) — `getServiceUrl(serviceId)` 공용 유틸. 새 CLI 명령에서 URL 하드코딩 금지
 
 ## Drizzle 마이그레이션 규칙
 
 - **버전**: `drizzle-orm` / `drizzle-kit` 모두 `1.0.0-beta.20` 고정
 - **스키마 파일**: 각 패키지 `src/db/schema.ts` (예외 없음)
 - **설정 파일**: 각 패키지 루트 `drizzle.config.ts` (`dialect: "sqlite"`, `out: "./drizzle"`)
-- **마이그레이션 폴더 경로**: `new URL("../../drizzle", import.meta.url).pathname` (process.cwd 금지)
+- **마이그레이션 폴더 경로**: `new URL("../drizzle", import.meta.url).pathname` (process.cwd 금지). **주의**: tsc가 src→dist로 컴파일하므로 `src/`에서의 상대경로와 `dist/`에서의 상대경로가 다름. `dist/xxx.js` 기준으로 `../drizzle`이 `패키지/drizzle`을 가리키는지 확인
 - **IF NOT EXISTS**: 모든 SQLite 마이그레이션 SQL에 필수. drizzle-kit generate 후 수동 추가
 - **PRAGMA**: 모든 SQLite 서비스에 WAL + busy_timeout=3000. FK 있으면 foreign_keys=ON
 - **드라이버**: NestJS 서비스는 `drizzle-orm/better-sqlite3`, 나머지는 `drizzle-orm/node-sqlite`

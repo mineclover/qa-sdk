@@ -1,6 +1,5 @@
 import { Injectable, Inject } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlConsumptionStore } from "../../stores/consumption-store.js";
 import type { ConsumptionStore } from "../../core/interfaces.js";
 import type { ConsumptionSnapshot } from "../../core/types.js";
@@ -10,7 +9,7 @@ import { computeRate } from "../../core/consumption-diagnostics.js";
 export class ConsumptionService {
   private readonly store: ConsumptionStore;
 
-  constructor(@Inject(DATABASE) db: Database.Database) {
+  constructor(@Inject(DRIZZLE_DB) db: DefinitionServiceDatabase) {
     this.store = new SqlConsumptionStore(db);
   }
 

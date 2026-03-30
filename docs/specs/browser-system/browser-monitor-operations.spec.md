@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: browser-sdk
-  tags: []
+  tags: [observability, runtime, structural]
   links:
-    - target: browser-monitor-spec
+    - target: browser-runtime-system
       type: refines
-    - target: browser-lifecycle-spec
+    - target: browser-lifecycle-system
       type: depends_on
 ---
 

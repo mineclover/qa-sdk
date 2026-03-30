@@ -98,6 +98,102 @@ export class DocsService {
     return getFeedbackRequestSummariesForDoc(docId, limit);
   }
 
+  getFeedbackTrace(docIds: readonly string[], limit = 20): DefFeedbackRequestSummary[] {
+    const seen = new Set<string>();
+    const trace: DefFeedbackRequestSummary[] = [];
+
+    for (const docId of docIds) {
+      const requests = this.getFeedbackRequests(docId, limit);
+      for (const request of requests) {
+        if (seen.has(request.id)) continue;
+        seen.add(request.id);
+        trace.push(request);
+      }
+    }
+
+    return trace.toSorted((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    ).slice(0, limit);
+  }
+
+  getBoundary(docId: string, level: "purpose" | "overview" = "overview") {
+    const doc = this.store.get(docId);
+    if (!doc) return null;
+
+    const scopeOrder = ["constraint", "state", "data", "feature", "flow", "interface", "ui"];
+    const linkOrder = ["constrains", "depends_on", "refines"];
+    const summary = (purpose?: string, overview?: string) =>
+      (level === "purpose" ? purpose : (purpose ?? overview))
+        ?.split("\n")[0]
+        ?.trim() || "(요약 없음)";
+    const scopeIndex = (scope: string) => {
+      const idx = scopeOrder.indexOf(scope);
+      return idx === -1 ? 999 : idx;
+    };
+    const linkIndex = (type: string) => {
+      const idx = linkOrder.indexOf(type);
+      return idx === -1 ? 999 : idx;
+    };
+
+    const children = this.getChildren(docId)
+      .toSorted((left, right) =>
+        scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
+      )
+      .map((child) => ({
+        docId: child.docId,
+        title: child.title ?? child.docId,
+        scope: child.scope,
+        aspect: child.aspect,
+        depth: child.depth,
+        summary: summary(child.purpose, child.context),
+      }));
+
+    const outgoing = this.getOutgoingLinks(docId)
+      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
+      .toSorted((left, right) =>
+        linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
+      )
+      .map((link) => {
+        const target = this.store.get(link.target);
+        return {
+          type: link.type,
+          target: link.target,
+          summary: summary(target?.purpose, target?.context),
+        };
+      });
+
+    const incoming = this.getIncomingLinks(docId)
+      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
+      .toSorted((left, right) =>
+        linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
+      )
+      .map((link) => {
+        const source = this.store.get(link.source);
+        return {
+          type: link.type,
+          source: link.source,
+          summary: summary(source?.purpose, source?.context),
+        };
+      });
+
+    return {
+      boundary: {
+        docId: doc.docId,
+        title: doc.title ?? doc.docId,
+        scope: doc.scope,
+        aspect: doc.aspect,
+        depth: doc.depth,
+        lifecycle: doc.lifecycle,
+        ...(doc.layer ? { layer: doc.layer } : {}),
+        ...(doc.svc ? { svc: doc.svc } : {}),
+        ...(doc.purpose ? { purpose: doc.purpose } : {}),
+        ...(level === "overview" && doc.context ? { overview: doc.context } : {}),
+      },
+      members: children,
+      couplings: { outgoing, incoming },
+    };
+  }
+
   // ── 단일 link/tag 원자적 mutation ─────────────────────
 
   addLink(docId: string, target: string, type: string) {

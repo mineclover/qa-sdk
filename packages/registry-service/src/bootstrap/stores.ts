@@ -7,6 +7,7 @@ import {
 } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
+import { createLogger } from "../lib/logger.js";
 import { InMemoryPrefixOwnerStore } from "../stores/in-memory-prefix-owner-store.js";
 import { SqlPrefixOwnerStore } from "../stores/sql-prefix-owner-store.js";
 import { InMemoryDraftLockStore } from "../stores/in-memory-draft-lock-store.js";
@@ -16,6 +17,7 @@ import { SqlCatalogStore } from "../stores/sql-catalog-store.js";
 import { InMemoryAxisProfileStore } from "../stores/in-memory-axis-profile-store.js";
 import { SqlAxisProfileStore } from "../stores/sql-axis-profile-store.js";
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+const logger = createLogger("registry-service");
 
 export async function createRegistryDatabaseDriver(
   sqlitePath: string,
@@ -30,7 +32,7 @@ export async function createRegistryDatabaseDriver(
     const drizzleDb = drizzle({ client: driver.$client });
     migrate(drizzleDb, { migrationsFolder });
   } catch (err) {
-    console.error("[registry-service] drizzle 마이그레이션 실패:", err);
+    logger.error({ err }, "drizzle 마이그레이션 실패");
     throw err;
   }
   return driver;

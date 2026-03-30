@@ -17,11 +17,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { NodeSqliteDriver } from "index-meta";
-import { SqlIndexMetaStore } from "index-meta";
-import { SqlAddressStateStore } from "index-meta";
-import { computeStateRanges, checkGate, activeRanges } from "index-meta";
-import type { DimStateSpec } from "index-meta";
+import {
+  NodeSqliteDriver,
+  SqlIndexMetaStore,
+  SqlAddressStateStore,
+  computeStateRanges,
+  checkGate,
+  activeRanges,
+  type DimStateSpec,
+} from "index-meta";
 
 // ── 공통 픽스처 ───────────────────────────────────────────
 

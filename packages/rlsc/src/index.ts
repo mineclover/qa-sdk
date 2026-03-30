@@ -25,7 +25,8 @@ export type {
 } from "./types.js";
 
 // 수집 (브라우저 전용)
-export { collectLayout, flattenTree } from "./collector.js";
+export { collectLayout } from "./collector.js";
+export { flattenTree } from "./tree-utils.js";
 
 // 인코딩/디코딩
 export { encodeToMarkup, parseMarkup } from "./encoder.js";

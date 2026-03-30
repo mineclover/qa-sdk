@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
+import type { DecodeMap } from "index-meta";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
@@ -20,7 +21,7 @@ async function loadFromRegistry(registryUrl: string) {
       logger.warn({ status: res.status }, "registry decode-map fetch failed");
       return;
     }
-    const maps: any[] = await res.json();
+    const maps = await res.json() as DecodeMap[];
     let loaded = 0;
     for (const map of maps) {
       try {

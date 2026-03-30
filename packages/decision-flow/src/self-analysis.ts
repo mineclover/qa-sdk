@@ -9,7 +9,7 @@
  */
 
 import { FlowSchemaBuilder } from "./schema.js";
-import type { Evidence, FlowSchema, GateSelection } from "./types.js";
+import type { Evidence, FlowSchema } from "./types.js";
 import { FlowEngine } from "./engine.js";
 import {
   analyzeGateStructure,
@@ -153,14 +153,14 @@ export function getAnnotatedDesignFlow(): FlowSchema {
     gates: COORDINATE_DESIGN_FLOW.gates.map((gate) => {
       const meta = GATE_WEIGHTS[gate.id];
       if (!meta) return gate;
-      return { ...gate, weight: meta.weight, affects: meta.affects };
+      return Object.assign({}, gate, { weight: meta.weight, affects: meta.affects });
     }),
   };
 }
 
 // ─── qa-sdk 실제 설계 결정 기록 ──────────────────────────
 
-function now(): string { return new Date().toISOString(); }
+function _now(): string { return new Date().toISOString(); }
 
 function ev(kind: Evidence["kind"], source: string, content: string, weight: number): Evidence {
   return { kind, source, content, weight };
@@ -214,6 +214,7 @@ export function recordQaSdkDesignDecisions(): {
     ev("rule", "domain-independence", "인지 단계는 모든 의사결정 플로우에 공통", 0.9),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- instance just created above
   instances.push(engine.getInstance(d1.id)!);
 
   // ── 결정 2: mental_model 축 정의 ──
@@ -242,6 +243,7 @@ export function recordQaSdkDesignDecisions(): {
   engine.selectBranch(d2.id, "not-applicable");
   engine.selectBranch(d2.id, "cross-cutting");
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- instance just created above
   instances.push(engine.getInstance(d2.id)!);
 
   // ── 결정 3: scope_mode 축 — 이건 논쟁적인 결정이었다 ──
@@ -273,6 +275,7 @@ export function recordQaSdkDesignDecisions(): {
     ev("data", "usage-analysis", "scope_mode는 ceo_review 플로우에서만 의미. 크로스커팅이 아님", 0.85),
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- instance just created above
   instances.push(engine.getInstance(d3.id)!);
 
   return { instances, engine };
@@ -304,6 +307,7 @@ export function analyzeRecordedDecisions(): {
   const axisMergeImpact = analyzeImpact(schema, "merge-split");
 
   // 각 인스턴스의 코어 결정 추적
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- instances are all valid from recordQaSdkDesignDecisions
   const traces = instances.map((inst) => traceCorePath(schema, inst!));
 
   return { gateProfiles, coreGates, causalGraph, axisMergeImpact, traces };

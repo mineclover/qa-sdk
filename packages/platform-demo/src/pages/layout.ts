@@ -146,7 +146,6 @@ export function renderLayoutPage(container: HTMLElement): void {
   wrap.appendChild(header);
 
   // configSection is no longer used — config is in header now
-  const configSection = { innerHTML: "" } as HTMLElement; // stub for compatibility
   // ── UUID structure bar ─────────────────────────────────────────────────
   const structBar = document.createElement("div");
   structBar.className = "lay-struct";
@@ -283,7 +282,8 @@ export function renderLayoutPage(container: HTMLElement): void {
   wrap.appendChild(main);
   container.appendChild(wrap);
 
-  // ── DOM refs ───────────────────────────────────────────────────────────
+  // ── DOM refs (위에서 innerHTML로 생성한 요소들) ────────────────────────
+  /* eslint-disable typescript/no-non-null-assertion */
   const elNumDims = document.getElementById("lay-num-dims") as HTMLInputElement;
   const elFormat = document.getElementById("lay-format") as HTMLSelectElement;
   const elIndexType = document.getElementById("lay-index-type")!;
@@ -325,6 +325,7 @@ export function renderLayoutPage(container: HTMLElement): void {
   const elRtPrefixHex = document.getElementById("lay-rt-prefix-hex")!;
   const elRtVersionHex = document.getElementById("lay-rt-version-hex")!;
   const elRtShardHex = document.getElementById("lay-rt-shard-hex")!;
+  /* eslint-enable typescript/no-non-null-assertion */
 
   // ── Format helpers ──────────────────────────────────────────────────────
 
@@ -564,6 +565,7 @@ export function renderLayoutPage(container: HTMLElement): void {
     navigator.clipboard.writeText(text).then(() => {
       elCopyDebug.textContent = "✓ Copied";
       setTimeout(() => { elCopyDebug.textContent = "📋 Copy"; }, 1500);
+      return undefined;
     });
   });
 
@@ -791,6 +793,7 @@ export function renderLayoutPage(container: HTMLElement): void {
       <div class="lay-an-row"><span class="lay-an-key">Index 예산</span><span class="lay-an-val">${vm.indexBudget} hex chars (${vm.indexBits} bits)</span></div>
       <div class="lay-an-row"><span class="lay-an-key">인덱스 타입</span><span class="lay-an-val">${vm.indexType === "bigint" ? "BigInt 필수" : "Number"}</span></div>
       <div class="lay-an-row"><span class="lay-an-key">유효 용량</span><span class="lay-an-val">${vm.effectiveMaxDisplay}</span></div>
+      ${noteRow}
       ${gapRows}
       <div class="lay-an-row"><span class="lay-an-key">균등 배분</span><span class="lay-an-val">${a.uniformMax.toLocaleString()} / dim</span></div>
       <div class="lay-an-row"><span class="lay-an-key">현재 곱</span><span class="lay-an-val">${vm.productDisplay}</span></div>

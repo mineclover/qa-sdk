@@ -4,6 +4,7 @@ import type {
   CollectorOptions,
   LayoutRect,
 } from "./types.js";
+import { flattenTree } from "./tree-utils.js";
 import { analyzeGrid } from "./grid.js";
 import { detectRelations } from "./relations.js";
 import { classifyLayers } from "./layers.js";
@@ -216,11 +217,4 @@ export function collectLayout(
   };
 }
 
-/** 트리를 평면 배열로 변환 */
-export function flattenTree(node: RLSCNode): RLSCNode[] {
-  const result: RLSCNode[] = [node];
-  for (const child of node.children) {
-    result.push(...flattenTree(child));
-  }
-  return result;
-}
+// flattenTree는 tree-utils.ts로 이동 (순환 의존 해소)

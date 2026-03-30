@@ -302,7 +302,7 @@ function parseMotionEditorCommandJson(
   try {
     parsed = JSON.parse(rawCommand) as unknown;
   } catch (error) {
-    throw new Error(`command JSON 파싱 실패: ${describeError(error)}`);
+    throw new Error(`command JSON 파싱 실패: ${describeError(error)}`, { cause: error });
   }
 
   if (!isRecord(parsed) || typeof parsed.type !== "string") {

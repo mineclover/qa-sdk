@@ -1,4 +1,4 @@
-import { context, trace, type Span } from "@opentelemetry/api";
+import { context, trace } from "@opentelemetry/api";
 
 /**
  * sqlcommenter 포맷으로 메타데이터 문자열을 빌드한다.

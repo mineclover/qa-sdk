@@ -1,6 +1,13 @@
 ---
 name: e2e-test
 description: "Playwright E2E 테스트 작성/실행/디버깅. 시나리오 문서(^preconditions, ^steps, ^assertions)를 Playwright 테스트로 변환하고, 품질 게이트와 연동한다. 트리거: /e2e-test, 'E2E 테스트 작성', 'e2e 실행', '시나리오 테스트', 'playwright', '브라우저 테스트', '통합 테스트 작성'."
+triggers:
+  - /e2e-test
+  - playwright
+  - E2E 테스트 작성
+  - e2e 실행
+  - 브라우저 테스트
+argument-hint: "<scenario-doc|target> [--grep <pattern>]"
 ---
 
 # E2E 테스트 스킬

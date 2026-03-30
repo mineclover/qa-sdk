@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: domain
   svc: shopping-web
-  tags: []
+  tags: [data, contract, runtime]
   links:
-    - target: ingest-api-spec
+    - target: ingest-api-system
       type: depends_on
 ---
 # API 클라이언트 — REST 래퍼 + SSE 구독

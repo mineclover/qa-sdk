@@ -198,6 +198,7 @@ export {
   getConcernDef,
   extractDirectConcerns,
   computeEffectiveConcerns,
+  selectConcernContext,
 } from "./concern.js";
 
 // ─── 검증 ───────────────────────────────────────────────
@@ -206,11 +207,17 @@ export { validateGraph } from "./validate.js";
 
 // ─── 영향 분석 (바텀업 역추적) ───────────────────────────
 export type { ImpactedDoc, ImpactAnalysis } from "./impact.js";
-export { analyzeImpact } from "./impact.js";
+export { analyzeImpact, selectImpactContext } from "./impact.js";
 
 // ─── 문서 조립 ──────────────────────────────────────────
-export type { MemberSummary, AssembledFeature } from "./assemble.js";
-export { assembleFeature } from "./assemble.js";
+export type {
+  MemberSummary,
+  AssembledFeature,
+  BoundarySummary,
+  BoundaryCouplingSummary,
+  AssembledBoundary,
+} from "./assemble.js";
+export { assembleFeature, assembleBoundary } from "./assemble.js";
 
 // ─── 계약 조립 (Contract Assembly) ──────────────────────
 export type { Reversibility, EvidenceItem, ContractSection, AssembledContract, ContractStats } from "./contract.js";
@@ -272,6 +279,16 @@ export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.j
 
 // ─── 데이터 소스 인터페이스 (서버/로컬 추상화) ───────────
 export type {
+  DefBoundaryCouplingIncoming,
+  DefBoundaryCouplingOutgoing,
+  DefBoundaryConcernItem,
+  DefBoundaryConcernsResult,
+  DefBoundaryContextResult,
+  DefBoundaryDoc,
+  DefBoundaryImpactDoc,
+  DefBoundaryImpactResult,
+  DefBoundaryMember,
+  DefBoundaryResult,
   DefDoc,
   DefFeedbackRequestSummary,
   DefIncomingLink,
@@ -283,7 +300,7 @@ export type {
 } from "./data-source.js";
 
 // ─── CLI 도구 ───────────────────────────────────────────
-export { topdown, bottomup, context } from "./cli-tools.js";
+export { topdown, bottomup, context, boundary, boundaryContext } from "./cli-tools.js";
 
 // ─── 브릿지 (decision-flow 연결) ────────────────────────
 export {

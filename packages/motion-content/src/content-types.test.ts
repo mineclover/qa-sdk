@@ -83,7 +83,7 @@ describe("콘텐츠 타입 축", () => {
     const broken = {
       ...comp,
       layers: comp.layers.map((l) =>
-        l.id === "card-a" ? { ...l, content: { type: "image" } } : l,
+        l.id === "card-a" ? Object.assign({}, l, { content: { type: "image" } }) : l,
       ),
     };
     const issues = validateMotionComposition(broken);

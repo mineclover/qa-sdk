@@ -392,8 +392,8 @@ describe("다중 인덱스", () => {
     const resolver = new MetaResolver(reg);
     const dataset = resolver.getDataset();
 
-    expect(dataset.indices.map((i) => i.indexId).sort()).toEqual(["content", "perm"]);
-    expect(dataset.dims.map((d) => d.dimId).sort()).toEqual(["category", "lang", "role"]);
+    expect(dataset.indices.map((i) => i.indexId).toSorted()).toEqual(["content", "perm"]);
+    expect(dataset.dims.map((d) => d.dimId).toSorted()).toEqual(["category", "lang", "role"]);
   });
 
   it("공유 dim은 dims에 한 번만 등장한다", () => {

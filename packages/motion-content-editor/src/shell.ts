@@ -18,7 +18,6 @@ import {
   type MotionCompositionDocumentV1,
   type MotionEditorCommand,
   type MotionEditorSession,
-  type MotionEditorSelection,
   type MotionEditorSelectionV2,
   type MotionEditorState,
   type MotionCueKind,
@@ -153,6 +152,18 @@ type MotionEditorPreviewTarget =
   | { readonly mode: "scene"; readonly sceneId: string };
 
 const FULL_PREVIEW_TARGET: MotionEditorPreviewTarget = { mode: "full" };
+
+/** innerHTML 직후 자식 요소를 안전하게 선택하는 헬퍼 */
+function requireElement<T extends HTMLElement>(
+  root: HTMLElement,
+  selector: string,
+): T {
+  const el = root.querySelector<T>(selector);
+  if (!el) {
+    throw new Error(`필수 요소를 찾을 수 없습니다: ${selector}`);
+  }
+  return el;
+}
 
 function isSceneComposition(
   composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
@@ -458,8 +469,8 @@ function renderDefaultStage(host: HTMLElement): MotionEditorShellStage {
       <div class="mce-caption" data-tone="neutral"></div>
     </div>
   `;
-  const stageRoot = host.querySelector<HTMLElement>(".mce-stage")!;
-  const captionElement = host.querySelector<HTMLElement>(".mce-caption")!;
+  const stageRoot = requireElement<HTMLElement>(host, ".mce-stage");
+  const captionElement = requireElement<HTMLElement>(host, ".mce-caption");
   return {
     adapter: createMotionDomStageAdapter({
       stageRoot,
@@ -577,6 +588,7 @@ function createNextTransitionDraft(
   }
   const adjacentPairs = state.composition.sequences.slice(0, -1).map((sequence, index) => ({
     fromSequenceId: sequence.id,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- slice(0,-1) 순회이므로 index+1 항상 유효
     toSequenceId: state.composition.sequences[index + 1]!.id,
   }));
   const selectedSequenceId = state.selection?.kind === "sequence" ? state.selection.id : null;
@@ -1381,9 +1393,9 @@ export function createMotionEditorShell(
   options.container.innerHTML = "";
   options.container.appendChild(root);
 
-  const leftDockSlot = root.querySelector<HTMLElement>('[data-layout-slot="left"]')!;
-  const rightDockSlot = root.querySelector<HTMLElement>('[data-layout-slot="right"]')!;
-  const bottomDockSlot = root.querySelector<HTMLElement>('[data-layout-slot="bottom"]')!;
+  const leftDockSlot = requireElement<HTMLElement>(root, '[data-layout-slot="left"]');
+  const rightDockSlot = requireElement<HTMLElement>(root, '[data-layout-slot="right"]');
+  const bottomDockSlot = requireElement<HTMLElement>(root, '[data-layout-slot="bottom"]');
 
   const leftDock = new PanelGroup({
     id: "left",
@@ -1515,9 +1527,9 @@ export function createMotionEditorShell(
   });
   bottomDock.element.classList.add("mce-panel-group--timeline");
 
-  const leftSplitterElement = root.querySelector<HTMLElement>('[data-splitter="left"]')!;
-  const rightSplitterElement = root.querySelector<HTMLElement>('[data-splitter="right"]')!;
-  const bottomSplitterElement = root.querySelector<HTMLElement>('[data-splitter="bottom"]')!;
+  const leftSplitterElement = requireElement<HTMLElement>(root, '[data-splitter="left"]');
+  const rightSplitterElement = requireElement<HTMLElement>(root, '[data-splitter="right"]');
+  const bottomSplitterElement = requireElement<HTMLElement>(root, '[data-splitter="bottom"]');
   const layoutSizes = {
     left: initialLayoutState.left.collapsed ? COLLAPSED_SIDE_SIZE : initialLayoutState.left.size,
     right: initialLayoutState.right.collapsed ? COLLAPSED_SIDE_SIZE : initialLayoutState.right.size,
@@ -1735,32 +1747,32 @@ export function createMotionEditorShell(
   window.addEventListener("resize", handleWindowResize);
   clampLayoutToBounds();
 
-  const stageHost = root.querySelector<HTMLElement>(".mce-stage-host")!;
+  const stageHost = requireElement<HTMLElement>(root, ".mce-stage-host");
   applyStagePreviewTheme(stageHost);
   const stageMount = options.renderStage?.(stageHost, state) ?? renderDefaultStage(stageHost);
-  const paramPanel = root.querySelector<HTMLElement>('[data-panel="params"]')!;
-  const scenesPanel = root.querySelector<HTMLElement>('[data-panel="scenes"]')!;
-  const sequencePanel = root.querySelector<HTMLElement>('[data-panel="sequences"]')!;
-  const layerPanel = root.querySelector<HTMLElement>('[data-panel="layers"]')!;
-  const transitionPanel = root.querySelector<HTMLElement>('[data-panel="transitions"]')!;
-  const captionPanel = root.querySelector<HTMLElement>('[data-panel="captions"]')!;
-  const cuePresetsPanel = root.querySelector<HTMLElement>('[data-panel="cue-presets"]')!;
-  const jsonPanel = root.querySelector<HTMLTextAreaElement>('[data-panel="json"]')!;
-  const jsonErrorPanel = root.querySelector<HTMLElement>('[data-panel="json-error"]')!;
-  const timelinePanel = root.querySelector<HTMLElement>('[data-panel="timeline"]')!;
-  const selectionDetailPanel = root.querySelector<HTMLElement>('[data-panel="selection-detail"]')!;
-  const diagnosticsPanel = root.querySelector<HTMLElement>('[data-panel="diagnostics"]')!;
-  const importDiagnosticsPanel = root.querySelector<HTMLElement>('[data-panel="import-diagnostics"]')!;
-  const eventLogPanel = root.querySelector<HTMLElement>('[data-panel="event-log"]')!;
-  const scrub = root.querySelector<HTMLInputElement>('[data-action="scrub"]')!;
-  const loopToggle = root.querySelector<HTMLInputElement>('[data-action="loop"]')!;
-  const playbackRateInput = root.querySelector<HTMLInputElement>('[data-action="playback-rate"]')!;
-  const themeToggleButton = root.querySelector<HTMLButtonElement>('[data-action="toggle-theme"]')!;
-  const fileInput = root.querySelector<HTMLInputElement>('[data-action="file-input"]')!;
-  const previewControls = root.querySelector<HTMLElement>('[data-preview-controls]')!;
-  const previewFullButton = root.querySelector<HTMLButtonElement>('[data-action="preview-full"]')!;
-  const previewSceneButton = root.querySelector<HTMLButtonElement>('[data-action="preview-scene"]')!;
-  const previewLabel = root.querySelector<HTMLElement>("[data-preview-label]")!;
+  const paramPanel = requireElement<HTMLElement>(root, '[data-panel="params"]');
+  const scenesPanel = requireElement<HTMLElement>(root, '[data-panel="scenes"]');
+  const sequencePanel = requireElement<HTMLElement>(root, '[data-panel="sequences"]');
+  const layerPanel = requireElement<HTMLElement>(root, '[data-panel="layers"]');
+  const transitionPanel = requireElement<HTMLElement>(root, '[data-panel="transitions"]');
+  const captionPanel = requireElement<HTMLElement>(root, '[data-panel="captions"]');
+  const cuePresetsPanel = requireElement<HTMLElement>(root, '[data-panel="cue-presets"]');
+  const jsonPanel = requireElement<HTMLTextAreaElement>(root, '[data-panel="json"]');
+  const jsonErrorPanel = requireElement<HTMLElement>(root, '[data-panel="json-error"]');
+  const timelinePanel = requireElement<HTMLElement>(root, '[data-panel="timeline"]');
+  const selectionDetailPanel = requireElement<HTMLElement>(root, '[data-panel="selection-detail"]');
+  const diagnosticsPanel = requireElement<HTMLElement>(root, '[data-panel="diagnostics"]');
+  const importDiagnosticsPanel = requireElement<HTMLElement>(root, '[data-panel="import-diagnostics"]');
+  const eventLogPanel = requireElement<HTMLElement>(root, '[data-panel="event-log"]');
+  const scrub = requireElement<HTMLInputElement>(root, '[data-action="scrub"]');
+  const loopToggle = requireElement<HTMLInputElement>(root, '[data-action="loop"]');
+  const playbackRateInput = requireElement<HTMLInputElement>(root, '[data-action="playback-rate"]');
+  const themeToggleButton = requireElement<HTMLButtonElement>(root, '[data-action="toggle-theme"]');
+  const fileInput = requireElement<HTMLInputElement>(root, '[data-action="file-input"]');
+  const previewControls = requireElement<HTMLElement>(root, "[data-preview-controls]");
+  const previewFullButton = requireElement<HTMLButtonElement>(root, '[data-action="preview-full"]');
+  const previewSceneButton = requireElement<HTMLButtonElement>(root, '[data-action="preview-scene"]');
+  const previewLabel = requireElement<HTMLElement>(root, "[data-preview-label]");
   const syncFocusedScene = () => {
     if (!isSceneComposition(state.composition)) {
       focusedSceneId = null;

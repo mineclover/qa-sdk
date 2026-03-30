@@ -358,6 +358,7 @@ export class GraphRegistry implements GraphPort {
   getPrefixesForTable(tableId: string): Array<{ prefixId: string; dimLabel: string }> {
     return this.edgesTo(tableId, "composes")
       .filter(e => e.meta?.dimKind === "table_ref")
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filter above guarantees meta exists
       .map(e => ({ prefixId: e.from, dimLabel: e.meta!.label as string }));
   }
 
@@ -367,6 +368,7 @@ export class GraphRegistry implements GraphPort {
   getTablesForPrefix(prefixId: string): Array<{ tableId: string; dimLabel: string }> {
     return this.edgesFrom(prefixId, "composes")
       .filter(e => e.meta?.dimKind === "table_ref")
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filter above guarantees meta exists
       .map(e => ({ tableId: e.to, dimLabel: e.meta!.label as string }));
   }
 

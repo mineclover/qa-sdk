@@ -8,7 +8,6 @@ import {
   allValidCombinations,
   CONCERN_TAGS,
   STRUCTURAL_TAGS,
-  TIER_TAGS,
   KNOWN_TAGS,
   isKnownTag,
   detectCrossScope,
@@ -126,11 +125,10 @@ describe("allValidCombinations", () => {
 // ─── 태그 체계 ──────────────────────────────────────────
 
 describe("태그 레지스트리", () => {
-  it("KNOWN_TAGS = CONCERN_TAGS + STRUCTURAL_TAGS + TIER_TAGS", () => {
-    expect(KNOWN_TAGS.length).toBe(CONCERN_TAGS.length + STRUCTURAL_TAGS.length + TIER_TAGS.length);
+  it("KNOWN_TAGS = CONCERN_TAGS + STRUCTURAL_TAGS", () => {
+    expect(KNOWN_TAGS.length).toBe(CONCERN_TAGS.length + STRUCTURAL_TAGS.length);
     for (const t of CONCERN_TAGS) expect(KNOWN_TAGS).toContain(t);
     for (const t of STRUCTURAL_TAGS) expect(KNOWN_TAGS).toContain(t);
-    for (const t of TIER_TAGS) expect(KNOWN_TAGS).toContain(t);
   });
 
   it("태그 간 중복 없음", () => {
@@ -140,7 +138,6 @@ describe("태그 레지스트리", () => {
   it("isKnownTag는 알려진 태그에 true", () => {
     expect(isKnownTag("security")).toBe(true);
     expect(isKnownTag("cross-scope")).toBe(true);
-    expect(isKnownTag("tier-infra")).toBe(true);
     expect(isKnownTag("unknown-tag")).toBe(false);
   });
 });

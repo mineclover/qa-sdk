@@ -132,7 +132,7 @@ export function recommendAll(
   // 중복 제거: 같은 relatedPrefixes 조합이면 첫 번째만
   const seen = new Set<string>();
   return results.filter(r => {
-    const key = r.relatedPrefixes.map(p => `${p.id}:${p.relation}`).sort().join("|");
+    const key = r.relatedPrefixes.map(p => `${p.id}:${p.relation}`).toSorted().join("|");
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

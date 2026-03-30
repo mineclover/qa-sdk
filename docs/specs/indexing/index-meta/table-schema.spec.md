@@ -9,7 +9,7 @@ def:
   svc: index-meta
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, structural, entry-point]
   links:
     - target: address-spec
       type: depends_on

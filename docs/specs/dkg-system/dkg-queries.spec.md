@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [decision, observability, runtime]
   links:
     - target: dkg-node-types
       type: depends_on
@@ -16,6 +16,13 @@ def:
       type: depends_on
 ---
 # DKG 설계 시점 질의
+
+
+## 탐색 ^navigation
+
+dkg-system > **dkg-queries**
+
+형제: `dkg-node-types` · `dkg-edge-types` · `dkg-constraint` · `dkg-growth-spiral` · `dkg-skills-system` · `dkg-service-topology` · `dkg-state-store`
 
 ## 목적 ^purpose
 

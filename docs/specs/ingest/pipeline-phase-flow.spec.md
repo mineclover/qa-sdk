@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: ingest-server
-  tags: []
+  tags: [runtime, observability, performance]
   links:
     - target: ingest-interface-pipeline
       type: refines

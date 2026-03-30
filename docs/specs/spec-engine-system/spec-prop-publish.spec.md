@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: []
+  tags: [contract, runtime, versioning]
   links:
-    - target: spec-core-types
+    - target: spec-core-types-group
       type: depends_on
     - target: registry-data-model
       type: depends_on

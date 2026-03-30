@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test": "vitest run",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "@qa-sdk/core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
   }
 }

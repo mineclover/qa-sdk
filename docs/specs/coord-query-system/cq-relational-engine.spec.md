@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: query-service
-  tags: []
+  tags: [query, structural, performance]
   links:
     - target: cq-policy-resolver
       type: depends_on

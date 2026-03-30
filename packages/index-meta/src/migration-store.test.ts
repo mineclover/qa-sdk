@@ -6,8 +6,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { InMemoryMigrationStore } from "./adapters/memory-migration-store.js";
 import { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";
 import { SqlMigrationStore } from "./adapters/sql-migration-store.js";
-import type { MigrationStore } from "./migration-store.js";
-import type { MigrationMapping } from "./migration-store.js";
+import type { MigrationStore, MigrationMapping } from "./migration-store.js";
 
 function mapping(overrides: Partial<MigrationMapping> & Pick<MigrationMapping, "fromVersionId" | "toVersionId" | "position" | "changeType">): MigrationMapping {
   return {

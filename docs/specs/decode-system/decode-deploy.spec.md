@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: decode-service
-  tags: []
+  tags: [runtime, migration, performance]
   links:
     - target: decode-api
       type: constrains

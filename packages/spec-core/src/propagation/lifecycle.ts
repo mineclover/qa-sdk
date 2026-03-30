@@ -71,7 +71,7 @@ export async function activateAndPropagate(
     graph.addNode(versionEvent);
     if (previousVersion) {
       // evolves-from 엣지 (이전 VersionEvent가 있으면)
-      const prevVeId = `VE-${input.prefix}-*-${previousVersion}`;
+      const _prevVeId = `VE-${input.prefix}-*-${previousVersion}`;
       // 간단히 justifies만 기록
     }
   }
@@ -102,7 +102,7 @@ function buildNotification(
   // intent-link 검사
   const intentLinks = graph.intentLinksFor(input.prefix);
 
-  const hasChanges = input.diff && input.diff.changedLabels.length > 0;
+  const _hasChanges = input.diff && input.diff.changedLabels.length > 0;
   const hasCapacityChange = input.diff?.changedLabels.some(c => c.toMax !== c.fromMax) ?? false;
 
   return {
@@ -122,7 +122,7 @@ function buildNotification(
     })),
     constraintViolations: constraints,
     brokenIntentLinks: intentLinks
-      .filter(l => l.invariant)
-      .map(l => ({ id: l.id, invariant: l.invariant! })),
+      .filter((l): l is typeof l & { invariant: string } => l.invariant != null)
+      .map(l => ({ id: l.id, invariant: l.invariant })),
   };
 }

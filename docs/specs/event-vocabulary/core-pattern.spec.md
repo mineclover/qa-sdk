@@ -10,7 +10,7 @@ def:
   svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, observability, entry-point]
   links:
     - target: graph-spec
       type: depends_on

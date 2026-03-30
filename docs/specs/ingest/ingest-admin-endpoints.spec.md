@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: []
+  tags: [contract, runtime, observability]
   links:
     - target: admin-api-spec
       type: refines

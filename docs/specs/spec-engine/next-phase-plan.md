@@ -9,7 +9,7 @@ def:
   layer: domain
   tags: [structural]
   links:
-    - target: convergence-layer-spec
+    - target: convergence-layer-group
       type: refines
 ---
 

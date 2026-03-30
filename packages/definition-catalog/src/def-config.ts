@@ -8,6 +8,12 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 
+/** 머신별 엔티티 상태 */
+export interface MachineEntityState {
+  readonly current: string;
+  readonly updatedAt: string;
+}
+
 export interface DefConfig {
   /** 주소 체계 버전 */
   addressVersion: "v1" | "v2";
@@ -19,6 +25,8 @@ export interface DefConfig {
   documentCount: number;
   /** 문서별 content hash (drift 감지) */
   checksums: Record<string, string>;
+  /** 머신별 엔티티 상태 — machineId → entityId → { current, updatedAt } */
+  states?: Record<string, Record<string, MachineEntityState>>;
 }
 
 const CONFIG_PATH = ".qa-sdk/def-config.json";
@@ -58,6 +66,47 @@ export async function writeDefConfig(root: string, config: DefConfig): Promise<v
   const path = configPath(root);
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(config, null, 2) + "\n");
+}
+
+// ── 머신 상태 헬퍼 ─────────────────────────────────────
+
+/** config에서 머신 상태 조회. 없으면 null 반환. */
+export function readMachineState(
+  config: DefConfig,
+  machineId: string,
+  entityId: string,
+): MachineEntityState | null {
+  return config.states?.[machineId]?.[entityId] ?? null;
+}
+
+/** config에 머신 상태 기록. config 객체를 직접 변경 (mutable). */
+export function writeMachineState(
+  config: DefConfig,
+  machineId: string,
+  entityId: string,
+  state: string,
+): void {
+  if (!config.states) config.states = {};
+  if (!config.states[machineId]) config.states[machineId] = {};
+  config.states[machineId][entityId] = {
+    current: state,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/** config에서 머신별 전체 상태 맵 조회 */
+export function readAllMachineStates(
+  config: DefConfig,
+  machineId: string,
+): ReadonlyMap<string, MachineEntityState> {
+  const map = new Map<string, MachineEntityState>();
+  const section = config.states?.[machineId];
+  if (section) {
+    for (const [entityId, state] of Object.entries(section)) {
+      map.set(entityId, state);
+    }
+  }
+  return map;
 }
 
 /** drift 감지 — config의 checksum과 현재 파일의 checksum 비교 */

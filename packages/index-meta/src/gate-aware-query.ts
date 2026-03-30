@@ -13,7 +13,6 @@ import {
   subtractRanges,
   mergeRanges,
   positionsToConstraint,
-  calcAddressRanges,
 } from "weighted-index";
 import type { AddressState, DimStateSpec } from "./invalid-ranges.js";
 import type { AddressStateCacheRecord } from "./invalid-range-store.js";

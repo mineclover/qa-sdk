@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
-  tags: []
+  tags: [entry-point, frontend, cross-scope]
   links:
     - target: definition-catalog-spec
       type: depends_on

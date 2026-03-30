@@ -122,6 +122,25 @@ const states = deriveAllStates({
 // → 11개 머신 상태를 한번에 파생
 ```
 
+### 품질 하네스 quick loop
+
+```bash
+qa-sdk def sync
+qa-sdk def validate
+qa-sdk quality show <gate-doc-id>
+qa-sdk quality run <gate-doc-id> --json
+qa-sdk quality diagnose <gate-doc-id> --json
+qa-sdk quality claims <bundle-doc-id>
+qa-sdk quality status quality-gates-system --json
+qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-system.json
+```
+
+읽는 순서:
+
+1. `quality run`이 `quality-ledger`를 최신화
+2. `quality claims`가 contract marker 기반 claim verdict를 계산
+3. `quality status/export`가 bundle/system 수준 snapshot을 만든다
+
 ## 관련 소스
 
 - `definition-catalog/src/state-model.ts` — FSM 엔진 + 4개 기본 머신

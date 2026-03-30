@@ -58,6 +58,7 @@ export class InMemoryAddressIndex implements AddressIndex {
       if (!this.prefixMap.has(prefixId)) {
         this.prefixMap.set(prefixId, []);
       }
+      // eslint-disable-next-line typescript/no-non-null-assertion -- 직전에 .has() 확인 후 .set()으로 보장
       const entries = this.prefixMap.get(prefixId)!;
       const entry: SortedEntry = { address, version, recordId, timestamp };
       insertSorted(entries, entry);
@@ -200,7 +201,7 @@ export class InMemoryAddressIndex implements AddressIndex {
       });
     }
 
-    return results.sort((a, b) => b.recordCount - a.recordCount);
+    return results.toSorted((a, b) => b.recordCount - a.recordCount);
   }
 
   /* ---- 유틸 ---- */
@@ -276,7 +277,7 @@ function findRange(
 /** Set 교집합 */
 function intersect(sets: Set<string>[]): Set<string> {
   if (sets.length === 0) return new Set();
-  const sorted = [...sets].sort((a, b) => a.size - b.size);
+  const sorted = [...sets].toSorted((a, b) => a.size - b.size);
   const [first, ...rest] = sorted;
   const result = new Set<string>();
   for (const id of first) {

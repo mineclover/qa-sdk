@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-registry
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [migration, runtime, contract]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: Registry 연결
+
+## 목적 ^purpose
+
+레지스트리 연결 실현 계획. registry-service↔definition-service↔DKG 삼각 동기화를 기술한다.
+
 
 > Status: **completed**
 > Created: 2026-03-21
@@ -77,7 +96,7 @@ registry에서 active version을 조회하여 사용하는 경로.
 #### C-1: registry에서 active catalog 조회
 
 - What: CLI 시작 시 `--registry` 옵션이 있으면 registry에서 active version 기반 catalog을 로드
-- Where: cli/catalog-loader.ts (이미 존재)
+- Where: packages/config-loader/src/catalog-loader.ts (독립 패키지로 추출됨)
 - 이것은 demo-catalog.ts 직접 import를 대체하는 게 아니라 **대안 경로**를 추가하는 것
 
 ## 3. Fitness Criteria

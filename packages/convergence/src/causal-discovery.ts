@@ -57,7 +57,7 @@ export function discoverCausality(
   }
 
   // confidence 높은 순 정렬
-  return candidates.sort((a, b) => b.coOccurrenceRate - a.coOccurrenceRate);
+  return candidates.toSorted((a, b) => b.coOccurrenceRate - a.coOccurrenceRate);
 }
 
 /**

@@ -8,33 +8,45 @@ def:
   lifecycle: approved
   layer: experience
   tags: [generated]
+  links:
+    - target: claude-skill-group
+      type: refines
+    - target: skill-def-context
+      type: depends_on
+    - target: skill-def-bottomup
+      type: refines
 ---
+
+
+## 탐색 ^navigation
+
+skill-catalog-system > claude-skill-group > **skill-def-topdown**
+
+형제: `skill-def-bottomup` · `skill-def-context` · `skill-def-audit` · `skill-def-explore` · `skill-def-knowledge` · `skill-def-level` · `skill-def-new` · `skill-def-link` · `skill-def-split` · `skill-def-state`
 
 ## 목적 ^purpose
 
-<!-- 탑다운 조회 — 시스템/그룹에서 시작하여 멤버 purpose/overview를 scope 순서로 조립 -->
-<!-- 이 skill이 사용자에게 어떤 가치를 주는가? 코드 설명이 아닌 "왜 이 도구가 필요한가"를 작성 -->
+시스템이나 그룹 문서에서 시작해 하위 멤버의 purpose/overview를 조립함으로써, 문서 집합을 상위 개념에서 하위 개념 순으로 이해하게 하는 스킬이다.
 
 ## 사용 맥락 ^context
 
-<!-- 언제 이 skill을 쓰는가? 어떤 상황에서 이 skill이 가장 유용한가? -->
-<!-- 예: "새 서비스를 추가할 때 영향 범위를 먼저 확인하려면 def-bottomup을 실행한다" -->
+특정 그룹의 전체 구조를 빠르게 설명해야 하거나,
+문서 ID는 알지만 하위 멤버의 의미와 읽기 순서를 아직 모를 때 사용한다.
 
 ## 설계 의도 ^intent
 
-<!-- 왜 이 방식으로 유도하는가? 다른 접근은 왜 부적합한가? -->
-<!-- 예: "scope 순서 정렬은 constraint→data→feature 순으로 읽어야 구조가 보이기 때문" -->
+contains 관계를 따라 조립하되 scope 순서로 정렬해, 같은 그룹 안에서도 제약→데이터→기능 같은 읽기 흐름이 드러나게 한다.
+개별 문서를 무작위로 읽는 방식보다 시스템 설명 품질이 안정적이다.
 
 ## 피드백 규칙 ^feedback
 
-<!-- CLI 사용 패턴에 따라 이 skill을 어떻게 개선하는가? -->
-<!-- 예: "blast radius가 50 이상이면 분할 제안을 추가한다" -->
-<!-- 예: "같은 그룹을 3번 이상 topdown하면 즐겨찾기 제안" -->
+- 같은 그룹을 반복해서 조립하면 overview 문서의 구성 설명이 부족하다는 신호로 본다.
+- topdown 후 context나 bottomup으로 자주 이어지면 그룹 문서에 더 강한 진입 링크를 추가한다.
 
 ## 주의사항 ^caveat
 
-<!-- 알려진 한계, 오용 패턴, 잘못된 기대 -->
+topdown은 시스템 설명용이다. 실제 수정 전 세부 영향 확인은 context나 bottomup으로 내려가야 한다.
 
 ## 관련 소스
 
-- ~/.claude/skills/def-topdown/SKILL.md
+- `skills/def-topdown/SKILL.md`

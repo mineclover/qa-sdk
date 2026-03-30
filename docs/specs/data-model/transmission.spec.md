@@ -8,7 +8,7 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [observability, data, contract]
   links:
     - target: record-spec
       type: depends_on

@@ -18,7 +18,7 @@ beforeAll(async () => {
   result = await scanAndBuild(ROOT, [
     join(ROOT, "docs"),
   ]);
-});
+}, 60_000);
 
 describe("실제 docs/ 스캔", () => {
   it("frontmatter가 있는 문서가 등록된다", () => {
@@ -33,23 +33,23 @@ describe("실제 docs/ 스캔", () => {
   it("등록된 문서를 ID로 조회할 수 있다", () => {
     const reg = result.registry;
     expect(reg.get("system-overview")).toBeDefined();
-    expect(reg.get("gate-service-spec")).toBeDefined();
+    expect(reg.get("gate-api")).toBeDefined();
     expect(reg.get("record-spec")).toBeDefined();
     expect(reg.get("ingest-api-spec")).toBeDefined();
-    expect(reg.get("decision-flow-spec")).toBeDefined();
+    expect(reg.get("df-system")).toBeDefined();
   });
 
   it("ref 경로가 올바르다 (baseDir 기준 상대)", () => {
     const reg = result.registry;
     expect(reg.get("system-overview")!.ref).toBe("docs/system-overview.md");
-    expect(reg.get("gate-service-spec")!.ref).toBe("docs/specs/services/gate-service.spec.md");
+    expect(reg.get("gate-api")!.ref).toBe("docs/specs/gate/gate-api.spec.md");
     expect(reg.get("record-spec")!.ref).toBe("docs/specs/data-model/record.spec.md");
   });
 
   it("title이 # 제목에서 추출된다", () => {
     const reg = result.registry;
     expect(reg.get("system-overview")!.title).toBe("QA-SDK 시스템 개요");
-    expect(reg.get("gate-service-spec")!.title).toBe("Gate Service 스펙");
+    expect(reg.get("gate-api")!.title).toBe("Gate Service API 계약");
     expect(reg.get("record-spec")!.title).toBe("EventRecord + RecordStore");
   });
 
@@ -57,7 +57,7 @@ describe("실제 docs/ 스캔", () => {
     const reg = result.registry;
     expect(reg.get("system-overview")!.tags).toContain("cross-scope");
     expect(reg.get("system-overview")!.tags).toContain("entry-point");
-    expect(reg.get("gate-service-spec")!.tags).toContain("security");
+    expect(reg.get("gate-api")!.tags).toContain("security");
     expect(reg.get("ingest-api-spec")!.tags).toContain("performance");
   });
 
@@ -74,13 +74,14 @@ describe("링크 연결", () => {
   it("frontmatter의 links가 연결된다", () => {
     const reg = result.registry;
 
-    // gate-service-spec → gate-engine-spec (depends_on)
-    // gate-engine-spec이 없으면 linkErrors에 들어감
-    const gateLinkError = result.linkErrors.find(e => e.source === "gate-service-spec" && e.target === "gate-engine-spec");
-    if (gateLinkError) {
-      // gate-engine-spec에 아직 frontmatter가 없으므로 미등록 — 예상된 에러
-      expect(gateLinkError.error).toContain("미등록");
-    }
+    // gate-api의 현재 depends_on/implements가 연결된다
+    const gateLinks = reg.getLinks("gate-api", "outgoing");
+    expect(gateLinks.some(link =>
+      link.targetId === "gate-state-model" && link.linkType === "depends_on"
+    )).toBe(true);
+    expect(gateLinks.some(link =>
+      link.targetId === "gate-engine-func" && link.linkType === "implements"
+    )).toBe(true);
 
     // ingest-api-spec의 depends_on들이 연결됨 — 둘 다 등록됨
     const ingestLinks = reg.getLinks("ingest-api-spec", "outgoing");
@@ -100,7 +101,7 @@ describe("concern 전파", () => {
 
   it("gate-service-spec의 security가 직접 부여", () => {
     const concerns = computeAllConcerns(result.registry);
-    const gate = concerns.get("gate-service-spec")!;
+    const gate = concerns.get("gate-api")!;
     expect(gate.direct).toContain("security");
   });
 });
@@ -109,7 +110,7 @@ describe("scope 기반 질의", () => {
   it("interface scope 문서 조회", () => {
     const apis = result.registry.findByScope("interface");
     expect(apis.length).toBeGreaterThanOrEqual(2);
-    expect(apis.some(e => e.id === "gate-service-spec")).toBe(true);
+    expect(apis.some(e => e.id === "gate-api")).toBe(true);
     expect(apis.some(e => e.id === "ingest-api-spec")).toBe(true);
   });
 

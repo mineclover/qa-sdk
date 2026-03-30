@@ -10,6 +10,8 @@ def:
   layer: domain
   tags: [structural, cross-scope, entry-point]
   links:
+    - target: system-overview
+      type: contains
     - target: system-design-tools
       type: contains
     - target: system-frontend
@@ -34,7 +36,8 @@ def:
 
 ## 구성 ^overview
 
-3개 기본 문서 + 5개 계층:
+4개 기본 문서 + 5개 계층:
+- `system-overview`: 시스템을 한 문단씩 빠르게 훑는 교차 개요 문서.
 - `system-concepts`: 이벤트, 좌표, 축, Prefix, prefix_ref 기본 개념.
 - `system-data-flow`: 이벤트 발생 → 수집 → 저장 → 판정 → 시각화 전체 흐름.
 - `system-packages`: 패키지 의존 관계.

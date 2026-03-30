@@ -57,6 +57,7 @@ function wrapQueryBuilder(builder: Record<string, unknown>, operation: string, t
   // then() 호출 = 실제 쿼리 실행 시점
   const originalThen = builder.then;
   if (typeof originalThen === "function") {
+    // eslint-disable-next-line unicorn/no-thenable -- Drizzle 쿼리 빌더의 thenable 패턴을 의도적으로 감싸는 instrumentation
     builder.then = function (
       this: unknown,
       onFulfilled?: (value: unknown) => unknown,

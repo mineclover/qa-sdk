@@ -16,6 +16,7 @@ export function createMetricsCollector(): MetricsCollector {
   return {
     inc(name, labels = {}, delta = 1) {
       if (!counters.has(name)) counters.set(name, new Map());
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
       const bucket = counters.get(name)!;
       const key = serializeLabels(labels);
       bucket.set(key, (bucket.get(key) ?? 0) + delta);

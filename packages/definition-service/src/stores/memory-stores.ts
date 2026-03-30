@@ -42,6 +42,7 @@ export class InMemoryDocStore implements DocStore {
 
     const updated: DocRecord = {
       ...existing,
+      level: patch.level === null ? undefined : (patch.level ?? existing.level),
       scope: patch.scope ?? existing.scope,
       aspect: patch.aspect ?? existing.aspect,
       depth: patch.depth ?? existing.depth,
@@ -54,6 +55,7 @@ export class InMemoryDocStore implements DocStore {
     };
 
     const same =
+      (updated.level ?? null) === (existing.level ?? null) &&
       updated.scope === existing.scope &&
       updated.aspect === existing.aspect &&
       updated.depth === existing.depth &&
@@ -86,13 +88,19 @@ export class InMemoryDocStore implements DocStore {
 
   list(filter?: DocListFilter): DocRecord[] {
     let result = Array.from(this.docs.values());
+    if (filter?.type) result = result.filter((d) => d.docType === filter.type);
+    if (filter?.knowledgeKind) result = result.filter((d) => d.knowledgeKind === filter.knowledgeKind);
+    if (filter?.level) result = result.filter((d) => d.level === filter.level);
     if (filter?.scope) result = result.filter((d) => d.scope === filter.scope);
     if (filter?.aspect) result = result.filter((d) => d.aspect === filter.aspect);
     if (filter?.depth) result = result.filter((d) => d.depth === filter.depth);
     if (filter?.lifecycle) result = result.filter((d) => d.lifecycle === filter.lifecycle);
     if (filter?.layer) result = result.filter((d) => d.layer === filter.layer);
     if (filter?.svc) result = result.filter((d) => d.svc === filter.svc);
-    if (filter?.tag) result = result.filter((d) => d.tags.includes(filter.tag!));
+    if (filter?.tag) {
+      const tag = filter.tag;
+      result = result.filter((d) => d.tags.includes(tag));
+    }
     if (filter?.address) result = result.filter((d) => d.address === filter.address);
     if (filter?.q) {
       const q = filter.q.toLowerCase();
@@ -103,7 +111,7 @@ export class InMemoryDocStore implements DocStore {
         d.docId.toLowerCase().includes(q),
       );
     }
-    result = result.sort((a, b) => a.docId.localeCompare(b.docId));
+    result = result.toSorted((a, b) => a.docId.localeCompare(b.docId));
     const offset = filter?.offset ?? 0;
     const limit = filter?.limit ?? 500;
     return result.slice(offset, offset + limit);
@@ -111,7 +119,7 @@ export class InMemoryDocStore implements DocStore {
 
   getHistory(docId: string, limit = 50): DocHistoryRecord[] {
     const entries = this.history.get(docId) ?? [];
-    return entries.slice(-limit).reverse();
+    return entries.slice(-limit).toReversed();
   }
 
   getVersion(docId: string, version: number): DocHistoryRecord | null {
@@ -175,7 +183,7 @@ export class InMemoryIntentStore implements IntentStore {
   listByPrefix(prefixId: string): SliceIntentRecord[] {
     return Array.from(this.intents.values())
       .filter((i) => i.prefixId === prefixId)
-      .sort((a, b) => a.sliceDepth - b.sliceDepth || a.id - b.id);
+      .toSorted((a, b) => a.sliceDepth - b.sliceDepth || a.id - b.id);
   }
 }
 
@@ -195,14 +203,14 @@ export class InMemoryConsumptionStore implements ConsumptionStore {
   latest(prefixId: string): ConsumptionSnapshot | null {
     const filtered = this.snapshots
       .filter((s) => s.prefixId === prefixId)
-      .sort((a, b) => b.collectedAt.localeCompare(a.collectedAt));
+      .toSorted((a, b) => b.collectedAt.localeCompare(a.collectedAt));
     return filtered[0] ?? null;
   }
 
   history(prefixId: string, limit = 30): ConsumptionSnapshot[] {
     return this.snapshots
       .filter((s) => s.prefixId === prefixId)
-      .sort((a, b) => b.collectedAt.localeCompare(a.collectedAt))
+      .toSorted((a, b) => b.collectedAt.localeCompare(a.collectedAt))
       .slice(0, limit);
   }
 }

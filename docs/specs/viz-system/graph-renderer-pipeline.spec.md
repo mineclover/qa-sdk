@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: []
+  tags: [frontend, observability, runtime]
   links:
-    - target: graph-renderer-spec
+    - target: viz-surface-system
       type: refines
 ---
 

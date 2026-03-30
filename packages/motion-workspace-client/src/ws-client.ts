@@ -117,10 +117,10 @@ export interface MotionWorkspaceWsMessageEvent {
 
 export interface MotionWorkspaceWebSocketLike {
   readonly readyState: number;
-  onopen: ((event: unknown) => void) | null;
-  onmessage: ((event: MotionWorkspaceWsMessageEvent) => void) | null;
-  onclose: ((event: MotionWorkspaceWsCloseEvent) => void) | null;
-  onerror: ((event: unknown) => void) | null;
+  addEventListener(type: "open", listener: (event: unknown) => void): void;
+  addEventListener(type: "message", listener: (event: MotionWorkspaceWsMessageEvent) => void): void;
+  addEventListener(type: "close", listener: (event: MotionWorkspaceWsCloseEvent) => void): void;
+  addEventListener(type: "error", listener: (event: unknown) => void): void;
   send(data: string): void;
   close(code?: number, reason?: string): void;
 }
@@ -518,14 +518,14 @@ export class MotionWorkspaceWsConnection {
   ): void {
     this.socket = socket;
 
-    socket.onopen = () => {
+    socket.addEventListener("open", () => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
       this.clearReconnectTimer();
-    };
+    });
 
-    socket.onmessage = (event) => {
+    socket.addEventListener("message", (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
@@ -569,16 +569,16 @@ export class MotionWorkspaceWsConnection {
           this.handlers.onServerError?.(message);
           return;
       }
-    };
+    });
 
-    socket.onerror = (event) => {
+    socket.addEventListener("error", (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
       this.handlers.onTransportError?.(event);
-    };
+    });
 
-    socket.onclose = (event) => {
+    socket.addEventListener("close", (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
@@ -588,7 +588,7 @@ export class MotionWorkspaceWsConnection {
       if (!this.closedByClient) {
         this.scheduleReconnect();
       }
-    };
+    });
   }
 
   private isCurrentSocket(

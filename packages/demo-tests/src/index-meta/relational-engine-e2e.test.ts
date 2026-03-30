@@ -22,9 +22,10 @@ import {
   SqlAddressRangeCache,
   matchRules,
   resolvePatternPolicy,
+  type MetaRegistryInput,
+  type PatternRule,
+  type ConflictStrategy,
 } from "index-meta";
-import type { MetaRegistryInput } from "index-meta";
-import type { PatternRule, ConflictStrategy } from "index-meta";
 import { AXIS } from "demo-snapshot";
 
 // ── 스키마 정의 ──────────────────────────────────────────────────────────────

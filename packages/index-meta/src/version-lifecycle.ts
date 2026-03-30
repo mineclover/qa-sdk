@@ -23,8 +23,6 @@
  *           용도: 피처 플래그, 동적 설정, A/B 테스트.
  */
 
-import type { EntityId } from "./types.js";
-
 // ── 타입 ──────────────────────────────────────────────────
 
 export type VersionStatus = "draft" | "released" | "active" | "deprecated";

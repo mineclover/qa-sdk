@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: definition-catalog-spec
       type: depends_on
-    - target: spec-core-types
+    - target: spec-core-types-group
       type: refines
 ---
 

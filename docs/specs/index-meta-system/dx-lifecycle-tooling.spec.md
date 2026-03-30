@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: index-meta
-  tags: []
+  tags: [entry-point, runtime, versioning]
   links:
     - target: index-codec-spec
       type: refines

@@ -141,7 +141,7 @@ describe("getReverseRefs — 역방향 조회", () => {
     });
 
     const reverses = await reg.getReverseRefs("role", "v1");
-    const prefixes = reverses.map((r) => r.prefix).sort();
+    const prefixes = reverses.map((r) => r.prefix).toSorted();
     expect(prefixes).toEqual(["audit", "perm"]);
   });
 

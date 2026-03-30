@@ -70,7 +70,7 @@ export class MonitorState {
   getTracePath(traceId: string): TracePath | undefined {
     const filtered = this.recentWindow
       .filter(r => r.trace_id === traceId)
-      .map(r => ({ traceId: r.trace_id!, timestamp: r.timestamp, addressContext: r.address_context }));
+      .map(r => ({ traceId: r.trace_id ?? traceId, timestamp: r.timestamp, addressContext: r.address_context }));
 
     const paths = extractTracePaths(filtered, this.layerMap);
     return paths[0];
@@ -80,14 +80,15 @@ export class MonitorState {
   getRecentPaths(limit: number = 10): TracePath[] {
     const traceIds = new Set<string>();
     for (let i = this.recentWindow.length - 1; i >= 0 && traceIds.size < limit; i--) {
-      if (this.recentWindow[i].trace_id) {
-        traceIds.add(this.recentWindow[i].trace_id!);
+      const tid = this.recentWindow[i].trace_id;
+      if (tid) {
+        traceIds.add(tid);
       }
     }
 
     const records = this.recentWindow
-      .filter(r => r.trace_id && traceIds.has(r.trace_id))
-      .map(r => ({ traceId: r.trace_id!, timestamp: r.timestamp, addressContext: r.address_context }));
+      .filter((r): r is typeof r & { trace_id: string } => r.trace_id != null && traceIds.has(r.trace_id))
+      .map(r => ({ traceId: r.trace_id, timestamp: r.timestamp, addressContext: r.address_context }));
 
     return extractTracePaths(records, this.layerMap);
   }

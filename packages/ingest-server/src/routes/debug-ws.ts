@@ -11,10 +11,10 @@ import type { Context } from "hono";
 import type { WSContext, WSEvents } from "hono/ws";
 import { encode as msgpackEncode, decode as msgpackDecode } from "@msgpack/msgpack";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
-import type { TraceStore, RecordStore } from "@qa-sdk/core";
 import {
-  TAG_EVENT_RECORD, TAG_DEBUG_COMMAND, TAG_DEBUG_RESPONSE, TAG_HEARTBEAT,
+  TAG_EVENT_RECORD, TAG_DEBUG_COMMAND, TAG_HEARTBEAT,
   encodeFrame, decodeFrame, encodeResponse,
+  type TraceStore, type RecordStore, type StoredRecord, type MsgpackDecode,
   type DebugCommand, type DebugEventRecord, type StreamFilter, type DebugResponse,
 } from "@qa-sdk/core";
 import type { Logger } from "pino";
@@ -33,7 +33,7 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
     let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
     function sendBinary(ws: WSContext, data: Uint8Array) {
-      try { ws.send(new Uint8Array(data) as any); } catch { /* connection closed */ }
+      try { ws.send(new Uint8Array(data)); } catch { /* connection closed */ }
     }
 
     function sendResponse(ws: WSContext, resp: DebugResponse) {
@@ -45,26 +45,26 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
     }
 
     /** RecordStreamBroker의 레코드를 DebugEventRecord로 변환 */
-    function toDebugRecord(record: any): DebugEventRecord {
+    function toDebugRecord(record: StoredRecord): DebugEventRecord {
       return {
-        logId: record.logId ?? record.log_id ?? "",
-        traceId: record.traceId ?? record.trace_id ?? "",
-        spanId: record.spanId ?? record.span_id ?? "",
-        parentSpanId: record.parentSpanId ?? record.parent_span_id,
+        logId: record.logId ?? "",
+        traceId: record.traceId ?? "",
+        spanId: record.spanId ?? "",
+        parentSpanId: record.parentSpanId,
         timestampMs: record.timestamp instanceof Date
           ? record.timestamp.getTime()
           : new Date(record.timestamp ?? Date.now()).getTime(),
-        recordKind: record.recordKind ?? record.record_kind ?? "log",
-        eventKey: record.eventKey ?? record.event_key ?? "",
-        eventVersion: record.eventVersion ?? record.event_version ?? "",
-        addressContext: record.addressContext ?? record.address_context,
-        serviceName: record.serviceName ?? record.service_name,
-        qaSessionId: record.qaSessionId ?? record.qa_session_id,
-        actorId: record.actorId ?? record.actor_id,
+        recordKind: (record.recordKind ?? "log") as DebugEventRecord["recordKind"],
+        eventKey: record.eventKey ?? "",
+        eventVersion: record.eventVersion ?? "",
+        addressContext: record.addressContext,
+        serviceName: undefined,
+        qaSessionId: record.qaSessionId,
+        actorId: record.actorId,
         payloadJson: record.payload ? JSON.stringify(record.payload) : undefined,
-        metricName: record.metricName ?? record.metric_name,
-        metricValue: record.metricValue ?? record.metric_value,
-        metricUnit: record.metricUnit ?? record.metric_unit,
+        metricName: record.metricName,
+        metricValue: record.metricValue,
+        metricUnit: record.metricUnit,
       };
     }
 
@@ -76,7 +76,8 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
       if (filter.sessionId && record.qaSessionId !== filter.sessionId) return false;
       if (filter.prefixIds?.length && record.addressContext) {
         const prefixes = Object.keys(record.addressContext);
-        if (!prefixes.some(p => filter.prefixIds!.includes(p))) return false;
+        const filterPrefixIds = filter.prefixIds;
+        if (!prefixes.some(p => filterPrefixIds.includes(p))) return false;
       }
       return true;
     }
@@ -86,7 +87,7 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
       stopSubscription();
       currentFilter = filter;
 
-      unsubscribe = deps.recordStreamBroker.subscribeToScenario("*", (record: any) => {
+      unsubscribe = deps.recordStreamBroker.subscribeToScenario("*", (record: StoredRecord) => {
         const debugRecord = toDebugRecord(record);
         if (!matchesFilter(debugRecord, currentFilter)) return;
 
@@ -154,7 +155,7 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
           break;
         }
         default:
-          sendResponse(ws, { type: "error", code: "UNKNOWN_COMMAND", message: `Unknown command: ${(cmd as any).type}` });
+          sendResponse(ws, { type: "error", code: "UNKNOWN_COMMAND", message: `Unknown command: ${(cmd as unknown as Record<string, unknown>).type}` });
       }
     }
 
@@ -176,7 +177,7 @@ export function createDebugWsHandler(deps: DebugWsDeps): (c: Context) => WSEvent
         if (evt.data instanceof ArrayBuffer || evt.data instanceof Uint8Array) {
           try {
             const bytes = evt.data instanceof ArrayBuffer ? new Uint8Array(evt.data) : evt.data;
-            const { tag, payload } = decodeFrame(bytes, msgpackDecode as any);
+            const { tag, payload } = decodeFrame(bytes, msgpackDecode as MsgpackDecode);
             if (tag === TAG_DEBUG_COMMAND) {
               await handleCommand(ws, payload as DebugCommand);
             } else if (tag === TAG_HEARTBEAT) {

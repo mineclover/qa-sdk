@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-coord-promotion
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [decision, migration, versioning]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 좌표 승격 파이프라인
+
+## 목적 ^purpose
+
+좌표 승격 실현 계획. draft→released→active 버전 전이와 주소 활성화 프로세스를 기술한다.
+
 
 > Status: **completed**
 > Created: 2026-03-21

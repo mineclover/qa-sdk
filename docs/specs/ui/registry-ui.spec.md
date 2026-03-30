@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: experience
   svc: registry-service
-  tags: []
+  tags: [entry-point, frontend, registry]
   links:
     - target: registry-service-modules
       type: depends_on

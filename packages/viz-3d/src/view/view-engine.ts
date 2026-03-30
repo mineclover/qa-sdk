@@ -33,7 +33,7 @@ export class ViewEngine {
 
   /** 매트릭스 스택용 커스텀 뷰 모드 추가 */
   addViewMode(name: string, positions: Record<string, ViewPosition>): void {
-    (this.positions as any)[name] = positions;
+    (this.positions as Record<string, Record<string, ViewPosition>>)[name] = positions;
   }
 
   registerGroup(groupId: string, initialPos: ViewPosition): void {

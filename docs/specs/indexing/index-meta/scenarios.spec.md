@@ -25,7 +25,7 @@ MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합
       `prefix-registry.test.ts`, `table-flow.e2e.test.ts`, `address-resolver.test.ts`,
       `migrate-address.test.ts`
 
-외부 시스템 통합 시나리오 (AddressProtocolManager): [scenarios-address.spec.md](scenarios-address.spec.md)
+외부 시스템 통합 시나리오 (AddressProtocolManager): [../../index-meta-system/address-scenarios-group.md](../../index-meta-system/address-scenarios-group.md)
 
 ## 구성 ^overview
 

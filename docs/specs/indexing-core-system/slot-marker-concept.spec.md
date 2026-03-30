@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: wi-pack-format-def
       type: depends_on
@@ -173,4 +173,4 @@ action:   description: 'reserved: [1]="_"'
 
 - [slot-marker-patterns](slot-marker-patterns.spec.md) — 실제 사용 패턴과 테스트
 - [slot-marker-capacity](slot-marker-capacity.spec.md) — 용량 영향
-- [`conventions.md` §2](../indexing/conventions.md#2-예약-항목reserved-entry) — 규범적 요약
+- [`conventions-system.md`](conventions-system.md) — 규범적 요약

@@ -21,7 +21,7 @@
  * ```
  */
 
-import { Module, type DynamicModule } from "@nestjs/common";
+import { Module, type DynamicModule, type InjectionToken } from "@nestjs/common";
 import { DefinitionClient, type DefinitionClientOptions } from "./client.js";
 
 /** DI 토큰 */
@@ -84,8 +84,8 @@ export class DefinitionModule {
    * ```
    */
   static forRootAsync(asyncOptions: {
-    inject?: any[];
-    useFactory: (...args: any[]) => DefinitionModuleOptions | Promise<DefinitionModuleOptions>;
+    inject?: InjectionToken[];
+    useFactory: (...args: unknown[]) => DefinitionModuleOptions | Promise<DefinitionModuleOptions>;
   }): DynamicModule {
     return {
       module: DefinitionModule,

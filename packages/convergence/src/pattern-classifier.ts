@@ -55,7 +55,7 @@ export function classifyPattern(
   const idMode = detectIdMode(input);
 
   // 규칙을 priority 내림차순 정렬
-  const sorted = [...rules].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  const sorted = [...rules].toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
   for (const rule of sorted) {
     // identification_mode 조건 확인
@@ -129,8 +129,9 @@ function evaluateMatch(
 
   // event_key 패턴 (하나라도 매칭)
   if (cond.eventKeyPatterns && cond.eventKeyPatterns.length > 0) {
+    const patterns = cond.eventKeyPatterns;
     const hasMatch = eventKeys.some(k =>
-      cond.eventKeyPatterns!.some(p => new RegExp(p).test(k)),
+      patterns.some(p => new RegExp(p).test(k)),
     );
     if (!hasMatch) return false;
   }

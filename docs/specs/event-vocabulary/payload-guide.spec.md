@@ -10,7 +10,7 @@ def:
   svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, contract, entry-point]
   links:
     - target: event-core-pattern
       type: depends_on

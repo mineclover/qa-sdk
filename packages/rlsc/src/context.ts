@@ -8,9 +8,8 @@ import type {
 } from "./types.js";
 import { encodeToMarkup } from "./encoder.js";
 import { gridToText } from "./grid.js";
-import { layersToText } from "./layers.js";
 import { relationsToText } from "./relations.js";
-import { flattenTree } from "./collector.js";
+import { flattenTree } from "./tree-utils.js";
 
 // ─── Context Engineering ────────────────────────────────────────────
 
@@ -89,7 +88,7 @@ function generateSummary(
 
   // 주요 영역 (면적 기준 상위 5개)
   const topNodes = [...visibleNodes]
-    .sort((a, b) => b.rect.width * b.rect.height - a.rect.width * a.rect.height)
+    .toSorted((a, b) => b.rect.width * b.rect.height - a.rect.width * a.rect.height)
     .slice(0, 5);
 
   // 역할 분포
@@ -125,7 +124,7 @@ function generateSummary(
   lines.push(
     ``,
     `역할 분포: ${[...roleCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
+      .toSorted((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([r, c]) => `${r}(${c})`)
       .join(", ")}`,

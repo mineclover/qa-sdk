@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: decode-service
-  tags: []
+  tags: [data, runtime, structural]
   links:
     - target: meta-registry-spec
       type: depends_on

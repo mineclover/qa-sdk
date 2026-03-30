@@ -78,7 +78,7 @@ export function resolveIntents(
 ): readonly SliceIntent[] {
   return intents
     .filter(i => sliceContains(i.slice, address))
-    .sort((a, b) => sliceDepth(a.slice) - sliceDepth(b.slice));
+    .toSorted((a, b) => sliceDepth(a.slice) - sliceDepth(b.slice));
 }
 
 // ─── 주소 소비율 ────────────────────────────────────────

@@ -1,13 +1,16 @@
-import { QaLogger, TraceContext } from "@qa-sdk/sdk";
-import type { MetricType } from "@qa-sdk/core";
-import { toTransmissionSource, toTransmissionBuild, toServiceDims } from "@qa-sdk/core";
-import { getCoreEvent } from "@qa-sdk/event-catalog";
-import { BeaconTransport } from "./transport.js";
-import { getOrCreateSession, clearSession } from "./session.js";
-import { createAutoCapture } from "./auto-capture.js";
-import type { QaMonitorConfig, MonitorSession, MonitorStatus } from "./types.js";
-import { track as browserTrack } from "@qa-sdk/browser-codec";
-import { BROWSER_CATALOG } from "@qa-sdk/browser-codec";
+import { QaLogger, TraceContext } from '@qa-sdk/sdk';
+import {
+  toTransmissionSource,
+  toTransmissionBuild,
+  toServiceDims,
+  type MetricType,
+} from '@qa-sdk/core';
+import { getCoreEvent } from '@qa-sdk/event-catalog';
+import { BeaconTransport } from './transport.js';
+import { getOrCreateSession, clearSession } from './session.js';
+import { createAutoCapture } from './auto-capture.js';
+import type { QaMonitorConfig, MonitorSession, MonitorStatus } from './types.js';
+import { track as browserTrack, BROWSER_CATALOG } from '@qa-sdk/browser-codec';
 
 /**
  * QaMonitor — 브라우저 모니터링 SDK 진입점.
@@ -31,21 +34,23 @@ export class QaMonitor {
   private readonly storageKey: string;
   private destroyAutoCapture: (() => void) | null = null;
   private readonly unloadHandler: () => void;
-  private _status: MonitorStatus = "active";
+  private _status: MonitorStatus = 'active';
 
   constructor(config: QaMonitorConfig) {
-    this.storageKey = config.storageKey ?? "qa_monitor";
+    this.storageKey = config.storageKey ?? 'qa_monitor';
     this.session = getOrCreateSession(this.storageKey);
 
     const transport = new BeaconTransport(`${config.ingestUrl}/v1/ingest`);
 
     const svc = config.serviceConfig;
     const source = svc
-      ? toTransmissionSource(svc, "@qa-sdk/browser", "0.1.0")
-      : { service_name: config.meta?.serviceName ?? "browser", sdk_name: "@qa-sdk/browser", sdk_version: "0.1.0" };
-    const build = svc
-      ? toTransmissionBuild(svc)
-      : { env: config.meta?.env ?? "production" };
+      ? toTransmissionSource(svc, '@qa-sdk/browser', '0.1.0')
+      : {
+          service_name: config.meta?.serviceName ?? 'browser',
+          sdk_name: '@qa-sdk/browser',
+          sdk_version: '0.1.0',
+        };
+    const build = svc ? toTransmissionBuild(svc) : { env: config.meta?.env ?? 'production' };
 
     // infra_context 자동 생성: serviceConfig → service prefix 좌표
     let infraContext = config.infraContext;
@@ -60,11 +65,11 @@ export class QaMonitor {
 
     this.logger = new QaLogger({
       transport,
-      owner: config.owner ?? { owner_type: "tenant", owner_id: "browser-monitor" },
+      owner: config.owner ?? { owner_type: 'tenant', owner_id: 'browser-monitor' },
       source,
       runtime: {
-        platform: "browser",
-        os_version: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
+        platform: 'browser',
+        os_version: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       },
       build,
       flushIntervalMs: 5_000,
@@ -82,7 +87,7 @@ export class QaMonitor {
 
     // 시나리오 시작 이벤트
     if (config.scenarioId) {
-      this.emit("session_start", { scenario_id: config.scenarioId });
+      this.emit('session_start', { scenario_id: config.scenarioId });
     }
 
     // 자동 수집 — infraContext(서비스 좌표)를 자동 주입하여 prefix 커버리지에 기여
@@ -97,8 +102,8 @@ export class QaMonitor {
     this.unloadHandler = () => {
       this.logger.flush().catch(() => {});
     };
-    if (typeof window !== "undefined") {
-      window.addEventListener("pagehide", this.unloadHandler);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', this.unloadHandler);
     }
   }
 
@@ -111,7 +116,7 @@ export class QaMonitor {
 
   /** 이벤트 수집 가능 여부 */
   get isActive(): boolean {
-    return this._status === "active";
+    return this._status === 'active';
   }
 
   // ── Actor 설정 ─────────────────────────────────────────
@@ -121,7 +126,7 @@ export class QaMonitor {
     this.logger.setActor({
       actor_id: opts.actorId,
       user_id: opts.userId ?? opts.actorId,
-      identification_mode: "identified",
+      identification_mode: 'identified',
       user_attributes: opts.attributes,
     });
   }
@@ -144,7 +149,11 @@ export class QaMonitor {
    *   tracking: { trackAction: 'view', page: 'home', userType: 'member' },
    * });
    */
-  emitWithCoords(eventKey: string, prefixes: Record<string, Record<string, string | number>>, payload?: Record<string, unknown>): void {
+  emitWithCoords(
+    eventKey: string,
+    prefixes: Record<string, Record<string, string | number>>,
+    payload?: Record<string, unknown>,
+  ): void {
     let ctx: Record<string, string> | undefined;
     try {
       ctx = browserTrack(BROWSER_CATALOG, prefixes);
@@ -159,13 +168,17 @@ export class QaMonitor {
    * event-catalog에 등록된 event_key면 버전을 자동으로 조회한다.
    * stopped 상태에서는 경고 후 무시된다.
    */
-  emit(eventKey: string, payload?: Record<string, unknown>, options?: { address_context?: Record<string, string> }): void {
-    if (this._status === "stopped") {
+  emit(
+    eventKey: string,
+    payload?: Record<string, unknown>,
+    options?: { address_context?: Record<string, string> },
+  ): void {
+    if (this._status === 'stopped') {
       console.warn(`[QaMonitor] emit("${eventKey}") called after shutdown — event dropped`);
       return;
     }
     const def = getCoreEvent(eventKey);
-    const version = (def?.event_version ?? "1").padStart(3, "0");
+    const version = (def?.event_version ?? '1').padStart(3, '0');
     this.logger.log({
       event_key: eventKey,
       event_version: version,
@@ -180,13 +193,17 @@ export class QaMonitor {
    * 메트릭 이벤트 기록. QaLogger.metric() 위임.
    * stopped 상태에서는 경고 후 무시.
    */
-  metric(name: string, value: number, opts?: {
-    type?: MetricType;
-    unit?: string;
-    labels?: Record<string, string>;
-    address_context?: Record<string, string>;
-  }): void {
-    if (this._status === "stopped") {
+  metric(
+    name: string,
+    value: number,
+    opts?: {
+      type?: MetricType;
+      unit?: string;
+      labels?: Record<string, string>;
+      address_context?: Record<string, string>;
+    },
+  ): void {
+    if (this._status === 'stopped') {
       console.warn(`[QaMonitor] metric("${name}") called after shutdown — event dropped`);
       return;
     }
@@ -210,8 +227,8 @@ export class QaMonitor {
    * stopped 상태에서는 경고 후 현재 세션을 반환한다.
    */
   newSession(): MonitorSession {
-    if (this._status === "stopped") {
-      console.warn("[QaMonitor] newSession() called after shutdown — ignored");
+    if (this._status === 'stopped') {
+      console.warn('[QaMonitor] newSession() called after shutdown — ignored');
       return { ...this.session };
     }
     clearSession(this.storageKey);
@@ -233,7 +250,7 @@ export class QaMonitor {
    * 전송 실패 시 throw.
    */
   async flush(): Promise<void> {
-    if (this._status === "stopped") return;
+    if (this._status === 'stopped') return;
     await this.logger.flush();
   }
 
@@ -244,14 +261,14 @@ export class QaMonitor {
    * 멱등 — 이미 stopped이면 즉시 반환.
    */
   async shutdown(): Promise<void> {
-    if (this._status === "stopped") return;
-    this._status = "stopped";
+    if (this._status === 'stopped') return;
+    this._status = 'stopped';
 
     this.destroyAutoCapture?.();
     this.destroyAutoCapture = null;
 
-    if (typeof window !== "undefined") {
-      window.removeEventListener("pagehide", this.unloadHandler);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pagehide', this.unloadHandler);
     }
 
     await this.logger.shutdown();
@@ -275,10 +292,11 @@ export function createQaMonitor(config: QaMonitorConfig): QaMonitor {
 export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaMonitor> {
   if (config.registry) {
     try {
-      const { loadCatalog: loadBrowserCatalog } = await import("@qa-sdk/browser-codec");
+      const { loadCatalog: loadBrowserCatalog } = await import('@qa-sdk/browser-codec');
       const result = await loadBrowserCatalog({
         registryUrl: config.registry,
-        cacheKey: `qa-catalog-${config.catalogId ?? "demo"}`,
+        cacheKey: `qa-catalog-${config.catalogId ?? 'demo'}`,
+        ...(config.serviceConfig ? { serviceOverlay: toServiceDims(config.serviceConfig) } : {}),
       });
 
       // 로드된 catalog으로 infra_context 재계산
@@ -290,7 +308,9 @@ export async function createQaMonitorAsync(config: QaMonitorConfig): Promise<QaM
         };
       }
     } catch (err) {
-      console.warn(`[QaMonitorAsync] registry fetch failed: ${err instanceof Error ? err.message : String(err)}. Using static BROWSER_CATALOG fallback.`);
+      console.warn(
+        `[QaMonitorAsync] registry fetch failed: ${err instanceof Error ? err.message : String(err)}. Using static BROWSER_CATALOG fallback.`,
+      );
     }
   }
   return new QaMonitor(config);

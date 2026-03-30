@@ -8,6 +8,9 @@ def:
   lifecycle: approved
   svc: registry-ui
   tags: [experience, frontend, registry]
+  links:
+    - target: registry-service-modules
+      type: refines
 ---
 # registry-ui
 

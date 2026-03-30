@@ -70,7 +70,7 @@ export function analyzeDeploymentSkew(
     }
 
     // version 정렬 (count 기준, 가장 많이 쓰이는 게 "latest"로 추정)
-    const sorted = [...merged.values()].sort((a, b) => b.count - a.count);
+    const sorted = [...merged.values()].toSorted((a, b) => b.count - a.count);
     const latestVersion = sorted[0]?.version ?? "unknown";
 
     const activeVersions = sorted.map(u => ({
@@ -126,7 +126,7 @@ export function analyzeDeploymentSkew(
     });
   }
 
-  return results.sort((a, b) => {
+  return results.toSorted((a, b) => {
     const sevOrder = { critical: 0, warning: 1, ok: 2 };
     return sevOrder[a.severity] - sevOrder[b.severity];
   });

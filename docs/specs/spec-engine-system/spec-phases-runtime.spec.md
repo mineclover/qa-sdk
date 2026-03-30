@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: []
+  tags: [runtime, observability, structural]
   links:
-    - target: spec-engine-phases
+    - target: spec-phases-group
       type: refines
     - target: spec-phases-roadmap
       type: depends_on

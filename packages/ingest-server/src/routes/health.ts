@@ -1,4 +1,5 @@
 import type { Db } from "@qa-sdk/store";
+import { readFileSync } from "node:fs";
 import { Hono, type Context } from "hono";
 
 export interface DbHealthStatus {
@@ -17,14 +18,15 @@ export interface HealthRoutesOptions {
 let _packageVersion: string | undefined;
 function getPackageVersion(): string {
   if (_packageVersion) return _packageVersion;
+  let version: string;
   try {
-    const { readFileSync } = require("node:fs");
     const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
-    _packageVersion = pkg.version ?? "0.0.0";
+    version = pkg.version ?? "0.0.0";
   } catch {
-    _packageVersion = "0.0.0";
+    version = "0.0.0";
   }
-  return _packageVersion!;
+  _packageVersion = version;
+  return version;
 }
 
 export function createHealthRoutes(options: HealthRoutesOptions) {

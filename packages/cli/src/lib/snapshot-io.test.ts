@@ -74,7 +74,7 @@ describe("snapshot-io", () => {
 
     const snaps = await readSnapshots(TMP);
     expect(snaps).toHaveLength(2);
-    expect(snaps.map((s) => s.id).sort()).toEqual(["a", "b"]);
+    expect(snaps.map((s) => s.id).toSorted()).toEqual(["a", "b"]);
     await rm(TMP, { recursive: true, force: true });
   });
 });

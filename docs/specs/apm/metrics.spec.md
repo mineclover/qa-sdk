@@ -10,7 +10,7 @@ def:
   layer: domain
   tags: [observability, performance]
   links:
-    - target: address-context-spec
+    - target: address-context-format
       type: depends_on
     - target: record-spec
       type: depends_on

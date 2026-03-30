@@ -42,14 +42,14 @@ export interface CatalogCodegenOptions {
 function computeCatalogHash(catalog: Catalog): string {
   // axes entries + capacity, prefix labels + dims 구조를 해시
   const parts: string[] = [catalog.id];
-  for (const [id, axis] of Object.entries(catalog.axes).sort((a, b) => a[0].localeCompare(b[0]))) {
-    const vkeys = Object.keys(axis.versions).sort();
+  for (const [id, axis] of Object.entries(catalog.axes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
+    const vkeys = Object.keys(axis.versions).toSorted();
     for (const vk of vkeys) {
       const snap = axis.versions[vk];
       parts.push(`${id}:${vk}:[${snap.entries.join(",")}]:${snap.capacity ?? snap.entries.length}`);
     }
   }
-  for (const [id, prefix] of Object.entries(catalog.prefixes).sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
     parts.push(`${id}:${prefix.labels.join(",")}:${prefix.versions.map(v => v.version).join(",")}`);
   }
   return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
@@ -104,9 +104,9 @@ export function generateCatalogTypes(
 // ── prefix-ids.ts ──────────────────────────────────────
 
 function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Record<string, string>, ts: string): string {
-  const prefixIds = Object.keys(catalog.prefixes).sort();
-  const axisIds = Object.keys(catalog.axes).sort();
-  const tableIds = Object.keys(catalog.tables ?? {}).sort();
+  const prefixIds = Object.keys(catalog.prefixes).toSorted();
+  const axisIds = Object.keys(catalog.axes).toSorted();
+  const tableIds = Object.keys(catalog.tables ?? {}).toSorted();
 
   const lines = [header(catalog.id, contentHash, ts)];
 
@@ -156,7 +156,7 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
   lines.push(`  generatedAt: "${ts}" as const,`);
   lines.push(`  /** prefix별 version (생성 시점 기준) */`);
   lines.push(`  prefixVersions: {`);
-  for (const [prefixId, version] of Object.entries(prefixVersions).sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [prefixId, version] of Object.entries(prefixVersions).toSorted((a, b) => a[0].localeCompare(b[0]))) {
     lines.push(`    "${prefixId}": "${version}",`);
   }
   lines.push(`  } as const,`);
@@ -174,7 +174,7 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
 function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
   const lines = [header(catalog.id, contentHash, ts)];
 
-  for (const [axisId, axis] of Object.entries(catalog.axes).sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [axisId, axis] of Object.entries(catalog.axes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
     const versionKeys = Object.keys(axis.versions);
     const latestKey = versionKeys[versionKeys.length - 1];
     const latest = axis.versions[latestKey];
@@ -211,7 +211,7 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
   lines.push(`import type * as Axes from "./axes.js";`);
   lines.push(``);
 
-  const prefixEntries = Object.entries(catalog.prefixes).sort((a, b) => a[0].localeCompare(b[0]));
+  const prefixEntries = Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]));
   const dimInterfaces: string[] = [];
 
   for (const [prefixId, prefix] of prefixEntries) {
@@ -351,7 +351,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
     }
   }
 
-  for (const axisId of [...usedAxes].sort()) {
+  for (const axisId of [...usedAxes].toSorted()) {
     const axis = catalog.axes[axisId];
     if (!axis) continue;
     const versionKeys = Object.keys(axis.versions);
@@ -374,7 +374,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   lines.push(`  prefixes: {`);
 
   // prefix — axis dims만 포함
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
     const axisDims = prefix.labels.filter(l => prefix.dims[l]?.kind === "axis");
     if (axisDims.length === 0) continue;
 
@@ -391,7 +391,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   // SNAPSHOT_SUPPLY — prefix별 스냅샷 전략
   lines.push(`/** prefix별 snapshot supply 전략 */`);
   lines.push(`export const SNAPSHOT_SUPPLY = {`);
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
     const hasPrefixRef = Object.values(prefix.dims).some(d => d.kind === "prefix_ref");
     const strategy = hasPrefixRef ? "envelope" : "implicit";
     lines.push(`  "${prefixId}": "${strategy}" as const,`);

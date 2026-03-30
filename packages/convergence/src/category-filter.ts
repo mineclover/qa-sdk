@@ -87,5 +87,5 @@ export function summarizeByCategory(
       totalHits: catUsage.addressUsages.reduce((s, a) => s + a.count, 0),
       versionCount: catUsage.versionUsages.length,
     }))
-    .sort((a, b) => b.totalHits - a.totalHits);
+    .toSorted((a, b) => b.totalHits - a.totalHits);
 }

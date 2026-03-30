@@ -83,7 +83,7 @@ function rangeCacheSuite(
 
       const v1List = await cache.list("perm", "v1");
       expect(v1List).toHaveLength(2);
-      expect(v1List.map((r) => r.label).sort()).toEqual(["action=write", "role=admin"]);
+      expect(v1List.map((r) => r.label).toSorted()).toEqual(["action=write", "role=admin"]);
 
       const v2List = await cache.list("perm", "v2");
       expect(v2List).toHaveLength(1);

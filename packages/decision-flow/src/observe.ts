@@ -17,8 +17,8 @@
  */
 
 import { WeightedIndex } from "weighted-index";
-import type { Evidence, FlowInstance, GateSelection } from "./types.js";
-import type { AutoDecisionPrinciple, MentalModelId, Reversibility, ForcingQuestion } from "./mental-model.js";
+import type { FlowInstance, GateSelection } from "./types.js";
+import type { AutoDecisionPrinciple } from "./mental-model.js";
 import {
   COGNITIVE_PHASE,
   CONFIDENCE_BAND,

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [data, contract, structural]
   links:
     - target: wi-pack-format-def
       type: depends_on

@@ -72,7 +72,7 @@ describe("InMemoryTagStore", () => {
     await store.attach("r3", "record", ["promo", "seasonal"]);
 
     const results = await store.search({ tags: ["promo"] });
-    const ids = results.map((r) => r.targetId).sort();
+    const ids = results.map((r) => r.targetId).toSorted();
     expect(ids).toEqual(["r1", "r3"]);
   });
 
@@ -96,7 +96,7 @@ describe("InMemoryTagStore", () => {
       tags: ["promo", "new"],
       operator: "AND",
     });
-    const ids = results.map((r) => r.targetId).sort();
+    const ids = results.map((r) => r.targetId).toSorted();
     expect(ids).toEqual(["r1", "r3"]);
   });
 
@@ -194,7 +194,7 @@ describe("InMemoryTagStore", () => {
     await store.attach("r1", "record", ["promo", "new", "seasonal"]);
 
     const [result] = await store.search({ tags: ["promo", "seasonal"] });
-    expect(result.matchedTags.sort()).toEqual(["promo", "seasonal"]);
+    expect(result.matchedTags.toSorted()).toEqual(["promo", "seasonal"]);
     expect(result.allTags).toEqual(["new", "promo", "seasonal"]);
   });
 

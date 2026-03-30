@@ -214,18 +214,19 @@ function buildEnvelopeWithSuffix(suffix: string): TransmissionEnvelope {
   return {
     ...envelope,
     transmission_id: `${envelope.transmission_id}_${suffix}`,
-    records: envelope.records.map((record) => ({
-      ...record,
-      log_id: `${record.log_id}_${suffix}`,
-      trace_id: `${record.trace_id}_${suffix}`,
-      span_id: `${record.span_id}_${suffix}`,
-      parent_span_id: record.parent_span_id
-        ? `${record.parent_span_id}_${suffix}`
-        : undefined,
-      qa_session_id: record.qa_session_id
-        ? `${record.qa_session_id}_${suffix}`
-        : undefined,
-    })),
+    records: envelope.records.map((record) =>
+      Object.assign({}, record, {
+        log_id: `${record.log_id}_${suffix}`,
+        trace_id: `${record.trace_id}_${suffix}`,
+        span_id: `${record.span_id}_${suffix}`,
+        parent_span_id: record.parent_span_id
+          ? `${record.parent_span_id}_${suffix}`
+          : undefined,
+        qa_session_id: record.qa_session_id
+          ? `${record.qa_session_id}_${suffix}`
+          : undefined,
+      }),
+    ),
   };
 }
 
@@ -1884,6 +1885,7 @@ describe("createApp", () => {
     let heartbeatResolved = false;
     void firstHeartbeatPromise.then(() => {
       heartbeatResolved = true;
+      return undefined;
     });
 
     await vi.advanceTimersByTimeAsync(14_999);

@@ -10,9 +10,9 @@
  */
 
 import * as THREE from "three";
-import type { GridLayout, CellLayout } from "../core/grid-builder.js";
+import type { GridLayout } from "../core/grid-builder.js";
 import type { CategoryColor } from "../core/color-tokens.js";
-import { CATEGORY_COLORS, PALETTE } from "../core/color-tokens.js";
+import { CATEGORY_COLORS } from "../core/color-tokens.js";
 
 export interface InstancedGridState {
   readonly gridId: string;
@@ -105,7 +105,7 @@ export function updateInstancedGrid(
   time: number,
   settings: { baseOpacity: number; glowMultiplier: number },
 ): void {
-  const { mesh, glows, keyToIndex, indexToKey, catColor } = state;
+  const { mesh, glows, indexToKey, catColor } = state;
   const baseColor = new THREE.Color(catColor.main.hex);
   const glowColor = new THREE.Color(catColor.emissive.hex);
   const tmpColor = new THREE.Color();

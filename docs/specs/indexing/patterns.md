@@ -10,11 +10,11 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: coord-foundation
       type: depends_on
-    - target: indexing-conventions
+    - target: conventions-system
       type: depends_on
 ---
 
@@ -23,7 +23,7 @@ def:
 ## 목적 ^purpose
 
 시스템을 **어떻게 쓰는가** — 버전 이동, index 합성, 필터링 패턴.
-기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`conventions.md`](conventions.md)를 참조한다.
+기반 원리는 [`foundation.md`](foundation.md), 프로젝트 관례는 [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md)를 참조한다.
 
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)

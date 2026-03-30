@@ -34,7 +34,7 @@ export class InMemoryAddressRangeCache implements AddressRangeCache {
 
   async deleteAll(prefix: string, versionId: string): Promise<void> {
     const pk = this._prefixKey(prefix, versionId);
-    for (const key of [...this._store.keys()]) {
+    for (const key of this._store.keys()) {
       if (key.startsWith(pk)) this._store.delete(key);
     }
   }

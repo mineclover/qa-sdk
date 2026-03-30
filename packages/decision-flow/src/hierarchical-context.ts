@@ -191,7 +191,7 @@ export function assembleHierarchicalContext(
   for (const bundle of dslBundles) {
     for (const fd of bundle.fixedDims) sharedAxesSet.add(fd);
   }
-  const sharedAxes = [...sharedAxesSet].sort();
+  const sharedAxes = [...sharedAxesSet].toSorted();
 
   // 요약
   const parts: string[] = [];

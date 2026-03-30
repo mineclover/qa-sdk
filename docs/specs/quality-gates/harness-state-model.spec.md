@@ -17,6 +17,13 @@ def:
 ---
 # Harness State Model
 
+
+## 탐색 ^navigation
+
+quality-gates-system > **harness-state-model**
+
+형제: `gate-kind-taxonomy` · `gate-tracker-spec` · `harness-model-spec` · `work-domain-quality-bundle` · `definition-quality-gates` · `decision-flow-quality-bundle` · `ingest-quality-bundle` · `query-quality-bundle` · `definition-service-quality-bundle` · `decode-quality-bundle` · `registry-quality-bundle` · `quality-ledger` · `dkg-harness-bridge`
+
 ## 목적 ^purpose
 
 하네스 인프라를 문서/게이트 나열이 아니라 유한 상태 모델로 관리하기 위해, 개념과 계약과 검증을 상태로 정의하고 일반화된 전이 규칙을 고정한다.
@@ -57,4 +64,5 @@ def:
 | **구조적** (이 문서) | "문서가 충분한가" | concept-defined → contract-bound → gate-bound → verified | `work-domain/harness-model.ts` |
 | **런타임** | "게이트가 통과했는가" | idle → blocked → ready → gathering → running → passed/failed/stale | `work-domain/harness.ts` |
 
-구조적 `verified` = 런타임 `BundleState === "complete"`. definition-harness가 두 계층을 통합 관리한다.
+런타임 `BundleState === "complete"`는 게이트 실행이 끝났다는 신호다.
+구조적 `verified` 승격은 그 신호만으로 확정하지 않고, `quality-ledger`의 최신 실행 결과가 각 `gateDocId + docVersion`에 대해 모두 `pass`인지 다시 확인한 뒤 결정한다.

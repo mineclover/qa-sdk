@@ -1,7 +1,6 @@
 import { Injectable, Inject } from "@nestjs/common";
-import type Database from "better-sqlite3";
 import { sliceDepth } from "definition-catalog";
-import { DATABASE } from "../../database.module.js";
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlIntentStore } from "../../stores/intent-store.js";
 import type { IntentStore } from "../../core/interfaces.js";
 import type { SliceIntentRecord } from "../../core/types.js";
@@ -11,7 +10,7 @@ import { parseDimsParam, resolveMatchingIntents } from "../../core/intent-resolv
 export class IntentsService {
   private readonly store: IntentStore;
 
-  constructor(@Inject(DATABASE) db: Database.Database) {
+  constructor(@Inject(DRIZZLE_DB) db: DefinitionServiceDatabase) {
     this.store = new SqlIntentStore(db);
   }
 

@@ -274,7 +274,7 @@ describe("[동치 분할] 생성자 입력 유효성", () => {
 describe("[에러 계층] instanceof 타입 검증", () => {
   it("빈 ids → ShapeError extends WeightedIndexError", () => {
     try {
-      new LabelRegistry({ x: [{ version: "v1", ids: [] }] });
+      const _lr = new LabelRegistry({ x: [{ version: "v1", ids: [] }] });
     } catch (e) {
       expect(e).toBeInstanceOf(ShapeError);
       expect(e).toBeInstanceOf(WeightedIndexError);

@@ -186,6 +186,7 @@ export class LabelRegistry<
     const order = this._getOrder(label);
     const versionMap = this._getVersionMap(label);
     return order.map(
+      // eslint-disable-next-line typescript/no-non-null-assertion -- versionMap은 order와 동일한 키로 구축됨
       (v) => versionMap.get(v)!.entry as LabelVersionEntry<TSchema[K]>
     );
   }
@@ -299,6 +300,7 @@ export class LabelRegistry<
   private _getLatestCache(label: string): VersionCache {
     const order = this._getOrder(label);
     const versionMap = this._getVersionMap(label);
+    // eslint-disable-next-line typescript/no-non-null-assertion -- order는 최소 1개 이상이고 versionMap에 동일 키 존재
     return versionMap.get(order[order.length - 1])!;
   }
 }

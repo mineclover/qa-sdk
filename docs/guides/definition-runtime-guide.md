@@ -9,7 +9,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
-  tags: [entry-point]
+  tags: [entry-point, cross-scope, runtime]
   links:
     - target: definition-management
       type: depends_on
@@ -20,6 +20,13 @@ def:
 ## 목적 ^purpose
 
 좌표 기반 정의 체계(하네스, 게이트, Cross-Loop)를 서비스나 CLI에서 실제로 사용하기 위한 초기화 가이드. `createDefinitionRuntime()` 한 번 호출로 6개 피드백 루프가 연결된다.
+
+## 구성 ^overview
+
+- `빠른 시작`: `createDefinitionRuntime()` 초기화와 gate tracker 연결
+- `서비스별 설정`: definition-service, ingest-server, CLI에서의 연결 위치
+- `초기화 순서`: registry → definition-service → ingest-server → CLI 순서
+- `guard 순서`: Decision success → Doc approved → Gate complete → Convention compliant
 
 ## 빠른 시작
 

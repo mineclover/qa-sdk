@@ -15,6 +15,13 @@ def:
       type: depends_on
 ---
 
+
+## 탐색 ^navigation
+
+quality-gates-system > **harness-model-spec**
+
+형제: `gate-kind-taxonomy` · `gate-tracker-spec` · `harness-state-model` · `work-domain-quality-bundle` · `definition-quality-gates` · `decision-flow-quality-bundle` · `ingest-quality-bundle` · `query-quality-bundle` · `definition-service-quality-bundle` · `decode-quality-bundle` · `registry-quality-bundle` · `quality-ledger` · `dkg-harness-bridge`
+
 ## 목적 ^purpose
 
 품질 게이트/계약/번들을 "문서 종류"가 아니라 **"현재 어디까지 도달했는가"**로 읽기 위한 4단계 구조적 상태 모델. 런타임 GateState(9상태)와 구분되는 상위 개념.

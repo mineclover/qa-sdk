@@ -60,7 +60,8 @@ export class BunSqliteDriver implements SqlDriver {
       // 동기 컨텍스트에서 async fn 실행은 제한적이지만,
       // bun:sqlite는 동기 DB이므로 실제로는 동기 실행됨
       let result: T;
-      fn(this).then(r => { result = r; });
+      fn(this).then(r => { result = r; return undefined; });
+      // eslint-disable-next-line typescript/no-non-null-assertion -- bun:sqlite 동기 트랜잭션에서 Promise가 동기 해소됨
       return result!;
     });
   }

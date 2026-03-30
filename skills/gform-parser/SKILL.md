@@ -4,6 +4,12 @@ description: >
   Google Form URL로부터 필드 메타데이터(레이블, 타입, entry ID, 선택지, 필수 여부)를
   자동 추출하고, JS config 파일이나 HTML 폼을 생성한다.
   Google Form URL이 주어지거나, 폼 필드 정보 추출이 필요할 때 사용.
+triggers:
+  - google form
+  - form parser
+  - 폼 필드 추출
+  - 설문 폼 config
+argument-hint: "<google-form-url> [--json|--config <name>]"
 allowed-tools: Bash, Read, Write, Edit, WebFetch, Glob, Grep
 ---
 

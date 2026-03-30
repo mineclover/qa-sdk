@@ -10,7 +10,7 @@ def:
   svc: decision-flow
   tags: [decision]
   links:
-    - target: decision-standard
+    - target: decision-standard-group
       type: refines
 ---
 

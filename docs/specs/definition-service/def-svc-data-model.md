@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: []
+  tags: [data, persistence, structural]
   links:
     - target: definition-service-system
       type: refines

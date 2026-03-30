@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: cli
-  tags: []
+  tags: [observability, runtime, structural]
   links:
     - target: runtime-flows-spec
       type: refines

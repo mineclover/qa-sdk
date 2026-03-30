@@ -144,7 +144,7 @@ export class FormatRegistry {
 
   /** chars 오름차순으로 정렬된 전체 목록. */
   list(): PackFormat[] {
-    return [...this.map.values()].sort((a, b) => a.chars - b.chars);
+    return [...this.map.values()].toSorted((a, b) => a.chars - b.chars);
   }
 
   /** 등록된 포맷 수. */

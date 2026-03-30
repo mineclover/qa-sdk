@@ -8,7 +8,7 @@ export type { DraftLockStore } from "../stores/draft-lock-store.js";
 
 /** seed 함수에서 사용하는 최소 로거 인터페이스 */
 export interface SeedLogger {
-  info(obj: any, msg?: string): void;
-  warn(obj: any, msg?: string): void;
+  info(obj: Record<string, unknown> | string, msg?: string): void;
+  warn(obj: Record<string, unknown> | string, msg?: string): void;
   debug?(msg: string): void;
 }

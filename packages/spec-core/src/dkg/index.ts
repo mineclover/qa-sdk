@@ -148,3 +148,5 @@ export type {
   DslProfile, DslMemberInfo,
   SystemOverview, ServiceSummary, HotSpot, DependencyGraphSummary, DomainHealthSummary,
 } from "./skills/service-explorer.js";
+export { serviceHealthCheck, eventCoverageCheck } from "./skills/service-skills.js";
+export type { ServiceHealthResult, EventCoverageResult } from "./skills/service-skills.js";

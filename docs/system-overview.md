@@ -5,8 +5,13 @@ def:
   scope: flow
   aspect: process_flow
   depth: overview
-  lifecycle: deprecated
+  lifecycle: approved
   tags: [cross-scope, flow, data, interface, state, entry-point]
+  links:
+    - target: system-root
+      type: refines
+    - target: system-data-flow
+      type: depends_on
 ---
 # QA-SDK 시스템 개요
 
@@ -92,6 +97,35 @@ Axis = 비즈니스 정보의 유한 분류. **소비 방식은 소비자가 결
 - **전파 소비**: ConcernTag가 depends_on 링크를 타고 하위 상속
 
 태깅 관리: 대상이 사는 곳에 함께 저장. 카디널리티는 축별 (단일/다중). 상세: `docs/specs/system/tag-management.spec.md`
+
+### Quality Claim Audit
+
+문서 스펙을 contract marker 단위 claim atom으로 분해하고, 구현 파일 바인딩, gate 실행 결과, review 원장을 합성해 `declared → bound → exercised → verified` 상태로 읽는다.
+
+현재 verified 상태로 닫힌 번들:
+
+- `work-domain-quality-bundle`
+- `decision-flow-quality-bundle`
+- `ingest-quality-bundle`
+- `query-quality-bundle`
+- `decode-quality-bundle`
+- `registry-quality-bundle`
+- `definition-service-quality-bundle`
+- `definition-quality-gates`
+
+루트 `quality-gates-system`은 현재 24개 gate 문서를 포함하고 `verified` 상태로 유지된다.
+2026-03-30 기준 root status snapshot은 `artifacts/quality-gates-system.json`으로 export했다.
+
+CLI:
+
+```bash
+qa-sdk def sync
+qa-sdk def validate
+qa-sdk quality bundle quality-gates-system
+qa-sdk quality claims quality-gates-system
+qa-sdk quality status quality-gates-system
+qa-sdk quality export quality-gates-system --output=artifacts/quality-gates-system.json
+```
 
 ---
 
@@ -257,8 +291,13 @@ user.login TransitionSpec:
 Core ──────────── @qa-sdk/core (타입, catalog runtime)
 SDK 레이어 ────── logger → codec → context → sdk → apm
 Browser ────────── browser-codec (encode/decode SSOT) → browser-sdk (범용 SDK — 도메인 데이터 없음)
-의사결정 ────────── decision-flow (분기 엔진, 패턴 학습, 경로 비교)
+의사결정 ────────── decision-flow (분기 엔진) → decision-flow-store (SQLite 영속)
 분석 ──────────── convergence (독립) → spec-core (DKG + skills + FlowSchemaNode)
+코드 생성 ────── codegen-core (순수 함수) → snapshot-io (JSON I/O)
+설정 로딩 ────── config-loader (Catalog/DkgConfig .ts/.js/.json 자동 감지)
+문서 데이터 ──── definition-data-source (SQLite local + HTTP 서버 팩토리)
+Git/모노레포 ── git-utils (execa 기반) → package-classifier (tier/runtime/scope)
+리뷰 추적 ────── review-ledger (파일별 커밋 기준 리뷰 원장 + AI 피드백 요청 artifact + DKG bridge)
 서비스 ──────────── ingest, registry-server, registry-service, gate, query, decode
 데모/참조 ────────── demo-snapshot, demo-types, shop-web, viz-3d
 ```
@@ -345,3 +384,12 @@ shop-web → ingest-server
   ├── co-occurrence: 20 쌍, 기존 IL 100% 매칭 ✅
   └── TransitionSpec: user.login 3-event ordered 매칭 ✅
 ```
+
+---
+
+## 다음 읽기
+
+- 용어 이해: `docs/CONVENTIONS.md` — DimRef, ColumnRef, 좌표 컨벤션
+- 실습: `docs/getting-started.md` — 환경 설정, codegen, 첫 이벤트 전송
+- 상세 스펙: `docs/specs/README.md` — 관심사별 스펙 인덱스
+- 운영 워크플로우: `docs/skills/README.md` — DKG skill + 플레이북

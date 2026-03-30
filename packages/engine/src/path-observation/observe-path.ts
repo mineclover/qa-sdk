@@ -36,7 +36,7 @@ export function derivePathObservation(
   }
 
   // 2. timestamp 순 정렬
-  const sorted = [...matchedPairs].sort(
+  const sorted = [...matchedPairs].toSorted(
     (a, b) =>
       new Date(a.node.timestamp).getTime() - new Date(b.node.timestamp).getTime(),
   );
@@ -73,12 +73,12 @@ export function derivePathObservation(
   // 6. Terminal node + reason
   const lastPair = sorted[sorted.length - 1] ?? null;
   const terminal_node = lastPair?.node.id ?? null;
-  const terminal_reason: TerminalReason | null =
-    terminal_node == null
-      ? null
-      : terminalStepIds.has(lastPair!.step_id)
-        ? "goal_reached"
-        : "partial";
+  let terminal_reason: TerminalReason | null = null;
+  if (terminal_node != null && lastPair) {
+    terminal_reason = terminalStepIds.has(lastPair.step_id)
+      ? "goal_reached"
+      : "partial";
+  }
 
   // 7. Traversed edges: 양쪽 endpoint가 모두 매칭된 spec 엣지
   const traversed_edges: TraversedEdge[] = specGraph.edges

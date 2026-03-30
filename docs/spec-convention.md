@@ -1,4 +1,23 @@
+---
+def:
+  id: spec-convention
+  type: knowledge
+  knowledge_kind: convention
+  scope: constraint
+  aspect: tech_constraint
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, structural, testing]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Spec Convention
+
+## 목적 ^purpose
+
+스펙 문서 작성 컨벤션. frontmatter 구조, 마커 사용법, scope-aspect 판별 기준을 정의한다.
+
 
 스펙은 `docs/specs/` 디렉토리에서 **관심사(concern)** 단위로 중앙 관리한다.
 

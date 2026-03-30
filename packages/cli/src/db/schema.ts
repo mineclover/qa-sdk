@@ -4,6 +4,7 @@
  * 1개 테이블: flow_instances
  * drizzle-kit generate로 마이그레이션 SQL 생성 시 사용
  */
+import type { FlowInstance } from "decision-flow";
 import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -13,7 +14,7 @@ export const flowInstances = sqliteTable(
     id: text("id").notNull().primaryKey(),
     schemaId: text("schema_id").notNull(),
     schemaVersion: text("schema_version").notNull(),
-    status: text("status").notNull(),
+    status: text("status").$type<FlowInstance["status"]>().notNull(),
     context: text("context").notNull().default("{}"),
     selections: text("selections").notNull().default("[]"),
     outcome: text("outcome"),
@@ -23,7 +24,7 @@ export const flowInstances = sqliteTable(
     testPlan: text("test_plan"),
     startedAt: text("started_at").notNull(),
     completedAt: text("completed_at"),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
   },
   (t) => [
     index("idx_fi_schema").on(t.schemaId),

@@ -8,32 +8,43 @@ def:
   lifecycle: approved
   layer: experience
   tags: [generated]
+  links:
+    - target: dkg-skill-group
+      type: refines
+    - target: skill-catalog-system
+      type: refines
 ---
+
+
+## 탐색 ^navigation
+
+skill-catalog-system > dkg-skill-group > **skill-dkg-skill-catalog**
+
+형제: `skill-dkg-skill-cascade` · `skill-dkg-skill-migrator` · `skill-dkg-skill-version-event` · `skill-dkg-skill-decision`
 
 ## 목적 ^purpose
 
-<!-- 스킬 카탈로그 — 스킬 등록/조회/실행 레지스트리 -->
-<!-- 이 skill이 사용자에게 어떤 가치를 주는가? 코드 설명이 아닌 "왜 이 도구가 필요한가"를 작성 -->
+스킬 정의와 실행 표면을 카탈로그로 읽게 해, 어떤 자동화 도구가 존재하고 어디에 연결되는지 추적 가능하게 만드는 스킬이다.
 
 ## 사용 맥락 ^context
 
-<!-- 언제 이 skill을 쓰는가? 어떤 상황에서 이 skill이 가장 유용한가? -->
-<!-- 예: "새 서비스를 추가할 때 영향 범위를 먼저 확인하려면 def-bottomup을 실행한다" -->
+새 skill을 추가하거나, 기존 skill의 등록 상태와 연결 구조를 점검할 때 사용한다.
+experience 계층 문서와 실제 skill 파일의 정합성을 맞출 때도 유용하다.
 
 ## 설계 의도 ^intent
 
-<!-- 왜 이 방식으로 유도하는가? 다른 접근은 왜 부적합한가? -->
-<!-- 예: "scope 순서 정렬은 constraint→data→feature 순으로 읽어야 구조가 보이기 때문" -->
+skill을 단순 파일 목록이 아니라 카탈로그 항목으로 취급해, 그룹화·추적·피드백 갱신을 가능하게 한다.
+이렇게 해야 실제 skill 집합과 문서 카탈로그의 드리프트를 줄일 수 있다.
 
 ## 피드백 규칙 ^feedback
 
-<!-- CLI 사용 패턴에 따라 이 skill을 어떻게 개선하는가? -->
-<!-- 예: "blast radius가 50 이상이면 분할 제안을 추가한다" -->
-<!-- 예: "같은 그룹을 3번 이상 topdown하면 즐겨찾기 제안" -->
+- 실제 skill 파일과 카탈로그 문서가 어긋나면 우선적으로 정합성 보수 대상에 올린다.
+- 사용률이 낮은 skill은 그룹 구성이나 진입 설명을 다시 쓰는 신호로 본다.
 
 ## 주의사항 ^caveat
 
-<!-- 알려진 한계, 오용 패턴, 잘못된 기대 -->
+카탈로그에 등록됐다고 해서 모든 skill이 동일한 품질이나 유지 상태를 보장하지는 않는다.
+실제 사용 전에는 SKILL.md와 관련 코드를 함께 봐야 한다.
 
 ## 관련 소스
 

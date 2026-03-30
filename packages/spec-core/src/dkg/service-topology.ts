@@ -9,7 +9,6 @@
  */
 
 import { GraphRegistry } from "./graph-registry.js";
-import type { PrefixNode, DecisionNode, ObservationNode, ConsumerNode } from "./dkg.types.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -495,11 +494,12 @@ export function buildDependencyGraph(topo: ServiceTopologyRegistry): DependencyG
   const visited = new Set<string>();
   const queue: Array<{ id: string; depth: number }> = roots.map(r => ({ id: r, depth: 0 }));
   while (queue.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
     const { id, depth } = queue.shift()!;
     if (visited.has(id)) continue;
     visited.add(id);
     maxDepth = Math.max(maxDepth, depth);
-    for (const e of edges.filter(e => e.to === id)) {
+    for (const e of edges.filter(edge => edge.to === id)) {
       queue.push({ id: e.from, depth: depth + 1 });
     }
   }
@@ -583,7 +583,7 @@ export function buildTimeline(graph: GraphRegistry): TimelineEvent[] {
     }
   }
 
-  return events.sort((a, b) => a.date.localeCompare(b.date));
+  return events.toSorted((a, b) => a.date.localeCompare(b.date));
 }
 
 function compareVersions(a: string, b: string): number {

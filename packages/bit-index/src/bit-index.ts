@@ -33,7 +33,6 @@
 
 import {
   createBitFieldLayout,
-  bitPack,
   bitUnpack,
   bitPackToBytes,
   bitPackToHex,

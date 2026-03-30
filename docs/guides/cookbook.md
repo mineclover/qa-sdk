@@ -1,6 +1,8 @@
 ---
 def:
   id: cookbook-guide
+  type: knowledge
+  knowledge_kind: guide
   address: def_document:v2:136194
   scope: flow
   aspect: user_scenario
@@ -9,7 +11,7 @@ def:
   layer: mediation
   tags: [entry-point]
   links:
-    - target: spec-linking-standard
+    - target: spec-reference-system
       type: refines
 ---
 

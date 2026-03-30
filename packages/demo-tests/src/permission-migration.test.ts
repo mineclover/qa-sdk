@@ -30,7 +30,7 @@ describe("permission-engine × demo-snapshot 통합", () => {
     const ps = createV1WithDefaults();
 
     for (const f of DEMO_FEATURES_V1) {
-      expect(ps.rolesFor(f.id).sort()).toEqual([...f.grantedRoles].sort());
+      expect(ps.rolesFor(f.id).toSorted()).toEqual([...f.grantedRoles].toSorted());
     }
   });
 
@@ -104,7 +104,7 @@ describe("permission-engine × demo-snapshot 통합", () => {
     // 스냅샷 라운드트립
     const snap = engine.toSnapshot();
     const restored = ScopedEngine.fromSnapshot(snap);
-    expect(restored.scopeKeys().sort()).toEqual(["dev:asia", "prod:asia"]);
+    expect(restored.scopeKeys().toSorted()).toEqual(["dev:asia", "prod:asia"]);
     expect(restored.scope("prod:asia").grantCount).toBe(prod.grantCount);
   });
 

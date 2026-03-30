@@ -19,6 +19,11 @@ function permissionSvcRefs(version: string): SemanticRefEntries {
     refPrefix: "service",
     refVersion: "v1",
     entries: [
+      { values: { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" }, label: "dev/shopping-web/shop" },
+      { values: { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" }, label: "dev/shopping-backend/shop" },
+      { values: { env: "dev", region: "asia", svc_name: "auth", namespace: "shop" }, label: "dev/auth/shop" },
+      { values: { env: "dev", region: "asia", svc_name: "payment", namespace: "shop" }, label: "dev/payment/shop" },
+      { values: { env: "dev", region: "asia", svc_name: "gateway", namespace: "shop" }, label: "dev/gateway/shop" },
       { values: { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" }, label: "prod/shopping-web/shop" },
       { values: { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" }, label: "prod/shopping-web/cms" },
       { values: { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" }, label: "prod/shopping-backend/shop" },
@@ -55,6 +60,11 @@ function eventSvcRefs(version: string): SemanticRefEntries {
       { values: { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" }, label: "prod/auth" },
       { values: { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" }, label: "prod/payment" },
       { values: { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" }, label: "prod/gateway" },
+      { values: { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" }, label: "prod/shopping-web/cms" },
+      { values: { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "cms" }, label: "prod/shopping-backend/cms" },
+      { values: { env: "prod", region: "asia", svc_name: "auth", namespace: "cms" }, label: "prod/auth/cms" },
+      { values: { env: "prod", region: "asia", svc_name: "payment", namespace: "cms" }, label: "prod/payment/cms" },
+      { values: { env: "prod", region: "asia", svc_name: "gateway", namespace: "cms" }, label: "prod/gateway/cms" },
     ],
   };
 }

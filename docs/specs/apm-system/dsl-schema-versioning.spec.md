@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: cli
-  tags: []
+  tags: [structural, versioning, observability]
   links:
     - target: dsl-schemas-spec
       type: refines

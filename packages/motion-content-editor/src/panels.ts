@@ -3,7 +3,6 @@ import type {
   FlashParams,
   LiftParams,
   MotionCaptionCue,
-  MotionCompositionDef,
   MotionCompositionDefV2,
   MotionCompositionSchema,
   MotionCueRef,
@@ -13,7 +12,6 @@ import type {
   MotionParameterDef,
   MotionParameterValues,
   MotionRuntimeSnapshot,
-  MotionSceneDef,
   MotionSceneSequenceDef,
   MotionSequenceDef,
   MotionTargetDef,
@@ -1012,6 +1010,7 @@ export function renderSelectionDetail(
         }
         return {
           sequence,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- findIndex !== -1 → 해당 인덱스 존재 보장
           slot: slots[index]!,
           storedSlot: sequence.layers?.find((entry) => entry.layerId === layer.id),
           index,

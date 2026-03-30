@@ -994,7 +994,7 @@ describe("motion workspace service websocket routes", () => {
           ...workspaceAfterCreate.document.composition,
           parameters: workspaceAfterCreate.document.composition.parameters.map((parameter) =>
             parameter.id === "headline"
-              ? { ...parameter, label: "Headline v2" }
+              ? Object.assign({}, parameter, { label: "Headline v2" })
               : parameter
           ),
         },

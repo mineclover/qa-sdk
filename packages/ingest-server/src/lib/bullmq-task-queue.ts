@@ -302,7 +302,7 @@ function parseRedisConnection(redisUrl: string): BullConnectionOptions {
     parsed = new URL(redisUrl);
   } catch (error) {
     throw new Error(`REDIS_URL must be a valid URL: ${redisUrl}`, {
-      cause: error instanceof Error ? error : undefined,
+      cause: error,
     });
   }
 

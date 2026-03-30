@@ -300,6 +300,7 @@ export function buildLayerMap(
       layer = proj.defaultLayer ?? 1;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- layerBuckets initialized with all LayerLevel keys
     const bucket = layerBuckets.get(layer)!;
     const category = prefix.meta?.category ?? inferCategoryFromStructure(prefixId, prefix);
 
@@ -321,12 +322,13 @@ export function buildLayerMap(
   const usedLevels = [...layerBuckets.entries()]
     .filter(([, bucket]) => bucket.length > 0)
     .map(([level]) => level)
-    .sort();
+    .toSorted();
 
   const layers: LayerDefinition[] = usedLevels.map(level => ({
     level,
     name: layerNames[level] ?? `Layer ${level}`,
     description: layerDescs[level] ?? "",
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- layerBuckets initialized with all LayerLevel keys
     prefixes: layerBuckets.get(level)!,
   }));
 
@@ -414,7 +416,7 @@ export function extractTracePaths(
 
   const paths: TracePath[] = [];
   for (const [traceId, steps] of traceGroups) {
-    const sorted = steps.sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
+    const sorted = steps.toSorted((a, b) => compareTimestamps(a.timestamp, b.timestamp));
     const layerPath = sorted.map(s => s.layer);
     const t0 = new Date(sorted[0].timestamp).getTime();
     const t1 = new Date(sorted[sorted.length - 1].timestamp).getTime();
@@ -479,5 +481,5 @@ export function computeActivity(
     });
   }
 
-  return activities.sort((a, b) => b.count - a.count);
+  return activities.toSorted((a, b) => b.count - a.count);
 }

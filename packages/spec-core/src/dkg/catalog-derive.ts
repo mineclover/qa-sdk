@@ -83,15 +83,19 @@ export function deriveFromCatalog(catalog: DeriveInput, graph?: GraphRegistry): 
     for (const [label, dimRef] of Object.entries(prefix.dims)) {
       switch (dimRef.kind) {
         case "axis":
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="axis" guarantees axisId
           g.addEdge("composes", id, dimRef.axisId!, { dimKind: "axis", label });
           break;
 
         case "prefix_ref":
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="prefix_ref" guarantees prefixId
           g.addEdge("composes", id, dimRef.prefixId!, { dimKind: "prefix_ref", label });
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="prefix_ref" guarantees prefixId
           g.addEdge("references", id, dimRef.prefixId!, { label });
           break;
 
         case "table_ref":
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="table_ref" guarantees table
           g.addEdge("composes", id, dimRef.table!, { dimKind: "table_ref", label });
           break;
       }
@@ -113,16 +117,19 @@ export function deriveFromCatalog(catalog: DeriveInput, graph?: GraphRegistry): 
         switch (colRef.kind) {
           case "axis_ref":
             // 컬럼이 축 값을 저장 → table --composes--> axis
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="axis_ref" guarantees axisId
             g.addEdge("composes", id, colRef.axisId!, { dimKind: "column_axis", column: colName });
             break;
 
           case "prefix_ref":
             // 컬럼이 prefix 주소를 저장 → table --references--> prefix
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="prefix_ref" guarantees prefixId
             g.addEdge("references", id, colRef.prefixId!, { column: colName });
             break;
 
           case "table_ref":
             // FK → table --references--> table
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- kind="table_ref" guarantees table
             g.addEdge("references", id, colRef.table!, { column: colName, fk: true });
             break;
 

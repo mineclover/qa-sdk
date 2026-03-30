@@ -211,6 +211,7 @@ export function computeEffectiveConcerns(
 
     // BFS
     while (queue.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
       const { docId, path, viaLinkType } = queue.shift()!;
       if (visited.has(docId)) continue;
       visited.add(docId);
@@ -250,4 +251,21 @@ export function computeEffectiveConcerns(
 
   const allConcerns = [...new Set([...direct, ...inherited.map(i => i.concern)])];
   return { direct, inherited, all: allConcerns };
+}
+
+export function selectConcernContext(
+  concerns: EffectiveConcerns,
+  mode: "direct" | "transitive",
+): EffectiveConcerns {
+  if (mode === "transitive") {
+    return concerns;
+  }
+
+  const inherited = concerns.inherited.filter((item) => item.path.length <= 2);
+  const all = [...new Set([...concerns.direct, ...inherited.map((item) => item.concern)])];
+  return {
+    direct: concerns.direct,
+    inherited,
+    all,
+  };
 }

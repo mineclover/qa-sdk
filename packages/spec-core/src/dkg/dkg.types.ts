@@ -155,6 +155,8 @@ export interface ObservationNode {
   readonly suggestion?: ObservationSuggestion;
   /** 의도 분류. 미지정 시 source + suggestion으로 자동 판정 */
   readonly intent?: ObservationIntent;
+  /** feedback request 등 외부 브릿지 메타데이터 */
+  readonly metadata?: Readonly<Record<string, unknown>>;
   readonly resolution?: {
     readonly decisionId: string;
     readonly outcome: "accepted" | "deferred" | "rejected";

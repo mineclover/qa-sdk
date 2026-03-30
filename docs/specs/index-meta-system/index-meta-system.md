@@ -66,4 +66,4 @@ MetaRegistry, PrefixDecoder, 주소 직렬화 등 좌표 시스템의 런타임 
 - `user-scenarios`: MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합 시나리오.
 - `canonical-format-spec`: 4-표현 체계(A=tuple key, B=packed int, C=hierarchical id, D=hash/uuid)에서 C 표현(hierarchical id)의 정규 형식을 지정한다.
 - `dx-lifecycle-group`: CLI, codegen, wire format, 타입 추론을 동선과 계약으로 나눈 DX 그룹.
-- `indexing-benchmarks`: encode/decode 성능, 차원 확장 한계, cross-index 종단 탐사, 정보 디코딩 파이프라인, 리소스 사용량의 실측 데이터.
+- `benchmark-system`: encode/decode 성능, 차원 확장 한계, cross-index 종단 탐사, 정보 디코딩 파이프라인, 리소스 사용량의 실측 데이터.

@@ -5,8 +5,9 @@
 import { D1SqlDriver, SqlAddressStateStore } from "index-meta";
 import { createApp } from "./app.js";
 
+/** Cloudflare D1 바인딩 — D1SqlDriver가 받는 최소 인터페이스 */
 interface Env {
-  DB: any;
+  DB: import("index-meta").D1Database;
 }
 
 export default {

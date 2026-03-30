@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: []
+  tags: [structural, runtime, observability]
   links:
     - target: definition-service-system
       type: constrains

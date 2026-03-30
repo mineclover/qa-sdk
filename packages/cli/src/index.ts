@@ -9,46 +9,139 @@
  * CLI는 그 결과를 수집하여 일관적 인터페이스로 관리할 뿐이다.
  */
 
-import { parseArgs } from "node:util";
-import { pathToFileURL } from "node:url";
-import { gitScan } from "./commands/git-scan.js";
-import { register } from "./commands/register.js";
+import { parseArgs } from 'node:util';
+import { pathToFileURL } from 'node:url';
+import { gitScan } from './commands/git-scan.js';
+import { register } from './commands/register.js';
 import {
-  dkgReport, dkgAxes, dkgPrefixes, dkgDomains, dkgImpact, dkgOverlaps,
-  dkgHistory, dkgExport, dkgImport, dkgRefresh, dkgSkew, dkgCoverage, dkgSkills, dkgTransitions, dkgTransitionAnalysis, dkgAudit,
-  dkgService, dkgPrefix, dkgDsl, dkgOverview, dkgTables, dkgTable, dkgFlowSchemas, dkgFlowSchema,
-  dkgTrace, dkgDecide, dkgObserve, dkgClaim, dkgRelease,
-  dkgResolve, dkgLink, dkgTimeline, dkgClaims, dkgRun, dkgMetrics, dkgConverge, dkgSelfCheck,
-  dkgDecisionsExport, dkgDecisionsImport, dkgDecisionsList,
-  dkgObservations, dkgDecisions, dkgConstraints,
-  dkgPromoteScan, dkgScanTables,
-  dkgPublish, dkgVersion,
-  dkgAddEntry, dkgReset,
-  dkgSpecAdd, dkgSpecList, dkgSpecTransition,
+  dkgReport,
+  dkgAxes,
+  dkgPrefixes,
+  dkgDomains,
+  dkgImpact,
+  dkgOverlaps,
+  dkgHistory,
+  dkgExport,
+  dkgImport,
+  dkgRefresh,
+  dkgSkew,
+  dkgCoverage,
+  dkgSkills,
+  dkgTransitions,
+  dkgTransitionAnalysis,
+  dkgAudit,
+  dkgService,
+  dkgPrefix,
+  dkgDsl,
+  dkgOverview,
+  dkgTables,
+  dkgTable,
+  dkgFlowSchemas,
+  dkgFlowSchema,
+  dkgTrace,
+  dkgDecide,
+  dkgObserve,
+  dkgClaim,
+  dkgRelease,
+  dkgResolve,
+  dkgLink,
+  dkgTimeline,
+  dkgClaims,
+  dkgRun,
+  dkgMetrics,
+  dkgConverge,
+  dkgSelfCheck,
+  dkgDecisionsExport,
+  dkgDecisionsImport,
+  dkgDecisionsList,
+  dkgObservations,
+  dkgDecisions,
+  dkgConstraints,
+  dkgPromoteScan,
+  dkgScanTables,
+  dkgPublish,
+  dkgVersion,
+  dkgAddEntry,
+  dkgReset,
+  dkgSpecAdd,
+  dkgSpecList,
+  dkgSpecTransition,
   emitCliEvent,
-  dkgPatterns, dkgPatternStats,
+  dkgPatterns,
+  dkgPatternStats,
   dkgDiscoverLinks,
-  setCatalogContext, getCatalogRegistry,
-} from "./commands/dkg.js";
-import { loadCatalog } from "./catalog-loader.js";
-import type { Catalog } from "@qa-sdk/core";
+  setCatalogContext,
+  getCatalogRegistry,
+} from './commands/dkg.js';
+import { loadCatalog } from 'config-loader';
+import type { Catalog } from '@qa-sdk/core';
 import {
-  cliEncode, cliDecode, cliResolve, cliFindVersion, cliDeriveRefs,
-  cliImpact, cliListPrefixes, cliListAxes,
-} from "./commands/dx.js";
-import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from "./commands/obs.js";
-import { dryRun, type ChangeScenario } from "./commands/dry-run.js";
-import { schemaPull } from "./commands/schema-pull.js";
-import { codegen, runMigrationTest, type CodegenFormat } from "./commands/codegen.js";
-import { specList, specResolve, specValidate, specTrace, specDecode, specCodegen } from "./commands/spec.js";
-import type { CatalogInputLike, SchemaValidationInput } from "./commands/spec.js";
-import { init } from "./commands/init.js";
-import { syncObsidian } from "./commands/sync-obsidian.js";
-import { ingestHealth, ingestSend, ingestRecent, ingestTrace, ingestStatus, ingestServices } from "./commands/ingest.js";
-import { gateCheck, gateClassify, gateHealth, queryResolve, queryRules, queryHealth } from "./commands/service-query.js";
-import { serviceList, serviceShow, serviceOwners, serviceEndpoints, serviceHealth, serviceAppList, serviceAppShow } from "./commands/service.js";
-import { cliDef } from "./commands/def.js";
-import { motionInspect, motionValidate } from "./commands/motion.js";
+  cliEncode,
+  cliDecode,
+  cliResolve,
+  cliFindVersion,
+  cliDeriveRefs,
+  cliImpact,
+  cliListPrefixes,
+  cliListAxes,
+} from './commands/dx.js';
+import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from './commands/obs.js';
+import { dryRun, type ChangeScenario } from './commands/dry-run.js';
+import { schemaPull } from './commands/schema-pull.js';
+import { codegen, runMigrationTest, type CodegenFormat } from './commands/codegen.js';
+import {
+  specList,
+  specResolve,
+  specValidate,
+  specTrace,
+  specDecode,
+  specCodegen,
+} from './commands/spec.js';
+import type { CatalogInputLike, SchemaValidationInput } from './commands/spec.js';
+import { init } from './commands/init.js';
+import { syncObsidian } from './commands/sync-obsidian.js';
+import {
+  ingestHealth,
+  ingestSend,
+  ingestRecent,
+  ingestTrace,
+  ingestStatus,
+  ingestServices,
+  ingestMode,
+  ingestInsights,
+} from './commands/ingest.js';
+import {
+  gateCheck,
+  gateClassify,
+  gateHealth,
+  queryResolve,
+  queryRules,
+  queryHealth,
+} from './commands/service-query.js';
+import {
+  serviceList,
+  serviceShow,
+  serviceOwners,
+  serviceEndpoints,
+  serviceHealth,
+  serviceHealthAll,
+  serviceMode,
+  serviceAppList,
+  serviceAppShow,
+} from './commands/service.js';
+import { cliDef } from './commands/def.js';
+import {
+  reviewMark,
+  reviewStatus,
+  reviewDashboard,
+  reviewLog,
+  reviewRequest,
+  reviewRequests,
+  reviewShowRequest,
+  reviewBridgeRequest,
+} from './commands/review.js';
+import { cliQuality } from './commands/quality.js';
+import { motionInspect, motionValidate } from './commands/motion.js';
 import {
   motionApply,
   motionExport,
@@ -62,7 +155,7 @@ import {
   motionWorkspaceDelete,
   motionWorkspaceList,
   motionWorkspaceShow,
-} from "./commands/motion-workspace.js";
+} from './commands/motion-workspace.js';
 import {
   flowList,
   flowStart,
@@ -80,7 +173,7 @@ import {
   flowHistory,
   flowVerdict,
   flowJudge,
-} from "./commands/flow.js";
+} from './commands/flow.js';
 
 // ── Usage ────────────────────────────────────────────
 
@@ -91,7 +184,7 @@ Global Options:
   --catalog <path>       카탈로그 파일 (.ts/.js/.json). 기본: qa-sdk.config.ts 또는 DEMO_CATALOG
 
 Usage:
-  qa-sdk init [options]            새 카탈로그 프로젝트 스캐폴딩
+  qa-sdk init [options]            새 카탈로그 프로젝트 또는 Vite 소비처 스캐폴딩
   qa-sdk scan git [options]          Git 메타데이터 수집 → SchemaSnapshot
   qa-sdk register [options]          SchemaSnapshot → Registry 등록
   qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)
@@ -200,6 +293,7 @@ Usage:
   qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)
   qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)
   qa-sdk service health [--env dev]  전체 서비스 헬스체크 (registry 경유)
+  qa-sdk service health-all [--json] 모든 서비스 직접 health check (registry 불필요)
   qa-sdk service owners [--json]     prefix → 소유 서비스 맵
   qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
   qa-sdk service app list [--json]     Application 목록
@@ -220,10 +314,32 @@ Usage:
   qa-sdk query resolve --coord d=v   정책 해석
   qa-sdk query rules                 정책 규칙 목록
 
+  qa-sdk review mark <file|glob...> --reviewer <name> [--model <ai>]  리뷰 완료 기록
+  qa-sdk review status [--service <scope>] [--stale] [--unreviewed]  리뷰 상태 조회
+  qa-sdk review dashboard            서비스별 리뷰 커버리지
+  qa-sdk review log <file>           파일 리뷰 이력
+  qa-sdk review request [file|glob...] --reviewer <name> --purpose <text>  AI 피드백 요청 생성
+    [--dkg-target <nodeId>] [--decision-id <id>]
+    [--decision-type <type> --title <text> --rationale <text>]
+  qa-sdk review requests [--service <scope>] [--limit N]  피드백 요청 목록
+  qa-sdk review show-request <id>    피드백 요청 상세
+  qa-sdk review bridge-request <id> --target <nodeId>  피드백 요청을 DKG observation/decision에 연결
+
+  qa-sdk quality list [filters]      gate 문서 목록
+  qa-sdk quality status [bundle-id]  quality bundle 상태 요약
+  qa-sdk quality export [bundle-id] [--output=<path>]  quality bundle 상태 JSON export
+  qa-sdk quality bundle <bundle-id>  gate 번들 문서 조회
+  qa-sdk quality claims <bundle-id>  contract claim 감사표 조회
+  qa-sdk quality show <gate-id>      gate 문서 상세
+  qa-sdk quality run <gate-id>       gate 명령 실행
+  qa-sdk quality next <gate-id>      다음 gate/doc 추천
+  qa-sdk quality diagnose <gate-id>  최근 실패/검증 상태 진단
+
   qa-sdk catalog list                등록된 카탈로그 목록
   qa-sdk catalog info <id>           카탈로그 상세 정보
 
   qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화
+  qa-sdk def sync [--db path]        docs → local definition SQLite 동기화
   qa-sdk obs read <path>             Obsidian 노트 읽기
   qa-sdk obs search <query>          Obsidian 검색
   qa-sdk obs append <path> <content> Obsidian 노트에 내용 추가
@@ -271,13 +387,13 @@ let loadedCatalog: Catalog | undefined;
 export async function main(argv = process.argv.slice(2)) {
   const args = argv;
 
-  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
+  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log(USAGE);
     return;
   }
 
   // --catalog 글로벌 옵션 추출
-  const catalogIdx = args.indexOf("--catalog");
+  const catalogIdx = args.indexOf('--catalog');
   let catalogPath: string | undefined;
   const filteredArgs = [...args];
   if (catalogIdx >= 0 && catalogIdx + 1 < args.length) {
@@ -288,259 +404,282 @@ export async function main(argv = process.argv.slice(2)) {
   const sub = resolveSubcommand(filteredArgs);
 
   // 카탈로그가 필요한 명령 → loadCatalog() 실행
-  const DX_COMMANDS = new Set(["encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact"]);
+  const DX_COMMANDS = new Set([
+    'encode',
+    'decode',
+    'resolve',
+    'find-version',
+    'list-prefixes',
+    'list-axes',
+    'derive-refs',
+    'impact',
+  ]);
   // codegen --registry 시에는 로컬 카탈로그 로딩 불필요
-  const hasRegistryFlag = filteredArgs.includes("--registry");
-  const needsCatalog = catalogPath || sub.name.startsWith("dkg") || sub.name.startsWith("catalog") || (sub.name === "codegen" && !hasRegistryFlag) || DX_COMMANDS.has(sub.name);
+  const hasRegistryFlag = filteredArgs.includes('--registry');
+  const needsCatalog =
+    catalogPath ||
+    sub.name.startsWith('dkg') ||
+    sub.name.startsWith('catalog') ||
+    (sub.name === 'codegen' && !hasRegistryFlag) ||
+    DX_COMMANDS.has(sub.name);
   if (needsCatalog) {
     loadedCatalog = await loadCatalog(catalogPath);
     setCatalogContext(loadedCatalog);
   }
 
   // 모든 CLI 명령을 cli_event 좌표로 기록
-  try { emitCliEvent(sub.name); } catch { /* 관측 실패는 명령 실행에 영향 없음 */ }
+  try {
+    emitCliEvent(sub.name);
+  } catch {
+    /* 관측 실패는 명령 실행에 영향 없음 */
+  }
 
   switch (sub.name) {
-    case "init":
+    case 'init':
       return runInit(sub.rest);
-    case "scan git":
+    case 'scan git':
       return runScanGit(sub.rest);
-    case "register":
+    case 'register':
       return runRegister(sub.rest);
-    case "dry-run":
+    case 'dry-run':
       return runDryRun(sub.rest);
-    case "codegen":
+    case 'codegen':
       return runCodegen(sub.rest);
-    case "inspect":
+    case 'inspect':
       return runInspect(sub.rest);
-    case "motion validate":
+    case 'motion validate':
       return motionValidate(sub.rest);
-    case "motion inspect":
+    case 'motion inspect':
       return motionInspect(sub.rest);
-    case "motion workspace list":
+    case 'motion workspace list':
       return motionWorkspaceList(sub.rest);
-    case "motion workspace show":
+    case 'motion workspace show':
       return motionWorkspaceShow(sub.rest);
-    case "motion workspace create":
+    case 'motion workspace create':
       return motionWorkspaceCreate(sub.rest);
-    case "motion workspace delete":
+    case 'motion workspace delete':
       return motionWorkspaceDelete(sub.rest);
-    case "motion scene list":
+    case 'motion scene list':
       return motionSceneList(sub.rest);
-    case "motion scene show":
+    case 'motion scene show':
       return motionSceneShow(sub.rest);
-    case "motion scene create":
+    case 'motion scene create':
       return motionSceneCreate(sub.rest);
-    case "motion scene delete":
+    case 'motion scene delete':
       return motionSceneDelete(sub.rest);
-    case "motion export":
+    case 'motion export':
       return motionExport(sub.rest);
-    case "motion import":
+    case 'motion import':
       return motionImport(sub.rest);
-    case "motion apply":
+    case 'motion apply':
       return motionApply(sub.rest);
-    case "motion preview":
+    case 'motion preview':
       return motionPreview(sub.rest);
-    case "spec list":
+    case 'spec list':
       return runSpecList(sub.rest);
-    case "spec resolve":
+    case 'spec resolve':
       return runSpecResolve(sub.rest);
-    case "spec validate":
+    case 'spec validate':
       return runSpecValidate(sub.rest);
-    case "spec trace":
+    case 'spec trace':
       return runSpecTrace(sub.rest);
-    case "spec decode":
+    case 'spec decode':
       return runSpecDecode(sub.rest);
-    case "spec codegen":
+    case 'spec codegen':
       return runSpecCodegen(sub.rest);
-    case "spec drift": {
-      const { cliSpecDrift } = await import("./commands/spec-drift.js");
+    case 'spec drift': {
+      const { cliSpecDrift } = await import('./commands/spec-drift.js');
       return cliSpecDrift(sub.rest);
     }
 
     // Obsidian 동기화
-    case "sync-obsidian":
+    case 'sync-obsidian':
       return runSyncObsidian(sub.rest);
 
     // Obsidian 조회/수정
-    case "obs read":
-      if (sub.rest[0]) obsRead(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
-      else console.error("Usage: qa-sdk obs read <path>");
+    case 'obs read':
+      if (sub.rest[0]) obsRead(sub.rest[0], sub.rest[sub.rest.indexOf('--vault') + 1]);
+      else console.error('Usage: qa-sdk obs read <path>');
       return;
-    case "obs search":
-      if (sub.rest[0]) obsSearch(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
-      else console.error("Usage: qa-sdk obs search <query>");
+    case 'obs search':
+      if (sub.rest[0]) obsSearch(sub.rest[0], sub.rest[sub.rest.indexOf('--vault') + 1]);
+      else console.error('Usage: qa-sdk obs search <query>');
       return;
-    case "obs append": {
+    case 'obs append': {
       const appendPath = sub.rest[0];
-      const contentIdx = sub.rest.indexOf("--content");
+      const contentIdx = sub.rest.indexOf('--content');
       if (!appendPath || contentIdx < 0) {
         console.error('Usage: qa-sdk obs append <path> --content "..."');
         return;
       }
-      obsAppend(appendPath, sub.rest[contentIdx + 1], sub.rest[sub.rest.indexOf("--vault") + 1]);
+      obsAppend(appendPath, sub.rest[contentIdx + 1], sub.rest[sub.rest.indexOf('--vault') + 1]);
       return;
     }
-    case "obs backlinks":
-      if (sub.rest[0]) obsBacklinks(sub.rest[0], sub.rest[sub.rest.indexOf("--vault") + 1]);
-      else console.error("Usage: qa-sdk obs backlinks <name>");
+    case 'obs backlinks':
+      if (sub.rest[0]) obsBacklinks(sub.rest[0], sub.rest[sub.rest.indexOf('--vault') + 1]);
+      else console.error('Usage: qa-sdk obs backlinks <name>');
       return;
-    case "obs list":
-      obsList(sub.rest[0] ?? "", sub.rest[sub.rest.indexOf("--vault") + 1]);
+    case 'obs list':
+      obsList(sub.rest[0] ?? '', sub.rest[sub.rest.indexOf('--vault') + 1]);
       return;
-    case "obs stats":
-      obsStats(sub.rest[sub.rest.indexOf("--vault") + 1]);
+    case 'obs stats':
+      obsStats(sub.rest[sub.rest.indexOf('--vault') + 1]);
       return;
 
     // DX 명령어
-    case "encode":
+    case 'encode':
       return runEncode(sub.rest);
-    case "decode":
+    case 'decode':
       return runDecode(sub.rest);
-    case "resolve":
+    case 'resolve':
       return runResolve(sub.rest);
-    case "find-version":
+    case 'find-version':
       return runFindVersion(sub.rest);
-    case "list-prefixes":
-      cliListPrefixes(loadedCatalog!, { json: sub.rest.includes("--json") });
+    case 'list-prefixes':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
+      cliListPrefixes(loadedCatalog!, { json: sub.rest.includes('--json') });
       return;
-    case "list-axes":
-      cliListAxes(loadedCatalog!, { json: sub.rest.includes("--json") });
+    case 'list-axes':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
+      cliListAxes(loadedCatalog!, { json: sub.rest.includes('--json') });
       return;
-    case "derive-refs":
+    case 'derive-refs':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
       cliDeriveRefs(loadedCatalog!, { check: true });
       return;
-    case "impact":
+    case 'impact':
       return runImpactCmd(sub.rest);
 
     // DKG 명령어
-    case "dkg report":
+    case 'dkg report':
       dkgReport();
       return;
-    case "dkg refresh":
+    case 'dkg refresh':
       dkgRefresh();
       return;
-    case "dkg axes": {
-      const groupIdx = sub.rest.indexOf("--group-by");
+    case 'dkg axes': {
+      const groupIdx = sub.rest.indexOf('--group-by');
       const groupBy = groupIdx >= 0 ? sub.rest[groupIdx + 1] : undefined;
       dkgAxes({ ...parsePage(sub.rest), groupBy });
       return;
     }
-    case "dkg prefixes":
+    case 'dkg prefixes':
       dkgPrefixes(parsePage(sub.rest));
       return;
-    case "dkg domains":
+    case 'dkg domains':
       dkgDomains(parsePage(sub.rest));
       return;
-    case "dkg flow-schemas":
+    case 'dkg flow-schemas':
       dkgFlowSchemas(parsePage(sub.rest));
       return;
-    case "dkg flow-schema":
+    case 'dkg flow-schema':
       if (sub.rest[0]) dkgFlowSchema(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg flow-schema <id>");
+      else console.error('Usage: qa-sdk dkg flow-schema <id>');
       return;
-    case "dkg impact":
+    case 'dkg impact':
       if (sub.rest[0]) dkgImpact(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg impact <axisId>");
+      else console.error('Usage: qa-sdk dkg impact <axisId>');
       return;
-    case "dkg overlaps":
+    case 'dkg overlaps':
       dkgOverlaps();
       return;
-    case "dkg history":
-      dkgHistory({ limit: parseInt(sub.rest[sub.rest.indexOf("--limit") + 1]) || 10 });
+    case 'dkg history':
+      dkgHistory({ limit: parseInt(sub.rest[sub.rest.indexOf('--limit') + 1]) || 10 });
       return;
-    case "dkg skew":
+    case 'dkg skew':
       dkgSkew();
       return;
-    case "dkg coverage":
+    case 'dkg coverage':
       dkgCoverage();
       return;
-    case "dkg skills":
-      dkgSkills();
+    case 'dkg skills':
+      dkgSkills(sub.rest[0]);
       return;
-    case "dkg audit":
+    case 'dkg audit':
       dkgAudit();
       return;
-    case "dkg transitions":
+    case 'dkg transitions':
       dkgTransitions(sub.rest[0]);
       return;
-    case "dkg transition": {
+    case 'dkg transition': {
       const arg = sub.rest[0];
-      if (arg === "coverage" || arg === "orphans" || arg === "violations") {
+      if (arg === 'coverage' || arg === 'orphans' || arg === 'violations') {
         dkgTransitionAnalysis(arg);
       } else {
         dkgTransitions(arg);
       }
       return;
     }
-    case "dkg export":
-      dkgExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
+    case 'dkg export':
+      dkgExport({ output: sub.rest[sub.rest.indexOf('--output') + 1] });
       return;
-    case "dkg import":
+    case 'dkg import':
       if (sub.rest[0]) dkgImport({ input: sub.rest[0] });
-      else console.error("Usage: qa-sdk dkg import <path>");
+      else console.error('Usage: qa-sdk dkg import <path>');
       return;
-    case "dkg decisions export":
-      dkgDecisionsExport({ output: sub.rest[sub.rest.indexOf("--output") + 1] });
+    case 'dkg decisions export':
+      dkgDecisionsExport({ output: sub.rest[sub.rest.indexOf('--output') + 1] });
       return;
-    case "dkg decisions import":
+    case 'dkg decisions import':
       if (sub.rest[0]) dkgDecisionsImport({ input: sub.rest[0] });
-      else console.error("Usage: qa-sdk dkg decisions import <path>");
+      else console.error('Usage: qa-sdk dkg decisions import <path>');
       return;
-    case "dkg decisions list": {
-      const dlLimit = sub.rest.indexOf("--limit");
-      const dlKind = sub.rest.indexOf("--kind");
+    case 'dkg decisions list': {
+      const dlLimit = sub.rest.indexOf('--limit');
+      const dlKind = sub.rest.indexOf('--kind');
       dkgDecisionsList({
         limit: dlLimit >= 0 ? parseInt(sub.rest[dlLimit + 1]) : undefined,
         kind: dlKind >= 0 ? sub.rest[dlKind + 1] : undefined,
       });
       return;
     }
-    case "dkg observations":
+    case 'dkg observations':
       dkgObservations(parsePage(sub.rest));
       return;
-    case "dkg decisions":
+    case 'dkg decisions':
       dkgDecisions(parsePage(sub.rest));
       return;
-    case "dkg constraints":
+    case 'dkg constraints':
       dkgConstraints(parsePage(sub.rest));
       return;
-    case "dkg service":
+    case 'dkg service':
       dkgService(sub.rest[0]);
       return;
-    case "dkg prefix":
+    case 'dkg prefix':
       if (sub.rest[0]) dkgPrefix(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg prefix <id>");
+      else console.error('Usage: qa-sdk dkg prefix <id>');
       return;
-    case "dkg dsl":
+    case 'dkg dsl':
       dkgDsl(sub.rest[0]);
       return;
-    case "dkg tables":
+    case 'dkg tables':
       dkgTables();
       return;
-    case "dkg table":
+    case 'dkg table':
       if (sub.rest[0]) dkgTable(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg table <id>");
+      else console.error('Usage: qa-sdk dkg table <id>');
       return;
-    case "dkg scan-tables":
+    case 'dkg scan-tables':
       dkgScanTables();
       return;
-    case "dkg overview":
+    case 'dkg overview':
       dkgOverview();
       return;
-    case "dkg claims":
+    case 'dkg claims':
       dkgClaims();
       return;
-    case "dkg timeline":
-      dkgTimeline({ open: sub.rest.includes("--open") });
+    case 'dkg timeline':
+      dkgTimeline({ open: sub.rest.includes('--open') });
       return;
-    case "dkg resolve": {
+    case 'dkg resolve': {
       const resObsId = sub.rest[0];
-      const resDecIdx = sub.rest.indexOf("--decision");
-      const resOutIdx = sub.rest.indexOf("--outcome");
-      const resNoteIdx = sub.rest.indexOf("--note");
+      const resDecIdx = sub.rest.indexOf('--decision');
+      const resOutIdx = sub.rest.indexOf('--outcome');
+      const resNoteIdx = sub.rest.indexOf('--note');
       if (!resObsId || resDecIdx < 0 || resOutIdx < 0) {
-        console.error("Usage: qa-sdk dkg resolve <obsId> --decision <decId> --outcome accepted|deferred|rejected [--note ...]");
+        console.error(
+          'Usage: qa-sdk dkg resolve <obsId> --decision <decId> --outcome accepted|deferred|rejected [--note ...]',
+        );
         return;
       }
       dkgResolve({
@@ -551,142 +690,153 @@ export async function main(argv = process.argv.slice(2)) {
       });
       return;
     }
-    case "dkg link": {
+    case 'dkg link': {
       const linkObsId = sub.rest[0];
-      const linkDecIdx = sub.rest.indexOf("--decision");
+      const linkDecIdx = sub.rest.indexOf('--decision');
       if (!linkObsId || linkDecIdx < 0) {
-        console.error("Usage: qa-sdk dkg link <obsId> --decision <decId>");
+        console.error('Usage: qa-sdk dkg link <obsId> --decision <decId>');
         return;
       }
       dkgLink({ obsId: linkObsId, decisionId: sub.rest[linkDecIdx + 1] });
       return;
     }
-    case "dkg run": {
+    case 'dkg run': {
       const runSkillId = sub.rest[0];
       if (!runSkillId) {
-        console.error("Usage: qa-sdk dkg run <skillId> [args...]");
-        console.error("  qa-sdk dkg skills 로 목록 확인");
+        console.error('Usage: qa-sdk dkg run <skillId> [args...]');
+        console.error('  qa-sdk dkg skills 로 목록 확인');
         return;
       }
       dkgRun(runSkillId, sub.rest.slice(1));
       return;
     }
-    case "dkg metrics":
+    case 'dkg metrics':
       dkgMetrics();
       return;
-    case "dkg converge":
+    case 'dkg converge':
       dkgConverge({
-        persist: sub.rest.includes("--persist"),
-        verbose: sub.rest.includes("--verbose"),
+        persist: sub.rest.includes('--persist'),
+        verbose: sub.rest.includes('--verbose'),
       });
       return;
-    case "dkg spec add": {
-      const saId = sub.rest[sub.rest.indexOf("--id") + 1];
-      const saType = sub.rest[sub.rest.indexOf("--type") + 1];
-      const saTitle = sub.rest[sub.rest.indexOf("--title") + 1];
-      const saRatIdx = sub.rest.indexOf("--rationale");
-      const saGovIdx = sub.rest.indexOf("--governs");
+    case 'dkg spec add': {
+      const saId = sub.rest[sub.rest.indexOf('--id') + 1];
+      const saType = sub.rest[sub.rest.indexOf('--type') + 1];
+      const saTitle = sub.rest[sub.rest.indexOf('--title') + 1];
+      const saRatIdx = sub.rest.indexOf('--rationale');
+      const saGovIdx = sub.rest.indexOf('--governs');
       if (!saId || !saType || !saTitle) {
-        console.error('Usage: qa-sdk dkg spec add --id <id> --type <type> --title "..." [--rationale "..."] [--governs <id,...>]');
+        console.error(
+          'Usage: qa-sdk dkg spec add --id <id> --type <type> --title "..." [--rationale "..."] [--governs <id,...>]',
+        );
         return;
       }
       dkgSpecAdd({
-        id: saId, type: saType, title: saTitle,
+        id: saId,
+        type: saType,
+        title: saTitle,
         rationale: saRatIdx >= 0 ? sub.rest[saRatIdx + 1] : undefined,
-        governs: saGovIdx >= 0 ? sub.rest[saGovIdx + 1].split(",") : undefined,
+        governs: saGovIdx >= 0 ? sub.rest[saGovIdx + 1].split(',') : undefined,
       });
       return;
     }
-    case "dkg spec list":
+    case 'dkg spec list':
       dkgSpecList();
       return;
-    case "dkg spec transition": {
+    case 'dkg spec transition': {
       const stSpecId = sub.rest[0];
       const stLifecycle = sub.rest[1];
       if (!stSpecId || !stLifecycle) {
-        console.error("Usage: qa-sdk dkg spec transition <specId> <draft|active|deprecated>");
+        console.error('Usage: qa-sdk dkg spec transition <specId> <draft|active|deprecated>');
         return;
       }
       dkgSpecTransition(stSpecId, stLifecycle);
       return;
     }
-    case "dkg reset": {
-      const resetTarget = sub.rest[0] ?? "all";
-      dkgReset(resetTarget, { confirm: sub.rest.includes("--confirm") });
+    case 'dkg reset': {
+      const resetTarget = sub.rest[0] ?? 'all';
+      dkgReset(resetTarget, { confirm: sub.rest.includes('--confirm') });
       return;
     }
-    case "dkg promote":
+    case 'dkg promote':
       dkgPromoteScan();
       return;
-    case "dkg add-entry": {
+    case 'dkg add-entry': {
       const aeAxisId = sub.rest[0];
       const aeEntry = sub.rest[1];
       if (!aeAxisId || !aeEntry) {
-        console.error("Usage: qa-sdk dkg add-entry <axis> <entry> [--apply] [--expand-capacity] [--write-file <path>]");
+        console.error(
+          'Usage: qa-sdk dkg add-entry <axis> <entry> [--apply] [--expand-capacity] [--write-file <path>]',
+        );
         return;
       }
-      const aeWriteIdx = sub.rest.indexOf("--write-file");
+      const aeWriteIdx = sub.rest.indexOf('--write-file');
       dkgAddEntry({
         axisId: aeAxisId,
         entry: aeEntry,
-        apply: sub.rest.includes("--apply"),
-        expandCapacity: sub.rest.includes("--expand-capacity"),
+        apply: sub.rest.includes('--apply'),
+        expandCapacity: sub.rest.includes('--expand-capacity'),
         writeFile: aeWriteIdx >= 0 ? sub.rest[aeWriteIdx + 1] : undefined,
       });
       return;
     }
-    case "dkg publish": {
-      const pubRegIdx = sub.rest.indexOf("--registry");
-      const pubVerIdx = sub.rest.indexOf("--version");
+    case 'dkg publish': {
+      const pubRegIdx = sub.rest.indexOf('--registry');
+      const pubVerIdx = sub.rest.indexOf('--version');
       await dkgPublish({
         registry: pubRegIdx >= 0 ? sub.rest[pubRegIdx + 1] : undefined,
         versionId: pubVerIdx >= 0 ? sub.rest[pubVerIdx + 1] : undefined,
       });
       return;
     }
-    case "dkg version": {
-      const vAction = sub.rest[0] ?? "list";
-      const vPrefix = sub.rest[1] ?? "";
-      const vVersionId = sub.rest[2] ?? "";
-      const vRegIdx = sub.rest.indexOf("--registry");
-      await dkgVersion(vAction, vPrefix, vVersionId, { registry: vRegIdx >= 0 ? sub.rest[vRegIdx + 1] : undefined });
+    case 'dkg version': {
+      const vAction = sub.rest[0] ?? 'list';
+      const vPrefix = sub.rest[1] ?? '';
+      const vVersionId = sub.rest[2] ?? '';
+      const vRegIdx = sub.rest.indexOf('--registry');
+      await dkgVersion(vAction, vPrefix, vVersionId, {
+        registry: vRegIdx >= 0 ? sub.rest[vRegIdx + 1] : undefined,
+      });
       return;
     }
-    case "dkg self-check":
-      dkgSelfCheck({ apply: sub.rest.includes("--apply"), fast: sub.rest.includes("--fast") });
+    case 'dkg self-check':
+      dkgSelfCheck({ apply: sub.rest.includes('--apply'), fast: sub.rest.includes('--fast') });
       return;
-    case "dkg patterns":
+    case 'dkg patterns':
       dkgPatterns();
       return;
-    case "dkg pattern-stats":
+    case 'dkg pattern-stats':
       dkgPatternStats();
       return;
-    case "dkg discover-links":
+    case 'dkg discover-links':
       dkgDiscoverLinks();
       return;
-    case "dkg diagram": {
-      const { dkgDiagram } = await import("./commands/dkg.js");
+    case 'dkg diagram': {
+      const { dkgDiagram } = await import('./commands/dkg.js');
       await dkgDiagram(sub.rest);
       break;
     }
-    case "dkg trace":
+    case 'dkg trace':
       if (sub.rest[0]) dkgTrace(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg trace <nodeId>");
+      else console.error('Usage: qa-sdk dkg trace <nodeId>');
       return;
-    case "dkg decide": {
-      const targetIdx = sub.rest.indexOf("--target");
-      const typeIdx = sub.rest.indexOf("--type");
-      const titleIdx = sub.rest.indexOf("--title");
-      const rationaleIdx = sub.rest.indexOf("--rationale");
+    case 'dkg decide': {
+      const targetIdx = sub.rest.indexOf('--target');
+      const typeIdx = sub.rest.indexOf('--type');
+      const titleIdx = sub.rest.indexOf('--title');
+      const rationaleIdx = sub.rest.indexOf('--rationale');
       if (targetIdx < 0 || typeIdx < 0 || titleIdx < 0 || rationaleIdx < 0) {
-        console.error('Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..." [--alternatives "alt1|alt2"] [--confidence 0.8] [--spec <specId>] [--legacy] [--force]');
-        console.error("  types: capacity, new-axis, new-prefix, dim-add, merge, deprecate");
+        console.error(
+          'Usage: qa-sdk dkg decide --target <id> --type <type> --title "..." --rationale "..." [--alternatives "alt1|alt2"] [--confidence 0.8] [--spec <specId>] [--legacy] [--force]',
+        );
+        console.error('  types: capacity, new-axis, new-prefix, dim-add, merge, deprecate');
         return;
       }
-      const specIdx = sub.rest.indexOf("--spec");
-      const alternativesIdx = sub.rest.indexOf("--alternatives");
-      const confidenceIdx = sub.rest.indexOf("--confidence");
-      const confidence = confidenceIdx >= 0 ? Number.parseFloat(sub.rest[confidenceIdx + 1] ?? "") : undefined;
+      const specIdx = sub.rest.indexOf('--spec');
+      const alternativesIdx = sub.rest.indexOf('--alternatives');
+      const confidenceIdx = sub.rest.indexOf('--confidence');
+      const confidence =
+        confidenceIdx >= 0 ? Number.parseFloat(sub.rest[confidenceIdx + 1] ?? '') : undefined;
       const hasValidConfidence = confidence !== undefined && Number.isFinite(confidence);
       if (confidenceIdx >= 0 && (!hasValidConfidence || confidence < 0 || confidence > 1)) {
         console.error('  --confidence는 0~1 숫자여야 합니다.');
@@ -701,24 +851,28 @@ export async function main(argv = process.argv.slice(2)) {
         type: sub.rest[typeIdx + 1],
         title: sub.rest[titleIdx + 1],
         rationale: sub.rest[rationaleIdx + 1],
-        alternatives: alternativesIdx >= 0
-          ? sub.rest[alternativesIdx + 1].split("|").map((value) => value.trim()).filter(Boolean)
-          : undefined,
+        alternatives:
+          alternativesIdx >= 0
+            ? sub.rest[alternativesIdx + 1]
+                .split('|')
+                .map((value) => value.trim())
+                .filter(Boolean)
+            : undefined,
         confidence,
         spec: specIdx >= 0 ? sub.rest[specIdx + 1] : undefined,
-        legacy: sub.rest.includes("--legacy"),
-        force: sub.rest.includes("--force"),
+        legacy: sub.rest.includes('--legacy'),
+        force: sub.rest.includes('--force'),
       });
       return;
     }
-    case "dkg observe": {
-      const obsTargetIdx = sub.rest.indexOf("--target");
-      const findingIdx = sub.rest.indexOf("--finding");
+    case 'dkg observe': {
+      const obsTargetIdx = sub.rest.indexOf('--target');
+      const findingIdx = sub.rest.indexOf('--finding');
       if (obsTargetIdx < 0 || findingIdx < 0) {
         console.error('Usage: qa-sdk dkg observe --target <id> --finding "..."');
         return;
       }
-      const suggIdx = sub.rest.indexOf("--suggestion");
+      const suggIdx = sub.rest.indexOf('--suggestion');
       dkgObserve({
         target: sub.rest[obsTargetIdx + 1],
         finding: sub.rest[findingIdx + 1],
@@ -726,118 +880,221 @@ export async function main(argv = process.argv.slice(2)) {
       });
       return;
     }
-    case "dkg claim": {
+    case 'dkg claim': {
       const claimTarget = sub.rest[0];
-      const byIdx = sub.rest.indexOf("--by");
+      const byIdx = sub.rest.indexOf('--by');
       if (!claimTarget || byIdx < 0) {
         console.error('Usage: qa-sdk dkg claim <id> --by <worker> [--reason "..."]');
         return;
       }
-      const reasonIdx = sub.rest.indexOf("--reason");
-      dkgClaim({ target: claimTarget, by: sub.rest[byIdx + 1], reason: reasonIdx >= 0 ? sub.rest[reasonIdx + 1] : undefined });
+      const reasonIdx = sub.rest.indexOf('--reason');
+      dkgClaim({
+        target: claimTarget,
+        by: sub.rest[byIdx + 1],
+        reason: reasonIdx >= 0 ? sub.rest[reasonIdx + 1] : undefined,
+      });
       return;
     }
-    case "dkg release":
+    case 'dkg release':
       if (sub.rest[0]) dkgRelease(sub.rest[0]);
-      else console.error("Usage: qa-sdk dkg release <id>");
+      else console.error('Usage: qa-sdk dkg release <id>');
       return;
 
     // Service 명령어
-    case "service list":
+    case 'service list':
       await serviceList(sub.rest);
       return;
-    case "service show":
+    case 'service show':
       await serviceShow(sub.rest);
       return;
-    case "service health":
+    case 'service health':
       await serviceHealth(sub.rest);
       return;
-    case "service owners":
+    case 'service health-all':
+      await serviceHealthAll(sub.rest);
+      return;
+    case 'service mode':
+      await serviceMode(sub.rest);
+      return;
+    case 'service owners':
       await serviceOwners(sub.rest);
       return;
-    case "service app list":
+    case 'service app list':
       serviceAppList(sub.rest);
       return;
-    case "service app show":
+    case 'service app show':
       serviceAppShow(sub.rest);
       return;
-    case "service endpoints":
+    case 'service endpoints':
       await serviceEndpoints(sub.rest);
       return;
 
     // Ingest 명령어
-    case "ingest health":
+    case 'ingest health':
       await ingestHealth(sub.rest);
       return;
-    case "ingest send":
+    case 'ingest send':
       await ingestSend(sub.rest);
       return;
-    case "ingest recent":
+    case 'ingest recent':
       await ingestRecent(sub.rest);
       return;
-    case "ingest trace":
+    case 'ingest trace':
       await ingestTrace(sub.rest);
       return;
-    case "ingest status":
+    case 'ingest status':
       await ingestStatus(sub.rest);
       return;
-    case "ingest services":
+    case 'ingest services':
       await ingestServices(sub.rest);
+      return;
+    case 'ingest mode':
+      await ingestMode(sub.rest);
+      return;
+    case 'ingest insights':
+      await ingestInsights(sub.rest);
       return;
 
     // Gate 명령어
-    case "gate health":
+    case 'gate health':
       await gateHealth(sub.rest);
       return;
-    case "gate check":
+    case 'gate check':
       await gateCheck(sub.rest);
       return;
-    case "gate classify":
+    case 'gate classify':
       await gateClassify(sub.rest);
       return;
 
     // Query 명령어
-    case "query health":
+    case 'query health':
       await queryHealth(sub.rest);
       return;
-    case "query resolve":
+    case 'query resolve':
       await queryResolve(sub.rest);
       return;
-    case "query rules":
+    case 'query rules':
       await queryRules(sub.rest);
       return;
 
     // Definition Catalog 명령어
-    case "def scan":     await cliDef(["scan"]); return;
-    case "def topdown":  await cliDef(["topdown", ...sub.rest]); return;
-    case "def bottomup": await cliDef(["bottomup", ...sub.rest]); return;
-    case "def context":  await cliDef(["context", ...sub.rest]); return;
-    case "def audit":    await cliDef(["audit", ...sub.rest]); return;
-    case "def validate": await cliDef(["validate"]); return;
-    case "def stats":    await cliDef(["stats"]); return;
-    case "def sync":     await cliDef(["sync", ...sub.rest]); return;
-    case "def read":     await cliDef(["read", ...sub.rest]); return;
-    case "def list":     await cliDef(["list", ...sub.rest]); return;
-    case "def get":      await cliDef(["get", ...sub.rest]); return;
-    case "def children": await cliDef(["children", ...sub.rest]); return;
-    case "def parent":   await cliDef(["parent", ...sub.rest]); return;
-    case "def incoming": await cliDef(["incoming", ...sub.rest]); return;
-    case "def search":   await cliDef(["search", ...sub.rest]); return;
-    case "def impact":   await cliDef(["impact", ...sub.rest]); return;
-    case "def check":    await cliDef(["check", ...sub.rest]); return;
-    case "def audit-db": await cliDef(["audit-db"]); return;
-    case "def overview": await cliDef(["overview"]); return;
-    case "def link-rules": await cliDef(["link-rules"]); return;
-    case "def find-by-file": await cliDef(["find-by-file", ...sub.rest]); return;
-    case "def guide": await cliDef(["guide", ...sub.rest]); return;
-    case "def":          await cliDef(sub.rest); return;
+    case 'def scan':
+      await cliDef(['scan']);
+      return;
+    case 'def topdown':
+      await cliDef(['topdown', ...sub.rest]);
+      return;
+    case 'def bottomup':
+      await cliDef(['bottomup', ...sub.rest]);
+      return;
+    case 'def context':
+      await cliDef(['context', ...sub.rest]);
+      return;
+    case 'def boundary':
+      await cliDef(['boundary', ...sub.rest]);
+      return;
+    case 'def boundary-context':
+      await cliDef(['boundary-context', ...sub.rest]);
+      return;
+    case 'def audit':
+      await cliDef(['audit', ...sub.rest]);
+      return;
+    case 'def validate':
+      await cliDef(['validate']);
+      return;
+    case 'def stats':
+      await cliDef(['stats']);
+      return;
+    case 'def sync':
+      await cliDef(['sync', ...sub.rest]);
+      return;
+    case 'def read':
+      await cliDef(['read', ...sub.rest]);
+      return;
+    case 'def list':
+      await cliDef(['list', ...sub.rest]);
+      return;
+    case 'def get':
+      await cliDef(['get', ...sub.rest]);
+      return;
+    case 'def children':
+      await cliDef(['children', ...sub.rest]);
+      return;
+    case 'def parent':
+      await cliDef(['parent', ...sub.rest]);
+      return;
+    case 'def incoming':
+      await cliDef(['incoming', ...sub.rest]);
+      return;
+    case 'def search':
+      await cliDef(['search', ...sub.rest]);
+      return;
+    case 'def impact':
+      await cliDef(['impact', ...sub.rest]);
+      return;
+    case 'def check':
+      await cliDef(['check', ...sub.rest]);
+      return;
+    case 'def audit-db':
+      await cliDef(['audit-db']);
+      return;
+    case 'def overview':
+      await cliDef(['overview']);
+      return;
+    case 'def link-rules':
+      await cliDef(['link-rules']);
+      return;
+    case 'def find-by-file':
+      await cliDef(['find-by-file', ...sub.rest]);
+      return;
+    case 'def guide':
+      await cliDef(['guide', ...sub.rest]);
+      return;
+    case 'def state':
+      await cliDef(['state', ...sub.rest]);
+      return;
+    case 'def':
+      await cliDef(sub.rest);
+      return;
+
+    // Quality Gate 명령어
+    case 'quality list':
+      await cliQuality(['list', ...sub.rest]);
+      return;
+    case 'quality status':
+      await cliQuality(['status', ...sub.rest]);
+      return;
+    case 'quality export':
+      await cliQuality(['export', ...sub.rest]);
+      return;
+    case 'quality bundle':
+      await cliQuality(['bundle', ...sub.rest]);
+      return;
+    case 'quality claims':
+      await cliQuality(['claims', ...sub.rest]);
+      return;
+    case 'quality show':
+      await cliQuality(['show', ...sub.rest]);
+      return;
+    case 'quality run':
+      await cliQuality(['run', ...sub.rest]);
+      return;
+    case 'quality next':
+      await cliQuality(['next', ...sub.rest]);
+      return;
+    case 'quality diagnose':
+      await cliQuality(['diagnose', ...sub.rest]);
+      return;
+    case 'quality':
+      await cliQuality(sub.rest);
+      return;
 
     // Catalog 명령어
-    case "catalog list": {
+    case 'catalog list': {
       const reg = getCatalogRegistry();
       const catalogs = reg.listCatalogs();
       if (catalogs.length === 0) {
-        console.log("  등록된 카탈로그 없음");
+        console.log('  등록된 카탈로그 없음');
       } else {
         console.log(`\n══ Catalogs (${catalogs.length}) ══\n`);
         for (const c of catalogs) {
@@ -846,15 +1103,20 @@ export async function main(argv = process.argv.slice(2)) {
       }
       return;
     }
-    case "catalog info": {
+    case 'catalog info': {
       const infoId = sub.rest[0];
       if (!infoId) {
-        console.error("Usage: qa-sdk catalog info <id>");
+        console.error('Usage: qa-sdk catalog info <id>');
         return;
       }
       const reg = getCatalogRegistry();
       if (!reg.has(infoId)) {
-        console.error(`카탈로그 '${infoId}' 없음. 사용 가능: ${reg.listCatalogs().map(c => c.id).join(", ")}`);
+        console.error(
+          `카탈로그 '${infoId}' 없음. 사용 가능: ${reg
+            .listCatalogs()
+            .map((c) => c.id)
+            .join(', ')}`,
+        );
         process.exitCode = 1;
         return;
       }
@@ -877,53 +1139,79 @@ export async function main(argv = process.argv.slice(2)) {
     }
 
     // Decision Flow
-    case "flow list":
+    case 'flow list':
       flowList();
       return;
-    case "flow start":
+    case 'flow start':
       flowStart(sub.rest);
       return;
-    case "flow select":
+    case 'flow select':
       flowSelect(sub.rest);
       return;
-    case "flow status":
+    case 'flow status':
       flowStatus(sub.rest);
       return;
-    case "flow trace":
+    case 'flow trace':
       flowTrace(sub.rest);
       return;
-    case "flow analyze":
+    case 'flow analyze':
       flowAnalyze(sub.rest);
       return;
-    case "flow compare":
+    case 'flow compare':
       flowCompare(sub.rest);
       return;
-    case "flow policy candidates":
+    case 'flow policy candidates':
       flowPolicyCandidates(sub.rest);
       return;
-    case "flow policy approve":
+    case 'flow policy approve':
       flowPolicyApprove(sub.rest);
       return;
-    case "flow policy reject":
+    case 'flow policy reject':
       flowPolicyReject(sub.rest);
       return;
-    case "flow policy list":
+    case 'flow policy list':
       flowPolicyList();
       return;
-    case "flow policy learn":
+    case 'flow policy learn':
       flowPolicyLearn(sub.rest);
       return;
-    case "flow lookup":
+    case 'flow lookup':
       flowLookup(sub.rest);
       return;
-    case "flow history":
+    case 'flow history':
       flowHistory(sub.rest);
       return;
-    case "flow verdict":
+    case 'flow verdict':
       flowVerdict(sub.rest);
       return;
-    case "flow judge":
+    case 'flow judge':
       flowJudge(sub.rest);
+      return;
+
+    // ── review ───────────────────────────────────────
+    case 'review mark':
+      reviewMark(sub.rest);
+      return;
+    case 'review status':
+      reviewStatus(sub.rest);
+      return;
+    case 'review dashboard':
+      reviewDashboard(sub.rest);
+      return;
+    case 'review log':
+      reviewLog(sub.rest);
+      return;
+    case 'review request':
+      await reviewRequest(sub.rest);
+      return;
+    case 'review requests':
+      reviewRequests(sub.rest);
+      return;
+    case 'review show-request':
+      reviewShowRequest(sub.rest);
+      return;
+    case 'review bridge-request':
+      reviewBridgeRequest(sub.rest);
       return;
 
     default:
@@ -943,12 +1231,27 @@ interface Subcommand {
 export function resolveSubcommand(args: string[]): Subcommand {
   // 3단어: "dkg decisions export" 등
   const threeWord = [
-    "motion workspace list", "motion workspace show", "motion workspace create", "motion workspace delete",
-    "motion scene list", "motion scene show", "motion scene create", "motion scene delete",
-    "dkg decisions export", "dkg decisions import", "dkg decisions list",
-    "dkg spec add", "dkg spec list", "dkg spec transition",
-    "flow policy candidates", "flow policy approve", "flow policy reject", "flow policy list", "flow policy learn",
-    "service app list", "service app show",
+    'motion workspace list',
+    'motion workspace show',
+    'motion workspace create',
+    'motion workspace delete',
+    'motion scene list',
+    'motion scene show',
+    'motion scene create',
+    'motion scene delete',
+    'dkg decisions export',
+    'dkg decisions import',
+    'dkg decisions list',
+    'dkg spec add',
+    'dkg spec list',
+    'dkg spec transition',
+    'flow policy candidates',
+    'flow policy approve',
+    'flow policy reject',
+    'flow policy list',
+    'flow policy learn',
+    'service app list',
+    'service app show',
   ];
   if (args.length >= 3) {
     const candidate = `${args[0]} ${args[1]} ${args[2]}`;
@@ -958,26 +1261,150 @@ export function resolveSubcommand(args: string[]): Subcommand {
   }
   // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
   const twoWord = [
-    "motion validate", "motion inspect", "motion export", "motion import", "motion apply", "motion preview",
-    "scan git", "spec list", "spec resolve", "spec validate", "spec trace", "spec decode", "spec codegen", "spec drift",
-    "dkg report", "dkg refresh", "dkg axes", "dkg prefixes", "dkg domains", "dkg impact", "dkg overlaps",
-    "dkg history", "dkg skew", "dkg coverage", "dkg skills", "dkg export", "dkg import", "dkg flow-schemas", "dkg flow-schema",
-    "dkg service", "dkg prefix", "dkg dsl", "dkg overview",
-    "dkg trace", "dkg decide", "dkg observe", "dkg claim", "dkg release",
-    "dkg claims", "dkg resolve", "dkg link", "dkg timeline", "dkg run", "dkg metrics", "dkg converge", "dkg self-check",
-    "dkg promote", "dkg reset", "dkg add-entry", "dkg publish", "dkg version", "dkg patterns", "dkg pattern-stats", "dkg diagram",
-    "dkg tables", "dkg table", "dkg scan-tables", "dkg transitions", "dkg transition", "dkg audit", "dkg discover-links",
-    "dkg observations", "dkg decisions", "dkg constraints",
-    "service list", "service show", "service health", "service owners", "service endpoints",
-    "ingest health", "ingest send", "ingest recent", "ingest trace", "ingest status", "ingest services",
-    "gate health", "gate check", "gate classify",
-    "query health", "query resolve", "query rules",
-    "def scan", "def topdown", "def bottomup", "def context", "def audit", "def validate", "def stats", "def sync", "def read",
-    "def list", "def get", "def children", "def parent", "def incoming", "def search", "def impact", "def check", "def audit-db", "def overview", "def link-rules", "def find-by-file", "def guide",
-    "catalog list", "catalog info",
-    "obs read", "obs search", "obs append", "obs backlinks", "obs list", "obs stats",
-    "flow list", "flow start", "flow select", "flow status", "flow trace", "flow analyze", "flow compare",
-    "flow lookup", "flow history", "flow verdict", "flow judge",
+    'motion validate',
+    'motion inspect',
+    'motion export',
+    'motion import',
+    'motion apply',
+    'motion preview',
+    'scan git',
+    'spec list',
+    'spec resolve',
+    'spec validate',
+    'spec trace',
+    'spec decode',
+    'spec codegen',
+    'spec drift',
+    'dkg report',
+    'dkg refresh',
+    'dkg axes',
+    'dkg prefixes',
+    'dkg domains',
+    'dkg impact',
+    'dkg overlaps',
+    'dkg history',
+    'dkg skew',
+    'dkg coverage',
+    'dkg skills',
+    'dkg export',
+    'dkg import',
+    'dkg flow-schemas',
+    'dkg flow-schema',
+    'dkg service',
+    'dkg prefix',
+    'dkg dsl',
+    'dkg overview',
+    'dkg trace',
+    'dkg decide',
+    'dkg observe',
+    'dkg claim',
+    'dkg release',
+    'dkg claims',
+    'dkg resolve',
+    'dkg link',
+    'dkg timeline',
+    'dkg run',
+    'dkg metrics',
+    'dkg converge',
+    'dkg self-check',
+    'dkg promote',
+    'dkg reset',
+    'dkg add-entry',
+    'dkg publish',
+    'dkg version',
+    'dkg patterns',
+    'dkg pattern-stats',
+    'dkg diagram',
+    'dkg tables',
+    'dkg table',
+    'dkg scan-tables',
+    'dkg transitions',
+    'dkg transition',
+    'dkg audit',
+    'dkg discover-links',
+    'dkg observations',
+    'dkg decisions',
+    'dkg constraints',
+    'service list', 'service health-all', 'service mode',
+    'service show',
+    'service health',
+    'service owners',
+    'service endpoints',
+    'ingest health',
+    'ingest send',
+    'ingest recent',
+    'ingest trace',
+    'ingest status',
+    'ingest services',
+    'ingest mode',
+    'ingest insights',
+    'gate health',
+    'gate check',
+    'gate classify',
+    'query health',
+    'query resolve',
+    'query rules',
+    'def scan',
+    'def topdown',
+    'def bottomup',
+    'def context',
+    'def boundary',
+    'def boundary-context',
+    'def audit',
+    'def validate',
+    'def stats',
+    'def sync',
+    'def read',
+    'def list',
+    'def get',
+    'def children',
+    'def parent',
+    'def incoming',
+    'def search',
+    'def impact',
+    'def check',
+    'def audit-db',
+    'def overview',
+    'def link-rules',
+    'def find-by-file',
+    'def guide',
+    'def state',
+    'quality list',
+    'quality status',
+    'quality export',
+    'quality bundle',
+    'quality claims',
+    'quality show',
+    'quality run',
+    'quality next',
+    'quality diagnose',
+    'review mark',
+    'review status',
+    'review dashboard',
+    'review log',
+    'review request',
+    'review requests',
+    'review show-request',
+    'review bridge-request',
+    'catalog list',
+    'catalog info',
+    'obs read',
+    'obs search',
+    'obs append',
+    'obs backlinks',
+    'obs list',
+    'obs stats',
+    'flow list',
+    'flow start',
+    'flow select',
+    'flow status',
+    'flow trace',
+    'flow analyze',
+    'flow compare',
+    'flow lookup',
+    'flow history',
+    'flow verdict',
+    'flow judge',
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
@@ -987,15 +1414,26 @@ export function resolveSubcommand(args: string[]): Subcommand {
   }
   // 1단어 커맨드
   const oneWord = [
-    "init",
-    "register", "dry-run", "codegen", "inspect",
-    "encode", "decode", "resolve", "find-version", "list-prefixes", "list-axes", "derive-refs", "impact",
-    "sync-obsidian",
+    'init',
+    'register',
+    'dry-run',
+    'codegen',
+    'inspect',
+    'encode',
+    'decode',
+    'resolve',
+    'find-version',
+    'list-prefixes',
+    'list-axes',
+    'derive-refs',
+    'impact',
+    'sync-obsidian',
+    'quality',
   ];
   if (oneWord.includes(args[0])) {
     return { name: args[0], rest: args.slice(1) };
   }
-  return { name: args.join(" "), rest: [] };
+  return { name: args.join(' '), rest: [] };
 }
 
 // ── scan git ─────────────────────────────────────────
@@ -1004,16 +1442,16 @@ async function runScanGit(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      root: { type: "string", default: "." },
-      output: { type: "string", default: "./schemas" },
-      id: { type: "string" },
+      root: { type: 'string', default: '.' },
+      output: { type: 'string', default: './schemas' },
+      id: { type: 'string' },
     },
     strict: true,
   });
 
   await gitScan({
-    root: values.root!,
-    output: values.output!,
+    root: values.root ?? '.',
+    output: values.output ?? './schemas',
     id: values.id,
   });
 }
@@ -1024,28 +1462,28 @@ async function runRegister(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      registry: { type: "string" },
-      input: { type: "string", default: "./schemas" },
-      "version-id": { type: "string" },
+      registry: { type: 'string' },
+      input: { type: 'string', default: './schemas' },
+      'version-id': { type: 'string' },
     },
     strict: true,
   });
 
   const registryUrl = values.registry ?? process.env.QA_REGISTRY_URL;
   if (!registryUrl) {
-    console.error("--registry 또는 $QA_REGISTRY_URL 필요");
+    console.error('--registry 또는 $QA_REGISTRY_URL 필요');
     process.exit(1);
   }
 
-  const versionId = values["version-id"];
+  const versionId = values['version-id'];
   if (!versionId) {
-    console.error("--version-id 필수");
+    console.error('--version-id 필수');
     process.exit(1);
   }
 
   await register({
     registry: registryUrl,
-    input: values.input!,
+    input: values.input ?? './schemas',
     versionId,
   });
 }
@@ -1056,15 +1494,15 @@ async function runDryRun(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      input: { type: "string" },
-      change: { type: "string" },
-      registry: { type: "string" },
+      input: { type: 'string' },
+      change: { type: 'string' },
+      registry: { type: 'string' },
     },
     strict: true,
   });
 
   if (!values.change) {
-    console.error("--change <json> 필수. 예: --change '{\"pkg\":{\"capacity\":128}}'");
+    console.error('--change <json> 필수. 예: --change \'{"pkg":{"capacity":128}}\'');
     process.exit(1);
   }
 
@@ -1072,7 +1510,7 @@ async function runDryRun(argv: string[]) {
   try {
     changes = JSON.parse(values.change) as ChangeScenario;
   } catch {
-    console.error("--change JSON 파싱 실패");
+    console.error('--change JSON 파싱 실패');
     process.exit(1);
   }
 
@@ -1091,28 +1529,30 @@ async function runCodegen(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      format: { type: "string", default: "ts" },
-      input: { type: "string", default: "./schemas" },
-      output: { type: "string", default: "./generated" },
-      package: { type: "string", default: "qa.apm.v1" },
-      catalog: { type: "string" },
-      "dkg-config": { type: "string" },
-      "lock-version": { type: "string" },
-      registry: { type: "string" },
-      "catalog-id": { type: "string" },
-      "test-migration": { type: "boolean" },
-      prefix: { type: "string" },
-      from: { type: "string" },
-      to: { type: "string" },
-      samples: { type: "string" },
+      format: { type: 'string', default: 'ts' },
+      input: { type: 'string', default: './schemas' },
+      output: { type: 'string', default: './generated' },
+      package: { type: 'string', default: 'qa.apm.v1' },
+      catalog: { type: 'string' },
+      'dkg-config': { type: 'string' },
+      'lock-version': { type: 'string' },
+      registry: { type: 'string' },
+      'catalog-id': { type: 'string' },
+      'test-migration': { type: 'boolean' },
+      prefix: { type: 'string' },
+      from: { type: 'string' },
+      to: { type: 'string' },
+      samples: { type: 'string' },
     },
     strict: true,
   });
 
   // --test-migration → 라운드트립 검증
-  if (values["test-migration"]) {
+  if (values['test-migration']) {
     if (!values.prefix || !values.from || !values.to) {
-      console.error("Usage: qa-sdk codegen --test-migration --prefix <id> --from <v1> --to <v2> [--samples 100]");
+      console.error(
+        'Usage: qa-sdk codegen --test-migration --prefix <id> --from <v1> --to <v2> [--samples 100]',
+      );
       return;
     }
     await runMigrationTest({
@@ -1129,34 +1569,34 @@ async function runCodegen(argv: string[]) {
   // --registry → Registry에서 카탈로그 fetch → codegen
   if (values.registry) {
     await codegen({
-      formats: ["ts"],
-      input: values.input!,
-      output: values.output!,
+      formats: ['ts'],
+      input: values.input ?? './schemas',
+      output: values.output ?? './generated',
       registry: values.registry,
-      catalogId: values["catalog-id"],
-      dkgConfig: values["dkg-config"],
-      lockVersion: values["lock-version"],
+      catalogId: values['catalog-id'],
+      dkgConfig: values['dkg-config'],
+      lockVersion: values['lock-version'],
     });
     return;
   }
 
   // --catalog 경로 또는 loadedCatalog → Catalog 기반 codegen
-  if (values.catalog || values["dkg-config"] || loadedCatalog) {
+  if (values.catalog || values['dkg-config'] || loadedCatalog) {
     await codegen({
-      formats: ["ts"],
-      input: values.input!,
-      output: values.output!,
+      formats: ['ts'],
+      input: values.input ?? './schemas',
+      output: values.output ?? './generated',
       catalog: values.catalog,
       loadedCatalog: loadedCatalog,
-      dkgConfig: values["dkg-config"],
-      lockVersion: values["lock-version"],
+      dkgConfig: values['dkg-config'],
+      lockVersion: values['lock-version'],
     });
     return;
   }
 
-  const formats = values.format!.split(",").map((f) => {
+  const formats = (values.format ?? 'ts').split(',').map((f) => {
     const trimmed = f.trim();
-    if (trimmed !== "proto" && trimmed !== "ts") {
+    if (trimmed !== 'proto' && trimmed !== 'ts') {
       console.error(`지원하지 않는 format: ${trimmed} (proto | ts)`);
       process.exit(1);
     }
@@ -1165,8 +1605,8 @@ async function runCodegen(argv: string[]) {
 
   await codegen({
     formats,
-    input: values.input!,
-    output: values.output!,
+    input: values.input ?? './schemas',
+    output: values.output ?? './generated',
     packageName: values.package,
   });
 }
@@ -1177,43 +1617,43 @@ async function runInspect(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      registry: { type: "string" },
-      "snapshot-id": { type: "string" },
-      output: { type: "string", default: "./schemas" },
+      registry: { type: 'string' },
+      'snapshot-id': { type: 'string' },
+      output: { type: 'string', default: './schemas' },
     },
     strict: true,
   });
 
   const registryUrl = values.registry ?? process.env.QA_REGISTRY_URL;
   if (!registryUrl) {
-    console.error("--registry 또는 $QA_REGISTRY_URL 필요");
+    console.error('--registry 또는 $QA_REGISTRY_URL 필요');
     process.exit(1);
   }
 
   await schemaPull({
     registry: registryUrl,
-    output: values.output!,
-    snapshotId: values["snapshot-id"],
+    output: values.output ?? './schemas',
+    snapshotId: values['snapshot-id'],
   });
 }
 
 // ── spec 공통: --catalog / --specs 파싱 ─────────────
 
 const SPEC_BASE_OPTIONS = {
-  specs: { type: "string" as const },
-  catalog: { type: "boolean" as const, default: false },
+  specs: { type: 'string' as const },
+  catalog: { type: 'boolean' as const, default: false },
 };
 
 function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
-  return !!value && typeof value === "object" && !Array.isArray(value);
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
   try {
-    const { DEMO_CATALOG } = await import("demo-snapshot");
+    const { DEMO_CATALOG } = await import('demo-snapshot');
     return DEMO_CATALOG;
   } catch {
-    console.error("demo-snapshot 패키지를 로딩할 수 없습니다");
+    console.error('demo-snapshot 패키지를 로딩할 수 없습니다');
     process.exit(1);
   }
 }
@@ -1233,13 +1673,15 @@ async function runSpecList(argv: string[]) {
 async function runSpecResolve(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, prefix: { type: "string" }, values: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, prefix: { type: 'string' }, values: { type: 'string' } },
     strict: true,
   });
 
   if (!values.prefix || !values.values) {
-    console.error("--prefix <id> --values <json> 필수");
-    console.error('예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'');
+    console.error('--prefix <id> --values <json> 필수');
+    console.error(
+      '예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'',
+    );
     process.exit(1);
   }
 
@@ -1247,7 +1689,7 @@ async function runSpecResolve(argv: string[]) {
   try {
     parsed = JSON.parse(values.values) as Record<string, string>;
   } catch {
-    console.error("--values JSON 파싱 실패");
+    console.error('--values JSON 파싱 실패');
     process.exit(1);
   }
 
@@ -1264,22 +1706,22 @@ async function runSpecResolve(argv: string[]) {
 async function runSpecValidate(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, schema: { type: "string" }, data: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, schema: { type: 'string' }, data: { type: 'string' } },
     strict: true,
   });
 
   if (!values.schema || !values.data) {
-    console.error("--schema <id> --data <json> 필수");
+    console.error('--schema <id> --data <json> 필수');
     process.exit(1);
   }
 
   let parsed: SchemaValidationInput;
   try {
     const raw = JSON.parse(values.data) as unknown;
-    if (!isSchemaValidationInput(raw)) throw new Error("invalid");
+    if (!isSchemaValidationInput(raw)) throw new Error('invalid');
     parsed = raw;
   } catch {
-    console.error("--data JSON 파싱 실패");
+    console.error('--data JSON 파싱 실패');
     process.exit(1);
   }
 
@@ -1296,13 +1738,13 @@ async function runSpecValidate(argv: string[]) {
 async function runSpecTrace(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, id: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, id: { type: 'string' } },
     strict: true,
   });
 
   if (!values.id) {
-    console.error("--id <specId> 필수");
-    console.error("예: qa-sdk spec trace --id FEAT-003");
+    console.error('--id <specId> 필수');
+    console.error('예: qa-sdk spec trace --id FEAT-003');
     process.exit(1);
   }
 
@@ -1318,7 +1760,11 @@ async function runSpecTrace(argv: string[]) {
 async function runSpecCodegen(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, output: { type: "string" }, format: { type: "string", default: "ts" } },
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      output: { type: 'string' },
+      format: { type: 'string', default: 'ts' },
+    },
     strict: true,
   });
 
@@ -1326,7 +1772,7 @@ async function runSpecCodegen(argv: string[]) {
     specPath: values.specs,
     catalogInput: values.catalog ? await loadCatalogInput() : undefined,
     output: values.output,
-    format: values.format as "ts" | "esm" | "cjs" | "proto" | "json-schema",
+    format: values.format as 'ts' | 'esm' | 'cjs' | 'proto' | 'json-schema',
   });
 }
 
@@ -1335,14 +1781,19 @@ async function runSpecCodegen(argv: string[]) {
 async function runSpecDecode(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, address: { type: "string" }, deep: { type: "boolean", default: false }, format: { type: "string" } },
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      address: { type: 'string' },
+      deep: { type: 'boolean', default: false },
+      format: { type: 'string' },
+    },
     strict: true,
   });
 
   if (!values.address) {
     console.error('--address "prefix:version:address" 필수');
-    console.error("예: qa-sdk spec decode --catalog --address permission:v1:3");
-    console.error("    qa-sdk spec decode --catalog --address permission:v1:3 --deep");
+    console.error('예: qa-sdk spec decode --catalog --address permission:v1:3');
+    console.error('    qa-sdk spec decode --catalog --address permission:v1:3 --deep');
     process.exit(1);
   }
 
@@ -1351,7 +1802,7 @@ async function runSpecDecode(argv: string[]) {
     catalogInput: values.catalog ? await loadCatalogInput() : undefined,
     address: values.address,
     deep: values.deep,
-    format: values.format === "json" ? "json" : "text",
+    format: values.format === 'json' ? 'json' : 'text',
   });
 }
 
@@ -1359,16 +1810,20 @@ async function runSpecDecode(argv: string[]) {
 
 function runEncode(argv: string[]) {
   const prefix = argv[0];
-  if (!prefix) { console.error("Usage: qa-sdk encode <prefix> --dim1 val1 --dim2 val2"); return; }
+  if (!prefix) {
+    console.error('Usage: qa-sdk encode <prefix> --dim1 val1 --dim2 val2');
+    return;
+  }
 
   const dims: Record<string, string | number> = {};
   for (let i = 1; i < argv.length; i += 2) {
-    const key = argv[i]?.replace(/^--/, "");
+    const key = argv[i]?.replace(/^--/, '');
     const val = argv[i + 1];
     if (key && val) dims[key] = val;
   }
 
-  const json = argv.includes("--json");
+  const json = argv.includes('--json');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   cliEncode(loadedCatalog!, { prefix, dims, json });
 }
 
@@ -1376,9 +1831,13 @@ function runEncode(argv: string[]) {
 
 function runDecode(argv: string[]) {
   const address = argv[0];
-  if (!address) { console.error('Usage: qa-sdk decode "prefix:version:address"'); return; }
-  const deep = argv.includes("--deep");
-  const json = argv.includes("--json");
+  if (!address) {
+    console.error('Usage: qa-sdk decode "prefix:version:address"');
+    return;
+  }
+  const deep = argv.includes('--deep');
+  const json = argv.includes('--json');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   cliDecode(loadedCatalog!, { address, deep, json });
 }
 
@@ -1386,10 +1845,14 @@ function runDecode(argv: string[]) {
 
 function runResolve(argv: string[]) {
   const address = argv[0];
-  if (!address) { console.error('Usage: qa-sdk resolve "prefix:version:address"'); return; }
-  const json = argv.includes("--json");
-  const toIdx = argv.indexOf("--to");
+  if (!address) {
+    console.error('Usage: qa-sdk resolve "prefix:version:address"');
+    return;
+  }
+  const json = argv.includes('--json');
+  const toIdx = argv.indexOf('--to');
   const to = toIdx >= 0 ? argv[toIdx + 1] : undefined;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   cliResolve(loadedCatalog!, { address, to, json });
 }
 
@@ -1398,21 +1861,27 @@ function runResolve(argv: string[]) {
 function runFindVersion(argv: string[]) {
   const axis = argv[0];
   const entry = argv[1];
-  if (!axis || !entry) { console.error("Usage: qa-sdk find-version <axis> <entry>"); return; }
+  if (!axis || !entry) {
+    console.error('Usage: qa-sdk find-version <axis> <entry>');
+    return;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   cliFindVersion(loadedCatalog!, { axis, entry });
 }
 
 // ── DX: impact ──────────────────────────────────────
 
 async function runImpactCmd(argv: string[]) {
-  const axisIdx = argv.indexOf("--axis");
-  const prefixIdx = argv.indexOf("--prefix");
+  const axisIdx = argv.indexOf('--axis');
+  const prefixIdx = argv.indexOf('--prefix');
   // DkgConfig는 동적 로드 (demo-snapshot fallback)
-  const { DEMO_DKG_CONFIG } = await import("demo-snapshot");
+  const { DEMO_DKG_CONFIG } = await import('demo-snapshot');
   const dkgConfig = DEMO_DKG_CONFIG;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   if (axisIdx >= 0) cliImpact(loadedCatalog!, dkgConfig, { axis: argv[axisIdx + 1] });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
   else if (prefixIdx >= 0) cliImpact(loadedCatalog!, dkgConfig, { prefix: argv[prefixIdx + 1] });
-  else console.error("Usage: qa-sdk impact --axis <id> or --prefix <id>");
+  else console.error('Usage: qa-sdk impact --axis <id> or --prefix <id>');
 }
 
 // ── sync-obsidian ───────────────────────────────────
@@ -1421,32 +1890,48 @@ function runSyncObsidian(argv: string[]) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      vault: { type: "string", default: "spec-prefix" },
-      "dry-run": { type: "boolean", default: false },
+      vault: { type: 'string', default: 'spec-prefix' },
+      'dry-run': { type: 'boolean', default: false },
     },
     strict: true,
   });
 
   syncObsidian({
-    vault: values.vault!,
-    dryRun: values["dry-run"]!,
+    vault: values.vault ?? 'spec-prefix',
+    dryRun: values['dry-run'] ?? false,
   });
 }
 
 // ── init ─────────────────────────────────────────────
 
 async function runInit(argv: string[]) {
-  const fromIdx = argv.indexOf("--from");
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      from: { type: 'string' },
+      'vite-consumer': { type: 'string' },
+      'service-name': { type: 'string' },
+      'owner-id': { type: 'string' },
+      'build-env': { type: 'string' },
+      force: { type: 'boolean', default: false },
+    },
+    strict: true,
+  });
   await init({
-    from: fromIdx >= 0 ? argv[fromIdx + 1] : undefined,
+    from: values.from,
+    viteConsumer: values['vite-consumer'],
+    serviceName: values['service-name'],
+    ownerId: values['owner-id'],
+    buildEnv: values['build-env'],
+    force: values.force ?? false,
   });
 }
 
 // ── DKG helpers ─────────────────────────────────────
 
 function parsePage(argv: string[]): { page?: number; limit?: number } {
-  const pageIdx = argv.indexOf("--page");
-  const limitIdx = argv.indexOf("--limit");
+  const pageIdx = argv.indexOf('--page');
+  const limitIdx = argv.indexOf('--limit');
   return {
     page: pageIdx >= 0 ? parseInt(argv[pageIdx + 1]) : undefined,
     limit: limitIdx >= 0 ? parseInt(argv[limitIdx + 1]) : undefined,

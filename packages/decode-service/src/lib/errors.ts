@@ -6,7 +6,6 @@ import {
   ValidationError,
   IndexMetaError,
 } from "index-meta";
-// @ts-expect-error weighted-index DTS 미생성 (기존 빌드 에러, ESM/CJS는 정상)
 import { IndexRangeError } from "weighted-index";
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";

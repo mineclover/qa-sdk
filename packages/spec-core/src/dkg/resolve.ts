@@ -8,7 +8,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import { decodePrefix, encodePrefixByValue, parseSerializedAddress, serializeAddress } from "@qa-sdk/core";
+import { decodePrefix, encodePrefixByValue, parseSerializedAddress } from "@qa-sdk/core";
 
 export interface ResolveResult {
   /** 최신 version의 주소 (prefix:version:address) */

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [structural, runtime, contract]
   links:
     - target: spec-arch-interceptors
       type: constrains

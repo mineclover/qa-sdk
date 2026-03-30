@@ -198,7 +198,7 @@ function removeLayerReferencesFromSequence(
   const nextLayerIds = sequence.layerIds.filter((entry) => entry !== layerId);
   const nextLayers = sequence.layers?.filter((slot) => slot.layerId !== layerId);
   const changed = nextLayerIds.length !== sequence.layerIds.length
-    || (sequence.layers ? nextLayers!.length !== sequence.layers.length : false);
+    || (sequence.layers !== undefined && nextLayers !== undefined && nextLayers.length !== sequence.layers.length);
   if (!changed) {
     return sequence;
   }
@@ -317,7 +317,7 @@ function removeTargetReferencesFromSceneSequence(
   const nextTargetIds = sequence.targetIds.filter((entry) => entry !== targetId);
   const nextLayers = sequence.layers?.filter((slot) => slot.targetId !== targetId);
   const changed = nextTargetIds.length !== sequence.targetIds.length
-    || (sequence.layers ? nextLayers!.length !== sequence.layers.length : false);
+    || (sequence.layers !== undefined && nextLayers !== undefined && nextLayers.length !== sequence.layers.length);
   if (!changed) {
     return sequence;
   }
@@ -393,7 +393,7 @@ function updateSequenceSlot(
       return slot;
     }
     changed = true;
-    return { ...slot, [field]: nextValue };
+    return Object.assign({}, slot, { [field]: nextValue });
   });
   if (!found || !changed) {
     return sequence;
@@ -424,7 +424,7 @@ function updateSequenceSlotRole(
     changed = true;
     return nextRole === undefined
       ? { layerId: slot.layerId, offsetMs: slot.offsetMs, zIndex: slot.zIndex }
-      : { ...slot, role: nextRole };
+      : Object.assign({}, slot, { role: nextRole });
   });
   if (!found || !changed) {
     return sequence;
@@ -914,6 +914,7 @@ export function applyMotionEditorCommand(
               return placement;
             }
             changed = true;
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- cue="enter" → cueRef 존재 보장 (null은 exit 삭제 경로)
             return { ...placement, enter: command.cueRef! };
           }
           if (command.cueRef === null) {
@@ -1305,7 +1306,7 @@ export function applyMotionEditorCommand(
           ? {
             ...transition,
             params: {
-              ...(transition.params ?? {}),
+              ...transition.params,
               [command.param]: command.value,
             },
           }

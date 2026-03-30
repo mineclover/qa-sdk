@@ -27,13 +27,13 @@ registry-service의 SchemaSnapshot 형식으로 Git, K8s, APM Signal 도메인 �
 2. **53비트 안전 범위** — composite별 `Π capacity`가 `Number.MAX_SAFE_INTEGER` 이내
 3. **SchemaSnapshot 호환** — `POST /schema/import` 호환 JSON 형식으로 정의
 4. **capacity headroom** — 현재 entries 대비 2~4× 여유. 축 추가 시 마이그레이션 없이 entry만 append
-5. **Snapshot Supply** — entry 버전 공급 전략 ([`indexing/conventions.md §5`](../indexing/conventions.md) 참조). composite별로 axis/envelope/context/implicit 중 선택
+5. **Snapshot Supply** — entry 버전 공급 전략 ([`conventions-system.md`](../indexing-core-system/conventions-system.md) 참조). composite별로 axis/envelope/context/implicit 중 선택
 
 ---
 
 ## Snapshot Supply 적용
 
-> 전략 정의, 비교표, 파이프라인 처리는 [`indexing/conventions.md §5`](../indexing/conventions.md)에 정의되어 있다. 이 섹션은 APM DSL에 적용한 구체 사항만 기술한다.
+> 전략 정의, 비교표, 파이프라인 처리는 [`conventions-system.md`](../indexing-core-system/conventions-system.md)에 정의되어 있다. 이 섹션은 APM DSL에 적용한 구체 사항만 기술한다.
 
 ### schema_version 공통 축
 

@@ -384,9 +384,9 @@ describe("E2E: G-SHOP 권한 체크 플로우", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
-  let codec: PermissionCodec;
+  let ternaryCodec: PermissionCodec;
 
-  const DIMS: CodecDims = {
+  const TERNARY_DIMS: CodecDims = {
     services: ["saas/app"],
     types: ["api"],
     resources: ["billing", "reports", "admin/settings", "admin/users", "support/tickets"],
@@ -394,28 +394,28 @@ describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
   };
 
   beforeAll(() => {
-    codec = new PermissionCodec("v1", DIMS);
+    ternaryCodec = new PermissionCodec("v1", TERNARY_DIMS);
   });
 
   function addr(resource: string, action: string): number {
-    return codec.encodeRaw("saas/app", "api", resource, action);
+    return ternaryCodec.encodeRaw("saas/app", "api", resource, action);
   }
 
   it("org default-allow + team deny + user override", () => {
     // ── Org 정책: 기본 전부 허용, admin/settings DELETE만 거부 ──
-    const org = new TernaryMask(codec.size);
-    for (let i = 0; i < codec.size; i++) org.allow(i);
+    const org = new TernaryMask(ternaryCodec.size);
+    for (let i = 0; i < ternaryCodec.size; i++) org.allow(i);
     org.deny(addr("admin/settings", "DELETE"));
 
     // ── Engineering 팀: billing 접근 거부 ──
-    const team = new TernaryMask(codec.size);
+    const team = new TernaryMask(ternaryCodec.size);
     team.deny(addr("billing", "GET"));
     team.deny(addr("billing", "POST"));
     team.deny(addr("billing", "PUT"));
     team.deny(addr("billing", "DELETE"));
 
     // ── 개발자 Alice: support/tickets POST 추가 거부 ──
-    const alice = new TernaryMask(codec.size);
+    const alice = new TernaryMask(ternaryCodec.size);
     alice.deny(addr("support/tickets", "POST"));
 
     // ── 계층 merge ──
@@ -435,16 +435,16 @@ describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
     expect(hasBit(aliceMask, addr("support/tickets", "GET"))).toBe(true);    // org allow 상속
 
     // 최종 크기
-    expect(aliceMask.length).toBe(Math.ceil(codec.size / 8));
+    expect(aliceMask.length).toBe(Math.ceil(ternaryCodec.size / 8));
   });
 
   it("Sales 팀 Bob — billing 접근 가능, admin 접근 불가", () => {
-    const org = new TernaryMask(codec.size);
-    for (let i = 0; i < codec.size; i++) org.allow(i);
+    const org = new TernaryMask(ternaryCodec.size);
+    for (let i = 0; i < ternaryCodec.size; i++) org.allow(i);
     org.deny(addr("admin/settings", "DELETE"));
 
     // Sales 팀: admin 전체 거부
-    const salesTeam = new TernaryMask(codec.size);
+    const salesTeam = new TernaryMask(ternaryCodec.size);
     salesTeam.deny(addr("admin/settings", "GET"));
     salesTeam.deny(addr("admin/settings", "POST"));
     salesTeam.deny(addr("admin/settings", "PUT"));
@@ -454,7 +454,7 @@ describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
     salesTeam.deny(addr("admin/users", "PUT"));
     salesTeam.deny(addr("admin/users", "DELETE"));
 
-    const bob = new TernaryMask(codec.size); // UNSET → 팀 상속
+    const bob = new TernaryMask(ternaryCodec.size); // UNSET → 팀 상속
 
     const bobResolved = TernaryMask.inherit(
       TernaryMask.inherit(org, salesTeam),
@@ -471,7 +471,7 @@ describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
   });
 
   it("ternary → binary 전송 크기 비교", () => {
-    const ternary = new TernaryMask(codec.size);
+    const ternary = new TernaryMask(ternaryCodec.size);
     // ternary: allow mask + deny mask = 2 × ceil(20/8) = 2 × 3 = 6 bytes
     expect(ternary.allowMask.length + ternary.denyMask.length).toBe(6);
 
@@ -484,14 +484,14 @@ describe("E2E: 조직 계층 권한 상속 (Ternary)", () => {
 
   it("default-deny 패턴: 최소 권한 원칙", () => {
     // org: 아무것도 안 줌 (전부 UNSET)
-    const org = new TernaryMask(codec.size);
+    const org = new TernaryMask(ternaryCodec.size);
 
     // team: reports GET만 허용
-    const team = new TernaryMask(codec.size);
+    const team = new TernaryMask(ternaryCodec.size);
     team.allow(addr("reports", "GET"));
 
     // user: 추가 없음
-    const user = new TernaryMask(codec.size);
+    const user = new TernaryMask(ternaryCodec.size);
 
     const resolved = TernaryMask.inherit(
       TernaryMask.inherit(org, team),

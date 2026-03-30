@@ -305,7 +305,7 @@ export function gateDistribution(
 
   const branches = [...branchBuckets.entries()]
     .map(([branchId, branchSelections]) => toBranchDistribution(branchId, branchSelections, totalSelections))
-    .sort((a, b) => b.count - a.count || a.branchId.localeCompare(b.branchId));
+    .toSorted((a, b) => b.count - a.count || a.branchId.localeCompare(b.branchId));
   const dominantBranch = branches.find((branch) => branch.isDominant);
 
   return {
@@ -325,7 +325,7 @@ export function gateDistribution(
     evidenceKindCorrelations: [...evidenceBuckets.entries()]
       .map(([evidenceKind, branchMap]) =>
         toEvidenceKindCorrelation(evidenceKind, branchMap, totalSelections))
-      .sort((a, b) =>
+      .toSorted((a, b) =>
         b.selectionCount - a.selectionCount
         || a.evidenceKind.localeCompare(b.evidenceKind),
       ),
@@ -470,6 +470,7 @@ function resolveReportSchemaId(
     throw new Error(`ComparisonReport의 schemaId가 일치해야 한다: ${[...schemaIds].join(", ")}`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- size===1 guaranteed by checks above
   return [...schemaIds][0]!;
 }
 
@@ -681,6 +682,7 @@ function inferGateOrderFromSequences(
       for (let nextIndex = index + 1; nextIndex < sequence.length; nextIndex += 1) {
         const from = sequence[index];
         const to = sequence[nextIndex];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- adjacency initialized for all sequence elements
         const edges = adjacency.get(from)!;
         if (!edges.has(to)) {
           edges.add(to);
@@ -693,10 +695,11 @@ function inferGateOrderFromSequences(
   const queue = [...inDegree.entries()]
     .filter(([, degree]) => degree === 0)
     .map(([gateId]) => gateId)
-    .sort((left, right) => (appearance.get(left) ?? 0) - (appearance.get(right) ?? 0));
+    .toSorted((left, right) => (appearance.get(left) ?? 0) - (appearance.get(right) ?? 0));
   const ordered: string[] = [];
 
   while (queue.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
     const current = queue.shift()!;
     ordered.push(current);
 
@@ -716,7 +719,7 @@ function inferGateOrderFromSequences(
 
   const remaining = [...adjacency.keys()]
     .filter((gateId) => !ordered.includes(gateId))
-    .sort((left, right) => (appearance.get(left) ?? 0) - (appearance.get(right) ?? 0));
+    .toSorted((left, right) => (appearance.get(left) ?? 0) - (appearance.get(right) ?? 0));
 
   return [...ordered, ...remaining];
 }
@@ -818,7 +821,7 @@ function buildGateDistributionShift(
         shiftPercentage: normalizeWeight(Math.abs(deltaRatio) * 100),
       };
     })
-    .sort((a, b) =>
+    .toSorted((a, b) =>
       b.shiftPercentage - a.shiftPercentage
       || b.countB - a.countB
       || a.branchId.localeCompare(b.branchId),
@@ -886,7 +889,7 @@ function diffPathBuckets(
       countA: bucketsA.get(signature)?.count ?? 0,
       countB: bucketsB.get(signature)?.count ?? 0,
     }))
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const countDeltaA = direction === "emerged" ? b.countB - a.countB : b.countA - a.countA;
       return countDeltaA || a.signature.localeCompare(b.signature);
     });
@@ -996,15 +999,15 @@ function toKindHistogram(evidence: readonly Evidence[]): Readonly<Record<string,
     histogram.set(entry.kind, (histogram.get(entry.kind) ?? 0) + 1);
   }
 
-  return Object.fromEntries([...histogram.entries()].sort(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries([...histogram.entries()].toSorted(([a], [b]) => a.localeCompare(b)));
 }
 
 function collectEvidenceKinds(selection: GateSelection): string[] {
-  return [...new Set(selection.evidence.map((entry) => entry.kind))].sort((a, b) => a.localeCompare(b));
+  return [...new Set(selection.evidence.map((entry) => entry.kind))].toSorted((a, b) => a.localeCompare(b));
 }
 
 function collectKinds(evidence: readonly Evidence[]): string[] {
-  return [...new Set(evidence.map((entry) => entry.kind))].sort((a, b) => a.localeCompare(b));
+  return [...new Set(evidence.map((entry) => entry.kind))].toSorted((a, b) => a.localeCompare(b));
 }
 
 function toBranchDistribution(
@@ -1038,7 +1041,7 @@ function toEvidenceKindCorrelation(
       ratio: selectionCount === 0 ? 0 : normalizeWeight(selections.length / selectionCount),
       averageConfidence: averageSelectionConfidence(selections),
     }))
-    .sort((a, b) => b.count - a.count || a.branchId.localeCompare(b.branchId));
+    .toSorted((a, b) => b.count - a.count || a.branchId.localeCompare(b.branchId));
   const dominantBranch = branches.find((branch) => branch.ratio > 0.7);
 
   return {
@@ -1085,7 +1088,7 @@ function dominantBranchId(selections: readonly GateSelection[]): string | undefi
   }
 
   const dominant = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+    .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
 
   return dominant?.[0];
 }
@@ -1121,7 +1124,7 @@ function serializeUnknown(value: unknown): string {
   }
   if (typeof value === "object") {
     return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([a], [b]) => a.localeCompare(b))
+      .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([key, entry]) => `${key}:${serializeUnknown(entry)}`)
       .join(",")}}`;
   }

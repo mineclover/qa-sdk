@@ -30,6 +30,7 @@ import {
   processPendingPhaseTwo,
   type ConvergencePipelinePort,
 } from "../lib/phase-two-worker.js";
+import type { CatalogValidator } from "../lib/catalog-validator.js";
 
 export type RegistryValidationMode = "strict" | "warn" | "off";
 
@@ -62,6 +63,10 @@ export interface IngestDeps {
   /** 건전성 검증용 prefix 메타 (설정 시 address_context 건전성 검증 활성화) */
   knownPrefixes?: ReadonlySet<string>;
   latestVersions?: ReadonlyMap<string, string>;
+  /** 카탈로그 기반 event/prefix 검증 (fail-open) */
+  catalogValidator?: CatalogValidator;
+  /** InsightsStore — 수집된 데이터를 인사이트 저장소에 전달 (app-hub 모드) */
+  insightsStore?: import("../ports/insights-store.port.js").InsightsStore;
 }
 
 export interface TracePersistenceStores {
@@ -138,6 +143,44 @@ async function processEnvelope(
   // Phase 1: 저장 (응답 경로)
   const persistedTraceIds = await storeEnvelope(envelope, deps);
 
+  // InsightsStore collect — app-hub 모드에서 외부 전달, local 모드에서 no-op
+  if (deps.insightsStore) {
+    try {
+      await deps.insightsStore.collect({
+        records: envelope.records.map(r => ({
+          logId: r.log_id,
+          timestamp: r.timestamp,
+          traceId: r.trace_id,
+          eventKey: r.event_key,
+          eventVersion: r.event_version,
+          recordKind: r.record_kind,
+          addressContext: r.address_context,
+          payload: r.payload as Record<string, unknown> | undefined,
+          actorId: r.actor_id,
+          userId: r.user_id,
+          qaSessionId: r.qa_session_id,
+        })),
+        traces: (() => {
+          // traceId별 record 수를 O(N)으로 집계 (filter 반복 O(N*M) 방지)
+          const counts = new Map<string, number>();
+          for (const r of envelope.records) counts.set(r.trace_id, (counts.get(r.trace_id) ?? 0) + 1);
+          return persistedTraceIds.map(traceId => ({
+            traceId,
+            serviceName: envelope.source.service_name,
+            recordCount: counts.get(traceId) ?? 0,
+          }));
+        })(),
+        sessions: [...new Set(envelope.records.map(r => r.qa_session_id).filter(Boolean))].map(sid => ({
+          sessionId: sid!,
+          startedAt: envelope.sent_at,
+        })),
+      });
+    } catch (err) {
+      // fail-open: insights 전달 실패가 ingest를 차단하지 않음
+      deps.logger?.warn({ err }, "insights collect failed — skipped");
+    }
+  }
+
   if (deps.taskQueue) {
     await enqueuePhaseTwoTasks(persistedTraceIds, deps.taskQueue);
     return;
@@ -163,6 +206,11 @@ async function storeEnvelope(
     if (health.staleVersions.length > 0) {
       deps.logger?.warn({ stale: health.staleVersions }, "address_context stale versions detected");
     }
+  }
+
+  // 카탈로그 기반 event/prefix 검증 (fail-open)
+  if (deps.catalogValidator) {
+    validateWithCatalog(envelope, deps.catalogValidator, deps.logger);
   }
 
   const registryWarnings = await validateEnvelopeRecords(envelope, deps);
@@ -351,6 +399,7 @@ async function persistTrace(
     return;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- stores가 undefined이면 withTraceTransaction이 반드시 존재 (L320-322 불변조건)
   await deps.withTraceTransaction!(persist);
 }
 
@@ -517,4 +566,61 @@ function toStoredRecords(records: RecordInsert[]): StoredRecord[] {
     ...structuredClone(record),
     createdAt: new Date(),
   }));
+}
+
+/**
+ * 카탈로그 기반 eventKey/prefix 검증.
+ * fail-open: 검증 실패해도 레코드는 통과시키고 warning만 기록한다.
+ */
+function validateWithCatalog(
+  envelope: TransmissionEnvelope,
+  validator: CatalogValidator,
+  logger?: Logger,
+): void {
+  try {
+    // ── eventKey 검증 (중복 제거) ──
+    const unknownEventKeys = new Set<string>();
+    for (const record of envelope.records) {
+      const result = validator.validateEventKey(record.event_key);
+      if (!result.known) {
+        unknownEventKeys.add(record.event_key);
+      }
+    }
+
+    if (unknownEventKeys.size > 0) {
+      logger?.warn(
+        {
+          unknownEventKeys: [...unknownEventKeys],
+          serviceName: envelope.source.service_name,
+          recordCount: envelope.records.length,
+        },
+        "카탈로그에 미등록된 eventKey 감지 (fail-open)",
+      );
+    }
+
+    // ── prefix 검증 (중복 제거) ──
+    const allUnknownPrefixes = new Set<string>();
+    for (const record of envelope.records) {
+      const result = validator.validatePrefixes(record.address_context);
+      for (const prefix of result.unknownPrefixes) {
+        allUnknownPrefixes.add(prefix);
+      }
+    }
+
+    if (allUnknownPrefixes.size > 0) {
+      logger?.warn(
+        {
+          unknownPrefixes: [...allUnknownPrefixes],
+          serviceName: envelope.source.service_name,
+        },
+        "카탈로그에 미등록된 prefix 감지 (fail-open)",
+      );
+    }
+  } catch (error) {
+    // 검증 자체의 실패도 fail-open
+    logger?.warn(
+      { err: error },
+      "카탈로그 검증 실패 — fail-open 통과",
+    );
+  }
 }

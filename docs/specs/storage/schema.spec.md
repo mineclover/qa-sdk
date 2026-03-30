@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: []
+  tags: [persistence, data, structural]
   links:
     - target: graph-spec
       type: depends_on

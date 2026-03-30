@@ -8,7 +8,7 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [observability, data, structural]
   links:
     - target: scenario-store-spec
       type: depends_on

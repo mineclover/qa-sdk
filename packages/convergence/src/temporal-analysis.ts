@@ -11,7 +11,6 @@
 
 import { type Catalog, compareTimestamps } from "@qa-sdk/core";
 import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
-import type { EntryUsage } from "./convergence.types.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -99,7 +98,7 @@ export function analyzeTemporalTrends(
   const slaRules = options?.slaRules ?? [];
 
   // 시간순 정렬
-  const sorted = [...records].sort((a, b) => compareTimestamps(a.timestamp, b.timestamp));
+  const sorted = [...records].toSorted((a, b) => compareTimestamps(a.timestamp, b.timestamp));
   if (sorted.length === 0) {
     return { windows: [], trends: [], anomalies: [], slaViolations: [], summary: "레코드 없음" };
   }
@@ -232,7 +231,7 @@ export function analyzeTemporalTrends(
   return {
     windows,
     trends: allTrends,
-    anomalies: anomalies.sort((a, b) => b.deviation - a.deviation),
+    anomalies: anomalies.toSorted((a, b) => b.deviation - a.deviation),
     slaViolations,
     summary: `${windows.length} windows, ${anomalies.length} anomalies, ${slaViolations.length} SLA violations`,
   };

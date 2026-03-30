@@ -236,8 +236,7 @@ export function assembleComposition(
     }),
   );
 
-  const transitions = readTransitions(composition).map((transition) => ({
-    ...transition,
+  const transitions = readTransitions(composition).map((transition) => Object.assign({}, transition, {
     fromSequenceId: sequenceIdByOriginalId.get(transition.fromSequenceId)
       ?? sequenceIdBySceneSequence.get(sceneTargetKey("main", transition.fromSequenceId))
       ?? transition.fromSequenceId,

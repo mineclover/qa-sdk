@@ -11,8 +11,6 @@
 import type { Catalog, DimRef } from "@qa-sdk/core";
 import {
   latestPrefixVersion,
-  getPrefixShape,
-  getPrefixEntries,
   encodePrefix,
   decodePrefix,
 } from "@qa-sdk/core";

@@ -1,11 +1,16 @@
 {
   "name": "@qa-sdk/browser-codec",
   "version": "0.1.0",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"

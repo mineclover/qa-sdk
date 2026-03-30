@@ -24,6 +24,13 @@ gate:
 ---
 # Work Domain Typecheck Gate
 
+
+## 탐색 ^navigation
+
+quality-gates-system > work-domain-quality-bundle > **gate-work-domain-typecheck**
+
+형제: `work-domain-quality-contract` · `gate-work-domain-build` · `gate-work-domain-test`
+
 ## 목적 ^purpose
 
 `work-domain` 패키지의 공개 타입과 게이트 taxonomy가 TypeScript 수준에서 깨지지 않는지 먼저 검증하는 정적 품질 게이트.

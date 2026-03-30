@@ -71,12 +71,12 @@ interface SyntheticEvent {
  */
 function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
   const events: SyntheticEvent[] = [];
-  const prefixes = (catalog as any).prefixes as Record<string, any> | undefined;
-  const axes = (catalog as any).axes as Record<string, any> | undefined;
+  const prefixes = catalog.prefixes;
+  const axes = catalog.axes;
   if (!prefixes || !axes) return events;
 
   for (const [prefixId, prefixDef] of Object.entries(prefixes)) {
-    const dims = prefixDef.dims as Record<string, { kind: string; axisId?: string }> | undefined;
+    const dims = prefixDef.dims;
     if (!dims) continue;
 
     // axis dim만 추출 (prefix_ref/table_ref 제외)
@@ -84,11 +84,11 @@ function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
     const refDimLabels: string[] = [];
 
     for (const [label, dimRef] of Object.entries(dims)) {
-      if (dimRef.kind === "axis" && dimRef.axisId) {
+      if (dimRef.kind === "axis") {
         const axis = axes[dimRef.axisId];
         if (!axis) continue;
         const versions = Object.keys(axis.versions);
-        const latest = axis.versions[versions[versions.length - 1]] as any;
+        const latest = axis.versions[versions[versions.length - 1]];
         if (latest?.entries) {
           axisDims.push({ label, axisId: dimRef.axisId, entries: latest.entries });
         }
@@ -108,10 +108,10 @@ function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
 
     for (const ad of axisDims) {
       for (const entry of ad.entries) {
-        const dims = { ...baseDims, [ad.label]: entry };
+        const eventDims = { ...baseDims, [ad.label]: entry };
         events.push({
           prefix: prefixId,
-          dims,
+          dims: eventDims,
           ...(refDimLabels.length > 0 ? { refDims: refDimLabels } : {}),
         });
       }
@@ -199,8 +199,8 @@ export function analyzeSelfCheck(
   for (const se of allSynthetic) {
     try {
       const ver = latestPrefixVersion(catalog, se.prefix);
-      const prefixDef = (catalog as any).prefixes?.[se.prefix];
-      const verDef = prefixDef?.versions?.find((v: any) => v.version === ver);
+      const prefixDef = catalog.prefixes[se.prefix];
+      const verDef = prefixDef?.versions?.find((v) => v.version === ver);
 
       // prefix_ref 차원의 refEntries 첫 번째 값을 자동 주입
       const dims: Record<string, string | number> = { ...se.dims };

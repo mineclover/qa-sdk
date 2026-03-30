@@ -27,14 +27,14 @@
 
 import { writeFile, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import type { SchemaSnapshot, Axis, Composite } from "../lib/types.js";
-import { scanAndClassify } from "../lib/pkg-classifier.js";
+import type { SchemaSnapshot, Axis, Composite } from "codegen-core";
+import { scanAndClassify } from "package-classifier";
 import {
   getRepoName,
   listSemverTags,
   collectCommitTypes,
   commitCountsByScope,
-} from "../lib/git.js";
+} from "git-utils";
 
 // ── Options ──────────────────────────────────────────
 
@@ -73,7 +73,7 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
   const tags = listSemverTags(root);
   const versions = [
     ...new Set([...tags, ...packages.map((p) => p.version)]),
-  ].sort();
+  ].toSorted();
   console.log(`  versions: ${versions.length} (${versions.join(", ")})`);
 
   // 3. 커밋 타입 수집
@@ -81,8 +81,8 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
   console.log(`  cc_types: ${ccTypes.length} (${ccTypes.join(", ")})`);
 
   // 4. 분류값 수집
-  const tiers = [...new Set(packages.map((p) => p.tier))].sort();
-  const runtimes = [...new Set(packages.map((p) => p.runtime))].sort();
+  const tiers = [...new Set(packages.map((p) => p.tier))].toSorted();
+  const runtimes = [...new Set(packages.map((p) => p.runtime))].toSorted();
   const scopes: string[] = ["public", "private"];
 
   // 5. 축 구성

@@ -25,7 +25,7 @@ describe("MatrixStack", () => {
 
     // y축 간격 확인
     const positions = Object.values(layout.gridPositions);
-    const yValues = positions.map(p => p.y).sort((a, b) => a - b);
+    const yValues = positions.map(p => p.y).toSorted((a, b) => a - b);
     expect(yValues[1] - yValues[0]).toBe(STACK_CHECKOUT.gap);
   });
 

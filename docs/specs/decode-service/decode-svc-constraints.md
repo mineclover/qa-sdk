@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: []
+  tags: [structural, runtime, contract]
   links:
     - target: decode-service-system
       type: constrains

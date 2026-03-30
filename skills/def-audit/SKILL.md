@@ -12,6 +12,7 @@ description: "definition-catalog 문서 품질 감사. purpose 품질, 링크 �
 ```bash
 qa-sdk def sync        # 최근 docs 변경을 local datasource에 반영
 qa-sdk def audit       # 전체 품질 리포트 (level 분포 포함)
+qa-sdk def audit-db    # approved 문서의 purpose/고립/svc 누락 빠른 점검
 qa-sdk def validate    # 깨진 링크/순환/고아/multi-parent/depth 검증
 qa-sdk def stats       # 분포 통계
 qa-sdk def link-rules  # LinkType 사용 규칙 조회
@@ -23,14 +24,15 @@ qa-sdk def link-rules  # LinkType 사용 규칙 조회
 qa-sdk def sync
 qa-sdk def validate
 qa-sdk def audit
+qa-sdk def audit-db
 ```
 
 ## audit 출력 예시
 
 ```
 === 품질 리포트 ===
-문서 483건 | purpose 483 | links 376 | tags 483
-level: leaf(402) module(71) group(10)
+문서 N건 | purpose N | links M | tags K
+level: leaf(...) module(...) group(...)
 ```
 
 ## 품질 기준
@@ -51,7 +53,13 @@ synthetic feedback 관계는 보조 신호일 뿐이며, frontmatter 기반 auth
 
 ### tags
 
-concern(security, performance 등) + tier(tier-infra 등) 태그 부여.
+문서 태그는 좌표를 대체하지 않는 보조 taxonomy다.
+
+- StructuralTag: `entry-point`, `cross-scope`, `decision`, `generated`
+- ConcernTag: `security`, `performance`, `accessibility`, `observability`, `testing`, `migration`, `deprecation`
+- 운영 관례 태그: `runtime`, `persistence`, `contract`, `versioning`, `frontend`, `quality-bundle`, `quality-gate`
+
+권장 수량은 보통 2~5개다. 자세한 기준은 `docs/specs/system/tag-management.spec.md`를 따른다.
 
 ### ^overview
 
@@ -92,6 +100,15 @@ contains 계층이 4단계를 초과하면 warning.
 ```
 
 무엇 + 왜 + 범위.
+
+## 빠른 합격선
+
+문서 품질을 빠르게 올릴 때는 아래 4개를 우선 맞춘다.
+
+1. `^purpose` 30자 이상
+2. authored links 1개 이상
+3. tags 2~5개
+4. `def validate`, `def audit-db` 모두 이슈 0
 
 ## 검증 이슈 유형
 

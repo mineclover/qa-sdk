@@ -76,6 +76,7 @@ export class PanelGroup {
     }
 
     this.options = options;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- constructor에서 tabs.length === 0 검사 직후
     this.activeTabId = options.defaultTabId ?? options.tabs[0]!.id;
 
     const direction = options.collapseDirection ?? "left";

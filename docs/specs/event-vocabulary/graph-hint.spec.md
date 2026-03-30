@@ -8,7 +8,7 @@ def:
   svc: event-catalog
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, observability, structural]
   links:
     - target: event-core-pattern
       type: depends_on

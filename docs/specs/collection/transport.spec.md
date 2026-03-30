@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: []
+  tags: [contract, runtime, observability]
   links:
-    - target: address-context-spec
+    - target: address-context-format
       type: depends_on
 ---
 

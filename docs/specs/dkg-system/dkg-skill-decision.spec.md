@@ -17,6 +17,13 @@ def:
 ---
 # Decision.scaffold — 의사결정 템플릿
 
+
+## 탐색 ^navigation
+
+dkg-system > dkg-skills-system > **dkg-skill-decision**
+
+형제: `dkg-skill-cascade` · `dkg-skill-migrator` · `dkg-skill-version-event` · `dkg-skill-catalog`
+
 ## 목적 ^purpose
 
 구조화된 의사결정 문서를 자동 생성하는 skill. 유형별 context, alternatives, reversalConditions를 자동 생성하고, rationale은 인간이 작성한다.

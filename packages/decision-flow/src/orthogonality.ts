@@ -15,7 +15,7 @@
  *   V > 0.9 → 축 병합 또는 재설계 필요
  */
 
-import type { FlowInstance, GateSelection } from "./types.js";
+import type { FlowInstance } from "./types.js";
 
 // ─── 타입 ────────────────────────────────────────────────
 
@@ -73,12 +73,12 @@ export function checkOrthogonality(
   // 분할표 구성
   const contingency = buildContingencyTable(pairs);
   const n = pairs.length;
-  const rowKeys = [...contingency.keys()].sort();
+  const rowKeys = [...contingency.keys()].toSorted();
   const colKeysSet = new Set<string>();
   for (const cols of contingency.values()) {
     for (const key of cols.keys()) colKeysSet.add(key);
   }
-  const colKeys = [...colKeysSet].sort();
+  const colKeys = [...colKeysSet].toSorted();
 
   const k1 = rowKeys.length;
   const k2 = colKeys.length;
@@ -93,6 +93,7 @@ export function checkOrthogonality(
   const colTotals = new Map<string, number>();
   for (const rowKey of rowKeys) {
     let rowSum = 0;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- rowKeys derived from contingency.keys()
     const cols = contingency.get(rowKey)!;
     for (const colKey of colKeys) {
       const observed = cols.get(colKey) ?? 0;
@@ -105,10 +106,13 @@ export function checkOrthogonality(
   // χ² 계산
   let chiSquared = 0;
   for (const rowKey of rowKeys) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- rowKeys derived from contingency.keys()
     const cols = contingency.get(rowKey)!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- rowTotals set for all rowKeys above
     const rowTotal = rowTotals.get(rowKey)!;
     for (const colKey of colKeys) {
       const observed = cols.get(colKey) ?? 0;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- colTotals set for all colKeys above
       const colTotal = colTotals.get(colKey)!;
       const expected = (rowTotal * colTotal) / n;
       if (expected > 0) {

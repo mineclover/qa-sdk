@@ -14,7 +14,6 @@ import type {
 } from "./convergence.types.js";
 
 const LOW_USAGE_THRESHOLD = 0.05;    // 5% 미만 → 저사용
-const LOW_UTILIZATION_THRESHOLD = 0.10; // 10% 미만 → 과도한 headroom
 
 /**
  * prefix의 단순화 기회를 분석한다.
@@ -33,7 +32,6 @@ export function analyzeSimplification(
   // 주소 공간 사용률
   const prefixAddresses = addressUsages.filter(a => a.prefix === prefixId);
   const activeAddressCount = prefixAddresses.length;
-  const totalCount = prefixAddresses.reduce((sum, a) => sum + a.count, 0);
 
   // 차원별 사용된 entry 집합
   const dimValueSets = new Map<string, Set<string>>();

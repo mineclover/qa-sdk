@@ -25,6 +25,13 @@ gate:
 ---
 # Work Domain Build Gate
 
+
+## 탐색 ^navigation
+
+quality-gates-system > work-domain-quality-bundle > **gate-work-domain-build**
+
+형제: `work-domain-quality-contract` · `gate-work-domain-typecheck` · `gate-work-domain-test`
+
 ## 목적 ^purpose
 
 `work-domain` 패키지가 실제 배포 산출물(ESM/CJS/DTS)까지 정상 생성되는지 확인하는 빌드 게이트.

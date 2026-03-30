@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: session-spec
       type: depends_on

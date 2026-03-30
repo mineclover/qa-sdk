@@ -18,6 +18,8 @@ export const qaSessions = sqliteTable("qa_sessions", {
   closedAt: text("closed_at"),
 });
 
+export type QaSessionRow = typeof qaSessions.$inferSelect;
+
 // ─── traces ────────────────────────────────────────────────────
 export const traces = sqliteTable(
   "traces",
@@ -40,6 +42,8 @@ export const traces = sqliteTable(
     index("idx_traces_reconstructed").on(t.reconstructed, t.createdAt),
   ],
 );
+
+export type TraceRow = typeof traces.$inferSelect;
 
 // ─── event_records ─────────────────────────────────────────────
 export const eventRecords = sqliteTable(
@@ -78,6 +82,8 @@ export const eventRecords = sqliteTable(
   ],
 );
 
+export type EventRecordRow = typeof eventRecords.$inferSelect;
+
 // ─── verdict_reports ───────────────────────────────────────────
 export const verdictReports = sqliteTable(
   "verdict_reports",
@@ -100,6 +106,8 @@ export const verdictReports = sqliteTable(
     uniqueIndex("uniq_verdict_scenario_trace").on(t.scenarioId, t.traceId),
   ],
 );
+
+export type VerdictReportRow = typeof verdictReports.$inferSelect;
 
 // ─── transmissions ─────────────────────────────────────────────
 export const transmissions = sqliteTable("transmissions", {

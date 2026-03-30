@@ -8,7 +8,7 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: indexing-core-system
       type: refines

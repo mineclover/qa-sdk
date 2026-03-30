@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: df-system
       type: implements
+    - target: cli-flow-store
+      type: depends_on
 ---
 # CLI SQLite 영속
 

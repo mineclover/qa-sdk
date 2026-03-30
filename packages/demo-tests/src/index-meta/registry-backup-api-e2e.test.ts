@@ -9,12 +9,16 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryPrefixRegistry } from "index-meta";
-import { InMemoryIndexMetaStore } from "index-meta";
-import { exportVersion, importVersion } from "index-meta";
-import { applyEntryBatch, validateEntryBatchPayload } from "index-meta";
-import { ValidationError } from "index-meta";
-import type { EntryBatchPayload } from "index-meta";
+import {
+  InMemoryPrefixRegistry,
+  InMemoryIndexMetaStore,
+  exportVersion,
+  importVersion,
+  applyEntryBatch,
+  validateEntryBatchPayload,
+  ValidationError,
+  type EntryBatchPayload,
+} from "index-meta";
 
 // ── 공통 픽스처 ────────────────────────────────────────────
 
@@ -72,7 +76,7 @@ describe("PrefixRegistry — 중앙 capacity 관리", () => {
 
     const all = await registry.listAll();
     expect(all).toHaveLength(3);
-    expect(all.map((r) => r.prefix).sort()).toEqual(["action", "role", "role"]);
+    expect(all.map((r) => r.prefix).toSorted()).toEqual(["action", "role", "role"]);
   });
 });
 

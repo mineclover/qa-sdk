@@ -442,6 +442,7 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
 
   // shard 계산 — 현재 modulo만 지원. 향후 전략 추가 시 여기에 분기 추가.
   function computeShard(index: number): number {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- computeShard는 sharding 존재 시에만 호출됨
     return index % sharding!.numShards;
   }
 
@@ -752,6 +753,7 @@ export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressPro
   const indexMaxBig = (1n << BigInt(indexChars * 4)) - 1n;
 
   function computeShard(index: bigint): number {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- computeShard는 sharding 존재 시에만 호출됨
     return Number(index % BigInt(sharding!.numShards));
   }
 

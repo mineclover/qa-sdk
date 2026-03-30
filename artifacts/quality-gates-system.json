@@ -1,0 +1,120 @@
+{
+  "rootId": "quality-gates-system",
+  "bundles": [
+    {
+      "bundleId": "decision-flow-quality-bundle",
+      "title": "Decision Flow Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "decision-flow",
+        "docs:quality-gates"
+      ]
+    },
+    {
+      "bundleId": "decode-quality-bundle",
+      "title": "Decode Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "decode-service",
+        "docs:quality-gates"
+      ]
+    },
+    {
+      "bundleId": "definition-quality-gates",
+      "title": "Definition Quality Gates — 문서 그래프 기반 품질 검증",
+      "gateCount": 3,
+      "claimCount": 18,
+      "verifiedClaimCount": 18,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "cli",
+        "docs:quality-gates",
+        "spec-tracker",
+        "work-domain"
+      ]
+    },
+    {
+      "bundleId": "definition-service-quality-bundle",
+      "title": "Definition Service Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "definition-service",
+        "docs:quality-gates"
+      ]
+    },
+    {
+      "bundleId": "ingest-quality-bundle",
+      "title": "Ingest Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "docs:quality-gates",
+        "ingest-server"
+      ]
+    },
+    {
+      "bundleId": "query-quality-bundle",
+      "title": "Query Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "docs:quality-gates",
+        "query-service"
+      ]
+    },
+    {
+      "bundleId": "registry-quality-bundle",
+      "title": "Registry Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "docs:quality-gates",
+        "registry-service"
+      ]
+    },
+    {
+      "bundleId": "work-domain-quality-bundle",
+      "title": "Work Domain Quality Bundle",
+      "gateCount": 3,
+      "claimCount": 15,
+      "verifiedClaimCount": 15,
+      "bundleState": "verified",
+      "verifiedGates": 3,
+      "totalGates": 3,
+      "reviewScopes": [
+        "docs:quality-gates",
+        "work-domain"
+      ]
+    }
+  ],
+  "generatedAt": "2026-03-30T00:32:17.714Z"
+}

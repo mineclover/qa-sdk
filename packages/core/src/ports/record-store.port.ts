@@ -1,5 +1,3 @@
-import type { EventRecord } from "../types/record.js";
-
 /** EventRecord 저장소 계약 */
 export interface RecordStore {
   insertBatch(records: RecordInsert[]): Promise<void>;

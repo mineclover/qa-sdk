@@ -23,6 +23,7 @@
     "drizzle-orm": "1.0.0-beta.20",
     "hono": "^4.7.5",
     "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
     "index-meta": "workspace:*",
     "motion-workspace": "workspace:*",
     "zod": "^3.24.2"

@@ -1,8 +1,8 @@
 /**
- * Git 메타데이터 추출 — child_process 기반, 외부 의존 없음.
+ * Git 메타데이터 추출 — execa 기반.
  */
 
-import { execSync } from "node:child_process";
+import { execaSync } from "execa";
 
 // ── Types ────────────────────────────────────────────
 
@@ -18,12 +18,8 @@ export interface ConventionalCommit {
 /** remote origin URL 또는 디렉토리 이름으로 레포명 추출 */
 export function getRepoName(cwd: string): string {
   try {
-    const url = execSync("git remote get-url origin", {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    const match = url.match(/\/([^/]+?)(\.git)?$/);
+    const { stdout: url } = execaSync("git", ["remote", "get-url", "origin"], { cwd });
+    const match = url.trim().match(/\/([^/]+?)(\.git)?$/);
     if (match) return match[1];
   } catch {
     // remote 없으면 fallback
@@ -36,18 +32,14 @@ export function getRepoName(cwd: string): string {
 /** semver 형식 git tag 목록 (v prefix 제거) */
 export function listSemverTags(cwd: string): string[] {
   try {
-    const raw = execSync("git tag -l", {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const { stdout: raw } = execaSync("git", ["tag", "-l"], { cwd });
     return raw
       .trim()
       .split("\n")
       .filter(Boolean)
       .map((t) => t.replace(/^v/, ""))
       .filter((t) => /^\d+\.\d+\.\d+/.test(t))
-      .sort();
+      .toSorted();
   } catch {
     return [];
   }
@@ -62,17 +54,12 @@ export function parseConventionalCommits(
   cwd: string,
   opts?: { since?: string; maxCount?: number },
 ): ConventionalCommit[] {
-  // format에 공백 포함 → 셸 word splitting 방지를 위해 따옴표로 감싸야 함
-  let cmd = 'git log --format="%H %s"';
-  if (opts?.since) cmd += ` ${opts.since}..HEAD`;
-  if (opts?.maxCount) cmd += ` -n ${opts.maxCount}`;
+  const args = ["log", "--format=%H %s"];
+  if (opts?.since) args.push(`${opts.since}..HEAD`);
+  if (opts?.maxCount) args.push("-n", String(opts.maxCount));
 
   try {
-    const raw = execSync(cmd, {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const { stdout: raw } = execaSync("git", args, { cwd });
 
     const commits: ConventionalCommit[] = [];
     for (const line of raw.trim().split("\n")) {
@@ -112,7 +99,7 @@ export function collectCommitTypes(cwd: string): string[] {
   const commits = parseConventionalCommits(cwd);
   const seen = new Set(commits.map((c) => c.type));
   for (const std of STANDARD_CC_TYPES) seen.add(std);
-  return [...seen].sort();
+  return [...seen].toSorted();
 }
 
 /**

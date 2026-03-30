@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [structural, performance, runtime]
   links:
     - target: wi-api
       type: constrains

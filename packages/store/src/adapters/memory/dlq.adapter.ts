@@ -21,7 +21,7 @@ export class InMemoryDlqStore implements DlqStore {
   async findPending(limit = 100): Promise<StoredDlqItem[]> {
     return Array.from(this.items.values())
       .filter((item) => item.resolvedAt === null)
-      .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+      .toSorted((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
       .slice(0, limit)
       .map((item) => structuredClone(item));
   }

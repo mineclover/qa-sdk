@@ -80,7 +80,7 @@ export function matchRules<T>(
   const matched = rules.filter((r) =>
     coordMatchesPattern(coord, r.pattern, shape),
   );
-  return matched.sort(
+  return matched.toSorted(
     (a, b) =>
       patternSpecificity(b.pattern, shape) -
       patternSpecificity(a.pattern, shape),
@@ -109,7 +109,7 @@ export function resolvePolicy<T>(
       };
 
     case "priority": {
-      const sorted = [...matched].sort(
+      const sorted = [...matched].toSorted(
         (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
       );
       return {
@@ -128,6 +128,7 @@ export function resolvePolicy<T>(
 
     case "first-match": {
       // 원래 입력 순서에서 첫 번째 매칭을 찾는다
+      // eslint-disable-next-line typescript/no-non-null-assertion -- matched.length > 0이므로 find는 반드시 매칭됨
       const first = rules.find((r) =>
         coordMatchesPattern(coord, r.pattern, shape),
       )!;

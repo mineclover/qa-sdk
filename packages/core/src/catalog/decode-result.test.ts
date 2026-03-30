@@ -14,8 +14,6 @@ import {
   resolveAddress,
   decomposeAddress,
   encodePrefix,
-} from "./runtime.js";
-import {
   decodePrefixAsResult,
   resolveAddressAsResult,
   decomposeAddressAsResult,
@@ -24,8 +22,8 @@ import {
   entitiesToDecodeResult,
   decodeResultToEntities,
   decodeResultToDeep,
+  type DecodeResult,
 } from "./decode-result.js";
-import type { DecodeResult } from "./decode-result.js";
 
 // ── 테스트용 미니 카탈로그 ────────────────────────────────────
 

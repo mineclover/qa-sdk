@@ -34,7 +34,9 @@ function deriveInitials(user: MotionEditorScenePresenceUser): string {
 
   const parts = source.split(/[\s/_-]+/).filter((part) => part.length > 0);
   if (parts.length >= 2) {
-    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.slice(0, 2);
+    const first = parts[0] ?? "";
+    const second = parts[1] ?? "";
+    return `${first[0] ?? ""}${second[0] ?? ""}`.slice(0, 2);
   }
 
   return source.slice(0, 2).toUpperCase();

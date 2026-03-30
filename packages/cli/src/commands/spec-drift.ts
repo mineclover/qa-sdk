@@ -3,9 +3,7 @@
  */
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
-import { extractDeclarations } from "spec-analyzer";
-import { scanImplementations } from "spec-analyzer";
-import { analyzeDrift } from "spec-analyzer";
+import { extractDeclarations, scanImplementations, analyzeDrift } from "spec-analyzer";
 import { scanAndBuild } from "definition-catalog";
 
 export async function cliSpecDrift(args: string[]): Promise<void> {
@@ -31,9 +29,10 @@ export async function cliSpecDrift(args: string[]): Promise<void> {
   // 2. svc별 그룹핑
   const bySvc = new Map<string, typeof entries>();
   for (const e of entries) {
-    const group = bySvc.get(e.serviceId!) ?? [];
+    const svcId = e.serviceId as string; // filter에서 !e.serviceId 제거됨
+    const group = bySvc.get(svcId) ?? [];
     group.push(e);
-    bySvc.set(e.serviceId!, group);
+    bySvc.set(svcId, group);
   }
 
   let totalDeclared = 0;

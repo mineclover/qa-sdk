@@ -49,7 +49,7 @@ export interface ValidationCoordinate {
 // ═══════════════════════════════════════════════════════════════
 
 /** layer 번호 (0/1/2) → validation_layer entry 이름 */
-function layerToEntry(layer: 0 | 1 | 2): string {
+function _layerToEntry(layer: 0 | 1 | 2): string {
   return VALIDATION_LAYERS[layer];
 }
 

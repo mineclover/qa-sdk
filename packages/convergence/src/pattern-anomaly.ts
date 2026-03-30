@@ -6,7 +6,6 @@
 
 import type {
   PatternAnomaly,
-  AnomalyKind,
   PatternClassification,
   PatternStats,
 } from "@qa-sdk/core";
@@ -41,7 +40,7 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
       const key = `unclassified:${c.eventCount}`;
       seqGroups.set(key, (seqGroups.get(key) ?? 0) + 1);
     }
-    for (const [key, count] of seqGroups) {
+    for (const [_key, count] of seqGroups) {
       anomalies.push({
         kind: "unclassified",
         sessionId: `aggregate:${count}`,
@@ -79,7 +78,7 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
     }
 
     // 3. 볼륨 급증 감지
-    const prevTotal = input.previous.reduce((s, p) => s + p.count, 0) || 1;
+    const _prevTotal = input.previous.reduce((s, p) => s + p.count, 0) || 1;
     for (const [pattern, count] of currentCounts) {
       const prevStat = input.previous.find(p => p.pattern === pattern);
       const prevCount = prevStat?.count ?? 0;

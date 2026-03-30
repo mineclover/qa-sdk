@@ -12,7 +12,7 @@
  *   결제 DSL = { permission, endpoint, flow_point, order_event } × prod 바인딩
  */
 
-import type { Catalog, DimRef } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -301,6 +301,7 @@ export function analyzeDslVersionSkew(
       if (!axisVersionMap.has(axisId)) {
         axisVersionMap.set(axisId, new Map());
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- set above guarantees presence
       axisVersionMap.get(axisId)!.set(m.prefixId, axisVer);
     }
   }

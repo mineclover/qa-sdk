@@ -8,14 +8,19 @@
  */
 
 import { calcWeights } from "weighted-index";
-import type { DemoCatalog, PrefixVersionDef } from "./demo-catalog.js";
+import type { DemoCatalog } from "./demo-catalog.js";
 
 // ═══════════════════════════════════════════════════════════════
 //  Semantic RefEntries 정의 — 의미가 원본
 // ═══════════════════════════════════════════════════════════════
 
-/** prod/asia의 전 서비스 × 전 namespace (10개) */
+/** dev+prod × asia × 전 서비스 × 전 namespace (15개) — 권한 서비스 참조 대상 */
 export const PERM_SVC_MEANING = [
+  { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" },
+  { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
+  { env: "dev", region: "asia", svc_name: "auth", namespace: "shop" },
+  { env: "dev", region: "asia", svc_name: "payment", namespace: "shop" },
+  { env: "dev", region: "asia", svc_name: "gateway", namespace: "shop" },
   { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" },
   { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" },
   { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
@@ -28,7 +33,7 @@ export const PERM_SVC_MEANING = [
   { env: "prod", region: "asia", svc_name: "gateway", namespace: "cms" },
 ] as const;
 
-/** dev + prod의 5개 서비스 (namespace=shop, 10개) */
+/** dev+prod × asia × 전 서비스 × shop+cms (15개) — 이벤트 서비스 참조 대상 */
 export const EVT_SVC_MEANING = [
   { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" },
   { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
@@ -40,6 +45,11 @@ export const EVT_SVC_MEANING = [
   { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" },
   { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
   { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" },
+  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" },
+  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "cms" },
+  { env: "prod", region: "asia", svc_name: "auth", namespace: "cms" },
+  { env: "prod", region: "asia", svc_name: "payment", namespace: "cms" },
+  { env: "prod", region: "asia", svc_name: "gateway", namespace: "cms" },
 ] as const;
 
 /** prod 5개 서비스 (namespace=shop, 5개) */

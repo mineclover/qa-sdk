@@ -43,10 +43,10 @@ export function collectAxisUsage(
   const entries: AxisUsageEntry[] = [];
 
   // 1. prefix.dims
-  const prefixes = (catalog as any).prefixes as Record<string, any> | undefined;
+  const prefixes = catalog.prefixes;
   if (prefixes) {
     for (const [prefixId, prefixDef] of Object.entries(prefixes)) {
-      const dims = prefixDef.dims as Record<string, { kind: string; axisId?: string }> | undefined;
+      const dims = prefixDef.dims;
       if (!dims) continue;
       for (const [, dimRef] of Object.entries(dims)) {
         if (dimRef.kind === "axis" && dimRef.axisId) {
@@ -101,14 +101,14 @@ export function summarizeAxisUsage(entries: readonly AxisUsageEntry[]): AxisUsag
       axisId,
       totalCount: Object.values(r.sources).reduce((a, b) => a + b, 0),
       sources: r.sources,
-      contexts: [...r.contexts].sort(),
+      contexts: [...r.contexts].toSorted(),
     }))
-    .sort((a, b) => b.totalCount - a.totalCount);
+    .toSorted((a, b) => b.totalCount - a.totalCount);
 }
 
 /** 카탈로그에 정의되어 있지만 어디서도 사용하지 않는 축을 찾는다. */
 export function findUnusedAxes(catalog: Catalog, entries: readonly AxisUsageEntry[]): string[] {
-  const allAxes = Object.keys((catalog as any).axes ?? {});
+  const allAxes = Object.keys(catalog.axes ?? {});
   const used = new Set(entries.map(e => e.axisId));
   return allAxes.filter(a => !used.has(a));
 }

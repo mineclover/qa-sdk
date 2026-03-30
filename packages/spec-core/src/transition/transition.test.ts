@@ -283,7 +283,7 @@ describe("TransitionRegistry", () => {
   it("names — transition 이름 목록", () => {
     registry.register(ARTICLE_CREATE);
     registry.register(ARTICLE_READ);
-    expect(registry.names().sort()).toEqual(["article.create", "article.read"]);
+    expect(registry.names().toSorted()).toEqual(["article.create", "article.read"]);
   });
 
   it("size — 등록 수", () => {

@@ -192,7 +192,7 @@ describe("쇼핑몰 결제 시스템 — 샘플 문서 구성", () => {
     it("checkout-api의 outgoing 관계 3건", () => {
       const links = reg.getLinks("checkout-api", "outgoing");
       expect(links.length).toBe(3);
-      const types = links.map(l => `${l.linkType}→${l.targetId}`).sort();
+      const types = links.map(l => `${l.linkType}→${l.targetId}`).toSorted();
       expect(types).toEqual([
         "depends_on→checkout-state",
         "depends_on→order-events",
@@ -320,13 +320,13 @@ describe("쇼핑몰 결제 시스템 — 샘플 문서 구성", () => {
     it("복합 필터: interface + specification", () => {
       const result = reg.query({ scope: "interface", depth: "specification" });
       expect(result.length).toBe(2);
-      expect(result.map(e => e.id).sort()).toEqual(["checkout-api", "order-events"]);
+      expect(result.map(e => e.id).toSorted()).toEqual(["checkout-api", "order-events"]);
     });
 
     it("태그 필터: security 태그가 직접 부여된 문서", () => {
       const result = reg.query({ tags: ["security"] });
       expect(result.length).toBe(2);
-      expect(result.map(e => e.id).sort()).toEqual(["checkout-flow", "pci-constraint"]);
+      expect(result.map(e => e.id).toSorted()).toEqual(["checkout-flow", "pci-constraint"]);
     });
 
     it("좌표 주소로 직접 조회", () => {

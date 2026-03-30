@@ -50,6 +50,7 @@ export function installConvergenceScheduler(
             "convergence scheduled flush completed",
           );
         }
+        return undefined;
       })
       .catch((error) => {
         deps.logger?.error({ err: error }, "convergence scheduled flush failed");

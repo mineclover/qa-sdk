@@ -17,7 +17,7 @@ const ROUTE_CONTROLLER_RE = /@(?:Get|Post|Put|Patch|Delete)\s*\(\s*["'`](\/[^"'`
 function extractMethod(line: string): string {
   const m = line.match(/\.(get|post|put|patch|delete)\s*\(/i)
     ?? line.match(/@(Get|Post|Put|Patch|Delete)\s*\(/i);
-  return m ? m[1]!.toUpperCase() : "GET";
+  return m?.[1]?.toUpperCase() ?? "GET";
 }
 
 function scanSource(source: string, filePath: string): ImplementedSymbol[] {
@@ -32,20 +32,21 @@ function scanSource(source: string, filePath: string): ImplementedSymbol[] {
 
   const lines = source.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i];
+    if (!line) continue;
 
     // export function
-    for (const m of line.matchAll(EXPORT_FUNCTION_RE)) add(m[1]!, "function", i + 1);
+    for (const m of line.matchAll(EXPORT_FUNCTION_RE)) { if (m[1]) add(m[1], "function", i + 1); }
     // export class
-    for (const m of line.matchAll(EXPORT_CLASS_RE)) add(m[1]!, "class", i + 1);
+    for (const m of line.matchAll(EXPORT_CLASS_RE)) { if (m[1]) add(m[1], "class", i + 1); }
     // export interface/type
-    for (const m of line.matchAll(EXPORT_INTERFACE_RE)) add(m[1]!, "type", i + 1);
+    for (const m of line.matchAll(EXPORT_INTERFACE_RE)) { if (m[1]) add(m[1], "type", i + 1); }
     // Hono routes
-    for (const m of line.matchAll(ROUTE_HONO_RE)) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1);
+    for (const m of line.matchAll(ROUTE_HONO_RE)) { if (m[1]) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1); }
     // Express routes
-    for (const m of line.matchAll(ROUTE_EXPRESS_RE)) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1);
+    for (const m of line.matchAll(ROUTE_EXPRESS_RE)) { if (m[1]) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1); }
     // NestJS controller
-    for (const m of line.matchAll(ROUTE_CONTROLLER_RE)) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1);
+    for (const m of line.matchAll(ROUTE_CONTROLLER_RE)) { if (m[1]) add(`${extractMethod(line)} ${m[1]}`, "endpoint", i + 1); }
   }
 
   return symbols;

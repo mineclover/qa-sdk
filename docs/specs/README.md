@@ -47,7 +47,7 @@ Core Event 정의, payload 가이드, 그래프 의미론 힌트.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [pipeline.spec.md](pipeline/pipeline.spec.md) | 4단계 순수 연산 파이프라인 | @qa-sdk/engine | implemented |
+| [system-data-flow.spec.md](system/system-data-flow.spec.md) | 4단계 순수 연산 파이프라인 + ingest 전체 데이터 흐름 | @qa-sdk/engine | implemented |
 | [ingest.spec.md](pipeline/ingest.spec.md) | POST /v1/ingest — 수집 + 저장 + 후처리 오케스트레이션 | @qa-sdk/ingest-server | implemented |
 
 ### transition/ — 전이 해석 계층
@@ -99,8 +99,8 @@ SpecGraph DAG 시각화, 실시간 SSE 업데이트, UI 패널.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [graph-renderer.spec.md](visualization/graph-renderer.spec.md) | dagre 레이아웃 + SVG 렌더링 + 실시간 업데이터 | @qa-sdk/viz-web | implemented |
-| [panels.spec.md](visualization/panels.spec.md) | 시나리오 선택기, 이벤트 로그, Verdict 표시 패널 | @qa-sdk/viz-web | implemented |
+| [viz-surface-system.md](viz-system/viz-surface-system.md) | dagre 레이아웃 + SVG 렌더링 + 실시간 업데이터 | @qa-sdk/viz-web | implemented |
+| [viz-panel-layout.spec.md](viz-system/viz-panel-layout.spec.md) | 시나리오 선택기, 이벤트 로그, Verdict 표시 패널 | @qa-sdk/viz-web | implemented |
 
 ### roleplay/ — 롤플레이 폼 빌더
 
@@ -108,8 +108,7 @@ DOM 트리 모델 기반 비주얼 폼 빌더, QA 이벤트 발생.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [form-builder.spec.md](roleplay/form-builder.spec.md) | DOM 트리 모델, 트리 뷰, 속성 편집기, auto-layout, 폼 렌더러 | @qa-sdk/roleplay-web | implemented |
-| [qa-bridge.spec.md](roleplay/qa-bridge.spec.md) | QaBridge + EventEmitter + 템플릿 렌더링 | @qa-sdk/roleplay-web | implemented |
+| [viz-roleplay-system.md](viz-system/viz-roleplay-system.md) | DOM 트리 모델, 속성 편집기, auto-layout, QA bridge 런타임 | @qa-sdk/roleplay-web | implemented |
 
 ### browser/ — 브라우저 모니터링 SDK
 
@@ -143,15 +142,15 @@ API 클라이언트, iframe 통신 프로토콜.
 | [README.md](indexing/README.md) | 인덱싱 관심사 개념 맵 — 레이어 구조, 문서 체계, 관심사 흐름 | — | — |
 | [foundation.md](indexing/foundation.md) | 근본 원리 — 닫힌 공간, 전단사, 버전화된 공간 계열 | weighted-index + index-meta | — |
 | [patterns.md](indexing/patterns.md) | 사용 패턴 — EntityId 이동, cross-index 참조, 활성/비활성 | weighted-index + index-meta | — |
-| [conventions.md](indexing/conventions.md) | 관례/규칙 — ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 절차 | weighted-index + index-meta | — |
+| [conventions-system.md](indexing-core-system/conventions-system.md) | 관례/규칙 — ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 절차 | weighted-index + index-meta | — |
 | [weighted-index/README.md](indexing/weighted-index/README.md) | weighted-index 패키지 인덱스 — 수학 엔진, partial binder, pack format, range query 구성 | weighted-index | implemented |
-| [weighted-index/traceability.spec.md](indexing/weighted-index/traceability.spec.md) | 변경 전파 추적성 — 3-tier 핀 구조, 변경 유형별 전파 경로, DKG·qa-sdk 계약 | weighted-index | design |
-| [weighted-index/core.spec.md](indexing/weighted-index/core.spec.md) | WeightedIndex / LabelRegistry / PrefixCodec — 수학 엔진 + 버전 관리 | weighted-index | implemented |
+| [wi-trace-group.md](weighted-index-system/wi-trace-group.md) | 변경 전파 추적성 — 3-tier 핀 구조, 변경 유형별 전파 경로, DKG·qa-sdk 계약 | weighted-index | implemented |
+| [wi-api.spec.md](weighted-index-system/wi-api.spec.md) | WeightedIndex / LabelRegistry / PrefixCodec — 퍼블릭 API와 엔트리포인트 | weighted-index | implemented |
 | [weighted-index/partial-binder.spec.md](indexing/weighted-index/partial-binder.spec.md) | PartialBinder / createBinder — 부분 차원 캐시, full path canonicalization, PrefixCodec 연동 | weighted-index | implemented |
-| [weighted-index/pack-format.spec.md](indexing/weighted-index/pack-format.spec.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
+| [wi-pack-format-system.md](weighted-index-system/wi-pack-format-system.md) | PackFormat / FormatRegistry / SemanticAddress / AddressConverter — 포맷·프로토콜·적합성 | weighted-index | implemented |
 | [index-meta/registry.spec.md](indexing/index-meta/registry.spec.md) | MetaRegistry — 축·스냅샷·버전 스키마 + 활성 manifest | index-meta | implemented |
 | [permission-engine/README.md](indexing/permission-engine/README.md) | permission-engine 패키지 인덱스 — core layer, 레이어 구조, 모듈 의존 관계 | permission-engine | implemented |
-| [permission-engine/core.spec.md](indexing/permission-engine/core.spec.md) | PermissionSet / TernaryMask / ScopedEngine — binary/ternary mask, 상속, scope routing | permission-engine | implemented |
+| [permission-system.md](permission/permission-system.md) | PermissionSet / TernaryMask / ScopedEngine — 권한 모델, codec, migration 시스템 인덱스 | permission-engine | implemented |
 | [permission-engine/codec.spec.md](indexing/permission-engine/codec.spec.md) | PermissionCodec — 3-tier protocol stack, text↔integer↔bitmask, PrefixCodec/index-meta 호환성 | permission-engine | implemented |
 | [permission-engine/resource.spec.md](indexing/permission-engine/resource.spec.md) | resource / service-ref / permission-code — canonical resource 규칙, ServiceContext, permission text address | permission-engine | implemented |
 | [permission-engine/migration.spec.md](indexing/permission-engine/migration.spec.md) | migration.ts — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | permission-engine | implemented |
@@ -167,12 +166,12 @@ API 클라이언트, iframe 통신 프로토콜.
 | 스펙 | 설명 | 상태 |
 |---|---|---|
 | [README.md](spec-engine/README.md) | 프로젝트 정체성, indexing 레이어와의 경계, 핵심 개념 | design |
-| [core-types.md](spec-engine/core-types.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API | design (Phase 1-1 구현 완료) |
-| [architecture.md](spec-engine/architecture.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계 | design |
-| [phases.md](spec-engine/phases.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 | in-progress |
-| [design-knowledge-graph.md](spec-engine/design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 11종, 엣지 18종, 성장 나선 모델) | design |
-| [dkg-skills.md](spec-engine/dkg-skills.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, 8개 skill 카탈로그 | design |
-| [spec-propagation.md](spec-engine/spec-propagation.md) | Spec Propagation — 스펙 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 | design |
+| [spec-core-types-group.md](spec-engine-system/spec-core-types-group.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API | implemented |
+| [spec-architecture-system.md](spec-engine-system/spec-architecture-system.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계 | implemented |
+| [spec-phases-group.md](spec-engine-system/spec-phases-group.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 | implemented |
+| [dkg-system.md](dkg-system/dkg-system.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프와 성장 나선 모델 | design |
+| [dkg-skills-system.md](dkg-system/dkg-skills-system.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그 | implemented |
+| [spec-prop-system.md](spec-engine-system/spec-prop-system.md) | Spec Propagation — 스펙 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 | implemented |
 
 ### apm/ — APM 인프라
 
@@ -187,16 +186,52 @@ API 클라이언트, iframe 통신 프로토콜.
 | [codegen.spec.md](apm/codegen.spec.md) | Protobuf + CLI 타입 공급 + snapshotSupply 코드젠 | spec-complete |
 | [pipeline.spec.md](apm/pipeline.spec.md) | 파이프라인 고도화 — 미들웨어, Phase 2 metric, Range Query | spec-complete |
 
+### dkg-system/ — 설계 지식 그래프
+
+좌표계 성장 나선을 추적하는 메타데이터 그래프. 노드 16종, 엣지 18종, skill 39개.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [dkg-system.md](dkg-system/dkg-system.md) | DKG 시스템 모듈 — 전체 구성 overview | implemented |
+| [dkg-node-types.spec.md](dkg-system/dkg-node-types.spec.md) | 16종 노드 타입 (Axis, Prefix, Decision, Observation, Skill 등) | implemented |
+| [dkg-edge-types.spec.md](dkg-system/dkg-edge-types.spec.md) | 18종 엣지 타입 (composes, governs, observes 등) | implemented |
+| [dkg-skills-system.md](dkg-system/dkg-skills-system.md) | 39개 skill 시스템 — read/write/analysis/chain 4카테고리 | implemented |
+| [dkg-skill-catalog.spec.md](dkg-system/dkg-skill-catalog.spec.md) | SkillNode 타입, specialization, 등록 체계, 전체 목록 | implemented |
+| [dkg-state-store.spec.md](dkg-system/dkg-state-store.spec.md) | 로컬 SQLite 상태 저장소 (5 테이블) | implemented |
+| [dkg-constraint.spec.md](dkg-system/dkg-constraint.spec.md) | CON-001~CON-007 불변 조건 | implemented |
+| [dkg-growth-spiral.spec.md](dkg-system/dkg-growth-spiral.spec.md) | 고정 축 → 운용 → 발견 → 새 고정 축 성장 모델 | implemented |
+
+### skill-catalog/ — 스킬 카탈로그
+
+Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에서 관리.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [skill-catalog-system.md](skill-catalog/skill-catalog-system.md) | 전체 그룹 구조 — 5개 그룹, 3디렉토리 경계 | implemented |
+| [claude-skill-group.md](skill-catalog/claude-skill-group.md) | definition-catalog 중심 Claude skill 11개 | implemented |
+| [dkg-skill-group.md](skill-catalog/dkg-skill-group.md) | DKG 자동화 39개 — 현황 + 도메인 계층 연결 | implemented |
+
+### quality-gates/ — 품질 게이트 & 하네스
+
+11개 FSM 머신, 8개 번들, 24개 게이트 문서. 하네스가 문서/코드 생명주기를 상태 머신으로 관리하고, 품질 원장이 gate 실행 결과를 영속한다.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [quality-gates-system.md](quality-gates/quality-gates-system.md) | 루트 모듈 — 8개 번들 + quality-ledger + dkg-harness-bridge | implemented |
+| [quality-ledger.spec.md](quality-gates/quality-ledger.spec.md) | gate 실행 원장 — SQLite 스키마, 검증 판정 로직 | implemented |
+| [dkg-harness-bridge.spec.md](quality-gates/dkg-harness-bridge.spec.md) | DKG skill ↔ 하네스 연결 — skill 발견 → 하네스 상태 영향 | implemented |
+| [harness-state-model.spec.md](quality-gates/harness-state-model.spec.md) | 4단계 구조 상태 (concept → contract → gate → verified) | implemented |
+
 ### services/ — 서비스 분리 스펙
 
 인덱싱 시스템의 마이크로서비스 분리 API 계약.
 
 | 스펙 | 설명 | 기반 모듈 | 상태 |
 |---|---|---|---|
-| [registry-service.spec.md](services/registry-service.spec.md) | Registry Service — 중앙 prefix DAG, 버전 라이프사이클, DraftWorkspace, 배포 시점 조회 | PrefixRegistry, VersionLifecycle | planned |
-| [decode-service.spec.md](services/decode-service.spec.md) | Decode Service — DecodeMap 번들 기반 독립 decode, REST API, Edge/Node.js/임베디드 배포 | PrefixDecoder, MetaResolver | implemented |
-| [gate-service.spec.md](services/gate-service.spec.md) | Gate Service — 주소 상태 관리 분산 서비스, RPC 계약, cascade 전파, 정합성 모델 | GateEngine, invalid-ranges | planned |
-| [query-service.spec.md](services/query-service.spec.md) | Query Service — 관계형 질의 + 정책 해소 + gate 통합, 규칙 영속화, 충돌 전략 | RelationalEngine, policy-resolver | planned |
+| [registry-api.spec.md](registry-system/registry-api.spec.md) | Registry Service — 중앙 prefix DAG와 버전 라이프사이클 API 계약 | PrefixRegistry, VersionLifecycle | implemented |
+| [decode-api.spec.md](decode-system/decode-api.spec.md) | Decode Service — DecodeMap 번들 기반 독립 decode와 REST API | PrefixDecoder, MetaResolver | implemented |
+| [gate-api.spec.md](gate/gate-api.spec.md) | Gate Service — 주소 상태 관리 API와 cascade 정합성 모델 | GateEngine, invalid-ranges | implemented |
+| [query-api.spec.md](query-system/query-api.spec.md) | Query Service — 관계형 질의, 정책 해소, gate 통합 API | RelationalEngine, policy-resolver | implemented |
 
 ### operations/ — 운영 시나리오
 
@@ -240,24 +275,24 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | @qa-sdk/core | `data-model/` |
 | @qa-sdk/event-catalog | `event-vocabulary/` |
 | @qa-sdk/sdk | `collection/` |
-| @qa-sdk/engine | `pipeline/pipeline.spec.md` |
+| @qa-sdk/engine | `spec-engine-system/spec-phases-runtime.spec.md`, `system/system-data-flow.spec.md` |
 | @qa-sdk/store | `storage/` |
-| @qa-sdk/ingest-server | `pipeline/ingest.spec.md` + `server/ingest/` |
-| @qa-sdk/registry-server | `server/registry/services.spec.md`, `server/registry/events.spec.md` |
+| @qa-sdk/ingest-server | `ingest/ingest-interface-pipeline.spec.md` + `server/ingest/` |
+| @qa-sdk/registry-server | `registry-system/registry-api.spec.md`, `server/registry/services.spec.md`, `server/registry/events.spec.md` |
 | @qa-sdk/registry-client | `server/registry/client.spec.md` |
-| weighted-index | `indexing/weighted-index/README.md`, `indexing/weighted-index/core.spec.md`, `indexing/weighted-index/partial-binder.spec.md`, `indexing/weighted-index/pack-format.spec.md`, `indexing/weighted-index/range-query.spec.md` |
+| weighted-index | `weighted-index-system/wi-system.md`, `weighted-index-system/wi-api.spec.md`, `indexing/weighted-index/partial-binder.spec.md`, `weighted-index-system/wi-pack-format-system.md`, `indexing/weighted-index/range-query.spec.md` |
 | demo-snapshot | `indexing/README.md` (데이터 카탈로그 섹션) |
 | @qa-sdk/demo-tests | `indexing/README.md` (통합 테스트 섹션) |
 | platform-demo | `indexing/README.md` (플랫폼 데모 섹션) |
-| permission-engine | `indexing/permission-engine/README.md`, `indexing/permission-engine/core.spec.md`, `indexing/permission-engine/codec.spec.md`, `indexing/permission-engine/resource.spec.md`, `indexing/permission-engine/migration.spec.md` |
+| permission-engine | `permission/permission-system.md`, `permission/perm-codec-system.md`, `permission/perm-external-system.md`, `permission/perm-migration-system.md` |
 | index-meta | `indexing/index-meta/README.md` + `indexing/index-meta/` |
 | @qa-sdk/pino | `infra/logger.spec.md` |
 | @qa-sdk/browser | `browser/monitor.spec.md` |
 | @qa-sdk/viz-web | `visualization/`, `web/` |
 | @qa-sdk/roleplay-web | `roleplay/`, `web/iframe-protocol.spec.md` |
 | viz-3d | `indexing/signal-model.md`, `indexing/dimension-operations.md` |
-| spec-core | `spec-engine/` |
-| @qa-sdk/cli | `spec-engine/` (dkg/codegen 명령) |
+| spec-core | `spec-engine/`, `dkg-system/` |
+| @qa-sdk/cli | `spec-engine/` (codegen), `dkg-system/` (dkg 명령), `skill-catalog/` (skill 메타) |
 | shop-web | — (데모 사이트, 별도 스펙 없음) |
 | platform-demo | — (3D 모니터 + 레이아웃 데모) |
 | e2e | — (Playwright E2E 테스트) |

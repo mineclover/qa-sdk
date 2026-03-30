@@ -1,4 +1,5 @@
 import type { SqlDriver } from "index-meta";
+import { parseJsonColumn } from "../lib/typed-json.js";
 import {
   cloneStoredPolicyRule,
   compareStoredPolicyRules,
@@ -140,8 +141,8 @@ function toStoredPolicyRule<T>(row: PolicyRuleRow): StoredPolicyRule<T> {
     id: row.id,
     indexId: row.index_id,
     versionId: row.version_id,
-    pattern: JSON.parse(row.pattern_json) as StoredPolicyRule<T>["pattern"],
-    value: JSON.parse(row.value_json) as T,
+    pattern: parseJsonColumn<StoredPolicyRule<T>["pattern"]>(row.pattern_json, []),
+    value: parseJsonColumn<T>(row.value_json, undefined as T),
     priority: row.priority ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

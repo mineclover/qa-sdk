@@ -8,7 +8,7 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [observability, structural, runtime]
   links:
     - target: storage-schema-spec
       type: depends_on

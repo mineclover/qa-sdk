@@ -12,7 +12,7 @@ def:
   links:
     - target: address-spec
       type: traces_to
-    - target: address-scenarios
+    - target: address-scenarios-group
       type: refines
 ---
 

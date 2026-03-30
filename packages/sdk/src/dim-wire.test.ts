@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
-import { encodePrefixByValue, decodePrefix, getPrefixShape } from "demo-snapshot";
+import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, getPrefixShape } from "demo-snapshot";
 import { createDimWireCodec } from "@qa-sdk/codec";
 
 describe("DimWireCodec", () => {

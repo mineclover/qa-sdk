@@ -29,8 +29,9 @@ import {
   InMemoryPrefixOwnerStore,
   InMemoryDraftLockStore,
   RegistryService,
+  simulate,
+  analyze,
 } from "@qa-sdk/registry-service";
-import { simulate, analyze } from "@qa-sdk/registry-service";
 import pino from "pino";
 
 // ══════════════════════════════════════════════════════════════
@@ -519,7 +520,7 @@ describe("Format D: 실용 하이브리드 — 전체 패키지 등록 + 의존�
       const to = (edge as any).to.split(":")[0];
       toCounts.set(to, (toCounts.get(to) ?? 0) + 1);
     }
-    const sorted = [...toCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const sorted = [...toCounts.entries()].toSorted((a, b) => b[1] - a[1]);
 
     // core 또는 weighted_index가 최다 피의존
     const topDeps = sorted.slice(0, 3).map(([name]) => name);

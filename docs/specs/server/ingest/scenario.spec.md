@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: []
+  tags: [contract, runtime, testing]
   links:
     - target: scenario-store-spec
       type: depends_on

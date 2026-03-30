@@ -19,6 +19,9 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
+import { createLogger } from "@qa-sdk/core";
+
+const logger = createLogger("catalog-provider");
 
 export interface CatalogProvider {
   /** catalog 조회 (registry 또는 로컬) */
@@ -95,9 +98,9 @@ function createRegistryProvider(registryUrl: string, catalogId: string): Catalog
         const body = await res.json() as { data: string };
         _catalog = JSON.parse(body.data) as Catalog;
         return _catalog;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Fallback: 로컬 catalog
-        console.warn(`Registry 연결 실패 (${registryUrl}): ${err.message}. 로컬 fallback.`);
+        logger.warn({ err, registryUrl }, "Registry 연결 실패. 로컬 fallback.");
         try {
           const mod = await import("demo-snapshot");
           _catalog = mod.DEMO_CATALOG;

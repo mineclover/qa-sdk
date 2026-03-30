@@ -30,17 +30,17 @@ function extractFromCodeBlock(code: string, specId: string, marker?: string): De
 
   // 타입/클래스 (함수보다 먼저 — 같은 이름이면 타입 우선)
   for (const match of code.matchAll(TYPE_RE)) {
-    const name = match[1]!;
-    if (!seen.has(name)) {
-      seen.add(name);
-      const kind: SymbolKind = code.includes(`class ${name}`) ? "class" : "type";
-      symbols.push({ name, kind, marker, specId });
-    }
+    const name = match[1];
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    const kind: SymbolKind = code.includes(`class ${name}`) ? "class" : "type";
+    symbols.push({ name, kind, marker, specId });
   }
 
   // 함수 (타입/클래스와 겹치지 않는 것만)
   for (const match of code.matchAll(FUNCTION_RE)) {
-    const name = match[1]!;
+    const name = match[1];
+    if (!name) continue;
     // 예약어 제외
     if (["if", "for", "while", "switch", "return", "new", "throw", "catch", "import", "export", "readonly"].includes(name)) continue;
     if (!seen.has(name)) {
@@ -60,21 +60,24 @@ function extractMarkerCodeBlocks(markdown: string): { marker: string; code: stri
 
   const sections: { marker: string; start: number; end: number }[] = [];
   for (const match of markdown.matchAll(markerSectionRe)) {
+    if (!match[1] || match.index === undefined) continue;
     sections.push({
-      marker: match[1]!,
-      start: match.index!,
+      marker: match[1],
+      start: match.index,
       end: markdown.length,
     });
   }
   // 각 섹션의 끝 = 다음 섹션의 시작
   for (let i = 0; i < sections.length - 1; i++) {
-    sections[i]!.end = sections[i + 1]!.start;
+    sections[i].end = sections[i + 1].start;
   }
 
   for (const section of sections) {
     const sectionText = markdown.slice(section.start, section.end);
     for (const codeMatch of sectionText.matchAll(codeBlockRe)) {
-      results.push({ marker: section.marker, code: codeMatch[1]! });
+      if (codeMatch[1]) {
+        results.push({ marker: section.marker, code: codeMatch[1] });
+      }
     }
   }
 

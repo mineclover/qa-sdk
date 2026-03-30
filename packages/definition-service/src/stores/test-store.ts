@@ -1,4 +1,6 @@
-import type Database from "better-sqlite3";
+import type { DefinitionServiceDatabase } from "../database.module.js";
+import { testRegistry, testResults } from "../db/schema.js";
+import { eq, and, desc, asc, sql, count, isNull } from "drizzle-orm";
 
 /** 테스트 등록 레코드 */
 export interface TestRegistration {
@@ -43,121 +45,158 @@ export interface TestStore {
   getLatestResult(docId: string): TestResult | null;
   getResultHistory(docId: string, limit?: number): TestResult[];
   getStatus(docId: string): TestStatus;
+  /** 등록된 모든 문서 ID 목록 (중복 제거) */
+  listRegisteredDocIds(): string[];
+  /** 전체 등록 건수 */
+  countRegistrations(): number;
 }
 
-function rowToReg(row: Record<string, unknown>): TestRegistration {
+/** Drizzle select 결과 → TestRegistration 변환 */
+type RegRow = typeof testRegistry.$inferSelect;
+
+function rowToReg(row: RegRow): TestRegistration {
   return {
-    id: row["id"] as number,
-    docId: row["doc_id"] as string,
-    testFile: row["test_file"] as string,
-    suite: (row["suite"] as string) || undefined,
-    description: (row["description"] as string) || undefined,
-    layer: (row["layer"] as string) || undefined,
-    registeredAt: row["registered_at"] as string,
+    id: row.id,
+    docId: row.docId,
+    testFile: row.testFile,
+    suite: row.suite || undefined,
+    description: row.description || undefined,
+    layer: row.layer || undefined,
+    registeredAt: row.registeredAt,
   };
 }
 
-function rowToResult(row: Record<string, unknown>): TestResult {
+/** Drizzle select 결과 → TestResult 변환 */
+type ResultRow = typeof testResults.$inferSelect;
+
+function rowToResult(row: ResultRow): TestResult {
   return {
-    id: row["id"] as number,
-    docId: row["doc_id"] as string,
-    testFile: row["test_file"] as string,
-    suite: (row["suite"] as string) || undefined,
-    passed: row["passed"] as number,
-    failed: row["failed"] as number,
-    skipped: row["skipped"] as number,
-    durationMs: (row["duration_ms"] as number) || undefined,
-    errorSummary: (row["error_summary"] as string) || undefined,
-    runAt: row["run_at"] as string,
+    id: row.id,
+    docId: row.docId,
+    testFile: row.testFile,
+    suite: row.suite || undefined,
+    passed: row.passed,
+    failed: row.failed,
+    skipped: row.skipped,
+    durationMs: row.durationMs || undefined,
+    errorSummary: row.errorSummary || undefined,
+    runAt: row.runAt,
   };
 }
 
 export class SqlTestStore implements TestStore {
-  private readonly stmtRegister;
-  private readonly stmtUnregister;
-  private readonly stmtFindByDoc;
-  private readonly stmtFindByFile;
-  private readonly stmtRecordResult;
-  private readonly stmtLatestResult;
-  private readonly stmtResultHistory;
-  private readonly stmtCountRegs;
-
-  constructor(private readonly db: Database.Database) {
-    this.stmtRegister = db.prepare(`
-      INSERT INTO test_registry (doc_id, test_file, suite, description, layer)
-      VALUES (@doc_id, @test_file, @suite, @description, @layer)
-      ON CONFLICT(doc_id, test_file, suite) DO UPDATE SET
-        description=@description, layer=@layer, registered_at=datetime('now')
-    `);
-    this.stmtUnregister = db.prepare(
-      "DELETE FROM test_registry WHERE doc_id = ? AND test_file = ? AND (suite = ? OR (suite IS NULL AND ? IS NULL))",
-    );
-    this.stmtFindByDoc = db.prepare("SELECT * FROM test_registry WHERE doc_id = ? ORDER BY test_file, suite");
-    this.stmtFindByFile = db.prepare("SELECT * FROM test_registry WHERE test_file = ? ORDER BY doc_id");
-    this.stmtRecordResult = db.prepare(`
-      INSERT INTO test_results (doc_id, test_file, suite, passed, failed, skipped, duration_ms, error_summary)
-      VALUES (@doc_id, @test_file, @suite, @passed, @failed, @skipped, @duration_ms, @error_summary)
-    `);
-    this.stmtLatestResult = db.prepare(
-      "SELECT * FROM test_results WHERE doc_id = ? ORDER BY run_at DESC LIMIT 1",
-    );
-    this.stmtResultHistory = db.prepare(
-      "SELECT * FROM test_results WHERE doc_id = ? ORDER BY run_at DESC LIMIT ?",
-    );
-    this.stmtCountRegs = db.prepare("SELECT COUNT(*) as cnt FROM test_registry WHERE doc_id = ?");
-  }
+  constructor(private readonly db: DefinitionServiceDatabase) {}
 
   register(reg: TestRegistration): number {
-    const result = this.stmtRegister.run({
-      doc_id: reg.docId,
-      test_file: reg.testFile,
-      suite: reg.suite ?? null,
-      description: reg.description ?? null,
-      layer: reg.layer ?? null,
-    });
+    const result = this.db
+      .insert(testRegistry)
+      .values({
+        docId: reg.docId,
+        testFile: reg.testFile,
+        suite: reg.suite ?? null,
+        description: reg.description ?? null,
+        layer: reg.layer ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [testRegistry.docId, testRegistry.testFile, testRegistry.suite],
+        set: {
+          description: reg.description ?? null,
+          layer: reg.layer ?? null,
+          registeredAt: sql`datetime('now')`,
+        },
+      })
+      .run();
     return Number(result.lastInsertRowid);
   }
 
   unregister(docId: string, testFile: string, suite?: string): boolean {
-    return this.stmtUnregister.run(docId, testFile, suite ?? null, suite ?? null).changes > 0;
+    // suite가 null인 경우와 값이 있는 경우 모두 처리
+    const suiteCondition = suite != null
+      ? eq(testRegistry.suite, suite)
+      : isNull(testRegistry.suite);
+
+    const result = this.db
+      .delete(testRegistry)
+      .where(
+        and(
+          eq(testRegistry.docId, docId),
+          eq(testRegistry.testFile, testFile),
+          suiteCondition,
+        ),
+      )
+      .run();
+    return result.changes > 0;
   }
 
   findByDoc(docId: string): TestRegistration[] {
-    return (this.stmtFindByDoc.all(docId) as Record<string, unknown>[]).map(rowToReg);
+    return this.db
+      .select()
+      .from(testRegistry)
+      .where(eq(testRegistry.docId, docId))
+      .orderBy(asc(testRegistry.testFile), asc(testRegistry.suite))
+      .all()
+      .map(rowToReg);
   }
 
   findByFile(testFile: string): TestRegistration[] {
-    return (this.stmtFindByFile.all(testFile) as Record<string, unknown>[]).map(rowToReg);
+    return this.db
+      .select()
+      .from(testRegistry)
+      .where(eq(testRegistry.testFile, testFile))
+      .orderBy(asc(testRegistry.docId))
+      .all()
+      .map(rowToReg);
   }
 
   recordResult(result: TestResult): number {
-    const r = this.stmtRecordResult.run({
-      doc_id: result.docId,
-      test_file: result.testFile,
-      suite: result.suite ?? null,
-      passed: result.passed,
-      failed: result.failed,
-      skipped: result.skipped,
-      duration_ms: result.durationMs ?? null,
-      error_summary: result.errorSummary ?? null,
-    });
+    const r = this.db
+      .insert(testResults)
+      .values({
+        docId: result.docId,
+        testFile: result.testFile,
+        suite: result.suite ?? null,
+        passed: result.passed,
+        failed: result.failed,
+        skipped: result.skipped,
+        durationMs: result.durationMs ?? null,
+        errorSummary: result.errorSummary ?? null,
+      })
+      .run();
     return Number(r.lastInsertRowid);
   }
 
   getLatestResult(docId: string): TestResult | null {
-    const row = this.stmtLatestResult.get(docId) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(testResults)
+      .where(eq(testResults.docId, docId))
+      .orderBy(desc(testResults.runAt))
+      .limit(1)
+      .get();
     return row ? rowToResult(row) : null;
   }
 
   getResultHistory(docId: string, limit = 20): TestResult[] {
-    return (this.stmtResultHistory.all(docId, limit) as Record<string, unknown>[]).map(rowToResult);
+    return this.db
+      .select()
+      .from(testResults)
+      .where(eq(testResults.docId, docId))
+      .orderBy(desc(testResults.runAt))
+      .limit(limit)
+      .all()
+      .map(rowToResult);
   }
 
   getStatus(docId: string): TestStatus {
-    const cnt = (this.stmtCountRegs.get(docId) as { cnt: number }).cnt;
+    const cntRow = this.db
+      .select({ cnt: count() })
+      .from(testRegistry)
+      .where(eq(testRegistry.docId, docId))
+      .get();
+    const cnt = cntRow?.cnt ?? 0;
     const latest = this.getLatestResult(docId);
     const total = latest ? latest.passed + latest.failed + latest.skipped : 0;
-    const passRate = total > 0 ? latest!.passed / total : 0;
+    const passRate = total > 0 && latest ? latest.passed / total : 0;
     return {
       docId,
       registrations: cnt,
@@ -165,5 +204,23 @@ export class SqlTestStore implements TestStore {
       passRate,
       healthy: !latest || latest.failed === 0,
     };
+  }
+
+  /** 등록된 모든 문서 ID 목록 (중복 제거) */
+  listRegisteredDocIds(): string[] {
+    return this.db
+      .selectDistinct({ docId: testRegistry.docId })
+      .from(testRegistry)
+      .all()
+      .map(r => r.docId);
+  }
+
+  /** 전체 등록 건수 */
+  countRegistrations(): number {
+    const row = this.db
+      .select({ cnt: count() })
+      .from(testRegistry)
+      .get();
+    return row?.cnt ?? 0;
   }
 }

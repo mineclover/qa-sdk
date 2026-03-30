@@ -76,6 +76,7 @@ export function resolveAll(): Map<string, ResolvedDef> {
   const resolving = new Set<string>(); // 순환 참조 감지
 
   const resolve = (id: string): ResolvedDef | null => {
+    // eslint-disable-next-line typescript/no-non-null-assertion
     if (result.has(id)) return result.get(id)!;
     if (resolving.has(id)) return null; // 순환 참조
     resolving.add(id);
@@ -168,8 +169,8 @@ export const PRESETS: Record<string, { axes: EnumAxis[]; composites: CompositeDe
 export function loadPreset(key: string) {
   const p = PRESETS[key];
   if (!p) return;
-  store.axes = p.axes.map((a) => ({ ...a, entries: [...a.entries] }));
-  store.composites = p.composites.map((c) => ({ ...c, dims: [...c.dims] }));
+  store.axes = p.axes.map((a) => Object.assign({}, a, { entries: [...a.entries] }));
+  store.composites = p.composites.map((c) => Object.assign({}, c, { dims: [...c.dims] }));
   notify();
 }
 

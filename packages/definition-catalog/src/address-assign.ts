@@ -4,9 +4,8 @@
  * 같은 scope×aspect×depth 내에서 순번(seq)을 부여하여
  * 각 문서에 유일한 v2 주소를 할당한다.
  */
-import type { DefinitionEntry } from "./types.js";
+import type { DefinitionEntry, DefScope, DefAspect, DefDepth } from "./types.js";
 import { encodeUniqueDocument, serializeUniqueDocumentAddress } from "./observe.js";
-import type { DefScope, DefAspect, DefDepth } from "./types.js";
 
 /** 주소 할당 결과 */
 export interface AddressAssignment {
@@ -43,7 +42,8 @@ export function assignUniqueAddresses(entries: readonly DefinitionEntry[]): read
     group.sort((a, b) => a.id.localeCompare(b.id));
 
     for (let i = 0; i < group.length; i++) {
-      const entry = group[i]!;
+      const entry = group[i];
+      if (!entry) continue;
       const seq = i + 1;  // 1-based
       const address = encodeUniqueDocument({
         scope: entry.scope,

@@ -12,7 +12,7 @@ def:
   svc: spec-core
   tags: [entry-point]
   links:
-    - target: axis-boundary-spec
+    - target: spec-reference-system
       type: refines
 ---
 

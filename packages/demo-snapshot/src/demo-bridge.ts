@@ -48,6 +48,7 @@ function toRegistryIndexRefValue(
   let encoded = 0;
   let stride = 1;
   for (let index = prefix.labels.length - 1; index >= 0; index -= 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- for 루프 인덱스 범위 내 보장
     const label = prefix.labels[index]!;
     encoded += decoded[label].position * stride;
     stride *= getRegistryDimSize(catalog, prefixId, versionId, label);

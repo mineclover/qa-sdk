@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: shopping-backend
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: shopping-backend-spec
       type: refines

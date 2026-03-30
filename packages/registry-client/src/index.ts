@@ -247,7 +247,9 @@ export function createRegistryConfigClient(config: RegistryConfig) {
     }>> {
       const res = await safeFetch(`${baseUrl}/api/endpoints?catalog=${catalogId}`);
       if (!res?.ok) return [];
-      return res.json() as any;
+      return res.json() as Promise<Array<{
+        namespace: string; svcName: string; env: string; region: string; url: string;
+      }>>;
     },
 
     /** 서비스 URL 맵 (config.js 대체용). env로 dev/prod 전환. */
@@ -256,7 +258,7 @@ export function createRegistryConfigClient(config: RegistryConfig) {
       const params = new URLSearchParams({ catalog: catalogId, env: e, namespace: defaultNamespace, region: defaultRegion });
       const res = await safeFetch(`${baseUrl}/api/services/urls?${params}`);
       if (!res?.ok) return {};
-      return res.json() as any;
+      return res.json() as Promise<Record<string, string>>;
     },
 
     /** Catalog JSON fetch */
@@ -290,7 +292,12 @@ export function createRegistryConfigClient(config: RegistryConfig) {
     } | null> {
       const res = await safeFetch(`${baseUrl}/health/generation`);
       if (!res?.ok) return null;
-      const body = await res.json() as { generations?: Record<string, any> };
+      const body = await res.json() as { generations?: Record<string, {
+        catalogHash: string;
+        dkgConfigHash: string | null;
+        prefixCount: number;
+        axisCount: number;
+      }> };
       return body.generations?.[catalogId] ?? null;
     },
 
@@ -298,14 +305,14 @@ export function createRegistryConfigClient(config: RegistryConfig) {
     async fetchDecodeMaps(): Promise<unknown[]> {
       const res = await safeFetch(`${baseUrl}/api/decode-map?catalog=${catalogId}`);
       if (!res?.ok) return [];
-      return res.json() as any;
+      return res.json() as Promise<unknown[]>;
     },
 
     /** 단건 DecodeMap */
     async fetchDecodeMap(prefix: string, version: string): Promise<unknown | null> {
       const res = await safeFetch(`${baseUrl}/api/decode-map/${prefix}/${version}?catalog=${catalogId}`);
       if (!res?.ok) return null;
-      return res.json() as any;
+      return res.json() as Promise<unknown>;
     },
 
     /** 이벤트 스키마 목록 (서비스별 필터 가능) */
@@ -313,7 +320,7 @@ export function createRegistryConfigClient(config: RegistryConfig) {
       const q = serviceId ? `&service=${serviceId}` : "";
       const res = await safeFetch(`${baseUrl}/api/event-schemas?catalog=${catalogId}${q}`);
       if (!res?.ok) return [];
-      return res.json() as any;
+      return res.json() as Promise<unknown[]>;
     },
 
     /** gateway 라우팅 구성 */
@@ -322,14 +329,14 @@ export function createRegistryConfigClient(config: RegistryConfig) {
       const params = new URLSearchParams({ catalog: catalogId, env: e, namespace: defaultNamespace, region: defaultRegion });
       const res = await safeFetch(`${baseUrl}/api/services/gateway?${params}`);
       if (!res?.ok) return { routes: [], env: e };
-      return res.json() as any;
+      return res.json() as Promise<{ routes: Array<{ path: string; serviceId: string; url: string; tier: string }>; env: string }>;
     },
 
     /** svc-owners 맵 (prefix → serviceId) */
     async fetchSvcOwners(): Promise<Record<string, string>> {
       const res = await safeFetch(`${baseUrl}/api/services/svc-owners?catalog=${catalogId}`);
       if (!res?.ok) return {};
-      return res.json() as any;
+      return res.json() as Promise<Record<string, string>>;
     },
 
     /** health check */

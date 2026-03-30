@@ -14,7 +14,7 @@
  * GateAwareEntryFlagStore:        flexible 모드 setFlag() 후 자동 재계산
  */
 
-import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
+import type { PrefixRegistry } from "./prefix-registry.js";
 import type { IndexMetaStore } from "./index-meta-store.js";
 import type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
 import type {
@@ -66,7 +66,7 @@ export class GateEngine {
     // composite prefix — 각 dim의 leaf ref에서 specs 수집
     const specs: DimStateSpec[] = [];
     for (let i = 0; i < record.refs.length; i++) {
-      const ref = record.refs[i]!;
+      const ref = record.refs[i];
       const dimSpecs = await this._buildLeafSpecs(ref.prefix, ref.versionId, i, ref.capacity);
       specs.push(...dimSpecs);
 

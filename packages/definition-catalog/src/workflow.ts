@@ -14,8 +14,7 @@
  *   → WorkflowSpec { nodes, edges, validators, metadata }
  */
 
-import type { ContractSection, AssembledContract, ContractStats, Reversibility, EvidenceItem } from "./contract.js";
-import { parseEvidenceItems } from "./contract.js";
+import type { ContractSection, AssembledContract, Reversibility } from "./contract.js";
 import type { ContractMarkerKind } from "./taxonomy.js";
 
 // ─── 타입: 워크플로우 노드 ──────────────────────────────

@@ -8,13 +8,13 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [structural, runtime, contract]
   links:
     - target: index-codec-spec
       type: constrains
     - target: table-accessor-api
       type: constrains
-    - target: index-meta-sdk-spec
+    - target: sdk-system
       type: constrains
 ---
 # conv-naming

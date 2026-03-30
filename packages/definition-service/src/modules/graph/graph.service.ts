@@ -2,6 +2,9 @@ import { Injectable, Inject } from "@nestjs/common";
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  selectConcernContext,
+  selectImpactContext,
+  type DefBoundaryContextResult,
   type ImpactAnalysis,
   type EffectiveConcerns,
   type DefinitionEntry,
@@ -81,6 +84,60 @@ export class GraphService {
     return { docId, concerns };
   }
 
+  boundaryContext(
+    docId: string,
+    level: "purpose" | "overview" = "overview",
+    mode: "direct" | "transitive" = "transitive",
+  ): DefBoundaryContextResult | null {
+    if (!this.docs.get(docId)) return null;
+
+    const boundary = this.docs.getBoundary(docId, level);
+    if (!boundary) return null;
+
+    const concerns = this.concerns(docId);
+    const impact = this.impact(docId);
+    if (!concerns || !impact) return null;
+
+    const selectedConcerns = selectConcernContext(concerns.concerns, mode);
+    const selectedImpact = selectImpactContext(impact, mode);
+    const feedbackTrace = this.docs.getFeedbackTrace([
+      docId,
+      ...selectedImpact.impacted.map((item) => item.id),
+    ]);
+
+    return {
+      mode,
+      level,
+      boundary,
+      concerns: {
+        docId,
+        direct: [...selectedConcerns.direct],
+        inherited: selectedConcerns.inherited.map((item) => ({
+          tag: item.concern,
+          source: item.from,
+          via: item.via,
+        })),
+        all: [...selectedConcerns.all],
+      },
+      impact: {
+        sourceId: selectedImpact.sourceId,
+        impacted: selectedImpact.impacted.map((item) => ({
+          docId: item.id,
+          via: item.via,
+          path: item.path.join(" → "),
+          direction: item.direction,
+          distance: item.depth,
+          ...(item.layer ? { layer: item.layer } : {}),
+          crossLayer: item.crossLayer,
+        })),
+        affectedGroups: [...selectedImpact.affectedGroups],
+        blastRadius: selectedImpact.blastRadius,
+        byLayer: selectedImpact.byLayer,
+      },
+      feedbackTrace,
+    };
+  }
+
   /** 그래프 검증 — 깨진 링크, 순환 참조, 고아 문서 (DB 기반) */
   validate(): { issues: ValidationIssue[]; errors: number; warnings: number; passed: boolean } {
     const allDocs = this.docs.list();
@@ -110,8 +167,8 @@ export class GraphService {
       if (doc.lifecycle === "deprecated") continue;
       const visited = new Set<string>();
       const stack = [doc.docId];
-      while (stack.length > 0) {
-        const current = stack.pop()!;
+      let current: string | undefined;
+      while ((current = stack.pop()) !== undefined) {
         if (visited.has(current)) {
           if (current === doc.docId) {
             issues.push({ severity: "error", type: "circular-ref", docId: doc.docId, message: "순환 참조 감지" });

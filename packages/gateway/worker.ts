@@ -165,13 +165,14 @@ export default {
 
         try {
           return await proxyRequest(request, url, route, env, headers);
-        } catch (err: any) {
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
           // 에러 self-report (fire-and-forget, 순환 방지: /v1/ingest 에러는 스킵)
           if (!route.prefix.startsWith("/v1/ingest") && env.INGEST_SERVICE) {
-            reportProxyError(env.INGEST_SERVICE, route.prefix, err?.message);
+            reportProxyError(env.INGEST_SERVICE, route.prefix, message);
           }
           return Response.json(
-            { error: "Service unavailable", target: route.prefix, message: err?.message },
+            { error: "Service unavailable", target: route.prefix, message },
             { status: 502 },
           );
         }

@@ -6,12 +6,15 @@
  * 이벤트 수집 + 저장 + WebSocket 실시간 스트림.
  */
 import { D1SqlDriver } from "index-meta";
+import { drizzle } from "drizzle-orm/d1";
 import { createApp } from "./app.js";
 import { INGEST_D1_SCHEMA_DDL } from "./stores/d1-schema.sql.js";
+import * as schema from "./db/schema.js";
 import { D1RecordStore } from "./stores/d1-record-store.js";
 import { D1TraceStore } from "./stores/d1-trace-store.js";
 import { D1SessionStore } from "./stores/d1-session-store.js";
 import { D1VerdictStore } from "./stores/d1-verdict-store.js";
+import type { D1Db } from "./stores/d1-db-type.js";
 import {
   InMemoryTransmissionStore,
   InMemoryGraphStore,
@@ -25,15 +28,39 @@ import { RecordStreamBroker } from "./lib/record-stream-broker.js";
 declare const WebSocketPair: {
   new (): { 0: WebSocket; 1: WebSocket };
 };
+/** CF Workers WebSocket 이벤트 */
+interface CFWebSocketEvent {
+  data: string | ArrayBuffer;
+}
+
 declare interface WebSocket {
   accept(): void;
   send(data: string): void;
   close(code?: number, reason?: string): void;
-  addEventListener(type: string, handler: (evt: any) => void): void;
+  addEventListener(type: string, handler: (evt: CFWebSocketEvent) => void): void;
+}
+
+/** CF Workers D1 Database 바인딩 */
+interface D1Result<T = unknown> {
+  results: T[];
+  success: boolean;
+  error?: string;
+}
+
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement;
+  all<T = unknown>(): Promise<D1Result<T>>;
+  first<T = unknown>(): Promise<T | null>;
+  run(): Promise<D1Result>;
+}
+
+interface D1Database {
+  exec(sql: string): Promise<unknown>;
+  prepare(sql: string): D1PreparedStatement;
 }
 
 interface Env {
-  DB: any;
+  DB: D1Database;
   CORS_ORIGIN?: string;
 }
 
@@ -54,7 +81,7 @@ function handleWebSocketUpgrade(): Response {
 
   const unsubscribers = new Map<string, () => void>();
 
-  server.addEventListener("message", (evt: any) => {
+  server.addEventListener("message", (evt: CFWebSocketEvent) => {
     let msg: { type: string; scenarioId: string };
     try {
       msg = JSON.parse(typeof evt.data === "string" ? evt.data : String(evt.data));
@@ -89,7 +116,7 @@ function handleWebSocketUpgrade(): Response {
     unsubscribers.clear();
   });
 
-  return new Response(null, { status: 101, webSocket: client } as any);
+  return new Response(null, { status: 101, webSocket: client } as unknown as ResponseInit);
 }
 
 export default {
@@ -106,6 +133,7 @@ export default {
     }
 
     const driver = new D1SqlDriver(env.DB);
+    const db = drizzle(env.DB, { schema }) as unknown as D1Db;
 
     // DDL 초기화 — IF NOT EXISTS이므로 매 요청 안전 실행
     for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
@@ -113,10 +141,10 @@ export default {
     }
 
     const app = createApp({
-      recordStore: new D1RecordStore(driver),
-      traceStore: new D1TraceStore(driver),
-      sessionStore: new D1SessionStore(driver),
-      verdictStore: new D1VerdictStore(driver),
+      recordStore: new D1RecordStore(db),
+      traceStore: new D1TraceStore(db),
+      sessionStore: new D1SessionStore(db),
+      verdictStore: new D1VerdictStore(db),
       transmissionStore: new InMemoryTransmissionStore(),
       graphStore: new InMemoryGraphStore(),
       scenarioSpecStore: new InMemoryScenarioSpecStore(),

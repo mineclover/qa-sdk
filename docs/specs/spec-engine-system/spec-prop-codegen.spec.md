@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: []
+  tags: [runtime, contract, structural]
   links:
-    - target: spec-core-types
+    - target: spec-core-types-group
       type: depends_on
 ---
 

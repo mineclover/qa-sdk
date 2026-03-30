@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: cli
-  tags: []
+  tags: [structural, observability, contract]
   links:
     - target: codegen-spec
       type: refines

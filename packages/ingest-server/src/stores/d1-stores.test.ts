@@ -2,7 +2,7 @@
  * D1 Store 단위 테스트 — InMemory SQLite 기반.
  *
  * NestJS 패턴: 각 Store를 독립적으로 생성+테스트.
- * NodeSqliteDriver(:memory:)로 D1 시뮬레이션.
+ * NodeSqliteDriver(:memory:) → drizzle 인스턴스로 D1 시뮬레이션.
  */
 
 import { describe, expect, it, beforeEach } from "vitest";
@@ -11,24 +11,25 @@ import { D1RecordStore } from "./d1-record-store.js";
 import { D1TraceStore } from "./d1-trace-store.js";
 import { D1SessionStore } from "./d1-session-store.js";
 import { D1VerdictStore } from "./d1-verdict-store.js";
+import { createD1Drizzle, type D1Db } from "./d1-db-type.js";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 
-async function createDb() {
+function createDb(): D1Db {
   const driver = new NodeSqliteDriver(":memory:", null);
   const drizzleDb = drizzle({ client: driver.$client });
   migrate(drizzleDb, { migrationsFolder });
-  return driver;
+  return createD1Drizzle(driver.$client);
 }
 
 describe("D1RecordStore", () => {
   let store: D1RecordStore;
 
-  beforeEach(async () => {
-    const driver = await createDb();
-    store = new D1RecordStore(driver);
+  beforeEach(() => {
+    const db = createDb();
+    store = new D1RecordStore(db);
   });
 
   it("insertBatch + findByTraceId", async () => {
@@ -75,9 +76,9 @@ describe("D1RecordStore", () => {
 describe("D1TraceStore", () => {
   let store: D1TraceStore;
 
-  beforeEach(async () => {
-    const driver = await createDb();
-    store = new D1TraceStore(driver);
+  beforeEach(() => {
+    const db = createDb();
+    store = new D1TraceStore(db);
   });
 
   it("upsert + findById", async () => {
@@ -117,9 +118,9 @@ describe("D1TraceStore", () => {
 describe("D1SessionStore", () => {
   let store: D1SessionStore;
 
-  beforeEach(async () => {
-    const driver = await createDb();
-    store = new D1SessionStore(driver);
+  beforeEach(() => {
+    const db = createDb();
+    store = new D1SessionStore(db);
   });
 
   it("upsert + findById", async () => {
@@ -140,9 +141,9 @@ describe("D1SessionStore", () => {
 describe("D1VerdictStore", () => {
   let store: D1VerdictStore;
 
-  beforeEach(async () => {
-    const driver = await createDb();
-    store = new D1VerdictStore(driver);
+  beforeEach(() => {
+    const db = createDb();
+    store = new D1VerdictStore(db);
   });
 
   it("insert + findByTraceId", async () => {

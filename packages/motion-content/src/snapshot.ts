@@ -50,16 +50,16 @@ export function resolveMotionAssetSnapshots(
 function isWithinWindow(
   timeMs: number,
   startMs: number,
-  endMs: number,
+  windowEndMs: number,
 ): boolean {
-  return timeMs >= startMs && timeMs <= endMs;
+  return timeMs >= startMs && timeMs <= windowEndMs;
 }
 
 function remainingMs(
   timeMs: number,
-  endMs: number,
+  windowEndMs: number,
 ): number {
-  return Math.max(0, endMs - timeMs);
+  return Math.max(0, windowEndMs - timeMs);
 }
 
 function resolveMotionLayerPhase(

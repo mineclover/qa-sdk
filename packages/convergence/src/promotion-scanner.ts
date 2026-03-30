@@ -206,5 +206,5 @@ export function scanPromotionCandidates(
 
   // verdict 순서: promote → review → keep
   const order = { promote: 0, review: 1, keep: 2 };
-  return candidates.sort((a, b) => order[a.verdict] - order[b.verdict]);
+  return candidates.toSorted((a, b) => order[a.verdict] - order[b.verdict]);
 }

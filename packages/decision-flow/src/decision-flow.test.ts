@@ -925,12 +925,12 @@ describe("comparison", () => {
       ...schema,
       gates: schema.gates.map((gate) => {
         if (gate.id === "risk") {
-          return { ...gate, weight: "core" as const };
+          return Object.assign({}, gate, { weight: "core" as const });
         }
         if (gate.id === "priority") {
-          return { ...gate, weight: "structural" as const };
+          return Object.assign({}, gate, { weight: "structural" as const });
         }
-        return { ...gate, weight: "tactical" as const };
+        return Object.assign({}, gate, { weight: "tactical" as const });
       }),
     };
   }

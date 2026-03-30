@@ -11,7 +11,7 @@
  *   engine.scope("dev:usa").has("payment_history", "admin");   // false
  */
 
-import { PermissionSet, type DimDef, type PermissionSetSnapshot } from "./permission-set.js";
+import { PermissionSet, type DimDef } from "./permission-set.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

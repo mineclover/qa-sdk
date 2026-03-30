@@ -1,4 +1,23 @@
+---
+def:
+  id: architecture-decisions
+  type: knowledge
+  knowledge_kind: adr
+  scope: constraint
+  aspect: tech_constraint
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, decision, cross-scope]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Architecture Decisions
+
+## 목적 ^purpose
+
+ADR-001~009 아키텍처 결정 기록. 불변 주소, 단방향 의존, fail-open 게이트 등 시스템 핵심 설계 결정의 근거와 대안을 보존한다.
+
 
 > 패키지 경계, 인증 전략, 데이터 흐름에 관한 횡단 설계 결정. 각 결정은 **왜** 그렇게 했는지와 **어떤 규칙**을 지켜야 하는지를 명시한다.
 

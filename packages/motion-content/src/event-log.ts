@@ -57,11 +57,11 @@ export function createMotionEventLog(maxEntries = 200): MotionEventLog {
     },
 
     entries() {
-      return [...buffer].reverse();
+      return [...buffer].toReversed();
     },
 
     entriesByCategory(category) {
-      return buffer.filter((e) => e.category === category).reverse();
+      return buffer.filter((e) => e.category === category).toReversed();
     },
 
     clear() {

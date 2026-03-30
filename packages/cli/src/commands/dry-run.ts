@@ -10,8 +10,7 @@
  *   --registry (원격): Registry API POST /workspace/simulate 호출
  */
 
-import type { SchemaSnapshot, Axis, Composite } from "../lib/types.js";
-import { readSnapshot } from "../lib/snapshot-io.js";
+import { readSnapshot } from "snapshot-io";
 
 const MAX_SAFE = Number.MAX_SAFE_INTEGER;
 
@@ -80,7 +79,10 @@ async function dryRunLocal(inputPath: string, changes: ChangeScenario): Promise<
 
     let entries = [...axis.entries];
     if (change.addEntries) entries.push(...change.addEntries);
-    if (change.removeEntries) entries = entries.filter((e) => !change.removeEntries!.includes(e));
+    if (change.removeEntries) {
+      const toRemove = change.removeEntries;
+      entries = entries.filter((e) => !toRemove.includes(e));
+    }
     const capacity = change.capacity ?? axis.capacity;
 
     // capacity가 entries 수보다 작으면 경고

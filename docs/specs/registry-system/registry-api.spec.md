@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: registry-service
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: registry-data-model
       type: depends_on

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: registry-service
-  tags: []
+  tags: [runtime, entry-point, observability]
   links:
     - target: registry-service-modules
       type: refines

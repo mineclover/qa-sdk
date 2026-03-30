@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-spec-core
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [structural, observability, runtime]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: spec-core 패키지 개선/분해
+
+## 목적 ^purpose
+
+spec-core 개선 실현 계획. DKG 스킬, convergence 분석, 관측 자동화 고도화를 기술한다.
+
 
 > Status: **completed** — Phase 1 (경계 분리) + Phase 2 (물리 분할) 완료
 > Created: 2026-03-22

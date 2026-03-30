@@ -23,7 +23,7 @@ export async function runDefinitionClientCall<T>(
     }
     return await run();
   } catch (error) {
-    logger.warn({ action, error }, "definition-service call skipped");
+    logger.warn({ action, err: error }, "definition-service call skipped");
     return undefined;
   }
 }

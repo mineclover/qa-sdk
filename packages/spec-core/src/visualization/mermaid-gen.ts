@@ -6,7 +6,7 @@
  */
 
 import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, ObservationNode, DecisionNode, PrefixNode, TransitionSpecNode } from "../dkg/dkg.types.js";
+import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, PrefixNode, TransitionSpecNode } from "../dkg/dkg.types.js";
 
 // ── SignalDef duck type (viz-3d 의존 없이) ──────────────────
 
@@ -525,15 +525,12 @@ export function tableErDiagram(
   const allTables = graph.getNodesByKind("table") as TableNode[];
   if (allTables.length === 0) return "erDiagram\n  %% No tables";
 
-  const ddl = options?.ddlStatus ?? {};
   const lines: string[] = ["erDiagram"];
   const title = options?.title ?? `All Tables (${allTables.length})`;
   lines.push(`  %% ${title}`);
 
   // 모든 테이블 엔티티
   for (const t of allTables) {
-    const status = ddl[t.id];
-    const statusTag = status === "deployed" ? " [D1]" : status === "catalog-only" ? " [catalog]" : "";
     lines.push(`  ${safeId(t.id)} {`);
     for (const col of t.columns) {
       const refs = graph.getTableColumnRefs(t.id);
@@ -796,11 +793,12 @@ export function traceSequenceDiagram(
   const byLayer = new Map<number, string[]>();
   for (const [pid, layer] of prefixLayers) {
     if (!byLayer.has(layer)) byLayer.set(layer, []);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- set above guarantees presence
     byLayer.get(layer)!.push(pid);
   }
 
   // layer별 participant 그룹
-  for (const [layer, pids] of [...byLayer.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [layer, pids] of [...byLayer.entries()].toSorted((a, b) => a[0] - b[0])) {
     lines.push(`  box ${layerNames[layer] ?? `L${layer}`}`);
     for (const pid of pids) lines.push(`    participant ${pid}`);
     lines.push(`  end`);

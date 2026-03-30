@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: query-service
-  tags: []
+  tags: [runtime, observability, testing]
   links:
     - target: gate-api
       type: depends_on

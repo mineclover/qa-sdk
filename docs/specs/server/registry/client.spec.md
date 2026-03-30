@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: registry-service
-  tags: []
+  tags: [contract, runtime, performance]
   links:
     - target: registry-events-spec
       type: depends_on

@@ -17,6 +17,13 @@ def:
 ---
 # ServiceTopology — 마이크로서비스 prefix 소유권과 계약
 
+
+## 탐색 ^navigation
+
+dkg-system > **dkg-service-topology**
+
+형제: `dkg-node-types` · `dkg-edge-types` · `dkg-queries` · `dkg-constraint` · `dkg-growth-spiral` · `dkg-skills-system` · `dkg-state-store`
+
 ## 목적 ^purpose
 
 단일 서비스 관점을 멀티서비스 관점으로 확장한다. 각 서비스가 prefix를 소유(own)하거나 소비(consume)하고, 서비스 간 공유는 계약(SharedContract)으로 관리된다.

@@ -9,7 +9,7 @@ import type { Catalog } from "@qa-sdk/core";
 import type { GraphPort } from "../../shared/graph-port.js";
 import { analyzeImpact } from "./analyze-impact.js";
 import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
-import type { ImpactAnalysisResult, AffectedPrefix } from "../dkg.types.js";
+import type { AffectedPrefix } from "../dkg.types.js";
 
 export interface SafeEntryAddInput {
   readonly axisId: string;

@@ -5,9 +5,14 @@
  * 구현체: LocalDataSource (SQLite 직접), ServerDataSource (HTTP)
  */
 
+import type { QualityGateSpec } from "work-domain";
+
 /** 문서 메타데이터 (DB 기준) */
 export interface DefDoc {
   docId: string;
+  title?: string;
+  type?: string;
+  knowledgeKind?: string;
   level?: string;
   scope: string;
   aspect: string;
@@ -23,6 +28,7 @@ export interface DefDoc {
   intent?: string;
   context?: string;
   caveat?: string;
+  gate?: QualityGateSpec;
   sourcePath?: string;
 }
 
@@ -32,8 +38,118 @@ export interface DefIncomingLink {
   type: string;
 }
 
+/** synthetic 역링크 (review-ledger 등 외부 인덱스에서 파생) */
+export interface DefSyntheticIncomingLink extends DefIncomingLink {
+  synthetic: true;
+  kind: "feedback_request";
+  title?: string;
+  createdAt?: string;
+  targetModel?: string | null;
+}
+
+/** definition 문서와 연결된 feedback request 요약 */
+export interface DefFeedbackRequestSummary {
+  id: string;
+  createdAt: string;
+  purpose: string;
+  targetModel: string | null;
+  status: string;
+  serviceScope: string | null;
+}
+
+export interface DefBoundaryDoc {
+  docId: string;
+  title: string;
+  scope: string;
+  aspect: string;
+  depth: string;
+  lifecycle: string;
+  layer?: string;
+  svc?: string;
+  purpose?: string;
+  overview?: string;
+}
+
+export interface DefBoundaryMember {
+  docId: string;
+  title: string;
+  scope: string;
+  aspect: string;
+  depth: string;
+  summary: string;
+}
+
+export interface DefBoundaryCouplingOutgoing {
+  type: string;
+  target: string;
+  summary: string;
+}
+
+export interface DefBoundaryCouplingIncoming {
+  type: string;
+  source: string;
+  summary: string;
+}
+
+export interface DefBoundaryResult {
+  boundary: DefBoundaryDoc;
+  members: DefBoundaryMember[];
+  couplings: {
+    outgoing: DefBoundaryCouplingOutgoing[];
+    incoming: DefBoundaryCouplingIncoming[];
+  };
+}
+
+export interface DefBoundaryConcernItem {
+  tag: string;
+  source: string;
+  via: string;
+}
+
+export interface DefBoundaryConcernsResult {
+  docId: string;
+  direct: string[];
+  inherited: DefBoundaryConcernItem[];
+  all: string[];
+}
+
+export interface DefBoundaryImpactDoc {
+  docId: string;
+  via: string;
+  path: string;
+  direction: "upstream" | "downstream";
+  distance: number;
+  layer?: string;
+  crossLayer: boolean;
+}
+
+export interface DefBoundaryImpactResult {
+  sourceId: string;
+  impacted: DefBoundaryImpactDoc[];
+  affectedGroups: string[];
+  blastRadius: number;
+  byLayer: {
+    domain: number;
+    operation: number;
+    mediation: number;
+    experience: number;
+    unspecified: number;
+  };
+}
+
+export interface DefBoundaryContextResult {
+  mode: "direct" | "transitive";
+  level: "purpose" | "overview";
+  boundary: DefBoundaryResult;
+  concerns: DefBoundaryConcernsResult;
+  impact: DefBoundaryImpactResult;
+  feedbackTrace: DefFeedbackRequestSummary[];
+}
+
 /** 목록 필터 */
 export interface DefListFilter {
+  type?: string;
+  knowledgeKind?: string;
   scope?: string;
   aspect?: string;
   depth?: string;
@@ -85,8 +201,24 @@ export interface DefDataSource {
   /** 역링크 */
   getIncomingLinks(docId: string): Promise<DefIncomingLink[]>;
 
+  /** 외부 인덱스에서 파생된 synthetic 역링크 */
+  getSyntheticIncomingLinks(docId: string): Promise<DefSyntheticIncomingLink[]>;
+
   /** 순방향 링크 */
   getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]>;
+
+  /** 문서와 연결된 feedback request 요약 */
+  getFeedbackRequestsByDocId(docId: string, limit?: number): Promise<DefFeedbackRequestSummary[]>;
+
+  /** 바운더리 단위 구조 + direct coupling 조회 */
+  getBoundary(docId: string, level?: "purpose" | "overview"): Promise<DefBoundaryResult | null>;
+
+  /** 바운더리 구조 + concerns + impact + feedback trace 조회 */
+  getBoundaryContext(
+    docId: string,
+    level?: "purpose" | "overview",
+    mode?: "direct" | "transitive",
+  ): Promise<DefBoundaryContextResult | null>;
 
   /** 그래프 검증 */
   validate(): Promise<DefValidationResult>;

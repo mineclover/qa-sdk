@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: registry-service
-  tags: []
+  tags: [runtime, structural, entry-point]
   links:
     - target: registry-service-modules
       type: refines

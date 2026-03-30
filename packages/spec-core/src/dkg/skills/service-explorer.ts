@@ -10,13 +10,11 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import type { GraphPort } from "../../shared/graph-port.js";
-import type { ServiceTopologyRegistry, SharedContract, DependencyGraph } from "../service-topology.js";
+import type { ServiceTopologyRegistry, SharedContract } from "../service-topology.js";
 import { buildDependencyGraph } from "../service-topology.js";
-import { checkAllDomainsHealth, type DomainHealthResult } from "./domain-health.js";
+import { checkAllDomainsHealth } from "./domain-health.js";
 import type {
-  AxisNode,
   PrefixNode,
-  DomainNode,
   DslBundleNode,
   ObservationNode,
   DecisionNode,
@@ -429,6 +427,7 @@ export function exploreDsl(
       if (!dimRef || dimRef.kind !== "axis") continue;
       const axisId = dimRef.axisId;
       if (!axisVersionMap.has(axisId)) axisVersionMap.set(axisId, new Map());
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- set above guarantees presence
       axisVersionMap.get(axisId)!.set(pid, axisVer);
     }
   }

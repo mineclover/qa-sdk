@@ -8,7 +8,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
-  tags: []
+  tags: [frontend, runtime, structural]
   links:
     - target: motion-editor-component
       type: depends_on

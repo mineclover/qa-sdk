@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: schema-layer-spec
       type: depends_on
-    - target: indexing-architecture
+    - target: index-arch-group
       type: refines
 ---
 

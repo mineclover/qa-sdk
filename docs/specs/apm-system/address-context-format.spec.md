@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: cli
-  tags: []
+  tags: [observability, contract, runtime]
   links:
-    - target: address-context-spec
+    - target: apm-schema-system
       type: refines
 ---
 

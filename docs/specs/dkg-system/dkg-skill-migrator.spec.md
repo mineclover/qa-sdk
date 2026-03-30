@@ -19,6 +19,13 @@ def:
 ---
 # inferMigrator — 마이그레이션 추론
 
+
+## 탐색 ^navigation
+
+dkg-system > dkg-skills-system > **dkg-skill-migrator**
+
+형제: `dkg-skill-cascade` · `dkg-skill-version-event` · `dkg-skill-decision` · `dkg-skill-catalog`
+
 ## 목적 ^purpose
 
 축/prefix 변경 시 필요한 마이그레이션 경로를 자동 추론하는 skill. 두 버전 간 diff를 분석하여 변환 함수(CoordMigrator)를 생성하거나, 수동 migrator가 필요함을 경고한다.

@@ -31,7 +31,7 @@ def:
 유한한 개념 조합에 정수 주소를 부여하고, 주소를 해석하고, 주소 공간을 버전 관리한다.
 **데이터를 저장하지 않는다.** 저장은 이 좌표 위에 구축되는 별도 계층의 책임이다.
 
-사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`conventions.md`](conventions.md) · 설계 구조: [`data-design.md`](data-design.md)
+사용 패턴: [`patterns.md`](patterns.md) · 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md) · 설계 구조: [`data-design.md`](data-design.md)
 
 - [`weighted-index/`](weighted-index/README.md)
 - [`index-meta/`](index-meta/README.md)
@@ -61,5 +61,5 @@ def:
 
 관련 스펙:
 - 사용 패턴: [`patterns.md`](patterns.md)
-- 프로젝트 관례: [`conventions.md`](conventions.md)
+- 프로젝트 관례: [`../indexing-core-system/conventions-system.md`](../indexing-core-system/conventions-system.md)
 - 설계 구조: [`data-design.md`](data-design.md)

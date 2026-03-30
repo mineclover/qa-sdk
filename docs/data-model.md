@@ -1,4 +1,23 @@
+---
+def:
+  id: data-model-guide
+  type: knowledge
+  knowledge_kind: guide
+  scope: data
+  aspect: domain_data
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, data, structural]
+  links:
+    - target: guides-system
+      type: refines
+---
 # Data Model
+
+## 목적 ^purpose
+
+ingest-server의 핵심 데이터 모델(Record, Trace, Session, Verdict, Scenario)의 스키마와 관계를 정의한다.
+
 
 시스템 전체 데이터 구성 요약. 상세 스펙은 `docs/specs/data-model/` 참조.
 

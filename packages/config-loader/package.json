@@ -1,0 +1,39 @@
+{
+  "name": "config-loader",
+  "version": "0.1.0",
+  "description": "Catalog/DkgConfig 파일 로더 — .ts/.js/.json 자동 감지 + 폴백 체인",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@qa-sdk/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "demo-snapshot": "*"
+  },
+  "peerDependenciesMeta": {
+    "demo-snapshot": { "optional": true }
+  },
+  "devDependencies": {
+    "demo-snapshot": "workspace:*",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}

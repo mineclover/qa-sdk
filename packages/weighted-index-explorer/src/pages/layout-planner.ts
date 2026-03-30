@@ -122,23 +122,25 @@ function renderPlanner(): string {
 // ── Interactivity ───────────────────────────────────────────────────────
 
 function setupPlannerInteractivity(container: HTMLElement): void {
-  const shapeList     = container.querySelector<HTMLElement>("#plan-shape-list")!;
-  const shapeAddBtn   = container.querySelector<HTMLButtonElement>("#plan-shape-add")!;
-  const prefixCharsIn = container.querySelector<HTMLInputElement>("#plan-prefix-chars")!;
-  const verDigitsIn   = container.querySelector<HTMLInputElement>("#plan-ver-digits")!;
-  const sizeHint      = container.querySelector<HTMLElement>("#plan-size-hint")!;
-  const verHint       = container.querySelector<HTMLElement>("#plan-ver-hint")!;
-  const verRangeEl    = container.querySelector<HTMLElement>("#plan-ver-range")!;
-  const resultEl      = container.querySelector<HTMLElement>("#plan-result")!;
-  const expansionEl   = container.querySelector<HTMLElement>("#plan-expansion")!;
+  const shapeList     = container.querySelector<HTMLElement>("#plan-shape-list");
+  const shapeAddBtn   = container.querySelector<HTMLButtonElement>("#plan-shape-add");
+  const prefixCharsIn = container.querySelector<HTMLInputElement>("#plan-prefix-chars");
+  const verDigitsIn   = container.querySelector<HTMLInputElement>("#plan-ver-digits");
+  const sizeHint      = container.querySelector<HTMLElement>("#plan-size-hint");
+  const verHint       = container.querySelector<HTMLElement>("#plan-ver-hint");
+  const verRangeEl    = container.querySelector<HTMLElement>("#plan-ver-range");
+  const resultEl      = container.querySelector<HTMLElement>("#plan-result");
+  const expansionEl   = container.querySelector<HTMLElement>("#plan-expansion");
 
-  const shardCharsIn  = container.querySelector<HTMLInputElement>("#plan-shard-chars")!;
-  const shardHintEl   = container.querySelector<HTMLElement>("#plan-shard-hint")!;
+  const shardCharsIn  = container.querySelector<HTMLInputElement>("#plan-shard-chars");
+  const shardHintEl   = container.querySelector<HTMLElement>("#plan-shard-hint");
 
-  const configText = container.querySelector<HTMLElement>("#plan-config-text")!;
-  const configCopy = container.querySelector<HTMLButtonElement>("#plan-config-copy")!;
+  const configText = container.querySelector<HTMLElement>("#plan-config-text");
+  const configCopy = container.querySelector<HTMLButtonElement>("#plan-config-copy");
 
-  if (!shapeList || !shapeAddBtn || !prefixCharsIn || !verDigitsIn || !resultEl) return;
+  if (!shapeList || !shapeAddBtn || !prefixCharsIn || !verDigitsIn || !resultEl ||
+      !sizeHint || !verHint || !verRangeEl || !expansionEl || !shardCharsIn ||
+      !shardHintEl || !configText || !configCopy) return;
 
   const dims: ShapeDim[] = [
     { name: "resource", size: 8 },
@@ -160,18 +162,18 @@ function setupPlannerInteractivity(container: HTMLElement): void {
         <button class="plan-dim-remove" type="button" title="제거">×</button>
       `;
 
-      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name")!;
-      const sizeInput = row.querySelector<HTMLInputElement>(".plan-dim-size")!;
-      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove")!;
+      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name");
+      const sizeInput = row.querySelector<HTMLInputElement>(".plan-dim-size");
+      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove");
 
-      nameInput.addEventListener("input", () => { dims[i].name = nameInput.value; });
+      nameInput?.addEventListener("input", () => { dims[i].name = nameInput.value; });
 
-      sizeInput.addEventListener("input", () => {
+      sizeInput?.addEventListener("input", () => {
         dims[i].size = Math.max(1, parseInt(sizeInput.value, 10) || 1);
         update();
       });
 
-      removeBtn.addEventListener("click", () => {
+      removeBtn?.addEventListener("click", () => {
         if (dims.length <= 1) return;
         dims.splice(i, 1);
         renderShapeDims();
@@ -246,7 +248,7 @@ function setupPlannerInteractivity(container: HTMLElement): void {
       right: [{ name: "index", maxValue: indexMax }],
     });
 
-    const indexChars = plan.fields.find(f => f.name === "index")!.chars;
+    const indexChars = plan.fields.find(f => f.name === "index")?.chars ?? 0;
     const totalChars = plan.totalChars + shardChars;
 
     // ── 포맷 비교 테이블 ────────────────────────────────────────
@@ -467,6 +469,7 @@ function setupPlannerInteractivity(container: HTMLElement): void {
       navigator.clipboard.writeText(text).then(() => {
         configCopy.textContent = "Copied!";
         setTimeout(() => { configCopy.textContent = "Copy"; }, 1200);
+        return undefined;
       });
     });
   }
@@ -552,15 +555,15 @@ interface CapDim {
 }
 
 function setupCapacityPlanInteractivity(container: HTMLElement): void {
-  const dimList      = container.querySelector<HTMLElement>("#cap-dim-list")!;
-  const dimAddBtn    = container.querySelector<HTMLButtonElement>("#cap-dim-add")!;
-  const prefixIn     = container.querySelector<HTMLInputElement>("#cap-prefix")!;
-  const versionIn    = container.querySelector<HTMLInputElement>("#cap-version")!;
-  const formatSel    = container.querySelector<HTMLSelectElement>("#cap-format")!;
-  const growthFactIn = container.querySelector<HTMLInputElement>("#cap-growth-factor")!;
-  const resultEl     = container.querySelector<HTMLElement>("#cap-result")!;
+  const dimList      = container.querySelector<HTMLElement>("#cap-dim-list");
+  const dimAddBtn    = container.querySelector<HTMLButtonElement>("#cap-dim-add");
+  const prefixIn     = container.querySelector<HTMLInputElement>("#cap-prefix");
+  const versionIn    = container.querySelector<HTMLInputElement>("#cap-version");
+  const formatSel    = container.querySelector<HTMLSelectElement>("#cap-format");
+  const growthFactIn = container.querySelector<HTMLInputElement>("#cap-growth-factor");
+  const resultEl     = container.querySelector<HTMLElement>("#cap-result");
 
-  if (!dimList || !dimAddBtn || !resultEl) return;
+  if (!dimList || !dimAddBtn || !prefixIn || !versionIn || !formatSel || !growthFactIn || !resultEl) return;
 
   const capDims: CapDim[] = [
     { name: "resource", current: 8, growth: null },
@@ -587,22 +590,22 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
         <button class="plan-dim-remove" type="button" title="제거" style="margin-left:4px">x</button>
       `;
 
-      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name")!;
-      const curInput  = row.querySelector<HTMLInputElement>(".cap-dim-current")!;
-      const groInput  = row.querySelector<HTMLInputElement>(".cap-dim-growth")!;
-      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove")!;
+      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name");
+      const curInput  = row.querySelector<HTMLInputElement>(".cap-dim-current");
+      const groInput  = row.querySelector<HTMLInputElement>(".cap-dim-growth");
+      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove");
 
-      nameInput.addEventListener("input", () => { capDims[i].name = nameInput.value; });
-      curInput.addEventListener("input", () => {
+      nameInput?.addEventListener("input", () => { capDims[i].name = nameInput.value; });
+      curInput?.addEventListener("input", () => {
         capDims[i].current = Math.max(1, parseInt(curInput.value, 10) || 1);
         updateCapacity();
       });
-      groInput.addEventListener("input", () => {
+      groInput?.addEventListener("input", () => {
         const v = groInput.value.trim();
         capDims[i].growth = v === "" ? null : Math.max(0, parseInt(v, 10) || 0);
         updateCapacity();
       });
-      removeBtn.addEventListener("click", () => {
+      removeBtn?.addEventListener("click", () => {
         if (capDims.length <= 1) return;
         capDims.splice(i, 1);
         renderCapDims();
@@ -640,8 +643,7 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
       capacity: formatName,
     });
 
-    const dimRows = result.dims.map((d, i) => {
-      const inputDim = dims[i];
+    const dimRows = result.dims.map((d) => {
       const headroomPct = (d.headroom * 100).toFixed(0);
       const growthRatio = d.current > 0 ? (d.growth / d.current).toFixed(1) : "—";
       const highGrowth = d.current > 0 && d.growth / d.current > 1.0;
@@ -806,10 +808,10 @@ function computeShard(s: ShardingStrategy, index: number): number {
 }
 
 function setupShardingInteractivity(container: HTMLElement): void {
-  const indexIn  = container.querySelector<HTMLInputElement>("#shard-index")!;
-  const numIn    = container.querySelector<HTMLInputElement>("#shard-num")!;
-  const charsIn  = container.querySelector<HTMLInputElement>("#shard-chars")!;
-  const resultEl = container.querySelector<HTMLElement>("#shard-result")!;
+  const indexIn  = container.querySelector<HTMLInputElement>("#shard-index");
+  const numIn    = container.querySelector<HTMLInputElement>("#shard-num");
+  const charsIn  = container.querySelector<HTMLInputElement>("#shard-chars");
+  const resultEl = container.querySelector<HTMLElement>("#shard-result");
   if (!indexIn || !numIn || !charsIn || !resultEl) return;
 
   function insertDashes(s: string): string {

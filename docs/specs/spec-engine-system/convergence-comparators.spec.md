@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [runtime, observability, structural]
   links:
-    - target: spec-core-types
+    - target: spec-core-types-group
       type: depends_on
-    - target: convergence-layer-spec
+    - target: convergence-layer-group
       type: refines
 ---
 
@@ -30,5 +30,5 @@ def:
 
 ## 입력 계약
 
-- 비교 도구는 모두 `spec-core-types`가 정의한 symbol/prefix 구조를 공통 입력으로 쓴다.
+- 비교 도구는 모두 `spec-core-types-group`이 정의한 symbol/prefix 구조를 공통 입력으로 쓴다.
 - 이 문서는 관측과 비교 알고리즘의 정체성을 다루고, 추천/사이클 운영은 `convergence-advisors`로 넘긴다.

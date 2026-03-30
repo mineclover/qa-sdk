@@ -8,13 +8,13 @@ def:
   svc: index-meta
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [structural, runtime, performance]
   links:
     - target: index-codec-spec
       type: constrains
     - target: resolver-spec
       type: constrains
-    - target: index-meta-sdk-spec
+    - target: sdk-system
       type: constrains
 ---
 

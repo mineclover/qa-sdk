@@ -18,7 +18,6 @@ import type {
   FlowInstance,
   FlowPolicy,
   FlowSchema,
-  GateSchema,
 } from "./types.js";
 import { detectPatterns } from "./policy-learning.js";
 import type { DetectedPattern } from "./policy-learning.js";
@@ -139,7 +138,7 @@ export class ContextProvider {
   provideForGate(
     schemaId: string,
     gateId: string,
-    context: Record<string, unknown> = {},
+    _context: Record<string, unknown> = {},
   ): GateContext {
     const schema = this.schemas.get(schemaId);
     const gate = schema?.gates.find((g) => g.id === gateId);
@@ -158,7 +157,7 @@ export class ContextProvider {
     const total = [...distribution.values()].reduce((s, c) => s + c, 0);
     const branchDistribution = [...distribution.entries()]
       .map(([branchId, count]) => ({ branchId, count, ratio: total > 0 ? count / total : 0 }))
-      .sort((a, b) => b.count - a.count);
+      .toSorted((a, b) => b.count - a.count);
 
     // 이 gate의 인지 모델 힌트
     const modelHints: ModelHint[] = [];
@@ -311,7 +310,7 @@ export class ContextProvider {
 
     for (const inst of completed) {
       const corePath = inst.selections
-        .filter((s) => {
+        .filter((_s) => {
           // 간이 코어 판정: selections 순서의 첫 번째가 보통 코어
           return true; // 모든 gate 포함 (스키마 없이도 동작)
         })
@@ -331,9 +330,9 @@ export class ContextProvider {
       }
     }
 
-    const mostCommon = [...pathCounts.values()].sort((a, b) => b.count - a.count)[0];
+    const mostCommon = [...pathCounts.values()].toSorted((a, b) => b.count - a.count)[0];
 
-    const sorted = [...completed].sort((a, b) =>
+    const sorted = [...completed].toSorted((a, b) =>
       (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
 
     return {
@@ -406,7 +405,7 @@ export class ContextProvider {
     // 최근 5건의 context에서 openQuestions 추출
     const questions: string[] = [];
     const recent = [...completed]
-      .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
+      .toSorted((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
       .slice(0, 5);
 
     for (const inst of recent) {

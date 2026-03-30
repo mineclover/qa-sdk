@@ -1,4 +1,23 @@
+---
+def:
+  id: getting-started-guide
+  type: knowledge
+  knowledge_kind: guide
+  scope: flow
+  aspect: user_scenario
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, runtime, cross-scope]
+  links:
+    - target: guides-system
+      type: refines
+---
 # QA-SDK Getting Started
+
+## 목적 ^purpose
+
+QA-SDK 시작 가이드. 산출물 단위, codegen 실행, CLI 사용법, 첫 이벤트 전송까지의 흐름을 안내한다.
+
 
 5분 안에 로컬 환경 구성부터 첫 이벤트 수집까지.
 
@@ -173,3 +192,12 @@ pnpm health    # CF Workers 상태 확인
 | platform-demo | platform-demo-3v1.pages.dev |
 
 env 전환: config.js의 `ENV: "dev"` → `"prod"` 변경, 또는 `registry.fetchServiceUrls("prod")`.
+
+---
+
+## 다음 읽기
+
+- 좌표 개념 이해: `docs/CONVENTIONS.md` — DimRef, Axis, Prefix, Address 용어 정의
+- DKG 탐색: `dkg skills` — 39개 자동화 도구 목록 + `dkg run skill-system-overview`
+- 운영 플레이북: `docs/skills/README.md` — prefix 추가, 시스템 리뷰, claim 워크플로우
+- 상세 스펙: `docs/specs/README.md` — 관심사별 스펙 인덱스

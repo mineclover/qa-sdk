@@ -7,8 +7,8 @@
 import type { RecordStore, RecordInsert, StoredRecord, RecordPaginationParams, StoredRecordPage } from "@qa-sdk/core";
 
 export interface ClickHouseClient {
-  query(sql: string, params?: Record<string, unknown>): Promise<{ rows: any[] }>;
-  insert(table: string, values: any[], columns: string[]): Promise<void>;
+  query(sql: string, params?: Record<string, unknown>): Promise<{ rows: Record<string, unknown>[] }>;
+  insert(table: string, values: Record<string, unknown>[], columns: string[]): Promise<void>;
   exec(sql: string): Promise<void>;
 }
 
@@ -93,36 +93,37 @@ export class ClickhouseRecordStore implements RecordStore {
   }
 }
 
+import { parseJsonColumn } from "../db/json-types.js";
+
 function parseJson<T>(val: string | null | undefined): T | undefined {
-  if (!val) return undefined;
-  try { return JSON.parse(val); } catch { return undefined; }
+  return parseJsonColumn<T | undefined>(val, undefined);
 }
 
-function toStoredRecord(row: any): StoredRecord {
+function toStoredRecord(row: Record<string, unknown>): StoredRecord {
   return {
-    logId: row.log_id,
-    traceId: row.trace_id,
-    spanId: row.span_id,
-    parentSpanId: row.parent_span_id ?? undefined,
-    timestamp: new Date(row.timestamp),
-    recordKind: row.record_kind,
-    eventKey: row.event_key,
-    eventVersion: row.event_version,
-    spanName: row.span_name ?? undefined,
-    startTime: row.start_time ? new Date(row.start_time) : undefined,
-    endTime: row.end_time ? new Date(row.end_time) : undefined,
-    statusCode: row.status_code ?? undefined,
-    payloadFormat: row.payload_format,
-    payloadEncoding: row.payload_encoding,
+    logId: row.log_id as string,
+    traceId: row.trace_id as string,
+    spanId: row.span_id as string,
+    parentSpanId: (row.parent_span_id as string | undefined) ?? undefined,
+    timestamp: new Date(row.timestamp as string | number),
+    recordKind: row.record_kind as string,
+    eventKey: row.event_key as string,
+    eventVersion: row.event_version as string,
+    spanName: (row.span_name as string | undefined) ?? undefined,
+    startTime: row.start_time ? new Date(row.start_time as string | number) : undefined,
+    endTime: row.end_time ? new Date(row.end_time as string | number) : undefined,
+    statusCode: (row.status_code as string | undefined) ?? undefined,
+    payloadFormat: row.payload_format as string,
+    payloadEncoding: row.payload_encoding as string,
     payloadMaskingApplied: !!row.payload_masking_applied,
-    payloadMaskedFields: parseJson<string[]>(row.payload_masked_fields) ?? [],
-    payload: parseJson(row.payload),
-    registryWarning: row.registry_warning ?? undefined,
-    addressContext: parseJson<Record<string, string>>(row.address_context),
-    qaSessionId: row.qa_session_id ?? undefined,
-    actorId: row.actor_id ?? undefined,
-    userId: row.user_id ?? undefined,
-    userAttributes: parseJson<Record<string, string>>(row.user_attributes),
-    createdAt: new Date(row.created_at),
+    payloadMaskedFields: parseJson<string[]>(row.payload_masked_fields as string) ?? [],
+    payload: parseJson(row.payload as string),
+    registryWarning: (row.registry_warning as string | undefined) ?? undefined,
+    addressContext: parseJson<Record<string, string>>(row.address_context as string),
+    qaSessionId: (row.qa_session_id as string | undefined) ?? undefined,
+    actorId: (row.actor_id as string | undefined) ?? undefined,
+    userId: (row.user_id as string | undefined) ?? undefined,
+    userAttributes: parseJson<Record<string, string>>(row.user_attributes as string),
+    createdAt: new Date(row.created_at as string | number),
   };
 }

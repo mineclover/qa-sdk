@@ -167,7 +167,7 @@ describe("InMemoryAddressIndex", () => {
       addressRange: { from: 100, to: 300 },
     });
     expect(hits).toHaveLength(3);
-    const ids = hits.map((h) => h.recordId).sort();
+    const ids = hits.map((h) => h.recordId).toSorted();
     expect(ids).toEqual(["r2", "r3", "r4"]);
   });
 

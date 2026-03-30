@@ -157,9 +157,9 @@ function buildMatrix(
 
 function updateMatrix(wrap: HTMLElement, matrix: GrantMatrix): void {
   const rows = Array.from(wrap.querySelectorAll<HTMLTableRowElement>("tbody tr"));
-  matrix.features.forEach((_, fi) => {
+  matrix.features.forEach((_f, fi) => {
     const cells = Array.from(rows[fi]?.querySelectorAll<HTMLTableCellElement>(".gm-matrix-cell") ?? []);
-    matrix.roles.forEach((_, ri) => {
+    matrix.roles.forEach((_r, ri) => {
       const cb = cells[ri]?.querySelector<HTMLInputElement>(".gm-checkbox");
       if (cb) cb.checked = matrix.cells[fi]?.[ri] ?? false;
     });
@@ -247,6 +247,7 @@ function buildSimPanel(
     checkBtn.textContent = "요청 중...";
     resultArea.innerHTML = `<div class="gm-sim-placeholder">API 요청 중...</div>`;
 
+    // eslint-disable-next-line typescript/no-non-null-assertion -- selectedRole은 DEMO_USERS에서 유래
     const user = DEMO_USERS.find(u => u.role === selectedRole)!;
     const roleKo = DEMO_KO.role[user.role] ?? user.role;
     const featName = DEMO_FEATURE_KO[selectedFeat] ?? selectedFeat;
@@ -501,7 +502,7 @@ export function renderGrantPage(container: HTMLElement, ver = "v2"): void {
       try {
         await patchGrantBatch(TUTORIAL_CHANGES);
         await refresh();
-      } catch (e) {
+      } catch {
         if (btn) { btn.disabled = false; btn.textContent = "▶ 변경 적용"; }
       }
     }
@@ -516,6 +517,7 @@ export function renderGrantPage(container: HTMLElement, ver = "v2"): void {
         if (btn) { btn.disabled = false; btn.textContent = "↺ 초기화"; }
       }
     }
+    return undefined;
   }).catch((e: unknown) => {
     container.innerHTML = `<div class="error-state">데이터를 불러올 수 없습니다. ${e instanceof Error ? e.message : ""}</div>`;
   });

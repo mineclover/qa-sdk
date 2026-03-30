@@ -10,7 +10,7 @@ def:
   svc: cli
   tags: [observability]
   links:
-    - target: logger-spec
+    - target: infra-logger-spec
       type: refines
 ---
 

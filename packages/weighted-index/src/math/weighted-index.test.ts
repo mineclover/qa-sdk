@@ -200,7 +200,7 @@ describe("[동치 분할] 입력 유효성", () => {
 describe("[에러 계층] instanceof 타입 검증", () => {
   it("빈 shape → ShapeError extends WeightedIndexError", () => {
     try {
-      new WeightedIndex([]);
+      const _wi = new WeightedIndex([]);
     } catch (e) {
       expect(e).toBeInstanceOf(ShapeError);
       expect(e).toBeInstanceOf(WeightedIndexError);

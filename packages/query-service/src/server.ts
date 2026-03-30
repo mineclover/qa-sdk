@@ -32,9 +32,10 @@ const startedAt = Date.now();
 let stateRoutesDeps: { stateStore: { snapshot(ctx: string, res: string): Record<string, string> } } | undefined;
 try {
   // InMemoryStateStore는 get/set/snapshot 인터페이스 충족
-  const mod = await (Function('return import("@qa-sdk/spec-core/transition")')() as Promise<any>);
-  if (mod?.InMemoryStateStore) {
-    stateRoutesDeps = { stateStore: new mod.InMemoryStateStore() };
+  const mod = await (Function('return import("@qa-sdk/spec-core/transition")')() as Promise<Record<string, unknown>>);
+  const StoreCtor = mod?.InMemoryStateStore as (new () => { snapshot(ctx: string, res: string): Record<string, string> }) | undefined;
+  if (StoreCtor) {
+    stateRoutesDeps = { stateStore: new StoreCtor() };
     logger.info("transition state store initialized (in-memory)");
   }
 } catch {

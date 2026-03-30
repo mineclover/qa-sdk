@@ -99,7 +99,7 @@ export function traceFlows(
       }
       // invariant 없어도 endpoint 불완전이면 기본 위반으로 취급하지 않음 (pass)
 
-      const key = `${link.id}:${missingEndpoints.sort().join(",")}`;
+      const key = `${link.id}:${missingEndpoints.toSorted().join(",")}`;
       countMap.set(key, (countMap.get(key) ?? 0) + 1);
       if (!violationMap.has(key)) {
         violationMap.set(key, {
@@ -113,8 +113,8 @@ export function traceFlows(
   }
 
   const violations: FlowViolation[] = [...violationMap.entries()]
-    .map(([key, v]) => ({ ...v, count: countMap.get(key) ?? 1 }))
-    .sort((a, b) => b.count - a.count);
+    .map(([key, v]) => Object.assign({}, v, { count: countMap.get(key) ?? 1 }))
+    .toSorted((a, b) => b.count - a.count);
 
   // Observation 자동 생성
   const observations: ObservationNode[] = [];
@@ -190,6 +190,7 @@ export function validateDslInvariants(
 
       const missing = bundle.memberPrefixes.filter(p => !presentPrefixes.has(p));
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filtered above: b.invariants && b.invariants.length > 0
       for (const invariant of bundle.invariants!) {
         const hasViolation = checkInvariantViolation(
           invariant,
@@ -213,8 +214,8 @@ export function validateDslInvariants(
   }
 
   const violations: DslInvariantViolation[] = [...violationMap.entries()]
-    .map(([key, v]) => ({ ...v, count: countMap.get(key) ?? 1 }))
-    .sort((a, b) => b.count - a.count);
+    .map(([key, v]) => Object.assign({}, v, { count: countMap.get(key) ?? 1 }))
+    .toSorted((a, b) => b.count - a.count);
 
   // Observation 자동 생성
   const observations: ObservationNode[] = [];

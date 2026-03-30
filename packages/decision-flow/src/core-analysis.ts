@@ -11,7 +11,6 @@ import type {
   FlowInstance,
   FlowSchema,
   GateDependency,
-  GateSchema,
   GateSelection,
   GateWeight,
 } from "./types.js";
@@ -59,7 +58,9 @@ export function analyzeGateStructure(schema: FlowSchema): GateProfile[] {
     if (!gate.affects) continue;
     for (const dep of gate.affects) {
       if (gateMap.has(dep.gateId)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- initialized above for all gates
         forwardEdges.get(gate.id)!.push(dep.gateId);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- initialized above for all gates
         reverseEdges.get(dep.gateId)!.push(gate.id);
       }
     }
@@ -70,6 +71,7 @@ export function analyzeGateStructure(schema: FlowSchema): GateProfile[] {
     const visited = new Set<string>();
     const queue = [startId];
     while (queue.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
       const current = queue.shift()!;
       for (const next of forwardEdges.get(current) ?? []) {
         if (!visited.has(next)) {
@@ -101,7 +103,7 @@ export function analyzeGateStructure(schema: FlowSchema): GateProfile[] {
       dependents,
       coreScore,
     };
-  }).sort((a, b) => b.coreScore - a.coreScore);
+  }).toSorted((a, b) => b.coreScore - a.coreScore);
 }
 
 /** 코어 gate만 필터 (weight="core" 또는 coreScore 상위) */
@@ -188,6 +190,7 @@ export function analyzeImpact(
   const transitiveSet = new Set<string>();
   const queue = [...directlyInvalidated];
   while (queue.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
     const current = queue.shift()!;
     if (transitiveSet.has(current)) continue;
     transitiveSet.add(current);
@@ -202,7 +205,7 @@ export function analyzeImpact(
   }
 
   // constrains/enables는 직접 영향만
-  const constrainsOrEnables = (gate.affects ?? [])
+  const _constrainsOrEnables = (gate.affects ?? [])
     .filter((d) => d.kind !== "invalidates")
     .map((d) => d.gateId)
     .filter((id) => gateMap.has(id));
@@ -292,6 +295,7 @@ export function traceCorePath(
     if (gate.weight === "core") {
       reason = `명시적 코어 gate — ${excludedBranches}개 대안 배제, ${downstreamImpact}개 후속 영향`;
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- profiles derived from same schema, gate guaranteed to exist
       const profile = profiles.find((p) => p.gateId === sel.gateId)!;
       reason = `구조 점수 ${profile.coreScore} — 전이 영향 ${profile.transitiveImpact}개 gate`;
     }

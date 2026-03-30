@@ -13,80 +13,19 @@
  */
 
 import type { DefinitionEntry, DefinitionLink, DefScope } from "./types.js";
-import { findMarkedSections, type MarkedSection } from "./extract.js";
+import { findMarkedSections } from "./extract.js";
 import { CONTRACT_MARKERS, type ContractMarkerKind, type ContractMarkerDef } from "./taxonomy.js";
 
-// ─── 가역성 (Reversibility) ─────────────────────────────
+// ── evidence 파싱은 contract-evidence.ts에 분리. re-export로 하위 호환. ──
+import { parseEvidenceItems } from "./contract-evidence.js";
+import type { EvidenceItem } from "./contract-evidence.js";
+export type { Reversibility, EvidenceItem } from "./contract-evidence.js";
+export { parseEvidenceItems };
 
-/**
- * 관측 가역성.
- *
- * 로그/트레이스/증거가 원본 데이터를 복원할 수 있는지 여부.
- * - reversible: 로그 + 로직 → 원본 데이터 복원 가능 (이벤트 소싱, raw event log)
- * - irreversible: 정보 손실로 원본 복원 불가 (집계 메트릭, verdict 판정)
- *
- * 정보이론적으로 reversible = 무손실(entropy 보존), irreversible = 손실(entropy 감소).
- * 마스킹된 데이터는 가역이더라도 비가역으로 전환된다.
- *
- * evidence 마커 내부에서 [reversible] / [irreversible] 어노테이션으로 선언한다:
- *
- * ```markdown
- * ## 증거 요구 ^evidence
- *
- * - 입력 정규화 로그 [reversible]
- * - 재고 검증 결과 [reversible]
- * - 최종 verdict 판정 [irreversible]
- * - 처리 시간 (어노테이션 없으면 미지정)
- * ```
- */
-export type Reversibility = "reversible" | "irreversible";
-
-/** 파싱된 증거 항목 — 가역성 어노테이션 포함 */
-export interface EvidenceItem {
-  /** 항목 설명 (어노테이션 제거 후) */
-  readonly description: string;
-  /** 가역성 — 어노테이션이 없으면 null (미지정) */
-  readonly reversibility: Reversibility | null;
-  /** 원본 문서 ID */
-  readonly sourceId: string;
-  /** 원본 텍스트 (어노테이션 포함) */
-  readonly raw: string;
-}
-
-/** [reversible] 또는 [irreversible] 어노테이션 정규식 */
-const REVERSIBILITY_REGEX = /\s*\[(reversible|irreversible)\]\s*$/;
-
-/**
- * evidence 섹션 본문에서 증거 항목을 파싱한다.
- * 불릿 항목(-/*)에서 [reversible]/[irreversible] 어노테이션을 추출한다.
- */
-export function parseEvidenceItems(body: string, sourceId: string): readonly EvidenceItem[] {
-  const items: EvidenceItem[] = [];
-  for (const line of body.split("\n")) {
-    const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
-    if (!bulletMatch) continue;
-
-    const raw = bulletMatch[1].trim();
-    const revMatch = raw.match(REVERSIBILITY_REGEX);
-
-    if (revMatch) {
-      items.push({
-        description: raw.replace(REVERSIBILITY_REGEX, "").trim(),
-        reversibility: revMatch[1] as Reversibility,
-        sourceId,
-        raw,
-      });
-    } else {
-      items.push({
-        description: raw,
-        reversibility: null,
-        sourceId,
-        raw,
-      });
-    }
-  }
-  return items;
-}
+// ── stats/rendering은 contract-stats.ts에 분리. ──
+import type { ContractStats } from "./contract-stats.js";
+import { computeStats, extractPurpose, renderContract } from "./contract-stats.js";
+export type { ContractStats } from "./contract-stats.js";
 
 // ─── 타입 ────────────────────────────────────────────────
 
@@ -142,25 +81,7 @@ export interface AssembledContract {
   readonly text: string;
 }
 
-/** 계약 통계 — MAP-Elites archive 축으로 사용 가능 */
-export interface ContractStats {
-  /** 전체 섹션 수 */
-  readonly totalSections: number;
-  /** code mode 섹션 수 */
-  readonly codeSections: number;
-  /** llm mode 섹션 수 */
-  readonly llmSections: number;
-  /** 의미 밀도 (llm / total) — HyEvo의 reasoning density에 대응 */
-  readonly semanticDensity: number;
-  /** 검증 밀도 (evidence + postcondition / total) */
-  readonly validationDensity: number;
-  /** 분기 수 */
-  readonly branchingFactor: number;
-  /** 계약 완성도 (8종 마커 중 몇 종이 존재하는가) */
-  readonly completeness: number;
-  /** 증거 가역성 비율 (reversible / 전체 증거 항목) — 높을수록 데이터 복원 가능성 높음 */
-  readonly evidenceReversibilityRatio: number;
-}
+// ContractStats 인터페이스는 contract-stats.ts에 분리됨
 
 // ─── 마커 → 슬롯 매핑 ──────────────────────────────────
 
@@ -288,95 +209,4 @@ export function assembleContract(
   };
 }
 
-// ─── 내부 함수 ──────────────────────────────────────────
-
-function extractPurpose(body: string): string | null {
-  const sections = findMarkedSections(body);
-  const purposeSections = sections.filter(s => s.marker === "purpose");
-  if (purposeSections.length === 0) return null;
-  return purposeSections.map(s => s.body).join("\n\n");
-}
-
-function computeStats(
-  sections: readonly ContractSection[],
-  branchingFactor: number,
-  parsedEvidence: readonly EvidenceItem[],
-): ContractStats {
-  const total = sections.length;
-  const codeSections = sections.filter(s => s.markerDef.modeHint === "code").length;
-  const llmSections = sections.filter(s => s.markerDef.modeHint === "llm").length;
-  const validationSections = sections.filter(
-    s => s.marker === "evidence" || s.marker === "postcondition",
-  ).length;
-
-  // 8종 마커 중 몇 종이 존재하는가
-  const presentMarkers = new Set(sections.map(s => s.marker));
-  const completeness = presentMarkers.size / CONTRACT_MARKERS.length;
-
-  // 증거 가역성 비율
-  const reversibleCount = parsedEvidence.filter(e => e.reversibility === "reversible").length;
-  const evidenceReversibilityRatio = parsedEvidence.length > 0
-    ? reversibleCount / parsedEvidence.length
-    : 0;
-
-  return {
-    totalSections: total,
-    codeSections,
-    llmSections,
-    semanticDensity: total > 0 ? llmSections / total : 0,
-    validationDensity: total > 0 ? validationSections / total : 0,
-    branchingFactor,
-    completeness,
-    evidenceReversibilityRatio,
-  };
-}
-
-/** 계약 섹션 한국어 레이블 */
-const SLOT_LABELS: Record<ContractMarkerKind, string> = {
-  "inputs": "입력",
-  "outputs": "출력",
-  "precondition": "사전 조건",
-  "postcondition": "사후 조건",
-  "flow-steps": "실행 단계",
-  "decision-point": "분기 지점",
-  "failure": "실패 조건",
-  "evidence": "증거 요구",
-};
-
-/** 렌더링 순서 (HyEvo workflow topology 순서: guard → boundary → steps → branch → verify) */
-const RENDER_ORDER: readonly ContractMarkerKind[] = [
-  "precondition",
-  "inputs",
-  "outputs",
-  "flow-steps",
-  "decision-point",
-  "failure",
-  "postcondition",
-  "evidence",
-];
-
-function renderContract(
-  group: DefinitionEntry,
-  purpose: string | null,
-  slotMap: Map<ContractMarkerKind, readonly ContractSection[]>,
-): string {
-  const lines: string[] = [];
-
-  lines.push(`# ${group.title} — 계약`);
-  if (purpose) lines.push(`\n${purpose}`);
-  lines.push("");
-
-  for (const marker of RENDER_ORDER) {
-    const sections = slotMap.get(marker) ?? [];
-    if (sections.length === 0) continue;
-
-    lines.push(`## ${SLOT_LABELS[marker]} (${sections.length}건)`);
-    for (const s of sections) {
-      lines.push(`### [${s.sourceScope}] ${s.sourceId}`);
-      lines.push(s.body);
-      lines.push("");
-    }
-  }
-
-  return lines.join("\n");
-}
+// 내부 함수(extractPurpose, computeStats, renderContract)는 contract-stats.ts에 분리됨

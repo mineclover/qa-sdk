@@ -183,6 +183,7 @@ export function relationsToText(relations: readonly RLSCRelation[]): string {
   const groups = new Map<string, RLSCRelation[]>();
   for (const rel of relations) {
     if (!groups.has(rel.type)) groups.set(rel.type, []);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
     groups.get(rel.type)!.push(rel);
   }
 
@@ -192,6 +193,7 @@ export function relationsToText(relations: readonly RLSCRelation[]): string {
     const bySource = new Map<string, string[]>();
     for (const rel of rels) {
       if (!bySource.has(rel.source)) bySource.set(rel.source, []);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
       bySource.get(rel.source)!.push(rel.target);
     }
     for (const [source, targets] of bySource) {

@@ -50,9 +50,9 @@ export function subscribeToTrace(
     source.close();
   });
 
-  source.onerror = (evt) => {
+  source.addEventListener("error", (evt) => {
     handlers.onError(evt);
-  };
+  });
 
   return () => {
     source.close();

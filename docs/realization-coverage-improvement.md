@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-coverage
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [testing, observability, runtime]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization: Entry 커버리지 15% → 97% 달성
+
+## 목적 ^purpose
+
+커버리지 개선 실현 계획. 스펙 문서와 테스트의 정합성을 높이는 단계별 전략을 기술한다.
+
 
 > Status: **completed** (Phase 1 완료)
 > Created: 2026-03-22

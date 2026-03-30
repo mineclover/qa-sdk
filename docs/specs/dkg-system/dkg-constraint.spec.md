@@ -8,16 +8,23 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [decision, observability, structural]
   links:
     - target: dkg-node-types
       type: constrains
     - target: dkg-queries
       type: constrains
-    - target: dkg-skills-spec
+    - target: dkg-skills-system
       type: constrains
 ---
 # DKG 불변식
+
+
+## 탐색 ^navigation
+
+dkg-system > **dkg-constraint**
+
+형제: `dkg-node-types` · `dkg-edge-types` · `dkg-queries` · `dkg-growth-spiral` · `dkg-skills-system` · `dkg-service-topology` · `dkg-state-store`
 
 ## 목적 ^purpose
 

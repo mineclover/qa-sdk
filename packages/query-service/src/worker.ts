@@ -2,12 +2,12 @@
  * worker.ts — query-service Cloudflare Workers 진입점.
  * D1SqlDriver → SqlPolicyRuleStore + InMemoryPrefixRegistry → createApp.
  */
-import { D1SqlDriver, InMemoryPrefixRegistry, MetaRegistry } from "index-meta";
+import { D1SqlDriver, InMemoryPrefixRegistry, MetaRegistry, type D1Database } from "index-meta";
 import { createApp } from "./app.js";
 import { SqlPolicyRuleStore } from "./stores/sql-policy-rule-store.js";
 
 interface Env {
-  DB: any;
+  DB: D1Database;
   GATE_SERVICE_URL?: string;
 }
 

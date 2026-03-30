@@ -6,7 +6,6 @@
  */
 
 import type {
-  TransitionSpec,
   ValidationResult,
   ValidationIssue,
   MatchMode,

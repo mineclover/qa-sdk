@@ -66,6 +66,9 @@ export interface DefinitionRegistry {
   /** 전체 목록 */
   all(): readonly DefinitionEntry[];
 
+  /** revision/version lineage 연결 문서를 조회 (revision asc, updatedAt asc) */
+  getLineage(id: string): readonly DefinitionEntry[];
+
   /** 통계 */
   stats(): DefinitionStats;
 }
@@ -201,8 +204,9 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     if (!target) throw new Error(`도착 문서 미등록: "${targetId}"`);
 
     const key = linkKey(sourceId, targetId, lt);
-    if (this.links.has(key)) {
-      return this.links.get(key)!;
+    const existing = this.links.get(key);
+    if (existing) {
+      return existing;
     }
 
     // def_link 좌표: 출발 문서의 scope × aspect × link_type
@@ -250,18 +254,22 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
   findByAddress(address: number): readonly DefinitionEntry[] {
     const ids = this.addressIndex.get(address);
     if (!ids) return [];
-    return [...ids].map(id => this.entries.get(id)!);
+    return [...ids]
+      .map(id => this.entries.get(id))
+      .filter((e): e is DefinitionEntry => e !== undefined);
   }
 
   query(filter: DefinitionFilter): readonly DefinitionEntry[] {
     return [...this.entries.values()].filter(e => {
+      if (filter.type && (e.type ?? "spec") !== filter.type) return false;
+      if (filter.knowledgeKind && e.knowledgeKind !== filter.knowledgeKind) return false;
       if (filter.scope && e.scope !== filter.scope) return false;
       if (filter.aspect && e.aspect !== filter.aspect) return false;
       if (filter.depth && e.depth !== filter.depth) return false;
       if (filter.lifecycle && e.lifecycle !== filter.lifecycle) return false;
       if (filter.layer && e.layer !== filter.layer) return false;
       if (filter.tags && filter.tags.length > 0) {
-        if (!e.tags || !filter.tags.every(t => e.tags!.includes(t))) return false;
+        if (!e.tags || !filter.tags.every(t => e.tags?.includes(t))) return false;
       }
       if (filter.serviceId && e.serviceId !== filter.serviceId) return false;
       return true;
@@ -270,6 +278,46 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
 
   all(): readonly DefinitionEntry[] {
     return [...this.entries.values()];
+  }
+
+  getLineage(id: string): readonly DefinitionEntry[] {
+    const start = this.entries.get(id);
+    if (!start) return [];
+
+    const visited = new Set<string>();
+    const queue = [id];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      for (const link of this.links.values()) {
+        if (
+          link.linkType !== "evolves_from" &&
+          link.linkType !== "supersedes"
+        ) {
+          continue;
+        }
+
+        if (link.sourceId === currentId && !visited.has(link.targetId)) {
+          queue.push(link.targetId);
+        }
+        if (link.targetId === currentId && !visited.has(link.sourceId)) {
+          queue.push(link.sourceId);
+        }
+      }
+    }
+
+    return [...visited]
+      .map((entryId) => this.entries.get(entryId))
+      .filter((entry): entry is DefinitionEntry => entry !== undefined)
+      .toSorted((left, right) => {
+        const leftRevision = left.revision ?? 1;
+        const rightRevision = right.revision ?? 1;
+        if (leftRevision !== rightRevision) return leftRevision - rightRevision;
+        return left.updatedAt.localeCompare(right.updatedAt);
+      });
   }
 
   stats(): DefinitionStats {

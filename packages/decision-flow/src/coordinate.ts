@@ -47,6 +47,7 @@ export function buildCoordinateSpace(
       shape.push(capacity);
       subFlowRefs.set(i, gate.subFlowId);
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-subFlow gate always has branches
       shape.push(gate.branches!.length);
     }
   }
@@ -115,6 +116,7 @@ export function encodeSelections(
       coords.push(subAddr + 1); // WeightedIndex는 1-based
     } else {
       // 일반 gate: branchId → 인덱스 변환
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-subFlow gate always has branches
       const branchIdx = gate.branches!.findIndex((b) => b.id === sel.branchId);
       if (branchIdx === -1) {
         throw new Error(
@@ -153,6 +155,7 @@ export function decodePath(
       selections[gate.id] = String(coordValue - 1);
     } else {
       // 일반 gate: 인덱스 → branchId
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-subFlow gate always has branches
       selections[gate.id] = gate.branches![coordValue - 1].id;
     }
   }
@@ -225,6 +228,7 @@ export function constraintForGate(
   }
 
   const positions = branchIds.map((bid) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guard above ensures branches exist
     const idx = gate.branches!.findIndex((b) => b.id === bid);
     if (idx === -1) throw new Error(`gate "${gateId}"에서 branch "${bid}"를 찾을 수 없다`);
     return idx + 1; // 1-based

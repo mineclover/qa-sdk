@@ -29,8 +29,8 @@ export function deriveMeta(prefix: PrefixDef): PrefixMeta {
 // ── Category 추론 ─────────────────────────────────────────────
 
 function inferCategory(prefix: PrefixDef): PrefixCategory {
-  const dimKinds = Object.values(prefix.dims).map(d => d.kind);
-  const hasTableRef = dimKinds.includes("table_ref");
+  const dimKinds = new Set(Object.values(prefix.dims).map(d => d.kind));
+  const hasTableRef = dimKinds.has("table_ref");
   const labels = prefix.labels;
 
   // table_ref가 있거나 이름이 _event로 끝나면 이벤트
@@ -41,14 +41,14 @@ function inferCategory(prefix: PrefixDef): PrefixCategory {
 
   // 정책: role/action 축
   if (labels.includes("role") && labels.includes("action")) return "policy";
-  if (labels.includes("role") && dimKinds.includes("prefix_ref")) return "policy";
+  if (labels.includes("role") && dimKinds.has("prefix_ref")) return "policy";
 
   // 관측: svc_ref + 관측성 축 패턴
-  const observationAxes = [
+  const observationAxes = new Set([
     "page", "resource_type", "http_method", "flow_name", "flow_step",
     "pipeline_phase", "validation_mode", "mask_mode",
-  ];
-  if (dimKinds.includes("prefix_ref") && labels.some(l => observationAxes.includes(l))) {
+  ]);
+  if (dimKinds.has("prefix_ref") && labels.some(l => observationAxes.has(l))) {
     return "observation";
   }
 

@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: guides-system
       type: refines
+    - target: tag-management-spec
+      type: depends_on
 ---
 # 문서 작성 표준 가이드
 
@@ -103,6 +105,31 @@ def:
       type: refines              # 부모→자식: contains, 자식→부모: refines
 ---
 ```
+
+## 3.5 태그 선택 규칙
+
+`tags`는 좌표(scope/aspect/depth)를 대체하지 않고, 횡단 관심사와 탐색 힌트를 보강하는 메타데이터다.
+
+먼저 붙일 값:
+
+- StructuralTag: `entry-point`, `cross-scope`, `decision`, `generated`
+- ConcernTag: `security`, `performance`, `accessibility`, `observability`, `testing`, `migration`, `deprecation`
+
+그 다음 필요할 때만 붙일 값:
+
+- 운영 관례 태그: `runtime`, `persistence`, `contract`, `versioning`
+- 제품/영역 태그: `frontend`, `registry`, `motion`
+- 품질 하네스 태그: `quality-bundle`, `quality-gate`, `gate-kind:*`
+
+권장 패턴:
+
+- 진입 문서면 `entry-point`
+- 통합 설계 문서면 `cross-scope`
+- 검증/게이트 문서면 `testing`
+- 공개 계약 문서면 `contract`
+- 저장소/SQLite/DB 문서면 `persistence`
+
+태그는 보통 2~5개면 충분하다. 자세한 분류 기준은 `tag-management-spec`를 따른다.
 
 ## 4. 본문 필수 구조
 

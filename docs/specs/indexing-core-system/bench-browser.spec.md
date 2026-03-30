@@ -12,7 +12,7 @@ def:
   links:
     - target: wi-layout-protocol
       type: depends_on
-    - target: browser-monitor-spec
+    - target: browser-runtime-system
       type: depends_on
 ---
 

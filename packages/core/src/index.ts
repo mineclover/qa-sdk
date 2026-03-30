@@ -77,6 +77,9 @@ export type {
 
 export type { ActorContext } from "./types/actor.js";
 
+export type { Brand, DocumentAddress, PrefixAddress } from "./types/branded.js";
+export { documentAddress, prefixAddress } from "./types/branded.js";
+
 export type {
   IdentificationMode,
   BehaviorPattern,
@@ -204,9 +207,11 @@ export { identifyActorMode } from "./lib/identify-actor.js";
 export type { IdentifyActorInput } from "./lib/identify-actor.js";
 
 export { createLogger } from "./lib/create-logger.js";
-export type { Logger } from "./lib/create-logger.js";
+export type { Logger, CreateLoggerOptions, LoggerDestination } from "./lib/create-logger.js";
 
 export { AppError, ServiceClientError } from "./lib/app-error.js";
+
+export { parseJsonColumn, parseJsonArray, parseJsonObject } from "./lib/typed-json.js";
 
 export {
   emptyStringToUndefined,

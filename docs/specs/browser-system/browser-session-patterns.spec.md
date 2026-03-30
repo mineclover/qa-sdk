@@ -10,9 +10,9 @@ def:
   lifecycle: approved
   layer: operation
   svc: browser-sdk
-  tags: []
+  tags: [observability, runtime, structural]
   links:
-    - target: browser-lifecycle-spec
+    - target: browser-lifecycle-system
       type: refines
 ---
 

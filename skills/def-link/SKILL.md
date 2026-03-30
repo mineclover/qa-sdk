@@ -44,6 +44,15 @@ qa-sdk def validate    # 고아/multi-parent 경고 확인
 | flow → feature (refines) | 높음 |
 | scenario → feature (traces_to) | 높음 |
 
+자주 쓰는 안전 패턴:
+
+| 패턴 | 권장 link |
+|------|-----------|
+| quality contract → quality bundle | `refines` |
+| gate 문서 → contract 문서 | `depends_on` |
+| overview leaf → 상위 system/module | `refines` |
+| data model → API 계약 | `depends_on` |
+
 ## 수동 검토 필요 (본문 확인)
 
 | 패턴 | 이유 |
@@ -91,3 +100,4 @@ qa-sdk def bottomup <문서ID>   # blast radius 확인
 - DB나 실행 환경의 캐시를 직접 고치지 않는다. `docs/`와 frontmatter가 SSOT다.
 - 불확실하면 추가하지 않음
 - 자동 패턴 먼저, 수동은 별도 처리
+- tags는 링크를 대체하지 않는다. `cross-scope`는 다중 소속의 의도를 설명할 뿐, authored relation 대신 쓰지 않는다.

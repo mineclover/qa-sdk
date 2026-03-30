@@ -8,7 +8,7 @@ def:
   svc: platform-demo
   lifecycle: approved
   layer: experience
-  tags: []
+  tags: [frontend, runtime, structural]
   links:
     - target: motion-content-glossary
       type: depends_on

@@ -1,5 +1,5 @@
 import type { RLSCNode, LayoutGrid, GridCell, LayoutRect } from "./types.js";
-import { flattenTree } from "./collector.js";
+import { flattenTree } from "./tree-utils.js";
 
 /** 기본 그리드 셀 크기 (px) — 16px = 고해상도 행렬 */
 const DEFAULT_CELL_SIZE = 16;
@@ -61,7 +61,7 @@ export function analyzeGrid(
       if (cell.nodeIds.length === 0) continue;
 
       // z-index 순서로 정렬
-      const sorted = [...cell.nodeIds].sort((a, b) => {
+      const sorted = [...cell.nodeIds].toSorted((a, b) => {
         const za = nodeMap.get(a)?.zIndex ?? 0;
         const zb = nodeMap.get(b)?.zIndex ?? 0;
         return za - zb;

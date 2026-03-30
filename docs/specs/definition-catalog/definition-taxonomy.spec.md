@@ -17,6 +17,8 @@ def:
       type: contains
     - target: definition-addressing
       type: contains
+    - target: tag-management-spec
+      type: depends_on
 ---
 # Definition Taxonomy — 문서 분류 체계
 
@@ -27,6 +29,7 @@ def:
 ## 정의 ^defines
 
 - scope 7종, aspect 22종, depth 4종, lifecycle 5종, layer 4종, link_type 6종
+- 문서 태그는 좌표 축이 아니라 보조 taxonomy이며 `tag-management-spec`에서 관리
 - VALID_SCOPE_ASPECTS 유효 조합 제약
 - v1/v2 주소 공간 개요
 

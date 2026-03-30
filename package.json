@@ -7,7 +7,11 @@
     "health": "bash scripts/health.sh",
     "build": "pnpm -r run build",
     "test": "pnpm -r --workspace-concurrency=1 run test",
-    "lint": "pnpm -r run lint",
+    "lint": "oxlint packages/",
+    "lint:fix": "oxlint --fix packages/",
+    "lint:ci": "oxlint --format=github --deny-warnings packages/",
+    "format": "oxfmt packages/",
+    "format:check": "oxfmt --check packages/",
     "clean": "pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",
     "def:check": "node packages/cli/dist/index.js def validate && node packages/cli/dist/index.js def check",
@@ -31,6 +35,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
     "protobufjs-cli": "^2.0.0",
     "verdaccio": "^6.3.2",
     "vitest": "^1.6.1"

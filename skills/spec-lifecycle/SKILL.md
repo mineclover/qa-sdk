@@ -1,6 +1,12 @@
 ---
 name: spec-lifecycle
 description: "스펙 문서 생명주기 관리. 설계→구현→검증 단계별 문서 상태 전이, 구현 완료 후 코드 참조 전환, drift 점검을 수행한다."
+triggers:
+  - spec lifecycle
+  - 문서 생명주기
+  - 코드 참조 전환
+  - spec drift
+argument-hint: "<spec-doc-id|service>"
 ---
 
 # Spec Lifecycle — 스펙 문서 생명주기 관리

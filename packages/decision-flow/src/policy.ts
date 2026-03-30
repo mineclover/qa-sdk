@@ -80,7 +80,7 @@ export function findApplicablePolicies(
   return policies
     .filter((p) => p.action.gateId === gateId)
     .filter((p) => evaluateAllConditions(p.conditions, evalContext))
-    .sort((a, b) => b.priority - a.priority) // 높은 priority 우선
+    .toSorted((a, b) => b.priority - a.priority) // 높은 priority 우선
     .map((p) => p.action);
 }
 

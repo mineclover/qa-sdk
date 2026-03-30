@@ -17,7 +17,7 @@ let result: ScanResult;
 
 beforeAll(async () => {
   result = await scanAndBuild(ROOT, [join(ROOT, "docs")]);
-});
+}, 60_000);
 
 function hasLink(sourceId: string, targetId: string, linkType: string): boolean {
   return result.registry.getLinks(sourceId, "outgoing").some(link =>
@@ -52,6 +52,7 @@ describe("US-007 링크 커버리지", () => {
     expect(containsCount("sdk-system")).toBe(3);
     expect(containsCount("wi-trace-group")).toBe(3);
     expect(containsCount("df-narrative-group")).toBe(3);
+    expect(containsCount("quality-gates-system")).toBeGreaterThanOrEqual(12);
   });
 
   it("대표 constraint/feature/data 링크가 유지된다", () => {

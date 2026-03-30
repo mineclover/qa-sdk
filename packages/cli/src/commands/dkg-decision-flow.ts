@@ -149,6 +149,7 @@ export async function startDkgDecisionFlowBridge(input: {
   }
 
   return {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- startFlow()로 생성된 인스턴스 존재 보장
     instance: engine.getInstance(started.id)!,
     currentGate: engine.getCurrentGate(started.id),
     appliedSteps,

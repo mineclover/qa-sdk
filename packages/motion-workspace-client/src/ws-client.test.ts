@@ -14,14 +14,17 @@ const originalFetch = globalThis.fetch;
 class FakeWebSocket implements MotionWorkspaceWebSocketLike {
   readonly url: string;
   readyState = 0;
-  onopen: ((event: unknown) => void) | null = null;
-  onmessage: ((event: MotionWorkspaceWsMessageEvent) => void) | null = null;
-  onclose: ((event: MotionWorkspaceWsCloseEvent) => void) | null = null;
-  onerror: ((event: unknown) => void) | null = null;
+  private readonly listeners = new Map<string, Array<(event: any) => void>>();
   readonly sent: string[] = [];
 
   constructor(url: string) {
     this.url = url;
+  }
+
+  addEventListener(type: string, listener: (event: any) => void): void {
+    const list = this.listeners.get(type) ?? [];
+    list.push(listener);
+    this.listeners.set(type, list);
   }
 
   send(data: string): void {
@@ -30,26 +33,28 @@ class FakeWebSocket implements MotionWorkspaceWebSocketLike {
 
   close(code?: number, reason?: string): void {
     this.readyState = 3;
-    this.onclose?.({
-      code,
-      reason,
-      wasClean: code === 1000,
-    });
+    for (const fn of this.listeners.get("close") ?? []) {
+      fn({ code, reason, wasClean: code === 1000 });
+    }
   }
 
   open(): void {
     this.readyState = 1;
-    this.onopen?.({});
+    for (const fn of this.listeners.get("open") ?? []) {
+      fn({});
+    }
   }
 
   receive(payload: unknown): void {
-    this.onmessage?.({
-      data: JSON.stringify(payload),
-    });
+    for (const fn of this.listeners.get("message") ?? []) {
+      fn({ data: JSON.stringify(payload) });
+    }
   }
 
   fail(error: unknown): void {
-    this.onerror?.(error);
+    for (const fn of this.listeners.get("error") ?? []) {
+      fn(error);
+    }
   }
 }
 

@@ -7,6 +7,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [domain, motion, workspace]
+  links:
+    - target: motion-workspace-system
+      type: refines
 ---
 # motion-workspace
 

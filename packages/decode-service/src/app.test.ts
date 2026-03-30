@@ -502,7 +502,7 @@ describe("decode-service", () => {
       const p = new DecoderPool(0);
       p.load({ map: permMap });
       p.load({ map: articleMap });
-      expect(p.keys().sort()).toEqual(["article:v1", "perm:v1"]);
+      expect(p.keys().toSorted()).toEqual(["article:v1", "perm:v1"]);
     });
 
     it("values — TTL 만료 항목 자동 제거", async () => {

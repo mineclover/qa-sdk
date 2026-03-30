@@ -68,7 +68,9 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
         e.to.includes("constraint") || e.to.includes("migration") || e.to.includes("result") ||
         e.to.includes("event_name") || e.to.includes("_op") || e.to.includes("intent") ||
         e.to.includes("lifecycle") || e.to.includes("record_type") || e.to.includes("decision_type") ||
-        e.to.includes("skill_id") || e.to.includes("edge_type") || e.to.includes("spec_type"),
+        e.to.includes("skill_id") || e.to.includes("edge_type") || e.to.includes("spec_type") ||
+        e.to.includes("escalation") || e.to.includes("forcing") || e.to.includes("cognitive") ||
+        e.to.includes("flow_type"),
       );
       if (!hasAction) {
         errors.push(`event prefix "${prefixId}" has no action-related axis`);
@@ -112,13 +114,20 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
 
   observation: {
     category: "observation",
-    description: "관측/로깅/추적. svc_ref(service 참조)를 포함해야 한다.",
-    requiredRefs: ["service"],
+    description: "관측/로깅/추적. svc_ref(service 참조)를 포함해야 한다. 자기 참조 관측(dev/decision-domain)은 면제.",
     validate: (prefixId, graph) => {
       const errors: string[] = [];
       const refs = graph.neighbors(prefixId, "references");
       if (!refs.includes("service")) {
-        errors.push(`observation prefix "${prefixId}" must reference service prefix`);
+        // 자기 참조 관측 prefix (dev/decision-domain)는 service 참조 면제
+        // 이 prefix들은 시스템 자체를 관측하므로 특정 서비스에 종속되지 않음
+        const SELF_OBSERVATION_PREFIXES = [
+          "test_coverage", "cli_tracking", "decision_path", "model_apply",
+          "contract_check", "skill_execution",
+        ];
+        if (!SELF_OBSERVATION_PREFIXES.includes(prefixId)) {
+          errors.push(`observation prefix "${prefixId}" must reference service prefix`);
+        }
       }
       return errors;
     },

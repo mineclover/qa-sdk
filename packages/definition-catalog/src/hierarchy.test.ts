@@ -106,11 +106,11 @@ beforeEach(() => {
 
 describe("패턴 1: 묶음 (composition)", () => {
   it("platform의 직접 멤버 2건", () => {
-    expect(getMembers("platform").sort()).toEqual(["auth-system", "payment-system"]);
+    expect(getMembers("platform").toSorted()).toEqual(["auth-system", "payment-system"]);
   });
 
   it("gate-system의 직접 멤버 3건", () => {
-    expect(getMembers("gate-system").sort()).toEqual(["gate-api", "gate-constraint", "gate-state"]);
+    expect(getMembers("gate-system").toSorted()).toEqual(["gate-api", "gate-constraint", "gate-state"]);
   });
 
   it("계층 깊이: platform=0, payment-system=1, gate-system=2, gate-api=3", () => {
@@ -139,7 +139,7 @@ describe("패턴 1: 묶음 (composition)", () => {
 describe("패턴 2: 교집합 (intersection)", () => {
   it("record-spec은 2개 그룹에 소속 (DAG)", () => {
     const parents = getParentGroups("record-spec");
-    expect(parents.sort()).toEqual(["auth-system", "payment-system"]);
+    expect(parents.toSorted()).toEqual(["auth-system", "payment-system"]);
   });
 
   it("payment-system과 auth-system의 공유 멤버 = record-spec", () => {
@@ -209,13 +209,13 @@ describe("통합 질의", () => {
   it("scope로 원자만 필터 (그룹 제외)", () => {
     const interfaces = reg.findByScope("interface");
     expect(interfaces.length).toBe(3);
-    expect(interfaces.map(e => e.id).sort()).toEqual(["auth-api", "checkout-api", "gate-api"]);
+    expect(interfaces.map(e => e.id).toSorted()).toEqual(["auth-api", "checkout-api", "gate-api"]);
   });
 
   it("overview depth = 그룹 문서들", () => {
     const groups = reg.query({ depth: "overview" });
     expect(groups.length).toBe(5);
-    expect(groups.map(e => e.id).sort()).toEqual([
+    expect(groups.map(e => e.id).toSorted()).toEqual([
       "auth-system", "checkout-system", "gate-system", "payment-system", "platform",
     ]);
   });

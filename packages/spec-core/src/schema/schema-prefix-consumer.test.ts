@@ -137,8 +137,8 @@ describe("SchemaHealthAudit", () => {
     const a = auditSchemaHealth(graph, { date: "2026-03-21" });
     const b = auditSchemaHealth(graph, { date: "2026-03-21" });
 
-    const aIds = a.observations.map(o => o.id).sort();
-    const bIds = b.observations.map(o => o.id).sort();
+    const aIds = a.observations.map(o => o.id).toSorted();
+    const bIds = b.observations.map(o => o.id).toSorted();
     expect(aIds).toEqual(bIds);
   });
 

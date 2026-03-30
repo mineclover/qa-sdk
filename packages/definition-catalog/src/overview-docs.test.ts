@@ -36,7 +36,7 @@ function walkMarkdownFiles(dir: string): string[] {
 function getOverviewTargetFiles(): string[] {
   return walkMarkdownFiles(DOCS_SPECS)
     .filter(file => /^  depth: overview$/m.test(readFileSync(file, "utf8")))
-    .sort();
+    .toSorted();
 }
 
 function extractOverviewSection(content: string): string | null {

@@ -9,7 +9,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: shopping-backend
-  tags: []
+  tags: [entry-point, runtime, observability]
   links:
     - target: system-infra
       type: refines

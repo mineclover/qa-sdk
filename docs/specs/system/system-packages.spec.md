@@ -8,9 +8,9 @@ def:
   depth: overview
   lifecycle: approved
   layer: operation
-  tags: []
+  tags: [entry-point, cross-scope, structural]
   links:
-    - target: spec-engine-architecture
+    - target: spec-architecture-system
       type: refines
     - target: registry-api
       type: refines

@@ -170,17 +170,15 @@ describe("mapping", () => {
     }
   });
 
-  it("매핑이 유효한 scope/layer/tier 값을 포함한다", () => {
+  it("매핑이 유효한 scope/layer 값을 포함한다", () => {
     const validScopes = ["ui", "feature", "flow", "state", "constraint", "data", "interface"];
     const validLayers = ["domain", "operation", "mediation", "experience"];
-    const validTiers = ["tier-frontend", "tier-backend", "tier-infra", "tier-system"];
 
     for (const [, mapping] of Object.entries(DOMAIN_TO_DEF_MAP)) {
       for (const scope of mapping.primaryScopes) {
         expect(validScopes).toContain(scope);
       }
       expect(validLayers).toContain(mapping.primaryLayer);
-      expect(validTiers).toContain(mapping.tier);
     }
   });
 
@@ -189,7 +187,6 @@ describe("mapping", () => {
     expect(query.scopes).toContain("constraint");
     expect(query.layer).toBe("domain");
     expect(query.tags).toContain("security");
-    expect(query.tags).toContain("tier-system");
   });
 
   it("suggestDomainFromArtifact()가 알려진 값을 매핑한다", () => {

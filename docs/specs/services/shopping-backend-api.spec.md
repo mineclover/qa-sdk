@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: shopping-backend
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: shopping-backend-spec
       type: refines

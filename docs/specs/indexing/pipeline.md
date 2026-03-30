@@ -8,7 +8,7 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: operation
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: pipeline-enrichment
       type: refines
@@ -34,9 +34,9 @@ entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 - **합성 메서드**: `reg.serialize(codec.encode(entityIds))`로 인코딩 전체 경로, `codec.decode(reg.parse(pk))`로 디코딩 전체 경로 1줄 합성
 
 - 레이어 분리 원리: [`foundation.md`](foundation.md) §3
-- 수학 엔진: [`weighted-index/core.spec.md`](weighted-index/core.spec.md)
+- 수학 엔진: [`../weighted-index-system/wi-math.spec.md`](../weighted-index-system/wi-math.spec.md)
 - 스키마 레이어: [`index-meta/registry.spec.md`](index-meta/registry.spec.md)
-- 프로토콜/포맷: [`weighted-index/pack-format.spec.md`](weighted-index/pack-format.spec.md)
+- 프로토콜/포맷: [`../weighted-index-system/wi-pack-format-system.md`](../weighted-index-system/wi-pack-format-system.md)
 - 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md)
 
 ---

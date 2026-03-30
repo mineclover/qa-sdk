@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: motion-workspace-service
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: motion-workspace-service-spec
       type: refines

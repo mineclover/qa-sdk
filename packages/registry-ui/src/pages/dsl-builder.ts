@@ -351,7 +351,6 @@ function bindVersionCheck(composites: ResolvedDef[]): void {
     const r = composites.find((x) => x.id === compId);
     if (!r) return;
 
-    const resolved = resolveAll();
     const dimIdx = r.dims.indexOf(dimId);
     if (dimIdx < 0) return;
 

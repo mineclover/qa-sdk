@@ -42,7 +42,7 @@ Phase 1 (테스트 — 각각 독립, 병렬 가능)
   #2 permission-code  #3 api-payload  #4 schema-sync  #5 backup  #6 wasm  #7 gpu
 
 Phase 2 (스펙 — Phase 1 이후)
-  #8 permission-engine-spec → #9 partial-binder-spec
+  #8 perm-codec-system → #9 partial-binder-spec
 
 Phase 3 (인프라 + 서비스)
   #10 debug-store ──────────────────────────────────── (독립)

@@ -1,6 +1,37 @@
 import { z } from "zod";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse } from "@qa-sdk/core";
 import { otelEnvSchema } from "@qa-sdk/otel";
+
+/**
+ * ~/.qa-sdk/ingest-profile.json에서 프로필 설정을 읽어
+ * 환경변수 기본값으로 사용한다. 환경변수가 명시적으로 설정된 경우 우선.
+ */
+function loadProfileDefaults(): Record<string, string> {
+  // 테스트 환경이면 프로필 로딩 스킵
+  if (process.env.VITEST || process.env.NODE_ENV === "test") return {};
+  try {
+    // service-profile.json (통합 프로필) 우선, 없으면 레거시 ingest-profile.json
+    const dir = join(homedir(), ".qa-sdk");
+    for (const filename of ["service-profile.json", "ingest-profile.json"]) {
+      const profilePath = join(dir, filename);
+      if (!existsSync(profilePath)) continue;
+      const profile = JSON.parse(readFileSync(profilePath, "utf-8"));
+      const defaults: Record<string, string> = {};
+      if (profile.insightsDriver) defaults.INSIGHTS_DRIVER = profile.insightsDriver;
+      if (profile.appHub?.endpoint) defaults.APP_HUB_ENDPOINT = profile.appHub.endpoint;
+      if (profile.appHub?.projectId) defaults.APP_HUB_PROJECT_ID = profile.appHub.projectId;
+      if (profile.appHub?.credential) defaults.APP_HUB_CREDENTIAL = profile.appHub.credential;
+      return defaults;
+    }
+    return {};
+  } catch (err) {
+    console.warn("[ingest] 프로필 로드 실패 — 기본값 사용:", err instanceof Error ? err.message : String(err));
+    return {};
+  }
+}
 
 export const envSchema = z.object({
   /** Store 드라이버: memory(기본) | pg | d1 | clickhouse */
@@ -28,6 +59,15 @@ export const envSchema = z.object({
   CONVERGENCE_DKG_SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   CONVERGENCE_SCHEDULE_INTERVAL_MS: z.coerce.number().int().positive().default(300_000),
   CONVERGENCE_REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  // ── Insights ─────────────────────────────────────────
+  /** 인사이트 저장소 드라이버: local(SQLite, 기본) | app-hub(Google App Hub) */
+  INSIGHTS_DRIVER: z.enum(["local", "app-hub"]).default("local"),
+  /** App Hub 엔드포인트 (INSIGHTS_DRIVER=app-hub 시 필수) */
+  APP_HUB_ENDPOINT: z.preprocess(emptyStringToUndefined, z.string().url().optional()),
+  /** App Hub 인증 정보 (서비스 계정 키 경로 또는 토큰) */
+  APP_HUB_CREDENTIAL: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  /** App Hub 프로젝트 ID */
+  APP_HUB_PROJECT_ID: z.preprocess(emptyStringToUndefined, z.string().optional()),
   // ── Catalog ──────────────────────────────────────────
   CATALOG_ID: z.string().default("demo"),
   // ── Pattern Classification ─────────────────────────
@@ -46,10 +86,31 @@ export const envSchema = z.object({
       path: ["REDIS_URL"],
     });
   }
+  if (value.INSIGHTS_DRIVER === "app-hub") {
+    if (!value.APP_HUB_ENDPOINT) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "APP_HUB_ENDPOINT is required when INSIGHTS_DRIVER=app-hub",
+        path: ["APP_HUB_ENDPOINT"],
+      });
+    }
+    if (!value.APP_HUB_PROJECT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "APP_HUB_PROJECT_ID is required when INSIGHTS_DRIVER=app-hub",
+        path: ["APP_HUB_PROJECT_ID"],
+      });
+    }
+  }
 });
 
+let _profileDefaults: Record<string, string> | null = null;
+
 export function parseEnv(source: NodeJS.ProcessEnv) {
-  return envSchema.parse(source);
+  // 프로필 기본값을 환경변수보다 낮은 우선순위로 lazy 적용
+  if (!_profileDefaults) _profileDefaults = loadProfileDefaults();
+  const merged = { ..._profileDefaults, ...source };
+  return envSchema.parse(merged);
 }
 
 export const env = parseEnv(process.env);

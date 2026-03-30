@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: weighted-index
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
     - target: wi-math
       type: implements

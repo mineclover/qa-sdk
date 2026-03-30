@@ -149,7 +149,7 @@ describe("S2. 점진적 패치", () => {
 
     // filter로 확인
     const services = view.distinctServices();
-    expect(services.sort()).toEqual(["cms/auth", "shop/payment"]);
+    expect(services.toSorted()).toEqual(["cms/auth", "shop/payment"]);
   });
 });
 

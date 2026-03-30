@@ -1,11 +1,8 @@
-import type { DomNode } from "./dom-tree.js";
+import type { DomNode } from './dom-tree.js';
 
-export function renderFormPreview(
-  container: HTMLElement,
-  root: DomNode,
-): () => void {
+export function renderFormPreview(container: HTMLElement, root: DomNode): () => void {
   function render(): void {
-    container.innerHTML = "";
+    container.innerHTML = '';
     const el = buildElement(root);
     container.appendChild(el);
   }
@@ -47,10 +44,7 @@ function buildElement(node: DomNode): HTMLElement {
   if (node.textContent && node.children.length > 0) {
     const firstChild = el.firstChild;
     if (!firstChild || firstChild.nodeType !== Node.TEXT_NODE) {
-      el.insertBefore(
-        document.createTextNode(node.textContent),
-        el.firstChild,
-      );
+      el.insertBefore(document.createTextNode(node.textContent), el.firstChild);
     }
   }
 

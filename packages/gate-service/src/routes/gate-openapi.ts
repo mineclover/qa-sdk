@@ -13,7 +13,6 @@ import {
   gateLookupRequestSchema,
   gateRecomputeRequestSchema,
   gateFilterRangesRequestSchema,
-  gateFilterModeSchema,
 } from "../schemas/gate.js";
 
 // ── 응답 스키마 ──────────────────────────────────────

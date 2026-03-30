@@ -55,6 +55,7 @@ const DIM_COLORS: Record<DimKey, { fill: string; ink: string }> = {
 //  DOM refs
 // ═══════════════════════════════════════════════════════════════════════════
 
+/* eslint-disable typescript/no-non-null-assertion -- getElementById for elements guaranteed in index.html */
 const gridContainer = document.getElementById("grid-container")!;
 const spPlaceholder = document.getElementById("sp-placeholder")!;
 const spContent     = document.getElementById("sp-content")!;
@@ -68,6 +69,7 @@ const listContainer = document.getElementById("list-container")!;
 const axisBar       = document.getElementById("axis-bar")!;
 const xAxisBtns     = document.getElementById("x-axis-btns")!;
 const yAxisBtns     = document.getElementById("y-axis-btns")!;
+/* eslint-enable typescript/no-non-null-assertion */
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Route ↔ Sheet mapping
@@ -109,37 +111,21 @@ function switchSheet(id: SheetId, pushState = true): void {
   ribbonTools.style.display = isExplorer ? "" : "none";
   axisBar.style.display = isExplorer && state.viewMode === "grid" ? "" : "none";
 
-  if (id === "concept") {
-    const el = document.getElementById("concept-all")!;
-    if (!el.dataset.rendered) { renderConceptAll(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "philosophy") {
-    const el = document.getElementById("concept-philosophy")!;
-    if (!el.dataset.rendered) { renderPhilosophy(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "address") {
-    const el = document.getElementById("concept-address")!;
-    if (!el.dataset.rendered) { renderAddress(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "version") {
-    const el = document.getElementById("concept-version")!;
-    if (!el.dataset.rendered) { renderVersion(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "filter") {
-    const el = document.getElementById("concept-filter")!;
-    if (!el.dataset.rendered) { renderFilter(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "obfuscate") {
-    const el = document.getElementById("concept-obfuscate")!;
-    if (!el.dataset.rendered) { renderObfuscatePage(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "layout") {
-    const el = document.getElementById("concept-layout")!;
-    if (!el.dataset.rendered) { renderLayoutPlanner(el); el.dataset.rendered = "1"; }
-  }
-  if (id === "multi") {
-    const el = document.getElementById("concept-multi")!;
-    if (!el.dataset.rendered) { renderMultiIndex(el); el.dataset.rendered = "1"; }
+  const sheetRenderers: Partial<Record<SheetId, { elId: string; render: (el: HTMLElement) => void }>> = {
+    concept:   { elId: "concept-all",        render: renderConceptAll },
+    philosophy:{ elId: "concept-philosophy",  render: renderPhilosophy },
+    address:   { elId: "concept-address",     render: renderAddress },
+    version:   { elId: "concept-version",     render: renderVersion },
+    filter:    { elId: "concept-filter",      render: renderFilter },
+    obfuscate: { elId: "concept-obfuscate",   render: renderObfuscatePage },
+    layout:    { elId: "concept-layout",      render: renderLayoutPlanner },
+    multi:     { elId: "concept-multi",       render: renderMultiIndex },
+  };
+
+  const renderer = sheetRenderers[id];
+  if (renderer) {
+    const el = document.getElementById(renderer.elId);
+    if (el && !el.dataset.rendered) { renderer.render(el); el.dataset.rendered = "1"; }
   }
 
   if (!isExplorer) {
@@ -372,7 +358,7 @@ function updateStatusBar(): void {
 
 function updateFormulaBar(cell: CellData | null): void {
   const vDef = getVersion(state.version);
-  const [W1, W2, W3, W4] = vDef.weights;
+  const [W1, W2, W3] = vDef.weights;
 
   if (!cell) {
     nameBox.textContent  = "—";

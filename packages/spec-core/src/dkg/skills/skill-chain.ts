@@ -7,12 +7,9 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import type { GraphPort } from "../../shared/graph-port.js";
-import type { DecisionNode, VersionEventNode, ImpactAnalysisResult } from "../dkg.types.js";
-import { safeEntryAdd, type SafeEntryAddResult } from "./safe-entry-add.js";
-import { versionEventFromDiff, type DiffInput } from "./version-event-derive.js";
-import { analyzeImpact } from "./analyze-impact.js";
+import { safeEntryAdd } from "./safe-entry-add.js";
 import { auditAllConstraints } from "./constraint-check.js";
-import { checkAllDomainsHealth, type DomainHealthResult } from "./domain-health.js";
+import { checkAllDomainsHealth } from "./domain-health.js";
 import { scaffoldDecision } from "./decision-scaffold.js";
 
 // ═══════════════════════════════════════════════════════════════

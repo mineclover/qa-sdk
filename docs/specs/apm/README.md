@@ -27,7 +27,7 @@
 
 ## Snapshot Supply 전략
 
-> 상세: [`indexing/conventions.md §5`](../indexing/conventions.md)
+> 상세: [`conventions-system.md`](../indexing-core-system/conventions-system.md)
 
 배포 시점의 entry set(snapshot)을 어떻게 추적하는지를 composite별로 선택한다:
 

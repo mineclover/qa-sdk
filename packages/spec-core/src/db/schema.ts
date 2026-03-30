@@ -40,6 +40,8 @@ export const dkgNodes = sqliteTable(
   ],
 );
 
+export type DkgNodeRow = typeof dkgNodes.$inferSelect;
+
 // ═══════════════════════════════════════════════════════
 //  DKG 엣지
 // ═══════════════════════════════════════════════════════
@@ -65,6 +67,8 @@ export const dkgEdges = sqliteTable(
     index("idx_dkg_edges_catalog").on(table.catalogId),
   ],
 );
+
+export type DkgEdgeRow = typeof dkgEdges.$inferSelect;
 
 // ═══════════════════════════════════════════════════════
 //  UsageData 스냅샷 — 집계 결과 영속화

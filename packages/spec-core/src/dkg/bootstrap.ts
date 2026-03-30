@@ -10,14 +10,12 @@
 import type { Catalog } from "@qa-sdk/core";
 import { analyzeGateStructure, identifyCoreGates, type FlowSchema } from "decision-flow";
 import { GraphRegistry } from "./graph-registry.js";
-import { deriveFromCatalog, type DeriveInput } from "./catalog-derive.js";
+import { deriveFromCatalog } from "./catalog-derive.js";
 import { attachFlowSchemaEdges } from "./flow-schema-relations.js";
 import type { DomainNode, ConsumerNode, ConstraintNode, IntentLinkNode, DslBundleNode, ObservationNode, DecisionNode, SpecNode, SkillNode, TransitionSpecNode, FlowSchemaNode } from "./dkg.types.js";
 import type { TransitionSpec } from "../transition/transition.types.js";
 import { toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "../transition/dkg-bridge.js";
-import { analyzeHeadroom, applyHeadroomDecisions } from "@qa-sdk/convergence";
-import { scanAxisOverlaps, comparePrefixes } from "@qa-sdk/convergence";
-import { recordSeparation, applySeparationRecord } from "@qa-sdk/convergence";
+import { analyzeHeadroom, applyHeadroomDecisions, scanAxisOverlaps, comparePrefixes, recordSeparation, applySeparationRecord } from "@qa-sdk/convergence";
 import { defineDslBundle, DslBundleRegistry, analyzeDslCoverage, analyzeAllVersionSkew } from "./dsl-bundle.js";
 
 // ── Config 타입 (구조적 호환) ────────────────────────────────
@@ -196,7 +194,7 @@ export function bootstrapDkg(options: {
       });
       applySeparationRecord(graph, record);
     }
-    const pairKey = [overlap.a, overlap.b].sort().join(":");
+    const pairKey = [overlap.a, overlap.b].toSorted().join(":");
     if (pairKey === "migration_pattern:verdict_result") {
       const dec: DecisionNode = {
         kind: "decision", id: "DEC-SEP-verdict-migration", date,

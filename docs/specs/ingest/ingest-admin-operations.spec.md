@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: ingest-server
-  tags: []
+  tags: [runtime, observability, performance]
   links:
     - target: admin-api-spec
       type: refines

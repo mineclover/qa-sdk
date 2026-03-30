@@ -1,94 +1,104 @@
 /**
- * D1RecordStore — RecordStore의 D1/SQLite 구현.
- * jsonb → TEXT (JSON string), timestamp → TEXT (ISO-8601).
+ * D1RecordStore — RecordStore의 D1/SQLite drizzle ORM 구현.
+ * text 컬럼 → ISO-8601 문자열로 저장, 조회 시 Date로 변환.
  */
-import type { SqlDriver } from "index-meta";
-import type { RecordStore, RecordInsert, StoredRecord, RecordPaginationParams, StoredRecordPage } from "@qa-sdk/core";
+import { and, asc, eq, gt, or, type SQL } from "drizzle-orm";
+import type {
+  RecordStore,
+  RecordInsert,
+  RecordPaginationCursor,
+  RecordPaginationParams,
+  StoredRecord,
+  StoredRecordPage,
+} from "@qa-sdk/core";
+import { eventRecords } from "../db/schema.js";
+import { parseJsonColumn, type AddressContextJson, type EventPayloadJson, type UserAttributesJson } from "../db/json-types.js";
+import type { D1Db } from "./d1-db-type.js";
 
 export class D1RecordStore implements RecordStore {
-  constructor(private readonly driver: SqlDriver) {}
+  constructor(private readonly db: D1Db) {}
 
   async insertBatch(records: RecordInsert[]): Promise<void> {
+    if (records.length === 0) return;
     for (const r of records) {
-      await this.driver.execute(
-        `INSERT INTO event_records (
-          log_id, trace_id, span_id, parent_span_id, timestamp, record_kind,
-          event_key, event_version, span_name, start_time, end_time, status_code,
-          payload_format, payload_encoding, payload_masking_applied, payload_masked_fields,
-          payload, registry_warning, address_context, qa_session_id,
-          actor_id, user_id, user_attributes, created_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT (log_id) DO NOTHING`,
-        [
-          r.logId, r.traceId, r.spanId, r.parentSpanId ?? null,
-          r.timestamp.toISOString(), r.recordKind,
-          r.eventKey, r.eventVersion,
-          r.spanName ?? null, r.startTime?.toISOString() ?? null,
-          r.endTime?.toISOString() ?? null, r.statusCode ?? null,
-          r.payloadFormat, r.payloadEncoding,
-          r.payloadMaskingApplied ? 1 : 0,
-          JSON.stringify(r.payloadMaskedFields),
-          r.payload ? JSON.stringify(r.payload) : null,
-          r.registryWarning ?? null,
-          r.addressContext ? JSON.stringify(r.addressContext) : null,
-          r.qaSessionId ?? null,
-          r.actorId ?? null, r.userId ?? null,
-          r.userAttributes ? JSON.stringify(r.userAttributes) : null,
-          new Date().toISOString(),
-        ],
-      );
+      await this.db
+        .insert(eventRecords)
+        .values({
+          logId: r.logId,
+          traceId: r.traceId,
+          spanId: r.spanId,
+          parentSpanId: r.parentSpanId ?? null,
+          timestamp: r.timestamp.toISOString(),
+          recordKind: r.recordKind,
+          eventKey: r.eventKey,
+          eventVersion: r.eventVersion,
+          spanName: r.spanName ?? null,
+          startTime: r.startTime?.toISOString() ?? null,
+          endTime: r.endTime?.toISOString() ?? null,
+          statusCode: r.statusCode ?? null,
+          payloadFormat: r.payloadFormat,
+          payloadEncoding: r.payloadEncoding,
+          payloadMaskingApplied: r.payloadMaskingApplied,
+          payloadMaskedFields: JSON.stringify(r.payloadMaskedFields),
+          payload: r.payload ? JSON.stringify(r.payload) : null,
+          registryWarning: r.registryWarning ?? null,
+          addressContext: r.addressContext ? JSON.stringify(r.addressContext) : null,
+          qaSessionId: r.qaSessionId ?? null,
+          actorId: r.actorId ?? null,
+          userId: r.userId ?? null,
+          userAttributes: r.userAttributes ? JSON.stringify(r.userAttributes) : null,
+          createdAt: new Date().toISOString(),
+        })
+        .onConflictDoNothing({ target: eventRecords.logId });
     }
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
-    const rows = await this.driver.query<RawRow>(
-      "SELECT * FROM event_records WHERE trace_id = ? ORDER BY timestamp",
-      [traceId],
-    );
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(eq(eventRecords.traceId, traceId))
+      .orderBy(asc(eventRecords.timestamp));
     return rows.map(toStoredRecord);
   }
 
   async findByTraceIdPaginated(traceId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
-    return this.paginate(
-      "SELECT * FROM event_records WHERE trace_id = ?",
-      [traceId], params,
-    );
+    return this.paginate(eq(eventRecords.traceId, traceId), params);
   }
 
   async findBySessionId(sessionId: string): Promise<StoredRecord[]> {
-    const rows = await this.driver.query<RawRow>(
-      "SELECT * FROM event_records WHERE qa_session_id = ? ORDER BY timestamp",
-      [sessionId],
-    );
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(eq(eventRecords.qaSessionId, sessionId))
+      .orderBy(asc(eventRecords.timestamp));
     return rows.map(toStoredRecord);
   }
 
   async findBySessionIdPaginated(sessionId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
-    return this.paginate(
-      "SELECT * FROM event_records WHERE qa_session_id = ?",
-      [sessionId], params,
-    );
+    return this.paginate(eq(eventRecords.qaSessionId, sessionId), params);
   }
 
   async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
-    const rows = await this.driver.query<RawRow>(
-      "SELECT * FROM event_records WHERE trace_id = ? AND event_key = ? ORDER BY timestamp",
-      [traceId, eventKey],
-    );
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(and(eq(eventRecords.traceId, traceId), eq(eventRecords.eventKey, eventKey)))
+      .orderBy(asc(eventRecords.timestamp));
     return rows.map(toStoredRecord);
   }
 
-  private async paginate(baseQuery: string, baseParams: unknown[], params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  private async paginate(baseCondition: SQL<unknown>, params?: RecordPaginationParams): Promise<StoredRecordPage> {
     const limit = params?.limit ?? 100;
-    let query = baseQuery;
-    const qParams = [...baseParams];
-    if (params?.cursor) {
-      query += " AND (timestamp > ? OR (timestamp = ? AND log_id > ?))";
-      const ts = params.cursor.timestamp.toISOString();
-      qParams.push(ts, ts, params.cursor.logId);
-    }
-    query += ` ORDER BY timestamp, log_id LIMIT ${limit + 1}`;
-    const rows = await this.driver.query<RawRow>(query, qParams);
+    const where = buildPaginatedWhere(baseCondition, params?.cursor);
+
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(where)
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit + 1);
+
     const items = rows.slice(0, limit).map(toStoredRecord);
     const hasMore = rows.length > limit;
     const last = items[items.length - 1];
@@ -100,48 +110,43 @@ export class D1RecordStore implements RecordStore {
   }
 }
 
-interface RawRow extends Record<string, unknown> {
-  log_id: string; trace_id: string; span_id: string; parent_span_id: string | null;
-  timestamp: string; record_kind: string; event_key: string; event_version: string;
-  span_name: string | null; start_time: string | null; end_time: string | null;
-  status_code: string | null; payload_format: string; payload_encoding: string;
-  payload_masking_applied: number; payload_masked_fields: string;
-  payload: string | null; registry_warning: string | null;
-  address_context: string | null; qa_session_id: string | null;
-  actor_id: string | null; user_id: string | null; user_attributes: string | null;
-  created_at: string;
+function buildPaginatedWhere(baseCondition: SQL<unknown>, cursor?: RecordPaginationCursor): SQL<unknown> {
+  if (!cursor) return baseCondition;
+  const ts = cursor.timestamp.toISOString();
+  return and(
+    baseCondition,
+    or(
+      gt(eventRecords.timestamp, ts),
+      and(eq(eventRecords.timestamp, ts), gt(eventRecords.logId, cursor.logId)),
+    ),
+  ) as SQL<unknown>;
 }
 
-function parseJson<T>(val: string | null): T | undefined {
-  if (!val) return undefined;
-  try { return JSON.parse(val); } catch { return undefined; }
-}
-
-function toStoredRecord(row: RawRow): StoredRecord {
+function toStoredRecord(row: typeof eventRecords.$inferSelect): StoredRecord {
   return {
-    logId: row.log_id,
-    traceId: row.trace_id,
-    spanId: row.span_id,
-    parentSpanId: row.parent_span_id ?? undefined,
+    logId: row.logId,
+    traceId: row.traceId,
+    spanId: row.spanId,
+    parentSpanId: row.parentSpanId ?? undefined,
     timestamp: new Date(row.timestamp),
-    recordKind: row.record_kind,
-    eventKey: row.event_key,
-    eventVersion: row.event_version,
-    spanName: row.span_name ?? undefined,
-    startTime: row.start_time ? new Date(row.start_time) : undefined,
-    endTime: row.end_time ? new Date(row.end_time) : undefined,
-    statusCode: row.status_code ?? undefined,
-    payloadFormat: row.payload_format,
-    payloadEncoding: row.payload_encoding,
-    payloadMaskingApplied: !!row.payload_masking_applied,
-    payloadMaskedFields: parseJson<string[]>(row.payload_masked_fields) ?? [],
-    payload: parseJson(row.payload),
-    registryWarning: row.registry_warning ?? undefined,
-    addressContext: parseJson<Record<string, string>>(row.address_context),
-    qaSessionId: row.qa_session_id ?? undefined,
-    actorId: row.actor_id ?? undefined,
-    userId: row.user_id ?? undefined,
-    userAttributes: parseJson<Record<string, string>>(row.user_attributes),
-    createdAt: new Date(row.created_at),
+    recordKind: row.recordKind,
+    eventKey: row.eventKey,
+    eventVersion: row.eventVersion,
+    spanName: row.spanName ?? undefined,
+    startTime: row.startTime ? new Date(row.startTime) : undefined,
+    endTime: row.endTime ? new Date(row.endTime) : undefined,
+    statusCode: row.statusCode ?? undefined,
+    payloadFormat: row.payloadFormat,
+    payloadEncoding: row.payloadEncoding,
+    payloadMaskingApplied: !!row.payloadMaskingApplied,
+    payloadMaskedFields: parseJsonColumn<string[]>(row.payloadMaskedFields, []),
+    payload: parseJsonColumn<EventPayloadJson | undefined>(row.payload, undefined),
+    registryWarning: row.registryWarning ?? undefined,
+    addressContext: parseJsonColumn<AddressContextJson | undefined>(row.addressContext, undefined),
+    qaSessionId: row.qaSessionId ?? undefined,
+    actorId: row.actorId ?? undefined,
+    userId: row.userId ?? undefined,
+    userAttributes: parseJsonColumn<UserAttributesJson | undefined>(row.userAttributes, undefined),
+    createdAt: new Date(row.createdAt),
   };
 }

@@ -12,7 +12,7 @@ def:
   layer: mediation
   tags: [entry-point]
   links:
-    - target: convergence-layer-spec
+    - target: convergence-layer-group
       type: refines
     - target: prefix-guide-modeling
       type: contains

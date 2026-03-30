@@ -76,7 +76,7 @@ export function partialQueryBase(
  */
 export function mergeRanges(ranges: [number, number][]): [number, number][] {
   if (ranges.length === 0) return [];
-  const sorted = [...ranges].sort((a, b) => a[0] - b[0]);
+  const sorted = [...ranges].toSorted((a, b) => a[0] - b[0]);
   const result: [number, number][] = [[...sorted[0]]];
   for (let i = 1; i < sorted.length; i++) {
     const last = result[result.length - 1];
@@ -182,7 +182,7 @@ export function containsAddress(
  */
 export function positionsToConstraint(positions: readonly number[]): string {
   if (positions.length === 0) return "";
-  const sorted = [...positions].sort((a, b) => a - b);
+  const sorted = [...positions].toSorted((a, b) => a - b);
   const segments: string[] = [];
   let from = sorted[0];
   let to   = sorted[0];

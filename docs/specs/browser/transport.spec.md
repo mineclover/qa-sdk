@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: mediation
   svc: shopping-web
-  tags: []
+  tags: [contract, runtime, observability]
   links:
     - target: trace-context-spec
       type: depends_on
-    - target: address-context-spec
+    - target: address-context-format
       type: depends_on
 ---
 

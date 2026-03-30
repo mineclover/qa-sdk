@@ -1,72 +1,92 @@
-import type { SqlDriver } from "index-meta";
+/**
+ * D1VerdictStore — VerdictStore의 D1/SQLite drizzle ORM 구현.
+ * ON CONFLICT (scenario_id, trace_id) → 기존 verdict 업데이트.
+ */
+import { and, desc, eq } from "drizzle-orm";
 import type { VerdictStore, VerdictInsert, StoredVerdict } from "@qa-sdk/core";
+import { verdictReports } from "../db/schema.js";
+import { parseJsonColumn, type VerdictReportJson } from "../db/json-types.js";
+import type { D1Db } from "./d1-db-type.js";
 
 export class D1VerdictStore implements VerdictStore {
-  constructor(private readonly driver: SqlDriver) {}
+  constructor(private readonly db: D1Db) {}
 
   async insert(params: VerdictInsert): Promise<void> {
     const now = new Date().toISOString();
-    await this.driver.execute(
-      `INSERT INTO verdict_reports (id, scenario_id, trace_id, qa_session_id, overall_verdict, report, computed_at)
-       VALUES (?,?,?,?,?,?,?)
-       ON CONFLICT (scenario_id, trace_id) DO UPDATE SET
-         overall_verdict = excluded.overall_verdict,
-         report = excluded.report,
-         computed_at = excluded.computed_at`,
-      [
-        params.id, params.scenarioId, params.traceId,
-        params.qaSessionId ?? null, params.overallVerdict,
-        JSON.stringify(params.report), now,
-      ],
-    );
+    await this.db
+      .insert(verdictReports)
+      .values({
+        id: params.id,
+        scenarioId: params.scenarioId,
+        traceId: params.traceId,
+        qaSessionId: params.qaSessionId ?? null,
+        overallVerdict: params.overallVerdict,
+        report: JSON.stringify(params.report),
+        computedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [verdictReports.scenarioId, verdictReports.traceId],
+        set: {
+          overallVerdict: params.overallVerdict,
+          report: JSON.stringify(params.report),
+          computedAt: now,
+        },
+      });
   }
 
   async removeByScenarioAndTrace(scenarioId: string, traceId: string): Promise<boolean> {
-    await this.driver.execute(
-      "DELETE FROM verdict_reports WHERE scenario_id = ? AND trace_id = ?",
-      [scenarioId, traceId],
-    );
+    await this.db
+      .delete(verdictReports)
+      .where(and(eq(verdictReports.scenarioId, scenarioId), eq(verdictReports.traceId, traceId)));
     return true;
   }
 
   async findByScenarioAndTrace(scenarioId: string, traceId: string): Promise<StoredVerdict | null> {
-    const row = await this.driver.queryOne<RawRow>(
-      "SELECT * FROM verdict_reports WHERE scenario_id = ? AND trace_id = ?",
-      [scenarioId, traceId],
-    );
+    const [row] = await this.db
+      .select()
+      .from(verdictReports)
+      .where(and(eq(verdictReports.scenarioId, scenarioId), eq(verdictReports.traceId, traceId)));
     return row ? toStoredVerdict(row) : null;
   }
 
   async findByTraceId(traceId: string): Promise<StoredVerdict[]> {
-    const rows = await this.driver.query<RawRow>(
-      "SELECT * FROM verdict_reports WHERE trace_id = ? ORDER BY computed_at DESC",
-      [traceId],
-    );
+    const rows = await this.db
+      .select()
+      .from(verdictReports)
+      .where(eq(verdictReports.traceId, traceId))
+      .orderBy(desc(verdictReports.computedAt));
     return rows.map(toStoredVerdict);
   }
 
   async findBySessionId(sessionId: string): Promise<StoredVerdict[]> {
-    const rows = await this.driver.query<RawRow>(
-      "SELECT * FROM verdict_reports WHERE qa_session_id = ? ORDER BY computed_at DESC",
-      [sessionId],
-    );
+    const rows = await this.db
+      .select()
+      .from(verdictReports)
+      .where(eq(verdictReports.qaSessionId, sessionId))
+      .orderBy(desc(verdictReports.computedAt));
     return rows.map(toStoredVerdict);
   }
 }
 
-interface RawRow extends Record<string, unknown> {
-  id: string; scenario_id: string; trace_id: string; qa_session_id: string | null;
-  overall_verdict: string; report: string; computed_at: string;
-}
-
-function toStoredVerdict(row: RawRow): StoredVerdict {
+function toStoredVerdict(row: typeof verdictReports.$inferSelect): StoredVerdict {
   return {
     id: row.id,
-    scenarioId: row.scenario_id,
-    traceId: row.trace_id,
-    qaSessionId: row.qa_session_id ?? undefined,
-    overallVerdict: row.overall_verdict,
-    report: JSON.parse(row.report),
-    computedAt: new Date(row.computed_at),
+    scenarioId: row.scenarioId,
+    traceId: row.traceId,
+    qaSessionId: row.qaSessionId ?? undefined,
+    overallVerdict: row.overallVerdict,
+    report: parseJsonColumn<VerdictReportJson>(row.report, {
+      scenario_id: row.scenarioId,
+      trace_id: row.traceId,
+      overall_verdict: "unknown",
+      step_matches: [],
+      missing_steps: [],
+      unexpected_nodes: [],
+      latency_violations: [],
+      ordering_violations: [],
+      summary: "",
+      computed_at: row.computedAt,
+    }),
+    computedAt: new Date(row.computedAt),
   };
 }

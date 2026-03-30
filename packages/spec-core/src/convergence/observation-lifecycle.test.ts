@@ -338,8 +338,8 @@ describe("observation store 멱등성 — 반복 converge 시 누적 안 함", (
     expect(afterThird.nodes).toBe(afterFirst.nodes);
 
     // observation ID 동일 확인
-    expect(obs1.map(o => o.id).sort()).toEqual(obs2.map(o => o.id).sort());
-    expect(obs2.map(o => o.id).sort()).toEqual(obs3.map(o => o.id).sort());
+    expect(obs1.map(o => o.id).toSorted()).toEqual(obs2.map(o => o.id).toSorted());
+    expect(obs2.map(o => o.id).toSorted()).toEqual(obs3.map(o => o.id).toSorted());
 
     store.close();
   });

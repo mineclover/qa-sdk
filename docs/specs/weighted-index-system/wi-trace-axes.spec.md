@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [data, observability, structural]
   links:
     - target: wi-math
       type: depends_on
@@ -34,7 +34,7 @@ def:
 
 ## 참조
 
-기반: [wi-math.spec.md](wi-math.spec.md) · [../../spec-engine/design-knowledge-graph.md](../../spec-engine/design-knowledge-graph.md)
+기반: [wi-math.spec.md](wi-math.spec.md) · [../dkg-system/dkg-system.md](../dkg-system/dkg-system.md)
 
 ## 역할 정의
 

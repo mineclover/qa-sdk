@@ -15,8 +15,7 @@
  * const logger = new QaLogger({ transports: [httpTransport, transport] });
  * ```
  */
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import { TAG_EVENT_RECORD, encodeFrame, type MsgpackEncode } from "@qa-sdk/core";
+import { TAG_EVENT_RECORD, encodeFrame, type TransmissionEnvelope, type MsgpackEncode } from "@qa-sdk/core";
 import type { Transport } from "./transport.js";
 
 const MAX_BUFFER = 1000;
@@ -90,19 +89,19 @@ export class DebugWebSocketTransport implements Transport {
       this.ws = new WebSocket(this.url);
       this.ws.binaryType = "arraybuffer";
 
-      this.ws.onopen = () => {
+      this.ws.addEventListener("open", () => {
         this.reconnectAttempt = 0;
         this.drainBuffer();
-      };
+      });
 
-      this.ws.onclose = () => {
+      this.ws.addEventListener("close", () => {
         this.ws = null;
         this.scheduleReconnect();
-      };
+      });
 
-      this.ws.onerror = () => {
-        // onclose가 뒤따르므로 여기서는 무시
-      };
+      this.ws.addEventListener("error", () => {
+        // close가 뒤따르므로 여기서는 무시
+      });
     } catch {
       this.scheduleReconnect();
     }
@@ -125,6 +124,7 @@ export class DebugWebSocketTransport implements Transport {
   private drainBuffer() {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     while (this.buffer.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- while (buffer.length > 0) 루프 내부
       const frame = this.buffer.shift()!;
       this.ws.send(frame);
     }

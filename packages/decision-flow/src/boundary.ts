@@ -33,7 +33,7 @@
  * - 하위 → 상위 변경이 필요하면 에스컬레이션 (명시적 경계 횡단)
  */
 
-import type { FlowSchema, FlowInstance, GateSelection, Condition } from "./types.js";
+import type { FlowSchema, FlowInstance } from "./types.js";
 
 // ─── 계층 (Layer) ────────────────────────────────────────
 

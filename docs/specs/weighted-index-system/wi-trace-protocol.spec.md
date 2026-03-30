@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [observability, structural, performance]
   links:
     - target: wi-trace-axes
       type: depends_on

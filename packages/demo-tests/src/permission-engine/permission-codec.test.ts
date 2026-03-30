@@ -185,7 +185,7 @@ describe("PermissionCodec", () => {
 
       // Tier 3 → Tier 1
       const listed = c.listGrants(mask);
-      expect(listed.sort()).toEqual(perms.sort());
+      expect(listed.toSorted()).toEqual(perms.toSorted());
 
       // Tier 3 크기 확인
       expect(mask.length).toBe(14); // 108 slots → 14 bytes

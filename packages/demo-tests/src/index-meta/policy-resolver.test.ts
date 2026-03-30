@@ -207,7 +207,7 @@ describe("RBAC scenario", () => {
     // admin-all(allow) vs admin-delete(allow) → same value, no conflict
     // no-delete(deny) vs admin-delete(allow) → conflict
     const conflictPairs = conflicts.map((c) =>
-      c.conflictingRules.map((r) => r.id).sort().join(","),
+      c.conflictingRules.map((r) => r.id).toSorted().join(","),
     );
     expect(conflictPairs).toContain("admin-all,default");
     expect(conflictPairs).toContain("admin-all,no-delete");

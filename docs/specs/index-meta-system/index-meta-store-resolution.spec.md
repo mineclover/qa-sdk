@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: index-meta
-  tags: []
+  tags: [runtime, persistence, structural]
   links:
     - target: address-spec
       type: depends_on

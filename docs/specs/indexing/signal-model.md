@@ -8,7 +8,7 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, observability, structural]
   links:
     - target: dimension-operations
       type: depends_on

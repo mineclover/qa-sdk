@@ -258,6 +258,7 @@ export async function renderEventPage(
     }
   }
 
+  // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 직후 .get()
   const data = _evtCache.get(cacheKey)!;
 
   renderGrid(gridContainer, state, data, (v) => {

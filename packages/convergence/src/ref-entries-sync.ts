@@ -10,7 +10,7 @@
  * @layer 기록 (Recording)
  */
 
-import type { Catalog, PrefixDef, PrefixVersionDef } from "@qa-sdk/core";
+import type { Catalog } from "@qa-sdk/core";
 import { encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core";
 
 export interface RefEntrySyncResult {

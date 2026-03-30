@@ -8,8 +8,18 @@ def:
   lifecycle: approved
   layer: mediation
   tags: [testing, contract, work-domain:productivity]
+  links:
+    - target: work-domain-quality-bundle
+      type: refines
 ---
 # Work Domain Public Contract
+
+
+## 탐색 ^navigation
+
+quality-gates-system > work-domain-quality-bundle > **work-domain-quality-contract**
+
+형제: `gate-work-domain-typecheck` · `gate-work-domain-build` · `gate-work-domain-test`
 
 ## 목적 ^purpose
 

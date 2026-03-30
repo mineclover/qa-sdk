@@ -165,7 +165,13 @@ function renderTimeline(timeline: TimelineData | null, selectedNodeId: string | 
 
 const state = createInspectorState();
 const client = new MotionWorkspaceClient({ baseUrl: WORKSPACE_CLIENT_BASE_URL });
-const rootEl = document.getElementById("inspector")!;
+const rootEl = ((): HTMLElement => {
+  const el = document.getElementById("inspector");
+  if (!el) {
+    throw new Error("필수 요소를 찾을 수 없습니다: #inspector");
+  }
+  return el;
+})();
 
 // ---------------------------------------------------------------------------
 // 소스 로딩

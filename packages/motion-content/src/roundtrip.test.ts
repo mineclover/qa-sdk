@@ -3,8 +3,7 @@ import { resolveMotionComposition } from "./model.js";
 import { endMs } from "./utils.js";
 import { createPromoGridComposition } from "./presets.js";
 import { parseMotionComposition, serializeMotionComposition } from "./io.js";
-import { resolveMotionAssetSnapshots } from "./snapshot.js";
-import { createMotionDebugSnapshot } from "./snapshot.js";
+import { resolveMotionAssetSnapshots, createMotionDebugSnapshot } from "./snapshot.js";
 
 describe("composition roundtrip", () => {
   const original = createPromoGridComposition();

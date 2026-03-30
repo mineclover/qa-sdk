@@ -130,6 +130,7 @@ export function executeEntryAdd(
   }
 
   // ── 4. VersionEvent 생성 ──
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ISO string always contains "T"
   const date = new Date().toISOString().split("T")[0]!;
   const changes: VersionChange[] = [
     { kind: "entry-added", detail: `"${entry}" added to ${axisId}` },

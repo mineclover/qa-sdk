@@ -608,10 +608,10 @@ export function decomposeAddressAsResult(
           value: rd.value,
         };
       }
-      (dimObj as any).ref = {
+      (dimObj as unknown as { ref: DecodeResult }).ref = {
         prefix: dim.prefixId,
         version: "v1",
-        address: d.refAddress ?? d.value,
+        address: d.refAddress ?? (d.value as number),
         dims: refDims,
       };
     }

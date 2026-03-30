@@ -8,8 +8,7 @@
  */
 
 import { stat } from "node:fs/promises";
-import type { SchemaSnapshot } from "../lib/types.js";
-import { readSnapshot, readSnapshots } from "../lib/snapshot-io.js";
+import { readSnapshot, readSnapshots } from "snapshot-io";
 
 export interface RegisterOptions {
   registry: string;

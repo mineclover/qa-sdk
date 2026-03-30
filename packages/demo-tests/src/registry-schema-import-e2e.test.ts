@@ -176,11 +176,11 @@ describe.skip("Schema Import E2E — qa-sdk-git", () => {
     expect(exported.composites).toHaveLength(2);
 
     // axis IDs 보존
-    const axisIds = exported.axes.map((a: any) => a.id).sort();
+    const axisIds = exported.axes.map((a: any) => a.id).toSorted();
     expect(axisIds).toEqual(["cc_type", "pkg", "runtime", "semver", "tier"]);
 
     // composite IDs 보존
-    const compIds = exported.composites.map((c: any) => c.id).sort();
+    const compIds = exported.composites.map((c: any) => c.id).toSorted();
     expect(compIds).toEqual(["change_map", "pkg_class"]);
 
     // composite dims 보존

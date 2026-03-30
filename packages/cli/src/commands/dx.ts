@@ -10,14 +10,13 @@
 
 import type { Catalog } from "@qa-sdk/core";
 import {
-  parseSerializedAddress, serializeAddress,
+  parseSerializedAddress,
   encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities, decomposeAddress, resolveAddress,
-  getPrefixShape, getPrefixStructure, latestPrefixVersion,
+  getPrefixShape, latestPrefixVersion,
 } from "@qa-sdk/core";
 import {
   resolve,
   findVersionForEntry,
-  findRefAddress,
   validateRefEntries,
   getAllSemanticRefs,
   bootstrapDkg,
@@ -80,7 +79,7 @@ export function cliDecode(catalog: Catalog, args: {
     const values = decodeResultToEntities(result);
 
     if (args.json) {
-      const result: Record<string, unknown> = {
+      const output: Record<string, unknown> = {
         address: args.address,
         prefix: prefixId,
         version,
@@ -90,10 +89,10 @@ export function cliDecode(catalog: Catalog, args: {
 
       if (args.deep) {
         const resolved = resolveAddress(catalog, prefixId, version, address);
-        result.resolved = resolved;
+        output.resolved = resolved;
       }
 
-      console.log(JSON.stringify(result, null, 2));
+      console.log(JSON.stringify(output, null, 2));
     } else {
       console.log(`\n  ${args.address}`);
 
@@ -199,7 +198,7 @@ export function cliFindVersion(catalog: Catalog, args: {
 
 // ── qa derive-refs ──────────────────────────────────
 
-export function cliDeriveRefs(catalog: Catalog, args: {
+export function cliDeriveRefs(catalog: Catalog, _args: {
   check?: boolean;
 }): void {
   const semantics = getAllSemanticRefs();

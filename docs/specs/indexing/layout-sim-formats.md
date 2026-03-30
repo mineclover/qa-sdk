@@ -8,9 +8,9 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [data, structural, runtime]
   links:
-    - target: bigint-addressing
+    - target: bigint-addressing-group
       type: depends_on
 ---
 

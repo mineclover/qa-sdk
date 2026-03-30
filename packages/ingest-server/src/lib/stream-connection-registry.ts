@@ -57,7 +57,7 @@ export function createStreamConnectionRegistry(): StreamConnectionRegistry {
             // Shutdown should continue even if a client socket is already gone.
           }
         }),
-      ).then(() => {});
+      ).then(() => undefined);
 
       return shutdownPromise;
     },

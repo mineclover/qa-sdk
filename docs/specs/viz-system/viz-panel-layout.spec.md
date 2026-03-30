@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: []
+  tags: [frontend, structural, entry-point]
   links:
-    - target: viz-panels-spec
+    - target: viz-surface-system
       type: refines
 ---
 

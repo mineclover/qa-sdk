@@ -138,7 +138,7 @@ export async function computeTraceVerdict(
 
   // entry_conditions 평가: 조건 미충족 시 "skipped" verdict를 저장하고 종료
   if (specGraph.entry_conditions && specGraph.entry_conditions.length > 0) {
-    const sortedNodes = [...graph.nodes].sort(
+    const sortedNodes = [...graph.nodes].toSorted(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
     const firstNode = sortedNodes[0] ?? null;

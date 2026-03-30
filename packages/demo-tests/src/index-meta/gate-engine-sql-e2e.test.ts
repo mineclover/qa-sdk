@@ -13,15 +13,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { NodeSqliteDriver } from "index-meta";
-import { SqlIndexMetaStore } from "index-meta";
-import { SqlEntryFlagStore } from "index-meta";
-import { SqlAddressStateStore } from "index-meta";
-import { SqlAddressRangeCache } from "index-meta";
-import { SqlPrefixRegistry } from "index-meta";
-import { InMemoryVersionLifecycleStore } from "index-meta";
-import { checkGate } from "index-meta";
 import {
+  NodeSqliteDriver,
+  SqlIndexMetaStore,
+  SqlEntryFlagStore,
+  SqlAddressStateStore,
+  SqlAddressRangeCache,
+  SqlPrefixRegistry,
+  InMemoryVersionLifecycleStore,
+  checkGate,
   GateEngine,
   GateAwareVersionLifecycleStore,
   GateAwareEntryFlagStore,

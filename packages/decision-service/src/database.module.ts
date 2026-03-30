@@ -15,7 +15,7 @@ export const RAW_DATABASE = "RAW_DATABASE";
 export const DATABASE = "DATABASE";
 export type DecisionServiceDatabase = BetterSQLite3Database<typeof schema>;
 
-const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+const migrationsFolder = new URL("../drizzle", import.meta.url).pathname;
 
 @Global()
 @Module({

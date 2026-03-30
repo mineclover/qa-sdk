@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: ingest-server
-  tags: []
+  tags: [entry-point, contract, runtime]
   links:
-    - target: ingest-api-spec
+    - target: ingest-api-system
       type: refines
     - target: transmission-spec
       type: depends_on

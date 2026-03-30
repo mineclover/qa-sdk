@@ -91,7 +91,7 @@ describe("[PV-1] PermissionView — filter/check 정확성", () => {
   });
 
   it("distinctServices = 부여된 feature 목록", () => {
-    expect(view.distinctServices().sort()).toEqual(viewerFeatures.sort());
+    expect(view.distinctServices().toSorted()).toEqual(viewerFeatures.toSorted());
   });
 });
 

@@ -4,7 +4,6 @@
 
 import {
   fetchPermCells,
-  fetchPermDecode,
   type PermCellsResponse,
 } from "../registry.js";
 import { DEMO_KO } from "demo-snapshot";
@@ -218,6 +217,7 @@ export async function renderPermissionPage(
     }
   }
 
+  // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 직후 .get()
   const data = _permCache.get(ver)!;
 
   renderGrid(gridContainer, state, data, (v) => {
@@ -275,5 +275,6 @@ export async function refreshPermDetail(
       return;
     }
   }
+  // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 직후 .get()
   renderPermDetail(spContent, value, _permCache.get(ver)!);
 }

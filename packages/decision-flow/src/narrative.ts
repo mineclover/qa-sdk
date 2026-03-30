@@ -66,7 +66,7 @@ export function buildNarrative(input: BuildNarrativeInput): DecisionNarrative {
     // 근거에서 한 줄 요약 추출 (weight 내림차순)
     const reason = sel.evidence.length > 0
       ? [...sel.evidence]
-          .sort((a, b) => b.weight - a.weight)
+          .toSorted((a, b) => b.weight - a.weight)
           .map((e) => e.content)
           .join("; ")
       : "근거 없음";

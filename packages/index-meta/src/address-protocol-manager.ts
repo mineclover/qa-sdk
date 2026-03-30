@@ -424,18 +424,21 @@ export class AddressProtocolManager {
   /** readProtocols 집합에 포함된 프로토콜만으로 자동 감지. */
   private _parseWithReadProtocols(input: string): SemanticAddress {
     for (const proto of this._order) {
+      // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _readProtocols 존재 확인 후 호출
       if (this._readProtocols!.has(proto.name) && proto.test(input)) {
         return proto.parse(input);
       }
     }
     throw new ParseError(
       `No read protocol matches "${input}". ` +
+        // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _readProtocols 존재 확인 후 호출
         `Allowed: [${[...this._readProtocols!].join(", ")}]`
     );
   }
 
   /** fallback 체인 순서대로 시도. 통계 수집. */
   private _parseWithFallback(input: string): SemanticAddress {
+    // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _fallbackChain 존재 확인 후 호출
     for (const name of this._fallbackChain!) {
       const proto = this._protocols.get(name);
       if (!proto) continue;
@@ -456,6 +459,7 @@ export class AddressProtocolManager {
     }
     throw new ParseError(
       `All fallback protocols failed for "${input}": ` +
+        // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _fallbackChain 존재 확인 후 호출
         `[${this._fallbackChain!.join(", ")}]`
     );
   }

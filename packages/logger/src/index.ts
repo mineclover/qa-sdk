@@ -16,3 +16,5 @@ export type { ProtobufTransportOptions } from "./transport/protobuf.js";
 export { OtlpTransport, mapToOtlpLogs } from "./transport/otlp.js";
 export type { OtlpTransportOptions } from "./transport/otlp.js";
 export { DebugWebSocketTransport } from "./transport/debug-ws.js";
+export { IngestForwarder, createIngestForwarder } from "./transport/ingest-forwarder.js";
+export type { LogIngestBridgeConfig, ForwarderStats } from "./transport/ingest-forwarder.js";

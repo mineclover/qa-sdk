@@ -160,6 +160,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
   function repaint(): void {
     const curRoles = rolesFor(ver);
     const curEvents = eventsFor(ver);
+    // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
     const curRole = curRoles.find(r => r.idx1 === st.roleIdx1)!;
     const totalPermCells = PERM_SVCS.length * rc(ver);
     const totalEvtCells = PERM_SVCS.length * curEvents.length;
@@ -356,13 +357,14 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         );
         td.classList.add("acc-tbl-td-selected");
 
-        const type = td.dataset.type!;
+        const type = td.dataset["type"] ?? "";
         const addr = Number(td.dataset.addr);
         const svcPos = Number(td.dataset.svc);
         const ps = PERM_SVCS[svcPos - 1];
 
         if (type === "permission") {
           const roleIdx1 = Number(td.dataset.role);
+          // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
           const role = curRoles.find(r => r.idx1 === roleIdx1)!;
           const isHit = permHits.has(addr);
           detailPanel.innerHTML = `
@@ -391,8 +393,9 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         } else {
           const evtIdx1 = Number(td.dataset.evt);
           const initIdx = Number(td.dataset.init);
+          // eslint-disable-next-line typescript/no-non-null-assertion -- evtIdx1는 curEvents에서 유래
           const evt = curEvents.find(e => e.idx1 === evtIdx1)!;
-          const initLabel = initIdx === 1 ? "web" : "mobile";
+          const detailInitLabel = initIdx === 1 ? "web" : "mobile";
           const isHit = evtHits.has(addr);
           detailPanel.innerHTML = `
             <div class="acc-detail-head">
@@ -413,7 +416,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">발원</span>
-                <span class="acc-detail-val">${initLabel}</span>
+                <span class="acc-detail-val">${detailInitLabel}</span>
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">산식</span>

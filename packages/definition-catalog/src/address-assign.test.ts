@@ -45,8 +45,8 @@ describe("assignUniqueAddresses", () => {
     expect(featureAssignments[0]!.seq).toBe(1);
     expect(featureAssignments[1]!.seq).toBe(2);
 
-    const dataAssignments = assignments.filter(a => a.scope === "data");
-    expect(dataAssignments[0]!.seq).toBe(1);
+    const dataAssignment = assignments.find(a => a.scope === "data");
+    expect(dataAssignment!.seq).toBe(1);
   });
 
   it("주소를 디코딩하면 원본 좌표 + seq가 복원된다", () => {

@@ -90,7 +90,7 @@ export class InMemoryDebugStore implements DebugStore {
     const normalizedLimit = normalizeLimit(limit, records.length);
 
     return records
-      .sort(compareRecordsByRecency)
+      .toSorted(compareRecordsByRecency)
       .slice(0, normalizedLimit)
       .map((record) => structuredClone(record));
   }

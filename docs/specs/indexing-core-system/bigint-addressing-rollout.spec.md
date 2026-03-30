@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [migration, versioning, performance]
   links:
     - target: bigint-addressing-runtime
       type: depends_on
-    - target: bigint-addressing
+    - target: bigint-addressing-group
       type: refines
 ---
 

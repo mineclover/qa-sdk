@@ -1,13 +1,9 @@
 import { stat, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { SchemaSnapshot } from "../lib/types.js";
-import { readSnapshot, readSnapshots, writeOutput } from "../lib/snapshot-io.js";
-import { generateProto, type ProtoGenOptions } from "../generators/proto.js";
-import { generateTypescript } from "../generators/typescript.js";
-import { generateCatalogTypes } from "../generators/catalog-typescript.js";
-import { loadCatalog } from "../catalog-loader.js";
-import { isDkgConfig, loadDkgConfig } from "../dkg-config-loader.js";
-import type { Catalog, DkgConfig } from "@qa-sdk/core";
+import { readSnapshot, readSnapshots, writeOutput } from "snapshot-io";
+import { generateProto, type ProtoGenOptions, generateTypescript, generateCatalogTypes, testMigration, type SchemaSnapshot } from "codegen-core";
+import { loadCatalog, isDkgConfig, loadDkgConfig } from "config-loader";
+import { latestPrefixVersion, type Catalog, type DkgConfig } from "@qa-sdk/core";
 
 export type CodegenFormat = "proto" | "ts";
 
@@ -50,6 +46,7 @@ export async function codegen(opts: CodegenOptions): Promise<void> {
 // ── Registry 기반 codegen ──────────────────────────────
 
 async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- codegen()에서 opts.registry 존재 시에만 호출
   const registryUrl = opts.registry!;
   const catalogId = opts.catalogId ?? "demo";
 
@@ -195,8 +192,6 @@ function generate(
 
 // ── Version Lifecycle 검증 ─────────────────────────────
 
-import { latestPrefixVersion } from "@qa-sdk/core";
-
 /**
  * registry의 prefix version 상태를 검증.
  * deprecated/draft version 사용 시 경고.
@@ -237,8 +232,6 @@ async function validatePrefixVersions(
 }
 
 // ── Migration Test CLI ───────────────────────────────
-
-import { testMigration } from "../generators/catalog-typescript.js";
 
 /**
  * prefix의 multi-version 라운드트립을 CLI에서 실행.

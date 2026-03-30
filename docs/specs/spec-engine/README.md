@@ -194,17 +194,17 @@ prefix의 존재 이유를 문서화. c4-doc 참조하되 독립 재작성.
 
 | 문서 | 내용 |
 |------|------|
-| [core-types.md](core-types.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API |
-| [architecture.md](architecture.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계, 함정 방지 |
-| [phases.md](phases.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 |
-| [design-knowledge-graph.md](design-knowledge-graph.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프 (노드 12종, 엣지 18종, 성장 나선 모델). 구현: 6 도메인, 9 DSL 번들, 25 skill, 7 spec, ServiceTopology(7 서비스, 3 계약) |
-| [dkg-skills.md](dkg-skills.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, 8개 skill 카탈로그 |
-| [spec-propagation.md](spec-propagation.md) | Spec Propagation — PrefixSpec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 |
+| [../spec-engine-system/spec-core-types-group.md](../spec-engine-system/spec-core-types-group.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API |
+| [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계, 함정 방지 |
+| [../spec-engine-system/spec-phases-group.md](../spec-engine-system/spec-phases-group.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 |
+| [../dkg-system/dkg-system.md](../dkg-system/dkg-system.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프와 성장 나선 모델 |
+| [../dkg-system/dkg-skills-system.md](../dkg-system/dkg-skills-system.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그 |
+| [../spec-engine-system/spec-prop-system.md](../spec-engine-system/spec-prop-system.md) | Spec Propagation — PrefixSpec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 |
 | [convergence-layer.md](convergence-layer.md) | Convergence Layer — 심볼 비교, 결정 비교, 인과 발견, 최소 가짓수, 경계 추천. 신경기호 검증 |
 | [decision-standard.md](decision-standard.md) | 의사결정 표준 프로세스 — 새 요구 시 prefix 평가/생성 표준 경로, 7개 체크리스트, skill 매핑 |
 | [prefix-guide.md](prefix-guide.md) | Prefix 실용 가이드 — 페이지/API/이벤트/권한이 모두 prefix, 환경 오버라이드 패턴, 관측 포인트 정의 |
-| [axis-boundary.md](axis-boundary.md) | Axis Boundary — 축에 넣을 것과 넣지 않을 것. endpoint prefix 재설계. 미들웨어 자동 태깅 |
-| [spec-linking-standard.md](spec-linking-standard.md) | Spec Linking Standard — 문서 간 참조 규칙. prefix↔spec↔decision 연결 형식 표준화 |
-| [system-architecture.md](system-architecture.md) | System Architecture — 전체 구현 구조 (12모듈, 12노드, 18엣지, 11skill, 14수렴도구) |
-| [temporal-relations.md](temporal-relations.md) | Temporal Relations — 시간 순서(trace 내 선후)와 데이터 흐름(prefix_ref 동적 추적) 수집 정의 |
+| [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Axis Boundary — 축에 넣을 것과 넣지 않을 것. endpoint prefix 재설계. 미들웨어 자동 태깅 |
+| [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Spec Linking Standard — 문서 간 참조 규칙. prefix↔spec↔decision 연결 형식 표준화 |
+| [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | System Architecture — 전체 구현 구조 (12모듈, 12노드, 18엣지, 11skill, 14수렴도구) |
+| [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | Temporal Relations — 시간 순서(trace 내 선후)와 데이터 흐름(prefix_ref 동적 추적) 수집 정의 |
 | [next-phase-plan.md](next-phase-plan.md) | Next Phase — prefix 3가지 사용 모드(enum/로깅/권한), skills prefix화, 이벤트 수집 E2E, PartialBinder 통합 |

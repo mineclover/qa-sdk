@@ -74,10 +74,11 @@ export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload>
 
       if (!handler) {
         this.pending.push(pendingTask);
-        return;
+        return undefined;
       }
 
       await this.runWithRetry(handler, pendingTask);
+      return undefined;
     });
 
     this.executionChain = next.catch(() => undefined);

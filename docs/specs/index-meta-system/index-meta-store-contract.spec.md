@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: index-meta
-  tags: []
+  tags: [contract, persistence, structural]
   links:
     - target: table-schema-spec
       type: depends_on

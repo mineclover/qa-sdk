@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: []
+  tags: [contract, runtime, observability]
   links:
-    - target: qa-bridge-spec
+    - target: viz-roleplay-system
       type: refines
 ---
 

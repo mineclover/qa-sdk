@@ -221,8 +221,8 @@ export class MetaRegistry {
           entries: Object.freeze(
             snInput.entries.map((e) => (typeof e === "number" && Object.is(e, -0) ? 0 : e))
           ),
-          entryFlags: Object.freeze({ ...(snInput.entryFlags ?? {}) }),
-          entryRefs: Object.freeze({ ...(snInput.entryRefs ?? {}) }),
+          entryFlags: Object.freeze({ ...snInput.entryFlags }),
+          entryRefs: Object.freeze({ ...snInput.entryRefs }),
           capacity: snInput.capacity,
           createdAt: snInput.createdAt,
           changelog: snInput.changelog,
@@ -412,7 +412,9 @@ export class MetaRegistry {
       if (dimDef.kind.type !== "index_ref") continue;
       const { indexId: targetIndexId } = dimDef.kind;
 
+      // eslint-disable-next-line typescript/no-non-null-assertion -- targetIndexId 존재는 위에서 검증됨
       const targetVersionMap = versionsMap.get(targetIndexId)!;
+      // eslint-disable-next-line typescript/no-non-null-assertion -- targetIndexId 존재는 위에서 검증됨
       const targetDef = indicesMap.get(targetIndexId)!;
 
       // target index의 모든 version size 중 최댓값 — entry 값의 상한
@@ -420,11 +422,13 @@ export class MetaRegistry {
       for (const iv of targetVersionMap.values()) {
         let size = 1;
         for (const d of targetDef.dims) {
+          // eslint-disable-next-line typescript/no-non-null-assertion -- dim과 snapshot은 생성자에서 검증됨
           size *= snapshotsMap.get(d)!.get(iv.snapshots[d])!.snapshot.entries.length;
         }
         maxTargetSize = Math.max(maxTargetSize, size);
       }
 
+      // eslint-disable-next-line typescript/no-non-null-assertion -- dimId는 dims 루프에서 가져온 키
       const snMap = snapshotsMap.get(dimId)!;
       for (const { snapshot } of snMap.values()) {
         for (let pos = 0; pos < snapshot.entries.length; pos++) {
@@ -449,6 +453,7 @@ export class MetaRegistry {
       for (const [indexId, indexDef] of indicesMap) {
         const targets = new Set<string>();
         for (const dimId of indexDef.dims) {
+          // eslint-disable-next-line typescript/no-non-null-assertion -- dimId는 indexDef.dims에서 가져왔고 dimsMap에 존재
           const dimDef = dimsMap.get(dimId)!;
           if (dimDef.kind.type === "index_ref" && dimDef.kind.indexId !== indexId) {
             targets.add(dimDef.kind.indexId);
@@ -503,7 +508,9 @@ export class MetaRegistry {
     {
       const strict = input.strict !== false;
       for (const [indexId, indexInput] of Object.entries(input.indices)) {
+        // eslint-disable-next-line typescript/no-non-null-assertion -- indexId는 input.indices에서 가져온 키
         const def = indicesMap.get(indexId)!;
+        // eslint-disable-next-line typescript/no-non-null-assertion -- indexId는 input.indices에서 가져온 키
         const vMap = versionsMap.get(indexId)!;
         let indexRequiresBigInt = false;
 
@@ -511,6 +518,7 @@ export class MetaRegistry {
           const shape: number[] = [];
           for (const dimId of def.dims) {
             const snapshotId = iv.snapshots[dimId];
+            // eslint-disable-next-line typescript/no-non-null-assertion -- dim과 snapshot은 생성자에서 검증됨
             shape.push(snapshotsMap.get(dimId)!.get(snapshotId)!.snapshot.entries.length);
           }
           const productBig = computeShapeProductBig(shape);
@@ -622,6 +630,7 @@ export class MetaRegistry {
     const dims = def.dims.map((dimId) => {
       const snapshotId = iv.snapshots[dimId];
       const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
+      // eslint-disable-next-line typescript/no-non-null-assertion -- dimId는 def.dims에서 가져왔고 this.dims에 존재
       const dimDef = this.dims.get(dimId)!;
       return {
         dimId,
@@ -659,6 +668,7 @@ export class MetaRegistry {
     const dims = def.dims.map((dimId) => {
       const snapshotId = iv.snapshots[dimId];
       const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
+      // eslint-disable-next-line typescript/no-non-null-assertion -- dimId는 def.dims에서 가져왔고 this.dims에 존재
       const dimDef = this.dims.get(dimId)!;
       return {
         dimId,
@@ -1301,6 +1311,7 @@ export class MetaRegistry {
     const visited = new Set<string>([from]);
 
     while (queue.length > 0) {
+      // eslint-disable-next-line typescript/no-non-null-assertion -- while 조건이 queue.length > 0 보장
       const path = queue.shift()!;
       const current = path[path.length - 1];
       if (current === to) return path;

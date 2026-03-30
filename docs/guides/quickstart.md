@@ -1,6 +1,8 @@
 ---
 def:
   id: quickstart-guide
+  type: knowledge
+  knowledge_kind: guide
   address: def_document:v2:136197
   scope: flow
   aspect: user_scenario

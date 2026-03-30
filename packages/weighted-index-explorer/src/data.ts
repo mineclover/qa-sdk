@@ -233,8 +233,8 @@ export function buildSliceGrid(spec: SliceSpec, vDef: VersionDef): CellData[][] 
     env:      fixed.env      ?? 1,
   };
 
-  return Array.from({ length: yDef.size }, (_, yi) =>
-    Array.from({ length: xDef.size }, (_, xi) => {
+  return Array.from({ length: yDef.size }, (_y, yi) =>
+    Array.from({ length: xDef.size }, (_x, xi) => {
       const xVal = String(xDef.values[xi]);
       const yVal = String(yDef.values[yi]);
       const coords = { ...fixedCoords, [xDim]: xi + 1, [yDim]: yi + 1 };

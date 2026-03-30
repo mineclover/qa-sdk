@@ -1,4 +1,7 @@
 import type { StoredRecord } from "@qa-sdk/core";
+import { createLogger } from "./logger.js";
+
+const logger = createLogger("record-stream-broker");
 
 type RecordListener = (record: StoredRecord) => void | Promise<void>;
 type SubscriberMap = Map<string, Set<RecordListener>>;
@@ -131,10 +134,10 @@ export class RecordStreamBroker {
       try {
         const result = listener(snapshot);
         Promise.resolve(result).catch((err: unknown) => {
-          console.error("[record-stream-broker] async listener error", { err, eventKey: record.eventKey });
+          logger.error({ err, eventKey: record.eventKey }, "async listener error");
         });
       } catch (err: unknown) {
-        console.error("[record-stream-broker] sync listener error", { err, eventKey: record.eventKey });
+        logger.error({ err, eventKey: record.eventKey }, "sync listener error");
       }
     }
   }

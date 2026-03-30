@@ -6,6 +6,7 @@ import {
   extractFrontmatter,
   parseYaml,
   extractDef,
+  extractGate,
   parseDocument,
   scanAndBuild,
   computeAllConcerns,
@@ -99,6 +100,25 @@ def:
     expect(def.id).toBe("test");
     expect(def.scope).toBe("ui");
   });
+
+  it("다중 최상위 블록에서 gate를 파싱한다", () => {
+    const result = parseYaml(`def:
+  id: gate-test
+  scope: constraint
+  aspect: tech_constraint
+  depth: validation
+gate:
+  kind: build
+  workDomain: productivity
+  package: work-domain
+  command: pnpm --filter work-domain build
+  suggestOnPass: [gate-next]`);
+    const gate = result.gate as Record<string, unknown>;
+    expect(gate.kind).toBe("build");
+    expect(gate.workDomain).toBe("productivity");
+    expect(gate.package).toBe("work-domain");
+    expect(gate.suggestOnPass).toEqual(["gate-next"]);
+  });
 });
 
 // ─── extractDef ──────────────────────────────────────────
@@ -142,6 +162,23 @@ describe("extractDef", () => {
     expect(def.links![0]).toEqual({ target: "engine", type: "depends_on" });
   });
 
+  it("version/revision과 lineage link를 파싱한다", () => {
+    const parsed = parseYaml(`def:
+  id: api-v2
+  version: v2
+  revision: 2
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  links:
+    - target: api-v1
+      type: supersedes`);
+    const def = extractDef(parsed, "test.md");
+    expect(def.version).toBe("v2");
+    expect(def.revision).toBe(2);
+    expect(def.links![0]).toEqual({ target: "api-v1", type: "supersedes" });
+  });
+
   it("def 블록 없으면 에러", () => {
     expect(() => extractDef({}, "test.md")).toThrow("def");
   });
@@ -153,6 +190,45 @@ describe("extractDef", () => {
   aspect: domain_data
   depth: overview`);
     expect(() => extractDef(parsed, "test.md")).toThrow("유효하지 않음");
+  });
+});
+
+// ─── extractGate ─────────────────────────────────────────
+
+describe("extractGate", () => {
+  it("유효한 gate 블록을 추출한다", () => {
+    const parsed = parseYaml(`def:
+  id: gate-build
+  scope: constraint
+  aspect: tech_constraint
+  depth: validation
+gate:
+  kind: build
+  workDomain: productivity
+  package: work-domain
+  command: pnpm --filter work-domain build
+  suggestOnPass: [gate-test]`);
+    const gate = extractGate(parsed, "test.md");
+    expect(gate).toEqual({
+      kind: "build",
+      workDomain: "productivity",
+      package: "work-domain",
+      command: "pnpm --filter work-domain build",
+      suggestOnPass: ["gate-test"],
+    });
+  });
+
+  it("gate.kind가 무효하면 에러", () => {
+    const parsed = parseYaml(`def:
+  id: gate-build
+  scope: constraint
+  aspect: tech_constraint
+  depth: validation
+gate:
+  kind: not-a-kind
+  workDomain: productivity
+  command: pnpm build`);
+    expect(() => extractGate(parsed, "test.md")).toThrow("gate.kind");
   });
 });
 
@@ -168,6 +244,10 @@ def:
   depth: specification
   lifecycle: approved
   tags: [accessibility]
+gate:
+  kind: visual-check
+  workDomain: ui-component
+  command: dev-browser 확인
 ---
 # 컴포넌트 명세
 
@@ -177,6 +257,8 @@ def:
     expect(doc.def.id).toBe("component-spec");
     expect(doc.def.scope).toBe("ui");
     expect(doc.def.tags).toEqual(["accessibility"]);
+    expect(doc.gate?.kind).toBe("visual-check");
+    expect(doc.gate?.workDomain).toBe("ui-component");
     expect(doc.filePath).toBe("docs/specs/ui/component.md");
     expect(doc.body).toContain("# 컴포넌트 명세");
   });
@@ -198,14 +280,21 @@ describe("scanAndBuild", () => {
     await writeFile(join(tmpDir, "docs/specs/services/gate.md"), `---
 def:
   id: gate-spec
-  scope: interface
-  aspect: api_contract
-  depth: specification
+  scope: constraint
+  aspect: tech_constraint
+  depth: validation
   lifecycle: approved
   tags: [security]
   links:
     - target: record-spec
       type: depends_on
+gate:
+  kind: typecheck
+  workDomain: productivity
+  package: work-domain
+  storyId: WD-001
+  command: pnpm --filter work-domain typecheck
+  suggestOnPass: [record-spec]
 ---
 # Gate Service
 
@@ -264,10 +353,12 @@ def:
     // registry 검증
     const gate = result.registry.get("gate-spec");
     expect(gate).toBeDefined();
-    expect(gate!.scope).toBe("interface");
+    expect(gate!.scope).toBe("constraint");
     expect(gate!.tags).toEqual(["security"]);
     expect(gate!.ref).toBe("docs/specs/services/gate.md");
     expect(gate!.title).toBe("Gate Service");
+    expect(gate!.gate?.kind).toBe("typecheck");
+    expect(gate!.gate?.storyId).toBe("WD-001");
 
     const record = result.registry.get("record-spec");
     expect(record).toBeDefined();

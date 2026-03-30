@@ -52,8 +52,10 @@ export async function createMemoryStores(): Promise<StoreSet> {
   };
 }
 
-/** D1/SQLite stores 생성 */
+/** D1/SQLite stores 생성 — SqlDriver.$client에서 drizzle 인스턴스를 만들어 주입 */
 export async function createD1Stores(driver: import("index-meta").SqlDriver): Promise<StoreSet> {
+  const { createD1Drizzle } = await import("./d1-db-type.js");
+  const db = createD1Drizzle((driver as unknown as { $client: unknown }).$client);
   const { D1RecordStore } = await import("./d1-record-store.js");
   const { D1TraceStore } = await import("./d1-trace-store.js");
   const { D1SessionStore } = await import("./d1-session-store.js");
@@ -67,10 +69,10 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
   } = await import("@qa-sdk/store");
 
   return {
-    recordStore: new D1RecordStore(driver),
-    traceStore: new D1TraceStore(driver),
-    sessionStore: new D1SessionStore(driver),
-    verdictStore: new D1VerdictStore(driver),
+    recordStore: new D1RecordStore(db),
+    traceStore: new D1TraceStore(db),
+    sessionStore: new D1SessionStore(db),
+    verdictStore: new D1VerdictStore(db),
     transmissionStore: new InMemoryTransmissionStore(),
     graphStore: new InMemoryGraphStore(),
     scenarioSpecStore: new InMemoryScenarioSpecStore(),

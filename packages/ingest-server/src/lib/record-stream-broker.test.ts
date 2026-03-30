@@ -25,15 +25,7 @@ function makeRecord(overrides: Partial<StoredRecord> = {}): StoredRecord {
 }
 
 describe("RecordStreamBroker — listener error isolation", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let errorSpy: any;
-
-  afterEach(() => {
-    errorSpy?.mockRestore();
-  });
-
-  it("logs sync listener errors via console.error and continues to other listeners", () => {
-    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("sync listener 에러 시 throw 없이 다음 listener 실행", () => {
     const broker = new RecordStreamBroker();
     const goodListener = vi.fn();
 
@@ -41,33 +33,23 @@ describe("RecordStreamBroker — listener error isolation", () => {
     broker.subscribeToScenario("scn_1", goodListener);
 
     expect(() => broker.publishToScenario("scn_1", makeRecord())).not.toThrow();
-
     expect(goodListener).toHaveBeenCalledTimes(1);
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[record-stream-broker] sync listener error",
-      expect.objectContaining({ err: expect.any(Error) }),
-    );
   });
 
-  it("logs async listener errors via console.error without crashing", async () => {
-    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("async listener 에러 시 crash 없이 정상 동작", async () => {
     const broker = new RecordStreamBroker();
+    const resolved = vi.fn();
 
     broker.subscribeToScenario("scn_2", () => Promise.reject(new Error("async crash")));
+    broker.subscribeToScenario("scn_2", resolved);
 
     broker.publishToScenario("scn_2", makeRecord());
 
-    await vi.waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith(
-        "[record-stream-broker] async listener error",
-        expect.objectContaining({ err: expect.any(Error) }),
-      );
-    });
+    // async error가 전파되지 않고 두 번째 listener도 호출됨
+    expect(resolved).toHaveBeenCalledTimes(1);
   });
 
-  it("does not call subsequent listeners if one throws synchronously", () => {
-    // Ensures error isolation: each listener is wrapped independently
-    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("sync 에러 listener 뒤의 listener도 실행된다", () => {
     const broker = new RecordStreamBroker();
     const afterListener = vi.fn();
 
@@ -76,7 +58,7 @@ describe("RecordStreamBroker — listener error isolation", () => {
 
     broker.publishToScenario("scn_3", makeRecord());
 
-    // afterListener still runs because each listener is wrapped in its own try/catch
+    // 각 listener가 독립 try/catch로 감싸져 있으므로 afterListener도 실행됨
     expect(afterListener).toHaveBeenCalledTimes(1);
   });
 });

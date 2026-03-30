@@ -13,6 +13,9 @@ import { extractFrontmatter, parseYaml } from "./frontmatter.js";
 
 /** DB에서 받아올 메타데이터 */
 export interface DbMetadata {
+  readonly version?: string;
+  readonly revision?: number;
+  readonly level?: string;
   readonly scope: string;
   readonly aspect: string;
   readonly depth: string;
@@ -27,7 +30,7 @@ export interface DbMetadata {
 
 /** DB 소유 필드 목록 — 이 필드만 덮어씀 */
 const DB_OWNED_FIELDS = new Set([
-  "address", "scope", "aspect", "depth", "lifecycle", "layer", "svc", "tags", "links",
+  "address", "version", "revision", "level", "scope", "aspect", "depth", "lifecycle", "layer", "svc", "tags", "links",
 ]);
 
 /**
@@ -49,6 +52,9 @@ export function mergeFrontmatter(
   // DB 소유 필드를 먼저 직렬화
   const dbLines: string[] = [];
   if (metadata.address) dbLines.push(`  address: ${metadata.address}`);
+  if (metadata.version) dbLines.push(`  version: ${metadata.version}`);
+  if (metadata.revision !== undefined) dbLines.push(`  revision: ${metadata.revision}`);
+  if (metadata.level) dbLines.push(`  level: ${metadata.level}`);
   dbLines.push(`  scope: ${metadata.scope}`);
   dbLines.push(`  aspect: ${metadata.aspect}`);
   dbLines.push(`  depth: ${metadata.depth}`);

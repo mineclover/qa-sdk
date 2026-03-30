@@ -8,7 +8,7 @@ def:
   svc: weighted-index
   lifecycle: approved
   layer: domain
-  tags: []
+  tags: [runtime, performance, entry-point]
   links:
     - target: wi-api
       type: depends_on

@@ -5,7 +5,7 @@
  * CoordMigrator 함수를 자동 생성한다.
  */
 
-import type { InferredMigrator, MigratorPattern } from "../dkg.types.js";
+import type { InferredMigrator } from "../dkg.types.js";
 
 export interface DiffInfo {
   readonly fromLabels: readonly string[];
@@ -72,7 +72,7 @@ export function inferMigrator(
   // 패턴 3: toLabels ⊃ fromLabels → append-dim
   if (diff.fromLabels.every(l => toSet.has(l))) {
     const addedLabels = diff.toLabels.filter(l => !fromSet.has(l));
-    const addedIndices = addedLabels.map(l => diff.toLabels.indexOf(l));
+    const addedIndices = new Set(addedLabels.map(l => diff.toLabels.indexOf(l)));
 
     // fromLabels 순서가 toLabels 내에서 보존되는지 확인
     const fromIndicesInTo = diff.fromLabels.map(l => diff.toLabels.indexOf(l));
@@ -85,7 +85,7 @@ export function inferMigrator(
           const result = new Array(diff.toLabels.length);
           let fromIdx = 0;
           for (let i = 0; i < diff.toLabels.length; i++) {
-            if (addedIndices.includes(i)) {
+            if (addedIndices.has(i)) {
               result[i] = defaultValue;
             } else {
               result[i] = coords[fromIdx++];

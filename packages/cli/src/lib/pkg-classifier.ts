@@ -104,7 +104,7 @@ function classifyTier(raw: RawPkg): string {
     n.startsWith("registry-ui")
   )
     return "app";
-  if (/^demo-/.test(n)) return "data";
+  if (n.startsWith('demo-')) return "data";
   if (n === "cli") return "service";
   if (raw.isScoped) return "platform";
   return "foundation";
@@ -116,9 +116,9 @@ function classifyRuntime(raw: RawPkg): string {
   if (
     n.startsWith("browser-") ||
     n.startsWith("viz-") ||
-    /-web$/.test(n) ||
+    n.endsWith('-web') ||
     n === "registry-ui" ||
-    /-demo$/.test(n)
+    n.endsWith('-demo')
   )
     return "browser";
   return "library";

@@ -1,67 +1,88 @@
 import { Hono } from "hono";
 import { describe, expect, it, beforeEach } from "vitest";
-import { NodeSqliteDriver } from "index-meta";
+import { getDatabaseSync } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
 import { createInsightsRoutes } from "./insights.js";
+import { DrizzleInsightsStore } from "../stores/drizzle-insights-store.js";
+import { traces, eventRecords } from "../db/schema.js";
 
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 
-async function createDb() {
-  const driver = new NodeSqliteDriver(":memory:", null);
-  const drizzleDb = drizzle({ client: driver.$client });
-  migrate(drizzleDb, { migrationsFolder });
-  return driver;
+type DrizzleDb = ReturnType<typeof drizzle>;
+
+function createDb(): DrizzleDb {
+  const DatabaseSync = getDatabaseSync();
+  const raw = new DatabaseSync(":memory:");
+  raw.exec("PRAGMA journal_mode = WAL");
+  raw.exec("PRAGMA busy_timeout = 3000");
+  const db = drizzle({ client: raw });
+  migrate(db, { migrationsFolder });
+  return db;
 }
 
-function buildApp(driver: NodeSqliteDriver) {
+function buildApp(db: DrizzleDb) {
   const app = new Hono();
-  app.route("/", createInsightsRoutes({ driver }));
+  app.route("/", createInsightsRoutes({ store: new DrizzleInsightsStore(db) }));
   return app;
 }
 
-async function insertTrace(driver: NodeSqliteDriver, traceId: string, serviceName: string, recordCount: number) {
+function insertTrace(db: DrizzleDb, traceId: string, serviceName: string, recordCount: number) {
   const now = new Date().toISOString();
-  await driver.execute(
-    `INSERT INTO traces (trace_id, service_name, record_count, first_timestamp, last_timestamp, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [traceId, serviceName, recordCount, now, now, now, now],
-  );
+  db.insert(traces).values({
+    traceId,
+    serviceName,
+    recordCount,
+    firstTimestamp: now,
+    lastTimestamp: now,
+    createdAt: now,
+    updatedAt: now,
+  }).run();
 }
 
-async function insertRecord(driver: NodeSqliteDriver, opts: {
+function insertRecord(db: DrizzleDb, opts: {
   logId: string; traceId: string; eventKey: string;
   addressContext?: string; actorId?: string; sessionId?: string;
 }) {
   const now = new Date().toISOString();
-  await driver.execute(
-    `INSERT INTO event_records (log_id, trace_id, span_id, timestamp, record_kind, event_key, event_version,
-       payload_format, payload_encoding, payload_masking_applied, payload_masked_fields,
-       address_context, actor_id, qa_session_id, created_at)
-     VALUES (?, ?, 'sp', ?, 'log', ?, '001', 'json', 'raw', 0, '[]', ?, ?, ?, ?)`,
-    [opts.logId, opts.traceId, now, opts.eventKey, opts.addressContext ?? null, opts.actorId ?? null, opts.sessionId ?? null, now],
-  );
+  db.insert(eventRecords).values({
+    logId: opts.logId,
+    traceId: opts.traceId,
+    spanId: "sp",
+    timestamp: now,
+    recordKind: "log",
+    eventKey: opts.eventKey,
+    eventVersion: "001",
+    payloadFormat: "json",
+    payloadEncoding: "raw",
+    payloadMaskingApplied: false,
+    payloadMaskedFields: "[]",
+    addressContext: opts.addressContext ?? null,
+    actorId: opts.actorId ?? null,
+    qaSessionId: opts.sessionId ?? null,
+    createdAt: now,
+  }).run();
 }
 
 describe("insights API", () => {
-  let driver: NodeSqliteDriver;
+  let db: DrizzleDb;
   let app: Hono;
 
-  beforeEach(async () => {
-    driver = await createDb();
-    app = buildApp(driver);
+  beforeEach(() => {
+    db = createDb();
+    app = buildApp(db);
 
     // seed data
-    await insertTrace(driver, "t1", "shop/web", 3);
-    await insertTrace(driver, "t2", "shop/web", 1);
-    await insertTrace(driver, "t3", "auth-svc", 2);
+    insertTrace(db, "t1", "shop/web", 3);
+    insertTrace(db, "t2", "shop/web", 1);
+    insertTrace(db, "t3", "auth-svc", 2);
 
-    await insertRecord(driver, { logId: "r1", traceId: "t1", eventKey: "page.view", addressContext: '{"service":"s:v1:0","page_view":"pv:v2:0"}' });
-    await insertRecord(driver, { logId: "r2", traceId: "t1", eventKey: "cart.add", addressContext: '{"cart_event":"ce:v1:0"}' });
-    await insertRecord(driver, { logId: "r3", traceId: "t1", eventKey: "checkout.entry" });
-    await insertRecord(driver, { logId: "r4", traceId: "t2", eventKey: "page.view" });
-    await insertRecord(driver, { logId: "r5", traceId: "t3", eventKey: "auth.login", actorId: "user@test.com", sessionId: "sess-1" });
-    await insertRecord(driver, { logId: "r6", traceId: "t3", eventKey: "permission.check" });
+    insertRecord(db, { logId: "r1", traceId: "t1", eventKey: "page.view", addressContext: '{"service":"s:v1:0","page_view":"pv:v2:0"}' });
+    insertRecord(db, { logId: "r2", traceId: "t1", eventKey: "cart.add", addressContext: '{"cart_event":"ce:v1:0"}' });
+    insertRecord(db, { logId: "r3", traceId: "t1", eventKey: "checkout.entry" });
+    insertRecord(db, { logId: "r4", traceId: "t2", eventKey: "page.view" });
+    insertRecord(db, { logId: "r5", traceId: "t3", eventKey: "auth.login", actorId: "user@test.com", sessionId: "sess-1" });
+    insertRecord(db, { logId: "r6", traceId: "t3", eventKey: "permission.check" });
   });
 
   it("GET /v1/insights/summary — 전체 카운트", async () => {

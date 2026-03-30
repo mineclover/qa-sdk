@@ -210,15 +210,15 @@ export function classifyEscalation(
   tags: readonly AutoDecisionPrinciple[],
 ): EscalationJudgment {
   // 5가지 자동 원칙 중 하나라도 해당하면 자동 처리 가능
-  const autoTags: AutoDecisionPrinciple[] = [
+  const autoTags = new Set<AutoDecisionPrinciple>([
     "standard-pattern",
     "completeness",
     "test-coverage",
     "observability",
     "security",
-  ];
+  ]);
 
-  const matchedPrinciple = tags.find((t) => autoTags.includes(t));
+  const matchedPrinciple = tags.find((t) => autoTags.has(t));
 
   if (matchedPrinciple) {
     return {

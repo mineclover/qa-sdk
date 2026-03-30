@@ -8,7 +8,7 @@ def:
   svc: ingest-server
   lifecycle: approved
   layer: operation
-  tags: []
+  tags: [runtime, testing, structural]
   links:
     - target: pipeline-enrichment
       type: refines

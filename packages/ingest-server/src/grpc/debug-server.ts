@@ -13,8 +13,40 @@ import * as protoLoader from "@grpc/proto-loader";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
-import type { TraceStore } from "@qa-sdk/core";
+import type { StoredRecord, TraceStore } from "@qa-sdk/core";
 import type { Logger } from "pino";
+
+/** gRPC 프로토 정의에서 동적 로드된 서비스 구조 */
+interface GrpcProto {
+  qa: {
+    debug: {
+      DebugService: {
+        service: grpc.ServiceDefinition;
+      };
+    };
+  };
+}
+
+/** StreamEvents / Subscribe 핸들러 명령 메시지 */
+interface GrpcStreamCommand {
+  filter?: {
+    eventKeys?: string[];
+    serviceIds?: string[];
+    traceId?: string;
+  };
+}
+
+/** GetActiveTraces 요청 메시지 */
+interface GetActiveTracesRequest {
+  limit?: number;
+}
+
+/** ResolveAddr 요청 메시지 */
+interface ResolveAddrRequest {
+  prefix: string;
+  version: string;
+  address: string;
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROTO_PATH = resolve(__dirname, "../../../../proto/debug.proto");
@@ -38,23 +70,23 @@ export async function startGrpcDebugServer(deps: GrpcDebugServerDeps): Promise<g
     oneofs: true,
   });
 
-  const proto = grpc.loadPackageDefinition(packageDef) as any;
+  const proto = grpc.loadPackageDefinition(packageDef) as unknown as GrpcProto;
   const server = new grpc.Server();
 
   server.addService(proto.qa.debug.DebugService.service, {
     // ── 양방향 스트리밍 ──
-    streamEvents(call: any) {
+    streamEvents(call: grpc.ServerDuplexStream<GrpcStreamCommand, unknown>) {
       const unsubscribers: (() => void)[] = [];
 
       // 기본 구독
-      const unsub = deps.recordStreamBroker.subscribeToScenario("*", (record: any) => {
+      const unsub = deps.recordStreamBroker.subscribeToScenario("*", (record: StoredRecord) => {
         try {
           call.write(toGrpcEvent(record));
         } catch { /* stream closed */ }
       });
       unsubscribers.push(unsub);
 
-      call.on("data", (cmd: any) => {
+      call.on("data", (cmd: GrpcStreamCommand) => {
         deps.logger?.debug({ cmd }, "grpc: client command");
         // 명령 처리 (filter 등)
       });
@@ -70,7 +102,7 @@ export async function startGrpcDebugServer(deps: GrpcDebugServerDeps): Promise<g
     },
 
     // ── 활성 trace 조회 ──
-    async getActiveTraces(call: any, callback: any) {
+    async getActiveTraces(call: grpc.ServerUnaryCall<GetActiveTracesRequest, unknown>, callback: grpc.sendUnaryData<unknown>) {
       try {
         if (!deps.traceStore) {
           return callback(null, { traces: [] });
@@ -93,7 +125,7 @@ export async function startGrpcDebugServer(deps: GrpcDebugServerDeps): Promise<g
     },
 
     // ── 주소 resolve ──
-    async resolveAddr(call: any, callback: any) {
+    async resolveAddr(call: grpc.ServerUnaryCall<ResolveAddrRequest, unknown>, callback: grpc.sendUnaryData<unknown>) {
       // 기본 구현: decode-service로 위임 (또는 로컬 catalog)
       callback(null, {
         prefix: call.request.prefix,
@@ -104,11 +136,11 @@ export async function startGrpcDebugServer(deps: GrpcDebugServerDeps): Promise<g
     },
 
     // ── 서버 스트리밍 구독 ──
-    subscribe(call: any) {
+    subscribe(call: grpc.ServerWritableStream<GrpcStreamCommand, unknown>) {
       const filter = call.request.filter || {};
       deps.logger?.info({ filter }, "grpc: subscribe");
 
-      const unsub = deps.recordStreamBroker.subscribeToScenario("*", (record: any) => {
+      const unsub = deps.recordStreamBroker.subscribeToScenario("*", (record: StoredRecord) => {
         const evt = toGrpcEvent(record);
 
         // 필터 적용
@@ -124,29 +156,29 @@ export async function startGrpcDebugServer(deps: GrpcDebugServerDeps): Promise<g
     },
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise((res, reject) => {
     server.bindAsync(`0.0.0.0:${port}`, grpc.ServerCredentials.createInsecure(), (err) => {
       if (err) return reject(err);
       deps.logger?.info({ port }, "gRPC debug server listening");
-      resolve(server);
+      res(server);
     });
   });
 }
 
 /** 레코드 → gRPC EventRecord 변환 */
-function toGrpcEvent(record: any) {
+function toGrpcEvent(record: StoredRecord) {
   return {
-    logId: record.logId ?? record.log_id ?? "",
-    traceId: record.traceId ?? record.trace_id ?? "",
-    spanId: record.spanId ?? record.span_id ?? "",
-    parentSpanId: record.parentSpanId ?? record.parent_span_id ?? "",
+    logId: record.logId ?? "",
+    traceId: record.traceId ?? "",
+    spanId: record.spanId ?? "",
+    parentSpanId: record.parentSpanId ?? "",
     timestampMs: record.timestamp instanceof Date ? record.timestamp.getTime() : Date.now(),
-    recordKind: record.recordKind ?? record.record_kind ?? "log",
-    eventKey: record.eventKey ?? record.event_key ?? "",
-    eventVersion: record.eventVersion ?? record.event_version ?? "",
-    addressContext: record.addressContext ?? record.address_context ?? {},
-    serviceName: record.serviceName ?? record.service_name ?? "",
-    qaSessionId: record.qaSessionId ?? record.qa_session_id ?? "",
+    recordKind: record.recordKind ?? "log",
+    eventKey: record.eventKey ?? "",
+    eventVersion: record.eventVersion ?? "",
+    addressContext: record.addressContext ?? {},
+    serviceName: "",
+    qaSessionId: record.qaSessionId ?? "",
     payloadJson: record.payload ? JSON.stringify(record.payload) : "",
   };
 }

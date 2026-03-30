@@ -29,8 +29,6 @@ import {
   clearBit,
   hasBit,
   popcount,
-  maskAnd,
-  maskOr,
 } from "weighted-index";
 
 // ── Types ────────────────────────────────────────────────────────────────────

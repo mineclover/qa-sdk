@@ -10,10 +10,12 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { defineTable } from "index-meta";
-import { compileSchema } from "index-meta";
-import { InMemoryIndexMetaStore } from "index-meta";
-import type { EntryRecord } from "index-meta";
+import {
+  defineTable,
+  compileSchema,
+  InMemoryIndexMetaStore,
+  type EntryRecord,
+} from "index-meta";
 
 // ── 예약 토큰 상수 ────────────────────────────────────────
 

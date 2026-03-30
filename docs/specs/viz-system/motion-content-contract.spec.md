@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: platform-demo
-  tags: []
+  tags: [contract, frontend, runtime]
   links:
     - target: motion-content-glossary
       type: refines

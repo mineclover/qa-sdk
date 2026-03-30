@@ -139,7 +139,7 @@ describe("MetaCodec 인스턴스 메모리", () => {
     // 생성 시간
     const ITER = 5_000;
     const start = performance.now();
-    for (let i = 0; i < ITER; i++) new MetaCodec(map);
+    for (let i = 0; i < ITER; i++) void new MetaCodec(map);
     const constructMs = (performance.now() - start) / ITER;
 
     results.push({

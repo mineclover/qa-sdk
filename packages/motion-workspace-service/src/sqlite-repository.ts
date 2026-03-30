@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { createLogger } from "./lib/logger.js";
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
@@ -34,7 +35,6 @@ interface PersistedSceneRow {
   readonly sceneJson: string;
 }
 
-const SQLITE_TIMESTAMP_SQL = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
 const MOTION_COMPOSITION_SCHEMA_V2 = "qa-sdk.motion-composition/v2";
 
 export const DEFAULT_MOTION_WORKSPACE_SQLITE_PATH = resolve(
@@ -42,12 +42,6 @@ export const DEFAULT_MOTION_WORKSPACE_SQLITE_PATH = resolve(
   ".qa-sdk",
   "motion-workspace.sqlite",
 );
-
-
-function createDatabase(path: string): DatabaseSyncInstance {
-  const Ctor = getDatabaseSync();
-  return new Ctor(path);
-}
 
 function resolveSqliteRepositoryPath(path?: string): string {
   if (!path || path.trim().length === 0) {
@@ -186,7 +180,7 @@ function toPersistedWorkspace(
 
   const scenes = sceneRows
     .slice()
-    .sort((left, right) => left.position - right.position)
+    .toSorted((left, right) => left.position - right.position)
     .map((sceneRow) => JSON.parse(sceneRow.sceneJson) as MotionSceneDef);
   const sceneRevisions = Object.fromEntries(
     sceneRows.map((sceneRow) => [sceneRow.sceneId, sceneRow.revision]),
@@ -218,6 +212,7 @@ export interface MotionWorkspaceSqliteRepositoryOptions
 {}
 
 export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepository {
+  private readonly logger = createLogger("motion-workspace");
   /** raw DatabaseSync — PRAGMA, 수동 트랜잭션용 */
   private readonly rawDb: DatabaseSyncInstance;
   /** drizzle query builder 인스턴스 (rawDb와 같은 커넥션) */
@@ -227,7 +222,8 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
   constructor(options: MotionWorkspaceSqliteRepositoryOptions = {}) {
     this.path = resolveSqliteRepositoryPath(options.path);
     ensureSqliteDirectory(this.path);
-    this.rawDb = createDatabase(this.path);
+    const DatabaseSync = getDatabaseSync();
+    this.rawDb = new DatabaseSync(this.path);
     this.rawDb.exec("PRAGMA journal_mode = WAL");
     this.rawDb.exec("PRAGMA busy_timeout = 3000");
     this.rawDb.exec("PRAGMA foreign_keys = ON");
@@ -238,7 +234,7 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
         migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
       });
     } catch (err) {
-      console.error("[motion-workspace] drizzle 마이그레이션 실패:", err);
+      this.logger.error({ err }, "drizzle 마이그레이션 실패");
       throw err;
     }
   }

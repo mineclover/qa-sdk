@@ -3,7 +3,6 @@ import type {
   MotionCaptionCue,
   MotionCompositionDef,
   MotionCompositionDefV2,
-  MotionCueDef,
   MotionLayerDef,
   MotionSceneDef,
   MotionSceneSequenceDef,

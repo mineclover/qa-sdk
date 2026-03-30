@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: registry-service
-  tags: []
+  tags: [runtime, migration, observability]
   links:
     - target: registry-service-modules
       type: refines

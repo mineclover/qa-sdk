@@ -82,7 +82,7 @@ function computeRange(selections: DimSelection[]): number[] {
     partials = next;
   }
 
-  return partials.sort((a, b) => a - b);
+  return partials.toSorted((a, b) => a - b);
 }
 
 // ── Decode a value back to 4D coordinates ─────────────────────────────────

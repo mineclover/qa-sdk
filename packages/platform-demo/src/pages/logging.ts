@@ -5,7 +5,6 @@
 import { serializeAddress, varintByteSize } from "weighted-index";
 import {
   DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS, DEMO_KO,
-  DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES, DEMO_EVT_SVC_VALUES, DEMO_EVENT_CAP,
   demoEncodeSvc, demoDecodeSvc, demoEventsFor,
   demoRoleStride, demoEvtStride,
@@ -284,7 +283,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
     btn.className = `log-filter-btn ${LEVEL_CLASSES[lv]} log-filter-active`;
     btn.textContent = lv;
     btn.addEventListener("click", () => {
-      activeFilters.has(lv) ? activeFilters.delete(lv) : activeFilters.add(lv);
+      if (activeFilters.has(lv)) activeFilters.delete(lv); else activeFilters.add(lv);
       btn.classList.toggle("log-filter-active");
       if (apiOnline) loadFromApi().catch(() => { showOffline(); renderLogList(); });
       else renderLogList();
@@ -418,6 +417,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   const ACTION_INDEX = new Map<string, number>();
   function actionIdx(action: string): number {
     if (!ACTION_INDEX.has(action)) ACTION_INDEX.set(action, ACTION_INDEX.size + 1);
+    // eslint-disable-next-line typescript/no-non-null-assertion -- .has() 직후 .get()
     return ACTION_INDEX.get(action)!;
   }
   // 초기 action 등록
@@ -543,9 +543,11 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   });
 
   const exPerm = 1;
+  // eslint-disable-next-line typescript/no-non-null-assertion -- 알려진 유효 주소
   const exPermD = decodePerm(exPerm, ver)!;
 
   const exEvt = ver === "v1" ? 46 : 58;
+  // eslint-disable-next-line typescript/no-non-null-assertion -- 알려진 유효 주소
   const exEvtD = decodeEvt(exEvt, ver)!;
 
   const anatomy = document.createElement("div");
@@ -771,7 +773,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
     detailPanel.querySelectorAll(".log-dtl-addr-link").forEach(el => {
       el.addEventListener("click", () => {
         const nav = (el as HTMLElement).dataset.nav;
-        const addr = +(el as HTMLElement).dataset.addr!;
+        const addr = Number((el as HTMLElement).dataset["addr"] ?? "0");
         if (nav === "service") navigateTo("service", { svcAddr: addr });
         else if (nav === "permission") navigateTo("permission", { permAddr: addr });
       });

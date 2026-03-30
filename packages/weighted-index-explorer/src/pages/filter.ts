@@ -9,11 +9,11 @@
 import {
   describeRangeFormula, partialQueryBase,
   createMask, setBit, hasBit, popcount,
-  calcAddressRanges, containsAddress,
+  calcAddressRanges,
   type CoordConstraint,
 } from "weighted-index";
 import {
-  SCHEMA_VERSIONS, getVersion,
+  SCHEMA_VERSIONS,
   type VersionDef,
 } from "../data.js";
 import { dimBadge } from "../utils/badge.js";
@@ -113,10 +113,9 @@ function buildSampleUsers(vDef: VersionDef): SampleUser[] {
     },
   ];
 
-  return specs.map((s) => ({
-    ...s,
+  return specs.map((s) => Object.assign({}, s, {
     bitmask: buildUserBitmask(s.envRoles, vDef),
-  }));
+  }) as SampleUser);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -163,7 +162,6 @@ function buildIntro(): string {
 
 function buildFormulaSection(vDef: VersionDef): string {
   // Example: database(3)×delete(3)×admin(4)×production(1)
-  const [W1, W2, W3, W4] = vDef.weights;
   const r = 3, a = 3, ro = 4, e = 1; // database, delete, admin, production
   const id = vDef.wi.encode([r, a, ro, e]);
 
@@ -382,10 +380,11 @@ function buildDemo(vDef: VersionDef): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef): void {
-  const resSel = container.querySelector<HTMLSelectElement>("#fd-resource")!;
-  const actSel = container.querySelector<HTMLSelectElement>("#fd-action")!;
-  const envSel = container.querySelector<HTMLSelectElement>("#fd-env")!;
-  const result = container.querySelector<HTMLDivElement>("#fd-result")!;
+  const resSel = container.querySelector<HTMLSelectElement>("#fd-resource");
+  const actSel = container.querySelector<HTMLSelectElement>("#fd-action");
+  const envSel = container.querySelector<HTMLSelectElement>("#fd-env");
+  const result = container.querySelector<HTMLDivElement>("#fd-result");
+  if (!resSel || !actSel || !envSel || !result) return;
 
   function run(): void {
     const resVal = resSel.value;

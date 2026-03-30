@@ -1,40 +1,20 @@
 /**
  * qa-sdk gate / query — gate-service + query-service CLI 접근.
  *
- * gate check: 주소 상태 확인 (active/reserved/inactive)
- * query resolve: 정책 해석
- * query rules: 정책 규칙 목록
+ * 서비스 URL은 service-profile.json에서 중앙 관리.
  */
 
-const DEFAULT_GATE_URL = "http://localhost:3400";
-const DEFAULT_QUERY_URL = "http://localhost:3500";
+import { getServiceUrl } from "../lib/service-profile.js";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
 async function resolveServiceUrl(args: string[], service: "gate" | "query"): Promise<string> {
-  // 1. 직접 지정
   const flag = service === "gate" ? "--gate" : "--query";
   const idx = args.indexOf(flag);
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
-
-  // 2. 환경변수
-  const envKey = service === "gate" ? "GATE_SERVICE_URL" : "QUERY_SERVICE_URL";
-  if (process.env[envKey]) return process.env[envKey]!;
-
-  // 3. registry에서 탐색
-  const registryUrl = process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
-  try {
-    const resp = await fetch(`${registryUrl}/api/services/urls`, { signal: AbortSignal.timeout(3_000) });
-    if (resp.ok) {
-      const urls = await resp.json() as Record<string, string>;
-      const key = service === "gate" ? "gate-service" : "query-service";
-      if (urls[key]) return urls[key];
-    }
-  } catch { /* fallback */ }
-
-  return service === "gate" ? DEFAULT_GATE_URL : DEFAULT_QUERY_URL;
+  const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+  return getServiceUrl(`${service}-service`, override);
 }
 
 async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {

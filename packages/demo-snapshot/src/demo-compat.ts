@@ -31,7 +31,7 @@ function catalogAxisToLegacy(axisId: string, ver: string, overrideId?: string): 
     name: axis.name,
     entries: snap.entries,
     ...(snap.capacity !== undefined ? { capacity: snap.capacity } : {}),
-    ko: { ...(snap.ko ?? {}) },
+    ko: { ...snap.ko },
   };
 }
 
@@ -128,7 +128,9 @@ export function demoDecodeSvc(v: number): number[] {
 const _permV1 = C.prefixes.permission.versions[0];
 const _evtV1 = C.prefixes.event.versions[0];
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- permission prefix v1에 refEntries 필수 (CON-006)
 export const DEMO_PERM_SVC_VALUES = _permV1.refEntries!.perm_svc.values;
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- event prefix v1에 refEntries 필수 (CON-006)
 export const DEMO_EVT_SVC_VALUES = _evtV1.refEntries!.evt_svc.values;
 
 // ── Permission / Event helpers ──────────────────────────────────────────────

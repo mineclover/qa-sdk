@@ -22,12 +22,13 @@ function parseHexColor(
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex 캡처 그룹 [1] 매칭 보장
   const digits = match[1]!;
   if (digits.length === 3) {
     return {
-      red: Number.parseInt(digits[0]!.repeat(2), 16),
-      green: Number.parseInt(digits[1]!.repeat(2), 16),
-      blue: Number.parseInt(digits[2]!.repeat(2), 16),
+      red: Number.parseInt(digits[0].repeat(2), 16),
+      green: Number.parseInt(digits[1].repeat(2), 16),
+      blue: Number.parseInt(digits[2].repeat(2), 16),
       alpha: 1,
     };
   }
@@ -57,6 +58,7 @@ function parseRgbColor(
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex 캡처 그룹 [1] 매칭 보장
   const parts = match[1]!.split(",").map((entry) => entry.trim());
   if (parts.length < 3 || parts.length > 4) {
     return null;

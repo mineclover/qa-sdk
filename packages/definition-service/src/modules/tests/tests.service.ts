@@ -1,6 +1,5 @@
 import { Injectable, Inject } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { DATABASE } from "../../database.module.js";
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlTestStore, type TestStore, type TestRegistration, type TestResult, type TestStatus } from "../../stores/test-store.js";
 import { GraphService } from "../graph/graph.service.js";
 
@@ -9,7 +8,7 @@ export class TestsService {
   private readonly store: TestStore;
 
   constructor(
-    @Inject(DATABASE) db: Database.Database,
+    @Inject(DRIZZLE_DB) db: DefinitionServiceDatabase,
     @Inject(GraphService) private readonly graph: GraphService,
   ) {
     this.store = new SqlTestStore(db);
@@ -83,25 +82,19 @@ export class TestsService {
     healthyDocs: number;
     failingDocs: number;
   } {
-    const allRegs = (this.store as SqlTestStore)["db"]
-      .prepare("SELECT DISTINCT doc_id FROM test_registry")
-      .all() as { doc_id: string }[];
+    const allDocIds = this.store.listRegisteredDocIds();
 
     let healthy = 0;
     let failing = 0;
-    for (const { doc_id } of allRegs) {
-      const status = this.store.getStatus(doc_id);
+    for (const docId of allDocIds) {
+      const status = this.store.getStatus(docId);
       if (status.healthy) healthy++;
       else failing++;
     }
 
-    const totalRegs = (this.store as SqlTestStore)["db"]
-      .prepare("SELECT COUNT(*) as cnt FROM test_registry")
-      .get() as { cnt: number };
-
     return {
-      registeredDocs: allRegs.length,
-      totalRegistrations: totalRegs.cnt,
+      registeredDocs: allDocIds.length,
+      totalRegistrations: this.store.countRegistrations(),
       healthyDocs: healthy,
       failingDocs: failing,
     };

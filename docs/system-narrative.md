@@ -1,7 +1,9 @@
 ---
 def:
   id: system-narrative
-  level: area
+  type: knowledge
+  knowledge_kind: narrative
+  level: module
   address: def_document:v2:137232
   scope: flow
   aspect: process_flow
@@ -10,6 +12,22 @@ def:
   layer: domain
   tags: [cross-scope, entry-point]
   links:
+    - target: msa-architecture
+      type: contains
+    - target: realization-catalog-mgmt
+      type: contains
+    - target: realization-coord-promotion
+      type: contains
+    - target: realization-coverage
+      type: contains
+    - target: realization-observability
+      type: contains
+    - target: realization-pipeline
+      type: contains
+    - target: realization-registry
+      type: contains
+    - target: realization-spec-core
+      type: contains
     - target: system-root
       type: refines
 ---

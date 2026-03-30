@@ -10,7 +10,7 @@ def:
   layer: domain
   tags: [observability]
   links:
-    - target: logger-spec
+    - target: logger-contract
       type: depends_on
 ---
 

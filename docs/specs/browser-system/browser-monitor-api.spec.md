@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: browser-sdk
-  tags: []
+  tags: [observability, contract, entry-point]
   links:
-    - target: browser-monitor-spec
+    - target: browser-runtime-system
       type: refines
 ---
 

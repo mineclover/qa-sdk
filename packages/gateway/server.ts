@@ -109,7 +109,7 @@ app.use("*", async (c, next) => {
   // tailscale 모드: Tailscale-User-Login 헤더 확인 (tailscale serve가 주입)
   if (AUTH_MODE === "tailscale") {
     const tsUser = c.req.header("Tailscale-User-Login");
-    const tsName = c.req.header("Tailscale-User-Name");
+    const _tsName = c.req.header("Tailscale-User-Name");
     if (!tsUser) return c.json({ error: "Tailscale auth required" }, 401);
     c.set("identity", tsUser);
     return next();
@@ -161,8 +161,9 @@ app.all("*", async (c) => {
           status: resp.status,
           headers: resp.headers,
         });
-      } catch (err: any) {
-        return c.json({ error: "Service unavailable", message: err?.message }, 502);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return c.json({ error: "Service unavailable", message }, 502);
       }
     }
   }

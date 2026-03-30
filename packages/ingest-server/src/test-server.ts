@@ -4,7 +4,10 @@
  */
 import { serve } from "@hono/node-server";
 import type { Catalog } from "@qa-sdk/core";
+import { createLogger } from "./lib/logger.js";
 import type { ConvergenceGraphPort, DkgStorePort } from "./lib/convergence-pipeline.js";
+
+const logger = createLogger("e2e-test-server");
 import { createNodeWebSocket } from "@hono/node-ws";
 import {
   InMemoryDlqStore,
@@ -60,14 +63,14 @@ async function setupConvergence() {
       recordStore,
       convergenceFns: {
         aggregateUsageData: specConvergence.aggregateUsageData,
-        collectMetrics: (catalog, graph, usage) => specConvergence.collectMetrics(catalog, graph as Parameters<typeof specConvergence.collectMetrics>[1], usage),
+        collectMetrics: (catalog, g, usage) => specConvergence.collectMetrics(catalog, g as Parameters<typeof specConvergence.collectMetrics>[1], usage),
         metricsToObservations: specConvergence.metricsToObservations,
-        traceFlows: (graph, records, opts) => specDkg.traceFlows(graph as Parameters<typeof specDkg.traceFlows>[0], records, opts),
+        traceFlows: (g, records, opts) => specDkg.traceFlows(g as Parameters<typeof specDkg.traceFlows>[0], records, opts),
       },
       graphProvider: () => (graph ?? { getNodesByKind: () => [] }) as ConvergenceGraphPort,
       catalogProvider: () => provider.getCatalog() as Catalog,
       dkgStore: dkgStore as DkgStorePort | undefined,
-      logger: { info: console.log, warn: console.warn, error: console.error, debug: () => {} } as any,
+      logger,
     }, { recordThreshold: 5, flushIntervalMs: 5_000 });
 
     // ingest 완료 시 convergence pipeline에 traceId 알림
@@ -80,7 +83,7 @@ async function setupConvergence() {
         for (const tid of newTraceIds) seenTraces.add(tid);
         if (newTraceIds.length > 0) {
           pipeline.notifyCompletion(newTraceIds);
-          console.log(`[convergence] notified ${newTraceIds.length} new traces`);
+          logger.info({ count: newTraceIds.length }, "convergence: notified new traces");
         }
       } catch { /* 무시 */ }
     }, 3_000);
@@ -112,7 +115,7 @@ async function setupConvergence() {
                   try {
                     decoded = transitionEngine.decodeCtx(transitionCatalog as Catalog, r.addressContext);
                   } catch (err) {
-                    console.warn(`[transition] decode failed for ${r.logId}:`, err);
+                    logger.warn({ err, logId: r.logId }, "transition decode 실패");
                   }
                 }
                 return {
@@ -124,32 +127,32 @@ async function setupConvergence() {
                 };
               });
               if (events.length > 0) {
-                console.log(`[transition] decoded sample:`, JSON.stringify(events[0].address_context));
-                console.log(`[transition] full event[0]:`, JSON.stringify(events[0]));
+                logger.debug({ addressContext: events[0].address_context }, "transition decoded sample");
+                logger.debug({ event: events[0] }, "transition full event[0]");
               }
 
               const result = transitionEngine.processSession({ sessionId: traceId, events });
-              console.log(`[transition] trace=${traceId}: events=${events.length} instances=${result.instances.length} violations=${result.violations.length} unmatched=${result.unmatchedCount}`);
+              logger.info({ traceId, events: events.length, instances: result.instances.length, violations: result.violations.length, unmatched: result.unmatchedCount }, "transition 처리 완료");
             }
-          } catch (err) { console.warn("[transition] polling error:", err); }
+          } catch (err) { logger.warn({ err }, "transition polling error"); }
         }, 5_000);
 
-        console.log(`[e2e:test-server] transition engine enabled (${DEMO_TRANSITION_SPECS.length} specs)`);
+        logger.info({ specCount: DEMO_TRANSITION_SPECS.length }, "transition engine enabled");
       } catch (err) {
-        console.warn("[e2e:test-server] transition engine setup failed:", err);
+        logger.warn({ err }, "transition engine setup 실패");
       }
     }
 
     process.on("SIGTERM", () => void pipeline.close());
     process.on("SIGINT", () => void pipeline.close());
-    console.log(`[e2e:test-server] convergence pipeline enabled (threshold=5, interval=5s)`);
+    logger.info({ threshold: 5, intervalMs: 5_000 }, "convergence pipeline enabled");
   } catch (err) {
-    console.warn("[e2e:test-server] convergence setup failed:", err);
+    logger.warn({ err }, "convergence setup 실패");
   }
 }
 
 const server = serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(`[e2e:test-server] http://localhost:${info.port}`);
+  logger.info({ port: info.port }, "서비스 시작");
 });
 
 injectWebSocket(server);

@@ -8,32 +8,43 @@ def:
   lifecycle: approved
   layer: experience
   tags: [generated]
+  links:
+    - target: dkg-skill-group
+      type: refines
+    - target: skill-dkg-skill-catalog
+      type: depends_on
+    - target: skill-dkg-skill-migrator
+      type: refines
 ---
+
+
+## 탐색 ^navigation
+
+skill-catalog-system > dkg-skill-group > **skill-dkg-skill-version-event**
+
+형제: `skill-dkg-skill-cascade` · `skill-dkg-skill-migrator` · `skill-dkg-skill-decision` · `skill-dkg-skill-catalog`
 
 ## 목적 ^purpose
 
-<!-- 버전 이벤트 생성 — 변경 diff에서 VersionEvent 자동 생성 -->
-<!-- 이 skill이 사용자에게 어떤 가치를 주는가? 코드 설명이 아닌 "왜 이 도구가 필요한가"를 작성 -->
+변경 diff에서 VersionEvent를 일관되게 생성해, 축과 prefix의 버전 진화를 추적 가능한 이벤트 로그로 남기는 스킬이다.
 
 ## 사용 맥락 ^context
 
-<!-- 언제 이 skill을 쓰는가? 어떤 상황에서 이 skill이 가장 유용한가? -->
-<!-- 예: "새 서비스를 추가할 때 영향 범위를 먼저 확인하려면 def-bottomup을 실행한다" -->
+축 entry 추가, capacity 변경, version 활성화/폐기처럼 버전 경계를 넘는 변경을 기록할 때 사용한다.
 
 ## 설계 의도 ^intent
 
-<!-- 왜 이 방식으로 유도하는가? 다른 접근은 왜 부적합한가? -->
-<!-- 예: "scope 순서 정렬은 constraint→data→feature 순으로 읽어야 구조가 보이기 때문" -->
+버전 변경 사실을 free-form 메모가 아니라 구조화 이벤트로 남겨, 후속 diff/impact/migrator가 같은 입력을 재사용하게 한다.
 
 ## 피드백 규칙 ^feedback
 
-<!-- CLI 사용 패턴에 따라 이 skill을 어떻게 개선하는가? -->
-<!-- 예: "blast radius가 50 이상이면 분할 제안을 추가한다" -->
-<!-- 예: "같은 그룹을 3번 이상 topdown하면 즐겨찾기 제안" -->
+- VersionEvent 누락이 자주 발생하면 change workflow 상에서 생성 타이밍을 더 앞쪽으로 당긴다.
+- 같은 event type이 반복되면 event payload 예시를 더 구체화한다.
 
 ## 주의사항 ^caveat
 
-<!-- 알려진 한계, 오용 패턴, 잘못된 기대 -->
+VersionEvent는 변경 기록이지 변경 승인이나 배포 완료 신호가 아니다.
+event만 있고 diff 근거가 빈약하면 이후 영향 분석 품질도 떨어진다.
 
 ## 관련 소스
 

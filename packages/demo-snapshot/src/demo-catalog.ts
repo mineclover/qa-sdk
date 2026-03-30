@@ -1360,7 +1360,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["group", "module", "leaf"],
-          capacity: 4,
+          capacity: 8,
           ko: { group: "그룹", module: "모듈", leaf: "리프" },
         },
       },
@@ -1425,7 +1425,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ["buffer", "flush", "aggregate", "classify", "metrics", "observations", "persist"],
-          capacity: 8,
+          capacity: 16,
           ko: { buffer: "버퍼", flush: "플러시", aggregate: "집계", classify: "분류", metrics: "메트릭", observations: "관측", persist: "저장" },
         },
       },

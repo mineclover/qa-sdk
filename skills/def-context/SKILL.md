@@ -67,3 +67,13 @@ blast radius: N건
 - PR 리뷰 시: "이 변경의 영향 범위는?"
 - 새 문서 추가 시: "어디에 넣어야 하지?"
 - feedback request나 synthetic trace가 걸린 문서인지 먼저 확인할 때
+
+## tags 해석 요령
+
+`def context`의 `concerns` 섹션은 문서 tags를 그대로 늘어놓는 용도가 아니다.
+
+- StructuralTag (`entry-point`, `cross-scope`, `decision`)는 문서 역할을 읽는다.
+- ConcernTag (`security`, `observability`, `testing` 등)는 횡단 관심사를 읽는다.
+- 운영 관례 태그 (`runtime`, `persistence`, `contract`)는 검색 편의를 위한 보조 신호로 본다.
+
+즉 "왜 이 문서를 먼저 봐야 하는가"는 StructuralTag에서, "어떤 종류의 위험/관심사가 있는가"는 ConcernTag에서 먼저 읽는다.

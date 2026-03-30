@@ -16,18 +16,7 @@
  */
 
 import {
-  COGNITIVE_PHASE,
-  CONFIDENCE_BAND,
   DECISION_AXES,
-  DECISION_OUTCOME,
-  ESCALATION_TYPE,
-  EVIDENCE_KIND,
-  FLOW_TYPE,
-  FORCING_QUESTION_AXIS,
-  MAGNITUDE,
-  MENTAL_MODEL_AXIS,
-  REVERSIBILITY,
-  SCOPE_MODE,
 } from "./vocabulary.js";
 
 // ─── 타입 (Catalog 인터페이스 호환) ──────────────────────

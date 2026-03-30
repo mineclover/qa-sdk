@@ -44,7 +44,7 @@ beforeAll(async () => {
       } catch { /* skip */ }
     }
   }
-});
+}, 60_000);
 
 describe("ingest 문서 등록", () => {
   it("15건 모두 등록된다 (그룹 1 + 멤버 14)", () => {

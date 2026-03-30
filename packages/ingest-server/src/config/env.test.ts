@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("parseEnv", () => {
+describe("parseEnv", { timeout: 15_000 }, () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();

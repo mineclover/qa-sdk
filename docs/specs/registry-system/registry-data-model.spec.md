@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: registry-service
-  tags: []
+  tags: [data, persistence, structural]
   links:
     - target: system-concepts
       type: depends_on

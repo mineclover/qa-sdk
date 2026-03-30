@@ -144,7 +144,7 @@ export class RegistryService {
     deactivationMode?: "strict" | "flexible";
     refs?: { prefix: string; versionId: string }[];
   }): Promise<ExtendedVersionRecord> {
-    const owner = await this.getPrefix(input.prefix);
+    await this.getPrefix(input.prefix);
 
     // composite refs 검증 + capacity 결정
     let dimRefs: DimRef[] | undefined;
@@ -626,7 +626,6 @@ export class RegistryService {
 
     const dimEntries: { dim: string; entryCount: number; capacity: number }[] = [];
     for (const dep of deps) {
-      const depVer = await this.versionStore.getVersion(dep.prefix, dep.versionId);
       dimEntries.push({
         dim: dep.prefix,
         entryCount: 0, // IndexMetaStore.getEntries가 있으면 실제 개수

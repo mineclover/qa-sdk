@@ -144,7 +144,7 @@ export async function createDevDkgProvider(
 
   // TransitionSpec 로드 (non-blocking, 실패 시 undefined)
   let transitionSpecs: readonly TransitionSpecPort[] | undefined;
-  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS; }).catch(() => {});
+  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS; return undefined; }).catch(() => {});
 
   function ensureInit(): void {
     const now = Date.now();

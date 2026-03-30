@@ -6,8 +6,6 @@
  * DB를 source of truth로 삼으면 서비스 재시작 시 코드 재구성 없이 상태 복원 가능.
  */
 
-import type { EntityId } from "./types.js";
-
 export interface EntryFlagRecord {
   readonly prefix:    string;
   readonly versionId: string;

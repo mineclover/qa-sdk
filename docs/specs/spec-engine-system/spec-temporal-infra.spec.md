@@ -10,7 +10,7 @@ def:
   svc: spec-core
   tags: [entry-point]
   links:
-    - target: temporal-relations
+    - target: spec-architecture-system
       type: refines
 ---
 

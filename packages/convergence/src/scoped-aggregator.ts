@@ -84,7 +84,7 @@ export function aggregateByDsl(
   }
 
   return {
-    scopes: scopes.sort((a, b) => b.recordCount - a.recordCount),
+    scopes: scopes.toSorted((a, b) => b.recordCount - a.recordCount),
     branches: allBranches,
     summary: `${scopes.length}개 영역, ${records.length}건 분류`,
   };
@@ -126,7 +126,7 @@ export function aggregateByCategory(
   }
 
   return {
-    scopes: scopes.sort((a, b) => b.recordCount - a.recordCount),
+    scopes: scopes.toSorted((a, b) => b.recordCount - a.recordCount),
     branches: [],
     summary: `${scopes.length}개 category, ${records.length}건 분류`,
   };
@@ -166,7 +166,10 @@ export function aggregateByService(
                 try {
                   const result = decodePrefixAsResult(catalog, prefixId, version, Number(addr));
                   const svcRefLabel = Object.keys(prefix.dims).find(
-                    l => prefix.dims[l].kind === "prefix_ref" && (prefix.dims[l] as any).prefixId === "service",
+                    l => {
+                      const d = prefix.dims[l];
+                      return d.kind === "prefix_ref" && d.prefixId === "service";
+                    },
                   );
                   if (svcRefLabel && result.dims[svcRefLabel]?.kind === "prefix_ref") {
                     svcKey = `svc:${result.dims[svcRefLabel].value}`;
@@ -197,7 +200,7 @@ export function aggregateByService(
   }
 
   return {
-    scopes: scopes.sort((a, b) => b.recordCount - a.recordCount),
+    scopes: scopes.toSorted((a, b) => b.recordCount - a.recordCount),
     branches: [],
     summary: `${scopes.length}개 서비스, ${records.length}건 분류`,
   };
@@ -215,7 +218,7 @@ const BRANCH_AXES = new Set([
   "http_method", "resource_type",
 ]);
 
-function extractBranches(entryUsages: readonly EntryUsage[], total: number): BranchDistribution[] {
+function extractBranches(entryUsages: readonly EntryUsage[], _total: number): BranchDistribution[] {
   const grouped = new Map<string, { entry: string; count: number }[]>();
 
   for (const u of entryUsages) {
@@ -231,8 +234,8 @@ function extractBranches(entryUsages: readonly EntryUsage[], total: number): Bra
       axisId,
       total: axisTotal,
       entries: entries
-        .sort((a, b) => b.count - a.count)
-        .map(e => ({ ...e, pct: axisTotal > 0 ? (e.count / axisTotal) * 100 : 0 })),
+        .toSorted((a, b) => b.count - a.count)
+        .map(e => Object.assign({}, e, { pct: axisTotal > 0 ? (e.count / axisTotal) * 100 : 0 })),
     };
   });
 }

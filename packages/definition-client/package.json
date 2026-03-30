@@ -19,6 +19,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@qa-sdk/core": "workspace:*",
     "definition-catalog": "workspace:*"
   },
   "peerDependencies": {

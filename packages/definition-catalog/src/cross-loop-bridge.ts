@@ -5,7 +5,7 @@
  * 시스템 전체의 피드백이 끊어진다. 이 모듈이 그 연결 조직.
  *
  * 연결:
- *   ③→② Gate complete → Harness "verified" 전이
+ *   ③→② Gate complete → Harness convention-compliance 전이
  *   ②→⑤ Harness 상태 → Decision 컨텍스트 enrichment
  *   ⑤→⑥ Decision verdict → Definition lifecycle 제안
  */

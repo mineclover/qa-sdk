@@ -5,10 +5,14 @@
  */
 
 import type {
+  DefBoundaryContextResult,
+  DefBoundaryResult,
   DefDataSource,
   DefDoc,
+  DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefSyntheticIncomingLink,
   DefValidationResult,
 } from "definition-catalog";
 
@@ -60,9 +64,35 @@ export class ServerDataSource implements DefDataSource {
     return result.links;
   }
 
+  async getSyntheticIncomingLinks(_docId: string): Promise<DefSyntheticIncomingLink[]> {
+    return [];
+  }
+
   async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
     const result = await this.fetchJson<{ links: { target: string; type: string }[] }>(`/docs/${docId}/outgoing-links`);
     return result.links;
+  }
+
+  async getFeedbackRequestsByDocId(
+    _docId: string,
+    _limit = 10,
+  ): Promise<DefFeedbackRequestSummary[]> {
+    return [];
+  }
+
+  async getBoundary(
+    docId: string,
+    level: "purpose" | "overview" = "overview",
+  ): Promise<DefBoundaryResult | null> {
+    return this.fetchJson<DefBoundaryResult>(`/docs/${docId}/boundary?level=${level}`);
+  }
+
+  async getBoundaryContext(
+    docId: string,
+    level: "purpose" | "overview" = "overview",
+    mode: "direct" | "transitive" = "transitive",
+  ): Promise<DefBoundaryContextResult | null> {
+    return this.fetchJson<DefBoundaryContextResult>(`/graph/${docId}/boundary-context?level=${level}&mode=${mode}`);
   }
 
   async validate(): Promise<DefValidationResult> {

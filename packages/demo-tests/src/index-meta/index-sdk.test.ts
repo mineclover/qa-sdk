@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createIndexSDK, RESERVED_TOKENS } from "index-meta";
-import { MetaCodec } from "index-meta";
-import { DimNotFoundError, EntryNotFoundError, ValidationError } from "index-meta";
+import {
+  createIndexSDK,
+  RESERVED_TOKENS,
+  MetaCodec,
+  DimNotFoundError,
+  EntryNotFoundError,
+  ValidationError,
+} from "index-meta";
 import { AXIS } from "demo-snapshot";
 
 // ── 픽스처 ──────────────────────────────────────────────────────────────────
@@ -1005,7 +1010,7 @@ describe("VersionedValue 와이어 포맷: { indexId, versionId, value }", () =>
     expect(vv.value).toBeLessThan(tracking.size);
 
     // 추가 필드 없음 (순수 3-field 구조)
-    expect(Object.keys(vv).sort()).toEqual(["indexId", "value", "versionId"]);
+    expect(Object.keys(vv).toSorted()).toEqual(["indexId", "value", "versionId"]);
   });
 
   it("JSON.stringify / JSON.parse round-trip이 가능하다", () => {
@@ -1250,7 +1255,7 @@ describe("상수 기반 워크플로: constants → encode → decode", () => {
     const tracking = sdk.client("tracking", "v1");
     const ACTION = tracking.constants("action");
 
-    expect(Object.keys(ACTION).sort()).toEqual(["click", "scroll", "submit", "view"]);
+    expect(Object.keys(ACTION).toSorted()).toEqual(["click", "scroll", "submit", "view"]);
   });
 });
 

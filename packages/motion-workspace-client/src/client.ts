@@ -1,5 +1,4 @@
-import type { MotionEditorCommand } from "motion-content";
-import type { MotionSceneDef } from "motion-content";
+import type { MotionEditorCommand, MotionSceneDef } from "motion-content";
 import type { MotionWorkspaceSnapshot } from "motion-workspace";
 import type {
   MotionWorkspaceApplyRequest,

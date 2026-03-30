@@ -1,4 +1,23 @@
+---
+def:
+  id: msa-architecture
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [cross-scope, observability, runtime]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # MSA 구성도 + 백업 시나리오
+
+## 목적 ^purpose
+
+마이크로서비스 토폴로지, 패턴 분류(인코딩→수집→분석→제공), 전이 엔진 구조를 설명한다.
+
 
 > Phase 6 멀티 카탈로그 런타임 반영
 > Created: 2026-03-21

@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: query-service
-  tags: []
+  tags: [structural, query, runtime]
   links:
     - target: wi-api
       type: depends_on

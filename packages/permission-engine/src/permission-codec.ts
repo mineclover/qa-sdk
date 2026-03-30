@@ -29,7 +29,6 @@ import {
   parsePermCode,
   type PermissionCode,
 } from "./permission-code.js";
-import type { ServiceContext } from "./service-ref.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

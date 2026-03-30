@@ -8,11 +8,11 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [runtime, observability, structural]
   links:
-    - target: convergence-layer-spec
+    - target: convergence-layer-group
       type: refines
-    - target: spec-engine-phases
+    - target: spec-phases-group
       type: refines
 ---
 

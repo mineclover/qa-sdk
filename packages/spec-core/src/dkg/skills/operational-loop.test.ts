@@ -215,7 +215,7 @@ describe("Operational Loop — 3일 운영 시뮬레이션", () => {
     console.log("\n══ 3일 히스토리 ══");
     console.log(`  스냅샷 ${snapshots.length}개 누적\n`);
 
-    for (const snap of snapshots.reverse()) {
+    for (const snap of snapshots.toReversed()) {
       const skews = analyzeDeploymentSkew(snap.versionUsages);
       const critical = skews.filter(s => s.severity === "critical");
       const versions = snap.versionUsages.map(v => `${v.prefix}:${v.version}(${v.count})`);

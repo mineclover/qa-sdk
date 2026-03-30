@@ -331,19 +331,19 @@ describe("복합 필터 질의", () => {
   it("entry-point 태그 문서 조회", () => {
     const entryPoints = reg.query({ tags: ["entry-point"] });
     expect(entryPoints.length).toBe(2);
-    expect(entryPoints.map(e => e.id).sort()).toEqual(["coord-foundation", "system-overview"]);
+    expect(entryPoints.map(e => e.id).toSorted()).toEqual(["coord-foundation", "system-overview"]);
   });
 
   it("decision 태그 문서 조회", () => {
     const decisions = reg.query({ tags: ["decision"] });
     expect(decisions.length).toBe(2);
-    expect(decisions.map(e => e.id).sort()).toEqual(["adrs", "decision-flow-spec"]);
+    expect(decisions.map(e => e.id).toSorted()).toEqual(["adrs", "decision-flow-spec"]);
   });
 
   it("observability 태그 문서 조회", () => {
     const obs = reg.query({ tags: ["observability"] });
     expect(obs.length).toBe(2);
-    expect(obs.map(e => e.id).sort()).toEqual(["apm-pipeline", "dkg-spec"]);
+    expect(obs.map(e => e.id).toSorted()).toEqual(["apm-pipeline", "dkg-spec"]);
   });
 });
 
@@ -364,7 +364,7 @@ describe("관계 그래프 질의", () => {
     const incoming = reg.getLinks("coord-foundation", "incoming");
     const impls = incoming.filter(l => l.linkType === "implements");
     expect(impls.length).toBe(3);
-    expect(impls.map(l => l.sourceId).sort()).toEqual([
+    expect(impls.map(l => l.sourceId).toSorted()).toEqual([
       "coord-query-spec", "gate-engine-spec", "weighted-index-spec",
     ]);
   });
@@ -373,14 +373,14 @@ describe("관계 그래프 질의", () => {
     const incoming = reg.getLinks("record-spec", "incoming");
     const deps = incoming.filter(l => l.linkType === "depends_on");
     expect(deps.length).toBe(2);
-    expect(deps.map(l => l.sourceId).sort()).toEqual(["ingest-api-spec", "query-api-spec"]);
+    expect(deps.map(l => l.sourceId).toSorted()).toEqual(["ingest-api-spec", "query-api-spec"]);
   });
 
   it("conventions가 제약하는 문서 2건", () => {
     const outgoing = reg.getLinks("conventions", "outgoing");
     const constraining = outgoing.filter(l => l.linkType === "constrains");
     expect(constraining.length).toBe(2);
-    expect(constraining.map(l => l.targetId).sort()).toEqual(["gate-service-spec", "ingest-api-spec"]);
+    expect(constraining.map(l => l.targetId).toSorted()).toEqual(["gate-service-spec", "ingest-api-spec"]);
   });
 
   it("traces_to 관계는 1건 (auto-capture → conventions)", () => {

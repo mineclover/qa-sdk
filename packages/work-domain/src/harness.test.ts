@@ -170,7 +170,7 @@ describe("deriveGateKinds", () => {
 
 function createMockGraph(): DocGraphPort {
   const docs: Record<string, DocNode> = {
-    "my-unit": { id: "my-unit", level: "unit", scope: "flow", aspect: "process_flow", depth: "overview" },
+    "my-unit": { id: "my-unit", level: "module", scope: "flow", aspect: "process_flow", depth: "overview" },
     "my-contract": { id: "my-contract", level: "leaf", scope: "interface", aspect: "api_contract", depth: "specification" },
     "my-constraint": { id: "my-constraint", level: "leaf", scope: "constraint", aspect: "tech_constraint", depth: "specification", tags: ["security"] },
     "my-feature": { id: "my-feature", level: "leaf", scope: "feature", aspect: "func_def", depth: "specification" },
@@ -195,7 +195,7 @@ describe("buildHarnessPlan", () => {
   it("anchor에서 하위 문서를 수집한다", () => {
     const plan = buildHarnessPlan("my-unit", graph);
     expect(plan.anchorId).toBe("my-unit");
-    expect(plan.anchorLevel).toBe("unit");
+    expect(plan.anchorLevel).toBe("module");
     expect(plan.totalDocs).toBe(3);
   });
 

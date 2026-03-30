@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [decision, versioning, runtime]
   links:
     - target: dkg-skill-catalog
       type: depends_on
@@ -18,6 +18,13 @@ def:
       type: depends_on
 ---
 # VersionEvent.fromDiff — 버전 이벤트 자동 파생
+
+
+## 탐색 ^navigation
+
+dkg-system > dkg-skills-system > **dkg-skill-version-event**
+
+형제: `dkg-skill-cascade` · `dkg-skill-migrator` · `dkg-skill-decision` · `dkg-skill-catalog`
 
 ## 목적 ^purpose
 

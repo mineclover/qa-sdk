@@ -7,6 +7,9 @@ def:
   depth: overview
   lifecycle: approved
   tags: [domain, coordinate, indexing]
+  links:
+    - target: index-meta-system
+      type: refines
 ---
 # address-index
 

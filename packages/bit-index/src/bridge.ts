@@ -23,7 +23,6 @@
 
 import { WeightedIndex } from "weighted-index";
 import { BitIndex, BitIndexBig } from "./bit-index.js";
-import { ShapeError } from "weighted-index";
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  IndexBridge

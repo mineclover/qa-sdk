@@ -1,4 +1,23 @@
+---
+def:
+  id: realization-pipeline
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  tags: [observability, runtime, performance]
+  links:
+    - target: system-narrative
+      type: refines
+---
 # Realization Plan: 파이프라인 실체화
+
+## 목적 ^purpose
+
+수집 파이프라인 실현 계획. Phase 1(기본 수집)→Phase 2(verdict/활성화) 단계를 기술한다.
+
 
 > Status: **completed**
 > DKG-Ref: OBS-MANUAL-service-mmz1ay93, OBS-MANUAL-service-mmz1n7ak, OBS-MANUAL-dsl-dev-mmzwyfbc, DEC-CAPACITY-dsl-dev-mmzyw4go
@@ -27,7 +46,7 @@
 ```
 dkg self-check [--apply]
   │
-  ├── 빌드/테스트 실행 (12개 패키지, execSync)
+  ├── 빌드/테스트 실행 (12개 패키지, execa)
   │
   ├── 좌표 인코딩 (encodePrefixByValue → build_event/test_event)
   │

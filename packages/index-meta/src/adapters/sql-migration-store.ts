@@ -117,8 +117,8 @@ export class SqlMigrationStore implements MigrationStore {
     let foundChange = false;
 
     for (let index = 0; index < path.length - 1; index++) {
-      const currentVersion = path[index]!;
-      const nextVersion = path[index + 1]!;
+      const currentVersion = path[index];
+      const nextVersion = path[index + 1];
       const row = await this.driver.queryOne<MigrationMappingRow>(
         `SELECT prefix, from_version_id, to_version_id, position, change_type, old_entity_id, new_entity_id, created_at
          FROM migration_mapping
@@ -179,6 +179,7 @@ export class SqlMigrationStore implements MigrationStore {
     const previous = new Map<string, string | null>([[fromVersionId, null]]);
 
     while (queue.length > 0) {
+      // eslint-disable-next-line typescript/no-non-null-assertion -- while 조건이 queue.length > 0 보장
       const current = queue.shift()!;
       for (const edge of adjacency.get(current) ?? []) {
         if (previous.has(edge.toVersionId)) continue;
@@ -215,5 +216,5 @@ function reconstructPath(previous: Map<string, string | null>, target: string): 
     current = previous.get(current) ?? null;
   }
 
-  return path.reverse();
+  return path.toReversed();
 }

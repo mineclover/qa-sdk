@@ -17,6 +17,7 @@
     "@nestjs/mercurius": "^13.2.4",
     "@nestjs/platform-fastify": "^11.0.0",
     "@qa-sdk/core": "workspace:*",
+    "@qa-sdk/logger": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "drizzle-orm": "1.0.0-beta.20",
     "definition-catalog": "workspace:*",
@@ -24,6 +25,7 @@
     "mercurius": "^16.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "work-domain": "workspace:*",
     "zod": "^3.24.2"
   },
   "devDependencies": {

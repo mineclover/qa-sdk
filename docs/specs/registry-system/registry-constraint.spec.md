@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: registry-service
-  tags: []
+  tags: [structural, runtime, observability]
   links:
     - target: registry-api
       type: constrains

@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { SpecCollector, generateReport, specIt } from "spec-tracker";
 import { AppError, ServiceClientError } from "./lib/app-error.js";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const collector = new SpecCollector();
@@ -135,8 +135,6 @@ describe("에러 처리 공통 컨벤션 (error-handling-convention)", () => {
 
 function findTsFiles(dir: string, acc: string[] = []): string[] {
   try {
-    const { readdirSync } = require("node:fs");
-    const { join } = require("node:path");
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
       const full = join(dir, entry.name);

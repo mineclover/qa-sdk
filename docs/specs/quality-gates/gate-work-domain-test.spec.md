@@ -24,6 +24,13 @@ gate:
 ---
 # Work Domain Test Gate
 
+
+## 탐색 ^navigation
+
+quality-gates-system > work-domain-quality-bundle > **gate-work-domain-test**
+
+형제: `work-domain-quality-contract` · `gate-work-domain-typecheck` · `gate-work-domain-build`
+
 ## 목적 ^purpose
 
 `work-domain` 패키지의 registry, mapping, classification, gate-kind 로직이 테스트 수준에서 유지되는지 확인하는 단위 테스트 게이트.

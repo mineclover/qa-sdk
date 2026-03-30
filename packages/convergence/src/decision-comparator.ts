@@ -90,7 +90,7 @@ function isContradictory(a: DecisionNode, b: DecisionNode): boolean {
  * 전체 활성 Decision에서 충돌/중복 쌍을 찾는다.
  */
 export function scanDecisionConflicts(graph: GraphPort): DecisionConflict[] {
-  const decisions = graph.findNodes("decision", d => d.lifecycle === "active");
+  const decisions = graph.findNodes("decision", d => (d as DecisionNode).lifecycle === "active");
   const results: DecisionConflict[] = [];
 
   for (let i = 0; i < decisions.length; i++) {

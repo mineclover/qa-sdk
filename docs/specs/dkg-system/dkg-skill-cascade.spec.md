@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: spec-core
-  tags: []
+  tags: [decision, observability, runtime]
   links:
     - target: dkg-skill-catalog
       type: depends_on
@@ -18,6 +18,13 @@ def:
       type: depends_on
 ---
 # analyzeImpact — 종단 Cascade
+
+
+## 탐색 ^navigation
+
+dkg-system > dkg-skills-system > **dkg-skill-cascade**
+
+형제: `dkg-skill-migrator` · `dkg-skill-version-event` · `dkg-skill-decision` · `dkg-skill-catalog`
 
 ## 목적 ^purpose
 

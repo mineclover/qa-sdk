@@ -1,5 +1,4 @@
-import type { ScenarioSpecStore } from "@qa-sdk/core";
-import type { ScenarioSpec } from "@qa-sdk/core";
+import type { ScenarioSpecStore, ScenarioSpec } from "@qa-sdk/core";
 
 /** ScenarioSpecStore의 in-memory 구현 */
 export class InMemoryScenarioSpecStore implements ScenarioSpecStore {

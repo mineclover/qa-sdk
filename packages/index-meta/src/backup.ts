@@ -74,7 +74,7 @@ export async function exportVersion(
     prefix,
     versionId,
     capacity: record.capacity,
-    ...(record.refs ? { refs: record.refs.map((ref) => ({ ...ref })) } : {}),
+    ...(record.refs ? { refs: record.refs.map((ref) => Object.assign({}, ref)) } : {}),
     entries,
   };
 }
@@ -118,7 +118,7 @@ export async function importVersion(
 ): Promise<void> {
   if (backup.format !== "index-meta/v1") {
     throw new ValidationError(
-      `importVersion: unknown format "${(backup as any).format}"`
+      `importVersion: unknown format "${(backup as { format: string }).format}"`
     );
   }
 

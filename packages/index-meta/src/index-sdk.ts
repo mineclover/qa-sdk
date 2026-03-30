@@ -41,9 +41,8 @@
  */
 
 import { MetaRegistry, computeActiveIndices, snapshotCapacity } from "./meta-registry.js";
-import { MetaCodec } from "./meta-codec.js";
 import { MetaResolver } from "./meta-resolver.js";
-import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet, EntryStatus } from "./types.js";
+import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet } from "./types.js";
 import { DimNotFoundError } from "./errors.js";
 
 // ── 예약 토큰 ────────────────────────────────────────────────────────────────
@@ -313,7 +312,9 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
               `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
             );
           }
+          // eslint-disable-next-line typescript/no-non-null-assertion -- dimEntriesMap 존재 확인 후 접근, 동일 루프에서 함께 구축됨
           const capInfo = dimCapacityMap.get(dimId)!;
+          // eslint-disable-next-line typescript/no-non-null-assertion -- dimEntriesMap 존재 확인 후 접근, 동일 루프에서 함께 구축됨
           const snapshotId = dimSnapshotIdMap.get(dimId)!;
 
           const positions: DimEntryView[] = [];

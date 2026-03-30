@@ -14,17 +14,16 @@ import { parseArgs } from "node:util";
 import { join } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
 import { compareTimestamps, normalizeTimestamp } from "@qa-sdk/core";
-import { SqliteInstanceStore } from "../stores/flow-sqlite-store.js";
+import { SqliteInstanceStore } from "decision-flow-store";
 import { FlowIngestEmitter } from "../stores/flow-ingest-emitter.js";
+import { getQaSdkDir } from "../lib/qa-dir.js";
 import {
   FlowEngine,
   ALL_SPRINT_FLOWS,
   ALL_DEV_DECISION_FLOWS,
   DEV_DECISION_POLICIES,
   DEV_DECISION_UNITS,
-  SPRINT_FLOW_REGISTRY,
   AUTOPLAN_POLICIES,
-  COORDINATE_DESIGN_FLOW,
   getAnnotatedDesignFlow,
   analyzeGateStructure,
   identifyCoreGates,
@@ -32,17 +31,13 @@ import {
   analyzeImpact,
   traceCorePath,
   buildFlowCompletionContext,
-  serializeObservedEvent,
-  encodeDecisionEvent,
   detectPatterns,
   diffInstances,
   gateDistribution,
   compareTimeRanges,
   createComparisonReport,
-  MemoryInstanceStore,
   PolicyCandidateWorkflow,
   type FlowSchema,
-  type GateProfile,
   type FlowInstance,
   type Evidence,
   type PolicyCandidateStatus,
@@ -51,8 +46,7 @@ import {
 
 // ─── 상태 관리 (SQLite 영속) ──────────────────────────────
 
-const FLOW_HOME = process.env.HOME ?? process.env.USERPROFILE ?? ".";
-const FLOW_STATE_DIR = join(FLOW_HOME, ".qa-sdk");
+const FLOW_STATE_DIR = getQaSdkDir();
 const FLOW_STATE_DB = join(FLOW_STATE_DIR, "decision-flow.sqlite");
 
 interface CandidateInsight {
@@ -285,6 +279,7 @@ export function flowSelect(argv: string[]) {
     const result = state.engine.selectBranch(instanceId, branchId, evidence, { confidence, durationMs });
     // 선택마다 SQLite 갱신 (active → 진행 상태 보존, completed → 최종 저장)
     state.store.save(result);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- selectBranch 성공 → schemaId 존재 보장
     const schema = state.engine.getSchema(result.schemaId)!;
 
     console.log(`\n✓ 선택: ${branchId}`);
@@ -549,6 +544,7 @@ export function flowCompare(argv: string[]) {
   });
 
   if (positionals.length >= 2) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length >= 2 → [0],[1] 존재 보장
     printPairwiseComparison(positionals[0]!, positionals[1]!);
     return;
   }
@@ -773,7 +769,7 @@ function listRegisteredPolicies(): FlowPolicy[] {
     }
   }
 
-  return [...deduped.values()].sort((a, b) =>
+  return [...deduped.values()].toSorted((a, b) =>
     a.flowId.localeCompare(b.flowId)
     || b.priority - a.priority
     || a.id.localeCompare(b.id),
@@ -823,7 +819,9 @@ function extractCandidateInsight(
 
   return {
     schemaId,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex 캡처 그룹 [1],[2] 매칭 보장
     frequency: Number.parseInt(match[1]!, 10),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- regex 캡처 그룹 [1],[2] 매칭 보장
     averageConfidence: Number.parseFloat(match[2]!),
   };
 }
@@ -1067,7 +1065,7 @@ function formatConfidence(value: number | undefined): string {
 
 function buildTestTargets(
   verdict: string,
-  changeType: string,
+  _changeType: string,
   impactScope: string,
   feature: string,
 ): import("decision-flow").TestTarget[] {
@@ -1215,7 +1213,7 @@ export function flowLookup(argv: string[]) {
   console.log(`${"ID".padEnd(42)} ${"Schema".padEnd(22)} ${"Status".padEnd(12)} 완료`);
   console.log("─".repeat(85));
 
-  const sorted = [...allInstances].sort((a, b) =>
+  const sorted = [...allInstances].toSorted((a, b) =>
     (b.completedAt ?? b.startedAt).localeCompare(a.completedAt ?? a.startedAt));
 
   for (const inst of sorted.slice(0, 20)) {

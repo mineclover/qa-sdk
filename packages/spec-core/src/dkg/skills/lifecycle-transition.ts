@@ -10,8 +10,6 @@ import type {
   DecisionNode,
   ObservationNode,
   PrefixNode,
-  DslBundleNode,
-  DkgNode,
   VersionEventNode,
 } from "../dkg.types.js";
 
@@ -44,12 +42,6 @@ const PREFIX_TRANSITIONS: Record<string, readonly string[]> = {
   active: ["deprecated"],
   deprecated: ["archived"],
   archived: [],
-};
-
-const DSL_TRANSITIONS: Record<string, readonly string[]> = {
-  draft: ["active"],
-  active: ["deprecated"],
-  deprecated: [],
 };
 
 const DECISION_TRANSITIONS: Record<string, readonly string[]> = {

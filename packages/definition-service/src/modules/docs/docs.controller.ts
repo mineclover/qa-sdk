@@ -106,6 +106,16 @@ export class DocsController {
     };
   }
 
+  @Get(":docId/boundary")
+  getBoundary(@Param("docId") docId: string, @Query("level") level?: string) {
+    const result = this.docs.getBoundary(
+      docId,
+      level === "purpose" ? "purpose" : "overview",
+    );
+    if (!result) throw new NotFoundException(`문서 ${docId} 없음`);
+    return result;
+  }
+
   // ── 단일 link/tag 원자적 추가/삭제 ────────────────────
 
   @Post(":docId/links")

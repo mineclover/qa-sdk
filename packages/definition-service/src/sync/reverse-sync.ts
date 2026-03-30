@@ -46,6 +46,7 @@ export async function syncDbToFiles(
 
     const filePath = join(rootDir, doc.sourcePath);
     const metadata: DbMetadata = {
+      level: doc.level,
       scope: doc.scope,
       aspect: doc.aspect,
       depth: doc.depth,

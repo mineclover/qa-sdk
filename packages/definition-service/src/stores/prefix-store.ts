@@ -1,4 +1,6 @@
-import type Database from "better-sqlite3";
+import type { DefinitionServiceDatabase } from "../database.module.js";
+import { prefixRegistry } from "../db/schema.js";
+import { eq, asc, type SQL } from "drizzle-orm";
 
 /** prefix 레지스트리 레코드 */
 export interface PrefixRecord {
@@ -24,81 +26,100 @@ export interface PrefixStore {
   remove(prefixId: string): boolean;
 }
 
-function rowToRecord(row: Record<string, unknown>): PrefixRecord {
+/** Drizzle select 결과 → PrefixRecord 변환 */
+type PrefixRow = typeof prefixRegistry.$inferSelect;
+
+function rowToRecord(row: PrefixRow): PrefixRecord {
   return {
-    prefixId: row["prefix_id"] as string,
-    name: row["name"] as string,
-    description: (row["description"] as string) || undefined,
-    category: (row["category"] as string) || undefined,
-    labels: JSON.parse((row["labels_json"] as string) || "[]"),
-    dims: JSON.parse((row["dims_json"] as string) || "{}"),
-    versions: JSON.parse((row["versions_json"] as string) || "[]"),
-    meta: JSON.parse((row["meta_json"] as string) || "{}"),
-    depPrefixIds: JSON.parse((row["dep_prefix_ids"] as string) || "[]"),
-    version: row["version"] as number,
-    registeredAt: row["registered_at"] as string,
-    updatedAt: row["updated_at"] as string,
+    prefixId: row.prefixId,
+    name: row.name,
+    description: row.description || undefined,
+    category: row.category || undefined,
+    labels: row.labelsJson,
+    dims: row.dimsJson,
+    versions: row.versionsJson,
+    meta: row.metaJson,
+    depPrefixIds: row.depPrefixIds,
+    version: row.version,
+    registeredAt: row.registeredAt,
+    updatedAt: row.updatedAt,
   };
 }
 
 export class SqlPrefixStore implements PrefixStore {
-  private readonly stmtGet;
-  private readonly stmtUpsert;
-  private readonly stmtDelete;
-
-  constructor(private readonly db: Database.Database) {
-    this.stmtGet = db.prepare("SELECT * FROM prefix_registry WHERE prefix_id = ?");
-    this.stmtUpsert = db.prepare(`
-      INSERT INTO prefix_registry (prefix_id, name, description, category, labels_json, dims_json, versions_json, meta_json, dep_prefix_ids, version, registered_at, updated_at)
-      VALUES (@prefix_id, @name, @description, @category, @labels_json, @dims_json, @versions_json, @meta_json, @dep_prefix_ids, @version, @registered_at, @updated_at)
-      ON CONFLICT(prefix_id) DO UPDATE SET
-        name=@name, description=@description, category=@category,
-        labels_json=@labels_json, dims_json=@dims_json, versions_json=@versions_json,
-        meta_json=@meta_json, dep_prefix_ids=@dep_prefix_ids,
-        version=version+1, updated_at=@updated_at
-    `);
-    this.stmtDelete = db.prepare("DELETE FROM prefix_registry WHERE prefix_id = ?");
-  }
+  constructor(private readonly db: DefinitionServiceDatabase) {}
 
   upsert(record: PrefixRecord): { action: "created" | "updated" | "unchanged" } {
     const existing = this.get(record.prefixId);
     const now = new Date().toISOString();
 
-    this.stmtUpsert.run({
-      prefix_id: record.prefixId,
+    const values = {
+      prefixId: record.prefixId,
       name: record.name,
       description: record.description ?? null,
       category: record.category ?? null,
-      labels_json: JSON.stringify(record.labels),
-      dims_json: JSON.stringify(record.dims),
-      versions_json: JSON.stringify(record.versions),
-      meta_json: JSON.stringify(record.meta),
-      dep_prefix_ids: JSON.stringify(record.depPrefixIds),
+      labelsJson: record.labels,
+      dimsJson: record.dims,
+      versionsJson: record.versions,
+      metaJson: record.meta,
+      depPrefixIds: record.depPrefixIds,
       version: existing ? existing.version + 1 : 1,
-      registered_at: existing?.registeredAt ?? now,
-      updated_at: now,
-    });
+      registeredAt: existing?.registeredAt ?? now,
+      updatedAt: now,
+    };
+
+    this.db
+      .insert(prefixRegistry)
+      .values(values)
+      .onConflictDoUpdate({
+        target: prefixRegistry.prefixId,
+        set: {
+          name: values.name,
+          description: values.description,
+          category: values.category,
+          labelsJson: values.labelsJson,
+          dimsJson: values.dimsJson,
+          versionsJson: values.versionsJson,
+          metaJson: values.metaJson,
+          depPrefixIds: values.depPrefixIds,
+          version: values.version,
+          updatedAt: values.updatedAt,
+        },
+      })
+      .run();
 
     return { action: existing ? "updated" : "created" };
   }
 
   get(prefixId: string): PrefixRecord | null {
-    const row = this.stmtGet.get(prefixId) as Record<string, unknown> | undefined;
+    const row = this.db
+      .select()
+      .from(prefixRegistry)
+      .where(eq(prefixRegistry.prefixId, prefixId))
+      .get();
     return row ? rowToRecord(row) : null;
   }
 
   list(filter?: { category?: string }): PrefixRecord[] {
-    let sql = "SELECT * FROM prefix_registry";
-    const params: unknown[] = [];
+    const conditions: SQL[] = [];
     if (filter?.category) {
-      sql += " WHERE category = ?";
-      params.push(filter.category);
+      conditions.push(eq(prefixRegistry.category, filter.category));
     }
-    sql += " ORDER BY prefix_id";
-    return (this.db.prepare(sql).all(...params) as Record<string, unknown>[]).map(rowToRecord);
+
+    return this.db
+      .select()
+      .from(prefixRegistry)
+      .where(conditions.length > 0 ? conditions[0] : undefined)
+      .orderBy(asc(prefixRegistry.prefixId))
+      .all()
+      .map(rowToRecord);
   }
 
   remove(prefixId: string): boolean {
-    return this.stmtDelete.run(prefixId).changes > 0;
+    const result = this.db
+      .delete(prefixRegistry)
+      .where(eq(prefixRegistry.prefixId, prefixId))
+      .run();
+    return result.changes > 0;
   }
 }

@@ -11,13 +11,9 @@ import type { ServiceTopologyRegistry } from "../service-topology.js";
 import type {
   DkgNodeKind,
   DkgNode,
-  PrefixNode,
-  AxisNode,
-  DslBundleNode,
   DecisionNode,
   ObservationNode,
   ConstraintNode,
-  DomainNode,
   ObservationSuggestion,
 } from "../dkg.types.js";
 
@@ -248,7 +244,7 @@ export function traceNode(
     const c = graph.cascadeFromPrefix(nodeId);
     cascade = {
       domains: c.domains.map(d => d.id),
-      consumers: c.consumers.map(c => c.id),
+      consumers: c.consumers.map(cn => cn.id),
     };
   } else if (node.kind === "axis") {
     const affected = graph.cascadeFromAxis(nodeId);

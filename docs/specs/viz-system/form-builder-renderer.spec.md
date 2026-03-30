@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: experience
   svc: platform-demo
-  tags: []
+  tags: [frontend, runtime, structural]
   links:
-    - target: form-builder-spec
+    - target: viz-roleplay-system
       type: refines
 ---
 

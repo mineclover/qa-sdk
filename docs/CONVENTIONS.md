@@ -1,4 +1,23 @@
+---
+def:
+  id: coding-conventions
+  type: knowledge
+  knowledge_kind: convention
+  scope: constraint
+  aspect: tech_constraint
+  depth: overview
+  lifecycle: approved
+  tags: [entry-point, structural, cross-scope]
+  links:
+    - target: guides-system
+      type: refines
+---
 # QA-SDK 개발 컨벤션
+
+## 목적 ^purpose
+
+QA-SDK 모노레포 전체에 적용되는 용어집, DimRef 3종, ColumnRef, 좌표 컨벤션, 환경변수 규칙을 통합 정리한다.
+
 
 ## 시스템 목적
 
@@ -784,3 +803,12 @@ const stored = await catalogStore.get("demo");
 if (stored?.hash === currentHash) return; // 변경 없음
 await catalogStore.upsert({ id: "demo", data: catalog, hash: currentHash });
 ```
+
+---
+
+## 다음 읽기
+
+- 실습: `docs/getting-started.md` — 환경 설정 + 첫 이벤트 전송
+- 서비스 구조: `docs/msa-architecture.md` — 서비스 토폴로지
+- 설계 결정: `docs/architecture-decisions.md` — ADR-001~009
+- 상세 스펙: `docs/specs/README.md` — 관심사별 인덱스

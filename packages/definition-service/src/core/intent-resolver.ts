@@ -37,5 +37,5 @@ export function resolveMatchingIntents(
       const slice = JSON.parse(intent.sliceJson) as Record<string, string>;
       return sliceContains(slice, address);
     })
-    .sort((a, b) => a.sliceDepth - b.sliceDepth);
+    .toSorted((a, b) => a.sliceDepth - b.sliceDepth);
 }

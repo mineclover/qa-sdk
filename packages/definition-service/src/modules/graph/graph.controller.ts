@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Inject, Param, NotFoundException } from "@nestjs/common";
+import { Controller, Get, Post, Inject, Param, NotFoundException, Query } from "@nestjs/common";
 import { GraphService } from "./graph.service.js";
 
 @Controller("graph")
@@ -15,6 +15,21 @@ export class GraphController {
   @Get(":docId/concerns")
   concerns(@Param("docId") docId: string) {
     const result = this.graph.concerns(docId);
+    if (!result) throw new NotFoundException(`문서 ${docId} 없음`);
+    return result;
+  }
+
+  @Get(":docId/boundary-context")
+  boundaryContext(
+    @Param("docId") docId: string,
+    @Query("level") level?: string,
+    @Query("mode") mode?: string,
+  ) {
+    const result = this.graph.boundaryContext(
+      docId,
+      level === "purpose" ? "purpose" : "overview",
+      mode === "direct" ? "direct" : "transitive",
+    );
     if (!result) throw new NotFoundException(`문서 ${docId} 없음`);
     return result;
   }

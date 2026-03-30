@@ -1,4 +1,4 @@
-import type { DomNode } from "./dom-tree.js";
+import type { DomNode } from './dom-tree.js';
 
 export interface TreeView {
   render(): void;
@@ -22,11 +22,11 @@ export function createTreeView(
   }
 
   function renderNode(node: DomNode, depth: number): HTMLElement {
-    const row = document.createElement("div");
-    row.className = "tree-row";
+    const row = document.createElement('div');
+    row.className = 'tree-row';
     row.dataset.nodeId = node.id;
     if (node.id === selectedId) {
-      row.classList.add("tree-row--selected");
+      row.classList.add('tree-row--selected');
     }
 
     row.style.paddingLeft = `${depth * 16 + 4}px`;
@@ -35,11 +35,11 @@ export function createTreeView(
     const isExpanded = expandedSet.has(node.id);
 
     // Expand/collapse arrow
-    const arrow = document.createElement("span");
-    arrow.className = "tree-arrow";
+    const arrow = document.createElement('span');
+    arrow.className = 'tree-arrow';
     if (hasChildren) {
-      arrow.textContent = isExpanded ? "\u25BE" : "\u25B8";
-      arrow.addEventListener("click", (e) => {
+      arrow.textContent = isExpanded ? '\u25BE' : '\u25B8';
+      arrow.addEventListener('click', (e) => {
         e.stopPropagation();
         if (expandedSet.has(node.id)) {
           expandedSet.delete(node.id);
@@ -49,28 +49,26 @@ export function createTreeView(
         renderTree();
       });
     } else {
-      arrow.textContent = " ";
+      arrow.textContent = ' ';
     }
 
     // Tag label
-    const label = document.createElement("span");
-    label.className = "tree-tag";
+    const label = document.createElement('span');
+    label.className = 'tree-tag';
     const attrStr = formatAttrs(node);
-    const text = node.textContent
-      ? ` "${truncate(node.textContent, 20)}"`
-      : "";
+    const text = node.textContent ? ` "${truncate(node.textContent, 20)}"` : '';
     label.innerHTML = `<span class="tree-bracket">&lt;</span><span class="tree-tagname">${node.tag}</span>${attrStr}<span class="tree-bracket">&gt;</span><span class="tree-text">${escapeHtml(text)}</span>`;
 
     row.appendChild(arrow);
     row.appendChild(label);
 
-    row.addEventListener("click", () => {
+    row.addEventListener('click', () => {
       selectedId = node.id;
       onSelect(node);
       renderTree();
     });
 
-    const fragment = document.createElement("div");
+    const fragment = document.createElement('div');
     fragment.appendChild(row);
 
     if (hasChildren && isExpanded) {
@@ -78,8 +76,8 @@ export function createTreeView(
         fragment.appendChild(renderNode(child, depth + 1));
       }
       // Closing tag
-      const closing = document.createElement("div");
-      closing.className = "tree-row tree-closing";
+      const closing = document.createElement('div');
+      closing.className = 'tree-row tree-closing';
       closing.style.paddingLeft = `${depth * 16 + 4}px`;
       closing.innerHTML = `<span class="tree-arrow"> </span><span class="tree-tag"><span class="tree-bracket">&lt;/</span><span class="tree-tagname">${node.tag}</span><span class="tree-bracket">&gt;</span></span>`;
       fragment.appendChild(closing);
@@ -89,19 +87,19 @@ export function createTreeView(
   }
 
   function renderTree(): void {
-    container.innerHTML = "";
+    container.innerHTML = '';
     container.appendChild(renderNode(currentRoot, 0));
   }
 
   function formatAttrs(node: DomNode): string {
     const entries = Object.entries(node.attributes);
-    if (entries.length === 0) return "";
+    if (entries.length === 0) return '';
     return entries
       .map(
         ([k, v]) =>
           ` <span class="tree-attrname">${escapeHtml(k)}</span>=<span class="tree-attrval">"${escapeHtml(v)}"</span>`,
       )
-      .join("");
+      .join('');
   }
 
   return {
@@ -109,8 +107,8 @@ export function createTreeView(
       renderTree();
     },
 
-    update(root: DomNode): void {
-      currentRoot = root;
+    update(newRoot: DomNode): void {
+      currentRoot = newRoot;
       renderTree();
     },
 
@@ -122,16 +120,16 @@ export function createTreeView(
 }
 
 function truncate(str: string, len: number): string {
-  return str.length > len ? str.slice(0, len) + "..." : str;
+  return str.length > len ? str.slice(0, len) + '...' : str;
 }
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
   };
   return text.replace(/[&<>"']/g, (ch) => map[ch] ?? ch);
 }

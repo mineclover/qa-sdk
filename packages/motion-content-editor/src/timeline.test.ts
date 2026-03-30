@@ -74,14 +74,12 @@ function createOverlappingSceneComposition() {
         title: "Scene B",
         startMs: 1800,
         durationMs: 2600,
-        sequences: mainScene.sequences.map((sequence) => ({
-          ...sequence,
-          id: `scene-b-${sequence.id}`,
-        })),
-        captions: mainScene.captions.map((caption) => ({
-          ...caption,
-          id: `scene-b-${caption.id}`,
-        })),
+        sequences: mainScene.sequences.map((sequence) =>
+          Object.assign({}, sequence, { id: `scene-b-${sequence.id}` }),
+        ),
+        captions: mainScene.captions.map((caption) =>
+          Object.assign({}, caption, { id: `scene-b-${caption.id}` }),
+        ),
       },
     ],
   };

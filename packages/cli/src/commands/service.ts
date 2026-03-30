@@ -1,16 +1,15 @@
 /**
- * qa-sdk service — 서비스 토폴로지 조회 CLI.
+ * qa-sdk service — 서비스 토폴로지 조회 + 환경 프로필 관리 CLI.
  *
- * registry-service의 /api/services API에서 서비스 목록을 조회한다.
- * prefix는 비즈니스 도메인의 좌표 공간이며 특정 서비스의 배타적 소유가 아님.
- * ownedPrefixes = 주로 produce하는 prefix (Projection 배치 기준).
+ * 서비스 URL은 ~/.qa-sdk/service-profile.json에서 중앙 관리한다.
+ * `qa-sdk service mode local|staging|prod`로 전환하면 모든 CLI 명령의 URL이 함께 변경된다.
  */
 
-const ENV_PRESETS: Record<string, string> = {
-  dev: "http://localhost:3300",
-  staging: "https://registry.staging.qa-sdk.io",
-  prod: "https://registry.qa-sdk.io",
-};
+import {
+  loadProfile, saveProfile, getServiceUrl, getProfilePath,
+  PROFILE_PRESETS, SERVICE_IDS,
+  type ServiceProfile, type ServiceMode,
+} from "../lib/service-profile.js";
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -18,11 +17,8 @@ function errorMessage(err: unknown): string {
 
 function getRegistryUrl(args: string[]): string {
   const idx = args.indexOf("--registry");
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
-  if (process.env.QA_REGISTRY_URL) return process.env.QA_REGISTRY_URL;
-  const envIdx = args.indexOf("--env");
-  const env = envIdx !== -1 && args[envIdx + 1] ? args[envIdx + 1] : process.env.QA_ENV ?? "dev";
-  return ENV_PRESETS[env] ?? ENV_PRESETS.dev;
+  const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
+  return getServiceUrl("registry-service", override);
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -123,7 +119,7 @@ export async function serviceOwners(args: string[]): Promise<void> {
       return;
     }
 
-    const sorted = Object.entries(owners).sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
+    const sorted = Object.entries(owners).toSorted((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
 
     console.log(`\n══ Prefix Owners (${sorted.length}) ══`);
     let lastSvc = "";
@@ -182,12 +178,78 @@ export async function serviceHealth(args: string[]): Promise<void> {
     if (data.down > 0) {
       console.log(`\n  ⚠ ${data.down}개 서비스 다운`);
     }
-  } catch (err: unknown) {
-    // fallback: registry 자체가 죽으면 직접 호출
-    console.error(`  registry 헬스체크 API 실패: ${errorMessage(err)}`);
-    console.log(`  URL: ${registryUrl}/api/health/services?env=${env}`);
-    console.log(`  registry-service가 실행 중인지 확인하세요.`);
+  } catch {
+    // fallback: registry 없이 직접 health check
+    console.log(`  registry 미응답 — 각 서비스 직접 체크\n`);
+    await directHealthCheck(json);
   }
+}
+
+// ── health-all (직접 health check) ───────────────
+
+const SERVICE_PORTS: Array<{ id: string; port: number; tier: string }> = [
+  { id: "ingest-server", port: 3200, tier: "backend" },
+  { id: "registry-service", port: 3300, tier: "infra" },
+  { id: "gate-service", port: 3400, tier: "backend" },
+  { id: "query-service", port: 3500, tier: "backend" },
+  { id: "decode-service", port: 3600, tier: "backend" },
+  { id: "definition-service", port: 3700, tier: "system" },
+  { id: "motion-workspace", port: 3710, tier: "system" },
+  { id: "decision-service", port: 3800, tier: "system" },
+];
+
+async function directHealthCheck(json: boolean): Promise<void> {
+  const results: Array<{ id: string; port: number; tier: string; status: string; latencyMs: number; version?: string; error?: string }> = [];
+
+  await Promise.all(SERVICE_PORTS.map(async (svc) => {
+    const url = `http://localhost:${svc.port}/health`;
+    const start = Date.now();
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(3_000) });
+      const latency = Date.now() - start;
+      if (resp.ok) {
+        const data = await resp.json() as Record<string, unknown>;
+        results.push({ ...svc, status: "up", latencyMs: latency, version: data.version as string | undefined });
+      } else {
+        results.push({ ...svc, status: "down", latencyMs: latency, error: `HTTP ${resp.status}` });
+      }
+    } catch (err) {
+      results.push({ ...svc, status: "down", latencyMs: Date.now() - start, error: errorMessage(err) });
+    }
+  }));
+
+  // 정렬: up 먼저, 그 다음 port 순
+  results.sort((a, b) => (a.status === "up" ? 0 : 1) - (b.status === "up" ? 0 : 1) || a.port - b.port);
+
+  if (json) {
+    console.log(JSON.stringify(results, null, 2));
+    return;
+  }
+
+  const up = results.filter(r => r.status === "up").length;
+  const total = results.length;
+  const label = up === total ? "HEALTHY" : up > 0 ? "DEGRADED" : "UNHEALTHY";
+
+  console.log(`══ System Health: ${label} (${up}/${total} up) ══\n`);
+  console.log(`  ${"STATUS".padEnd(8)} ${"SERVICE".padEnd(22)} ${"TIER".padEnd(10)} ${"LATENCY".padEnd(10)} ${"VERSION".padEnd(10)} URL`);
+  console.log("  " + "─".repeat(90));
+
+  for (const r of results) {
+    const icon = r.status === "up" ? "●" : "○";
+    const lat = r.status === "up" ? `${r.latencyMs}ms` : (r.error ?? "—").slice(0, 20);
+    const ver = r.version ?? "—";
+    console.log(`  ${icon} ${r.status.padEnd(5)} ${r.id.padEnd(22)} ${r.tier.padEnd(10)} ${lat.padEnd(10)} ${ver.padEnd(10)} http://localhost:${r.port}`);
+  }
+
+  if (up < total) {
+    console.log(`\n  ${total - up}개 서비스 미응답`);
+  }
+}
+
+/** qa-sdk service health-all — registry 없이 모든 서비스 직접 health check */
+export async function serviceHealthAll(args: string[]): Promise<void> {
+  const json = args.includes("--json");
+  await directHealthCheck(json);
 }
 
 // ── endpoints ─────────────────────────────────────
@@ -261,4 +323,85 @@ export async function serviceAppShow(args: string[]): Promise<void> {
     }
     console.log();
   } catch (err: unknown) { console.error(`  조회 실패: ${errorMessage(err)}`); }
+}
+
+// ── mode ───────────────────────────────────────────
+
+export async function serviceMode(args: string[]): Promise<void> {
+  const profile = loadProfile();
+
+  const setArgs: Array<[string, string]> = [];
+  const positional: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--set" && args[i + 1]) {
+      const [key, ...rest] = args[i + 1].split("=");
+      if (key && rest.length > 0) setArgs.push([key, rest.join("=")]);
+      i++;
+    } else if (!args[i].startsWith("--")) {
+      positional.push(args[i]);
+    }
+  }
+
+  const modeName = positional[0] as string | undefined;
+  if (modeName) {
+    const preset = PROFILE_PRESETS[modeName as ServiceMode];
+    if (!preset) {
+      console.error(`알 수 없는 모드: ${modeName} (가능: local, staging, prod)`);
+      process.exitCode = 1;
+      return;
+    }
+    const merged: ServiceProfile = { ...preset, services: { ...preset.services }, appHub: profile.appHub ?? preset.appHub };
+    applySetArgs(merged, setArgs);
+    saveProfile(merged);
+    printProfile(merged);
+    console.log(`\n  → ${modeName} 모드로 전환 완료`);
+    return;
+  }
+
+  if (setArgs.length > 0) {
+    applySetArgs(profile, setArgs);
+    saveProfile(profile);
+    printProfile(profile);
+    console.log(`\n  → 설정 업데이트 완료`);
+    return;
+  }
+
+  printProfile(profile);
+}
+
+function applySetArgs(profile: ServiceProfile, setArgs: Array<[string, string]>): void {
+  for (const [key, value] of setArgs) {
+    if (key === "insightsDriver") {
+      if (value === "local" || value === "app-hub") profile.insightsDriver = value;
+      else console.warn(`  경고: insightsDriver는 local 또는 app-hub만 가능`);
+    } else if (key.startsWith("appHub.")) {
+      if (!profile.appHub) profile.appHub = { endpoint: "", projectId: "", credential: "" };
+      const field = key.slice(7);
+      if (field === "endpoint" || field === "projectId" || field === "credential") {
+        profile.appHub[field] = value;
+      } else {
+        console.warn(`  경고: 알 수 없는 appHub 키 (무시: ${field})`);
+      }
+    } else if (SERVICE_IDS.includes(key as typeof SERVICE_IDS[number]) || key in profile.services) {
+      profile.services[key] = value;
+    } else {
+      console.warn(`  경고: 알 수 없는 키 (무시: ${key})`);
+    }
+  }
+}
+
+function printProfile(profile: ServiceProfile): void {
+  console.log(`\n══ Service Profile (${profile.mode}) ══`);
+  console.log(`  insightsDriver:  ${profile.insightsDriver}`);
+  console.log(`\n  서비스 URL:`);
+  for (const id of SERVICE_IDS) {
+    console.log(`    ${id.padEnd(22)} ${profile.services[id] ?? "(미설정)"}`);
+  }
+  if (profile.appHub) {
+    console.log(`\n  App Hub:`);
+    console.log(`    endpoint:      ${profile.appHub.endpoint || "(미설정)"}`);
+    console.log(`    projectId:     ${profile.appHub.projectId || "(미설정)"}`);
+    console.log(`    credential:    ${profile.appHub.credential ? "***" : "(미설정)"}`);
+  }
+  console.log(`\n  config: ${getProfilePath()}`);
 }

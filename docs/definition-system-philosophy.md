@@ -1,6 +1,8 @@
 ---
 def:
   id: definition-system-philosophy
+  type: knowledge
+  knowledge_kind: philosophy
   address: def_document:v2:137217
   scope: flow
   aspect: process_flow

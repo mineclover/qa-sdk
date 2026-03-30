@@ -167,12 +167,14 @@ export async function processPendingPhaseTwo(
 
   // ── Phase 2.5: Transition Matching (에러 격리) ──────
   if (deps.transitionEngine && deps.transitionCatalog) {
+    const transitionEngine = deps.transitionEngine;
+    const transitionCatalog = deps.transitionCatalog;
     try {
       for (const traceId of reconstructResult.reconstructedTraceIds) {
         const records = await deps.recordStore.findByTraceId(traceId);
         // address_context가 있는 레코드만 디코딩 + 전이 매칭
-        const withCtx = records.filter((r: any) => r.addressContext && typeof r.addressContext === "object");
-        const decodedEvents: any[] = [];
+        const withCtx = records.filter((r) => r.addressContext && typeof r.addressContext === "object");
+        const decodedEvents: Array<Record<string, unknown>> = [];
         for (const r of withCtx) {
           const ctx = r.addressContext as Record<string, string>;
           // 1) decode-service 우선 시도 (설정된 경우)
@@ -190,12 +192,12 @@ export async function processPendingPhaseTwo(
           }
           // 2) 로컬 fallback
           if (!decoded) {
-            decoded = deps.transitionEngine!.decodeCtx(deps.transitionCatalog!, ctx);
+            decoded = transitionEngine.decodeCtx(transitionCatalog, ctx);
           }
           decodedEvents.push({
             ...r,
-            log_id: (r as any).id ?? (r as any).logId ?? "",
-            timestamp: (r as any).createdAt ?? (r as any).timestamp ?? "",
+            log_id: r.logId ?? "",
+            timestamp: r.createdAt ?? r.timestamp ?? "",
             address_context: decoded,
           });
         }

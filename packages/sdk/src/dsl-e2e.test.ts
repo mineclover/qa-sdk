@@ -158,13 +158,13 @@ describe("DSL 종단 E2E", () => {
     console.log(`  records: ${usage.sourceStats!.totalRecords}`);
 
     console.log(`\n  [분기 지점: flow_step]`);
-    for (const e of flowStepEntries.sort((a, b) => b.count - a.count)) {
+    for (const e of flowStepEntries.toSorted((a, b) => b.count - a.count)) {
       const pct = ((e.count / 300) * 100).toFixed(1);
       console.log(`    ${e.entry.padEnd(10)} ${e.count}건 (${pct}%)`);
     }
 
     console.log(`\n  [분기 결과: verdict_result]`);
-    for (const e of verdictEntries.sort((a, b) => b.count - a.count)) {
+    for (const e of verdictEntries.toSorted((a, b) => b.count - a.count)) {
       const pct = ((e.count / 100) * 100).toFixed(1);
       console.log(`    ${e.entry.padEnd(10)} ${e.count}건 (${pct}%)`);
     }
@@ -174,7 +174,7 @@ describe("DSL 종단 E2E", () => {
     for (const r of records) {
       if (r.event_key) keyGroups.set(r.event_key, (keyGroups.get(r.event_key) ?? 0) + 1);
     }
-    for (const [key, count] of [...keyGroups.entries()].sort((a, b) => b[1] - a[1])) {
+    for (const [key, count] of [...keyGroups.entries()].toSorted((a, b) => b[1] - a[1])) {
       console.log(`    ${key.padEnd(20)} ${count}건`);
     }
 

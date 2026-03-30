@@ -35,12 +35,16 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { NodeSqliteDriver } from "index-meta";
-import { SqlIndexMetaStore } from "index-meta";
-import { SqlAddressStateStore } from "index-meta";
-import { computeStateRanges, checkGate } from "index-meta";
-import type { DimStateSpec, GateResult } from "index-meta";
-import type { EntryRecord } from "index-meta";
+import {
+  NodeSqliteDriver,
+  SqlIndexMetaStore,
+  SqlAddressStateStore,
+  computeStateRanges,
+  checkGate,
+  type DimStateSpec,
+  type GateResult,
+  type EntryRecord,
+} from "index-meta";
 
 // ── 픽스처 설명 ────────────────────────────────────────────
 //

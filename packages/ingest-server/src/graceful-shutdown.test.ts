@@ -269,6 +269,7 @@ describe("installGracefulShutdown", () => {
     let shutdownSettled = false;
     void shutdownPromise.then(() => {
       shutdownSettled = true;
+      return undefined;
     });
 
     const rejectedResponse = await harness.app.request("/health");

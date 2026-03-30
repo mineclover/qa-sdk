@@ -15,7 +15,7 @@ import type { MatchPattern, CoordinatePattern } from "./transition.types.js";
  * 규칙: 차원 값을 `.`으로 연결 (정렬된 키 순서).
  */
 export function deriveEventKey(coord: CoordinatePattern): string {
-  const keys = Object.keys(coord).sort();
+  const keys = Object.keys(coord).toSorted();
   return keys.map((k) => coord[k]).join(".");
 }
 
@@ -59,7 +59,7 @@ export function transitionMatchToScenarioSteps(
 
     // ordered/single: next로 다음 step 연결
     if (!isLast && (match.mode === "ordered" || match.mode === "single")) {
-      return { ...step, next: [`${transitionName}__step_${i + 1}`] };
+      return Object.assign({}, step, { next: [`${transitionName}__step_${i + 1}`] });
     }
 
     return step;

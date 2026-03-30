@@ -61,7 +61,7 @@ export class AxisRegistry {
       const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (!res.ok) throw new Error(`registry ${res.status}`);
 
-      const axes = await res.json() as Array<{
+      const _axes = await res.json() as Array<{
         id: string;
         entryCount: number;
         capacity: number;

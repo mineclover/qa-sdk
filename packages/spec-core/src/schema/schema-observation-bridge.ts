@@ -10,7 +10,7 @@
 import type { ObservationNode, ObservationSuggestion } from "../dkg/dkg.types.js";
 import type { ValidationResult } from "./schema.validator.js";
 import type { ValidationErrorDetail } from "../shared/errors.js";
-import { mapValidationToCoordinates, decodeCoordinate, type ValidationCoordinate } from "./schema-validation-codec.js";
+import { mapValidationToCoordinates, type ValidationCoordinate } from "./schema-validation-codec.js";
 
 // ═══════════════════════════════════════════════════════════════
 

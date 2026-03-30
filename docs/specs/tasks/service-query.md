@@ -56,4 +56,4 @@ spec.todo에서 언급된 대로, 규모가 커지면 분할 고려:
 - PolicyRule 저장소 (Memory + SQL)
 - 규칙 CRUD 5종 + 질의 5종 = 10개 엔드포인트
 - Gate 통합 클라이언트
-- coordinate-query.spec.md `[S2]` `[A5]` → 📋 에서 ✅로 전환
+- query-system.md `[S2]` `[A5]` → 📋 에서 ✅로 전환

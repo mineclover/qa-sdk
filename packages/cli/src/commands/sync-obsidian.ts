@@ -763,6 +763,7 @@ function buildIndexNote(prefixes: string[], domainIds: string[], axes: string[])
   for (const id of prefixes) {
     const cat = getPrefix(id)?.meta?.category ?? "entity";
     if (!byCategory.has(cat)) byCategory.set(cat, []);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
     byCategory.get(cat)!.push(id);
   }
 
@@ -770,6 +771,7 @@ function buildIndexNote(prefixes: string[], domainIds: string[], axes: string[])
   const prefixSections = categoryOrder
     .filter(c => byCategory.has(c))
     .map(cat => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .filter(has) → .get() 존재 보장
       const items = byCategory.get(cat)!;
       const links = items.map(id => {
         const p = getPrefix(id);

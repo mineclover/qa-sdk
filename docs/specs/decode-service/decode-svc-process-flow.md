@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: decode-service
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: decode-service-system
       type: refines

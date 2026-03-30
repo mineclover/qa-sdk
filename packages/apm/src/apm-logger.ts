@@ -8,7 +8,7 @@
  * address_context를 자동으로 생성한다.
  */
 
-import type { EventRecord, MetricType, PayloadFormat, PayloadEncoding, SpanStatusCode } from "@qa-sdk/core";
+import type { EventRecord, MetricType, PayloadFormat, PayloadEncoding } from "@qa-sdk/core";
 import { toServiceDims, toTransmissionSource, toTransmissionBuild } from "@qa-sdk/core";
 import { QaLogger, TraceContext } from "@qa-sdk/sdk";
 import type { SpanHandle } from "@qa-sdk/sdk";

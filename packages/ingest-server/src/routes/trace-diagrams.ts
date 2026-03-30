@@ -58,7 +58,7 @@ export function createTraceDiagramRoutes(deps: TraceDiagramDeps) {
         .map(r => ({
           traceId: r.traceId ?? traceId,
           timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : String(r.timestamp),
-          addressContext: r.addressContext!,
+          addressContext: r.addressContext ?? {},
         }));
 
       if (traceRecords.length === 0) {

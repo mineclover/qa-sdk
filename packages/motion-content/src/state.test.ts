@@ -68,7 +68,7 @@ describe("motion editor timeline normalization", () => {
   it("updates absolute-coordinate layer timing via update-item-timing", () => {
     // 절대좌표 layer로 테스트: layers 슬롯 없는 composition
     const base = createPromoGridComposition();
-    const absoluteComp = { ...base, sequences: base.sequences.map((s) => ({ ...s, layers: undefined })) };
+    const absoluteComp = { ...base, sequences: base.sequences.map((s) => Object.assign({}, s, { layers: undefined })) };
     const state = createMotionEditorState(absoluteComp);
 
     const next = applyMotionEditorCommand(state, {
@@ -437,7 +437,7 @@ describe("motion editor timeline normalization", () => {
     const base = createPromoGridComposition();
     const absoluteComposition = {
       ...base,
-      sequences: base.sequences.map((seq) => ({ ...seq, layers: undefined })),
+      sequences: base.sequences.map((seq) => Object.assign({}, seq, { layers: undefined })),
     };
     const state = createMotionEditorState(absoluteComposition);
 

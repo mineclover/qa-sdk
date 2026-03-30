@@ -70,7 +70,7 @@ export class MemoryInstanceStore implements InstanceStore {
   private filterInstances(predicate: (instance: FlowInstance) => boolean): FlowInstance[] {
     return [...this.instances.values()]
       .filter(predicate)
-      .sort((a, b) => compareTimestamps(a.startedAt, b.startedAt))
+      .toSorted((a, b) => compareTimestamps(a.startedAt, b.startedAt))
       .map(cloneInstance);
   }
 }

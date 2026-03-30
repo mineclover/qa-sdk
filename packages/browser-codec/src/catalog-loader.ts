@@ -9,8 +9,14 @@
  * 순서: API 시도 → 실패 시 Cache → 실패 시 Static fallback
  */
 
-import type { BrowserCatalog, BrowserPrefixDef, BrowserDimDef } from "./browser-codec.js";
-import { BROWSER_CATALOG } from "./demo-catalog-browser.js";
+import type {
+  BrowserCatalog,
+  BrowserPrefixDef,
+  BrowserDimDef,
+  BrowserServiceDims,
+} from './browser-codec.js';
+import { withServiceOverlay } from './browser-codec.js';
+import { BROWSER_CATALOG } from './demo-catalog-browser.js';
 
 export interface CatalogLoaderConfig {
   /** registry-service URL (예: "http://localhost:4000") */
@@ -21,11 +27,13 @@ export interface CatalogLoaderConfig {
   readonly cacheTtlMs?: number;
   /** API 타임아웃 (ms, 기본: 5초) */
   readonly timeoutMs?: number;
+  /** service prefix를 로컬 browser catalog overlay로 확장할 값 */
+  readonly serviceOverlay?: BrowserServiceDims;
 }
 
 export interface LoadResult {
   readonly catalog: BrowserCatalog;
-  readonly source: "api" | "cache" | "static";
+  readonly source: 'api' | 'cache' | 'static';
   readonly prefixCount: number;
   readonly timestamp: string;
 }
@@ -35,7 +43,7 @@ export interface LoadResult {
  * API → Cache → Static 순서로 시도.
  */
 export async function loadCatalog(config?: CatalogLoaderConfig): Promise<LoadResult> {
-  const cacheKey = config?.cacheKey ?? "qa-sdk-catalog";
+  const cacheKey = config?.cacheKey ?? 'qa-sdk-catalog';
   const cacheTtl = config?.cacheTtlMs ?? 5 * 60 * 1000;
   const timeout = config?.timeoutMs ?? 5000;
 
@@ -44,12 +52,13 @@ export async function loadCatalog(config?: CatalogLoaderConfig): Promise<LoadRes
     try {
       const catalog = await fetchCatalog(config.registryUrl, timeout);
       if (catalog && Object.keys(catalog).length > 0) {
+        const overlaidCatalog = applyServiceOverlay(catalog, config?.serviceOverlay);
         // 캐시 저장
-        saveCatalogCache(cacheKey, catalog);
+        saveCatalogCache(cacheKey, overlaidCatalog);
         return {
-          catalog,
-          source: "api",
-          prefixCount: Object.keys(catalog).length,
+          catalog: overlaidCatalog,
+          source: 'api',
+          prefixCount: Object.keys(overlaidCatalog).length,
           timestamp: new Date().toISOString(),
         };
       }
@@ -61,19 +70,21 @@ export async function loadCatalog(config?: CatalogLoaderConfig): Promise<LoadRes
   // 2. Cache 시도
   const cached = loadCatalogCache(cacheKey, cacheTtl);
   if (cached) {
+    const overlaidCatalog = applyServiceOverlay(cached, config?.serviceOverlay);
     return {
-      catalog: cached,
-      source: "cache",
-      prefixCount: Object.keys(cached).length,
+      catalog: overlaidCatalog,
+      source: 'cache',
+      prefixCount: Object.keys(overlaidCatalog).length,
       timestamp: new Date().toISOString(),
     };
   }
 
   // 3. Static fallback
+  const overlaidStaticCatalog = applyServiceOverlay(BROWSER_CATALOG, config?.serviceOverlay);
   return {
-    catalog: BROWSER_CATALOG,
-    source: "static",
-    prefixCount: Object.keys(BROWSER_CATALOG).length,
+    catalog: overlaidStaticCatalog,
+    source: 'static',
+    prefixCount: Object.keys(overlaidStaticCatalog).length,
     timestamp: new Date().toISOString(),
   };
 }
@@ -82,7 +93,10 @@ export async function loadCatalog(config?: CatalogLoaderConfig): Promise<LoadRes
 //  API Fetch
 // ═══════════════════════════════════════════════════
 
-async function fetchCatalog(registryUrl: string, timeoutMs: number): Promise<BrowserCatalog | null> {
+async function fetchCatalog(
+  registryUrl: string,
+  timeoutMs: number,
+): Promise<BrowserCatalog | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -99,33 +113,51 @@ async function fetchCatalog(registryUrl: string, timeoutMs: number): Promise<Bro
   }
 }
 
+/** registry-service 응답의 dim 형태 */
+interface RegistryDimData {
+  readonly kind?: string;
+  readonly entries?: readonly string[];
+  readonly capacity?: number;
+  readonly values?: readonly number[];
+}
+
+/** registry-service 응답의 prefix 형태 */
+interface RegistryPrefixData {
+  readonly version?: string;
+  readonly activeVersion?: string;
+  readonly labels?: string[];
+  readonly dims?: Record<string, RegistryDimData>;
+}
+
 /**
  * registry-service /resolve/active 응답을 BrowserCatalog로 변환.
  *
  * 응답 형태 (예상):
  * { prefixId: { version, dims: { label: { kind, entries?, capacity?, values? } }, ... }, ... }
  */
-function convertRegistryResponse(data: Record<string, any>): BrowserCatalog {
+function convertRegistryResponse(data: Record<string, unknown>): BrowserCatalog {
   const catalog: Record<string, BrowserPrefixDef> = {};
 
-  for (const [prefixId, prefixData] of Object.entries(data)) {
-    if (!prefixData || typeof prefixData !== "object") continue;
+  for (const [prefixId, raw] of Object.entries(data)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const prefixData = raw as RegistryPrefixData;
 
-    const version = prefixData.version ?? prefixData.activeVersion ?? "v1";
-    const labels: string[] = prefixData.labels ?? prefixData.dims ? Object.keys(prefixData.dims) : [];
+    const version = prefixData.version ?? prefixData.activeVersion ?? 'v1';
+    const labels: string[] =
+      prefixData.labels ?? (prefixData.dims ? Object.keys(prefixData.dims) : []);
     const dims: Record<string, BrowserDimDef> = {};
 
     if (prefixData.dims) {
-      for (const [label, dimData] of Object.entries(prefixData.dims as Record<string, any>)) {
-        if (dimData.kind === "axis" || dimData.entries) {
+      for (const [label, dimData] of Object.entries(prefixData.dims)) {
+        if (dimData.kind === 'axis' || dimData.entries) {
           dims[label] = {
-            kind: "axis",
+            kind: 'axis',
             entries: dimData.entries ?? [],
             capacity: dimData.capacity ?? dimData.entries?.length ?? 32,
           };
-        } else if (dimData.kind === "prefix_ref" || dimData.values) {
+        } else if (dimData.kind === 'prefix_ref' || dimData.values) {
           dims[label] = {
-            kind: "prefix_ref",
+            kind: 'prefix_ref',
             values: dimData.values ?? [],
           };
         }
@@ -168,5 +200,20 @@ function loadCatalogCache(key: string, ttlMs: number): BrowserCatalog | null {
     return entry.catalog;
   } catch {
     return null;
+  }
+}
+
+function applyServiceOverlay(
+  catalog: BrowserCatalog,
+  serviceOverlay?: BrowserServiceDims,
+): BrowserCatalog {
+  if (!serviceOverlay) {
+    return catalog;
+  }
+
+  try {
+    return withServiceOverlay(catalog, serviceOverlay);
+  } catch {
+    return catalog;
   }
 }

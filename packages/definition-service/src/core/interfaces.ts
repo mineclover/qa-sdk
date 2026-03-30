@@ -11,6 +11,7 @@ import type {
 
 /** 메타데이터 업데이트 입력 (DB가 SSOT인 필드들) */
 export interface DocMetadataUpdate {
+  level?: string | null;
   scope?: string;
   aspect?: string;
   depth?: string;
@@ -40,6 +41,9 @@ export interface DocStore {
 
 /** 확장 문서 목록 필터 */
 export interface DocListFilter {
+  type?: string;
+  knowledgeKind?: string;
+  level?: string;
   scope?: string;
   aspect?: string;
   depth?: string;

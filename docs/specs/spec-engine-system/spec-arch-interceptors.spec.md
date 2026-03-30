@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: spec-core
-  tags: []
+  tags: [runtime, structural, observability]
   links:
-    - target: spec-core-types
+    - target: spec-core-types-group
       type: depends_on
 ---
 # Decorator와 Interceptor 설계

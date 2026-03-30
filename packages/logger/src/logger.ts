@@ -2,14 +2,12 @@ import {
   type ActorContext,
   type EventRecord,
   type TransmissionEnvelope,
-  type RecordKind,
   type MetricType,
   type SpanStatusCode,
   type PayloadFormat,
   type PayloadEncoding,
   newTransmissionId,
   newLogId,
-  newSpanId,
   now,
 } from "@qa-sdk/core";
 
@@ -253,7 +251,7 @@ export class QaLogger {
       }
       this.buffer = combined;
       const error = err instanceof Error ? err : new Error(String(err));
-      throw new Error(`[qa-sdk:flush] transport.send failed: ${error.message}`, { cause: error });
+      throw new Error(`[qa-sdk:flush] transport.send failed: ${error.message}`, { cause: err });
     } finally {
       this.flushInProgress = false;
     }

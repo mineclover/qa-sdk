@@ -161,6 +161,20 @@ describe("MemoryDefinitionRegistry", () => {
     });
   });
 
+  describe("getLineage", () => {
+    it("supersedes/evolves_from 연결을 revision 순으로 반환한다", () => {
+      registry.register(makeEntry({ id: "api-v1", revision: 1, version: "v1", updatedAt: "2026-03-01T00:00:00Z" }));
+      registry.register(makeEntry({ id: "api-v2", revision: 2, version: "v2", updatedAt: "2026-03-02T00:00:00Z" }));
+      registry.register(makeEntry({ id: "api-v3", revision: 3, version: "v3", updatedAt: "2026-03-03T00:00:00Z" }));
+
+      registry.link("api-v2", "api-v1", "supersedes");
+      registry.link("api-v3", "api-v2", "evolves_from");
+
+      const lineage = registry.getLineage("api-v2");
+      expect(lineage.map((entry) => entry.id)).toEqual(["api-v1", "api-v2", "api-v3"]);
+    });
+  });
+
   // ─── 질의 ──────────────────────────────────────────────
 
   describe("findByScope", () => {

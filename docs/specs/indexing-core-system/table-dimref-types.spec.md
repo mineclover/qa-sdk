@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: domain
   svc: weighted-index
-  tags: []
+  tags: [data, structural, runtime]
   links:
     - target: table-schema-def
       type: depends_on

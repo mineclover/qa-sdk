@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: spec-core
-  tags: []
+  tags: [runtime, observability, structural]
   links:
     - target: spec-arch-interceptors
       type: refines

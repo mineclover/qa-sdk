@@ -88,7 +88,7 @@ export class InMemoryRecordStore implements RecordStore {
   ): StoredRecord[] {
     return Array.from(this.records.values())
       .filter(predicate)
-      .sort(compareRecords)
+      .toSorted(compareRecords)
       .map((record) => structuredClone(record));
   }
 

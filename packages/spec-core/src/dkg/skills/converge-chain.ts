@@ -5,7 +5,7 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort, UsageData, AxisOverlap, PrefixOverlap, DeploymentSkew } from "@qa-sdk/convergence";
+import type { GraphPort, UsageData, AxisOverlap, PrefixOverlap } from "@qa-sdk/convergence";
 import type { ObservationNode, DecisionNode } from "../dkg.types.js";
 import { scanAxisOverlaps, comparePrefixes, analyzeSimplification, discoverCausality, analyzeDeploymentSkew } from "@qa-sdk/convergence";
 import { scaffoldDecision } from "./decision-scaffold.js";

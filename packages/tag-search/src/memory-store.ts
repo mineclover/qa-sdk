@@ -50,12 +50,14 @@ export class InMemoryTagStore implements TagStore {
       });
     }
 
+    // eslint-disable-next-line typescript/no-non-null-assertion -- 직전에 .has() 확인 후 .set()으로 보장
     const fwd = this.forward.get(targetId)!;
     for (const tag of normalized) {
       fwd.add(tag);
       if (!this.inverted.has(tag)) {
         this.inverted.set(tag, new Set());
       }
+      // eslint-disable-next-line typescript/no-non-null-assertion -- 직전에 .has() 확인 후 .set()으로 보장
       this.inverted.get(tag)!.add(targetId);
     }
   }
@@ -100,7 +102,7 @@ export class InMemoryTagStore implements TagStore {
 
   async getTags(targetId: string): Promise<string[]> {
     const fwd = this.forward.get(targetId);
-    return fwd ? [...fwd].sort() : [];
+    return fwd ? [...fwd].toSorted() : [];
   }
 
   async search(query: TagQuery): Promise<TagSearchResult[]> {
@@ -155,7 +157,7 @@ export class InMemoryTagStore implements TagStore {
         if (timeRange.to && m.createdAt > timeRange.to) continue;
       }
 
-      const allTags = [...(this.forward.get(targetId) ?? [])].sort();
+      const allTags = [...(this.forward.get(targetId) ?? [])].toSorted();
       const matchedTags = normalized.filter((t) => allTags.includes(t));
 
       results.push({
@@ -188,7 +190,7 @@ export class InMemoryTagStore implements TagStore {
 
     return [...counts.entries()]
       .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+      .toSorted((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
   }
 
   async count(): Promise<number> {
@@ -203,7 +205,7 @@ function intersect(sets: Set<string>[]): Set<string> {
   if (sets.length === 0) return new Set();
 
   // 가장 작은 셋부터 순회 (최적화)
-  const sorted = [...sets].sort((a, b) => a.size - b.size);
+  const sorted = [...sets].toSorted((a, b) => a.size - b.size);
   const [first, ...rest] = sorted;
 
   const result = new Set<string>();

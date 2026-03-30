@@ -7,7 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
-  tags: []
+  tags: [cross-scope, runtime, decision, observability]
   links:
     - target: harness-architecture
       type: implements

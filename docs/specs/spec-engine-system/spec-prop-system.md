@@ -38,7 +38,7 @@ PrefixSpec 변경이 publish -> notify -> codegen -> DKG record로 종단 전파
 - `spec-prop-codegen`: 변경된 스펙에서 TypeScript 타입을 자동 생성하는 3단계.
 - `spec-prop-dkg-record`: 스펙 변경을 DKG 그래프에 기록하는 4단계.
 
-기반: [core-types.md](../spec-engine/core-types.md) · [design-knowledge-graph.md](../spec-engine/design-knowledge-graph.md) · [dkg-skills.md](../spec-engine/dkg-skills.md) · [registry-service.spec.md](../services/registry-service.spec.md)
+기반: [core-types.md](../spec-engine/core-types.md) · [../dkg-system/dkg-system.md](../dkg-system/dkg-system.md) · [../dkg-system/dkg-skills-system.md](../dkg-system/dkg-skills-system.md) · [registry-api.spec.md](../registry-system/registry-api.spec.md)
 
 ---
 

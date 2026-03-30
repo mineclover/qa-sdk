@@ -8,9 +8,9 @@ def:
   lifecycle: approved
   layer: mediation
   svc: platform-demo
-  tags: []
+  tags: [runtime, observability, structural]
   links:
-    - target: rlsc-spec
+    - target: viz-language-system
       type: refines
 ---
 
