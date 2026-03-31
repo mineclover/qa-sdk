@@ -7,7 +7,7 @@
 - active 문서만 대상으로 본다. `deprecated`/`archived`는 일단 제외한다.
 - child 문서는 `anchor-dir/<post-anchor-ancestor-id...>/<filename>`으로 이동시킨다.
 
-요약: root 26건, move 대상 380건, blocked 11건
+요약: root 26건, move 대상 387건, blocked 0건
 
 ## Root Documents
 
@@ -360,6 +360,21 @@
   target: `docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md`
   anchor: `definition-catalog-spec`
   chain: `system-root > system-design-tools > definition-catalog-spec > definition-taxonomy > definition-addressing`
+- `definition-harness-cli`
+  current: `docs/specs/definition-catalog/definition-harness-cli.spec.md`
+  target: `docs/specs/definition-catalog/definition-harness/definition-harness-cli.spec.md`
+  anchor: `definition-catalog-spec`
+  chain: `system-root > system-design-tools > definition-catalog-spec > definition-harness > definition-harness-cli`
+- `definition-harness-derive`
+  current: `docs/specs/definition-catalog/definition-harness-derive.spec.md`
+  target: `docs/specs/definition-catalog/definition-harness/definition-harness-derive.spec.md`
+  anchor: `definition-catalog-spec`
+  chain: `system-root > system-design-tools > definition-catalog-spec > definition-harness > definition-harness-derive`
+- `definition-harness-persistence`
+  current: `docs/specs/definition-catalog/definition-harness-persistence.spec.md`
+  target: `docs/specs/definition-catalog/definition-harness/definition-harness-persistence.spec.md`
+  anchor: `definition-catalog-spec`
+  chain: `system-root > system-design-tools > definition-catalog-spec > definition-harness > definition-harness-persistence`
 - `definition-level`
   current: `docs/specs/definition-catalog/definition-level.spec.md`
   target: `docs/specs/definition-catalog/definition-taxonomy/definition-level.spec.md`
@@ -1325,6 +1340,11 @@
   target: `docs/specs/quality-gates/decode-quality-bundle/decode-quality-contract.spec.md`
   anchor: `quality-gates-system`
   chain: `quality-gates-system > decode-quality-bundle > decode-quality-contract`
+- `definition-quality-contract`
+  current: `docs/specs/quality-gates/definition-quality-contract.spec.md`
+  target: `docs/specs/definition-catalog/definition-quality-contract.spec.md`
+  anchor: `definition-quality-gates`
+  chain: `quality-gates-system > definition-quality-gates > definition-quality-contract`
 - `definition-service-quality-contract`
   current: `docs/specs/quality-gates/definition-service-quality-contract.spec.md`
   target: `docs/specs/quality-gates/definition-service-quality-bundle/definition-service-quality-contract.spec.md`
@@ -1360,6 +1380,21 @@
   target: `docs/specs/quality-gates/decode-quality-bundle/gate-decode-test.spec.md`
   anchor: `quality-gates-system`
   chain: `quality-gates-system > decode-quality-bundle > gate-decode-test`
+- `gate-definition-quality-cli`
+  current: `docs/specs/quality-gates/gate-definition-quality-cli.spec.md`
+  target: `docs/specs/definition-catalog/gate-definition-quality-cli.spec.md`
+  anchor: `definition-quality-gates`
+  chain: `quality-gates-system > definition-quality-gates > gate-definition-quality-cli`
+- `gate-definition-quality-spec-tracker`
+  current: `docs/specs/quality-gates/gate-definition-quality-spec-tracker.spec.md`
+  target: `docs/specs/definition-catalog/gate-definition-quality-spec-tracker.spec.md`
+  anchor: `definition-quality-gates`
+  chain: `quality-gates-system > definition-quality-gates > gate-definition-quality-spec-tracker`
+- `gate-definition-quality-work-domain`
+  current: `docs/specs/quality-gates/gate-definition-quality-work-domain.spec.md`
+  target: `docs/specs/definition-catalog/gate-definition-quality-work-domain.spec.md`
+  anchor: `definition-quality-gates`
+  chain: `quality-gates-system > definition-quality-gates > gate-definition-quality-work-domain`
 - `gate-definition-service-build`
   current: `docs/specs/quality-gates/gate-definition-service-build.spec.md`
   target: `docs/specs/quality-gates/definition-service-quality-bundle/gate-definition-service-build.spec.md`
@@ -1943,37 +1978,5 @@
 
 ## Blocked
 
-- `definition-gate-derivation` (`docs/specs/definition-catalog/definition-gate-derivation.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `definition-gate-fsm` (`docs/specs/definition-catalog/definition-gate-fsm.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `definition-harness-cli` (`docs/specs/definition-catalog/definition-harness-cli.spec.md`)
-  reason: `multi-parent`
-  details: `harness-architecture, definition-harness`
-- `definition-harness-derive` (`docs/specs/definition-catalog/definition-harness-derive.spec.md`)
-  reason: `multi-parent`
-  details: `harness-architecture, definition-harness`
-- `definition-harness-persistence` (`docs/specs/definition-catalog/definition-harness-persistence.spec.md`)
-  reason: `multi-parent`
-  details: `harness-architecture, definition-harness`
-- `definition-harness` (`docs/specs/definition-catalog/definition-harness.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, harness-architecture`
-- `definition-quality-gates` (`docs/specs/definition-catalog/definition-quality-gates.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `definition-quality-contract` (`docs/specs/quality-gates/definition-quality-contract.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `gate-definition-quality-cli` (`docs/specs/quality-gates/gate-definition-quality-cli.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `gate-definition-quality-spec-tracker` (`docs/specs/quality-gates/gate-definition-quality-spec-tracker.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
-- `gate-definition-quality-work-domain` (`docs/specs/quality-gates/gate-definition-quality-work-domain.spec.md`)
-  reason: `multi-parent`
-  details: `definition-catalog-spec, quality-gates-system`
+- none
 
