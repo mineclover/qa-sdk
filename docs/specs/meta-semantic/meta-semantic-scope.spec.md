@@ -27,18 +27,26 @@ meta-semantic이 정의한 데이터 단위(패싯, 파이프, 바운더리)에
 
 ## 방법 ^method
 
-**scope**가 데이터 단위의 성격(무엇에 대한 것인가)을 분류하고,
-**aspect**가 scope 내에서 세부 유형을 특정하고,
-각 scope×aspect 조합에 **검증 전략**이 매핑된다.
+계층적으로 결정된다:
 
-scope와 aspect의 관계는 **경로 모델**을 따른다:
-aspect는 scope에 독립적인 축이 아니라, scope가 결정되면 유효한 aspect 서브셋이 정해진다.
-전곱(scope × 전체 aspect)이 아닌, scope별 도달 가능한 aspect만 존재한다.
+1. **scope**가 데이터 단위의 성격(무엇에 대한 것인가)을 분류하고,
+2. scope가 결정되면 **유효한 aspect 서브셋**이 정해지고 (경로 모델),
+3. 각 aspect에 **적합한 검증 전략**이 결정된다.
+
+```
+scope (7종)
+  └── aspect (scope별 서브셋, 총 22종)
+       └── 검증 전략 (aspect별로 결정)
+```
+
+aspect는 scope에 독립적인 축이 아니다.
+scope가 결정되면 들어올 수 있는 aspect이 정해져 있고,
+aspect 유형별로 검증 전략이 정해져 있다.
 
 ## 구성 ^overview
 
 - 1단계 (meta-semantic): 데이터 흐름의 최소 단위를 정의 — 패싯, 파이프, 바운더리
-- **2단계 (scope): 그 단위를 검증 방법으로 분류** — scope × aspect(경로 모델) × 검증 전략
+- **2단계 (scope): 그 단위를 검증 방법으로 분류** — scope → aspect 서브셋 → aspect별 검증 전략
 
 ---
 
