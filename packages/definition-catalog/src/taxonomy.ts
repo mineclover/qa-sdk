@@ -151,16 +151,6 @@ export const ASPECT_TO_SCOPES: Record<DefAspect, readonly DefScope[]> = (() => {
   return map as Record<DefAspect, readonly DefScope[]>;
 })();
 
-/**
- * @deprecated ASPECT_TO_SCOPES로 대체. 1:1 역참조는 N:M에서 보장되지 않음.
- * 하위 호환을 위해 유지하되, 첫 번째 scope만 반환한다.
- */
-export const ASPECT_TO_SCOPE: Record<DefAspect, DefScope> = Object.fromEntries(
-  Object.entries(ASPECT_TO_SCOPES).map(
-    ([aspect, scopes]) => [aspect, scopes[0]],
-  ),
-) as Record<DefAspect, DefScope>;
-
 // ─── 검증 ────────────────────────────────────────────────
 
 /**

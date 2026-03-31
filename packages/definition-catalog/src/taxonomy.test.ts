@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
-  ASPECT_TO_SCOPE,
   ASPECT_TO_SCOPES,
   validateScopeAspect,
   isValidScopeAspect,
@@ -94,8 +93,9 @@ describe("ASPECT_TO_SCOPES 역참조 (N:M)", () => {
   });
 });
 
-describe("ASPECT_TO_SCOPE 하위 호환 (deprecated)", () => {
-  it("모든 aspect에 대해 첫 번째 scope를 반환한다", () => {
+describe("ASPECT_TO_SCOPE 하위 호환 (deprecated, compat.ts)", () => {
+  it("모든 aspect에 대해 첫 번째 scope를 반환한다", async () => {
+    const { ASPECT_TO_SCOPE } = await import("./compat.js");
     for (const aspect of DEF_ASPECT.entries) {
       expect(ASPECT_TO_SCOPE[aspect]).toBeDefined();
       expect(ASPECT_TO_SCOPE[aspect]).toBe(ASPECT_TO_SCOPES[aspect][0]);

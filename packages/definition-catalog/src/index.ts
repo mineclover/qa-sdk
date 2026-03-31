@@ -67,7 +67,6 @@ export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerK
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
-  ASPECT_TO_SCOPE,
   ASPECT_TO_SCOPES,
   validateScopeAspect,
   isValidScopeAspect,
@@ -90,6 +89,10 @@ export {
   isScenarioMarker,
   getScenarioMarkerDef,
 } from "./taxonomy.js";
+
+// ─── 하위 호환 (deprecated) ──────────────────────────────
+/** @deprecated ASPECT_TO_SCOPES 사용. 새 코드에서 import 금지 */
+export { ASPECT_TO_SCOPE } from "./compat.js";
 
 // ─── scope 레지스트리 ────────────────────────────────────
 export type { ScopeVersionDef, ScopeRegistryEntry, ScopeSegment, ScopeAddress, DecodedScopeAddress } from "./scope-registry.js";
