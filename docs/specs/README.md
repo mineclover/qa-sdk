@@ -212,6 +212,7 @@ Semantic Folding 기반 의도 컴파일러 — 코드를 접어 검증 단위 �
 | [meta-semantic-folding.spec.md](meta-semantic/meta-semantic-folding.spec.md) | Semantic Folding — 검증 단위 식별 핵심 메커니즘, 분기 경로 한정, 계약 도출 | draft |
 | [meta-semantic-ir.spec.md](meta-semantic/meta-semantic-ir.spec.md) | Module·Data·Pipe IR 구조 — 참조 타입, 5원 생명주기, 계약 위임 | draft |
 | [meta-semantic-spacetime-uid.spec.md](meta-semantic/meta-semantic-spacetime-uid.spec.md) | Spacetime UID — 분기 경로별 WeightedIndex + 시간 축, 전곱 아닌 경로 합산 | draft |
+| [meta-semantic-scope.spec.md](meta-semantic/meta-semantic-scope.spec.md) | 검증 분류 체계 — scope×aspect 경로 모델, scope별 검증 전략 매핑 | draft |
 | [meta-semantic-extraction.spec.md](meta-semantic/meta-semantic-extraction.spec.md) | LLM 기반 추출 — 검증 가능 함수 식별, 의미 있는 분기점 판별, 파서 역할 분리 | draft |
 
 ### skill-catalog/ — 스킬 카탈로그

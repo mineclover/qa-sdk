@@ -23,6 +23,8 @@ def:
       type: contains
     - target: meta-semantic-folding
       type: contains
+    - target: meta-semantic-scope
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러
