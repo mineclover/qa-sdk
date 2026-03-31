@@ -411,7 +411,15 @@ export const CLASSIFICATION_CONVENTIONS = {
   purposeSection: "## 목적 ^purpose에 문서의 존재 이유를 섹션 분량으로 작성",
 
   /**
-   * 컨벤션 10: `## 구성 ^overview` — 핵심 사실 나열 (선택)
+   * 컨벤션 10: `## 방법 ^method` — 하위 구성요소로 목적 달성 방법 (module/group 권장)
+   *
+   * 하위 구성요소를 주어로 써서 목적 달성 경로를 서술한다.
+   * ^delegates 목록의 각 항목이 무엇을 하는지 흐름으로 연결.
+   */
+  methodSection: "## 방법 ^method에 하위 구성요소로 목적 달성 경로를 서술 (module/group 권장)",
+
+  /**
+   * 컨벤션 11: `## 구성 ^overview` — 핵심 사실 나열 (선택)
    *
    * 무엇이 있는가, 몇 개인가, 주요 항목 목록.
    * purpose보다 구체적이지만 상세는 아닌 수준.
@@ -419,12 +427,12 @@ export const CLASSIFICATION_CONVENTIONS = {
   overviewSection: "## 구성 ^overview에 핵심 사실을 나열 (선택, purpose보다 구체적)",
 
   /**
-   * 컨벤션 11: 마커 없는 섹션은 detail (full에서만 보임)
+   * 컨벤션 12: 마커 없는 섹션은 detail (full에서만 보임)
    */
   unmarkedIsDetail: "마커 없는 섹션은 full 추출에서만 보임",
 
   /**
-   * 컨벤션 12: 그룹 문서는 overview depth + contains 링크
+   * 컨벤션 13: 그룹 문서는 overview depth + contains 링크
    *
    * 그룹 문서의 목적에 시스템 전체 목적,
    * 구성에 멤버 목록과 구성 요약.
@@ -432,7 +440,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   groupDocument: "그룹 문서 = overview depth + contains 링크 + 목적/구성 섹션",
 
   /**
-   * 컨벤션 13: 자유 마커로 scope별 핵심 내용 수집
+   * 컨벤션 14: 자유 마커로 scope별 핵심 내용 수집
    *
    * purpose/overview 외에 scope에 맞는 자유 마커를 사용한다.
    * - constraint 문서: `## 불변 조건 ^constraint` → 제약 규칙 수집
@@ -447,7 +455,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 코드 참조 컨벤션 ──────────────────────────────────
 
   /**
-   * 컨벤션 14: 인라인 코드 블록 금지 — 코드 위치 참조로 대체
+   * 컨벤션 15: 인라인 코드 블록 금지 — 코드 위치 참조로 대체
    *
    * 문서에 TypeScript/코드를 직접 작성하면:
    * - 코드 변경 시 문서가 stale 됨 (이중 관리)
@@ -462,7 +470,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   noInlineCode: "인라인 코드 블록 금지. 소스 경로 참조 또는 코드-문서 공유 마커 사용",
 
   /**
-   * 컨벤션 15: 소스 위치 표기 — `## 관련 소스` 섹션 통일
+   * 컨벤션 16: 소스 위치 표기 — `## 관련 소스` 섹션 통일
    *
    * 문서 하단에 `## 관련 소스` 섹션을 두고 소스 파일 경로를 나열한다.
    * 형식: `- packages/<pkg>/src/<path>.ts — <한줄 설명>`
@@ -473,7 +481,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── scope별 표준 마커 ──────────────────────────────────
 
   /**
-   * 컨벤션 16: scope별 권장 마커
+   * 컨벤션 17: scope별 권장 마커
    *
    * | scope      | 필수 마커          | 권장 마커                          |
    * |------------|-------------------|---------------------------------|
@@ -510,7 +518,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── scope별 작성 템플릿 ─────────────────────────────────
 
   /**
-   * 컨벤션 17: scope별 최소 구조
+   * 컨벤션 18: scope별 최소 구조
    *
    * feature/func_def:
    *   ^purpose → ^overview → 입출력 테이블 → 동작 규칙 → 관련 소스
@@ -542,7 +550,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   scopeTemplates: "scope별 최소 구조: purpose → overview → scope 고유 섹션 → 관련 소스",
 
   /**
-   * 컨벤션 18: overview 그룹 문서 — 자동 파생 가능 정보 생략
+   * 컨벤션 19: overview 그룹 문서 — 자동 파생 가능 정보 생략
    *
    * "overview: 총 N개 멤버." 같은 기계적 prefix 금지.
    * contains 링크에서 멤버 수는 자동 파생된다.
@@ -553,7 +561,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 그룹 분류 컨벤션 ──────────────────────────────────
 
   /**
-   * 컨벤션 19: 그룹 scope는 멤버 투표가 아니라 그룹의 주 책임
+   * 컨벤션 20: 그룹 scope는 멤버 투표가 아니라 그룹의 주 책임
    *
    * 그룹 문서의 scope/aspect는 멤버의 다수결이 아니라
    * "이 그룹이 존재하는 이유(주 책임)"로 결정한다.
@@ -569,7 +577,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   groupScopeByResponsibility: "그룹 scope는 멤버 투표가 아니라 그룹의 주 책임으로 결정",
 
   /**
-   * 컨벤션 20: flow/process_flow는 실제 흐름에만 사용
+   * 컨벤션 21: flow/process_flow는 실제 흐름에만 사용
    *
    * 순수 조직 계층(system-root, system-infra 등)과 실제 시간 순서가 있는
    * 프로세스 흐름(pipeline, lifecycle, spec-phases)을 구분한다.
@@ -583,7 +591,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   flowOnlyForFlow: "flow/process_flow는 실제 시간 순서 흐름에만. 조직 그룹은 주 책임 scope 사용",
 
   /**
-   * 컨벤션 21: structural 태그로 조직 계층 식별
+   * 컨벤션 22: structural 태그로 조직 계층 식별
    *
    * depth: overview + contains 링크를 가진 그룹 문서에 structural 태그를 부여한다.
    * query({ tags: ["structural"] }) → 조직 그룹만 조회
@@ -594,7 +602,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 코드-문서 연결 컨벤션 ─────────────────────────────
 
   /**
-   * 컨벤션 22: svc 필드로 패키지 연결
+   * 컨벤션 23: svc 필드로 패키지 연결
    *
    * frontmatter의 svc 필드가 문서를 코드 패키지에 연결한다.
    * 한 패키지에 명확히 속하는 문서에만 부여.
@@ -606,7 +614,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   svcMapping: "svc 필드로 문서-패키지 연결. 단일 패키지 소속일 때만 부여",
 
   /**
-   * 컨벤션 23: 정확성 > 분량
+   * 컨벤션 24: 정확성 > 분량
    *
    * 짧은 문서는 문제가 아니다. 부정확한 문서가 문제다.
    * - purpose 1줄이라도 코드와 일치하면 유효
@@ -617,7 +625,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   accuracyOverVolume: "정확성 > 분량. 짧아도 정확하면 유효, 길어도 부정확하면 유해",
 
   /**
-   * 컨벤션 24: scope 내 aspect 분포를 모니터링
+   * 컨벤션 25: scope 내 aspect 분포를 모니터링
    *
    * 하나의 scope에서 특정 aspect가 80% 이상 집중되면 점검한다.
    * - 도메인 특성(좌표 시스템 = feature가 많음)이면 허용
@@ -629,7 +637,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 계약 조립 컨벤션 ──────────────────────────────────
 
   /**
-   * 컨벤션 25: 계약 문서는 그룹 + 멤버 구조
+   * 컨벤션 26: 계약 문서는 그룹 + 멤버 구조
    *
    * 계약(Contract)은 단일 문서가 아니라, 기존 좌표 공간의 문서 constellation이다.
    * 그룹 문서(overview depth)가 contains 링크로 멤버를 포함한다.
@@ -654,7 +662,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   // ── 존재론적 계층 (Layer) ──────────────────────────────
 
   /**
-   * 컨벤션 26: layer는 존재 이유, scope는 구조 — 직교
+   * 컨벤션 27: layer는 존재 이유, scope는 구조 — 직교
    *
    * scope(무엇에 대한 정의인가)와 layer(왜 존재하는가)는 직교한다.
    *
@@ -677,7 +685,7 @@ export const CLASSIFICATION_CONVENTIONS = {
   layerOrthogonal: "layer는 존재 이유(domain/operation/mediation/experience), scope는 구조. 직교",
 
   /**
-   * 컨벤션 27: layer 영향 전파 규칙
+   * 컨벤션 28: layer 영향 전파 규칙
    *
    * domain 변경     → domain + operation + mediation (experience 직접 영향 없음)
    * operation 변경  → operation 내부만 (인프라 변경이 다른 계층에 영향 주면 안 됨)

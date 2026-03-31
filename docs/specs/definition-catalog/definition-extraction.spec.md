@@ -40,12 +40,27 @@ def:
 ## 마커 문법
 
 ```markdown
-## 목적 ^purpose       ← 표준 마커
-## 구성 ^overview      ← 표준 마커
+## 목적 ^purpose       ← 필수 마커
+## 방법 ^method        ← 방법 마커 (module/group용)
+## 구성 ^overview      ← 보조 마커
+## 정의 ^defines       ← 구조 마커
+## 소비 ^consumes      ← 구조 마커
+## 위임 ^delegates     ← 구조 마커
 ## 제약 ^constraint    ← 커스텀 마커
 ```
 
 마커 없는 섹션은 full 추출에서만 노출된다.
+
+### 마커 체계
+
+| 마커 | 역할 | 필수 여부 |
+|------|------|----------|
+| `^purpose` | 왜 존재하는가 | 필수 |
+| `^method` | 하위 구성요소로 목적을 어떻게 달성하는가 | module/group 권장 |
+| `^defines` | 이 문서가 정의하는 것 | 권장 |
+| `^consumes` | 외부에서 가져다 쓰는 것 | 권장 |
+| `^delegates` | 자식에게 위임하는 것 | module/group 권장 |
+| `^overview` | 핵심 사실 나열 | 선택 |
 
 ## 관련 소스
 

@@ -456,14 +456,25 @@ config: `.qa-sdk/def-config.json` — 주소 버전, 동기화 시각, 문서별
 | Gate 도출 | `work-domain/contract-to-gates.ts` | scope×aspect → GateKind |
 | 계획 | `work-domain/harness.ts` | buildHarnessPlan + 런타임 |
 
-### 스펙 문서 3역할 마커
+### 스펙 문서 마커 체계
 
-모든 스펙 문서에 개념 흐름 방향을 표시:
+모든 스펙 문서에 구조와 흐름을 마커로 표시:
+
+**필수:**
+- `^purpose` — 왜 존재하는가 (목적)
+
+**구조 마커 (개념 흐름 방향):**
 - `^defines` — 이 문서가 새로 정의하는 개념/함수/타입
 - `^consumes` — 외부에서 가져다 쓰는 것 (코드의 import)
 - `^delegates` — 자식에게 위임하는 것 (module/unit만, 코드의 re-export)
 
-leaf = defines + consumes. module = defines + consumes + delegates. unit = defines + delegates.
+**방법 마커:**
+- `^method` — 하위 구성요소를 어떻게 사용하여 목적을 달성하는가 (module/group용)
+
+**보조:**
+- `^overview` — 핵심 사실 나열 (선택)
+
+level별 조합: leaf = purpose + defines + consumes. module = purpose + method + defines + consumes + delegates.
 
 ### 범용 유틸
 
