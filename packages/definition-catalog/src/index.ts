@@ -91,6 +91,10 @@ export {
   getScenarioMarkerDef,
 } from "./taxonomy.js";
 
+// ─── scope 레지스트리 ────────────────────────────────────
+export type { ScopeVersionDef, ScopeRegistryEntry, ScopeSegment, ScopeAddress, DecodedScopeAddress } from "./scope-registry.js";
+export { ScopeRegistry } from "./scope-registry.js";
+
 // ─── 카탈로그 ───────────────────────────────────────────
 export type { DimRef, PrefixVersionDef, PrefixMeta, PrefixDef, DefinitionCatalog } from "./catalog.js";
 export { DEFINITION_CATALOG } from "./catalog.js";
