@@ -131,12 +131,33 @@ export const VALID_SCOPE_ASPECTS: Record<DefScope, readonly DefAspect[]> = {
 } as const;
 
 /**
- * aspect → scope 역참조 맵 (자동 파생).
- * aspect만 알면 scope를 추론할 수 있다.
+ * aspect → scope[] 역참조 맵 (자동 파생).
+ *
+ * N:M 소비 모델: 하나의 aspect가 여러 scope에서 소비될 수 있다.
+ * VALID_SCOPE_ASPECTS에서 자동 파생.
+ *
+ * @example
+ *   ASPECT_TO_SCOPES["scenario"] → ["feature"]         // v1: feature만 소비
+ *   ASPECT_TO_SCOPES["scenario"] → ["feature", "flow"] // 미래: flow도 소비
+ */
+export const ASPECT_TO_SCOPES: Record<DefAspect, readonly DefScope[]> = (() => {
+  const map: Record<string, DefScope[]> = {};
+  for (const [scope, aspects] of Object.entries(VALID_SCOPE_ASPECTS)) {
+    for (const aspect of aspects) {
+      if (!map[aspect]) map[aspect] = [];
+      map[aspect].push(scope as DefScope);
+    }
+  }
+  return map as Record<DefAspect, readonly DefScope[]>;
+})();
+
+/**
+ * @deprecated ASPECT_TO_SCOPES로 대체. 1:1 역참조는 N:M에서 보장되지 않음.
+ * 하위 호환을 위해 유지하되, 첫 번째 scope만 반환한다.
  */
 export const ASPECT_TO_SCOPE: Record<DefAspect, DefScope> = Object.fromEntries(
-  Object.entries(VALID_SCOPE_ASPECTS).flatMap(
-    ([scope, aspects]) => aspects.map(a => [a, scope]),
+  Object.entries(ASPECT_TO_SCOPES).map(
+    ([aspect, scopes]) => [aspect, scopes[0]],
   ),
 ) as Record<DefAspect, DefScope>;
 

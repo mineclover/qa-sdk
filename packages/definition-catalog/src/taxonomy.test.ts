@@ -3,6 +3,7 @@ import {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
   ASPECT_TO_SCOPE,
+  ASPECT_TO_SCOPES,
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
@@ -70,18 +71,34 @@ describe("VALID_SCOPE_ASPECTS", () => {
   });
 });
 
-describe("ASPECT_TO_SCOPE 역참조", () => {
-  it("모든 aspect에 대해 scope를 반환한다", () => {
+describe("ASPECT_TO_SCOPES 역참조 (N:M)", () => {
+  it("모든 aspect에 대해 scope 배열을 반환한다", () => {
     for (const aspect of DEF_ASPECT.entries) {
-      expect(ASPECT_TO_SCOPE[aspect]).toBeDefined();
+      expect(ASPECT_TO_SCOPES[aspect]).toBeDefined();
+      expect(ASPECT_TO_SCOPES[aspect].length).toBeGreaterThan(0);
     }
   });
 
   it("VALID_SCOPE_ASPECTS와 일관된다", () => {
     for (const [scope, aspects] of Object.entries(VALID_SCOPE_ASPECTS)) {
       for (const aspect of aspects) {
-        expect(ASPECT_TO_SCOPE[aspect]).toBe(scope);
+        expect(ASPECT_TO_SCOPES[aspect]).toContain(scope);
       }
+    }
+  });
+
+  it("ASPECT_TO_SCOPES의 전체 조합 수가 allValidCombinations과 일치한다", () => {
+    const totalFromScopes = Object.values(ASPECT_TO_SCOPES)
+      .reduce((sum, scopes) => sum + scopes.length, 0);
+    expect(totalFromScopes).toBe(allValidCombinations().length);
+  });
+});
+
+describe("ASPECT_TO_SCOPE 하위 호환 (deprecated)", () => {
+  it("모든 aspect에 대해 첫 번째 scope를 반환한다", () => {
+    for (const aspect of DEF_ASPECT.entries) {
+      expect(ASPECT_TO_SCOPE[aspect]).toBeDefined();
+      expect(ASPECT_TO_SCOPE[aspect]).toBe(ASPECT_TO_SCOPES[aspect][0]);
     }
   });
 });
@@ -169,9 +186,9 @@ describe("detectCrossScope", () => {
 });
 
 describe("CLASSIFICATION_CONVENTIONS", () => {
-  it("26개 컨벤션이 정의되어 있다", () => {
+  it("27개 컨벤션이 정의되어 있다", () => {
     const keys = Object.keys(CLASSIFICATION_CONVENTIONS);
-    expect(keys.length).toBe(26);
+    expect(keys.length).toBe(27);
     // 분류 (C1-C6)
     expect(keys).toContain("scopeByAudience");
     expect(keys).toContain("splitThreshold");

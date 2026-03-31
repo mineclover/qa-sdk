@@ -68,6 +68,7 @@ export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
   ASPECT_TO_SCOPE,
+  ASPECT_TO_SCOPES,
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
