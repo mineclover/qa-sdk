@@ -208,6 +208,7 @@ Semantic Folding 기반 의도 컴파일러 — 코드를 접어 검증 단위 �
 | 스펙 | 설명 | 상태 |
 |---|---|---|
 | [meta-semantic-system.spec.md](meta-semantic/meta-semantic-system.spec.md) | 전체 시스템 그룹 — Folding 중심 철학, 분기 경로 좌표 모델, LLM 역할 | draft |
+| [meta-semantic-concepts.spec.md](meta-semantic/meta-semantic-concepts.spec.md) | 7가지 원자 개념 — 5원 분리→바운더리→계약 하향→Folding→검증 단위→분기 경로→UID | draft |
 | [meta-semantic-folding.spec.md](meta-semantic/meta-semantic-folding.spec.md) | Semantic Folding — 검증 단위 식별 핵심 메커니즘, 분기 경로 한정, 계약 도출 | draft |
 | [meta-semantic-ir.spec.md](meta-semantic/meta-semantic-ir.spec.md) | Module·Data·Pipe IR 구조 — 참조 타입, 5원 생명주기, 계약 위임 | draft |
 | [meta-semantic-spacetime-uid.spec.md](meta-semantic/meta-semantic-spacetime-uid.spec.md) | Spacetime UID — 분기 경로별 WeightedIndex + 시간 축, 전곱 아닌 경로 합산 | draft |

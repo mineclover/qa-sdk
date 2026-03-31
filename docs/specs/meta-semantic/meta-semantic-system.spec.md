@@ -13,6 +13,8 @@ def:
       type: depends_on
     - target: definition-catalog-spec
       type: depends_on
+    - target: meta-semantic-concepts
+      type: contains
     - target: meta-semantic-ir
       type: contains
     - target: meta-semantic-spacetime-uid
@@ -125,27 +127,27 @@ Spacetime UID          ≡  SemanticAddress       (schema:version:index)
 
 ## 2. 3종 IR 모델 (The Triad)
 
-### 2.1 Module — 5원 분리를 통합하는 바운더리
+### 2.1 Module — 5원 중 일부가 존재하는 검증 가능한 기능 단위
 
-**모듈은 데이터의 5원 분리(생산·소비·정의·관리·저장)를 통합하는 경계에 의해 정의된다.**
+**모듈은 데이터 5원 중 일부가 존재하는 검증 가능한 기능 단위(바운더리)에 의해 정의된다.**
 
-"이 데이터의 생산/소비/관리/정의/저장이 여기서 통합된다"는 것이 모듈의 경계를 결정한다.
-interface의 inputs/outputs가 존재하는 이유는 생산과 소비의 바운더리이기 때문이고,
-relations의 parent/children이 존재하는 이유는 관리 위임의 계층이기 때문이다.
+바운더리는 5원 전부를 가질 필요가 없다.
+순수 함수는 정의+생산+소비만, 서비스 클래스는 5원 전부를 가질 수 있다.
+핵심은 "검증 가능한 기능 단위인가"이다.
 
 ```typescript
 interface ModuleIR {
   /** 의도의 해시 주소 — interface 구조에서 결정론적 파생 */
   id: string;
 
-  /** 외부에 노출하는 계약 — 생산/소비의 바운더리 */
+  /** 외부에 노출하는 계약 — 이 바운더리가 소비/생산하는 것 */
   interface: {
-    inputs: DataRef[];       // 이 경계로 들어오는 데이터 (생산의 시작점)
-    outputs: DataRef[];      // 이 경계에서 나가는 데이터 (소비자에게 전달)
+    inputs: DataRef[];       // 이 바운더리가 소비하는 데이터
+    outputs: DataRef[];      // 이 바운더리가 생산하는 데이터
     sideEffects: PipeRef[];  // 유발하는 부수효과
   };
 
-  /** 계층적 관계 — 관리 위임의 경로 */
+  /** 계층적 관계 — 계약 전달 경로 */
   relations: {
     parent: ModuleRef | null;   // 계약을 내려주는 상위 계층
     children: ModuleRef[];      // 계약 범위 내에서 동작하는 하위 계층
@@ -155,13 +157,12 @@ interface ModuleIR {
 }
 ```
 
-**핵심 원칙: 계약의 하향 전달**
+**핵심 원칙: 상호 무지, 자기 계약 명확**
 
-상위 모듈이 데이터 계약(스키마, 검증 규칙)을 내려주고,
-하위 모듈은 그 계약 범위 내에서 세부 동작(생산/소비)을 자유롭게 수행한다.
-상위는 하위의 세부 동작을 알 필요 없다.
-하위에서 올라오는 트랜잭션도 계약이 커버하므로 문제없다.
-이로 인해 하위 모듈은 **무상태(Stateless) 순수 함수**처럼 좌표계 위를 자유롭게 이동할 수 있다.
+상위도 하위의 세부를 모르고, 하위도 상위의 세부를 모른다.
+각 바운더리는 **자신이 소비할 데이터/계약/트랜잭션만 명확히 알면 된다.**
+모르는 건 자유이지만 아는 건 의무다.
+이로 인해 각 바운더리는 독립적으로 검증·교체·이동 가능하다.
 
 **DefLevel과의 매핑:**
 
