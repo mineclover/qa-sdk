@@ -43,6 +43,41 @@ export interface DefDocBody {
   sourcePath?: string;
 }
 
+export interface DefCodeReference {
+  codePath: string;
+  docId: string;
+  relationType: "boundary" | "doc";
+  sourceKind: "code_comment" | "doc_frontmatter";
+  symbol?: string;
+  line?: number;
+}
+
+export interface DefBoundaryResolutionCandidate {
+  anchor: DefDoc;
+  supportingDocs: DefDoc[];
+  references: DefCodeReference[];
+}
+
+export type DefFileBoundaryResolution =
+  | {
+      kind: "none";
+      codePath: string;
+      references: DefCodeReference[];
+    }
+  | {
+      kind: "unique";
+      codePath: string;
+      anchor: DefDoc;
+      supportingDocs: DefDoc[];
+      references: DefCodeReference[];
+    }
+  | {
+      kind: "ambiguous";
+      codePath: string;
+      candidates: DefBoundaryResolutionCandidate[];
+      references: DefCodeReference[];
+    };
+
 /** 링크 (역방향) */
 export interface DefIncomingLink {
   source: string;
@@ -202,6 +237,9 @@ export interface DefDataSource {
 
   /** 최신 문서 본문 조회 */
   getBody(docId: string): Promise<DefDocBody | null>;
+
+  /** 코드 파일 기준 authoritative boundary 해석 */
+  resolveByFile(filePath: string): Promise<DefFileBoundaryResolution>;
 
   /** 목록 (필터 + pagination + 전문검색) */
   list(filter?: DefListFilter): Promise<DefDoc[]>;

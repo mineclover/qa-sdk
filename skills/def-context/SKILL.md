@@ -68,6 +68,20 @@ blast radius: N건
 - 새 문서 추가 시: "어디에 넣어야 하지?"
 - feedback request나 synthetic trace가 걸린 문서인지 먼저 확인할 때
 
+## 판단 원칙 (meta-semantic 기반)
+
+> 상세: `ms-concept-contract-descent` 참조
+
+컨텍스트 수집 범위는 **"상호 무지, 자기 계약 명확"** 원칙을 따른다:
+
+- **자기가 소비할 것만 수집한다.** 상위의 세부도, 하위의 세부도 불필요
+- 상위 문서: 내려준 계약(scope, constraint)만 확인 — 상위 내부 구현은 무시
+- 하위 문서: 존재 여부와 purpose만 확인 — 하위 세부 내용은 무시
+- peer 문서: 자기가 depends_on하는 문서의 계약만 확인
+
+**모르는 건 자유이지만 아는 건 의무다.**
+컨텍스트가 과하면: "이 정보를 내가 소비하는가?"로 필터링.
+
 ## tags 해석 요령
 
 `def context`의 `concerns` 섹션은 문서 tags를 그대로 늘어놓는 용도가 아니다.

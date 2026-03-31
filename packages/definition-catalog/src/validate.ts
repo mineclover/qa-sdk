@@ -17,7 +17,11 @@ export interface ValidationIssue {
     | "broken-link" | "circular-ref" | "self-ref" | "orphan"
     | "missing-purpose" | "short-purpose"
     | "multi-parent" | "contains-depth-violation"
-    | "level-violation";
+    | "level-violation"
+    | "broken-code-reference"
+    | "invalid-code-boundary"
+    | "ambiguous-code-boundary"
+    | "inconsistent-code-boundary";
   readonly docId: string;
   readonly message: string;
 }

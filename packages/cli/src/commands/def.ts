@@ -13,6 +13,7 @@
 import { join, resolve, relative } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import {
+  CONCERN_TAGS,
   scanAndBuild,
   LINK_TYPE_RULES,
   readDefConfig,
@@ -46,6 +47,13 @@ type FeedbackTraceMatch = {
   anchorDocId: string;
   request: DefFeedbackRequestSummary;
 };
+
+const CONCERN_TAG_SET = new Set<string>(CONCERN_TAGS);
+const BOUNDARY_LEVELS = new Set(["group", "module"]);
+
+function extractConcernTags(tags: readonly string[]): string[] {
+  return tags.filter((tag) => CONCERN_TAG_SET.has(tag));
+}
 
 async function collectFeedbackMatches(
   source: DefDataSource,
@@ -424,6 +432,24 @@ async function cmdSearch(source: DefDataSource, query: string) {
   }
 }
 
+async function cmdConcepts(source: DefDataSource, flags: Record<string, string>) {
+  const limit = flags["limit"] ? Number(flags["limit"]) : 200;
+  const docs = await source.list({
+    type: "knowledge",
+    knowledgeKind: "concept",
+    ...(flags["q"] ? { q: flags["q"] } : {}),
+    ...(flags["tag"] ? { tag: flags["tag"] } : {}),
+    limit,
+  });
+
+  console.log(`[${source.mode}] concept 문서 ${docs.length}건`);
+  for (const doc of docs) {
+    const tags = doc.tags.length > 0 ? ` [${doc.tags.join(",")}]` : "";
+    console.log(`  ${doc.docId}  ${doc.scope}/${doc.aspect}  ${doc.lifecycle}${tags}`);
+    if (doc.purpose) console.log(`    ${doc.purpose.slice(0, 120)}`);
+  }
+}
+
 async function cmdStats(source: DefDataSource) {
   const all = await source.list({ limit: 1000 });
   const approved = all.filter(d => d.lifecycle === "approved");
@@ -559,7 +585,7 @@ async function cmdTopdown(source: DefDataSource, groupId: string, level: "purpos
   const sorted = children.toSorted((a, b) => a.scope.localeCompare(b.scope) || a.docId.localeCompare(b.docId));
 
   for (const child of sorted) {
-    const prefix = child.level === "module" || child.level === "unit" ? `[${child.level}] ` : "";
+    const prefix = child.level && BOUNDARY_LEVELS.has(child.level) ? `[${child.level}] ` : "";
     const scopeTag = `[${child.scope.split("/")[0]}]`;
     console.log(`## ${scopeTag} ${prefix}${child.title ?? child.docId}`);
     if (level === "purpose" && child.purpose) {
@@ -600,7 +626,7 @@ async function cmdBottomup(source: DefDataSource, docId: string) {
     for (const link of incoming) {
       if (visited.has(link.source)) continue;
       const srcDoc = await source.get(link.source);
-      if (srcDoc && (srcDoc.level === "module" || srcDoc.level === "unit" || srcDoc.level === "area")) {
+      if (srcDoc && srcDoc.level && BOUNDARY_LEVELS.has(srcDoc.level)) {
         groups.add(link.source);
       }
       queue.push({ id: link.source, depth: current.depth + 1, via: `${link.type} ↑` });
@@ -673,13 +699,22 @@ async function cmdContext(source: DefDataSource, docId: string) {
   }
 
   // 적용되는 제약
-  const constraints = outgoing.filter(l => l.type === "constrains" || l.type === "implements");
+  const outgoingConstraints = outgoing.filter(l => l.type === "constrains");
+  const implementedContracts = outgoing.filter(l => l.type === "implements");
   const constraintIncoming = incoming.filter(l => l.type === "constrains");
-  if (constraints.length > 0 || constraintIncoming.length > 0) {
+  if (outgoingConstraints.length > 0 || implementedContracts.length > 0 || constraintIncoming.length > 0) {
     console.log(`\n## 적용되는 제약`);
     for (const c of constraintIncoming) {
       const cDoc = await source.get(c.source);
       console.log(`- [${c.source}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+    }
+    for (const c of outgoingConstraints) {
+      const cDoc = await source.get(c.target);
+      console.log(`- [constrains → ${c.target}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+    }
+    for (const c of implementedContracts) {
+      const cDoc = await source.get(c.target);
+      console.log(`- [implements → ${c.target}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
     }
   }
 
@@ -694,12 +729,12 @@ async function cmdContext(source: DefDataSource, docId: string) {
   }
 
   // concerns (태그 기반 — 직접 + 상속)
-  const directConcerns = doc.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated");
+  const directConcerns = extractConcernTags(doc.tags);
   const inheritedConcerns: string[] = [];
   for (const link of [...deps, ...(parent ? [{ target: parent.docId, type: "contains" }] : [])]) {
     const target = await source.get(link.target);
     if (!target) continue;
-    const tConcerns = target.tags.filter(t => t !== "structural" && t !== "entry-point" && t !== "generated");
+    const tConcerns = extractConcernTags(target.tags);
     for (const c of tConcerns) {
       inheritedConcerns.push(`${c} from ${link.target} via ${link.type}`);
     }
@@ -1014,12 +1049,67 @@ async function cmdSync(flags: Record<string, string>) {
   console.log(`DB: ${result.dbPath}`);
 }
 
+function printDefHelp() {
+  console.log(`qa-sdk def — 문서 관리
+
+시작하기:
+  help                        이 도움말
+  guide                       시스템 전체 구조 안내
+  guide concepts              핵심 개념 (좌표, prefix, 축)
+  guide classification        문서 분류 체계 (scope, level, layer)
+  guide authoring             핵심 작성 규칙 + 코드 매핑 규칙
+  guide management            definition 관리 흐름
+  guide services              서비스 구조
+  guide philosophy            시스템 철학
+  concepts                    concept 문서 목록
+
+조회:
+  list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
+  get <ID>            단건 조회
+  body <ID>           최신 본문 조회 (--json 가능)
+  read <ID>           body의 별칭
+  children <ID>       자식 문서
+  parent <ID>         부모 문서
+  incoming <ID>       역링크
+  search <검색어>     전문 검색
+  concepts            knowledge/concept 문서 조회
+  find-by-file <경로[:symbol]> code_references 기준 boundary 해석
+
+분석:
+  scan-audit          raw frontmatter/link 감사 (DB 미사용)
+  context <ID>        작업 전 컨텍스트 (소속/의존/영향)
+  boundary <ID>       바운더리 구조 + direct coupling (--level, --json 가능)
+  boundary-context <ID> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)
+  impact <ID>         변경 영향 분석
+  topdown <ID>        탑다운 조립
+  bottomup <ID>       영향 역추적
+
+품질:
+  sync                docs → local DB 동기화
+  audit               품질 리포트 + 그래프 검증
+  validate            DB 기준 그래프 + code reference 검증
+  stats               분포 통계
+  check <ID>          문서 정합성 점검
+  link-rules          LinkType 사용 규칙
+
+상태:
+  state               전체 머신 상태 분포
+  state <머신ID>      특정 머신 분포
+  state <문서ID>      문서별 상태
+  state --deps        머신 간 의존 관계`);
+}
+
 // ── 라우터 ────────────────────────────────────────────
 
 export async function cliDef(args: string[]): Promise<void> {
   const { positional, options, flags } = parseFlags(args);
   const sub = positional[0];
   const rest = positional.slice(1);
+
+  if (!sub || sub === "help") {
+    printDefHelp();
+    return;
+  }
 
   // scan은 파일 스캔 전용 (DB 불필요)
   if (sub === "scan") return cmdScan(flags);
@@ -1030,8 +1120,8 @@ export async function cliDef(args: string[]): Promise<void> {
 
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
-    "list", "get", "body", "children", "parent", "incoming", "validate", "search", "stats",
-    "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide",
+    "list", "get", "body", "read", "children", "parent", "incoming", "validate", "search", "stats",
+    "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide", "concepts",
     "topdown", "bottomup", "context", "boundary", "boundary-context",
   ]);
   if (dsCommands.has(sub)) {
@@ -1048,13 +1138,15 @@ export async function cliDef(args: string[]): Promise<void> {
         case "list": return await cmdList(source, flags);
         case "get": return await cmdGet(source, rest[0]);
         case "body":
-          if (!rest[0]) { console.log("Usage: qa-sdk def body <문서ID> [--json]"); return; }
+        case "read":
+          if (!rest[0]) { console.log("Usage: qa-sdk def body|read <문서ID> [--json]"); return; }
           return await cmdBody(source, rest[0], flags);
         case "children": return await cmdChildren(source, rest[0]);
         case "parent": return await cmdParent(source, rest[0]);
         case "incoming": return await cmdIncoming(source, rest[0]);
         case "validate": return await cmdValidate(source);
         case "search": return await cmdSearch(source, rest[0] ?? flags["q"] ?? "");
+        case "concepts": return await cmdConcepts(source, flags);
         case "stats": return await cmdStats(source);
         case "impact": return await cmdImpact(source, rest[0]);
         case "check": return await cmdCheck(source, rest[0]);
@@ -1085,50 +1177,7 @@ export async function cliDef(args: string[]): Promise<void> {
     return;
   }
 
-  // 알 수 없는 명령
-  switch (sub) {
-    default:
-      console.log(`qa-sdk def — 문서 관리
-
-시작하기:
-  guide                       시스템 전체 구조 안내
-  guide concepts              핵심 개념 (좌표, prefix, 축)
-  guide classification        문서 분류 체계 (scope, level, layer)
-  guide services              서비스 구조
-  guide philosophy            시스템 철학
-
-조회:
-  list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
-  get <ID>            단건 조회
-  body <ID>           최신 본문 조회 (--json 가능)
-  children <ID>       자식 문서
-  parent <ID>         부모 문서
-  incoming <ID>       역링크
-  search <검색어>     전문 검색
-  find-by-file <경로>  코드 파일 → 관련 문서
-
-분석:
-  scan-audit         raw frontmatter/link 감사 (DB 미사용)
-  context <ID>        작업 전 컨텍스트 (소속/의존/영향)
-  boundary <ID>       바운더리 구조 + direct coupling (--level, --json 가능)
-  boundary-context <ID> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)
-  impact <ID>         변경 영향 분석
-  topdown <ID>        탑다운 조립
-  bottomup <ID>       영향 역추적
-
-품질:
-  audit               품질 리포트 + 그래프 검증
-  validate            깨진 링크/순환/고아 검증
-  stats               분포 통계
-  check <ID>          문서 정합성 점검
-  link-rules          LinkType 사용 규칙
-
-상태:
-  state               전체 머신 상태 분포
-  state <머신ID>      특정 머신 분포
-  state <문서ID>      문서별 상태
-  state --deps        머신 간 의존 관계`);
-  }
+  printDefHelp();
 }
 
 async function cmdFindByFile(source: DefDataSource, filePath: string) {
@@ -1159,75 +1208,101 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
   console.log(`패키지: ${pkgDir} (${pkgName})`);
   console.log("");
 
-  // 패키지 디렉토리 → svc 별칭 매핑 (패키지명과 svc가 다른 경우)
-  const SVC_ALIASES: Record<string, string[]> = {
-    "cli": ["qa-sdk-cli"],
-    "shop-web": ["shopping-web"],
-    "definition-catalog": ["definition-service"],
-    "definition-client": ["definition-service"],
-    "motion-content": ["motion-workspace-service"],
-    "motion-workspace": ["motion-workspace-service"],
-    "motion-workspace-client": ["motion-workspace-service"],
-    "motion-content-editor": ["motion-workspace-service"],
-  };
-
-  // 2. svc 필드로 문서 검색 — 패키지 디렉토리명, 패키지 이름, 별칭 모두 시도
-  const candidates = new Set([pkgDir, pkgName, ...(SVC_ALIASES[pkgDir] ?? [])]);
-  let docs: DefDoc[] = [];
-
-  for (const svc of candidates) {
-    const found = await source.list({ svc, limit: 100 });
-    for (const d of found) {
-      if (!docs.some(existing => existing.docId === d.docId)) {
-        docs.push(d);
-      }
-    }
-  }
-
-  if (docs.length === 0) {
-    console.log(`svc="${pkgDir}" 또는 "${pkgName}"에 연결된 문서가 없습니다.`);
-    console.log(`  → frontmatter에 svc: ${pkgDir} 를 추가하세요.`);
+  if (source.mode === "scan") {
+    console.log("find-by-file는 DB-owned code reference가 필요합니다.");
+    console.log("  → qa-sdk def sync 후 local/server datasource에서 다시 실행하세요.");
     return;
   }
 
-  // 3. 파일 경로에서 모듈 힌트 추출
-  const fileName = relPath.split("/").pop()?.replace(/\.tsx?$/, "") ?? "";
-  const fileHints = fileName.split(/[-_.]/).filter(h => h.length > 2);
+  const mapping = await source.resolveByFile(relPath);
 
-  // 4. 결과 출력 — 관련도 순서 (파일명과 문서 ID가 겹치는 것 우선)
-  docs.sort((a, b) => {
-    const aRelevance = fileHints.some(h => a.docId.includes(h)) ? 1 : 0;
-    const bRelevance = fileHints.some(h => b.docId.includes(h)) ? 1 : 0;
-    return bRelevance - aRelevance;
-  });
-
-  console.log(`관련 문서 ${docs.length}건:`);
-  for (const d of docs) {
-    const levelStr = d.level && d.level !== "leaf" ? `[${d.level}] ` : "";
-    const relevance = fileHints.some(h => d.docId.includes(h)) ? " ← 파일명 매칭" : "";
-    console.log(`  ${levelStr}${d.docId}  ${d.scope}/${d.aspect}  ${d.depth}${relevance}`);
-    if (d.purpose) {
-      console.log(`    ${d.purpose.slice(0, 100)}`);
-    }
+  if (mapping.kind === "none") {
+    console.log("구조적으로 증명 가능한 code↔doc mapping이 없습니다.");
+    console.log("  → 코드 주석에 `@def.boundary <doc-id>[#symbol]` 또는 `@def.doc <doc-id>[#symbol]`를 추가하세요.");
+    console.log("  → 또는 문서 frontmatter top-level에 `source: packages/.../file.ts[:symbol]`를 추가하세요.");
+    console.log("  → 그런 뒤 `qa-sdk def sync`를 다시 실행하세요.");
+    console.log("  → explicit source-map이 없으면 find-by-file는 결과를 주지 않습니다.");
+    return;
   }
 
-  // 5. 코드 심볼 요약
-  try {
-    const fileContent = readFileSync(absPath, "utf-8");
-    const exports = fileContent.match(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+(\w+)/gm);
-    if (exports && exports.length > 0) {
-      console.log(`\n코드 export (${exports.length}건):`);
-      for (const exp of exports.slice(0, 10)) {
-        const name = exp.replace(/^export\s+(?:async\s+)?(?:function|class|interface|type|const)\s+/, "");
-        console.log(`  ${name}`);
-      }
-      if (exports.length > 10) console.log(`  ... 외 ${exports.length - 10}건`);
+  if (mapping.kind === "ambiguous") {
+    console.log("explicit source-map이 둘 이상의 boundary anchor로 갈라집니다.");
+    if (mapping.references.some((ref) => ref.symbol)) {
+      console.log("  → symbol별 mapping이 있으면 `<경로:심볼>`로 다시 조회하세요.");
     }
-  } catch { /* 파일 읽기 실패 무시 */ }
+    console.log("  → 단일 authoritative boundary로 정리되기 전까지 find-by-file는 결과를 확정하지 않습니다.\n");
+    for (const item of mapping.candidates) {
+      console.log(`- anchor: ${item.anchor.docId}`);
+      const docIds = new Set(item.supportingDocs.map((doc) => doc.docId));
+      const symbols = [...new Set(
+        item.references
+          .filter((ref) => docIds.has(ref.docId))
+          .map((ref) => ref.symbol)
+          .filter(Boolean),
+      )];
+      if (symbols.length > 0) {
+        console.log(`  symbols: ${symbols.join(", ")}`);
+      }
+      for (const doc of item.supportingDocs) {
+        console.log(`  - doc: ${doc.docId}`);
+      }
+    }
+    return;
+  }
+
+  console.log(`authoritative boundary: ${mapping.anchor.docId}`);
+  console.log(`  scope: ${mapping.anchor.scope}/${mapping.anchor.aspect}`);
+  console.log(`  depth: ${mapping.anchor.depth}`);
+  if (mapping.anchor.level) console.log(`  level: ${mapping.anchor.level}`);
+  if (mapping.anchor.svc) console.log(`  svc: ${mapping.anchor.svc}`);
+  if (mapping.anchor.purpose) {
+    console.log(`  purpose: ${mapping.anchor.purpose.slice(0, 160)}`);
+  }
+
+  console.log(`\nsource-map support (${mapping.supportingDocs.length}건):`);
+  for (const doc of mapping.supportingDocs) {
+    const marker = doc.docId === mapping.anchor.docId ? "  *" : "  -";
+    console.log(`${marker} ${doc.docId}  ${doc.scope}/${doc.aspect}  ${doc.depth}`);
+  }
 }
 
 async function cmdGuide(source: DefDataSource, topic?: string) {
   switch (topic) {
+    case "authoring": {
+      const doc = await source.get("definition-authoring-guide");
+      console.log("=== 문서 작성 빠른 진입 ===\n");
+      console.log(doc?.purpose ?? "(definition-authoring-guide 문서 없음)");
+      console.log("\n핵심 체크:");
+      console.log("  1. 좌표 결정: scope/aspect/depth + level/layer/lifecycle");
+      console.log("  2. frontmatter: id, links, svc, tags");
+      console.log("  3. 본문: ^purpose 필수, group/module은 ^overview + contains");
+      console.log("  4. 코드 매핑: source: + @def.boundary/@def.doc → def sync → def find-by-file <경로[:symbol]>");
+      console.log("\n바로 보기:");
+      console.log("  def body definition-authoring-guide");
+      console.log("  def body definition-mgmt-coordinates");
+      console.log("  def body definition-mgmt-verification-loop");
+      return;
+    }
+    case "management":
+    case "workflow": {
+      const doc = await source.get("definition-management");
+      const children = await source.getChildren("definition-management");
+      console.log("=== definition 관리 흐름 ===\n");
+      console.log(doc?.purpose ?? "(definition-management 문서 없음)");
+      if (children.length > 0) {
+        console.log("\n관리 단계:");
+        for (const child of children.toSorted((a, b) => a.docId.localeCompare(b.docId))) {
+          console.log(`  - ${child.docId}`);
+          if (child.purpose) console.log(`    ${child.purpose.slice(0, 100)}`);
+        }
+      }
+      console.log("\n바로 보기:");
+      console.log("  def body definition-management");
+      console.log("  def children definition-management");
+      console.log("  def body definition-mgmt-coordinates");
+      console.log("  def body definition-mgmt-verification-loop");
+      return;
+    }
     case "concepts": {
       const doc = await source.get("system-concepts");
       console.log("=== 핵심 개념 ===\n");
@@ -1313,6 +1388,8 @@ async function cmdGuide(source: DefDataSource, topic?: string) {
       console.log("\n=== 다음 단계 ===\n");
       console.log("  def guide concepts        핵심 개념 (좌표, prefix, 축)");
       console.log("  def guide classification  문서 분류 체계 (scope, level, layer)");
+      console.log("  def guide authoring       핵심 작성 규칙");
+      console.log("  def guide management      definition 관리 흐름");
       console.log("  def guide services        서비스 구조");
       console.log("  def guide philosophy      시스템 철학");
       console.log("  def children <area-id>    영역 내부 탐색");

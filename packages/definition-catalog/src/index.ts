@@ -205,6 +205,15 @@ export {
 export type { ValidationIssue, ValidationResult } from "./validate.js";
 export { validateGraph } from "./validate.js";
 
+// ─── 코드 참조 스캔 ─────────────────────────────────────
+export type { CodeReferenceInput, CodeReferenceTarget } from "./code-references.js";
+export {
+  collectCodeReferences,
+  parseCodeReferenceTarget,
+  formatCodeReferenceTarget,
+  makeCodeReferenceScopeKey,
+} from "./code-references.js";
+
 // ─── 영향 분석 (바텀업 역추적) ───────────────────────────
 export type { ImpactedDoc, ImpactAnalysis } from "./impact.js";
 export { analyzeImpact, selectImpactContext } from "./impact.js";
@@ -284,6 +293,8 @@ export type {
   DefBoundaryConcernItem,
   DefBoundaryConcernsResult,
   DefBoundaryContextResult,
+  DefBoundaryResolutionCandidate,
+  DefCodeReference,
   DefBoundaryDoc,
   DefBoundaryImpactDoc,
   DefBoundaryImpactResult,
@@ -291,6 +302,7 @@ export type {
   DefBoundaryResult,
   DefDoc,
   DefDocBody,
+  DefFileBoundaryResolution,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,

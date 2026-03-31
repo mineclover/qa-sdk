@@ -14,6 +14,7 @@ description: "definition-catalog 지식 문서 조회. 특정 스펙의 '왜'를
 qa-sdk def list --type=knowledge
 
 # 종류별
+qa-sdk def concepts
 qa-sdk def list --type=knowledge --knowledge-kind=philosophy
 qa-sdk def list --type=knowledge --knowledge-kind=adr
 qa-sdk def list --type=knowledge --knowledge-kind=guide
@@ -26,10 +27,11 @@ qa-sdk def list --type=knowledge --svc=ingest-server
 ## "왜" 질문 흐름
 
 1. 스펙 문서 ID 확인 → `qa-sdk def get <spec-id>`
-2. 해당 스펙을 constrains하는 knowledge 문서 탐색 → `qa-sdk def incoming <spec-id>`
-3. knowledge 문서가 없으면 → `/def-new` knowledge 템플릿으로 생성
+2. purpose/overview만으로 부족하면 → `qa-sdk def body <spec-id>`
+3. 해당 스펙을 constrains하는 knowledge 문서 탐색 → `qa-sdk def incoming <spec-id>`
+4. knowledge 문서가 없으면 → `/def-new` knowledge 템플릿으로 생성
 
-## 6종 knowledge_kind
+## 7종 knowledge_kind
 
 | kind | 핵심 질문 | 마커 |
 |------|----------|------|
@@ -39,6 +41,7 @@ qa-sdk def list --type=knowledge --svc=ingest-server
 | **narrative** | "어떻게 여기까지 왔는가?" | ^timeline, ^lessons |
 | **convention** | "뭘 따라야 하는가?" | ^rules, ^exceptions |
 | **pattern** | "이 패턴이 왜 반복되는가?" | ^structure, ^when-to-use |
+| **concept** | "이 개념이 정확히 무엇인가?" | ^definition, ^overview |
 
 ## spec ↔ knowledge 연결
 

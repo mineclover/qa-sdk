@@ -47,6 +47,15 @@ export interface DocHistoryRecord extends DocRecord {
   changeType: "created" | "updated" | "marker_edit" | "metadata_edit";
 }
 
+export interface CodeReferenceRecord {
+  codePath: string;
+  docId: string;
+  relationType: "boundary" | "doc";
+  sourceKind: "code_comment" | "doc_frontmatter";
+  symbol?: string;
+  line?: number;
+}
+
 /** 주소 슬라이스 의도 레코드 */
 export interface SliceIntentRecord {
   id: number;

@@ -64,13 +64,13 @@ export async function createDataSource(options: DataSourceOptions = {}): Promise
   if (options.mode === "local") {
     const dbPath = options.dbPath ?? findDbPath(cwd);
     if (!dbPath) throw new Error("DB 파일을 찾을 수 없습니다. DEF_DB_PATH를 설정하거나 POST /sync를 실행하세요.");
-    return new LocalDataSource(dbPath);
+    return new LocalDataSource(dbPath, cwd);
   }
 
   // 자동 감지: DB 파일 우선
   const dbPath = options.dbPath ?? findDbPath(cwd);
   if (dbPath) {
-    return new LocalDataSource(dbPath);
+    return new LocalDataSource(dbPath, cwd);
   }
 
   // DB 없으면 서버 시도

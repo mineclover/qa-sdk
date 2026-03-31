@@ -173,6 +173,35 @@ export const documentHistory = sqliteTable(
 export type DocumentHistoryRow = typeof documentHistory.$inferSelect;
 export type DocumentLinkRow = typeof documentLinks.$inferSelect;
 
+// ── code_references ──────────────────────────────────────────────
+export const codeReferences = sqliteTable(
+  "code_references",
+  {
+    codePath: text("code_path").notNull(),
+    docId: text("doc_id").notNull(),
+    relationType: text("relation_type").notNull(),
+    sourceKind: text("source_kind").notNull(),
+    symbol: text("symbol").notNull().default(""),
+    line: integer("line"),
+  },
+  (table) => [
+    primaryKey({
+      columns: [
+        table.codePath,
+        table.docId,
+        table.relationType,
+        table.sourceKind,
+        table.symbol,
+      ],
+    }),
+    index("idx_cr_code_path").on(table.codePath),
+    index("idx_cr_code_path_symbol").on(table.codePath, table.symbol),
+    index("idx_cr_doc_id").on(table.docId),
+  ],
+);
+
+export type CodeReferenceRow = typeof codeReferences.$inferSelect;
+
 // ── slice_intents ────────────────────────────────────────────────
 export const sliceIntents = sqliteTable(
   "slice_intents",

@@ -2,6 +2,8 @@ import { Injectable, Inject } from "@nestjs/common";
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  formatCodeReferenceTarget,
+  makeCodeReferenceScopeKey,
   selectConcernContext,
   selectImpactContext,
   type DefBoundaryContextResult,
@@ -61,6 +63,20 @@ export class GraphService {
       address: 0,
       serialized: "",
     }));
+  }
+
+  private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
+    if (doc.level === "group" || doc.level === "module") return doc;
+
+    let current = doc;
+    const visited = new Set<string>([doc.docId]);
+    while (true) {
+      const parent = this.docs.getParent(current.docId);
+      if (!parent || visited.has(parent.docId)) return current;
+      if (parent.level === "group" || parent.level === "module") return parent;
+      visited.add(parent.docId);
+      current = parent;
+    }
   }
 
   /** 영향 분석 — DB edge 테이블 기반 */
@@ -190,6 +206,81 @@ export class GraphService {
         if (!hasContains) {
           issues.push({ severity: "warning", type: "orphan", docId: doc.docId, message: "approved 리프이지만 어디에도 참조되지 않음" });
         }
+      }
+    }
+
+    const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));
+    const refsByPath = new Map<string, ReturnType<DocsService["listCodeReferences"]>>();
+    for (const ref of this.docs.listCodeReferences()) {
+      const doc = docsById.get(ref.docId);
+      if (!doc) {
+        issues.push({
+          severity: "error",
+          type: "broken-code-reference",
+          docId: ref.docId,
+          message: `code reference "${ref.codePath}"가 존재하지 않는 문서 "${ref.docId}"를 참조`,
+        });
+        continue;
+      }
+      if (ref.relationType === "boundary" && doc.level !== "group" && doc.level !== "module") {
+        issues.push({
+          severity: "error",
+          type: "invalid-code-boundary",
+          docId: ref.docId,
+          message: `boundary reference "${ref.codePath}"는 group/module 문서를 가리켜야 함`,
+        });
+      }
+      const scopeKey = makeCodeReferenceScopeKey(ref.codePath, ref.symbol);
+      const bucket = refsByPath.get(scopeKey) ?? [];
+      bucket.push(ref);
+      refsByPath.set(scopeKey, bucket);
+    }
+
+    for (const [_scopeKey, pathRefs] of refsByPath) {
+      const targetLabel = formatCodeReferenceTarget({
+        codePath: pathRefs[0]!.codePath,
+        symbol: pathRefs[0]!.symbol,
+      });
+      const boundaryIds = [...new Set(
+        pathRefs
+          .filter((ref) => ref.relationType === "boundary" && docsById.has(ref.docId))
+          .map((ref) => ref.docId),
+      )];
+
+      if (boundaryIds.length > 1) {
+        issues.push({
+          severity: "error",
+          type: "ambiguous-code-boundary",
+          docId: boundaryIds[0]!,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(", ")}`,
+        });
+        continue;
+      }
+
+      const explicitBoundaryId = boundaryIds[0] ?? null;
+      const inferredAnchorIds = new Set<string>();
+      for (const ref of pathRefs) {
+        const doc = docsById.get(ref.docId);
+        if (!doc) continue;
+        const anchor = this.resolveBoundaryAnchor(doc);
+        inferredAnchorIds.add(anchor.docId);
+        if (explicitBoundaryId && anchor.docId !== explicitBoundaryId) {
+          issues.push({
+            severity: "error",
+            type: "inconsistent-code-boundary",
+            docId: ref.docId,
+            message: `code reference "${targetLabel}"의 explicit boundary "${explicitBoundaryId}"와 문서 "${ref.docId}"의 anchor "${anchor.docId}"가 다름`,
+          });
+        }
+      }
+
+      if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
+        issues.push({
+          severity: "error",
+          type: "ambiguous-code-boundary",
+          docId: pathRefs[0]!.docId,
+          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(", ")}`,
+        });
       }
     }
 

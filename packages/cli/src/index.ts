@@ -1035,6 +1035,9 @@ export async function main(argv = process.argv.slice(2)) {
     case 'def search':
       await cliDef(['search', ...sub.rest]);
       return;
+    case 'def concepts':
+      await cliDef(['concepts', ...sub.rest]);
+      return;
     case 'def impact':
       await cliDef(['impact', ...sub.rest]);
       return;
@@ -1055,6 +1058,9 @@ export async function main(argv = process.argv.slice(2)) {
       return;
     case 'def guide':
       await cliDef(['guide', ...sub.rest]);
+      return;
+    case 'def help':
+      await cliDef(['help', ...sub.rest]);
       return;
     case 'def state':
       await cliDef(['state', ...sub.rest]);
@@ -1369,6 +1375,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'def parent',
     'def incoming',
     'def search',
+    'def concepts',
     'def impact',
     'def check',
     'def audit-db',

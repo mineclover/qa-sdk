@@ -11,6 +11,7 @@ def:
   links:
     - target: system-root
       type: refines
+source: packages/review-ledger/src/types.ts
 ---
 
 # Review Ledger — 리뷰 원장 + AI 피드백 요청

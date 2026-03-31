@@ -11,6 +11,8 @@ description: "definition-catalog 새 문서 생성. frontmatter + ^purpose + ^ov
 ---
 def:
   id: <고유 ID, kebab-case>
+  type: <spec|knowledge>             # 선택, 기본 spec
+  knowledge_kind: <philosophy|adr|guide|narrative|convention|pattern|concept>  # knowledge만
   level: <group|module|leaf>  # 선택, 기본 leaf
   scope: <ui|feature|flow|state|constraint|data|interface>
   aspect: <세부 유형>
@@ -71,13 +73,19 @@ interface: api_contract, cli_contract, event_contract
 qa-sdk def sync
 qa-sdk def validate    # 깨진 링크 확인
 qa-sdk def audit       # purpose + level 분포 확인
+qa-sdk def boundary-context <문서ID> --mode direct
+qa-sdk def find-by-file <관련 코드 경로[:symbol]>
 ```
 
 ## 작성 규칙
 
 - `group` 또는 `module`이면 `## 구성 ^overview`를 실제로 채우고 `contains` 자식을 가져야 한다.
 - `leaf`면 `contains` 자식을 만들지 않는다.
+- 개념 자체를 정의하는 지식 문서는 `type: knowledge` + `knowledge_kind: concept`를 사용한다.
 - 새 문서를 생성한 뒤 실행 환경의 `~/.codex/skills/`나 DB를 직접 고치지 않는다. repo 문서와 `def sync`가 기준이다.
+- 코드 경계와 실제로 맞추려면 top-level frontmatter에 `source: packages/.../file.ts[:symbol]`를 추가한다.
+- 코드 파일 안에는 `@def.boundary <group-or-module-doc-id>[#symbol]` 또는 `@def.doc <module-or-leaf-doc-id>[#symbol]` 주석을 붙일 수 있다.
+- 그런 뒤 `qa-sdk def sync`로 DB의 `code_references`를 갱신하고 `def find-by-file <관련 코드 경로[:symbol]>`로 확인한다.
 
 ## tags 선택 규칙
 

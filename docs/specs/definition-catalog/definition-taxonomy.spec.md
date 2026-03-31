@@ -1,6 +1,8 @@
 ---
 def:
   id: definition-taxonomy
+  type: knowledge
+  knowledge_kind: concept
   level: module
   address: def_document:v2:342164
   scope: data

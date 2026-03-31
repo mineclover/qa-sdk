@@ -2,10 +2,13 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
   DefBoundaryContextResult,
+  DefBoundaryResolutionCandidate,
   DefBoundaryResult,
+  DefCodeReference,
   DefDataSource,
   DefDoc,
   DefDocBody,
+  DefFileBoundaryResolution,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
@@ -236,6 +239,14 @@ export class ScanDataSource implements DefDataSource {
       docVersion: doc.docVersion,
       revision: doc.revision,
       sourcePath: doc.sourcePath,
+    };
+  }
+
+  async resolveByFile(filePath: string): Promise<DefFileBoundaryResolution> {
+    return {
+      kind: "none",
+      codePath: filePath,
+      references: [],
     };
   }
 

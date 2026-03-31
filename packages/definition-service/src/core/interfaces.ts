@@ -5,6 +5,7 @@
 import type {
   DocRecord,
   DocHistoryRecord,
+  CodeReferenceRecord,
   SliceIntentRecord,
   ConsumptionSnapshot,
 } from "./types.js";
@@ -42,6 +43,9 @@ export interface DocStore {
     revision?: number;
     sourcePath?: string;
   } | null;
+  replaceCodeReferences(references: CodeReferenceRecord[]): number;
+  listCodeReferences(): CodeReferenceRecord[];
+  getCodeReferencesByPath(codePath: string): CodeReferenceRecord[];
   list(filter?: DocListFilter): DocRecord[];
   getHistory(docId: string, limit?: number): DocHistoryRecord[];
   getVersion(docId: string, version: number): DocHistoryRecord | null;

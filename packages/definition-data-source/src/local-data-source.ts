@@ -6,12 +6,16 @@
  */
 
 import Database from "better-sqlite3";
+import { isAbsolute, relative } from "node:path";
 import type {
   DefBoundaryContextResult,
+  DefBoundaryResolutionCandidate,
   DefBoundaryResult,
+  DefCodeReference,
   DefDataSource,
   DefDoc,
   DefDocBody,
+  DefFileBoundaryResolution,
   DefIncomingLink,
   DefListFilter,
   DefValidationResult,
@@ -21,6 +25,9 @@ import type {
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  formatCodeReferenceTarget,
+  makeCodeReferenceScopeKey,
+  parseCodeReferenceTarget,
   selectConcernContext,
   selectImpactContext,
 } from "definition-catalog";
@@ -33,6 +40,8 @@ function rowToDoc(row: Record<string, unknown>): DefDoc {
   return {
     docId: row["doc_id"] as string,
     title: (row["title"] as string) || (row["doc_id"] as string),
+    type: (row["doc_type"] as string) || undefined,
+    knowledgeKind: (row["knowledge_kind"] as string) || undefined,
     level: (row["level"] as string) || undefined,
     scope: row["scope"] as string,
     aspect: row["aspect"] as string,
@@ -89,6 +98,88 @@ export class LocalDataSource implements DefDataSource {
     };
   }
 
+  async resolveByFile(filePath: string): Promise<DefFileBoundaryResolution> {
+    const requested = this.normalizeCodeReferenceTarget(filePath);
+    const refs = this.db
+      .prepare(`
+        SELECT code_path, doc_id, relation_type, source_kind, symbol, line
+        FROM code_references
+        WHERE code_path = ?
+        ORDER BY doc_id, relation_type
+      `)
+      .all(requested.codePath) as Array<Record<string, unknown>>;
+
+    const references: DefCodeReference[] = refs.map((row) => ({
+      codePath: row["code_path"] as string,
+      docId: row["doc_id"] as string,
+      relationType: row["relation_type"] as DefCodeReference["relationType"],
+      sourceKind: row["source_kind"] as DefCodeReference["sourceKind"],
+      symbol: (row["symbol"] as string) || undefined,
+      line: (row["line"] as number | null) ?? undefined,
+    }));
+
+    const scopedReferences = requested.symbol
+      ? references.filter((ref) => (ref.symbol ?? "") === requested.symbol || !ref.symbol)
+      : references;
+
+    if (scopedReferences.length === 0) {
+      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+    }
+
+    const supportingDocs = await Promise.all(
+      [...new Set(scopedReferences.map((ref) => ref.docId))].map((docId) => this.get(docId)),
+    );
+    const docs = supportingDocs.filter((doc): doc is DefDoc => Boolean(doc));
+    if (docs.length === 0) {
+      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+    }
+
+    const boundaryRefs = scopedReferences.filter((ref) => ref.relationType === "boundary");
+    const boundaryDocIds = [...new Set(boundaryRefs.map((ref) => ref.docId))];
+    if (boundaryDocIds.length > 1) {
+      const candidates = docs
+        .filter((doc) => boundaryDocIds.includes(doc.docId))
+        .map((anchor) => ({
+          anchor,
+          supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
+          references: scopedReferences,
+        }));
+      return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+    }
+
+    const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
+
+    for (const doc of docs) {
+      const anchor = boundaryDocIds.length === 1
+        ? docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc
+        : await this.resolveBoundaryAnchor(doc);
+      const existing = byAnchor.get(anchor.docId);
+      if (existing) {
+        existing.supportingDocs.push(doc);
+      } else {
+        byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
+      }
+    }
+
+    const candidates = [...byAnchor.values()].map((candidate) => ({
+      anchor: candidate.anchor,
+          supportingDocs: candidate.supportingDocs.toSorted((a: DefDoc, b: DefDoc) => a.docId.localeCompare(b.docId)),
+      references: scopedReferences,
+    }));
+
+    if (candidates.length === 1) {
+      return {
+        kind: "unique",
+        codePath: formatCodeReferenceTarget(requested),
+        anchor: candidates[0]!.anchor,
+        supportingDocs: candidates[0]!.supportingDocs,
+        references: scopedReferences,
+      };
+    }
+
+    return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+  }
+
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
     // 전문 검색 — MATCH 실패 시 LIKE fallback으로 exact id/title 검색을 보완한다.
     if (filter?.q) {
@@ -118,6 +209,8 @@ export class LocalDataSource implements DefDataSource {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
+    if (filter?.type) { conditions.push("doc_type = ?"); params.push(filter.type); }
+    if (filter?.knowledgeKind) { conditions.push("knowledge_kind = ?"); params.push(filter.knowledgeKind); }
     if (filter?.scope) { conditions.push("scope = ?"); params.push(filter.scope); }
     if (filter?.aspect) { conditions.push("aspect = ?"); params.push(filter.aspect); }
     if (filter?.depth) { conditions.push("depth = ?"); params.push(filter.depth); }
@@ -445,6 +538,83 @@ export class LocalDataSource implements DefDataSource {
       }
     }
 
+    const refs = this.getAllCodeReferences();
+    const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));
+    const refsByPath = new Map<string, DefCodeReference[]>();
+
+    for (const ref of refs) {
+      const doc = docsById.get(ref.docId);
+      if (!doc) {
+        issues.push({
+          severity: "error",
+          type: "broken-code-reference",
+          docId: ref.docId,
+          message: `code reference "${ref.codePath}"가 존재하지 않는 문서 "${ref.docId}"를 참조`,
+        });
+        continue;
+      }
+      if (ref.relationType === "boundary" && doc.level !== "group" && doc.level !== "module") {
+        issues.push({
+          severity: "error",
+          type: "invalid-code-boundary",
+          docId: ref.docId,
+          message: `boundary reference "${ref.codePath}"는 group/module 문서를 가리켜야 함`,
+        });
+      }
+      const scopeKey = makeCodeReferenceScopeKey(ref.codePath, ref.symbol);
+      const bucket = refsByPath.get(scopeKey) ?? [];
+      bucket.push(ref);
+      refsByPath.set(scopeKey, bucket);
+    }
+
+    for (const [_scopeKey, pathRefs] of refsByPath) {
+      const targetLabel = formatCodeReferenceTarget({
+        codePath: pathRefs[0]!.codePath,
+        symbol: pathRefs[0]!.symbol,
+      });
+      const boundaryIds = [...new Set(
+        pathRefs
+          .filter((ref) => ref.relationType === "boundary" && docsById.has(ref.docId))
+          .map((ref) => ref.docId),
+      )];
+
+      if (boundaryIds.length > 1) {
+        issues.push({
+          severity: "error",
+          type: "ambiguous-code-boundary",
+          docId: boundaryIds[0]!,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(", ")}`,
+        });
+        continue;
+      }
+
+      const explicitBoundaryId = boundaryIds[0] ?? null;
+      const inferredAnchorIds = new Set<string>();
+      for (const ref of pathRefs) {
+        const doc = docsById.get(ref.docId);
+        if (!doc) continue;
+        const anchor = await this.resolveBoundaryAnchor(doc);
+        inferredAnchorIds.add(anchor.docId);
+        if (explicitBoundaryId && anchor.docId !== explicitBoundaryId) {
+          issues.push({
+            severity: "error",
+            type: "inconsistent-code-boundary",
+            docId: ref.docId,
+            message: `code reference "${targetLabel}"의 explicit boundary "${explicitBoundaryId}"와 문서 "${ref.docId}"의 anchor "${anchor.docId}"가 다름`,
+          });
+        }
+      }
+
+      if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
+        issues.push({
+          severity: "error",
+          type: "ambiguous-code-boundary",
+          docId: pathRefs[0]!.docId,
+          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(", ")}`,
+        });
+      }
+    }
+
     const errors = issues.filter(i => i.severity === "error").length;
     const warnings = issues.filter(i => i.severity === "warning").length;
     return { issues, errors, warnings, passed: errors === 0 };
@@ -452,5 +622,50 @@ export class LocalDataSource implements DefDataSource {
 
   close() {
     this.db.close();
+  }
+
+  private getAllCodeReferences(): DefCodeReference[] {
+    const rows = this.db
+      .prepare(`
+        SELECT code_path, doc_id, relation_type, source_kind, symbol, line
+        FROM code_references
+        ORDER BY code_path, doc_id, relation_type
+      `)
+      .all() as Array<Record<string, unknown>>;
+
+    return rows.map((row) => ({
+      codePath: row["code_path"] as string,
+      docId: row["doc_id"] as string,
+      relationType: row["relation_type"] as DefCodeReference["relationType"],
+      sourceKind: row["source_kind"] as DefCodeReference["sourceKind"],
+      symbol: (row["symbol"] as string) || undefined,
+      line: (row["line"] as number | null) ?? undefined,
+    }));
+  }
+
+  private normalizeCodeReferenceTarget(filePath: string): { codePath: string; symbol?: string } {
+    const parsed = parseCodeReferenceTarget(filePath.replaceAll("\\", "/"));
+    const rawPath = parsed?.codePath ?? filePath;
+    const symbol = parsed?.symbol;
+    if (isAbsolute(rawPath)) {
+      const relPath = relative(this.cwd, rawPath).replaceAll("\\", "/");
+      if (relPath !== "" && !relPath.startsWith("../")) {
+        return { codePath: relPath, symbol };
+      }
+    }
+    return { codePath: rawPath.replaceAll("\\", "/"), symbol };
+  }
+
+  private async resolveBoundaryAnchor(doc: DefDoc): Promise<DefDoc> {
+    if (doc.level === "group" || doc.level === "module") return doc;
+    let current = doc;
+    const visited = new Set<string>([doc.docId]);
+    while (true) {
+      const parent = await this.getParent(current.docId);
+      if (!parent || visited.has(parent.docId)) return current;
+      if (parent.level === "group" || parent.level === "module") return parent;
+      visited.add(parent.docId);
+      current = parent;
+    }
   }
 }

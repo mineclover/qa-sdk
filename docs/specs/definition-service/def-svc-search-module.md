@@ -15,6 +15,7 @@ def:
       type: refines
     - target: def-svc-data-model
       type: depends_on
+source: packages/definition-service/src/modules/search/search.service.ts
 ---
 # Definition Service — Search Module
 

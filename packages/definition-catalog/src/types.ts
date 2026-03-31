@@ -47,6 +47,7 @@ export type DefDocType = "spec" | "knowledge";
  * narrative: 진화 과정/맥락 ("시스템이 어떻게 여기까지 왔는가")
  * convention: 합의된 규칙 ("에러 코드 컨벤션")
  * pattern: 반복되는 설계 패턴 ("이벤트 수집 패턴")
+ * concept: 개념 자체의 정의 ("좌표란 무엇인가", "taxonomy란 무엇인가")
  */
 export type KnowledgeKind =
   | "philosophy"
@@ -54,7 +55,8 @@ export type KnowledgeKind =
   | "guide"
   | "narrative"
   | "convention"
-  | "pattern";
+  | "pattern"
+  | "concept";
 
 /** 대분류 — 무엇에 대한 정의인가 */
 export type DefScope =

@@ -50,6 +50,18 @@ definition-catalog 문서를 일관되게 작성하고 모듈 단위로 쿼리�
 | implementation | 구현 세부 | 코드 수준 설계, 알고리즘 |
 | validation | 검증 계획 | 테스트 계획, 품질 게이트 |
 
+### knowledge_kind — "어떤 지식 문서인가"
+
+| knowledge_kind | 의미 |
+|----------------|------|
+| philosophy | 시스템 철학 |
+| adr | 아키텍처 결정 기록 |
+| guide | 사용법/판단 가이드 |
+| narrative | 진화 과정/맥락 |
+| convention | 합의된 규칙 |
+| pattern | 반복 해법 |
+| concept | 개념 정의 |
+
 ### svc — "어느 모듈에 속하는가"
 
 ```yaml
@@ -103,8 +115,21 @@ def:
   links:
     - target: parent-doc-id
       type: refines              # 부모→자식: contains, 자식→부모: refines
+source: packages/<pkg>/src/<file>.ts[:symbol]   # 선택 — 코드 경계와 1:1로 연결할 때만
 ---
 ```
+
+`source:`는 문서 frontmatter에서 코드와의 정적 연결을 선언하는 방식이다.
+코드 파일 쪽에서는 아래 주석 컨벤션을 같이 쓸 수 있다.
+
+```ts
+// @def.boundary <group-or-module-doc-id>[#symbol]
+// @def.doc <module-or-leaf-doc-id>[#symbol]
+```
+
+`qa-sdk def sync`는 `source:`와 `@def.boundary`/`@def.doc`를 함께 스캔해서
+DB의 `code_references`를 갱신한다. `qa-sdk def find-by-file`와 review-feedback은
+이 DB를 authoritative source로 사용한다. explicit mapping이 없으면 결과를 주지 않는다.
 
 ## 3.5 태그 선택 규칙
 
@@ -170,4 +195,5 @@ def:
 qa-sdk def audit              # 전체 품질 리포트
 qa-sdk def validate           # 깨진 링크/순환/고아
 qa-sdk def list --depth=specification --svc=""  # svc 미지정 스펙 (위반 후보)
+qa-sdk def find-by-file <관련 코드 경로>         # explicit source-map 검증
 ```

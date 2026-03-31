@@ -60,6 +60,7 @@ knowledge 문서는 `knowledge_kind`로 세분화한다.
 | narrative | 진화 과정/맥락 | 시스템이 여기까지 온 경로 |
 | convention | 합의된 규칙 | 에러 코드 컨벤션 |
 | pattern | 반복 설계 패턴 | 이벤트 수집 패턴 |
+| concept | 개념 정의 | 좌표란 무엇인가, taxonomy란 무엇인가 |
 
 ## Level — "이 문서의 역할"
 

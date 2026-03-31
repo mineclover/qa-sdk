@@ -15,6 +15,7 @@ def:
       type: refines
     - target: def-svc-data-model
       type: depends_on
+source: packages/definition-service/src/sync/reverse-sync.ts
 ---
 # Definition Service — Sync Module
 

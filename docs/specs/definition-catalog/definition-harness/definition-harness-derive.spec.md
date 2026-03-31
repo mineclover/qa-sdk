@@ -66,7 +66,7 @@ frontmatter의 `lifecycle` 필드에서 직접 읽음 — 파생 불필요.
 | svc 있고 코드 존재 + 관련 테스트 통과 | `verified` |
 | 문서에 코드 블록 없고 소스 참조만 있음 | `source-referenced` |
 
-판별 입력: `svc` 필드 → `packages/` 디렉토리 매핑, `def find-by-file` 역매핑, spec-tracker 증거, 문서 본문 패턴 감지
+판별 입력: `svc` 필드, explicit `source:` code-boundary-map, spec-tracker 증거, 문서 본문 패턴 감지
 
 ### convention-compliance
 

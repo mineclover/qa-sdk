@@ -1,9 +1,20 @@
 import { Injectable, Inject, Optional } from "@nestjs/common";
+import { isAbsolute, relative } from "node:path";
 import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
 import { SqlDocStore } from "../../stores/doc-store.js";
 import type { DocRecord, DocHistoryRecord } from "../../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter, DocListResult } from "../../core/interfaces.js";
-import type { DefFeedbackRequestSummary, DefSyntheticIncomingLink } from "definition-catalog";
+import type {
+  DefBoundaryResolutionCandidate,
+  DefCodeReference,
+  DefFeedbackRequestSummary,
+  DefFileBoundaryResolution,
+  DefSyntheticIncomingLink,
+} from "definition-catalog";
+import {
+  formatCodeReferenceTarget,
+  parseCodeReferenceTarget,
+} from "definition-catalog";
 import { SearchService } from "../search/search.service.js";
 import {
   getFeedbackRequestSummariesForDoc,
@@ -56,6 +67,104 @@ export class DocsService {
 
   getBody(docId: string) {
     return this.store.getBody(docId);
+  }
+
+  listCodeReferences() {
+    return this.store.listCodeReferences();
+  }
+
+  private normalizeCodeReferenceTarget(filePath: string): { codePath: string; symbol?: string } {
+    const parsed = parseCodeReferenceTarget(filePath.replaceAll("\\", "/"));
+    const rawPath = parsed?.codePath ?? filePath;
+    const symbol = parsed?.symbol;
+    if (isAbsolute(rawPath)) {
+      const relPath = relative(process.cwd(), rawPath).replaceAll("\\", "/");
+      if (relPath !== "" && !relPath.startsWith("../")) {
+        return { codePath: relPath, symbol };
+      }
+    }
+    return { codePath: rawPath.replaceAll("\\", "/"), symbol };
+  }
+
+  private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
+    if (doc.level === "group" || doc.level === "module") return doc;
+
+    let current = doc;
+    const visited = new Set<string>([doc.docId]);
+    while (true) {
+      const parent = this.getParent(current.docId);
+      if (!parent || visited.has(parent.docId)) return current;
+      if (parent.level === "group" || parent.level === "module") return parent;
+      visited.add(parent.docId);
+      current = parent;
+    }
+  }
+
+  resolveByFile(filePath: string): DefFileBoundaryResolution {
+    const requested = this.normalizeCodeReferenceTarget(filePath);
+    const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) => ({
+      codePath: ref.codePath,
+      docId: ref.docId,
+      relationType: ref.relationType,
+      sourceKind: ref.sourceKind,
+      ...(ref.symbol ? { symbol: ref.symbol } : {}),
+      ...(ref.line !== undefined ? { line: ref.line } : {}),
+    })) as DefCodeReference[];
+
+    const scopedReferences = requested.symbol
+      ? references.filter((ref) => (ref.symbol ?? "") === requested.symbol || !ref.symbol)
+      : references;
+
+    if (scopedReferences.length === 0) {
+      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+    }
+
+    const docs = [...new Set(scopedReferences.map((ref) => ref.docId))]
+      .map((docId) => this.get(docId))
+      .filter((doc): doc is DocRecord => Boolean(doc));
+    if (docs.length === 0) {
+      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+    }
+
+    const boundaryDocIds = [...new Set(scopedReferences.filter((ref) => ref.relationType === "boundary").map((ref) => ref.docId))];
+    if (boundaryDocIds.length > 1) {
+      const candidates = docs
+        .filter((doc) => boundaryDocIds.includes(doc.docId))
+        .map((anchor) => ({
+          anchor,
+          supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
+          references: scopedReferences,
+        })) as DefBoundaryResolutionCandidate[];
+      return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+    }
+
+    const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
+    for (const doc of docs) {
+      const anchor = boundaryDocIds.length === 1
+        ? docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc
+        : this.resolveBoundaryAnchor(doc);
+      const existing = byAnchor.get(anchor.docId);
+      if (existing) existing.supportingDocs.push(doc);
+      else byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
+    }
+
+    const candidates = [...byAnchor.values()].map((candidate) => ({
+      anchor: candidate.anchor,
+      supportingDocs: candidate.supportingDocs.toSorted((a, b) => a.docId.localeCompare(b.docId)),
+      references: scopedReferences,
+    }));
+
+    if (candidates.length === 1) {
+      return {
+        kind: "unique",
+        codePath: formatCodeReferenceTarget(requested),
+        anchor: candidates[0]!.anchor,
+        supportingDocs: candidates[0]!.supportingDocs,
+        references: scopedReferences,
+      };
+    }
+
+    return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
   }
 
   getHistory(docId: string, limit?: number): DocHistoryRecord[] {

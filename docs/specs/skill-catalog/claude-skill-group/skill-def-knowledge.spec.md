@@ -29,7 +29,7 @@ skill-catalog-system > claude-skill-group > **skill-def-knowledge**
 ## 정의 ^defines
 
 - "왜" 질문 흐름 (spec → incoming links → knowledge 탐색)
-- 6종 knowledge_kind별 마커 가이드
+- 7종 knowledge_kind별 마커 가이드
 - decision-flow → knowledge 승격 경로
 
 ## 소비 ^consumes

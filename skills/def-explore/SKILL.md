@@ -15,6 +15,7 @@ qa-sdk def guide concepts       # 핵심 개념 (좌표, prefix, 축)
 qa-sdk def guide classification # 문서 분류 체계 (scope, level, layer)
 qa-sdk def guide services       # 서비스 구조 (6개 인프라 + 보조)
 qa-sdk def guide philosophy     # 시스템 철학
+qa-sdk def concepts             # knowledge/concept 문서 목록
 ```
 
 ## 탐색 경로
@@ -34,6 +35,7 @@ def get system-concepts       # 이벤트, 좌표, 축, Prefix 기본 개념
 def get definition-taxonomy   # 문서 분류 체계 전체 (scope/aspect/depth/level/layer)
 def get definition-level      # 분해 레벨 설계 근거 (왜 level이 필요한가)
 def get definition-addressing # 주소 체계 (이중 관리: address + id)
+def concepts                  # concept 문서만 모아서 조회
 def search "철학"             # 시스템 철학 문서
 ```
 
@@ -50,9 +52,14 @@ def context <service-id>      # 소속/의존/영향 컨텍스트
 ### 4. 코드 연결
 
 ```bash
-def find-by-file <파일경로>   # 코드 → 관련 문서
+def find-by-file <파일경로[:symbol]>   # 코드 → 관련 문서
+def body <문서ID>            # 최신 본문 전체 확인
 def list --svc=<서비스명>     # 서비스별 문서 전체
 ```
+
+`def find-by-file`는 DB의 `code_references`만 사용한다.
+입력은 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`이며, `qa-sdk def sync` 이후에만 반영된다.
+결과가 없으면 아직 구조적 code-boundary-map이 정의되지 않은 것이다.
 
 ### 5. 품질 확인
 

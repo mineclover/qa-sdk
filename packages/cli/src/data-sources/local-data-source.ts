@@ -6,12 +6,16 @@
  */
 
 import Database from "better-sqlite3";
+import { isAbsolute, relative } from "node:path";
 import type {
   DefBoundaryContextResult,
+  DefBoundaryResolutionCandidate,
   DefBoundaryResult,
+  DefCodeReference,
   DefDataSource,
   DefDoc,
   DefDocBody,
+  DefFileBoundaryResolution,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
@@ -31,6 +35,8 @@ function rowToDoc(row: Record<string, unknown>): DefDoc {
   return {
     docId: row["doc_id"] as string,
     title: (row["title"] as string) || (row["doc_id"] as string),
+    type: (row["doc_type"] as string) || undefined,
+    knowledgeKind: (row["knowledge_kind"] as string) || undefined,
     level: (row["level"] as string) || undefined,
     scope: row["scope"] as string,
     aspect: row["aspect"] as string,
@@ -55,9 +61,11 @@ function rowToDoc(row: Record<string, unknown>): DefDoc {
 export class LocalDataSource implements DefDataSource {
   readonly mode = "local" as const;
   private readonly db: Database.Database;
+  private readonly cwd: string;
 
-  constructor(dbPath: string) {
+  constructor(dbPath: string, cwd: string = process.cwd()) {
     this.db = new Database(dbPath, { readonly: true });
+    this.cwd = cwd;
   }
 
   async get(docId: string): Promise<DefDoc | null> {
@@ -82,6 +90,78 @@ export class LocalDataSource implements DefDataSource {
       revision: (row["revision"] as number | null) ?? undefined,
       sourcePath: (row["source_path"] as string) || undefined,
     };
+  }
+
+  async resolveByFile(filePath: string): Promise<DefFileBoundaryResolution> {
+    const normalizedPath = this.normalizeCodePath(filePath);
+    const refs = this.db
+      .prepare(`
+        SELECT code_path, doc_id, relation_type, source_kind, symbol, line
+        FROM code_references
+        WHERE code_path = ?
+        ORDER BY doc_id, relation_type
+      `)
+      .all(normalizedPath) as Array<Record<string, unknown>>;
+
+    const references: DefCodeReference[] = refs.map((row) => ({
+      codePath: row["code_path"] as string,
+      docId: row["doc_id"] as string,
+      relationType: row["relation_type"] as DefCodeReference["relationType"],
+      sourceKind: row["source_kind"] as DefCodeReference["sourceKind"],
+      symbol: (row["symbol"] as string) || undefined,
+      line: (row["line"] as number | null) ?? undefined,
+    }));
+
+    if (references.length === 0) {
+      return { kind: "none", codePath: normalizedPath, references };
+    }
+
+    const docs = (await Promise.all(
+      [...new Set(references.map((ref) => ref.docId))].map((docId) => this.get(docId)),
+    )).filter((doc): doc is DefDoc => Boolean(doc));
+    if (docs.length === 0) {
+      return { kind: "none", codePath: normalizedPath, references };
+    }
+
+    const boundaryDocIds = [...new Set(references.filter((ref) => ref.relationType === "boundary").map((ref) => ref.docId))];
+    if (boundaryDocIds.length > 1) {
+      const candidates = docs
+        .filter((doc) => boundaryDocIds.includes(doc.docId))
+        .map((anchor) => ({
+          anchor,
+          supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
+          references,
+        }));
+      return { kind: "ambiguous", codePath: normalizedPath, candidates, references };
+    }
+
+    const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
+    for (const doc of docs) {
+      const anchor = boundaryDocIds.length === 1 && docs.find((item) => item.docId === boundaryDocIds[0])
+        ? docs.find((item) => item.docId === boundaryDocIds[0])!
+        : await this.resolveBoundaryAnchor(doc);
+      const existing = byAnchor.get(anchor.docId);
+      if (existing) existing.supportingDocs.push(doc);
+      else byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references });
+    }
+
+    const candidates = [...byAnchor.values()].map((candidate) => ({
+      anchor: candidate.anchor,
+          supportingDocs: candidate.supportingDocs.toSorted((a: DefDoc, b: DefDoc) => a.docId.localeCompare(b.docId)),
+      references,
+    }));
+
+    if (candidates.length === 1) {
+      return {
+        kind: "unique",
+        codePath: normalizedPath,
+        anchor: candidates[0]!.anchor,
+        supportingDocs: candidates[0]!.supportingDocs,
+        references,
+      };
+    }
+
+    return { kind: "ambiguous", codePath: normalizedPath, candidates, references };
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
@@ -113,6 +193,8 @@ export class LocalDataSource implements DefDataSource {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
+    if (filter?.type) { conditions.push("doc_type = ?"); params.push(filter.type); }
+    if (filter?.knowledgeKind) { conditions.push("knowledge_kind = ?"); params.push(filter.knowledgeKind); }
     if (filter?.scope) { conditions.push("scope = ?"); params.push(filter.scope); }
     if (filter?.aspect) { conditions.push("aspect = ?"); params.push(filter.aspect); }
     if (filter?.depth) { conditions.push("depth = ?"); params.push(filter.depth); }
@@ -435,5 +517,28 @@ export class LocalDataSource implements DefDataSource {
 
   close() {
     this.db.close();
+  }
+
+  private normalizeCodePath(filePath: string): string {
+    if (isAbsolute(filePath)) {
+      const relPath = relative(this.cwd, filePath).replaceAll("\\", "/");
+      if (relPath !== "" && !relPath.startsWith("../")) {
+        return relPath;
+      }
+    }
+    return filePath.replaceAll("\\", "/");
+  }
+
+  private async resolveBoundaryAnchor(doc: DefDoc): Promise<DefDoc> {
+    if (doc.level === "group" || doc.level === "module") return doc;
+    let current = doc;
+    const visited = new Set<string>([doc.docId]);
+    while (true) {
+      const parent = await this.getParent(current.docId);
+      if (!parent || visited.has(parent.docId)) return current;
+      if (parent.level === "group" || parent.level === "module") return parent;
+      visited.add(parent.docId);
+      current = parent;
+    }
   }
 }

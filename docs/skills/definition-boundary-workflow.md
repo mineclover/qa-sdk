@@ -14,13 +14,15 @@ description: "definition-catalog boundary를 기준으로 direct 구조, couplin
 2. `boundary`로 direct 구조를 읽는다.
 3. `boundary-context --mode direct`로 현재 작업 단위를 읽는다.
 4. `boundary-context --mode transitive`로 전이 영향을 읽는다.
-5. 필요하면 provider/state/interaction/validation 문서로 분리한다.
+5. 요약만으로 부족하면 `body`로 최신 본문 전체를 읽는다.
+6. 필요하면 provider/state/interaction/validation 문서로 분리한다.
 
 ```bash
 qa-sdk def sync
 qa-sdk def boundary <문서ID>
 qa-sdk def boundary-context <문서ID> --mode direct
 qa-sdk def boundary-context <문서ID> --mode transitive
+qa-sdk def body <문서ID>
 ```
 
 ## Verification Loop
@@ -30,7 +32,7 @@ boundary 문서를 정리한 뒤에는 아래 루프를 기본으로 돈다.
 ```bash
 pnpm --filter @qa-sdk/cli build
 node packages/cli/dist/index.js def sync
-node packages/cli/dist/index.js def validate
+node packages/cli/dist/index.js def validate   # code_references + graph 함께 검증
 node packages/cli/dist/index.js def audit
 node packages/cli/dist/index.js def audit-db
 ```
@@ -76,12 +78,16 @@ node packages/cli/dist/index.js def validate --scan
   concern/impact 포함 복합 조회
 - `qa-sdk def context <문서ID>`
   상위/하위/제약/의존 맥락 확인
+- `qa-sdk def find-by-file <파일경로[:symbol]>`
+  `source:` + `@def.boundary`/`@def.doc`가 DB에 적재된 경우에만 authoritative boundary를 조회한다
 - `qa-sdk def validate`
   synced graph 검증
 - `qa-sdk def scan-audit`
   raw frontmatter/link drift 감사
 
 skill 파일은 내부 실행 정의 SSOT이고, 사용자는 위 명령 진입점을 통해 간접적으로 접근한다.
+
+`def find-by-file`는 DB에 explicit code reference가 없는 파일에는 결과를 주지 않는다. heuristic ranking은 사용하지 않는다.
 
 ## 참고 문서
 

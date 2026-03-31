@@ -18,6 +18,7 @@ declare module "definition-data-source" {
   export interface SyncLocalDbResult {
     synced: number;
     links: number;
+    codeReferences: number;
     dbPath: string;
   }
 

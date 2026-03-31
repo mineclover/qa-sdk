@@ -1,4 +1,4 @@
-import { parseDocument, scanAndBuild } from "definition-catalog";
+import { collectCodeReferences, parseDocument, scanAndBuild } from "definition-catalog";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DocStore } from "../core/interfaces.js";
@@ -8,6 +8,7 @@ export interface SyncResult {
   synced: number;
   unchanged: number;
   created: number;
+  codeReferences: number;
   errors: string[];
 }
 
@@ -23,7 +24,7 @@ export async function syncDocsToDb(
   rootDir: string,
   docStore: DocStore,
 ): Promise<SyncResult> {
-  const result: SyncResult = { synced: 0, unchanged: 0, created: 0, errors: [] };
+  const result: SyncResult = { synced: 0, unchanged: 0, created: 0, codeReferences: 0, errors: [] };
 
   let scanResult;
   try {
@@ -81,6 +82,13 @@ export async function syncDocsToDb(
         `${entry.id}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
+  }
+
+  try {
+    const codeReferences = collectCodeReferences(rootDir, { docsDir, codeDirs: ["packages"] });
+    result.codeReferences = docStore.replaceCodeReferences(codeReferences);
+  } catch (err) {
+    result.errors.push(`code reference scan 실패: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return result;

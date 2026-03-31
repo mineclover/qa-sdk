@@ -1,5 +1,5 @@
 import type { DefinitionServiceDatabase } from "../database.module.js";
-import type { DocRecord, DocHistoryRecord } from "../core/types.js";
+import type { DocRecord, DocHistoryRecord, CodeReferenceRecord } from "../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
 import { computeDocumentAddress } from "../core/compute-address.js";
@@ -7,6 +7,7 @@ import {
   documents,
   documentLinks,
   documentHistory,
+  codeReferences,
 } from "../db/schema.js";
 import {
   eq,
@@ -495,6 +496,55 @@ export class SqlDocStore implements DocStore {
       revision: row.revision ?? undefined,
       sourcePath: row.sourcePath || undefined,
     };
+  }
+
+  replaceCodeReferences(references: CodeReferenceRecord[]): number {
+    this.db.delete(codeReferences).run();
+    if (references.length === 0) return 0;
+    for (const ref of references) {
+      this.db.insert(codeReferences).values({
+        codePath: ref.codePath,
+        docId: ref.docId,
+        relationType: ref.relationType,
+        sourceKind: ref.sourceKind,
+        symbol: ref.symbol ?? "",
+        line: ref.line ?? null,
+      }).run();
+    }
+    return references.length;
+  }
+
+  listCodeReferences(): CodeReferenceRecord[] {
+    return this.db
+      .select()
+      .from(codeReferences)
+      .orderBy(asc(codeReferences.codePath), asc(codeReferences.docId), asc(codeReferences.relationType))
+      .all()
+      .map((row) => ({
+        codePath: row.codePath,
+        docId: row.docId,
+        relationType: row.relationType as CodeReferenceRecord["relationType"],
+        sourceKind: row.sourceKind as CodeReferenceRecord["sourceKind"],
+        symbol: row.symbol || undefined,
+        line: row.line ?? undefined,
+      }));
+  }
+
+  getCodeReferencesByPath(codePath: string): CodeReferenceRecord[] {
+    return this.db
+      .select()
+      .from(codeReferences)
+      .where(eq(codeReferences.codePath, codePath))
+      .orderBy(asc(codeReferences.docId), asc(codeReferences.relationType))
+      .all()
+      .map((row) => ({
+        codePath: row.codePath,
+        docId: row.docId,
+        relationType: row.relationType as CodeReferenceRecord["relationType"],
+        sourceKind: row.sourceKind as CodeReferenceRecord["sourceKind"],
+        symbol: row.symbol || undefined,
+        line: row.line ?? undefined,
+      }));
   }
 
   list(filter?: DocListFilter): DocRecord[] {

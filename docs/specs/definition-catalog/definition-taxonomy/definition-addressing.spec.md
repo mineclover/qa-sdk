@@ -1,6 +1,8 @@
 ---
 def:
   id: definition-addressing
+  type: knowledge
+  knowledge_kind: concept
   level: leaf
   address: def_document:v2:342161
   scope: data

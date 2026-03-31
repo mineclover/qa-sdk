@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 import {
+  collectCodeReferences,
   extractByMarker,
   extractFrontmatter,
   parseDocument,
@@ -22,6 +23,7 @@ export interface SyncLocalDbOptions {
 export interface SyncLocalDbResult {
   synced: number;
   links: number;
+  codeReferences: number;
   dbPath: string;
 }
 
@@ -71,6 +73,29 @@ const documentLinks = sqliteTable(
   }),
 );
 
+const codeReferences = sqliteTable(
+  "code_references",
+  {
+    codePath: text("code_path").notNull(),
+    docId: text("doc_id").notNull(),
+    relationType: text("relation_type").notNull(),
+    sourceKind: text("source_kind").notNull(),
+    symbol: text("symbol").notNull(),
+    line: integer("line"),
+  },
+  (table) => ({
+    pk: primaryKey({
+      columns: [
+        table.codePath,
+        table.docId,
+        table.relationType,
+        table.sourceKind,
+        table.symbol,
+      ],
+    }),
+  }),
+);
+
 type DrizzleDb = ReturnType<typeof drizzle>;
 
 export async function syncDocsToLocalDb(
@@ -84,7 +109,7 @@ export async function syncDocsToLocalDb(
   const sqlite = new Database(dbPath);
   const db = drizzle({
     client: sqlite,
-    schema: { documents, documentLinks },
+    schema: { documents, documentLinks, codeReferences },
   });
 
   try {
@@ -92,6 +117,7 @@ export async function syncDocsToLocalDb(
 
     const entries = scan.registry.all();
     let linkCount = 0;
+    let codeReferenceCount = 0;
 
     db.transaction((tx) => {
       for (const entry of entries) {
@@ -120,11 +146,27 @@ export async function syncDocsToLocalDb(
           linkCount += links.length;
         }
       }
+
+      const refs = collectCodeReferences(rootDir, { docsDir, codeDirs: ["packages"] });
+      if (refs.length > 0) {
+        tx.insert(codeReferences).values(
+          refs.map((ref) => ({
+            codePath: ref.codePath,
+            docId: ref.docId,
+            relationType: ref.relationType,
+            sourceKind: ref.sourceKind,
+            symbol: ref.symbol ?? "",
+            line: ref.line ?? null,
+          })),
+        ).run();
+      }
+      codeReferenceCount = refs.length;
     });
 
     return {
       synced: entries.length,
       links: linkCount,
+      codeReferences: codeReferenceCount,
       dbPath,
     };
   } finally {
@@ -135,6 +177,7 @@ export async function syncDocsToLocalDb(
 function resetTables(db: Database.Database): void {
   db.exec(`
     DROP TABLE IF EXISTS document_links;
+    DROP TABLE IF EXISTS code_references;
     DROP TABLE IF EXISTS documents;
     DROP TABLE IF EXISTS documents_fts;
     CREATE TABLE IF NOT EXISTS documents (
@@ -171,6 +214,15 @@ function resetTables(db: Database.Database): void {
       target_id TEXT NOT NULL,
       link_type TEXT NOT NULL,
       PRIMARY KEY (source_id, target_id, link_type)
+    );
+    CREATE TABLE IF NOT EXISTS code_references (
+      code_path TEXT NOT NULL,
+      doc_id TEXT NOT NULL,
+      relation_type TEXT NOT NULL,
+      source_kind TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      line INTEGER,
+      PRIMARY KEY (code_path, doc_id, relation_type, source_kind, symbol)
     );
     CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
       doc_id,

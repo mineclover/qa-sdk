@@ -51,6 +51,12 @@ export class DocsController {
     return result;
   }
 
+  @Get("by-file")
+  byFile(@Query("path") filePath?: string) {
+    if (!filePath) throw new BadRequestException("path query 필수");
+    return this.docs.resolveByFile(filePath);
+  }
+
   @Get(":docId")
   get(@Param("docId") docId: string) {
     const doc = this.docs.get(docId);

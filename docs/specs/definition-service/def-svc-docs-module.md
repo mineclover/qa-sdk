@@ -15,6 +15,7 @@ def:
       type: refines
     - target: def-svc-data-model
       type: depends_on
+source: packages/definition-service/src/modules/docs/docs.service.ts
 ---
 # Definition Service — Docs Module
 

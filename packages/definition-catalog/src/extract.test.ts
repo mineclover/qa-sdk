@@ -90,6 +90,26 @@ describe("extractByLevel", () => {
     expect(result.text).toBe("");
     expect(result.noMarkers).toBe(true);
   });
+
+  it("fenced code block 안의 예시 마커는 무시한다", () => {
+    const body = `# 가이드
+
+## 목적 ^purpose
+
+실제 목적 문장.
+
+## 예시
+
+\`\`\`markdown
+## 목적 ^purpose
+예시 문장.
+\`\`\`
+`;
+
+    const result = extractByLevel(body, "purpose");
+    expect(result.text).toContain("실제 목적 문장.");
+    expect(result.text).not.toContain("예시 문장.");
+  });
 });
 
 describe("summarizeDocument", () => {

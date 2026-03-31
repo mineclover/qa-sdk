@@ -1,6 +1,8 @@
 ---
 def:
   id: definition-level
+  type: knowledge
+  knowledge_kind: concept
   level: leaf
   address: def_document:v2:342163
   scope: data

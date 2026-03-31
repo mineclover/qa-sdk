@@ -6,10 +6,13 @@
 
 import type {
   DefBoundaryContextResult,
+  DefBoundaryResolutionCandidate,
   DefBoundaryResult,
+  DefCodeReference,
   DefDataSource,
   DefDoc,
   DefDocBody,
+  DefFileBoundaryResolution,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
@@ -41,6 +44,11 @@ export class ServerDataSource implements DefDataSource {
       if (e instanceof Error && e.message.includes("404")) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
     }
+  }
+
+  async resolveByFile(filePath: string): Promise<DefFileBoundaryResolution> {
+    const params = new URLSearchParams({ path: filePath });
+    return this.fetchJson(`/docs/by-file?${params.toString()}`);
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {

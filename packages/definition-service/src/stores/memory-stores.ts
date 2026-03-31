@@ -1,4 +1,4 @@
-import type { DocRecord, DocHistoryRecord, SliceIntentRecord, ConsumptionSnapshot } from "../core/types.js";
+import type { CodeReferenceRecord, DocRecord, DocHistoryRecord, SliceIntentRecord, ConsumptionSnapshot } from "../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter, IntentStore, ConsumptionStore } from "../core/interfaces.js";
 import { computeDocumentAddress } from "../core/compute-address.js";
 import { decideVersion } from "../core/doc-versioner.js";
@@ -9,6 +9,7 @@ import { diagnoseSnapshot } from "../core/consumption-diagnostics.js";
 export class InMemoryDocStore implements DocStore {
   private readonly docs = new Map<string, DocRecord>();
   private readonly history = new Map<string, DocHistoryRecord[]>();
+  private codeReferences: CodeReferenceRecord[] = [];
 
   upsert(
     doc: DocRecord,
@@ -98,6 +99,19 @@ export class InMemoryDocStore implements DocStore {
       revision: record.revision,
       sourcePath: record.sourcePath,
     };
+  }
+
+  replaceCodeReferences(references: CodeReferenceRecord[]): number {
+    this.codeReferences = [...references];
+    return this.codeReferences.length;
+  }
+
+  listCodeReferences(): CodeReferenceRecord[] {
+    return [...this.codeReferences];
+  }
+
+  getCodeReferencesByPath(codePath: string): CodeReferenceRecord[] {
+    return this.codeReferences.filter((item) => item.codePath === codePath);
   }
 
   list(filter?: DocListFilter): DocRecord[] {

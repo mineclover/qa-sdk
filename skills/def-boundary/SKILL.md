@@ -17,6 +17,7 @@ qa-sdk def sync
 qa-sdk def boundary <문서ID>
 qa-sdk def boundary-context <문서ID> --mode direct
 qa-sdk def boundary-context <문서ID> --mode transitive
+qa-sdk def body <문서ID>
 ```
 
 - `def boundary`
@@ -25,6 +26,8 @@ qa-sdk def boundary-context <문서ID> --mode transitive
   지금 작업 단위의 concern/impact를 one-hop 기준으로 본다.
 - `def boundary-context --mode transitive`
   inherited concern과 확장 blast radius까지 본다.
+- `def body`
+  purpose/context 요약만으로 부족할 때 최신 본문 전체를 직접 읽는다.
 
 ## 언제 무엇을 쓰는가
 
@@ -34,6 +37,8 @@ qa-sdk def boundary-context <문서ID> --mode transitive
   `qa-sdk def boundary-context <문서ID> --mode direct`
 - 전이 영향까지 리뷰하고 싶다
   `qa-sdk def boundary-context <문서ID> --mode transitive`
+- 문서 경계가 코드 파일과 어디서 만나는지 보고 싶다
+  `qa-sdk def find-by-file <파일경로[:symbol]>`  # DB에 explicit code reference가 있을 때만 결과 반환
 - 상위 그룹에서 내려오고 싶다
   `qa-sdk def topdown <그룹ID>`
 - 링크 누락을 메우고 싶다
@@ -97,3 +102,6 @@ GraphQL  doc(id) { boundary boundaryContext }
 - boundary overview에는 세부 business logic를 적지 않는다.
 - `direct`와 `transitive`를 섞어 읽으면 blast radius 판단이 흔들린다.
 - GraphQL lazy field `doc { boundaryContext }`는 기본적으로 `overview/transitive`다.
+- `def find-by-file`는 `qa-sdk def sync`로 적재된 `code_references`만 사용한다.
+- code reference 입력은 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`이다.
+- explicit mapping이 없는 파일에는 결과를 주지 않는다. ranking fallback을 신뢰하지 않는다.

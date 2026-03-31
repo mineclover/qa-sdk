@@ -76,6 +76,11 @@ function headingLevel(line: string): number {
   return match ? match[1].length : 0;
 }
 
+function isFenceToggle(line: string): boolean {
+  const trimmed = line.trimStart();
+  return trimmed.startsWith("```") || trimmed.startsWith("~~~");
+}
+
 /**
  * 본문에서 마커가 붙은 섹션을 모두 추출한다.
  *
@@ -85,8 +90,15 @@ function headingLevel(line: string): number {
 export function findMarkedSections(body: string): readonly MarkedSection[] {
   const lines = body.split("\n");
   const result: MarkedSection[] = [];
+  let inFence = false;
 
   for (let i = 0; i < lines.length; i++) {
+    if (isFenceToggle(lines[i])) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+
     const match = lines[i].match(MARKER_REGEX);
     if (!match) continue;
 
@@ -102,8 +114,15 @@ export function findMarkedSections(body: string): readonly MarkedSection[] {
 
     // 섹션 본문 수집: 다음 동급/상위 헤더 전까지
     const bodyLines: string[] = [];
+    let inSectionFence = false;
     for (let j = i + 1; j < lines.length; j++) {
-      const nextLevel = headingLevel(lines[j]);
+      if (isFenceToggle(lines[j])) {
+        inSectionFence = !inSectionFence;
+        bodyLines.push(lines[j]);
+        continue;
+      }
+
+      const nextLevel = inSectionFence ? 0 : headingLevel(lines[j]);
       if (nextLevel > 0 && nextLevel <= level) break; // 동급 또는 상위 헤더
       bodyLines.push(lines[j]);
     }

@@ -37,6 +37,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   self-check / converge / metrics / overview 종합 점검
 - `docs/skills/definition-boundary-workflow.md`
   boundary / boundary-context 기준의 문서 경계 정리와 영향 범위 읽기
+- `qa-sdk def body <문서ID>`
+  boundary/context 요약만으로 부족할 때 최신 본문 전체 확인
 - `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`
   build / sync / validate / audit / quality / vitest 회귀의 표준 검증 루프
 - `docs/skills/decide.md`
@@ -68,3 +70,5 @@ CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 도구. 운�
 3. 개별 단계를 skill로 직접 실행하려면 `dkg skills <keyword>`로 탐색한다.
 4. 왜 그 skill을 써야 하는지, 어떤 피드백 규칙이 있는지 알고 싶으면 `docs/specs/skill-catalog/*.md`로 내려간다.
 5. 실제 실행 정의는 `skills/*/SKILL.md`가 소유하지만, 조회와 선택은 command entrypoint와 workflow 문서를 먼저 따른다.
+6. 코드 파일과 문서 경계를 맞출 때는 `qa-sdk def find-by-file <파일경로[:symbol]>`를 쓴다. 이 명령은 DB의 `code_references`만 보고 결과를 낸다.
+7. `code_references`는 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`를 `qa-sdk def sync`로 정규화해서 만든다. explicit mapping이 없으면 결과를 주지 않는다.
