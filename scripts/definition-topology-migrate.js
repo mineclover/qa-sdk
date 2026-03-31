@@ -269,7 +269,7 @@ function chooseAnchor(chain, docs, strategy) {
 
 function computeMovePlan(docs, strategy) {
   const parentsByChild = buildParentIndex(docs);
-  const moves = [];
+  const preliminaryMoves = [];
   const roots = [];
   const blocked = [];
 
@@ -325,7 +325,7 @@ function computeMovePlan(docs, strategy) {
       ),
     );
 
-    moves.push({
+    preliminaryMoves.push({
       docId: doc.id,
       title: doc.title,
       level: doc.level,
@@ -337,6 +337,34 @@ function computeMovePlan(docs, strategy) {
       changed: doc.relativePath !== targetPath,
     });
   }
+
+  const currentPaths = new Set([...docs.values()].map((doc) => doc.relativePath));
+  function fallbackFileName(move) {
+    return `${move.docId}.md`;
+  }
+
+  const moves = preliminaryMoves.map((move) => {
+    const targetOccupiedByCurrent = currentPaths.has(move.targetPath) && move.targetPath !== move.currentPath;
+    const duplicateTarget = preliminaryMoves.some((other) =>
+      other.docId !== move.docId && other.targetPath === move.targetPath,
+    );
+    if (!targetOccupiedByCurrent && !duplicateTarget) {
+      return move;
+    }
+
+    const fallbackTargetPath = toPosix(
+      path.join(
+        path.dirname(move.targetPath),
+        fallbackFileName(move),
+      ),
+    );
+
+    return {
+      ...move,
+      targetPath: fallbackTargetPath,
+      changed: move.currentPath !== fallbackTargetPath,
+    };
+  });
 
   return {
     roots,
