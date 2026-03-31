@@ -126,6 +126,21 @@ contains 계층이 4단계를 초과하면 warning.
 | leaf-has-children | error | leaf인데 contains 자식 있음 |
 | leaf-too-long | warning | leaf 150줄 초과 → 분할 검토 |
 
+## 판단 원칙 (meta-semantic 기반)
+
+> 상세: `ms-concept-boundary`, `ms-concept-five-roles`, `ms-concept-verification-unit` 참조
+
+감사 시 추가로 확인할 수 있는 원칙적 기준:
+
+| 점검 | 근거 | 조치 |
+|------|------|------|
+| 한 문서에 다른 5원 조합이 섞여 있는가? | 5원 분리 | `/def-split` 검토 |
+| 이 문서는 검증 가능한가? (기계적 판정) | 바운더리 | 검증 불가면 바운더리 재정의 |
+| level과 5원 조합이 일치하는가? | 바운더리 | 관리+저장 없는데 module이면 재검토 |
+
+기존 품질 기준(purpose 30자+, links, tags, level 규칙)은 그대로 유지.
+위 원칙은 **심화 감사** 시 추가 적용한다.
+
 ## LinkType 사용 규칙 (taxonomy.ts LINK_TYPE_RULES)
 
 | 유형 | 읽는 법 | 순환 | 다중부모 | 사용 기준 |

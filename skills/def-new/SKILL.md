@@ -87,6 +87,22 @@ qa-sdk def find-by-file <관련 코드 경로[:symbol]>
 - 코드 파일 안에는 `@def.boundary <group-or-module-doc-id>[#symbol]` 또는 `@def.doc <module-or-leaf-doc-id>[#symbol]` 주석을 붙일 수 있다.
 - 그런 뒤 `qa-sdk def sync`로 DB의 `code_references`를 갱신하고 `def find-by-file <관련 코드 경로[:symbol]>`로 확인한다.
 
+## 판단 원칙 (meta-semantic 기반)
+
+> 상세: `ms-concept-five-roles`, `ms-concept-boundary` 참조
+
+새 문서를 만들기 전에 **이 문서가 어떤 데이터 역할을 서술하는지** 확인한다:
+
+| 문서가 서술하는 것 | 해당 5원 역할 | scope 힌트 |
+|------------------|-------------|-----------|
+| 데이터 형태/스키마 | 정의 | `data/*` |
+| 데이터 생성 로직 | 생산 | `feature/func_def` |
+| 데이터 표시/사용 | 소비 | `ui/*`, `interface/*` |
+| 검증 규칙/계약 | 관리 | `constraint/*` |
+| 저장 방식/UID 체계 | 저장 | `data/system_data` |
+
+하나의 문서가 여러 역할을 서술하면 분리 검토 (`/def-split`).
+
 ## tags 선택 규칙
 
 먼저 붙일 태그:

@@ -97,6 +97,22 @@ GraphQL  boundaryContext(docId, level, mode)
 GraphQL  doc(id) { boundary boundaryContext }
 ```
 
+## 판단 원칙 (meta-semantic 기반)
+
+> 상세: `ms-concept-boundary`, `ms-concept-contract-descent` 참조
+
+**바운더리 = 5원 중 일부가 존재하는 검증 가능한 기능 단위.**
+
+문서 그래프에서 바운더리를 식별할 때:
+- 이 문서 그룹에 어떤 5원(생산·소비·정의·관리·저장)이 존재하는가?
+- 서로 다른 5원 조합이 섞여 있으면 바운더리가 불분명한 신호
+- 바운더리 내부는 블랙박스, 외부에는 계약(interface)만 노출
+
+바운더리 간 관계:
+- 상위-하위: 계약이 내려가고 트랜잭션이 올라감
+- 동등 수준(peer): 각자 소비할 API 계약만 앎
+- 공유 데이터: 공통 상위 바운더리가 관리
+
 ## 주의사항
 
 - boundary overview에는 세부 business logic를 적지 않는다.
