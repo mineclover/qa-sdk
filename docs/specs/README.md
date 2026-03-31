@@ -201,6 +201,18 @@ API 클라이언트, iframe 통신 프로토콜.
 | [dkg-constraint.spec.md](dkg-system/dkg-constraint.spec.md) | CON-001~CON-007 불변 조건 | implemented |
 | [dkg-growth-spiral.spec.md](dkg-system/dkg-growth-spiral.spec.md) | 고정 축 → 운용 → 발견 → 새 고정 축 성장 모델 | implemented |
 
+### meta-semantic/ — 메타 시맨틱 아키텍처
+
+Semantic Folding 기반 의도 컴파일러 — 코드를 접어 검증 단위 식별 → 분기 경로만 좌표화 → LLM 기반 분할.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [meta-semantic-system.spec.md](meta-semantic/meta-semantic-system.spec.md) | 전체 시스템 그룹 — Folding 중심 철학, 분기 경로 좌표 모델, LLM 역할 | draft |
+| [meta-semantic-folding.spec.md](meta-semantic/meta-semantic-folding.spec.md) | Semantic Folding — 검증 단위 식별 핵심 메커니즘, 분기 경로 한정, 계약 도출 | draft |
+| [meta-semantic-ir.spec.md](meta-semantic/meta-semantic-ir.spec.md) | Module·Data·Pipe IR 구조 — 참조 타입, 5원 생명주기, 계약 위임 | draft |
+| [meta-semantic-spacetime-uid.spec.md](meta-semantic/meta-semantic-spacetime-uid.spec.md) | Spacetime UID — 분기 경로별 WeightedIndex + 시간 축, 전곱 아닌 경로 합산 | draft |
+| [meta-semantic-extraction.spec.md](meta-semantic/meta-semantic-extraction.spec.md) | LLM 기반 추출 — 검증 가능 함수 식별, 의미 있는 분기점 판별, 파서 역할 분리 | draft |
+
 ### skill-catalog/ — 스킬 카탈로그
 
 Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에서 관리.
@@ -293,6 +305,7 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | viz-3d | `indexing/signal-model.md`, `indexing/dimension-operations.md` |
 | spec-core | `spec-engine/`, `dkg-system/` |
 | @qa-sdk/cli | `spec-engine/` (codegen), `dkg-system/` (dkg 명령), `skill-catalog/` (skill 메타) |
+| meta-semantic | `meta-semantic/` |
 | shop-web | — (데모 사이트, 별도 스펙 없음) |
 | platform-demo | — (3D 모니터 + 레이아웃 데모) |
 | e2e | — (Playwright E2E 테스트) |
