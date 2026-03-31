@@ -129,7 +129,7 @@ Spacetime UID          ≡  SemanticAddress       (schema:version:index)
 
 ### 2.1 Module — 바운더리에 의해 정의
 
-모듈은 **바운더리**(5원 중 일부가 존재하는 검증 가능 기능 단위)에 의해 정의된다.
+모듈은 **바운더리**(패싯 중 일부가 존재하는 검증 가능 기능 단위)에 의해 정의된다.
 바운더리 간 관계는 **계약 하향**(상호 무지, 자기 계약 명확) 원칙을 따른다.
 
 > 바운더리 상세: `ms-concept-boundary` 참조
@@ -146,12 +146,12 @@ relations는 계약 전달 경로다. 구조 상세는 `meta-semantic-ir` 참조
 | parent + children 있음 | `module` |
 | children 없음 (말단) | `leaf` |
 
-### 2.2 Data — 5원 분리 규칙 (State Entity)
+### 2.2 Data — 데이터 패싯 규칙 (State Entity)
 
 데이터의 5가지 역할(생산·소비·정의·관리·저장)은 반드시 분리한다.
 각 역할은 독립적으로 존재할 수 있으며, 변형은 생산+저장의 조합으로 추적한다.
 
-> 5원 분리 상세: `ms-concept-five-roles` 참조
+> 데이터 패싯 상세: `ms-concept-data-facets` 참조
 
 DataIR의 구조 상세는 `meta-semantic-ir` 참조.
 

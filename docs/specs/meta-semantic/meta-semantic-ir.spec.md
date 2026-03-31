@@ -31,11 +31,11 @@ TypeScript 코드에서 추출한 의도를 표현하는 3종 IR(Module · Data 
 ## 정의 ^defines
 
 - `ModuleIR` — 구조적 의도 컨테이너 (정적, 계층적)
-- `DataIR` — 5원 분리 규칙 (생산/소비/정의/관리/저장)
+- `DataIR` — 데이터 패싯 규칙 (생산/소비/정의/관리/저장)
 - `PipeIR` — 실행 트랜잭션 (동적, 시간축 생성기)
 - `DataRef`, `ModuleRef`, `PipeRef` — IR 간 참조 타입
 - 데이터 계약의 하향 위임 + 트랜잭션의 상향 전달 원칙
-- 5원 분리 = 좌표를 적절히 나누면서 일관성을 유지하기 위한 설계 규칙
+- 데이터 패싯 = 좌표를 적절히 나누면서 일관성을 유지하기 위한 설계 규칙
 
 ## 소비 ^consumes
 
@@ -47,7 +47,7 @@ TypeScript 코드에서 추출한 의도를 표현하는 3종 IR(Module · Data 
 ## 위임 ^delegates
 
 - **meta-semantic-ir-module** → ModuleIR 상세 구조, 계층 규칙, 계약 위임 메커니즘
-- **meta-semantic-ir-data** → DataIR 5원 모델, 정합성 경계, 스키마 해싱
+- **meta-semantic-ir-data** → DataIR 패싯 모델, 정합성 경계, 스키마 해싱
 - **meta-semantic-ir-pipe** → PipeIR 트랜잭션 모델, 시간축 전진, 부수효과 체인
 
 ## 구성 ^overview
@@ -92,7 +92,7 @@ interface PipeRef {
 
 ### Module = 바운더리에 의해 정의
 
-모듈의 경계는 **바운더리**(5원 중 일부가 존재하는 검증 가능 기능 단위)에 의해 결정된다.
+모듈의 경계는 **바운더리**(패싯 중 일부가 존재하는 검증 가능 기능 단위)에 의해 결정된다.
 
 > 바운더리 개념 상세: `ms-concept-boundary` 참조
 > 계약 하향 원칙 상세: `ms-concept-contract-descent` 참조
@@ -154,11 +154,11 @@ relations.children.length === 0                             → leaf
 
 ## 3. DataIR 구조
 
-### 5원 분리 규칙
+### 데이터 패싯 규칙
 
-DataIR은 5원 분리 규칙에 따라 역할별 필드가 분리되어 있다.
+DataIR은 데이터 패싯 규칙에 따라 역할별 필드가 분리되어 있다.
 
-> 5원 분리 개념 상세: `ms-concept-five-roles` 참조
+> 데이터 패싯 개념 상세: `ms-concept-data-facets` 참조
 
 ### 인터페이스
 
@@ -291,10 +291,10 @@ interface PipeIR {
 
 ### Module ↔ Data: 바운더리 관계
 
-Module이 Data의 5원을 통합하는 바운더리이므로, 모든 Data 역할이 Module을 통해 연결된다:
+Module이 Data의 패싯을 통합하는 바운더리이므로, 모든 Data 역할이 Module을 통해 연결된다:
 
 ```
-Data 5원               Module에서의 역할
+Data 패싯               Module에서의 역할
 ─────────              ──────────────────
 정의 (definition)   →  Module.interface의 타입 시그니처가 스키마를 결정
 관리 (management)   →  Module = managedBy의 대상. 계약을 내려주는 주체
