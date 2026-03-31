@@ -10,7 +10,7 @@ def:
   svc: cli
   tags: [observability, runtime, versioning]
   links:
-    - target: runtime-flows-spec
+    - target: apm-runtime-system
       type: refines
 ---
 

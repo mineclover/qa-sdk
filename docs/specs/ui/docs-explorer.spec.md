@@ -7,6 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: experience
+  svc: docs-explorer
   tags: [entry-point, frontend, cross-scope]
   links:
     - target: definition-catalog-spec

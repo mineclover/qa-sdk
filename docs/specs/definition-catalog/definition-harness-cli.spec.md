@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: mediation
   svc: definition-service
-  tags: [entry-point, runtime, testing]
+  tags: [entry-point, runtime, testing, cross-scope]
   links:
     - target: definition-harness
       type: refines

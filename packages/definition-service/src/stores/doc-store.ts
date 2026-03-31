@@ -36,6 +36,8 @@ function rowToDoc(row: DocRow): DocRecord {
     tags: row.tagsJson,
     links: row.linksJson,
     svc: row.svc || undefined,
+    docVersion: row.docVersion || undefined,
+    revision: row.revision ?? undefined,
     address: row.address || undefined,
     targetPrefix: row.targetPrefix || undefined,
     version: row.version,
@@ -70,6 +72,8 @@ function rowToHistory(row: HistoryRow): DocHistoryRecord {
     tags: row.tagsJson,
     links: row.linksJson,
     svc: undefined,
+    docVersion: row.docVersion || undefined,
+    revision: row.revision ?? undefined,
     address: undefined,
     targetPrefix: undefined,
     version: row.version,
@@ -92,6 +96,29 @@ function rowToHistory(row: HistoryRow): DocHistoryRecord {
 export class SqlDocStore implements DocStore {
   constructor(private readonly db: DefinitionServiceDatabase) {}
 
+  private getSnapshotRow(docId: string): DocRow | undefined {
+    return this.db
+      .select()
+      .from(documents)
+      .where(eq(documents.docId, docId))
+      .get();
+  }
+
+  private backfillLatestSnapshotBody(docId: string, body: string, syncedAt: string): void {
+    const row = this.getSnapshotRow(docId);
+    if (!row) return;
+    if (row.body === body) return;
+
+    this.db
+      .update(documents)
+      .set({
+        body,
+        syncedAt,
+      })
+      .where(eq(documents.docId, docId))
+      .run();
+  }
+
   upsert(
     doc: DocRecord,
     body: string,
@@ -100,6 +127,7 @@ export class SqlDocStore implements DocStore {
     const decision = decideVersion(existing, doc);
 
     if (decision.action === "unchanged") {
+      this.backfillLatestSnapshotBody(doc.docId, body, doc.syncedAt);
       return { action: "unchanged", version: decision.version };
     }
 
@@ -120,10 +148,13 @@ export class SqlDocStore implements DocStore {
       tagsJson: doc.tags,
       linksJson: doc.links,
       svc: doc.svc ?? null,
+      docVersion: doc.docVersion ?? null,
+      revision: doc.revision ?? null,
       address: address ?? doc.address ?? null,
       targetPrefix: doc.targetPrefix ?? null,
       version,
       bodyHash: doc.bodyHash,
+      body,
       purpose: doc.purpose ?? null,
       intent: doc.intent ?? null,
       context: doc.context ?? null,
@@ -151,10 +182,13 @@ export class SqlDocStore implements DocStore {
           tagsJson: values.tagsJson,
           linksJson: values.linksJson,
           svc: values.svc,
+          docVersion: values.docVersion,
+          revision: values.revision,
           address: values.address,
           targetPrefix: values.targetPrefix,
           version: values.version,
           bodyHash: values.bodyHash,
+          body: values.body,
           purpose: values.purpose,
           intent: values.intent,
           context: values.context,
@@ -182,6 +216,8 @@ export class SqlDocStore implements DocStore {
         layer: values.layer,
         tagsJson: values.tagsJson,
         linksJson: values.linksJson,
+        docVersion: values.docVersion,
+        revision: values.revision,
         bodyHash: values.bodyHash,
         body,
         purpose: values.purpose,
@@ -252,6 +288,8 @@ export class SqlDocStore implements DocStore {
       tagsJson: updated.tags,
       linksJson: updated.links,
       svc: updated.svc ?? null,
+      docVersion: updated.docVersion ?? null,
+      revision: updated.revision ?? null,
       address: address ?? updated.address ?? null,
       targetPrefix: updated.targetPrefix ?? null,
       version,
@@ -283,6 +321,8 @@ export class SqlDocStore implements DocStore {
           tagsJson: values.tagsJson,
           linksJson: values.linksJson,
           svc: values.svc,
+          docVersion: values.docVersion,
+          revision: values.revision,
           address: values.address,
           targetPrefix: values.targetPrefix,
           version: values.version,
@@ -327,6 +367,8 @@ export class SqlDocStore implements DocStore {
         layer: values.layer,
         tagsJson: values.tagsJson,
         linksJson: values.linksJson,
+        docVersion: values.docVersion,
+        revision: values.revision,
         bodyHash: values.bodyHash,
         body,
         purpose: values.purpose,
@@ -438,12 +480,21 @@ export class SqlDocStore implements DocStore {
   }
 
   get(docId: string): DocRecord | null {
-    const row = this.db
-      .select()
-      .from(documents)
-      .where(eq(documents.docId, docId))
-      .get();
+    const row = this.getSnapshotRow(docId);
     return row ? rowToDoc(row) : null;
+  }
+
+  getBody(docId: string) {
+    const row = this.getSnapshotRow(docId);
+    if (!row) return null;
+    return {
+      docId: row.docId,
+      body: row.body,
+      bodyHash: row.bodyHash,
+      docVersion: row.docVersion || undefined,
+      revision: row.revision ?? undefined,
+      sourcePath: row.sourcePath || undefined,
+    };
   }
 
   list(filter?: DocListFilter): DocRecord[] {

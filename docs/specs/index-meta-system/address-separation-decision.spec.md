@@ -12,7 +12,7 @@ def:
   links:
     - target: index-codec-spec
       type: constrains
-    - target: adr-address-separation
+    - target: address-separation-group
       type: refines
 ---
 

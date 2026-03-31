@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [entry-point]
+  tags: [entry-point, cross-scope]
   links:
     - target: definition-catalog-spec
       type: refines

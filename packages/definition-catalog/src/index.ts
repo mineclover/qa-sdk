@@ -290,6 +290,7 @@ export type {
   DefBoundaryMember,
   DefBoundaryResult,
   DefDoc,
+  DefDocBody,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,

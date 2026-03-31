@@ -10,7 +10,7 @@ def:
   svc: shopping-web
   tags: [contract, runtime, frontend]
   links:
-    - target: motion-content-glossary
+    - target: motion-content-contract
       type: depends_on
 ---
 

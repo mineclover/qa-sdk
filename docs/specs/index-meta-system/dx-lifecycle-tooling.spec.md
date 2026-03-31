@@ -12,7 +12,7 @@ def:
   links:
     - target: index-codec-spec
       type: refines
-    - target: dx-lifecycle-spec
+    - target: dx-lifecycle-group
       type: refines
 ---
 

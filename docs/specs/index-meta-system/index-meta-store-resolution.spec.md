@@ -12,7 +12,7 @@ def:
   links:
     - target: address-spec
       type: depends_on
-    - target: index-meta-store
+    - target: index-meta-store-group
       type: refines
 ---
 

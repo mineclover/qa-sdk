@@ -64,7 +64,7 @@ skill 운영 가이드와 카탈로그는 아래에서 시작한다.
 
 문서 품질 평가 기준 현재 상태:
 
-- `def audit`: 문서 `674`, purpose `674`, links `577`, tags `661`
+- `def audit`: 문서 `662`, purpose `662`, links `551`, tags `662`
 - `def validate`: 그래프 검증 경고 `0`
 
 대표 명령:

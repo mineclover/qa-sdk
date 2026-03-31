@@ -10,7 +10,7 @@ def:
   svc: browser-sdk
   tags: [observability, contract, runtime]
   links:
-    - target: auto-capture-spec
+    - target: browser-runtime-system
       type: refines
 ---
 

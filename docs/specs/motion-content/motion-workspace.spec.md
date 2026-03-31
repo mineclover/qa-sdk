@@ -8,9 +8,10 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
+  svc: motion-workspace
   tags: [structural]
   links:
-    - target: motion-content-glossary
+    - target: motion-content-contract
       type: refines
     - target: motion-workspace-client-spec
       type: contains

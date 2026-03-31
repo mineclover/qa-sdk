@@ -402,6 +402,8 @@ export async function scanAndBuild(
       registry.register({
         id: def.id,
         title: fm.body.match(/^#\s+(.+)/m)?.[1] ?? def.id,
+        version: def.version,
+        revision: def.revision,
         type: def.type,
         knowledgeKind: def.knowledge_kind,
         level: def.level,

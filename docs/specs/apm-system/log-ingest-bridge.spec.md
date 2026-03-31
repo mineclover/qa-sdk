@@ -7,6 +7,7 @@ def:
   level: module
   lifecycle: approved
   layer: operation
+  svc: logger
   tags: [logging, ingest, transport]
   links:
     - target: logger-contract

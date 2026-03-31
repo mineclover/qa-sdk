@@ -2,7 +2,7 @@
  * DefDataSource — definition 데이터 접근 추상화
  *
  * CLI, 서비스, 에이전트 모두 이 인터페이스로 문서 데이터에 접근.
- * 구현체: LocalDataSource (SQLite 직접), ServerDataSource (HTTP)
+ * 구현체: LocalDataSource (SQLite 직접), ServerDataSource (HTTP), ScanDataSource (frontmatter scan)
  */
 
 import type { QualityGateSpec } from "work-domain";
@@ -22,6 +22,8 @@ export interface DefDoc {
   tags: string[];
   links: { target: string; type: string }[];
   svc?: string;
+  docVersion?: string;
+  revision?: number;
   address?: string;
   version: number;
   purpose?: string;
@@ -29,6 +31,15 @@ export interface DefDoc {
   context?: string;
   caveat?: string;
   gate?: QualityGateSpec;
+  sourcePath?: string;
+}
+
+export interface DefDocBody {
+  docId: string;
+  body: string;
+  bodyHash?: string;
+  docVersion?: string;
+  revision?: number;
   sourcePath?: string;
 }
 
@@ -184,10 +195,13 @@ export interface DefValidationResult {
  * 데이터 소스 인터페이스 — 서버/로컬 양쪽 구현
  */
 export interface DefDataSource {
-  readonly mode: "local" | "server";
+  readonly mode: "local" | "server" | "scan";
 
   /** 단건 조회 */
   get(docId: string): Promise<DefDoc | null>;
+
+  /** 최신 문서 본문 조회 */
+  getBody(docId: string): Promise<DefDocBody | null>;
 
   /** 목록 (필터 + pagination + 전문검색) */
   list(filter?: DefListFilter): Promise<DefDoc[]>;

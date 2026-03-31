@@ -14,7 +14,7 @@ def:
       type: depends_on
     - target: perm-external-system
       type: depends_on
-    - target: perm-codec-spec
+    - target: perm-codec-system
       type: refines
 ---
 

@@ -6,6 +6,7 @@ def:
   aspect: api_contract
   depth: overview
   lifecycle: approved
+  svc: motion-workspace-client
   tags: [mediation, motion, client]
   links:
     - target: motion-workspace-service

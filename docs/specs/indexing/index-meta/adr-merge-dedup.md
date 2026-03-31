@@ -12,7 +12,9 @@ def:
   layer: domain
   tags: [decision]
   links:
-    - target: dimension-operations
+    - target: architecture-decisions
+      type: refines
+    - target: dim-ops-system
       type: constrains
 ---
 

@@ -10,7 +10,7 @@ def:
   layer: experience
   tags: [frontend, runtime, structural]
   links:
-    - target: motion-content-glossary
+    - target: motion-content-contract
       type: depends_on
 ---
 # Motion Content Editor 컴포넌트

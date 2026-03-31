@@ -58,6 +58,13 @@ export class DocsController {
     return doc;
   }
 
+  @Get(":docId/body")
+  getBody(@Param("docId") docId: string) {
+    const body = this.docs.getBody(docId);
+    if (!body) throw new NotFoundException(`문서 ${docId} 없음`);
+    return body;
+  }
+
   @Patch(":docId")
   updateMetadata(@Param("docId") docId: string, @Body() body: DocMetadataUpdate) {
     if (this.axisRegistry) {

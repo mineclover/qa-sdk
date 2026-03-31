@@ -10,7 +10,7 @@ def:
   svc: ingest-server
   tags: [contract, runtime, observability]
   links:
-    - target: admin-api-spec
+    - target: admin-api-system
       type: refines
     - target: dlq-store-spec
       type: depends_on

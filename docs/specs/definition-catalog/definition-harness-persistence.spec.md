@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   svc: definition-service
-  tags: [runtime, observability, persistence]
+  tags: [runtime, observability, persistence, cross-scope]
   links:
     - target: definition-harness
       type: refines

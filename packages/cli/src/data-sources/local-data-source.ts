@@ -11,6 +11,7 @@ import type {
   DefBoundaryResult,
   DefDataSource,
   DefDoc,
+  DefDocBody,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
@@ -39,6 +40,8 @@ function rowToDoc(row: Record<string, unknown>): DefDoc {
     tags: JSON.parse((row["tags_json"] as string) || "[]"),
     links: JSON.parse((row["links_json"] as string) || "[]"),
     svc: (row["svc"] as string) || undefined,
+    docVersion: (row["doc_version"] as string) || undefined,
+    revision: (row["revision"] as number | null) ?? undefined,
     address: (row["address"] as string) || undefined,
     version: row["version"] as number,
     purpose: (row["purpose"] as string) || undefined,
@@ -60,6 +63,25 @@ export class LocalDataSource implements DefDataSource {
   async get(docId: string): Promise<DefDoc | null> {
     const row = this.db.prepare("SELECT * FROM documents WHERE doc_id = ?").get(docId) as Record<string, unknown> | undefined;
     return row ? rowToDoc(row) : null;
+  }
+
+  async getBody(docId: string): Promise<DefDocBody | null> {
+    const row = this.db
+      .prepare(`
+        SELECT doc_id, body, body_hash, doc_version, revision, source_path
+        FROM documents
+        WHERE doc_id = ?
+      `)
+      .get(docId) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return {
+      docId: row["doc_id"] as string,
+      body: (row["body"] as string) || "",
+      bodyHash: (row["body_hash"] as string) || undefined,
+      docVersion: (row["doc_version"] as string) || undefined,
+      revision: (row["revision"] as number | null) ?? undefined,
+      sourcePath: (row["source_path"] as string) || undefined,
+    };
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {

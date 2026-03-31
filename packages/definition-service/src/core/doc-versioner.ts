@@ -29,8 +29,12 @@ export function decideVersion(
     return { action: "created", version: 1, changeType: "created" };
   }
 
-  // body_hash 동일 + 마커도 동일 → unchanged
-  if (existing.bodyHash === incoming.bodyHash && markersMatch(existing, incoming)) {
+  // body_hash + 마커 + 파일 유래 메타데이터 동일 → unchanged
+  if (
+    existing.bodyHash === incoming.bodyHash &&
+    markersMatch(existing, incoming) &&
+    metadataMatch(existing, incoming)
+  ) {
     return { action: "unchanged", version: existing.version, changeType: "updated" };
   }
 
@@ -59,12 +63,30 @@ export function markersMatch(a: DocRecord, b: DocRecord): boolean {
  */
 export function isMarkerOnlyChange(prev: DocRecord, next: DocRecord): boolean {
   return (
+    prev.bodyHash === next.bodyHash &&
+    metadataMatch(prev, next)
+  );
+}
+
+function metadataMatch(prev: DocRecord, next: DocRecord): boolean {
+  return (
+    prev.title === next.title &&
+    prev.docType === next.docType &&
+    prev.knowledgeKind === next.knowledgeKind &&
+    prev.level === next.level &&
     prev.scope === next.scope &&
     prev.aspect === next.aspect &&
     prev.depth === next.depth &&
     prev.lifecycle === next.lifecycle &&
-    prev.bodyHash === next.bodyHash &&
+    prev.layer === next.layer &&
+    prev.svc === next.svc &&
+    prev.docVersion === next.docVersion &&
+    prev.revision === next.revision &&
+    prev.targetPrefix === next.targetPrefix &&
+    prev.address === next.address &&
+    prev.sourcePath === next.sourcePath &&
     JSON.stringify(prev.tags) === JSON.stringify(next.tags) &&
-    JSON.stringify(prev.links) === JSON.stringify(next.links)
+    JSON.stringify(prev.links) === JSON.stringify(next.links) &&
+    JSON.stringify(prev.gate ?? null) === JSON.stringify(next.gate ?? null)
   );
 }

@@ -12,7 +12,7 @@ def:
     - target: claude-skill-group
       type: refines
     - target: skill-def-topdown
-      type: refines
+      type: traces_to
     - target: skill-def-context
       type: depends_on
 ---

@@ -29,7 +29,7 @@ implemented
 | [canonical-format.spec.md](canonical-format.spec.md) | Canonical C Format — 정규 텍스트(colon)/바이너리(layout) 포맷 지정 |
 | [invariants.spec.md](invariants.spec.md) | 변환 불변조건 — 12개 invariant 명세 + 테스트 커버리지 맵 |
 | [../../../gate/gate-api.spec.md](../../../gate/gate-api.spec.md) | GateEngine — 주소 상태 자동 재계산, cascade 전파, gate-aware-query 합성 API |
-| [adr-address-separation.md](adr-address-separation.md) | ADR: AddressProtocolManager 분리 |
+| [../../../index-meta-system/address-separation-group.md](../../../index-meta-system/address-separation-group.md) | ADR: AddressProtocolManager 분리 |
 | [adr-merge-dedup.md](adr-merge-dedup.md) | ADR: 의미적 중복 제거 — D-1~D-5 식별, canonical 구현 지정, 의도적 분리 근거 |
 
 ## 횡단 문서

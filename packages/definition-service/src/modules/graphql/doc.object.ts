@@ -172,6 +172,8 @@ export class Doc {
   @Field(() => [String]) tags!: string[];
   @Field(() => [DocLink]) links!: DocLink[];
   @Field(() => String, { nullable: true }) svc?: string;
+  @Field(() => String, { nullable: true }) docVersion?: string;
+  @Field(() => Int, { nullable: true }) revision?: number;
   @Field(() => String, { nullable: true }) address?: string;
   @Field(() => Int) version!: number;
   @Field(() => String, { nullable: true }) purpose?: string;

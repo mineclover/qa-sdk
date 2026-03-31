@@ -54,6 +54,10 @@ export class DocsService {
     return this.store.get(docId);
   }
 
+  getBody(docId: string) {
+    return this.store.getBody(docId);
+  }
+
   getHistory(docId: string, limit?: number): DocHistoryRecord[] {
     return this.store.getHistory(docId, limit);
   }

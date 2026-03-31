@@ -4,7 +4,8 @@
  * 데이터 소스: SQLite 직접 접근(기본) 또는 definition-service HTTP.
  *   --local:  SQLite DB 직접 (서버 불필요)
  *   --server: definition-service API (기본: localhost:3700)
- *   생략:     DB 파일 있으면 local, 없으면 server 시도
+ *   --scan:   docs/ frontmatter 직접 스캔 (read-only degraded mode)
+ *   생략:     DB 파일 있으면 local, 없으면 server, 둘 다 없으면 scan 시도
  *
  * 모든 조회/분석 명령은 DefDataSource 기반. scan만 파일 직접 스캔.
  */
@@ -16,6 +17,7 @@ import {
   LINK_TYPE_RULES,
   readDefConfig,
   detectDrift,
+  extractByLevel,
   hashFrontmatter,
   computeDistribution,
   createInstance,
@@ -24,6 +26,9 @@ import {
   deriveSpecImplState,
   deriveConventionState,
   deriveSyncState,
+  extractByMarker,
+  extractFrontmatter,
+  validateGraph,
   type DefDataSource,
   type DefDoc,
   type DefFeedbackRequestSummary,
@@ -74,6 +79,7 @@ function parseFlags(args: string[]): { positional: string[]; options: DataSource
     const arg = args[index]!;
     if (arg === "--local") { mode = "local"; continue; }
     if (arg === "--server") { mode = "server"; continue; }
+    if (arg === "--scan") { mode = "scan"; continue; }
     if (arg.startsWith("--")) {
       const [k, inline] = arg.slice(2).split("=", 2);
       const next = args[index + 1];
@@ -175,6 +181,24 @@ async function cmdGet(source: DefDataSource, docId: string) {
   }
 }
 
+async function cmdBody(source: DefDataSource, docId: string, flags: Record<string, string>) {
+  const result = await source.getBody(docId);
+  if (!result) { console.log(`문서 "${docId}" 없음`); return; }
+  if (flags["json"] === "true") {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  console.log(`[${source.mode}] ${result.docId}`);
+  if (result.docVersion) console.log(`  docVersion: ${result.docVersion}`);
+  if (result.revision !== undefined) console.log(`  revision:   ${result.revision}`);
+  if (result.bodyHash) console.log(`  bodyHash:   ${result.bodyHash}`);
+  if (result.sourcePath) console.log(`  sourcePath: ${result.sourcePath}`);
+  console.log("");
+  process.stdout.write(result.body);
+  if (!result.body.endsWith("\n")) process.stdout.write("\n");
+}
+
 async function cmdChildren(source: DefDataSource, docId: string) {
   const children = await source.getChildren(docId);
   console.log(`[${source.mode}] ${docId} → ${children.length} children`);
@@ -230,6 +254,36 @@ async function cmdValidate(source: DefDataSource) {
 // ── 영향 분석 + 변경 경고 ─────────────────────────────
 
 const CHANGE_THRESHOLD = 3; // depends_on 이 수 이상이면 대규모 변경 경고
+
+const SERVICE_EXEMPT_DOC_IDS = new Set([
+  "architecture-decisions",
+  "automation-skill-group",
+  "claude-skill-group",
+  "cli-command-group",
+  "coding-conventions",
+  "decision-definition-bridge",
+  "definition-mgmt-consistency-rules",
+  "definition-mgmt-graph-links",
+  "definition-mgmt-state-tracking",
+  "dkg-harness-bridge",
+  "dkg-skill-group",
+  "error-handling-convention",
+  "gate-tracker-spec",
+  "harness-model-spec",
+  "motion-workspace-system",
+  "ralph-tui-skill-group",
+  "skill-catalog-system",
+  "spec-convention",
+  "spec-verification-system",
+  "system-packages",
+]);
+
+function isServiceExempt(doc: DefDoc): boolean {
+  if (SERVICE_EXEMPT_DOC_IDS.has(doc.docId)) return true;
+  if (doc.docId.startsWith("definition-mgmt-")) return true;
+  if (doc.docId.startsWith("skill-")) return true;
+  return false;
+}
 
 async function cmdImpact(source: DefDataSource, docId: string) {
   const doc = await source.get(docId);
@@ -462,7 +516,7 @@ async function cmdAuditDb(source: DefDataSource) {
       issues.push(`[medium] ${d.docId}: 고립 — outgoing 0, incoming ≤1`);
     }
 
-    if (!d.svc && d.scope !== "data" && d.aspect !== "prefix_schema") {
+    if (!d.svc && d.scope !== "data" && d.aspect !== "prefix_schema" && !isServiceExempt(d)) {
       // 라이브러리/prefix 문서 제외
       if (!["user_scenario", "process_flow"].includes(d.aspect)) {
         noSvc++;
@@ -861,14 +915,90 @@ async function cmdAudit(source: DefDataSource) {
 // ── scan (파일 스캔 유틸) ──────────────────────────────
 
 /** 파일 시스템에서 docs/ 하위 .md를 스캔하여 ScanResult 반환 */
-async function scan() {
+async function scan(flags: Record<string, string> = {}) {
   const root = getRootDir();
-  return scanAndBuild(root, [join(root, "docs")]);
+  const docsDir = flags["docs"] ?? "docs";
+  return scanAndBuild(root, [join(root, docsDir)]);
 }
 
 /** scan = sync의 alias. 파일 스캔 + DB 동기화를 한번에 수행. */
 async function cmdScan(flags: Record<string, string>) {
   return cmdSync(flags);
+}
+
+async function cmdScanAudit(flags: Record<string, string>) {
+  const root = getRootDir();
+  const result = await scan(flags);
+  const active = result.registry.all().filter(
+    (entry) => entry.lifecycle !== "deprecated" && entry.lifecycle !== "archived",
+  );
+
+  let withPurpose = 0;
+  let withTags = 0;
+  let withLinks = 0;
+  const byLevel: Record<string, number> = {};
+
+  for (const entry of active) {
+    const level = entry.level ?? "leaf";
+    byLevel[level] = (byLevel[level] || 0) + 1;
+    if ((entry.tags?.length ?? 0) > 0) withTags++;
+    if (result.registry.getLinks(entry.id, "outgoing").some((link) => link.linkType !== "contains")) {
+      withLinks++;
+    }
+
+    if (entry.ref) {
+      try {
+        const content = readFileSync(join(root, entry.ref), "utf8");
+        const fm = extractFrontmatter(content);
+        const body = fm?.body ?? content;
+        const purpose = extractByMarker(body, "purpose").text || extractByLevel(body, "purpose").text;
+        if (purpose.trim().length > 0) {
+          withPurpose++;
+        }
+      } catch {
+        // scan error는 별도 섹션에서 보고한다.
+      }
+    }
+  }
+
+  console.log("=== scan 감사 ===");
+  console.log(`문서 ${active.length}건 | purpose ${withPurpose} | links ${withLinks} | tags ${withTags}`);
+  console.log(`registered: ${result.registered} | linked: ${result.linked}`);
+  console.log(`scan errors: ${result.errors.length} | link errors: ${result.linkErrors.length}`);
+  console.log(`level: ${Object.entries(byLevel).toSorted((a, b) => b[1] - a[1]).map(([k, v]) => `${k}(${v})`).join(" ")}`);
+
+  if (result.errors.length > 0) {
+    console.log(`\n=== 스캔 에러 ${result.errors.length}건 ===`);
+    for (const issue of result.errors.slice(0, 10)) {
+      console.log(`  ${issue.file}: ${issue.error}`);
+    }
+    if (result.errors.length > 10) console.log(`  ... 외 ${result.errors.length - 10}건`);
+  }
+
+  if (result.linkErrors.length > 0) {
+    console.log(`\n=== 링크 에러 ${result.linkErrors.length}건 ===`);
+    for (const issue of result.linkErrors.slice(0, 10)) {
+      console.log(`  ${issue.source} -> ${issue.target}: ${issue.error}`);
+    }
+    if (result.linkErrors.length > 10) console.log(`  ... 외 ${result.linkErrors.length - 10}건`);
+  }
+
+  const validation = validateGraph(result.registry);
+  if (validation.issues.length > 0) {
+    const byType: Record<string, Array<(typeof validation.issues)[number]>> = {};
+    for (const issue of validation.issues) (byType[issue.type] ??= []).push(issue);
+
+    console.log(`\n=== 그래프 검증 (errors=${validation.errors} warnings=${validation.warnings}) ===`);
+    for (const [type, items] of Object.entries(byType).toSorted((a, b) => b[1].length - a[1].length)) {
+      console.log(`\n[${items[0]!.severity}] ${type}: ${items.length}건`);
+      for (const issue of items.slice(0, 10)) {
+        console.log(`  ${issue.docId}: ${issue.message}`);
+      }
+      if (items.length > 10) console.log(`  ... 외 ${items.length - 10}건`);
+    }
+  } else {
+    console.log(`\n그래프 검증 통과 (이슈 0건)`);
+  }
 }
 
 async function cmdSync(flags: Record<string, string>) {
@@ -893,13 +1023,14 @@ export async function cliDef(args: string[]): Promise<void> {
 
   // scan은 파일 스캔 전용 (DB 불필요)
   if (sub === "scan") return cmdScan(flags);
+  if (sub === "scan-audit") return cmdScanAudit(flags);
   if (sub === "sync") return cmdSync(flags);
   if (sub === "link-rules") return cmdLinkRules();
   if (sub === "state") return cmdState(rest, flags);
 
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
-    "list", "get", "children", "parent", "incoming", "validate", "search", "stats",
+    "list", "get", "body", "children", "parent", "incoming", "validate", "search", "stats",
     "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide",
     "topdown", "bottomup", "context", "boundary", "boundary-context",
   ]);
@@ -916,6 +1047,9 @@ export async function cliDef(args: string[]): Promise<void> {
       switch (sub) {
         case "list": return await cmdList(source, flags);
         case "get": return await cmdGet(source, rest[0]);
+        case "body":
+          if (!rest[0]) { console.log("Usage: qa-sdk def body <문서ID> [--json]"); return; }
+          return await cmdBody(source, rest[0], flags);
         case "children": return await cmdChildren(source, rest[0]);
         case "parent": return await cmdParent(source, rest[0]);
         case "incoming": return await cmdIncoming(source, rest[0]);
@@ -966,6 +1100,7 @@ export async function cliDef(args: string[]): Promise<void> {
 조회:
   list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
   get <ID>            단건 조회
+  body <ID>           최신 본문 조회 (--json 가능)
   children <ID>       자식 문서
   parent <ID>         부모 문서
   incoming <ID>       역링크
@@ -973,6 +1108,7 @@ export async function cliDef(args: string[]): Promise<void> {
   find-by-file <경로>  코드 파일 → 관련 문서
 
 분석:
+  scan-audit         raw frontmatter/link 감사 (DB 미사용)
   context <ID>        작업 전 컨텍스트 (소속/의존/영향)
   boundary <ID>       바운더리 구조 + direct coupling (--level, --json 가능)
   boundary-context <ID> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)

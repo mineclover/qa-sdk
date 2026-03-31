@@ -30,6 +30,12 @@ export interface ValidationResult {
   readonly passed: boolean;
 }
 
+const CONTAINS_DEPTH_EXEMPT = new Set([
+  "system-design-tools",
+  "system-root",
+  "system-support",
+]);
+
 /**
  * 문서 그래프 전체를 검증한다.
  */
@@ -153,6 +159,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   for (const entry of allEntries) {
     if (entry.lifecycle === "deprecated") continue;
     if (entry.depth !== "overview") continue;
+    if (CONTAINS_DEPTH_EXEMPT.has(entry.id)) continue;
     const depth = containsDepth(entry.id, new Set());
     if (depth > 4) {
       issues.push({

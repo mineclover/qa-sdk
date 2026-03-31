@@ -10,7 +10,7 @@ def:
   svc: ingest-server
   tags: [observability]
   links:
-    - target: ingest-infra-spec
+    - target: ingest-infra-system
       type: refines
 ---
 

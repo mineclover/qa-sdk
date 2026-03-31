@@ -12,7 +12,7 @@ def:
   links:
     - target: coord-foundation
       type: depends_on
-    - target: data-design-spec
+    - target: data-design-group
       type: depends_on
 ---
 

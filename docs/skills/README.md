@@ -19,6 +19,12 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 - skill 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
 - skill 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
 
+### 조회 원칙
+
+- 사용자는 skill을 직접 `skills/*/SKILL.md`로 조회하지 않는다.
+- 먼저 `qa-sdk` 명령 진입점 또는 `cli-command-group` 문서를 통해 어떤 표면을 써야 하는지 찾는다.
+- `SKILL.md`는 실행 정의 SSOT이지만, 운영/탐색의 1차 진입점은 아니다.
+
 ## 주요 진입점
 
 ### 운영 플레이북
@@ -31,6 +37,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
   self-check / converge / metrics / overview 종합 점검
 - `docs/skills/definition-boundary-workflow.md`
   boundary / boundary-context 기준의 문서 경계 정리와 영향 범위 읽기
+- `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`
+  build / sync / validate / audit / quality / vitest 회귀의 표준 검증 루프
 - `docs/skills/decide.md`
   decision-flow 실행 절차
 
@@ -59,4 +67,4 @@ CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 도구. 운�
 2. 운영 절차가 필요하면 `docs/skills/*.md` 플레이북을 읽는다.
 3. 개별 단계를 skill로 직접 실행하려면 `dkg skills <keyword>`로 탐색한다.
 4. 왜 그 skill을 써야 하는지, 어떤 피드백 규칙이 있는지 알고 싶으면 `docs/specs/skill-catalog/*.md`로 내려간다.
-5. Claude/Codex skill 실행은 `skills/*/SKILL.md`를 기준으로 한다.
+5. 실제 실행 정의는 `skills/*/SKILL.md`가 소유하지만, 조회와 선택은 command entrypoint와 workflow 문서를 먼저 따른다.

@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: motion-workspace-client
   tags: [structural]
   links:
     - target: motion-workspace-spec

@@ -10,11 +10,11 @@ def:
   layer: domain
   tags: [data, observability, structural]
   links:
-    - target: dimension-operations
+    - target: dim-ops-system
       type: depends_on
     - target: dsl-bundle-spec
       type: depends_on
-    - target: table-system-spec
+    - target: table-system-group
       type: depends_on
 ---
 

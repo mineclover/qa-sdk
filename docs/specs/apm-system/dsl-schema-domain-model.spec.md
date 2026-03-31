@@ -10,7 +10,7 @@ def:
   svc: cli
   tags: [structural, data, observability]
   links:
-    - target: dsl-schemas-spec
+    - target: apm-schema-system
       type: refines
 ---
 

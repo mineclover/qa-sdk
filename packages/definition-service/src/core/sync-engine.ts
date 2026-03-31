@@ -73,6 +73,8 @@ export function buildDocRecord(
     tags: entry.tags ? [...entry.tags] : [],
     links,
     svc: entry.serviceId,
+    docVersion: entry.version,
+    revision: entry.revision,
     address: address ?? undefined,
     targetPrefix,
     version: 0, // upsert가 결정

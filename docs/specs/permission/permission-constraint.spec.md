@@ -10,9 +10,9 @@ def:
   svc: permission-engine
   tags: [security]
   links:
-    - target: perm-codec-spec
+    - target: perm-codec-system
       type: constrains
-    - target: perm-migration-spec
+    - target: perm-migration-system
       type: constrains
     - target: perm-permission-code
       type: constrains

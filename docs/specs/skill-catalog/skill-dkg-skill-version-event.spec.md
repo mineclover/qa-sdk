@@ -12,9 +12,9 @@ def:
     - target: dkg-skill-group
       type: refines
     - target: skill-dkg-skill-catalog
-      type: depends_on
+      type: traces_to
     - target: skill-dkg-skill-migrator
-      type: refines
+      type: traces_to
 ---
 
 

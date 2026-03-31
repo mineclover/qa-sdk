@@ -1,6 +1,7 @@
 ---
 def:
   id: prefix-catalog-system
+  level: module
   scope: data
   aspect: prefix_schema
   depth: overview

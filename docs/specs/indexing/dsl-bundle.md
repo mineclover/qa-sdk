@@ -10,9 +10,9 @@ def:
   layer: domain
   tags: [data, structural, runtime]
   links:
-    - target: dimension-operations
+    - target: dim-ops-system
       type: depends_on
-    - target: table-system-spec
+    - target: table-system-group
       type: depends_on
 ---
 

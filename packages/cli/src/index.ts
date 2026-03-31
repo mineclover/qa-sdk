@@ -979,7 +979,10 @@ export async function main(argv = process.argv.slice(2)) {
 
     // Definition Catalog 명령어
     case 'def scan':
-      await cliDef(['scan']);
+      await cliDef(['scan', ...sub.rest]);
+      return;
+    case 'def scan-audit':
+      await cliDef(['scan-audit', ...sub.rest]);
       return;
     case 'def topdown':
       await cliDef(['topdown', ...sub.rest]);
@@ -1000,10 +1003,10 @@ export async function main(argv = process.argv.slice(2)) {
       await cliDef(['audit', ...sub.rest]);
       return;
     case 'def validate':
-      await cliDef(['validate']);
+      await cliDef(['validate', ...sub.rest]);
       return;
     case 'def stats':
-      await cliDef(['stats']);
+      await cliDef(['stats', ...sub.rest]);
       return;
     case 'def sync':
       await cliDef(['sync', ...sub.rest]);
@@ -1016,6 +1019,9 @@ export async function main(argv = process.argv.slice(2)) {
       return;
     case 'def get':
       await cliDef(['get', ...sub.rest]);
+      return;
+    case 'def body':
+      await cliDef(['body', ...sub.rest]);
       return;
     case 'def children':
       await cliDef(['children', ...sub.rest]);
@@ -1036,10 +1042,10 @@ export async function main(argv = process.argv.slice(2)) {
       await cliDef(['check', ...sub.rest]);
       return;
     case 'def audit-db':
-      await cliDef(['audit-db']);
+      await cliDef(['audit-db', ...sub.rest]);
       return;
     case 'def overview':
-      await cliDef(['overview']);
+      await cliDef(['overview', ...sub.rest]);
       return;
     case 'def link-rules':
       await cliDef(['link-rules']);
@@ -1345,6 +1351,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'query resolve',
     'query rules',
     'def scan',
+    'def scan-audit',
     'def topdown',
     'def bottomup',
     'def context',
@@ -1357,6 +1364,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'def read',
     'def list',
     'def get',
+    'def body',
     'def children',
     'def parent',
     'def incoming',

@@ -10,7 +10,7 @@ def:
   layer: operation
   tags: [cross-scope, observability, runtime]
   links:
-    - target: ingest-api-spec
+    - target: ingest-api-system
       type: refines
     - target: browser-runtime-system
       type: refines

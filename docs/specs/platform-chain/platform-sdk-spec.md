@@ -21,7 +21,7 @@ def:
     - target: platform-context-spec
       type: depends_on
     - target: platform-sdk-user-scenarios
-      type: refines
+      type: traces_to
 ---
 
 # @qa-sdk/sdk — 클라이언트 SDK

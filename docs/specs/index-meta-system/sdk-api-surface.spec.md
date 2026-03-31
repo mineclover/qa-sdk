@@ -12,7 +12,7 @@ def:
   links:
     - target: sdk-dim-views
       type: depends_on
-    - target: index-meta-store
+    - target: index-meta-store-group
       type: depends_on
 ---
 # sdk-api-surface

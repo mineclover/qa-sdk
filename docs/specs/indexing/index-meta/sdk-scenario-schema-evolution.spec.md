@@ -12,7 +12,7 @@ def:
   links:
     - target: sdk-scenarios
       type: refines
-    - target: dx-lifecycle-spec
+    - target: dx-lifecycle-group
       type: traces_to
 ---
 # SDK 시나리오 — 스키마 진화

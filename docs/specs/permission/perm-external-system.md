@@ -17,8 +17,6 @@ def:
       type: contains
     - target: perm-permission-code
       type: contains
-    - target: perm-resource-spec
-      type: refines
 ---
 
 # perm-external-system

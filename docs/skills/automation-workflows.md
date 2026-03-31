@@ -35,12 +35,14 @@ description: "automation skill 묶음 운영 가이드. e2e-test, gform-parser, 
 
 ## 빠른 링크
 
-- skill 파일
-  `skills/e2e-test/SKILL.md`
-  `skills/gform-parser/SKILL.md`
-  `skills/spec-lifecycle/SKILL.md`
+- command entrypoint
+  `qa-sdk quality show <gate-doc-id>`
+  `qa-sdk quality run <gate-doc-id> --json`
+  `qa-sdk review request ...`
 - catalog 문서
   `docs/specs/skill-catalog/automation-skill-group.md`
   `docs/specs/skill-catalog/skill-e2e-test.spec.md`
   `docs/specs/skill-catalog/skill-gform-parser.spec.md`
   `docs/specs/skill-catalog/skill-spec-lifecycle.spec.md`
+
+skill 파일은 구현 SSOT이지만, 운영 조회는 command entrypoint와 catalog 문서를 먼저 사용한다.

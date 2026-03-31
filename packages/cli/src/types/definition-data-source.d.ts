@@ -2,9 +2,11 @@ declare module "definition-data-source" {
   import type { DefDataSource } from "definition-catalog";
 
   export interface DataSourceOptions {
-    mode?: "local" | "server";
+    mode?: "local" | "server" | "scan";
     dbPath?: string;
     serverUrl?: string;
+    rootDir?: string;
+    docsDir?: string;
   }
 
   export interface SyncLocalDbOptions {

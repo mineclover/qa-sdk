@@ -10,7 +10,7 @@ def:
   svc: cli
   tags: [structural, observability, contract]
   links:
-    - target: codegen-spec
+    - target: apm-codegen-system
       type: refines
 ---
 

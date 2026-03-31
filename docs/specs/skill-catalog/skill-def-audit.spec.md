@@ -12,7 +12,7 @@ def:
     - target: claude-skill-group
       type: refines
     - target: skill-def-link
-      type: depends_on
+      type: traces_to
     - target: skill-def-split
       type: depends_on
 ---

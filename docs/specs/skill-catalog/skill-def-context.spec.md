@@ -12,9 +12,9 @@ def:
     - target: claude-skill-group
       type: refines
     - target: skill-def-bottomup
-      type: depends_on
+      type: traces_to
     - target: skill-def-topdown
-      type: depends_on
+      type: traces_to
 ---
 
 

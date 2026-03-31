@@ -288,6 +288,7 @@ function parseFlags(args: string[]): {
   for (const arg of args) {
     if (arg === "--local") { mode = "local"; continue; }
     if (arg === "--server") { mode = "server"; continue; }
+    if (arg === "--scan") { mode = "scan"; continue; }
     if (arg.startsWith("--")) {
       const [key, value] = arg.slice(2).split("=", 2);
       flags[key] = value ?? "true";
@@ -2009,15 +2010,15 @@ async function cmdClaims(
 
 function printUsage(): void {
   console.log(`Usage:
-  qa-sdk quality list [--local|--server] [--domain=<id>] [--kind=<id>] [--story=<id>] [--pkg=<name>] [--q=<text>]
+  qa-sdk quality list [--local|--server|--scan] [--domain=<id>] [--kind=<id>] [--story=<id>] [--pkg=<name>] [--q=<text>]
   qa-sdk quality status [bundle-or-system-id] [--json]
   qa-sdk quality export [bundle-or-system-id] [--output=<path>]
-  qa-sdk quality bundle <bundle-doc-id> [--local|--server]
+  qa-sdk quality bundle <bundle-doc-id> [--local|--server|--scan]
   qa-sdk quality claims <bundle-doc-id>
-  qa-sdk quality show <gate-doc-id> [--local|--server]
-  qa-sdk quality run <gate-doc-id> [--local|--server] [--dry-run] [--json]
-  qa-sdk quality next <gate-doc-id> [--local|--server] [--outcome=pass|fail] [--json]
-  qa-sdk quality diagnose <gate-doc-id> [--local|--server] [--outcome=pass|fail] [--json]`);
+  qa-sdk quality show <gate-doc-id> [--local|--server|--scan]
+  qa-sdk quality run <gate-doc-id> [--local|--server|--scan] [--dry-run] [--json]
+  qa-sdk quality next <gate-doc-id> [--local|--server|--scan] [--outcome=pass|fail] [--json]
+  qa-sdk quality diagnose <gate-doc-id> [--local|--server|--scan] [--outcome=pass|fail] [--json]`);
 }
 
 export async function cliQuality(args: string[]): Promise<void> {

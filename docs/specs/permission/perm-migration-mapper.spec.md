@@ -12,7 +12,7 @@ def:
   links:
     - target: perm-migration-algorithm
       type: depends_on
-    - target: perm-migration-spec
+    - target: perm-migration-system
       type: refines
 ---
 

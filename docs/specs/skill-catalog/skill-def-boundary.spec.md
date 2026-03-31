@@ -50,6 +50,10 @@ provider 선언 순서가 로직상 중요하거나, 문서 시스템에서 바�
 boundary는 구조 단위이지 구현 파일 트리의 별칭이 아니다.
 overview 문서에 business logic를 넣으면 state/interaction/validation 문서와 역할이 겹쳐 조회 품질이 나빠진다.
 
-## 관련 소스
+## 관련 진입점
 
-- `skills/def-boundary/SKILL.md`
+- `qa-sdk def boundary <문서ID>`
+- `qa-sdk def boundary-context <문서ID> --mode direct|transitive`
+- `docs/specs/skill-catalog/skill-cli-def-commands.spec.md`
+
+`skills/def-boundary/SKILL.md`는 구현 SSOT이지만, 조회 진입점은 위 command 표면을 따른다.

@@ -6,6 +6,7 @@ def:
   aspect: func_def
   depth: overview
   lifecycle: approved
+  svc: motion-workspace
   tags: [domain, motion, workspace]
   links:
     - target: motion-workspace-system

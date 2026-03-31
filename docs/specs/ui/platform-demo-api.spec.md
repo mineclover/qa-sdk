@@ -11,7 +11,7 @@ def:
   svc: platform-demo
   tags: [entry-point, contract, frontend]
   links:
-    - target: motion-content-glossary
+    - target: motion-content-contract
       type: refines
     - target: platform-demo-api
       type: contains

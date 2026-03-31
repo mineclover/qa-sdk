@@ -14,7 +14,7 @@ def:
     - target: skill-def-context
       type: depends_on
     - target: skill-def-link
-      type: depends_on
+      type: traces_to
 ---
 
 

@@ -9,6 +9,7 @@ import type {
   DefBoundaryResult,
   DefDataSource,
   DefDoc,
+  DefDocBody,
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
@@ -27,6 +28,15 @@ export class ServerDataSource implements DefDataSource {
   async get(docId: string): Promise<DefDoc | null> {
     try {
       return await this.fetchJson(`/docs/${docId}`);
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("404")) return null;
+      throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
+    }
+  }
+
+  async getBody(docId: string): Promise<DefDocBody | null> {
+    try {
+      return await this.fetchJson(`/docs/${docId}/body`);
     } catch (e) {
       if (e instanceof Error && e.message.includes("404")) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });

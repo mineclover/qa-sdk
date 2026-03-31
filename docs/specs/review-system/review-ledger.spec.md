@@ -6,6 +6,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: mediation
+  svc: review-ledger
   tags: [observability, entry-point]
   links:
     - target: system-root

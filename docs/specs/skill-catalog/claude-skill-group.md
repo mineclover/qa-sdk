@@ -66,7 +66,8 @@ definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 �
 ## 경계 ^boundary
 
 이 문서는 `docs/specs/skill-catalog/` 계층의 메타 스펙이다.
-- 실제 실행 지침은 `skills/def-*/SKILL.md`
+- 실제 조회 진입점은 `qa-sdk def ...`와 `skill-cli-def-commands`
+- 실제 실행 정의는 `skills/def-*/SKILL.md`
 - 운영 관점의 묶음 설명은 `docs/skills/`
 
-즉 이 그룹 문서는 skill 자체가 아니라 skill 관계와 사용 목적을 설명한다.
+즉 이 그룹 문서는 skill 자체가 아니라 skill 관계와 사용 목적을 설명한다. 사용자는 command entrypoint를 통해 간접적으로 접근하고, `SKILL.md`는 구현 SSOT로만 본다.

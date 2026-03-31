@@ -1,4 +1,4 @@
-import { scanAndBuild } from "definition-catalog";
+import { parseDocument, scanAndBuild } from "definition-catalog";
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { DocStore } from "../core/interfaces.js";
@@ -37,6 +37,9 @@ export async function syncDocsToDb(
   for (const e of scanResult.errors) {
     result.errors.push(`${e.file}: ${e.error}`);
   }
+  for (const e of scanResult.linkErrors) {
+    result.errors.push(`${e.source} -> ${e.target}: ${e.error}`);
+  }
 
   // 레지스트리에 등록된 모든 문서 처리
   const registry = scanResult.registry;
@@ -59,9 +62,10 @@ export async function syncDocsToDb(
 
       const body = extractBody(content);
 
-      // 레지스트리에서 outgoing 링크 조회
-      const outgoing = registry.getLinks(entry.id, "outgoing");
-      const links = outgoing.map((l) => ({ target: l.targetId, type: l.linkType }));
+      const parsed = parseDocument(content, absPath);
+      const links = parsed.def.links
+        ? parsed.def.links.map((link) => ({ target: link.target, type: link.type }))
+        : [];
 
       const doc = buildDocRecord(entry, body, links, relative(rootDir, absPath));
       const { action } = docStore.upsert(doc, body);

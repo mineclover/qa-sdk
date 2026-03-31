@@ -14,7 +14,7 @@ def:
     - target: skill-def-context
       type: depends_on
     - target: skill-def-bottomup
-      type: refines
+      type: traces_to
 ---
 
 

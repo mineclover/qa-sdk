@@ -12,8 +12,6 @@ def:
   links:
     - target: ingest-api-system
       type: refines
-    - target: ingest-pipeline-flow
-      type: refines
 ---
 
 # Ingest 인터페이스 파이프라인

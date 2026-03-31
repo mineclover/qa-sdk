@@ -34,6 +34,14 @@ export interface DocStore {
     patch: DocMetadataUpdate,
   ): { action: "updated" | "unchanged"; version: number } | null;
   get(docId: string): DocRecord | null;
+  getBody(docId: string): {
+    docId: string;
+    body: string;
+    bodyHash: string;
+    docVersion?: string;
+    revision?: number;
+    sourcePath?: string;
+  } | null;
   list(filter?: DocListFilter): DocRecord[];
   getHistory(docId: string, limit?: number): DocHistoryRecord[];
   getVersion(docId: string, version: number): DocHistoryRecord | null;

@@ -4,13 +4,15 @@
  * 우선순위:
  * 1. --server 플래그 → ServerDataSource
  * 2. --local 플래그 → LocalDataSource
- * 3. 자동: DB 파일 존재 시 local, 아니면 server ping → 성공 시 server, 실패 시 에러
+ * 3. --scan 플래그 → ScanDataSource (read-only degraded mode)
+ * 4. 자동: DB 파일 존재 시 local, 아니면 server ping → 성공 시 server, 실패 시 scan
  */
 
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import type { DefDataSource } from "definition-catalog";
 import { LocalDataSource } from "./local-data-source.js";
+import { ScanDataSource } from "./scan-data-source.js";
 import { ServerDataSource } from "./server-data-source.js";
 
 /** 기본 DB 경로 후보 */
@@ -24,11 +26,15 @@ const DEFAULT_SERVER_URL = "http://localhost:3700";
 
 export interface DataSourceOptions {
   /** 강제 모드 */
-  mode?: "local" | "server";
+  mode?: "local" | "server" | "scan";
   /** DB 파일 경로 (local 모드) */
   dbPath?: string;
   /** 서버 URL (server 모드) */
   serverUrl?: string;
+  /** 루트 디렉토리 (scan 모드) */
+  rootDir?: string;
+  /** 문서 디렉토리 (scan 모드) */
+  docsDir?: string;
 }
 
 /** DB 파일 자동 탐지 */
@@ -47,8 +53,10 @@ function findDbPath(cwd: string): string | null {
  * 데이터 소스 생성 — 자동 감지 또는 명시적 선택
  */
 export async function createDataSource(options: DataSourceOptions = {}): Promise<DefDataSource> {
-  const cwd = process.cwd();
+  const cwd = options.rootDir ?? process.cwd();
   const serverUrl = options.serverUrl ?? process.env.DEF_SERVICE_URL ?? DEFAULT_SERVER_URL;
+  const docsDir = options.docsDir ?? "docs";
+  const docsPath = join(cwd, docsDir);
 
   // 명시적 모드
   if (options.mode === "server") {
@@ -63,6 +71,12 @@ export async function createDataSource(options: DataSourceOptions = {}): Promise
     if (!dbPath) throw new Error("DB 파일을 찾을 수 없습니다. DEF_DB_PATH를 설정하거나 POST /sync를 실행하세요.");
     return new LocalDataSource(dbPath);
   }
+  if (options.mode === "scan") {
+    if (!existsSync(docsPath)) {
+      throw new Error(`scan 모드 실패: 문서 디렉토리가 없습니다 (${docsPath}).`);
+    }
+    return ScanDataSource.create(cwd, docsDir);
+  }
 
   // 자동 감지: DB 파일 우선
   const dbPath = options.dbPath ?? findDbPath(cwd);
@@ -76,9 +90,15 @@ export async function createDataSource(options: DataSourceOptions = {}): Promise
     return server;
   }
 
+  if (existsSync(docsPath)) {
+    console.warn(`[scan] definition DB와 service가 모두 없어 read-only scan fallback을 사용합니다 (${docsPath}).`);
+    return ScanDataSource.create(cwd, docsDir);
+  }
+
   throw new Error(
     "데이터 소스를 찾을 수 없습니다.\n" +
     "  - DB 파일: data/definition-service.sqlite (POST /sync로 생성)\n" +
-    "  - 서버: definition-service가 :3700에서 응답하지 않음",
+    "  - 서버: definition-service가 :3700에서 응답하지 않음\n" +
+    `  - 문서 디렉토리: ${docsPath} 없음`,
   );
 }

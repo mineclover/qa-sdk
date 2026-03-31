@@ -27,6 +27,8 @@ def:
       type: contains
     - target: definition-mgmt-feedback-loop
       type: contains
+    - target: definition-mgmt-verification-loop
+      type: contains
     - target: definition-mgmt-consistency-rules
       type: contains
 ---
@@ -43,6 +45,7 @@ def:
 - `definition-mgmt-graph-links`: contains 계층과 횡방향 링크가 어떻게 함께 정의 그래프를 구성하는지 정리한다.
 - `definition-mgmt-state-tracking`: harness와 quality gate가 definition 상태를 어떻게 추적하는지 정리한다.
 - `definition-mgmt-feedback-loop`: 관측, feedback request, decision, infra 전이가 어떻게 순환하는지 정리한다.
+- `definition-mgmt-verification-loop`: build, sync, validate, audit, quality, vitest 회귀를 어떤 순서로 반복해야 하는지 정리한다.
 - `definition-mgmt-consistency-rules`: 주소 불변, 단일 개념 원칙, 상태 좌표화 등 운영 규칙을 정리한다.
 
 ## 관리 흐름
@@ -52,7 +55,8 @@ def:
   → 그래프 연결
     → 상태 추적
       → 관측/피드백 루프
-        → 운영 규칙으로 회수
+        → 검증 루프
+          → 운영 규칙으로 회수
 ```
 
 이 문서는 위 5단계를 하나의 관리 흐름으로 읽게 하는 루트 모듈이다.
@@ -65,7 +69,8 @@ def:
 | 2 | 정의들이 어떻게 교류하는가 | `definition-mgmt-graph-links` |
 | 3 | 이 정의의 현재 상태는 무엇인가 | `definition-mgmt-state-tracking` |
 | 4 | 관측이 어떻게 정의를 다시 바꾸는가 | `definition-mgmt-feedback-loop` |
-| 5 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
+| 5 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
+| 6 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
 
 ## 사용 맥락 ^context
 
@@ -75,6 +80,7 @@ def:
 | 문서 분류/이동 | `definition-mgmt-coordinates`, `definition-mgmt-graph-links` |
 | 상태 조회/전이 | `definition-mgmt-state-tracking` |
 | 피드백 루프 추적 | `definition-mgmt-feedback-loop` |
+| 검증 순서 정하기 | `definition-mgmt-verification-loop` |
 | 규칙 점검 | `definition-mgmt-consistency-rules` |
 
 ## 주의사항 ^caveat

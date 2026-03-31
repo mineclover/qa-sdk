@@ -12,11 +12,11 @@ def:
     - target: dkg-skill-group
       type: refines
     - target: skill-dkg-skill-catalog
-      type: depends_on
+      type: traces_to
     - target: skill-dkg-skill-version-event
-      type: depends_on
+      type: traces_to
     - target: skill-dkg-skill-cascade
-      type: depends_on
+      type: traces_to
 ---
 
 

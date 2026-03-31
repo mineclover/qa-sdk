@@ -14,7 +14,7 @@ def:
       type: depends_on
     - target: permission-encoding
       type: depends_on
-    - target: perm-migration-spec
+    - target: perm-migration-system
       type: refines
 ---
 

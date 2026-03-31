@@ -23,6 +23,27 @@ qa-sdk def boundary-context <문서ID> --mode direct
 qa-sdk def boundary-context <문서ID> --mode transitive
 ```
 
+## Verification Loop
+
+boundary 문서를 정리한 뒤에는 아래 루프를 기본으로 돈다.
+
+```bash
+pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js def sync
+node packages/cli/dist/index.js def validate
+node packages/cli/dist/index.js def audit
+node packages/cli/dist/index.js def audit-db
+```
+
+raw frontmatter 기준으로 boundary/link drift를 따로 보고 싶으면:
+
+```bash
+node packages/cli/dist/index.js def scan-audit
+node packages/cli/dist/index.js def validate --scan
+```
+
+이 루프는 `boundary`와 `boundary-context`가 DB-synced view와 raw scan view에서 모두 같은 방향으로 읽히는지 확인하는 용도다.
+
 ## direct 와 transitive
 
 - `direct`
@@ -47,18 +68,23 @@ qa-sdk def boundary-context <문서ID> --mode transitive
 - 검증
   `feature/scenario` + `depth: validation`
 
-## 함께 쓰는 skill
+## 함께 쓰는 명령 진입점
 
-- `skills/def-boundary/SKILL.md`
-  boundary 조회와 구조화의 기본 루틴
-- `skills/def-context/SKILL.md`
+- `qa-sdk def boundary <문서ID>`
+  boundary 구조와 direct coupling 조회
+- `qa-sdk def boundary-context <문서ID> --mode direct|transitive`
+  concern/impact 포함 복합 조회
+- `qa-sdk def context <문서ID>`
   상위/하위/제약/의존 맥락 확인
-- `skills/def-link/SKILL.md`
-  누락된 authored link 보강
-- `skills/def-state/SKILL.md`
-  상태 전이와 lifecycle 분리
+- `qa-sdk def validate`
+  synced graph 검증
+- `qa-sdk def scan-audit`
+  raw frontmatter/link drift 감사
+
+skill 파일은 내부 실행 정의 SSOT이고, 사용자는 위 명령 진입점을 통해 간접적으로 접근한다.
 
 ## 참고 문서
 
 - `docs/specs/viteplus-sdk-smoke/viteplus-playbook-boundary-relation.spec.md`
 - `docs/specs/definition-service/def-svc-api-contract.md`
+- `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`

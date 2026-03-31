@@ -10,7 +10,7 @@ def:
   svc: cli
   tags: [entry-point, contract, structural]
   links:
-    - target: codegen-spec
+    - target: apm-codegen-system
       type: refines
     - target: cli-contract-spec
       type: depends_on

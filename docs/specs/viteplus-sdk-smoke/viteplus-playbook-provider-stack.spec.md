@@ -12,7 +12,7 @@ def:
     - target: viteplus-sdk-smoke-system
       type: refines
     - target: viteplus-playbook-template-flow
-      type: refines
+      type: traces_to
     - target: viteplus-playbook-template-implementation
       type: depends_on
 ---

@@ -11,7 +11,7 @@ def:
   layer: domain
   tags: [entry-point, structural, data]
   links:
-    - target: coordinate-states-spec
+    - target: coord-states-group
       type: depends_on
     - target: event-schema-spec
       type: depends_on

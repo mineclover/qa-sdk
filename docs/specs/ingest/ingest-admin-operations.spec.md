@@ -10,7 +10,7 @@ def:
   svc: ingest-server
   tags: [runtime, observability, performance]
   links:
-    - target: admin-api-spec
+    - target: admin-api-system
       type: refines
 ---
 

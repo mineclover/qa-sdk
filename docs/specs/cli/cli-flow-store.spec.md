@@ -9,7 +9,7 @@ def:
   svc: cli
   tags: [persistence, runtime, decision]
   links:
-    - target: cli-contract
+    - target: cli-contract-spec
       type: refines
     - target: dkg-state-store
       type: depends_on

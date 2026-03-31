@@ -14,7 +14,7 @@ def:
       type: depends_on
     - target: canonical-format-spec
       type: depends_on
-    - target: index-meta-store
+    - target: index-meta-store-group
       type: depends_on
 ---
 

@@ -187,6 +187,8 @@ export class DocResolver {
       tags: record.tags,
       links: record.links,
       svc: record.svc,
+      docVersion: record.docVersion,
+      revision: record.revision,
       address: record.address,
       version: record.version,
       purpose: record.purpose,

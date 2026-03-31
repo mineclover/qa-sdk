@@ -51,6 +51,12 @@ def:
 - skill 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
 - skill 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
 
+### 조회 원칙
+
+- skill 조회는 command entrypoint를 통해 간접적으로 수행한다.
+- `qa-sdk def ...`, `qa-sdk quality ...`, `qa-sdk dkg skills ...` 같은 명령 표면이 1차 진입점이다.
+- `skills/*/SKILL.md`는 구현 SSOT이지만, 사용자와 운영자가 직접 뒤지는 탐색 표면이 아니다.
+
 ### 주의
 
 - `skills/`와 `docs/skills/`는 이름이 비슷하지만 역할이 다르다. 전자는 실행 정의, 후자는 운영 설명

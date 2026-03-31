@@ -10,7 +10,7 @@ def:
   svc: platform-demo
   tags: [contract, frontend, runtime]
   links:
-    - target: motion-content-glossary
+    - target: viz-language-system
       type: refines
 ---
 

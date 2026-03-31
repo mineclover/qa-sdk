@@ -10,9 +10,9 @@ def:
   svc: weighted-index
   tags: [runtime, structural, observability]
   links:
-    - target: coordinate-states-spec
+    - target: coord-states-group
       type: depends_on
-    - target: behavioral-traversal
+    - target: behavior-traversal-group
       type: refines
 ---
 

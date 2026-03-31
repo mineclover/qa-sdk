@@ -15,8 +15,6 @@ def:
       type: contains
     - target: perm-codec-interop
       type: contains
-    - target: perm-codec-spec
-      type: refines
 ---
 
 # Permission Codec 시스템

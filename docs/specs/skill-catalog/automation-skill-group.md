@@ -1,6 +1,7 @@
 ---
 def:
   id: automation-skill-group
+  level: module
   scope: feature
   aspect: func_def
   depth: overview

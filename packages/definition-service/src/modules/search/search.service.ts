@@ -33,6 +33,8 @@ function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
     tags: row.tagsJson,
     links: row.linksJson,
     svc: row.svc || undefined,
+    docVersion: row.docVersion || undefined,
+    revision: row.revision ?? undefined,
     address: row.address || undefined,
     targetPrefix: row.targetPrefix || undefined,
     version: row.version,

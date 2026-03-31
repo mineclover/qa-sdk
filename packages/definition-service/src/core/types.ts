@@ -22,6 +22,10 @@ export interface DocRecord {
   tags: string[];
   links: { target: string; type: string }[];
   svc?: string;
+  /** frontmatter version 문자열 (예: v1, 2026.03) */
+  docVersion?: string;
+  /** frontmatter revision 숫자 */
+  revision?: number;
   /** 좌표 주소 — scope×aspect×depth로 계산 (def_document:v1:<N>) */
   address?: string;
   /** 이 문서가 기술하는 대상 prefix (이중 좌표 참조) */

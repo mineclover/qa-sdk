@@ -15,8 +15,6 @@ def:
       type: contains
     - target: perm-migration-mapper
       type: contains
-    - target: perm-migration-spec
-      type: refines
 ---
 
 # Permission Migration 시스템

@@ -12,7 +12,7 @@ def:
   links:
     - target: behavior-traversal-axis
       type: depends_on
-    - target: behavioral-traversal
+    - target: behavior-traversal-group
       type: refines
 ---
 

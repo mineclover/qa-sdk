@@ -12,7 +12,7 @@ def:
   links:
     - target: table-schema-spec
       type: depends_on
-    - target: index-meta-store
+    - target: index-meta-store-group
       type: refines
 ---
 

@@ -8,6 +8,7 @@ import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 import {
   extractByMarker,
   extractFrontmatter,
+  parseDocument,
   scanAndBuild,
   type DefinitionEntry,
 } from "definition-catalog";
@@ -41,9 +42,12 @@ const documents = sqliteTable("documents", {
   tagsJson: text("tags_json").notNull(),
   linksJson: text("links_json").notNull(),
   svc: text("svc"),
+  docVersion: text("doc_version"),
+  revision: integer("revision"),
   address: text("address"),
   version: integer("version").notNull(),
   bodyHash: text("body_hash").notNull(),
+  body: text("body").notNull(),
   purpose: text("purpose"),
   intent: text("intent"),
   context: text("context"),
@@ -93,9 +97,11 @@ export async function syncDocsToLocalDb(
       for (const entry of entries) {
         const sourcePath = entry.ref ? join(rootDir, entry.ref) : null;
         const body = sourcePath ? extractMarkdownBody(sourcePath) : "";
-        const outgoing = scan.registry.getLinks(entry.id, "outgoing")
-          .map((link) => ({ target: link.targetId, type: link.linkType }));
-        const row = toDocumentRow(rootDir, entry, body, outgoing);
+        const declared = sourcePath
+          ? parseDocument(readFileSync(sourcePath, "utf8"), sourcePath).def.links
+          : undefined;
+        const links = declared ? declared.map((link) => ({ target: link.target, type: link.type })) : [];
+        const row = toDocumentRow(rootDir, entry, body, links);
 
         tx.insert(documents).values(row).run();
         tx.run(sql.raw(
@@ -103,15 +109,15 @@ export async function syncDocsToLocalDb(
            VALUES (${quote(row.docId)}, ${quote(row.purpose ?? "")}, ${quote(row.intent ?? "")}, ${quote(row.context ?? "")}, ${quote(row.caveat ?? "")})`,
         ));
 
-        if (outgoing.length > 0) {
+        if (links.length > 0) {
           tx.insert(documentLinks).values(
-            outgoing.map((link) => ({
+            links.map((link) => ({
               sourceId: entry.id,
               targetId: link.target,
               linkType: link.type,
             })),
           ).run();
-          linkCount += outgoing.length;
+          linkCount += links.length;
         }
       }
     });
@@ -146,9 +152,12 @@ function resetTables(db: Database.Database): void {
       tags_json TEXT NOT NULL DEFAULT '[]',
       links_json TEXT NOT NULL DEFAULT '[]',
       svc TEXT,
+      doc_version TEXT,
+      revision INTEGER,
       address TEXT,
       version INTEGER NOT NULL DEFAULT 1,
       body_hash TEXT NOT NULL,
+      body TEXT NOT NULL,
       purpose TEXT,
       intent TEXT,
       context TEXT,
@@ -205,9 +214,12 @@ function toDocumentRow(
     tagsJson: JSON.stringify(entry.tags ?? []),
     linksJson: JSON.stringify(outgoing),
     svc: entry.serviceId ?? null,
+    docVersion: entry.version ?? null,
+    revision: entry.revision ?? null,
     address: entry.serialized ?? null,
     version: entry.revision ?? 1,
     bodyHash: hashBody(body),
+    body,
     purpose: extractByMarker(body, "purpose").text || null,
     intent: extractByMarker(body, "intent").text || null,
     context: extractByMarker(body, "context").text || null,

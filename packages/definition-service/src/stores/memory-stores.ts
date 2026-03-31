@@ -86,6 +86,20 @@ export class InMemoryDocStore implements DocStore {
     return this.docs.get(docId) ?? null;
   }
 
+  getBody(docId: string) {
+    const record = this.docs.get(docId);
+    if (!record) return null;
+    const lastHistory = (this.history.get(docId) ?? []).at(-1);
+    return {
+      docId,
+      body: lastHistory?.body ?? "",
+      bodyHash: record.bodyHash,
+      docVersion: record.docVersion,
+      revision: record.revision,
+      sourcePath: record.sourcePath,
+    };
+  }
+
   list(filter?: DocListFilter): DocRecord[] {
     let result = Array.from(this.docs.values());
     if (filter?.type) result = result.filter((d) => d.docType === filter.type);
