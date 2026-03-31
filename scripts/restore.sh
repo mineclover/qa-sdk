@@ -137,10 +137,39 @@ restore_sqlite() {
   fi
 }
 
+restore_sqlite "definition-service" "${DEFINITION_SQLITE_PATH:-data/definition-service.sqlite}"
 restore_sqlite "gate-service" "${GATE_SQLITE_PATH:-data/gate-service.sqlite}"
 restore_sqlite "query-service" "${QUERY_SQLITE_PATH:-data/query-service.sqlite}"
 restore_sqlite "registry-service" "${REGISTRY_SQLITE_PATH:-data/registry-service.sqlite}"
 restore_sqlite "dkg-state" "${DKG_SQLITE_PATH:-$HOME/.qa-sdk/state.sqlite}"
+
+# ══════════════════════════════════════════════════════════════
+# 3.5. Definition docs archive 복원
+# ══════════════════════════════════════════════════════════════
+
+restore_definition_docs() {
+  local short_date="${RESTORE_DATE:0:4}-${RESTORE_DATE:4:2}-${RESTORE_DATE:6:2}"
+  local archive
+  archive=$(ls -1t "$BACKUP_DIR/daily/definition-docs-${short_date}"*.tar.gz 2>/dev/null | head -1 || true)
+
+  if [[ -z "$archive" ]]; then
+    warn "Definition docs: 백업 파일 없음 — 건너뜀"
+    return
+  fi
+
+  log "Definition docs 복원: $archive"
+  if [[ "$DRY_RUN" == true ]]; then
+    return
+  fi
+
+  if tar -xzf "$archive"; then
+    ok "Definition docs 복원 완료"
+  else
+    fail "Definition docs 복원 실패"
+  fi
+}
+
+restore_definition_docs
 
 # ══════════════════════════════════════════════════════════════
 # 4. 카탈로그 API 복원

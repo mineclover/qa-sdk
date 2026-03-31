@@ -35,7 +35,8 @@ describe("실제 docs/ 스캔", () => {
     expect(reg.get("system-overview")).toBeDefined();
     expect(reg.get("gate-api")).toBeDefined();
     expect(reg.get("record-spec")).toBeDefined();
-    expect(reg.get("ingest-api-spec")).toBeDefined();
+    expect(reg.get("ingest-api-system")).toBeDefined();
+    expect(reg.get("ingest-interface-contract")).toBeDefined();
     expect(reg.get("df-system")).toBeDefined();
   });
 
@@ -44,6 +45,7 @@ describe("실제 docs/ 스캔", () => {
     expect(reg.get("system-overview")!.ref).toBe("docs/system-overview.md");
     expect(reg.get("gate-api")!.ref).toBe("docs/specs/gate/gate-api.spec.md");
     expect(reg.get("record-spec")!.ref).toBe("docs/specs/data-model/record.spec.md");
+    expect(reg.get("ingest-api-system")!.ref).toBe("docs/specs/ingest/ingest-api-system.md");
   });
 
   it("title이 # 제목에서 추출된다", () => {
@@ -51,6 +53,7 @@ describe("실제 docs/ 스캔", () => {
     expect(reg.get("system-overview")!.title).toBe("QA-SDK 시스템 개요");
     expect(reg.get("gate-api")!.title).toBe("Gate Service API 계약");
     expect(reg.get("record-spec")!.title).toBe("EventRecord + RecordStore");
+    expect(reg.get("ingest-api-system")!.title).toBe("Ingest API 그룹");
   });
 
   it("tags가 보존된다", () => {
@@ -58,7 +61,7 @@ describe("실제 docs/ 스캔", () => {
     expect(reg.get("system-overview")!.tags).toContain("cross-scope");
     expect(reg.get("system-overview")!.tags).toContain("entry-point");
     expect(reg.get("gate-api")!.tags).toContain("security");
-    expect(reg.get("ingest-api-spec")!.tags).toContain("performance");
+    expect(reg.get("ingest-api-system")!.tags).toContain("performance");
   });
 
   it("좌표가 자동 계산된다", () => {
@@ -83,11 +86,11 @@ describe("링크 연결", () => {
       link.targetId === "gate-engine-func" && link.linkType === "implements"
     )).toBe(true);
 
-    // ingest-api-spec의 depends_on들이 연결됨 — 둘 다 등록됨
-    const ingestLinks = reg.getLinks("ingest-api-spec", "outgoing");
+    // ingest-interface-contract의 연결이 유지됨
+    const ingestLinks = reg.getLinks("ingest-interface-contract", "outgoing");
     expect(ingestLinks.length).toBeGreaterThan(0);
     expect(ingestLinks.some(link =>
-      link.targetId === "record-spec" && link.linkType === "depends_on"
+      link.targetId === "transmission-spec" && link.linkType === "depends_on"
     )).toBe(true);
   });
 });
@@ -95,7 +98,7 @@ describe("링크 연결", () => {
 describe("concern 전파", () => {
   it("ingest-api-spec의 performance가 직접 부여", () => {
     const concerns = computeAllConcerns(result.registry);
-    const ingest = concerns.get("ingest-api-spec")!;
+    const ingest = concerns.get("ingest-api-system")!;
     expect(ingest.direct).toContain("performance");
   });
 
@@ -111,7 +114,7 @@ describe("scope 기반 질의", () => {
     const apis = result.registry.findByScope("interface");
     expect(apis.length).toBeGreaterThanOrEqual(2);
     expect(apis.some(e => e.id === "gate-api")).toBe(true);
-    expect(apis.some(e => e.id === "ingest-api-spec")).toBe(true);
+    expect(apis.some(e => e.id === "ingest-interface-contract")).toBe(true);
   });
 
   it("flow scope 문서 조회", () => {

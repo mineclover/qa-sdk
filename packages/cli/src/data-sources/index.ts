@@ -4,7 +4,7 @@
  * 우선순위:
  * 1. --server 플래그 → ServerDataSource
  * 2. --local 플래그 → LocalDataSource
- * 3. 자동: DB 파일 존재 시 local, 아니면 server ping → 성공 시 server, 실패 시 scanAndBuild fallback
+ * 3. 자동: DB 파일 존재 시 local, 아니면 server ping → 성공 시 server, 실패 시 에러
  */
 
 import { existsSync } from "node:fs";

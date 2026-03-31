@@ -165,6 +165,10 @@ export class SearchService implements OnModuleInit {
           like(documents.context, pattern),
           like(documents.caveat, pattern),
           like(documents.docId, pattern),
+          like(documents.title, pattern),
+          like(documents.svc, pattern),
+          like(documents.address, pattern),
+          like(documents.tagsJson, pattern),
         ),
       )
       .orderBy(asc(documents.docId))
@@ -186,6 +190,10 @@ export class SearchService implements OnModuleInit {
           like(documents.context, pattern),
           like(documents.caveat, pattern),
           like(documents.docId, pattern),
+          like(documents.title, pattern),
+          like(documents.svc, pattern),
+          like(documents.address, pattern),
+          like(documents.tagsJson, pattern),
         ),
       )
       .get();

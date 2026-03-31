@@ -97,7 +97,29 @@ backup_dkg() {
 backup_dkg
 
 # ══════════════════════════════════════════════════════════════
-# 3. SQLite 파일 복사 (gate / query / registry-service)
+# 2.5. Definition metadata reverse sync (best effort)
+# ══════════════════════════════════════════════════════════════
+
+sync_definition_metadata_to_files() {
+  local base_url="${DEFINITION_SERVICE_URL:-http://localhost:3700}"
+
+  log "definition metadata 역동기화 시도..."
+  if [[ "$DRY_RUN" == true ]]; then
+    log "curl -X POST ${base_url}/sync/to-files"
+    return
+  fi
+
+  if curl -sf -X POST "${base_url}/sync/to-files" >/dev/null 2>&1; then
+    ok "definition metadata → docs frontmatter 역동기화 완료"
+  else
+    warn "definition metadata 역동기화 실패 — definition DB 백업만 수행"
+  fi
+}
+
+sync_definition_metadata_to_files
+
+# ══════════════════════════════════════════════════════════════
+# 3. SQLite 파일 복사 (definition / gate / query / registry-service)
 # ══════════════════════════════════════════════════════════════
 
 backup_sqlite() {
@@ -123,10 +145,39 @@ backup_sqlite() {
   fi
 }
 
+backup_sqlite "${DEFINITION_SQLITE_PATH:-data/definition-service.sqlite}" "definition-service"
 backup_sqlite "${GATE_SQLITE_PATH:-data/gate-service.sqlite}" "gate-service"
 backup_sqlite "${QUERY_SQLITE_PATH:-data/query-service.sqlite}" "query-service"
 backup_sqlite "${REGISTRY_SQLITE_PATH:-data/registry-service.sqlite}" "registry-service"
 backup_sqlite "${DKG_SQLITE_PATH:-$HOME/.qa-sdk/state.sqlite}" "dkg-state"
+
+# ══════════════════════════════════════════════════════════════
+# 3.5. Definition docs archive
+# ══════════════════════════════════════════════════════════════
+
+backup_definition_docs() {
+  local src="${DEFINITION_DOCS_PATH:-docs}"
+  local out="$BACKUP_DIR/daily/definition-docs-${DATE_SHORT}.tar.gz"
+
+  if [[ ! -d "$src" ]]; then
+    warn "Definition docs: $src 디렉토리 없음 — 건너뜀"
+    return
+  fi
+
+  log "Definition docs 백업 시작..."
+  if [[ "$DRY_RUN" == true ]]; then
+    log "tar -czf $out $src"
+    return
+  fi
+
+  if tar -czf "$out" "$src"; then
+    ok "Definition docs → $(du -h "$out" | cut -f1)"
+  else
+    fail "Definition docs 아카이브 실패"
+  fi
+}
+
+backup_definition_docs
 
 # ══════════════════════════════════════════════════════════════
 # 4. 카탈로그 API 백업

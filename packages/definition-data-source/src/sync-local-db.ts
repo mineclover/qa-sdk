@@ -164,7 +164,7 @@ function resetTables(db: Database.Database): void {
       PRIMARY KEY (source_id, target_id, link_type)
     );
     CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-      doc_id UNINDEXED,
+      doc_id,
       purpose,
       intent,
       context,

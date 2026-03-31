@@ -29,6 +29,7 @@ import {
 function rowToDoc(row: Record<string, unknown>): DefDoc {
   return {
     docId: row["doc_id"] as string,
+    title: (row["title"] as string) || (row["doc_id"] as string),
     level: (row["level"] as string) || undefined,
     scope: row["scope"] as string,
     aspect: row["aspect"] as string,
@@ -62,20 +63,29 @@ export class LocalDataSource implements DefDataSource {
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
-    // 전문 검색 — 한글 토크나이저 보정: 각 단어에 * 와일드카드 추가
+    // 전문 검색 — MATCH 실패 시 LIKE fallback으로 exact id/title 검색을 보완한다.
     if (filter?.q) {
       const ftsQuery = filter.q
         .split(/\s+/)
         .filter(t => t.length > 0)
         .map(t => t.endsWith("*") ? t : `${t}*`)
         .join(" ");
-      const stmt = this.db.prepare(`
-        SELECT d.* FROM documents d
-        JOIN documents_fts fts ON fts.doc_id = d.doc_id
-        WHERE documents_fts MATCH ?
-        LIMIT ?
-      `);
-      return (stmt.all(ftsQuery, filter?.limit ?? 50) as Record<string, unknown>[]).map(rowToDoc);
+      try {
+        const stmt = this.db.prepare(`
+          SELECT d.* FROM documents d
+          JOIN documents_fts fts ON fts.doc_id = d.doc_id
+          WHERE documents_fts MATCH ?
+          LIMIT ? OFFSET ?
+        `);
+        const rows = stmt.all(ftsQuery, filter?.limit ?? 50, filter?.offset ?? 0) as Record<string, unknown>[];
+        if (rows.length > 0) {
+          return rows.map(rowToDoc);
+        }
+      } catch {
+        // hyphenated doc id 등 FTS 구문 오류는 LIKE fallback으로 처리한다.
+      }
+
+      return this.searchByLike(filter.q, filter?.limit ?? 50, filter?.offset ?? 0);
     }
 
     const conditions: string[] = [];
@@ -96,6 +106,39 @@ export class LocalDataSource implements DefDataSource {
     const offset = filter?.offset ?? 0;
     const stmt = this.db.prepare(`SELECT * FROM documents ${where} ORDER BY doc_id LIMIT ? OFFSET ?`);
     return (stmt.all(...params, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
+  }
+
+  private searchByLike(query: string, limit: number, offset: number): DefDoc[] {
+    const pattern = `%${query}%`;
+    const stmt = this.db.prepare(`
+      SELECT * FROM documents
+      WHERE purpose LIKE ?
+         OR intent LIKE ?
+         OR context LIKE ?
+         OR caveat LIKE ?
+         OR doc_id LIKE ?
+         OR title LIKE ?
+         OR svc LIKE ?
+         OR address LIKE ?
+         OR tags_json LIKE ?
+      ORDER BY doc_id
+      LIMIT ? OFFSET ?
+    `);
+    return (
+      stmt.all(
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        pattern,
+        limit,
+        offset,
+      ) as Record<string, unknown>[]
+    ).map(rowToDoc);
   }
 
   async getChildren(docId: string): Promise<DefDoc[]> {

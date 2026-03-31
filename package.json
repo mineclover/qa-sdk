@@ -14,7 +14,7 @@
     "format:check": "oxfmt --check packages/",
     "clean": "pnpm -r run clean",
     "sync:skills": "bash scripts/sync-skills.sh",
-    "def:check": "node packages/cli/dist/index.js def validate && node packages/cli/dist/index.js def check",
+    "def:check": "node packages/cli/dist/index.js def validate && node packages/cli/dist/index.js def audit-db",
     "dev:ingest": "pnpm --filter @qa-sdk/ingest-server dev",
     "dev:registry": "pnpm --filter @qa-sdk/registry-service dev",
     "dev:shop": "pnpm --filter @qa-sdk/shop-web dev",
