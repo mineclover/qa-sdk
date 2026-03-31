@@ -270,11 +270,18 @@ scope:0 (ui) v1:
 - scope별 aspect 소비 버전 관리
 - 경로 모델 인코딩 설계
 
+### 구현 완료
+
+| 구현 | 파일 | 상태 |
+|------|------|------|
+| ScopeRegistry | `definition-catalog/src/scope-registry.ts` | 14 tests 통과 |
+| ASPECT_TO_SCOPES (N:M) | `definition-catalog/src/taxonomy.ts` | deprecated 하위 호환 유지 |
+
 ### 후속 과제
 
 | 과제 | 설명 |
 |------|------|
-| ScopeRegistry 구현 | aspect pool + scope 소비 관계 코드 구현 |
-| 경로 인코딩 엔진 | weighted-index에 경로 모델 인코딩 지원 |
-| VALID_SCOPE_ASPECTS 마이그레이션 | 1:1 소유 → N:M 소비 모델 전환 |
+| 검증 전략 코드화 | scope×aspect→검증전략 조회 함수 (현재 테이블만) |
+| 경로 인코딩 core 스펙 | weighted-index에 경로 모델 인코딩 지원 |
+| 기존 주소 마이그레이션 | v1/v2 전곱 주소 → 경로 주소 전환 전략 |
 | 검증 전략 자동 추천 | scope×aspect에서 검증 방법 자동 제안 |
