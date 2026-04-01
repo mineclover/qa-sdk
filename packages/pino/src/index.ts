@@ -116,9 +116,9 @@ function serializeError(error: unknown): Record<string, unknown> {
   };
 
   // Error 인스턴스의 열거 가능 속성도 포함 (cause, code 등)
-  for (const key of Object.keys(error)) {
+  for (const [key, value] of Object.entries(error)) {
     if (!(key in base)) {
-      base[key] = (error as unknown as Record<string, unknown>)[key];
+      base[key] = value;
     }
   }
 
