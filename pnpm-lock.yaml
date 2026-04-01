@@ -329,8 +329,8 @@ importers:
   packages/core:
     dependencies:
       pino:
-        specifier: ^9.6.0
-        version: 9.14.0
+        specifier: workspace:@qa-sdk/pino@^9.9.4
+        version: link:../pino
       ulid:
         specifier: ^2.3.0
         version: 2.4.0
