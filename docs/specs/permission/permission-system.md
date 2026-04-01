@@ -25,6 +25,8 @@ def:
       type: contains
     - target: perm-migration-system
       type: contains
+    - target: auth-permission-integration
+      type: contains
 ---
 
 # 권한 엔진 시스템

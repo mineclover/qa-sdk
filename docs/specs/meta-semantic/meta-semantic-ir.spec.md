@@ -28,6 +28,14 @@ def:
 TypeScript 코드에서 추출한 의도를 표현하는 3종 IR(Module · Data · Pipe) 구조를 정의한다.
 코드를 "텍스트"가 아닌 "좌표를 가진 의도 객체의 네트워크"로 변환하기 위한 데이터 모델이다.
 
+## 방법 ^method
+
+**ModuleIR**이 바운더리에 의해 정의된 계층 구조를 표현하고,
+**DataIR**이 패싯 역할별(생산/소비/정의/관리/저장) 데이터 스키마를 분리하고,
+**PipeIR**이 트랜잭션 실행으로 시간 축을 전진시키고,
+**참조 타입**(ModuleRef/DataRef/PipeRef)이 IR 간 타입 안전한 연결을 제공하고,
+계약은 **하향 위임**(parent→children), 트랜잭션은 **상향 전달**(pipe→module)한다.
+
 ## 정의 ^defines
 
 - `ModuleIR` — 구조적 의도 컨테이너 (정적, 계층적)

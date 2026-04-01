@@ -4,9 +4,10 @@
 
 ## 현황
 
-- 스펙: 74개 문서 (pipe-interpret.spec, pipe-gate.spec 포함)
-- 구현: 37개 파일 (`@qa-sdk/core` — matchHappyPath, collectGraphEvents, compareWithSimulation 추가)
-- 테스트: 594 tests 전부 통과 (33 test files)
+- 스펙: 74개 문서 (마커 보강 완료: ^method 4개, ^delegates 1개 추가)
+- 구현: 39개 파일 (`@qa-sdk/core` pipe-zoom.ts + `codegen-core` event-track-typescript.ts 추가)
+- 테스트: 639 tests 전부 통과 (core 620 / 36 files + codegen-core 19 / 1 file)
+- 스펙: 76개 문서 (pipe-zoom.spec, event-track-codegen.spec 추가 + P1 .todo 4건)
 
 ---
 
@@ -106,6 +107,29 @@
 - [x] path-coverage-min 근사치 제거 (executedPathCount 필수)
 - [x] __foldedContract 타입 캐스트 제거, version 비교 수정
 
+### 줌 레벨 시각화
+
+- [x] computeZoomView — PipeGraph → 줌 레벨별 뷰 계산 (group/module/leaf)
+- [x] computeZoomLevels — 3단계 줌 레벨 맵 일괄 생성
+- [x] computeLayout — 위상 정렬 기반 DAG 레이아웃 (barycenter 휴리스틱)
+- [x] 타입 확실성 시각 인코딩 — strict→polygon/solid, flexible→cloud/dashed
+- [x] 줌 레벨별 접기: group(전체), module(chain+SCC), leaf(없음)
+- [x] 테스트 26건 통과
+
+### SDK Track 코드 자동 생성
+
+- [x] generateTrackCode — EventDef + EventMapping + PayloadGuide → TypeScript
+- [x] 생성 파일 4종: event-keys.ts, event-payloads.ts, track-functions.ts, index.ts
+- [x] EventKey 유니온 + 카테고리별 서브 유니온
+- [x] 이벤트별 payload 인터페이스 + EventPayloadMap
+- [x] 이벤트별 타입 안전 track 함수 + 제네릭 track<K>
+- [x] 테스트 19건 통과
+
+### 스펙 마커 보강
+
+- [x] MODULE ^method 추가: folding, spacetime-uid, extraction, ir
+- [x] MODULE ^delegates 추가: pipe-impl (contains 자식 11개)
+
 ### 테스트 재편 + 인프라
 
 - [x] pipe-infra.test.ts → 4개 패싯별 파일 분리
@@ -132,18 +156,16 @@
 
 ### P0 — 핵심 (시스템 본질)
 
-- [ ] Semantic Folding 줌 레벨 시각화 — 접기/펼치기의 다중 해상도 렌더링
-- [ ] event-catalog → SDK track 코드 자동 생성 (현재는 수동 삽입)
-- [ ] 내부 스펙 완성도 — 마커 누락 보강, 스펙 간 정합성 점검
+- [x] Semantic Folding 줌 레벨 시각화 — computeZoomView/computeZoomLevels/computeLayout (26 tests)
+- [x] event-catalog → SDK track 코드 자동 생성 — generateTrackCode (19 tests)
+- [x] 내부 스펙 완성도 — MODULE ^method 4개 + ^delegates 1개 보강
 
-### P1 — 중간
+### P1 — 중간 (각 .spec.todo.md 작성 완료)
 
-- [ ] PipeGraph → Mermaid 변환
-- [ ] PipeGraph → D3/SVG 변환
-- [ ] toCloudEvent → 실제 EventRecord 타입 연결
-- [ ] compat 파일 제거 (ASPECT_TO_SCOPE 19줄만 잔존)
-- [ ] graph-matcher → PathMatcher 전환 (feature flag)
-- [ ] VerdictReport v1 → v2 전환
+- [ ] toCloudEvent → 실제 EventRecord 타입 연결 → `cloud-event-bridge.spec.todo.md`
+- [ ] compat 파일 제거 (ASPECT_TO_SCOPE 19줄만 잔존) → `compat-removal.spec.todo.md`
+- [ ] graph-matcher → PathMatcher 전환 (feature flag) → `path-matcher-migration.spec.todo.md`
+- [ ] VerdictReport v1 → v2 전환 → `verdict-v2.spec.todo.md`
 
 ### P2 — 보류 (인프라 / 기술 부채 대상)
 
@@ -154,3 +176,8 @@
 - [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
 - [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
 - [ ] tags — definition 쪽 tags 조회 브릿지
+
+### P3 — 낮음
+
+- [ ] PipeGraph → Mermaid 변환
+- [ ] PipeGraph → D3/SVG 변환

@@ -72,6 +72,75 @@ export {
   type DefaultPolicy,
 } from "./ternary-mask.js";
 
+export {
+  RoleRegistry,
+  type DomainRoleDef,
+  type RoleRegistryValidationError,
+} from "./role-registry.js";
+
+export {
+  OrgRoleRegistry,
+  type DomainAssignment,
+  type OrgRoleDef,
+  type OrgRoleValidationError,
+} from "./org-role-registry.js";
+
+export {
+  RoleResolver,
+  type ResolutionContext,
+  type DirectAssignment,
+  type DomainMaskResult,
+  type ExplainEntry,
+} from "./role-resolver.js";
+
+export {
+  UserOverrideStore,
+  type UserOverrideSnapshot,
+} from "./user-override.js";
+
+export {
+  UserPermissionEngine,
+  type FinalMaskResult,
+  type AuditResult,
+  type GrantSource,
+  type DenialReason,
+} from "./user-permission-engine.js";
+
+export {
+  type PermissionVersionStore,
+  InMemoryPermissionVersionStore,
+} from "./permission-version.js";
+
+export {
+  type AuthProvider,
+  ZitadelProvider,
+  KeycloakProvider,
+  NoopAuthProvider,
+  type ZitadelProviderOptions,
+  type KeycloakProviderOptions,
+} from "./auth-provider.js";
+
+export {
+  PermissionChangeNotifier,
+  type NotifyOptions,
+  type NotifyResult,
+} from "./permission-change-notifier.js";
+
+export {
+  TokenEnrichmentHandler,
+  computeSchemaHash,
+  base64ToUint8,
+  type PermissionClaims,
+  type ContextLoader,
+} from "./token-enrichment.js";
+
+export {
+  PermissionMiddleware,
+  type MiddlewareErrorKind,
+  type MiddlewareError,
+  type CheckResult,
+} from "./permission-middleware.js";
+
 // re-export from weighted-index (partial-binder는 weighted-index에 위치)
 export {
   createBinder,

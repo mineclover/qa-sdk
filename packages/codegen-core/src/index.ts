@@ -16,3 +16,14 @@ export {
   toTsConstKey,
 } from "./naming.js";
 export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from "./types.js";
+export {
+  generateTrackCode,
+  type EventDef,
+  type FieldDef,
+  type FieldType,
+  type PayloadGuide,
+  type EventMapping,
+  type TrackCodegenFile,
+  type TrackCodegenResult,
+  type TrackCodegenOptions,
+} from "./event-track-typescript.js";

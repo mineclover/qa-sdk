@@ -34,6 +34,8 @@ def:
       type: contains
     - target: pipe-gate
       type: contains
+    - target: pipe-zoom
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현
@@ -56,6 +58,21 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 **pipe-gate**가 품질 게이트 평가(pass/fail/review)를 수행하고,
 **pipe-fold**가 서브그래프 접기/펼치기 + 경계 계약을 도출하고,
 **pipe-flow-catalog**가 29종 각각의 표현·정의·검증 방식을 문서화한다.
+
+## 위임 ^delegates
+
+- **pipe-types** → PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입 정의
+- **pipe-path** → 단일 파이프 + 그래프 전체 경로 수 계산 (countPipePaths, countGraphPaths)
+- **pipe-validate** → PipeSpec/PipeGraph 구조 무결성 검증
+- **pipe-serialize** → JSON 직렬화/역직렬화
+- **pipe-store** → PipeSpec/PipeGraph CRUD 인메모리 저장소
+- **pipe-analyze** → 복잡도·병목·커버리지·이벤트 카탈로그 수집
+- **pipe-simulate** → 시뮬레이션 + happy path 검증 + 시뮬 결과 드리프트 감지
+- **pipe-interpret** → PipeConcern 8종 추출·BFS 전파·역할 분류·변경 영향 분석
+- **pipe-gate** → 품질 게이트 정의 + 자동 평가 (pass/fail/review)
+- **pipe-flow-catalog** → PipeFlow 29종 각각의 표현·정의·검증 방식 문서화
+- **pipe-connection-catalog** → ConnectionKind 8종 각각의 의미·사용 기준 문서화
+- **pipe-zoom** → 줌 레벨별 시각화 데이터 모델 (뷰·레이아웃·스타일 3 패싯)
 
 ## 구성 ^overview
 

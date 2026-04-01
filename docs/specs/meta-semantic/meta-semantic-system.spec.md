@@ -43,6 +43,8 @@ def:
       type: contains
     - target: pipe-gate
       type: contains
+    - target: event-track-codegen
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러

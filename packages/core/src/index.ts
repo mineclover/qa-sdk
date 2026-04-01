@@ -314,6 +314,12 @@ export type {
   ImpactedPipe, PipeImpactAnalysis, PipeRole,
 } from "./pipe-interpret.js";
 
+// ── Pipe Zoom ────────────────────────────────────────────
+export { computeZoomLevels, computeZoomView, computeLayout } from "./pipe-zoom.js";
+export type {
+  ZoomNodeStyle, ZoomNode, ZoomEdge, ZoomSummary, ZoomView, ZoomLevelMap,
+} from "./pipe-zoom.js";
+
 // ── Pipe Quality Gate ────────────────────────────────────
 export { evaluateGate, evaluateGates, allGatesPass, hasReviewItems } from "./pipe-gate.js";
 export type {
