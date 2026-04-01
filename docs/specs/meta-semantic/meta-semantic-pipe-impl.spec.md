@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-pipe-impl
-  level: leaf
+  level: module
   scope: feature
   aspect: func_def
   depth: implementation
@@ -12,6 +12,20 @@ def:
       type: depends_on
     - target: ms-concept-pipe
       type: implements
+    - target: pipe-types
+      type: contains
+    - target: pipe-path
+      type: contains
+    - target: pipe-validate
+      type: contains
+    - target: pipe-serialize
+      type: contains
+    - target: pipe-store
+      type: contains
+    - target: pipe-analyze
+      type: contains
+    - target: pipe-simulate
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현 계획
