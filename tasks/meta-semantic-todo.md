@@ -4,9 +4,9 @@
 
 ## 현황
 
-- 스펙: 73개 문서 (pipe-interpret.spec, pipe-gate.spec 추가)
-- 구현: 35개 파일 (`@qa-sdk/core` — pipe-fold, pipe-interpret, pipe-gate 추가)
-- 테스트: 561 tests 전부 통과 (29 test files)
+- 스펙: 74개 문서 (pipe-interpret.spec, pipe-gate.spec 포함)
+- 구현: 37개 파일 (`@qa-sdk/core` — matchHappyPath, collectGraphEvents, compareWithSimulation 추가)
+- 테스트: 594 tests 전부 통과 (33 test files)
 
 ---
 
@@ -52,11 +52,11 @@
 - [x] foldSubgraph — 파이프 그룹 → 단일 노드 축소
 - [x] unfoldNode — 접힌 노드 → 원본 복원
 - [x] detectFoldRegions — scope 클러스터 / 선형 체인 / SCC 자동 탐지
-- [x] 성능 벤치마크 — 200파이프 depth=12, 3단계 중첩 fold 전부 서브밀리초 (38 tests)
+- [x] 성능 벤치마크 — 200파이프 depth=12, 3단계 중첩 fold 전부 서브밀리초 (36 tests)
 
-### 연산자 안정화 (31종 PipeFlow × 6모듈)
+### 연산자 안정화 (29종 PipeFlow × 6모듈)
 
-- [x] validate — 빈 from/to 배열 검증, 숫자 범위 (duration>0, cooldown>0 등), correlation 자기참조 (+19 tests)
+- [x] validate — 빈 from/to 배열 검증, 숫자 범위, correlation 자기참조 (+20 tests)
 - [x] simulate — loop 반복, tap 에러 격리, dedup 상태 추적, 테스트 커버리지 확대 (+21 tests)
 - [x] runtime — throttle 속도제한, debounce 대기, dedup 중복제거, filter skip 기록 (+10 tests)
 
@@ -82,8 +82,38 @@
 
 ### 테스트 추적 + 매칭
 
-- [x] TestRegistry — 케이스/스위트/결과 수집 + 품질 지표 (18 tests)
+- [x] TestRegistry — 케이스/스위트/결과 수집 + 품질 지표 (24 tests)
 - [x] PathMatcher — matchPath() + 판정 (pass/warn/fail) (8 tests)
+
+### 레이어 2 — 해석 (PipeGraph 네이티브)
+
+- [x] PipeConcern 8종 자동 추출 — extractPipeConcerns
+- [x] 전파 규칙 테이블 — PIPE_PROPAGATION_RULES (ConnectionKind × PipeConcern × 방향)
+- [x] concern 전파 BFS — propagatePipeConcerns (전이적 전파 축소 포함)
+- [x] 변경 영향 분석 — analyzePipeImpact (blastRadius + byConcern)
+- [x] 파이프 역할 분류 — classifyPipeRole (producer/consumer/transformer/router/observer)
+- [x] 테스트 23건 통과
+- [x] 퀄리티 게이트 — evaluateGate/evaluateGates + pass/fail/review 3종 판정 (17 tests)
+- [x] 퀄리티 게이트 spec-tracker 연동 — pipe-interpret-gate (11 tests)
+
+### 데이터 흐름 보정
+
+- [x] matchHappyPath — 시뮬 결과 vs happy path 비교 (18 tests)
+- [x] collectGraphEvents — PipeGraph에서 trigger/produces/emit 이벤트 자동 수집 (14 tests)
+- [x] TestRegistry.compareWithSimulation — 시뮬 결과 드리프트 감지 (6 tests)
+- [x] 스펙 6건 데이터 흐름 보정 (.todo → 구현 → .spec 흡수)
+- [x] pipe-gate 적용 시점 분류 (정의 직후/분석 후/시뮬 후)
+- [x] path-coverage-min 근사치 제거 (executedPathCount 필수)
+- [x] __foldedContract 타입 캐스트 제거, version 비교 수정
+
+### 테스트 재편
+
+- [x] pipe-infra.test.ts → 4개 패싯별 파일 분리
+  - pipe-serialize.test.ts (4 tests)
+  - pipe-store.test.ts (9 tests)
+  - pipe-validate.test.ts (20 tests)
+  - pipe-analyze.test.ts (14 tests)
+- [x] matchHappyPath → pipe-happy-path.test.ts 분리 (18 tests)
 
 ---
 
@@ -95,18 +125,8 @@
 
 ## 미완료
 
-### 레이어 2 — 해석 (PipeGraph 네이티브)
+### 레이어 2 잔여 (definition-catalog 브릿지 — 별도 레이어)
 
-- [x] PipeConcern 8종 자동 추출 — extractPipeConcerns (flow 패턴 → 관심사)
-- [x] 전파 규칙 테이블 — PIPE_PROPAGATION_RULES (ConnectionKind × PipeConcern × 방향)
-- [x] concern 전파 BFS — propagatePipeConcerns (전이적 전파 축소 포함)
-- [x] 변경 영향 분석 — analyzePipeImpact (blastRadius + byConcern)
-- [x] 파이프 역할 분류 — classifyPipeRole (producer/consumer/transformer/router/observer)
-- [x] 테스트 23건 통과
-- [x] 퀄리티 게이트 — evaluateGate/evaluateGates + pass/fail/review 3종 판정 (16 tests)
-- [x] 퀄리티 게이트 spec-tracker 연동 — pipe-interpret-gate (11 tests)
-
-잔여 (definition-catalog 브릿지 — 별도 레이어):
 - [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
 - [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
 - [ ] tags — definition 쪽 tags 조회 브릿지
@@ -131,13 +151,6 @@
 - [ ] VerdictReport v1 → v2 전환
 - [ ] compat 파일 제거 체크리스트
 
-### 스펙 정리
+### SDK 관측 체계
 
-- [x] test-tracking.spec 구현 완료 반영
-- [x] execution-semantics.spec PathMatcher 구현 완료 반영
-- [x] pipe-impl 테스트 카운트 갱신 (561 tests)
-- [x] pipe-validate.spec 추가 검증 규칙 문서화
-- [x] pipe-simulate.spec 연산자 동작 안정화 문서화
-- [x] pipe-interpret.spec + pipe-gate.spec 신규 작성
-- [x] pipe-spec.ts 주석 31종→29종 수정
-- [x] pipe-impl leaf 문서들 구현 소스 참조 업데이트 (37개 파일 + lifecycle→approved)
+- [ ] event-catalog → SDK track 코드 자동 생성 (현재는 수동 삽입)
