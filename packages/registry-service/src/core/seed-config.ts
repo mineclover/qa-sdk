@@ -61,12 +61,13 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
       consumedPrefixes: ["service", "rbac"] },
     // ── 인프라 ──
     { serviceId: "infra-controller", name: "인프라 컨트롤러", tier: "infra", team: "devops", url: "http://localhost:3300",
-      ownedPrefixes: ["deploy_event", "health_event", "service", "data_policy", "engine_event", "schema_event", "resource_lifecycle"] },
+      ownedPrefixes: ["deploy_event", "health_event", "service", "data_policy", "engine_event", "schema_event", "resource_lifecycle",
+        "gate_point", "version_point", "version_state", "tag_lifecycle"] },
     { serviceId: "ingest-server", name: "이벤트 수집", tier: "infra", team: "platform", url: "http://localhost:3200",
       urls: { dev: "http://localhost:3200", staging: "https://ingest.staging.qa-sdk.io", prod: "https://ingest.qa-sdk.io" },
       gatewayPath: "/v1/",
-      // 파이프라인 자체 이벤트만 생산 — 나머지(ingest_record 등)는 소비/저장 대상
-      ownedPrefixes: ["pipeline_point"],
+      // 파이프라인 자체 이벤트 + 수집 메트릭 생산
+      ownedPrefixes: ["pipeline_point", "ingest_record", "metric_point", "metric_aggregate"],
       consumedPrefixes: ["service"] },
     { serviceId: "gate-service", name: "게이트 서비스", tier: "infra", team: "platform", url: "http://localhost:3400",
       urls: { dev: "http://localhost:3400", prod: "https://qa-gate-service.astralclover.workers.dev" },
@@ -88,7 +89,9 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
     { serviceId: "ci-runner", name: "CI Runner", tier: "system", team: "platform",
       ownedPrefixes: ["build_event", "test_event", "contract_check", "test_coverage"] },
     { serviceId: "dkg-engine", name: "DKG 엔진", tier: "system", team: "platform",
-      ownedPrefixes: ["dkg_event", "dkg_decision_event", "dkg_observation_event", "observation_event", "spec_event", "edge_activity"],
+      ownedPrefixes: ["dkg_event", "dkg_decision_event", "dkg_observation_event", "observation_event", "spec_event", "edge_activity",
+        "decision_event", "decision_path", "escalation_event", "forcing_response", "model_apply",
+        "pattern_match", "pattern_anomaly", "event_classification"],
       consumedPrefixes: ["service", "build_event", "test_event"] },
     { serviceId: "registry-service", name: "레지스트리 서비스", tier: "infra", team: "platform", url: "http://localhost:3300",
       urls: { dev: "http://localhost:3300", staging: "https://registry.staging.qa-sdk.io", prod: "https://registry.qa-sdk.io" },

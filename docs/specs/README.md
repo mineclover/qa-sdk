@@ -284,7 +284,7 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [logger.spec.md](infra/logger.spec.md) | pino 기반 구조화 JSON 로거 | @qa-sdk/pino | implemented |
+| [logger.spec.md](apm-system/logger.spec.md) | pino 기반 구조화 JSON 로거 | @qa-sdk/core (createLogger) + @qa-sdk/logger | implemented |
 
 ## 패키지 → 스펙 위치 매핑
 
@@ -306,7 +306,8 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | platform-demo | `indexing/README.md` (플랫폼 데모 섹션) |
 | permission-engine | `permission/permission-system.md`, `permission/perm-codec-system.md`, `permission/perm-external-system.md`, `permission/perm-migration-system.md` |
 | index-meta | `indexing/index-meta/README.md` + `indexing/index-meta/` |
-| @qa-sdk/pino | `infra/logger.spec.md` |
+| @qa-sdk/core (createLogger) | `apm-system/logger.spec.md` |
+| @qa-sdk/logger | `apm-system/logger.spec.md`, `apm-system/transport.spec.md` |
 | @qa-sdk/browser | `browser/monitor.spec.md` |
 | @qa-sdk/viz-web | `visualization/`, `web/` |
 | @qa-sdk/roleplay-web | `roleplay/`, `web/iframe-protocol.spec.md` |

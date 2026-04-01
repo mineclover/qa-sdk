@@ -6,30 +6,33 @@ def:
   scope: data
   aspect: domain_data
   depth: overview
-  lifecycle: approved
+  lifecycle: deprecated
   tags: [domain, tagging, search]
   links:
-    - target: tag-search-spec
-      type: refines
     - target: tag-management-spec
-      type: depends_on
+      type: traces_to
 ---
-# tag-search
+# tag-search (deprecated)
 
 ## 목적 ^purpose
 
-좌표계 외부의 태그 기반 검색 인덱스 라이브러리. 대상에 다중 태그를 부착하고, 태그 조합으로 역색인 검색을 수행한다.
+~~좌표계 외부의 태그 기반 검색 인덱스 라이브러리.~~
 
-## 구성 ^overview
+**deprecated** — `tag-management.spec.md`에 흡수됨.
+태그 저장/조회/전파/충돌 규칙은 `storage-system/tag-management.spec.md`가 SSOT.
+역검색 API는 `definition-service` 검색 모듈(SearchModule, FTS5)이 담당.
 
-- **TagStore** (port): 태그 저장·검색 추상 인터페이스 — attach / detach / query / summary
-- **InMemoryTagStore**: 메모리 기반 구현체
-- **TagAttachment**: 대상(targetKind + targetId)에 태그를 부착하는 단위
-- **TagQuery**: 포함/제외 조건 + targetKind 필터로 검색
-- **normalizeTag()**: 태그 정규화 (소문자, trim, 중복 방지)
+## 대체 경로
 
-## 설계 결정 ^intent
+| tag-search 개념 | 대체 | 위치 |
+|----------------|------|------|
+| TagStore (attach/detach) | 대상 저장소에 직접 저장 | tag-management.spec.md §targets |
+| TagQuery (include/exclude) | definition-service SearchModule | `definition-service/src/modules/search/` |
+| normalizeTag | definition-catalog taxonomy | `definition-catalog/src/taxonomy.ts` KNOWN_TAGS |
+| InMemoryTagStore | 별도 store 불필요 | tag-management.spec.md 설계 결정 |
 
-- 좌표계(prefix/dim)와 직교하는 분류 체계 — 좌표가 아닌 속성 기반 필터링
-- Port/Adapter 패턴으로 영속 계층 교체 가능
-- tag-management.spec.md의 카디널리티·전파 규칙을 따름
+## 관련
+
+- `docs/specs/storage-system/tag-management.spec.md` — 태그 관리 SSOT
+- `docs/specs/definition-catalog/definition-taxonomy.spec.md` — KNOWN_TAGS 분류
+- `packages/definition-service/src/modules/search/` — 실제 태그 검색 구현

@@ -67,3 +67,23 @@ MetaRegistry, PrefixDecoder, 주소 직렬화 등 좌표 시스템의 런타임 
 - `canonical-format-spec`: 4-표현 체계(A=tuple key, B=packed int, C=hierarchical id, D=hash/uuid)에서 C 표현(hierarchical id)의 정규 형식을 지정한다.
 - `dx-lifecycle-group`: CLI, codegen, wire format, 타입 추론을 동선과 계약으로 나눈 DX 그룹.
 - `benchmark-system`: encode/decode 성능, 차원 확장 한계, cross-index 종단 탐사, 정보 디코딩 파이프라인, 리소스 사용량의 실측 데이터.
+
+## 관련 소스
+
+| 모듈 | 파일 | 역할 |
+|------|------|------|
+| MetaRegistry | `packages/index-meta/src/meta-registry.ts` | 메타데이터 등록·조회 허브 |
+| MetaCodec | `packages/index-meta/src/meta-codec.ts` | DecodeMap 기반 encode/decode |
+| MetaCodecBig | `packages/index-meta/src/meta-codec-big.ts` | BigInt 경로 codec |
+| MetaResolver | `packages/index-meta/src/meta-resolver.ts` | DecodeMap/DimRange/IndexRange 변환 |
+| PrefixDecoder | `packages/index-meta/src/prefix-decoder.ts` | prefix 디코딩 + 의미 해석 |
+| PrefixRegistry | `packages/index-meta/src/prefix-registry.ts` | prefix 메타 관리 |
+| IndexSDK | `packages/index-meta/src/index-sdk.ts` | 경량 소비 SDK |
+| GateEngine | `packages/index-meta/src/gate-engine.ts` | 4-state 게이트 모델 |
+| AddressProtocolManager | `packages/index-meta/src/address-protocol-manager.ts` | 주소 직렬화 프로토콜 |
+| CrossIndexQuery | `packages/index-meta/src/cross-index-query.ts` | 크로스 인덱스 탐색 |
+| MigrateAddress | `packages/index-meta/src/migrate-address.ts` | 버전 간 주소 마이그레이션 |
+| RelationalEngine | `packages/index-meta/src/relational-engine.ts` | 관계형 주소 질의 |
+| PolicyResolver | `packages/index-meta/src/policy-resolver.ts` | 정책 규칙 해석 |
+| IndexMetaStore | `packages/index-meta/src/index-meta-store.ts` | 저장 계약 |
+| VersionLifecycle | `packages/index-meta/src/version-lifecycle.ts` | 버전 상태 전이 |

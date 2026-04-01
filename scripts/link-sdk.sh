@@ -21,7 +21,7 @@ mkdir -p "$TARGET/node_modules/@qa-sdk"
 mkdir -p "$TARGET/node_modules/@msgpack"
 
 # @qa-sdk/* 패키지
-for pkg in core logger codec context sdk apm browser-codec registry-client pino; do
+for pkg in core logger codec context sdk apm browser-codec registry-client; do
   ln -sfn "$QA_SDK_ROOT/packages/$pkg" "$TARGET/node_modules/@qa-sdk/$pkg"
   echo "  ✅ @qa-sdk/$pkg"
 done

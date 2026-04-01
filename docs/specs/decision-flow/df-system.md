@@ -70,3 +70,17 @@ P0~P11 전부 완료 (2026-03-25).
 
 테스트: 188 decision-flow + 141 CLI + 852 demo-tests.
 QG: `pnpm --filter decision-flow typecheck && pnpm --filter decision-flow test && pnpm --filter @qa-sdk/cli build && pnpm --filter demo-tests test`
+
+## 관련 소스
+
+| 패키지 | 역할 | 주요 파일 |
+|--------|------|----------|
+| `packages/decision-flow/` | 코어 엔진 + 모델 + 분석 | `engine.ts`, `schema.ts`, `types.ts`, `coordinate.ts` |
+| `packages/decision-flow/src/observe.ts` | prefix 인코딩 (5종) | decision_event, decision_path, escalation_event, forcing_response, model_apply |
+| `packages/decision-flow/src/context-provider.ts` | 컨텍스트 공급 | ContextProvider, hierarchical lookup |
+| `packages/decision-flow/src/core-analysis.ts` | 벡터 비교 + 시간 패턴 | comparison, temporal analysis |
+| `packages/decision-flow/src/narrative.ts` | 서사 구조 | narrative context |
+| `packages/decision-flow/src/dev-decisions.ts` | 일상 결정 FlowSchema | 5종 dev decision |
+| `packages/decision-flow/src/policy.ts` | 정책 학습 + 라우터 | policy learning |
+| `packages/decision-flow-store/` | SQLite 영속화 | InstanceStore |
+| `packages/cli/src/commands/dkg.ts` | CLI 조회/판정 | dkg decide, dkg flow-schema |

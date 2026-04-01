@@ -18,42 +18,43 @@ def:
 
 ## 목적 ^purpose
 
-구조화 JSON 로깅. pino 호환 인터페이스 제공.
+구조화 JSON 로깅. npm `pino` 기반 + `@qa-sdk/core`의 `createLogger` 팩토리 제공.
 
 ## 구성 ^overview
 
-- **팩토리**: `pino(options?, destination?)` — options 생략 시 기본값, destination 생략 시 stdout
-- **로그 레벨**: trace(10) ~ fatal(60) + silent, 설정 레벨 이상만 출력 (기본: info)
-- **LoggerOptions**: level, base(고정 필드), mixin(동적 필드), serializers(값 변환), messageKey/errorKey 커스터마이징
+- **팩토리**: `createLogger("서비스명", options?)` — 서비스별 pino 인스턴스 생성
+- **로그 레벨**: trace(10) ~ fatal(60) + silent, 환경별 자동 결정 (prod: info, dev: debug)
+- **multi-destination**: stdout + 추가 destination (IngestForwarder 등) 동시 출력
 - **child logger**: 부모 바인딩 상속 + 추가 바인딩 병합, 체이닝 가능
-- **Destination**: `write(message: string)` 인터페이스로 출력 대상 추상화
+- **Transport**: `@qa-sdk/logger`에서 Http/Protobuf/OTLP/DebugWebSocket/IngestForwarder 제공
 
 ## 상태
 
-implemented
+implemented — `@qa-sdk/core` createLogger + `@qa-sdk/logger` Transport 체계로 운영 중.
+레거시 `@qa-sdk/pino` 래퍼는 미채택, 제거 대상.
 
 ## 팩토리
 
 ```typescript
-function pino(options?: LoggerOptions, destination?: Destination): Logger;
+// @qa-sdk/core
+import { createLogger } from "@qa-sdk/core";
+
+const logger = createLogger("ingest-server");
+const logger = createLogger("ingest-server", {
+  destinations: [{ stream: createIngestForwarder({...}), level: "info" }],
+});
 ```
 
-- `options` 생략 시 기본값 적용
-- `destination` 생략 시 stdout
+- 서비스에서는 `createLogger("서비스명")` 필수. `console.log/warn/error` 사용 금지
+- 라이브러리에서는 `createLogger` 사용 또는 생성자로 logger 주입
 
 ## Logger 인터페이스
 
+npm `pino`의 Logger 타입을 그대로 사용:
+
 ```typescript
-interface Logger {
-  level: Level;
-  trace(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  debug(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  info(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  warn(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  error(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  fatal(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
-  child(bindings: Record<string, unknown>): Logger;
-}
+import type { Logger } from "pino";
+// re-export: import type { Logger } from "@qa-sdk/core";
 ```
 
 ## 로그 레벨
@@ -68,61 +69,27 @@ interface Logger {
 | fatal | 60 |
 | silent | Infinity |
 
-- 설정된 레벨 이상만 출력
-- 기본 레벨: `info`
+## 에러 로깅 규칙
 
-## LoggerOptions
+- `logger.error({ err }, "설명")` — `err` 키 사용 (pino 자동 직렬화)
+- `error` 키 사용 금지 (`{}`로 출력됨)
+- 빈 catch 블록 금지 — 최소 `logger.warn`
 
-```typescript
-interface LoggerOptions {
-  level?: Level | string;
-  base?: Record<string, unknown>;
-  messageKey?: string;          // 기본값: "msg"
-  errorKey?: string;            // 기본값: "err"
-  mixin?: () => Record<string, unknown>;
-  serializers?: Record<string, (value: unknown) => unknown>;
-  formatters?: {
-    level?: (label: string, number: number) => Record<string, unknown>;
-  };
-}
-```
+## Transport 체계 (@qa-sdk/logger)
 
-| 옵션 | 기본값 | 설명 |
-|---|---|---|
-| `level` | `"info"` | 로그 출력 임계 레벨 |
-| `base` | - | 모든 로그에 포함될 고정 필드 |
-| `messageKey` | `"msg"` | 메시지 필드 키 |
-| `errorKey` | `"err"` | 에러 직렬화 필드 키 |
-| `mixin` | - | 매 로그 호출 시 동적 필드 생성 함수 |
-| `serializers` | - | 특정 키의 값을 변환하는 함수 맵 |
+| Transport | 용도 |
+|-----------|------|
+| `HttpTransport` | HTTP 전송 |
+| `ProtobufTransport` | Protobuf 인코딩 전송 |
+| `OtlpTransport` | OpenTelemetry 로그 전송 |
+| `DebugWebSocketTransport` | 개발 디버그 WS |
+| `IngestForwarder` | addressContext 있는 로그 → ingest 파이프라인 전달 |
+| `NoopTransport` | 테스트용 |
 
-## Destination
+## 관련 소스
 
-```typescript
-interface Destination {
-  write(message: string): void;
-}
-```
-
-- 포맷된 JSON 문자열을 출력할 대상
-- 기본: `process.stdout`
-
-## 정적 프로퍼티
-
-```typescript
-pino.stdSerializers = {
-  err: (error: unknown) => unknown;
-};
-```
-
-- `err`: Error 객체를 `{ type, message, stack }` 형태로 직렬화
-
-## child logger
-
-```typescript
-const child = logger.child({ requestId: "abc" });
-child.info("hello"); // { requestId: "abc", msg: "hello", ... }
-```
-
-- 부모 바인딩을 상속하고 추가 바인딩을 병합
-- child에서 다시 child 생성 가능 (체이닝)
+| 파일 | 역할 |
+|------|------|
+| `packages/core/src/lib/create-logger.ts` | createLogger 팩토리 (npm pino 기반) |
+| `packages/logger/src/` | Transport 구현체 (Http, Protobuf, OTLP, IngestForwarder) |
+| `packages/logger/src/transport/ingest-forwarder.ts` | 로그 → Ingest 브릿지 |
