@@ -31,6 +31,12 @@ def:
       type: contains
     - target: meta-semantic-execution-semantics
       type: contains
+    - target: meta-semantic-pipe-impl
+      type: contains
+    - target: meta-semantic-test-tracking
+      type: contains
+    - target: meta-semantic-v2-migration
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러
@@ -78,7 +84,7 @@ def:
 
 ## 위임 ^delegates
 
-- **meta-semantic-concepts** → 8가지 원자 개념 정의 (패싯, 바운더리, 파이프 등)
+- **meta-semantic-concepts** → 9가지 원자 개념 정의 (패싯, 바운더리, 이벤트, 파이프 등)
 - **meta-semantic-folding** → Semantic Folding 핵심 메커니즘, 검증 단위 식별
 - **meta-semantic-ir** → 3종 IR 구조 정의 (Module, Data, Pipe)
 - **meta-semantic-scope** → scope → aspect → 검증 전략 (경로 모델)

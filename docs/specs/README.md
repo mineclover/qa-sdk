@@ -203,17 +203,23 @@ API 클라이언트, iframe 통신 프로토콜.
 
 ### meta-semantic/ — 메타 시맨틱 아키텍처
 
-Semantic Folding 기반 의도 컴파일러 — 코드를 접어 검증 단위 식별 → 분기 경로만 좌표화 → LLM 기반 분할.
+데이터 흐름을 검증 가능한 단위로 정의하는 체계. 9가지 원자 개념 + PipeFlow 29종 + ConnectionKind 8종 + 실행 엔진 + 표준 호환.
 
 | 스펙 | 설명 | 상태 |
 |---|---|---|
-| [meta-semantic-system.spec.md](meta-semantic/meta-semantic-system.spec.md) | 전체 시스템 그룹 — Folding 중심 철학, 분기 경로 좌표 모델, LLM 역할 | draft |
-| [meta-semantic-concepts.spec.md](meta-semantic/meta-semantic-concepts.spec.md) | 7가지 원자 개념 — 5원 분리→바운더리→계약 하향→Folding→검증 단위→분기 경로→UID | draft |
-| [meta-semantic-folding.spec.md](meta-semantic/meta-semantic-folding.spec.md) | Semantic Folding — 검증 단위 식별 핵심 메커니즘, 분기 경로 한정, 계약 도출 | draft |
-| [meta-semantic-ir.spec.md](meta-semantic/meta-semantic-ir.spec.md) | Module·Data·Pipe IR 구조 — 참조 타입, 5원 생명주기, 계약 위임 | draft |
-| [meta-semantic-spacetime-uid.spec.md](meta-semantic/meta-semantic-spacetime-uid.spec.md) | Spacetime UID — 분기 경로별 WeightedIndex + 시간 축, 전곱 아닌 경로 합산 | draft |
-| [meta-semantic-scope.spec.md](meta-semantic/meta-semantic-scope.spec.md) | 검증 분류 체계 — scope×aspect 경로 모델, scope별 검증 전략 매핑 | draft |
-| [meta-semantic-extraction.spec.md](meta-semantic/meta-semantic-extraction.spec.md) | LLM 기반 추출 — 검증 가능 함수 식별, 의미 있는 분기점 판별, 파서 역할 분리 | draft |
+| [meta-semantic-system.spec.md](meta-semantic/meta-semantic-system.spec.md) | 전체 시스템 그룹 — 2레이어 + 실행 엔진 + 표준 호환 | draft |
+| [meta-semantic-concepts.spec.md](meta-semantic/meta-semantic-concepts.spec.md) | 9가지 원자 개념 — 패싯→바운더리→계약→이벤트→파이프→Folding→검증→경로→UID | draft |
+| [meta-semantic-folding.spec.md](meta-semantic/meta-semantic-folding.spec.md) | Semantic Folding — 모듈/파이프에서 하위 패싯을 접어 인터페이스로 끌어올림 | draft |
+| [meta-semantic-ir.spec.md](meta-semantic/meta-semantic-ir.spec.md) | Module·Data·Pipe IR 구조 | draft |
+| [meta-semantic-spacetime-uid.spec.md](meta-semantic/meta-semantic-spacetime-uid.spec.md) | Spacetime UID — 분기 경로 + 시간 축 주소 | draft |
+| [meta-semantic-scope.spec.md](meta-semantic/meta-semantic-scope.spec.md) | scope→aspect 경로 모델 + 검증 전략 (ScopeRegistry 구현 완료) | draft |
+| [meta-semantic-extraction.spec.md](meta-semantic/meta-semantic-extraction.spec.md) | LLM 기반 추출 — 검증 가능 함수 식별 | draft |
+| [meta-semantic-pipe-impl.spec.md](meta-semantic/meta-semantic-pipe-impl.spec.md) | PipeFlow 29종 + ConnectionKind 8종 + 시뮬레이션 + 분석 (구현 완료, 399 tests) | draft |
+| [meta-semantic-data-contract.spec.md](meta-semantic/meta-semantic-data-contract.spec.md) | 데이터 계약 — 스키마 + 관계 + 계보 + 버전 (구현 완료) | draft |
+| [meta-semantic-event-standard.spec.md](meta-semantic/meta-semantic-event-standard.spec.md) | CloudEvents 호환 + 서비스 버전 매니페스트 + 라이프사이클 (구현 완료) | draft |
+| [meta-semantic-execution-semantics.spec.md](meta-semantic/meta-semantic-execution-semantics.spec.md) | Phase 3 런타임 — 조건 평가 + 에러 전파 + 취소 + PipeRunner (구현 완료) | draft |
+| [meta-semantic-test-tracking.spec.md](meta-semantic/meta-semantic-test-tracking.spec.md) | 테스트 추적 — 패싯별 검증 루프 (스펙만) | draft |
+| [meta-semantic-v2-migration.spec.md](meta-semantic/meta-semantic-v2-migration.spec.md) | v2 마이그레이션 계획 — Phase 1~4 | draft |
 
 ### skill-catalog/ — 스킬 카탈로그
 
