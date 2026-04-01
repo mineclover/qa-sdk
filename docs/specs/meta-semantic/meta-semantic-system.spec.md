@@ -31,45 +31,69 @@ def:
 
 ## 목적 ^purpose
 
-데이터의 흐름을 검증 가능한 단위로 정의하는 체계.
-데이터 패싯(Data Facets)으로 역할을 쪼개고, 파이프로 실행을 묶고,
-바운더리로 경계를 정하고, 좌표로 추적한다.
+데이터의 흐름을 검증 가능한 단위로 정의하고 추적하는 체계.
+2개 레이어로 구성: 수집(단위 자체 속성)과 해석(관계/맥락 기반).
 
 ## 방법 ^method
 
-**데이터 패싯**이 데이터의 독립 역할(생산·소비·정의·관리·저장 등)을 분리하고,
-**바운더리**가 패싯 중 일부를 가진 검증 가능 기능 단위로 코드를 경계짓고,
-**파이프**가 바운더리들을 확정적 실행 순서로 묶고,
-**Semantic Folding**이 코드를 접어 바운더리와 파이프를 식별하고,
-**분기 경로**가 파이프 내 도달 가능한 경우의 수만 수집하고 (전곱 아님),
-**Spacetime UID**가 분기 경로 + 시간 축으로 모든 실행을 추적한다.
+**레이어 1 — 수집:** 코드 한 단위를 수집할 때 동시에 얻을 수 있는 것을 정의한다.
+**데이터 패싯**이 역할을 분리하고, **바운더리**가 경계를 짓고,
+**파이프**가 실행을 묶고, **scope→aspect**가 검증 방법을 분류하고,
+**layer**가 존재 이유를, **concern**이 횡단 관심사를, **code-references**가 문서 연결을,
+**분기 경로**가 경우의 수를, **Spacetime UID**가 주소를 부여한다.
+
+**레이어 2 — 해석:** 수집된 단위들을 연결하고 맥락을 부여한다.
+**lifecycle**이 시간에 따른 상태를, **link_type**이 관계 성격을,
+**concern 전파**가 횡단 관심사 확산을, **layer 영향 전파**가 cascade 방향을,
+**tags**가 보조 분류를 부여한다.
 
 코드는 **Module·Data·Pipe** 3종 IR로 분해되어 위 체계의 입력이 된다.
 
 ## 정의 ^defines
 
+레이어 1 (수집 — 단위 자체 속성):
 - 데이터 패싯 (Data Facets) — 데이터의 독립적 역할을 분리하는 설계 규칙
 - 파이프 (Pipe) — 패싯 단위들의 확정적 실행 묶음
 - Semantic Folding — 코드 구조의 계층적 접기/펼치기로 검증 단위 식별
-- 코드 의도의 3원 IR 모델 (Module × Data × Pipe)
-- 분기 경로 기반 주소 체계 (이벤트별 경우의 수 수집, 전곱 아님)
-- LLM 기반 실행 단위 식별 및 분기점 추출
+- scope → aspect → 검증 전략 (quality gates 포함)
+- layer — 존재 이유 식별 (domain/operation/mediation/experience)
+- concern 식별 — 횡단 관심사 태깅 (security, performance 등)
+- code-references — 코드↔문서 매핑
+- 분기 경로 기반 주소 체계 (경로 합산, 전곱 아님)
+- Spacetime UID — 분기 경로 + 시간 축 주소
+- LLM 기반 실행 단위 식별
+
+레이어 2 (해석 — 관계/맥락 기반):
+- lifecycle — 시간에 따른 상태 (draft→active→deprecated)
+- link_type — 바운더리 간 관계 성격 (depends_on/implements/refines/constrains)
+- concern 전파 — 그래프 순회로 횡단 관심사 확산
+- layer 영향 전파 — domain→operation→mediation→experience cascade
+- tags — 보조 분류
 
 ## 위임 ^delegates
 
+- **meta-semantic-concepts** → 8가지 원자 개념 정의 (패싯, 바운더리, 파이프 등)
 - **meta-semantic-folding** → Semantic Folding 핵심 메커니즘, 검증 단위 식별
 - **meta-semantic-ir** → 3종 IR 구조 정의 (Module, Data, Pipe)
+- **meta-semantic-scope** → scope → aspect → 검증 전략 (경로 모델)
 - **meta-semantic-spacetime-uid** → 분기 경로 기반 시공간 UID 인코딩
 - **meta-semantic-extraction** → LLM 기반 실행 단위 식별 및 분기점 추출
 
 ## 구성 ^overview
 
-4개 하위 모듈 (Semantic Folding이 중심):
+2개 레이어, 6개 하위 모듈:
 
-- **meta-semantic-folding**: 코드 구조를 접고 펼쳐 검증 가능한 실행 단위를 식별하는 핵심 메커니즘
-- **meta-semantic-ir**: Module(구조 공간) · Data(상태 실체) · Pipe(시간 흐름) IR 정의
-- **meta-semantic-spacetime-uid**: 분기 경로 기반 주소 인코딩 (이벤트별 경우의 수 합산)
-- **meta-semantic-extraction**: LLM이 함수 단위 실행 경계를 식별하고 분기점을 추출
+**레이어 1 — 수집 (코드 단위 하나만 보고 결정 가능):**
+- **meta-semantic-concepts**: 8가지 원자 개념 (패싯, 바운더리, 파이프, 계약 하향 등)
+- **meta-semantic-folding**: 코드를 접어 검증 가능 실행 단위를 식별
+- **meta-semantic-ir**: Module·Data·Pipe IR 구조
+- **meta-semantic-scope**: scope→aspect 경로 모델 + 검증 전략
+- **meta-semantic-spacetime-uid**: 분기 경로 + 시간 축 주소
+- **meta-semantic-extraction**: LLM 기반 단위 식별 + 분기점 추출
+
+**레이어 2 — 해석 (수집된 단위 간 관계/맥락):**
+- lifecycle, link_type, concern 전파, layer 영향 전파, tags
+- 후속 설계 대상
 
 ---
 
