@@ -220,6 +220,7 @@ function resolveBrowserCatalog(config: QaBridgeConfig): BrowserCatalog {
   return withServiceOverlay(LOCAL_BROWSER_CATALOG, toServiceDims(config.serviceConfig));
 }
 
+// @prefix service:v1 — dims: [env:0, region:1, svc_name:2, namespace:3]
 function resolveInfraContext(
   config: QaBridgeConfig,
   browserCatalog: BrowserCatalog,
