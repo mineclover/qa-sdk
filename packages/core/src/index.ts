@@ -314,6 +314,17 @@ export type {
 } from "./types/constraint.js";
 export { ConstraintRegistry, evaluatePredicate, executeConstraint } from "./constraint-engine.js";
 
+// ── Pipe Runtime (Phase 3) ───────────────────────────────
+export type {
+  ConditionExpr, FieldCondition, LogicalCondition, ExistsCondition, EventCondition,
+  StepResult, StepError, ICancellationToken, IPipeContext,
+  StepExecutor, ExecutedStep, RunResult,
+} from "./types/pipe-runtime.js";
+export {
+  parseCondition, evaluateCondition,
+  CancellationToken, PipeContext, ExecutorRegistry, PipeRunner,
+} from "./pipe-runtime.js";
+
 export {
   checkCompatibility, computeSchemaHash,
   collectSchemaChanges, determineCompatibility, createSchemaVersion,
