@@ -1,0 +1,257 @@
+---
+def:
+  id: meta-semantic-event-standard
+  level: leaf
+  scope: interface
+  aspect: event_contract
+  depth: specification
+  lifecycle: draft
+  layer: domain
+  tags: [structural]
+  links:
+    - target: meta-semantic-system
+      type: depends_on
+    - target: ms-concept-event
+      type: refines
+    - target: meta-semantic-scope
+      type: depends_on
+---
+
+# 이벤트 표준 — CloudEvents 호환 + 서비스 버전 매니페스트
+
+## 목적 ^purpose
+
+meta-semantic의 이벤트 개념을 CloudEvents 정식 호환으로 구현하고,
+서비스 단위로 하위 prefix 버전을 고정·조회할 수 있는
+**서비스 버전 매니페스트(Service Version Manifest)**를 정의한다.
+
+## 방법 ^method
+
+**CloudEvents** 표준 필드로 이벤트 봉투의 호환성을 확보하고,
+**qa-sdk 확장 속성**으로 prefix 좌표·버전을 태깅하고,
+**서비스 버전 매니페스트**로 서비스의 하위 prefix 전체 버전을 고정한다.
+
+---
+
+## 1. CloudEvents 호환 매핑
+
+### 표준 필드
+
+| CloudEvents 필드 | 값 | qa-sdk 원천 |
+|---|---|---|
+| `specversion` | `"1.0"` | CloudEvents 스펙 버전 (고정) |
+| `id` | ULID | 이벤트 고유 식별자 |
+| `type` | `event_key` | 이벤트 유형 (예: `order_submitted`) |
+| `source` | 서비스 URI | 이벤트 발생 서비스 (예: `//order-service`) |
+| `time` | ISO-8601 | `timestamp` |
+| `subject` | 좌표 주소 | `coordinate` (인코딩된 정수 또는 직렬화) |
+| `data` | JSON | `payload` |
+| `datacontenttype` | `"application/json"` | 페이로드 형식 |
+
+### qa-sdk 확장 속성 (Extension Attributes)
+
+CloudEvents는 커스텀 확장 속성을 허용한다.
+qa-sdk는 다음 확장을 사용한다:
+
+| 확장 속성 | 값 | 의미 |
+|---|---|---|
+| `qasdk_prefix` | prefix ID | 이벤트가 속한 좌표 공간 (예: `order_event`) |
+| `qasdk_prefixversion` | prefix 버전 | 좌표 인코딩에 사용된 prefix 버전 (예: `v2`) |
+| `qasdk_manifestversion` | 매니페스트 버전 | 서비스 레벨 버전 (예: `v3`) |
+| `qasdk_traceid` | trace ID | 파이프 체인 추적용 |
+| `qasdk_sessionid` | session ID | 세션 단위 그룹핑 |
+
+### 예시
+
+```json
+{
+  "specversion": "1.0",
+  "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "type": "order_submitted",
+  "source": "//order-service",
+  "time": "2026-04-01T10:30:00Z",
+  "subject": "order_event:v2:1345",
+  "data": { "orderId": "ORD-123", "amount": 50000 },
+  "datacontenttype": "application/json",
+
+  "qasdk_prefix": "order_event",
+  "qasdk_prefixversion": "v2",
+  "qasdk_manifestversion": "v3",
+  "qasdk_traceid": "trace_abc123",
+  "qasdk_sessionid": "session_xyz789"
+}
+```
+
+---
+
+## 2. 서비스 버전 매니페스트 (Service Version Manifest)
+
+### 개념
+
+서비스는 여러 prefix를 소유한다.
+매니페스트는 서비스의 **하위 prefix 전체 버전을 고정**하여,
+특정 매니페스트 버전으로 서비스의 전체 좌표 체계를 복원할 수 있게 한다.
+
+### 구조
+
+```typescript
+interface ServiceVersionManifest {
+  /** 서비스 식별자 */
+  serviceId: string;
+
+  /** 매니페스트 버전 — 서비스 레벨 버전 */
+  manifestVersion: string;
+
+  /** 하위 prefix별 고정 버전 */
+  prefixes: Record<string, string>;
+
+  /** 생성 시각 */
+  createdAt: string;
+
+  /** 변경 사유 */
+  changelog?: string;
+}
+```
+
+### 예시
+
+```typescript
+const manifest: ServiceVersionManifest = {
+  serviceId: "order-service",
+  manifestVersion: "v3",
+  prefixes: {
+    "order_event": "v2",
+    "payment_event": "v1",
+    "cart_event": "v3",
+    "order_action": "v1",
+  },
+  createdAt: "2026-04-01T00:00:00Z",
+  changelog: "cart_event v2→v3: shipping_option 축 추가",
+};
+```
+
+### 매니페스트 버전 규칙
+
+| 상황 | 매니페스트 버전 변경 |
+|------|-------------------|
+| 하위 prefix 중 하나라도 버전 변경 | 매니페스트 버전 올림 |
+| 새 prefix 추가 | 매니페스트 버전 올림 |
+| prefix 제거 (deprecated) | 매니페스트 버전 올림 |
+| 하위 prefix 내용 변경 없음 | 매니페스트 버전 유지 |
+
+### 조회 API
+
+```typescript
+// 서비스의 현재(최신) 매니페스트 조회
+getLatestManifest(serviceId: string): ServiceVersionManifest
+
+// 서비스의 특정 버전 매니페스트 조회
+getManifest(serviceId: string, manifestVersion: string): ServiceVersionManifest
+
+// 특정 매니페스트에서 prefix 버전 조회
+getPrefixVersion(serviceId: string, manifestVersion: string, prefixId: string): string
+
+// 서비스의 매니페스트 이력 조회
+listManifests(serviceId: string): ServiceVersionManifest[]
+```
+
+---
+
+## 3. CloudEvents + 매니페스트 연동
+
+### 이벤트 발행 시
+
+```
+서비스가 이벤트를 발행할 때:
+1. 현재 매니페스트 버전 조회 → "v3"
+2. 해당 prefix의 고정 버전 조회 → order_event: "v2"
+3. CloudEvents 봉투 생성:
+   - specversion: "1.0"
+   - qasdk_prefixversion: "v2"
+   - qasdk_manifestversion: "v3"
+```
+
+### 이벤트 수신 시
+
+```
+수신자가 이벤트를 처리할 때:
+1. qasdk_manifestversion → "v3" 확인
+2. getManifest("order-service", "v3") → 전체 prefix 버전 세트 복원
+3. qasdk_prefix + qasdk_prefixversion → 좌표 공간 결정
+4. subject(좌표 주소) 디코딩 → 원래 차원 값 복원
+```
+
+**매니페스트 버전 하나로 서비스의 전체 좌표 체계를 복원할 수 있다.**
+
+---
+
+## 4. scope×aspect와의 관계
+
+CloudEvents의 `type`(event_key)은 scope로 분류된다:
+
+```
+type: "order_submitted"    → scope: feature, aspect: func_def
+type: "page_viewed"        → scope: ui, aspect: interaction
+type: "record_persisted"   → scope: data, aspect: domain_data
+type: "api_called"         → scope: interface, aspect: api_contract
+```
+
+scope별 검증 전략이 이벤트에도 적용되어,
+이벤트 유형에 따라 적합한 검증 방법이 결정된다.
+
+---
+
+## 5. 기존 EventRecord와의 관계
+
+| 접근 | 전략 |
+|------|------|
+| **내부 저장** | 기존 EventRecord 구조 유지 (성능 최적화) |
+| **외부 발행** | CloudEvents 봉투로 래핑 (표준 호환) |
+| **변환** | `toCloudEvent(record, manifest)` → CloudEvents JSON |
+| **역변환** | `fromCloudEvent(ce)` → EventRecord |
+
+기존 코드 변경 최소화: 내부는 EventRecord, 외부 인터페이스만 CloudEvents.
+
+---
+
+## 6. AsyncAPI 명세 자동 생성
+
+매니페스트 + event-catalog에서 AsyncAPI 명세를 자동 생성할 수 있다:
+
+```
+입력:
+  ServiceVersionManifest (prefix 목록 + 버전)
+  + event-catalog (이벤트 유형 + payload 스키마)
+
+출력:
+  asyncapi: '3.0.0'
+  info:
+    title: order-service Events
+    version: v3  ← 매니페스트 버전
+  channels:
+    order_submitted:
+      messages:
+        orderSubmitted:
+          payload:
+            $ref: '#/components/schemas/OrderSubmittedPayload'
+```
+
+---
+
+## 7. 범위
+
+### 현재 범위
+
+- CloudEvents 표준 필드 매핑 + qa-sdk 확장 속성 정의
+- 서비스 버전 매니페스트 구조 + 조회 API
+- CloudEvents ↔ EventRecord 변환 전략
+- AsyncAPI 자동 생성 가능성
+
+### 후속 과제
+
+| 과제 | 설명 |
+|------|------|
+| toCloudEvent/fromCloudEvent 구현 | EventRecord ↔ CloudEvents 변환 함수 |
+| ManifestStore 구현 | 매니페스트 영속화 (SQLite/서비스) |
+| AsyncAPI 생성기 | manifest + event-catalog → .asyncapi.yaml |
+| registry-service 연동 | 매니페스트를 registry-service에서 관리 |
