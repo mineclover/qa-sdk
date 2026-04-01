@@ -110,13 +110,13 @@ interface PipeGraph {
   manifestVersion?: string;
 }
 
-/** 파이프 간 연결 */
+/** 파이프 간 연결 (N:M 지원) */
 interface PipeConnection {
-  /** 출발 파이프 */
-  from: string;
+  /** 출발 파이프 — 단일 또는 여러 소스 (join) */
+  from: string | string[];
 
-  /** 도착 파이프 */
-  to: string;
+  /** 도착 파이프 — 단일 또는 여러 대상 (fan-out) */
+  to: string | string[];
 
   /** 연결 유형 */
   kind: ConnectionKind;
@@ -130,7 +130,9 @@ type ConnectionKind =
   | "conditional"   // from 완료 + 조건 충족 → to 시작
   | "event"         // from.produces 이벤트 → to.trigger 매칭
   | "error"         // from 실패 → to 시작 (에러 핸들링)
-  | "compensate";   // from 후속 실패 → to 보상 실행
+  | "compensate"    // from 후속 실패 → to 보상 실행
+  | "fan-out"       // from 완료 → to[] 동시 시작 (1:N)
+  | "join";         // from[] 전부 완료 → to 시작 (N:1)
 ```
 
 ### PipeFlow — 12종 흐름 제어
@@ -266,13 +268,15 @@ function countGraphPaths(graph: PipeGraph): number
 그래프의 entryPipeId부터 시작하여 connections를 따라가며
 각 PipeSpec의 경로 수를 곱/합산한다.
 
-| connection kind | 계산 |
-|---|---|
-| next | 곱 (순차) |
-| conditional | 합 (조건부) |
-| event | 곱 (이벤트 체인) |
-| error | 합 (에러 대안) |
-| compensate | 합 (보상 경로) |
+| connection kind | 계산 | 설명 |
+|---|---|---|
+| next | 곱 | 순차 도달 |
+| conditional | 합 | 조건부 분기 |
+| event | 곱 | 이벤트 체인 |
+| error | 합 | 에러 대안 |
+| compensate | 합 | 보상 경로 |
+| fan-out | 곱 | 1→N 동시 실행, 전부의 경로 곱 |
+| join | 1 | N→1 합류점, 합류 후 to의 경로만 |
 
 ---
 
@@ -309,7 +313,10 @@ function validatePipeGraph(graph: PipeGraph): ValidationIssue[]
 | unreachable-pipe | warning | entry에서 도달 불가능한 파이프 |
 | circular-next | error | next 연결에 순환 |
 | duplicate-pipe-id | error | pipes 내 pipeId 중복 |
-| event-mismatch | warning | connection.kind=event인데 from.produces에 to.trigger.eventKey 없음 |
+| event-mismatch | warning | kind=event인데 from.produces에 to.trigger.eventKey 없음 |
+| fan-out-single | warning | kind=fan-out인데 to가 단일 값 (next로 충분) |
+| join-single | warning | kind=join인데 from이 단일 값 (next로 충분) |
+| join-incomplete | error | kind=join인데 from[] 중 일부가 entry에서 도달 불가능 |
 
 ---
 
@@ -358,5 +365,12 @@ Phase 3에서 engine의 매칭을 PipeGraph 기반으로 전환할 때까지
 | step.constraints | PipeSpec.flow 내 PipeStep.constraints |
 
 PipeGraph가 ScenarioSpec보다 표현력이 높다:
-- ScenarioSpec: step kind 3종 (sequence/branch/optional)
-- PipeGraph: connection kind 5종 + PipeFlow 12종
+- ScenarioSpec: step kind 3종 (sequence/branch/optional), 1:1 연결만
+- PipeGraph: connection kind 7종 (fan-out/join 포함) + PipeFlow 12종 + N:M 연결
+
+ScenarioSpec에서 표현 불가능했던 것:
+- 동시 실행 후 합류 (fan-out → join)
+- 에러 시 보상 (compensate)
+- 재시도/폴백 (retry/fallback)
+- 비동기 이벤트 발행 (emit)
+- 반복 처리 (loop)
