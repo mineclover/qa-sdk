@@ -238,12 +238,126 @@ scope별 검증 전략이 이벤트에도 적용되어,
 
 ---
 
-## 7. 범위
+## 7. Prefix 관리 및 공급 라이프사이클
+
+### Prefix 라이프사이클
+
+```
+draft → released → active → deprecated → archived
+  │        │         │          │
+  │        │         │          └── 이벤트 수신만 가능 (발행 금지)
+  │        │         └── 이벤트 발행/수신 모두 가능
+  │        └── 매니페스트에 포함 가능. 아직 active 아님
+  └── 개발 중. 매니페스트에 포함 불가
+```
+
+| 상태 | 이벤트 발행 | 이벤트 수신 | 매니페스트 포함 | 변경 가능 |
+|------|:---------:|:---------:|:------------:|:--------:|
+| `draft` | ✗ | ✗ | ✗ | ✓ (자유) |
+| `released` | ✗ | ✗ | ✓ (준비) | ✗ (고정) |
+| `active` | ✓ | ✓ | ✓ | ✗ (고정) |
+| `deprecated` | ✗ | ✓ | ✓ (하위 호환) | ✗ |
+| `archived` | ✗ | ✗ | ✗ | ✗ |
+
+**전이 규칙:**
+- `draft → released`: 축/capacity 확정, 변경 불가 시작
+- `released → active`: 매니페스트 publish 시 자동 전이
+- `active → deprecated`: 새 prefix 버전이 active되면 이전 버전 deprecated
+- `deprecated → archived`: 이 버전을 참조하는 매니페스트가 전부 superseded된 후
+
+### 매니페스트 라이프사이클
+
+```
+draft → published → active → superseded → archived
+  │        │          │          │
+  │        │          │          └── 새 매니페스트가 active되면 이전 superseded
+  │        │          └── 서비스가 이 매니페스트로 이벤트를 발행 중
+  │        └── prefix 버전 조합이 확정됨. active 전환 대기
+  └── prefix 조합 구성 중
+```
+
+| 상태 | 이벤트 발행 | 이력 조회 | prefix 변경 |
+|------|:---------:|:--------:|:----------:|
+| `draft` | ✗ | ✗ | ✓ (prefix 추가/제거) |
+| `published` | ✗ | ✗ | ✗ (고정) |
+| `active` | ✓ | ✓ | ✗ |
+| `superseded` | ✗ | ✓ (과거 이벤트 디코딩용) | ✗ |
+| `archived` | ✗ | ✗ | ✗ |
+
+**전이 규칙:**
+- `draft → published`: 포함된 모든 prefix가 released 이상
+- `published → active`: 서비스 배포 시. 이전 active 매니페스트는 superseded로
+- `active → superseded`: 새 매니페스트가 active될 때 자동 전이
+- `superseded → archived`: 이 매니페스트로 발행된 이벤트의 보존 기간 만료 후
+
+### 가드 (전이 조건)
+
+| 전이 | 가드 |
+|------|------|
+| prefix: draft → released | 축 정의 완료, capacity headroom ≥ 2 |
+| prefix: active → deprecated | 대체 prefix 버전이 active 상태 |
+| manifest: draft → published | 포함된 모든 prefix가 released 이상 |
+| manifest: published → active | 서비스 배포 승인 |
+| manifest: superseded → archived | 참조 이벤트 retention 기간 만료 |
+
+### 공급 체인
+
+```
+① Prefix 정의 (draft)
+   축, capacity, entries 설정
+     ↓
+② Prefix 릴리스 (released)
+   축/capacity 고정, 매니페스트 포함 가능
+     ↓
+③ 매니페스트 구성 (draft)
+   서비스가 사용할 prefix 버전 조합 선택
+     ↓
+④ 매니페스트 발행 (published)
+   모든 prefix가 released 이상인지 검증
+     ↓
+⑤ 매니페스트 활성화 (active)
+   서비스 배포. prefix도 active로 자동 전이
+     ↓
+⑥ 이벤트 발행
+   CloudEvents + qasdk_manifestversion으로 발행
+     ↓
+⑦ 이벤트 수신/디코딩
+   manifestversion으로 매니페스트 조회 → prefix 버전 세트 복원 → 좌표 디코딩
+```
+
+### 버전 전환 시나리오
+
+```
+시나리오: cart_event v2 → v3 (shipping_option 축 추가)
+
+1. cart_event v3 생성 (draft)
+   → shipping_option 축 추가, capacity 설정
+2. cart_event v3 릴리스 (released)
+   → 축/capacity 고정
+3. order-service 매니페스트 v4 생성 (draft)
+   → cart_event: v2 → v3 변경
+4. 매니페스트 v4 발행 (published)
+   → cart_event v3이 released 상태 확인
+5. 매니페스트 v4 활성화 (active)
+   → cart_event v3 active, cart_event v2 deprecated
+   → 매니페스트 v3 superseded
+6. 이후 이벤트
+   → 새 이벤트: manifestversion=v4, cart_event v3으로 인코딩
+   → 과거 이벤트: manifestversion=v3, cart_event v2로 디코딩 (superseded 매니페스트 조회 가능)
+```
+
+---
+
+## 8. 범위
 
 ### 현재 범위
 
 - CloudEvents 표준 필드 매핑 + qa-sdk 확장 속성 정의
 - 서비스 버전 매니페스트 구조 + 조회 API
+- Prefix 라이프사이클 (draft→released→active→deprecated→archived)
+- 매니페스트 라이프사이클 (draft→published→active→superseded→archived)
+- 공급 체인 (prefix 정의 → 릴리스 → 매니페스트 구성 → 발행 → 활성화 → 이벤트)
+- 전이 가드 규칙
 - CloudEvents ↔ EventRecord 변환 전략
 - AsyncAPI 자동 생성 가능성
 
@@ -253,5 +367,7 @@ scope별 검증 전략이 이벤트에도 적용되어,
 |------|------|
 | toCloudEvent/fromCloudEvent 구현 | EventRecord ↔ CloudEvents 변환 함수 |
 | ManifestStore 구현 | 매니페스트 영속화 (SQLite/서비스) |
+| PrefixLifecycleEngine 구현 | prefix 상태 전이 + 가드 검증 |
+| ManifestLifecycleEngine 구현 | 매니페스트 상태 전이 + 가드 검증 |
 | AsyncAPI 생성기 | manifest + event-catalog → .asyncapi.yaml |
 | registry-service 연동 | 매니페스트를 registry-service에서 관리 |
