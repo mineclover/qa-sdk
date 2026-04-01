@@ -443,7 +443,7 @@ export function foldSubgraph(
   const topScope = [...scopeVotes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   const topAspect = [...aspectVotes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 
-  const foldedPipe: PipeSpec & { __foldedContract: FoldedContract } = {
+  const foldedPipe: PipeSpec = {
     pipeId: resolvedFoldId,
     version: graph.version,
     description: `접힌 노드: ${pipeIds.join(", ")}`,
@@ -452,13 +452,12 @@ export function foldSubgraph(
     produces: allProduces.size > 0 ? [...allProduces] : undefined,
     scope: topScope,
     aspect: topAspect,
-    __foldedContract: contract,
   };
 
   // 새 그래프 구성
   const newPipes = [
     ...graph.pipes.filter(p => !pipeSet.has(p.pipeId)),
-    foldedPipe as PipeSpec,
+    foldedPipe,
   ];
 
   const newGraph: PipeGraph = {

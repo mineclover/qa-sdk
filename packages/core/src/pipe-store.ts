@@ -78,14 +78,14 @@ export class MemoryPipeGraphStore implements PipeGraphStore {
     for (const graph of this.graphs.values()) {
       if (graph.graphId === graphId) result.push(graph);
     }
-    return result.sort((a, b) => a.version.localeCompare(b.version));
+    return result.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
   }
 
   listAll(): PipeGraph[] {
     const latestMap = new Map<string, PipeGraph>();
     for (const graph of this.graphs.values()) {
       const existing = latestMap.get(graph.graphId);
-      if (!existing || graph.version > existing.version) {
+      if (!existing || graph.version.localeCompare(existing.version, undefined, { numeric: true }) > 0) {
         latestMap.set(graph.graphId, graph);
       }
     }
@@ -133,7 +133,7 @@ export class MemoryPipeSpecStore implements PipeSpecStore {
     for (const spec of this.specs.values()) {
       if (spec.pipeId === pipeId) versions.push(spec);
     }
-    versions.sort((a, b) => a.version.localeCompare(b.version));
+    versions.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
     return versions.length > 0 ? versions[versions.length - 1] : null;
   }
 

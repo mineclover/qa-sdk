@@ -154,10 +154,10 @@ export interface CoverageReport {
   pipeCoverage: number;
   /** 전체 경로 수 */
   totalPaths: number;
-  /** 실행된 경로 수 */
-  executedPaths: number;
-  /** 경로 커버리지 (%) */
-  pathCoverage: number;
+  /** 실행된 경로 수 (executedPathCount 미제공 시 null) */
+  executedPaths: number | null;
+  /** 경로 커버리지 (%, executedPathCount 미제공 시 null) */
+  pathCoverage: number | null;
   /** 미실행 파이프 목록 */
   uncoveredPipes: string[];
 }
@@ -175,15 +175,17 @@ export function analyzeCoverage(
     .map(p => p.pipeId);
 
   const totalPaths = countGraphPaths(graph);
-  const executedPaths = executedPathCount ?? executedPipes; // 근사치
 
   return {
     totalPipes,
     executedPipes,
     pipeCoverage: totalPipes > 0 ? Math.round((executedPipes / totalPipes) * 100) : 0,
     totalPaths,
-    executedPaths,
-    pathCoverage: totalPaths > 0 ? Math.round((executedPaths / totalPaths) * 100) : 0,
+    // executedPathCount 미제공 시 null — 근사치 사용 안 함
+    executedPaths: executedPathCount ?? null,
+    pathCoverage: executedPathCount != null && totalPaths > 0
+      ? Math.round((executedPathCount / totalPaths) * 100)
+      : null,
     uncoveredPipes,
   };
 }

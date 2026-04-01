@@ -249,12 +249,12 @@ describe("foldSubgraph", () => {
     expect(entry!.exitPipeIds).toContain("D");
   });
 
-  it("접힌 노드에 __foldedContract 포함", () => {
+  it("foldMap에서 contract 조회 가능", () => {
     const graph = chainGraph();
     const result = foldSubgraph(graph, ["B", "C", "D"], "fold_BCD");
-    const foldedPipe = result.graph.pipes.find(p => p.pipeId === "fold_BCD") as any;
-    expect(foldedPipe.__foldedContract).toBeDefined();
-    expect(foldedPipe.__foldedContract.foldId).toBe("fold_BCD");
+    const entry = result.foldMap.get("fold_BCD");
+    expect(entry).toBeDefined();
+    expect(entry!.contract.foldId).toBe("fold_BCD");
   });
 
   it("분기 그래프 접기 — 조건부 연결 재배선", () => {

@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-pipe-impl
@@ -23,7 +23,7 @@ PipeGraph의 복잡도 메트릭, 병목 감지, 커버리지 분석을 제공�
 
 ## 관련 소스
 
-- `packages/core/src/pipe-analyze.ts` — 3함수
+- `packages/core/src/pipe-analyze.ts` — 3함수 + `getChildFlows` (public API로 export)
 - `packages/core/src/pipe-infra.test.ts` — 분석 테스트 6케이스
 
 ## API
@@ -51,13 +51,16 @@ PipeGraph의 복잡도 메트릭, 병목 감지, 커버리지 분석을 제공�
 | latencyPoints | timeout 합산이 높은 파이프 |
 | complexPipes | 경로 수 ≥ 임계값 |
 
-### analyzeCoverage(graph, executedPipeIds) → CoverageReport
+### analyzeCoverage(graph, executedPipeIds, executedPathCount?) → CoverageReport
 
 | 메트릭 | 설명 |
 |--------|------|
 | pipeCoverage | 파이프 커버리지 (%) |
-| pathCoverage | 경로 커버리지 (%) |
+| pathCoverage | 경로 커버리지 (%, `executedPathCount` 미제공 시 `null`) |
+| executedPaths | 실행된 경로 수 (`executedPathCount` 미제공 시 `null`) |
 | uncoveredPipes | 미실행 파이프 목록 |
+
+> `pathCoverage`는 실제 실행 경로 수 없이 계산할 수 없다. 파이프 수로 근사하지 않는다.
 
 ## 검증
 
