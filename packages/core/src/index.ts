@@ -289,6 +289,11 @@ export type {
 export { countPipePaths, countGraphPaths } from "./pipe-path.js";
 export { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
 export type { ValidationIssue } from "./pipe-validate.js";
+export { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
+export type { PipeGraphStore, PipeSpecStore } from "./pipe-store.js";
+export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
+export { analyzePipeComplexity, findBottlenecks, analyzeCoverage } from "./pipe-analyze.js";
+export type { PipeComplexity, BottleneckReport, CoverageReport } from "./pipe-analyze.js";
 
 export type {
   MetricRollupStore,
