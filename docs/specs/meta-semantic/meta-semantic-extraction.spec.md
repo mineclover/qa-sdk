@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: meta-semantic-folding
       type: depends_on
+    - target: ms-concept-verification-unit
+      type: depends_on
 ---
 
 # Meta-Semantic Extraction — LLM 기반 검증 단위 식별

@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: meta-semantic-spacetime-uid
       type: depends_on
+    - target: ms-concept-pipe
+      type: refines
 ---
 
 # Meta-Semantic IR — PipeIR

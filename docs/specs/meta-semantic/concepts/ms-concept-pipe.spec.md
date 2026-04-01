@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: ms-concept-boundary
       type: depends_on
+    - target: ms-concept-data-facets
+      type: depends_on
 ---
 
 # 파이프 (Pipe)

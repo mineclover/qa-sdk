@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: meta-semantic-spacetime-uid
       type: depends_on
+    - target: ms-concept-data-facets
+      type: refines
 ---
 
 # Meta-Semantic IR — DataIR

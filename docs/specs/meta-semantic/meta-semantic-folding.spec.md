@@ -13,6 +13,10 @@ def:
       type: depends_on
     - target: meta-semantic-ir
       type: depends_on
+    - target: meta-semantic-extraction
+      type: depends_on
+    - target: ms-concept-branch-path
+      type: depends_on
 ---
 
 # Semantic Folding — 검증 단위 식별의 핵심 메커니즘
@@ -352,7 +356,21 @@ point           ██████  ██      ·
 
 ---
 
-## 8. 범위와 제약
+## 8. Folding과 Extraction의 관계
+
+Folding과 Extraction은 같은 활동의 다른 측면이다:
+
+- **Folding** = 전략 (strategy): 3단계 레벨에서 **무엇을** 접을 것인가
+- **Extraction** = 구현 (implementation): 코드에서 **어떻게** 그것을 찾고 추출할 것인가
+
+Folding이 "L2에서 이 함수가 독립 검증 가능한가?"라는 질문을 정의하면,
+Extraction이 "LLM + AST 파서로 그 질문에 답한다."
+
+> Extraction 상세: `meta-semantic-extraction` 참조
+
+---
+
+## 9. 범위와 제약
 
 ### 현재 범위
 

@@ -20,8 +20,14 @@ def:
 
 ## 목적 ^purpose
 
-Semantic Folding이 식별한, 독립적으로 테스트 가능한 함수를 정의한다.
+Semantic Folding의 L2 단계에서 산출되는, 독립적으로 테스트 가능한 함수를 정의한다.
 검증 단위는 좌표를 부여할 가치가 있는 코드의 최소 단위다.
+
+이 개념은 Folding의 "무엇을 산출하는가"를 정의하고,
+Extraction의 "어떻게 식별하는가"의 판단 기준이 된다.
+
+> Folding: 전략 (3단계 레벨에서 무엇을 접는가) — `ms-concept-folding` 참조
+> Extraction: 구현 (LLM+AST로 어떻게 찾는가) — `meta-semantic-extraction` 참조
 
 ---
 

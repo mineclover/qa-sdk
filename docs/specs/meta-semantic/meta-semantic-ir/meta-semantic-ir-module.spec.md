@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: definition-level
       type: depends_on
+    - target: ms-concept-boundary
+      type: refines
 ---
 
 # Meta-Semantic IR — ModuleIR
