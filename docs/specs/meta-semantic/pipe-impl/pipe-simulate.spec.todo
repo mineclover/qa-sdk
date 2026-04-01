@@ -1,0 +1,24 @@
+---
+target: pipe-simulate
+reason: 시뮬레이션의 두 가지 용도 — 실제 동작 시뮬 + 의도된 happy path 등록이 구분 안 됨
+---
+
+## 변경 항목
+
+- [ ] "시뮬레이션 용도" 섹션 추가
+  - 현재: dry-run으로 "어떤 경로가 실행되는지" 추적만 기술
+  - 변경: 두 가지 용도를 명시
+    (a) 실제 동작 시뮬: resolver로 분기/실패 시나리오 주입하여 경로 탐색
+    (b) 의도된 happy path 등록: 설계자가 의도한 정상 경로를 사전 등록하고 시뮬레이션으로 검증
+  - happy path 등록은 "이 그래프가 설계 의도대로 동작하는가"를 검증하는 목적
+
+- [ ] happy path 등록 API 스펙 초안
+  - 현재: branchResolver/filterResolver로만 경로 선택
+  - 변경: 의도된 경로를 선언적으로 등록하는 방식 필요 (예: expectedPath: ["validate", "charge", "receipt"])
+  - 등록된 happy path와 시뮬 결과의 pipeTrace 비교 → 불일치 시 보고
+
+## 코드 반영 시 확인
+
+- [ ] happy path 등록 타입 정의 (SimulationConfig 확장 또는 별도)
+- [ ] happy path vs 시뮬 결과 비교 함수 구현
+- [ ] 테스트: 등록된 happy path와 일치/불일치 케이스

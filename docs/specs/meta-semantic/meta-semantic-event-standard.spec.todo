@@ -1,0 +1,21 @@
+---
+target: meta-semantic-event-standard
+reason: CloudEvent 변환의 최종 목적이 SDK 관측 코드 생성임이 누락
+---
+
+## 변경 항목
+
+- [ ] "최종 목적 — SDK 관측 코드 생성" 섹션 추가
+  - 현재: CloudEvents 호환 매핑 + 매니페스트 + 라이프사이클 기술 (변환 방법론만)
+  - 변경: 이 전체의 최종 목적을 명시
+    이벤트 카탈로그(정적 분석에서 수집) 기반으로 → SDK 로깅 코드를 실제 동작 로직에 삽입하여 → 이벤트를 식별·수집하는 것
+  - 흐름: PipeGraph 정의 → 이벤트 카탈로그 수집 → CloudEvent 스키마 도출 → SDK track 코드 생성/삽입 → 런타임 수집
+
+- [ ] event-catalog와의 관계 명시
+  - 현재: §6에서 AsyncAPI 자동 생성만 언급
+  - 변경: event-catalog 패키지가 이벤트 카탈로그의 구현체이며, 정적 분석 결과를 이곳에 등록하고, SDK 코드 생성의 입력이 된다는 연결 기술
+
+## 코드 반영 시 확인
+
+- [ ] event-catalog → CloudEvent 스키마 → SDK track 코드 생성 경로가 구현되어 있는지 확인
+- [ ] 미구현이면 후속 과제에 추가
