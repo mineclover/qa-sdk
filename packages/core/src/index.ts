@@ -295,6 +295,20 @@ export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
 export { analyzePipeComplexity, findBottlenecks, analyzeCoverage } from "./pipe-analyze.js";
 export type { PipeComplexity, BottleneckReport, CoverageReport } from "./pipe-analyze.js";
 export { simulate } from "./pipe-simulate.js";
+
+// ── Data Contract ───────────────────────────────────────
+export type {
+  DataSchema, DataColumn, FacetRole, ColumnConstraint, ColumnRef as DataColumnRef,
+  DataRelation, CascadeRule,
+  FieldLineage, FieldRef, TransformKind,
+  SchemaVersion, SchemaChange, SchemaChangeType, SchemaCompatibility,
+  FieldSet, FieldSpec, CompatibilityResult,
+} from "./types/data-schema.js";
+export {
+  checkCompatibility, computeSchemaHash,
+  collectSchemaChanges, determineCompatibility, createSchemaVersion,
+  LineageCollector, VersionCollector,
+} from "./data-contract.js";
 export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext } from "./pipe-simulate.js";
 
 export type {
