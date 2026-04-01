@@ -128,32 +128,29 @@
 
 ## 미완료
 
-### 레이어 2 잔여 (definition-catalog 브릿지 — 별도 레이어)
+> 우선순위: P0(핵심) → P1(중간) → P2(보류). definition-catalog은 기술 부채 변경 대상이라 브릿지 보류.
 
-- [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
-- [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
-- [ ] tags — definition 쪽 tags 조회 브릿지
+### P0 — 핵심 (시스템 본질)
 
-### 시각화
+- [ ] Semantic Folding 줌 레벨 시각화 — 접기/펼치기의 다중 해상도 렌더링
+- [ ] event-catalog → SDK track 코드 자동 생성 (현재는 수동 삽입)
+- [ ] 내부 스펙 완성도 — 마커 누락 보강, 스펙 간 정합성 점검
+
+### P1 — 중간
 
 - [ ] PipeGraph → Mermaid 변환
 - [ ] PipeGraph → D3/SVG 변환
-- [ ] Semantic Folding 줌 레벨 시각화
-
-### 인프라 통합
-
-- [ ] ManifestStore 영속화 — 인메모리 → SQLite
-- [ ] registry-service 연동 — 매니페스트 API 노출
-- [ ] PipeGraphStore 영속화 — 인메모리 → SQLite
 - [ ] toCloudEvent → 실제 EventRecord 타입 연결
-
-### v2 마이그레이션 잔여
-
-- [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드
+- [ ] compat 파일 제거 (ASPECT_TO_SCOPE 19줄만 잔존)
 - [ ] graph-matcher → PathMatcher 전환 (feature flag)
 - [ ] VerdictReport v1 → v2 전환
-- [ ] compat 파일 제거 체크리스트
 
-### SDK 관측 체계
+### P2 — 보류 (인프라 / 기술 부채 대상)
 
-- [ ] event-catalog → SDK track 코드 자동 생성 (현재는 수동 삽입)
+- [ ] ManifestStore 영속화 — 인메모리 → SQLite
+- [ ] PipeGraphStore 영속화 — 인메모리 → SQLite
+- [ ] registry-service 연동 — 매니페스트 API 노출
+- [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드 (v2-migration.spec 있음)
+- [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
+- [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
+- [ ] tags — definition 쪽 tags 조회 브릿지
