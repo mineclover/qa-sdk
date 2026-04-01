@@ -32,497 +32,143 @@ def:
 
 **DataSchema**가 테이블의 컬럼별 패싯 역할을 매핑하고,
 **DataRelation**이 엔티티 간 관계 유형과 cascade를 정의하고,
-**DataContract**가 파이프 step별 생산/소비 스키마 호환성을 검증하고,
-**FieldLineage**가 파이프를 거치며 필드가 어떻게 변환되는지 추적하고,
-**SchemaVersion**이 스키마 변경의 호환성을 판별한다.
+**checkCompatibility**가 파이프 step별 생산/소비 스키마 호환성을 검증하고,
+**LineageCollector**가 파이프를 거치며 필드가 어떻게 변환되는지 추적하고,
+**VersionCollector**가 스키마 변경의 호환성을 판별하고 이력을 관리한다.
 
 ## 구성 ^overview
 
-5개 구성 요소:
+5개 구성 요소 + 관련 소스:
 
-1. **DataSchema** — 컬럼 정의 + 패싯 역할 매핑 (기존 TableSchema 확장)
-2. **DataRelation** — 엔티티 간 관계 유형 + cascade (기존 ColumnRef.table_ref 확장)
-3. **DataContract** — 파이프 step의 생산/소비 스키마 호환 검증
-4. **FieldLineage** — 필드 단위 데이터 변환 추적 (A.name → B.userName)
-5. **SchemaVersion** — 스키마 변경 이력 + breaking/non-breaking 판별
+| 구성 | 설명 | 구현 파일 |
+|------|------|----------|
+| DataSchema | 컬럼 + 패싯 역할(produced/consumed/derived/managed/identity) + 제약 | `core/src/types/data-schema.ts` |
+| DataRelation | 1:1/1:N/N:M + owns/references/embeds + cascade | `core/src/types/data-schema.ts` |
+| 호환 검증 | checkCompatibility(producer, consumer) → 누락/타입불일치 판정 | `core/src/data-contract.ts` |
+| 계보 추적 | LineageCollector — 10종 변환(direct/rename/compute/aggregate/...) + 원본/영향 추적 | `core/src/data-contract.ts` |
+| 버전 관리 | VersionCollector — 9종 변경 유형 + backward/forward/breaking 판별 | `core/src/data-contract.ts` |
+
+테스트: `core/src/data-contract.test.ts` (36 tests)
+통합: `core/src/meta-semantic-integration.test.ts` (시나리오 9~10)
 
 ---
 
 ## 1. DataSchema — 컬럼 + 패싯 역할
 
-### 기존 TableSchema와의 관계
+기존 TableSchema를 확장: `DataColumn = ColumnRef + facetRole + constraints`
 
-```
-기존 TableSchema:
-  columns: { name: ColumnRef, age: ColumnRef, ... }
-  ColumnRef: scalar | axis_ref | table_ref | prefix_ref
+| facetRole | 의미 | 예시 |
+|-----------|------|------|
+| `produced` | 이 엔티티에서 생산 | orders.id (자동 생성) |
+| `consumed` | 외부에서 받아서 소비 | orders.member_id (members에서) |
+| `derived` | 다른 컬럼에서 계산 파생 | orders.total_amount (cart_items에서 집계) |
+| `managed` | 정합성 관리 대상 | orders.status (상태 전이 규칙) |
+| `identity` | UID/PK — 저장의 식별자 | orders.id |
 
-DataSchema (확장):
-  columns: { name: DataColumn, age: DataColumn, ... }
-  DataColumn = ColumnRef + 패싯 역할 + 제약
-```
-
-### 타입 정의
-
-```typescript
-interface DataSchema {
-  /** 스키마 식별자 */
-  schemaId: string;
-  version: string;
-
-  /** 컬럼 정의 */
-  columns: Record<string, DataColumn>;
-
-  /** 기본키 */
-  primaryKey: string[];
-
-  /** 스키마 해시 (구조적 동등성) */
-  schemaHash: string;
-}
-
-interface DataColumn {
-  /** 기존 ColumnRef 타입 */
-  ref: ColumnRef;
-
-  /** 패싯 역할: 이 컬럼이 데이터 흐름에서 어떤 역할인가 */
-  facetRole?: FacetRole;
-
-  /** 필수 여부 */
-  required: boolean;
-
-  /** 기본값 */
-  defaultValue?: unknown;
-
-  /** 검증 제약 */
-  constraints?: ColumnConstraint[];
-}
-
-/** 컬럼의 패싯 역할 */
-type FacetRole =
-  | "produced"     // 이 컬럼은 이 엔티티에서 생산됨 (시작점)
-  | "consumed"     // 이 컬럼은 외부에서 받아서 소비됨
-  | "derived"      // 이 컬럼은 다른 컬럼에서 계산으로 파생됨
-  | "managed"      // 이 컬럼은 정합성 관리 대상 (검증 규칙 적용)
-  | "identity";    // 이 컬럼은 UID/PK — 저장의 식별자
-
-/** 컬럼 제약 */
-interface ColumnConstraint {
-  type: "not-null" | "unique" | "range" | "pattern" | "enum" | "fk";
-  value?: unknown;
-}
-
-/** 기존 ColumnRef (재사용) */
-type ColumnRef =
-  | { kind: "scalar"; type: string }
-  | { kind: "axis_ref"; axisId: string }
-  | { kind: "table_ref"; table: string }
-  | { kind: "prefix_ref"; prefixId: string };
-```
-
-### 예시
-
-```typescript
-const orderSchema: DataSchema = {
-  schemaId: "orders",
-  version: "v1",
-  primaryKey: ["id"],
-  schemaHash: "abc123",
-  columns: {
-    id: {
-      ref: { kind: "scalar", type: "string" },
-      facetRole: "identity",
-      required: true,
-    },
-    member_id: {
-      ref: { kind: "table_ref", table: "members" },
-      facetRole: "consumed",   // 외부(members)에서 받음
-      required: true,
-      constraints: [{ type: "fk", value: "members.id" }],
-    },
-    status: {
-      ref: { kind: "axis_ref", axisId: "order_action" },
-      facetRole: "managed",    // 상태 전이 규칙으로 관리
-      required: true,
-    },
-    total_amount: {
-      ref: { kind: "scalar", type: "number" },
-      facetRole: "derived",    // cart_items에서 계산으로 파생
-      required: true,
-    },
-    service_addr: {
-      ref: { kind: "prefix_ref", prefixId: "service" },
-      facetRole: "consumed",   // 좌표 주소 참조
-      required: true,
-    },
-  },
-};
-```
+> 타입 상세: `core/src/types/data-schema.ts` `DataSchema`, `DataColumn`, `FacetRole` 참조
 
 ---
 
 ## 2. DataRelation — 엔티티 간 관계
 
-### 기존 ColumnRef.table_ref와의 관계
+기존 ColumnRef.table_ref에 카디널리티 + cascade 추가.
 
-```
-기존: { kind: "table_ref", table: "members" }
-  → "이 컬럼이 members 테이블을 참조" (FK 존재만 표현)
+| 필드 | 설명 |
+|------|------|
+| cardinality | 1:1, 1:N, N:1, N:M |
+| ownership | owns(소유), references(참조), embeds(내장) |
+| cascade.onDelete | cascade, set-null, restrict, no-action |
+| cascade.onUpdate | cascade, restrict, no-action |
 
-DataRelation (확장):
-  → 카디널리티 (1:1, 1:N, N:M)
-  → cascade 규칙 (삭제/갱신 시 동작)
-  → 방향 (소유 vs 참조)
-```
-
-### 타입 정의
-
-```typescript
-interface DataRelation {
-  /** 관계 식별자 */
-  relationId: string;
-
-  /** 소스 엔티티 */
-  source: { schemaId: string; column: string };
-
-  /** 대상 엔티티 */
-  target: { schemaId: string; column: string };
-
-  /** 카디널리티 */
-  cardinality: "1:1" | "1:N" | "N:1" | "N:M";
-
-  /** 관계 성격 */
-  ownership: RelationOwnership;
-
-  /** cascade 규칙 */
-  cascade: CascadeRule;
-}
-
-type RelationOwnership =
-  | "owns"         // source가 target을 소유 (삭제 시 함께 삭제)
-  | "references"   // source가 target을 참조 (삭제 시 null 또는 제약)
-  | "embeds";      // source 안에 target이 내장 (비정규화)
-
-interface CascadeRule {
-  onDelete: "cascade" | "set-null" | "restrict" | "no-action";
-  onUpdate: "cascade" | "restrict" | "no-action";
-}
-```
-
-### 예시
-
-```typescript
-const relations: DataRelation[] = [
-  {
-    relationId: "order-member",
-    source: { schemaId: "orders", column: "member_id" },
-    target: { schemaId: "members", column: "id" },
-    cardinality: "N:1",
-    ownership: "references",
-    cascade: { onDelete: "restrict", onUpdate: "cascade" },
-  },
-  {
-    relationId: "cart-items",
-    source: { schemaId: "carts", column: "id" },
-    target: { schemaId: "cart_items", column: "cart_id" },
-    cardinality: "1:N",
-    ownership: "owns",
-    cascade: { onDelete: "cascade", onUpdate: "cascade" },
-  },
-];
-```
+> 타입 상세: `core/src/types/data-schema.ts` `DataRelation`, `CascadeRule` 참조
 
 ---
 
-## 3. DataContract — 파이프 step의 스키마 호환 검증
+## 3. 스키마 호환 검증
 
-### 개념
-
-파이프의 각 step은 데이터를 소비하거나 생산한다.
-**생산자가 내보내는 스키마**와 **소비자가 기대하는 스키마**가 호환되어야 한다.
-
-```
-PipeStep(facet: "소비")
-  → 이 step이 기대하는 필드: { id, name, amount }
-  → 실제 들어오는 데이터: { id, name, amount, extra_field }
-  → 호환: ✓ (상위 호환 — 추가 필드는 무시)
-
-PipeStep(facet: "생산")
-  → 이 step이 내보내는 필드: { id, result }
-  → 다음 step이 기대하는 필드: { id, result, status }
-  → 호환: ✗ (status 누락 — 하위 호환 실패)
-```
-
-### 타입 정의
-
-```typescript
-interface DataContract {
-  /** 계약 식별자 */
-  contractId: string;
-
-  /** 파이프 참조 */
-  pipeId: string;
-  stepPath: string;           // "flow.steps[1]"
-
-  /** 생산 스키마: 이 step이 내보내는 필드 */
-  produces?: FieldSet;
-
-  /** 소비 스키마: 이 step이 기대하는 필드 */
-  consumes?: FieldSet;
-}
-
-interface FieldSet {
-  fields: Record<string, FieldSpec>;
-}
-
-interface FieldSpec {
-  type: string;               // "string", "number", "Order", etc.
-  required: boolean;
-  source?: string;            // 원본 스키마 참조 (schemaId.column)
-}
-
-/** 호환성 검증 결과 */
-interface CompatibilityResult {
-  compatible: boolean;
-  /** 누락 필드 (소비자가 기대하지만 생산자에 없는) */
-  missingFields: string[];
-  /** 타입 불일치 */
-  typeMismatches: Array<{ field: string; expected: string; actual: string }>;
-  /** 추가 필드 (생산자에 있지만 소비자가 기대하지 않는 — 상위 호환) */
-  extraFields: string[];
-  /** breaking 여부 */
-  breaking: boolean;
-}
-
-/** 두 FieldSet의 호환성 검증 */
-function checkCompatibility(
-  producer: FieldSet,
-  consumer: FieldSet,
-): CompatibilityResult;
-```
-
-### 호환성 규칙
+생산자 스키마 ↔ 소비자 기대 스키마 매칭.
 
 | 상황 | 판정 | breaking? |
 |------|------|-----------|
 | 소비자 기대 필드가 생산자에 있음 | 호환 | ✗ |
-| 생산자에 추가 필드 있음 | 상위 호환 | ✗ |
-| 소비자 기대 필드가 생산자에 없음 | 비호환 | **✓** |
-| 같은 필드인데 타입 다름 | 비호환 | **✓** |
-| 소비자 required인데 생산자 optional | 비호환 | **✓** |
-| 생산자 required인데 소비자 optional | 호환 | ✗ |
+| 생산자에 추가 필드 | 상위 호환 | ✗ |
+| 소비자 필수 필드 누락 | 비호환 | **✓** |
+| 타입 불일치 | 비호환 | **✓** |
+
+> 구현: `core/src/data-contract.ts` `checkCompatibility()` 참조
 
 ---
 
-## 4. FieldLineage — 필드 단위 데이터 변환 추적
+## 4. 계보 추적 (FieldLineage)
 
-### 개념
-
-파이프를 거치면서 필드가 어떻게 변환되는지 추적한다.
+10종 변환 유형: direct, rename, compute, aggregate, lookup, derive, concat, split, filter, cast
 
 ```
-orders.total_amount (derived)
-  ← cart_items.price × cart_items.quantity (계산)
-    ← items.price (원본)
-
-→ lineage: items.price → cart_items.price → Σ(price × qty) → orders.total_amount
+items.price → cart_items.subtotal (compute: price × qty)
+  → orders.total_amount (aggregate: Σ subtotal)
+    → payments.amount (direct)
+      → report.revenue (aggregate: Σ amount)
 ```
 
-### 타입 정의
+| API | 설명 |
+|-----|------|
+| `LineageCollector.record(lineage)` | 계보 기록 |
+| `.traceOrigins(field)` | 원본 역추적 |
+| `.traceImpact(field)` | 영향 순추적 |
+| `.getSchemaLineage(schemaId)` | 스키마별 계보 |
 
-```typescript
-interface FieldLineage {
-  /** 대상 필드 */
-  target: FieldRef;
-
-  /** 원본 필드(들) */
-  sources: FieldRef[];
-
-  /** 변환 유형 */
-  transform: TransformKind;
-
-  /** 변환 표현식 (사람 읽기용) */
-  expression?: string;
-
-  /** 이 변환이 발생하는 파이프/step */
-  pipeId: string;
-  stepPath: string;
-}
-
-interface FieldRef {
-  schemaId: string;
-  column: string;
-}
-
-type TransformKind =
-  | "direct"       // 직접 복사 (A.name → B.name)
-  | "rename"       // 이름 변경 (A.name → B.userName)
-  | "compute"      // 계산 (A.price × A.qty → B.total)
-  | "aggregate"    // 집계 (Σ A.amount → B.total)
-  | "lookup"       // 참조 조회 (A.userId → lookup(users) → B.userName)
-  | "derive"       // 파생 (A.birthDate → compute(age) → B.age)
-  | "concat"       // 결합 (A.first + A.last → B.fullName)
-  | "split"        // 분할 (A.fullName → B.first, B.last)
-  | "filter"       // 필터링 (A.items → filter(active) → B.activeItems)
-  | "cast";        // 타입 변환 (A.amount(string) → B.amount(number))
-```
-
-### 계보 그래프
-
-```typescript
-interface LineageGraph {
-  /** 전체 lineage 목록 */
-  lineages: FieldLineage[];
-
-  /** 특정 필드의 원본 추적 (역방향) */
-  traceOrigins(field: FieldRef): FieldLineage[];
-
-  /** 특정 필드의 영향 추적 (순방향) */
-  traceImpact(field: FieldRef): FieldLineage[];
-
-  /** 특정 스키마의 모든 lineage */
-  getSchemaLineage(schemaId: string): FieldLineage[];
-}
-```
+> 구현: `core/src/data-contract.ts` `LineageCollector` 참조
 
 ---
 
-## 5. SchemaVersion — 스키마 변경 이력 + 호환성
+## 5. 스키마 버전 관리
 
-### 타입 정의
+9종 변경 유형 + 호환성 자동 판별.
 
-```typescript
-interface SchemaVersion {
-  schemaId: string;
-  version: string;
-  previousVersion?: string;
+| 변경 | 호환성 |
+|------|--------|
+| add-optional, default-add/change, constraint-remove | backward |
+| constraint-add | forward |
+| add-required, remove, rename, type-change | **breaking** |
 
-  /** 변경 내역 */
-  changes: SchemaChange[];
+| API | 설명 |
+|-----|------|
+| `collectSchemaChanges(old, new)` | 변경 수집 |
+| `determineCompatibility(changes)` | 호환성 판별 |
+| `createSchemaVersion(old, new)` | SchemaVersion 생성 |
+| `VersionCollector.getBreakingChanges(id)` | breaking 필터 |
 
-  /** 전체 호환성 판정 */
-  compatibility: "backward" | "forward" | "full" | "breaking";
-
-  changelog?: string;
-  createdAt: string;
-}
-
-interface SchemaChange {
-  /** 변경 유형 */
-  type: SchemaChangeType;
-  /** 대상 컬럼 */
-  column: string;
-  /** 상세 */
-  detail?: string;
-}
-
-type SchemaChangeType =
-  | "add-optional"     // 선택 필드 추가 (backward compatible)
-  | "add-required"     // 필수 필드 추가 (BREAKING)
-  | "remove"           // 필드 제거 (BREAKING)
-  | "rename"           // 필드 이름 변경 (BREAKING)
-  | "type-change"      // 타입 변경 (BREAKING)
-  | "constraint-add"   // 제약 추가 (potentially breaking)
-  | "constraint-remove" // 제약 제거 (backward compatible)
-  | "default-add"      // 기본값 추가 (backward compatible)
-  | "default-change";  // 기본값 변경 (backward compatible)
-```
-
-### 호환성 판별 규칙
-
-| 변경 유형 | backward? | forward? | breaking? |
-|----------|:---------:|:--------:|:---------:|
-| add-optional | ✓ | ✗ | ✗ |
-| add-required | ✗ | ✓ | **✓** |
-| remove | ✗ | ✓ | **✓** |
-| rename | ✗ | ✗ | **✓** |
-| type-change | ✗ | ✗ | **✓** |
-| constraint-add | △ | ✗ | △ |
-| constraint-remove | ✓ | ✗ | ✗ |
-| default-add | ✓ | ✓ | ✗ |
-| default-change | ✓ | ✓ | ✗ |
+> 구현: `core/src/data-contract.ts` `VersionCollector` 참조
 
 ---
 
 ## 6. 파이프 흐름과의 연결
 
-### PipeStep에 DataContract 연결
+PipeStep.dataContract로 파이프 step별 입출력 스키마 + 접근 테이블 정의.
 
-```typescript
-// 확장: PipeStep에 계약 참조 추가
-interface PipeStep {
-  kind: "step";
-  facet: string;
-  eventKey?: string;
-  constraints?: Constraint[];
-  timeout?: number;
+| API | 설명 |
+|-----|------|
+| `validateStepContracts(result, pipes)` | step 간 스키마 호환 자동 검증 |
+| `extractLineageFromSimulation(result, pipes)` | 시뮬레이션→계보 자동 추출 |
 
-  /** 이 step의 데이터 계약 (확장) */
-  dataContract?: {
-    consumes?: FieldSet;      // 기대하는 입력 스키마
-    produces?: FieldSet;      // 보장하는 출력 스키마
-    accesses?: SchemaAccess[]; // 접근하는 테이블/컬럼
-  };
-}
-
-interface SchemaAccess {
-  schemaId: string;
-  columns: string[];
-  mode: "read" | "write" | "readwrite";
-}
-```
-
-### 검증 파이프라인
-
-```
-PipeGraph 정의
-  ↓
-각 PipeStep의 dataContract 검증
-  → step[0].produces ↔ step[1].consumes 호환 검증
-  → 테이블 접근 권한 검증
-  → FK 무결성 검증
-  ↓
-FieldLineage 자동 추출
-  → step 간 필드 매핑 추적
-  → 계보 그래프 구축
-  ↓
-SchemaVersion 변경 시
-  → breaking change 감지
-  → 영향받는 파이프 목록
-  → 호환되지 않는 계약 식별
-```
+> 구현: `core/src/pipe-bridge.ts` 참조
+> 타입: `core/src/types/pipe-spec.ts` `StepDataContract` 참조
 
 ---
 
-## 7. 기존 table-ref 체계와의 관계
+## 7. 기존 table-ref와의 관계
 
 | 기존 | 확장 | 관계 |
 |------|------|------|
-| `DimRef` (axis/prefix_ref/table_ref) | `DataColumn.ref` | ColumnRef 그대로 재사용 |
-| `ColumnRef` 4종 | `DataColumn` (ref + facetRole + constraints) | 패싯 역할 추가 |
-| `TableSchema` | `DataSchema` (columns + PK + hash) | 구조화 확장 |
-| (없음) | `DataRelation` (카디널리티 + cascade) | 신규 |
-| (없음) | `DataContract` (생산/소비 스키마 매칭) | 신규 |
-| (없음) | `FieldLineage` (필드 변환 추적) | 신규 |
-| (없음) | `SchemaVersion` (호환성 판별) | 신규 |
+| DimRef (axis/prefix_ref/table_ref) | DataColumn.ref | ColumnRef 그대로 재사용 |
+| ColumnRef 4종 | DataColumn (ref + facetRole + constraints) | 패싯 역할 추가 |
+| TableSchema | DataSchema (columns + PK + hash) | 구조화 확장 |
 
 ---
 
-## 8. 범위
+## 검증
 
-### 현재 범위
-
-- DataSchema: 컬럼 정의 + 패싯 역할 + 제약
-- DataRelation: 1:1/1:N/N:M + cascade
-- DataContract: 생산/소비 스키마 호환 검증
-- FieldLineage: 10종 변환 유형 + 계보 그래프
-- SchemaVersion: 9종 변경 유형 + 호환성 판별
-
-### 후속 구현
-
-| 순서 | 구현 | 파일 |
-|------|------|------|
-| 1 | DataSchema + DataColumn 타입 | `core/src/types/data-schema.ts` |
-| 2 | DataRelation 타입 | `core/src/types/data-relation.ts` |
-| 3 | checkCompatibility() | `core/src/data-contract.ts` |
-| 4 | FieldLineage + LineageGraph | `core/src/data-lineage.ts` |
-| 5 | SchemaVersion + 호환성 판별 | `core/src/schema-version.ts` |
+```bash
+pnpm --filter @qa-sdk/core test -- src/data-contract.test.ts   # 36 tests
+pnpm --filter @qa-sdk/core test                                 # 275 tests (통합 포함)
+```

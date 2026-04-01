@@ -60,35 +60,7 @@ aspect pool (글로벌 정의, 버전 관리)
 aspect는 scope에 소속되지 않는다. **글로벌 pool에 한 번만 정의된다.**
 여러 scope가 같은 aspect를 소비할 수 있다.
 
-```typescript
-// aspect pool — 전체 aspect 정의 (버전 관리)
-const aspectPool = createLabelRegistry({
-  aspect: [
-    {
-      version: 'v1',
-      ids: [
-        'layout', 'component', 'interaction',
-        'func_def', 'scenario',
-        'user_scenario', 'process_flow', 'relation',
-        'app_state', 'domain_state', 'system_state',
-        'tech_constraint', 'biz_constraint', 'infra_constraint',
-        'domain_data', 'system_data', 'external_data',
-        'prefix_schema', 'axis_catalog',
-        'api_contract', 'cli_contract', 'event_contract',
-      ]  // 22개
-    },
-    {
-      version: 'v2',
-      ids: [
-        // v1 전부 + 신규
-        ...v1Ids,
-        'visual_test', // 신규 aspect 예시
-      ],
-      changelog: 'visual_test 추가'
-    }
-  ]
-});
-```
+> 구현: `definition-catalog/src/vocabulary.ts` `DEF_ASPECT` 참조
 
 **pool 버전 규칙:**
 - 새 aspect 추가 → pool 버전 올림 (기존 인덱스 불변, append-only)
@@ -100,18 +72,13 @@ const aspectPool = createLabelRegistry({
 
 각 scope는 `scope:[index]`로 주소화되며, pool에서 일부 aspect를 소비한다.
 
-```typescript
-// scope registry — scope별 소비 구성 (버전 관리)
-const scopeRegistry = {
-  'scope:0': {  // ui
-    name: 'ui',
-    versions: [
-      { version: 'v1', consumes: ['layout', 'component', 'interaction'] }
-    ]
-  },
-  'scope:1': {  // feature
-    name: 'feature',
-    versions: [
+> 구현: `definition-catalog/src/scope-registry.ts` `ScopeRegistry` 참조
+
+```
+예시 (구현에서 자동 초기화):
+  scope:0 (ui) v1 → 소비: [layout, component, interaction]
+  scope:1 (feature) v1 → 소비: [func_def, scenario]
+  scope:2 (flow) v1 → 소비: [user_scenario, process_flow, relation]
       { version: 'v1', consumes: ['func_def', 'scenario'] }
     ]
   },
@@ -123,8 +90,6 @@ const scopeRegistry = {
       //                                                              ↑ scenario 추가 소비
     ]
   },
-  // ...
-};
 ```
 
 **소비 버전 규칙:**
