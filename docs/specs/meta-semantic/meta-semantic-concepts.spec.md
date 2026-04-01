@@ -51,8 +51,8 @@ def:
 
 **실행 축** — 무엇이 함께 실행되는가:
 **파이프**가 바운더리들을 확정적 실행 묶음으로 결합하고,
-**Semantic Folding**이 코드에서 바운더리와 파이프를 찾고,
-**검증 단위**가 Folding의 산출물로 독립 테스트 가능한 파이프를 식별하고,
+**Semantic Folding**이 모듈에서 하위 패싯을 접어 인터페이스로 끌어올리고,
+**검증 단위**가 Folding의 L2에서 독립 테스트 가능한 함수를 식별하고,
 **분기 경로**가 검증 단위 내 경우의 수를 세고,
 **Spacetime UID**가 경로 + 시간으로 모든 실행을 추적한다.
 
@@ -64,7 +64,7 @@ def:
 - **ms-concept-boundary** → 바운더리: 패싯 중 일부가 존재하는 검증 가능 기능 단위 (개념 단위)
 - **ms-concept-pipe** → 파이프: 개념 단위들의 확정적 실행 묶음 (실행 단위)
 - **ms-concept-contract-descent** → 계약 하향: 상호 무지, 자기 계약 명확 원칙
-- **ms-concept-folding** → Semantic Folding: 코드에서 바운더리를 찾는 메커니즘
+- **ms-concept-folding** → Semantic Folding: 모듈이 하위 패싯을 접어서 인터페이스로 끌어올리는 개념
 - **ms-concept-verification-unit** → 검증 단위: Folding이 산출하는 독립 테스트 가능 함수
 - **ms-concept-branch-path** → 분기 경로: 전곱이 아닌 도달 가능 경로의 합
 - **ms-concept-spacetime-uid** → Spacetime UID: 경로 + 시간 = 시공간 식별자
@@ -82,8 +82,8 @@ def:
 **실행 축** (무엇이 함께 실행되는가):
 
 4. **파이프** — 개념 단위들의 확정적 실행 묶음 (실행 단위)
-5. **Semantic Folding** — 코드에서 바운더리와 파이프를 찾는 메커니즘
-6. **검증 단위** — Folding이 산출하는 것: 독립 테스트 가능한 파이프
+5. **Semantic Folding** — 모듈이 하위 패싯을 접어서 인터페이스로 끌어올리는 개념
+6. **검증 단위** — Folding의 L2 산출물: 독립 테스트 가능한 함수
 7. **분기 경로** — 검증 단위 내의 경우의 수를 세는 방법
 8. **Spacetime UID** — 분기 경로에 시간을 결합한 주소
 

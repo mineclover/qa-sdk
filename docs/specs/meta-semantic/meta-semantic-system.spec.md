@@ -54,7 +54,7 @@ def:
 레이어 1 (수집 — 단위 자체 속성):
 - 데이터 패싯 (Data Facets) — 데이터의 독립적 역할을 분리하는 설계 규칙
 - 파이프 (Pipe) — 패싯 단위들의 확정적 실행 묶음
-- Semantic Folding — 코드 구조의 계층적 접기/펼치기로 검증 단위 식별
+- Semantic Folding — 모듈이 하위 패싯을 접어서 인터페이스로 끌어올리는 개념
 - scope → aspect → 검증 전략 (quality gates 포함)
 - layer — 존재 이유 식별 (domain/operation/mediation/experience)
 - concern 식별 — 횡단 관심사 태깅 (security, performance 등)
