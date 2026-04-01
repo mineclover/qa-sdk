@@ -18,20 +18,54 @@ def:
 
 ## 목적 ^purpose
 
-구조화 JSON 로깅. npm `pino` 기반 + `@qa-sdk/core`의 `createLogger` 팩토리 제공.
+구조화 JSON 로깅. `@qa-sdk/pino` (zero-dependency pino 호환 래퍼) + `@qa-sdk/core`의 `createLogger` 팩토리 제공.
 
 ## 구성 ^overview
 
-- **팩토리**: `createLogger("서비스명", options?)` — 서비스별 pino 인스턴스 생성
+- **`@qa-sdk/pino`**: npm pino의 zero-dependency 순수 JS 구현체. pnpm workspace alias로 `from "pino"` import가 이 패키지를 resolve
+- **팩토리**: `createLogger("서비스명", options?)` — 서비스별 logger 인스턴스 생성
 - **로그 레벨**: trace(10) ~ fatal(60) + silent, 환경별 자동 결정 (prod: info, dev: debug)
 - **multi-destination**: stdout + 추가 destination (IngestForwarder 등) 동시 출력
 - **child logger**: 부모 바인딩 상속 + 추가 바인딩 병합, 체이닝 가능
 - **Transport**: `@qa-sdk/logger`에서 Http/Protobuf/OTLP/DebugWebSocket/IngestForwarder 제공
 
-## 상태
+## @qa-sdk/pino — pino 호환 래퍼
 
-implemented — `@qa-sdk/core` createLogger + `@qa-sdk/logger` Transport 체계로 운영 중.
-레거시 `@qa-sdk/pino` 래퍼는 미채택, 제거 대상.
+npm pino를 직접 쓰지 않고 자체 래퍼를 만든 이유:
+
+- **zero-dependency**: npm pino는 sonic-boom, on-exit-leak-free 등 native C++ binding + worker thread 의존. CF Workers 등 native binding 불가 환경에서 동작 안 함
+- **번들 크기**: npm pino + 의존성 트리 vs `@qa-sdk/pino` 단일 파일 (~250행)
+- **drop-in 호환**: `"pino": "workspace:@qa-sdk/pino@^9.9.4"` alias로 코드 변경 없이 교체. `from "pino"` import가 자체 래퍼를 resolve
+
+### npm pino vs @qa-sdk/pino
+
+| 기능 | npm pino | @qa-sdk/pino |
+|------|---------|-------------|
+| `pino(opts?, dest?)` 팩토리 | ✓ | ✓ |
+| Logger (trace~fatal + child) | ✓ | ✓ |
+| LoggerOptions (level, base, mixin, serializers, formatters) | ✓ | ✓ |
+| Destination (write) | ✓ | ✓ |
+| stdSerializers.err | ✓ | ✓ |
+| pino.transport() (worker thread) | ✓ | ✗ |
+| pino.multistream() | ✓ | ✗ |
+| Native C++ binding (sonic-boom) | ✓ | ✗ |
+| 외부 의존성 | 다수 | **0개** |
+
+사용하는 서비스 (8개):
+core, decode-service, demo-tests, gate-service, ingest-server, query-service, registry-client, registry-service
+
+### workspace alias 설정
+
+```jsonc
+// packages/*/package.json
+{
+  "dependencies": {
+    "pino": "workspace:@qa-sdk/pino@^9.9.4"
+  }
+}
+```
+
+코드에서는 `from "pino"`로 import — pnpm이 `@qa-sdk/pino`로 resolve.
 
 ## 팩토리
 
@@ -50,12 +84,22 @@ const logger = createLogger("ingest-server", {
 
 ## Logger 인터페이스
 
-npm `pino`의 Logger 타입을 그대로 사용:
+`@qa-sdk/pino`가 제공하는 Logger 타입:
 
 ```typescript
-import type { Logger } from "pino";
-// re-export: import type { Logger } from "@qa-sdk/core";
+interface Logger {
+  level: Level;
+  trace(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  debug(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  info(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  warn(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  error(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  fatal(obj?: unknown, msg?: unknown, ...args: unknown[]): void;
+  child(bindings: Record<string, unknown>): Logger;
+}
 ```
+
+re-export: `import type { Logger } from "@qa-sdk/core";`
 
 ## 로그 레벨
 
@@ -90,6 +134,7 @@ import type { Logger } from "pino";
 
 | 파일 | 역할 |
 |------|------|
-| `packages/core/src/lib/create-logger.ts` | createLogger 팩토리 (npm pino 기반) |
+| `packages/pino/src/index.ts` | @qa-sdk/pino — zero-dependency pino 호환 구현체 |
+| `packages/core/src/lib/create-logger.ts` | createLogger 팩토리 |
 | `packages/logger/src/` | Transport 구현체 (Http, Protobuf, OTLP, IngestForwarder) |
 | `packages/logger/src/transport/ingest-forwarder.ts` | 로그 → Ingest 브릿지 |
