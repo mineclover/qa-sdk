@@ -295,94 +295,28 @@ join:
 
 ---
 
-## 6. PipeRunner — 런타임 실행 엔진 (Phase 3 초안)
+## 6. 구현 완료
 
-### 인터페이스
+### Phase 3 런타임 구현
 
-```typescript
-interface PipeRunner {
-  /** PipeGraph 실행 */
-  run(graph: PipeGraph, triggerEvent: SimEvent): Promise<RunResult>;
+| 구현 | 파일 | 테스트 |
+|------|------|--------|
+| ConditionExpr + parseCondition + evaluateCondition | `core/src/pipe-runtime.ts` | 10 tests |
+| CancellationToken (협력적 취소 + child 전파) | 같은 파일 | 5 tests |
+| PipeContext (get/set/clone + 중첩 경로) | 같은 파일 | 4 tests |
+| ExecutorRegistry (facet별 실행기) | 같은 파일 | — |
+| PipeRunner (run + 에러 전파 + 이벤트 체인) | 같은 파일 | 10 tests |
+| 타입: StepResult, StepError, ExecutedStep, RunResult | `core/src/types/pipe-runtime.ts` | 타입 체크 |
 
-  /** 단일 PipeSpec 실행 */
-  runPipe(pipe: PipeSpec, context: PipeContext): Promise<PipeResult>;
-}
-
-interface RunResult {
-  /** 실행된 step 이력 */
-  steps: ExecutedStep[];
-  /** 생산된 이벤트 */
-  producedEvents: SimEvent[];
-  /** 에러 (있으면) */
-  errors: PipeError[];
-  /** 최종 context */
-  finalContext: PipeContext;
-  /** 소요 시간 */
-  duration: number;
-}
-
-interface ExecutedStep {
-  pipeId: string;
-  flowPath: string;
-  facet: string;
-  input: unknown;
-  output: unknown;
-  status: "ok" | "error" | "cancelled" | "skipped";
-  error?: StepError;
-  duration: number;
-  timestamp: string;
-}
-```
-
-### Step 실행기 등록
-
-```typescript
-/** step 실행기 — facet별로 등록 */
-interface StepExecutor {
-  facet: string;
-  execute(step: PipeStep, context: PipeContext): Promise<StepResult>;
-}
-
-/** 실행기 레지스트리 */
-interface ExecutorRegistry {
-  register(executor: StepExecutor): void;
-  get(facet: string): StepExecutor | null;
-}
-```
-
-각 facet(소비/생산/정의/관리/저장)에 대한 실행기를 등록.
-PipeRunner는 step.facet으로 실행기를 조회하여 실행.
+> 타입 상세: `core/src/types/pipe-runtime.ts` 참조
+> 구현 상세: `core/src/pipe-runtime.ts` 참조
 
 ---
 
-## 7. PathMatcher — 실행 결과 매칭 (Phase 3 초안)
+## 7. PathMatcher — 실행 결과 매칭 (미구현)
 
-### 기존 graph-matcher 대체
-
-```typescript
-interface PathMatcher {
-  /**
-   * 실행 결과(RunResult)와 PipeSpec을 매칭.
-   * 어떤 경로가 실행되었는지, 기대와 일치하는지 판정.
-   */
-  match(result: RunResult, graph: PipeGraph): MatchResult;
-}
-
-interface MatchResult {
-  /** 매칭된 경로 */
-  matchedPath: string[];
-  /** 실행됐지만 기대하지 않은 step */
-  unexpectedSteps: ExecutedStep[];
-  /** 기대했지만 실행 안 된 step */
-  missingSteps: string[];
-  /** constraint 검증 결과 */
-  constraintResults: ConstraintResult[];
-  /** 최종 판정 */
-  verdict: "pass" | "fail" | "warn" | "degraded";
-}
-```
-
-### 기존 VerdictReport와의 관계
+실행 결과(RunResult)와 PipeSpec을 매칭하여 어떤 경로가 실행되었는지 판정.
+기존 VerdictReport(ScenarioSpec 기반)를 대체.
 
 | VerdictReport (v1) | PathMatcher (v2) |
 |---|---|
@@ -390,36 +324,21 @@ interface MatchResult {
 | step 순서 매칭 | 경로 매칭 (합산 모델) |
 | 6상태 | scope×aspect 검증 전략 기반 판정 |
 
----
-
-## 8. Phase 3 구현 순서
-
-| 순서 | 구현 | 의존 |
-|------|------|------|
-| 1 | `ConditionExpr` 타입 + `ConditionEvaluator` | — |
-| 2 | `StepResult` + `StepError` + 에러 전파 규칙 | — |
-| 3 | `CancellationToken` | — |
-| 4 | `PipeContext` | ConditionEvaluator |
-| 5 | `StepExecutor` + `ExecutorRegistry` | PipeContext |
-| 6 | `PipeRunner` | 1~5 전부 |
-| 7 | `PathMatcher` | PipeRunner 출력 |
+> 후속 구현 대상
 
 ---
 
-## 9. 범위 경계 요약
+## 8. 범위 경계 요약
 
 ```
 Phase 2 (완료 — 선언적):
-  "어떤 흐름이 가능한가"를 정의하고 시뮬레이션
   PipeFlow 29종 + ConnectionKind 8종 + simulate() + analyze()
-  → 입력: PipeSpec/PipeGraph (선언)
-  → 출력: 경로 수, 구조 검증, dry-run 결과
+  → 구현: core/src/pipe-*.ts
 
-경계선 ─────────────────────────────────
+Phase 3 (완료 — 실행적):
+  ConditionEvaluator + CancellationToken + PipeContext + PipeRunner
+  → 구현: core/src/pipe-runtime.ts (29 tests)
 
-Phase 3 (설계 — 실행적):
-  "실제로 어떻게 실행하는가"를 정의하고 런타임
-  ConditionEvaluator + ErrorPropagation + Cancellation + PipeContext
-  → 입력: PipeSpec/PipeGraph + 실제 이벤트 + 실제 데이터
-  → 출력: ExecutedStep[] + 에러 + VerdictReport v2
+미구현:
+  PathMatcher (실행 결과 ↔ PipeSpec 매칭)
 ```

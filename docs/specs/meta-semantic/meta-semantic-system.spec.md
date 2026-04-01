@@ -87,11 +87,11 @@ def:
 
 ## 구성 ^overview
 
-2개 레이어, 6개 하위 모듈:
+2개 레이어 + 실행 엔진 + 표준 호환:
 
 **레이어 1 — 수집 (코드 단위 하나만 보고 결정 가능):**
-- **meta-semantic-concepts**: 8가지 원자 개념 (패싯, 바운더리, 파이프, 계약 하향 등)
-- **meta-semantic-folding**: 코드를 접어 검증 가능 실행 단위를 식별
+- **meta-semantic-concepts**: 9가지 원자 개념 (패싯, 바운더리, 이벤트, 파이프 등)
+- **meta-semantic-folding**: 모듈/파이프에서 하위 패싯을 접어 인터페이스로 끌어올림
 - **meta-semantic-ir**: Module·Data·Pipe IR 구조
 - **meta-semantic-scope**: scope→aspect 경로 모델 + 검증 전략
 - **meta-semantic-spacetime-uid**: 분기 경로 + 시간 축 주소
@@ -101,12 +101,26 @@ def:
 - lifecycle, link_type, concern 전파, layer 영향 전파, tags
 - 후속 설계 대상
 
-**핵심 카탈로그 (구현 완료):**
-- **PipeFlow 29종 카탈로그**: `pipe-impl/pipe-flow-catalog.spec.md` — 각 흐름 제어의 표현·정의·검증 방식
-- **ConnectionKind 8종 카탈로그**: `pipe-impl/pipe-connection-catalog.spec.md` — 각 연결 유형의 표현·정의·검증 방식
-- **데이터 계약**: `meta-semantic-data-contract.spec.md` — 스키마+관계+계보+버전
-- **이벤트 표준**: `meta-semantic-event-standard.spec.md` — CloudEvents 호환+매니페스트
-- **테스트 추적**: `meta-semantic-test-tracking.spec.md` — 패싯별 검증 루프
+**실행 엔진 (구현 완료):**
+- **meta-semantic-pipe-impl**: PipeFlow 29종 + ConnectionKind 8종 + 시뮬레이션 + 분석
+- **meta-semantic-execution-semantics**: 조건 평가 + 에러 전파 + 취소 + 컨텍스트 + PipeRunner
+- **meta-semantic-data-contract**: 스키마 + 관계 + 계보 + 버전 + 호환 검증
+- **Constraint 엔진**: 정의 + 평가 + 결과 수집 + 품질 지표
+
+**표준 호환 (구현 완료):**
+- **CloudEvents**: toCloudEvent/fromCloudEvent + 배치 변환 + 직렬화
+- **AsyncAPI**: generateAsyncApi + YAML/JSON 생성기
+- **이벤트 표준**: CloudEvents 확장 속성 + 서비스 버전 매니페스트 + 라이프사이클
+
+**카탈로그 (개별 leaf 문서):**
+- PipeFlow 29종: `pipe-impl/flows/pf-*.spec.md` (29개)
+- ConnectionKind 8종: `pipe-impl/connections/pc-*.spec.md` (8개)
+
+**미구현:**
+- 테스트 추적 (TestCase/TestSuite — 스펙만)
+- PathMatcher (실행 결과 매칭 — 스펙만)
+- 레이어 2 해석
+- 시각화
 
 ---
 

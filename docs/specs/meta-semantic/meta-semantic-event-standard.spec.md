@@ -361,13 +361,19 @@ draft → published → active → superseded → archived
 - CloudEvents ↔ EventRecord 변환 전략
 - AsyncAPI 자동 생성 가능성
 
+### 구현 완료
+
+| 구현 | 파일 | 테스트 |
+|------|------|--------|
+| toCloudEvent / fromCloudEvent | `core/src/cloud-events.ts` | 14 tests |
+| serializeCloudEvent / deserializeCloudEvent | 같은 파일 | 포함 |
+| toCloudEventBatch / fromCloudEventBatch | 같은 파일 | 포함 |
+| generateAsyncApi / asyncApiToYaml / asyncApiToJson | `core/src/asyncapi-gen.ts` | 4 tests |
+| ManifestRegistry (prefix + manifest 라이프사이클) | `definition-catalog/src/version-manifest.ts` | 16 tests |
+
 ### 후속 과제
 
 | 과제 | 설명 |
 |------|------|
-| toCloudEvent/fromCloudEvent 구현 | EventRecord ↔ CloudEvents 변환 함수 |
-| ManifestStore 구현 | 매니페스트 영속화 (SQLite/서비스) |
-| PrefixLifecycleEngine 구현 | prefix 상태 전이 + 가드 검증 |
-| ManifestLifecycleEngine 구현 | 매니페스트 상태 전이 + 가드 검증 |
-| AsyncAPI 생성기 | manifest + event-catalog → .asyncapi.yaml |
+| ManifestStore 영속화 | 인메모리 → SQLite/서비스 |
 | registry-service 연동 | 매니페스트를 registry-service에서 관리 |
