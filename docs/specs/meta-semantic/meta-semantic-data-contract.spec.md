@@ -142,14 +142,27 @@ items.price → cart_items.subtotal (compute: price × qty)
 
 ---
 
-## 6. 파이프 흐름과의 연결
+## 6. 파이프 흐름과의 연결 — 시뮬레이션 기반 계보
+
+계보 추적의 데이터 소스는 **시뮬레이션 결과(SimulationResult)**이다.
+시뮬레이션이 실행 경로를 확정한 후에야 step 간 데이터 흐름을 추적할 수 있다.
+
+```
+시뮬레이션(3단계) → SimulationResult (실행된 step 순서 확정)
+    ↓
+계보 추적(4단계) → step 간 produces/consumes 매칭 → 필드 단위 계보 수집
+    ↓
+스키마 호환 검증 → 변경 감지 → 호환성 판정
+```
 
 PipeStep.dataContract로 파이프 step별 입출력 스키마 + 접근 테이블 정의.
 
-| API | 설명 |
-|-----|------|
-| `validateStepContracts(result, pipes)` | step 간 스키마 호환 자동 검증 |
-| `extractLineageFromSimulation(result, pipes)` | 시뮬레이션→계보 자동 추출 |
+| API | 입력 | 설명 |
+|-----|------|------|
+| `extractLineageFromSimulation(result, pipes)` | `SimulationResult` | 시뮬레이션 결과에서 계보 자동 추출 |
+| `validateStepContracts(result, pipes)` | `SimulationResult` | 실행된 step 간 스키마 호환 자동 검증 |
+
+> 시뮬레이션 없이는 "어떤 step이 실행되었는지" 알 수 없으므로 계보도 구성 불가.
 
 > 구현: `core/src/pipe-bridge.ts` 참조
 > 타입: `core/src/types/pipe-spec.ts` `StepDataContract` 참조

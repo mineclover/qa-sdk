@@ -348,7 +348,31 @@ draft → published → active → superseded → archived
 
 ---
 
-## 8. 범위
+## 8. 최종 목적 — SDK 관측 코드 생성
+
+이 스펙의 CloudEvents 호환, 매니페스트 라이프사이클, prefix 공급 체인은
+모두 하나의 목적을 향한다:
+
+**이벤트 카탈로그 기반으로 SDK 로깅 코드를 실제 동작 로직에 삽입하여 이벤트를 식별·수집하는 것.**
+
+```
+PipeGraph 정의 → 정적 분석에서 이벤트 카탈로그 수집
+    ↓              (trigger/produces/emit에서 이벤트 식별)
+이벤트 카탈로그 → CloudEvent 스키마 도출 + AsyncAPI 생성
+    ↓
+SDK track 코드 생성/삽입 → 실제 운영 로직에 로깅 코드 주입
+    ↓
+런타임 이벤트 수집 → ingest-server → 분석·관측
+    ↓
+피드백: 실제 수집 데이터 vs 설계 의도 → 드리프트 감지 → 스펙 보정
+```
+
+event-catalog 패키지가 이벤트 카탈로그의 구현체이며,
+정적 분석 결과를 등록하고 SDK 코드 생성의 입력이 된다.
+
+---
+
+## 9. 범위
 
 ### 현재 범위
 

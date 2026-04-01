@@ -22,9 +22,10 @@ def:
 
 ## 목적 ^purpose
 
-PipeGraph를 가상 실행(dry-run)하여 어떤 경로가 실행되는지,
-어떤 이벤트가 생산되는지, 얼마나 시간이 걸리는지 추적한다.
-실제 부수효과 없이 경로 탐색과 이벤트 체인을 시뮬레이션한다.
+PipeGraph를 가상 실행하여 경로 탐색과 이벤트 체인을 시뮬레이션한다.
+두 가지 용도:
+**(a) 실제 동작 시뮬** — resolver로 분기/실패 시나리오를 주입하여 경로 탐색.
+**(b) 의도된 happy path 검증** — 설계자가 등록한 정상 경로와 시뮬 결과를 비교하여 설계 의도 검증.
 
 ## 관련 소스
 
@@ -77,6 +78,29 @@ simulate(config: SimulationConfig): SimulationResult
 | tap | observe 에러 격리 (try/catch), step은 항상 실행 | 관측 실패가 흐름을 차단하지 않음 |
 | dedup | Set으로 keyField 값 추적, 중복 시 skip | 첫 등장만 통과 |
 | filter | 조건 false 시 "filtered" step 기록 | filterResolver로 판정 주입 |
+
+### Happy Path 검증 (미구현)
+
+설계자가 의도한 정상 경로를 사전 등록하고, 시뮬 결과와 비교한다.
+
+```typescript
+// 의도된 정상 경로 선언
+const happyPath: HappyPathSpec = {
+  expectedPipeTrace: ["validate", "charge", "receipt"],
+  expectedFacets: ["검증", "결제", "영수증"],
+};
+
+// 시뮬 결과와 비교
+const result = simulate({ graph, initialEvent, ... });
+const match = matchHappyPath(result, happyPath);
+// → { match: true } 또는 { match: false, divergedAt: "charge", ... }
+```
+
+| 항목 | 설명 |
+|------|------|
+| `expectedPipeTrace` | 의도된 파이프 실행 순서 |
+| `expectedFacets` | 의도된 패싯 실행 순서 (선택) |
+| `matchHappyPath()` | pipeTrace 비교 → 일치/불일치 + 분기 지점 보고 |
 
 ## 검증
 
