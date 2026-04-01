@@ -275,6 +275,21 @@ export type {
 
 export type { ScenarioSpecStore } from "./ports/scenario-spec-store.port.js";
 
+// ── PipeSpec ────────────────────────────────────────────
+export type {
+  PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
+  PipeFlow, PipeStep, PipeSequence, PipeBranch, PipeOptional,
+  PipeParallel, PipeRace, PipeAwait, PipeRetry, PipeFallback,
+  PipeLoop, PipeCompensate, PipeEmit, PipeFinally, PipeTimeout, PipeFeedback,
+  PipeMap, PipeReduce, PipeBuffer, PipeFilter,
+  PipeCircuitBreaker, PipeThrottle, PipeDebounce,
+  PipeSplit, PipeEnrich, PipeTap, PipeResequence, PipeWindow,
+  PipeDedup, PipeCorrelation, Constraint,
+} from "./types/pipe-spec.js";
+export { countPipePaths, countGraphPaths } from "./pipe-path.js";
+export { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
+export type { ValidationIssue } from "./pipe-validate.js";
+
 export type {
   MetricRollupStore,
   MetricRollupInsert,

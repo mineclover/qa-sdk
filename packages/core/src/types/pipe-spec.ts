@@ -1,0 +1,333 @@
+// ── PipeSpec — 단일 파이프 노드 ──────────────────────────
+
+export interface PipeSpec {
+  /** 파이프 노드 ID (그래프 내 유일) */
+  pipeId: string;
+  version: string;
+  description?: string;
+
+  /** 트리거: 이 파이프를 시작시키는 이벤트 */
+  trigger: {
+    eventKey: string;
+    entryConditions?: Constraint[];
+  };
+
+  /** 내부 패싯 흐름 (31종 흐름 제어) */
+  flow: PipeFlow;
+
+  /** 생산 이벤트: 이 파이프가 완료 시 발생시키는 이벤트 */
+  produces?: string[];
+
+  /** scope×aspect 분류 */
+  scope?: string;
+  aspect?: string;
+}
+
+// ── PipeGraph — 노드 간 연결 ─────────────────────────────
+
+export interface PipeGraph {
+  graphId: string;
+  version: string;
+  description?: string;
+
+  /** 그래프에 속한 파이프 노드들 */
+  pipes: PipeSpec[];
+
+  /** 노드 간 연결 */
+  connections: PipeConnection[];
+
+  /** 그래프 진입점 */
+  entryPipeId: string;
+
+  /** 매니페스트 참조 */
+  manifestVersion?: string;
+}
+
+/** 파이프 간 연결 (N:M 지원) */
+export interface PipeConnection {
+  from: string | string[];
+  to: string | string[];
+  kind: ConnectionKind;
+  condition?: string;
+}
+
+export type ConnectionKind =
+  | "next"
+  | "conditional"
+  | "event"
+  | "error"
+  | "compensate"
+  | "fan-out"
+  | "join"
+  | "feedback";
+
+// ── PipeFlow — 31종 흐름 제어 ────────────────────────────
+
+export type PipeFlow =
+  // 기본
+  | PipeStep | PipeSequence
+  // 분기
+  | PipeBranch | PipeOptional
+  // 동시성
+  | PipeParallel | PipeRace | PipeAwait
+  // 내결함
+  | PipeRetry | PipeFallback
+  // 반복
+  | PipeLoop
+  // 트랜잭션
+  | PipeCompensate
+  // 비동기
+  | PipeEmit
+  // 정리
+  | PipeFinally
+  // 시간
+  | PipeTimeout
+  // 제어
+  | PipeFeedback
+  // 배치
+  | PipeMap | PipeReduce | PipeBuffer | PipeFilter
+  // 안정화
+  | PipeCircuitBreaker | PipeThrottle | PipeDebounce
+  // 데이터 변환
+  | PipeSplit | PipeEnrich
+  // 관측
+  | PipeTap
+  // 스트리밍
+  | PipeResequence | PipeWindow
+  // 상태
+  | PipeDedup | PipeCorrelation;
+
+// ── 기본 ──────────────────────────────────────────────
+
+export interface PipeStep {
+  kind: "step";
+  facet: string;
+  eventKey?: string;
+  constraints?: Constraint[];
+  timeout?: number;
+}
+
+export interface PipeSequence {
+  kind: "sequence";
+  steps: PipeFlow[];
+}
+
+// ── 분기 ──────────────────────────────────────────────
+
+export interface PipeBranch {
+  kind: "branch";
+  condition: string;
+  paths: PipeFlow[];
+}
+
+export interface PipeOptional {
+  kind: "optional";
+  step: PipeFlow;
+}
+
+// ── 동시성 ────────────────────────────────────────────
+
+export interface PipeParallel {
+  kind: "parallel";
+  steps: PipeFlow[];
+}
+
+export interface PipeRace {
+  kind: "race";
+  steps: PipeFlow[];
+}
+
+export interface PipeAwait {
+  kind: "await";
+  condition: string;
+  timeout?: number;
+  then: PipeFlow;
+}
+
+// ── 내결함 ────────────────────────────────────────────
+
+export interface PipeRetry {
+  kind: "retry";
+  step: PipeFlow;
+  maxAttempts: number;
+  backoff?: number;
+}
+
+export interface PipeFallback {
+  kind: "fallback";
+  try: PipeFlow;
+  catch: PipeFlow;
+}
+
+// ── 반복 ──────────────────────────────────────────────
+
+export interface PipeLoop {
+  kind: "loop";
+  body: PipeFlow;
+  until: string;
+  maxIterations?: number;
+}
+
+// ── 트랜잭션 ──────────────────────────────────────────
+
+export interface PipeCompensate {
+  kind: "compensate";
+  forward: PipeFlow;
+  compensate: PipeFlow;
+}
+
+// ── 비동기 ────────────────────────────────────────────
+
+export interface PipeEmit {
+  kind: "emit";
+  eventKey: string;
+  payload?: string;
+}
+
+// ── 정리 ──────────────────────────────────────────────
+
+export interface PipeFinally {
+  kind: "finally";
+  body: PipeFlow;
+  cleanup: PipeFlow;
+}
+
+// ── 시간 ──────────────────────────────────────────────
+
+export interface PipeTimeout {
+  kind: "timeout";
+  body: PipeFlow;
+  duration: number;
+  onTimeout?: PipeFlow;
+}
+
+// ── 제어 ──────────────────────────────────────────────
+
+export interface PipeFeedback {
+  kind: "feedback";
+  body: PipeFlow;
+  feedbackEvent: string;
+  until: string;
+  maxIterations?: number;
+}
+
+// ── 배치 ──────────────────────────────────────────────
+
+export interface PipeMap {
+  kind: "map";
+  itemFlow: PipeFlow;
+  collection: string;
+  concurrency?: number;
+}
+
+export interface PipeReduce {
+  kind: "reduce";
+  step: PipeFlow;
+  initial: string;
+  accumulator: string;
+}
+
+export interface PipeBuffer {
+  kind: "buffer";
+  body: PipeFlow;
+  count?: number;
+  duration?: number;
+}
+
+export interface PipeFilter {
+  kind: "filter";
+  condition: string;
+  step: PipeFlow;
+}
+
+// ── 안정화 ────────────────────────────────────────────
+
+export interface PipeCircuitBreaker {
+  kind: "circuit-breaker";
+  step: PipeFlow;
+  failureThreshold: number;
+  cooldown: number;
+  halfOpenAttempts?: number;
+}
+
+export interface PipeThrottle {
+  kind: "throttle";
+  step: PipeFlow;
+  rate: number;
+  interval: number;
+}
+
+export interface PipeDebounce {
+  kind: "debounce";
+  step: PipeFlow;
+  wait: number;
+}
+
+// ── 데이터 변환 ───────────────────────────────────────
+
+export interface PipeSplit {
+  kind: "split";
+  splitBy: string;
+  itemFlow: PipeFlow;
+}
+
+export interface PipeEnrich {
+  kind: "enrich";
+  source: string;
+  mergeField: string;
+  step: PipeFlow;
+  timeout?: number;
+}
+
+// ── 관측 ──────────────────────────────────────────────
+
+export interface PipeTap {
+  kind: "tap";
+  observe: PipeFlow;
+  step: PipeFlow;
+}
+
+// ── 스트리밍 ──────────────────────────────────────────
+
+export interface PipeResequence {
+  kind: "resequence";
+  orderBy: string;
+  windowSize: number;
+  step: PipeFlow;
+}
+
+export interface PipeWindow {
+  kind: "window";
+  type: "tumbling" | "sliding" | "session";
+  size: number;
+  slide?: number;
+  gap?: number;
+  body: PipeFlow;
+}
+
+// ── 상태 ──────────────────────────────────────────────
+
+export interface PipeDedup {
+  kind: "dedup";
+  keyField: string;
+  ttl?: number;
+  step: PipeFlow;
+}
+
+export interface PipeCorrelation {
+  kind: "correlation";
+  requestEvent: string;
+  responseEvent: string;
+  correlationKey: string;
+  timeout?: number;
+  onMatch: PipeFlow;
+  onTimeout?: PipeFlow;
+}
+
+// ── 공통 ──────────────────────────────────────────────
+
+export interface Constraint {
+  field: string;
+  op: "eq" | "neq" | "exists" | "gt" | "lt" | "contains" | "masked";
+  value?: unknown;
+}
