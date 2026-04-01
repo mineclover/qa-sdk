@@ -389,3 +389,196 @@ describe("PipeRunner", () => {
     expect(result.errors[0].code).toBe("FAIL");
   });
 });
+
+// ── 연산자 동작 안정화 ──────────────────────────────
+
+describe("연산자 동작 안정화", () => {
+  function makeRunner(): PipeRunner {
+    const executors = new ExecutorRegistry();
+    for (const facet of ["소비", "관리", "생산", "저장", "정의"]) {
+      executors.register({
+        facet,
+        execute: async (s, ctx) => {
+          ctx.set(`_executed.${s.eventKey ?? facet}`, true);
+          return { status: "ok", output: ctx.get(s.eventKey ?? facet) ?? `${facet}_done` };
+        },
+      });
+    }
+    return new PipeRunner(executors);
+  }
+
+  describe("throttle — 속도 제한", () => {
+    it("rate 이내 호출은 정상 실행", async () => {
+      const runner = makeRunner();
+      // rate: 3, interval: 10000ms — 한 윈도우에 3회까지 허용
+      const throttleFlow: PipeFlow = { kind: "throttle", rate: 3, interval: 10_000, step: step("소비", "api") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", {
+          kind: "sequence",
+          steps: [throttleFlow, throttleFlow, throttleFlow],
+        })],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const result = await runner.run(graph, { eventKey: "start" });
+      expect(result.status).toBe("complete");
+      // 3회 모두 실행되어야 함 (rate=3)
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(3);
+      const skipped = result.steps.filter(s => s.kind === "throttle" && s.status === "skipped");
+      expect(skipped.length).toBe(0);
+    });
+
+    it("rate 초과 시 skipped 기록", async () => {
+      const runner = makeRunner();
+      // rate: 2, interval: 10000ms — 2회까지만 허용
+      const throttleFlow: PipeFlow = { kind: "throttle", rate: 2, interval: 10_000, step: step("소비", "api") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", {
+          kind: "sequence",
+          steps: [throttleFlow, throttleFlow, throttleFlow, throttleFlow],
+        })],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const result = await runner.run(graph, { eventKey: "start" });
+      expect(result.status).toBe("complete");
+      // 처음 2회는 실행, 나머지 2회는 skip
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(2);
+      const skipped = result.steps.filter(s => s.kind === "throttle" && s.status === "skipped");
+      expect(skipped.length).toBe(2);
+    });
+  });
+
+  describe("debounce — 대기 후 실행", () => {
+    it("wait 후 step이 실행됨", async () => {
+      const runner = makeRunner();
+      const debounceFlow: PipeFlow = { kind: "debounce", wait: 10, step: step("소비", "api") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", debounceFlow)],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const start = Date.now();
+      const result = await runner.run(graph, { eventKey: "start" });
+      const elapsed = Date.now() - start;
+
+      expect(result.status).toBe("complete");
+      // 내부 step이 실행되어야 함
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(1);
+      // wait 시간만큼 지연되었는지 확인
+      expect(elapsed).toBeGreaterThanOrEqual(9); // 약간의 타이머 오차 허용
+    });
+  });
+
+  describe("dedup — 중복 제거", () => {
+    it("같은 keyField 값은 두 번째부터 skipped", async () => {
+      const runner = makeRunner();
+      const dedupFlow: PipeFlow = { kind: "dedup", keyField: "orderId", step: step("소비", "process") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", {
+          kind: "sequence",
+          steps: [dedupFlow, dedupFlow, dedupFlow],
+        })],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      // 같은 orderId로 3회 호출
+      const result = await runner.run(graph, { eventKey: "start", payload: { orderId: "order-123" } });
+      expect(result.status).toBe("complete");
+      // 첫 번째만 실행, 나머지 2회 skip
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(1);
+      const skipped = result.steps.filter(s => s.kind === "dedup" && s.status === "skipped");
+      expect(skipped.length).toBe(2);
+    });
+
+    it("다른 keyField 값은 각각 실행", async () => {
+      const executors = new ExecutorRegistry();
+      let callCount = 0;
+      executors.register({
+        facet: "소비",
+        execute: async (s, ctx) => {
+          callCount++;
+          // 매 호출마다 orderId를 변경하여 다른 키로 만듦
+          ctx.set("orderId", `order-${callCount}`);
+          return { status: "ok", output: `done-${callCount}` };
+        },
+      });
+      const runner = new PipeRunner(executors);
+
+      // sequence: step(orderId 변경) → dedup → step(orderId 변경) → dedup
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", {
+          kind: "sequence",
+          steps: [
+            step("소비", "set1"),
+            { kind: "dedup", keyField: "orderId", step: step("소비", "process") } as PipeFlow,
+            step("소비", "set2"),
+            { kind: "dedup", keyField: "orderId", step: step("소비", "process2") } as PipeFlow,
+          ],
+        })],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const result = await runner.run(graph, { eventKey: "start", payload: { orderId: "order-0" } });
+      expect(result.status).toBe("complete");
+      // 중복이 없으므로 dedup skip이 없어야 함
+      const skipped = result.steps.filter(s => s.kind === "dedup" && s.status === "skipped");
+      expect(skipped.length).toBe(0);
+    });
+  });
+
+  describe("filter — 조건 불일치 시 skipped 기록", () => {
+    it("조건 참 → step 실행", async () => {
+      const runner = makeRunner();
+      const filterFlow: PipeFlow = { kind: "filter", condition: "amount > 100", step: step("소비", "process") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", filterFlow)],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const result = await runner.run(graph, { eventKey: "start", payload: { amount: 200 } });
+      expect(result.status).toBe("complete");
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(1);
+      const skipped = result.steps.filter(s => s.kind === "filter" && s.status === "skipped");
+      expect(skipped.length).toBe(0);
+    });
+
+    it("조건 거짓 → skipped ExecutedStep 기록", async () => {
+      const runner = makeRunner();
+      const filterFlow: PipeFlow = { kind: "filter", condition: "amount > 100", step: step("소비", "process") };
+      const graph: PipeGraph = {
+        graphId: "g", version: "v1",
+        pipes: [makePipe("p", "start", filterFlow)],
+        connections: [],
+        entryPipeId: "p",
+      };
+
+      const result = await runner.run(graph, { eventKey: "start", payload: { amount: 50 } });
+      expect(result.status).toBe("complete");
+      // step은 실행되지 않아야 함
+      const okSteps = result.steps.filter(s => s.kind === "step" && s.status === "ok");
+      expect(okSteps.length).toBe(0);
+      // filter skipped 기록이 있어야 함
+      const skipped = result.steps.filter(s => s.kind === "filter" && s.status === "skipped");
+      expect(skipped.length).toBe(1);
+      expect(skipped[0].status).toBe("skipped");
+    });
+  });
+});

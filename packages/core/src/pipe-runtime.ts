@@ -243,6 +243,14 @@ export class PipeRunner {
     const rootToken = new CancellationToken();
     const startTime = Date.now();
 
+    // 연산자 상태 — run 단위로 격리
+    const runState: RunState = {
+      // throttle: flow 객체 참조 → { 호출 카운트, 윈도우 시작 시각 }
+      throttle: new WeakMap(),
+      // dedup: keyField 값 → 최초 관측 시각
+      dedup: new Map(),
+    };
+
     const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
     const eventQueue: Array<{ eventKey: string; payload?: Record<string, unknown> }> = [triggerEvent];
 
@@ -261,7 +269,7 @@ export class PipeRunner {
           data: event.payload ? { ...event.payload } : {},
         });
 
-        await this.runFlow(pipe.flow, pipe.pipeId, "flow", context, steps);
+        await this.runFlow(pipe.flow, pipe.pipeId, "flow", context, steps, runState);
 
         // produces → 이벤트 큐
         if (pipe.produces) {
@@ -321,6 +329,7 @@ export class PipeRunner {
     path: string,
     context: PipeContext,
     steps: ExecutedStep[],
+    runState?: RunState,
   ): Promise<StepResult> {
     if (context.cancellation.cancelled) {
       return { status: "error", error: { code: "CANCELLED", message: context.cancellation.reason ?? "cancelled", retryable: false } };
@@ -353,7 +362,7 @@ export class PipeRunner {
 
       case "sequence": {
         for (let i = 0; i < flow.steps.length; i++) {
-          const r = await this.runFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, context, steps);
+          const r = await this.runFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, context, steps, runState);
           if (r.status === "error") return r; // 즉시 중단, 에러 전파
         }
         return { status: "ok", output: context.previousOutput };
@@ -365,7 +374,7 @@ export class PipeRunner {
         for (let i = 0; i < flow.paths.length; i++) {
           // 마지막 경로는 default (else)
           if (i === flow.paths.length - 1 || evaluateCondition(condExpr, context)) {
-            return this.runFlow(flow.paths[i], pipeId, `${path}.paths[${i}]`, context.clone(), steps);
+            return this.runFlow(flow.paths[i], pipeId, `${path}.paths[${i}]`, context.clone(), steps, runState);
           }
         }
         return { status: "ok", output: null };
@@ -375,7 +384,7 @@ export class PipeRunner {
         const condExpr = parseCondition("_optional");
         // optional은 항상 실행 시도 (에러 시 무시)
         try {
-          return await this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+          return await this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
         } catch {
           return { status: "ok", output: context.previousOutput };
         }
@@ -384,7 +393,7 @@ export class PipeRunner {
       case "parallel": {
         const results = await Promise.all(
           flow.steps.map((s, i) =>
-            this.runFlow(s, pipeId, `${path}.steps[${i}]`, context.clone(), steps),
+            this.runFlow(s, pipeId, `${path}.steps[${i}]`, context.clone(), steps, runState),
           ),
         );
         const firstError = results.find(r => r.status === "error");
@@ -395,7 +404,7 @@ export class PipeRunner {
       case "race": {
         // 실제 race는 Promise.race를 써야 하지만, 순차 시뮬로 대체
         for (let i = 0; i < flow.steps.length; i++) {
-          const r = await this.runFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, context.clone(), steps);
+          const r = await this.runFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, context.clone(), steps, runState);
           if (r.status === "ok") return r; // 첫 성공이 승자
         }
         return { status: "error", error: { code: "ALL_FAILED", message: "race: all steps failed", retryable: false } };
@@ -403,13 +412,13 @@ export class PipeRunner {
 
       case "await": {
         // await는 조건 확인 후 then 실행
-        return this.runFlow(flow.then, pipeId, `${path}.then`, context, steps);
+        return this.runFlow(flow.then, pipeId, `${path}.then`, context, steps, runState);
       }
 
       case "retry": {
         let lastError: StepError | undefined;
         for (let attempt = 0; attempt < flow.maxAttempts; attempt++) {
-          const r = await this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+          const r = await this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
           if (r.status === "ok") return r;
           lastError = r.error;
           if (!r.error.retryable) return r;
@@ -419,15 +428,15 @@ export class PipeRunner {
       }
 
       case "fallback": {
-        const tryResult = await this.runFlow(flow.try, pipeId, `${path}.try`, context, steps);
+        const tryResult = await this.runFlow(flow.try, pipeId, `${path}.try`, context, steps, runState);
         if (tryResult.status === "ok") return tryResult;
-        return this.runFlow(flow.catch, pipeId, `${path}.catch`, context, steps);
+        return this.runFlow(flow.catch, pipeId, `${path}.catch`, context, steps, runState);
       }
 
       case "loop": {
         const max = flow.maxIterations ?? 100;
         for (let i = 0; i < max; i++) {
-          const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
+          const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
           if (r.status === "error") return r;
           const untilExpr = parseCondition(flow.until);
           if (evaluateCondition(untilExpr, context)) break;
@@ -436,9 +445,9 @@ export class PipeRunner {
       }
 
       case "compensate": {
-        const fwdResult = await this.runFlow(flow.forward, pipeId, `${path}.forward`, context, steps);
+        const fwdResult = await this.runFlow(flow.forward, pipeId, `${path}.forward`, context, steps, runState);
         if (fwdResult.status === "error") {
-          await this.runFlow(flow.compensate, pipeId, `${path}.compensate`, context, steps);
+          await this.runFlow(flow.compensate, pipeId, `${path}.compensate`, context, steps, runState);
           return fwdResult;
         }
         return fwdResult;
@@ -455,21 +464,21 @@ export class PipeRunner {
       }
 
       case "finally": {
-        const bodyResult = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
-        await this.runFlow(flow.cleanup, pipeId, `${path}.cleanup`, context, steps);
+        const bodyResult = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
+        await this.runFlow(flow.cleanup, pipeId, `${path}.cleanup`, context, steps, runState);
         return bodyResult; // body의 결과를 전파 (cleanup 결과 무시)
       }
 
       case "timeout": {
         // 단순 구현: body 실행 + duration은 기록만
-        const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
+        const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
         return r;
       }
 
       case "feedback": {
         const max = flow.maxIterations ?? 100;
         for (let i = 0; i < max; i++) {
-          const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
+          const r = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
           if (r.status === "error") return r;
           const untilExpr = parseCondition(flow.until);
           if (evaluateCondition(untilExpr, context)) break;
@@ -479,48 +488,99 @@ export class PipeRunner {
 
       case "tap": {
         // observe 실행 (에러 무시)
-        try { await this.runFlow(flow.observe, pipeId, `${path}.observe`, context.clone(), steps); } catch { /* 무시 */ }
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        try { await this.runFlow(flow.observe, pipeId, `${path}.observe`, context.clone(), steps, runState); } catch { /* 무시 */ }
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
       }
 
       case "filter": {
         const condExpr = parseCondition(flow.condition);
         if (evaluateCondition(condExpr, context)) {
-          return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+          return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
         }
         steps.push({ pipeId, flowPath: path, kind: "filter", input: null, output: null, status: "skipped", duration: 0, timestamp: now });
         return { status: "ok", output: null };
       }
 
       case "map":
-        return this.runFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, context, steps);
+        return this.runFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, context, steps, runState);
       case "reduce":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
       case "buffer":
-        return this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
+        return this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
       case "split":
-        return this.runFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, context, steps);
+        return this.runFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, context, steps, runState);
       case "enrich":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
       case "resequence":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
       case "window":
-        return this.runFlow(flow.body, pipeId, `${path}.body`, context, steps);
-      case "dedup":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        return this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
+
+      case "throttle": {
+        // 속도 제한 — interval 윈도우 내 rate 초과 시 skip
+        // flow 객체 참조를 키로 사용하여 같은 throttle 노드의 호출을 추적
+        if (runState) {
+          const nowMs = Date.now();
+          let entry = runState.throttle.get(flow);
+          if (!entry || (nowMs - entry.windowStart) >= flow.interval) {
+            // 새 윈도우 시작
+            entry = { count: 0, windowStart: nowMs };
+            runState.throttle.set(flow, entry);
+          }
+          entry.count++;
+          if (entry.count > flow.rate) {
+            // 속도 초과 → skip
+            steps.push({ pipeId, flowPath: path, kind: "throttle", input: null, output: null, status: "skipped", duration: 0, timestamp: now });
+            return { status: "ok", output: null };
+          }
+        }
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
+      }
+
+      case "debounce": {
+        // 디바운스 — wait ms 대기 후 실행 (시뮬레이션: 실제 대기)
+        await sleep(flow.wait);
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
+      }
+
+      case "dedup": {
+        // 중복 제거 — keyField 값 기준, TTL 내 이미 본 키는 skip
+        if (runState) {
+          const keyValue = context.get(flow.keyField);
+          const keyStr = String(keyValue ?? "");
+          const nowMs = Date.now();
+          const seenAt = runState.dedup.get(keyStr);
+          if (seenAt != null) {
+            // TTL 확인 — ttl 미지정이면 run 전체 동안 유효
+            const expired = flow.ttl != null && (nowMs - seenAt) >= flow.ttl;
+            if (!expired) {
+              // 중복 → skip
+              steps.push({ pipeId, flowPath: path, kind: "dedup", input: keyValue, output: null, status: "skipped", duration: 0, timestamp: now });
+              return { status: "ok", output: null };
+            }
+          }
+          runState.dedup.set(keyStr, nowMs);
+        }
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
+      }
+
       case "correlation":
-        return this.runFlow(flow.onMatch, pipeId, `${path}.onMatch`, context, steps);
+        return this.runFlow(flow.onMatch, pipeId, `${path}.onMatch`, context, steps, runState);
       case "circuit-breaker":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
-      case "throttle":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
-      case "debounce":
-        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps);
+        return this.runFlow(flow.step, pipeId, `${path}.step`, context, steps, runState);
 
       default:
         return { status: "ok", output: null };
     }
   }
+}
+
+/** run 단위 연산자 상태 */
+interface RunState {
+  /** throttle: flow 객체 참조 → { 호출 카운트, 윈도우 시작 시각 } */
+  throttle: WeakMap<object, { count: number; windowStart: number }>;
+  /** dedup: keyField 문자열 값 → 최초 관측 시각 (ms) */
+  dedup: Map<string, number>;
 }
 
 function sleep(ms: number): Promise<void> {
