@@ -399,7 +399,7 @@ describe("collectGraphEvents", () => {
     expect(events.find(e => e.eventKey === "order_validated" && e.role === "emit")?.pipeId).toBe("order");
   });
 
-  it("emit 없는 단순 그래프", () => {
+  it("emit 없는 단순 그래프 — trigger만 수집", () => {
     const graph: PipeGraph = {
       graphId: "g1", version: "v1",
       pipes: [{ pipeId: "p1", version: "v1", trigger: { eventKey: "start" }, flow: step() }],
@@ -409,5 +409,116 @@ describe("collectGraphEvents", () => {
     const events = collectGraphEvents(graph);
     expect(events).toHaveLength(1);
     expect(events[0]!.role).toBe("trigger");
+  });
+
+  it("중첩 emit — branch 내부 sequence 안의 emit", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{
+        pipeId: "p1", version: "v1",
+        trigger: { eventKey: "start" },
+        flow: {
+          kind: "branch", condition: "type",
+          paths: [
+            { kind: "sequence", steps: [step(), { kind: "emit", eventKey: "path_a" }] },
+            { kind: "emit", eventKey: "path_b" },
+          ],
+        },
+      }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
+    expect(emits).toHaveLength(2);
+    expect(emits.map(e => e.eventKey).sort()).toEqual(["path_a", "path_b"]);
+  });
+
+  it("finally 내부 emit", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{
+        pipeId: "p1", version: "v1",
+        trigger: { eventKey: "start" },
+        flow: {
+          kind: "finally",
+          body: step(),
+          cleanup: { kind: "emit", eventKey: "cleanup_done" },
+        },
+      }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
+    expect(emits).toHaveLength(1);
+    expect(emits[0]!.eventKey).toBe("cleanup_done");
+  });
+
+  it("compensate 내부 emit", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{
+        pipeId: "p1", version: "v1",
+        trigger: { eventKey: "start" },
+        flow: {
+          kind: "compensate",
+          forward: { kind: "emit", eventKey: "forward_ok" },
+          compensate: { kind: "emit", eventKey: "rollback" },
+        },
+      }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
+    expect(emits).toHaveLength(2);
+    expect(emits.map(e => e.eventKey).sort()).toEqual(["forward_ok", "rollback"]);
+  });
+
+  it("중복 emit — 같은 eventKey가 여러 경로에 존재하면 모두 수집", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{
+        pipeId: "p1", version: "v1",
+        trigger: { eventKey: "start" },
+        flow: {
+          kind: "branch", condition: "type",
+          paths: [
+            { kind: "emit", eventKey: "notify" },
+            { kind: "emit", eventKey: "notify" },
+          ],
+        },
+      }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
+    // 중복 제거 없이 모두 수집 (각 경로에서 독립적으로 emit 가능)
+    expect(emits).toHaveLength(2);
+  });
+
+  it("여러 파이프에서 이벤트 수집", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [
+        { pipeId: "p1", version: "v1", trigger: { eventKey: "e1" }, flow: step(), produces: ["e2"] },
+        { pipeId: "p2", version: "v1", trigger: { eventKey: "e2" }, flow: { kind: "emit", eventKey: "e3" } },
+        { pipeId: "p3", version: "v1", trigger: { eventKey: "e3" }, flow: step() },
+      ],
+      connections: [{ from: "p1", to: "p2", kind: "next" }, { from: "p2", to: "p3", kind: "next" }],
+      entryPipeId: "p1",
+    };
+    const events = collectGraphEvents(graph);
+    expect(events.filter(e => e.role === "trigger")).toHaveLength(3);
+    expect(events.filter(e => e.role === "produces")).toHaveLength(1);
+    expect(events.filter(e => e.role === "emit")).toHaveLength(1);
+    // pipeId 매핑 확인
+    expect(events.find(e => e.eventKey === "e2" && e.role === "produces")!.pipeId).toBe("p1");
+    expect(events.find(e => e.eventKey === "e3" && e.role === "emit")!.pipeId).toBe("p2");
+  });
+
+  it("빈 그래프 — 파이프 없음", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1", pipes: [], connections: [], entryPipeId: "",
+    };
+    expect(collectGraphEvents(graph)).toHaveLength(0);
   });
 });
