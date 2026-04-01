@@ -18,7 +18,7 @@ def:
 
 ## 목적 ^purpose
 
-PipeFlow 31종 흐름 제어 타입, PipeSpec(단일 노드), PipeGraph(노드 연결),
+PipeFlow 29종 흐름 제어 타입, PipeSpec(단일 노드), PipeGraph(노드 연결),
 ConnectionKind 8종, Constraint 타입을 정의한다.
 
 ## 관련 소스
@@ -27,7 +27,7 @@ ConnectionKind 8종, Constraint 타입을 정의한다.
 
 ## 구성 ^overview
 
-PipeFlow 31종 (6카테고리):
+PipeFlow 29종 (6카테고리):
 - 기본(2): step, sequence
 - 분기(2): branch, optional
 - 동시성(3): parallel, race, await

@@ -100,7 +100,7 @@ def:
 - 후속 설계 대상
 
 **핵심 카탈로그 (구현 완료):**
-- **PipeFlow 31종 카탈로그**: `pipe-impl/pipe-flow-catalog.spec.md` — 각 흐름 제어의 표현·정의·검증 방식
+- **PipeFlow 29종 카탈로그**: `pipe-impl/pipe-flow-catalog.spec.md` — 각 흐름 제어의 표현·정의·검증 방식
 - **ConnectionKind 8종 카탈로그**: `pipe-impl/pipe-connection-catalog.spec.md` — 각 연결 유형의 표현·정의·검증 방식
 - **데이터 계약**: `meta-semantic-data-contract.spec.md` — 스키마+관계+계보+버전
 - **이벤트 표준**: `meta-semantic-event-standard.spec.md` — CloudEvents 호환+매니페스트

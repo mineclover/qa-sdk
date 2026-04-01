@@ -36,19 +36,19 @@ def:
 
 ## 목적 ^purpose
 
-PipeFlow 31종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노드 연결),
+PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노드 연결),
 경로 계산, 검증, 직렬화, 저장, 분석, 시뮬레이션을 구현한다.
 
 ## 방법 ^method
 
-**pipe-types**가 PipeFlow 31종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입을 정의하고,
+**pipe-types**가 PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입을 정의하고,
 **pipe-path**가 단일 파이프 + 그래프 전체 경로 수를 계산하고,
 **pipe-validate**가 구조 무결성을 검증하고,
 **pipe-serialize**가 JSON 직렬화/역직렬화하고,
 **pipe-store**가 CRUD 저장소를 제공하고,
 **pipe-analyze**가 복잡도·병목·커버리지를 분석하고,
 **pipe-simulate**가 dry-run 시뮬레이션을 실행하고,
-**pipe-flow-catalog**가 31종 각각의 표현·정의·검증 방식을 문서화한다.
+**pipe-flow-catalog**가 29종 각각의 표현·정의·검증 방식을 문서화한다.
 
 ## 구성 ^overview
 
@@ -76,7 +76,7 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 ```
 
 > 타입 상세: `core/src/types/pipe-spec.ts` 참조
-> 31종 흐름 제어 상세: `pipe-flow-catalog` 참조
+> 29종 흐름 제어 상세: `pipe-flow-catalog` 참조
 
 ## ConnectionKind 8종
 
@@ -99,7 +99,7 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 |---|---|
 | `scenario_id` | `graphId` |
 | `steps[]` (flat + next[]) | `pipes[]` (노드) + `connections[]` (엣지) |
-| step kind 3종 | ConnectionKind 8종 + PipeFlow 31종 |
+| step kind 3종 | ConnectionKind 8종 + PipeFlow 29종 |
 
 > v2 마이그레이션 계획: `meta-semantic-v2-migration` 참조
 
