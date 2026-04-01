@@ -98,6 +98,10 @@ export { ASPECT_TO_SCOPE } from "./compat.js";
 export type { ScopeVersionDef, ScopeRegistryEntry, ScopeSegment, ScopeAddress, DecodedScopeAddress } from "./scope-registry.js";
 export { ScopeRegistry } from "./scope-registry.js";
 
+// ─── 버전 매니페스트 ─────────────────────────────────────
+export type { PrefixLifecycleState, PrefixVersionRecord, ManifestLifecycleState, ServiceVersionManifest, GuardResult } from "./version-manifest.js";
+export { ManifestRegistry } from "./version-manifest.js";
+
 // ─── 카탈로그 ───────────────────────────────────────────
 export type { DimRef, PrefixVersionDef, PrefixMeta, PrefixDef, DefinitionCatalog } from "./catalog.js";
 export { DEFINITION_CATALOG } from "./catalog.js";
