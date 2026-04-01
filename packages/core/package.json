@@ -24,7 +24,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "pino": "workspace:@qa-sdk/pino@^9.9.4",
+    "pino": "workspace:@qa-sdk/pino@*",
     "ulid": "^2.3.0",
     "zod": "^3.24.2"
   },
