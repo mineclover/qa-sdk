@@ -292,8 +292,27 @@ export type { ValidationIssue } from "./pipe-validate.js";
 export { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
 export type { PipeGraphStore, PipeSpecStore } from "./pipe-store.js";
 export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
-export { analyzePipeComplexity, findBottlenecks, analyzeCoverage } from "./pipe-analyze.js";
+export { analyzePipeComplexity, findBottlenecks, analyzeCoverage, getChildFlows } from "./pipe-analyze.js";
 export type { PipeComplexity, BottleneckReport, CoverageReport } from "./pipe-analyze.js";
+
+// ── Pipe Folding ──────────────────────────────────────
+export {
+  computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions,
+} from "./pipe-fold.js";
+export type {
+  FoldLevel, FoldDataRef, FoldedContract, FoldedGraph, FoldRegion,
+} from "./pipe-fold.js";
+export { normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
+
+// ── Pipe Interpretation ──────────────────────────────────
+export {
+  extractPipeConcerns, propagatePipeConcerns, analyzePipeImpact, classifyPipeRole,
+  PIPE_PROPAGATION_RULES,
+} from "./pipe-interpret.js";
+export type {
+  PipeConcern, InheritedPipeConcern, PipeConcernEntry, PipeConcernMap,
+  ImpactedPipe, PipeImpactAnalysis, PipeRole,
+} from "./pipe-interpret.js";
 export { simulate } from "./pipe-simulate.js";
 
 // ── Data Contract ───────────────────────────────────────
