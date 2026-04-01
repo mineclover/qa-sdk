@@ -312,12 +312,18 @@ PipeSpec 경로:
 | PipeSpec CRUD | ScenarioSpecStore와 동일 패턴 |
 | 패싯 흐름 + 흐름 제어 검증 | PipeSpec 유효성 검증 |
 
-### Phase 3: 매칭 엔진 전환
+### Phase 3: 런타임 실행 + 매칭 엔진
+
+> 상세: `meta-semantic-execution-semantics` 참조
 
 | 항목 | 설명 |
 |------|------|
-| PathMatcher 구현 | 경로 모델 기반 이벤트 매칭 |
-| VerdictReport v2 | scope×aspect 검증 전략 기반 판정 |
+| ConditionEvaluator | 조건 표현식 평가 엔진 |
+| ErrorPropagation | step 실패 → 상위 전파 규칙 (에러 계층) |
+| CancellationToken | race/timeout 패자 취소 (협력적) |
+| PipeContext | step 간 데이터 전달 + 필드 조회 |
+| PipeRunner | PipeGraph 실제 실행 런타임 |
+| PathMatcher | 실행 결과 ↔ PipeSpec 매칭 (VerdictReport v2) |
 | 기존 graph-matcher 대체 | 점진 전환 (feature flag) |
 
 ### Phase 4: 표준 호환 + 통합

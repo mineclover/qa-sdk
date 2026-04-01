@@ -29,6 +29,8 @@ def:
       type: contains
     - target: meta-semantic-data-contract
       type: contains
+    - target: meta-semantic-execution-semantics
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러
