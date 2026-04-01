@@ -80,12 +80,15 @@ def:
 기존 ScenarioSpec의 step kinds를 패싯 흐름 위에서 표현한다.
 흐름 제어 자체는 유지하되, 기반이 "이벤트 매칭"에서 "데이터 흐름"으로 바뀐다.
 
-| 기존 step kind | 파이프에서의 표현 | 의미 |
-|---|---|---|
-| `sequence` | 패싯 A → 패싯 B | 순차 도달 (곱). A 완료 후 B 실행 |
-| `branch` | 패싯 A → 패싯 B \| 패싯 C | 조건부 (합). 조건에 따라 B 또는 C |
-| `optional` | 패싯 A → (패싯 B)? | 선택적. 있으면 매칭, 없어도 통과 |
-| `step` | 개별 패싯 | 최소 실행 단위 |
+| 흐름 제어 | 표기 | 의미 | 분기 경로 계산 |
+|---|---|---|---|
+| `step` | A | 개별 패싯 실행 | 1 |
+| `sequence` | A → B | 순차. A 완료 후 B | 곱 (A × B) |
+| `branch` | A → B \| C | 조건부 분기. B 또는 C | 합 (A×B + A×C) |
+| `optional` | A → (B)? | 선택적. 있으면 매칭, 없어도 통과 | +1 (B 있는 경로 + 없는 경로) |
+| `parallel` | A + B | 동시 실행, 전부 완료 대기 | 곱 (A × B) |
+| `race` | A \|\| B | 동시 실행, 먼저 완료된 것만 | 합 (A + B) |
+| `await` | wait(조건) → B | 조건 충족까지 대기 후 B 실행 | B의 경로 수 |
 
 ### PipeSpec 구조 (안)
 
@@ -112,12 +115,15 @@ interface PipeSpec {
   manifestVersion?: string;
 }
 
-/** 패싯 흐름 노드 */
+/** 패싯 흐름 노드 — 7종 흐름 제어 */
 type PipeFlow =
   | PipeStep        // 개별 패싯 실행
   | PipeSequence    // 순차 (A → B)
-  | PipeBranch      // 조건부 (A → B | C)
-  | PipeOptional;   // 선택적 (A → B?)
+  | PipeBranch      // 조건부 분기 (A → B | C)
+  | PipeOptional    // 선택적 (A → B?)
+  | PipeParallel    // 동시 실행 (A + B, 전부 완료 대기)
+  | PipeRace        // 경쟁 실행 (A | B, 먼저 완료된 것만)
+  | PipeAwait;      // 대기 후 실행 (조건 충족까지 대기 → B)
 
 interface PipeStep {
   kind: "step";
@@ -129,18 +135,35 @@ interface PipeStep {
 
 interface PipeSequence {
   kind: "sequence";
-  steps: PipeFlow[];      // 순차 실행
+  steps: PipeFlow[];      // 순차 실행: steps[0] → steps[1] → ...
 }
 
 interface PipeBranch {
   kind: "branch";
   condition: string;      // 분기 조건
-  paths: PipeFlow[];      // 각 분기 경로
+  paths: PipeFlow[];      // 조건에 따라 하나만 실행
 }
 
 interface PipeOptional {
   kind: "optional";
   step: PipeFlow;         // 있으면 매칭, 없어도 통과
+}
+
+interface PipeParallel {
+  kind: "parallel";
+  steps: PipeFlow[];      // 동시 실행, 전부 완료 대기 (Promise.all)
+}
+
+interface PipeRace {
+  kind: "race";
+  steps: PipeFlow[];      // 동시 실행, 먼저 완료된 것만 (Promise.race)
+}
+
+interface PipeAwait {
+  kind: "await";
+  condition: string;      // 대기 조건 (이벤트 발생, 타임아웃, 외부 신호)
+  timeout?: number;       // 대기 제한 시간
+  then: PipeFlow;         // 조건 충족 후 실행
 }
 ```
 
@@ -244,16 +267,54 @@ PipeSpec 경로:
 
 ---
 
-## 5. 하위 호환 전략
+## 5. 하위 호환 전략 — 제거 용이 설계
 
-| 단계 | 전략 |
-|------|------|
-| Phase 2 | ScenarioSpec과 PipeSpec 병행. 변환기로 상호 전환 |
-| Phase 3 | graph-matcher와 PathMatcher 병행. feature flag 전환 |
-| Phase 4 | ScenarioSpec deprecated. PipeSpec만 사용 |
+### 원칙: compat 분리 패턴
 
-기존 시나리오 데이터는 변환기를 통해 PipeSpec으로 마이그레이션.
-변환 불가능한 경우(복잡한 커스텀 매칭)는 수동 마이그레이션.
+deprecated 코드는 `compat.*` 파일로 분리한다.
+새 코드는 compat를 import하지 않는다.
+제거 시 compat 파일만 삭제하면 된다.
+
+```
+v2 코드 (새 체계):
+  pipe-spec.ts          → PipeSpec, PipeFlow
+  path-matcher.ts       → PathMatcher
+  scope-registry.ts     → ScopeRegistry
+  version-manifest.ts   → ManifestRegistry
+
+compat (제거 대상):
+  compat.ts             → ASPECT_TO_SCOPE (이미 분리됨)
+  compat-scenario.ts    → ScenarioSpec ↔ PipeSpec 변환기
+  compat-graph.ts       → SpecGraph ↔ PathModel 변환기
+  compat-verdict.ts     → VerdictReport v1 ↔ v2 변환기
+```
+
+### 제거 체크리스트
+
+```
+Phase 2 완료 시:
+  □ 모든 신규 시나리오가 PipeSpec으로 작성됨
+  □ compat-scenario.ts 외에 ScenarioSpec import 없음
+  → compat-scenario.ts 제거 가능
+
+Phase 3 완료 시:
+  □ PathMatcher가 graph-matcher의 모든 케이스 통과
+  □ compat-graph.ts 외에 SpecGraph import 없음
+  → compat-graph.ts 제거 가능
+
+Phase 4 완료 시:
+  □ CloudEvents 변환이 모든 외부 인터페이스에 적용됨
+  □ 모든 compat 파일 import 0건
+  → compat 전체 삭제
+```
+
+### 병행 기간
+
+| 단계 | v1 | v2 | 전환 |
+|------|:--:|:--:|------|
+| Phase 2 | ScenarioSpec 읽기 | PipeSpec 읽기+쓰기 | 변환기로 v1→v2 자동 전환 |
+| Phase 3 | graph-matcher 읽기 | PathMatcher 읽기+쓰기 | feature flag |
+| Phase 4 | — | 전체 v2 | compat 삭제 |
 
 ---
 
