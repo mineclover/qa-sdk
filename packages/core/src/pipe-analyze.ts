@@ -225,7 +225,7 @@ function collectTotalTimeout(flow: PipeFlow): number {
   return total;
 }
 
-function getChildFlows(flow: PipeFlow): PipeFlow[] {
+export function getChildFlows(flow: PipeFlow): PipeFlow[] {
   switch (flow.kind) {
     case "step": case "emit": return [];
     case "sequence": case "parallel": case "race": return flow.steps;

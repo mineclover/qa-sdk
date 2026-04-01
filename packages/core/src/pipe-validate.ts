@@ -77,6 +77,10 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       if (flow.maxAttempts <= 0) {
         issues.push({ path, severity: "error", message: "retry.maxAttempts ≤ 0" });
       }
+      // backoff 음수 검증
+      if (flow.backoff != null && flow.backoff < 0) {
+        issues.push({ path: `${path}.backoff`, severity: "warning", message: "retry.backoff < 0 (음수 백오프)" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
@@ -110,6 +114,8 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       if (flow.onTimeout) validateFlow(flow.onTimeout, `${path}.onTimeout`, issues, depth + 1);
       break;
 
+    // ── 안정화 숫자 범위 검증 (duration은 위에서 error로 처리, 아래는 warning) ──
+
     case "feedback":
       if (flow.maxIterations == null) {
         issues.push({ path, severity: "warning", message: "feedback.maxIterations 미설정 (무한 루프 위험)" });
@@ -118,6 +124,10 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       break;
 
     case "map":
+      // collection 빈 문자열 검증
+      if (flow.collection === "") {
+        issues.push({ path: `${path}.collection`, severity: "warning", message: "map.collection 빈 문자열" });
+      }
       validateFlow(flow.itemFlow, `${path}.itemFlow`, issues, depth + 1);
       break;
 
@@ -128,6 +138,14 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
     case "buffer":
       if (flow.count == null && flow.duration == null) {
         issues.push({ path, severity: "warning", message: "buffer: count와 duration 모두 미설정" });
+      }
+      // count 설정 시 양수 검증
+      if (flow.count != null && flow.count <= 0) {
+        issues.push({ path: `${path}.count`, severity: "warning", message: "buffer.count ≤ 0" });
+      }
+      // duration 설정 시 양수 검증
+      if (flow.duration != null && flow.duration <= 0) {
+        issues.push({ path: `${path}.duration`, severity: "warning", message: "buffer.duration ≤ 0" });
       }
       validateFlow(flow.body, `${path}.body`, issues, depth + 1);
       break;
@@ -140,22 +158,45 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       if (flow.failureThreshold <= 0) {
         issues.push({ path, severity: "error", message: "circuit-breaker.failureThreshold ≤ 0" });
       }
+      // cooldown 양수 검증
+      if (flow.cooldown <= 0) {
+        issues.push({ path: `${path}.cooldown`, severity: "warning", message: "circuit-breaker.cooldown ≤ 0" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
     case "throttle":
+      // rate, interval 양수 검증
+      if (flow.rate <= 0) {
+        issues.push({ path: `${path}.rate`, severity: "warning", message: "throttle.rate ≤ 0" });
+      }
+      if (flow.interval <= 0) {
+        issues.push({ path: `${path}.interval`, severity: "warning", message: "throttle.interval ≤ 0" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
     case "debounce":
+      // wait 양수 검증
+      if (flow.wait <= 0) {
+        issues.push({ path: `${path}.wait`, severity: "warning", message: "debounce.wait ≤ 0" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
     case "split":
+      // splitBy 빈 문자열 검증
+      if (flow.splitBy === "") {
+        issues.push({ path: `${path}.splitBy`, severity: "warning", message: "split.splitBy 빈 문자열" });
+      }
       validateFlow(flow.itemFlow, `${path}.itemFlow`, issues, depth + 1);
       break;
 
     case "enrich":
+      // source 빈 문자열 검증
+      if (flow.source === "") {
+        issues.push({ path: `${path}.source`, severity: "warning", message: "enrich.source 빈 문자열" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
@@ -169,14 +210,34 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       break;
 
     case "window":
+      // size 양수 검증
+      if (flow.size <= 0) {
+        issues.push({ path: `${path}.size`, severity: "warning", message: "window.size ≤ 0" });
+      }
+      // sliding 윈도우일 때 slide 양수 검증
+      if (flow.type === "sliding" && flow.slide != null && flow.slide <= 0) {
+        issues.push({ path: `${path}.slide`, severity: "warning", message: "window.slide ≤ 0 (sliding 윈도우)" });
+      }
+      // session 윈도우일 때 gap 양수 검증
+      if (flow.type === "session" && flow.gap != null && flow.gap <= 0) {
+        issues.push({ path: `${path}.gap`, severity: "warning", message: "window.gap ≤ 0 (session 윈도우)" });
+      }
       validateFlow(flow.body, `${path}.body`, issues, depth + 1);
       break;
 
     case "dedup":
+      // ttl 설정 시 양수 검증
+      if (flow.ttl != null && flow.ttl <= 0) {
+        issues.push({ path: `${path}.ttl`, severity: "warning", message: "dedup.ttl ≤ 0" });
+      }
       validateFlow(flow.step, `${path}.step`, issues, depth + 1);
       break;
 
     case "correlation":
+      // 요청/응답 이벤트 동일 시 데드락 위험
+      if (flow.requestEvent === flow.responseEvent) {
+        issues.push({ path, severity: "warning", message: "correlation: requestEvent와 responseEvent 동일 (데드락 위험)" });
+      }
       validateFlow(flow.onMatch, `${path}.onMatch`, issues, depth + 1);
       if (flow.onTimeout) validateFlow(flow.onTimeout, `${path}.onTimeout`, issues, depth + 1);
       break;
@@ -220,6 +281,14 @@ export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
     const conn = graph.connections[i];
     const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
     const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+
+    // 빈 배열 검증
+    if (froms.length === 0) {
+      issues.push({ path: `connections[${i}].from`, severity: "warning", message: "from 배열이 비어있음" });
+    }
+    if (tos.length === 0) {
+      issues.push({ path: `connections[${i}].to`, severity: "warning", message: "to 배열이 비어있음" });
+    }
 
     for (const f of froms) {
       if (!pipeIds.has(f)) {
