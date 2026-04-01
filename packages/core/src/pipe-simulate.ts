@@ -109,6 +109,9 @@ export function simulate(config: SimulationConfig): SimulationResult {
     maxSteps = 1000,
   } = config;
 
+  // filterResolver가 명시적으로 제공되었는지 여부 (dedup 동작 분기에 사용)
+  const hasExplicitFilterResolver = config.filterResolver !== undefined;
+
   const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
   const steps: SimStep[] = [];
   const pipeTrace: string[] = [];
@@ -119,6 +122,9 @@ export function simulate(config: SimulationConfig): SimulationResult {
 
   // 이벤트 큐: 트리거 대기 이벤트
   const eventQueue: SimEvent[] = [initialEvent];
+
+  // dedup 상태 추적: 시뮬레이션 실행 범위 내에서 seen 키 관리
+  const dedupSeen = new Set<string>();
 
   while (eventQueue.length > 0) {
     if (steps.length >= maxSteps) {
@@ -237,11 +243,18 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
       }
 
-      case "loop":
+      case "loop": {
         steps.push({ pipeId, flowPath: path, kind: "loop", timestamp: clock, status: "executed" });
-        // 1회만 실행 (시뮬레이션에서 무한 루프 방지)
-        walkFlow(flow.body, pipeId, `${path}.body`, ctx);
+        const loopMax = flow.maxIterations ?? 10;
+        for (let iter = 0; iter < loopMax; iter++) {
+          if (steps.length >= maxSteps) break;
+          walkFlow(flow.body, pipeId, `${path}.body[${iter}]`, ctx);
+          // branchResolver로 until 조건 평가: truthy(≠0) → 루프 종료
+          const done = branchResolver(flow.until, ctx);
+          if (done) break;
+        }
         break;
+      }
 
       case "compensate":
         steps.push({ pipeId, flowPath: path, kind: "compensate", timestamp: clock, status: "executed" });
@@ -291,10 +304,13 @@ export function simulate(config: SimulationConfig): SimulationResult {
 
       case "filter": {
         const pass = filterResolver(flow.condition, ctx);
+        // 통과/차단 모두 기록: 통과 시 executed, 차단 시 filtered
+        steps.push({
+          pipeId, flowPath: path, kind: "filter", timestamp: clock,
+          status: pass ? "executed" : "filtered",
+        });
         if (pass) {
           walkFlow(flow.step, pipeId, `${path}.step`, ctx);
-        } else {
-          steps.push({ pipeId, flowPath: path, kind: "filter", timestamp: clock, status: "filtered" });
         }
         break;
       }
@@ -327,7 +343,12 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
 
       case "tap":
-        walkFlow(flow.observe, pipeId, `${path}.observe`, ctx);
+        // observe 에러가 메인 흐름에 전파되지 않도록 격리
+        try {
+          walkFlow(flow.observe, pipeId, `${path}.observe`, ctx);
+        } catch {
+          // observe 실패는 무시 — 메인 step은 계속 실행
+        }
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
@@ -342,7 +363,16 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
 
       case "dedup": {
-        const pass = filterResolver(`dedup:${flow.keyField}`, ctx);
+        // filterResolver가 명시 제공 시 resolver 기반, 미제공 시 seen-key 추적
+        let pass: boolean;
+        if (hasExplicitFilterResolver) {
+          pass = filterResolver(`dedup:${flow.keyField}`, ctx);
+        } else {
+          const dedupKey = flow.keyField;
+          pass = !dedupSeen.has(dedupKey);
+          dedupSeen.add(dedupKey);
+        }
+
         if (pass) {
           walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         } else {

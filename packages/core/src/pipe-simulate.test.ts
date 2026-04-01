@@ -283,6 +283,516 @@ describe("simulate", () => {
     });
   });
 
+  describe("연산자 동작 안정화", () => {
+    // ── loop 반복 ──────────────────────────────────────
+
+    it("loop — branchResolver가 0 반환 시 maxIterations까지 반복", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "loop", body: step("반복"), until: "done", maxIterations: 3 },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      // branchResolver 기본(0) → until 조건 미충족 → 3회 반복
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      // loop 스텝 1 + body 스텝 3 = 4
+      const bodySteps = result.steps.filter(s => s.kind === "step");
+      expect(bodySteps).toHaveLength(3);
+      expect(result.facetTrace).toEqual(["반복", "반복", "반복"]);
+    });
+
+    it("loop — branchResolver가 truthy 반환 시 조기 종료", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "loop", body: step("반복"), until: "done", maxIterations: 10 },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      let callCount = 0;
+      const result = simulate({
+        graph,
+        initialEvent: { eventKey: "start" },
+        // 2회 실행 후 종료 (첫 번째, 두 번째 호출에서 0, 세 번째에서 1)
+        branchResolver: (condition) => {
+          if (condition === "done") {
+            callCount++;
+            return callCount >= 2 ? 1 : 0;
+          }
+          return 0;
+        },
+      });
+
+      const bodySteps = result.steps.filter(s => s.kind === "step");
+      expect(bodySteps).toHaveLength(2);
+    });
+
+    it("loop — maxIterations 기본값 10", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "loop", body: step("반복"), until: "never" },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      const bodySteps = result.steps.filter(s => s.kind === "step");
+      expect(bodySteps).toHaveLength(10);
+    });
+
+    // ── tap 에러 격리 ──────────────────────────────────
+
+    it("tap — observe 에러가 메인 step에 전파되지 않음", () => {
+      // observe가 실행되고 step도 실행됨 (정상 경로)
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "tap",
+            observe: step("관측"),
+            step: step("메인"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.facetTrace).toContain("관측");
+      expect(result.facetTrace).toContain("메인");
+      expect(result.status).toBe("complete");
+    });
+
+    it("tap — observe/step 모두 실행됨", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "tap",
+            observe: step("관측"),
+            step: step("메인"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.facetTrace).toEqual(["관측", "메인"]);
+      expect(result.totalSteps).toBe(2);
+    });
+
+    // ── dedup 중복 제거 ────────────────────────────────
+
+    it("dedup — 첫 번째는 통과, 동일 키 두 번째는 filtered", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "sequence",
+            steps: [
+              { kind: "dedup", keyField: "orderId", step: step("처리1") },
+              { kind: "dedup", keyField: "orderId", step: step("처리2") },
+            ],
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      // 첫 번째 dedup: 통과 → step 실행
+      expect(result.facetTrace).toContain("처리1");
+      // 두 번째 dedup: 이미 본 키 → filtered
+      const dedupFiltered = result.steps.filter(s => s.kind === "dedup" && s.status === "filtered");
+      expect(dedupFiltered).toHaveLength(1);
+      expect(result.facetTrace).not.toContain("처리2");
+    });
+
+    it("dedup — 서로 다른 키는 모두 통과", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "sequence",
+            steps: [
+              { kind: "dedup", keyField: "orderId", step: step("처리A") },
+              { kind: "dedup", keyField: "userId", step: step("처리B") },
+            ],
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.facetTrace).toContain("처리A");
+      expect(result.facetTrace).toContain("처리B");
+    });
+
+    // ── filter 기록 ────────────────────────────────────
+
+    it("filter — 통과 시 executed 스텝 기록 + 내부 step 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "filter", condition: "valid", step: step("검증") },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      const filterStep = result.steps.find(s => s.kind === "filter");
+      expect(filterStep).toBeDefined();
+      expect(filterStep!.status).toBe("executed");
+      expect(result.facetTrace).toContain("검증");
+    });
+
+    it("filter — 차단 시 filtered 스텝 기록, 내부 step 미실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "filter", condition: "valid", step: step("검증") },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({
+        graph,
+        initialEvent: { eventKey: "start" },
+        filterResolver: () => false,
+      });
+      const filterStep = result.steps.find(s => s.kind === "filter");
+      expect(filterStep).toBeDefined();
+      expect(filterStep!.status).toBe("filtered");
+      expect(result.facetTrace).not.toContain("검증");
+    });
+
+    // ── parallel ───────────────────────────────────────
+
+    it("parallel — 모든 병렬 step 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "parallel",
+            steps: [step("A"), step("B"), step("C")],
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("parallel");
+      expect(result.facetTrace).toEqual(["A", "B", "C"]);
+    });
+
+    // ── race ───────────────────────────────────────────
+
+    it("race — raceResolver가 선택한 인덱스만 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "race",
+            steps: [step("느림"), step("빠름"), step("중간")],
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({
+        graph,
+        initialEvent: { eventKey: "start" },
+        raceResolver: () => 1,
+      });
+      expect(result.facetTrace).toEqual(["빠름"]);
+    });
+
+    it("race — 기본 raceResolver는 첫 번째(0) 선택", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "race",
+            steps: [step("첫번째"), step("두번째")],
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.facetTrace).toEqual(["첫번째"]);
+    });
+
+    // ── retry ──────────────────────────────────────────
+
+    it("retry — 성공 경로 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "retry", step: step("시도"), maxAttempts: 3 },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("retry");
+      expect(result.facetTrace).toContain("시도");
+    });
+
+    // ── fallback ───────────────────────────────────────
+
+    it("fallback — 성공 시 try 경로", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "fallback",
+            try: step("주경로"),
+            catch: step("대체경로"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.facetTrace).toEqual(["주경로"]);
+    });
+
+    it("fallback — 실패 시 catch 경로", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "fallback",
+            try: step("주경로"),
+            catch: step("대체경로"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({
+        graph,
+        initialEvent: { eventKey: "start" },
+        failureResolver: () => false,
+      });
+      expect(result.facetTrace).toEqual(["대체경로"]);
+    });
+
+    // ── compensate ─────────────────────────────────────
+
+    it("compensate — forward 경로만 실행 (정상 시)", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "compensate",
+            forward: step("전진"),
+            compensate: step("보상"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("compensate");
+      expect(result.facetTrace).toEqual(["전진"]);
+    });
+
+    // ── map ────────────────────────────────────────────
+
+    it("map — itemFlow 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "map", collection: "items", itemFlow: step("변환") },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("map");
+      expect(result.facetTrace).toContain("변환");
+    });
+
+    // ── reduce ─────────────────────────────────────────
+
+    it("reduce — step 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "reduce", step: step("집계"), initial: "0", accumulator: "sum" },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("reduce");
+      expect(result.facetTrace).toContain("집계");
+    });
+
+    // ── split ──────────────────────────────────────────
+
+    it("split — itemFlow 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "split", splitBy: "type", itemFlow: step("분할처리") },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("split");
+      expect(result.facetTrace).toContain("분할처리");
+    });
+
+    // ── enrich ─────────────────────────────────────────
+
+    it("enrich — step 실행 + timeout 시간 경과", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "enrich", source: "db", mergeField: "user", step: step("보강"), timeout: 100 },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start", timestamp: 0 } });
+      expect(result.steps[0].kind).toBe("enrich");
+      expect(result.facetTrace).toContain("보강");
+      expect(result.totalTime).toBeGreaterThanOrEqual(100);
+    });
+
+    // ── throttle ───────────────────────────────────────
+
+    it("throttle — step 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: { kind: "throttle", rate: 10, interval: 1000, step: step("제한") },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("throttle");
+      expect(result.facetTrace).toContain("제한");
+    });
+
+    // ── circuit-breaker ────────────────────────────────
+
+    it("circuit-breaker — 정상 시 step 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "circuit-breaker",
+            step: step("보호대상"),
+            failureThreshold: 5, cooldown: 3000,
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("circuit-breaker");
+      expect(result.facetTrace).toContain("보호대상");
+    });
+
+    // ── correlation ────────────────────────────────────
+
+    it("correlation — onMatch 실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "correlation",
+            requestEvent: "req", responseEvent: "res",
+            correlationKey: "txId",
+            onMatch: step("매칭"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("correlation");
+      expect(result.facetTrace).toContain("매칭");
+    });
+  });
+
   describe("실전 시나리오", () => {
     it("주문 처리: 접수 → 결제+재고 → 알림", () => {
       const graph: PipeGraph = {
