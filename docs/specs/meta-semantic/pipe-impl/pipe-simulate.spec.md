@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-pipe-impl
@@ -29,7 +29,7 @@ PipeGraph를 가상 실행(dry-run)하여 어떤 경로가 실행되는지,
 ## 관련 소스
 
 - `packages/core/src/pipe-simulate.ts` — simulate()
-- `packages/core/src/pipe-simulate.test.ts` — 15 테스트
+- `packages/core/src/pipe-simulate.test.ts` — 38 테스트
 
 ## API
 
@@ -68,6 +68,15 @@ simulate(config: SimulationConfig): SimulationResult
 - 무한 루프: maxSteps로 방지, status = "max-steps-reached"
 - finally: body + cleanup 모두 실행
 - tap: observe + step 모두 실행 (관측은 흐름에 영향 없음)
+
+### 연산자 동작 안정화
+
+| 연산자 | 동작 | 비고 |
+|--------|------|------|
+| loop | maxIterations까지 body 반복, until 조건 체크 | until 조건 만족 시 조기 종료 |
+| tap | observe 에러 격리 (try/catch), step은 항상 실행 | 관측 실패가 흐름을 차단하지 않음 |
+| dedup | Set으로 keyField 값 추적, 중복 시 skip | 첫 등장만 통과 |
+| filter | 조건 false 시 "filtered" step 기록 | filterResolver로 판정 주입 |
 
 ## 검증
 

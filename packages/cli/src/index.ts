@@ -130,6 +130,7 @@ import {
   serviceAppShow,
 } from './commands/service.js';
 import { cliDef } from './commands/def.js';
+import { prefixStamp, prefixDrift, prefixFind, prefixMigrate, prefixImpact } from './commands/prefix-stamp.js';
 import {
   reviewMark,
   reviewStatus,
@@ -420,6 +421,7 @@ export async function main(argv = process.argv.slice(2)) {
     catalogPath ||
     sub.name.startsWith('dkg') ||
     sub.name.startsWith('catalog') ||
+    sub.name.startsWith('prefix') ||
     (sub.name === 'codegen' && !hasRegistryFlag) ||
     DX_COMMANDS.has(sub.name);
   if (needsCatalog) {
@@ -644,6 +646,47 @@ export async function main(argv = process.argv.slice(2)) {
       return;
     case 'dkg service':
       dkgService(sub.rest[0]);
+      return;
+    case 'prefix stamp': {
+      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+      const psServiceIdx = sub.rest.indexOf('--service');
+      prefixStamp(loadedCatalog, {
+        update: sub.rest.includes('--update'),
+        dryRun: sub.rest.includes('--dry-run'),
+        service: psServiceIdx >= 0 ? sub.rest[psServiceIdx + 1] : undefined,
+        paths: sub.rest.filter(a => !a.startsWith('--') && (psServiceIdx < 0 || sub.rest.indexOf(a) !== psServiceIdx + 1)),
+      });
+      return;
+    }
+    case 'prefix drift':
+      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+      prefixDrift(loadedCatalog, sub.rest.filter(a => !a.startsWith('--')));
+      return;
+    case 'prefix find': {
+      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+      const pfDimIdx = sub.rest.indexOf('--dim');
+      const pfVerIdx = sub.rest.indexOf('--version');
+      prefixFind(loadedCatalog, sub.rest[0]?.startsWith('--') ? undefined : sub.rest[0], {
+        dim: pfDimIdx >= 0 ? sub.rest[pfDimIdx + 1] : undefined,
+        version: pfVerIdx >= 0 ? sub.rest[pfVerIdx + 1] : undefined,
+        summary: sub.rest.includes('--summary'),
+      });
+      return;
+    }
+    case 'prefix migrate': {
+      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+      const [pmPrefix, pmFrom, pmTo] = sub.rest.filter(a => !a.startsWith('--'));
+      if (!pmPrefix || !pmFrom || !pmTo) {
+        console.error('Usage: qa-sdk prefix migrate <prefixId> <fromVersion> <toVersion> [--dry-run]');
+        return;
+      }
+      prefixMigrate(loadedCatalog, pmPrefix, pmFrom, pmTo, { dryRun: sub.rest.includes('--dry-run') });
+      return;
+    }
+    case 'prefix impact':
+      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+      if (!sub.rest[0]) { console.error('Usage: qa-sdk prefix impact <prefixId>'); return; }
+      prefixImpact(loadedCatalog, sub.rest[0]);
       return;
     case 'dkg prefix':
       if (sub.rest[0]) dkgPrefix(sub.rest[0]);
@@ -1401,6 +1444,11 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'review requests',
     'review show-request',
     'review bridge-request',
+    'prefix stamp',
+    'prefix drift',
+    'prefix find',
+    'prefix migrate',
+    'prefix impact',
     'catalog list',
     'catalog info',
     'obs read',

@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: scenario
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -423,12 +423,18 @@ seq: 패싯 내 순번 (1-based)
 - 검증 루프 6단계
 - drift 감지
 
+### 구현 완료
+
+| 구현 | 파일 | 테스트 |
+|------|------|--------|
+| TestRegistry, buildTestAddress, parseTestAddress | `packages/core/src/test-tracking.ts` | 18 tests (`test-tracking.test.ts`) |
+| TestCase, TestSuite, TestResult 등 타입 정의 | `packages/core/src/types/test-tracking.ts` | 타입 체크 |
+
 ### 후속 구현
 
 | 순서 | 구현 | 파일 |
 |------|------|------|
-| 1 | TestCase + TestSuite 타입 | `core/src/types/test-tracking.ts` |
-| 2 | TestResult 수집기 | `core/src/test-collector.ts` |
-| 3 | TestContract 파서 | `definition-catalog/src/test-contract.ts` |
-| 4 | QualityMetrics 산출 | `core/src/test-metrics.ts` |
-| 5 | drift 감지 | `core/src/test-drift.ts` |
+| 1 | TestResult 수집기 | `core/src/test-collector.ts` |
+| 2 | TestContract 파서 | `definition-catalog/src/test-contract.ts` |
+| 3 | QualityMetrics 산출 | `core/src/test-metrics.ts` |
+| 4 | drift 감지 | `core/src/test-drift.ts` |

@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-pipe-impl
@@ -49,6 +49,41 @@ PipeSpec 내부 흐름과 PipeGraph 연결 구조의 무결성을 검증한다.
 | fan-out-single, join-single | warning |
 | event-mismatch | warning |
 | feedback-no-convergence | warning |
+
+### 추가 검증 규칙 (연산자 안정화)
+
+#### 빈 from/to 배열
+
+| 규칙 | 심각도 | 설명 |
+|------|--------|------|
+| empty-from | warning | from 배열이 비어있음 |
+| empty-to | warning | to 배열이 비어있음 |
+
+#### 숫자 범위 검증
+
+| 연산자 | 필드 | 조건 | 심각도 |
+|--------|------|------|--------|
+| timeout | duration | > 0 | error |
+| circuit-breaker | cooldown | > 0 | error |
+| circuit-breaker | failureThreshold | > 0 | error |
+| window | size | > 0 | error |
+| retry | maxAttempts | > 0 | error |
+| retry | backoff | >= 0 | error |
+| throttle | rate | > 0 | error |
+| throttle | interval | > 0 | error |
+| debounce | wait | > 0 | error |
+| dedup | ttl | > 0 | error |
+| buffer | count | > 0 | error |
+| buffer | duration | > 0 | error |
+
+#### 의미적 검증
+
+| 규칙 | 심각도 | 설명 |
+|------|--------|------|
+| correlation-same-event | warning | correlation.requestEvent !== responseEvent 위반 (같은 이벤트) |
+| enrich-empty-source | warning | enrich.source가 비어있음 |
+| map-empty-collection | warning | map.collection이 비어있음 |
+| split-empty-splitBy | warning | split.splitBy가 비어있음 |
 
 ## 검증
 

@@ -1,12 +1,12 @@
 # Meta-Semantic TODO
 
-> 최종 업데이트: 2026-04-01
+> 최종 업데이트: 2026-04-02
 
 ## 현황
 
-- 스펙: 71개 문서
-- 구현: 32개 파일 (`@qa-sdk/core` + `definition-catalog`)
-- 테스트: 425 tests 전부 통과
+- 스펙: 73개 문서 (pipe-interpret.spec, pipe-gate.spec 추가)
+- 구현: 35개 파일 (`@qa-sdk/core` — pipe-fold, pipe-interpret, pipe-gate 추가)
+- 테스트: 561 tests 전부 통과 (29 test files)
 
 ---
 
@@ -26,7 +26,7 @@
 
 ### Phase 2 — PipeSpec + PipeGraph
 
-- [x] PipeFlow 29종 타입 정의
+- [x] PipeFlow 29종 타입 정의 (29종 확정)
 - [x] ConnectionKind 8종 타입 정의 (N:M PipeConnection)
 - [x] countPipePaths / countGraphPaths (38 tests)
 - [x] validatePipeSpec / validatePipeGraph
@@ -103,6 +103,8 @@
 - [x] 변경 영향 분석 — analyzePipeImpact (blastRadius + byConcern)
 - [x] 파이프 역할 분류 — classifyPipeRole (producer/consumer/transformer/router/observer)
 - [x] 테스트 23건 통과
+- [x] 퀄리티 게이트 — evaluateGate/evaluateGates + pass/fail/review 3종 판정 (16 tests)
+- [x] 퀄리티 게이트 spec-tracker 연동 — pipe-interpret-gate (11 tests)
 
 잔여 (definition-catalog 브릿지 — 별도 레이어):
 - [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
@@ -131,6 +133,11 @@
 
 ### 스펙 정리
 
-- [ ] test-tracking.spec 구현 완료 반영
-- [ ] execution-semantics.spec PathMatcher 구현 완료 반영
-- [ ] pipe-impl leaf 문서들 구현 소스 참조 업데이트
+- [x] test-tracking.spec 구현 완료 반영
+- [x] execution-semantics.spec PathMatcher 구현 완료 반영
+- [x] pipe-impl 테스트 카운트 갱신 (561 tests)
+- [x] pipe-validate.spec 추가 검증 규칙 문서화
+- [x] pipe-simulate.spec 연산자 동작 안정화 문서화
+- [x] pipe-interpret.spec + pipe-gate.spec 신규 작성
+- [x] pipe-spec.ts 주석 31종→29종 수정
+- [x] pipe-impl leaf 문서들 구현 소스 참조 업데이트 (37개 파일 + lifecycle→approved)

@@ -313,6 +313,13 @@ export type {
   PipeConcern, InheritedPipeConcern, PipeConcernEntry, PipeConcernMap,
   ImpactedPipe, PipeImpactAnalysis, PipeRole,
 } from "./pipe-interpret.js";
+
+// ── Pipe Quality Gate ────────────────────────────────────
+export { evaluateGate, evaluateGates, allGatesPass, hasReviewItems } from "./pipe-gate.js";
+export type {
+  GateLevel, GateVerdict, GateCriterion, PipeGateSpec,
+  CriterionResult, GateResult, SubGateIssue,
+} from "./pipe-gate.js";
 export { simulate } from "./pipe-simulate.js";
 
 // ── Data Contract ───────────────────────────────────────

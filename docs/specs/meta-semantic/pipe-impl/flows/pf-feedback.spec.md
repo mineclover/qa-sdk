@@ -7,7 +7,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: pipe-flow-catalog
@@ -46,3 +46,12 @@ body 출력을 feedbackEvent로 재주입. 카테고리: 제어.
 - 경로: `core/src/pipe-path.ts`
 - 시뮬: `core/src/pipe-simulate.ts`
 - 검증: `core/src/pipe-validate.ts`
+
+## 구현 소스
+
+- 타입: `packages/core/src/types/pipe-spec.ts` — `PipeFeedback`
+- 경로 계산: `packages/core/src/pipe-path.ts` — `countPipePaths()` switch case
+- 검증: `packages/core/src/pipe-validate.ts` — `validateFlow()` switch case
+- 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
+- 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
+- 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case

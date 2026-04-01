@@ -39,6 +39,10 @@ def:
       type: contains
     - target: meta-semantic-prefix-annotation
       type: contains
+    - target: pipe-interpret
+      type: contains
+    - target: pipe-gate
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러
@@ -105,12 +109,14 @@ def:
 - **meta-semantic-spacetime-uid**: 분기 경로 + 시간 축 주소
 - **meta-semantic-extraction**: LLM 기반 단위 식별 + 분기점 추출
 
-**레이어 2 — 해석 (수집된 단위 간 관계/맥락):**
-- lifecycle, link_type, concern 전파, layer 영향 전파, tags
-- 후속 설계 대상
+**레이어 2 — 해석 (PipeGraph 네이티브):**
+- **pipe-interpret**: PipeConcern 8종 자동 추출, ConnectionKind별 전파 규칙(BFS), 전이적 축소, 영향 분석, 역할 분류
+- **pipe-gate**: 퀄리티 게이트 스펙 정의 + 자동 평가 (pass/fail/review 3종 판정)
+- **pipe-fold**: 서브그래프 접기/펼치기 + 경계 계약 도출 + 자동 영역 탐지
+- 잔여: definition-catalog 브릿지 (lifecycle/layer/tags 조회)
 
 **실행 엔진 (구현 완료):**
-- **meta-semantic-pipe-impl**: PipeFlow 29종 + ConnectionKind 8종 + 시뮬레이션 + 분석
+- **meta-semantic-pipe-impl**: PipeFlow 31종 + ConnectionKind 8종 + 시뮬레이션 + 분석 + 연산자 안정화
 - **meta-semantic-execution-semantics**: 조건 평가 + 에러 전파 + 취소 + 컨텍스트 + PipeRunner
 - **meta-semantic-data-contract**: 스키마 + 관계 + 계보 + 버전 + 호환 검증
 - **Constraint 엔진**: 정의 + 평가 + 결과 수집 + 품질 지표
@@ -125,10 +131,10 @@ def:
 - ConnectionKind 8종: `pipe-impl/connections/pc-*.spec.md` (8개)
 
 **미구현:**
-- 테스트 추적 (TestCase/TestSuite — 스펙만)
-- PathMatcher (실행 결과 매칭 — 스펙만)
-- 레이어 2 해석
-- 시각화
+- 시각화 (Mermaid / D3 / Folding 줌 레벨)
+- 경로 열거 + 시나리오 좌표 (pipe_scenario prefix)
+- definition-catalog 브릿지 (lifecycle/layer/tags 조회)
+- 인프라 통합 (Store 영속화, registry 연동)
 
 ---
 
@@ -137,42 +143,15 @@ def:
 ### "Semantic Folding이 먼저, 좌표는 그 다음"
 
 ```
-소스 코드 (TypeScript)
-  ↓ Semantic Folding (접기/펼치기)
-검증 가능한 실행 단위 식별 (함수 경계)
-  ↓ LLM 기반 분기점 추출
-각 함수의 분기 경로 수집 (이벤트별 경우의 수)
-  ↓ 3종 IR 변환 (Module × Data × Pipe)
-분기 경로 기반 주소 할당 (WeightedIndex)
-  ↓ 시공간 좌표가 부여된 의도 지도
+소스 코드 → Semantic Folding → 검증 가능한 단위 식별 → 분기 경로 수집 → 좌표 할당
 ```
 
-이 시스템의 핵심은 **Semantic Folding**이다.
-코드를 계층별로 접고 펼쳐서 "이 함수는 독립적으로 검증 가능한가?"를 판단하고,
-검증 가능한 단위를 식별한 후에야 각 단위의 분기 경로를 좌표화한다.
+Folding으로 독립 검증 가능한 단위를 식별한 후에야 좌표화한다.
+전체 변수의 전곱이 아닌, 도달 가능한 경로만 수집한다 (합산 모델).
 
-좌표화 시 **전체 변수의 전곱(N×M)을 만들지 않는다.**
-각 이벤트(분기점)에서 실제 도달 가능한 경로만 수집한다.
-
-### 분기 경로 기반 좌표 모델
-
-전곱 모델과 경로 모델의 차이:
-
-```
-전곱 (기존 WeightedIndex 일반 용법):
-  변수A(3) × 변수B(4) × 변수C(2) = 24 주소
-  → 모든 조합이 존재한다고 가정 (대부분 도달 불가능)
-
-경로 모델 (이 시스템):
-  변수A(3개 분기)
-    ├── 도달점: 변수B(4개 분기) → 3 × 4 = 12 경로
-    ├── 도달점: 변수C(2개 분기) → 3 × 2 = 6 경로
-    └── 도달점: 변수D(5개 분기) → 3 × 5 = 15 경로
-  총: 12 + 6 + 15 = 33 경로 (≠ 3×4×2×5 = 120)
-```
-
-각 분기점에서 **다음에 도달하는 분기점**을 따라가며 곱하고,
-독립적인 경로는 **합산**한다. 이것이 "이벤트별 경우의 수 수집"이다.
+> Folding 메커니즘 상세: `meta-semantic-folding` 참조
+> 분기 경로 수집 규칙: `ms-concept-branch-path` 참조
+> 경로 수 계산 구현: `pipe-path` 참조
 
 ### definition-catalog와의 관계
 
@@ -342,53 +321,11 @@ LLM이 코드를 읽고 **"이 함수는 독립적으로 검증 가능한 실행
 **Semantic Folding은 이 시스템의 핵심이다.** 단순한 시각화 기법이 아니라,
 코드 구조를 계층별로 접고 펼쳐서 **검증 가능한 실행 단위를 식별**하는 메커니즘이다.
 
-### 왜 Folding이 먼저인가
+Folding이 선행되지 않으면 좌표 체계가 성립하지 않는다.
 
-좌표를 부여하려면 먼저 "무엇에 좌표를 부여할 것인가"를 결정해야 한다.
-모든 변수, 모든 함수, 모든 줄에 좌표를 부여하면 주소 공간이 폭발한다.
-Semantic Folding은 코드를 접어서 **"이 단위는 독립적으로 검증 가능한가?"**를 판단하고,
-검증 가능한 단위만 좌표화 대상으로 선정한다.
-
-```
-전체 코드 (10만 줄)
-  ↓ L0 접기: 시스템 경계 식별
-[PaymentSystem] ──→ [OrderSystem] ──→ [NotificationSystem]
-  ↓ L1 펼치기: PaymentSystem 내부
-[Validator] → [Processor] → [Notifier]
-  ↓ L2 펼치기: Processor 내부 — 여기서 검증 단위 결정
-processPayment()  ← 이 함수가 독립 검증 가능한 실행 단위
-  ├── 분기A: 주문유형(3) → 분기B: 결제방법(4) → 3×4 = 12 경로
-  └── 분기A: 주문유형(3) → 분기C: 배송옵션(2) → 3×2 = 6 경로
-  총: 18 경로만 좌표화 (전체 변수 전곱 아님)
-```
-
-### Folding이 결정하는 것
-
-| 판단 | 결과 | 후속 작업 |
-|------|------|----------|
-| "이 함수는 독립 검증 가능" | leaf ModuleIR 생성 | 분기점 추출 → 좌표 할당 |
-| "이 클래스는 하위를 조율" | module ModuleIR 생성 | 하위 leaf 식별 위임 |
-| "이 패키지는 경계" | group ModuleIR 생성 | 하위 module 식별 위임 |
-| "이 분기는 의미 없음" | 좌표화 대상에서 제외 | 분기 수에 포함 안 함 |
-
-### 타입 확실성 시각화
-
-접힌 뷰에서 데이터의 타입 안전성을 직관적으로 노출:
-
-```
-Strict 스키마 (interface User { name: string; age: number })
-  → 단단한 다각형 (Polygon) — 모든 필드가 구체적 타입
-
-Flexible 입력 (any, unknown, Record<string, any>)
-  → 흐릿한 구름 (Cloud) — 런타임 취약 지점 직관적 노출
-```
-
-### 계약 테스트 도출
-
-접힌 상위 모듈의 interface는 그 자체로:
-1. 아키텍처 도식 (시각적 이해)
-2. Contract Test 기준점 (검증)
-3. definition-catalog 문서와의 일관성 검증 대상
+> Folding 개념: `ms-concept-folding` 참조
+> Folding 메커니즘 상세 (3단계 레벨, 검증 기준, 경로 한정, 계약 도출, 타입 확실성): `meta-semantic-folding` 참조
+> PipeGraph 구현 (foldSubgraph, unfoldNode, FoldedContract): `pipe-fold` 소스 참조
 
 ---
 

@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-v2-migration
@@ -30,6 +30,10 @@ def:
       type: contains
     - target: pipe-connection-catalog
       type: contains
+    - target: pipe-interpret
+      type: contains
+    - target: pipe-gate
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현
@@ -52,19 +56,24 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 
 ## 구성 ^overview
 
-8개 하위 모듈 + 관련 소스:
+하위 모듈 + 관련 소스:
 
 | 모듈 | 구현 파일 | 테스트 |
 |------|----------|--------|
 | pipe-types | `core/src/types/pipe-spec.ts` | 빌드 체크 |
 | pipe-path | `core/src/pipe-path.ts` | 38 tests (`pipe-path.test.ts`) |
 | pipe-validate | `core/src/pipe-validate.ts` | 포함 |
-| pipe-serialize | `core/src/pipe-serialize.ts` | 4 tests (`pipe-infra.test.ts`) |
-| pipe-store | `core/src/pipe-store.ts` | 9 tests (`pipe-infra.test.ts`) |
-| pipe-analyze | `core/src/pipe-analyze.ts` | 6 tests (`pipe-infra.test.ts`) |
-| pipe-simulate | `core/src/pipe-simulate.ts` | 15 tests (`pipe-simulate.test.ts`) |
+| pipe-serialize | `core/src/pipe-serialize.ts` | 포함 (`pipe-infra.test.ts`) |
+| pipe-store | `core/src/pipe-store.ts` | 포함 (`pipe-infra.test.ts`) |
+| pipe-analyze | `core/src/pipe-analyze.ts` | 포함 (`pipe-infra.test.ts`) |
+| pipe-infra (validate+serialize+store+analyze) | 위 4개 파일 | 39 tests (`pipe-infra.test.ts`) |
+| pipe-simulate | `core/src/pipe-simulate.ts` | 38 tests (`pipe-simulate.test.ts`) |
 | pipe-bridge | `core/src/pipe-bridge.ts` | 통합 테스트 |
 | pipe-flow-catalog | 문서 전용 | — |
+| pipe-fold | `core/src/pipe-fold.ts` | 38 tests (`pipe-fold.test.ts`) |
+| pipe-interpret | `core/src/pipe-interpret.ts` | 23 tests + 퀄리티 게이트 11건 |
+| pipe-gate | `core/src/pipe-gate.ts` | 16 tests (`pipe-gate.test.ts`) |
+| pipe-runtime | `core/src/pipe-runtime.ts` | 36 tests (`pipe-runtime.test.ts`) |
 
 통합 테스트: `core/src/meta-semantic-integration.test.ts` (12 tests)
 
@@ -107,5 +116,5 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 
 ```bash
 pnpm --filter @qa-sdk/core build    # 타입 체크
-pnpm --filter @qa-sdk/core test     # 275 tests
+pnpm --filter @qa-sdk/core test     # 561 tests
 ```

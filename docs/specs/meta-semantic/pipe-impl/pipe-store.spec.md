@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   links:
     - target: meta-semantic-pipe-impl

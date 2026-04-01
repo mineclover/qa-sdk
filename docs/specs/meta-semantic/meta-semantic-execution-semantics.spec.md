@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -313,7 +313,7 @@ join:
 
 ---
 
-## 7. PathMatcher — 실행 결과 매칭 (미구현)
+## 7. PathMatcher — 실행 결과 매칭 (구현 완료)
 
 실행 결과(RunResult)와 PipeSpec을 매칭하여 어떤 경로가 실행되었는지 판정.
 기존 VerdictReport(ScenarioSpec 기반)를 대체.
@@ -324,11 +324,28 @@ join:
 | step 순서 매칭 | 경로 매칭 (합산 모델) |
 | 6상태 | scope×aspect 검증 전략 기반 판정 |
 
-> 후속 구현 대상
+### 구현
+
+| 구현 | 파일 | 테스트 |
+|------|------|--------|
+| matchPath() | `packages/core/src/path-matcher.ts` | 8 tests (`path-matcher.test.ts`) |
 
 ---
 
-## 8. 범위 경계 요약
+## 8. 런타임 안정화 (Runtime Stabilization)
+
+PipeRunner 실행 중 호출 빈도·중복·조건을 제어하는 안정화 메커니즘.
+
+| 전략 | 설명 |
+|------|------|
+| `throttle` | interval 내 호출 횟수를 제한 (rate limiting). 호출 추적 포함 |
+| `debounce` | delay 경과 후 실행 (마지막 호출 기준 대기) |
+| `dedup` | Map 기반 keyField 중복 제거. TTL 만료 시 자동 해제 |
+| `filter` | condition이 false면 실행 건너뜀. ExecutedStep status = `"skipped"` |
+
+---
+
+## 9. 범위 경계 요약
 
 ```
 Phase 2 (완료 — 선언적):
@@ -339,6 +356,10 @@ Phase 3 (완료 — 실행적):
   ConditionEvaluator + CancellationToken + PipeContext + PipeRunner
   → 구현: core/src/pipe-runtime.ts (29 tests)
 
-미구현:
+Phase 3 추가 (완료):
   PathMatcher (실행 결과 ↔ PipeSpec 매칭)
+  → 구현: packages/core/src/path-matcher.ts (8 tests)
+
+  런타임 안정화 (throttle, debounce, dedup, filter)
+  → 구현: core/src/pipe-runtime.ts
 ```

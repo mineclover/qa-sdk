@@ -173,21 +173,58 @@ SDK 함수마다 prefix ID와 dims가 인자의 어느 위치에 있는지 고�
 
 이 테이블이 stamp 도구의 **설정값**. 새 SDK 함수가 추가되면 행 추가.
 
-### 3.3 탐지 → resolve → 삽입 흐름
+### 3.3 version resolve 체계
+
+stamp이 version을 결정하는 우선순위:
+
+```
+1. ServiceVersionManifest (서비스 매니페스트)
+   → 이 서비스가 실제로 소비하는 prefix version
+2. VERSION_META.prefixVersions (codegen 시점 스냅샷)
+   → codegen 생성 시 확정된 prefix version
+3. latestPrefixVersion(catalog, prefixId) (폴백)
+   → 카탈로그의 최신 version
+```
+
+**ServiceVersionManifest 기반** (가장 정확):
+
+```ts
+// ManifestRegistry에서 서비스 매니페스트 조회
+const manifest = registry.getServiceManifest("shopping-web");
+// manifest.prefixes = { "page_view": "v2", "cart_event": "v1", ... }
+// → page_view는 v2, cart_event는 v1으로 resolve
+```
+
+**VERSION_META 기반** (codegen 소비자):
+
+```ts
+// codegen 생성물에 포함된 버전 스냅샷
+import { VERSION_META } from "./generated/prefix-ids";
+// VERSION_META.prefixVersions = { "auth_event": "v2", "cart_event": "v1", ... }
+```
+
+**폴백** (매니페스트/VERSION_META 없을 때):
+
+```ts
+latestPrefixVersion(catalog, "service") → "v1"
+```
+
+### 3.4 탐지 → resolve → 삽입 흐름
 
 ```ts
 // ── 1. 탐지: SDK 함수 호출 발견 ──
 browserTrack(browserCatalog, {
-  service: toServiceDims(config.serviceConfig),   // ← 앵커 함수의 2번째 인자
+  service: toServiceDims(config.serviceConfig),
 });
 
 // ── 2. 추출: 테이블 규칙 적용 ──
 // browserTrack → "2번째 인자 오브젝트 키" → prefixId = "service"
-// dims = 오브젝트 값 키들. toServiceDims() 반환값이므로
-//   → 카탈로그의 service prefix 전체 labels를 기본값으로 사용
+// dims = 함수 호출 반환값 → 카탈로그의 전체 labels 사용
 
-// ── 3. resolve: 카탈로그 조회 ──
-// latestPrefixVersion(catalog, "service") → "v1"
+// ── 3. resolve: version 결정 (우선순위) ──
+//   매니페스트: manifest.prefixes["service"] → "v1"
+//   또는 VERSION_META.prefixVersions["service"] → "v1"
+//   또는 latestPrefixVersion(catalog, "service") → "v1"
 // catalog.prefixes["service"].labels = ["env", "region", "svc_name", "namespace"]
 // labels.indexOf("env") = 0, labels.indexOf("region") = 1, ...
 
@@ -210,23 +247,41 @@ dims를 코드에서 추출할 수 없으면 해당 prefix의 **전체 labels**�
 실제 사용 dim이 전체의 부분집합이어도 스탬프의 검증 기능에는 영향 없음
 (전체 labels의 index도 부분집합의 index도 같은 값이므로).
 
-### 3.5 prefix ID가 동적인 경우
+### 3.6 prefix ID가 동적인 경우
 
-`Object.entries(prefixes)` 루프처럼 prefix ID가 런타임에 결정되는 패턴:
+SDK 호출에서 prefix ID가 변수인 경우의 분류와 처리:
+
+| 카테고리 | 건수 | 처리 | 예시 |
+|----------|------|------|------|
+| **함수 파라미터** (범용 인프라) | ~16건 | **스탬프 불필요** | `resolve(catalog, prefixId, ...)` — 모든 prefix를 다루는 코드 |
+| **조건 상수** (리터럴 분기) | ~2건 | **자동 처리 가능** | `prefixId = r.kind === "build" ? "build_event" : "test_event"` |
+| **카탈로그 파생** (dim.prefixId) | ~2건 | **자동 처리 가능** | `dimRef.prefixId` — 카탈로그 구조에서 정적 추출 |
+| **런타임 데이터 파싱** | ~1건 | 수동 힌트 | serialized 문자열에서 추출 |
+| **CLI 인자** | ~1건 | 수동 힌트 | `args.prefix` — 사용자가 런타임에 입력 |
+
+**범용 인프라 코드** (함수 파라미터로 모든 prefix를 다루는 코드):
+- 특정 prefix에 바인딩된 게 아니므로 스탬프 대상이 아님
+- 예: `resolve()`, `dim-wire`, `codegen`, `demo-bridge`, `semantic-ref`
+
+**조건 상수** (자동 처리 가능):
 
 ```ts
-// 이런 코드는 자동 스탬프 불가 — 제네릭 래퍼
-for (const [prefixId, dims] of Object.entries(prefixes)) {
-  this.encode(prefixId, dims);
-}
+// 삼항 연산자에서 리터럴 추출 → 양쪽 다 스탬프
+const prefixId = r.kind === "build" ? "build_event" : "test_event";
+encodePrefixByValue(catalog, prefixId, ver, { ... });
+// → // @prefix build_event:v2 — dims: [...]
+// → // @prefix test_event:v1 — dims: [...]
 ```
 
-이 경우:
-- SDK 내부 구현 (qa-context.ts, browser-codec.ts) → 제외 대상
-- 제네릭 래퍼 (bench/) → 실제 호출부에서 스탬프 (래퍼가 아니라 래퍼를 호출하는 곳)
-- 어디에도 해당 안 됨 → **수동 힌트** (`// @prefix auth_event`) 사용, stamp이 version+index 자동 채움
+**카탈로그 파생** (자동 처리 가능):
 
-### 3.6 수동 힌트
+```ts
+// dim.prefixId는 카탈로그 메타데이터 → 정적으로 resolve 가능
+const dimRef = prefix.dims[dimLabel];
+encodePrefixByValue(catalog, dimRef.prefixId, refEntries.refVersion, meaning);
+```
+
+### 3.7 수동 힌트
 
 prefix ID만 수동으로 명시하면 stamp이 나머지를 채움:
 
@@ -244,7 +299,7 @@ function checkAdmin(decoded: DecodeResult) {
 - decoded 결과의 dim을 직접 참조하는 로직
 - 제네릭 래퍼를 통해 간접 호출하는 코드
 
-### 3.7 제외 대상
+### 3.8 제외 대상
 
 | 대상 | 이유 |
 |------|------|
@@ -254,11 +309,14 @@ function checkAdmin(decoded: DecodeResult) {
 | codegen 생성물 (`demo-types/`) | `VERSION_META`가 추적 |
 | 테스트 파일 (`*.test.ts`, `*.spec.ts`) | 검증 코드에 표식 부착은 과잉 |
 
-### 3.8 CLI 명령
+### 3.9 CLI 명령
 
 ```bash
 # SDK 함수 호출 탐지 → 스탬프 자동 삽입
 qa-sdk prefix stamp
+
+# 서비스 매니페스트 기반 version resolve
+qa-sdk prefix stamp --service shopping-web
 
 # 기존 스탬프 + 수동 힌트를 카탈로그 현재 상태로 갱신
 qa-sdk prefix stamp --update
@@ -270,7 +328,7 @@ qa-sdk prefix stamp --dry-run
 qa-sdk prefix stamp src/pages/
 ```
 
-### 3.9 삽입 로직
+### 3.10 삽입 로직
 
 ```
 1. 파일 확장자 → COMMENT_PREFIX 결정
@@ -519,22 +577,96 @@ stamp/drift 같은 도구만 확장자별 접두사를 인식하면 된다.
 
 ---
 
-## 8. 기존 메커니즘과의 관계
+## 8. 기존 인프라 연결 구조
+
+### 8.1 계층 관계
 
 ```
 계층:
-  Catalog     prefix 정의 + 소유        PrefixMeta.source
-  Mapping     이벤트→prefix 매핑        prefix-mapping.ts
-  Service     서비스→prefix 선언        ownedPrefixes
-  Code        코드→prefix label:index   // @prefix  ← 이 스펙
+  Catalog        prefix 정의 + 소유               PrefixMeta.source
+  Manifest       서비스별 소비 prefix version      ManifestRegistry (ServiceVersionManifest)
+  Codegen        prefix 상수 + version 스냅샷      PREFIX_IDS, VERSION_META, PrefixId 타입
+  Mapping        이벤트→prefix dim 매핑            prefix-mapping.ts
+  Service        서비스→prefix 생산 선언           ownedPrefixes / consumedPrefixes
+  Lifecycle      prefix version 상태 전이          dkg version (lock/release/activate/deprecate)
+  Code           코드→prefix label:index           // @prefix  ← 이 스펙
 ```
 
-| 질문 | 답하는 메커니즘 |
-|------|----------------|
-| 이 prefix를 누가 정의했나? | `PrefixMeta.source` |
-| 이 이벤트는 어떤 prefix로 매핑되나? | `prefix-mapping.ts` |
-| 이 서비스가 어떤 prefix를 생산하나? | `ownedPrefixes` |
-| **이 코드가 이 prefix의 어떤 label:index에 바인딩되어 있나?** | **`// @prefix`** |
+### 8.2 역할 매트릭스
+
+| 질문 | 답하는 메커니즘 | 위치 |
+|------|----------------|------|
+| 이 prefix를 누가 정의했나? | `PrefixMeta.source` | `demo-catalog.ts` |
+| 이 이벤트는 어떤 prefix로 매핑되나? | `prefix-mapping.ts` | `event-catalog/` |
+| 이 서비스가 어떤 prefix를 생산하나? | `ownedPrefixes` | `seed-config.ts` |
+| 이 서비스가 어떤 prefix를 어떤 version으로 소비하나? | `ServiceVersionManifest` | `ManifestRegistry` |
+| codegen 시점에 각 prefix가 무슨 version이었나? | `VERSION_META.prefixVersions` | `demo-types/prefix-ids.ts` |
+| 이 prefix의 현재 lifecycle 상태는? | `dkg version` CLI | `registry-service` |
+| **이 코드가 이 prefix의 어떤 label:index에 바인딩되어 있나?** | **`// @prefix`** | **코드 주석** |
+
+### 8.3 stamp이 기존 인프라를 활용하는 흐름
+
+```
+┌─ ManifestRegistry ─────────────────────┐
+│ ServiceVersionManifest {               │
+│   serviceId: "shopping-web",           │
+│   prefixes: {                          │
+│     "page_view": "v2",                 │  ← stamp이 version 결정에 사용
+│     "cart_event": "v1",                │
+│   }                                    │
+│ }                                      │
+└────────────────────────────────────────┘
+         ↓ version
+┌─ Catalog ──────────────────────────────┐
+│ prefixes["cart_event"].labels           │
+│   = ["action", "product_id", "env"]    │  ← stamp이 dim:index resolve에 사용
+│     index: 0       1            2      │
+└────────────────────────────────────────┘
+         ↓ stamp 생성
+┌─ Code ─────────────────────────────────┐
+│ // @prefix cart_event:v1 — dims: [action:0, product_id:1]
+│ function addToCart(item) {             │
+│   track("cart_event", { action: "add" })│
+│ }                                      │
+└────────────────────────────────────────┘
+         ↓ drift 검증
+┌─ VERSION_META ─────────────────────────┐
+│ prefixVersions: {                      │
+│   "cart_event": "v1",  ← 스탬프와 일치?│
+│ }                                      │
+└────────────────────────────────────────┘
+```
+
+### 8.4 codegen이 제공하는 상수와의 관계
+
+codegen (`qa-sdk codegen`)이 이미 생성하는 것:
+
+| 생성물 | 내용 | stamp과의 관계 |
+|--------|------|---------------|
+| `PrefixId` 타입 | prefix 이름 유니온 | 코드에서 prefix ID 타입 안전성 보장 |
+| `PREFIX_IDS` 상수 | prefix 이름 배열 (`as const`) | 코드에서 prefix ID를 상수로 참조 (리터럴 하드코딩 방지) |
+| `VERSION_META` | prefix별 version 스냅샷 | stamp의 version resolve 소스 |
+| dim 인터페이스 | prefix별 dim 타입 | 타입 수준에서 dim 안전성 보장 |
+
+**PREFIX_IDS + stamp의 역할 분리**:
+- `PREFIX_IDS` / `PrefixId` → "어떤 prefix를 쓸 수 있는가" (타입 안전성)
+- `// @prefix` → "이 코드가 실제로 어떤 prefix의 어떤 dim:index에 바인딩되어 있는가" (런타임 바인딩 추적)
+
+타입 시스템은 "잘못된 prefix 이름"을 컴파일 시점에 막고,
+stamp은 "version/index가 바뀌었을 때 영향 범위"를 추적한다.
+
+### 8.5 dkg version / dkg publish와의 연동
+
+prefix version 상태 전이 시 stamp drift가 자동 감지:
+
+```
+1. dkg version activate cart_event v2     ← v2 활성화
+2. qa-sdk prefix drift                    ← 기존 v1 스탬프와 불일치 탐지
+   WARNING  version-behind: cart_event — 표식 v1, 최신 v2
+3. qa-sdk prefix stamp --update           ← 스탬프를 v2로 갱신
+   또는
+   qa-sdk prefix migrate cart_event v1 v2 ← v1→v2 일괄 마이그레이션
+```
 
 ---
 
@@ -639,36 +771,44 @@ $ qa-sdk prefix migrate cart_event v1 v2
 
 ## 10. 도입 전략
 
-### Phase 1 — 규약 확립
+### Phase 1 — 규약 + 기반 (완료)
 
-- `PrefixMeta.source` 100% 채우기 (선행)
-- 이 스펙 승인
-- CLAUDE.md에 "prefix label 직접 사용 시 `// @prefix` 표식 필수, `qa-sdk prefix stamp`으로 자동 생성" 추가
+- [x] 이 스펙 작성
+- [x] `qa-sdk prefix stamp` CLI 구현 (SDK 앵커 탐지 + 자동 삽입)
+- [x] `qa-sdk prefix drift` CLI 구현 (label-index 불일치 경고)
+- [x] `qa-sdk prefix find` CLI 구현 (표식 기반 탐색)
+- [x] 확장자별 주석 매핑 (JS/TS/Python/Shell 등)
+- [x] 중복 방지 로직
+- [x] 기존 코드 3곳 수동 스탬프 (service prefix)
 
-### Phase 2 — stamp 구현 + 기존 코드 표식 부착
+### Phase 2 — version resolve 강화
 
-- `qa-sdk prefix stamp` CLI 구현 (핵심)
-  - track/emit 호출부 정적 분석 → prefix ID + dim label 추출
-  - 카탈로그 refEntries에서 version + index resolve
-  - `// @prefix` 한줄 주석 삽입/갱신
-- 기존 코드에 `prefix stamp` 실행하여 일괄 부착
+- [ ] stamp에서 `ServiceVersionManifest` 기반 version resolve 연동
+- [ ] stamp에서 `VERSION_META.prefixVersions` 기반 version resolve 연동
+- [ ] `--service` 옵션으로 서비스 매니페스트 기반 스탬프
+- [ ] 조건 상수 패턴 자동 인식 (`a ? "X" : "Y"` → 양쪽 다 스탬프)
 
-### Phase 3 — drift + 마이그레이션 도구
+### Phase 3 — 마이그레이션 + CI
 
-- CLI `qa-sdk prefix drift` — label-index drift 경고
-- CLI `qa-sdk prefix migrate` — version 마이그레이션 시 표식 일괄 갱신
-- CLI `qa-sdk prefix find` / `prefix impact`
-- CI 통합 (선택)
+- [ ] `qa-sdk prefix migrate` — version 마이그레이션 시 표식 일괄 갱신
+- [ ] `qa-sdk prefix impact` — entry 변경 영향 범위
+- [ ] `dkg version` 상태 전이 시 자동 drift check 연동
+- [ ] CI 통합 (선택)
+- [ ] `PrefixMeta.source` 100% 채우기
 
 ---
 
 ## 관련 소스
 
-- `packages/demo-snapshot/src/demo-catalog.ts` — PrefixMeta.source (소유 정보)
-- `packages/event-catalog/src/prefix-mapping.ts` — 이벤트→prefix 매핑 SSOT
-- `packages/demo-types/src/prefix-ids.ts` — VERSION_META (codegen 추적)
-- `packages/registry-service/src/core/seed-config.ts` — ownedPrefixes 선언
-- `packages/browser-sdk/src/monitor.ts` — emitWithCoords 패턴
-- `packages/browser-codec/src/browser-codec.ts` — track/encode 구현
-- `packages/context/src/qa-context.ts` — QaContext.track()
-- `packages/core/src/catalog/runtime.ts` — latestPrefixVersion, encodePrefix
+| 파일 | 역할 |
+|------|------|
+| `packages/cli/src/commands/prefix-stamp.ts` | stamp/drift/find CLI 구현 |
+| `packages/definition-catalog/src/version-manifest.ts` | ManifestRegistry + ServiceVersionManifest |
+| `packages/demo-types/src/prefix-ids.ts` | PREFIX_IDS, PrefixId, VERSION_META (codegen) |
+| `packages/codegen-core/src/catalog-typescript.ts` | codegen 생성 로직 |
+| `packages/demo-snapshot/src/demo-catalog.ts` | PrefixMeta.source (소유 정보) |
+| `packages/event-catalog/src/prefix-mapping.ts` | 이벤트→prefix 매핑 SSOT |
+| `packages/registry-service/src/core/seed-config.ts` | ownedPrefixes / consumedPrefixes |
+| `packages/core/src/catalog/runtime.ts` | latestPrefixVersion, encodePrefix |
+| `packages/spec-core/src/propagation/lifecycle.ts` | version 상태 전이 + 전파 |
+| `packages/cli/src/commands/dkg.ts` | dkg version / dkg publish CLI |

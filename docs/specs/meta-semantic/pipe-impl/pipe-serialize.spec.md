@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: implementation
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-pipe-impl

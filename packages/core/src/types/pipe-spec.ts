@@ -12,7 +12,7 @@ export interface PipeSpec {
     entryConditions?: Constraint[];
   };
 
-  /** 내부 패싯 흐름 (31종 흐름 제어) */
+  /** 내부 패싯 흐름 (29종 흐름 제어) */
   flow: PipeFlow;
 
   /** 생산 이벤트: 이 파이프가 완료 시 발생시키는 이벤트 */
@@ -61,7 +61,7 @@ export type ConnectionKind =
   | "join"
   | "feedback";
 
-// ── PipeFlow — 31종 흐름 제어 ────────────────────────────
+// ── PipeFlow — 29종 흐름 제어 ────────────────────────────
 
 export type PipeFlow =
   // 기본
