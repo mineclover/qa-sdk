@@ -46,6 +46,20 @@
 - [x] PipeRunner — run() + 에러 전파 + 이벤트 체인 (10 tests)
 - [x] 벤치마크 — 전부 서브밀리초 (11 tests)
 
+### Semantic Folding
+
+- [x] computeFoldedContract — 서브그래프 경계 계약 도출
+- [x] foldSubgraph — 파이프 그룹 → 단일 노드 축소
+- [x] unfoldNode — 접힌 노드 → 원본 복원
+- [x] detectFoldRegions — scope 클러스터 / 선형 체인 / SCC 자동 탐지
+- [x] 성능 벤치마크 — 200파이프 depth=12, 3단계 중첩 fold 전부 서브밀리초 (38 tests)
+
+### 연산자 안정화 (31종 PipeFlow × 6모듈)
+
+- [x] validate — 빈 from/to 배열 검증, 숫자 범위 (duration>0, cooldown>0 등), correlation 자기참조 (+19 tests)
+- [x] simulate — loop 반복, tap 에러 격리, dedup 상태 추적, 테스트 커버리지 확대 (+21 tests)
+- [x] runtime — throttle 속도제한, debounce 대기, dedup 중복제거, filter skip 기록 (+10 tests)
+
 ### 데이터 계약
 
 - [x] DataSchema — 컬럼 + 패싯 역할 (FacetRole)
@@ -81,13 +95,19 @@
 
 ## 미완료
 
-### 레이어 2 — 해석
+### 레이어 2 — 해석 (PipeGraph 네이티브)
 
-- [ ] lifecycle — PipeSpec/PipeGraph/DataSchema에 lifecycle 적용
-- [ ] link_type — 바운더리/파이프 간 관계 성격 (definition-catalog LinkType 재사용)
-- [ ] concern 전파 — 파이프 그래프에서 횡단 관심사 확산 (definition-catalog BFS 재사용)
-- [ ] layer 영향 전파 — domain→operation→mediation→experience cascade
-- [ ] tags — 파이프/스키마에 태깅
+- [x] PipeConcern 8종 자동 추출 — extractPipeConcerns (flow 패턴 → 관심사)
+- [x] 전파 규칙 테이블 — PIPE_PROPAGATION_RULES (ConnectionKind × PipeConcern × 방향)
+- [x] concern 전파 BFS — propagatePipeConcerns (전이적 전파 축소 포함)
+- [x] 변경 영향 분석 — analyzePipeImpact (blastRadius + byConcern)
+- [x] 파이프 역할 분류 — classifyPipeRole (producer/consumer/transformer/router/observer)
+- [x] 테스트 23건 통과
+
+잔여 (definition-catalog 브릿지 — 별도 레이어):
+- [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
+- [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
+- [ ] tags — definition 쪽 tags 조회 브릿지
 
 ### 시각화
 

@@ -37,6 +37,8 @@ def:
       type: contains
     - target: meta-semantic-v2-migration
       type: contains
+    - target: meta-semantic-prefix-annotation
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러
