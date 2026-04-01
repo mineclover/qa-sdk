@@ -106,7 +106,7 @@
 - [x] path-coverage-min 근사치 제거 (executedPathCount 필수)
 - [x] __foldedContract 타입 캐스트 제거, version 비교 수정
 
-### 테스트 재편
+### 테스트 재편 + 인프라
 
 - [x] pipe-infra.test.ts → 4개 패싯별 파일 분리
   - pipe-serialize.test.ts (4 tests)
@@ -114,6 +114,9 @@
   - pipe-validate.test.ts (20 tests)
   - pipe-analyze.test.ts (14 tests)
 - [x] matchHappyPath → pipe-happy-path.test.ts 분리 (18 tests)
+- [x] fixture 추출 — step()/simplePipe/simpleGraph → `__fixtures__/pipe-fixtures.ts` (20파일 교체)
+- [x] test-split 스킬 작성 (`skills/test-split/SKILL.md`)
+- [x] pino 의존 수정 — workspace:@qa-sdk/pino → npm pino ^9.6.0 (8패키지)
 
 ---
 

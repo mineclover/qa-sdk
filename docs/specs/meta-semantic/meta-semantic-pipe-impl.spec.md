@@ -50,32 +50,42 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 **pipe-validate**가 구조 무결성을 검증하고,
 **pipe-serialize**가 JSON 직렬화/역직렬화하고,
 **pipe-store**가 CRUD 저장소를 제공하고,
-**pipe-analyze**가 복잡도·병목·커버리지를 분석하고,
-**pipe-simulate**가 dry-run 시뮬레이션을 실행하고,
+**pipe-analyze**가 복잡도·병목·커버리지·이벤트 카탈로그 수집을 수행하고,
+**pipe-simulate**가 시뮬레이션 + happy path 검증을 실행하고,
+**pipe-interpret**가 관심사 추출·전파·역할 분류를 수행하고,
+**pipe-gate**가 품질 게이트 평가(pass/fail/review)를 수행하고,
+**pipe-fold**가 서브그래프 접기/펼치기 + 경계 계약을 도출하고,
 **pipe-flow-catalog**가 29종 각각의 표현·정의·검증 방식을 문서화한다.
 
 ## 구성 ^overview
 
 하위 모듈 + 관련 소스:
 
-| 모듈 | 구현 파일 | 테스트 |
-|------|----------|--------|
-| pipe-types | `core/src/types/pipe-spec.ts` | 빌드 체크 |
-| pipe-path | `core/src/pipe-path.ts` | 38 tests (`pipe-path.test.ts`) |
-| pipe-validate | `core/src/pipe-validate.ts` | 포함 |
-| pipe-serialize | `core/src/pipe-serialize.ts` | 포함 (`pipe-infra.test.ts`) |
-| pipe-store | `core/src/pipe-store.ts` | 포함 (`pipe-infra.test.ts`) |
-| pipe-analyze | `core/src/pipe-analyze.ts` | 포함 (`pipe-infra.test.ts`) |
-| pipe-infra (validate+serialize+store+analyze) | 위 4개 파일 | 39 tests (`pipe-infra.test.ts`) |
-| pipe-simulate | `core/src/pipe-simulate.ts` | 38 tests (`pipe-simulate.test.ts`) |
-| pipe-bridge | `core/src/pipe-bridge.ts` | 통합 테스트 |
-| pipe-flow-catalog | 문서 전용 | — |
-| pipe-fold | `core/src/pipe-fold.ts` | 38 tests (`pipe-fold.test.ts`) |
-| pipe-interpret | `core/src/pipe-interpret.ts` | 23 tests + 퀄리티 게이트 11건 |
-| pipe-gate | `core/src/pipe-gate.ts` | 16 tests (`pipe-gate.test.ts`) |
-| pipe-runtime | `core/src/pipe-runtime.ts` | 36 tests (`pipe-runtime.test.ts`) |
+| 모듈 | 구현 파일 | 테스트 파일 | tests |
+|------|----------|-----------|-------|
+| pipe-types | `core/src/types/pipe-spec.ts` | 빌드 체크 | — |
+| pipe-path | `core/src/pipe-path.ts` | `pipe-path.test.ts` | 38 |
+| pipe-validate | `core/src/pipe-validate.ts` | `pipe-validate.test.ts` | 20 |
+| pipe-serialize | `core/src/pipe-serialize.ts` | `pipe-serialize.test.ts` | 4 |
+| pipe-store | `core/src/pipe-store.ts` | `pipe-store.test.ts` | 9 |
+| pipe-analyze | `core/src/pipe-analyze.ts` | `pipe-analyze.test.ts` | 14 |
+| pipe-simulate | `core/src/pipe-simulate.ts` | `pipe-simulate.test.ts` | 38 |
+| pipe-simulate (29종) | 같은 파일 | `pipe-simulate-advanced.test.ts` | 40 |
+| pipe-simulate (시나리오) | 같은 파일 | `pipe-simulate-scenarios.test.ts` | 14 |
+| pipe-simulate (UI) | 같은 파일 | `pipe-simulate-ui.test.ts` | 12 |
+| pipe-happy-path | `core/src/pipe-simulate.ts` | `pipe-happy-path.test.ts` | 18 |
+| pipe-fold | `core/src/pipe-fold.ts` | `pipe-fold.test.ts` | 36 |
+| pipe-interpret | `core/src/pipe-interpret.ts` | `pipe-interpret.test.ts` | 23 |
+| pipe-gate | `core/src/pipe-gate.ts` | `pipe-gate.test.ts` | 17 |
+| pipe-interpret-gate | 같은 파일 | `pipe-interpret-gate.test.ts` | 11 |
+| pipe-runtime | `core/src/pipe-runtime.ts` | `pipe-runtime.test.ts` | 36 |
+| pipe-bridge | `core/src/pipe-bridge.ts` | 통합 테스트 | — |
+| pipe-benchmark | 성능 검증 | `pipe-benchmark.test.ts` | 11 |
+| pipe-flow-catalog | 문서 전용 (29 leaf) | — | — |
+| pipe-connection-catalog | 문서 전용 (8 leaf) | — | — |
 
-통합 테스트: `core/src/meta-semantic-integration.test.ts` (12 tests)
+통합 테스트: `meta-semantic-integration.test.ts` (12 tests)
+공유 fixture: `__fixtures__/pipe-fixtures.ts` (step, simplePipe, branchPipe, simpleGraph)
 
 ## 설계 구조
 
@@ -116,5 +126,5 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 
 ```bash
 pnpm --filter @qa-sdk/core build    # 타입 체크
-pnpm --filter @qa-sdk/core test     # 561 tests
+pnpm --filter @qa-sdk/core test     # 594 tests (33 files)
 ```
