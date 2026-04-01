@@ -320,6 +320,17 @@ export type {
   StepResult, StepError, ICancellationToken, IPipeContext,
   StepExecutor, ExecutedStep, RunResult,
 } from "./types/pipe-runtime.js";
+// ── PathMatcher ─────────────────────────────────────────
+export type { MatchResult as PathMatchResult } from "./path-matcher.js";
+export { matchPath } from "./path-matcher.js";
+
+// ── Test Tracking ───────────────────────────────────────
+export type {
+  TestCase, TestTarget, TestExpectation, TestSuite, TestResult,
+  FacetQualityMetrics, PipeQualityMetrics,
+} from "./types/test-tracking.js";
+export { buildTestAddress, parseTestAddress, TestRegistry } from "./test-tracking.js";
+
 // ── AsyncAPI ─────────────────────────────────────────────
 export type { AsyncApiOptions, AsyncApiSpec } from "./asyncapi-gen.js";
 export { generateAsyncApi, asyncApiToYaml, asyncApiToJson } from "./asyncapi-gen.js";
