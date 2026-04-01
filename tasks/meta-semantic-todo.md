@@ -116,7 +116,7 @@
 - [x] matchHappyPath → pipe-happy-path.test.ts 분리 (18 tests)
 - [x] fixture 추출 — step()/simplePipe/simpleGraph → `__fixtures__/pipe-fixtures.ts` (20파일 교체)
 - [x] test-split 스킬 작성 (`skills/test-split/SKILL.md`)
-- [x] pino 의존 수정 — workspace:@qa-sdk/pino → npm pino ^9.6.0 (8패키지)
+- [x] @qa-sdk/pino 복원 + workspace 참조 간소화 (^9.9.4 → *)
 
 ---
 
