@@ -13,7 +13,7 @@
     "weighted-index": "workspace:*",
     "bit-index": "workspace:*",
     "@qa-sdk/registry-service": "workspace:*",
-    "pino": "^9.6.0",
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "hono": "^4.7.5"
   },
   "devDependencies": {

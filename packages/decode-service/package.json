@@ -22,7 +22,7 @@
     "dotenv": "^17.3.1",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
-    "pino": "^9.6.0",
+    "pino": "workspace:@qa-sdk/pino@^9.9.4",
     "weighted-index": "workspace:*",
     "zod": "^3.24.2"
   },
