@@ -34,6 +34,13 @@ export interface SimulationConfig {
   /** race 해소: 어떤 것이 먼저 완료될지 결정. 반환값: 인덱스. */
   raceResolver?: (stepCount: number, context: SimContext) => number;
 
+  /**
+   * 실패 해소: retry/fallback/circuit-breaker에서 성공/실패 결정.
+   * true = 성공 (try 경로), false = 실패 (catch/재시도 경로).
+   * 미설정 시 기본값: 항상 성공 (true).
+   */
+  failureResolver?: (flowKind: string, context: SimContext) => boolean;
+
   /** 최대 시뮬레이션 스텝 (무한 루프 방지) */
   maxSteps?: number;
 }
@@ -98,6 +105,7 @@ export function simulate(config: SimulationConfig): SimulationResult {
     branchResolver = () => 0,
     filterResolver = () => true,
     raceResolver = () => 0,
+    failureResolver = () => true,
     maxSteps = 1000,
   } = config;
 
@@ -218,11 +226,16 @@ export function simulate(config: SimulationConfig): SimulationResult {
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "fallback":
+      case "fallback": {
         steps.push({ pipeId, flowPath: path, kind: "fallback", timestamp: clock, status: "executed" });
-        // 시뮬레이션에서는 try 성공 경로로 (branchResolver로 실패 시뮬 가능)
-        walkFlow(flow.try, pipeId, `${path}.try`, ctx);
+        const success = failureResolver("fallback", ctx);
+        if (success) {
+          walkFlow(flow.try, pipeId, `${path}.try`, ctx);
+        } else {
+          walkFlow(flow.catch, pipeId, `${path}.catch`, ctx);
+        }
         break;
+      }
 
       case "loop":
         steps.push({ pipeId, flowPath: path, kind: "loop", timestamp: clock, status: "executed" });

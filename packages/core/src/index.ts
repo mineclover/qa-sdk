@@ -320,6 +320,9 @@ export {
   LineageCollector, VersionCollector,
 } from "./data-contract.js";
 export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext } from "./pipe-simulate.js";
+export type { StepDataContract } from "./types/pipe-spec.js";
+export { extractLineageFromSimulation, validateStepContracts, constraintResultToEvent } from "./pipe-bridge.js";
+export type { StepCompatIssue, ConstraintEvent } from "./pipe-bridge.js";
 
 export type {
   MetricRollupStore,

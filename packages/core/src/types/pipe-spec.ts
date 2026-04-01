@@ -105,6 +105,18 @@ export interface PipeStep {
   eventKey?: string;
   constraints?: Constraint[];
   timeout?: number;
+
+  /** 데이터 계약: 이 step의 입출력 스키마 + 접근 테이블 */
+  dataContract?: StepDataContract;
+}
+
+export interface StepDataContract {
+  /** 이 step이 기대하는 입력 필드 */
+  consumes?: Record<string, { type: string; required: boolean; source?: string }>;
+  /** 이 step이 보장하는 출력 필드 */
+  produces?: Record<string, { type: string; required: boolean }>;
+  /** 접근하는 테이블/컬럼 */
+  accesses?: Array<{ schemaId: string; columns: string[]; mode: "read" | "write" | "readwrite" }>;
 }
 
 export interface PipeSequence {
