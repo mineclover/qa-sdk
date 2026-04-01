@@ -294,6 +294,8 @@ export type { PipeGraphStore, PipeSpecStore } from "./pipe-store.js";
 export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
 export { analyzePipeComplexity, findBottlenecks, analyzeCoverage } from "./pipe-analyze.js";
 export type { PipeComplexity, BottleneckReport, CoverageReport } from "./pipe-analyze.js";
+export { simulate } from "./pipe-simulate.js";
+export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext } from "./pipe-simulate.js";
 
 export type {
   MetricRollupStore,
