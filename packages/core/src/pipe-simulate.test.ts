@@ -837,3 +837,81 @@ describe("simulate", () => {
     });
   });
 });
+
+// ── Happy Path 검증 ─────────────────────────────────────
+
+import { matchHappyPath } from "./pipe-simulate.js";
+
+describe("matchHappyPath", () => {
+  // next 연결로만 체인 구성 (produces는 사용하지 않음 — 중복 트리거 방지)
+  const graph: PipeGraph = {
+    graphId: "g1", version: "v1",
+    pipes: [
+      { pipeId: "validate", version: "v1", trigger: { eventKey: "start" }, flow: step("검증") },
+      { pipeId: "charge", version: "v1", trigger: { eventKey: "t_charge" }, flow: step("결제") },
+      { pipeId: "receipt", version: "v1", trigger: { eventKey: "t_receipt" }, flow: step("영수증") },
+    ],
+    connections: [
+      { from: "validate", to: "charge", kind: "next" },
+      { from: "charge", to: "receipt", kind: "next" },
+    ],
+    entryPipeId: "validate",
+  };
+
+  it("happy path 일치", () => {
+    const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+    const match = matchHappyPath(result, {
+      expectedPipeTrace: ["validate", "charge", "receipt"],
+    });
+    expect(match.match).toBe(true);
+    expect(match.pipeTraceMatch).toBe(true);
+    expect(match.divergedAtIndex).toBeNull();
+  });
+
+  it("happy path 불일치 — 파이프 순서 다름", () => {
+    const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+    const match = matchHappyPath(result, {
+      expectedPipeTrace: ["validate", "receipt", "charge"],
+    });
+    expect(match.match).toBe(false);
+    expect(match.pipeTraceMatch).toBe(false);
+    expect(match.divergedAtIndex).toBe(1);
+    expect(match.expected).toBe("receipt");
+    expect(match.actual).toBe("charge");
+  });
+
+  it("happy path 불일치 — 기대보다 짧은 트레이스", () => {
+    const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+    const match = matchHappyPath(result, {
+      expectedPipeTrace: ["validate", "charge", "receipt", "notify"],
+    });
+    expect(match.match).toBe(false);
+    expect(match.divergedAtIndex).toBe(3);
+    expect(match.expected).toBe("notify");
+    expect(match.actual).toBeNull();
+  });
+
+  it("패싯 트레이스도 검증", () => {
+    const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+    const match = matchHappyPath(result, {
+      expectedPipeTrace: ["validate", "charge", "receipt"],
+      expectedFacets: ["검증", "결제", "영수증"],
+    });
+    expect(match.match).toBe(true);
+    expect(match.facetMatch).toBe(true);
+  });
+
+  it("파이프 일치 + 패싯 불일치", () => {
+    const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+    const match = matchHappyPath(result, {
+      expectedPipeTrace: ["validate", "charge", "receipt"],
+      expectedFacets: ["검증", "결제", "알림"],
+    });
+    expect(match.match).toBe(false);
+    expect(match.pipeTraceMatch).toBe(true);
+    expect(match.facetMatch).toBe(false);
+    expect(match.divergedAtIndex).toBe(2);
+    expect(match.expected).toBe("알림");
+    expect(match.actual).toBe("영수증");
+  });
+});

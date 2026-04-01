@@ -52,17 +52,29 @@ PipeGraph에 대한 품질 기준을 **스펙으로 정의**하고,
 
 ## GateCriterion — 9종 평가 기준
 
-| type | 설명 | 예시 |
-|------|------|------|
-| `concern-present` | 지정 concern이 존재해야 함 | `{values: ["resilience"]}` |
-| `concern-absent` | 지정 concern이 없어야 함 | `{values: ["concurrency"]}` |
-| `role-is` | 파이프 역할이 일치해야 함 | `{value: "transformer"}` |
-| `blast-radius-max` | 변경 영향 범위 상한 | `{value: 5}` |
-| `path-coverage-min` | 경로 커버리지 하한 (`executedPathCount` 필수) | `{value: 0.8}` |
-| `no-isolated-pipes` | 고립 파이프 없어야 함 | — |
-| `max-complexity` | 총 경로 수 상한 | `{value: 100}` |
-| `all-pipes-have-concerns` | 모든 파이프에 관심사 있어야 함 | — |
-| `no-unhandled-resilience` | resilience 상속만 받고 자체 내결함 없는 파이프 없어야 함 | — |
+| type | 설명 | 적용 시점 |
+|------|------|----------|
+| `no-isolated-pipes` | 고립 파이프 없어야 함 | 정의 직후 |
+| `max-complexity` | 총 경로 수 상한 | 정의 직후 |
+| `concern-present` | 지정 concern이 존재해야 함 | 정적 분석 후 |
+| `concern-absent` | 지정 concern이 없어야 함 | 정적 분석 후 |
+| `role-is` | 파이프 역할이 일치해야 함 | 정적 분석 후 |
+| `all-pipes-have-concerns` | 모든 파이프에 관심사 있어야 함 | 정적 분석 후 |
+| `no-unhandled-resilience` | resilience 상속만 받고 자체 내결함 없는 파이프 없어야 함 | 정적 분석 후 |
+| `blast-radius-max` | 변경 영향 범위 상한 | 정적 분석 후 |
+| `path-coverage-min` | 경로 커버리지 하한 (`executedPathCount` 필수) | 시뮬레이션 후 |
+
+### 적용 시점
+
+게이트는 파이프라인의 여러 시점에서 적용 가능하다:
+
+| 시점 | 필요 데이터 | 사용 가능 기준 |
+|------|------------|--------------|
+| **정의 직후** | PipeGraph 구조만 | `no-isolated-pipes`, `max-complexity` |
+| **정적 분석 후** | + PipeConcernMap, PipeRole | 위 + `concern-*`, `role-is`, `all-pipes-have-concerns`, `no-unhandled-resilience`, `blast-radius-max` |
+| **시뮬레이션 후** | + executedPathCount | 위 + `path-coverage-min` |
+
+`evaluateGate`의 `executedPipeIds`/`executedPathCount`는 optional — 미제공 시 구조/해석 기준만 평가된다.
 
 ## GateVerdict — 3종 판정
 

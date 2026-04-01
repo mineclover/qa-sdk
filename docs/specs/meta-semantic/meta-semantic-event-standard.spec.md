@@ -348,7 +348,31 @@ draft → published → active → superseded → archived
 
 ---
 
-## 8. 범위
+## 8. 최종 목적 — SDK 관측
+
+이 스펙의 CloudEvents 호환, 매니페스트 라이프사이클, prefix 공급 체인은 하나의 목적을 향한다:
+
+**이벤트 카탈로그 기반으로 실제 동작 로직에서 이벤트를 식별·수집하는 것.**
+
+```
+PipeGraph 정의 → collectGraphEvents()로 이벤트 카탈로그 수집
+    ↓
+이벤트 카탈로그 → CloudEvent 스키마 도출 + AsyncAPI 생성
+    ↓
+런타임 track API (event-catalog autoTrack) → 실제 이벤트 수집
+    ↓
+수집 데이터 → ingest-server → 분석·관측
+    ↓
+피드백: 실제 수집 데이터 vs 설계 의도 → compareWithSimulation()으로 드리프트 감지
+```
+
+현재 구현 상태:
+- **구현됨**: 런타임 track API (event-catalog autoTrack), CloudEvent 변환, collectGraphEvents
+- **미구현**: 이벤트 카탈로그에서 SDK track 코드 자동 생성 (현재는 수동 삽입)
+
+---
+
+## 9. 범위
 
 ### 현재 범위
 

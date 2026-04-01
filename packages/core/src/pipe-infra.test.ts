@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
 import { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
-import { analyzePipeComplexity, findBottlenecks, analyzeCoverage } from "./pipe-analyze.js";
+import { analyzePipeComplexity, findBottlenecks, analyzeCoverage, collectGraphEvents } from "./pipe-analyze.js";
 import { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
 import type { PipeSpec, PipeGraph, PipeFlow } from "./types/pipe-spec.js";
 
@@ -352,5 +352,62 @@ describe("validatePipeGraph — 빈 배열 연결 검증", () => {
     const w = issues.find(i => i.message.includes("to 배열이 비어있음"));
     expect(w).toBeDefined();
     expect(w!.severity).toBe("warning");
+  });
+});
+
+// ── 이벤트 카탈로그 수집 ─────────────────────────────────
+
+describe("collectGraphEvents", () => {
+  it("trigger + produces + emit 이벤트 수집", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [
+        {
+          pipeId: "order", version: "v1",
+          trigger: { eventKey: "order_submitted" },
+          flow: {
+            kind: "sequence", steps: [
+              step("검증"),
+              { kind: "emit", eventKey: "order_validated" },
+            ],
+          },
+          produces: ["order_completed"],
+        },
+        {
+          pipeId: "payment", version: "v1",
+          trigger: { eventKey: "order_completed" },
+          flow: step("결제"),
+        },
+      ],
+      connections: [{ from: "order", to: "payment", kind: "next" }],
+      entryPipeId: "order",
+    };
+
+    const events = collectGraphEvents(graph);
+
+    // trigger 2건
+    expect(events.filter(e => e.role === "trigger")).toHaveLength(2);
+    expect(events.find(e => e.eventKey === "order_submitted" && e.role === "trigger")).toBeDefined();
+    expect(events.find(e => e.eventKey === "order_completed" && e.role === "trigger")).toBeDefined();
+
+    // produces 1건
+    expect(events.filter(e => e.role === "produces")).toHaveLength(1);
+    expect(events.find(e => e.eventKey === "order_completed" && e.role === "produces")?.pipeId).toBe("order");
+
+    // emit 1건
+    expect(events.filter(e => e.role === "emit")).toHaveLength(1);
+    expect(events.find(e => e.eventKey === "order_validated" && e.role === "emit")?.pipeId).toBe("order");
+  });
+
+  it("emit 없는 단순 그래프", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{ pipeId: "p1", version: "v1", trigger: { eventKey: "start" }, flow: step() }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const events = collectGraphEvents(graph);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.role).toBe("trigger");
   });
 });

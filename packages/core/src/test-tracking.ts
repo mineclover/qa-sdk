@@ -7,6 +7,9 @@ import type {
   FacetQualityMetrics, PipeQualityMetrics,
 } from "./types/test-tracking.js";
 import type { PipeSpec } from "./types/pipe-spec.js";
+import type { SimulationResult } from "./pipe-simulate.js";
+import { matchHappyPath } from "./pipe-simulate.js";
+import type { HappyPathSpec, HappyPathMatch } from "./pipe-simulate.js";
 import { countPipePaths } from "./pipe-path.js";
 
 // ── TestCase 주소 생성 ───────────────────────────────
@@ -192,6 +195,25 @@ export class TestRegistry {
       facetDistribution,
       uncoveredFacets,
     };
+  }
+
+  // ── 시뮬레이션 비교 ────────────────────────────
+
+  /**
+   * 시뮬레이션 결과를 등록된 happy path와 비교하여 드리프트를 감지한다.
+   *
+   * @param scenarioId 시나리오(happy path) 식별자
+   * @param spec 의도된 경로 선언
+   * @param result 시뮬레이션 결과
+   * @returns 매칭 결과 + 드리프트 여부
+   */
+  compareWithSimulation(
+    scenarioId: string,
+    spec: HappyPathSpec,
+    result: SimulationResult,
+  ): { scenarioId: string; match: HappyPathMatch; drift: boolean } {
+    const match = matchHappyPath(result, spec);
+    return { scenarioId, match, drift: !match.match };
   }
 
   // ── 전체 현황 ─────────────────────────────────

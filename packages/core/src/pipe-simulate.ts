@@ -457,3 +457,89 @@ export function simulate(config: SimulationConfig): SimulationResult {
     };
   }
 }
+
+// ── Happy Path 검증 ─────────────────────────────────
+
+/** 의도된 정상 경로 선언 */
+export interface HappyPathSpec {
+  /** 의도된 파이프 실행 순서 */
+  expectedPipeTrace: string[];
+  /** 의도된 패싯 실행 순서 (선택) */
+  expectedFacets?: string[];
+}
+
+/** Happy path 매칭 결과 */
+export interface HappyPathMatch {
+  /** 전체 일치 여부 */
+  match: boolean;
+  /** 파이프 트레이스 일치 여부 */
+  pipeTraceMatch: boolean;
+  /** 패싯 트레이스 일치 여부 (expectedFacets 미제공 시 true) */
+  facetMatch: boolean;
+  /** 불일치 시 분기 지점 인덱스 */
+  divergedAtIndex: number | null;
+  /** 불일치 시 기대값 */
+  expected: string | null;
+  /** 불일치 시 실제값 */
+  actual: string | null;
+}
+
+/**
+ * 시뮬레이션 결과가 의도된 happy path와 일치하는지 검증한다.
+ */
+export function matchHappyPath(
+  result: SimulationResult,
+  spec: HappyPathSpec,
+): HappyPathMatch {
+  // 파이프 트레이스 비교
+  const pipeMatch = arraysEqual(result.pipeTrace, spec.expectedPipeTrace);
+  let divergedAtIndex: number | null = null;
+  let expected: string | null = null;
+  let actual: string | null = null;
+
+  if (!pipeMatch) {
+    const maxLen = Math.max(result.pipeTrace.length, spec.expectedPipeTrace.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (result.pipeTrace[i] !== spec.expectedPipeTrace[i]) {
+        divergedAtIndex = i;
+        expected = spec.expectedPipeTrace[i] ?? null;
+        actual = result.pipeTrace[i] ?? null;
+        break;
+      }
+    }
+  }
+
+  // 패싯 트레이스 비교 (선택)
+  const facetMatch = spec.expectedFacets
+    ? arraysEqual(result.facetTrace, spec.expectedFacets)
+    : true;
+
+  if (pipeMatch && !facetMatch && spec.expectedFacets) {
+    const maxLen = Math.max(result.facetTrace.length, spec.expectedFacets.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (result.facetTrace[i] !== spec.expectedFacets[i]) {
+        divergedAtIndex = i;
+        expected = spec.expectedFacets[i] ?? null;
+        actual = result.facetTrace[i] ?? null;
+        break;
+      }
+    }
+  }
+
+  return {
+    match: pipeMatch && facetMatch,
+    pipeTraceMatch: pipeMatch,
+    facetMatch,
+    divergedAtIndex,
+    expected,
+    actual,
+  };
+}
+
+function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}

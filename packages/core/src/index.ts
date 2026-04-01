@@ -292,8 +292,8 @@ export type { ValidationIssue } from "./pipe-validate.js";
 export { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
 export type { PipeGraphStore, PipeSpecStore } from "./pipe-store.js";
 export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
-export { analyzePipeComplexity, findBottlenecks, analyzeCoverage, getChildFlows } from "./pipe-analyze.js";
-export type { PipeComplexity, BottleneckReport, CoverageReport } from "./pipe-analyze.js";
+export { analyzePipeComplexity, findBottlenecks, analyzeCoverage, getChildFlows, collectGraphEvents } from "./pipe-analyze.js";
+export type { PipeComplexity, BottleneckReport, CoverageReport, GraphEvent } from "./pipe-analyze.js";
 
 // ── Pipe Folding ──────────────────────────────────────
 export {
@@ -320,7 +320,7 @@ export type {
   GateLevel, GateVerdict, GateCriterion, PipeGateSpec,
   CriterionResult, GateResult, SubGateIssue,
 } from "./pipe-gate.js";
-export { simulate } from "./pipe-simulate.js";
+export { simulate, matchHappyPath } from "./pipe-simulate.js";
 
 // ── Data Contract ───────────────────────────────────────
 export type {
@@ -379,7 +379,7 @@ export {
   collectSchemaChanges, determineCompatibility, createSchemaVersion,
   LineageCollector, VersionCollector,
 } from "./data-contract.js";
-export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext } from "./pipe-simulate.js";
+export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext, HappyPathSpec, HappyPathMatch } from "./pipe-simulate.js";
 export type { StepDataContract } from "./types/pipe-spec.js";
 export { extractLineageFromSimulation, validateStepContracts, constraintResultToEvent } from "./pipe-bridge.js";
 export type { StepCompatIssue, ConstraintEvent } from "./pipe-bridge.js";

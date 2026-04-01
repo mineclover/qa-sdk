@@ -411,7 +411,27 @@ seq: 패싯 내 순번 (1-based)
 
 ---
 
-## 8. 범위
+## 8. SDK 관측 체계와의 연결
+
+테스트 추적은 SDK 관측 체계의 **품질 피드백 루프**이다.
+
+```
+설계 의도 (시뮬레이션 expected)  ←→  실제 수집 데이터 (actual)
+            ↓                              ↓
+      compareWithSimulation() ← TestRegistry
+            ↓
+      드리프트 감지 → 스펙 보정
+```
+
+| 비교 대상 | API | 검출 |
+|-----------|-----|------|
+| 시뮬 예상 경로 vs 실제 실행 | `compareWithSimulation(scenarioId, spec, result)` | 경로 드리프트 |
+| 패싯별 테스트 커버리지 | `computePipeMetrics()` | 미검증 경로 |
+| 스키마 변경 후 테스트 상태 | `computeFacetMetrics(facet, schemaUpdatedAt)` | 스키마 드리프트 |
+
+---
+
+## 9. 범위
 
 ### 현재 범위
 

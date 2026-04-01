@@ -281,3 +281,46 @@ describe("실전: 주문 시스템 테스트 추적", () => {
     expect(failures[0].testId).toBe("om2");
   });
 });
+
+// ── 시뮬레이션 비교 ─────────────────────────────────────
+
+import type { SimulationResult } from "./pipe-simulate.js";
+
+describe("compareWithSimulation", () => {
+  it("시뮬 결과와 happy path 일치 → drift 없음", () => {
+    const reg = new TestRegistry();
+    const simResult: SimulationResult = {
+      steps: [],
+      pipeTrace: ["validate", "charge", "receipt"],
+      facetTrace: ["검증", "결제", "영수증"],
+      producedEvents: [],
+      status: "complete",
+      totalTime: 0,
+      totalSteps: 3,
+    };
+    const { drift, match } = reg.compareWithSimulation("happy-order", {
+      expectedPipeTrace: ["validate", "charge", "receipt"],
+    }, simResult);
+    expect(drift).toBe(false);
+    expect(match.match).toBe(true);
+  });
+
+  it("시뮬 결과와 happy path 불일치 → drift 감지", () => {
+    const reg = new TestRegistry();
+    const simResult: SimulationResult = {
+      steps: [],
+      pipeTrace: ["validate", "refund"],
+      facetTrace: ["검증", "환불"],
+      producedEvents: [],
+      status: "complete",
+      totalTime: 0,
+      totalSteps: 2,
+    };
+    const { drift, match, scenarioId } = reg.compareWithSimulation("happy-order", {
+      expectedPipeTrace: ["validate", "charge", "receipt"],
+    }, simResult);
+    expect(drift).toBe(true);
+    expect(match.divergedAtIndex).toBe(1);
+    expect(scenarioId).toBe("happy-order");
+  });
+});

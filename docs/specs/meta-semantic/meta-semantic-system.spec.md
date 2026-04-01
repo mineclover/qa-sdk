@@ -138,6 +138,48 @@ def:
 
 ---
 
+## 데이터 흐름 파이프라인
+
+레이어 1/2 분류는 "무엇이 단위 속성이고 무엇이 관계인가"의 관점이다.
+파이프라인은 "언제 무엇이 실행되는가"의 직교하는 관점이다.
+
+```
+1. 정의
+   PipeFlow 29종 + ConnectionKind 8종 → PipeSpec → PipeGraph
+   이벤트 정의(trigger, produces, emit), 데이터 계약(consumes/produces/accesses)
+        ↓
+2. 정적 분석 + 이벤트 카탈로그 수집
+   구조: 경로 수 계산, 검증, 복잡도, 병목, 서브그래프 접기/펼치기
+   카탈로그: collectGraphEvents()로 trigger/produces/emit 이벤트 자동 수집
+   해석: 관심사 8종 자동 추출 → BFS 전파 → 역할 분류
+   ├── 품질 게이트 (구조/해석 기준은 여기서부터 적용 가능)
+   ↓
+3. 시뮬레이션
+   (a) 실제 동작 시뮬: resolver로 분기/실패 시나리오 주입
+   (b) 의도된 happy path 검증: matchHappyPath()로 설계 의도 확인
+   → 실행 경로, 생산 이벤트, 패싯 트레이스 수집
+   ├── 품질 게이트 (실행 데이터 기준: path-coverage-min 등)
+   ↓
+4. 계보 추적
+   시뮬레이션 결과(SimulationResult) 기반 — 데이터가 어떻게 흐르는지 추적
+   extractLineageFromSimulation() → 필드 단위 계보 수집
+   validateStepContracts() → step 간 스키마 호환 검증
+        ↓
+5. SDK 관측 코드 생성
+   이벤트 카탈로그 기반 → CloudEvent 스키마 도출
+   런타임 track API(event-catalog autoTrack)로 실제 동작 로직에서 이벤트 수집
+   테스트 메트릭: compareWithSimulation()으로 시뮬 vs 실제 드리프트 감지
+        ↓
+   (피드백: 실제 수집 데이터 → 드리프트 발견 → 스펙 보정)
+```
+
+레이어 분류와의 관계:
+- 레이어 1(수집)의 프리미티브가 1~2단계의 입력
+- 레이어 2(해석)의 전파·분류가 2단계의 해석 부분
+- 실행 엔진이 3단계, 데이터 계약이 4단계, 표준 호환이 5단계에 대응
+
+---
+
 ## 1. 코어 철학
 
 ### "Semantic Folding이 먼저, 좌표는 그 다음"

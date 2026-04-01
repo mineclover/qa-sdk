@@ -227,6 +227,52 @@ function collectTotalTimeout(flow: PipeFlow): number {
   return total;
 }
 
+// ── 이벤트 카탈로그 수집 ─────────────────────────────
+
+/** 그래프에서 수집된 이벤트 정보 */
+export interface GraphEvent {
+  /** 이벤트 키 */
+  eventKey: string;
+  /** 이벤트 유형: trigger(소비) / produces(생산) / emit(비동기 생산) */
+  role: "trigger" | "produces" | "emit";
+  /** 소속 파이프 ID */
+  pipeId: string;
+}
+
+/**
+ * PipeGraph의 모든 파이프에서 trigger/produces/emit 이벤트를 수집한다.
+ * 정적 분석 단계에서 이벤트 카탈로그의 입력으로 사용된다.
+ */
+export function collectGraphEvents(graph: PipeGraph): GraphEvent[] {
+  const events: GraphEvent[] = [];
+
+  for (const pipe of graph.pipes) {
+    // trigger (소비)
+    events.push({ eventKey: pipe.trigger.eventKey, role: "trigger", pipeId: pipe.pipeId });
+
+    // produces (생산)
+    if (pipe.produces) {
+      for (const eventKey of pipe.produces) {
+        events.push({ eventKey, role: "produces", pipeId: pipe.pipeId });
+      }
+    }
+
+    // emit (비동기 생산 — flow 트리 탐색)
+    collectEmitEvents(pipe.flow, pipe.pipeId, events);
+  }
+
+  return events;
+}
+
+function collectEmitEvents(flow: PipeFlow, pipeId: string, events: GraphEvent[]): void {
+  if (flow.kind === "emit") {
+    events.push({ eventKey: flow.eventKey, role: "emit", pipeId });
+  }
+  for (const child of getChildFlows(flow)) {
+    collectEmitEvents(child, pipeId, events);
+  }
+}
+
 export function getChildFlows(flow: PipeFlow): PipeFlow[] {
   switch (flow.kind) {
     case "step": case "emit": return [];
