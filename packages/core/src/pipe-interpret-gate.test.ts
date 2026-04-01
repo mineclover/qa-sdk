@@ -24,11 +24,9 @@ import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "./types/pipe
 const collector = new SpecCollector();
 const SPEC_ID = "pipe-interpret-quality";
 
-// ── 헬퍼 ──────────────────────────────────────────────
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
-const step = (facet = "소비", overrides?: Partial<import("./types/pipe-spec.js").PipeStep>): PipeFlow => ({
-  kind: "step", facet, ...overrides,
-});
+// ── 헬퍼 ──────────────────────────────────────────────
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
   return {
@@ -56,7 +54,7 @@ function orderFlowGraph(): PipeGraph {
         flow: {
           kind: "sequence",
           steps: [
-            step("소비", { dataContract: {
+            step("소비", undefined, { dataContract: {
               consumes: { orderId: { type: "string", required: true } },
               accesses: [{ schemaId: "orders", columns: ["id", "status"], mode: "read" }],
             }}),
@@ -71,7 +69,7 @@ function orderFlowGraph(): PipeGraph {
           kind: "retry",
           step: {
             kind: "timeout",
-            body: step("생산", { dataContract: {
+            body: step("생산", undefined, { dataContract: {
               accesses: [{ schemaId: "payments", columns: ["amount", "method"], mode: "write" }],
             }}),
             duration: 10000,
@@ -82,7 +80,7 @@ function orderFlowGraph(): PipeGraph {
         scope: "payment",
       }),
       makePipe("receipt", {
-        flow: step("생산", { dataContract: {
+        flow: step("생산", undefined, { dataContract: {
           produces: { receiptUrl: { type: "string", required: true } },
         }}),
         produces: ["receipt.generated"],
@@ -95,7 +93,7 @@ function orderFlowGraph(): PipeGraph {
         },
       }),
       makePipe("complete", {
-        flow: step("저장", { dataContract: {
+        flow: step("저장", undefined, { dataContract: {
           accesses: [{ schemaId: "orders", columns: ["status"], mode: "write" }],
         }}),
       }),
@@ -123,7 +121,7 @@ function fullConnectionGraph(): PipeGraph {
       makePipe("E", { flow: { kind: "fallback", try: step(), catch: step() } }),
       makePipe("F", { flow: { kind: "dedup", keyField: "id", step: step() } }),
       makePipe("G", { flow: { kind: "tap", observe: step(), step: step() } }),
-      makePipe("H", { flow: step("소비", { dataContract: {
+      makePipe("H", { flow: step("소비", undefined, { dataContract: {
         accesses: [{ schemaId: "t", columns: ["c"], mode: "readwrite" }],
       }}) }),
       makePipe("J"),

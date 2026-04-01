@@ -14,9 +14,7 @@ const SPEC_ID = "pipe-gate-system";
 
 // ── 헬퍼 ──────────────────────────────────────────────
 
-const step = (facet = "소비", overrides?: Partial<import("./types/pipe-spec.js").PipeStep>): PipeFlow => ({
-  kind: "step", facet, ...overrides,
-});
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
   return {
@@ -41,7 +39,7 @@ function orderFlowGraph(): PipeGraph {
         flow: {
           kind: "sequence",
           steps: [
-            step("소비", { dataContract: {
+            step("소비", undefined, { dataContract: {
               accesses: [{ schemaId: "orders", columns: ["id", "status"], mode: "read" }],
             }}),
             { kind: "branch", condition: "order.type", paths: [step("관리"), step("관리")] },
@@ -52,7 +50,7 @@ function orderFlowGraph(): PipeGraph {
       makePipe("charge", {
         flow: {
           kind: "retry",
-          step: { kind: "timeout", body: step("생산", { dataContract: {
+          step: { kind: "timeout", body: step("생산", undefined, { dataContract: {
             accesses: [{ schemaId: "payments", columns: ["amount"], mode: "write" }],
           }}), duration: 10000 },
           maxAttempts: 3,
@@ -67,7 +65,7 @@ function orderFlowGraph(): PipeGraph {
         flow: { kind: "tap", observe: { kind: "emit", eventKey: "notification.send" }, step: step("관리") },
       }),
       makePipe("complete", {
-        flow: step("저장", { dataContract: {
+        flow: step("저장", undefined, { dataContract: {
           accesses: [{ schemaId: "orders", columns: ["status"], mode: "write" }],
         }}),
       }),

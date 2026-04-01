@@ -2,8 +2,7 @@ import { describe, it, expect } from "vitest";
 import { matchHappyPath, simulate } from "./pipe-simulate.js";
 import type { SimulationResult, HappyPathMatch } from "./pipe-simulate.js";
 import type { PipeGraph, PipeFlow } from "./types/pipe-spec.js";
-
-const step = (facet = "소비"): PipeFlow => ({ kind: "step", facet });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 /** SimulationResult를 직접 구성하는 헬퍼 (simulate 없이 matchHappyPath 단독 테스트) */
 function fakeResult(pipeTrace: string[], facetTrace: string[] = []): SimulationResult {

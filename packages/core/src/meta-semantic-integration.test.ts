@@ -35,8 +35,7 @@ import {
 } from "./index.js";
 import type { ConstraintDef } from "./types/constraint.js";
 
-const step = (facet: string, eventKey?: string): PipeFlow =>
-  ({ kind: "step", facet, eventKey });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 describe("통합 시나리오: 주문 처리 시스템", () => {
   // ── 1. 스키마 정의 ──────────────────────────────────

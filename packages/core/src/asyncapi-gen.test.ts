@@ -3,7 +3,7 @@ import { generateAsyncApi, asyncApiToYaml, asyncApiToJson } from "./asyncapi-gen
 import type { PipeGraph, PipeFlow } from "./types/pipe-spec.js";
 import type { PipeSpec } from "./types/pipe-spec.js";
 
-const step = (facet: string, eventKey?: string): PipeFlow => ({ kind: "step", facet, eventKey });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makePipe(id: string, trigger: string, flow: PipeFlow, produces?: string[]): PipeSpec {
   return { pipeId: id, version: "v1", trigger: { eventKey: trigger }, flow, produces };

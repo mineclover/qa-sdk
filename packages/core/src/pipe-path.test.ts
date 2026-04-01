@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";
 import type { PipeFlow, PipeGraph } from "./types/pipe-spec.js";
-
-// 헬퍼: step 생성
-const step = (facet = "소비"): PipeFlow => ({ kind: "step", facet });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 describe("countPipePaths", () => {
   it("step → 1", () => {

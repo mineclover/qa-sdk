@@ -3,9 +3,9 @@ import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions } fr
 import { countGraphPaths } from "./pipe-path.js";
 import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "./types/pipe-spec.js";
 
-// ── 헬퍼 ──────────────────────────────────────────────
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
-const step = (facet = "소비"): PipeFlow => ({ kind: "step", facet });
+// ── 헬퍼 ──────────────────────────────────────────────
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
   return {

@@ -3,7 +3,7 @@ import { matchPath } from "./path-matcher.js";
 import type { PipeGraph, PipeFlow, PipeSpec } from "./types/pipe-spec.js";
 import type { RunResult, ExecutedStep } from "./types/pipe-runtime.js";
 
-const step = (facet: string): PipeFlow => ({ kind: "step", facet });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makePipe(id: string, trigger: string, flow: PipeFlow, produces?: string[]): PipeSpec {
   return { pipeId: id, version: "v1", trigger: { eventKey: trigger }, flow, produces };

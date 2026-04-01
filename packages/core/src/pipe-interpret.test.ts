@@ -4,11 +4,9 @@ import {
 } from "./pipe-interpret.js";
 import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "./types/pipe-spec.js";
 
-// ── 헬퍼 ──────────────────────────────────────────────
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
-const step = (facet = "소비", overrides?: Partial<import("./types/pipe-spec.js").PipeStep>): PipeFlow => ({
-  kind: "step", facet, ...overrides,
-});
+// ── 헬퍼 ──────────────────────────────────────────────
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
   return {
@@ -73,7 +71,7 @@ describe("extractPipeConcerns", () => {
 
   it("accesses write+read → data-mutation + data-read", () => {
     const pipe = makePipe("A", {
-      flow: step("관리", {
+      flow: step("관리", undefined, {
         dataContract: {
           accesses: [
             { schemaId: "orders", columns: ["id"], mode: "write" },
@@ -178,7 +176,7 @@ describe("propagatePipeConcerns", () => {
     const graph = makeGraph(
       [
         makePipe("A", {
-          flow: step("저장", {
+          flow: step("저장", undefined, {
             dataContract: {
               accesses: [{ schemaId: "orders", columns: ["status"], mode: "write" }],
             },

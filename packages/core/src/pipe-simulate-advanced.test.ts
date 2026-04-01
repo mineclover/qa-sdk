@@ -5,8 +5,7 @@ import { describe, it, expect } from "vitest";
 import { simulate } from "./pipe-simulate.js";
 import type { PipeSpec, PipeGraph, PipeFlow } from "./types/pipe-spec.js";
 
-const step = (facet: string, eventKey?: string): PipeFlow =>
-  ({ kind: "step", facet, eventKey });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makeGraph(pipes: PipeSpec[], connections: PipeGraph["connections"] = []): PipeGraph {
   return {

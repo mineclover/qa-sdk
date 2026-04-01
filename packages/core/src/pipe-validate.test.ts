@@ -1,20 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
 import type { PipeSpec, PipeGraph, PipeFlow } from "./types/pipe-spec.js";
-
-const step = (facet = "소비"): PipeFlow => ({ kind: "step", facet });
+import { step, simplePipe } from "./__fixtures__/pipe-fixtures.js";
 
 const wrap = (flow: PipeFlow): PipeSpec => ({
   pipeId: "t", version: "v1",
   trigger: { eventKey: "e" },
   flow,
 });
-
-const simplePipe: PipeSpec = {
-  pipeId: "p1", version: "v1",
-  trigger: { eventKey: "e1" },
-  flow: step(),
-};
 
 // ── 숫자 범위 검증 ───────────────────────────────────────
 

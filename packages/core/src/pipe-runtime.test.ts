@@ -6,7 +6,7 @@ import {
 import type { PipeFlow, PipeSpec, PipeGraph } from "./types/pipe-spec.js";
 import type { StepResult } from "./types/pipe-runtime.js";
 
-const step = (facet: string, eventKey?: string): PipeFlow => ({ kind: "step", facet, eventKey });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makePipe(id: string, trigger: string, flow: PipeFlow, produces?: string[]): PipeSpec {
   return { pipeId: id, version: "v1", trigger: { eventKey: trigger }, flow, produces };

@@ -5,7 +5,7 @@ import {
 import type { TestCase, TestSuite, TestResult } from "./types/test-tracking.js";
 import type { PipeSpec, PipeFlow } from "./types/pipe-spec.js";
 
-const step = (facet: string): PipeFlow => ({ kind: "step", facet });
+import { step } from "./__fixtures__/pipe-fixtures.js";
 
 // ── 주소 ─────────────────────────────────────────────
 

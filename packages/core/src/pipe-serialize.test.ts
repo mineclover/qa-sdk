@@ -1,27 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
-import type { PipeSpec, PipeGraph, PipeFlow } from "./types/pipe-spec.js";
-
-const step = (facet = "소비"): PipeFlow => ({ kind: "step", facet });
-
-const simplePipe: PipeSpec = {
-  pipeId: "p1", version: "v1",
-  trigger: { eventKey: "e1" },
-  flow: step(),
-};
-
-const branchPipe: PipeSpec = {
-  pipeId: "p2", version: "v1",
-  trigger: { eventKey: "e2" },
-  flow: { kind: "branch", condition: "x", paths: [step("생산"), step("저장")] },
-};
-
-const simpleGraph: PipeGraph = {
-  graphId: "g1", version: "v1",
-  pipes: [simplePipe, branchPipe],
-  connections: [{ from: "p1", to: "p2", kind: "next" }],
-  entryPipeId: "p1",
-};
+import { step, simplePipe, branchPipe, simpleGraph } from "./__fixtures__/pipe-fixtures.js";
 
 describe("직렬화", () => {
   it("PipeSpec 라운드트립", () => {
