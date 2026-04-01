@@ -28,6 +28,8 @@ def:
       type: contains
     - target: pipe-flow-catalog
       type: contains
+    - target: pipe-connection-catalog
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현
