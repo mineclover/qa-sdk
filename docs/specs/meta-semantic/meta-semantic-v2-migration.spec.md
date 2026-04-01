@@ -80,15 +80,20 @@ def:
 기존 ScenarioSpec의 step kinds를 패싯 흐름 위에서 표현한다.
 흐름 제어 자체는 유지하되, 기반이 "이벤트 매칭"에서 "데이터 흐름"으로 바뀐다.
 
-| 흐름 제어 | 표기 | 의미 | 분기 경로 계산 |
-|---|---|---|---|
-| `step` | A | 개별 패싯 실행 | 1 |
-| `sequence` | A → B | 순차. A 완료 후 B | 곱 (A × B) |
-| `branch` | A → B \| C | 조건부 분기. B 또는 C | 합 (A×B + A×C) |
-| `optional` | A → (B)? | 선택적. 있으면 매칭, 없어도 통과 | +1 (B 있는 경로 + 없는 경로) |
-| `parallel` | A + B | 동시 실행, 전부 완료 대기 | 곱 (A × B) |
-| `race` | A \|\| B | 동시 실행, 먼저 완료된 것만 | 합 (A + B) |
-| `await` | wait(조건) → B | 조건 충족까지 대기 후 B 실행 | B의 경로 수 |
+| 카테고리 | 흐름 제어 | 표기 | 의미 | 분기 경로 계산 |
+|---|---|---|---|---|
+| 기본 | `step` | A | 개별 패싯 실행 | 1 |
+| 기본 | `sequence` | A → B | 순차. A 완료 후 B | 곱 (A × B) |
+| 분기 | `branch` | A → B \| C | 조건부 분기. B 또는 C | 합 (A×B + A×C) |
+| 분기 | `optional` | A → (B)? | 선택적. 있어도 없어도 통과 | +1 (있는 경로 + 없는 경로) |
+| 동시성 | `parallel` | A + B | 동시 실행, 전부 완료 대기 | 곱 (A × B) |
+| 동시성 | `race` | A \|\| B | 동시 실행, 먼저 완료만 | 합 (A + B) |
+| 동시성 | `await` | wait(조건) → B | 조건 충족까지 대기 | B의 경로 수 |
+| 내결함 | `retry` | A ↻ (n) | 실패 시 재시도 | A의 경로 수 (재시도 횟수 무관) |
+| 내결함 | `fallback` | try(A) catch(B) | 실패 시 대안 | 합 (A + B) |
+| 반복 | `loop` | A ↻ until(조건) | 조건 충족까지 반복 | A의 경로 수 (반복 횟수 무관) |
+| 트랜잭션 | `compensate` | A ✓→ undo(A) | 후속 실패 시 롤백 | A의 경로 수 + 보상 경로 |
+| 비동기 | `emit` | fire(이벤트) | 결과 안 기다리고 발행 | 0 (후속 경로 없음) |
 
 ### PipeSpec 구조 (안)
 
@@ -115,21 +120,35 @@ interface PipeSpec {
   manifestVersion?: string;
 }
 
-/** 패싯 흐름 노드 — 7종 흐름 제어 */
+/** 패싯 흐름 노드 — 12종 흐름 제어 */
 type PipeFlow =
+  // ── 기본 ──
   | PipeStep        // 개별 패싯 실행
   | PipeSequence    // 순차 (A → B)
+  // ── 분기 ──
   | PipeBranch      // 조건부 분기 (A → B | C)
   | PipeOptional    // 선택적 (A → B?)
+  // ── 동시성 ──
   | PipeParallel    // 동시 실행 (A + B, 전부 완료 대기)
-  | PipeRace        // 경쟁 실행 (A | B, 먼저 완료된 것만)
-  | PipeAwait;      // 대기 후 실행 (조건 충족까지 대기 → B)
+  | PipeRace        // 경쟁 실행 (A || B, 먼저 완료된 것만)
+  | PipeAwait       // 대기 후 실행 (조건 충족까지 대기 → B)
+  // ── 내결함 ──
+  | PipeRetry       // 실패 시 재시도 (backoff + 최대 횟수)
+  | PipeFallback    // 실패 시 대안 실행 (catch → B)
+  // ── 반복 ──
+  | PipeLoop        // 조건 충족까지 반복
+  // ── 트랜잭션 ──
+  | PipeCompensate  // 후속 실패 시 선행 롤백 (saga)
+  // ── 비동기 발행 ──
+  | PipeEmit;       // 결과 안 기다리고 이벤트 발행 (fire-and-forget)
+
+// ── 기본 ──────────────────────────────────────────────
 
 interface PipeStep {
   kind: "step";
   facet: string;          // 생산 | 소비 | 정의 | 관리 | 저장
   eventKey?: string;      // 이 단계에서 발생하는 이벤트 (수집 대상)
-  constraints?: Constraint[];  // 기존 ScenarioSpec.constraints 유지
+  constraints?: Constraint[];
   timeout?: number;
 }
 
@@ -137,6 +156,8 @@ interface PipeSequence {
   kind: "sequence";
   steps: PipeFlow[];      // 순차 실행: steps[0] → steps[1] → ...
 }
+
+// ── 분기 ──────────────────────────────────────────────
 
 interface PipeBranch {
   kind: "branch";
@@ -148,6 +169,8 @@ interface PipeOptional {
   kind: "optional";
   step: PipeFlow;         // 있으면 매칭, 없어도 통과
 }
+
+// ── 동시성 ────────────────────────────────────────────
 
 interface PipeParallel {
   kind: "parallel";
@@ -164,6 +187,47 @@ interface PipeAwait {
   condition: string;      // 대기 조건 (이벤트 발생, 타임아웃, 외부 신호)
   timeout?: number;       // 대기 제한 시간
   then: PipeFlow;         // 조건 충족 후 실행
+}
+
+// ── 내결함 ────────────────────────────────────────────
+
+interface PipeRetry {
+  kind: "retry";
+  step: PipeFlow;         // 재시도 대상
+  maxAttempts: number;    // 최대 시도 횟수
+  backoff?: number;       // 재시도 간격 (ms). 지수 증가 적용 가능
+}
+
+interface PipeFallback {
+  kind: "fallback";
+  try: PipeFlow;          // 먼저 시도
+  catch: PipeFlow;        // 실패 시 대안 실행
+}
+
+// ── 반복 ──────────────────────────────────────────────
+
+interface PipeLoop {
+  kind: "loop";
+  body: PipeFlow;         // 반복 실행할 흐름
+  until: string;          // 종료 조건 (조건 충족 시 중단)
+  maxIterations?: number; // 무한 루프 방지
+}
+
+// ── 트랜잭션 ──────────────────────────────────────────
+
+interface PipeCompensate {
+  kind: "compensate";
+  forward: PipeFlow;      // 정상 흐름
+  compensate: PipeFlow;   // forward의 후속이 실패하면 롤백 실행
+}
+
+// ── 비동기 발행 ───────────────────────────────────────
+
+interface PipeEmit {
+  kind: "emit";
+  eventKey: string;       // 발행할 이벤트
+  payload?: string;       // 페이로드 표현식
+  // 결과를 기다리지 않음 (fire-and-forget)
 }
 ```
 
