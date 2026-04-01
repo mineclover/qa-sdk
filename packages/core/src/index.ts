@@ -304,6 +304,16 @@ export type {
   SchemaVersion, SchemaChange, SchemaChangeType, SchemaCompatibility,
   FieldSet, FieldSpec, CompatibilityResult,
 } from "./types/data-schema.js";
+// ── Constraint Engine ───────────────────────────────────
+export type {
+  ConstraintDef as VerificationConstraint, ConstraintSubject, SubjectKind,
+  ConstraintPredicate, PredicateOp,
+  ConstraintContext, ContextWhen,
+  ConstraintEvidence, EvidenceMethod,
+  ConstraintResult as VerificationResult, FailureTrace,
+} from "./types/constraint.js";
+export { ConstraintRegistry, evaluatePredicate, executeConstraint } from "./constraint-engine.js";
+
 export {
   checkCompatibility, computeSchemaHash,
   collectSchemaChanges, determineCompatibility, createSchemaVersion,
