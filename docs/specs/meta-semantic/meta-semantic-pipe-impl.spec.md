@@ -132,27 +132,41 @@ type ConnectionKind =
   | "error"         // from 실패 → to 시작 (에러 핸들링)
   | "compensate"    // from 후속 실패 → to 보상 실행
   | "fan-out"       // from 완료 → to[] 동시 시작 (1:N)
-  | "join";         // from[] 전부 완료 → to 시작 (N:1)
+  | "join"          // from[] 전부 완료 → to 시작 (N:1)
+  | "feedback";     // from 출력 → to 입력 (폐루프, 이벤트 기반 재트리거)
 ```
 
-### PipeFlow — 12종 흐름 제어
+### PipeFlow — 15종 흐름 제어
 
 ```typescript
 type PipeFlow =
-  // 기본
-  | PipeStep | PipeSequence
-  // 분기
-  | PipeBranch | PipeOptional
-  // 동시성
-  | PipeParallel | PipeRace | PipeAwait
-  // 내결함
-  | PipeRetry | PipeFallback
-  // 반복
-  | PipeLoop
-  // 트랜잭션
-  | PipeCompensate
-  // 비동기
-  | PipeEmit;
+  // ── 기본 (2) ──
+  | PipeStep          // 개별 패싯 실행
+  | PipeSequence      // 순차 (A → B)
+  // ── 분기 (2) ──
+  | PipeBranch        // 조건부 분기 (A → B | C)
+  | PipeOptional      // 선택적 (A → B?)
+  // ── 동시성 (3) ──
+  | PipeParallel      // 동시 실행, 전부 대기 (Promise.all)
+  | PipeRace          // 동시 실행, 먼저 완료만 (Promise.race)
+  | PipeAwait         // 조건 충족까지 대기 → 실행
+  // ── 내결함 (2) ──
+  | PipeRetry         // 실패 시 재시도
+  | PipeFallback      // 실패 시 대안 (try/catch)
+  // ── 반복 (1) ──
+  | PipeLoop          // 조건 충족까지 반복
+  // ── 트랜잭션 (1) ──
+  | PipeCompensate    // 후속 실패 시 롤백 (saga)
+  // ── 비동기 (1) ──
+  | PipeEmit          // 결과 안 기다리고 발행 (fire-and-forget)
+  // ── 정리 (1) ──
+  | PipeFinally       // 성공/실패 무관 항상 실행 (cleanup)
+  // ── 시간 (1) ──
+  | PipeTimeout       // 전체 흐름 시간 제한 래퍼
+  // ── 제어 (1) ──
+  | PipeFeedback;     // 출력이 입력으로 되돌아감 (폐루프)
+
+// ── 기본 ──────────────────────────────────────────────
 
 interface PipeStep {
   kind: "step";
@@ -167,6 +181,8 @@ interface PipeSequence {
   steps: PipeFlow[];
 }
 
+// ── 분기 ──────────────────────────────────────────────
+
 interface PipeBranch {
   kind: "branch";
   condition: string;
@@ -177,6 +193,8 @@ interface PipeOptional {
   kind: "optional";
   step: PipeFlow;
 }
+
+// ── 동시성 ────────────────────────────────────────────
 
 interface PipeParallel {
   kind: "parallel";
@@ -195,6 +213,8 @@ interface PipeAwait {
   then: PipeFlow;
 }
 
+// ── 내결함 ────────────────────────────────────────────
+
 interface PipeRetry {
   kind: "retry";
   step: PipeFlow;
@@ -208,6 +228,8 @@ interface PipeFallback {
   catch: PipeFlow;
 }
 
+// ── 반복 ──────────────────────────────────────────────
+
 interface PipeLoop {
   kind: "loop";
   body: PipeFlow;
@@ -215,17 +237,50 @@ interface PipeLoop {
   maxIterations?: number;
 }
 
+// ── 트랜잭션 ──────────────────────────────────────────
+
 interface PipeCompensate {
   kind: "compensate";
   forward: PipeFlow;
   compensate: PipeFlow;
 }
 
+// ── 비동기 ────────────────────────────────────────────
+
 interface PipeEmit {
   kind: "emit";
   eventKey: string;
   payload?: string;
 }
+
+// ── 정리 ──────────────────────────────────────────────
+
+interface PipeFinally {
+  kind: "finally";
+  body: PipeFlow;          // 메인 흐름 (성공/실패 가능)
+  cleanup: PipeFlow;       // 항상 실행 (리소스 해제, 로그 등)
+}
+
+// ── 시간 ──────────────────────────────────────────────
+
+interface PipeTimeout {
+  kind: "timeout";
+  body: PipeFlow;          // 시간 제한을 받는 흐름
+  duration: number;        // 제한 시간 (ms)
+  onTimeout?: PipeFlow;    // 타임아웃 시 대안 실행 (없으면 에러)
+}
+
+// ── 제어 ──────────────────────────────────────────────
+
+interface PipeFeedback {
+  kind: "feedback";
+  body: PipeFlow;          // 실행할 흐름
+  feedbackEvent: string;   // body 결과를 이 이벤트로 재주입
+  until: string;           // 종료 조건 (수렴 판정)
+  maxIterations?: number;  // 무한 루프 방지
+}
+
+// ── 공통 ──────────────────────────────────────────────
 
 interface Constraint {
   field: string;
@@ -258,6 +313,9 @@ function countPipePaths(flow: PipeFlow): number
 | loop | countPaths(body) | 반복 횟수 무관 |
 | compensate | countPaths(forward) + countPaths(compensate) | 정상 + 보상 |
 | emit | 1 | 발행만 |
+| finally | countPaths(body) | cleanup은 항상 실행 (분기 아님) |
+| timeout | countPaths(body) + (onTimeout ? countPaths(onTimeout) : 1) | 정상 + 타임아웃 대안 |
+| feedback | countPaths(body) | 반복 횟수 무관 (loop와 동일) |
 
 ### 그래프 전체 경로 (`pipe-graph-path.ts`)
 
@@ -277,6 +335,7 @@ function countGraphPaths(graph: PipeGraph): number
 | compensate | 합 | 보상 경로 |
 | fan-out | 곱 | 1→N 동시 실행, 전부의 경로 곱 |
 | join | 1 | N→1 합류점, 합류 후 to의 경로만 |
+| feedback | countPaths(to) | 폐루프 재트리거, 반복 횟수 무관 |
 
 ---
 
@@ -299,6 +358,9 @@ function validatePipeSpec(spec: PipeSpec): ValidationIssue[]
 | missing-trigger | error | trigger.eventKey 비어있음 |
 | missing-facet | warning | step.facet이 알려진 패싯 아님 |
 | deep-nesting | warning | 중첩 깊이 > 8 |
+| feedback-no-limit | warning | feedback.maxIterations 미설정 (무한 루프 위험) |
+| timeout-zero | error | timeout.duration ≤ 0 |
+| finally-in-emit | error | emit 내부에 finally (의미 없음) |
 
 ### PipeGraph 검증
 
@@ -317,6 +379,7 @@ function validatePipeGraph(graph: PipeGraph): ValidationIssue[]
 | fan-out-single | warning | kind=fan-out인데 to가 단일 값 (next로 충분) |
 | join-single | warning | kind=join인데 from이 단일 값 (next로 충분) |
 | join-incomplete | error | kind=join인데 from[] 중 일부가 entry에서 도달 불가능 |
+| feedback-no-convergence | warning | kind=feedback인데 종료 조건 없음 (무한 재트리거) |
 
 ---
 
@@ -366,7 +429,7 @@ Phase 3에서 engine의 매칭을 PipeGraph 기반으로 전환할 때까지
 
 PipeGraph가 ScenarioSpec보다 표현력이 높다:
 - ScenarioSpec: step kind 3종 (sequence/branch/optional), 1:1 연결만
-- PipeGraph: connection kind 7종 (fan-out/join 포함) + PipeFlow 12종 + N:M 연결
+- PipeGraph: ConnectionKind 8종 + PipeFlow 15종 + N:M 연결
 
 ScenarioSpec에서 표현 불가능했던 것:
 - 동시 실행 후 합류 (fan-out → join)
@@ -374,3 +437,6 @@ ScenarioSpec에서 표현 불가능했던 것:
 - 재시도/폴백 (retry/fallback)
 - 비동기 이벤트 발행 (emit)
 - 반복 처리 (loop)
+- 피드백 루프 (feedback — 폐루프 제어)
+- 성공/실패 무관 정리 (finally)
+- 전체 흐름 시간 제한 (timeout 래퍼)
