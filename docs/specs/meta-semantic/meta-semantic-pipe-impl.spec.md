@@ -136,7 +136,7 @@ type ConnectionKind =
   | "feedback";     // from 출력 → to 입력 (폐루프, 이벤트 기반 재트리거)
 ```
 
-### PipeFlow — 15종 흐름 제어
+### PipeFlow — 31종 흐름 제어
 
 ```typescript
 type PipeFlow =
@@ -164,7 +164,27 @@ type PipeFlow =
   // ── 시간 (1) ──
   | PipeTimeout       // 전체 흐름 시간 제한 래퍼
   // ── 제어 (1) ──
-  | PipeFeedback;     // 출력이 입력으로 되돌아감 (폐루프)
+  | PipeFeedback      // 출력이 입력으로 되돌아감 (폐루프)
+  // ── 배치 (4) ──
+  | PipeMap           // 컬렉션 각 항목에 흐름 적용
+  | PipeReduce        // 여러 결과를 하나로 집계
+  | PipeBuffer        // N개/T시간 모아서 한 번에 처리
+  | PipeFilter        // 조건 만족 항목만 통과 (탈락은 소멸)
+  // ── 안정화 (3) ──
+  | PipeCircuitBreaker // N회 실패 → 쿨다운 → 반개방 → 재시도
+  | PipeThrottle      // 실행 빈도 제한 (N/초)
+  | PipeDebounce      // 빠른 반복 무시, 마지막만 실행
+  // ── 데이터 변환 (2) ──
+  | PipeSplit         // 하나의 데이터를 여러 개로 분할
+  | PipeEnrich        // 외부 소스에서 데이터 보강
+  // ── 관측 (1) ──
+  | PipeTap           // 흐름에 영향 없이 관측 (wire-tap)
+  // ── 스트리밍 (2) ──
+  | PipeResequence    // 순서 복원 (비동기 메시지 재정렬)
+  | PipeWindow        // 시간/개수 기반 윈도우 (슬라이딩/텀블링/세션)
+  // ── 상태 (2) ──
+  | PipeDedup         // 중복 이벤트 제거
+  | PipeCorrelation;  // 요청/응답 상관 관계 매칭
 
 // ── 기본 ──────────────────────────────────────────────
 
@@ -257,8 +277,8 @@ interface PipeEmit {
 
 interface PipeFinally {
   kind: "finally";
-  body: PipeFlow;          // 메인 흐름 (성공/실패 가능)
-  cleanup: PipeFlow;       // 항상 실행 (리소스 해제, 로그 등)
+  body: PipeFlow;          // 메인 흐름
+  cleanup: PipeFlow;       // 항상 실행
 }
 
 // ── 시간 ──────────────────────────────────────────────
@@ -278,6 +298,119 @@ interface PipeFeedback {
   feedbackEvent: string;   // body 결과를 이 이벤트로 재주입
   until: string;           // 종료 조건 (수렴 판정)
   maxIterations?: number;  // 무한 루프 방지
+}
+
+// ── 배치 ──────────────────────────────────────────────
+
+interface PipeMap {
+  kind: "map";
+  itemFlow: PipeFlow;      // 각 항목에 적용할 흐름
+  collection: string;      // 입력 컬렉션 참조
+  concurrency?: number;    // 동시 처리 수 (기본 1 = 순차)
+}
+
+interface PipeReduce {
+  kind: "reduce";
+  step: PipeFlow;          // 각 항목에 대한 누적 연산
+  initial: string;         // 초기값 표현식
+  accumulator: string;     // 누적 변수명
+}
+
+interface PipeBuffer {
+  kind: "buffer";
+  body: PipeFlow;          // 버퍼된 배치에 적용할 흐름
+  count?: number;          // 개수 기반 (N개 모이면 flush)
+  duration?: number;       // 시간 기반 (T ms마다 flush)
+}
+
+interface PipeFilter {
+  kind: "filter";
+  condition: string;       // 통과 조건 (만족하면 통과, 불만족 소멸)
+  step: PipeFlow;          // 통과한 항목에 적용할 흐름
+}
+
+// ── 안정화 ────────────────────────────────────────────
+
+interface PipeCircuitBreaker {
+  kind: "circuit-breaker";
+  step: PipeFlow;          // 보호 대상 흐름
+  failureThreshold: number; // 실패 N회 → 회로 개방
+  cooldown: number;         // 쿨다운 (ms) → 반개방
+  halfOpenAttempts?: number; // 반개방 시 시도 횟수 (기본 1)
+}
+
+interface PipeThrottle {
+  kind: "throttle";
+  step: PipeFlow;          // 빈도 제한 대상
+  rate: number;            // 허용 횟수
+  interval: number;        // 시간 간격 (ms) — rate/interval
+}
+
+interface PipeDebounce {
+  kind: "debounce";
+  step: PipeFlow;          // 실행 대상
+  wait: number;            // 대기 시간 (ms) — 마지막 트리거 후 wait 동안 추가 없으면 실행
+}
+
+// ── 데이터 변환 ───────────────────────────────────────
+
+interface PipeSplit {
+  kind: "split";
+  splitBy: string;         // 분할 기준 (필드명 또는 표현식)
+  itemFlow: PipeFlow;      // 분할된 각 항목에 적용할 흐름
+}
+
+interface PipeEnrich {
+  kind: "enrich";
+  source: string;          // 보강 데이터 소스 (서비스, DB 등)
+  mergeField: string;      // 보강 결과를 병합할 필드
+  step: PipeFlow;          // 보강 후 실행할 흐름
+  timeout?: number;
+}
+
+// ── 관측 ──────────────────────────────────────────────
+
+interface PipeTap {
+  kind: "tap";
+  observe: PipeFlow;       // 관측 행위 (로깅, 메트릭 등)
+  step: PipeFlow;          // 메인 흐름 (tap은 이 흐름에 영향 없음)
+}
+
+// ── 스트리밍 ──────────────────────────────────────────
+
+interface PipeResequence {
+  kind: "resequence";
+  orderBy: string;         // 정렬 기준 필드
+  windowSize: number;      // 재정렬 윈도우 크기
+  step: PipeFlow;          // 정렬된 항목에 적용할 흐름
+}
+
+interface PipeWindow {
+  kind: "window";
+  type: "tumbling" | "sliding" | "session";
+  size: number;            // 윈도우 크기 (개수 또는 ms)
+  slide?: number;          // sliding일 때 슬라이드 간격
+  gap?: number;            // session일 때 유휴 갭 (ms)
+  body: PipeFlow;          // 윈도우 내 항목에 적용할 흐름
+}
+
+// ── 상태 ──────────────────────────────────────────────
+
+interface PipeDedup {
+  kind: "dedup";
+  keyField: string;        // 중복 판단 키 필드
+  ttl?: number;            // 중복 기억 기간 (ms, 없으면 영구)
+  step: PipeFlow;          // 중복 아닌 항목에 적용할 흐름
+}
+
+interface PipeCorrelation {
+  kind: "correlation";
+  requestEvent: string;    // 요청 이벤트 키
+  responseEvent: string;   // 응답 이벤트 키
+  correlationKey: string;  // 매칭 키 필드
+  timeout?: number;        // 응답 대기 시간
+  onMatch: PipeFlow;       // 매칭 시 실행
+  onTimeout?: PipeFlow;    // 타임아웃 시 실행
 }
 
 // ── 공통 ──────────────────────────────────────────────
@@ -315,7 +448,21 @@ function countPipePaths(flow: PipeFlow): number
 | emit | 1 | 발행만 |
 | finally | countPaths(body) | cleanup은 항상 실행 (분기 아님) |
 | timeout | countPaths(body) + (onTimeout ? countPaths(onTimeout) : 1) | 정상 + 타임아웃 대안 |
-| feedback | countPaths(body) | 반복 횟수 무관 (loop와 동일) |
+| feedback | countPaths(body) | 반복 횟수 무관 |
+| map | countPaths(itemFlow) | 항목 수 무관 (흐름 자체의 경로) |
+| reduce | countPaths(step) | 누적 횟수 무관 |
+| buffer | countPaths(body) | 배치 크기 무관 |
+| filter | countPaths(step) + 1 | 통과 경로 + 탈락(소멸) 경로 |
+| circuit-breaker | countPaths(step) + 1 | 정상 + 개방(차단) 경로 |
+| throttle | countPaths(step) | 빈도 제한은 경로 분기 아님 |
+| debounce | countPaths(step) | 대기 후 실행, 경로 분기 아님 |
+| split | countPaths(itemFlow) | 분할 수 무관 |
+| enrich | countPaths(step) | 보강은 경로 분기 아님 |
+| tap | countPaths(step) | 관측은 경로 분기 아님 |
+| resequence | countPaths(step) | 재정렬은 경로 분기 아님 |
+| window | countPaths(body) | 윈도우 크기 무관 |
+| dedup | countPaths(step) + 1 | 통과 + 중복(소멸) |
+| correlation | countPaths(onMatch) + (onTimeout ? countPaths(onTimeout) : 1) | 매칭 + 타임아웃 |
 
 ### 그래프 전체 경로 (`pipe-graph-path.ts`)
 
