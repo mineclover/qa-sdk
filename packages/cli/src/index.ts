@@ -365,6 +365,8 @@ Commands:
     --base <ref>           기준 브랜치/참조 (기본: upstream 또는 remote HEAD)
     --current <ref>        현재 브랜치 대신 비교할 ref (기본: HEAD)
     --skip-fetch           fetch 없이 로컬에 저장된 remote ref만 사용
+    --skip-worktrees       다른 local worktree는 분석에서 제외
+    --output <path>        JSON 리포트를 파일로 저장
     --json                 JSON으로 출력
     --limit <n>            사람이 읽는 출력 최대 개수 (기본: 10)
 
@@ -1543,8 +1545,10 @@ async function runGitConflicts(argv: string[]) {
       base: { type: 'string' },
       current: { type: 'string' },
       json: { type: 'boolean', default: false },
+      output: { type: 'string' },
       limit: { type: 'string', default: '10' },
       'skip-fetch': { type: 'boolean', default: false },
+      'skip-worktrees': { type: 'boolean', default: false },
     },
     strict: true,
   });
@@ -1560,8 +1564,10 @@ async function runGitConflicts(argv: string[]) {
     base: values.base,
     current: values.current,
     json: values.json ?? false,
+    output: values.output,
     limit: parsedLimit,
     skipFetch: values['skip-fetch'] ?? false,
+    skipWorktrees: values['skip-worktrees'] ?? false,
   });
 }
 

@@ -1,5 +1,5 @@
-import { readdir } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import {
   analyzeRemoteBranchConflicts,
   type BranchChangeFile,
@@ -14,6 +14,8 @@ export interface GitConflictsOptions {
   json?: boolean;
   limit?: number;
   skipFetch?: boolean;
+  skipWorktrees?: boolean;
+  output?: string;
 }
 
 export interface GitConflictReport {
@@ -29,6 +31,11 @@ export async function gitConflicts(
   options: GitConflictsOptions,
 ): Promise<GitConflictReport> {
   const report = await buildGitConflictReport(options);
+  if (options.output) {
+    const outputPath = resolve(options.output);
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, JSON.stringify(report, null, 2), 'utf-8');
+  }
   printGitConflictReport(report, options);
   return report;
 }
@@ -43,16 +50,18 @@ export async function buildGitConflictReport(
     baseRef: options.base,
     currentRef: options.current,
     fetch: options.skipFetch ? false : true,
+    includeWorktrees: options.skipWorktrees ? false : true,
   });
+  const comparedTargets = [...analysis.branches, ...analysis.worktrees];
   const workspaceScopes = await listWorkspaceScopes(root);
   const currentScopes = uniqueSorted(
     analysis.current.paths.map((path) => scopeFromPath(path)),
   );
   const occupiedScopes = uniqueSorted(
-    analysis.branches.flatMap((branch) => branch.paths.map((path) => scopeFromPath(path))),
+    comparedTargets.flatMap((branch) => branch.paths.map((path) => scopeFromPath(path))),
   );
   const overlapScopes = uniqueSorted(
-    analysis.branches.flatMap((branch) => branch.overlappingPaths.map((path) => scopeFromPath(path))),
+    comparedTargets.flatMap((branch) => branch.overlappingPaths.map((path) => scopeFromPath(path))),
   );
   const occupiedScopeSet = new Set(occupiedScopes);
   const safeScopes = workspaceScopes.filter((scope) => !occupiedScopeSet.has(scope));
@@ -123,6 +132,9 @@ function printGitConflictReport(
   const overlappingBranches = report.analysis.branches.filter(
     (branch) => branch.overlappingPaths.length > 0,
   );
+  const overlappingWorktrees = report.analysis.worktrees.filter(
+    (worktree) => worktree.overlappingPaths.length > 0,
+  );
 
   console.log('Git 충돌 분석');
   console.log(`  repo: ${report.analysis.repoPath}`);
@@ -153,10 +165,29 @@ function printGitConflictReport(
       console.log(
         `  ${branch.branchName} overlap=${branch.overlappingPaths.length} files=${branch.files.length}`,
       );
-      printOverlapList(branch.overlappingFiles, limit);
+      printOverlapList(branch.overlappingFiles, limit, 'remote');
     }
     if (overlappingBranches.length > limit) {
       console.log(`  ... ${overlappingBranches.length - limit}개 브랜치 생략`);
+    }
+  }
+
+  console.log('');
+  console.log(
+    `잠재 충돌 worktree: ${overlappingWorktrees.length}/${report.analysis.worktrees.length}`,
+  );
+  if (overlappingWorktrees.length === 0) {
+    console.log('  중첩 변경 없음');
+  } else {
+    for (const worktree of overlappingWorktrees.slice(0, limit)) {
+      console.log(
+        `  ${worktree.displayName} overlap=${worktree.overlappingPaths.length} files=${worktree.files.length}`,
+      );
+      console.log(`    path: ${worktree.worktreePath}`);
+      printOverlapList(worktree.overlappingFiles, limit, 'worktree');
+    }
+    if (overlappingWorktrees.length > limit) {
+      console.log(`  ... ${overlappingWorktrees.length - limit}개 worktree 생략`);
     }
   }
 
@@ -218,6 +249,7 @@ function printOverlapList(
     comparedStatus: string;
   }[],
   limit: number,
+  targetLabel: string,
 ): void {
   if (files.length === 0) {
     console.log('    중첩 파일 없음');
@@ -226,7 +258,7 @@ function printOverlapList(
 
   for (const file of files.slice(0, limit)) {
     console.log(
-      `    ${file.path} [current:${file.currentStatus}, remote:${file.comparedStatus}]`,
+      `    ${file.path} [current:${file.currentStatus}, ${targetLabel}:${file.comparedStatus}]`,
     );
   }
   if (files.length > limit) {

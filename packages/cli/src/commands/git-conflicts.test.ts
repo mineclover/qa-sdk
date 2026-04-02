@@ -16,7 +16,7 @@ afterEach(async () => {
 });
 
 describe('gitConflicts', () => {
-  it('현재 브랜치와 remote 브랜치의 중첩 변경 지점과 safe scope를 계산한다', async () => {
+  it('현재 브랜치와 remote 브랜치, local worktree의 중첩 변경 지점과 safe scope를 계산한다', async () => {
     const fixture = await createConflictFixture();
 
     const report = await buildGitConflictReport({
@@ -49,6 +49,14 @@ describe('gitConflicts', () => {
     expect(gamma).toBeDefined();
     expect(gamma?.overlappingPaths).toEqual([]);
 
+    const localDocs = report.analysis.worktrees.find(
+      (worktree) => worktree.branchName === 'feature/local-docs',
+    );
+    expect(localDocs).toBeDefined();
+    expect(localDocs?.displayName).toBe('worktree:feature/local-docs');
+    expect(localDocs?.worktreePath.endsWith('/worktree-docs')).toBe(true);
+    expect(localDocs?.overlappingPaths).toEqual(['packages/cli/src/index.ts']);
+
     expect(report.analysis.hotspots).toContainEqual({
       path: 'packages/api/schema.sql',
       branches: [
@@ -57,25 +65,38 @@ describe('gitConflicts', () => {
         'origin/feature/beta',
       ],
     });
+    expect(report.analysis.hotspots).toContainEqual({
+      path: 'packages/cli/src/index.ts',
+      branches: [
+        'feature/local',
+        'worktree:feature/local-docs',
+      ],
+    });
 
     expect(report.currentScopes).toEqual(['packages/api', 'packages/cli']);
     expect(report.occupiedScopes).toEqual([
+      'docs',
       'packages/api',
+      'packages/cli',
       'packages/web',
       'packages/worker',
     ]);
-    expect(report.overlapScopes).toEqual(['packages/api']);
-    expect(report.safeScopes).toEqual(['(root)', 'docs', 'packages/cli']);
+    expect(report.overlapScopes).toEqual(['packages/api', 'packages/cli']);
+    expect(report.safeScopes).toEqual(['(root)']);
   });
 });
 
-async function createConflictFixture(): Promise<{ worktreeDir: string }> {
+async function createConflictFixture(): Promise<{
+  worktreeDir: string;
+  linkedWorktreeDir: string;
+}> {
   const tempRoot = await mkdtemp(join(tmpdir(), 'qa-sdk-git-conflicts-'));
   tempDirs.push(tempRoot);
 
   const remoteDir = join(tempRoot, 'remote.git');
   const seedDir = join(tempRoot, 'seed');
   const worktreeDir = join(tempRoot, 'worktree');
+  const linkedWorktreeDir = join(tempRoot, 'worktree-docs');
 
   git(tempRoot, ['init', '--bare', '--initial-branch=main', remoteDir]);
   git(tempRoot, ['clone', remoteDir, seedDir]);
@@ -120,7 +141,14 @@ async function createConflictFixture(): Promise<{ worktreeDir: string }> {
   git(worktreeDir, ['add', 'packages/api/schema.sql', 'packages/cli/src/index.ts']);
   git(worktreeDir, ['commit', '-m', 'feat(cli): local conflict candidate']);
 
-  return { worktreeDir };
+  git(worktreeDir, ['worktree', 'add', '-b', 'feature/local-docs', linkedWorktreeDir, 'origin/main']);
+  configureGitIdentity(linkedWorktreeDir);
+  await writeRepoFile(linkedWorktreeDir, 'packages/cli/src/index.ts', 'cli local docs\n');
+  await writeRepoFile(linkedWorktreeDir, 'docs/guide.md', 'guide local docs\n');
+  git(linkedWorktreeDir, ['add', 'packages/cli/src/index.ts', 'docs/guide.md']);
+  git(linkedWorktreeDir, ['commit', '-m', 'docs(cli): local worktree docs']);
+
+  return { worktreeDir, linkedWorktreeDir };
 }
 
 function configureGitIdentity(cwd: string): void {

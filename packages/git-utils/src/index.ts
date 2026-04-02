@@ -13,6 +13,10 @@ export {
   type BranchChangeSet,
   type BranchOverlapFile,
   type ComparedBranchAnalysis,
+  type ComparedWorktreeAnalysis,
+  listGitWorktrees,
+  parseGitWorktreeList,
+  type GitWorktreeDescriptor,
   type RemoteBranchConflictAnalysis,
   type SharedConflictHotspot,
 } from "./branch-conflicts.js";

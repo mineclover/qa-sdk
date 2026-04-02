@@ -1,4 +1,7 @@
-import { openRepository, type DeltaType, type DiffFile, type DiffDelta, type Repository } from "es-git";
+import { realpathSync } from "node:fs";
+import { basename, resolve as resolvePath } from "node:path";
+import { execaSync } from "execa";
+import { openRepository, type DeltaType, type DiffDelta, type DiffFile, type Repository } from "es-git";
 
 export interface BranchChangeFile {
   path: string;
@@ -11,6 +14,7 @@ export interface BranchChangeFile {
 
 export interface BranchChangeSet {
   branchName: string;
+  displayName: string;
   ref: string;
   headOid: string;
   mergeBaseOid: string;
@@ -31,6 +35,20 @@ export interface ComparedBranchAnalysis extends BranchChangeSet {
   branchOnlyPaths: string[];
 }
 
+export interface ComparedWorktreeAnalysis extends ComparedBranchAnalysis {
+  worktreePath: string;
+  branchRef: string | null;
+  isDetached: boolean;
+}
+
+export interface GitWorktreeDescriptor {
+  path: string;
+  headOid: string;
+  branchRef: string | null;
+  isBare: boolean;
+  isDetached: boolean;
+}
+
 export interface SharedConflictHotspot {
   path: string;
   branches: string[];
@@ -38,6 +56,7 @@ export interface SharedConflictHotspot {
 
 export interface RemoteBranchConflictAnalysis {
   repoPath: string;
+  currentWorktreePath: string;
   remoteName: string;
   fetched: boolean;
   baseRef: string;
@@ -47,6 +66,7 @@ export interface RemoteBranchConflictAnalysis {
   currentHeadOid: string;
   current: BranchChangeSet;
   branches: ComparedBranchAnalysis[];
+  worktrees: ComparedWorktreeAnalysis[];
   hotspots: SharedConflictHotspot[];
 }
 
@@ -57,14 +77,17 @@ export interface AnalyzeRemoteBranchConflictsOptions {
   currentRef?: string;
   fetch?: boolean;
   excludeCurrentRemoteBranch?: boolean;
+  includeWorktrees?: boolean;
 }
 
 export async function analyzeRemoteBranchConflicts(
   options: AnalyzeRemoteBranchConflictsOptions,
 ): Promise<RemoteBranchConflictAnalysis> {
-  const repo = await openRepository(options.cwd);
+  const repoPath = canonicalPath(options.cwd);
+  const repo = await openRepository(repoPath);
   const remoteName = resolveRemoteName(repo, options.remoteName);
   const fetch = options.fetch !== false;
+  const includeWorktrees = options.includeWorktrees !== false;
 
   if (fetch) {
     const remote = repo.getRemote(remoteName);
@@ -81,27 +104,29 @@ export async function analyzeRemoteBranchConflicts(
 
   const baseHeadOid = repo.revparseSingle(baseRef);
   const currentHeadOid = repo.revparseSingle(currentRef);
-  const current = buildBranchChangeSet(
+  const current = buildBranchChangeSet({
     repo,
-    currentBranchName ?? currentRef,
-    currentRef,
-    currentHeadOid,
+    branchName: currentBranchName ?? currentRef,
+    displayName: currentBranchName ?? currentRef,
+    ref: currentRef,
+    headOid: currentHeadOid,
     baseHeadOid,
-  );
+  });
 
   const skipCurrentRemoteBranch = options.excludeCurrentRemoteBranch !== false
     && currentBranchName !== null;
-  const remoteBranches = listRemoteBranchNames(repo, remoteName)
+  const branches = listRemoteBranchNames(repo, remoteName)
     .filter((branchName) => !skipCurrentRemoteBranch || branchName !== `${remoteName}/${currentBranchName}`)
     .map((branchName) => {
       const branchHeadOid = repo.revparseSingle(branchName);
-      const branchChangeSet = buildBranchChangeSet(
+      const branchChangeSet = buildBranchChangeSet({
         repo,
         branchName,
-        branchName,
-        branchHeadOid,
+        displayName: branchName,
+        ref: branchName,
+        headOid: branchHeadOid,
         baseHeadOid,
-      );
+      });
 
       if (branchChangeSet.files.length === 0) return null;
       return buildComparedBranchAnalysis(current, branchChangeSet);
@@ -109,8 +134,17 @@ export async function analyzeRemoteBranchConflicts(
     .filter((branch): branch is ComparedBranchAnalysis => branch !== null)
     .toSorted(compareComparedBranches);
 
+  const worktrees = includeWorktrees
+    ? await collectWorktreeAnalyses({
+      cwd: repoPath,
+      current,
+      baseRef,
+    })
+    : [];
+
   return {
-    repoPath: options.cwd,
+    repoPath,
+    currentWorktreePath: repoPath,
     remoteName,
     fetched: fetch,
     baseRef,
@@ -119,9 +153,59 @@ export async function analyzeRemoteBranchConflicts(
     currentBranchName,
     currentHeadOid,
     current,
-    branches: remoteBranches,
-    hotspots: buildHotspots([current, ...remoteBranches]),
+    branches,
+    worktrees,
+    hotspots: buildHotspots([current, ...branches, ...worktrees]),
   };
+}
+
+export function listGitWorktrees(cwd: string): GitWorktreeDescriptor[] {
+  const { stdout } = execaSync("git", ["worktree", "list", "--porcelain"], { cwd });
+  return parseGitWorktreeList(stdout);
+}
+
+export function parseGitWorktreeList(output: string): GitWorktreeDescriptor[] {
+  const lines = output.split(/\r?\n/);
+  const worktrees: GitWorktreeDescriptor[] = [];
+  let current: Partial<GitWorktreeDescriptor> | null = null;
+
+  for (const line of lines) {
+    if (line.startsWith("worktree ")) {
+      if (isCompleteWorktree(current)) {
+        worktrees.push(current);
+      }
+      current = {
+        path: line.slice("worktree ".length),
+        branchRef: null,
+        isBare: false,
+        isDetached: false,
+      };
+      continue;
+    }
+
+    if (!current || line.length === 0) continue;
+    if (line.startsWith("HEAD ")) {
+      current.headOid = line.slice("HEAD ".length);
+      continue;
+    }
+    if (line.startsWith("branch ")) {
+      current.branchRef = line.slice("branch ".length);
+      continue;
+    }
+    if (line === "bare") {
+      current.isBare = true;
+      continue;
+    }
+    if (line === "detached") {
+      current.isDetached = true;
+    }
+  }
+
+  if (isCompleteWorktree(current)) {
+    worktrees.push(current);
+  }
+
+  return worktrees;
 }
 
 function buildComparedBranchAnalysis(
@@ -151,22 +235,76 @@ function buildComparedBranchAnalysis(
   };
 }
 
-function buildBranchChangeSet(
-  repo: Repository,
-  branchName: string,
-  ref: string,
-  headOid: string,
-  baseHeadOid: string,
-): BranchChangeSet {
-  const mergeBaseOid = headOid === baseHeadOid
-    ? baseHeadOid
-    : repo.getMergeBase(baseHeadOid, headOid);
-  const files = collectChangedFiles(repo, mergeBaseOid, headOid);
+async function collectWorktreeAnalyses(
+  options: {
+    cwd: string;
+    current: BranchChangeSet;
+    baseRef: string;
+  },
+): Promise<ComparedWorktreeAnalysis[]> {
+  const worktrees = listGitWorktrees(options.cwd)
+    .filter((worktree) => !worktree.isBare)
+    .filter((worktree) => canonicalPath(worktree.path) !== options.cwd);
+
+  const analyses = await Promise.all(
+    worktrees.map(async (worktree) => analyzeWorktree(worktree, options)),
+  );
+
+  return analyses
+    .filter((analysis): analysis is ComparedWorktreeAnalysis => analysis !== null)
+    .toSorted(compareComparedBranches);
+}
+
+async function analyzeWorktree(
+  worktree: GitWorktreeDescriptor,
+  options: {
+    current: BranchChangeSet;
+    baseRef: string;
+  },
+): Promise<ComparedWorktreeAnalysis | null> {
+  const repo = await openRepository(worktree.path);
+  const branchName = worktree.branchRef
+    ? normalizeRefName(worktree.branchRef)
+    : `detached:${worktree.headOid.slice(0, 7)}`;
+  const changeSet = buildBranchChangeSet({
+    repo,
+    branchName,
+    displayName: buildWorktreeDisplayName(worktree, branchName),
+    ref: worktree.branchRef ?? worktree.headOid,
+    headOid: worktree.headOid,
+    baseHeadOid: repo.revparseSingle(options.baseRef),
+  });
+
+  if (changeSet.files.length === 0) return null;
 
   return {
-    branchName,
-    ref,
-    headOid,
+    ...buildComparedBranchAnalysis(options.current, changeSet),
+    worktreePath: canonicalPath(worktree.path),
+    branchRef: worktree.branchRef,
+    isDetached: worktree.isDetached,
+  };
+}
+
+function buildBranchChangeSet(
+  options: {
+    repo: Repository;
+    branchName: string;
+    displayName: string;
+    ref: string;
+    headOid: string;
+    baseHeadOid: string;
+  },
+): BranchChangeSet {
+  const mergeBaseOid = options.headOid === options.baseHeadOid
+    ? options.baseHeadOid
+    : options.repo.getMergeBase(options.baseHeadOid, options.headOid);
+  const files = collectChangedFiles(options.repo, mergeBaseOid, options.headOid);
+
+  return {
+    branchName: options.branchName,
+    displayName: options.displayName,
+    ref: options.ref,
+    headOid: options.headOid,
     mergeBaseOid,
     files,
     paths: files.map((file) => file.path),
@@ -294,6 +432,17 @@ function normalizeRefName(ref: string): string {
   return ref;
 }
 
+function buildWorktreeDisplayName(
+  worktree: GitWorktreeDescriptor,
+  branchName: string,
+): string {
+  if (worktree.isDetached) {
+    return `worktree:${basename(worktree.path)}@${worktree.headOid.slice(0, 7)}`;
+  }
+
+  return `worktree:${branchName}`;
+}
+
 function listRemoteBranchNames(
   repo: Repository,
   remoteName: string,
@@ -324,7 +473,7 @@ function buildHotspots(
   for (const branch of branches) {
     for (const path of branch.paths) {
       const matchedBranches = pathToBranches.get(path) ?? new Set<string>();
-      matchedBranches.add(branch.branchName);
+      matchedBranches.add(branch.displayName);
       pathToBranches.set(path, matchedBranches);
     }
   }
@@ -352,5 +501,20 @@ function compareComparedBranches(
   const byFileCount = right.files.length - left.files.length;
   if (byFileCount !== 0) return byFileCount;
 
-  return left.branchName.localeCompare(right.branchName);
+  return left.displayName.localeCompare(right.displayName);
+}
+
+function isCompleteWorktree(
+  worktree: Partial<GitWorktreeDescriptor> | null,
+): worktree is GitWorktreeDescriptor {
+  return Boolean(worktree?.path && worktree.headOid);
+}
+
+function canonicalPath(path: string): string {
+  const resolvedPath = resolvePath(path);
+  try {
+    return realpathSync.native(resolvedPath);
+  } catch {
+    return resolvedPath;
+  }
 }
