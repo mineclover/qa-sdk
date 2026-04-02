@@ -63,11 +63,12 @@
         "pnpm --filter codegen-core test 통과"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -161,6 +162,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-02T08:43:24.286Z"
+    "updatedAt": "2026-04-02T08:51:39.854Z"
   }
 }

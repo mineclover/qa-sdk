@@ -1,0 +1,243 @@
+import { describe, expect, it } from "vitest";
+import type { Catalog } from "../catalog/catalog.types.js";
+import { chainSegments } from "../catalog/path-summation.js";
+import { validateBindings } from "./validate.js";
+import type { DataObjectBinding } from "./types.js";
+
+const TEST_CATALOG: Catalog = {
+  id: "binding-test",
+  name: "Binding Test Catalog",
+  axes: {
+    member_id: {
+      id: "member_id",
+      name: "Member ID",
+      versions: {
+        v1: { entries: ["m1", "m2"], capacity: 4 },
+      },
+    },
+    order_id: {
+      id: "order_id",
+      name: "Order ID",
+      versions: {
+        v1: { entries: ["o1", "o2"], capacity: 4 },
+      },
+    },
+    payment_method: {
+      id: "payment_method",
+      name: "Payment Method",
+      versions: {
+        v1: { entries: ["card", "bank"], capacity: 4 },
+      },
+    },
+    shipping_option: {
+      id: "shipping_option",
+      name: "Shipping Option",
+      versions: {
+        v1: { entries: ["standard", "same_day"], capacity: 4 },
+      },
+    },
+    region_id: {
+      id: "region_id",
+      name: "Region ID",
+      versions: {
+        v1: { entries: ["kr", "us"], capacity: 4 },
+      },
+    },
+  },
+  prefixes: {
+    member_identity: {
+      id: "member_identity",
+      name: "Member Identity",
+      labels: ["memberId"],
+      dims: {
+        memberId: { kind: "axis", axisId: "member_id" },
+      },
+      versions: [
+        {
+          version: "v1",
+          axisVersions: { memberId: "v1" },
+        },
+      ],
+    },
+    order_route: {
+      id: "order_route",
+      name: "Order Route",
+      labels: ["orderId", "paymentMethod", "shippingOption"],
+      dims: {
+        orderId: { kind: "axis", axisId: "order_id" },
+        paymentMethod: { kind: "axis", axisId: "payment_method" },
+        shippingOption: { kind: "axis", axisId: "shipping_option" },
+      },
+      addressModel: "sum",
+      versions: [
+        {
+          version: "v1",
+          axisVersions: {
+            orderId: "v1",
+            paymentMethod: "v1",
+            shippingOption: "v1",
+          },
+          segments: chainSegments([
+            { segmentId: "order_payment", consumes: ["orderId", "paymentMethod"], shape: [4, 4] },
+            { segmentId: "order_shipping", consumes: ["orderId", "shippingOption"], shape: [4, 4] },
+          ]),
+        },
+      ],
+    },
+    region_identity: {
+      id: "region_identity",
+      name: "Region Identity",
+      labels: ["regionId"],
+      dims: {
+        regionId: { kind: "axis", axisId: "region_id" },
+      },
+      versions: [
+        {
+          version: "v1",
+          axisVersions: { regionId: "v1" },
+        },
+      ],
+    },
+  },
+  tables: {
+    members: {
+      table: "members",
+      columns: {
+        id: { kind: "scalar", type: "string" },
+      },
+    },
+    members_backup: {
+      table: "members_backup",
+      columns: {
+        id: { kind: "scalar", type: "string" },
+      },
+    },
+    orders: {
+      table: "orders",
+      columns: {
+        id: { kind: "scalar", type: "string" },
+        payment_method: { kind: "axis_ref", axisId: "payment_method" },
+        shipping_option: { kind: "axis_ref", axisId: "shipping_option" },
+      },
+    },
+  },
+};
+
+function makeBinding(overrides: Partial<DataObjectBinding> = {}): DataObjectBinding {
+  return {
+    schemaId: "members",
+    schemaVersion: "v1",
+    prefixId: "member_identity",
+    prefixVersion: "v1",
+    columnToAxis: {
+      id: { dimLabel: "memberId" },
+    },
+    ...overrides,
+  };
+}
+
+describe("validateBindings", () => {
+  it("product prefix 바인딩이 카탈로그와 정합하면 에러가 없다", () => {
+    const [result] = validateBindings([makeBinding()], TEST_CATALOG);
+
+    expect(result).toEqual({
+      schemaId: "members",
+      prefixId: "member_identity",
+      errors: [],
+      warnings: [],
+    });
+  });
+
+  it("sum prefix의 유효한 segmentId를 허용한다", () => {
+    const [result] = validateBindings([
+      makeBinding({
+        schemaId: "orders",
+        prefixId: "order_route",
+        columnToAxis: {
+          id: { dimLabel: "orderId" },
+          payment_method: { dimLabel: "paymentMethod", segmentId: "order_payment" },
+          shipping_option: { dimLabel: "shippingOption", segmentId: "order_shipping" },
+        },
+      }),
+    ], TEST_CATALOG);
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("카탈로그에 schema table이 없으면 warning으로 남기고 다른 검증은 계속한다", () => {
+    const [result] = validateBindings([
+      makeBinding({
+        schemaId: "external_schema",
+        prefixId: "region_identity",
+        columnToAxis: {
+          external_id: { dimLabel: "regionId" },
+        },
+      }),
+    ], TEST_CATALOG);
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([
+      'schema "external_schema" table not found in catalog; identity 검증 생략',
+    ]);
+  });
+
+  it("identity 컬럼 id가 매핑되지 않으면 에러", () => {
+    const [result] = validateBindings([
+      makeBinding({
+        columnToAxis: {},
+      }),
+    ], TEST_CATALOG);
+
+    expect(result.errors).toContain(
+      'schema "members" identity 컬럼 "id"가 columnToAxis에 매핑되지 않음',
+    );
+  });
+
+  it("존재하지 않는 dimLabel을 매핑하면 에러", () => {
+    const [result] = validateBindings([
+      makeBinding({
+        columnToAxis: {
+          id: { dimLabel: "missingDim" },
+        },
+      }),
+    ], TEST_CATALOG);
+
+    expect(result.errors).toContain(
+      'column "id" → dim "missingDim"이 prefix "member_identity"에 없음',
+    );
+  });
+
+  it("sum prefix에 없는 segmentId를 지정하면 에러", () => {
+    const [result] = validateBindings([
+      makeBinding({
+        schemaId: "orders",
+        prefixId: "order_route",
+        columnToAxis: {
+          id: { dimLabel: "orderId" },
+          payment_method: { dimLabel: "paymentMethod", segmentId: "missing_segment" },
+        },
+      }),
+    ], TEST_CATALOG);
+
+    expect(result.errors).toContain(
+      'column "payment_method"의 segmentId "missing_segment"가 prefix "order_route:v1" segments에 없음',
+    );
+  });
+
+  it("같은 prefix:version에 중복 바인딩이 있으면 모두 에러", () => {
+    const results = validateBindings([
+      makeBinding(),
+      makeBinding({
+        schemaId: "members_backup",
+      }),
+    ], TEST_CATALOG);
+
+    expect(results).toHaveLength(2);
+    for (const result of results) {
+      expect(result.errors).toContain(
+        'prefix "member_identity:v1"에 중복 바인딩 존재: members, members_backup',
+      );
+    }
+  });
+});

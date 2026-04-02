@@ -13,6 +13,13 @@ export interface DataObjectBinding {
   columnToAxis: Record<string, ColumnAxisMapping>;
 }
 
+export interface BindingValidation {
+  schemaId: string;
+  prefixId: string;
+  errors: string[];
+  warnings: string[];
+}
+
 export interface BoundDataObject<
   S extends string,
   P extends string,
