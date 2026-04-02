@@ -1,7 +1,7 @@
 ---
 def:
   id: pipe-store
-  level: leaf
+  level: module
   scope: data
   aspect: system_data
   depth: implementation
@@ -12,19 +12,26 @@ def:
       type: depends_on
     - target: pipe-types
       type: depends_on
+    - target: pipe-store-memory
+      type: contains
+    - target: pipe-store-sqlite
+      type: contains
 ---
 
 # PipeGraph / PipeSpec 저장소
 
 ## 목적 ^purpose
 
-PipeGraph와 PipeSpec의 CRUD 포트 인터페이스 + 인메모리 어댑터.
-기존 qa-sdk 포트 패턴(RecordStore, ScenarioSpecStore)과 동일 구조.
+PipeGraph와 PipeSpec의 CRUD 포트 인터페이스를 정의하고,
+두 가지 어댑터(인메모리, SQLite)로 구현한다.
 
-## 관련 소스
+## 방법 ^method
 
-- `packages/core/src/pipe-store.ts` — 포트 + 인메모리 어댑터
-- `packages/core/src/pipe-infra.test.ts` — 저장소 테스트 9케이스
+포트 인터페이스(PipeGraphStore, PipeSpecStore)를 `@qa-sdk/core`에 선언하고,
+소비자가 어댑터를 선택하여 주입한다.
+
+- **인메모리 (Memory)**: 테스트 및 단기 실행용 — `@qa-sdk/core`에 내장
+- **SQLite (영속)**: 장기 보관 및 CLI 워크플로우용 — `pipe-store-sqlite` 패키지
 
 ## 포트: PipeGraphStore
 
@@ -49,8 +56,7 @@ listAll(): PipeSpec[]
 remove(pipeId, version): boolean
 ```
 
-## 검증
+## 위임 ^delegates
 
-```bash
-pnpm --filter @qa-sdk/core test -- src/pipe-infra.test.ts
-```
+- **pipe-store-memory** → 인메모리 어댑터 (`@qa-sdk/core`)
+- **pipe-store-sqlite** → SQLite 어댑터 (`pipe-store-sqlite` 패키지)

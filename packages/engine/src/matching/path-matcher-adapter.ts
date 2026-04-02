@@ -28,6 +28,18 @@ import { evaluateConstraints } from "./constraint-evaluator.js";
  * matchGraphs와 동일한 인터페이스를 유지하므로 drop-in 교체 가능.
  */
 export function matchViaPathMatcher(spec: SpecGraph, runtime: RuntimeGraph): MatchResult {
+  // 빈 spec — 모든 runtime node가 unmatched
+  if (spec.nodes.length === 0) {
+    return {
+      scenario_id: spec.scenario_id,
+      trace_id: runtime.trace_id,
+      step_matches: [],
+      missing_steps: [],
+      unmatched_nodes: runtime.nodes.map(n => n.id),
+      ordering_violations: [],
+    };
+  }
+
   const { pipeGraph, runResult, stepNodeMap, constraintResultMap } =
     adaptInputs(spec, runtime);
 

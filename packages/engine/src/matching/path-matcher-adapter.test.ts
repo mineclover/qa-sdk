@@ -385,3 +385,71 @@ describe("matchViaPathMatcher — ordering violations", () => {
     expect(result.ordering_violations).toEqual([]);
   });
 });
+
+describe("matchViaPathMatcher — 엣지 케이스 패싯", () => {
+  it("빈 spec (nodes=[]) → 빈 결과", () => {
+    const spec: SpecGraph = { scenario_id: "sc", version: "1.0.0", nodes: [], edges: [] };
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "any.event" }),
+    ]);
+
+    const result = matchViaPathMatcher(spec, runtime);
+
+    expect(result.step_matches).toEqual([]);
+    expect(result.missing_steps).toEqual([]);
+    expect(result.unmatched_nodes).toEqual(["n1"]);
+  });
+
+  it("빈 runtime → 모든 required step missing", () => {
+    const spec = buildSpecGraph([
+      buildSpecNode("s1", { event_key: "step.a", required: true }),
+      buildSpecNode("s2", { event_key: "step.b", required: true }),
+    ]);
+    const runtime = buildRuntimeGraph([]);
+
+    const result = matchViaPathMatcher(spec, runtime);
+
+    expect(result.missing_steps).toEqual(["s1", "s2"]);
+    expect(result.step_matches.every(m => m.verdict === "fail")).toBe(true);
+    expect(result.unmatched_nodes).toEqual([]);
+  });
+
+  it("required + optional 혼합 — required만 있으면 optional은 warn", () => {
+    const spec = buildSpecGraph([
+      buildSpecNode("s1", { event_key: "required.event", required: true }),
+      buildSpecNode("s2", { event_key: "optional.event", required: false }),
+    ]);
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "required.event" }),
+      // optional.event 없음
+    ]);
+
+    const result = matchViaPathMatcher(spec, runtime);
+
+    const s1 = result.step_matches.find(m => m.step_id === "s1")!;
+    const s2 = result.step_matches.find(m => m.step_id === "s2")!;
+    expect(s1.verdict).toBe("pass");
+    expect(s2.verdict).toBe("warn");
+    expect(result.missing_steps).toEqual(["s2"]);
+  });
+
+  it("자동 순차 연결 — edges 없어도 다중 노드 전부 도달 가능", () => {
+    // edges=[] 시 s1→s2→s3 자동 생성 → PathMatcher가 모두 reachable로 처리
+    const spec = buildSpecGraph([
+      buildSpecNode("s1", { event_key: "e1" }),
+      buildSpecNode("s2", { event_key: "e2" }),
+      buildSpecNode("s3", { event_key: "e3" }),
+    ]);
+    const runtime = buildRuntimeGraph([
+      buildRuntimeNode({ id: "n1", event_key: "e1" }),
+      buildRuntimeNode({ id: "n2", event_key: "e2" }),
+      buildRuntimeNode({ id: "n3", event_key: "e3" }),
+    ]);
+
+    const result = matchViaPathMatcher(spec, runtime);
+
+    expect(result.missing_steps).toEqual([]);
+    expect(result.step_matches).toHaveLength(3);
+    expect(result.step_matches.every(m => m.verdict === "pass")).toBe(true);
+  });
+});

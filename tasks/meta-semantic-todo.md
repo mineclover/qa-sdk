@@ -5,8 +5,8 @@
 ## 현황
 
 - 스펙: 80개 문서 (6 패싯 폴더 분리, CON-MS-001~007 적용)
-- 구현: 41개 파일 (pipe-zoom, verdict-v2, event-track-typescript, cloud-events 강화)
-- 테스트: 661 tests 전부 통과 (core 637 / 37 files + codegen-core 24 / 1 file)
+- 구현: 44개 파일 (+pipe-store-sqlite 패키지: store.ts, manifest-store.ts, schema.ts)
+- 테스트: 691 tests 전부 통과 (core 637/37 + codegen-core 24/1 + pipe-store-sqlite 30/2)
 
 ---
 
@@ -188,6 +188,17 @@
 - [x] test-split 스킬 작성 (`skills/test-split/SKILL.md`)
 - [x] @qa-sdk/pino 복원 + workspace 참조 간소화 (^9.9.4 → *)
 
+### SQLite 영속화 (pipe-store-sqlite 패키지)
+
+- [x] 패키지 생성 — drizzle-orm@1.0.0-beta.20 + node:sqlite, tsup dual format
+- [x] 스키마 4테이블: pipe_graphs, pipe_specs, prefix_versions, service_manifests
+- [x] SqlitePipeGraphStore — PipeGraphStore 포트 구현 (save/get/getLatest/listVersions/listAll/remove/findByPipeId/findByTriggerEvent)
+- [x] SqlitePipeSpecStore — PipeSpecStore 포트 구현 (save/get/getLatest/listAll/remove)
+- [x] SqliteManifestRegistry — ManifestRegistry 동일 API (가드 로직 내장, definition-catalog 비의존)
+- [x] JSON 라운드트립: PipeFlow 29종 union, PipeConnection[], prefixes Record
+- [x] 마이그레이션 IF NOT EXISTS 적용
+- [x] 테스트 30건 통과 (PipeStore 14 + ManifestRegistry 16)
+
 ---
 
 ## 진행 중
@@ -206,8 +217,8 @@
 
 ### P2 — 보류 (인프라 / 기술 부채 대상)
 
-- [ ] ManifestStore 영속화 — 인메모리 → SQLite
-- [ ] PipeGraphStore 영속화 — 인메모리 → SQLite
+- [x] PipeGraphStore + PipeSpecStore 영속화 — SqlitePipeGraphStore/SqlitePipeSpecStore (14 tests)
+- [x] ManifestRegistry 영속화 — SqliteManifestRegistry (16 tests)
 - [ ] registry-service 연동 — 매니페스트 API 노출
 - [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드 (migration/v2-migration.spec 있음)
 - [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
