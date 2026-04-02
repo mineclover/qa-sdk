@@ -13,6 +13,7 @@ import { newDlqId, newVerdictId, now } from "@qa-sdk/core";
 import { compileSpec } from "../spec-compiler/compile.js";
 import { evaluateConstraint } from "../matching/constraint-evaluator.js";
 import { matchGraphs } from "../matching/graph-matcher.js";
+import { matchViaPathMatcher } from "../matching/path-matcher-adapter.js";
 import { computeVerdict } from "../verdict/compute.js";
 
 export interface ComputePendingVerdictsDeps {
@@ -176,7 +177,11 @@ export async function computeTraceVerdict(
     }
   }
 
-  const matchResult = matchGraphs(specGraph, graph);
+  // USE_PATH_MATCHER=true 시 PathMatcher 어댑터 사용, 기본: graph-matcher
+  const matchResult =
+    process.env.USE_PATH_MATCHER === "true"
+      ? matchViaPathMatcher(specGraph, graph)
+      : matchGraphs(specGraph, graph);
   const report = computeVerdict(matchResult, specGraph, graph, session.sessionId);
 
   const verdictInsert: VerdictInsert = {

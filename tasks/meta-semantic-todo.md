@@ -202,7 +202,7 @@
 
 ### P1 — 중간
 
-- [ ] graph-matcher → PathMatcher 전환 (engine 패키지 어댑터) → `migration/path-matcher-migration.spec.todo.md`
+- [x] graph-matcher → PathMatcher 전환 (engine 패키지 어댑터, 18 tests)
 
 ### P2 — 보류 (인프라 / 기술 부채 대상)
 
