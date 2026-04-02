@@ -1,10 +1,11 @@
 /**
  * Meta-Semantic SQLite 스키마
  *
- * 4개 테이블: pipe_graphs, pipe_specs, prefix_versions, service_manifests
+ * 6개 테이블: pipe_graphs, pipe_specs, prefix_versions, service_manifests,
+ * data_object_bindings, lineage_validations
  */
 
-import { sqliteTable, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 /** PipeGraph 테이블 — graphId+version 복합 유일 */
@@ -95,5 +96,41 @@ export const serviceManifests = sqliteTable(
   (t) => [
     index("idx_sm_service_id").on(t.serviceId),
     uniqueIndex("idx_sm_unique").on(t.serviceId, t.manifestVersion),
+  ],
+);
+
+/** Data object binding snapshot — schemaId 기준 최신 바인딩 */
+export const dataObjectBindings = sqliteTable(
+  "data_object_bindings",
+  {
+    schemaId: text("schema_id").notNull().primaryKey(),
+    prefixId: text("prefix_id").notNull(),
+    prefixVersion: text("prefix_version").notNull(),
+    /** Record<string, ColumnAxisMapping> JSON */
+    columnToAxis: text("column_to_axis").notNull(),
+    createdAt: text("created_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+  },
+  (t) => [
+    index("idx_dob_prefix_id").on(t.prefixId),
+    index("idx_dob_prefix_version").on(t.prefixId, t.prefixVersion),
+  ],
+);
+
+/** Lineage validation history — schemaId별 검증 이력 */
+export const lineageValidations = sqliteTable(
+  "lineage_validations",
+  {
+    id: text("id").notNull().primaryKey(),
+    schemaId: text("schema_id").notNull(),
+    validatedAt: text("validated_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    bound: integer("bound").notNull(),
+    unbound: integer("unbound").notNull(),
+    mismatched: integer("mismatched").notNull(),
+    /** validation detail payload JSON */
+    details: text("details").notNull(),
+  },
+  (t) => [
+    index("idx_lv_schema_id").on(t.schemaId),
+    index("idx_lv_schema_validated_at").on(t.schemaId, t.validatedAt),
   ],
 );

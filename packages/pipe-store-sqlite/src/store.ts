@@ -2,7 +2,7 @@
  * SQLite PipeGraphStore / PipeSpecStore — drizzle + node:sqlite
  *
  * @qa-sdk/core의 PipeGraphStore/PipeSpecStore 포트를 SQLite로 구현.
- * createStores(path)로 단일 DB 연결에서 3개 store를 생성한다.
+ * createStores(path)로 단일 DB 연결에서 pipe/manifest/data-object store를 생성한다.
  *
  * @def.doc pipe-store-sqlite
  */
@@ -12,14 +12,17 @@ import type { PipeGraph, PipeSpec, PipeConnection } from "@qa-sdk/core";
 import { eq, sql } from "drizzle-orm";
 
 import { createDb, type DrizzleDb } from "./db/connection.js";
+import { SqliteBindingStore, SqliteLineageValidationStore } from "./data-object-store.js";
 import { pipeGraphs, pipeSpecs } from "./db/schema.js";
 import { SqliteManifestRegistry } from "./manifest-store.js";
 
-/** 단일 DB에서 3개 store 생성 */
+/** 단일 DB에서 여러 store 생성 */
 export function createStores(path: string): {
   graphStore: SqlitePipeGraphStore;
   specStore: SqlitePipeSpecStore;
   manifestRegistry: SqliteManifestRegistry;
+  bindingStore: SqliteBindingStore;
+  lineageValidationStore: SqliteLineageValidationStore;
   close: () => void;
 } {
   const { rawDb, db } = createDb(path);
@@ -27,6 +30,8 @@ export function createStores(path: string): {
     graphStore: new SqlitePipeGraphStore(db),
     specStore: new SqlitePipeSpecStore(db),
     manifestRegistry: SqliteManifestRegistry.fromDb(db),
+    bindingStore: new SqliteBindingStore(db),
+    lineageValidationStore: new SqliteLineageValidationStore(db),
     close: () => rawDb.close(),
   };
 }

@@ -1,0 +1,791 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "ad17f257-a2b8-42f7-8d83-73449294501f",
+  "prevIds": [
+    "6943954a-b87d-40a2-805e-e05286d69974"
+  ],
+  "ddl": [
+    {
+      "name": "data_object_bindings",
+      "entityType": "tables"
+    },
+    {
+      "name": "lineage_validations",
+      "entityType": "tables"
+    },
+    {
+      "name": "pipe_graphs",
+      "entityType": "tables"
+    },
+    {
+      "name": "pipe_specs",
+      "entityType": "tables"
+    },
+    {
+      "name": "prefix_versions",
+      "entityType": "tables"
+    },
+    {
+      "name": "service_manifests",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "schema_id",
+      "entityType": "columns",
+      "table": "data_object_bindings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix_id",
+      "entityType": "columns",
+      "table": "data_object_bindings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix_version",
+      "entityType": "columns",
+      "table": "data_object_bindings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "column_to_axis",
+      "entityType": "columns",
+      "table": "data_object_bindings"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "data_object_bindings"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "schema_id",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+      "generated": null,
+      "name": "validated_at",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "bound",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "unbound",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mismatched",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "details",
+      "entityType": "columns",
+      "table": "lineage_validations"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "graph_id",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "pipes",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "connections",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "entry_pipe_id",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "manifest_version",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "pipe_graphs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "pipe_id",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "description",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "trigger",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "flow",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "produces",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scope",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "aspect",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "pipe_specs"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefix_id",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "released_at",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activated_at",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deprecated_at",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "table": "prefix_versions"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "service_id",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "manifest_version",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "prefixes",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "published_at",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activated_at",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "superseded_at",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "changelog",
+      "entityType": "columns",
+      "table": "service_manifests"
+    },
+    {
+      "columns": [
+        "schema_id"
+      ],
+      "nameExplicit": false,
+      "name": "data_object_bindings_pk",
+      "table": "data_object_bindings",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "lineage_validations_pk",
+      "table": "lineage_validations",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "pipe_graphs_pk",
+      "table": "pipe_graphs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "pipe_specs_pk",
+      "table": "pipe_specs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "prefix_versions_pk",
+      "table": "prefix_versions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "service_manifests_pk",
+      "table": "service_manifests",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_dob_prefix_id",
+      "entityType": "indexes",
+      "table": "data_object_bindings"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix_id",
+          "isExpression": false
+        },
+        {
+          "value": "prefix_version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_dob_prefix_version",
+      "entityType": "indexes",
+      "table": "data_object_bindings"
+    },
+    {
+      "columns": [
+        {
+          "value": "schema_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_lv_schema_id",
+      "entityType": "indexes",
+      "table": "lineage_validations"
+    },
+    {
+      "columns": [
+        {
+          "value": "schema_id",
+          "isExpression": false
+        },
+        {
+          "value": "validated_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_lv_schema_validated_at",
+      "entityType": "indexes",
+      "table": "lineage_validations"
+    },
+    {
+      "columns": [
+        {
+          "value": "graph_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_pg_graph_id",
+      "entityType": "indexes",
+      "table": "pipe_graphs"
+    },
+    {
+      "columns": [
+        {
+          "value": "graph_id",
+          "isExpression": false
+        },
+        {
+          "value": "version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_pg_version",
+      "entityType": "indexes",
+      "table": "pipe_graphs"
+    },
+    {
+      "columns": [
+        {
+          "value": "pipe_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_ps_pipe_id",
+      "entityType": "indexes",
+      "table": "pipe_specs"
+    },
+    {
+      "columns": [
+        {
+          "value": "pipe_id",
+          "isExpression": false
+        },
+        {
+          "value": "version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_ps_version",
+      "entityType": "indexes",
+      "table": "pipe_specs"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_pv_prefix_id",
+      "entityType": "indexes",
+      "table": "prefix_versions"
+    },
+    {
+      "columns": [
+        {
+          "value": "prefix_id",
+          "isExpression": false
+        },
+        {
+          "value": "version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_pv_unique",
+      "entityType": "indexes",
+      "table": "prefix_versions"
+    },
+    {
+      "columns": [
+        {
+          "value": "service_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_sm_service_id",
+      "entityType": "indexes",
+      "table": "service_manifests"
+    },
+    {
+      "columns": [
+        {
+          "value": "service_id",
+          "isExpression": false
+        },
+        {
+          "value": "manifest_version",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_sm_unique",
+      "entityType": "indexes",
+      "table": "service_manifests"
+    }
+  ],
+  "renames": []
+}

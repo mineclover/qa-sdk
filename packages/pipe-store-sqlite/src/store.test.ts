@@ -228,8 +228,15 @@ describe("PipeGraph 선택적 필드 패싯", () => {
 // ── createStores 통합 ───────────────────────────────
 
 describe("createStores — 단일 DB 공유", () => {
-  it("3개 store가 같은 DB를 공유", () => {
-    const { graphStore, specStore, manifestRegistry, close } = createStores(":memory:");
+  it("5개 store가 같은 DB를 공유", () => {
+    const {
+      graphStore,
+      specStore,
+      manifestRegistry,
+      bindingStore,
+      lineageValidationStore,
+      close,
+    } = createStores(":memory:");
 
     // graph
     graphStore.save(makeGraph("g1", "1.0.0"));
@@ -243,6 +250,33 @@ describe("createStores — 단일 DB 공유", () => {
     manifestRegistry.registerPrefix("tracking", "v1");
     const record = manifestRegistry.getPrefixRecord("tracking", "v1");
     expect(record.state).toBe("draft");
+
+    // binding
+    bindingStore.save({
+      schemaId: "orders",
+      prefixId: "order_route",
+      prefixVersion: "v1",
+      columnToAxis: {
+        id: { dimLabel: "orderId" },
+      },
+    });
+    expect(bindingStore.get("orders")?.prefixId).toBe("order_route");
+
+    // lineage validation
+    lineageValidationStore.save({
+      schemaId: "orders",
+      bound: 1,
+      unbound: 0,
+      mismatched: 0,
+      details: [
+        {
+          status: "bound",
+          target: { schemaId: "orders", column: "id" },
+          sources: [{ schemaId: "raw_orders", column: "id" }],
+        },
+      ],
+    });
+    expect(lineageValidationStore.getLatest("orders")?.bound).toBe(1);
 
     close();
   });
