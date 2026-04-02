@@ -2,7 +2,8 @@ export type {
   ColumnAxisMapping,
   DataObjectBinding,
   BindingValidation,
+  LineageChainValidation,
   BoundDataObject,
 } from "./types.js";
 export { BindingRegistry } from "./registry.js";
-export { validateBindings } from "./validate.js";
+export { validateBindings, validateLineageChain } from "./validate.js";

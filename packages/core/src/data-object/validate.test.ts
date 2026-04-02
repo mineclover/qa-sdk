@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Catalog } from "../catalog/catalog.types.js";
 import { chainSegments } from "../catalog/path-summation.js";
-import { validateBindings } from "./validate.js";
+import type { FieldLineage } from "../types/data-schema.js";
+import { BindingRegistry } from "./registry.js";
+import { validateBindings, validateLineageChain } from "./validate.js";
 import type { DataObjectBinding } from "./types.js";
 
 const TEST_CATALOG: Catalog = {
@@ -241,3 +243,108 @@ describe("validateBindings", () => {
     }
   });
 });
+
+describe("validateLineageChain", () => {
+  it("source와 target schema가 모두 바인딩되고 target dim이 이어지면 bound로 집계한다", () => {
+    const registry = makeRegistry([
+      makeBinding({
+        schemaId: "members",
+        prefixId: "member_identity",
+        columnToAxis: {
+          id: { dimLabel: "memberId" },
+        },
+      }),
+      makeBinding({
+        schemaId: "member_projection",
+        prefixId: "member_identity",
+        columnToAxis: {
+          member_id: { dimLabel: "memberId" },
+        },
+      }),
+    ]);
+
+    const result = validateLineageChain([
+      makeLineage(["members", "id"], ["member_projection", "member_id"]),
+    ], registry);
+
+    expect(result).toEqual({
+      bound: 1,
+      unbound: 0,
+      mismatched: 0,
+    });
+  });
+
+  it("source 또는 target 바인딩이 없으면 unbound로 집계한다", () => {
+    const registry = makeRegistry([
+      makeBinding({
+        schemaId: "members",
+        prefixId: "member_identity",
+        columnToAxis: {
+          id: { dimLabel: "memberId" },
+        },
+      }),
+    ]);
+
+    const result = validateLineageChain([
+      makeLineage(["members", "id"], ["member_projection", "member_id"]),
+    ], registry);
+
+    expect(result).toEqual({
+      bound: 0,
+      unbound: 1,
+      mismatched: 0,
+    });
+  });
+
+  it("양쪽 바인딩은 있지만 target dim mapping과 이어지지 않으면 mismatched로 집계한다", () => {
+    const registry = makeRegistry([
+      makeBinding({
+        schemaId: "members",
+        prefixId: "member_identity",
+        columnToAxis: {
+          id: { dimLabel: "memberId" },
+        },
+      }),
+      makeBinding({
+        schemaId: "member_region_projection",
+        prefixId: "region_identity",
+        columnToAxis: {
+          member_region: { dimLabel: "regionId" },
+        },
+      }),
+    ]);
+
+    const result = validateLineageChain([
+      makeLineage(["members", "id"], ["member_region_projection", "member_region"]),
+    ], registry);
+
+    expect(result).toEqual({
+      bound: 0,
+      unbound: 0,
+      mismatched: 1,
+    });
+  });
+});
+
+function makeLineage(
+  source: [schemaId: string, column: string],
+  target: [schemaId: string, column: string],
+): FieldLineage {
+  return {
+    target: { schemaId: target[0], column: target[1] },
+    sources: [{ schemaId: source[0], column: source[1] }],
+    transform: "direct",
+    pipeId: "pipe.member-sync",
+    stepPath: "sync.member-id",
+  };
+}
+
+function makeRegistry(bindings: readonly DataObjectBinding[]): BindingRegistry {
+  const registry = new BindingRegistry();
+
+  for (const binding of bindings) {
+    registry.register(binding);
+  }
+
+  return registry;
+}

@@ -1,5 +1,7 @@
 import type { Catalog, PathSegment, PrefixDef, PrefixVersionDef, TableSchema } from "../catalog/catalog.types.js";
-import type { BindingValidation, DataObjectBinding } from "./types.js";
+import type { FieldLineage, FieldRef } from "../types/data-schema.js";
+import { BindingRegistry } from "./registry.js";
+import type { BindingValidation, ColumnAxisMapping, DataObjectBinding, LineageChainValidation } from "./types.js";
 
 export function validateBindings(
   bindings: readonly DataObjectBinding[],
@@ -8,6 +10,39 @@ export function validateBindings(
   const duplicateBindings = collectDuplicateBindings(bindings);
 
   return bindings.map((binding) => validateBinding(binding, catalog, duplicateBindings));
+}
+
+export function validateLineageChain(
+  lineages: readonly FieldLineage[],
+  registry: BindingRegistry,
+): LineageChainValidation {
+  const summary: LineageChainValidation = {
+    bound: 0,
+    unbound: 0,
+    mismatched: 0,
+  };
+
+  for (const lineage of lineages) {
+    const targetBinding = registry.getBySchema(lineage.target.schemaId);
+    const sourceBindings = lineage.sources.map((source) => ({
+      source,
+      binding: registry.getBySchema(source.schemaId),
+    }));
+
+    if (!targetBinding || sourceBindings.some(({ binding }) => binding === null)) {
+      summary.unbound += 1;
+      continue;
+    }
+
+    if (hasLineageDimMismatch(lineage.target, targetBinding, sourceBindings)) {
+      summary.mismatched += 1;
+      continue;
+    }
+
+    summary.bound += 1;
+  }
+
+  return summary;
 }
 
 function validateBinding(
@@ -152,4 +187,43 @@ function collectSegmentIds(segments: readonly PathSegment[], target: Set<string>
       collectSegmentIds(segment.children, target);
     }
   }
+}
+
+function hasLineageDimMismatch(
+  target: FieldRef,
+  targetBinding: DataObjectBinding,
+  sourceBindings: ReadonlyArray<{ source: FieldRef; binding: DataObjectBinding | null }>,
+): boolean {
+  const targetMapping = getColumnMapping(targetBinding, target.column);
+  if (!targetMapping) {
+    return false;
+  }
+
+  return !sourceBindings.some(({ source, binding }) => {
+    if (!binding) {
+      return false;
+    }
+
+    return mappingsMatch(
+      targetMapping,
+      getColumnMapping(binding, source.column),
+    );
+  });
+}
+
+function getColumnMapping(binding: DataObjectBinding, columnId: string): ColumnAxisMapping | null {
+  return binding.columnToAxis[columnId] ?? null;
+}
+
+function mappingsMatch(expected: ColumnAxisMapping, actual: ColumnAxisMapping | null): boolean {
+  if (!actual) {
+    return false;
+  }
+
+  return expected.dimLabel === actual.dimLabel
+    && normalizeSegmentId(expected.segmentId) === normalizeSegmentId(actual.segmentId);
+}
+
+function normalizeSegmentId(segmentId?: string): string {
+  return segmentId ?? "";
 }

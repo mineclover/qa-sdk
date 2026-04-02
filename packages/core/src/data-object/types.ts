@@ -20,6 +20,12 @@ export interface BindingValidation {
   warnings: string[];
 }
 
+export interface LineageChainValidation {
+  bound: number;
+  unbound: number;
+  mismatched: number;
+}
+
 export interface BoundDataObject<
   S extends string,
   P extends string,

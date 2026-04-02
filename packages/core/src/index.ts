@@ -61,8 +61,8 @@ export type { SpecGraph, SpecNode, SpecEdgeType, SpecEdge, RuntimeGraph, Runtime
 export type { Verdict, ConstraintResult, StepMatch, MatchResult, VerdictReport, LatencyViolation, OrderingViolation } from "./types/verdict.js";
 export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason } from "./types/path-observation.js";
 export type { ServiceStatus, ServiceEntry, EventRecordKind, EventStatus, EventCategory, EventLifecycleStage, EventEntry } from "./types/registry.js";
-export type { ColumnAxisMapping, DataObjectBinding, BindingValidation, BoundDataObject } from "./data-object/index.js";
-export { BindingRegistry, validateBindings } from "./data-object/index.js";
+export type { ColumnAxisMapping, DataObjectBinding, BindingValidation, LineageChainValidation, BoundDataObject } from "./data-object/index.js";
+export { BindingRegistry, validateBindings, validateLineageChain } from "./data-object/index.js";
 
 // ── Schemas ─────────────────────────────────────────────
 

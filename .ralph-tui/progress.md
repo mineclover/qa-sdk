@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - `@qa-sdk/core`에 새 공개 도메인 타입을 추가할 때는 `src/<domain>/index.ts` 서브배럴을 만들고, 루트 `src/index.ts`에 수동으로 다시 re-export한다.
 - `@qa-sdk/core`에 새 공개 클래스/값을 추가할 때도 도메인 서브배럴과 루트 `src/index.ts` 양쪽에 명시적으로 export를 연결해야 외부 패키지에서 안정적으로 소비된다.
 - `addressModel: "sum"` 관련 검증은 `PrefixVersionDef.segments`의 최상위 배열만 보면 안 되고, 재귀 `children`까지 순회해 `segmentId`를 수집해야 version-local segment 참조를 놓치지 않는다.
+- `validateLineageChain`의 dim mismatch는 schema 전체가 아니라 lineage의 target 컬럼이 실제로 `columnToAxis`에 매핑된 경우에만 검사해야 한다. target이 비-dim 필드면 source schema가 dim을 갖고 있어도 bound로 두는 편이 과검출을 막는다.
 
 ---
 
@@ -33,4 +34,12 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: sum prefix의 `segmentId` 검증은 top-level `segments`만이 아니라 재귀 `children`까지 평탄화해서 검사해야 실제 version-local segment 참조와 맞는다.
   - Gotchas encountered: 현재 `validateBindings(bindings, catalog)` 시그니처만으로는 `DataSchema.facetRole === "identity"`를 직접 읽을 수 없어, 카탈로그 기반 CI 검증에서는 `catalog.tables[schemaId].columns.id`를 최소 identity 규약으로 보고 테이블 메타데이터가 없을 때는 warning으로 강등하는 편이 안전하다.
+---
+
+## [2026-04-02] - US-004
+- What was implemented: `packages/core/src/data-object/validate.ts`에 `validateLineageChain(lineages, registry)`를 추가해 schema binding 누락은 `unbound`, target 컬럼의 dim 매핑이 source lineage에서 이어지지 않으면 `mismatched`, 그 외는 `bound`로 집계하도록 구현했다. `LineageChainValidation` 타입을 `packages/core/src/data-object/types.ts`에 추가했고, 공개 export를 `packages/core/src/data-object/index.ts`와 `packages/core/src/index.ts`에 연결했다. `packages/core/src/data-object/validate.test.ts`에는 bound/unbound/mismatched 각 1건 이상의 회귀 테스트를 추가했다.
+- Files changed: `packages/core/src/data-object/validate.ts`, `packages/core/src/data-object/validate.test.ts`, `packages/core/src/data-object/types.ts`, `packages/core/src/data-object/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: lineage 검증에서 dim mismatch는 target 필드가 실제 좌표 dim을 운반하는 경우만 검사해야 계산/집계용 비-dim 필드를 과하게 실패시키지 않는다.
+  - Gotchas encountered: `FieldLineage.sources`는 다중 입력을 가질 수 있어 전체 lineage를 한 건으로 집계할 때는 "missing binding 우선, 그다음 target dim continuity 검사"처럼 판정 우선순위를 먼저 고정해 두는 편이 테스트와 후속 저장 모델이 단순해진다.
 ---
