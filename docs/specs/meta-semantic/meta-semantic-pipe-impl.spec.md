@@ -36,6 +36,14 @@ def:
       type: contains
     - target: pipe-zoom
       type: contains
+    - target: verdict-v2
+      type: contains
+    - target: path-matcher-migration
+      type: contains
+    - target: meta-semantic-data-contract
+      type: contains
+    - target: meta-semantic-test-tracking
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현

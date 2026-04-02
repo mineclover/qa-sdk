@@ -17,33 +17,29 @@ def:
       type: contains
     - target: meta-semantic-ir
       type: contains
-    - target: meta-semantic-spacetime-uid
+    - target: meta-semantic-pipe-impl
+      type: contains
+    - target: meta-semantic-folding
       type: contains
     - target: meta-semantic-extraction
       type: contains
-    - target: meta-semantic-folding
+    - target: meta-semantic-execution-semantics
+      type: contains
+    - target: meta-semantic-spacetime-uid
       type: contains
     - target: meta-semantic-scope
       type: contains
     - target: meta-semantic-event-standard
       type: contains
-    - target: meta-semantic-data-contract
+    - target: meta-semantic-prefix-annotation
       type: contains
-    - target: meta-semantic-execution-semantics
+    - target: cloud-event-bridge
       type: contains
-    - target: meta-semantic-pipe-impl
-      type: contains
-    - target: meta-semantic-test-tracking
+    - target: event-track-codegen
       type: contains
     - target: meta-semantic-v2-migration
       type: contains
-    - target: meta-semantic-prefix-annotation
-      type: contains
-    - target: pipe-interpret
-      type: contains
-    - target: pipe-gate
-      type: contains
-    - target: event-track-codegen
+    - target: compat-removal
       type: contains
 ---
 

@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-execution-semantics
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification

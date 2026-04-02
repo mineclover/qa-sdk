@@ -7,7 +7,7 @@ def:
   scope: data
   aspect: domain_data
   depth: overview
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [entry-point]
   links:

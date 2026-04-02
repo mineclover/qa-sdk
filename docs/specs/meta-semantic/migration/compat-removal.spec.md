@@ -5,7 +5,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   links:
     - target: meta-semantic-v2-migration

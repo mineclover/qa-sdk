@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-extraction
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification

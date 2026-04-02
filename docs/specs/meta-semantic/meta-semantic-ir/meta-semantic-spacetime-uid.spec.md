@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-spacetime-uid
-  level: module
+  level: leaf
   scope: data
   aspect: system_data
   depth: specification

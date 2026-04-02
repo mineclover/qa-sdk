@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-test-tracking
-  level: module
+  level: leaf
   scope: feature
   aspect: scenario
   depth: specification

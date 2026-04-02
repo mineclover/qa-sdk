@@ -1,7 +1,7 @@
 ---
 def:
   id: meta-semantic-v2-migration
-  level: module
+  level: leaf
   scope: flow
   aspect: process_flow
   depth: overview

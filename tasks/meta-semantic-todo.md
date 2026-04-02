@@ -4,10 +4,9 @@
 
 ## 현황
 
-- 스펙: 74개 문서 (마커 보강 완료: ^method 4개, ^delegates 1개 추가)
-- 구현: 39개 파일 (`@qa-sdk/core` pipe-zoom.ts + `codegen-core` event-track-typescript.ts 추가)
-- 테스트: 639 tests 전부 통과 (core 620 / 36 files + codegen-core 19 / 1 file)
-- 스펙: 76개 문서 (pipe-zoom.spec, event-track-codegen.spec 추가 + P1 .todo 4건)
+- 스펙: 80개 문서 (6 패싯 폴더 분리, CON-MS-001~007 적용)
+- 구현: 41개 파일 (pipe-zoom, verdict-v2, event-track-typescript, cloud-events 강화)
+- 테스트: 661 tests 전부 통과 (core 637 / 37 files + codegen-core 24 / 1 file)
 
 ---
 
@@ -114,21 +113,63 @@
 - [x] computeLayout — 위상 정렬 기반 DAG 레이아웃 (barycenter 휴리스틱)
 - [x] 타입 확실성 시각 인코딩 — strict→polygon/solid, flexible→cloud/dashed
 - [x] 줌 레벨별 접기: group(전체), module(chain+SCC), leaf(없음)
+- [x] 패싯 분할: pipe-zoom-view/layout/style 3개 테스트 + fixture 추출
 - [x] 테스트 26건 통과
 
 ### SDK Track 코드 자동 생성
 
 - [x] generateTrackCode — EventDef + EventMapping + PayloadGuide → TypeScript
-- [x] 생성 파일 4종: event-keys.ts, event-payloads.ts, track-functions.ts, index.ts
+- [x] 생성 파일 5종: event-keys, event-payloads, event-mappings, track-functions, index
 - [x] EventKey 유니온 + 카테고리별 서브 유니온
 - [x] 이벤트별 payload 인터페이스 + EventPayloadMap
 - [x] 이벤트별 타입 안전 track 함수 + 제네릭 track<K>
-- [x] 테스트 19건 통과
+- [x] EVENT_MAPPINGS typed const — 매핑 데이터 codegen 출력
+- [x] 테스트 24건 통과
+
+### CloudEvent ↔ EventRecord 타입 연결
+
+- [x] toCloudEvent(EventRecord | EventRecordLike) — 두 타입 모두 허용
+- [x] EventRecordLike에 address_context 필드 추가 (EventRecord 호환)
+- [x] address_context → subject 변환 (coordinate보다 우선)
+- [x] fromCloudEvent → address_context 복원
+- [x] 기존 14 tests 보존 + address_context 라운드트립 4건 추가 (18 tests)
+
+### VerdictReport v2
+
+- [x] computeVerdictV2 — PathMatcher + PipeGate → pass/fail/review 3종 판정
+- [x] PathMatcher verdict 직접 수용 (독자 pipeRate 재계산 제거)
+- [x] 패싯 커버리지 — getChildFlows 재사용 (중복 getChildren 제거)
+- [x] 게이트 오버레이: gate fail→fail, gate review→review
+- [x] 테스트 13건 통과
+
+### compat 제거
+
+- [x] ASPECT_TO_SCOPE compat.ts 삭제 + index.ts export 제거
+- [x] taxonomy.test.ts 하위 호환 테스트 제거 (32→31 tests)
 
 ### 스펙 마커 보강
 
 - [x] MODULE ^method 추가: folding, spacetime-uid, extraction, ir
-- [x] MODULE ^delegates 추가: pipe-impl (contains 자식 11개)
+- [x] MODULE ^delegates 추가: pipe-impl (contains 자식 11개 → 16개)
+
+### 코드 리뷰 이슈 수정
+
+- [x] getChildren 3중 중복 제거 — verdict-v2에서 getChildFlows(pipe-analyze) import
+- [x] verdict-v2 pipeRate 독자 재계산 제거 — PathMatcher verdict 직접 수용
+- [x] codegen import 경로 버그 수정 — EventKey를 event-keys.js에서 import
+- [x] codegen event-mappings.ts 추가 — 매핑 데이터를 typed const로 생성
+- [x] pipe-zoom 미사용 import(computeFoldedContract) 제거
+- [x] verdict-v2 미사용 import(allGatesPass, GateVerdict) 제거
+
+### spec 구조 재편 (CON-MS-001~007)
+
+- [x] 패싯 폴더 6개 분리: concepts, meta-semantic-ir, algorithm, pipe-impl, interface, migration
+- [x] childless module → leaf 강등 8건 (spacetime-uid, scope, folding, extraction, data-contract, execution-semantics, test-tracking, v2-migration)
+- [x] 다중 부모 제거: pipe-interpret, pipe-gate → system contains에서 제거
+- [x] 고아 소속: cloud-event-bridge, compat-removal, verdict-v2, path-matcher-migration
+- [x] lifecycle 갱신 5건 → approved (concepts, ir, folding, scope, data-contract)
+- [x] scope/aspect 보정 3건 (ir-pipe→data/system_data, event-track-codegen→interface/event_contract, path-matcher-migration→flow/process_flow)
+- [x] data-contract, test-tracking → pipe-impl 소속 이동 (algorithm/ 예외 해소)
 
 ### 테스트 재편 + 인프라
 
@@ -137,8 +178,13 @@
   - pipe-store.test.ts (9 tests)
   - pipe-validate.test.ts (20 tests)
   - pipe-analyze.test.ts (14 tests)
+- [x] pipe-zoom.test.ts → 3개 패싯별 파일 분리
+  - pipe-zoom-view.test.ts (16 tests)
+  - pipe-zoom-layout.test.ts (4 tests)
+  - pipe-zoom-style.test.ts (6 tests)
 - [x] matchHappyPath → pipe-happy-path.test.ts 분리 (18 tests)
 - [x] fixture 추출 — step()/simplePipe/simpleGraph → `__fixtures__/pipe-fixtures.ts` (20파일 교체)
+- [x] fixture 추출 — pipe-zoom-fixtures.ts (makePipe, conn, 4개 그래프)
 - [x] test-split 스킬 작성 (`skills/test-split/SKILL.md`)
 - [x] @qa-sdk/pino 복원 + workspace 참조 간소화 (^9.9.4 → *)
 
@@ -152,27 +198,18 @@
 
 ## 미완료
 
-> 우선순위: P0(핵심) → P1(중간) → P2(보류). definition-catalog은 기술 부채 변경 대상이라 브릿지 보류.
+> 우선순위: P1(중간) → P2(보류) → P3(낮음). definition-catalog은 기술 부채 변경 대상이라 브릿지 보류.
 
-### P0 — 핵심 (시스템 본질)
+### P1 — 중간
 
-- [x] Semantic Folding 줌 레벨 시각화 — computeZoomView/computeZoomLevels/computeLayout (26 tests)
-- [x] event-catalog → SDK track 코드 자동 생성 — generateTrackCode (19 tests)
-- [x] 내부 스펙 완성도 — MODULE ^method 4개 + ^delegates 1개 보강
-
-### P1 — 중간 (각 .spec.todo.md 작성 완료)
-
-- [ ] toCloudEvent → 실제 EventRecord 타입 연결 → `cloud-event-bridge.spec.todo.md`
-- [ ] compat 파일 제거 (ASPECT_TO_SCOPE 19줄만 잔존) → `compat-removal.spec.todo.md`
-- [ ] graph-matcher → PathMatcher 전환 (feature flag) → `path-matcher-migration.spec.todo.md`
-- [ ] VerdictReport v1 → v2 전환 → `verdict-v2.spec.todo.md`
+- [ ] graph-matcher → PathMatcher 전환 (engine 패키지 어댑터) → `migration/path-matcher-migration.spec.todo.md`
 
 ### P2 — 보류 (인프라 / 기술 부채 대상)
 
 - [ ] ManifestStore 영속화 — 인메모리 → SQLite
 - [ ] PipeGraphStore 영속화 — 인메모리 → SQLite
 - [ ] registry-service 연동 — 매니페스트 API 노출
-- [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드 (v2-migration.spec 있음)
+- [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드 (migration/v2-migration.spec 있음)
 - [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
 - [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
 - [ ] tags — definition 쪽 tags 조회 브릿지

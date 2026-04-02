@@ -2,8 +2,8 @@
 def:
   id: meta-semantic-ir-pipe
   level: leaf
-  scope: flow
-  aspect: process_flow
+  scope: data
+  aspect: system_data
   depth: specification
   lifecycle: draft
   layer: domain

@@ -2,8 +2,8 @@
 def:
   id: path-matcher-migration
   level: leaf
-  scope: feature
-  aspect: func_def
+  scope: flow
+  aspect: process_flow
   depth: specification
   lifecycle: draft
   layer: domain

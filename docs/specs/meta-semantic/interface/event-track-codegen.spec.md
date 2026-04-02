@@ -2,8 +2,8 @@
 def:
   id: event-track-codegen
   level: leaf
-  scope: feature
-  aspect: func_def
+  scope: interface
+  aspect: event_contract
   depth: implementation
   lifecycle: approved
   layer: mediation

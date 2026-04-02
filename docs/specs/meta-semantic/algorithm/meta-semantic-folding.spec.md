@@ -1,11 +1,11 @@
 ---
 def:
   id: meta-semantic-folding
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural, entry-point]
   links:

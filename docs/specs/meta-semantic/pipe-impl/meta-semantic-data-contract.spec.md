@@ -1,11 +1,11 @@
 ---
 def:
   id: meta-semantic-data-contract
-  level: module
+  level: leaf
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:

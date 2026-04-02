@@ -1,11 +1,11 @@
 ---
 def:
   id: meta-semantic-scope
-  level: module
+  level: leaf
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
