@@ -124,6 +124,9 @@ ScenarioSpec (설계)   "이 순서로 진행되어야 한다" (step 기반, ver
 - resource: 소문자, `/` 구분, leading/trailing slash 금지, depth ≤ 4, `:param` 허용
 - permission code: `{service-ref}.{type}.{resource}.{action}`
 - 인코딩 선택: DB+범위 → WeightedIndex, 인메모리 필터 → BitIndex, 양쪽 → IndexBridge
+- Domain Role deny 레이어: grant와 대칭 — `denyRoles`(role 단위 제거), `denyFeatures`(feature 단위 제거)
+- resolution: parents OR 합산 + ownFeatures → denyRoles resolved + denyFeatures 차감 → final
+- deny는 해당 role의 resolved에만 영향, 부모/자식에 전파 안 됨
 
 ## PolicyRule 인터페이스
 

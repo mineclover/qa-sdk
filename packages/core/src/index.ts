@@ -152,8 +152,8 @@ export {
   type StepExecutor, type ExecutedStep, type RunResult,
   parseCondition, evaluateCondition, CancellationToken, PipeContext, ExecutorRegistry, PipeRunner,
   // bridge
-  extractLineageFromSimulation, validateStepContracts, constraintResultToEvent,
-  type StepCompatIssue, type ConstraintEvent,
+  extractLineageFromSimulation, validateStepContracts, validateSimulationLineage, constraintResultToEvent,
+  type StepCompatIssue, type SimulationLineageValidation, type ConstraintEvent,
   // matcher
   matchPath, type PipeMatchResult,
   // verdict v2
@@ -199,10 +199,10 @@ export {
   pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3,
   type SvgOptions, type D3Node, type D3Link, type D3GraphData,
   // definition bridge
-  resolveLifecycles, analyzeLayerPropagation, resolveTags,
+  resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings,
   type PipeDefLifecycle, type PipeDefLayer,
   type DefinitionMeta, type DefinitionLookup,
-  type PipeLifecycleInfo, type LayerPropagation, type PipeTagInfo,
+  type PipeLifecycleInfo, type LayerPropagation, type PipeTagInfo, type PipeBindingInfo,
   // segment detection
   detectPathSegments, type DetectedSegments, type SegmentReason,
 } from "./pipe/index.js";

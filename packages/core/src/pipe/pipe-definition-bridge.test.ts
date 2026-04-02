@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
-  resolveLifecycles, analyzeLayerPropagation, resolveTags,
+  resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings,
 } from "./pipe-definition-bridge.js";
 import type { DefinitionLookup, DefinitionMeta } from "./pipe-definition-bridge.js";
 import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
+import { BindingRegistry } from "../data-object/registry.js";
+import type { DataObjectBinding } from "../data-object/types.js";
 import { step } from "./__fixtures__/pipe-fixtures.js";
 
 function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
@@ -124,3 +126,73 @@ describe("resolveTags", () => {
     expect(result[0].tags).toHaveLength(0);
   });
 });
+
+// ── resolveBindings ──────────────────────────────────
+
+describe("resolveBindings", () => {
+  it("binding 있는 파이프와 없는 파이프를 함께 요약하고 warning을 남긴다", () => {
+    const graph: PipeGraph = {
+      graphId: "g-bindings",
+      version: "1.0.0",
+      pipes: [
+        makePipe("A", {
+          flow: step("저장", undefined, {
+            dataContract: {
+              accesses: [{ schemaId: "orders", columns: ["member_id"], mode: "write" }],
+            },
+          }),
+        }),
+        makePipe("B", {
+          flow: step("저장", undefined, {
+            dataContract: {
+              accesses: [{ schemaId: "audit_log", columns: ["member_id"], mode: "write" }],
+            },
+          }),
+        }),
+      ],
+      connections: [conn("A", "B")],
+      entryPipeId: "A",
+    };
+
+    const registry = makeRegistry([
+      makeBinding({
+        schemaId: "orders",
+        prefixId: "member_identity",
+        columnToAxis: {
+          member_id: { dimLabel: "memberId" },
+        },
+      }),
+    ]);
+
+    const result = resolveBindings(graph, registry);
+
+    expect(result[0].bindings).toHaveLength(1);
+    expect(result[0].warnings).toEqual([]);
+    expect(result[1].bindings).toHaveLength(0);
+    expect(result[1].missingSchemaIds).toEqual(["audit_log"]);
+    expect(result[1].warnings).toEqual(['pipe "B"에 binding 없음']);
+  });
+});
+
+function makeBinding(overrides: Partial<DataObjectBinding> = {}): DataObjectBinding {
+  return {
+    schemaId: "orders",
+    schemaVersion: "v1",
+    prefixId: "member_identity",
+    prefixVersion: "v1",
+    columnToAxis: {
+      id: { dimLabel: "memberId" },
+    },
+    ...overrides,
+  };
+}
+
+function makeRegistry(bindings: readonly DataObjectBinding[]): BindingRegistry {
+  const registry = new BindingRegistry();
+
+  for (const binding of bindings) {
+    registry.register(binding);
+  }
+
+  return registry;
+}

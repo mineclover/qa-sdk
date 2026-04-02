@@ -59,8 +59,8 @@ export type {
 export { parseCondition, evaluateCondition, CancellationToken, PipeContext, ExecutorRegistry, PipeRunner } from "./pipe-runtime.js";
 
 // ── Bridge ────────────────────────────────────────────
-export { extractLineageFromSimulation, validateStepContracts, constraintResultToEvent } from "./pipe-bridge.js";
-export type { StepCompatIssue, ConstraintEvent } from "./pipe-bridge.js";
+export { extractLineageFromSimulation, validateStepContracts, validateSimulationLineage, constraintResultToEvent } from "./pipe-bridge.js";
+export type { StepCompatIssue, SimulationLineageValidation, ConstraintEvent } from "./pipe-bridge.js";
 
 // ── PathMatcher ───────────────────────────────────────
 export type { MatchResult as PipeMatchResult } from "./path-matcher.js";
@@ -130,11 +130,11 @@ export { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "./pi
 export type { SvgOptions, D3Node, D3Link, D3GraphData } from "./pipe-svg.js";
 
 // ── Definition Bridge ─────────────────────────────────
-export { resolveLifecycles, analyzeLayerPropagation, resolveTags } from "./pipe-definition-bridge.js";
+export { resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings } from "./pipe-definition-bridge.js";
 export type {
   DefLifecycle as PipeDefLifecycle, DefLayer as PipeDefLayer,
   DefinitionMeta, DefinitionLookup,
-  PipeLifecycleInfo, LayerPropagation, PipeTagInfo,
+  PipeLifecycleInfo, LayerPropagation, PipeTagInfo, PipeBindingInfo,
 } from "./pipe-definition-bridge.js";
 
 // ── Test Tracking ─────────────────────────────────────

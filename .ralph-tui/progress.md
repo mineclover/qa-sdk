@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - `validateLineageChain`의 dim mismatch는 schema 전체가 아니라 lineage의 target 컬럼이 실제로 `columnToAxis`에 매핑된 경우에만 검사해야 한다. target이 비-dim 필드면 source schema가 dim을 갖고 있어도 bound로 두는 편이 과검출을 막는다.
 - codegen 산출물은 소비 패키지에서 바로 컴파일될 수 있도록 generated file 안에 최소 helper 타입/레지스트리 shape를 함께 선언하는 standalone 패턴이 안전하다. 내부 `@qa-sdk/core` runtime import를 강제하지 않는 편이 재사용성과 배포 안정성이 높다.
 - `drizzle-kit generate`가 SQLite 증분 migration에서는 새 테이블/인덱스에 `IF NOT EXISTS`를 자동으로 붙이지 않을 수 있으므로, shared local DB를 여러 번 bootstrap하는 패키지는 생성 직후 migration SQL을 점검해 `IF NOT EXISTS`를 수동 보강하는 편이 안전하다.
+- pipe lineage를 바인딩 검증에 연결할 때는 `PipeStep.dataContract.accesses`의 unique writable schema를 step schema identity로 우선 해석하고, write target이 여러 개면 임의 매핑하지 말고 `pipeId` fallback + warning/unbound로 강등하는 보수적 브릿지가 안전하다.
 
 ---
 
@@ -60,4 +61,12 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: SQLite snapshot store는 `schemaId` 기준 upsert 테이블과 append-only validation history 테이블을 분리하면 최신 binding 조회와 validation 이력 조회를 단순한 API로 동시에 지원할 수 있다.
   - Gotchas encountered: `@qa-sdk/core`의 워크스페이스 타입 surface가 항상 source와 즉시 동기화되는 것은 아니므로, 다른 패키지에서 새 core summary 타입을 직접 import하기보다 저장소 경계의 입력/출력 shape를 로컬로 선언하는 편이 package typecheck 안정성이 높다.
+---
+
+## [2026-04-02] - US-007
+- What was implemented: `packages/core/src/pipe/pipe-definition-bridge.ts`에 `resolveBindings(graph, registry)`와 `PipeBindingInfo`를 추가해 파이프별 access schema 및 legacy `pipeId` binding을 조회하고, binding이 전혀 없을 때 warning으로 남기도록 구현했다. `packages/core/src/pipe/pipe-bridge.ts`에는 step access 기반 schema identity 해석을 더한 뒤 `validateSimulationLineage(result, pipes, registry)`를 추가해 시뮬레이션 후 lineage 추출과 `validateLineageChain` 검증을 한 번에 수행하도록 연결했다. 공개 export도 `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts`에 반영했고, mixed graph 회귀 테스트를 추가했다.
+- Files changed: `packages/core/src/pipe/pipe-definition-bridge.ts`, `packages/core/src/pipe/pipe-bridge.ts`, `packages/core/src/pipe/pipe-definition-bridge.test.ts`, `packages/core/src/pipe/pipe-bridge.test.ts`, `packages/core/src/pipe/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: pipe와 data-object binding을 브릿지할 때는 `dataContract.accesses`에서 schema 후보를 모아 파이프별 binding summary를 만들고, simulation lineage 쪽은 unique writable schema를 우선 사용하면 `pipeId`와 실제 schemaId가 다른 그래프에서도 검증을 붙일 수 있다.
+  - Gotchas encountered: 한 step이 여러 write/readwrite schema를 동시에 건드리면 schema identity를 안전하게 하나로 고정할 수 없으므로, 이 경우에는 추측 매핑보다 `pipeId` fallback과 warning/unbound 처리가 과검증과 오검증을 함께 줄인다.
 ---

@@ -6,6 +6,9 @@
  */
 
 import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";
+import type { DataObjectBinding } from "../data-object/types.js";
+import { BindingRegistry } from "../data-object/registry.js";
+import { collectFlowSteps } from "./pipe-fold.js";
 
 // ── definition metadata 타입 (definition-catalog 호환) ──
 
@@ -110,7 +113,10 @@ export function analyzeLayerPropagation(
       });
 
       if (affected.length > 0) {
-        const targetLayer = layerMap.get(affected[0])!;
+        const targetLayer = layerMap.get(affected[0]);
+        if (!targetLayer) {
+          continue;
+        }
         results.push({
           sourcePipeId: from,
           sourceLayer,
@@ -158,4 +164,74 @@ export function resolveTags(
     }
     return { pipeId: pipe.pipeId, tags: [...allTags], docId: docs[0].docId };
   });
+}
+
+// ── binding 조회 ─────────────────────────────────────
+
+export interface PipeBindingInfo {
+  pipeId: string;
+  schemaIds: string[];
+  bindings: DataObjectBinding[];
+  missingSchemaIds: string[];
+  warnings: string[];
+}
+
+/** PipeGraph의 각 파이프에 대해 binding registry 조회 */
+export function resolveBindings(
+  graph: PipeGraph,
+  registry: BindingRegistry,
+): PipeBindingInfo[] {
+  return graph.pipes.map((pipe) => resolvePipeBindings(pipe, registry));
+}
+
+function resolvePipeBindings(
+  pipe: PipeSpec,
+  registry: BindingRegistry,
+): PipeBindingInfo {
+  const schemaIds = collectBindingSchemaIds(pipe, registry);
+  const bindings: DataObjectBinding[] = [];
+  const missingSchemaIds: string[] = [];
+
+  for (const schemaId of schemaIds) {
+    const binding = registry.getBySchema(schemaId);
+    if (binding) {
+      bindings.push(binding);
+    } else {
+      missingSchemaIds.push(schemaId);
+    }
+  }
+
+  const warnings: string[] = [];
+  if (bindings.length === 0) {
+    warnings.push(`pipe "${pipe.pipeId}"에 binding 없음`);
+  } else if (missingSchemaIds.length > 0) {
+    warnings.push(`pipe "${pipe.pipeId}"의 schema binding 없음: ${missingSchemaIds.join(", ")}`);
+  }
+
+  return {
+    pipeId: pipe.pipeId,
+    schemaIds,
+    bindings,
+    missingSchemaIds,
+    warnings,
+  };
+}
+
+function collectBindingSchemaIds(
+  pipe: PipeSpec,
+  registry: BindingRegistry,
+): string[] {
+  const schemaIds = new Set<string>();
+
+  for (const step of collectFlowSteps(pipe.flow)) {
+    for (const access of step.dataContract?.accesses ?? []) {
+      schemaIds.add(access.schemaId);
+    }
+  }
+
+  if (schemaIds.size === 0 || registry.getBySchema(pipe.pipeId)) {
+    schemaIds.add(pipe.pipeId);
+  }
+
+  return [...schemaIds];
 }

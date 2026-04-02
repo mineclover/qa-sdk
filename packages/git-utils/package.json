@@ -4,10 +4,31 @@
   "description": "Git 메타데이터 추출 — conventional commits, semver tags, scope 집계",
   "license": "MIT",
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" } },
-  "main": "./dist/index.cjs", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": { "build": "tsup", "typecheck": "tsc --noEmit", "clean": "rm -rf dist" },
-  "dependencies": { "execa": "^9.6.1" },
-  "devDependencies": { "@types/node": "^22.0.0", "tsup": "^8.5.1", "typescript": "^5.8.2" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "es-git": "^0.6.0",
+    "execa": "^9.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
 }

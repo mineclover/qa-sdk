@@ -2,13 +2,16 @@
  * 브릿지 — 시뮬레이션↔계보, Constraint↔이벤트 연결
  */
 
-import type { SimulationResult, SimStep } from "./pipe-simulate.js";
-import type { FieldLineage } from "../types/data-schema.js";
+import type { SimulationResult } from "./pipe-simulate.js";
+import type { FieldLineage, FieldSet, CompatibilityResult } from "../types/data-schema.js";
 import type { ConstraintResult } from "../types/constraint.js";
-import type { PipeSpec, PipeStep } from "../types/pipe-spec.js";
-import type { FieldSet, CompatibilityResult } from "../types/data-schema.js";
-import { checkCompatibility } from "./data-contract.js";
-import { LineageCollector } from "./data-contract.js";
+import type { PipeSpec, PipeStep, PipeFlow } from "../types/pipe-spec.js";
+import type { LineageChainValidation } from "../data-object/types.js";
+import { BindingRegistry } from "../data-object/registry.js";
+import { validateLineageChain } from "../data-object/validate.js";
+import { checkCompatibility, LineageCollector } from "./data-contract.js";
+import { resolveBindings } from "./pipe-definition-bridge.js";
+import type { PipeBindingInfo } from "./pipe-definition-bridge.js";
 
 // ── 시뮬레이션 → 자동 계보 추출 ─────────────────────
 
@@ -24,7 +27,7 @@ export function extractLineageFromSimulation(
   const pipeMap = new Map(pipes.map(p => [p.pipeId, p]));
 
   // step 간 produces → consumes 체인 추출
-  let previousProduces: { pipeId: string; fields: Record<string, { type: string }> } | null = null;
+  let previousProduces: { schemaId: string; fields: Record<string, { type: string }> } | null = null;
 
   for (const step of result.steps) {
     if (step.kind !== "step" || !step.facet) continue;
@@ -37,14 +40,15 @@ export function extractLineageFromSimulation(
     if (!flowStep || flowStep.kind !== "step" || !flowStep.dataContract) continue;
 
     const dc = flowStep.dataContract;
+    const schemaId = resolveStepSchemaId(flowStep, step.pipeId);
 
     // 이전 step의 produces → 현재 step의 consumes 매칭
     if (previousProduces && dc.consumes) {
-      for (const [field, spec] of Object.entries(dc.consumes)) {
+      for (const [field] of Object.entries(dc.consumes)) {
         if (previousProduces.fields[field]) {
           collector.record({
-            target: { schemaId: step.pipeId, column: field },
-            sources: [{ schemaId: previousProduces.pipeId, column: field }],
+            target: { schemaId, column: field },
+            sources: [{ schemaId: previousProduces.schemaId, column: field }],
             transform: "direct",
             pipeId: step.pipeId,
             stepPath: step.flowPath,
@@ -55,7 +59,7 @@ export function extractLineageFromSimulation(
 
     // 현재 step의 produces 기록
     if (dc.produces) {
-      previousProduces = { pipeId: step.pipeId, fields: dc.produces };
+      previousProduces = { schemaId, fields: dc.produces };
     }
   }
 
@@ -126,6 +130,31 @@ export function validateStepContracts(
   return issues;
 }
 
+export interface SimulationLineageValidation {
+  lineages: readonly FieldLineage[];
+  summary: LineageChainValidation;
+  warnings: string[];
+  bindings: PipeBindingInfo[];
+}
+
+/** 시뮬레이션 결과에서 계보를 추출하고 binding registry 기준으로 검증 */
+export function validateSimulationLineage(
+  result: SimulationResult,
+  pipes: PipeSpec[],
+  registry: BindingRegistry,
+): SimulationLineageValidation {
+  const collector = extractLineageFromSimulation(result, pipes);
+  const lineages = collector.getAll();
+  const bindings = resolveBindings(buildPipeBindingGraph(pipes), registry);
+
+  return {
+    lineages,
+    summary: validateLineageChain(lineages, registry),
+    warnings: bindings.flatMap((binding) => binding.warnings),
+    bindings,
+  };
+}
+
 // ── Constraint → 이벤트 변환 ─────────────────────────
 
 export interface ConstraintEvent {
@@ -165,8 +194,6 @@ export function constraintResultToEvent(result: ConstraintResult): ConstraintEve
 
 // ── 내부 헬퍼 ─────────────────────────────────────────
 
-import type { PipeFlow } from "../types/pipe-spec.js";
-
 function findStepByPath(flow: PipeFlow, path: string): PipeFlow | null {
   // "flow.steps[0]" → flow의 steps[0]
   const parts = path.replace(/^flow\.?/, "").split(".");
@@ -187,4 +214,44 @@ function findStepByPath(flow: PipeFlow, path: string): PipeFlow | null {
   }
 
   return current as PipeFlow | null;
+}
+
+function resolveStepSchemaId(step: PipeStep, fallback: string): string {
+  const writableSchemas = collectStepSchemaIds(step, ["write", "readwrite"]);
+  if (writableSchemas.length === 1) {
+    return writableSchemas[0];
+  }
+
+  const readableSchemas = collectStepSchemaIds(step, ["read", "readwrite", "write"]);
+  if (readableSchemas.length === 1) {
+    return readableSchemas[0];
+  }
+
+  return fallback;
+}
+
+function collectStepSchemaIds(
+  step: PipeStep,
+  modes: Array<"read" | "write" | "readwrite">,
+): string[] {
+  const allowedModes = new Set(modes);
+  const schemaIds = new Set<string>();
+
+  for (const access of step.dataContract?.accesses ?? []) {
+    if (allowedModes.has(access.mode)) {
+      schemaIds.add(access.schemaId);
+    }
+  }
+
+  return [...schemaIds];
+}
+
+function buildPipeBindingGraph(pipes: PipeSpec[]) {
+  return {
+    graphId: "__simulation_lineage__",
+    version: "v1",
+    pipes,
+    connections: [],
+    entryPipeId: pipes[0]?.pipeId ?? "",
+  };
 }
