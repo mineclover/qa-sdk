@@ -62,6 +62,7 @@ export type { Verdict, ConstraintResult, StepMatch, MatchResult, VerdictReport, 
 export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason } from "./types/path-observation.js";
 export type { ServiceStatus, ServiceEntry, EventRecordKind, EventStatus, EventCategory, EventLifecycleStage, EventEntry } from "./types/registry.js";
 export type { ColumnAxisMapping, DataObjectBinding, BoundDataObject } from "./data-object/index.js";
+export { BindingRegistry } from "./data-object/index.js";
 
 // ── Schemas ─────────────────────────────────────────────
 

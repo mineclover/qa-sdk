@@ -3,3 +3,4 @@ export type {
   DataObjectBinding,
   BoundDataObject,
 } from "./types.js";
+export { BindingRegistry } from "./registry.js";
