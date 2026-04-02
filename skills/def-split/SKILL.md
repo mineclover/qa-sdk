@@ -9,6 +9,14 @@ description: "definition-catalog 대형 문서 분할. 150줄 이상인 leaf 문
 
 원칙: "모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다."
 
+## 핵심 지침: 과편화 허용 + 자기 증명
+
+**과편화는 상관없다.** 패싯이 다르면 줄 수와 무관하게 분할한다. 작은 leaf가 여러 개인 것이 큰 leaf 하나보다 낫다.
+
+분할 후 각 문서가 갖춰야 할 것:
+- **상위 문서 (module)**: 하위 문서를 빠짐없이 `contains` 링크로 담고, `^overview`에서 각 leaf의 역할을 요약
+- **하위 문서 (leaf)**: 자기 자신에 대한 정의를 규칙(`^purpose`, `^defines`, `^consumes`)에 맞게 관리하고, 구현 코드 참조와 테스트 코드 참조(`파일:라인`)를 포함하여 자기 증명을 갖춤
+
 ## 분할 대상 찾기
 
 ```bash
@@ -34,9 +42,12 @@ qa-sdk def bottomup <문서ID>
 2. 각 섹션을 "하나의 개념으로 독립 추적 가능한가" 기준으로 묶는다
 3. 원본 문서의 `level`을 `leaf` → `module`로 변경하고 `depth: overview` + `contains` 링크를 추가한다
 4. 멤버 leaf 문서를 생성하고 `## 목적 ^purpose`를 채운다
-5. 필요한 횡방향 관계는 `/def-link` 기준으로 보강한다
-6. `qa-sdk def sync`로 local datasource를 갱신한다
-7. 검증: module은 contains 자식 1건 이상 필수, leaf는 자식 금지
+5. 각 leaf에 구현 참조(`## 구현 참조`)를 추가한다:
+   - 구현: `패키지/src/파일.ts` — 핵심 함수/타입
+   - 테스트: `패키지/src/파일.test.ts` — 관련 describe/it 라인번호
+6. 필요한 횡방향 관계는 `/def-link` 기준으로 보강한다
+7. `qa-sdk def sync`로 local datasource를 갱신한다
+8. 검증: module은 contains 자식 1건 이상 필수, leaf는 자식 금지
 
 ## frontmatter 형식
 

@@ -5,68 +5,26 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
-- `@qa-sdk/core`에 새 공개 도메인 타입을 추가할 때는 `src/<domain>/index.ts` 서브배럴을 만들고, 루트 `src/index.ts`에 수동으로 다시 re-export한다.
-- `@qa-sdk/core`에 새 공개 클래스/값을 추가할 때도 도메인 서브배럴과 루트 `src/index.ts` 양쪽에 명시적으로 export를 연결해야 외부 패키지에서 안정적으로 소비된다.
-- `addressModel: "sum"` 관련 검증은 `PrefixVersionDef.segments`의 최상위 배열만 보면 안 되고, 재귀 `children`까지 순회해 `segmentId`를 수집해야 version-local segment 참조를 놓치지 않는다.
-- `validateLineageChain`의 dim mismatch는 schema 전체가 아니라 lineage의 target 컬럼이 실제로 `columnToAxis`에 매핑된 경우에만 검사해야 한다. target이 비-dim 필드면 source schema가 dim을 갖고 있어도 bound로 두는 편이 과검출을 막는다.
-- codegen 산출물은 소비 패키지에서 바로 컴파일될 수 있도록 generated file 안에 최소 helper 타입/레지스트리 shape를 함께 선언하는 standalone 패턴이 안전하다. 내부 `@qa-sdk/core` runtime import를 강제하지 않는 편이 재사용성과 배포 안정성이 높다.
-- `drizzle-kit generate`가 SQLite 증분 migration에서는 새 테이블/인덱스에 `IF NOT EXISTS`를 자동으로 붙이지 않을 수 있으므로, shared local DB를 여러 번 bootstrap하는 패키지는 생성 직후 migration SQL을 점검해 `IF NOT EXISTS`를 수동 보강하는 편이 안전하다.
-- pipe lineage를 바인딩 검증에 연결할 때는 `PipeStep.dataContract.accesses`의 unique writable schema를 step schema identity로 우선 해석하고, write target이 여러 개면 임의 매핑하지 말고 `pipeId` fallback + warning/unbound로 강등하는 보수적 브릿지가 안전하다.
+- PipeSpec 확장 패턴: optional 필드를 추가할 때는 `types/pipe-spec.ts` 정의만 바꾸지 말고 `packages/core/src/index.ts`와 `packages/core/src/pipe/index.ts` 공개 export, `validatePipeSpec` 시맨틱 검증, `pipe-serialize` 라운드트립 테스트를 함께 갱신한다.
 
 ---
 
-## [2026-04-02] - US-001
-- What was implemented: `packages/core/src/data-object/types.ts`에 `ColumnAxisMapping`, `DataObjectBinding`, `BoundDataObject<S, P>`를 추가하고 `packages/core/src/data-object/index.ts` 및 루트 `packages/core/src/index.ts`에서 export 연결을 완료했다.
-- Files changed: `packages/core/src/data-object/types.ts`, `packages/core/src/data-object/index.ts`, `packages/core/src/index.ts`
+## 2026-04-02 - US-001
+- What was implemented
+  - `PipePort` 인터페이스와 `PipeSpec.ports?: PipePort[]` optional 필드를 추가했다.
+  - `validatePipeSpec`에 같은 방향 내 `portId` 중복 검증을 추가하고, 직렬화/역직렬화 라운드트립 테스트를 보강했다.
+  - `PipePort`를 core 공개 export 표면에도 포함했다.
+- Files changed
+  - `packages/core/src/types/pipe-spec.ts`
+  - `packages/core/src/pipe/pipe-validate.ts`
+  - `packages/core/src/pipe/pipe-serialize.ts`
+  - `packages/core/src/pipe/pipe-validate.test.ts`
+  - `packages/core/src/pipe/pipe-serialize.test.ts`
+  - `packages/core/src/pipe/index.ts`
+  - `packages/core/src/index.ts`
 - **Learnings:**
-  - Patterns discovered: `@qa-sdk/core`의 공개 표면은 서브배럴 + 루트 수동 re-export 패턴으로 확장된다.
-  - Gotchas encountered: 스토리의 `core/src/...` 경로는 실제 워크스페이스에서는 `packages/core/src/...`에 대응한다.
----
-
-## [2026-04-02] - US-002
-- What was implemented: `packages/core/src/data-object/registry.ts`에 `BindingRegistry`를 추가해 `register`, `getBySchema`, `getByPrefix`, `listAll`, `remove`를 구현했고, `packages/core/src/data-object/registry.test.ts`에 CRUD 및 조회 불변성 테스트 7건을 추가했다. 또한 `packages/core/src/data-object/index.ts`와 루트 `packages/core/src/index.ts`에 공개 export를 연결했다.
-- Files changed: `packages/core/src/data-object/registry.ts`, `packages/core/src/data-object/registry.test.ts`, `packages/core/src/data-object/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: 인메모리 레지스트리는 기본 `Map` 저장소와 보조 인덱스(`prefixId -> schemaId Set`)를 함께 유지해 O(1) 단건 조회와 그룹 조회를 동시에 만족시키는 방식이 잘 맞는다.
-  - Gotchas encountered: `pnpm --filter @qa-sdk/core test -- --run <file>`는 이 패키지 스크립트 구성에서는 파일 단위로 제한되지 않고 전체 `vitest run`이 실행될 수 있어, 검증 시간 예측 시 전체 스위트 실행 가능성을 감안해야 한다.
----
-
-## [2026-04-02] - US-003
-- What was implemented: `packages/core/src/data-object/validate.ts`에 `validateBindings(bindings, catalog)`를 추가해 identity 컬럼 매핑, prefix/version 존재 여부, dimLabel 존재 여부, sum segment 재귀 검증, 같은 `prefixId:prefixVersion` 중복 바인딩 검사를 구현했다. `BindingValidation` 타입을 `packages/core/src/data-object/types.ts`에 추가했고, `packages/core/src/data-object/validate.test.ts`에 정상/경고/에러 케이스 7건을 고정했다. 공개 표면은 `packages/core/src/data-object/index.ts`와 `packages/core/src/index.ts`에 연결했다.
-- Files changed: `packages/core/src/data-object/validate.ts`, `packages/core/src/data-object/validate.test.ts`, `packages/core/src/data-object/types.ts`, `packages/core/src/data-object/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: sum prefix의 `segmentId` 검증은 top-level `segments`만이 아니라 재귀 `children`까지 평탄화해서 검사해야 실제 version-local segment 참조와 맞는다.
-  - Gotchas encountered: 현재 `validateBindings(bindings, catalog)` 시그니처만으로는 `DataSchema.facetRole === "identity"`를 직접 읽을 수 없어, 카탈로그 기반 CI 검증에서는 `catalog.tables[schemaId].columns.id`를 최소 identity 규약으로 보고 테이블 메타데이터가 없을 때는 warning으로 강등하는 편이 안전하다.
----
-
-## [2026-04-02] - US-004
-- What was implemented: `packages/core/src/data-object/validate.ts`에 `validateLineageChain(lineages, registry)`를 추가해 schema binding 누락은 `unbound`, target 컬럼의 dim 매핑이 source lineage에서 이어지지 않으면 `mismatched`, 그 외는 `bound`로 집계하도록 구현했다. `LineageChainValidation` 타입을 `packages/core/src/data-object/types.ts`에 추가했고, 공개 export를 `packages/core/src/data-object/index.ts`와 `packages/core/src/index.ts`에 연결했다. `packages/core/src/data-object/validate.test.ts`에는 bound/unbound/mismatched 각 1건 이상의 회귀 테스트를 추가했다.
-- Files changed: `packages/core/src/data-object/validate.ts`, `packages/core/src/data-object/validate.test.ts`, `packages/core/src/data-object/types.ts`, `packages/core/src/data-object/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: lineage 검증에서 dim mismatch는 target 필드가 실제 좌표 dim을 운반하는 경우만 검사해야 계산/집계용 비-dim 필드를 과하게 실패시키지 않는다.
-  - Gotchas encountered: `FieldLineage.sources`는 다중 입력을 가질 수 있어 전체 lineage를 한 건으로 집계할 때는 "missing binding 우선, 그다음 target dim continuity 검사"처럼 판정 우선순위를 먼저 고정해 두는 편이 테스트와 후속 저장 모델이 단순해진다.
----
-
-## [2026-04-02] - US-005
-- What was implemented: `packages/data-object-codegen/` 패키지를 새로 추가하고 `generateDataObjectBindings(catalog, schemas, bindings)`를 구현했다. 생성기는 `data-objects.ts`, `binding-registry.ts`, `lineage-types.ts`, `index.ts` 4개 파일을 반환하며, prefix별 literal union 기반 인터페이스, standalone 바인딩 레지스트리 초기화 코드, schema 간 direct lineage 후보 타입을 함께 생성한다. 입력 정규화 기반 `contentHash`도 결정론적으로 계산하도록 고정했다.
-- Files changed: `packages/data-object-codegen/package.json`, `packages/data-object-codegen/tsconfig.json`, `packages/data-object-codegen/tsup.config.ts`, `packages/data-object-codegen/src/index.ts`, `packages/data-object-codegen/src/generate-data-object-bindings.ts`, `packages/data-object-codegen/src/generate-data-object-bindings.test.ts`, `pnpm-lock.yaml`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: generated TS 파일은 standalone helper 타입을 직접 선언해 두면 core runtime class import 없이도 소비자 패키지에서 바로 컴파일/사용할 수 있다.
-  - Gotchas encountered: 새 workspace 패키지를 추가한 직후에는 `pnpm --filter <pkg> <script>`가 로컬 `node_modules` 링크 부재로 바이너리를 못 찾을 수 있어, 오프라인 `pnpm install --filter <pkg>`로 importer/link를 먼저 잡아야 package-local `tsc`/`tsup` 스크립트가 정상 동작한다.
----
-
-## [2026-04-02] - US-006
-- What was implemented: `packages/pipe-store-sqlite/src/db/schema.ts`에 `data_object_bindings`, `lineage_validations` 테이블과 인덱스를 추가하고, `packages/pipe-store-sqlite/src/data-object-store.ts`에 `SqliteBindingStore`, `SqliteLineageValidationStore`를 구현했다. `createStores()`는 두 저장소를 같은 DB 연결로 함께 노출하도록 확장했고, CRUD/히스토리 조회 테스트를 추가했다. 또한 `drizzle-kit generate`로 `packages/pipe-store-sqlite/drizzle/20260402092232_dark_marauders/` migration을 생성한 뒤 새 DDL에 `IF NOT EXISTS`를 보강했다.
-- Files changed: `packages/pipe-store-sqlite/src/db/schema.ts`, `packages/pipe-store-sqlite/src/data-object-store.ts`, `packages/pipe-store-sqlite/src/data-object-store.test.ts`, `packages/pipe-store-sqlite/src/store.ts`, `packages/pipe-store-sqlite/src/store.test.ts`, `packages/pipe-store-sqlite/src/index.ts`, `packages/pipe-store-sqlite/drizzle/20260402092232_dark_marauders/migration.sql`, `packages/pipe-store-sqlite/drizzle/20260402092232_dark_marauders/snapshot.json`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: SQLite snapshot store는 `schemaId` 기준 upsert 테이블과 append-only validation history 테이블을 분리하면 최신 binding 조회와 validation 이력 조회를 단순한 API로 동시에 지원할 수 있다.
-  - Gotchas encountered: `@qa-sdk/core`의 워크스페이스 타입 surface가 항상 source와 즉시 동기화되는 것은 아니므로, 다른 패키지에서 새 core summary 타입을 직접 import하기보다 저장소 경계의 입력/출력 shape를 로컬로 선언하는 편이 package typecheck 안정성이 높다.
----
-
-## [2026-04-02] - US-007
-- What was implemented: `packages/core/src/pipe/pipe-definition-bridge.ts`에 `resolveBindings(graph, registry)`와 `PipeBindingInfo`를 추가해 파이프별 access schema 및 legacy `pipeId` binding을 조회하고, binding이 전혀 없을 때 warning으로 남기도록 구현했다. `packages/core/src/pipe/pipe-bridge.ts`에는 step access 기반 schema identity 해석을 더한 뒤 `validateSimulationLineage(result, pipes, registry)`를 추가해 시뮬레이션 후 lineage 추출과 `validateLineageChain` 검증을 한 번에 수행하도록 연결했다. 공개 export도 `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts`에 반영했고, mixed graph 회귀 테스트를 추가했다.
-- Files changed: `packages/core/src/pipe/pipe-definition-bridge.ts`, `packages/core/src/pipe/pipe-bridge.ts`, `packages/core/src/pipe/pipe-definition-bridge.test.ts`, `packages/core/src/pipe/pipe-bridge.test.ts`, `packages/core/src/pipe/index.ts`, `packages/core/src/index.ts`, `.ralph-tui/progress.md`
-- **Learnings:**
-  - Patterns discovered: pipe와 data-object binding을 브릿지할 때는 `dataContract.accesses`에서 schema 후보를 모아 파이프별 binding summary를 만들고, simulation lineage 쪽은 unique writable schema를 우선 사용하면 `pipeId`와 실제 schemaId가 다른 그래프에서도 검증을 붙일 수 있다.
-  - Gotchas encountered: 한 step이 여러 write/readwrite schema를 동시에 건드리면 schema identity를 안전하게 하나로 고정할 수 없으므로, 이 경우에는 추측 매핑보다 `pipeId` fallback과 warning/unbound 처리가 과검증과 오검증을 함께 줄인다.
+  - Patterns discovered
+    - Pipe 관련 스키마 변경은 타입 정의, validator, serializer, 두 개의 export surface, 관련 fixture/테스트를 같이 맞추는 구조다.
+  - Gotchas encountered
+    - 루트 `pnpm lint`는 이번 변경과 무관한 기존 워크스페이스 lint 오류 때문에 실패했고, 변경 파일 대상 `oxlint`는 0 warning/0 error로 통과했다.
 ---

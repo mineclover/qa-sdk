@@ -10,7 +10,7 @@ export interface ValidationIssue {
   message: string;
 }
 
-const KNOWN_FACETS = ["생산", "소비", "정의", "관리", "저장"];
+const KNOWN_FACETS = new Set(["생산", "소비", "정의", "관리", "저장"]);
 
 // ── PipeSpec 검증 ─────────────────────────────────────
 
@@ -21,8 +21,31 @@ export function validatePipeSpec(spec: PipeSpec): ValidationIssue[] {
     issues.push({ path: "trigger.eventKey", severity: "error", message: "트리거 이벤트 키 누락" });
   }
 
+  validatePorts(spec, issues);
   validateFlow(spec.flow, "flow", issues, 0);
   return issues;
+}
+
+function validatePorts(spec: PipeSpec, issues: ValidationIssue[]): void {
+  if (!spec.ports) return;
+
+  const seen = new Map<string, number>();
+
+  spec.ports.forEach((port, index) => {
+    const key = `${port.direction}:${port.portId}`;
+    const prevIndex = seen.get(key);
+
+    if (prevIndex != null) {
+      issues.push({
+        path: `ports[${index}].portId`,
+        severity: "error",
+        message: `같은 방향("${port.direction}") 내 중복 portId: "${port.portId}" (기존: ports[${prevIndex}])`,
+      });
+      return;
+    }
+
+    seen.set(key, index);
+  });
 }
 
 function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], depth: number): void {
@@ -32,7 +55,7 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
 
   switch (flow.kind) {
     case "step":
-      if (flow.facet && !KNOWN_FACETS.includes(flow.facet)) {
+      if (flow.facet && !KNOWN_FACETS.has(flow.facet)) {
         issues.push({ path: `${path}.facet`, severity: "warning", message: `알 수 없는 패싯: "${flow.facet}"` });
       }
       break;

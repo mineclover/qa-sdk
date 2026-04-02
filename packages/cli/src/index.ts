@@ -11,6 +11,7 @@
 
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
+import { gitConflicts } from './commands/git-conflicts.js';
 import { gitScan } from './commands/git-scan.js';
 import { register } from './commands/register.js';
 import {
@@ -358,6 +359,15 @@ Commands:
     --output <dir>         저장 디렉토리 (기본: ./schemas)
     --id <name>            스키마 ID (기본: repo 이름에서 추출)
 
+  git conflicts
+    --root <path>          분석 대상 저장소 루트 (기본: .)
+    --remote <name>        원격 이름 (기본: origin)
+    --base <ref>           기준 브랜치/참조 (기본: upstream 또는 remote HEAD)
+    --current <ref>        현재 브랜치 대신 비교할 ref (기본: HEAD)
+    --skip-fetch           fetch 없이 로컬에 저장된 remote ref만 사용
+    --json                 JSON으로 출력
+    --limit <n>            사람이 읽는 출력 최대 개수 (기본: 10)
+
   register
     --registry <url>       Registry 서버 URL ($QA_REGISTRY_URL)
     --input <path>         SchemaSnapshot (파일 또는 디렉토리, 기본: ./schemas)
@@ -441,6 +451,8 @@ export async function main(argv = process.argv.slice(2)) {
       return runInit(sub.rest);
     case 'scan git':
       return runScanGit(sub.rest);
+    case 'git conflicts':
+      return runGitConflicts(sub.rest);
     case 'register':
       return runRegister(sub.rest);
     case 'dry-run':
@@ -1323,6 +1335,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'motion apply',
     'motion preview',
     'scan git',
+    'git conflicts',
     'spec list',
     'spec resolve',
     'spec validate',
@@ -1516,6 +1529,39 @@ async function runScanGit(argv: string[]) {
     root: values.root ?? '.',
     output: values.output ?? './schemas',
     id: values.id,
+  });
+}
+
+// ── git conflicts ────────────────────────────────────
+
+async function runGitConflicts(argv: string[]) {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      root: { type: 'string', default: '.' },
+      remote: { type: 'string', default: 'origin' },
+      base: { type: 'string' },
+      current: { type: 'string' },
+      json: { type: 'boolean', default: false },
+      limit: { type: 'string', default: '10' },
+      'skip-fetch': { type: 'boolean', default: false },
+    },
+    strict: true,
+  });
+
+  const parsedLimit = Number(values.limit ?? '10');
+  if (!Number.isFinite(parsedLimit) || parsedLimit < 1) {
+    throw new Error('--limit는 1 이상의 숫자여야 함');
+  }
+
+  await gitConflicts({
+    root: values.root ?? '.',
+    remote: values.remote ?? 'origin',
+    base: values.base,
+    current: values.current,
+    json: values.json ?? false,
+    limit: parsedLimit,
+    skipFetch: values['skip-fetch'] ?? false,
   });
 }
 

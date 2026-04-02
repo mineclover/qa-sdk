@@ -9,23 +9,34 @@ import { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
 
 /** PipeSpec → JSON 문자열 */
 export function serializePipeSpec(spec: PipeSpec): string {
-  return JSON.stringify(spec, null, 2);
+  return JSON.stringify(
+    {
+      ...spec,
+      ports: spec.ports,
+    },
+    null,
+    2,
+  );
 }
 
 /** JSON 문자열 → PipeSpec (검증 포함) */
 export function deserializePipeSpec(json: string): PipeSpec {
   const parsed = JSON.parse(json) as PipeSpec;
-  if (!parsed.pipeId || !parsed.flow) {
+  const normalized: PipeSpec = {
+    ...parsed,
+    ports: parsed.ports,
+  };
+  if (!normalized.pipeId || !normalized.flow) {
     throw new Error("유효하지 않은 PipeSpec: pipeId 또는 flow 누락");
   }
-  const issues = validatePipeSpec(parsed);
+  const issues = validatePipeSpec(normalized);
   const errors = issues.filter(i => i.severity === "error");
   if (errors.length > 0) {
     throw new Error(
       `PipeSpec 검증 실패 (${errors.length}건):\n${errors.map(e => `  ${e.path}: ${e.message}`).join("\n")}`,
     );
   }
-  return parsed;
+  return normalized;
 }
 
 /** PipeGraph → JSON 문자열 */

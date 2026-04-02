@@ -1,5 +1,14 @@
 // ── PipeSpec — 단일 파이프 노드 ──────────────────────────
 
+export interface PipePort {
+  /** 포트 ID (같은 방향 내 유일) */
+  portId: string;
+  direction: "in" | "out";
+  facetType?: string;
+  label?: string;
+  required?: boolean;
+}
+
 export interface PipeSpec {
   /** 파이프 노드 ID (그래프 내 유일) */
   pipeId: string;
@@ -14,6 +23,9 @@ export interface PipeSpec {
 
   /** 내부 패싯 흐름 (29종 흐름 제어) */
   flow: PipeFlow;
+
+  /** typed 입출력 포트 선언 */
+  ports?: PipePort[];
 
   /** 생산 이벤트: 이 파이프가 완료 시 발생시키는 이벤트 */
   produces?: string[];

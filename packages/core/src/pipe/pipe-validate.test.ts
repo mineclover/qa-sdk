@@ -85,6 +85,31 @@ describe("validatePipeSpec — 숫자 범위 검증", () => {
 // ── 시맨틱 검증 ──────────────────────────────────────────
 
 describe("validatePipeSpec — 시맨틱 검증", () => {
+  it("같은 방향 내 중복 portId → error", () => {
+    const issues = validatePipeSpec({
+      ...wrap(step()),
+      ports: [
+        { portId: "order", direction: "in", facetType: "order.created", required: true },
+        { portId: "order", direction: "in", facetType: "order.updated" },
+      ],
+    });
+    const error = issues.find(i => i.path === "ports[1].portId");
+    expect(error).toBeDefined();
+    expect(error!.severity).toBe("error");
+    expect(error!.message).toContain("중복 portId");
+  });
+
+  it("방향이 다르면 같은 portId 허용", () => {
+    const issues = validatePipeSpec({
+      ...wrap(step()),
+      ports: [
+        { portId: "order", direction: "in", facetType: "order.created" },
+        { portId: "order", direction: "out", facetType: "order.normalized" },
+      ],
+    });
+    expect(issues.find(i => i.message.includes("중복 portId"))).toBeUndefined();
+  });
+
   it("correlation: requestEvent === responseEvent → 데드락 warning", () => {
     const issues = validatePipeSpec(wrap({
       kind: "correlation", requestEvent: "evt", responseEvent: "evt",
