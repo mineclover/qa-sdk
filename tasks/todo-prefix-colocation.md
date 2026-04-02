@@ -6,49 +6,79 @@
 문제: table 스키마, Enum, 이벤트 쿼리 등 **실제 개념이 정의되는 위치**와 prefix 선언이 분리되어 drift 발생.
 목표: prefix 메타데이터를 소스 선언 위치에 colocate → codegen/정적분석으로 수집 → 카탈로그 자동 파생.
 
+## 데이터 흐름 모델
+
 ```
-소스 선언 (.comment / JSDoc / annotation)
-  ↓ 수집 (codegen / static analysis)
-카탈로그 (DEMO_CATALOG — 여전히 SSOT, 자동 생성)
-  ↓ 파생
-DKG / 인코딩 / 서비스
+┌─────────────────────────────────────────────────────┐
+│  소스 선언 (colocation)                              │
+│                                                      │
+│  drizzle 스키마 .comment()  ──→  table_ref dim       │
+│  Enum/const 선언 annotation  ──→  axis entries       │
+│  쿼리 .comment()            ──→  event-catalog       │
+│  트랜잭션 묶음              ──→  transition 단위     │
+│                                    └→ event-catalog[] │
+└──────────────────────┬──────────────────────────────┘
+                       ↓ 수집 (codegen / static analysis)
+              카탈로그 (DEMO_CATALOG — SSOT)
+                       ↓ 파생
+              DKG / 인코딩 / 서비스
 ```
+
+### 소스별 기대 타겟
+
+| 소스 | 기대 타겟 | 관계 |
+|------|----------|------|
+| drizzle 스키마 `.comment()` | `table_ref` dim | 스키마 = table_ref가 가리키는 실체 |
+| Enum/const annotation | axis entries | Enum 멤버 = axis의 유한 값 목록 |
+| 쿼리 `.comment()` | event-catalog 매핑 | 쿼리 = 이벤트 발생 지점 |
+| 트랜잭션 경계 | transition 단위 | 트랜잭션 = 상태 전이의 원자 단위, event-catalog들이 하위 소속 |
 
 ## 원칙
 
-- DEMO_CATALOG의 SSOT 지위 유지 — 다만 **입력 방식**이 수동→자동 파생으로 전환
-- 기존 코드 하위 호환 — colocate annotation이 없는 스키마는 기존 중앙 선언 유지
-- 점진적 전환 — 한번에 전부 옮기지 않음, 신규부터 colocation 사용
+- DEMO_CATALOG의 SSOT 지위 유지 — **입력 방식**이 수동→자동 파생으로 전환
+- 기존 코드 하위 호환 — annotation 없는 스키마는 기존 중앙 선언 유지
+- 점진적 전환 — 신규부터 colocation 사용
 
 ---
 
-## Phase 1: Drizzle 스키마 → prefix 연결
+## Phase 1: Drizzle 스키마 → table_ref 출처 선언
 
-### 1-1. `.comment()` 기반 prefix annotation 컨벤션 정의
+스키마가 `table_ref` dim의 출처가 된다. prefix에서 `{ kind: "table_ref", table: "members" }`로 참조할 때, `members` 테이블 정의 자체에 "나는 이 prefix의 이 dim으로 참조된다"를 선언.
 
-- [ ] drizzle `sqliteTable` 정의에 `.comment({ prefix: "<prefixId>", dims: {...} })` 형식 컨벤션 설계
-- [ ] table_ref dim이 참조하는 실제 drizzle table에 역방향 annotation 추가
-- [ ] 예시: `members` table → `{ prefix: "cart_event", dim: "actor", role: "table_ref" }`
+### 1-1. `.comment()` 기반 table_ref annotation 컨벤션
+
+- [ ] drizzle table 정의에 `.comment()` 형식 설계: 이 테이블이 어떤 prefix의 어떤 dim에 table_ref로 참조되는지 명시
+- [ ] 컨벤션 예시:
 
 ```ts
-// 예시 — definition-service/src/db/schema.ts
-export const prefixRegistry = sqliteTable("prefix_registry", {
-  prefixId: text("prefix_id").primaryKey(),
+// members 테이블이 cart_event.actor dim의 table_ref 출처임을 선언
+export const members = sqliteTable("members", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
   // ...
-}).comment({ prefix: "def_document", role: "registry" });
+}).comment({ table_ref: "cart_event.actor" });
+
+// items 테이블이 cart_event.target dim의 table_ref 출처임을 선언
+export const items = sqliteTable("items", {
+  id: integer("id").primaryKey(),
+  // ...
+}).comment({ table_ref: "cart_event.target" });
 ```
 
-### 1-2. 기존 17개 drizzle 스키마 → prefix 매핑 조사
+- [ ] 다중 참조 시: `{ table_ref: ["cart_event.target", "order_event.item"] }` 배열 형식
+- [ ] 역방향 검증: annotation ↔ DEMO_CATALOG table_ref dim 일치 확인
 
-- [ ] 각 스키마 파일이 어떤 prefix와 관련되는지 매핑 테이블 작성
-- [ ] table_ref dim 사용하는 prefix 4종 확인 (cart_event.actor→members, cart_event.target→items 등)
-- [ ] annotation 우선 대상 선정 (table_ref 관계가 있는 것부터)
+### 1-2. 기존 table_ref 매핑 조사
 
-### 1-3. prefix annotation extractor 유틸
+- [ ] DEMO_CATALOG에서 `kind: "table_ref"` 사용하는 prefix·dim 전수 조사
+- [ ] 해당 table이 어떤 drizzle 스키마 파일에 정의되어 있는지 매핑
+- [ ] annotation 대상 선정 (table_ref 관계가 이미 있는 것부터)
 
-- [ ] `extractPrefixAnnotations(schemaModule)` — drizzle 스키마 파일에서 `.comment()` 내 prefix 메타 추출
-- [ ] AST 기반 또는 런타임 introspection 방식 결정
-- [ ] 출력: `Array<{ table: string, prefixId: string, dimLabel?: string, role: string }>`
+### 1-3. table_ref annotation extractor
+
+- [ ] `extractTableRefAnnotations(schemaModule)` — `.comment()` 내 `table_ref` 키 추출
+- [ ] 출력: `Array<{ table: string, prefixId: string, dimLabel: string }>`
+- [ ] DEMO_CATALOG과 교차 검증: annotation 있지만 catalog에 없으면 warning, 반대도 warning
 
 ---
 
@@ -56,52 +86,102 @@ export const prefixRegistry = sqliteTable("prefix_registry", {
 
 ### 2-1. axis entry 소스 annotation 컨벤션
 
-- [ ] axis entries를 정의하는 위치(상수, enum, config)에 JSDoc 또는 데코레이터로 prefix/axis 메타 부착
-- [ ] 예시: 서비스별 환경변수 enum → `@axis("env")` 또는 `/** @axis env */`
+- [ ] axis entries 정의 위치(상수, enum, config)에 annotation으로 axis 메타 부착
 
 ```ts
-// 예시 — 서비스 코드에서
 /** @axis cart_action @version v1 */
 export const CART_ACTIONS = ["add", "remove", "update_qty", "clear"] as const;
 ```
 
 ### 2-2. enum → axis entry 파생 codegen
 
-- [ ] annotation 달린 enum/const 선언 수집 → axis entries 자동 파생
+- [ ] annotation 달린 enum/const 수집 → axis entries 자동 파생
 - [ ] capacity 자동 계산: `nextPowerOf2(entries.length * 2)`
-- [ ] 기존 DEMO_CATALOG axes와 교차 검증 (drift 감지)
+- [ ] DEMO_CATALOG axes와 교차 검증 (drift 감지)
 
 ---
 
-## Phase 3: 쿼리 이벤트 → prefix 연결 (db-traffic-control)
+## Phase 3: 쿼리 이벤트 → event-catalog 연결
 
-### 3-1. 쿼리 `.comment()` prefix tag 컨벤션
+쿼리 `.comment()`는 prefix에 직접 연결되지 않고 **event-catalog**로 연결된다.
+event-catalog가 prefix-mapping을 통해 prefix와 연결하는 기존 구조를 유지.
 
-- [ ] 쿼리 작성 시 `.comment({ prefix: "order_event", action: "create" })` 형식으로 prefix 의도 명시
-- [ ] db-traffic-control drizzle-middleware가 이 태그를 수집하여 `QueryMetricEvent.tags`에 포함
-- [ ] `TrafficMetricsCollector`가 prefix 태그 있는 이벤트를 별도 집계
+### 3-1. 쿼리 `.comment()` → event-catalog 매핑 컨벤션
 
-### 3-2. 쿼리 prefix 수집 → event-catalog 브릿지
+- [ ] 쿼리 작성 시 event_key를 명시하여 event-catalog 이벤트로 선언
 
-- [ ] db-traffic-control metrics에서 prefix 태그 추출 → event-catalog prefix-mapping과 교차 검증
-- [ ] 쿼리에 prefix 태그가 있지만 event-catalog에 매핑 없으면 warning
-- [ ] 자동 매핑 제안: 쿼리 패턴(table + operation) → prefix 후보 추천
+```ts
+// 쿼리가 event-catalog의 "order.create" 이벤트임을 선언
+db.insert(orders).values(data)
+  .comment({ event_key: "order.create", domain: "commerce" });
+
+// select 쿼리도 이벤트로 선언 가능
+db.select().from(orders).where(eq(orders.id, id))
+  .comment({ event_key: "order.read", domain: "commerce" });
+```
+
+- [ ] db-traffic-control drizzle-middleware가 `event_key` 태그를 `QueryMetricEvent.tags`에 포함
+- [ ] event-catalog prefix-mapping에 해당 event_key 매핑 존재 여부 검증
+
+### 3-2. 트랜잭션 → transition 단위 (event-catalog 하위 구성)
+
+트랜잭션으로 묶인 쿼리들은 **하나의 transition**(상태 전이)을 구성하며, 
+각 쿼리의 event-catalog 이벤트가 그 transition의 하위 구성원이 된다.
+
+- [ ] 트랜잭션 경계 annotation 컨벤션 설계
+
+```ts
+// 트랜잭션 = transition 단위
+await db.transaction(async (tx) => {
+  // 이 트랜잭션 전체가 "order.complete" transition
+  // 하위 event-catalog 이벤트들이 소속됨
+
+  await tx.update(orders).set({ status: "completed" })
+    .where(eq(orders.id, orderId))
+    .comment({ event_key: "order.status_change", transition: "order.complete" });
+
+  await tx.insert(payments).values(paymentData)
+    .comment({ event_key: "payment.confirm", transition: "order.complete" });
+
+  await tx.update(inventory).set({ qty: sql`qty - ${amount}` })
+    .comment({ event_key: "inventory.decrement", transition: "order.complete" });
+});
+```
+
+- [ ] transition 단위 구조 정의:
+
+```ts
+interface TransitionUnit {
+  transitionId: string;           // "order.complete"
+  events: string[];               // ["order.status_change", "payment.confirm", "inventory.decrement"]
+  atomicity: "all_or_nothing";    // 트랜잭션 보장
+}
+```
+
+- [ ] event-catalog에 transition → events 계층 구조 반영
+- [ ] prefix-mapping에서 transition 단위로 이벤트 그룹 해석 가능하게 확장
+
+### 3-3. 쿼리 event 수집 → event-catalog 교차 검증
+
+- [ ] db-traffic-control metrics에서 `event_key` 태그 추출
+- [ ] event-catalog prefix-mapping에 매핑 없으면 warning
+- [ ] transition 내 event들이 event-catalog에 전부 등록되어 있는지 검증
 
 ---
 
 ## Phase 4: 수집 파이프라인 통합
 
-### 4-1. prefix-source-collector 유틸 (신규)
+### 4-1. prefix-source-collector (신규)
 
-- [ ] Phase 1~3의 수집기를 통합하는 단일 진입점
-- [ ] 입력: drizzle 스키마 + enum 선언 + 쿼리 메트릭
+- [ ] Phase 1~3 수집기 통합 단일 진입점
+- [ ] 입력: drizzle 스키마 (table_ref) + enum (axis) + 쿼리 메트릭 (event-catalog)
 - [ ] 출력: `PrefixSourceMap` — prefixId별 출처 목록 (파일, 라인, 역할)
 
 ### 4-2. catalog codegen 통합
 
-- [ ] `generateCatalogTypes()` 확장 — colocated annotation 기반 catalog 자동 생성
+- [ ] colocated annotation 기반 catalog 자동 파생
 - [ ] 기존 수동 DEMO_CATALOG entries와 자동 수집 entries 병합 전략
-- [ ] 충돌 감지: 수동 선언 vs 자동 수집이 다를 때 warning
+- [ ] 충돌 감지: 수동 선언 vs 자동 수집 불일치 시 warning
 
 ### 4-3. CLI 명령
 
@@ -115,12 +195,13 @@ export const CART_ACTIONS = ["add", "remove", "update_qty", "clear"] as const;
 
 | Phase | 가치 | 난이도 | 순서 |
 |-------|------|--------|------|
-| 1-1 컨벤션 정의 | 높음 (기준점) | 낮음 | **1st** |
-| 1-2 매핑 조사 | 높음 (현황 파악) | 낮음 | **1st** |
-| 3-1 쿼리 comment 컨벤션 | 높음 (DX 즉시 개선) | 낮음 | **2nd** |
+| 1-1 table_ref annotation 컨벤션 | 높음 (기준점) | 낮음 | **1st** |
+| 1-2 table_ref 매핑 조사 | 높음 (현황 파악) | 낮음 | **1st** |
+| 3-1 쿼리 event_key 컨벤션 | 높음 (DX 즉시 개선) | 낮음 | **2nd** |
+| 3-2 트랜잭션 transition 구조 | 높음 (원자성 표현) | 중간 | **2nd** |
 | 1-3 extractor 유틸 | 중간 | 중간 | 3rd |
 | 2-1 axis annotation 컨벤션 | 중간 | 낮음 | 3rd |
-| 3-2 event-catalog 브릿지 | 중간 | 중간 | 4th |
+| 3-3 교차 검증 | 중간 | 중간 | 4th |
 | 2-2 enum codegen | 중간 | 높음 | 5th |
 | 4-* 통합 | 높음 (장기) | 높음 | 6th |
 
@@ -129,3 +210,4 @@ export const CART_ACTIONS = ["add", "remove", "update_qty", "clear"] as const;
 - DEMO_CATALOG SSOT 불변 — colocation은 입력 경로 개선이지 SSOT 이동이 아님
 - drizzle `.comment()` 형식은 Drizzle 1.0 beta에서 `Record<string, string>` 지원 확인 필요
 - AST 분석 vs 런타임 introspection 중 결정 필요 (codegen-core 패턴 참고)
+- event-catalog prefix-mapping 구조 확장 시 기존 매핑 하위 호환 유지

@@ -4,6 +4,7 @@
 
 import type { PipeFlow, PipeSpec, PipeGraph, PortRef } from "../types/pipe-spec.js";
 import { isPortRef, normalizeEndpointPipeIds, toEndpointArray } from "./pipe-endpoint.js";
+import { resolvePorts } from "./pipe-port.js";
 
 export interface ValidationIssue {
   path: string;
@@ -387,7 +388,7 @@ function validateConnectionEndpoint(
   if (endpoint.portId == null) return;
 
   const pipe = pipeMap.get(endpoint.pipeId);
-  const hasPort = pipe?.ports?.some(port => port.portId === endpoint.portId) ?? false;
+  const hasPort = pipe != null && resolvePorts(pipe).some(port => port.portId === endpoint.portId);
   if (!hasPort) {
     issues.push({
       path: endpointValuePath(path, isArray, index, "portId"),

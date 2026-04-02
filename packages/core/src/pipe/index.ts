@@ -18,6 +18,9 @@ export { countPipePaths, countGraphPaths } from "./pipe-path.js";
 export { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
 export type { ValidationIssue } from "./pipe-validate.js";
 
+// ── Port Resolution ───────────────────────────────────
+export { inferPortsFromDataContract, resolvePorts } from "./pipe-port.js";
+
 // ── Serialize ─────────────────────────────────────────
 export { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
 

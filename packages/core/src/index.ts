@@ -119,6 +119,8 @@ export {
   countPipePaths, countGraphPaths,
   // validate
   validatePipeSpec, validatePipeGraph, type ValidationIssue,
+  // ports
+  inferPortsFromDataContract, resolvePorts,
   // serialize
   serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph,
   // store
