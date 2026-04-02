@@ -6,7 +6,7 @@
 
 - 스펙: 80개 문서 (6 패싯 폴더 분리, CON-MS-001~007 적용)
 - 구현: 44개 파일 (+pipe-store-sqlite 패키지: store.ts, manifest-store.ts, schema.ts)
-- 테스트: 691 tests 전부 통과 (core 637/37 + codegen-core 24/1 + pipe-store-sqlite 30/2)
+- 테스트: 729 tests 전부 통과 (core 729/43 + codegen-core 24/1 + pipe-store-sqlite 30/2)
 
 ---
 
@@ -219,13 +219,12 @@
 
 - [x] PipeGraphStore + PipeSpecStore 영속화 — SqlitePipeGraphStore/SqlitePipeSpecStore (14 tests)
 - [x] ManifestRegistry 영속화 — SqliteManifestRegistry (16 tests)
-- [ ] registry-service 연동 — 매니페스트 API 노출
-- [ ] ScenarioSpec → PipeGraph 마이그레이션 가이드 (migration/v2-migration.spec 있음)
-- [ ] lifecycle — definition 쪽 lifecycle 조회 브릿지
-- [ ] layer 영향 전파 — definition 쪽 canPropagate 브릿지
-- [ ] tags — definition 쪽 tags 조회 브릿지
+- [x] lifecycle — resolveLifecycles (DefinitionLookup 포트 기반)
+- [x] layer 영향 전파 — analyzeLayerPropagation (canPropagate 내장)
+- [x] tags — resolveTags (DefinitionLookup 포트 기반)
+- [ ] registry-service 연동 — 매니페스트 API 노출 (NestJS 서비스 변경 필요)
 
 ### P3 — 낮음
 
-- [ ] PipeGraph → Mermaid 변환
-- [ ] PipeGraph → D3/SVG 변환
+- [x] PipeGraph → Mermaid 변환 — pipeGraphToMermaid / zoomViewToMermaid
+- [x] PipeGraph → D3/SVG 변환 — pipeGraphToSvg / zoomViewToSvg / pipeGraphToD3 / zoomViewToD3 (15 tests)
