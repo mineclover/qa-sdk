@@ -454,6 +454,14 @@ export class PipeRunner {
         return fwdResult;
       }
 
+      case "transition-scope": {
+        const bodyResult = await this.runFlow(flow.body, pipeId, `${path}.body`, context, steps, runState);
+        if (bodyResult.status === "error" && flow.compensate) {
+          await this.runFlow(flow.compensate, pipeId, `${path}.compensate`, context, steps, runState);
+        }
+        return bodyResult;
+      }
+
       case "emit": {
         steps.push({
           pipeId, flowPath: path, kind: "emit",

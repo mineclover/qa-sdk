@@ -11,6 +11,7 @@ after each iteration and it's included in prompts for context.
 - Pipe role 판정 패턴: `flow.kind`와 `ports`가 같이 있으면 역할 분류는 `resolvePorts()`를 먼저 보고, `tap`/`branch`/`emit` 같은 kind 휴리스틱은 ports가 부족할 때만 fallback으로 남긴다.
 - Pipe standalone SVG 확장 패턴: `pipe-svg-shapes.ts`에 새 렌더링 affordance를 추가할 때는 `StandaloneNodeOptions`와 `standaloneNodeSvg` 호출 경로를 함께 갱신하고, `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts` 공개 export, 전용 shape 테스트를 한 세트로 맞춘다.
 - Pipe edge SVG 메타데이터 전달 패턴: `facetType`처럼 connection-level 시각 메타데이터를 그래프 렌더러가 쓰려면 `pipe-svg-shapes.ts`에서 draw helper를 확장하는 것만으로는 부족하고, `pipe-zoom.ts`의 `ZoomEdge`에 값을 보존한 뒤 `pipe-svg.ts`가 그대로 전달하도록 연결해야 한다.
+- Pipe PortRef edge 라우팅 패턴: port-aware SVG/D3 렌더링은 `PipeConnection`의 PortRef를 `ZoomEdge.sourcePorts/targetPorts`로 보존하고, 노드 쪽은 `ZoomNode.ports`에 `resolvePorts()` 결과를 싣는다. 실제 anchor 좌표는 `drawPortDots()`와 동일한 방향별 순서/간격 공식을 써서 계산하고, PortRef가 없거나 매칭 포트가 없으면 node center로 fallback한다.
 
 ---
 
@@ -137,4 +138,22 @@ after each iteration and it's included in prompts for context.
     - edge label 같은 connection-level SVG affordance는 zoom/layout 이후에 그려지므로, graph renderer가 쓰는 intermediate edge 타입(`ZoomEdge`)에 메타데이터를 먼저 보존하고 최종 shape helper에 전달하는 흐름이 재사용 가능하다.
   - Gotchas encountered
     - feedback edge는 실제 path가 cubic arc라서 단순 `(x1+x2)/2, (y1+y2)/2` 직선 중점을 쓰면 라벨이 잘못된 위치에 놓인다. cubic midpoint를 계산해야 edge 위에 자연스럽게 붙는다.
+---
+## 2026-04-02 - US-007
+- What was implemented
+  - `ZoomEdge`에 `sourcePorts`/`targetPorts`, `ZoomNode`에 resolved `ports`를 보존하도록 바꿔 PortRef 연결 메타데이터가 zoom/layout 이후에도 유지되게 했다.
+  - `pipe-svg.ts`가 PortRef edge일 때 node rect + port index 기반으로 시작/종료 좌표를 계산하도록 바꾸고, 일반 string 연결은 기존 node center 기준을 그대로 유지했다.
+  - `pipeGraphToD3`/`zoomViewToD3`가 `D3Link.sourcePorts`/`targetPorts`를 내보내도록 확장했고, SVG/D3 회귀 테스트를 추가했다.
+- Files changed
+  - `packages/core/src/pipe/pipe-zoom.ts`
+  - `packages/core/src/pipe/pipe-svg.ts`
+  - `packages/core/src/pipe/pipe-zoom-view.test.ts`
+  - `packages/core/src/pipe/pipe-svg.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - PortRef 기반 edge routing은 `pipeGraphToSvg`에서 원본 connection을 다시 파싱하기보다, zoom intermediate 타입(`ZoomEdge`, `ZoomNode`)에 필요한 메타데이터를 보존해 SVG와 D3가 같은 anchor 계산 로직을 공유하게 만드는 편이 회귀에 강하다.
+  - Gotchas encountered
+    - `computeZoomView()`가 endpoint를 단순 `pipeId`로만 정규화하면 `pipeGraphToSvg`/`pipeGraphToD3` 단계에서는 PortRef를 복구할 방법이 없다. PortRef를 쓰는 시각 기능은 zoom 단계에서 메타데이터를 같이 실어 보내야 한다.
+    - 루트 `pnpm lint`는 여전히 워크스페이스 전체 기존 이슈와 섞이므로, 이번 작업 검증은 변경 파일 대상 `oxlint`와 `@qa-sdk/core` 타입체크/관련 테스트로 확인했다.
 ---

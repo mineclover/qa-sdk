@@ -46,6 +46,7 @@ describe("시뮬레이션 커버리지", () => {
         case "fallback": flow = { kind: "fallback", try: step("관리"), catch: step("관리") }; break;
         case "loop": flow = { kind: "loop", body: step("관리"), until: "done" }; break;
         case "compensate": flow = { kind: "compensate", forward: step("생산"), compensate: step("관리") }; break;
+        case "transition-scope": flow = { kind: "transition-scope", transitionId: "t1", body: step("생산"), events: ["e1"] }; break;
         case "emit": flow = { kind: "emit", eventKey: "notify" }; break;
         case "finally": flow = { kind: "finally", body: step("생산"), cleanup: step("저장") }; break;
         case "timeout": flow = { kind: "timeout", body: step("관리"), duration: 1000 }; break;

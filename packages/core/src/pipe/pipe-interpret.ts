@@ -141,6 +141,9 @@ export function extractPipeConcerns(pipe: PipeSpec): PipeConcern[] {
       case "tap":
         concerns.add("observability");
         break;
+      case "transition-scope":
+        if (flow.compensate) concerns.add("resilience");
+        break;
       case "step":
         // step 레벨 timeout
         if (flow.timeout) concerns.add("latency");

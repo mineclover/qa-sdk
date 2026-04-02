@@ -3,7 +3,7 @@ export type {
   PipePort, PortRef, PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
   PipeFlow, PipeStep, PipeSequence, PipeBranch, PipeOptional,
   PipeParallel, PipeRace, PipeAwait, PipeRetry, PipeFallback,
-  PipeLoop, PipeCompensate, PipeEmit, PipeFinally, PipeTimeout, PipeFeedback,
+  PipeLoop, PipeCompensate, PipeTransitionScope, PipeEmit, PipeFinally, PipeTimeout, PipeFeedback,
   PipeMap, PipeReduce, PipeBuffer, PipeFilter,
   PipeCircuitBreaker, PipeThrottle, PipeDebounce,
   PipeSplit, PipeEnrich, PipeTap, PipeResequence, PipeWindow,

@@ -7,16 +7,18 @@
  */
 
 import type {
-  PipeSpec, PipeGraph, ConnectionKind,
+  PipeSpec, PipeGraph, ConnectionKind, PipePort,
 } from "../types/pipe-spec.js";
 import type { FoldLevel, FoldedContract, FoldRegion } from "./pipe-fold.js";
 import {
   foldSubgraph, detectFoldRegions,
-  normalize, collectFlowSteps,
+  collectFlowSteps,
 } from "./pipe-fold.js";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";
 import { extractPipeConcerns, propagatePipeConcerns, classifyPipeRole } from "./pipe-interpret.js";
 import type { PipeConcern, PipeRole } from "./pipe-interpret.js";
+import { normalizePortRefs } from "./pipe-endpoint.js";
+import { resolvePorts } from "./pipe-port.js";
 
 // ── 타입 정의 ─────────────────────────────────────────
 
@@ -54,6 +56,8 @@ export interface ZoomNode {
   contract?: FoldedContract;
   /** 내부 파이프 수 */
   foldedChildCount: number;
+  /** 노드 경계 포트 */
+  ports: readonly PipePort[];
   /** 총 경로 수 */
   totalPaths: number;
   /** scope */
@@ -72,6 +76,10 @@ export interface ZoomEdge {
   kind: ConnectionKind;
   /** 흐르는 데이터 facet 타입 */
   facetType?: string;
+  /** source PortRef 메타데이터 */
+  sourcePorts?: string[];
+  /** target PortRef 메타데이터 */
+  targetPorts?: string[];
   /** 조건 (conditional일 때) */
   condition?: string;
 }
@@ -321,6 +329,7 @@ function buildView(
       isFolded,
       contract,
       foldedChildCount: contract?.summary.pipeCount ?? 1,
+      ports: isFolded ? [] : resolvePorts(pipe),
       totalPaths: contract?.summary.totalPaths ?? countPipePaths(pipe.flow),
       scope: pipe.scope,
       aspect: pipe.aspect,
@@ -332,16 +341,18 @@ function buildView(
   const edges: ZoomEdge[] = [];
 
   for (const conn of graph.connections) {
-    const froms = normalize(conn.from);
-    const tos = normalize(conn.to);
+    const froms = normalizePortRefs(conn.from);
+    const tos = normalizePortRefs(conn.to);
     for (const from of froms) {
       for (const to of tos) {
-        if (pipeIds.has(from) && pipeIds.has(to)) {
+        if (pipeIds.has(from.pipeId) && pipeIds.has(to.pipeId)) {
           edges.push({
-            from,
-            to,
+            from: from.pipeId,
+            to: to.pipeId,
             kind: conn.kind,
             ...(conn.facetType ? { facetType: conn.facetType } : {}),
+            ...(from.portId ? { sourcePorts: [from.portId] } : {}),
+            ...(to.portId ? { targetPorts: [to.portId] } : {}),
             ...(conn.condition ? { condition: conn.condition } : {}),
           });
         }

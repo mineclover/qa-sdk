@@ -126,6 +126,17 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
       validateFlow(flow.compensate, `${path}.compensate`, issues, depth + 1);
       break;
 
+    case "transition-scope":
+      if (!flow.transitionId) {
+        issues.push({ path: `${path}.transitionId`, severity: "error", message: "transition-scope.transitionId 누락" });
+      }
+      if (!flow.events || flow.events.length === 0) {
+        issues.push({ path: `${path}.events`, severity: "error", message: "transition-scope.events 비어있음 (이벤트 없는 전이는 무의미)" });
+      }
+      validateFlow(flow.body, `${path}.body`, issues, depth + 1);
+      if (flow.compensate) validateFlow(flow.compensate, `${path}.compensate`, issues, depth + 1);
+      break;
+
     case "finally":
       validateFlow(flow.body, `${path}.body`, issues, depth + 1);
       validateFlow(flow.cleanup, `${path}.cleanup`, issues, depth + 1);

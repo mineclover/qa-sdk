@@ -262,6 +262,11 @@ export function simulate(config: SimulationConfig): SimulationResult {
         walkFlow(flow.forward, pipeId, `${path}.forward`, ctx);
         break;
 
+      case "transition-scope":
+        steps.push({ pipeId, flowPath: path, kind: "transition-scope", timestamp: clock, status: "executed" });
+        walkFlow(flow.body, pipeId, `${path}.body`, ctx);
+        break;
+
       case "emit": {
         const s: SimStep = {
           pipeId, flowPath: path, kind: "emit",

@@ -181,4 +181,30 @@ describe("엣지", () => {
     const view = computeZoomView(graph, "leaf");
     expect(view.edges).toHaveLength(4);
   });
+
+  it("PortRef 연결 메타데이터를 ZoomEdge에 보존한다", () => {
+    const graph: PipeGraph = {
+      graphId: "ports",
+      version: "1.0.0",
+      pipes: [
+        makePipe("A", {
+          ports: [{ portId: "receipt", direction: "out" }],
+        }),
+        makePipe("B", {
+          ports: [{ portId: "receipt", direction: "in" }],
+        }),
+      ],
+      connections: [{
+        from: { pipeId: "A", portId: "receipt" },
+        to: { pipeId: "B", portId: "receipt" },
+        kind: "next",
+      }],
+      entryPipeId: "A",
+    };
+
+    const view = computeZoomView(graph, "leaf");
+    expect(view.edges).toHaveLength(1);
+    expect(view.edges[0].sourcePorts).toEqual(["receipt"]);
+    expect(view.edges[0].targetPorts).toEqual(["receipt"]);
+  });
 });

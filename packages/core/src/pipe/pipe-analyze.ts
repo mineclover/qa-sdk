@@ -287,6 +287,7 @@ export function getChildFlows(flow: PipeFlow): PipeFlow[] {
     case "reduce": case "enrich": return [flow.step];
     case "fallback": return [flow.try, flow.catch];
     case "compensate": return [flow.forward, flow.compensate];
+    case "transition-scope": return flow.compensate ? [flow.body, flow.compensate] : [flow.body];
     case "finally": return [flow.body, flow.cleanup];
     case "await": return [flow.then];
     case "timeout": return flow.onTimeout ? [flow.body, flow.onTimeout] : [flow.body];

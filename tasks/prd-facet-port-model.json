@@ -137,13 +137,13 @@
         "신규 테스트: PortRef 연결 SVG에 port dot 좌표 기반 path 생성 검증"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "pipe-svg.ts 수정. US-002(PortRef) + US-005(port dot 위치) 의존.",
       "dependsOn": [
         "US-002",
         "US-005"
       ],
-      "completionNotes": ""
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -183,6 +183,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-02T10:37:55.607Z"
+    "updatedAt": "2026-04-02T10:44:49.193Z"
   }
 }

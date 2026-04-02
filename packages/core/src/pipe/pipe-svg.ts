@@ -14,7 +14,7 @@ import { escapeAttr, svgSvg } from "./pipe-svg-primitives.js";
 import {
   renderMarkerDefs,
   drawNodeShape, drawFoldedNode, drawEntryMarker,
-  drawConcernBadges, drawNodeLabel, drawFoldedCount,
+  drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
   drawEdgePath, drawConditionBadge,
 } from "./pipe-svg-shapes.js";
 
@@ -47,6 +47,8 @@ export interface D3Link {
   source: string;
   target: string;
   kind: string;
+  sourcePorts?: string[];
+  targetPorts?: string[];
   condition?: string;
 }
 
@@ -121,6 +123,8 @@ export function zoomViewToD3(view: ZoomView): D3GraphData {
       source: e.from,
       target: e.to,
       kind: e.kind,
+      ...(e.sourcePorts ? { sourcePorts: e.sourcePorts } : {}),
+      ...(e.targetPorts ? { targetPorts: e.targetPorts } : {}),
       ...(e.condition ? { condition: e.condition } : {}),
     })),
     entryNodeId: view.entryNodeId,
@@ -167,22 +171,28 @@ function renderNode(node: ZoomNode, entryId: string, ox: number, oy: number): st
     if (node.foldedChildCount > 0) parts.push(drawFoldedCount(cx, y + h, node.foldedChildCount));
   } else {
     parts.push(drawNodeShape(x, y, w, h, { role: node.role, style: node.style }));
+    if (node.ports.length > 0) {
+      parts.push(drawPortDots(x, y, w, h, [...node.ports]));
+    }
   }
 
   parts.push(drawNodeLabel(cx, cy, node.label));
 
   if (!node.isFolded && node.concerns.length > 0) {
-    parts.push(drawConcernBadges(node.concerns as PipeConcern[], x + w, y, h));
+    const badgeOffset = node.ports.some(port => port.direction === "out") ? 12 : 0;
+    parts.push(drawConcernBadges(node.concerns as PipeConcern[], x + w + badgeOffset, y, h));
   }
 
   return `  <g class="node" data-id="${escapeAttr(node.id)}" data-role="${node.role}">\n    ${parts.join("\n    ")}\n  </g>`;
 }
 
 function renderEdge(edge: ZoomEdge, from: ZoomNode, to: ZoomNode, ox: number, oy: number): string {
-  const x1 = from.position.x + ox + from.size.width / 2;
-  const y1 = from.position.y + oy;
-  const x2 = to.position.x + ox - to.size.width / 2;
-  const y2 = to.position.y + oy;
+  const start = resolveEdgeAnchor(from, edge.sourcePorts, "out", ox, oy);
+  const end = resolveEdgeAnchor(to, edge.targetPorts, "in", ox, oy);
+  const x1 = start.x;
+  const y1 = start.y;
+  const x2 = end.x;
+  const y2 = end.y;
   const lift = Math.max(from.size.height, to.size.height) + 40;
 
   const parts: string[] = [drawEdgePath(x1, y1, x2, y2, {
@@ -193,4 +203,47 @@ function renderEdge(edge: ZoomEdge, from: ZoomNode, to: ZoomNode, ox: number, oy
   if (edge.condition) parts.push(drawConditionBadge(x1, y1, x2, y2, edge.condition));
 
   return `  <g class="edge" data-kind="${edge.kind}">\n    ${parts.join("\n    ")}\n  </g>`;
+}
+
+function resolveEdgeAnchor(
+  node: ZoomNode,
+  portIds: string[] | undefined,
+  direction: "in" | "out",
+  ox: number,
+  oy: number,
+): { x: number; y: number } {
+  const cx = node.position.x + ox;
+  const cy = node.position.y + oy;
+  const w = node.size.width;
+  const h = node.size.height;
+  const fallback = {
+    x: direction === "out" ? cx + w / 2 : cx - w / 2,
+    y: cy,
+  };
+
+  if (!portIds || portIds.length === 0) {
+    return fallback;
+  }
+
+  const directionPorts = node.ports.filter(port => port.direction === direction);
+  if (directionPorts.length === 0) {
+    return fallback;
+  }
+
+  const portId = portIds.find(candidate => directionPorts.some(port => port.portId === candidate));
+  if (portId == null) {
+    return fallback;
+  }
+
+  const portIndex = directionPorts.findIndex(port => port.portId === portId);
+  if (portIndex < 0) {
+    return fallback;
+  }
+
+  const top = cy - h / 2;
+  const step = h / (directionPorts.length + 1);
+  return {
+    x: fallback.x,
+    y: top + step * (portIndex + 1),
+  };
 }

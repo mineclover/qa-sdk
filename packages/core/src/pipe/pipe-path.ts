@@ -46,6 +46,8 @@ export function countPipePaths(flow: PipeFlow): number {
     // 트랜잭션
     case "compensate":
       return countPipePaths(flow.forward) + countPipePaths(flow.compensate);
+    case "transition-scope":
+      return countPipePaths(flow.body) + (flow.compensate ? countPipePaths(flow.compensate) : 0);
 
     // 비동기
     case "emit":

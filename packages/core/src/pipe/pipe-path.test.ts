@@ -58,6 +58,21 @@ describe("countPipePaths", () => {
     })).toBe(2);
   });
 
+  it("transition-scope → body 경로 수", () => {
+    expect(countPipePaths({
+      kind: "transition-scope", transitionId: "t1", body: step(), events: ["e1"],
+    })).toBe(1);
+  });
+
+  it("transition-scope + compensate → body + compensate (합)", () => {
+    expect(countPipePaths({
+      kind: "transition-scope", transitionId: "t1",
+      body: { kind: "sequence", steps: [step(), step()] },
+      events: ["e1", "e2"],
+      compensate: step(),
+    })).toBe(2);
+  });
+
   it("loop → body 경로 수 (반복 횟수 무관)", () => {
     expect(countPipePaths({ kind: "loop", body: step(), until: "done" })).toBe(1);
   });

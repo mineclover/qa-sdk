@@ -27,7 +27,7 @@ export interface PipeSpec {
     entryConditions?: Constraint[];
   };
 
-  /** 내부 패싯 흐름 (29종 흐름 제어) */
+  /** 내부 패싯 흐름 (30종 흐름 제어) */
   flow: PipeFlow;
 
   /** typed 입출력 포트 선언 */
@@ -80,7 +80,7 @@ export type ConnectionKind =
   | "join"
   | "feedback";
 
-// ── PipeFlow — 29종 흐름 제어 ────────────────────────────
+// ── PipeFlow — 30종 흐름 제어 ────────────────────────────
 
 export type PipeFlow =
   // 기본
@@ -94,7 +94,7 @@ export type PipeFlow =
   // 반복
   | PipeLoop
   // 트랜잭션
-  | PipeCompensate
+  | PipeCompensate | PipeTransitionScope
   // 비동기
   | PipeEmit
   // 정리
@@ -205,6 +205,19 @@ export interface PipeCompensate {
   kind: "compensate";
   forward: PipeFlow;
   compensate: PipeFlow;
+}
+
+/** 선언적 비즈니스 원자 경계 — "전부 되거나 전부 안 되거나" */
+export interface PipeTransitionScope {
+  kind: "transition-scope";
+  /** 전이 식별자 */
+  transitionId: string;
+  /** 전이 본체 — 이 안의 모든 동작이 원자적으로 성공하거나 실패 */
+  body: PipeFlow;
+  /** 이 전이에 소속된 이벤트 목록 */
+  events: string[];
+  /** 실패 시 보상 (선택) */
+  compensate?: PipeFlow;
 }
 
 // ── 비동기 ────────────────────────────────────────────

@@ -20,6 +20,29 @@ function makeChainGraph(ids: string[]): PipeGraph {
   };
 }
 
+function makePortGraph(connection: PipeConnection): PipeGraph {
+  return {
+    graphId: "ports",
+    version: "1.0.0",
+    pipes: [
+      makePipe("A", {
+        ports: [
+          { portId: "normalized", direction: "out" },
+          { portId: "receipt", direction: "out" },
+        ],
+      }),
+      makePipe("B", {
+        ports: [
+          { portId: "normalized", direction: "in" },
+          { portId: "receipt", direction: "in" },
+        ],
+      }),
+    ],
+    connections: [connection],
+    entryPipeId: "A",
+  };
+}
+
 // ── pipeGraphToSvg ────────────────────────────────────
 
 describe("pipeGraphToSvg", () => {
@@ -83,6 +106,28 @@ describe("pipeGraphToSvg", () => {
 
     expect(svg).toContain('class="edge-facet-label"');
     expect(svg).toContain(">payment.result</text>");
+  });
+
+  it("PortRef edge는 해당 port dot 좌표에서 시작/종료한다", () => {
+    const graph = makePortGraph({
+      from: { pipeId: "A", portId: "receipt" },
+      to: { pipeId: "B", portId: "receipt" },
+      kind: "next",
+    });
+    const svg = pipeGraphToSvg(graph);
+
+    expect(svg).toContain('d="M 168 88 C 208 88, 208 88, 248 88"');
+  });
+
+  it("PortRef가 없으면 기존 node center 기준 edge를 유지한다", () => {
+    const graph = makePortGraph({
+      from: "A",
+      to: "B",
+      kind: "next",
+    });
+    const svg = pipeGraphToSvg(graph);
+
+    expect(svg).toContain('d="M 168 78 C 208 78, 208 78, 248 78"');
   });
 
   it("group 줌 레벨 → 접힌 노드 스타일", () => {
@@ -179,6 +224,18 @@ describe("pipeGraphToD3", () => {
     const d3 = pipeGraphToD3(graph);
     expect(Array.isArray(d3.nodes[0].concerns)).toBe(true);
     expect(typeof d3.nodes[0].role).toBe("string");
+  });
+
+  it("PortRef 링크 → sourcePorts/targetPorts 포함", () => {
+    const graph = makePortGraph({
+      from: { pipeId: "A", portId: "receipt" },
+      to: { pipeId: "B", portId: "receipt" },
+      kind: "next",
+    });
+    const d3 = pipeGraphToD3(graph);
+
+    expect(d3.links[0].sourcePorts).toEqual(["receipt"]);
+    expect(d3.links[0].targetPorts).toEqual(["receipt"]);
   });
 });
 
