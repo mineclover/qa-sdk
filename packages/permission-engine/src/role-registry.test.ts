@@ -150,6 +150,154 @@ describe("RoleRegistry", () => {
     });
   });
 
+  describe("deny 레이어 — denyFeatures", () => {
+    it("상속된 feature를 개별 제거한다", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "viewer",  domain: "project", parents: [],          ownFeatures: ["page:dashboard", "resource:read"] });
+      r.register({ id: "author",  domain: "project", parents: ["viewer"],  ownFeatures: ["resource:write", "api:create"] });
+      r.register({
+        id: "api-author", domain: "project", parents: ["author"],
+        ownFeatures: [],
+        denyFeatures: ["page:dashboard"],
+      });
+
+      const feats = r.resolvedFeatures("project", "api-author");
+      expect(feats.has("page:dashboard")).toBe(false); // deny됨
+      expect(feats.has("resource:read")).toBe(true);    // 유지
+      expect(feats.has("resource:write")).toBe(true);   // 유지
+      expect(feats.has("api:create")).toBe(true);       // 유지
+    });
+
+    it("ownFeatures도 deny 가능하다", () => {
+      const r = new RoleRegistry();
+      r.register({
+        id: "special", domain: "d", parents: [],
+        ownFeatures: ["a", "b"],
+        denyFeatures: ["a"],
+      });
+      const feats = r.resolvedFeatures("d", "special");
+      expect(feats.has("a")).toBe(false);
+      expect(feats.has("b")).toBe(true);
+    });
+  });
+
+  describe("deny 레이어 — denyRoles", () => {
+    it("특정 role의 feature를 통째로 제거한다", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "viewer",   domain: "project", parents: [],                    ownFeatures: ["page:dashboard", "resource:read"] });
+      r.register({ id: "auditor",  domain: "project", parents: [],                    ownFeatures: ["audit:log", "audit:export"] });
+      r.register({ id: "manager",  domain: "project", parents: ["viewer", "auditor"], ownFeatures: ["action:approve"] });
+      r.register({
+        id: "ops-manager", domain: "project", parents: ["manager"],
+        ownFeatures: [],
+        denyRoles: ["auditor"],
+      });
+
+      const feats = r.resolvedFeatures("project", "ops-manager");
+      // auditor 계열 전부 제거
+      expect(feats.has("audit:log")).toBe(false);
+      expect(feats.has("audit:export")).toBe(false);
+      // viewer + manager 유지
+      expect(feats.has("page:dashboard")).toBe(true);
+      expect(feats.has("resource:read")).toBe(true);
+      expect(feats.has("action:approve")).toBe(true);
+    });
+
+    it("denyRoles와 denyFeatures를 함께 사용한다", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "viewer",  domain: "d", parents: [], ownFeatures: ["page:dashboard", "resource:read"] });
+      r.register({ id: "writer",  domain: "d", parents: [], ownFeatures: ["resource:write"] });
+      r.register({
+        id: "restricted", domain: "d",
+        parents: ["viewer", "writer"],
+        ownFeatures: ["special:access"],
+        denyRoles: ["writer"],
+        denyFeatures: ["page:dashboard"],
+      });
+
+      const feats = r.resolvedFeatures("d", "restricted");
+      expect(feats.has("resource:write")).toBe(false);  // denyRoles
+      expect(feats.has("page:dashboard")).toBe(false);  // denyFeatures
+      expect(feats.has("resource:read")).toBe(true);    // 유지
+      expect(feats.has("special:access")).toBe(true);   // own 유지
+    });
+
+    it("denyRoles 대상 role에 feature 추가 시 자동 deny 반영", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "base", domain: "d", parents: [], ownFeatures: ["a", "b"] });
+      r.register({ id: "extra", domain: "d", parents: ["base"], ownFeatures: ["c"] });
+      r.register({
+        id: "filtered", domain: "d",
+        parents: ["extra"],
+        ownFeatures: [],
+        denyRoles: ["base"],
+      });
+
+      const feats = r.resolvedFeatures("d", "filtered");
+      // base의 resolved = {a, b} → 전부 deny
+      expect(feats.has("a")).toBe(false);
+      expect(feats.has("b")).toBe(false);
+      // extra의 own인 c는 유지
+      expect(feats.has("c")).toBe(true);
+    });
+  });
+
+  describe("deny 레이어 — buildDomainPermissionSet 반영", () => {
+    it("deny가 mask에 반영된다", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "viewer", domain: "d", parents: [], ownFeatures: ["a", "b", "c"] });
+      r.register({
+        id: "limited", domain: "d", parents: ["viewer"],
+        ownFeatures: [],
+        denyFeatures: ["b"],
+      });
+
+      const ps = r.buildDomainPermissionSet("d");
+      expect(ps.has("a", "limited")).toBe(true);
+      expect(ps.has("b", "limited")).toBe(false);
+      expect(ps.has("c", "limited")).toBe(true);
+      // viewer는 영향 없음
+      expect(ps.has("b", "viewer")).toBe(true);
+    });
+  });
+
+  describe("deny 레이어 — validate", () => {
+    it("존재하지 않는 denyRole을 감지한다", () => {
+      const r = new RoleRegistry();
+      r.register({
+        id: "a", domain: "d", parents: [],
+        ownFeatures: [],
+        denyRoles: ["ghost"],
+      });
+      const errors = r.validate();
+      expect(errors.length).toBe(1);
+      expect(errors[0].kind).toBe("unknown-deny-role");
+    });
+
+    it("자기 자신을 deny하면 감지한다", () => {
+      const r = new RoleRegistry();
+      r.register({
+        id: "a", domain: "d", parents: [],
+        ownFeatures: ["x"],
+        denyRoles: ["a"],
+      });
+      const errors = r.validate();
+      expect(errors.some(e => e.kind === "self-deny-role")).toBe(true);
+    });
+
+    it("정상 deny 정의는 오류 없음", () => {
+      const r = new RoleRegistry();
+      r.register({ id: "base", domain: "d", parents: [], ownFeatures: ["a"] });
+      r.register({
+        id: "filtered", domain: "d", parents: ["base"],
+        ownFeatures: [],
+        denyRoles: ["base"],
+        denyFeatures: ["a"],
+      });
+      expect(r.validate()).toEqual([]);
+    });
+  });
+
   describe("에러 케이스", () => {
     it("중복 role 등록 시 throw", () => {
       const r = buildProjectRoles();

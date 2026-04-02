@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - `@qa-sdk/core`에 새 공개 클래스/값을 추가할 때도 도메인 서브배럴과 루트 `src/index.ts` 양쪽에 명시적으로 export를 연결해야 외부 패키지에서 안정적으로 소비된다.
 - `addressModel: "sum"` 관련 검증은 `PrefixVersionDef.segments`의 최상위 배열만 보면 안 되고, 재귀 `children`까지 순회해 `segmentId`를 수집해야 version-local segment 참조를 놓치지 않는다.
 - `validateLineageChain`의 dim mismatch는 schema 전체가 아니라 lineage의 target 컬럼이 실제로 `columnToAxis`에 매핑된 경우에만 검사해야 한다. target이 비-dim 필드면 source schema가 dim을 갖고 있어도 bound로 두는 편이 과검출을 막는다.
+- codegen 산출물은 소비 패키지에서 바로 컴파일될 수 있도록 generated file 안에 최소 helper 타입/레지스트리 shape를 함께 선언하는 standalone 패턴이 안전하다. 내부 `@qa-sdk/core` runtime import를 강제하지 않는 편이 재사용성과 배포 안정성이 높다.
 
 ---
 
@@ -42,4 +43,12 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Patterns discovered: lineage 검증에서 dim mismatch는 target 필드가 실제 좌표 dim을 운반하는 경우만 검사해야 계산/집계용 비-dim 필드를 과하게 실패시키지 않는다.
   - Gotchas encountered: `FieldLineage.sources`는 다중 입력을 가질 수 있어 전체 lineage를 한 건으로 집계할 때는 "missing binding 우선, 그다음 target dim continuity 검사"처럼 판정 우선순위를 먼저 고정해 두는 편이 테스트와 후속 저장 모델이 단순해진다.
+---
+
+## [2026-04-02] - US-005
+- What was implemented: `packages/data-object-codegen/` 패키지를 새로 추가하고 `generateDataObjectBindings(catalog, schemas, bindings)`를 구현했다. 생성기는 `data-objects.ts`, `binding-registry.ts`, `lineage-types.ts`, `index.ts` 4개 파일을 반환하며, prefix별 literal union 기반 인터페이스, standalone 바인딩 레지스트리 초기화 코드, schema 간 direct lineage 후보 타입을 함께 생성한다. 입력 정규화 기반 `contentHash`도 결정론적으로 계산하도록 고정했다.
+- Files changed: `packages/data-object-codegen/package.json`, `packages/data-object-codegen/tsconfig.json`, `packages/data-object-codegen/tsup.config.ts`, `packages/data-object-codegen/src/index.ts`, `packages/data-object-codegen/src/generate-data-object-bindings.ts`, `packages/data-object-codegen/src/generate-data-object-bindings.test.ts`, `pnpm-lock.yaml`, `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered: generated TS 파일은 standalone helper 타입을 직접 선언해 두면 core runtime class import 없이도 소비자 패키지에서 바로 컴파일/사용할 수 있다.
+  - Gotchas encountered: 새 workspace 패키지를 추가한 직후에는 `pnpm --filter <pkg> <script>`가 로컬 `node_modules` 링크 부재로 바이너리를 못 찾을 수 있어, 오프라인 `pnpm install --filter <pkg>`로 importer/link를 먼저 잡아야 package-local `tsc`/`tsup` 스크립트가 정상 동작한다.
 ---

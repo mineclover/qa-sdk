@@ -40,12 +40,23 @@ export interface DomainRoleDef {
    * 분기 상속: 부모를 여러 개 지정하면 모두 합산.
    */
   parents: readonly string[];
+  /**
+   * 상속에서 제외할 Role ID 목록 (같은 domain 내).
+   * 해당 role의 resolvedFeatures 전체를 deny set에 추가한다.
+   * grant와 대칭: parents가 role 단위 부여, denyRoles가 role 단위 제거.
+   */
+  denyRoles?: readonly string[];
+  /**
+   * 상속에서 제외할 개별 feature ID 목록.
+   * grant와 대칭: ownFeatures가 feature 단위 부여, denyFeatures가 feature 단위 제거.
+   */
+  denyFeatures?: readonly string[];
 }
 
 export interface RoleRegistryValidationError {
   domain: string;
   roleId: string;
-  kind: "cycle" | "unknown-parent" | "duplicate";
+  kind: "cycle" | "unknown-parent" | "duplicate" | "unknown-deny-role" | "self-deny-role";
   message: string;
 }
 
@@ -190,8 +201,8 @@ export class RoleRegistry {
     const errors: RoleRegistryValidationError[] = [];
     for (const [domain, domainMap] of this._domains) {
       for (const roleId of domainMap.keys()) {
-        // 알 수 없는 부모
         const node = domainMap.get(roleId)!;
+        // 알 수 없는 부모
         for (const parentId of node.def.parents) {
           if (!domainMap.has(parentId)) {
             errors.push({
@@ -199,6 +210,24 @@ export class RoleRegistry {
               roleId,
               kind: "unknown-parent",
               message: `Role "${roleId}" in domain "${domain}" references unknown parent "${parentId}"`,
+            });
+          }
+        }
+        // deny 검증
+        for (const denyRoleId of node.def.denyRoles ?? []) {
+          if (denyRoleId === roleId) {
+            errors.push({
+              domain,
+              roleId,
+              kind: "self-deny-role",
+              message: `Role "${roleId}" in domain "${domain}" denies itself`,
+            });
+          } else if (!domainMap.has(denyRoleId)) {
+            errors.push({
+              domain,
+              roleId,
+              kind: "unknown-deny-role",
+              message: `Role "${roleId}" in domain "${domain}" denies unknown role "${denyRoleId}"`,
             });
           }
         }
@@ -240,13 +269,27 @@ export class RoleRegistry {
 
     visiting.add(roleId);
 
+    // 1. parents → OR 합산
     const result = new Set<string>(node.def.ownFeatures);
     for (const parentId of node.def.parents) {
-      // 부모가 이미 계산된 경우 직접 사용, 아닌 경우 재귀
       const parentNode = this._getNode(domain, parentId);
       const parentFeats = parentNode.resolved
         ?? this._resolveFeatures(domain, parentId, new Set(visiting));
       for (const f of parentFeats) result.add(f);
+    }
+
+    // 2. deny set 구성 (denyRoles + denyFeatures)
+    const { denyRoles, denyFeatures } = node.def;
+    if (denyRoles?.length || denyFeatures?.length) {
+      const denySet = new Set<string>(denyFeatures ?? []);
+      for (const denyRoleId of denyRoles ?? []) {
+        const denyNode = this._getNode(domain, denyRoleId);
+        const denyFeats = denyNode.resolved
+          ?? this._resolveFeatures(domain, denyRoleId, new Set(visiting));
+        for (const f of denyFeats) denySet.add(f);
+      }
+      // 3. grant - deny
+      for (const f of denySet) result.delete(f);
     }
 
     visiting.delete(roleId);
