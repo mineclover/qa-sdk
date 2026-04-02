@@ -10,7 +10,7 @@ import type { ZoomView, ZoomNode, ZoomEdge } from "./pipe-zoom.js";
 import { computeZoomView, computeLayout } from "./pipe-zoom.js";
 import type { FoldLevel } from "./pipe-fold.js";
 import type { PipeConcern } from "./pipe-interpret.js";
-import { r, escapeAttr, svgSvg } from "./pipe-svg-primitives.js";
+import { escapeAttr, svgSvg } from "./pipe-svg-primitives.js";
 import {
   renderMarkerDefs,
   drawNodeShape, drawFoldedNode, drawEntryMarker,
@@ -185,7 +185,11 @@ function renderEdge(edge: ZoomEdge, from: ZoomNode, to: ZoomNode, ox: number, oy
   const y2 = to.position.y + oy;
   const lift = Math.max(from.size.height, to.size.height) + 40;
 
-  const parts: string[] = [drawEdgePath(x1, y1, x2, y2, { kind: edge.kind, feedbackLift: lift })];
+  const parts: string[] = [drawEdgePath(x1, y1, x2, y2, {
+    kind: edge.kind,
+    feedbackLift: lift,
+    facetType: edge.facetType,
+  })];
   if (edge.condition) parts.push(drawConditionBadge(x1, y1, x2, y2, edge.condition));
 
   return `  <g class="edge" data-kind="${edge.kind}">\n    ${parts.join("\n    ")}\n  </g>`;

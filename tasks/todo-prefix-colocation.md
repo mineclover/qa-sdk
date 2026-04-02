@@ -122,91 +122,93 @@ db.insert(orders).values(data)
 
 ---
 
-## Phase 4: Transition 선언 시스템 — 제어 흐름 내 1급 전이 표현
+## Phase 4: 선언적 Transition — 제어 흐름 내 비즈니스 원자 경계
 
 ### 동기
 
-transition은 트레이싱/로깅의 부산물이 아니라 **설계 시점의 1급 선언**이어야 한다.
+transition = **비즈니스 레벨의 선언적 원자 경계**. "이 묶음은 전부 되거나 전부 안 되거나."
 
-- DB 레벨: 트랜잭션 = 원자적 상태 변경의 경계
-- 서비스 레벨: saga/choreography = 분산 상태 전이의 경계
-- 두 경우 모두 "이 묶음이 하나의 전이다"를 **설계 시점에 명시적으로 선언**해야 함
-- 런타임 트레이싱은 이 선언의 관측일 뿐, 선언 자체는 아님
+은행 송금 예시: 출금 + 입금 + 수수료 기록 — 셋 중 하나라도 실패하면 전체 롤백.
+이 "전부 되거나 전부 안 되거나"는 **설계 시점에 선언**하는 것이지, 런타임 트레이싱이나 DB `db.transaction()` 구현의 문제가 아님.
+구현이 DB 트랜잭션이든 saga든 수동 보상이든 — 그건 실행 메커니즘. transition 선언은 그보다 위에 있음.
 
-### 기존 구조와의 관계
+### 기존 구조의 한계
 
-현재 시스템에 transition 관련 개념이 이미 있지만 파편화됨:
+| 위치 | 있는 것 | 없는 것 |
+|------|---------|---------|
+| `PathSegment.transition` | 좌표→이벤트 전이 | 이벤트 **그룹** 경계 |
+| `PipeCompensate` | forward + compensate 쌍 | "이게 하나의 원자 단위" 선언 |
+| `PipeEmit` | 단발 이벤트 발행 | 어떤 전이에 소속되는지 |
 
-| 위치 | 표현 | 한계 |
-|------|------|------|
-| `PathSegment.transition` | `EventTransition { eventKey, prefixId? }` | 좌표 레벨 전이만. 이벤트 그룹핑 없음 |
-| `BranchRoute.transition` | 축 값 조건별 분기 전이 | 단일 이벤트 대상만 |
-| `PipeEmit` | `{ kind: "emit", eventKey }` | 단발 이벤트 발행. 전이 경계 표현 없음 |
-| `PipeCompensate` | forward + compensate flow | 보상 로직은 있지만 "전이 단위" 선언 없음 |
-| `db.transaction()` | 런타임 트랜잭션 | 코드에만 존재, 설계 선언 없음 |
+**빠진 것**: "이 구간이 하나의 비즈니스 전이이고, 내부 이벤트들은 여기 소속된다"는 선언.
 
-**빠진 것**: "이 구간이 하나의 transition이다"라는 **1급 선언 + 하위 이벤트 소속 관계**.
-
-### 4-1. PipeTransitionScope 타입 도입
-
-PipeSpec 제어 흐름 안에서 transition 경계를 명시적으로 선언하는 새 flow kind.
+### 4-1. PipeTransitionScope — 제어 흐름 내 원자 경계 선언
 
 - [ ] `PipeTransitionScope` 인터페이스 설계:
 
 ```ts
 interface PipeTransitionScope {
   kind: "transition-scope";
-  /** 전이 식별자 — event-catalog의 transition 단위와 1:1 */
+  /** 전이 식별자 */
   transitionId: string;
-  /** 전이 본체 — 내부 flow가 원자적으로 실행됨 */
+  /** 전이 본체 — 이 안의 모든 동작이 원자적으로 성공하거나 실패 */
   body: PipeFlow;
-  /** 이 전이가 발행하는 이벤트 목록 (body 내 emit들의 상위 그룹) */
+  /** 이 전이에 소속된 이벤트 목록 */
   events: string[];
-  /** 보상 로직 (선택) — 실패 시 rollback */
+  /** 실패 시 보상 (선택) */
   compensate?: PipeFlow;
-  /** 전이 완료 시 후속 이벤트 (PathSegment.transition과 동일 의미) */
-  onComplete?: EventTransition;
 }
 ```
 
-- [ ] 기존 `PipeCompensate`와의 관계: transition-scope는 compensate를 포함할 수 있는 상위 개념
-- [ ] 기존 `PipeEmit`과의 관계: scope 내부의 emit들은 자동으로 transition의 하위 이벤트로 소속
+```ts
+// 은행 송금 예시
+const transfer: PipeSpec = {
+  pipeId: "bank-transfer",
+  flow: {
+    kind: "transition-scope",
+    transitionId: "transfer.execute",
+    events: ["account.debit", "account.credit", "fee.record"],
+    body: {
+      kind: "sequence",
+      steps: [
+        { kind: "step", facet: "출금", eventKey: "account.debit" },
+        { kind: "step", facet: "입금", eventKey: "account.credit" },
+        { kind: "step", facet: "수수료", eventKey: "fee.record" },
+      ],
+    },
+    compensate: {
+      kind: "sequence",
+      steps: [
+        { kind: "step", facet: "출금취소", eventKey: "account.debit.reverse" },
+        { kind: "step", facet: "입금취소", eventKey: "account.credit.reverse" },
+      ],
+    },
+  },
+};
+```
 
-### 4-2. transition-scope ↔ event-catalog 연결
+- [ ] 기존 `PipeCompensate` 관계: transition-scope가 compensate를 포함하는 상위 개념. PipeCompensate는 보상 로직만, transition-scope는 원자 경계 + 이벤트 소속 + 보상
+- [ ] scope 내부의 `PipeEmit`들은 자동으로 transition의 하위 이벤트로 소속
 
-- [ ] event-catalog에 `TransitionDef` 추가:
+### 4-2. event-catalog에 TransitionDef 등록
+
+- [ ] transition을 event-catalog에 선언:
 
 ```ts
 interface TransitionDef {
   transitionId: string;
-  /** 이 transition에 소속된 event_key 목록 */
+  /** 이 transition에 소속된 event_key 목록 — PipeTransitionScope.events와 일치 */
   events: string[];
-  /** 원자성 보장 수준 */
-  atomicity: "db-transaction" | "saga" | "best-effort";
-  /** 관련 prefix (PathSegment.transition과 동일) */
-  prefixId?: string;
 }
 ```
 
-- [ ] PipeTransitionScope.events ↔ TransitionDef.events 교차 검증
-- [ ] 쿼리 `.comment({ event_key, transition })` 의 transition 값이 TransitionDef에 존재하는지 검증
+- [ ] PipeTransitionScope.events ↔ TransitionDef.events 정합성 검증
+- [ ] 쿼리 `.comment({ event_key, transition })` 의 transition이 TransitionDef에 존재하는지 검증
 
-### 4-3. transition-scope ↔ PathSegment.transition 브릿지
+### 4-3. PathSegment.transition 브릿지
 
-- [ ] `PathSegment.transition`은 좌표 레벨 (주소 → 이벤트), `PipeTransitionScope`는 제어 흐름 레벨 (실행 경계 → 이벤트 그룹)
-- [ ] 같은 `transitionId`를 공유하여 양쪽을 연결
-- [ ] 검증: PipeSpec에 transition-scope가 있으면, 해당 prefix의 PathSegment에도 대응하는 transition이 있는지 확인
-
-### 4-4. DB 트랜잭션 → transition-scope 연결
-
-- [ ] 코드 레벨 `db.transaction()` 안의 `.comment({ transition })` 태그가 PipeTransitionScope.transitionId와 일치해야 함
-- [ ] 정적 분석 또는 런타임 검증으로 코드 트랜잭션 ↔ 설계 transition 매핑 확인
-
-### 4-5. 서비스 간 분산 transition
-
-- [ ] 마이크로서비스 간 saga 패턴에서도 transition-scope 사용 가능
-- [ ] `atomicity: "saga"` — 각 서비스의 PipeTransitionScope가 saga의 한 step
-- [ ] saga coordinator가 여러 transition-scope를 순서대로 실행, 실패 시 compensate chain
+- [ ] `PathSegment.transition`(좌표 레벨)과 `PipeTransitionScope`(제어 흐름 레벨)가 같은 `transitionId` 공유
+- [ ] 좌표 주소 디코딩 → transition 해석 → 해당 PipeSpec의 transition-scope와 연결
 
 ---
 
@@ -246,10 +248,8 @@ interface TransitionDef {
 | 2-1 axis annotation 컨벤션 | 중간 | 낮음 | 4th |
 | 4-3 PathSegment 브릿지 | 중간 (일관성) | 중간 | 4th |
 | 3-2 교차 검증 | 중간 | 중간 | 5th |
-| 4-4 DB 트랜잭션 연결 | 중간 | 높음 | 5th |
 | 2-2 enum codegen | 중간 | 높음 | 6th |
-| 4-5 분산 transition | 낮음 (장기) | 높음 | 7th |
-| 5-* 통합 | 높음 (장기) | 높음 | 8th |
+| 5-* 통합 | 높음 (장기) | 높음 | 7th |
 
 ## 제약
 
@@ -258,3 +258,4 @@ interface TransitionDef {
 - AST 분석 vs 런타임 introspection 중 결정 필요 (codegen-core 패턴 참고)
 - event-catalog prefix-mapping 구조 확장 시 기존 매핑 하위 호환 유지
 - PipeTransitionScope는 기존 29종 flow kind에 추가 — pipe-flow-catalog 30번째 또는 메타 flow kind로 분류 결정 필요
+- transition 선언은 비즈니스 원자 경계. 구현 메커니즘(DB tx, saga, 수동 보상)은 별도 관심사

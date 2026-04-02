@@ -117,12 +117,12 @@
         "기존 pipe-svg.test.ts 전부 통과"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "pipe-svg-shapes.ts + pipe-svg.ts 수정. US-002(PipeConnection.facetType) 의존.",
       "dependsOn": [
         "US-002"
       ],
-      "completionNotes": ""
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -183,6 +183,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-02T10:33:30.822Z"
+    "updatedAt": "2026-04-02T10:37:55.607Z"
   }
 }

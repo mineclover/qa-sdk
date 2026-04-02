@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawPortDots, standaloneNodeSvg } from "./pipe-svg-shapes.js";
+import { drawEdgePath, drawPortDots, standaloneEdgeSvg, standaloneNodeSvg } from "./pipe-svg-shapes.js";
 import type { PipePort } from "../types/pipe-spec.js";
 
 describe("drawPortDots", () => {
@@ -52,5 +52,32 @@ describe("standaloneNodeSvg", () => {
 
     expect(svg).not.toContain('class="port-dots"');
     expect(svg).toContain(">Normalize</text>");
+  });
+});
+
+describe("drawEdgePath", () => {
+  it("facetType이 있으면 edge 중간에 pill 라벨을 렌더링한다", () => {
+    const svg = drawEdgePath(20, 40, 180, 40, {
+      kind: "event",
+      facetType: "payment.result",
+    });
+
+    expect(svg).toContain('class="edge-facet-label"');
+    expect(svg).toContain('font-size="10"');
+    expect(svg).toContain('font-family="monospace"');
+    expect(svg).toContain(">payment.result</text>");
+    expect(svg).toContain('fill-opacity="0.78"');
+  });
+});
+
+describe("standaloneEdgeSvg", () => {
+  it("facetType이 있으면 standalone edge에도 라벨을 포함한다", () => {
+    const svg = standaloneEdgeSvg({
+      kind: "next",
+      facetType: "order.normalized",
+    });
+
+    expect(svg).toContain('class="edge-facet-label"');
+    expect(svg).toContain(">order.normalized</text>");
   });
 });

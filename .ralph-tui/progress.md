@@ -10,6 +10,7 @@ after each iteration and it's included in prompts for context.
 - Pipe metadata 추론 패턴: 명시 필드(`ports`)와 유도 필드(dataContract 기반)가 공존하면 `resolve*()` helper를 두고, validator/consumer가 optional 필드를 직접 읽지 말고 항상 resolver를 거치게 만든다.
 - Pipe role 판정 패턴: `flow.kind`와 `ports`가 같이 있으면 역할 분류는 `resolvePorts()`를 먼저 보고, `tap`/`branch`/`emit` 같은 kind 휴리스틱은 ports가 부족할 때만 fallback으로 남긴다.
 - Pipe standalone SVG 확장 패턴: `pipe-svg-shapes.ts`에 새 렌더링 affordance를 추가할 때는 `StandaloneNodeOptions`와 `standaloneNodeSvg` 호출 경로를 함께 갱신하고, `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts` 공개 export, 전용 shape 테스트를 한 세트로 맞춘다.
+- Pipe edge SVG 메타데이터 전달 패턴: `facetType`처럼 connection-level 시각 메타데이터를 그래프 렌더러가 쓰려면 `pipe-svg-shapes.ts`에서 draw helper를 확장하는 것만으로는 부족하고, `pipe-zoom.ts`의 `ZoomEdge`에 값을 보존한 뒤 `pipe-svg.ts`가 그대로 전달하도록 연결해야 한다.
 
 ---
 
@@ -118,4 +119,22 @@ after each iteration and it's included in prompts for context.
     - standalone SVG affordance를 확장할 때는 shape 구현만 바꾸지 말고 `StandaloneNodeOptions`, `standaloneNodeSvg`, 두 export surface, 전용 렌더링 테스트를 같이 업데이트해야 downstream catalog 소비자가 바로 쓸 수 있다.
   - Gotchas encountered
     - 루트 `pnpm lint`는 인자와 무관하게 `packages/` 전체를 검사하므로 기존 워크스페이스 lint 이슈와 섞인다. 변경 범위 확인은 `pnpm exec oxlint <files...>`로 따로 실행해야 신호가 깨끗하다.
+---
+## 2026-04-02 - US-006
+- What was implemented
+  - `EdgePathOptions`와 `StandaloneEdgeOptions`에 `facetType?: string`을 추가하고, `drawEdgePath()`가 cubic edge 중간점에 facet pill 라벨을 렌더링하도록 확장했다.
+  - `pipe-zoom.ts`의 `ZoomEdge`가 `PipeConnection.facetType`을 보존하도록 바꾸고, `pipe-svg.ts`가 이를 `drawEdgePath()`로 전달하게 연결했다.
+  - `pipe-svg.test.ts`와 `pipe-svg-shapes.test.ts`에 facet edge 라벨 회귀 테스트를 추가했고, touched file lint 경고도 함께 정리했다.
+- Files changed
+  - `packages/core/src/pipe/pipe-svg-shapes.ts`
+  - `packages/core/src/pipe/pipe-svg.ts`
+  - `packages/core/src/pipe/pipe-zoom.ts`
+  - `packages/core/src/pipe/pipe-svg.test.ts`
+  - `packages/core/src/pipe/pipe-svg-shapes.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - edge label 같은 connection-level SVG affordance는 zoom/layout 이후에 그려지므로, graph renderer가 쓰는 intermediate edge 타입(`ZoomEdge`)에 메타데이터를 먼저 보존하고 최종 shape helper에 전달하는 흐름이 재사용 가능하다.
+  - Gotchas encountered
+    - feedback edge는 실제 path가 cubic arc라서 단순 `(x1+x2)/2, (y1+y2)/2` 직선 중점을 쓰면 라벨이 잘못된 위치에 놓인다. cubic midpoint를 계산해야 edge 위에 자연스럽게 붙는다.
 ---

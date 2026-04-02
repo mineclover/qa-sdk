@@ -345,13 +345,90 @@ export interface EdgePathOptions {
   kind: ConnectionKind;
   /** feedback U턴 lift 높이 (기본: nodeHeight + 40) */
   feedbackLift?: number;
+  /** edge 중간 facet 라벨 */
+  facetType?: string;
+}
+
+function cubicPointAt(
+  p0: number,
+  p1: number,
+  p2: number,
+  p3: number,
+  t: number,
+): number {
+  const mt = 1 - t;
+  return (mt ** 3 * p0)
+    + (3 * mt ** 2 * t * p1)
+    + (3 * mt * t ** 2 * p2)
+    + (t ** 3 * p3);
+}
+
+function getEdgeLabelPosition(
+  x1: number, y1: number,
+  x2: number, y2: number,
+  kind: ConnectionKind,
+  feedbackLift: number,
+): { x: number; y: number } {
+  const controls = kind === "feedback"
+    ? {
+      c1x: x1,
+      c1y: y1 - feedbackLift,
+      c2x: x2,
+      c2y: y2 - feedbackLift,
+    }
+    : {
+      c1x: (x1 + x2) / 2,
+      c1y: y1,
+      c2x: (x1 + x2) / 2,
+      c2y: y2,
+    };
+
+  return {
+    x: cubicPointAt(x1, controls.c1x, controls.c2x, x2, 0.5),
+    y: cubicPointAt(y1, controls.c1y, controls.c2y, y2, 0.5),
+  };
+}
+
+function drawFacetBadge(
+  x1: number, y1: number,
+  x2: number, y2: number,
+  facetType: string,
+  kind: ConnectionKind,
+  feedbackLift: number,
+): string {
+  const token = EDGE_TOKENS[kind] ?? EDGE_TOKENS.next;
+  const { x, y } = getEdgeLabelPosition(x1, y1, x2, y2, kind, feedbackLift);
+  const width = Math.max(facetType.length * 6.1 + 16, 36);
+  const height = 18;
+  const bx = x - width / 2;
+  const by = y - height / 2;
+
+  return [
+    `<g class="edge-facet-label">`,
+    `  ${svgRect(bx, by, width, height, {
+      rx: height / 2,
+      fill: "#ffffff",
+      "fill-opacity": 0.78,
+      stroke: token.stroke,
+      "stroke-opacity": 0.35,
+      "stroke-width": 1,
+    })}`,
+    `  ${svgText(x, y + 3.5, facetType, {
+      "text-anchor": "middle",
+      "font-size": 10,
+      "font-family": "monospace",
+      fill: token.stroke,
+      "pointer-events": "none",
+    })}`,
+    `</g>`,
+  ].join("\n");
 }
 
 /** 엣지 path 요소 (마커 참조 포함) */
 export function drawEdgePath(
   x1: number, y1: number,
   x2: number, y2: number,
-  { kind, feedbackLift = 100 }: EdgePathOptions,
+  { kind, feedbackLift = 100, facetType }: EdgePathOptions,
 ): string {
   const token = EDGE_TOKENS[kind] ?? EDGE_TOKENS.next;
 
@@ -381,6 +458,9 @@ export function drawEdgePath(
   };
 
   parts.push(svgPath(d, pathAttrs));
+  if (facetType) {
+    parts.push(drawFacetBadge(x1, y1, x2, y2, facetType, kind, feedbackLift));
+  }
   return parts.join("\n");
 }
 
@@ -481,6 +561,7 @@ export function standaloneNodeSvg(opts: StandaloneNodeOptions): string {
 export interface StandaloneEdgeOptions {
   kind: ConnectionKind;
   condition?: string;
+  facetType?: string;
   width?: number;
   height?: number;
   padding?: number;
@@ -492,7 +573,7 @@ export interface StandaloneEdgeOptions {
  */
 export function standaloneEdgeSvg(opts: StandaloneEdgeOptions): string {
   const {
-    kind, condition,
+    kind, condition, facetType,
     width = 280, height = 110, padding = 32,
   } = opts;
 
@@ -513,7 +594,7 @@ export function standaloneEdgeSvg(opts: StandaloneEdgeOptions): string {
     svgRect(bx, cy - nodeH / 2, nodeW, nodeH, { rx: 4, fill: "#eceff1", stroke: "#78909c", "stroke-width": 1.5 }),
     svgText(bx + nodeW / 2, cy + 5, "B", { "text-anchor": "middle", "font-size": 13, fill: "#37474f" }),
     // 엣지
-    drawEdgePath(x1, cy, x2, cy, { kind, feedbackLift: nodeH + 40 }),
+    drawEdgePath(x1, cy, x2, cy, { kind, feedbackLift: nodeH + 40, facetType }),
     // 조건 배지
     ...(condition ? [drawConditionBadge(x1, cy, x2, cy, condition)] : []),
   ];

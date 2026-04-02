@@ -72,6 +72,19 @@ describe("pipeGraphToSvg", () => {
     expect(svg).toContain("#c62828");
   });
 
+  it("connection facetType을 edge 라벨로 전달한다", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "1.0.0",
+      pipes: [makePipe("A"), makePipe("B")],
+      connections: [{ from: "A", to: "B", kind: "next", facetType: "payment.result" }],
+      entryPipeId: "A",
+    };
+    const svg = pipeGraphToSvg(graph);
+
+    expect(svg).toContain('class="edge-facet-label"');
+    expect(svg).toContain(">payment.result</text>");
+  });
+
   it("group 줌 레벨 → 접힌 노드 스타일", () => {
     const graph = makeChainGraph(["A", "B", "C", "D", "E", "F"]);
     const svg = pipeGraphToSvg(graph, "group");

@@ -7,7 +7,7 @@
  */
 
 import type {
-  PipeSpec, PipeGraph, PipeConnection, ConnectionKind, PipeStep,
+  PipeSpec, PipeGraph, ConnectionKind,
 } from "../types/pipe-spec.js";
 import type { FoldLevel, FoldedContract, FoldRegion } from "./pipe-fold.js";
 import {
@@ -70,6 +70,8 @@ export interface ZoomEdge {
   to: string;
   /** 연결 종류 */
   kind: ConnectionKind;
+  /** 흐르는 데이터 facet 타입 */
+  facetType?: string;
   /** 조건 (conditional일 때) */
   condition?: string;
 }
@@ -199,7 +201,8 @@ export function computeLayout(view: ZoomView): ZoomView {
   const layerMap = new Map<string, number>();
 
   function assignLayer(id: string, visited: Set<string>): number {
-    if (layerMap.has(id)) return layerMap.get(id)!;
+    const existingLayer = layerMap.get(id);
+    if (existingLayer !== undefined) return existingLayer;
     if (visited.has(id)) return 0; // 순환 방지
     visited.add(id);
 
@@ -225,11 +228,12 @@ export function computeLayout(view: ZoomView): ZoomView {
   }
 
   // 레이어 내 정렬 (barycenter 휴리스틱)
-  const sortedLayerKeys = [...layers.keys()].sort((a, b) => a - b);
+  const sortedLayerKeys = [...layers.keys()].toSorted((a, b) => a - b);
   const positionIndex = new Map<string, number>();
 
   for (const layerKey of sortedLayerKeys) {
-    const ids = layers.get(layerKey)!;
+    const ids = layers.get(layerKey);
+    if (!ids) continue;
 
     if (layerKey === 0) {
       // 첫 레이어: 원래 순서 유지
@@ -241,8 +245,7 @@ export function computeLayout(view: ZoomView): ZoomView {
         if (parents.length === 0) return { id, bc: 0 };
         const sum = parents.reduce((s, p) => s + (positionIndex.get(p) ?? 0), 0);
         return { id, bc: sum / parents.length };
-      });
-      barycenters.sort((a, b) => a.bc - b.bc);
+      }).toSorted((a, b) => a.bc - b.bc);
       barycenters.forEach(({ id }, i) => positionIndex.set(id, i));
       layers.set(layerKey, barycenters.map(b => b.id));
     }
@@ -252,11 +255,13 @@ export function computeLayout(view: ZoomView): ZoomView {
   const nodeMap = new Map(view.nodes.map(n => [n.id, n]));
 
   for (const layerKey of sortedLayerKeys) {
-    const ids = layers.get(layerKey)!;
+    const ids = layers.get(layerKey);
+    if (!ids) continue;
     const totalHeight = ids.length * NODE_GAP;
 
     for (let i = 0; i < ids.length; i++) {
-      const node = nodeMap.get(ids[i])!;
+      const node = nodeMap.get(ids[i]);
+      if (!node) continue;
       node.position = {
         x: layerKey * LAYER_GAP,
         y: i * NODE_GAP - totalHeight / 2,
@@ -332,7 +337,13 @@ function buildView(
     for (const from of froms) {
       for (const to of tos) {
         if (pipeIds.has(from) && pipeIds.has(to)) {
-          edges.push({ from, to, kind: conn.kind, condition: conn.condition });
+          edges.push({
+            from,
+            to,
+            kind: conn.kind,
+            ...(conn.facetType ? { facetType: conn.facetType } : {}),
+            ...(conn.condition ? { condition: conn.condition } : {}),
+          });
         }
       }
     }
