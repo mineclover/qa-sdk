@@ -185,6 +185,30 @@ describe("collectGraphEvents", () => {
     expect(emits.map(e => e.eventKey).sort()).toEqual(["forward_ok", "rollback"]);
   });
 
+  it("transition-scope 내부 emit 수집", () => {
+    const graph: PipeGraph = {
+      graphId: "g1", version: "v1",
+      pipes: [{
+        pipeId: "p1", version: "v1",
+        trigger: { eventKey: "start" },
+        flow: {
+          kind: "transition-scope",
+          transitionId: "transfer",
+          body: { kind: "sequence", steps: [
+            { kind: "emit", eventKey: "account.debit" },
+            { kind: "emit", eventKey: "account.credit" },
+          ]},
+          events: ["account.debit", "account.credit"],
+        },
+      }],
+      connections: [],
+      entryPipeId: "p1",
+    };
+    const emits = collectGraphEvents(graph).filter(e => e.role === "emit");
+    expect(emits).toHaveLength(2);
+    expect(emits.map(e => e.eventKey).sort()).toEqual(["account.credit", "account.debit"]);
+  });
+
   it("중복 emit — 같은 eventKey가 여러 경로에 존재하면 모두 수집", () => {
     const graph: PipeGraph = {
       graphId: "g1", version: "v1",

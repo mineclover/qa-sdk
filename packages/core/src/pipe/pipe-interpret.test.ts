@@ -117,6 +117,31 @@ describe("extractPipeConcerns", () => {
     expect(concerns).toContain("latency");
     expect(concerns).toContain("observability");
   });
+
+  it("transition-scope + compensate → resilience", () => {
+    const pipe = makePipe("A", {
+      flow: {
+        kind: "transition-scope",
+        transitionId: "transfer.execute",
+        body: { kind: "sequence", steps: [step(), step()] },
+        events: ["account.debit", "account.credit"],
+        compensate: step(),
+      },
+    });
+    expect(extractPipeConcerns(pipe)).toContain("resilience");
+  });
+
+  it("transition-scope without compensate → no resilience", () => {
+    const pipe = makePipe("A", {
+      flow: {
+        kind: "transition-scope",
+        transitionId: "t1",
+        body: step(),
+        events: ["e1"],
+      },
+    });
+    expect(extractPipeConcerns(pipe)).not.toContain("resilience");
+  });
 });
 
 // ── propagatePipeConcerns ─────────────────────────────

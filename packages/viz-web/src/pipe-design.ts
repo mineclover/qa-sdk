@@ -3,14 +3,19 @@
  * Role / Certainty / Flow 29종 / Edge 8종 / Concern 8종 / 줌 비교 / 실전 패턴
  */
 
-import type { PipeGraph, PipeSpec, PipeConnection, PipeFlow } from "@qa-sdk/core";
 import {
+  type PipeGraph,
+  type PipeSpec,
+  type PipeConnection,
+  type PipeFlow,
+  type PortRef,
+  type StandaloneNodeOptions,
+  type StandaloneEdgeOptions,
   pipeGraphToSvg,
   standaloneNodeSvg, standaloneEdgeSvg,
   ROLE_TOKENS, CONCERN_TOKENS, EDGE_TOKENS,
   classifyPipeRole, extractPipeConcerns,
 } from "@qa-sdk/core";
-import type { StandaloneNodeOptions } from "@qa-sdk/core";
 
 // ── 헬퍼 ─────────────────────────────────────────────
 
@@ -20,8 +25,18 @@ function mkPipe(id: string, flow: PipeFlow, extra?: Partial<PipeSpec>): PipeSpec
 function mkGraph(id: string, pipes: PipeSpec[], connections: PipeConnection[], entry: string): PipeGraph {
   return { graphId: id, version: "1.0.0", pipes, connections, entryPipeId: entry };
 }
-function c(from: string, to: string, kind: PipeConnection["kind"] = "next", cond?: string): PipeConnection {
+function conn(from: string, to: string, kind: PipeConnection["kind"] = "next", cond?: string): PipeConnection {
   return { from, to, kind, ...(cond ? { condition: cond } : {}) };
+}
+function portRef(pipeId: string, portId: string): PortRef {
+  return { pipeId, portId };
+}
+function getRequiredElement(id: string): HTMLElement {
+  const element = document.getElementById(id);
+  if (element == null) {
+    throw new Error(`필수 카탈로그 컨테이너를 찾을 수 없습니다: ${id}`);
+  }
+  return element;
 }
 
 const step = (id: string): PipeFlow => ({ kind: "step", facet: id });
@@ -29,7 +44,7 @@ const step = (id: string): PipeFlow => ({ kind: "step", facet: id });
 // ── Role 노드 갤러리 ──────────────────────────────────
 
 function buildRoleGrid() {
-  const el = document.getElementById("role-grid")!;
+  const el = getRequiredElement("role-grid");
   const items: Array<StandaloneNodeOptions & { desc: string }> = [
     { role: "producer",    label: "producer",    desc: "이벤트를 생산<br>emit 중심" },
     { role: "consumer",    label: "consumer",    desc: "이벤트를 소비<br>produces 없음" },
@@ -51,7 +66,7 @@ function buildRoleGrid() {
 // ── Certainty 노드 갤러리 ─────────────────────────────
 
 function buildCertaintyGrid() {
-  const el = document.getElementById("certainty-grid")!;
+  const el = getRequiredElement("certainty-grid");
   const items: Array<StandaloneNodeOptions & { desc: string }> = [
     { role: "transformer", label: "strict",   certainty: "strict",   desc: "step, sequence<br>실선 테두리" },
     { role: "transformer", label: "flexible", certainty: "flexible", desc: "optional, branch<br>긴 점선 — — —" },
@@ -68,7 +83,7 @@ function buildCertaintyGrid() {
 // ── Entry · Concern · Folded ──────────────────────────
 
 function buildModifierGrid() {
-  const el = document.getElementById("modifier-grid")!;
+  const el = getRequiredElement("modifier-grid");
   const items: Array<StandaloneNodeOptions & { desc: string }> = [
     { role: "consumer",    label: "entry node", isEntry: true,
       desc: "그래프 진입점<br>좌측 ▶ 마커" },
@@ -93,7 +108,7 @@ function buildModifierGrid() {
 // ── Role × Certainty 매트릭스 ─────────────────────────
 
 function buildMatrix() {
-  const el = document.getElementById("matrix-grid")!;
+  const el = getRequiredElement("matrix-grid");
   const roles: StandaloneNodeOptions["role"][] = ["producer", "consumer", "transformer", "router", "observer"];
   const certs: StandaloneNodeOptions["certainty"][] = ["strict", "flexible", "mixed"];
 
@@ -143,6 +158,7 @@ const FLOW_CATEGORIES: Array<{
     entries: [
       { kind: "parallel", flow: { kind: "parallel", steps: [step("a"), step("b")] }, fields: "steps[]" },
       { kind: "race",     flow: { kind: "race",     steps: [step("a"), step("b")] }, fields: "steps[]" },
+      // oxlint-disable-next-line unicorn/no-thenable -- PipeAwait 스키마의 표준 필드명이다.
       { kind: "await",    flow: { kind: "await", condition: "ready", timeout: 5000, then: step("next") }, fields: "condition, timeout, then" },
     ],
   },
@@ -221,7 +237,7 @@ const FLOW_CATEGORIES: Array<{
 ];
 
 function buildFlowCatalog() {
-  const el = document.getElementById("flow-catalog")!;
+  const el = getRequiredElement("flow-catalog");
   el.innerHTML = FLOW_CATEGORIES.map(cat => {
     const cards = cat.entries.map(entry => {
       const pipe = mkPipe(entry.kind, entry.flow, entry.produces ? { produces: entry.produces } : {});
@@ -254,7 +270,7 @@ function buildFlowCatalog() {
 // ── Edge 갤러리 ───────────────────────────────────────
 
 function buildEdgeGrid() {
-  const el = document.getElementById("edge-grid")!;
+  const el = getRequiredElement("edge-grid");
   const kinds: PipeConnection["kind"][] = [
     "next", "conditional", "event", "error", "compensate", "fan-out", "join", "feedback",
   ];
@@ -285,10 +301,120 @@ function buildEdgeGrid() {
   }).join("");
 }
 
+// ── Port + FacetType 갤러리 ───────────────────────────
+
+function buildPortFacetGrid() {
+  const portEl = getRequiredElement("port-grid");
+  const facetEdgeEl = getRequiredElement("facet-edge-grid");
+
+  const portItems: Array<{
+    title: string;
+    desc: string;
+    node: StandaloneNodeOptions;
+    facets?: string[];
+  }> = [
+    {
+      title: "input-only",
+      desc: "왼쪽 경계에 input port만 배치",
+      node: {
+        role: "consumer",
+        label: "ingest",
+        ports: [{ portId: "orderData", direction: "in", facetType: "OrderData" }],
+      },
+      facets: ["OrderData"],
+    },
+    {
+      title: "output-only",
+      desc: "오른쪽 경계에 output port만 배치",
+      node: {
+        role: "producer",
+        label: "emit",
+        ports: [{ portId: "paymentResult", direction: "out", facetType: "PaymentResult" }],
+      },
+      facets: ["PaymentResult"],
+    },
+    {
+      title: "input + output",
+      desc: "양방향 handoff를 동시에 표시",
+      node: {
+        role: "transformer",
+        label: "payment",
+        ports: [
+          { portId: "orderData", direction: "in", facetType: "OrderData" },
+          { portId: "paymentResult", direction: "out", facetType: "PaymentResult" },
+        ],
+      },
+      facets: ["OrderData", "PaymentResult"],
+    },
+    {
+      title: "typed facetType 4종",
+      desc: "facetType 해시 색상이 port dot마다 독립 적용",
+      node: {
+        role: "transformer",
+        label: "router",
+        ports: [
+          { portId: "orderData", direction: "in", facetType: "OrderData" },
+          { portId: "auditTrail", direction: "in", facetType: "AuditTrail" },
+          { portId: "paymentResult", direction: "out", facetType: "PaymentResult" },
+          { portId: "notificationCommand", direction: "out", facetType: "NotificationCommand" },
+        ],
+      },
+      facets: ["OrderData", "AuditTrail", "PaymentResult", "NotificationCommand"],
+    },
+  ];
+
+  const edgeItems: Array<StandaloneEdgeOptions & { title: string; desc: string }> = [
+    {
+      title: "next",
+      desc: "기본 handoff도 facetType pill로 payload를 명시",
+      kind: "next",
+      facetType: "PaymentResult",
+    },
+    {
+      title: "event",
+      desc: "이벤트 경계를 넘는 연결에도 facetType 라벨 유지",
+      kind: "event",
+      facetType: "OrderConfirmed",
+    },
+    {
+      title: "conditional",
+      desc: "조건 배지와 facetType pill이 동시에 공존",
+      kind: "conditional",
+      facetType: "PaymentRoute",
+      condition: "amount>100000",
+    },
+    {
+      title: "fan-out",
+      desc: "멀티 채널 분기에서도 공통 facetType을 공유",
+      kind: "fan-out",
+      facetType: "NotificationCommand",
+    },
+  ];
+
+  portEl.innerHTML = portItems.map(({ title, desc, node, facets }) => `
+    <div class="mini-card">
+      ${standaloneNodeSvg({ ...node, width: 138, height: 54, padding: 22 })}
+      <div class="mini-title">${title}</div>
+      <div class="mini-desc">${desc}</div>
+      ${facets?.length
+        ? `<div class="facet-list">${facets.map(facet => `<span class="facet-pill">${facet}</span>`).join("")}</div>`
+        : ""}
+    </div>
+  `).join("");
+
+  facetEdgeEl.innerHTML = edgeItems.map(({ title, desc, ...edge }) => `
+    <div class="mini-card">
+      ${standaloneEdgeSvg({ ...edge, width: 252, height: 96, padding: 24 })}
+      <div class="mini-title">${title}</div>
+      <div class="mini-desc">${desc}</div>
+    </div>
+  `).join("");
+}
+
 // ── Concern 배지 갤러리 ───────────────────────────────
 
 function buildConcernGrid() {
-  const el = document.getElementById("concern-grid")!;
+  const el = getRequiredElement("concern-grid");
   const hints: Record<string, string> = {
     resilience:       "retry, fallback, circuit-breaker",
     latency:          "timeout, await, throttle, debounce",
@@ -313,7 +439,7 @@ function buildConcernGrid() {
 // ── 줌 레벨 비교 ─────────────────────────────────────
 
 function buildZoomCompare() {
-  const el = document.getElementById("zoom-compare")!;
+  const el = getRequiredElement("zoom-compare");
 
   const pipes = [
     mkPipe("auth",       { kind: "step", facet: "auth" }),
@@ -326,9 +452,9 @@ function buildZoomCompare() {
     mkPipe("respond",    { kind: "step", facet: "response" }),
   ];
   const graph = mkGraph("zoom-demo", pipes, [
-    c("auth", "fetch"), c("fetch", "transform"), c("transform", "validate"),
-    c("validate", "cache"), c("cache", "emit", "event"), c("validate", "monitor"),
-    c("monitor", "respond"), c("emit", "respond"),
+    conn("auth", "fetch"), conn("fetch", "transform"), conn("transform", "validate"),
+    conn("validate", "cache"), conn("cache", "emit", "event"), conn("validate", "monitor"),
+    conn("monitor", "respond"), conn("emit", "respond"),
   ], "auth");
 
   const levels = [
@@ -350,9 +476,45 @@ function buildZoomCompare() {
 // ── 실전 패턴 갤러리 ──────────────────────────────────
 
 function buildSampleGrid() {
-  const el = document.getElementById("sample-grid")!;
+  const el = getRequiredElement("sample-grid");
 
   const samples: Array<{ name: string; desc: string; graph: PipeGraph }> = [
+    {
+      name: "OrderData → [payment] → PaymentResult → [notification]",
+      desc: "PortRef endpoint와 facetType edge label을 모두 명시한 실전 handoff 패턴",
+      graph: mkGraph("port-facet-handoff", [
+        mkPipe("order-data", step("order-data"), {
+          ports: [
+            { portId: "orderData", direction: "out", facetType: "OrderData", required: true },
+          ],
+        }),
+        mkPipe("payment", { kind: "retry", step: step("payment-api"), maxAttempts: 3 }, {
+          ports: [
+            { portId: "orderData", direction: "in", facetType: "OrderData", required: true },
+            { portId: "paymentResult", direction: "out", facetType: "PaymentResult", required: true },
+          ],
+        }),
+        mkPipe("notification", { kind: "emit", eventKey: "notification.sent" }, {
+          ports: [
+            { portId: "paymentResult", direction: "in", facetType: "PaymentResult", required: true },
+          ],
+          produces: ["notification.sent"],
+        }),
+      ], [
+        {
+          from: portRef("order-data", "orderData"),
+          to: portRef("payment", "orderData"),
+          kind: "next",
+          facetType: "OrderData",
+        },
+        {
+          from: portRef("payment", "paymentResult"),
+          to: portRef("notification", "paymentResult"),
+          kind: "event",
+          facetType: "PaymentResult",
+        },
+      ], "order-data"),
+    },
     {
       name: "결제 분기 + 보상 트랜잭션",
       desc: "conditional → error → compensate 패턴",
@@ -364,11 +526,11 @@ function buildSampleGrid() {
         mkPipe("refund",    { kind: "compensate", forward: step("deduct"), compensate: step("refund-exec") }),
         mkPipe("confirm",   { kind: "emit", eventKey: "order.confirmed" }, { produces: ["order.confirmed"] }),
       ], [
-        c("checkout", "pay-card", "conditional", "method=card"),
-        c("checkout", "pay-bank", "conditional", "method=bank"),
-        c("pay-card", "on-error", "error"),
-        c("on-error", "refund", "compensate"),
-        c("pay-card", "confirm"), c("pay-bank", "confirm"), c("refund", "confirm"),
+        conn("checkout", "pay-card", "conditional", "method=card"),
+        conn("checkout", "pay-bank", "conditional", "method=bank"),
+        conn("pay-card", "on-error", "error"),
+        conn("on-error", "refund", "compensate"),
+        conn("pay-card", "confirm"), conn("pay-bank", "confirm"), conn("refund", "confirm"),
       ], "checkout"),
     },
     {
@@ -381,12 +543,12 @@ function buildSampleGrid() {
         mkPipe("send-push",  step("push-svc")),
         mkPipe("log-result", { kind: "tap", observe: step("audit"), step: step("log") }),
       ], [
-        c("trigger", "send-email", "fan-out"),
-        c("trigger", "send-sms",   "fan-out"),
-        c("trigger", "send-push",  "fan-out"),
-        c("send-email", "log-result", "join"),
-        c("send-sms",   "log-result", "join"),
-        c("send-push",  "log-result", "join"),
+        conn("trigger", "send-email", "fan-out"),
+        conn("trigger", "send-sms",   "fan-out"),
+        conn("trigger", "send-push",  "fan-out"),
+        conn("send-email", "log-result", "join"),
+        conn("send-sms",   "log-result", "join"),
+        conn("send-push",  "log-result", "join"),
       ], "trigger"),
     },
     {
@@ -400,8 +562,8 @@ function buildSampleGrid() {
         mkPipe("emit",    { kind: "emit",    eventKey: "batch.processed" }, { produces: ["batch.processed"] }),
         mkPipe("monitor", { kind: "tap",     observe: step("metrics"), step: step("pass") }),
       ], [
-        c("ingest", "window"), c("window", "dedup"), c("dedup", "process"),
-        c("process", "emit", "event"), c("process", "monitor"),
+        conn("ingest", "window"), conn("window", "dedup"), conn("dedup", "process"),
+        conn("process", "emit", "event"), conn("process", "monitor"),
       ], "ingest"),
     },
     {
@@ -414,8 +576,8 @@ function buildSampleGrid() {
         mkPipe("throttle",   { kind: "throttle", step: step("rate-limited"), rate: 50, interval: 1000 }),
         mkPipe("response",   { kind: "emit", eventKey: "response.ready" }, { produces: ["response.ready"] }),
       ], [
-        c("entry", "cb-call"), c("cb-call", "on-fail", "error"),
-        c("cb-call", "throttle"), c("on-fail", "response"), c("throttle", "response"),
+        conn("entry", "cb-call"), conn("cb-call", "on-fail", "error"),
+        conn("cb-call", "throttle"), conn("on-fail", "response"), conn("throttle", "response"),
       ], "entry"),
     },
     {
@@ -432,8 +594,8 @@ function buildSampleGrid() {
         mkPipe("enrich",  { kind: "enrich", source: "user-db", mergeField: "user", step: step("merge"), timeout: 1000 }),
         mkPipe("output",  { kind: "emit", eventKey: "result.ready" }, { produces: ["result.ready"] }),
       ], [
-        c("sender", "await", "event"),
-        c("await", "enrich"), c("enrich", "output"),
+        conn("sender", "await", "event"),
+        conn("await", "enrich"), conn("enrich", "output"),
       ], "sender"),
     },
     {
@@ -446,11 +608,11 @@ function buildSampleGrid() {
         mkPipe("retry-decide", step("decide")),
         mkPipe("ship",         { kind: "emit", eventKey: "shipped" }, { produces: ["shipped"] }),
       ], [
-        c("order", "reserve", "event"),
-        c("reserve", "validate"),
-        c("validate", "ship"),
-        c("validate", "retry-decide", "conditional", "available=false"),
-        c("retry-decide", "reserve", "feedback"),
+        conn("order", "reserve", "event"),
+        conn("reserve", "validate"),
+        conn("validate", "ship"),
+        conn("validate", "retry-decide", "conditional", "available=false"),
+        conn("retry-decide", "reserve", "feedback"),
       ], "order"),
     },
   ];
@@ -473,6 +635,7 @@ buildModifierGrid();
 buildMatrix();
 buildFlowCatalog();
 buildEdgeGrid();
+buildPortFacetGrid();
 buildConcernGrid();
 buildZoomCompare();
 buildSampleGrid();

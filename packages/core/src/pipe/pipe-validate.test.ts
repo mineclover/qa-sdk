@@ -148,6 +148,39 @@ describe("validatePipeSpec — 시맨틱 검증", () => {
     }));
     expect(issues.find(i => i.message.includes("split.splitBy"))).toBeDefined();
   });
+
+  it("transition-scope: transitionId 누락 → error", () => {
+    const issues = validatePipeSpec(wrap({
+      kind: "transition-scope", transitionId: "", body: step(), events: ["e1"],
+    }));
+    expect(issues.find(i => i.message.includes("transitionId 누락"))).toBeDefined();
+  });
+
+  it("transition-scope: events 빈 배열 → error", () => {
+    const issues = validatePipeSpec(wrap({
+      kind: "transition-scope", transitionId: "t1", body: step(), events: [],
+    }));
+    expect(issues.find(i => i.message.includes("events 비어있음"))).toBeDefined();
+  });
+
+  it("transition-scope: 유효한 선언 → 에러 없음", () => {
+    const issues = validatePipeSpec(wrap({
+      kind: "transition-scope", transitionId: "transfer.execute",
+      body: { kind: "sequence", steps: [step(), step()] },
+      events: ["account.debit", "account.credit"],
+    }));
+    expect(issues.filter(i => i.severity === "error")).toHaveLength(0);
+  });
+
+  it("transition-scope: compensate body도 재귀 검증", () => {
+    const issues = validatePipeSpec(wrap({
+      kind: "transition-scope", transitionId: "t1",
+      body: step(),
+      events: ["e1"],
+      compensate: { kind: "sequence", steps: [] },
+    }));
+    expect(issues.find(i => i.message.includes("sequence.steps 비어있음"))).toBeDefined();
+  });
 });
 
 // ── 그래프 검증 ──────────────────────────────────────────

@@ -12,6 +12,7 @@ after each iteration and it's included in prompts for context.
 - Pipe standalone SVG 확장 패턴: `pipe-svg-shapes.ts`에 새 렌더링 affordance를 추가할 때는 `StandaloneNodeOptions`와 `standaloneNodeSvg` 호출 경로를 함께 갱신하고, `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts` 공개 export, 전용 shape 테스트를 한 세트로 맞춘다.
 - Pipe edge SVG 메타데이터 전달 패턴: `facetType`처럼 connection-level 시각 메타데이터를 그래프 렌더러가 쓰려면 `pipe-svg-shapes.ts`에서 draw helper를 확장하는 것만으로는 부족하고, `pipe-zoom.ts`의 `ZoomEdge`에 값을 보존한 뒤 `pipe-svg.ts`가 그대로 전달하도록 연결해야 한다.
 - Pipe PortRef edge 라우팅 패턴: port-aware SVG/D3 렌더링은 `PipeConnection`의 PortRef를 `ZoomEdge.sourcePorts/targetPorts`로 보존하고, 노드 쪽은 `ZoomNode.ports`에 `resolvePorts()` 결과를 싣는다. 실제 anchor 좌표는 `drawPortDots()`와 동일한 방향별 순서/간격 공식을 써서 계산하고, PortRef가 없거나 매칭 포트가 없으면 node center로 fallback한다.
+- Workspace dist export 동기화 패턴: downstream 패키지가 `@qa-sdk/core`의 `dist/*.d.ts` export를 바라보므로, 선행 작업에서 core 공개 타입이 바뀌었으면 후속 패키지 타입체크 전에 `pnpm --filter @qa-sdk/core build`로 선언 파일부터 갱신해야 한다.
 
 ---
 
@@ -154,6 +155,21 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered
     - PortRef 기반 edge routing은 `pipeGraphToSvg`에서 원본 connection을 다시 파싱하기보다, zoom intermediate 타입(`ZoomEdge`, `ZoomNode`)에 필요한 메타데이터를 보존해 SVG와 D3가 같은 anchor 계산 로직을 공유하게 만드는 편이 회귀에 강하다.
   - Gotchas encountered
-    - `computeZoomView()`가 endpoint를 단순 `pipeId`로만 정규화하면 `pipeGraphToSvg`/`pipeGraphToD3` 단계에서는 PortRef를 복구할 방법이 없다. PortRef를 쓰는 시각 기능은 zoom 단계에서 메타데이터를 같이 실어 보내야 한다.
-    - 루트 `pnpm lint`는 여전히 워크스페이스 전체 기존 이슈와 섞이므로, 이번 작업 검증은 변경 파일 대상 `oxlint`와 `@qa-sdk/core` 타입체크/관련 테스트로 확인했다.
+  - `computeZoomView()`가 endpoint를 단순 `pipeId`로만 정규화하면 `pipeGraphToSvg`/`pipeGraphToD3` 단계에서는 PortRef를 복구할 방법이 없다. PortRef를 쓰는 시각 기능은 zoom 단계에서 메타데이터를 같이 실어 보내야 한다.
+  - 루트 `pnpm lint`는 여전히 워크스페이스 전체 기존 이슈와 섞이므로, 이번 작업 검증은 변경 파일 대상 `oxlint`와 `@qa-sdk/core` 타입체크/관련 테스트로 확인했다.
+---
+## 2026-04-02 - US-008
+- What was implemented
+  - `pipe-design.html` TOC에 `Port & FacetType` 섹션을 추가하고, 포트 갤러리와 facetType edge 갤러리를 위한 카드 레이아웃/반응형 스타일을 보강했다.
+  - `pipe-design.ts`에 input-only, output-only, input+output, typed facetType 4종 포트 dot 시연과 next/event/conditional/fan-out facetType edge 라벨 시연을 추가했다.
+  - 실전 패턴 갤러리에 `OrderData → [payment] → PaymentResult → [notification]` 예시를 추가해 PortRef endpoint와 facetType edge label이 함께 보이도록 구성했다.
+- Files changed
+  - `packages/viz-web/pipe-design.html`
+  - `packages/viz-web/src/pipe-design.ts`
+- **Learnings:**
+  - Patterns discovered
+    - viz-web처럼 downstream 패키지가 workspace 라이브러리의 `dist` export를 직접 소비하면, 선행 story에서 core 타입이 바뀐 뒤 후속 story의 `tsc --noEmit`를 돌리기 전에 먼저 해당 라이브러리를 build해서 declaration을 갱신해야 한다.
+  - Gotchas encountered
+    - `@qa-sdk/core` 공개 타입은 source가 아니라 `dist/index.d.ts`를 통해 해석되므로, core를 빌드하지 않으면 `PortRef`, `ports`, `facetType`가 이미 소스에 있어도 viz-web 타입체크에서는 없는 것으로 보인다.
+    - `PipeAwait.then`은 도메인 스키마의 정식 필드라서 lint의 `unicorn/no-thenable`과 충돌한다. 카탈로그 fixture에서는 해당 줄만 명시적으로 예외 처리해야 changed-file lint가 통과한다.
 ---
