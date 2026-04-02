@@ -26,7 +26,7 @@
 
 ### Phase 2 — PipeSpec + PipeGraph
 
-- [x] PipeFlow 29종 타입 정의 (29종 확정)
+- [x] PipeFlow 30종 타입 정의 (30종 확정, transition-scope 포함)
 - [x] ConnectionKind 8종 타입 정의 (N:M PipeConnection)
 - [x] countPipePaths / countGraphPaths (38 tests)
 - [x] validatePipeSpec / validatePipeGraph
@@ -35,7 +35,7 @@
 - [x] 분석 — complexity, bottleneck, coverage (6 tests)
 - [x] Phase 2 시뮬레이션 — simulate() + resolver (81 tests)
 - [x] Phase 2→3 브릿지 — extractLineage, validateStepContracts, constraintResultToEvent
-- [x] PipeFlow 카탈로그 (flows/ 29 leaf, connections/ 8 leaf)
+- [x] PipeFlow 카탈로그 (flows/ 30 leaf, connections/ 8 leaf)
 
 ### Phase 3 — 런타임
 
@@ -195,7 +195,7 @@
 - [x] SqlitePipeGraphStore — PipeGraphStore 포트 구현 (save/get/getLatest/listVersions/listAll/remove/findByPipeId/findByTriggerEvent)
 - [x] SqlitePipeSpecStore — PipeSpecStore 포트 구현 (save/get/getLatest/listAll/remove)
 - [x] SqliteManifestRegistry — ManifestRegistry 동일 API (가드 로직 내장, definition-catalog 비의존)
-- [x] JSON 라운드트립: PipeFlow 29종 union, PipeConnection[], prefixes Record
+- [x] JSON 라운드트립: PipeFlow 30종 union, PipeConnection[], prefixes Record
 - [x] 마이그레이션 IF NOT EXISTS 적용
 - [x] 테스트 30건 통과 (PipeStore 14 + ManifestRegistry 16)
 

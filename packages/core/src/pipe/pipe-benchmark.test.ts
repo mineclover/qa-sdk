@@ -22,7 +22,7 @@ describe("시뮬레이션 커버리지", () => {
     "step", "sequence", "branch", "optional",
     "parallel", "race", "await",
     "retry", "fallback",
-    "loop", "compensate", "emit",
+    "loop", "compensate", "transition-scope", "emit",
     "finally", "timeout", "feedback",
     "map", "reduce", "buffer", "filter",
     "circuit-breaker", "throttle", "debounce",
@@ -31,7 +31,7 @@ describe("시뮬레이션 커버리지", () => {
     "dedup", "correlation",
   ];
 
-  it("Phase 2 simulate() — 29종 PipeFlow 전부 시뮬레이션 가능", () => {
+  it("Phase 2 simulate() — 30종 PipeFlow 전부 시뮬레이션 가능", () => {
     for (const kind of allFlowKinds) {
       let flow: PipeFlow;
       switch (kind) {

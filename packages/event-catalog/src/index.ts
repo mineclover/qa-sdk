@@ -68,3 +68,14 @@ export {
   getAllMappings,
   SHOP_EVENT_MAPPINGS,
 } from "./prefix-mapping.js";
+
+// ── Transition ─────────────────────────────────────
+export type { TransitionDef } from "./types.js";
+export type { TransitionIssue } from "./transition.js";
+export {
+  registerTransitions,
+  getTransition,
+  getAllTransitions,
+  clearTransitions,
+  validateTransitionEvents,
+} from "./transition.js";

@@ -77,6 +77,26 @@ describe("직렬화", () => {
     });
   });
 
+  it("PipeSpec transition-scope 라운드트립", () => {
+    const spec = {
+      ...simplePipe,
+      flow: {
+        kind: "transition-scope" as const,
+        transitionId: "transfer.execute",
+        body: { kind: "sequence" as const, steps: [step("출금"), step("입금")] },
+        events: ["account.debit", "account.credit"],
+        compensate: step("롤백"),
+      },
+    };
+    const json = serializePipeSpec(spec);
+    const restored = deserializePipeSpec(json);
+    expect(restored.flow.kind).toBe("transition-scope");
+    const flow = restored.flow as { transitionId: string; events: string[]; compensate?: unknown };
+    expect(flow.transitionId).toBe("transfer.execute");
+    expect(flow.events).toEqual(["account.debit", "account.credit"]);
+    expect(flow.compensate).toBeDefined();
+  });
+
   it("무효 PipeSpec 역직렬화 시 에러", () => {
     const badJson = JSON.stringify({ pipeId: "bad", flow: { kind: "retry", step: step(), maxAttempts: 0 }, trigger: { eventKey: "e" } });
     expect(() => deserializePipeSpec(badJson)).toThrow("검증 실패");

@@ -16,6 +16,7 @@ export type {
   BranchRoute,
   PathSegment,
   ColumnRef,
+  TableRefSource,
   TableSchema,
   Catalog,
   PrefixIds,
@@ -104,3 +105,16 @@ export type { DecodedPath, TransitionEntry } from "./path-summation.js";
 // ── Axis Usage Analysis ─────────────────────────────────────
 export type { AxisUsageEntry, AxisUsageSummary, CollectAxisUsageOptions } from "./axis-usage.js";
 export { collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "./axis-usage.js";
+
+// ── Table Ref Validation ────────────────────────────────────
+export type { TableRefIssue } from "./table-ref-validate.js";
+export { validateTableRefs } from "./table-ref-validate.js";
+
+// ── Transition Bridge (좌표 ↔ 제어 흐름 정합성) ────────────
+export type { TransitionBridgeIssue, TransitionSummary } from "./transition-bridge.js";
+export {
+  collectCoordinateTransitions,
+  collectControlFlowTransitions,
+  summarizeTransitions,
+  validateTransitionBridge,
+} from "./transition-bridge.js";

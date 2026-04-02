@@ -61,3 +61,15 @@ export interface PayloadFieldGuide {
   event_key: string;
   fields: PayloadFieldDef[];
 }
+
+// ── Transition Definition ──────────────────────────
+
+/** 선언적 비즈니스 트랜잭션 — 이벤트들의 원자 경계 그룹 */
+export interface TransitionDef {
+  /** 전이 식별자 — PipeTransitionScope.transitionId와 일치 */
+  transitionId: string;
+  /** 이 transition에 소속된 event_key 목록 */
+  events: string[];
+  /** 설명 */
+  description?: string;
+}

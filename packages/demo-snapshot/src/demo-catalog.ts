@@ -70,9 +70,15 @@ export type ColumnRef =
   | { readonly kind: "table_ref"; readonly table: string }
   | { readonly kind: "axis_ref"; readonly axisId: string };
 
+export interface TableRefSource {
+  readonly prefixId: string;
+  readonly dimLabel: string;
+}
+
 export interface TableSchema {
   readonly table: string;
   readonly columns: Record<string, ColumnRef>;
+  readonly referencedBy?: readonly TableRefSource[];
 }
 
 // ── Layer 3: 카탈로그 ────────────────────────────────────────────────────────
@@ -2413,6 +2419,12 @@ export const DEMO_CATALOG = {
         role:     { kind: "axis_ref", axisId: "role" },
         org_id:   { kind: "table_ref", table: "orgs" },
       },
+      referencedBy: [
+        { prefixId: "deploy_event", dimLabel: "actor" },
+        { prefixId: "cart_event", dimLabel: "actor" },
+        { prefixId: "auth_event", dimLabel: "actor" },
+        { prefixId: "order_event", dimLabel: "actor" },
+      ],
     },
     orgs: {
       table: "orgs",
@@ -2430,6 +2442,9 @@ export const DEMO_CATALOG = {
         category:       { kind: "axis_ref", axisId: "category" },
         warehouse_addr: { kind: "prefix_ref", prefixId: "service" },
       },
+      referencedBy: [
+        { prefixId: "cart_event", dimLabel: "target" },
+      ],
     },
     orders: {
       table: "orders",
@@ -2440,6 +2455,9 @@ export const DEMO_CATALOG = {
         status:       { kind: "axis_ref", axisId: "order_action" },
         amount:       { kind: "scalar", type: "number" },
       },
+      referencedBy: [
+        { prefixId: "order_event", dimLabel: "order" },
+      ],
     },
     carts: {
       table: "carts",

@@ -45,36 +45,68 @@
 
 스키마가 `table_ref` dim의 출처가 된다. prefix에서 `{ kind: "table_ref", table: "members" }`로 참조할 때, `members` 테이블 정의 자체에 "나는 이 prefix의 이 dim으로 참조된다"를 선언.
 
-### 1-1. `.comment()` 기반 table_ref annotation 컨벤션
+### 1-2. 기존 table_ref 매핑 조사 (2026-04-02 완료)
 
-- [ ] drizzle table 정의에 `.comment()` 형식 설계: 이 테이블이 어떤 prefix의 어떤 dim에 table_ref로 참조되는지 명시
+**Prefix dims의 table_ref (4개 prefix, 6건):**
+
+| prefix | dim | → table |
+|--------|-----|---------|
+| deploy_event | actor | members |
+| cart_event | actor | members |
+| cart_event | target | items |
+| auth_event | actor | members |
+| order_event | actor | members |
+| order_event | order | orders |
+
+**핵심 발견:** prefix dim의 table_ref가 가리키는 테이블(members, items, orders)은 전부 **catalog-only** — drizzle 스키마 없음.
+실제 drizzle 스키마가 있는 테이블(event_records, traces 등)은 인프라용이며 prefix dim에서 직접 참조하지 않음.
+
+→ annotation 컨벤션은 두 경로를 모두 커버해야 함:
+  - **drizzle 스키마가 있는 경우**: `.comment()` 기반 annotation
+  - **catalog-only (drizzle 없는 경우)**: `TableSchema` 정의에 메타데이터 부착
+
+### 1-1. table_ref annotation 컨벤션
+
+두 경로:
+
+**경로 A — drizzle 스키마가 있을 때 (프로덕션 기대):**
 
 ```ts
-// members 테이블이 cart_event.actor dim의 table_ref 출처임을 선언
+// drizzle 스키마에 .comment()로 prefix 관계 선언
 export const members = sqliteTable("members", {
   id: integer("id").primaryKey(),
   name: text("name").notNull(),
-}).comment({ table_ref: "cart_event.actor" });
-
-// 다중 참조
-export const items = sqliteTable("items", {
-  id: integer("id").primaryKey(),
-}).comment({ table_ref: ["cart_event.target", "order_event.item"] });
+}).comment({ table_ref: ["cart_event.actor", "auth_event.actor", "order_event.actor", "deploy_event.actor"] });
 ```
 
-- [ ] 역방향 검증: annotation ↔ DEMO_CATALOG table_ref dim 일치 확인
+**경로 B — catalog-only일 때 (현재 데모):**
 
-### 1-2. 기존 table_ref 매핑 조사
+```ts
+// DEMO_CATALOG.tables의 TableSchema에 meta 필드 확장
+members: {
+  table: "members",
+  columns: { ... },
+  // 신규: 이 테이블이 어떤 prefix dim에서 table_ref로 참조되는지
+  referencedBy: [
+    { prefixId: "cart_event", dimLabel: "actor" },
+    { prefixId: "auth_event", dimLabel: "actor" },
+    { prefixId: "order_event", dimLabel: "actor" },
+    { prefixId: "deploy_event", dimLabel: "actor" },
+  ],
+}
+```
 
-- [ ] DEMO_CATALOG에서 `kind: "table_ref"` 사용하는 prefix·dim 전수 조사
-- [ ] 해당 table이 어떤 drizzle 스키마 파일에 정의되어 있는지 매핑
-- [ ] annotation 우선 대상 선정 (table_ref 관계가 이미 있는 것부터)
+- [x] DEMO_CATALOG에서 `kind: "table_ref"` 사용 전수 조사 완료
+- [x] drizzle 스키마 존재 여부 확인 완료
+- [x] `TableSchema`에 `referencedBy` 필드 추가 (catalog.types.ts — `TableRefSource` 인터페이스)
+- [x] DEMO_CATALOG members/items/orders에 `referencedBy` 선언 완료
+- [ ] drizzle `.comment()` 지원은 프로덕션 구현 시 추가 (현재 demo에는 해당 없음)
 
 ### 1-3. table_ref annotation extractor
 
 - [ ] `extractTableRefAnnotations(schemaModule)` — `.comment()` 내 `table_ref` 키 추출
 - [ ] 출력: `Array<{ table: string, prefixId: string, dimLabel: string }>`
-- [ ] DEMO_CATALOG과 교차 검증: annotation 있지만 catalog에 없으면 warning, 반대도 warning
+- [x] `validateTableRefs(catalog)` — catalog 자체에서 table_ref ↔ referencedBy 양방향 정합성 검증 (core/catalog/table-ref-validate.ts, 테스트 6건)
 
 ---
 
@@ -142,9 +174,9 @@ transition = **비즈니스 레벨의 선언적 원자 경계**. "이 묶음은 
 
 **빠진 것**: "이 구간이 하나의 비즈니스 전이이고, 내부 이벤트들은 여기 소속된다"는 선언.
 
-### 4-1. PipeTransitionScope — 제어 흐름 내 원자 경계 선언
+### 4-1. PipeTransitionScope — 제어 흐름 내 원자 경계 선언 (2026-04-02 완료)
 
-- [ ] `PipeTransitionScope` 인터페이스 설계:
+- [x] `PipeTransitionScope` 인터페이스 설계 + PipeFlow 유니온 30종 확장:
 
 ```ts
 interface PipeTransitionScope {
@@ -187,12 +219,14 @@ const transfer: PipeSpec = {
 };
 ```
 
-- [ ] 기존 `PipeCompensate` 관계: transition-scope가 compensate를 포함하는 상위 개념. PipeCompensate는 보상 로직만, transition-scope는 원자 경계 + 이벤트 소속 + 보상
-- [ ] scope 내부의 `PipeEmit`들은 자동으로 transition의 하위 이벤트로 소속
+- [x] 기존 `PipeCompensate` 관계 정립: transition-scope는 compensate를 포함하는 상위 개념
+- [x] 전 switch-case 사이트 반영: validate, analyze, path, interpret, simulate, runtime, benchmark
+- [x] 테스트 13건 (validate 4, interpret 2, path 2, analyze 1, serialize 1, simulate 1, fold 2)
+- [x] 리뷰 완료: allFlowKinds 누락 + collectFailureKinds 누락 수정
 
-### 4-2. event-catalog에 TransitionDef 등록
+### 4-2. event-catalog에 TransitionDef 등록 (2026-04-02 완료)
 
-- [ ] transition을 event-catalog에 선언:
+- [x] transition을 event-catalog에 선언:
 
 ```ts
 interface TransitionDef {
@@ -202,13 +236,16 @@ interface TransitionDef {
 }
 ```
 
-- [ ] PipeTransitionScope.events ↔ TransitionDef.events 정합성 검증
-- [ ] 쿼리 `.comment({ event_key, transition })` 의 transition이 TransitionDef에 존재하는지 검증
+- [x] PipeTransitionScope.events ↔ TransitionDef.events 정합성 검증 (`validateTransitionEvents()`, 테스트 8건)
+- [x] registry: `registerTransitions`, `getTransition`, `getAllTransitions`, `clearTransitions`
+- [ ] 쿼리 `.comment({ event_key, transition })` 의 transition이 TransitionDef에 존재하는지 검증 (3-1과 연동)
 
-### 4-3. PathSegment.transition 브릿지
+### 4-3. PathSegment.transition 브릿지 (2026-04-02 완료)
 
-- [ ] `PathSegment.transition`(좌표 레벨)과 `PipeTransitionScope`(제어 흐름 레벨)가 같은 `transitionId` 공유
-- [ ] 좌표 주소 디코딩 → transition 해석 → 해당 PipeSpec의 transition-scope와 연결
+- [x] `collectCoordinateTransitions(segments)` — PathSegment 트리에서 transition eventKey 수집
+- [x] `collectControlFlowTransitions(graph)` — PipeGraph에서 transition-scope transitionId 수집
+- [x] `summarizeTransitions(segments, graph)` — 양쪽 수집 결과 요약
+- [x] `validateTransitionBridge(segments, graph)` — 좌표 ↔ 제어 흐름 양방향 정합성 검증 (테스트 14건)
 
 ---
 
@@ -237,19 +274,19 @@ interface TransitionDef {
 
 ## 우선순위
 
-| Phase | 가치 | 난이도 | 순서 |
+| Phase | 가치 | 난이도 | 상태 |
 |-------|------|--------|------|
-| 1-1 table_ref annotation 컨벤션 | 높음 (기준점) | 낮음 | **1st** |
-| 1-2 table_ref 매핑 조사 | 높음 (현황 파악) | 낮음 | **1st** |
-| 3-1 쿼리 event_key 컨벤션 | 높음 (DX 즉시 개선) | 낮음 | **2nd** |
-| 4-1 PipeTransitionScope 타입 | 높음 (핵심 추상) | 중간 | **2nd** |
-| 4-2 transition ↔ event-catalog | 높음 (연결 완성) | 중간 | **3rd** |
-| 1-3 extractor 유틸 | 중간 | 중간 | 3rd |
-| 2-1 axis annotation 컨벤션 | 중간 | 낮음 | 4th |
-| 4-3 PathSegment 브릿지 | 중간 (일관성) | 중간 | 4th |
-| 3-2 교차 검증 | 중간 | 중간 | 5th |
-| 2-2 enum codegen | 중간 | 높음 | 6th |
-| 5-* 통합 | 높음 (장기) | 높음 | 7th |
+| 1-1 table_ref annotation 컨벤션 | 높음 | 낮음 | ✅ 완료 (referencedBy 필드 + DEMO_CATALOG 선언) |
+| 1-2 table_ref 매핑 조사 | 높음 | 낮음 | ✅ 완료 (6건 전수 조사) |
+| 4-1 PipeTransitionScope 타입 | 높음 | 중간 | ✅ 완료 (30종 + 13 tests + 리뷰) |
+| 4-2 transition ↔ event-catalog | 높음 | 중간 | ✅ 완료 (TransitionDef + registry + 8 tests) |
+| 4-3 PathSegment 브릿지 | 중간 | 중간 | ✅ 완료 (transition-bridge.ts + 14 tests) |
+| **3-1 쿼리 event_key 컨벤션** | 높음 | 낮음 | 다음 |
+| 1-3 extractor 유틸 | 중간 | 중간 | 미착수 |
+| 2-1 axis annotation 컨벤션 | 중간 | 낮음 | 미착수 |
+| 3-2 교차 검증 | 중간 | 중간 | 미착수 |
+| 2-2 enum codegen | 중간 | 높음 | 미착수 |
+| 5-* 통합 | 높음 | 높음 | 미착수 |
 
 ## 제약
 
@@ -257,5 +294,5 @@ interface TransitionDef {
 - drizzle `.comment()` 형식은 Drizzle 1.0 beta에서 `Record<string, string>` 지원 확인 필요
 - AST 분석 vs 런타임 introspection 중 결정 필요 (codegen-core 패턴 참고)
 - event-catalog prefix-mapping 구조 확장 시 기존 매핑 하위 호환 유지
-- PipeTransitionScope는 기존 29종 flow kind에 추가 — pipe-flow-catalog 30번째 또는 메타 flow kind로 분류 결정 필요
+- PipeTransitionScope는 30번째 flow kind로 확정 — pipe-flow-catalog transactional 분류 등록 완료
 - transition 선언은 비즈니스 원자 경계. 구현 메커니즘(DB tx, saga, 수동 보상)은 별도 관심사

@@ -648,6 +648,33 @@ describe("simulate", () => {
       expect(result.facetTrace).toEqual(["전진"]);
     });
 
+    // ── transition-scope ───────────────────────────────
+
+    it("transition-scope — body 실행, compensate는 정상 시 미실행", () => {
+      const graph: PipeGraph = {
+        graphId: "g1", version: "v1",
+        pipes: [{
+          pipeId: "p1", version: "v1",
+          trigger: { eventKey: "start" },
+          flow: {
+            kind: "transition-scope",
+            transitionId: "transfer",
+            body: { kind: "sequence", steps: [step("출금"), step("입금")] },
+            events: ["account.debit", "account.credit"],
+            compensate: step("롤백"),
+          },
+        }],
+        connections: [],
+        entryPipeId: "p1",
+      };
+
+      const result = simulate({ graph, initialEvent: { eventKey: "start" } });
+      expect(result.steps[0].kind).toBe("transition-scope");
+      expect(result.facetTrace).toEqual(["출금", "입금"]);
+      // 정상 실행이므로 "롤백" 미포함
+      expect(result.facetTrace).not.toContain("롤백");
+    });
+
     // ── map ────────────────────────────────────────────
 
     it("map — itemFlow 실행", () => {

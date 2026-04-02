@@ -207,7 +207,7 @@ function collectFlowKinds(flow: PipeFlow, kinds: Set<string>): void {
 function collectFailureKinds(flow: PipeFlow): string[] {
   const kinds: string[] = [];
   function walk(f: PipeFlow): void {
-    if (f.kind === "retry" || f.kind === "fallback" || f.kind === "circuit-breaker" || f.kind === "compensate") {
+    if (f.kind === "retry" || f.kind === "fallback" || f.kind === "circuit-breaker" || f.kind === "compensate" || (f.kind === "transition-scope" && f.compensate != null)) {
       kinds.push(f.kind);
     }
     for (const child of getChildFlows(f)) walk(child);

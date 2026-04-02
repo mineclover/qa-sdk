@@ -159,9 +159,17 @@ export type ColumnRef =
   | { readonly kind: "table_ref"; readonly table: string }
   | { readonly kind: "axis_ref"; readonly axisId: string };
 
+/** prefix dim에서 이 테이블을 table_ref로 참조하는 역방향 선언 */
+export interface TableRefSource {
+  readonly prefixId: string;
+  readonly dimLabel: string;
+}
+
 export interface TableSchema {
   readonly table: string;
   readonly columns: Record<string, ColumnRef>;
+  /** 이 테이블이 어떤 prefix dim에서 table_ref로 참조되는지 (colocation 선언) */
+  readonly referencedBy?: readonly TableRefSource[];
 }
 
 // ── Catalog ───────────────────────────────────────────────────────────────

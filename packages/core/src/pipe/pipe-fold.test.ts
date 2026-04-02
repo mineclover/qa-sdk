@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions, normalize as normalizeEndpoint } from "./pipe-fold.js";
+import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions, normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
 import { countGraphPaths } from "./pipe-path.js";
 import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "../types/pipe-spec.js";
 
@@ -27,6 +27,33 @@ describe("normalize", () => {
       { pipeId: "A", portId: "payment_result" },
       { pipeId: "B", portId: "payment_input" },
     ])).toEqual(["A", "B"]);
+  });
+});
+
+describe("collectFlowSteps", () => {
+  it("transition-scope body 내부 step 수집", () => {
+    const flow: PipeFlow = {
+      kind: "transition-scope",
+      transitionId: "transfer",
+      body: { kind: "sequence", steps: [step("출금"), step("입금")] },
+      events: ["account.debit", "account.credit"],
+    };
+    const steps = collectFlowSteps(flow);
+    expect(steps).toHaveLength(2);
+    expect(steps.map(s => s.facet)).toEqual(["출금", "입금"]);
+  });
+
+  it("transition-scope + compensate — 양쪽 step 모두 수집", () => {
+    const flow: PipeFlow = {
+      kind: "transition-scope",
+      transitionId: "t1",
+      body: step("본체"),
+      events: ["e1"],
+      compensate: { kind: "sequence", steps: [step("보상1"), step("보상2")] },
+    };
+    const steps = collectFlowSteps(flow);
+    expect(steps).toHaveLength(3);
+    expect(steps.map(s => s.facet)).toEqual(["본체", "보상1", "보상2"]);
   });
 });
 
