@@ -97,7 +97,7 @@ export {
   createSegment, chainSegments,
   encodeBySegment, decodeBySegment,
   totalSize, collectTransitions, productToSegment,
-  validateSegments, validatePrefixSegments,
+  validateSegments, validatePrefixSegments, validateManifestSegments,
 } from "./path-summation.js";
 export type { DecodedPath, TransitionEntry } from "./path-summation.js";
 

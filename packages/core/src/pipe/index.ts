@@ -98,6 +98,45 @@ export { ConstraintRegistry, evaluatePredicate, executeConstraint } from "./cons
 export { detectPathSegments } from "./pipe-segment.js";
 export type { DetectedSegments, SegmentReason } from "./pipe-segment.js";
 
+// ── Mermaid ───────────────────────────────────────────
+export { pipeGraphToMermaid, zoomViewToMermaid } from "./pipe-mermaid.js";
+export type { MermaidOptions } from "./pipe-mermaid.js";
+
+// ── SVG primitives ────────────────────────────────────
+export {
+  svgRect, svgCircle, svgPolygon, svgLine, svgPath, svgText, svgGroup, svgSvg,
+  svgMarker, svgDefs, bezierH, arcAbove,
+  r as svgR, escapeXml as svgEscapeXml, escapeAttr as svgEscapeAttr,
+} from "./pipe-svg-primitives.js";
+export type { Attrs as SvgAttrs, MarkerDef as SvgMarkerDef } from "./pipe-svg-primitives.js";
+
+// ── SVG shapes + tokens ───────────────────────────────
+export {
+  ROLE_TOKENS, CERTAINTY_STROKE_DASH, CONCERN_TOKENS, EDGE_TOKENS,
+  renderMarkerDefs,
+  drawNodeShape, drawFoldedNode, drawEntryMarker,
+  drawConcernBadges, drawNodeLabel, drawFoldedCount,
+  drawEdgePath, drawConditionBadge,
+  standaloneNodeSvg, standaloneEdgeSvg,
+} from "./pipe-svg-shapes.js";
+export type {
+  RoleTokens, ConcernTokens, EdgeTokens,
+  NodeShapeOptions, EdgePathOptions,
+  StandaloneNodeOptions, StandaloneEdgeOptions,
+} from "./pipe-svg-shapes.js";
+
+// ── SVG / D3 ──────────────────────────────────────────
+export { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "./pipe-svg.js";
+export type { SvgOptions, D3Node, D3Link, D3GraphData } from "./pipe-svg.js";
+
+// ── Definition Bridge ─────────────────────────────────
+export { resolveLifecycles, analyzeLayerPropagation, resolveTags } from "./pipe-definition-bridge.js";
+export type {
+  DefLifecycle as PipeDefLifecycle, DefLayer as PipeDefLayer,
+  DefinitionMeta, DefinitionLookup,
+  PipeLifecycleInfo, LayerPropagation, PipeTagInfo,
+} from "./pipe-definition-bridge.js";
+
 // ── Test Tracking ─────────────────────────────────────
 export type {
   TestCase, TestTarget, TestExpectation, TestSuite, TestResult,
