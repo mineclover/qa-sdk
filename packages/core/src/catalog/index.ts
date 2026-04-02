@@ -10,6 +10,11 @@ export type {
   DimRef,
   PrefixVersionDef,
   PrefixDef,
+  AddressModel,
+  AxisCondition,
+  EventTransition,
+  BranchRoute,
+  PathSegment,
   ColumnRef,
   TableSchema,
   Catalog,
@@ -86,6 +91,15 @@ export {
 // ── 통일 Decode 결과 타입 ────────────────────────────────────
 export type { DecodeResult, DecodedDim } from "./decode-result.js";
 export { entitiesToDecodeResult, decodeResultToEntities, decodeResultToDeep } from "./decode-result.js";
+
+// ── Path Summation (경로 합산) ──────────────────────────────
+export {
+  createSegment, chainSegments,
+  encodeBySegment, decodeBySegment,
+  totalSize, collectTransitions, productToSegment,
+  validateSegments, validatePrefixSegments,
+} from "./path-summation.js";
+export type { DecodedPath, TransitionEntry } from "./path-summation.js";
 
 // ── Axis Usage Analysis ─────────────────────────────────────
 export type { AxisUsageEntry, AxisUsageSummary, CollectAxisUsageOptions } from "./axis-usage.js";

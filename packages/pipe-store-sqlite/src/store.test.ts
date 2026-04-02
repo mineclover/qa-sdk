@@ -1,6 +1,6 @@
 // @def.doc pipe-store-sqlite
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqlitePipeGraphStore, SqlitePipeSpecStore } from "./store.js";
+import { SqlitePipeGraphStore, SqlitePipeSpecStore, createStores } from "./store.js";
 import type { PipeSpec, PipeGraph, PipeFlow } from "@qa-sdk/core";
 
 // ── 헬퍼 ──────────────────────────────────────────────
@@ -222,5 +222,28 @@ describe("PipeGraph 선택적 필드 패싯", () => {
     store.remove("g1", "2.0.0");
 
     expect(store.getLatest("g1")!.version).toBe("1.0.0");
+  });
+});
+
+// ── createStores 통합 ───────────────────────────────
+
+describe("createStores — 단일 DB 공유", () => {
+  it("3개 store가 같은 DB를 공유", () => {
+    const { graphStore, specStore, manifestRegistry, close } = createStores(":memory:");
+
+    // graph
+    graphStore.save(makeGraph("g1", "1.0.0"));
+    expect(graphStore.get("g1", "1.0.0")).not.toBeNull();
+
+    // spec
+    specStore.save(makePipe("p1"));
+    expect(specStore.get("p1", "1.0.0")).not.toBeNull();
+
+    // manifest
+    manifestRegistry.registerPrefix("tracking", "v1");
+    const record = manifestRegistry.getPrefixRecord("tracking", "v1");
+    expect(record.state).toBe("draft");
+
+    close();
   });
 });

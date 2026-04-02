@@ -1,4 +1,5 @@
-export { SqlitePipeGraphStore, SqlitePipeSpecStore } from "./store.js";
+export { createDb } from "./db/connection.js";
+export { createStores, SqlitePipeGraphStore, SqlitePipeSpecStore } from "./store.js";
 export { SqliteManifestRegistry } from "./manifest-store.js";
 export type {
   PrefixVersionRecord, PrefixLifecycleState,

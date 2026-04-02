@@ -1415,6 +1415,9 @@ importers:
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
+      pipe-store-sqlite:
+        specifier: workspace:*
+        version: link:../pipe-store-sqlite
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

@@ -30,6 +30,7 @@
     "@nestjs/platform-ws": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
     "@qa-sdk/core": "workspace:*",
+    "pipe-store-sqlite": "workspace:*",
     "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/definition-client": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",

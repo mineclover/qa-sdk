@@ -44,6 +44,8 @@ def:
       type: contains
     - target: meta-semantic-test-tracking
       type: contains
+    - target: prefix-path-summation
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현

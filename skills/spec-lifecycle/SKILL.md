@@ -166,6 +166,52 @@ def:
       type: contains
 ```
 
+## .spec.md / .todo.md 분리 컨벤션
+
+하나의 기능 단위에 대해 두 파일이 **같은 id로 공존**할 수 있다:
+
+| 파일 | 역할 | 내용 | lifecycle |
+|------|------|------|-----------|
+| `<id>.spec.md` | 현재 — 구현된 것 | 타입, API, 검증, 소스 참조 | approved |
+| `<id>.todo.md` | 계획 — 해야 하는 것 | 목표, 기획, 미구현 Phase, 제약 | draft |
+
+### 규칙
+
+1. **구현 완료 시**: `.todo.md`의 해당 항목을 `.spec.md`로 병합하고 `.todo.md`에서 삭제
+2. **전부 구현 시**: `.todo.md` 파일 삭제 (`.spec.md`만 남음)
+3. **신규 기획 시**: `.todo.md`만 먼저 작성 가능 (코드 없으면 `.spec.md` 불필요)
+4. **같은 id**: frontmatter `id`는 동일. 두 파일이 하나의 기능을 다른 시점에서 기술
+5. **contains**: 부모 문서는 id 하나만 참조 (두 파일을 개별 참조하지 않음)
+
+### 예시
+
+```
+# 초기 — 기획만
+prefix-path-summation.todo.md  ← 계획 전체
+
+# Phase 1~2 구현 완료 후
+prefix-path-summation.spec.md  ← 구현된 타입/연산/테스트
+prefix-path-summation.todo.md  ← 미구현 Phase 3~5
+
+# 전부 완료
+prefix-path-summation.spec.md  ← 전체 스펙
+(todo 삭제)
+```
+
+### .spec.md에 들어가는 것
+
+- 구현된 타입과 소스 참조
+- 검증된 테스트와 커버리지
+- 확정된 제약 조건
+- 동작하는 API 목록
+
+### .todo.md에 들어가는 것
+
+- 미구현 Phase의 목표와 설계
+- 예상 인터페이스 (의사 코드 허용)
+- 선행 조건과 의존 관계
+- 검토 필요 사항
+
 ## 주의
 
 - 전환 시 코드 경로가 실제로 존재하는지 확인 (파일 + export 이름)

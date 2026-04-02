@@ -1,0 +1,106 @@
+// ── Pipe Types ────────────────────────────────────────
+export type {
+  PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
+  PipeFlow, PipeStep, PipeSequence, PipeBranch, PipeOptional,
+  PipeParallel, PipeRace, PipeAwait, PipeRetry, PipeFallback,
+  PipeLoop, PipeCompensate, PipeEmit, PipeFinally, PipeTimeout, PipeFeedback,
+  PipeMap, PipeReduce, PipeBuffer, PipeFilter,
+  PipeCircuitBreaker, PipeThrottle, PipeDebounce,
+  PipeSplit, PipeEnrich, PipeTap, PipeResequence, PipeWindow,
+  PipeDedup, PipeCorrelation, Constraint,
+  StepDataContract,
+} from "../types/pipe-spec.js";
+
+// ── Path ──────────────────────────────────────────────
+export { countPipePaths, countGraphPaths } from "./pipe-path.js";
+
+// ── Validate ──────────────────────────────────────────
+export { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
+export type { ValidationIssue } from "./pipe-validate.js";
+
+// ── Serialize ─────────────────────────────────────────
+export { serializePipeSpec, deserializePipeSpec, serializePipeGraph, deserializePipeGraph } from "./pipe-serialize.js";
+
+// ── Store (포트 + 인메모리) ───────────────────────────
+export type { PipeGraphStore, PipeSpecStore } from "./pipe-store.js";
+export { MemoryPipeGraphStore, MemoryPipeSpecStore } from "./pipe-store.js";
+
+// ── Analyze ───────────────────────────────────────────
+export { analyzePipeComplexity, findBottlenecks, analyzeCoverage, getChildFlows, collectGraphEvents } from "./pipe-analyze.js";
+export type { PipeComplexity, BottleneckReport, CoverageReport, GraphEvent } from "./pipe-analyze.js";
+
+// ── Fold ──────────────────────────────────────────────
+export { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions } from "./pipe-fold.js";
+export type { FoldLevel, FoldDataRef, FoldedContract, FoldedGraph, FoldRegion } from "./pipe-fold.js";
+export { normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
+
+// ── Interpret ─────────────────────────────────────────
+export { extractPipeConcerns, propagatePipeConcerns, analyzePipeImpact, classifyPipeRole, PIPE_PROPAGATION_RULES } from "./pipe-interpret.js";
+export type { PipeConcern, InheritedPipeConcern, PipeConcernEntry, PipeConcernMap, ImpactedPipe, PipeImpactAnalysis, PipeRole } from "./pipe-interpret.js";
+
+// ── Zoom ──────────────────────────────────────────────
+export { computeZoomLevels, computeZoomView, computeLayout } from "./pipe-zoom.js";
+export type { ZoomNodeStyle, ZoomNode, ZoomEdge, ZoomSummary, ZoomView, ZoomLevelMap } from "./pipe-zoom.js";
+
+// ── Gate ──────────────────────────────────────────────
+export { evaluateGate, evaluateGates, allGatesPass, hasReviewItems } from "./pipe-gate.js";
+export type { GateLevel, GateVerdict, GateCriterion, PipeGateSpec, CriterionResult, GateResult, SubGateIssue } from "./pipe-gate.js";
+
+// ── Simulate ──────────────────────────────────────────
+export { simulate, matchHappyPath } from "./pipe-simulate.js";
+export type { SimulationConfig, SimulationResult, SimStep, SimEvent, SimContext, HappyPathSpec, HappyPathMatch } from "./pipe-simulate.js";
+
+// ── Runtime ───────────────────────────────────────────
+export type {
+  ConditionExpr, FieldCondition, LogicalCondition, ExistsCondition, EventCondition,
+  StepResult, StepError, ICancellationToken, IPipeContext,
+  StepExecutor, ExecutedStep, RunResult,
+} from "../types/pipe-runtime.js";
+export { parseCondition, evaluateCondition, CancellationToken, PipeContext, ExecutorRegistry, PipeRunner } from "./pipe-runtime.js";
+
+// ── Bridge ────────────────────────────────────────────
+export { extractLineageFromSimulation, validateStepContracts, constraintResultToEvent } from "./pipe-bridge.js";
+export type { StepCompatIssue, ConstraintEvent } from "./pipe-bridge.js";
+
+// ── PathMatcher ───────────────────────────────────────
+export type { MatchResult as PipeMatchResult } from "./path-matcher.js";
+export { matchPath } from "./path-matcher.js";
+
+// ── Verdict v2 ────────────────────────────────────────
+export { computeVerdictV2 } from "./verdict-v2.js";
+export type { VerdictV2, FacetCoverage, VerdictReportV2 } from "./verdict-v2.js";
+
+// ── Data Contract ─────────────────────────────────────
+export type {
+  DataSchema, DataColumn, FacetRole, ColumnConstraint, ColumnRef as DataColumnRef,
+  DataRelation, CascadeRule,
+  FieldLineage, FieldRef, TransformKind,
+  SchemaVersion, SchemaChange, SchemaChangeType, SchemaCompatibility,
+  FieldSet, FieldSpec, CompatibilityResult,
+} from "../types/data-schema.js";
+export {
+  checkCompatibility, computeSchemaHash,
+  collectSchemaChanges, determineCompatibility, createSchemaVersion,
+  LineageCollector, VersionCollector,
+} from "./data-contract.js";
+
+// ── Constraint Engine ─────────────────────────────────
+export type {
+  ConstraintDef as PipeConstraintDef, ConstraintSubject, SubjectKind,
+  ConstraintPredicate, PredicateOp,
+  ConstraintContext, ContextWhen,
+  ConstraintEvidence, EvidenceMethod,
+  ConstraintResult as PipeConstraintResult, FailureTrace,
+} from "../types/constraint.js";
+export { ConstraintRegistry, evaluatePredicate, executeConstraint } from "./constraint-engine.js";
+
+// ── Segment Detection ─────────────────────────────────
+export { detectPathSegments } from "./pipe-segment.js";
+export type { DetectedSegments, SegmentReason } from "./pipe-segment.js";
+
+// ── Test Tracking ─────────────────────────────────────
+export type {
+  TestCase, TestTarget, TestExpectation, TestSuite, TestResult,
+  FacetQualityMetrics, PipeQualityMetrics,
+} from "../types/test-tracking.js";
+export { buildTestAddress, parseTestAddress, TestRegistry } from "./test-tracking.js";

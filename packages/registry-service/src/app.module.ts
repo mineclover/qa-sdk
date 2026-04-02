@@ -16,6 +16,7 @@ import { SchemaModule } from "./modules/schema/schema.module.js";
 import { ServiceModule } from "./modules/services/service.module.js";
 import { VersionModule } from "./modules/versions/version.module.js";
 import { WorkspaceModule } from "./modules/workspace/workspace.module.js";
+import { ManifestModule } from "./modules/manifests/manifest.module.js";
 
 const definitionServiceBaseUrl = getServiceDevUrl("definition-service") ?? "http://localhost:3700";
 
@@ -30,6 +31,7 @@ const definitionServiceBaseUrl = getServiceDevUrl("definition-service") ?? "http
     AxisModule,
     VersionModule,
     WorkspaceModule,
+    ManifestModule,
     DagModule,
     ResolveModule,
     SchemaModule,

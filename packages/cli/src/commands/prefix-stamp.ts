@@ -178,6 +178,8 @@ const ANCHORS: readonly AnchorDef[] = [
   { patterns: ["encodePrefix("], prefixArg: "string-2" },
   { patterns: ["decodePrefix("], prefixArg: "string-2" },
   { patterns: ["encodePrefixByValue("], prefixArg: "string-2" },
+  { patterns: ["encodeBySegment("], prefixArg: "string-2" },
+  { patterns: ["decodeBySegment("], prefixArg: "string-1" },
 ];
 
 // ── 제외 경로 패턴 ───────────────────────────────────────────────────────────
@@ -215,7 +217,12 @@ function isExcluded(filePath: string): boolean {
 interface ParsedStamp {
   readonly prefixId: string;
   readonly version: string | undefined;
+  /** product 모델: dims */
   readonly dims: readonly { label: string; index: number }[];
+  /** sum 모델: model/segmentId/consumes */
+  readonly model?: "sum";
+  readonly segmentId?: string;
+  readonly consumes?: readonly string[];
   readonly raw: string;
   readonly lineIndex: number;
 }
@@ -223,19 +230,36 @@ interface ParsedStamp {
 const STAMP_RE = /@prefix\s+([\w-]+)(?::([\w.]+))?(?:\s+—\s+(.*))?/;
 const DIMS_RE = /dims:\s*\[([^\]]+)\]/;
 const DIM_ITEM_RE = /([\w-]+):(\d+)/g;
+const SUM_MODEL_RE = /model:sum\s+seg:([\w-]+)\s+consumes:\[([^\]]+)\]/;
 
 function parseStamp(line: string, lineIndex: number): ParsedStamp | null {
   const m = line.match(STAMP_RE);
   if (!m) return null;
 
+  const meta = m[3] || "";
+
+  // sum 모델 파싱 시도
+  const sumMatch = meta.match(SUM_MODEL_RE);
+  if (sumMatch) {
+    return {
+      prefixId: m[1],
+      version: m[2] || undefined,
+      dims: [],
+      model: "sum",
+      segmentId: sumMatch[1],
+      consumes: sumMatch[2].split(",").map(s => s.trim()),
+      raw: line,
+      lineIndex,
+    };
+  }
+
+  // product 모델 (기존)
   const dims: { label: string; index: number }[] = [];
-  if (m[3]) {
-    const dm = m[3].match(DIMS_RE);
-    if (dm) {
-      let im: RegExpExecArray | null;
-      while ((im = DIM_ITEM_RE.exec(dm[1])) !== null) {
-        dims.push({ label: im[1], index: parseInt(im[2]) });
-      }
+  const dm = meta.match(DIMS_RE);
+  if (dm) {
+    let im: RegExpExecArray | null;
+    while ((im = DIM_ITEM_RE.exec(dm[1])) !== null) {
+      dims.push({ label: im[1], index: parseInt(im[2]) });
     }
   }
 
@@ -359,15 +383,57 @@ function resolveStampLine(
   commentPrefix: string,
   indent: string,
   versionResolver: VersionResolver,
+  segmentId?: string,
 ): string | null {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) return null;
 
   const version = versionResolver.resolve(catalog, prefixId);
-  const labels = prefix.labels;
 
+  // sum 모델 — 세그먼트별 스탬프
+  if (prefix.addressModel === "sum" && segmentId) {
+    const vdef = prefix.versions.find(v => v.version === version);
+    const seg = vdef?.segments?.find(s => s.segmentId === segmentId);
+    if (!seg) return null;
+    const consumesStr = seg.consumes.join(",");
+    return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${segmentId} consumes:[${consumesStr}]`;
+  }
+
+  // sum 모델이지만 segmentId 미지정 → 모든 세그먼트 스탬프 (첫 번째만)
+  if (prefix.addressModel === "sum") {
+    const vdef = prefix.versions.find(v => v.version === version);
+    const seg = vdef?.segments?.[0];
+    if (seg) {
+      const consumesStr = seg.consumes.join(",");
+      return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${seg.segmentId} consumes:[${consumesStr}]`;
+    }
+  }
+
+  // product 모델 (기존)
+  const labels = prefix.labels;
   const dimsStr = labels.map((label, i) => `${label}:${i}`).join(", ");
   return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — dims: [${dimsStr}]`;
+}
+
+/** sum prefix의 모든 세그먼트에 대한 스탬프 행 생성 */
+function resolveAllSegmentStampLines(
+  catalog: Catalog,
+  prefixId: string,
+  commentPrefix: string,
+  indent: string,
+  versionResolver: VersionResolver,
+): string[] {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix || prefix.addressModel !== "sum") return [];
+
+  const version = versionResolver.resolve(catalog, prefixId);
+  const vdef = prefix.versions.find(v => v.version === version);
+  if (!vdef?.segments) return [];
+
+  return vdef.segments.map(seg => {
+    const consumesStr = seg.consumes.join(",");
+    return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${seg.segmentId} consumes:[${consumesStr}]`;
+  });
 }
 
 // ── 앵커 탐지 + 스탬프 생성 ──────────────────────────────────────────────────
@@ -694,7 +760,42 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
       const checkVersion = stamp.version || latestVer;
       const labels = prefix.labels;
 
-      // dim 검증
+      // sum 모델 검증
+      if (stamp.model === "sum" && stamp.segmentId) {
+        const vdef = prefix.versions.find(v => v.version === checkVersion);
+        const segments = vdef?.segments;
+
+        if (!segments) {
+          results.push({
+            file: rel, line: i + 1, severity: "error",
+            code: "no-segments",
+            message: `${stamp.prefixId}:${checkVersion} — segments 미정의 (addressModel: sum)`,
+          });
+        } else {
+          const seg = segments.find(s => s.segmentId === stamp.segmentId);
+          if (!seg) {
+            results.push({
+              file: rel, line: i + 1, severity: "error",
+              code: "segment-removed",
+              message: `${stamp.prefixId}:${checkVersion} — seg "${stamp.segmentId}" 삭제됨`,
+            });
+          } else if (stamp.consumes) {
+            // consumes 변경 검증
+            const actualConsumes = seg.consumes.join(",");
+            const stampConsumes = stamp.consumes.join(",");
+            if (actualConsumes !== stampConsumes) {
+              results.push({
+                file: rel, line: i + 1, severity: "error",
+                code: "consumes-changed",
+                message: `${stamp.prefixId}:${checkVersion} seg:${stamp.segmentId} — 표식 [${stampConsumes}], 실제 [${actualConsumes}]`,
+              });
+            }
+          }
+        }
+        continue;
+      }
+
+      // product 모델 dim 검증 (기존)
       for (const dim of stamp.dims) {
         const actualIndex = labels.indexOf(dim.label);
         if (actualIndex < 0) {
@@ -747,7 +848,7 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
 export function prefixFind(
   catalog: Catalog,
   prefixId?: string,
-  opts?: { dim?: string; version?: string; summary?: boolean },
+  opts?: { dim?: string; version?: string; summary?: boolean; segment?: string; model?: string },
 ): void {
   const files = collectFiles([process.cwd()]);
   const matches: { file: string; line: number; stamp: ParsedStamp }[] = [];
@@ -769,6 +870,9 @@ export function prefixFind(
       if (prefixId && stamp.prefixId !== prefixId) continue;
       if (opts?.version && stamp.version !== opts.version) continue;
       if (opts?.dim && !stamp.dims.some((d) => d.label === opts.dim)) continue;
+      if (opts?.segment && stamp.segmentId !== opts.segment) continue;
+      if (opts?.model === "sum" && stamp.model !== "sum") continue;
+      if (opts?.model === "product" && stamp.model === "sum") continue;
 
       matches.push({ file: rel, line: i + 1, stamp });
     }
@@ -793,12 +897,16 @@ export function prefixFind(
   }
 
   for (const m of matches) {
-    const dimsStr =
-      m.stamp.dims.length > 0
+    let detail: string;
+    if (m.stamp.model === "sum") {
+      detail = ` — model:sum seg:${m.stamp.segmentId} consumes:[${m.stamp.consumes?.join(",") ?? ""}]`;
+    } else {
+      detail = m.stamp.dims.length > 0
         ? ` — dims: [${m.stamp.dims.map((d) => `${d.label}:${d.index}`).join(", ")}]`
         : "";
+    }
     console.log(
-      `  ${m.file}:${m.line} — ${m.stamp.prefixId}:${m.stamp.version || "?"}${dimsStr}`,
+      `  ${m.file}:${m.line} — ${m.stamp.prefixId}:${m.stamp.version || "?"}${detail}`,
     );
   }
   console.log(`\n${matches.length}건`);
@@ -819,9 +927,15 @@ export function prefixMigrate(
     return;
   }
 
-  // to version의 labels로 새 dim:index 계산
+  // to version의 labels/segments로 새 스탬프 계산
   const labels = prefix.labels;
   const newDimsStr = labels.map((label, i) => `${label}:${i}`).join(", ");
+
+  // sum 모델: to version의 세그먼트 맵
+  const toVdef = prefix.versions.find(v => v.version === toVersion);
+  const toSegMap = new Map(
+    (toVdef?.segments ?? []).map(s => [s.segmentId, s]),
+  );
 
   const files = collectFiles([process.cwd()]);
   const stampRe = new RegExp(
@@ -845,7 +959,24 @@ export function prefixMigrate(
       if (!stampRe.test(lines[i])) continue;
 
       const indent = lines[i].match(/^(\s*)/)?.[1] ?? "";
-      const newLine = `${indent}${cp} @prefix ${prefixId}:${toVersion} — dims: [${newDimsStr}]`;
+      const parsed = parseStamp(lines[i], i);
+      let newLine: string;
+
+      if (parsed?.model === "sum" && parsed.segmentId) {
+        // sum 모델: 세그먼트별 스탬프 갱신
+        const toSeg = toSegMap.get(parsed.segmentId);
+        if (toSeg) {
+          const consumesStr = toSeg.consumes.join(",");
+          newLine = `${indent}${cp} @prefix ${prefixId}:${toVersion} — model:sum seg:${parsed.segmentId} consumes:[${consumesStr}]`;
+        } else {
+          // 세그먼트 제거됨
+          console.log(`  ⚠ ${rel}:${i + 1} — seg "${parsed.segmentId}" v2에서 제거됨`);
+          continue;
+        }
+      } else {
+        // product 모델 (기존)
+        newLine = `${indent}${cp} @prefix ${prefixId}:${toVersion} — dims: [${newDimsStr}]`;
+      }
 
       if (opts?.dryRun) {
         console.log(`  ${rel}:${i + 1}`);
@@ -904,8 +1035,22 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
   const labels = prefix.labels;
   console.log(`${prefixId} (${prefix.name || ""})`);
   console.log(`  최신 version: ${latestVer}`);
+  console.log(`  addressModel: ${prefix.addressModel ?? "product"}`);
   console.log(`  labels: [${labels.join(", ")}]`);
   console.log(`  dims: ${labels.length}개`);
+
+  // sum 모델: 세그먼트 정보
+  if (prefix.addressModel === "sum") {
+    const vdef = prefix.versions.find(v => v.version === latestVer);
+    if (vdef?.segments) {
+      console.log(`  segments: ${vdef.segments.length}개`);
+      for (const seg of vdef.segments) {
+        const trans = seg.transition ? ` → ${seg.transition.eventKey}` : "";
+        const routes = seg.routes ? ` (${seg.routes.length} routes)` : "";
+        console.log(`    ${seg.segmentId}: consumes:[${seg.consumes.join(",")}] size:${seg.size}${trans}${routes}`);
+      }
+    }
+  }
 
   // dim별 axis entry 현황
   for (let i = 0; i < labels.length; i++) {

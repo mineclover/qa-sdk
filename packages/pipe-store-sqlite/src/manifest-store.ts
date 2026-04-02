@@ -40,14 +40,10 @@ export interface GuardResult {
   readonly allowed: boolean;
   readonly reason?: string;
 }
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
+import { createDb, type DrizzleDb } from "./db/connection.js";
 import { prefixVersions, serviceManifests } from "./db/schema.js";
-
-type DrizzleDb = ReturnType<typeof drizzle>;
 
 // ── 전이 규칙 (definition-catalog 비의존, 직접 정의) ──
 
@@ -68,22 +64,18 @@ const MANIFEST_TRANSITIONS: Record<string, readonly string[]> = {
 };
 
 export class SqliteManifestRegistry {
-  private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
   constructor(path: string) {
-    const DatabaseSync = getDatabaseSync();
-    this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
-    try {
-      this.db = drizzle({ client: this.rawDb });
-      migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
-      });
-    } catch (err) {
-      throw err;
-    }
+    const { db } = createDb(path);
+    this.db = db;
+  }
+
+  /** 기존 DrizzleDb 인스턴스로 생성 (createStores에서 사용) */
+  static fromDb(db: DrizzleDb): SqliteManifestRegistry {
+    const instance = Object.create(SqliteManifestRegistry.prototype) as SqliteManifestRegistry;
+    instance.db = db;
+    return instance;
   }
 
   // ── Prefix 관리 ────────────────────────────────────
@@ -272,9 +264,7 @@ export class SqliteManifestRegistry {
     return version;
   }
 
-  close(): void {
-    this.rawDb.close();
-  }
+  // close는 createStores()의 close 함수로 일괄 처리
 
   // ── 내부 헬퍼 ──────────────────────────────────────
 

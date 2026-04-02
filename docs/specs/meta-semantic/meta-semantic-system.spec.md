@@ -41,6 +41,8 @@ def:
       type: contains
     - target: compat-removal
       type: contains
+    - target: meta-semantic-philosophy
+      type: contains
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러

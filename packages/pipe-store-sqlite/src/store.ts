@@ -2,40 +2,53 @@
  * SQLite PipeGraphStore / PipeSpecStore — drizzle + node:sqlite
  *
  * @qa-sdk/core의 PipeGraphStore/PipeSpecStore 포트를 SQLite로 구현.
- * 저장 위치는 소비자가 결정 (예: ~/.qa-sdk/pipe-store.sqlite)
+ * createStores(path)로 단일 DB 연결에서 3개 store를 생성한다.
  *
  * @def.doc pipe-store-sqlite
  */
 
 import type { PipeGraphStore, PipeSpecStore } from "@qa-sdk/core";
 import type { PipeGraph, PipeSpec, PipeConnection } from "@qa-sdk/core";
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, desc, like } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
+import { createDb, type DrizzleDb } from "./db/connection.js";
 import { pipeGraphs, pipeSpecs } from "./db/schema.js";
+import { SqliteManifestRegistry } from "./manifest-store.js";
 
-type DrizzleDb = ReturnType<typeof drizzle>;
+/** 단일 DB에서 3개 store 생성 */
+export function createStores(path: string): {
+  graphStore: SqlitePipeGraphStore;
+  specStore: SqlitePipeSpecStore;
+  manifestRegistry: SqliteManifestRegistry;
+  close: () => void;
+} {
+  const { rawDb, db } = createDb(path);
+  return {
+    graphStore: new SqlitePipeGraphStore(db),
+    specStore: new SqlitePipeSpecStore(db),
+    manifestRegistry: SqliteManifestRegistry.fromDb(db),
+    close: () => rawDb.close(),
+  };
+}
+
+// ── 버전 정렬 ───────────────────────────────────────
+
+/** semver-aware 문자열 비교 (인메모리 MemoryPipeGraphStore와 동일) */
+function compareVersions(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true });
+}
 
 // ── PipeGraphStore ──────────────────────────────────
 
 export class SqlitePipeGraphStore implements PipeGraphStore {
-  private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
-  constructor(path: string) {
-    const DatabaseSync = getDatabaseSync();
-    this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
-    try {
-      this.db = drizzle({ client: this.rawDb });
-      migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
-      });
-    } catch (err) {
-      throw err;
+  constructor(pathOrDb: string | DrizzleDb) {
+    if (typeof pathOrDb === "string") {
+      const { db } = createDb(pathOrDb);
+      this.db = db;
+    } else {
+      this.db = pathOrDb;
     }
   }
 
@@ -76,28 +89,29 @@ export class SqlitePipeGraphStore implements PipeGraphStore {
   }
 
   getLatest(graphId: string): PipeGraph | null {
-    const row = this.db
+    const rows = this.db
       .select()
       .from(pipeGraphs)
       .where(eq(pipeGraphs.graphId, graphId))
-      .orderBy(desc(pipeGraphs.version))
-      .get();
-    return row ? rowToGraph(row) : null;
+      .all();
+    if (rows.length === 0) return null;
+    rows.sort((a, b) => compareVersions(b.version, a.version));
+    return rowToGraph(rows[0]);
   }
 
   listVersions(graphId: string): PipeGraph[] {
-    return this.db
+    const rows = this.db
       .select()
       .from(pipeGraphs)
       .where(eq(pipeGraphs.graphId, graphId))
-      .orderBy(pipeGraphs.version)
-      .all()
-      .map(rowToGraph);
+      .all();
+    rows.sort((a, b) => compareVersions(a.version, b.version));
+    return rows.map(rowToGraph);
   }
 
   listAll(): PipeGraph[] {
-    // 각 graphId의 최신 버전만 — subquery로 max version 추출
-    const all = this.db.select().from(pipeGraphs).orderBy(desc(pipeGraphs.version)).all();
+    const all = this.db.select().from(pipeGraphs).all();
+    all.sort((a, b) => compareVersions(b.version, a.version));
     const latestMap = new Map<string, typeof all[number]>();
     for (const row of all) {
       if (!latestMap.has(row.graphId)) latestMap.set(row.graphId, row);
@@ -114,47 +128,46 @@ export class SqlitePipeGraphStore implements PipeGraphStore {
   }
 
   findByPipeId(pipeId: string): PipeGraph[] {
-    // JSON 내 검색 — pipes 컬럼에서 pipeId 포함 여부
-    return this.db
+    // json_each로 pipes 배열 내 pipeId 검색 — 파라미터 바인딩으로 injection 방지
+    const rows = this.db
       .select()
       .from(pipeGraphs)
-      .where(like(pipeGraphs.pipes, `%"pipeId":"${pipeId}"%`))
-      .all()
-      .map(rowToGraph);
+      .where(
+        sql`EXISTS (
+          SELECT 1 FROM json_each(${pipeGraphs.pipes})
+          WHERE json_extract(value, '$.pipeId') = ${pipeId}
+        )`,
+      )
+      .all();
+    return rows.map(rowToGraph);
   }
 
   findByTriggerEvent(eventKey: string): PipeGraph[] {
-    return this.db
+    const rows = this.db
       .select()
       .from(pipeGraphs)
-      .where(like(pipeGraphs.pipes, `%"eventKey":"${eventKey}"%`))
-      .all()
-      .map(rowToGraph);
-  }
-
-  close(): void {
-    this.rawDb.close();
+      .where(
+        sql`EXISTS (
+          SELECT 1 FROM json_each(${pipeGraphs.pipes})
+          WHERE json_extract(value, '$.trigger.eventKey') = ${eventKey}
+        )`,
+      )
+      .all();
+    return rows.map(rowToGraph);
   }
 }
 
 // ── PipeSpecStore ───────────────────────────────────
 
 export class SqlitePipeSpecStore implements PipeSpecStore {
-  private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
-  constructor(path: string) {
-    const DatabaseSync = getDatabaseSync();
-    this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
-    try {
-      this.db = drizzle({ client: this.rawDb });
-      migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
-      });
-    } catch (err) {
-      throw err;
+  constructor(pathOrDb: string | DrizzleDb) {
+    if (typeof pathOrDb === "string") {
+      const { db } = createDb(pathOrDb);
+      this.db = db;
+    } else {
+      this.db = pathOrDb;
     }
   }
 
@@ -197,13 +210,14 @@ export class SqlitePipeSpecStore implements PipeSpecStore {
   }
 
   getLatest(pipeId: string): PipeSpec | null {
-    const row = this.db
+    const rows = this.db
       .select()
       .from(pipeSpecs)
       .where(eq(pipeSpecs.pipeId, pipeId))
-      .orderBy(desc(pipeSpecs.version))
-      .get();
-    return row ? rowToSpec(row) : null;
+      .all();
+    if (rows.length === 0) return null;
+    rows.sort((a, b) => compareVersions(b.version, a.version));
+    return rowToSpec(rows[0]);
   }
 
   listAll(): PipeSpec[] {
@@ -216,10 +230,6 @@ export class SqlitePipeSpecStore implements PipeSpecStore {
       .where(eq(pipeSpecs.id, `${pipeId}:${version}`))
       .run();
     return result.changes > 0;
-  }
-
-  close(): void {
-    this.rawDb.close();
   }
 }
 
