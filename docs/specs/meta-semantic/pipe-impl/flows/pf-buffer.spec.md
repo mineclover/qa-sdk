@@ -22,6 +22,11 @@ def:
 
 N개 또는 T시간 모아서 처리. 카테고리: 배치.
 
+## fold topology
+
+분류: **batch**.
+여러 입력을 count/time 기준으로 모아 하나의 배치로 접은 뒤 `body`에 넘긴다. 요소 수는 N개지만 외부 계약은 배치 단위 한 번의 flush로 요약된다.
+
 ## 정의 방식
 
 필드: body(필수), count 또는 duration

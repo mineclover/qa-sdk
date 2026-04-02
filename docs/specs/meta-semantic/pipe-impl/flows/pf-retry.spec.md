@@ -22,6 +22,11 @@ def:
 
 실패 시 backoff로 재시도. 카테고리: 내결함.
 
+## fold topology
+
+분류: **resilient**.
+같은 `step`을 동일 계약 아래 여러 번 재진입시키고 성공/한계 도달 결과만 외부에 노출한다. 실패를 흡수해 한 인터페이스에 접는 복원력 topology다.
+
 ## 정의 방식
 
 필드: step(필수), maxAttempts(필수, >0), backoff

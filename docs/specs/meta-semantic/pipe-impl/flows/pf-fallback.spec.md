@@ -22,6 +22,11 @@ def:
 
 try 실패 시 catch 실행. 카테고리: 내결함.
 
+## fold topology
+
+분류: **resilient**.
+`try`와 `catch` 두 실행면을 하나의 파이프 계약으로 접는다. 기본 경로가 실패하면 대체 경로가 같은 ingress/egress를 이어받는 복원력 패턴이다.
+
 ## 정의 방식
 
 필드: try(필수), catch(필수)

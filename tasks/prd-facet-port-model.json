@@ -176,13 +176,13 @@
         "meta-semantic-pipe-impl.spec.md 방법 섹션에 fold topology 관점 설명 추가"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "코드 변경 없음. 문서 전용. 29개 pf-*.spec.md 수정 + 카탈로그 스펙 수정.",
       "dependsOn": [],
-      "completionNotes": ""
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-02T10:51:59.209Z"
+    "updatedAt": "2026-04-02T10:59:13.892Z"
   }
 }

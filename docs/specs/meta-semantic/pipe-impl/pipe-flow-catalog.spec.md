@@ -73,6 +73,33 @@ PipeFlow 29종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무�
 
 ---
 
+## fold topology 분류
+
+fold topology는 하위 패싯과 경로를 단일 `PipeSpec` 인터페이스로 접을 때
+"몇 개의 실행면을 어떤 형태로 합성하는가"를 설명하는 분류다.
+아래 포트 수는 접힌 파이프 외부에서 보이는 주 경로 기준이며, rollback·feedback·observe 같은
+내부 side path는 `특이사항`에만 적는다.
+
+| topology | flow kind | 입력 포트 수 | 출력 포트 수 | 특이사항 |
+|------|------|------|------|------|
+| atomic | step | 1 | 1 | 하위 자식 없음. 단일 facet 실행을 그대로 노출 |
+| linear | sequence | 1 | 1 | 내부 `steps` N개를 직렬로 접고 ingress/egress만 유지 |
+| conditional | branch, optional | 1 | 1 | 내부 후보 경로는 2+이지만 외부에는 선택된 결과 1개만 노출 |
+| concurrent | parallel, race, await | 1 | 1 | fan-out/join 또는 조건 대기를 숨기고 주 경로 1개로 환원 |
+| resilient | retry, fallback, circuit-breaker | 1 | 1 | 재시도·대체·차단 상태를 같은 계약에 흡수. 단락 실패는 내부 정책 |
+| iterative | loop, feedback | 1 | 1 | back-edge를 숨기고 수렴한 결과만 egress로 노출 |
+| transactional | compensate, finally | 1 | 1 | rollback/cleanup은 내부 보조 경로. 외부 계약은 본체와 동일 |
+| signaling | emit | 0-1 | 1 | 입력 없이 신호 생성 가능. 있으면 payload를 event로 투영 |
+| temporal | timeout, throttle, debounce | 1 | 0-1 | 시간 게이트가 지연·소거·우회를 결정. `timeout`은 대체 출력 가능 |
+| batch | map, reduce, buffer, filter | 1 | 1 | 외부 포트는 collection/batch 단위 1쌍, 내부 요소 수는 N |
+| transformation | split, enrich | 1-2 | 1-N | `split`은 1→N fan-out, `enrich`는 주 입력 + side input 병합 |
+| streaming | resequence, window | 1 | 1 | 스트림 버퍼/윈도우 상태를 내부에 숨기고 동일 stream contract 유지 |
+| stateful | dedup, correlation | 1-2 | 0-1 | 숨은 state store가 방출 시점을 결정. suppress/match 모두 포함 |
+| observational | tap | 1 | 1 | 주 경로는 pass-through, 관측 branch는 side effect only |
+
+총 14개 topology가 29개 flow kind 전체를 덮으며, 각 leaf 스펙은 이 분류를 기준으로 자신이
+어떤 합성 패턴을 노출하는지 설명한다.
+
 ---
 
 ## 기본 (2종)

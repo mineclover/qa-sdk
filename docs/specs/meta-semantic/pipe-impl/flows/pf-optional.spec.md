@@ -22,6 +22,11 @@ def:
 
 있어도 없어도 통과. 카테고리: 분기.
 
+## fold topology
+
+분류: **conditional**.
+`step` 실행 경로와 bypass 경로를 함께 접는다. 실행해도 되고 건너뛰어도 되는 두 선택지를 하나의 조건형 topology로 제공한다.
+
 ## 정의 방식
 
 필드: step(필수)

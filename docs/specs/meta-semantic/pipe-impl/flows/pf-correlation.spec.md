@@ -22,6 +22,11 @@ def:
 
 request + response를 key로 매칭. 카테고리: 상태.
 
+## fold topology
+
+분류: **stateful**.
+`requestEvent`와 `responseEvent`를 상태 저장소에서 매칭해 하나의 continuation으로 접는다. 즉시 출력보다 매칭 상태가 방출 시점을 결정하는 stateful fold다.
+
 ## 정의 방식
 
 필드: requestEvent(필수), responseEvent(필수), correlationKey(필수), onMatch(필수), timeout, onTimeout

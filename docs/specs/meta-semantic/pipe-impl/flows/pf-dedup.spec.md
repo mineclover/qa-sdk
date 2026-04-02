@@ -22,6 +22,11 @@ def:
 
 같은 key 재입력 시 소멸. 카테고리: 상태.
 
+## fold topology
+
+분류: **stateful**.
+현재 입력과 과거에 본 key 상태를 함께 접어 중복이면 소거하고 신규면 통과시킨다. 출력 여부가 숨은 상태에 의해 결정되므로 stateful topology다.
+
 ## 정의 방식
 
 필드: keyField(필수), ttl, step(필수)

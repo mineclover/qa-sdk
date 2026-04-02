@@ -22,6 +22,11 @@ def:
 
 패싯 하나를 실행하는 최소 단위. 카테고리: 기본.
 
+## fold topology
+
+분류: **atomic**.
+하위 분기나 보조 경로 없이 `facet` 하나를 그대로 실행 인터페이스로 노출한다. 입력 한 번이 곧 실행 한 번으로 대응하는 최소 합성 패턴이다.
+
 ## 정의 방식
 
 필드: facet(필수), eventKey, constraints, timeout, dataContract

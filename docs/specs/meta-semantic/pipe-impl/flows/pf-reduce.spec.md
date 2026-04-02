@@ -22,6 +22,11 @@ def:
 
 여러 항목을 하나로 누적. 카테고리: 배치.
 
+## fold topology
+
+분류: **batch**.
+여러 항목을 accumulator 하나로 점진적으로 접어 최종 결과 하나를 만든다. 요소별 intermediate state를 숨기고 집계 결과만 외부로 노출한다.
+
 ## 정의 방식
 
 필드: step(필수), initial(필수), accumulator(필수)

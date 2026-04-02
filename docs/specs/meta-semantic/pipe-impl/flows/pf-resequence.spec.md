@@ -22,6 +22,11 @@ def:
 
 무순서 입력을 재정렬. 카테고리: 스트리밍.
 
+## fold topology
+
+분류: **streaming**.
+무순서 스트림을 버퍼링해 `orderBy` 기준으로 다시 정렬한 뒤 내보낸다. 순서 복원용 상태를 내부에 숨기고 동일한 stream contract를 유지하는 streaming fold다.
+
 ## 정의 방식
 
 필드: orderBy(필수), windowSize(필수), step(필수)

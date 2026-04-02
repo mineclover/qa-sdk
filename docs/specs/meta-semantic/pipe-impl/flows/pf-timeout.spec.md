@@ -22,6 +22,11 @@ def:
 
 body에 시간 제한 래퍼. 카테고리: 시간.
 
+## fold topology
+
+분류: **temporal**.
+`body` 실행과 deadline을 함께 접어 시간 초과 여부를 topology 차원에서 결정한다. 완료 경로와 `onTimeout` 우회 경로가 모두 clock에 종속된다.
+
 ## 정의 방식
 
 필드: body(필수), duration(필수, >0), onTimeout

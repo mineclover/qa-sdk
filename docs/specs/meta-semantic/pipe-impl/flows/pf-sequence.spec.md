@@ -22,6 +22,11 @@ def:
 
 steps를 순서대로 실행. 카테고리: 기본.
 
+## fold topology
+
+분류: **linear**.
+`steps`를 앞에서 뒤로 직렬 연결해 하나의 ingress에서 하나의 egress로 접는다. 여러 하위 실행이 있어도 외부에는 순차 합성 결과만 보이는 linear topology다.
+
 ## 정의 방식
 
 필드: steps(필수, 2+)

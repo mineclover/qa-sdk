@@ -22,6 +22,11 @@ def:
 
 조건 충족까지 대기 후 then 실행. 카테고리: 동시성.
 
+## fold topology
+
+분류: **concurrent**.
+외부 조건 충족이라는 보조 신호와 `then` continuation을 한 인터페이스에서 합류시킨다. 선행 입력은 유지하되 완료 시점만 동기화하는 동시성 fold다.
+
 ## 정의 방식
 
 필드: condition(필수), then(필수), timeout

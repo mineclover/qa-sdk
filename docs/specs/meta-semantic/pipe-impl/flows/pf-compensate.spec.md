@@ -22,6 +22,11 @@ def:
 
 forward 성공 후 후속 실패 시 보상. 카테고리: 트랜잭션.
 
+## fold topology
+
+분류: **transactional**.
+`forward`와 `compensate`를 짝으로 접어 단일 트랜잭션 경계처럼 다룬다. 보상 경로는 내부에 숨기고 외부에는 본체 계약 하나만 노출한다.
+
 ## 정의 방식
 
 필드: forward(필수), compensate(필수)

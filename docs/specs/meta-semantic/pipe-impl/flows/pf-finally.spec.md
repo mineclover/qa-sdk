@@ -22,6 +22,11 @@ def:
 
 body 성공/실패 무관 cleanup 실행. 카테고리: 정리.
 
+## fold topology
+
+분류: **transactional**.
+`body`의 성공/실패와 무관하게 `cleanup`을 항상 결합한다. 정리 경로를 별도 출력으로 노출하지 않고 본체 lifecycle에 접어 넣는 transactional topology다.
+
 ## 정의 방식
 
 필드: body(필수), cleanup(필수)

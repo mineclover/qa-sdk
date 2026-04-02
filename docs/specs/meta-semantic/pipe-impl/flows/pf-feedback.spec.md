@@ -22,6 +22,11 @@ def:
 
 body 출력을 feedbackEvent로 재주입. 카테고리: 제어.
 
+## fold topology
+
+분류: **iterative**.
+`body`의 결과를 `feedbackEvent`로 다시 주입해 수렴할 때까지 폐루프를 만든다. 외부에서는 한 번의 실행처럼 보이지만 내부에는 back-edge가 있는 iterative fold다.
+
 ## 정의 방식
 
 필드: body(필수), feedbackEvent(필수), until(필수), maxIterations(권장)

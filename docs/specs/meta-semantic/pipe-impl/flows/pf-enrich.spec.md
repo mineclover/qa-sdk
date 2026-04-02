@@ -22,6 +22,11 @@ def:
 
 외부 소스에서 데이터 조회 후 병합. 카테고리: 데이터변환.
 
+## fold topology
+
+분류: **transformation**.
+주 입력에 외부 `source`를 붙여 `mergeField` 기준으로 보강한 결과를 만든다. 원본 payload에 side input을 합성해 다른 형태의 출력으로 바꾸는 transformation fold다.
+
 ## 정의 방식
 
 필드: source(필수), mergeField(필수), step(필수), timeout

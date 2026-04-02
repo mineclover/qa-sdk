@@ -5,6 +5,7 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+- Pipe flow taxonomy 문서 동기화 패턴: flow kind 분류 축이 바뀌면 `pipe-flow-catalog.spec.md` 집계 표, 29개 `pf-*.spec.md` leaf 설명, `meta-semantic-pipe-impl.spec.md` 상위 방법 문단을 함께 갱신해야 분류 SSOT가 유지된다.
 - PipeSpec 확장 패턴: optional 필드를 추가할 때는 `types/pipe-spec.ts` 정의만 바꾸지 말고 `packages/core/src/index.ts`와 `packages/core/src/pipe/index.ts` 공개 export, `validatePipeSpec` 시맨틱 검증, `pipe-serialize` 라운드트립 테스트를 함께 갱신한다.
 - PipeConnection endpoint 확장 패턴: pipe-level 소비자(path/analyze/runtime/simulate 등)는 공용 helper로 endpoint를 `pipeId`만 추출해 유지하고, 구조 변환(fold/unfold)만 원래 endpoint shape(`string` vs `PortRef`)를 보존하도록 분리한다.
 - Pipe metadata 추론 패턴: 명시 필드(`ports`)와 유도 필드(dataContract 기반)가 공존하면 `resolve*()` helper를 두고, validator/consumer가 optional 필드를 직접 읽지 말고 항상 resolver를 거치게 만든다.
@@ -172,4 +173,21 @@ after each iteration and it's included in prompts for context.
   - Gotchas encountered
     - `@qa-sdk/core` 공개 타입은 source가 아니라 `dist/index.d.ts`를 통해 해석되므로, core를 빌드하지 않으면 `PortRef`, `ports`, `facetType`가 이미 소스에 있어도 viz-web 타입체크에서는 없는 것으로 보인다.
     - `PipeAwait.then`은 도메인 스키마의 정식 필드라서 lint의 `unicorn/no-thenable`과 충돌한다. 카탈로그 fixture에서는 해당 줄만 명시적으로 예외 처리해야 changed-file lint가 통과한다.
+---
+
+## 2026-04-02 - US-009
+- What was implemented
+  - `pipe-flow-catalog.spec.md`에 14개 fold topology 분류와 topology별 port 구성 패턴(입력/출력/특이사항) 표를 추가했다.
+  - `pf-*.spec.md` 29개 모두에 `## fold topology` 섹션을 넣어 각 flow kind가 어떤 합성 패턴에 속하는지와 이유를 문서화했다.
+  - `meta-semantic-pipe-impl.spec.md`의 `^method`/위임 설명을 fold topology 관점까지 확장했다.
+- Files changed
+  - `docs/specs/meta-semantic/pipe-impl/pipe-flow-catalog.spec.md`
+  - `docs/specs/meta-semantic/meta-semantic-pipe-impl.spec.md`
+  - `docs/specs/meta-semantic/pipe-impl/flows/pf-*.spec.md` (29 files)
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - Pipe flow taxonomy 문서는 카탈로그 요약, 개별 leaf 설명, 상위 module `^method`가 함께 움직여야 분류 기준이 drift하지 않는다.
+  - Gotchas encountered
+    - 현재 타입 소스에는 `transition-scope`까지 포함되어 30종처럼 보이지만, 이번 story 범위와 leaf 문서 체계는 여전히 29개 `pf-*` 기준이라 추가 문서를 만들지 않고 지정된 집합만 재분류해야 한다.
 ---

@@ -22,6 +22,11 @@ def:
 
 steps 동시 시작, 먼저 완료된 것만. 카테고리: 동시성.
 
+## fold topology
+
+분류: **concurrent**.
+하나의 입력을 여러 `steps`에 동시에 전달하되 가장 먼저 끝난 branch만 승자로 채택한다. fan-out 이후 winner-takes-all join을 수행하는 concurrent topology다.
+
 ## 정의 방식
 
 필드: steps(필수, 2+)

@@ -75,7 +75,8 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 **pipe-interpret**가 관심사 추출·전파·역할 분류를 수행하고,
 **pipe-gate**가 품질 게이트 평가(pass/fail/review)를 수행하고,
 **pipe-fold**가 서브그래프 접기/펼치기 + 경계 계약을 도출하고,
-**pipe-flow-catalog**가 29종 각각의 표현·정의·검증·시각 방식을 문서화하고,
+**pipe-flow-catalog**가 29종 각각의 표현·정의·검증·시각 방식과
+fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 **pipe-svg**가 PipeGraph → SVG/D3 3-레이어 렌더링 파이프라인을 구현한다.
 
 ## 위임 ^delegates
@@ -89,7 +90,7 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 - **pipe-simulate** → 시뮬레이션 + happy path 검증 + 시뮬 결과 드리프트 감지
 - **pipe-interpret** → PipeConcern 8종 추출·BFS 전파·역할 분류·변경 영향 분석
 - **pipe-gate** → 품질 게이트 정의 + 자동 평가 (pass/fail/review)
-- **pipe-flow-catalog** → PipeFlow 29종 각각의 표현·정의·검증 방식 문서화
+- **pipe-flow-catalog** → PipeFlow 29종 각각의 표현·정의·검증 방식 + fold topology/port 합성 패턴 문서화
 - **pipe-connection-catalog** → ConnectionKind 8종 각각의 의미·사용 기준 문서화
 - **pipe-zoom** → 줌 레벨별 시각화 데이터 모델 (뷰·레이아웃·스타일 3 패싯)
 - **pipe-svg** → PipeGraph → SVG/D3 3-레이어 렌더링 (primitives → shapes+tokens → renderer)

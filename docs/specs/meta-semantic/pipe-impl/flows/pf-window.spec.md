@@ -22,6 +22,11 @@ def:
 
 tumbling/sliding/session 구간화. 카테고리: 스트리밍.
 
+## fold topology
+
+분류: **streaming**.
+연속 스트림을 tumbling/sliding/session window로 잘라 각 구간을 `body`에 넘긴다. 무한 입력을 유한한 묶음으로 재구성하는 streaming fold다.
+
 ## 정의 방식
 
 필드: type(필수), size(필수), slide, gap, body(필수)

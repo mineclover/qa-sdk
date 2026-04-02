@@ -22,6 +22,11 @@ def:
 
 N회 실패 → 쿨다운 → 반개방. 카테고리: 안정화.
 
+## fold topology
+
+분류: **resilient**.
+`step` 실행 경로와 차단 상태(open/half-open/closed)를 같은 계약 아래 접어 실패 격리를 숨긴다. 외부에서는 단일 호출처럼 보이지만 내부에는 회복용 우회 판단이 있다.
+
 ## 정의 방식
 
 필드: step(필수), failureThreshold(필수, >0), cooldown(필수)

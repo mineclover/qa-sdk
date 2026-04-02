@@ -22,6 +22,11 @@ def:
 
 하나의 데이터를 여러 항목으로 분할. 카테고리: 데이터변환.
 
+## fold topology
+
+분류: **transformation**.
+하나의 입력 payload를 여러 조각으로 펼친 뒤 각 조각에 `itemFlow`를 적용한다. 1개의 입력이 다수의 의미 단위로 재구성되므로 transformation topology다.
+
 ## 정의 방식
 
 필드: splitBy(필수), itemFlow(필수)

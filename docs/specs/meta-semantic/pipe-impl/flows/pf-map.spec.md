@@ -22,6 +22,11 @@ def:
 
 collection 각 항목에 itemFlow 적용. 카테고리: 배치.
 
+## fold topology
+
+분류: **batch**.
+컬렉션 하나를 여러 item 단위 실행으로 펼쳤다가 다시 결과 집합으로 접는다. 내부 fan-out은 N개지만 외부 인터페이스는 collection ingress/egress 한 쌍으로 유지된다.
+
 ## 정의 방식
 
 필드: itemFlow(필수), collection(필수), concurrency

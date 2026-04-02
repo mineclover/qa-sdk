@@ -22,6 +22,11 @@ def:
 
 흐름에 영향 없이 관측. 카테고리: 관측.
 
+## fold topology
+
+분류: **observational**.
+`step`의 주 경로를 유지한 채 `observe`를 옆으로 덧붙이는 sidecar 합성이다. 관측 branch는 결과를 바꾸지 않으므로 observational topology로 분류한다.
+
 ## 정의 방식
 
 필드: observe(필수), step(필수)

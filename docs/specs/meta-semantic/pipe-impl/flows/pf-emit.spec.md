@@ -22,6 +22,11 @@ def:
 
 결과 안 기다리고 이벤트 발행. 카테고리: 비동기.
 
+## fold topology
+
+분류: **signaling**.
+실행의 핵심이 하위 패싯 합성이 아니라 `eventKey` 방출 그 자체다. 입력이 있으면 payload로 투영하고, 없더라도 독립 신호를 생성할 수 있는 topology다.
+
 ## 정의 방식
 
 필드: eventKey(필수), payload

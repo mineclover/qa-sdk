@@ -22,6 +22,11 @@ def:
 
 종료 조건 충족까지 body 반복. 카테고리: 반복.
 
+## fold topology
+
+분류: **iterative**.
+`body` 결과를 다시 같은 흐름의 입력으로 되먹임해 `until`까지 반복한다. 반복 횟수보다 수렴 규칙이 중요하므로 back-edge 중심의 iterative fold다.
+
 ## 정의 방식
 
 필드: body(필수), until(필수), maxIterations(권장)

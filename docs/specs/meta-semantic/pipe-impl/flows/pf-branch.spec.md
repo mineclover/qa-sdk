@@ -22,6 +22,11 @@ def:
 
 조건에 따라 하나의 경로만 실행. 카테고리: 분기.
 
+## fold topology
+
+분류: **conditional**.
+`condition`이 하나의 입력을 여러 `paths` 중 하나로 분기한 뒤 선택된 결과만 외부로 노출한다. 내부 분기 수는 늘어나도 파이프 경계는 단일 ingress/egress를 유지한다.
+
 ## 정의 방식
 
 필드: condition(필수), paths(필수, 2+)
