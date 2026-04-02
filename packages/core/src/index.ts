@@ -176,6 +176,33 @@ export {
   type TestCase, type TestTarget, type TestExpectation, type TestSuite, type TestResult,
   type FacetQualityMetrics, type PipeQualityMetrics,
   buildTestAddress, parseTestAddress, TestRegistry,
+  // mermaid
+  pipeGraphToMermaid, zoomViewToMermaid, type MermaidOptions,
+  // svg primitives
+  svgRect, svgCircle, svgPolygon, svgLine, svgPath, svgText, svgGroup, svgSvg,
+  svgMarker, svgDefs, bezierH, arcAbove,
+  svgR, svgEscapeXml, svgEscapeAttr,
+  type SvgAttrs, type SvgMarkerDef,
+  // svg shapes + tokens
+  ROLE_TOKENS, CERTAINTY_STROKE_DASH, CONCERN_TOKENS, EDGE_TOKENS,
+  renderMarkerDefs,
+  drawNodeShape, drawFoldedNode, drawEntryMarker,
+  drawConcernBadges, drawNodeLabel, drawFoldedCount,
+  drawEdgePath, drawConditionBadge,
+  standaloneNodeSvg, standaloneEdgeSvg,
+  type RoleTokens, type ConcernTokens, type EdgeTokens,
+  type NodeShapeOptions, type EdgePathOptions,
+  type StandaloneNodeOptions, type StandaloneEdgeOptions,
+  // svg / d3
+  pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3,
+  type SvgOptions, type D3Node, type D3Link, type D3GraphData,
+  // definition bridge
+  resolveLifecycles, analyzeLayerPropagation, resolveTags,
+  type PipeDefLifecycle, type PipeDefLayer,
+  type DefinitionMeta, type DefinitionLookup,
+  type PipeLifecycleInfo, type LayerPropagation, type PipeTagInfo,
+  // segment detection
+  detectPathSegments, type DetectedSegments, type SegmentReason,
 } from "./pipe/index.js";
 
 // ═══════════════════════════════════════════════════════
