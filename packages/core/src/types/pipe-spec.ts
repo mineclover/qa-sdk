@@ -9,6 +9,12 @@ export interface PipePort {
   required?: boolean;
 }
 
+/** 파이프 또는 특정 포트를 가리키는 연결 참조 */
+export interface PortRef {
+  pipeId: string;
+  portId?: string;
+}
+
 export interface PipeSpec {
   /** 파이프 노드 ID (그래프 내 유일) */
   pipeId: string;
@@ -57,9 +63,10 @@ export interface PipeGraph {
 
 /** 파이프 간 연결 (N:M 지원) */
 export interface PipeConnection {
-  from: string | string[];
-  to: string | string[];
+  from: string | string[] | PortRef | PortRef[];
+  to: string | string[] | PortRef | PortRef[];
   kind: ConnectionKind;
+  facetType?: string;
   condition?: string;
 }
 

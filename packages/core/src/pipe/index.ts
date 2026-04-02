@@ -1,6 +1,6 @@
 // ── Pipe Types ────────────────────────────────────────
 export type {
-  PipePort, PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
+  PipePort, PortRef, PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
   PipeFlow, PipeStep, PipeSequence, PipeBranch, PipeOptional,
   PipeParallel, PipeRace, PipeAwait, PipeRetry, PipeFallback,
   PipeLoop, PipeCompensate, PipeEmit, PipeFinally, PipeTimeout, PipeFeedback,

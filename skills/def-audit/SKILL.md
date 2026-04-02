@@ -101,14 +101,29 @@ contains 계층이 4단계를 초과하면 warning.
 
 무엇 + 왜 + 범위.
 
+## 자기 증명 점검
+
+leaf 문서는 자기 존재를 증명할 수 있어야 한다:
+
+- `^purpose`, `^defines`, `^consumes` 마커가 규칙에 맞게 작성되었는가
+- 구현 코드 참조(`패키지/src/파일.ts`)가 있는가
+- 테스트 코드 참조(`패키지/src/파일.test.ts:라인`)가 있는가
+
+상위 문서(module/group)는 하위를 빠짐없이 담는가:
+- `contains` 링크가 실제 하위 문서와 1:1 대응하는가
+- `^overview`에서 각 하위 문서의 역할을 요약하는가
+
+과편화는 상관없다 — 패싯이 다르면 줄 수와 무관하게 분할한다.
+
 ## 빠른 합격선
 
-문서 품질을 빠르게 올릴 때는 아래 4개를 우선 맞춘다.
+문서 품질을 빠르게 올릴 때는 아래 5개를 우선 맞춘다.
 
 1. `^purpose` 30자 이상
 2. authored links 1개 이상
 3. tags 2~5개
-4. `def validate`, `def audit-db` 모두 이슈 0
+4. leaf에 구현/테스트 코드 참조 존재
+5. `def validate`, `def audit-db` 모두 이슈 0
 
 ## 검증 이슈 유형
 
@@ -125,6 +140,7 @@ contains 계층이 4단계를 초과하면 warning.
 | level-no-children | error | group/module인데 contains 자식 없음 |
 | leaf-has-children | error | leaf인데 contains 자식 있음 |
 | leaf-too-long | warning | leaf 150줄 초과 → 분할 검토 |
+| leaf-no-impl-ref | warning | leaf에 구현/테스트 코드 참조 없음 → 자기 증명 부재 |
 
 ## 판단 원칙 (meta-semantic 기반)
 

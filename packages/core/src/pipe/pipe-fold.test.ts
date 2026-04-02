@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions } from "./pipe-fold.js";
+import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions, normalize as normalizeEndpoint } from "./pipe-fold.js";
 import { countGraphPaths } from "./pipe-path.js";
 import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "../types/pipe-spec.js";
 
@@ -20,6 +20,15 @@ function makePipe(id: string, overrides?: Partial<PipeSpec>): PipeSpec {
 function conn(from: string, to: string, kind: PipeConnection["kind"] = "next"): PipeConnection {
   return { from, to, kind };
 }
+
+describe("normalize", () => {
+  it("PortRef[]를 pipeId[]로 정규화한다", () => {
+    expect(normalizeEndpoint([
+      { pipeId: "A", portId: "payment_result" },
+      { pipeId: "B", portId: "payment_input" },
+    ])).toEqual(["A", "B"]);
+  });
+});
 
 // ── 픽스처 그래프 ─────────────────────────────────────
 

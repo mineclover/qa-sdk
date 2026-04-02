@@ -2,7 +2,8 @@
  * PipeSpec / PipeGraph 구조 검증
  */
 
-import type { PipeFlow, PipeSpec, PipeGraph } from "../types/pipe-spec.js";
+import type { PipeFlow, PipeSpec, PipeGraph, PortRef } from "../types/pipe-spec.js";
+import { isPortRef, normalizeEndpointPipeIds, toEndpointArray } from "./pipe-endpoint.js";
 
 export interface ValidationIssue {
   path: string;
@@ -276,6 +277,7 @@ function validateFlow(flow: PipeFlow, path: string, issues: ValidationIssue[], d
 export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const pipeIds = new Set(graph.pipes.map(p => p.pipeId));
+  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
 
   // 진입점 존재 확인
   if (!pipeIds.has(graph.entryPipeId)) {
@@ -302,8 +304,10 @@ export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
   // 연결 검증
   for (let i = 0; i < graph.connections.length; i++) {
     const conn = graph.connections[i];
-    const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
-    const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+    const fromValues = toEndpointArray(conn.from);
+    const toValues = toEndpointArray(conn.to);
+    const froms = normalizeEndpointPipeIds(conn.from);
+    const tos = normalizeEndpointPipeIds(conn.to);
 
     // 빈 배열 검증
     if (froms.length === 0) {
@@ -313,16 +317,12 @@ export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
       issues.push({ path: `connections[${i}].to`, severity: "warning", message: "to 배열이 비어있음" });
     }
 
-    for (const f of froms) {
-      if (!pipeIds.has(f)) {
-        issues.push({ path: `connections[${i}].from`, severity: "error", message: `pipeId "${f}" 없음` });
-      }
-    }
-    for (const t of tos) {
-      if (!pipeIds.has(t)) {
-        issues.push({ path: `connections[${i}].to`, severity: "error", message: `pipeId "${t}" 없음` });
-      }
-    }
+    fromValues.forEach((value, index) => {
+      validateConnectionEndpoint(value, `connections[${i}].from`, Array.isArray(conn.from), index, pipeIds, pipeMap, issues);
+    });
+    toValues.forEach((value, index) => {
+      validateConnectionEndpoint(value, `connections[${i}].to`, Array.isArray(conn.to), index, pipeIds, pipeMap, issues);
+    });
 
     // fan-out인데 to가 단일
     if (conn.kind === "fan-out" && tos.length <= 1) {
@@ -341,9 +341,9 @@ export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
     if (reachable.has(pipeId)) return;
     reachable.add(pipeId);
     for (const conn of graph.connections) {
-      const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
+      const froms = normalizeEndpointPipeIds(conn.from);
       if (froms.includes(pipeId)) {
-        const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+        const tos = normalizeEndpointPipeIds(conn.to);
         for (const t of tos) walkReachable(t);
       }
     }
@@ -357,4 +357,52 @@ export function validatePipeGraph(graph: PipeGraph): ValidationIssue[] {
   }
 
   return issues;
+}
+
+function validateConnectionEndpoint(
+  endpoint: string | PortRef,
+  path: string,
+  isArray: boolean,
+  index: number,
+  pipeIds: Set<string>,
+  pipeMap: Map<string, PipeSpec>,
+  issues: ValidationIssue[],
+): void {
+  if (!isPortRef(endpoint)) {
+    if (!pipeIds.has(endpoint)) {
+      issues.push({ path: endpointValuePath(path, isArray, index), severity: "error", message: `pipeId "${endpoint}" 없음` });
+    }
+    return;
+  }
+
+  if (!pipeIds.has(endpoint.pipeId)) {
+    issues.push({
+      path: endpointValuePath(path, isArray, index, "pipeId"),
+      severity: "error",
+      message: `pipeId "${endpoint.pipeId}" 없음`,
+    });
+    return;
+  }
+
+  if (endpoint.portId == null) return;
+
+  const pipe = pipeMap.get(endpoint.pipeId);
+  const hasPort = pipe?.ports?.some(port => port.portId === endpoint.portId) ?? false;
+  if (!hasPort) {
+    issues.push({
+      path: endpointValuePath(path, isArray, index, "portId"),
+      severity: "error",
+      message: `pipe "${endpoint.pipeId}"에 portId "${endpoint.portId}" 없음`,
+    });
+  }
+}
+
+function endpointValuePath(
+  path: string,
+  isArray: boolean,
+  index: number,
+  field?: keyof PortRef,
+): string {
+  const base = isArray ? `${path}[${index}]` : path;
+  return field ? `${base}.${field}` : base;
 }

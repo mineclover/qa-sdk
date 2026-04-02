@@ -11,6 +11,7 @@ import type {
   StepExecutor, ExecutedStep, RunResult,
 } from "../types/pipe-runtime.js";
 import type { PipeFlow, PipeSpec, PipeGraph } from "../types/pipe-spec.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── ConditionEvaluator ───────────────────────────────
 
@@ -284,10 +285,10 @@ export class PipeRunner {
 
         // 연결 따라가기
         for (const conn of graph.connections) {
-          const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
+          const froms = normalizeEndpointPipeIds(conn.from);
           if (!froms.includes(pipe.pipeId)) continue;
 
-          const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+          const tos = normalizeEndpointPipeIds(conn.to);
           if (conn.kind === "next" || conn.kind === "fan-out" || conn.kind === "join") {
             for (const to of tos) {
               const toPipe = pipeMap.get(to);

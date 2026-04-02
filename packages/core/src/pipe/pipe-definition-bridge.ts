@@ -9,6 +9,7 @@ import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";
 import type { DataObjectBinding } from "../data-object/types.js";
 import { BindingRegistry } from "../data-object/registry.js";
 import { collectFlowSteps } from "./pipe-fold.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── definition metadata 타입 (definition-catalog 호환) ──
 
@@ -100,8 +101,8 @@ export function analyzeLayerPropagation(
 
   // 연결을 따라 layer 전파 확인
   for (const conn of graph.connections) {
-    const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
-    const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+    const froms = normalizeEndpointPipeIds(conn.from);
+    const tos = normalizeEndpointPipeIds(conn.to);
 
     for (const from of froms) {
       const sourceLayer = layerMap.get(from);

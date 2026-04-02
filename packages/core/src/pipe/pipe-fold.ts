@@ -11,6 +11,7 @@ import type {
 } from "../types/pipe-spec.js";
 import { countGraphPaths } from "./pipe-path.js";
 import { getChildFlows } from "./pipe-analyze.js";
+import { endpointIdentity, isPortRef, normalizeEndpointPipeIds, toEndpointArray } from "./pipe-endpoint.js";
 
 // ── 타입 정의 ─────────────────────────────────────────
 
@@ -99,9 +100,37 @@ export interface FoldRegion {
 
 // ── 내부 헬퍼 ─────────────────────────────────────────
 
-/** from/to 정규화 (string | string[] → string[]) */
-export function normalize(endpoint: string | string[]): string[] {
-  return Array.isArray(endpoint) ? endpoint : [endpoint];
+/** from/to 정규화 (pipe-level 비교용: PortRef → pipeId) */
+export function normalize(endpoint: PipeConnection["from"]): string[] {
+  return normalizeEndpointPipeIds(endpoint);
+}
+
+function rebuildEndpoint(
+  source: PipeConnection["from"],
+  values: Array<string | { pipeId: string; portId?: string }>,
+): PipeConnection["from"] {
+  if (Array.isArray(source)) {
+    if (source.every(value => isPortRef(value))) {
+      return values.map(value => isPortRef(value) ? value : { pipeId: value });
+    }
+    return values.map(value => isPortRef(value) ? value.pipeId : value);
+  }
+
+  const [first] = values;
+  if (isPortRef(source)) {
+    return isPortRef(first) ? first : { pipeId: first };
+  }
+  return isPortRef(first) ? first.pipeId : first;
+}
+
+function dedupeEndpointValues(values: Array<string | { pipeId: string; portId?: string }>): Array<string | { pipeId: string; portId?: string }> {
+  const seen = new Set<string>();
+  return values.filter(value => {
+    const key = endpointIdentity(value);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** PipeFlow 트리에서 모든 PipeStep 수집 */
@@ -209,13 +238,15 @@ function buildSubgraph(graph: PipeGraph, pipeIds: string[], entryPipeId: string)
 
 /** 연결의 endpoint를 교체 */
 function rewireEndpoint(
-  endpoint: string | string[],
+  endpoint: PipeConnection["from"],
   pipeSet: Set<string>,
   replacementId: string,
-): string | string[] {
-  const arr = normalize(endpoint);
-  const rewired = [...new Set(arr.map(id => pipeSet.has(id) ? replacementId : id))];
-  return rewired.length === 1 ? rewired[0] : rewired;
+): PipeConnection["from"] {
+  const rewired = toEndpointArray(endpoint).map(value => {
+    const pipeId = isPortRef(value) ? value.pipeId : value;
+    return pipeSet.has(pipeId) ? replacementId : value;
+  });
+  return rebuildEndpoint(endpoint, dedupeEndpointValues(rewired));
 }
 
 // ── 핵심 함수 ─────────────────────────────────────────
@@ -403,6 +434,7 @@ export function foldSubgraph(
         from: rewireEndpoint(conn.from, pipeSet, resolvedFoldId),
         to: rewireEndpoint(conn.to, pipeSet, resolvedFoldId),
         kind: conn.kind,
+        ...(conn.facetType ? { facetType: conn.facetType } : {}),
         ...(conn.condition ? { condition: conn.condition } : {}),
       });
     } else {
@@ -413,7 +445,7 @@ export function foldSubgraph(
 
   // 재배선 중복 제거 (같은 from+to+kind)
   const connKey = (c: PipeConnection) =>
-    `${JSON.stringify(normalize(c.from).sort())}→${JSON.stringify(normalize(c.to).sort())}:${c.kind}`;
+    `${JSON.stringify(toEndpointArray(c.from).map(endpointIdentity).sort())}→${JSON.stringify(toEndpointArray(c.to).map(endpointIdentity).sort())}:${c.kind}`;
   const seen = new Set<string>();
   const dedupedConnections = rewiredConnections.filter(c => {
     const key = connKey(c);
@@ -528,6 +560,7 @@ export function unfoldNode(
           from: conn.from,
           to: replaceInEndpoint(conn.to, foldedNodeId, entryId),
           kind: conn.kind,
+          ...(conn.facetType ? { facetType: conn.facetType } : {}),
           ...(conn.condition ? { condition: conn.condition } : {}),
         });
       }
@@ -538,6 +571,7 @@ export function unfoldNode(
           from: replaceInEndpoint(conn.from, foldedNodeId, exitId),
           to: conn.to,
           kind: conn.kind,
+          ...(conn.facetType ? { facetType: conn.facetType } : {}),
           ...(conn.condition ? { condition: conn.condition } : {}),
         });
       }
@@ -566,13 +600,17 @@ export function unfoldNode(
 
 /** endpoint 내 특정 ID를 교체 */
 function replaceInEndpoint(
-  endpoint: string | string[],
+  endpoint: PipeConnection["from"],
   oldId: string,
   newId: string,
-): string | string[] {
-  const arr = normalize(endpoint);
-  const replaced = arr.map(id => id === oldId ? newId : id);
-  return replaced.length === 1 ? replaced[0] : replaced;
+): PipeConnection["from"] {
+  const replaced = toEndpointArray(endpoint).map(value => {
+    if (isPortRef(value)) {
+      return value.pipeId === oldId ? { ...value, pipeId: newId } : value;
+    }
+    return value === oldId ? newId : value;
+  });
+  return rebuildEndpoint(endpoint, replaced);
 }
 
 /**

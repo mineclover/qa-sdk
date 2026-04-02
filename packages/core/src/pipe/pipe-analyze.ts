@@ -4,6 +4,7 @@
 
 import type { PipeFlow, PipeSpec, PipeGraph } from "../types/pipe-spec.js";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── 복잡도 메트릭 ────────────────────────────────────
 
@@ -104,8 +105,8 @@ export function findBottlenecks(
   }
 
   for (const conn of graph.connections) {
-    const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
-    const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+    const froms = normalizeEndpointPipeIds(conn.from);
+    const tos = normalizeEndpointPipeIds(conn.to);
     for (const f of froms) fanOutCount[f] = (fanOutCount[f] ?? 0) + tos.length;
     for (const t of tos) fanInCount[t] = (fanInCount[t] ?? 0) + froms.length;
   }

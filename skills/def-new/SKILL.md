@@ -87,6 +87,26 @@ qa-sdk def find-by-file <관련 코드 경로[:symbol]>
 - 코드 파일 안에는 `@def.boundary <group-or-module-doc-id>[#symbol]` 또는 `@def.doc <module-or-leaf-doc-id>[#symbol]` 주석을 붙일 수 있다.
 - 그런 뒤 `qa-sdk def sync`로 DB의 `code_references`를 갱신하고 `def find-by-file <관련 코드 경로[:symbol]>`로 확인한다.
 
+## 자기 증명 원칙
+
+모든 문서는 자기 존재를 증명할 수 있어야 한다:
+
+- **상위 문서 (module/group)**: 하위 문서를 빠짐없이 담는다 (`contains` 링크 + `^overview` 요약)
+- **하위 문서 (leaf)**: 자기 자신에 대한 정의를 마커 규칙에 맞게 관리하고, 구현 코드와 테스트 코드 참조를 포함한다
+
+leaf 문서에 `## 구현 참조` 섹션을 권장한다:
+
+```markdown
+## 구현 참조
+
+- 구현: `패키지/src/파일.ts` — 핵심 함수/타입
+- 테스트 (`패키지/src/파일.test.ts`):
+  - 시나리오 설명: `:<라인번호>`
+  - 시나리오 설명: `:<라인번호>`
+```
+
+인라인 코드 예시보다 테스트 코드 참조를 우선한다 — 테스트가 살아있는 예시이고, 코드와 동기화가 보장된다.
+
 ## 판단 원칙 (meta-semantic 기반)
 
 > 상세: `ms-concept-five-roles`, `ms-concept-boundary` 참조

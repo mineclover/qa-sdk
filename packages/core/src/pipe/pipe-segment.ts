@@ -12,6 +12,7 @@
 import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
 import type { PathSegment, EventTransition, BranchRoute } from "../catalog/catalog.types.js";
 import { chainSegments } from "../catalog/path-summation.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 /** 도출 결과 */
 export interface DetectedSegments {
@@ -50,7 +51,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     outgoing.set(pipe.pipeId, []);
   }
   for (const conn of graph.connections) {
-    const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
+    const froms = normalizeEndpointPipeIds(conn.from);
     for (const f of froms) {
       outgoing.get(f)?.push(conn);
     }
@@ -78,7 +79,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
       const nextConns = conns.filter(c => c.kind === "next");
 
       if (nextConns.length === 1) {
-        const tos = Array.isArray(nextConns[0].to) ? nextConns[0].to : [nextConns[0].to];
+        const tos = normalizeEndpointPipeIds(nextConns[0].to);
         if (tos.length === 1 && !visited.has(tos[0])) {
           current = tos[0];
           continue;
@@ -101,7 +102,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
       visited.add(pipeId);
 
       for (const cond of conditionals) {
-        const tos = Array.isArray(cond.to) ? cond.to : [cond.to];
+        const tos = normalizeEndpointPipeIds(cond.to);
         for (const to of tos) {
           const branchChain = walkChain(to);
           const segId = `branch_${pipeId}_${to}`;
@@ -132,7 +133,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
       // 비-conditional 연결도 처리
       for (const c of conns) {
         if (c.kind !== "conditional" && c.kind !== "feedback") {
-          const tos = Array.isArray(c.to) ? c.to : [c.to];
+          const tos = normalizeEndpointPipeIds(c.to);
           for (const to of tos) processNode(to);
         }
       }
@@ -145,7 +146,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
       visited.add(pipeId);
 
       for (const fo of fanouts) {
-        const tos = Array.isArray(fo.to) ? fo.to : [fo.to];
+        const tos = normalizeEndpointPipeIds(fo.to);
         for (const to of tos) {
           const chain = walkChain(to);
           const segId = `fanout_${pipeId}_${to}`;
@@ -197,7 +198,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     const conns = out.get(lastId) ?? [];
     for (const c of conns) {
       if (c.kind === "feedback") continue;
-      const tos = Array.isArray(c.to) ? c.to : [c.to];
+      const tos = normalizeEndpointPipeIds(c.to);
       for (const to of tos) processNode(to);
     }
   }
@@ -219,7 +220,7 @@ function findEventTransition(
   const conns = outgoing.get(pipeId) ?? [];
   for (const c of conns) {
     if (c.kind === "event") {
-      const tos = Array.isArray(c.to) ? c.to : [c.to];
+      const tos = normalizeEndpointPipeIds(c.to);
       const toPipe = pipeMap.get(tos[0]);
       if (toPipe) {
         return { eventKey: toPipe.trigger.eventKey };

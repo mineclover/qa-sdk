@@ -41,21 +41,32 @@ export function deserializePipeSpec(json: string): PipeSpec {
 
 /** PipeGraph → JSON 문자열 */
 export function serializePipeGraph(graph: PipeGraph): string {
-  return JSON.stringify(graph, null, 2);
+  return JSON.stringify(
+    {
+      ...graph,
+      connections: graph.connections,
+    },
+    null,
+    2,
+  );
 }
 
 /** JSON 문자열 → PipeGraph (검증 포함) */
 export function deserializePipeGraph(json: string): PipeGraph {
   const parsed = JSON.parse(json) as PipeGraph;
-  if (!parsed.graphId || !parsed.pipes || !parsed.entryPipeId) {
+  const normalized: PipeGraph = {
+    ...parsed,
+    connections: parsed.connections,
+  };
+  if (!normalized.graphId || !normalized.pipes || !normalized.entryPipeId) {
     throw new Error("유효하지 않은 PipeGraph: graphId, pipes, 또는 entryPipeId 누락");
   }
-  const issues = validatePipeGraph(parsed);
+  const issues = validatePipeGraph(normalized);
   const errors = issues.filter(i => i.severity === "error");
   if (errors.length > 0) {
     throw new Error(
       `PipeGraph 검증 실패 (${errors.length}건):\n${errors.map(e => `  ${e.path}: ${e.message}`).join("\n")}`,
     );
   }
-  return parsed;
+  return normalized;
 }

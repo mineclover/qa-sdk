@@ -10,6 +10,7 @@ import type { PipeConcern, PipeRole, PipeConcernMap, PipeImpactAnalysis } from "
 import { extractPipeConcerns, propagatePipeConcerns, analyzePipeImpact, classifyPipeRole } from "./pipe-interpret.js";
 import { countGraphPaths } from "./pipe-path.js";
 import { analyzePipeComplexity } from "./pipe-analyze.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── 타입 정의 ─────────────────────────────────────────
 
@@ -219,8 +220,8 @@ function evaluateCriterion(
     case "no-isolated-pipes": {
       const connected = new Set<string>();
       for (const conn of graph.connections) {
-        const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
-        const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+        const froms = normalizeEndpointPipeIds(conn.from);
+        const tos = normalizeEndpointPipeIds(conn.to);
         froms.forEach(f => connected.add(f));
         tos.forEach(t => connected.add(t));
       }

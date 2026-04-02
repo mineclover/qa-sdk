@@ -8,6 +8,7 @@
 import type {
   PipeFlow, PipeSpec, PipeGraph, PipeConnection,
 } from "../types/pipe-spec.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── 설정 ─────────────────────────────────────────────
 
@@ -390,12 +391,12 @@ export function simulate(config: SimulationConfig): SimulationResult {
 
   function followConnections(fromPipeId: string, _event: SimEvent): void {
     const outgoing = graph.connections.filter(c => {
-      const froms = Array.isArray(c.from) ? c.from : [c.from];
+      const froms = normalizeEndpointPipeIds(c.from);
       return froms.includes(fromPipeId);
     });
 
     for (const conn of outgoing) {
-      const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+      const tos = normalizeEndpointPipeIds(conn.to);
 
       switch (conn.kind) {
         case "next":

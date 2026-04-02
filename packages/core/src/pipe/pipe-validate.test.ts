@@ -179,3 +179,70 @@ describe("validatePipeGraph — 빈 배열 연결 검증", () => {
     expect(w!.severity).toBe("warning");
   });
 });
+
+describe("validatePipeGraph — PortRef 검증", () => {
+  const sourcePipe: PipeSpec = {
+    pipeId: "source",
+    version: "v1",
+    trigger: { eventKey: "source.started" },
+    flow: step(),
+    ports: [
+      { portId: "payment_result", direction: "out", facetType: "payment.result" },
+    ],
+  };
+
+  const targetPipe: PipeSpec = {
+    pipeId: "target",
+    version: "v1",
+    trigger: { eventKey: "target.started" },
+    flow: step(),
+    ports: [
+      { portId: "payment_input", direction: "in", facetType: "payment.result" },
+    ],
+  };
+
+  it("존재하지 않는 portId → error", () => {
+    const graph: PipeGraph = {
+      graphId: "g-port-invalid",
+      version: "v1",
+      pipes: [sourcePipe, targetPipe],
+      connections: [{
+        from: { pipeId: "source", portId: "missing" },
+        to: { pipeId: "target", portId: "payment_input" },
+        kind: "event",
+      }],
+      entryPipeId: "source",
+    };
+
+    const issues = validatePipeGraph(graph);
+    const error = issues.find(i => i.path === "connections[0].from.portId");
+    expect(error).toBeDefined();
+    expect(error!.severity).toBe("error");
+    expect(error!.message).toContain("portId \"missing\"");
+  });
+
+  it("존재하는 PortRef + string 연결은 모두 허용", () => {
+    const graph: PipeGraph = {
+      graphId: "g-port-valid",
+      version: "v1",
+      pipes: [sourcePipe, targetPipe],
+      connections: [
+        {
+          from: { pipeId: "source", portId: "payment_result" },
+          to: { pipeId: "target", portId: "payment_input" },
+          kind: "event",
+          facetType: "payment.result",
+        },
+        {
+          from: "source",
+          to: "target",
+          kind: "next",
+        },
+      ],
+      entryPipeId: "source",
+    };
+
+    const issues = validatePipeGraph(graph);
+    expect(issues.find(i => i.severity === "error")).toBeUndefined();
+  });
+});

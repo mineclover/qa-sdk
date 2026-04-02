@@ -8,6 +8,7 @@
  */
 
 import type { PipeFlow, PipeGraph } from "../types/pipe-spec.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 /** 단일 파이프의 내부 흐름에서 도달 가능한 경로 수 */
 export function countPipePaths(flow: PipeFlow): number {
@@ -123,7 +124,7 @@ export function countGraphPaths(graph: PipeGraph): number {
 
     // 이 파이프에서 나가는 연결들
     const outgoing = graph.connections.filter(c => {
-      const froms = Array.isArray(c.from) ? c.from : [c.from];
+      const froms = normalizeEndpointPipeIds(c.from);
       return froms.includes(pipeId);
     });
 
@@ -131,7 +132,7 @@ export function countGraphPaths(graph: PipeGraph): number {
 
     let totalOutgoing = 0;
     for (const conn of outgoing) {
-      const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+      const tos = normalizeEndpointPipeIds(conn.to);
 
       switch (conn.kind) {
         case "next":

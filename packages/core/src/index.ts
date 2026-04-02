@@ -107,7 +107,7 @@ export type { MetricRollupStore, MetricRollupInsert, StoredMetricRollup, MetricR
 
 export {
   // types
-  type PipePort, type PipeSpec, type PipeGraph, type PipeConnection, type ConnectionKind,
+  type PipePort, type PortRef, type PipeSpec, type PipeGraph, type PipeConnection, type ConnectionKind,
   type PipeFlow, type PipeStep, type PipeSequence, type PipeBranch, type PipeOptional,
   type PipeParallel, type PipeRace, type PipeAwait, type PipeRetry, type PipeFallback,
   type PipeLoop, type PipeCompensate, type PipeEmit, type PipeFinally, type PipeTimeout, type PipeFeedback,

@@ -8,6 +8,7 @@
 
 import type { PipeGraph, PipeSpec } from "../types/pipe-spec.js";
 import type { RunResult, ExecutedStep } from "../types/pipe-runtime.js";
+import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
 
 // ── 매칭 결과 ────────────────────────────────────────
 
@@ -153,9 +154,9 @@ function getReachablePipes(graph: PipeGraph): Set<string> {
 
     // connections에서 나가는 연결 탐색
     for (const conn of graph.connections) {
-      const froms = Array.isArray(conn.from) ? conn.from : [conn.from];
+      const froms = normalizeEndpointPipeIds(conn.from);
       if (froms.includes(pipeId)) {
-        const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
+        const tos = normalizeEndpointPipeIds(conn.to);
         for (const to of tos) walk(to);
       }
     }
