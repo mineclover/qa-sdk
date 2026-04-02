@@ -356,6 +356,10 @@ export type {
 export type { MatchResult as PathMatchResult } from "./path-matcher.js";
 export { matchPath } from "./path-matcher.js";
 
+// ── Verdict v2 ──────────────────────────────────────────
+export { computeVerdictV2 } from "./verdict-v2.js";
+export type { VerdictV2, FacetCoverage, VerdictReportV2 } from "./verdict-v2.js";
+
 // ── Test Tracking ───────────────────────────────────────
 export type {
   TestCase, TestTarget, TestExpectation, TestSuite, TestResult,

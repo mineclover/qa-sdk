@@ -153,6 +153,9 @@ export function generateTrackCode(
   // 매핑이 있는 이벤트만 track 함수 생성 (매핑 없으면 prefix 바인딩 불가)
   const trackableEvents = events.filter(e => mappingSet.has(e.event_key));
   const sorted = [...trackableEvents].sort((a, b) => a.event_key.localeCompare(b.event_key));
+  const sortedMappings = [...mappings]
+    .filter(m => trackableEvents.some(e => e.event_key === m.event_key))
+    .sort((a, b) => a.event_key.localeCompare(b.event_key));
 
   // 카테고리 그룹
   const categories = new Map<string, EventDef[]>();
@@ -165,6 +168,7 @@ export function generateTrackCode(
   const files: TrackCodegenFile[] = [
     { path: "event-keys.ts", content: genEventKeys(h, sorted, categories) },
     { path: "event-payloads.ts", content: genEventPayloads(h, sorted, guideMap) },
+    { path: "event-mappings.ts", content: genEventMappings(h, sortedMappings) },
     { path: "track-functions.ts", content: genTrackFunctions(h, sorted, guideMap, options) },
     { path: "index.ts", content: genIndex(h, sorted) },
   ];
@@ -266,7 +270,8 @@ function genTrackFunctions(
   const lines: string[] = [h];
 
   // import 선언
-  lines.push(`import type { EventKey, EventPayloadMap } from "./event-payloads.js";`);
+  lines.push(`import type { EventKey } from "./event-keys.js";`);
+  lines.push(`import type { EventPayloadMap } from "./event-payloads.js";`);
   lines.push(``);
 
   // Tracker 인터페이스 (event-catalog 비의존)
@@ -304,6 +309,81 @@ function genTrackFunctions(
   return lines.join("\n") + "\n";
 }
 
+// ── event-mappings.ts ─────────────────────────────────
+
+function genEventMappings(
+  h: string,
+  mappings: EventMapping[],
+): string {
+  const lines: string[] = [h];
+
+  lines.push(`import type { EventKey } from "./event-keys.js";`);
+  lines.push(``);
+
+  // DimSource 타입 (인라인 — event-catalog 비의존)
+  lines.push(`export type DimSource =`);
+  lines.push(`  | { kind: "fixed"; value: string }`);
+  lines.push(`  | { kind: "context"; contextKey: string }`);
+  lines.push(`  | { kind: "payload"; payloadKey: string; fallback?: string };`);
+  lines.push(``);
+
+  lines.push(`export interface PrefixDimMapping {`);
+  lines.push(`  prefixId: string;`);
+  lines.push(`  dims: Record<string, DimSource>;`);
+  lines.push(`  condition?: string;`);
+  lines.push(`}`);
+  lines.push(``);
+
+  lines.push(`export interface EventMappingEntry {`);
+  lines.push(`  event_key: EventKey;`);
+  lines.push(`  domain: string;`);
+  lines.push(`  prefixes: readonly PrefixDimMapping[];`);
+  lines.push(`}`);
+  lines.push(``);
+
+  // 매핑 데이터
+  lines.push(`/** 이벤트별 prefix 매핑 — createAutoTracker에 전달 가능 */`);
+  lines.push(`export const EVENT_MAPPINGS: readonly EventMappingEntry[] = [`);
+
+  for (const m of mappings) {
+    lines.push(`  {`);
+    lines.push(`    event_key: "${m.event_key}",`);
+    lines.push(`    domain: "${m.domain}",`);
+    lines.push(`    prefixes: [`);
+
+    for (const p of m.prefixes) {
+      lines.push(`      {`);
+      lines.push(`        prefixId: "${p.prefixId}",`);
+      if (p.condition) {
+        lines.push(`        condition: "${p.condition}",`);
+      }
+      lines.push(`        dims: {`);
+
+      for (const [dimLabel, source] of Object.entries(p.dims)) {
+        const src = source as { kind: string; value?: string; contextKey?: string; payloadKey?: string; fallback?: string };
+        if (src.kind === "fixed") {
+          lines.push(`          ${dimLabel}: { kind: "fixed", value: "${src.value}" },`);
+        } else if (src.kind === "context") {
+          lines.push(`          ${dimLabel}: { kind: "context", contextKey: "${src.contextKey}" },`);
+        } else if (src.kind === "payload") {
+          const fb = src.fallback ? `, fallback: "${src.fallback}"` : "";
+          lines.push(`          ${dimLabel}: { kind: "payload", payloadKey: "${src.payloadKey}"${fb} },`);
+        }
+      }
+
+      lines.push(`        },`);
+      lines.push(`      },`);
+    }
+
+    lines.push(`    ],`);
+    lines.push(`  },`);
+  }
+
+  lines.push(`] as const;`);
+
+  return lines.join("\n") + "\n";
+}
+
 // ── index.ts ──────────────────────────────────────────
 
 function genIndex(h: string, events: EventDef[]): string {
@@ -329,6 +409,9 @@ function genIndex(h: string, events: EventDef[]): string {
   }
   lines.push(`} from "./event-payloads.js";`);
 
+  lines.push(``);
+  lines.push(`export { EVENT_MAPPINGS } from "./event-mappings.js";`);
+  lines.push(`export type { DimSource, PrefixDimMapping, EventMappingEntry } from "./event-mappings.js";`);
   lines.push(``);
   lines.push(`export { track } from "./track-functions.js";`);
   lines.push(`export type { Tracker } from "./track-functions.js";`);

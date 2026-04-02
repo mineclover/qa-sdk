@@ -11,7 +11,7 @@ import type {
 } from "./types/pipe-spec.js";
 import type { FoldLevel, FoldedContract, FoldRegion } from "./pipe-fold.js";
 import {
-  computeFoldedContract, foldSubgraph, detectFoldRegions,
+  foldSubgraph, detectFoldRegions,
   normalize, collectFlowSteps,
 } from "./pipe-fold.js";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";

@@ -90,10 +90,6 @@ export {
   getScenarioMarkerDef,
 } from "./taxonomy.js";
 
-// ─── 하위 호환 (deprecated) ──────────────────────────────
-/** @deprecated ASPECT_TO_SCOPES 사용. 새 코드에서 import 금지 */
-export { ASPECT_TO_SCOPE } from "./compat.js";
-
 // ─── scope 레지스트리 ────────────────────────────────────
 export type { ScopeVersionDef, ScopeRegistryEntry, ScopeSegment, ScopeAddress, DecodedScopeAddress } from "./scope-registry.js";
 export { ScopeRegistry } from "./scope-registry.js";

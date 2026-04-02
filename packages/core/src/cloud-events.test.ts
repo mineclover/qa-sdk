@@ -128,6 +128,59 @@ describe("직렬화", () => {
   });
 });
 
+describe("address_context 연결", () => {
+  it("address_context가 있으면 subject로 변환", () => {
+    const record: EventRecordLike = {
+      event_key: "test",
+      timestamp: "2026-01-01T00:00:00Z",
+      address_context: { order_event: "order_event:v2:42" },
+    };
+    const ce = toCloudEvent(record, manifest);
+    expect(ce.subject).toBe("order_event:v2:42");
+  });
+
+  it("address_context와 coordinate 모두 있으면 address_context 우선", () => {
+    const record: EventRecordLike = {
+      event_key: "test",
+      timestamp: "2026-01-01T00:00:00Z",
+      address_context: { order_event: "order_event:v2:99" },
+      coordinate: 1345,
+    };
+    const ce = toCloudEvent(record, manifest);
+    expect(ce.subject).toBe("order_event:v2:99");
+  });
+
+  it("fromCloudEvent → address_context 복원", () => {
+    const ce: CloudEvent = {
+      specversion: "1.0", id: "1", type: "test", source: "//s", time: "2026-01-01T00:00:00Z",
+      subject: "order_event:v2:42",
+      qasdk_prefix: "order_event",
+    };
+    const record = fromCloudEvent(ce);
+    expect(record.address_context).toEqual({ order_event: "order_event:v2:42" });
+    expect(record.coordinate).toBe(42);
+  });
+
+  it("EventRecord → CloudEvent → EventRecordLike 라운드트립 (address_context)", () => {
+    const record: EventRecordLike = {
+      event_key: "order_submitted",
+      timestamp: "2026-04-01T10:30:00Z",
+      payload: { orderId: "ORD-123" },
+      address_context: { order_event: "order_event:v2:1345" },
+      trace_id: "trace_abc",
+      qa_session_id: "session_xyz",
+    };
+    const ce = toCloudEvent(record, manifest, "rt-001");
+    const restored = fromCloudEvent(ce);
+
+    expect(restored.event_key).toBe(record.event_key);
+    expect(restored.timestamp).toBe(record.timestamp);
+    expect(restored.address_context).toEqual(record.address_context);
+    expect(restored.trace_id).toBe(record.trace_id);
+    expect(restored.qa_session_id).toBe(record.qa_session_id);
+  });
+});
+
 describe("배치 변환", () => {
   it("toCloudEventBatch — 여러 레코드 일괄 변환", () => {
     const records: EventRecordLike[] = [

@@ -83,13 +83,14 @@ const OPTS = { timestamp: "2026-04-02T00:00:00.000Z" };
 // ── generateTrackCode ────────────────────────────────
 
 describe("generateTrackCode", () => {
-  it("4개 파일 생성", () => {
+  it("5개 파일 생성", () => {
     const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
 
-    expect(result.files).toHaveLength(4);
+    expect(result.files).toHaveLength(5);
     const paths = result.files.map(f => f.path);
     expect(paths).toContain("event-keys.ts");
     expect(paths).toContain("event-payloads.ts");
+    expect(paths).toContain("event-mappings.ts");
     expect(paths).toContain("track-functions.ts");
     expect(paths).toContain("index.ts");
   });
@@ -256,6 +257,61 @@ describe("index.ts (barrel)", () => {
   });
 });
 
+// ── event-mappings.ts ────────────────────────────────
+
+describe("event-mappings.ts", () => {
+  it("EVENT_MAPPINGS const 생성", () => {
+    const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
+    const content = result.files.find(f => f.path === "event-mappings.ts")!.content;
+
+    expect(content).toContain("export const EVENT_MAPPINGS");
+    expect(content).toContain('"page.view"');
+    expect(content).toContain('"cart.add"');
+    expect(content).toContain('"auth.login"');
+  });
+
+  it("prefix별 dims 매핑 데이터 포함", () => {
+    const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
+    const content = result.files.find(f => f.path === "event-mappings.ts")!.content;
+
+    // cart.add의 tracking prefix에 fixed trackAction
+    expect(content).toContain('prefixId: "tracking"');
+    expect(content).toContain('kind: "fixed", value: "add_to_cart"');
+    // cart.add의 cart_event prefix
+    expect(content).toContain('prefixId: "cart_event"');
+  });
+
+  it("DimSource 타입 정의 포함", () => {
+    const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
+    const content = result.files.find(f => f.path === "event-mappings.ts")!.content;
+
+    expect(content).toContain("export type DimSource =");
+    expect(content).toContain('kind: "fixed"');
+    expect(content).toContain('kind: "context"');
+    expect(content).toContain('kind: "payload"');
+  });
+});
+
+// ── import 경로 정합성 ──────────────────────────────
+
+describe("import 경로 정합성", () => {
+  it("track-functions.ts가 EventKey를 event-keys.js에서 import", () => {
+    const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
+    const content = result.files.find(f => f.path === "track-functions.ts")!.content;
+
+    expect(content).toContain('from "./event-keys.js"');
+    expect(content).toContain('from "./event-payloads.js"');
+  });
+
+  it("index.ts가 EVENT_MAPPINGS re-export", () => {
+    const result = generateTrackCode(EVENTS, MAPPINGS, PAYLOAD_GUIDES, OPTS);
+    const content = result.files.find(f => f.path === "index.ts")!.content;
+
+    expect(content).toContain("EVENT_MAPPINGS");
+    expect(content).toContain("EventMappingEntry");
+  });
+});
+
 // ── 매핑 없는 이벤트 필터링 ──────────────────────────
 
 describe("매핑 필터링", () => {
@@ -289,7 +345,7 @@ describe("빈 입력", () => {
   it("이벤트 0개 → 빈 파일 생성", () => {
     const result = generateTrackCode([], [], [], OPTS);
 
-    expect(result.files).toHaveLength(4);
+    expect(result.files).toHaveLength(5);
     const keysContent = result.files.find(f => f.path === "event-keys.ts")!.content;
     expect(keysContent).toContain("자동 생성 파일");
   });

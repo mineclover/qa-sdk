@@ -9,6 +9,8 @@
  *   qasdk_traceid, qasdk_sessionid
  */
 
+import type { EventRecord } from "./types/record.js";
+
 // ── CloudEvents 타입 ─────────────────────────────────
 
 export interface CloudEvent {
@@ -37,11 +39,17 @@ export interface CloudEvent {
   qasdk_sessionid?: string;
 }
 
-/** 내부 EventRecord (간소화 — 실제로는 @qa-sdk/core의 EventRecord 사용) */
+/**
+ * CloudEvent 변환 소스 — EventRecord 호환 최소 인터페이스.
+ * EventRecord를 직접 전달하거나 최소 필드만 가진 객체를 전달할 수 있다.
+ */
 export interface EventRecordLike {
   event_key: string;
   timestamp: string;
-  payload?: Record<string, unknown>;
+  payload?: unknown;
+  /** n차원 주소 컨텍스트 (EventRecord 호환) */
+  address_context?: Record<string, string>;
+  /** @deprecated address_context 사용. 레거시 단일 좌표 */
   coordinate?: number;
   trace_id?: string;
   qa_session_id?: string;
@@ -58,53 +66,62 @@ export interface ManifestRef {
 
 // ── 변환 함수 ────────────────────────────────────────
 
-/** EventRecord → CloudEvent 변환 */
+/** EventRecord → CloudEvent 변환. EventRecord 또는 EventRecordLike 모두 허용. */
 export function toCloudEvent(
-  record: EventRecordLike,
+  record: EventRecord | EventRecordLike,
   manifest: ManifestRef,
   eventId?: string,
 ): CloudEvent {
+  const r = record as EventRecordLike;
   const ce: CloudEvent = {
     specversion: "1.0",
     id: eventId ?? generateId(),
-    type: record.event_key,
+    type: r.event_key,
     source: manifest.source,
-    time: record.timestamp,
+    time: r.timestamp,
     datacontenttype: "application/json",
   };
 
-  if (record.payload) ce.data = record.payload;
+  if (r.payload != null) ce.data = r.payload;
 
-  if (record.coordinate != null) {
+  // address_context 우선, 없으면 레거시 coordinate
+  if (r.address_context && manifest.prefix && r.address_context[manifest.prefix]) {
+    ce.subject = r.address_context[manifest.prefix];
+  } else if (r.coordinate != null) {
     ce.subject = manifest.prefix
-      ? `${manifest.prefix}:${manifest.prefixVersion ?? "v1"}:${record.coordinate}`
-      : String(record.coordinate);
+      ? `${manifest.prefix}:${manifest.prefixVersion ?? "v1"}:${r.coordinate}`
+      : String(r.coordinate);
   }
 
   if (manifest.prefix) ce.qasdk_prefix = manifest.prefix;
   if (manifest.prefixVersion) ce.qasdk_prefixversion = manifest.prefixVersion;
   if (manifest.manifestVersion) ce.qasdk_manifestversion = manifest.manifestVersion;
-  if (record.trace_id) ce.qasdk_traceid = record.trace_id;
-  if (record.qa_session_id) ce.qasdk_sessionid = record.qa_session_id;
+  if (r.trace_id) ce.qasdk_traceid = r.trace_id;
+  if (r.qa_session_id) ce.qasdk_sessionid = r.qa_session_id;
 
   return ce;
 }
 
-/** CloudEvent → EventRecord 변환 */
+/** CloudEvent → EventRecordLike 변환 */
 export function fromCloudEvent(ce: CloudEvent): EventRecordLike {
   const record: EventRecordLike = {
     event_key: ce.type,
     timestamp: ce.time,
   };
 
-  if (ce.data) record.payload = ce.data as Record<string, unknown>;
+  if (ce.data != null) record.payload = ce.data as Record<string, unknown>;
 
-  // subject에서 coordinate 추출
+  // subject → address_context + 레거시 coordinate
   if (ce.subject) {
     const parts = ce.subject.split(":");
     const lastPart = parts[parts.length - 1];
     const num = Number(lastPart);
     if (!isNaN(num)) record.coordinate = num;
+
+    // prefix:version:address 형식이면 address_context 복원
+    if (parts.length >= 3 && ce.qasdk_prefix) {
+      record.address_context = { [ce.qasdk_prefix]: ce.subject };
+    }
   }
 
   if (ce.qasdk_traceid) record.trace_id = ce.qasdk_traceid;
@@ -130,16 +147,16 @@ export function deserializeCloudEvent(json: string): CloudEvent {
   return parsed as CloudEvent;
 }
 
-/** 배치 변환 — EventRecord[] → CloudEvent[] */
+/** 배치 변환 — EventRecord[] | EventRecordLike[] → CloudEvent[] */
 export function toCloudEventBatch(
-  records: EventRecordLike[],
+  records: readonly (EventRecord | EventRecordLike)[],
   manifest: ManifestRef,
 ): CloudEvent[] {
   return records.map(r => toCloudEvent(r, manifest));
 }
 
-/** 배치 역변환 — CloudEvent[] → EventRecord[] */
-export function fromCloudEventBatch(events: CloudEvent[]): EventRecordLike[] {
+/** 배치 역변환 — CloudEvent[] → EventRecordLike[] */
+export function fromCloudEventBatch(events: readonly CloudEvent[]): EventRecordLike[] {
   return events.map(fromCloudEvent);
 }
 

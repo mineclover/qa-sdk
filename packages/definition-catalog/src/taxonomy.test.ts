@@ -93,16 +93,6 @@ describe("ASPECT_TO_SCOPES 역참조 (N:M)", () => {
   });
 });
 
-describe("ASPECT_TO_SCOPE 하위 호환 (deprecated, compat.ts)", () => {
-  it("모든 aspect에 대해 첫 번째 scope를 반환한다", async () => {
-    const { ASPECT_TO_SCOPE } = await import("./compat.js");
-    for (const aspect of DEF_ASPECT.entries) {
-      expect(ASPECT_TO_SCOPE[aspect]).toBeDefined();
-      expect(ASPECT_TO_SCOPE[aspect]).toBe(ASPECT_TO_SCOPES[aspect][0]);
-    }
-  });
-});
-
 describe("validateScopeAspect", () => {
   it("유효한 조합은 통과한다", () => {
     for (const combo of allValidCombinations()) {
