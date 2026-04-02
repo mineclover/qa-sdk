@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PipeGraph Preview</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+      header {
+        background: #1a1a2e; color: #fff; padding: 12px 24px;
+        display: flex; align-items: center; gap: 16px;
+      }
+      header h1 { font-size: 18px; font-weight: 600; }
+      header .subtitle { font-size: 13px; color: #aaa; }
+      .controls {
+        background: #fff; border-bottom: 1px solid #e0e0e0;
+        padding: 10px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      }
+      .controls label { font-size: 13px; font-weight: 500; }
+      .controls select, .controls input[type=range] { height: 30px; }
+      .controls select { padding: 0 8px; border: 1px solid #ccc; border-radius: 4px; }
+      .btn {
+        padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer;
+        font-size: 13px; font-weight: 500;
+        background: #1a1a2e; color: #fff;
+      }
+      .btn:hover { background: #2d2d5e; }
+      .btn.secondary { background: #eee; color: #333; }
+      .btn.secondary:hover { background: #ddd; }
+      .main { display: flex; height: calc(100vh - 100px); }
+      .sidebar {
+        width: 260px; min-width: 200px; background: #fff;
+        border-right: 1px solid #e0e0e0; overflow-y: auto; padding: 12px;
+      }
+      .sidebar h2 { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase;
+        letter-spacing: 0.05em; margin-bottom: 8px; }
+      .example-item {
+        padding: 8px 10px; border-radius: 6px; cursor: pointer;
+        font-size: 13px; margin-bottom: 4px; border: 1px solid transparent;
+      }
+      .example-item:hover { background: #f0f4ff; }
+      .example-item.active { background: #e8eeff; border-color: #5c6bc0; }
+      .example-item .name { font-weight: 500; }
+      .example-item .desc { font-size: 11px; color: #888; margin-top: 2px; }
+      .viewer { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+      .tabs {
+        display: flex; border-bottom: 1px solid #e0e0e0; background: #fff;
+        padding: 0 16px;
+      }
+      .tab {
+        padding: 8px 16px; font-size: 13px; cursor: pointer;
+        border-bottom: 2px solid transparent; color: #666;
+      }
+      .tab.active { border-bottom-color: #5c6bc0; color: #5c6bc0; font-weight: 500; }
+      .tab-content { flex: 1; overflow: auto; padding: 16px; }
+      .tab-pane { display: none; }
+      .tab-pane.active { display: block; }
+      #svg-container svg {
+        background: #fff; border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+        max-width: 100%;
+      }
+      #mermaid-container {
+        background: #fff; border-radius: 8px; padding: 16px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      }
+      pre {
+        background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px;
+        font-size: 12px; overflow: auto; line-height: 1.6;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+      }
+      .zoom-buttons { display: flex; gap: 6px; margin-bottom: 12px; }
+      .zoom-btn {
+        padding: 5px 12px; border: 1px solid #ccc; border-radius: 4px;
+        cursor: pointer; font-size: 12px; background: #fff;
+      }
+      .zoom-btn.active { background: #5c6bc0; color: #fff; border-color: #5c6bc0; }
+      .stats {
+        display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;
+      }
+      .stat { background: #fff; padding: 8px 14px; border-radius: 6px; font-size: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+      .stat .val { font-size: 20px; font-weight: 700; color: #5c6bc0; }
+      .stat .key { color: #888; margin-top: 2px; }
+      .copy-btn {
+        float: right; padding: 4px 10px; font-size: 11px;
+        background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PipeGraph Preview</h1>
+      <span class="subtitle">pipeGraphToSvg · pipeGraphToMermaid · pipeGraphToD3</span>
+    </header>
+
+    <div class="controls">
+      <label>줌 레벨:</label>
+      <div class="zoom-buttons">
+        <button class="zoom-btn active" data-level="leaf">leaf</button>
+        <button class="zoom-btn" data-level="module">module</button>
+        <button class="zoom-btn" data-level="group">group</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="sidebar">
+        <h2>예제 그래프</h2>
+        <div id="example-list"></div>
+      </div>
+
+      <div class="viewer">
+        <div class="tabs">
+          <div class="tab active" data-tab="svg">SVG</div>
+          <div class="tab" data-tab="mermaid">Mermaid</div>
+          <div class="tab" data-tab="d3">D3 Data</div>
+        </div>
+
+        <div class="tab-content">
+          <div class="tab-pane active" id="tab-svg">
+            <div class="stats" id="stats"></div>
+            <div id="svg-container"></div>
+          </div>
+          <div class="tab-pane" id="tab-mermaid">
+            <div id="mermaid-container">
+              <button class="copy-btn" id="copy-mermaid">복사</button>
+              <pre id="mermaid-code"></pre>
+            </div>
+          </div>
+          <div class="tab-pane" id="tab-d3">
+            <pre id="d3-code"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/pipe-preview.ts"></script>
+  </body>
+</html>
