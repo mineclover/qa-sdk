@@ -98,12 +98,12 @@
         "기존 pipe-svg.test.ts 15 tests 전부 통과 (ports 없으면 기존 동작 동일)"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "pipe-svg-shapes.ts 수정. US-001(PipePort 타입) 의존.",
       "dependsOn": [
         "US-001"
       ],
-      "completionNotes": ""
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -183,6 +183,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-02T10:26:54.514Z"
+    "updatedAt": "2026-04-02T10:33:30.822Z"
   }
 }

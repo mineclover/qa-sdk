@@ -7,14 +7,14 @@
  */
 
 import {
-  r, escapeXml,
+  escapeXml,
   svgRect, svgPolygon, svgCircle, svgPath, svgText, svgGroup,
   svgMarker, svgDefs,
   bezierH, arcAbove,
   type MarkerDef,
 } from "./pipe-svg-primitives.js";
 import type { PipeConcern, PipeRole } from "./pipe-interpret.js";
-import type { ConnectionKind } from "../types/pipe-spec.js";
+import type { ConnectionKind, PipePort } from "../types/pipe-spec.js";
 import type { ZoomNodeStyle } from "./pipe-zoom.js";
 
 // ── 디자인 토큰 ───────────────────────────────────────
@@ -76,6 +76,8 @@ export const EDGE_TOKENS: Record<ConnectionKind, EdgeTokens> = {
   join:        { stroke: "#2e7d32", strokeWidth: 2,   markerEnd: "arr-join" },
   feedback:    { stroke: "#e65100", strokeWidth: 1.5, strokeDash: "6 3", markerEnd: "arr-feedback" },
 };
+
+const DEFAULT_PORT_COLOR = "#90a4ae";
 
 // ── Marker defs ───────────────────────────────────────
 
@@ -240,6 +242,103 @@ export function drawFoldedCount(cx: number, bottom: number, count: number): stri
   });
 }
 
+function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const h = hue / 60;
+  const x = c * (1 - Math.abs(h % 2 - 1));
+
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (h >= 0 && h < 1) {
+    red = c;
+    green = x;
+  } else if (h < 2) {
+    red = x;
+    green = c;
+  } else if (h < 3) {
+    green = c;
+    blue = x;
+  } else if (h < 4) {
+    green = x;
+    blue = c;
+  } else if (h < 5) {
+    red = x;
+    blue = c;
+  } else {
+    red = c;
+    blue = x;
+  }
+
+  const m = l - c / 2;
+  const toHex = (value: number) => Math.round((value + m) * 255)
+    .toString(16)
+    .padStart(2, "0");
+
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+}
+
+function hashFacetTypeColor(facetType?: string): string {
+  if (!facetType) return DEFAULT_PORT_COLOR;
+
+  let hash = 0;
+  for (const char of facetType) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+
+  return hslToHex(hash % 360, 58 + (hash % 10), 46 + (hash % 8));
+}
+
+function renderPortDot(
+  cx: number,
+  cy: number,
+  port: PipePort,
+): string {
+  const radius = 5.5;
+  const directionClass = port.direction === "in" ? "port-dot-in" : "port-dot-out";
+  const color = hashFacetTypeColor(port.facetType);
+  const title = port.facetType
+    ? `${port.portId} (${port.facetType})`
+    : port.portId;
+  const points: [number, number][] = port.direction === "in"
+    ? [[cx + 1.75, cy - 2.5], [cx - 1.75, cy], [cx + 1.75, cy + 2.5]]
+    : [[cx - 1.75, cy - 2.5], [cx + 1.75, cy], [cx - 1.75, cy + 2.5]];
+
+  return [
+    `<g class="port-dot ${directionClass}">`,
+    `  <title>${escapeXml(title)}</title>`,
+    `  ${svgCircle(cx, cy, radius, { fill: color, stroke: "#ffffff", "stroke-width": 1.4 })}`,
+    `  ${svgPolygon(points, { fill: "#ffffff", opacity: 0.95 })}`,
+    `</g>`,
+  ].join("\n");
+}
+
+/** 노드 경계 포트 점: input=왼쪽, output=오른쪽 */
+export function drawPortDots(
+  x: number, y: number, w: number, h: number,
+  ports: PipePort[],
+): string {
+  if (ports.length === 0) return "";
+
+  const parts: string[] = [];
+  const groups: Array<[PipePort["direction"], number]> = [["in", x], ["out", x + w]];
+
+  for (const [direction, cx] of groups) {
+    const directionPorts = ports.filter(port => port.direction === direction);
+    const step = h / (directionPorts.length + 1);
+
+    directionPorts.forEach((port, index) => {
+      const cy = y + step * (index + 1);
+      parts.push(renderPortDot(cx, cy, port));
+    });
+  }
+
+  return parts.length > 0 ? svgGroup(parts, { class: "port-dots" }) : "";
+}
+
 // ── 엣지 도형 ─────────────────────────────────────────
 
 export interface EdgePathOptions {
@@ -316,6 +415,7 @@ export interface StandaloneNodeOptions {
   label: string;
   certainty?: ZoomNodeStyle["certainty"];
   concerns?: PipeConcern[];
+  ports?: PipePort[];
   isEntry?: boolean;
   isFolded?: boolean;
   foldedCount?: number;
@@ -333,6 +433,7 @@ export function standaloneNodeSvg(opts: StandaloneNodeOptions): string {
     role, label,
     certainty = "strict",
     concerns = [],
+    ports = [],
     isEntry = false,
     isFolded = false,
     foldedCount = 0,
@@ -341,14 +442,12 @@ export function standaloneNodeSvg(opts: StandaloneNodeOptions): string {
     padding = 28,
   } = opts;
 
-  const badgeW = concerns.length > 0 ? 20 : 0;
   const entryW = isEntry ? 20 : 0;
-  const totalW = entryW + width + badgeW + padding * 2;
-  const totalH = height + padding * 2;
   const x = padding + entryW;
   const y = padding;
   const cx = x + width / 2;
   const cy = y + height / 2;
+  const hasOutputPorts = ports.some(port => port.direction === "out");
 
   const parts: string[] = [];
 
@@ -366,10 +465,14 @@ export function standaloneNodeSvg(opts: StandaloneNodeOptions): string {
     parts.push(drawNodeShape(x, y, width, height, { role, style }));
   }
 
+  if (!isFolded && ports.length > 0) {
+    parts.push(drawPortDots(x, y, width, height, ports));
+  }
+
   parts.push(drawNodeLabel(cx, cy, label));
 
   if (concerns.length > 0) {
-    parts.push(drawConcernBadges(concerns, x + width, y, height));
+    parts.push(drawConcernBadges(concerns, x + width + (hasOutputPorts ? 12 : 0), y, height));
   }
 
   return svgGroup(parts, {});

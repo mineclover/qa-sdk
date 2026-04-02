@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - PipeConnection endpoint 확장 패턴: pipe-level 소비자(path/analyze/runtime/simulate 등)는 공용 helper로 endpoint를 `pipeId`만 추출해 유지하고, 구조 변환(fold/unfold)만 원래 endpoint shape(`string` vs `PortRef`)를 보존하도록 분리한다.
 - Pipe metadata 추론 패턴: 명시 필드(`ports`)와 유도 필드(dataContract 기반)가 공존하면 `resolve*()` helper를 두고, validator/consumer가 optional 필드를 직접 읽지 말고 항상 resolver를 거치게 만든다.
 - Pipe role 판정 패턴: `flow.kind`와 `ports`가 같이 있으면 역할 분류는 `resolvePorts()`를 먼저 보고, `tap`/`branch`/`emit` 같은 kind 휴리스틱은 ports가 부족할 때만 fallback으로 남긴다.
+- Pipe standalone SVG 확장 패턴: `pipe-svg-shapes.ts`에 새 렌더링 affordance를 추가할 때는 `StandaloneNodeOptions`와 `standaloneNodeSvg` 호출 경로를 함께 갱신하고, `packages/core/src/pipe/index.ts`와 `packages/core/src/index.ts` 공개 export, 전용 shape 테스트를 한 세트로 맞춘다.
 
 ---
 
@@ -99,4 +100,22 @@ after each iteration and it's included in prompts for context.
     - 역할 분류처럼 schema-derived 메타데이터와 flow 휴리스틱이 같이 존재하는 경우에도, 명시/추론 메타데이터 resolver를 먼저 보고 레거시 휴리스틱은 뒤로 미루는 순서가 회귀를 줄인다.
   - Gotchas encountered
     - 루트 `pnpm lint`는 이번 변경과 무관한 워크스페이스 전반의 기존 lint 오류 때문에 실패했고, 변경 파일 대상 `oxlint`는 0 warning/0 error로 통과했다.
+---
+## 2026-04-02 - US-005
+- What was implemented
+  - `drawPortDots(x, y, w, h, ports)`를 추가해 input 포트는 왼쪽 경계, output 포트는 오른쪽 경계에 균등 분배된 typed dot으로 렌더링되게 했다.
+  - port dot은 `facetType` 해시 기반 색상과 fallback `#90a4ae`를 사용하고, 방향별 `◀/▶` 스타일 삼각형과 SVG `title` tooltip을 포함한다.
+  - `StandaloneNodeOptions.ports?: PipePort[]`를 추가하고 `standaloneNodeSvg`가 unfolded 노드에서 port dot을 렌더링하도록 연결했다.
+  - `drawPortDots`를 core 공개 export surface에 추가하고, shape 전용 테스트를 새로 작성했다.
+- Files changed
+  - `packages/core/src/pipe/pipe-svg-shapes.ts`
+  - `packages/core/src/pipe/pipe-svg-shapes.test.ts`
+  - `packages/core/src/pipe/index.ts`
+  - `packages/core/src/index.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - standalone SVG affordance를 확장할 때는 shape 구현만 바꾸지 말고 `StandaloneNodeOptions`, `standaloneNodeSvg`, 두 export surface, 전용 렌더링 테스트를 같이 업데이트해야 downstream catalog 소비자가 바로 쓸 수 있다.
+  - Gotchas encountered
+    - 루트 `pnpm lint`는 인자와 무관하게 `packages/` 전체를 검사하므로 기존 워크스페이스 lint 이슈와 섞인다. 변경 범위 확인은 `pnpm exec oxlint <files...>`로 따로 실행해야 신호가 깨끗하다.
 ---

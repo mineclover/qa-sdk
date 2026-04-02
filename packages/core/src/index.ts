@@ -191,7 +191,7 @@ export {
   ROLE_TOKENS, CERTAINTY_STROKE_DASH, CONCERN_TOKENS, EDGE_TOKENS,
   renderMarkerDefs,
   drawNodeShape, drawFoldedNode, drawEntryMarker,
-  drawConcernBadges, drawNodeLabel, drawFoldedCount,
+  drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
   drawEdgePath, drawConditionBadge,
   standaloneNodeSvg, standaloneEdgeSvg,
   type RoleTokens, type ConcernTokens, type EdgeTokens,
