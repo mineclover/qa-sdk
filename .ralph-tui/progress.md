@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - PipeSpec 확장 패턴: optional 필드를 추가할 때는 `types/pipe-spec.ts` 정의만 바꾸지 말고 `packages/core/src/index.ts`와 `packages/core/src/pipe/index.ts` 공개 export, `validatePipeSpec` 시맨틱 검증, `pipe-serialize` 라운드트립 테스트를 함께 갱신한다.
 - PipeConnection endpoint 확장 패턴: pipe-level 소비자(path/analyze/runtime/simulate 등)는 공용 helper로 endpoint를 `pipeId`만 추출해 유지하고, 구조 변환(fold/unfold)만 원래 endpoint shape(`string` vs `PortRef`)를 보존하도록 분리한다.
 - Pipe metadata 추론 패턴: 명시 필드(`ports`)와 유도 필드(dataContract 기반)가 공존하면 `resolve*()` helper를 두고, validator/consumer가 optional 필드를 직접 읽지 말고 항상 resolver를 거치게 만든다.
+- Pipe role 판정 패턴: `flow.kind`와 `ports`가 같이 있으면 역할 분류는 `resolvePorts()`를 먼저 보고, `tap`/`branch`/`emit` 같은 kind 휴리스틱은 ports가 부족할 때만 fallback으로 남긴다.
 
 ---
 
@@ -82,4 +83,20 @@ after each iteration and it's included in prompts for context.
     - 선택적 명시 필드와 추론 필드가 같이 존재할 때는 `resolve*()`를 SSOT로 두고, validator까지 그 resolver를 사용하게 연결해야 downstream 동작이 일관된다.
   - Gotchas encountered
     - inferred port를 export만 하고 validator가 `pipe.ports`만 직접 보면 PortRef 검증이 계속 실패하므로, utility 추가와 소비자 교체를 한 세트로 처리해야 한다.
+---
+
+## 2026-04-02 - US-004
+- What was implemented
+  - `classifyPipeRole()`을 `resolvePorts()` 우선 판정으로 재작성해, 명시/inferred port shape가 있으면 그것을 먼저 사용하고 `tap`/`branch`/`emit`은 fallback으로만 사용하게 바꿨다.
+  - 출력 포트 기반 `producer`, 입력+출력 포트 기반 `transformer`, input-only/no-port fallback `consumer` 규칙을 정리하면서 레거시 `PipeSpec.produces` 기반 transformer 승격은 유지했다.
+  - `pipe-interpret.test.ts`에 명시 `ports`가 `flow.kind` 기반 분류보다 우선함을 검증하는 회귀 테스트를 추가했다.
+- Files changed
+  - `packages/core/src/pipe/pipe-interpret.ts`
+  - `packages/core/src/pipe/pipe-interpret.test.ts`
+  - `.ralph-tui/progress.md`
+- **Learnings:**
+  - Patterns discovered
+    - 역할 분류처럼 schema-derived 메타데이터와 flow 휴리스틱이 같이 존재하는 경우에도, 명시/추론 메타데이터 resolver를 먼저 보고 레거시 휴리스틱은 뒤로 미루는 순서가 회귀를 줄인다.
+  - Gotchas encountered
+    - 루트 `pnpm lint`는 이번 변경과 무관한 워크스페이스 전반의 기존 lint 오류 때문에 실패했고, 변경 파일 대상 `oxlint`는 0 warning/0 error로 통과했다.
 ---

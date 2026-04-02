@@ -6,10 +6,11 @@
  */
 
 import type {
-  PipeSpec, PipeGraph, PipeConnection, ConnectionKind, PipeFlow, PipeStep,
+  PipeSpec, PipeGraph, ConnectionKind, PipeFlow,
 } from "../types/pipe-spec.js";
 import { getChildFlows } from "./pipe-analyze.js";
-import { normalize, collectFlowSteps } from "./pipe-fold.js";
+import { normalize } from "./pipe-fold.js";
+import { resolvePorts } from "./pipe-port.js";
 
 // ── 타입 정의 ─────────────────────────────────────────
 
@@ -65,11 +66,11 @@ export interface PipeImpactAnalysis {
 
 /** 파이프 역할 */
 export type PipeRole =
-  | "producer"     // emit으로 생산
-  | "consumer"     // trigger 소비, produces 없음
-  | "transformer"  // trigger + produces (입력→출력 변환)
-  | "router"       // branch 중심, data access 없음
-  | "observer";    // tap 중심, produces 없음
+  | "producer"     // 출력 포트 또는 emit 중심
+  | "consumer"     // 입력 위주 소비
+  | "transformer"  // 입력+출력 포트 공존
+  | "router"       // branch 중심, 데이터 포트 없음
+  | "observer";    // tap 중심, 출력 포트 없음
 
 // ── 전파 규칙 ─────────────────────────────────────────
 
@@ -231,7 +232,9 @@ export function propagatePipeConcerns(graph: PipeGraph): PipeConcernMap {
 
     // BFS
     while (queue.length > 0) {
-      const { pipeId: srcId, path, viaKind, propagatable } = queue.shift()!;
+      const current = queue.shift();
+      if (!current) continue;
+      const { pipeId: srcId, path, viaKind, propagatable } = current;
       if (visited.has(srcId)) continue;
       visited.add(srcId);
 
@@ -367,7 +370,8 @@ export function analyzePipeImpact(
   }
 
   while (queue.length > 0) {
-    const item = queue.shift()!;
+    const item = queue.shift();
+    if (!item) continue;
     if (visited.has(item.pipeId)) continue;
     visited.add(item.pipeId);
 
@@ -413,30 +417,33 @@ export function analyzePipeImpact(
 }
 
 /**
- * 파이프 흐름 구조에서 역할을 추론한다.
+ * 파이프의 입출력 포트 구성을 우선으로, 필요 시 flow.kind를 fallback으로 사용해 역할을 추론한다.
  */
 export function classifyPipeRole(pipe: PipeSpec): PipeRole {
-  const hasProduces = (pipe.produces?.length ?? 0) > 0;
+  const ports = resolvePorts(pipe);
+  const hasInputPort = ports.some(port => port.direction === "in");
+  const hasOutputPort = ports.some(port => port.direction === "out");
+  const hasAnyPort = ports.length > 0;
+  const hasLegacyProduces = (pipe.produces?.length ?? 0) > 0;
   const hasTap = flowContainsKind(pipe.flow, "tap");
   const hasBranch = flowContainsKind(pipe.flow, "branch");
   const hasEmit = flowContainsKind(pipe.flow, "emit");
-  const hasDataAccess = collectFlowSteps(pipe.flow).some(
-    s => (s.dataContract?.accesses?.length ?? 0) > 0,
-  );
 
-  // observer: tap 패턴이 주요 흐름, 외부 출력 없음
-  if (hasTap && !hasProduces && !hasEmit) return "observer";
+  // Port shape is the primary signal: bidirectional data flow implies transformation.
+  if (hasInputPort && hasOutputPort) return "transformer";
 
-  // router: 분기 중심, data access 없음
-  if (hasBranch && !hasDataAccess) return "router";
+  // Output-only pipes behave as producers regardless of flow kind.
+  if (hasOutputPort) return "producer";
 
-  // transformer: 입력(trigger) + 출력(produces) 모두 있음
-  if (hasProduces) return "transformer";
+  // Fallback to the legacy flow-kind heuristics when port metadata is absent or input-only.
+  if (hasTap && !hasLegacyProduces && !hasEmit) return "observer";
 
-  // producer: emit으로 이벤트 생산
+  if (hasBranch && !hasAnyPort) return "router";
+
+  if (hasLegacyProduces) return "transformer";
+
   if (hasEmit) return "producer";
 
-  // consumer: 기본값
   return "consumer";
 }
 

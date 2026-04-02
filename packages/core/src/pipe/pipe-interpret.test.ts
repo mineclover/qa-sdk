@@ -239,7 +239,7 @@ describe("analyzePipeImpact", () => {
     );
     const result = analyzePipeImpact(graph, "A");
     expect(result.blastRadius).toBe(2);
-    expect(result.impacted.map(i => i.pipeId).sort()).toEqual(["B", "C"]);
+    expect(result.impacted.map(i => i.pipeId).toSorted()).toEqual(["B", "C"]);
     expect(result.impacted.find(i => i.pipeId === "B")!.depth).toBe(1);
     expect(result.impacted.find(i => i.pipeId === "C")!.depth).toBe(2);
   });
@@ -309,6 +309,23 @@ describe("classifyPipeRole", () => {
       flow: { kind: "branch", condition: "type", paths: [step(), step()] },
     });
     expect(classifyPipeRole(pipe)).toBe("router");
+  });
+
+  it("명시 ports는 flow.kind fallback보다 우선한다", () => {
+    const tapTransformer = makePipe("A", {
+      flow: { kind: "tap", observe: step(), step: step() },
+      ports: [
+        { portId: "request", direction: "in" },
+        { portId: "result", direction: "out" },
+      ],
+    });
+    const branchConsumer = makePipe("B", {
+      flow: { kind: "branch", condition: "type", paths: [step(), step()] },
+      ports: [{ portId: "request", direction: "in" }],
+    });
+
+    expect(classifyPipeRole(tapTransformer)).toBe("transformer");
+    expect(classifyPipeRole(branchConsumer)).toBe("consumer");
   });
 });
 
