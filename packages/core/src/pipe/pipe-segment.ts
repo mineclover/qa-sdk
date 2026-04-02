@@ -4,20 +4,18 @@
  * PipeGraph의 connection 구조에서 이벤트 분기 토폴로지를 분석하여
  * PathSegment[]를 생성한다.
  *
- * 규칙:
- *   - conditional connection → 분기 세그먼트 분리
- *   - event connection → transition 설정
- *   - fan-out → 병렬 세그먼트
- *   - next 체인 → 단일 세그먼트
+ * 도출된 세그먼트는 **제안(proposal)**이다.
+ * consumes는 파이프 체인의 pipeId 목록으로 채워지며,
+ * 소비자가 실제 axis label로 교체해야 한다.
  */
 
 import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
-import type { PathSegment } from "../catalog/catalog.types.js";
+import type { PathSegment, EventTransition, BranchRoute } from "../catalog/catalog.types.js";
 import { chainSegments } from "../catalog/path-summation.js";
 
 /** 도출 결과 */
 export interface DetectedSegments {
-  /** 도출된 세그먼트 목록 */
+  /** 도출된 세그먼트 (consumes는 pipeId 기반 제안값) */
   segments: PathSegment[];
   /** 감지 근거 */
   reasons: SegmentReason[];
@@ -25,11 +23,9 @@ export interface DetectedSegments {
 
 export interface SegmentReason {
   segmentId: string;
-  /** 감지 방식 */
   kind: "conditional-branch" | "event-transition" | "fan-out" | "linear-chain";
-  /** 관련 connection */
-  fromPipeId: string;
-  toPipeIds: string[];
+  pipeIds: string[];
+  condition?: string;
 }
 
 /**
@@ -40,9 +36,11 @@ export interface SegmentReason {
  * 2. conditional 분기 → 각 분기별 별도 세그먼트
  * 3. event connection → transition 설정
  * 4. fan-out → 병렬 세그먼트
- * 5. 단순 next 체인 → 하나의 세그먼트로 묶음
+ * 5. 단순 next 체인 → 하나의 세그먼트
  */
 export function detectPathSegments(graph: PipeGraph): DetectedSegments {
+  if (graph.pipes.length === 0) return { segments: [], reasons: [] };
+
   const reasons: SegmentReason[] = [];
   const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
 
@@ -58,22 +56,29 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     }
   }
 
-  const rawSegments: Array<Omit<PathSegment, "addressOffset" | "size">> = [];
+  const rawSegments: Array<{
+    segmentId: string;
+    consumes: string[];
+    shape: number[];
+    transition?: EventTransition;
+    routes?: BranchRoute[];
+  }> = [];
   const visited = new Set<string>();
 
+  /** next 체인 따라가며 연속 파이프 수집 */
   function walkChain(startId: string): string[] {
     const chain: string[] = [];
     let current = startId;
 
-    while (true) {
-      if (visited.has(current)) break;
+    while (current && !visited.has(current)) {
       visited.add(current);
       chain.push(current);
 
       const conns = outgoing.get(current) ?? [];
-      // 단순 next 1개만 있으면 체인 계속
-      if (conns.length === 1 && conns[0].kind === "next") {
-        const tos = Array.isArray(conns[0].to) ? conns[0].to : [conns[0].to];
+      const nextConns = conns.filter(c => c.kind === "next");
+
+      if (nextConns.length === 1) {
+        const tos = Array.isArray(nextConns[0].to) ? nextConns[0].to : [nextConns[0].to];
         if (tos.length === 1 && !visited.has(tos[0])) {
           current = tos[0];
           continue;
@@ -86,60 +91,51 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
   }
 
   function processNode(pipeId: string): void {
-    if (visited.has(pipeId)) return;
+    if (visited.has(pipeId) || !pipeMap.has(pipeId)) return;
 
     const conns = outgoing.get(pipeId) ?? [];
-    const pipe = pipeMap.get(pipeId);
-    if (!pipe) return;
 
     // conditional 분기 → 각 분기별 세그먼트
     const conditionals = conns.filter(c => c.kind === "conditional");
     if (conditionals.length > 0) {
-      const chain = walkChain(pipeId);
-      const consumes = collectScopes(chain, pipeMap);
+      visited.add(pipeId);
 
       for (const cond of conditionals) {
         const tos = Array.isArray(cond.to) ? cond.to : [cond.to];
         for (const to of tos) {
           const branchChain = walkChain(to);
-          const branchConsumes = collectScopes(branchChain, pipeMap);
-          const allConsumes = [...new Set([...consumes, ...branchConsumes])];
+          const segId = `branch_${pipeId}_${to}`;
 
-          const segId = `${pipeId}_to_${to}`;
+          // 분기 체인의 마지막에서 event 전이 확인
+          const lastId = branchChain[branchChain.length - 1];
+          const transition = findEventTransition(lastId, outgoing, pipeMap);
+
           rawSegments.push({
             segmentId: segId,
-            consumes: allConsumes,
-            shape: allConsumes.map(() => 2), // 분기별 2값 (경로 존재/비존재)
-            ...(cond.condition ? {} : {}),
+            consumes: [pipeId, ...branchChain],
+            shape: [pipeId, ...branchChain].map(() => 2),
+            ...(transition ? { transition } : {}),
           });
 
           reasons.push({
             segmentId: segId,
             kind: "conditional-branch",
-            fromPipeId: pipeId,
-            toPipeIds: [to],
+            pipeIds: [pipeId, ...branchChain],
+            condition: cond.condition,
           });
 
-          processNode(to);
+          // 체인 끝 이후 연결 처리
+          processNextConnections(lastId, outgoing);
         }
       }
 
-      // event 전이
-      const events = conns.filter(c => c.kind === "event");
-      for (const ev of events) {
-        const tos = Array.isArray(ev.to) ? ev.to : [ev.to];
-        const toPipe = pipeMap.get(tos[0]);
-        if (toPipe) {
-          // 마지막 세그먼트에 transition 추가
-          const lastSeg = rawSegments[rawSegments.length - 1];
-          if (lastSeg) {
-            (lastSeg as { transition?: { eventKey: string } }).transition = {
-              eventKey: toPipe.trigger.eventKey,
-            };
-          }
+      // 비-conditional 연결도 처리
+      for (const c of conns) {
+        if (c.kind !== "conditional" && c.kind !== "feedback") {
+          const tos = Array.isArray(c.to) ? c.to : [c.to];
+          for (const to of tos) processNode(to);
         }
       }
-
       return;
     }
 
@@ -147,74 +143,62 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     const fanouts = conns.filter(c => c.kind === "fan-out");
     if (fanouts.length > 0) {
       visited.add(pipeId);
+
       for (const fo of fanouts) {
         const tos = Array.isArray(fo.to) ? fo.to : [fo.to];
         for (const to of tos) {
           const chain = walkChain(to);
-          const consumes = collectScopes(chain, pipeMap);
-
           const segId = `fanout_${pipeId}_${to}`;
+
           rawSegments.push({
             segmentId: segId,
-            consumes: consumes.length > 0 ? consumes : [pipeId],
-            shape: consumes.length > 0 ? consumes.map(() => 2) : [2],
+            consumes: chain,
+            shape: chain.map(() => 2),
           });
 
           reasons.push({
             segmentId: segId,
             kind: "fan-out",
-            fromPipeId: pipeId,
-            toPipeIds: [to],
+            pipeIds: [pipeId, ...chain],
           });
         }
       }
       return;
     }
 
-    // 단순 체인 → 하나의 세그먼트
+    // 단순 체인
     const chain = walkChain(pipeId);
     if (chain.length > 0) {
-      const consumes = collectScopes(chain, pipeMap);
       const segId = chain.length === 1 ? chain[0] : `chain_${chain[0]}`;
+      const lastId = chain[chain.length - 1];
+      const transition = findEventTransition(lastId, outgoing, pipeMap);
 
       rawSegments.push({
         segmentId: segId,
-        consumes: consumes.length > 0 ? consumes : chain,
-        shape: consumes.length > 0 ? consumes.map(() => 2) : chain.map(() => 2),
+        consumes: chain,
+        shape: chain.map(() => 2),
+        ...(transition ? { transition } : {}),
       });
 
       reasons.push({
         segmentId: segId,
         kind: "linear-chain",
-        fromPipeId: chain[0],
-        toPipeIds: chain.slice(1),
+        pipeIds: chain,
       });
 
-      // 체인 끝에서 event 전이
-      const lastPipeId = chain[chain.length - 1];
-      const lastConns = outgoing.get(lastPipeId) ?? [];
-      const eventConns = lastConns.filter(c => c.kind === "event");
-      for (const ev of eventConns) {
-        const tos = Array.isArray(ev.to) ? ev.to : [ev.to];
-        const toPipe = pipeMap.get(tos[0]);
-        if (toPipe) {
-          const lastSeg = rawSegments[rawSegments.length - 1];
-          if (lastSeg) {
-            (lastSeg as { transition?: { eventKey: string } }).transition = {
-              eventKey: toPipe.trigger.eventKey,
-            };
-          }
-        }
-        processNode(tos[0]);
-      }
+      processNextConnections(lastId, outgoing);
+    }
+  }
 
-      // next 이후 연결 처리
-      for (const conn of lastConns) {
-        if (conn.kind !== "event" && conn.kind !== "feedback") {
-          const tos = Array.isArray(conn.to) ? conn.to : [conn.to];
-          for (const to of tos) processNode(to);
-        }
-      }
+  function processNextConnections(
+    lastId: string,
+    out: Map<string, PipeConnection[]>,
+  ): void {
+    const conns = out.get(lastId) ?? [];
+    for (const c of conns) {
+      if (c.kind === "feedback") continue;
+      const tos = Array.isArray(c.to) ? c.to : [c.to];
+      for (const to of tos) processNode(to);
     }
   }
 
@@ -226,12 +210,26 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
   };
 }
 
-/** 파이프 목록에서 scope를 수집 (scope가 없으면 pipeId 사용) */
-function collectScopes(pipeIds: string[], pipeMap: Map<string, PipeSpec>): string[] {
-  const scopes = new Set<string>();
-  for (const id of pipeIds) {
-    const pipe = pipeMap.get(id);
-    if (pipe?.scope) scopes.add(pipe.scope);
+/** 체인 끝에서 event connection → transition 추출 */
+function findEventTransition(
+  pipeId: string,
+  outgoing: Map<string, PipeConnection[]>,
+  pipeMap: Map<string, PipeSpec>,
+): EventTransition | undefined {
+  const conns = outgoing.get(pipeId) ?? [];
+  for (const c of conns) {
+    if (c.kind === "event") {
+      const tos = Array.isArray(c.to) ? c.to : [c.to];
+      const toPipe = pipeMap.get(tos[0]);
+      if (toPipe) {
+        return { eventKey: toPipe.trigger.eventKey };
+      }
+    }
   }
-  return [...scopes];
+  // produces로 암묵적 전이
+  const pipe = pipeMap.get(pipeId);
+  if (pipe?.produces?.length) {
+    return { eventKey: pipe.produces[0] };
+  }
+  return undefined;
 }

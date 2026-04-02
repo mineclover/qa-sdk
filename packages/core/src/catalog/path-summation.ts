@@ -242,21 +242,58 @@ export function validateSegments(segments: readonly PathSegment[]): string[] {
 
 /**
  * prefix 카탈로그 컨텍스트에서 세그먼트 검증.
- * consumes가 prefix.dims의 부분집합인지, route 축이 consumes에 포함되는지 검증.
+ * - consumes가 prefix.dims의 부분집합인지
+ * - route 축이 consumes에 포함되는지
+ * - shape가 실제 axis entries/capacity와 일치하는지 (catalog 제공 시)
  */
 export function validatePrefixSegments(
   prefix: PrefixDef,
   segments: readonly PathSegment[],
+  catalog?: Catalog,
+  version?: string,
 ): string[] {
   const errors = validateSegments(segments);
   const dimLabels = new Set(Object.keys(prefix.dims));
 
+  // version별 axis capacity 맵 구축 (catalog 제공 시)
+  const capacityMap = new Map<string, number>();
+  if (catalog && version) {
+    const vdef = prefix.versions.find(v => v.version === version);
+    if (vdef) {
+      for (const label of Object.keys(prefix.dims)) {
+        const dim = prefix.dims[label];
+        if (dim.kind === "axis") {
+          const axisVer = vdef.axisVersions[label];
+          const axis = catalog.axes[dim.axisId];
+          if (axis && axisVer) {
+            const snap = axis.versions[axisVer];
+            if (snap) {
+              capacityMap.set(label, snap.capacity ?? snap.entries.length);
+            }
+          }
+        }
+      }
+    }
+  }
+
   function walkPrefix(segs: readonly PathSegment[]): void {
     for (const seg of segs) {
       // consumes가 prefix dims의 부분집합인지
-      for (const label of seg.consumes) {
+      for (let i = 0; i < seg.consumes.length; i++) {
+        const label = seg.consumes[i];
         if (!dimLabels.has(label)) {
           errors.push(`"${seg.segmentId}" consumes "${label}" — prefix "${prefix.id}"에 없는 dim`);
+          continue;
+        }
+
+        // shape ↔ axis capacity 정합성 (catalog 제공 시)
+        if (capacityMap.size > 0) {
+          const expectedCap = capacityMap.get(label);
+          if (expectedCap !== undefined && seg.shape[i] !== expectedCap) {
+            errors.push(
+              `"${seg.segmentId}" shape[${i}]=${seg.shape[i]} ≠ axis "${label}" capacity ${expectedCap}`,
+            );
+          }
         }
       }
 
@@ -267,6 +304,15 @@ export function validatePrefixSegments(
           if (!consumesSet.has(route.when.axis)) {
             errors.push(`"${seg.segmentId}" route axis "${route.when.axis}" — consumes에 없음`);
           }
+          // route value가 shape 범위 내인지
+          if (route.when.eq !== undefined) {
+            const idx = seg.consumes.indexOf(route.when.axis);
+            if (idx >= 0 && route.when.eq >= seg.shape[idx]) {
+              errors.push(
+                `"${seg.segmentId}" route ${route.when.axis}=${route.when.eq} ≥ shape ${seg.shape[idx]}`,
+              );
+            }
+          }
         }
       }
 
@@ -275,6 +321,41 @@ export function validatePrefixSegments(
   }
 
   walkPrefix(segments);
+  return errors;
+}
+
+/**
+ * manifest publish 시 sum prefix의 segment 정합성 검증.
+ * manifest가 참조하는 prefix 중 addressModel:"sum"인 것에 대해
+ * segments가 유효한지 카탈로그 기준으로 검증한다.
+ */
+export function validateManifestSegments(
+  catalog: Catalog,
+  manifestPrefixes: Record<string, string>,
+): string[] {
+  const errors: string[] = [];
+
+  for (const [prefixId, version] of Object.entries(manifestPrefixes)) {
+    const prefix = catalog.prefixes[prefixId];
+    if (!prefix || prefix.addressModel !== "sum") continue;
+
+    const vdef = prefix.versions.find(v => v.version === version);
+    if (!vdef) {
+      errors.push(`prefix "${prefixId}:${version}" — 버전 미존재`);
+      continue;
+    }
+
+    if (!vdef.segments || vdef.segments.length === 0) {
+      errors.push(`prefix "${prefixId}:${version}" — addressModel:sum이지만 segments 없음`);
+      continue;
+    }
+
+    const segErrors = validatePrefixSegments(prefix, vdef.segments, catalog, version);
+    for (const e of segErrors) {
+      errors.push(`prefix "${prefixId}:${version}" — ${e}`);
+    }
+  }
+
   return errors;
 }
 
