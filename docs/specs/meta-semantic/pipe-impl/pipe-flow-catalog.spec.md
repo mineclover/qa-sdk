@@ -14,11 +14,11 @@ def:
       type: refines
 ---
 
-# PipeFlow 카탈로그 — 29종 표현·정의·검증·시각 방식
+# PipeFlow 카탈로그 — 30종 표현·정의·검증·시각 방식
 
 ## 목적 ^purpose
 
-PipeFlow 29종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무엇을 명시해야 하는가),
+PipeFlow 30종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무엇을 명시해야 하는가),
 검증 방식(어떻게 증명하는가), 시각 표현(역할·관심사)을 정의한다.
 
 ## 시각 설계 요약 ^defines
@@ -41,6 +41,7 @@ PipeFlow 29종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무�
 | loop | consumer | — | #f3e5f5 / #6a1b9a |
 | feedback | consumer | — | #f3e5f5 / #6a1b9a |
 | compensate | consumer | — | #f3e5f5 / #6a1b9a |
+| transition-scope | consumer³ | resilience⁴ | #f3e5f5 / #6a1b9a |
 | finally | consumer | — | #f3e5f5 / #6a1b9a |
 | emit | producer | async-coupling | #e3f2fd / #1565c0 |
 | timeout | consumer | latency | #f3e5f5 / #6a1b9a |
@@ -60,6 +61,8 @@ PipeFlow 29종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무�
 
 > ¹ `step`: timeout 필드가 있으면 latency, dataContract.accesses에 write/readwrite 있으면 data-mutation 추가
 > ² `PipeSpec.produces` 설정 시 transformer (#e8f5e9 / #2e7d32) 로 승격
+> ³ `transition-scope`: body 내용에 따라 역할 결정 (scope 자체는 역할에 영향 없음)
+> ⁴ `transition-scope`: compensate 필드가 있을 때만 resilience 관심사 추가
 
 **역할 색상표**
 
@@ -88,7 +91,7 @@ fold topology는 하위 패싯과 경로를 단일 `PipeSpec` 인터페이스로
 | concurrent | parallel, race, await | 1 | 1 | fan-out/join 또는 조건 대기를 숨기고 주 경로 1개로 환원 |
 | resilient | retry, fallback, circuit-breaker | 1 | 1 | 재시도·대체·차단 상태를 같은 계약에 흡수. 단락 실패는 내부 정책 |
 | iterative | loop, feedback | 1 | 1 | back-edge를 숨기고 수렴한 결과만 egress로 노출 |
-| transactional | compensate, finally | 1 | 1 | rollback/cleanup은 내부 보조 경로. 외부 계약은 본체와 동일 |
+| transactional | compensate, finally, transition-scope | 1 | 1 | rollback/cleanup은 내부 보조 경로. 외부 계약은 본체와 동일 |
 | signaling | emit | 0-1 | 1 | 입력 없이 신호 생성 가능. 있으면 payload를 event로 투영 |
 | temporal | timeout, throttle, debounce | 1 | 0-1 | 시간 게이트가 지연·소거·우회를 결정. `timeout`은 대체 출력 가능 |
 | batch | map, reduce, buffer, filter | 1 | 1 | 외부 포트는 collection/batch 단위 1쌍, 내부 요소 수는 N |
@@ -97,7 +100,7 @@ fold topology는 하위 패싯과 경로를 단일 `PipeSpec` 인터페이스로
 | stateful | dedup, correlation | 1-2 | 0-1 | 숨은 state store가 방출 시점을 결정. suppress/match 모두 포함 |
 | observational | tap | 1 | 1 | 주 경로는 pass-through, 관측 branch는 side effect only |
 
-총 14개 topology가 29개 flow kind 전체를 덮으며, 각 leaf 스펙은 이 분류를 기준으로 자신이
+총 14개 topology가 30개 flow kind 전체를 덮으며, 각 leaf 스펙은 이 분류를 기준으로 자신이
 어떤 합성 패턴을 노출하는지 설명한다.
 
 ---
@@ -213,7 +216,7 @@ fold topology는 하위 패싯과 경로를 단일 `PipeSpec` 인터페이스로
 
 ---
 
-## 트랜잭션 (1종)
+## 트랜잭션 (2종)
 
 ### compensate
 
@@ -223,6 +226,20 @@ fold topology는 하위 패싯과 경로를 단일 `PipeSpec` 인터페이스로
 | 정의 | forward(필수), compensate(필수) |
 | 검증 | forward 성공 후 후속 실패 시 compensate 실행 확인. compensate 후 상태 복원 확인 |
 | 경로 수 | countPaths(forward) + countPaths(compensate) |
+
+### transition-scope
+
+| 항목 | 내용 |
+|------|------|
+| 표현 | `{ kind: "transition-scope", transitionId: "transfer.execute", body: transferFlow, events: ["account.debit", "account.credit"], compensate?: rollbackFlow }` |
+| 정의 | transitionId(필수), body(필수), events(필수, 1+), compensate(선택) |
+| 검증 | transitionId가 event-catalog TransitionDef에 등록되어 있는지 확인. events ↔ TransitionDef.events 정합성 검증. body 실패 시 compensate 실행 확인 |
+| 경로 수 | countPaths(body) + (compensate ? countPaths(compensate) : 0) |
+| fold topology | transactional — compensate, finally와 동일 그룹 |
+
+> `transition-scope`는 선언적 비즈니스 원자 경계. "전부 되거나 전부 안 되거나"를 설계 시점에 명시.
+> 구현 메커니즘(DB transaction, saga, 수동 보상)은 이 선언의 소비자가 결정.
+> `compensate`와의 차이: compensate는 보상 로직 쌍만 표현. transition-scope는 원자 경계 + 이벤트 소속 관계 + 선택적 보상을 포함하는 상위 개념.
 
 ---
 

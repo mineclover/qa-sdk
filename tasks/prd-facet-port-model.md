@@ -96,7 +96,7 @@ PipePort를 자동으로 도출하여 명시적 ports 선언 없이도 port 정�
   - `step.dataContract.consumes` 각 필드 → `{ direction: "in", portId: fieldName, facetType: field.type }`
   - `step.dataContract.produces` 각 필드 → `{ direction: "out", portId: fieldName, facetType: field.type }`
   - `pipe.ports` 명시 선언이 있으면 우선, 없으면 dataContract에서 도출
-- [ ] `resolvePorts(pipe: PipeSpec): PipePort[]` — 명시 ports ∪ inferred ports 병합
+- [ ] `resolvePorts(pipe: PipeSpec): PipePort[]` — 명시 ports 우선, 없으면 dataContract에서 도출
 - [ ] leaf 아닌 flow (sequence, parallel 등)에서는 하위 step들의 ports를 집계
 - [ ] 테스트: dataContract만 있는 pipe → ports 도출 결과 검증
 
@@ -108,13 +108,16 @@ PipePort를 자동으로 도출하여 명시적 ports 선언 없이도 port 정�
 "이 vertex에 어떤 line이 붙어있나"로 역할을 결정하도록 한다.
 
 **Acceptance Criteria:**
-- [ ] `classifyPipeRole` 판정 로직 우선순위 변경:
+- [ ] `classifyPipeRole` 판정 로직 — port shape 우선 + legacy fallback:
   1. `resolvePorts(pipe)` 호출
-  2. tap flow 포함 + output ports 없음 → observer
-  3. branch flow 포함 + data ports 없음 → router
-  4. output ports 있고 input ports도 있음 → transformer
-  5. output ports만 있거나 emit 포함 → producer
-  6. fallback: input ports만 (또는 ports 없음) → consumer
+  2. input ports + output ports 모두 있음 → transformer
+  3. output ports만 있음 → producer
+  4. tap flow 포함 + legacy produces 없음 + emit 없음 → observer
+  5. branch flow 포함 + ports 없음 → router
+  6. legacy produces 있음 → transformer
+  7. emit 있음 → producer
+  8. fallback → consumer
+  - TODO: ports 명시된 pipe에서는 port-only 판정 우선, legacy fallback 단계적 deprecation 예정
 - [ ] 기존 23 tests 전부 통과
 - [ ] 신규 테스트: `ports` 명시 선언이 flow.kind 추론보다 우선함을 검증
 
@@ -185,18 +188,18 @@ edge 중간에 작은 라벨을 렌더링하여 "어떤 데이터가 흐르는�
 
 ### US-009: flow catalog fold topology 재편
 
-**Description:** 개발자로서, 29종 flow kind가 "fold topology" 관점으로 재분류되어
+**Description:** 개발자로서, 30종 flow kind가 "fold topology" 관점으로 재분류되어
 각 flow kind가 "어떻게 패싯들을 합성하는가"의 기술자로 이해된다.
 
 **Acceptance Criteria:**
-- [ ] `pipe-flow-catalog.spec.md`에 fold topology 분류 섹션 추가 (14종, 29 flow kind 전수):
+- [ ] `pipe-flow-catalog.spec.md`에 fold topology 분류 섹션 추가 (14종, 30 flow kind 전수):
   - atomic(1): step
   - linear(1): sequence
   - conditional(2): branch, optional
   - concurrent(3): parallel, race, await
   - resilient(3): retry, fallback, circuit-breaker
   - iterative(2): loop, feedback
-  - transactional(2): compensate, finally
+  - transactional(3): compensate, finally, transition-scope
   - signaling(1): emit
   - temporal(3): timeout, throttle, debounce
   - batch(4): map, reduce, buffer, filter
