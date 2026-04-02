@@ -2,6 +2,8 @@
  * PipeGraphStore — PipeGraph CRUD 포트 + 인메모리 어댑터
  *
  * 기존 qa-sdk 포트 패턴 (RecordStore, ScenarioSpecStore)과 동일.
+ *
+ * @def.doc pipe-store-memory
  */
 
 import type { PipeSpec, PipeGraph } from "./types/pipe-spec.js";

@@ -13,7 +13,7 @@ import { newDlqId, newVerdictId, now } from "@qa-sdk/core";
 import { compileSpec } from "../spec-compiler/compile.js";
 import { evaluateConstraint } from "../matching/constraint-evaluator.js";
 import { matchGraphs } from "../matching/graph-matcher.js";
-import { matchViaPathMatcher } from "../matching/path-matcher-adapter.js";
+import { matchViaPathMatcher } from "../matching/path-matcher-adapter.js"; // @def.doc path-matcher-migration
 import { computeVerdict } from "../verdict/compute.js";
 
 export interface ComputePendingVerdictsDeps {

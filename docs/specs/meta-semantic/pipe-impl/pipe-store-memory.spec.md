@@ -10,6 +10,9 @@ def:
   links:
     - target: pipe-store
       type: depends_on
+sources:
+  - packages/core/src/pipe-store.ts
+  - packages/core/src/pipe-store.test.ts
 ---
 
 # PipeGraph / PipeSpec 인메모리 저장소

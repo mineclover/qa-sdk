@@ -4,6 +4,8 @@
  * definition-catalog의 ManifestRegistry와 동일한 public API.
  * 인메모리 Map 대신 SQLite에 저장.
  * 상태 머신 가드 로직은 ManifestRegistry 원본을 재사용.
+ *
+ * @def.doc pipe-store-sqlite
  */
 
 // 타입은 definition-catalog와 호환 (직접 정의하여 패키지 의존 제거)

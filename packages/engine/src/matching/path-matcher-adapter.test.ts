@@ -1,3 +1,4 @@
+// @def.doc path-matcher-migration
 import { describe, expect, it } from "vitest";
 import { matchViaPathMatcher } from "./path-matcher-adapter.js";
 import type { SpecGraph, SpecNode, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";

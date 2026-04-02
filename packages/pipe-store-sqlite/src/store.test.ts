@@ -1,3 +1,4 @@
+// @def.doc pipe-store-sqlite
 import { describe, it, expect, beforeEach } from "vitest";
 import { SqlitePipeGraphStore, SqlitePipeSpecStore } from "./store.js";
 import type { PipeSpec, PipeGraph, PipeFlow } from "@qa-sdk/core";

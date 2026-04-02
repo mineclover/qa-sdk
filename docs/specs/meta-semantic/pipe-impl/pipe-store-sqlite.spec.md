@@ -10,6 +10,11 @@ def:
   links:
     - target: pipe-store
       type: depends_on
+sources:
+  - packages/pipe-store-sqlite/src/store.ts
+  - packages/pipe-store-sqlite/src/manifest-store.ts
+  - packages/pipe-store-sqlite/src/store.test.ts
+  - packages/pipe-store-sqlite/src/manifest-store.test.ts
 ---
 
 # PipeGraph / PipeSpec / ManifestRegistry SQLite 저장소

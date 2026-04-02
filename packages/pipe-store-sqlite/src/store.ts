@@ -3,6 +3,8 @@
  *
  * @qa-sdk/core의 PipeGraphStore/PipeSpecStore 포트를 SQLite로 구현.
  * 저장 위치는 소비자가 결정 (예: ~/.qa-sdk/pipe-store.sqlite)
+ *
+ * @def.doc pipe-store-sqlite
  */
 
 import type { PipeGraphStore, PipeSpecStore } from "@qa-sdk/core";

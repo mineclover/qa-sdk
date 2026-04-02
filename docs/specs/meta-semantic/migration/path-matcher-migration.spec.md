@@ -12,6 +12,10 @@ def:
       type: depends_on
     - target: meta-semantic-execution-semantics
       type: depends_on
+sources:
+  - packages/engine/src/matching/path-matcher-adapter.ts
+  - packages/engine/src/matching/path-matcher-adapter.test.ts
+  - packages/engine/src/orchestration/compute-pending-verdicts.ts
 ---
 
 # graph-matcher → PathMatcher 전환

@@ -6,6 +6,8 @@
  * matchPath를 호출하고, 결과를 MatchResult(graph-matcher 호환)로 역변환한다.
  *
  * 차이점: 전곱 그래프 매칭 → 경로 모델 매칭 (합산)
+ *
+ * @def.doc path-matcher-migration
  */
 
 import type {
