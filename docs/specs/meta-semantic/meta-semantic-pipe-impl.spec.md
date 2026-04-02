@@ -46,6 +46,14 @@ def:
       type: contains
     - target: prefix-path-summation
       type: contains
+    - target: pipe-mermaid
+      type: contains
+    - target: pipe-definition-bridge
+      type: contains
+    - target: pipe-svg
+      type: contains
+    - target: data-object-binding
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현
@@ -67,7 +75,8 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 **pipe-interpret**가 관심사 추출·전파·역할 분류를 수행하고,
 **pipe-gate**가 품질 게이트 평가(pass/fail/review)를 수행하고,
 **pipe-fold**가 서브그래프 접기/펼치기 + 경계 계약을 도출하고,
-**pipe-flow-catalog**가 29종 각각의 표현·정의·검증 방식을 문서화한다.
+**pipe-flow-catalog**가 29종 각각의 표현·정의·검증·시각 방식을 문서화하고,
+**pipe-svg**가 PipeGraph → SVG/D3 3-레이어 렌더링 파이프라인을 구현한다.
 
 ## 위임 ^delegates
 
@@ -83,6 +92,7 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 - **pipe-flow-catalog** → PipeFlow 29종 각각의 표현·정의·검증 방식 문서화
 - **pipe-connection-catalog** → ConnectionKind 8종 각각의 의미·사용 기준 문서화
 - **pipe-zoom** → 줌 레벨별 시각화 데이터 모델 (뷰·레이아웃·스타일 3 패싯)
+- **pipe-svg** → PipeGraph → SVG/D3 3-레이어 렌더링 (primitives → shapes+tokens → renderer)
 
 ## 구성 ^overview
 
@@ -110,6 +120,9 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 | pipe-benchmark | 성능 검증 | `pipe-benchmark.test.ts` | 11 |
 | pipe-flow-catalog | 문서 전용 (29 leaf) | — | — |
 | pipe-connection-catalog | 문서 전용 (8 leaf) | — | — |
+| pipe-svg-primitives | `core/src/pipe/pipe-svg-primitives.ts` | — | — |
+| pipe-svg-shapes | `core/src/pipe/pipe-svg-shapes.ts` | — | — |
+| pipe-svg | `core/src/pipe/pipe-svg.ts` | `pipe-svg.test.ts` | 15 |
 
 통합 테스트: `meta-semantic-integration.test.ts` (12 tests)
 공유 fixture: `__fixtures__/pipe-fixtures.ts` (step, simplePipe, branchPipe, simpleGraph)

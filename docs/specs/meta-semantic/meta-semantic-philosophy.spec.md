@@ -183,18 +183,71 @@ meta-semantic          "코드가 무엇을 의도하는가"     → intent:v1:M
 
 ---
 
-## 원칙 7 — 패싯은 역할 분리다
+## 원칙 7 — 패싯은 역할 분리이고, 스키마는 좌표에 바인딩된다
 
 데이터의 5가지 역할(생산·소비·정의·관리·저장)은 반드시 분리한다.
 
 이것은 "데이터를 5개로 쪼개라"가 아니라,
 **"하나의 데이터가 어떤 역할로 사용되고 있는지 식별하라"**는 설계 규칙이다.
 
-**귀결:**
+### 역할 분리의 귀결
+
 - 같은 데이터도 역할에 따라 다른 바운더리에서 관리
 - 변형은 생산+저장의 조합으로 추적
 - 각 역할은 독립적으로 존재할 수 있음
 - n개 모듈이 같은 Data를 공유하면 상위 계층에 관리 위임
+
+### 스키마 → prefix → 주소 → 계보
+
+패싯 역할을 식별한 데이터는 **스키마(DataSchema)**로 정의되고,
+스키마는 **prefix 주소 공간에 바인딩**되어 고유 식별 가능한 객체가 된다.
+
+```
+DataSchema (컬럼 + 패싯 역할 매핑)
+  → prefix의 축으로 등록 (table_ref 또는 axis_ref)
+    → 데이터 인스턴스에 주소 부여 (prefix:version:address)
+      → 필드 단위 계보 추적 (LineageCollector)
+        → 스키마 버전 간 호환성 검증 (VersionCollector)
+```
+
+**이 체인이 동작해야 하는 이유:**
+- 스키마가 prefix에 바인딩되지 않으면 데이터가 좌표계에 진입하지 못한다
+- 좌표가 없으면 "이 필드가 어디서 왔는가"(계보)를 추적할 수 없다
+- 계보가 없으면 스키마 변경의 영향 범위를 알 수 없다
+
+**귀결:**
+- DataSchema의 각 컬럼은 facetRole(produced/consumed/derived/managed/identity)을 선언
+- identity 역할 컬럼이 prefix 주소의 저장 식별자
+- 파이프 step의 dataContract(consumes/produces/accesses)가 계보의 입력
+- 시뮬레이션 결과(SimulationResult)에서 계보를 자동 추출(extractLineageFromSimulation)
+
+### 좌표 모델과 계보의 관계
+
+데이터 계보를 추적하려면 데이터가 **어떤 주소 모델로 좌표화되었는지** 알아야 한다.
+전곱과 합산은 계보 해석 방식이 다르다.
+
+| 주소 모델 | 계보 해석 | 참조 |
+|----------|----------|------|
+| **전곱(product)** | 모든 축이 동등 — 필드 변환 경로가 축 조합으로 결정 | 원칙 2, `prefix-path-summation` |
+| **합산(sum)** | 세그먼트별 분기 — 필드가 어떤 분기 경로를 거쳤는지 추적 | `prefix-path-summation`, `meta-semantic-spacetime-uid` |
+
+```
+전곱 계보:
+  orders.amount → payments.amount (direct)
+  → 축 조합으로 "어떤 주문 유형×결제 방법인가" 식별
+  → 주소 디코딩만으로 맥락 복원
+
+합산 계보:
+  orders.amount → payments.amount (direct)
+  → 세그먼트로 "이 변환이 card 경로인가 bank 경로인가" 식별
+  → 세그먼트 + route로 분기 맥락까지 복원
+  → transition으로 다른 이벤트의 계보와 연결
+```
+
+> 좌표 모델 상세: `prefix-path-summation` 참조
+> 분기 경로 수집 규칙: `ms-concept-branch-path` 참조
+> 시공간 주소 체계: `meta-semantic-spacetime-uid` 참조
+> 데이터 계약 + 계보: `meta-semantic-data-contract` 참조
 
 ---
 
@@ -205,7 +258,8 @@ meta-semantic          "코드가 무엇을 의도하는가"     → intent:v1:M
   ↓ 기준 제공
 (1) Folding이 먼저 → 단위 식별
   ↓ 단위 확정
-(7) 패싯 역할 분리 → 데이터 구조
+(7) 패싯 역할 분리 → 데이터 스키마 정의
+  └── DataSchema → prefix 바인딩 → 주소 부여 → 계보 추적
 (4) Module·Data·Pipe 직교 → IR 분해
   ↓ 좌표 대상 확정
 (2) 경로 합산 → 주소 할당

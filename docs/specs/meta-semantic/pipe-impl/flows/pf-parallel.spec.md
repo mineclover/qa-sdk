@@ -55,3 +55,11 @@ steps 전부 동시 시작, 전부 완료 대기. 카테고리: 동시성.
 - 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
 - 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
 - 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case
+
+
+## 시각 표현
+
+| 속성 | 값 |
+|------|-----|
+| role | consumer |
+| concerns | concurrency |

@@ -55,3 +55,11 @@ body 출력을 feedbackEvent로 재주입. 카테고리: 제어.
 - 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
 - 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
 - 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case
+
+
+## 시각 표현
+
+| 속성 | 값 |
+|------|-----|
+| role | consumer |
+| concerns | — |

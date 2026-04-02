@@ -55,3 +55,13 @@ def:
 - 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
 - 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
 - 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case
+
+
+## 시각 표현
+
+| 속성 | 값 |
+|------|-----|
+| role | consumer |
+| concerns | — ¹ |
+
+> ¹ timeout 필드 있으면 latency 추가; dataContract.accesses write/readwrite 있으면 data-mutation 추가

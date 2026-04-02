@@ -55,3 +55,11 @@ N회 실패 → 쿨다운 → 반개방. 카테고리: 안정화.
 - 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
 - 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
 - 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case
+
+
+## 시각 표현
+
+| 속성 | 값 |
+|------|-----|
+| role | consumer |
+| concerns | resilience |

@@ -14,12 +14,64 @@ def:
       type: refines
 ---
 
-# PipeFlow 카탈로그 — 29종 표현·정의·검증 방식
+# PipeFlow 카탈로그 — 29종 표현·정의·검증·시각 방식
 
 ## 목적 ^purpose
 
 PipeFlow 29종 각각의 표현 방식(어떻게 쓰는가), 정의 방식(무엇을 명시해야 하는가),
-검증 방식(어떻게 증명하는가)을 정의한다.
+검증 방식(어떻게 증명하는가), 시각 표현(역할·관심사)을 정의한다.
+
+## 시각 설계 요약 ^defines
+
+각 flow kind가 `PipeSpec.flow`로 단독 사용될 때 `classifyPipeRole` / `extractPipeConcerns`가 도출하는 값.
+`PipeSpec.produces` 설정 시 role이 `transformer`로 승격될 수 있음.
+
+| kind | role | concerns | 노드 색상 (fill/stroke) |
+|------|------|----------|------------------------|
+| step | consumer | — ¹ | #f3e5f5 / #6a1b9a |
+| sequence | consumer | — | #f3e5f5 / #6a1b9a |
+| branch | router | — | #fff8e1 / #f57f17 |
+| optional | consumer | — | #f3e5f5 / #6a1b9a |
+| parallel | consumer | concurrency | #f3e5f5 / #6a1b9a |
+| race | consumer | concurrency | #f3e5f5 / #6a1b9a |
+| await | consumer | latency | #f3e5f5 / #6a1b9a |
+| retry | consumer | resilience | #f3e5f5 / #6a1b9a |
+| fallback | consumer | resilience | #f3e5f5 / #6a1b9a |
+| circuit-breaker | consumer | resilience | #f3e5f5 / #6a1b9a |
+| loop | consumer | — | #f3e5f5 / #6a1b9a |
+| feedback | consumer | — | #f3e5f5 / #6a1b9a |
+| compensate | consumer | — | #f3e5f5 / #6a1b9a |
+| finally | consumer | — | #f3e5f5 / #6a1b9a |
+| emit | producer | async-coupling | #e3f2fd / #1565c0 |
+| timeout | consumer | latency | #f3e5f5 / #6a1b9a |
+| map | consumer² | — | #f3e5f5 / #6a1b9a |
+| reduce | consumer² | — | #f3e5f5 / #6a1b9a |
+| buffer | consumer² | — | #f3e5f5 / #6a1b9a |
+| filter | consumer | data-filtering | #f3e5f5 / #6a1b9a |
+| throttle | consumer | — | #f3e5f5 / #6a1b9a |
+| debounce | consumer | — | #f3e5f5 / #6a1b9a |
+| split | consumer² | — | #f3e5f5 / #6a1b9a |
+| enrich | consumer² | — | #f3e5f5 / #6a1b9a |
+| tap | observer | observability | #fce4ec / #c62828 |
+| resequence | consumer² | — | #f3e5f5 / #6a1b9a |
+| window | consumer² | — | #f3e5f5 / #6a1b9a |
+| dedup | consumer | data-filtering | #f3e5f5 / #6a1b9a |
+| correlation | consumer | async-coupling | #f3e5f5 / #6a1b9a |
+
+> ¹ `step`: timeout 필드가 있으면 latency, dataContract.accesses에 write/readwrite 있으면 data-mutation 추가
+> ² `PipeSpec.produces` 설정 시 transformer (#e8f5e9 / #2e7d32) 로 승격
+
+**역할 색상표**
+
+| role | fill | stroke | 노드 모양 |
+|------|------|--------|----------|
+| producer | #e3f2fd | #1565c0 | 오른쪽 뾰족 오각형 |
+| consumer | #f3e5f5 | #6a1b9a | 둥근 직사각형 (stadium) |
+| transformer | #e8f5e9 | #2e7d32 | 다이아몬드 컷 육각형 |
+| router | #fff8e1 | #f57f17 | 마름모 (diamond) |
+| observer | #fce4ec | #c62828 | 타원 (ellipse) |
+
+---
 
 ---
 
