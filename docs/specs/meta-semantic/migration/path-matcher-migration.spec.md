@@ -5,7 +5,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: approved
+  lifecycle: completed
   layer: domain
   links:
     - target: meta-semantic-v2-migration
@@ -15,29 +15,27 @@ def:
 sources:
   - packages/engine/src/matching/path-matcher-adapter.ts
   - packages/engine/src/matching/path-matcher-adapter.test.ts
-  - packages/engine/src/orchestration/compute-pending-verdicts.ts
 ---
 
-# graph-matcher → PathMatcher 전환
+# graph-matcher → PathMatcher 전환 (완료)
 
 ## 목적 ^purpose
 
 기존 `graph-matcher`(ScenarioSpec 기반 greedy 매칭)를
 `PathMatcher`(PipeGraph 기반 경로 모델 매칭)로 전환한다.
-어댑터 패턴으로 인터페이스를 보존하여 점진 전환.
+~~어댑터 패턴으로 인터페이스를 보존하여 점진 전환.~~
+**2026-04-03 전환 완료** — graph-matcher 삭제, PathMatcher 단일 엔진 확정.
 
 ## 정의 ^defines
 
-- `matchViaPathMatcher(spec, runtime)` — graph-matcher 호환 어댑터
+- `matchViaPathMatcher(spec, runtime)` — 유일한 매칭 엔진
   - SpecGraph + RuntimeGraph → PipeGraph + RunResult 변환
-  - `matchPath` 호출 후 MatchResult(graph-matcher 형식)로 역변환
-- `USE_PATH_MATCHER` env var — feature flag (기본: `false`)
+  - `matchPath` 호출 후 MatchResult로 역변환
 
 ## 소비 ^consumes
 
 - `matchPath` (`@qa-sdk/core`) — PathMatcher 핵심 함수
 - `evaluateConstraints` (engine/matching) — constraint 평가 재사용
-- `matchGraphs` (engine/matching) — 기존 경로 (flag=false 시 사용)
 
 ## 변환 알고리즘
 
@@ -52,7 +50,7 @@ sources:
 - constraint 실패 → `status: "error"` ExecutedStep (PathMatcher가 fail 판정)
 - 미매칭 → RunResult에 미포함 (PathMatcher가 missingPipes로 탐지)
 
-**PathMatcher MatchResult → graph-matcher MatchResult:**
+**PathMatcher → MatchResult 역변환:**
 - `matchedPipes` → `step_matches[].verdict = "pass"`
 - `errorSteps` → `step_matches[].verdict = "fail"` + constraint_results 복원
 - `missingPipes` → `step_matches[].verdict = "fail"|"warn"` + `missing_steps`
@@ -60,11 +58,9 @@ sources:
 
 ## 관련 소스
 
-- `packages/engine/src/matching/path-matcher-adapter.ts` — 어댑터 구현
-- `packages/engine/src/matching/path-matcher-adapter.test.ts` — 18 tests
-- `packages/engine/src/orchestration/compute-pending-verdicts.ts` — feature flag 적용
+- `packages/engine/src/matching/path-matcher-adapter.ts` — 매칭 엔진 구현
+- `packages/engine/src/matching/path-matcher-adapter.test.ts` — 22 tests
 
-## 잔여 작업
+## 완료 이력
 
-- `USE_PATH_MATCHER` 기본값을 `true`로 전환 (충분한 검증 후)
-- graph-matcher 코드 + 관련 테스트 제거
+- 2026-04-03: graph-matcher.ts 삭제, USE_PATH_MATCHER flag 제거, matchViaPathMatcher 단일 경로 확정 (0e50855)

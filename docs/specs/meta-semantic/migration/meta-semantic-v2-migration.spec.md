@@ -324,7 +324,7 @@ PipeSpec 경로:
 | PipeContext | step 간 데이터 전달 + 필드 조회 |
 | PipeRunner | PipeGraph 실제 실행 런타임 |
 | PathMatcher | 실행 결과 ↔ PipeSpec 매칭 (VerdictReport v2) |
-| 기존 graph-matcher 대체 | 점진 전환 (feature flag) |
+| ~~기존 graph-matcher 대체~~ | ✅ 완료 (2026-04-03, graph-matcher 삭제) |
 
 ### Phase 4: 표준 호환 + 통합
 
@@ -367,8 +367,8 @@ Phase 2 완료 시:
   □ compat-scenario.ts 외에 ScenarioSpec import 없음
   → compat-scenario.ts 제거 가능
 
-Phase 3 완료 시:
-  □ PathMatcher가 graph-matcher의 모든 케이스 통과
+Phase 3 완료 시: ✅ (2026-04-03)
+  ☑ PathMatcher가 graph-matcher의 모든 케이스 통과
   □ compat-graph.ts 외에 SpecGraph import 없음
   → compat-graph.ts 제거 가능
 
@@ -383,7 +383,7 @@ Phase 4 완료 시:
 | 단계 | v1 | v2 | 전환 |
 |------|:--:|:--:|------|
 | Phase 2 | ScenarioSpec 읽기 | PipeSpec 읽기+쓰기 | 변환기로 v1→v2 자동 전환 |
-| Phase 3 | graph-matcher 읽기 | PathMatcher 읽기+쓰기 | feature flag |
+| Phase 3 | ~~graph-matcher~~ | PathMatcher 단일 | ✅ 완료 |
 | Phase 4 | — | 전체 v2 | compat 삭제 |
 
 ---

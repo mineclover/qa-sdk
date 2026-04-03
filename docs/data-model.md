@@ -177,7 +177,7 @@ Ingest Server
         ▼
   RuntimeGraph
         │ compileSpec(ScenarioSpec) → SpecGraph
-        │ matchGraphs(SpecGraph, RuntimeGraph)
+        │ matchViaPathMatcher(SpecGraph, RuntimeGraph)
         ▼
   VerdictReport  →  StoredVerdict
         │

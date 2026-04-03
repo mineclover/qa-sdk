@@ -78,7 +78,7 @@ implemented | draft | planned | hold
 | `data-model/` | 2개 이상 패키지가 공유하는 타입 + 포트 | EventRecord, RuntimeGraph, VerdictStore |
 | `event-vocabulary/` | 이벤트 정의, payload 규격, 그래프 힌트 | CoreEventDef, PayloadFieldGuide, GraphHint |
 | `collection/` | SDK 클라이언트 사이드 수집 | QaLogger, TraceContext, masking |
-| `pipeline/` | 데이터 처리 파이프라인 (엔진 + 오케스트레이션) | reconstruct, matchGraphs, ingest Phase 1/2 |
+| `pipeline/` | 데이터 처리 파이프라인 (엔진 + 오케스트레이션) | reconstruct, matchViaPathMatcher, ingest Phase 1/2 |
 | `server/<name>/` | 서버 엔드포인트 | REST API, SSE, health check |
 | `storage/` | DB 스키마 + 어댑터 구현 | PostgreSQL 테이블, Drizzle adapter |
 | `infra/` | 횡단 인프라 도구 | pino 로거 |
