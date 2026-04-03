@@ -44,3 +44,7 @@ export type { FingerprintAggregation, BudgetAggregation } from "./metrics.js";
 // ── Drizzle 미들웨어 ──────────────────────────────────────
 export { withTrafficControl, TrafficControlError } from "./drizzle-middleware.js";
 export type { TrafficControlContext } from "./drizzle-middleware.js";
+
+// ── Event Bridge (쿼리 ↔ event-catalog 교차 검증) ────────
+export type { EventBridgeIssue, EventKeyCollector } from "./event-bridge.js";
+export { validateQueryEventKeys, validateQueryTransitions } from "./event-bridge.js";

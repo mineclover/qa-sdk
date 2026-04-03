@@ -100,3 +100,33 @@ describe("FanOutMetricsCollector", () => {
     expect(b.size).toBe(1);
   });
 });
+
+// ── event_key / transition 수집 ─────────────────────
+
+describe("InMemoryMetricsCollector — event_key 수집", () => {
+  it("event_key 없는 쿼리 → 빈 배열", () => {
+    const collector = new InMemoryMetricsCollector();
+    collector.record(makeEvent());
+    expect(collector.collectEventKeys()).toEqual([]);
+  });
+
+  it("event_key 수집 + 중복 제거", () => {
+    const collector = new InMemoryMetricsCollector();
+    collector.record(makeEvent({ tags: { event_key: "order.create" } }));
+    collector.record(makeEvent({ tags: { event_key: "order.create" } }));
+    collector.record(makeEvent({ tags: { event_key: "order.read" } }));
+    expect(collector.collectEventKeys().sort()).toEqual(["order.create", "order.read"]);
+  });
+
+  it("transition 그룹 수집", () => {
+    const collector = new InMemoryMetricsCollector();
+    collector.record(makeEvent({ tags: { event_key: "account.debit", transition: "transfer" } }));
+    collector.record(makeEvent({ tags: { event_key: "account.credit", transition: "transfer" } }));
+    collector.record(makeEvent({ tags: { event_key: "fee.record", transition: "transfer" } }));
+    collector.record(makeEvent({ tags: { event_key: "log.write" } }));
+
+    const groups = collector.collectTransitionGroups();
+    expect(groups.size).toBe(1);
+    expect(groups.get("transfer")!.sort()).toEqual(["account.credit", "account.debit", "fee.record"]);
+  });
+});

@@ -114,6 +114,30 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
     return results.sort((a, b) => b.totalQueries - a.totalQueries);
   }
 
+  /** tags.event_key가 있는 쿼리에서 event_key 목록 추출 (중복 제거) */
+  collectEventKeys(): string[] {
+    const keys = new Set<string>();
+    for (const event of this.events) {
+      const ek = event.tags.event_key;
+      if (ek) keys.add(ek);
+    }
+    return [...keys];
+  }
+
+  /** tags.transition이 있는 쿼리에서 transition별 event_key 그룹 수집 */
+  collectTransitionGroups(): Map<string, string[]> {
+    const groups = new Map<string, Set<string>>();
+    for (const event of this.events) {
+      const tid = event.tags.transition;
+      const ek = event.tags.event_key;
+      if (!tid || !ek) continue;
+      const set = groups.get(tid) ?? new Set();
+      set.add(ek);
+      groups.set(tid, set);
+    }
+    return new Map([...groups.entries()].map(([k, v]) => [k, [...v]]));
+  }
+
   /** 전체 이벤트 수 */
   get size(): number {
     return this.events.length;
