@@ -18,8 +18,8 @@ def:
 
 ## 목적 ^purpose
 
-PipeFlow 29종 흐름 제어 타입, PipeSpec(단일 노드), PipeGraph(노드 연결),
-ConnectionKind 8종, Constraint 타입을 정의한다.
+PipeFlow 30종 흐름 제어 타입, PipeSpec(단일 노드), PipeGraph(노드 연결),
+ConnectionKind 8종, PipePort/PortRef, Constraint 타입을 정의한다.
 
 ## 관련 소스
 
@@ -27,27 +27,28 @@ ConnectionKind 8종, Constraint 타입을 정의한다.
 
 ## 구성 ^overview
 
-PipeFlow 29종 (6카테고리):
-- 기본(2): step, sequence
-- 분기(2): branch, optional
-- 동시성(3): parallel, race, await
-- 내결함(2): retry, fallback
-- 반복(1): loop
-- 트랜잭션(1): compensate
-- 비동기(1): emit
-- 정리(1): finally
-- 시간(1): timeout
-- 제어(1): feedback
-- 배치(4): map, reduce, buffer, filter
-- 안정화(3): circuit-breaker, throttle, debounce
-- 데이터변환(2): split, enrich
-- 관측(1): tap
-- 스트리밍(2): resequence, window
-- 상태(2): dedup, correlation
+PipeFlow 30종 (fold topology 14분류):
+- atomic(1): step
+- linear(1): sequence
+- conditional(2): branch, optional
+- concurrent(3): parallel, race, await
+- resilient(3): retry, fallback, circuit-breaker
+- iterative(2): loop, feedback
+- transactional(3): compensate, finally, transition-scope
+- signaling(1): emit
+- temporal(3): timeout, throttle, debounce
+- batch(4): map, reduce, buffer, filter
+- transformation(2): split, enrich
+- streaming(2): resequence, window
+- stateful(2): dedup, correlation
+- observational(1): tap
 
 ConnectionKind 8종: next, conditional, event, error, compensate, fan-out, join, feedback
 
-PipeConnection: N:M 지원 (from/to: string | string[])
+PipePort: typed input/output port (portId, direction, facetType)
+PortRef: port-level 연결 참조 (pipeId + portId)
+
+PipeConnection: N:M 지원 (from/to: string | string[] | PortRef | PortRef[]), facetType 옵션
 
 ## 검증
 
