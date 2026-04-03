@@ -54,6 +54,14 @@ def:
       type: contains
     - target: data-object-binding
       type: contains
+    - target: pipe-transition-scope
+      type: contains
+    - target: pipe-static-lineage
+      type: contains
+    - target: prefix-colocation
+      type: contains
+    - target: test-name-tokens
+      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현

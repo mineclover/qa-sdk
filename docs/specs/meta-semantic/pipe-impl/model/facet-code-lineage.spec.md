@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-pipe-impl
@@ -156,7 +156,12 @@ CREATE INDEX idx_fcm_schema_id ON facet_code_mappings (schema_id);
 | FieldLineage.facet | `core/types/data-schema.ts` | 완료 |
 | facet 자동 주입 | `core/pipe/pipe-lineage.ts` | 완료 |
 | buildFullLineageChain | `core/data-object/lineage-chain.ts` | 완료 (3 tests) |
-| SqliteFacetCodeStore | `pipe-store-sqlite/facet-code-store.ts` | 완료 (7 tests) |
-| enrichLineage | — | 미구현 |
-| chain 검증 | — | 미구현 |
-| @facet.impl annotation 수집 | — | 미구현 |
+| SqliteFacetCodeStore | `pipe-store-sqlite/facet-code-store.ts` | 완료 (8 tests) |
+
+### 폐기 항목
+
+| 항목 | 사유 |
+|------|------|
+| ~~enrichLineage~~ | `buildFullLineageChain` 내부 `enrichNode()`가 동일 기능 수행. 별도 함수 중복 |
+| ~~validateFullLineageChain~~ | `FullLineageChain.quality` 메트릭 + `validateLineageChainDetailed`로 이미 커버 |
+| ~~@facet.impl annotation 수집~~ | 소비자 없음. 수동 `register()` 호출로 충분. 소비자(대시보드, CLI) 발생 시 착수 |

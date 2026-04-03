@@ -24,8 +24,10 @@ definition-catalog 패키지에 직접 의존하지 않고 DefinitionLookup 포�
 - `DefinitionLookup` — definition 조회 포트 (findByCoordinate, getById)
 - `DefinitionMeta` — docId, lifecycle, layer?, tags?
 - `resolveLifecycles(graph, lookup)` → 파이프별 lifecycle 조회
-- `analyzeLayerPropagation(graph, lookup)` → layer 영향 전파 분석
+- `analyzeLayerPropagation(graph, lookup)` → layer 영향 전파 분석 (canPropagate: canonical impact.ts와 동일)
 - `resolveTags(graph, lookup)` → 파이프별 tags 조회
+- `PipeBindingInfo` — 파이프별 DataObjectBinding 해석 결과
+- `resolveBindings(graph, registry)` → 파이프별 binding 조회
 
 ## 소비 ^consumes
 

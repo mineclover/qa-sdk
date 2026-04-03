@@ -10,6 +10,10 @@ def:
   links:
     - target: meta-semantic-pipe-impl
       type: depends_on
+    - target: pipe-transition-scope
+      type: depends_on
+    - target: pipe-static-lineage
+      type: depends_on
 ---
 
 # Prefix Colocation — 선언 위치 기반 prefix 출처 관리
