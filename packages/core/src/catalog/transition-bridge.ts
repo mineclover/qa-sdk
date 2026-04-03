@@ -8,8 +8,9 @@
  * TransitionDef (이벤트 카탈로그 레벨)
  */
 
-import type { PathSegment, EventTransition } from "./catalog.types.js";
+import type { PathSegment } from "./catalog.types.js";
 import type { PipeFlow, PipeGraph } from "../types/pipe-spec.js";
+import { getChildFlows } from "../pipe/pipe-flow-utils.js";
 
 // ── 타입 ──────────────────────────────────────────
 
@@ -60,32 +61,8 @@ function walkFlow(flow: PipeFlow, ids: string[]): void {
   if (flow.kind === "transition-scope") {
     ids.push(flow.transitionId);
   }
-  for (const child of getChildFlowsLocal(flow)) {
+  for (const child of getChildFlows(flow)) {
     walkFlow(child, ids);
-  }
-}
-
-/** getChildFlows 로컬 복사 — pipe-analyze.ts 순환 import 방지 */
-function getChildFlowsLocal(flow: PipeFlow): PipeFlow[] {
-  switch (flow.kind) {
-    case "step": case "emit": return [];
-    case "sequence": case "parallel": case "race": return flow.steps;
-    case "branch": return flow.paths;
-    case "optional": case "retry": case "throttle": case "debounce":
-    case "circuit-breaker": case "filter": case "dedup":
-    case "resequence": return [flow.step];
-    case "loop": case "buffer": case "window": case "feedback": return [flow.body];
-    case "map": case "split": return [flow.itemFlow];
-    case "reduce": case "enrich": return [flow.step];
-    case "fallback": return [flow.try, flow.catch];
-    case "compensate": return [flow.forward, flow.compensate];
-    case "transition-scope": return flow.compensate ? [flow.body, flow.compensate] : [flow.body];
-    case "finally": return [flow.body, flow.cleanup];
-    case "await": return [flow.then];
-    case "timeout": return flow.onTimeout ? [flow.body, flow.onTimeout] : [flow.body];
-    case "tap": return [flow.observe, flow.step];
-    case "correlation": return flow.onTimeout ? [flow.onMatch, flow.onTimeout] : [flow.onMatch];
-    default: return [];
   }
 }
 

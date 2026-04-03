@@ -1,3 +1,5 @@
+import type { TransformKind } from "./data-schema.js";
+
 // ── PipeSpec — 단일 파이프 노드 ──────────────────────────
 
 export interface PipePort {
@@ -129,6 +131,14 @@ export interface PipeStep {
   dataContract?: StepDataContract;
 }
 
+/** 출력 필드 하나의 계보 힌트 — 어떤 입력이 이 출력에 기여했는가 */
+export interface LineageHint {
+  /** 이 출력에 기여하는 입력 필드명 목록 */
+  sources: string[];
+  /** 변환 종류 */
+  transform: TransformKind;
+}
+
 export interface StepDataContract {
   /** 이 step이 기대하는 입력 필드 */
   consumes?: Record<string, { type: string; required: boolean; source?: string }>;
@@ -136,6 +146,8 @@ export interface StepDataContract {
   produces?: Record<string, { type: string; required: boolean }>;
   /** 접근하는 테이블/컬럼 */
   accesses?: Array<{ schemaId: string; columns: string[]; mode: "read" | "write" | "readwrite" }>;
+  /** 출력 필드별 입력 기여 매핑 — 어떤 consumes가 어떤 produces에 기여하는가 */
+  lineageHints?: Record<string, LineageHint>;
 }
 
 export interface PipeSequence {

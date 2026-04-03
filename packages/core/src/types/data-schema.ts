@@ -59,6 +59,8 @@ export interface FieldLineage {
   expression?: string;
   pipeId: string;
   stepPath: string;
+  /** 이 변환을 수행한 패싯 (PipeStep.facet) */
+  facet?: string;
 }
 
 export interface FieldRef {
