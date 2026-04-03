@@ -3,10 +3,23 @@ import { renderFileMapLayout, renderTreeCanvas } from "./render.js";
 import { SAMPLE_REPORT } from "./sample-report.js";
 import { applyRawInputToState, createInitialState, resolveActiveTree } from "./state.js";
 import type { RenderState } from "./types.js";
+import {
+  applyViewportHudAction,
+  createCanvasChrome,
+  type CanvasViewportController,
+  createViewportHudActions,
+  isCanvasDisclosureOpen,
+  isViewportHudActionId,
+  renderCanvasHud,
+  renderCanvasSupportBar,
+  toggleCanvasDisclosureState,
+} from "canvas-viewport";
 
 let container: HTMLElement;
 let state: RenderState;
 let autoRefreshTimerId: number | null = null;
+let canvasController: CanvasViewportController | null = null;
+let chrome: ReturnType<typeof createCanvasChrome> | null = null;
 const AUTO_REFRESH_MS = 5000;
 
 export function renderFileMapPage(el: HTMLElement): void {
@@ -22,11 +35,27 @@ export function renderFileMapPage(el: HTMLElement): void {
 function render(): void {
   const activeTree = resolveActiveTree(state);
   renderFileMapLayout(container, state, activeTree);
+  mountCanvasChrome();
   bindPageActions();
-  renderTreeCanvas(container, activeTree, state.selectedNodeId, (nodeId) => {
-    state.selectedNodeId = nodeId;
-    render();
+  renderDrawerSupportBar();
+  renderCanvasHudForFileMap();
+  canvasController = chrome
+    ? renderTreeCanvas(chrome.surfaceHost, chrome.minimapHost, activeTree, state.selectedNodeId, (nodeId) => {
+      state.selectedNodeId = nodeId;
+      render();
+    })
+    : null;
+}
+
+function mountCanvasChrome(): void {
+  const chromeRoot = container.querySelector<HTMLElement>("#fmap-canvas-chrome");
+  if (!chromeRoot) return;
+  chromeRoot.innerHTML = "";
+  chrome = createCanvasChrome({
+    surfaceClassName: "fmap-canvas",
+    minimapClassName: "fmap-minimap",
   });
+  chromeRoot.appendChild(chrome.shell);
 }
 
 function bindPageActions(): void {
@@ -65,26 +94,8 @@ function bindPageActions(): void {
     });
   });
 
-  container.querySelector<HTMLButtonElement>(".fmap-reset-view")?.addEventListener("click", () => {
-    const activeTree = resolveActiveTree(state);
-    renderTreeCanvas(container, activeTree, state.selectedNodeId, (nodeId) => {
-      state.selectedNodeId = nodeId;
-      render();
-    });
-  });
-
-  container.querySelectorAll<HTMLButtonElement>(".fmap-toggle").forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextMode = button.dataset.viewMode;
-      if (nextMode === "all" || nextMode === "current" || nextMode === "workspace" || nextMode === "overlap") {
-        state.viewMode = nextMode;
-        render();
-      }
-    });
-  });
-
   container.querySelector<HTMLButtonElement>(".fmap-drawer-toggle")?.addEventListener("click", () => {
-    state.drawerExpanded = !state.drawerExpanded;
+    state.drawerState = toggleCanvasDisclosureState(state.drawerState);
     render();
   });
 
@@ -162,4 +173,78 @@ function ensureAutoRefreshLoop(): void {
     if (state.inputSource !== "hosted") return;
     void loadHostedReport(false);
   }, AUTO_REFRESH_MS);
+}
+
+function renderCanvasHudForFileMap(): void {
+  const hudHost = chrome?.hudHost;
+  if (!hudHost) return;
+
+  renderCanvasHud(hudHost, {
+    hint: "휠 확대 · 드래그 이동 · 미니맵 클릭 이동",
+    actions: createViewportHudActions({
+      extraActions: [
+        { id: "view:all", label: "전체 변경", active: state.viewMode === "all" },
+        { id: "view:current", label: "현재 브랜치", active: state.viewMode === "current" },
+        { id: "view:workspace", label: "작업중만", active: state.viewMode === "workspace" },
+        { id: "view:overlap", label: "충돌만", active: state.viewMode === "overlap" },
+      ],
+      includeZoom: true,
+      includeFitView: true,
+      includeResetView: true,
+    }),
+    onAction: (actionId) => {
+      if (isViewportHudActionId(actionId)) {
+        if (canvasController) {
+          applyViewportHudAction(canvasController, actionId);
+          return;
+        }
+      }
+      if (actionId.startsWith("view:")) {
+        const nextMode = actionId.slice("view:".length);
+        if (nextMode === "all" || nextMode === "current" || nextMode === "workspace" || nextMode === "overlap") {
+          state.viewMode = nextMode;
+          render();
+        }
+      }
+    },
+  });
+}
+
+function renderDrawerSupportBar(): void {
+  const supportHost = container.querySelector<HTMLElement>("#fmap-drawer-support");
+  if (!supportHost) return;
+
+  renderCanvasSupportBar(supportHost, {
+    leading: "Support",
+    chips: [
+      { label: state.autoRefreshEnabled ? "auto refresh" : "manual refresh", tone: state.autoRefreshEnabled ? "success" : "warning" },
+      { label: isCanvasDisclosureOpen(state.drawerState) ? "drawer open" : "drawer closed", tone: "info" },
+    ],
+    actions: [
+      {
+        id: "drawer:refresh",
+        label: state.autoRefreshEnabled ? "자동 새로고침 끄기" : "자동 새로고침 켜기",
+      },
+      {
+        id: "drawer:toggle",
+        label: isCanvasDisclosureOpen(state.drawerState) ? "정보 패널 접기" : "정보 패널 펼치기",
+        emphasis: "primary",
+      },
+    ],
+    onAction: (actionId) => {
+      if (actionId === "drawer:refresh") {
+        state.autoRefreshEnabled = !state.autoRefreshEnabled;
+        if (state.autoRefreshEnabled) {
+          state.inputSource = "hosted";
+          void loadHostedReport(false);
+        }
+        render();
+        return;
+      }
+      if (actionId === "drawer:toggle") {
+        state.drawerState = toggleCanvasDisclosureState(state.drawerState);
+        render();
+      }
+    },
+  });
 }

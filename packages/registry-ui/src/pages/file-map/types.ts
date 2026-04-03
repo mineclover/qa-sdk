@@ -6,6 +6,7 @@ import type {
   GitConflictReport as GitConflictReportInput,
   WorkspaceChangeSet as GitConflictWorkspace,
 } from "git-utils";
+import type { CanvasDisclosureState } from "canvas-viewport";
 
 export type GitConflictSource =
   | GitConflictReportInput["analysis"]["current"]
@@ -103,6 +104,6 @@ export interface RenderState {
   autoLoadAttempted: boolean;
   autoRefreshEnabled: boolean;
   inputSource: "sample" | "hosted" | "file" | "manual";
-  drawerExpanded: boolean;
+  drawerState: CanvasDisclosureState;
   viewMode: "all" | "current" | "workspace" | "overlap";
 }

@@ -1,5 +1,7 @@
+const DEFAULT_HOSTED_REPORT_PATH = import.meta.env.VITE_GIT_CONFLICTS_REPORT_PATH ?? "/git-conflicts.json";
+
 export async function loadHostedReportText(
-  baseUrl = "/git-conflicts.json",
+  baseUrl = DEFAULT_HOSTED_REPORT_PATH,
 ): Promise<{ ok: true; rawText: string } | { ok: false; message: string }> {
   try {
     const response = await fetch(baseUrl, { cache: "no-store" });
