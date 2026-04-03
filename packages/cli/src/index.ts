@@ -11,7 +11,7 @@
 
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
-import { gitConflicts } from './commands/git-conflicts.js';
+import { gitConflicts, watchGitConflicts } from './commands/git-conflicts.js';
 import { gitScan } from './commands/git-scan.js';
 import { register } from './commands/register.js';
 import {
@@ -89,7 +89,7 @@ import {
 import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from './commands/obs.js';
 import { dryRun, type ChangeScenario } from './commands/dry-run.js';
 import { schemaPull } from './commands/schema-pull.js';
-import { codegen, runMigrationTest, type CodegenFormat } from './commands/codegen.js';
+import { codegen, codegenDataObjects, runMigrationTest, type CodegenFormat } from './commands/codegen.js';
 import {
   specList,
   specResolve,
@@ -364,9 +364,12 @@ Commands:
     --remote <name>        원격 이름 (기본: origin)
     --base <ref>           기준 브랜치/참조 (기본: upstream 또는 remote HEAD)
     --current <ref>        현재 브랜치 대신 비교할 ref (기본: HEAD)
+    --max-commits <n>      source별 포함할 최근 커밋 수 (기본: 12)
     --skip-fetch           fetch 없이 로컬에 저장된 remote ref만 사용
     --skip-worktrees       다른 local worktree는 분석에서 제외
     --output <path>        JSON 리포트를 파일로 저장
+    --watch                주기적으로 리포트를 다시 계산
+    --interval-ms <n>      watch 주기 ms (기본: 5000)
     --json                 JSON으로 출력
     --limit <n>            사람이 읽는 출력 최대 개수 (기본: 10)
 
@@ -1544,8 +1547,11 @@ async function runGitConflicts(argv: string[]) {
       remote: { type: 'string', default: 'origin' },
       base: { type: 'string' },
       current: { type: 'string' },
+      'max-commits': { type: 'string', default: '12' },
       json: { type: 'boolean', default: false },
       output: { type: 'string' },
+      watch: { type: 'boolean', default: false },
+      'interval-ms': { type: 'string', default: '5000' },
       limit: { type: 'string', default: '10' },
       'skip-fetch': { type: 'boolean', default: false },
       'skip-worktrees': { type: 'boolean', default: false },
@@ -1557,18 +1563,37 @@ async function runGitConflicts(argv: string[]) {
   if (!Number.isFinite(parsedLimit) || parsedLimit < 1) {
     throw new Error('--limit는 1 이상의 숫자여야 함');
   }
+  const parsedMaxCommits = Number(values['max-commits'] ?? '12');
+  if (!Number.isFinite(parsedMaxCommits) || parsedMaxCommits < 1) {
+    throw new Error('--max-commits는 1 이상의 숫자여야 함');
+  }
+  const parsedIntervalMs = Number(values['interval-ms'] ?? '5000');
+  if (!Number.isFinite(parsedIntervalMs) || parsedIntervalMs < 500) {
+    throw new Error('--interval-ms는 500 이상의 숫자여야 함');
+  }
 
-  await gitConflicts({
+  const commandOptions = {
     root: values.root ?? '.',
+    executionCwd: process.cwd(),
     remote: values.remote ?? 'origin',
     base: values.base,
     current: values.current,
+    maxCommitHistory: parsedMaxCommits,
     json: values.json ?? false,
     output: values.output,
     limit: parsedLimit,
     skipFetch: values['skip-fetch'] ?? false,
     skipWorktrees: values['skip-worktrees'] ?? false,
-  });
+    watch: values.watch ?? false,
+    intervalMs: parsedIntervalMs,
+  };
+
+  if (values.watch) {
+    await watchGitConflicts(commandOptions);
+    return;
+  }
+
+  await gitConflicts(commandOptions);
 }
 
 // ── register ─────────────────────────────────────────
@@ -1653,6 +1678,7 @@ async function runCodegen(argv: string[]) {
       'lock-version': { type: 'string' },
       registry: { type: 'string' },
       'catalog-id': { type: 'string' },
+      'data-objects': { type: 'string' },
       'test-migration': { type: 'boolean' },
       prefix: { type: 'string' },
       from: { type: 'string' },
@@ -1661,6 +1687,15 @@ async function runCodegen(argv: string[]) {
     },
     strict: true,
   });
+
+  // --data-objects → DataObjectBinding JSON → Typed SDK 생성
+  if (values['data-objects']) {
+    await codegenDataObjects({
+      bindingsPath: values['data-objects'],
+      output: values.output ?? './generated',
+    });
+    return;
+  }
 
   // --test-migration → 라운드트립 검증
   if (values['test-migration']) {
