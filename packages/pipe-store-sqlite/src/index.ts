@@ -12,6 +12,7 @@ export type {
   LineageValidationRecord,
   LineageValidationInput,
 } from "./data-object-store.js";
+export { SqliteFacetCodeStore } from "./facet-code-store.js";
 export { SqliteManifestRegistry } from "./manifest-store.js";
 export type {
   PrefixVersionRecord, PrefixLifecycleState,

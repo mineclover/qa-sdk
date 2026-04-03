@@ -116,6 +116,21 @@ export const dataObjectBindings = sqliteTable(
   ],
 );
 
+/** Facet-code mapping — 패싯 ↔ 소스 코드 매핑 */
+export const facetCodeMappings = sqliteTable(
+  "facet_code_mappings",
+  {
+    facet: text("facet").notNull().primaryKey(),
+    /** FacetCodeRef[] JSON */
+    implementations: text("implementations").notNull(),
+    schemaId: text("schema_id"),
+    createdAt: text("created_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+  },
+  (t) => [
+    index("idx_fcm_schema_id").on(t.schemaId),
+  ],
+);
+
 /** Lineage validation history — schemaId별 검증 이력 */
 export const lineageValidations = sqliteTable(
   "lineage_validations",
