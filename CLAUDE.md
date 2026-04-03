@@ -552,7 +552,7 @@ INSIGHTS_DRIVER=app-hub  → AppHubInsightsStore (Google App Hub)
 - **스키마 파일**: 각 패키지 `src/db/schema.ts` (예외 없음)
 - **설정 파일**: 각 패키지 루트 `drizzle.config.ts` (`dialect: "sqlite"`, `out: "./drizzle"`)
 - **마이그레이션 폴더 경로**: `new URL("../drizzle", import.meta.url).pathname` (process.cwd 금지). **주의**: tsc가 src→dist로 컴파일하므로 `src/`에서의 상대경로와 `dist/`에서의 상대경로가 다름. `dist/xxx.js` 기준으로 `../drizzle`이 `패키지/drizzle`을 가리키는지 확인
-- **IF NOT EXISTS**: 모든 SQLite 마이그레이션 SQL에 필수. drizzle-kit generate 후 수동 추가
+- **IF NOT EXISTS**: drizzle `migrate()`가 `__drizzle_migrations` hash로 중복 실행을 방지하므로, 정상 마이그레이션 경로에서는 불필요. 생성된 SQL을 수동 수정하지 않는다
 - **PRAGMA**: 모든 SQLite 서비스에 WAL + busy_timeout=3000. FK 있으면 foreign_keys=ON
 - **드라이버**: NestJS 서비스는 `drizzle-orm/better-sqlite3`, 나머지는 `drizzle-orm/node-sqlite`
 - **node:sqlite 타입**: `getDatabaseSync()` + `DatabaseSyncInstance`를 index-meta에서 import. 자체 인터페이스 정의 금지
