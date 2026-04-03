@@ -36,6 +36,109 @@ def:
 <핵심 사실 — 선택>
 ```
 
+## 문서 유형 (5종 확장자)
+
+컨벤션: `docs/specs/system/doc-type-convention.spec.md`
+
+파일명 형식: `{def-id}.{type}.md`
+
+| `--type` | 확장자 | lifecycle | 용도 |
+|----------|--------|----------|------|
+| `spec` (기본) | `.spec.md` | `approved` | 구현 완료 스펙 |
+| `todo` | `.todo.md` | `draft` | 미구현 계획 (체크박스 `[ ]`) |
+| `test` | `.test.md` | spec 따름 | 검증 기준 (test.ts 식별자 참조) |
+| `memo` | `.memo.md` | — | 의사결정 맥락 |
+| `plan` | `.plan.md` | — | 현재 목표 → 장기 목표 |
+
+규칙:
+- **기본은 spec** — 나머지는 필요시만 생성
+- 같은 id에 `.spec.md` + `.todo.md` 동시 존재 가능 (완료분 + 잔여분)
+- todo에만 체크박스, plan에는 방향만
+- memo는 spec에서 "왜" 비중 > 1/3일 때 분리
+- test.md는 test.ts `describe`/`it` 식별자 참조
+
+### todo 템플릿
+
+```markdown
+---
+def:
+  id: {id}
+  level: leaf
+  scope: {scope}
+  aspect: {aspect}
+  depth: specification
+  lifecycle: draft
+  layer: {layer}
+  links: []
+---
+
+# {제목}
+
+## 목적 ^purpose
+
+## 구현 항목
+
+- [ ] 항목 1
+- [ ] 항목 2
+```
+
+### test 템플릿
+
+```markdown
+---
+def:
+  id: {id}
+  level: leaf
+  scope: {scope}
+  aspect: validation
+  depth: validation
+  lifecycle: draft
+  layer: {layer}
+  links:
+    - target: {spec-id}
+      type: refines
+---
+
+# {제목} — 검증 기준
+
+## 시나리오
+
+### S-001: {시나리오명}
+
+- **describe**: `{test.ts describe 식별자}`
+- **전제 조건**: ...
+- **기대 결과**: ...
+- **대응 테스트**: `{파일}:{line}`
+```
+
+### memo 템플릿
+
+```markdown
+# {제목} — 결정 메모
+
+## 날짜: {YYYY-MM-DD}
+
+## 맥락
+
+## 검토한 대안
+
+## 결정
+
+## 영향받는 스펙
+```
+
+### plan 템플릿
+
+```markdown
+# {제목} — 방향 계획
+
+## 현재 목표
+
+## 장기 목표
+
+## 단계
+```
+
 ## level 판단 기준
 
 원칙: "모든 문서는 하나의 개념과 그 개념의 구성을 참조하는 완결된 정의여야 한다."
