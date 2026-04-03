@@ -146,9 +146,14 @@ async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
   }
 }
 
-// ── SchemaSnapshot 기반 codegen (기존) ─────────────────
+// ── SchemaSnapshot 기반 codegen (레거시) ─────────────────
 
+/** @deprecated --catalog 또는 --registry 사용 권장 */
 async function codegenFromSnapshot(opts: CodegenOptions): Promise<void> {
+  console.warn(
+    "[deprecated] SchemaSnapshot 기반 codegen은 향후 제거 예정입니다.\n" +
+    "  --catalog <경로> 또는 --registry <URL> 사용을 권장합니다.",
+  );
   const info = await stat(opts.input);
   const snapshots = info.isDirectory()
     ? await readSnapshots(opts.input)
