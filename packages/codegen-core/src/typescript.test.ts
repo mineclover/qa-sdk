@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateTypescript } from "./typescript.js";
-import type { SchemaSnapshot } from "../lib/types.js";
+import type { SchemaSnapshot } from "./types.js";
 
 const SNAPSHOT: SchemaSnapshot = {
   id: "k8s-dsl-v1",

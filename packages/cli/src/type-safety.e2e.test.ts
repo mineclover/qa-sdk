@@ -8,8 +8,8 @@
  * 4. empty-entries 축이 string으로 적절히 폴백하는지
  */
 import { describe, it, expect } from "vitest";
-import { generateTypescript } from "./generators/typescript.js";
-import type { SchemaSnapshot } from "./lib/types.js";
+import { generateTypescript } from "codegen-core";
+import type { SchemaSnapshot } from "codegen-core";
 
 // ── 픽스처 ───────────────────────────────────────────
 

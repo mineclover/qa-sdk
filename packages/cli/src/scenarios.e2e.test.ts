@@ -14,10 +14,9 @@ import { writeFile, readFile, readdir, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { codegen } from "./commands/codegen.js";
-import { generateProto } from "./generators/proto.js";
-import { generateTypescript } from "./generators/typescript.js";
-import { readSnapshot, readSnapshots } from "./lib/snapshot-io.js";
-import type { SchemaSnapshot } from "./lib/types.js";
+import { generateProto, generateTypescript } from "codegen-core";
+import { readSnapshot, readSnapshots } from "snapshot-io";
+import type { SchemaSnapshot } from "codegen-core";
 
 // ── 테스트 픽스처 ──────────────────────────────────
 
