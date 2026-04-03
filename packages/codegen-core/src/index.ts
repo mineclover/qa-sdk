@@ -17,6 +17,12 @@ export {
 } from "./naming.js";
 export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from "./types.js";
 export {
+  generateDataObjectBindings,
+  type DataObjectCodegenFile,
+  type DataObjectCodegenResult,
+  type DataObjectCodegenOptions,
+} from "./data-object-typescript.js";
+export {
   generateTrackCode,
   type EventDef,
   type FieldDef,
