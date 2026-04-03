@@ -1,3 +1,17 @@
+import {
+  applyViewportHudAction,
+  createCanvasViewportSession,
+  renderCanvasSupportBar,
+  type CanvasViewportController,
+  createViewportHudActions,
+  DEFAULT_CANVAS_VIEWPORT_PRESET,
+  createMinimapLayout,
+  isViewportHudActionId,
+  minimapPointToContentPoint,
+  projectViewportFrame,
+  renderCanvasHud,
+  type ViewTransformLike,
+} from "canvas-viewport";
 import type { LayoutResult, PositionedNode, PositionedEdge } from "./layout";
 import type { NodeState } from "./style";
 import type { GraphRole } from "@qa-sdk/event-catalog";
@@ -10,7 +24,7 @@ interface EventStackEntry {
   timestamp: string;
 }
 
-export interface GraphRenderer {
+export interface GraphRenderer extends CanvasViewportController {
   render(): void;
   /** 노드 상태, 엣지 하이라이트, 이벤트 배지를 모두 초기 상태로 리셋 */
   resetState(): void;
@@ -50,13 +64,39 @@ export function createGraphSvg(
   container: HTMLElement,
   layout: LayoutResult,
 ): GraphRenderer {
+  let shell: HTMLDivElement | null = null;
   let svg: SVGSVGElement | null = null;
+  let scene: SVGGElement | null = null;
+  let minimapHost: HTMLDivElement | null = null;
+  let supportHost: HTMLDivElement | null = null;
+  let minimapViewport: SVGRectElement | null = null;
+  let transform: ViewTransformLike = { x: 0, y: 0, k: 1 };
+  let dragging = false;
+  let dragOrigin: { x: number; y: number } | null = null;
+  let dragTransformStart: ViewTransformLike | null = null;
   const nodeElements = new Map<string, SVGGElement>();
   const edgeElements = new Map<string, SVGGElement>();
   const eventStacks = new Map<string, EventStackEntry[]>();
   const nodeStates = new Map<string, NodeState>();
   // Persist role so updateNodeState can re-apply it after state changes
   const nodeRoles = new Map<string, GraphRole | undefined>();
+  const minimapLayout = createMinimapLayout({
+    width: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapWidth,
+    height: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapHeight,
+    contentWidth: layout.width,
+    contentHeight: layout.height,
+    padding: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapPadding,
+  });
+  const viewportSession = createCanvasViewportSession({
+    getTransform: () => transform,
+    setTransform: (nextTransform) => {
+      transform = nextTransform;
+      applyTransform();
+    },
+    getContentSize: () => ({ width: layout.width, height: layout.height }),
+    getViewportSize: () => ({ width: layout.width, height: layout.height }),
+    preset: DEFAULT_CANVAS_VIEWPORT_PRESET,
+  });
 
   function buildSvg(): SVGSVGElement {
     const el = document.createElementNS(SVG_NS, "svg");
@@ -64,6 +104,63 @@ export function createGraphSvg(
     el.setAttribute("preserveAspectRatio", "xMidYMid meet");
     el.classList.add("spec-graph");
     return el;
+  }
+
+  function buildShell(): HTMLDivElement {
+    const el = document.createElement("div");
+    el.className = "spec-graph-shell cv-shell";
+    return el;
+  }
+
+  function buildMinimap(): HTMLDivElement {
+    const el = document.createElement("div");
+    el.className = "spec-graph-minimap cv-minimap";
+    return el;
+  }
+
+  function buildSupportHost(): HTMLDivElement {
+    const el = document.createElement("div");
+    el.className = "spec-graph-support cv-support-host";
+    return el;
+  }
+
+  function renderHud(host: HTMLDivElement): void {
+    renderCanvasHud(host, {
+      hint: "휠 확대 · 드래그 이동 · 미니맵 클릭 이동",
+      actions: createViewportHudActions({
+        includeZoom: true,
+        includeFitView: true,
+        includeResetView: false,
+      }),
+      onAction: (actionId: string) => {
+        if (!isViewportHudActionId(actionId)) return;
+        applyViewportHudAction(rendererApi, actionId);
+      },
+    });
+  }
+
+  function renderSupport(host: HTMLDivElement): void {
+    renderCanvasSupportBar(host, {
+      leading: "Spec Graph",
+      chips: [
+        { label: `nodes ${layout.nodes.length}`, tone: "info" },
+        { label: `edges ${layout.edges.length}`, tone: "success" },
+      ],
+      actions: [
+        { id: "graph:reset-state", label: "상태 리셋" },
+      ],
+      onAction: (actionId: string) => {
+        if (actionId === "graph:reset-state") {
+          rendererApi.resetState();
+        }
+      },
+    });
+  }
+
+  function buildScene(svgEl: SVGSVGElement): SVGGElement {
+    const group = document.createElementNS(SVG_NS, "g");
+    svgEl.appendChild(group);
+    return group;
   }
 
   function createArrowMarker(svgEl: SVGSVGElement): void {
@@ -87,7 +184,7 @@ export function createGraphSvg(
     svgEl.appendChild(defs);
   }
 
-  function renderEdge(svgEl: SVGSVGElement, edge: PositionedEdge): void {
+  function renderEdge(sceneEl: SVGGElement, edge: PositionedEdge): void {
     const g = document.createElementNS(SVG_NS, "g");
     g.setAttribute("class", getEdgeClass(edge.type));
     g.setAttribute("data-source", edge.source);
@@ -101,11 +198,11 @@ export function createGraphSvg(
       g.appendChild(path);
     }
 
-    svgEl.appendChild(g);
+    sceneEl.appendChild(g);
     edgeElements.set(`${edge.source}->${edge.target}`, g);
   }
 
-  function renderNode(svgEl: SVGSVGElement, node: PositionedNode): void {
+  function renderNode(sceneEl: SVGGElement, node: PositionedNode): void {
     const g = document.createElementNS(SVG_NS, "g");
     const state = nodeStates.get(node.step_id) ?? "pending";
 
@@ -142,7 +239,7 @@ export function createGraphSvg(
       g.appendChild(badge);
     }
 
-    svgEl.appendChild(g);
+    sceneEl.appendChild(g);
     nodeElements.set(node.step_id, g);
   }
 
@@ -177,21 +274,174 @@ export function createGraphSvg(
     g.appendChild(badge);
   }
 
-  return {
+  function toCanvasPoint(event: MouseEvent, svgEl: SVGSVGElement): { x: number; y: number } {
+    const rect = svgEl.getBoundingClientRect();
+    const viewBox = svgEl.viewBox.baseVal;
+    const scaleX = viewBox.width / rect.width;
+    const scaleY = viewBox.height / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY,
+    };
+  }
+
+  function applyTransform(): void {
+    if (!scene) return;
+    scene.setAttribute("transform", `translate(${transform.x} ${transform.y}) scale(${transform.k})`);
+    updateMinimapViewport();
+  }
+
+  function updateMinimapViewport(): void {
+    if (!minimapViewport) return;
+    const frame = projectViewportFrame(transform, minimapLayout);
+    minimapViewport.setAttribute("x", String(frame.x));
+    minimapViewport.setAttribute("y", String(frame.y));
+    minimapViewport.setAttribute("width", String(frame.width));
+    minimapViewport.setAttribute("height", String(frame.height));
+  }
+
+  function bindViewportInteractions(svgEl: SVGSVGElement): void {
+    svgEl.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const point = toCanvasPoint(event, svgEl);
+      viewportSession.zoomAtPoint(
+        point,
+        event.deltaY > 0
+          ? DEFAULT_CANVAS_VIEWPORT_PRESET.wheelZoomOutFactor
+          : DEFAULT_CANVAS_VIEWPORT_PRESET.wheelZoomInFactor,
+      );
+    }, { passive: false });
+
+    svgEl.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      dragging = true;
+      dragOrigin = toCanvasPoint(event, svgEl);
+      dragTransformStart = { ...transform };
+      svgEl.setPointerCapture(event.pointerId);
+    });
+
+    svgEl.addEventListener("pointermove", (event) => {
+      if (!dragging || !dragOrigin || !dragTransformStart) return;
+      const point = toCanvasPoint(event, svgEl);
+      viewportSession.setTransform({
+        x: dragTransformStart.x + (point.x - dragOrigin.x),
+        y: dragTransformStart.y + (point.y - dragOrigin.y),
+        k: dragTransformStart.k,
+      });
+    });
+
+    const endDrag = (event: PointerEvent) => {
+      dragging = false;
+      dragOrigin = null;
+      dragTransformStart = null;
+      if (svgEl.hasPointerCapture(event.pointerId)) {
+        svgEl.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    svgEl.addEventListener("pointerup", endDrag);
+    svgEl.addEventListener("pointercancel", endDrag);
+  }
+
+  function renderMinimap(): void {
+    if (!minimapHost || !svg) return;
+    minimapHost.innerHTML = "";
+    const minimapSvg = document.createElementNS(SVG_NS, "svg");
+    minimapSvg.setAttribute("viewBox", `0 0 ${minimapLayout.width} ${minimapLayout.height}`);
+    minimapSvg.classList.add("spec-graph-minimap-svg");
+    minimapHost.appendChild(minimapSvg);
+
+    const mapLayer = document.createElementNS(SVG_NS, "g");
+    mapLayer.setAttribute(
+      "transform",
+      `translate(${minimapLayout.padding} ${minimapLayout.padding}) scale(${minimapLayout.scale})`,
+    );
+    minimapSvg.appendChild(mapLayer);
+
+    for (const edge of layout.edges) {
+      const path = document.createElementNS(SVG_NS, "path");
+      path.setAttribute("d", buildSmoothPath(edge.points));
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#94a3b8");
+      path.setAttribute("stroke-width", String(1 / minimapLayout.scale));
+      path.setAttribute("stroke-opacity", "0.85");
+      mapLayer.appendChild(path);
+    }
+
+    for (const node of layout.nodes) {
+      const circle = document.createElementNS(SVG_NS, "circle");
+      circle.setAttribute("cx", String(node.x));
+      circle.setAttribute("cy", String(node.y));
+      circle.setAttribute("r", String(3.5 / minimapLayout.scale));
+      circle.setAttribute("fill", "#475569");
+      circle.setAttribute("stroke", "#ffffff");
+      circle.setAttribute("stroke-width", String(1 / minimapLayout.scale));
+      circle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        viewportSession.centerOnPoint({ x: node.x, y: node.y });
+      });
+      mapLayer.appendChild(circle);
+    }
+
+    minimapViewport = document.createElementNS(SVG_NS, "rect");
+    minimapViewport.setAttribute("class", "spec-graph-minimap-viewport");
+    minimapViewport.setAttribute("fill", "rgba(74,158,255,0.14)");
+    minimapViewport.setAttribute("stroke", "#4a9eff");
+    minimapViewport.setAttribute("stroke-width", "1");
+    minimapSvg.appendChild(minimapViewport);
+
+    minimapSvg.addEventListener("click", (event) => {
+      const point = toCanvasPoint(event as MouseEvent, minimapSvg);
+      const contentPoint = minimapPointToContentPoint(point, minimapLayout);
+      viewportSession.centerOnPoint(contentPoint);
+    });
+
+    updateMinimapViewport();
+  }
+
+  function resetView(): void {
+    viewportSession.resetView();
+  }
+
+  function fitView(): void {
+    viewportSession.fitView();
+  }
+
+  function zoomIn(): void {
+    viewportSession.zoomIn();
+  }
+
+  function zoomOut(): void {
+    viewportSession.zoomOut();
+  }
+  const rendererApi: GraphRenderer = {
     render() {
       container.innerHTML = "";
+      shell = buildShell();
       svg = buildSvg();
+      scene = buildScene(svg);
       createArrowMarker(svg);
+      bindViewportInteractions(svg);
 
       for (const edge of layout.edges) {
-        renderEdge(svg, edge);
+        renderEdge(scene, edge);
       }
 
       for (const node of layout.nodes) {
-        renderNode(svg, node);
+        renderNode(scene, node);
       }
-
-      container.appendChild(svg);
+      minimapHost = buildMinimap();
+      supportHost = buildSupportHost();
+      const hudHost = document.createElement("div");
+      renderSupport(supportHost);
+      renderHud(hudHost);
+      shell.appendChild(svg);
+      shell.appendChild(supportHost);
+      shell.appendChild(hudHost);
+      shell.appendChild(minimapHost);
+      container.appendChild(shell);
+      renderMinimap();
+      viewportSession.resetView();
     },
 
     updateNodeState(stepId: string, state: NodeState) {
@@ -232,6 +482,19 @@ export function createGraphSvg(
       }
     },
 
+    resetView() {
+      viewportSession.resetView();
+    },
+    fitView() {
+      viewportSession.fitView();
+    },
+    zoomIn() {
+      viewportSession.zoomIn();
+    },
+    zoomOut() {
+      viewportSession.zoomOut();
+    },
+
     highlightEdge(source: string, target: string) {
       const g = edgeElements.get(`${source}->${target}`);
       if (!g) return;
@@ -239,10 +502,15 @@ export function createGraphSvg(
     },
 
     destroy() {
-      if (svg && svg.parentElement) {
-        svg.parentElement.removeChild(svg);
+      if (shell && shell.parentElement) {
+        shell.parentElement.removeChild(shell);
       }
+      shell = null;
       svg = null;
+      scene = null;
+      minimapHost = null;
+      supportHost = null;
+      minimapViewport = null;
       nodeElements.clear();
       edgeElements.clear();
       eventStacks.clear();
@@ -250,4 +518,5 @@ export function createGraphSvg(
       nodeRoles.clear();
     },
   };
+  return rendererApi;
 }

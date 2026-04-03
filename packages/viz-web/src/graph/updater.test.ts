@@ -9,6 +9,10 @@ function makeRenderer(): GraphRenderer {
   return {
     render: vi.fn(),
     resetState: vi.fn(),
+    fitView: vi.fn(),
+    resetView: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
     updateNodeState: vi.fn(),
     addEventToStack: vi.fn(),
     highlightEdge: vi.fn(),

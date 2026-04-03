@@ -1,6 +1,7 @@
 import "./styles/main.css";
 import "./styles/graph.css";
 
+import { getCanvasPaneFocusFlags, toggleCanvasPaneFocus } from "canvas-viewport";
 import type { ScenarioSpec, SpecGraph, StoredRecord, VerdictReport } from "@qa-sdk/core";
 import { compileSpec } from "@qa-sdk/engine";
 import { computeLayout } from "./graph/layout";
@@ -48,18 +49,13 @@ function clearError(): void {
 let focusedPane: "left" | "right" | null = null;
 
 function focusPane(pane: "left" | "right"): void {
-  if (focusedPane === pane) {
-    // second click on same pane → reset to equal
-    mainLeftEl.classList.remove("focused", "unfocused");
-    mainRightEl.classList.remove("focused", "unfocused");
-    focusedPane = null;
-  } else {
-    focusedPane = pane;
-    mainLeftEl.classList.toggle("focused", pane === "left");
-    mainLeftEl.classList.toggle("unfocused", pane === "right");
-    mainRightEl.classList.toggle("focused", pane === "right");
-    mainRightEl.classList.toggle("unfocused", pane === "left");
-  }
+  focusedPane = toggleCanvasPaneFocus(focusedPane, pane);
+  const left = getCanvasPaneFocusFlags(focusedPane, "left");
+  const right = getCanvasPaneFocusFlags(focusedPane, "right");
+  mainLeftEl.classList.toggle("focused", left.focused);
+  mainLeftEl.classList.toggle("unfocused", left.unfocused);
+  mainRightEl.classList.toggle("focused", right.focused);
+  mainRightEl.classList.toggle("unfocused", right.unfocused);
 }
 
 // Only focus on clicks that hit the pane background (not interactive children)

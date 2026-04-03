@@ -1,3 +1,5 @@
+@import "canvas-viewport/styles.css";
+
 /* ── SVG Graph Base ───────────────────────────────────── */
 
 .spec-graph {
@@ -7,6 +9,31 @@
   max-width: 100%;
   max-height: 100%;
   overflow: visible;
+}
+
+.spec-graph-shell {
+  --cv-minimap-bg: rgba(15, 23, 42, 0.88);
+  --cv-minimap-border: rgba(74, 158, 255, 0.26);
+  --cv-hud-bg: rgba(15, 23, 42, 0.88);
+  --cv-hud-border: rgba(74, 158, 255, 0.26);
+  --cv-btn-bg: rgba(74, 158, 255, 0.14);
+  --cv-btn-bg-hover: rgba(74, 158, 255, 0.24);
+  --cv-btn-color: #d9e6ff;
+  --cv-btn-active-bg: #4a9eff;
+  --cv-btn-active-color: #08111f;
+  --cv-hint-color: #b5c0d0;
+}
+
+.spec-graph-minimap {
+  z-index: 4;
+}
+
+.spec-graph-minimap-svg {
+  display: block;
+}
+
+.spec-graph-minimap-viewport {
+  pointer-events: none;
 }
 
 /* ── Nodes ────────────────────────────────────────────── */
