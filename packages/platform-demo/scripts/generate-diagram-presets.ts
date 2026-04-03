@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import {
   bootstrapDkg,
-} from "@qa-sdk/spec-core/analysis";
+} from "@qa-sdk/spec-core/dkg";
 import {
   intentLinkDiagram,
   allIntentLinksDiagram,

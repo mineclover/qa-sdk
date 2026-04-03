@@ -52,7 +52,7 @@ export interface DkgSqliteStoreConstructor {
 
 // ── 동적 import 모듈 타입 ───────────────────────────────
 
-/** `import("@qa-sdk/spec-core/analysis")` 결과의 최소 인터페이스 */
+/** `import("@qa-sdk/spec-core/dkg")` 결과의 최소 인터페이스 */
 export interface AnalysisModulePort {
   bootstrapDkg(options: { catalog: unknown; config: unknown; date?: string }): GraphRegistryPort;
 }

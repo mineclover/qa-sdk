@@ -41,7 +41,7 @@ export async function buildActivationGatePort(
       (options.loadPropagationModule
         ?? (async () => import("@qa-sdk/spec-core/propagation") as unknown as PropagationModulePort))(),
       (options.loadAnalysisModule
-        ?? (async () => import("@qa-sdk/spec-core/analysis") as unknown as AnalysisModulePort))(),
+        ?? (async () => import("@qa-sdk/spec-core/dkg") as unknown as AnalysisModulePort))(),
       (options.loadDemoSnapshot
         ?? (async () => import("demo-snapshot") as unknown as DemoSnapshotModulePort))(),
     ]);

@@ -43,29 +43,30 @@ export interface DevDkgProvider {
 export async function createDevDkgProvider(
   config: DevDkgProviderConfig,
 ): Promise<DevDkgProvider> {
-  const analysisModule = await import("@qa-sdk/spec-core/analysis");
+  const dkgModule = await import("@qa-sdk/spec-core/dkg");
+  const convergenceModule = await import("@qa-sdk/spec-core/convergence");
   const storeModuleImport = await import("@qa-sdk/spec-core/store");
   const demoSnapshotImport = await import("demo-snapshot");
 
   const analysis: AnalysisModulePort = {
     bootstrapDkg(options) {
-      return analysisModule.bootstrapDkg({
-        catalog: options.catalog as Parameters<typeof analysisModule.bootstrapDkg>[0]["catalog"],
-        config: options.config as Parameters<typeof analysisModule.bootstrapDkg>[0]["config"],
+      return dkgModule.bootstrapDkg({
+        catalog: options.catalog as Parameters<typeof dkgModule.bootstrapDkg>[0]["catalog"],
+        config: options.config as Parameters<typeof dkgModule.bootstrapDkg>[0]["config"],
         date: options.date,
-        transitionSpecs: options.transitionSpecs as Parameters<typeof analysisModule.bootstrapDkg>[0]["transitionSpecs"],
+        transitionSpecs: options.transitionSpecs as Parameters<typeof dkgModule.bootstrapDkg>[0]["transitionSpecs"],
       });
     },
     collectMetrics(catalog, graph, usage) {
-      return analysisModule.collectMetrics(
-        catalog as Parameters<typeof analysisModule.collectMetrics>[0],
-        graph as Parameters<typeof analysisModule.collectMetrics>[1],
-        usage as Parameters<typeof analysisModule.collectMetrics>[2],
+      return convergenceModule.collectMetrics(
+        catalog as Parameters<typeof convergenceModule.collectMetrics>[0],
+        graph as Parameters<typeof convergenceModule.collectMetrics>[1],
+        usage as Parameters<typeof convergenceModule.collectMetrics>[2],
       ) as MetricValuePort[];
     },
     metricsToObservations(metrics, options) {
-      return analysisModule.metricsToObservations(
-        metrics as Parameters<typeof analysisModule.metricsToObservations>[0],
+      return convergenceModule.metricsToObservations(
+        metrics as Parameters<typeof convergenceModule.metricsToObservations>[0],
         options,
       ) as ObservationNodePort[];
     },

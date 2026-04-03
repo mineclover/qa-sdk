@@ -19,10 +19,6 @@
       "import": "./dist/convergence/index.js",
       "types": "./dist/convergence/index.d.ts"
     },
-    "./analysis": {
-      "import": "./dist/analysis/index.js",
-      "types": "./dist/analysis/index.d.ts"
-    },
     "./propagation": {
       "import": "./dist/propagation/index.js",
       "types": "./dist/propagation/index.d.ts"

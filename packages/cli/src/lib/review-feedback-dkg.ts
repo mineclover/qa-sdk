@@ -8,7 +8,7 @@ import {
   type DecisionNode,
   type DecisionType,
   type ObservationNode,
-} from "@qa-sdk/spec-core/analysis";
+} from "@qa-sdk/spec-core/dkg";
 import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
 import type { FeedbackRequest } from "review-ledger";
 import { getQaSdkDir } from "./qa-dir.js";

@@ -127,7 +127,7 @@ export class DiagramService {
   private async getTopo(): Promise<ServiceTopologyLike | undefined> {
     if (this.cachedTopo) return this.cachedTopo;
     try {
-      const analysis = await import("@qa-sdk/spec-core/analysis") as unknown as AnalysisDiagramModule;
+      const analysis = await import("@qa-sdk/spec-core/dkg") as unknown as AnalysisDiagramModule;
       this.cachedTopo = analysis.createDemoTopology();
       return this.cachedTopo ?? undefined;
     } catch {

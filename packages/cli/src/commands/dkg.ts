@@ -14,10 +14,7 @@ import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core
 import {
   bootstrapDkg,
   GraphRegistry,
-  scanAxisOverlaps,
   analyzeImpact,
-  scanDecisionConflicts,
-  analyzeDeploymentSkew,
   createDemoTopology,
   exploreService,
   explorePrefix,
@@ -37,6 +34,22 @@ import {
   entryAddChain,
   systemHealthChain,
   convergeChain,
+  traceFlows,
+  validateDslInvariants,
+  scaffoldDecision,
+  inferMigrator,
+  auditCoverage,
+  transitionPrefix,
+  transitionDecision,
+  serviceHealthCheck,
+  eventCoverageCheck,
+  analyzeDslVersionSkew,
+  type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type TableNode, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type ObservationSuggestion, type TransitionSpecNode,
+} from "@qa-sdk/spec-core/dkg";
+import {
+  scanAxisOverlaps,
+  scanDecisionConflicts,
+  analyzeDeploymentSkew,
   collectMetrics,
   metricsToObservations,
   resolveRecoveredMetrics,
@@ -47,21 +60,11 @@ import {
   DEMO_PATTERN_RULES,
   scanPromotionCandidates,
   analyzeSelfCheck,
-  traceFlows,
-  validateDslInvariants,
-  auditSchemaHealth,
   discoverCausality,
-  scaffoldDecision,
-  inferMigrator,
-  auditCoverage,
-  transitionPrefix,
-  transitionDecision,
-  serviceHealthCheck,
-  eventCoverageCheck,
-  analyzeDslVersionSkew,
   type AddressContextRecord,
-  type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type MetricValue, type TableNode, type CausalCandidate, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type UsageData, type EntryUsage, type AddressUsage, type CoOccurrence, type ObservationSuggestion, type TransitionSpecNode,
-} from "@qa-sdk/spec-core/analysis";
+  type MetricValue, type CausalCandidate, type UsageData, type EntryUsage, type AddressUsage, type CoOccurrence,
+} from "@qa-sdk/spec-core/convergence";
+import { auditSchemaHealth } from "@qa-sdk/spec-core";
 import {
   executeEntryAdd,
   EntryAddError,
@@ -5122,7 +5125,7 @@ import {
   listAllDiagrams,
 } from "@qa-sdk/spec-core/viz";
 import type { MermaidDiagramOptions } from "@qa-sdk/spec-core/viz";
-// createDemoTopology already imported from @qa-sdk/spec-core/analysis
+// createDemoTopology already imported from @qa-sdk/spec-core/dkg
 
 export async function dkgDiagram(argv: string[]): Promise<void> {
   const { values, positionals } = parseArgs({

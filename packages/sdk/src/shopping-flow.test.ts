@@ -10,7 +10,7 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { createQaContext } from "@qa-sdk/context";
 import { buildLayerMap, buildSvcOwnerMap, MonitorState, SERVICE_PROJECTION } from "@qa-sdk/spec-core/viz";
-import type { AddressContextRecord } from "@qa-sdk/spec-core/analysis";
+import type { AddressContextRecord } from "@qa-sdk/spec-core/convergence";
 import type { TracePath } from "@qa-sdk/spec-core/viz";
 import type { TypedQaContext } from "demo-types";
 import { DSL_CHECKOUT, sdk } from "demo-types";
