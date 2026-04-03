@@ -1,43 +1,73 @@
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import {
   analyzeRemoteBranchConflicts,
   type BranchChangeFile,
+  type GitConflictReport,
   type RemoteBranchConflictAnalysis,
+  type WorkspaceChangeSet,
 } from 'git-utils';
 
 export interface GitConflictsOptions {
   root: string;
+  executionCwd?: string;
   remote?: string;
   base?: string;
   current?: string;
   json?: boolean;
   limit?: number;
+  maxCommitHistory?: number;
   skipFetch?: boolean;
   skipWorktrees?: boolean;
   output?: string;
-}
-
-export interface GitConflictReport {
-  analysis: RemoteBranchConflictAnalysis;
-  workspaceScopes: string[];
-  currentScopes: string[];
-  occupiedScopes: string[];
-  overlapScopes: string[];
-  safeScopes: string[];
+  watch?: boolean;
+  intervalMs?: number;
 }
 
 export async function gitConflicts(
   options: GitConflictsOptions,
 ): Promise<GitConflictReport> {
   const report = await buildGitConflictReport(options);
-  if (options.output) {
-    const outputPath = resolve(options.output);
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, JSON.stringify(report, null, 2), 'utf-8');
-  }
+  await persistGitConflictReport(report, options.output);
   printGitConflictReport(report, options);
   return report;
+}
+
+export async function watchGitConflicts(
+  options: GitConflictsOptions,
+): Promise<void> {
+  const intervalMs = Math.max(options.intervalMs ?? 5000, 500);
+  let stopped = false;
+  const stop = () => {
+    stopped = true;
+  };
+
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+
+  let iteration = 0;
+
+  try {
+    while (!stopped) {
+      iteration += 1;
+      const startedAt = new Date();
+
+      try {
+        const report = await buildGitConflictReport(options);
+        await persistGitConflictReport(report, options.output);
+        printWatchSummary(report, options, iteration, startedAt);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[git conflicts watch] ${startedAt.toISOString()} 실패: ${message}`);
+      }
+
+      if (stopped) break;
+      await sleep(intervalMs);
+    }
+  } finally {
+    process.removeListener('SIGINT', stop);
+    process.removeListener('SIGTERM', stop);
+  }
 }
 
 export async function buildGitConflictReport(
@@ -46,9 +76,11 @@ export async function buildGitConflictReport(
   const root = resolve(options.root);
   const analysis = await analyzeRemoteBranchConflicts({
     cwd: root,
+    executionCwd: options.executionCwd,
     remoteName: options.remote,
     baseRef: options.base,
     currentRef: options.current,
+    maxCommitHistory: options.maxCommitHistory,
     fetch: options.skipFetch ? false : true,
     includeWorktrees: options.skipWorktrees ? false : true,
   });
@@ -67,6 +99,8 @@ export async function buildGitConflictReport(
   const safeScopes = workspaceScopes.filter((scope) => !occupiedScopeSet.has(scope));
 
   return {
+    schemaVersion: 'git-conflicts-report/v1',
+    generatedAt: new Date().toISOString(),
     analysis,
     workspaceScopes,
     currentScopes,
@@ -154,6 +188,9 @@ function printGitConflictReport(
     comparePrefix: null,
   });
 
+  printWorkspaceSummary('Repo 작업중 변경', report.analysis.repoWorkspace, limit);
+  printWorkspaceSummary('실행 위치 변경', report.analysis.workspace, limit);
+
   console.log('');
   console.log(
     `잠재 충돌 브랜치: ${overlappingBranches.length}/${report.analysis.branches.length}`,
@@ -216,6 +253,76 @@ function printGitConflictReport(
       console.log(`  ... ${report.safeScopes.length - limit}개 scope 생략`);
     }
   }
+}
+
+function printWatchSummary(
+  report: GitConflictReport,
+  options: GitConflictsOptions,
+  iteration: number,
+  startedAt: Date,
+): void {
+  const overlappingBranches = report.analysis.branches.filter(
+    (branch) => branch.overlappingPaths.length > 0,
+  ).length;
+  const overlappingWorktrees = report.analysis.worktrees.filter(
+    (worktree) => worktree.overlappingPaths.length > 0,
+  ).length;
+
+  console.log(`[git conflicts watch #${iteration}] ${startedAt.toISOString()}`);
+  console.log(`  current files: ${report.analysis.current.files.length}`);
+  console.log(`  repo workspace: ${report.analysis.repoWorkspace?.files.length ?? 0}`);
+  console.log(`  execution workspace: ${report.analysis.workspace?.files.length ?? 0}`);
+  console.log(`  branch overlaps: ${overlappingBranches}/${report.analysis.branches.length}`);
+  console.log(`  worktree overlaps: ${overlappingWorktrees}/${report.analysis.worktrees.length}`);
+  console.log(`  hotspots: ${report.analysis.hotspots.length}`);
+  console.log(`  safe scopes: ${report.safeScopes.length}`);
+  if (options.output) {
+    console.log(`  output: ${resolve(options.output)}`);
+  }
+  if (options.json && !options.output) {
+    console.log('  note: watch 모드에서는 stdout에 요약만 출력합니다. 전체 JSON은 --output 사용을 권장합니다.');
+  }
+}
+
+function printWorkspaceSummary(
+  title: string,
+  workspace: WorkspaceChangeSet | null,
+  limit: number,
+): void {
+  console.log('');
+  if (!workspace) {
+    console.log(`${title}: 범위 밖`);
+    return;
+  }
+
+  console.log(`${title}: ${workspace.files.length}개 파일`);
+  console.log(`  path: ${workspace.relativePath}`);
+  console.log(
+    `  diff: files=${workspace.diffStats.filesChanged} +${workspace.diffStats.insertions} -${workspace.diffStats.deletions}`,
+  );
+  printChangeList(workspace.files, limit, {
+    emptyMessage: '  변경 없음',
+    comparePrefix: null,
+  });
+}
+
+async function persistGitConflictReport(
+  report: GitConflictReport,
+  output?: string,
+): Promise<void> {
+  if (!output) return;
+
+  const outputPath = resolve(output);
+  const tempPath = `${outputPath}.${process.pid}.${Date.now()}.tmp`;
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(tempPath, JSON.stringify(report, null, 2), 'utf-8');
+  await rename(tempPath, outputPath);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => {
+    setTimeout(resolvePromise, ms);
+  });
 }
 
 function printChangeList(

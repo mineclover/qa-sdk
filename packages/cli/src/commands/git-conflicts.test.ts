@@ -84,6 +84,31 @@ describe('gitConflicts', () => {
     expect(report.overlapScopes).toEqual(['packages/api', 'packages/cli']);
     expect(report.safeScopes).toEqual(['(root)']);
   });
+
+  it('repo workspace와 execution workspace를 분리해서 계산한다', async () => {
+    const fixture = await createConflictFixture();
+
+    const report = await buildGitConflictReport({
+      root: fixture.worktreeDir,
+      executionCwd: join(fixture.worktreeDir, 'packages/cli'),
+      remote: 'origin',
+    });
+
+    expect(report.schemaVersion).toBe('git-conflicts-report/v1');
+    expect(report.generatedAt).toMatch(/^20\d\d-/);
+    expect(report.analysis.repoWorkspace).toBeDefined();
+    expect(report.analysis.repoWorkspace?.relativePath).toBe('.');
+    expect(report.analysis.repoWorkspace?.paths).toEqual([
+      'docs/guide.md',
+      'packages/cli/src/live.ts',
+    ]);
+
+    expect(report.analysis.workspace).toBeDefined();
+    expect(report.analysis.workspace?.relativePath).toBe('packages/cli');
+    expect(report.analysis.workspace?.paths).toEqual([
+      'packages/cli/src/live.ts',
+    ]);
+  });
 });
 
 async function createConflictFixture(): Promise<{
@@ -147,6 +172,9 @@ async function createConflictFixture(): Promise<{
   await writeRepoFile(linkedWorktreeDir, 'docs/guide.md', 'guide local docs\n');
   git(linkedWorktreeDir, ['add', 'packages/cli/src/index.ts', 'docs/guide.md']);
   git(linkedWorktreeDir, ['commit', '-m', 'docs(cli): local worktree docs']);
+
+  await writeRepoFile(worktreeDir, 'packages/cli/src/live.ts', 'live local change\n');
+  await writeRepoFile(worktreeDir, 'docs/guide.md', 'guide dirty change\n');
 
   return { worktreeDir, linkedWorktreeDir };
 }
