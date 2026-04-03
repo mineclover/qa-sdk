@@ -8,7 +8,7 @@ export type {
   PipeCircuitBreaker, PipeThrottle, PipeDebounce,
   PipeSplit, PipeEnrich, PipeTap, PipeResequence, PipeWindow,
   PipeDedup, PipeCorrelation, Constraint,
-  StepDataContract,
+  StepDataContract, LineageHint,
 } from "../types/pipe-spec.js";
 
 // ── Path ──────────────────────────────────────────────
@@ -33,8 +33,8 @@ export { analyzePipeComplexity, findBottlenecks, analyzeCoverage, getChildFlows,
 export type { PipeComplexity, BottleneckReport, CoverageReport, GraphEvent } from "./pipe-analyze.js";
 
 // ── Fold ──────────────────────────────────────────────
-export { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions } from "./pipe-fold.js";
-export type { FoldLevel, FoldDataRef, FoldedContract, FoldedGraph, FoldRegion } from "./pipe-fold.js";
+export { computeFoldedContract, foldSubgraph, unfoldNode, restoreLineageFromFold, validateFoldCheckpoint, detectFoldRegions } from "./pipe-fold.js";
+export type { FoldLevel, FoldDataRef, FoldedContract, FoldedGraph, FoldRegion, FoldCheckpointResult } from "./pipe-fold.js";
 export { normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
 
 // ── Interpret ─────────────────────────────────────────
@@ -64,6 +64,15 @@ export { parseCondition, evaluateCondition, CancellationToken, PipeContext, Exec
 // ── Bridge ────────────────────────────────────────────
 export { extractLineageFromSimulation, validateStepContracts, validateSimulationLineage, constraintResultToEvent } from "./pipe-bridge.js";
 export type { StepCompatIssue, SimulationLineageValidation, ConstraintEvent } from "./pipe-bridge.js";
+
+// ── Static Lineage (정적 계보 추적) ──────────────────
+export {
+  deriveStaticLineage, deriveStaticLineageWithDiagnostics,
+  summarizeFlowLineage, validateStaticLineage, findFieldOrigin,
+  deriveGraphLineage, summarizeGraphLineage, findFieldOriginInGraph,
+  lineageId, serializeLineage, deserializeLineage, diffLineage,
+} from "./pipe-lineage.js";
+export type { FlowLineageSummary, StaticLineageValidation, GraphLineageSummary, LineageDiff, LineageWarning, StaticLineageResult } from "./pipe-lineage.js";
 
 // ── PathMatcher ───────────────────────────────────────
 export type { MatchResult as PipeMatchResult } from "./path-matcher.js";
@@ -130,7 +139,7 @@ export type {
 
 // ── SVG / D3 ──────────────────────────────────────────
 export { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "./pipe-svg.js";
-export type { SvgOptions, D3Node, D3Link, D3GraphData } from "./pipe-svg.js";
+export type { SvgOptions, D3Node, D3Link, D3GraphData, D3LineageSummary } from "./pipe-svg.js";
 
 // ── Definition Bridge ─────────────────────────────────
 export { resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings } from "./pipe-definition-bridge.js";
