@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { execaSync } from "execa";
 import type { BranchChangeFile, BranchChangeStats, WorkspaceChangeSet } from "./branch-conflicts-types.js";
 import { canonicalPath } from "./branch-conflicts-worktrees.js";
@@ -106,11 +107,37 @@ function collectWorkspaceDiffStats(
     };
   }, { insertions: 0, deletions: 0 });
 
+  const untrackedStats = files.reduce((acc, file) => {
+    if (file.status !== "Untracked") return acc;
+
+    const filePath = `${repoPath}/${file.path}`;
+    let insertions = 0;
+    try {
+      const content = readFileSync(filePath, "utf-8");
+      insertions = countTextLines(content);
+    } catch {
+      insertions = 0;
+    }
+
+    return {
+      insertions: acc.insertions + insertions,
+      deletions: acc.deletions,
+    };
+  }, { insertions: 0, deletions: 0 });
+
   return {
     filesChanged: files.length,
-    insertions: stats.insertions,
-    deletions: stats.deletions,
+    insertions: stats.insertions + untrackedStats.insertions,
+    deletions: stats.deletions + untrackedStats.deletions,
   };
+}
+
+function countTextLines(content: string): number {
+  if (content.length === 0) return 0;
+  if (content.includes("\0")) return 0;
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = normalized.split("\n").length;
+  return normalized.endsWith("\n") ? lines - 1 : lines;
 }
 
 function toRelativeRepoPath(repoPath: string, executionCwd: string): string | null {
