@@ -5,6 +5,7 @@ const INGEST_URL = "http://localhost:3101";
 const VIZ_URL = "http://localhost:5210";
 const ROLEPLAY_URL = "http://localhost:5211";
 const SHOP_URL = "http://localhost:5220";
+const REGISTRY_UI_URL = "http://localhost:5230";
 
 export default defineConfig({
   testDir: "./tests",
@@ -60,6 +61,13 @@ export default defineConfig({
       url: SHOP_URL,
       reuseExistingServer: !process.env["CI"],
       timeout: 15_000,
+    },
+    {
+      command:
+        "cd ../.. && pnpm --filter @qa-sdk/cli build && node packages/cli/dist/index.js git conflicts --root . --skip-fetch --max-commits 12 --output packages/registry-ui/public/git-conflicts.json && pnpm --filter @qa-sdk/registry-ui exec vite --port 5230",
+      url: REGISTRY_UI_URL,
+      reuseExistingServer: !process.env["CI"],
+      timeout: 40_000,
     },
   ],
 });
