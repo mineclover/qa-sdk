@@ -1,5 +1,6 @@
 import { relativeToNode, summarizeNodeSources } from "./normalize.js";
 import type { FileTreeNode, NodeSourceSummary, NormalizedReport, RenderState } from "./types.js";
+import { isCanvasDisclosureOpen } from "canvas-viewport";
 
 export function renderFileMapLayout(
   container: HTMLElement,
@@ -8,42 +9,26 @@ export function renderFileMapLayout(
 ): void {
   const selectedNode = findNodeById(activeTree, state.selectedNodeId) ?? activeTree;
   const report = state.report;
+  const drawerOpen = isCanvasDisclosureOpen(state.drawerState);
 
   container.innerHTML = `
-    <div class="fmap-page ${state.drawerExpanded ? "is-drawer-open" : "is-drawer-collapsed"}">
+    <div class="fmap-page ${drawerOpen ? "is-drawer-open" : "is-drawer-collapsed"}">
       <section class="fmap-main">
         <div class="fmap-main-toolbar">
           <div>
             <h2>Hierarchy</h2>
             <p>원 크기 = 포함 파일 수, 색 = 충돌 밀도</p>
           </div>
-          <div class="fmap-main-actions">
-            <div class="fmap-toggle-group">
-              ${viewToggle("all", "전체 변경", state.viewMode)}
-              ${viewToggle("current", "현재 브랜치", state.viewMode)}
-              ${viewToggle("workspace", "작업중만", state.viewMode)}
-              ${viewToggle("overlap", "충돌만", state.viewMode)}
-            </div>
-            <button class="dsl-btn fmap-reset-view" type="button">뷰 리셋</button>
-          </div>
         </div>
         <div class="fmap-canvas-shell">
-          <div id="fmap-canvas" class="fmap-canvas"></div>
-          <div id="fmap-minimap" class="fmap-minimap"></div>
+          <div id="fmap-canvas-chrome"></div>
         </div>
       </section>
 
       <section class="fmap-side">
         <div class="fmap-drawer-handle">
           <div class="fmap-drawer-bar"></div>
-          <div class="fmap-drawer-actions">
-            <button class="dsl-btn fmap-refresh-toggle" type="button">
-              ${state.autoRefreshEnabled ? "자동 새로고침 끄기" : "자동 새로고침 켜기"}
-            </button>
-            <button class="dsl-btn fmap-drawer-toggle" type="button">
-              ${state.drawerExpanded ? "정보 패널 접기" : "정보 패널 펼치기"}
-            </button>
-          </div>
+          <div id="fmap-drawer-support"></div>
         </div>
         <div class="fmap-drawer-content">
         <div class="fmap-panel fmap-panel-hero">
@@ -298,15 +283,6 @@ function summaryCard(title: string, value: string, desc: string): string {
       <div class="fmap-stat-desc">${escapeHtml(desc)}</div>
     </div>
   `;
-}
-
-function viewToggle(
-  value: "all" | "current" | "workspace" | "overlap",
-  label: string,
-  current: "all" | "current" | "workspace" | "overlap",
-): string {
-  const active = value === current ? "is-active" : "";
-  return `<button class="fmap-toggle ${active}" data-view-mode="${value}" type="button">${escapeHtml(label)}</button>`;
 }
 
 function legendRow(className: string, label: string): string {

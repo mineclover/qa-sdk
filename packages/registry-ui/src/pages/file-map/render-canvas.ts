@@ -1,19 +1,25 @@
+import {
+  createCanvasViewportSession,
+  DEFAULT_CANVAS_VIEWPORT_PRESET,
+  type CanvasViewportController,
+  createMinimapLayout,
+  minimapPointToContentPoint,
+  projectViewportFrame,
+} from "canvas-viewport";
 import * as d3 from "d3";
 import type { FileTreeNode } from "./types.js";
 
 export function renderTreeCanvas(
-  container: HTMLElement,
+  surfaceHost: HTMLElement,
+  minimapHost: HTMLElement,
   tree: FileTreeNode,
   selectedNodeId: string,
   onSelectNode: (nodeId: string) => void,
-): void {
-  const canvas = container.querySelector<HTMLElement>("#fmap-canvas");
-  const minimapHost = container.querySelector<HTMLElement>("#fmap-minimap");
-  if (!canvas) return;
-  canvas.innerHTML = "";
-  if (minimapHost) minimapHost.innerHTML = "";
+): CanvasViewportController | null {
+  surfaceHost.innerHTML = "";
+  minimapHost.innerHTML = "";
 
-  const width = Math.max(canvas.clientWidth, 980);
+  const width = Math.max(surfaceHost.clientWidth, 980);
   const hierarchy = d3.hierarchy<FileTreeNode>(tree, (node) => node.children);
   const totalNodes = hierarchy.descendants().length;
   const rowHeight = totalNodes > 120 ? 20 : 30;
@@ -28,8 +34,15 @@ export function renderTreeCanvas(
   const maxY = d3.max(nodes, (node) => node.y) ?? 0;
 
   const height = Math.max(maxX - minX + 180, 620);
+  const minimapLayout = createMinimapLayout({
+    width: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapWidth + 20,
+    height: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapHeight + 14,
+    contentWidth: Math.max(width, maxY + 320),
+    contentHeight: height,
+    padding: DEFAULT_CANVAS_VIEWPORT_PRESET.minimapPadding,
+  });
   const svg = d3
-    .select(canvas)
+    .select(surfaceHost)
     .append("svg")
     .attr("viewBox", `0 0 ${Math.max(width, maxY + 320)} ${height}`)
     .attr("class", "fmap-svg");
@@ -38,32 +51,36 @@ export function renderTreeCanvas(
   const rootGroup = zoomLayer.append("g").attr("transform", `translate(90, ${80 - minX})`);
 
   const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
-    .scaleExtent([0.45, 2.2])
+    .scaleExtent([DEFAULT_CANVAS_VIEWPORT_PRESET.minScale, DEFAULT_CANVAS_VIEWPORT_PRESET.maxScale])
     .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
       zoomLayer.attr("transform", event.transform.toString());
-      if (minimapHost) {
-        updateMinimapViewport(minimapHost, event.transform, Math.max(width, maxY + 320), height);
-      }
+      updateMinimapViewport(minimapHost, event.transform, minimapLayout);
     });
+  const viewportSession = createCanvasViewportSession({
+    getTransform: () => d3.zoomTransform(svg.node() as SVGSVGElement),
+    setTransform: (nextTransform) => {
+      svg.call(
+        zoomBehavior.transform,
+        d3.zoomIdentity.translate(nextTransform.x, nextTransform.y).scale(nextTransform.k),
+      );
+    },
+    getContentSize: () => ({ width: Math.max(width, maxY + 320), height }),
+    getViewportSize: () => ({ width, height }),
+    preset: DEFAULT_CANVAS_VIEWPORT_PRESET,
+  });
   svg.call(zoomBehavior);
-  svg.call(
-    zoomBehavior.transform,
-    d3.zoomIdentity.translate(12, 0).scale(width > 1200 ? 0.92 : 0.78),
-  );
+  viewportSession.fitView();
 
-  if (minimapHost) {
-    renderMinimap({
-      host: minimapHost,
-      nodes,
-      links,
-      contentWidth: Math.max(width, maxY + 320),
-      contentHeight: height,
-      selectedNodeId,
-      onSelectNode,
-      svg,
-      zoomBehavior,
-    });
-  }
+  renderMinimap({
+    host: minimapHost,
+    nodes,
+    links,
+    minimapLayout,
+    selectedNodeId,
+    onSelectNode,
+    svg,
+    zoomBehavior,
+  });
 
   const linkPath = d3.linkHorizontal<d3.HierarchyPointLink<FileTreeNode>, d3.HierarchyPointNode<FileTreeNode>>()
     .x((link) => link.y)
@@ -117,31 +134,26 @@ export function renderTreeCanvas(
     .attr("text-anchor", (node: d3.HierarchyPointNode<FileTreeNode>) => node.children ? "end" : "start")
     .attr("class", "fmap-sub-label")
     .text((node: d3.HierarchyPointNode<FileTreeNode>) => metricLabel(node.data));
+
+  return viewportSession;
 }
 
 function renderMinimap(params: {
   host: HTMLElement;
   nodes: d3.HierarchyPointNode<FileTreeNode>[];
   links: d3.HierarchyPointLink<FileTreeNode>[];
-  contentWidth: number;
-  contentHeight: number;
+  minimapLayout: ReturnType<typeof createMinimapLayout>;
   selectedNodeId: string;
   onSelectNode: (nodeId: string) => void;
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   zoomBehavior: d3.ZoomBehavior<SVGSVGElement, unknown>;
 }): void {
-  const miniWidth = 220;
-  const miniHeight = 150;
-  const padding = 10;
-  const scale = Math.min(
-    (miniWidth - padding * 2) / params.contentWidth,
-    (miniHeight - padding * 2) / params.contentHeight,
-  );
+  const { width, height, padding, scale, contentWidth, contentHeight } = params.minimapLayout;
 
   const minimapSvg = d3
     .select(params.host)
     .append("svg")
-    .attr("viewBox", `0 0 ${miniWidth} ${miniHeight}`)
+    .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("class", "fmap-minimap-svg");
 
   const mapLayer = minimapSvg
@@ -186,45 +198,34 @@ function renderMinimap(params: {
     .attr("stroke-width", 1);
 
   minimapSvg.on("click", (event: MouseEvent) => {
-    const point = d3.pointer(event, minimapSvg.node());
-    const targetX = (point[0] - padding) / scale;
-    const targetY = (point[1] - padding) / scale;
+      const point = d3.pointer(event, minimapSvg.node());
+      const target = minimapPointToContentPoint({ x: point[0], y: point[1] }, params.minimapLayout);
     const currentTransform = d3.zoomTransform(params.svg.node() as SVGSVGElement);
-    const nextTransform = d3.zoomIdentity
-      .translate(params.contentWidth / 2 - targetX * currentTransform.k, params.contentHeight / 2 - targetY * currentTransform.k)
-      .scale(currentTransform.k);
-    params.svg.call(params.zoomBehavior.transform, nextTransform);
+    params.svg.call(
+      params.zoomBehavior.transform,
+      d3.zoomIdentity.translate(
+        contentWidth / 2 - target.x * currentTransform.k,
+        contentHeight / 2 - target.y * currentTransform.k,
+      ).scale(currentTransform.k),
+    );
   });
 
-  updateMinimapViewport(params.host, d3.zoomTransform(params.svg.node() as SVGSVGElement), params.contentWidth, params.contentHeight);
+  updateMinimapViewport(params.host, d3.zoomTransform(params.svg.node() as SVGSVGElement), params.minimapLayout);
 }
 
 function updateMinimapViewport(
   host: HTMLElement,
   transform: d3.ZoomTransform,
-  contentWidth: number,
-  contentHeight: number,
+  layout: ReturnType<typeof createMinimapLayout>,
 ): void {
-  const svg = host.querySelector<SVGSVGElement>("svg");
   const viewport = host.querySelector<SVGRectElement>(".fmap-minimap-viewport");
-  if (!svg || !viewport) return;
+  if (!viewport) return;
 
-  const viewBox = svg.viewBox.baseVal;
-  const padding = 10;
-  const scale = Math.min(
-    (viewBox.width - padding * 2) / contentWidth,
-    (viewBox.height - padding * 2) / contentHeight,
-  );
-
-  const visibleX = (-transform.x) / transform.k;
-  const visibleY = (-transform.y) / transform.k;
-  const visibleWidth = contentWidth / transform.k;
-  const visibleHeight = contentHeight / transform.k;
-
-  viewport.setAttribute("x", String(padding + visibleX * scale));
-  viewport.setAttribute("y", String(padding + visibleY * scale));
-  viewport.setAttribute("width", String(visibleWidth * scale));
-  viewport.setAttribute("height", String(visibleHeight * scale));
+  const frame = projectViewportFrame(transform, layout);
+  viewport.setAttribute("x", String(frame.x));
+  viewport.setAttribute("y", String(frame.y));
+  viewport.setAttribute("width", String(frame.width));
+  viewport.setAttribute("height", String(frame.height));
 }
 
 function nodeRadius(node: FileTreeNode): number {

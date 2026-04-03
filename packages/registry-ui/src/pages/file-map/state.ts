@@ -11,7 +11,7 @@ export function createInitialState(): RenderState {
     autoLoadAttempted: false,
     autoRefreshEnabled: true,
     inputSource: "sample",
-    drawerExpanded: false,
+    drawerState: "closed",
     viewMode: "all",
   };
 }
@@ -45,7 +45,7 @@ export function applyRawInputToState(
     autoLoadAttempted: true,
     autoRefreshEnabled: options?.autoRefreshEnabled ?? state.autoRefreshEnabled,
     inputSource: options?.inputSource ?? state.inputSource,
-    drawerExpanded: state.drawerExpanded,
+    drawerState: state.drawerState,
     viewMode: state.viewMode,
   };
 }
