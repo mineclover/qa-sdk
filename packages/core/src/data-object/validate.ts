@@ -1,7 +1,7 @@
 import type { Catalog, PathSegment, PrefixDef, PrefixVersionDef, TableSchema } from "../catalog/catalog.types.js";
 import type { FieldLineage, FieldRef } from "../types/data-schema.js";
 import { BindingRegistry } from "./registry.js";
-import type { BindingValidation, ColumnAxisMapping, DataObjectBinding, LineageChainValidation } from "./types.js";
+import type { BindingValidation, ChainIssue, ColumnAxisMapping, DataObjectBinding, DetailedChainValidation, LineageChainValidation } from "./types.js";
 
 export function validateBindings(
   bindings: readonly DataObjectBinding[],
@@ -43,6 +43,49 @@ export function validateLineageChain(
   }
 
   return summary;
+}
+
+/** validateLineageChain 상세 버전 — 어떤 lineage가 문제인지 식별 */
+export function validateLineageChainDetailed(
+  lineages: readonly FieldLineage[],
+  registry: BindingRegistry,
+): DetailedChainValidation {
+  const issues: ChainIssue[] = [];
+  let bound = 0;
+  let unbound = 0;
+  let mismatched = 0;
+
+  for (const lineage of lineages) {
+    const targetBinding = registry.getBySchema(lineage.target.schemaId);
+    const sourceBindings = lineage.sources.map((source) => ({
+      source,
+      binding: registry.getBySchema(source.schemaId),
+    }));
+
+    const targetRef = { schemaId: lineage.target.schemaId, column: lineage.target.column };
+
+    if (!targetBinding) {
+      unbound += 1;
+      issues.push({ kind: "unbound", target: targetRef, reason: `target schema "${lineage.target.schemaId}" binding 없음` });
+      continue;
+    }
+    if (sourceBindings.some(({ binding }) => binding === null)) {
+      unbound += 1;
+      const missing = sourceBindings.filter(({ binding }) => binding === null).map(({ source }) => source.schemaId);
+      issues.push({ kind: "unbound", target: targetRef, reason: `source schema binding 없음: ${missing.join(", ")}` });
+      continue;
+    }
+
+    if (hasLineageDimMismatch(lineage.target, targetBinding, sourceBindings)) {
+      mismatched += 1;
+      issues.push({ kind: "mismatched", target: targetRef, reason: `dim 매핑 불일치 (target.column="${lineage.target.column}")` });
+      continue;
+    }
+
+    bound += 1;
+  }
+
+  return { bound, unbound, mismatched, issues };
 }
 
 function validateBinding(

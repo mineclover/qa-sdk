@@ -3,6 +3,7 @@ import type { Catalog } from "../catalog/catalog.types.js";
 import { chainSegments } from "../catalog/path-summation.js";
 import type { FieldLineage } from "../types/data-schema.js";
 import { BindingRegistry } from "./registry.js";
+import { validateLineageChainDetailed } from "./validate.js";
 import { validateBindings, validateLineageChain } from "./validate.js";
 import type { DataObjectBinding } from "./types.js";
 
@@ -323,6 +324,45 @@ describe("validateLineageChain", () => {
       unbound: 0,
       mismatched: 1,
     });
+  });
+});
+
+describe("validateLineageChainDetailed", () => {
+  it("unbound → issue에 사유 포함", () => {
+    const registry = makeRegistry([]);
+    const result = validateLineageChainDetailed([
+      makeLineage(["src", "col"], ["target", "col"]),
+    ], registry);
+    expect(result.unbound).toBe(1);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].kind).toBe("unbound");
+    expect(result.issues[0].reason).toContain("target");
+  });
+
+  it("mismatched → issue에 target 식별 정보 포함", () => {
+    const registry = makeRegistry([
+      makeBinding({ schemaId: "members", prefixId: "p1", columnToAxis: { id: { dimLabel: "memberId" } } }),
+      makeBinding({ schemaId: "other", prefixId: "p2", columnToAxis: { col: { dimLabel: "otherId" } } }),
+    ]);
+    const result = validateLineageChainDetailed([
+      makeLineage(["members", "id"], ["other", "col"]),
+    ], registry);
+    expect(result.mismatched).toBe(1);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].kind).toBe("mismatched");
+    expect(result.issues[0].target.schemaId).toBe("other");
+  });
+
+  it("bound → issues 비어있음", () => {
+    const registry = makeRegistry([
+      makeBinding({ schemaId: "members", prefixId: "p1", columnToAxis: { id: { dimLabel: "memberId" } } }),
+      makeBinding({ schemaId: "proj", prefixId: "p1", columnToAxis: { member_id: { dimLabel: "memberId" } } }),
+    ]);
+    const result = validateLineageChainDetailed([
+      makeLineage(["members", "id"], ["proj", "member_id"]),
+    ], registry);
+    expect(result.bound).toBe(1);
+    expect(result.issues).toEqual([]);
   });
 });
 
