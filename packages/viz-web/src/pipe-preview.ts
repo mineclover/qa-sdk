@@ -3,7 +3,7 @@
  * SVG / Mermaid / D3 데이터 세 가지 탭으로 출력 확인
  */
 
-import type { PipeGraph, PipeSpec, PipeConnection, FoldLevel } from "@qa-sdk/core";
+import type { PipeGraph, PipeSpec, PipeConnection, PipeFlow, FoldLevel } from "@qa-sdk/core";
 import {
   pipeGraphToSvg, pipeGraphToMermaid, pipeGraphToD3,
   computeZoomView, computeLayout,
@@ -125,6 +125,60 @@ const EXAMPLES: Example[] = [
     },
   },
   {
+    name: "은행 송금 (transition-scope)",
+    desc: "출금→입금 원자 전이 + 보상 + 데이터 계보",
+    graph: {
+      graphId: "transfer", version: "1.0.0",
+      pipes: [
+        pipe("접수", {
+          flow: {
+            kind: "step", facet: "접수",
+            dataContract: {
+              consumes: { amount: { type: "number", required: true }, fromAccount: { type: "string", required: true }, toAccount: { type: "string", required: true } },
+              produces: { transferRequest: { type: "object", required: true } },
+              lineageHints: { transferRequest: { sources: ["amount", "fromAccount", "toAccount"], transform: "compute" } },
+            },
+          } satisfies PipeFlow,
+        }),
+        pipe("송금실행", {
+          flow: {
+            kind: "transition-scope",
+            transitionId: "transfer.execute",
+            events: ["account.debit", "account.credit"],
+            body: {
+              kind: "sequence",
+              steps: [
+                { kind: "step", facet: "출금", eventKey: "account.debit",
+                  dataContract: {
+                    consumes: { transferRequest: { type: "object", required: true } },
+                    produces: { debitResult: { type: "object", required: true } },
+                    lineageHints: { debitResult: { sources: ["transferRequest"], transform: "compute" } },
+                  },
+                },
+                { kind: "step", facet: "입금", eventKey: "account.credit",
+                  dataContract: {
+                    consumes: { debitResult: { type: "object", required: true } },
+                    produces: { creditResult: { type: "object", required: true } },
+                    lineageHints: { creditResult: { sources: ["debitResult"], transform: "compute" } },
+                  },
+                },
+              ],
+            },
+            compensate: { kind: "step", facet: "환불" },
+          } satisfies PipeFlow,
+        }),
+        pipe("완료알림", {
+          flow: { kind: "step", facet: "알림" },
+        }),
+      ],
+      connections: [
+        c("접수", "송금실행"),
+        c("송금실행", "완료알림"),
+      ],
+      entryPipeId: "접수",
+    },
+  },
+  {
     name: "복잡 그래프",
     desc: "여러 패턴 혼합 (8 파이프)",
     graph: {
@@ -186,7 +240,7 @@ function render() {
   const mermaid = pipeGraphToMermaid(graph, currentLevel);
   document.getElementById("mermaid-code")!.textContent = mermaid;
 
-  // D3
+  // D3 (lineageSummaries 포함)
   const d3data = pipeGraphToD3(graph, currentLevel);
   document.getElementById("d3-code")!.textContent = JSON.stringify(d3data, null, 2);
 }
