@@ -81,6 +81,7 @@ describe("validateSimulationLineage", () => {
 
     const validation = validateSimulationLineage(result, graph.pipes, registry);
 
+    // step 간 체인 계보 (cross-pipe 포함 — 시뮬레이션은 실행 순서 기반)
     expect(validation.lineages).toEqual([
       {
         target: { schemaId: "member_projection", column: "member_id" },

@@ -11,7 +11,7 @@ import type { PipeGraph } from "../types/pipe-spec.js";
 import type { MatchResult } from "./path-matcher.js";
 import type { GateResult } from "./pipe-gate.js";
 import { hasReviewItems } from "./pipe-gate.js";
-import { getChildFlows } from "./pipe-analyze.js";
+import { getChildFlows } from "./pipe-flow-utils.js";
 
 // ── 타입 ─────────────────────────────────────────────
 

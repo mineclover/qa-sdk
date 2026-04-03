@@ -186,7 +186,7 @@ export class LineageCollector {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const key = `${current.schemaId}.${current.column}`;
+      const key = `${current.schemaId}:${current.column}`;
       if (visited.has(key)) continue;
       visited.add(key);
 
@@ -208,7 +208,7 @@ export class LineageCollector {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const key = `${current.schemaId}.${current.column}`;
+      const key = `${current.schemaId}:${current.column}`;
       if (visited.has(key)) continue;
       visited.add(key);
 

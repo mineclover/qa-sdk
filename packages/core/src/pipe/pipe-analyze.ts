@@ -5,6 +5,7 @@
 import type { PipeFlow, PipeSpec, PipeGraph } from "../types/pipe-spec.js";
 import { countPipePaths, countGraphPaths } from "./pipe-path.js";
 import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
+import { getChildFlows } from "./pipe-flow-utils.js";
 
 // ── 복잡도 메트릭 ────────────────────────────────────
 
@@ -274,25 +275,5 @@ function collectEmitEvents(flow: PipeFlow, pipeId: string, events: GraphEvent[])
   }
 }
 
-export function getChildFlows(flow: PipeFlow): PipeFlow[] {
-  switch (flow.kind) {
-    case "step": case "emit": return [];
-    case "sequence": case "parallel": case "race": return flow.steps;
-    case "branch": return flow.paths;
-    case "optional": case "retry": case "throttle": case "debounce":
-    case "circuit-breaker": case "filter": case "dedup":
-    case "resequence": return [flow.step];
-    case "loop": case "buffer": case "window": case "feedback": return [flow.body];
-    case "map": case "split": return [flow.itemFlow];
-    case "reduce": case "enrich": return [flow.step];
-    case "fallback": return [flow.try, flow.catch];
-    case "compensate": return [flow.forward, flow.compensate];
-    case "transition-scope": return flow.compensate ? [flow.body, flow.compensate] : [flow.body];
-    case "finally": return [flow.body, flow.cleanup];
-    case "await": return [flow.then];
-    case "timeout": return flow.onTimeout ? [flow.body, flow.onTimeout] : [flow.body];
-    case "tap": return [flow.observe, flow.step];
-    case "correlation": return flow.onTimeout ? [flow.onMatch, flow.onTimeout] : [flow.onMatch];
-    default: return [];
-  }
-}
+// getChildFlows는 pipe-flow-utils.ts에서 정의 — 하위 호환 re-export
+export { getChildFlows };

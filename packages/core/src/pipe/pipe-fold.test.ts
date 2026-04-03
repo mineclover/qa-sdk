@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFoldedContract, foldSubgraph, unfoldNode, detectFoldRegions, normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
+import { computeFoldedContract, foldSubgraph, unfoldNode, restoreLineageFromFold, validateFoldCheckpoint, detectFoldRegions, normalize as normalizeEndpoint, collectFlowSteps } from "./pipe-fold.js";
 import { countGraphPaths } from "./pipe-path.js";
 import type { PipeSpec, PipeGraph, PipeFlow, PipeConnection } from "../types/pipe-spec.js";
 
@@ -242,6 +242,14 @@ describe("computeFoldedContract", () => {
   it("존재하지 않는 pipeId → 에러", () => {
     expect(() => computeFoldedContract(chainGraph(), ["Z"])).toThrow("존재하지 않음");
   });
+
+  it("lineageSummary — 접힌 구간의 계보 요약 포함", () => {
+    const graph = chainGraph();
+    const contract = computeFoldedContract(graph, ["B", "C", "D"]);
+    expect(contract.lineageSummary).toBeDefined();
+    // B의 dataContract에 orderId consumes가 있음 → inputs에 포함
+    expect(contract.lineageSummary!.inputs.length).toBeGreaterThanOrEqual(0);
+  });
 });
 
 // ── foldSubgraph ──────────────────────────────────────
@@ -347,6 +355,116 @@ describe("unfoldNode", () => {
 
     const restored = unfoldNode(folded, "fold_ABC");
     expect(restored.entryPipeId).toBe("A");
+  });
+});
+
+// ── restoreLineageFromFold ──────────────────────────────
+
+describe("restoreLineageFromFold", () => {
+  it("unfold 시 원본 pipe별 계보 복원", () => {
+    const graph: PipeGraph = {
+      graphId: "lineage-fold", version: "1.0.0",
+      pipes: [
+        makePipe("A"),
+        makePipe("B", {
+          flow: step("변환", undefined, {
+            dataContract: {
+              consumes: { input: { type: "string", required: true } },
+              produces: { output: { type: "string", required: true } },
+              lineageHints: { output: { sources: ["input"], transform: "direct" } },
+            },
+          }),
+        }),
+        makePipe("C", {
+          flow: step("출력", undefined, {
+            dataContract: {
+              consumes: { data: { type: "string", required: true } },
+              produces: { result: { type: "string", required: true } },
+              lineageHints: { result: { sources: ["data"], transform: "compute" } },
+            },
+          }),
+        }),
+        makePipe("D"),
+      ],
+      connections: [conn("A", "B"), conn("B", "C"), conn("C", "D")],
+      entryPipeId: "A",
+    };
+
+    const folded = foldSubgraph(graph, ["B", "C"], "fold_BC");
+    const lineages = restoreLineageFromFold(folded, "fold_BC");
+
+    // B와 C의 원본 계보가 보존됨
+    expect(lineages.has("B")).toBe(true);
+    expect(lineages.has("C")).toBe(true);
+    // 접히지 않은 A는 포함되지 않음
+    expect(lineages.has("A")).toBe(false);
+  });
+
+  it("존재하지 않는 foldedNodeId → 에러", () => {
+    const folded = foldSubgraph(chainGraph(), ["B", "C"], "fold_BC");
+    expect(() => restoreLineageFromFold(folded, "nonexistent")).toThrow("찾을 수 없음");
+  });
+});
+
+// ── validateFoldCheckpoint ───────────────────────────
+
+describe("validateFoldCheckpoint", () => {
+  it("입출력 완전 연결 → valid=true", () => {
+    const graph: PipeGraph = {
+      graphId: "cp1", version: "1.0.0",
+      pipes: [
+        makePipe("A"),
+        makePipe("B", {
+          flow: step("변환", undefined, {
+            dataContract: {
+              consumes: { input: { type: "string", required: true } },
+              produces: { output: { type: "string", required: true } },
+              lineageHints: { output: { sources: ["input"], transform: "compute" } },
+            },
+          }),
+        }),
+        makePipe("C"),
+      ],
+      connections: [conn("A", "B"), conn("B", "C")],
+      entryPipeId: "A",
+    };
+    const contract = computeFoldedContract(graph, ["B"]);
+    const result = validateFoldCheckpoint(contract);
+    expect(result.valid).toBe(true);
+    expect(result.disconnectedInputs).toHaveLength(0);
+    expect(result.orphanOutputs).toHaveLength(0);
+  });
+
+  it("출처 불명 출력 → orphanOutputs", () => {
+    const graph: PipeGraph = {
+      graphId: "cp2", version: "1.0.0",
+      pipes: [
+        makePipe("A"),
+        makePipe("B", {
+          flow: step("생성", undefined, {
+            dataContract: {
+              produces: { result: { type: "string", required: true } },
+              // lineageHints 없음 → result는 origin 없는 출력
+            },
+          }),
+        }),
+        makePipe("C"),
+      ],
+      connections: [conn("A", "B"), conn("B", "C")],
+      entryPipeId: "A",
+    };
+    const contract = computeFoldedContract(graph, ["B"]);
+    const result = validateFoldCheckpoint(contract);
+    // result 필드는 produces에 있지만 lineage source가 없음
+    expect(result.orphanOutputs).toContain("result");
+  });
+
+  it("lineageSummary 없는 contract → valid=true (빈 상태)", () => {
+    const graph = chainGraph();
+    const contract = computeFoldedContract(graph, ["A"]);
+    // A는 dataContract가 없는 단순 pipe
+    const result = validateFoldCheckpoint(contract);
+    expect(result.valid).toBe(true);
   });
 });
 

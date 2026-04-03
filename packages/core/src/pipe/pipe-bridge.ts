@@ -4,6 +4,7 @@
 
 import type { SimulationResult } from "./pipe-simulate.js";
 import type { FieldLineage, FieldSet, CompatibilityResult } from "../types/data-schema.js";
+import { resolveStepSchemaId } from "./pipe-schema-id.js";
 import type { ConstraintResult } from "../types/constraint.js";
 import type { PipeSpec, PipeStep, PipeFlow } from "../types/pipe-spec.js";
 import type { LineageChainValidation } from "../data-object/types.js";
@@ -27,22 +28,45 @@ export function extractLineageFromSimulation(
   const pipeMap = new Map(pipes.map(p => [p.pipeId, p]));
 
   // step 간 produces → consumes 체인 추출
+  // 주의: cross-pipe 체인이 생성됨 (시뮬레이션은 실행 순서 기반, 정적은 단일 pipe)
   let previousProduces: { schemaId: string; fields: Record<string, { type: string }> } | null = null;
 
   for (const step of result.steps) {
-    if (step.kind !== "step" || !step.facet) continue;
+    if (step.kind !== "step") continue;
 
     const pipe = pipeMap.get(step.pipeId);
     if (!pipe) continue;
 
     // PipeFlow 트리에서 해당 step의 dataContract 찾기
     const flowStep = findStepByPath(pipe.flow, step.flowPath);
-    if (!flowStep || flowStep.kind !== "step" || !flowStep.dataContract) continue;
+    if (!flowStep || flowStep.kind !== "step" || !flowStep.dataContract) {
+      // dataContract 없는 step → chain 끊기 (인접하지 않은 step 간 false chain 방지)
+      previousProduces = null;
+      continue;
+    }
 
     const dc = flowStep.dataContract;
     const schemaId = resolveStepSchemaId(flowStep, step.pipeId);
 
-    // 이전 step의 produces → 현재 step의 consumes 매칭
+    // step 내부 계보: lineageHints 우선, 없으면 이름 매칭
+    if (dc.produces) {
+      for (const [outputField] of Object.entries(dc.produces)) {
+        const hint = dc.lineageHints?.[outputField];
+        if (hint) {
+          // lineageHints 명시: sources가 이 출력에 기여
+          collector.record({
+            target: { schemaId, column: outputField },
+            sources: hint.sources.map(s => ({ schemaId, column: s })),
+            transform: hint.transform,
+            pipeId: step.pipeId,
+            stepPath: step.flowPath,
+          });
+        }
+        // hints 없는 이름 매칭 pass-through는 chain lineage에서 처리 (self-reference 방지)
+      }
+    }
+
+    // 이전 step의 produces → 현재 step의 consumes 체인
     if (previousProduces && dc.consumes) {
       for (const [field] of Object.entries(dc.consumes)) {
         if (previousProduces.fields[field]) {
@@ -57,9 +81,11 @@ export function extractLineageFromSimulation(
       }
     }
 
-    // 현재 step의 produces 기록
+    // 현재 step의 produces 기록 — sink step(produces 없음)이면 체인 끊기
     if (dc.produces) {
       previousProduces = { schemaId, fields: dc.produces };
+    } else if (dc.consumes) {
+      previousProduces = null;
     }
   }
 
@@ -88,7 +114,7 @@ export function validateStepContracts(
   let previousProduces: { stepPath: string; fields: FieldSet } | null = null;
 
   for (const step of result.steps) {
-    if (step.kind !== "step" || !step.facet) continue;
+    if (step.kind !== "step") continue;
 
     const pipe = pipeMap.get(step.pipeId);
     if (!pipe) continue;
@@ -216,35 +242,7 @@ function findStepByPath(flow: PipeFlow, path: string): PipeFlow | null {
   return current as PipeFlow | null;
 }
 
-function resolveStepSchemaId(step: PipeStep, fallback: string): string {
-  const writableSchemas = collectStepSchemaIds(step, ["write", "readwrite"]);
-  if (writableSchemas.length === 1) {
-    return writableSchemas[0];
-  }
-
-  const readableSchemas = collectStepSchemaIds(step, ["read", "readwrite", "write"]);
-  if (readableSchemas.length === 1) {
-    return readableSchemas[0];
-  }
-
-  return fallback;
-}
-
-function collectStepSchemaIds(
-  step: PipeStep,
-  modes: Array<"read" | "write" | "readwrite">,
-): string[] {
-  const allowedModes = new Set(modes);
-  const schemaIds = new Set<string>();
-
-  for (const access of step.dataContract?.accesses ?? []) {
-    if (allowedModes.has(access.mode)) {
-      schemaIds.add(access.schemaId);
-    }
-  }
-
-  return [...schemaIds];
-}
+// resolveStepSchemaId는 pipe-schema-id.ts에서 import (정적 계보와 공유)
 
 function buildPipeBindingGraph(pipes: PipeSpec[]) {
   return {

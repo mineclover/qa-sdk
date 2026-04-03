@@ -131,11 +131,12 @@ export function analyzeLayerPropagation(
   return results;
 }
 
+/** canonical: definition-catalog/impact.ts canPropagate와 동일 */
 function canPropagate(source: DefLayer, target: DefLayer): boolean {
-  const si = LAYER_ORDER.indexOf(source);
-  const ti = LAYER_ORDER.indexOf(target);
-  // domain → 모든 곳, operation → operation만, mediation → mediation+experience, experience → experience만
-  return si <= ti;
+  if (source === "domain") return target !== "experience"; // domain → domain + operation + mediation
+  if (source === "operation") return target === "operation"; // operation → 자기만
+  if (source === "mediation") return target === "mediation" || target === "experience";
+  return target === "experience"; // experience → 자기만
 }
 
 // ── tags 조회 ────────────────────────────────────────

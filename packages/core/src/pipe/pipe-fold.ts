@@ -10,8 +10,11 @@ import type {
   PipeFlow, PipeStep, StepDataContract,
 } from "../types/pipe-spec.js";
 import { countGraphPaths } from "./pipe-path.js";
-import { getChildFlows } from "./pipe-analyze.js";
+import { getChildFlows } from "./pipe-flow-utils.js";
 import { endpointIdentity, isPortRef, normalizeEndpointPipeIds, toEndpointArray } from "./pipe-endpoint.js";
+import type { FlowLineageSummary } from "./pipe-lineage.js";
+import { summarizeFlowLineage, deriveStaticLineage } from "./pipe-lineage.js";
+import type { FieldLineage } from "../types/data-schema.js";
 
 // ── 타입 정의 ─────────────────────────────────────────
 
@@ -64,6 +67,9 @@ export interface FoldedContract {
   /** 횡단 관심사 (scope/aspect에서 수집) */
   concerns: string[];
 
+  /** 접힌 구간의 계보 요약 (입력→출력 압축) */
+  lineageSummary?: FlowLineageSummary;
+
   /** 접힌 파이프 ID 목록 */
   foldedPipeIds: string[];
 }
@@ -79,6 +85,8 @@ export interface FoldedGraph {
     originalConnections: PipeConnection[];
     entryPipeIds: string[];
     exitPipeIds: string[];
+    /** 원본 pipe별 정적 계보 (unfold 시 복원용) */
+    originalLineages: Map<string, FieldLineage[]>;
   }>;
 }
 
@@ -392,7 +400,35 @@ export function computeFoldedContract(
       sideEffectCount: sideEffects.length,
     },
     concerns: [...concerns],
+    // 접힌 구간의 계보 요약 — 각 pipe flow에서 계보를 파생하고 합산
+    lineageSummary: computeFoldLineageSummary(pipeIds, pipeMap),
     foldedPipeIds: [...pipeIds],
+  };
+}
+
+function computeFoldLineageSummary(
+  pipeIds: string[],
+  pipeMap: Map<string, PipeSpec>,
+): FlowLineageSummary {
+  const allInputs = new Set<string>();
+  const allOutputs = new Set<string>();
+  const outputLineage: Record<string, string[]> = {};
+
+  for (const id of pipeIds) {
+    const pipe = pipeMap.get(id);
+    if (!pipe) continue;
+    const summary = summarizeFlowLineage(pipe.flow, id);
+    for (const i of summary.inputs) allInputs.add(i);
+    for (const o of summary.outputs) allOutputs.add(o);
+    for (const [k, v] of Object.entries(summary.outputLineage)) {
+      outputLineage[k] = [...new Set([...(outputLineage[k] ?? []), ...v])];
+    }
+  }
+
+  return {
+    inputs: [...allInputs],
+    outputs: [...allOutputs],
+    outputLineage,
   };
 }
 
@@ -501,12 +537,20 @@ export function foldSubgraph(
     entryPipeId: pipeSet.has(graph.entryPipeId) ? resolvedFoldId : graph.entryPipeId,
   };
 
+  // 원본 pipe별 정적 계보 저장
+  const originalLineages = new Map<string, FieldLineage[]>();
+  for (const id of pipeIds) {
+    const pipe = pipeMap.get(id)!;
+    originalLineages.set(id, deriveStaticLineage(pipe.flow, id));
+  }
+
   const foldMap = new Map<string, {
     contract: FoldedContract;
     originalPipes: PipeSpec[];
     originalConnections: PipeConnection[];
     entryPipeIds: string[];
     exitPipeIds: string[];
+    originalLineages: Map<string, FieldLineage[]>;
   }>();
 
   foldMap.set(resolvedFoldId, {
@@ -515,6 +559,7 @@ export function foldSubgraph(
     originalConnections: internalConnections,
     entryPipeIds: entry,
     exitPipeIds: exit,
+    originalLineages,
   });
 
   return { graph: newGraph, foldMap };
@@ -595,6 +640,79 @@ export function unfoldNode(
     pipes: newPipes,
     connections: newConnections,
     entryPipeId,
+  };
+}
+
+/**
+ * 접힌 노드에서 원본 pipe별 계보를 복원한다.
+ * unfold 후 각 pipe의 정적 계보가 필요할 때 사용.
+ */
+export function restoreLineageFromFold(
+  foldedGraph: FoldedGraph,
+  foldedNodeId: string,
+): Map<string, FieldLineage[]> {
+  const foldEntry = foldedGraph.foldMap.get(foldedNodeId);
+  if (!foldEntry) {
+    throw new Error(`접힌 노드 '${foldedNodeId}'를 찾을 수 없음`);
+  }
+  return foldEntry.originalLineages;
+}
+
+/** fold 체크포인트 검증 결과 */
+export interface FoldCheckpointResult {
+  /** 검증 통과 여부 */
+  valid: boolean;
+  /** 입력 필드 (entry pipe의 consumes) */
+  inputFields: string[];
+  /** 출력 필드 (exit pipe의 produces) */
+  outputFields: string[];
+  /** 입력→출력 연결이 끊긴 필드 (입력이 출력에 기여하지 않음) */
+  disconnectedInputs: string[];
+  /** 출처 불명 출력 (어떤 입력에서도 기여받지 못한 출력) */
+  orphanOutputs: string[];
+}
+
+/**
+ * fold 경계 = 체크포인트: 입력 형태 → 출력 형태 검증.
+ *
+ * FoldedContract의 lineageSummary를 사용하여:
+ * 1. 모든 입력이 최소 하나의 출력에 기여하는지 확인
+ * 2. 모든 출력이 최소 하나의 입력에서 기여받는지 확인
+ */
+export function validateFoldCheckpoint(contract: FoldedContract): FoldCheckpointResult {
+  const summary = contract.lineageSummary;
+  if (!summary) {
+    return {
+      valid: true,
+      inputFields: [],
+      outputFields: [],
+      disconnectedInputs: [],
+      orphanOutputs: [],
+    };
+  }
+
+  const { inputs, outputs, outputLineage } = summary;
+
+  // 출력에 기여하는 입력 집합
+  const contributingInputs = new Set<string>();
+  for (const sources of Object.values(outputLineage)) {
+    for (const src of sources) contributingInputs.add(src);
+  }
+
+  // 입력 중 어떤 출력에도 기여하지 않는 것
+  const disconnectedInputs = inputs.filter(i => !contributingInputs.has(i));
+
+  // 출력 중 기여 입력이 없는 것
+  const orphanOutputs = outputs.filter(o =>
+    !outputLineage[o] || outputLineage[o].length === 0,
+  );
+
+  return {
+    valid: disconnectedInputs.length === 0 && orphanOutputs.length === 0,
+    inputFields: inputs,
+    outputFields: outputs,
+    disconnectedInputs,
+    orphanOutputs,
   };
 }
 

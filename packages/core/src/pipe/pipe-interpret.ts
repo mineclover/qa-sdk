@@ -8,7 +8,7 @@
 import type {
   PipeSpec, PipeGraph, ConnectionKind, PipeFlow,
 } from "../types/pipe-spec.js";
-import { getChildFlows } from "./pipe-analyze.js";
+import { getChildFlows } from "./pipe-flow-utils.js";
 import { normalize } from "./pipe-fold.js";
 import { resolvePorts } from "./pipe-port.js";
 

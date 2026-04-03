@@ -5,11 +5,12 @@
  * ZoomView의 노드/엣지 배치 정보를 시각 도형으로 변환한다.
  */
 
-import type { PipeGraph } from "../types/pipe-spec.js";
+import type { PipeGraph, PipeFlow } from "../types/pipe-spec.js";
 import type { ZoomView, ZoomNode, ZoomEdge } from "./pipe-zoom.js";
 import { computeZoomView, computeLayout } from "./pipe-zoom.js";
 import type { FoldLevel } from "./pipe-fold.js";
 import type { PipeConcern } from "./pipe-interpret.js";
+import { summarizeFlowLineage } from "./pipe-lineage.js";
 import { escapeAttr, svgSvg } from "./pipe-svg-primitives.js";
 import {
   renderMarkerDefs,
@@ -41,6 +42,8 @@ export interface D3Node {
   shape: "polygon" | "cloud";
   role: string;
   concerns: readonly string[];
+  /** transition-scope의 transitionId (해당 파이프에 있을 때만) */
+  transitionId?: string;
 }
 
 export interface D3Link {
@@ -49,13 +52,24 @@ export interface D3Link {
   kind: string;
   sourcePorts?: string[];
   targetPorts?: string[];
+  facetType?: string;
   condition?: string;
+}
+
+/** 파이프별 계보 요약 — D3 시각화에서 노드 tooltip/상세 표시용 */
+export interface D3LineageSummary {
+  pipeId: string;
+  inputs: string[];
+  outputs: string[];
+  outputLineage: Record<string, string[]>;
 }
 
 export interface D3GraphData {
   nodes: D3Node[];
   links: D3Link[];
   entryNodeId: string;
+  /** 파이프별 정적 계보 요약 (lineageHints 기반) */
+  lineageSummaries?: D3LineageSummary[];
 }
 
 // ── 공개 함수 ─────────────────────────────────────────
@@ -101,7 +115,36 @@ export function zoomViewToSvg(view: ZoomView, options?: SvgOptions): string {
 }
 
 export function pipeGraphToD3(graph: PipeGraph, level: FoldLevel = "leaf"): D3GraphData {
-  return zoomViewToD3(computeLayout(computeZoomView(graph, level)));
+  const d3 = zoomViewToD3(computeLayout(computeZoomView(graph, level)));
+
+  // transitionId 주입
+  const transitionMap = new Map<string, string>();
+  for (const pipe of graph.pipes) {
+    const tid = findTransitionId(pipe.flow);
+    if (tid) transitionMap.set(pipe.pipeId, tid);
+  }
+  for (const node of d3.nodes) {
+    const tid = transitionMap.get(node.id);
+    if (tid) node.transitionId = tid;
+  }
+
+  // lineageSummaries 주입
+  const summaries: D3LineageSummary[] = [];
+  for (const pipe of graph.pipes) {
+    const summary = summarizeFlowLineage(pipe.flow, pipe.pipeId);
+    if (summary.inputs.length > 0 || summary.outputs.length > 0) {
+      summaries.push({ pipeId: pipe.pipeId, ...summary });
+    }
+  }
+  if (summaries.length > 0) d3.lineageSummaries = summaries;
+
+  return d3;
+}
+
+/** PipeFlow 트리에서 최상위 transition-scope의 transitionId 탐색 */
+function findTransitionId(flow: PipeFlow): string | undefined {
+  if (flow.kind === "transition-scope") return flow.transitionId;
+  return undefined;
 }
 
 export function zoomViewToD3(view: ZoomView): D3GraphData {
@@ -125,6 +168,7 @@ export function zoomViewToD3(view: ZoomView): D3GraphData {
       kind: e.kind,
       ...(e.sourcePorts ? { sourcePorts: e.sourcePorts } : {}),
       ...(e.targetPorts ? { targetPorts: e.targetPorts } : {}),
+      ...((e as { facetType?: string }).facetType ? { facetType: (e as { facetType?: string }).facetType } : {}),
       ...(e.condition ? { condition: e.condition } : {}),
     })),
     entryNodeId: view.entryNodeId,
