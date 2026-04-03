@@ -9,7 +9,7 @@ test.describe("git conflicts file map", () => {
     const workspaceToggle = page.getByRole("button", { name: "작업중만" });
     await workspaceToggle.click();
     await expect(workspaceToggle).toHaveClass(/is-active/);
-    await expect(page.locator("#fmap-canvas svg")).toBeVisible();
+    await expect(page.locator("#fmap-canvas-chrome .fmap-canvas svg")).toBeVisible();
 
     const drawerToggle = page.getByRole("button", { name: "정보 패널 펼치기" });
     await drawerToggle.click();

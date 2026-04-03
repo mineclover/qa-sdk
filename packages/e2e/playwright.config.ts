@@ -64,10 +64,13 @@ export default defineConfig({
     },
     {
       command:
-        "cd ../.. && pnpm --filter @qa-sdk/cli build && node packages/cli/dist/index.js git conflicts --root . --skip-fetch --max-commits 12 --output packages/registry-ui/public/git-conflicts.json && pnpm --filter @qa-sdk/registry-ui exec vite --port 5230",
+        "cd ../.. && pnpm --filter @qa-sdk/cli build && node packages/cli/dist/index.js git conflicts --root . --skip-fetch --max-commits 12 --output packages/registry-ui/public/__generated__/git-conflicts.e2e.json && pnpm --filter @qa-sdk/registry-ui exec vite --port 5230",
       url: REGISTRY_UI_URL,
-      reuseExistingServer: !process.env["CI"],
+      reuseExistingServer: false,
       timeout: 40_000,
+      env: {
+        VITE_GIT_CONFLICTS_REPORT_PATH: "/__generated__/git-conflicts.e2e.json",
+      },
     },
   ],
 });
