@@ -1,9 +1,10 @@
 import { stat, mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import { readSnapshot, readSnapshots, writeOutput } from "snapshot-io";
-import { generateProto, type ProtoGenOptions, generateTypescript, generateCatalogTypes, testMigration, type SchemaSnapshot } from "codegen-core";
+import { generateProto, type ProtoGenOptions, generateTypescript, generateCatalogTypes, generateDataObjectBindings, testMigration, type SchemaSnapshot } from "codegen-core";
 import { loadCatalog, isDkgConfig, loadDkgConfig } from "config-loader";
-import { latestPrefixVersion, type Catalog, type DkgConfig } from "@qa-sdk/core";
+import { latestPrefixVersion, type Catalog, type DkgConfig, type DataObjectBinding } from "@qa-sdk/core";
 
 export type CodegenFormat = "proto" | "ts";
 
@@ -229,6 +230,44 @@ async function validatePrefixVersions(
     for (const w of warnings) console.warn(`  ${w}`);
     console.warn("");
   }
+}
+
+// ── DataObject Bindings codegen ──────────────────────
+
+export interface DataObjectCodegenCliOptions {
+  /** DataObjectBinding[] JSON 파일 경로 */
+  bindingsPath: string;
+  /** 출력 디렉토리 */
+  output: string;
+}
+
+/**
+ * DataObjectBinding JSON → Typed SDK 파일 생성.
+ *
+ * qa-sdk codegen --data-objects ./bindings.json --output ./generated
+ */
+export async function codegenDataObjects(opts: DataObjectCodegenCliOptions): Promise<void> {
+  const raw = await readFile(opts.bindingsPath, "utf-8");
+  const bindings = JSON.parse(raw) as DataObjectBinding[];
+
+  if (!Array.isArray(bindings) || bindings.length === 0) {
+    console.error("바인딩 파일이 비어있거나 배열이 아닙니다:", opts.bindingsPath);
+    return;
+  }
+
+  console.log(`DataObject bindings: ${bindings.length}건 (${opts.bindingsPath})`);
+
+  const result = generateDataObjectBindings(bindings);
+
+  await mkdir(opts.output, { recursive: true });
+
+  for (const file of result.files) {
+    const outPath = join(opts.output, file.path);
+    await writeOutput(outPath, file.content);
+    console.log(`Generated → ${outPath}`);
+  }
+
+  console.log(`${result.files.length} file(s) generated (hash: ${result.contentHash})`);
 }
 
 // ── Migration Test CLI ───────────────────────────────

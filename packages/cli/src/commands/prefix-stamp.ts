@@ -169,6 +169,20 @@ interface AnchorDef {
   readonly prefixArg: "object-key-1" | "object-key-2" | "string-1" | "string-2";
 }
 
+/**
+ * DataObjectBinding 상수에서 prefixId를 추출하는 특수 앵커.
+ * codegen이 생성한 `*_BINDING` 상수의 `prefixId: "..."` 패턴을 탐지.
+ */
+interface BindingAnchorDef {
+  readonly patterns: readonly string[];
+  readonly prefixArg: "binding-prefixId";
+}
+
+const BINDING_ANCHORS: readonly BindingAnchorDef[] = [
+  // codegen 생성 바인딩 상수: `prefixId: "order_event"`
+  { patterns: ["_BINDING"], prefixArg: "binding-prefixId" },
+];
+
 const ANCHORS: readonly AnchorDef[] = [
   // prefix 전용 SDK 함수만 앵커로 사용
   // .encode() / .decode()는 WeightedIndex, BitIndex, Protobuf 등에도 있어 노이즈가 큼
@@ -532,6 +546,63 @@ function findAnchorsInFile(
               anchorPattern: pattern,
               callLine: lineIndex,
             });
+          }
+        }
+      }
+    }
+  }
+
+  // 바인딩 앵커: `*_BINDING` 상수가 import되거나 사용되는 파일에서 prefixId 추출
+  for (const anchor of BINDING_ANCHORS) {
+    for (const pattern of anchor.patterns) {
+      // import 문에서 바인딩 상수 사용 감지
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
+        // import { ORDERS_BINDING } from "./data-objects" 패턴
+        if (!line.includes(pattern)) continue;
+        // 같은 파일에서 prefixId 리터럴 추출 (바인딩 정의 파일)
+        const prefixMatch = line.match(/prefixId:\s*["']([\w-]+)["']/);
+        if (prefixMatch) {
+          const prefixId = prefixMatch[1];
+          if (!catalog.prefixes[prefixId]) continue;
+          const insertLine = findInsertLine(lines, lineIndex);
+          const indent = lines[insertLine]?.match(/^(\s*)/)?.[1] ?? "";
+          const stampLine = resolveStampLine(catalog, prefixId, commentPrefix, indent, versionResolver);
+          if (stampLine) {
+            actions.push({
+              prefixId,
+              insertBeforeLine: insertLine,
+              stampLine,
+              status: "resolved",
+              anchorPattern: pattern,
+              callLine: lineIndex,
+            });
+          }
+        }
+        // import 구문에서 바인딩 변수명 감지 → 파일 내 prefixId 찾기
+        if (/import\s*\{.*_BINDING/.test(line)) {
+          const bindingNames = [...line.matchAll(/([\w]+_BINDING)/g)].map(m => m[1]);
+          for (const bindingName of bindingNames) {
+            // 파일 전체에서 해당 바인딩의 .prefixId 참조 찾기
+            const prefixIdLine = fullText.match(new RegExp(`${bindingName}\\.prefixId`));
+            if (!prefixIdLine) continue;
+            // 바인딩이 참조되는 위치에 스탬프 — import 행에 삽입
+            // 주변에서 prefixId 리터럴 찾기 (codegen 생성 파일이면)
+            const defMatch = fullText.match(new RegExp(`const\\s+${bindingName}[\\s\\S]*?prefixId:\\s*["'](\\w+)["']`));
+            if (!defMatch || !catalog.prefixes[defMatch[1]]) continue;
+            const insertLine2 = findInsertLine(lines, lineIndex);
+            const indent2 = lines[insertLine2]?.match(/^(\s*)/)?.[1] ?? "";
+            const stampLine2 = resolveStampLine(catalog, defMatch[1], commentPrefix, indent2, versionResolver);
+            if (stampLine2) {
+              actions.push({
+                prefixId: defMatch[1],
+                insertBeforeLine: insertLine2,
+                stampLine: stampLine2,
+                status: "resolved",
+                anchorPattern: `${pattern}(${bindingName})`,
+                callLine: lineIndex,
+              });
+            }
           }
         }
       }
