@@ -132,9 +132,9 @@ export const SAMPLE_REPORT: GitConflictReportInput = {
   schemaVersion: "git-conflicts-report/v1",
   generatedAt: "2026-04-03T12:00:00+09:00",
   analysis: {
-    repoPath: "/Users/junwoobang/workflow/qa-sdk",
-    currentWorktreePath: "/Users/junwoobang/workflow/qa-sdk",
-    executionCwd: "/Users/junwoobang/workflow/qa-sdk/packages/cli",
+    repoPath: "/workspace/qa-sdk",
+    currentWorktreePath: "/workspace/qa-sdk",
+    executionCwd: "/workspace/qa-sdk/packages/cli",
     fetched: false,
     baseHeadOid: "e3f196ca5c571ad017754ac16448d4b2d2cd6e7a",
     currentRef: "HEAD",
@@ -163,7 +163,7 @@ export const SAMPLE_REPORT: GitConflictReportInput = {
     currentHeadOid: "c2dc3b8000000000000000000000000000000000",
     repoWorkspace: {
       scope: "repo",
-      executionCwd: "/Users/junwoobang/workflow/qa-sdk",
+      executionCwd: "/workspace/qa-sdk",
       relativePath: ".",
       diffStats: { filesChanged: 6, insertions: 44, deletions: 12 },
       files: [
@@ -185,7 +185,7 @@ export const SAMPLE_REPORT: GitConflictReportInput = {
     },
     workspace: {
       scope: "execution",
-      executionCwd: "/Users/junwoobang/workflow/qa-sdk/packages/cli",
+      executionCwd: "/workspace/qa-sdk/packages/cli",
       relativePath: "packages/cli",
       diffStats: { filesChanged: 2, insertions: 17, deletions: 3 },
       files: [
