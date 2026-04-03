@@ -28,7 +28,7 @@ export interface MatchResult {
   step_matches: StepMatch[];
   missing_steps: string[];
   unmatched_nodes: string[];
-  /** sequence 엣지 기준 순서 위반 목록. matchGraphs가 채우며, 직접 생성 시 생략 가능 */
+  /** sequence 엣지 기준 순서 위반 목록. 매칭 엔진이 채우며, 직접 생성 시 생략 가능 */
   ordering_violations?: OrderingViolation[];
 }
 

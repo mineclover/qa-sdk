@@ -40,7 +40,7 @@ export {
   evaluateConstraint,
   evaluateConstraints,
 } from "./matching/constraint-evaluator.js";
-export { matchGraphs } from "./matching/graph-matcher.js";
+export { matchViaPathMatcher } from "./matching/path-matcher-adapter.js";
 
 // ── Path Observation ─────────────────────────────────────
 

@@ -198,7 +198,7 @@ describe("reconstruct — serviceName propagation", () => {
     expect(graph.nodes[0].service_name).toBeUndefined();
   });
 
-  it("enables source filtering in matchGraphs via service_name", () => {
+  it("enables source filtering in matching via service_name", () => {
     const records = [
       buildRecord({ log_id: "log_a", span_id: "span_a", event_key: "order.placed" }),
     ];

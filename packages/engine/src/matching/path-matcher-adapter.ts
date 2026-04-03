@@ -1,13 +1,8 @@
 /**
- * graph-matcher → PathMatcher 어댑터
+ * PathMatcher 기반 매칭 엔진.
  *
- * USE_PATH_MATCHER=true 시 matchGraphs 대신 사용된다.
  * SpecGraph + RuntimeGraph를 PipeGraph + RunResult로 변환하여
- * matchPath를 호출하고, 결과를 MatchResult(graph-matcher 호환)로 역변환한다.
- *
- * 차이점: 전곱 그래프 매칭 → 경로 모델 매칭 (합산)
- *
- * @def.doc path-matcher-migration
+ * matchPath를 호출하고, 결과를 MatchResult로 역변환한다.
  */
 
 import type {
@@ -27,7 +22,7 @@ import { evaluateConstraints } from "./constraint-evaluator.js";
 
 /**
  * PathMatcher를 통해 MatchResult를 생성한다.
- * matchGraphs와 동일한 인터페이스를 유지하므로 drop-in 교체 가능.
+ * SpecGraph + RuntimeGraph를 받아 MatchResult를 반환한다.
  */
 export function matchViaPathMatcher(spec: SpecGraph, runtime: RuntimeGraph): MatchResult {
   // 빈 spec — 모든 runtime node가 unmatched
