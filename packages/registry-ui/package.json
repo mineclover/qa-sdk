@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "canvas-viewport": "workspace:*",
     "d3": "^7.9.0",
     "git-utils": "workspace:*",
     "weighted-index": "workspace:*"

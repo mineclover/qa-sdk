@@ -130,6 +130,15 @@ importers:
         specifier: ^6.3.5
         version: 6.4.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/canvas-viewport:
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@qa-sdk/core':
@@ -1495,6 +1504,9 @@ importers:
 
   packages/registry-ui:
     dependencies:
+      canvas-viewport:
+        specifier: workspace:*
+        version: link:../canvas-viewport
       d3:
         specifier: ^7.9.0
         version: 7.9.0
@@ -1813,6 +1825,9 @@ importers:
       '@qa-sdk/event-catalog':
         specifier: workspace:*
         version: link:../event-catalog
+      canvas-viewport:
+        specifier: workspace:*
+        version: link:../canvas-viewport
       dagre:
         specifier: ^0.8.5
         version: 0.8.5

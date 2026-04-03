@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "canvas-viewport": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/engine": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
