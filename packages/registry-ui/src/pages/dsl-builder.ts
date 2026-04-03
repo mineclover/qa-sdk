@@ -2,7 +2,7 @@
  * DSL 빌더 — store의 축/composite를 선택하여 인코딩/디코딩 테스트
  */
 
-import { WeightedIndex } from "weighted-index";
+import { WeightedIndex, calcWeights } from "weighted-index";
 import { store, resolveAll, toSnapshot, fromSnapshot, type ResolvedDef } from "../store.js";
 
 let container: HTMLElement;

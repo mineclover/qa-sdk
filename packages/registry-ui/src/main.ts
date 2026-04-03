@@ -20,6 +20,8 @@ const containers: Record<TabId, HTMLElement> = {
 const rendered = new Set<TabId>();
 
 function switchTab(id: TabId) {
+  location.hash = id;
+
   tabs.forEach((t) => {
     const active = t.dataset.tab === id;
     t.classList.toggle("active", active);
@@ -41,4 +43,12 @@ tabs.forEach((t) =>
   t.addEventListener("click", () => switchTab(t.dataset.tab as TabId)),
 );
 
-switchTab("prefix-builder");
+const initialHash = location.hash.replace(/^#/, "");
+const initialTab: TabId = initialHash === "glossary"
+  || initialHash === "prefix-builder"
+  || initialHash === "dsl-builder"
+  || initialHash === "file-map"
+  ? initialHash
+  : "prefix-builder";
+
+switchTab(initialTab);
