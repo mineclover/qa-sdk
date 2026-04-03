@@ -6,15 +6,15 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { TransitionSpec, TransitionInstance } from "./transition.types.js";
-import type { TransitionEvent } from "./transition-engine.js";
-import type { InputViolation } from "./input-validator.js";
-import type { ObservationNode } from "../dkg/dkg.types.js";
-import { TransitionRegistry } from "./transition.registry.js";
-import { InMemoryStateStore } from "./state-store.js";
-import { TransitionEngine } from "./transition-engine.js";
-import { violationsToObservations } from "./violation-bridge.js";
-import { decodeAddressContext } from "./decode-adapter.js";
+import type { TransitionSpec, TransitionInstance } from "spec-transition";
+import type { TransitionEvent } from "spec-transition";
+import type { InputViolation } from "spec-transition";
+import type { ObservationNode } from "dkg";
+import { TransitionRegistry } from "spec-transition";
+import { InMemoryStateStore } from "spec-transition";
+import { TransitionEngine } from "spec-transition";
+import { violationsToObservations } from "dkg";
+import { decodeAddressContext } from "spec-transition";
 
 // ═══════════════════════════════════════════════════════════════
 //  Types

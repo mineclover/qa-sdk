@@ -6,7 +6,7 @@
  */
 
 // ── 공유 타입 (GraphPort, DKG 타입 부분집합) ─────
-export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "./graph-port.js";
+export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "spec-schema";
 export type {
   DecisionNode,
   ObservationNode,

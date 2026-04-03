@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "@qa-sdk/spec-core/dkg";
+import { bootstrapDkg } from "dkg";
 
 import {
   getFlowSchemaProfile,

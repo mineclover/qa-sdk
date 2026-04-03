@@ -5,7 +5,7 @@
  */
 
 import { nextPowerOf2 } from "weighted-index";
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort } from "spec-schema";
 import type { DecisionNode } from "./dkg-types.js";
 import { scaffoldDecision } from "./decision-scaffold.js";
 

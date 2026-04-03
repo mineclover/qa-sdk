@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
+    "spec-schema": "workspace:*",
     "weighted-index": "workspace:*"
   },
   "devDependencies": {

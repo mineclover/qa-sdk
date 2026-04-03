@@ -1,5 +1,5 @@
 import type { ExportSurface } from "./export-surface.types.js";
-import { DuplicateRegistrationError, NotFoundError } from "../shared/errors.js";
+import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
 
 /**
  * prefix별 export surface를 등록하고 제목을 resolve하는 레지스트리.

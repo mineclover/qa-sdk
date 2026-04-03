@@ -5,8 +5,8 @@
  * CLI에서 파일 저장 + mmdc 렌더링을 담당.
  */
 
-import type { GraphRegistry } from "../dkg/graph-registry.js";
-import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, PrefixNode, TransitionSpecNode } from "../dkg/dkg.types.js";
+import type { GraphRegistry } from "dkg";
+import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, PrefixNode, TransitionSpecNode } from "dkg";
 
 // ── SignalDef duck type (viz-3d 의존 없이) ──────────────────
 

@@ -25,6 +25,7 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "better-sqlite3": "^12.8.0",
@@ -35,6 +36,7 @@
     "definition-catalog": "workspace:*",
     "definition-data-source": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "dkg": "workspace:*",
     "drizzle-orm": "1.0.0-beta.20",
     "execa": "^9.6.1",
     "git-utils": "workspace:*",
@@ -47,6 +49,7 @@
     "review-ledger": "workspace:*",
     "snapshot-io": "workspace:*",
     "spec-analyzer": "workspace:*",
+    "spec-transition": "workspace:*",
     "spec-tracker": "workspace:*",
     "work-domain": "workspace:*"
   },

@@ -8,7 +8,7 @@
 import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { extractCausalGraph, type FlowSchema } from "decision-flow";
-import { DEMO_TRANSITION_SPECS } from "@qa-sdk/spec-core/transition";
+import { DEMO_TRANSITION_SPECS } from "spec-transition";
 import { CatalogRegistry, collectAxisUsage, summarizeAxisUsage, findUnusedAxes, getPrefixProfile, type Catalog, type AxisVersionSnapshot } from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
 import {
@@ -45,7 +45,7 @@ import {
   eventCoverageCheck,
   analyzeDslVersionSkew,
   type DkgNode, type DkgNodeDetails, type DecisionType, type ClaimData, type ObservationNode, type DecisionNode, type SkillNode, type TableNode, type ConstraintNode, type DkgEdgeType, type SpecNode, type ConvergeAction, type ObservationSuggestion, type TransitionSpecNode,
-} from "@qa-sdk/spec-core/dkg";
+} from "dkg";
 import {
   scanAxisOverlaps,
   scanDecisionConflicts,
@@ -63,14 +63,14 @@ import {
   discoverCausality,
   type AddressContextRecord,
   type MetricValue, type CausalCandidate, type UsageData, type EntryUsage, type AddressUsage, type CoOccurrence,
-} from "@qa-sdk/spec-core/convergence";
+} from "@qa-sdk/convergence";
 import { auditSchemaHealth } from "@qa-sdk/spec-core";
 import {
   executeEntryAdd,
   EntryAddError,
   writeCatalogFile,
 } from "@qa-sdk/spec-core/propagation";
-import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
+import { DkgSqliteStore } from "dkg/store";
 import { join, dirname } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
 import { execaSync } from "execa";
@@ -5125,7 +5125,7 @@ import {
   listAllDiagrams,
 } from "@qa-sdk/spec-core/viz";
 import type { MermaidDiagramOptions } from "@qa-sdk/spec-core/viz";
-// createDemoTopology already imported from @qa-sdk/spec-core/dkg
+// createDemoTopology already imported from dkg
 
 export async function dkgDiagram(argv: string[]): Promise<void> {
   const { values, positionals } = parseArgs({

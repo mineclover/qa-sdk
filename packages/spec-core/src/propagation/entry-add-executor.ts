@@ -12,14 +12,14 @@
  */
 
 import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphRegistry } from "dkg";
 import type {
   DkgNode,
   AxisNode,
   VersionEventNode,
   VersionChange,
-} from "../dkg/dkg.types.js";
-import { safeEntryAdd, type SafeEntryAddResult } from "../dkg/skills/safe-entry-add.js";
+} from "dkg";
+import { safeEntryAdd, type SafeEntryAddResult } from "dkg";
 import {
   addEntryToCatalog,
   expandCapacity,

@@ -5,7 +5,7 @@
  * 상태는 DEMO_CATALOG 축(axis)으로 표현한다.
  */
 
-// ── Types ────────────────────────────────────────────────
+// ── 순수 transition (from spec-transition) ──────────────
 export type {
   EffectKind,
   MatchMode,
@@ -21,62 +21,49 @@ export type {
   TransitionInstance,
   ValidationIssue,
   ValidationResult,
-} from "./transition.types.js";
+} from "spec-transition";
 
-export { EFFECT_KINDS } from "./transition.types.js";
+export { EFFECT_KINDS } from "spec-transition";
 
 // ── Schema Validation ────────────────────────────────────
-export { validateTransitionSpec } from "./transition.schema.js";
+export { validateTransitionSpec } from "spec-transition";
 
 // ── Catalog Validation ───────────────────────────────────
-export { validateWithCatalog } from "./catalog-validator.js";
+export { validateWithCatalog } from "spec-transition";
 
 // ── Registry ─────────────────────────────────────────────
-export { TransitionRegistry } from "./transition.registry.js";
+export { TransitionRegistry } from "spec-transition";
 
 // ── Match Adapter ────────────────────────────────────────
 export {
   deriveEventKey,
   coordToConstraints,
   transitionMatchToScenarioSteps,
-} from "./match-adapter.js";
+} from "spec-transition";
 
 // ── State Store ──────────────────────────────────────────
-export type { StateStore } from "./state-store.js";
-export { InMemoryStateStore } from "./state-store.js";
-export { SqliteStateStore } from "./sqlite-state-store.js";
-export type { AsyncStateStore } from "./sqlite-state-store.js";
+export type { StateStore } from "spec-transition";
+export { InMemoryStateStore } from "spec-transition";
+export { SqliteStateStore } from "spec-transition";
+export type { AsyncStateStore } from "spec-transition";
 
 // ── Bind Extractor ───────────────────────────────────────
-export { extractBind } from "./bind-extractor.js";
-export type { BindResult, BindError } from "./bind-extractor.js";
+export { extractBind } from "spec-transition";
+export type { BindResult, BindError } from "spec-transition";
 
 // ── Input Validator ──────────────────────────────────────
-export { validateInput } from "./input-validator.js";
-export type { InputViolation, InputValidationResult } from "./input-validator.js";
+export { validateInput } from "spec-transition";
+export type { InputViolation, InputValidationResult } from "spec-transition";
 
 // ── Output Applier ───────────────────────────────────────
-export { applyOutput } from "./output-applier.js";
+export { applyOutput } from "spec-transition";
 
 // ── Engine ───────────────────────────────────────────────
-export { TransitionEngine } from "./transition-engine.js";
-export type { TransitionResult, TransitionEvent } from "./transition-engine.js";
+export { TransitionEngine } from "spec-transition";
+export type { TransitionResult, TransitionEvent } from "spec-transition";
 
-// ── DKG Bridge ───────────────────────────────────────
-export { toTransitionSpecNode, toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "./dkg-bridge.js";
-
-// ── Violation Bridge ─────────────────────────────────
-export { violationsToObservations } from "./violation-bridge.js";
-
-// ── Transition Pipeline ──────────────────────────────
-export type { TransitionFunctions, TransitionSessionInput, TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
-export { createTransitionFunctions } from "./transition-pipeline.js";
-
-// ── Transition Metrics ────────────────────────────────
-export { aggregateTransitionResults, transitionFlushToMetrics } from "./transition-metrics.js";
-
-// ── Decode Adapter ───────────────────────────────────
-export { decodeAddressContext } from "./decode-adapter.js";
+// ── Decode Adapter ───────────────────────────────────────
+export { decodeAddressContext } from "spec-transition";
 
 // ── Demo Specs ───────────────────────────────────────────
 export {
@@ -84,4 +71,15 @@ export {
   USER_LOGIN_SPEC,
   PAYMENT_CAPTURE_SPEC,
   DEMO_TRANSITION_SPECS,
-} from "./demo-transition-specs.js";
+} from "spec-transition";
+
+// ── DKG Bridge (from dkg) ───────────────────────────────
+export { toTransitionSpecNode, toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "dkg";
+export { violationsToObservations } from "dkg";
+
+// ── Transition Pipeline (로컬) ──────────────────────────
+export type { TransitionFunctions, TransitionSessionInput, TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
+export { createTransitionFunctions } from "./transition-pipeline.js";
+
+// ── Transition Metrics (로컬) ────────────────────────────
+export { aggregateTransitionResults, transitionFlushToMetrics } from "./transition-metrics.js";

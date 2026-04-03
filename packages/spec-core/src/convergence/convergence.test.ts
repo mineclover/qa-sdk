@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { GraphRegistry } from "../dkg/graph-registry.js";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
+import { GraphRegistry, deriveFromCatalog } from "dkg";
 import {
   compareAxes, comparePrefixes, scanAxisOverlaps,
   compareDecisions, scanDecisionConflicts,
@@ -10,7 +9,7 @@ import {
   recommendFromSimplification, recommendFromObservation, recommendFromCausality, recommendAll,
   runConvergenceAnalysis,
 } from "@qa-sdk/convergence";
-import type { DecisionNode, IntentLinkNode, DomainNode } from "../dkg/dkg.types.js";
+import type { DecisionNode, IntentLinkNode, DomainNode } from "dkg";
 import type { CoOccurrence, EntryUsage, AddressUsage, UsageData } from "@qa-sdk/convergence";
 
 let graph: GraphRegistry;

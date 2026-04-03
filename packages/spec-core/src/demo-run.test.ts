@@ -5,11 +5,7 @@
 
 import { describe, it } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, decodePrefix } from "demo-snapshot";
-import { bootstrapDkg } from "./dkg/bootstrap.js";
-import { analyzeImpact } from "./dkg/skills/analyze-impact.js";
-import { defineFlow, serializeFlow } from "./dkg/flow-definition.js";
-import { resolve } from "./dkg/resolve.js";
-import { findVersionForEntry, findRefAddress } from "./dkg/semantic-ref.js";
+import { bootstrapDkg, analyzeImpact, defineFlow, serializeFlow, resolve, findVersionForEntry, findRefAddress } from "dkg";
 import { compareAxes, optimizeCapacities } from "@qa-sdk/convergence";
 
 const SEP = "─".repeat(60);

@@ -6,12 +6,12 @@ import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
 import { createQaContext } from "@qa-sdk/context";
 import { catalogToPrefixSpecs } from "@qa-sdk/spec-core";
-import { auditCoverage, traceFlows, bootstrapDkg } from "@qa-sdk/spec-core/dkg";
+import { auditCoverage, traceFlows, bootstrapDkg } from "dkg";
 import {
   aggregateUsageData, analyzeCollectionHealth,
   type AddressContextRecord,
   aggregateByDsl, aggregateByCategory, aggregateByService,
-} from "@qa-sdk/spec-core/convergence";
+} from "@qa-sdk/convergence";
 
 describe("DSL 종단 E2E", () => {
 

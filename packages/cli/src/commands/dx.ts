@@ -21,7 +21,7 @@ import {
   getAllSemanticRefs,
   bootstrapDkg,
   analyzeImpact,
-} from "@qa-sdk/spec-core/dkg";
+} from "dkg";
 
 // ── qa encode ───────────────────────────────────────
 

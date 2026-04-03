@@ -4,7 +4,7 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort } from "spec-schema";
 import type { PrefixNode } from "./dkg-types.js";
 import type {
   EntryUsage,

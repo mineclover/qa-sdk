@@ -141,6 +141,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
@@ -171,6 +174,9 @@ importers:
       demo-snapshot:
         specifier: workspace:*
         version: link:../demo-snapshot
+      dkg:
+        specifier: workspace:*
+        version: link:../dkg
       drizzle-orm:
         specifier: 1.0.0-beta.20
         version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
@@ -210,6 +216,9 @@ importers:
       spec-tracker:
         specifier: workspace:*
         version: link:../spec-tracker
+      spec-transition:
+        specifier: workspace:*
+        version: link:../spec-transition
       work-domain:
         specifier: workspace:*
         version: link:../work-domain
@@ -321,6 +330,9 @@ importers:
       '@qa-sdk/core':
         specifier: workspace:*
         version: link:../core
+      spec-schema:
+        specifier: workspace:*
+        version: link:../spec-schema
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -740,6 +752,55 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+
+  packages/dkg:
+    dependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+      decision-flow:
+        specifier: workspace:*
+        version: link:../decision-flow
+      drizzle-orm:
+        specifier: 1.0.0-beta.20
+        version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
+      spec-schema:
+        specifier: workspace:*
+        version: link:../spec-schema
+      spec-transition:
+        specifier: workspace:*
+        version: link:../spec-transition
+      weighted-index:
+        specifier: workspace:*
+        version: link:../weighted-index
+    devDependencies:
+      '@qa-sdk/spec-core':
+        specifier: workspace:*
+        version: link:../spec-core
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
+      drizzle-kit:
+        specifier: 1.0.0-beta.20
+        version: 1.0.0-beta.20
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/docs-explorer:
     dependencies:
@@ -1265,6 +1326,9 @@ importers:
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
+      dkg:
+        specifier: workspace:*
+        version: link:../dkg
       javascript-obfuscator:
         specifier: ^5.3.0
         version: 5.3.0
@@ -1616,6 +1680,9 @@ importers:
         specifier: workspace:*
         version: link:../logger
     devDependencies:
+      '@qa-sdk/convergence':
+        specifier: workspace:*
+        version: link:../convergence
       '@qa-sdk/spec-core':
         specifier: workspace:*
         version: link:../spec-core
@@ -1625,6 +1692,9 @@ importers:
       demo-types:
         specifier: workspace:*
         version: link:../demo-types
+      dkg:
+        specifier: workspace:*
+        version: link:../dkg
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -1680,12 +1750,21 @@ importers:
       decision-flow:
         specifier: workspace:*
         version: link:../decision-flow
+      dkg:
+        specifier: workspace:*
+        version: link:../dkg
       drizzle-orm:
         specifier: 1.0.0-beta.20
         version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      spec-schema:
+        specifier: workspace:*
+        version: link:../spec-schema
+      spec-transition:
+        specifier: workspace:*
+        version: link:../spec-transition
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -1706,6 +1785,21 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
+  packages/spec-schema:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
   packages/spec-tracker:
     devDependencies:
       tsup:
@@ -1717,6 +1811,28 @@ importers:
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
+  packages/spec-transition:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/store:
     dependencies:

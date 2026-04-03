@@ -7,7 +7,7 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort } from "spec-schema";
 import type { DecisionNode, ConstraintNode } from "./dkg-types.js";
 import type { AxisOverlap } from "./convergence.types.js";
 import { scaffoldDecision } from "./decision-scaffold.js";

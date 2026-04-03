@@ -7,15 +7,10 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
-import { GraphRegistry } from "./dkg/graph-registry.js";
-import { deriveFromCatalog } from "./dkg/catalog-derive.js";
-import { bootstrapDkg } from "./dkg/bootstrap.js";
-import { analyzeImpact } from "./dkg/skills/analyze-impact.js";
+import { GraphRegistry, deriveFromCatalog, bootstrapDkg, analyzeImpact, transitionPrefix, transitionDecision, resolveObservation, generateLifecycleReport, createDemoTopology, buildDependencyGraph, buildTimeline } from "dkg";
 import { scanAxisOverlaps, comparePrefixes, analyzeSimplification, analyzeTemporalTrends, aggregateUsageData, analyzeEntryCoverage, type AddressContextRecord } from "@qa-sdk/convergence";
 import { catalogToPrefixSpecs } from "./loader/catalog-bridge.js";
-import type { AxisNode, PrefixNode, ObservationNode, DecisionNode } from "./dkg/dkg.types.js";
-import { transitionPrefix, transitionDecision, resolveObservation, generateLifecycleReport } from "./dkg/skills/lifecycle-transition.js";
-import { createDemoTopology, buildDependencyGraph, buildTimeline } from "./dkg/service-topology.js";
+import type { AxisNode, PrefixNode, ObservationNode, DecisionNode } from "dkg";
 import { buildLayerMap, buildSvcOwnerMap, extractTracePaths, computeActivity, SERVICE_PROJECTION } from "./visualization/layer-map.js";
 import { MonitorState } from "./visualization/monitor-queries.js";
 

@@ -8,12 +8,8 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue } from "demo-snapshot";
 import { aggregateUsageData, analyzeCollectionHealth, analyzeEntryCoverage, discoverCausality, analyzeSimplification, type AddressContextRecord } from "@qa-sdk/convergence";
-import { auditCoverage } from "../dkg/skills/coverage-audit.js";
-import { traceFlows } from "../dkg/skills/flow-trace.js";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
-import { bootstrapDkg } from "../dkg/bootstrap.js";
-import { analyzeAllVersionSkew, defineDslBundle, DslBundleRegistry } from "../dkg/dsl-bundle.js";
-import type { DslBundleNode } from "../dkg/dkg.types.js";
+import { auditCoverage, traceFlows, deriveFromCatalog, bootstrapDkg, analyzeAllVersionSkew, defineDslBundle, DslBundleRegistry } from "dkg";
+import type { DslBundleNode } from "dkg";
 
 describe("E2E: 수집 → 집계 → 수렴 파이프라인", () => {
 

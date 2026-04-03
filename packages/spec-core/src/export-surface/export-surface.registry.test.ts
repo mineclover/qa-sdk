@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { ExportSurfaceRegistry } from "./export-surface.registry.js";
-import { DuplicateRegistrationError, NotFoundError } from "../shared/errors.js";
+import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
 
 describe("ExportSurfaceRegistry", () => {
   let registry: ExportSurfaceRegistry;

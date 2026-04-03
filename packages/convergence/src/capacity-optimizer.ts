@@ -25,7 +25,7 @@
  */
 
 import { isPowerOf2, nextPowerOf2 } from "weighted-index";
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort } from "spec-schema";
 
 export interface CapacityRecommendation {
   readonly axisId: string;

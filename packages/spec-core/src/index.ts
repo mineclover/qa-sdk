@@ -1,20 +1,20 @@
-// ── Shared ──────────────────────────────────────────
-export { ok, err } from "./shared/result.js";
-export type { Result } from "./shared/result.js";
+// ── Shared (from spec-schema) ──────────────────────
+export { ok, err } from "spec-schema";
+export type { Result } from "spec-schema";
 export {
   SpecError,
   DuplicateRegistrationError,
   NotFoundError,
   ValidationError,
-} from "./shared/errors.js";
-export type { ValidationErrorDetail } from "./shared/errors.js";
-export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "./shared/graph-port.js";
+} from "spec-schema";
+export type { ValidationErrorDetail } from "spec-schema";
+export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "spec-schema";
 
 // ── Export Surface ───────────────────────────────────
 export type { ExportSurface } from "./export-surface/export-surface.types.js";
 export { ExportSurfaceRegistry } from "./export-surface/export-surface.registry.js";
 
-// ── Schema (Layer 2) ────────────────────────────────
+// ── Schema (from spec-schema) ──────────────────────
 export type {
   SchemaCategory,
   SchemaValueType,
@@ -22,11 +22,11 @@ export type {
   SchemaDef,
   SchemaFragment,
   SchemaConstraint,
-} from "./schema/schema.types.js";
-export { SchemaRegistry } from "./schema/schema.registry.js";
-export { CATEGORY_RULES, validatePrefixCategory, validateAllCategories } from "./schema/category-rules.js";
-export type { CategoryRule, CategoryValidationResult } from "./schema/category-rules.js";
-export { SchemaValidator } from "./schema/schema.validator.js";
+} from "spec-schema";
+export { SchemaRegistry } from "spec-schema";
+export { CATEGORY_RULES, validatePrefixCategory, validateAllCategories } from "spec-schema";
+export type { CategoryRule, CategoryValidationResult } from "spec-schema";
+export { SchemaValidator } from "spec-schema";
 export {
   registerPresets,
   DEFAULT_SCHEMAS,
@@ -41,21 +41,23 @@ export {
   FRAGMENT_HAS_TARGET,
   FRAGMENT_HAS_OUTCOME,
   FRAGMENT_IDENTIFIED,
-} from "./schema/presets.js";
-export type { ValidationResult } from "./schema/schema.validator.js";
+} from "spec-schema";
+export type { ValidationResult } from "spec-schema";
 
-// ── Schema: Prefix Consumer ─────────────────────────
+// ── Schema: Validation Codec (from spec-schema) ────
 export {
   mapErrorToCoordinate,
   mapValidationToCoordinates,
   decodeCoordinate,
   AXIS_ENTRIES,
-} from "./schema/schema-validation-codec.js";
-export type { ValidationCoordinate } from "./schema/schema-validation-codec.js";
-export { bridgeValidationToObservation } from "./schema/schema-observation-bridge.js";
-export type { SchemaObservationResult } from "./schema/schema-observation-bridge.js";
-export { auditSchemaHealth } from "./schema/schema-health-audit.js";
-export type { SchemaHealthReport, SchemaViolationEntry } from "./schema/schema-health-audit.js";
+} from "spec-schema";
+export type { ValidationCoordinate } from "spec-schema";
+
+// ── Schema: Bridges (from dkg) ─────────────────────
+export { bridgeValidationToObservation } from "dkg";
+export type { SchemaObservationResult } from "dkg";
+export { auditSchemaHealth } from "dkg";
+export type { SchemaHealthReport, SchemaViolationEntry } from "dkg";
 
 // ── Spec Document ───────────────────────────────────
 export type {

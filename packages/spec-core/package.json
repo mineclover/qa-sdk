@@ -46,8 +46,11 @@
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
     "decision-flow": "workspace:*",
+    "dkg": "workspace:*",
     "drizzle-orm": "1.0.0-beta.20",
     "index-meta": "workspace:*",
+    "spec-schema": "workspace:*",
+    "spec-transition": "workspace:*",
     "weighted-index": "workspace:*"
   },
   "devDependencies": {

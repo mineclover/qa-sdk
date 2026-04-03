@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
-import { bootstrapDkg } from "../dkg/bootstrap.js";
+import { deriveFromCatalog, bootstrapDkg } from "dkg";
 import { aggregateUsageData, filterUsageByCategory, groupUsageByCategory, summarizeByCategory, type AddressContextRecord, type PrefixNode } from "@qa-sdk/convergence";
 
 describe("Category 기반 질의", () => {

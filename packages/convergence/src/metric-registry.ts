@@ -5,7 +5,7 @@
  */
 
 import type { MetricDef, MetricValue, MetricStatus } from "./metric.types.js";
-import type { GraphPort, GraphNodeLike } from "./graph-port.js";
+import type { GraphPort, GraphNodeLike } from "spec-schema";
 import type { ObservationNode } from "./dkg-types.js";
 import type { UsageData } from "./convergence.types.js";
 import type { Catalog } from "@qa-sdk/core";

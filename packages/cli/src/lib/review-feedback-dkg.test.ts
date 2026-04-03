@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import { bootstrapDkg } from "@qa-sdk/spec-core/dkg";
-import { DkgSqliteStore } from "@qa-sdk/spec-core/store";
+import { bootstrapDkg } from "dkg";
+import { DkgSqliteStore } from "dkg/store";
 import type { FeedbackRequest } from "review-ledger";
 import {
   bridgeFeedbackRequestToDkg,

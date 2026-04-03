@@ -10,8 +10,8 @@ import { join, extname } from "node:path";
 import type { SpecDocument, SpecRelation } from "../spec/spec.types.js";
 import type { PrefixSpec } from "../spec/prefix-spec.types.js";
 import type { ExportSurface } from "../export-surface/export-surface.types.js";
-import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaConstraint, SchemaAxis } from "../schema/schema.types.js";
-import { SpecError } from "../shared/errors.js";
+import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaConstraint, SchemaAxis } from "spec-schema";
+import { SpecError } from "spec-schema";
 
 type JsonScalar = string | number | boolean | null;
 type JsonValue = JsonScalar | JsonObject | JsonValue[];

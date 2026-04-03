@@ -6,10 +6,10 @@
  */
 
 import type { RegistryPort } from "./registry-port.js";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphRegistry } from "dkg";
 import type { VersionEventNode, VersionNotification } from "./types.js";
-import { versionEventFromDiff } from "../dkg/skills/version-event-derive.js";
-import type { DiffInput } from "../dkg/skills/version-event-derive.js";
+import { versionEventFromDiff } from "dkg";
+import type { DiffInput } from "dkg";
 
 export interface SealInput {
   readonly prefix: string;

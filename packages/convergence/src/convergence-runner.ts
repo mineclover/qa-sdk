@@ -7,7 +7,7 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "./graph-port.js";
+import type { GraphPort } from "spec-schema";
 import type { ObservationNode } from "./dkg-types.js";
 import type {
   UsageData,

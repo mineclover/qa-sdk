@@ -6,9 +6,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { bootstrapDkg } from "../dkg/bootstrap.js";
+import { bootstrapDkg } from "dkg";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG } from "demo-snapshot";
-import type { GraphRegistry } from "../dkg/graph-registry.js";
+import type { GraphRegistry } from "dkg";
 import {
   intentLinkDiagram,
   allIntentLinksDiagram,

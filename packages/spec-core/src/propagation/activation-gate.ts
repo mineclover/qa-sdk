@@ -4,9 +4,9 @@
  * registry-service가 이 순수 함수를 소비하여 활성화 게이트를 구현한다.
  */
 
-import type { GraphPort, GraphNodeLike } from "../shared/graph-port.js";
-import { checkConstraints } from "../dkg/skills/constraint-check.js";
-import { validatePrefixCategory } from "../schema/category-rules.js";
+import type { GraphPort, GraphNodeLike } from "spec-schema";
+import { checkConstraints } from "dkg";
+import { validatePrefixCategory } from "spec-schema";
 
 export interface ActivationDiagnostic {
   readonly level: "error" | "warning" | "info";

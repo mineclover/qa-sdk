@@ -1,5 +1,5 @@
 import type { ExportSurface } from "../export-surface/export-surface.types.js";
-import type { SchemaCategory } from "../schema/schema.types.js";
+import type { SchemaCategory } from "spec-schema";
 import type { SpecId } from "./spec.types.js";
 
 /**

@@ -12,7 +12,7 @@
  */
 
 import { nextPowerOf2 as _nextPow2 } from "weighted-index";
-import type { GraphPort, GraphNodeLike } from "./graph-port.js";
+import type { GraphPort, GraphNodeLike } from "spec-schema";
 
 /** 노드의 런타임 필드를 열거한다. 각 variant가 서로 다른 필드를 가지므로 정적 타입 단언 불가. */
 function nodeFields(node: GraphNodeLike): [string, unknown][] {

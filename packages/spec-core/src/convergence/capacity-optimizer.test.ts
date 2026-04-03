@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
 import { optimalCapacity, optimizeCapacities, optimizeWithImpact } from "@qa-sdk/convergence";
-import { deriveFromCatalog } from "../dkg/catalog-derive.js";
+import { deriveFromCatalog } from "dkg";
 
 describe("optimalCapacity", () => {
   it("최소 capacity는 32", () => {

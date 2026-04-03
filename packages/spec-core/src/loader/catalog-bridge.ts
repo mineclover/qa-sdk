@@ -10,7 +10,7 @@
 
 import type { DimRef, PrefixSpec } from "../spec/prefix-spec.types.js";
 import type { ExportSurface } from "../export-surface/export-surface.types.js";
-import type { SchemaCategory } from "../schema/schema.types.js";
+import type { SchemaCategory } from "spec-schema";
 
 /**
  * DemoCatalog 호환 타입.
