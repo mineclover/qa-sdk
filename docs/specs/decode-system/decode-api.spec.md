@@ -12,6 +12,8 @@ def:
   links:
     - target: decode-bundle
       type: depends_on
+    - target: decode-bigint
+      type: depends_on
 ---
 # Decode Service REST API
 
