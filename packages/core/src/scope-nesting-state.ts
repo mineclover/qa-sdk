@@ -124,7 +124,12 @@ const ALL_STATUSES: PlaybookStatus[] = [
  * 2. success에서 draft-change → editing + clear-stale-result
  * 3. 어떤 상태에서든 reset → idle
  */
-export function verifyInvariants(): TransitionViolation[] {
+export interface InvariantValidation {
+  valid: boolean;
+  violations: TransitionViolation[];
+}
+
+export function verifyInvariants(): InvariantValidation {
   const violations: TransitionViolation[] = [];
 
   for (const status of ALL_STATUSES) {
@@ -180,5 +185,5 @@ export function verifyInvariants(): TransitionViolation[] {
     }
   }
 
-  return violations;
+  return { valid: violations.length === 0, violations };
 }

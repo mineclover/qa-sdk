@@ -129,9 +129,10 @@ describe("불변량 3종 — state-transition.spec.md", () => {
     }
   });
 
-  it("verifyInvariants — 위반 0건", () => {
-    const violations = verifyInvariants();
-    expect(violations).toHaveLength(0);
+  it("verifyInvariants — 위반 0건, valid: true", () => {
+    const result = verifyInvariants();
+    expect(result.valid).toBe(true);
+    expect(result.violations).toHaveLength(0);
   });
 });
 

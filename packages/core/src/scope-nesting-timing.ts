@@ -5,8 +5,13 @@
  * 교차하여 계약의 시간적 가용성을 검증한다.
  */
 
-import type { MountFlowBinding, ScopePipeBinding } from "./scope-nesting-mount.js";
+import type { MountFlowBinding, ScopePipeBinding, ScopeContractRef } from "./scope-nesting-mount.js";
 import type { SimulationResult } from "./pipe/pipe-simulate.js";
+
+/** string | ScopeContractRef → contractId 정규화 */
+function normalizeContractId(ref: string | ScopeContractRef): string {
+  return typeof ref === "string" ? ref : ref.contractId;
+}
 
 // ── 타입 ──────────────────────────────────────────────
 
@@ -42,7 +47,8 @@ export type TimingIssueCode =
 export interface TimingIssue {
   severity: "error" | "warning";
   code: TimingIssueCode;
-  pipeId: string;
+  /** pipe 귀속 이슈. readiness-event-missing 등 계약 수준 이슈에서는 미설정 */
+  pipeId?: string;
   contractId: string;
   message: string;
 }
@@ -131,7 +137,6 @@ export function validateContractTiming(
         issues.push({
           severity: "warning",
           code: "readiness-event-missing",
-          pipeId: "",
           contractId: contract.contractId,
           message: `계약 "${contract.contractId}"의 readyAfter 이벤트 "${contract.readyAfter}"가 시뮬 결과에 없음`,
         });
@@ -152,7 +157,8 @@ export function validateContractTiming(
     const firstStep = pipeFirstStep.get(pipeId);
     if (firstStep === undefined) continue; // 시뮬에서 실행되지 않은 pipe
 
-    for (const contractId of scopeBinding.scopeContracts) {
+    for (const ref of scopeBinding.scopeContracts) {
+      const contractId = normalizeContractId(ref);
       const readyAt = readyAtMap.get(contractId) ?? -1;
       if (readyAt > 0 && firstStep < readyAt) {
         issues.push({
@@ -191,7 +197,7 @@ export function validateContractTiming(
       const staleConsumers: string[] = [];
       for (const [otherPipeId, otherBinding] of Object.entries(bindings)) {
         if (otherPipeId === pipeId) continue;
-        if (!otherBinding.scopeContracts.includes(delegation.contractId)) continue;
+        if (!otherBinding.scopeContracts.some(r => normalizeContractId(r) === delegation.contractId)) continue;
 
         const otherFirst = pipeFirstStep.get(otherPipeId);
         if (otherFirst !== undefined && otherFirst >= delegationStart && otherFirst < completionStep) {

@@ -225,7 +225,7 @@ export { validateContractTiming } from "./scope-nesting-timing.js";
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
   PlaybookStatus, TransitionTrigger, TransitionResult,
-  SideEffect, TransitionViolation,
+  SideEffect, TransitionViolation, InvariantValidation,
 } from "./scope-nesting-state.js";
 export { transition, isViolation, verifyInvariants } from "./scope-nesting-state.js";
 
