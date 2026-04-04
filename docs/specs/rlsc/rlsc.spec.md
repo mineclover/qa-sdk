@@ -70,15 +70,15 @@ DOM (브라우저)
        ├─ classifyLayers()     → LayerStack[]         [수집: z 레이어]
        └─ detectRelations()    → RLSCRelation[]       [수집: 공간 관계]
             ↓
-       measureLayout()        → LayoutMetrics         [해석1: 수치]       ← draft
+       measureLayout()        → LayoutMetrics         [해석1: 수치]       ← ✓
             ↓
-       classifyLayout()       → LayoutPattern         [해석2: 패턴 어휘]  ← draft (rlsc-pattern)
+       classifyLayout()       → LayoutPattern         [해석2: 패턴 어휘]  ← ✓ (rlsc-pattern)
             ↓
-       checkConformance()     → ConformanceResult     [검증]              ← draft
+       checkConformance()     → ConformanceResult     [검증]              ← ✓
             │
-       LayoutMonitor          → 실시간 재검증 루프    [관측]              ← draft
+       LayoutMonitor          → 실시간 재검증 루프    [관측]              ← ✓
             ↓
-       renderToCanvas/SVG     → 시각적 구조 이미지    [시각화]            ← draft
+       renderToCanvas/SVG     → 시각적 구조 이미지    [시각화]            ← ✓
             ↓
        encodeToMarkup()       → RLSC/1.0 마크업       [직렬화]
             ↓
@@ -105,11 +105,11 @@ DOM (브라우저)
 | 마크업 직렬화/파싱 | `rlsc-encoder` | `encoder.ts` | ✓ |
 | LLM 프롬프트 생성 | `rlsc-context` | `context.ts` | ✓ |
 | 쿼리/불변 갱신/diff | `rlsc-query` | `query.ts` | ✓ |
-| 설계 메트릭 계산 | `rlsc-metrics` | `metrics.ts` | draft |
-| 패턴 어휘 분류 | `rlsc-pattern` | `pattern.ts` | draft |
-| 의도 선언 + 프레임 검증 | `rlsc-intent` | `intent.ts` | draft |
-| 색상 매핑 캔버스 렌더링 | `rlsc-canvas` | `canvas.ts` | draft |
-| DOM 변화 관측 + 재검증 루프 | `rlsc-monitor` | `monitor.ts` | draft |
+| 설계 메트릭 계산 | `rlsc-metrics` | `metrics.ts` | ✓ |
+| 패턴 어휘 분류 | `rlsc-pattern` | `pattern.ts` | ✓ |
+| 의도 선언 + 프레임 검증 | `rlsc-intent` | `intent.ts` | ✓ |
+| 색상 매핑 캔버스 렌더링 | `rlsc-canvas` | `canvas.ts` | ✓ |
+| DOM 변화 관측 + 재검증 루프 | `rlsc-monitor` | `monitor.ts` | ✓ |
 | 테스트 시나리오 묶음 | `rlsc-test` | `*.test.md` | mixed |
 
 ## 제약 ^consumes

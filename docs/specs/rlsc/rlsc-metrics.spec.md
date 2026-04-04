@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: review
   layer: domain
   svc: rlsc
   links:
@@ -107,13 +107,13 @@ def:
 
 ## 구현 항목
 
-- [ ] `LayoutMetrics`, `ProximityGroup` 타입 — `types.ts`에 추가 (columnSystem, spacingValues, spacingBase, aspectRatioDistribution 포함)
-- [ ] `metrics.ts` 파일 생성
+- [x] `LayoutMetrics`, `ProximityGroup` 타입 — `types.ts`에 추가 (columnSystem, spacingValues, spacingBase, aspectRatioDistribution 포함)
+- [x] `metrics.ts` 파일 생성
   - 페이지 수준: `measureBalance`, `detectGridPattern`, `scoreGoldenRatio`, `detectProximityGroups`, `detectDominantFlow`
   - 구조 단위: `detectColumnSystem`, `measureSpacing`, `measureAspectRatios`
   - 조합: `measureLayout`
-- [ ] `grid.ts:extractRegions` export 전환 (현재 내부 함수)
-- [ ] `index.ts` — `measureLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
+- [x] `grid.ts:extractRegions` export 전환 (현재 내부 함수)
+- [x] `index.ts` — `measureLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
 - [ ] `metrics.test.ts` — 각 측정 함수 단위 테스트 (DOM 없이 mock 노드)
   - 12-col 배치 → `columnSystem { cols: 12, gutterPx: 16, marginPx: 24 }`
   - spacingValues `[8, 16, 24]` → spacingBase 8

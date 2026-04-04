@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: review
   layer: domain
   svc: rlsc
   links:
@@ -81,11 +81,11 @@ def:
 
 ## 구현 항목
 
-- [ ] `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts`에 추가 (패턴 타입은 `rlsc-pattern`이 담당)
-- [ ] `intent.ts` 파일 생성 — `checkConformance`, `recognizeLayout` + 내부 체커 구현
+- [x] `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts`에 추가 (패턴 타입은 `rlsc-pattern`이 담당)
+- [x] `intent.ts` 파일 생성 — `checkConformance`, `recognizeLayout` + 내부 체커 구현
   - 페이지 수준: `checkBalance`, `checkGrid`, `checkFlow`, `checkGoldenRatio`, `checkGestalt`
   - 구조 단위: `checkGridSystem`, `checkSpacing`, `checkProportions`
-- [ ] `index.ts` — `checkConformance`, `recognizeLayout`, `LayoutPattern`, `ConformanceResult` + 새 패턴 타입 export 추가
+- [x] `index.ts` — `checkConformance`, `recognizeLayout`, `LayoutPattern`, `ConformanceResult` + 새 패턴 타입 export 추가
 - [ ] `intent.test.ts` — 양 방향 사용 검증
   - `recognizeLayout(doc)` 만 호출 → violations 없이 LayoutPattern 반환
   - `checkConformance(doc, { gridPattern: "3x3" })` + 실측 2×2 → gridPattern violation

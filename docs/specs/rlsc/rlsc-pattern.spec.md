@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: review
   layer: domain
   svc: rlsc
   links:
@@ -86,9 +86,9 @@ def:
 
 ## 구현 항목
 
-- [ ] `LayoutPattern`, `GridSystemPattern`, `SpacingPattern`, `ProportionPattern`, `GestaltPattern` 타입 — `types.ts`에 추가
-- [ ] `pattern.ts` 파일 생성 — `classifyLayout` 구현
-- [ ] `index.ts` — `classifyLayout`, 패턴 타입 5종 export 추가
+- [x] `LayoutPattern`, `GridSystemPattern`, `SpacingPattern`, `ProportionPattern`, `GestaltPattern` 타입 — `types.ts`에 추가
+- [x] `pattern.ts` 파일 생성 — `classifyLayout` 구현
+- [x] `index.ts` — `classifyLayout`, 패턴 타입 5종 export 추가
 - [ ] `pattern.test.ts` — `classifyLayout` 단위 테스트 (mock LayoutMetrics)
   - balance.x 2.1 → balanceRatio `[2, 1]`
   - goldenRatioScore 0.85 → goldenRatio true
