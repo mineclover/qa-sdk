@@ -8,17 +8,13 @@ import type {
 } from "./types.js";
 import { encodeToMarkup } from "./encoder.js";
 import { gridToText } from "./grid.js";
+import { layersToText } from "./layers.js";
 import { relationsToText } from "./relations.js";
 import { flattenTree } from "./tree-utils.js";
 
 // ─── Context Engineering ────────────────────────────────────────────
 
-const DEFAULT_CONTEXT_OPTIONS: Required<ContextOptions> = {
-  purpose: "layout-analysis",
-  focus: undefined as unknown as string,
-  sections: ["tree", "grid", "layers", "relations"],
-  maxTokens: 4000,
-};
+const DEFAULT_SECTIONS = ["tree", "grid", "layers", "relations"] as const satisfies ContextOptions["sections"];
 
 /**
  * R.L.S.C. 문서를 LLM이 이해할 수 있는 디자인 컨텍스트로 변환한다.
@@ -31,7 +27,12 @@ export function generateDesignContext(
   doc: RLSCDocument,
   options?: Partial<ContextOptions>,
 ): DesignContext {
-  const opts = { ...DEFAULT_CONTEXT_OPTIONS, ...options };
+  const opts = {
+    purpose: options?.purpose ?? ("layout-analysis" as ContextPurpose),
+    focus: options?.focus,
+    sections: options?.sections ?? DEFAULT_SECTIONS,
+    maxTokens: options?.maxTokens ?? 4000,
+  };
   const allNodes = flattenTree(doc.root);
 
   // 자연어 요약 생성
@@ -57,11 +58,17 @@ export function generateDesignContext(
     ? generateFocusDetail(doc, allNodes, opts.focus)
     : undefined;
 
+  // 레이어 텍스트
+  const layers = opts.sections.includes("layers")
+    ? layersToText(doc.layers)
+    : "";
+
   // 프롬프트 조합
   const prompt = buildPrompt(opts.purpose, {
     summary,
     structure,
     matrix,
+    layers,
     relations,
     focusDetail,
   });
@@ -304,6 +311,7 @@ function buildPrompt(
     summary: string;
     structure: string;
     matrix: string;
+    layers: string;
     relations: string;
     focusDetail?: string;
   },
@@ -313,6 +321,7 @@ function buildPrompt(
   template = template.replace("{summary}", data.summary);
   template = template.replace("{structure}", data.structure);
   template = template.replace("{matrix}", data.matrix);
+  template = template.replace("{layers}", data.layers);
   template = template.replace("{relations}", data.relations);
 
   const focusSection = data.focusDetail

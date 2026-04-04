@@ -189,6 +189,9 @@ export function collectLayout(
   root?: Element,
   options?: CollectorOptions,
 ): RLSCDocument {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    throw new Error("collectLayout은 브라우저 환경에서만 실행 가능합니다");
+  }
   nodeCounter = 0;
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const targetRoot = root ?? document.body;

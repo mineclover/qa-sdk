@@ -122,8 +122,8 @@ export function parseMarkup(markup: string): Partial<RLSCDocument> {
     url: header["url"] ?? "",
     timestamp: header["timestamp"] ?? new Date().toISOString(),
     address: header["address"],
-    root: root as RLSCNode,
-    grid: { cellSize: 120, cols: 0, rows: 0, cells: [] },
+    ...(root ? { root } : {}),
+    grid: { cellSize: 0, cols: 0, rows: 0, cells: [] },
     layers: [],
     relations: [],
   };
