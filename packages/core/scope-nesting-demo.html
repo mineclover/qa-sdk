@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Scope Nesting — Canonical Review 시뮬레이션</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e4e4e7; }
+    .header { padding: 24px 32px; border-bottom: 1px solid #27272a; }
+    .header h1 { font-size: 20px; font-weight: 600; color: #fafafa; }
+    .header p { font-size: 13px; color: #71717a; margin-top: 4px; }
+    .container { display: flex; height: calc(100vh - 80px); }
+    .panel { flex: 1; padding: 24px; overflow-y: auto; }
+    .panel-left { border-right: 1px solid #27272a; }
+    .panel h2 { font-size: 14px; font-weight: 600; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+    #nesting-svg { width: 100%; }
+    .scope-box { cursor: pointer; transition: opacity 0.2s; }
+    .scope-box:hover { opacity: 0.9; }
+    .info-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .info-card h3 { font-size: 14px; font-weight: 600; color: #fafafa; margin-bottom: 8px; }
+    .info-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid #27272a; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #71717a; }
+    .info-value { color: #e4e4e7; font-family: 'SF Mono', monospace; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+    .badge-state { background: #1e3a5f; color: #93c5fd; }
+    .badge-logging { background: #3b2f1a; color: #fbbf24; }
+    .badge-persist { background: #1a3b2f; color: #6ee7b7; }
+    .badge-adapter { background: #3b1a3b; color: #d8b4fe; }
+    .badge-facet { background: #27272a; color: #a1a1aa; margin-right: 4px; }
+    .badge-valid { background: #14532d; color: #4ade80; }
+    .badge-warning { background: #713f12; color: #fbbf24; }
+    .badge-error { background: #7f1d1d; color: #f87171; }
+    .timeline { margin-top: 16px; }
+    .timeline-step { display: flex; align-items: center; padding: 6px 0; font-size: 12px; }
+    .timeline-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+    .timeline-pipe { color: #93c5fd; font-family: 'SF Mono', monospace; width: 120px; }
+    .timeline-facet { color: #a1a1aa; }
+    .arrow-marker { fill: none; stroke: #52525b; stroke-width: 1; }
+    .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #71717a; }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #27272a; background: transparent; color: #a1a1aa; }
+    .tab.active { background: #27272a; color: #fafafa; border-color: #3f3f46; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Scope Nesting — Canonical Review Playbook</h1>
+    <p>context-action 패턴의 계약 하향(contract descent) + 시뮬레이션 결과</p>
+  </div>
+  <div class="container">
+    <div class="panel panel-left">
+      <div class="tab-bar">
+        <button class="tab active" onclick="showView('nesting')">Scope 계층</button>
+        <button class="tab" onclick="showView('timeline')">시뮬 타임라인</button>
+        <button class="tab" onclick="showView('sequence')">L0→L3 시퀀스</button>
+      </div>
+      <div id="view-nesting"></div>
+      <div id="view-timeline" class="hidden"></div>
+      <div id="view-sequence" class="hidden"></div>
+    </div>
+    <div class="panel">
+      <h2>검증 결과</h2>
+      <div id="info-panel"></div>
+    </div>
+  </div>
+
+<script>
+// ── 데이터 (실제 canonical-review 비즈니스 로직 기반) ──
+
+const scopeData = [
+  {
+    id: "qa-bridge", depth: 0,
+    provides: [{ id: "logging-session", type: "logging", shape: "QaBridge → NoopTransport" }],
+    consumes: [],
+    facets: ["소비"],
+    pipes: [],
+    business: "createQaBridge({ serviceName, transport: NoopTransport })",
+    contracts: "startSession(), emitEvent(), flush(), getDebugEnvelopes()",
+  },
+  {
+    id: "feature-context", depth: 1,
+    provides: [
+      { id: "playbook-state", type: "state", shape: "CanonicalReviewState", readyAfter: "persist_load" },
+      { id: "persist-adapter", type: "persist", shape: "playbookPersist" },
+    ],
+    consumes: [{ id: "logging-session", type: "logging" }],
+    facets: ["정의", "저장"],
+    pipes: ["persist-loader"],
+    business: "createCanonicalReviewInitialState(sessionId, traceId)",
+    contracts: "draft: CanonicalReviewDraft, validationIssues[], result, status, activity[]",
+  },
+  {
+    id: "handlers", depth: 2,
+    provides: [{ id: "submission-handlers", type: "adapter", shape: "SubmissionHandlers" }],
+    consumes: [
+      { id: "playbook-state", type: "state" },
+      { id: "logging-session", type: "logging" },
+    ],
+    facets: ["소비", "관리", "생산"],
+    pipes: ["validate-input", "compute-result", "log-event"],
+    business: "assessCanonicalReviewDraft(draft) → { issues, result }",
+    contracts: "handleSubmit(), handleReset(), handleDraftChange()",
+  },
+  {
+    id: "view", depth: 3,
+    provides: [],
+    consumes: [
+      { id: "playbook-state", type: "state" },
+      { id: "submission-handlers", type: "adapter" },
+    ],
+    facets: ["소비"],
+    pipes: [],
+    business: "CanonicalReviewView → DOM render + input binding",
+    contracts: "statusLabel, routeLabel, envelopePreview, issueMessages",
+  },
+];
+
+const descentPaths = [
+  { contractId: "logging-session", from: "qa-bridge", to: ["feature-context", "handlers"] },
+  { contractId: "playbook-state", from: "feature-context", to: ["handlers", "view"] },
+  { contractId: "submission-handlers", from: "handlers", to: ["view"] },
+];
+
+const simSteps = [
+  { pipe: "persist-loader", facet: "저장", event: "persist_load_complete" },
+  { pipe: "validate-input", facet: "소비", event: "review_input" },
+  { pipe: "validate-input", facet: "관리", event: null },
+  { pipe: "compute-result", facet: "소비", event: null },
+  { pipe: "compute-result", facet: "생산", event: "review_score" },
+  { pipe: "log-event", facet: "소비", event: "review_logged" },
+  { pipe: "log-event", facet: "소비", event: null },
+];
+
+const l0l3 = {
+  l1: { valid: true, issues: 1, paths: 4 },
+  l15: { valid: true, issues: 0, snapshots: 4 },
+  l2: { from: "editing", trigger: "valid-submit", next: "submitting", invariants: "OK" },
+  l3: { status: "complete", steps: 7, happy: true },
+  timing: { valid: true, gaps: 0 },
+};
+
+// ── 색상 ──
+
+const TYPE_COLORS = {
+  state: { bg: "#1e3a5f", fg: "#93c5fd", stroke: "#3b82f6" },
+  logging: { bg: "#3b2f1a", fg: "#fbbf24", stroke: "#f59e0b" },
+  persist: { bg: "#1a3b2f", fg: "#6ee7b7", stroke: "#10b981" },
+  adapter: { bg: "#3b1a3b", fg: "#d8b4fe", stroke: "#a855f7" },
+  custom: { bg: "#27272a", fg: "#a1a1aa", stroke: "#52525b" },
+};
+
+const FACET_COLORS = {
+  "생산": "#4ade80", "소비": "#60a5fa", "관리": "#fbbf24",
+  "정의": "#c084fc", "저장": "#6ee7b7",
+};
+
+const SCOPE_BG = ["#1a1a2e44", "#16213e44", "#0f3b6344", "#1a2a4444"];
+
+// ── Nesting 렌더링 ──
+
+function renderNesting() {
+  const container = d3.select("#view-nesting");
+  container.html("");
+
+  const W = 560, H = 520;
+  const svg = container.append("svg")
+    .attr("width", W).attr("height", H)
+    .attr("viewBox", `0 0 ${W} ${H}`);
+
+  // 중첩 사각형 (바깥→안쪽)
+  const pad = 16, boxH = 90, gap = 12;
+  const scopes = scopeData.map((s, i) => ({
+    ...s,
+    x: pad * i + 10,
+    y: pad * i + (boxH + gap) * i + 10,
+    w: W - pad * i * 2 - 20,
+    h: boxH,
+  }));
+
+  // scope 박스
+  const groups = svg.selectAll("g.scope").data(scopes).enter().append("g")
+    .attr("class", "scope-box")
+    .attr("transform", d => `translate(${d.x}, ${d.y})`)
+    .on("click", (_, d) => showScopeInfo(d));
+
+  groups.append("rect")
+    .attr("width", d => d.w).attr("height", d => d.h)
+    .attr("rx", 8)
+    .attr("fill", (_, i) => SCOPE_BG[i])
+    .attr("stroke", d => d.provides.length > 0 ? TYPE_COLORS[d.provides[0].type].stroke : "#3f3f46")
+    .attr("stroke-width", 1.5);
+
+  // scope 이름 + depth
+  groups.append("text")
+    .attr("x", 14).attr("y", 22)
+    .attr("fill", "#fafafa").attr("font-size", 13).attr("font-weight", 600)
+    .text(d => `${d.id}  (depth ${d.depth})`);
+
+  // provides 뱃지
+  groups.each(function(d) {
+    const g = d3.select(this);
+    d.provides.forEach((c, i) => {
+      const color = TYPE_COLORS[c.type];
+      g.append("rect").attr("x", 14 + i * 150).attr("y", 34).attr("width", 140).attr("height", 20).attr("rx", 4).attr("fill", color.bg);
+      g.append("text").attr("x", 20 + i * 150).attr("y", 48).attr("fill", color.fg).attr("font-size", 11).text(`↑ ${c.id}`);
+    });
+  });
+
+  // consumes 뱃지
+  groups.each(function(d) {
+    const g = d3.select(this);
+    d.consumes.forEach((c, i) => {
+      const color = TYPE_COLORS[c.type];
+      g.append("rect").attr("x", 14 + i * 150).attr("y", 58).attr("width", 140).attr("height", 20).attr("rx", 4).attr("fill", color.bg).attr("opacity", 0.6);
+      g.append("text").attr("x", 20 + i * 150).attr("y", 72).attr("fill", color.fg).attr("font-size", 11).attr("opacity", 0.8).text(`↓ ${c.id}`);
+    });
+  });
+
+  // 패싯 태그
+  groups.each(function(d) {
+    const g = d3.select(this);
+    d.facets.forEach((f, i) => {
+      g.append("circle").attr("cx", d.w - 14 - i * 18).attr("cy", 18).attr("r", 6).attr("fill", FACET_COLORS[f] || "#71717a").attr("opacity", 0.8);
+    });
+  });
+
+  // 계약 하향 화살표
+  const defs = svg.append("defs");
+  defs.append("marker").attr("id", "arrowhead").attr("markerWidth", 8).attr("markerHeight", 6)
+    .attr("refX", 8).attr("refY", 3).attr("orient", "auto")
+    .append("polygon").attr("points", "0 0, 8 3, 0 6").attr("fill", "#52525b");
+
+  descentPaths.forEach(path => {
+    const srcIdx = scopes.findIndex(s => s.id === path.from);
+    const color = TYPE_COLORS[scopeData[srcIdx].provides.find(p => p.id === path.contractId)?.type || "custom"];
+    path.to.forEach(target => {
+      const tgtIdx = scopes.findIndex(s => s.id === target);
+      const src = scopes[srcIdx], tgt = scopes[tgtIdx];
+      const x1 = src.x + src.w - 8, y1 = src.y + src.h / 2;
+      const x2 = tgt.x + tgt.w - 8, y2 = tgt.y + 8;
+      svg.append("path")
+        .attr("d", `M${x1},${y1} C${x1 + 30},${y1} ${x2 + 30},${y2} ${x2},${y2}`)
+        .attr("fill", "none").attr("stroke", color.stroke).attr("stroke-width", 1.5)
+        .attr("stroke-dasharray", "4,3").attr("opacity", 0.6)
+        .attr("marker-end", "url(#arrowhead)");
+    });
+  });
+
+  // 범례
+  const legend = container.append("div").attr("class", "legend").style("margin-top", "12px");
+  Object.entries(TYPE_COLORS).forEach(([type, color]) => {
+    const item = legend.append("div").attr("class", "legend-item");
+    item.append("div").attr("class", "legend-swatch").style("background", color.stroke);
+    item.append("span").text(type);
+  });
+  Object.entries(FACET_COLORS).forEach(([facet, color]) => {
+    const item = legend.append("div").attr("class", "legend-item");
+    item.append("div").attr("class", "legend-swatch").style("background", color).style("border-radius", "50%");
+    item.append("span").text(facet);
+  });
+
+  // 초기 info
+  showScopeInfo(scopes[0]);
+}
+
+// ── 타임라인 렌더링 ──
+
+function renderTimeline() {
+  const container = d3.select("#view-timeline");
+  container.html("");
+
+  const W = 560, H = 320, margin = { top: 30, right: 20, bottom: 30, left: 130 };
+  const svg = container.append("svg").attr("width", W).attr("height", H);
+
+  const pipes = [...new Set(simSteps.map(s => s.pipe))];
+  const y = d3.scaleBand().domain(pipes).range([margin.top, H - margin.bottom]).padding(0.3);
+  const x = d3.scaleLinear().domain([0, simSteps.length]).range([margin.left, W - margin.right]);
+
+  // 축
+  svg.append("g").attr("transform", `translate(0,${margin.top})`)
+    .call(d3.axisTop(x).ticks(simSteps.length).tickFormat(d => `step ${d}`))
+    .selectAll("text").attr("fill", "#71717a").attr("font-size", 10);
+  svg.append("g").attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y))
+    .selectAll("text").attr("fill", "#a1a1aa").attr("font-size", 11).attr("font-family", "'SF Mono', monospace");
+
+  svg.selectAll("line,path").attr("stroke", "#27272a");
+
+  // step 블록
+  simSteps.forEach((step, i) => {
+    const pipeY = y(step.pipe);
+    const color = FACET_COLORS[step.facet] || "#71717a";
+    svg.append("rect")
+      .attr("x", x(i)).attr("y", pipeY)
+      .attr("width", x(1) - x(0) - 2).attr("height", y.bandwidth())
+      .attr("rx", 4).attr("fill", color).attr("opacity", 0.25);
+    svg.append("text")
+      .attr("x", x(i) + (x(1) - x(0)) / 2).attr("y", pipeY + y.bandwidth() / 2 + 4)
+      .attr("text-anchor", "middle").attr("fill", color).attr("font-size", 10)
+      .text(step.facet);
+    if (step.event) {
+      svg.append("text")
+        .attr("x", x(i) + (x(1) - x(0)) / 2).attr("y", pipeY + y.bandwidth() + 12)
+        .attr("text-anchor", "middle").attr("fill", "#52525b").attr("font-size", 8)
+        .text(step.event);
+    }
+  });
+}
+
+// ── L0→L3 시퀀스 렌더링 ──
+
+function renderSequence() {
+  const container = d3.select("#view-sequence");
+  container.html("");
+
+  const layers = [
+    { id: "L0", label: "Guard", detail: "fail-open", color: "#4ade80" },
+    { id: "L1", label: "구조", detail: `valid=${l0l3.l1.valid}, ${l0l3.l1.paths} paths`, color: "#60a5fa" },
+    { id: "L1.5", label: "마운트", detail: `valid=${l0l3.l15.valid}, ${l0l3.l15.snapshots} snapshots`, color: "#fbbf24" },
+    { id: "L2", label: "전이", detail: `${l0l3.l2.from}→${l0l3.l2.next}`, color: "#c084fc" },
+    { id: "L3", label: "시뮬", detail: `${l0l3.l3.status}, ${l0l3.l3.steps} steps`, color: "#818cf8" },
+    { id: "T", label: "Timing", detail: `valid=${l0l3.timing.valid}, ${l0l3.timing.gaps} gaps`, color: "#f472b6" },
+  ];
+
+  const W = 560, H = 200;
+  const svg = container.append("svg").attr("width", W).attr("height", H);
+  const nodeW = 80, nodeH = 60, gap = 12;
+  const startX = (W - (layers.length * (nodeW + gap) - gap)) / 2;
+
+  layers.forEach((l, i) => {
+    const x = startX + i * (nodeW + gap), y = 40;
+    svg.append("rect").attr("x", x).attr("y", y).attr("width", nodeW).attr("height", nodeH)
+      .attr("rx", 8).attr("fill", l.color + "22").attr("stroke", l.color).attr("stroke-width", 1.5);
+    svg.append("text").attr("x", x + nodeW / 2).attr("y", y + 20)
+      .attr("text-anchor", "middle").attr("fill", l.color).attr("font-size", 12).attr("font-weight", 600).text(l.id);
+    svg.append("text").attr("x", x + nodeW / 2).attr("y", y + 36)
+      .attr("text-anchor", "middle").attr("fill", "#a1a1aa").attr("font-size", 9).text(l.label);
+    svg.append("text").attr("x", x + nodeW / 2).attr("y", y + nodeH + 16)
+      .attr("text-anchor", "middle").attr("fill", "#71717a").attr("font-size", 9).text(l.detail);
+    if (i < layers.length - 1 && i < 4) {
+      svg.append("line")
+        .attr("x1", x + nodeW).attr("y1", y + nodeH / 2)
+        .attr("x2", x + nodeW + gap).attr("y2", y + nodeH / 2)
+        .attr("stroke", "#3f3f46").attr("stroke-width", 1).attr("marker-end", "url(#arrowhead)");
+    }
+  });
+  // T는 L1.5와 L3에서 점선 연결
+  const tx = startX + 5 * (nodeW + gap), ty = 40;
+  svg.append("line").attr("x1", startX + 2 * (nodeW + gap) + nodeW / 2).attr("y1", 40 + nodeH)
+    .attr("x2", tx + nodeW / 2).attr("y2", ty + nodeH)
+    .attr("stroke", "#f472b6").attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+  svg.append("line").attr("x1", startX + 4 * (nodeW + gap) + nodeW / 2).attr("y1", 40 + nodeH)
+    .attr("x2", tx + nodeW / 2).attr("y2", ty + nodeH)
+    .attr("stroke", "#f472b6").attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+}
+
+// ── Info 패널 ──
+
+function showScopeInfo(scope) {
+  const panel = d3.select("#info-panel");
+  panel.html("");
+
+  // scope 상세
+  const card = panel.append("div").attr("class", "info-card");
+  card.append("h3").text(scope.id);
+
+  const rows = [
+    ["depth", scope.depth],
+    ["비즈니스 로직", scope.business],
+    ["계약 내용", scope.contracts],
+  ];
+  rows.forEach(([label, value]) => {
+    const row = card.append("div").attr("class", "info-row");
+    row.append("span").attr("class", "info-label").text(label);
+    row.append("span").attr("class", "info-value").text(value);
+  });
+
+  // provides
+  if (scope.provides.length > 0) {
+    const pCard = panel.append("div").attr("class", "info-card");
+    pCard.append("h3").text("Provides");
+    scope.provides.forEach(c => {
+      const row = pCard.append("div").attr("class", "info-row");
+      row.append("span").html(`<span class="badge badge-${c.type}">${c.type}</span> ${c.id}`);
+      row.append("span").attr("class", "info-value").text(c.shape);
+    });
+  }
+
+  // consumes
+  if (scope.consumes.length > 0) {
+    const cCard = panel.append("div").attr("class", "info-card");
+    cCard.append("h3").text("Consumes");
+    scope.consumes.forEach(c => {
+      const row = cCard.append("div").attr("class", "info-row");
+      row.append("span").html(`<span class="badge badge-${c.type}">${c.type}</span> ${c.id}`);
+      row.append("span").attr("class", "info-value").text("← " + descentPaths.find(p => p.contractId === c.id)?.from || "?");
+    });
+  }
+
+  // 패싯
+  const fCard = panel.append("div").attr("class", "info-card");
+  fCard.append("h3").text("패싯");
+  const facetDiv = fCard.append("div").style("display", "flex").style("gap", "6px");
+  scope.facets.forEach(f => {
+    facetDiv.append("span").attr("class", "badge badge-facet").style("border-left", `3px solid ${FACET_COLORS[f]}`).text(f);
+  });
+
+  // pipes
+  if (scope.pipes.length > 0) {
+    const pipesCard = panel.append("div").attr("class", "info-card");
+    pipesCard.append("h3").text("Pipes (handlers 내부)");
+    scope.pipes.forEach(p => {
+      const steps = simSteps.filter(s => s.pipe === p);
+      const row = pipesCard.append("div").attr("class", "info-row");
+      row.append("span").attr("class", "info-value").text(p);
+      row.append("span").attr("class", "info-label").text(steps.map(s => s.facet).join(" → "));
+    });
+  }
+
+  // 검증 상태
+  const vCard = panel.append("div").attr("class", "info-card");
+  vCard.append("h3").text("검증");
+  vCard.append("div").attr("class", "info-row")
+    .html(`<span class="info-label">L1 구조</span><span class="badge badge-valid">valid</span>`);
+  vCard.append("div").attr("class", "info-row")
+    .html(`<span class="info-label">L1.5 마운트</span><span class="badge badge-valid">valid</span>`);
+  vCard.append("div").attr("class", "info-row")
+    .html(`<span class="info-label">L3 시뮬</span><span class="badge badge-valid">${l0l3.l3.steps} steps, happy=${l0l3.l3.happy}</span>`);
+}
+
+// ── 탭 전환 ──
+
+function showView(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll("[id^='view-']").forEach(v => v.classList.add("hidden"));
+  document.querySelector(`[onclick="showView('${name}')"]`).classList.add("active");
+  document.getElementById(`view-${name}`).classList.remove("hidden");
+}
+
+// ── 초기화 ──
+
+renderNesting();
+renderTimeline();
+renderSequence();
+</script>
+</body>
+</html>
