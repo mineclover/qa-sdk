@@ -35,6 +35,7 @@ qa-sdk def bottomup <문서ID>
 - 분할 기준은 `scope`보다 `단일 개념 + stable trace unit`을 우선한다.
 - 기본 패턴은 `module + leaf`다.
 - 여러 module을 왜 함께 묶는지 자체를 설명해야 할 때만 `group`을 고려한다.
+- transport/API surface, validation contract, cleanup/operations lane처럼 **운영 책임이 다른 패싯**은 줄 수와 무관하게 분리한다.
 
 ## 절차
 
@@ -48,6 +49,12 @@ qa-sdk def bottomup <문서ID>
 6. 필요한 횡방향 관계는 `/def-link` 기준으로 보강한다
 7. `qa-sdk def sync`로 local datasource를 갱신한다
 8. 검증: module은 contains 자식 1건 이상 필수, leaf는 자식 금지
+
+경험적 분할 힌트:
+
+- **구조 설명 vs 운영 surface**가 한 문서에 섞여 있으면 분리한다.
+- **validate/assemble contract**와 **warning/cleanup lane**은 같은 기능군이어도 실패 조건과 운영 책임이 다르면 분리한다.
+- 상위 module/index는 가능한 한 가볍게 두고, API/CLI/dashboard 같은 진입점은 별도 leaf로 뺀다.
 
 ## frontmatter 형식
 
@@ -92,6 +99,8 @@ pnpm --filter definition-catalog test
 - 한 문서 내에서 **서로 다른 패싯 조합**이 섞여 있으면 분리 신호
 - 예: 스키마 정의(정의) 부분과 검증 규칙(관리) 부분이 한 문서에 → 분리
 - 예: API 계약(소비 인터페이스)과 구현 로직(생산) → 분리
+- 예: module 구조 설명(정의)과 cleanup 운영 절차(관리/운영)가 한 문서에 → 분리
+- 예: 서비스 aggregate 설명(정의)과 sync endpoint surface(소비 인터페이스)가 한 문서에 → 분리
 
 분할 결과의 각 leaf는 **검증 가능한 기능 단위(바운더리)**여야 한다:
 - 실행 검증, 타입 검증, 계약 검증, 정합성 검증 중 하나 이상 가능한가?

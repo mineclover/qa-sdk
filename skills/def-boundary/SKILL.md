@@ -66,6 +66,12 @@ qa-sdk def body <문서ID>
 - `refines`
   boundary overview에서 state/interaction/implementation 세부로 내려간다.
 
+방향 sanity check:
+
+- leaf 문서가 부모/상위 문서를 `contains`로 가리키면 거의 항상 방향 오류다.
+- 이런 경우는 leaf를 module로 승격할지 보기 전에, 먼저 `refines` 또는 `depends_on`로 고친다.
+- `level=leaf인데 contains 자식` 경고는 분해 부족이 아니라 링크 방향 오류일 수 있다.
+
 ## direct 와 transitive
 
 - `direct`
@@ -84,6 +90,7 @@ boundary가 흐리거나 결합이 과하면 다음 순서로 정리한다.
 3. 상태 전이를 `state/app_state`로 분리한다.
 4. interaction을 `ui/interaction`으로 분리한다.
 5. 세부 로직은 implementation/validation leaf로 내린다.
+6. 다중 부모가 의도적 공유라면 `cross-scope` 태그를 추가하고, 비의도적이면 하나의 `contains`를 `depends_on`으로 낮춘다.
 
 ## API surface
 

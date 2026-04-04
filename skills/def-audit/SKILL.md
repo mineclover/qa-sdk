@@ -27,6 +27,12 @@ qa-sdk def audit
 qa-sdk def audit-db
 ```
 
+실행 위치:
+
+- 가능하면 **repo root**에서 실행한다.
+- 이 저장소에서는 `node packages/cli/dist/index.js def ...` 또는 `pnpm exec qa-sdk def ...`가 가장 안전하다.
+- `pnpm --filter <pkg> exec qa-sdk def ...`는 package cwd 때문에 `docs/`와 `data/definition-service.sqlite`를 잘못 찾을 수 있으니 우선 피한다.
+
 ## audit 출력 예시
 
 ```
@@ -72,6 +78,7 @@ synthetic feedback 관계는 보조 신호일 뿐이며, frontmatter 기반 auth
 - `cross-scope` 태그가 있으면 **의도적 공유** → warning 생략 (허용)
 - 태그 없이 다중 소속이면 **비의도적 중복 가능** → warning
 - 조치: 의도적이면 `cross-scope` 태그 추가, 비의도적이면 하나를 `depends_on`으로 전환
+- 먼저 `contains` 방향이 맞는지 확인한다. leaf가 부모를 `contains`로 잡은 경우는 다중 소속이 아니라 링크 방향 오류일 가능성이 높다.
 
 ### level 검증 (3-level 모델)
 
@@ -124,6 +131,13 @@ leaf 문서는 자기 존재를 증명할 수 있어야 한다:
 3. tags 2~5개
 4. leaf에 구현/테스트 코드 참조 존재
 5. `def validate`, `def audit-db` 모두 이슈 0
+
+## 경험 규칙
+
+- `def validate`는 통과하지만 `scan-audit`가 실패하면 local DB stale보다 **frontmatter 조합 오류**나 **scan 전용 duplicate-id**를 먼저 의심한다.
+- `def sync` 직후 `def validate`가 `no such table`로 깨지면 sync가 끝나기 전에 validate를 친 것이다. sync 완료 후 다시 본다.
+- `svc 미부여`는 현재 저장소에서는 **참고 지표**다. generic concept/prefix-catalog/guide 문서를 fail로 보지 않는다.
+- duplicate-id가 `.spec.md + .todo.md`의 **같은 stem 공존**이라면 허용 케이스다. stem이 다르면 실제 충돌이다.
 
 ## 검증 이슈 유형
 

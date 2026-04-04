@@ -182,6 +182,8 @@ def:
 3. **신규 기획 시**: `.todo.md`만 먼저 작성 가능 (코드 없으면 `.spec.md` 불필요)
 4. **같은 id**: frontmatter `id`는 동일. 두 파일이 하나의 기능을 다른 시점에서 기술
 5. **contains**: 부모 문서는 id 하나만 참조 (두 파일을 개별 참조하지 않음)
+6. **같은 stem 유지**: `{id}.spec.md`와 `{id}.todo.md`는 basename이 같아야 scan 단계에서 공존으로 인식된다
+7. **test 문서 연결**: `.test.md`는 spec 또는 상위 module의 authored link(`refines` 또는 `contains`)가 있어야 orphan 경고가 나지 않는다
 
 ### 예시
 
@@ -211,6 +213,12 @@ prefix-path-summation.spec.md  ← 전체 스펙
 - 예상 인터페이스 (의사 코드 허용)
 - 선행 조건과 의존 관계
 - 검토 필요 사항
+
+### 완료된 todo를 남겨둘 때의 규칙
+
+- 체크박스가 전부 `[x]`이면 todo를 계속 두지 않는다.
+- 구현 요약과 결정 기록을 보존해야 하면 `.memo.md` 또는 knowledge 문서로 전환한다.
+- 실제 잔여가 1건이라도 남으면 `.todo.md`에 **잔여만** 남긴다.
 
 ## 주의
 

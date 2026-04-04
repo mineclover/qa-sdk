@@ -44,6 +44,7 @@ argument-hint: "<command> <doc-id> [--type spec|todo|test|memo|plan]"
 1. `{id}.todo.md`의 전체 구현 여부 확인 (체크박스 전부 `[x]`?)
 2. 전부 완료 → `.spec.md`로 이름 변경 + lifecycle `draft` → `approved`
 3. 부분 완료 → `.spec.md` 신규 생성 (완료 부분), `.todo.md` 잔여분 유지
+4. 체크박스는 모두 끝났지만 내용이 결정 기록/리뷰 로그라면 `.memo.md` 또는 `knowledge` 문서로 전환
 
 ### status — 문서 현황 조회
 
@@ -136,8 +137,8 @@ def:
 def:
   id: {id}
   level: leaf
-  scope: {scope}
-  aspect: validation
+  scope: flow
+  aspect: user_scenario
   depth: validation
   lifecycle: draft
   layer: {layer}
@@ -158,6 +159,13 @@ def:
 - **기대 결과**: ...
 - **대응 테스트**: `{파일}:{line}`
 ```
+
+테스트 문서 좌표 규칙:
+
+- 기본값은 `flow/user_scenario + depth: validation`
+- feature 전용 시나리오를 강조할 때만 `feature/scenario + depth: validation`
+- `aspect: validation`은 현재 taxonomy에 없으므로 쓰지 않는다
+- `.test.md`는 spec 또는 상위 module에서 authored link로 참조해야 orphan 경고가 나지 않는다
 
 ### memo 템플릿
 
@@ -210,3 +218,9 @@ def:
 | `def-new` | spec 문서 생성 | doc-lifecycle create --type spec과 동등. def-new는 유지, doc-lifecycle은 5종 전체 커버 |
 | `spec-lifecycle` | 코드 참조 전환, drift 점검 | doc-lifecycle promote와 연동 가능 — 승격 후 spec-lifecycle로 코드 참조 점검 |
 | `def-audit` | 링크/고아/깊이 검증 | doc-lifecycle audit는 확장자 정합성에 집중, def-audit은 구조 검증에 집중 |
+
+## 경험 규칙
+
+- `.todo.md`와 `.spec.md`가 공존할 때는 **같은 id + 같은 stem**을 유지한다.
+- `.todo.md`는 실행 가능한 잔여만 남기고, 이미 끝난 체크리스트는 spec이나 memo로 옮긴다.
+- 리뷰/결정 기록이主体가 되면 `.todo.md`보다 `.memo.md`가 맞다.
