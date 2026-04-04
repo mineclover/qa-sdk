@@ -215,6 +215,13 @@ export type {
 } from "./scope-nesting-mount.js";
 export { validateMountFlow } from "./scope-nesting-mount.js";
 
+// ── Contract Timing — 계약 위임 시점 분석 ──
+export type {
+  DelegationRef, TimedScopePipeBinding, TimedMountFlowBinding,
+  TimingIssueCode, TimingIssue, ReadinessEntry, DelegationGap, TimingValidation,
+} from "./scope-nesting-timing.js";
+export { validateContractTiming } from "./scope-nesting-timing.js";
+
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
   PlaybookStatus, TransitionTrigger, TransitionResult,
