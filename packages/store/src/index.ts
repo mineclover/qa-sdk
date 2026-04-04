@@ -29,4 +29,5 @@ export {
   InMemoryVerdictStore,
   InMemoryDlqStore,
   InMemoryKeyCache,
+  InMemoryAggregator,
 } from "./adapters/memory/index.js";

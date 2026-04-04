@@ -117,6 +117,7 @@ export type { TransmissionStore, TransmissionInsert } from "./ports/transmission
 export type { ScenarioSpecStore } from "./ports/scenario-spec-store.port.js";
 export type { MetricRollupStore, MetricRollupInsert, StoredMetricRollup, MetricRollupQuery, MetricWindowType } from "./ports/metric-rollup-store.port.js";
 export type { KeyCache, CacheEntry, CacheStats } from "./ports/key-cache.port.js";
+export type { Aggregator, AggregateEntry, AggregateOptions, AxisProjectionEntry } from "./ports/aggregator.port.js";
 
 // ═══════════════════════════════════════════════════════
 // Pipe Engine — 파이프 실행, 분석, 검증, 판정
