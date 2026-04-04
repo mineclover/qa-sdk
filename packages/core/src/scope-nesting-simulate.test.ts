@@ -10,8 +10,12 @@ import { describe, it, expect } from "vitest";
 import {
   validateScopeNesting,
   checkSwapSafety,
+  resolveContracts,
   type ScopeNesting,
 } from "./scope-nesting.js";
+import { transition, isViolation, verifyInvariants } from "./scope-nesting-state.js";
+import { validateMountFlow, type MountFlowBinding } from "./scope-nesting-mount.js";
+import { validateContractTiming, type TimedMountFlowBinding } from "./scope-nesting-timing.js";
 import { simulate, matchHappyPath } from "./pipe/pipe-simulate.js";
 import type { PipeGraph, PipeSpec, PipeFlow } from "./types/pipe-spec.js";
 
@@ -329,6 +333,101 @@ describe("context-action 시뮬레이션 — 구조 + 흐름 검증", () => {
         expectedPipeTrace: ["incident-validate", "incident-score", "incident-log"],
       });
       expect(happyPath.match).toBe(true);
+    });
+  });
+
+  describe("4단계: L0→L1→L1.5→L2→L3 전체 시퀀스", () => {
+    const mountBinding: MountFlowBinding = {
+      nesting: playbookNesting,
+      graph: handlerGraph,
+      bindings: {
+        "validate-input": { scopeId: "handlers", scopeContracts: ["playbook-state"] },
+        "compute-result": { scopeId: "handlers", scopeContracts: ["playbook-state"] },
+        "log-event": { scopeId: "handlers", scopeContracts: [{ contractId: "logging-session", required: false }] },
+      },
+    };
+
+    it("L0: guard 미주입 시 fail-open → 전체 통과", () => {
+      // L1: 정적 구조
+      const l1 = validateScopeNesting(playbookNesting);
+      expect(l1.valid).toBe(true);
+
+      // L1.5: 마운트 흐름
+      const l15 = validateMountFlow(mountBinding);
+      expect(l15.valid).toBe(true);
+      expect(l15.snapshots[2].activeContracts).toContain("logging-session");
+      expect(l15.snapshots[2].activeContracts).toContain("playbook-state");
+
+      // L2: 상태 전이
+      const t = transition("editing", "valid-submit");
+      expect(isViolation(t)).toBe(false);
+      const inv = verifyInvariants();
+      expect(inv.valid).toBe(true);
+
+      // L3: 동적 경로
+      const sim = simulate({ graph: handlerGraph, initialEvent: { eventKey: "form_submit" } });
+      expect(sim.status).toBe("complete");
+      expect(matchHappyPath(sim, {
+        expectedPipeTrace: ["validate-input", "compute-result", "log-event"],
+      }).match).toBe(true);
+    });
+
+    it("L0: logging guard-inactive → L1 warning + L1.5 optional warning + L3 여전히 통과", () => {
+      const guards = { isEncodable: (c: string) => c !== "logging-session" };
+
+      // L1: guard-inactive warning, optional-missing warning
+      const l1 = validateScopeNesting(playbookNesting, guards);
+      // logging이 required이므로 feature-context/handlers에서 error
+      expect(l1.valid).toBe(false);
+
+      // L1.5: log-event의 logging-session은 optional이므로 warning만
+      const l15 = validateMountFlow(mountBinding, guards);
+      const logIssue = l15.issues.find(i => i.pipeId === "log-event");
+      expect(logIssue?.severity).toBe("warning");
+
+      // L3: simulate은 guard와 무관하게 이벤트 체인만 추적
+      const sim = simulate({ graph: handlerGraph, initialEvent: { eventKey: "form_submit" } });
+      expect(sim.status).toBe("complete");
+    });
+
+    it("L1.5↔L3 교차: contract timing 검증", () => {
+      const timedBinding: TimedMountFlowBinding = {
+        ...mountBinding,
+        bindings: {
+          ...mountBinding.bindings,
+          "validate-input": {
+            scopeId: "handlers",
+            scopeContracts: ["playbook-state"],
+            delegatesTo: [{
+              contractId: "playbook-state",
+              completionEvent: "review_complete",
+              tolerateStale: true,
+            }],
+          },
+        },
+      };
+
+      const sim = simulate({ graph: handlerGraph, initialEvent: { eventKey: "form_submit" } });
+      const timing = validateContractTiming(timedBinding, sim);
+
+      // playbook-state는 readyAfter 없으므로 즉시 사용 가능
+      const stateReady = timing.readinessTimeline.find(r => r.contractId === "playbook-state");
+      expect(stateReady?.readyAtStep).toBe(-1);
+
+      // delegation gap: validate-input이 playbook-state를 역방향 위임
+      // compute-result도 playbook-state를 소비하므로 stale consumer일 수 있음
+      // tolerateStale: true이므로 warning
+      expect(timing.valid).toBe(true);
+    });
+
+    it("resolveContracts로 handler의 provider 추적", () => {
+      const resolved = resolveContracts(playbookNesting, "handlers");
+      const state = resolved.find(r => r.contractId === "playbook-state")!;
+      expect(state.provider?.scopeId).toBe("feature-context");
+      expect(state.overridden).toBe(false);
+
+      const logging = resolved.find(r => r.contractId === "logging-session")!;
+      expect(logging.provider?.scopeId).toBe("qa-bridge");
     });
   });
 });
