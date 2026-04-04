@@ -3,6 +3,7 @@ import {
   validateScopeNesting,
   checkSwapSafety,
   resolveGuards,
+  resolveContracts,
   type ScopeNesting,
   type ScopeContract,
 } from "./scope-nesting.js";
@@ -304,5 +305,194 @@ describe("checkSwapSafety", () => {
     // mid-1과 mid-2는 서로 의존하지 않으므로 교환 안전
     const errors = checkSwapSafety(nesting, 1, 2);
     expect(errors).toBeNull();
+  });
+});
+
+// ── Provider Override 테스트 ─────────────────────────
+
+describe("provider override", () => {
+  it("override: true — 상위 provider를 대체, duplicate-provider 없음", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "override-test",
+      scopes: [
+        { scopeId: "parent", provides: [{ contractId: "state", type: "state" }], consumes: [] },
+        { scopeId: "child", provides: [{ contractId: "state", type: "state", override: true }], consumes: [] },
+        { scopeId: "leaf", provides: [], consumes: [{ contractId: "state", type: "state" }] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(true);
+    // duplicate-provider warning 없어야 함
+    expect(result.issues.filter(i => i.code === "duplicate-provider")).toHaveLength(0);
+    // leaf의 provider는 child
+    const path = result.descentPaths.find(d => d.contractId === "state")!;
+    expect(path.providedBy).toBe("child");
+  });
+
+  it("override: false — duplicate-provider warning 발생", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "no-override",
+      scopes: [
+        { scopeId: "parent", provides: [{ contractId: "x", type: "state" }], consumes: [] },
+        { scopeId: "child", provides: [{ contractId: "x", type: "state" }], consumes: [] },
+        { scopeId: "leaf", provides: [], consumes: [{ contractId: "x", type: "state" }] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.issues.some(i => i.code === "duplicate-provider")).toBe(true);
+  });
+
+  it("override: true + 상위에 대상 없음 — override-no-parent warning", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "override-orphan",
+      scopes: [
+        { scopeId: "root", provides: [{ contractId: "x", type: "state", override: true }], consumes: [] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    const issue = result.issues.find(i => i.code === "override-no-parent");
+    expect(issue).toBeDefined();
+    expect(issue!.scopeId).toBe("root");
+  });
+});
+
+// ── Optional Consume 테스트 ──────────────────────────
+
+describe("optional consume", () => {
+  it("required: false + provider 없음 — optional-missing warning (valid)", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "optional-test",
+      scopes: [
+        { scopeId: "handler", provides: [], consumes: [
+          { contractId: "logging", type: "logging", required: false },
+        ] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(true); // error 아님
+    const issue = result.issues.find(i => i.code === "optional-missing");
+    expect(issue).toBeDefined();
+    expect(issue!.contractId).toBe("logging");
+  });
+
+  it("required: true (기본) + provider 없음 — missing-provider error", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "required-test",
+      scopes: [
+        { scopeId: "handler", provides: [], consumes: [
+          { contractId: "logging", type: "logging" }, // required 미설정 = true
+        ] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(i => i.code === "missing-provider")).toBe(true);
+  });
+
+  it("required: false + provider 있음 — 정상 (optional 아닌 것처럼 동작)", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "optional-with-provider",
+      scopes: [
+        { scopeId: "bridge", provides: [{ contractId: "logging", type: "logging" }], consumes: [] },
+        { scopeId: "handler", provides: [], consumes: [
+          { contractId: "logging", type: "logging", required: false },
+        ] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(true);
+    expect(result.issues.filter(i => i.code === "optional-missing")).toHaveLength(0);
+  });
+
+  it("playbook nesting에서 logging을 optional로 — qa-bridge 없어도 valid", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "playbook-optional-logging",
+      scopes: [
+        // qa-bridge 생략
+        {
+          scopeId: "feature-context",
+          provides: [{ contractId: "playbook-state", type: "state" }],
+          consumes: [{ contractId: "logging-session", type: "logging", required: false }],
+        },
+        {
+          scopeId: "handlers",
+          provides: [{ contractId: "submission-handlers", type: "adapter" }],
+          consumes: [
+            { contractId: "playbook-state", type: "state" },
+            { contractId: "logging-session", type: "logging", required: false },
+          ],
+        },
+        {
+          scopeId: "view",
+          provides: [],
+          consumes: [
+            { contractId: "playbook-state", type: "state" },
+            { contractId: "submission-handlers", type: "adapter" },
+          ],
+        },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(true);
+    // optional-missing warning 2건 (feature-context, handlers)
+    const optionalIssues = result.issues.filter(i => i.code === "optional-missing");
+    expect(optionalIssues.length).toBe(2);
+  });
+});
+
+// ── resolveContracts 테스트 ──────────────────────────
+
+describe("resolveContracts", () => {
+  it("handler의 계약 provider를 정확히 조회", () => {
+    const resolved = resolveContracts(createPlaybookNesting(), "handlers");
+    expect(resolved).toHaveLength(2);
+
+    const state = resolved.find(r => r.contractId === "playbook-state")!;
+    expect(state.provider?.scopeId).toBe("feature-context");
+    expect(state.optional).toBe(false);
+
+    const logging = resolved.find(r => r.contractId === "logging-session")!;
+    expect(logging.provider?.scopeId).toBe("qa-bridge");
+  });
+
+  it("view의 계약 provider를 정확히 조회", () => {
+    const resolved = resolveContracts(createPlaybookNesting(), "view");
+    const handlers = resolved.find(r => r.contractId === "submission-handlers")!;
+    expect(handlers.provider?.scopeId).toBe("handlers");
+  });
+
+  it("override 반영 — child가 대체하면 overridden: true", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "resolve-override",
+      scopes: [
+        { scopeId: "parent", provides: [{ contractId: "x", type: "state" }], consumes: [] },
+        { scopeId: "child", provides: [{ contractId: "x", type: "state", override: true }], consumes: [] },
+        { scopeId: "leaf", provides: [], consumes: [{ contractId: "x", type: "state" }] },
+      ],
+    };
+    const resolved = resolveContracts(nesting, "leaf");
+    const x = resolved.find(r => r.contractId === "x")!;
+    expect(x.provider?.scopeId).toBe("child");
+    expect(x.overridden).toBe(true);
+  });
+
+  it("optional + provider 없음 — optional: true", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "resolve-optional",
+      scopes: [
+        { scopeId: "handler", provides: [], consumes: [
+          { contractId: "logging", type: "logging", required: false },
+        ] },
+      ],
+    };
+    const resolved = resolveContracts(nesting, "handler");
+    const logging = resolved.find(r => r.contractId === "logging")!;
+    expect(logging.provider).toBeNull();
+    expect(logging.optional).toBe(true);
+  });
+
+  it("존재하지 않는 scopeId — 빈 배열", () => {
+    const resolved = resolveContracts(createPlaybookNesting(), "nonexistent");
+    expect(resolved).toHaveLength(0);
   });
 });

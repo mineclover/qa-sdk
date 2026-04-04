@@ -204,8 +204,9 @@ export type {
   SimulationGuards,
   NestingIssueSeverity, NestingIssue, NestingIssueCode,
   NestingValidation, DescentPath,
+  ResolvedContract,
 } from "./scope-nesting.js";
-export { validateScopeNesting, checkSwapSafety, resolveGuards } from "./scope-nesting.js";
+export { validateScopeNesting, checkSwapSafety, resolveGuards, resolveContracts } from "./scope-nesting.js";
 
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {

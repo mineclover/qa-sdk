@@ -16,6 +16,10 @@ export interface ContractRef {
   type: "state" | "logging" | "persist" | "adapter" | "custom";
   /** 계약이 제공하는 shape (타입명 또는 스키마 참조) */
   shape?: string;
+  /** provides에서: 상위 provider를 의도적으로 재정의 (기본: false) */
+  override?: boolean;
+  /** consumes에서: 필수 여부 (기본: true). false이면 provider 없어도 warning만 */
+  required?: boolean;
 }
 
 /** Scope = 계약을 소유하는 Boundary */
@@ -88,12 +92,14 @@ export interface NestingIssue {
 }
 
 export type NestingIssueCode =
-  | "missing-provider"    // 소비하는 계약의 제공자가 상위에 없음
-  | "duplicate-provider"  // 동일 계약을 복수 스코프가 제공
-  | "unused-contract"     // 제공하지만 하위에서 소비하지 않음
-  | "self-consume"        // 자기가 제공한 계약을 자기가 소비
-  | "empty-scope"         // provides도 consumes도 없는 스코프
-  | "guard-inactive";     // L0 guard에 의해 계약 비활성
+  | "missing-provider"     // 소비하는 계약의 제공자가 상위에 없음
+  | "duplicate-provider"   // 동일 계약을 복수 스코프가 제공 (override 아닌 경우)
+  | "unused-contract"      // 제공하지만 하위에서 소비하지 않음
+  | "self-consume"         // 자기가 제공한 계약을 자기가 소비
+  | "empty-scope"          // provides도 consumes도 없는 스코프
+  | "guard-inactive"       // L0 guard에 의해 계약 비활성
+  | "optional-missing"     // optional consume의 provider 부재 (warning)
+  | "override-no-parent";  // override 선언했지만 상위에 대체 대상 없음
 
 export interface NestingValidation {
   valid: boolean;
@@ -165,15 +171,31 @@ export function validateScopeNesting(
 
       const existing = providerMap.get(contract.contractId);
       if (existing) {
-        issues.push({
-          severity: "warning",
-          scopeId: scope.scopeId,
-          contractId: contract.contractId,
-          code: "duplicate-provider",
-          message: `계약 "${contract.contractId}"이 "${existing.scopeId}"(depth ${existing.depth})와 "${scope.scopeId}"(depth ${i}) 양쪽에서 제공됨`,
-        });
+        if (contract.override) {
+          // 의도적 override — 상위 provider를 대체
+          providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
+        } else {
+          issues.push({
+            severity: "warning",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "duplicate-provider",
+            message: `계약 "${contract.contractId}"이 "${existing.scopeId}"(depth ${existing.depth})와 "${scope.scopeId}"(depth ${i}) 양쪽에서 제공됨`,
+          });
+          providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
+        }
+      } else {
+        if (contract.override) {
+          issues.push({
+            severity: "warning",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "override-no-parent",
+            message: `스코프 "${scope.scopeId}"가 "${contract.contractId}" override를 선언했지만 상위에 대체 대상 없음`,
+          });
+        }
+        providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
       }
-      providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
     }
   }
 
@@ -197,23 +219,44 @@ export function validateScopeNesting(
       }
 
       const provider = providerMap.get(contract.contractId);
+      const isOptional = contract.required === false;
+
       if (!provider) {
-        issues.push({
-          severity: "error",
-          scopeId: scope.scopeId,
-          contractId: contract.contractId,
-          code: "missing-provider",
-          message: `스코프 "${scope.scopeId}"가 소비하는 계약 "${contract.contractId}"의 제공자가 없음`,
-        });
+        if (isOptional) {
+          issues.push({
+            severity: "warning",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "optional-missing",
+            message: `스코프 "${scope.scopeId}"의 선택적 계약 "${contract.contractId}"의 제공자가 없음 (fallback 동작)`,
+          });
+        } else {
+          issues.push({
+            severity: "error",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "missing-provider",
+            message: `스코프 "${scope.scopeId}"가 소비하는 계약 "${contract.contractId}"의 제공자가 없음`,
+          });
+        }
       } else if (provider.depth >= i) {
-        // provider가 자기와 같은 depth이거나 하위에 있음
-        issues.push({
-          severity: "error",
-          scopeId: scope.scopeId,
-          contractId: contract.contractId,
-          code: "missing-provider",
-          message: `스코프 "${scope.scopeId}"(depth ${i})가 소비하는 계약 "${contract.contractId}"의 제공자 "${provider.scopeId}"(depth ${provider.depth})가 상위가 아님`,
-        });
+        if (isOptional) {
+          issues.push({
+            severity: "warning",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "optional-missing",
+            message: `스코프 "${scope.scopeId}"의 선택적 계약 "${contract.contractId}"의 제공자 "${provider.scopeId}"가 상위가 아님 (fallback 동작)`,
+          });
+        } else {
+          issues.push({
+            severity: "error",
+            scopeId: scope.scopeId,
+            contractId: contract.contractId,
+            code: "missing-provider",
+            message: `스코프 "${scope.scopeId}"(depth ${i})가 소비하는 계약 "${contract.contractId}"의 제공자 "${provider.scopeId}"(depth ${provider.depth})가 상위가 아님`,
+          });
+        }
       }
 
       // consumer 등록
@@ -254,6 +297,74 @@ export function validateScopeNesting(
     issues,
     descentPaths,
   };
+}
+
+// ── Provider Resolution ───────────────────────────────
+
+/** 해결된 계약 — 특정 scope 관점에서 소비 계약의 provider 정보 */
+export interface ResolvedContract {
+  contractId: string;
+  provider: { scopeId: string; depth: number } | null;
+  consumer: { scopeId: string; depth: number };
+  /** override로 대체되었는가 */
+  overridden: boolean;
+  /** optional이고 provider 없는가 */
+  optional: boolean;
+}
+
+/**
+ * 특정 scope 관점에서 소비하는 계약의 provider를 조회한다.
+ * override/optional/guard를 반영한 실제 해결 결과를 반환.
+ */
+export function resolveContracts(
+  nesting: ScopeNesting,
+  scopeId: string,
+  guards?: SimulationGuards,
+): ResolvedContract[] {
+  const g = resolveGuards(guards);
+  const { scopes } = nesting;
+
+  const scopeIndex = scopes.findIndex(s => s.scopeId === scopeId);
+  if (scopeIndex < 0) return [];
+
+  const scope = scopes[scopeIndex];
+
+  // provider 맵 구축 (override 반영, guard 반영)
+  const providerMap = new Map<string, { scopeId: string; depth: number }>();
+  for (let i = 0; i < scopes.length; i++) {
+    for (const contract of scopes[i].provides) {
+      if (!g.isEncodable(contract.contractId)) continue;
+      const existing = providerMap.get(contract.contractId);
+      if (existing && !contract.override) continue; // 비-override는 첫 등록 유지
+      providerMap.set(contract.contractId, { scopeId: scopes[i].scopeId, depth: i });
+    }
+  }
+
+  return scope.consumes.map((contract): ResolvedContract => {
+    const provider = providerMap.get(contract.contractId) ?? null;
+    const isOptional = contract.required === false;
+    const validProvider = provider && provider.depth < scopeIndex ? provider : null;
+
+    // override 여부: provider가 있고, 더 상위에 다른 provider도 있었는지
+    let overridden = false;
+    if (validProvider) {
+      // 현재 provider 이전에 동일 계약을 제공하는 scope가 있었는지 확인
+      for (let i = 0; i < validProvider.depth; i++) {
+        if (scopes[i].provides.some(c => c.contractId === contract.contractId)) {
+          overridden = true;
+          break;
+        }
+      }
+    }
+
+    return {
+      contractId: contract.contractId,
+      provider: validProvider,
+      consumer: { scopeId, depth: scopeIndex },
+      overridden,
+      optional: isOptional && validProvider === null,
+    };
+  });
 }
 
 // ── 순서 검증 유틸 ────────────────────────────────────
