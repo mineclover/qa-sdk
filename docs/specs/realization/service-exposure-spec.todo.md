@@ -5,7 +5,7 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: mediation
   links:
     - target: realization-service-control-plane
@@ -21,4 +21,4 @@ gateway path, strip rule 같은 노출 정책을 서비스 논리 정의와 분�
 
 ## 구현 항목
 
-- [ ] exposure 변경이 gateway rollout 규칙과 어떻게 연결되는지 운영 가이드를 추가한다.
+- [x] exposure 변경이 gateway rollout 규칙과 어떻게 연결되는지 운영 가이드를 추가한다.

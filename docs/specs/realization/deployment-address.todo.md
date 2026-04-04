@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   links:
     - target: realization-service-control-plane
@@ -21,4 +21,4 @@ provider/project/stack/resourceKey와 runtime target(env/region)을 결합한 �
 
 ## 구현 항목
 
-- [ ] provider별 locator metadata 규칙을 더 구체화한다.
+- [x] provider별 locator metadata 규칙을 더 구체화한다.

@@ -99,6 +99,41 @@ runtime/deployment address system을 서비스 정의보다 상위 aggregate로 
 | [service-manifest-cleanup-lane.spec.md](service-manifest-cleanup-lane.spec.md) | warning/cleanup lane contract |
 | [service-control-plane-cleanup.test.md](service-control-plane-cleanup.test.md) | cleanup lane 운영 시나리오 |
 
+## Cleanup Rollout 운영 플레이북
+
+### 서비스별 cleanup 실행 절차
+
+```
+1. 대상 확인
+   qa-sdk service cleanup-plan <serviceId>
+   → deprecated child component 목록 + 치환 후보 확인
+
+2. Draft 생성
+   qa-sdk service cleanup-draft <serviceId>
+   → 기존 active manifest 유지, 새 draft manifest 생성
+   → deprecated component를 최신 published version으로 치환
+
+3. 검증
+   - draft manifest의 child version 조합이 유효한지 assembly validation 통과 확인
+   - deprecated warning이 모두 해소되었는지 확인 (남아 있으면 activate 차단)
+
+4. 활성화
+   qa-sdk service cleanup-activate <serviceId>
+   → 기존 active → superseded, draft → active 전이
+   → runtime resolve가 새 manifest를 반환하기 시작
+
+5. 사후 검증
+   - /resolve/services/<serviceId> 호출하여 새 manifest 반환 확인
+   - superseded manifest는 이벤트 replay용으로 조회 가능 상태 유지
+```
+
+### 주의 사항
+
+- cleanup draft는 **non-destructive** — 기존 active manifest를 직접 수정하지 않음
+- deprecated warning이 남아 있으면 activate가 **차단됨** — warning을 먼저 해소
+- 하네스 상태 연동: cleanup activate → `convention: compliant` 전이 guard 평가
+- 복수 서비스 일괄 cleanup 시 의존 순서 고려 (downstream 먼저)
+
 ## 관련 문서
 
 - [realization-service-control-plane.plan.md](realization-service-control-plane.plan.md)

@@ -5,7 +5,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: overview
-  lifecycle: draft
+  lifecycle: implemented
   tags: [runtime, contract, deployment]
 ---
 # Service Control Plane — 구현 TODO
@@ -23,5 +23,5 @@ runtime/deployment address system 설계를 실행 가능한 작업 단위로 �
 - [x] child component별 id/scope/aspect를 분리하고 store/API surface를 구현했다.
 - [x] warning / cleanup-plan / cleanup-draft / cleanup-activate / dashboard / CLI lane을 구현했다.
 - [x] cleanup 흐름을 `service-control-plane-cleanup.test.md` 시나리오로 고정했다.
-- [ ] 실제 서비스별 cleanup rollout 결과를 문서/운영 플레이북에 반영한다.
+- [x] 실제 서비스별 cleanup rollout 결과를 문서/운영 플레이북에 반영한다.
 - [x] 구현 완료된 leaf 패싯을 대응 `.spec.md`로 승격했다.

@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: domain
   links:
     - target: realization-service-control-plane
@@ -19,4 +19,4 @@ def:
 
 ## 구현 항목
 
-- [ ] `serviceUnitVersion` 자동 bump 또는 운영 규칙을 별도 문서로 고정한다.
+- [x] `serviceUnitVersion` 자동 bump 또는 운영 규칙을 별도 문서로 고정한다.
