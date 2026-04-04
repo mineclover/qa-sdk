@@ -14,6 +14,12 @@ def:
       type: depends_on
     - target: gate-engine-func
       type: implements
+    - target: gate-event-bus
+      type: contains
+    - target: gate-cache-invalidation
+      type: contains
+    - target: gate-consistency
+      type: contains
 ---
 # Gate Service API 계약
 
