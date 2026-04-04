@@ -31,31 +31,37 @@ context-action 패턴의 검증을 4개 계층으로 분리하고, 각 계층의
 
 ## 정의 ^defines
 
-- **4계층 시뮬레이션 모델** — 운영 상태 제약(L0) → 정적 구조(L1) → 상태 전이(L2) → 동적 경로(L3)
+- **5계층 시뮬레이션 모델** — L0(guard) → L1(구조) → L1.5(마운트 흐름) → L2(전이) → L3(경로)
+- **L1.5 mount flow** — scope↔pipe 브릿지. pipe가 어느 scope에서 실행되고 어떤 계약을 소비하는지 연결
 - **L0 guard 주입** — GateEngine/GateState/하네스 상태를 resolver 패턴으로 시뮬레이션에 주입
-- **계층 간 연결** — L0 제약 → L1 유효 → L2 전이 가능 → L3 경로 시뮬 가능
+- **계층 간 연결** — L0 제약 → L1 유효 → L1.5 마운트 충족 → L2 전이 가능 → L3 경로 시뮬 가능
 
 ## 소비 ^consumes
 
 - `validateScopeNesting()` — L1 정적 구조 검증 (`@qa-sdk/core`)
+- `validateMountFlow()` — L1.5 마운트 흐름 검증 (`@qa-sdk/core`)
 - `transition()` / `verifyInvariants()` — L2 상태 전이 검증 (`@qa-sdk/core`)
 - `simulate()` / `matchHappyPath()` — L3 동적 경로 검증 (`@qa-sdk/core`)
 
-## 4계층 모델
+## 5계층 모델
 
 ```
-L3  동적 경로      simulate(handlerGraph) → pipeTrace, facetTrace
-    │              30종 PipeFlow 경로 추적. handlers 계층 내부.
-    │
-L2  상태 전이      transition(status, trigger) → next + sideEffects
-    │              PlaybookStatus 6상태 전이. 단일 scope 런타임.
-    │
-L1  정적 구조      validateScopeNesting(nesting) → valid + issues
-    │              contract descent 정합성. 전체 scope 구조.
-    │
-L0  운영 상태 제약  guards: isEncodable, gateResult, harnessState
-                   GateEngine/GateState/하네스 상태 → L1~L3의 전제 조건.
-                   선택적 주입 — 미주입 시 기본 허용 (fail-open).
+L3   동적 경로      simulate(handlerGraph) → pipeTrace, facetTrace
+     │              30종 PipeFlow 경로 추적. handlers 계층 내부.
+     │
+L2   상태 전이      transition(status, trigger) → next + sideEffects
+     │              PlaybookStatus 6상태 전이. 단일 scope 런타임.
+     │
+L1.5 마운트 흐름    validateMountFlow(binding) → snapshots + issues
+     │              scope↔pipe 연결. depth별 활성 계약 스냅샷.
+     │              pipe가 소비하는 계약이 마운트 시점에 활성인지 검증.
+     │
+L1   정적 구조      validateScopeNesting(nesting) → valid + issues
+     │              contract descent 정합성. 전체 scope 구조.
+     │
+L0   운영 상태 제약  guards: isEncodable, gateResult, harnessState
+                    GateEngine/GateState/하네스 상태 → L1~L3의 전제 조건.
+                    선택적 주입 — 미주입 시 기본 허용 (fail-open).
 ```
 
 ## L0: 운영 상태 제약 (guard 주입)
@@ -200,6 +206,7 @@ doc lifecycle(draft/review/approved/deprecated)은 L0 guard에 포함하지 않�
 |------|------|--------|
 | L0 | `core/src/scope-nesting.ts` (SimulationGuards, resolveGuards) | `scope-nesting.test.ts` L0 guard 5건 |
 | L1 | `core/src/scope-nesting.ts` (validateScopeNesting) | `scope-nesting.test.ts` 14건 |
+| L1.5 | `core/src/scope-nesting-mount.ts` (validateMountFlow) | `scope-nesting-mount.test.ts` 7건 |
 | L2 | `core/src/scope-nesting-state.ts` | `scope-nesting-state.test.ts` 18건 |
 | L3 | `core/src/pipe/pipe-simulate.ts` | `pipe-simulate.test.ts` 39건 |
 | 통합 | — | `scope-nesting-simulate.test.ts` 13건 |

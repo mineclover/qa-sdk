@@ -208,6 +208,13 @@ export type {
 } from "./scope-nesting.js";
 export { validateScopeNesting, checkSwapSafety, resolveGuards, resolveContracts } from "./scope-nesting.js";
 
+// ── Mount Flow — scope↔pipe 브릿지 ──
+export type {
+  ScopePipeBinding, MountFlowBinding, MountSnapshot,
+  MountFlowIssueCode, MountFlowIssue, MountFlowValidation,
+} from "./scope-nesting-mount.js";
+export { validateMountFlow } from "./scope-nesting-mount.js";
+
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
   PlaybookStatus, TransitionTrigger, TransitionResult,
