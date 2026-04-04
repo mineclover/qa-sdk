@@ -85,6 +85,23 @@ const result = validateScopeNesting(nesting);
 
 ## 검증 규칙
 
+### L0 guard 주입
+
+```typescript
+import { validateScopeNesting, type SimulationGuards } from "@qa-sdk/core";
+
+const guards: SimulationGuards = {
+  isEncodable: (contractId) => gateEngine.isActive(contractId),
+  // gateResult, harnessState는 미주입 시 기본 허용 (fail-open)
+};
+
+const result = validateScopeNesting(nesting, guards);
+// guard-inactive warning → 비활성 계약
+// missing-provider error → 비활성 계약을 소비하는 하위 scope
+```
+
+## 검증 규칙
+
 | 코드 | severity | 의미 |
 |------|----------|------|
 | `missing-provider` | error | 소비하는 계약의 제공자가 상위에 없음 (순서 위반 포함) |
@@ -92,6 +109,7 @@ const result = validateScopeNesting(nesting);
 | `duplicate-provider` | warning | 동일 계약을 복수 scope가 제공 |
 | `unused-contract` | warning | 제공하지만 하위에서 소비하지 않음 |
 | `empty-scope` | warning | provides도 consumes도 없는 scope |
+| `guard-inactive` | warning | L0 guard에 의해 계약 비활성 (encode 불가) |
 
 ## 순서 교환 안전성 검사
 

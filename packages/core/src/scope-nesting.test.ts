@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateScopeNesting,
   checkSwapSafety,
+  resolveGuards,
   type ScopeNesting,
   type ScopeContract,
 } from "./scope-nesting.js";
@@ -198,6 +199,78 @@ describe("validateScopeNesting", () => {
     expect(result.valid).toBe(false);
     const issue = result.issues.find(i => i.code === "missing-provider");
     expect(issue).toBeDefined();
+  });
+});
+
+// ── L0 guard 테스트 ──────────────────────────────────
+
+describe("L0 SimulationGuards", () => {
+  it("guard 미주입 — fail-open, 기존 결과와 동일", () => {
+    const withoutGuards = validateScopeNesting(createPlaybookNesting());
+    const withGuards = validateScopeNesting(createPlaybookNesting(), {});
+    expect(withGuards.valid).toBe(withoutGuards.valid);
+    expect(withGuards.descentPaths.length).toBe(withoutGuards.descentPaths.length);
+  });
+
+  it("isEncodable false — 해당 계약 비활성 + 하위 missing-provider", () => {
+    const nesting = createPlaybookNesting();
+    const result = validateScopeNesting(nesting, {
+      // logging-session을 비활성화
+      isEncodable: (contractId) => contractId !== "logging-session",
+    });
+
+    // logging-session이 비활성 → guard-inactive warning
+    const guardIssue = result.issues.find(
+      i => i.code === "guard-inactive" && i.contractId === "logging-session",
+    );
+    expect(guardIssue).toBeDefined();
+
+    // feature-context, handlers가 logging-session 소비 → missing-provider error
+    const missingErrors = result.issues.filter(
+      i => i.code === "missing-provider" && i.contractId === "logging-session",
+    );
+    expect(missingErrors.length).toBeGreaterThanOrEqual(2);
+    expect(result.valid).toBe(false);
+  });
+
+  it("isEncodable 전부 true — guard 영향 없음", () => {
+    const result = validateScopeNesting(createPlaybookNesting(), {
+      isEncodable: () => true,
+    });
+    expect(result.valid).toBe(true);
+    expect(result.issues.filter(i => i.code === "guard-inactive")).toHaveLength(0);
+  });
+
+  it("isEncodable 특정 계약만 비활성 — 해당 하위만 영향", () => {
+    const nesting = createPlaybookNesting();
+    const result = validateScopeNesting(nesting, {
+      // submission-handlers만 비활성
+      isEncodable: (contractId) => contractId !== "submission-handlers",
+    });
+
+    // handlers의 submission-handlers가 비활성
+    const guardIssue = result.issues.find(
+      i => i.code === "guard-inactive" && i.contractId === "submission-handlers",
+    );
+    expect(guardIssue).toBeDefined();
+
+    // view가 submission-handlers 소비 → missing-provider
+    const viewError = result.issues.find(
+      i => i.code === "missing-provider" && i.scopeId === "view" && i.contractId === "submission-handlers",
+    );
+    expect(viewError).toBeDefined();
+
+    // logging-session, playbook-state는 영향 없음
+    expect(result.issues.filter(i => i.contractId === "logging-session" && i.code === "guard-inactive")).toHaveLength(0);
+  });
+
+  it("gateResult / harnessState — resolveGuards에서 기본값 제공", () => {
+    // 현재 gateResult/harnessState는 validateScopeNesting 내부에서 직접 사용하지 않음
+    // resolveGuards가 기본값을 제공하는지만 확인
+    const resolved = resolveGuards({ isEncodable: () => false });
+    expect(resolved.gateResult("any")).toBe("pass");
+    expect(resolved.harnessState("any")).toBe("active");
+    expect(resolved.isEncodable("any")).toBe(false);
   });
 });
 

@@ -38,6 +38,39 @@ export interface ScopeNesting {
   scopes: ScopeContract[];
 }
 
+// ── L0 운영 상태 guard ────────────────────────────────
+
+/**
+ * 시뮬레이션 guard — L0 운영 상태 제약을 선택적으로 주입.
+ * 미주입 시 기본 허용 (fail-open 원칙).
+ * doc lifecycle은 제외 — 런타임 영향 경로 특정 시 별도 스펙에서 추가.
+ */
+export interface SimulationGuards {
+  /** 주소가 encode 가능한가 — GateEngine 4-state (active만 true) */
+  isEncodable?: (prefixId: string) => boolean;
+  /** 품질 게이트 결과 — GateState 9종 중 최종 판정 */
+  gateResult?: (gateId: string) => "pass" | "fail" | "review";
+  /** 하네스 머신 상태 */
+  harnessState?: (machineId: string) => string;
+}
+
+/** guard 기본값 — 모두 허용 (fail-open) */
+const DEFAULT_GUARDS: Required<SimulationGuards> = {
+  isEncodable: () => true,
+  gateResult: () => "pass",
+  harnessState: () => "active",
+};
+
+/** 주입된 guard와 기본값을 병합 */
+export function resolveGuards(guards?: SimulationGuards): Required<SimulationGuards> {
+  if (!guards) return DEFAULT_GUARDS;
+  return {
+    isEncodable: guards.isEncodable ?? DEFAULT_GUARDS.isEncodable,
+    gateResult: guards.gateResult ?? DEFAULT_GUARDS.gateResult,
+    harnessState: guards.harnessState ?? DEFAULT_GUARDS.harnessState,
+  };
+}
+
 // ── 검증 결과 ─────────────────────────────────────────
 
 export type NestingIssueSeverity = "error" | "warning";
@@ -59,7 +92,8 @@ export type NestingIssueCode =
   | "duplicate-provider"  // 동일 계약을 복수 스코프가 제공
   | "unused-contract"     // 제공하지만 하위에서 소비하지 않음
   | "self-consume"        // 자기가 제공한 계약을 자기가 소비
-  | "empty-scope";        // provides도 consumes도 없는 스코프
+  | "empty-scope"         // provides도 consumes도 없는 스코프
+  | "guard-inactive";     // L0 guard에 의해 계약 비활성
 
 export interface NestingValidation {
   valid: boolean;
@@ -88,17 +122,21 @@ export interface DescentPath {
  * 3. 제공하지만 하위에서 소비하지 않으면 경고
  * 4. 자기가 제공한 계약을 자기가 소비하면 에러
  */
-export function validateScopeNesting(nesting: ScopeNesting): NestingValidation {
+export function validateScopeNesting(
+  nesting: ScopeNesting,
+  guards?: SimulationGuards,
+): NestingValidation {
   const issues: NestingIssue[] = [];
   const descentPaths: DescentPath[] = [];
   const { scopes } = nesting;
+  const g = resolveGuards(guards);
 
   // contractId → { providerScopeId, depth }
   const providerMap = new Map<string, { scopeId: string; depth: number }>();
   // contractId → consumer scopeId[]
   const consumerMap = new Map<string, string[]>();
 
-  // 1단계: provider 등록 + 중복 검사
+  // 1단계: provider 등록 + 중복 검사 + L0 guard 적용
   for (let i = 0; i < scopes.length; i++) {
     const scope = scopes[i];
 
@@ -113,6 +151,18 @@ export function validateScopeNesting(nesting: ScopeNesting): NestingValidation {
     }
 
     for (const contract of scope.provides) {
+      // L0 guard: isEncodable가 false이면 이 계약은 비활성
+      if (!g.isEncodable(contract.contractId)) {
+        issues.push({
+          severity: "warning",
+          scopeId: scope.scopeId,
+          contractId: contract.contractId,
+          code: "guard-inactive",
+          message: `스코프 "${scope.scopeId}"의 계약 "${contract.contractId}"이 gate에 의해 비활성 (encode 불가)`,
+        });
+        continue; // provider로 등록하지 않음 → 하위가 소비하면 missing-provider
+      }
+
       const existing = providerMap.get(contract.contractId);
       if (existing) {
         issues.push({

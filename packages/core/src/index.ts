@@ -201,10 +201,11 @@ export {
 // ── Scope Nesting — contract descent 기반 스코프 중첩 검증 ──
 export type {
   ContractRef, ScopeContract, ScopeNesting,
+  SimulationGuards,
   NestingIssueSeverity, NestingIssue, NestingIssueCode,
   NestingValidation, DescentPath,
 } from "./scope-nesting.js";
-export { validateScopeNesting, checkSwapSafety } from "./scope-nesting.js";
+export { validateScopeNesting, checkSwapSafety, resolveGuards } from "./scope-nesting.js";
 
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
