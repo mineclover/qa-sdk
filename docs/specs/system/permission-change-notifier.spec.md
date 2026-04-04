@@ -10,7 +10,7 @@ def:
   tags: [permission, notification, revoke]
   links:
     - target: auth-permission-integration
-      type: contains
+      type: refines
 ---
 
 # PermissionChangeNotifier

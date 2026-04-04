@@ -10,7 +10,7 @@ def:
   tags: [auth, oauth, provider]
   links:
     - target: auth-permission-integration
-      type: contains
+      type: refines
 ---
 
 # AuthProvider 계약

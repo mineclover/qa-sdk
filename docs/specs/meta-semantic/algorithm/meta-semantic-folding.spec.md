@@ -9,11 +9,7 @@ def:
   layer: domain
   tags: [structural, entry-point]
   links:
-    - target: meta-semantic-system
-      type: depends_on
     - target: meta-semantic-ir
-      type: depends_on
-    - target: meta-semantic-extraction
       type: depends_on
     - target: ms-concept-branch-path
       type: depends_on

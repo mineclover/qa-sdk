@@ -13,13 +13,13 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 z-index 값 기준으로 노드를 6종 레이어 역할로 분류한다.
 같은 z-index끼리 그룹화하여 LayerStack 배열을 생성하고,
 각 스택에 역할 레이블과 총 면적을 부여한다.
 
-^defines
+## ^defines
 
 - `packages/rlsc/src/layers.ts:classifyLayers` — `(nodes) → LayerStack[]`
   - 비가시 노드(`!visible`) 제외
@@ -42,6 +42,6 @@ z-index 값 기준으로 노드를 6종 레이어 역할로 분류한다.
   - 각 스택: `z:{zIndex}  {role}  [{nodeIds}]` 형식
   - nodeIds > 5개이면 첫 5개 + `+N` 생략 표시
 
-^consumes
+## ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCNode, LayerStack, LayerRole

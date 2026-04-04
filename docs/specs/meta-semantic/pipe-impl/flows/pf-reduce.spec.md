@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-여러 항목을 하나로 누적. 카테고리: 배치.
+여러 항목을 누적기 하나로 접어 최종 집계 결과를 만드는 reduce PipeFlow를 정의한다.
 
 ## fold topology
 

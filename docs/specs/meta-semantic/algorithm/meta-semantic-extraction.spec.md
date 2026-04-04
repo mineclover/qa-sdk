@@ -9,8 +9,6 @@ def:
   layer: domain
   tags: [structural]
   links:
-    - target: meta-semantic-system
-      type: depends_on
     - target: meta-semantic-ir
       type: depends_on
     - target: meta-semantic-folding

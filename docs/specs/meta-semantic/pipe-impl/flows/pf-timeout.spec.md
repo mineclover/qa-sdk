@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-body에 시간 제한 래퍼. 카테고리: 시간.
+본체 흐름에 시간 제한과 초과 처리 경로를 결합하는 timeout PipeFlow를 정의한다.
 
 ## fold topology
 

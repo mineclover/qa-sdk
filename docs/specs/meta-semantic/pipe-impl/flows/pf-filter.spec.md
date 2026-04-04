@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-조건 만족만 통과, 불만족 소멸. 카테고리: 배치.
+입력 집합 중 조건을 만족하는 항목만 남기고 나머지는 제거하는 filter PipeFlow를 정의한다.
 
 ## fold topology
 

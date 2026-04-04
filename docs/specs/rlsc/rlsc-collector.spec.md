@@ -13,13 +13,13 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 DOM 트리를 순회하여 RLSCNode 트리를 생성한다. 브라우저 전용.
 루트 요소에서 시작하여 자식 노드를 재귀 수집하고, 그리드/레이어/관계 분석을 통합하여
 RLSCDocument를 반환한다.
 
-^defines
+## ^defines
 
 - `packages/rlsc/src/collector.ts:collectLayout` — 공개 진입점. `(root?, options?) → RLSCDocument`
   - root 미지정 시 `document.body` 사용
@@ -45,7 +45,7 @@ RLSCDocument를 반환한다.
 - `packages/rlsc/src/collector.ts:getSemanticAttributes` — 의미론적 속성 추출 (내부)
   - data-*, aria-*, href, src, alt, type, name 추출
 
-^consumes
+## ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCNode, RLSCDocument, CollectorOptions, LayoutRect
 - `packages/rlsc/src/tree-utils.ts` — flattenTree
@@ -54,4 +54,4 @@ RLSCDocument를 반환한다.
 - `packages/rlsc/src/layers.ts` — classifyLayers
 
 > 제약: `window` / `document` / `getComputedStyle` / `getBoundingClientRect` 직접 사용 — 브라우저 전용.
-> 서버/Node 환경 가드 미구현 (TODO).
+> `collectLayout()` 진입부에서 `typeof window === "undefined"` 체크 — 서버/Node 환경에서 즉시 오류 발생.

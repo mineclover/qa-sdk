@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-종료 조건 충족까지 body 반복. 카테고리: 반복.
+종료 조건이 만족될 때까지 같은 본체 흐름을 반복 실행하는 loop PipeFlow를 정의한다.
 
 ## fold topology
 

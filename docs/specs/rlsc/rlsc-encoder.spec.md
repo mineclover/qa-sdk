@@ -13,11 +13,11 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 RLSCDocument를 RLSC/1.0 마크업 문자열로 직렬화하고, 마크업을 다시 Partial<RLSCDocument>로 파싱한다.
 직렬화 결과는 LLM 프롬프트 주입과 라운드트립 복원 양쪽에 사용된다.
 
-^defines
+## ^defines
 
 ### encodeToMarkup(doc: RLSCDocument) → string
 
@@ -39,16 +39,13 @@ RLSCDocument를 RLSC/1.0 마크업 문자열로 직렬화한다.
 - `display:D`: block/inline 외의 값만 출력
 - `"text"`: 큰따옴표 내부 `"` → `\"`로 이스케이프
 
-**Known bug** (`encoder.ts:125`): `root as RLSCNode` 강제 캐스트 — root가 undefined일 때 런타임 오류 가능.
-**Known bug** (`encoder.ts:126`): parseMarkup의 grid 플레이스홀더 `cellSize: 120` (올바른 값: 16).
-
 ### parseMarkup(markup: string) → Partial\<RLSCDocument>
 
 RLSC/1.0 마크업 문자열을 파싱하여 부분 문서를 반환한다.
 
 - 섹션 구분자 `---`로 분리, 헤더에서 `viewport`, `url`, `timestamp`, `address` 추출
 - **트리 섹션만 파싱** — grid/layers/relations 섹션은 무시 (호출자가 재계산 책임)
-- 반환 grid는 `{ cellSize: 120, cols: 0, rows: 0, cells: [] }` 플레이스홀더
+- 반환 grid는 `{ cellSize: 0, cols: 0, rows: 0, cells: [] }` 플레이스홀더 (`cellSize: 0` = 재계산 필요 시그널)
 - viewport 파싱 실패 시 기본값 `1920×1080`
 
 **노드 라인 파싱 규칙**:
@@ -57,7 +54,7 @@ RLSC/1.0 마크업 문자열을 파싱하여 부분 문서를 반환한다.
 - rect 파싱 실패 시 `{ x:0, y:0, width:0, height:0 }`
 - position: "static", overflow: "visible", visible: true 고정 복원
 
-^consumes
+## ^consumes
 - `types.ts` — RLSCNode, RLSCDocument
 - `grid.ts` — gridToText
 - `layers.ts` — layersToText

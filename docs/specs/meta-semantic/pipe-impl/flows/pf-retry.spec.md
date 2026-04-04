@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-실패 시 backoff로 재시도. 카테고리: 내결함.
+실패한 단계를 backoff 정책으로 다시 시도해 복원력을 높이는 retry PipeFlow를 정의한다.
 
 ## fold topology
 

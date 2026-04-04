@@ -14,7 +14,7 @@ def:
     - target: viteplus-playbook-template-implementation
       type: traces_to
     - target: viteplus-playbook-boundary-coupling
-      type: depends_on
+      type: traces_to
     - target: ms-concept-boundary
       type: implements
 ---

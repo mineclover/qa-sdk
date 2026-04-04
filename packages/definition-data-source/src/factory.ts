@@ -9,7 +9,7 @@
  */
 
 import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { DefDataSource } from "definition-catalog";
 import { LocalDataSource } from "./local-data-source.js";
 import { ScanDataSource } from "./scan-data-source.js";
@@ -49,11 +49,26 @@ function findDbPath(cwd: string): string | null {
   return null;
 }
 
+function findWorkspaceRoot(startDir: string): string {
+  let current = resolve(startDir);
+
+  while (true) {
+    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+      return current;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      return startDir;
+    }
+    current = parent;
+  }
+}
+
 /**
  * 데이터 소스 생성 — 자동 감지 또는 명시적 선택
  */
 export async function createDataSource(options: DataSourceOptions = {}): Promise<DefDataSource> {
-  const cwd = options.rootDir ?? process.cwd();
+  const cwd = options.rootDir ?? findWorkspaceRoot(process.cwd());
   const serverUrl = options.serverUrl ?? process.env.DEF_SERVICE_URL ?? DEFAULT_SERVER_URL;
   const docsDir = options.docsDir ?? "docs";
   const docsPath = join(cwd, docsDir);

@@ -1,8 +1,8 @@
 ---
 def:
   id: scope-nesting-contract-timing-test
-  scope: feature
-  aspect: scenario
+  scope: flow
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: domain
@@ -13,6 +13,10 @@ def:
 ---
 
 # Contract Timing 테스트 명세
+
+## 목적 ^purpose
+
+계약의 준비 시점과 역방향 위임 gap이 시뮬레이션 결과에서 일관되게 드러나는지 검증한다.
 
 ## 전제 ^preconditions
 

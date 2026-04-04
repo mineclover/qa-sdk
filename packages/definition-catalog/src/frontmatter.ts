@@ -358,6 +358,33 @@ async function scanMarkdownFiles(dir: string): Promise<string[]> {
   return files;
 }
 
+type DocVariant = "spec" | "todo" | "test" | "memo" | "plan" | "other";
+
+function getDocVariant(filePath: string): DocVariant {
+  if (filePath.endsWith(".spec.md")) return "spec";
+  if (filePath.endsWith(".todo.md")) return "todo";
+  if (filePath.endsWith(".test.md")) return "test";
+  if (filePath.endsWith(".memo.md")) return "memo";
+  if (filePath.endsWith(".plan.md")) return "plan";
+  return "other";
+}
+
+function getDocStem(filePath: string): string {
+  return filePath.replace(/\.(spec|todo|test|memo|plan)\.md$/, "").replace(/\.md$/, "");
+}
+
+function compareVariantPriority(left: string, right: string): number {
+  const priority: Record<DocVariant, number> = {
+    spec: 0,
+    test: 1,
+    memo: 2,
+    plan: 3,
+    todo: 4,
+    other: 5,
+  };
+  return priority[getDocVariant(left)] - priority[getDocVariant(right)] || left.localeCompare(right);
+}
+
 /**
  * 디렉토리를 스캔하여 frontmatter가 있는 .md 파일을 모두 등록한다.
  *
@@ -383,6 +410,7 @@ export async function scanAndBuild(
     const files = await scanMarkdownFiles(dir);
     allFiles.push(...files);
   }
+  allFiles.sort(compareVariantPriority);
 
   // 2단계: 등록
   const now = new Date().toISOString();
@@ -398,6 +426,19 @@ export async function scanAndBuild(
       const doc = parseDocument(content, filePath);
       const def = doc.def;
       const relPath = relative(baseDir, filePath);
+      const existing = registry.get(def.id);
+      if (existing) {
+        const currentVariant = getDocVariant(relPath);
+        const existingVariant = getDocVariant(existing.ref ?? "");
+        const sameStem = existing.ref ? getDocStem(existing.ref) === getDocStem(relPath) : false;
+        const allowedTodoCoexistence =
+          sameStem
+          && currentVariant === "todo"
+          && existingVariant === "spec";
+        if (allowedTodoCoexistence) {
+          continue;
+        }
+      }
 
       registry.register({
         id: def.id,

@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-try 실패 시 catch 실행. 카테고리: 내결함.
+기본 경로가 실패했을 때 대체 경로가 같은 계약을 이어받는 fallback PipeFlow를 정의한다.
 
 ## fold topology
 

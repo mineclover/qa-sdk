@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-있어도 없어도 통과. 카테고리: 분기.
+실행해도 되고 건너뛰어도 되는 선택적 경로를 한 계약으로 다루는 optional PipeFlow를 정의한다.
 
 ## fold topology
 

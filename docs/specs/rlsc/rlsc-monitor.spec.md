@@ -3,7 +3,7 @@ def:
   id: rlsc-monitor
   level: leaf
   scope: feature
-  aspect: runtime_behavior
+  aspect: func_def
   depth: specification
   lifecycle: draft
   layer: domain
@@ -15,13 +15,13 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 MutationObserver + ResizeObserver로 DOM 변화를 감지하고,
 변경 발생 시 레이아웃을 재수집하여 선언된 LayoutPattern와의 적합성을 실시간으로 재검증한다.
 화면이 의도한 레이아웃으로 구현됐는지 지속적으로 확인하는 관측 루프를 담당한다.
 
-^defines
+## ^defines
 
 **타입**
 
@@ -74,7 +74,7 @@ DOM 변화 (mutation/resize)
 - `diffDocuments(before, after)` 결과의 각 diff 항목을 `LayoutChange`로 변환
 - `timestamp: new Date().toISOString()` (재수집 시점)
 
-^consumes
+## ^consumes
 
 - `packages/rlsc/src/types.ts` — LayoutMonitor, LayoutChange, MonitorOptions, CollectorOptions, ConformanceResult
 - `packages/rlsc/src/collector.ts` — collectLayout

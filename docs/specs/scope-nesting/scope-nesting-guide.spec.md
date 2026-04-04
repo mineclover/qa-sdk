@@ -10,8 +10,6 @@ def:
   links:
     - target: scope-nesting-system
       type: refines
-    - target: scope-nesting-validation-rules
-      type: depends_on
     - target: ms-concept-contract-descent
       type: implements
     - target: ms-concept-boundary

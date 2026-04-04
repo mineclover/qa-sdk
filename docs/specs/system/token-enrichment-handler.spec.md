@@ -10,7 +10,7 @@ def:
   tags: [token, jwt, permission, enrichment]
   links:
     - target: auth-permission-integration
-      type: contains
+      type: refines
 ---
 
 # TokenEnrichmentHandler

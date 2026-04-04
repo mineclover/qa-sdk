@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-흐름에 영향 없이 관측. 카테고리: 관측.
+주 경로의 결과를 바꾸지 않고 옆에서 관측만 수행하는 tap PipeFlow를 정의한다.
 
 ## fold topology
 

@@ -13,12 +13,12 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 뷰포트를 고정 크기 셀(기본 16px)로 분할하고 각 셀의 노드 점유를 행렬로 분석한다.
 각 셀은 점유 노드 목록, z-index 정렬 스택, dominant 노드, coverage(점유율)를 가진다.
 
-^defines
+## ^defines
 
 - `packages/rlsc/src/grid.ts:analyzeGrid` — `(root, viewport, cellSize?) → LayoutGrid`
   - `DEFAULT_CELL_SIZE`: 16px
@@ -41,7 +41,7 @@ def:
   - 오른쪽 → 아래 방향으로 확장하여 사각형 영역 추출
   - 방문 셀은 재방문하지 않음
 
-^consumes
+## ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCNode, LayoutGrid, GridCell, LayoutRect
 - `packages/rlsc/src/tree-utils.ts` — flattenTree

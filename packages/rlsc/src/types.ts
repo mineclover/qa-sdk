@@ -207,6 +207,126 @@ export interface RLSCQuery {
   readonly visibleOnly?: boolean;
 }
 
+// ─── Metrics ────────────────────────────────────────────────────────
+
+/** 게슈탈트 근접성으로 묶인 노드 집합 */
+export interface ProximityGroup {
+  readonly nodeIds: readonly string[];
+  readonly centroid: { readonly x: number; readonly y: number };
+  readonly boundingRect: LayoutRect;
+}
+
+/** 레이아웃 수치 측정값 집합 */
+export interface LayoutMetrics {
+  // 페이지 수준
+  /** 좌:우 / 상:하 시각적 무게 비율 (면적 기준, 1.0 = 균형) */
+  readonly balance: { readonly x: number; readonly y: number };
+  /** 주 흐름 방향 */
+  readonly dominantFlow: "horizontal" | "vertical" | "grid" | "free";
+  /** 감지된 도미넌트 영역 그리드 */
+  readonly gridPattern: { readonly cols: number; readonly rows: number } | null;
+  /** 황금비 적합도 (0–1) */
+  readonly goldenRatioScore: number;
+  /** 근접성 클러스터 */
+  readonly proximityGroups: readonly ProximityGroup[];
+  // 구조 단위 수준
+  /** 감지된 컬럼 그리드 시스템 */
+  readonly columnSystem: {
+    readonly cols: number;
+    readonly gutterPx: number;
+    readonly marginPx: number;
+    readonly rowGapPx?: number;
+  } | null;
+  /** 감지된 gap·margin 수치 목록 (오름차순, 중복 제거) */
+  readonly spacingValues: readonly number[];
+  /** 가장 작은 공약수 단위. null = 미감지 */
+  readonly spacingBase: number | null;
+  /** 가시 노드 width/height 비율 분포 (count 내림차순) */
+  readonly aspectRatioDistribution: readonly { readonly ratio: number; readonly count: number }[];
+}
+
+// ─── Pattern ────────────────────────────────────────────────────────
+
+/** 컬럼 기반 그리드 시스템 패턴 */
+export interface GridSystemPattern {
+  readonly columns: number;
+  readonly gutter: number;
+  readonly margin?: number;
+  readonly rowGap?: number;
+  readonly columnWidthPx?: number;
+}
+
+/** 여백·간격 패턴 */
+export interface SpacingPattern {
+  readonly base?: number;
+  readonly scale: readonly number[];
+  readonly consistent: boolean;
+}
+
+/** 요소 비율 패턴 */
+export interface ProportionPattern {
+  readonly dominant?: number;
+  readonly namedRatio?: "1:1" | "4:3" | "16:9" | "golden" | "2:1" | "3:1";
+  readonly distribution: readonly { readonly ratio: number; readonly count: number }[];
+}
+
+/** 게슈탈트 관련 패턴 */
+export interface GestaltPattern {
+  readonly proximity?: "tight" | "loose";
+  readonly continuity?: "strong" | "weak";
+  readonly minGroupCount?: number;
+}
+
+/** 레이아웃 패턴 어휘 — 선언(top-down)과 인식(bottom-up)이 공유하는 중립 타입 */
+export interface LayoutPattern {
+  // 페이지 수준
+  readonly gridPattern?: "3x3" | "2-col" | "1-col" | { readonly cols: number; readonly rows: number };
+  readonly balanceRatio?: { readonly x?: readonly [number, number]; readonly y?: readonly [number, number] };
+  readonly flowDirection?: "left-to-right" | "right-to-left" | "top-to-bottom" | "grid";
+  readonly goldenRatio?: boolean;
+  readonly gestalt?: GestaltPattern;
+  // 구조 단위 수준
+  readonly gridSystem?: GridSystemPattern;
+  readonly spacing?: SpacingPattern;
+  readonly proportions?: ProportionPattern;
+}
+
+// ─── Conformance ────────────────────────────────────────────────────
+
+/** 레이아웃 프레임 위반 항목 */
+export interface ConformanceViolation {
+  readonly rule: string;
+  readonly declared: unknown;
+  readonly recognized: unknown;
+  readonly severity: "error" | "warning";
+  readonly description: string;
+}
+
+/** 레이아웃 프레임 검증 결과 */
+export interface ConformanceResult {
+  readonly declared: LayoutPattern;
+  readonly recognized: LayoutPattern;
+  readonly metrics: LayoutMetrics;
+  readonly violations: readonly ConformanceViolation[];
+  /** 0–1. 선언된 필드 중 일치 비율. 선언 없으면 1.0 */
+  readonly score: number;
+}
+
+// ─── Canvas ─────────────────────────────────────────────────────────
+
+/** 캔버스 렌더링 옵션 */
+export interface CanvasRenderOptions {
+  readonly colorBy?: "role" | "layer" | "depth" | "custom";
+  readonly palette?: Readonly<Record<string, string>>;
+  readonly opacity?: number;
+  readonly showGrid?: boolean;
+  readonly showGroups?: boolean;
+  readonly showBalance?: boolean;
+  readonly showFlow?: boolean;
+  /** 오버레이에 사용할 측정값 (showGroups/showBalance/showFlow 활성 시 필요) */
+  readonly metrics?: LayoutMetrics;
+}
+
 // ─── Monitor ────────────────────────────────────────────────────────
 
 /** 레이아웃 변경 이벤트 */
@@ -216,6 +336,14 @@ export interface LayoutChange {
   readonly before?: LayoutRect;
   readonly after?: LayoutRect;
   readonly timestamp: string;
+}
+
+/** 레이아웃 모니터 옵션 */
+export interface MonitorOptions {
+  readonly intent?: LayoutPattern;
+  readonly debounceMs?: number;
+  readonly collectOptions?: CollectorOptions;
+  readonly onConformanceChange?: (result: ConformanceResult) => void;
 }
 
 /** 레이아웃 모니터 */
@@ -228,4 +356,6 @@ export interface LayoutMonitor {
   snapshot(): RLSCDocument;
   /** 변경 이력 */
   readonly changes: readonly LayoutChange[];
+  /** 적합성 변경 콜백 (intent 설정 시 활성) */
+  onConformanceChange?: (result: ConformanceResult) => void;
 }

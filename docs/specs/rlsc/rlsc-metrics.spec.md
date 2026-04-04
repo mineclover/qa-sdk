@@ -15,12 +15,10 @@ def:
 
 ^purpose
 
-수집된 RLSCDocument에서 설계 메트릭을 계산하고, 수치 측정값을 패턴 어휘로 분류한다.
+수집된 RLSCDocument에서 설계 메트릭을 계산한다.
 게슈탈트 원칙(근접성·연속성·유사성), 황금비, 그리드 패턴, 시각적 균형 등
-레이아웃 프레임의 구조적 특성을 먼저 수치로 측정(`LayoutMetrics`)한 뒤,
-`classifyLayout`으로 패턴 어휘(`LayoutPattern`)로 변환한다.
-`LayoutPattern`은 선언(top-down 설계 의도)과 인식(bottom-up DOM 수집) 양 방향에서
-같은 어휘를 공유하는 중립 타입이다.
+레이아웃 프레임의 구조적 특성을 수치(`LayoutMetrics`)로 측정한다.
+수치를 패턴 어휘로 분류하는 것은 `rlsc-pattern`이 담당한다.
 
 ^defines
 
@@ -101,22 +99,6 @@ def:
   - `ratio = width / height`, 소수점 2자리 반올림 후 집계
   - count 내림차순 정렬
 
-- `packages/rlsc/src/metrics.ts:classifyLayout` — `(metrics: LayoutMetrics) → LayoutPattern`
-  - 수치 측정값을 패턴 어휘로 변환 (bottom-up 인식 경로)
-
-  *페이지 수준 분류*
-  - `gridPattern`: `metrics.gridPattern` → `{ cols, rows }` 또는 축약 레이블("3x3", "2-col", "1-col") 매핑
-  - `balanceRatio.x`: `metrics.balance.x` → 가장 가까운 정수 비율 `[a, 1]`으로 반올림
-  - `flowDirection`: `metrics.dominantFlow` → `"horizontal"→"left-to-right"`, `"vertical"→"top-to-bottom"`, `"grid"→"grid"`
-  - `goldenRatio`: `metrics.goldenRatioScore ≥ 0.8` → `true`
-
-  *구조 단위 수준 분류*
-  - `gridSystem`: `metrics.columnSystem` → `GridSystemPattern` (null이면 생략)
-  - `spacing`: `metrics.spacingValues` + `metrics.spacingBase` → `SpacingPattern`
-  - `proportions`: `metrics.aspectRatioDistribution` 상위 3개 → 알려진 비율 매칭 후 `ProportionPattern`
-
-  분류 불가 필드는 결과에서 생략
-
 ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCDocument, RLSCNode, LayoutGrid, LayoutRect, RLSCRelation
@@ -129,14 +111,10 @@ def:
 - [ ] `metrics.ts` 파일 생성
   - 페이지 수준: `measureBalance`, `detectGridPattern`, `scoreGoldenRatio`, `detectProximityGroups`, `detectDominantFlow`
   - 구조 단위: `detectColumnSystem`, `measureSpacing`, `measureAspectRatios`
-  - 조합: `measureLayout`, `classifyLayout`
+  - 조합: `measureLayout`
 - [ ] `grid.ts:extractRegions` export 전환 (현재 내부 함수)
-- [ ] `index.ts` — `measureLayout`, `classifyLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
-- [ ] `metrics.test.ts` — 각 측정 함수 + `classifyLayout` 단위 테스트 (DOM 없이 mock 노드)
-  - balance.x 2.1 → balanceRatio `[2, 1]`
-  - goldenRatioScore 0.85 → goldenRatio true
-  - gridPattern null → 결과에서 gridPattern 키 없음
-  - dominantFlow "free" → 결과에서 flowDirection 키 없음
-  - 12-col 배치 → columnSystem `{ cols: 12, gutterPx: 16, marginPx: 24 }`
-  - spacingValues `[8, 16, 24]` → spacingBase 8, consistent true
-  - aspectRatioDistribution 1위 1.78 → namedRatio "16:9"
+- [ ] `index.ts` — `measureLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
+- [ ] `metrics.test.ts` — 각 측정 함수 단위 테스트 (DOM 없이 mock 노드)
+  - 12-col 배치 → `columnSystem { cols: 12, gutterPx: 16, marginPx: 24 }`
+  - spacingValues `[8, 16, 24]` → spacingBase 8
+  - dominantFlow: flow/adjacent 관계 집계 검증

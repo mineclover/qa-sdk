@@ -1,8 +1,8 @@
 ---
 def:
   id: scope-nesting-simulation-layers-test
-  scope: feature
-  aspect: scenario
+  scope: flow
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: domain
@@ -13,6 +13,10 @@ def:
 ---
 
 # 시뮬레이션 계층 테스트 명세
+
+## 목적 ^purpose
+
+L0 guard부터 L3 simulate까지 5계층 시뮬레이션 모델이 같은 전제와 결과로 연결되는지 검증한다.
 
 ## 전제 ^preconditions
 

@@ -10,7 +10,7 @@
  * 모든 조회/분석 명령은 DefDataSource 기반. scan만 파일 직접 스캔.
  */
 
-import { join, resolve, relative } from "node:path";
+import { dirname, join, resolve, relative } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import {
   CONCERN_TAGS,
@@ -40,7 +40,17 @@ import { createDataSource, syncDocsToLocalDb, type DataSourceOptions } from "def
 // ── 유틸 ──────────────────────────────────────────────
 
 function getRootDir(): string {
-  return process.cwd();
+  let current = process.cwd();
+  while (true) {
+    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+      return current;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      return process.cwd();
+    }
+    current = parent;
+  }
 }
 
 type FeedbackTraceMatch = {

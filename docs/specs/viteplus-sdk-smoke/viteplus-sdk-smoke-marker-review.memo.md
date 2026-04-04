@@ -1,9 +1,11 @@
 ---
 def:
   id: viteplus-sdk-smoke-marker-review
-  scope: process
-  aspect: quality_check
-  depth: task
+  type: knowledge
+  knowledge_kind: narrative
+  scope: flow
+  aspect: process_flow
+  depth: specification
   lifecycle: approved
   layer: mediation
   svc: viteplus-sdk-smoke
@@ -13,6 +15,10 @@ def:
 ---
 
 # Vite+ SDK Smoke 스펙 리뷰 — 결정 기록
+
+## 목적 ^purpose
+
+viteplus-sdk-smoke 문서군을 리뷰하면서 어떤 마커를 보강했고 어떤 구조적 결정을 내렸는지 기록한다. 구현 완료 후 남은 설계 맥락과 리뷰 근거를 memo/knowledge 문서로 보존하는 것이 목적이다.
 
 ## 마커 정비 (2026-04-04)
 

@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
     - target: meta-semantic-pipe-impl
       type: depends_on
@@ -14,8 +15,6 @@ def:
       type: refines
     - target: prefix-path-summation
       type: depends_on
-    - target: pipe-static-lineage
-      type: refines
 ---
 
 # PipeTransitionScope — 제어 흐름 내 선언적 비즈니스 원자 경계

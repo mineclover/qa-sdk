@@ -8,7 +8,7 @@ def:
   lifecycle: approved
   layer: operation
   links:
-    - target: test-name-tokens
+    - target: definition-catalog-spec
       type: depends_on
 ---
 

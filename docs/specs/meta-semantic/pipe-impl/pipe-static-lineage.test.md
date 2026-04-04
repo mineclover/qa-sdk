@@ -3,7 +3,7 @@ def:
   id: pipe-static-lineage-test
   level: leaf
   scope: feature
-  aspect: validation
+  aspect: scenario
   depth: validation
   lifecycle: approved
   layer: domain
@@ -15,6 +15,10 @@ def:
 ---
 
 # 정적 계보 추적 — 검증 기준
+
+## 목적 ^purpose
+
+정적 계보 추적이 sequence, graph, serialization 경로에서 같은 lineage semantics를 유지하는지 검증한다.
 
 ## 대응 테스트 파일
 

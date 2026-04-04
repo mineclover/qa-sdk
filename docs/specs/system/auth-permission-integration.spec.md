@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: approved
   layer: operation
-  tags: [auth, permission, oauth, token]
+  tags: [auth, permission, oauth, token, cross-scope]
   links:
     - target: auth-provider-contract
       type: contains

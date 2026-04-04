@@ -23,6 +23,12 @@ def:
       type: contains
     - target: scope-nesting-simulation-layers
       type: contains
+    - target: scope-nesting-procedure-test
+      type: contains
+    - target: scope-nesting-contract-timing-test
+      type: contains
+    - target: scope-nesting-simulation-layers-test
+      type: contains
     - target: ms-concept-contract-descent
       type: implements
     - target: ms-concept-boundary

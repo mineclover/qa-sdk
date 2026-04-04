@@ -388,4 +388,48 @@ def:
     expect(recordConcerns.direct).toContain("migration");
     expect(recordConcerns.inherited.length).toBe(0);
   });
+
+  it("같은 stem의 spec + todo는 spec을 우선 등록하고 todo 중복 에러를 내지 않는다", async () => {
+    const coexistDir = await mkdtemp(join(tmpdir(), "def-catalog-coexist-"));
+    try {
+      await mkdir(join(coexistDir, "docs/specs/demo"), { recursive: true });
+
+      await writeFile(join(coexistDir, "docs/specs/demo/sample.spec.md"), `---
+def:
+  id: sample-doc
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Sample Spec
+
+## 목적 ^purpose
+
+spec body
+`);
+
+      await writeFile(join(coexistDir, "docs/specs/demo/sample.todo.md"), `---
+def:
+  id: sample-doc
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+---
+# Sample Todo
+
+## 목적 ^purpose
+
+todo body
+`);
+
+      const result = await scanAndBuild(coexistDir, [join(coexistDir, "docs")]);
+      expect(result.errors).toEqual([]);
+      expect(result.registry.all()).toHaveLength(1);
+      expect(result.registry.get("sample-doc")?.ref).toBe("docs/specs/demo/sample.spec.md");
+    } finally {
+      await rm(coexistDir, { recursive: true, force: true });
+    }
+  });
 });

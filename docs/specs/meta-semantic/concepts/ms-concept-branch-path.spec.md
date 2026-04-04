@@ -12,8 +12,6 @@ def:
   links:
     - target: meta-semantic-concepts
       type: depends_on
-    - target: ms-concept-verification-unit
-      type: depends_on
 ---
 
 # 분기 경로 (Branch Path)

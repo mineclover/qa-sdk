@@ -27,11 +27,11 @@ def:
 
 테스트 시나리오: `rlsc-test.todo.md` 참조.
 
-- [ ] `encoder.test.ts` — 라운드트립, 이스케이프, address 필드, relations 없는 문서
-- [ ] `relations.test.ts` — 8종 기하 경계 케이스
-- [ ] `grid.test.ts` — cellSize 기본값, dominant, coverage, 빈 셀
-- [ ] `query.test.ts` — 조건 필터 4종, diff 5종
-- [ ] `context.test.ts` — 토큰 예산 truncate, accessibility-audit {layers} 검증
+- [x] `encoder.test.ts` — 라운드트립, 이스케이프, address 필드, relations 없는 문서
+- [x] `relations.test.ts` — 8종 기하 경계 케이스
+- [x] `grid.test.ts` — cellSize 기본값, dominant, coverage, 빈 셀
+- [x] `query.test.ts` — 조건 필터 4종, diff 5종
+- [x] `context.test.ts` — 토큰 예산 truncate, accessibility-audit {layers} 검증
 
 ## Phase 3 — LayoutMonitor 구현
 
@@ -44,22 +44,24 @@ def:
 - [ ] `index.ts` export 추가
 - [ ] `monitor.test.ts` — 브라우저 가드 + debounce 단위 테스트
 
-## Phase 5 — 설계 메트릭
+## Phase 5 — 설계 메트릭 + 패턴 어휘
 
-스펙: `rlsc-metrics.spec.md`
+스펙: `rlsc-metrics.spec.md`, `rlsc-pattern.spec.md`
 
 - [ ] `LayoutMetrics`, `ProximityGroup` 타입 — `types.ts` 추가
-- [ ] `metrics.ts` 생성 — `measureLayout` + 5종 측정 함수
+- [ ] `metrics.ts` 생성 — `measureLayout` + 8종 측정 함수
 - [ ] `grid.ts:extractRegions` export 전환
-- [ ] `index.ts` export 추가
-- [ ] `metrics.test.ts` — 각 측정 함수 단위 테스트
+- [ ] `LayoutPattern` 및 하위 패턴 타입 5종 — `types.ts` 추가
+- [ ] `pattern.ts` 생성 — `classifyLayout`
+- [ ] `index.ts` export 추가 (`measureLayout`, `classifyLayout`, 타입 포함)
+- [ ] `metrics.test.ts`, `pattern.test.ts` — 단위 테스트
 
 ## Phase 6 — 의도 선언 + 프레임 검증
 
 스펙: `rlsc-intent.spec.md`
 
-- [ ] `LayoutIntent`, `GestaltIntent`, `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts` 추가
-- [ ] `intent.ts` 생성 — `checkConformance` + 5종 내부 체커
+- [ ] `LayoutPattern`, `GestaltPattern`, `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts` 추가
+- [ ] `intent.ts` 생성 — `checkConformance` + `recognizeLayout` + 5종 내부 체커
 - [ ] `index.ts` export 추가
 - [ ] `intent.test.ts` — 의도별 위반 탐지 + score 계산 테스트
 

@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-from 출력 → to 입력 (순환 허용).
+한 단계의 출력이 다시 입력으로 되먹임되는 폐루프 feedback 연결 semantics를 정의한다.
 
 ## 정의 방식
 

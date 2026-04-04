@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-steps를 순서대로 실행. 카테고리: 기본.
+여러 단계를 앞에서 뒤로 고정 순서대로 연결해 실행하는 sequence PipeFlow를 정의한다.
 
 ## fold topology
 

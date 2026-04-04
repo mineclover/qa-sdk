@@ -10,7 +10,7 @@ def:
   tags: [permission, middleware, jwt, auth]
   links:
     - target: auth-permission-integration
-      type: contains
+      type: refines
 ---
 
 # PermissionMiddleware

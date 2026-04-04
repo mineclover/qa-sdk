@@ -26,11 +26,15 @@ def:
       type: contains
     - target: rlsc-metrics
       type: contains
+    - target: rlsc-pattern
+      type: contains
     - target: rlsc-intent
       type: contains
     - target: rlsc-canvas
       type: contains
     - target: rlsc-monitor
+      type: contains
+    - target: rlsc-test
       type: contains
 ---
 
@@ -68,7 +72,7 @@ DOM (브라우저)
             ↓
        measureLayout()        → LayoutMetrics         [해석1: 수치]       ← draft
             ↓
-       classifyLayout()       → LayoutPattern         [해석2: 패턴 어휘]  ← draft
+       classifyLayout()       → LayoutPattern         [해석2: 패턴 어휘]  ← draft (rlsc-pattern)
             ↓
        checkConformance()     → ConformanceResult     [검증]              ← draft
             │
@@ -102,9 +106,11 @@ DOM (브라우저)
 | LLM 프롬프트 생성 | `rlsc-context` | `context.ts` | ✓ |
 | 쿼리/불변 갱신/diff | `rlsc-query` | `query.ts` | ✓ |
 | 설계 메트릭 계산 | `rlsc-metrics` | `metrics.ts` | draft |
+| 패턴 어휘 분류 | `rlsc-pattern` | `pattern.ts` | draft |
 | 의도 선언 + 프레임 검증 | `rlsc-intent` | `intent.ts` | draft |
 | 색상 매핑 캔버스 렌더링 | `rlsc-canvas` | `canvas.ts` | draft |
 | DOM 변화 관측 + 재검증 루프 | `rlsc-monitor` | `monitor.ts` | draft |
+| 테스트 시나리오 묶음 | `rlsc-test` | `*.test.md` | mixed |
 
 ## 제약 ^consumes
 

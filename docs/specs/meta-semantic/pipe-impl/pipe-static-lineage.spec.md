@@ -12,8 +12,6 @@ def:
       type: depends_on
     - target: pipe-transition-scope
       type: depends_on
-    - target: prefix-colocation
-      type: depends_on
     - target: pipe-fold-lineage
       type: contains
     - target: pipe-graph-lineage-precision
@@ -21,6 +19,8 @@ def:
     - target: pipe-reduce-lineage
       type: contains
     - target: test-name-tokens
+      type: contains
+    - target: pipe-static-lineage-test
       type: contains
 ---
 
@@ -84,6 +84,7 @@ PipeFlow 정의만으로 "어떤 데이터가 어떤 데이터를 만드는 데 
 | `pipe-fold-lineage` | fold 압축 시 계보 통합 |
 | `pipe-graph-lineage-precision` | facetType/PortRef 기반 정밀 cross-pipe 연결 |
 | `pipe-reduce-lineage` | reduce accumulator 계보 표현 |
+| `pipe-static-lineage-test` | 정적/시뮬/graph 계보 검증 시나리오 |
 
 ## ^consumes
 

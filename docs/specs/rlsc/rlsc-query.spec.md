@@ -13,11 +13,11 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 RLSCDocument에서 조건 기반 노드 검색, 불변 갱신, 두 문서 간 diff를 제공한다.
 문서 자체는 변경하지 않으며 모든 갱신 연산은 새 문서를 반환한다.
 
-^defines
+## ^defines
 
 ### queryNodes(doc: RLSCDocument, query: RLSCQuery) → RLSCNode[]
 

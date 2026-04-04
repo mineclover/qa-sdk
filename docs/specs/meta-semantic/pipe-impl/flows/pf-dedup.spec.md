@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-같은 key 재입력 시 소멸. 카테고리: 상태.
+중복 key를 기억해 이미 본 입력을 소거하고 신규 입력만 통과시키는 dedup PipeFlow를 정의한다.
 
 ## fold topology
 

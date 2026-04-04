@@ -2,7 +2,7 @@
 def:
   id: scope-nesting-procedure-test
   scope: flow
-  aspect: scenario
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: domain
@@ -13,6 +13,10 @@ def:
 ---
 
 # Scope Nesting 변경 절차 테스트 명세
+
+## 목적 ^purpose
+
+scope 추가·순서 변경·제거 절차가 validateScopeNesting과 mount flow 검증에 맞게 동작하는지 검증한다.
 
 ## 전제 ^preconditions
 

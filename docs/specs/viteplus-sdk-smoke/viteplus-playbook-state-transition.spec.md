@@ -13,8 +13,6 @@ def:
       type: refines
     - target: viteplus-playbook-app-state
       type: refines
-    - target: viteplus-playbook-template-implementation
-      type: depends_on
 ---
 
 # Vite+ Playbook State Transition

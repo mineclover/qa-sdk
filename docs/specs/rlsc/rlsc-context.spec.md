@@ -13,11 +13,11 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 RLSCDocument를 5종 목적별 LLM 프롬프트 템플릿으로 변환하여 DesignContext를 생성한다.
 토큰 예산 내에서 구조 정보의 우선순위를 결정하고, 자연어 요약과 마크업을 결합한다.
 
-^defines
+## ^defines
 
 ### generateDesignContext(doc: RLSCDocument, options?: Partial\<ContextOptions>) → DesignContext
 
@@ -45,12 +45,10 @@ RLSCDocument를 LLM이 소비할 수 있는 DesignContext로 변환한다.
 
 **ContextOptions 기본값**: `{ purpose: "layout-analysis", sections: ["tree","grid","layers","relations"], maxTokens: 4000 }`
 
-**Known bug** (`context.ts:288`): `accessibility-audit` 템플릿의 `{layers}` 플레이스홀더가 buildPrompt에서 교체되지 않아 리터럴 문자열로 남음.
-**Known bug** (`context.ts:18`): `focus: undefined as unknown as string` — ContextOptions의 focus 필드 타입 핵. null 대신 undefined를 허용하기 위한 임시 캐스트.
-
-^consumes
+## ^consumes
 - `types.ts` — RLSCDocument, RLSCNode, ContextOptions, DesignContext, ContextPurpose, LayoutRect
 - `encoder.ts` — encodeToMarkup
 - `grid.ts` — gridToText
+- `layers.ts` — layersToText
 - `relations.ts` — relationsToText
 - `tree-utils.ts` — flattenTree

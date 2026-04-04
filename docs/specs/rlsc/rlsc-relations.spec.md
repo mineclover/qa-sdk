@@ -13,12 +13,12 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 가시 노드 목록에서 8종 공간 관계를 탐지한다.
 노드 쌍을 순회하며 기하 조건을 평가하고, RLSCRelation 배열을 반환한다.
 
-^defines
+## ^defines
 
 - `packages/rlsc/src/relations.ts:detectRelations` — `(nodes) → RLSCRelation[]`
   - 가시 노드(`visible`)만 필터링 후 O(n²) 쌍 순회
@@ -48,6 +48,6 @@ def:
   - 유형별 그룹화 후 source별로 targets 합산 출력
   - 형식: `{source} {TYPE} {target1, target2, ...}`
 
-^consumes
+## ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCNode, RLSCRelation, LayoutRect

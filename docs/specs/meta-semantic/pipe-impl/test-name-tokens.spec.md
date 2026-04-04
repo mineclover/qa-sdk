@@ -7,6 +7,7 @@ def:
   depth: specification
   lifecycle: approved
   layer: operation
+  tags: [cross-scope]
   links:
     - target: pipe-static-lineage
       type: depends_on

@@ -20,7 +20,7 @@ def:
 
 ## 목적 ^purpose
 
-wait 동안 추가 없으면 실행. 카테고리: 안정화.
+짧은 시간 안의 반복 입력을 접어 마지막 안정 입력만 실행하는 debounce PipeFlow를 정의한다.
 
 ## fold topology
 

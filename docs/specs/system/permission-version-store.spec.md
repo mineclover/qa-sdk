@@ -10,7 +10,7 @@ def:
   tags: [permission, version, storage]
   links:
     - target: auth-permission-integration
-      type: contains
+      type: refines
 ---
 
 # PermissionVersionStore

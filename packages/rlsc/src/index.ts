@@ -20,8 +20,24 @@ export type {
   ContextOptions,
   DesignContext,
   RLSCQuery,
+  // 메트릭
+  ProximityGroup,
+  LayoutMetrics,
+  // 패턴
+  GridSystemPattern,
+  SpacingPattern,
+  ProportionPattern,
+  GestaltPattern,
+  LayoutPattern,
+  // 적합성
+  ConformanceViolation,
+  ConformanceResult,
+  // 캔버스
+  CanvasRenderOptions,
+  // 모니터
   LayoutChange,
   LayoutMonitor,
+  MonitorOptions,
 } from "./types.js";
 
 // 수집 (브라우저 전용)
@@ -51,3 +67,28 @@ export {
   diffDocuments,
 } from "./query.js";
 export type { LayoutDiff } from "./query.js";
+
+// 메트릭
+export {
+  measureLayout,
+  measureBalance,
+  detectGridPattern,
+  scoreGoldenRatio,
+  detectProximityGroups,
+  detectDominantFlow,
+  detectColumnSystem,
+  measureSpacing,
+  measureAspectRatios,
+} from "./metrics.js";
+
+// 패턴 분류
+export { classifyLayout } from "./pattern.js";
+
+// 적합성 검증
+export { checkConformance, recognizeLayout } from "./intent.js";
+
+// 렌더링
+export { assignColors, renderToSVG, renderToCanvas } from "./canvas.js";
+
+// 모니터 (브라우저 전용)
+export { createLayoutMonitor } from "./monitor.js";

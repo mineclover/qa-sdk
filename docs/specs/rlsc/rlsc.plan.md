@@ -15,6 +15,8 @@ def:
 
 # R.L.S.C.™ 구현 계획
 
+> **[Superseded]** Phase 1–2 완료. 현행 계획은 `rlsc-facets.plan.md` 참조. Phase 3(LayoutMonitor)은 제거가 아닌 구현 방향으로 변경됨.
+
 ## 현황 평가 (코드 직접 검토)
 
 | 모듈 | 상태 | 비고 |

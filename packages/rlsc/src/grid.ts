@@ -131,7 +131,7 @@ export function gridToText(grid: LayoutGrid): string {
   return lines.join("\n");
 }
 
-interface GridRegion {
+export interface GridRegion {
   nodeId: string;
   colStart: number;
   colEnd: number;
@@ -140,7 +140,7 @@ interface GridRegion {
 }
 
 /** 그리드에서 dominant 노드 기준으로 연속 영역 추출 */
-function extractRegions(grid: LayoutGrid): GridRegion[] {
+export function extractRegions(grid: LayoutGrid): GridRegion[] {
   const visited = new Set<string>();
   const regions: GridRegion[] = [];
 

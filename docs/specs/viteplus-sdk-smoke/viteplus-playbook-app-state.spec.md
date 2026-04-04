@@ -11,12 +11,6 @@ def:
   links:
     - target: viteplus-sdk-smoke-system
       type: refines
-    - target: viteplus-playbook-template-implementation
-      type: depends_on
-    - target: viteplus-playbook-state-transition
-      type: depends_on
-    - target: trace-context-spec
-      type: depends_on
 ---
 
 # Vite+ Playbook App State
