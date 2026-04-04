@@ -28,6 +28,10 @@ def:
       type: contains
     - target: viteplus-playbook-app-state
       type: contains
+    - target: viteplus-playbook-state-transition
+      type: contains
+    - target: viteplus-playbook-boundary-coupling
+      type: contains
     - target: viteplus-playbook-interaction
       type: contains
     - target: platform-sdk-user-scenarios
@@ -72,22 +76,51 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 - **template-implementation** → 공통 runtime/store/dom helper 구현
 - **template-flow** → 새 feature 확장 절차
 - **provider-stack** → scope nesting 순서 규칙
-- **boundary-relation** → boundary 단위/결합/조회 표준
-- **app-state** → 공통 상태 모델
+- **boundary-relation** → boundary 단위 정의
+- **boundary-coupling** → 결합 규칙 + 조회 표준
+- **app-state** → state shape 정의
+- **state-transition** → 전이 규칙
 - **interaction** → UI 반응 규칙 5종
 - **canonical-review-\*** → 첫 번째 feature (구현 + 검증)
 - **incident-escalation-\*** → 두 번째 feature (구현 + 검증, 구조 대칭)
 
 ## 구성 ^overview
 
-- `smoke.ts`와 `qa-bridge.ts`는 여전히 최소 소비처와 복사 가능한 브리지 템플릿 역할을 맡는다.
-- `features/canonical-review/`는 Vite+ 안에서 `contexts/business/handlers/actions/hooks/views`를 어떻게 배치할지 보여주는 reference다.
-- `features/incident-escalation/`는 같은 template로 두 번째 feature를 파생한 reference다.
-- `viteplus-playbook-template-implementation`은 두 feature가 공유하는 runtime/view helper의 구현 문서다.
-- `viteplus-playbook-template-flow`는 새 feature를 template 위에서 확장하는 절차 문서다.
-- `viteplus-playbook-boundary-relation`은 컨텍스트 바운더리와 결합 표현 규칙을 설명한다.
-- `viteplus-playbook-provider-stack`은 provider/composition 순서를 설명한다.
-- `viteplus-playbook-app-state`는 공통 frontend state shape를 설명한다.
-- `viteplus-playbook-interaction`은 invalid focus, reopen, reset 같은 UI 반응 규칙을 설명한다.
-- `viteplus-canonical-review-implementation`은 구현 단위와 파일 책임을 고정한다.
-- `viteplus-canonical-review-validation`은 invalid focus, success 전이, reopen, reset, build/test 명령을 검증 단위로 고정한다.
+12개 하위 문서를 패싯 기준으로 분류한다.
+
+### 정의 패싯 — 구조와 규칙
+
+| 문서 | 정의하는 것 |
+|------|-----------|
+| `boundary-relation` | boundary 단위 5종, boundary = scope |
+| `provider-stack` | scope nesting 순서 규칙, contract descent 구현 |
+| `app-state` | playbook state shape 8개 슬롯 |
+| `interaction` | UI 반응 규칙 5종 (focus, feedback, reopen, reset, debug) |
+
+### 관리 패싯 — 규칙과 제약
+
+| 문서 | 관리하는 것 |
+|------|-----------|
+| `boundary-coupling` | 결합 표현 4종 + overview 표준 + 조회 3단계 |
+| `state-transition` | status 전이 6종 + 불변량 |
+
+### 생산 패싯 — 구현
+
+| 문서 | 생산하는 것 |
+|------|-----------|
+| `template-implementation` | 공통 runtime/store/dom/persist helper 5개 |
+| `canonical-review-implementation` | 첫 번째 feature 구현 단위 |
+| `incident-escalation-implementation` | 두 번째 feature 구현 단위 (대칭) |
+
+### 프로세스 — 절차
+
+| 문서 | 절차 |
+|------|------|
+| `template-flow` | 새 feature 확장 6단계 프로세스 |
+
+### 검증 패싯 — 테스트 시나리오
+
+| 문서 | 검증하는 것 |
+|------|-----------|
+| `canonical-review-validation` | 상태 전이 + handler orchestration + build/test |
+| `incident-escalation-validation` | 동일 구조 (대칭) + severity 변형 |

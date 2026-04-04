@@ -13,6 +13,8 @@ def:
       type: refines
     - target: viteplus-playbook-template-implementation
       type: depends_on
+    - target: viteplus-playbook-state-transition
+      type: depends_on
     - target: trace-context-spec
       type: depends_on
 ---
@@ -21,49 +23,31 @@ def:
 
 ## 목적 ^purpose
 
-playbook feature가 공통으로 가지는 프론트엔드 상태 모델을 정의해, context 분리와 spec boundary 분리가 같은 상태 좌표 위에서 읽히도록 만든다.
+playbook feature가 공통으로 가지는 프론트엔드 상태 모델의 shape을 정의한다.
 
 ## 정의 ^defines
 
 - **playbook state shape** — 8개 공통 슬롯: `draft`, `validationIssues`, `result`, `status`, `activity`, `debugRevision`, `submissionError`, `lastSubmittedAt`
-- **status 전이 규칙** — `idle → editing → invalid|submitting → success|error → idle` 순환
 
 ## 소비 ^consumes
 
-- `playbookStateMachine` — 공통 상태 머신 정의 (`viteplus-playbook-template-implementation`)
 - `playbookStore` — store/subscribe/update helper (`viteplus-playbook-template-implementation`)
 - `trace-context` — session/trace 경계 (`trace-context-spec`)
 
 ## 구성 ^overview
 
-- `status`는 shared playbook state machine의 `idle/editing/invalid/submitting/success/error`를 따른다.
+- 전이 규칙은 `viteplus-playbook-state-transition`에서 정의한다.
 - `activity`와 `debugRevision`은 UI에 보이는 값이면서 logging flush와 함께 변하는 app state다.
 
 ## 상태 슬롯
 
-| 슬롯 | 의미 |
-|------|------|
-| `draft` | 현재 편집 중인 feature 입력 |
-| `validationIssues` | 현재 submit 기준의 field issue 목록 |
-| `result` | business 계산 결과 |
-| `status` | 공통 상태 머신 값 |
-| `activity` | handler가 append하는 사용자 가시 이벤트 로그 |
-| `debugRevision` | NoopTransport flush 이후 UI 갱신 트리거 |
-| `submissionError` | async submit 실패 메시지 |
-| `lastSubmittedAt` | 마지막 성공 제출 시각 |
-
-## 전이 규칙
-
-- draft 변경 → `editing`
-- invalid submit → `invalid`
-- valid submit 시작 → `submitting`
-- submit 성공 → `success`
-- submit 실패 → `error`
-- reset → `idle`
-
-## scope/aspect 배정 이유
-
-- `scope: state`
-  문서의 중심은 feature가 들고 있는 런타임 값과 전이다.
-- `aspect: app_state`
-  브라우저 화면과 handler가 함께 읽고 쓰는 프론트엔드 상태이므로 domain/system이 아니라 app state다.
+| 슬롯 | 패싯 | 의미 |
+|------|------|------|
+| `draft` | 정의 | 현재 편집 중인 feature 입력 |
+| `validationIssues` | 관리 | 현재 submit 기준의 field issue 목록 |
+| `result` | 생산 | business 계산 결과 |
+| `status` | 관리 | 공통 상태 머신 값 |
+| `activity` | 소비 | handler가 append하는 사용자 가시 이벤트 로그 |
+| `debugRevision` | 소비 | NoopTransport flush 이후 UI 갱신 트리거 |
+| `submissionError` | 관리 | async submit 실패 메시지 |
+| `lastSubmittedAt` | 생산 | 마지막 성공 제출 시각 |
