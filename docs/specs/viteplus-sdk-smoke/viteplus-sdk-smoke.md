@@ -38,6 +38,8 @@ def:
       type: contains
     - target: viteplus-playbook-simulation-layers
       type: contains
+    - target: viteplus-playbook-provider-patterns
+      type: contains
     - target: platform-sdk-user-scenarios
       type: depends_on
     - target: sdk-vite-onboarding-guide
