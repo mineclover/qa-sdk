@@ -106,7 +106,7 @@ export function transition(
 export function isViolation(
   result: TransitionResult | TransitionViolation,
 ): result is TransitionViolation {
-  return "from" in result && "trigger" in result;
+  return !("next" in result);
 }
 
 // ── 불변량 검증 ───────────────────────────────────────

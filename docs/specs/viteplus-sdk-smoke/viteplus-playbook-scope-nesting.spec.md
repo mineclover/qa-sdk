@@ -110,6 +110,8 @@ const result = validateScopeNesting(nesting, guards);
 | `unused-contract` | warning | 제공하지만 하위에서 소비하지 않음 |
 | `empty-scope` | warning | provides도 consumes도 없는 scope |
 | `guard-inactive` | warning | L0 guard에 의해 계약 비활성 (encode 불가) |
+| `optional-missing` | warning | optional consume(required: false)의 provider 부재 — fallback 동작 |
+| `override-no-parent` | warning | override 선언했지만 상위에 대체 대상 없음 |
 
 ## 순서 교환 안전성 검사
 

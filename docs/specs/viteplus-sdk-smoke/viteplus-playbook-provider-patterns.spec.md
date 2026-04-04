@@ -221,7 +221,9 @@ analyzeDeactivation(nesting, "qa-bridge")
 
 | 순서 | 패턴 | 이유 |
 |------|------|------|
-| 1 | optional consume | fail-open 원칙과 직결. ContractRef 확장 최소 |
-| 2 | provider override | 테스트 mock 주입에 즉시 활용. ContractRef 확장 최소 |
-| 3 | provider resolution | 1, 2의 결과를 조회하는 API. 검증/시각화에 필요 |
-| 4 | scope lifecycle | L0 guard와 연동. 1~3 안정 후 진행 |
+| 순서 | 패턴 | 상태 |
+|------|------|------|
+| 1 | optional consume | 구현 완료 (`ContractRef.required`) |
+| 2 | provider override | 구현 완료 (`ContractRef.override`) |
+| 3 | provider resolution | 구현 완료 (`resolveContracts()`) |
+| 4 | scope lifecycle (`analyzeDeactivation`) | 미구현 — 패턴 1~3 안정화 후 진행 예정 |

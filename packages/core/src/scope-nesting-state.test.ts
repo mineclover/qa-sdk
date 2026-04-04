@@ -17,8 +17,34 @@ import {
 // ── 전이 6종 ─────────────────────────────────────────
 
 describe("상태 전이 6종 — state-transition.spec.md", () => {
-  it("draft 변경 → editing", () => {
+  it("draft 변경 (idle) → editing", () => {
     const result = transition("idle", "draft-change");
+    expect(isViolation(result)).toBe(false);
+    if (!isViolation(result)) {
+      expect(result.next).toBe("editing");
+    }
+  });
+
+  it("draft 변경 (error) → editing, 부수효과 없음", () => {
+    const result = transition("error", "draft-change");
+    expect(isViolation(result)).toBe(false);
+    if (!isViolation(result)) {
+      expect(result.next).toBe("editing");
+      expect(result.sideEffects).toHaveLength(0);
+    }
+  });
+
+  it("draft 변경 (invalid) → editing, 부수효과 없음", () => {
+    const result = transition("invalid", "draft-change");
+    expect(isViolation(result)).toBe(false);
+    if (!isViolation(result)) {
+      expect(result.next).toBe("editing");
+      expect(result.sideEffects).toHaveLength(0);
+    }
+  });
+
+  it("draft 변경 (editing) → editing, 멱등", () => {
+    const result = transition("editing", "draft-change");
     expect(isViolation(result)).toBe(false);
     if (!isViolation(result)) {
       expect(result.next).toBe("editing");

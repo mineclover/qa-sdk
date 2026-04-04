@@ -20,6 +20,8 @@ export interface ContractRef {
   override?: boolean;
   /** consumes에서: 필수 여부 (기본: true). false이면 provider 없어도 warning만 */
   required?: boolean;
+  /** provides에서: 이 계약의 데이터가 준비되는 시점 (이벤트 키). 미설정 시 즉시 */
+  readyAfter?: string;
 }
 
 /** Scope = 계약을 소유하는 Boundary */
@@ -175,6 +177,7 @@ export function validateScopeNesting(
           // 의도적 override — 상위 provider를 대체
           providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
         } else {
+          // 비-override duplicate — warning만, 첫 provider 유지
           issues.push({
             severity: "warning",
             scopeId: scope.scopeId,
@@ -182,7 +185,7 @@ export function validateScopeNesting(
             code: "duplicate-provider",
             message: `계약 "${contract.contractId}"이 "${existing.scopeId}"(depth ${existing.depth})와 "${scope.scopeId}"(depth ${i}) 양쪽에서 제공됨`,
           });
-          providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
+          // providerMap 변경 없음 — 첫 등록(상위) provider가 canonical
         }
       } else {
         if (contract.override) {
