@@ -7,10 +7,9 @@
 
 ## 선행 작업 (구현 전 완료 필수)
 
-| 작업 | 이유 |
-|------|------|
-| 카탈로그 `addressModel: "sum"` + `PathSegment[]` 지원 | `spec_path` 합산 모델의 전제. 없으면 B 좌표가 flat seq로 fallback됨 |
-| segment registry 구현 | 스펙 경로 append-only 추가 + 기존 주소 불변 보장 |
+> **완료됨** — `packages/core/src/catalog/catalog.types.ts` + `path-summation.ts`에
+> `AddressModel`, `PathSegment`, `PrefixDef.addressModel`이 모두 구현되어 있음.
+> 별도 선행 작업 불필요.
 
 ---
 

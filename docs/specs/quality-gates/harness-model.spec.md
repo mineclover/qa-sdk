@@ -1,4 +1,5 @@
 ---
+address: 9001
 def:
   id: harness-model-spec
   level: leaf
@@ -13,6 +14,14 @@ def:
       type: refines
     - target: harness-architecture
       type: depends_on
+tests:
+  - kind: unit
+    intent: deriveHarnessState 4단계 상태 판별
+    module: work-domain/harness-model
+  - kind: e2e
+    intent: concept-defined → verified 전이 검증
+    module: work-domain/harness-model
+    scope: single
 ---
 
 

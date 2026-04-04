@@ -1,7 +1,7 @@
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, max, sql } from "drizzle-orm";
 import { testScenarios, testScenarioRuns } from "./db/schema.js";
 import type {
   TestScenario,
@@ -116,13 +116,17 @@ export class SqliteTestScenarioStore {
       .map(r => this.rowToScenario(r));
   }
 
-  nextSeq(kind: string, scope: string): number {
-    const [{ value }] = this.db
-      .select({ value: count() })
-      .from(testScenarios)
-      .where(and(eq(testScenarios.kind, kind), eq(testScenarios.scope, scope)))
-      .all();
-    return (value ?? 0) + 1;
+  nextSeq(_kind: string, _scope: string): number {
+    // B 좌표(test_scenario:v1:N)의 N은 전역 단조 증가 — kind/scope 무관하게 유일해야 함.
+    // id가 test_scenario:v1: 패턴인 행에서 최대 N을 추출하여 +1 반환.
+    const [row] = this.rawDb
+      .prepare(
+        `SELECT COALESCE(MAX(CAST(SUBSTR(id, LENGTH('test_scenario:v1:') + 1) AS INTEGER)), 0) AS max_seq
+         FROM test_scenarios
+         WHERE id LIKE 'test_scenario:v1:%'`,
+      )
+      .all() as Array<{ max_seq: number }>;
+    return (row?.max_seq ?? 0) + 1;
   }
 
   private rowToScenario(row: typeof testScenarios.$inferSelect): TestScenario {
