@@ -67,18 +67,18 @@ export function parseTestsDeclaration(
 // ── frontmatter 추출 (YAML-lite) ──────────────────────────
 
 function extractFrontmatterTests(content: string): unknown[] {
-  const yaml = extractFrontmatter(content);
-  if (!yaml) return [];
-  const parsed = parseYaml(yaml) as Record<string, unknown>;
+  const result = extractFrontmatter(content);
+  if (!result) return [];
+  const parsed = parseYaml(result.yaml) as Record<string, unknown>;
   const tests = parsed["tests"];
   if (!Array.isArray(tests)) return [];
   return tests;
 }
 
 function extractSpecAddress(content: string): string | null {
-  const yaml = extractFrontmatter(content);
-  if (!yaml) return null;
-  const parsed = parseYaml(yaml) as Record<string, unknown>;
+  const result = extractFrontmatter(content);
+  if (!result) return null;
+  const parsed = parseYaml(result.yaml) as Record<string, unknown>;
   const address = parsed["address"];
   if (address !== undefined) return `def:${address}`;
   const id = parsed["id"];
