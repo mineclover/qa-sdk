@@ -5,6 +5,15 @@
 
 ---
 
+## 선행 작업 (구현 전 완료 필수)
+
+| 작업 | 이유 |
+|------|------|
+| 카탈로그 `addressModel: "sum"` + `PathSegment[]` 지원 | `spec_path` 합산 모델의 전제. 없으면 B 좌표가 flat seq로 fallback됨 |
+| segment registry 구현 | 스펙 경로 append-only 추가 + 기존 주소 불변 보장 |
+
+---
+
 ## 목적
 
 테스트 환경, 관측성, 순차적 개발 지원, 추상화/시각화, 개발 방법론 강제를 하나의 통합 DX 레이어로 제공하는 서비스 개발 하네스.
@@ -68,6 +77,7 @@ metadata:
   simulation_ref?: address    — 연결된 PipeSpec 주소 (simulation 타입일 때)
   spec_version: string        — 스펙 lifecycle 버전
   code_commit: string         — 실행 시점 커밋 해시
+  file_path: string           — 실제 테스트 파일 경로 (qa-sdk test run이 파일 위치 참조)
 ```
 
 **spec_path 합산 모델:**
@@ -112,6 +122,19 @@ declared → [modularity-gate] → assigned → collected → verified
 | `collected` | 실행 결과 1건 이상 ingest | 테스트 러너 자동 |
 | `verified` | pass rate 기준 충족 | `qa-sdk test status` |
 | `archived` | 연결된 스펙 deprecated | 자동 cascade |
+
+### definition-service 의존 처리
+
+`스펙 approved → assign 가능` 조건은 definition-service에서 스펙 lifecycle을 조회한다. CLI는 로컬 서버를 띄워서 이 의존을 처리한다.
+
+```
+qa-sdk test assign
+  → DefDataSource: 로컬 SQLite 모드 (서버 없음) 또는
+                   로컬 definition-service HTTP (qa-sdk serve 후)
+  → 로컬 서버: qa-sdk serve --local (definition-service 로컬 인스턴스)
+```
+
+오프라인/CI 모두 동작: DefDataSource가 SQLite 로컬 모드를 지원하므로 서버 없이도 scan 가능.
 
 ### 모듈화 게이트 (advisory)
 
@@ -349,14 +372,28 @@ qa-sdk test report            — 커버리지 매트릭스 출력
 
 ---
 
+## 구현 순서
+
+| 단계 | 내용 |
+|------|------|
+| **0단계 (선행)** | 카탈로그 합산 모델 (`addressModel: "sum"`) + segment registry 구현 |
+| **1단계** | co-location + B 좌표 (flat seq fallback) + scan/assign/scaffold/run/status |
+| **2단계** | simulation 연결 (`compareWithSimulation`) |
+| **3단계** | spec_path 합산 모델 적용 (0단계 완료 후) |
+| **4단계** | mirror 패키지 (실제 필요 시) |
+
+---
+
 ## 설계 원칙 요약
 
-1. **spec-first → scaffold**: 스펙 선언이 모든 것의 시작점
-2. **A 좌표 → B 좌표 승격**: 미할당(파생) → 할당(기준점), B가 canonical reference
-3. **서비스 조합은 메타데이터**: 조합 폭발 방지, participants[] 로 추적
-4. **spec_path 합산**: 전곱 금지, 실제 경로만 주소화
-5. **모듈화 = 테스트 가능성**: 테스트 불가 코드 = 컨벤션 advisory
-6. **패싯 분리 → 테스트 타입**: 역할이 테스트 전략을 결정
-7. **시뮬 = 설계 증명**: drift 감지로 설계-구현 정합성 유지
-8. **두 축 모두 append-only**: test_kind, test_scope 확장 가능
-9. **미러 소스는 비추적**: mirror 패키지에서 원본 소스는 gitignore, 테스트 코드만 git-tracked
+1. **합산 모델 선행**: segment registry 없이 B 좌표 합산 불가 — 0단계 필수
+2. **spec-first → scaffold**: 스펙 선언이 모든 것의 시작점
+3. **A 좌표 → B 좌표 승격**: 미할당(파생) → 할당(기준점), B가 canonical reference
+4. **서비스 조합은 메타데이터**: 조합 폭발 방지, participants[] 로 추적
+5. **spec_path 합산**: 전곱 금지, 실제 경로만 주소화
+6. **모듈화 = 테스트 가능성**: 테스트 불가 코드 = 컨벤션 advisory
+7. **패싯 분리 → 테스트 타입**: 역할이 테스트 전략을 결정
+8. **시뮬 = 설계 증명**: drift 감지로 설계-구현 정합성 유지
+9. **두 축 모두 append-only**: test_kind, test_scope 확장 가능
+10. **미러 소스는 비추적**: mirror 패키지에서 원본 소스는 gitignore, 테스트 코드만 git-tracked
+11. **file_path 필수 메타데이터**: B 좌표 할당 시 실제 파일 경로 저장 — run 명령의 전제
