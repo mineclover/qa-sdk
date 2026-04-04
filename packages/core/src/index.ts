@@ -222,6 +222,9 @@ export type {
 } from "./scope-nesting-timing.js";
 export { validateContractTiming } from "./scope-nesting-timing.js";
 
+// ── Scope Nesting Mermaid — 시각화 ──
+export { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "./scope-nesting-mermaid.js";
+
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
   PlaybookStatus, TransitionTrigger, TransitionResult,
