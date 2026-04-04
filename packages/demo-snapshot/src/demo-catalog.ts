@@ -60,6 +60,8 @@ export interface PrefixDef {
   readonly dims: Record<string, DimRef>;
   readonly versions: readonly PrefixVersionDef[];
   readonly meta?: PrefixMeta;
+  /** 주소 모델 (미선언 시 "product" 기본값) */
+  readonly addressModel?: "product" | "sum";
 }
 
 // ── Layer 2.5: 테이블 스키마 (좌표 ↔ 관계형 양방향 연결) ─────────────────────
@@ -2467,6 +2469,7 @@ export const DEMO_CATALOG = {
           },
         },
       ],
+      addressModel: "product" as const,
     },
   },
 
