@@ -54,3 +54,17 @@ PipeFlow 31번째 유형(B안)은 카테고리 오류로 탈락.
 
 "5개 boundary를 contract descent 순서로 중첩하고, 각 scope가 하위에 계약을 제공한다.
 handlers 계층에서만 PipeSpec transformer 패턴이 적용된다."
+
+## 오픈 퀘스천
+
+### OQ-5: doc lifecycle의 시뮬레이션 역할
+
+3계층→4계층 확장 시 L0(운영 상태 제약)에 GateEngine/GateState/하네스는 포함 결정됨.
+doc lifecycle은 guard 의존 순서에서 "Doc approved → Gate complete" 전제 조건이지만, 시뮬레이션 목적(코드 경로 검증)에 부합하는지 미결.
+
+**충돌 지점:** doc lifecycle은 문서 관리 상태이지 런타임 코드 실행 상태가 아님. 시뮬레이션이 코드 경로 검증이라면 문서 상태가 코드에 영향을 주는 실제 경로가 있는가?
+
+**방향 후보:**
+- A) L0 guard에 포함 — 문서 미승인 시 convention 전이 차단
+- B) L0 guard에서 제외 — 런타임 검증으로 한정, doc lifecycle은 CI/CD gate
+- C) 별도 스펙에서 연결점 재정의 — doc lifecycle이 영향 주는 "런타임 경로"를 특정하여 그것만 guard화
