@@ -5,38 +5,30 @@
  * 교차하여 계약의 시간적 가용성을 검증한다.
  */
 
+import type { ContractRef } from "./scope-nesting.js";
 import type { MountFlowBinding, ScopePipeBinding, ScopeContractRef } from "./scope-nesting-mount.js";
 import type { SimulationResult } from "./pipe/pipe-simulate.js";
 
-/** string | ScopeContractRef → contractId 정규화 */
 function normalizeContractId(ref: string | ScopeContractRef): string {
   return typeof ref === "string" ? ref : ref.contractId;
 }
 
 // ── 타입 ──────────────────────────────────────────────
 
-/** pipe의 역방향 위임 선언 */
 export interface DelegationRef {
-  /** 위임 대상 계약 */
   contractId: string;
-  /** 위임 완료를 알리는 이벤트 */
   completionEvent: string;
   /** 위임 중 stale data 허용 (기본: false) */
   tolerateStale?: boolean;
 }
 
-/** 확장된 ScopePipeBinding — 위임 포함 */
 export interface TimedScopePipeBinding extends ScopePipeBinding {
-  /** 이 pipe가 상위 scope 계약에 역방향 위임하는 목록 */
   delegatesTo?: DelegationRef[];
 }
 
-/** 시점 검증용 바인딩 */
 export interface TimedMountFlowBinding extends MountFlowBinding {
   bindings: Record<string, TimedScopePipeBinding>;
 }
-
-// ── 검증 결과 ─────────────────────────────────────────
 
 export type TimingIssueCode =
   | "consume-before-ready"
@@ -47,7 +39,7 @@ export type TimingIssueCode =
 export interface TimingIssue {
   severity: "error" | "warning";
   code: TimingIssueCode;
-  /** pipe 귀속 이슈. readiness-event-missing 등 계약 수준 이슈에서는 미설정 */
+  /** 계약 수준 이슈(readiness-event-missing 등)에서는 미설정 */
   pipeId?: string;
   contractId: string;
   message: string;
@@ -64,7 +56,6 @@ export interface DelegationGap {
   delegatorPipeId: string;
   gapStartStep: number;
   gapEndStep: number;
-  /** gap 동안 해당 계약을 소비하는 pipe */
   staleConsumers: string[];
 }
 
@@ -75,12 +66,59 @@ export interface TimingValidation {
   delegationGaps: DelegationGap[];
 }
 
+// ── 내부 유틸 ─────────────────────────────────────────
+
+/** 시뮬 결과에서 이벤트 → step 인덱스 맵 구축 */
+function buildEventStepMap(simResult: SimulationResult): Map<string, number> {
+  const map = new Map<string, number>();
+  for (let i = 0; i < simResult.steps.length; i++) {
+    const s = simResult.steps[i];
+    if (s.eventKey && !map.has(s.eventKey)) {
+      map.set(s.eventKey, i);
+    }
+  }
+  for (const e of simResult.producedEvents) {
+    if (!map.has(e.eventKey)) {
+      map.set(e.eventKey, simResult.steps.length);
+    }
+  }
+  return map;
+}
+
+/** pipe별 첫 실행 step 인덱스 */
+function buildPipeFirstStepMap(simResult: SimulationResult): Map<string, number> {
+  const map = new Map<string, number>();
+  for (let i = 0; i < simResult.steps.length; i++) {
+    const s = simResult.steps[i];
+    if (!map.has(s.pipeId)) {
+      map.set(s.pipeId, i);
+    }
+  }
+  return map;
+}
+
+/** override 반영한 effective provider 맵 구축 */
+function buildEffectiveProviderMap(
+  scopes: { provides: ContractRef[] }[],
+): Map<string, ContractRef> {
+  const map = new Map<string, ContractRef>();
+  for (const scope of scopes) {
+    for (const contract of scope.provides) {
+      const existing = map.get(contract.contractId);
+      if (!existing || contract.override) {
+        map.set(contract.contractId, contract);
+      }
+    }
+  }
+  return map;
+}
+
 // ── 검증 함수 ─────────────────────────────────────────
 
 /**
  * 계약 시점 검증 — 시뮬 결과와 마운트 바인딩을 교차 분석.
  *
- * 1. readyAfter가 있는 계약: 해당 이벤트가 producedEvents에 나타난 후에야 소비 가능
+ * 1. readyAfter: 해당 이벤트가 producedEvents에 나타난 후에야 소비 가능
  * 2. delegatesTo: completionEvent가 producedEvents에 있는지 확인
  * 3. delegation gap: 위임 시작~완료 사이에 해당 계약 소비하는 pipe 탐지
  */
@@ -93,43 +131,11 @@ export function validateContractTiming(
   const delegationGaps: DelegationGap[] = [];
 
   const { nesting, bindings } = binding;
+  const eventStepMap = buildEventStepMap(simResult);
+  const pipeFirstStep = buildPipeFirstStepMap(simResult);
+  const effectiveProvider = buildEffectiveProviderMap(nesting.scopes);
 
-  // 이벤트 → step 인덱스 맵
-  const eventStepMap = new Map<string, number>();
-  for (let i = 0; i < simResult.steps.length; i++) {
-    const s = simResult.steps[i];
-    if (s.eventKey && !eventStepMap.has(s.eventKey)) {
-      eventStepMap.set(s.eventKey, i);
-    }
-  }
-  // producedEvents도 포함
-  for (const e of simResult.producedEvents) {
-    if (!eventStepMap.has(e.eventKey)) {
-      eventStepMap.set(e.eventKey, simResult.steps.length); // 마지막 이후
-    }
-  }
-
-  // pipe → 첫 실행 step 인덱스
-  const pipeFirstStep = new Map<string, number>();
-  for (let i = 0; i < simResult.steps.length; i++) {
-    const s = simResult.steps[i];
-    if (!pipeFirstStep.has(s.pipeId)) {
-      pipeFirstStep.set(s.pipeId, i);
-    }
-  }
-
-  // 1단계: effective provider 결정 (override 반영) → readyAfter 분석
-  // override된 계약은 마지막 override가 canonical. 비-override duplicate는 첫 등록 유지.
-  const effectiveProvider = new Map<string, import("./scope-nesting.js").ContractRef>();
-  for (const scope of nesting.scopes) {
-    for (const contract of scope.provides) {
-      const existing = effectiveProvider.get(contract.contractId);
-      if (!existing || contract.override) {
-        effectiveProvider.set(contract.contractId, contract);
-      }
-    }
-  }
-
+  // readyAfter 분석
   for (const [, contract] of effectiveProvider) {
     if (contract.readyAfter) {
       const readyStep = eventStepMap.get(contract.readyAfter);
@@ -149,13 +155,12 @@ export function validateContractTiming(
     }
   }
 
-  // readyAfter가 있는 계약의 준비 시점 맵
   const readyAtMap = new Map(readinessTimeline.map(r => [r.contractId, r.readyAtStep]));
 
-  // 2단계: consume-before-ready 검사
+  // consume-before-ready 검사
   for (const [pipeId, scopeBinding] of Object.entries(bindings)) {
     const firstStep = pipeFirstStep.get(pipeId);
-    if (firstStep === undefined) continue; // 시뮬에서 실행되지 않은 pipe
+    if (firstStep === undefined) continue;
 
     for (const ref of scopeBinding.scopeContracts) {
       const contractId = normalizeContractId(ref);
@@ -172,7 +177,7 @@ export function validateContractTiming(
     }
   }
 
-  // 3단계: delegation gap 분석
+  // delegation gap 분석
   for (const [pipeId, scopeBinding] of Object.entries(bindings)) {
     if (!scopeBinding.delegatesTo) continue;
 
@@ -189,11 +194,9 @@ export function validateContractTiming(
         continue;
       }
 
-      // 위임 시작 = 이 pipe의 첫 실행 step
       const delegationStart = pipeFirstStep.get(pipeId);
       if (delegationStart === undefined) continue;
 
-      // gap 동안 해당 계약을 소비하는 다른 pipe 찾기
       const staleConsumers: string[] = [];
       for (const [otherPipeId, otherBinding] of Object.entries(bindings)) {
         if (otherPipeId === pipeId) continue;
@@ -214,9 +217,8 @@ export function validateContractTiming(
           staleConsumers,
         });
 
-        const severity = delegation.tolerateStale ? "warning" : "error";
         issues.push({
-          severity,
+          severity: delegation.tolerateStale ? "warning" : "error",
           code: "delegation-gap",
           pipeId,
           contractId: delegation.contractId,
