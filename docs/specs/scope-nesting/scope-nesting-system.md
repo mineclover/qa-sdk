@@ -23,6 +23,8 @@ def:
       type: contains
     - target: scope-nesting-simulation-layers
       type: contains
+    - target: scope-nesting-visualization
+      type: contains
     - target: scope-nesting-procedure-test
       type: contains
     - target: scope-nesting-contract-timing-test
