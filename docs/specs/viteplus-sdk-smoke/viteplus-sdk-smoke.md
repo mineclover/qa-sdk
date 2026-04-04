@@ -44,6 +44,8 @@ def:
       type: contains
     - target: viteplus-playbook-interaction
       type: contains
+    - target: viteplus-playbook-user-scenarios
+      type: contains
     - target: platform-sdk-user-scenarios
       type: depends_on
     - target: sdk-vite-onboarding-guide
@@ -110,7 +112,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 
 ## 구성 ^overview
 
-17개 하위 문서를 패싯 기준으로 분류한다.
+18개 하위 문서를 패싯 기준으로 분류한다.
 
 ### 정의 패싯 — 구조와 규칙 (4)
 
@@ -158,3 +160,9 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 |------|-----------|
 | `canonical-review-validation` | 상태 전이 + handler orchestration + 변형 2종 |
 | `incident-escalation-validation` | 동일 구조 (대칭) + severity 변형 2종 |
+
+### 유저 시나리오 (1)
+
+| 문서 | 시나리오 |
+|------|---------|
+| `user-scenarios` | 새 feature 추가, 순서 변경 검증, 경량 모드, mock override, 타이밍 버그 검출, delegation gap 검출 |
