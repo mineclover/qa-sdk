@@ -286,16 +286,65 @@ auth×pay   -      -        -       ✅          -          -
   → 다음 액션 제안: "PipeSpec 수정 or 구현 수정"
 ```
 
+### 테스트 파일 배치 전략
+
+두 가지 패턴을 지원한다. 패키지별로 선택.
+
+**패턴 1 — co-location (코드 근접):**
+
+```
+packages/auth-service/src/
+  auth.ts
+  auth.test.ts    ← 바로 옆에 위치, git-tracked
+```
+
+**패턴 2 — mirror 패키지:**
+
+```
+packages/auth-service-tests/
+  src/
+    auth.ts          ← auth-service에서 미러링, gitignored
+    auth.service.ts  ← 미러링, gitignored
+    auth.test.ts     ← 테스트 코드만, git-tracked
+  .gitignore         ← src/**/*.ts 중 *.test.ts 제외 전부 ignore
+  package.json
+```
+
+mirror 패키지는 원본 소스를 그대로 복제하되, 복제된 소스는 git 추적하지 않는다.
+테스트 코드가 미러된 로컬 소스를 직접 import하므로 내부 구현에도 접근 가능.
+
+**mirror 패키지 초기화 순서 (scaffold --mirror):**
+
+```
+1. qa-sdk test scaffold --mirror <source-package>
+   → mirror 패키지 디렉토리 생성
+   → .gitignore 자동 생성 (*.ts 중 *.test.ts 제외 전부 ignore)
+   → 소스 파일 초기 복사 (gitignored)
+   → *.test.ts 스텁 생성 (git-tracked)
+
+2. qa-sdk test mirror sync <source-package>
+   → 소스 변경사항을 mirror 패키지에 반영 (gitignored 파일만 갱신)
+   → CI 진입 시 또는 테스트 실행 전 선행 필수
+```
+
+**mirror sync 트리거:**
+
+- `qa-sdk test run` 실행 전 자동 sync
+- CI: test 스텝 전 `qa-sdk test mirror sync --all` 선행
+- 개발 중: watch 모드 (`qa-sdk test mirror sync --watch`)
+
 ### CLI 커맨드 전체
 
 ```
-qa-sdk test scan       — 스펙 선언 읽기 → declared
-qa-sdk test assign     — 모듈화 체크 → B 좌표 부여
-qa-sdk test scaffold   — 테스트 스텁 파일 생성
-qa-sdk test simulate   — 시뮬 vs 실제 비교
-qa-sdk test run [kind] — 특정 타입 실행 + 수집
-qa-sdk test status     — 생명주기 현황
-qa-sdk test report     — 커버리지 매트릭스 출력
+qa-sdk test scan              — 스펙 선언 읽기 → declared
+qa-sdk test assign            — 모듈화 체크 → B 좌표 부여
+qa-sdk test scaffold          — co-location 테스트 스텁 생성
+qa-sdk test scaffold --mirror — mirror 패키지 초기화 + gitignore 설정
+qa-sdk test mirror sync       — 미러링 소스 갱신 (gitignored)
+qa-sdk test simulate          — 시뮬 vs 실제 비교
+qa-sdk test run [kind]        — 특정 타입 실행 + 수집
+qa-sdk test status            — 생명주기 현황
+qa-sdk test report            — 커버리지 매트릭스 출력
 ```
 
 ---
@@ -310,3 +359,4 @@ qa-sdk test report     — 커버리지 매트릭스 출력
 6. **패싯 분리 → 테스트 타입**: 역할이 테스트 전략을 결정
 7. **시뮬 = 설계 증명**: drift 감지로 설계-구현 정합성 유지
 8. **두 축 모두 append-only**: test_kind, test_scope 확장 가능
+9. **미러 소스는 비추적**: mirror 패키지에서 원본 소스는 gitignore, 테스트 코드만 git-tracked
