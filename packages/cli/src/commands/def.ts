@@ -561,7 +561,10 @@ async function cmdAuditDb(source: DefDataSource) {
   }
 
   console.log(`[${source.mode}] === DB 품질 감사 ===`);
-  console.log(`approved ${all.length}건 | purpose 없음 ${noPurpose} | 짧음 ${shortPurpose} | 고립 ${noLinks} | svc 미부여 ${noSvc}`);
+  console.log(`approved ${all.length}건 | purpose 없음 ${noPurpose} | 짧음 ${shortPurpose} | 고립 ${noLinks}`);
+  if (noSvc > 0) {
+    console.log(`info | svc 미부여 ${noSvc}건 (참고 지표 — 현재는 fail 조건 아님)`);
+  }
 
   if (issues.length > 0) {
     const high = issues.filter(i => i.startsWith("[high]"));

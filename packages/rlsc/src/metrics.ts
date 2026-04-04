@@ -100,8 +100,8 @@ export function measureBalance(
     else bottomArea += area;
   }
 
-  const x = rightArea === 0 ? 99 : leftArea / rightArea;
-  const y = bottomArea === 0 ? 99 : topArea / bottomArea;
+  const x = leftArea === 0 || rightArea === 0 ? 99 : leftArea / rightArea;
+  const y = topArea === 0 || bottomArea === 0 ? 99 : topArea / bottomArea;
 
   return { x, y };
 }
@@ -282,15 +282,19 @@ export function detectDominantFlow(
 ): "horizontal" | "vertical" | "grid" | "free" {
   let horizontal = 0;
   let vertical = 0;
+  let flowCount = 0;
 
   for (const rel of relations) {
     if (rel.type === "adjacent-x") horizontal++;
     else if (rel.type === "adjacent-y") vertical++;
+    else if (rel.type === "flow") flowCount++;
   }
 
   if (horizontal > vertical * 1.5) return "horizontal";
   if (vertical > horizontal * 1.5) return "vertical";
   if (horizontal > 0 && vertical > 0) return "grid";
+  // "flow" 단독: 방향 불명확, horizontal 기본값
+  if (flowCount > 0) return "horizontal";
   return "free";
 }
 

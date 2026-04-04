@@ -13,21 +13,21 @@ import { flattenTree } from "./tree-utils.js";
 const DEFAULT_ROLE_PALETTE: Record<string, string> = {
   banner: "#4A90D9",
   navigation: "#7B68EE",
-  main: "#50C878",
-  complementary: "#FFB347",
-  contentinfo: "#CD5C5C",
-  region: "#87CEEB",
-  dialog: "#DDA0DD",
-  form: "#F0E68C",
+  main: "#5CB85C",
+  complementary: "#F0AD4E",
+  contentinfo: "#D9534F",
+  dialog: "#FF6B6B",
+  form: "#20B2AA",
+  search: "#9370DB",
 };
 
 const DEFAULT_LAYER_PALETTE: Record<string, string> = {
   background: "#E8E8E8",
-  content: "#B8D4E8",
-  sticky: "#FFD700",
-  overlay: "#FFA07A",
-  modal: "#DDA0DD",
-  tooltip: "#90EE90",
+  content: "#5CB85C",
+  sticky: "#F0AD4E",
+  overlay: "#FF9933",
+  modal: "#D9534F",
+  tooltip: "#9370DB",
 };
 
 // ─── 내부 유틸 ───────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export function assignColors(
 
     switch (colorBy) {
       case "role": {
-        color = DEFAULT_ROLE_PALETTE[node.role ?? ""] ?? "#CCCCCC";
+        color = DEFAULT_ROLE_PALETTE[node.role ?? ""] ?? "#999999";
         break;
       }
       case "depth": {
@@ -79,16 +79,15 @@ export function assignColors(
       }
       case "layer": {
         const layerName = zIndexToLayerName(node.zIndex);
-        color = DEFAULT_LAYER_PALETTE[layerName] ?? "#CCCCCC";
+        color = DEFAULT_LAYER_PALETTE[layerName] ?? "#999999";
         break;
       }
       case "custom": {
-        const key = node.role ?? node.tag;
-        color = (palette && palette[key]) ? palette[key] : "#CCCCCC";
+        color = (palette && palette[node.id]) ? palette[node.id]! : "#999999";
         break;
       }
       default: {
-        color = DEFAULT_ROLE_PALETTE[node.role ?? ""] ?? "#CCCCCC";
+        color = DEFAULT_ROLE_PALETTE[node.role ?? ""] ?? "#999999";
         break;
       }
     }
@@ -105,12 +104,12 @@ function svgGridLines(width: number, height: number, cellSize: number): string {
   const lines: string[] = [];
   for (let x = cellSize; x < width; x += cellSize) {
     lines.push(
-      `  <line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="#CCCCCC" stroke-width="1" opacity="0.5"/>`,
+      `  <line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="#999999" stroke-width="1" opacity="0.5"/>`,
     );
   }
   for (let y = cellSize; y < height; y += cellSize) {
     lines.push(
-      `  <line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="#CCCCCC" stroke-width="1" opacity="0.5"/>`,
+      `  <line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="#999999" stroke-width="1" opacity="0.5"/>`,
     );
   }
   return lines.join("\n");
@@ -303,7 +302,7 @@ export function renderToSVG(
 
   // 노드 rect 요소
   for (const node of sorted) {
-    const color = colorMap.get(node.id) ?? "#CCCCCC";
+    const color = colorMap.get(node.id) ?? "#999999";
     const { x, y, width: w, height: h } = node.rect;
 
     parts.push(
@@ -388,7 +387,7 @@ export function renderToCanvas(
   // 격자 오버레이 (노드 아래)
   if (options.showGrid) {
     ctx.save();
-    ctx.strokeStyle = "#CCCCCC";
+    ctx.strokeStyle = "#999999";
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.5;
 
@@ -410,7 +409,7 @@ export function renderToCanvas(
 
   // 노드 렌더링
   for (const node of sorted) {
-    const color = colorMap.get(node.id) ?? "#CCCCCC";
+    const color = colorMap.get(node.id) ?? "#999999";
     const { x, y, width: w, height: h } = node.rect;
 
     ctx.save();

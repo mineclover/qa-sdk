@@ -177,6 +177,40 @@ function checkGridSystem(
   return violations;
 }
 
+function checkProportions(
+  declared: LayoutPattern,
+  recognized: LayoutPattern,
+): ConformanceViolation[] {
+  const violations: ConformanceViolation[] = [];
+  const d = declared.proportions;
+  const r = recognized.proportions;
+  if (!d) return violations;
+
+  if (d.dominant !== undefined) {
+    const recognizedDominant = r?.dominant ?? null;
+    const diff = recognizedDominant !== null ? Math.abs(d.dominant - recognizedDominant) : Infinity;
+    if (diff > 0.1) {
+      violations.push({
+        rule: "proportions.dominant",
+        declared: d.dominant,
+        recognized: recognizedDominant,
+        severity: "warning",
+        description: `주요 비율 불일치: 선언 ${d.dominant}, 인식 ${recognizedDominant ?? "없음"}`,
+      });
+    }
+  }
+  if (d.namedRatio !== undefined && d.namedRatio !== r?.namedRatio) {
+    violations.push({
+      rule: "proportions.namedRatio",
+      declared: d.namedRatio,
+      recognized: r?.namedRatio ?? null,
+      severity: "warning",
+      description: `비율 명칭 불일치: 선언 "${d.namedRatio}", 인식 "${r?.namedRatio ?? "없음"}"`,
+    });
+  }
+  return violations;
+}
+
 function checkSpacing(
   declared: LayoutPattern,
   recognized: LayoutPattern,
@@ -243,14 +277,14 @@ export function checkConformance(
     ...checkGestalt(declared, recognized),
     ...checkGridSystem(declared, recognized),
     ...checkSpacing(declared, recognized),
+    ...checkProportions(declared, recognized),
   ];
 
   const total = countDeclaredFields(declared);
   const score =
     total === 0
       ? 1.0
-      : (total - violations.filter((v) => v.severity === "error").length) /
-        total;
+      : (total - violations.length) / total;
 
   return {
     declared,

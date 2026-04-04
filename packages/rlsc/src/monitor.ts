@@ -73,6 +73,9 @@ export function createLayoutMonitor(
 
       resizeObserver = new ResizeObserver(handleChange);
       resizeObserver.observe(target);
+      if (document.documentElement !== target) {
+        resizeObserver.observe(document.documentElement);
+      }
     },
 
     stop() {

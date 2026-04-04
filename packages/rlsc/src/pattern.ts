@@ -4,6 +4,7 @@ import type {
   GridSystemPattern,
   SpacingPattern,
   ProportionPattern,
+  GestaltPattern,
 } from "./types.js";
 
 // 알려진 비율 매핑 테이블
@@ -105,6 +106,25 @@ export function classifyLayout(metrics: LayoutMetrics): LayoutPattern {
       consistent,
     };
     result.spacing = spacing;
+  }
+
+  // gestalt — proximity: 그룹 간 평균 거리로 분류 (continuity는 LayoutMetrics에 flow 카운트 없음)
+  if (metrics.proximityGroups.length >= 2) {
+    const centroids = metrics.proximityGroups.map((g) => g.centroid);
+    let totalGap = 0;
+    let pairs = 0;
+    for (let i = 0; i < centroids.length; i++) {
+      for (let j = i + 1; j < centroids.length; j++) {
+        const dx = centroids[i]!.x - centroids[j]!.x;
+        const dy = centroids[i]!.y - centroids[j]!.y;
+        totalGap += Math.sqrt(dx * dx + dy * dy);
+        pairs++;
+      }
+    }
+    const avgGap = pairs > 0 ? totalGap / pairs : 0;
+    const proximity: GestaltPattern["proximity"] =
+      avgGap <= 16 ? "tight" : avgGap <= 64 ? "loose" : undefined;
+    if (proximity) result.gestalt = { proximity };
   }
 
   // proportions
