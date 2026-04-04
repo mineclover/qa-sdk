@@ -267,8 +267,8 @@ cold path (batch aggregation):
 | G-2 | **GPU compute shader PoC (WebGPU)** | ✅ 완료 | — | weighted-gpu: encode.wgsl, decode.wgsl, reduce.wgsl + GPUEncoder 클래스 |
 | G-3 | **FPGA 인터페이스 설계** | 낮 | 높 | FPGAAdapter 인터페이스 + threshold 기반 CPU/FPGA 분기 |
 | G-4 | **bitmask u64 최적화** | ✅ 완료 | — | weighted-wasm: popcountWasm, maskAndWasm, maskOrWasm, masksOverlapWasm (u64 단위) |
-| G-5 | **JS vs WASM 실측 벤치마크** | 중 | 낮 | batch 1K/10K/100K 기준 JS fallback vs WASM 성능 비교 측정 |
-| G-6 | **GPU vs CPU 실측 벤치마크** | 중 | 중 | batch 10K/100K 기준 WebGPU vs CPU 비교 (브라우저 환경) |
+| G-5 | **JS vs WASM 실측 벤치마크** | ✅ 완료 | — | weighted-wasm/js/bench.ts — batch 1K/10K/100K encode/decode/popcount/maskAnd |
+| G-6 | **GPU vs CPU 실측 벤치마크** | ✅ 완료 | — | weighted-gpu/src/bench.ts — batch 10K/100K encode/decode/reduce (WebGPU) |
 
 ---
 
