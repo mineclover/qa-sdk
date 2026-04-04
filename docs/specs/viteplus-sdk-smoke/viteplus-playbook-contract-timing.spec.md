@@ -4,7 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: experience
   svc: viteplus-sdk-smoke
   tags: [frontend, structural, testing]

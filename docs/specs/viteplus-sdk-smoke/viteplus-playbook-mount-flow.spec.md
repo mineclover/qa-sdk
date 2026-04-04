@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: experience
   svc: viteplus-sdk-smoke
   tags: [frontend, structural, testing]
