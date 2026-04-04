@@ -129,6 +129,10 @@ import {
   serviceMode,
   serviceAppList,
   serviceAppShow,
+  serviceCleanupPlan,
+  serviceCleanupDraft,
+  serviceCleanupActivate,
+  serviceCleanupExecute,
 } from './commands/service.js';
 import { cliDef } from './commands/def.js';
 import { prefixStamp, prefixDrift, prefixFind, prefixMigrate, prefixImpact } from './commands/prefix-stamp.js';
@@ -307,6 +311,10 @@ Usage:
   qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
   qa-sdk service app list [--json]     Application 목록
   qa-sdk service app show <id>         Application 상세 (서비스 포함)
+  qa-sdk service cleanup-plan <serviceId> [--manifest-version v] [--json]
+  qa-sdk service cleanup-draft <serviceId> --new-version <v> [--manifest-version v] [--replace kind=version]
+  qa-sdk service cleanup-activate <serviceId> --manifest-version <v>
+  qa-sdk service cleanup-execute <serviceId> --new-version <v> [--manifest-version v] [--replace kind=version]
 
   qa-sdk ingest health [--env dev|prod|staging]  수집 서버 헬스체크
   qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송
@@ -992,6 +1000,18 @@ export async function main(argv = process.argv.slice(2)) {
     case 'service owners':
       await serviceOwners(sub.rest);
       return;
+    case 'service cleanup-plan':
+      await serviceCleanupPlan(sub.rest);
+      return;
+    case 'service cleanup-draft':
+      await serviceCleanupDraft(sub.rest);
+      return;
+    case 'service cleanup-activate':
+      await serviceCleanupActivate(sub.rest);
+      return;
+    case 'service cleanup-execute':
+      await serviceCleanupExecute(sub.rest);
+      return;
     case 'service app list':
       serviceAppList(sub.rest);
       return;
@@ -1467,6 +1487,10 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'service health',
     'service owners',
     'service endpoints',
+    'service cleanup-plan',
+    'service cleanup-draft',
+    'service cleanup-activate',
+    'service cleanup-execute',
     'ingest health',
     'ingest send',
     'ingest recent',

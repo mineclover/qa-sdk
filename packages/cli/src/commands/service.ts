@@ -37,6 +37,70 @@ interface ServiceRecord {
   consumedPrefixes?: string[];
 }
 
+interface CleanupWarning {
+  code: string;
+  severity: string;
+  kind: string;
+  version: string;
+  message?: string;
+}
+
+interface CleanupPlanItem {
+  kind: string;
+  currentVersion: string;
+  candidateVersions: string[];
+  suggestedVersion?: string;
+  status: "replaceable" | "ambiguous" | "blocked";
+}
+
+interface CleanupPlanResponse {
+  serviceId: string;
+  manifestVersion: string;
+  ready: boolean;
+  items: CleanupPlanItem[];
+  warnings: CleanupWarning[];
+}
+
+function getOption(args: string[], name: string): string | undefined {
+  const idx = args.indexOf(name);
+  return idx >= 0 ? args[idx + 1] : undefined;
+}
+
+function getPositional(args: string[]): string[] {
+  const result: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index]!;
+    if (value.startsWith("--")) {
+      index += 1;
+      continue;
+    }
+    result.push(value);
+  }
+  return result;
+}
+
+function parseReplacementArgs(args: string[]): Partial<Record<"service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding", string>> {
+  const replacements: Partial<Record<"service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding", string>> = {};
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== "--replace") continue;
+    const value = args[index + 1];
+    if (!value) continue;
+    const [kind, version] = value.split("=", 2);
+    if (!kind || !version) continue;
+    if (
+      kind === "service-unit"
+      || kind === "ownership"
+      || kind === "exposure"
+      || kind === "runtime-address"
+      || kind === "deployment-binding"
+    ) {
+      replacements[kind] = version;
+    }
+    index += 1;
+  }
+  return replacements;
+}
+
 // ── list ──────────────────────────────────────────
 
 export async function serviceList(args: string[]): Promise<void> {
@@ -277,6 +341,151 @@ export async function serviceEndpoints(args: string[]): Promise<void> {
   } catch (err: unknown) {
     console.error(`  조회 실패: ${errorMessage(err)}`);
   }
+}
+
+// ── cleanup-plan ──────────────────────────────────
+
+export async function serviceCleanupPlan(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const jsonOutput = args.includes("--json");
+  const serviceId = getPositional(args)[0];
+  if (!serviceId) {
+    console.error("Usage: qa-sdk service cleanup-plan <serviceId> [--manifest-version <ver>] [--json]");
+    return;
+  }
+
+  const manifestVersion = getOption(args, "--manifest-version");
+  const query = manifestVersion ? `?manifestVersion=${encodeURIComponent(manifestVersion)}` : "";
+
+  try {
+    const data = await fetchJson<CleanupPlanResponse>(`${registryUrl}/resolve/services/${serviceId}/cleanup-plan${query}`);
+    if (jsonOutput) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
+    console.log(`\n══ Cleanup Plan: ${data.serviceId} (${data.manifestVersion}) ══`);
+    console.log(`  ready: ${data.ready ? "yes" : "no"}`);
+    console.log(`  warnings: ${data.warnings.length}`);
+    if (data.items.length === 0) {
+      console.log("  deprecated 참조 없음");
+      return;
+    }
+    console.log(`\n  ${"KIND".padEnd(18)} ${"CURRENT".padEnd(16)} ${"STATUS".padEnd(12)} CANDIDATES`);
+    console.log("  " + "─".repeat(80));
+    for (const item of data.items) {
+      const candidates = item.candidateVersions.join(", ") || "-";
+      const label = item.suggestedVersion ? `${item.status} -> ${item.suggestedVersion}` : item.status;
+      console.log(`  ${item.kind.padEnd(18)} ${item.currentVersion.padEnd(16)} ${label.padEnd(12)} ${candidates}`);
+    }
+  } catch (err) {
+    console.error(`  cleanup plan 조회 실패: ${errorMessage(err)}`);
+  }
+}
+
+// ── cleanup-draft ────────────────────────────────
+
+export async function serviceCleanupDraft(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const jsonOutput = args.includes("--json");
+  const serviceId = getPositional(args)[0];
+  const newManifestVersion = getOption(args, "--new-version");
+
+  if (!serviceId || !newManifestVersion) {
+    console.error("Usage: qa-sdk service cleanup-draft <serviceId> --new-version <ver> [--manifest-version <ver>] [--replace kind=version]");
+    return;
+  }
+
+  const sourceManifestVersion = getOption(args, "--manifest-version");
+  const replacements = parseReplacementArgs(args);
+
+  try {
+    const resp = await fetch(`${registryUrl}/resolve/services/${serviceId}/cleanup-draft`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ...(sourceManifestVersion ? { sourceManifestVersion } : {}),
+        newManifestVersion,
+        ...(Object.keys(replacements).length > 0 ? { replacements } : {}),
+      }),
+    });
+    if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+    const data = await resp.json() as {
+      sourceManifestVersion: string;
+      manifestVersion: string;
+      replacements: Record<string, string | undefined>;
+    };
+
+    if (jsonOutput) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
+    console.log(`\ncleanup draft created`);
+    console.log(`  source: ${data.sourceManifestVersion}`);
+    console.log(`  draft:  ${data.manifestVersion}`);
+    console.log(`  replacements:`);
+    for (const [kind, version] of Object.entries(data.replacements)) {
+      if (version) console.log(`    ${kind}: ${version}`);
+    }
+  } catch (err) {
+    console.error(`  cleanup draft 생성 실패: ${errorMessage(err)}`);
+  }
+}
+
+// ── cleanup-activate ─────────────────────────────
+
+export async function serviceCleanupActivate(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const jsonOutput = args.includes("--json");
+  const serviceId = getPositional(args)[0];
+  const manifestVersion = getOption(args, "--manifest-version");
+
+  if (!serviceId || !manifestVersion) {
+    console.error("Usage: qa-sdk service cleanup-activate <serviceId> --manifest-version <ver>");
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${registryUrl}/resolve/services/${serviceId}/cleanup-activate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ manifestVersion }),
+    });
+    if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+    const data = await resp.json() as {
+      previousActiveManifestVersion: string | null;
+      activatedManifestVersion: string;
+      state: string;
+    };
+
+    if (jsonOutput) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
+    console.log(`\ncleanup activation complete`);
+    console.log(`  previous active: ${data.previousActiveManifestVersion ?? "-"}`);
+    console.log(`  activated:       ${data.activatedManifestVersion}`);
+    console.log(`  state:           ${data.state}`);
+  } catch (err) {
+    console.error(`  cleanup activation 실패: ${errorMessage(err)}`);
+  }
+}
+
+// ── cleanup-execute ──────────────────────────────
+
+export async function serviceCleanupExecute(args: string[]): Promise<void> {
+  const serviceId = getPositional(args)[0];
+  const newManifestVersion = getOption(args, "--new-version");
+  if (!serviceId || !newManifestVersion) {
+    console.error("Usage: qa-sdk service cleanup-execute <serviceId> --new-version <ver> [--manifest-version <ver>] [--replace kind=version]");
+    return;
+  }
+
+  await serviceCleanupPlan([serviceId, ...args.filter(arg => arg !== serviceId)]);
+  await serviceCleanupDraft([serviceId, ...args.filter(arg => arg !== serviceId)]);
+  await serviceCleanupActivate([serviceId, "--manifest-version", newManifestVersion, ...args.filter(arg => arg !== serviceId && arg !== "--new-version" && arg !== newManifestVersion)]);
 }
 
 // ── applications ────────────────────────────────
