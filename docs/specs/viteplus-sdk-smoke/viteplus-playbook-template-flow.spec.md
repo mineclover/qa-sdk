@@ -31,6 +31,19 @@ def:
 
 공통 template 위에 새 Vite+ feature를 추가할 때 어떤 순서로 draft, validation, handlers, docs, tests를 복제하고 조정하는지 절차 흐름으로 고정한다.
 
+## 정의 ^defines
+
+- **template 확장 6단계 프로세스** — domain 정의 → context 연결 → view 작성 → handler logging 연결 → 테스트 추가 → 문서 등록
+
+## 소비 ^consumes
+
+- shared runtime/store/dom helper (`viteplus-playbook-template-implementation`)
+- boundary 단위/결합 규칙 (`viteplus-playbook-boundary-relation`)
+- provider composition order (`viteplus-playbook-provider-stack`)
+- SDK 온보딩 가이드 (`sdk-vite-onboarding-guide`)
+- scope 분류 기준 (`scope-classification-guide`)
+- definition 관리 체계 (`definition-management`)
+
 ## 구성 ^overview
 
 - 새 feature는 먼저 domain draft와 validation을 정의한다.

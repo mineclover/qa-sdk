@@ -23,9 +23,19 @@ def:
 
 playbook feature가 공통으로 가지는 프론트엔드 상태 모델을 정의해, context 분리와 spec boundary 분리가 같은 상태 좌표 위에서 읽히도록 만든다.
 
+## 정의 ^defines
+
+- **playbook state shape** — 8개 공통 슬롯: `draft`, `validationIssues`, `result`, `status`, `activity`, `debugRevision`, `submissionError`, `lastSubmittedAt`
+- **status 전이 규칙** — `idle → editing → invalid|submitting → success|error → idle` 순환
+
+## 소비 ^consumes
+
+- `playbookStateMachine` — 공통 상태 머신 정의 (`viteplus-playbook-template-implementation`)
+- `playbookStore` — store/subscribe/update helper (`viteplus-playbook-template-implementation`)
+- `trace-context` — session/trace 경계 (`trace-context-spec`)
+
 ## 구성 ^overview
 
-- 공통 state slot은 `draft`, `validationIssues`, `result`, `status`, `activity`, `debugRevision`, `submissionError`, `lastSubmittedAt` 이다.
 - `status`는 shared playbook state machine의 `idle/editing/invalid/submitting/success/error`를 따른다.
 - `activity`와 `debugRevision`은 UI에 보이는 값이면서 logging flush와 함께 변하는 app state다.
 

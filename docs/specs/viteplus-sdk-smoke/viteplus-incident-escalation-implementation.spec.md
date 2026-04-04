@@ -35,6 +35,8 @@ def:
 - `IncidentEscalationContexts` — shared store/ref/persist helper를 조합하는 app-local context
 - `business/*` — severity validation, urgency score, escalation route 계산
 - `handlers/*` — invalid focus, reopen, submit, reset, logging flush orchestration
+- `actions/*` — DOM 이벤트에서 handler 호출로 바꾸는 adapter
+- `hooks/getIncidentEscalationData` — 화면용 view-model 조립 (urgency/route/debug panel)
 - `views/IncidentEscalationView` — shared DOM helper로 렌더링하는 incident UI
 
 ## 소비 ^consumes

@@ -25,6 +25,17 @@ def:
 
 컨텍스트 바운더리 자체와 컨텍스트 간 결합을 어떤 문서 단위와 링크 타입으로 표현할지 표준화한다.
 
+## 정의 ^defines
+
+- **boundary 단위 5종** — page root, qa-bridge facade, feature context, handlers/actions, view
+- **결합 표현 규칙** — contains(묶음/소속), depends_on(의존), constrains(순서 강제), refines(상세화) 사용 기준
+- **boundary 조회 표준** — 구조 조회(purpose/overview), 결합 조회(direct links), 세부 조회(leaf 문서) 3단계
+
+## 소비 ^consumes
+
+- `LinkType` 규칙 — contains/depends_on/constrains/refines (`definition-mgmt-graph-links`)
+- `topdown/assemble` — boundary overview 조립 패턴 (`definition-assembly`)
+
 ## 구성 ^overview
 
 - boundary는 “같은 최신 상태/refs/side effect 경계를 공유하는 단위”로 본다.

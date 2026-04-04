@@ -31,6 +31,12 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 - handler orchestration 테스트로 severity 기반 validation, submit success, reopen, reset을 확인한다.
 - build/test 명령으로 Vite+ 번들 환경까지 함께 확인한다.
 
+## 전제 ^preconditions
+
+- `packages/viteplus-sdk-smoke/src/qa-bridge.ts`가 `NoopTransport` debug envelope를 제공한다.
+- incident escalation feature는 `incident_escalation_*` 이벤트와 `incident_escalation_score` 메트릭을 기록한다.
+- build는 `tsc && vp build` 기준으로 통과해야 한다.
+
 ## 스텝 ^steps
 
 1. 빈 incident draft로 submit을 실행한다.
@@ -46,3 +52,14 @@ incident escalation feature가 canonical template 위에서 invalid focus, succe
 - success 이후 draft 수정 시 상태가 `editing`으로 복귀한다.
 - reset 시 draft, validation, result, status가 baseline으로 복원된다.
 - qa-sdk debug envelope에 `incident_escalation_*` 이벤트와 `incident_escalation_score` 메트릭이 남는다.
+
+## 변형 ^variants
+
+### V1: severity별 필수 필드 분기
+
+- `severity=sev1`이면 `impactScope`와 `mitigationPlan`이 필수. 미입력 시 해당 field error가 추가된다.
+- `severity=sev3`이면 `impactScope`만 필수. `mitigationPlan`은 선택.
+
+### V2: async submitter 실패
+
+- persist adapter가 예외를 던지면 상태가 `error`로 전이되고 `incident_escalation_submit_failed` 이벤트가 남는다.

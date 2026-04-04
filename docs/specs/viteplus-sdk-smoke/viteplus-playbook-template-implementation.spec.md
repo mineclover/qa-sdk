@@ -33,6 +33,11 @@ canonical review와 incident escalation 두 feature가 함께 재사용하는 �
 - `shared/runtime/playbookHandlers.ts` — activity append, field focus, bridge flush helper
 - `shared/views/playbookDom.ts` — input/select/textarea 렌더링과 active-field 복원 helper
 
+## 소비 ^consumes
+
+- `@qa-sdk/sdk` — NoopTransport, logging facade (`sdk-usage-guide`)
+- `browser-monitor` — createQaMonitorAsync, emitWithCoords (`browser-monitor-operations`)
+
 ## 구성 ^overview
 
 - template는 코드 재사용 단위이므로 `feature/func_def`가 맞다.

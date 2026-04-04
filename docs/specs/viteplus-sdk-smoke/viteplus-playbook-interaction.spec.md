@@ -23,12 +23,22 @@ def:
 
 invalid focus 이동, submit 차단, success 이후 reopen, reset 복원처럼 사용자 입력에 대한 반응 규칙을 interaction 문서로 분리한다.
 
+## 정의 ^defines
+
+- **invalid focus** — validation failure 시 first invalid field로 focus 이동
+- **submit feedback** — submitting 동안 버튼 label 변경 + 비활성화
+- **reopen** — success 이후 draft 변경 시 `editing` 복귀 + stale result 제거
+- **reset** — 시각 상태와 runtime state 동시 초기화
+- **debug surface** — flush 이후 recent records/latest envelope UI 반영
+
+## 소비 ^consumes
+
+- `playbook state shape` — status 전이 기반 반응 (`viteplus-playbook-app-state`)
+- `playbookDom` — input/select/textarea 렌더링 + active-field 복원 (`viteplus-playbook-template-implementation`)
+
 ## 구성 ^overview
 
 - interaction은 view가 렌더링하고 handler가 완성한다.
-- invalid submit 시 첫 번째 문제 field로 focus가 이동해야 한다.
-- submitting 동안 submit 버튼은 비활성화되고 label이 바뀐다.
-- success 이후 field를 수정하면 stale result를 지우고 `editing`으로 복귀한다.
 - reset은 입력값뿐 아니라 validation/result/status까지 baseline으로 돌린다.
 
 ## interaction 규칙

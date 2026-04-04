@@ -11,8 +11,6 @@ def:
   links:
     - target: viteplus-sdk-smoke-system
       type: refines
-    - target: viteplus-playbook-template-flow
-      type: traces_to
     - target: viteplus-playbook-template-implementation
       type: depends_on
 ---
@@ -23,10 +21,20 @@ def:
 
 context-action의 provider 선언 순서가 의미를 가지는 구조를 Vite+ canonical example에 맞는 조립 순서로 고정한다.
 
+## 정의 ^defines
+
+- **provider composition order** — Page Root → qa-bridge → feature context → handlers/actions → view render 의 5단계 조립 순서 규칙
+
+## 소비 ^consumes
+
+- `qa-bridge` facade — session/trace/logging 경계 (`viteplus-playbook-template-implementation`)
+- `playbookStore` / `playbookPersist` — feature context의 store/refs (`viteplus-playbook-template-implementation`)
+- `playbookHandlers` — handler/action binding (`viteplus-playbook-template-implementation`)
+- `playbookDom` — view 렌더링 helper (`viteplus-playbook-template-implementation`)
+
 ## 구성 ^overview
 
 - 이 문서는 React provider 자체를 기술하는 것이 아니라, 같은 의미의 composition order를 정의한다.
-- 순서는 `qa-bridge session -> feature context(store/refs/persist) -> handlers/actions binding -> view render` 이다.
 - 상위가 하위를 감싸는 순서가 깨지면 최신 상태 접근, focus 이동, logging flush가 어긋난다.
 
 ## provider/composition 순서
@@ -42,7 +50,7 @@ context-action의 provider 선언 순서가 의미를 가지는 구조를 Vite+ 
 5. **view render**
    입력 전달과 상태 표현만 수행한다.
 
-## 순서 제약 ^constraint
+## 순서 제약
 
 - `qa-bridge`가 없으면 handler가 logging side effect를 수행할 수 없다.
 - `feature context`가 없으면 handler와 view가 같은 state/ref를 공유할 수 없다.
