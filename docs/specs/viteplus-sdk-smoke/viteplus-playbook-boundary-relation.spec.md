@@ -28,11 +28,13 @@ def:
 ## 정의 ^defines
 
 - **boundary 단위 5종** — page root, qa-bridge facade, feature context, handlers/actions, view
+- **boundary = scope** — 각 boundary는 계약을 소유하는 scope. contract descent 원칙에 따라 상위→하위 하향
 - **결합 표현 규칙** — contains(묶음/소속), depends_on(의존), constrains(순서 강제), refines(상세화) 사용 기준
 - **boundary 조회 표준** — 구조 조회(purpose/overview), 결합 조회(direct links), 세부 조회(leaf 문서) 3단계
 
 ## 소비 ^consumes
 
+- `ScopeContract` / `ScopeNesting` — boundary를 scope로 모델링 (`@qa-sdk/core`)
 - `LinkType` 규칙 — contains/depends_on/constrains/refines (`definition-mgmt-graph-links`)
 - `topdown/assemble` — boundary overview 조립 패턴 (`definition-assembly`)
 

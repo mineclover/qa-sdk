@@ -44,6 +44,40 @@ def:
 
 `packages/viteplus-sdk-smoke`를 단순 import/build smoke를 넘어, qa-sdk logging과 implementation-convention 책임 분리를 함께 보여주는 canonical example 패키지로 고정한다.
 
+## 방법 ^method
+
+5개 boundary를 **contract descent 순서**로 중첩하고, 각 scope가 하위에 계약을 제공한다.
+
+1. **qa-bridge**가 logging-session 계약을 제공하여 하위 전체가 logging 가능
+2. **feature-context**가 state shape + persist 계약을 제공하여 handler/view가 공유 상태 접근 가능
+3. **handlers/actions**가 submission-handlers 계약을 제공하여 view가 사용자 입력 처리 가능
+4. **view**가 모든 상위 계약을 소비하여 DOM으로 표현
+
+handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→생산)이 적용된다.
+`validateScopeNesting()`으로 provider 순서의 계약 하향 정합성을 검증한다.
+
+## 정의 ^defines
+
+- **context-action 패턴** — scope nesting 기반 UI 아키텍처. contract descent의 런타임 구현체
+- **playbook template** — 두 feature가 공유하는 runtime/store/dom/persist 유틸 세트
+
+## 소비 ^consumes
+
+- `@qa-sdk/sdk` — logging facade, NoopTransport
+- `@qa-sdk/core` — validateScopeNesting, PipeSpec simulate (handlers 검증)
+- `browser-monitor` — createQaMonitorAsync, emitWithCoords
+
+## 위임 ^delegates
+
+- **template-implementation** → 공통 runtime/store/dom helper 구현
+- **template-flow** → 새 feature 확장 절차
+- **provider-stack** → scope nesting 순서 규칙
+- **boundary-relation** → boundary 단위/결합/조회 표준
+- **app-state** → 공통 상태 모델
+- **interaction** → UI 반응 규칙 5종
+- **canonical-review-\*** → 첫 번째 feature (구현 + 검증)
+- **incident-escalation-\*** → 두 번째 feature (구현 + 검증, 구조 대칭)
+
 ## 구성 ^overview
 
 - `smoke.ts`와 `qa-bridge.ts`는 여전히 최소 소비처와 복사 가능한 브리지 템플릿 역할을 맡는다.

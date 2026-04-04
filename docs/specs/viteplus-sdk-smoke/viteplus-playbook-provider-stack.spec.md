@@ -13,6 +13,8 @@ def:
       type: refines
     - target: viteplus-playbook-template-implementation
       type: depends_on
+    - target: ms-concept-contract-descent
+      type: implements
 ---
 
 # Vite+ Playbook Provider Stack
@@ -24,9 +26,11 @@ context-action의 provider 선언 순서가 의미를 가지는 구조를 Vite+ 
 ## 정의 ^defines
 
 - **provider composition order** — Page Root → qa-bridge → feature context → handlers/actions → view render 의 5단계 조립 순서 규칙
+- **scope nesting = contract descent 구현** — 각 scope가 계약을 소유하고, 상위→하위로 하향 전파. 순서 위반 시 하위가 소비할 계약이 부재
 
 ## 소비 ^consumes
 
+- `validateScopeNesting` — 계약 하향 정합성 검증 (`@qa-sdk/core`)
 - `qa-bridge` facade — session/trace/logging 경계 (`viteplus-playbook-template-implementation`)
 - `playbookStore` / `playbookPersist` — feature context의 store/refs (`viteplus-playbook-template-implementation`)
 - `playbookHandlers` — handler/action binding (`viteplus-playbook-template-implementation`)
