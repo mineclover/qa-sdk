@@ -61,8 +61,24 @@ export type { SpecGraph, SpecNode, SpecEdgeType, SpecEdge, RuntimeGraph, Runtime
 export type { Verdict, ConstraintResult, StepMatch, MatchResult, VerdictReport, LatencyViolation, OrderingViolation } from "./types/verdict.js";
 export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason } from "./types/path-observation.js";
 export type { ServiceStatus, ServiceEntry, EventRecordKind, EventStatus, EventCategory, EventLifecycleStage, EventEntry } from "./types/registry.js";
-export type { ColumnAxisMapping, DataObjectBinding, BindingValidation, LineageChainValidation, BoundDataObject } from "./data-object/index.js";
-export { BindingRegistry, validateBindings, validateLineageChain } from "./data-object/index.js";
+export type {
+  ColumnAxisMapping,
+  DataObjectBinding,
+  BindingValidation,
+  LineageChainValidation,
+  BoundDataObject,
+  FacetCodeRef,
+  FacetCodeMapping,
+  FacetCodeStore,
+  FacetResolution,
+} from "./data-object/index.js";
+export {
+  BindingRegistry,
+  validateBindings,
+  validateLineageChain,
+  FacetCodeRegistry,
+  resolveFacetMappings,
+} from "./data-object/index.js";
 
 // ── Schemas ─────────────────────────────────────────────
 
@@ -180,6 +196,17 @@ export {
   type TestCase, type TestTarget, type TestExpectation, type TestSuite, type TestResult,
   type FacetQualityMetrics, type PipeQualityMetrics,
   buildTestAddress, parseTestAddress, TestRegistry,
+} from "./pipe/index.js";
+
+// ── Scope Nesting — contract descent 기반 스코프 중첩 검증 ──
+export type {
+  ContractRef, ScopeContract, ScopeNesting,
+  NestingIssueSeverity, NestingIssue, NestingIssueCode,
+  NestingValidation, DescentPath,
+} from "./scope-nesting.js";
+export { validateScopeNesting, checkSwapSafety } from "./scope-nesting.js";
+
+export {
   // mermaid
   pipeGraphToMermaid, zoomViewToMermaid, type MermaidOptions,
   // svg primitives
