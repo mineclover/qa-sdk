@@ -82,8 +82,22 @@ pipe-svg는 core에 유지 (기존 소비자 무변경), scope-nesting 시각화
 **장점**: 단계별 안전, 각 단계에서 테스트 통과 확인 가능
 **단점**: 중간 상태에서 re-export 관리 필요
 
-## 결정 필요
+## 결정 완료
 
-- A/B/C 중 방향 선택
-- 패키지명: `viz-core` vs `viz-render` vs `viz-toolkit`
-- pipe-svg 이동 시점: scope-nesting 시각화와 동시 vs 후속
+- **C안 채택** (점진적 B→A)
+- **패키지명**: `viz-core`
+- **1단계 완료** (2026-04-05): primitives + shapes + pipe-mermaid + scope-mermaid + scope-d3 → viz-core 복사. core 원본 유지.
+
+## 잔여 작업
+
+- [ ] 2단계: core 원본을 `viz-core` re-export로 전환 (하위 호환)
+  - `core/pipe/pipe-svg-primitives.ts` → `export * from "viz-core/primitives"`
+  - `core/pipe/pipe-svg-shapes.ts` → `export * from "viz-core/shapes"`
+  - `core/pipe/pipe-mermaid.ts` → `export * from "viz-core/pipe-mermaid"`
+  - `core/scope-nesting-mermaid.ts` → `export * from "viz-core/scope-mermaid"`
+  - `core/scope-nesting-d3.ts` → `export * from "viz-core/scope-d3"`
+- [ ] 3단계: 소비자 import 경로 변경 (viz-web, registry-ui → viz-core)
+- [ ] 4단계: core re-export 제거, core index.ts에서 시각화 export 삭제
+- [ ] pipe-svg.ts (그래프 렌더러) 이동 — pipe-zoom 의존 정리 필요
+- [ ] scope-nesting-timeline.ts 신규 구현 → viz-core에 직접 생성
+- [ ] viz-web/scope-nesting-preview 페이지 → viz-core + canvas-viewport 통합
