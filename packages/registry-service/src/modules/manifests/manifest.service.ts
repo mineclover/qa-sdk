@@ -4,12 +4,15 @@ import type { PrefixLifecycleState, ManifestLifecycleState, ServiceVersionManife
 import { AppError } from "../../lib/errors.js";
 import type { ServiceComponentVersionStore } from "../../stores/service-component-version-store.js";
 import { ServiceComponentStore } from "../services/service-component-store.js";
+import type { ServiceOwnershipSpec } from "../services/service.types.js";
 import { SERVICE_COMPONENT_VERSION_STORE } from "../services/service-component.service.js";
 import {
+  createManifestAssemblyContract,
   normalizeAssembleManifestBody,
   toServiceManifestOptions,
   validateAssembleManifestBody,
   type AssembleManifestBody,
+  type ManifestAssemblyContract,
   type ServiceManifestMetadata,
 } from "./manifest-assembly.js";
 
@@ -23,6 +26,33 @@ interface ManifestRegistryCompat {
     changelog?: string,
     options?: ServiceManifestMetadata,
   ): ServiceVersionManifest;
+}
+
+export interface ManifestAssemblyDiagnostic {
+  readonly level: "error" | "warning";
+  readonly code:
+    | "INVALID_INPUT"
+    | "COMPONENT_NOT_FOUND"
+    | "COMPONENT_NOT_PUBLISHED"
+    | "OWNED_PREFIX_NOT_PINNED"
+    | "PREFIX_VERSION_NOT_FOUND";
+  readonly message: string;
+  readonly target?: string;
+  readonly details?: Record<string, unknown>;
+}
+
+export interface ManifestAssemblyValidationResult {
+  readonly serviceId: string;
+  readonly manifestVersion: string;
+  readonly ready: boolean;
+  readonly diagnostics: readonly ManifestAssemblyDiagnostic[];
+  readonly qualityGate: {
+    readonly id: "manifest-assembly-compatibility";
+    readonly passed: boolean;
+    readonly errorCount: number;
+    readonly warningCount: number;
+  };
+  readonly contract: ManifestAssemblyContract;
 }
 
 @Injectable()
@@ -89,7 +119,17 @@ export class ManifestService {
   async assembleManifest(body: AssembleManifestBody, catalogId = "demo") {
     const normalized = normalizeAssembleManifestBody(body);
     validateAssembleManifestBody(normalized);
-    await this.validateReferencedComponents(catalogId, normalized);
+    const validation = await this.validateManifestAssembly(normalized, catalogId);
+    if (!validation.ready) {
+      throw new AppError(
+        "ASSEMBLY_VALIDATION_FAILED",
+        validation.diagnostics
+          .filter((diagnostic) => diagnostic.level === "error")
+          .map((diagnostic) => diagnostic.message)
+          .join("; "),
+        409,
+      );
+    }
     const runtimeAddress = await this.resolveRuntimeAddress(catalogId, normalized);
     return this.createManifest(
       normalized.serviceId,
@@ -101,6 +141,38 @@ export class ManifestService {
         ...(runtimeAddress ? { runtimeAddress } : {}),
       }),
     );
+  }
+
+  async validateManifestAssembly(body: AssembleManifestBody, catalogId = "demo"): Promise<ManifestAssemblyValidationResult> {
+    const normalized = normalizeAssembleManifestBody(body);
+    const diagnostics: ManifestAssemblyDiagnostic[] = [];
+
+    try {
+      validateAssembleManifestBody(normalized);
+    } catch (error) {
+      diagnostics.push(this.toInputDiagnostic(error));
+    }
+
+    await this.validatePrefixPins(normalized, diagnostics);
+    await this.validateReferencedComponents(catalogId, normalized, diagnostics);
+    await this.validateOwnershipCoverage(catalogId, normalized, diagnostics);
+
+    const errorCount = diagnostics.filter((diagnostic) => diagnostic.level === "error").length;
+    const warningCount = diagnostics.filter((diagnostic) => diagnostic.level === "warning").length;
+
+    return {
+      serviceId: normalized.serviceId,
+      manifestVersion: normalized.manifestVersion,
+      ready: errorCount === 0,
+      diagnostics,
+      qualityGate: {
+        id: "manifest-assembly-compatibility",
+        passed: errorCount === 0,
+        errorCount,
+        warningCount,
+      },
+      contract: createManifestAssemblyContract(normalized),
+    };
   }
 
   listManifests(serviceId: string) {
@@ -150,24 +222,28 @@ export class ManifestService {
     }
   }
 
-  private async validateReferencedComponents(catalogId: string, body: AssembleManifestBody) {
+  private async validateReferencedComponents(
+    catalogId: string,
+    body: AssembleManifestBody,
+    diagnostics?: ManifestAssemblyDiagnostic[],
+  ) {
     if (!this.components) {
       return;
     }
     if (body.serviceUnitVersion) {
-      await this.requirePublished(catalogId, "service-unit", body.serviceId, body.serviceUnitVersion);
+      await this.requirePublished(catalogId, "service-unit", body.serviceId, body.serviceUnitVersion, diagnostics);
     }
     if (body.ownershipVersion) {
-      await this.requirePublished(catalogId, "ownership", body.serviceId, body.ownershipVersion);
+      await this.requirePublished(catalogId, "ownership", body.serviceId, body.ownershipVersion, diagnostics);
     }
     if (body.exposureVersion) {
-      await this.requirePublished(catalogId, "exposure", body.serviceId, body.exposureVersion);
+      await this.requirePublished(catalogId, "exposure", body.serviceId, body.exposureVersion, diagnostics);
     }
     if (body.deploymentVersion) {
-      await this.requirePublished(catalogId, "deployment-binding", body.serviceId, body.deploymentVersion);
+      await this.requirePublished(catalogId, "deployment-binding", body.serviceId, body.deploymentVersion, diagnostics);
     }
     if (body.runtimeAddressVersion) {
-      await this.requirePublished(catalogId, "runtime-address", body.serviceId, body.runtimeAddressVersion);
+      await this.requirePublished(catalogId, "runtime-address", body.serviceId, body.runtimeAddressVersion, diagnostics);
     }
   }
 
@@ -187,16 +263,124 @@ export class ManifestService {
     kind: "service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding",
     serviceId: string,
     version: string,
+    diagnostics?: ManifestAssemblyDiagnostic[],
   ) {
-    const record = await this.components!.require(catalogId, kind, serviceId, version);
-    if (record.state !== "published") {
-      throw new AppError(
-        "INVALID_TRANSITION",
-        `Component must be published before assembly: ${kind}/${serviceId}/${version}`,
-        409,
-      );
+    try {
+      const record = await this.components!.require(catalogId, kind, serviceId, version);
+      if (record.state !== "published") {
+        const diagnostic: ManifestAssemblyDiagnostic = {
+          level: "error",
+          code: "COMPONENT_NOT_PUBLISHED",
+          target: `${kind}:${serviceId}:${version}`,
+          message: `Component must be published before assembly: ${kind}/${serviceId}/${version}`,
+          details: { kind, serviceId, version, state: record.state },
+        };
+        if (diagnostics) {
+          diagnostics.push(diagnostic);
+          return null;
+        }
+        throw new AppError("INVALID_TRANSITION", diagnostic.message, 409);
+      }
+      return record;
+    } catch (error) {
+      if (diagnostics) {
+        diagnostics.push(this.toComponentDiagnostic(error, kind, serviceId, version));
+        return null;
+      }
+      throw error;
     }
-    return record;
+  }
+
+  private async validatePrefixPins(
+    body: AssembleManifestBody,
+    diagnostics: ManifestAssemblyDiagnostic[],
+  ) {
+    for (const [prefixId, version] of Object.entries(body.prefixes)) {
+      try {
+        this.registry.getPrefixRecord(prefixId, version);
+      } catch {
+        diagnostics.push({
+          level: "error",
+          code: "PREFIX_VERSION_NOT_FOUND",
+          target: `${prefixId}:${version}`,
+          message: `Pinned prefix not found: ${prefixId}:${version}`,
+          details: { prefixId, version },
+        });
+      }
+    }
+  }
+
+  private async validateOwnershipCoverage(
+    catalogId: string,
+    body: AssembleManifestBody,
+    diagnostics: ManifestAssemblyDiagnostic[],
+  ) {
+    if (!this.components || !body.ownershipVersion) {
+      return;
+    }
+
+    let record: Awaited<ReturnType<ServiceComponentStore["require"]>> | null = null;
+    try {
+      record = await this.components.require(catalogId, "ownership", body.serviceId, body.ownershipVersion);
+    } catch {
+      return;
+    }
+    if (record.state !== "published") {
+      return;
+    }
+
+    const ownership = record.value as ServiceOwnershipSpec;
+    const missingPrefixes = ownership.ownedPrefixes.filter((prefixId) => !(prefixId in body.prefixes));
+    if (missingPrefixes.length === 0) {
+      return;
+    }
+
+    diagnostics.push({
+      level: "error",
+      code: "OWNED_PREFIX_NOT_PINNED",
+      target: `ownership:${body.serviceId}:${body.ownershipVersion}`,
+      message: `Ownership-owned prefixes must be pinned in manifest: ${missingPrefixes.join(", ")}`,
+      details: {
+        serviceId: body.serviceId,
+        ownershipVersion: body.ownershipVersion,
+        missingPrefixes,
+      },
+    });
+  }
+
+  private toInputDiagnostic(error: unknown): ManifestAssemblyDiagnostic {
+    const appError = mapError(error);
+    return {
+      level: "error",
+      code: "INVALID_INPUT",
+      message: appError.message,
+      details: { statusCode: appError.statusCode },
+    };
+  }
+
+  private toComponentDiagnostic(
+    error: unknown,
+    kind: "service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding",
+    serviceId: string,
+    version: string,
+  ): ManifestAssemblyDiagnostic {
+    const appError = error instanceof AppError ? error : mapError(error);
+    if (appError.code === "NOT_FOUND") {
+      return {
+        level: "error",
+        code: "COMPONENT_NOT_FOUND",
+        target: `${kind}:${serviceId}:${version}`,
+        message: `Component not found for assembly: ${kind}/${serviceId}/${version}`,
+        details: { kind, serviceId, version },
+      };
+    }
+    return {
+      level: "error",
+      code: "COMPONENT_NOT_PUBLISHED",
+      target: `${kind}:${serviceId}:${version}`,
+      message: appError.message,
+      details: { kind, serviceId, version },
+    };
   }
 }
 

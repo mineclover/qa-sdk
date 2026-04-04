@@ -33,6 +33,15 @@ export class ServiceComponentController {
     return this.components.getAssemblyCandidates(catalogId ?? "demo", serviceId);
   }
 
+  @Get(":serviceId/ownership/topology")
+  getOwnershipTopologyAlignment(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("version") version?: string,
+  ) {
+    return this.components.getOwnershipTopologyAlignment(catalogId ?? "demo", serviceId, version);
+  }
+
   @Get(":serviceId/components/:kind/:version")
   get(
     @Param("serviceId") serviceId: string,
@@ -52,6 +61,21 @@ export class ServiceComponentController {
     @Query("catalog") catalogId?: string,
   ) {
     return this.components.upsert(catalogId ?? "demo", kind, serviceId, version, body);
+  }
+
+  @Post(":serviceId/runtime-addresses/sync")
+  syncRuntimeAddress(
+    @Param("serviceId") serviceId: string,
+    @Body() body: {
+      runtimeAddressVersion: string;
+      namespace: string;
+      name: string;
+      env: string;
+      region: string;
+    },
+    @Query("catalog") catalogId?: string,
+  ) {
+    return this.components.syncRuntimeAddress(catalogId ?? "demo", serviceId, body);
   }
 
   @Post(":serviceId/deployments/sync")

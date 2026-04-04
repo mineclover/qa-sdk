@@ -63,16 +63,19 @@ spec로 승격할 때는 하나의 큰 leaf로 두지 않고 index/module + leaf
 - `realization-service-control-plane.spec.md`
   - 역할: 전체 구조/조립 관계/contains 링크를 담는 index/module
 
-### leaf 후보
+### module/leaf 후보
 
 - `service-unit-spec.spec.md`
 - `service-ownership-spec.spec.md`
 - `service-exposure-spec.spec.md`
+- `service-control-plane-surface.spec.md`
 - `runtime-service-address.spec.md`
 - `deployment-address.spec.md`
 - `deployment-binding.spec.md`
 - `service-release-manifest.spec.md`
-- `service-manifest-assembly.spec.md`
+- `service-manifest-assembly.spec.md` (module)
+- `service-manifest-validation.spec.md`
+- `service-manifest-cleanup-lane.spec.md`
 
 ## 단계
 

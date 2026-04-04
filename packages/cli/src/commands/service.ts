@@ -61,6 +61,36 @@ interface CleanupPlanResponse {
   warnings: CleanupWarning[];
 }
 
+interface OwnershipTopologyResponse {
+  serviceId: string;
+  topology: {
+    ownedPrefixes: string[];
+    consumedPrefixes: string[];
+  };
+  ownershipComponent: null | {
+    version: string;
+    state: string;
+    ownedPrefixes: string[];
+    consumedPrefixes: string[];
+  };
+  alignment: {
+    status: "aligned" | "drifted" | "topology-only";
+    ownedPrefixes: {
+      matching: string[];
+      onlyInComponent: string[];
+      onlyInTopology: string[];
+    };
+    consumedPrefixes: {
+      matching: string[];
+      onlyInComponent: string[];
+      onlyInTopology: string[];
+    };
+    conflictingOwners: Array<{ prefixId: string; topologyOwnerServiceId: string }>;
+    ownedPrefixConsumers: Array<{ prefixId: string; consumers: string[] }>;
+    consumedPrefixOwners: Array<{ prefixId: string; ownerServiceId: string | null }>;
+  };
+}
+
 function getOption(args: string[], name: string): string | undefined {
   const idx = args.indexOf(name);
   return idx >= 0 ? args[idx + 1] : undefined;
@@ -196,6 +226,56 @@ export async function serviceOwners(args: string[]): Promise<void> {
     }
   } catch (err: unknown) {
     console.error(`  조회 실패: ${errorMessage(err)}`);
+  }
+}
+
+// ── ownership-topology ───────────────────────────
+
+export async function serviceOwnershipTopology(args: string[]): Promise<void> {
+  const registryUrl = getRegistryUrl(args);
+  const jsonOutput = args.includes("--json");
+  const serviceId = getPositional(args)[0];
+  if (!serviceId) {
+    console.error("Usage: qa-sdk service ownership-topology <serviceId> [--version <ver>] [--json]");
+    return;
+  }
+
+  const version = getOption(args, "--version");
+  const query = version ? `?version=${encodeURIComponent(version)}` : "";
+
+  try {
+    const data = await fetchJson<OwnershipTopologyResponse>(`${registryUrl}/api/services/${serviceId}/ownership/topology${query}`);
+    if (jsonOutput) {
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
+    console.log(`\n══ Ownership Topology: ${data.serviceId} ══`);
+    console.log(`  status: ${data.alignment.status}`);
+    if (data.ownershipComponent) {
+      console.log(`  component: ${data.ownershipComponent.version} (${data.ownershipComponent.state})`);
+    } else {
+      console.log("  component: -");
+    }
+
+    console.log(`\n  owned`);
+    console.log(`    matching:          ${data.alignment.ownedPrefixes.matching.join(", ") || "-"}`);
+    console.log(`    only in component: ${data.alignment.ownedPrefixes.onlyInComponent.join(", ") || "-"}`);
+    console.log(`    only in topology:  ${data.alignment.ownedPrefixes.onlyInTopology.join(", ") || "-"}`);
+
+    console.log(`\n  consumed`);
+    console.log(`    matching:          ${data.alignment.consumedPrefixes.matching.join(", ") || "-"}`);
+    console.log(`    only in component: ${data.alignment.consumedPrefixes.onlyInComponent.join(", ") || "-"}`);
+    console.log(`    only in topology:  ${data.alignment.consumedPrefixes.onlyInTopology.join(", ") || "-"}`);
+
+    if (data.alignment.conflictingOwners.length > 0) {
+      console.log(`\n  conflicting owners`);
+      for (const item of data.alignment.conflictingOwners) {
+        console.log(`    ${item.prefixId}: ${item.topologyOwnerServiceId}`);
+      }
+    }
+  } catch (err) {
+    console.error(`  ownership topology 조회 실패: ${errorMessage(err)}`);
   }
 }
 

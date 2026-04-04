@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import type { SqlDriver } from "index-meta";
+import { AppModule } from "../../app.module.js";
 import { DATABASE } from "../../database.module.js";
 import { DatabaseModule } from "../../database.module.js";
 import { SqlConfigStore } from "../../stores/sql-config-store.js";
@@ -232,6 +233,97 @@ describe("ServiceModule (Nest)", () => {
     });
   });
 
+  it("GET /api/services/:serviceId/ownership/topology compares ownership component with topology declarations", async () => {
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
+    apps.push(app);
+    const { configStore } = createStores(app);
+
+    await configStore.set("demo", "services", JSON.stringify([
+      {
+        serviceId: "order-svc",
+        name: "Order",
+        ownedPrefixes: ["tracking"],
+        consumedPrefixes: ["service"],
+      },
+      {
+        serviceId: "report-svc",
+        name: "Report",
+        ownedPrefixes: ["report"],
+        consumedPrefixes: ["tracking"],
+      },
+    ]));
+
+    await request(
+      app,
+      "PUT",
+      "/api/services/order-svc/components/ownership/own-v2?catalog=demo",
+      {
+        serviceId: "order-svc",
+        ownedPrefixes: ["tracking", "endpoint"],
+        consumedPrefixes: ["service", "permission"],
+      },
+    );
+    await request(
+      app,
+      "POST",
+      "/api/services/order-svc/components/ownership/own-v2/transition?catalog=demo",
+      { state: "published" },
+    );
+
+    const response = await request(
+      app,
+      "GET",
+      "/api/services/order-svc/ownership/topology?catalog=demo&version=own-v2",
+    );
+    expect(response.statusCode).toBe(200);
+    expect(json(response)).toMatchObject({
+      serviceId: "order-svc",
+      topology: {
+        ownedPrefixes: ["tracking"],
+        consumedPrefixes: ["service"],
+      },
+      ownershipComponent: {
+        version: "own-v2",
+        state: "published",
+        ownedPrefixes: ["tracking", "endpoint"],
+        consumedPrefixes: ["service", "permission"],
+      },
+      alignment: {
+        status: "drifted",
+        ownedPrefixes: {
+          matching: ["tracking"],
+          onlyInComponent: ["endpoint"],
+          onlyInTopology: [],
+        },
+        consumedPrefixes: {
+          matching: ["service"],
+          onlyInComponent: ["permission"],
+          onlyInTopology: [],
+        },
+        ownedPrefixConsumers: [
+          {
+            prefixId: "tracking",
+            consumers: ["report-svc"],
+          },
+          {
+            prefixId: "endpoint",
+            consumers: [],
+          },
+        ],
+        consumedPrefixOwners: [
+          {
+            prefixId: "service",
+            ownerServiceId: null,
+          },
+          {
+            prefixId: "permission",
+            ownerServiceId: null,
+          },
+        ],
+      },
+    });
+  });
+
   it("POST /api/services/:serviceId/deployments/sync stores deployment-binding via convenience write surface", async () => {
     const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
     apps.push(app);
@@ -265,6 +357,11 @@ describe("ServiceModule (Nest)", () => {
       version: "dep-sync-v1",
       state: "draft",
       synced: true,
+      manifestImpact: {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      },
     });
 
     const detail = await request(
@@ -298,6 +395,206 @@ describe("ServiceModule (Nest)", () => {
         outputs: {
           healthUrl: "https://order.example.com/health",
         },
+      },
+    });
+  });
+
+  it("POST /api/services/:serviceId/runtime-addresses/sync stores runtime-address via convenience write surface", async () => {
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
+    apps.push(app);
+
+    const syncResponse = await request(
+      app,
+      "POST",
+      "/api/services/order-svc/runtime-addresses/sync?catalog=demo",
+      {
+        runtimeAddressVersion: "ra-sync-v1",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+    );
+    expect(syncResponse.statusCode).toBe(201);
+    expect(json(syncResponse)).toMatchObject({
+      ok: true,
+      kind: "runtime-address",
+      serviceId: "order-svc",
+      version: "ra-sync-v1",
+      state: "draft",
+      synced: true,
+      manifestImpact: {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      },
+    });
+
+    const detail = await request(
+      app,
+      "GET",
+      "/api/services/order-svc/components/runtime-address/ra-sync-v1?catalog=demo",
+    );
+    expect(detail.statusCode).toBe(200);
+    expect(json(detail)).toMatchObject({
+      kind: "runtime-address",
+      serviceId: "order-svc",
+      version: "ra-sync-v1",
+      value: {
+        serviceId: "order-svc",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+    });
+  });
+
+  it("runtime-addresses/sync reports republish impact when active manifest pins another runtimeAddress version", async () => {
+    const app = await createNestTestApp({ imports: [AppModule] });
+    apps.push(app);
+
+    await request(app, "PUT", "/api/services/order-svc/components/service-unit/su-v1?catalog=demo", {
+      serviceId: "order-svc",
+      namespace: "shop",
+      name: "order",
+      tier: "backend",
+    });
+    await request(app, "PUT", "/api/services/order-svc/components/ownership/own-v1?catalog=demo", {
+      serviceId: "order-svc",
+      ownedPrefixes: ["tracking"],
+    });
+    await request(app, "PUT", "/api/services/order-svc/components/runtime-address/ra-old?catalog=demo", {
+      serviceId: "order-svc",
+      namespace: "shop",
+      name: "order",
+      env: "prod",
+      region: "asia",
+    });
+    await request(app, "POST", "/api/services/order-svc/components/service-unit/su-v1/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/api/services/order-svc/components/ownership/own-v1/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/api/services/order-svc/components/runtime-address/ra-old/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/manifests/prefixes", { prefixId: "tracking", version: "v1" });
+    await request(app, "POST", "/manifests/prefixes/tracking/v1/transition", { state: "released" });
+    await request(app, "POST", "/manifests/assemble?catalog=demo", {
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      runtimeAddressVersion: "ra-old",
+      serviceUnitVersion: "su-v1",
+      ownershipVersion: "own-v1",
+      prefixes: { tracking: "v1" },
+    });
+    await request(app, "POST", "/manifests/order-svc/1.0.0/transition", { state: "published" });
+    await request(app, "POST", "/manifests/order-svc/1.0.0/transition", { state: "active" });
+
+    const syncResponse = await request(
+      app,
+      "POST",
+      "/api/services/order-svc/runtime-addresses/sync?catalog=demo",
+      {
+        runtimeAddressVersion: "ra-new",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+    );
+    expect(syncResponse.statusCode).toBe(201);
+    expect(json(syncResponse)).toMatchObject({
+      manifestImpact: {
+        status: "republish-recommended",
+        activeManifestVersion: "1.0.0",
+        pinnedRuntimeAddressVersion: "ra-old",
+        action: "review-and-republish",
+      },
+    });
+  });
+
+  it("deployments/sync reports republish impact when active manifest pins another deployment version", async () => {
+    const app = await createNestTestApp({ imports: [AppModule] });
+    apps.push(app);
+
+    await request(app, "PUT", "/api/services/order-svc/components/service-unit/su-v1?catalog=demo", {
+      serviceId: "order-svc",
+      namespace: "shop",
+      name: "order",
+      tier: "backend",
+    });
+    await request(app, "PUT", "/api/services/order-svc/components/ownership/own-v1?catalog=demo", {
+      serviceId: "order-svc",
+      ownedPrefixes: ["tracking"],
+    });
+    await request(app, "PUT", "/api/services/order-svc/components/runtime-address/ra-v1?catalog=demo", {
+      serviceId: "order-svc",
+      namespace: "shop",
+      name: "order",
+      env: "prod",
+      region: "asia",
+    });
+    await request(app, "PUT", "/api/services/order-svc/components/deployment-binding/dep-old?catalog=demo", {
+      serviceId: "order-svc",
+      deploymentVersion: "dep-old",
+      address: {
+        serviceId: "order-svc",
+        runtime: {
+          serviceId: "order-svc",
+          namespace: "shop",
+          name: "order",
+          env: "prod",
+          region: "asia",
+        },
+        provider: "pulumi",
+        project: "core",
+        stack: "prod",
+        resourceKey: "api",
+      },
+      observedAt: "2026-04-04T00:00:00.000Z",
+      url: "https://old.example.com",
+    });
+    await request(app, "POST", "/api/services/order-svc/components/service-unit/su-v1/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/api/services/order-svc/components/ownership/own-v1/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/api/services/order-svc/components/runtime-address/ra-v1/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/api/services/order-svc/components/deployment-binding/dep-old/transition?catalog=demo", { state: "published" });
+    await request(app, "POST", "/manifests/prefixes", { prefixId: "tracking", version: "v1" });
+    await request(app, "POST", "/manifests/prefixes/tracking/v1/transition", { state: "released" });
+    await request(app, "POST", "/manifests/assemble?catalog=demo", {
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      runtimeAddressVersion: "ra-v1",
+      serviceUnitVersion: "su-v1",
+      ownershipVersion: "own-v1",
+      deploymentVersion: "dep-old",
+      prefixes: { tracking: "v1" },
+    });
+    await request(app, "POST", "/manifests/order-svc/1.0.0/transition", { state: "published" });
+    await request(app, "POST", "/manifests/order-svc/1.0.0/transition", { state: "active" });
+
+    const syncResponse = await request(
+      app,
+      "POST",
+      "/api/services/order-svc/deployments/sync?catalog=demo",
+      {
+        deploymentVersion: "dep-new",
+        runtime: {
+          namespace: "shop",
+          name: "order",
+          env: "prod",
+          region: "asia",
+        },
+        provider: "pulumi",
+        project: "core",
+        stack: "prod",
+        resourceKey: "api",
+        url: "https://new.example.com",
+      },
+    );
+    expect(syncResponse.statusCode).toBe(201);
+    expect(json(syncResponse)).toMatchObject({
+      manifestImpact: {
+        status: "republish-recommended",
+        activeManifestVersion: "1.0.0",
+        pinnedDeploymentVersion: "dep-old",
+        action: "review-and-republish",
       },
     });
   });

@@ -4,6 +4,7 @@ import {
   serviceCleanupDraft,
   serviceCleanupExecute,
   serviceCleanupPlan,
+  serviceOwnershipTopology,
 } from "./service.js";
 import { USAGE, resolveSubcommand } from "../index.js";
 
@@ -90,11 +91,62 @@ describe("service cleanup CLI", () => {
     );
   });
 
+  it("ownership-topology는 alignment drift를 출력한다", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      response({
+        serviceId: "order-svc",
+        topology: {
+          ownedPrefixes: ["tracking"],
+          consumedPrefixes: ["service"],
+        },
+        ownershipComponent: {
+          version: "own-v2",
+          state: "published",
+          ownedPrefixes: ["tracking", "endpoint"],
+          consumedPrefixes: ["service", "permission"],
+        },
+        alignment: {
+          status: "drifted",
+          ownedPrefixes: {
+            matching: ["tracking"],
+            onlyInComponent: ["endpoint"],
+            onlyInTopology: [],
+          },
+          consumedPrefixes: {
+            matching: ["service"],
+            onlyInComponent: ["permission"],
+            onlyInTopology: [],
+          },
+          conflictingOwners: [],
+          ownedPrefixConsumers: [],
+          consumedPrefixOwners: [],
+        },
+      }),
+    );
+
+    const output = await captureConsoleAsync(async () => {
+      await serviceOwnershipTopology(["order-svc", "--version", "own-v2"]);
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "http://registry.test/api/services/order-svc/ownership/topology?version=own-v2",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(output.stdout).toContain("Ownership Topology: order-svc");
+    expect(output.stdout).toContain("status: drifted");
+    expect(output.stdout).toContain("only in component: endpoint");
+  });
+
   it("usage와 subcommand 해석에 cleanup 명령을 노출한다", () => {
+    expect(USAGE).toContain("qa-sdk service ownership-topology <serviceId>");
     expect(USAGE).toContain("qa-sdk service cleanup-plan <serviceId>");
     expect(resolveSubcommand(["service", "cleanup-execute", "order-svc", "--new-version", "1.0.1"])).toEqual({
       name: "service cleanup-execute",
       rest: ["order-svc", "--new-version", "1.0.1"],
+    });
+    expect(resolveSubcommand(["service", "ownership-topology", "order-svc", "--version", "own-v2"])).toEqual({
+      name: "service ownership-topology",
+      rest: ["order-svc", "--version", "own-v2"],
     });
   });
 });

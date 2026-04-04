@@ -1,10 +1,10 @@
 ---
 def:
   id: service-manifest-assembly
-  level: leaf
+  level: module
   scope: flow
   aspect: process_flow
-  depth: specification
+  depth: overview
   lifecycle: approved
   layer: operation
   links:
@@ -12,28 +12,32 @@ def:
       type: refines
     - target: service-release-manifest
       type: depends_on
+    - target: service-manifest-validation
+      type: contains
+    - target: service-manifest-cleanup-lane
+      type: contains
+contains:
+  - service-manifest-validation
+  - service-manifest-cleanup-lane
 ---
 # Service Manifest Assembly
 
 ## 목적 ^purpose
 
-이미 존재하는 child component version을 선택해 deterministic한 release manifest를 조립하고, deprecated 참조를 cleanup lane으로 치환하는 실행 경로를 정의한다.
+이미 존재하는 child component version을 선택해 deterministic한 release manifest를 조립하는 흐름을 상위 개념으로 고정한다. validate/assemble 계약과 cleanup lane은 별도 leaf로 분리한다.
 
-## ^defines
+## 구성 ^overview
 
-- assembly gate: referenced child component는 반드시 `published`
-- runtime resolve: manifest pin only, fallback 최소화
-- warning surface: `GET /resolve/services/:serviceId/warnings`
-- cleanup lane:
-  - `GET /resolve/services/:serviceId/cleanup-plan`
-  - `POST /resolve/services/:serviceId/cleanup-draft`
-  - `POST /resolve/services/:serviceId/cleanup-activate`
-  - `qa-sdk service cleanup-plan|cleanup-draft|cleanup-activate|cleanup-execute`
-- cleanup draft는 non-destructive다. 기존 active manifest는 유지하고 새 draft를 만든 뒤 별도 activation으로 전이한다.
+- `service-manifest-validation`: `validate`/`assemble` contract, ownership coverage, semantics key
+- `service-manifest-cleanup-lane`: warning/cleanup-plan/cleanup-draft/cleanup-activate/CLI orchestration
 
-## ^consumes
+## 분해 원칙
 
-- `packages/registry-service/src/modules/manifests/manifest.service.ts`
-- `packages/registry-service/src/modules/resolve/resolve.service.ts`
-- `packages/cli/src/commands/service.ts`
-- `packages/registry-service/src/modules/dashboard/dashboard.service.ts`
+- validation/assemble은 deterministic contract facet이다.
+- cleanup lane은 deprecated ref remediation facet이다.
+- 둘 다 `service-release-manifest`를 전제로 하지만, 실패 조건과 운영 책임이 달라 별도 leaf로 추적한다.
+
+## 관련 문서
+
+- [service-manifest-validation.spec.md](service-manifest-validation.spec.md)
+- [service-manifest-cleanup-lane.spec.md](service-manifest-cleanup-lane.spec.md)

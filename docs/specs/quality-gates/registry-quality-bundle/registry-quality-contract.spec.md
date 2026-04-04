@@ -23,11 +23,11 @@ quality-gates-system > registry-quality-bundle > **registry-quality-contract**
 
 ## 목적 ^purpose
 
-`registry-service`가 외부 소비자에게 약속하는 catalog/prefix/version/service topology surface를 한 문서로 고정하여 quality gate의 기준점을 제공한다.
+`registry-service`가 외부 소비자에게 약속하는 catalog/prefix/version/service topology/service-control-plane surface를 한 문서로 고정하여 quality gate의 기준점을 제공한다.
 
 ## 구성 ^overview
 
-핵심 계약은 `CatalogService`, `PrefixService`, `VersionService`, `ServiceTopologyService`, `/catalogs`, `/prefixes`, `/api/services`, `/api/endpoints` 경로다.
+핵심 계약은 `CatalogService`, `PrefixService`, `VersionService`, `ServiceTopologyService`, `ManifestService`, `/catalogs`, `/prefixes`, `/api/services`, `/api/services/:serviceId/ownership/topology`, `/api/endpoints`, `/manifests/assemble`, `/manifests/validate`, `/resolve/services/:serviceId` 경로다.
 validation gate 문서는 이 계약이 build/test/service-flow 수준에서 유지되는지 검증한다.
 
 ## 입력 ^inputs
@@ -35,12 +35,14 @@ validation gate 문서는 이 계약이 build/test/service-flow 수준에서 유
 - catalog 입력은 snapshot/config/pattern-rules와 prefix 집합이다.
 - version 입력은 prefix/version lifecycle action과 activation hook 의존성이다.
 - service topology 입력은 service entries, ownedPrefixes, endpoint overlay, gateway 구성이 다.
+- service control plane 입력은 child component version, ownership prefix pin, runtime/deployment sync, manifest assembly body다.
 
 ## 출력 ^outputs
 
 - catalog surface는 registry catalog CRUD와 decode-map 응답을 제공한다.
 - prefix/version surface는 lifecycle/profile 조회와 activate/release 결과를 제공한다.
 - service surface는 topology, svc-owner, endpoint resolve, gateway 구성을 제공한다.
+- service-control-plane surface는 child component lifecycle, manifest validation/assembly, cleanup/resolve 진단을 제공한다.
 
 ## 사전 조건 ^precondition
 

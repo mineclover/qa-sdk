@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, UseFilters } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, UseFilters } from "@nestjs/common";
 import type { PrefixLifecycleState, ManifestLifecycleState } from "pipe-store-sqlite";
 import { PrefixExceptionFilter } from "../prefixes/prefix.exception-filter.js";
 import { ManifestService } from "./manifest.service.js";
@@ -62,6 +62,12 @@ export class ManifestController {
   @Post("assemble")
   assembleManifest(@Body() body: AssembleManifestBody, @Query("catalog") catalogId?: string) {
     return this.manifests.assembleManifest(body, catalogId ?? "demo");
+  }
+
+  @Post("validate")
+  @HttpCode(200)
+  validateManifest(@Body() body: AssembleManifestBody, @Query("catalog") catalogId?: string) {
+    return this.manifests.validateManifestAssembly(body, catalogId ?? "demo");
   }
 
   @Get(":serviceId/active")

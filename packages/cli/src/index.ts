@@ -123,6 +123,7 @@ import {
   serviceList,
   serviceShow,
   serviceOwners,
+  serviceOwnershipTopology,
   serviceEndpoints,
   serviceHealth,
   serviceHealthAll,
@@ -308,6 +309,7 @@ Usage:
   qa-sdk service health [--env dev]  전체 서비스 헬스체크 (registry 경유)
   qa-sdk service health-all [--json] 모든 서비스 직접 health check (registry 불필요)
   qa-sdk service owners [--json]     prefix → 소유 서비스 맵
+  qa-sdk service ownership-topology <serviceId> [--version v] [--json]
   qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록
   qa-sdk service app list [--json]     Application 목록
   qa-sdk service app show <id>         Application 상세 (서비스 포함)
@@ -1000,6 +1002,9 @@ export async function main(argv = process.argv.slice(2)) {
     case 'service owners':
       await serviceOwners(sub.rest);
       return;
+    case 'service ownership-topology':
+      await serviceOwnershipTopology(sub.rest);
+      return;
     case 'service cleanup-plan':
       await serviceCleanupPlan(sub.rest);
       return;
@@ -1486,6 +1491,7 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'service show',
     'service health',
     'service owners',
+    'service ownership-topology',
     'service endpoints',
     'service cleanup-plan',
     'service cleanup-draft',

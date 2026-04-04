@@ -16,9 +16,9 @@ gate:
   workDomain: productivity
   storyId: REG-QUALITY-001
   package: registry-service
-  command: pnpm --filter @qa-sdk/registry-service exec vitest run src/e2e/catalog-and-services.test.ts src/stores/prefix-owner-store.test.ts src/lib/draft-workspace.test.ts src/lib/gate-hook-integration.test.ts src/lib/activation-gate-adapter.test.ts --testTimeout=15000
+  command: pnpm --filter @qa-sdk/registry-service exec vitest run src/e2e/catalog-and-services.test.ts src/stores/prefix-owner-store.test.ts src/lib/draft-workspace.test.ts src/lib/gate-hook-integration.test.ts src/lib/activation-gate-adapter.test.ts src/modules/services/service.controller.test.ts src/modules/manifests/manifest.controller.test.ts src/modules/resolve/resolve.controller.test.ts src/modules/dashboard/dashboard.controller.test.ts --testTimeout=15000
   successPattern: exit_code=0
-  references: [packages/registry-service/src/e2e/catalog-and-services.test.ts, packages/registry-service/src/stores/prefix-owner-store.test.ts, packages/registry-service/src/lib/registry-service.ts]
+  references: [packages/registry-service/src/e2e/catalog-and-services.test.ts, packages/registry-service/src/stores/prefix-owner-store.test.ts, packages/registry-service/src/lib/registry-service.ts, packages/registry-service/src/modules/manifests/manifest.service.ts, packages/registry-service/src/modules/resolve/resolve.service.ts]
 ---
 # Registry Service Flow Gate
 

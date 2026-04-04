@@ -4,6 +4,7 @@ import { InMemoryServiceComponentVersionStore } from "../../stores/in-memory-ser
 import type { SqliteManifestRegistry } from "pipe-store-sqlite";
 import { ServiceComponentStore } from "../services/service-component-store.js";
 import {
+  createManifestAssemblyContract,
   normalizeAssembleManifestBody,
   toServiceManifestOptions,
   validateAssembleManifestBody,
@@ -81,6 +82,33 @@ describe("manifest assembly helpers", () => {
       },
     });
   });
+
+  it("동일 child version 조합 + 동일 prefix pin이면 동일 semanticsKey를 만든다", () => {
+    const first = createManifestAssemblyContract({
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      serviceUnitVersion: "su-1",
+      ownershipVersion: "own-1",
+      runtimeAddressVersion: "ra-1",
+      prefixes: { tracking: "v1", endpoint: "v2" },
+      changelog: "first",
+    });
+    const second = createManifestAssemblyContract({
+      serviceId: "order-svc",
+      manifestVersion: "2.0.0",
+      serviceUnitVersion: "su-1",
+      ownershipVersion: "own-1",
+      runtimeAddressVersion: "ra-1",
+      prefixes: { endpoint: "v2", tracking: "v1" },
+      changelog: "second",
+    });
+
+    expect(first.semanticsKey).toBe(second.semanticsKey);
+    expect(first.normalizedPrefixes).toEqual({
+      endpoint: "v2",
+      tracking: "v1",
+    });
+  });
 });
 
 describe("ManifestService assembleManifest", () => {
@@ -88,6 +116,7 @@ describe("ManifestService assembleManifest", () => {
     const createManifest = vi.fn().mockReturnValue({ ok: true });
     const service = new ManifestService({
       createManifest,
+      getPrefixRecord: vi.fn(),
     } as unknown as SqliteManifestRegistry);
 
     const result = await service.assembleManifest({
@@ -168,7 +197,10 @@ describe("ManifestService assembleManifest", () => {
 
     const createManifest = vi.fn().mockReturnValue({ ok: true });
     const service = new ManifestService(
-      { createManifest } as unknown as SqliteManifestRegistry,
+      {
+        createManifest,
+        getPrefixRecord: vi.fn(),
+      } as unknown as SqliteManifestRegistry,
       componentStore,
     );
 
@@ -216,7 +248,10 @@ describe("ManifestService assembleManifest", () => {
     });
 
     const service = new ManifestService(
-      { createManifest: vi.fn() } as unknown as SqliteManifestRegistry,
+      {
+        createManifest: vi.fn(),
+        getPrefixRecord: vi.fn(),
+      } as unknown as SqliteManifestRegistry,
       componentStore,
     );
 
@@ -226,7 +261,47 @@ describe("ManifestService assembleManifest", () => {
       serviceUnitVersion: "su-1",
       prefixes: { tracking: "v1" },
     })).rejects.toMatchObject({
-      code: "INVALID_TRANSITION",
+      code: "ASSEMBLY_VALIDATION_FAILED",
+    });
+  });
+
+  it("ownership-owned prefix가 pin되지 않으면 validation diagnostic을 반환한다", async () => {
+    const componentStore = new InMemoryServiceComponentVersionStore();
+    const components = new ServiceComponentStore(componentStore);
+    await components.upsert("demo", {
+      kind: "ownership",
+      serviceId: "order-svc",
+      version: "own-1",
+      state: "published",
+      value: {
+        serviceId: "order-svc",
+        ownedPrefixes: ["tracking"],
+      },
+    });
+
+    const service = new ManifestService(
+      {
+        getPrefixRecord: vi.fn(),
+      } as unknown as SqliteManifestRegistry,
+      componentStore,
+    );
+
+    await expect(service.validateManifestAssembly({
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      ownershipVersion: "own-1",
+      prefixes: {},
+    })).resolves.toMatchObject({
+      ready: false,
+      qualityGate: {
+        id: "manifest-assembly-compatibility",
+        passed: false,
+      },
+      diagnostics: [
+        expect.objectContaining({
+          code: "OWNED_PREFIX_NOT_PINNED",
+        }),
+      ],
     });
   });
 });

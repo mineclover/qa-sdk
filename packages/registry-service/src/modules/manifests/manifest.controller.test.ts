@@ -162,6 +162,7 @@ describe("ManifestController", () => {
   it("POST /manifests/assemble — child version과 runtimeAddress를 포함한 manifest를 생성한다", async () => {
     const app = await buildApp();
     await seedAssemblyComponents(app, "order-svc");
+    await request(app, "POST", "/manifests/prefixes", { prefixId: "tracking", version: "v1" });
     const res = await request(app, "POST", "/manifests/assemble", {
       serviceId: "order-svc",
       manifestVersion: "1.0.0",
@@ -212,6 +213,63 @@ describe("ManifestController", () => {
         region: "asia",
       },
     });
+  });
+
+  it("POST /manifests/validate — ownership pin coverage와 semantics contract를 반환한다", async () => {
+    const app = await buildApp();
+    await seedAssemblyComponents(app, "order-svc");
+    await request(app, "POST", "/manifests/prefixes", { prefixId: "tracking", version: "v1" });
+
+    const invalid = await request(app, "POST", "/manifests/validate", {
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      ownershipVersion: "own-1",
+      prefixes: {},
+    });
+    expect(invalid.statusCode).toBe(200);
+    expect(json(invalid)).toMatchObject({
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      ready: false,
+      qualityGate: {
+        id: "manifest-assembly-compatibility",
+        passed: false,
+      },
+      diagnostics: [
+        expect.objectContaining({
+          code: "OWNED_PREFIX_NOT_PINNED",
+        }),
+      ],
+      contract: {
+        componentVersions: {
+          ownershipVersion: "own-1",
+        },
+      },
+    });
+
+    const valid = await request(app, "POST", "/manifests/validate", {
+      serviceId: "order-svc",
+      manifestVersion: "2.0.0",
+      ownershipVersion: "own-1",
+      prefixes: { tracking: "v1" },
+    });
+    expect(valid.statusCode).toBe(200);
+    expect(json(valid)).toMatchObject({
+      ready: true,
+      qualityGate: {
+        id: "manifest-assembly-compatibility",
+        passed: true,
+      },
+      contract: {
+        normalizedPrefixes: {
+          tracking: "v1",
+        },
+        componentVersions: {
+          ownershipVersion: "own-1",
+        },
+      },
+    });
+    expect(json<{ contract: { semanticsKey: string } }>(valid).contract.semanticsKey).toMatch(/^[0-9a-f]{16}$/);
   });
 
   it("POST /manifests/assemble — runtimeAddress.serviceId mismatch면 400", async () => {

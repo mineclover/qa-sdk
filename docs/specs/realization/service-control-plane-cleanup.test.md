@@ -3,14 +3,14 @@ def:
   id: service-control-plane-cleanup-test
   level: leaf
   scope: flow
-  aspect: validation
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: operation
   links:
     - target: realization-service-control-plane
       type: refines
-    - target: service-manifest-assembly
+    - target: service-manifest-cleanup-lane
       type: refines
 ---
 # Service Control Plane Cleanup — 검증 기준

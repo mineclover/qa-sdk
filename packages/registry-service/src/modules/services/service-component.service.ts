@@ -1,11 +1,17 @@
-import { Inject, Injectable, Optional } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, Optional } from "@nestjs/common";
 import { AppError } from "@qa-sdk/core";
 import type {
   ServiceComponentLifecycleState,
   ServiceComponentVersionStore,
 } from "../../stores/service-component-version-store.js";
-import type { ComponentVersionKind, DeploymentBinding } from "./service.types.js";
+import type {
+  ComponentVersionKind,
+  DeploymentBinding,
+  RuntimeServiceAddress,
+  ServiceOwnershipSpec,
+} from "./service.types.js";
 import { ManifestService } from "../manifests/manifest.service.js";
+import { ServiceTopologyService } from "./service-topology.service.js";
 import {
   isComponentVersionKind,
   ServiceComponentStore,
@@ -20,13 +26,18 @@ export class ServiceComponentService {
 
   constructor(
     @Inject(SERVICE_COMPONENT_VERSION_STORE) componentStore: ServiceComponentVersionStore,
-    @Optional() @Inject(ManifestService) private readonly manifests?: ManifestService,
+    @Optional() @Inject(forwardRef(() => ManifestService)) private readonly manifests?: ManifestService,
+    @Optional() @Inject(ServiceTopologyService) private readonly topology?: ServiceTopologyService,
   ) {
     this.store = new ServiceComponentStore(componentStore);
   }
 
-  static fromStore(componentStore: ServiceComponentVersionStore, manifests?: ManifestService) {
-    return new ServiceComponentService(componentStore, manifests);
+  static fromStore(
+    componentStore: ServiceComponentVersionStore,
+    manifests?: ManifestService,
+    topology?: ServiceTopologyService,
+  ) {
+    return new ServiceComponentService(componentStore, manifests, topology);
   }
 
   listVersions(catalogId: string, kind: string, serviceId: string) {
@@ -86,8 +97,147 @@ export class ServiceComponentService {
     };
   }
 
+  async getOwnershipTopologyAlignment(
+    catalogId: string,
+    serviceId: string,
+    version?: string,
+  ) {
+    if (!this.topology) {
+      throw new AppError("SERVICE_UNAVAILABLE", "service topology not available", 503);
+    }
+
+    const topologyRecord = await this.topology.get(catalogId, serviceId);
+    const topologyServices = await this.topology.list(catalogId);
+    const owners = await this.topology.listSvcOwners(catalogId);
+    const versions = await this.listVersions(catalogId, "ownership", serviceId);
+    const selected = version
+      ? await this.store.require(catalogId, "ownership", serviceId, version)
+      : this.selectPreferredOwnershipVersion(versions);
+
+    if (!selected) {
+      return {
+        serviceId,
+        topology: {
+          ownedPrefixes: [...topologyRecord.ownedPrefixes],
+          consumedPrefixes: [...(topologyRecord.consumedPrefixes ?? [])],
+        },
+        ownershipComponent: null,
+        alignment: {
+          status: "topology-only" as const,
+          ownedPrefixes: {
+            matching: [],
+            onlyInComponent: [],
+            onlyInTopology: [...topologyRecord.ownedPrefixes],
+          },
+          consumedPrefixes: {
+            matching: [],
+            onlyInComponent: [],
+            onlyInTopology: [...(topologyRecord.consumedPrefixes ?? [])],
+          },
+          conflictingOwners: [],
+          ownedPrefixConsumers: topologyRecord.ownedPrefixes.map((prefixId) => ({
+            prefixId,
+            consumers: this.findConsumers(topologyServices, prefixId, serviceId),
+          })),
+          consumedPrefixOwners: (topologyRecord.consumedPrefixes ?? []).map((prefixId) => ({
+            prefixId,
+            ownerServiceId: owners[prefixId] ?? null,
+          })),
+        },
+      };
+    }
+
+    const ownership = selected.value as ServiceOwnershipSpec;
+    const ownedAlignment = this.compareStringSets(ownership.ownedPrefixes, topologyRecord.ownedPrefixes);
+    const consumedAlignment = this.compareStringSets(
+      ownership.consumedPrefixes ?? [],
+      topologyRecord.consumedPrefixes ?? [],
+    );
+    const conflictingOwners = ownership.ownedPrefixes
+      .filter((prefixId) => owners[prefixId] != null && owners[prefixId] !== serviceId)
+      .map((prefixId) => ({
+        prefixId,
+        topologyOwnerServiceId: owners[prefixId]!,
+      }));
+    const driftCount =
+      ownedAlignment.onlyInComponent.length
+      + ownedAlignment.onlyInTopology.length
+      + consumedAlignment.onlyInComponent.length
+      + consumedAlignment.onlyInTopology.length
+      + conflictingOwners.length;
+
+    return {
+      serviceId,
+      topology: {
+        ownedPrefixes: [...topologyRecord.ownedPrefixes],
+        consumedPrefixes: [...(topologyRecord.consumedPrefixes ?? [])],
+      },
+      ownershipComponent: {
+        version: selected.version,
+        state: selected.state,
+        ownedPrefixes: [...ownership.ownedPrefixes],
+        consumedPrefixes: [...(ownership.consumedPrefixes ?? [])],
+      },
+      alignment: {
+        status: driftCount === 0 ? "aligned" as const : "drifted" as const,
+        ownedPrefixes: ownedAlignment,
+        consumedPrefixes: consumedAlignment,
+        conflictingOwners,
+        ownedPrefixConsumers: ownership.ownedPrefixes.map((prefixId) => ({
+          prefixId,
+          consumers: this.findConsumers(topologyServices, prefixId, serviceId),
+        })),
+        consumedPrefixOwners: (ownership.consumedPrefixes ?? []).map((prefixId) => ({
+          prefixId,
+          ownerServiceId: owners[prefixId] ?? null,
+        })),
+      },
+    };
+  }
+
   get(catalogId: string, kind: string, serviceId: string, version: string) {
     return this.store.require(catalogId, this.parseKind(kind), serviceId, version);
+  }
+
+  async syncRuntimeAddress(
+    catalogId: string,
+    serviceId: string,
+    body: {
+      runtimeAddressVersion: string;
+      namespace: string;
+      name: string;
+      env: string;
+      region: string;
+    },
+  ) {
+    if (!body.runtimeAddressVersion) {
+      throw new AppError("INVALID_INPUT", "runtimeAddressVersion 필수", 400);
+    }
+    if (!body.namespace || !body.name || !body.env || !body.region) {
+      throw new AppError("INVALID_INPUT", "namespace/name/env/region 필수", 400);
+    }
+
+    const value: RuntimeServiceAddress = {
+      serviceId,
+      namespace: body.namespace,
+      name: body.name,
+      env: body.env,
+      region: body.region,
+    };
+
+    const result = await this.upsert(
+      catalogId,
+      "runtime-address",
+      serviceId,
+      body.runtimeAddressVersion,
+      value,
+    );
+
+    return {
+      ...result,
+      synced: true,
+      manifestImpact: await this.describeRuntimeAddressManifestImpact(serviceId, body.runtimeAddressVersion),
+    };
   }
 
   async syncDeployment(
@@ -150,9 +300,12 @@ export class ServiceComponentService {
       value,
     );
 
+    const manifestImpact = await this.describeDeploymentManifestImpact(serviceId, body.deploymentVersion);
+
     return {
       ...result,
       synced: true,
+      manifestImpact,
     };
   }
 
@@ -304,6 +457,149 @@ export class ServiceComponentService {
         : "Deprecated: optional component omitted from new assembly";
     }
     return "Archived: unusable for new assembly";
+  }
+
+  private selectPreferredOwnershipVersion(records: readonly ServiceComponentRecord[]) {
+    const published = records
+      .filter((record) => record.state === "published")
+      .toSorted((left, right) => this.compareRecordRecency(left, right));
+    if (published.length > 0) {
+      return published[0]!;
+    }
+    const sorted = [...records].toSorted((left, right) => this.compareRecordRecency(left, right));
+    return sorted[0] ?? null;
+  }
+
+  private compareStringSets(componentValues: readonly string[], topologyValues: readonly string[]) {
+    const componentSet = new Set(componentValues);
+    const topologySet = new Set(topologyValues);
+    return {
+      matching: [...componentSet].filter((value) => topologySet.has(value)).sort(),
+      onlyInComponent: [...componentSet].filter((value) => !topologySet.has(value)).sort(),
+      onlyInTopology: [...topologySet].filter((value) => !componentSet.has(value)).sort(),
+    };
+  }
+
+  private findConsumers(
+    topologyServices: readonly {
+      serviceId: string;
+      consumedPrefixes?: readonly string[];
+    }[],
+    prefixId: string,
+    serviceId: string,
+  ) {
+    return topologyServices
+      .filter((service) => service.serviceId !== serviceId && (service.consumedPrefixes ?? []).includes(prefixId))
+      .map((service) => service.serviceId)
+      .sort();
+  }
+
+  private compareRecordRecency(left: ServiceComponentRecord, right: ServiceComponentRecord) {
+    const leftKey = left.updatedAt ?? left.createdAt ?? left.version;
+    const rightKey = right.updatedAt ?? right.createdAt ?? right.version;
+    return rightKey.localeCompare(leftKey);
+  }
+
+  private async describeRuntimeAddressManifestImpact(
+    serviceId: string,
+    runtimeAddressVersion: string,
+  ): Promise<{
+    status: "already-pinned" | "republish-recommended" | "unpinned" | "no-active-manifest";
+    activeManifestVersion: string | null;
+    pinnedRuntimeAddressVersion?: string;
+    action: "none" | "review-and-republish" | "optional-republish";
+  }> {
+    if (!this.manifests) {
+      return {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      };
+    }
+
+    const activeManifest = this.manifests.getActiveManifest(serviceId);
+    if (!activeManifest) {
+      return {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      };
+    }
+
+    if (!activeManifest.runtimeAddressVersion) {
+      return {
+        status: "unpinned",
+        activeManifestVersion: activeManifest.manifestVersion,
+        action: "optional-republish",
+      };
+    }
+
+    if (activeManifest.runtimeAddressVersion === runtimeAddressVersion) {
+      return {
+        status: "already-pinned",
+        activeManifestVersion: activeManifest.manifestVersion,
+        pinnedRuntimeAddressVersion: activeManifest.runtimeAddressVersion,
+        action: "none",
+      };
+    }
+
+    return {
+      status: "republish-recommended",
+      activeManifestVersion: activeManifest.manifestVersion,
+      pinnedRuntimeAddressVersion: activeManifest.runtimeAddressVersion,
+      action: "review-and-republish",
+    };
+  }
+
+  private async describeDeploymentManifestImpact(
+    serviceId: string,
+    deploymentVersion: string,
+  ): Promise<{
+    status: "already-pinned" | "republish-recommended" | "unpinned" | "no-active-manifest";
+    activeManifestVersion: string | null;
+    pinnedDeploymentVersion?: string;
+    action: "none" | "review-and-republish" | "optional-republish";
+  }> {
+    if (!this.manifests) {
+      return {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      };
+    }
+
+    const activeManifest = this.manifests.getActiveManifest(serviceId);
+    if (!activeManifest) {
+      return {
+        status: "no-active-manifest",
+        activeManifestVersion: null,
+        action: "optional-republish",
+      };
+    }
+
+    if (!activeManifest.deploymentVersion) {
+      return {
+        status: "unpinned",
+        activeManifestVersion: activeManifest.manifestVersion,
+        action: "optional-republish",
+      };
+    }
+
+    if (activeManifest.deploymentVersion === deploymentVersion) {
+      return {
+        status: "already-pinned",
+        activeManifestVersion: activeManifest.manifestVersion,
+        pinnedDeploymentVersion: activeManifest.deploymentVersion,
+        action: "none",
+      };
+    }
+
+    return {
+      status: "republish-recommended",
+      activeManifestVersion: activeManifest.manifestVersion,
+      pinnedDeploymentVersion: activeManifest.deploymentVersion,
+      action: "review-and-republish",
+    };
   }
 }
 
