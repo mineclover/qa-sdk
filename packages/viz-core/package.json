@@ -39,6 +39,11 @@
       "types": "./dist/pipe-svg.d.ts",
       "import": "./dist/pipe-svg.js",
       "require": "./dist/pipe-svg.cjs"
+    },
+    "./scope-nesting-timeline": {
+      "types": "./dist/scope-nesting-timeline.d.ts",
+      "import": "./dist/scope-nesting-timeline.js",
+      "require": "./dist/scope-nesting-timeline.cjs"
     }
   },
   "main": "./dist/index.cjs",

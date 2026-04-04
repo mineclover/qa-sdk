@@ -53,3 +53,13 @@ export {
   scopeNestingToD3,
   type D3ScopeNode, type D3ContractEdge, type D3ScopeGraph,
 } from "./scope-d3.js";
+
+// ── Scope Nesting Timeline ──
+export {
+  SCOPE_DEPTH_COLORS, CONTRACT_TYPE_COLORS, TIMING_COLORS,
+  buildTimelineRows, scopeTimelineToSvg, scopeTimelineToD3,
+} from "./scope-nesting-timeline.js";
+export type {
+  RowType, TimelineBlock, ScopeTimelineRow,
+  ScopeTimelineData, ScopeTimelineSvgOptions, D3TimelineData,
+} from "./scope-nesting-timeline.js";

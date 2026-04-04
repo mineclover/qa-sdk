@@ -9,6 +9,7 @@ export default defineConfig({
     "src/scope-mermaid.ts",
     "src/scope-d3.ts",
     "src/pipe-svg.ts",
+    "src/scope-nesting-timeline.ts",
   ],
   format: ["esm", "cjs"],
   dts: true,
