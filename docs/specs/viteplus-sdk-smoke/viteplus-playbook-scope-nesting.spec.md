@@ -155,6 +155,12 @@ assert(happyPath.match);
 
 | 파일 | 역할 |
 |------|------|
-| `core/src/scope-nesting.ts` | 타입 + 검증 함수 |
-| `core/src/scope-nesting.test.ts` | 단위 테스트 (12 tests) |
-| `core/src/scope-nesting-simulate.test.ts` | 통합 테스트 — nesting + PipeSpec simulate (13 tests) |
+| `core/src/scope-nesting.ts` | 타입 + guard + validate + resolve |
+| `core/src/scope-nesting.test.ts` | 단위 테스트 (32건) |
+| `core/src/scope-nesting-mount.ts` | mount flow 검증 |
+| `core/src/scope-nesting-mount.test.ts` | mount flow 테스트 (9건) |
+| `core/src/scope-nesting-timing.ts` | 계약 시점 분석 |
+| `core/src/scope-nesting-timing.test.ts` | timing 테스트 (6건) |
+| `core/src/scope-nesting-state.ts` | 상태 전이 검증 |
+| `core/src/scope-nesting-state.test.ts` | 전이 테스트 (21건) |
+| `core/src/scope-nesting-simulate.test.ts` | 통합 테스트 (13건) |

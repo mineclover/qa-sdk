@@ -89,12 +89,19 @@ handlers scope (depth 2) {
 PipeSpec에 scopeId를 추가하지 않고, 별도 매핑으로 관리. PipeSpec은 범용이므로 scope-nesting 의존을 넣지 않는다.
 
 ```typescript
+/** scope 계약 참조 — required 플래그 포함 */
+interface ScopeContractRef {
+  contractId: string;
+  /** 필수 여부 (기본: true). false이면 미활성 시 warning만 */
+  required?: boolean;
+}
+
 /** pipe → scope 매핑 */
 interface ScopePipeBinding {
   /** pipe가 실행되는 scope */
   scopeId: string;
-  /** pipe가 소비하는 scope 계약 (StepDataContract과 별개) */
-  scopeContracts: string[];
+  /** pipe가 소비하는 scope 계약 (string이면 required: true) */
+  scopeContracts: Array<string | ScopeContractRef>;
 }
 
 /** scope nesting + pipe graph를 연결하는 매핑 */

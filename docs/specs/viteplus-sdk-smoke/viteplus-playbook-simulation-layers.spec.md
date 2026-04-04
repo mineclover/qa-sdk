@@ -204,9 +204,9 @@ doc lifecycle(draft/review/approved/deprecated)은 L0 guard에 포함하지 않�
 
 | 계층 | 구현 | 테스트 |
 |------|------|--------|
-| L0 | `core/src/scope-nesting.ts` (SimulationGuards, resolveGuards) | `scope-nesting.test.ts` L0 guard 5건 |
-| L1 | `core/src/scope-nesting.ts` (validateScopeNesting) | `scope-nesting.test.ts` 14건 |
-| L1.5 | `core/src/scope-nesting-mount.ts` (validateMountFlow) | `scope-nesting-mount.test.ts` 7건 |
-| L2 | `core/src/scope-nesting-state.ts` | `scope-nesting-state.test.ts` 18건 |
+| L0+L1 | `core/src/scope-nesting.ts` (guard + validate + resolve) | `scope-nesting.test.ts` 32건 |
+| L1.5 | `core/src/scope-nesting-mount.ts` (validateMountFlow) | `scope-nesting-mount.test.ts` 9건 |
+| L1.5↔L3 | `core/src/scope-nesting-timing.ts` (validateContractTiming) | `scope-nesting-timing.test.ts` 6건 |
+| L2 | `core/src/scope-nesting-state.ts` | `scope-nesting-state.test.ts` 21건 |
 | L3 | `core/src/pipe/pipe-simulate.ts` | `pipe-simulate.test.ts` 39건 |
 | 통합 | — | `scope-nesting-simulate.test.ts` 13건 |

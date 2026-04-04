@@ -42,7 +42,7 @@ scope-nesting의 provides/consumes 선언 위에서 동작하는 4가지 provide
 
 ### 문제
 
-하위 scope가 상위와 동일한 contractId를 제공하여 하위의 후손들이 상위 대신 하위 것을 사용하게 하고 싶다. 현재는 `duplicate-provider` warning으로 경고만 하고, 마지막 등록이 이김.
+하위 scope가 상위와 동일한 contractId를 제공하여 하위의 후손들이 상위 대신 하위 것을 사용하게 하고 싶다. 현재는 `duplicate-provider` warning으로 경고만 하고, 첫 등록(상위)이 canonical provider로 유지된다.
 
 ### 설계
 
@@ -147,7 +147,8 @@ handler가 logging을 선택적으로 소비:
 ```typescript
 interface ResolvedContract {
   contractId: string;
-  provider: { scopeId: string; depth: number };
+  /** provider가 없으면 null (optional consume 시) */
+  provider: { scopeId: string; depth: number } | null;
   consumer: { scopeId: string; depth: number };
   /** override로 대체되었는가 */
   overridden: boolean;

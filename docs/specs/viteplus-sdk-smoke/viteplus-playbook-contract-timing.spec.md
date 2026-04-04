@@ -95,9 +95,9 @@ interface ContractRef {
   override?: boolean;
   required?: boolean;
 
-  /** 이 계약의 데이터가 준비되는 시점 (이벤트 키) */
+  /** 이 계약의 데이터가 준비되는 시점 (이벤트 키) — 구현 완료 */
   readyAfter?: string;
-  /** 이 계약이 역방향 위임을 받는가 */
+  /** 이 계약이 역방향 위임을 받는가 — 미구현, 향후 delegatesTo 확장 시 추가 예정 */
   acceptsReverseDelegation?: boolean;
 }
 ```
@@ -107,7 +107,7 @@ interface ContractRef {
 ```typescript
 interface ScopePipeBinding {
   scopeId: string;
-  scopeContracts: string[];
+  scopeContracts: Array<string | ScopeContractRef>;
 
   /** 이 pipe가 상위 scope 계약에 역방향 위임하는 목록 */
   delegatesTo?: Array<{
@@ -132,7 +132,8 @@ type TimingIssueCode =
 interface TimingIssue {
   severity: "error" | "warning";
   code: TimingIssueCode;
-  pipeId: string;
+  /** pipe 귀속 이슈. readiness-event-missing 등 계약 수준 이슈에서는 미설정 */
+  pipeId?: string;
   contractId: string;
   message: string;
 }
