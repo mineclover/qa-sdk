@@ -1483,7 +1483,7 @@ export const DEMO_CATALOG = {
       id: "test_seq", name: "테스트 시나리오 순번",
       versions: {
         v1: {
-          entries: [] as unknown as readonly string[],
+          entries: [] as unknown as readonly string[], // TODO: 순번 엔트리 미정의 — CON-006 reserved 처리
           capacity: 2048,
         },
       },
