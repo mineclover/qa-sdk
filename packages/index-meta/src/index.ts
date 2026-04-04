@@ -101,6 +101,8 @@ export type {
 } from "./cross-index-query.js";
 export { PrefixDecoder } from "./prefix-decoder.js";
 export type { PrefixDecoderConfig, PrefixDeepDecodeResult, PrefixDeepDecodeDetailedResult } from "./prefix-decoder.js";
+export { PrefixDecoderBig } from "./prefix-decoder-big.js";
+export type { PrefixDecoderBigConfig, PrefixDeepDecodeResultBig, PrefixDeepDecodeDetailedResultBig } from "./prefix-decoder-big.js";
 export {
   queryAcrossVersions,
   entityVersionSpan,
