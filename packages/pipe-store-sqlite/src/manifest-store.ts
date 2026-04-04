@@ -27,6 +27,12 @@ export interface ServiceVersionManifest {
   readonly serviceId: string;
   readonly manifestVersion: string;
   readonly state: ManifestLifecycleState;
+  readonly runtimeAddressVersion?: string;
+  readonly serviceUnitVersion?: string;
+  readonly ownershipVersion?: string;
+  readonly exposureVersion?: string;
+  readonly deploymentVersion?: string;
+  readonly runtimeAddress?: RuntimeAddressSnapshot;
   readonly prefixes: Record<string, string>;
   readonly createdAt: string;
   readonly publishedAt?: string;
@@ -34,6 +40,23 @@ export interface ServiceVersionManifest {
   readonly supersededAt?: string;
   readonly archivedAt?: string;
   readonly changelog?: string;
+}
+
+export interface RuntimeAddressSnapshot {
+  readonly serviceId: string;
+  readonly namespace: string;
+  readonly name: string;
+  readonly env: string;
+  readonly region: string;
+}
+
+export interface ServiceManifestOptions {
+  readonly runtimeAddressVersion?: string;
+  readonly serviceUnitVersion?: string;
+  readonly ownershipVersion?: string;
+  readonly exposureVersion?: string;
+  readonly deploymentVersion?: string;
+  readonly runtimeAddress?: RuntimeAddressSnapshot;
 }
 
 export interface GuardResult {
@@ -155,11 +178,21 @@ export class SqliteManifestRegistry {
     manifestVersion: string,
     prefixes: Record<string, string>,
     changelog?: string,
+    options?: ServiceManifestOptions,
   ): ServiceVersionManifest {
+    if (options?.runtimeAddress && options.runtimeAddress.serviceId !== serviceId) {
+      throw new Error(`runtimeAddress.serviceId "${options.runtimeAddress.serviceId}" != manifest serviceId "${serviceId}"`);
+    }
     const manifest: ServiceVersionManifest = {
       serviceId,
       manifestVersion,
       state: "draft",
+      ...(options?.runtimeAddressVersion ? { runtimeAddressVersion: options.runtimeAddressVersion } : {}),
+      ...(options?.serviceUnitVersion ? { serviceUnitVersion: options.serviceUnitVersion } : {}),
+      ...(options?.ownershipVersion ? { ownershipVersion: options.ownershipVersion } : {}),
+      ...(options?.exposureVersion ? { exposureVersion: options.exposureVersion } : {}),
+      ...(options?.deploymentVersion ? { deploymentVersion: options.deploymentVersion } : {}),
+      ...(options?.runtimeAddress ? { runtimeAddress: options.runtimeAddress } : {}),
       prefixes,
       createdAt: new Date().toISOString(),
       changelog,
@@ -311,6 +344,12 @@ export class SqliteManifestRegistry {
         serviceId: manifest.serviceId,
         manifestVersion: manifest.manifestVersion,
         state: manifest.state,
+        runtimeAddressVersion: manifest.runtimeAddressVersion ?? null,
+        serviceUnitVersion: manifest.serviceUnitVersion ?? null,
+        ownershipVersion: manifest.ownershipVersion ?? null,
+        exposureVersion: manifest.exposureVersion ?? null,
+        deploymentVersion: manifest.deploymentVersion ?? null,
+        runtimeAddress: manifest.runtimeAddress ? JSON.stringify(manifest.runtimeAddress) : null,
         prefixes: JSON.stringify(manifest.prefixes),
         createdAt: manifest.createdAt,
         publishedAt: manifest.publishedAt ?? null,
@@ -323,6 +362,12 @@ export class SqliteManifestRegistry {
         target: serviceManifests.id,
         set: {
           state: manifest.state,
+          runtimeAddressVersion: manifest.runtimeAddressVersion ?? null,
+          serviceUnitVersion: manifest.serviceUnitVersion ?? null,
+          ownershipVersion: manifest.ownershipVersion ?? null,
+          exposureVersion: manifest.exposureVersion ?? null,
+          deploymentVersion: manifest.deploymentVersion ?? null,
+          runtimeAddress: manifest.runtimeAddress ? JSON.stringify(manifest.runtimeAddress) : null,
           prefixes: JSON.stringify(manifest.prefixes),
           publishedAt: manifest.publishedAt ?? null,
           activatedAt: manifest.activatedAt ?? null,
@@ -358,6 +403,14 @@ function rowToManifest(row: ManifestRow): ServiceVersionManifest {
     serviceId: row.serviceId,
     manifestVersion: row.manifestVersion,
     state: row.state as ManifestLifecycleState,
+    ...(row.runtimeAddressVersion ? { runtimeAddressVersion: row.runtimeAddressVersion } : {}),
+    ...(row.serviceUnitVersion ? { serviceUnitVersion: row.serviceUnitVersion } : {}),
+    ...(row.ownershipVersion ? { ownershipVersion: row.ownershipVersion } : {}),
+    ...(row.exposureVersion ? { exposureVersion: row.exposureVersion } : {}),
+    ...(row.deploymentVersion ? { deploymentVersion: row.deploymentVersion } : {}),
+    ...(row.runtimeAddress
+      ? { runtimeAddress: JSON.parse(row.runtimeAddress) as RuntimeAddressSnapshot }
+      : {}),
     prefixes: JSON.parse(row.prefixes) as Record<string, string>,
     createdAt: row.createdAt,
     ...(row.publishedAt ? { publishedAt: row.publishedAt } : {}),

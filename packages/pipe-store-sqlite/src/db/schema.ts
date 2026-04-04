@@ -84,6 +84,13 @@ export const serviceManifests = sqliteTable(
     serviceId: text("service_id").notNull(),
     manifestVersion: text("manifest_version").notNull(),
     state: text("state").notNull(), // ManifestLifecycleState
+    runtimeAddressVersion: text("runtime_address_version"),
+    serviceUnitVersion: text("service_unit_version"),
+    ownershipVersion: text("ownership_version"),
+    exposureVersion: text("exposure_version"),
+    deploymentVersion: text("deployment_version"),
+    /** Runtime service address snapshot JSON */
+    runtimeAddress: text("runtime_address"),
     /** Record<string, string> JSON — prefixId → version */
     prefixes: text("prefixes").notNull(),
     createdAt: text("created_at").notNull(),

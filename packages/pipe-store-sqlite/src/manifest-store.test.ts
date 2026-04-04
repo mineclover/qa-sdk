@@ -60,6 +60,51 @@ describe("SqliteManifestRegistry", () => {
       const m = reg.createManifest("order-svc", "1.0.0", { tracking: "v1" });
       expect(m.state).toBe("draft");
       expect(m.prefixes.tracking).toBe("v1");
+      expect(m.serviceUnitVersion).toBeUndefined();
+    });
+
+    it("선택적 child-version ref와 runtimeAddress를 함께 저장할 수 있다", () => {
+      const m = reg.createManifest(
+        "order-svc",
+        "1.0.0",
+        { tracking: "v1" },
+        "초기 릴리스",
+        {
+          runtimeAddressVersion: "ra-1",
+          serviceUnitVersion: "su-1",
+          ownershipVersion: "own-1",
+          exposureVersion: "exp-1",
+          deploymentVersion: "dep-1",
+          runtimeAddress: {
+            serviceId: "order-svc",
+            namespace: "shop",
+            name: "order",
+            env: "prod",
+            region: "asia",
+          },
+        },
+      );
+      expect(m.serviceUnitVersion).toBe("su-1");
+      expect(m.runtimeAddressVersion).toBe("ra-1");
+      expect(m.runtimeAddress?.env).toBe("prod");
+    });
+
+    it("runtimeAddress.serviceId가 다르면 거부한다", () => {
+      expect(() => reg.createManifest(
+        "order-svc",
+        "1.0.0",
+        { tracking: "v1" },
+        undefined,
+        {
+          runtimeAddress: {
+            serviceId: "other-svc",
+            namespace: "shop",
+            name: "order",
+            env: "prod",
+            region: "asia",
+          },
+        },
+      )).toThrow("runtimeAddress.serviceId");
     });
 
     it("draft → published (모든 prefix released 이상)", () => {
@@ -157,6 +202,41 @@ describe("SqliteManifestRegistry", () => {
       reg.createManifest("svc", "1.0.0", {}, "초기 릴리스");
       const loaded = reg.getManifest("svc", "1.0.0");
       expect(loaded.changelog).toBe("초기 릴리스");
+    });
+
+    it("enriched manifest metadata를 라운드트립한다", () => {
+      reg.createManifest(
+        "svc",
+        "1.0.0",
+        { tracking: "v1" },
+        "초기 릴리스",
+        {
+          runtimeAddressVersion: "ra-1",
+          serviceUnitVersion: "su-1",
+          ownershipVersion: "own-1",
+          deploymentVersion: "dep-1",
+          runtimeAddress: {
+            serviceId: "svc",
+            namespace: "shop",
+            name: "payment",
+            env: "prod",
+            region: "asia",
+          },
+        },
+      );
+
+      const loaded = reg.getManifest("svc", "1.0.0");
+      expect(loaded.serviceUnitVersion).toBe("su-1");
+      expect(loaded.runtimeAddressVersion).toBe("ra-1");
+      expect(loaded.ownershipVersion).toBe("own-1");
+      expect(loaded.deploymentVersion).toBe("dep-1");
+      expect(loaded.runtimeAddress).toEqual({
+        serviceId: "svc",
+        namespace: "shop",
+        name: "payment",
+        env: "prod",
+        region: "asia",
+      });
     });
   });
 });

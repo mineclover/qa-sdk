@@ -1,9 +1,8 @@
-import type { FacetCodeMapping, FacetCodeRef } from "@qa-sdk/core";
-import type { FacetCodeStore } from "@qa-sdk/core";
 import { eq, like } from "drizzle-orm";
 
 import { createDb, type DrizzleDb } from "./db/connection.js";
 import { facetCodeMappings } from "./db/schema.js";
+import type { FacetCodeMapping, FacetCodeRef, FacetCodeStore } from "./facet-code-types.js";
 
 type MappingRow = typeof facetCodeMappings.$inferSelect;
 

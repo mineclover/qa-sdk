@@ -17,5 +17,6 @@ export { SqliteManifestRegistry } from "./manifest-store.js";
 export type {
   PrefixVersionRecord, PrefixLifecycleState,
   ServiceVersionManifest, ManifestLifecycleState,
+  RuntimeAddressSnapshot, ServiceManifestOptions,
   GuardResult,
 } from "./manifest-store.js";
