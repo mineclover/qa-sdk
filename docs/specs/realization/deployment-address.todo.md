@@ -21,7 +21,7 @@ provider/project/stack/resourceKey와 runtime target(env/region)을 결합한 �
 
 ## 구현 항목
 
-- [ ] `DeploymentAddress`가 반드시 `RuntimeServiceAddress`를 포함하도록 타입을 고정한다.
+- [x] `DeploymentAddress`가 반드시 `RuntimeServiceAddress`를 포함하도록 타입을 고정한다.
 - [ ] `env/region` 없는 deployment ref를 미완성 주소로 취급하는 규칙을 명시한다.
 - [ ] Pulumi URN을 canonical address가 아닌 locator metadata로 두는 규칙을 문서화한다.
 - [ ] deployment target 비교/동등성 판정 규칙을 정한다.

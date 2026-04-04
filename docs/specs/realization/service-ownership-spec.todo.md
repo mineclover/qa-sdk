@@ -21,7 +21,7 @@ def:
 
 ## 구현 항목
 
-- [ ] `ownedPrefixes`와 `consumedPrefixes`를 `ServiceOwnershipSpec`으로 분리한다.
+- [x] `ownedPrefixes`와 `consumedPrefixes`를 `ServiceOwnershipSpec`으로 분리한다.
 - [ ] ownership spec과 DKG topology 질의의 연결 지점을 정한다.
 - [ ] manifest `prefixes`가 ownership spec과 어떻게 정합되는지 규칙을 정한다.
 - [ ] ownership 변경이 `ownershipVersion` 증가로 이어지는 규칙을 정한다.

@@ -23,7 +23,7 @@ child component version과 prefix pin을 묶는 release artifact를 정의해 ru
 
 ## 구현 항목
 
-- [ ] `serviceUnitVersion`, `ownershipVersion`, `exposureVersion`, `deploymentVersion`, `runtimeAddress`, `prefixes`를 포함한 manifest 구조를 고정한다.
+- [x] `serviceUnitVersion`, `ownershipVersion`, `exposureVersion`, `deploymentVersion`, `runtimeAddress`, `prefixes`를 포함한 manifest 구조를 고정한다.
 - [ ] manifest가 child snapshot 전체를 중복 저장하지 않는 원칙을 명시한다.
 - [ ] `service_manifests` 스키마에 어떤 version ref와 snapshot이 필요한지 정리한다.
 - [ ] CloudEvents의 `qasdk_manifestversion`이 이 artifact와 어떻게 연결되는지 규칙을 정한다.

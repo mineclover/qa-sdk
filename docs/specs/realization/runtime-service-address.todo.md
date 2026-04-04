@@ -19,7 +19,7 @@ def:
 
 ## 구현 항목
 
-- [ ] `RuntimeServiceAddress = serviceId + namespace/name/env/region` 구조를 타입으로 고정한다.
+- [x] `RuntimeServiceAddress = serviceId + namespace/name/env/region` 구조를 타입으로 고정한다.
 - [ ] `ServiceBootConfig`와 1:1 projection 관계를 명시한다.
 - [ ] `service` prefix 인코딩에 필요한 최소 필드를 검증 규칙으로 정한다.
 - [ ] runtime address version surface가 필요한지와 필요하다면 언제 증가하는지 규칙을 정한다.
