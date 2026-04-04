@@ -3,12 +3,15 @@ import {
   measureLayout,
   classifyLayout,
   renderToSVG,
+  renderToCanvas,
   checkConformance,
+  createLayoutMonitor,
 } from "rlsc";
 import type {
   RLSCDocument,
   LayoutPattern,
   CanvasRenderOptions,
+  LayoutMonitor,
 } from "rlsc";
 
 declare global {
@@ -18,7 +21,10 @@ declare global {
     copyContext: () => void;
     clearSelection: () => void;
     renderSVG: () => void;
+    renderCanvas2D: () => void;
     runConformance: () => void;
+    startMonitor: () => void;
+    stopMonitor: () => void;
   }
 }
 
@@ -86,6 +92,7 @@ let nodeMap: Map<string, InlineNode> | null = null;
 let selectedId: string | null = null;
 let overlayOn = false;
 let rlscDoc: RLSCDocument | null = null;
+let layoutMonitor: LayoutMonitor | null = null;
 
 // ═══════════════════════════════════════════════════════
 //  인라인 수집
@@ -272,6 +279,7 @@ function runCollection(): void {
   try { renderMetrics(); } catch (e) { console.error("[rlsc] renderMetrics:", e); setPanel("panel-metrics", `renderMetrics 오류: ${escHtml(String(e))}`); }
   try { renderPattern(); } catch (e) { console.error("[rlsc] renderPattern:", e); setPanel("panel-pattern", `renderPattern 오류: ${escHtml(String(e))}`); }
   try { renderSVG(); } catch (e) { console.error("[rlsc] renderSVG:", e); }
+  try { renderCanvas2D(); } catch (e) { console.error("[rlsc] renderCanvas2D:", e); }
   if (overlayOn) drawBboxOverlay();
 
   setupInteraction();
@@ -515,6 +523,88 @@ function renderSVG(): void {
   container.innerHTML = svg;
 }
 
+function renderCanvas2D(): void {
+  if (!rlscDoc) return;
+  const canvasEl = document.getElementById("canvas2d-el") as HTMLCanvasElement | null;
+  if (!canvasEl) return;
+
+  const colorEl = document.getElementById("c2d-opt-color") as HTMLSelectElement | null;
+  const colorBy = (colorEl?.value ?? "role") as CanvasRenderOptions["colorBy"];
+  const showGrid = (document.getElementById("c2d-opt-grid") as HTMLInputElement | null)?.checked ?? true;
+  const showBalance = (document.getElementById("c2d-opt-balance") as HTMLInputElement | null)?.checked ?? true;
+  const showFlow = (document.getElementById("c2d-opt-flow") as HTMLInputElement | null)?.checked ?? false;
+  const showGroups = (document.getElementById("c2d-opt-groups") as HTMLInputElement | null)?.checked ?? false;
+
+  const metricsForGroups = showGroups ? measureLayout(rlscDoc) : undefined;
+
+  renderToCanvas(rlscDoc, canvasEl, {
+    colorBy,
+    showGrid,
+    showBalance,
+    showFlow,
+    showGroups,
+    opacity: 0.65,
+    ...(metricsForGroups ? { metrics: metricsForGroups } : {}),
+  });
+}
+
+function startMonitor(): void {
+  const root = document.getElementById("sample-layout");
+  if (!root) return;
+
+  const changesEl = document.getElementById("monitor-changes");
+  const statusEl = document.getElementById("monitor-status");
+  const startBtn = document.getElementById("monitor-start") as HTMLButtonElement | null;
+  const stopBtn = document.getElementById("monitor-stop") as HTMLButtonElement | null;
+
+  layoutMonitor = createLayoutMonitor(root, {
+    debounceMs: 300,
+    onConformanceChange: (result) => {
+      if (statusEl) statusEl.textContent = `Score: ${Math.round(result.score * 100)}%`;
+    },
+  });
+
+  layoutMonitor.start();
+
+  if (startBtn) startBtn.disabled = true;
+  if (stopBtn) stopBtn.disabled = false;
+  if (statusEl) statusEl.textContent = "Monitoring...";
+  if (changesEl) changesEl.innerHTML = "";
+
+  // 변경 이력 폴링
+  const pollId = setInterval(() => {
+    if (!layoutMonitor || !changesEl) { clearInterval(pollId); return; }
+    const changes = layoutMonitor.changes;
+    if (changes.length === 0) return;
+    const html = changes.map(c => {
+      const col = c.type === "added" ? "var(--green)" : c.type === "removed" ? "var(--red)" : "var(--yellow)";
+      return `<div style="padding:2px 0;border-bottom:1px solid var(--bg-tertiary)"><span style="color:${col};font-weight:600">${c.type}</span> <span style="color:var(--accent)">${c.nodeId}</span> <span style="color:var(--text-muted)">${c.timestamp}</span></div>`;
+    }).join("");
+    changesEl.innerHTML = html;
+  }, 500);
+
+  // pollId를 stop 시 정리할 수 있도록 저장
+  (window as unknown as Record<string, unknown>).__monitorPollId = pollId;
+}
+
+function stopMonitor(): void {
+  if (layoutMonitor) {
+    layoutMonitor.stop();
+    layoutMonitor = null;
+  }
+
+  const startBtn = document.getElementById("monitor-start") as HTMLButtonElement | null;
+  const stopBtn = document.getElementById("monitor-stop") as HTMLButtonElement | null;
+  const statusEl = document.getElementById("monitor-status");
+
+  if (startBtn) startBtn.disabled = false;
+  if (stopBtn) stopBtn.disabled = true;
+  if (statusEl) statusEl.textContent = "Stopped";
+
+  const pollId = (window as unknown as Record<string, unknown>).__monitorPollId;
+  if (typeof pollId === "number") clearInterval(pollId);
+}
+
 function runConformance(): void {
   const resultEl = document.getElementById("conformance-result");
   if (!resultEl) return;
@@ -704,4 +794,7 @@ window["runCollection"] = runCollection;
 window["copyContext"] = copyContext;
 window["clearSelection"] = clearSelection;
 window["renderSVG"] = renderSVG;
+window["renderCanvas2D"] = renderCanvas2D;
 window["runConformance"] = runConformance;
+window["startMonitor"] = startMonitor;
+window["stopMonitor"] = stopMonitor;

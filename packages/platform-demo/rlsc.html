@@ -267,6 +267,8 @@
         <div class="tab" data-tab="pattern">Pattern</div>
         <div class="tab" data-tab="svg">SVG</div>
         <div class="tab" data-tab="conformance">Conformance</div>
+        <div class="tab" data-tab="canvas2d">Canvas</div>
+        <div class="tab" data-tab="monitor">Monitor</div>
       </div>
       <div class="tab-content">
         <div class="tab-panel active" id="panel-tree"><span style="color:var(--text-muted)">Click "Collect" to analyze...</span></div>
@@ -296,6 +298,30 @@
             <button class="btn" style="margin-top:8px;width:100%" onclick="runConformance()">Check Conformance</button>
             <div id="conformance-result" style="margin-top:12px"></div>
           </div>
+        <div class="tab-panel" id="panel-canvas2d" style="padding:0">
+          <div class="svg-options">
+            <label class="svg-opt-label"><input type="checkbox" id="c2d-opt-grid" checked> Grid</label>
+            <label class="svg-opt-label"><input type="checkbox" id="c2d-opt-balance" checked> Balance</label>
+            <label class="svg-opt-label"><input type="checkbox" id="c2d-opt-flow"> Flow</label>
+            <label class="svg-opt-label"><input type="checkbox" id="c2d-opt-groups"> Groups</label>
+            <select id="c2d-opt-color" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-primary);font-size:11px;border-radius:3px;padding:2px 4px">
+              <option value="role">By Role</option>
+              <option value="depth">By Depth</option>
+              <option value="layer">By Layer</option>
+            </select>
+            <button class="btn" style="font-size:10px;padding:2px 8px" onclick="renderCanvas2D()">Re-render</button>
+          </div>
+          <div style="padding:12px;overflow:auto"><canvas id="canvas2d-el" style="border:1px solid var(--border);border-radius:var(--radius);max-width:100%"></canvas></div>
+        </div>
+        <div class="tab-panel" id="panel-monitor" style="padding:12px">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="btn" id="monitor-start" onclick="startMonitor()">Start</button>
+            <button class="btn" id="monitor-stop" onclick="stopMonitor()" disabled>Stop</button>
+            <span id="monitor-status" style="color:var(--text-muted);font-size:11px;line-height:28px">Idle</span>
+          </div>
+          <div class="metrics-title">변경 이력</div>
+          <div id="monitor-changes" style="font-size:10px;color:var(--text-secondary);max-height:400px;overflow-y:auto">모니터링을 시작하면 레이아웃 변경 이벤트가 표시됩니다.</div>
+        </div>
         </div>
       </div>
     </div>
