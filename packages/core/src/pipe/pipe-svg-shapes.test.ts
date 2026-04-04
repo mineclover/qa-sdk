@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawEdgePath, drawPortDots, standaloneEdgeSvg, standaloneNodeSvg } from "./pipe-svg-shapes.js";
+import { drawEdgePath, drawPortDots, standaloneEdgeSvg, standaloneNodeSvg } from "viz-core";
 import type { PipePort } from "../types/pipe-spec.js";
 
 describe("drawPortDots", () => {

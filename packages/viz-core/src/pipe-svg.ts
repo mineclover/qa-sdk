@@ -1,23 +1,19 @@
 /**
  * PipeGraph → SVG / D3 데이터 변환 (그래프 레벨 렌더러)
  *
- * pipe-svg-primitives + pipe-svg-shapes 위에서 동작.
+ * primitives + shapes 위에서 동작.
  * ZoomView의 노드/엣지 배치 정보를 시각 도형으로 변환한다.
  */
 
-import type { PipeGraph, PipeFlow } from "../types/pipe-spec.js";
-import type { ZoomView, ZoomNode, ZoomEdge } from "./pipe-zoom.js";
-import { computeZoomView, computeLayout } from "./pipe-zoom.js";
-import type { FoldLevel } from "./pipe-fold.js";
-import type { PipeConcern } from "./pipe-interpret.js";
-import { summarizeFlowLineage } from "./pipe-lineage.js";
-import { escapeAttr, svgSvg } from "./pipe-svg-primitives.js";
+import type { PipeGraph, PipeFlow, ZoomView, ZoomNode, ZoomEdge, FoldLevel, PipeConcern } from "@qa-sdk/core";
+import { computeZoomView, computeLayout, summarizeFlowLineage } from "@qa-sdk/core";
+import { escapeAttr, svgSvg } from "./primitives.js";
 import {
   renderMarkerDefs,
   drawNodeShape, drawFoldedNode, drawEntryMarker,
   drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
   drawEdgePath, drawConditionBadge,
-} from "./pipe-svg-shapes.js";
+} from "./shapes.js";
 
 // ── 공개 타입 ─────────────────────────────────────────
 

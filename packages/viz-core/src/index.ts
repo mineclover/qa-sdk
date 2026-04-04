@@ -23,6 +23,11 @@ export {
   drawEdgePath, drawConditionBadge,
   standaloneNodeSvg, standaloneEdgeSvg,
 } from "./shapes.js";
+export type {
+  RoleTokens, ConcernTokens, EdgeTokens,
+  NodeShapeOptions, EdgePathOptions,
+  StandaloneNodeOptions, StandaloneEdgeOptions,
+} from "./shapes.js";
 
 // ── Pipe Mermaid ──
 export {
@@ -34,6 +39,14 @@ export {
 export {
   nestingToMermaid, mountSnapshotToMermaid, timingToMermaid,
 } from "./scope-mermaid.js";
+
+// ── Pipe SVG / D3 ──
+export {
+  pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3,
+} from "./pipe-svg.js";
+export type {
+  SvgOptions, D3Node, D3Link, D3GraphData, D3LineageSummary,
+} from "./pipe-svg.js";
 
 // ── Scope Nesting D3 ──
 export {

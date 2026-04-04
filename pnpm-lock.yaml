@@ -374,6 +374,9 @@ importers:
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
+      viz-core:
+        specifier: workspace:*
+        version: link:../viz-core
 
   packages/data-object-codegen:
     dependencies:
@@ -1319,6 +1322,9 @@ importers:
       permission-engine:
         specifier: workspace:*
         version: link:../permission-engine
+      rlsc:
+        specifier: workspace:*
+        version: link:../rlsc
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
@@ -1958,6 +1964,22 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
+  packages/viz-core:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
   packages/viz-web:
     dependencies:
       '@qa-sdk/core':
@@ -1975,6 +1997,9 @@ importers:
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
+      viz-core:
+        specifier: workspace:*
+        version: link:../viz-core
     devDependencies:
       '@types/dagre':
         specifier: ^0.7.52

@@ -11,7 +11,7 @@ import { validateMountFlow, type MountFlowBinding } from "./scope-nesting-mount.
 import { validateContractTiming, type TimedMountFlowBinding } from "./scope-nesting-timing.js";
 import { transition, isViolation, verifyInvariants } from "./scope-nesting-state.js";
 import { simulate, matchHappyPath } from "./pipe/pipe-simulate.js";
-import { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "./scope-nesting-mermaid.js";
+import { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "viz-core";
 import type { PipeGraph, PipeFlow } from "./types/pipe-spec.js";
 
 const step = (facet: string, eventKey?: string): PipeFlow => ({

@@ -9,13 +9,15 @@ import {
   type PipeConnection,
   type PipeFlow,
   type PortRef,
+  classifyPipeRole, extractPipeConcerns,
+} from "@qa-sdk/core";
+import {
   type StandaloneNodeOptions,
   type StandaloneEdgeOptions,
   pipeGraphToSvg,
   standaloneNodeSvg, standaloneEdgeSvg,
   ROLE_TOKENS, CONCERN_TOKENS, EDGE_TOKENS,
-  classifyPipeRole, extractPipeConcerns,
-} from "@qa-sdk/core";
+} from "viz-core";
 
 // ── 헬퍼 ─────────────────────────────────────────────
 

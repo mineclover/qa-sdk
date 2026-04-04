@@ -12,6 +12,7 @@
   "dependencies": {
     "canvas-viewport": "workspace:*",
     "@qa-sdk/core": "workspace:*",
+    "viz-core": "workspace:*",
     "@qa-sdk/engine": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "dagre": "^0.8.5"

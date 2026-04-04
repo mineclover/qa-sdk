@@ -9,6 +9,36 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./primitives": {
+      "types": "./dist/primitives.d.ts",
+      "import": "./dist/primitives.js",
+      "require": "./dist/primitives.cjs"
+    },
+    "./shapes": {
+      "types": "./dist/shapes.d.ts",
+      "import": "./dist/shapes.js",
+      "require": "./dist/shapes.cjs"
+    },
+    "./pipe-mermaid": {
+      "types": "./dist/pipe-mermaid.d.ts",
+      "import": "./dist/pipe-mermaid.js",
+      "require": "./dist/pipe-mermaid.cjs"
+    },
+    "./scope-mermaid": {
+      "types": "./dist/scope-mermaid.d.ts",
+      "import": "./dist/scope-mermaid.js",
+      "require": "./dist/scope-mermaid.cjs"
+    },
+    "./scope-d3": {
+      "types": "./dist/scope-d3.d.ts",
+      "import": "./dist/scope-d3.js",
+      "require": "./dist/scope-d3.cjs"
+    },
+    "./pipe-svg": {
+      "types": "./dist/pipe-svg.d.ts",
+      "import": "./dist/pipe-svg.js",
+      "require": "./dist/pipe-svg.cjs"
     }
   },
   "main": "./dist/index.cjs",

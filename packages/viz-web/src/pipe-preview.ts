@@ -4,10 +4,8 @@
  */
 
 import type { PipeGraph, PipeSpec, PipeConnection, PipeFlow, FoldLevel } from "@qa-sdk/core";
-import {
-  pipeGraphToSvg, pipeGraphToMermaid, pipeGraphToD3,
-  computeZoomView, computeLayout,
-} from "@qa-sdk/core";
+import { computeZoomView, computeLayout } from "@qa-sdk/core";
+import { pipeGraphToSvg, pipeGraphToD3, pipeGraphToMermaid } from "viz-core";
 
 // ── 예제 그래프 정의 ──────────────────────────────────
 

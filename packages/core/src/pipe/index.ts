@@ -110,36 +110,7 @@ export { ConstraintRegistry, evaluatePredicate, executeConstraint } from "./cons
 export { detectPathSegments } from "./pipe-segment.js";
 export type { DetectedSegments, SegmentReason } from "./pipe-segment.js";
 
-// ── Mermaid ───────────────────────────────────────────
-export { pipeGraphToMermaid, zoomViewToMermaid } from "./pipe-mermaid.js";
-export type { MermaidOptions } from "./pipe-mermaid.js";
-
-// ── SVG primitives ────────────────────────────────────
-export {
-  svgRect, svgCircle, svgPolygon, svgLine, svgPath, svgText, svgGroup, svgSvg,
-  svgMarker, svgDefs, bezierH, arcAbove,
-  r as svgR, escapeXml as svgEscapeXml, escapeAttr as svgEscapeAttr,
-} from "./pipe-svg-primitives.js";
-export type { Attrs as SvgAttrs, MarkerDef as SvgMarkerDef } from "./pipe-svg-primitives.js";
-
-// ── SVG shapes + tokens ───────────────────────────────
-export {
-  ROLE_TOKENS, CERTAINTY_STROKE_DASH, CONCERN_TOKENS, EDGE_TOKENS,
-  renderMarkerDefs,
-  drawNodeShape, drawFoldedNode, drawEntryMarker,
-  drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
-  drawEdgePath, drawConditionBadge,
-  standaloneNodeSvg, standaloneEdgeSvg,
-} from "./pipe-svg-shapes.js";
-export type {
-  RoleTokens, ConcernTokens, EdgeTokens,
-  NodeShapeOptions, EdgePathOptions,
-  StandaloneNodeOptions, StandaloneEdgeOptions,
-} from "./pipe-svg-shapes.js";
-
-// ── SVG / D3 ──────────────────────────────────────────
-export { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "./pipe-svg.js";
-export type { SvgOptions, D3Node, D3Link, D3GraphData, D3LineageSummary } from "./pipe-svg.js";
+// 시각화 (Mermaid, SVG primitives, shapes, SVG/D3) → viz-core로 이동 완료
 
 // ── Definition Bridge ─────────────────────────────────
 export { resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings } from "./pipe-definition-bridge.js";

@@ -172,6 +172,8 @@ export {
   // bridge
   extractLineageFromSimulation, validateStepContracts, validateSimulationLineage, constraintResultToEvent,
   type StepCompatIssue, type SimulationLineageValidation, type ConstraintEvent,
+  // static lineage
+  summarizeFlowLineage, type FlowLineageSummary,
   // matcher
   matchPath, type PipeMatchResult,
   // verdict v2
@@ -222,8 +224,7 @@ export type {
 } from "./scope-nesting-timing.js";
 export { validateContractTiming } from "./scope-nesting-timing.js";
 
-// ── Scope Nesting Mermaid — 시각화 ──
-export { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "./scope-nesting-mermaid.js";
+// Scope Nesting Mermaid/D3 시각화 → viz-core로 이동 (C안 3단계)
 
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {
@@ -233,26 +234,6 @@ export type {
 export { transition, isViolation, verifyInvariants } from "./scope-nesting-state.js";
 
 export {
-  // mermaid
-  pipeGraphToMermaid, zoomViewToMermaid, type MermaidOptions,
-  // svg primitives
-  svgRect, svgCircle, svgPolygon, svgLine, svgPath, svgText, svgGroup, svgSvg,
-  svgMarker, svgDefs, bezierH, arcAbove,
-  svgR, svgEscapeXml, svgEscapeAttr,
-  type SvgAttrs, type SvgMarkerDef,
-  // svg shapes + tokens
-  ROLE_TOKENS, CERTAINTY_STROKE_DASH, CONCERN_TOKENS, EDGE_TOKENS,
-  renderMarkerDefs,
-  drawNodeShape, drawFoldedNode, drawEntryMarker,
-  drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
-  drawEdgePath, drawConditionBadge,
-  standaloneNodeSvg, standaloneEdgeSvg,
-  type RoleTokens, type ConcernTokens, type EdgeTokens,
-  type NodeShapeOptions, type EdgePathOptions,
-  type StandaloneNodeOptions, type StandaloneEdgeOptions,
-  // svg / d3
-  pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3,
-  type SvgOptions, type D3Node, type D3Link, type D3GraphData,
   // definition bridge
   resolveLifecycles, analyzeLayerPropagation, resolveTags, resolveBindings,
   type PipeDefLifecycle, type PipeDefLayer,

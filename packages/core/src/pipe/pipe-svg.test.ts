@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "./pipe-svg.js";
+import { pipeGraphToSvg, zoomViewToSvg, pipeGraphToD3, zoomViewToD3 } from "viz-core";
 import { computeZoomView, computeLayout } from "./pipe-zoom.js";
 import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
 import { step } from "./__fixtures__/pipe-fixtures.js";

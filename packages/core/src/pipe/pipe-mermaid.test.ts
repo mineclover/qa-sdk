@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pipeGraphToMermaid, zoomViewToMermaid } from "./pipe-mermaid.js";
+import { pipeGraphToMermaid, zoomViewToMermaid } from "viz-core";
 import { computeZoomView } from "./pipe-zoom.js";
 import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
 import { step } from "./__fixtures__/pipe-fixtures.js";

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "./scope-nesting-mermaid.js";
+import { nestingToMermaid, mountSnapshotToMermaid, timingToMermaid } from "viz-core";
 import { validateScopeNesting, type ScopeNesting } from "./scope-nesting.js";
 import { validateMountFlow, type MountFlowBinding } from "./scope-nesting-mount.js";
 import { validateContractTiming, type TimedMountFlowBinding } from "./scope-nesting-timing.js";

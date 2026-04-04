@@ -90,14 +90,31 @@ pipe-svg는 core에 유지 (기존 소비자 무변경), scope-nesting 시각화
 
 ## 잔여 작업
 
-- [ ] 2단계: core 원본을 `viz-core` re-export로 전환 (하위 호환)
-  - `core/pipe/pipe-svg-primitives.ts` → `export * from "viz-core/primitives"`
-  - `core/pipe/pipe-svg-shapes.ts` → `export * from "viz-core/shapes"`
-  - `core/pipe/pipe-mermaid.ts` → `export * from "viz-core/pipe-mermaid"`
-  - `core/scope-nesting-mermaid.ts` → `export * from "viz-core/scope-mermaid"`
-  - `core/scope-nesting-d3.ts` → `export * from "viz-core/scope-d3"`
-- [ ] 3단계: 소비자 import 경로 변경 (viz-web, registry-ui → viz-core)
-- [ ] 4단계: core re-export 제거, core index.ts에서 시각화 export 삭제
-- [ ] pipe-svg.ts (그래프 렌더러) 이동 — pipe-zoom 의존 정리 필요
+- [x] 2단계: core 원본을 `viz-core` re-export로 전환 (하위 호환) — 2026-04-05 완료
+  - viz-core tsup multi-entry + subpath exports 추가 (./primitives, ./shapes, ./pipe-mermaid, ./scope-mermaid, ./scope-d3)
+  - core에 `viz-core: workspace:*` 의존성 추가
+  - 5개 파일 → `export * from "viz-core/..."` 전환
+  - core build 스크립트에 `rm -rf dist` 추가 (순환 의존 TS5055 방지)
+  - 1039 tests 전부 통과 확인
+- [x] 3단계: 소비자 import 경로 변경 — 2026-04-05 완료
+  - viz-web/pipe-design.ts: shapes/tokens → `viz-core` import 전환
+  - viz-web/pipe-preview.ts: `pipeGraphToMermaid` → `viz-core` import 전환
+  - viz-web에 `viz-core: workspace:*` 의존성 추가
+  - viz-core index.ts에 누락된 타입 export 추가 (RoleTokens, StandaloneNodeOptions 등)
+  - registry-ui: 해당 없음 (시각화 import 미사용)
+- [x] 4단계: core 공개 API에서 시각화 export 삭제 — 2026-04-05 완료
+  - pipe/index.ts: Mermaid, SVG primitives, SVG shapes+tokens 섹션 제거
+  - core/index.ts: scope-nesting-mermaid export + pipe 시각화 블록 제거
+  - re-export 파일 자체는 유지 (pipe-svg.ts + test 파일이 내부 의존)
+  - 1039 tests 전부 통과 확인
+- [x] pipe-svg.ts (그래프 렌더러) → viz-core 이동 — 2026-04-05 완료
+  - viz-core/src/pipe-svg.ts 생성 (import를 @qa-sdk/core + viz-core 내부로 전환)
+  - viz-core export/subpath/tsup entry 추가
+  - core/pipe/pipe-svg.ts re-export → 삭제
+  - viz-web: pipeGraphToSvg/D3 import를 viz-core로 전환
+  - core 공개 API에서 SVG/D3 export 제거
+  - core의 6개 re-export 파일 삭제, viz-core를 devDependencies로 이동
+  - core에 `summarizeFlowLineage` 공개 export 추가
+  - 1039 tests 전부 통과 확인
 - [ ] scope-nesting-timeline.ts 신규 구현 → viz-core에 직접 생성
 - [ ] viz-web/scope-nesting-preview 페이지 → viz-core + canvas-viewport 통합
