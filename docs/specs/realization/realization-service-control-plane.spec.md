@@ -137,4 +137,3 @@ runtime/deployment address system을 서비스 정의보다 상위 aggregate로 
 ## 관련 문서
 
 - [realization-service-control-plane.plan.md](realization-service-control-plane.plan.md)
-- [realization-service-control-plane.todo.md](realization-service-control-plane.todo.md)

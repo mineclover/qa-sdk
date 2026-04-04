@@ -122,11 +122,7 @@ PipeFlow 30종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 | pipe-runtime | `core/src/pipe-runtime.ts` | `pipe-runtime.test.ts` | 36 |
 | pipe-bridge | `core/src/pipe-bridge.ts` | 통합 테스트 | — |
 | pipe-benchmark | 성능 검증 | `pipe-benchmark.test.ts` | 11 |
-| pipe-flow-catalog | 문서 전용 (29 leaf) | — | — |
-| pipe-connection-catalog | 문서 전용 (8 leaf) | — | — |
-| pipe-svg-primitives | `core/src/pipe/pipe-svg-primitives.ts` | — | — |
-| pipe-svg-shapes | `core/src/pipe/pipe-svg-shapes.ts` | — | — |
-| pipe-svg | `core/src/pipe/pipe-svg.ts` | `pipe-svg.test.ts` | 15 |
+| pipe-svg | `packages/viz-core/src/pipe-svg.ts` | `packages/core/src/pipe-svg.test.ts` | 15 |
 
 통합 테스트: `meta-semantic-integration.test.ts` (12 tests)
 공유 fixture: `__fixtures__/pipe-fixtures.ts` (step, simplePipe, branchPipe, simpleGraph)
@@ -169,6 +165,7 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 ## 관련 문서
 
 - `meta-semantic-pipe-catalog` — PipeFlow/ConnectionKind 카탈로그와 naming/colocation 규칙
+- `scope-nesting-visualization` — `viz-core`/`viz-web` 기반 시각화 경계
 
 ## 검증
 

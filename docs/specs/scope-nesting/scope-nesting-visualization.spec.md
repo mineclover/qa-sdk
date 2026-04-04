@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: scope-nesting-contract-timing
       type: depends_on
+    - target: scope-nesting-viz-package
+      type: traces_to
 ---
 
 # Scope Nesting 시각화
@@ -32,8 +34,9 @@ scope-nesting의 5계층 시뮬레이션 결과를 통합 타임라인으로 렌
 
 ## 소비 ^consumes
 
-- `pipe-svg-primitives` — svgRect, svgText, svgLine, svgGroup (`@qa-sdk/core`)
-- `pipe-svg-shapes` — ROLE_TOKENS, EDGE_TOKENS, CONCERN_TOKENS 색상 체계 (`@qa-sdk/core`)
+- `viz-core/primitives` — svgRect, svgText, svgLine, svgGroup (`packages/viz-core/src/primitives.ts`)
+- `viz-core/shapes` — 공통 도형/토큰 계층 (`packages/viz-core/src/shapes.ts`)
+- `viz-core/scope-nesting-timeline` — `scopeTimelineToSvg`, `scopeTimelineToD3`, timeline 전용 토큰
 - `canvas-viewport` — createCanvasViewportSession, renderCanvasHud (`canvas-viewport`)
 - `ScopeNesting` / `NestingValidation` / `MountSnapshot` / `TimingValidation` (`@qa-sdk/core`)
 - `SimulationResult` (`@qa-sdk/core`)
@@ -42,27 +45,27 @@ scope-nesting의 5계층 시뮬레이션 결과를 통합 타임라인으로 렌
 
 ## 아키텍처
 
-### 기존 pipe-svg 3계층과의 관계
+### 현재 renderer 계층
 
 ```
-pipe-svg-primitives  (SVG 요소 빌더)
+viz-core/primitives          (SVG 요소 빌더)
   ↑
-pipe-svg-shapes     (도메인 도형 + 토큰)
+viz-core/shapes             (도메인 도형 + 토큰)
   ↑
-pipe-svg            (PipeGraph 렌더러)
+viz-core/pipe-svg          (PipeGraph 렌더러)
   ↑ 병렬
-scope-nesting-svg   (ScopeNesting 타임라인 렌더러)  ← 신규
+viz-core/scope-nesting-timeline  (ScopeNesting 타임라인 렌더러)
   ↑
 canvas-viewport     (줌/팬/미니맵)
   ↑
 viz-web             (프리뷰 웹 호스트)
 ```
 
-scope-nesting-svg는 pipe-svg와 **같은 계층**에 위치. primitives와 shapes를 공유하되, 렌더링 대상이 PipeGraph 대신 ScopeNesting.
+scope-nesting timeline 렌더러는 `viz-core` 내부에서 pipe-svg와 같은 계층에 위치한다. primitives와 shapes를 공유하되, 렌더링 대상이 PipeGraph 대신 ScopeNesting이다.
 
 ### 토큰 매핑
 
-기존 pipe-svg 토큰을 scope-nesting에 재매핑:
+`viz-core/shapes`의 공통 토큰을 scope-nesting timeline에 재매핑:
 
 | pipe-svg 토큰 | scope-nesting 용도 |
 |---|---|
@@ -158,7 +161,7 @@ function scopeTimelineToSvg(
 ): string;
 ```
 
-pipe-svg의 `pipeGraphToSvg` 패턴과 동일. SVG 문자열 반환.
+`viz-core/pipe-svg`의 `pipeGraphToSvg` 패턴과 같은 계층의 SVG renderer다.
 
 ### 2. scopeTimelineToD3 (브라우저)
 
@@ -176,7 +179,7 @@ function scopeTimelineToD3(
 ): D3TimelineData;
 ```
 
-pipe-svg의 `pipeGraphToD3` 패턴과 동일. D3 호환 데이터 반환.
+`viz-core/pipe-svg`의 D3 변환 계층과 동일한 역할의 D3 데이터 변환기다.
 
 ### 3. renderScopeTimeline (브라우저 DOM)
 
@@ -230,12 +233,11 @@ viz-web의 `GraphRenderer` 패턴. host에 SVG 마운트 + canvas-viewport 세�
 
 | 단계 | 파일 | 내용 |
 |---|---|---|
-| 1 | `core/src/scope-nesting-timeline.ts` | ScopeTimelineData → ScopeTimelineRow[] 변환 + scopeTimelineToSvg |
-| 2 | `core/src/scope-nesting-timeline.ts` | scopeTimelineToD3 |
-| 3 | `core/src/scope-nesting-timeline.test.ts` | SVG 출력 + D3 데이터 구조 검증 |
-| 4 | `viz-web/src/scope-nesting-preview.ts` | renderScopeTimeline + canvas-viewport 통합 |
-| 5 | `viz-web/scope-nesting.html` | 프리뷰 페이지 HTML |
-| 6 | `scope-nesting-demo.html` 제거 | viz-web 프리뷰로 대체 |
+| 1 | `packages/viz-core/src/scope-nesting-timeline.ts` | ScopeTimelineData → ScopeTimelineRow[] 변환 + scopeTimelineToSvg |
+| 2 | `packages/viz-core/src/scope-nesting-timeline.ts` | scopeTimelineToD3 |
+| 3 | `packages/viz-core/src/scope-nesting-timeline.test.ts` | SVG 출력 + D3 데이터 구조 검증 |
+| 4 | `packages/viz-web/src/scope-nesting-preview.ts` | preview 데이터 조립 + canvas-viewport 통합 |
+| 5 | `packages/viz-web/scope-nesting.html` | 프리뷰 페이지 HTML |
 
 ### 의존성
 
@@ -251,9 +253,9 @@ viz-web의 `GraphRenderer` 패턴. host에 SVG 마운트 + canvas-viewport 세�
 
 | 재사용 대상 | 경로 | 사용 방법 |
 |---|---|---|
-| SVG primitives | `core/src/pipe/pipe-svg-primitives.ts` | svgRect, svgText, svgLine 직접 호출 |
-| 디자인 토큰 | `core/src/pipe/pipe-svg-shapes.ts` | ROLE_TOKENS, EDGE_TOKENS 색상 참조 |
-| Standalone SVG | `core/src/pipe/pipe-svg-shapes.ts` | standaloneNodeSvg 패턴 참고 |
+| SVG primitives | `packages/viz-core/src/primitives.ts` | svgRect, svgText, svgLine 직접 호출 |
+| 디자인 토큰 | `packages/viz-core/src/shapes.ts` | 공통 색상/shape 패턴 참조 |
+| Timeline renderer | `packages/viz-core/src/scope-nesting-timeline.ts` | timeline 행 조립 + SVG/D3 출력 |
 | 캔버스 추상화 | `canvas-viewport/src/` | createCanvasViewportSession + HUD |
-| viz-web 프리뷰 | `viz-web/src/pipe-preview.ts` | 탭 전환 + 줌 레벨 패턴 참고 |
+| viz-web 프리뷰 | `packages/viz-web/src/scope-nesting-preview.ts` | 예제 조립 + 탭 전환 + 필터 UI |
 | registry-ui D3 | `registry-ui/src/pages/file-map/render-canvas.ts` | D3 + canvas-viewport 통합 패턴 |
