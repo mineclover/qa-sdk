@@ -14,6 +14,8 @@ def:
       type: implements
     - target: pipe-types
       type: contains
+    - target: facet-port-model
+      type: contains
     - target: pipe-path
       type: contains
     - target: pipe-validate
@@ -74,6 +76,7 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 ## 방법 ^method
 
 **pipe-types**가 PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입을 정의하고,
+**facet-port-model**이 typed port / PortRef / facetType edge 표현으로 이를 확장하고,
 **pipe-path**가 단일 파이프 + 그래프 전체 경로 수를 계산하고,
 **pipe-validate**가 구조 무결성을 검증하고,
 **pipe-serialize**가 JSON 직렬화/역직렬화하고,
@@ -90,6 +93,7 @@ fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 ## 위임 ^delegates
 
 - **pipe-types** → PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입 정의
+- **facet-port-model** → typed port / PortRef / Feynman식 facet line 모델
 - **pipe-path** → 단일 파이프 + 그래프 전체 경로 수 계산 (countPipePaths, countGraphPaths)
 - **pipe-validate** → PipeSpec/PipeGraph 구조 무결성 검증
 - **pipe-serialize** → JSON 직렬화/역직렬화
@@ -110,6 +114,7 @@ fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 | 모듈 | 구현 파일 | 테스트 파일 | tests |
 |------|----------|-----------|-------|
 | pipe-types | `core/src/types/pipe-spec.ts` | 빌드 체크 | — |
+| facet-port-model | `core/src/types/pipe-spec.ts`, `core/src/pipe/pipe-port.ts` | `pipe-port.test.ts` 외 | — |
 | pipe-path | `core/src/pipe-path.ts` | `pipe-path.test.ts` | 38 |
 | pipe-validate | `core/src/pipe-validate.ts` | `pipe-validate.test.ts` | 20 |
 | pipe-serialize | `core/src/pipe-serialize.ts` | `pipe-serialize.test.ts` | 4 |
