@@ -116,5 +116,14 @@ pipe-svg는 core에 유지 (기존 소비자 무변경), scope-nesting 시각화
   - core의 6개 re-export 파일 삭제, viz-core를 devDependencies로 이동
   - core에 `summarizeFlowLineage` 공개 export 추가
   - 1039 tests 전부 통과 확인
-- [ ] scope-nesting-timeline.ts 신규 구현 → viz-core에 직접 생성
-- [ ] viz-web/scope-nesting-preview 페이지 → viz-core + canvas-viewport 통합
+- [x] scope-nesting-timeline.ts 신규 구현 → viz-core에 직접 생성 — 2026-04-05 완료
+  - 타입: ScopeTimelineData, ScopeTimelineRow, TimelineBlock, D3TimelineData
+  - 토큰: SCOPE_DEPTH_COLORS, CONTRACT_TYPE_COLORS, TIMING_COLORS
+  - 함수: buildTimelineRows, scopeTimelineToSvg, scopeTimelineToD3
+  - 행 4종: scope(depth 기반), contract(readiness), pipe(simulation step), delegation(gap)
+  - viz-core export/subpath/tsup entry 추가
+  - 10 tests 통과
+- [x] viz-web/scope-nesting-preview 페이지 → viz-core + canvas-viewport 통합 — 2026-04-05 완료
+  - scope-nesting.html: 사이드바(예제 선택) + 탭(Timeline/Mermaid/D3) + 행 필터 체크박스
+  - scope-nesting-preview.ts: MountFlowBinding/validateMountFlow/simulate 올바른 API로 구현
+  - viz-web tsc --noEmit 통과 확인
