@@ -186,22 +186,13 @@ Decision success (⑤)
           → 이벤트 생산 (① PipeFlow → L3 simulate)
 ```
 
-## 오픈 퀘스천
+## doc lifecycle — L0 guard에서 제외
 
-### OQ-5: doc lifecycle의 시뮬레이션 역할
+doc lifecycle(draft/review/approved/deprecated)은 L0 guard에 포함하지 않는다.
 
-guard 의존 순서에서 "Doc approved"가 Gate complete의 전제 조건이지만, doc lifecycle이 현재 시뮬레이션 목적(context-action 패턴 검증)에 부합하는지 검토 필요.
+**이유:** 외부 요인(문서 관리 상태)이 코드 검증에 직접 영향을 주면 시뮬레이션 안정성이 떨어진다. 시뮬레이션은 런타임 코드 경로 검증으로 한정.
 
-**검토 사항:**
-- doc lifecycle은 "문서 관리 상태"이지 "코드 실행 상태"가 아님
-- 시뮬레이션은 코드 경로 검증이 목적 — 문서 상태가 코드 경로에 영향을 주는 경로가 실제로 있는가?
-- 대안: doc lifecycle 대신 **feature flag** 또는 **deployment state** 같은 런타임 제약이 더 적합할 수 있음
-- 또는: doc lifecycle의 "approved" 체크는 L0 guard가 아니라 **CI/CD gate** (시뮬레이션 밖)에서 처리
-
-**방향 후보:**
-- A) L0 guard에 docLifecycle 포함 — 문서 미승인 시 관련 convention 전이 차단
-- B) L0 guard에서 제외 — doc lifecycle은 운영 프로세스이고, 시뮬레이션은 런타임 코드 검증으로 한정
-- C) 별도 스펙에서 doc lifecycle의 시뮬레이션 연결점을 재정의
+**향후:** doc lifecycle이 런타임에 영향 주는 구체적 경로가 특정되면, 별도 스펙에서 해당 경로만 guard로 추출. guard 인터페이스가 교체 가능하게 설계되어 있으므로 추가 시 기존 코드 변경 없음.
 
 ## 관련 소스
 
