@@ -3,7 +3,7 @@ def:
   id: doc-type-convention
   level: leaf
   scope: constraint
-  aspect: convention
+  aspect: tech_constraint
   depth: specification
   lifecycle: approved
   layer: operation
@@ -84,7 +84,7 @@ docs/specs/meta-semantic/pipe-impl/
 | `.memo.md` | 없음 (히스토리) | — |
 | `.plan.md` | 없음 (방향) | — |
 
-## 운영 규칙 ^method
+## 운영 규칙 ^constraint
 
 ### todo 규칙
 
@@ -109,7 +109,7 @@ docs/specs/meta-semantic/pipe-impl/
 - 구체적 체크박스 없음 — 방향과 단계만
 - 실행 가능해지면 todo로 추출
 
-## 정합성 검증 ^overview
+## 정합성 검증 ^constraint
 
 | 검증 | 심각도 | 설명 |
 |------|--------|------|
