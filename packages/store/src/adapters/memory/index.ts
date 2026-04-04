@@ -6,3 +6,4 @@ export { InMemoryGraphStore } from "./graph.adapter.js";
 export { InMemoryScenarioSpecStore } from "./scenario-spec.adapter.js";
 export { InMemoryVerdictStore } from "./verdict.adapter.js";
 export { InMemoryDlqStore } from "./dlq.adapter.js";
+export { InMemoryKeyCache } from "./key-cache.adapter.js";

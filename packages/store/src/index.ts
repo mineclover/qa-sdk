@@ -28,4 +28,5 @@ export {
   InMemoryScenarioSpecStore,
   InMemoryVerdictStore,
   InMemoryDlqStore,
+  InMemoryKeyCache,
 } from "./adapters/memory/index.js";

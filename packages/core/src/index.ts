@@ -116,6 +116,7 @@ export type { SessionStore, SessionUpsert, StoredSession } from "./ports/session
 export type { TransmissionStore, TransmissionInsert } from "./ports/transmission-store.port.js";
 export type { ScenarioSpecStore } from "./ports/scenario-spec-store.port.js";
 export type { MetricRollupStore, MetricRollupInsert, StoredMetricRollup, MetricRollupQuery, MetricWindowType } from "./ports/metric-rollup-store.port.js";
+export type { KeyCache, CacheEntry, CacheStats } from "./ports/key-cache.port.js";
 
 // ═══════════════════════════════════════════════════════
 // Pipe Engine — 파이프 실행, 분석, 검증, 판정
