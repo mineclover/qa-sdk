@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: domain
   links: []
 ---

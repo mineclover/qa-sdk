@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: implemented
   layer: domain
   links:
     - target: pipe-static-lineage
