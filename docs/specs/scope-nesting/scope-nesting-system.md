@@ -11,6 +11,10 @@ def:
   links:
     - target: scope-nesting-guide
       type: contains
+    - target: scope-nesting-validation-rules
+      type: contains
+    - target: scope-nesting-procedure
+      type: contains
     - target: scope-nesting-provider-patterns
       type: contains
     - target: scope-nesting-mount-flow
@@ -56,8 +60,10 @@ contract descent 기반 스코프 중첩 검증 프레임워크. scope가 계약
 
 ## 위임 ^delegates
 
-- **scope-nesting-guide** → 핵심 API + 검증 규칙 8종 + L0 guard
-- **provider-patterns** → override, optional, resolution, lifecycle 패턴
+- **scope-nesting-guide** → 핵심 API 사용법
+- **validation-rules** → 검증 규칙 8종 + L0 guard 정책
+- **procedure** → scope 추가/변경/제거 절차
+- **provider-patterns** → override, optional, resolution, lifecycle 4패턴 (각각 leaf)
 - **mount-flow** → scope↔pipe 브릿지 (L1.5)
 - **contract-timing** → readyAfter + delegation gap 시점 분석
 - **simulation-layers** → 5계층 모델 정의
