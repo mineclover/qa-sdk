@@ -26,6 +26,8 @@ def:
       type: contains
     - target: viteplus-playbook-provider-stack
       type: contains
+    - target: viteplus-playbook-scope-nesting
+      type: contains
     - target: viteplus-playbook-app-state
       type: contains
     - target: viteplus-playbook-state-transition
@@ -76,6 +78,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 - **template-implementation** → 공통 runtime/store/dom helper 구현
 - **template-flow** → 새 feature 확장 절차
 - **provider-stack** → scope nesting 순서 규칙
+- **scope-nesting** → contract descent 검증 가이드
 - **boundary-relation** → boundary 단위 정의
 - **boundary-coupling** → 결합 규칙 + 조회 표준
 - **app-state** → state shape 정의
@@ -101,6 +104,7 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 
 | 문서 | 관리하는 것 |
 |------|-----------|
+| `scope-nesting` | contract descent 검증 가이드 + 계약 선언 + 검증 방법 |
 | `boundary-coupling` | 결합 표현 4종 + overview 표준 + 조회 3단계 |
 | `state-transition` | status 전이 6종 + 불변량 |
 
