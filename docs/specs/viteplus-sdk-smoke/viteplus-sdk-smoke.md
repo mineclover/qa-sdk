@@ -36,6 +36,8 @@ def:
       type: contains
     - target: viteplus-playbook-interaction
       type: contains
+    - target: viteplus-playbook-simulation-layers
+      type: contains
     - target: platform-sdk-user-scenarios
       type: depends_on
     - target: sdk-vite-onboarding-guide
@@ -128,3 +130,4 @@ handlers 계층 내부에서만 PipeSpec transformer 패턴(소비→관리→�
 |------|-----------|
 | `canonical-review-validation` | 상태 전이 + handler orchestration + build/test |
 | `incident-escalation-validation` | 동일 구조 (대칭) + severity 변형 |
+| `simulation-layers` | 3계층 시뮬레이션 모델 (L1 구조 → L2 전이 → L3 경로) |
