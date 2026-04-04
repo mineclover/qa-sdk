@@ -335,8 +335,8 @@ Usage:
   qa-sdk review bridge-request <id> --target <nodeId>  피드백 요청을 DKG observation/decision에 연결
 
   qa-sdk test scan [--dir <path>] [--db <path>]   스펙 frontmatter tests: 선언 → declared
-  qa-sdk test assign [--a-coord <c>] [--force]     모듈화 체크 → B 좌표 부여
-  qa-sdk test scaffold [--b-coord <c>]             테스트 스텁 파일 생성
+  qa-sdk test assign [--a-coord <c>] [--force] [--db <path>]  모듈화 체크 → B 좌표 부여
+  qa-sdk test scaffold [--b-coord <c>] [--db <path>]         테스트 스텁 파일 생성
   qa-sdk test status [--db <path>]                 생명주기 현황
   qa-sdk test report [--db <path>]                 커버리지 매트릭스
 
