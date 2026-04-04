@@ -48,3 +48,101 @@ export interface ServiceAttributes {
   /** 구조적 특성 */
   readonly structural?: readonly ServiceStructuralTag[];
 }
+
+/** 서비스 자체의 논리 단위 정의 */
+export interface ServiceUnitSpec {
+  readonly serviceId: string;
+  readonly namespace: string;
+  readonly name: string;
+  readonly tier?: "frontend" | "backend" | "infra" | "system";
+  readonly team?: string;
+  readonly applicationId?: string;
+  readonly attributes?: ServiceAttributes;
+}
+
+/** 서비스가 생산/소비하는 prefix 관계 */
+export interface ServiceOwnershipSpec {
+  readonly serviceId: string;
+  readonly ownedPrefixes: readonly string[];
+  readonly consumedPrefixes?: readonly string[];
+}
+
+/** 서비스의 gateway/routing 노출 정책 */
+export interface ServiceExposureSpec {
+  readonly serviceId: string;
+  readonly gatewayPath?: string;
+  readonly stripPrefix?: boolean;
+}
+
+/** qa-sdk 좌표계가 직접 인코딩하는 canonical runtime 주소 */
+export interface RuntimeServiceAddress {
+  readonly serviceId: string;
+  readonly namespace: string;
+  readonly name: string;
+  readonly env: string;
+  readonly region: string;
+}
+
+/** provider/project/stack/resourceKey까지 포함한 배포 주소 */
+export interface DeploymentAddress {
+  readonly serviceId: string;
+  readonly runtime: RuntimeServiceAddress;
+  readonly provider: string;
+  readonly project: string;
+  readonly stack: string;
+  readonly resourceKey: string;
+}
+
+/** 배포 시스템이 관측한 URL/출력값 overlay */
+export interface DeploymentBinding {
+  readonly deploymentVersion: string;
+  readonly address: DeploymentAddress;
+  readonly observedAt: string;
+  readonly urn?: string;
+  readonly url?: string;
+  readonly outputs?: Readonly<Record<string, unknown>>;
+}
+
+export type ComponentVersionKind =
+  | "service-unit"
+  | "ownership"
+  | "exposure"
+  | "runtime-address"
+  | "deployment-binding";
+
+/** child component의 독립 version 참조 */
+export interface ComponentVersionRef {
+  readonly kind: ComponentVersionKind;
+  readonly serviceId: string;
+  readonly version: string;
+}
+
+/** release artifact 참조 — 실제 manifest 본문은 별도 store가 관리 */
+export interface ServiceReleaseManifestRef {
+  readonly serviceId: string;
+  readonly manifestVersion: string;
+}
+
+/** child component version을 조합해 manifest를 만들기 위한 입력 */
+export interface ManifestAssemblyRequest {
+  readonly serviceId: string;
+  readonly runtimeAddressVersion: string;
+  readonly serviceUnitVersion: string;
+  readonly ownershipVersion: string;
+  readonly exposureVersion?: string;
+  readonly deploymentVersion?: string;
+  readonly prefixes: Readonly<Record<string, string>>;
+  readonly manifestVersion: string;
+  readonly changelog?: string;
+}
+
+/** 서비스 주소 aggregate의 현재 분해 상태 */
+export interface ServiceAddressAggregate {
+  readonly serviceId: string;
+  readonly unit: ServiceUnitSpec;
+  readonly ownership: ServiceOwnershipSpec;
+  readonly exposure?: ServiceExposureSpec;
+  readonly runtimeAddresses: readonly RuntimeServiceAddress[];
+  readonly deployments: readonly DeploymentBinding[];
+  readonly releases?: readonly ServiceReleaseManifestRef[];
+}

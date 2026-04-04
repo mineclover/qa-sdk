@@ -1,12 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseFilters } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, Query, UseFilters } from "@nestjs/common";
 import type { PrefixLifecycleState, ManifestLifecycleState } from "pipe-store-sqlite";
 import { PrefixExceptionFilter } from "../prefixes/prefix.exception-filter.js";
 import { ManifestService } from "./manifest.service.js";
+import type { AssembleManifestBody } from "./manifest-assembly.js";
 
 @UseFilters(new PrefixExceptionFilter())
 @Controller("manifests")
 export class ManifestController {
-  constructor(private readonly manifests: ManifestService) {}
+  constructor(@Inject(ManifestService) private readonly manifests: ManifestService) {}
 
   // ── Prefix 라이프사이클 ──────────────────────────────
   // static "prefixes" segment 먼저 선언 → ":serviceId" 보다 우선 매칭
@@ -56,6 +57,11 @@ export class ManifestController {
       body.prefixes,
       body.changelog,
     );
+  }
+
+  @Post("assemble")
+  assembleManifest(@Body() body: AssembleManifestBody, @Query("catalog") catalogId?: string) {
+    return this.manifests.assembleManifest(body, catalogId ?? "demo");
   }
 
   @Get(":serviceId/active")

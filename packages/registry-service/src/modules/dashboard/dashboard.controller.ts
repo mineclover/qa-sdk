@@ -4,6 +4,7 @@ import {
   Header,
   HttpCode,
   Inject,
+  Param,
   Post,
   Query,
   UseFilters,
@@ -53,6 +54,32 @@ export class DashboardController {
     return this.dashboard.listCatalogs();
   }
 
+  @Get("dev/api/service-control-plane/:serviceId/candidates")
+  serviceCandidatesDev(
+    @Query("catalog") catalogId: string | undefined,
+    @Param("serviceId") serviceId: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceAssemblyCandidates(serviceId, catalogId ?? "demo");
+  }
+
+  @Get("dev/api/service-control-plane/:serviceId/warnings")
+  serviceWarningsDev(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceWarnings(serviceId, { catalogId, manifestVersion });
+  }
+
+  @Get("dev/api/service-control-plane/:serviceId/cleanup-plan")
+  serviceCleanupPlanDev(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceCleanupPlan(serviceId, { catalogId, manifestVersion });
+  }
+
   @Get("api/dashboard/overview")
   overview(): unknown {
     return this.dashboard.getOverview();
@@ -71,6 +98,32 @@ export class DashboardController {
   @Get("api/dashboard/timeline")
   timeline(@Query("limit") limit?: string): unknown {
     return this.dashboard.getTimeline(parseLimit(limit));
+  }
+
+  @Get("api/dashboard/service-control-plane/:serviceId/candidates")
+  serviceCandidates(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceAssemblyCandidates(serviceId, catalogId ?? "demo");
+  }
+
+  @Get("api/dashboard/service-control-plane/:serviceId/warnings")
+  serviceWarnings(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceWarnings(serviceId, { catalogId, manifestVersion });
+  }
+
+  @Get("api/dashboard/service-control-plane/:serviceId/cleanup-plan")
+  serviceCleanupPlan(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ): Promise<unknown> {
+    return this.dashboard.getServiceCleanupPlan(serviceId, { catalogId, manifestVersion });
   }
 
   @Get("api/dashboard/schema")

@@ -16,6 +16,8 @@ import { InMemoryCatalogStore } from "../stores/in-memory-catalog-store.js";
 import { SqlCatalogStore } from "../stores/sql-catalog-store.js";
 import { InMemoryAxisProfileStore } from "../stores/in-memory-axis-profile-store.js";
 import { SqlAxisProfileStore } from "../stores/sql-axis-profile-store.js";
+import { InMemoryServiceComponentVersionStore } from "../stores/in-memory-service-component-version-store.js";
+import { SqlServiceComponentVersionStore } from "../stores/sql-service-component-version-store.js";
 const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
 const logger = createLogger("registry-service");
 
@@ -52,6 +54,7 @@ export async function createRegistryStores(sqlitePath: string) {
       catalogStore: new InMemoryCatalogStore(),
       axisStore: new InMemoryAxisProfileStore(),
       configStore: new InMemoryConfigStore(),
+      componentStore: new InMemoryServiceComponentVersionStore(),
       endpointStore: new InMemoryServiceEndpointStore(),
       eventSchemaStore: new InMemoryEventSchemaStore(),
     };
@@ -70,6 +73,7 @@ export async function createRegistryStores(sqlitePath: string) {
     catalogStore: new SqlCatalogStore(driver),
     axisStore: new SqlAxisProfileStore(driver),
     configStore: new SqlConfigStore(driver),
+    componentStore: new SqlServiceComponentVersionStore(driver),
     endpointStore: new SqlServiceEndpointStore(driver),
     eventSchemaStore: new SqlEventSchemaStore(driver),
   };

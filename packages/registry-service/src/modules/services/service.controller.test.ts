@@ -2,8 +2,8 @@ import "reflect-metadata";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import type { SqlDriver } from "index-meta";
-import { AppModule } from "../../app.module.js";
 import { DATABASE } from "../../database.module.js";
+import { DatabaseModule } from "../../database.module.js";
 import { SqlConfigStore } from "../../stores/sql-config-store.js";
 import { SqlServiceEndpointStore } from "../../stores/sql-service-endpoint-store.js";
 import {
@@ -11,6 +11,7 @@ import {
   request,
   json,
 } from "../../test/nest-helpers.js";
+import { ServiceModule } from "./service.module.js";
 
 function createStores(app: NestFastifyApplication) {
   const db = app.get<SqlDriver>(DATABASE);
@@ -30,7 +31,7 @@ afterEach(async () => {
 
 describe("ServiceModule (Nest)", () => {
   it("GET/POST/PATCH /api/services keeps topology CRUD semantics", async () => {
-    const app = await createNestTestApp({ imports: [AppModule] });
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
     apps.push(app);
     const { configStore } = createStores(app);
 
@@ -89,8 +90,150 @@ describe("ServiceModule (Nest)", () => {
     });
   });
 
+  it("PUT/GET /api/services/:serviceId/components/:kind/:version stores versioned child components", async () => {
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
+    apps.push(app);
+
+    await request(
+      app,
+      "PUT",
+      "/api/services/gateway/components/service-unit/su-v1?catalog=demo",
+      {
+        serviceId: "gateway",
+        namespace: "shop",
+        name: "Gateway",
+        tier: "system",
+      },
+    );
+    await request(
+      app,
+      "PUT",
+      "/api/services/gateway/components/ownership/own-v1?catalog=demo",
+      {
+        serviceId: "gateway",
+        ownedPrefixes: ["endpoint"],
+      },
+    );
+
+    const putResponse = await request(
+      app,
+      "PUT",
+      "/api/services/gateway/components/runtime-address/ra-v1?catalog=demo",
+      {
+        serviceId: "gateway",
+        namespace: "shop",
+        name: "Gateway",
+        env: "prod",
+        region: "asia",
+      },
+    );
+    expect(putResponse.statusCode).toBe(200);
+    expect(json(putResponse)).toEqual({
+      ok: true,
+      kind: "runtime-address",
+      serviceId: "gateway",
+      version: "ra-v1",
+      state: "draft",
+    });
+
+    const detailResponse = await request(
+      app,
+      "GET",
+      "/api/services/gateway/components/runtime-address/ra-v1?catalog=demo",
+    );
+    expect(detailResponse.statusCode).toBe(200);
+    expect(json(detailResponse)).toMatchObject({
+      kind: "runtime-address",
+      serviceId: "gateway",
+      version: "ra-v1",
+      state: "draft",
+      value: {
+        serviceId: "gateway",
+        namespace: "shop",
+        name: "Gateway",
+        env: "prod",
+        region: "asia",
+      },
+    });
+
+    const listResponse = await request(
+      app,
+      "GET",
+      "/api/services/gateway/components/runtime-address?catalog=demo",
+    );
+    expect(listResponse.statusCode).toBe(200);
+    expect(json<Array<{ version: string }>>(listResponse)).toMatchObject([
+      { version: "ra-v1", state: "draft" },
+    ]);
+
+    const transitionResponse = await request(
+      app,
+      "POST",
+      "/api/services/gateway/components/runtime-address/ra-v1/transition?catalog=demo",
+      { state: "published" },
+    );
+    expect(transitionResponse.statusCode).toBe(201);
+    expect(json(transitionResponse)).toMatchObject({
+      state: "published",
+    });
+
+    await request(
+      app,
+      "POST",
+      "/api/services/gateway/components/service-unit/su-v1/transition?catalog=demo",
+      { state: "published" },
+    );
+    await request(
+      app,
+      "POST",
+      "/api/services/gateway/components/ownership/own-v1/transition?catalog=demo",
+      { state: "published" },
+    );
+
+    const publishedResponse = await request(
+      app,
+      "GET",
+      "/api/services/gateway/components/runtime-address/published?catalog=demo",
+    );
+    expect(publishedResponse.statusCode).toBe(200);
+    expect(json<Array<{ version: string; state: string }>>(publishedResponse)).toMatchObject([
+      { version: "ra-v1", state: "published" },
+    ]);
+
+    const candidatesResponse = await request(
+      app,
+      "GET",
+      "/api/services/gateway/assembly-candidates?catalog=demo",
+    );
+    expect(candidatesResponse.statusCode).toBe(200);
+    expect(json(candidatesResponse)).toMatchObject({
+      serviceId: "gateway",
+      required: {
+        "service-unit": {
+          published: [{ version: "su-v1", state: "published" }],
+        },
+        "ownership": {
+          published: [{ version: "own-v1", state: "published" }],
+        },
+        "runtime-address": {
+          published: [{ version: "ra-v1", state: "published" }],
+        },
+      },
+      readiness: {
+        ready: true,
+        missingRequired: [],
+      },
+      summary: {
+        published: {
+          required: 3,
+          optional: 0,
+        },
+      },
+    });
+  });
+
   it("GET /api/endpoints, /resolve, /:ns/:svc matches endpoint lookup semantics", async () => {
-    const app = await createNestTestApp({ imports: [AppModule] });
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
     apps.push(app);
     const { endpointStore } = createStores(app);
 
@@ -153,7 +296,7 @@ describe("ServiceModule (Nest)", () => {
   });
 
   it("resolve returns Hono-compatible errors for missing inputs and missing records", async () => {
-    const app = await createNestTestApp({ imports: [AppModule] });
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
     apps.push(app);
 
     const missingQueryResponse = await request(app, "GET", "/api/endpoints/resolve?catalog=demo");

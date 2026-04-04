@@ -2,6 +2,9 @@ import "reflect-metadata";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { ManifestModule } from "./manifest.module.js";
+import type { ServiceComponentVersionStore } from "../../stores/service-component-version-store.js";
+import { ServiceComponentStore } from "../services/service-component-store.js";
+import { SERVICE_COMPONENT_VERSION_STORE } from "../services/service-component.service.js";
 import { createNestTestApp, request, json } from "../../test/nest-helpers.js";
 
 const apps: NestFastifyApplication[] = [];
@@ -16,6 +19,68 @@ async function buildApp() {
   const app = await createNestTestApp({ imports: [ManifestModule] });
   apps.push(app);
   return app;
+}
+
+async function seedAssemblyComponents(app: NestFastifyApplication, serviceId: string) {
+  const componentStore = app.get<ServiceComponentVersionStore>(SERVICE_COMPONENT_VERSION_STORE);
+  const components = new ServiceComponentStore(componentStore);
+  await components.upsert("demo", {
+    kind: "service-unit",
+    serviceId,
+    version: "su-1",
+    state: "published",
+    value: {
+      serviceId,
+      namespace: "shop",
+      name: "order",
+    },
+  });
+  await components.upsert("demo", {
+    kind: "ownership",
+    serviceId,
+    version: "own-1",
+    state: "published",
+    value: {
+      serviceId,
+      ownedPrefixes: ["tracking"],
+    },
+  });
+  await components.upsert("demo", {
+    kind: "exposure",
+    serviceId,
+    version: "exp-1",
+    state: "published",
+    value: {
+      serviceId,
+      gatewayPath: "/api",
+      stripPrefix: true,
+    },
+  });
+  await components.upsert("demo", {
+    kind: "deployment-binding",
+    serviceId,
+    version: "dep-1",
+    state: "published",
+    value: {
+      deploymentVersion: "dep-1",
+      address: {
+        serviceId,
+        runtime: {
+          serviceId,
+          namespace: "shop",
+          name: "order",
+          env: "prod",
+          region: "asia",
+        },
+        provider: "pulumi",
+        project: "core",
+        stack: "prod",
+        resourceKey: "api",
+      },
+      observedAt: "2026-04-03T00:00:00.000Z",
+      url: "https://order.example.com",
+    },
+  });
 }
 
 describe("ManifestController", () => {
@@ -92,6 +157,85 @@ describe("ManifestController", () => {
     });
     expect(res.statusCode).toBe(201);
     expect(json(res)).toMatchObject({ serviceId: "order-svc", state: "draft" });
+  });
+
+  it("POST /manifests/assemble — child version과 runtimeAddress를 포함한 manifest를 생성한다", async () => {
+    const app = await buildApp();
+    await seedAssemblyComponents(app, "order-svc");
+    const res = await request(app, "POST", "/manifests/assemble", {
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      serviceUnitVersion: "su-1",
+      ownershipVersion: "own-1",
+      exposureVersion: "exp-1",
+      deploymentVersion: "dep-1",
+      runtimeAddress: {
+        serviceId: "order-svc",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+      prefixes: { tracking: "v1" },
+      changelog: "assembled",
+    });
+    expect(res.statusCode).toBe(201);
+    expect(json(res)).toMatchObject({
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      serviceUnitVersion: "su-1",
+      ownershipVersion: "own-1",
+      exposureVersion: "exp-1",
+      deploymentVersion: "dep-1",
+      runtimeAddress: {
+        serviceId: "order-svc",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+      changelog: "assembled",
+      state: "draft",
+    });
+
+    const detail = await request(app, "GET", "/manifests/order-svc/1.0.0");
+    expect(detail.statusCode).toBe(200);
+    expect(json(detail)).toMatchObject({
+      serviceUnitVersion: "su-1",
+      ownershipVersion: "own-1",
+      deploymentVersion: "dep-1",
+      runtimeAddress: {
+        serviceId: "order-svc",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+    });
+  });
+
+  it("POST /manifests/assemble — runtimeAddress.serviceId mismatch면 400", async () => {
+    const app = await buildApp();
+    await seedAssemblyComponents(app, "order-svc");
+    const res = await request(app, "POST", "/manifests/assemble", {
+      serviceId: "order-svc",
+      manifestVersion: "1.0.0",
+      runtimeAddress: {
+        serviceId: "other-svc",
+        namespace: "shop",
+        name: "order",
+        env: "prod",
+        region: "asia",
+      },
+      prefixes: { tracking: "v1" },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(json(res)).toMatchObject({
+      error: {
+        code: "INVALID_INPUT",
+        message: 'runtimeAddress.serviceId "other-svc" != manifest serviceId "order-svc"',
+      },
+    });
   });
 
   it("GET /manifests/:serviceId — 목록 조회", async () => {

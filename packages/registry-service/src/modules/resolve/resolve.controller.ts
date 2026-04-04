@@ -1,8 +1,11 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
   Param,
+  Post,
+  Query,
   UseFilters,
 } from "@nestjs/common";
 import { badRequest, noActiveVersion } from "../../lib/errors.js";
@@ -31,6 +34,77 @@ export class ResolveController {
   @Get("resolve/manifest")
   resolveManifest() {
     return this.resolveService.resolveManifest();
+  }
+
+  @Get("resolve/services/:serviceId")
+  resolveServiceRelease(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+    @Query("env") env?: string,
+    @Query("region") region?: string,
+    @Query("project") project?: string,
+    @Query("stack") stack?: string,
+    @Query("resourceKey") resourceKey?: string,
+  ) {
+    return this.resolveService.resolveServiceRelease(serviceId, {
+      catalogId: catalogId ?? "demo",
+      manifestVersion,
+      env,
+      region,
+      project,
+      stack,
+      resourceKey,
+    });
+  }
+
+  @Get("resolve/services/:serviceId/warnings")
+  getServiceReleaseWarnings(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ) {
+    return this.resolveService.getServiceReleaseWarnings(serviceId, {
+      catalogId: catalogId ?? "demo",
+      manifestVersion,
+    });
+  }
+
+  @Get("resolve/services/:serviceId/cleanup-plan")
+  getServiceCleanupPlan(
+    @Param("serviceId") serviceId: string,
+    @Query("catalog") catalogId?: string,
+    @Query("manifestVersion") manifestVersion?: string,
+  ) {
+    return this.resolveService.getServiceCleanupPlan(serviceId, {
+      catalogId: catalogId ?? "demo",
+      manifestVersion,
+    });
+  }
+
+  @Post("resolve/services/:serviceId/cleanup-draft")
+  createCleanupDraft(
+    @Param("serviceId") serviceId: string,
+    @Body() body: {
+      catalogId?: string;
+      sourceManifestVersion?: string;
+      newManifestVersion: string;
+      replacements?: Partial<Record<"service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding", string>>;
+      changelog?: string;
+    },
+  ) {
+    return this.resolveService.createCleanupDraft(serviceId, body);
+  }
+
+  @Post("resolve/services/:serviceId/cleanup-activate")
+  activateCleanupDraft(
+    @Param("serviceId") serviceId: string,
+    @Body() body: {
+      catalogId?: string;
+      manifestVersion: string;
+    },
+  ) {
+    return this.resolveService.activateCleanupDraft(serviceId, body);
   }
 
   @Get("inspect/:prefix/:versionId/meta")

@@ -1,8 +1,8 @@
 /**
  * registry-service Drizzle ORM 스키마 정의
  *
- * 7개 테이블: prefix, draft_lock, axis_profile, catalogs,
- *            service_endpoint, config, event_schema
+ * 8개 테이블: prefix, draft_lock, axis_profile, catalogs,
+ *            service_endpoint, config, event_schema, service_component_version
  *
  * NOTE: schema_version 테이블은 앱 레벨 마이그레이션 트래커로
  * Drizzle 관리 대상에서 제외한다 (__drizzle_migrations와 별개).
@@ -135,6 +135,38 @@ export const eventSchema = sqliteTable(
     check(
       "chk_event_schema_status",
       sql`status IN ('active', 'deprecated', 'retired')`,
+    ),
+  ],
+);
+
+// ─── service_component_version ─────────────────────────
+export const serviceComponentVersion = sqliteTable(
+  "service_component_version",
+  {
+    catalogId: text("catalog_id").notNull().default("demo"),
+    kind: text("kind").notNull(),
+    serviceId: text("service_id").notNull(),
+    version: text("version").notNull(),
+    state: text("state").notNull().default("draft"),
+    valueJson: text("value_json").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+    publishedAt: text("published_at"),
+    deprecatedAt: text("deprecated_at"),
+    archivedAt: text("archived_at"),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.catalogId, t.kind, t.serviceId, t.version],
+    }),
+    index("idx_service_component_lookup").on(t.catalogId, t.serviceId, t.kind),
+    check(
+      "chk_service_component_kind",
+      sql`kind IN ('service-unit', 'ownership', 'exposure', 'runtime-address', 'deployment-binding')`,
+    ),
+    check(
+      "chk_service_component_state",
+      sql`state IN ('draft', 'published', 'deprecated', 'archived')`,
     ),
   ],
 );

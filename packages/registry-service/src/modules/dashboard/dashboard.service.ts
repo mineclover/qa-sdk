@@ -8,6 +8,8 @@ import type {
   MetricValuePort,
 } from "../../types/spec-core-ports.js";
 import { AppError } from "@qa-sdk/core";
+import type { ResolveService } from "../resolve/resolve.service.js";
+import type { ServiceComponentService } from "../services/service-component.service.js";
 
 interface SchemaLayerEntry {
   id: string;
@@ -69,6 +71,9 @@ export interface DashboardServiceDeps {
   collectMetrics?: () => MetricValuePort[];
   onCollect?: () => Promise<{ collected: boolean; changes: string[] }>;
   listCatalogs?: () => Promise<Array<{ id: string; name: string }>>;
+  getAssemblyCandidates?: (catalogId: string, serviceId: string) => Promise<unknown>;
+  getServiceWarnings?: (serviceId: string, query: { catalogId: string; manifestVersion?: string }) => Promise<unknown>;
+  getCleanupPlan?: (serviceId: string, query: { catalogId: string; manifestVersion?: string }) => Promise<unknown>;
 }
 
 export class DashboardService {
@@ -374,6 +379,39 @@ export class DashboardService {
       // catalog store 실패 시 기본 카탈로그만 반환한다.
     }
     return { catalogs };
+  }
+
+  async getServiceAssemblyCandidates(serviceId: string, catalogId = "demo") {
+    if (!this.deps.getAssemblyCandidates) {
+      throw new AppError("SERVICE_UNAVAILABLE", "service control plane not available", 503);
+    }
+    return this.deps.getAssemblyCandidates(catalogId, serviceId);
+  }
+
+  async getServiceWarnings(
+    serviceId: string,
+    query: { catalogId?: string; manifestVersion?: string },
+  ) {
+    if (!this.deps.getServiceWarnings) {
+      throw new AppError("SERVICE_UNAVAILABLE", "service warnings not available", 503);
+    }
+    return this.deps.getServiceWarnings(serviceId, {
+      catalogId: query.catalogId ?? "demo",
+      manifestVersion: query.manifestVersion,
+    });
+  }
+
+  async getServiceCleanupPlan(
+    serviceId: string,
+    query: { catalogId?: string; manifestVersion?: string },
+  ) {
+    if (!this.deps.getCleanupPlan) {
+      throw new AppError("SERVICE_UNAVAILABLE", "cleanup plan not available", 503);
+    }
+    return this.deps.getCleanupPlan(serviceId, {
+      catalogId: query.catalogId ?? "demo",
+      manifestVersion: query.manifestVersion,
+    });
   }
 
   getHtml() {
