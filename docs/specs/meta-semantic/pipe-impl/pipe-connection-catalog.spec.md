@@ -7,9 +7,10 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
+    - target: meta-semantic-pipe-catalog
+      type: refines
     - target: pipe-types
       type: refines
     - target: pc-next
@@ -37,6 +38,11 @@ def:
 PipeGraph에서 파이프 노드를 연결하는 8종 `ConnectionKind`의
 표현 방식, 정의 방식, 검증 방식, 경로 계산 규칙을 카탈로그 관점에서 정리한다.
 개별 연결의 의미와 예시는 각 `pc-*` 문서가 책임진다.
+
+## 방법 ^method
+
+이 문서는 연결 자체의 실행 순서보다 "연결 kind 분류와 semantics 표"를 다루므로
+runtime flow 문서가 아니라 카탈로그 문서로 본다. 그래서 상위 module 좌표는 `data/domain_data`를 유지한다.
 
 ## ^overview
 

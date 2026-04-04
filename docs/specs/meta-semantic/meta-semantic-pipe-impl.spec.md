@@ -10,6 +10,8 @@ def:
   links:
     - target: meta-semantic-v2-migration
       type: depends_on
+    - target: meta-semantic-pipe-catalog
+      type: depends_on
     - target: ms-concept-pipe
       type: implements
     - target: pipe-types
@@ -27,10 +29,6 @@ def:
     - target: pipe-analyze
       type: contains
     - target: pipe-simulate
-      type: contains
-    - target: pipe-flow-catalog
-      type: contains
-    - target: pipe-connection-catalog
       type: contains
     - target: pipe-interpret
       type: contains
@@ -60,22 +58,18 @@ def:
       type: contains
     - target: pipe-static-lineage
       type: contains
-    - target: prefix-colocation
-      type: contains
-    - target: test-name-tokens
-      type: contains
 ---
 
 # PipeSpec + PipeGraph 구현
 
 ## 목적 ^purpose
 
-PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노드 연결),
+PipeFlow 30종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노드 연결),
 경로 계산, 검증, 직렬화, 저장, 분석, 시뮬레이션을 구현한다.
 
 ## 방법 ^method
 
-**pipe-types**가 PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입을 정의하고,
+**pipe-types**가 PipeFlow 30종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입을 정의하고,
 **facet-port-model**이 typed port / PortRef / facetType edge 표현으로 이를 확장하고,
 **pipe-path**가 단일 파이프 + 그래프 전체 경로 수를 계산하고,
 **pipe-validate**가 구조 무결성을 검증하고,
@@ -86,13 +80,11 @@ PipeFlow 29종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 **pipe-interpret**가 관심사 추출·전파·역할 분류를 수행하고,
 **pipe-gate**가 품질 게이트 평가(pass/fail/review)를 수행하고,
 **pipe-fold**가 서브그래프 접기/펼치기 + 경계 계약을 도출하고,
-**pipe-flow-catalog**가 29종 각각의 표현·정의·검증·시각 방식과
-fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 **pipe-svg**가 PipeGraph → SVG/D3 3-레이어 렌더링 파이프라인을 구현한다.
 
 ## 위임 ^delegates
 
-- **pipe-types** → PipeFlow 29종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입 정의
+- **pipe-types** → PipeFlow 30종 + PipeSpec + PipeGraph + ConnectionKind 8종 타입 정의
 - **facet-port-model** → typed port / PortRef / Feynman식 facet line 모델
 - **pipe-path** → 단일 파이프 + 그래프 전체 경로 수 계산 (countPipePaths, countGraphPaths)
 - **pipe-validate** → PipeSpec/PipeGraph 구조 무결성 검증
@@ -102,8 +94,6 @@ fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 - **pipe-simulate** → 시뮬레이션 + happy path 검증 + 시뮬 결과 드리프트 감지
 - **pipe-interpret** → PipeConcern 8종 추출·BFS 전파·역할 분류·변경 영향 분석
 - **pipe-gate** → 품질 게이트 정의 + 자동 평가 (pass/fail/review)
-- **pipe-flow-catalog** → PipeFlow 29종 각각의 표현·정의·검증 방식 + fold topology/port 합성 패턴 문서화
-- **pipe-connection-catalog** → ConnectionKind 8종 각각의 의미·사용 기준 문서화
 - **pipe-zoom** → 줌 레벨별 시각화 데이터 모델 (뷰·레이아웃·스타일 3 패싯)
 - **pipe-svg** → PipeGraph → SVG/D3 3-레이어 렌더링 (primitives → shapes+tokens → renderer)
 
@@ -121,7 +111,7 @@ fold topology(atomic~observational)별 포트 합성 패턴을 문서화하고,
 | pipe-store | `core/src/pipe-store.ts` | `pipe-store.test.ts` | 9 |
 | pipe-analyze | `core/src/pipe-analyze.ts` | `pipe-analyze.test.ts` | 14 |
 | pipe-simulate | `core/src/pipe-simulate.ts` | `pipe-simulate.test.ts` | 38 |
-| pipe-simulate (29종) | 같은 파일 | `pipe-simulate-advanced.test.ts` | 40 |
+| pipe-simulate (30종) | 같은 파일 | `pipe-simulate-advanced.test.ts` | 40 |
 | pipe-simulate (시나리오) | 같은 파일 | `pipe-simulate-scenarios.test.ts` | 14 |
 | pipe-simulate (UI) | 같은 파일 | `pipe-simulate-ui.test.ts` | 12 |
 | pipe-happy-path | `core/src/pipe-simulate.ts` | `pipe-happy-path.test.ts` | 18 |
@@ -149,7 +139,7 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 ```
 
 > 타입 상세: `core/src/types/pipe-spec.ts` 참조
-> 29종 흐름 제어 상세: `pipe-flow-catalog` 참조
+> 30종 흐름 제어 상세: `pipe-flow-catalog` 참조
 
 ## ConnectionKind 8종
 
@@ -172,9 +162,13 @@ PipeGraph = PipeSpec 노드들의 연결 그래프 (ScenarioSpec 대체)
 |---|---|
 | `scenario_id` | `graphId` |
 | `steps[]` (flat + next[]) | `pipes[]` (노드) + `connections[]` (엣지) |
-| step kind 3종 | ConnectionKind 8종 + PipeFlow 29종 |
+| step kind 3종 | ConnectionKind 8종 + PipeFlow 30종 |
 
 > v2 마이그레이션 계획: `meta-semantic-v2-migration` 참조
+
+## 관련 문서
+
+- `meta-semantic-pipe-catalog` — PipeFlow/ConnectionKind 카탈로그와 naming/colocation 규칙
 
 ## 검증
 

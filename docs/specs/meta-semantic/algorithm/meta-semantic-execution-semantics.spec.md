@@ -40,7 +40,7 @@ Phase 2(선언 + 시뮬레이션)와 Phase 3(런타임 실행)의 경계를 명�
 
 | 구현 | 파일 | 설명 |
 |------|------|------|
-| PipeFlow 29종 타입 | `core/src/types/pipe-spec.ts` | 흐름 제어 선언 |
+| PipeFlow 30종 타입 | `core/src/types/pipe-spec.ts` | 흐름 제어 선언 |
 | PipeGraph + ConnectionKind 8종 | 같은 파일 | 파이프 간 연결 선언 |
 | countPipePaths / countGraphPaths | `core/src/pipe-path.ts` | 경로 수 계산 |
 | validatePipeSpec / validatePipeGraph | `core/src/pipe-validate.ts` | 구조 검증 |
@@ -349,7 +349,7 @@ PipeRunner 실행 중 호출 빈도·중복·조건을 제어하는 안정화 �
 
 ```
 Phase 2 (완료 — 선언적):
-  PipeFlow 29종 + ConnectionKind 8종 + simulate() + analyze()
+  PipeFlow 30종 + ConnectionKind 8종 + simulate() + analyze()
   → 구현: core/src/pipe-*.ts
 
 Phase 3 (완료 — 실행적):

@@ -7,7 +7,7 @@ def:
   depth: overview
   lifecycle: draft
   layer: domain
-  tags: [structural, entry-point]
+  tags: [structural, entry-point, cross-scope]
   links:
     - target: system-concepts
       type: depends_on
@@ -18,6 +18,8 @@ def:
     - target: meta-semantic-ir
       type: contains
     - target: meta-semantic-pipe-impl
+      type: contains
+    - target: meta-semantic-pipe-catalog
       type: contains
     - target: meta-semantic-folding
       type: contains
@@ -38,9 +40,9 @@ def:
     - target: event-track-codegen
       type: contains
     - target: meta-semantic-v2-migration
-      type: contains
+      type: traces_to
     - target: compat-removal
-      type: contains
+      type: traces_to
     - target: meta-semantic-philosophy
       type: contains
 ---
@@ -91,6 +93,7 @@ def:
 ## 위임 ^delegates
 
 - **meta-semantic-concepts** → 9가지 원자 개념 정의 (패싯, 바운더리, 이벤트, 파이프 등)
+- **meta-semantic-pipe-catalog** → PipeFlow/ConnectionKind 카탈로그와 보조 운영 규칙
 - **meta-semantic-folding** → Semantic Folding 핵심 메커니즘, 검증 단위 식별
 - **meta-semantic-ir** → 3종 IR 구조 정의 (Module, Data, Pipe)
 - **meta-semantic-scope** → scope → aspect → 검증 전략 (경로 모델)
@@ -103,6 +106,7 @@ def:
 
 **레이어 1 — 수집 (코드 단위 하나만 보고 결정 가능):**
 - **meta-semantic-concepts**: 9가지 원자 개념 (패싯, 바운더리, 이벤트, 파이프 등)
+- **meta-semantic-pipe-catalog**: PipeFlow/ConnectionKind 카탈로그 + naming/colocation 규칙
 - **meta-semantic-folding**: 모듈/파이프에서 하위 패싯을 접어 인터페이스로 끌어올림
 - **meta-semantic-ir**: Module·Data·Pipe IR 구조
 - **meta-semantic-scope**: scope→aspect 경로 모델 + 검증 전략
@@ -116,7 +120,7 @@ def:
 - 잔여: definition-catalog 브릿지 (lifecycle/layer/tags 조회)
 
 **실행 엔진 (구현 완료):**
-- **meta-semantic-pipe-impl**: PipeFlow 31종 + ConnectionKind 8종 + 시뮬레이션 + 분석 + 연산자 안정화
+- **meta-semantic-pipe-impl**: PipeFlow 30종 + ConnectionKind 8종 + 시뮬레이션 + 분석 + 연산자 안정화
 - **meta-semantic-execution-semantics**: 조건 평가 + 에러 전파 + 취소 + 컨텍스트 + PipeRunner
 - **meta-semantic-data-contract**: 스키마 + 관계 + 계보 + 버전 + 호환 검증
 - **Constraint 엔진**: 정의 + 평가 + 결과 수집 + 품질 지표
@@ -127,7 +131,7 @@ def:
 - **이벤트 표준**: CloudEvents 확장 속성 + 서비스 버전 매니페스트 + 라이프사이클
 
 **카탈로그 (개별 leaf 문서):**
-- PipeFlow 29종: `pipe-impl/flows/pf-*.spec.md` (29개)
+- PipeFlow 30종: `pipe-impl/flows/pf-*.spec.md` + `transition-scope.spec.md`
 - ConnectionKind 8종: `pipe-impl/connections/pc-*.spec.md` (8개)
 
 **미구현:**
@@ -145,7 +149,7 @@ def:
 
 ```
 1. 정의
-   PipeFlow 29종 + ConnectionKind 8종 → PipeSpec → PipeGraph
+   PipeFlow 30종 + ConnectionKind 8종 → PipeSpec → PipeGraph
    이벤트 정의(trigger, produces, emit), 데이터 계약(consumes/produces/accesses)
         ↓
 2. 정적 분석 + 이벤트 카탈로그 수집
@@ -203,6 +207,14 @@ meta-semantic          "코드가 무엇을 의도하는가"     → intent:v1:M
 
 문서 좌표 × 코드 좌표 = 완전한 시스템 추적
 ```
+
+## 전환 문서
+
+이 문서는 **현재 시스템 entry-point**다. migration/remove 문서는 현재 구조의 하위 구성요소가 아니라
+전환 흐름이므로 `contains`가 아니라 추적 관계로만 둔다.
+
+- `meta-semantic-v2-migration`
+- `compat-removal`
 
 ### 좌표 동형
 

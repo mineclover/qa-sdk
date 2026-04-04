@@ -7,9 +7,10 @@ def:
   depth: overview
   lifecycle: approved
   layer: domain
+  tags: [cross-scope]
   links:
-    - target: meta-semantic-pipe-impl
-      type: depends_on
+    - target: meta-semantic-pipe-catalog
+      type: refines
     - target: pipe-types
       type: refines
     - target: pipe-flow-visual-semantics
@@ -85,6 +86,12 @@ def:
 PipeFlow 30종 각각의 표현 방식, 정의 방식, 검증 방식, 시각 표현을
 카탈로그 관점에서 정리한다.
 개별 flow kind의 상세는 각 `pf-*` 문서와 `pipe-transition-scope`가 책임진다.
+
+## 방법 ^method
+
+이 문서는 runtime flow를 직접 실행하는 구현 문서가 아니라
+flow kind taxonomy를 정리하는 카탈로그 문서다. 자식 leaf가 `feature/func_def`여도,
+상위 module은 "어떤 kind가 존재하고 어떻게 분류되는가"를 다루므로 `data/domain_data`를 유지한다.
 
 ## ^overview
 

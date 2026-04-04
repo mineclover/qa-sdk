@@ -1,9 +1,9 @@
 ---
 def:
   id: scope-nesting-viz-package
-  scope: process
-  aspect: quality_check
-  depth: task
+  scope: flow
+  aspect: process_flow
+  depth: specification
   lifecycle: draft
   layer: domain
   links:

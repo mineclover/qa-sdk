@@ -46,7 +46,7 @@ PipeGraphStore, PipeSpecStore, ManifestRegistry의 SQLite 영속 어댑터.
 | `prefix_versions` | `prefixId:version` | — |
 | `service_manifests` | `serviceId:manifestVersion` | `prefixes{}` |
 
-- **PipeFlow 29종**: `flow` 컬럼에 JSON 직렬화. 라운드트립 보장
+- **PipeFlow 30종**: `flow` 컬럼에 JSON 직렬화. 라운드트립 보장
 - **버전 정렬**: `getLatest` — 사전순 최대값
 - **listAll**: 각 ID의 최신 버전만 (`GROUP BY` + `MAX`)
 
