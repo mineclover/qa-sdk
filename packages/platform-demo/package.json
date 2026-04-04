@@ -10,9 +10,10 @@
     "prebuild-diagrams": "tsx scripts/generate-diagram-presets.ts"
   },
   "dependencies": {
-    "demo-snapshot": "workspace:*",
     "bit-index": "workspace:*",
+    "demo-snapshot": "workspace:*",
     "permission-engine": "workspace:*",
+    "rlsc": "workspace:*",
     "weighted-index": "workspace:*",
     "weighted-ui": "workspace:*"
   },

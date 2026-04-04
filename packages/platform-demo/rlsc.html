@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R.L.S.C.™ Inspector</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --bg-highlight: #1c2128;
+      --border: #30363d;
+      --border-active: #58a6ff;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb33;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+      --cyan: #39d2c0;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --radius: 6px;
+      --radius-lg: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); height: 100vh; overflow: hidden; }
+
+    .app {
+      display: grid;
+      grid-template-rows: 44px 1fr 32px;
+      grid-template-columns: 1fr 520px;
+      grid-template-areas: "header header" "canvas panel" "status status";
+      height: 100vh;
+    }
+
+    /* ─── 헤더 ──────────────────────────────────── */
+    .header {
+      grid-area: header; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 16px; gap: 16px;
+    }
+    .header h1 { font-size: 14px; font-weight: 600; letter-spacing: .5px; }
+    .header h1 span { color: var(--accent); }
+    .header-actions { display: flex; gap: 8px; margin-left: auto; }
+    .btn {
+      background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 4px 12px; font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: background .15s, border-color .15s;
+    }
+    .btn:hover { background: var(--bg-highlight); border-color: var(--border-active); }
+    .btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .badge { background: var(--accent-dim); color: var(--accent); font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 500; }
+
+    /* ─── 캔버스 ─────────────────────────────────── */
+    .canvas { grid-area: canvas; position: relative; overflow-y: auto; background: #0a0e14; }
+    .sample-layout { position: relative; font-family: var(--font-sans); }
+
+    /* 호버 하이라이트 */
+    .hover-hl {
+      position: absolute; border: 2px solid var(--accent); background: rgba(88,166,255,.08);
+      pointer-events: none; z-index: 501; border-radius: 2px; display: none; transition: all .08s;
+    }
+    .hover-hl.visible { display: block; }
+    .hover-hl-label {
+      position: absolute; top: -20px; left: 0; font: 10px var(--font-mono);
+      color: var(--accent); background: var(--bg-secondary); padding: 1px 6px;
+      border-radius: 3px; white-space: nowrap; border: 1px solid var(--accent);
+    }
+    /* 선택 하이라이트 */
+    .select-hl {
+      position: absolute; border: 2px solid var(--green); background: rgba(63,185,80,.10);
+      pointer-events: none; z-index: 502; border-radius: 2px; display: none;
+    }
+    .select-hl.visible { display: block; }
+    .select-hl-label {
+      position: absolute; bottom: -20px; left: 0; font: 10px var(--font-mono);
+      color: #000; background: var(--green); padding: 1px 6px; border-radius: 3px; white-space: nowrap;
+    }
+    /* 바운딩 박스 오버레이 (Overlay 모드) */
+    .bbox-overlay {
+      position: absolute; border: 1px solid; pointer-events: none; z-index: 500;
+      border-radius: 1px; opacity: 0; transition: opacity .15s;
+    }
+    .bbox-overlay.visible { opacity: 1; }
+
+    /* ─── 패널 ───────────────────────────────────── */
+    .panel {
+      grid-area: panel; background: var(--bg-secondary); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-tertiary); overflow-x: auto; scrollbar-width: thin; flex-shrink: 0; }
+    .tab-bar::-webkit-scrollbar { height: 3px; }
+    .tab-bar::-webkit-scrollbar-thumb { background: var(--border); }
+    .tab {
+      padding: 8px 10px; font-size: 11px; cursor: pointer; color: var(--text-secondary); white-space: nowrap; flex-shrink: 0;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+    }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content {
+      flex: 1; overflow-y: auto; padding: 0; min-height: 0;
+      font-family: var(--font-mono); font-size: 11px; line-height: 1.6; color: var(--text-primary);
+    }
+    .tab-panel { display: none; padding: 12px; }
+    .tab-panel.active { display: block; }
+
+    /* 선택 정보 바 */
+    .selection-bar {
+      background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+      padding: 8px 12px; font-size: 11px; display: none;
+    }
+    .selection-bar.visible { display: block; }
+
+    /* 트리 노드 행 */
+    .tree-row { padding: 1px 4px; border-radius: 2px; cursor: pointer; white-space: pre; }
+    .tree-row:hover { background: var(--accent-dim); }
+    .tree-row.selected { background: rgba(63,185,80,.15); outline: 1px solid var(--green); }
+    .mk-tag { color: var(--cyan); }
+    .mk-rect { color: var(--yellow); }
+    .mk-z { color: var(--purple); }
+    .mk-role { color: var(--green); }
+    .mk-text { color: var(--orange); }
+    .mk-addr { color: var(--accent); }
+    .mk-section { color: var(--red); font-weight: 600; }
+
+    /* z-index 레이어 카드 */
+    .layer-card { margin-bottom: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; }
+
+    /* ─── 상태 바 ─────────────────────────────────── */
+    .status-bar {
+      grid-area: status; background: var(--bg-tertiary); border-top: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--text-muted); gap: 16px;
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* ─── 샘플 레이아웃 ──────────────────────────── */
+    .s-header {
+      background: #1a1e24; height: 56px; display: flex; align-items: center;
+      padding: 0 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .s-logo { font-size: 18px; font-weight: 700; color: var(--accent); }
+    .s-nav { display: flex; gap: 24px; margin-left: 48px; list-style: none; }
+    .s-nav li a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+    .s-nav-actions { margin-left: auto; display: flex; gap: 12px; }
+    .s-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px 16px; font-size: 13px; cursor: pointer; }
+    .s-btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+    .s-hero {
+      height: 320px; display: flex; flex-direction: column; justify-content: center; padding: 0 60px;
+      background: linear-gradient(135deg, #161b22 0%, #0d1117 50%, #1a1625 100%); border-bottom: 1px solid var(--border);
+    }
+    .s-hero h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .s-hero p { color: var(--text-secondary); font-size: 16px; max-width: 500px; }
+    .s-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 24px; }
+    .s-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color .2s; }
+    .s-card:hover { border-color: var(--border-active); }
+    .s-card-img { height: 160px; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 48px; color: var(--text-muted); }
+    .s-card-body { padding: 12px 16px; }
+    .s-card-body h3 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .s-card-body .price { color: var(--green); font-size: 16px; font-weight: 600; }
+    .s-card-body .meta { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+    .s-footer { padding: 24px 60px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ─── 메트릭/패턴/SVG/컨포먼스 패널 ─────────────── */
+    .metrics-section { margin-bottom: 16px; }
+    .metrics-title { color: var(--accent); font-weight: 600; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metrics-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid var(--bg-tertiary); }
+    .metrics-key { color: var(--text-secondary); }
+    .metrics-val { color: var(--text-primary); font-family: var(--font-mono); }
+    .violation-item { padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; border-left: 3px solid; }
+    .violation-error { border-color: var(--red); background: rgba(248,81,73,.08); }
+    .violation-warning { border-color: var(--yellow); background: rgba(210,153,34,.08); }
+    .score-bar { height: 6px; border-radius: 3px; background: var(--bg-tertiary); overflow: hidden; margin: 4px 0 12px; }
+    .score-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+    .conformance-input { width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-primary); font-family: var(--font-mono); font-size: 10px; border-radius: 4px; padding: 8px; resize: vertical; min-height: 120px; }
+    .conformance-input:focus { outline: none; border-color: var(--accent); }
+    .svg-container { padding: 12px; overflow: auto; }
+    .svg-container svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+    .svg-options { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-tertiary); }
+    .svg-opt-label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-secondary); cursor: pointer; }
+    .svg-opt-label input { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1><span>R.L.S.C.</span>™ Inspector</h1>
+      <span class="badge">v1.0</span>
+      <div class="header-actions">
+        <button class="btn" id="btn-overlay" onclick="toggleOverlay()">Overlay</button>
+        <button class="btn" onclick="runCollection()">Collect</button>
+        <button class="btn" onclick="copyContext()">Copy Context</button>
+      </div>
+    </div>
+
+    <div class="canvas" id="canvas">
+      <div class="sample-layout" id="sample-layout">
+        <header class="s-header" role="banner" data-qa-address="page_view:v2:5">
+          <div class="s-logo">ShopDemo</div>
+          <ul class="s-nav" role="navigation">
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">Categories</a></li>
+            <li><a href="#">About</a></li>
+          </ul>
+          <div class="s-nav-actions">
+            <button class="s-btn" role="button">Cart (2)</button>
+            <button class="s-btn s-btn-primary" role="button">Login</button>
+          </div>
+        </header>
+        <section class="s-hero" role="region">
+          <h1>Spring Collection 2026</h1>
+          <p>새로운 시즌, 새로운 시작. 올 봄 가장 트렌디한 아이템을 만나보세요.</p>
+        </section>
+        <section class="s-grid" role="region">
+          <article class="s-card" role="article" data-qa-address="tracking:v3:12">
+            <div class="s-card-img">A</div>
+            <div class="s-card-body"><h3>Classic T-Shirt</h3><div class="price">₩29,900</div><div class="meta">Free Shipping</div></div>
+          </article>
+          <article class="s-card" role="article" data-qa-address="tracking:v3:13">
+            <div class="s-card-img">B</div>
+            <div class="s-card-body"><h3>Denim Jacket</h3><div class="price">₩89,000</div><div class="meta">20% Off</div></div>
+          </article>
+          <article class="s-card" role="article" data-qa-address="tracking:v3:14">
+            <div class="s-card-img">C</div>
+            <div class="s-card-body"><h3>Sneakers Pro</h3><div class="price">₩119,000</div><div class="meta">New Arrival</div></div>
+          </article>
+          <article class="s-card" role="article" data-qa-address="tracking:v3:15">
+            <div class="s-card-img">D</div>
+            <div class="s-card-body"><h3>Canvas Bag</h3><div class="price">₩45,000</div><div class="meta">Eco Friendly</div></div>
+          </article>
+          <article class="s-card" role="article" data-qa-address="tracking:v3:16">
+            <div class="s-card-img">E</div>
+            <div class="s-card-body"><h3>Silk Scarf</h3><div class="price">₩55,000</div><div class="meta">Limited Edition</div></div>
+          </article>
+          <article class="s-card" role="article" data-qa-address="tracking:v3:17">
+            <div class="s-card-img">F</div>
+            <div class="s-card-body"><h3>Wool Beanie</h3><div class="price">₩25,000</div><div class="meta">Winter Essential</div></div>
+          </article>
+        </section>
+        <footer class="s-footer" role="contentinfo">
+          <p>© 2026 ShopDemo — R.L.S.C.™ Prototype</p>
+        </footer>
+
+        <!-- 오버레이 (sample-layout 내부 → 스크롤 동기화) -->
+        <div class="hover-hl" id="hover-hl"><div class="hover-hl-label" id="hover-hl-label"></div></div>
+        <div class="select-hl" id="select-hl"><div class="select-hl-label" id="select-hl-label"></div></div>
+        <div id="bbox-container"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="selection-bar" id="selection-bar"></div>
+      <div class="tab-bar">
+        <div class="tab active" data-tab="tree">Tree</div>
+        <div class="tab" data-tab="layers">Layers</div>
+        <div class="tab" data-tab="context">Context</div>
+        <div class="tab" data-tab="metrics">Metrics</div>
+        <div class="tab" data-tab="pattern">Pattern</div>
+        <div class="tab" data-tab="svg">SVG</div>
+        <div class="tab" data-tab="conformance">Conformance</div>
+      </div>
+      <div class="tab-content">
+        <div class="tab-panel active" id="panel-tree"><span style="color:var(--text-muted)">Click "Collect" to analyze...</span></div>
+        <div class="tab-panel" id="panel-layers"></div>
+        <div class="tab-panel" id="panel-context"></div>
+        <div class="tab-panel" id="panel-metrics"><span style="color:var(--text-muted)">Collect to view layout metrics...</span></div>
+        <div class="tab-panel" id="panel-pattern"><span style="color:var(--text-muted)">Collect to view pattern classification...</span></div>
+        <div class="tab-panel" id="panel-svg" style="padding:0">
+          <div class="svg-options">
+            <label class="svg-opt-label"><input type="checkbox" id="svg-opt-grid" checked> Grid</label>
+            <label class="svg-opt-label"><input type="checkbox" id="svg-opt-balance" checked> Balance</label>
+            <label class="svg-opt-label"><input type="checkbox" id="svg-opt-flow"> Flow</label>
+            <label class="svg-opt-label"><input type="checkbox" id="svg-opt-groups"> Groups</label>
+            <select id="svg-opt-color" style="background:var(--bg-tertiary);border:1px solid var(--border);color:var(--text-primary);font-size:11px;border-radius:3px;padding:2px 4px">
+              <option value="role">By Role</option>
+              <option value="depth">By Depth</option>
+              <option value="layer">By Layer</option>
+            </select>
+            <button class="btn" style="font-size:10px;padding:2px 8px" onclick="renderSVG()">Re-render</button>
+          </div>
+          <div class="svg-container" id="svg-container"><span style="color:var(--text-muted);padding:12px;display:block">Collect to view SVG render...</span></div>
+        </div>
+        <div class="tab-panel" id="panel-conformance">
+          <div style="padding:12px">
+            <div class="metrics-title">선언된 레이아웃 인텐트 (LayoutPattern JSON)</div>
+            <textarea class="conformance-input" id="conformance-intent" placeholder='{"flowDirection":"top-to-bottom","gridSystem":{"columns":3,"gutter":16}}'></textarea>
+            <button class="btn" style="margin-top:8px;width:100%" onclick="runConformance()">Check Conformance</button>
+            <div id="conformance-result" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div style="display:flex;align-items:center;gap:4px"><div class="status-dot" id="status-dot"></div><span id="status-text">Ready</span></div>
+      <span id="stat-info">—</span>
+      <span style="margin-left:auto">R.L.S.C.™ Relative Layout Structured Content</span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/pages/rlsc.ts"></script>
+</body>
+</html>
