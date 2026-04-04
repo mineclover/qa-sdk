@@ -17,6 +17,7 @@ import {
   type QueryLookupService,
 } from "./lib/query-service.js";
 import { createRuleService } from "./lib/rule-service.js";
+import { createRuleMigrationService } from "./lib/rule-migration-service.js";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";
@@ -61,6 +62,12 @@ export function createApp(deps: AppDeps) {
     policyRuleStore,
     prefixRegistry: deps.prefixRegistry ?? new InMemoryPrefixRegistry(),
   });
+  const ruleMigrationService = deps.metaRegistry
+    ? createRuleMigrationService({
+        policyRuleStore,
+        metaRegistry: deps.metaRegistry,
+      })
+    : undefined;
 
   app.use("*", requestId);
 
@@ -78,7 +85,7 @@ export function createApp(deps: AppDeps) {
       getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
-  app.route("/", createRuleRoutes({ ruleService }));
+  app.route("/", createRuleRoutes({ ruleService, ruleMigrationService }));
   app.route("/", createQueryRoutes({ queryService }));
   app.route("/state", createStateRoutes(deps.stateRoutes ?? {}));
   app.route("/transitions", createStateRoutes(deps.stateRoutes ?? {}));

@@ -47,4 +47,11 @@ export const ruleIdParamSchema = z.object({
   id: z.string().min(1),
 });
 
+export const ruleMigrationPayloadSchema = z.object({
+  indexId: z.string().min(1),
+  fromVersion: z.string().min(1),
+  toVersion: z.string().min(1),
+});
+
 export type PolicyRulePayload = z.infer<typeof policyRulePayloadSchema>;
+export type RuleMigrationPayload = z.infer<typeof ruleMigrationPayloadSchema>;

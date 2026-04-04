@@ -21,6 +21,11 @@ export {
 export { NodeSqliteDriver, BetterSqliteDriver } from "index-meta";
 export { SqlPolicyRuleStore } from "./stores/sql-policy-rule-store.js";
 export {
+  RuleMigrationService,
+  createRuleMigrationService,
+} from "./lib/rule-migration-service.js";
+export type { RuleMigrationResult } from "./lib/rule-migration-service.js";
+export {
   PolicyRuleNotFoundError,
   PolicyRuleAlreadyExistsError,
 } from "./stores/policy-rule-store.js";
