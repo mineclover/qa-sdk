@@ -11,12 +11,19 @@ import type { PipeGraph } from "./types/pipe-spec.js";
 
 // ── 타입 ──────────────────────────────────────────────
 
+/** scope 계약 참조 — required 플래그 포함 */
+export interface ScopeContractRef {
+  contractId: string;
+  /** 필수 여부 (기본: true). false이면 미활성 시 warning만 */
+  required?: boolean;
+}
+
 /** pipe → scope 매핑 */
 export interface ScopePipeBinding {
   /** pipe가 실행되는 scope */
   scopeId: string;
-  /** pipe가 소비하는 scope 계약 */
-  scopeContracts: string[];
+  /** pipe가 소비하는 scope 계약 (string이면 required: true) */
+  scopeContracts: Array<string | ScopeContractRef>;
 }
 
 /** scope nesting + pipe graph를 연결하는 매핑 */
@@ -129,15 +136,18 @@ export function validateMountFlow(
 
     // 계약 가용성 확인
     const active = activeByDepth[depth];
-    for (const contractId of scopeBinding.scopeContracts) {
+    for (const ref of scopeBinding.scopeContracts) {
+      const contractId = typeof ref === "string" ? ref : ref.contractId;
+      const isOptional = typeof ref === "string" ? false : ref.required === false;
+
       if (!active.includes(contractId)) {
         issues.push({
-          severity: "error",
+          severity: isOptional ? "warning" : "error",
           code: "contract-unavailable",
           pipeId,
           scopeId: scopeBinding.scopeId,
           contractId,
-          message: `pipe "${pipeId}"가 소비하는 계약 "${contractId}"이 scope "${scopeBinding.scopeId}"(depth ${depth}) 마운트 시점에 미활성`,
+          message: `pipe "${pipeId}"가 소비하는 ${isOptional ? "선택적 " : ""}계약 "${contractId}"이 scope "${scopeBinding.scopeId}"(depth ${depth}) 마운트 시점에 미활성`,
         });
       }
     }

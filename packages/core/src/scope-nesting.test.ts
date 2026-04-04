@@ -265,6 +265,25 @@ describe("L0 SimulationGuards", () => {
     expect(result.issues.filter(i => i.contractId === "logging-session" && i.code === "guard-inactive")).toHaveLength(0);
   });
 
+  it("guard-inactive + optional consume — warning 2건, valid 유지", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "guard-optional",
+      scopes: [
+        { scopeId: "bridge", provides: [{ contractId: "logging", type: "logging" }], consumes: [] },
+        { scopeId: "handler", provides: [], consumes: [
+          { contractId: "logging", type: "logging", required: false },
+        ] },
+      ],
+    };
+    const result = validateScopeNesting(nesting, {
+      isEncodable: (c) => c !== "logging",
+    });
+    expect(result.valid).toBe(true);
+    // guard-inactive + optional-missing 두 건
+    expect(result.issues.filter(i => i.code === "guard-inactive")).toHaveLength(1);
+    expect(result.issues.filter(i => i.code === "optional-missing")).toHaveLength(1);
+  });
+
   it("gateResult / harnessState — resolveGuards에서 기본값 제공", () => {
     // 현재 gateResult/harnessState는 validateScopeNesting 내부에서 직접 사용하지 않음
     // resolveGuards가 기본값을 제공하는지만 확인

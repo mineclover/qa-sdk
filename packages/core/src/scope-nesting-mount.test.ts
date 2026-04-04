@@ -213,4 +213,47 @@ describe("validateMountFlow", () => {
     expect(result.valid).toBe(true);
     expect(result.snapshots[3].pipes).toEqual(["render-view"]);
   });
+
+  // I3: 빈 graph
+  it("빈 graph (pipes 0개) — snapshots만 생성, issues 없음", () => {
+    const emptyGraph: PipeGraph = { graphId: "empty", version: "v1", pipes: [], connections: [] };
+    const binding: MountFlowBinding = {
+      nesting,
+      graph: emptyGraph,
+      bindings: {},
+    };
+    const result = validateMountFlow(binding);
+    expect(result.valid).toBe(true);
+    expect(result.issues).toHaveLength(0);
+    expect(result.snapshots).toHaveLength(4);
+  });
+
+  // C2: guard-inactive + optional consume
+  it("guard-inactive + optional consume — warning (error 아님)", () => {
+    const binding: MountFlowBinding = {
+      nesting,
+      graph,
+      bindings: {
+        "validate-input": { scopeId: "handlers", scopeContracts: [] },
+        "compute-result": { scopeId: "handlers", scopeContracts: [] },
+        "log-event": {
+          scopeId: "handlers",
+          scopeContracts: [
+            { contractId: "logging-session", required: false },
+          ],
+        },
+      },
+    };
+    // logging-session 비활성
+    const result = validateMountFlow(binding, {
+      isEncodable: (c) => c !== "logging-session",
+    });
+    // optional이므로 warning, valid 유지
+    expect(result.valid).toBe(true);
+    const issue = result.issues.find(
+      i => i.code === "contract-unavailable" && i.pipeId === "log-event",
+    );
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe("warning");
+  });
 });

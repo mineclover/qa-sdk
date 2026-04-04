@@ -112,26 +112,35 @@ export function validateContractTiming(
     }
   }
 
-  // 1단계: readyAfter 분석 — 계약별 준비 시점 계산
+  // 1단계: effective provider 결정 (override 반영) → readyAfter 분석
+  // override된 계약은 마지막 override가 canonical. 비-override duplicate는 첫 등록 유지.
+  const effectiveProvider = new Map<string, import("./scope-nesting.js").ContractRef>();
   for (const scope of nesting.scopes) {
     for (const contract of scope.provides) {
-      if (contract.readyAfter) {
-        const readyStep = eventStepMap.get(contract.readyAfter);
-        if (readyStep === undefined) {
-          issues.push({
-            severity: "warning",
-            code: "readiness-event-missing",
-            pipeId: "",
-            contractId: contract.contractId,
-            message: `계약 "${contract.contractId}"의 readyAfter 이벤트 "${contract.readyAfter}"가 시뮬 결과에 없음`,
-          });
-          readinessTimeline.push({ contractId: contract.contractId, readyAtStep: -1 });
-        } else {
-          readinessTimeline.push({ contractId: contract.contractId, readyAtStep: readyStep });
-        }
-      } else {
-        readinessTimeline.push({ contractId: contract.contractId, readyAtStep: -1 });
+      const existing = effectiveProvider.get(contract.contractId);
+      if (!existing || contract.override) {
+        effectiveProvider.set(contract.contractId, contract);
       }
+    }
+  }
+
+  for (const [, contract] of effectiveProvider) {
+    if (contract.readyAfter) {
+      const readyStep = eventStepMap.get(contract.readyAfter);
+      if (readyStep === undefined) {
+        issues.push({
+          severity: "warning",
+          code: "readiness-event-missing",
+          pipeId: "",
+          contractId: contract.contractId,
+          message: `계약 "${contract.contractId}"의 readyAfter 이벤트 "${contract.readyAfter}"가 시뮬 결과에 없음`,
+        });
+        readinessTimeline.push({ contractId: contract.contractId, readyAtStep: -1 });
+      } else {
+        readinessTimeline.push({ contractId: contract.contractId, readyAtStep: readyStep });
+      }
+    } else {
+      readinessTimeline.push({ contractId: contract.contractId, readyAtStep: -1 });
     }
   }
 
