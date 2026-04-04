@@ -17,81 +17,87 @@ def:
 
 ^purpose
 
-설계 의도를 선언적으로 표현하고, 측정된 LayoutMetrics와 비교하여 레이아웃 프레임 위반을 탐지한다.
-"3×3 그리드로 구성한다", "좌:우 = 2:1 균형을 유지한다", "좌→우 흐름으로 스크롤된다"와 같은
-설계 프레임을 코드 수준에서 검증 가능한 형태로 정의한다.
+`LayoutPattern`을 공유 어휘로 삼아 설계 의도 선언(top-down)과 DOM 인식(bottom-up) 양 방향을
+같은 구조로 표현하고, 두 패턴을 비교하여 레이아웃 프레임 위반을 탐지한다.
+
+```
+선언 경로 (설계자):  LayoutPattern { gridPattern: "3x3", flowDirection: "left-to-right" }
+                                                     ↓ checkConformance
+인식 경로 (DOM):     classifyLayout(measureLayout(doc)) → LayoutPattern { gridPattern: "3x3", ... }
+```
+
+선언 없이 인식만 실행해도 의미가 있다 — "이 페이지가 어떤 패턴인가"를 자동 분류한다.
 
 ^defines
 
 **타입**
 
-- `LayoutIntent` — 설계 의도 선언
+- `LayoutPattern` — 레이아웃 패턴 어휘 (선언과 인식 공유)
   - `gridPattern?: "3x3" | "2-col" | "1-col" | { cols: number, rows: number }`
   - `balanceRatio?: { x?: [number, number], y?: [number, number] }` — `[좌, 우]` 비율. 예: `[2, 1]`
   - `flowDirection?: "left-to-right" | "right-to-left" | "top-to-bottom" | "grid"`
-  - `goldenRatio?: boolean` — 황금비 준수 여부 (score ≥ 0.8이면 통과)
-  - `gestalt?: GestaltIntent`
+  - `goldenRatio?: boolean`
+  - `gestalt?: GestaltPattern`
 
-- `GestaltIntent` — 게슈탈트 의도
+- `GestaltPattern` — 게슈탈트 관련 패턴
   - `proximity?: "tight" | "loose"` — 근접 그룹 간격 기대치
-    - tight: gapThreshold ≤ 16px (ADJACENCY_GAP 이내)
+    - tight: gapThreshold ≤ 16px
     - loose: gapThreshold ≤ 64px
   - `continuity?: "strong" | "weak"` — flow 연결 밀도
     - strong: flow relations ≥ 가시 노드 수의 50%
     - weak: flow relations ≥ 가시 노드 수의 20%
-  - `minGroupCount?: number` — 최소 proximity group 수 (기본: 검사 안 함)
+  - `minGroupCount?: number` — proximity group 수 하한
 
 - `ConformanceViolation` — 위반 항목
   - `rule: string` — 규칙 이름 (예: "balance.x", "gridPattern", "flowDirection")
-  - `expected: unknown` — 의도값
-  - `actual: unknown` — 측정값
+  - `declared: unknown` — 선언값 (top-down)
+  - `recognized: unknown` — 인식값 (bottom-up)
   - `severity: "error" | "warning"`
-  - `description: string` — 사람이 읽을 수 있는 설명
+  - `description: string`
 
 - `ConformanceResult` — 검증 결과
-  - `intent: LayoutIntent`
-  - `metrics: LayoutMetrics`
+  - `declared: LayoutPattern` — 선언된 패턴 (입력)
+  - `recognized: LayoutPattern` — DOM에서 인식된 패턴 (`classifyLayout` 결과)
+  - `metrics: LayoutMetrics` — 인식 과정의 raw 수치 (디버깅용)
   - `violations: ConformanceViolation[]`
-  - `score: number` — 0–1 (1 = 모든 규칙 통과, 위반 없음)
+  - `score: number` — 0–1 (선언된 필드 중 일치 비율, 선언 없으면 1.0)
 
 **함수**
 
-- `packages/rlsc/src/intent.ts:checkConformance` — `(doc: RLSCDocument, intent: LayoutIntent) → ConformanceResult`
-  - `measureLayout(doc)` 호출 후 내부 체커 순서대로 실행
-  - score = `(통과 규칙 수) / (전체 선언된 규칙 수)`, 규칙 없으면 1.0
+- `packages/rlsc/src/intent.ts:checkConformance` — `(doc: RLSCDocument, declared: LayoutPattern) → ConformanceResult`
+  - `measureLayout(doc)` → `classifyLayout(metrics)` → `recognized: LayoutPattern`
+  - 선언된 필드만 비교 (미선언 필드는 위반 생성 안 함)
+  - score = `(위반 없는 필드 수) / (선언된 필드 수)`, 선언 없으면 1.0
 
-- `packages/rlsc/src/intent.ts:checkBalance` — `(metrics, intent) → ConformanceViolation[]` (내부)
-  - `intent.balanceRatio.x` 있으면 `[a, b]` → 기대 비율 `a/b` vs `metrics.balance.x`
-  - 허용 편차: ±20% (기본). 초과 시 warning, ±50% 초과 시 error
+- `packages/rlsc/src/intent.ts:recognizeLayout` — `(doc: RLSCDocument) → LayoutPattern`
+  - 선언 없이 DOM만으로 패턴 인식 (`measureLayout` + `classifyLayout` 래퍼)
+  - 단독 사용: "이 페이지가 어떤 레이아웃 패턴인가?"
 
-- `packages/rlsc/src/intent.ts:checkGrid` — `(metrics, intent) → ConformanceViolation[]` (내부)
-  - `"3x3"` → `{ cols: 3, rows: 3 }` 변환 후 비교
-  - `metrics.gridPattern` null이면 error
-
-- `packages/rlsc/src/intent.ts:checkFlow` — `(metrics, intent) → ConformanceViolation[]` (내부)
-  - `"left-to-right"` → `dominantFlow === "horizontal"` 기대
-  - `"top-to-bottom"` → `dominantFlow === "vertical"` 기대
-  - `"grid"` → `dominantFlow === "grid"` 기대
-
-- `packages/rlsc/src/intent.ts:checkGoldenRatio` — `(metrics, intent) → ConformanceViolation[]` (내부)
-  - `intent.goldenRatio === true` → `metrics.goldenRatioScore < 0.8` 시 warning
-
-- `packages/rlsc/src/intent.ts:checkGestalt` — `(metrics, intent) → ConformanceViolation[]` (내부)
-  - proximity "tight": gapThreshold 16px 기준 그룹이 존재해야 함
-  - continuity "strong": `flow` relations 비율 ≥ 0.5
+- 내부 체커 (모두 `declared` vs `recognized` 필드 비교):
+  - `checkBalance(declared, recognized) → ConformanceViolation[]`
+    - `[a, b]` → 기대 비율 `a/b` vs `recognized.balanceRatio.x`
+    - 허용 편차: ±20% → warning, ±50% 초과 → error
+  - `checkGrid(declared, recognized) → ConformanceViolation[]`
+    - `"3x3"` → `{ cols: 3, rows: 3 }` 변환 후 비교
+  - `checkFlow(declared, recognized) → ConformanceViolation[]`
+    - `"left-to-right"` → `recognized.flowDirection === "left-to-right"` 기대
+  - `checkGoldenRatio(declared, recognized) → ConformanceViolation[]`
+    - `declared.goldenRatio === true` + `recognized.goldenRatio !== true` → warning
+  - `checkGestalt(declared, recognized) → ConformanceViolation[]`
 
 ^consumes
 
-- `packages/rlsc/src/types.ts` — RLSCDocument
-- `packages/rlsc/src/metrics.ts` — measureLayout, LayoutMetrics
+- `packages/rlsc/src/types.ts` — RLSCDocument, LayoutMetrics
+- `packages/rlsc/src/metrics.ts` — measureLayout, classifyLayout
 
 ## 구현 항목
 
-- [ ] `LayoutIntent`, `GestaltIntent`, `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts`에 추가
-- [ ] `intent.ts` 파일 생성 — `checkConformance` + 내부 체커 5종 구현
-- [ ] `index.ts` — `checkConformance`, `LayoutIntent`, `ConformanceResult` export 추가
-- [ ] `intent.test.ts` — 의도 선언별 위반 탐지 단위 테스트
-  - 3x3 의도 + 2x2 실측 → gridPattern violation
-  - balance [2,1] 의도 + 실측 1.05 → balance.x violation
-  - flowDirection "left-to-right" + dominantFlow "vertical" → flowDirection violation
-  - 모든 규칙 통과 → score 1.0
+- [ ] `LayoutPattern`, `GestaltPattern`, `ConformanceViolation`, `ConformanceResult` 타입 — `types.ts`에 추가
+- [ ] `intent.ts` 파일 생성 — `checkConformance`, `recognizeLayout` + 내부 체커 5종 구현
+- [ ] `index.ts` — `checkConformance`, `recognizeLayout`, `LayoutPattern`, `ConformanceResult` export 추가
+- [ ] `intent.test.ts` — 양 방향 사용 검증
+  - `recognizeLayout(doc)` 만 호출 → violations 없이 LayoutPattern 반환
+  - `checkConformance(doc, { gridPattern: "3x3" })` + 실측 2×2 → gridPattern violation
+  - `checkConformance(doc, { balanceRatio: { x: [2, 1] } })` + 실측 1.05 → balance.x violation
+  - 선언 필드 모두 일치 → score 1.0
+  - 선언 없음 (`{}`) → score 1.0, violations []

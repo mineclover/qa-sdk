@@ -15,15 +15,18 @@ def:
 
 ^purpose
 
-수집된 RLSCDocument에서 설계 메트릭을 계산한다.
+수집된 RLSCDocument에서 설계 메트릭을 계산하고, 수치 측정값을 패턴 어휘로 분류한다.
 게슈탈트 원칙(근접성·연속성·유사성), 황금비, 그리드 패턴, 시각적 균형 등
-레이아웃 프레임의 구조적 특성을 수치로 표현하여 의도 검증의 입력으로 공급한다.
+레이아웃 프레임의 구조적 특성을 먼저 수치로 측정(`LayoutMetrics`)한 뒤,
+`classifyLayout`으로 패턴 어휘(`LayoutPattern`)로 변환한다.
+`LayoutPattern`은 선언(top-down 설계 의도)과 인식(bottom-up DOM 수집) 양 방향에서
+같은 어휘를 공유하는 중립 타입이다.
 
 ^defines
 
 **타입**
 
-- `LayoutMetrics` — 측정값 집합
+- `LayoutMetrics` — 측정값 집합 (raw 수치)
   - `balance: { x: number, y: number }` — 좌:우 / 상:하 시각적 무게 비율 (면적 기준)
     - x: `좌측 절반 총 면적 / 우측 절반 총 면적` (1.0 = 균형, 2.0 = 좌측 2배)
     - y: `상측 절반 총 면적 / 하측 절반 총 면적`
@@ -67,6 +70,14 @@ def:
   - 양쪽 모두 유의미 → "grid"
   - 나머지 → "free"
 
+- `packages/rlsc/src/metrics.ts:classifyLayout` — `(metrics: LayoutMetrics) → LayoutPattern`
+  - 수치 측정값을 패턴 어휘로 변환 (bottom-up 인식 경로)
+  - `gridPattern`: `metrics.gridPattern` → `{ cols, rows }` 또는 축약 레이블("3x3", "2-col", "1-col") 매핑
+  - `balanceRatio.x`: `metrics.balance.x` → 가장 가까운 정수 비율 `[a, 1]`으로 반올림
+  - `flowDirection`: `metrics.dominantFlow` → `"horizontal"→"left-to-right"`, `"vertical"→"top-to-bottom"`, `"grid"→"grid"`
+  - `goldenRatio`: `metrics.goldenRatioScore ≥ 0.8` → `true`
+  - 분류 불가(free flow, null grid 등)인 필드는 해당 키를 결과에서 생략
+
 ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCDocument, RLSCNode, LayoutGrid, LayoutRect, RLSCRelation
@@ -76,7 +87,11 @@ def:
 ## 구현 항목
 
 - [ ] `LayoutMetrics`, `ProximityGroup` 타입 — `types.ts`에 추가
-- [ ] `metrics.ts` 파일 생성 — `measureLayout`, `measureBalance`, `detectGridPattern`, `scoreGoldenRatio`, `detectProximityGroups`, `detectDominantFlow` 구현
+- [ ] `metrics.ts` 파일 생성 — `measureLayout`, `measureBalance`, `detectGridPattern`, `scoreGoldenRatio`, `detectProximityGroups`, `detectDominantFlow`, `classifyLayout` 구현
 - [ ] `grid.ts:extractRegions` export 전환 (현재 내부 함수)
-- [ ] `index.ts` — `measureLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
-- [ ] `metrics.test.ts` — 각 측정 함수 단위 테스트 (DOM 없이 mock 노드)
+- [ ] `index.ts` — `measureLayout`, `classifyLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
+- [ ] `metrics.test.ts` — 각 측정 함수 + `classifyLayout` 단위 테스트 (DOM 없이 mock 노드)
+  - balance.x 2.1 → balanceRatio `[2, 1]`
+  - goldenRatioScore 0.85 → goldenRatio true
+  - gridPattern null → 결과에서 gridPattern 키 없음
+  - dominantFlow "free" → 결과에서 flowDirection 키 없음

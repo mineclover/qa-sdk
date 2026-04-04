@@ -18,7 +18,7 @@ def:
 ^purpose
 
 MutationObserver + ResizeObserver로 DOM 변화를 감지하고,
-변경 발생 시 레이아웃을 재수집하여 선언된 LayoutIntent와의 적합성을 실시간으로 재검증한다.
+변경 발생 시 레이아웃을 재수집하여 선언된 LayoutPattern와의 적합성을 실시간으로 재검증한다.
 화면이 의도한 레이아웃으로 구현됐는지 지속적으로 확인하는 관측 루프를 담당한다.
 
 ^defines
@@ -26,7 +26,7 @@ MutationObserver + ResizeObserver로 DOM 변화를 감지하고,
 **타입**
 
 - `MonitorOptions` — 모니터 생성 옵션
-  - `intent?: LayoutIntent` — 적합성 검증에 사용할 의도 선언 (없으면 변화 감지만)
+  - `intent?: LayoutPattern` — 적합성 검증에 사용할 의도 선언 (없으면 변화 감지만)
   - `debounceMs?: number` — DOM 변화 후 재수집 대기 시간, 기본 200ms
   - `collectOptions?: CollectorOptions` — collectLayout 전달 옵션
 
