@@ -69,4 +69,28 @@ describe("SqliteTestScenarioStore", () => {
     const s = store.getById("test_scenario:v1:1");
     expect(s?.lifecycle).toBe("collected");
   });
+
+  it("listByLifecycle → lifecycle 필터", () => {
+    store.upsertDeclared({
+      aCoord: "def:10/unit", specAddress: "def:10", kind: "unit",
+      scope: "single", intent: "테스트A", primarySvc: "@qa-sdk/svc-a",
+    });
+    store.upsertDeclared({
+      aCoord: "def:11/e2e", specAddress: "def:11", kind: "e2e",
+      scope: "system", intent: "테스트B", primarySvc: "@qa-sdk/svc-b",
+    });
+    store.assign("def:10/unit", "test_scenario:v1:1", "svc-a.test.ts", false);
+
+    expect(store.listByLifecycle("declared").length).toBe(1);
+    expect(store.listByLifecycle("assigned").length).toBe(1);
+  });
+
+  it("nextSeq → kind+scope 기준 순번 계산", () => {
+    store.upsertDeclared({
+      aCoord: "def:20/unit", specAddress: "def:20", kind: "unit",
+      scope: "single", intent: "테스트", primarySvc: "@qa-sdk/svc",
+    });
+    expect(store.nextSeq("unit", "single")).toBe(2); // 1개 있으면 다음은 2
+    expect(store.nextSeq("e2e", "system")).toBe(1);  // 없으면 1
+  });
 });

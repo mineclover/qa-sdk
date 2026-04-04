@@ -1,9 +1,7 @@
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, and } from "drizzle-orm";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { eq, and, count } from "drizzle-orm";
 import { testScenarios, testScenarioRuns } from "./db/schema.js";
 import type {
   TestScenario,
@@ -13,8 +11,6 @@ import type {
 } from "./types.js";
 
 type DrizzleDb = ReturnType<typeof drizzle>;
-
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 export class SqliteTestScenarioStore {
   private rawDb: DatabaseSyncInstance;
@@ -26,9 +22,13 @@ export class SqliteTestScenarioStore {
     this.rawDb.exec("PRAGMA journal_mode = WAL");
     this.rawDb.exec("PRAGMA busy_timeout = 3000");
     this.db = drizzle({ client: this.rawDb });
-    migrate(this.db, {
-      migrationsFolder: resolve(__dirname, "../drizzle"),
-    });
+    try {
+      migrate(this.db, {
+        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
+      });
+    } catch (err) {
+      throw new Error(`[test-scenario-store] 마이그레이션 실패: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   upsertDeclared(input: CreateTestScenarioInput): void {
@@ -117,12 +117,12 @@ export class SqliteTestScenarioStore {
   }
 
   nextSeq(kind: string, scope: string): number {
-    const count = this.db
-      .select()
+    const [{ value }] = this.db
+      .select({ value: count() })
       .from(testScenarios)
       .where(and(eq(testScenarios.kind, kind), eq(testScenarios.scope, scope)))
-      .all().length;
-    return count + 1;
+      .all();
+    return (value ?? 0) + 1;
   }
 
   private rowToScenario(row: typeof testScenarios.$inferSelect): TestScenario {
