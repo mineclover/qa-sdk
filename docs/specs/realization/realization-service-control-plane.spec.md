@@ -65,6 +65,7 @@ runtime/deployment address system을 서비스 정의보다 상위 aggregate로 
 - child component version API
   - `PUT /api/services/:serviceId/components/:kind/:version`
   - `POST /api/services/:serviceId/components/:kind/:version/transition`
+  - `POST /api/services/:serviceId/deployments/sync`
 - assembly candidate API
   - `GET /api/services/:serviceId/components/:kind/published`
   - `GET /api/services/:serviceId/assembly-candidates`

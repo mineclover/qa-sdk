@@ -54,6 +54,30 @@ export class ServiceComponentController {
     return this.components.upsert(catalogId ?? "demo", kind, serviceId, version, body);
   }
 
+  @Post(":serviceId/deployments/sync")
+  syncDeployment(
+    @Param("serviceId") serviceId: string,
+    @Body() body: {
+      deploymentVersion: string;
+      runtime: {
+        namespace: string;
+        name: string;
+        env: string;
+        region: string;
+      };
+      provider: string;
+      project: string;
+      stack: string;
+      resourceKey: string;
+      url?: string;
+      urn?: string;
+      outputs?: Record<string, unknown>;
+    },
+    @Query("catalog") catalogId?: string,
+  ) {
+    return this.components.syncDeployment(catalogId ?? "demo", serviceId, body);
+  }
+
   @Post(":serviceId/components/:kind/:version/transition")
   transition(
     @Param("serviceId") serviceId: string,

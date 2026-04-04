@@ -4,7 +4,7 @@ import type {
   ServiceComponentLifecycleState,
   ServiceComponentVersionStore,
 } from "../../stores/service-component-version-store.js";
-import type { ComponentVersionKind } from "./service.types.js";
+import type { ComponentVersionKind, DeploymentBinding } from "./service.types.js";
 import { ManifestService } from "../manifests/manifest.service.js";
 import {
   isComponentVersionKind,
@@ -88,6 +88,72 @@ export class ServiceComponentService {
 
   get(catalogId: string, kind: string, serviceId: string, version: string) {
     return this.store.require(catalogId, this.parseKind(kind), serviceId, version);
+  }
+
+  async syncDeployment(
+    catalogId: string,
+    serviceId: string,
+    body: {
+      deploymentVersion: string;
+      runtime: {
+        namespace: string;
+        name: string;
+        env: string;
+        region: string;
+      };
+      provider: string;
+      project: string;
+      stack: string;
+      resourceKey: string;
+      url?: string;
+      urn?: string;
+      outputs?: Record<string, unknown>;
+    },
+  ) {
+    if (!body.deploymentVersion) {
+      throw new AppError("INVALID_INPUT", "deploymentVersion 필수", 400);
+    }
+    if (!body.runtime?.namespace || !body.runtime?.name || !body.runtime?.env || !body.runtime?.region) {
+      throw new AppError("INVALID_INPUT", "runtime.namespace/name/env/region 필수", 400);
+    }
+    if (!body.provider || !body.project || !body.stack || !body.resourceKey) {
+      throw new AppError("INVALID_INPUT", "provider/project/stack/resourceKey 필수", 400);
+    }
+
+    const value: DeploymentBinding = {
+      deploymentVersion: body.deploymentVersion,
+      address: {
+        serviceId,
+        runtime: {
+          serviceId,
+          namespace: body.runtime.namespace,
+          name: body.runtime.name,
+          env: body.runtime.env,
+          region: body.runtime.region,
+        },
+        provider: body.provider,
+        project: body.project,
+        stack: body.stack,
+        resourceKey: body.resourceKey,
+      },
+      observedAt: new Date().toISOString(),
+      ...(body.url ? { url: body.url } : {}),
+      ...(body.urn ? { urn: body.urn } : {}),
+      ...(body.outputs ? { outputs: body.outputs } : {}),
+    };
+
+    const result = await this.upsert(
+      catalogId,
+      "deployment-binding",
+      serviceId,
+      body.deploymentVersion,
+      value,
+    );
+
+    return {
+      ...result,
+      synced: true,
+    };
   }
 
   async upsert(

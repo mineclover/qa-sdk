@@ -21,5 +21,5 @@ def:
 
 ## 구현 항목
 
-- [ ] `deployments/sync` write surface를 실제 external deploy tool 프로토콜과 맞춘다.
+- [x] `deployments/sync` write surface를 실제 external deploy tool 프로토콜과 맞춘다.
 - [ ] deployment binding 변경과 manifest 재발행의 운영 정책을 문서화한다.

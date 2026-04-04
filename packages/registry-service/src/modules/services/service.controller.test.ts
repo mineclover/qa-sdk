@@ -232,6 +232,76 @@ describe("ServiceModule (Nest)", () => {
     });
   });
 
+  it("POST /api/services/:serviceId/deployments/sync stores deployment-binding via convenience write surface", async () => {
+    const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
+    apps.push(app);
+
+    const syncResponse = await request(
+      app,
+      "POST",
+      "/api/services/order-svc/deployments/sync?catalog=demo",
+      {
+        deploymentVersion: "dep-sync-v1",
+        runtime: {
+          namespace: "shop",
+          name: "order",
+          env: "prod",
+          region: "asia",
+        },
+        provider: "pulumi",
+        project: "core",
+        stack: "prod",
+        resourceKey: "api",
+        url: "https://order.example.com",
+        urn: "urn:pulumi:prod::core::api",
+        outputs: { healthUrl: "https://order.example.com/health" },
+      },
+    );
+    expect(syncResponse.statusCode).toBe(201);
+    expect(json(syncResponse)).toMatchObject({
+      ok: true,
+      kind: "deployment-binding",
+      serviceId: "order-svc",
+      version: "dep-sync-v1",
+      state: "draft",
+      synced: true,
+    });
+
+    const detail = await request(
+      app,
+      "GET",
+      "/api/services/order-svc/components/deployment-binding/dep-sync-v1?catalog=demo",
+    );
+    expect(detail.statusCode).toBe(200);
+    expect(json(detail)).toMatchObject({
+      kind: "deployment-binding",
+      serviceId: "order-svc",
+      version: "dep-sync-v1",
+      value: {
+        deploymentVersion: "dep-sync-v1",
+        address: {
+          serviceId: "order-svc",
+          runtime: {
+            serviceId: "order-svc",
+            namespace: "shop",
+            name: "order",
+            env: "prod",
+            region: "asia",
+          },
+          provider: "pulumi",
+          project: "core",
+          stack: "prod",
+          resourceKey: "api",
+        },
+        url: "https://order.example.com",
+        urn: "urn:pulumi:prod::core::api",
+        outputs: {
+          healthUrl: "https://order.example.com/health",
+        },
+      },
+    });
+  });
+
   it("GET /api/endpoints, /resolve, /:ns/:svc matches endpoint lookup semantics", async () => {
     const app = await createNestTestApp({ imports: [DatabaseModule, ServiceModule] });
     apps.push(app);

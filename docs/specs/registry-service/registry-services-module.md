@@ -49,6 +49,7 @@ def:
   - `GET/POST/PATCH/PUT /api/services`
   - `GET/PUT /api/services/:serviceId/components/:kind/:version`
   - `POST /api/services/:serviceId/components/:kind/:version/transition`
+  - `POST /api/services/:serviceId/deployments/sync`
   - `GET /api/services/:serviceId/components/:kind/published`
   - `GET /api/services/:serviceId/assembly-candidates`
   - `GET /api/services/svc-owners`
