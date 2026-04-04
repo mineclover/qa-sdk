@@ -13,7 +13,7 @@ def:
     - target: service-release-manifest
       type: depends_on
 ---
-# Service Manifest Assembly — 잔여 구현 항목
+# Service Manifest Assembly — 잔여 TODO
 
 ## 목적 ^purpose
 
@@ -21,8 +21,5 @@ def:
 
 ## 구현 항목
 
-- [x] `ManifestAssemblyRequest` 구조를 고정한다.
-- [ ] child version 조합과 prefix pin set의 compatibility validation 규칙을 정한다.
-- [x] `manifests/assemble` API가 child component를 암묵적으로 수정하지 않는다는 원칙을 명시한다.
-- [x] `resolve`를 assembly 결과 기반 read-model API로 재정의한다.
-- [ ] 동일 child version 조합 + 동일 prefix pin이면 동일 manifest semantics를 보장하는 규칙을 정한다.
+- [ ] compatibility validation을 explicit quality gate/claim으로 승격한다.
+- [ ] 동일 child version 조합 + 동일 prefix pin이면 동일 manifest semantics를 보장하는 규칙을 quality contract로 분리한다.

@@ -79,6 +79,7 @@ runtime/deployment address system을 서비스 정의보다 상위 aggregate로 
   - `GET /resolve/services/:serviceId/cleanup-plan`
   - `POST /resolve/services/:serviceId/cleanup-draft`
   - `POST /resolve/services/:serviceId/cleanup-activate`
+  - `qa-sdk service cleanup-plan|cleanup-draft|cleanup-activate|cleanup-execute`
   - cleanup은 active manifest를 직접 수정하지 않고 draft를 만든 뒤 별도 activation으로 전이한다.
 
 ## 분해 원칙
@@ -94,14 +95,15 @@ runtime/deployment address system을 서비스 정의보다 상위 aggregate로 
 
 | 문서 | 역할 |
 |------|------|
-| [service-unit-spec.todo.md](service-unit-spec.todo.md) | 서비스 단위 정의 경계와 잔여 구현 |
-| [service-ownership-spec.todo.md](service-ownership-spec.todo.md) | prefix 소유/소비 모델과 잔여 구현 |
-| [service-exposure-spec.todo.md](service-exposure-spec.todo.md) | gateway/routing 정책과 잔여 구현 |
-| [runtime-service-address.todo.md](runtime-service-address.todo.md) | runtime 주소 모델과 `ServiceBootConfig` projection |
-| [deployment-address.todo.md](deployment-address.todo.md) | 배포 주소 모델과 target identity |
-| [deployment-binding.todo.md](deployment-binding.todo.md) | 배포 결과 binding과 endpoint read model |
-| [service-release-manifest.todo.md](service-release-manifest.todo.md) | release artifact 구조와 version ref |
-| [service-manifest-assembly.todo.md](service-manifest-assembly.todo.md) | assembly contract, validation, resolve API |
+| [service-unit-spec.spec.md](service-unit-spec.spec.md) | 서비스 단위 정의 경계 |
+| [service-ownership-spec.spec.md](service-ownership-spec.spec.md) | prefix 소유/소비 모델 |
+| [service-exposure-spec.spec.md](service-exposure-spec.spec.md) | gateway/routing 정책 |
+| [runtime-service-address.spec.md](runtime-service-address.spec.md) | runtime 주소 모델과 `ServiceBootConfig` projection |
+| [deployment-address.spec.md](deployment-address.spec.md) | 배포 주소 모델과 target identity |
+| [deployment-binding.spec.md](deployment-binding.spec.md) | 배포 결과 binding과 endpoint read model |
+| [service-release-manifest.spec.md](service-release-manifest.spec.md) | release artifact 구조와 version ref |
+| [service-manifest-assembly.spec.md](service-manifest-assembly.spec.md) | assembly contract, cleanup lane, resolve API |
+| [service-control-plane-cleanup.test.md](service-control-plane-cleanup.test.md) | cleanup lane 운영 시나리오 |
 
 ## 관련 문서
 

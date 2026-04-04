@@ -21,7 +21,7 @@ def:
 
 ## 사용 맥락 ^context
 
-`/api/dashboard`, `/api/diagrams`, `/dev`, `/dev/ws`가 어떤 provider와 graph를 통해 계산되는지 확인할 때 이 문서를 본다. dev dashboard가 env-gated optional integration이라 production path를 더럽히지 않아야 할 때, 그리고 catalog 변경이 dashboard cache invalidation으로 이어지는지 확인할 때 중요하다.
+`/api/dashboard`, `/api/diagrams`, `/dev`, `/dev/ws`, service control plane dashboard surface가 어떤 provider와 graph를 통해 계산되는지 확인할 때 이 문서를 본다. dev dashboard가 env-gated optional integration이라 production path를 더럽히지 않아야 할 때, 그리고 catalog 변경이 dashboard cache invalidation으로 이어지는지 확인할 때 중요하다.
 
 ## 설계 의도 ^intent
 
@@ -43,10 +43,16 @@ def:
   - `GET /dev/api/timeline`
   - `POST /dev/api/refresh`
   - `GET /dev/api/catalogs`
+  - `GET /dev/api/service-control-plane/:serviceId/candidates`
+  - `GET /dev/api/service-control-plane/:serviceId/warnings`
+  - `GET /dev/api/service-control-plane/:serviceId/cleanup-plan`
   - `GET /api/dashboard/overview`
   - `GET /api/dashboard/flow-map`
   - `GET /api/dashboard/metrics`
   - `GET /api/dashboard/timeline`
+  - `GET /api/dashboard/service-control-plane/:serviceId/candidates`
+  - `GET /api/dashboard/service-control-plane/:serviceId/warnings`
+  - `GET /api/dashboard/service-control-plane/:serviceId/cleanup-plan`
   - `GET /api/dashboard/schema`
   - `POST /api/dashboard/collect`
   - `GET /api/diagrams`
@@ -58,6 +64,7 @@ def:
 - `packages/registry-service/src/modules/dashboard/dashboard.module.ts` — global provider와 service 조립
 - `packages/registry-service/src/modules/dashboard/dev-dashboard.provider.ts` — env-gated provider builder
 - `packages/registry-service/src/modules/dashboard/dashboard.service.ts` — overview/flow-map/metrics/timeline 계산
+- `packages/registry-service/src/modules/dashboard/dashboard.service.ts` — service control plane candidates / warnings / cleanup plan read-model
 - `packages/registry-service/src/modules/dashboard/diagram.service.ts` — Mermaid diagram 계산
 - `packages/registry-service/src/modules/dashboard/dashboard.controller.ts` — dashboard/dev HTTP adapter
 - `packages/registry-service/src/modules/dashboard/diagram.controller.ts` — diagrams HTTP adapter

@@ -21,7 +21,7 @@ def:
 
 ## 사용 맥락 ^context
 
-`/api/services`, `/api/endpoints`, `/api/applications`, `/api/health/services` 변경 시 이 모듈을 본다. topology 변경 후 definition-service에서 affected test를 조회하는 경로, `PATCH /api/services`를 `PUT` alias로 유지하는 계약, endpoint store가 있을 때만 overlay를 적용하는 동작이 여기서 결정된다.
+`/api/services`, `/api/endpoints`, `/api/applications`, `/api/health/services`, service component version surface 변경 시 이 모듈을 본다. topology 변경 후 definition-service에서 affected test를 조회하는 경로, `PATCH /api/services`를 `PUT` alias로 유지하는 계약, endpoint store가 있을 때만 overlay를 적용하는 동작, child component lifecycle 및 assembly candidate read-model이 여기서 결정된다.
 
 ## 설계 의도 ^intent
 
@@ -31,19 +31,26 @@ def:
 
 - controllers:
   - `ServiceController`
+  - `ServiceComponentController`
   - `EndpointController`
   - `ApplicationController`
   - `ServiceHealthController`
 - providers/exports:
   - `SERVICE_CONFIG_STORE`
   - `SERVICE_ENDPOINT_STORE`
+  - `SERVICE_COMPONENT_VERSION_STORE`
   - `SERVICE_HEALTH_BINDINGS`
   - `ServiceTopologyService`
+  - `ServiceComponentService`
   - `EndpointService`
   - `ApplicationService`
   - `ServiceHealthService`
 - surface:
   - `GET/POST/PATCH/PUT /api/services`
+  - `GET/PUT /api/services/:serviceId/components/:kind/:version`
+  - `POST /api/services/:serviceId/components/:kind/:version/transition`
+  - `GET /api/services/:serviceId/components/:kind/published`
+  - `GET /api/services/:serviceId/assembly-candidates`
   - `GET /api/services/svc-owners`
   - `GET /api/services/urls`
   - `GET /api/services/gateway`
@@ -60,6 +67,8 @@ def:
 - `packages/registry-service/src/modules/services/service.module.ts` — 모듈 조립과 export 경계
 - `packages/registry-service/src/modules/services/service-topology.service.ts` — topology CRUD, gateway/url 계산, affected test 로그
 - `packages/registry-service/src/modules/services/service.controller.ts` — `/api/services` HTTP adapter
+- `packages/registry-service/src/modules/services/service-component.service.ts` — child component version/lifecycle/assembly candidate
+- `packages/registry-service/src/modules/services/service-component.controller.ts` — service component HTTP adapter
 - `packages/registry-service/src/modules/services/endpoint.service.ts` — endpoint registry/resolve 로직
 - `packages/registry-service/src/modules/services/endpoint.controller.ts` — `/api/endpoints` HTTP adapter
 - `packages/registry-service/src/modules/services/application.service.ts` — application 읽기 모델

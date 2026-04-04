@@ -13,7 +13,7 @@ def:
     - target: registry-services-module
       type: depends_on
 ---
-# ServiceExposureSpec — 잔여 구현 항목
+# ServiceExposureSpec — 잔여 TODO
 
 ## 목적 ^purpose
 
@@ -21,7 +21,4 @@ gateway path, strip rule 같은 노출 정책을 서비스 논리 정의와 분�
 
 ## 구현 항목
 
-- [x] `gatewayPath`, `stripPrefix`를 `ServiceExposureSpec`으로 분리한다.
-- [ ] URL과 exposure policy의 경계를 명확히 정한다.
-- [ ] gateway read model이 이 spec만으로 필요한 정책을 읽을 수 있게 surface를 정리한다.
-- [ ] exposure 변경이 `exposureVersion` 증가로 이어지는 규칙을 정한다.
+- [ ] exposure 변경이 gateway rollout 규칙과 어떻게 연결되는지 운영 가이드를 추가한다.

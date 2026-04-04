@@ -13,7 +13,7 @@ def:
     - target: deployment-address
       type: depends_on
 ---
-# DeploymentBinding — 잔여 구현 항목
+# DeploymentBinding — 잔여 TODO
 
 ## 목적 ^purpose
 
@@ -21,7 +21,5 @@ def:
 
 ## 구현 항목
 
-- [x] `deploymentVersion`, `address`, `url`, `outputs`, `urn` 필드를 가진 `DeploymentBinding`을 타입으로 고정한다.
-- [ ] `ServiceEndpointStore`를 deployment binding의 read model로 재정의한다.
-- [ ] `deployments/sync`가 어떤 입력을 받아 binding을 갱신하는지 API 계약을 정한다.
-- [ ] deployment binding 변경이 manifest 재발행을 요구하는지 여부를 규칙화한다.
+- [ ] `deployments/sync` write surface를 실제 external deploy tool 프로토콜과 맞춘다.
+- [ ] deployment binding 변경과 manifest 재발행의 운영 정책을 문서화한다.

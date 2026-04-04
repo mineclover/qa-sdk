@@ -11,7 +11,7 @@ def:
     - target: realization-service-control-plane
       type: depends_on
 ---
-# ServiceUnitSpec — 잔여 구현 항목
+# ServiceUnitSpec — 잔여 TODO
 
 ## 목적 ^purpose
 
@@ -19,7 +19,4 @@ def:
 
 ## 구현 항목
 
-- [x] `ServiceRecord`에서 `serviceId`, `namespace`, `name`, `tier`, `team`, `applicationId`, `attributes`만 남기는 경계를 확정한다.
-- [x] `serviceId`와 `namespace/name`의 역할 차이를 타입과 문서로 구분한다.
-- [ ] `ServiceUnitSpec` 단독 조회 API 요구사항을 정리한다.
-- [ ] unit spec 변경이 `serviceUnitVersion` 증가로 이어지는 규칙을 정한다.
+- [ ] `serviceUnitVersion` 자동 bump 또는 운영 규칙을 별도 문서로 고정한다.

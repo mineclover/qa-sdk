@@ -13,7 +13,7 @@ def:
     - target: dkg-service-topology
       type: depends_on
 ---
-# ServiceOwnershipSpec — 잔여 구현 항목
+# ServiceOwnershipSpec — 잔여 TODO
 
 ## 목적 ^purpose
 
@@ -21,7 +21,5 @@ def:
 
 ## 구현 항목
 
-- [x] `ownedPrefixes`와 `consumedPrefixes`를 `ServiceOwnershipSpec`으로 분리한다.
-- [ ] ownership spec과 DKG topology 질의의 연결 지점을 정한다.
-- [ ] manifest `prefixes`가 ownership spec과 어떻게 정합되는지 규칙을 정한다.
-- [ ] ownership 변경이 `ownershipVersion` 증가로 이어지는 규칙을 정한다.
+- [ ] ownership spec과 DKG topology 질의의 deeper integration을 문서/도구로 고정한다.
+- [ ] ownership 변경 시 prefix pin 검증 범위를 quality gate로 연결한다.
