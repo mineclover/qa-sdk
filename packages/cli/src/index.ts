@@ -142,6 +142,13 @@ import {
   reviewShowRequest,
   reviewBridgeRequest,
 } from './commands/review.js';
+import {
+  testScan,
+  testAssign,
+  testScaffold,
+  testStatus,
+  testReport,
+} from './commands/test.js';
 import { cliQuality } from './commands/quality.js';
 import { motionInspect, motionValidate } from './commands/motion.js';
 import {
@@ -326,6 +333,12 @@ Usage:
   qa-sdk review requests [--service <scope>] [--limit N]  피드백 요청 목록
   qa-sdk review show-request <id>    피드백 요청 상세
   qa-sdk review bridge-request <id> --target <nodeId>  피드백 요청을 DKG observation/decision에 연결
+
+  qa-sdk test scan [--dir <path>] [--db <path>]   스펙 frontmatter tests: 선언 → declared
+  qa-sdk test assign [--a-coord <c>] [--force]     모듈화 체크 → B 좌표 부여
+  qa-sdk test scaffold [--b-coord <c>]             테스트 스텁 파일 생성
+  qa-sdk test status [--db <path>]                 생명주기 현황
+  qa-sdk test report [--db <path>]                 커버리지 매트릭스
 
   qa-sdk quality list [filters]      gate 문서 목록
   qa-sdk quality status [bundle-id]  quality bundle 상태 요약
@@ -1286,6 +1299,57 @@ export async function main(argv = process.argv.slice(2)) {
       reviewBridgeRequest(sub.rest);
       return;
 
+    // Test 하네스 명령어
+    case 'test scan': {
+      const { values } = parseArgs({
+        args: sub.rest,
+        options: { dir: { type: 'string' }, db: { type: 'string' } },
+        strict: false,
+      });
+      testScan({ dir: values['dir'] as string | undefined, db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test assign': {
+      const { values } = parseArgs({
+        args: sub.rest,
+        options: {
+          'a-coord': { type: 'string' },
+          force: { type: 'boolean' },
+          db: { type: 'string' },
+        },
+        strict: false,
+      });
+      testAssign({ aCoord: values['a-coord'] as string | undefined, force: values['force'] as boolean | undefined, db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test scaffold': {
+      const { values } = parseArgs({
+        args: sub.rest,
+        options: { 'b-coord': { type: 'string' }, mirror: { type: 'string' }, db: { type: 'string' } },
+        strict: false,
+      });
+      testScaffold({ bCoord: values['b-coord'] as string | undefined, mirror: values['mirror'] as string | undefined, db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test status': {
+      const { values } = parseArgs({
+        args: sub.rest,
+        options: { db: { type: 'string' } },
+        strict: false,
+      });
+      testStatus({ db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test report': {
+      const { values } = parseArgs({
+        args: sub.rest,
+        options: { db: { type: 'string' } },
+        strict: false,
+      });
+      testReport({ db: values['db'] as string | undefined });
+      return;
+    }
+
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
       console.log(USAGE);
@@ -1486,6 +1550,11 @@ export function resolveSubcommand(args: string[]): Subcommand {
     'flow history',
     'flow verdict',
     'flow judge',
+    'test scan',
+    'test assign',
+    'test scaffold',
+    'test status',
+    'test report',
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;

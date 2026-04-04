@@ -47,6 +47,7 @@
     "package-classifier": "workspace:*",
     "quality-ledger": "workspace:*",
     "review-ledger": "workspace:*",
+    "test-scenario-store": "workspace:*",
     "snapshot-io": "workspace:*",
     "spec-analyzer": "workspace:*",
     "spec-transition": "workspace:*",
