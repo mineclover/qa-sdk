@@ -1446,6 +1446,46 @@ export const DEMO_CATALOG = {
         },
       },
     },
+
+    // ── 테스트 시나리오 축 ────────────────────────────────────────────────────
+    test_kind: {
+      id: "test_kind", name: "테스트 유형",
+      versions: {
+        v1: {
+          entries: [
+            "unit",
+            "ui-logic",
+            "ui",
+            "db-transaction",
+            "data-exchange",
+            "auth-flow",
+            "e2e",
+            "simulation",
+          ],
+          capacity: 16,
+          ko: { unit: "단위", "ui-logic": "UI로직", ui: "UI", "db-transaction": "DB트랜잭션", "data-exchange": "데이터교환", "auth-flow": "인증흐름", e2e: "E2E", simulation: "시뮬레이션" },
+        },
+      },
+    },
+    test_scope: {
+      id: "test_scope", name: "테스트 범위",
+      versions: {
+        v1: {
+          entries: ["single", "pair", "multi", "system"],
+          capacity: 8,
+          ko: { single: "단일", pair: "쌍", multi: "다중", system: "시스템" },
+        },
+      },
+    },
+    test_seq: {
+      id: "test_seq", name: "테스트 시나리오 순번",
+      versions: {
+        v1: {
+          entries: [] as unknown as readonly string[],
+          capacity: 2048,
+        },
+      },
+    },
   },
 
   prefixes: {
@@ -2403,6 +2443,29 @@ export const DEMO_CATALOG = {
       },
       versions: [
         { version: "v1", axisVersions: { def_level: "v1", graph_action: "v1", link_type: "v1" }, refEntries: { svc_ref: { values: _INFRA_SVC, refVersion: "v1" } } },
+      ],
+    },
+
+    // ── 테스트 시나리오 prefix ─────────────────────────────────────────────────
+    test_scenario: {
+      id: "test_scenario", name: "테스트 시나리오",
+      description: "스펙 의도와 연결된 테스트 시나리오 좌표",
+      labels: ["test_kind", "test_scope", "test_seq"],
+      meta: { category: "state" as const, layer: 2 as const, detailKind: "generic" as const },
+      dims: {
+        test_kind:  { kind: "axis" as const, axisId: "test_kind" },
+        test_scope: { kind: "axis" as const, axisId: "test_scope" },
+        test_seq:   { kind: "axis" as const, axisId: "test_seq" },
+      },
+      versions: [
+        {
+          version: "v1",
+          axisVersions: {
+            test_kind:  "v1",
+            test_scope: "v1",
+            test_seq:   "v1",
+          },
+        },
       ],
     },
   },
