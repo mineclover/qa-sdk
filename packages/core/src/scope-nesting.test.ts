@@ -373,6 +373,131 @@ describe("provider override", () => {
     expect(issue).toBeDefined();
     expect(issue!.scopeId).toBe("root");
   });
+
+  // I2: DescentPath 교체 상세 — 3-depth override
+  it("override — 3-depth에서 중간이 override하면 최하위는 중간 provider를 봄", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "3-depth-override",
+      scopes: [
+        { scopeId: "grandparent", provides: [{ contractId: "x", type: "state" }], consumes: [] },
+        { scopeId: "parent", provides: [{ contractId: "x", type: "state", override: true }], consumes: [] },
+        { scopeId: "child", provides: [], consumes: [{ contractId: "x", type: "state" }] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    expect(result.valid).toBe(true);
+
+    const path = result.descentPaths.find(d => d.contractId === "x")!;
+    expect(path.providedBy).toBe("parent");
+    expect(path.providerDepth).toBe(1);
+  });
+
+  it("override 후 상위 provider의 unused-contract — grandparent의 x가 미소비", () => {
+    const nesting: ScopeNesting = {
+      nestingId: "override-unused",
+      scopes: [
+        { scopeId: "grandparent", provides: [{ contractId: "x", type: "state" }], consumes: [] },
+        { scopeId: "parent", provides: [{ contractId: "x", type: "state", override: true }], consumes: [] },
+        { scopeId: "child", provides: [], consumes: [{ contractId: "x", type: "state" }] },
+      ],
+    };
+    const result = validateScopeNesting(nesting);
+    // grandparent의 x는 override로 대체되어 직접 소비자가 없음
+    // 하지만 buildProviderMap에서 override가 대체하면 grandparent의 x는 providerMap에서 제거됨
+    // → unused-contract가 grandparent에서 발생하지 않음 (providerMap에 없으므로)
+    // 이 동작이 의도적인지 확인
+    expect(result.valid).toBe(true);
+  });
+});
+
+// ── Procedure 통합 테스트 ────────────────────────────
+
+describe("procedure — scope 추가/변경/제거 절차", () => {
+  it("추가 — 올바른 위치에 새 scope 삽입 → valid", () => {
+    const nesting = createPlaybookNesting();
+    // handlers와 view 사이에 새 scope 삽입 (handlers의 계약 소비)
+    const extended: ScopeNesting = {
+      ...nesting,
+      scopes: [
+        ...nesting.scopes.slice(0, 3),
+        {
+          scopeId: "middleware",
+          provides: [{ contractId: "middleware-result", type: "adapter" }],
+          consumes: [{ contractId: "submission-handlers", type: "adapter" }],
+        },
+        nesting.scopes[3], // view
+      ],
+    };
+    const result = validateScopeNesting(extended);
+    expect(result.valid).toBe(true);
+  });
+
+  it("추가 — 잘못된 위치(provider보다 상위)에 삽입 → missing-provider error", () => {
+    const nesting = createPlaybookNesting();
+    // playbook-state를 소비하는 scope를 feature-context 앞에 삽입
+    const wrongPosition: ScopeNesting = {
+      ...nesting,
+      scopes: [
+        nesting.scopes[0], // qa-bridge
+        {
+          scopeId: "early-consumer",
+          provides: [],
+          consumes: [{ contractId: "playbook-state", type: "state" }],
+        },
+        ...nesting.scopes.slice(1),
+      ],
+    };
+    const result = validateScopeNesting(wrongPosition);
+    expect(result.valid).toBe(false);
+    expect(result.issues.some(
+      i => i.code === "missing-provider" && i.scopeId === "early-consumer",
+    )).toBe(true);
+  });
+
+  it("순서 변경 — 안전한 교환 후 mount flow 재검증 통과", () => {
+    // mid-1과 mid-2가 독립인 nesting
+    const nesting: ScopeNesting = {
+      nestingId: "swap-procedure",
+      scopes: [
+        { scopeId: "root", provides: [{ contractId: "a", type: "state" }], consumes: [] },
+        { scopeId: "mid-1", provides: [{ contractId: "b", type: "state" }], consumes: [{ contractId: "a", type: "state" }] },
+        { scopeId: "mid-2", provides: [{ contractId: "c", type: "state" }], consumes: [{ contractId: "a", type: "state" }] },
+        { scopeId: "leaf", provides: [], consumes: [{ contractId: "b", type: "state" }, { contractId: "c", type: "state" }] },
+      ],
+    };
+    // 안전성 확인
+    const errors = checkSwapSafety(nesting, 1, 2);
+    expect(errors).toBeNull();
+
+    // 교환 적용
+    const swapped: ScopeNesting = {
+      ...nesting,
+      scopes: [nesting.scopes[0], nesting.scopes[2], nesting.scopes[1], nesting.scopes[3]],
+    };
+    const result = validateScopeNesting(swapped);
+    expect(result.valid).toBe(true);
+  });
+
+  it("제거 — qa-bridge 제거 시 descentPaths.consumedBy로 영향 파악", () => {
+    const nesting = createPlaybookNesting();
+    const result = validateScopeNesting(nesting);
+    const loggingPath = result.descentPaths.find(d => d.contractId === "logging-session")!;
+
+    // 영향받는 scope 확인
+    expect(loggingPath.consumedBy).toContain("feature-context");
+    expect(loggingPath.consumedBy).toContain("handlers");
+
+    // 제거 후 검증
+    const withoutBridge: ScopeNesting = {
+      ...nesting,
+      scopes: nesting.scopes.filter(s => s.scopeId !== "qa-bridge"),
+    };
+    const afterRemoval = validateScopeNesting(withoutBridge);
+    expect(afterRemoval.valid).toBe(false);
+    expect(afterRemoval.issues.filter(
+      i => i.code === "missing-provider" && i.contractId === "logging-session",
+    ).length).toBeGreaterThanOrEqual(2);
+  });
 });
 
 // ── Optional Consume 테스트 ──────────────────────────

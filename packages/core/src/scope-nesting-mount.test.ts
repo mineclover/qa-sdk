@@ -256,4 +256,46 @@ describe("validateMountFlow", () => {
     expect(issue).toBeDefined();
     expect(issue!.severity).toBe("warning");
   });
+
+  // C1: pipe-not-found
+  it("pipe-not-found — binding의 pipeId가 graph에 없음", () => {
+    const binding: MountFlowBinding = {
+      nesting,
+      graph,
+      bindings: {
+        "ghost-pipe": { scopeId: "handlers", scopeContracts: [] },
+        "validate-input": { scopeId: "handlers", scopeContracts: [] },
+        "compute-result": { scopeId: "handlers", scopeContracts: [] },
+        "log-event": { scopeId: "handlers", scopeContracts: [] },
+      },
+    };
+    const result = validateMountFlow(binding);
+    expect(result.valid).toBe(false);
+    const issue = result.issues.find(i => i.code === "pipe-not-found");
+    expect(issue).toBeDefined();
+    expect(issue!.pipeId).toBe("ghost-pipe");
+  });
+
+  // I4: 언마운트 시나리오 — scope 제거 후 mount flow
+  it("언마운트 — qa-bridge 제거 후 logging 소비 pipe에서 contract-unavailable", () => {
+    const withoutBridge: ScopeNesting = {
+      nestingId: "no-bridge",
+      scopes: nesting.scopes.filter(s => s.scopeId !== "qa-bridge"),
+    };
+    const binding: MountFlowBinding = {
+      nesting: withoutBridge,
+      graph,
+      bindings: {
+        "validate-input": { scopeId: "handlers", scopeContracts: [] },
+        "compute-result": { scopeId: "handlers", scopeContracts: [] },
+        "log-event": { scopeId: "handlers", scopeContracts: ["logging-session"] },
+      },
+    };
+    const result = validateMountFlow(binding);
+    expect(result.valid).toBe(false);
+    const issue = result.issues.find(
+      i => i.code === "contract-unavailable" && i.pipeId === "log-event" && i.contractId === "logging-session",
+    );
+    expect(issue).toBeDefined();
+  });
 });

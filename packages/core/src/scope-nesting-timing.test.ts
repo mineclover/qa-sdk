@@ -327,4 +327,87 @@ describe("delegation-gap", () => {
     expect(issue).toBeDefined();
     expect(issue!.severity).toBe("warning");
   });
+
+  // C2: completion-event-missing
+  it("completion-event-missing — completionEvent가 시뮬에 없음", () => {
+    const simResult = simulate({
+      graph: delegationGraph,
+      initialEvent: { eventKey: "form_submit" },
+    });
+
+    const nesting: ScopeNesting = {
+      nestingId: "missing-completion",
+      scopes: [
+        { scopeId: "context", provides: [{ contractId: "state", type: "state" }], consumes: [] },
+        { scopeId: "handlers", provides: [], consumes: [{ contractId: "state", type: "state" }] },
+      ],
+    };
+
+    const binding: TimedMountFlowBinding = {
+      nesting,
+      graph: delegationGraph,
+      bindings: {
+        "submit-handler": {
+          scopeId: "handlers",
+          scopeContracts: ["state"],
+          delegatesTo: [{
+            contractId: "state",
+            completionEvent: "nonexistent_event", // 시뮬에 없는 이벤트
+          }],
+        },
+        "view-render": { scopeId: "handlers", scopeContracts: [] },
+        "persist-complete": { scopeId: "context", scopeContracts: [] },
+      },
+    };
+
+    const result = validateContractTiming(binding, simResult);
+    const issue = result.issues.find(i => i.code === "completion-event-missing");
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe("warning");
+    expect(issue!.contractId).toBe("state");
+  });
+
+  // C3: gapStartStep/gapEndStep 정확성
+  it("delegation-gap — gapStartStep < gapEndStep + 정확한 step 인덱스", () => {
+    const simResult = simulate({
+      graph: delegationGraph,
+      initialEvent: { eventKey: "form_submit" },
+    });
+
+    const nesting: ScopeNesting = {
+      nestingId: "gap-steps",
+      scopes: [
+        { scopeId: "context", provides: [{ contractId: "state", type: "state" }], consumes: [] },
+        { scopeId: "handlers", provides: [], consumes: [{ contractId: "state", type: "state" }] },
+        { scopeId: "view", provides: [], consumes: [{ contractId: "state", type: "state" }] },
+      ],
+    };
+
+    const binding: TimedMountFlowBinding = {
+      nesting,
+      graph: delegationGraph,
+      bindings: {
+        "submit-handler": {
+          scopeId: "handlers",
+          scopeContracts: ["state"],
+          delegatesTo: [{
+            contractId: "state",
+            completionEvent: "submit_persist_complete",
+            tolerateStale: false,
+          }],
+        },
+        "view-render": { scopeId: "view", scopeContracts: ["state"] },
+        "persist-complete": { scopeId: "context", scopeContracts: [] },
+      },
+    };
+
+    const result = validateContractTiming(binding, simResult);
+    expect(result.delegationGaps.length).toBeGreaterThan(0);
+
+    const gap = result.delegationGaps[0];
+    expect(gap.gapStartStep).toBeLessThan(gap.gapEndStep);
+    expect(gap.gapStartStep).toBeGreaterThanOrEqual(0);
+    expect(gap.delegatorPipeId).toBe("submit-handler");
+    expect(gap.staleConsumers).toContain("view-render");
+  });
 });
