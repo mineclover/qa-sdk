@@ -337,8 +337,8 @@ batch encoder (GPU offload 가능)
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
-| I-1 | **Cache 인터페이스 + Memory 어댑터** | 높 | 낮 | `KeyCache { get(key): Result, set(key, result, ttl) }` 포트 + InMemory |
-| I-2 | **Aggregation 인터페이스** | 높 | 중 | `Aggregator { groupByKey(keys), projectAxis(keys, axes) }` 포트 |
+| I-1 | **Cache 인터페이스 + Memory 어댑터** | ✅ 완료 | — | KeyCache 포트 + InMemoryKeyCache (LRU + TTL), 11 tests |
+| I-2 | **Aggregation 인터페이스** | ✅ 완료 | — | Aggregator 포트 + InMemoryAggregator (groupByKey + projectAxis), 9 tests |
 | I-3 | **Materialized View 스키마** | 중 | 중 | `{ packed_key, count, last_seen, payload_summary }` 테이블 정의 |
 | I-4 | **Redis/KV 캐시 어댑터** | 중 | 중 | Cloudflare KV 또는 Redis 어댑터 |
 | I-5 | **Streaming consumer PoC** | 낮 | 높 | Kafka/SSE consumer → batch encode → store 파이프라인 |
