@@ -87,6 +87,7 @@ DOM 변화 (mutation/resize)
 - [x] `LayoutMonitor`에 `onConformanceChange` 콜백 필드 추가 — `types.ts`
 - [x] `monitor.ts` 파일 생성 — `createLayoutMonitor` 구현
 - [x] `index.ts` — `createLayoutMonitor`, `MonitorOptions` export 추가
-- [ ] `monitor.test.ts` — 브라우저 없이 테스트 가능한 부분 검증
+- [x] `monitor.test.ts` — 브라우저 없이 테스트 가능한 부분 검증 — 2026-04-05 완료
   - `createLayoutMonitor` 브라우저 환경 가드 (MutationObserver 없는 환경 → 에러)
   - debounce 로직 단위 테스트 (타이머 mock)
+  - 시나리오: `rlsc-monitor-test`

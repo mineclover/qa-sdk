@@ -89,11 +89,7 @@ def:
 - [x] `LayoutPattern`, `GridSystemPattern`, `SpacingPattern`, `ProportionPattern`, `GestaltPattern` 타입 — `types.ts`에 추가
 - [x] `pattern.ts` 파일 생성 — `classifyLayout` 구현
 - [x] `index.ts` — `classifyLayout`, 패턴 타입 5종 export 추가
-- [ ] `pattern.test.ts` — `classifyLayout` 단위 테스트 (mock LayoutMetrics)
-  - balance.x 2.1 → balanceRatio `[2, 1]`
-  - goldenRatioScore 0.85 → goldenRatio true
-  - gridPattern null → 결과에서 gridPattern 키 없음
-  - dominantFlow "free" → 결과에서 flowDirection 키 없음
-  - columnSystem 12-col → gridSystem `{ columns: 12, gutter: 16 }`
+- [x] `pattern.test.ts` — `classifyLayout` 단위 테스트 (mock LayoutMetrics) — 2026-04-05 완료
+  - 시나리오: `rlsc-pattern-test`
   - spacingValues `[8, 16, 24]`, base 8 → spacing.consistent true
   - aspectRatioDistribution 1위 1.78 → namedRatio "16:9"

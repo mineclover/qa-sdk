@@ -85,7 +85,5 @@ DOM 노드에 역할·레이어·깊이 기준 색상을 부여하고 z-index �
 - [x] `canvas.ts` 파일 생성 — `renderToCanvas`, `renderToSVG`, `assignColors` 구현
 - [x] 오버레이 내부 함수 3종 구현 (`overlayProximityGroups`, `overlayBalanceAxis`, `overlayFlowArrows`)
 - [x] `index.ts` — `renderToCanvas`, `renderToSVG`, `assignColors`, `CanvasRenderOptions` export 추가
-- [ ] `canvas.test.ts` — `renderToSVG` 단위 테스트 (DOM 없이)
-  - role 기준 색상 매핑 검증
-  - SVG 출력에 노드 수만큼 rect 요소 존재
-  - depth 기준 색상이 깊이에 따라 변화
+- [x] `canvas.test.ts` — `renderToSVG` 단위 테스트 (DOM 없이) — 2026-04-05 완료
+  - 시나리오: `rlsc-canvas-test`

@@ -86,10 +86,8 @@ def:
   - 페이지 수준: `checkBalance`, `checkGrid`, `checkFlow`, `checkGoldenRatio`, `checkGestalt`
   - 구조 단위: `checkGridSystem`, `checkSpacing`, `checkProportions`
 - [x] `index.ts` — `checkConformance`, `recognizeLayout`, `LayoutPattern`, `ConformanceResult` + 새 패턴 타입 export 추가
-- [ ] `intent.test.ts` — 양 방향 사용 검증
-  - `recognizeLayout(doc)` 만 호출 → violations 없이 LayoutPattern 반환
-  - `checkConformance(doc, { gridPattern: "3x3" })` + 실측 2×2 → gridPattern violation
-  - `checkConformance(doc, { balanceRatio: { x: [2, 1] } })` + 실측 1.05 → balance.x violation
+- [x] `intent.test.ts` — 양 방향 사용 검증 — 2026-04-05 완료
+  - 시나리오: `rlsc-intent-test`
   - `checkConformance(doc, { gridSystem: { columns: 12, gutter: 16 } })` + 실측 6-col → gridSystem violation
   - `checkConformance(doc, { spacing: { base: 8, consistent: true } })` + 실측 base=null → spacing violation
   - 선언 필드 모두 일치 → score 1.0

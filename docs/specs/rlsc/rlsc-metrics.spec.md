@@ -114,7 +114,5 @@ def:
   - 조합: `measureLayout`
 - [x] `grid.ts:extractRegions` export 전환 (현재 내부 함수)
 - [x] `index.ts` — `measureLayout`, `LayoutMetrics`, `ProximityGroup` export 추가
-- [ ] `metrics.test.ts` — 각 측정 함수 단위 테스트 (DOM 없이 mock 노드)
-  - 12-col 배치 → `columnSystem { cols: 12, gutterPx: 16, marginPx: 24 }`
-  - spacingValues `[8, 16, 24]` → spacingBase 8
-  - dominantFlow: flow/adjacent 관계 집계 검증
+- [x] `metrics.test.ts` — 각 측정 함수 단위 테스트 (DOM 없이 mock 노드) — 2026-04-05 완료
+  - 시나리오: `rlsc-metrics-test`
