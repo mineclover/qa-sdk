@@ -5,5 +5,5 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
-  onSuccess: "cp -r drizzle dist/drizzle 2>/dev/null || true",
+  onSuccess: "mkdir -p dist/drizzle && cp -r drizzle/. dist/drizzle/ 2>/dev/null || true",
 });
