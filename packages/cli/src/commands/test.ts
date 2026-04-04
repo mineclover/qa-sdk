@@ -13,6 +13,7 @@ import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 
 import { SqliteTestScenarioStore } from "test-scenario-store";
 import type { TestKind, TestScope } from "test-scenario-store";
 import { getQaSdkDir } from "../lib/qa-dir.js";
+import { extractFrontmatter, parseYaml } from "definition-catalog";
 
 const VALID_KINDS = new Set<string>([
   "unit", "ui-logic", "ui", "db-transaction",
@@ -66,40 +67,22 @@ export function parseTestsDeclaration(
 // ── frontmatter 추출 (YAML-lite) ──────────────────────────
 
 function extractFrontmatterTests(content: string): unknown[] {
-  const match = content.match(/^---\n([\s\S]*?)\n---/m);
-  if (!match) return [];
-  const fm = match[1];
-
-  const testsMatch = fm.match(/^tests:\s*\n((?:  - [\s\S]*?)(?=\n\S|$))/m);
-  if (!testsMatch) return [];
-
-  const lines = testsMatch[1].split("\n");
-  const items: Record<string, unknown>[] = [];
-  let current: Record<string, unknown> | null = null;
-
-  for (const line of lines) {
-    const itemMatch = line.match(/^  - (.+)/);
-    if (itemMatch) {
-      current = {};
-      items.push(current);
-      const kv = itemMatch[1].match(/^(\w+):\s*(.+)/);
-      if (kv && current) current[kv[1]] = kv[2].trim();
-      continue;
-    }
-    if (current && line.match(/^    \w+:/)) {
-      const kv = line.trim().match(/^(\w+):\s*(.+)/);
-      if (kv) current[kv[1]] = kv[2].trim();
-    }
-  }
-
-  return items;
+  const yaml = extractFrontmatter(content);
+  if (!yaml) return [];
+  const parsed = parseYaml(yaml) as Record<string, unknown>;
+  const tests = parsed["tests"];
+  if (!Array.isArray(tests)) return [];
+  return tests;
 }
 
 function extractSpecAddress(content: string): string | null {
-  const match = content.match(/address:\s*(\d+)/);
-  if (match) return `def:${match[1]}`;
-  const idMatch = content.match(/^  id:\s*(.+)/m);
-  if (idMatch) return `def:${idMatch[1].trim()}`;
+  const yaml = extractFrontmatter(content);
+  if (!yaml) return null;
+  const parsed = parseYaml(yaml) as Record<string, unknown>;
+  const address = parsed["address"];
+  if (address !== undefined) return `def:${address}`;
+  const id = parsed["id"];
+  if (typeof id === "string") return `def:${id.trim()}`;
   return null;
 }
 
@@ -128,7 +111,12 @@ export function testScan(opts: { dir?: string; db?: string }): void {
       }
       if (!entry.name.endsWith(".spec.md")) continue;
 
-      const content = readFileSync(fullPath, "utf-8");
+      let content: string;
+      try {
+        content = readFileSync(fullPath, "utf-8");
+      } catch {
+        continue;
+      }
       const specAddress = extractSpecAddress(content);
       if (!specAddress) continue;
 
