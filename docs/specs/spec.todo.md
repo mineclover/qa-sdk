@@ -114,7 +114,7 @@
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
-| D-5 | **PrefixDecoderBig** | 낮 | 중 | BigInt index decode 지원 (현재 PrefixDecoder가 거부) |
+| D-5 | **PrefixDecoderBig** | ✅ 완료 | — | PrefixDecoderBig + decode-service BigInt 자동 감지, 28 tests |
 
 ---
 
@@ -136,9 +136,9 @@
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|---|---|---|---|
 | E-1 | **gate-service 패키지 스캐폴딩** | ✅ 완료 | 중 | Hono.js 앱, package-local GateService facade, 6개 RPC 엔드포인트 |
-| E-2 | **이벤트 발행 인터페이스** | planned | 중 | release/flagChange 이벤트 → recompute 트리거. cascade의 네트워크 전파 기반 |
-| E-3 | **캐시 무효화 브로드캐스트** | planned | 높 | 분산 환경에서 recompute 결과를 다른 서비스에 전파 |
-| E-4 | **정합성 모델 구현** | planned | 중 | shouldVerify 재확인 흐름, Primary 직접 조회 경로 |
+| E-2 | **이벤트 발행 인터페이스** | ✅ 완료 | — | EventBus 포트 + InMemoryEventBus, 10 tests |
+| E-3 | **캐시 무효화 브로드캐스트** | ✅ 완료 | — | CacheInvalidation 서비스 (flag-change/release → recompute → broadcast), 10 tests |
+| E-4 | **정합성 모델 구현** | ✅ 완료 | — | shouldVerify + Primary 직접 조회, 13 tests |
 
 ---
 
@@ -165,7 +165,7 @@
 | F-2 | **규칙 CRUD 엔드포인트** | ✅ 완료 | 중 | POST/GET/PUT/DELETE `/rules` + detectConflicts 사전 검증 + `force` 지원 |
 | F-3 | **질의 엔드포인트** | ✅ 완료 | 중 | `/resolve`, `/match-ranges`, `/compose-query`, `/query-across-versions`, `/resolve-relation` |
 | F-4 | **Gate Service 클라이언트** | ✅ 완료 | 중 | gateFilterRanges, gateAwareResolve 연동. fail-open/fail-closed 전략 |
-| F-5 | **규칙 버전 마이그레이션** | planned | 높 | index version 변경 시 translateConstraint로 규칙 자동 변환 |
+| F-5 | **규칙 버전 마이그레이션** | ✅ 완료 | — | RuleMigrationService + POST /rules/migrate, 16 tests |
 
 ---
 
