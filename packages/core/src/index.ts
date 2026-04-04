@@ -206,6 +206,13 @@ export type {
 } from "./scope-nesting.js";
 export { validateScopeNesting, checkSwapSafety } from "./scope-nesting.js";
 
+// ── Scope Nesting State — 상태 전이 검증 ──
+export type {
+  PlaybookStatus, TransitionTrigger, TransitionResult,
+  SideEffect, TransitionViolation,
+} from "./scope-nesting-state.js";
+export { transition, isViolation, verifyInvariants } from "./scope-nesting-state.js";
+
 export {
   // mermaid
   pipeGraphToMermaid, zoomViewToMermaid, type MermaidOptions,
