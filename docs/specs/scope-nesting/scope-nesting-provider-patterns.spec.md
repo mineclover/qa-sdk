@@ -1,17 +1,16 @@
 ---
 def:
-  id: viteplus-playbook-provider-patterns
+  id: scope-nesting-provider-patterns
   scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved
-  layer: experience
-  svc: viteplus-sdk-smoke
+  layer: domain
   tags: [frontend, structural]
   links:
-    - target: viteplus-sdk-smoke-system
+    - target: scope-nesting-system
       type: refines
-    - target: viteplus-playbook-scope-nesting
+    - target: scope-nesting-guide
       type: refines
     - target: ms-concept-contract-descent
       type: implements

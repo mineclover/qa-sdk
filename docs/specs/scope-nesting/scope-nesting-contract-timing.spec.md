@@ -1,19 +1,18 @@
 ---
 def:
-  id: viteplus-playbook-contract-timing
+  id: scope-nesting-contract-timing
   scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved
-  layer: experience
-  svc: viteplus-sdk-smoke
+  layer: domain
   tags: [frontend, structural, testing]
   links:
-    - target: viteplus-sdk-smoke-system
+    - target: scope-nesting-system
       type: refines
-    - target: viteplus-playbook-mount-flow
+    - target: scope-nesting-mount-flow
       type: refines
-    - target: viteplus-playbook-provider-patterns
+    - target: scope-nesting-provider-patterns
       type: depends_on
     - target: pipe-simulate
       type: depends_on

@@ -1,21 +1,20 @@
 ---
 def:
-  id: viteplus-playbook-mount-flow
+  id: scope-nesting-mount-flow
   scope: flow
   aspect: process_flow
   depth: specification
   lifecycle: approved
-  layer: experience
-  svc: viteplus-sdk-smoke
+  layer: domain
   tags: [frontend, structural, testing]
   links:
-    - target: viteplus-sdk-smoke-system
+    - target: scope-nesting-system
       type: refines
-    - target: viteplus-playbook-scope-nesting
+    - target: scope-nesting-guide
       type: depends_on
-    - target: viteplus-playbook-provider-patterns
+    - target: scope-nesting-provider-patterns
       type: depends_on
-    - target: viteplus-playbook-simulation-layers
+    - target: scope-nesting-simulation-layers
       type: depends_on
     - target: pipe-simulate
       type: depends_on

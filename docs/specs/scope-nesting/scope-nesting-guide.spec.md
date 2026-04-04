@@ -1,15 +1,14 @@
 ---
 def:
-  id: viteplus-playbook-scope-nesting
+  id: scope-nesting-guide
   scope: constraint
   aspect: tech_constraint
   depth: specification
   lifecycle: approved
-  layer: experience
-  svc: viteplus-sdk-smoke
+  layer: domain
   tags: [frontend, structural, testing]
   links:
-    - target: viteplus-sdk-smoke-system
+    - target: scope-nesting-system
       type: refines
     - target: viteplus-playbook-provider-stack
       type: refines

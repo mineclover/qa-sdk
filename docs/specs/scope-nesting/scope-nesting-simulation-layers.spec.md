@@ -1,17 +1,16 @@
 ---
 def:
-  id: viteplus-playbook-simulation-layers
+  id: scope-nesting-simulation-layers
   scope: feature
   aspect: scenario
   depth: specification
   lifecycle: approved
-  layer: experience
-  svc: viteplus-sdk-smoke
+  layer: domain
   tags: [frontend, testing, structural]
   links:
-    - target: viteplus-sdk-smoke-system
+    - target: scope-nesting-system
       type: refines
-    - target: viteplus-playbook-scope-nesting
+    - target: scope-nesting-guide
       type: depends_on
     - target: viteplus-playbook-state-transition
       type: depends_on
@@ -23,7 +22,7 @@ def:
       type: depends_on
 ---
 
-# Vite+ Playbook 시뮬레이션 계층 정의
+# Scope Nesting 시뮬레이션 계층 정의
 
 ## 목적 ^purpose
 

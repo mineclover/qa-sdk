@@ -16,13 +16,7 @@ def:
       type: refines
     - target: platform-sdk-user-scenarios
       type: depends_on
-    - target: viteplus-playbook-scope-nesting
-      type: depends_on
-    - target: viteplus-playbook-provider-patterns
-      type: depends_on
-    - target: viteplus-playbook-mount-flow
-      type: depends_on
-    - target: viteplus-playbook-contract-timing
+    - target: scope-nesting-system
       type: depends_on
     - target: viteplus-playbook-template-flow
       type: depends_on
