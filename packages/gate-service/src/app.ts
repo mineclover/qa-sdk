@@ -1,3 +1,4 @@
+// @facet
 import { Hono } from "hono";
 import type { Logger } from "pino";
 import type { AddressStateStore, GateEngine } from "index-meta";
