@@ -295,13 +295,78 @@ qa-sdk-test-infra/      ← 별도 repo
 
 또는 `facetScanPath`를 레지스트리에 추가하지 않고, CLI가 `packages/{serviceId}/src/`를 기본 경로로 사용.
 
-## 8. synced/ 파일 규칙
+## 8. git 추적 규칙
+
+### 원칙: 복제본은 커밋하지 않는다
+
+rclone으로 재생성 가능한 파일은 git 추적 대상이 아니다. 커밋 가치가 있는 건 테스트 코드, mock, 설정뿐.
+
+### 레이어별 .gitignore
+
+**Facet:**
+```gitignore
+# facet-tests/.gitignore
+synced/          # rclone 복제본 — 재생성 가능
+!__mocks__/      # mock stub — 커밋 대상
+!tests/          # 테스트 코드 — 커밋 대상
+!vitest.config.ts
+!package.json
+!tsconfig.json
+```
+
+**Simulation:**
+```gitignore
+# simulation-tests/.gitignore
+synced/          # rclone 복제본
+!__mocks__/
+!scenarios/      # 시뮬레이션 시나리오 — 커밋 대상
+!vitest.config.ts
+!package.json
+```
+
+**E2E:**
+```gitignore
+# e2e-isolated/.gitignore
+src/             # 통째 복제본 — 재생성 가능
+!e2e/            # E2E 테스트 코드 — 커밋 대상
+!__mocks__/      # mock stub — 커밋 대상
+!setup.ts
+!vitest.config.ts
+!package.json
+```
+
+### 커밋 대상 / 비대상 매트릭스
+
+| 경로 | 커밋 | 이유 |
+|------|:----:|------|
+| `synced/` | **X** | rclone으로 재생성 |
+| `e2e-isolated/src/` | **X** | rclone으로 재생성 |
+| `tests/`, `scenarios/`, `e2e/` | **O** | 직접 작성한 테스트 코드 |
+| `__mocks__/` | **O** | 환경 의존 stub (수동 관리) |
+| `vitest.config.ts` | **O** | alias 설정 |
+| `package.json`, `tsconfig.json` | **O** | 패키지 메타데이터 |
+| `include-list.txt` | **X** | `facet scan`으로 재생성 |
+
+### 동기화 후 상태 확인
+
+```bash
+# 동기화 후 git status가 깨끗해야 함
+qa-sdk facet sync --service gate-service
+git status
+# synced/ 변경은 gitignore로 무시됨
+# 새 mock이 필요하면 __mocks__/에만 추가 → 커밋
+
+# include-list도 재생성 대상
+qa-sdk facet scan --service gate-service --output include-list.txt
+# include-list.txt는 gitignore됨
+```
+
+### 9. synced/ 파일 규칙
 
 1. **읽기 전용** — synced/ 파일을 직접 수정하지 않는다
-2. **git 추적 안 함** — `.gitignore`에 `synced/` 추가
-3. **export 주입만 허용** — `@facet export` 처리는 자동화 도구가 수행
-4. **원본 변경 시 재동기화** — `qa-sdk facet sync` 또는 rclone 직접 실행
-5. **import 경로** — 테스트에서 `../synced/gate-service/src/gate.js`로 상대 import
+2. **export 주입만 허용** — `@facet export` 처리는 자동화 도구가 수행
+3. **원본 변경 시 재동기화** — `qa-sdk facet sync` 또는 rclone 직접 실행
+4. **import 경로** — 테스트에서 `../synced/gate-service/src/gate.js`로 상대 import
 
 ## 9. 의존성 체인 분석 — import 따라가기
 
