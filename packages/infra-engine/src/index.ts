@@ -13,6 +13,8 @@ export { createRegisterStage } from "./stages/register-stage.js";
 export { createObserveStage } from "./stages/observe-stage.js";
 export { createProvisionStage } from "./stages/provision-stage.js";
 export { registerProvider, getProvider, listProviders } from "./providers/registry.js";
+export { createLocalProvider } from "./providers/local.js";
+export { pulumiDeployFn } from "./providers/pulumi-deploy.js";
 
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";
