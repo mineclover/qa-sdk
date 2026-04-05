@@ -1,16 +1,20 @@
 ---
 def:
   id: gate-event-bus
-  level: leaf
+  level: module
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: mediation
   svc: gate-service
   links:
     - target: gate-api
       type: refines
+    - target: gate-event-bus-test
+      type: contains
+contains:
+  - gate-event-bus-test
 ---
 # EventBus 이벤트 전파 계약
 

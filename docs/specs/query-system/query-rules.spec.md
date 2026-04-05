@@ -1,6 +1,7 @@
 ---
 def:
   id: query-rules
+  level: module
   address: def_document:v2:342189
   scope: data
   aspect: domain_data
@@ -14,6 +15,8 @@ def:
       type: depends_on
     - target: query-rule-migration
       type: contains
+contains:
+  - query-rule-migration
 ---
 # 규칙 영속화 (PolicyRule Store)
 

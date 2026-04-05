@@ -1,16 +1,21 @@
 ---
 def:
   id: decode-bigint
+  level: module
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: mediation
   svc: decode-service
   tags: [bigint, runtime]
   links:
     - target: decode-api
       type: refines
+    - target: decode-bigint-test
+      type: contains
+contains:
+  - decode-bigint-test
 ---
 # PrefixDecoderBig — BigInt 주소 디코딩
 

@@ -1,15 +1,20 @@
 ---
 def:
   id: query-rule-migration
+  level: module
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: mediation
   svc: query-service
   links:
     - target: query-rules
       type: refines
+    - target: query-rule-migration-test
+      type: contains
+contains:
+  - query-rule-migration-test
 ---
 
 # 규칙 버전 마이그레이션 (Rule Version Migration)

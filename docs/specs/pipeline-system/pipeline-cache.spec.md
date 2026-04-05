@@ -1,13 +1,18 @@
 ---
 def:
   id: pipeline-cache
+  level: module
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   tags: [cache, port]
-  links: []
+  links:
+    - target: pipeline-cache-test
+      type: contains
+contains:
+  - pipeline-cache-test
 ---
 # KeyCache — 쿼리 결과 캐시 포트
 

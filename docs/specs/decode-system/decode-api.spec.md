@@ -1,6 +1,7 @@
 ---
 def:
   id: decode-api
+  level: module
   address: def_document:v2:412805
   scope: interface
   aspect: api_contract
@@ -13,7 +14,9 @@ def:
     - target: decode-bundle
       type: depends_on
     - target: decode-bigint
-      type: depends_on
+      type: contains
+contains:
+  - decode-bigint
 ---
 # Decode Service REST API
 

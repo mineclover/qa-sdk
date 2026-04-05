@@ -1,6 +1,7 @@
 ---
 def:
   id: gate-api
+  level: module
   address: def_document:v2:412810
   scope: interface
   aspect: api_contract
@@ -20,6 +21,10 @@ def:
       type: contains
     - target: gate-consistency
       type: contains
+contains:
+  - gate-event-bus
+  - gate-cache-invalidation
+  - gate-consistency
 ---
 # Gate Service API 계약
 

@@ -5,7 +5,7 @@ def:
   scope: flow
   aspect: user_scenario
   depth: validation
-  lifecycle: implemented
+  lifecycle: approved
   layer: mediation
   svc: gate-service
   links:

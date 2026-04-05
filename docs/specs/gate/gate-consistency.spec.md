@@ -1,16 +1,20 @@
 ---
 def:
   id: gate-consistency
-  level: leaf
+  level: module
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   svc: gate-service
   links:
     - target: gate-api
       type: refines
+    - target: gate-consistency-test
+      type: contains
+contains:
+  - gate-consistency-test
 ---
 # Consistency 서비스
 

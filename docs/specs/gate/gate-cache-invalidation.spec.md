@@ -1,16 +1,20 @@
 ---
 def:
   id: gate-cache-invalidation
-  level: leaf
+  level: module
   scope: flow
   aspect: process_flow
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   svc: gate-service
   links:
     - target: gate-event-bus
       type: depends_on
+    - target: gate-cache-invalidation-test
+      type: contains
+contains:
+  - gate-cache-invalidation-test
 ---
 # CacheInvalidation 서비스
 

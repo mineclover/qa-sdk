@@ -1,13 +1,18 @@
 ---
 def:
   id: pipeline-aggregator
+  level: module
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   tags: [aggregation, port]
-  links: []
+  links:
+    - target: pipeline-aggregator-test
+      type: contains
+contains:
+  - pipeline-aggregator-test
 ---
 # Aggregator — packed_key 집계 포트
 

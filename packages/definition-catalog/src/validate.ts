@@ -36,6 +36,7 @@ export interface ValidationResult {
 
 const CONTAINS_DEPTH_EXEMPT = new Set([
   "system-design-tools",
+  "system-infra",
   "system-root",
   "system-support",
 ]);

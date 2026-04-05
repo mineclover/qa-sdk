@@ -4,7 +4,7 @@ def:
   scope: flow
   aspect: user_scenario
   depth: validation
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   tags: [testing, aggregation]
   links:
