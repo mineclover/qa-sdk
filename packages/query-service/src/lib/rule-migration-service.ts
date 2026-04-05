@@ -67,10 +67,12 @@ export class RuleMigrationService {
   /**
    * 특정 index의 규칙을 fromVersion에서 toVersion으로 일괄 변환한다.
    *
-   * - 각 규칙의 pattern을 translateConstraint로 변환
+   * 2-pass 방식:
+   *   1단계: 모든 규칙의 pattern을 translateConstraint로 사전 변환 (store 미접촉)
+   *   2단계: 변환 성공한 규칙만 store에 일괄 적용
+   *
    * - 변환 불가(entity 미존재)인 규칙은 skipped로 보고
-   * - 변환된 규칙은 versionId를 toVersion으로 갱신하여 store에 반영
-   * - 원자적 수행: 하나라도 store.update 실패 시 예외 전파
+   * - store.update 실패 시 예외 전파 (이미 적용된 규칙은 롤백 안 됨 — best-effort)
    */
   async migrateRules(
     indexId: string,
@@ -121,15 +123,15 @@ export class RuleMigrationService {
     // 해당 index + fromVersion의 모든 규칙 조회
     const rules = await this.policyRuleStore.findByIndex(indexId, fromVersion);
 
-    const migrated: StoredPolicyRule<unknown>[] = [];
     const skipped: string[] = [];
     const timestamp = this.now().toISOString();
 
+    // 1단계: 사전 변환 (store 미접촉)
+    const pendingUpdates: StoredPolicyRule<unknown>[] = [];
+
     for (const rule of rules) {
-      // pattern을 dim별 Record로 변환
       const constraintRecord = patternToConstraintRecord(rule.pattern, dimIds);
 
-      // translateConstraint로 position 변환
       const translated = translateConstraint(
         indexId,
         fromVersion,
@@ -139,21 +141,22 @@ export class RuleMigrationService {
       );
 
       if (translated === null) {
-        // entity가 target version에 없어서 변환 불가
         skipped.push(rule.id);
         continue;
       }
 
-      // 변환된 constraint를 다시 pattern으로
       const newPattern = constraintRecordToPattern(translated, dimIds);
-
-      const updatedRule: StoredPolicyRule<unknown> = {
+      pendingUpdates.push({
         ...rule,
         versionId: toVersion,
         pattern: newPattern,
         updatedAt: timestamp,
-      };
+      });
+    }
 
+    // 2단계: 변환 성공한 규칙만 store에 적용
+    const migrated: StoredPolicyRule<unknown>[] = [];
+    for (const updatedRule of pendingUpdates) {
       const stored = await this.policyRuleStore.update(updatedRule);
       migrated.push(stored);
     }

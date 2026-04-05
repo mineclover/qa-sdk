@@ -1,8 +1,9 @@
-import type {
-  Aggregator,
-  AggregateEntry,
-  AggregateOptions,
-  AxisProjectionEntry,
+import {
+  compareTimestamps,
+  type Aggregator,
+  type AggregateEntry,
+  type AggregateOptions,
+  type AxisProjectionEntry,
 } from "@qa-sdk/core";
 
 /** decode 함수 시그니처 — 외부에서 주입 */
@@ -43,7 +44,7 @@ export class InMemoryAggregator implements Aggregator {
 
     for (const item of filtered) {
       const existing = groups.get(item.key);
-      if (!existing || item.timestamp > existing.lastSeen) {
+      if (!existing || compareTimestamps(item.timestamp, existing.lastSeen) > 0) {
         groups.set(item.key, {
           count: (existing?.count ?? 0) + 1,
           lastSeen: item.timestamp,
@@ -117,8 +118,8 @@ export class InMemoryAggregator implements Aggregator {
     if (!options?.from && !options?.to) return this.items;
 
     return this.items.filter(item => {
-      if (options.from && item.timestamp < options.from) return false;
-      if (options.to && item.timestamp > options.to) return false;
+      if (options.from && compareTimestamps(item.timestamp, options.from) < 0) return false;
+      if (options.to && compareTimestamps(item.timestamp, options.to) > 0) return false;
       return true;
     });
   }

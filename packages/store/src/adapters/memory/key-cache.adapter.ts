@@ -64,6 +64,7 @@ export class InMemoryKeyCache<T = unknown> implements KeyCache<T> {
     if (this.isExpired(entry)) {
       this.store.delete(key);
       this.evictions++;
+      this.misses++;
       return false;
     }
     return true;
