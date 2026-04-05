@@ -46,7 +46,7 @@ export { createDashboardData, type DashboardData, type DashboardSummary, type Se
 export { createAutoRecovery, type AutoRecoveryOptions } from "./monitor/auto-recovery.js";
 export { calculateSla, type SlaReport } from "./monitor/sla.js";
 export { registerAllProviders } from "./providers/all.js";
-export { createCloudflareProvider } from "./providers/cloudflare.js";
+export { createCloudflareProvider, wranglerDeployFn, type CloudflareProviderOptions } from "./providers/cloudflare.js";
 export { createRailwayProvider } from "./providers/railway.js";
 export { createAwsProvider } from "./providers/aws.js";
 export { createGcpProvider } from "./providers/gcp.js";

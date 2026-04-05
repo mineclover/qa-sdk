@@ -108,7 +108,96 @@ async function main() {
         process.exit(failed > 0 ? 1 : 0);
       }
 
-      // 단일 서비스 배포
+      // Cloudflare 배포: infra deploy <service> <env> --provider cloudflare [config]
+      if (rest.includes("--provider") && rest[rest.indexOf("--provider") + 1] === "cloudflare") {
+        const service = rest[0];
+        const env = rest[1] ?? "prod";
+        const configIdx = rest.findIndex(a => a.endsWith(".json"));
+        const configFile = configIdx !== -1 ? rest[configIdx] : "cloudflare-prod.json";
+        const configPath = resolve(__dirname, `../config/${configFile}`);
+        const dryRun = rest.includes("--dry-run");
+
+        const { createPipeline } = await import("../src/core/pipeline.js");
+        const { createConfigStage } = await import("../src/config/config-stage.js");
+        const { createPlainLoader } = await import("../src/config/sops-loader.js");
+        const { createProvisionStage } = await import("../src/stages/provision-stage.js");
+        const { createRegisterStage } = await import("../src/stages/register-stage.js");
+        const { createVerifyStage } = await import("../src/verify/verify-stage.js");
+        const { createObserveStage } = await import("../src/stages/observe-stage.js");
+        const { createGateAdapter } = await import("../src/adapters/gate.js");
+        const { createInfraProfileAdapter } = await import("../src/adapters/infra-profile.js");
+        const { createServiceProfileAdapter } = await import("../src/adapters/service-profile.js");
+        const { createCloudflareProvider, wranglerDeployFn } = await import("../src/providers/cloudflare.js");
+        const { registerProvider, getProvider } = await import("../src/providers/registry.js");
+        const { createRegistryAdapter } = await import("../src/adapters/registry.js");
+
+        console.log(`\n=== Cloudflare 배포 ===`);
+        console.log(`서비스: ${service}`);
+        console.log(`환경:   ${env}`);
+        console.log(`설정:   ${configPath}${dryRun ? " (dry-run)" : ""}\n`);
+
+        registerProvider(createCloudflareProvider());
+        const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
+        const serviceProfile = createServiceProfileAdapter(PROFILE_DIR);
+        const gate = createGateAdapter();
+
+        // registry 연동
+        let registry: any;
+        try {
+          const res = await fetch(`${REGISTRY_URL}/health`, { signal: AbortSignal.timeout(2000) });
+          if (res.ok) { registry = createRegistryAdapter(REGISTRY_URL); console.log("[registry] 실서비스 연결"); }
+          else throw new Error();
+        } catch {
+          registry = { syncDeployment: async (p: any) => { console.log(`[registry-mock] sync: ${p.serviceId}`); return { synced: true }; } };
+        }
+
+        const mockIngest = { emit: async (key: string) => { console.log(`[ingest] emit: ${key}`); return { ok: true }; } };
+        const mockCoord = { resolveSvcRef: () => null, encodeDeployEvent: () => ({}), encodeHealthEvent: () => ({}) };
+
+        const stages = dryRun
+          ? [createConfigStage(createPlainLoader())]
+          : [
+              createConfigStage(createPlainLoader()),
+              createProvisionStage(getProvider, wranglerDeployFn),
+              createRegisterStage(registry, serviceProfile, infraProfile),
+              createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000 }),
+              createObserveStage(mockIngest, mockCoord, infraProfile),
+            ];
+
+        const pipeline = createPipeline(stages);
+        const result = await pipeline.run({
+          service,
+          provider: "cloudflare" as any,
+          env,
+          region: "global",
+          configPath,
+          triggeredBy: "manual",
+        });
+
+        console.log(`\n=== 배포 결과 ===`);
+        console.log(`성공:     ${result.success}`);
+        console.log(`엔드포인트: ${result.endpoint}`);
+        console.log(`소요시간: ${result.duration}ms`);
+        for (const s of result.stageResults) {
+          console.log(`  ${s.stage}: ${s.status} (${s.duration}ms)${s.error ? ` — ${s.error}` : ""}`);
+        }
+
+        if (result.success) {
+          await infraProfile.addHistory(service, {
+            deployedAt: new Date().toISOString(),
+            version: result.endpoint ?? "unknown",
+            env, provider: "cloudflare",
+            endpoint: result.endpoint ?? "",
+            duration: result.duration,
+            success: true,
+            triggeredBy: "manual",
+          });
+        }
+
+        process.exit(result.success ? 0 : 1);
+      }
+
+      // 단일 서비스 배포 (local K3s)
       delegateTo("deploy-local.ts", rest);
       await import("./deploy-local.js");
       break;
