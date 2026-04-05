@@ -84,8 +84,11 @@ interface ProvisionResult {
 ### DeployProvider 인터페이스
 
 ```typescript
+/** 프로바이��� 식별자 — 소문자 kebab-case */
+type ProviderId = "cloudflare" | "aws" | "gcp" | "railway" | "vultr" | "local";
+
 interface DeployProvider {
-  readonly name: string;  // "cloudflare" | "aws" | "gcp" | "railway" | "vultr" | "local"
+  readonly name: ProviderId;
   
   /** Pulumi Program 반환 — 이 함수가 실제 리소스를 선언 */
   getProgram(config: ResolvedConfig, serviceId: string): PulumiFn;
@@ -96,6 +99,24 @@ interface DeployProvider {
   /** 프로바이더별 사전 검증 (API 키 존재, 권한 확인 등) */
   validate(config: ResolvedConfig): Promise<ValidationResult>;
 }
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];     // valid=false일 때 사유
+}
+```
+
+### 출력 키 규약
+
+모든 프로바이더의 `stack.outputs()`는 반드시 `endpoint` 키를 포함해야 한다:
+
+```typescript
+// 필수 출력 키
+outputs.endpoint   // 서비스 접근 URL (예: "https://ingest-staging.up.railway.app")
+// 선택 출력 키
+outputs.ip         // IP 주소 (있는 경우)
+outputs.resourceId // 프로바이더 리소스 ID
+```
 ```
 
 ### ProvisionStage 실행 순서

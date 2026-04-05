@@ -85,6 +85,17 @@ interface ResolvedConfig {
   global: GlobalConfig;
   services: Record<string, ServiceConfig>;
   connections: Record<string, ConnectionConfig>;
+  monitoring?: MonitoringConfig;
+}
+
+interface MonitoringConfig {
+  interval: number;           // 헬스체크 주기 (초). 기본 60
+  webhooks?: WebhookConfig[];
+}
+
+interface WebhookConfig {
+  url: string;
+  events: string[];           // 알림 트리거 상태 (예: ["OutOfSync", "Unknown"])
 }
 
 interface GlobalConfig {

@@ -75,17 +75,23 @@ DeployResult { endpoint, registryId, healthStatus, gateVerdict }
 
 ### Rollback 전략
 
-파이프라인 실행 중 스테이지가 실패하면, 이미 완료된 스테이지를 역순으로 rollback한다.
+파이프라인 실행 중 스테이지가 실패하면, **파이프라인 실행기가** 이미 완료된 스테이지를 역순으로 rollback한다. 개별 스테이지는 자신의 `rollback()` 구현만 책임지며, cascade 호출은 실행기가 관리한다.
 
-| 실패 지점 | rollback 대상 |
-|-----------|--------------|
+| 실패 지점 | 실행기가 호출하는 rollback |
+|-----------|--------------------------|
 | ConfigStage | 없음 (읽기 전용) |
-| ProvisionStage | Pulumi destroy (리소스 정리) |
-| RegisterStage | registry 등록 취소 + service-profile 복원 |
-| VerifyStage | ProvisionStage rollback + RegisterStage rollback |
-| ObserveStage | 경고만 (배포 자체는 성공, 관측 실패는 fail-open) |
+| ProvisionStage | ProvisionStage.rollback() — Pulumi destroy |
+| RegisterStage | RegisterStage.rollback() → ProvisionStage.rollback() |
+| VerifyStage | RegisterStage.rollback() → ProvisionStage.rollback() |
+| ObserveStage | 없음 — 경고만 기록 (fail-open) |
 
-ObserveStage는 **fail-open** — 관측 실패가 배포 성공을 뒤집지 않는다.
+**fail-open 정의**: 스테이지가 성공을 반환하되 `warnings` 배열에 실패 사유를 기록한다. 파이프라인은 중단하지 않으며, 호출자는 `warnings`를 로깅만 한다. ObserveStage 전체가 fail-open이다.
+
+### 실행 보장
+
+- **순차 실행**: 스테이지는 반드시 정의된 순서대로 실행
+- **동시 배포 차단**: 같은 (service, env, provider, region) 조합에 대한 동시 배포는 DynamoDB lock이 차단
+- **triggeredBy**: 파이프라인 입력에 `triggeredBy: "ci" | "manual"` 포함 (기본: "manual")
 
 ## 정의 ^defines
 
@@ -99,6 +105,7 @@ interface DeployContext {
   readonly env: string;          // "dev" | "staging" | "prod"
   readonly region: string;       // "ap-northeast-2" 등
   readonly configPath: string;   // SOPS YAML 경로
+  readonly triggeredBy: "ci" | "manual";  // 기본: "manual"
 
   // 스테이지가 순차적으로 채우는 필드
   config?: ResolvedConfig;

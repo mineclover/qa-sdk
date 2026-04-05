@@ -141,6 +141,14 @@ RegisterStage 완료 (endpoint 확정)
 - `ResolvedConfig.connections` — 의존 서비스 연결정보 (dependency-reach 게이트)
 - `GateAdapter` — qa-sdk GateEngine 패턴 차용 시 사용 (선택)
 
+## 사전 조건
+
+VerifyStage는 이전 스테이지가 완료되어 `ctx.config`와 `ctx.provision`이 non-null임을 전제한다. null이면 파이프라인 실행기 레벨에서 이미 에러가 발생한 상태.
+
+### healthPath 기본값
+
+`ResolvedConfig.connections[target].health_path`가 미지정이면 VerifyStage가 기본값 `/health`를 적용한다.
+
 ## Rollback
 
-VerifyStage 자체는 rollback할 것이 없다. 실패 시 파이프라인 실행기가 RegisterStage.rollback() → ProvisionStage.rollback()을 역순 호출한다.
+VerifyStage 자체는 rollback할 것이 없다 (읽기 전용 검증). 실패 시 **파이프라인 실행기가** RegisterStage.rollback() → ProvisionStage.rollback()을 역순 호출한다.

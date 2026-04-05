@@ -46,6 +46,16 @@ Degraded ←→ Unknown
 | `Degraded` | 부분 이상 — 일부 의존 서비스 불통 | 서비스 자체는 응답하나 dependency 일부 실패 |
 | `Unknown` | 도달 불가 — 네트워크/서비스 다운 | 연결 자체 실패 (timeout, ECONNREFUSED) |
 
+### VerifyStage 상태와의 매핑
+
+VerifyStage의 배포 시점 `healthStatus`와 모니터링의 지속적 `SyncStatus`는 관점이 다르다:
+
+| VerifyStage healthStatus | 초기 SyncStatus | 설명 |
+|--------------------------|----------------|------|
+| `healthy` | `Synced` | 배포 직후 정상 |
+| `degraded` | `Degraded` | 배포 성공이나 일부 이상 |
+| `failed` | — | rollback되므로 모니터링 미등록 |
+
 ## Sync Loop
 
 ```typescript

@@ -42,11 +42,7 @@ interface DeployEventPayload {
   health_status: "healthy" | "degraded" | "failed";
   gate_verdict: "pass" | "warn" | "fail";
   duration_ms: number;
-  stage_results: Array<{
-    stage: string;
-    status: string;
-    duration_ms: number;
-  }>;
+  stage_results: StageResult[];  // pipeline.spec의 StageResult 타입 재사용
   version?: string;
   triggered_by: "ci" | "manual";    // GitHub Actions vs CLI
   rollback: boolean;                 // rollback이 발생했는지
