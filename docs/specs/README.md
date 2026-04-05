@@ -293,7 +293,7 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | [infra-providers.spec.md](infra-engine/infra-providers.spec.md) | 프로바이더 추상화 — 6개 멀티 클라우드 | infra-engine | implemented |
 | [infra-adapters.spec.md](infra-engine/infra-adapters.spec.md) | qa-sdk 연동 어댑터 — 6개 포트 인터페이스 | infra-engine | implemented |
 | [infra-discovery.spec.md](infra-engine/infra-discovery.spec.md) | 서비스 디스커버리 + Fleet 관리 + export 도구 | infra-engine | implemented |
-| [infra-monitoring.spec.md](infra-engine/infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 — sync-loop + 대시보드 | infra-engine | draft |
+| [infra-monitoring.spec.md](infra-engine/infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 — sync-loop + 대시보드 + 자동 복구 + SLA | infra-engine | implemented |
 
 ### infra/ — 인프라 도구
 

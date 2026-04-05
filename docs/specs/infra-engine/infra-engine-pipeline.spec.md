@@ -205,49 +205,88 @@ interface StageResult {
 
 ```
 packages/infra-engine/
-  ├── src/
-  │   ├── core/                    # 파이프라인 엔진 (범용, qa-sdk 무의존)
-  │   │   ├── pipeline.ts          # DeployPipeline 실행기
-  │   │   ├── stages.ts            # Stage 인터페이스 + 내장 스테이지
-  │   │   └── types.ts             # DeployContext, DeployResult 등
+  ├── src/                             # 40 소스 파일
+  │   ├── core/                        # 파이프라인 엔진 (범용, qa-sdk 무의존)
+  │   │   ├── types.ts                 # DeployContext, DeployResult, Stage 등
+  │   │   └── pipeline.ts              # DeployPipeline 실행기
   │   │
-  │   ├── providers/               # Pulumi Program per provider
-  │   │   ├── provider.ts          # DeployProvider 인터페이스
-  │   │   ├── cloudflare.ts
-  │   │   ├── aws.ts
-  │   │   ├── gcp.ts
-  │   │   ├── railway.ts
-  │   │   ├── vultr.ts
-  │   │   └── local.ts
+  │   ├── config/                      # SOPS + 설정 해석
+  │   │   ├── config-schema.ts         # 통합 설정 zod 스키마
+  │   │   ├── sops-loader.ts           # SOPS 복호화
+  │   │   ├── config-stage.ts          # ConfigStage 구현
+  │   │   └── env-bridge.ts            # SOPS YAML → 서비스별 env 변환
   │   │
-  │   ├── config/                  # SOPS + 설정 해석
-  │   │   ├── sops-loader.ts       # SOPS 복호화
-  │   │   ├── config-schema.ts     # 통합 설정 zod 스키마
-  │   │   └── env-bridge.ts        # SOPS YAML → 서비스별 env 변환
+  │   ├── adapters/                    # 외부 시스템 연동 (교체 가능)
+  │   │   ├── adapter.ts               # Adapter 인터페이스 정의 (6포트)
+  │   │   ├── registry.ts              # → registry-service API
+  │   │   ├── gate.ts                  # → 품질 게이트 평가
+  │   │   ├── infra-profile.ts         # → infra-profile.json
+  │   │   ├── service-profile.ts       # → service-profile.json
+  │   │   └── definition.ts            # → definition-service (문서/테스트/prefix)
   │   │
-  │   ├── adapters/                # 외부 시스템 연동 (교체 가능)
-  │   │   ├── adapter.ts           # Adapter 인터페이스 정의
-  │   │   ├── registry.ts          # → registry-service API
-  │   │   ├── ingest.ts            # → ingest-server 이벤트
-  │   │   ├── service-profile.ts   # → service-profile.json
-  │   │   └── gate.ts              # → 품질 게이트 평가
+  │   ├── providers/                   # Pulumi Program per provider
+  │   │   ├── registry.ts              # 프로바이더 레지스트리
+  │   │   ├── local.ts                 # Local K3s 프로바이더
+  │   │   ├── pulumi-deploy.ts         # Pulumi Automation API 래퍼
+  │   │   ├── all.ts                   # 전체 프로바이더 집합
+  │   │   ├── cloudflare.ts            # Cloudflare 프로바이더 (스텁)
+  │   │   ├── railway.ts               # Railway 프로바이더 (스텁)
+  │   │   ├── aws.ts                   # AWS 프로바이더 (스텁)
+  │   │   ├── gcp.ts                   # GCP 프로바이더 (스텁)
+  │   │   └── vultr.ts                 # Vultr 프로바이더 (스텁)
   │   │
-  │   ├── verify/                  # 헬스체크 & 품질 게이트
-  │   │   ├── health-check.ts      # HTTP/TCP 프로브
-  │   │   └── gate-definitions.ts  # 배포 품질 게이트 정의
+  │   ├── stages/                      # 5단계 스테이지 구현
+  │   │   ├── provision-stage.ts       # ProvisionStage — Pulumi 실행
+  │   │   ├── register-stage.ts        # RegisterStage — registry 등록
+  │   │   └── observe-stage.ts         # ObserveStage — 이벤트 emit + 모니터링 등록
   │   │
-  │   ├── monitor/                 # 상태 조회 & 대시보드 데이터
-  │   │   ├── status.ts            # 서비스별 배포 상태 집계
-  │   │   └── sync-loop.ts         # 주기적 상태 동기화
+  │   ├── verify/                      # 헬스체크 & 품질 게이트
+  │   │   ├── health-check.ts          # HTTP/TCP 프로브
+  │   │   ├── gate-definitions.ts      # 배포 품질 게이트 정의
+  │   │   └── verify-stage.ts          # VerifyStage — 헬스체크 + 게이트 평가
   │   │
-  │   └── index.ts
+  │   ├── discovery/                   # 서비스 디스커버리
+  │   │   ├── client.ts                # DiscoveryClient (registry 기반)
+  │   │   └── enhanced-client.ts       # EnhancedDiscovery (registry + definition 통합)
+  │   │
+  │   ├── fleet/                       # Fleet 관리
+  │   │   └── manager.ts               # FleetManager (status, tier 그룹핑)
+  │   │
+  │   ├── export/                      # 설정 파일 생성 도구
+  │   │   ├── env-file.ts              # .env 파일 생성
+  │   │   ├── typescript-module.ts     # TypeScript 서비스 연결 모듈
+  │   │   └── docker-compose.ts        # docker-compose.override.yml
+  │   │
+  │   ├── monitor/                     # 모니터링 & 대시보드
+  │   │   ├── sync-loop.ts             # 주기적 상태 동기화 (ArgoCD 스타일)
+  │   │   ├── dashboard.ts             # FleetStatus 집계 + 대시보드 데이터
+  │   │   ├── auto-recovery.ts         # OutOfSync 자동 재배포
+  │   │   └── sla.ts                   # SLA 추적 (uptime 계산)
+  │   │
+  │   ├── commands/                    # CLI 명령 구현
+  │   │   ├── destroy.ts               # destroy 명령 (Pulumi destroy + 정리)
+  │   │   └── audit.ts                 # audit 명령 (registry 데이터 품질 점검)
+  │   │
+  │   └── index.ts                     # public export
   │
-  ├── config/                      # SOPS 암호화 환경별 설정
-  │   ├── dev.yaml
-  │   ├── staging.yaml
-  │   └── prod.yaml
+  ├── scripts/                         # CLI 진입점
+  │   ├── infra.ts                     # 통합 CLI (15 서브커맨드)
+  │   ├── deploy-local.ts              # 로컬 배포 (레거시, infra.ts에서 위임)
+  │   ├── discover.ts                  # 디스커버리 (레거시, infra.ts에서 위임)
+  │   └── export.ts                    # export (레거시, infra.ts에서 위임)
   │
-  ├── sops.yaml                    # SOPS 암호화 규칙
+  ├── config/                          # 환경별 설정 JSON
+  │   ├── test.json
+  │   ├── dev.json
+  │   ├── stage.json
+  │   ├── prod.json
+  │   ├── test-nginx.json
+  │   └── test-nginx-v2.json
+  │
+  ├── docs/
+  │   └── k3d-local-setup.md           # K3s 로컬 클러스터 설정 가이드
+  │
+  ├── sops.yaml                        # SOPS 암호화 규칙 (템플릿)
   ├── tsup.config.ts
   └── package.json
 ```

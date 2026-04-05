@@ -35,7 +35,7 @@ kubectl create namespace qa-prod
 cd packages/infra-engine
 
 # nginx 테스트 배포 (이미지 빌드 불필요)
-PULUMI_CONFIG_PASSPHRASE="" pnpm exec tsx scripts/deploy-local.ts nginx-test dev test-nginx.json
+pnpm exec tsx scripts/infra.ts deploy nginx-test dev test-nginx.json
 
 # 서비스 배포 (Docker 이미지 필요)
 # 1. 이미지 빌드
@@ -43,23 +43,54 @@ docker build -t qa-sdk/ingest-server:latest -f Dockerfile.ingest-server .
 # 2. k3d에 이미지 로드
 k3d image import qa-sdk/ingest-server:latest -c qa-local
 # 3. 배포
-PULUMI_CONFIG_PASSPHRASE="" pnpm exec tsx scripts/deploy-local.ts ingest-server dev
+pnpm exec tsx scripts/infra.ts deploy ingest-server dev
 
 # 다른 환경에 배포
-PULUMI_CONFIG_PASSPHRASE="" pnpm exec tsx scripts/deploy-local.ts nginx-test stage test-nginx.json
+pnpm exec tsx scripts/infra.ts deploy nginx-test stage test-nginx.json
+
+# dry-run (변경 사항 미리보기, 실제 배포 없음)
+pnpm exec tsx scripts/infra.ts deploy nginx-test dev --dry-run
+
+# 환경 내 전체 서비스 일괄 배포
+pnpm exec tsx scripts/infra.ts deploy --all dev
+
+# 실패해도 계속 배포
+pnpm exec tsx scripts/infra.ts deploy --all dev --continue-on-error
 ```
 
 ### 인자
 
 ```
-deploy-local.ts <service> <env> [config-file]
+infra deploy <service> <env> [config-file] [--dry-run]
+infra deploy --all <env> [--continue-on-error]
 ```
 
 | 인자 | 설명 | 기본값 |
 |------|------|--------|
-| service | 서비스 ID | (필수) |
+| service | 서비스 ID | (필수, --all 사용 시 불필요) |
 | env | 환경 (dev/stage/prod) | dev |
 | config-file | 설정 JSON 파일명 | `{env}.json` |
+| --dry-run | 변경 사항 미리보기 (Pulumi preview) | false |
+| --all | 환경 내 전체 서비스 배포 | false |
+| --continue-on-error | 실패 시에도 다음 서비스 계속 배포 | false |
+
+## Destroy 명령
+
+```bash
+cd packages/infra-engine
+
+# 서비스 리소스 정리
+pnpm exec tsx scripts/infra.ts destroy nginx-test dev
+
+# 확인 프롬프트 스킵
+pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
+```
+
+destroy는 다음을 수행한다:
+- Pulumi destroy (스택 삭제)
+- port-forward 프로세스 kill (PID 기반)
+- infra-profile에서 deployment + monitor 제거
+- service-profile URL 복원
 
 ## 파이프라인 출력
 
@@ -100,19 +131,27 @@ curl http://127.0.0.1:20080/
 cat ~/.qa-sdk/infra-profile.json
 
 # 디스커버리로 확인
-pnpm exec tsx scripts/discover.ts nginx-test dev
+pnpm exec tsx scripts/infra.ts discover nginx-test dev
+
+# 배포 이력 확인
+pnpm exec tsx scripts/infra.ts history nginx-test
+
+# 배포 이력 JSON 출력
+pnpm exec tsx scripts/infra.ts history nginx-test --json
 ```
 
 ## 정리
 
 ```bash
-# K8s 리소스 삭제
-kubectl -n qa-dev delete deploy,svc --all
-
-# Pulumi 상태 초기화
-rm -rf ~/.pulumi-local/.pulumi
+# infra destroy로 정리 (권장)
+pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
 
 # port-forward 정리
+pnpm exec tsx scripts/infra.ts pf cleanup
+
+# 또는 수동 정리:
+kubectl -n qa-dev delete deploy,svc --all
+rm -rf ~/.pulumi-local/.pulumi
 pkill -f "port-forward"
 
 # 클러스터 삭제

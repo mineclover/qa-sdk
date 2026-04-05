@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, monitoring, argocd]
   links:
@@ -174,10 +174,28 @@ monitoring:
 - `health_event` prefix — demo-catalog (svc_ref × health_status)
 - `ResolvedConfig.monitoring` — 알림 설정
 
-## 향후 확장 (Phase 2 — 현재 범위 밖)
+## 구현 완료 모듈
 
-현재 스펙에 포함되지 않음. 별도 스펙 문서로 분리 시 추가.
+| 모듈 | 파일 | 역할 |
+|------|------|------|
+| SyncLoop | `src/monitor/sync-loop.ts` | 주기적 헬스체크 + 상태 전이 |
+| Dashboard | `src/monitor/dashboard.ts` | FleetStatus 집계 + 대시보드 데이터 |
+| AutoRecovery | `src/monitor/auto-recovery.ts` | OutOfSync 감지 → 자동 재배포 트리거 |
+| SLA | `src/monitor/sla.ts` | uptime 기반 SLA 계산 |
 
-- **자동 복구**: OutOfSync 감지 시 자동 재배포 파이프라인 트리거
-- **SLA 추적**: uptime 기반 SLA 계산 및 리포트
+### CLI 명령
+
+```
+infra monitor start [--interval N]   # 백그라운드 sync-loop 시작
+infra monitor check                  # 수동 1회 동기화
+infra monitor status                 # 마지막 체크 결과
+
+infra dashboard summary              # 전체 서비스 상태 요약
+infra dashboard service <id>         # 서비스 상세
+infra dashboard export [path]        # JSON export
+```
+
+## 향후 확장
+
 - **Grafana 연동**: DashboardData를 Grafana 데이터소스로 노출
+- **webhook 알림**: 상태 변화 시 Slack/Discord webhook POST

@@ -52,8 +52,40 @@ pnpm exec tsx scripts/export.ts status prod
 | 🟢 | running | 배포 기록 없지만 헬스체크 응답 (로컬 실행 중) |
 | ⬜ | pending | 배포 안 됨 + 미실행 |
 
+## 모니터링 명령
+
+```bash
+cd packages/infra-engine
+
+# sync-loop 시작 (백그라운드 헬스체크)
+pnpm exec tsx scripts/infra.ts monitor start --interval 60
+
+# 수동 1회 동기화
+pnpm exec tsx scripts/infra.ts monitor check
+
+# 마지막 체크 결과 조회
+pnpm exec tsx scripts/infra.ts monitor status
+```
+
+## 대시보드 명령
+
+```bash
+cd packages/infra-engine
+
+# 전체 서비스 상태 요약
+pnpm exec tsx scripts/infra.ts dashboard summary
+
+# 특정 서비스 상세
+pnpm exec tsx scripts/infra.ts dashboard service ingest-server
+
+# JSON export
+pnpm exec tsx scripts/infra.ts dashboard export ./dashboard.json
+```
+
 ## 활용
 
 1. **어떤 서비스가 떠있는지 확인**: `status dev` → 🟢 running 서비스 확인
 2. **배포 필요한 서비스 파악**: `status staging` → ⬜ pending 서비스가 배포 대상
 3. **환경별 비교**: `status dev` vs `status prod` → 환경 간 서비스 차이 확인
+4. **헬스 모니터링**: `monitor start` → 주기적 헬스체크로 OutOfSync 감지
+5. **대시보드 확인**: `dashboard summary` → 전체 Fleet 상태 + uptime 확인

@@ -224,17 +224,62 @@ services:
 ### discover 명령
 
 ```
-qa-sdk discover <serviceId> [--env dev]          # 단일 서비스 조회
-qa-sdk discover --all [--env dev]                # 전체 서비스 URL 맵
-qa-sdk discover --list                           # 서비스 목록
-qa-sdk discover --code <serviceId> [--env dev]   # 연결 코드 생성
+infra discover <serviceId> <env>                 # 단일 서비스 조회
+infra discover --all <env>                       # 전체 서비스 URL 맵
+infra discover --list                            # 서비스 목록
+infra discover --deep <serviceId> <env>          # 문서/테스트/prefix 포함 상세 조회
+infra discover --code <serviceId> <env>          # 연결 코드 생성
+```
+
+### deploy 명령
+
+```
+infra deploy <service> <env> [config]            # 단일 서비스 배포
+infra deploy <service> <env> --dry-run           # 변경 사항 미리보기 (Pulumi preview)
+infra deploy --all <env>                         # 환경 내 전체 서비스 순차 배포
+infra deploy --all <env> --continue-on-error     # 실패 시에도 계속 배포
+```
+
+### destroy 명령
+
+```
+infra destroy <service> <env>                    # 서비스 리소스 정리
+infra destroy <service> <env> --yes              # 확인 프롬프트 스킵
 ```
 
 ### export 명령
 
 ```
-qa-sdk export status [--env dev]                 # Fleet 상태 조회
-qa-sdk export env <serviceId> [--env dev]        # .env 파일 생성
-qa-sdk export ts [--env dev] [--services a,b]    # TypeScript 모듈 생성
-qa-sdk export compose [--env dev]                # docker-compose override 생성
+infra export env <serviceId> <env>               # .env 파일 생성
+infra export ts <env> [--out <path>]             # TypeScript 모듈 생성
+infra export compose <env>                       # docker-compose override 생성
+infra export docs <env>                          # 문서 요약 생성
+```
+
+### status / history / audit 명령
+
+```
+infra status <env>                               # Fleet 상태 조회 (tier별)
+infra history <service>                          # 배포 이력 테이블
+infra history <service> --json                   # 배포 이력 JSON 출력
+infra audit                                      # registry 데이터 품질 점검
+```
+
+### monitor / dashboard 명령
+
+```
+infra monitor start [--interval N]               # 백그라운드 sync-loop 시작
+infra monitor check                              # 수동 1회 동기화
+infra monitor status                             # 마지막 체크 결과
+
+infra dashboard summary                          # 전체 서비스 상태 요약
+infra dashboard service <id>                     # 서비스 상세
+infra dashboard export [path]                    # JSON export
+```
+
+### port-forward 관리
+
+```
+infra pf list                                    # 활성 port-forward 목록
+infra pf cleanup                                 # 죽은 PID 정리
 ```
