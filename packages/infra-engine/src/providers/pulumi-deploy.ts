@@ -30,6 +30,8 @@ async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
 export interface PulumiDeployOptions {
   env?: string;
   dryRun?: boolean;
+  backendUrl?: string;   // 기본: process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local"
+  k8sContext?: string;    // 기본: process.env.KUBECONFIG_CONTEXT ?? "k3d-qa-local"
 }
 
 export function createPulumiDeployFn(options?: PulumiDeployOptions) {
@@ -47,6 +49,14 @@ export async function pulumiDeployFn(
   const program = provider.getProgram(config, serviceId);
   const projectName = `infra-engine-${serviceId}`;
 
+  const backendUrl = options?.backendUrl
+    ?? process.env.PULUMI_BACKEND_URL
+    ?? "file://~/.pulumi-local";
+
+  const k8sContext = options?.k8sContext
+    ?? process.env.KUBECONFIG_CONTEXT
+    ?? "k3d-qa-local";
+
   const stack = await LocalWorkspace.createOrSelectStack(
     {
       stackName,
@@ -57,13 +67,13 @@ export async function pulumiDeployFn(
       projectSettings: {
         name: projectName,
         runtime: "nodejs",
-        backend: { url: "file://~/.pulumi-local" },
+        backend: { url: backendUrl },
       },
     },
   );
 
   // K8s 컨텍스트 설정
-  await stack.setConfig("kubernetes:context", { value: "k3d-qa-local" });
+  await stack.setConfig("kubernetes:context", { value: k8sContext });
 
   // dry-run: preview만 실행하고 반환
   if (options?.dryRun) {

@@ -40,6 +40,7 @@ export { generateEnvFile, type EnvFileOptions } from "./export/env-file.js";
 export { generateTypescriptModule } from "./export/typescript-module.js";
 export { generateDockerComposeOverride } from "./export/docker-compose.js";
 export { destroy } from "./commands/destroy.js";
+export { envUp, envDown, envStatus, envReset, detectEnvironment } from "./commands/env-manager.js";
 export { createSyncLoop, type SyncLoopOptions, type SyncCheckResult } from "./monitor/sync-loop.js";
 export { createDashboardData, type DashboardData, type DashboardSummary, type ServiceDashboard } from "./monitor/dashboard.js";
 export { createAutoRecovery, type AutoRecoveryOptions } from "./monitor/auto-recovery.js";

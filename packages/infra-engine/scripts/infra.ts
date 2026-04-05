@@ -13,12 +13,21 @@
  *   infra audit
  *   infra monitor [start|check|status] [--interval N]
  *   infra dashboard [summary|service <id>|export [path]]
+ *   infra env [up|down|status|reset]
  *   infra pf [list|cleanup]
  *   infra --help
  */
 
 // 0-3: Passphrase 자동 설정 — Pulumi 로컬 백엔드에서 암호 프롬프트 방지
 process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
+
+// 환경 자동 감지 (LocalStack 실행 시 S3 백엔드 전환)
+import { detectEnvironment } from "../src/commands/env-manager.js";
+const infraMode = await detectEnvironment();
+const _cmd = process.argv[2];
+if (_cmd && _cmd !== "--help" && _cmd !== "-h") {
+  console.log(`[env] ${infraMode === "localstack" ? "LocalStack 감지 → S3 백엔드" : "파일 백엔드"}`);
+}
 
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -343,6 +352,22 @@ async function main() {
       }
       break;
     }
+    case "env": {
+      const sub = rest[0] ?? "status";
+      const infraEngineCwd = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, "");
+      const { envUp, envDown, envStatus, envReset } = await import("../src/commands/env-manager.js");
+
+      switch (sub) {
+        case "up": await envUp(infraEngineCwd); break;
+        case "down": await envDown(infraEngineCwd); break;
+        case "status": await envStatus(); break;
+        case "reset": await envReset(infraEngineCwd); break;
+        default:
+          console.error("사용: infra env [up|down|status|reset]");
+          process.exit(1);
+      }
+      break;
+    }
     case "--help":
     case "-h":
     case undefined: {
@@ -360,6 +385,7 @@ infra-engine CLI
   infra audit
   infra monitor [start|check|status] [--interval N]
   infra dashboard [summary|service <id>|export [path]]
+  infra env [up|down|status|reset]
   infra pf [list|cleanup]
   infra --help
 `);
