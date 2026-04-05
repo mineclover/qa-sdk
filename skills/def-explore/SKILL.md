@@ -74,7 +74,24 @@ IR 코드: `packages/core/src/meta-semantic/` (11 source files, 124 tests)
 
 문서 유형 6종: `.spec.md`(정의) / `.rule.md`(소비 규칙) / `.todo.md`(계획) / `.test.md`(검증) / `.memo.md`(기록) / `.plan.md`(방향)
 
-### 6. 품질 확인
+### 6. 추적 3축 + 격리 테스트
+
+```bash
+def get tracking-three-axes     # 이벤트 × 패싯 × 데이터 분류 3축
+def get facet-test-isolation    # 패싯 추출 + 격리 테스트 인프라
+```
+
+추적 3축:
+- 이벤트 (유저 시나리오) — event-catalog, prefix-mapping
+- 패싯 (데이터 계보) — DataIR 4패싯, pipe-lineage
+- 데이터 분류 (core vs UX) — DefLayer (domain/experience)
+
+격리 테스트:
+- `qa-sdk facet scan --service {svc}` → `@facet` 파일 + 의존 분석
+- `qa-sdk facet inject {dir}` → 복사본에 export 주입
+- `facet-tests/` (단위), `simulation-tests/` (통합)
+
+### 7. 품질 확인
 
 ```bash
 def audit                     # 문서 품질 + 그래프 검증
