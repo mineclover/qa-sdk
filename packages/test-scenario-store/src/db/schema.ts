@@ -9,6 +9,7 @@ export const testScenarios = sqliteTable(
     specAddress: text("spec_address").notNull(),
     kind: text("kind").notNull(),
     scope: text("scope").notNull().default("single"),
+    phase: text("phase"),
     lifecycle: text("lifecycle").notNull().default("declared"),
     intent: text("intent").notNull(),
     primarySvc: text("primary_svc").notNull(),

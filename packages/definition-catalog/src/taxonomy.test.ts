@@ -3,6 +3,7 @@ import {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
   ASPECT_TO_SCOPES,
+  SEMANTIC_LINT_FAMILIES,
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
@@ -90,6 +91,25 @@ describe("ASPECT_TO_SCOPES 역참조 (N:M)", () => {
     const totalFromScopes = Object.values(ASPECT_TO_SCOPES)
       .reduce((sum, scopes) => sum + scopes.length, 0);
     expect(totalFromScopes).toBe(allValidCombinations().length);
+  });
+});
+
+describe("SEMANTIC_LINT_FAMILIES", () => {
+  it("semantic lint family가 선언되어 있다", () => {
+    expect(SEMANTIC_LINT_FAMILIES.length).toBeGreaterThan(0);
+  });
+
+  it("family id는 유일하다", () => {
+    const ids = SEMANTIC_LINT_FAMILIES.map((family) => family.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("seed와 traversal이 비어 있지 않다", () => {
+    for (const family of SEMANTIC_LINT_FAMILIES) {
+      expect(family.seeds.length).toBeGreaterThan(0);
+      expect(family.traversal.length).toBeGreaterThan(0);
+      expect(family.containsDepthLimit).toBeGreaterThanOrEqual(4);
+    }
   });
 });
 

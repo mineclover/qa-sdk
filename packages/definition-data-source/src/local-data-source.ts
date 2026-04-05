@@ -18,6 +18,7 @@ import type {
   DefFileBoundaryResolution,
   DefIncomingLink,
   DefListFilter,
+  DefOutgoingLink,
   DefValidationResult,
   DefinitionEntry,
   DefinitionLink,
@@ -25,11 +26,14 @@ import type {
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  docRowToRegistryInput,
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
+  MemoryDefinitionRegistry,
   parseCodeReferenceTarget,
   selectConcernContext,
   selectImpactContext,
+  validateGraph,
 } from "definition-catalog";
 import {
   getFeedbackRequestSummariesForDoc,
@@ -76,6 +80,11 @@ export class LocalDataSource implements DefDataSource {
 
   async get(docId: string): Promise<DefDoc | null> {
     const row = this.db.prepare("SELECT * FROM documents WHERE doc_id = ?").get(docId) as Record<string, unknown> | undefined;
+    return row ? rowToDoc(row) : null;
+  }
+
+  async getByAddress(address: string): Promise<DefDoc | null> {
+    const row = this.db.prepare("SELECT * FROM documents WHERE address = ?").get(address) as Record<string, unknown> | undefined;
     return row ? rowToDoc(row) : null;
   }
 
@@ -283,9 +292,24 @@ export class LocalDataSource implements DefDataSource {
   }
 
   async getIncomingLinks(docId: string): Promise<DefIncomingLink[]> {
-    const stmt = this.db.prepare("SELECT source_id, link_type FROM document_links WHERE target_id = ?");
-    return (stmt.all(docId) as { source_id: string; link_type: string }[])
-      .map(r => ({ source: r.source_id, type: r.link_type }));
+    const targetAddress = (await this.get(docId))?.address;
+    const stmt = this.db.prepare(`
+      SELECT dl.source_id, dl.link_type,
+             COALESCE(dl.source_address, d.address) AS source_address
+      FROM document_links dl
+      LEFT JOIN documents d ON d.doc_id = dl.source_id
+      WHERE dl.target_id = ?
+    `);
+    return (stmt.all(docId) as {
+      source_id: string;
+      link_type: string;
+      source_address: string | null;
+    }[]).map((r) => ({
+      source: r.source_id,
+      type: r.link_type,
+      ...(r.source_address ? { sourceAddress: r.source_address } : {}),
+      ...(targetAddress ? { targetAddress } : {}),
+    }));
   }
 
   async getSyntheticIncomingLinks(
@@ -294,10 +318,38 @@ export class LocalDataSource implements DefDataSource {
     return getSyntheticIncomingLinksForDoc(this.cwd, docId);
   }
 
-  async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
-    const stmt = this.db.prepare("SELECT target_id, link_type FROM document_links WHERE source_id = ?");
-    return (stmt.all(docId) as { target_id: string; link_type: string }[])
-      .map(r => ({ target: r.target_id, type: r.link_type }));
+  async getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]> {
+    const sourceAddress = (await this.get(docId))?.address;
+    const stmt = this.db.prepare(`
+      SELECT dl.target_id, dl.link_type,
+             COALESCE(dl.target_address, d.address) AS target_address
+      FROM document_links dl
+      LEFT JOIN documents d ON d.doc_id = dl.target_id
+      WHERE dl.source_id = ?
+    `);
+    return (stmt.all(docId) as {
+      target_id: string;
+      link_type: string;
+      target_address: string | null;
+    }[]).map((r) => ({
+      target: r.target_id,
+      type: r.link_type,
+      ...(sourceAddress ? { sourceAddress } : {}),
+      ...(r.target_address ? { targetAddress: r.target_address } : {}),
+    }));
+  }
+
+  /** 전체 링크를 한번에 조회 — validate() 등 일괄 처리용. source_id 기준 그룹핑. */
+  private getAllLinks(): Map<string, { target: string; type: string }[]> {
+    const stmt = this.db.prepare("SELECT source_id, target_id, link_type FROM document_links");
+    const rows = stmt.all() as { source_id: string; target_id: string; link_type: string }[];
+    const grouped = new Map<string, { target: string; type: string }[]>();
+    for (const r of rows) {
+      let list = grouped.get(r.source_id);
+      if (!list) { list = []; grouped.set(r.source_id, list); }
+      list.push({ target: r.target_id, type: r.link_type });
+    }
+    return grouped;
   }
 
   async getFeedbackRequestsByDocId(
@@ -492,8 +544,10 @@ export class LocalDataSource implements DefDataSource {
       },
       impact: {
         sourceId: impact.sourceId,
+        ...(impact.sourceAddress ? { sourceAddress: impact.sourceAddress } : {}),
         impacted: impact.impacted.map((item) => ({
           docId: item.id,
+          ...(item.address ? { address: item.address } : {}),
           via: item.via,
           path: item.path.join(" → "),
           direction: item.direction,
@@ -512,31 +566,31 @@ export class LocalDataSource implements DefDataSource {
   async validate(): Promise<DefValidationResult> {
     const allDocs = await this.list({ limit: 10000 });
     const allIds = new Set(allDocs.map(d => d.docId));
-    const referenced = new Set<string>();
     const issues: DefValidationResult["issues"] = [];
+    const registry = new MemoryDefinitionRegistry();
 
     for (const doc of allDocs) {
-      if (doc.lifecycle === "deprecated") continue;
-      const outgoing = await this.getOutgoingLinks(doc.docId);
+      registry.register(docRowToRegistryInput(doc));
+    }
+
+    const allLinks = this.getAllLinks();
+    for (const doc of allDocs) {
+      const outgoing = allLinks.get(doc.docId) ?? [];
       for (const link of outgoing) {
-        referenced.add(link.target);
         if (!allIds.has(link.target)) {
-          issues.push({ severity: "error", type: "broken-link", docId: doc.docId, message: `target "${link.target}" (${link.type})가 존재하지 않음` });
+          issues.push({
+            severity: "error",
+            type: "broken-link",
+            docId: doc.docId,
+            message: `target "${link.target}" (${link.type})가 존재하지 않음`,
+          });
+          continue;
         }
+        registry.link(doc.docId, link.target, link.type as DefinitionLink["linkType"]);
       }
-      const incoming = await this.getIncomingLinks(doc.docId);
-      if (incoming.length > 0) referenced.add(doc.docId);
     }
 
-    for (const doc of allDocs) {
-      if (doc.lifecycle !== "approved") continue;
-      if (!referenced.has(doc.docId)) {
-        const outgoing = await this.getOutgoingLinks(doc.docId);
-        if (!outgoing.some(l => l.type === "contains")) {
-          issues.push({ severity: "warning", type: "orphan", docId: doc.docId, message: "approved 리프이지만 어디에도 참조되지 않음" });
-        }
-      }
-    }
+    issues.push(...validateGraph(registry).issues);
 
     const refs = this.getAllCodeReferences();
     const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));

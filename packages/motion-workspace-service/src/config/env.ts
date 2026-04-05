@@ -1,7 +1,10 @@
 import { z } from "zod";
+import { getServicePort } from "@qa-sdk/core";
+
+const DEFAULT_PORT = getServicePort("motion-workspace-service") ?? 3710;
 
 export const envSchema = z.object({
-  PORT: z.coerce.number().int().default(3710),
+  PORT: z.coerce.number().int().default(DEFAULT_PORT),
   SQLITE_PATH: z.string().default("data/motion-workspace-service.sqlite"),
 });
 

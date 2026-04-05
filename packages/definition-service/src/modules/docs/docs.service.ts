@@ -65,6 +65,10 @@ export class DocsService {
     return this.store.get(docId);
   }
 
+  getByAddress(address: string): DocRecord | null {
+    return this.store.getByAddress(address);
+  }
+
   getBody(docId: string) {
     return this.store.getBody(docId);
   }

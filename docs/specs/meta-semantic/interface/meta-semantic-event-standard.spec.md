@@ -5,7 +5,7 @@ def:
   scope: interface
   aspect: event_contract
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:

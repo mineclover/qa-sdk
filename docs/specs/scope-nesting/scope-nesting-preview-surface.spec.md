@@ -33,4 +33,5 @@ def:
 
 - `packages/viz-web/src/scope-nesting-preview.ts`
 - `packages/viz-web/scope-nesting.html`
-- `packages/viz-core/src/index.ts`
+- `packages/viz-core/src/scope-nesting-timeline.ts`
+- `packages/viz-core/src/scope-mermaid.ts`

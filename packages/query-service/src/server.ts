@@ -29,17 +29,29 @@ const gateClient = env.GATE_SERVICE_URL
 const startedAt = Date.now();
 
 // ── Transition State Store (optional) ───────────────
-let stateRoutesDeps: { stateStore: { snapshot(ctx: string, res: string): Record<string, string> } } | undefined;
+import type { StateRouteDeps } from "./routes/state.js";
+
+const stateRoutesDeps: StateRouteDeps = {};
 try {
-  // InMemoryStateStore는 get/set/snapshot 인터페이스 충족
   const mod = await (Function('return import("@qa-sdk/spec-core/transition")')() as Promise<Record<string, unknown>>);
   const StoreCtor = mod?.InMemoryStateStore as (new () => { snapshot(ctx: string, res: string): Record<string, string> }) | undefined;
   if (StoreCtor) {
-    stateRoutesDeps = { stateStore: new StoreCtor() };
+    stateRoutesDeps.stateStore = new StoreCtor();
     logger.info("transition state store initialized (in-memory)");
   }
 } catch {
   // spec-core/transition 미설치 환경에서는 무시
+}
+
+// ── RecordStore for replay (optional) ───────────────
+try {
+  const recordPath = env.RECORD_STORE_PATH ?? env.SQLITE_PATH;
+  const { createReplayRecordStore } = await import("./lib/replay-record-store.js");
+  const recordDriver = await createSqliteDriver({ driver: env.SQLITE_DRIVER, path: recordPath, schema: null });
+  stateRoutesDeps.recordStore = createReplayRecordStore(recordDriver);
+  logger.info({ path: recordPath }, "record store initialized for replay");
+} catch {
+  logger.warn("record store 미초기화 — replay는 fallback 모드");
 }
 
 const app = createApp({

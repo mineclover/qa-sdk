@@ -31,12 +31,16 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 
 - `docs/skills/automation-workflows.md`
   `e2e-test`, `gform-parser`, `spec-lifecycle` 사용 순서
+- `skills/dkg-audit/SKILL.md`
+  `dkg audit-events`, 로컬 `~/.qa-sdk/state.sqlite`, 중앙 ingest forwarding 점검
 - `docs/skills/ralph-tui-workflows.md`
   `ralph-tui-prd` → `create-json/beads/beads-rust` 선택 기준
 - `docs/skills/system-review.md`
   self-check / converge / metrics / overview 종합 점검
 - `docs/skills/definition-boundary-workflow.md`
   boundary / boundary-context 기준의 문서 경계 정리와 영향 범위 읽기
+- `skills/def-entry-sync/SKILL.md`
+  기능 추가 뒤 root entry 문서와 skill index를 같이 갱신하는 체크리스트
 - `qa-sdk def body <문서ID>`
   boundary/context 요약만으로 부족할 때 최신 본문 전체 확인
 - `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`

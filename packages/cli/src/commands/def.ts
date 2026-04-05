@@ -36,6 +36,7 @@ import {
   type StateMachineInstance,
 } from "definition-catalog";
 import { createDataSource, syncDocsToLocalDb, type DataSourceOptions } from "definition-data-source";
+import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
 
 // ── 유틸 ──────────────────────────────────────────────
 
@@ -63,6 +64,10 @@ const BOUNDARY_LEVELS = new Set(["group", "module"]);
 
 function extractConcernTags(tags: readonly string[]): string[] {
   return tags.filter((tag) => CONCERN_TAG_SET.has(tag));
+}
+
+function formatLinkRef(id: string, address?: string): string {
+  return address ? `${id} <${address}>` : id;
 }
 
 async function collectFeedbackMatches(
@@ -165,9 +170,12 @@ async function cmdList(source: DefDataSource, flags: Record<string, string>) {
   }
 }
 
-async function cmdGet(source: DefDataSource, docId: string) {
-  const doc = await source.get(docId);
-  if (!doc) { console.log(`문서 "${docId}" 없음`); return; }
+async function cmdGet(source: DefDataSource, docId?: string, address?: string) {
+  const doc = address
+    ? await source.getByAddress(address)
+    : docId ? await source.get(docId) : null;
+  const lookup = address ? `address "${address}"` : `문서 "${docId}"`;
+  if (!doc) { console.log(`${lookup} 없음`); return; }
   console.log(`[${source.mode}] ${doc.docId}`);
   if (doc.level && doc.level !== "leaf") console.log(`  level:     ${doc.level}`);
   console.log(`  scope:     ${doc.scope}/${doc.aspect}`);
@@ -189,7 +197,7 @@ async function cmdGet(source: DefDataSource, docId: string) {
   }
   if (doc.purpose) console.log(`\n  purpose: ${doc.purpose.slice(0, 200)}`);
 
-  const requests = await source.getFeedbackRequestsByDocId(docId, 5);
+  const requests = await source.getFeedbackRequestsByDocId(doc.docId, 5);
   if (requests.length > 0) {
     console.log(`\n  feedback requests:`);
     for (const request of requests) {
@@ -233,12 +241,26 @@ async function cmdParent(source: DefDataSource, docId: string) {
   else console.log(`[${source.mode}] ${docId}: 부모 없음`);
 }
 
-async function cmdIncoming(source: DefDataSource, docId: string) {
-  const links = await source.getIncomingLinks(docId);
-  console.log(`[${source.mode}] ${docId} ← ${links.length} incoming`);
-  for (const l of links) console.log(`  ${l.source} (${l.type})`);
+async function resolveDocId(source: DefDataSource, docId?: string, address?: string): Promise<string | null> {
+  if (address) {
+    const doc = await source.getByAddress(address);
+    return doc?.docId ?? null;
+  }
+  return docId ?? null;
+}
 
-  const syntheticIncoming = await source.getSyntheticIncomingLinks(docId);
+async function cmdIncoming(source: DefDataSource, docId?: string, address?: string) {
+  const resolvedDocId = await resolveDocId(source, docId, address);
+  if (!resolvedDocId) {
+    const lookup = address ? `address "${address}"` : `문서 "${docId}"`;
+    console.log(`${lookup} 없음`);
+    return;
+  }
+  const links = await source.getIncomingLinks(resolvedDocId);
+  console.log(`[${source.mode}] ${resolvedDocId} ← ${links.length} incoming`);
+  for (const l of links) console.log(`  ${formatLinkRef(l.source, l.sourceAddress)} (${l.type})`);
+
+  const syntheticIncoming = await source.getSyntheticIncomingLinks(resolvedDocId);
   if (syntheticIncoming.length > 0) {
     console.log(`\n  feedback_request:`);
     for (const link of syntheticIncoming) {
@@ -246,6 +268,18 @@ async function cmdIncoming(source: DefDataSource, docId: string) {
       console.log(`  ${link.source}${model} (${link.type})`);
     }
   }
+}
+
+async function cmdOutgoing(source: DefDataSource, docId?: string, address?: string) {
+  const resolvedDocId = await resolveDocId(source, docId, address);
+  if (!resolvedDocId) {
+    const lookup = address ? `address "${address}"` : `문서 "${docId}"`;
+    console.log(`${lookup} 없음`);
+    return;
+  }
+  const links = await source.getOutgoingLinks(resolvedDocId);
+  console.log(`[${source.mode}] ${resolvedDocId} → ${links.length} outgoing`);
+  for (const l of links) console.log(`  ${formatLinkRef(l.target, l.targetAddress)} (${l.type})`);
 }
 
 async function cmdValidate(source: DefDataSource) {
@@ -303,14 +337,17 @@ function isServiceExempt(doc: DefDoc): boolean {
   return false;
 }
 
-async function cmdImpact(source: DefDataSource, docId: string) {
-  const doc = await source.get(docId);
-  if (!doc) { console.log(`문서 "${docId}" 없음`); return; }
+async function cmdImpact(source: DefDataSource, docId?: string, address?: string) {
+  const doc = address
+    ? await source.getByAddress(address)
+    : docId ? await source.get(docId) : null;
+  const lookup = address ? `address "${address}"` : `문서 "${docId}"`;
+  if (!doc) { console.log(`${lookup} 없음`); return; }
 
-  const incoming = await source.getIncomingLinks(docId);
-  const outgoing = await source.getOutgoingLinks(docId);
-  const parent = await source.getParent(docId);
-  const _children = await source.getChildren(docId);
+  const incoming = await source.getIncomingLinks(doc.docId);
+  const outgoing = await source.getOutgoingLinks(doc.docId);
+  const parent = await source.getParent(doc.docId);
+  const _children = await source.getChildren(doc.docId);
 
   // 주 기능 의존자 = depends_on으로 이 노드를 참조하는 문서
   const primary = incoming.filter(l => l.type === "depends_on" || l.type === "implements");
@@ -323,6 +360,7 @@ async function cmdImpact(source: DefDataSource, docId: string) {
 
   console.log(`[${source.mode}] ${doc.docId} 영향 분석`);
   console.log(`  scope: ${doc.scope}/${doc.aspect}  layer: ${doc.layer ?? "-"}  svc: ${doc.svc ?? "-"}`);
+  if (doc.address) console.log(`  address: ${doc.address}`);
   if (doc.purpose) console.log(`  purpose: ${doc.purpose.slice(0, 120)}`);
   console.log();
 
@@ -330,21 +368,21 @@ async function cmdImpact(source: DefDataSource, docId: string) {
   console.log(`  주 기능 (outgoing depends_on):`);
   const outDeps = outgoing.filter(l => l.type === "depends_on");
   if (outDeps.length === 0) console.log("    (없음 — 독립 노드)");
-  for (const l of outDeps) console.log(`    → ${l.target}`);
+  for (const l of outDeps) console.log(`    → ${formatLinkRef(l.target, l.targetAddress)}`);
 
   // 경유 수신
   console.log(`\n  이 노드를 의존하는 문서 (blast radius):`);
   if (primary.length === 0) console.log("    (없음 — 리프)");
-  for (const l of primary) console.log(`    ← ${l.source} (${l.type})`);
+  for (const l of primary) console.log(`    ← ${formatLinkRef(l.source, l.sourceAddress)} (${l.type})`);
 
   if (constraints.length > 0) {
     console.log(`\n  제약 (constrains):`);
-    for (const l of constraints) console.log(`    ⚠ ${l.source}`);
+    for (const l of constraints) console.log(`    ⚠ ${formatLinkRef(l.source, l.sourceAddress)}`);
   }
 
   if (traces.length > 0) {
     console.log(`\n  추적/구체화 (traces_to/refines):`);
-    for (const l of traces) console.log(`    ↗ ${l.source} (${l.type})`);
+    for (const l of traces) console.log(`    ↗ ${formatLinkRef(l.source, l.sourceAddress)} (${l.type})`);
   }
 
   // 변경 규모 판단
@@ -719,15 +757,15 @@ async function cmdContext(source: DefDataSource, docId: string) {
     console.log(`\n## 적용되는 제약`);
     for (const c of constraintIncoming) {
       const cDoc = await source.get(c.source);
-      console.log(`- [${c.source}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+      console.log(`- [${formatLinkRef(c.source, c.sourceAddress)}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
     }
     for (const c of outgoingConstraints) {
       const cDoc = await source.get(c.target);
-      console.log(`- [constrains → ${c.target}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+      console.log(`- [constrains → ${formatLinkRef(c.target, c.targetAddress)}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
     }
     for (const c of implementedContracts) {
       const cDoc = await source.get(c.target);
-      console.log(`- [implements → ${c.target}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
+      console.log(`- [implements → ${formatLinkRef(c.target, c.targetAddress)}]: ${cDoc?.purpose?.slice(0, 100) ?? ""}`);
     }
   }
 
@@ -737,7 +775,7 @@ async function cmdContext(source: DefDataSource, docId: string) {
     console.log(`\n## 의존 대상`);
     for (const d of deps) {
       const dDoc = await source.get(d.target);
-      console.log(`- [${d.type}] ${d.target}: ${dDoc?.purpose?.slice(0, 100) ?? ""}`);
+      console.log(`- [${d.type}] ${formatLinkRef(d.target, d.targetAddress)}: ${dDoc?.purpose?.slice(0, 100) ?? ""}`);
     }
   }
 
@@ -767,7 +805,7 @@ async function cmdContext(source: DefDataSource, docId: string) {
   console.log(`\n## 영향 범위`);
   console.log(`blast radius: ${blastRadius.length}건`);
   for (const b of blastRadius.slice(0, 10)) {
-    console.log(`- [${b.type}] ${b.source}`);
+    console.log(`- [${b.type}] ${formatLinkRef(b.source, b.sourceAddress)}`);
   }
   if (blastRadius.length > 10) console.log(`  ... 외 ${blastRadius.length - 10}건`);
 
@@ -783,10 +821,16 @@ async function cmdContext(source: DefDataSource, docId: string) {
 
 // ── boundary (DefDataSource 기반) ─────────────────────
 
-async function cmdBoundary(source: DefDataSource, docId: string, flags: Record<string, string>) {
+async function cmdBoundary(source: DefDataSource, docId: string | undefined, flags: Record<string, string>) {
   const level = flags["level"] === "purpose" ? "purpose" : "overview";
-  const boundaryData = await source.getBoundary(docId, level);
-  if (!boundaryData) { console.log(`문서 "${docId}" 없음`); return; }
+  const resolvedDocId = await resolveDocId(source, docId, flags["address"]);
+  if (!resolvedDocId) {
+    const lookup = flags["address"] ? `address "${flags["address"]}"` : `문서 "${docId}"`;
+    console.log(`${lookup} 없음`);
+    return;
+  }
+  const boundaryData = await source.getBoundary(resolvedDocId, level);
+  if (!boundaryData) { console.log(`문서 "${resolvedDocId}" 없음`); return; }
 
   if (flags["json"] === "true") {
     console.log(JSON.stringify(boundaryData, null, 2));
@@ -837,11 +881,17 @@ async function cmdBoundary(source: DefDataSource, docId: string, flags: Record<s
   }
 }
 
-async function cmdBoundaryContext(source: DefDataSource, docId: string, flags: Record<string, string>) {
+async function cmdBoundaryContext(source: DefDataSource, docId: string | undefined, flags: Record<string, string>) {
   const level = flags["level"] === "purpose" ? "purpose" : "overview";
   const mode = flags["mode"] === "direct" ? "direct" : "transitive";
-  const result = await source.getBoundaryContext(docId, level, mode);
-  if (!result) { console.log(`문서 "${docId}" 없음`); return; }
+  const resolvedDocId = await resolveDocId(source, docId, flags["address"]);
+  if (!resolvedDocId) {
+    const lookup = flags["address"] ? `address "${flags["address"]}"` : `문서 "${docId}"`;
+    console.log(`${lookup} 없음`);
+    return;
+  }
+  const result = await source.getBoundaryContext(resolvedDocId, level, mode);
+  if (!result) { console.log(`문서 "${resolvedDocId}" 없음`); return; }
 
   if (flags["json"] === "true") {
     console.log(JSON.stringify(result, null, 2));
@@ -894,11 +944,14 @@ async function cmdBoundaryContext(source: DefDataSource, docId: string, flags: R
 
   console.log(`\n## impact`);
   console.log(`blast radius: ${result.impact.blastRadius}건`);
+  if (result.impact.sourceAddress) {
+    console.log(`source address: ${result.impact.sourceAddress}`);
+  }
   if (result.impact.affectedGroups.length > 0) {
     console.log(`groups: ${result.impact.affectedGroups.join(", ")}`);
   }
-  for (const item of result.impact.impacted.slice(0, 10)) {
-    console.log(`- [${item.via}] ${item.docId} (${item.direction}, depth ${item.distance})`);
+    for (const item of result.impact.impacted.slice(0, 10)) {
+    console.log(`- [${item.via}] ${formatLinkRef(item.docId, item.address)} (${item.direction}, depth ${item.distance})`);
   }
 
   if (result.feedbackTrace.length > 0) {
@@ -969,10 +1022,6 @@ async function scan(flags: Record<string, string> = {}) {
   return scanAndBuild(root, [join(root, docsDir)]);
 }
 
-/** scan = sync의 alias. 파일 스캔 + DB 동기화를 한번에 수행. */
-async function cmdScan(flags: Record<string, string>) {
-  return cmdSync(flags);
-}
 
 async function cmdScanAudit(flags: Record<string, string>) {
   const root = getRootDir();
@@ -1062,54 +1111,74 @@ async function cmdSync(flags: Record<string, string>) {
   console.log(`DB: ${result.dbPath}`);
 }
 
+const DEF_HELP_SECTIONS = [
+  {
+    title: "시작하기",
+    lines: [
+      "help                        이 도움말",
+      "guide                       시스템 전체 구조 안내",
+      "guide concepts              핵심 개념 (좌표, prefix, 축)",
+      "guide classification        문서 분류 체계 (scope, level, layer)",
+      "guide authoring             핵심 작성 규칙 + 코드 매핑 규칙",
+      "guide management            definition 관리 흐름",
+      "guide services              서비스 구조",
+      "guide philosophy            시스템 철학",
+      "concepts                    concept 문서 목록",
+    ],
+  },
+  {
+    title: "조회",
+    lines: [
+      "list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]",
+      "get <ID> | --address=<ADDR>  단건 조회",
+      "body <ID>           최신 본문 조회 (--json 가능)",
+      "read <ID>           body의 별칭",
+      "children <ID>       자식 문서",
+      "parent <ID>         부모 문서",
+      "incoming <ID> | --address=<ADDR>  역링크",
+      "outgoing <ID> | --address=<ADDR>  순방향 링크",
+      "search <검색어>     전문 검색",
+      "concepts            knowledge/concept 문서 조회",
+      "find-by-file <경로[:symbol]> code_references 기준 boundary 해석",
+    ],
+  },
+  {
+    title: "분석",
+    lines: [
+      "scan-audit          raw frontmatter/link 감사 (DB 미사용)",
+      "context <ID>        작업 전 컨텍스트 (소속/의존/영향)",
+      "boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)",
+      "boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)",
+      "impact <ID> | --address=<ADDR>  변경 영향 분석",
+      "topdown <ID>        탑다운 조립",
+      "bottomup <ID>       영향 역추적",
+    ],
+  },
+  {
+    title: "품질",
+    lines: [
+      "sync                docs → local DB 동기화",
+      "audit               품질 리포트 + 그래프 검증",
+      "validate            DB 기준 그래프 + code reference 검증",
+      "stats               분포 통계",
+      "check <ID>          문서 정합성 점검",
+      "link-rules          LinkType 사용 규칙",
+    ],
+  },
+  {
+    title: "상태",
+    lines: [
+      "state               전체 머신 상태 분포",
+      "state <머신ID>      특정 머신 분포",
+      "state <문서ID>      문서별 상태",
+      "state --deps        머신 간 의존 관계",
+    ],
+  },
+] as const satisfies readonly CommandHelpSectionSpec[];
+
 function printDefHelp() {
-  console.log(`qa-sdk def — 문서 관리
-
-시작하기:
-  help                        이 도움말
-  guide                       시스템 전체 구조 안내
-  guide concepts              핵심 개념 (좌표, prefix, 축)
-  guide classification        문서 분류 체계 (scope, level, layer)
-  guide authoring             핵심 작성 규칙 + 코드 매핑 규칙
-  guide management            definition 관리 흐름
-  guide services              서비스 구조
-  guide philosophy            시스템 철학
-  concepts                    concept 문서 목록
-
-조회:
-  list [--scope=X] [--level=Z] [--layer=Y] [--tag=T] [--q=검색어]
-  get <ID>            단건 조회
-  body <ID>           최신 본문 조회 (--json 가능)
-  read <ID>           body의 별칭
-  children <ID>       자식 문서
-  parent <ID>         부모 문서
-  incoming <ID>       역링크
-  search <검색어>     전문 검색
-  concepts            knowledge/concept 문서 조회
-  find-by-file <경로[:symbol]> code_references 기준 boundary 해석
-
-분석:
-  scan-audit          raw frontmatter/link 감사 (DB 미사용)
-  context <ID>        작업 전 컨텍스트 (소속/의존/영향)
-  boundary <ID>       바운더리 구조 + direct coupling (--level, --json 가능)
-  boundary-context <ID> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)
-  impact <ID>         변경 영향 분석
-  topdown <ID>        탑다운 조립
-  bottomup <ID>       영향 역추적
-
-품질:
-  sync                docs → local DB 동기화
-  audit               품질 리포트 + 그래프 검증
-  validate            DB 기준 그래프 + code reference 검증
-  stats               분포 통계
-  check <ID>          문서 정합성 점검
-  link-rules          LinkType 사용 규칙
-
-상태:
-  state               전체 머신 상태 분포
-  state <머신ID>      특정 머신 분포
-  state <문서ID>      문서별 상태
-  state --deps        머신 간 의존 관계`);
+  const body = formatHelpSections(DEF_HELP_SECTIONS);
+  console.log(`qa-sdk def — 문서 관리\n\n${body}`);
 }
 
 // ── 라우터 ────────────────────────────────────────────
@@ -1124,8 +1193,7 @@ export async function cliDef(args: string[]): Promise<void> {
     return;
   }
 
-  // scan은 파일 스캔 전용 (DB 불필요)
-  if (sub === "scan") return cmdScan(flags);
+  if (sub === "scan") return cmdSync(flags);  // scan = sync alias (하위호환)
   if (sub === "scan-audit") return cmdScanAudit(flags);
   if (sub === "sync") return cmdSync(flags);
   if (sub === "link-rules") return cmdLinkRules();
@@ -1133,7 +1201,7 @@ export async function cliDef(args: string[]): Promise<void> {
 
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
-    "list", "get", "body", "read", "children", "parent", "incoming", "validate", "search", "stats",
+    "list", "get", "body", "read", "children", "parent", "incoming", "outgoing", "validate", "search", "stats",
     "impact", "check", "audit", "audit-db", "overview", "find-by-file", "guide", "concepts",
     "topdown", "bottomup", "context", "boundary", "boundary-context",
   ]);
@@ -1149,19 +1217,20 @@ export async function cliDef(args: string[]): Promise<void> {
     try {
       switch (sub) {
         case "list": return await cmdList(source, flags);
-        case "get": return await cmdGet(source, rest[0]);
+        case "get": return await cmdGet(source, rest[0], flags["address"]);
         case "body":
         case "read":
           if (!rest[0]) { console.log("Usage: qa-sdk def body|read <문서ID> [--json]"); return; }
           return await cmdBody(source, rest[0], flags);
         case "children": return await cmdChildren(source, rest[0]);
         case "parent": return await cmdParent(source, rest[0]);
-        case "incoming": return await cmdIncoming(source, rest[0]);
+        case "incoming": return await cmdIncoming(source, rest[0], flags["address"]);
+        case "outgoing": return await cmdOutgoing(source, rest[0], flags["address"]);
         case "validate": return await cmdValidate(source);
         case "search": return await cmdSearch(source, rest[0] ?? flags["q"] ?? "");
         case "concepts": return await cmdConcepts(source, flags);
         case "stats": return await cmdStats(source);
-        case "impact": return await cmdImpact(source, rest[0]);
+        case "impact": return await cmdImpact(source, rest[0], flags["address"]);
         case "check": return await cmdCheck(source, rest[0]);
         case "audit": return await cmdAudit(source);
         case "audit-db": return await cmdAuditDb(source);
@@ -1178,10 +1247,10 @@ export async function cliDef(args: string[]): Promise<void> {
           if (!rest[0]) { console.log("Usage: qa-sdk def context <문서ID>"); return; }
           return await cmdContext(source, rest[0]);
         case "boundary":
-          if (!rest[0]) { console.log("Usage: qa-sdk def boundary <문서ID> [--level purpose|overview] [--json]"); return; }
+          if (!rest[0] && !flags["address"]) { console.log("Usage: qa-sdk def boundary <문서ID> [--address=<ADDR>] [--level purpose|overview] [--json]"); return; }
           return await cmdBoundary(source, rest[0], flags);
         case "boundary-context":
-          if (!rest[0]) { console.log("Usage: qa-sdk def boundary-context <문서ID> [--level purpose|overview] [--mode direct|transitive] [--json]"); return; }
+          if (!rest[0] && !flags["address"]) { console.log("Usage: qa-sdk def boundary-context <문서ID> [--address=<ADDR>] [--level purpose|overview] [--mode direct|transitive] [--json]"); return; }
           return await cmdBoundaryContext(source, rest[0], flags);
       }
     } finally {
@@ -1245,7 +1314,7 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
     }
     console.log("  → 단일 authoritative boundary로 정리되기 전까지 find-by-file는 결과를 확정하지 않습니다.\n");
     for (const item of mapping.candidates) {
-      console.log(`- anchor: ${item.anchor.docId}`);
+      console.log(`- anchor: ${formatLinkRef(item.anchor.docId, item.anchor.address)}`);
       const docIds = new Set(item.supportingDocs.map((doc) => doc.docId));
       const symbols = [...new Set(
         item.references
@@ -1257,13 +1326,13 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
         console.log(`  symbols: ${symbols.join(", ")}`);
       }
       for (const doc of item.supportingDocs) {
-        console.log(`  - doc: ${doc.docId}`);
+        console.log(`  - doc: ${formatLinkRef(doc.docId, doc.address)}`);
       }
     }
     return;
   }
 
-  console.log(`authoritative boundary: ${mapping.anchor.docId}`);
+  console.log(`authoritative boundary: ${formatLinkRef(mapping.anchor.docId, mapping.anchor.address)}`);
   console.log(`  scope: ${mapping.anchor.scope}/${mapping.anchor.aspect}`);
   console.log(`  depth: ${mapping.anchor.depth}`);
   if (mapping.anchor.level) console.log(`  level: ${mapping.anchor.level}`);
@@ -1275,7 +1344,7 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
   console.log(`\nsource-map support (${mapping.supportingDocs.length}건):`);
   for (const doc of mapping.supportingDocs) {
     const marker = doc.docId === mapping.anchor.docId ? "  *" : "  -";
-    console.log(`${marker} ${doc.docId}  ${doc.scope}/${doc.aspect}  ${doc.depth}`);
+    console.log(`${marker} ${formatLinkRef(doc.docId, doc.address)}  ${doc.scope}/${doc.aspect}  ${doc.depth}`);
   }
 }
 

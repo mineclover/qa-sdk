@@ -506,6 +506,7 @@ ingest(3200), registry-service(3300), gate(3400), query(3500), decode(3600), def
 | `package-classifier` | 모노레포 패키지 tier/runtime/scope 분류 (CLI에서 추출) |
 | `snapshot-io` | SchemaSnapshot JSON 읽기/쓰기/검증 (CLI에서 추출) |
 | `review-ledger` | 파일별 커밋 기준 리뷰 완료 기록 원장 — SQLite + drizzle (신규) |
+| `test-types` | 테스트 분류 타입 SSOT — TestPhase/TestKind/TestScope/TestLifecycle (zero-dep) |
 
 ## Ingest Store Driver (STORE_DRIVER)
 

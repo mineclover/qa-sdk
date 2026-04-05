@@ -54,11 +54,12 @@ node packages/cli/dist/index.js def audit-db
 - `def sync`
   docs SSOT를 local datasource에 반영한다.
 - `def validate`
-  synced graph 기준의 구조 위반을 본다.
+  synced SQLite graph 기준의 구조 위반 + code reference boundary 정합성을 본다.
 - `def audit`
   purpose, level, links, tags 분포를 한 번에 본다.
 - `def audit-db`
   빠른 메타 품질과 고립 문서를 본다.
+- address-first surface를 바꿨다면 `def get --address`, `def incoming|outgoing --address`, `def impact --address` smoke를 추가로 본다.
 
 ## Quality Gate 루프
 
@@ -130,7 +131,7 @@ node packages/cli/dist/index.js def validate --scan
 ### 역할
 
 - `scan-audit`
-  raw frontmatter, 미해결 link, 순환, level 위반을 본다.
+  raw frontmatter, 미해결 link, 그리고 같은 graph 규칙을 문서 원본 기준으로 본다.
 - `validate --scan`
   datasource fallback 없이 scan graph 자체를 검증한다.
 
@@ -148,7 +149,7 @@ node packages/cli/dist/index.js def validate --scan
 
 ## 피드백 신호
 
-- `def validate`는 synced graph의 현재 운용 상태를 보여준다.
+- `def validate`는 synced SQLite graph의 현재 운용 상태와 code boundary 정합성을 보여준다.
 - `def scan-audit`는 raw 문서 원본의 unresolved 상태를 보여준다.
 - 둘의 결과가 다르면 sync 누락, reverse sync 필요, 또는 authored link drift를 의심한다.
 - quality gate 결과와 claim verdict가 다르면 harness/contract marker 정합성을 먼저 본다.

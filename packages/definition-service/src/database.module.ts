@@ -40,7 +40,7 @@ function applyMigrations(db: Database.Database, migrationsDir: string) {
           db.exec(stmt);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (!msg.includes("already exists")) {
+          if (!msg.includes("already exists") && !msg.includes("duplicate column name")) {
             logger.warn({ stmt: stmt.slice(0, 80), err: msg }, "migration statement 실패");
           }
         }

@@ -122,7 +122,13 @@ export type {
 
 // ── Test Tracking ─────────────────────────────────────
 export type {
+  TestPhase,
   TestCase, TestTarget, TestExpectation, TestSuite, TestResult,
-  FacetQualityMetrics, PipeQualityMetrics,
+  FacetQualityMetrics, PhaseQualityMetrics, PipeQualityMetrics,
 } from "../types/test-tracking.js";
+export { TEST_PHASES } from "../types/test-tracking.js";
 export { buildTestAddress, parseTestAddress, TestRegistry } from "./test-tracking.js";
+
+// ── Sim → Phase Bridge ──────────────────────────────
+export type { PhaseAnnotatedStep, SimPhaseResult } from "./sim-phase-bridge.js";
+export { annotateSimPhases, FACET_PHASE_DEFAULTS } from "./sim-phase-bridge.js";

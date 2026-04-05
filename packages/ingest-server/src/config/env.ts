@@ -2,8 +2,10 @@ import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse } from "@qa-sdk/core";
+import { emptyStringToUndefined, optionalUrl, booleanWithDefaultFalse, getServicePort, getServiceDevUrl } from "@qa-sdk/core";
 import { otelEnvSchema } from "@qa-sdk/otel";
+
+const DEFAULT_PORT = getServicePort("ingest-server") ?? 3200;
 
 /**
  * ~/.qa-sdk/ingest-profile.json에서 프로필 설정을 읽어
@@ -41,7 +43,7 @@ export const envSchema = z.object({
   /** SQLite 경로 (STORE_DRIVER=d1 시 Node.js 로컬용). CF Workers에서는 D1 바인딩 사용. */
   SQLITE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
   REDIS_URL: optionalUrl,
-  PORT: z.coerce.number().default(3200),
+  PORT: z.coerce.number().default(DEFAULT_PORT),
   CORS_ORIGIN: z.string().default("*"),
   CLEANUP_CRON_ENABLED: booleanWithDefaultFalse,
   TASK_QUEUE_ENABLED: booleanWithDefaultFalse,
@@ -50,7 +52,7 @@ export const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(100),
   WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),
-  REGISTRY_URL: optionalUrl,
+  REGISTRY_URL: z.preprocess(emptyStringToUndefined, z.string().url().default(getServiceDevUrl("registry-service") ?? "http://localhost:3300")),
   REGISTRY_VALIDATION_MODE: z.enum(["strict", "warn", "off"]).default("warn"),
   // ── Convergence Pipeline ──────────────────────────
   CONVERGENCE_ENABLED: booleanWithDefaultFalse,

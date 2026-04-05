@@ -13,7 +13,7 @@ description: "definition-catalog 문서 품질 감사. purpose 품질, 링크 �
 qa-sdk def sync        # 최근 docs 변경을 local datasource에 반영
 qa-sdk def audit       # 전체 품질 리포트 (level 분포 포함)
 qa-sdk def audit-db    # approved 문서의 purpose/고립/svc 누락 빠른 점검
-qa-sdk def validate    # 깨진 링크/순환/고아/multi-parent/depth 검증
+qa-sdk def validate    # synced graph + code reference boundary 검증
 qa-sdk def stats       # 분포 통계
 qa-sdk def link-rules  # LinkType 사용 규칙 조회
 ```
@@ -76,6 +76,7 @@ synthetic feedback 관계는 보조 신호일 뿐이며, frontmatter 기반 auth
 하나의 문서가 2개 이상의 그룹에 `contains`로 소속되면 감지.
 
 - `cross-scope` 태그가 있으면 **의도적 공유** → warning 생략 (허용)
+- meta-semantic / scope-nesting 바운더리 문서는 **concept link**로 semantic family가 확인되면 cross-scope parent 조합을 허용할 수 있다
 - 태그 없이 다중 소속이면 **비의도적 중복 가능** → warning
 - 조치: 의도적이면 `cross-scope` 태그 추가, 비의도적이면 하나를 `depends_on`으로 전환
 - 먼저 `contains` 방향이 맞는지 확인한다. leaf가 부모를 `contains`로 잡은 경우는 다중 소속이 아니라 링크 방향 오류일 가능성이 높다.
@@ -97,6 +98,7 @@ contains 계층이 4단계를 초과하면 warning.
 
 - group → group → module → leaf 로 이어지는 깊이
 - 5단계 이상이면 중간 그룹 도입 검토
+- 단, meta-semantic / scope-nesting 바운더리 계열은 semantic family가 확인되면 6단계까지 허용될 수 있다
 
 ## purpose 보강 패턴
 
@@ -134,6 +136,8 @@ leaf 문서는 자기 존재를 증명할 수 있어야 한다:
 
 ## 경험 규칙
 
+- `def validate`와 `scan-audit`는 같은 graph 규칙을 보되, 전자는 synced SQLite + code reference 기준이고 후자는 raw frontmatter 기준이다.
+- graph lint는 structural layer 위에 semantic override를 얹는다. meta-semantic / scope-nesting concept link가 있으면 multi-parent와 contains-depth 일부 규칙이 완화될 수 있다.
 - `def validate`는 통과하지만 `scan-audit`가 실패하면 local DB stale보다 **frontmatter 조합 오류**나 **scan 전용 duplicate-id**를 먼저 의심한다.
 - `def sync` 직후 `def validate`가 `no such table`로 깨지면 sync가 끝나기 전에 validate를 친 것이다. sync 완료 후 다시 본다.
 - `svc 미부여`는 현재 저장소에서는 **참고 지표**다. generic concept/prefix-catalog/guide 문서를 fail로 보지 않는다.

@@ -27,6 +27,8 @@ def:
       type: contains
     - target: infra-discovery
       type: contains
+    - target: infra-engine-todo
+      type: traces_to
 ---
 # 인프라 엔진 배포 파이프라인
 

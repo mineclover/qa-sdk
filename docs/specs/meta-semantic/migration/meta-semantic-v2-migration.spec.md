@@ -5,7 +5,7 @@ def:
   scope: flow
   aspect: process_flow
   depth: overview
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [entry-point]
   links:

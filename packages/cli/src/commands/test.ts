@@ -11,15 +11,15 @@
 import { join, resolve, dirname } from "node:path";
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
 import { SqliteTestScenarioStore } from "test-scenario-store";
-import type { TestKind, TestScope } from "test-scenario-store";
+import type { TestPhaseLabel } from "test-scenario-store";
+import type { TestKind, TestScope } from "test-types";
+import { TEST_KINDS, TEST_SCOPES, TEST_PHASES } from "test-types";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 import { extractFrontmatter, parseYaml } from "definition-catalog";
 
-const VALID_KINDS = new Set<string>([
-  "unit", "ui-logic", "ui", "db-transaction",
-  "data-exchange", "auth-flow", "e2e", "simulation",
-]);
-const VALID_SCOPES = new Set<string>(["single", "pair", "multi", "system"]);
+const VALID_KINDS = new Set<string>(TEST_KINDS);
+const VALID_SCOPES = new Set<string>(TEST_SCOPES);
+const VALID_PHASES = new Set<string>(TEST_PHASES);
 
 // ── 파싱 유틸 (테스트 가능한 순수 함수) ──────────────────
 
@@ -28,6 +28,7 @@ export interface ParsedTestDeclaration {
   specAddress: string;
   kind: TestKind;
   scope: TestScope;
+  phase: TestPhaseLabel | null;
   intent: string;
   primarySvc: string;
   participants: string[];
@@ -45,6 +46,8 @@ export function parseTestsDeclaration(
     if (!kind || !VALID_KINDS.has(kind)) continue;
 
     const scope = (obj["scope"] as string | undefined) ?? "single";
+    const rawPhase = obj["phase"] as string | undefined;
+    const phase = rawPhase && VALID_PHASES.has(rawPhase) ? (rawPhase as TestPhaseLabel) : null;
     const intent = (obj["intent"] as string | undefined) ?? "";
     const primarySvc = (obj["module"] as string | undefined) ?? "";
     const participants = Array.isArray(obj["participants"])
@@ -56,6 +59,7 @@ export function parseTestsDeclaration(
       specAddress,
       kind: kind as TestKind,
       scope: VALID_SCOPES.has(scope) ? (scope as TestScope) : "single",
+      phase,
       intent,
       primarySvc,
       participants,
@@ -209,20 +213,26 @@ export function testScaffold(opts: { bCoord?: string; mirror?: string; db?: stri
     }
 
     mkdirSync(dirname(fullPath), { recursive: true });
-    writeFileSync(fullPath, generateTestStub(scenario.primarySvc, scenario.kind, scenario.intent), "utf-8");
+    writeFileSync(fullPath, generateTestStub(scenario.primarySvc, scenario.kind, scenario.intent, scenario.phase ?? undefined), "utf-8");
     console.log(`생성: ${scenario.filePath}`);
   }
 }
 
-function generateTestStub(modulePath: string, kind: TestKind, intent: string): string {
+function generateTestStub(modulePath: string, kind: TestKind, intent: string, phase?: string): string {
+  const phaseComment = phase ? `\n// 테스트 단계: ${phase}` : "";
   return `import { describe, it, expect } from "vitest";
 // import { ... } from "${modulePath}";
 
 // 의도: ${intent}
-// 테스트 유형: ${kind}
+// 테스트 유형: ${kind}${phaseComment}
 
 describe("${intent}", () => {
-  it("TODO: 테스트를 작성하세요", () => {
+  it("precondition — 전제조건 확인", () => {
+    // 테스트 실행 전 필요한 상태 확인
+    expect(true).toBe(true);
+  });
+
+  it("act + assert — 동작 실행 및 검증", () => {
     // arrange
     // act
     // assert
@@ -259,6 +269,21 @@ export function testStatus(opts: { db?: string }): void {
   }
   console.log("─".repeat(40));
   console.log(`합계: ${all.length}개`);
+
+  // phase별 분포
+  const byPhase: Record<string, number> = {};
+  for (const s of all) {
+    const p = s.phase ?? "(미지정)";
+    byPhase[p] = (byPhase[p] ?? 0) + 1;
+  }
+  if (Object.keys(byPhase).length > 1 || !byPhase["(미지정)"]) {
+    console.log("\n단계별 분포");
+    console.log("─".repeat(40));
+    for (const [phase, count] of Object.entries(byPhase).sort((a, b) => b[1] - a[1])) {
+      const bar = "█".repeat(count);
+      console.log(`${phase.padEnd(18)} ${String(count).padStart(4)}  ${bar}`);
+    }
+  }
 
   const violations = all.filter(s => s.conventionViolation);
   if (violations.length > 0) {
@@ -312,4 +337,13 @@ export function testReport(opts: { db?: string }): void {
   }
 
   console.log("\n범례: ✅ verified  🔄 collected  ○ assigned  · declared  - 없음");
+
+  // phase 커버리지 요약
+  const withPhase = all.filter(s => s.phase);
+  if (withPhase.length > 0) {
+    const coveredPhases = new Set(withPhase.map(s => s.phase!));
+    const allPhases = [...VALID_PHASES] as string[];
+    const uncovered = allPhases.filter(p => !coveredPhases.has(p as TestPhaseLabel));
+    console.log(`\nphase 커버리지: ${coveredPhases.size}/${allPhases.length} (${uncovered.length > 0 ? `미커버: ${uncovered.join(", ")}` : "전부 커버"})`);
+  }
 }

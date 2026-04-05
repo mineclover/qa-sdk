@@ -16,6 +16,7 @@ import type {
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefOutgoingLink,
   DefSyntheticIncomingLink,
   DefValidationResult,
 } from "definition-catalog";
@@ -31,6 +32,15 @@ export class ServerDataSource implements DefDataSource {
   async get(docId: string): Promise<DefDoc | null> {
     try {
       return await this.fetchJson(`/docs/${docId}`);
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("404")) return null;
+      throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
+    }
+  }
+
+  async getByAddress(address: string): Promise<DefDoc | null> {
+    try {
+      return await this.fetchJson(`/docs/by-address/${encodeURIComponent(address)}`);
     } catch (e) {
       if (e instanceof Error && e.message.includes("404")) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
@@ -83,8 +93,8 @@ export class ServerDataSource implements DefDataSource {
     return result.links;
   }
 
-  async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
-    const result = await this.fetchJson<{ links: { target: string; type: string }[] }>(`/docs/${docId}/outgoing-links`);
+  async getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]> {
+    const result = await this.fetchJson<{ links: DefOutgoingLink[] }>(`/docs/${docId}/outgoing-links`);
     return result.links;
   }
 

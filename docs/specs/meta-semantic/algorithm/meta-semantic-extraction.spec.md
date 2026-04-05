@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -261,8 +261,8 @@ function processPayment(input: PaymentInput): PaymentResult {
 ### @def.doc 통합
 
 ```typescript
-// @def.doc payment-api-spec#processPayment
-// → ModuleIR.meta.defDocRef = 'payment-api-spec'
+// @def.doc payment-api#processPayment
+// → ModuleIR.meta.defDocRef = 'payment-api'
 // → definition-catalog 문서와 양방향 링크
 ```
 
@@ -277,3 +277,16 @@ function processPayment(input: PaymentInput): PaymentResult {
 | 동적 분기 미추적 | 런타임 값에 의존하는 분기 | LLM이 "flexible" 표시 |
 | 프레임워크 의존 | NestJS DI 등 | 프레임워크별 LLM 프롬프트 조정 |
 | 간접 호출 | 콜백, 이벤트 리스너 | LLM이 의미적으로 판단 |
+
+---
+
+## 7. 소스 코드 참조
+
+| 파일 | 역할 | 테스트 |
+|------|------|:------:|
+| `core/src/meta-semantic/extraction.ts` | 핵심 타입 + 경로 계산 + 마커 추출 + LLM 포트 | 11 |
+| `core/src/meta-semantic/extraction-parser.ts` | ParserPort + 정규식 mock 파서 | 5 |
+| `core/src/meta-semantic/extraction-pipeline.ts` | 4단계 오케스트레이션 | 3 |
+| `core/src/meta-semantic/extraction-prompts.ts` | LLM 프롬프트 4종 + mock LLM | 8 |
+
+파서/LLM 교체: `ParserPort`(TypeScript AST) / `ExtractionPort`(Claude API) 구현체로 교체.

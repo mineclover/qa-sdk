@@ -49,6 +49,7 @@ const asyncNesting: ScopeNesting = {
 const lateLoadGraph: PipeGraph = {
   graphId: "late-load",
   version: "v1",
+  entryPipeId: "submit-handler",
   pipes: [
     {
       pipeId: "submit-handler",
@@ -74,6 +75,7 @@ const lateLoadGraph: PipeGraph = {
 const earlyLoadGraph: PipeGraph = {
   graphId: "early-load",
   version: "v1",
+  entryPipeId: "persist-loader",
   pipes: [
     {
       pipeId: "persist-loader",
@@ -159,6 +161,7 @@ describe("consume-before-ready", () => {
       graph: {
         graphId: "no-loader",
         version: "v1",
+        entryPipeId: "submit-handler",
         pipes: [lateLoadGraph.pipes[0]], // submit-handler만
         connections: [],
       },
@@ -210,6 +213,7 @@ describe("delegation-gap", () => {
   const delegationGraph: PipeGraph = {
     graphId: "delegation",
     version: "v1",
+    entryPipeId: "submit-handler",
     pipes: [
       {
         pipeId: "submit-handler",

@@ -1,54 +1,47 @@
-import { stat, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
-import { readSnapshot, readSnapshots, writeOutput } from "snapshot-io";
-import { generateProto, type ProtoGenOptions, generateTypescript, generateCatalogTypes, generateDataObjectBindings, testMigration, type SchemaSnapshot } from "codegen-core";
+import { writeOutput } from "snapshot-io";
+import { generateCatalogTypes, generateDataObjectBindings, testMigration } from "codegen-core";
 import { loadCatalog, isDkgConfig, loadDkgConfig } from "config-loader";
 import { latestPrefixVersion, type Catalog, type DkgConfig, type DataObjectBinding } from "@qa-sdk/core";
 
-export type CodegenFormat = "proto" | "ts";
-
-export interface CodegenOptions {
-  formats: CodegenFormat[];
-  input: string;
+/** 공통 codegen 옵션 */
+interface CodegenBase {
   output: string;
-  packageName?: string;
-  /** Catalog 파일 경로 (TS/JS/JSON). */
-  catalog?: string;
-  /** 이미 로드된 Catalog 객체. catalog 경로보다 우선. */
-  loadedCatalog?: Catalog;
-  /** DkgConfig 파일 경로. */
   dkgConfig?: string;
-  /** 특정 prefix version으로 고정. 미지정 시 latest. */
   lockVersion?: string;
-  /** Registry URL. 원격 카탈로그 fetch. */
-  registry?: string;
-  /** Registry에서 가져올 catalog ID (default: "demo"). */
+}
+
+/** Registry에서 카탈로그 fetch → 생성 */
+export interface CodegenRegistryOptions extends CodegenBase {
+  registry: string;
   catalogId?: string;
 }
 
-/**
- * 코드 생성.
- *
- * --registry 지정 시: Registry에서 카탈로그 fetch → Typed SDK 생성
- * --catalog 지정 시: 로컬 Catalog → Typed SDK 생성
- * --input 지정 시: SchemaSnapshot JSON → 단일 .d.ts/.proto 생성 (기존)
- */
+/** 로컬 Catalog → 생성 */
+export interface CodegenCatalogOptions extends CodegenBase {
+  catalog?: string;
+  loadedCatalog?: Catalog;
+}
+
+export type CodegenOptions = CodegenRegistryOptions | CodegenCatalogOptions;
+
+function isRegistryOptions(opts: CodegenOptions): opts is CodegenRegistryOptions {
+  return "registry" in opts && !!opts.registry;
+}
+
 export async function codegen(opts: CodegenOptions): Promise<void> {
-  if (opts.registry) {
+  if (isRegistryOptions(opts)) {
     return codegenFromRegistry(opts);
   }
-  if (opts.catalog || opts.loadedCatalog) {
-    return codegenFromCatalog(opts);
-  }
-  return codegenFromSnapshot(opts);
+  return codegenFromCatalog(opts);
 }
 
 // ── Registry 기반 codegen ──────────────────────────────
 
-async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- codegen()에서 opts.registry 존재 시에만 호출
-  const registryUrl = opts.registry!;
+async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> {
+  const registryUrl = opts.registry;
   const catalogId = opts.catalogId ?? "demo";
 
   console.log(`Fetching catalog "${catalogId}" from ${registryUrl}...`);
@@ -124,7 +117,7 @@ async function codegenFromRegistry(opts: CodegenOptions): Promise<void> {
 
 // ── Catalog 기반 codegen ───────────────────────────────
 
-async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
+async function codegenFromCatalog(opts: CodegenCatalogOptions): Promise<void> {
   const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
   const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
 
@@ -143,56 +136,6 @@ async function codegenFromCatalog(opts: CodegenOptions): Promise<void> {
   console.log(`${result.files.length} file(s) generated from catalog "${catalog.id}" (hash: ${result.contentHash})`);
   if (opts.lockVersion) {
     console.log(`  version locked to: ${opts.lockVersion}`);
-  }
-}
-
-// ── SchemaSnapshot 기반 codegen (레거시) ─────────────────
-
-/** @deprecated --catalog 또는 --registry 사용 권장 */
-async function codegenFromSnapshot(opts: CodegenOptions): Promise<void> {
-  console.warn(
-    "[deprecated] SchemaSnapshot 기반 codegen은 향후 제거 예정입니다.\n" +
-    "  --catalog <경로> 또는 --registry <URL> 사용을 권장합니다.",
-  );
-  const info = await stat(opts.input);
-  const snapshots = info.isDirectory()
-    ? await readSnapshots(opts.input)
-    : [await readSnapshot(opts.input)];
-
-  if (snapshots.length === 0) {
-    console.log("입력 경로에 SchemaSnapshot JSON이 없음");
-    return;
-  }
-
-  let generated = 0;
-
-  for (const snapshot of snapshots) {
-    const baseName = snapshot.id;
-
-    for (const format of opts.formats) {
-      const { content, ext } = generate(snapshot, format, {
-        packageName: opts.packageName,
-      });
-      const outPath = join(opts.output, `${baseName}${ext}`);
-      await writeOutput(outPath, content);
-      console.log(`Generated → ${outPath}`);
-      generated++;
-    }
-  }
-
-  console.log(`${generated} file(s) generated`);
-}
-
-function generate(
-  snapshot: SchemaSnapshot,
-  format: CodegenFormat,
-  protoOpts: ProtoGenOptions,
-): { content: string; ext: string } {
-  switch (format) {
-    case "proto":
-      return { content: generateProto(snapshot, protoOpts), ext: ".proto" };
-    case "ts":
-      return { content: generateTypescript(snapshot), ext: ".d.ts" };
   }
 }
 

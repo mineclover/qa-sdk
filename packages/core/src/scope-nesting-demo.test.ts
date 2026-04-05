@@ -58,6 +58,7 @@ const nesting: ScopeNesting = {
 const graph: PipeGraph = {
   graphId: "canonical-review-handler",
   version: "v1",
+  entryPipeId: "persist-loader",
   pipes: [
     { pipeId: "persist-loader", version: "v1", trigger: { eventKey: "app_init" }, flow: step("저장", "persist_load_complete"), produces: ["persist_load_complete"] },
     { pipeId: "validate-input", version: "v1", trigger: { eventKey: "persist_load_complete" }, flow: { kind: "sequence", steps: [step("소비", "review_input"), step("관리")] }, produces: ["validation_result"] },

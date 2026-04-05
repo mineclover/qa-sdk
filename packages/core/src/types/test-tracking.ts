@@ -1,8 +1,13 @@
+// ── TestPhase — test-types 패키지에서 re-export ──────
+
+export type { TestPhase } from "test-types";
+export { TEST_PHASES } from "test-types";
+
 // ── TestCase — 좌표가 부여된 테스트 단위 ─────────────
 
 export interface TestCase {
   testId: string;
-  address: string;              // "test:scope:aspect:facet:seq"
+  address: string;              // "test:scope:aspect:facet:phase:seq" (phase 없으면 기존 4세그먼트)
   name: string;
   target: TestTarget;
   expected: TestExpectation;
@@ -10,6 +15,7 @@ export interface TestCase {
   scope?: string;
   aspect?: string;
   facet?: string;
+  phase?: TestPhase;            // 이 테스트가 검증하는 단계
   tags?: string[];
 }
 
@@ -35,6 +41,7 @@ export interface TestSuite {
   scope?: string;
   aspect?: string;
   cases: TestCase[];
+  phases?: TestPhase[];         // 이 스위트가 커버하는 단계 집합
   pipeId?: string;
   schemaId?: string;
 }
@@ -67,6 +74,16 @@ export interface FacetQualityMetrics {
   hasDrift: boolean;
 }
 
+export interface PhaseQualityMetrics {
+  phase: TestPhase;
+  totalTests: number;
+  passedTests: number;
+  passRate: number;
+  hasCoverage: boolean;
+  lastExecuted?: string;
+  hasDrift: boolean;
+}
+
 export interface PipeQualityMetrics {
   pipeId: string;
   totalPaths: number;
@@ -74,4 +91,6 @@ export interface PipeQualityMetrics {
   pathCoverage: number;
   facetDistribution: Record<string, number>;
   uncoveredFacets: string[];
+  phaseDistribution: Record<string, number>;
+  uncoveredPhases: string[];
 }

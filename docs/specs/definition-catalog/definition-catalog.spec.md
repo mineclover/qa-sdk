@@ -82,161 +82,86 @@ def:
 
 ## 상태
 
-implemented (v0.1.0) — 195 tests / 10 files (2026-03-25)
+implemented — current model is owned by `packages/definition-catalog/src/`, `definition-data-source`, and `definition-service`.
 
----
+## 현재 모델
 
-## 1. 모델 정체성
+### SSOT
 
-### 1개 문서 = 1개 비즈니스 로직
+- 문서 파일의 YAML frontmatter `def:` 블록이 SSOT다.
+- registry, SQLite, search index, code reference map은 모두 파생물이다.
+- `skills/`는 실행 정의 SSOT이고, `docs/skills/`와 `docs/specs/skill-catalog/`는 설명/카탈로그 레이어다.
 
-이 시스템의 단위는 **1개의 비즈니스 로직 정의**다.
-각 문서는 정확히 하나의 좌표(scope × aspect × depth)에 위치하고,
-그 좌표가 정의하는 주제의 내용만 담는다.
+### 핵심 흐름
 
-```
-좌표 = 문서의 정체성 = "이 문서는 무엇을 정의하는가"
-내용 = 그 정체성에 맞는 비즈니스 로직만
-```
-
-여러 비즈니스 로직 간의 구조(깊이, 상속, 조합)는 이 시스템의 현재 범위가 아니다.
-현재 단계에서는 개별 로직의 분류와 추적에 집중한다.
-
-### decision-flow와의 관계
-
-```
-definition-catalog   "무엇(what)을 정의하는가"    → def_document:v1:65
-decision-flow        "왜(why) 그렇게 결정했는가"  → decision_event:v1:1234
-
-what × why = 추적 가능한 소프트웨어 정의
+```text
+docs/*.md frontmatter
+  → scanAndBuild()
+  → MemoryDefinitionRegistry
+  → syncDocsToLocalDb()
+  → documents / document_links / code_references
+  → DefDataSource(local|server|scan)
+  → qa-sdk def ...
 ```
 
-### 좌표 동형
+### Frontmatter 블록 3종
 
-```
-DEFINITION_CATALOG     ≡  DemoCatalog       (축 + prefix 구조)
-def_scope/def_aspect   ≡  AxisDef           (차원)
-DefinitionEntry        ≡  EventRecord       (좌표가 부여된 레코드)
-VALID_SCOPE_ASPECTS    ≡  SchemaConstraint  (유효 조합 제약)
-```
+| 블록 | 파서 | 역할 |
+|------|------|------|
+| `def:` | `extractDef(parsed, filePath)` | 문서 메타데이터 (id, scope, aspect, lifecycle 등) |
+| `gate:` | `extractGate(parsed, filePath)` | 품질 게이트 선언 (kind, workDomain, command) |
+| `tests:` | `extractTests(parsed)` | 테스트 선언 (name, kind, scope, phase, intent) |
 
----
+`FrontmatterTest` 인터페이스: `{ name, kind, scope, phase?, intent, module?, participants? }`.
+`ParsedDocument.tests`로 반환. CLI `qa-sdk test scan`에서 소비.
 
-## 2. 구성
+### 검증 표면
 
-3개 하위 모듈로 분해된다:
+- `def sync`
+  docs SSOT를 SQLite datasource에 반영한다.
+- `def validate`
+  synced graph 기준의 구조 위반과 code reference boundary 정합성을 본다.
+- `def scan-audit`
+  raw frontmatter 기준 스캔 에러, 링크 에러, graph 규칙을 본다.
+- `def audit-db`
+  approved 문서의 purpose, 짧은 목적문, 고립, svc 부여 상태를 빠르게 점검한다.
+- address-first 조회
+  `def get --address`, `def incoming|outgoing --address`, `def impact --address`로 canonical address 기준 탐색을 지원한다.
 
-| 하위 문서 | 역할 |
-|-----------|------|
-| **definition-taxonomy** | 분류 축(scope, aspect, depth, level, layer, link_type), 좌표 인코딩, 주소 체계 |
-| **definition-state-model** | FSM 엔진 + 11개 상태 머신 정의 |
-| **definition-harness** | 상태 모델을 실제 시스템에 적용 — 의존/프로세스/수집/품질게이트 |
+### 문서 그래프 규칙
 
-### 영속성 — Frontmatter SSOT
+- `contains`
+  소속과 조립 구조를 표현한다.
+- lateral links
+  `depends_on`, `implements`, `refines`, `constrains`, `traces_to`, `evolves_from`, `supersedes`
+- `cross-scope`
+  의도적 다중 부모/공유 소속을 명시한다.
 
-문서 파일의 YAML frontmatter가 SSOT. registry는 파생 인덱스.
+### 코드 매핑 규칙
 
-```yaml
----
-def:
-  id: gate-api
-  version: v2
-  revision: 2
-  scope: interface
-  aspect: api_contract
-  depth: specification
-  lifecycle: approved
-  tags: [structural, security]
-  links:
-    - target: gate-engine-func
-      type: implements
-    - target: gate-api-v1
-      type: supersedes
-gate:
-  kind: api-contract
-  workDomain: backend-logic
-  command: pnpm --filter gate-service test
----
-# Gate Service API 계약
-...본문...
-```
+- `qa-sdk def find-by-file`는 추정이 아니라 explicit mapping만 쓴다.
+- 입력은 문서 frontmatter `source:`와 코드 주석 `@def.boundary`, `@def.doc`다.
+- `def sync`가 `code_references`를 정규화한다.
 
-`gate` 블록은 선택이다. `depth: validation` 문서가 실행 가능한 단일 품질 게이트와 1:1로 대응할 때 사용한다.
+## 운영 진입점
 
-### 스캔
+- taxonomy / coordinates / level
+  분류 축과 주소 체계
+- management
+  좌표 부여, 링크, 상태, 피드백, 검증 루프
+- quality-gates
+  contract marker 기반 품질 게이트와 claim verdict
+- harness
+  문서 상태를 기계적으로 추적하는 실행 레이어
 
-```typescript
-const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
-// result.registry: 자동 구성된 MemoryDefinitionRegistry
-// result.registered: 등록된 문서 수
-// result.linked: 연결된 관계 수
-// result.errors: 파싱 에러 목록
-```
+## 관련 소스
 
-1. 디렉토리 재귀 스캔 → .md 파일에서 frontmatter 추출
-2. `def` 블록 파싱 + scope-aspect 검증
-3. registry 자동 등록 (좌표 자동 계산)
-4. links 자동 연결 (모든 문서 등록 후)
-5. frontmatter 없는 파일은 건너뜀
-
----
-
-## 3. 계층 구조 (contains)
-
-`contains` 링크로 문서를 그룹으로 묶는다. 그룹도 문서(overview depth).
-
-```
-gate-system (flow/overview, tags: [security])
-  ├── contains → gate-constraint (constraint/specification)
-  ├── contains → gate-state-model (state/specification)
-  ├── contains → gate-engine-func (feature/specification)
-  ├── contains → gate-flow (flow/specification)
-  ├── contains → gate-api (interface/specification)
-  └── contains → gate-scenario (feature/validation)
-```
-
-3가지 패턴:
-- **묶음**: 그룹이 멤버를 contains
-- **교집합**: 1개 문서가 여러 그룹에 소속 (DAG)
-- **상속**: 그룹의 concern이 모든 멤버에 contains↓ 전파
-
----
-
-## 4. 운영 컨벤션
-
-### 분류 컨벤션
-
-**C1. 1개 문서 = 1개 좌표 = 1개 비즈니스 로직**
-
-문서의 좌표가 정의하는 주제의 내용**만** 담는다.
-다른 scope의 내용은 link로 참조. 본문에 2줄 이상 서술하면 분리 신호.
-
-**C2. scope 결정 기준 — "주 독자가 누구인가"**
-
-- API를 호출하는 사람 → `interface/api_contract`
-- 흐름을 이해하려는 사람 → `flow/process_flow`
-- 상태를 설계하는 사람 → `state/domain_state`
-
-**C3. 여러 scope에 걸치면 — 쪼개고 link로 연결**
-
-scope별 독립 문서로 분리 → link로 연결.
-정말 쪼갤 수 없으면: 주 scope 1개 + `tags: ["cross-scope", ...]`
-
-**C4. 횡단 관심사는 scope가 아니라 ConcernTag**
-
-보안, 성능, 접근성 등은 tag로 횡단 추적. link 그래프를 통해 자동 전파.
-
-**C5. aspect 추가 시 — 기존 동류와 성격 비교**
-
-새 aspect는 "주 독자/성격"이 기존 aspect와 동류인지 확인 후 배치.
-
-**C6. aspect 이동은 파괴적 — 마이그레이션 프로토콜**
-
-기존 aspect 유지 → 새 aspect 추가 → 마이그레이션 → traces_to 추적.
-
-**C7. cross-scope 3개 이상이면 분리 후보**
-
-`detectCrossScope()`로 자동 감지.
+- `packages/definition-catalog/src/frontmatter.ts`
+- `packages/definition-catalog/src/validate.ts`
+- `packages/definition-data-source/src/sync-local-db.ts`
+- `packages/definition-data-source/src/local-data-source.ts`
+- `packages/definition-service/src/modules/docs/`
+- `packages/definition-service/src/modules/graph/`
 
 ### 문서 작성 컨벤션
 
@@ -388,7 +313,7 @@ pnpm --filter definition-catalog build       # ESM + CJS 빌드
 | 과제 | 설명 |
 |------|------|
 | DEMO_CATALOG 통합 | definition 축/prefix를 DEMO_CATALOG에 추가 |
-| CLI 연동 | `qa-sdk def scan/query/assemble` 명령 |
+| CLI 연동 | `qa-sdk def sync/list/validate/audit` 등 DefDataSource 기반 명령 |
 | 자동 link 추론 | 좌표 유형 간 구조적 관계에서 link를 자동 생성 |
 | 커버리지 히트맵 | scope × aspect별 문서 존재/부재 시각화 |
 | 나머지 문서 frontmatter 주입 | docs/specs/ 200+건에 점진적 frontmatter 추가 |

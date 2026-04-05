@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "
 import { extname, resolve, relative, join } from "node:path";
 import type { Catalog } from "@qa-sdk/core";
 import { latestPrefixVersion } from "@qa-sdk/core";
+import { getServiceUrl } from "../lib/service-profile.js";
 
 // ── Version Resolver ─────────────────────────────────────────────────────────
 
@@ -67,12 +68,13 @@ function buildVersionResolver(
   catalog: Catalog,
   serviceId?: string,
 ): VersionResolver {
-  // 1. --service 지정 시: seed-config에서 서비스의 소비 prefix 조회
+  // 1. --service 지정 시: 로컬 → registry 순서로 매니페스트 탐색
   if (serviceId) {
-    // seed-config 또는 ManifestRegistry에서 서비스 매니페스트 로드
-    // 현재는 카탈로그 기반으로 폴백 (ManifestRegistry는 인메모리)
-    // TODO: registry-service 연동 또는 로컬 매니페스트 파일 로드
-    console.log(`  서비스 "${serviceId}" 매니페스트 기반 resolve (미구현 — latest 폴백)`);
+    const manifest = loadLocalManifest(serviceId) ?? fetchRegistryManifest(serviceId);
+    if (manifest) {
+      return createManifestResolver(manifest, serviceId);
+    }
+    console.log(`  서비스 "${serviceId}" 매니페스트 미발견 — latest 폴백`);
   }
 
   // 2. VERSION_META 탐색: 프로젝트 내 codegen 생성물에서 prefixVersions 로드
@@ -120,6 +122,67 @@ function findVersionMeta(): Record<string, string> | null {
     }
   }
   return null;
+}
+
+/**
+ * 서비스별 로컬 매니페스트를 탐색한다.
+ * ~/.qa-sdk/manifests/{serviceId}.json 또는 프로젝트 내 manifest 파일을 탐색.
+ */
+function loadLocalManifest(serviceId: string): Record<string, string> | null {
+  const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? "";
+  const candidates = [
+    resolve(homeDir, `.qa-sdk/manifests/${serviceId}.json`),
+    resolve(process.cwd(), `.qa-sdk/manifests/${serviceId}.json`),
+    resolve(process.cwd(), `manifests/${serviceId}.json`),
+  ];
+
+  for (const candidate of candidates) {
+    if (!existsSync(candidate)) continue;
+    try {
+      const content = readFileSync(candidate, "utf-8");
+      const parsed = JSON.parse(content) as Record<string, unknown>;
+      const prefixVersions = parsed.prefixVersions;
+      if (prefixVersions && typeof prefixVersions === "object" && !Array.isArray(prefixVersions)) {
+        return prefixVersions as Record<string, string>;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * registry-service에서 서비스 매니페스트를 fetch한다.
+ * 실패 시 null 반환 (fail-open).
+ */
+function fetchRegistryManifest(serviceId: string): Record<string, string> | null {
+  try {
+    const registryUrl = getServiceUrl("registry-service");
+    const url = `${registryUrl}/api/services/${serviceId}/manifest`;
+    // 동기 fetch — CLI이므로 허용. AbortSignal.timeout 적용.
+    const resp = fetchSync(url);
+    if (!resp) return null;
+    const parsed = JSON.parse(resp) as Record<string, unknown>;
+    const prefixes = parsed.prefixVersions ?? parsed.prefixes;
+    if (prefixes && typeof prefixes === "object" && !Array.isArray(prefixes)) {
+      console.log(`  registry manifest 로드: ${serviceId}`);
+      return prefixes as Record<string, string>;
+    }
+  } catch {
+    // registry 미실행 또는 네트워크 오류 — silent fail
+  }
+  return null;
+}
+
+/** 동기 HTTP GET — CLI 전용. 5초 타임아웃. */
+function fetchSync(url: string): string | null {
+  try {
+    const { execSync } = require("node:child_process") as typeof import("node:child_process");
+    return execSync(`curl -sf --max-time 5 "${url}"`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+  } catch {
+    return null;
+  }
 }
 
 // ── 확장자별 주석 접두사 ──────────────────────────────────────────────────────

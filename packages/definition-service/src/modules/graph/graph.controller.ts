@@ -12,6 +12,13 @@ export class GraphController {
     return result;
   }
 
+  @Get("by-address/:address/impact")
+  impactByAddress(@Param("address") address: string) {
+    const result = this.graph.impactByAddress(address);
+    if (!result) throw new NotFoundException(`주소 ${address} 문서 없음`);
+    return result;
+  }
+
   @Get(":docId/concerns")
   concerns(@Param("docId") docId: string) {
     const result = this.graph.concerns(docId);
@@ -31,6 +38,21 @@ export class GraphController {
       mode === "direct" ? "direct" : "transitive",
     );
     if (!result) throw new NotFoundException(`문서 ${docId} 없음`);
+    return result;
+  }
+
+  @Get("by-address/:address/boundary-context")
+  boundaryContextByAddress(
+    @Param("address") address: string,
+    @Query("level") level?: string,
+    @Query("mode") mode?: string,
+  ) {
+    const result = this.graph.boundaryContextByAddress(
+      address,
+      level === "purpose" ? "purpose" : "overview",
+      mode === "direct" ? "direct" : "transitive",
+    );
+    if (!result) throw new NotFoundException(`주소 ${address} 문서 없음`);
     return result;
   }
 

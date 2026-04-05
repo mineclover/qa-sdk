@@ -44,7 +44,7 @@ describe("실제 docs/ 스캔", () => {
     const reg = result.registry;
     expect(reg.get("system-overview")!.ref).toBe("docs/system-overview.md");
     expect(reg.get("gate-api")!.ref).toBe("docs/specs/gate/gate-api.spec.md");
-    expect(reg.get("record-spec")!.ref).toBe("docs/specs/data-model/record.spec.md");
+    expect(reg.get("record-spec")!.ref).toBe("docs/specs/ingest/record.spec.md");
     expect(reg.get("ingest-api-system")!.ref).toBe("docs/specs/ingest/ingest-api-system.md");
   });
 

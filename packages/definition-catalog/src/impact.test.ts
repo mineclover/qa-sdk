@@ -31,14 +31,14 @@ beforeEach(() => {
   // checkout-api depends_on gate-api (교차 의존)
   // gate-scenario traces_to gate-api (비전파)
 
-  reg.register(doc({ id: "system-root", title: "시스템", scope: "flow", aspect: "process_flow", depth: "overview" }));
-  reg.register(doc({ id: "gate-system", title: "Gate", scope: "flow", aspect: "process_flow", depth: "overview" }));
-  reg.register(doc({ id: "gate-api", title: "Gate API", scope: "interface", aspect: "api_contract", depth: "specification" }));
-  reg.register(doc({ id: "gate-state", title: "Gate State", scope: "state", aspect: "domain_state", depth: "specification" }));
-  reg.register(doc({ id: "gate-constraint", title: "Gate Constraint", scope: "constraint", aspect: "tech_constraint", depth: "specification" }));
-  reg.register(doc({ id: "gate-flow", title: "Gate Flow", scope: "flow", aspect: "process_flow", depth: "specification" }));
-  reg.register(doc({ id: "checkout-api", title: "Checkout API", scope: "interface", aspect: "api_contract", depth: "specification" }));
-  reg.register(doc({ id: "gate-scenario", title: "Gate Scenario", scope: "feature", aspect: "scenario", depth: "validation" }));
+  reg.register(doc({ id: "system-root", title: "시스템", scope: "flow", aspect: "process_flow", depth: "overview", serialized: "def_document:v2:1001" }));
+  reg.register(doc({ id: "gate-system", title: "Gate", scope: "flow", aspect: "process_flow", depth: "overview", serialized: "def_document:v2:1002" }));
+  reg.register(doc({ id: "gate-api", title: "Gate API", scope: "interface", aspect: "api_contract", depth: "specification", serialized: "def_document:v2:1003" }));
+  reg.register(doc({ id: "gate-state", title: "Gate State", scope: "state", aspect: "domain_state", depth: "specification", serialized: "def_document:v2:1004" }));
+  reg.register(doc({ id: "gate-constraint", title: "Gate Constraint", scope: "constraint", aspect: "tech_constraint", depth: "specification", serialized: "def_document:v2:1005" }));
+  reg.register(doc({ id: "gate-flow", title: "Gate Flow", scope: "flow", aspect: "process_flow", depth: "specification", serialized: "def_document:v2:1006" }));
+  reg.register(doc({ id: "checkout-api", title: "Checkout API", scope: "interface", aspect: "api_contract", depth: "specification", serialized: "def_document:v2:1007" }));
+  reg.register(doc({ id: "gate-scenario", title: "Gate Scenario", scope: "feature", aspect: "scenario", depth: "validation", serialized: "def_document:v2:1008" }));
 
   reg.link("system-root", "gate-system", "contains");
   reg.link("gate-system", "gate-api", "contains");
@@ -55,6 +55,7 @@ describe("analyzeImpact", () => {
     const result = impact("gate-api");
 
     expect(result.sourceId).toBe("gate-api");
+    expect(result.sourceAddress).toBe("def_document:v2:1003");
     expect(result.blastRadius).toBeGreaterThan(0);
 
     const ids = result.impacted.map(i => i.id);
@@ -117,6 +118,7 @@ describe("analyzeImpact", () => {
     const result = impact("gate-api");
     const systemRoot = result.impacted.find(i => i.id === "system-root");
     expect(systemRoot).toBeDefined();
+    expect(systemRoot?.address).toBe("def_document:v2:1001");
     // gate-api → gate-system → system-root
     expect(systemRoot!.path).toContain("gate-api");
     expect(systemRoot!.path).toContain("gate-system");

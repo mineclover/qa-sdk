@@ -1,4 +1,12 @@
-import type { CodeReferenceRecord, DocRecord, DocHistoryRecord, SliceIntentRecord, ConsumptionSnapshot } from "../core/types.js";
+import type {
+  CodeReferenceRecord,
+  DocRecord,
+  DocHistoryRecord,
+  DocIncomingLinkRecord,
+  DocOutgoingLinkRecord,
+  SliceIntentRecord,
+  ConsumptionSnapshot,
+} from "../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter, IntentStore, ConsumptionStore } from "../core/interfaces.js";
 import { computeDocumentAddress } from "../core/compute-address.js";
 import { decideVersion } from "../core/doc-versioner.js";
@@ -87,6 +95,10 @@ export class InMemoryDocStore implements DocStore {
     return this.docs.get(docId) ?? null;
   }
 
+  getByAddress(address: string): DocRecord | null {
+    return Array.from(this.docs.values()).find((doc) => doc.address === address) ?? null;
+  }
+
   getBody(docId: string) {
     const record = this.docs.get(docId);
     if (!record) return null;
@@ -153,6 +165,41 @@ export class InMemoryDocStore implements DocStore {
   getVersion(docId: string, version: number): DocHistoryRecord | null {
     const entries = this.history.get(docId) ?? [];
     return entries.find((e) => e.version === version) ?? null;
+  }
+
+  getIncomingLinks(docId: string): DocIncomingLinkRecord[] {
+    const targetAddress = this.docs.get(docId)?.address;
+    return Array.from(this.docs.values())
+      .flatMap((doc) =>
+        doc.links
+          .filter((link) => link.target === docId)
+          .map((link) => ({
+            source: doc.docId,
+            type: link.type,
+            ...(doc.address ? { sourceAddress: doc.address } : {}),
+            ...(targetAddress ? { targetAddress } : {}),
+          })),
+      )
+      .toSorted((left, right) =>
+        left.source.localeCompare(right.source) || left.type.localeCompare(right.type),
+      );
+  }
+
+  getOutgoingLinks(docId: string): DocOutgoingLinkRecord[] {
+    const doc = this.docs.get(docId);
+    if (!doc) return [];
+    return doc.links
+      .map((link) => ({
+        target: link.target,
+        type: link.type,
+        ...(doc.address ? { sourceAddress: doc.address } : {}),
+        ...(this.docs.get(link.target)?.address
+          ? { targetAddress: this.docs.get(link.target)?.address }
+          : {}),
+      }))
+      .toSorted((left, right) =>
+        left.target.localeCompare(right.target) || left.type.localeCompare(right.type),
+      );
   }
 
 }

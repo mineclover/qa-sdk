@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "drizzle-orm": "1.0.0-beta.20",
-    "index-meta": "workspace:*"
+    "index-meta": "workspace:*",
+    "test-types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

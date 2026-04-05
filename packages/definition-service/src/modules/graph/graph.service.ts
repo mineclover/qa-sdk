@@ -2,10 +2,13 @@ import { Injectable, Inject } from "@nestjs/common";
 import {
   analyzeImpact,
   computeEffectiveConcerns,
+  docRowToRegistryInput,
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
+  MemoryDefinitionRegistry,
   selectConcernContext,
   selectImpactContext,
+  validateGraph,
   type DefBoundaryContextResult,
   type ImpactAnalysis,
   type EffectiveConcerns,
@@ -89,6 +92,12 @@ export class GraphService {
     );
   }
 
+  impactByAddress(address: string): ImpactAnalysis | null {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) return null;
+    return this.impact(doc.docId);
+  }
+
   /** concern 전파 — DB edge 테이블 기반 */
   concerns(docId: string): { docId: string; concerns: EffectiveConcerns } | null {
     if (!this.docs.get(docId)) return null;
@@ -137,8 +146,10 @@ export class GraphService {
       },
       impact: {
         sourceId: selectedImpact.sourceId,
+        ...(selectedImpact.sourceAddress ? { sourceAddress: selectedImpact.sourceAddress } : {}),
         impacted: selectedImpact.impacted.map((item) => ({
           docId: item.id,
+          ...(item.address ? { address: item.address } : {}),
           via: item.via,
           path: item.path.join(" → "),
           direction: item.direction,
@@ -154,60 +165,44 @@ export class GraphService {
     };
   }
 
+  boundaryContextByAddress(
+    address: string,
+    level: "purpose" | "overview" = "overview",
+    mode: "direct" | "transitive" = "transitive",
+  ): DefBoundaryContextResult | null {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) return null;
+    return this.boundaryContext(doc.docId, level, mode);
+  }
+
   /** 그래프 검증 — 깨진 링크, 순환 참조, 고아 문서 (DB 기반) */
   validate(): { issues: ValidationIssue[]; errors: number; warnings: number; passed: boolean } {
     const allDocs = this.docs.list();
     const allIds = new Set(allDocs.map(d => d.docId));
-    const referenced = new Set<string>();
     const issues: ValidationIssue[] = [];
+    const registry = new MemoryDefinitionRegistry();
 
     for (const doc of allDocs) {
-      if (doc.lifecycle === "deprecated") continue;
+      registry.register(docRowToRegistryInput(doc));
+    }
+
+    for (const doc of allDocs) {
       const outgoing = this.docs.getOutgoingLinks(doc.docId);
       for (const link of outgoing) {
-        referenced.add(link.target);
         if (!allIds.has(link.target)) {
-          issues.push({ severity: "error", type: "broken-link", docId: doc.docId, message: `target "${link.target}" (${link.type})가 존재하지 않음` });
-        }
-        if (link.target === doc.docId) {
-          issues.push({ severity: "error", type: "self-ref", docId: doc.docId, message: `자기 자신을 ${link.type}로 참조` });
-        }
-      }
-      const incoming = this.docs.getIncomingLinks(doc.docId);
-      if (incoming.length > 0) referenced.add(doc.docId);
-    }
-
-    // 순환 참조
-    const cyclicTypes = new Set(["depends_on", "implements", "refines"]);
-    for (const doc of allDocs) {
-      if (doc.lifecycle === "deprecated") continue;
-      const visited = new Set<string>();
-      const stack = [doc.docId];
-      let current: string | undefined;
-      while ((current = stack.pop()) !== undefined) {
-        if (visited.has(current)) {
-          if (current === doc.docId) {
-            issues.push({ severity: "error", type: "circular-ref", docId: doc.docId, message: "순환 참조 감지" });
-          }
+          issues.push({
+            severity: "error",
+            type: "broken-link",
+            docId: doc.docId,
+            message: `target "${link.target}" (${link.type})가 존재하지 않음`,
+          });
           continue;
         }
-        visited.add(current);
-        for (const l of this.docs.getOutgoingLinks(current)) {
-          if (cyclicTypes.has(l.type) && allIds.has(l.target)) stack.push(l.target);
-        }
+        registry.link(doc.docId, link.target, link.type as DefinitionLink["linkType"]);
       }
     }
 
-    // 고아 문서
-    for (const doc of allDocs) {
-      if (doc.lifecycle !== "approved") continue;
-      if (!referenced.has(doc.docId)) {
-        const hasContains = this.docs.getOutgoingLinks(doc.docId).some(l => l.type === "contains");
-        if (!hasContains) {
-          issues.push({ severity: "warning", type: "orphan", docId: doc.docId, message: "approved 리프이지만 어디에도 참조되지 않음" });
-        }
-      }
-    }
+    issues.push(...validateGraph(registry).issues);
 
     const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));
     const refsByPath = new Map<string, ReturnType<DocsService["listCodeReferences"]>>();

@@ -20,7 +20,8 @@ describe("parseEnv", { timeout: 15_000 }, () => {
 
     expect(env.CLEANUP_CRON_ENABLED).toBe(false);
     expect(env.TASK_QUEUE_ENABLED).toBe(false);
-    expect(env.REGISTRY_URL).toBeUndefined();
+    // blank → emptyStringToUndefined → default fallback
+    expect(env.REGISTRY_URL).toBe("http://localhost:3300");
     expect(env.REDIS_URL).toBeUndefined();
     expect(env.WORKER_CONCURRENCY).toBe(5);
   });

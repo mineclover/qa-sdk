@@ -42,8 +42,8 @@ sync-obsidian (볼트 동기화).
 |--------|------|
 | `scan git` | Git 메타데이터 → SchemaSnapshot |
 | `register` | SchemaSnapshot → Registry 등록 |
-| `dry-run` | 변경 시뮬레이션 (DAG 전파, 실제 변경 없음) |
-| `codegen` | SchemaSnapshot → 타입 인터페이스 생성 |
+| `dry-run` | 변경 시뮬레이션 — `--catalog` 또는 `--registry` 기반 (DAG 전파, 실제 변경 없음) |
+| `codegen` | Catalog/Registry → 타입 인터페이스 생성 (`--catalog` 또는 `--registry` 필수) |
 
 ### 좌표 DX
 

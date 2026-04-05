@@ -15,6 +15,8 @@ def:
   links:
     - target: definition-taxonomy
       type: refines
+    - target: definition-addressing-plan
+      type: traces_to
 ---
 # Definition Addressing — 문서 주소 체계
 
@@ -32,6 +34,22 @@ def:
 ## 소비 ^consumes
 
 - scope, aspect, depth (taxonomy) — 주소 공간의 차원
+
+## 현재 적용 상태
+
+- 문서 작성 시 frontmatter의 `address: def_document:v2:<N>`를 우선 보존한다.
+- sync/DB 적재 시 explicit v2 address가 있으면 그대로 저장한다.
+- `document_links`는 `sourceId/targetId`와 `sourceAddress/targetAddress`를 함께 저장한다.
+- incoming/outgoing link 조회 시 `sourceAddress/targetAddress`를 병행 노출한다.
+- `getByAddress(address)` 조회 surface가 local/server/scan/CLI에 존재한다.
+- incoming/outgoing link는 address 기준으로도 REST/CLI/GraphQL에서 조회할 수 있다.
+- `resolveByFile`와 graph impact 결과에서도 canonical address를 함께 노출한다.
+- explicit address가 없는 문서는 현재도 legacy `def_document:v1:<N>` fallback을 사용한다.
+- 따라서 현재 운영 상태는 **`id` 주식별 + v2 병행 저장 + v1 fallback`**이다.
+
+## 도입 계획
+
+현재 전환 단계와 다음 슬라이스는 `definition-addressing-plan` 문서가 관리한다.
 
 ## 설계 근거 ^intent
 
@@ -59,6 +77,8 @@ id="record-spec"    address="def_document:v1:283"   ← 유일!
 |------|------|------|
 | **불변 식별자** | `address` (정수) | 한번 부여되면 절대 변경 안 됨. 링크/참조/저장의 앵커 |
 | **표시 라벨** | `id` (kebab-case) | 사람이 읽는 이름. 변경 가능 (rename 시 주소는 유지) |
+
+현재 단계의 결론은 `id`를 제거하는 것이 아니라, `id`와 `address`를 목적이 다른 필드로 함께 유지하는 것이다.
 
 ### 참조 방식
 

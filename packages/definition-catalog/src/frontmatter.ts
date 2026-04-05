@@ -85,12 +85,26 @@ export interface FrontmatterDef {
 /** frontmatter에서 파싱된 gate 블록 */
 export type FrontmatterGate = QualityGateSpec;
 
+/** frontmatter에서 파싱된 tests 선언 항목 */
+export interface FrontmatterTest {
+  readonly name: string;
+  readonly kind: string;
+  readonly scope: string;
+  /** 테스트 단계 — test-types TestPhase 값 */
+  readonly phase?: string;
+  readonly intent: string;
+  readonly module?: string;
+  readonly participants?: readonly string[];
+}
+
 /** 파싱 결과 */
 export interface ParsedDocument {
   /** frontmatter def 블록 */
   readonly def: FrontmatterDef;
   /** 선택적 품질 게이트 블록 */
   readonly gate?: FrontmatterGate;
+  /** 선택적 tests 선언 */
+  readonly tests?: readonly FrontmatterTest[];
   /** 파일 경로 (baseDir 기준 상대) */
   readonly filePath: string;
   /** frontmatter 이후 본문 */
@@ -140,6 +154,7 @@ export function extractFrontmatter(content: string): { yaml: string; body: strin
  */
 import { parseYaml, parseScalar } from "./yaml-lite.js";
 export { parseYaml, parseScalar };
+import { parseDocumentAddress, parseUniqueDocumentAddress } from "./observe.js";
 
 
 // ─── Frontmatter → DefinitionEntryInput 변환 ────────────
@@ -315,6 +330,38 @@ export function extractGate(
 }
 
 /**
+ * 파싱된 YAML에서 tests 블록을 추출한다.
+ * tests는 선택적 — 없으면 undefined.
+ */
+export function extractTests(parsed: Record<string, unknown>): FrontmatterTest[] | undefined {
+  const tests = parsed.tests;
+  if (!Array.isArray(tests)) return undefined;
+
+  const result: FrontmatterTest[] = [];
+  for (const item of tests) {
+    if (typeof item !== "object" || item === null) continue;
+    const t = item as Record<string, unknown>;
+    const name = typeof t.name === "string" ? t.name : "";
+    const kind = typeof t.kind === "string" ? t.kind : "";
+    if (!kind) continue; // kind 필수
+
+    result.push({
+      name,
+      kind,
+      scope: typeof t.scope === "string" ? t.scope : "single",
+      ...(typeof t.phase === "string" ? { phase: t.phase } : {}),
+      intent: typeof t.intent === "string" ? t.intent : "",
+      ...(typeof t.module === "string" ? { module: t.module } : {}),
+      ...(Array.isArray(t.participants)
+        ? { participants: t.participants.filter((p): p is string => typeof p === "string") }
+        : {}),
+    });
+  }
+
+  return result.length > 0 ? result : undefined;
+}
+
+/**
  * 마크다운 파일 내용을 파싱하여 ParsedDocument를 반환한다.
  */
 export function parseDocument(content: string, filePath: string): ParsedDocument {
@@ -324,10 +371,12 @@ export function parseDocument(content: string, filePath: string): ParsedDocument
   const parsed = parseYaml(fm.yaml);
   const def = extractDef(parsed, filePath);
   const gate = extractGate(parsed, filePath);
+  const tests = extractTests(parsed);
 
   return {
     def,
     ...(gate ? { gate } : {}),
+    ...(tests ? { tests } : {}),
     filePath,
     body: fm.body,
   };
@@ -358,7 +407,7 @@ async function scanMarkdownFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-type DocVariant = "spec" | "todo" | "test" | "memo" | "plan" | "other";
+type DocVariant = "spec" | "todo" | "test" | "memo" | "plan" | "rule" | "other";
 
 function getDocVariant(filePath: string): DocVariant {
   if (filePath.endsWith(".spec.md")) return "spec";
@@ -366,21 +415,23 @@ function getDocVariant(filePath: string): DocVariant {
   if (filePath.endsWith(".test.md")) return "test";
   if (filePath.endsWith(".memo.md")) return "memo";
   if (filePath.endsWith(".plan.md")) return "plan";
+  if (filePath.endsWith(".rule.md")) return "rule";
   return "other";
 }
 
 function getDocStem(filePath: string): string {
-  return filePath.replace(/\.(spec|todo|test|memo|plan)\.md$/, "").replace(/\.md$/, "");
+  return filePath.replace(/\.(spec|todo|test|memo|plan|rule)\.md$/, "").replace(/\.md$/, "");
 }
 
 function compareVariantPriority(left: string, right: string): number {
   const priority: Record<DocVariant, number> = {
     spec: 0,
-    test: 1,
-    memo: 2,
-    plan: 3,
-    todo: 4,
-    other: 5,
+    rule: 1,
+    test: 2,
+    memo: 3,
+    plan: 4,
+    todo: 5,
+    other: 6,
   };
   return priority[getDocVariant(left)] - priority[getDocVariant(right)] || left.localeCompare(right);
 }
@@ -457,6 +508,12 @@ export async function scanAndBuild(
         ref: relPath,
         serviceId: def.svc,
         gate: doc.gate,
+        ...(def.address
+          ? {
+              address: parseUniqueDocumentAddress(def.address) ?? parseDocumentAddress(def.address) ?? undefined,
+              serialized: def.address,
+            }
+          : {}),
         createdAt: now,
         updatedAt: now,
       });

@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -130,3 +130,14 @@ schemaHash = deterministicHash(
 - `uidScheme`는 어떤 주소 체계를 쓰는지 나타낸다.
 - 같은 데이터의 다른 시점은 같은 경로 주소를 공유하되, 다른 시퀀스로 구분한다.
 - UID 체계가 바뀌면 마이그레이션과 버전 관리가 필요하다.
+
+## 소스 코드
+
+| 파일 | 역할 |
+|------|------|
+| `core/src/meta-semantic/ir-types.ts` | `DataIR`, `DataDefinition`, `DataManagement`, `DataLifecycle`, `DataStorage`, `FieldDescriptor` 타입 |
+| `core/src/meta-semantic/ir-types.ts` | `computeSchemaHash()` (FNV-1a), `deriveCertainty()` |
+| `core/src/meta-semantic/ir-validate.ts` | `missing-manager`, `orphan-data`, `schema-collision` 탐지 |
+| `core/src/meta-semantic/ir-audit.ts` | `certainty-mismatch`, `hash-mismatch`, `nonstandard-uid-scheme` 감사 |
+| `core/src/meta-semantic/ir-bridge.ts` | `stepContractToDataIR()` — StepDataContract → DataIR 변환 |
+| `core/src/pipe/data-contract.ts` | `computeSchemaHash()` (FNV-1a 통일), `checkCompatibility()` |

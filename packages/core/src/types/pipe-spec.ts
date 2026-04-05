@@ -127,6 +127,9 @@ export interface PipeStep {
   constraints?: Constraint[];
   timeout?: number;
 
+  /** 테스트 단계 힌트: 이 step이 대응하는 테스트 단계 */
+  testPhase?: import("./test-tracking.js").TestPhase;
+
   /** 데이터 계약: 이 step의 입출력 스키마 + 접근 테이블 */
   dataContract?: StepDataContract;
 }

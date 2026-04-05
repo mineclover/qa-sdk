@@ -228,11 +228,19 @@ export function cliDeriveRefs(catalog: Catalog, _args: {
 
 // ── qa impact ───────────────────────────────────────
 
-export function cliImpact(catalog: Catalog, dkgConfig: Parameters<typeof bootstrapDkg>[0]["config"], args: {
-  axis?: string;
-  prefix?: string;
-}): void {
-  const graph = bootstrapDkg({ catalog, config: dkgConfig });
+function isGraphPort(v: unknown): v is Parameters<typeof analyzeImpact>[0] {
+  return !!v && typeof v === "object" && "cascadeFromAxis" in v;
+}
+
+/** graph를 직접 받으면 재사용, config를 받으면 bootstrap */
+export function cliImpact(
+  catalog: Catalog,
+  graphOrConfig: Parameters<typeof analyzeImpact>[0] | Parameters<typeof bootstrapDkg>[0]["config"],
+  args: { axis?: string; prefix?: string },
+): void {
+  const graph = isGraphPort(graphOrConfig)
+    ? graphOrConfig
+    : bootstrapDkg({ catalog, config: graphOrConfig });
 
   const input = args.axis
     ? { type: "entry-added" as const, target: { axis: args.axis } }

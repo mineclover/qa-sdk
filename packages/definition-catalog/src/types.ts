@@ -329,8 +329,15 @@ export interface DefinitionStats {
   readonly byDepth: Record<DefDepth, number>;
 }
 
-/** 등록 입력 (address/serialized 제외 — 자동 계산) */
-export type DefinitionEntryInput = Omit<DefinitionEntry, "address" | "serialized">;
+/**
+ * 등록 입력.
+ *
+ * 기본은 address/serialized 자동 계산이지만,
+ * frontmatter에 explicit address(v1/v2)가 이미 있으면 이를 병행 입력으로 허용한다.
+ */
+export type DefinitionEntryInput =
+  Omit<DefinitionEntry, "address" | "serialized">
+  & Partial<Pick<DefinitionEntry, "address" | "serialized">>;
 
 /** 수정 가능한 필드 */
 export type DefinitionEntryPatch = Partial<Pick<

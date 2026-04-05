@@ -6,7 +6,7 @@
  * 집계 결과를 스냅샷으로 저장하여 누적/비교 가능.
  */
 
-import { createLogger } from "@qa-sdk/core";
+import { createLogger, type EventRecord } from "@qa-sdk/core";
 import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
 import { drizzle } from "drizzle-orm/node-sqlite";
 import { migrate } from "drizzle-orm/node-sqlite/migrator";
@@ -28,6 +28,7 @@ import {
   dkgEdges,
   usageSnapshots,
   versionUsages,
+  cliAuditEvents,
   dkgMeta,
 } from "../db/schema.js";
 import { GraphRegistry } from "../graph-registry.js";
@@ -69,6 +70,31 @@ interface ExportEdgePayload {
   meta?: JsonObject;
 }
 
+export interface CliAuditEventInput {
+  readonly record: EventRecord;
+  readonly eventPrefix?: string;
+  readonly command?: string;
+  readonly targetId?: string;
+  readonly targetKind?: string;
+  readonly lifecycleFrom?: string;
+  readonly lifecycleTo?: string;
+}
+
+export interface CliAuditEventRow {
+  readonly id: number;
+  readonly catalogId: string;
+  readonly eventPrefix?: string;
+  readonly command?: string;
+  readonly eventKey: string;
+  readonly eventVersion: string;
+  readonly timestamp: string;
+  readonly targetId?: string;
+  readonly targetKind?: string;
+  readonly lifecycleFrom?: string;
+  readonly lifecycleTo?: string;
+  readonly record: EventRecord;
+}
+
 export class DkgSqliteStore {
   private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
@@ -88,10 +114,44 @@ export class DkgSqliteStore {
       migrate(this.db, {
         migrationsFolder: new URL("../../drizzle", import.meta.url).pathname,
       });
+      this.ensureAuxTables();
     } catch (err) {
       logger.error({ err }, "drizzle 마이그레이션 실패");
       throw err;
     }
+  }
+
+  private ensureAuxTables(): void {
+    this.rawDb.exec(`
+      CREATE TABLE IF NOT EXISTS cli_audit_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        catalog_id TEXT NOT NULL DEFAULT 'demo',
+        event_prefix TEXT,
+        command TEXT,
+        event_key TEXT NOT NULL,
+        event_version TEXT NOT NULL,
+        record_kind TEXT NOT NULL DEFAULT 'log',
+        log_id TEXT NOT NULL,
+        trace_id TEXT NOT NULL,
+        span_id TEXT NOT NULL,
+        qa_session_id TEXT,
+        target_id TEXT,
+        target_kind TEXT,
+        lifecycle_from TEXT,
+        lifecycle_to TEXT,
+        timestamp TEXT NOT NULL,
+        address_context TEXT,
+        payload TEXT,
+        record_json TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_catalog ON cli_audit_events (catalog_id);
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_prefix ON cli_audit_events (event_prefix);
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_command ON cli_audit_events (command);
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_target ON cli_audit_events (target_id, target_kind);
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_lifecycle ON cli_audit_events (lifecycle_to);
+      CREATE INDEX IF NOT EXISTS idx_cli_audit_timestamp ON cli_audit_events (timestamp);
+    `);
   }
 
   // ── Graph: save/load ─────────────────────────────────
@@ -315,6 +375,44 @@ export class DkgSqliteStore {
     }
 
     return snapshotId;
+  }
+
+  saveCliAuditEvent(input: CliAuditEventInput): number {
+    const recordJson = JSON.stringify(input.record);
+    const payloadJson = input.record.payload === undefined ? null : JSON.stringify(input.record.payload);
+    const addressContextJson = input.record.address_context
+      ? JSON.stringify(input.record.address_context)
+      : null;
+
+    this.db
+      .insert(cliAuditEvents)
+      .values({
+        catalogId: this.catalogId,
+        eventPrefix: input.eventPrefix ?? null,
+        command: input.command ?? null,
+        eventKey: input.record.event_key,
+        eventVersion: input.record.event_version,
+        recordKind: input.record.record_kind,
+        logId: input.record.log_id,
+        traceId: input.record.trace_id,
+        spanId: input.record.span_id,
+        qaSessionId: input.record.qa_session_id ?? null,
+        targetId: input.targetId ?? null,
+        targetKind: input.targetKind ?? null,
+        lifecycleFrom: input.lifecycleFrom ?? null,
+        lifecycleTo: input.lifecycleTo ?? null,
+        timestamp: input.record.timestamp,
+        addressContext: addressContextJson,
+        payload: payloadJson,
+        recordJson,
+      })
+      .run();
+
+    const row = this.db
+      .select({ id: sql<number>`last_insert_rowid()` })
+      .from(cliAuditEvents)
+      .get();
+    return row?.id ?? 0;
   }
 
   /** 최근 N개 스냅샷의 versionUsages를 로드. */
@@ -559,7 +657,7 @@ export class DkgSqliteStore {
   // ── Stats ────────────────────────────────────────────
 
   stats(): {
-    nodes: number; edges: number; snapshots: number; versionUsages: number;
+    nodes: number; edges: number; snapshots: number; versionUsages: number; auditEvents: number;
     bootstrapNodes: number; manualNodes: number;
     bootstrapEdges: number; manualEdges: number;
   } {
@@ -567,11 +665,26 @@ export class DkgSqliteStore {
     const edges = this.db.select({ c: count() }).from(dkgEdges).where(eq(dkgEdges.catalogId, this.catalogId)).get()?.c ?? 0;
     const snapshots = this.db.select({ c: count() }).from(usageSnapshots).get()?.c ?? 0;
     const vuCount = this.db.select({ c: count() }).from(versionUsages).get()?.c ?? 0;
+    const auditEvents = this.db
+      .select({ c: count() })
+      .from(cliAuditEvents)
+      .where(eq(cliAuditEvents.catalogId, this.catalogId))
+      .get()?.c ?? 0;
     const bootstrapNodes = this.db.select({ c: count() }).from(dkgNodes).where(and(eq(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId))).get()?.c ?? 0;
     const manualNodes = this.db.select({ c: count() }).from(dkgNodes).where(and(eq(dkgNodes.source, "manual"), eq(dkgNodes.catalogId, this.catalogId))).get()?.c ?? 0;
     const bootstrapEdges = this.db.select({ c: count() }).from(dkgEdges).where(and(eq(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId))).get()?.c ?? 0;
     const manualEdges = this.db.select({ c: count() }).from(dkgEdges).where(and(eq(dkgEdges.source, "manual"), eq(dkgEdges.catalogId, this.catalogId))).get()?.c ?? 0;
-    return { nodes, edges, snapshots, versionUsages: vuCount, bootstrapNodes, manualNodes, bootstrapEdges, manualEdges };
+    return {
+      nodes,
+      edges,
+      snapshots,
+      versionUsages: vuCount,
+      auditEvents,
+      bootstrapNodes,
+      manualNodes,
+      bootstrapEdges,
+      manualEdges,
+    };
   }
 
   // ── JSON export/import ───────────────────────────────
@@ -865,6 +978,16 @@ export class DkgSqliteStore {
     return { snapshotsDeleted: snapCount, versionUsagesDeleted: vuCount };
   }
 
+  clearCliAuditEvents(): number {
+    const before = this.db
+      .select({ c: count() })
+      .from(cliAuditEvents)
+      .where(eq(cliAuditEvents.catalogId, this.catalogId))
+      .get()?.c ?? 0;
+    this.db.delete(cliAuditEvents).where(eq(cliAuditEvents.catalogId, this.catalogId)).run();
+    return before;
+  }
+
   /** 특정 source의 노드/엣지만 삭제. */
   clearBySource(source: NodeSource): { nodesDeleted: number; edgesDeleted: number } {
     const nodesBefore = this.db
@@ -922,6 +1045,45 @@ export class DkgSqliteStore {
       .orderBy(desc(usageSnapshots.id))
       .limit(limit)
       .all();
+  }
+
+  listRecentCliAuditEvents(
+    limit = 50,
+    filters: {
+      eventPrefix?: string;
+      command?: string;
+      targetId?: string;
+      lifecycleTo?: string;
+    } = {},
+  ): CliAuditEventRow[] {
+    const conditions = [eq(cliAuditEvents.catalogId, this.catalogId)];
+    if (filters.eventPrefix) conditions.push(eq(cliAuditEvents.eventPrefix, filters.eventPrefix));
+    if (filters.command) conditions.push(eq(cliAuditEvents.command, filters.command));
+    if (filters.targetId) conditions.push(eq(cliAuditEvents.targetId, filters.targetId));
+    if (filters.lifecycleTo) conditions.push(eq(cliAuditEvents.lifecycleTo, filters.lifecycleTo));
+
+    const rows = this.db
+      .select()
+      .from(cliAuditEvents)
+      .where(and(...conditions))
+      .orderBy(desc(cliAuditEvents.id))
+      .limit(limit)
+      .all();
+
+    return rows.map((row) => ({
+      id: row.id,
+      catalogId: row.catalogId,
+      eventPrefix: row.eventPrefix ?? undefined,
+      command: row.command ?? undefined,
+      eventKey: row.eventKey,
+      eventVersion: row.eventVersion,
+      timestamp: row.timestamp,
+      targetId: row.targetId ?? undefined,
+      targetKind: row.targetKind ?? undefined,
+      lifecycleFrom: row.lifecycleFrom ?? undefined,
+      lifecycleTo: row.lifecycleTo ?? undefined,
+      record: JSON.parse(row.recordJson) as EventRecord,
+    }));
   }
 
   // ── Meta 범위 조회 ─────────────────────────────────

@@ -19,7 +19,13 @@ import type {
   DefinitionStats,
 } from "./types.js";
 import { validateScopeAspect } from "./taxonomy.js";
-import { encodeDocument, serializeDocumentAddress, encodeLink } from "./observe.js";
+import {
+  encodeDocument,
+  serializeDocumentAddress,
+  parseDocumentAddress,
+  parseUniqueDocumentAddress,
+  encodeLink,
+} from "./observe.js";
 
 // ─── 레지스트리 인터페이스 ────────────────────────────────
 
@@ -80,6 +86,27 @@ function linkKey(sourceId: string, targetId: string, linkType: LinkType): string
   return `${sourceId}|${targetId}|${linkType}`;
 }
 
+function resolveDocumentAddress(input: DefinitionEntryInput): { address: number; serialized: string } {
+  if (input.serialized) {
+    const parsedV2 = parseUniqueDocumentAddress(input.serialized);
+    if (parsedV2 !== null) return { address: parsedV2, serialized: input.serialized };
+    const parsedV1 = parseDocumentAddress(input.serialized);
+    if (parsedV1 !== null) return { address: parsedV1, serialized: input.serialized };
+  }
+
+  if (input.address !== undefined) {
+    const serialized = input.serialized ?? serializeDocumentAddress(input.address);
+    return { address: input.address, serialized };
+  }
+
+  const address = encodeDocument({
+    scope: input.scope,
+    aspect: input.aspect,
+    depth: input.depth,
+  });
+  return { address, serialized: serializeDocumentAddress(address) };
+}
+
 /**
  * 인메모리 정의 레지스트리.
  *
@@ -115,14 +142,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     // scope-aspect 유효성 검증
     validateScopeAspect(input.scope, input.aspect);
 
-    // 좌표 계산 (불변 정체성: scope × aspect × depth)
-    // level은 메타데이터 — 분해 깊이가 변할 수 있으므로 주소에 포함하지 않음
-    const address = encodeDocument({
-      scope: input.scope,
-      aspect: input.aspect,
-      depth: input.depth,
-    });
-    const serialized = serializeDocumentAddress(address);
+    const { address, serialized } = resolveDocumentAddress(input);
 
     const entry: DefinitionEntry = { ...input, address, serialized };
     this.entries.set(entry.id, entry);
@@ -137,10 +157,12 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       throw new Error(`등록되지 않은 ID: "${id}"`);
     }
 
-    // depth 변경 시만 좌표 재계산 (lifecycle은 좌표에 영향 없음)
+    // legacy(v1) 주소만 depth 변경 시 재계산한다.
+    // explicit v2 address는 불변 식별자로 간주하여 보존한다.
     const depth = patch.depth ?? existing.depth;
     const lifecycle = patch.lifecycle ?? existing.lifecycle;
-    const needsReencode = patch.depth !== undefined;
+    const usesLegacyV1Address = existing.serialized?.startsWith("def_document:v1:") ?? true;
+    const needsReencode = patch.depth !== undefined && usesLegacyV1Address;
 
     let address = existing.address;
     let serialized = existing.serialized;

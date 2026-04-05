@@ -3,41 +3,57 @@
  */
 
 import type {
-  TestCase, TestSuite, TestResult,
-  FacetQualityMetrics, PipeQualityMetrics,
+  TestCase, TestSuite, TestResult, TestPhase,
+  FacetQualityMetrics, PipeQualityMetrics, PhaseQualityMetrics,
 } from "../types/test-tracking.js";
+import { TEST_PHASES } from "../types/test-tracking.js";
 import type { PipeSpec } from "../types/pipe-spec.js";
+import { compareTimestamps } from "../lib/clock.js";
 import type { SimulationResult } from "./pipe-simulate.js";
 import { matchHappyPath } from "./pipe-simulate.js";
 import type { HappyPathSpec, HappyPathMatch } from "./pipe-simulate.js";
 import { countPipePaths } from "./pipe-path.js";
 
+/** 관측 대상 패싯 5종 */
+const KNOWN_FACETS = ["생산", "소비", "정의", "관리", "저장"] as const;
+
 // ── TestCase 주소 생성 ───────────────────────────────
 
-/** 테스트 케이스 주소 생성 */
+/** 테스트 케이스 주소 생성 (phase 포함) */
 export function buildTestAddress(
   scopeIndex: number,
   aspectIndex: number,
   facet: string,
+  phase: TestPhase | undefined,
   seq: number,
 ): string {
+  if (phase) {
+    return `test:${scopeIndex}:${aspectIndex}:${facet}:${phase}:${seq}`;
+  }
   return `test:${scopeIndex}:${aspectIndex}:${facet}:${seq}`;
 }
 
-/** 테스트 주소 파싱 */
+/** 테스트 주소 파싱 (4세그먼트 하위 호환 + 5세그먼트 phase 포함) */
 export function parseTestAddress(address: string): {
   scopeIndex: number;
   aspectIndex: number;
   facet: string;
+  phase?: TestPhase;
   seq: number;
 } | null {
-  const match = address.match(/^test:(\d+):(\d+):([^:]+):(\d+)$/);
-  if (!match) return null;
+  // test:scope:aspect:facet[:phase]:seq — phase는 선택
+  const m = address.match(/^test:(\d+):(\d+):([^:]+):(?:([^:]+):)?(\d+)$/);
+  if (!m) return null;
+
+  const rawPhase = m[4]; // undefined if 4-segment
   return {
-    scopeIndex: Number(match[1]),
-    aspectIndex: Number(match[2]),
-    facet: match[3],
-    seq: Number(match[4]),
+    scopeIndex: Number(m[1]),
+    aspectIndex: Number(m[2]),
+    facet: m[3],
+    phase: rawPhase && (TEST_PHASES as readonly string[]).includes(rawPhase)
+      ? (rawPhase as TestPhase)
+      : undefined,
+    seq: Number(m[5]),
   };
 }
 
@@ -47,6 +63,8 @@ export class TestRegistry {
   private readonly cases: Map<string, TestCase> = new Map();
   private readonly suites: Map<string, TestSuite> = new Map();
   private readonly results: TestResult[] = [];
+  /** testId → 최신 결과 캐시 (recordResult 시 O(1) 갱신) */
+  private readonly latestResults: Map<string, TestResult> = new Map();
 
   // ── 테스트 케이스 ──────────────────────────────
 
@@ -64,6 +82,10 @@ export class TestRegistry {
 
   getCasesByFacet(facet: string): TestCase[] {
     return [...this.cases.values()].filter(tc => tc.facet === facet);
+  }
+
+  getCasesByPhase(phase: TestPhase): TestCase[] {
+    return [...this.cases.values()].filter(tc => tc.phase === phase);
   }
 
   listCases(): TestCase[] {
@@ -87,6 +109,12 @@ export class TestRegistry {
     return [...this.suites.values()].filter(s => s.facet === facet);
   }
 
+  getSuitesByPhase(phase: TestPhase): TestSuite[] {
+    return [...this.suites.values()].filter(s =>
+      s.phases?.includes(phase) || s.cases.some(c => c.phase === phase),
+    );
+  }
+
   listSuites(): TestSuite[] {
     return [...this.suites.values()];
   }
@@ -95,15 +123,18 @@ export class TestRegistry {
 
   recordResult(result: TestResult): void {
     this.results.push(result);
+    this.latestResults.set(result.testId, result);
   }
 
   recordResults(results: TestResult[]): void {
-    for (const r of results) this.results.push(r);
+    for (const r of results) {
+      this.results.push(r);
+      this.latestResults.set(r.testId, r);
+    }
   }
 
   getLatestResult(testId: string): TestResult | null {
-    const filtered = this.results.filter(r => r.testId === testId);
-    return filtered.length > 0 ? filtered[filtered.length - 1] : null;
+    return this.latestResults.get(testId) ?? null;
   }
 
   getResultsByAddress(address: string): TestResult[] {
@@ -111,48 +142,52 @@ export class TestRegistry {
   }
 
   getFailures(): TestResult[] {
-    // 각 testId의 최신 결과만 보고 fail인 것
-    const latest = new Map<string, TestResult>();
-    for (const r of this.results) {
-      latest.set(r.testId, r);
-    }
-    return [...latest.values()].filter(r => r.status === "fail");
+    return [...this.latestResults.values()].filter(r => r.status === "fail");
   }
 
   // ── 품질 지표 ─────────────────────────────────
+
+  /** 공통 지표 수집 — facet/phase 양쪽에서 사용 */
+  private gatherStats(
+    cases: TestCase[],
+    schemaUpdatedAt?: string,
+  ): { passed: number; lastExecuted?: string; hasDrift: boolean; resultCache: Map<string, TestResult | null> } {
+    let passed = 0;
+    let lastExecuted: string | undefined;
+    let hasDrift = false;
+    const resultCache = new Map<string, TestResult | null>();
+
+    for (const tc of cases) {
+      const result = this.getLatestResult(tc.testId);
+      resultCache.set(tc.testId, result ?? null);
+      if (result) {
+        if (result.status === "pass") passed++;
+        if (!lastExecuted || compareTimestamps(result.executedAt, lastExecuted) > 0) {
+          lastExecuted = result.executedAt;
+        }
+        if (schemaUpdatedAt && compareTimestamps(result.executedAt, schemaUpdatedAt) < 0) {
+          hasDrift = true;
+        }
+      } else {
+        hasDrift = true;
+      }
+    }
+
+    return { passed, lastExecuted, hasDrift, resultCache };
+  }
 
   computeFacetMetrics(
     facet: string,
     schemaUpdatedAt?: string,
   ): FacetQualityMetrics {
     const cases = this.getCasesByFacet(facet);
-    let passed = 0;
-    let lastExecuted: string | undefined;
-    let hasDrift = false;
-
-    for (const tc of cases) {
-      const result = this.getLatestResult(tc.testId);
-      if (result) {
-        if (result.status === "pass") passed++;
-        if (!lastExecuted || result.executedAt > lastExecuted) {
-          lastExecuted = result.executedAt;
-        }
-        // drift: 스키마 변경 후 테스트 미실행
-        if (schemaUpdatedAt && result.executedAt < schemaUpdatedAt) {
-          hasDrift = true;
-        }
-      } else {
-        hasDrift = true; // 미실행
-      }
-    }
-
+    const { passed, lastExecuted, hasDrift, resultCache } = this.gatherStats(cases, schemaUpdatedAt);
     const total = cases.length;
-    // contractVerifiedRate: contractRef가 있는 케이스 중 pass 비율
+
     const contractCases = cases.filter(tc => tc.contractRef);
-    const contractPassed = contractCases.filter(tc => {
-      const r = this.getLatestResult(tc.testId);
-      return r?.status === "pass";
-    }).length;
+    const contractPassed = contractCases.filter(tc =>
+      resultCache.get(tc.testId)?.status === "pass",
+    ).length;
 
     return {
       facet,
@@ -167,6 +202,25 @@ export class TestRegistry {
     };
   }
 
+  computePhaseMetrics(
+    phase: TestPhase,
+    schemaUpdatedAt?: string,
+  ): PhaseQualityMetrics {
+    const cases = this.getCasesByPhase(phase);
+    const { passed, lastExecuted, hasDrift } = this.gatherStats(cases, schemaUpdatedAt);
+    const total = cases.length;
+
+    return {
+      phase,
+      totalTests: total,
+      passedTests: passed,
+      passRate: total > 0 ? Math.round((passed / total) * 100) : 0,
+      hasCoverage: total > 0,
+      lastExecuted,
+      hasDrift,
+    };
+  }
+
   computePipeMetrics(pipe: PipeSpec): PipeQualityMetrics {
     const totalPaths = countPipePaths(pipe.flow);
     const pipeCases = [...this.cases.values()].filter(
@@ -176,16 +230,26 @@ export class TestRegistry {
     // 패싯별 분포
     const facetDistribution: Record<string, number> = {};
     const coveredFacets = new Set<string>();
+    // 단계별 분포
+    const phaseDistribution: Record<string, number> = {};
+    const coveredPhases = new Set<string>();
+
     for (const tc of pipeCases) {
       if (tc.facet) {
         facetDistribution[tc.facet] = (facetDistribution[tc.facet] ?? 0) + 1;
         const result = this.getLatestResult(tc.testId);
         if (result?.status === "pass") coveredFacets.add(tc.facet);
       }
+      if (tc.phase) {
+        phaseDistribution[tc.phase] = (phaseDistribution[tc.phase] ?? 0) + 1;
+        const result = this.getLatestResult(tc.testId);
+        if (result?.status === "pass") coveredPhases.add(tc.phase);
+      }
     }
 
-    const allFacets = ["생산", "소비", "정의", "관리", "저장"];
+    const allFacets = KNOWN_FACETS;
     const uncoveredFacets = allFacets.filter(f => !coveredFacets.has(f));
+    const uncoveredPhases = (TEST_PHASES as readonly string[]).filter(p => !coveredPhases.has(p));
 
     return {
       pipeId: pipe.pipeId,
@@ -194,6 +258,8 @@ export class TestRegistry {
       pathCoverage: totalPaths > 0 ? Math.round((pipeCases.length / totalPaths) * 100) : 0,
       facetDistribution,
       uncoveredFacets,
+      phaseDistribution,
+      uncoveredPhases,
     };
   }
 
@@ -229,11 +295,9 @@ export class TestRegistry {
     const totalSuites = this.suites.size;
     const totalResults = this.results.length;
 
-    const latest = new Map<string, TestResult>();
-    for (const r of this.results) latest.set(r.testId, r);
-    const passed = [...latest.values()].filter(r => r.status === "pass").length;
-    const failures = [...latest.values()].filter(r => r.status === "fail").length;
-    const tested = latest.size;
+    const passed = [...this.latestResults.values()].filter(r => r.status === "pass").length;
+    const failures = [...this.latestResults.values()].filter(r => r.status === "fail").length;
+    const tested = this.latestResults.size;
 
     return {
       totalCases,

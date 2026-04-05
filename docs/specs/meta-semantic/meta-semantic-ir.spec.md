@@ -19,6 +19,10 @@ def:
       type: contains
     - target: meta-semantic-ir-pipe
       type: contains
+    - target: meta-semantic-ir-rule
+      type: contains
+    - target: meta-semantic-ir-usecases
+      type: contains
 ---
 
 # Meta-Semantic IR — 3종 중간 표현 모델
@@ -342,12 +346,46 @@ Pipe ──triggers──→ Pipe (인과 체인)
 
 ## 6. 검증 규칙
 
-| 검증 | 심각도 | 설명 |
-|------|--------|------|
-| orphan-module | warning | 어떤 parent에도 속하지 않는 비루트 모듈 |
-| orphan-data | warning | producedBy/consumedBy 모두 비어 있는 데이터 |
-| missing-manager | error | Data.management.managedBy가 null |
-| circular-parent | error | Module.relations.parent 순환 |
-| circular-pipe | error | Pipe.triggers 순환 |
-| schema-collision | warning | 다른 type 이름인데 같은 schemaHash |
-| dangling-ref | error | 존재하지 않는 ModuleRef/DataRef/PipeRef |
+| 검증 | 심각도 | 없으면 발생하는 모호함 |
+|------|:------:|----------------------|
+| dangling-ref | error | 참조 대상이 없으면 "이것이 무엇인지" 답할 수 없다 |
+| circular-parent | error | 계약 위임 경로가 무한하면 "누가 최종 책임자인지" 답할 수 없다 |
+| circular-pipe | error | 인과 체인에 순환이 있으면 "실행이 언제 끝나는지" 답할 수 없다 |
+| missing-manager | error | 정합성 보장 주체가 없으면 "이 데이터를 누가 검증하는지" 답할 수 없다 |
+| schema-collision | warning | 같은 구조에 다른 이름이면 "같은 것인지 다른 것인지" 판단 불가. alias 의도 시 허용 |
+| orphan-data | warning | 아무도 쓰지 않는 데이터는 "삭제해도 되는지" 판단 불가. 미래 소비자 대기 시 허용 |
+| orphan-module | warning | 트리에 속하지 않는 모듈은 "어떤 계약 하에 동작하는지" 불명. 독립 유틸리티 시 허용 |
+
+코드: `core/src/meta-semantic/ir-validate.ts` (14 tests)
+
+## 7. 소스 코드 참조
+
+| 파일 | 역할 | 테스트 |
+|------|------|:------:|
+| `ir-types.ts` | IR 3종 타입 + 유틸 (FNV-1a schemaHash, inferModuleLevel, deriveCertainty) | 9 |
+| `ir-validate.ts` | 참조 무결성 검증 — `IRIssueType` 7종 (Map 기반 O(1) 조회) | 14 |
+| `ir-audit.ts` | 품질 감사 — `AuditRule` 9종 (정합성 4 + 분할 신호 5) | 11 |
+| `ir-bridge.ts` | PipeSpec/PipeGraph/StepDataContract ↔ IR 변환 | 7 |
+| `ir-nesting-bridge.ts` | ScopeNesting ↔ IR 교차 검증 (precomputed 지원) + 변환 | 7 |
+| `spacetime-uid.ts` | Spacetime UID — `PathBranchPoint` 경로 합산 인코딩 | 17 |
+| `extraction.ts` | 핵심 타입 (BranchPoint, ExecutionUnit) + 경로 계산 + 마커 추출 + LLM 포트 | 11 |
+| `extraction-parser.ts` | ParserPort + 정규식 mock 파서 | 5 |
+| `extraction-pipeline.ts` | 4단계 오케스트레이션 (LLM 병렬 호출) | 3 |
+| `extraction-prompts.ts` | LLM 프롬프트 4종 + mock LLM | 8 |
+| `ir-scenario.test.ts` | 유저 시나리오 (주문 처리 + PipeGraph 라운드트립) | 12 |
+| `ir-rule-validation.test.ts` | rule.md 유효성 증명 (패싯 + 분할 + nesting 교차) | 10 |
+| `ir-audit.test.ts` | 감사 규칙 개별 검증 (정합성 + 분할 신호) | 11 |
+| `ir-nesting-bridge.test.ts` | 교차 검증 + 변환 | 7 |
+
+**합계: 11 source files, 124 tests**
+
+소비 규칙(체크리스트, prefix 매핑, 분할 규칙)은 `meta-semantic-ir.rule.md` 참조.
+
+검증 파이프라인:
+```
+validateIRGraph()     → 참조 무결성 (dangling, circular, orphan)
+auditIRGraph()        → 품질 감사 (정합성 + 분할 신호)
+crossValidate()       → ScopeNesting ↔ IR 교차 정합성 (precomputed 지원)
+```
+
+해시 알고리즘: FNV-1a 32bit (ir-types + data-contract 통일). 동일 필드 구조 → 동일 해시.

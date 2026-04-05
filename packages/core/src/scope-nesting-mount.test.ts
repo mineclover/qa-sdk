@@ -55,6 +55,7 @@ const nesting: ScopeNesting = {
 const graph: PipeGraph = {
   graphId: "handler-graph",
   version: "v1",
+  entryPipeId: "validate-input",
   pipes: [
     { pipeId: "validate-input", version: "v1", trigger: { eventKey: "form_submit" }, flow: { kind: "sequence", steps: [step("소비"), step("관리")] }, produces: ["validation_result"] },
     { pipeId: "compute-result", version: "v1", trigger: { eventKey: "validation_result" }, flow: { kind: "sequence", steps: [step("소비"), step("생산")] }, produces: ["review_complete"] },
@@ -216,7 +217,7 @@ describe("validateMountFlow", () => {
 
   // I3: 빈 graph
   it("빈 graph (pipes 0개) — snapshots만 생성, issues 없음", () => {
-    const emptyGraph: PipeGraph = { graphId: "empty", version: "v1", pipes: [], connections: [] };
+    const emptyGraph: PipeGraph = { graphId: "empty", version: "v1", entryPipeId: "", pipes: [], connections: [] };
     const binding: MountFlowBinding = {
       nesting,
       graph: emptyGraph,

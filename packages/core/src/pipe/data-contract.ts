@@ -50,18 +50,22 @@ export function checkCompatibility(
 
 // ── 스키마 해시 ──────────────────────────────────────
 
-/** DataSchema의 구조적 해시 계산 */
+/** DataSchema의 구조적 해시 계산 (FNV-1a 32bit — IR computeSchemaHash와 동일 알고리즘) */
 export function computeSchemaHash(schema: DataSchema): string {
   const sorted = Object.entries(schema.columns)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, col]) => `${name}:${columnRefToString(col.ref)}:${col.required}`);
-  // 단순 해시 (실 구현 시 crypto 사용)
-  let hash = 0;
-  const str = sorted.join("|");
+  return fnv1a32(sorted.join("|"));
+}
+
+/** FNV-1a 32bit 해시 — meta-semantic/ir-types.ts와 동일 알고리즘 */
+function fnv1a32(str: string): string {
+  let hash = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
   }
-  return Math.abs(hash).toString(36);
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 function columnRefToString(ref: DataColumn["ref"]): string {

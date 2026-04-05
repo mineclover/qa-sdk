@@ -11,12 +11,16 @@ import { Field, ObjectType, Int } from "@nestjs/graphql";
 export class DocLink {
   @Field(() => String) target!: string;
   @Field(() => String) type!: string;
+  @Field(() => String, { nullable: true }) sourceAddress?: string;
+  @Field(() => String, { nullable: true }) targetAddress?: string;
 }
 
 @ObjectType()
 export class IncomingLink {
   @Field(() => String) source!: string;
   @Field(() => String) type!: string;
+  @Field(() => String, { nullable: true }) sourceAddress?: string;
+  @Field(() => String, { nullable: true }) targetAddress?: string;
 }
 
 @ObjectType()
@@ -109,6 +113,7 @@ export class BoundaryContextConcernsResultType {
 @ObjectType()
 export class BoundaryContextImpactDoc {
   @Field(() => String) docId!: string;
+  @Field(() => String, { nullable: true }) address?: string;
   @Field(() => String) via!: string;
   @Field(() => String) path!: string;
   @Field(() => String) direction!: string;
@@ -129,6 +134,7 @@ export class BoundaryContextLayerBreakdown {
 @ObjectType()
 export class BoundaryContextImpactResultType {
   @Field(() => String) sourceId!: string;
+  @Field(() => String, { nullable: true }) sourceAddress?: string;
   @Field(() => [BoundaryContextImpactDoc]) impacted!: BoundaryContextImpactDoc[];
   @Field(() => [String]) affectedGroups!: string[];
   @Field(() => Int) blastRadius!: number;
@@ -185,6 +191,7 @@ export class Doc {
 
   @Field(() => [Doc], { nullable: true }) children?: Doc[];
   @Field(() => Doc, { nullable: true }) parent?: Doc | null;
+  @Field(() => [DocLink], { nullable: true }) outgoingLinks?: DocLink[];
   @Field(() => [IncomingLink], { nullable: true }) incomingLinks?: IncomingLink[];
   @Field(() => [SyntheticIncomingLink], { nullable: true }) syntheticIncomingLinks?: SyntheticIncomingLink[];
   @Field(() => [FeedbackRequestSummary], { nullable: true }) feedbackRequests?: FeedbackRequestSummary[];
@@ -195,6 +202,7 @@ export class Doc {
 @ObjectType()
 export class ImpactedDoc {
   @Field(() => String) docId!: string;
+  @Field(() => String, { nullable: true }) address?: string;
   @Field(() => String) scope!: string;
   @Field(() => String, { nullable: true }) layer?: string;
   @Field(() => String) path!: string;
@@ -204,6 +212,7 @@ export class ImpactedDoc {
 @ObjectType()
 export class ImpactAnalysisResult {
   @Field(() => String) sourceId!: string;
+  @Field(() => String, { nullable: true }) sourceAddress?: string;
   @Field(() => [ImpactedDoc]) impacted!: ImpactedDoc[];
   @Field(() => Int) blastRadius!: number;
   @Field(() => [FeedbackRequestSummary], { nullable: true }) feedbackTrace?: FeedbackRequestSummary[];

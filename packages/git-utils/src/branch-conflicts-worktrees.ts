@@ -4,8 +4,12 @@ import { execaSync } from "execa";
 import type { GitWorktreeDescriptor } from "./branch-conflicts-types.js";
 
 export function listGitWorktrees(cwd: string): GitWorktreeDescriptor[] {
-  const { stdout } = execaSync("git", ["worktree", "list", "--porcelain"], { cwd });
-  return parseGitWorktreeList(stdout);
+  try {
+    const { stdout } = execaSync("git", ["worktree", "list", "--porcelain"], { cwd });
+    return parseGitWorktreeList(stdout);
+  } catch {
+    return [];
+  }
 }
 
 export function parseGitWorktreeList(output: string): GitWorktreeDescriptor[] {

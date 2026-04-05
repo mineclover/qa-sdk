@@ -19,6 +19,7 @@ import type {
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefOutgoingLink,
   DefSyntheticIncomingLink,
   DefValidationResult,
   DefinitionEntry,
@@ -70,6 +71,11 @@ export class LocalDataSource implements DefDataSource {
 
   async get(docId: string): Promise<DefDoc | null> {
     const row = this.db.prepare("SELECT * FROM documents WHERE doc_id = ?").get(docId) as Record<string, unknown> | undefined;
+    return row ? rowToDoc(row) : null;
+  }
+
+  async getByAddress(address: string): Promise<DefDoc | null> {
+    const row = this.db.prepare("SELECT * FROM documents WHERE address = ?").get(address) as Record<string, unknown> | undefined;
     return row ? rowToDoc(row) : null;
   }
 
@@ -267,19 +273,49 @@ export class LocalDataSource implements DefDataSource {
   }
 
   async getIncomingLinks(docId: string): Promise<DefIncomingLink[]> {
-    const stmt = this.db.prepare("SELECT source_id, link_type FROM document_links WHERE target_id = ?");
-    return (stmt.all(docId) as { source_id: string; link_type: string }[])
-      .map(r => ({ source: r.source_id, type: r.link_type }));
+    const targetAddress = (await this.get(docId))?.address;
+    const stmt = this.db.prepare(`
+      SELECT dl.source_id, dl.link_type,
+             COALESCE(dl.source_address, d.address) AS source_address
+      FROM document_links dl
+      LEFT JOIN documents d ON d.doc_id = dl.source_id
+      WHERE dl.target_id = ?
+    `);
+    return (stmt.all(docId) as {
+      source_id: string;
+      link_type: string;
+      source_address: string | null;
+    }[]).map((r) => ({
+      source: r.source_id,
+      type: r.link_type,
+      ...(r.source_address ? { sourceAddress: r.source_address } : {}),
+      ...(targetAddress ? { targetAddress } : {}),
+    }));
   }
 
   async getSyntheticIncomingLinks(_docId: string): Promise<DefSyntheticIncomingLink[]> {
     return [];
   }
 
-  async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
-    const stmt = this.db.prepare("SELECT target_id, link_type FROM document_links WHERE source_id = ?");
-    return (stmt.all(docId) as { target_id: string; link_type: string }[])
-      .map(r => ({ target: r.target_id, type: r.link_type }));
+  async getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]> {
+    const sourceAddress = (await this.get(docId))?.address;
+    const stmt = this.db.prepare(`
+      SELECT dl.target_id, dl.link_type,
+             COALESCE(dl.target_address, d.address) AS target_address
+      FROM document_links dl
+      LEFT JOIN documents d ON d.doc_id = dl.target_id
+      WHERE dl.source_id = ?
+    `);
+    return (stmt.all(docId) as {
+      target_id: string;
+      link_type: string;
+      target_address: string | null;
+    }[]).map((r) => ({
+      target: r.target_id,
+      type: r.link_type,
+      ...(sourceAddress ? { sourceAddress } : {}),
+      ...(r.target_address ? { targetAddress: r.target_address } : {}),
+    }));
   }
 
   async getFeedbackRequestsByDocId(

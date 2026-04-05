@@ -265,17 +265,24 @@ export const DKG_OP = {
 } as const;
 export type DkgOp = typeof DKG_OP[keyof typeof DKG_OP];
 
-/** dkg_target_kind — DKG 대상 종류 (entries: 10, capacity: 16) */
+/** dkg_target_kind — DKG 대상 종류 (entries: 17, capacity: 32) */
 export const DKG_TARGET_KIND = {
   AXIS: "axis",
   PREFIX: "prefix",
+  SPEC: "spec",
+  SCHEMA: "schema",
   DOMAIN: "domain",
   DSL_BUNDLE: "dsl-bundle",
   DECISION: "decision",
+  VERSION_EVENT: "version-event",
   OBSERVATION: "observation",
   CONSTRAINT: "constraint",
+  CONSUMER: "consumer",
   SKILL: "skill",
   INTENT_LINK: "intent-link",
+  TRANSITION_SPEC: "transition-spec",
+  TABLE: "table",
+  FLOW_SCHEMA: "flow-schema",
   SYSTEM: "system",
 } as const;
 export type DkgTargetKind = typeof DKG_TARGET_KIND[keyof typeof DKG_TARGET_KIND];

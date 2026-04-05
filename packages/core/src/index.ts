@@ -59,7 +59,7 @@ export type { QaSession } from "./types/session.js";
 export type { ScenarioSpec, EntryCondition, StepKind, ScenarioStep, StepConstraint, BranchDef } from "./types/scenario.js";
 export type { SpecGraph, SpecNode, SpecEdgeType, SpecEdge, RuntimeGraph, RuntimeNode, RuntimeEdgeType, RuntimeEdge } from "./types/graph.js";
 export type { Verdict, ConstraintResult, StepMatch, MatchResult, VerdictReport, LatencyViolation, OrderingViolation } from "./types/verdict.js";
-export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason } from "./types/path-observation.js";
+export type { PathObservation, ReachedNode, TraversedEdge, TerminalReason, BranchPath, BranchPoint, NonLinearPathObservation } from "./types/path-observation.js";
 export type { ServiceStatus, ServiceEntry, EventRecordKind, EventStatus, EventCategory, EventLifecycleStage, EventEntry } from "./types/registry.js";
 export type {
   ColumnAxisMapping,
@@ -106,7 +106,7 @@ export type { SimpleShutdownDeps } from "./lib/graceful-shutdown.js";
 
 // ── Ports ───────────────────────────────────────────────
 
-export type { RecordStore, RecordInsert, RecordPaginationCursor, RecordPaginationParams, StoredRecord, StoredRecordPage } from "./ports/record-store.port.js";
+export type { RecordStore, RecordInsert, RecordPaginationCursor, RecordPaginationParams, StoredRecord, StoredRecordPage, TimeRangeParams } from "./ports/record-store.port.js";
 export type { TraceStore, TraceUpsert, StoredTrace } from "./ports/trace-store.port.js";
 export type { GraphStore } from "./ports/graph-store.port.js";
 export type { VerdictStore, VerdictInsert, StoredVerdict } from "./ports/verdict-store.port.js";
@@ -197,9 +197,13 @@ export {
   type PipeConstraintResult, type FailureTrace,
   ConstraintRegistry, evaluatePredicate, executeConstraint,
   // test tracking
+  type TestPhase, TEST_PHASES,
   type TestCase, type TestTarget, type TestExpectation, type TestSuite, type TestResult,
-  type FacetQualityMetrics, type PipeQualityMetrics,
+  type FacetQualityMetrics, type PhaseQualityMetrics, type PipeQualityMetrics,
   buildTestAddress, parseTestAddress, TestRegistry,
+  // sim → phase bridge
+  type PhaseAnnotatedStep, type SimPhaseResult,
+  annotateSimPhases, FACET_PHASE_DEFAULTS,
 } from "./pipe/index.js";
 
 // ── Scope Nesting — contract descent 기반 스코프 중첩 검증 ──
@@ -227,6 +231,12 @@ export type {
 export { validateContractTiming } from "./scope-nesting-timing.js";
 
 // Scope Nesting Mermaid/D3 시각화 → viz-core로 이동 (C안 3단계)
+
+// ── Scope Lifecycle — 비활성화 영향 분석 파이프라인 ──
+export type {
+  ProviderSnapshot, ContractTrace, DeactivationImpact,
+} from "./scope-nesting-lifecycle.js";
+export { snapshotProviders, traceContracts, classifyImpact, analyzeDeactivation } from "./scope-nesting-lifecycle.js";
 
 // ── Scope Nesting State — 상태 전이 검증 ──
 export type {

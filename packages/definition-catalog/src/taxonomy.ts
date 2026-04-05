@@ -5,7 +5,7 @@
  * def_scope와 def_aspect는 독립 축이지만 유효 조합이 제한된다.
  * VALID_SCOPE_ASPECTS가 이 제약을 표현한다.
  *
- * 좌표 공간(16×64)에서 실제 유효한 조합은 20개뿐이다.
+ * 좌표 공간(16×64)에서 실제 유효한 조합은 22개다.
  * 등록 시 validateScopeAspect()로 검증한다.
  */
 
@@ -150,6 +150,37 @@ export const ASPECT_TO_SCOPES: Record<DefAspect, readonly DefScope[]> = (() => {
   }
   return map as Record<DefAspect, readonly DefScope[]>;
 })();
+
+// ─── Semantic lint families ─────────────────────────────
+
+export type SemanticLintTraversalLinkType = Extract<
+  LinkType,
+  "contains" | "depends_on" | "implements" | "refines"
+>;
+
+export interface SemanticLintFamilyRule {
+  readonly id: string;
+  readonly seeds: readonly string[];
+  readonly traversal: readonly SemanticLintTraversalLinkType[];
+  readonly containsDepthLimit: number;
+  readonly allowCrossScopeMultiParent: boolean;
+}
+
+export const SEMANTIC_LINT_FAMILIES: readonly SemanticLintFamilyRule[] = [
+  {
+    id: "meta-semantic-boundary",
+    seeds: [
+      "meta-semantic-concepts",
+      "ms-concept-boundary",
+      "ms-concept-data-facets",
+      "ms-concept-verification-unit",
+      "ms-concept-contract-descent",
+    ],
+    traversal: ["contains", "depends_on", "implements", "refines"],
+    containsDepthLimit: 6,
+    allowCrossScopeMultiParent: true,
+  },
+] as const;
 
 // ─── 검증 ────────────────────────────────────────────────
 

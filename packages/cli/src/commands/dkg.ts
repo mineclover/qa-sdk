@@ -9,7 +9,26 @@ import { parseArgs } from "node:util";
 import { DEMO_CATALOG, DEMO_DKG_CONFIG, encodePrefixByValue, latestPrefixVersion, type DemoAxisId } from "demo-snapshot";
 import { extractCausalGraph, type FlowSchema } from "decision-flow";
 import { DEMO_TRANSITION_SPECS } from "spec-transition";
-import { CatalogRegistry, collectAxisUsage, summarizeAxisUsage, findUnusedAxes, getPrefixProfile, type Catalog, type AxisVersionSnapshot } from "@qa-sdk/core";
+import {
+  CatalogRegistry,
+  collectAxisUsage,
+  summarizeAxisUsage,
+  findUnusedAxes,
+  createServiceBootConfig,
+  getPrefixProfile,
+  newLogId,
+  newTransmissionId,
+  newTraceId,
+  newSpanId,
+  now,
+  toServiceDims,
+  toTransmissionBuild,
+  toTransmissionSource,
+  type Catalog,
+  type AxisVersionSnapshot,
+  type EventRecord,
+  type TransmissionEnvelope,
+} from "@qa-sdk/core";
 import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from "@qa-sdk/spec-core";
 import {
   bootstrapDkg,
@@ -209,6 +228,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   // dkg analyze
   "dkg impact":    { intent: "analyze", domain: "dkg-graph", subject: "axis" },
   "dkg overlaps":  { intent: "analyze", domain: "convergence", subject: "axis" },
+  "dkg audit-events": { intent: "query", domain: "registry", subject: "system" },
   "dkg self-check": { intent: "analyze", domain: "self-ref", subject: "system" },
   "dkg converge":  { intent: "analyze", domain: "convergence", subject: "system" },
   "dkg promote":   { intent: "analyze", domain: "self-ref", subject: "axis" },
@@ -298,27 +318,36 @@ export function emitCliEvent(command: string): void {
   const mapping = CLI_COMMAND_MAP[command];
   if (!mapping) return;
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
-    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", latestVer("cli_event"), {
+    const collectedAt = now();
+    const version = latestVer("cli_event");
+    const address = encodePrefixByValue(DEMO_CATALOG, "cli_event", version, {
       cli_intent: mapping.intent,
       cli_domain: mapping.domain,
       cli_subject: mapping.subject,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    const serialized = serializeAddressContext("cli_event", version, address);
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "cli_intent", entry: mapping.intent, count: 1, lastSeen: now },
-        { axisId: "cli_domain", entry: mapping.domain, count: 1, lastSeen: now },
-        { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: now },
+        { axisId: "cli_intent", entry: mapping.intent, count: 1, lastSeen: collectedAt },
+        { axisId: "cli_domain", entry: mapping.domain, count: 1, lastSeen: collectedAt },
+        { axisId: "cli_subject", entry: mapping.subject, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [
-        { prefix: "cli_event", version: latestVer("cli_event"), address, count: 1 },
-      ],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "cli_event", version: latestVer("cli_event"), count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } satisfies UsageData);
+      addressUsages: [{ prefix: "cli_event", version, address, count: 1 }],
+      versionPrefixes: [{ prefix: "cli_event", version }],
+    });
+    persistAuditRecord({
+      eventKey: "cli.command.executed",
+      eventPrefix: "cli_event",
+      command,
+      addressContext: { cli_event: serialized },
+      payload: {
+        command,
+        cli_intent: mapping.intent,
+        cli_domain: mapping.domain,
+        cli_subject: mapping.subject,
+      },
+    });
   } catch {
     // 인코딩 실패 시 무시
   }
@@ -389,31 +418,163 @@ export function analyzeCliCoverage(): {
 /** skill 실행 이벤트를 skill_execution prefix로 기록 */
 function emitSkillExecution(skillId: string, category: string, outcome: string = "ok"): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const collectedAt = now();
     const ver = latestVer("skill_execution");
     encodePrefixByValue(DEMO_CATALOG, "skill_execution", ver, {
       skill_id: skillId,
       skill_category: category,
       skill_outcome: outcome,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "skill_id", entry: skillId, count: 1, lastSeen: now },
-        { axisId: "skill_category", entry: category, count: 1, lastSeen: now },
-        { axisId: "skill_outcome", entry: outcome, count: 1, lastSeen: now },
+        { axisId: "skill_id", entry: skillId, count: 1, lastSeen: collectedAt },
+        { axisId: "skill_category", entry: category, count: 1, lastSeen: collectedAt },
+        { axisId: "skill_outcome", entry: outcome, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "skill_execution", version: ver, count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } satisfies UsageData);
+      versionPrefixes: [{ prefix: "skill_execution", version: ver }],
+    });
   } catch { /* 기록 실패 시 무시 */ }
 }
 
 function latestVer(prefixId: string): string {
   return latestPrefixVersion(DEMO_CATALOG, prefixId);
+}
+
+function cliSessionId(): string {
+  return `cli-${process.env.USER ?? "unknown"}`;
+}
+
+const CLI_AUDIT_SERVICE = createServiceBootConfig("qa-sdk-cli");
+const CLI_AUDIT_SOURCE = toTransmissionSource(CLI_AUDIT_SERVICE, "@qa-sdk/cli", "0.1.0");
+const CLI_AUDIT_BUILD = toTransmissionBuild(CLI_AUDIT_SERVICE);
+
+function resolveAuditIngestUrl(): string | null {
+  const base = process.env.QA_CLI_AUDIT_INGEST_URL ?? process.env.INGEST_URL;
+  if (!base) return null;
+  return base.endsWith("/v1/ingest") ? base : `${base}/v1/ingest`;
+}
+
+async function forwardAuditRecordToIngest(record: EventRecord): Promise<void> {
+  const ingestUrl = resolveAuditIngestUrl();
+  if (!ingestUrl) return;
+
+  const dims = toServiceDims(CLI_AUDIT_SERVICE);
+  const envelope: TransmissionEnvelope = {
+    transmission_id: newTransmissionId(),
+    sent_at: record.timestamp,
+    owner: {
+      owner_type: "agent",
+      owner_id: record.qa_session_id ?? cliSessionId(),
+    },
+    source: CLI_AUDIT_SOURCE,
+    runtime: { platform: "node" },
+    build: CLI_AUDIT_BUILD,
+    infra_context: {
+      env: dims.env,
+      region: dims.region,
+      svc_name: dims.svc_name,
+      namespace: dims.namespace,
+    },
+    records: [record],
+  };
+
+  try {
+    await fetch(ingestUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+      signal: AbortSignal.timeout(3_000),
+    });
+  } catch (err) {
+    if (process.env.DEBUG || process.env.QA_CLI_AUDIT_WARN === "1") {
+      console.warn(`[cli-audit-ingest] 전송 실패 (${ingestUrl}): ${errorMessage(err)}`);
+    }
+  }
+}
+
+function serializeAddressContext(prefix: string, version: string, address: number): string {
+  return `${prefix}:${version}:${address}`;
+}
+
+function saveUsageTelemetry(input: {
+  collectedAt: string;
+  entryUsages?: EntryUsage[];
+  addressUsages?: AddressUsage[];
+  versionPrefixes?: Array<{ prefix: string; version: string }>;
+}): void {
+  const entryUsages = input.entryUsages ?? [];
+  const addressUsages = input.addressUsages ?? [];
+  const versionUsages = (input.versionPrefixes ?? []).map(({ prefix, version }) => ({
+    prefix,
+    version,
+    count: 1,
+    lastSeen: input.collectedAt,
+    sessions: [cliSessionId()],
+  }));
+
+  if (entryUsages.length === 0 && addressUsages.length === 0 && versionUsages.length === 0) {
+    return;
+  }
+
+  const store = getStore();
+  store.saveUsageSnapshot({
+    entryUsages,
+    addressUsages,
+    coOccurrences: [],
+    versionUsages,
+    collectionPeriod: { from: input.collectedAt, to: input.collectedAt },
+  } satisfies UsageData);
+}
+
+function makeAuditRecord(
+  eventKey: string,
+  payload: Record<string, unknown>,
+  addressContext?: Record<string, string>,
+): EventRecord {
+  return {
+    log_id: newLogId(),
+    timestamp: now(),
+    record_kind: "log",
+    trace_id: newTraceId(),
+    span_id: newSpanId(),
+    event_key: eventKey,
+    event_version: "1",
+    payload_format: "json",
+    payload_encoding: "raw",
+    payload_masking_applied: false,
+    payload_masked_fields: [],
+    payload,
+    qa_session_id: cliSessionId(),
+    ...(addressContext && Object.keys(addressContext).length > 0
+      ? { address_context: addressContext }
+      : {}),
+  };
+}
+
+function persistAuditRecord(input: {
+  eventKey: string;
+  payload: Record<string, unknown>;
+  addressContext?: Record<string, string>;
+  eventPrefix?: string;
+  command?: string;
+  targetId?: string;
+  targetKind?: string;
+  lifecycleFrom?: string;
+  lifecycleTo?: string;
+}): void {
+  const store = getStore();
+  const record = makeAuditRecord(input.eventKey, input.payload, input.addressContext);
+  store.saveCliAuditEvent({
+    record,
+    eventPrefix: input.eventPrefix,
+    command: input.command,
+    targetId: input.targetId,
+    targetKind: input.targetKind,
+    lifecycleFrom: input.lifecycleFrom,
+    lifecycleTo: input.lifecycleTo,
+  });
+  void forwardAuditRecordToIngest(record);
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
@@ -422,53 +583,91 @@ function latestVer(prefixId: string): string {
 function emitDkgEvent(
   op: string,
   targetKind: string,
-  _targetId: string,
-  extra?: { decisionType?: string; obsSource?: string; nodeSource?: string; lifecycleState?: string },
+  targetId: string,
+  extra?: {
+    decisionType?: string;
+    obsSource?: string;
+    nodeSource?: string;
+    lifecycleState?: string;
+    lifecycleFrom?: string;
+    command?: string;
+  },
 ): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
-    const versionUsages: Array<{ prefix: string; version: string; count: number; lastSeen: string; sessions: string[] }> = [];
+    const collectedAt = now();
+    const versionUsages: Array<{ prefix: string; version: string }> = [];
+    const addressUsages: AddressUsage[] = [];
+    const addressContext: Record<string, string> = {};
 
     // 기본 dkg_event
-    encodePrefixByValue(DEMO_CATALOG, "dkg_event", latestVer("dkg_event"), {
-      dkg_op: op,
-      dkg_target_kind: targetKind,
-    });
-    versionUsages.push({ prefix: "dkg_event", version: latestVer("dkg_event"), count: 1, lastSeen: now, sessions: [session] });
+    try {
+      const dkgVersion = latestVer("dkg_event");
+      const dkgAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_event", dkgVersion, {
+        dkg_op: op,
+        dkg_target_kind: targetKind,
+      });
+      addressUsages.push({ prefix: "dkg_event", version: dkgVersion, address: dkgAddress, count: 1 });
+      addressContext.dkg_event = serializeAddressContext("dkg_event", dkgVersion, dkgAddress);
+      versionUsages.push({ prefix: "dkg_event", version: dkgVersion });
+    } catch {
+      // dkg_target_kind에 등록되지 않은 값이어도 audit record 자체는 남긴다.
+    }
 
     // 승격된 prefix: dkg_decision_event (decide 시)
     if (extra?.decisionType) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", latestVer("dkg_decision_event"), {
+        const decisionVersion = latestVer("dkg_decision_event");
+        const decisionAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_decision_event", decisionVersion, {
           decision_type: extra.decisionType,
           dkg_target_kind: targetKind,
           node_source: extra.nodeSource ?? "manual",
         });
-        versionUsages.push({ prefix: "dkg_decision_event", version: latestVer("dkg_decision_event"), count: 1, lastSeen: now, sessions: [session] });
+        addressUsages.push({ prefix: "dkg_decision_event", version: decisionVersion, address: decisionAddress, count: 1 });
+        addressContext.dkg_decision_event = serializeAddressContext("dkg_decision_event", decisionVersion, decisionAddress);
+        versionUsages.push({ prefix: "dkg_decision_event", version: decisionVersion });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
     // 승격된 prefix: dkg_observation_event (observe 시)
     if (extra?.obsSource) {
       try {
-        encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", latestVer("dkg_observation_event"), {
+        const observationVersion = latestVer("dkg_observation_event");
+        const observationAddress = encodePrefixByValue(DEMO_CATALOG, "dkg_observation_event", observationVersion, {
           obs_source: extra.obsSource,
           dkg_target_kind: targetKind,
           lifecycle_state: extra.lifecycleState ?? "active",
         });
-        versionUsages.push({ prefix: "dkg_observation_event", version: latestVer("dkg_observation_event"), count: 1, lastSeen: now, sessions: [session] });
+        addressUsages.push({ prefix: "dkg_observation_event", version: observationVersion, address: observationAddress, count: 1 });
+        addressContext.dkg_observation_event = serializeAddressContext("dkg_observation_event", observationVersion, observationAddress);
+        versionUsages.push({ prefix: "dkg_observation_event", version: observationVersion });
       } catch { /* 값이 축에 없으면 건너뜀 */ }
     }
 
-    const store = getStore();
-    store.saveUsageSnapshot({
-      entryUsages: [],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages,
-      collectionPeriod: { from: now, to: now },
-    } satisfies UsageData);
+    saveUsageTelemetry({
+      collectedAt,
+      addressUsages,
+      versionPrefixes: versionUsages,
+    });
+    persistAuditRecord({
+      eventKey: "cli.dkg.operation",
+      eventPrefix: "dkg_event",
+      command: extra?.command ?? "dkg",
+      targetId,
+      targetKind,
+      lifecycleFrom: extra?.lifecycleFrom,
+      lifecycleTo: extra?.lifecycleState,
+      addressContext,
+      payload: {
+        op,
+        targetKind,
+        targetId,
+        ...(extra?.decisionType ? { decisionType: extra.decisionType } : {}),
+        ...(extra?.obsSource ? { obsSource: extra.obsSource } : {}),
+        ...(extra?.nodeSource ? { nodeSource: extra.nodeSource } : {}),
+        ...(extra?.lifecycleFrom ? { lifecycleFrom: extra.lifecycleFrom } : {}),
+        ...(extra?.lifecycleState ? { lifecycleTo: extra.lifecycleState } : {}),
+      },
+    });
   } catch {
     // 인코딩 실패 시 무시 (운영에 영향 없음)
   }
@@ -477,6 +676,23 @@ function emitDkgEvent(
 interface PageOptions {
   page?: number;
   limit?: number;
+}
+
+async function fetchVersionStatus(
+  registryUrl: string,
+  prefix: string,
+  versionId: string,
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(`${registryUrl}/prefixes/${prefix}/versions/${versionId}`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json() as { status?: string };
+    return data.status;
+  } catch {
+    return undefined;
+  }
 }
 
 function paginate<T>(items: T[], opts: PageOptions): { items: T[]; page: number; totalPages: number; total: number } {
@@ -1013,27 +1229,9 @@ export function dkgFlowSchema(flowSchemaId: string): void {
 
 // ── dkg impact ──────────────────────────────────────
 
-export function dkgImpact(axisId: string): void {
-  const graph = getGraph();
-
-  const cascade = graph.cascadeFromAxis(axisId);
-  if (cascade.length === 0) {
-    console.log(`\n  ${axisId}: 영향받는 prefix 없음`);
-    return;
-  }
-
-  console.log(`\n══ Impact: ${axisId} ══`);
-  for (const c of cascade) {
-    console.log(`  ${"  ".repeat(c.distance - 1)}${c.reason === "composes" ? "←" : "←ref─"} ${c.id} (depth=${c.distance})`);
-  }
-
-  // consumer까지 cascade
-  for (const c of cascade) {
-    const { consumers } = graph.cascadeFromPrefix(c.id);
-    if (consumers.length > 0) {
-      console.log(`\n  ${c.id} → consumers: ${consumers.map(cc => cc.id).join(", ")}`);
-    }
-  }
+/** 캐시된 DKG graph를 반환. cliImpact에 넘겨 이중 bootstrap 방지. */
+export function getDkgGraph(): ReturnType<typeof getGraph> {
+  return getGraph();
 }
 
 // ── dkg overlaps ────────────────────────────────────
@@ -1089,6 +1287,61 @@ export function dkgHistory(opts: { limit?: number }): void {
     }
     for (const [prefix, versions] of byPrefix) {
       console.log(`    ${prefix}: ${versions.join(", ")}`);
+    }
+  }
+}
+
+// ── dkg audit-events — CLI lifecycle 감사 로그 ──────────
+
+export function dkgAuditEvents(opts: {
+  limit?: number;
+  prefix?: string;
+  command?: string;
+  targetId?: string;
+  lifecycleTo?: string;
+  json?: boolean;
+}): void {
+  const store = getStore();
+  const events = store.listRecentCliAuditEvents(opts.limit ?? 30, {
+    ...(opts.prefix ? { eventPrefix: opts.prefix } : {}),
+    ...(opts.command ? { command: opts.command } : {}),
+    ...(opts.targetId ? { targetId: opts.targetId } : {}),
+    ...(opts.lifecycleTo ? { lifecycleTo: opts.lifecycleTo } : {}),
+  });
+
+  if (opts.json) {
+    console.log(JSON.stringify(events, null, 2));
+    return;
+  }
+
+  console.log(`\n══ CLI Audit Events (${events.length}건) ══`);
+  if (events.length === 0) {
+    console.log("  (없음)");
+    return;
+  }
+
+  for (const event of events) {
+    const prefix = event.eventPrefix ?? "-";
+    const target = event.targetId ?? "-";
+    const command = event.command ?? "-";
+    const lifecycle =
+      event.lifecycleFrom || event.lifecycleTo
+        ? `${event.lifecycleFrom ?? "?"} → ${event.lifecycleTo ?? "?"}`
+        : "-";
+    console.log(`\n  #${event.id} ${event.timestamp}`);
+    console.log(`    prefix=${prefix} command=${command}`);
+    console.log(`    event=${event.eventKey}@${event.eventVersion} target=${target} kind=${event.targetKind ?? "-"}`);
+    console.log(`    lifecycle=${lifecycle}`);
+    console.log(`    trace=${event.record.trace_id} session=${event.record.qa_session_id ?? "-"}`);
+    if (event.record.address_context && Object.keys(event.record.address_context).length > 0) {
+      console.log(`    address_context=${JSON.stringify(event.record.address_context)}`);
+    }
+    const payload =
+      event.record.payload && typeof event.record.payload === "object"
+        ? JSON.stringify(event.record.payload)
+        : String(event.record.payload ?? "");
+    if (payload && payload !== "undefined") {
+      console.log(`    payload=${payload.slice(0, 240)}`);
     }
   }
 }
@@ -2386,6 +2639,7 @@ function recordLegacyDecision(opts: {
   emitDkgEvent("decide", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
     decisionType: opts.type === "capacity" ? "capacity" : opts.type === "merge" ? "merge" : opts.type === "deprecate" ? "deprecate" : opts.type === "new-axis" ? "new-axis" : opts.type === "new-prefix" ? "new-prefix" : opts.type === "dim-add" ? "dim-add" : undefined,
     nodeSource: "manual",
+    command: "dkg decide",
   });
 
   console.log(`\n══ Decision 기록 완료 ══`);
@@ -2424,7 +2678,6 @@ export async function dkgDecide(opts: {
   alternatives?: readonly string[];
   confidence?: number;
   spec?: string;
-  legacy?: boolean;
   force?: boolean;
   confirmProceed?: () => Promise<boolean>;
 }): Promise<void> {
@@ -2448,11 +2701,6 @@ export async function dkgDecide(opts: {
 
   const decision = recordLegacyDecision(opts);
   if (!decision) {
-    return;
-  }
-
-  if (opts.legacy) {
-    console.log(`  flow:      legacy 모드 — coordinate-design 브릿지 생략`);
     return;
   }
 
@@ -2531,7 +2779,7 @@ export async function dkgDecide(opts: {
     }
   } catch (err) {
     console.warn(`\n  ⚠ coordinate-design 브릿지 시작 실패: ${errorMessage(err)}`);
-    console.warn("  --legacy로 기존 방식만 실행할 수 있습니다.");
+    console.warn("  decision은 기록됨. flow 연결만 실패.");
   }
 }
 
@@ -2594,6 +2842,7 @@ export function dkgObserve(opts: {
   emitDkgEvent("observe", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
     obsSource: "manual",
     lifecycleState: "active",
+    command: "dkg observe",
   });
 
   console.log(`\n══ Observation 기록 완료 ══`);
@@ -2628,7 +2877,9 @@ export function dkgClaim(opts: { target: string; by: string; reason?: string }):
   // claim 저장
   store.setMeta(claimKey(opts.target), JSON.stringify(result.claim));
 
-  emitDkgEvent("claim", graph.getNode(opts.target)?.kind ?? "prefix", opts.target);
+  emitDkgEvent("claim", graph.getNode(opts.target)?.kind ?? "prefix", opts.target, {
+    command: "dkg claim",
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- verdict !== "blocked" → claim/impact 존재 보장
   const claim = result.claim!;
@@ -2684,7 +2935,9 @@ export function dkgRelease(target: string): void {
   for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
   store.saveNodes([releaseObs], result.edges, "manual");
 
-  emitDkgEvent("release", graph.getNode(target)?.kind ?? "prefix", target);
+  emitDkgEvent("release", graph.getNode(target)?.kind ?? "prefix", target, {
+    command: "dkg release",
+  });
 
   console.log(`\n══ Release: ${target} ══`);
   console.log(`  was:  ${prevClaim.by} (${prevClaim.at})`);
@@ -2734,7 +2987,9 @@ export function dkgResolve(opts: { obsId: string; decisionId: string; outcome: s
     "manual",
   );
 
-  emitDkgEvent("resolve", "observation", opts.obsId);
+  emitDkgEvent("resolve", "observation", opts.obsId, {
+    command: "dkg resolve",
+  });
 
   console.log(`\n══ Resolve ══`);
   console.log(`  observation: ${opts.obsId}`);
@@ -2765,7 +3020,9 @@ export function dkgLink(opts: { obsId: string; decisionId: string }): void {
   graph.addEdge("prompts", opts.obsId, opts.decisionId);
   store.saveNodes([], [{ type: "prompts", from: opts.obsId, to: opts.decisionId }], "manual");
 
-  emitDkgEvent("link", "observation", opts.obsId);
+  emitDkgEvent("link", "observation", opts.obsId, {
+    command: "dkg link",
+  });
 
   console.log(`\n══ Link ══`);
   console.log(`  ${opts.obsId} → prompts → ${opts.decisionId}`);
@@ -4056,7 +4313,9 @@ export async function dkgPublish(opts: { registry?: string; versionId?: string }
       console.log(`  release order: ${result.analysis.releaseOrder.join(" → ")}`);
     }
 
-    emitDkgEvent("promote", "system", "publish");
+    emitDkgEvent("promote", "system", "publish", {
+      command: "dkg publish",
+    });
   } catch (err: unknown) {
     console.error(`  연결 실패: ${errorMessage(err)}`);
     console.error(`  registry-service가 ${registryUrl}에서 실행 중인지 확인하세요.`);
@@ -4093,19 +4352,87 @@ export async function dkgVersion(action: string, prefix: string, versionId: stri
     return;
   }
 
+  const beforeStatus = await fetchVersionStatus(registryUrl, prefix, versionId);
+
   try {
     const res = await fetch(`${registryUrl}/prefixes/${prefix}/versions/${versionId}/${endpoint}`, { method: "POST" });
     if (!res.ok) {
       const body = await res.text();
+      persistAuditRecord({
+        eventKey: "cli.dkg.version",
+        eventPrefix: "cli_event",
+        command: "dkg version",
+        targetId: `${prefix}:${versionId}`,
+        targetKind: "version",
+        lifecycleFrom: beforeStatus,
+        payload: {
+          action,
+          prefix,
+          versionId,
+          registryUrl,
+          ok: false,
+          statusCode: res.status,
+          error: body.slice(0, 400),
+        },
+      });
       console.error(`오류 (${res.status}): ${body}`);
       return;
     }
     const result = await res.json();
+    const afterStatus = await fetchVersionStatus(registryUrl, prefix, versionId);
     console.log(`\n  ${prefix}:${versionId} → ${action} 완료`);
     if (action === "activate" && result) {
       console.log(`  결과:`, JSON.stringify(result, null, 2).slice(0, 200));
     }
+
+    // version 상태 전이 후 자동 drift check
+    if (action === "activate" || action === "deprecate") {
+      console.log(`\n  prefix drift check (${prefix})...`);
+      try {
+        const { prefixDrift } = await import("./prefix-stamp.js");
+        const catalog = DEMO_CATALOG as import("@qa-sdk/core").Catalog;
+        if (catalog) prefixDrift(catalog);
+      } catch {
+        console.log("  drift check 건너뜀 (카탈로그 로드 실패)");
+      }
+    }
+
+    persistAuditRecord({
+      eventKey: "cli.dkg.version",
+      eventPrefix: "cli_event",
+      command: "dkg version",
+      targetId: `${prefix}:${versionId}`,
+      targetKind: "version",
+      lifecycleFrom: beforeStatus,
+      lifecycleTo: afterStatus ?? action,
+      payload: {
+        action,
+        prefix,
+        versionId,
+        registryUrl,
+        beforeStatus,
+        afterStatus,
+        ok: true,
+        ...(result && typeof result === "object" ? { result } : {}),
+      },
+    });
   } catch (err: unknown) {
+    persistAuditRecord({
+      eventKey: "cli.dkg.version",
+      eventPrefix: "cli_event",
+      command: "dkg version",
+      targetId: `${prefix}:${versionId}`,
+      targetKind: "version",
+      lifecycleFrom: beforeStatus,
+      payload: {
+        action,
+        prefix,
+        versionId,
+        registryUrl,
+        ok: false,
+        error: errorMessage(err),
+      },
+    });
     console.error(`연결 실패: ${errorMessage(err)}`);
   }
 }
@@ -4158,9 +4485,14 @@ export function dkgSpecAdd(opts: {
   store.saveNodes([spec], edges, "manual");
 
   // spec_event 기록
-  emitSpecEvent(opts.type, opts.lifecycle ?? "draft");
+  emitSpecEvent(opts.type, opts.lifecycle ?? "draft", {
+    targetId: opts.id,
+    command: "dkg spec add",
+  });
 
-  emitDkgEvent("decide", "spec", opts.id);
+  emitDkgEvent("decide", "spec", opts.id, {
+    command: "dkg spec add",
+  });
 
   console.log(`\n══ Spec 등록 완료 ══`);
   console.log(`  id:        ${opts.id}`);
@@ -4218,33 +4550,60 @@ export function dkgSpecTransition(specId: string, toLifecycle: string): void {
   store.saveNodes([updated], [], "manual");
 
   // spec_event 기록
-  emitSpecEvent(spec.type, toLifecycle);
+  emitSpecEvent(spec.type, toLifecycle, {
+    targetId: specId,
+    lifecycleFrom: fromLifecycle,
+    command: "dkg spec transition",
+  });
+  emitDkgEvent("transition", "spec", specId, {
+    command: "dkg spec transition",
+    lifecycleFrom: fromLifecycle,
+    lifecycleState: toLifecycle,
+  });
 
   console.log(`\n══ Spec Transition ══`);
   console.log(`  ${specId}: ${fromLifecycle} → ${toLifecycle}`);
 }
 
 /** spec 변경 이벤트를 spec_event prefix로 기록 */
-function emitSpecEvent(specType: string, lifecycleState: string): void {
+function emitSpecEvent(
+  specType: string,
+  lifecycleState: string,
+  extra?: { targetId?: string; lifecycleFrom?: string; command?: string },
+): void {
   try {
-    const now = new Date().toISOString();
-    const session = `cli-${process.env.USER ?? "unknown"}`;
+    const collectedAt = now();
     const ver = latestVer("spec_event");
-    encodePrefixByValue(DEMO_CATALOG, "spec_event", ver, {
+    const address = encodePrefixByValue(DEMO_CATALOG, "spec_event", ver, {
       spec_type: specType,
       lifecycle_state: lifecycleState,
     });
-    const store = getStore();
-    store.saveUsageSnapshot({
+    const serialized = serializeAddressContext("spec_event", ver, address);
+    saveUsageTelemetry({
+      collectedAt,
       entryUsages: [
-        { axisId: "spec_type", entry: specType, count: 1, lastSeen: now },
-        { axisId: "lifecycle_state", entry: lifecycleState, count: 1, lastSeen: now },
+        { axisId: "spec_type", entry: specType, count: 1, lastSeen: collectedAt },
+        { axisId: "lifecycle_state", entry: lifecycleState, count: 1, lastSeen: collectedAt },
       ],
-      addressUsages: [],
-      coOccurrences: [],
-      versionUsages: [{ prefix: "spec_event", version: ver, count: 1, lastSeen: now, sessions: [session] }],
-      collectionPeriod: { from: now, to: now },
-    } satisfies UsageData);
+      addressUsages: [{ prefix: "spec_event", version: ver, address, count: 1 }],
+      versionPrefixes: [{ prefix: "spec_event", version: ver }],
+    });
+    persistAuditRecord({
+      eventKey: "cli.spec.lifecycle",
+      eventPrefix: "spec_event",
+      command: extra?.command ?? "dkg spec",
+      targetId: extra?.targetId,
+      targetKind: "spec",
+      lifecycleFrom: extra?.lifecycleFrom,
+      lifecycleTo: lifecycleState,
+      addressContext: { spec_event: serialized },
+      payload: {
+        specType,
+        lifecycleState,
+        ...(extra?.targetId ? { targetId: extra.targetId } : {}),
+        ...(extra?.lifecycleFrom ? { lifecycleFrom: extra.lifecycleFrom } : {}),
+      },
+    });
   } catch { /* 기록 실패 시 무시 */ }
 }
 
@@ -4320,7 +4679,9 @@ export function dkgPromoteScan(): void {
   const graph = getGraph();
   const catalog = registry.has(activeCatalogId) ? registry.getCatalog(activeCatalogId) : DEMO_CATALOG;
 
-  emitDkgEvent("promote", "system", "scan");
+    emitDkgEvent("promote", "system", "scan", {
+      command: "dkg promote",
+    });
 
   // 기존 축 이름 수집
   const existingAxes = new Set(Object.keys(catalog.axes ?? {}));

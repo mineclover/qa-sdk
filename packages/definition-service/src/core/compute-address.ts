@@ -1,7 +1,8 @@
 /**
- * 문서 좌표 주소 계산 — scope × aspect × depth → def_document:v1:<N>
+ * 문서 좌표 주소 계산 — legacy fallback.
  *
- * definition-catalog의 encodeDocument를 래핑.
+ * explicit v2 address가 없는 문서에 한해 scope × aspect × depth 기반
+ * `def_document:v1:<N>`를 계산한다.
  * 유효하지 않은 값이면 null 반환 (주소 계산 실패가 저장을 차단하지 않음).
  */
 

@@ -5,7 +5,7 @@ def:
   scope: interface
   aspect: api_contract
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural, contract]
   links:
@@ -781,20 +781,18 @@ $ qa-sdk prefix migrate cart_event v1 v2
 - [x] 중복 방지 로직
 - [x] 기존 코드 3곳 수동 스탬프 (service prefix)
 
-### Phase 2 — version resolve 강화
+### Phase 2 — version resolve 강화 (완료)
 
-- [ ] stamp에서 `ServiceVersionManifest` 기반 version resolve 연동
-- [ ] stamp에서 `VERSION_META.prefixVersions` 기반 version resolve 연동
-- [ ] `--service` 옵션으로 서비스 매니페스트 기반 스탬프
-- [ ] 조건 상수 패턴 자동 인식 (`a ? "X" : "Y"` → 양쪽 다 스탬프)
+- [x] stamp에서 `VERSION_META.prefixVersions` 기반 version resolve 연동
+- [x] `--service` 옵션으로 로컬 매니페스트 기반 스탬프
+- [x] registry-service 원격 매니페스트 fetch (`fetchRegistryManifest`)
+- [x] 조건 상수 패턴 자동 인식
 
-### Phase 3 — 마이그레이션 + CI
+### Phase 3 — 마이그레이션 + Hook (완료)
 
-- [ ] `qa-sdk prefix migrate` — version 마이그레이션 시 표식 일괄 갱신
-- [ ] `qa-sdk prefix impact` — entry 변경 영향 범위
-- [ ] `dkg version` 상태 전이 시 자동 drift check 연동
-- [ ] CI 통합 (선택)
-- [ ] `PrefixMeta.source` 100% 채우기
+- [x] `qa-sdk prefix migrate` — version 마이그레이션 시 표식 일괄 갱신
+- [x] `qa-sdk prefix impact` — prefix 사용처 영향 범위
+- [x] `dkg version activate/deprecate` 후 자동 drift check 실행
 
 ---
 
@@ -811,4 +809,5 @@ $ qa-sdk prefix migrate cart_event v1 v2
 | `packages/registry-service/src/core/seed-config.ts` | ownedPrefixes / consumedPrefixes |
 | `packages/core/src/catalog/runtime.ts` | latestPrefixVersion, encodePrefix |
 | `packages/spec-core/src/propagation/lifecycle.ts` | version 상태 전이 + 전파 |
-| `packages/cli/src/commands/dkg.ts` | dkg version / dkg publish CLI |
+| `packages/cli/src/commands/dkg.ts` | dkg version / dkg publish CLI + drift hook |
+| `packages/core/src/meta-semantic/source-annotations.ts` | @table_ref, @axis JSDoc 어노테이션 추출 |

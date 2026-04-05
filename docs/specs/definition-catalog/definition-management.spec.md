@@ -29,6 +29,8 @@ def:
       type: contains
     - target: definition-mgmt-observability-model
       type: contains
+    - target: definition-mgmt-semantic-lint
+      type: contains
     - target: definition-mgmt-verification-loop
       type: contains
     - target: definition-mgmt-consistency-rules
@@ -48,6 +50,7 @@ def:
 - `definition-mgmt-state-tracking`: harness와 quality gate가 definition 상태를 어떻게 추적하는지 정리한다.
 - `definition-mgmt-feedback-loop`: 관측, feedback request, decision, infra 전이가 어떻게 순환하는지 정리한다.
 - `definition-mgmt-observability-model`: Definition/State/Decision/Verification 평면과 reachable path registry를 어떤 심볼과 FSM으로 다룰지 정리한다.
+- `definition-mgmt-semantic-lint`: structural lint 위에 meta-semantic 2층 override를 어떻게 얹는지 정리한다.
 - `definition-mgmt-verification-loop`: build, sync, validate, audit, quality, vitest 회귀를 어떤 순서로 반복해야 하는지 정리한다.
 - `definition-mgmt-consistency-rules`: 주소 불변, 단일 개념 원칙, 상태 좌표화 등 운영 규칙을 정리한다.
 
@@ -73,8 +76,9 @@ def:
 | 3 | 이 정의의 현재 상태는 무엇인가 | `definition-mgmt-state-tracking` |
 | 4 | 관측이 어떻게 정의를 다시 바꾸는가 | `definition-mgmt-feedback-loop` |
 | 5 | 무엇을 어떻게 관찰하고 좌표화하는가 | `definition-mgmt-observability-model` |
-| 6 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
-| 7 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
+| 6 | 구조 lint를 언제 semantic override로 완화하는가 | `definition-mgmt-semantic-lint` |
+| 7 | 무엇을 어떤 순서로 검증하는가 | `definition-mgmt-verification-loop` |
+| 8 | 무엇을 지켜야 일관성이 유지되는가 | `definition-mgmt-consistency-rules` |
 
 ## 사용 맥락 ^context
 
@@ -85,6 +89,7 @@ def:
 | 상태 조회/전이 | `definition-mgmt-state-tracking` |
 | 피드백 루프 추적 | `definition-mgmt-feedback-loop` |
 | 관찰 스키마/경로 좌표화 | `definition-mgmt-observability-model` |
+| meta-semantic 예외 규칙 점검 | `definition-mgmt-semantic-lint` |
 | 검증 순서 정하기 | `definition-mgmt-verification-loop` |
 | 규칙 점검 | `definition-mgmt-consistency-rules` |
 

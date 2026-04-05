@@ -30,14 +30,14 @@ def:
 
 ## 정의 ^defines
 
-- scope 7종, aspect 22종, depth 4종, lifecycle 5종, layer 4종, link_type 6종
+- scope 7종, aspect 22종, depth 4종, lifecycle 5종, level 3종, layer 4종, link_type 8종
 - 문서 태그는 좌표 축이 아니라 보조 taxonomy이며 `tag-management-spec`에서 관리
 - VALID_SCOPE_ASPECTS 유효 조합 제약
 - v1/v2 주소 공간 개요
 
 ## 위임 ^delegates
 
-- **definition-level** → 분해 레벨(5종) 상세
+- **definition-level** → 분해 레벨(3종) 상세
 - **definition-addressing** → 주소 체계 상세 (이중 관리, 마이그레이션)
 
 ## 구성 ^overview
@@ -45,8 +45,8 @@ def:
 7개 축이 문서의 정체성을 결정한다:
 
 - **좌표 축** (주소에 인코딩 — 불변): scope(7) × aspect(22) × depth(4) × seq(128)
-- **메타데이터** (변할 수 있음): level(5), lifecycle(5), layer(4)
-- **관계**: link_type(6)
+- **메타데이터** (변할 수 있음): level(3), lifecycle(5), layer(4)
+- **관계**: link_type(8)
 - **이중 관리**: address(불변 식별자) + id(표시 라벨)
 - **하위 문서**: definition-level(분해 레벨), definition-addressing(주소 체계)
 
@@ -99,7 +99,9 @@ def:
 ├── 데이터 (data)
 │   ├── 도메인데이터 (domain_data)    비즈니스 도메인 엔티티와 스키마
 │   ├── 시스템데이터 (system_data)    설정, 로그, 메트릭 등 시스템 데이터
-│   └── 외부데이터 (external_data)    외부 API, 서드파티 데이터 연동
+│   ├── 외부데이터 (external_data)    외부 API, 서드파티 데이터 연동
+│   ├── Prefix스키마 (prefix_schema)  좌표 prefix의 차원 구성, 버전, capacity 정의
+│   └── Axis카탈로그 (axis_catalog)   좌표 축의 entries, capacity, headroom 정의
 │
 └── 인터페이스 (interface)
     ├── API계약 (api_contract)       REST/gRPC 엔드포인트, 요청/응답 스키마
@@ -107,7 +109,7 @@ def:
     └── 이벤트계약 (event_contract)  이벤트 스키마, 메시지 포맷, 발행/구독 규약
 ```
 
-scope-aspect 유효 조합: 20개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
+scope-aspect 유효 조합: 22개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
 
 ### depth (4종) — "얼마나 상세한가"
 
@@ -120,7 +122,7 @@ scope-aspect 유효 조합: 20개. `VALID_SCOPE_ASPECTS`가 제약, `validateSco
 
 ## 메타데이터
 
-### level (5종) — "어떤 분해 단위인가"
+### level (3종) — "어떤 분해 단위인가"
 
 상세: `definition-level` 문서 참조.
 
@@ -136,9 +138,11 @@ scope(구조)와 직교. "이것을 삭제해도 비즈니스 진실이 바뀌�
 
 draft → review → approved → deprecated → archived
 
-### link_type (6종) — "어떤 관계인가"
+### link_type (8종) — "어떤 관계인가"
 
 참조: `definition-catalog/src/taxonomy.ts:LINK_TYPE_RULES`
+
+`depends_on`, `implements`, `refines`, `constrains`, `traces_to`, `contains`, `evolves_from`, `supersedes`
 
 ## 주소 체계
 

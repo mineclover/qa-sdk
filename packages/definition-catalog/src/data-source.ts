@@ -82,6 +82,16 @@ export type DefFileBoundaryResolution =
 export interface DefIncomingLink {
   source: string;
   type: string;
+  sourceAddress?: string;
+  targetAddress?: string;
+}
+
+/** 링크 (순방향) */
+export interface DefOutgoingLink {
+  target: string;
+  type: string;
+  sourceAddress?: string;
+  targetAddress?: string;
 }
 
 /** synthetic 역링크 (review-ledger 등 외부 인덱스에서 파생) */
@@ -161,6 +171,7 @@ export interface DefBoundaryConcernsResult {
 
 export interface DefBoundaryImpactDoc {
   docId: string;
+  address?: string;
   via: string;
   path: string;
   direction: "upstream" | "downstream";
@@ -171,6 +182,7 @@ export interface DefBoundaryImpactDoc {
 
 export interface DefBoundaryImpactResult {
   sourceId: string;
+  sourceAddress?: string;
   impacted: DefBoundaryImpactDoc[];
   affectedGroups: string[];
   blastRadius: number;
@@ -235,6 +247,9 @@ export interface DefDataSource {
   /** 단건 조회 */
   get(docId: string): Promise<DefDoc | null>;
 
+  /** 주소 기준 단건 조회 */
+  getByAddress(address: string): Promise<DefDoc | null>;
+
   /** 최신 문서 본문 조회 */
   getBody(docId: string): Promise<DefDocBody | null>;
 
@@ -257,7 +272,7 @@ export interface DefDataSource {
   getSyntheticIncomingLinks(docId: string): Promise<DefSyntheticIncomingLink[]>;
 
   /** 순방향 링크 */
-  getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]>;
+  getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]>;
 
   /** 문서와 연결된 feedback request 요약 */
   getFeedbackRequestsByDocId(docId: string, limit?: number): Promise<DefFeedbackRequestSummary[]>;

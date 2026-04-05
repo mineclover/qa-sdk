@@ -7,7 +7,7 @@ def:
   scope: data
   aspect: domain_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   links:
     - target: meta-semantic-concepts

@@ -76,6 +76,10 @@ contract descent 기반 스코프 중첩 검증 프레임워크. scope가 계약
 - **contract-timing** → readyAfter + delegation gap 시점 분석
 - **simulation-layers** → 5계층 모델 정의
 
+### 외부 브릿지
+
+- `core/src/meta-semantic/ir-nesting-bridge.ts` → ScopeNesting ↔ ModuleIR 교차 검증 (`crossValidate`) + 자동 변환 (`nestingToModuleIRs`)
+
 ## 구성 ^overview
 
 | 구현 파일 | 테스트 |

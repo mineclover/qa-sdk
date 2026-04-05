@@ -295,6 +295,7 @@ Browser ────────── browser-codec (encode/decode SSOT) → br
 분석 ──────────── convergence (독립) → spec-core (DKG + skills + FlowSchemaNode)
 코드 생성 ────── codegen-core (순수 함수) → snapshot-io (JSON I/O)
 설정 로딩 ────── config-loader (Catalog/DkgConfig .ts/.js/.json 자동 감지)
+테스트 분류 ──── test-types (TestPhase/Kind/Scope/Lifecycle SSOT) → test-scenario-store (Drizzle)
 문서 데이터 ──── definition-data-source (SQLite local + HTTP 서버 팩토리)
 Git/모노레포 ── git-utils (execa 기반) → package-classifier (tier/runtime/scope)
 리뷰 추적 ────── review-ledger (파일별 커밋 기준 리뷰 원장 + AI 피드백 요청 artifact + DKG bridge)
@@ -314,7 +315,7 @@ qa-sdk dkg report                  # 현황 요약
 
 # 조회
 qa-sdk dkg trace <id>              # 노드 추적 (구성/소속/제약/cascade)
-qa-sdk dkg impact <axis>           # 축 변경 영향 분석
+qa-sdk dkg impact <axis>           # 축 변경 영향 분석 (→ analyzeImpact 위임)
 qa-sdk dkg table <table>           # DB 테이블 의존 추적
 qa-sdk dkg service <id>            # 서비스 프로파일
 qa-sdk dkg prefix <id>             # prefix 상세
@@ -328,8 +329,7 @@ qa-sdk dkg scan-tables             # DB 스키마 drift 감지
 # 변경
 qa-sdk dkg add-entry <axis> <entry>    # 축 entry 추가
 qa-sdk dkg observe --target <id>       # 관측 기록
-qa-sdk dkg decide --type <t>           # 의사결정 기록 (→ flow 자동 실행)
-qa-sdk dkg decide --legacy             # 기존 방식 (flow 없이 직접 DecisionNode)
+qa-sdk dkg decide --type <t>           # 의사결정 기록 (→ flow 브릿지 자동 실행)
 qa-sdk dkg resolve <obs>               # 관측 루프 닫기
 
 # 의사결정 플로우

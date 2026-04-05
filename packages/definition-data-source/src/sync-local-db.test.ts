@@ -89,21 +89,175 @@ def:
 
       const rawLink = db
         .prepare(`
-          SELECT source_id, target_id, link_type
+          SELECT source_id, target_id, source_address, target_address, link_type
           FROM document_links
           WHERE source_id = ?
         `)
         .get("sample-doc") as
-          | { source_id: string; target_id: string; link_type: string }
+          | {
+              source_id: string;
+              target_id: string;
+              source_address: string | null;
+              target_address: string | null;
+              link_type: string;
+            }
           | undefined;
 
       expect(rawLink).toEqual({
         source_id: "sample-doc",
         target_id: "missing-doc",
+        source_address: expect.stringMatching(/^def_document:v1:/),
+        target_address: null,
         link_type: "depends_on",
       });
     } finally {
       db.close();
+    }
+  });
+
+  it("frontmatter의 v2 address를 documents.address에 보존한다", async () => {
+    const rootDir = makeTempDir();
+    const docsDir = join(rootDir, "docs");
+    const dataDir = join(rootDir, "data");
+    mkdirSync(docsDir, { recursive: true });
+    mkdirSync(dataDir, { recursive: true });
+
+    writeFileSync(
+      join(docsDir, "addressed.md"),
+      `---
+def:
+  id: addressed-doc
+  address: def_document:v2:424242
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+---
+# Addressed Doc
+
+## 목적 ^purpose
+
+v2 address 보존 확인
+`,
+      "utf8",
+    );
+
+    const result = await syncDocsToLocalDb({ rootDir });
+    expect(result.synced).toBe(1);
+
+    const db = new Database(join(rootDir, "data/definition-service.sqlite"), { readonly: true });
+    try {
+      const row = db
+        .prepare("SELECT address FROM documents WHERE doc_id = ?")
+        .get("addressed-doc") as { address: string | null } | undefined;
+      expect(row?.address).toBe("def_document:v2:424242");
+    } finally {
+      db.close();
+    }
+  });
+
+  it("링크 조회 시 source/target address를 병행 노출한다", async () => {
+    const rootDir = makeTempDir();
+    const docsDir = join(rootDir, "docs");
+    const dataDir = join(rootDir, "data");
+    mkdirSync(docsDir, { recursive: true });
+    mkdirSync(dataDir, { recursive: true });
+
+    writeFileSync(
+      join(docsDir, "source.md"),
+      `---
+def:
+  id: source-doc
+  address: def_document:v2:101
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  links:
+    - target: target-doc
+      type: depends_on
+---
+# Source Doc
+
+## 목적 ^purpose
+
+source purpose
+`,
+      "utf8",
+    );
+
+    writeFileSync(
+      join(docsDir, "target.md"),
+      `---
+def:
+  id: target-doc
+  address: def_document:v2:202
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+---
+# Target Doc
+
+## 목적 ^purpose
+
+target purpose
+`,
+      "utf8",
+    );
+
+    await syncDocsToLocalDb({ rootDir });
+
+    const db = new Database(join(rootDir, "data/definition-service.sqlite"), { readonly: true });
+    try {
+      const rawLink = db
+        .prepare(`
+          SELECT source_id, target_id, source_address, target_address, link_type
+          FROM document_links
+          WHERE source_id = ? AND target_id = ?
+        `)
+        .get("source-doc", "target-doc") as
+          | {
+              source_id: string;
+              target_id: string;
+              source_address: string | null;
+              target_address: string | null;
+              link_type: string;
+            }
+          | undefined;
+
+      expect(rawLink).toEqual({
+        source_id: "source-doc",
+        target_id: "target-doc",
+        source_address: "def_document:v2:101",
+        target_address: "def_document:v2:202",
+        link_type: "depends_on",
+      });
+    } finally {
+      db.close();
+    }
+
+    const source = new LocalDataSource(join(rootDir, "data/definition-service.sqlite"), rootDir);
+    try {
+      await expect(source.getOutgoingLinks("source-doc")).resolves.toEqual([
+        {
+          target: "target-doc",
+          type: "depends_on",
+          sourceAddress: "def_document:v2:101",
+          targetAddress: "def_document:v2:202",
+        },
+      ]);
+
+      await expect(source.getIncomingLinks("target-doc")).resolves.toEqual([
+        {
+          source: "source-doc",
+          type: "depends_on",
+          sourceAddress: "def_document:v2:101",
+          targetAddress: "def_document:v2:202",
+        },
+      ]);
+    } finally {
+      source.close();
     }
   });
 

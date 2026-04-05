@@ -1,11 +1,13 @@
 import { z } from "zod";
-import { optionalUrl } from "@qa-sdk/core";
+import { getServicePort, getServiceDevUrl, emptyStringToUndefined } from "@qa-sdk/core";
+
+const DEFAULT_PORT = getServicePort("query-service") ?? 3500;
 
 export const envSchema = z.object({
-  PORT: z.coerce.number().int().default(3500),
+  PORT: z.coerce.number().int().default(DEFAULT_PORT),
   SQLITE_DRIVER: z.enum(["node", "better"]).default("node"),
   SQLITE_PATH: z.string().default("data/query-service.sqlite"),
-  GATE_SERVICE_URL: optionalUrl,
+  GATE_SERVICE_URL: z.preprocess(emptyStringToUndefined, z.string().url().default(getServiceDevUrl("gate-service") ?? "http://localhost:3400")),
   QUERY_DEFAULT_STRATEGY: z.enum([
     "most-specific",
     "priority",
@@ -13,6 +15,8 @@ export const envSchema = z.object({
     "first-match",
   ]).default("most-specific"),
   QUERY_GATE_FAILURE_MODE: z.enum(["fail-open", "fail-closed"]).default("fail-open"),
+  /** 시점 replay용 RecordStore DB 경로 (미설정 시 SQLITE_PATH 공유) */
+  RECORD_STORE_PATH: z.preprocess(emptyStringToUndefined, z.string().optional()),
 });
 
 export type Env = z.infer<typeof envSchema>;

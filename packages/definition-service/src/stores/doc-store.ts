@@ -1,5 +1,11 @@
 import type { DefinitionServiceDatabase } from "../database.module.js";
-import type { DocRecord, DocHistoryRecord, CodeReferenceRecord } from "../core/types.js";
+import type {
+  DocRecord,
+  DocHistoryRecord,
+  CodeReferenceRecord,
+  DocIncomingLinkRecord,
+  DocOutgoingLinkRecord,
+} from "../core/types.js";
 import type { DocStore, DocMetadataUpdate, DocListFilter } from "../core/interfaces.js";
 import { decideVersion } from "../core/doc-versioner.js";
 import { computeDocumentAddress } from "../core/compute-address.js";
@@ -16,6 +22,7 @@ import {
   desc,
   like,
   count,
+  sql,
   type SQL,
 } from "drizzle-orm";
 
@@ -133,7 +140,7 @@ export class SqlDocStore implements DocStore {
     }
 
     const { version, changeType } = decision;
-    const address = computeDocumentAddress(doc.scope, doc.aspect, doc.depth);
+    const computedAddress = computeDocumentAddress(doc.scope, doc.aspect, doc.depth);
 
     const values = {
       docId: doc.docId,
@@ -151,7 +158,7 @@ export class SqlDocStore implements DocStore {
       svc: doc.svc ?? null,
       docVersion: doc.docVersion ?? null,
       revision: doc.revision ?? null,
-      address: address ?? doc.address ?? null,
+      address: doc.address ?? computedAddress ?? null,
       targetPrefix: doc.targetPrefix ?? null,
       version,
       bodyHash: doc.bodyHash,
@@ -232,6 +239,7 @@ export class SqlDocStore implements DocStore {
       .run();
 
     this.syncLinks(doc.docId, doc.links);
+    this.syncLinkAddresses(doc.docId, values.address ?? undefined);
 
     const action = changeType === "created" ? "created" as const : "updated" as const;
     return { action, version };
@@ -273,7 +281,7 @@ export class SqlDocStore implements DocStore {
     if (same) return { action: "unchanged", version: existing.version };
 
     const version = existing.version + 1;
-    const address = computeDocumentAddress(updated.scope, updated.aspect, updated.depth);
+    const computedAddress = computeDocumentAddress(updated.scope, updated.aspect, updated.depth);
 
     const values = {
       docId: updated.docId,
@@ -291,7 +299,7 @@ export class SqlDocStore implements DocStore {
       svc: updated.svc ?? null,
       docVersion: updated.docVersion ?? null,
       revision: updated.revision ?? null,
-      address: address ?? updated.address ?? null,
+      address: updated.address ?? computedAddress ?? null,
       targetPrefix: updated.targetPrefix ?? null,
       version,
       bodyHash: updated.bodyHash,
@@ -383,6 +391,7 @@ export class SqlDocStore implements DocStore {
       .run();
 
     this.syncLinks(docId, updated.links);
+    this.syncLinkAddresses(docId, values.address ?? undefined);
 
     return { action: "updated", version };
   }
@@ -390,17 +399,21 @@ export class SqlDocStore implements DocStore {
   // ── Edge 동기화 ──────────────────────────────────
 
   private syncLinks(docId: string, links: { target: string; type: string }[]) {
+    const sourceAddress = this.get(docId)?.address ?? null;
     this.db
       .delete(documentLinks)
       .where(eq(documentLinks.sourceId, docId))
       .run();
 
     for (const link of links) {
+      const targetAddress = this.get(link.target)?.address ?? null;
       this.db
         .insert(documentLinks)
         .values({
           sourceId: docId,
           targetId: link.target,
+          sourceAddress,
+          targetAddress,
           linkType: link.type,
         })
         .onConflictDoNothing()
@@ -408,32 +421,63 @@ export class SqlDocStore implements DocStore {
     }
   }
 
+  private syncLinkAddresses(docId: string, address?: string): void {
+    const currentAddress = address ?? null;
+    this.db
+      .update(documentLinks)
+      .set({ sourceAddress: currentAddress })
+      .where(eq(documentLinks.sourceId, docId))
+      .run();
+
+    this.db
+      .update(documentLinks)
+      .set({ targetAddress: currentAddress })
+      .where(eq(documentLinks.targetId, docId))
+      .run();
+  }
+
   // ── Link 쿼리 ──────────────────────────────────────────
 
   /** 특정 문서에서 나가는 링크 */
-  getOutgoingLinks(docId: string): { target: string; type: string }[] {
+  getOutgoingLinks(docId: string): DocOutgoingLinkRecord[] {
+    const sourceAddress = this.get(docId)?.address;
     return this.db
       .select({
         target: documentLinks.targetId,
         type: documentLinks.linkType,
+        targetAddress: sql<string | null>`coalesce(${documentLinks.targetAddress}, ${documents.address})`,
       })
       .from(documentLinks)
+      .leftJoin(documents, eq(documentLinks.targetId, documents.docId))
       .where(eq(documentLinks.sourceId, docId))
       .all()
-      .map(r => ({ target: r.target, type: r.type }));
+      .map(r => ({
+        target: r.target,
+        type: r.type,
+        ...(sourceAddress ? { sourceAddress } : {}),
+        ...(r.targetAddress ? { targetAddress: r.targetAddress } : {}),
+      }));
   }
 
   /** 특정 문서로 들어오는 링크 */
-  getIncomingLinks(docId: string): { source: string; type: string }[] {
+  getIncomingLinks(docId: string): DocIncomingLinkRecord[] {
+    const targetAddress = this.get(docId)?.address;
     return this.db
       .select({
         source: documentLinks.sourceId,
         type: documentLinks.linkType,
+        sourceAddress: sql<string | null>`coalesce(${documentLinks.sourceAddress}, ${documents.address})`,
       })
       .from(documentLinks)
+      .leftJoin(documents, eq(documentLinks.sourceId, documents.docId))
       .where(eq(documentLinks.targetId, docId))
       .all()
-      .map(r => ({ source: r.source, type: r.type }));
+      .map(r => ({
+        source: r.source,
+        type: r.type,
+        ...(r.sourceAddress ? { sourceAddress: r.sourceAddress } : {}),
+        ...(targetAddress ? { targetAddress } : {}),
+      }));
   }
 
   /** contains 링크로 연결된 자식 문서 */
@@ -482,6 +526,15 @@ export class SqlDocStore implements DocStore {
 
   get(docId: string): DocRecord | null {
     const row = this.getSnapshotRow(docId);
+    return row ? rowToDoc(row) : null;
+  }
+
+  getByAddress(address: string): DocRecord | null {
+    const row = this.db
+      .select()
+      .from(documents)
+      .where(eq(documents.address, address))
+      .get();
     return row ? rowToDoc(row) : null;
   }
 

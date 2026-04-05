@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -287,7 +287,7 @@ meta-semantic:       function × path × tx_seq         → intent:v1:F:P:T
 ### 교차 참조
 
 ```
-def_document:v2:342162 (문서: payment-api-spec)
+def_document:v2:342162 (문서: payment-api)
   ↕ @def.doc 주석
 intent:v1:1:0:42 (코드: processOrder, normal×card, 42번째 실행)
 
@@ -341,3 +341,16 @@ intent:v1:1:0:42 (코드: processOrder, normal×card, 42번째 실행)
     3 × 3 + 3 × 3 = 18 경로 / 함수
     50개 함수 × 18 = 900 경로 (관리 가능)
 ```
+
+---
+
+## 8. 소스 코드
+
+| 파일 | 역할 |
+|------|------|
+| `core/src/meta-semantic/spacetime-uid.ts` | `PathBranchPoint`, `IntentPathSegment`, `SpacetimeUID` 타입 |
+| `core/src/meta-semantic/spacetime-uid.ts` | `buildSegments()`, `encodePathAddress()`, `decodePathAddress()` |
+| `core/src/meta-semantic/spacetime-uid.ts` | `createSpacetimeUID()`, `parseSpacetimeUID()` |
+| `core/src/meta-semantic/spacetime-uid.ts` | `pathAddressRange()`, `addressesForBranch()` 쿼리 |
+
+테스트: `spacetime-uid.test.ts` (17 tests)

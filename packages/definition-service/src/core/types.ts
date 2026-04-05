@@ -26,7 +26,7 @@ export interface DocRecord {
   docVersion?: string;
   /** frontmatter revision 숫자 */
   revision?: number;
-  /** 좌표 주소 — scope×aspect×depth로 계산 (def_document:v1:<N>) */
+  /** 좌표 주소 — explicit v2를 우선 보존하고, 없으면 legacy v1 fallback */
   address?: string;
   /** 이 문서가 기술하는 대상 prefix (이중 좌표 참조) */
   targetPrefix?: string;
@@ -54,6 +54,20 @@ export interface CodeReferenceRecord {
   sourceKind: "code_comment" | "doc_frontmatter";
   symbol?: string;
   line?: number;
+}
+
+export interface DocIncomingLinkRecord {
+  source: string;
+  type: string;
+  sourceAddress?: string;
+  targetAddress?: string;
+}
+
+export interface DocOutgoingLinkRecord {
+  target: string;
+  type: string;
+  sourceAddress?: string;
+  targetAddress?: string;
 }
 
 /** 주소 슬라이스 의도 레코드 */

@@ -127,6 +127,8 @@ PipeFlow 30종 흐름 제어를 포함한 PipeSpec(단일 노드), PipeGraph(노
 통합 테스트: `meta-semantic-integration.test.ts` (12 tests)
 공유 fixture: `__fixtures__/pipe-fixtures.ts` (step, simplePipe, branchPipe, simpleGraph)
 
+`pipe-svg`의 구현 소유권은 `viz-core`로 이동했지만, 기존 compatibility 검증과 graph-level snapshot 테스트는 아직 `core`의 테스트 스위트에 남아 있다.
+
 ## 설계 구조
 
 ```

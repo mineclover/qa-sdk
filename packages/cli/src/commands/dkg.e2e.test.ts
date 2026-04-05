@@ -85,36 +85,30 @@ describe("dkg CLI E2E", () => {
     expect(output.stdout).toContain("⚠ 코어 gate 무효화 — 전체 재설계 필요");
   });
 
-  it("dkg decide --legacy는 기존 DecisionNode 기록만 남기고 flow 연결은 만들지 않는다", async () => {
-    const { home, dkgDecide, dkgTrace } = await loadIsolatedDkgModules();
+  it("dkg decide는 DecisionNode 기록 후 flow bridge를 시도한다", async () => {
+    const { home, dkgDecide } = await loadIsolatedDkgModules();
 
     const decideOutput = await captureConsoleAsync(async () => {
       await dkgDecide({
         target: "decision_event",
         type: "new-axis",
-        title: "legacy 새 axis 추가",
-        rationale: "기존 기록 경로 유지 확인",
-        legacy: true,
+        title: "새 axis 추가",
+        rationale: "bridge 시도 확인",
         confirmProceed: async () => true,
       });
     });
 
-    expect(decideOutput.stdout).toContain("legacy 모드 — coordinate-design 브릿지 생략");
-
+    // decision은 항상 기록됨
     const decisionId = extractLabeledValue(decideOutput.stdout, "id");
     const store = new DkgSqliteStore(join(home, ".qa-sdk", "state.sqlite"), "demo");
     const graph = store.loadGraph();
     const decision = graph.getNode(decisionId);
 
     expect(decision?.kind).toBe("decision");
-    expect(decision && "flowInstanceId" in decision ? decision.flowInstanceId : undefined).toBeUndefined();
-
-    const traceOutput = captureConsole(() => {
-      dkgTrace(decisionId);
-    });
-
-    expect(traceOutput.stdout).not.toContain("── 연결된 FlowInstance 코어 추적 ──");
-    expect(traceOutput.stdout).not.toContain("flow:      ");
+    // bridge 시도: 성공하면 flowInstanceId 존재, 실패하면 경고 출력
+    const hasFlow = decision && "flowInstanceId" in decision && !!decision.flowInstanceId;
+    const hasBridgeWarning = decideOutput.stdout.includes("브릿지 시작 실패");
+    expect(hasFlow || hasBridgeWarning).toBe(true);
   });
 });
 

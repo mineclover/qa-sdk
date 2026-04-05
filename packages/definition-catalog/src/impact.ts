@@ -18,6 +18,8 @@ import type { DefLayer, DefinitionEntry, DefinitionLink, LinkType } from "./type
 export interface ImpactedDoc {
   /** 영향받는 문서 ID */
   readonly id: string;
+  /** 영향받는 문서의 canonical address */
+  readonly address?: string;
   /** 어떤 관계를 통해 영향받는가 */
   readonly via: LinkType;
   /** 영향 경로 (변경 문서 → ... → 영향받는 문서) */
@@ -36,6 +38,8 @@ export interface ImpactedDoc {
 export interface ImpactAnalysis {
   /** 변경된 문서 ID */
   readonly sourceId: string;
+  /** 변경된 문서의 canonical address */
+  readonly sourceAddress?: string;
   /** 변경 문서의 layer */
   readonly sourceLayer?: DefLayer;
   /** 영향받는 문서 목록 */
@@ -99,7 +103,13 @@ export function analyzeImpact(
 ): ImpactAnalysis {
   const source = getEntry(sourceId);
   if (!source) {
-    return { sourceId, impacted: [], affectedGroups: [], blastRadius: 0, byLayer: { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 } };
+    return {
+      sourceId,
+      impacted: [],
+      affectedGroups: [],
+      blastRadius: 0,
+      byLayer: { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 },
+    };
   }
 
   const sourceLayer = source.layer;
@@ -128,7 +138,16 @@ export function analyzeImpact(
 
     const crossLayer = !!propagatingLayer && !!doc.layer && propagatingLayer !== doc.layer;
 
-    impacted.push({ id: docId, via, path, direction, depth, layer: doc.layer, crossLayer });
+    impacted.push({
+      id: docId,
+      address: doc.serialized || undefined,
+      via,
+      path,
+      direction,
+      depth,
+      layer: doc.layer,
+      crossLayer,
+    });
 
     // layer 통계
     if (doc.layer) byLayer[doc.layer]++;
@@ -145,6 +164,7 @@ export function analyzeImpact(
 
   return {
     sourceId,
+    sourceAddress: source.serialized || undefined,
     sourceLayer,
     impacted,
     affectedGroups,
@@ -204,6 +224,7 @@ export function selectImpactContext(
 
   return {
     sourceId: impact.sourceId,
+    sourceAddress: impact.sourceAddress,
     sourceLayer: impact.sourceLayer,
     impacted,
     affectedGroups: impacted

@@ -64,6 +64,8 @@ const documentLinks = sqliteTable(
   {
     sourceId: text("source_id").notNull(),
     targetId: text("target_id").notNull(),
+    sourceAddress: text("source_address"),
+    targetAddress: text("target_address"),
     linkType: text("link_type").notNull(),
   },
   (table) => ({
@@ -120,6 +122,7 @@ export async function syncDocsToLocalDb(
     let codeReferenceCount = 0;
 
     db.transaction((tx) => {
+      const addressById = new Map(entries.map((entry) => [entry.id, entry.serialized ?? null] as const));
       for (const entry of entries) {
         const sourcePath = entry.ref ? join(rootDir, entry.ref) : null;
         const body = sourcePath ? extractMarkdownBody(sourcePath) : "";
@@ -140,6 +143,8 @@ export async function syncDocsToLocalDb(
             links.map((link) => ({
               sourceId: entry.id,
               targetId: link.target,
+              sourceAddress: addressById.get(entry.id) ?? null,
+              targetAddress: addressById.get(link.target) ?? null,
               linkType: link.type,
             })),
           ).run();
@@ -212,6 +217,8 @@ function resetTables(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS document_links (
       source_id TEXT NOT NULL,
       target_id TEXT NOT NULL,
+      source_address TEXT,
+      target_address TEXT,
       link_type TEXT NOT NULL,
       PRIMARY KEY (source_id, target_id, link_type)
     );

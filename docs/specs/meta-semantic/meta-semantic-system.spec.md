@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: overview
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural, entry-point, cross-scope]
   links:

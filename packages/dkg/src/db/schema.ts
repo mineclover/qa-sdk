@@ -109,6 +109,46 @@ export const versionUsages = sqliteTable(
 );
 
 // ═══════════════════════════════════════════════════════
+//  CLI Audit Events — EventRecord 기반 로컬 감사 로그
+// ═══════════════════════════════════════════════════════
+
+export const cliAuditEvents = sqliteTable(
+  "cli_audit_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    catalogId: text("catalog_id").notNull().default("demo"),
+    eventPrefix: text("event_prefix"),
+    command: text("command"),
+    eventKey: text("event_key").notNull(),
+    eventVersion: text("event_version").notNull(),
+    recordKind: text("record_kind").notNull().default("log"),
+    logId: text("log_id").notNull(),
+    traceId: text("trace_id").notNull(),
+    spanId: text("span_id").notNull(),
+    qaSessionId: text("qa_session_id"),
+    targetId: text("target_id"),
+    targetKind: text("target_kind"),
+    lifecycleFrom: text("lifecycle_from"),
+    lifecycleTo: text("lifecycle_to"),
+    timestamp: text("timestamp").notNull(),
+    addressContext: text("address_context"),
+    payload: text("payload"),
+    recordJson: text("record_json").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => [
+    index("idx_cli_audit_catalog").on(table.catalogId),
+    index("idx_cli_audit_prefix").on(table.eventPrefix),
+    index("idx_cli_audit_command").on(table.command),
+    index("idx_cli_audit_target").on(table.targetId, table.targetKind),
+    index("idx_cli_audit_lifecycle").on(table.lifecycleTo),
+    index("idx_cli_audit_timestamp").on(table.timestamp),
+  ],
+);
+
+// ═══════════════════════════════════════════════════════
 //  메타데이터
 // ═══════════════════════════════════════════════════════
 

@@ -5,7 +5,7 @@ def:
   scope: ui
   aspect: component
   depth: overview
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [visualization, testing]
   links:

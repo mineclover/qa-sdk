@@ -9,12 +9,12 @@
  * 7대 분류 (scope):
  *   화면/UI, 기능, 흐름, 상태, 제약조건, 데이터, 인터페이스
  *
- * 20 세부 유형 (aspect):
+ * 22 세부 유형 (aspect):
  *   레이아웃, 컴포넌트, 인터랙션, 기능정의, 시나리오,
  *   사용자시나리오, 프로세스흐름, 연관관계,
  *   앱상태, 도메인상태, 시스템상태,
  *   기술적제약, 비즈니스제약, 인프라제약,
- *   도메인데이터, 시스템데이터, 외부데이터,
+ *   도메인데이터, 시스템데이터, 외부데이터, Prefix스키마, Axis카탈로그,
  *   API계약, CLI계약, 이벤트계약
  *
  * 4 깊이 (depth): 개요, 명세, 구현, 검증
@@ -63,11 +63,23 @@ export {
 } from "./vocabulary.js";
 
 // ─── 분류 체계 ──────────────────────────────────────────
-export type { TaxonomyScope, TaxonomyAspect, DefinitionTaxonomy, ContractMarkerKind, ContractMarkerDef, ScenarioMarkerKind, ScenarioMarkerDef, LinkTypeRule } from "./taxonomy.js";
+export type {
+  TaxonomyScope,
+  TaxonomyAspect,
+  DefinitionTaxonomy,
+  ContractMarkerKind,
+  ContractMarkerDef,
+  ScenarioMarkerKind,
+  ScenarioMarkerDef,
+  LinkTypeRule,
+  SemanticLintFamilyRule,
+  SemanticLintTraversalLinkType,
+} from "./taxonomy.js";
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
   ASPECT_TO_SCOPES,
+  SEMANTIC_LINT_FAMILIES,
   validateScopeAspect,
   isValidScopeAspect,
   allValidCombinations,
@@ -199,6 +211,7 @@ export {
 // ─── 레지스트리 ─────────────────────────────────────────
 export type { DefinitionRegistry } from "./registry.js";
 export { MemoryDefinitionRegistry } from "./registry.js";
+export { docRowToRegistryInput } from "./registry-helpers.js";
 
 // ─── Concern 전파 엔진 ──────────────────────────────────
 export {
@@ -279,12 +292,13 @@ export type { ExtractLevel, StandardMarker, Marker, MarkedSection, MarkedLine, E
 export { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
 
 // ─── Frontmatter 파서 + 스캐너 ──────────────────────────
-export type { FrontmatterDef, FrontmatterGate, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
+export type { FrontmatterDef, FrontmatterGate, FrontmatterTest, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
 export {
   extractFrontmatter,
   parseYaml,
   extractDef,
   extractGate,
+  extractTests,
   parseDocument,
   scanAndBuild,
   computeAllConcerns,
@@ -313,6 +327,7 @@ export type {
   DefFileBoundaryResolution,
   DefFeedbackRequestSummary,
   DefIncomingLink,
+  DefOutgoingLink,
   DefListFilter,
   DefSyntheticIncomingLink,
   DefValidationIssue,

@@ -156,6 +156,24 @@ DB의 `code_references`를 갱신한다. `qa-sdk def find-by-file`와 review-fee
 
 태그는 보통 2~5개면 충분하다. 자세한 분류 기준은 `tag-management-spec`를 따른다.
 
+## 3.9 문서 유형 (확장자)
+
+파일 확장자로 문서의 역할을 구분한다. 같은 좌표(scope×aspect×depth)에 여러 유형이 공존할 수 있다.
+
+| 확장자 | 질문 | 독자 | 예시 |
+|--------|------|------|------|
+| `.spec.md` | "이것은 무엇인가" | 정의자/구현자 | gate-engine.spec.md |
+| `.rule.md` | "이것을 사용할 때 무엇을 확인하는가" | 소비자 | meta-semantic-ir.rule.md |
+| `.todo.md` | "다음에 무엇을 하는가" | 구현자 | meta-semantic-ir.todo.md |
+| `.test.md` | "어떻게 검증하는가" | 검증자 | gate-scenario.test.md |
+| `.memo.md` | "무엇을 발견했는가" | 탐색자 | performance-finding.memo.md |
+| `.plan.md` | "어떻게 구현할 것인가" | 설계자 | drizzle-migration.plan.md |
+
+**spec vs rule 구분**:
+- spec = "이것은 무엇이고, 어떤 구조인가" (정의)
+- rule = "이것을 소비할 때 어떤 조건을 확인하는가" (판별 기준 + 체크리스트)
+- rule은 종속 spec과 같은 디렉토리에 배치. spec 변경 시 rule도 함께 갱신.
+
 ## 4. 본문 필수 구조
 
 ```markdown

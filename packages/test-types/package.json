@@ -1,0 +1,23 @@
+{
+  "name": "test-types",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tsup": "*",
+    "typescript": "*"
+  }
+}

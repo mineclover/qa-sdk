@@ -16,7 +16,9 @@
       "import": "./dist/platform/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rm -rf dist && tsc",
     "test": "vitest run",
@@ -25,14 +27,15 @@
   },
   "dependencies": {
     "pino": "workspace:@qa-sdk/pino@*",
+    "test-types": "workspace:*",
     "ulid": "^2.3.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "spec-tracker": "workspace:*",
-    "viz-core": "workspace:*",
     "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
+    "vitest": "^1.6.1",
+    "viz-core": "workspace:*"
   }
 }

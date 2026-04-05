@@ -2,7 +2,7 @@
  * D1RecordStore — RecordStore의 D1/SQLite drizzle ORM 구현.
  * text 컬럼 → ISO-8601 문자열로 저장, 조회 시 Date로 변환.
  */
-import { and, asc, eq, gt, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
 import type {
   RecordStore,
   RecordInsert,
@@ -10,6 +10,7 @@ import type {
   RecordPaginationParams,
   StoredRecord,
   StoredRecordPage,
+  TimeRangeParams,
 } from "@qa-sdk/core";
 import { eventRecords } from "../db/schema.js";
 import { parseJsonColumn, type AddressContextJson, type EventPayloadJson, type UserAttributesJson } from "../db/json-types.js";
@@ -85,6 +86,25 @@ export class D1RecordStore implements RecordStore {
       .from(eventRecords)
       .where(and(eq(eventRecords.traceId, traceId), eq(eventRecords.eventKey, eventKey)))
       .orderBy(asc(eventRecords.timestamp));
+    return rows.map(toStoredRecord);
+  }
+
+  async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
+    const conditions: SQL<unknown>[] = [];
+    if (params.from) conditions.push(gte(eventRecords.timestamp, params.from.toISOString()));
+    if (params.to) conditions.push(lte(eventRecords.timestamp, params.to.toISOString()));
+    if (params.eventKey) conditions.push(eq(eventRecords.eventKey, params.eventKey));
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const limit = params.limit ?? 1000;
+
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(where)
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit);
+
     return rows.map(toStoredRecord);
   }
 

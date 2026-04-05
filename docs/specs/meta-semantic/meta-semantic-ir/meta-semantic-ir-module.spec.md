@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -113,3 +113,14 @@ relations.children.length === 0                             -> leaf
 ```
 
 이 규칙은 ModuleIR가 단순 AST 노드가 아니라, 문서 경계와 코드 경계를 동시에 정렬하는 기준임을 뜻한다.
+
+## 소스 코드
+
+| 파일 | 역할 |
+|------|------|
+| `core/src/meta-semantic/ir-types.ts` | `ModuleIR`, `ModuleInterface`, `ModuleRelations`, `ModuleMeta`, `ModuleRef` 타입 |
+| `core/src/meta-semantic/ir-types.ts` | `inferModuleLevel()` — 계층에서 level 자동 추론 |
+| `core/src/meta-semantic/ir-validate.ts` | `dangling-ref` (parent/child), `circular-parent`, `orphan-module` 탐지 |
+| `core/src/meta-semantic/ir-audit.ts` | `level-mismatch`, `too-many-inputs/outputs/children`, `mixed-certainty` 감사 |
+| `core/src/meta-semantic/ir-bridge.ts` | `pipeGraphToModuleIR()` — PipeGraph → ModuleIR 계층 변환 |
+| `core/src/meta-semantic/ir-nesting-bridge.ts` | `nestingToModuleIRs()` — ScopeNesting → ModuleIR 변환, `crossValidate()` |

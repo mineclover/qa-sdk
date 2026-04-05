@@ -1,0 +1,1 @@
+ALTER TABLE `test_scenarios` ADD `phase` text;

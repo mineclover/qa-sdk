@@ -98,8 +98,8 @@ const SCHEMA = {
       capacity: 32,
     },
     dkg_target_kind: {
-      entries: ["axis", "prefix", "domain", "dsl-bundle", "decision", "observation", "constraint", "skill", "intent-link", "system"],
-      capacity: 16,
+      entries: ["axis", "prefix", "spec", "schema", "decision", "version-event", "constraint", "observation", "domain", "consumer", "intent-link", "dsl-bundle", "skill", "transition-spec", "table", "flow-schema", "system"],
+      capacity: 32,
     },
     edge_type: {
       entries: ["satisfies", "implements", "tests", "traces-to", "depends-on", "composes", "references", "governs", "justifies", "constrains", "contains", "bridges", "consumes", "binds", "observes", "prompts", "evolves-from", "supersedes"],

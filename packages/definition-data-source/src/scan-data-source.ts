@@ -12,6 +12,7 @@ import type {
   DefFeedbackRequestSummary,
   DefIncomingLink,
   DefListFilter,
+  DefOutgoingLink,
   DefSyntheticIncomingLink,
   DefValidationResult,
 } from "definition-catalog";
@@ -114,14 +115,32 @@ async function loadDeclaredLinks(
 }
 
 function buildDeclaredLinkMaps(docs: readonly DefDoc[]) {
-  const outgoing = new Map();
-  const incoming = new Map();
+  const docsById = new Map(docs.map((doc) => [doc.docId, doc] as const));
+  const outgoing = new Map<string, DefOutgoingLink[]>();
+  const incoming = new Map<string, DefIncomingLink[]>();
 
   for (const doc of docs) {
-    outgoing.set(doc.docId, doc.links.map((link) => ({ target: link.target, type: link.type })));
+    outgoing.set(
+      doc.docId,
+      doc.links.map((link) => ({
+        target: link.target,
+        type: link.type,
+        ...(doc.address ? { sourceAddress: doc.address } : {}),
+        ...(docsById.get(link.target)?.address
+          ? { targetAddress: docsById.get(link.target)?.address }
+          : {}),
+      })),
+    );
     for (const link of doc.links) {
       const list = incoming.get(link.target) ?? [];
-      list.push({ source: doc.docId, type: link.type });
+      list.push({
+        source: doc.docId,
+        type: link.type,
+        ...(doc.address ? { sourceAddress: doc.address } : {}),
+        ...(docsById.get(link.target)?.address
+          ? { targetAddress: docsById.get(link.target)?.address }
+          : {}),
+      });
       incoming.set(link.target, list);
     }
   }
@@ -191,8 +210,8 @@ export class ScanDataSource implements DefDataSource {
     private readonly registry: MemoryDefinitionRegistry,
     private readonly bodies: Map<string, string>,
     private readonly docs: DefDoc[],
-    private readonly declaredOutgoingLinks: ReadonlyMap<string, readonly { target: string; type: string }[]>,
-    private readonly declaredIncomingLinks: ReadonlyMap<string, readonly { source: string; type: string }[]>,
+    private readonly declaredOutgoingLinks: ReadonlyMap<string, readonly DefOutgoingLink[]>,
+    private readonly declaredIncomingLinks: ReadonlyMap<string, readonly DefIncomingLink[]>,
     private readonly scanErrors: readonly ScanIssue[],
     private readonly scanLinkErrors: readonly ScanLinkIssue[],
   ) {}
@@ -228,6 +247,10 @@ export class ScanDataSource implements DefDataSource {
 
   async get(docId: string): Promise<DefDoc | null> {
     return this.docs.find((doc) => doc.docId === docId) ?? null;
+  }
+
+  async getByAddress(address: string): Promise<DefDoc | null> {
+    return this.docs.find((doc) => doc.address === address) ?? null;
   }
 
   async getBody(docId: string): Promise<DefDocBody | null> {
@@ -284,7 +307,7 @@ export class ScanDataSource implements DefDataSource {
     return getSyntheticIncomingLinksForDoc(this.rootDir, docId);
   }
 
-  async getOutgoingLinks(docId: string): Promise<{ target: string; type: string }[]> {
+  async getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]> {
     return [...(this.declaredOutgoingLinks.get(docId) ?? [])];
   }
 
@@ -431,8 +454,10 @@ export class ScanDataSource implements DefDataSource {
       },
       impact: {
         sourceId: impact.sourceId,
+        ...(impact.sourceAddress ? { sourceAddress: impact.sourceAddress } : {}),
         impacted: impact.impacted.map((item) => ({
           docId: item.id,
+          ...(item.address ? { address: item.address } : {}),
           via: item.via,
           path: item.path.join(" → "),
           direction: item.direction,

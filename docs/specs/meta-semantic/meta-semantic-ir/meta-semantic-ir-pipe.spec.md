@@ -5,7 +5,7 @@ def:
   scope: data
   aspect: system_data
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: domain
   tags: [structural]
   links:
@@ -95,3 +95,11 @@ Pipe   --triggers------> Pipe
 - 무한 루프를 피하려면 인과 체인은 DAG로 유지한다.
 - `rolledBack`는 실패한 실행을 제거하는 것이 아니라, 실패한 실행을 보존한 채 상태만 바꾼다.
 - 따라서 rollback도 관측 가능한 경로로 남아야 한다.
+
+## 소스 코드
+
+| 파일 | 역할 |
+|------|------|
+| `core/src/meta-semantic/ir-types.ts` | `PipeIR`, `PipeSourceLocation`, `PipeRef` 타입 |
+| `core/src/meta-semantic/ir-validate.ts` | `circular-pipe` 탐지 (DFS) |
+| `core/src/meta-semantic/ir-bridge.ts` | `pipeSpecToIR()` — PipeSpec → PipeIR 변환 |

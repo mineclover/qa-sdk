@@ -89,6 +89,8 @@ export interface SimStep {
   kind: string;
   /** 패싯 (step일 때) */
   facet?: string;
+  /** 테스트 단계 (PipeStep.testPhase에서 전파) */
+  phase?: import("../types/test-tracking.js").TestPhase;
   /** 이벤트 키 (step/emit일 때) */
   eventKey?: string;
   /** 시뮬레이션 시각 */
@@ -175,7 +177,8 @@ export function simulate(config: SimulationConfig): SimulationResult {
       case "step": {
         const s: SimStep = {
           pipeId, flowPath: path, kind: "step",
-          facet: flow.facet, eventKey: flow.eventKey,
+          facet: flow.facet, phase: flow.testPhase,
+          eventKey: flow.eventKey,
           timestamp: clock, status: "executed",
         };
         steps.push(s);

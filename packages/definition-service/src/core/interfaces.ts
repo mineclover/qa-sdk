@@ -6,6 +6,8 @@ import type {
   DocRecord,
   DocHistoryRecord,
   CodeReferenceRecord,
+  DocIncomingLinkRecord,
+  DocOutgoingLinkRecord,
   SliceIntentRecord,
   ConsumptionSnapshot,
 } from "./types.js";
@@ -35,6 +37,7 @@ export interface DocStore {
     patch: DocMetadataUpdate,
   ): { action: "updated" | "unchanged"; version: number } | null;
   get(docId: string): DocRecord | null;
+  getByAddress(address: string): DocRecord | null;
   getBody(docId: string): {
     docId: string;
     body: string;
@@ -49,6 +52,8 @@ export interface DocStore {
   list(filter?: DocListFilter): DocRecord[];
   getHistory(docId: string, limit?: number): DocHistoryRecord[];
   getVersion(docId: string, version: number): DocHistoryRecord | null;
+  getIncomingLinks(docId: string): DocIncomingLinkRecord[];
+  getOutgoingLinks(docId: string): DocOutgoingLinkRecord[];
 }
 
 /** 확장 문서 목록 필터 */

@@ -21,7 +21,7 @@ const nesting: ScopeNesting = {
 };
 
 const graph: PipeGraph = {
-  graphId: "g", version: "v1",
+  graphId: "g", version: "v1", entryPipeId: "validate",
   pipes: [
     { pipeId: "validate", version: "v1", trigger: { eventKey: "submit" }, flow: { kind: "sequence", steps: [step("소비"), step("관리")] }, produces: ["result"] },
     { pipeId: "compute", version: "v1", trigger: { eventKey: "result" }, flow: step("생산", "score"), produces: ["done"] },
@@ -110,7 +110,7 @@ describe("timingToMermaid", () => {
     };
 
     const timedGraph: PipeGraph = {
-      graphId: "tg", version: "v1",
+      graphId: "tg", version: "v1", entryPipeId: "loader",
       pipes: [
         { pipeId: "loader", version: "v1", trigger: { eventKey: "init" }, flow: step("저장", "load_done"), produces: ["load_done"] },
         { pipeId: "submit", version: "v1", trigger: { eventKey: "load_done" }, flow: step("소비"), produces: ["submit_done"] },
@@ -149,7 +149,7 @@ describe("timingToMermaid", () => {
     };
 
     const gapGraph: PipeGraph = {
-      graphId: "gg", version: "v1",
+      graphId: "gg", version: "v1", entryPipeId: "sub",
       pipes: [
         { pipeId: "sub", version: "v1", trigger: { eventKey: "go" }, flow: step("생산", "started"), produces: ["started"] },
         { pipeId: "view", version: "v1", trigger: { eventKey: "started" }, flow: step("소비") },

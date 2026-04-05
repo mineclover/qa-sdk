@@ -27,6 +27,8 @@ prefix 버전의 draft 생성, 수정, lock/unlock, release, activate, deprecate
 
 `VersionModule`은 store provider 토큰과 optional port builder를 명시적으로 분리한다. `buildActivationGatePort()`와 `buildPostActivationHookPort()`를 공용화해 런타임별 dynamic import 복제를 없애고, `VersionService`는 `RegistryService` wrapper에 `DefinitionClient` fail-open 호출만 얹어 activation 후 관측 기록을 남긴다.
 
+CLI의 `dkg version` 표면은 이 모듈의 `GET /prefixes/:prefix/versions/:versionId` + transition endpoint를 함께 사용해 `beforeStatus -> afterStatus`를 감사 로그에 남긴다.
+
 ## 구성 ^overview
 
 - controller: `VersionController`

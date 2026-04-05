@@ -36,7 +36,7 @@ def:
 <핵심 사실 — 선택>
 ```
 
-## 문서 유형 (5종 확장자)
+## 문서 유형 (6종 확장자)
 
 컨벤션: `docs/specs/system/doc-type-convention.spec.md`
 
@@ -45,6 +45,7 @@ def:
 | `--type` | 확장자 | lifecycle | 용도 |
 |----------|--------|----------|------|
 | `spec` (기본) | `.spec.md` | `approved` | 구현 완료 스펙 |
+| `rule` | `.rule.md` | spec 따름 | 소비 규칙 (체크리스트/판별 기준) |
 | `todo` | `.todo.md` | `draft` | 미구현 계획 (체크박스 `[ ]`) |
 | `test` | `.test.md` | spec 따름 | 검증 기준 (test.ts 식별자 참조) |
 | `memo` | `.memo.md` | — | 의사결정 맥락 |
@@ -52,7 +53,8 @@ def:
 
 규칙:
 - **기본은 spec** — 나머지는 필요시만 생성
-- 같은 id에 `.spec.md` + `.todo.md` 동시 존재 가능 (완료분 + 잔여분)
+- 같은 id에 `.spec.md` + `.rule.md` + `.todo.md` 동시 존재 가능
+- rule은 종속 spec과 같은 디렉토리. spec 변경 시 rule도 갱신
 - todo에만 체크박스, plan에는 방향만
 - memo는 spec에서 "왜" 비중 > 1/3일 때 분리
 - test.md는 test.ts `describe`/`it` 식별자 참조

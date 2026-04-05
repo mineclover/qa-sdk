@@ -99,13 +99,13 @@ export interface DescentPath {
 
 // ── providerMap 공통 구축 ─────────────────────────────
 
-interface ProviderEntry { scopeId: string; depth: number }
+export interface ProviderEntry { scopeId: string; depth: number }
 
 /**
  * 스코프 목록에서 contractId → provider 맵을 구축한다.
  * override/guard를 반영하며, issues가 주어지면 부수효과로 진단을 수집한다.
  */
-function buildProviderMap(
+export function buildProviderMap(
   scopes: ScopeContract[],
   isEncodable: (contractId: string) => boolean,
   issues?: NestingIssue[],

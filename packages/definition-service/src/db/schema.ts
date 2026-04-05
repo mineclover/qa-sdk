@@ -122,11 +122,15 @@ export const documentLinks = sqliteTable(
   {
     sourceId: text("source_id").notNull(),
     targetId: text("target_id").notNull(),
+    sourceAddress: text("source_address"),
+    targetAddress: text("target_address"),
     linkType: text("link_type").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.sourceId, table.targetId, table.linkType] }),
     index("idx_dl_target").on(table.targetId, table.linkType),
+    index("idx_dl_source_address").on(table.sourceAddress),
+    index("idx_dl_target_address").on(table.targetAddress),
     index("idx_dl_type").on(table.linkType),
   ],
 );

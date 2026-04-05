@@ -806,11 +806,31 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: [
-            "axis", "prefix", "domain", "dsl-bundle", "decision",
-            "observation", "constraint", "skill", "intent-link", "system",
+            "axis", "prefix", "spec", "schema", "decision",
+            "version-event", "constraint", "observation", "domain", "consumer",
+            "intent-link", "dsl-bundle", "skill", "transition-spec", "table",
+            "flow-schema", "system",
           ],
-          capacity: 16,
-          ko: { axis: "축", prefix: "프리픽스", domain: "도메인", "dsl-bundle": "DSL번들", decision: "결정", observation: "관측", constraint: "제약", skill: "스킬", "intent-link": "의도링크", system: "시스템" },
+          capacity: 32,
+          ko: {
+            axis: "축",
+            prefix: "프리픽스",
+            spec: "스펙",
+            schema: "스키마",
+            decision: "결정",
+            "version-event": "버전이벤트",
+            constraint: "제약",
+            observation: "관측",
+            domain: "도메인",
+            consumer: "소비자",
+            "intent-link": "의도링크",
+            "dsl-bundle": "DSL번들",
+            skill: "스킬",
+            "transition-spec": "전이스펙",
+            table: "테이블",
+            "flow-schema": "플로우스키마",
+            system: "시스템",
+          },
         },
       },
     },
@@ -1479,12 +1499,91 @@ export const DEMO_CATALOG = {
         },
       },
     },
-    test_seq: {
-      id: "test_seq", name: "테스트 시나리오 순번",
+    test_phase: {
+      id: "test_phase", name: "테스트 단계",
       versions: {
         v1: {
-          entries: [] as unknown as readonly string[], // TODO: 순번 엔트리 미정의 — CON-006 reserved 처리
-          capacity: 2048,
+          entries: [
+            "precondition",
+            "fixture",
+            "arrange",
+            "act",
+            "observe",
+            "assert-primary",
+            "assert-side",
+            "assert-negative",
+            "snapshot",
+            "teardown",
+            "report",
+          ],
+          capacity: 32,
+          ko: {
+            precondition: "전제조건", fixture: "데이터준비", arrange: "상태설정",
+            act: "동작실행", observe: "관측", "assert-primary": "주검증",
+            "assert-side": "부수효과검증", "assert-negative": "부정검증",
+            snapshot: "스냅샷", teardown: "정리", report: "결과보고",
+          },
+        },
+      },
+    },
+    // ── Meta-Semantic IR 축 ─────────────────────────────────────────────
+    ir_certainty: {
+      id: "ir_certainty", name: "타입 확신도",
+      versions: {
+        v1: {
+          entries: ["strict", "flexible"],
+          capacity: 4,
+          ko: { strict: "엄격", flexible: "유연" },
+        },
+      },
+    },
+    ir_transaction_scope: {
+      id: "ir_transaction_scope", name: "트랜잭션 범위",
+      versions: {
+        v1: {
+          entries: ["local", "distributed"],
+          capacity: 4,
+          ko: { local: "로컬", distributed: "분산" },
+        },
+      },
+    },
+    ir_pipe_state: {
+      id: "ir_pipe_state", name: "파이프 트랜잭션 상태",
+      versions: {
+        v1: {
+          entries: ["pending", "committed", "rolledBack"],
+          capacity: 4,
+          ko: { pending: "대기", committed: "확정", rolledBack: "롤백" },
+        },
+      },
+    },
+    ir_call_kind: {
+      id: "ir_call_kind", name: "호출 종류",
+      versions: {
+        v1: {
+          entries: ["method-call", "event-emit", "http-request", "db-query"],
+          capacity: 8,
+          ko: { "method-call": "메서드호출", "event-emit": "이벤트발행", "http-request": "HTTP요청", "db-query": "DB쿼리" },
+        },
+      },
+    },
+    ir_retention: {
+      id: "ir_retention", name: "데이터 보존",
+      versions: {
+        v1: {
+          entries: ["ephemeral", "session", "persistent"],
+          capacity: 4,
+          ko: { ephemeral: "일시", session: "세션", persistent: "영구" },
+        },
+      },
+    },
+    ir_storage_type: {
+      id: "ir_storage_type", name: "저장 유형",
+      versions: {
+        v1: {
+          entries: ["memory", "db", "event-stream"],
+          capacity: 4,
+          ko: { memory: "메모리", db: "DB", "event-stream": "이벤트스트림" },
         },
       },
     },
@@ -2452,12 +2551,12 @@ export const DEMO_CATALOG = {
     test_scenario: {
       id: "test_scenario", name: "테스트 시나리오",
       description: "스펙 의도와 연결된 테스트 시나리오 좌표",
-      labels: ["test_kind", "test_scope", "test_seq"],
+      labels: ["test_kind", "test_scope", "test_phase"],
       meta: { category: "state" as const, layer: 2 as const, detailKind: "generic" as const },
       dims: {
         test_kind:  { kind: "axis" as const, axisId: "test_kind" },
         test_scope: { kind: "axis" as const, axisId: "test_scope" },
-        test_seq:   { kind: "axis" as const, axisId: "test_seq" },
+        test_phase:   { kind: "axis" as const, axisId: "test_phase" },
       },
       versions: [
         {
@@ -2465,11 +2564,72 @@ export const DEMO_CATALOG = {
           axisVersions: {
             test_kind:  "v1",
             test_scope: "v1",
-            test_seq:   "v1",
+            test_phase:   "v1",
           },
         },
       ],
       addressModel: "product" as const,
+    },
+
+    // ── Meta-Semantic IR prefix ─────────────────────────────────────────
+
+    ir_module: {
+      id: "ir_module", name: "모듈 정의 관측",
+      description: "def_level × def_layer × ir_certainty — 모듈 구조 + 타입 확신도",
+      labels: ["def_level", "def_layer", "ir_certainty"],
+      meta: { category: "observation" as const, visualShape: "cube" as const, heightRatio: 0.8, detailKind: "metric" as const },
+      dims: {
+        def_level:    { kind: "axis" as const, axisId: "def_level" },
+        def_layer:    { kind: "axis" as const, axisId: "def_layer" },
+        ir_certainty: { kind: "axis" as const, axisId: "ir_certainty" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { def_level: "v1", def_layer: "v1", ir_certainty: "v1" } },
+      ],
+    },
+    ir_data: {
+      id: "ir_data", name: "데이터 수명 관측",
+      description: "ir_certainty × ir_transaction_scope × ir_retention × ir_storage_type — 데이터 4패싯",
+      labels: ["ir_certainty", "ir_transaction_scope", "ir_retention", "ir_storage_type"],
+      meta: { category: "state" as const, visualShape: "cube" as const, heightRatio: 0.8, detailKind: "metric" as const },
+      dims: {
+        ir_certainty:         { kind: "axis" as const, axisId: "ir_certainty" },
+        ir_transaction_scope: { kind: "axis" as const, axisId: "ir_transaction_scope" },
+        ir_retention:         { kind: "axis" as const, axisId: "ir_retention" },
+        ir_storage_type:      { kind: "axis" as const, axisId: "ir_storage_type" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { ir_certainty: "v1", ir_transaction_scope: "v1", ir_retention: "v1", ir_storage_type: "v1" } },
+      ],
+    },
+    ir_pipe: {
+      id: "ir_pipe", name: "파이프 트랜잭션 관측",
+      description: "svc_ref × ir_pipe_state × ir_call_kind — 서비스별 파이프 실행 상태",
+      labels: ["svc_ref", "ir_pipe_state", "ir_call_kind"],
+      meta: { category: "event" as const, visualShape: "flat-tile" as const, heightRatio: 0.6, detailKind: "event-def" as const },
+      dims: {
+        svc_ref:       { kind: "prefix_ref" as const, prefixId: "service" },
+        ir_pipe_state: { kind: "axis" as const, axisId: "ir_pipe_state" },
+        ir_call_kind:  { kind: "axis" as const, axisId: "ir_call_kind" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { ir_pipe_state: "v1", ir_call_kind: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+    },
+    ir_intent_path: {
+      id: "ir_intent_path", name: "시공간 경로 관측",
+      description: "svc_ref × ir_call_kind × ir_pipe_state — 경로별 실행 이력 (addressModel: sum)",
+      labels: ["svc_ref", "ir_call_kind", "ir_pipe_state"],
+      meta: { category: "observation" as const, visualShape: "flat-tile" as const, heightRatio: 0.6, detailKind: "generic" as const },
+      dims: {
+        svc_ref:       { kind: "prefix_ref" as const, prefixId: "service" },
+        ir_call_kind:  { kind: "axis" as const, axisId: "ir_call_kind" },
+        ir_pipe_state: { kind: "axis" as const, axisId: "ir_pipe_state" },
+      },
+      versions: [
+        { version: "v1", axisVersions: { ir_call_kind: "v1", ir_pipe_state: "v1" }, refEntries: { svc_ref: { values: _PERM_SVC, refVersion: "v1" } } },
+      ],
+      addressModel: "sum" as const,
     },
   },
 

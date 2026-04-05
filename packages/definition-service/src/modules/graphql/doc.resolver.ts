@@ -13,6 +13,7 @@ import {
   BoundaryContextResultType,
   BoundaryResultType,
   Doc,
+  DocLink,
   FeedbackRequestSummary,
   IncomingLink,
   ImpactAnalysisResult,
@@ -43,6 +44,12 @@ export class DocResolver {
   @Query(() => Doc, { nullable: true, description: "단일 문서 조회" })
   doc(@Args("id", { type: () => String }) id: string): Doc | null {
     const record = this.docsService.get(id);
+    return record ? this.toDoc(record) : null;
+  }
+
+  @Query(() => Doc, { nullable: true, description: "주소 기준 단일 문서 조회" })
+  docByAddress(@Args("address", { type: () => String }) address: string): Doc | null {
+    const record = this.docsService.getByAddress(address);
     return record ? this.toDoc(record) : null;
   }
 
@@ -77,8 +84,10 @@ export class DocResolver {
     ]);
     return {
       sourceId: result.sourceId,
+      sourceAddress: result.sourceAddress,
       impacted: result.impacted.map(d => ({
         docId: d.id,
+        address: d.address,
         scope: d.via,
         layer: d.layer,
         path: d.path.join(" → "),
@@ -145,6 +154,11 @@ export class DocResolver {
   parent(@Parent() doc: Doc): Doc | null {
     const record = this.docsService.getParent(doc.docId);
     return record ? this.toDoc(record) : null;
+  }
+
+  @ResolveField(() => [DocLink], { description: "순방향 링크 (address-aware read model)" })
+  outgoingLinks(@Parent() doc: Doc): DocLink[] {
+    return this.docsService.getOutgoingLinks(doc.docId);
   }
 
   @ResolveField(() => [IncomingLink], { description: "역링크" })

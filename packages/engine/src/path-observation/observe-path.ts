@@ -7,6 +7,9 @@ import type {
   ReachedNode,
   TraversedEdge,
   TerminalReason,
+  BranchPoint,
+  BranchPath,
+  NonLinearPathObservation,
 } from "@qa-sdk/core";
 
 /**
@@ -95,11 +98,112 @@ export function derivePathObservation(
     reached_goals,
     unreachable_goals,
     loop_detected,
-    // TODO: recovery_used는 항상 false다.
-    // 실제 graph traversal을 구현하면 recovery 엣지(optional/branch fallback)를
-    // 실제로 통과했는지 감지하여 true로 설정할 수 있다.
-    recovery_used: false,
+    // optional 엣지를 실제로 통과했으면 recovery 경로 사용
+    recovery_used: traversed_edges.some((e) => e.edge_type === "optional"),
     terminal_node,
     terminal_reason,
+  };
+}
+
+// ── 비선형 경로 관측 ────────────────────────────────────
+
+/**
+ * spec graph에서 분기 지점을 탐지하고,
+ * 각 분기가 실제로 관측되었는지 분석한다.
+ *
+ * 분기 지점: 같은 source에서 2개 이상의 branch/optional 엣지가 나가는 노드
+ */
+export function deriveBranchPaths(
+  specGraph: SpecGraph,
+  observation: PathObservation,
+): BranchPoint[] {
+  const reachedStepIds = new Set(observation.reached_nodes.map(n => n.spec_step_id));
+  const reachedNodeMap = new Map(
+    observation.reached_nodes.map(n => [n.spec_step_id, n]),
+  );
+
+  // source별 outgoing 엣지 그룹핑
+  const outgoing = new Map<string, typeof specGraph.edges>();
+  for (const edge of specGraph.edges) {
+    const list = outgoing.get(edge.source) ?? [];
+    list.push(edge);
+    outgoing.set(edge.source, list);
+  }
+
+  const branchPoints: BranchPoint[] = [];
+
+  for (const [sourceStepId, edges] of outgoing) {
+    // 분기 지점: 2개 이상 outgoing 엣지
+    if (edges.length < 2) continue;
+
+    const branches: BranchPath[] = edges.map(edge => {
+      const taken = reachedStepIds.has(edge.target);
+      // taken인 분기의 후속 노드 수집 (BFS로 해당 분기 서브트리)
+      const branchReached: ReachedNode[] = [];
+      if (taken) {
+        collectBranchNodes(edge.target, specGraph, reachedStepIds, reachedNodeMap, branchReached, sourceStepId);
+      }
+      return {
+        targetStepId: edge.target,
+        edgeType: edge.type,
+        taken,
+        reachedNodes: branchReached,
+      };
+    });
+
+    branchPoints.push({ sourceStepId, branches });
+  }
+
+  return branchPoints;
+}
+
+/**
+ * 분기 시작점부터 도달 가능한 관측 노드를 수집한다 (DFS).
+ * 다른 분기 지점의 서브트리에는 진입하지 않음.
+ */
+function collectBranchNodes(
+  stepId: string,
+  specGraph: SpecGraph,
+  reachedStepIds: Set<string>,
+  reachedNodeMap: Map<string, ReachedNode>,
+  result: ReachedNode[],
+  excludeSource: string,
+): void {
+  if (!reachedStepIds.has(stepId)) return;
+  const node = reachedNodeMap.get(stepId);
+  if (node) result.push(node);
+
+  // 후속 엣지 탐색
+  for (const edge of specGraph.edges) {
+    if (edge.source !== stepId) continue;
+    if (edge.target === excludeSource) continue; // 역방향 방지
+    collectBranchNodes(edge.target, specGraph, reachedStepIds, reachedNodeMap, result, excludeSource);
+  }
+}
+
+/**
+ * PathObservation + 분기 분석을 합성하여 NonLinearPathObservation을 반환한다.
+ */
+export function deriveNonLinearObservation(
+  matchResult: MatchResult,
+  specGraph: SpecGraph,
+  runtimeGraph: RuntimeGraph,
+): NonLinearPathObservation {
+  const observation = derivePathObservation(matchResult, specGraph, runtimeGraph);
+  const branchPoints = deriveBranchPaths(specGraph, observation);
+
+  const total = branchPoints.reduce((sum, bp) => sum + bp.branches.length, 0);
+  const taken = branchPoints.reduce(
+    (sum, bp) => sum + bp.branches.filter(b => b.taken).length, 0,
+  );
+
+  return {
+    ...observation,
+    branchPoints,
+    branchCoverage: {
+      taken,
+      total,
+      rate: total > 0 ? Math.round((taken / total) * 100) : 0,
+    },
   };
 }

@@ -119,6 +119,8 @@ const logEventPipe: PipeSpec = {
 
 const handlerGraph: PipeGraph = {
   graphId: "canonical-review-handler",
+  version: "v1",
+  entryPipeId: "validate-input",
   pipes: [validatePipe, computeResultPipe, logEventPipe],
   connections: [
     { from: "validate-input", to: "compute-result", kind: "event" },
@@ -168,6 +170,8 @@ const incidentLogPipe: PipeSpec = {
 
 const incidentHandlerGraph: PipeGraph = {
   graphId: "incident-escalation-handler",
+  version: "v1",
+  entryPipeId: "incident-validate",
   pipes: [incidentValidatePipe, incidentScorePipe, incidentLogPipe],
   connections: [
     { from: "incident-validate", to: "incident-score", kind: "event" },

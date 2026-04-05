@@ -47,11 +47,12 @@
     "package-classifier": "workspace:*",
     "quality-ledger": "workspace:*",
     "review-ledger": "workspace:*",
-    "test-scenario-store": "workspace:*",
     "snapshot-io": "workspace:*",
     "spec-analyzer": "workspace:*",
-    "spec-transition": "workspace:*",
     "spec-tracker": "workspace:*",
+    "spec-transition": "workspace:*",
+    "test-scenario-store": "workspace:*",
+    "test-types": "workspace:*",
     "work-domain": "workspace:*"
   },
   "devDependencies": {

@@ -1,3 +1,15 @@
+/** 시간 범위 쿼리 파라미터 */
+export interface TimeRangeParams {
+  /** 시작 시각 (inclusive) */
+  from?: Date;
+  /** 종료 시각 (inclusive) */
+  to?: Date;
+  /** 이벤트 키 필터 (선택) */
+  eventKey?: string;
+  /** 최대 반환 건수 */
+  limit?: number;
+}
+
 /** EventRecord 저장소 계약 */
 export interface RecordStore {
   insertBatch(records: RecordInsert[]): Promise<void>;
@@ -12,6 +24,8 @@ export interface RecordStore {
     params?: RecordPaginationParams,
   ): Promise<StoredRecordPage>;
   findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]>;
+  /** 시간 범위로 레코드를 조회한다. timestamp ASC 정렬. */
+  findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]>;
 }
 
 export interface RecordPaginationCursor {

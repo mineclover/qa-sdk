@@ -1,21 +1,9 @@
-export type TestKind =
-  | "unit"
-  | "ui-logic"
-  | "ui"
-  | "db-transaction"
-  | "data-exchange"
-  | "auth-flow"
-  | "e2e"
-  | "simulation";
+import type {
+  TestKind, TestScope, TestPhase, TestLifecycle,
+} from "test-types";
 
-export type TestScope = "single" | "pair" | "multi" | "system";
-
-export type TestLifecycle =
-  | "declared"
-  | "assigned"
-  | "collected"
-  | "verified"
-  | "archived";
+export type { TestKind, TestScope, TestLifecycle } from "test-types";
+export type TestPhaseLabel = TestPhase;
 
 export interface TestScenario {
   /** B 좌표 — test_scenario:v1:M (assigned 이후 부여) */
@@ -26,6 +14,8 @@ export interface TestScenario {
   specAddress: string;
   kind: TestKind;
   scope: TestScope;
+  /** 테스트 단계 (frontmatter tests[].phase) */
+  phase: TestPhaseLabel | null;
   lifecycle: TestLifecycle;
   /** 테스트 의도 (스펙 frontmatter tests[].intent) */
   intent: string;
@@ -59,6 +49,7 @@ export interface CreateTestScenarioInput {
   specAddress: string;
   kind: TestKind;
   scope: TestScope;
+  phase?: TestPhaseLabel | null;
   intent: string;
   primarySvc: string;
   participants?: string[];

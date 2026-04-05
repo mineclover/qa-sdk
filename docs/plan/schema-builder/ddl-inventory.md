@@ -118,7 +118,7 @@
 | `transmissions.env` | env | 5 |
 | `verdict_reports.overall_verdict` | verdict_result | 5 |
 | `tbl_version_lifecycle.status` | version_lifecycle | 5 |
-| `dkg_nodes.kind` | dkg_target_kind | 10 |
+| `dkg_nodes.kind` | dkg_target_kind | 17 |
 | `dkg_nodes.source` | node_source | 4 |
 | `dkg_edges.type` | edge_type | 18 |
 | `dkg_edges.source` | node_source | 4 |

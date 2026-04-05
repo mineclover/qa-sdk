@@ -76,28 +76,42 @@ export function collectCommitSummary(
   cwd: string,
   oid: string,
 ): BranchSplitPoint {
-  const { stdout } = execaSync(
-    "git",
-    [
-      "show",
-      "-s",
-      "--date=iso-strict",
-      "--format=%H%x09%h%x09%cI%x09%an%x09%ae%x09%s",
+  try {
+    const { stdout } = execaSync(
+      "git",
+      [
+        "show",
+        "-s",
+        "--date=iso-strict",
+        "--format=%H%x09%h%x09%cI%x09%an%x09%ae%x09%s",
+        oid,
+      ],
+      { cwd },
+    );
+    const [fullOid = "", shortOid = "", committedAt = "", authorName = "", authorEmail = "", ...subjectParts] = stdout.trim().split("\t");
+    return {
+      oid: fullOid,
+      shortOid,
+      committedAt,
+      authorName,
+      authorEmail,
+      summary: subjectParts.join("\t"),
+      diffStats: collectCommitDiffStats(cwd, oid),
+      changedPaths: collectCommitChangedPaths(cwd, oid),
+    };
+  } catch {
+    // merge-base OID가 유효하지 않거나 git show 실패
+    return {
       oid,
-    ],
-    { cwd },
-  );
-  const [fullOid = "", shortOid = "", committedAt = "", authorName = "", authorEmail = "", ...subjectParts] = stdout.trim().split("\t");
-  return {
-    oid: fullOid,
-    shortOid,
-    committedAt,
-    authorName,
-    authorEmail,
-    summary: subjectParts.join("\t"),
-    diffStats: collectCommitDiffStats(cwd, oid),
-    changedPaths: collectCommitChangedPaths(cwd, oid),
-  };
+      shortOid: oid.slice(0, 7),
+      committedAt: "",
+      authorName: "",
+      authorEmail: "",
+      summary: "",
+      diffStats: { filesChanged: 0, insertions: 0, deletions: 0 },
+      changedPaths: [],
+    };
+  }
 }
 
 function collectCommitDiffStats(

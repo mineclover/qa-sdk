@@ -34,6 +34,16 @@ describe("MemoryDefinitionRegistry", () => {
       expect(entry.serialized).toMatch(/^def_document:v1:\d+$/);
     });
 
+    it("명시된 v2 address가 있으면 그 값을 보존한다", () => {
+      const entry = registry.register(makeEntry({
+        id: "doc-v2",
+        address: 123456,
+        serialized: "def_document:v2:123456",
+      }));
+      expect(entry.address).toBe(123456);
+      expect(entry.serialized).toBe("def_document:v2:123456");
+    });
+
     it("중복 ID 등록 시 에러", () => {
       registry.register(makeEntry({ id: "dup" }));
       expect(() => registry.register(makeEntry({ id: "dup" }))).toThrow("이미 등록된 ID");
@@ -80,6 +90,18 @@ describe("MemoryDefinitionRegistry", () => {
       const updated = registry.update("doc-2", { depth: "specification" });
       expect(updated.address).not.toBe(entry.address);
       expect(updated.depth).toBe("specification");
+    });
+
+    it("명시된 v2 address 문서는 depth 변경 시에도 주소를 유지한다", () => {
+      registry.register(makeEntry({
+        id: "doc-v2-stable",
+        depth: "overview",
+        address: 222222,
+        serialized: "def_document:v2:222222",
+      }));
+      const updated = registry.update("doc-v2-stable", { depth: "specification" });
+      expect(updated.address).toBe(222222);
+      expect(updated.serialized).toBe("def_document:v2:222222");
     });
 
     it("미등록 ID 수정 시 에러", () => {

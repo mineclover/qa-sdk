@@ -57,6 +57,27 @@ export class DocsController {
     return this.docs.resolveByFile(filePath);
   }
 
+  @Get("by-address/:address")
+  getByAddress(@Param("address") address: string) {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) throw new NotFoundException(`주소 ${address} 문서 없음`);
+    return doc;
+  }
+
+  @Get("by-address/:address/incoming-links")
+  getIncomingLinksByAddress(@Param("address") address: string) {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) throw new NotFoundException(`주소 ${address} 문서 없음`);
+    return { address, docId: doc.docId, links: this.docs.getIncomingLinks(doc.docId) };
+  }
+
+  @Get("by-address/:address/outgoing-links")
+  getOutgoingLinksByAddress(@Param("address") address: string) {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) throw new NotFoundException(`주소 ${address} 문서 없음`);
+    return { address, docId: doc.docId, links: this.docs.getOutgoingLinks(doc.docId) };
+  }
+
   @Get(":docId")
   get(@Param("docId") docId: string) {
     const doc = this.docs.get(docId);
@@ -126,6 +147,18 @@ export class DocsController {
       level === "purpose" ? "purpose" : "overview",
     );
     if (!result) throw new NotFoundException(`문서 ${docId} 없음`);
+    return result;
+  }
+
+  @Get("by-address/:address/boundary")
+  getBoundaryByAddress(@Param("address") address: string, @Query("level") level?: string) {
+    const doc = this.docs.getByAddress(address);
+    if (!doc) throw new NotFoundException(`주소 ${address} 문서 없음`);
+    const result = this.docs.getBoundary(
+      doc.docId,
+      level === "purpose" ? "purpose" : "overview",
+    );
+    if (!result) throw new NotFoundException(`주소 ${address} 문서 없음`);
     return result;
   }
 

@@ -9,6 +9,10 @@
  */
 
 import type { MemoryDefinitionRegistry } from "./registry.js";
+import {
+  allowsSemanticMultiParent,
+  semanticContainsDepthLimit,
+} from "./semantic-lint.js";
 
 /** 검증 이슈 1건 */
 export interface ValidationIssue {
@@ -48,6 +52,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   const issues: ValidationIssue[] = [];
   const allEntries = registry.all();
   const allIds = new Set(allEntries.map(e => e.id));
+  const semanticSignalCache = new Map<string, readonly string[]>();
 
   // 참조되는 ID 수집 (고아 판별용)
   const referenced = new Set<string>();
@@ -135,9 +140,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
   }
   for (const [childId, parents] of containsParentCount) {
     if (parents.length > 1) {
-      const child = allEntries.find(e => e.id === childId);
-      const hasCrossScope = child?.tags?.includes("cross-scope") ?? false;
-      if (!hasCrossScope) {
+      if (!allowsSemanticMultiParent(childId, parents, registry, semanticSignalCache)) {
         issues.push({
           severity: "warning",
           type: "multi-parent",
@@ -166,12 +169,13 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     if (entry.depth !== "overview") continue;
     if (CONTAINS_DEPTH_EXEMPT.has(entry.id)) continue;
     const depth = containsDepth(entry.id, new Set());
-    if (depth > 4) {
+    const limit = semanticContainsDepthLimit(entry.id, registry, semanticSignalCache);
+    if (depth > limit) {
       issues.push({
         severity: "warning",
         type: "contains-depth-violation",
         docId: entry.id,
-        message: `contains 계층 ${depth}단계 — 4단계 이하 권장`,
+        message: `contains 계층 ${depth}단계 — ${limit}단계 이하 권장`,
       });
     }
   }
@@ -185,7 +189,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
 
     if (level === "group" && containsChildren.length === 0) {
       issues.push({
-        severity: "warning",
+        severity: "error",
         type: "level-violation" as ValidationIssue["type"],
         docId: entry.id,
         message: `level=group인데 contains 자식이 없음 — 묶임의 이유를 설명하려면 자식이 필요`,
@@ -193,7 +197,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
     if (level === "module" && containsChildren.length === 0) {
       issues.push({
-        severity: "warning",
+        severity: "error",
         type: "level-violation" as ValidationIssue["type"],
         docId: entry.id,
         message: `level=module인데 contains 자식이 없음 — 개념 정의에는 구성 요소(leaf)가 필요`,
@@ -201,7 +205,7 @@ export function validateGraph(registry: MemoryDefinitionRegistry): ValidationRes
     }
     if (level === "leaf" && containsChildren.length > 0) {
       issues.push({
-        severity: "warning",
+        severity: "error",
         type: "level-violation" as ValidationIssue["type"],
         docId: entry.id,
         message: `level=leaf인데 contains 자식 ${containsChildren.length}건 — module 또는 group으로 변경 필요`,

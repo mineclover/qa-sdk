@@ -28,7 +28,7 @@ packages/test-scenario-store/       ← 신규 패키지
   tsup.config.ts
 
 packages/demo-snapshot/src/
-  demo-catalog.ts                   — test_kind, test_scope, test_seq 축 + test_scenario prefix 추가
+  demo-catalog.ts                   — test_kind, test_scope, test_phase 축 + test_scenario prefix 추가
 
 packages/cli/src/
   commands/test.ts                  — testScan, testAssign, testScaffold, testStatus, testReport
@@ -76,8 +76,8 @@ test_scope: {
     },
   },
 },
-test_seq: {
-  id: "test_seq",
+test_phase: {
+  id: "test_phase",
   name: "테스트 시나리오 순번",
   versions: {
     v1: {
@@ -95,11 +95,11 @@ test_scenario: {
   id: "test_scenario",
   name: "테스트 시나리오",
   description: "스펙 의도와 연결된 테스트 시나리오 좌표",
-  labels: ["test_kind", "test_scope", "test_seq"],
+  labels: ["test_kind", "test_scope", "test_phase"],
   dims: {
     test_kind: { kind: "axis", axisId: "test_kind" },
     test_scope: { kind: "axis", axisId: "test_scope" },
-    test_seq:   { kind: "axis", axisId: "test_seq" },
+    test_phase:   { kind: "axis", axisId: "test_phase" },
   },
   versions: [
     {
@@ -107,7 +107,7 @@ test_scenario: {
       axisVersions: {
         test_kind:  "v1",
         test_scope: "v1",
-        test_seq:   "v1",
+        test_phase:   "v1",
       },
     },
   ],

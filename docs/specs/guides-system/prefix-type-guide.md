@@ -284,7 +284,7 @@ qa-sdk 모노레포를 분석한 결과 (34개 prefix):
 |-----------|-------------|---|
 | 2-4 | 8 | build_result(4) |
 | 5-8 | 16 | cli_intent(7) |
-| 9-16 | 32 | dkg_target_kind(10) |
+| 9-16 | 32 | dkg_target_kind(17) |
 | 17-32 | 64 | skill_id(27) |
 
 공식: `nextPowerOf2(entries × 2)`

@@ -69,6 +69,10 @@ export {
   SHOP_EVENT_MAPPINGS,
 } from "./prefix-mapping.js";
 
+// ── Track Codegen ──────────────────────────────────────
+export type { TrackCodegenOptions } from "./track-codegen.js";
+export { generateTrackCode, summarizeMappings } from "./track-codegen.js";
+
 // ── Transition ─────────────────────────────────────
 export type { TransitionDef } from "./types.js";
 export type { TransitionIssue } from "./transition.js";
