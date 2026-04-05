@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, quality-gate, health-check]
   links:

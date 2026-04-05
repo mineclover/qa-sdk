@@ -284,14 +284,15 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
-| [infra-engine-pipeline.spec.md](infra-engine/infra-engine-pipeline.spec.md) | **중심 인덱스** — 5단계 파이프라인 + 패키지 구조 | infra-engine | draft |
-| [infra-config-stage.spec.md](infra-engine/infra-config-stage.spec.md) | ConfigStage — SOPS 복호화 + zod 검증 | infra-engine | draft |
-| [infra-provision-stage.spec.md](infra-engine/infra-provision-stage.spec.md) | ProvisionStage — Pulumi 실행 + S3 state | infra-engine | draft |
-| [infra-register-stage.spec.md](infra-engine/infra-register-stage.spec.md) | RegisterStage — registry-service 등록 + service-profile | infra-engine | draft |
-| [infra-verify-stage.spec.md](infra-engine/infra-verify-stage.spec.md) | VerifyStage — 헬스체크 + 품질 게이트 | infra-engine | draft |
-| [infra-observe-stage.spec.md](infra-engine/infra-observe-stage.spec.md) | ObserveStage — 배포 이벤트 emit + 모니터링 등록 | infra-engine | draft |
-| [infra-providers.spec.md](infra-engine/infra-providers.spec.md) | 프로바이더 추상화 — 6개 멀티 클라우드 | infra-engine | draft |
-| [infra-adapters.spec.md](infra-engine/infra-adapters.spec.md) | qa-sdk 연동 어댑터 — 5개 포트 인터페이스 | infra-engine | draft |
+| [infra-engine-pipeline.spec.md](infra-engine/infra-engine-pipeline.spec.md) | **중심 인덱스** — 5단계 파이프라인 + 패키지 구조 | infra-engine | implemented |
+| [infra-config-stage.spec.md](infra-engine/infra-config-stage.spec.md) | ConfigStage — SOPS 복호화 + zod 검증 | infra-engine | implemented |
+| [infra-provision-stage.spec.md](infra-engine/infra-provision-stage.spec.md) | ProvisionStage — Pulumi 실행 + S3 state | infra-engine | implemented |
+| [infra-register-stage.spec.md](infra-engine/infra-register-stage.spec.md) | RegisterStage — registry-service 등록 + service-profile | infra-engine | implemented |
+| [infra-verify-stage.spec.md](infra-engine/infra-verify-stage.spec.md) | VerifyStage — 헬스체크 + 품질 게이트 | infra-engine | implemented |
+| [infra-observe-stage.spec.md](infra-engine/infra-observe-stage.spec.md) | ObserveStage — 배포 이벤트 emit + 모니터링 등록 | infra-engine | implemented |
+| [infra-providers.spec.md](infra-engine/infra-providers.spec.md) | 프로바이더 추상화 — 6개 멀티 클라우드 | infra-engine | implemented |
+| [infra-adapters.spec.md](infra-engine/infra-adapters.spec.md) | qa-sdk 연동 어댑터 — 6개 포트 인터페이스 | infra-engine | implemented |
+| [infra-discovery.spec.md](infra-engine/infra-discovery.spec.md) | 서비스 디스커버리 + Fleet 관리 + export 도구 | infra-engine | implemented |
 | [infra-monitoring.spec.md](infra-engine/infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 — sync-loop + 대시보드 | infra-engine | draft |
 
 ### infra/ — 인프라 도구

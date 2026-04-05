@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: module
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, devops, gitops]
   links:
@@ -24,6 +24,8 @@ def:
     - target: infra-adapters
       type: contains
     - target: infra-monitoring
+      type: contains
+    - target: infra-discovery
       type: contains
 ---
 # 인프라 엔진 배포 파이프라인
@@ -195,6 +197,7 @@ interface StageResult {
 | [infra-providers](infra-providers.spec.md) | 프로바이더별 Pulumi Program |
 | [infra-adapters](infra-adapters.spec.md) | qa-sdk 연동 어댑터 |
 | [infra-monitoring](infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 |
+| [infra-discovery](infra-discovery.spec.md) | 서비스 디스커버리 + Fleet 관리 + export 도구 |
 
 ---
 

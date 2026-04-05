@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, secret, config]
   links:
@@ -141,6 +141,17 @@ async function decrypt(configPath: string): Promise<Record<string, unknown>> {
 **사전 조건**: `sops` CLI가 PATH에 설치되어 있어야 함.
 - CI: GitHub Actions에서 `sops` 바이너리 설치 (`mozilla/sops` releases)
 - 로컬: `brew install sops` (macOS) 또는 `go install` 등
+
+### createPlainLoader — SOPS 미설치 환경용 평문 JSON 로더
+
+```typescript
+/** 평문 JSON 설정 파일 로더. SOPS 미설치 환경에서 사용. */
+function createPlainLoader(): SopsLoader;
+```
+
+- `readFile(configPath, "utf-8")` → `JSON.parse()` — SOPS CLI 호출 없이 평문 JSON 파일을 직접 읽는다
+- SopsLoader 인터페이스와 동일하므로 ConfigStage에 그대로 주입 가능
+- 개발/테스트 환경에서 SOPS 없이 파이프라인을 실행할 때 사용
 
 ### ConfigStage 실행 흐름
 

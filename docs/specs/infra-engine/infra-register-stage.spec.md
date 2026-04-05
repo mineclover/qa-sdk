@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, registry, service-discovery]
   links:

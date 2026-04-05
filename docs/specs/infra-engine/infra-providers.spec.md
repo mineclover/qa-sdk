@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: operation
   tags: [infra, pulumi, multi-cloud]
   links:
@@ -102,6 +102,57 @@ const deploy = new command.remote.Command("local-deploy", {
 ## 위임 ^delegates
 
 각 프로바이더의 상세 리소스 선언은 Phase별로 구현하며, 초기에는 Cloudflare + Railway에 집중한다.
+
+## Local 프로바이더 구현 상세
+
+팩토리: `createLocalProvider(options?: LocalProviderOptions): DeployProvider`
+
+### LocalProviderOptions
+
+```typescript
+interface LocalProviderOptions {
+  env?: string;              // 배포 대상 환경 (namespace 결정용)
+  imageOverride?: string;    // 이미지 오버라이드 (기본: qa-sdk/{serviceId}:latest)
+  healthPath?: string;       // 헬스체크 경로 (기본: /health/live)
+}
+```
+
+### Env → Namespace 매핑
+
+| env | namespace |
+|-----|-----------|
+| test, dev | qa-dev |
+| stage, staging | qa-stage |
+| prod, production | qa-prod |
+
+### Pulumi 배포 함수 (createPulumiDeployFn)
+
+팩토리: `createPulumiDeployFn(options?: { env?: string })` — ProvisionStage의 `deployFn`으로 주입
+
+- 로컬 파일 백엔드 사용 (`file://~/.pulumi-local`) — S3 불필요
+- K8s context: `k3d-qa-local` 고정
+- 배포 후 `kubectl port-forward`를 백그라운드로 실행하여 호스트에서 접근 가능하게 함
+
+### Port-Forward 메커니즘
+
+K3s NodePort로 배포된 서비스에 호스트에서 접근하기 위해 `kubectl port-forward`를 자동으로 실행한다.
+
+- 기존 동일 서비스의 port-forward 프로세스를 먼저 정리 (`pkill`)
+- `kubectl -n {namespace} port-forward svc/{serviceName} {localPort}:{port}` — detached 모드
+- 연결 준비 대기: 최대 10초 (1초 간격 polling)
+- 최종 endpoint: `http://127.0.0.1:{localPort}` (IPv6 해석 방지를 위해 127.0.0.1 사용)
+
+### Env → Port Offset 매핑
+
+동일 서비스를 여러 환경에 배포할 때 포트 충돌을 방지한다.
+
+| env | port offset | 예시 (port=3200) |
+|-----|------------|-----------------|
+| dev | +20000 | 23200 |
+| stage | +21000 | 24200 |
+| prod | +22000 | 25200 |
+
+`localPort = port + envOffset[env]` (기본 offset: 20000)
 
 ## 확장
 

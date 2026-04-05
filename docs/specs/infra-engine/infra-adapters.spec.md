@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: draft
+  lifecycle: implemented
   layer: mediation
   tags: [infra, adapter, integration]
   links:
@@ -153,12 +153,14 @@ type GateVerdict = "pass" | "warn" | "fail";
 
 ## qa-sdk 구현
 
-### QaSdkRegistryAdapter
+### QaSdkRegistryAdapter (= createRegistryAdapter)
+
+팩토리: `createRegistryAdapter(baseUrl: string): RegistryAdapter`
 
 - `POST /api/services/:id/deployments/sync?catalog={catalogId}` 호출
 - 기존 `DeploymentBinding` 타입 그대로 사용 — 타입 변환 이 어댑터가 담당
 - timeout: 5초 (`AbortSignal.timeout(5_000)`)
-- 에러: `ServiceClientError` 패턴 (qa-sdk 컨벤션)
+- 에러: HTTP 비정상 응답 시 상태코드 + 본문 포함한 Error throw
 
 ### QaSdkServiceProfileAdapter
 
@@ -196,6 +198,27 @@ type GateVerdict = "pass" | "warn" | "fail";
 - 필수 게이트 전부 pass → "pass"
 - 필수 pass + 선택 fail → "warn"
 - 필수 fail → "fail"
+
+### createPulumiDeployFn — Pulumi Automation API 기반 배포 함수
+
+팩토리: `createPulumiDeployFn(options?: PulumiDeployOptions)` → `deployFn(provider, config, serviceId, stackName)`
+
+- 로컬 파일 백엔드 사용 (`file://~/.pulumi-local`) — S3 불필요
+- K8s context를 `k3d-qa-local`로 설정
+- 배포 후 K3s NodePort에 대해 `kubectl port-forward`를 백그라운드로 실행하여 호스트에서 접근 가능하게 함
+- 환경별 포트 오프셋: dev→+20000, stage→+21000, prod→+22000
+
+### LocalProviderOptions
+
+```typescript
+interface LocalProviderOptions {
+  env?: string;              // 배포 대상 환경 (namespace 결정용)
+  imageOverride?: string;    // 이미지 오버라이드 (기본: qa-sdk/{serviceId}:latest)
+  healthPath?: string;       // 헬스체크 경로 (기본: /health/live)
+}
+```
+
+`createLocalProvider(options?)` 팩토리로 Local 프로바이더 생성 시 전달한다.
 
 ## 어댑터별 에러 처리
 
