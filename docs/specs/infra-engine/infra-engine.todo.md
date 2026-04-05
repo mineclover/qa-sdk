@@ -12,135 +12,211 @@ def:
       type: refines
 ---
 
-# Infra Engine — 구현 TODO
+# Infra Engine — TODO
 
 ## 목적 ^purpose
 
-infra-engine 패키지의 구현 완료 현황과 잔여 작업을 추적한다.
+infra-engine 패키지의 구현 현황과 잔여 작업을 추적한다. 우선순위는 사용성(P0) → 기능(P1) → 아키텍처(P2) 순.
 
 ---
 
-## 구현 완료 (implemented)
+## 구현 완료
 
-### 코어 파이프라인
-- [x] `core/types.ts` — DeployContext, DeployResult, Stage, DeployPipeline 등 전체 타입
-- [x] `core/pipeline.ts` — createPipeline(), 순차 실행 + 역순 rollback + duration
-- [x] 40 tests PASS
-
-### 5단계 스테이지
-- [x] ConfigStage — SOPS CLI (createSopsLoader) + 평문 JSON (createPlainLoader) + zod 검증
-- [x] ProvisionStage — DeployProvider 검증 + deployFn 호출 + rollback(destroy)
-- [x] RegisterStage — registry-service sync + service-profile URL + infra-profile 메타 + rollback
-- [x] VerifyStage — httpProbe + 내장 게이트 4종 + retry + gate verdict
-- [x] ObserveStage — deploy_event emit + 모니터 등록 (fail-open)
-
-### 어댑터 6개 포트
-- [x] RegistryAdapter — `createRegistryAdapter(baseUrl)` HTTP 실연동
-- [x] ServiceProfileAdapter — `createServiceProfileAdapter(dir)` + rollback 파일
-- [x] InfraProfileAdapter — `createInfraProfileAdapter(dir)` deployments + monitors
-- [x] IngestAdapter — 인터페이스 (실구현은 mock)
-- [x] CoordinateAdapter — 인터페이스 (실구현은 mock)
-- [x] GateAdapter — `createGateAdapter()` pass/warn/fail 판정
-
-### 프로바이더
-- [x] DeployProvider 인터페이스 + 프로바이더 레지스트리 (register/get/list)
-- [x] Local K3s 프로바이더 — `createLocalProvider(options)` + K8s Deployment/Service
-- [x] Pulumi 배포 함수 — `createPulumiDeployFn({ env })` + port-forward + env→ns 매핑
-
-### 디스커버리 + Fleet + Export
-- [x] DiscoveryClient — resolve/resolveAll/listServices/generateConnectCode
-- [x] FleetManager — status() tier별 서비스 상태 조회
-- [x] export env — `.env.{service}.{env}` 파일 생성
-- [x] export ts — `service-connections.{env}.ts` 타입드 모듈 생성
-- [x] export compose — `docker-compose.override.{env}.yml` 생성
-
-### CLI 스크립트
-- [x] `scripts/deploy-local.ts` — 로컬 K3s 배포 (nginx 검증 완료)
-- [x] `scripts/discover.ts` — 디스커버리 CLI (--all, --list, --code)
-- [x] `scripts/export.ts` — export CLI (status, env, ts, compose)
-
-### 검증 완료 시나리오
-- [x] 동일 서비스 재배포 (Pulumi 멱등성)
-- [x] 설정 변경 재배포 (Pulumi diff update)
-- [x] dev/stage 멀티 환경 동시 배포
-- [x] registry-service 실연동
-- [x] 디스커버리 + 연결 코드 생성
+- [x] 코어 파이프라인 (createPipeline, 순차실행+rollback)
+- [x] 5단계 스테이지 (Config, Provision, Register, Verify, Observe)
+- [x] 어댑터 6포트 (Registry, ServiceProfile, InfraProfile, Ingest, Coordinate, Gate)
+- [x] RegistryAdapter 실구현 (POST /api/services/:id/deployments/sync)
+- [x] Local K3s 프로바이더 + Pulumi 배포 함수 (port-forward 포함)
+- [x] DiscoveryClient (resolve, resolveAll, generateConnectCode)
+- [x] EnhancedDiscovery (registry + definition 통합)
+- [x] DefinitionAdapter (서비스 문서/테스트/prefix 조회)
+- [x] FleetManager (status, tier별 그룹핑, 헬스체크 실행 감지)
+- [x] Export 3종 (env, ts, compose) + docs 요약
+- [x] CLI 3종 (discover.ts, deploy-local.ts, export.ts)
+- [x] Skills 4종 (infra-discover, infra-deploy, infra-export, infra-status)
+- [x] URL fallback 경고, 테스트 3-state, env 필터링
+- [x] 6개 시나리오 검증 (재배포, 설정변경, 멀티env, CI, 디스커버리, fleet)
+- [x] 58 tests, 26 소스 파일
 
 ---
 
-## 잔여 작업 (TODO)
+## P0 — 사용성 (즉시)
 
-### P0 — 운영 필수
+### 0-1. destroy 명령
 
-- [ ] **IngestAdapter 실구현** — TransmissionEnvelope 구성 + POST /v1/ingest 실호출
-  - `src/adapters/ingest.ts` 생성
-  - svc_ref 좌표 인코딩 → CoordinateAdapter 실구현 필요
-  - spec: infra-observe-stage.spec.md §TransmissionEnvelope 구성
+배포된 리소스를 한 번에 정리하는 명령.
 
-- [ ] **CoordinateAdapter 실구현** — demo-catalog service prefix 좌표 인코딩
-  - `src/adapters/coordinate.ts` 생성
-  - `_INFRA_SVC` → service prefix 4차원 인코딩 (env × region × svc_name × namespace)
-  - fail-open: 해석 실패 시 null → 빈 address_context
+- [ ] `scripts/infra.ts destroy <service> <env>` 서브커맨드
+  - Pulumi destroy (스택 삭제)
+  - port-forward 프로세스 kill (PID 기반)
+  - infra-profile에서 deployment + monitor 제거
+  - service-profile URL 복원 (rollback 파일)
+- [ ] `--all` 플래그: 환경 내 전체 서비스 destroy
+- [ ] destroy 전 확인 프롬프트 (--yes로 스킵 가능)
 
-- [ ] **SyncLoop 모니터링** — ArgoCD 스타일 주기적 헬스체크
-  - `src/monitor/sync-loop.ts` 구현
-  - infra-profile.json monitors 순회 → 헬스체크 → 상태 변화 시 health_event emit
-  - webhook 알림 (Slack/Discord)
-  - spec: infra-monitoring.spec.md (lifecycle: draft)
+### 0-2. CLI 통합 (단일 진입점)
 
-- [ ] **ingest-server Docker 빌드 수정** — @qa-sdk/pino tsc 에러 해소
-  - `Dockerfile.ingest-server` → `pnpm --filter @qa-sdk/ingest-server... run build` 실패
-  - pino 패키지 빌드 에러 수정 후 K3s 실배포 가능
+scripts/ 분산을 `infra.ts` 서브커맨드로 통합.
 
-### P1 — 프로바이더 확장
+- [ ] `scripts/infra.ts` — 단일 진입점
+  ```
+  infra discover [--all|--list|--deep|--code] <service> <env>
+  infra deploy <service> <env> [config]
+  infra destroy <service> <env>
+  infra export [env|ts|compose|docs] <args>
+  infra status <env>
+  infra history <service>
+  infra audit
+  ```
+- [ ] package.json scripts 추가: `"infra": "tsx scripts/infra.ts"`
+- [ ] 기존 discover.ts, deploy-local.ts, export.ts → infra.ts에서 import하여 위임
+- [ ] `--help` 자동 출력 (인자 없을 때)
 
-- [ ] **Cloudflare 프로바이더** — `@pulumi/cloudflare` Workers/Pages 배포
-  - `src/providers/cloudflare.ts`
-  - 기존 wrangler.toml 기반 배포를 Pulumi로 래핑
+### 0-3. PULUMI_CONFIG_PASSPHRASE 자동 처리
 
-- [ ] **Railway 프로바이더** — `@pulumi/command` + Railway CLI
-  - `src/providers/railway.ts`
+- [ ] infra.ts 진입점에서 `process.env.PULUMI_CONFIG_PASSPHRASE ??= ""`
+- [ ] 또는 `packages/infra-engine/.env.local`에 `PULUMI_CONFIG_PASSPHRASE=` 설정
+- [ ] deploy/destroy 실행 시 passphrase 프롬프트 방지
+
+### 0-4. port-forward 프로세스 관리
+
+- [ ] `~/.qa-sdk/infra-pf.json` — PID + service + port 매핑
+  ```json
+  { "nginx-test-dev": { "pid": 12345, "localPort": 20080, "service": "svc/xxx" } }
+  ```
+- [ ] deploy 시: 기존 PID kill → 새 port-forward 시작 → PID 기록
+- [ ] destroy 시: PID kill → 기록 제거
+- [ ] `infra pf list` — 현재 활성 port-forward 목록
+- [ ] `infra pf cleanup` — 죽은 PID 정리
+
+---
+
+## P1 — 기능 확장 (중기)
+
+### 1-1. 배포 이력
+
+- [ ] infra-profile에 `history: DeployHistoryEntry[]` 추가
+  ```typescript
+  interface DeployHistoryEntry {
+    deployedAt: string;
+    version: string;
+    env: string;
+    provider: string;
+    duration: number;
+    success: boolean;
+    triggeredBy: "ci" | "manual";
+  }
+  ```
+- [ ] deploy 성공 시 history에 push (최대 50건 보존)
+- [ ] `infra history <service>` — 배포 이력 테이블 출력
+- [ ] `infra history <service> --json` — JSON 출력
+
+### 1-2. dry-run (변경 사항 미리보기)
+
+- [ ] `infra deploy <service> <env> --dry-run`
+- [ ] Pulumi `stack.preview()` 호출 → 변경 사항 diff 출력
+- [ ] 실제 배포 없음, register/verify/observe 스킵
+- [ ] 출력: `+ 2 to create, ~ 1 to update, - 0 to delete`
+
+### 1-3. fleet 일괄 배포
+
+- [ ] `infra deploy --all <env>` — 환경 내 전체 서비스 순차 배포
+- [ ] 설정 파일 기반으로 배포 대상 결정 (`config/{env}.json`의 services 키)
+- [ ] 실패 시 중단 or 계속 옵션 (`--continue-on-error`)
+- [ ] 결과 요약 출력
+
+### 1-4. export 경로 지정
+
+- [ ] `infra export ts <env> --out <path>` — 출력 경로 지정
+- [ ] 서비스별 자동 배치: `--service-dir` → `packages/{service}/src/generated/`
+- [ ] `.gitignore`에 generated/ 자동 추가 여부 확인
+
+### 1-5. registry 데이터 감사
+
+- [ ] `infra audit` — registry 데이터 품질 점검
+  - URL 미등록 서비스 (env별)
+  - ownedPrefixes가 빈 서비스
+  - consumedPrefixes에 선언되었지만 어디에도 소유되지 않은 prefix
+  - 중복 URL (두 서비스가 같은 URL)
+- [ ] 결과: warning/error 분류, 수정 제안
+
+### 1-6. IngestAdapter 실구현
+
+- [ ] `src/adapters/ingest.ts` — TransmissionEnvelope 구성 + POST /v1/ingest
+- [ ] CoordinateAdapter 실구현 — demo-catalog service prefix 좌표 인코딩
+- [ ] deploy_event 좌표: svc_ref × deploy_action × actor
+- [ ] fail-open: 좌표 해석 실패 → 빈 address_context
+
+### 1-7. ingest-server Docker 빌드
+
+- [ ] @qa-sdk/pino tsc 빌드 에러 수정
+- [ ] `docker build -t qa-sdk/ingest-server:latest -f Dockerfile.ingest-server .` 성공
+- [ ] `k3d image import` → K3s 실배포 검증
+
+---
+
+## P2 — 아키텍처 (장기)
+
+### 2-1. SyncLoop 모니터링
+
+- [ ] `src/monitor/sync-loop.ts` 구현
+  - infra-profile monitors 순회 → 주기적 헬스체크
+  - 상태 변화 시 health_event → ingest-server emit
+  - Synced → OutOfSync / Degraded / Unknown 전이
+- [ ] webhook 알림 (Slack/Discord)
+  - `config.monitoring.webhooks` 설정 기반
+  - OutOfSync/Unknown 시 POST
+- [ ] `infra monitor start` — 백그라운드 실행
+- [ ] `infra monitor stop`
+- [ ] `infra monitor status` — 마지막 체크 결과
+
+### 2-2. 클라우드 프로바이더
+
+- [ ] Cloudflare — `@pulumi/cloudflare ^6.14.0`
+  - Workers, Pages, D1 배포
+  - 기존 wrangler.toml 기반 래핑
+- [ ] Railway — `@pulumi/command ^1.2.1` + Railway CLI
   - `railway up --service {id} --environment {env}`
-
-- [ ] **AWS 프로바이더** — `@pulumi/aws` ECS/Lambda
-  - `src/providers/aws.ts`
+- [ ] AWS — `@pulumi/aws ^7.24.0`
+  - ECS / Lambda / App Runner
   - OIDC STS 임시 토큰
+- [ ] GCP — `@pulumi/gcp ^9.18.0`
+  - Cloud Run / App Engine
+  - Workload Identity
+- [ ] Vultr — `@ediri/vultr ^2.27.1`
+  - K3s 컨테이너 배포
 
-- [ ] **GCP 프로바이더** — `@pulumi/gcp` Cloud Run
-  - `src/providers/gcp.ts`
+### 2-3. CI/CD 통합
 
-- [ ] **Vultr 프로바이더** — `@ediri/vultr` K3s 컨테이너
-  - `src/providers/vultr.ts`
-
-### P2 — CI/CD 통합
-
-- [ ] **GitHub Actions 워크플로우** — `.github/workflows/infra-deploy.yaml`
-  - OIDC 인증 → SOPS 복호화 → Pulumi 배포 → 레지스트리 등록 → 헬스체크
+- [ ] `.github/workflows/infra-deploy.yaml`
+  - OIDC 인증 → SOPS 복호화 → Pulumi 배포 → 헬스체크
   - `triggeredBy: "ci"` 자동 설정
-
-- [ ] **SOPS 설정 파일** — 환경별 YAML 암호화
-  - `sops.yaml` 규칙 + KMS ARN 설정
+  - push to main → config/*.yaml 변경 감지 → 자동 배포
+- [ ] SOPS 설정 파일
+  - `sops.yaml` 암호화 규칙 (KMS ARN + encrypted_regex)
   - `config/{env}.yaml` → SOPS 암호화 후 커밋
+  - `createSopsLoader()` 실사용
+- [ ] S3 + DynamoDB State Backend
+  - `s3://qa-sdk-infra-state?dynamoTable=qa-sdk-infra-lock`
+  - `file://~/.pulumi-local` → S3 전환
+  - DynamoDB TTL 30분 (크래시 lock 자동 해제)
+- [ ] 키 교체: `scripts/rotate-keys.ts`
+  - KMS 키 교체 + SOPS 파일 재암호화
 
-- [ ] **S3 + DynamoDB State Backend** — 운영 Pulumi 상태 관리
-  - S3 버저닝 + DynamoDB lock
-  - `file://~/.pulumi-local` → `s3://qa-sdk-infra-state?dynamoTable=...` 전환
+### 2-4. DashboardData API
 
-- [ ] **키 교체 스크립트** — `scripts/rotate-keys.ts`
-  - KMS 키 교체 + SOPS 파일 재암호화 자동화
+- [ ] `src/monitor/dashboard.ts` 구현
+  - FleetStatus 집계
+  - 배포 이력 타임라인
+  - 서비스별 uptime 계산
+- [ ] HTTP 엔드포인트 (또는 JSON 파일 export)
+- [ ] Grafana 데이터소스 연동 가능한 형식
 
-### P3 — 고도화
+### 2-5. 자동 복구 + SLA
 
-- [ ] **DashboardData API** — 서비스별 상태 집계 엔드포인트
-  - `src/monitor/dashboard.ts` 구현
-  - FleetStatus + 배포 이력 + 헬스 이력
-
-- [ ] **FleetManager.deployAll 실구현** — 현재 dry-run만
-  - 파이프라인 실행 체인 + 순차/병렬 옵션
-
-- [ ] **Pulumi destroy CLI** — 배포된 리소스 정리
-  - `scripts/destroy.ts` — 스택 선택 → destroy → 프로필 정리
-
-- [ ] **자동 복구** — OutOfSync 감지 → 자동 재배포
-- [ ] **SLA 추적** — uptime 기반 계산 + 리포트
-- [ ] **Grafana 연동** — DashboardData → Grafana 데이터소스
+- [ ] OutOfSync 감지 → 자동 재배포 트리거
+  - 최대 재시도 횟수 제한
+  - 연속 실패 시 알림 에스컬레이션
+- [ ] SLA 추적
+  - uptime 계산 (Synced 시간 / 전체 시간)
+  - 월별 리포트 생성
