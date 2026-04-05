@@ -1,0 +1,36 @@
+{
+  "global": {
+    "region": "ap-northeast-2"
+  },
+  "services": {
+    "ingest-server": {
+      "port": 3200,
+      "store_driver": "memory",
+      "depends_on": ["registry-service"]
+    },
+    "registry-service": {
+      "port": 3300
+    },
+    "gate-service": {
+      "port": 3400,
+      "depends_on": ["registry-service", "ingest-server"]
+    },
+    "query-service": {
+      "port": 3500,
+      "depends_on": ["gate-service"]
+    },
+    "decode-service": {
+      "port": 3600
+    }
+  },
+  "connections": {
+    "ingest-server": { "endpoint": "http://localhost:3200" },
+    "registry-service": { "endpoint": "http://localhost:3300" },
+    "gate-service": { "endpoint": "http://localhost:3400" },
+    "query-service": { "endpoint": "http://localhost:3500" },
+    "decode-service": { "endpoint": "http://localhost:3600" }
+  },
+  "monitoring": {
+    "interval": 60
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "global": {
+    "region": "ap-northeast-2"
+  },
+  "services": {
+    "ingest-server": {
+      "port": 3200,
+      "store_driver": "pg",
+      "insights_driver": "app-hub",
+      "depends_on": ["registry-service"]
+    },
+    "registry-service": {
+      "port": 3300
+    },
+    "gate-service": {
+      "port": 3400,
+      "depends_on": ["registry-service", "ingest-server"]
+    },
+    "query-service": {
+      "port": 3500,
+      "depends_on": ["gate-service"]
+    },
+    "decode-service": {
+      "port": 3600
+    },
+    "definition-service": {
+      "port": 3700,
+      "depends_on": ["registry-service"]
+    },
+    "decision-service": {
+      "port": 3800,
+      "depends_on": ["definition-service"]
+    },
+    "motion-workspace": {
+      "port": 3710
+    }
+  },
+  "connections": {
+    "ingest-server": { "endpoint": "https://ingest.qa-sdk.io" },
+    "registry-service": { "endpoint": "https://registry.qa-sdk.io" },
+    "gate-service": { "endpoint": "https://gate.qa-sdk.io" },
+    "query-service": { "endpoint": "https://query.qa-sdk.io" },
+    "decode-service": { "endpoint": "https://decode.qa-sdk.io" },
+    "definition-service": { "endpoint": "https://definition.qa-sdk.io" },
+    "decision-service": { "endpoint": "https://decision.qa-sdk.io" },
+    "motion-workspace": { "endpoint": "https://motion.qa-sdk.io" }
+  },
+  "monitoring": {
+    "interval": 30,
+    "webhooks": [
+      {
+        "url": "https://hooks.slack.com/services/PROD_WEBHOOK",
+        "events": ["OutOfSync", "Degraded", "Unknown"]
+      }
+    ]
+  }
+}
