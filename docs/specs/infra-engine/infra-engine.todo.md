@@ -73,23 +73,39 @@ infra-engine 패키지의 구현 현황과 잔여 작업을 추적한다.
 - [x] Dockerfile pre-build 전략
 - [x] k3d image import 성공
 
+### K3s 실배포 (6서비스)
+- [x] **ingest-server K3s 배포** — Docker 빌드 + k3d import + 배포 + 200 OK 검증 (:23200)
+- [x] **decision-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23800)
+- [x] **definition-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23700)
+- [x] **motion-workspace-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23710)
+- [x] **Dockerfile.nestjs 공용화** — SERVICE build-arg로 NestJS 3서비스 공유
+- [x] **tsup 7서비스 전환** — 전 서비스 tsup 빌드 체인 통일
+- [x] **6서비스 전체 200 OK 검증** — K3s 4 (ingest, decision, definition, motion-workspace) + CF 2 (registry, gateway)
+
 ### 현재 규모
-- **42 소스**, **21 테스트**, **107 테스트** (infra-engine 93 + cli-command 14)
+- **42 소스**, **93 테스트**, **107 테스트** (infra-engine 93 + cli-command 14)
 - **15 CLI**, **4 skills**, **10 스펙**
+- **배포 현황**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
 
 ---
 
 ## 잔여 작업
 
+### Workers 호환 (차단됨)
+
+- [ ] **gate-service Workers 호환** — index-meta Workers 호환 해결 필요
+- [ ] **query-service Workers 호환** — index-meta Workers 호환 해결 필요
+- [ ] **decode-service Workers 호환** — index-meta Workers 호환 해결 필요
+
 ### 운영 통합
 
-- [ ] **ingest-server K3s 실배포** — Docker 이미지 빌드 완료, K3s 배포 + 헬스체크 검증
 - [ ] **CoordinateAdapter 좌표 인코딩** — demo-catalog WeightedIndex로 실인코딩 (현재 fail-open)
 - [ ] **SOPS age 키 설정** — 키 생성 → sops.yaml → YAML 설정 암호화
 - [ ] **webhook 알림** — Slack/Discord POST (OutOfSync/Unknown)
 
 ### 프로바이더 실구현
 
+- [ ] **Cloudflare Pages** — 정적 사이트 배포 프로바이더
 - [ ] **Railway** — `@pulumi/command` + Railway CLI
 - [ ] **AWS** — `@pulumi/aws` ECS/Lambda + OIDC STS
 - [ ] **GCP** — `@pulumi/gcp` Cloud Run + Workload Identity

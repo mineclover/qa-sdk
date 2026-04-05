@@ -31,18 +31,34 @@ pnpm exec tsx scripts/export.ts status prod
 ```
 === Fleet Status (dev) ===
 
-  총: 23  배포됨: 0  실행중: 4
+  총: 23  배포됨: 4  실행중: 6
 
   [backend]
     ⬜ pending  platform-demo-api          http://localhost:8787
-    🟢 running  motion-workspace-service   http://localhost:3710
+    ✅ deployed motion-workspace-service   http://127.0.0.1:23710
   [infra]
-    🟢 running  registry-service           http://localhost:3300
-    🟢 running  definition-service         http://localhost:3700
-    ⬜ pending  ingest-server              http://localhost:3200
+    🟢 running  registry-service           http://localhost:3300  (CF prod)
+    ✅ deployed definition-service         http://127.0.0.1:23700
+    ✅ deployed decision-service           http://127.0.0.1:23800
+    ✅ deployed ingest-server              http://127.0.0.1:23200
+    🟢 running  gateway                    (CF prod)
   [frontend]
     ⬜ pending  shopping-web               http://localhost:5220
 ```
+
+### 6서비스 배포 현황 (2026-04-05)
+
+| 서비스 | 환경 | 포트 | 상태 |
+|--------|------|------|------|
+| ingest-server | K3s dev | :23200 | ✅ deployed |
+| decision-service | K3s dev | :23800 | ✅ deployed |
+| definition-service | K3s dev | :23700 | ✅ deployed |
+| motion-workspace-service | K3s dev | :23710 | ✅ deployed |
+| registry-service | CF prod | — | 🟢 running |
+| gateway | CF prod | — | 🟢 running |
+| gate-service | — | — | ⬜ blocked (index-meta Workers 호환) |
+| query-service | — | — | ⬜ blocked (index-meta Workers 호환) |
+| decode-service | — | — | ⬜ blocked (index-meta Workers 호환) |
 
 ## 상태 아이콘
 

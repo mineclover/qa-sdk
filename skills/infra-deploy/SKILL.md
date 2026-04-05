@@ -45,6 +45,22 @@ k3d image import qa-sdk/ingest-server:latest -c qa-local
 # 3. 배포
 pnpm exec tsx scripts/infra.ts deploy ingest-server dev
 
+# NestJS 서비스 (Docker 빌드 → k3d → deploy)
+# Dockerfile.nestjs는 SERVICE build-arg로 NestJS 3서비스 공유
+docker build --build-arg SERVICE=decision-service -t qa-sdk/decision-service:latest -f Dockerfile.nestjs .
+k3d image import qa-sdk/decision-service:latest -c qa-local
+pnpm exec tsx scripts/infra.ts deploy decision-service dev
+
+# definition-service
+docker build --build-arg SERVICE=definition-service -t qa-sdk/definition-service:latest -f Dockerfile.nestjs .
+k3d image import qa-sdk/definition-service:latest -c qa-local
+pnpm exec tsx scripts/infra.ts deploy definition-service dev
+
+# motion-workspace-service
+docker build --build-arg SERVICE=motion-workspace-service -t qa-sdk/motion-workspace-service:latest -f Dockerfile.nestjs .
+k3d image import qa-sdk/motion-workspace-service:latest -c qa-local
+pnpm exec tsx scripts/infra.ts deploy motion-workspace-service dev
+
 # 다른 환경에 배포
 pnpm exec tsx scripts/infra.ts deploy nginx-test stage test-nginx.json
 
