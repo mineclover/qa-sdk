@@ -61,13 +61,26 @@ async function main() {
   const serviceProfile = createServiceProfileAdapter(PROFILE_DIR);
   const gate = createGateAdapter();
 
-  // 외부 서비스 mock (registry, ingest는 아직 실연동 안 함)
-  const mockRegistry: RegistryAdapter = {
-    syncDeployment: async (params) => {
-      console.log(`[registry] sync: ${params.serviceId} → ${params.url}`);
-      return { synced: true };
-    },
-  };
+  // 실제 registry-service 연동 (미실행 시 mock fallback)
+  let registry: RegistryAdapter;
+  try {
+    const res = await fetch("http://localhost:3300/health", { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      const { createRegistryAdapter } = await import("../src/adapters/registry.js");
+      registry = createRegistryAdapter("http://localhost:3300");
+      console.log("[registry] 실서비스 연결됨 (localhost:3300)");
+    } else {
+      throw new Error("not ok");
+    }
+  } catch {
+    console.log("[registry] 미실행 — mock 모드");
+    registry = {
+      syncDeployment: async (params) => {
+        console.log(`[registry-mock] sync: ${params.serviceId} → ${params.url}`);
+        return { synced: true };
+      },
+    };
+  }
   const mockIngest: IngestAdapter = {
     emit: async (key: string) => {
       console.log(`[ingest] emit: ${key}`);
@@ -84,7 +97,7 @@ async function main() {
   const pipeline = createPipeline([
     createConfigStage(createPlainLoader()),
     createProvisionStage(getProvider, pulumiDeployFn),
-    createRegisterStage(mockRegistry, serviceProfile, infraProfile),
+    createRegisterStage(registry, serviceProfile, infraProfile),
     createVerifyStage(gate, { maxRetries: 5, retryDelay: 3000 }),
     createObserveStage(mockIngest, mockCoordinate, infraProfile),
   ]);
