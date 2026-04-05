@@ -7,7 +7,7 @@ def:
   level: leaf
   lifecycle: approved
   layer: operation
-  tags: [infra, monitoring, argocd]
+  tags: [infra, monitoring, argocd, observability]
   links:
     - target: infra-engine-pipeline
       type: implements

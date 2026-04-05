@@ -41,7 +41,7 @@ function getOverviewTargetFiles(): string[] {
 
 function extractOverviewSection(content: string): string | null {
   const lines = content.split(/\r?\n/);
-  const start = lines.findIndex(line => line === "## 구성 ^overview");
+  const start = lines.findIndex(line => /^##\s+.*\^overview/.test(line));
   if (start === -1) return null;
 
   const collected: string[] = [];

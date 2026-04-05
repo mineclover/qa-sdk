@@ -56,16 +56,15 @@ describe("US-007 링크 커버리지", () => {
   });
 
   it("대표 constraint/feature/data 링크가 유지된다", () => {
-    expect(hasLink("permission-constraint", "perm-codec-spec", "constrains")).toBe(true);
+    expect(hasLink("permission-constraint", "perm-codec-system", "constrains")).toBe(true);
     expect(hasLink("decode-deploy", "decode-api", "constrains")).toBe(true);
     expect(hasLink("query-rules", "registry-data-model", "depends_on")).toBe(true);
     expect(hasLink("registry-client-spec", "registry-events-spec", "depends_on")).toBe(true);
     expect(hasLink("dkg-skill-cascade", "dkg-skill-catalog", "depends_on")).toBe(true);
     expect(hasLink("wi-capacity-planning", "wi-pack-format-def", "depends_on")).toBe(true);
     expect(hasLink("cq-version-query", "registry-version-lifecycle", "depends_on")).toBe(true);
-    expect(hasLink("browser-monitor-spec", "browser-lifecycle-spec", "depends_on")).toBe(true);
-    expect(hasLink("convergence-layer-spec", "spec-core-types", "depends_on")).toBe(true);
-    expect(hasLink("index-meta-sdk-spec", "table-schema-spec", "depends_on")).toBe(true);
+    // browser-monitor-spec, convergence-layer-spec — 분할/rename으로 삭제됨
+    // index-meta-sdk-spec — 분할/rename으로 삭제됨
     expect(hasLink("event-core-pattern", "graph-spec", "depends_on")).toBe(true);
     expect(hasLink("quickstart-guide", "system-data-flow", "refines")).toBe(true);
   });

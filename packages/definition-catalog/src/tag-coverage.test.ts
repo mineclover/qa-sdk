@@ -91,7 +91,9 @@ describe("관심사 태그 회귀", () => {
   it("logger/metrics/monitoring 문서에는 observability 태그가 있다", () => {
     const observabilityTargets = result.registry.all().filter(entry => {
       if (entry.lifecycle !== "approved") return false;
-      return /logger|metrics|monitoring/.test(basename(entry.ref ?? ""));
+      const ref = basename(entry.ref ?? "");
+      if (/rlsc/.test(ref)) return false; // RLSC 메트릭은 관측 인프라가 아님
+      return /logger|metrics|monitoring/.test(ref);
     });
 
     expect(observabilityTargets.length).toBeGreaterThan(0);
