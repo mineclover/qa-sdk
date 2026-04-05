@@ -104,5 +104,3 @@ infra-engine 패키지의 구현 현황과 잔여 작업을 추적한다.
 ### 고도화
 
 - [ ] **Grafana 연동** — dashboard export → Grafana 데이터소스
-- [ ] **cli-command → packages/cli 마이그레이션** — handlerKey → handler 직접 바인딩 점진 전환
-- [ ] **Hono Worker registry-service** — Cloudflare Workers 완전 호환 (NestJS → Hono)
