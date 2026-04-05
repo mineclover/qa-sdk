@@ -70,5 +70,5 @@ packed_key 기반 그룹핑과 축 프로젝션 집계를 추상화한다. DB의
 
 - `ingest(key, timestamp, payload?)` — 테스트용 데이터 주입 메서드.
 - 내부 StoredItem 배열에 저장.
-- `filterByTime()` — from/to 옵션에 따른 시간 범위 필터 (문자열 비교).
+- `filterByTime()` — from/to 옵션에 따른 시간 범위 필터 (`compareTimestamps()` 사용).
 - **프로덕션 대체**: DB GROUP BY 또는 Materialized View로 교체 가능.

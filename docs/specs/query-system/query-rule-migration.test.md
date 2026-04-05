@@ -89,7 +89,7 @@ def:
 
 - append-only: position 값이 변환 전후 동일
 - swap: migration edge에 따라 position이 정확히 교차
-- shrink: 변환 불가 규칙이 skipped 배열에 포함되고, 원본은 store에 불변
+- shrink: 변환 불가 규칙이 skipped 배열에 포함되고, 원본은 store에 불변 (2-pass 사전 변환으로 store 오염 방지)
 - 에러: code + statusCode 조합으로 에러 유형 식별
 - 타임스탬프: createdAt 불변, updatedAt만 갱신
 - API: HTTP status + JSON body 구조 검증, 마이그레이션 후 version별 조회 정합성

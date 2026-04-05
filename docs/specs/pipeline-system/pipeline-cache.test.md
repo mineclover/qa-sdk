@@ -41,7 +41,7 @@ InMemoryKeyCache의 기본 동작, TTL 만료, LRU eviction, 통계 추적, 덮�
 
 ### has (1)
 
-6. has — 존재 시 true, 만료 후 false
+6. has — 존재 시 true, 만료 후 false + misses 카운트 증가
 
 ### clear (1)
 
@@ -62,7 +62,7 @@ InMemoryKeyCache의 기본 동작, TTL 만료, LRU eviction, 통계 추적, 덮�
 
 ## 검증 ^assertions
 
-- TTL: 만료 시점 정확 (100ms 설정 → 101ms에서 만료)
+- TTL: 만료 시점 정확 (100ms 설정 → 101ms에서 만료). get()/has() 모두 misses 카운트
 - LRU: Map 삽입 순서 기반으로 가장 오래된 항목이 먼저 제거
 - LRU 갱신: get() 호출이 항목을 최신으로 이동
 - stats: hit/miss/eviction 카운트가 각 동작에 정확히 반영

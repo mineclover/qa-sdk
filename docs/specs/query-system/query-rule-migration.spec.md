@@ -65,14 +65,17 @@ migrateRules(indexId, fromVersion, toVersion)
   ├─ MetaRegistry에서 index 정의 + 양쪽 version 유효성 확인
   ├─ policyRuleStore.findByIndex(indexId, fromVersion)
   │
-  └─ 규칙별 루프:
-       ├─ patternToConstraintRecord(pattern, dimIds) → Record<dimId, constraint>
-       ├─ translateConstraint(indexId, from, to, record, registry)
-       │    ├─ null → skipped (entity가 target version에 없음)
-       │    └─ Record → constraintRecordToPattern → newPattern
-       ├─ store.update({ ...rule, versionId: toVersion, pattern: newPattern, updatedAt })
-       └─ 결과 집계: { migrated, skipped, rules }
+  ├─ 1단계: 사전 변환 (store 미접촉)
+  │    └─ 규칙별:
+  │         ├─ patternToConstraintRecord → translateConstraint
+  │         │    ├─ null → skipped
+  │         │    └─ Record → constraintRecordToPattern → pendingUpdates에 추가
+  │
+  └─ 2단계: 변환 성공한 규칙만 store에 일괄 적용
+       └─ pendingUpdates 순회 → store.update({ ...rule, versionId, pattern, updatedAt })
 ```
+
+**2-pass 설계 근거**: 1단계에서 translateConstraint 실패(skipped)를 모두 식별한 후, 2단계에서 store 쓰기를 수행한다. 이로써 변환 로직 자체의 부분 실패가 store를 오염시키지 않는다. 단, store.update 중간 실패 시 이미 적용된 규칙은 롤백되지 않는다 (best-effort).
 
 ## 변환 시나리오
 
@@ -92,7 +95,7 @@ migrateRules(indexId, fromVersion, toVersion)
 | index 미존재 | NOT_FOUND | 404 |
 | fromVersion 미존재 | NOT_FOUND | 404 |
 | toVersion 미존재 | NOT_FOUND | 404 |
-| store.update 실패 | 예외 전파 | 500 |
+| store.update 실패 | 예외 전파 (best-effort, 부분 적용 가능) | 500 |
 
 ## 타임스탬프 규칙
 

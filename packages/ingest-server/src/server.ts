@@ -5,6 +5,7 @@ import { createNodeWebSocket } from "@hono/node-ws";
 import {
   newDlqId,
   createServiceBootConfig,
+  warnPortConflict,
   type DlqStore,
   type GraphStore,
   type RecordStore,
@@ -340,6 +341,7 @@ async function startServer() {
       env: serviceConfig.env,
       region: serviceConfig.region,
     }, "ingest-server listening");
+    warnPortConflict("ingest-server", info.port, logger);
   });
 
   injectWebSocket(server);

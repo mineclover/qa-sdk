@@ -21,11 +21,14 @@ export const SERVICE_PORTS: readonly ServicePortEntry[] = [
   { name: "query-service",      defaultPort: 3500, description: "정책 규칙 질의 (SQLite)" },
   { name: "decode-service",     defaultPort: 3600, description: "좌표 디코더 캐시 (Stateless)" },
   { name: "definition-service", defaultPort: 3700, description: "문서/prefix 정의 관리 (NestJS + SQLite)" },
+  { name: "motion-workspace-service", defaultPort: 3710, description: "모션 워크스페이스 (Hono + SQLite)" },
+  { name: "decision-service",   defaultPort: 3800, description: "의사결정 스키마/인스턴스 관리 (NestJS + SQLite)" },
   // ── 비즈니스 서비스 (4xxx) ── (데모용, 실제 배포 시 변경)
   { name: "shopping-backend",   defaultPort: 4100, description: "쇼핑 백엔드 API" },
   { name: "auth",               defaultPort: 4200, description: "인증 서비스" },
   { name: "payment",            defaultPort: 4300, description: "결제 서비스" },
-  { name: "gateway",            defaultPort: 4400, description: "API 게이트웨이" },
+  // ── 게이트웨이 (8xxx) ──
+  { name: "gateway",            defaultPort: 8787, description: "API 게이트웨이 (Hono + Tailscale/CF Workers)" },
   // ── 프론트엔드 (5xxx) ──
   { name: "shopping-web",       defaultPort: 5220, description: "쇼핑 데모 사이트" },
   { name: "platform-demo",      defaultPort: 5176, description: "3D 모니터 + 다이어그램 뷰어" },

@@ -51,7 +51,7 @@ packed_key를 기반으로 디코딩 결과를 캐시하여 hot path O(1) lookup
 - **maxSize**: 기본 10,000. 초과 시 Map 첫 번째 항목(가장 오래된)부터 제거.
 - **TTL**: `set()` 시 `cachedAt = Date.now()` 기록. `get()`/`has()` 시 lazy eviction.
   - `ttlMs === 0` → 영구 캐시 (만료 없음)
-  - `Date.now() - cachedAt > ttlMs` → 만료 → 삭제 + evictions++
+  - `Date.now() - cachedAt > ttlMs` → 만료 → 삭제 + evictions++ + misses++
 - **stats 초기화**: `clear()` 시 hits/misses/evictions 모두 0으로 리셋.
 - **덮어쓰기**: 동일 키 `set()` 시 기존 항목 삭제 후 새로 삽입 (순서 갱신 + size 유지).
 

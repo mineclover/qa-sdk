@@ -21,7 +21,7 @@ const app = new Hono();
 
 const AUTH_MODE = process.env.AUTH_MODE ?? "bypass";
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
-const PORT = parseInt(process.env.GATEWAY_PORT ?? "8787");
+const PORT = parseInt(process.env.PORT ?? "8787");
 
 const SERVICE_URLS: Record<string, string> = {
   ingest: process.env.INGEST_URL ?? "http://localhost:3200",

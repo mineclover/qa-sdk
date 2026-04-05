@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { warnPortConflict } from "@qa-sdk/core";
 import { createLogger } from "./lib/logger.js";
 import {
   createApp,
@@ -28,6 +29,7 @@ const server = serve({
     { serviceId: info.serviceId, persistence: info.defaultPersistence, port: serverInfo.port },
     "서비스 시작",
   );
+  warnPortConflict("motion-workspace-service", serverInfo.port, logger);
 });
 app.injectWebSocket(server);
 
