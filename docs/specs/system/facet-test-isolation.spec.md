@@ -254,11 +254,94 @@ qa-sdk-test-infra/      ← 별도 repo
 4. **원본 변경 시 재동기화** — `qa-sdk facet sync` 또는 rclone 직접 실행
 5. **import 경로** — 테스트에서 `../synced/gate-service/src/gate.js`로 상대 import
 
-## 9. 제약과 한계
+## 9. 의존성 체인 분석 — import 따라가기
+
+### 문제
+
+`@facet` 파일만 복제하면 import 대상이 누락되어 빌드/테스트가 깨진다.
+
+```ts
+// @facet
+import { Order } from "../types/order.ts";       // ← 순수 타입 → 함께 복제
+import { validate } from "../lib/validator.ts";   // ← 순수 함수 → 함께 복제
+import { logger } from "../lib/logger.ts";        // ← 환경 의존 → 차단 (block)
+```
+
+### 해결: import 체인 walk + block 판별
+
+`@facet` 파일에서 시작하여 import를 재귀적으로 따라가되, **환경 의존이 나타나면 block**.
+
+```
+@facet gate.ts
+  ├─ import types/gate-types.ts      ✓ 순수 → 포함
+  │    └─ import types/common.ts     ✓ 순수 → 포함
+  ├─ import lib/gate-rules.ts        ✓ 순수 → 포함
+  └─ import config/env.ts            ✗ process.env → block
+```
+
+### Block 판별 기준
+
+| 패턴 | block 여부 |
+|------|:---------:|
+| `process.env` | block |
+| `import.*hono\|express\|fastify` | block |
+| `import.*drizzle\|better-sqlite3\|node:sqlite` | block |
+| `createLogger` | block |
+| `import.*node:fs` (동적 파일 접근) | block |
+| `fetch` (네트워크 호출) | block |
+| `import type` | **통과** (타입만이므로) |
+
+### git-utils와의 연결
+
+git-utils의 `analyzeRemoteBranchConflicts`가 **파일 간 변경 overlap**을 분석하듯, facet scan은 **파일 간 import overlap**을 분석한다.
+
+| git-utils | facet scan |
+|-----------|-----------|
+| 변경된 파일 탐지 | `@facet` 마커 파일 탐지 |
+| merge-base diff → overlap | import walk → 의존성 |
+| hotspot (다수 브랜치 접촉) | shared deps (다수 facet이 공유) |
+| block (충돌 영역) | block (환경 의존 지점) |
+
+### CLI 출력
+
+```bash
+qa-sdk facet scan --service gate-service --deps
+
+# @facet 파일 (직접 선언):
+#   src/gate.ts
+#   src/policy-rule.ts
+#
+# 의존성 (import chain 자동 포함):
+#   src/types/gate-types.ts
+#   src/types/common.ts
+#   src/lib/gate-rules.ts
+#
+# block (환경 의존 — 제외):
+#   src/config/env.ts (process.env)
+#   src/lib/logger.ts (createLogger)
+#
+# 총: 5 파일 복제, 2 파일 block
+```
+
+### block 파일 처리
+
+block된 파일이 `@facet` 파일에서 import되면 두 가지 선택지:
+
+**A) stub 자동 생성** — block 파일 위치에 빈 export stub을 생성
+```ts
+// synced/gate-service/src/config/env.ts (auto-stub)
+export const env = {} as any;
+```
+
+**B) import 제거** — 복사본에서 해당 import 행을 제거 (사용하지 않는 경우)
+
+기본은 A. logger처럼 호출만 하고 반환값을 안 쓰는 경우 B.
+
+## 10. 제약과 한계
 
 | 제약 | 이유 | 대응 |
 |------|------|------|
-| TypeScript만 | 마커 파싱 + export 주입이 TS 문법 의존 | 확장 가능하지만 현재 TS만 |
-| 순환 의존 | 추출 파일이 환경 의존 파일을 import하면 깨짐 | `@facet` 붙이기 전에 import 체인 확인 |
-| 타입 import | 추출 파일이 공유 타입을 import → 타입 파일도 함께 동기화 | `@facet` 파일의 import 분석 → 타입 파일 자동 포함 |
+| TypeScript만 | 마커 파싱 + import 분석이 TS 문법 의존 | 확장 가능하지만 현재 TS만 |
+| 동적 import | `import()` 표현식은 정적 분석 불가 | block 처리 (수동 힌트 허용) |
 | rclone 설치 | 외부 도구 의존 | CI에서 사전 설치 또는 docker |
+| 간접 환경 의존 | A→B→C에서 C가 환경 의존이면 A도 영향 | 재귀 walk가 자동 감지 |
