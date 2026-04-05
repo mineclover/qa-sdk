@@ -26,7 +26,7 @@ import { createInfraProfileAdapter } from "../src/adapters/infra-profile.js";
 import { createServiceProfileAdapter } from "../src/adapters/service-profile.js";
 import { createLocalProvider, type LocalProviderOptions } from "../src/providers/local.js";
 import { registerProvider, getProvider } from "../src/providers/registry.js";
-import { pulumiDeployFn } from "../src/providers/pulumi-deploy.js";
+import { createPulumiDeployFn } from "../src/providers/pulumi-deploy.js";
 import type {
   RegistryAdapter,
   IngestAdapter,
@@ -96,7 +96,7 @@ async function main() {
   // 파이프라인 구성
   const pipeline = createPipeline([
     createConfigStage(createPlainLoader()),
-    createProvisionStage(getProvider, pulumiDeployFn),
+    createProvisionStage(getProvider, createPulumiDeployFn({ env: ENV })),
     createRegisterStage(registry, serviceProfile, infraProfile),
     createVerifyStage(gate, { maxRetries: 5, retryDelay: 3000 }),
     createObserveStage(mockIngest, mockCoordinate, infraProfile),

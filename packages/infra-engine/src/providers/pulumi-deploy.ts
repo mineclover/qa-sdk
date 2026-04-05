@@ -10,11 +10,21 @@ import type { ResolvedConfig } from "../core/types.js";
  * - 로컬 파일 백엔드 사용 (S3 불필요)
  * - K8s context를 k3d-qa-local로 설정
  */
+export interface PulumiDeployOptions {
+  env?: string;
+}
+
+export function createPulumiDeployFn(options?: PulumiDeployOptions) {
+  return (provider: DeployProvider, config: ResolvedConfig, serviceId: string, stackName: string) =>
+    pulumiDeployFn(provider, config, serviceId, stackName, options);
+}
+
 export async function pulumiDeployFn(
   provider: DeployProvider,
   config: ResolvedConfig,
   serviceId: string,
   stackName: string,
+  options?: PulumiDeployOptions,
 ): Promise<{ stackName: string; outputs: Record<string, string> }> {
   const program = provider.getProgram(config, serviceId);
   const projectName = `infra-engine-${serviceId}`;
@@ -50,10 +60,12 @@ export async function pulumiDeployFn(
 
   // K3s NodePort → kubectl port-forward로 호스트에서 접근 가능하게
   const port = config.services[serviceId]?.port ?? 3200;
-  const localPort = port + 20000; // 충돌 방지: 80 → 20080, 3200 → 23200 (10080은 Node.js unsafe port)
-  const namespace = outputs.serviceName
-    ? "qa-dev" // TODO: env 기반 namespace 결정
-    : "default";
+  const env = options?.env ?? "dev";
+  const ENV_NS: Record<string, string> = { test: "qa-dev", dev: "qa-dev", stage: "qa-stage", staging: "qa-stage", prod: "qa-prod", production: "qa-prod" };
+  const namespace = ENV_NS[env] ?? "qa-dev";
+  // 환경별 포트 오프셋 — 동일 서비스 다중 환경 배포 시 충돌 방지
+  const envOffset: Record<string, number> = { dev: 20000, stage: 21000, prod: 22000 };
+  const localPort = port + (envOffset[env] ?? 20000);
 
   if (outputs.serviceName) {
     try {
