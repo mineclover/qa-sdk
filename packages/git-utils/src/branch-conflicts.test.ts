@@ -305,4 +305,97 @@ describe("에러 시나리오", () => {
       expect(h.branches).toEqual(sorted);
     }
   });
+
+  it("base ref fallback — main이 기본 브랜치면 자동 해소", { timeout: 30000 }, async () => {
+    const root = await mkdtemp(join(tmpdir(), "git-baseref-"));
+    tempDirs.push(root);
+
+    const remoteDir = join(root, "remote.git");
+    const workDir = join(root, "work");
+
+    git(root, ["init", "--bare", "--initial-branch=main", remoteDir]);
+    git(root, ["clone", remoteDir, workDir]);
+    configId(workDir);
+
+    await writeRepoFile(workDir, "src/app.ts", "app v1\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "chore: seed"]);
+    git(workDir, ["push", "origin", "main"]);
+
+    git(workDir, ["checkout", "-b", "feature/test", "origin/main"]);
+    await writeRepoFile(workDir, "src/app.ts", "app feature\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: test"]);
+
+    // baseRef를 지정하지 않음 → fallback 체인으로 자동 해소
+    const result = await analyzeRemoteBranchConflicts({
+      cwd: workDir,
+      remoteName: "origin",
+      // baseRef 생략
+      fetch: false,
+    });
+
+    // fallback으로 origin/main이 선택되어야 함
+    expect(result.baseRef).toContain("main");
+    // 현재 브랜치의 변경이 감지되어야 함
+    expect(result.current.files.length).toBeGreaterThan(0);
+  });
+
+  it("worktree overlap — linked worktree의 변경이 hotspot에 포함", { timeout: 30000 }, async () => {
+    const root = await mkdtemp(join(tmpdir(), "git-worktree-"));
+    tempDirs.push(root);
+
+    const remoteDir = join(root, "remote.git");
+    const workDir = join(root, "work");
+    const worktreeDir = join(root, "wt");
+
+    git(root, ["init", "--bare", "--initial-branch=main", remoteDir]);
+    git(root, ["clone", remoteDir, workDir]);
+    configId(workDir);
+
+    await writeRepoFile(workDir, "src/shared.ts", "shared v1\n");
+    await writeRepoFile(workDir, "src/only-main.ts", "main v1\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "chore: seed"]);
+    git(workDir, ["push", "origin", "main"]);
+
+    // remote branch for overlap
+    git(workDir, ["checkout", "-b", "feature/remote-a", "origin/main"]);
+    await writeRepoFile(workDir, "src/shared.ts", "shared remote-a\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: remote-a"]);
+    git(workDir, ["push", "-u", "origin", "feature/remote-a"]);
+
+    // 메인으로 복귀 후 worktree 생성
+    git(workDir, ["checkout", "main"]);
+    git(workDir, ["worktree", "add", "-b", "feature/wt", worktreeDir, "origin/main"]);
+    configId(worktreeDir);
+
+    // worktree에서 shared.ts 변경
+    await writeRepoFile(worktreeDir, "src/shared.ts", "shared worktree\n");
+    git(worktreeDir, ["add", "."]);
+    git(worktreeDir, ["commit", "-m", "feat: worktree change"]);
+
+    // main worktree에서 현재 브랜치에서 shared.ts 변경
+    git(workDir, ["checkout", "-b", "feature/current", "origin/main"]);
+    await writeRepoFile(workDir, "src/shared.ts", "shared current\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: current"]);
+
+    const result = await analyzeRemoteBranchConflicts({
+      cwd: workDir,
+      remoteName: "origin",
+      baseRef: "origin/main",
+      fetch: false,
+      includeWorktrees: true,
+    });
+
+    // worktree 분석이 포함되어야 함
+    expect(result.worktrees.length).toBeGreaterThanOrEqual(1);
+
+    // shared.ts가 current + remote-a + worktree에서 변경 → hotspot
+    const sharedHotspot = result.hotspots.find(h => h.path === "src/shared.ts");
+    expect(sharedHotspot).toBeDefined();
+    expect(sharedHotspot!.branches.length).toBeGreaterThanOrEqual(2);
+  });
 });
