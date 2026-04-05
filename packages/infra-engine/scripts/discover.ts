@@ -6,13 +6,24 @@
  * 예시: pnpm exec tsx scripts/discover.ts ingest-server dev
  *       pnpm exec tsx scripts/discover.ts --all dev
  *       pnpm exec tsx scripts/discover.ts --code ingest-server,gate-service dev
+ *       pnpm exec tsx scripts/discover.ts --deep ingest-server dev
  */
 
 import { createDiscoveryClient } from "../src/discovery/client.js";
+import { createDefinitionAdapter } from "../src/adapters/definition.js";
+import { createEnhancedDiscoveryClient } from "../src/discovery/enhanced-client.js";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
-const arg1 = process.argv[2] ?? "--all";
-const env = process.argv[3] ?? "dev";
+const DEFINITION_URL = process.env.DEFINITION_URL ?? "http://localhost:3700";
+
+// 인자 파싱
+const args = process.argv.slice(2);
+const deepIndex = args.indexOf("--deep");
+const isDeep = deepIndex !== -1;
+if (isDeep) args.splice(deepIndex, 1);
+
+const arg1 = args[0] ?? "--all";
+const env = args[1] ?? "dev";
 
 async function main() {
   const client = createDiscoveryClient(REGISTRY_URL);
@@ -29,8 +40,8 @@ async function main() {
   }
 
   if (arg1 === "--code") {
-    const serviceIds = (process.argv[3] ?? "").split(",").filter(Boolean);
-    const codeEnv = process.argv[4] ?? "dev";
+    const serviceIds = (args[1] ?? "").split(",").filter(Boolean);
+    const codeEnv = args[2] ?? "dev";
     if (serviceIds.length === 0) {
       console.error("사용법: --code service1,service2 [env]");
       process.exit(1);
@@ -49,7 +60,82 @@ async function main() {
     return;
   }
 
-  // 단일 서비스 조회
+  // --deep 모드: definition-service 데이터 통합
+  if (isDeep) {
+    const defAdapter = createDefinitionAdapter(DEFINITION_URL);
+    const enhanced = createEnhancedDiscoveryClient(client, defAdapter);
+    const svc = await enhanced.resolveEnhanced(arg1, env);
+
+    if (!svc) {
+      console.error(`서비스 "${arg1}"를 찾을 수 없습니다`);
+      process.exit(1);
+    }
+
+    console.log(`\n=== ${svc.name} (${svc.serviceId}) ===`);
+    console.log(`  URL:      ${svc.url}`);
+    console.log(`  Tier:     ${svc.tier}`);
+    console.log(`  Team:     ${svc.team}`);
+
+    // 문서 정보
+    if (svc.docs) {
+      const d = svc.docs;
+      const lcSummary = Object.entries(d.byLifecycle)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+      const lySummary = Object.entries(d.byLayer)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+
+      console.log(`\n  --- 문서 ---`);
+      console.log(`  총 ${d.totalDocs}건 (${lcSummary})`);
+      console.log(`  계층: ${lySummary}`);
+    } else {
+      console.log(`\n  --- 문서 ---`);
+      console.log(`  (definition-service 조회 불가)`);
+    }
+
+    // 테스트 정보
+    if (svc.testHealth) {
+      const t = svc.testHealth;
+      const healthIcon = t.healthy ? "pass" : "fail";
+      console.log(`\n  --- 테스트 ---`);
+      console.log(`  총 ${t.totalTests}건, pass rate: ${t.passRate}%, healthy: ${healthIcon}`);
+    } else {
+      console.log(`\n  --- 테스트 ---`);
+      console.log(`  (definition-service 조회 불가)`);
+    }
+
+    // 소유 Prefix 상세
+    console.log(`\n  --- 소유 Prefix ---`);
+    if (svc.ownedPrefixDetails && svc.ownedPrefixDetails.length > 0) {
+      const maxPrefixLen = Math.max(...svc.ownedPrefixDetails.map((p) => p.prefixId.length));
+      for (const p of svc.ownedPrefixDetails) {
+        const labelsStr = p.labels.length > 0 ? ` [${p.labels.join(", ")}]` : "";
+        console.log(
+          `  ${p.prefixId.padEnd(maxPrefixLen + 2)} ${p.name} (${p.category}${labelsStr})`,
+        );
+      }
+    } else if (svc.ownedPrefixes.length > 0) {
+      // definition-service에서 상세를 못 가져왔지만 prefix 목록은 있는 경우
+      for (const id of svc.ownedPrefixes) {
+        console.log(`  ${id}`);
+      }
+    } else {
+      console.log(`  (없음)`);
+    }
+
+    // 환경별 URL
+    if (svc.urls && Object.keys(svc.urls).length > 0) {
+      console.log(`\n  --- 환경별 URL ---`);
+      for (const [e, u] of Object.entries(svc.urls)) {
+        console.log(`  ${e}:${" ".repeat(Math.max(1, 10 - e.length))}${u}`);
+      }
+    }
+
+    return;
+  }
+
+  // 단일 서비스 조회 (기본)
   const svc = await client.resolve(arg1, env);
   if (!svc) {
     console.error(`서비스 "${arg1}"를 찾을 수 없습니다`);

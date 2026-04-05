@@ -7,6 +7,18 @@ export { createRegistryAdapter } from "./adapters/registry.js";
 export { createInfraProfileAdapter } from "./adapters/infra-profile.js";
 export { createServiceProfileAdapter } from "./adapters/service-profile.js";
 export { createDiscoveryClient, type ServiceInfo, type DiscoveryClient } from "./discovery/client.js";
+export {
+  createDefinitionAdapter,
+  type DefinitionAdapter,
+  type ServiceDocsInfo,
+  type ServiceTestInfo,
+  type ServicePrefixInfo,
+} from "./adapters/definition.js";
+export {
+  createEnhancedDiscoveryClient,
+  type EnhancedDiscoveryClient,
+  type EnhancedServiceInfo,
+} from "./discovery/enhanced-client.js";
 export { createSopsLoader, createPlainLoader } from "./config/sops-loader.js";
 export { createConfigStage } from "./config/config-stage.js";
 export { extractServiceEnv, resolveConnectionEnv } from "./config/env-bridge.js";

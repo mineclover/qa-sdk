@@ -7,10 +7,12 @@
  *   pnpm exec tsx scripts/export.ts ts [env]                  — TypeScript 모듈 생성
  *   pnpm exec tsx scripts/export.ts compose [env]             — docker-compose override 생성
  *   pnpm exec tsx scripts/export.ts status [env]              — 전체 서비스 상태
+ *   pnpm exec tsx scripts/export.ts docs [serviceId]          — 서비스별 문서 요약 (definition-service)
  */
 
 import { createDiscoveryClient } from "../src/discovery/client.js";
 import { createInfraProfileAdapter } from "../src/adapters/infra-profile.js";
+import { createDefinitionAdapter } from "../src/adapters/definition.js";
 import { createFleetManager } from "../src/fleet/manager.js";
 import type { FleetServiceStatus } from "../src/fleet/manager.js";
 import { generateEnvFile } from "../src/export/env-file.js";
@@ -21,6 +23,7 @@ import { resolve } from "node:path";
 import { writeFile, mkdir } from "node:fs/promises";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
+const DEFINITION_URL = process.env.DEFINITION_URL ?? "http://localhost:3700";
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 const cmd = process.argv[2] ?? "status";
 const arg1 = process.argv[3];
@@ -97,9 +100,57 @@ async function main() {
       break;
     }
 
+    case "docs": {
+      const defAdapter = createDefinitionAdapter(DEFINITION_URL);
+
+      if (arg1) {
+        // 단일 서비스 문서 요약
+        const docs = await defAdapter.getServiceDocs(arg1);
+        const lcSummary = Object.entries(docs.byLifecycle)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+        const lySummary = Object.entries(docs.byLayer)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+
+        console.log(`\n=== ${arg1} 문서 요약 ===\n`);
+        console.log(`  총 ${docs.totalDocs}건`);
+        console.log(`  lifecycle: ${lcSummary || "(없음)"}`);
+        console.log(`  layer:     ${lySummary || "(없음)"}`);
+
+        if (docs.docs.length > 0) {
+          console.log(`\n  문서 목록:`);
+          const maxIdLen = Math.max(...docs.docs.map((d) => d.docId.length));
+          for (const doc of docs.docs) {
+            console.log(
+              `    ${doc.docId.padEnd(maxIdLen + 2)} [${doc.lifecycle}] ${doc.title} (${doc.layer}/${doc.scope})`,
+            );
+          }
+        }
+      } else {
+        // 전체 서비스 문서 요약 (서비스 목록에서 순회)
+        const services = await client.listServices();
+        console.log(`\n=== 서비스별 문서 요약 ===\n`);
+        for (const svc of services) {
+          try {
+            const docs = await defAdapter.getServiceDocs(svc.serviceId);
+            const lcSummary = Object.entries(docs.byLifecycle)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ");
+            console.log(
+              `  ${svc.serviceId.padEnd(28)} ${String(docs.totalDocs).padStart(3)}건  ${lcSummary}`,
+            );
+          } catch {
+            console.log(`  ${svc.serviceId.padEnd(28)} (조회 불가)`);
+          }
+        }
+      }
+      break;
+    }
+
     default:
       console.error(`알 수 없는 명령: ${cmd}`);
-      console.error("사용: export.ts [status|env|ts|compose] ...");
+      console.error("사용: export.ts [status|env|ts|compose|docs] ...");
       process.exit(1);
   }
 }
