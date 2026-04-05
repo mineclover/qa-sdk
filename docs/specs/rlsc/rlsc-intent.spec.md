@@ -17,7 +17,7 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 `LayoutPattern`을 공유 어휘로 삼아 설계 의도 선언(top-down)과 DOM 인식(bottom-up) 양 방향을
 같은 구조로 표현하고, 두 패턴을 비교하여 레이아웃 프레임 위반을 탐지한다.
@@ -30,7 +30,7 @@ def:
 
 선언 없이 인식만 실행해도 의미가 있다 — "이 페이지가 어떤 패턴인가"를 자동 분류한다.
 
-^defines
+## 정의 ^defines
 
 **타입**
 
@@ -73,7 +73,7 @@ def:
     - `declared.goldenRatio === true` + `recognized.goldenRatio !== true` → warning
   - `checkGestalt(declared, recognized) → ConformanceViolation[]`
 
-^consumes
+## 소비 ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCDocument, LayoutMetrics, LayoutPattern, ConformanceViolation, ConformanceResult
 - `packages/rlsc/src/metrics.ts` — measureLayout

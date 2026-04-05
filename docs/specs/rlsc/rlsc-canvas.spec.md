@@ -15,14 +15,14 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 RLSCDocument를 색상 매핑 이미지로 렌더링한다.
 DOM 노드에 역할·레이어·깊이 기준 색상을 부여하고 z-index 순서대로 겹쳐 그려
 레이아웃 구조, 레이어 겹침, 게슈탈트 그룹, 균형 축선을 한 장의 이미지로 표현한다.
 브라우저(Canvas 2D)와 서버/테스트(SVG 문자열) 두 렌더 경로를 지원한다.
 
-^defines
+## 정의 ^defines
 
 **타입**
 
@@ -74,7 +74,7 @@ DOM 노드에 역할·레이어·깊이 기준 색상을 부여하고 z-index �
 - `packages/rlsc/src/canvas.ts:overlayFlowArrows` — `(ctx, relations, nodeMap) → void` (내부)
   - `flow` + `adjacent-x` + `adjacent-y` 관계를 화살표로 시각화
 
-^consumes
+## 소비 ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCDocument, RLSCNode, LayoutMetrics, ProximityGroup, LayerRole
 - `packages/rlsc/src/tree-utils.ts` — flattenTree

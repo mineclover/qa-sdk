@@ -15,13 +15,13 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 `LayoutMetrics`(수치)를 `LayoutPattern`(패턴 어휘)으로 분류하고, 패턴 타입 어휘를 정의한다.
 `LayoutPattern`은 선언(top-down 설계 의도)과 인식(bottom-up DOM 수집) 양방향에서 공유하는 중립 타입이다.
 수치를 해석하는 단계(`metrics`)와 선언 대 인식을 비교하는 단계(`intent`) 사이의 중재 계층.
 
-^defines
+## 정의 ^defines
 
 **타입**
 
@@ -79,7 +79,7 @@ def:
 
   분류 불가 필드는 결과에서 생략
 
-^consumes
+## 소비 ^consumes
 
 - `packages/rlsc/src/types.ts` — LayoutMetrics
 - `packages/rlsc/src/metrics.ts` — LayoutMetrics (입력 타입)

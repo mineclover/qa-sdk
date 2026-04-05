@@ -13,14 +13,14 @@ def:
       type: depends_on
 ---
 
-^purpose
+## 목적 ^purpose
 
 수집된 RLSCDocument에서 설계 메트릭을 계산한다.
 게슈탈트 원칙(근접성·연속성·유사성), 황금비, 그리드 패턴, 시각적 균형 등
 레이아웃 프레임의 구조적 특성을 수치(`LayoutMetrics`)로 측정한다.
 수치를 패턴 어휘로 분류하는 것은 `rlsc-pattern`이 담당한다.
 
-^defines
+## 정의 ^defines
 
 **타입**
 
@@ -99,7 +99,7 @@ def:
   - `ratio = width / height`, 소수점 2자리 반올림 후 집계
   - count 내림차순 정렬
 
-^consumes
+## 소비 ^consumes
 
 - `packages/rlsc/src/types.ts` — RLSCDocument, RLSCNode, LayoutGrid, LayoutRect, RLSCRelation
 - `packages/rlsc/src/tree-utils.ts` — flattenTree

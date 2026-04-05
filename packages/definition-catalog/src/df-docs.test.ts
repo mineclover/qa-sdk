@@ -22,8 +22,8 @@ const DF_MEMBER_IDS = [
   "df-state-model",
   "df-serialization",
   "df-causal-mapping",
-  "decision-standard",
-  "df-narrative",
+  "decision-standard-group",
+  "df-narrative-group",
   "axis-decision-guide",
 ];
 
@@ -108,23 +108,18 @@ describe("link 연결", () => {
     expect(links.some(l => l.targetId === "df-constraint" && l.linkType === "depends_on")).toBe(true);
   });
 
-  it("decision-standard → df-axis-model (constrains)", () => {
-    const links = result.registry.getLinks("decision-standard", "outgoing");
-    expect(links.some(l => l.targetId === "df-axis-model" && l.linkType === "constrains")).toBe(true);
+  it("decision-standard-group → decision-standard-process (contains)", () => {
+    const links = result.registry.getLinks("decision-standard-group", "outgoing");
+    expect(links.some(l => l.targetId === "decision-standard-process" && l.linkType === "contains")).toBe(true);
   });
 
-  it("decision-standard → df-observation-space (constrains)", () => {
-    const links = result.registry.getLinks("decision-standard", "outgoing");
-    expect(links.some(l => l.targetId === "df-observation-space" && l.linkType === "constrains")).toBe(true);
-  });
-
-  it("df-narrative → df-state-model (depends_on)", () => {
-    const links = result.registry.getLinks("df-narrative", "outgoing");
-    expect(links.some(l => l.targetId === "df-state-model" && l.linkType === "depends_on")).toBe(true);
+  it("decision-standard-group → decision-standard-checklist (contains)", () => {
+    const links = result.registry.getLinks("decision-standard-group", "outgoing");
+    expect(links.some(l => l.targetId === "decision-standard-checklist" && l.linkType === "contains")).toBe(true);
   });
 
   it("axis-decision-guide → decision-standard (refines)", () => {
     const links = result.registry.getLinks("axis-decision-guide", "outgoing");
-    expect(links.some(l => l.targetId === "decision-standard" && l.linkType === "refines")).toBe(true);
+    expect(links.some(l => l.targetId === "decision-standard-group" && l.linkType === "refines")).toBe(true);
   });
 });
