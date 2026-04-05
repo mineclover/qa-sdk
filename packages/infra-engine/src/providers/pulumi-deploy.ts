@@ -1,7 +1,24 @@
 // providers/pulumi-deploy.ts — Pulumi Automation API 기반 배포 함수
 import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
+import { homedir } from "node:os";
 import type { DeployProvider } from "../adapters/adapter.js";
 import type { ResolvedConfig } from "../core/types.js";
+
+const PF_DIR = resolve(homedir(), ".qa-sdk");
+const PF_FILE = resolve(PF_DIR, "infra-pf.json");
+
+interface PfEntry { pid: number; localPort: number; service: string; namespace: string }
+
+async function loadPfMap(): Promise<Record<string, PfEntry>> {
+  try { return JSON.parse(await readFile(PF_FILE, "utf-8")); } catch { return {}; }
+}
+
+async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
+  await mkdir(PF_DIR, { recursive: true });
+  await writeFile(PF_FILE, JSON.stringify(map, null, 2));
+}
 
 /**
  * Pulumi Automation API를 사용하여 프로바이더의 프로그램을 실행한다.
@@ -68,12 +85,23 @@ export async function pulumiDeployFn(
   const localPort = port + (envOffset[env] ?? 20000);
 
   if (outputs.serviceName) {
+    const pfKey = `${serviceId}-${env}`;
     try {
       const { execa } = await import("execa");
-      // 기존 port-forward 프로세스 정리
-      try {
-        await execa("pkill", ["-f", `port-forward.*${outputs.serviceName}`]);
-      } catch { /* 기존 프로세스 없으면 무시 */ }
+
+      // 기존 port-forward 프로세스 정리 — PID 기반 (pkill fallback)
+      const pfMap = await loadPfMap();
+      if (pfMap[pfKey]?.pid) {
+        try {
+          process.kill(pfMap[pfKey].pid, "SIGTERM");
+          console.log(`[port-forward] 기존 PID ${pfMap[pfKey].pid} 종료`);
+        } catch { /* 이미 종료됨 */ }
+      } else {
+        // PID 파일에 없으면 패턴 매칭 fallback
+        try {
+          await execa("pkill", ["-f", `port-forward.*${outputs.serviceName}`]);
+        } catch { /* 기존 프로세스 없으면 무시 */ }
+      }
 
       // 백그라운드 port-forward 실행
       const pf = execa("kubectl", [
@@ -84,6 +112,18 @@ export async function pulumiDeployFn(
       ], { detached: true, stdio: "ignore" });
       pf.unref();
 
+      // PID를 infra-pf.json에 저장
+      if (pf.pid) {
+        const updatedMap = await loadPfMap();
+        updatedMap[pfKey] = {
+          pid: pf.pid,
+          localPort,
+          service: outputs.serviceName,
+          namespace,
+        };
+        await savePfMap(updatedMap);
+      }
+
       // port-forward 준비 대기 (연결 확인까지)
       for (let i = 0; i < 10; i++) {
         await new Promise((r) => setTimeout(r, 1000));
@@ -92,7 +132,7 @@ export async function pulumiDeployFn(
           break;
         } catch { /* 아직 준비 안 됨 */ }
       }
-      console.log(`[port-forward] svc/${outputs.serviceName} → localhost:${localPort}`);
+      console.log(`[port-forward] svc/${outputs.serviceName} → localhost:${localPort} (PID: ${pf.pid})`);
     } catch (err) {
       console.warn(`[port-forward] 설정 실패: ${err}`);
     }
