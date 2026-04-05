@@ -108,6 +108,7 @@ export {
   entityVersionSpan,
   translateConstraint,
 } from "./version-query.js";
+export type { CoordConstraint } from "weighted-index";
 export { exportVersion, importVersion } from "./backup.js";
 export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
 export { generateTypes, lintSchema, formatSchemaDiff } from "./codegen.js";

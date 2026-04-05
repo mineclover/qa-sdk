@@ -57,8 +57,8 @@ describe("MemoryEventBus", () => {
     const received1: GateEvent[] = [];
     const received2: GateEvent[] = [];
 
-    bus.subscribe("flag-change", (e) => received1.push(e));
-    bus.subscribe("flag-change", (e) => received2.push(e));
+    bus.subscribe("flag-change", (e) => { received1.push(e); });
+    bus.subscribe("flag-change", (e) => { received2.push(e); });
 
     bus.publish(makeFlagChange());
 
@@ -71,8 +71,8 @@ describe("MemoryEventBus", () => {
     const flagEvents: GateEvent[] = [];
     const releaseEvents: GateEvent[] = [];
 
-    bus.subscribe("flag-change", (e) => flagEvents.push(e));
-    bus.subscribe("release", (e) => releaseEvents.push(e));
+    bus.subscribe("flag-change", (e) => { flagEvents.push(e); });
+    bus.subscribe("release", (e) => { releaseEvents.push(e); });
 
     bus.publish(makeFlagChange());
     bus.publish(makeRelease());
@@ -87,7 +87,7 @@ describe("MemoryEventBus", () => {
     const bus = new MemoryEventBus();
     const received: GateEvent[] = [];
 
-    const unsubscribe = bus.subscribe("flag-change", (e) => received.push(e));
+    const unsubscribe = bus.subscribe("flag-change", (e) => { received.push(e); });
     bus.publish(makeFlagChange());
     expect(received).toHaveLength(1);
 
@@ -100,7 +100,7 @@ describe("MemoryEventBus", () => {
     const bus = new MemoryEventBus();
     const received: GateEvent[] = [];
 
-    bus.subscribe("flag-change", (e) => received.push(e));
+    bus.subscribe("flag-change", (e) => { received.push(e); });
     bus.close();
     bus.publish(makeFlagChange());
 
@@ -126,7 +126,7 @@ describe("MemoryEventBus", () => {
     bus.subscribe("flag-change", () => {
       throw new Error("handler error");
     });
-    bus.subscribe("flag-change", (e) => received.push(e));
+    bus.subscribe("flag-change", (e) => { received.push(e); });
 
     bus.publish(makeFlagChange());
 
@@ -162,7 +162,7 @@ describe("MemoryEventBus", () => {
     const bus = new MemoryEventBus();
     const received: RecomputeCompleteEvent[] = [];
 
-    bus.subscribe("recompute-complete", (e) => received.push(e));
+    bus.subscribe("recompute-complete", (e) => { received.push(e); });
 
     const event = makeRecomputeComplete({ triggeredBy: "flag-change:2" });
     bus.publish(event);

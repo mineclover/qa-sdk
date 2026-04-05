@@ -77,7 +77,7 @@ describe("CacheInvalidation", () => {
 
     it("flag-change 후 recompute-complete 이벤트가 발행된다", async () => {
       const recomputeEvents: GateEvent[] = [];
-      bus.subscribe("recompute-complete", (e) => recomputeEvents.push(e));
+      bus.subscribe("recompute-complete", (e) => { recomputeEvents.push(e); });
       service = createCacheInvalidation({ eventBus: bus, gateService });
 
       bus.publish({
@@ -118,7 +118,7 @@ describe("CacheInvalidation", () => {
 
     it("release 후 recompute-complete 이벤트에 triggeredBy=release가 포함된다", async () => {
       const recomputeEvents: GateEvent[] = [];
-      bus.subscribe("recompute-complete", (e) => recomputeEvents.push(e));
+      bus.subscribe("recompute-complete", (e) => { recomputeEvents.push(e); });
       service = createCacheInvalidation({ eventBus: bus, gateService });
 
       bus.publish({
