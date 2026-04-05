@@ -86,17 +86,29 @@ async function main() {
       },
     };
   }
-  const mockIngest: IngestAdapter = {
-    emit: async (key: string) => {
-      console.log(`[ingest] emit: ${key}`);
-      return { ok: true };
-    },
-  };
-  const mockCoordinate: CoordinateAdapter = {
-    resolveSvcRef: () => null, // 로컬에서는 좌표 해석 건너뜀
-    encodeDeployEvent: () => ({}),
-    encodeHealthEvent: () => ({}),
-  };
+  // IngestAdapter — ingest-server 실행 시 실연동, 미실행 시 mock fallback
+  let ingestAdapter: IngestAdapter;
+  try {
+    const res = await fetch("http://localhost:3200/health/live", { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      const { createIngestAdapter } = await import("../src/adapters/ingest.js");
+      ingestAdapter = createIngestAdapter({ baseUrl: "http://localhost:3200" });
+      console.log("[ingest] 실서비스 연결됨 (localhost:3200)");
+    } else {
+      throw new Error("not ok");
+    }
+  } catch {
+    console.log("[ingest] 미실행 — mock 모드");
+    ingestAdapter = {
+      emit: async (key: string) => {
+        console.log(`[ingest-mock] emit: ${key}`);
+        return { ok: true };
+      },
+    };
+  }
+
+  const { createCoordinateAdapter } = await import("../src/adapters/coordinate.js");
+  const coordinateAdapter = createCoordinateAdapter();
 
   // 파이프라인 구성 — dry-run 시 config + provision(preview)만 실행
   const stages = DRY_RUN
@@ -109,7 +121,7 @@ async function main() {
         createProvisionStage(getProvider, createPulumiDeployFn({ env: ENV })),
         createRegisterStage(registry, serviceProfile, infraProfile),
         createVerifyStage(gate, { maxRetries: 5, retryDelay: 3000 }),
-        createObserveStage(mockIngest, mockCoordinate, infraProfile),
+        createObserveStage(ingestAdapter, coordinateAdapter, infraProfile),
       ];
   const pipeline = createPipeline(stages);
 

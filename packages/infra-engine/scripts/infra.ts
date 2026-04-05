@@ -151,8 +151,22 @@ async function main() {
           registry = { syncDeployment: async (p: any) => { console.log(`[registry-mock] sync: ${p.serviceId}`); return { synced: true }; } };
         }
 
-        const mockIngest = { emit: async (key: string) => { console.log(`[ingest] emit: ${key}`); return { ok: true }; } };
-        const mockCoord = { resolveSvcRef: () => null, encodeDeployEvent: () => ({}), encodeHealthEvent: () => ({}) };
+        // IngestAdapter — ingest-server 실행 시 실연동, 미실행 시 mock fallback
+        let ingestAdapter: any;
+        try {
+          const ingestRes = await fetch("http://localhost:3200/health/live", { signal: AbortSignal.timeout(2000) });
+          if (ingestRes.ok) {
+            const { createIngestAdapter } = await import("../src/adapters/ingest.js");
+            ingestAdapter = createIngestAdapter({ baseUrl: "http://localhost:3200" });
+            console.log("[ingest] 실서비스 연결됨 (localhost:3200)");
+          } else throw new Error();
+        } catch {
+          console.log("[ingest] 미실행 — mock 모드");
+          ingestAdapter = { emit: async (key: string) => { console.log(`[ingest-mock] emit: ${key}`); return { ok: true }; } };
+        }
+
+        const { createCoordinateAdapter } = await import("../src/adapters/coordinate.js");
+        const coordinateAdapter = createCoordinateAdapter();
 
         const stages = dryRun
           ? [createConfigStage(createPlainLoader())]
@@ -161,7 +175,7 @@ async function main() {
               createProvisionStage(getProvider, wranglerDeployFn),
               createRegisterStage(registry, serviceProfile, infraProfile),
               createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000 }),
-              createObserveStage(mockIngest, mockCoord, infraProfile),
+              createObserveStage(ingestAdapter, coordinateAdapter, infraProfile),
             ];
 
         const pipeline = createPipeline(stages);

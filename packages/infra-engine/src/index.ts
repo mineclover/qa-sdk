@@ -4,6 +4,8 @@ export { createPipeline } from "./core/pipeline.js";
 export type * from "./adapters/adapter.js";
 export { createGateAdapter } from "./adapters/gate.js";
 export { createRegistryAdapter } from "./adapters/registry.js";
+export { createIngestAdapter, type IngestAdapterOptions } from "./adapters/ingest.js";
+export { createCoordinateAdapter } from "./adapters/coordinate.js";
 export { createInfraProfileAdapter } from "./adapters/infra-profile.js";
 export { createServiceProfileAdapter } from "./adapters/service-profile.js";
 export { createDiscoveryClient, type ServiceInfo, type DiscoveryClient } from "./discovery/client.js";
