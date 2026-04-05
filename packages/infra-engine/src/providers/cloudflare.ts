@@ -68,7 +68,9 @@ export async function wranglerDeployFn(
     for (const [key, value] of Object.entries(svcConfig)) {
       if (typeof value === "string" || typeof value === "number") {
         if (key !== "port" && key !== "depends_on" && key !== "gates") {
-          vars.push("--var", `${key.toUpperCase()}:${String(value)}`);
+          const safeKey = key.toUpperCase();
+          if (!/^[A-Z_][A-Z0-9_]*$/.test(safeKey)) continue;
+          vars.push("--var", `${safeKey}:${String(value)}`);
         }
       }
     }

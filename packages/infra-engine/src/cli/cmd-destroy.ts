@@ -12,7 +12,7 @@ export const destroyHandler: CommandHandler = async (ctx) => {
   }
   if (!yes) {
     console.log(`${service} (${env}) 리소스를 삭제합니다. 계속하려면 --yes 플래그를 추가하세요.`);
-    process.exit(0);
+    process.exit(1);
   }
 
   const { destroy } = await import("../commands/destroy.js");

@@ -4,6 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 import { PROFILE_DIR, REGISTRY_URL } from "./context.js";
+import { validateId, assertPathContainment } from "../lib/validation.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const configDir = resolve(__dirname, "../../config");
@@ -11,8 +12,10 @@ const configDir = resolve(__dirname, "../../config");
 /** deploy --all: fleet 일괄 배포 */
 async function deployAll(ctx: CommandContext): Promise<void> {
   const env = ctx.args.service ?? "dev"; // --all 모드에서 첫 위치 인자가 env
+  validateId(env, "env");
   const continueOnError = !!ctx.options.continueOnError;
   const configPath = resolve(configDir, `${env}.json`);
+  assertPathContainment(configPath, configDir);
   let config: { services: Record<string, unknown> };
   try {
     config = JSON.parse(await readFile(configPath, "utf-8"));
@@ -34,7 +37,7 @@ async function deployAll(ctx: CommandContext): Promise<void> {
       const scriptsDir = resolve(__dirname, "../../scripts");
       await execa("pnpm", ["exec", "tsx", resolve(scriptsDir, "deploy-local.ts"), svc, env], {
         stdio: "inherit",
-        env: { ...process.env, PULUMI_CONFIG_PASSPHRASE: "" },
+        env: process.env,
       });
       results.push({ service: svc, success: true, duration: Date.now() - start });
     } catch (err) {

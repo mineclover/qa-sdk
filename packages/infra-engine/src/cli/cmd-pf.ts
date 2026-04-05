@@ -2,6 +2,7 @@ import type { CommandHandler } from "cli-command";
 import { resolve } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { PROFILE_DIR } from "./context.js";
+import { isSafePid } from "../lib/validation.js";
 
 const pfPath = resolve(PROFILE_DIR, "infra-pf.json");
 
@@ -16,7 +17,9 @@ export const pfListHandler: CommandHandler = async (_ctx) => {
       console.log("\n=== 활성 Port-Forward ===\n");
       for (const [key, val] of entries as [string, any][]) {
         let alive = false;
-        try { process.kill(val.pid, 0); alive = true; } catch {}
+        if (isSafePid(val.pid)) {
+          try { process.kill(val.pid, 0); alive = true; } catch {}
+        }
         const icon = alive ? "[alive]" : "[dead]";
         console.log(`  ${icon} ${key.padEnd(25)} PID=${val.pid}  port=${val.localPort}  svc=${val.service}`);
       }
@@ -32,6 +35,11 @@ export const pfCleanupHandler: CommandHandler = async (_ctx) => {
     const map = JSON.parse(await readFile(pfPath, "utf-8"));
     let cleaned = 0;
     for (const [key, val] of Object.entries(map) as [string, any][]) {
+      if (!isSafePid(val.pid)) {
+        delete map[key];
+        cleaned++;
+        continue;
+      }
       try { process.kill(val.pid, 0); } catch {
         delete map[key];
         cleaned++;

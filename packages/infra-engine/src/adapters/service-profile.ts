@@ -1,5 +1,5 @@
 // adapters/service-profile.ts — 서비스 프로필 JSON 파일 기반 어댑터
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 import type { ServiceProfileAdapter } from "./adapter.js";
 
@@ -27,7 +27,9 @@ export function createServiceProfileAdapter(baseDir: string): ServiceProfileAdap
 
   async function save(data: ProfileData): Promise<void> {
     await mkdir(baseDir, { recursive: true });
-    await writeFile(profilePath, JSON.stringify(data, null, 2));
+    const tmp = profilePath + ".tmp";
+    await writeFile(tmp, JSON.stringify(data, null, 2));
+    await rename(tmp, profilePath);
   }
 
   return {
@@ -37,8 +39,10 @@ export function createServiceProfileAdapter(baseDir: string): ServiceProfileAdap
     },
     async set(serviceId, url) {
       const data = await load();
-      // rollback 백업
-      await writeFile(rollbackPath, JSON.stringify(data, null, 2));
+      // rollback 백업 (원자적 쓰기)
+      const tmp = rollbackPath + ".tmp";
+      await writeFile(tmp, JSON.stringify(data, null, 2));
+      await rename(tmp, rollbackPath);
       data.services[serviceId] = url;
       await save(data);
     },

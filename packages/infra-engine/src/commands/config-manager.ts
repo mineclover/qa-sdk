@@ -2,6 +2,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
+import { isValidServiceUrl, isLocalhost } from "../lib/validation.js";
 
 const CONFIG_DIR = resolve(homedir(), ".qa-sdk");
 const CONFIG_FILE = resolve(CONFIG_DIR, "infra-config.json");
@@ -140,8 +141,11 @@ export function applyConfigToEnv(config: InfraConfig): void {
   // Pulumi backend
   if (config.backend === "minio" && config.s3Endpoint) {
     process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}?endpoint=${config.s3Endpoint}&disableSSL=true&s3ForcePathStyle=true`;
-    process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
-    process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+    // minioadmin 기본 자격증명은 localhost에서만 허용
+    if (isLocalhost(config.s3Endpoint)) {
+      process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
+      process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+    }
   } else if (config.backend === "s3") {
     process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}`;
   }
@@ -150,10 +154,16 @@ export function applyConfigToEnv(config: InfraConfig): void {
   process.env.AWS_DEFAULT_REGION ??= config.awsRegion;
   process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
 
-  // 서비스 URL
-  process.env.REGISTRY_URL ??= config.services.registry;
-  process.env.INGEST_URL ??= config.services.ingest;
-  process.env.DEFINITION_URL ??= config.services.definition;
+  // 서비스 URL — http/https만 허용
+  if (isValidServiceUrl(config.services.registry)) {
+    process.env.REGISTRY_URL ??= config.services.registry;
+  }
+  if (isValidServiceUrl(config.services.ingest)) {
+    process.env.INGEST_URL ??= config.services.ingest;
+  }
+  if (isValidServiceUrl(config.services.definition)) {
+    process.env.DEFINITION_URL ??= config.services.definition;
+  }
 
   // K8s
   process.env.KUBECONFIG_CONTEXT ??= config.k8sContext;

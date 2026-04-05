@@ -4,7 +4,8 @@ import { createInfraProfileAdapter } from "../adapters/infra-profile.js";
 import { createServiceProfileAdapter } from "../adapters/service-profile.js";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, rename } from "node:fs/promises";
+import { validateId, isSafePid } from "../lib/validation.js";
 
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 const PF_FILE = resolve(PROFILE_DIR, "infra-pf.json");
@@ -16,10 +17,14 @@ async function loadPfMap(): Promise<Record<string, PfEntry>> {
 }
 
 async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
-  await writeFile(PF_FILE, JSON.stringify(map, null, 2));
+  const tmp = PF_FILE + ".tmp";
+  await writeFile(tmp, JSON.stringify(map, null, 2));
+  await rename(tmp, PF_FILE);
 }
 
 export async function destroy(serviceId: string, env: string): Promise<void> {
+  validateId(serviceId, "serviceId");
+  validateId(env, "env");
   const key = `${serviceId}-${env}`;
   const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
   const serviceProfile = createServiceProfileAdapter(PROFILE_DIR);
@@ -31,21 +36,18 @@ export async function destroy(serviceId: string, env: string): Promise<void> {
   // 1. Kill port-forward
   const pfMap = await loadPfMap();
   if (pfMap[key]) {
-    try {
-      process.kill(pfMap[key].pid, "SIGTERM");
-      console.log(`[port-forward] PID ${pfMap[key].pid} 종료 (port ${pfMap[key].localPort})`);
-    } catch {
-      console.log(`[port-forward] PID ${pfMap[key].pid} 이미 종료됨`);
+    if (isSafePid(pfMap[key].pid)) {
+      try {
+        process.kill(pfMap[key].pid, "SIGTERM");
+        console.log(`[port-forward] PID ${pfMap[key].pid} 종료 (port ${pfMap[key].localPort})`);
+      } catch {
+        console.log(`[port-forward] PID ${pfMap[key].pid} 이미 종료됨`);
+      }
+    } else {
+      console.warn(`[port-forward] 유효하지 않은 PID: ${pfMap[key].pid}`);
     }
     delete pfMap[key];
     await savePfMap(pfMap);
-  } else {
-    // Fallback: pkill by pattern
-    try {
-      const { execa } = await import("execa");
-      await execa("pkill", ["-f", `port-forward.*${serviceId}`]);
-      console.log(`[port-forward] 패턴 매칭으로 정리`);
-    } catch { /* none found */ }
   }
 
   // 2. Pulumi destroy
@@ -74,18 +76,17 @@ export async function destroy(serviceId: string, env: string): Promise<void> {
     console.warn(`[pulumi] destroy 실패 (스택 없을 수 있음): ${err instanceof Error ? err.message : err}`);
   }
 
-  // 3. Remove from infra-profile
-  const deployment = await infraProfile.getDeployment(serviceId);
-  if (deployment) {
-    const allDeps = await infraProfile.getAllDeployments();
-    delete allDeps[serviceId];
-    const allMonitors = (await infraProfile.getAllMonitors()).filter(m => m.serviceId !== serviceId);
-    await writeFile(
-      resolve(PROFILE_DIR, "infra-profile.json"),
-      JSON.stringify({ deployments: allDeps, monitors: allMonitors }, null, 2),
-    );
+  // 3. Remove from infra-profile — 전체 필드 보존하며 대상만 삭제
+  const profilePath = resolve(PROFILE_DIR, "infra-profile.json");
+  try {
+    const raw = JSON.parse(await readFile(profilePath, "utf-8"));
+    delete raw.deployments?.[serviceId];
+    raw.monitors = (raw.monitors ?? []).filter((m: any) => m.serviceId !== serviceId);
+    const tmp = profilePath + ".tmp";
+    await writeFile(tmp, JSON.stringify(raw, null, 2));
+    await rename(tmp, profilePath);
     console.log(`[infra-profile] ${serviceId} 배포/모니터 기록 제거`);
-  }
+  } catch { /* profile 파일 없으면 무시 */ }
 
   // 4. Restore service-profile
   await serviceProfile.restore(serviceId);

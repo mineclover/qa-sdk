@@ -1,5 +1,5 @@
 // adapters/infra-profile.ts — 인프라 프로필 JSON 파일 기반 어댑터
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 import type { InfraProfileAdapter } from "./adapter.js";
 import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from "../core/types.js";
@@ -28,12 +28,16 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
 
   async function save(data: InfraProfileData): Promise<void> {
     await mkdir(baseDir, { recursive: true });
-    await writeFile(profilePath, JSON.stringify(data, null, 2));
+    const tmp = profilePath + ".tmp";
+    await writeFile(tmp, JSON.stringify(data, null, 2));
+    await rename(tmp, profilePath);
   }
 
   async function saveRollback(data: InfraProfileData): Promise<void> {
     await mkdir(baseDir, { recursive: true });
-    await writeFile(rollbackPath, JSON.stringify(data, null, 2));
+    const tmp = rollbackPath + ".tmp";
+    await writeFile(tmp, JSON.stringify(data, null, 2));
+    await rename(tmp, rollbackPath);
   }
 
   async function loadRollback(): Promise<InfraProfileData> {

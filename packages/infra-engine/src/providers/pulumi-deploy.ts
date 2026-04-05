@@ -1,10 +1,11 @@
 // providers/pulumi-deploy.ts — Pulumi Automation API 기반 배포 함수
 import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
 import { resolve } from "node:path";
 import { homedir } from "node:os";
 import type { DeployProvider } from "../adapters/adapter.js";
 import type { ResolvedConfig } from "../core/types.js";
+import { isSafePid } from "../lib/validation.js";
 
 const PF_DIR = resolve(homedir(), ".qa-sdk");
 const PF_FILE = resolve(PF_DIR, "infra-pf.json");
@@ -17,7 +18,9 @@ async function loadPfMap(): Promise<Record<string, PfEntry>> {
 
 async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
   await mkdir(PF_DIR, { recursive: true });
-  await writeFile(PF_FILE, JSON.stringify(map, null, 2));
+  const tmp = PF_FILE + ".tmp";
+  await writeFile(tmp, JSON.stringify(map, null, 2));
+  await rename(tmp, PF_FILE);
 }
 
 /**
@@ -112,16 +115,11 @@ export async function pulumiDeployFn(
 
       // 기존 port-forward 프로세스 정리 — PID 기반 (pkill fallback)
       const pfMap = await loadPfMap();
-      if (pfMap[pfKey]?.pid) {
+      if (isSafePid(pfMap[pfKey]?.pid)) {
         try {
           process.kill(pfMap[pfKey].pid, "SIGTERM");
           console.log(`[port-forward] 기존 PID ${pfMap[pfKey].pid} 종료`);
         } catch { /* 이미 종료됨 */ }
-      } else {
-        // PID 파일에 없으면 패턴 매칭 fallback
-        try {
-          await execa("pkill", ["-f", `port-forward.*${outputs.serviceName}`]);
-        } catch { /* 기존 프로세스 없으면 무시 */ }
       }
 
       // 백그라운드 port-forward 실행

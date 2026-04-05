@@ -146,11 +146,12 @@ export async function detectEnvironment(): Promise<"minio" | "file"> {
     return "minio";
   }
 
-  // MinIO 자동 감지
+  // MinIO 자동 감지 — localhost에서만 minioadmin 기본 자격증명 설정
   try {
     const res = await fetch(`${MINIO_ENDPOINT}/minio/health/live`, { signal: AbortSignal.timeout(1000) });
     if (res.ok) {
       process.env.INFRA_AWS_ENDPOINT ??= MINIO_ENDPOINT;
+      // MINIO_ENDPOINT는 localhost 고정이므로 안전
       process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
       process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
       process.env.AWS_DEFAULT_REGION ??= "ap-northeast-2";

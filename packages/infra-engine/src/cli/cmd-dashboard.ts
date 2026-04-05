@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createInfraProfileAdapter } from "../adapters/infra-profile.js";
 import { PROFILE_DIR } from "./context.js";
+import { assertNoTraversal } from "../lib/validation.js";
 
 /** dashboard summary — 전체 요약 */
 export const dashboardSummaryHandler: CommandHandler = async (_ctx) => {
@@ -53,6 +54,7 @@ export const dashboardExportHandler: CommandHandler = async (ctx) => {
   const dashboard = createDashboardData(infraProfile);
   const json = await dashboard.exportJson();
   const outPath = ctx.args.path ?? "generated/dashboard.json";
+  assertNoTraversal(outPath);
   await mkdir(resolve(outPath, ".."), { recursive: true });
   await writeFile(outPath, json);
   console.log(`생성됨: ${outPath}`);
