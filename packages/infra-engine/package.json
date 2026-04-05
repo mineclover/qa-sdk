@@ -14,7 +14,8 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy:local": "tsx scripts/deploy-local.ts"
+    "deploy:local": "tsx scripts/deploy-local.ts",
+    "infra": "tsx scripts/infra.ts"
   },
   "dependencies": {
     "@pulumi/kubernetes": "^4.28.0",

@@ -39,6 +39,7 @@ export {
 export { generateEnvFile, type EnvFileOptions } from "./export/env-file.js";
 export { generateTypescriptModule } from "./export/typescript-module.js";
 export { generateDockerComposeOverride } from "./export/docker-compose.js";
+export { destroy } from "./commands/destroy.js";
 
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";

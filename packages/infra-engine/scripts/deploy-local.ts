@@ -11,6 +11,9 @@
  * 예시: npx tsx packages/infra-engine/scripts/deploy-local.ts ingest-server dev
  */
 
+// 0-3: Passphrase 자동 설정 — Pulumi 로컬 백엔드에서 암호 프롬프트 방지
+process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
+
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
