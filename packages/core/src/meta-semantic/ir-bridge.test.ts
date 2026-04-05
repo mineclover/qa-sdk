@@ -95,23 +95,18 @@ describe("pipeGraphToModuleIR", () => {
 describe("stepContractToDataIR", () => {
   it("StepDataContract → DataIR 변환", () => {
     const contract: StepDataContract = {
-      stepId: "validate-order",
-      input: {
-        fields: {
-          orderId: { type: "string", required: true },
-          amount: { type: "number", required: true },
-        },
+      consumes: {
+        orderId: { type: "string", required: true },
+        amount: { type: "number", required: true },
       },
-      output: {
-        fields: {
-          valid: { type: "boolean", required: true },
-        },
+      produces: {
+        valid: { type: "boolean", required: true },
       },
     };
 
     const dataIR = stepContractToDataIR(contract, { moduleId: "order-service" });
 
-    expect(dataIR.definition.type).toBe("validate-order");
+    expect(dataIR.definition.type).toBe("step");
     expect(dataIR.definition.fields).toHaveLength(3);
     expect(dataIR.definition.certainty).toBe("strict");
     expect(dataIR.management.managedBy.moduleId).toBe("order-service");
@@ -120,11 +115,8 @@ describe("stepContractToDataIR", () => {
 
   it("any 필드 포함 → certainty flexible", () => {
     const contract: StepDataContract = {
-      stepId: "flexible-step",
-      input: {
-        fields: {
-          data: { type: "any", required: false },
-        },
+      consumes: {
+        data: { type: "any", required: false },
       },
     };
 
