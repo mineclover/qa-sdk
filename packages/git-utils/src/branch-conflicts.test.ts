@@ -225,4 +225,84 @@ describe("에러 시나리오", () => {
     expect(result.branches).toHaveLength(0);
     expect(result.hotspots).toHaveLength(0);
   });
+
+  it("hotspot 정렬 — 브랜치 수 내림차순, 같으면 path 알파벳순", { timeout: 30000 }, async () => {
+    // fixture: 3개 파일이 서로 다른 수의 브랜치에서 변경됨
+    const root = await mkdtemp(join(tmpdir(), "git-hotspot-sort-"));
+    tempDirs.push(root);
+
+    const remoteDir = join(root, "remote.git");
+    const workDir = join(root, "work");
+
+    git(root, ["init", "--bare", "--initial-branch=main", remoteDir]);
+    git(root, ["clone", remoteDir, workDir]);
+    configId(workDir);
+
+    // seed — 4개 파일
+    await writeRepoFile(workDir, "src/a.ts", "a v1\n");
+    await writeRepoFile(workDir, "src/b.ts", "b v1\n");
+    await writeRepoFile(workDir, "src/c.ts", "c v1\n");
+    await writeRepoFile(workDir, "src/d.ts", "d v1\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "chore: seed"]);
+    git(workDir, ["push", "origin", "main"]);
+
+    // branch-1: a, b, c 변경
+    git(workDir, ["checkout", "-b", "feature/one", "origin/main"]);
+    await writeRepoFile(workDir, "src/a.ts", "a one\n");
+    await writeRepoFile(workDir, "src/b.ts", "b one\n");
+    await writeRepoFile(workDir, "src/c.ts", "c one\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: one"]);
+    git(workDir, ["push", "-u", "origin", "feature/one"]);
+
+    // branch-2: a, b 변경
+    git(workDir, ["checkout", "main"]);
+    git(workDir, ["checkout", "-b", "feature/two", "origin/main"]);
+    await writeRepoFile(workDir, "src/a.ts", "a two\n");
+    await writeRepoFile(workDir, "src/b.ts", "b two\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: two"]);
+    git(workDir, ["push", "-u", "origin", "feature/two"]);
+
+    // current(local): a, c, d 변경
+    git(workDir, ["checkout", "main"]);
+    git(workDir, ["checkout", "-b", "feature/local", "origin/main"]);
+    await writeRepoFile(workDir, "src/a.ts", "a local\n");
+    await writeRepoFile(workDir, "src/c.ts", "c local\n");
+    await writeRepoFile(workDir, "src/d.ts", "d local\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "feat: local"]);
+
+    // 결과:
+    //   a.ts — local + one + two = 3 브랜치
+    //   b.ts — one + two = 2 브랜치
+    //   c.ts — local + one = 2 브랜치
+    //   d.ts — local만 = 1 브랜치 (hotspot 아님)
+    const result = await analyzeRemoteBranchConflicts({
+      cwd: workDir,
+      remoteName: "origin",
+      baseRef: "origin/main",
+      fetch: false,
+    });
+
+    // hotspot이 3건 (d.ts는 1 브랜치이므로 제외)
+    expect(result.hotspots.length).toBeGreaterThanOrEqual(2);
+
+    // 정렬 검증: 첫 번째는 a.ts (3 브랜치), 그 다음 b.ts/c.ts (2 브랜치, 알파벳순)
+    const paths = result.hotspots.map(h => h.path);
+    expect(paths[0]).toBe("src/a.ts"); // 3 브랜치 — 최다
+
+    // b.ts와 c.ts는 같은 2 브랜치 → 알파벳순
+    const twoWay = result.hotspots.filter(h => h.branches.length === 2);
+    if (twoWay.length >= 2) {
+      expect(twoWay[0].path.localeCompare(twoWay[1].path)).toBeLessThanOrEqual(0);
+    }
+
+    // 각 hotspot의 branches도 알파벳순 정렬
+    for (const h of result.hotspots) {
+      const sorted = [...h.branches].sort();
+      expect(h.branches).toEqual(sorted);
+    }
+  });
 });

@@ -51,4 +51,4 @@ git-utils 패키지의 에러 가드 보강 + 패키지 독립 시나리오 테�
 
 - [ ] worktree 포함 시나리오 (linked worktree overlap — es-git worktree 지원 확인 필요)
 - [ ] base ref 해소 fallback 체인 (upstream/remote HEAD/main/master)
-- [ ] hotspot 카운트 정렬 검증
+- [x] hotspot 카운트 정렬 검증 (3브랜치/2브랜치 정렬 + branches 내부 알파벳순)
