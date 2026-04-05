@@ -17,6 +17,16 @@ export { createProvisionStage } from "./stages/provision-stage.js";
 export { registerProvider, getProvider, listProviders } from "./providers/registry.js";
 export { createLocalProvider, type LocalProviderOptions } from "./providers/local.js";
 export { pulumiDeployFn } from "./providers/pulumi-deploy.js";
+export {
+  createFleetManager,
+  type FleetManager,
+  type FleetStatus,
+  type FleetServiceStatus,
+  type FleetDeployResult,
+} from "./fleet/manager.js";
+export { generateEnvFile, type EnvFileOptions } from "./export/env-file.js";
+export { generateTypescriptModule } from "./export/typescript-module.js";
+export { generateDockerComposeOverride } from "./export/docker-compose.js";
 
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";
