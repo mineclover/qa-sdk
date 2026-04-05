@@ -72,7 +72,8 @@ async function main() {
     }
 
     console.log(`\n=== ${svc.name} (${svc.serviceId}) ===`);
-    console.log(`  URL:      ${svc.url}`);
+    const deepFallback = svc.urlFallback ? `  ⚠ ${env} URL 미등록 — 기본 URL 사용 중` : "";
+    console.log(`  URL:      ${svc.url}${deepFallback}`);
     console.log(`  Tier:     ${svc.tier}`);
     console.log(`  Team:     ${svc.team}`);
 
@@ -97,7 +98,7 @@ async function main() {
     // 테스트 정보
     if (svc.testHealth) {
       const t = svc.testHealth;
-      const healthIcon = t.healthy ? "pass" : "fail";
+      const healthIcon = t.healthy === "pass" ? "✅ pass" : t.healthy === "fail" ? "❌ fail" : "⬜ 데이터 없음";
       console.log(`\n  --- 테스트 ---`);
       console.log(`  총 ${t.totalTests}건, pass rate: ${t.passRate}%, healthy: ${healthIcon}`);
     } else {
@@ -143,7 +144,8 @@ async function main() {
   }
 
   console.log(`\n=== ${svc.name} (${svc.serviceId}) ===`);
-  console.log(`  URL:      ${svc.url}`);
+  const fallbackWarn = svc.urlFallback ? `  ⚠ ${env} URL 미등록 — 기본 URL 사용 중` : "";
+  console.log(`  URL:      ${svc.url}${fallbackWarn}`);
   console.log(`  Tier:     ${svc.tier}`);
   console.log(`  Team:     ${svc.team}`);
   console.log(`  Owned:    ${svc.ownedPrefixes.join(", ") || "(없음)"}`);

@@ -40,7 +40,7 @@ async function main() {
       const status = await fleet.status(env);
       console.log(`\n=== Fleet Status (${env}) ===\n`);
       console.log(
-        `  총: ${status.summary.total}  배포됨: ${status.summary.deployed}  healthy: ${status.summary.healthy}\n`,
+        `  총: ${status.summary.total}  배포됨: ${status.summary.deployed}  실행중: ${status.summary.running}\n`,
       );
 
       // tier별 그룹핑
@@ -54,9 +54,10 @@ async function main() {
       for (const [tier, svcs] of [...byTier.entries()].sort()) {
         console.log(`  [${tier}]`);
         for (const s of svcs) {
-          const deployed = s.deployed ? "[deployed]" : "[pending]";
+          const icon = s.deployed ? "✅" : s.running ? "🟢" : "⬜";
+          const label = s.deployed ? "deployed" : s.running ? "running " : "pending ";
           const url = s.deployedUrl ?? s.registryUrl ?? "-";
-          console.log(`    ${deployed} ${s.serviceId.padEnd(28)} ${url}`);
+          console.log(`    ${icon} ${label} ${s.serviceId.padEnd(26)} ${url}`);
         }
       }
       break;
@@ -67,10 +68,11 @@ async function main() {
         console.error("사용: export.ts env <serviceId> [env]");
         process.exit(1);
       }
+      const includeAll = process.argv.includes("--all");
       const content = await generateEnvFile(client, {
         serviceId: arg1,
         env: arg2,
-        includeAll: true,
+        includeAll,
       });
       const outPath = `.env.${arg1}.${arg2}`;
       await writeFile(outPath, content);

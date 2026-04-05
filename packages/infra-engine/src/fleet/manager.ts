@@ -8,6 +8,7 @@ export interface FleetStatus {
   summary: {
     total: number;
     deployed: number;
+    running: number;
     healthy: number;
     degraded: number;
     unknown: number;
@@ -21,6 +22,8 @@ export interface FleetServiceStatus {
   registryUrl: string;
   deployedUrl?: string;
   deployed: boolean;
+  /** 헬스체크로 확인된 실행 상태 */
+  running?: boolean;
   healthy?: boolean;
   env: string;
 }
@@ -79,17 +82,31 @@ export function createFleetManager(
       const deployedUrl = deployment?.endpoint;
       const deployed = deployment != null;
 
-      // 헬스체크: 배포된 서비스에만 시도
+      // 헬스체크: 배포된 서비스 또는 registry URL이 있는 서비스에 시도
       let healthy: boolean | undefined;
+      let running: boolean | undefined;
+
       if (deployed && deployedUrl) {
         try {
           const res = await fetch(
             `${deployedUrl}${deployment.healthPath ?? "/health"}`,
-            { signal: AbortSignal.timeout(5_000) },
+            { signal: AbortSignal.timeout(2_000) },
           );
           healthy = res.ok;
+          running = res.ok;
         } catch {
           healthy = false;
+          running = false;
+        }
+      } else if (registryUrl) {
+        // 배포 기록 없어도 registry URL로 실행 상태 확인
+        try {
+          const res = await fetch(`${registryUrl}/health`, {
+            signal: AbortSignal.timeout(2_000),
+          });
+          running = res.ok;
+        } catch {
+          running = false;
         }
       }
 
@@ -100,6 +117,7 @@ export function createFleetManager(
         registryUrl,
         deployedUrl,
         deployed,
+        running,
         healthy,
         env,
       });
@@ -110,18 +128,20 @@ export function createFleetManager(
 
   function summarize(services: FleetServiceStatus[]): FleetStatus["summary"] {
     let deployed = 0;
+    let running = 0;
     let healthy = 0;
     let degraded = 0;
     let unknown = 0;
 
     for (const s of services) {
       if (s.deployed) deployed++;
+      if (s.running === true) running++;
       if (s.healthy === true) healthy++;
       else if (s.healthy === false) degraded++;
       else unknown++;
     }
 
-    return { total: services.length, deployed, healthy, degraded, unknown };
+    return { total: services.length, deployed, running, healthy, degraded, unknown };
   }
 
   function buildDryRunResult(

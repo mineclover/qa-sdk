@@ -23,6 +23,8 @@ export interface ServiceInfo {
   ownedPrefixes: string[];
   consumedPrefixes: string[];
   urls?: Record<string, string>;
+  /** env별 URL이 없어 기본 URL로 대체된 경우 true */
+  urlFallback?: boolean;
 }
 
 export interface DiscoveryClient {
@@ -60,6 +62,9 @@ export function createDiscoveryClient(registryUrl: string, catalogId?: string): 
         // env별 URL 해석
         if (env && svc.urls?.[env]) {
           svc.url = svc.urls[env];
+        } else if (env && svc.urls && !svc.urls[env]) {
+          // 요청한 env URL이 registry에 등록되어 있지 않음 — 기본 URL 사용
+          svc.urlFallback = true;
         }
         return svc;
       } catch {
@@ -86,9 +91,14 @@ export function createDiscoveryClient(registryUrl: string, catalogId?: string): 
         .map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1)))
         .join("");
 
+      const fallbackWarning = svc.urlFallback
+        ? `// ⚠ ${env} URL이 registry에 등록되어 있지 않습니다. 기본 URL을 사용합니다.\n`
+        : "";
+
       return [
         `// ${svc.name} (${svc.serviceId})`,
         `// env: ${env ?? "default"}, tier: ${svc.tier}, team: ${svc.team}`,
+        ...(fallbackWarning ? [fallbackWarning.trimEnd()] : []),
         `export const ${varName}_URL = "${svc.url}";`,
         ``,
         `/** ${svc.name}에 연결 -- 헬스체크 후 URL 반환 */`,

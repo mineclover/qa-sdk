@@ -27,7 +27,8 @@ export interface ServiceTestInfo {
   totalTests: number;
   /** 0-100 범위의 통과율 */
   passRate: number;
-  healthy: boolean;
+  /** "pass": 전체 통과, "fail": 실패 존재, "no-data": 테스트 데이터 없음 */
+  healthy: "pass" | "fail" | "no-data";
 }
 
 export interface ServicePrefixInfo {
@@ -114,11 +115,13 @@ export function createDefinitionAdapter(baseUrl: string): DefinitionAdapter {
       }
 
       const passRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
+      const healthy: "pass" | "fail" | "no-data" =
+        totalTests === 0 ? "no-data" : totalFailed === 0 ? "pass" : "fail";
       return {
         serviceId,
         totalTests,
         passRate,
-        healthy: totalFailed === 0 && totalTests > 0,
+        healthy,
       };
     },
 
