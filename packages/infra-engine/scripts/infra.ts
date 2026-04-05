@@ -11,6 +11,8 @@
  *   infra status <env>
  *   infra history <service> [--json]
  *   infra audit
+ *   infra monitor [start|check|status] [--interval N]
+ *   infra dashboard [summary|service <id>|export [path]]
  *   infra pf [list|cleanup]
  *   infra --help
  */
@@ -236,6 +238,111 @@ async function main() {
       }
       break;
     }
+    case "monitor": {
+      const sub = rest[0] ?? "status";
+      const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
+
+      if (sub === "start") {
+        const intervalIdx = rest.indexOf("--interval");
+        const intervalArg = intervalIdx !== -1 ? parseInt(rest[intervalIdx + 1]) : 60;
+        const { createSyncLoop } = await import("../src/monitor/sync-loop.js");
+        const loop = createSyncLoop({
+          infraProfile,
+          interval: intervalArg,
+          onStatusChange: (svc, prev, curr) => {
+            const icon = curr === "Synced" ? "[OK]" : curr === "OutOfSync" ? "[FAIL]" : curr === "Degraded" ? "[WARN]" : "[?]";
+            console.log(`${icon} ${svc}: ${prev} -> ${curr}`);
+          },
+        });
+        loop.start();
+        console.log("Ctrl+C로 종료");
+        // 프로세스 유지
+        await new Promise(() => {}); // never resolves
+        break;
+      }
+
+      if (sub === "once" || sub === "check") {
+        const { createSyncLoop } = await import("../src/monitor/sync-loop.js");
+        const loop = createSyncLoop({ infraProfile });
+        const results = await loop.syncAll();
+        if (results.length === 0) {
+          console.log("모니터링 대상 없음 (배포된 서비스 없음)");
+        } else {
+          console.log(`\n=== Monitor Check (${results.length}건) ===\n`);
+          for (const r of results) {
+            const icon = r.currentStatus === "Synced" ? "[OK]" : r.currentStatus === "OutOfSync" ? "[FAIL]" : r.currentStatus === "Degraded" ? "[WARN]" : "[?]";
+            const changed = r.changed ? ` (${r.previousStatus} -> ${r.currentStatus})` : "";
+            console.log(`  ${icon} ${r.serviceId.padEnd(25)} ${r.currentStatus}${changed}  ${r.latency ?? "-"}ms`);
+          }
+        }
+        break;
+      }
+
+      if (sub === "status") {
+        const monitors = await infraProfile.getAllMonitors();
+        if (monitors.length === 0) {
+          console.log("모니터링 대상 없음");
+        } else {
+          console.log(`\n=== Monitor Status (${monitors.length}건) ===\n`);
+          for (const m of monitors) {
+            const icon = m.lastStatus === "Synced" ? "[OK]" : m.lastStatus === "OutOfSync" ? "[FAIL]" : m.lastStatus === "Degraded" ? "[WARN]" : "[?]";
+            console.log(`  ${icon} ${m.serviceId.padEnd(25)} ${m.lastStatus ?? "Unknown"}  last: ${m.lastChecked ?? "never"}`);
+          }
+        }
+        break;
+      }
+
+      console.error("사용: infra monitor [start|check|status] [--interval N]");
+      break;
+    }
+    case "dashboard": {
+      const sub = rest[0] ?? "summary";
+      const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
+      const { createDashboardData } = await import("../src/monitor/dashboard.js");
+      const dashboard = createDashboardData(infraProfile);
+
+      if (sub === "summary") {
+        const s = await dashboard.getSummary();
+        console.log(`\n=== Dashboard Summary ===`);
+        console.log(`  시각:       ${s.timestamp}`);
+        console.log(`  배포:       ${s.deployed}건`);
+        console.log(`  모니터:     ${s.monitored}건`);
+        console.log(`  상태:       ${Object.entries(s.byStatus).map(([k, v]) => `${k}:${v}`).join(", ")}`);
+        console.log(`  프로바이더: ${Object.entries(s.byProvider).map(([k, v]) => `${k}:${v}`).join(", ") || "-"}`);
+        console.log(`  환경:       ${Object.entries(s.byEnv).map(([k, v]) => `${k}:${v}`).join(", ") || "-"}`);
+      } else if (sub === "service") {
+        const svcId = rest[1];
+        if (!svcId) {
+          console.error("사용: infra dashboard service <serviceId>");
+          process.exit(1);
+        }
+        const d = await dashboard.getServiceDashboard(svcId);
+        console.log(`\n=== ${svcId} Dashboard ===`);
+        if (d.deployment) {
+          console.log(`  배포: ${d.deployment.provider}/${d.deployment.env} -> ${d.deployment.endpoint}`);
+          console.log(`  배포일: ${d.deployment.deployedAt}`);
+        } else {
+          console.log("  배포: 없음");
+        }
+        if (d.monitor) {
+          console.log(`  모니터: ${d.monitor.status} (마지막: ${d.monitor.lastChecked})`);
+        }
+        console.log(`  이력: ${d.history.length}건`);
+        if (d.uptime) {
+          console.log(`  uptime: ${d.uptime.percentage}% (since ${d.uptime.since})`);
+        }
+      } else if (sub === "export") {
+        const json = await dashboard.exportJson();
+        const outPath = rest[1] ?? "generated/dashboard.json";
+        const { mkdir, writeFile: writeFileFs } = await import("node:fs/promises");
+        await mkdir(resolve(outPath, ".."), { recursive: true });
+        await writeFileFs(outPath, json);
+        console.log(`생성됨: ${outPath}`);
+      } else {
+        console.error("사용: infra dashboard [summary|service <id>|export [path]]");
+      }
+      break;
+    }
     case "--help":
     case "-h":
     case undefined: {
@@ -251,6 +358,8 @@ infra-engine CLI
   infra status <env>
   infra history <service> [--json]
   infra audit
+  infra monitor [start|check|status] [--interval N]
+  infra dashboard [summary|service <id>|export [path]]
   infra pf [list|cleanup]
   infra --help
 `);

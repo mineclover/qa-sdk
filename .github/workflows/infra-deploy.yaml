@@ -1,0 +1,68 @@
+# infra-engine 자동 배포 워크플로우 (골격)
+# 활성화하려면 아래 TODO 항목을 설정하세요.
+name: Infra Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/infra-engine/config/**'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '배포할 서비스 (--all이면 전체)'
+        required: true
+      env:
+        description: '환경 (dev/stage/prod)'
+        required: true
+        default: 'dev'
+
+# TODO: AWS OIDC 설정
+# permissions:
+#   id-token: write
+#   contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # TODO: AWS OIDC 인증
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::ACCOUNT:role/github-actions
+      #     aws-region: ap-northeast-2
+
+      # TODO: SOPS 설치 + 복호화
+      # - name: Install SOPS
+      #   run: |
+      #     curl -LO https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
+      #     chmod +x sops-v3.9.4.linux.amd64
+      #     sudo mv sops-v3.9.4.linux.amd64 /usr/local/bin/sops
+
+      - name: Install Pulumi
+        uses: pulumi/actions@v6
+
+      - name: Deploy
+        working-directory: packages/infra-engine
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+          # TODO: real backend
+          # PULUMI_BACKEND_URL: s3://qa-sdk-infra-state
+        run: |
+          SERVICE="${{ github.event.inputs.service || '--all' }}"
+          ENV="${{ github.event.inputs.env || 'dev' }}"
+          pnpm exec tsx scripts/infra.ts deploy $SERVICE $ENV

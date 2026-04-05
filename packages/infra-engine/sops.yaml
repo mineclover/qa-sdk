@@ -1,0 +1,7 @@
+# SOPS 암호화 규칙 (템플릿)
+# 활성화하려면 KMS ARN을 설정하세요.
+creation_rules:
+  - path_regex: config/.*\.yaml$
+    encrypted_regex: "^(.*_key|.*_secret|.*_password|.*_url|.*_token)$"
+    # TODO: KMS ARN 설정
+    # kms: "arn:aws:kms:ap-northeast-2:ACCOUNT:key/KEY_ID"
