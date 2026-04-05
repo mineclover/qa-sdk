@@ -61,12 +61,61 @@ def:
 └─────────────────┘                └─────────────────────────┘
 ```
 
-## 2. 레이어
+## 2. 레이어 (3종)
 
-| 레이어 | 목적 | 동기화 | 대상 |
-|--------|------|--------|------|
-| **A. Facet** | 순수 로직 단위 테스트 | `@facet` 파일만 선택 복사 | 타입, 순수 함수, 비즈니스 규칙 |
-| **B. Simulation** | 통합 시뮬레이션 | rclone 폴더 전체 클로닝 | 서비스 전체 구조 |
+| 레이어 | 목적 | 동기화 | 환경 의존 처리 | 구조 |
+|--------|------|--------|--------------|------|
+| **A. Facet** | 순수 로직 단위 테스트 | `@facet` 파일 + import 의존만 | path alias (`__mocks__/`) | `synced/` + `tests/` |
+| **B. Simulation** | 통합 시뮬레이션 | rclone 폴더 동기화 | path alias (`__mocks__/`) | `synced/` + `scenarios/` |
+| **C. E2E** | 종단 간 테스트 | 통째 복제 + mock 덮어쓰기 | block 위치에 stub 파일 교체 | `root/src/` + `root/e2e/` 격리 |
+
+### A. Facet — path alias 방식
+
+```
+facet-tests/
+  synced/gate-service/          ← @facet 파일 + 의존만 복제
+    src/gate.ts
+    src/types/gate-types.ts
+  __mocks__/gate-service/       ← 환경 의존 stub
+    src/config/env.ts
+    src/lib/logger.ts
+  tests/                        ← 테스트 코드
+    gate/gate-validate.test.ts
+  vitest.config.ts              ← resolve.alias로 env → __mocks__/env
+```
+
+### B. Simulation — path alias 방식
+
+```
+simulation-tests/
+  synced/gate-service/          ← rclone 폴더 동기화
+    src/                        ← 전체 구조
+  __mocks__/gate-service/       ← 환경 의존 stub
+    src/config/env.ts
+    src/server.ts
+  scenarios/                    ← 시뮬레이션 시나리오
+    gate-query-flow.test.ts
+  vitest.config.ts              ← resolve.alias
+```
+
+### C. E2E — 통째 복제 + mock 덮어쓰기
+
+```
+e2e-isolated/
+  src/                          ← 원본 통째 복제 (rclone)
+    gate-service/
+      src/gate.ts
+      src/config/env.ts         ← mock으로 덮어쓰기됨
+      src/server.ts             ← mock으로 덮어쓰기됨
+  e2e/                          ← E2E 테스트 (src/와 격리)
+    gate-flow.test.ts
+    setup.ts                    ← mock 덮어쓰기 실행
+  __mocks__/                    ← stub 원본
+    config/env.ts
+    server.ts
+```
+
+`e2e/`는 `src/`를 import하지만, `src/` 내부의 환경 의존 파일은 setup 단계에서 `__mocks__/` 파일로 교체된 상태. 서비스 빌드 트리거와 완전 분리 — `root/src`와 `root/e2e`가 별도 진입점.
 
 ## 3. `@facet` 마커 규약
 
@@ -323,19 +372,46 @@ qa-sdk facet scan --service gate-service --deps
 # 총: 5 파일 복제, 2 파일 block
 ```
 
-### block 파일 처리
+### block 파일 처리 — 레이어별
 
-block된 파일이 `@facet` 파일에서 import되면 두 가지 선택지:
+| 레이어 | 전략 | 설정 위치 |
+|--------|------|----------|
+| **Facet / Simulation** | `__mocks__/` + path alias | `vitest.config.ts` `resolve.alias` |
+| **E2E** | `__mocks__/` → block 위치에 덮어쓰기 | `e2e/setup.ts` |
 
-**A) stub 자동 생성** — block 파일 위치에 빈 export stub을 생성
+**Facet / Simulation — path alias 방식:**
 ```ts
-// synced/gate-service/src/config/env.ts (auto-stub)
-export const env = {} as any;
+// vitest.config.ts
+export default {
+  resolve: {
+    alias: {
+      "../config/env.js": "./__mocks__/gate-service/src/config/env.js",
+      "../lib/logger.js": "./__mocks__/gate-service/src/lib/logger.js",
+    },
+  },
+};
 ```
 
-**B) import 제거** — 복사본에서 해당 import 행을 제거 (사용하지 않는 경우)
+**E2E — mock 덮어쓰기 방식:**
+```ts
+// e2e/setup.ts
+// rclone 동기화 후, block 파일을 mock으로 교체
+import { copyFileSync } from "node:fs";
+copyFileSync("__mocks__/config/env.ts", "src/gate-service/src/config/env.ts");
+copyFileSync("__mocks__/server.ts", "src/gate-service/src/server.ts");
+```
 
-기본은 A. logger처럼 호출만 하고 반환값을 안 쓰는 경우 B.
+**`__mocks__/` stub 예시:**
+```ts
+// __mocks__/gate-service/src/config/env.ts
+export const env = {
+  PORT: 3400,
+  SQLITE_DRIVER: "node" as const,
+  SQLITE_PATH: ":memory:",
+};
+```
+
+stub은 원본의 export 시그니처만 유지하고 환경 접근을 제거한 형태.
 
 ## 10. 제약과 한계
 
