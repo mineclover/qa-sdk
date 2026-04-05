@@ -1,3 +1,4 @@
+// @facet
 /**
  * InMemory EventBus 어댑터.
  *

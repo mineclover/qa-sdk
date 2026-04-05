@@ -1,3 +1,4 @@
+// @facet
 /**
  * EventBus 포트 — fan-out publish/subscribe 패턴.
  *

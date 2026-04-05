@@ -1,3 +1,4 @@
+// @facet
 import type { PatternRule } from "index-meta";
 
 export interface StoredPolicyRule<T> extends PatternRule<T> {

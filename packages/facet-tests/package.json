@@ -6,6 +6,9 @@
   "scripts": {
     "test": "vitest run"
   },
+  "dependencies": {
+    "index-meta": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
