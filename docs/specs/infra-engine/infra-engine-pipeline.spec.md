@@ -1,14 +1,30 @@
 ---
 def:
   id: infra-engine-pipeline
-  scope: system
+  scope: feature
   aspect: func_def
   depth: specification
   level: module
   lifecycle: draft
   layer: operation
   tags: [infra, devops, gitops]
-  links: []
+  links:
+    - target: infra-config-stage
+      type: contains
+    - target: infra-provision-stage
+      type: contains
+    - target: infra-register-stage
+      type: contains
+    - target: infra-verify-stage
+      type: contains
+    - target: infra-observe-stage
+      type: contains
+    - target: infra-providers
+      type: contains
+    - target: infra-adapters
+      type: contains
+    - target: infra-monitoring
+      type: contains
 ---
 # 인프라 엔진 배포 파이프라인
 
@@ -158,10 +174,14 @@ interface StageResult {
 
 ## 소비 ^consumes
 
-- `node-sops` — SOPS 복호화
-- `@pulumi/pulumi` — Automation API
-- `aws-sdk` — S3/DynamoDB state backend
+- `sops` CLI 바이너리 — Mozilla SOPS (shell-out via `execa`)
+- `@pulumi/pulumi` `^3.229.0` — Automation API
+- `@aws-sdk/client-s3` `^3.1024.0` — S3 state backend
+- `@aws-sdk/client-dynamodb` `^3.1024.0` — DynamoDB lock
+- `@aws-sdk/client-kms` `^3.1024.0` — KMS 복호화
+- `@aws-sdk/client-sts` `^3.1024.0` — OIDC STS 임시 토큰
 - `zod` — 설정 스키마 검증
+- `execa` `^9.0.0` — sops CLI 실행
 
 ## 위임 ^delegates
 

@@ -4,6 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  level: leaf
   lifecycle: draft
   layer: operation
   tags: [infra, quality-gate, health-check]

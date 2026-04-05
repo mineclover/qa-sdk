@@ -4,6 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  level: leaf
   lifecycle: draft
   layer: operation
   tags: [infra, secret, config]
@@ -117,14 +118,29 @@ interface ConnectionConfig {
 }
 ```
 
-### SopsLoader
+### SopsLoader — `sops` CLI shell-out
+
+npm에 안정적인 SOPS 순수 JS 라이브러리가 없으므로, `sops` CLI 바이너리를 `execa`로 호출한다.
+(프로젝트에 이미 `execa` 기반 `git-utils` 패키지가 있어 패턴 일관)
 
 ```typescript
 interface SopsLoader {
   /** SOPS YAML 복호화 → 메모리 객체. 디스크 기록 없음 */
   decrypt(configPath: string): Promise<Record<string, unknown>>;
 }
+
+// 구현 개요
+async function decrypt(configPath: string): Promise<Record<string, unknown>> {
+  // sops --decrypt --output-type json config/staging.yaml
+  // → stdout에 평문 JSON 출력 (디스크 기록 없음)
+  const { stdout } = await execa("sops", ["--decrypt", "--output-type", "json", configPath]);
+  return JSON.parse(stdout);
+}
 ```
+
+**사전 조건**: `sops` CLI가 PATH에 설치되어 있어야 함.
+- CI: GitHub Actions에서 `sops` 바이너리 설치 (`mozilla/sops` releases)
+- 로컬: `brew install sops` (macOS) 또는 `go install` 등
 
 ### ConfigStage 실행 흐름
 
@@ -156,8 +172,9 @@ function resolveConnectionEnv(
 
 ## 소비 ^consumes
 
-- `node-sops` — Node.js SOPS 복호화 라이브러리
-- `aws-sdk/kms` — KMS 복호화 키 접근 (OIDC 임시 권한)
+- `sops` CLI 바이너리 — Mozilla SOPS (shell-out via `execa`)
+- `execa` — 프로세스 실행 (`^9.0.0`)
+- `@aws-sdk/client-kms` — KMS 복호화 키 접근 (OIDC 임시 권한, `^3.1024.0`)
 - `zod` — 설정 스키마 검증
 
 ## 보안 제약
@@ -166,3 +183,12 @@ function resolveConnectionEnv(
 2. **KMS 키 접근은 OIDC 임시 토큰** — 정적 Access Key 사용 금지
 3. **Git에는 암호화된 YAML만 커밋** — `.gitignore`에 `*.decrypted.yaml` 추가
 4. **키 교체**: `scripts/rotate-keys.ts`로 KMS 키 교체 + SOPS 파일 재암호화 자동화
+
+## 에러 처리
+
+| 에러 | 원인 | 대응 |
+|------|------|------|
+| `sops` binary not found | PATH에 미설치 | "sops CLI를 설치하세요" 메시지 |
+| KMS AccessDenied | OIDC 미설정 또는 권한 부족 | "AWS OIDC trust relationship 확인" |
+| YAML parse error | SOPS 파일 손상 | "sops --decrypt 수동 실행하여 확인" |
+| zod validation error | 설정값 누락/타입 불일치 | 어떤 필드가 실패했는지 상세 출력 |

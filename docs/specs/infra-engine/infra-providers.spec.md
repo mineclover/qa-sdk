@@ -4,15 +4,13 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  level: module
+  level: leaf
   lifecycle: draft
   layer: operation
   tags: [infra, pulumi, multi-cloud]
   links:
     - target: infra-engine-pipeline
       type: implements
-    - target: infra-provision-stage
-      type: refines
 ---
 # 프로바이더 추상화 — 멀티 클라우드 배포
 
@@ -47,14 +45,16 @@ function getProvider(name: string): DeployProvider {
 
 ## 프로바이더별 배포 대상
 
-| 프로바이더 | Pulumi SDK | 배포 대상 | 인증 |
-|-----------|-----------|----------|------|
-| `cloudflare` | `@pulumi/cloudflare` | Workers, Pages, D1 | `CLOUDFLARE_API_TOKEN` |
-| `aws` | `@pulumi/aws` | ECS, Lambda, App Runner | OIDC (STS) |
-| `gcp` | `@pulumi/gcp` | Cloud Run, App Engine | Service Account / Workload Identity |
-| `railway` | `@pulumi/command` + Railway API | Railway 서비스 | `RAILWAY_TOKEN` |
-| `vultr` | `@pulumi/vultr` | K3s 위 컨테이너 | `VULTR_API_KEY` |
-| `local` | `@pulumi/command` | Docker Compose / K3s | SSH 또는 Tailscale |
+| 프로바이더 | Pulumi SDK | 버전 | 배포 대상 | 인증 |
+|-----------|-----------|------|----------|------|
+| `cloudflare` | `@pulumi/cloudflare` | `^6.14.0` | Workers, Pages, D1 | `CLOUDFLARE_API_TOKEN` |
+| `aws` | `@pulumi/aws` | `^7.24.0` | ECS, Lambda, App Runner | OIDC (STS) |
+| `gcp` | `@pulumi/gcp` | `^9.18.0` | Cloud Run, App Engine | Service Account / Workload Identity |
+| `railway` | `@pulumi/command` | `^1.2.1` | Railway 서비스 (CLI/API) | `RAILWAY_TOKEN` |
+| `vultr` | `@ediri/vultr` (커뮤니티) | `^2.27.1` | K3s 위 컨테이너 | `VULTR_API_KEY` |
+| `local` | `@pulumi/command` | `^1.2.1` | Docker Compose / K3s | SSH 또는 Tailscale |
+
+> **참고**: `@pulumi/vultr`는 공식 프로바이더가 없음. `@ediri/vultr`는 커뮤니티 유지 패키지로, 공식 프로바이더 출시 시 교체 가능.
 
 ### 프로바이더별 Pulumi Program 패턴
 
@@ -95,7 +95,7 @@ const deploy = new command.remote.Command("local-deploy", {
 
 ## 소비 ^consumes
 
-- `@pulumi/cloudflare`, `@pulumi/aws`, `@pulumi/gcp`, `@pulumi/vultr` — 프로바이더별 Pulumi SDK
+- `@pulumi/cloudflare` `^6.14.0`, `@pulumi/aws` `^7.24.0`, `@pulumi/gcp` `^9.18.0`, `@ediri/vultr` `^2.27.1` — 프로바이더별 Pulumi SDK
 - `@pulumi/command` — CLI/SSH 기반 배포 (Railway, Local)
 - `ResolvedConfig` — 프로바이더별 인증 정보 + 서비스 설정
 

@@ -4,6 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  level: leaf
   lifecycle: draft
   layer: operation
   tags: [infra, pulumi, deploy]
@@ -46,25 +47,33 @@ ctx.config (ResolvedConfig)
 ### State Backend 설정
 
 ```typescript
+// S3 backend URL에 DynamoDB lock 테이블 명시
+const backendUrl = "s3://qa-sdk-infra-state"
+  + `?region=ap-northeast-2`
+  + `&dynamoTable=qa-sdk-infra-lock`;  // DynamoDB lock 테이블
+
+const stackName = `${ctx.service}-${ctx.env}-${ctx.provider}-${ctx.region}`;
+
 const workspace = await LocalWorkspace.create({
   projectSettings: {
     name: `infra-engine-${ctx.service}`,
     runtime: "nodejs",
-    backend: {
-      url: `s3://qa-sdk-infra-state/${ctx.service}`,
-    },
-  },
-  stackSettings: {
-    [stackName]: {
-      // DynamoDB lock 테이블
-      secretsProvider: "awskms://KEY_ID",
-    },
+    backend: { url: backendUrl },
   },
 });
+
+const stack = await LocalWorkspace.createOrSelectStack({
+  stackName,
+  workDir: workspace.workDir,
+});
+
+// secretsProvider는 스택 레벨에서 설정
+await stack.setConfig("aws:secretsProvider", { value: "awskms://KEY_ID" });
 ```
 
 - 스택 이름: `{service}-{env}-{provider}-{region}` (예: `ingest-server-staging-railway-apne2`)
 - S3 버저닝 활성 — 상태 파일 히스토리 보존
+- DynamoDB lock: S3 URL의 `dynamoTable` 파라미터로 지정
 - DynamoDB TTL — 비정상 종료 시 lock 자동 해제 (30분)
 
 ## 정의 ^defines
@@ -138,10 +147,11 @@ async rollback(ctx: DeployContext): Promise<void> {
 
 ## 소비 ^consumes
 
-- `@pulumi/pulumi` — Automation API (LocalWorkspace, Stack)
-- `@aws-sdk/client-s3` — State backend
-- `@aws-sdk/client-dynamodb` — Lock table
-- 프로바이더별 Pulumi SDK (`@pulumi/cloudflare`, `@pulumi/aws`, `@pulumi/gcp` 등)
+- `@pulumi/pulumi` `^3.229.0` — Automation API (LocalWorkspace, Stack)
+- `@aws-sdk/client-s3` `^3.1024.0` — State backend
+- `@aws-sdk/client-dynamodb` `^3.1024.0` — Lock table
+- `@aws-sdk/client-sts` `^3.1024.0` — OIDC 임시 토큰 발급
+- 프로바이더별 Pulumi SDK (providers.spec.md 참조)
 
 ## 제약
 

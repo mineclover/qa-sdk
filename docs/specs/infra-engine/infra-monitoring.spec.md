@@ -4,6 +4,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
+  level: leaf
   lifecycle: draft
   layer: operation
   tags: [infra, monitoring, argocd]
@@ -166,13 +167,16 @@ monitoring:
 
 ## 소비 ^consumes
 
-- `MonitorAdapter` — 감시 대상 목록 관리
-- `IngestAdapter` — 상태 변화 이벤트 emit
+- `InfraProfileAdapter` — 감시 대상 목록 관리 (`monitors` 필드)
+- `IngestAdapter` — 상태 변화 이벤트 emit (`health_event` TransmissionEnvelope)
+- `CoordinateAdapter` — svc_ref 좌표 해석 (health_event 인코딩)
 - `RegistryAdapter` — 배포 이력 조회
-- `health_event` prefix — qa-sdk event-catalog
+- `health_event` prefix — demo-catalog (svc_ref × health_status)
 - `ResolvedConfig.monitoring` — 알림 설정
 
-## 향후 확장
+## 향후 확장 (Phase 2 — 현재 범위 밖)
+
+현재 스펙에 포함되지 않음. 별도 스펙 문서로 분리 시 추가.
 
 - **자동 복구**: OutOfSync 감지 시 자동 재배포 파이프라인 트리거
 - **SLA 추적**: uptime 기반 SLA 계산 및 리포트
