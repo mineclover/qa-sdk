@@ -5,7 +5,9 @@
   "services": {
     "ingest-server": {
       "port": 3200,
-      "store_driver": "memory",
+      "store_driver": "d1",
+      "cors_origin": "*",
+      "registry_url": "http://registry-service-svc:3300",
       "depends_on": ["registry-service"]
     },
     "registry-service": {
@@ -21,6 +23,20 @@
     },
     "decode-service": {
       "port": 3600
+    },
+    "decision-service": {
+      "port": 3800,
+      "health_path": "/health",
+      "depends_on": ["registry-service"]
+    },
+    "definition-service": {
+      "port": 3700,
+      "health_path": "/health",
+      "depends_on": ["registry-service"]
+    },
+    "motion-workspace-service": {
+      "port": 3710,
+      "health_path": "/health"
     }
   },
   "connections": {
@@ -28,7 +44,10 @@
     "registry-service": { "endpoint": "http://localhost:3300" },
     "gate-service": { "endpoint": "http://localhost:3400" },
     "query-service": { "endpoint": "http://localhost:3500" },
-    "decode-service": { "endpoint": "http://localhost:3600" }
+    "decode-service": { "endpoint": "http://localhost:3600" },
+    "decision-service": { "endpoint": "http://localhost:3800" },
+    "definition-service": { "endpoint": "http://localhost:3700" },
+    "motion-workspace-service": { "endpoint": "http://localhost:3710" }
   },
   "monitoring": {
     "interval": 60

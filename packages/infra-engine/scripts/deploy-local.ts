@@ -54,11 +54,12 @@ async function main() {
   console.log(`설정:   ${CONFIG_PATH}\n`);
 
   // 프로바이더 등록 — nginx 테스트 시 이미지/헬스체크 오버라이드
+  // healthPath: config의 health_path가 우선, 없으면 local.ts 기본값 /health/live
   const isNginxTest = SERVICE === "nginx-test";
   registerProvider(createLocalProvider({
     env: ENV,
     imageOverride: isNginxTest ? "nginx:alpine" : undefined,
-    healthPath: isNginxTest ? "/" : "/health/live",
+    healthPath: isNginxTest ? "/" : undefined,
   }));
 
   // 어댑터 설정

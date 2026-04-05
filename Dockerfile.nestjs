@@ -1,0 +1,50 @@
+# Dockerfile.nestjs — NestJS/Hono 서비스 공용
+# 사용: docker build --build-arg SERVICE=decision-service -t qa-sdk/decision-service:latest -f Dockerfile.nestjs .
+ARG SERVICE=decision-service
+
+FROM node:22-slim AS base
+RUN corepack enable pnpm
+
+FROM base AS build
+WORKDIR /app
+COPY . .
+RUN pnpm install --frozen-lockfile
+# 런타임 의존 패키지 빌드 (서비스의 tsup external workspace 패키지)
+# logger: Docker 환경 @types/node 미해석 → tsc 타입 에러, noEmitOnError=false이므로 JS 정상 생성
+# viz-core/spec-tracker: 기존 DTS 에러 → 제외
+ARG SERVICE
+RUN pnpm --filter @qa-sdk/pino run build && \
+    pnpm --filter test-types run build && \
+    pnpm --filter @qa-sdk/core run build && \
+    (pnpm --filter @qa-sdk/logger run build || true) && \
+    pnpm --filter weighted-index run build || true
+# 서비스별 추가 의존 빌드 (각 서비스가 external로 선언한 workspace 패키지)
+# DTS 에러가 있어도 ESM/CJS JS 파일은 정상 생성 (noEmitOnError=false 기본값)
+RUN if [ "$SERVICE" = "decision-service" ]; then \
+      (pnpm --filter decision-flow run build || true); \
+    elif [ "$SERVICE" = "definition-service" ]; then \
+      (pnpm --filter definition-catalog run build || true) && \
+      (pnpm --filter work-domain run build || true); \
+    elif [ "$SERVICE" = "motion-workspace-service" ]; then \
+      (pnpm --filter index-meta run build || true) && \
+      (pnpm --filter motion-content run build || true) && \
+      (pnpm --filter motion-workspace run build || true); \
+    fi
+# 서비스 자체 빌드
+# definition-service: GraphQL reflection이 tsup 번들과 호환 안 됨 → tsc 빌드 사용
+# tsc에서 DTS 에러가 나도 JS는 정상 생성 (noEmitOnError=false 기본값)
+RUN if [ "$SERVICE" = "definition-service" ]; then \
+      (pnpm --filter @qa-sdk/${SERVICE} run build:tsc || true); \
+    else \
+      pnpm --filter @qa-sdk/${SERVICE} build; \
+    fi
+
+FROM node:22-slim AS production
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+ARG SERVICE
+WORKDIR /app/packages/${SERVICE}
+ENV NODE_ENV=production
+COPY --from=build --chown=node:node /app /app
+USER node
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["sh", "-c", "curl -fsS http://localhost:${PORT:-3000}/health || exit 1"]
+CMD ["node", "dist/main.js"]

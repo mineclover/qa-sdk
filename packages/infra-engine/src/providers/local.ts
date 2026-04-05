@@ -33,7 +33,10 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
         const image = options?.imageOverride ?? `qa-sdk/${serviceId}:latest`;
         const env = options?.env ?? "dev";
         const namespace = ENV_NAMESPACE[env] ?? "qa-dev";
-        const healthPath = options?.healthPath ?? "/health/live";
+        const healthPath = options?.healthPath
+          ?? (svcConfig as Record<string, unknown>)?.health_path as string | undefined
+          ?? config.connections?.[serviceId]?.health_path
+          ?? "/health/live";
 
         // 서비스 설정에서 env vars 추출 (port, depends_on, gates 제외)
         const envVars = Object.entries(svcConfig ?? {})
