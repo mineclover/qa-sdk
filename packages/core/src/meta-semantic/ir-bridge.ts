@@ -97,17 +97,17 @@ export function stepContractToDataIR(
   managedBy: ModuleRef,
 ): DataIR {
   const fields: FieldDescriptor[] = [
-    ...Object.entries(contract.input?.fields ?? {}).map(([name, spec]) => ({
+    ...Object.entries(contract.consumes ?? {}).map(([name, spec]) => ({
       name,
       type: spec.type,
       optional: !spec.required,
-      hasDefault: !!spec.defaultValue,
+      hasDefault: false,
     })),
-    ...Object.entries(contract.output?.fields ?? {}).map(([name, spec]) => ({
+    ...Object.entries(contract.produces ?? {}).map(([name, spec]) => ({
       name,
       type: spec.type,
       optional: !spec.required,
-      hasDefault: !!spec.defaultValue,
+      hasDefault: false,
     })),
   ];
 
@@ -115,7 +115,7 @@ export function stepContractToDataIR(
 
   return {
     definition: {
-      type: contract.stepId ?? "anonymous",
+      type: "step",
       schemaHash,
       fields,
       certainty: deriveCertainty(fields),

@@ -5,7 +5,8 @@
  * "올바르지만 개선이 필요한" 구조적 품질 이슈를 감지한다.
  */
 
-import type { ModuleIR, DataIR, PipeIR, IRGraph } from "./ir-validate.js";
+import type { ModuleIR, DataIR, PipeIR } from "./ir-types.js";
+import type { IRGraph } from "./ir-validate.js";
 import { inferModuleLevel, computeSchemaHash, deriveCertainty } from "./ir-types.js";
 
 // ── 감사 결과 타입 ────────────────────────────────────

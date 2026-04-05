@@ -1,7 +1,16 @@
-// ── TestPhase — test-types 패키지에서 re-export ──────
+// ── TestPhase — 인라인 정의 (Docker 빌드 호환) ──────
 
-export type { TestPhase } from "test-types";
-export { TEST_PHASES } from "test-types";
+/** SSOT: demo-catalog test_phase axis entries */
+export type TestPhase =
+  | "precondition" | "fixture" | "arrange" | "act" | "observe"
+  | "assert-primary" | "assert-side" | "assert-negative"
+  | "snapshot" | "teardown" | "report";
+
+export const TEST_PHASES: readonly TestPhase[] = [
+  "precondition", "fixture", "arrange", "act", "observe",
+  "assert-primary", "assert-side", "assert-negative",
+  "snapshot", "teardown", "report",
+] as const;
 
 // ── TestCase — 좌표가 부여된 테스트 단위 ─────────────
 

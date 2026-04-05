@@ -323,7 +323,7 @@ class PinoLoggerImpl implements Logger {
 function createDefaultDestination(): Destination {
   // Edge runtime 호환: globalThis 기반 stdout 탐색
   const write = typeof globalThis !== "undefined" && "process" in globalThis
-    ? (msg: string) => (globalThis as { process: { stdout: { write: (m: string) => void } } }).process.stdout.write(msg)
+    ? (msg: string) => (globalThis as unknown as { process: { stdout: { write: (m: string) => void } } }).process.stdout.write(msg)
     : typeof console !== "undefined"
       ? (msg: string) => console.log(msg.replace(/\n$/, ""))
       : (_msg: string) => {};
