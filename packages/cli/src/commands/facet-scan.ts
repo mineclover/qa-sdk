@@ -5,7 +5,7 @@
  * 격리된 테스트 인프라에서 동기화하여 테스트할 대상이다.
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, extname, dirname } from "node:path";
 
 export interface FacetMarker {
@@ -157,4 +157,59 @@ function resolveFilePath(importPath: string): string | null {
     try { statSync(c); return c; } catch { /* next */ }
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Task 4: generateIncludeList + facetScan CLI 엔트리
+// ---------------------------------------------------------------------------
+
+export function generateIncludeList(facetFiles: FacetFile[], deps: DepFile[]): string {
+  const paths = new Set<string>();
+  for (const f of facetFiles) paths.add(f.relativePath);
+  for (const d of deps) paths.add(d.relativePath);
+
+  const lines = [...paths].sort().map(p => `+ ${p}`);
+  lines.push("- **");
+  return lines.join("\n") + "\n";
+}
+
+export function facetScan(serviceRoot: string, opts: { output?: string; deps?: boolean } = {}): void {
+  const { facetFiles } = scanFacetFiles(serviceRoot);
+
+  if (facetFiles.length === 0) {
+    console.log("@facet 마커 파일 없음");
+    return;
+  }
+
+  const allDeps: DepFile[] = [];
+  const allBlocked: BlockedFile[] = [];
+  if (opts.deps !== false) {
+    for (const f of facetFiles) {
+      const { included, blocked } = resolveImportDeps(f.absolutePath, serviceRoot);
+      allDeps.push(...included);
+      allBlocked.push(...blocked);
+    }
+  }
+
+  console.log(`@facet 파일: ${facetFiles.length}건`);
+  for (const f of facetFiles) {
+    const exports = f.marker.exports.length > 0 ? ` (export: ${f.marker.exports.join(", ")})` : "";
+    console.log(`  ${f.relativePath}${exports}`);
+  }
+
+  if (allDeps.length > 0) {
+    console.log(`\n의존성: ${allDeps.length}건`);
+    for (const d of allDeps) console.log(`  ${d.relativePath}`);
+  }
+
+  if (allBlocked.length > 0) {
+    console.log(`\nblock: ${allBlocked.length}건`);
+    for (const b of allBlocked) console.log(`  ${b.relativePath} (${b.reason})`);
+  }
+
+  if (opts.output) {
+    const list = generateIncludeList(facetFiles, allDeps);
+    writeFileSync(opts.output, list, "utf-8");
+    console.log(`\ninclude-list → ${opts.output}`);
+  }
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { parseFacetMarker, scanFacetFiles, resolveImportDeps } from "./facet-scan.js";
+import { parseFacetMarker, scanFacetFiles, resolveImportDeps, generateIncludeList } from "./facet-scan.js";
+import type { FacetFile, DepFile } from "./facet-scan.js";
 import { writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -90,5 +91,20 @@ describe("resolveImportDeps", () => {
 
     const result = resolveImportDeps(join(TMP, "src/service.ts"), TMP);
     expect(result.blocked).toHaveLength(0);
+  });
+});
+
+describe("generateIncludeList", () => {
+  it("rclone include-list 형식 생성", () => {
+    const files: FacetFile[] = [
+      { relativePath: "src/gate.ts", absolutePath: "/x/src/gate.ts", marker: { type: "file", exports: [] } },
+    ];
+    const deps: DepFile[] = [
+      { relativePath: "src/types/order.ts", absolutePath: "/x/src/types/order.ts" },
+    ];
+    const list = generateIncludeList(files, deps);
+    expect(list).toContain("+ src/gate.ts");
+    expect(list).toContain("+ src/types/order.ts");
+    expect(list).toContain("- **");
   });
 });
