@@ -1,11 +1,11 @@
 ---
 def:
   id: facet-test-isolation
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   tags: [structural, testing]
   links:
@@ -13,6 +13,8 @@ def:
       type: depends_on
     - target: meta-semantic-prefix-annotation
       type: depends_on
+    - target: facet-test-isolation-rule
+      type: traces_to
 ---
 
 # Facet Test Isolation — 코드 패싯 추출 + 격리 테스트 인프라
@@ -486,3 +488,37 @@ stub은 원본의 export 시그니처만 유지하고 환경 접근을 제거한
 | 동적 import | `import()` 표현식은 정적 분석 불가 | block 처리 (수동 힌트 허용) |
 | rclone 설치 | 외부 도구 의존 | CI에서 사전 설치 또는 docker |
 | 간접 환경 의존 | A→B→C에서 C가 환경 의존이면 A도 영향 | 재귀 walk가 자동 감지 |
+
+## 11. 소스 코드
+
+### CLI 도구
+
+| 파일 | 역할 | 테스트 |
+|------|------|:------:|
+| `cli/src/commands/facet-scan.ts` | `@facet` 파서 + 파일 스캔 + import walk + block + include-list | 11 |
+| `cli/src/commands/facet-inject.ts` | `@facet export` 기반 복사본 export 주입 | 3 |
+
+### 테스트 패키지
+
+| 패키지 | 목적 | 테스트 |
+|--------|------|:------:|
+| `facet-tests` | 패싯 단위 테스트 (path alias mock) | 12 |
+| `simulation-tests` | 서비스 간 통합 시뮬레이션 (전체 동기화) | 2 |
+
+### `@facet` 마커 적용 파일
+
+| 서비스 | 파일 |
+|--------|------|
+| gate-service | `src/app.ts`, `src/adapters/memory-event-bus.ts`, `src/ports/event-bus.port.ts` |
+| query-service | `src/stores/in-memory-policy-rule-store.ts`, `src/stores/policy-rule-store.ts` |
+
+## 12. 구현 현황
+
+| Phase | 상태 | 내용 |
+|:-----:|:----:|------|
+| **1. Facet** | **완료** | CLI(scan+inject) + facet-tests 패키지 + gate/query 실전 테스트 |
+| **2. Simulation** | **완료** | simulation-tests 패키지 + gate→query 통합 시뮬레이션 |
+| 3. E2E | 미착수 | 통째 복제 + mock 덮어쓰기 방식 |
+| 4. 별도 Repo | 미착수 | 모노레포 분리 시 |
+
+운영 규칙: `facet-test-isolation.rule.md` 참조.
