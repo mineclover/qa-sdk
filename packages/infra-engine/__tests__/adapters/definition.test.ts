@@ -101,7 +101,7 @@ describe("DefinitionAdapter", () => {
       expect(result.serviceId).toBe("test-svc");
       expect(result.totalTests).toBe(9); // 5+3+1
       expect(result.passRate).toBe(89); // Math.round(8/9 * 100)
-      expect(result.healthy).toBe(false); // failed > 0
+      expect(result.healthy).toBe("fail"); // failed > 0
     });
 
     it("테스트 없는 문서는 무시", async () => {
@@ -117,7 +117,7 @@ describe("DefinitionAdapter", () => {
 
       expect(result.totalTests).toBe(0);
       expect(result.passRate).toBe(0);
-      expect(result.healthy).toBe(false); // totalTests === 0 → not healthy
+      expect(result.healthy).toBe("no-data"); // totalTests === 0 → 데이터 없음
     });
 
     it("모든 테스트 통과 시 healthy", async () => {
@@ -133,7 +133,7 @@ describe("DefinitionAdapter", () => {
       const adapter = createDefinitionAdapter(BASE_URL);
       const result = await adapter.getServiceTestHealth("test-svc");
 
-      expect(result.healthy).toBe(true);
+      expect(result.healthy).toBe("pass");
       expect(result.passRate).toBe(100);
     });
   });

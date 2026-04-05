@@ -1,5 +1,6 @@
 // adapters/adapter.ts — 6개 포트 인터페이스 + DeployProvider
 import type {
+  DeployHistoryEntry,
   GateCheckResult,
   GateVerdict,
   InfraDeploymentEntry,
@@ -53,6 +54,8 @@ export interface InfraProfileAdapter {
   removeMonitor(serviceId: string): Promise<void>;
   getAllMonitors(): Promise<MonitorTarget[]>;
   updateMonitorStatus(serviceId: string, status: string, checkedAt: string): Promise<void>;
+  addHistory(serviceId: string, entry: DeployHistoryEntry): Promise<void>;
+  getHistory(serviceId: string): Promise<DeployHistoryEntry[]>;
 }
 
 // --- 4. IngestAdapter ---

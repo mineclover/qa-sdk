@@ -3,7 +3,7 @@ import { createInfraProfileAdapter } from "../../src/adapters/infra-profile.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { InfraDeploymentEntry, MonitorTarget } from "../../src/core/types.js";
+import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from "../../src/core/types.js";
 
 const entry: InfraDeploymentEntry = {
   serviceId: "test-svc",
@@ -49,6 +49,50 @@ describe("InfraProfileAdapter", () => {
     await adapter.restore("test-svc");
     const result = await adapter.getDeployment("test-svc");
     expect(result?.endpoint).toBe("http://localhost:3200");
+  });
+
+  it("addHistory + getHistory 라운드트립", async () => {
+    const adapter = createInfraProfileAdapter(dir);
+    const historyEntry: DeployHistoryEntry = {
+      deployedAt: "2026-04-05T00:00:00Z",
+      version: "abc123",
+      env: "dev",
+      provider: "local",
+      endpoint: "http://localhost:3200",
+      duration: 1500,
+      success: true,
+      triggeredBy: "manual",
+    };
+    await adapter.addHistory("test-svc", historyEntry);
+    const history = await adapter.getHistory("test-svc");
+    expect(history).toHaveLength(1);
+    expect(history[0]).toEqual(historyEntry);
+  });
+
+  it("getHistory — 존재하지 않는 서비스 → 빈 배열", async () => {
+    const adapter = createInfraProfileAdapter(dir);
+    expect(await adapter.getHistory("nope")).toEqual([]);
+  });
+
+  it("addHistory — 50건 초과 시 가장 오래된 항목 제거", async () => {
+    const adapter = createInfraProfileAdapter(dir);
+    for (let i = 0; i < 55; i++) {
+      await adapter.addHistory("test-svc", {
+        deployedAt: `2026-04-05T00:${String(i).padStart(2, "0")}:00Z`,
+        version: `v${i}`,
+        env: "dev",
+        provider: "local",
+        endpoint: "http://localhost:3200",
+        duration: 100,
+        success: true,
+        triggeredBy: "manual",
+      });
+    }
+    const history = await adapter.getHistory("test-svc");
+    expect(history).toHaveLength(50);
+    // 가장 오래된 5개 (v0~v4) 제거, v5부터 시작
+    expect(history[0].version).toBe("v5");
+    expect(history[49].version).toBe("v54");
   });
 
   it("모니터 등록 + 조회", async () => {

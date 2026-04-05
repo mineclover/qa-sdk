@@ -29,6 +29,7 @@ async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
  */
 export interface PulumiDeployOptions {
   env?: string;
+  dryRun?: boolean;
 }
 
 export function createPulumiDeployFn(options?: PulumiDeployOptions) {
@@ -63,6 +64,16 @@ export async function pulumiDeployFn(
 
   // K8s 컨텍스트 설정
   await stack.setConfig("kubernetes:context", { value: "k3d-qa-local" });
+
+  // dry-run: preview만 실행하고 반환
+  if (options?.dryRun) {
+    console.log(`[pulumi] previewing ${serviceId} (dry-run)...`);
+    const preview = await stack.preview({ onOutput: (msg) => process.stdout.write(msg) });
+    return {
+      stackName,
+      outputs: { endpoint: "(dry-run)", changeSummary: JSON.stringify(preview.changeSummary) },
+    };
+  }
 
   console.log(`[pulumi] deploying ${serviceId} to stack ${stackName}...`);
   const result = await stack.up({

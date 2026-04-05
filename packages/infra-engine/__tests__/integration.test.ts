@@ -58,6 +58,8 @@ describe("5단계 파이프라인 통합 테스트", () => {
       removeMonitor: vi.fn(async () => {}),
       getAllMonitors: vi.fn(async () => []),
       updateMonitorStatus: vi.fn(async () => {}),
+      addHistory: vi.fn(async () => {}),
+      getHistory: vi.fn(async () => []),
     };
     const ingest: IngestAdapter = { emit: vi.fn(async () => ({ ok: true })) };
     const coord: CoordinateAdapter = {

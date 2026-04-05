@@ -2,11 +2,12 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { InfraProfileAdapter } from "./adapter.js";
-import type { InfraDeploymentEntry, MonitorTarget } from "../core/types.js";
+import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from "../core/types.js";
 
 interface InfraProfileData {
   deployments: Record<string, InfraDeploymentEntry>;
   monitors: MonitorTarget[];
+  history: Record<string, DeployHistoryEntry[]>;
 }
 
 const PROFILE_FILE = "infra-profile.json";
@@ -21,7 +22,7 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
       const raw = await readFile(profilePath, "utf-8");
       return JSON.parse(raw);
     } catch {
-      return { deployments: {}, monitors: [] };
+      return { deployments: {}, monitors: [], history: {} };
     }
   }
 
@@ -40,7 +41,7 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
       const raw = await readFile(rollbackPath, "utf-8");
       return JSON.parse(raw);
     } catch {
-      return { deployments: {}, monitors: [] };
+      return { deployments: {}, monitors: [], history: {} };
     }
   }
 
@@ -92,6 +93,23 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
         target.lastChecked = checkedAt;
         await save(data);
       }
+    },
+    async addHistory(serviceId, entry) {
+      const data = await load();
+      data.history ??= {};
+      const list = data.history[serviceId] ?? [];
+      list.push(entry);
+      // 최대 50건 유지 (가장 오래된 것부터 제거)
+      if (list.length > 50) {
+        data.history[serviceId] = list.slice(list.length - 50);
+      } else {
+        data.history[serviceId] = list;
+      }
+      await save(data);
+    },
+    async getHistory(serviceId) {
+      const data = await load();
+      return data.history?.[serviceId] ?? [];
     },
   };
 }

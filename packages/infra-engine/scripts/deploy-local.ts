@@ -35,13 +35,15 @@ import type {
   IngestAdapter,
   CoordinateAdapter,
 } from "../src/adapters/adapter.js";
-import type { DeployContext } from "../src/core/types.js";
+import type { DeployContext, DeployHistoryEntry } from "../src/core/types.js";
 
 // --- 설정 ---
-const SERVICE = process.argv[2] || "ingest-server";
-const ENV = process.argv[3] || "dev";
+const DRY_RUN = process.argv.includes("--dry-run");
+const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith("--"));
+const SERVICE = positionalArgs[0] || "ingest-server";
+const ENV = positionalArgs[1] || "dev";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CONFIG_FILE = process.argv[4] || `${ENV}.json`;
+const CONFIG_FILE = positionalArgs[2] || `${ENV}.json`;
 const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 
@@ -96,14 +98,20 @@ async function main() {
     encodeHealthEvent: () => ({}),
   };
 
-  // 파이프라인 구성
-  const pipeline = createPipeline([
-    createConfigStage(createPlainLoader()),
-    createProvisionStage(getProvider, createPulumiDeployFn({ env: ENV })),
-    createRegisterStage(registry, serviceProfile, infraProfile),
-    createVerifyStage(gate, { maxRetries: 5, retryDelay: 3000 }),
-    createObserveStage(mockIngest, mockCoordinate, infraProfile),
-  ]);
+  // 파이프라인 구성 — dry-run 시 config + provision(preview)만 실행
+  const stages = DRY_RUN
+    ? [
+        createConfigStage(createPlainLoader()),
+        createProvisionStage(getProvider, createPulumiDeployFn({ env: ENV, dryRun: true })),
+      ]
+    : [
+        createConfigStage(createPlainLoader()),
+        createProvisionStage(getProvider, createPulumiDeployFn({ env: ENV })),
+        createRegisterStage(registry, serviceProfile, infraProfile),
+        createVerifyStage(gate, { maxRetries: 5, retryDelay: 3000 }),
+        createObserveStage(mockIngest, mockCoordinate, infraProfile),
+      ];
+  const pipeline = createPipeline(stages);
 
   // 실행
   const result = await pipeline.run({
@@ -127,6 +135,21 @@ async function main() {
     console.log(
       `  ${s.stage}: ${s.status} (${s.duration}ms)${s.error ? ` — ${s.error}` : ""}`,
     );
+  }
+
+  // 배포 이력 기록
+  if (!DRY_RUN) {
+    const historyEntry: DeployHistoryEntry = {
+      deployedAt: new Date().toISOString(),
+      version: result.endpoint ?? "unknown",
+      env: ENV,
+      provider: "local",
+      endpoint: result.endpoint ?? "",
+      duration: result.duration,
+      success: result.success,
+      triggeredBy: "manual",
+    };
+    await infraProfile.addHistory(SERVICE, historyEntry);
   }
 
   // 프로필 확인

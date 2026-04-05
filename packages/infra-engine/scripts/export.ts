@@ -25,6 +25,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
 const DEFINITION_URL = process.env.DEFINITION_URL ?? "http://localhost:3700";
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
+const EXPORT_OUT = process.env.INFRA_EXPORT_OUT;
 const cmd = process.argv[2] ?? "status";
 const arg1 = process.argv[3];
 const arg2 = process.argv[4] ?? "dev";
@@ -74,7 +75,9 @@ async function main() {
         env: arg2,
         includeAll,
       });
-      const outPath = `.env.${arg1}.${arg2}`;
+      const outPath = EXPORT_OUT ?? `.env.${arg1}.${arg2}`;
+      const outDir = resolve(outPath, "..");
+      await mkdir(outDir, { recursive: true });
       await writeFile(outPath, content);
       console.log(`생성됨: ${outPath}`);
       console.log(content);
@@ -84,8 +87,9 @@ async function main() {
     case "ts": {
       const env = arg1 ?? "dev";
       const content = await generateTypescriptModule(client, env);
-      await mkdir("generated", { recursive: true });
-      const outPath = `generated/service-connections.${env}.ts`;
+      const outPath = EXPORT_OUT ?? `generated/service-connections.${env}.ts`;
+      const outDir = resolve(outPath, "..");
+      await mkdir(outDir, { recursive: true });
       await writeFile(outPath, content);
       console.log(`생성됨: ${outPath} (${content.split("\n").length}줄)`);
       break;
@@ -94,8 +98,9 @@ async function main() {
     case "compose": {
       const env = arg1 ?? "dev";
       const content = await generateDockerComposeOverride(client, env);
-      await mkdir("generated", { recursive: true });
-      const outPath = `generated/docker-compose.override.${env}.yml`;
+      const outPath = EXPORT_OUT ?? `generated/docker-compose.override.${env}.yml`;
+      const outDir = resolve(outPath, "..");
+      await mkdir(outDir, { recursive: true });
       await writeFile(outPath, content);
       console.log(`생성됨: ${outPath}`);
       console.log(content);

@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: leaf
-  lifecycle: implemented
+  lifecycle: approved
   layer: mediation
   tags: [infra, adapter, integration]
   links:

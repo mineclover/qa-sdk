@@ -5,7 +5,7 @@ def:
   aspect: func_def
   depth: specification
   level: module
-  lifecycle: implemented
+  lifecycle: approved
   layer: operation
   tags: [infra, devops, gitops]
   links:

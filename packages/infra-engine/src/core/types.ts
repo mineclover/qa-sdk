@@ -160,3 +160,14 @@ export interface MonitorTarget {
 }
 
 export type SyncStatus = "Synced" | "OutOfSync" | "Degraded" | "Unknown";
+
+export interface DeployHistoryEntry {
+  deployedAt: string;
+  version: string;
+  env: string;
+  provider: string;
+  endpoint: string;
+  duration: number;
+  success: boolean;
+  triggeredBy: "ci" | "manual";
+}

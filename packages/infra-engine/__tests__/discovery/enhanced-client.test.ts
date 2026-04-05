@@ -28,7 +28,7 @@ function createMockDefinitionAdapter(overrides?: Partial<DefinitionAdapter>): De
       serviceId,
       totalTests: 10,
       passRate: 90,
-      healthy: true,
+      healthy: "pass" as const,
     })),
     getPrefixInfo: vi.fn(async (prefixId) => ({
       prefixId,
@@ -155,7 +155,7 @@ describe("EnhancedDiscoveryClient", () => {
 
     const health = await enhanced.getServiceTestHealth("ingest-server");
     expect(health.serviceId).toBe("ingest-server");
-    expect(health.healthy).toBe(true);
+    expect(health.healthy).toBe("pass");
     expect(def.getServiceTestHealth).toHaveBeenCalledWith("ingest-server");
   });
 });

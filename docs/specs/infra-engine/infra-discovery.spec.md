@@ -4,8 +4,8 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  level: module
-  lifecycle: implemented
+  level: leaf
+  lifecycle: approved
   layer: mediation
   tags: [infra, discovery, export]
   links:

@@ -46,6 +46,8 @@ describe("ObserveStage", () => {
       removeMonitor: vi.fn(async () => {}),
       getAllMonitors: vi.fn(async () => []),
       updateMonitorStatus: vi.fn(async () => {}),
+      addHistory: vi.fn(async () => {}),
+      getHistory: vi.fn(async () => []),
     };
 
     const stage = createObserveStage(ingest, coord, infraProfile);
@@ -73,6 +75,8 @@ describe("ObserveStage", () => {
       removeMonitor: vi.fn(async () => {}),
       getAllMonitors: vi.fn(async () => []),
       updateMonitorStatus: vi.fn(async () => {}),
+      addHistory: vi.fn(async () => {}),
+      getHistory: vi.fn(async () => []),
     };
 
     const stage = createObserveStage(ingest, coord, infraProfile);
