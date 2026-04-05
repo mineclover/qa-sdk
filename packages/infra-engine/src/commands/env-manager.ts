@@ -124,7 +124,11 @@ export async function envStatus(): Promise<void> {
 
   // Pulumi backend
   const backend = process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local";
-  console.log(`  Pulumi:     ${backend.startsWith("s3://") ? "☁ S3 백엔드" : "📁 파일 백엔드"} (${backend.split("?")[0]})`);
+  const isMinioS3 = backend.includes("localhost") || backend.includes("127.0.0.1");
+  const pulumiLabel = backend.startsWith("s3://")
+    ? isMinioS3 ? "📦 MinIO S3 (로컬)" : "☁ AWS S3"
+    : "📁 파일";
+  console.log(`  Pulumi:     ${pulumiLabel} (${backend.split("?")[0]})`);
 
   console.log("");
 }
