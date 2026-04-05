@@ -1,0 +1,47 @@
+{
+  "global": {
+    "region": "ap-northeast-2"
+  },
+  "services": {
+    "ingest-server": {
+      "port": 3200,
+      "store_driver": "d1",
+      "depends_on": ["registry-service"]
+    },
+    "registry-service": {
+      "port": 3300
+    },
+    "gate-service": {
+      "port": 3400,
+      "depends_on": ["registry-service", "ingest-server"]
+    },
+    "query-service": {
+      "port": 3500,
+      "depends_on": ["gate-service"]
+    },
+    "decode-service": {
+      "port": 3600
+    },
+    "definition-service": {
+      "port": 3700,
+      "depends_on": ["registry-service"]
+    }
+  },
+  "connections": {
+    "ingest-server": { "endpoint": "https://ingest.staging.qa-sdk.io" },
+    "registry-service": { "endpoint": "https://registry.staging.qa-sdk.io" },
+    "gate-service": { "endpoint": "https://gate.staging.qa-sdk.io" },
+    "query-service": { "endpoint": "https://query.staging.qa-sdk.io" },
+    "decode-service": { "endpoint": "https://decode.staging.qa-sdk.io" },
+    "definition-service": { "endpoint": "https://definition.staging.qa-sdk.io" }
+  },
+  "monitoring": {
+    "interval": 60,
+    "webhooks": [
+      {
+        "url": "https://hooks.slack.com/services/STAGING_WEBHOOK",
+        "events": ["OutOfSync", "Unknown"]
+      }
+    ]
+  }
+}

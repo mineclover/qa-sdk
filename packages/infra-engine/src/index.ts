@@ -5,7 +5,7 @@ export type * from "./adapters/adapter.js";
 export { createGateAdapter } from "./adapters/gate.js";
 export { createInfraProfileAdapter } from "./adapters/infra-profile.js";
 export { createServiceProfileAdapter } from "./adapters/service-profile.js";
-export { createSopsLoader } from "./config/sops-loader.js";
+export { createSopsLoader, createPlainLoader } from "./config/sops-loader.js";
 export { createConfigStage } from "./config/config-stage.js";
 export { extractServiceEnv, resolveConnectionEnv } from "./config/env-bridge.js";
 export { createVerifyStage } from "./verify/verify-stage.js";
@@ -17,6 +17,7 @@ export { registerProvider, getProvider, listProviders } from "./providers/regist
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";
 import { createSopsLoader } from "./config/sops-loader.js";
+import type { SopsLoader } from "./config/sops-loader.js";
 import { createVerifyStage } from "./verify/verify-stage.js";
 import { createRegisterStage } from "./stages/register-stage.js";
 import { createObserveStage } from "./stages/observe-stage.js";
@@ -33,6 +34,7 @@ export interface DeployOptions {
   configPath: string;
   triggeredBy?: "ci" | "manual";
   adapters: Adapters;
+  configLoader?: SopsLoader; // 기본: createSopsLoader()
   deployFn: (
     provider: DeployProvider,
     config: ResolvedConfig,
@@ -42,11 +44,11 @@ export interface DeployOptions {
 }
 
 export async function deploy(options: DeployOptions): Promise<DeployResult> {
-  const sopsLoader = createSopsLoader();
+  const loader = options.configLoader ?? createSopsLoader();
   const gateAdapter = options.adapters.gate;
 
   const pipeline = createPipeline([
-    createConfigStage(sopsLoader),
+    createConfigStage(loader),
     createProvisionStage(getProvider, options.deployFn),
     createRegisterStage(options.adapters.registry, options.adapters.serviceProfile, options.adapters.infraProfile),
     createVerifyStage(gateAdapter),
