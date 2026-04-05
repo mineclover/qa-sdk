@@ -97,6 +97,31 @@ export async function envStatus(): Promise<void> {
     /* K8s 미실행 — 위에서 이미 표시 */
   }
 
+  // 서비스: registry-service
+  try {
+    const res = await fetch("http://localhost:3300/health", { signal: AbortSignal.timeout(2000) });
+    console.log(`  Registry:   ${res.ok ? "🟢 실행 중 (localhost:3300)" : "⬜ 미실행"}`);
+  } catch {
+    console.log("  Registry:   ⬜ 미실행");
+  }
+
+  // 서비스: ingest-server
+  try {
+    const res = await fetch("http://localhost:3200/health/live", { signal: AbortSignal.timeout(2000) });
+    const storeMode = process.env.STORE_DRIVER ?? "memory";
+    console.log(`  Ingest:     ${res.ok ? `🟢 실행 중 (${storeMode} 모드)` : "⬜ 미실행"}`);
+  } catch {
+    console.log("  Ingest:     ⬜ 미실행");
+  }
+
+  // 서비스: definition-service
+  try {
+    const res = await fetch("http://localhost:3700/health", { signal: AbortSignal.timeout(2000) });
+    console.log(`  Definition: ${res.ok ? "🟢 실행 중 (localhost:3700)" : "⬜ 미실행"}`);
+  } catch {
+    console.log("  Definition: ⬜ 미실행");
+  }
+
   // Pulumi backend
   const backend = process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local";
   console.log(`  Pulumi:     ${backend.startsWith("s3://") ? "☁ S3 백엔드" : "📁 파일 백엔드"} (${backend.split("?")[0]})`);
