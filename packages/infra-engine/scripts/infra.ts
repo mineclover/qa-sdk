@@ -26,7 +26,7 @@ import { detectEnvironment } from "../src/commands/env-manager.js";
 const infraMode = await detectEnvironment();
 const _cmd = process.argv[2];
 if (_cmd && _cmd !== "--help" && _cmd !== "-h") {
-  console.log(`[env] ${infraMode === "localstack" ? "LocalStack 감지 → S3 백엔드" : "파일 백엔드"}`);
+  console.log(`[env] ${infraMode === "minio" ? "MinIO S3 감지 → S3 백엔드" : "파일 백엔드"}`);
 }
 
 import { resolve, dirname } from "node:path";
