@@ -106,6 +106,10 @@ level은 **바운더리에 어떤 패싯이 존재하느냐**로 성격이 결�
 children 유무는 구조적 검증이고, 패싯 조합은 의미적 검증이다.
 둘 다 일치해야 올바른 level이다.
 
+IR 자동 추론: `inferModuleLevel(relations)` (`core/src/meta-semantic/ir-types.ts`)
+— parent/children 관계에서 group/module/leaf를 자동 판별.
+`auditIRGraph`가 `level-mismatch`로 불일치를 감지.
+
 ## 검증
 
 ```bash

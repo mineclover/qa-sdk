@@ -61,7 +61,20 @@ def list --svc=<서비스명>     # 서비스별 문서 전체
 입력은 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`이며, `qa-sdk def sync` 이후에만 반영된다.
 결과가 없으면 아직 구조적 code-boundary-map이 정의되지 않은 것이다.
 
-### 5. 품질 확인
+### 5. Meta-Semantic IR 탐색
+
+```bash
+def get meta-semantic-system    # 시스템 전체 (group, 15 members)
+def get meta-semantic-ir        # IR 3종 모듈 (Module·Data·Pipe)
+def children meta-semantic-ir   # IR 하위: pipe/data/module/rule/usecases
+def get meta-semantic-extraction # LLM 기반 코드 추출 파이프라인
+```
+
+IR 코드: `packages/core/src/meta-semantic/` (11 source files, 124 tests)
+
+문서 유형 6종: `.spec.md`(정의) / `.rule.md`(소비 규칙) / `.todo.md`(계획) / `.test.md`(검증) / `.memo.md`(기록) / `.plan.md`(방향)
+
+### 6. 품질 확인
 
 ```bash
 def audit                     # 문서 품질 + 그래프 검증
