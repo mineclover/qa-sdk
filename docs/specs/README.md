@@ -278,6 +278,22 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | [unit-2-pipeline.md](tasks/unit-2-pipeline.md) | A1, A5, A6 | I-1 ~ I-6 |
 | [unit-3-monitoring.md](tasks/unit-3-monitoring.md) | A6 조회 | 신규 |
 
+### infra-engine/ — 하이브리드 배포 엔진
+
+5단계 파이프라인 기반 멀티 프로바이더 배포 엔진. 서비스 레지스트리 자동 등록, 품질 게이트, ArgoCD 스타일 모니터링.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [infra-engine-pipeline.spec.md](infra-engine/infra-engine-pipeline.spec.md) | **중심 인덱스** — 5단계 파이프라인 + 패키지 구조 | infra-engine | draft |
+| [infra-config-stage.spec.md](infra-engine/infra-config-stage.spec.md) | ConfigStage — SOPS 복호화 + zod 검증 | infra-engine | draft |
+| [infra-provision-stage.spec.md](infra-engine/infra-provision-stage.spec.md) | ProvisionStage — Pulumi 실행 + S3 state | infra-engine | draft |
+| [infra-register-stage.spec.md](infra-engine/infra-register-stage.spec.md) | RegisterStage — registry-service 등록 + service-profile | infra-engine | draft |
+| [infra-verify-stage.spec.md](infra-engine/infra-verify-stage.spec.md) | VerifyStage — 헬스체크 + 품질 게이트 | infra-engine | draft |
+| [infra-observe-stage.spec.md](infra-engine/infra-observe-stage.spec.md) | ObserveStage — 배포 이벤트 emit + 모니터링 등록 | infra-engine | draft |
+| [infra-providers.spec.md](infra-engine/infra-providers.spec.md) | 프로바이더 추상화 — 6개 멀티 클라우드 | infra-engine | draft |
+| [infra-adapters.spec.md](infra-engine/infra-adapters.spec.md) | qa-sdk 연동 어댑터 — 5개 포트 인터페이스 | infra-engine | draft |
+| [infra-monitoring.spec.md](infra-engine/infra-monitoring.spec.md) | ArgoCD 스타일 모니터링 — sync-loop + 대시보드 | infra-engine | draft |
+
 ### infra/ — 인프라 도구
 
 로깅 등 횡단 인프라 유틸리티.
@@ -316,6 +332,7 @@ runtime-flows 심볼 기반 도출 태스크. 📋/🔧 → ✅ 전환 작업 �
 | spec-core | `spec-engine/`, `dkg-system/` |
 | @qa-sdk/cli | `spec-engine/` (codegen), `dkg-system/` (dkg 명령), `skill-catalog/` (skill 메타) |
 | meta-semantic | `meta-semantic/` |
+| infra-engine | `infra-engine/` |
 | shop-web | — (데모 사이트, 별도 스펙 없음) |
 | platform-demo | — (3D 모니터 + 레이아웃 데모) |
 | e2e | — (Playwright E2E 테스트) |
