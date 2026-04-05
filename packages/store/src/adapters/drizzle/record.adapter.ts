@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
 import type {
   RecordStore,
   RecordInsert,
@@ -6,6 +6,7 @@ import type {
   RecordPaginationParams,
   StoredRecord,
   StoredRecordPage,
+  TimeRangeParams,
 } from "@qa-sdk/core";
 import type { DbExecutor } from "../../db/client.js";
 import { eventRecords } from "../../db/schema.js";
@@ -115,6 +116,26 @@ export class DrizzleRecordStore implements RecordStore {
       )
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
       .comment({ adapter: "RecordStore", method: "findByTraceAndEventKey" });
+    return rows.map(toStoredRecord);
+  }
+
+  async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
+    const conditions: SQL<unknown>[] = [];
+    if (params.from) conditions.push(gte(eventRecords.timestamp, params.from));
+    if (params.to) conditions.push(lte(eventRecords.timestamp, params.to));
+    if (params.eventKey) conditions.push(eq(eventRecords.eventKey, params.eventKey));
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const limit = params.limit ?? 1000;
+
+    const rows = await this.db
+      .select()
+      .from(eventRecords)
+      .where(where)
+      .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
+      .limit(limit)
+      .comment({ adapter: "RecordStore", method: "findByTimeRange" });
+
     return rows.map(toStoredRecord);
   }
 }

@@ -4,7 +4,7 @@
  * MergeTree 기반 append-only 저장.
  * batch insert 최적화 (단일 INSERT ... VALUES).
  */
-import type { RecordStore, RecordInsert, StoredRecord, RecordPaginationParams, StoredRecordPage } from "@qa-sdk/core";
+import type { RecordStore, RecordInsert, StoredRecord, RecordPaginationParams, StoredRecordPage, TimeRangeParams } from "@qa-sdk/core";
 
 export interface ClickHouseClient {
   query(sql: string, params?: Record<string, unknown>): Promise<{ rows: Record<string, unknown>[] }>;
@@ -89,6 +89,31 @@ export class ClickhouseRecordStore implements RecordStore {
       "SELECT * FROM event_records WHERE trace_id = {traceId:String} AND event_key = {eventKey:String} ORDER BY timestamp",
       { traceId, eventKey },
     );
+    return rows.map(toStoredRecord);
+  }
+
+  async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
+    const conditions: string[] = [];
+    const p: Record<string, unknown> = {};
+
+    if (params.from) {
+      conditions.push("timestamp >= {from:DateTime64(3)}");
+      p.from = params.from.toISOString().replace("T", " ").replace("Z", "");
+    }
+    if (params.to) {
+      conditions.push("timestamp <= {to:DateTime64(3)}");
+      p.to = params.to.toISOString().replace("T", " ").replace("Z", "");
+    }
+    if (params.eventKey) {
+      conditions.push("event_key = {eventKey:String}");
+      p.eventKey = params.eventKey;
+    }
+
+    const limit = params.limit ?? 1000;
+    const where = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const sql = `SELECT * FROM event_records${where} ORDER BY timestamp, log_id LIMIT ${limit}`;
+
+    const { rows } = await this.client.query(sql, p);
     return rows.map(toStoredRecord);
   }
 }
