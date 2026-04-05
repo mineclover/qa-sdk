@@ -153,6 +153,9 @@ importers:
       better-sqlite3:
         specifier: ^12.8.0
         version: 12.8.0
+      cli-command:
+        specifier: workspace:*
+        version: link:../cli-command
       codegen-core:
         specifier: workspace:*
         version: link:../codegen-core
@@ -861,6 +864,19 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/facet-tests:
+    dependencies:
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
   packages/gate-service:
     dependencies:
       '@hono/node-server':
@@ -1088,6 +1104,9 @@ importers:
       drizzle-kit:
         specifier: 1.0.0-beta.20
         version: 1.0.0-beta.20
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
       tsx:
         specifier: ^4.19.3
         version: 4.21.0
@@ -1770,6 +1789,22 @@ importers:
         version: link:../weighted-index
 
   packages/shop-web: {}
+
+  packages/simulation-tests:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/snapshot-io:
     dependencies:

@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsup",
+    "build:tsc": "tsc",
     "test": "vitest run",
     "start": "node dist/server.js",
     "clean": "rm -rf dist",
@@ -28,11 +29,11 @@
     "@qa-sdk/store": "workspace:*",
     "bullmq": "^5.0.0",
     "dotenv": "^17.3.1",
+    "drizzle-orm": "1.0.0-beta.20",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
     "ws": "^8.19.0",
-    "drizzle-orm": "1.0.0-beta.20",
     "zod": "^3.24.2"
   },
   "peerDependencies": {
@@ -59,6 +60,7 @@
     "@types/node": "^22.13.10",
     "@types/ws": "^8.18.1",
     "drizzle-kit": "1.0.0-beta.20",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "wrangler": "^4.76.0"
