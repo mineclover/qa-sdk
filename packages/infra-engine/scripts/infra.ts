@@ -18,16 +18,14 @@
  *   infra --help
  */
 
-// 0-3: Passphrase 자동 설정 — Pulumi 로컬 백엔드에서 암호 프롬프트 방지
-process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
+// infra-config.json 기반 설정 적용
+import { loadInfraConfig, applyConfigToEnv } from "../src/commands/config-manager.js";
+const infraConfig = await loadInfraConfig();
+applyConfigToEnv(infraConfig); // 환경변수에 설정 반영 (passphrase, backend, 서비스 URL 등)
 
-// 환경 자동 감지 (LocalStack 실행 시 S3 백엔드 전환)
+// MinIO 자동 감지 fallback (infra-config에 없어도 MinIO가 떠있으면 연결)
 import { detectEnvironment } from "../src/commands/env-manager.js";
-const infraMode = await detectEnvironment();
-const _cmd = process.argv[2];
-if (_cmd && _cmd !== "--help" && _cmd !== "-h") {
-  console.log(`[env] ${infraMode === "minio" ? "MinIO S3 감지 → S3 백엔드" : "파일 백엔드"}`);
-}
+await detectEnvironment();
 
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -471,6 +469,64 @@ async function main() {
       }
       break;
     }
+    case "config": {
+      const {
+        loadInfraConfig: loadCfg, saveInfraConfig: saveCfg,
+        switchProfile, setConfigField, formatConfig, listPresets, getPreset,
+      } = await import("../src/commands/config-manager.js");
+      const sub = rest[0] ?? "show";
+
+      if (sub === "show") {
+        const cfg = await loadCfg();
+        console.log(`\n=== 인프라 설정 ===\n`);
+        console.log(formatConfig(cfg));
+        console.log("");
+        break;
+      }
+
+      if (sub === "use") {
+        const profile = rest[1];
+        if (!profile) {
+          console.log(`사용 가능한 프로필: ${listPresets().join(", ")}`);
+          process.exit(1);
+        }
+        const cfg = await switchProfile(profile);
+        console.log(`\n✅ 프로필 전환: ${profile}\n`);
+        console.log(formatConfig(cfg));
+        console.log("");
+        break;
+      }
+
+      if (sub === "set") {
+        const field = rest[1];
+        const value = rest[2];
+        if (!field || !value) {
+          console.error("사용: infra config set <field> <value>");
+          console.error("필드: backend, k8s-context, registry, ingest, definition, ingest-store, s3-endpoint, s3-bucket");
+          process.exit(1);
+        }
+        const cfg = await setConfigField(field, value);
+        console.log(`\n✅ ${field} = ${value}\n`);
+        console.log(formatConfig(cfg));
+        console.log("");
+        break;
+      }
+
+      if (sub === "presets") {
+        console.log("\n=== 프로필 프리셋 ===\n");
+        for (const name of listPresets()) {
+          const p = getPreset(name)!;
+          console.log(`  [${name}]`);
+          console.log(`    backend: ${p.backend}${p.s3Endpoint ? ` (${p.s3Endpoint})` : ""}`);
+          console.log(`    services: ${p.services.registry}`);
+          console.log("");
+        }
+        break;
+      }
+
+      console.error("사용: infra config [show|use <profile>|set <field> <value>|presets]");
+      process.exit(1);
+    }
     case "--help":
     case "-h":
     case undefined: {
@@ -481,11 +537,13 @@ infra-engine CLI
   infra discover [--all|--list|--deep|--code] <service> <env>
   infra deploy <service> <env> [config] [--dry-run]
   infra deploy --all <env> [--continue-on-error]
+  infra deploy <service> <env> --provider cloudflare
   infra destroy <service> <env> [--yes]
   infra export [env|ts|compose|docs] <args> [--out <path>]
   infra status <env>
   infra history <service> [--json]
   infra audit
+  infra config [show|use <profile>|set <field> <value>|presets]
   infra monitor [start|check|status] [--interval N]
   infra dashboard [summary|service <id>|export [path]]
   infra env [up|down|status|reset]
