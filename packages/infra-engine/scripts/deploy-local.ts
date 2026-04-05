@@ -24,7 +24,7 @@ import { createObserveStage } from "../src/stages/observe-stage.js";
 import { createGateAdapter } from "../src/adapters/gate.js";
 import { createInfraProfileAdapter } from "../src/adapters/infra-profile.js";
 import { createServiceProfileAdapter } from "../src/adapters/service-profile.js";
-import { createLocalProvider } from "../src/providers/local.js";
+import { createLocalProvider, type LocalProviderOptions } from "../src/providers/local.js";
 import { registerProvider, getProvider } from "../src/providers/registry.js";
 import { pulumiDeployFn } from "../src/providers/pulumi-deploy.js";
 import type {
@@ -38,7 +38,8 @@ import type { DeployContext } from "../src/core/types.js";
 const SERVICE = process.argv[2] || "ingest-server";
 const ENV = process.argv[3] || "dev";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CONFIG_PATH = resolve(__dirname, `../config/${ENV}.json`);
+const CONFIG_FILE = process.argv[4] || `${ENV}.json`;
+const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 
 async function main() {
@@ -47,8 +48,13 @@ async function main() {
   console.log(`환경:   ${ENV}`);
   console.log(`설정:   ${CONFIG_PATH}\n`);
 
-  // 프로바이더 등록
-  registerProvider(createLocalProvider());
+  // 프로바이더 등록 — nginx 테스트 시 이미지/헬스체크 오버라이드
+  const isNginxTest = SERVICE === "nginx-test";
+  registerProvider(createLocalProvider({
+    env: ENV,
+    imageOverride: isNginxTest ? "nginx:alpine" : undefined,
+    healthPath: isNginxTest ? "/" : "/health/live",
+  }));
 
   // 어댑터 설정
   const infraProfile = createInfraProfileAdapter(PROFILE_DIR);

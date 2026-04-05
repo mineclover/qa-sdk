@@ -48,11 +48,45 @@ export async function pulumiDeployFn(
     outputs[key] = String(val.value);
   }
 
-  // NodePort 서비스의 endpoint가 없으면 기본값 구성
-  if (!outputs.endpoint) {
-    const port = config.services[serviceId]?.port ?? 3200;
-    outputs.endpoint = `http://localhost:${port}`;
+  // K3s NodePort → kubectl port-forward로 호스트에서 접근 가능하게
+  const port = config.services[serviceId]?.port ?? 3200;
+  const localPort = port + 20000; // 충돌 방지: 80 → 20080, 3200 → 23200 (10080은 Node.js unsafe port)
+  const namespace = outputs.serviceName
+    ? "qa-dev" // TODO: env 기반 namespace 결정
+    : "default";
+
+  if (outputs.serviceName) {
+    try {
+      const { execa } = await import("execa");
+      // 기존 port-forward 프로세스 정리
+      try {
+        await execa("pkill", ["-f", `port-forward.*${outputs.serviceName}`]);
+      } catch { /* 기존 프로세스 없으면 무시 */ }
+
+      // 백그라운드 port-forward 실행
+      const pf = execa("kubectl", [
+        "-n", namespace,
+        "port-forward",
+        `svc/${outputs.serviceName}`,
+        `${localPort}:${port}`,
+      ], { detached: true, stdio: "ignore" });
+      pf.unref();
+
+      // port-forward 준비 대기 (연결 확인까지)
+      for (let i = 0; i < 10; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          await globalThis.fetch(`http://127.0.0.1:${localPort}/`, { signal: AbortSignal.timeout(2000) });
+          break;
+        } catch { /* 아직 준비 안 됨 */ }
+      }
+      console.log(`[port-forward] svc/${outputs.serviceName} → localhost:${localPort}`);
+    } catch (err) {
+      console.warn(`[port-forward] 설정 실패: ${err}`);
+    }
   }
 
+  // Node.js fetch는 localhost를 IPv6로 해석할 수 있으므로 127.0.0.1 사용
+  outputs.endpoint = `http://127.0.0.1:${localPort}`;
   return { stackName, outputs };
 }

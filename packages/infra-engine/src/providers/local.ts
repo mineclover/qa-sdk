@@ -5,12 +5,24 @@ import type { ResolvedConfig } from "../core/types.js";
 
 /** K3s 환경에서 namespace를 결정하는 매핑 */
 const ENV_NAMESPACE: Record<string, string> = {
+  test: "qa-dev",
   dev: "qa-dev",
   stage: "qa-stage",
+  staging: "qa-stage",
   prod: "qa-prod",
+  production: "qa-prod",
 };
 
-export function createLocalProvider(): DeployProvider {
+export interface LocalProviderOptions {
+  /** 배포 대상 환경 (namespace 결정용) */
+  env?: string;
+  /** 이미지 오버라이드 (기본: qa-sdk/{serviceId}:latest) */
+  imageOverride?: string;
+  /** 헬스체크 경로 (기본: /health/live) */
+  healthPath?: string;
+}
+
+export function createLocalProvider(options?: LocalProviderOptions): DeployProvider {
   return {
     name: "local",
 
@@ -18,11 +30,10 @@ export function createLocalProvider(): DeployProvider {
       return async () => {
         const svcConfig = config.services[serviceId];
         const port = svcConfig?.port ?? 3200;
-        const image = `qa-sdk/${serviceId}:latest`;
-        const namespace =
-          ENV_NAMESPACE[config.global.region] ??
-          ENV_NAMESPACE["dev"] ??
-          "qa-dev";
+        const image = options?.imageOverride ?? `qa-sdk/${serviceId}:latest`;
+        const env = options?.env ?? "dev";
+        const namespace = ENV_NAMESPACE[env] ?? "qa-dev";
+        const healthPath = options?.healthPath ?? "/health/live";
 
         // 서비스 설정에서 env vars 추출 (port, depends_on, gates 제외)
         const envVars = Object.entries(svcConfig ?? {})
@@ -54,7 +65,7 @@ export function createLocalProvider(): DeployProvider {
                     ports: [{ containerPort: port }],
                     env: envVars,
                     readinessProbe: {
-                      httpGet: { path: "/health/live", port },
+                      httpGet: { path: healthPath, port },
                       initialDelaySeconds: 5,
                       periodSeconds: 10,
                     },
