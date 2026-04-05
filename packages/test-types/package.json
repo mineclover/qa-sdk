@@ -17,7 +17,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "tsup": "*",
+    "tsup": "^8.5.1",
     "typescript": "*"
   }
 }

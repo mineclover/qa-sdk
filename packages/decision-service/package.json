@@ -13,7 +13,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "build": "tsc",
+    "build": "tsup",
+    "build:tsc": "tsc",
     "start": "node dist/main.js",
     "db:generate": "drizzle-kit generate"
   },
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "drizzle-kit": "1.0.0-beta.20",
+    "tsup": "^8.5.1",
     "typescript": "^5.4.0"
   }
 }
