@@ -176,10 +176,10 @@ describe("analyzeRemoteBranchConflicts", () => {
     expect(apiHotspot!.branches.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("workspace 변경 감지", { timeout: 30000 }, async () => {
+  it("workspace — untracked 파일 감지", { timeout: 30000 }, async () => {
     const cwd = await createConflictFixture();
 
-    // uncommitted 변경 추가
+    // uncommitted untracked 변경 추가
     await writeRepoFile(cwd, "src/live.ts", "live change\n");
 
     const result = await analyzeRemoteBranchConflicts({
@@ -193,6 +193,83 @@ describe("analyzeRemoteBranchConflicts", () => {
     // repoWorkspace에서 untracked 파일 확인
     expect(result.repoWorkspace).toBeDefined();
     expect(result.repoWorkspace!.paths).toContain("src/live.ts");
+    expect(result.repoWorkspace!.files.find(f => f.path === "src/live.ts")?.status).toBe("Untracked");
+  });
+
+  it("workspace — staged + modified 혼합 감지", { timeout: 30000 }, async () => {
+    const cwd = await createConflictFixture();
+
+    // staged 변경 (기존 파일 수정 후 add)
+    await writeRepoFile(cwd, "src/api.ts", "api staged change\n");
+    git(cwd, ["add", "src/api.ts"]);
+    // unstaged 변경 (staged 후 다시 수정)
+    await writeRepoFile(cwd, "src/api.ts", "api unstaged after stage\n");
+
+    const result = await analyzeRemoteBranchConflicts({
+      cwd,
+      executionCwd: cwd,
+      remoteName: "origin",
+      baseRef: "origin/main",
+      fetch: false,
+    });
+
+    expect(result.repoWorkspace).toBeDefined();
+    expect(result.repoWorkspace!.paths).toContain("src/api.ts");
+    expect(result.repoWorkspace!.diffStats.filesChanged).toBeGreaterThan(0);
+  });
+});
+
+// ── collectWorkspaceChanges 단위 테스트 ───────────────
+
+describe("collectWorkspaceChanges", () => {
+  it("repo 외부 경로 → null", () => {
+    const result = collectWorkspaceChanges("/some/repo", "/completely/different/path");
+    expect(result).toBeNull();
+  });
+
+  it("변경 없는 repo → 빈 결과", { timeout: 15000 }, async () => {
+    const root = await mkdtemp(join(tmpdir(), "git-ws-clean-"));
+    tempDirs.push(root);
+
+    const remoteDir = join(root, "remote.git");
+    const workDir = join(root, "work");
+
+    git(root, ["init", "--bare", "--initial-branch=main", remoteDir]);
+    git(root, ["clone", remoteDir, workDir]);
+    configId(workDir);
+
+    await writeRepoFile(workDir, "file.txt", "clean\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "chore: init"]);
+
+    const result = collectWorkspaceChanges(workDir, workDir);
+    expect(result).toBeDefined();
+    expect(result!.files).toHaveLength(0);
+    expect(result!.diffStats.filesChanged).toBe(0);
+  });
+
+  it("하위 디렉토리 scope → relativePath 계산", { timeout: 15000 }, async () => {
+    const root = await mkdtemp(join(tmpdir(), "git-ws-sub-"));
+    tempDirs.push(root);
+
+    const remoteDir = join(root, "remote.git");
+    const workDir = join(root, "work");
+
+    git(root, ["init", "--bare", "--initial-branch=main", remoteDir]);
+    git(root, ["clone", remoteDir, workDir]);
+    configId(workDir);
+
+    await writeRepoFile(workDir, "packages/a/src/index.ts", "code\n");
+    git(workDir, ["add", "."]);
+    git(workDir, ["commit", "-m", "chore: init"]);
+
+    // 하위 디렉토리에 새 파일 추가
+    await writeRepoFile(workDir, "packages/a/src/new.ts", "new file\n");
+
+    const result = collectWorkspaceChanges(workDir, join(workDir, "packages/a"));
+    expect(result).toBeDefined();
+    expect(result!.relativePath).toBe("packages/a");
+    expect(result!.paths.some(p => p.includes("new.ts"))).toBe(true);
   });
 });
 

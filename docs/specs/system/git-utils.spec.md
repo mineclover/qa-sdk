@@ -5,12 +5,9 @@ def:
   scope: interface
   aspect: cli_contract
   depth: specification
-  lifecycle: review
+  lifecycle: approved
   layer: operation
   tags: [structural]
-  links:
-    - target: git-utils-todo
-      type: contains
 ---
 
 # git-utils — Git 메타데이터 추출 + 분기 충돌 분석
@@ -95,7 +92,8 @@ def:
 ## 에러 처리
 
 - **기본 메타데이터**: fail-silent — 모든 함수가 에러 시 빈 결과 반환
-- **분기 충돌**: `listGitWorktrees`, `collectCommitSummary` 에러 가드 필요 (현재 throw)
+- **분기 충돌**: `listGitWorktrees`, `collectCommitSummary` 에러 가드 완료 (try-catch + 빈 배열)
+- **workspace**: repo 외부 경로 → `null` 반환. untracked 파일 읽기 실패 → 0줄 처리
 - **es-git**: 네이티브 바이너리 — CI 환경에서 사전 빌드 필요
 
 ## 구현 위치
@@ -109,3 +107,12 @@ def:
 | `packages/git-utils/src/branch-conflicts-worktrees.ts` | worktree 조회 |
 | `packages/git-utils/src/branch-conflicts-workspace.ts` | 작업 디렉토리 변경 |
 | `packages/git-utils/src/branch-conflicts-types.ts` | 타입 정의 |
+
+## 테스트 현황
+
+| 파일 | 패싯 | 테스트 |
+|------|------|:------:|
+| `git.test.ts` | getRepoName(3), listSemverTags(3), parseConventionalCommits(3), collectCommitTypes(1), commitCountsByScope(2) | 12 |
+| `branch-conflicts.test.ts` | 파서(3), fail-silent(1), overlap(1), workspace(2), empty(1), sort(1), fallback(1), worktree(1), collectWorkspaceChanges(3) | 14 |
+
+**합계: 26 tests**
