@@ -2,7 +2,7 @@
 def:
   id: infra-engine-todo
   level: leaf
-  scope: system
+  scope: feature
   aspect: func_def
   depth: specification
   lifecycle: approved

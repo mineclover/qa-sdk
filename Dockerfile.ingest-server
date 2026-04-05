@@ -5,10 +5,17 @@ FROM base AS build
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
-# 로컬에서 미리 빌드된 dist/ 사용 — Docker 안에서는 의존 설치만
-# 빌드가 필요하면: pnpm --filter @qa-sdk/ingest-server... run build
-# Docker 빌드 전 로컬에서 실행 필요:
-#   pnpm --filter @qa-sdk/ingest-server... run build
+# 런타임 의존 순서대로 빌드
+RUN pnpm --filter @qa-sdk/pino run build && \
+    pnpm --filter test-types run build && \
+    pnpm --filter @qa-sdk/core run build && \
+    pnpm --filter @qa-sdk/otel run build && \
+    pnpm --filter @qa-sdk/codec-proto run build && \
+    pnpm --filter @qa-sdk/engine run build && \
+    pnpm --filter @qa-sdk/registry-client run build && \
+    pnpm --filter @qa-sdk/store run build && \
+    pnpm --filter index-meta run build && \
+    pnpm --filter @qa-sdk/ingest-server run build
 
 FROM node:22-slim AS production
 RUN apt-get update \
