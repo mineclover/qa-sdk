@@ -63,11 +63,11 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
   const { D1SessionStore } = await import("./d1-session-store.js");
   const { D1VerdictStore } = await import("./d1-verdict-store.js");
   const { D1KeyObservationStore } = await import("./d1-key-observation-store.js");
+  const { D1GraphStore } = await import("./d1-graph-store.js");
+  const { D1ScenarioSpecStore } = await import("./d1-scenario-spec-store.js");
   // 부가 stores는 InMemory 사용 (D1 구현 후순위)
   const {
     InMemoryTransmissionStore,
-    InMemoryGraphStore,
-    InMemoryScenarioSpecStore,
     InMemoryDlqStore,
   } = await import("@qa-sdk/store");
 
@@ -78,8 +78,8 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
     verdictStore: new D1VerdictStore(db),
     keyObservationStore: new D1KeyObservationStore(db),
     transmissionStore: new InMemoryTransmissionStore(),
-    graphStore: new InMemoryGraphStore(),
-    scenarioSpecStore: new InMemoryScenarioSpecStore(),
+    graphStore: new D1GraphStore(db),
+    scenarioSpecStore: new D1ScenarioSpecStore(db),
     dlqStore: new InMemoryDlqStore(),
   };
 }

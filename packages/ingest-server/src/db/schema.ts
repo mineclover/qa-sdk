@@ -197,3 +197,29 @@ export const keyObservationPrefixes = sqliteTable(
 );
 
 export type KeyObservationPrefixRow = typeof keyObservationPrefixes.$inferSelect;
+
+// ─── runtime_graphs ───────────────────────────────────────
+export const runtimeGraphs = sqliteTable("runtime_graphs", {
+  traceId: text("trace_id").primaryKey(),
+  graph: text("graph").notNull(),            // JSON string (RuntimeGraph)
+  nodeCount: integer("node_count").notNull(),
+  edgeCount: integer("edge_count").notNull(),
+  builtAt: text("built_at").notNull(),        // ISO-8601
+});
+
+// ─── scenario_specs ───────────────────────────────────────
+export const scenarioSpecs = sqliteTable(
+  "scenario_specs",
+  {
+    scenarioId: text("scenario_id").primaryKey(),
+    version: text("version").notNull(),
+    domain: text("domain").notNull(),
+    description: text("description"),
+    spec: text("spec").notNull(),              // JSON string (ScenarioSpec)
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_scenario_specs_domain").on(t.domain),
+  ],
+);

@@ -157,4 +157,24 @@ CREATE TABLE IF NOT EXISTS key_observation_prefixes (
   first_seen     TEXT    NOT NULL,
   last_seen      TEXT    NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS runtime_graphs (
+  trace_id   TEXT PRIMARY KEY,
+  graph      TEXT NOT NULL,
+  node_count INTEGER NOT NULL,
+  edge_count INTEGER NOT NULL,
+  built_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS scenario_specs (
+  scenario_id TEXT PRIMARY KEY,
+  version     TEXT NOT NULL,
+  domain      TEXT NOT NULL,
+  description TEXT,
+  spec        TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_scenario_specs_domain ON scenario_specs(domain);
 `;
