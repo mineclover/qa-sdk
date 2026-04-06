@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createServer } from "node:http";
 
 import { DkgSqliteStore } from "../../../spec-core/src/store/index.js";
 
 const originalHome = process.env.HOME;
+const originalAuditIngestUrl = process.env.QA_CLI_AUDIT_INGEST_URL;
 const tempHomes: string[] = [];
+const runHeavySmoke = process.env.QA_SDK_RUN_HEAVY_SMOKE === "1";
 
 describe("dkg CLI E2E", () => {
   afterEach(async () => {
@@ -16,6 +19,11 @@ describe("dkg CLI E2E", () => {
       delete process.env.HOME;
     } else {
       process.env.HOME = originalHome;
+    }
+    if (originalAuditIngestUrl === undefined) {
+      delete process.env.QA_CLI_AUDIT_INGEST_URL;
+    } else {
+      process.env.QA_CLI_AUDIT_INGEST_URL = originalAuditIngestUrl;
     }
     await Promise.all(tempHomes.splice(0).map((home) => rm(home, { recursive: true, force: true })));
   });
@@ -109,6 +117,78 @@ describe("dkg CLI E2E", () => {
     const hasFlow = decision && "flowInstanceId" in decision && !!decision.flowInstanceId;
     const hasBridgeWarning = decideOutput.stdout.includes("브릿지 시작 실패");
     expect(hasFlow || hasBridgeWarning).toBe(true);
+  });
+
+  it("dkg audit-events는 로컬 audit log를 남기고 ingest forwarding을 수행한다", async () => {
+    const home = await mkdtemp(join(tmpdir(), "qa-dkg-audit-"));
+    tempHomes.push(home);
+    process.env.HOME = home;
+    vi.resetModules();
+
+    let resolveBody!: (body: string) => void;
+    let rejectBody!: (err: Error) => void;
+    const requestBody = new Promise<string>((resolve, reject) => {
+      resolveBody = resolve;
+      rejectBody = reject;
+    });
+    const timeout = setTimeout(() => rejectBody(new Error("audit forwarding timeout")), 5_000);
+    const server = createServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+      req.on("end", () => {
+        clearTimeout(timeout);
+        res.writeHead(202, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true }));
+        server.close();
+        resolveBody(Buffer.concat(chunks).toString("utf-8"));
+      });
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.listen(0, "127.0.0.1", () => resolve());
+      server.on("error", reject);
+    });
+    const address = server.address();
+    expect(address).toBeTruthy();
+    expect(typeof address).not.toBe("string");
+    process.env.QA_CLI_AUDIT_INGEST_URL = `http://127.0.0.1:${(address as { port: number }).port}`;
+
+    const { main } = await import("../index.js");
+    const output = await captureConsoleAsync(async () => {
+      await main(["dkg", "audit-events", "--limit", "1"]);
+    });
+
+    expect(output.stdout).toContain("CLI Audit Events");
+
+    const envelope = JSON.parse(await requestBody);
+    expect(envelope.records).toHaveLength(1);
+    expect(envelope.records[0].event_key).toBe("cli.command.executed");
+    expect(envelope.records[0].payload).toEqual(
+      expect.objectContaining({
+        command: "dkg audit-events",
+      }),
+    );
+
+    const store = new DkgSqliteStore(join(home, ".qa-sdk", "state.sqlite"), "demo");
+    const events = store.listRecentCliAuditEvents(5, { command: "dkg audit-events" });
+    expect(events.length).toBeGreaterThan(0);
+    expect(events[0]?.eventKey).toBe("cli.command.executed");
+  });
+
+  const heavyIt = runHeavySmoke ? it : it.skip;
+
+  heavyIt("dkg self-check full path는 별도 heavy smoke lane에서 실행된다", async () => {
+    const home = await mkdtemp(join(tmpdir(), "qa-dkg-heavy-"));
+    tempHomes.push(home);
+    process.env.HOME = home;
+    vi.resetModules();
+
+    const { main } = await import("../index.js");
+    const output = await captureConsoleAsync(async () => {
+      await main(["dkg", "self-check"]);
+    });
+
+    expect(output.stdout).toContain("Self-Check");
+    expect(output.stdout).toContain("Phase A: aggregate");
   });
 });
 

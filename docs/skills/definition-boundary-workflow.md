@@ -94,3 +94,9 @@ skill 파일은 내부 실행 정의 SSOT이고, 사용자는 위 명령 진입�
 - `docs/specs/viteplus-sdk-smoke/viteplus-playbook-boundary-relation.spec.md`
 - `docs/specs/definition-service/def-svc-api-contract.md`
 - `docs/specs/definition-catalog/definition-mgmt-verification-loop.spec.md`
+
+## 검증 매핑
+
+- `def boundary`, `def boundary-context`, `def body`
+  - 검증: `packages/cli/src/skills-workflows.test.ts`
+  - address 기반 boundary smoke: `packages/cli/src/commands/def.test.ts`

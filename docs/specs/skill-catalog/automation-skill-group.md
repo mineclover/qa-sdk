@@ -45,6 +45,7 @@ skill-catalog-system > **automation-skill-group**
 이 문서는 automation 계열 skill의 카탈로그 문서다.
 - 실제 skill 정의는 `skills/e2e-test`, `skills/gform-parser`, `skills/spec-lifecycle`
 - 운영 플레이북은 `docs/skills/automation-workflows.md`
+- representative workflow 검증은 `packages/cli/src/skills-workflows.test.ts`와 `packages/cli/src/scenarios.e2e.test.ts`가 담당
 
 따라서 실제 프롬프트 표면을 바꾸려면 `skills/`를 수정해야 하고,
 이 문서는 왜/언제/어떻게 묶어 쓰는지 설명하는 용도다.

@@ -63,5 +63,6 @@ DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 
 - 실제 DKG 연산 구현은 `packages/spec-core/src/dkg/skills`
 - CLI 진입점은 `packages/cli/src/commands/dkg.ts`
 - 운영 플레이북은 필요 시 `docs/skills/`에 별도 문서로 둔다
+- representative workflow 검증은 `docs/skills/system-review.md` ↔ `packages/cli/src/skills-workflows.test.ts`가 담당
 
 따라서 이 그룹 문서는 실행 코드나 운영 가이드가 아니라 DKG skill 관계와 목적을 설명하는 계층이다.

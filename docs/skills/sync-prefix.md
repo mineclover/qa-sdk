@@ -57,3 +57,13 @@ node packages/cli/dist/index.js obs backlinks role      # 백링크
 
 - **단방향**: DEMO_CATALOG → Obsidian. Obsidian 수정은 소스에 반영되지 않음
 - **구현**: `packages/cli/src/commands/sync-obsidian.ts` (execa 기반)
+
+## 검증 매핑
+
+- `sync-obsidian`, `obs stats`, `obs read`
+  - 문서↔명령 매핑: `packages/cli/src/skills-workflows.test.ts`
+- `sync-obsidian --dry-run`
+  - 실행 smoke: `packages/cli/src/skills-workflows.test.ts`
+- `sync-obsidian` 실제 write path
+  - gated smoke: `packages/cli/src/commands/sync-obsidian-write.e2e.test.ts`
+  - 조건: Obsidian CLI 설치 + `QA_SDK_OBSIDIAN_WRITE_SMOKE_VAULT=<scratch-vault>`

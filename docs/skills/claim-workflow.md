@@ -76,3 +76,8 @@ dkg run skill-release <nodeId>
 ```
 
 claim → 작업 → release 사이클 후 변경 이력 확인: `dkg run skill-trace <nodeId>`
+
+## 검증 매핑
+
+- `dkg claim`, `dkg release`, `dkg run skill-claim`, `dkg run skill-release`
+  - 검증: `packages/cli/src/skills-workflows.test.ts`

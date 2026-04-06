@@ -57,3 +57,8 @@ dkg run skill-table-impact <tableId>     # DB 의존 추적
 - **간단한 조회** → `obs` CLI
 - **영향 분석, 수렴 검토** → `dkg run skill-*`
 - **Graph View 시각화** → Obsidian 직접 열기
+
+## 검증 매핑
+
+- `obs stats`, `obs read`, `obs backlinks`, `dkg prefix`, `dkg impact`, `dkg trace`
+  - 검증: `packages/cli/src/skills-workflows.test.ts`

@@ -15,6 +15,8 @@ def:
       type: contains
     - target: ingest-runtime-operations
       type: contains
+    - target: key-observation-store
+      type: contains
 ---
 
 # Ingest 인프라 그룹
@@ -27,5 +29,6 @@ health check, rate limiting, request ID, graceful shutdown 등 ingest 서비스 
 
 - `ingest-runtime-middleware`: health check, rate limiting, request ID, error handler 미들웨어 규칙.
 - `ingest-runtime-operations`: graceful shutdown과 적용 순서 같은 운영 절차 규칙.
+- `key-observation-store`: packed key 관측 빈도/시점/payload 요약을 영속 추적하는 materialized-view store 규격.
 
 원본: `docs/specs/server/ingest/infrastructure.spec.md` (`ingest-infra-spec`)

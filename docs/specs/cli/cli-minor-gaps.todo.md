@@ -16,10 +16,8 @@ def:
 
 ## 목적 ^purpose
 
-CLI 명령 표면에서 아직 구조적으로 남아 있는 작은 부채를 추적한다. 완료 항목은 `cli-command-spec.spec.md`에 흡수.
+CLI 명령 표면에서 아직 구조적으로 남아 있는 작은 부채를 추적한다. 현재 열린 항목은 없고, 새 부채가 생기면 여기서 다시 연다. 완료 항목은 `cli-command-spec.spec.md`에 흡수.
 
-## 잔여 항목 (1건)
+## 잔여 항목 (0건)
 
-### smoke coverage
-
-- [ ] `dkg audit-events` + ingest forwarding e2e smoke를 CLI 회귀 세트에 포함 (서비스 의존 — CI 셋업 필요)
+현재 열려 있는 구조적 잔여 항목 없음.

@@ -46,3 +46,15 @@ description: "automation skill 묶음 운영 가이드. e2e-test, gform-parser, 
   `docs/specs/skill-catalog/skill-spec-lifecycle.spec.md`
 
 skill 파일은 구현 SSOT이지만, 운영 조회는 command entrypoint와 catalog 문서를 먼저 사용한다.
+
+## 검증 매핑
+
+- `qa-sdk quality show <gate-doc-id>` / `qa-sdk quality run <gate-doc-id> --json`
+  - 검증: `packages/cli/src/commands/quality.test.ts`
+  - fixture execution smoke: `packages/cli/src/commands/quality-smoke.e2e.test.ts`
+- `qa-sdk review request ...`
+  - 검증: `packages/cli/src/commands/review.test.ts`
+- 시나리오 기반 자동화 흐름
+  - 검증: `packages/cli/src/scenarios.e2e.test.ts`
+- 문서↔명령 매핑 smoke
+  - 검증: `packages/cli/src/skills-workflows.test.ts`

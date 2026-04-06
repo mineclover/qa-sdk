@@ -9,7 +9,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
+import { getQaSdkBaseHome } from "./qa-dir.js";
 
 // ── 타입 ────────────────────────────────────────────
 
@@ -114,24 +114,32 @@ const ENV_VAR_MAP: Record<string, string> = {
 
 // ── 파일 I/O ────────────────────────────────────────
 
-const PROFILE_DIR = join(homedir(), ".qa-sdk");
-const PROFILE_PATH = join(PROFILE_DIR, "service-profile.json");
+function getProfileDir(): string {
+  return join(getQaSdkBaseHome(), ".qa-sdk");
+}
 
-/** 기존 ingest-profile.json 경로 (마이그레이션용) */
-const LEGACY_PROFILE_PATH = join(PROFILE_DIR, "ingest-profile.json");
+function getProfileFilePath(): string {
+  return join(getProfileDir(), "service-profile.json");
+}
+
+function getLegacyProfilePath(): string {
+  return join(getProfileDir(), "ingest-profile.json");
+}
 
 export function getProfilePath(): string {
-  return PROFILE_PATH;
+  return getProfileFilePath();
 }
 
 export function loadProfile(): ServiceProfile {
+  const profilePath = getProfileFilePath();
+  const legacyProfilePath = getLegacyProfilePath();
   try {
-    if (existsSync(PROFILE_PATH)) {
-      return JSON.parse(readFileSync(PROFILE_PATH, "utf-8")) as ServiceProfile;
+    if (existsSync(profilePath)) {
+      return JSON.parse(readFileSync(profilePath, "utf-8")) as ServiceProfile;
     }
     // 레거시 ingest-profile.json 마이그레이션
-    if (existsSync(LEGACY_PROFILE_PATH)) {
-      const legacy = JSON.parse(readFileSync(LEGACY_PROFILE_PATH, "utf-8"));
+    if (existsSync(legacyProfilePath)) {
+      const legacy = JSON.parse(readFileSync(legacyProfilePath, "utf-8"));
       const migrated: ServiceProfile = {
         mode: legacy.mode ?? "local",
         insightsDriver: legacy.insightsDriver ?? "local",
@@ -150,8 +158,10 @@ export function loadProfile(): ServiceProfile {
 }
 
 export function saveProfile(profile: ServiceProfile): void {
-  if (!existsSync(PROFILE_DIR)) mkdirSync(PROFILE_DIR, { recursive: true });
-  writeFileSync(PROFILE_PATH, JSON.stringify(profile, null, 2) + "\n");
+  const profileDir = getProfileDir();
+  const profilePath = getProfileFilePath();
+  if (!existsSync(profileDir)) mkdirSync(profileDir, { recursive: true });
+  writeFileSync(profilePath, JSON.stringify(profile, null, 2) + "\n");
 }
 
 // ── 조회 API ────────────────────────────────────────

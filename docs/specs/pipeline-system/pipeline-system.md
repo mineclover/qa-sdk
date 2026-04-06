@@ -25,6 +25,8 @@ def:
       type: contains
     - target: indexing-pipeline
       type: contains
+    - target: redis-cache-adapter
+      type: contains
     - target: ingest-system
       type: depends_on
 ---
@@ -44,3 +46,4 @@ def:
 - `pipeline-monitoring`: 파이프라인 자체의 관측 메트릭.
 - `task-pipeline-unit`: A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축하여 인덱싱 시스템의 packed_key 기반 운영 분석을 가능하게 한다.
 - `indexing-pipeline`: entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
+- `redis-cache-adapter`: KeyCache 포트의 Redis L2 구현과 decode-service/CLI cache 통합 규약.

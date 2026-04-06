@@ -105,3 +105,9 @@ SQLITE_PATH=:memory: node packages/ingest-server/dist/server.js
 # App Hub 연결 실패 → fail-open이므로 수집은 계속됨
 # 로그에서 "insights collect failed" 확인 후 credential/endpoint 검증
 ```
+
+## 검증 매핑
+
+- `ingest mode`, `ingest insights`
+  - 검증: `packages/cli/src/commands/ingest-mode.e2e.test.ts`
+  - 문서↔명령 매핑: `packages/cli/src/skills-workflows.test.ts`

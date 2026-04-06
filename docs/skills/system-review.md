@@ -106,3 +106,15 @@ node packages/cli/dist/index.js dkg resolve <obsId> --decision <decId> --outcome
 | 결정 기록 | `dkg run skill-record-decision <id> <type> <title> <rationale>` | 해결 결정 기록 |
 
 필터링: `dkg skills analysis` — analysis 카테고리만 조회
+
+## 검증 매핑
+
+- `dkg self-check`, `dkg converge`, `dkg metrics`, `dkg overview`, `dkg run skill-*`
+  - 검증: `packages/cli/src/skills-workflows.test.ts`
+  - smoke는 비용 때문에 `dkg self-check --fast`를 사용한다.
+- `dkg audit-events`
+  - ingest forwarding e2e: `packages/cli/src/commands/dkg.e2e.test.ts`
+- DKG decision/flow bridge와 관측 기록
+  - 검증: `packages/cli/src/commands/dkg.e2e.test.ts`
+- flow 정책/판정 보조
+  - 검증: `packages/cli/src/commands/flow.test.ts`

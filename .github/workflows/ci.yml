@@ -72,6 +72,11 @@ jobs:
       - name: Run unit tests
         run: pnpm run test
 
+      - name: Run CLI heavy smoke lane
+        env:
+          QA_SDK_RUN_HEAVY_SMOKE: "1"
+        run: pnpm --filter @qa-sdk/cli exec vitest run src/commands/dkg.e2e.test.ts -t "dkg self-check full path는 별도 heavy smoke lane에서 실행된다"
+
       - name: Run store integration tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/qa_sdk_ci

@@ -115,3 +115,9 @@ description: "의사결정 플로우 실행. 트리거: '결정', 'decide', '테
 | 관측 | `dkg run skill-record-observation <target> <finding>` | 발견 사항 기록 |
 | 전이 | `dkg run skill-lifecycle-transition <nodeId> <lifecycle>` | prefix/decision 상태 전환 |
 | 추적 | `dkg run skill-trace <targetId>` | 결정 영향 체인 확인 |
+
+## 검증 매핑
+
+- `dkg decide`, `dkg observe`, `dkg run skill-record-decision`, `dkg run skill-record-observation`
+  - 검증: `packages/cli/src/skills-workflows.test.ts`
+  - DKG bridge/결정 기록은 `packages/cli/src/commands/dkg.e2e.test.ts`
