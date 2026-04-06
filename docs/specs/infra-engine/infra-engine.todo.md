@@ -38,6 +38,13 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - cli-command 트리 마이그레이션: scripts/infra.ts에서 cli-command 기반 트리 라우팅으로 전환
 - tsup 7서비스 전환: NestJS 서비스 빌드를 tsup 단일 번들로 통일
 - 보안: gateway JWKS 서명 검증 + route-permissions + enrichment-server + K8s DNS 서비스명 고정
+- 좌표 실인코딩: CoordinateAdapter demo-catalog WeightedIndex 기반 실인코딩
+- K8s Service DNS: Pulumi 서비스명 고정 (metadata.name 직접 지정, 랜덤 해시 제거)
+- 권한 판정: hasBit() 실판정 (route-permissions.ts FEATURE_INDEX)
+- 인증: Zitadel OIDC + SSO 로컬 배포
+- Gateway: JWKS 서명 검증 + permission middleware
+- Enrichment: enrichment server (3 roles × 12 features)
+- Secrets: 자동 관리
 
 ### 현재 규모
 
