@@ -117,8 +117,9 @@ RecordInsert[]
 |------|------|:---:|
 | D1 Store | `ingest-server/src/stores/d1-stores.test.ts` | 8 |
 | extractKeyObservations | `ingest-server/src/lib/extract-key-observations.test.ts` | 4 |
+| fail-open 통합 | `ingest-server/src/routes/ingest.test.ts` | 1 |
 
-검증 항목: observe 라운드트립, count 누적, batch 처리, summary 집계, stale 탐지, drift 감지, prefix 집계, orderBy, registered 판정, payload 샘플 최대 5 필드.
+검증 항목: observe 라운드트립, count 누적, batch 처리, summary 집계, stale 탐지, drift 감지, prefix 집계, orderBy, registered 판정, payload 샘플 최대 5 필드, observeBatch 실패 시 ingest 정상 진행.
 
 ## 설계 결정
 

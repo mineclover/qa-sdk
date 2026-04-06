@@ -16,7 +16,7 @@
 | query-service.spec.md | 완료 | F-1~F-5 완료 (29 tests) |
 | 횡단 인프라 (H) | 완료 | TaskQueue+BullMQ+Worker+DLQ, SQL 어댑터 3종 |
 | 하드웨어 가속 (G) | G-1~G-6 완료 | wi-hardware-acceleration.spec.md에 반영 |
-| 데이터 파이프라인 (I) | I-1~I-4 완료 | Cache 11 tests, Aggregation 9 tests, MV 12 tests, Redis 12 tests |
+| 데이터 파이프라인 (I) | I-1~I-4 완료 | Cache 11, Aggregation 9, MV 13 (D1 8 + extract 4 + fail-open 1), Redis 16 (adapter 12 + decode integration 4) |
 
 최종 게이트: 5 build / demo-tests 654 tests / index-meta 922 tests / ingest-server 141 tests / gate-service 14 tests / query-service 29 tests — 전부 통과
 

@@ -92,6 +92,7 @@ fail-open: Redis 장애 시 in-memory pool만으로 동작.
 | 대상 | 케이스 |
 |------|:---:|
 | RedisKeyCache (mock) | 12 |
+| decode-service L2 캐시 통합 | 4 |
 
 ## 후속 작업
 

@@ -21,23 +21,23 @@ Redis 기반 L2 캐시 레이어를 구축하고, decode 결과 공유·콜드 �
 
 ---
 
-## Phase 1: RedisKeyCache 어댑터 (building block)
+## Phase 1: RedisKeyCache 어댑터 (building block) — ✅ 완료
 
-| # | 작업 | 우선순위 | 난이도 | 설명 |
-|---|------|---------|--------|------|
-| 1-1 | RedisKeyCache\<T\> 구현 | 높 | 중 | ioredis 기반 KeyCache\<T\> 포트 구현. GET/SET/DEL/EXISTS/SCAN. prefix 네임스페이스 |
-| 1-2 | ioredis optionalDependencies | 높 | 낮 | store 패키지에 ioredis optional 추가. 미설치 시 명확한 에러 |
-| 1-3 | RedisKeyCache 테스트 | 높 | 중 | ioredis mock 기반. InMemoryKeyCache 11개와 동일 시나리오 |
-| 1-4 | store/index.ts export | 높 | 낮 | RedisKeyCache re-export |
+| # | 작업 | 상태 | 설명 |
+|---|------|:---:|------|
+| 1-1 | RedisKeyCache\<T\> 구현 | ✅ | ioredis 기반 KeyCache\<T\> 포트 구현. 12 tests |
+| 1-2 | ioredis optionalDependencies | ✅ | store 패키지에 ioredis optional 추가 |
+| 1-3 | RedisKeyCache 테스트 | ✅ | ioredis mock 기반 12개 케이스 |
+| 1-4 | store/index.ts export | ✅ | RedisKeyCache re-export |
 
-## Phase 2: decode-service 캐시 통합
+## Phase 2: decode-service 캐시 통합 — ✅ 완료
 
-| # | 작업 | 우선순위 | 난이도 | 설명 |
-|---|------|---------|--------|------|
-| 2-1 | DecoderPool Redis fallback | 높 | 중 | pool miss → Redis 조회 → hit 시 pool에 채움. CACHE_DRIVER=redis 환경변수 |
-| 2-2 | decode 결과 Redis 저장 | 높 | 중 | decode 성공 시 결과를 Redis에 SET (TTL = CACHE_TTL_MS) |
-| 2-3 | decode-service env 확장 | 중 | 낮 | CACHE_DRIVER, REDIS_URL을 config/env.ts에 추가 |
-| 2-4 | decode-service health에 Redis 상태 포함 | 낮 | 낮 | /health 응답에 redis connected/disconnected 표시 |
+| # | 작업 | 상태 | 설명 |
+|---|------|:---:|------|
+| 2-1 | DecoderPool Redis fallback | ✅ | CACHE_DRIVER=redis 환경변수 + server.ts 초기화 |
+| 2-2 | decode 결과 Redis 저장 | ✅ | POST /decode 캐시 조회/저장. 4 integration tests |
+| 2-3 | decode-service env 확장 | ✅ | CACHE_DRIVER, REDIS_URL config/env.ts 추가 |
+| 2-4 | decode-service health에 Redis 상태 포함 | 미구현 | /health 응답에 redis connected/disconnected 표시 (낮은 우선순위) |
 
 ## Phase 3: 서비스 간 캐시 공유
 
@@ -51,8 +51,8 @@ Redis 기반 L2 캐시 레이어를 구축하고, decode 결과 공유·콜드 �
 
 | # | 작업 | 우선순위 | 난이도 | 설명 |
 |---|------|---------|--------|------|
-| 4-1 | `cache stats` 명령 | 중 | 낮 | Redis 캐시 통계 조회 (키 수, 메모리, hit rate) |
-| 4-2 | `cache clear` 명령 | 중 | 낮 | 전체 또는 prefix 지정 캐시 삭제 |
+| 4-1 | `cache stats` 명령 | ✅ | Redis 캐시 통계 조회 (키 수, 메모리) |
+| 4-2 | `cache clear` 명령 | ✅ | 전체 또는 prefix 지정 캐시 삭제 |
 | 4-3 | `cache warm` 명령 | 낮 | 중 | catalog 기반 decode 결과 사전 워밍 |
 
 ## Phase 5: 캐시 무효화
