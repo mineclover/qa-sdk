@@ -286,6 +286,71 @@ function checkFeature(userId: string, feature: string): CheckResult {
   return { granted: false, reason: "not_assigned", sources: [] };
 }
 
+// ── JWT 발급 설정 ───────────────────────────────────
+// Enrichment 서버가 직접 JWT를 발급한다.
+// Zitadel Action의 metadata 주입이 v2에서 불안정하므로,
+// enrichment 서버가 token exchange (RFC 8693 유사) 역할을 수행.
+
+const JWT_SECRET = process.env.ENRICHMENT_JWT_SECRET ?? "enrichment-local-dev-secret-32ch";
+const JWT_ISSUER = "qa-enrichment";
+const JWT_EXPIRY = 43200; // 12시간
+
+// ── Enrich 공통 로직 ────────────────────────────────
+
+interface EnrichResult {
+  perms: Record<string, string>;
+  perms_v: number;
+  perms_schema: string;
+}
+
+/**
+ * userId 기반으로 permission claims를 계산한다.
+ * /enrich 와 /token 엔드포인트에서 공유.
+ */
+async function computeEnrich(userId: string, env?: string): Promise<EnrichResult> {
+  // 1. Zitadel metadata 우선 조회
+  const zitadelPerms = await fetchZitadelMetadata(userId);
+  if (zitadelPerms) {
+    return {
+      perms: zitadelPerms.perms as Record<string, string>,
+      perms_v: zitadelPerms.perms_v,
+      perms_schema: zitadelPerms.perms_schema,
+    };
+  }
+
+  // 2. 인메모리 user state에서 role 기반 계산
+  const user = getUser(userId);
+  const effectiveRoles = user.roles;
+
+  // 모든 role의 features를 OR 합산
+  const allFeatures = new Set<FeatureName>();
+  for (const role of effectiveRoles) {
+    const features = resolveRoleFeatures(role);
+    for (const f of features) allFeatures.add(f);
+  }
+
+  // env 제한 적용 (각 role별)
+  const restricted = new Set<string>();
+  if (env) {
+    for (const role of effectiveRoles) {
+      const envFeatures = applyEnvRestrictions([...allFeatures], role, env);
+      for (const f of envFeatures) restricted.add(f);
+    }
+  }
+
+  const finalFeatures = env
+    ? [...restricted] as FeatureName[]
+    : [...allFeatures];
+
+  const bitmask = createBitmask(finalFeatures);
+
+  return {
+    perms: { infra: bitmask },
+    perms_v: user.perms_v,
+    perms_schema: "qa-v1",
+  };
+}
+
 // ── Routes ───────────────────────────────────────────
 
 // ── 유저 상태 조회 ──────────────────────────────────
@@ -470,7 +535,78 @@ app.post("/users/:userId/activate", (c) => {
   });
 });
 
-// ── Enrichment (기존 엔드포인트, 확장) ──────────────
+// ── Token Exchange (Zitadel → Enrichment JWT) ──────
+
+/**
+ * POST /token — Zitadel opaque access_token을 enrichment JWT로 교환.
+ *
+ * 흐름:
+ * 1. Zitadel userinfo 엔드포인트로 토큰 검증 + userId 획득
+ * 2. computeEnrich()로 permission claims 계산
+ * 3. HS256 서명 JWT 발급
+ *
+ * RFC 8693 (Token Exchange) 유사 패턴.
+ */
+app.post("/token", async (c) => {
+  let body: { zitadel_token?: string };
+  try {
+    body = await c.req.json<{ zitadel_token?: string }>();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { zitadel_token } = body;
+  if (!zitadel_token) {
+    return c.json({ error: "zitadel_token required" }, 400);
+  }
+
+  // 1. Zitadel userinfo로 토큰 검증
+  const zitadelUrl = process.env.ZITADEL_URL ?? "http://localhost:8085";
+  let userinfo: { sub: string; name?: string; email?: string };
+
+  try {
+    const userinfoResp = await fetch(`${zitadelUrl}/oidc/v1/userinfo`, {
+      headers: { Authorization: `Bearer ${zitadel_token}` },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!userinfoResp.ok) {
+      return c.json({ error: "Invalid Zitadel token" }, 401);
+    }
+    userinfo = await userinfoResp.json() as { sub: string; name?: string; email?: string };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return c.json({ error: "Zitadel userinfo unreachable", detail: message }, 502);
+  }
+
+  // 2. Permission claims 계산
+  const enrichResult = await computeEnrich(userinfo.sub);
+
+  // 3. JWT 생성 (HS256)
+  const { createHmac } = await import("node:crypto");
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: JWT_ISSUER,
+    sub: userinfo.sub,
+    name: userinfo.name,
+    email: userinfo.email,
+    perms: enrichResult.perms,
+    perms_v: enrichResult.perms_v,
+    perms_schema: enrichResult.perms_schema,
+    iat: now,
+    exp: now + JWT_EXPIRY,
+  };
+
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = createHmac("sha256", JWT_SECRET)
+    .update(`${header}.${payloadB64}`)
+    .digest("base64url");
+  const token = `${header}.${payloadB64}.${signature}`;
+
+  return c.json({ token, expires_in: JWT_EXPIRY });
+});
+
+// ── Enrichment (기존 엔드포인트, computeEnrich 사용) ──
 
 /**
  * Zitadel Action 또는 gateway에서 호출하는 enrichment 엔드포인트.
@@ -487,47 +623,18 @@ app.post("/enrich", async (c) => {
   }>();
   const userId = body.userId;
 
-  // 1. Zitadel metadata 우선 조회
-  const zitadelPerms = await fetchZitadelMetadata(userId);
-  if (zitadelPerms) {
-    return c.json({
-      perms: zitadelPerms.perms,
-      perms_v: zitadelPerms.perms_v,
-      perms_schema: zitadelPerms.perms_schema,
-      source: "zitadel-metadata",
-    });
+  // roles를 명시적으로 전달한 경우 인메모리 상태에 반영
+  if (body.roles) {
+    const user = getUser(userId);
+    user.roles = body.roles;
   }
 
-  // 2. 인메모리 user state에서 role 기반 계산
-  const user = getUser(userId);
-  const effectiveRoles = body.roles ?? user.roles;
-
-  // 모든 role의 features를 OR 합산
-  const allFeatures = new Set<FeatureName>();
-  for (const role of effectiveRoles) {
-    const features = resolveRoleFeatures(role);
-    for (const f of features) allFeatures.add(f);
-  }
-
-  // env 제한 적용 (각 role별)
-  const restricted = new Set<string>();
-  if (body.env) {
-    for (const role of effectiveRoles) {
-      const envFeatures = applyEnvRestrictions([...allFeatures], role, body.env);
-      for (const f of envFeatures) restricted.add(f);
-    }
-  }
-
-  const finalFeatures = body.env
-    ? [...restricted] as FeatureName[]
-    : [...allFeatures];
-
-  const bitmask = createBitmask(finalFeatures);
+  const result = await computeEnrich(userId, body.env);
 
   return c.json({
-    perms: { infra: bitmask },
-    perms_v: user.perms_v,
-    perms_schema: "qa-v1",
+    perms: result.perms,
+    perms_v: result.perms_v,
+    perms_schema: result.perms_schema,
     source: "role-computed",
   });
 });
@@ -587,6 +694,7 @@ if (isDirectRun) {
 export {
   app, startServer, FEATURES, FEATURE_INDEX, ROLE_FEATURES, ROLE_DEFS,
   createBitmask, applyEnvRestrictions, ENV_RESTRICTIONS,
-  hasBit, resolveRoleFeatures, checkFeature,
+  hasBit, resolveRoleFeatures, checkFeature, computeEnrich,
   users, getUser,
+  JWT_SECRET, JWT_ISSUER, JWT_EXPIRY,
 };

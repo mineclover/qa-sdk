@@ -36,6 +36,48 @@ if (JWKS_VERIFIER) {
   console.log(`[gateway] JWKS 미설정 — JWT 서명 미검증 (개발 모드)`);
 }
 
+// ── Enrichment JWT (HS256) 검증 ─────────────────────────
+// Zitadel Action의 metadata 주입이 불안정하므로,
+// enrichment 서버가 발급한 HS256 JWT도 검증한다.
+
+const ENRICHMENT_JWT_SECRET = process.env.ENRICHMENT_JWT_SECRET;
+if (ENRICHMENT_JWT_SECRET) {
+  console.log(`[gateway] Enrichment JWT (HS256) 검증 활성`);
+}
+
+/**
+ * HS256 JWT 서명 검증.
+ * enrichment 서버가 발급한 JWT를 gateway에서 검증한다.
+ * 성공 시 payload 반환, 실패 시 null.
+ */
+async function verifyHS256(token: string, secret: string): Promise<Record<string, unknown> | null> {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  try {
+    const header = JSON.parse(Buffer.from(parts[0], "base64url").toString()) as Record<string, unknown>;
+    if (header.alg !== "HS256") return null;
+
+    const { createHmac } = await import("node:crypto");
+    const expected = createHmac("sha256", secret)
+      .update(`${parts[0]}.${parts[1]}`)
+      .digest("base64url");
+
+    if (parts[2] !== expected) return null;
+
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString()) as Record<string, unknown>;
+
+    // 만료 체크
+    if (typeof payload.exp === "number" && payload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 // ── Zitadel Metadata / Enrichment Fallback ────────────
 
 const ZITADEL_URL = process.env.ZITADEL_URL; // e.g., "http://localhost:8085"
@@ -206,26 +248,44 @@ app.use("*", async (c, next) => {
   }
 
   // jwt 모드: JWT 토큰 파싱 + perms claims 추출
+  // 검증 순서: HS256 (enrichment JWT) → JWKS (Zitadel RS256) → 서명 미검증 (dev)
   if (AUTH_MODE === "jwt") {
     const auth = c.req.header("Authorization");
     if (!auth?.startsWith("Bearer ")) return c.json({ error: "JWT required" }, 401);
     const token = auth.slice(7);
 
     try {
-      let payload: Record<string, unknown>;
+      let payload: Record<string, unknown> | null = null;
 
-      if (JWKS_VERIFIER) {
-        // 프로덕션: JWKS 서명 검증
-        const result = await JWKS_VERIFIER.verify(token);
-        payload = result.payload;
-      } else {
-        // 로컬 dev: 서명 미검증 (JWKS_URL 미설정 시)
+      // 1. Enrichment JWT (HS256) 검증 시도
+      if (ENRICHMENT_JWT_SECRET) {
+        payload = await verifyHS256(token, ENRICHMENT_JWT_SECRET);
+      }
+
+      // 2. JWKS (RS256) 검증 시도 — enrichment JWT가 아닌 경우
+      if (!payload && JWKS_VERIFIER) {
+        try {
+          const result = await JWKS_VERIFIER.verify(token);
+          payload = result.payload;
+        } catch (jwksErr) {
+          // JWKS 검증 실패 시 HS256이 아닌 경우에만 에러
+          if (!ENRICHMENT_JWT_SECRET) throw jwksErr;
+          // 두 검증 모두 실패 — 아래에서 처리
+        }
+      }
+
+      // 3. 로컬 dev: 서명 미검증 (JWKS_URL, ENRICHMENT_JWT_SECRET 모두 미설정 시)
+      if (!payload && !JWKS_VERIFIER && !ENRICHMENT_JWT_SECRET) {
         const parts = token.split(".");
         if (parts.length !== 3) throw new Error("invalid jwt");
         payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
-        if (payload.exp && (payload.exp as number) < Math.floor(Date.now() / 1000)) {
+        if (payload!.exp && (payload!.exp as number) < Math.floor(Date.now() / 1000)) {
           return c.json({ error: "Token expired" }, 401);
         }
+      }
+
+      if (!payload) {
+        return c.json({ error: "Invalid JWT — signature verification failed" }, 401);
       }
 
       // id_token에 perms가 없으면 Zitadel user metadata에서 조회
