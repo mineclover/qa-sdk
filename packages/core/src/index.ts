@@ -36,7 +36,7 @@ export { collectAxisUsage, summarizeAxisUsage, findUnusedAxes } from "./catalog/
 export {
   latestPrefixVersion,
   getPrefixStructure, getPrefixShape, getPrefixEntries, getPrefixProfile,
-  encodePrefix, decodePrefix, encodePrefixByValue,
+  encodePrefix, decodePrefix, decodePrefixPartial, encodePrefixByValue,
   resolveAddress, decomposeAddress, verifyRoundTrip,
   decodePrefixAsResult, resolveAddressAsResult, decomposeAddressAsResult,
 } from "./catalog/runtime.js";

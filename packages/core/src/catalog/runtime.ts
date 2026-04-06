@@ -362,6 +362,51 @@ export function decodePrefix(
   return result;
 }
 
+/**
+ * prefix 1D 주소에서 요청한 labels만 부분 decode. O(k).
+ * 전체 decodePrefix() O(d) 대비 k << d 일 때 유리.
+ *
+ * @param labels - 추출할 차원 label 목록 (getFixedLabels 범위 내)
+ */
+export function decodePrefixPartial(
+  catalog: Catalog, prefixId: string, version: string,
+  address: number, labels: string[],
+): Record<string, DecodedPosition> {
+  const prefix = catalog.prefixes[prefixId];
+  if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
+  const vdef = prefix.versions.find(v => v.version === version);
+  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  const fixedLabels = getFixedLabels(prefix);
+  const { shape } = getPrefixShape(catalog, prefixId, version);
+  const { strides } = getShapeAndStrides(catalog, prefixId, version);
+
+  const labelSet = new Set(labels);
+  const result: Record<string, DecodedPosition> = {};
+
+  for (let i = 0; i < fixedLabels.length; i++) {
+    const label = fixedLabels[i];
+    if (!labelSet.has(label)) continue;
+
+    // O(1) per dim: floor(address / stride) % shape
+    const pos = Math.floor(address / strides[i]) % shape[i];
+
+    const dim = prefix.dims[label];
+    let value: string | number;
+    if (dim.kind === "axis") {
+      const axis = catalog.axes[dim.axisId];
+      const snap = axis.versions[vdef.axisVersions[label]];
+      value = pos < snap.entries.length ? snap.entries[pos] : `(reserved:${pos})`;
+    } else if (dim.kind === "prefix_ref") {
+      const ref = vdef.refEntries?.[label];
+      value = ref ? ref.values[pos] : pos;
+    } else {
+      continue;
+    }
+    result[label] = { position: pos, value };
+  }
+  return result;
+}
+
 // ── resolve: 재귀적 의미 해석 ────────────────────────────────────────────────
 
 export interface ResolvedDimValue {
