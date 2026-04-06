@@ -18,14 +18,11 @@ def:
 
 ingest-server의 미구현 store driver 현황을 추적한다.
 
-## App Hub Insights Store — 방향 전환 (2026-04-05)
+## App Hub Insights Store — 보류 (2026-04-06)
 
-기존 계획: App Hub SDK 직접 연동 (collect, 읽기 12종, 환경변수)
-→ **재검토**: infra-engine이 인프라 관측 파이프라인을 통합 관리하므로, App Hub 연동은 infra-engine을 소비하는 형태로 전환 검토.
-
-- [ ] infra-engine의 IngestAdapter가 App Hub 경로를 대체하는지 평가
-- [ ] 대체 가능 시: app-hub-insights-store.ts stub → infra-engine 클라이언트로 교체
-- [ ] 대체 불가 시: 기존 App Hub SDK 직접 연동 진행 (아래 항목)
+infra-engine이 주력 인프라 관측 파이프라인. App Hub은 현재 미사용.
+향후 App Hub 도입 시 infra-engine 하위 통합 또는 호환 레이어로 검토. 대체는 하지 않음.
+기존 stub 코드(app-hub-insights-store.ts)는 유지.
 
 ### App Hub 직접 연동 (infra-engine 대체 불가 시에만)
 
