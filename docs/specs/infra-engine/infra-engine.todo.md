@@ -34,8 +34,10 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - env 공급 안정화: config JSON → env vars 변환 (SKIP_KEYS: depends_on, gates, health_path)
 - post-deploy 자동화: codegen (TS 모듈 + .env 재생성), cascade (depends_on 역추적), version-manager (JSON 영속 + rollback)
 - --sync 플래그: `infra deploy --sync`로 배포 후 codegen + cascade 자동 실행
+- 좌표: CoordinateAdapter Catalog 기반 실인코딩 (service/deploy_event/health_event, 17 tests)
 - cli-command 트리 마이그레이션: scripts/infra.ts에서 cli-command 기반 트리 라우팅으로 전환
 - tsup 7서비스 전환: NestJS 서비스 빌드를 tsup 단일 번들로 통일
+- 보안: gateway JWKS 서명 검증 + route-permissions + enrichment-server + K8s DNS 서비스명 고정
 
 ### 현재 규모
 
@@ -56,7 +58,6 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 
 ### 운영 통합
 
-- [ ] **CoordinateAdapter 좌표 인코딩** — demo-catalog WeightedIndex로 실인코딩 (현재 fail-open)
 - [ ] **SOPS age 키 설정** — 키 생성 → sops.yaml → YAML 설정 암호화
 - [ ] **webhook 알림** — Slack/Discord POST (OutOfSync/Unknown)
 
