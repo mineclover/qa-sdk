@@ -103,6 +103,7 @@ export const verdictReports = sqliteTable(
     index("idx_verdict_reports_scenario_id").on(t.scenarioId),
     index("idx_verdict_reports_trace_id").on(t.traceId),
     index("idx_verdict_reports_session_id").on(t.qaSessionId),
+    index("idx_verdict_reports_verdict").on(t.overallVerdict),
     uniqueIndex("uniq_verdict_scenario_trace").on(t.scenarioId, t.traceId),
   ],
 );
@@ -139,6 +140,7 @@ export const deadLetterQueue = sqliteTable(
   },
   (t) => [
     index("idx_dlq_pending").on(t.resolvedAt, t.createdAt),
+    index("idx_dlq_trace_phase").on(t.traceId, t.phase),
   ],
 );
 

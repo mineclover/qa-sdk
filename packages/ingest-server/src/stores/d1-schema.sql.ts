@@ -92,6 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_verdict_reports_scenario_id ON verdict_reports(sc
 CREATE INDEX IF NOT EXISTS idx_verdict_reports_trace_id ON verdict_reports(trace_id);
 CREATE INDEX IF NOT EXISTS idx_verdict_reports_session_id ON verdict_reports(qa_session_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_verdict_scenario_trace ON verdict_reports(scenario_id, trace_id);
+CREATE INDEX IF NOT EXISTS idx_verdict_reports_verdict ON verdict_reports(overall_verdict);
 
 CREATE TABLE IF NOT EXISTS transmissions (
   transmission_id TEXT PRIMARY KEY,
@@ -119,6 +120,7 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
 );
 
 CREATE INDEX IF NOT EXISTS idx_dlq_pending ON dead_letter_queue(resolved_at, created_at);
+CREATE INDEX IF NOT EXISTS idx_dlq_trace_phase ON dead_letter_queue(trace_id, phase);
 
 CREATE TABLE IF NOT EXISTS insight_labels (
   id               TEXT PRIMARY KEY,

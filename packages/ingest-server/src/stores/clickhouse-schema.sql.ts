@@ -98,4 +98,64 @@ CREATE TABLE IF NOT EXISTS key_observation_prefixes (
   last_seen DateTime64(3)
 ) ENGINE = ReplacingMergeTree(last_seen)
 ORDER BY prefix_id;
+
+CREATE TABLE IF NOT EXISTS transmissions (
+  transmission_id String,
+  sent_at DateTime64(3),
+  owner_type LowCardinality(String),
+  owner_id String,
+  service_name LowCardinality(String),
+  sdk_name LowCardinality(String),
+  sdk_version String,
+  platform LowCardinality(String),
+  env LowCardinality(String),
+  record_count UInt32,
+  received_at DateTime64(3) DEFAULT now64(3)
+) ENGINE = MergeTree()
+ORDER BY (service_name, sent_at, transmission_id);
+
+CREATE TABLE IF NOT EXISTS dead_letter_queue (
+  id String,
+  trace_id String,
+  phase LowCardinality(String),
+  error_message String,
+  attempt_count UInt32 DEFAULT 0,
+  last_attempted_at Nullable(DateTime64(3)),
+  created_at DateTime64(3) DEFAULT now64(3),
+  resolved_at Nullable(DateTime64(3))
+) ENGINE = ReplacingMergeTree(created_at)
+ORDER BY (trace_id, phase, id);
+
+CREATE TABLE IF NOT EXISTS insight_labels (
+  id String,
+  kind LowCardinality(String),
+  target_id String,
+  label LowCardinality(String),
+  status LowCardinality(String) DEFAULT 'pending',
+  notes Nullable(String),
+  metadata Nullable(String),
+  created_at DateTime64(3) DEFAULT now64(3),
+  updated_at DateTime64(3) DEFAULT now64(3)
+) ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY (kind, target_id, id);
+
+CREATE TABLE IF NOT EXISTS runtime_graphs (
+  trace_id String,
+  graph String,
+  node_count UInt32,
+  edge_count UInt32,
+  built_at DateTime64(3) DEFAULT now64(3)
+) ENGINE = ReplacingMergeTree(built_at)
+ORDER BY trace_id;
+
+CREATE TABLE IF NOT EXISTS scenario_specs (
+  scenario_id String,
+  version String,
+  domain LowCardinality(String),
+  description Nullable(String),
+  spec String,
+  created_at DateTime64(3) DEFAULT now64(3),
+  updated_at DateTime64(3) DEFAULT now64(3)
+) ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY (domain, scenario_id);
 `;
