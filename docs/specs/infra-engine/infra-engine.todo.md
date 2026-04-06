@@ -36,29 +36,42 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - --sync 플래그: `infra deploy --sync`로 배포 후 codegen + cascade 자동 실행
 - 좌표: CoordinateAdapter Catalog 기반 실인코딩 (service/deploy_event/health_event, 13 tests)
 - cli-command 트리 마이그레이션: scripts/infra.ts에서 cli-command 기반 트리 라우팅으로 전환
-- tsup 7서비스 전환: NestJS 서비스 빌드를 tsup 단일 번들로 통일
-- 보안: gateway JWKS 서명 검증 + route-permissions + enrichment-server + K8s DNS 서비스명 고정
+- tsup 7서비스 전환: NestJS 서비스 빌드를 tsup 단일 번들로 통일 (tsup ^8.5.1)
+- 보안: gateway JWKS 서명 검증 + route-permissions + enrichment-server + 보안 13건 수정
 - 좌표 실인코딩: CoordinateAdapter demo-catalog WeightedIndex 기반 실인코딩
 - K8s Service DNS: Pulumi 서비스명 고정 (metadata.name 직접 지정, 랜덤 해시 제거)
-- 권한 판정: hasBit() 실판정 (route-permissions.ts FEATURE_INDEX)
+- 권한 판정: hasBit() 실판정 (route-permissions.ts FEATURE_INDEX 12종)
 - 인증: Zitadel OIDC + SSO 로컬 배포 + JWT enrichment (JWKS RS256 + HS256)
-- Gateway: JWKS 서명 검증 + HS256 검증 + permission middleware + route-level bitmask O(1)
-- Enrichment: enrichment server (3 roles × 12 features, POST /token JWT 발급)
+- Zitadel Login V2: SPA 배포 (zitadel + zitadel-login + nginx 3-컨테이너)
+- Gateway: JWKS 서명 검증 + HS256 이중 검증 + permission middleware + route-level bitmask O(1)
+- Enrichment: enrichment server (3 roles × 12 features, POST /token — Zitadel 검증 → HS256 JWT 발급)
 - Secrets: 자동 관리 — secrets 명령 3종 (show/init/rotate)
-- 고급 테스트: 동시 배포 충돌, K8s DNS 라우팅, 장애 복구, 멀티 환경 동시 운영
-- OIDC 브라우저: test/oidc-login.html — Zitadel authorization_code + PKCE 플로우 테스트
+- 고급 테스트: 동시 배포 충돌, K8s DNS 라우팅, 장애 복구, 멀티 환경 동시 운영 (16건)
+- OIDC 브라우저: test/oidc-login.html + test-oidc-browser.ts — Zitadel authorization_code + PKCE 플로우 테스트
+- AuthZ 라이프사이클: grant/revoke/override/invalidate/explain 57건
+- 운영 데모: 42건 E2E
+- cli-command 패키지: 트리 마이그레이션 완료
 
 ### 현재 규모
 
-- **71 소스**, **220+ 테스트** (unit 106 + cli-command 23 + auth 57 + demo 37 + gateway 12 + advanced 24 + resilience 28 + login-flow 30)
-- **33 CLI 명령**, **4 skills**, **13 스펙**
-- **8 설정 파일** (test/dev/local/stage/prod/cloudflare-prod/test-nginx/test-nginx-v2)
-- **배포**: K3s dev 9서비스 + CF prod 2서비스 = 11서비스
+- **65+ 소스** (infra-engine) + **7** (cli-command)
+- **220+ 테스트** (unit 105 + demo 42 + auth 57 + advanced 16)
+- **26 CLI 명령**, **4 skills**, **10+ 스펙**
+- **배포**: 7 K8s pods + 2 Cloudflare + Zitadel + MinIO
 - **인프라**: Docker Compose (MinIO + Zitadel + CockroachDB) + K3s 클러스터
 
 ---
 
-## 잔여 작업
+## 잔여 작업 (모두 외부 의존)
+
+### OAuth IdP
+
+- [ ] **Google OAuth 연동** — Zitadel Admin → Identity Providers
+- [ ] **GitHub OAuth 연동** — Zitadel Admin → Identity Providers
+
+### Zitadel 세션 관리
+
+- [ ] **ZitadelProvider 세션 종료** — 사용자 비활성화 시 세션 종료 + 토큰 무효화
 
 ### Workers 호환 (차단됨)
 
@@ -66,14 +79,8 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - [ ] **query-service Workers 호환** — index-meta Workers 호환 해결 필요
 - [ ] **decode-service Workers 호환** — index-meta Workers 호환 해결 필요
 
-### 운영 통합
-
-- [ ] **SOPS age 키 설정** — 키 생성 → sops.yaml → YAML 설정 암호화
-- [ ] **webhook 알림** — Slack/Discord POST (OutOfSync/Unknown)
-
 ### 프로바이더 실구현
 
-- [ ] **Cloudflare Pages** — 정적 사이트 배포 프로바이더
 - [ ] **Railway** — `@pulumi/command` + Railway CLI
 - [ ] **AWS** — `@pulumi/aws` ECS/Lambda + OIDC STS
 - [ ] **GCP** — `@pulumi/gcp` Cloud Run + Workload Identity
@@ -83,8 +90,8 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 
 - [ ] **GitHub Actions 활성화** — OIDC, SOPS, config 변경 감지 → 자동 배포
 - [ ] **S3 + DynamoDB 운영 State** — MinIO → AWS S3 전환
-- [ ] **키 교체 스크립트** — rotate-keys.ts
 
 ### 고도화
 
 - [ ] **Grafana 연동** — dashboard export → Grafana 데이터소스
+- [ ] **webhook 알림** — Slack/Discord POST (OutOfSync/Unknown)
