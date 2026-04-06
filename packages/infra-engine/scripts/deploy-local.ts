@@ -190,6 +190,28 @@ async function main() {
     }
   }
 
+  // --sync: codegen + cascade
+  if (result.success && process.argv.includes("--sync")) {
+    try {
+      const { createDiscoveryClient } = await import("../src/discovery/client.js");
+      const { runPostDeployCodegen } = await import("../src/post-deploy/codegen.js");
+      const client = createDiscoveryClient(process.env.REGISTRY_URL ?? "http://localhost:3300");
+      const codegenResult = await runPostDeployCodegen(client, SERVICE, ENV);
+      console.log(`[codegen] TS: ${codegenResult.tsPath}`);
+      console.log(`[codegen] env: ${codegenResult.envPaths.length}건`);
+    } catch (err) {
+      console.warn(`[codegen] 실패: ${err instanceof Error ? err.message : err}`);
+    }
+
+    try {
+      const { findCascadeTargets, executeCascade } = await import("../src/post-deploy/cascade.js");
+      const { createPlainLoader: pl } = await import("../src/config/sops-loader.js");
+      const rawConfig = await pl().decrypt(CONFIG_PATH);
+      const targets = findCascadeTargets(rawConfig as any, SERVICE);
+      await executeCascade(targets, ENV, { dryRun: true });
+    } catch { /* cascade 감지 실패 무시 */ }
+  }
+
   // 프로필 확인
   const deployment = await infraProfile.getDeployment(SERVICE);
   if (deployment) {
