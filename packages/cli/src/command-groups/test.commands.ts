@@ -5,10 +5,9 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { testAssign, testReport, testScan, testScaffold, testStatus } from "../commands/test.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const TEST_COMMAND_DESCRIPTORS = [
   { id: "test.scan", path: ["scan"], usage: "qa-sdk test scan [--dir <path>] [--db <path>]   스펙 frontmatter tests: 선언 → declared", handlerKey: "test.scan" },

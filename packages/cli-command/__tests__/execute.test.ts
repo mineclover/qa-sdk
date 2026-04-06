@@ -33,6 +33,29 @@ describe("executeCommand", () => {
     expect(ok).toBe(false);
   });
 
+  it("--help가 전달되면 onHelp를 호출한다", async () => {
+    const onHelp = vi.fn();
+    const tree: CliCommandNode[] = [
+      { segment: "deploy", handler: vi.fn(async () => {}), description: "배포" },
+    ];
+
+    const ok = await executeCommand(["deploy", "--help"], tree, { onHelp });
+    expect(ok).toBe(true);
+    expect(onHelp).toHaveBeenCalledOnce();
+    expect(onHelp.mock.calls[0][0]?.segment).toBe("deploy");
+  });
+
+  it("매칭되지 않는 명령에 onNotFound가 호출된다", async () => {
+    const onNotFound = vi.fn(async () => {});
+    const tree: CliCommandNode[] = [
+      { segment: "deploy", handler: vi.fn(async () => {}) },
+    ];
+
+    const ok = await executeCommand(["unknown-cmd"], tree, { onNotFound });
+    expect(ok).toBe(true);
+    expect(onNotFound).toHaveBeenCalledWith(["unknown-cmd"]);
+  });
+
   it("옵션 파싱", async () => {
     const fn = vi.fn(async () => {});
     const tree: CliCommandNode[] = [{

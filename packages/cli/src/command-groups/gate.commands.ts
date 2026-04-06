@@ -4,10 +4,9 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { gateCheck, gateClassify, gateHealth } from "../commands/service-query.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const GATE_COMMAND_DESCRIPTORS = [
   {

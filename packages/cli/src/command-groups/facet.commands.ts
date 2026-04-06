@@ -1,13 +1,14 @@
 import { resolve } from "node:path";
 import {
+  collectCommandUsageSpecs,
   descriptorsToTree,
   type CliCommandNode,
   type CommandDescriptor,
+  type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { injectFacetExports } from "../commands/facet-inject.js";
 import { facetScan } from "../commands/facet-scan.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const FACET_COMMAND_DESCRIPTORS = [
   { id: "facet.scan", path: ["scan"], usage: "qa-sdk facet scan [--service <id>] [--output <path>] [--no-deps]", handlerKey: "facet.scan" },
@@ -16,6 +17,9 @@ export const FACET_COMMAND_DESCRIPTORS = [
 
 export const FACET_COMMAND_TREE =
   descriptorsToTree(FACET_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+export const FACET_COMMAND_SPECS =
+  collectCommandUsageSpecs(["facet"], FACET_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
 export const FACET_HANDLER_REGISTRY = {
   "facet.scan": async (rest: string[]) => {

@@ -1,19 +1,43 @@
 import { parseArgs } from "node:util";
 import {
+  collectCommandUsageSpecs,
   descriptorsToTree,
   type CliCommandNode,
   type CommandDescriptor,
+  type CommandUsageSpec,
 } from "../command-spec.js";
 import { gitConflicts, watchGitConflicts } from "../commands/git-conflicts.js";
 
 type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const GIT_COMMAND_DESCRIPTORS = [
-  { id: "git.conflicts", path: ["conflicts"], usage: "qa-sdk git conflicts [options]      Git 충돌/발산 리포트", handlerKey: "git.conflicts" },
+  {
+    id: "git.conflicts",
+    path: ["conflicts"],
+    usage: "qa-sdk git conflicts [options]      Git 충돌/발산 리포트",
+    handlerKey: "git.conflicts",
+    options: [
+      { flag: "--root", valueHint: "<path>", description: "분석 대상 저장소 루트 (기본: .)" },
+      { flag: "--remote", valueHint: "<name>", description: "원격 이름 (기본: origin)" },
+      { flag: "--base", valueHint: "<ref>", description: "기준 브랜치/참조 (기본: upstream 또는 remote HEAD)" },
+      { flag: "--current", valueHint: "<ref>", description: "현재 브랜치 대신 비교할 ref (기본: HEAD)" },
+      { flag: "--max-commits", valueHint: "<n>", description: "source별 포함할 최근 커밋 수 (기본: 12)" },
+      { flag: "--skip-fetch", description: "fetch 없이 로컬에 저장된 remote ref만 사용" },
+      { flag: "--skip-worktrees", description: "다른 local worktree는 분석에서 제외" },
+      { flag: "--output", valueHint: "<path>", description: "JSON 리포트를 파일로 저장" },
+      { flag: "--watch", description: "주기적으로 리포트를 다시 계산" },
+      { flag: "--interval-ms", valueHint: "<n>", description: "watch 주기 ms (기본: 5000)" },
+      { flag: "--json", description: "JSON으로 출력" },
+      { flag: "--limit", valueHint: "<n>", description: "사람이 읽는 출력 최대 개수 (기본: 10)" },
+    ],
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const GIT_COMMAND_TREE =
   descriptorsToTree(GIT_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+export const GIT_COMMAND_SPECS =
+  collectCommandUsageSpecs(["git"], GIT_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
 export const GIT_HANDLER_REGISTRY = {
   "git.conflicts": async (rest: string[]) => {

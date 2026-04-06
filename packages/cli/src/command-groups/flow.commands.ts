@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   flowAnalyze,
@@ -23,8 +24,6 @@ import {
   flowTrace,
   flowVerdict,
 } from "../commands/flow.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const FLOW_COMMAND_DESCRIPTORS = [
   { id: "flow.list", path: ["list"], usage: "qa-sdk flow list                              플로우 스키마 목록", handlerKey: "flow.list" },

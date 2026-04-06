@@ -12,6 +12,8 @@ export type {
   CommandHelpSectionSpec,
 } from "cli-command";
 
+export type RestCommandHandler = (rest: string[]) => Promise<void> | void;
+
 export {
   resolveCommand,
   executeCommand,

@@ -106,6 +106,21 @@ CLI 명령을 사람이 읽는 help, parser 해석, dispatch 연결, usage 렌�
 
 이 표면은 현재 호환성/별도 구현 이유로 switch fallback에 남아 있다.
 
+## 최적화 이력 (2026-04-06)
+
+### cli-command 패키지
+
+- `composeTree` dead export 제거 — 호출처 없는 API 표면 정리. `descriptorsToTree`만 유지
+- `MutableCliCommandNode`를 `Omit<CliCommandNode, 'children'>` 파생으로 변경 — 필드 수동 복제 제거
+- `descriptorsToTree`에 `path: []` guard 추가 — 빈 경로 descriptor silent 무시 방지
+- 테스트 +5건 (23 total): compose empty path, execute onHelp/onNotFound, help args/options 렌더, resolve children-only 노드
+
+### cli 패키지
+
+- `command-spec.ts`에서 unused re-export 제거: `composeTree`, `resolveCommand`, `parseCommandArgs`
+- `RestCommandHandler` 타입 중앙화 (`command-spec.ts` 단일 export → 16개 command-group 파일에서 import)
+- `resolveSubcommandInternal` 수동 if-chain → `TREE_COMMAND_GROUPS` 루프 치환
+
 ## 관련 소스
 
 - `packages/cli-command/src/index.ts`
@@ -113,6 +128,8 @@ CLI 명령을 사람이 읽는 help, parser 해석, dispatch 연결, usage 렌�
 - `packages/cli-command/src/compose.ts`
 - `packages/cli-command/src/help.ts`
 - `packages/cli-command/src/resolve.ts`
+- `packages/cli-command/src/execute.ts`
+- `packages/cli-command/src/parse.ts`
 - `packages/cli/src/command-spec.ts`
 - `packages/cli/src/index.ts`
-- `packages/cli/src/commands/def.ts`
+- `packages/cli/src/command-groups/*.commands.ts`

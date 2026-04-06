@@ -1,8 +1,11 @@
 import type { Catalog } from "@qa-sdk/core";
 import {
+  collectCommandUsageSpecs,
   descriptorsToTree,
   type CliCommandNode,
   type CommandDescriptor,
+  type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   prefixDrift,
@@ -11,8 +14,6 @@ import {
   prefixMigrate,
   prefixStamp,
 } from "../commands/prefix-stamp.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const PREFIX_COMMAND_DESCRIPTORS = [
   { id: "prefix.stamp", path: ["stamp"], usage: "qa-sdk prefix stamp [paths...] [--update] [--dry-run]", handlerKey: "prefix.stamp" },
@@ -24,6 +25,9 @@ export const PREFIX_COMMAND_DESCRIPTORS = [
 
 export const PREFIX_COMMAND_TREE =
   descriptorsToTree(PREFIX_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+export const PREFIX_COMMAND_SPECS =
+  collectCommandUsageSpecs(["prefix"], PREFIX_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
 export function createPrefixHandlerRegistry(
   loadedCatalog: Catalog,

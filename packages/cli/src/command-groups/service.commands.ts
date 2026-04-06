@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   serviceAppList,
@@ -21,8 +22,6 @@ import {
   serviceList,
   serviceShow,
 } from "../commands/service.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const SERVICE_COMMAND_DESCRIPTORS = [
   { id: "service.list", path: ["list"], usage: "qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)", handlerKey: "service.list" },

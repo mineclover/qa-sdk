@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   runSpecCodegen,
@@ -13,8 +14,6 @@ import {
   runSpecTrace,
   runSpecValidate,
 } from "../commands/spec.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const SPEC_COMMAND_DESCRIPTORS = [
   {

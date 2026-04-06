@@ -35,6 +35,14 @@ describe("resolveCommand", () => {
     expect(r?.node.handler).toBeDefined();
   });
 
+  it("자식만 있는 노드로 resolve하면 해당 노드를 반환한다", () => {
+    const r = resolveCommand(["config"], tree);
+    expect(r).not.toBeNull();
+    expect(r?.commandName).toBe("config");
+    expect(r?.node.children).toBeDefined();
+    expect(r?.node.children!.length).toBe(3);
+  });
+
   it("미매칭 → null", () => {
     expect(resolveCommand(["unknown"], tree)).toBeNull();
   });

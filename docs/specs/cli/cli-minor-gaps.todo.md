@@ -49,3 +49,7 @@ review는 파일 경로(glob) 기반, quality는 bundle-doc-id 기반. 좌표 ad
 - [x] `CommandDescriptor` authored SSOT + `cli-command` 패키지
 - [x] GraphQL/REST/CLI address-first 구현
 - [x] `def scan` alias 정리, `dkg audit-events`, `document_links` address
+- [x] cli-command dead export 제거 (`composeTree`, `resolveCommand`, `parseCommandArgs`)
+- [x] cli-command 테스트 +5건 (17→23): empty path guard, onHelp/onNotFound, args/options 렌더, children-only resolve
+- [x] `RestCommandHandler` 타입 중앙화 (17곳 → `command-spec.ts` 단일)
+- [x] `resolveSubcommandInternal` if-chain → `TREE_COMMAND_GROUPS` 루프

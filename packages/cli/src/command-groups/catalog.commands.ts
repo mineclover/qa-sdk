@@ -4,10 +4,9 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { getCatalogRegistry } from "../commands/dkg.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const CATALOG_COMMAND_DESCRIPTORS = [
   { id: "catalog.list", path: ["list"], usage: "qa-sdk catalog list                등록된 카탈로그 목록", handlerKey: "catalog.list" },

@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { motionInspect, motionValidate } from "../commands/motion.js";
 import {
@@ -20,8 +21,6 @@ import {
   motionWorkspaceList,
   motionWorkspaceShow,
 } from "../commands/motion-workspace.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const MOTION_COMMAND_DESCRIPTORS = [
   {

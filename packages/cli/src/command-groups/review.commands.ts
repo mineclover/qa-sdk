@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   reviewBridgeRequest,
@@ -15,8 +16,6 @@ import {
   reviewShowRequest,
   reviewStatus,
 } from "../commands/review.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const REVIEW_COMMAND_DESCRIPTORS = [
   { id: "review.mark", path: ["mark"], usage: "qa-sdk review mark <file|glob...> --reviewer <name> [--model <ai>]  리뷰 완료 기록", handlerKey: "review.mark" },

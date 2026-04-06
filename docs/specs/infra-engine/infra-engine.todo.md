@@ -82,8 +82,17 @@ infra-engine 패키지의 구현 현황과 잔여 작업을 추적한다.
 - [x] **tsup 7서비스 전환** — 전 서비스 tsup 빌드 체인 통일
 - [x] **6서비스 전체 200 OK 검증** — K3s 4 (ingest, decision, definition, motion-workspace) + CF 2 (registry, gateway)
 
+### Dockerfile + 운영 개선 (2026-04-06)
+- [x] **Dockerfile.nestjs PORT 주입** — `ARG PORT` + `ENV PORT` + `EXPOSE` 추가. HEALTHCHECK가 서비스 실제 포트 사용
+- [x] **Docker layer cache 최적화** — lockfile/package.json 먼저 복사 → install → source 복사 순서
+- [x] **Dockerfile scope guard** — `@qa-sdk/${SERVICE}` 실패 시 unscoped `${SERVICE}` fallback
+- [x] **dev.json health_path 통일** — ingest-server에 `/health/live` 명시 (기본 `/health`과 불일치 해소)
+- [x] **motion-workspace 네이밍 통일** — dev.json `motion-workspace-service` → `motion-workspace` (prod와 일치)
+- [x] **sdk_version 동적 로드** — `adapters/ingest.ts` 하드코딩 `"1.0.0"` → `package.json` version 참조
+- [x] **kubectl context 검증** — `local.ts validate()`에서 `k3d-qa-local` context 확인 추가
+
 ### 현재 규모
-- **42 소스**, **93 테스트**, **107 테스트** (infra-engine 93 + cli-command 14)
+- **42 소스**, **93 테스트**, **107 테스트** (infra-engine 93 + cli-command 23)
 - **15 CLI**, **4 skills**, **10 스펙**
 - **배포 현황**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
 

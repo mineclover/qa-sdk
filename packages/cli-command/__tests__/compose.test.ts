@@ -50,6 +50,15 @@ describe("descriptorsToTree", () => {
     ]);
   });
 
+  it("path가 빈 descriptor는 무시한다", () => {
+    const result = descriptorsToTree([
+      { id: "empty", path: [], handlerKey: "empty", usage: "empty" },
+      { id: "valid", path: ["valid"], handlerKey: "valid", usage: "valid cmd" },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].segment).toBe("valid");
+  });
+
   it("same path leaf에 metadata를 병합한다", () => {
     const descriptors: CommandDescriptor[] = [
       {

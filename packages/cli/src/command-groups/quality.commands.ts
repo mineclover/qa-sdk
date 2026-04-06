@@ -4,10 +4,9 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import { cliQuality } from "../commands/quality.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const QUALITY_COMMAND_DESCRIPTORS = [
   { id: "quality.list", path: ["list"], usage: "qa-sdk quality list [filters]      gate 문서 목록", handlerKey: "quality.list" },

@@ -4,6 +4,7 @@ import {
   type CliCommandNode,
   type CommandDescriptor,
   type CommandUsageSpec,
+  type RestCommandHandler,
 } from "../command-spec.js";
 import {
   ingestHealth,
@@ -15,8 +16,6 @@ import {
   ingestStatus,
   ingestTrace,
 } from "../commands/ingest.js";
-
-type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const INGEST_COMMAND_DESCRIPTORS = [
   {
