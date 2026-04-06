@@ -40,23 +40,9 @@ async function truncate(d: Db, ...tables: string[]) {
 
 export async function createPgRecordStore() {
   const d = getDb();
-  // PG event_records에 traces FK 제약 — 테스트용 trace 시딩 포함
-  const traceStore = new DrizzleTraceStore(d);
-  const recordStore = new DrizzleRecordStore(d);
-
-  // shared test에서 사용하는 traceId 목록을 미리 시드
-  const traceIds = ["t1", "t2", "t3"];
-  for (const traceId of traceIds) {
-    await traceStore.upsert({
-      traceId,
-      recordCount: 0,
-      firstTimestamp: new Date("2026-01-01"),
-      lastTimestamp: new Date("2026-01-01"),
-    });
-  }
-
+  await seedTraces(d, ["t1", "t2", "t3"]);
   return {
-    store: recordStore,
+    store: new DrizzleRecordStore(d),
     cleanup: async () => truncate(d, "event_records", "traces"),
   };
 }
@@ -85,12 +71,10 @@ export async function createPgSessionStore() {
   };
 }
 
-export async function createPgVerdictStore() {
-  const d = getDb();
-  // verdict_reports에 traces FK 제약 — 테스트용 trace 시딩
+/** FK 제약 테이블용 traces 시딩. 매 factory 호출 시 실행 — beforeEach cleanup 이후에도 안전. */
+async function seedTraces(d: Db, ids = ["t1", "t2"]) {
   const traceStore = new DrizzleTraceStore(d);
-  const traceIds = ["t1", "t2"];
-  for (const traceId of traceIds) {
+  for (const traceId of ids) {
     await traceStore.upsert({
       traceId,
       recordCount: 0,
@@ -98,6 +82,11 @@ export async function createPgVerdictStore() {
       lastTimestamp: new Date("2026-01-01"),
     });
   }
+}
+
+export async function createPgVerdictStore() {
+  const d = getDb();
+  await seedTraces(d);
   return {
     store: new DrizzleVerdictStore(d),
     cleanup: async () => truncate(d, "verdict_reports", "traces"),
@@ -106,17 +95,7 @@ export async function createPgVerdictStore() {
 
 export async function createPgGraphStore() {
   const d = getDb();
-  // runtime_graphs에 traces FK 제약 — 테스트용 trace 시딩
-  const traceStore = new DrizzleTraceStore(d);
-  const traceIds = ["t1", "t2"];
-  for (const traceId of traceIds) {
-    await traceStore.upsert({
-      traceId,
-      recordCount: 0,
-      firstTimestamp: new Date("2026-01-01"),
-      lastTimestamp: new Date("2026-01-01"),
-    });
-  }
+  await seedTraces(d);
   return {
     store: new DrizzleGraphStore(d),
     cleanup: async () => truncate(d, "runtime_graphs", "traces"),
@@ -141,17 +120,7 @@ export async function createPgTransmissionStore() {
 
 export async function createPgDlqStore() {
   const d = getDb();
-  // dead_letter_queue에 traces FK 제약 — 테스트용 trace 시딩
-  const traceStore = new DrizzleTraceStore(d);
-  const traceIds = ["t1", "t2"];
-  for (const traceId of traceIds) {
-    await traceStore.upsert({
-      traceId,
-      recordCount: 0,
-      firstTimestamp: new Date("2026-01-01"),
-      lastTimestamp: new Date("2026-01-01"),
-    });
-  }
+  await seedTraces(d);
   return {
     store: new DrizzleDlqStore(d),
     cleanup: async () => truncate(d, "dead_letter_queue", "traces"),
