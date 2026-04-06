@@ -1,5 +1,38 @@
 import { defineConfig } from "vite";
+import type { Plugin } from "vite";
 import obfuscatorPlugin from "rollup-plugin-obfuscator";
+import { registerPfEntry, removePfEntry } from "../../packages/infra-engine/src/lib/pf-registry.js";
+
+const PF_KEY = "platform-demo-dev";
+
+/** Vite 시작/종료 시 infra pf-registry에 자동 등록/해제 */
+function pfRegistryPlugin(): Plugin {
+  return {
+    name: "pf-registry",
+    configureServer(server) {
+      server.httpServer?.once("listening", () => {
+        const addr = server.httpServer?.address();
+        if (!addr || typeof addr === "string") return;
+        const port = addr.port;
+        registerPfEntry(PF_KEY, {
+          pid: process.pid,
+          localPort: port,
+          service: "platform-demo",
+          namespace: "local",
+          kind: "dev-server",
+          note: "Vite dev — RLSC Inspector + platform demo",
+        }).catch(() => {});
+        console.log(`[pf-registry] registered ${PF_KEY} → :${port}`);
+      });
+      const cleanup = () => {
+        removePfEntry(PF_KEY).catch(() => {});
+      };
+      process.on("SIGINT", cleanup);
+      process.on("SIGTERM", cleanup);
+      process.on("exit", cleanup);
+    },
+  };
+}
 
 export default defineConfig({
   root: ".",
@@ -27,6 +60,7 @@ export default defineConfig({
       ],
     },
   },
+  plugins: [pfRegistryPlugin()],
   server: {
     port: 5176,
     proxy: {
