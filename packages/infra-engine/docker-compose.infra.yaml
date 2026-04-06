@@ -37,7 +37,7 @@ services:
     image: ghcr.io/zitadel/zitadel:latest
     command: start-from-init --masterkeyFromEnv --tlsMode disabled
     environment:
-      ZITADEL_MASTERKEY: "MasterkeyNeedsToHave32Chars!!"
+      ZITADEL_MASTERKEY: "QaSdkLocalDevMasterKey0123456789"
       ZITADEL_DATABASE_POSTGRES_HOST: zitadel-db
       ZITADEL_DATABASE_POSTGRES_PORT: 5432
       ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
@@ -48,12 +48,12 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
       ZITADEL_EXTERNALSECURE: "false"
-      ZITADEL_EXTERNALPORT: 8080
+      ZITADEL_EXTERNALPORT: 8085
       ZITADEL_EXTERNALDOMAIN: localhost
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: "Admin123!"
     ports:
-      - "8080:8080"
+      - "8085:8080"
     depends_on:
       zitadel-db:
         condition: service_healthy

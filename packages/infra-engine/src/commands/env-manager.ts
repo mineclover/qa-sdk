@@ -124,8 +124,8 @@ export async function envStatus(): Promise<void> {
 
   // Zitadel
   try {
-    const res = await fetch("http://localhost:8080/debug/healthz", { signal: AbortSignal.timeout(2000) });
-    console.log(`  Zitadel:    ${res.ok ? "🟢 실행 중 (localhost:8080)" : "⬜ 미실행"}`);
+    const res = await fetch("http://localhost:8085/debug/healthz", { signal: AbortSignal.timeout(2000) });
+    console.log(`  Zitadel:    ${res.ok ? "🟢 실행 중 (localhost:8085)" : "⬜ 미실행"}`);
   } catch {
     console.log("  Zitadel:    ⬜ 미실행");
   }
