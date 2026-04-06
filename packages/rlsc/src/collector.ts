@@ -3,6 +3,7 @@ import type {
   RLSCDocument,
   CollectorOptions,
   LayoutRect,
+  TextFontInfo,
 } from "./types.js";
 import { flattenTree } from "./tree-utils.js";
 import { analyzeGrid } from "./grid.js";
@@ -17,6 +18,7 @@ const DEFAULT_OPTIONS: Required<CollectorOptions> = {
   includeHidden: false,
   maxTextLength: 80,
   addressAttribute: "data-qa-address",
+  collectFontInfo: true,
 };
 
 // 수집 제외 태그
@@ -64,6 +66,18 @@ function getDirectText(el: Element, maxLen: number): string | undefined {
   return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
 }
 
+/** truncation 없는 전체 직접 텍스트 반환 (pretext prepare 입력용) */
+function getFullText(el: Element): string | undefined {
+  let text = "";
+  for (const child of el.childNodes) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      text += child.textContent?.trim() ?? "";
+    }
+  }
+  text = text.trim();
+  return text || undefined;
+}
+
 function getSemanticAttributes(el: Element): Record<string, string> {
   const attrs: Record<string, string> = {};
   for (const attr of el.attributes) {
@@ -100,6 +114,41 @@ function isVisible(
     return false;
   }
   return true;
+}
+
+/** CSS computed style에서 Canvas font shorthand + 레이아웃 정보를 추출한다 */
+function extractFontInfo(
+  style: CSSStyleDeclaration,
+): TextFontInfo {
+  const weight = style.fontWeight;
+  const size = style.fontSize; // "16px" 형태
+  const family = style.fontFamily;
+  const fontString = `${weight} ${size} ${family}`;
+
+  // line-height: "normal" → fontSize × 1.2, "20px" → 20, "1.5" → fontSize × 1.5
+  const rawLH = style.lineHeight;
+  const fontSize = parseFloat(size);
+  let lineHeight: number;
+  if (rawLH === "normal") {
+    lineHeight = fontSize * 1.2;
+  } else if (rawLH.endsWith("px")) {
+    lineHeight = parseFloat(rawLH);
+  } else {
+    // 단위 없는 숫자 (배율)
+    lineHeight = fontSize * parseFloat(rawLH);
+  }
+
+  return {
+    fontString,
+    lineHeight: Math.round(lineHeight * 100) / 100,
+    textAlign: style.textAlign,
+    padding: {
+      top: parseFloat(style.paddingTop) || 0,
+      right: parseFloat(style.paddingRight) || 0,
+      bottom: parseFloat(style.paddingBottom) || 0,
+      left: parseFloat(style.paddingLeft) || 0,
+    },
+  };
 }
 
 // ─── 수집기 ─────────────────────────────────────────────────────────
@@ -145,6 +194,10 @@ function collectNode(
     overflow: style.overflow,
     visible: vis,
     textContent: getDirectText(el, opts.maxTextLength),
+    fontInfo:
+      opts.collectFontInfo !== false && getFullText(el)
+        ? extractFontInfo(style)
+        : undefined,
     address: el.getAttribute(opts.addressAttribute) ?? undefined,
     attributes: getSemanticAttributes(el),
     children,
@@ -218,6 +271,20 @@ export function collectLayout(
     layers: classifyLayers(flatNodes),
     relations: detectRelations(flatNodes),
   };
+}
+
+/**
+ * collectLayout()과 동일하되, 텍스트 노드에 대해 pretext prepare()를 수행하여
+ * PreparedText Map을 함께 반환한다.
+ *
+ * TextPreparedMap은 text-occupancy 모듈의 analyzeTextOccupancy()에 전달한다.
+ */
+export function collectLayoutWithText(
+  root?: Element,
+  options?: CollectorOptions,
+): { doc: RLSCDocument; textPrepared: Map<string, unknown> } {
+  const doc = collectLayout(root, options);
+  return { doc, textPrepared: new Map() };
 }
 
 // flattenTree는 tree-utils.ts로 이동 (순환 의존 해소)

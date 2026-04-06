@@ -36,6 +36,8 @@ export interface RLSCNode {
   readonly textContent?: string;
   /** 기존 좌표계 주소 (data-qa-address 등에서 추출) */
   readonly address?: string;
+  /** 폰트 정보 (텍스트가 있는 노드에만 존재) */
+  readonly fontInfo?: TextFontInfo;
   /** 의미론적 속성 (data-*, aria-*) */
   readonly attributes: Readonly<Record<string, string>>;
   /** 자식 노드 */
@@ -54,6 +56,8 @@ export interface CollectorOptions {
   readonly maxTextLength?: number;
   /** 좌표계 주소 추출 속성명. 기본 "data-qa-address" */
   readonly addressAttribute?: string;
+  /** 텍스트 노드의 폰트 정보 수집 여부. 기본 true */
+  readonly collectFontInfo?: boolean;
 }
 
 // ─── Grid ───────────────────────────────────────────────────────────
@@ -358,4 +362,72 @@ export interface LayoutMonitor {
   readonly changes: readonly LayoutChange[];
   /** 적합성 변경 콜백 (intent 설정 시 활성) */
   onConformanceChange?: (result: ConformanceResult) => void;
+}
+
+// ─── Text Occupancy ────────────────────────────────────────────────
+
+/** 수집 시점에 노드에 부착되는 폰트 정보 */
+export interface TextFontInfo {
+  /** Canvas font shorthand ("500 16px Inter") */
+  readonly fontString: string;
+  /** CSS line-height (px) */
+  readonly lineHeight: number;
+  /** CSS text-align */
+  readonly textAlign: string;
+  /** 내부 여백 (px) */
+  readonly padding: {
+    readonly top: number;
+    readonly right: number;
+    readonly bottom: number;
+    readonly left: number;
+  };
+}
+
+/** 노드별 텍스트 점유 분석 결과 */
+export interface TextOccupancy {
+  readonly nodeId: string;
+  /** 뷰포트 좌표 기준 텍스트 실제 렌더링 영역 */
+  readonly renderedRect: LayoutRect;
+  /** 컨테이너 대비 x축 점유율 (0–1) */
+  readonly fillX: number;
+  /** 컨테이너 대비 y축 점유율 (0–1) */
+  readonly fillY: number;
+  /** 줄 수 */
+  readonly lineCount: number;
+  /** shrink-wrap 너비 (px) */
+  readonly naturalWidth: number;
+  /** 텍스트와 컨테이너 content-box 사이의 여백 (px) */
+  readonly margins: {
+    readonly top: number;
+    readonly right: number;
+    readonly bottom: number;
+    readonly left: number;
+  };
+  /** 경계 접촉 판정 (margin < threshold) */
+  readonly boundaryContact: {
+    readonly top: boolean;
+    readonly right: boolean;
+    readonly bottom: boolean;
+    readonly left: boolean;
+  };
+  /** 텍스트가 컨테이너 밖으로 넘침 */
+  readonly overflows: boolean;
+}
+
+/** 영역별 텍스트 밀도 집계 */
+export interface TextRegionDensity {
+  /** GridRegion nodeId */
+  readonly regionId: string;
+  /** 영역 내 텍스트 총 면적 (px²) */
+  readonly textArea: number;
+  /** 영역 면적 (px²) */
+  readonly regionArea: number;
+  /** 텍스트 밀도 (0–1) */
+  readonly density: number;
+  /** 영역 내 노드 평균 x 점유 */
+  readonly avgFillX: number;
+  /** 영역 내 노드 평균 y 점유 */
+  readonly avgFillY: number;
+  /** 경계 접촉 노드 수 */
+  readonly contactCount: number;
 }

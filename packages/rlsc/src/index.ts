@@ -38,10 +38,14 @@ export type {
   LayoutChange,
   LayoutMonitor,
   MonitorOptions,
+  // 텍스트 점유
+  TextFontInfo,
+  TextOccupancy,
+  TextRegionDensity,
 } from "./types.js";
 
 // 수집 (브라우저 전용)
-export { collectLayout } from "./collector.js";
+export { collectLayout, collectLayoutWithText } from "./collector.js";
 export { flattenTree } from "./tree-utils.js";
 
 // 인코딩/디코딩
