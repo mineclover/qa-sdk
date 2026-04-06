@@ -141,9 +141,20 @@ export async function createPgTransmissionStore() {
 
 export async function createPgDlqStore() {
   const d = getDb();
+  // dead_letter_queue에 traces FK 제약 — 테스트용 trace 시딩
+  const traceStore = new DrizzleTraceStore(d);
+  const traceIds = ["t1", "t2"];
+  for (const traceId of traceIds) {
+    await traceStore.upsert({
+      traceId,
+      recordCount: 0,
+      firstTimestamp: new Date("2026-01-01"),
+      lastTimestamp: new Date("2026-01-01"),
+    });
+  }
   return {
     store: new DrizzleDlqStore(d),
-    cleanup: async () => truncate(d, "dead_letter_queue"),
+    cleanup: async () => truncate(d, "dead_letter_queue", "traces"),
   };
 }
 
