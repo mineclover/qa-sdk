@@ -1012,18 +1012,30 @@ importers:
 
   packages/infra-engine:
     dependencies:
+      '@hono/node-server':
+        specifier: ^1.19.11
+        version: 1.19.11(hono@4.12.7)
       '@pulumi/kubernetes':
         specifier: ^4.28.0
         version: 4.28.0(typescript@5.9.3)
       '@pulumi/pulumi':
         specifier: ^3.229.0
         version: 3.229.0(typescript@5.9.3)
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
       cli-command:
         specifier: workspace:*
         version: link:../cli-command
+      demo-snapshot:
+        specifier: workspace:*
+        version: link:../demo-snapshot
       execa:
         specifier: ^9.0.0
         version: 9.6.1
+      hono:
+        specifier: ^4.12.7
+        version: 4.12.7
       zod:
         specifier: ^3.23.0
         version: 3.25.76
