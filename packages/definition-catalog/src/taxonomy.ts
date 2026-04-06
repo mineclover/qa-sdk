@@ -488,11 +488,12 @@ export const CLASSIFICATION_CONVENTIONS = {
    * - constraint 문서: `## 불변 조건 ^constraint` → 제약 규칙 수집
    * - state 문서: `## 상태 정의 ^state-def` → 상태 정의 수집
    * - interface 문서: `## 엔드포인트 ^endpoints` → API 목록 수집
+   * - concept/guide/viz 문서: `## 해석 관점 ^interpretation` → 복수 독해 렌즈 기록
    *
    * extractByMarker(body, "constraint") → 해당 섹션만 추출.
    * 마커 이름은 lowercase + 하이픈: ^my-marker
    */
-  customMarkers: "자유 마커(^constraint, ^state-def 등)로 scope별 핵심 내용 수집 가능",
+  customMarkers: "자유 마커(^constraint, ^state-def, ^interpretation 등)로 scope별 핵심 내용 수집 가능",
 
   // ── 코드 참조 컨벤션 ──────────────────────────────────
 
@@ -554,6 +555,9 @@ export const CLASSIFICATION_CONVENTIONS = {
    * ^context — 사용 맥락 (언제/어떤 상황에서 이 도구를 쓰는가)
    * ^feedback — 피드백 규칙 (CLI 사용 패턴에 따른 개선 기준)
    * ^caveat — 주의사항 (한계, 오용 패턴, 잘못된 기대)
+   *
+   * 다중 해석 문서 전용 마커:
+   * ^interpretation — 같은 구조를 여러 독해 관점으로 병렬 기록
    */
   scopeMarkers: "scope별 표준 마커: constraint→^constraint, state→^state-def, interface→^api-surface",
 
@@ -588,6 +592,9 @@ export const CLASSIFICATION_CONVENTIONS = {
    *
    * experience 계층 (layer:experience) — skill/CLI 문서:
    *   ^purpose → ^context (사용 맥락) → ^intent (설계 의도) → ^feedback (피드백 규칙) → ^caveat → 관련 소스
+   *
+   * concept/guide/viz 문서에서 다중 해석이 필요한 경우:
+   *   ^purpose → ^overview → ^interpretation (관점별 질문/읽기/한계) → 관련 소스
    */
   scopeTemplates: "scope별 최소 구조: purpose → overview → scope 고유 섹션 → 관련 소스",
 

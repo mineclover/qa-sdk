@@ -29,6 +29,8 @@ def:
       type: contains
     - target: df-gate-integration
       type: contains
+    - target: df-taxonomy
+      type: contains
 ---
 
 # Decision Flow 시스템
@@ -43,6 +45,7 @@ def:
 - `df-analysis-group`: 벡터 비교, 시간 패턴, 인과 매핑 — 분석 계층.
 - `df-interface-group`: CLI 영속화, CLI 조회, ingest 전송 — 외부 인터페이스 계층.
 - `df-constraint`: 게이트 무게, 인과 그래프, 결정 계층, 컨텍스트 바운더리.
+- `df-taxonomy`: decision-flow가 소유하는 분류 체계의 중심 문서.
 - `decision-standard-group`: 표준 프로세스 + 체크리스트.
 - `df-narrative-group`: 서사 구조 + 컨텍스트 + 증명.
 - `axis-decision-guide`: 축 판단 프레임워크 (범용 재사용 가능).

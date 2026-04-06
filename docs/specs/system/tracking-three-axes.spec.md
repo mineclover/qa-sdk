@@ -15,13 +15,15 @@ def:
       type: depends_on
     - target: definition-taxonomy
       type: depends_on
+    - target: observability-taxonomy
+      type: refines
 ---
 
-# 추적 3축 체계 — 이벤트 × 패싯 × 데이터 분류
+# 앱 데이터 관측 3축 체계 — 이벤트 × 패싯 × 데이터 분류
 
 ## 목적 ^purpose
 
-시스템 관측의 3가지 직교 축을 정의한다. 같은 시스템을 다른 렌즈로 보는 것이며, 각각 독립적으로 수집되고 trace_id/session_id로 런타임에 연결된다.
+앱 데이터 관측의 3가지 직교 축을 정의한다. 사용자 행동과 데이터 흐름, 그리고 그 데이터의 존재 이유를 앱 레벨에서 읽기 위한 taxonomy이며, 각각 독립적으로 수집되고 trace_id/session_id로 런타임에 연결된다.
 
 ## 정의 ^defines
 
@@ -29,6 +31,7 @@ def:
 - 축 2: 패싯 (데이터 흐름 관점)
 - 축 3: 데이터 분류 (비즈니스 vs UX — DefLayer로 표현)
 - 3축의 독립성과 연결 지점
+- 이 taxonomy의 책임 경계
 
 ## 구성 ^overview
 
@@ -37,7 +40,7 @@ def:
 | 축 | 관점 | 질문 | 정의 주체 | 수집 도구 |
 |----|------|------|----------|----------|
 | **이벤트** | 유저 시나리오 | "사용자가 무엇을 했는가" | 기획자/디자이너 | event-catalog, prefix-mapping, auto-track |
-| **패싯** | 데이터 흐름 | "데이터가 어디서 어디로 가는가" | 개발자 | DataIR 4패싯, pipe-lineage, FieldLineage |
+| **패싯** | 데이터 흐름 | "데이터가 어디서 어디로 가는가" | 개발자 | 데이터 패싯 5역할, DataIR 4패싯 projection, pipe-lineage, FieldLineage |
 | **데이터 분류** | 존재 이유 | "이 데이터가 왜 있는가" | 기획+개발 | DefLayer (domain/experience/operation/mediation) |
 
 ### 각 축의 역할
@@ -52,6 +55,12 @@ def:
 
 기획 문서의 유저 시나리오에서 파생. `event-catalog`의 카테고리(navigation, interaction, form, session, network, execution, outcome, quality, infrastructure)로 분류.
 
+앱 데이터 관측 taxonomy가 **직접 소유하는 핵심 카테고리**는
+`navigation`, `interaction`, `form`, `session`, `network`, `outcome`이다.
+
+- `execution`, `quality`는 앱 시나리오의 내부 진행/품질 신호를 설명할 때만 보조적으로 포함될 수 있다.
+- `infrastructure`는 event-catalog의 상위 카탈로그에는 존재하지만, 이 taxonomy의 핵심 범위에는 포함하지 않는다.
+
 **축 2: 패싯** — 데이터 계보
 
 ```
@@ -59,7 +68,18 @@ def:
   Order 스키마 → PaymentService가 관리 → CartService가 생산 → DB에 영구 저장
 ```
 
-코드 구조에서 파생. `DataIR` 4패싯 + `FieldLineage`(필드별 변환 추적).
+코드 구조에서 파생한다. 다만 여기에는 **개념 역할**과 **IR 투영** 두 층이 있다.
+
+- 개념 층: `ms-concept-data-facets`가 정의하는 5가지 역할
+  - 정의 / 관리 / 생산 / 소비 / 저장
+- IR 층: `DataIR`는 이를 4개 projection으로 저장
+  - `definition`
+  - `management`
+  - `lifecycle` (`producedBy`, `consumedBy`, `transformedBy`)
+  - `storage`
+
+즉 "패싯 5역할"이 canonical 개념이고,
+`DataIR 4패싯`은 그 개념을 런타임/정적 분석에 맞게 투영한 구현 모델이다.
 
 **축 3: 데이터 분류** — core vs UX
 
@@ -71,6 +91,25 @@ DefLayer = mediation  → 변환/중재 (API 응답 포맷, 검색 인덱스)
 ```
 
 기획 단계에서 "이 데이터가 core인가 UX인가"를 결정하고, 스키마 정의 시 layer를 태깅.
+
+---
+
+## 책임 경계 ^constraint
+
+이 문서는 **앱 데이터 관측 taxonomy**만 다룬다.
+
+- 포함:
+  - 사용자 시나리오 이벤트
+  - 데이터 패싯/계보
+  - 데이터의 존재 이유 분류(DefLayer)
+- 포함하지 않음:
+  - decision-flow의 판단 추적 (`DecisionUnit`, `Evidence`, `DecisionVerdict`)
+  - CLI/DKG 운영 이벤트
+  - infra-engine의 deploy/health/rollout 관측
+  - OpenTelemetry 프로토콜/SDK 책임
+
+즉 이 문서는 "앱 안에서 무슨 일이 일어났고 데이터가 어떻게 흘렀는가"를 설명한다.
+서비스 계측 프로토콜이나 운영 파이프라인 관측은 별도 taxonomy가 소유한다.
 
 ---
 
@@ -99,6 +138,9 @@ DefLayer = mediation  → 변환/중재 (API 응답 포맷, 검색 인덱스)
 
 → T1으로 묶으면: "세션 S1에서 사용자가 cart.add → CartService가 Order 생산 (core 데이터)"
 ```
+
+여기서 `trace_id/session_id`는 **런타임 연결 수단**이지,
+decision-flow나 infra observe와 의미를 통합하는 상위 taxonomy를 뜻하지는 않는다.
 
 ### 시뮬레이션 / E2E
 
@@ -143,7 +185,8 @@ E2E:
 |------|:--:|------|
 | `event-catalog/src/prefix-mapping.ts` | 1 | 이벤트 → prefix 차원 매핑 |
 | `event-catalog/src/auto-track.ts` | 1 | event_key → 자동 인코딩 |
-| `core/src/meta-semantic/ir-types.ts` | 2 | DataIR 4패싯 |
+| `docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md` | 2 | 데이터 패싯 5역할 (개념 canonical) |
+| `core/src/meta-semantic/ir-types.ts` | 2 | DataIR 4패싯 projection |
 | `core/src/pipe/pipe-lineage.ts` | 2 | 필드별 계보 추적 |
 | `core/src/pipe/data-contract.ts` | 2 | 스키마 호환 검증 |
 | `definition-catalog/src/types.ts` | 3 | DefLayer 정의 |

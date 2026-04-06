@@ -14,6 +14,8 @@ def:
       type: contains
     - target: df-system
       type: contains
+    - target: taxonomy-boundaries
+      type: contains
     - target: spec-engine-system
       type: contains
     - target: analysis-system
@@ -31,4 +33,10 @@ DKG(설계 그래프), Decision Flow(의사결정), Spec Engine(설계 규칙), 
 
 ## 구성 ^overview
 
-5개 도구: DKG(설계 그래프), decision-flow(의사결정), spec-engine(설계 규칙), analysis(관측), definition-catalog(문서).
+- DKG(설계 그래프)
+- decision-flow(의사결정)
+- definition-catalog(문서 관리)
+- taxonomy-boundaries(분류 체계 경계 관리)
+- spec-engine(설계 규칙)
+- analysis(관측)
+- prefix-catalog(도메인 prefix 카탈로그)

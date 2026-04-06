@@ -13,6 +13,8 @@ def:
       type: depends_on
     - target: definition-service-system
       type: depends_on
+    - target: status-crosswalk
+      type: depends_on
     - target: definition-system-philosophy
       type: refines
     - target: dual-coordinate-system
@@ -95,10 +97,13 @@ Decision → 문서 생성 → 문서가 컨텍스트 → 다음 Decision → �
 
 | decision-flow 판정 | verdict | → DefLifecycle |
 |---|---|---|
-| 승인 | approved | approved |
-| 보류/추가검토 | deferred | review |
-| 거부 | rejected | deprecated |
-| 미결정 | — | draft |
+| 성공 | success | approved |
+| 실패 | failure | deprecated |
+| 보류 | deferred | draft |
+| 대체됨 | superseded | archived |
+
+이 매핑은 `definition-catalog/src/bridge.ts`의 `suggestLifecycleFromVerdict()` 구현을 따른다.
+더 넓은 상태 체계 번역은 `status-crosswalk` 문서를 따른다.
 
 ### CLI에서 확인
 

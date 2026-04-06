@@ -74,6 +74,22 @@ def:
 - boundary는 semantic column의 개념일 뿐 아니라, 각 column 전체를 감싸는 plane 박스로도 표현한다.
 - test phase, verification unit, gate doc, code-doc link는 바닥 행에 가까운 작은 단위로 놓는다.
 
+## 해석 관점 ^interpretation
+
+이 grid는 하나의 canonical 트리만 강제하지 않는다.
+같은 배치를 서로 다른 독해 렌즈로 병렬 기록할 수 있다.
+
+### 관점 1 — 상향식 진입점 분류
+
+- `facet/boundary`는 시스템을 실제로 분해하는 의미론적 축이다.
+  패싯이 먼저 있고, boundary는 패싯 일부를 가진 검증 가능한 기능 단위로 형성된다.
+- `definition scope`는 boundary를 어떤 인지 관점에서 먼저 붙잡는지, 즉 상향식 접근의 진입점을 분류하는 축이다.
+  현재 열 이름은 `문서 좌표`이지만, 이 관점에서는 `인지 관점 / 정의 진입점` plane으로도 읽을 수 있다.
+- `scope-nesting`은 boundary를 계약 소유자 단위의 scope로 배열하여
+  상위 → 하위 계약 하향을 표현하는 구조 축이다.
+- 따라서 이 grid는 `생성(facet/boundary) → 인지(definition scope) → 배치(scope-nesting)` 흐름으로도 읽을 수 있다.
+- 이 해석은 유효한 관점 중 하나이며, 다른 도메인이나 문서에서는 다른 관점을 추가로 기록할 수 있다.
+
 ## 포함해야 하는 대표 개념
 
 - `definition-taxonomy`
