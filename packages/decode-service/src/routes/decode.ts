@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { KeyCache } from "@qa-sdk/core";
 import { PrefixDecoder, PrefixDecoderBig } from "index-meta";
 import type { DecoderPool } from "../lib/decoder-pool.js";
 import { AppError, decoderNotLoaded } from "../lib/errors.js";
@@ -13,6 +14,10 @@ import {
 
 export interface DecodeDeps {
   pool: DecoderPool;
+  /** Redis L2 캐시 (없으면 L1 only) */
+  decodeCache?: KeyCache;
+  /** 캐시 TTL (밀리초) */
+  cacheTtlMs?: number;
 }
 
 export function createDecodeRoutes(deps: DecodeDeps) {
@@ -25,16 +30,37 @@ export function createDecodeRoutes(deps: DecodeDeps) {
     const body = await c.req.json();
     const req = decodeRequestSchema.parse(body);
 
+    // L2 캐시 조회
+    const cacheKey = `${req.prefix ?? "auto"}:${req.version ?? "auto"}:${req.input}`;
+    if (deps.decodeCache) {
+      try {
+        const cached = await deps.decodeCache.get(cacheKey);
+        if (cached) return c.json(cached);
+      } catch {
+        // fail-open: 캐시 실패 → decode 진행
+      }
+    }
+
     const decoder = resolveDecoder(pool, req.input, req.prefix, req.version);
     const vv = decoder.resolve(req.input);
     const entities = decoder.decode(req.input);
-
-    return c.json({
+    const result = {
       indexId: vv.indexId,
       versionId: vv.versionId,
       value: vv.value,
       entities,
-    });
+    };
+
+    // L2 캐시 저장
+    if (deps.decodeCache) {
+      try {
+        await deps.decodeCache.set(cacheKey, result, deps.cacheTtlMs ?? 60_000);
+      } catch {
+        // fail-open
+      }
+    }
+
+    return c.json(result);
   });
 
   // ── POST /decode/batch ───────────────────────────────────────────────────

@@ -20,9 +20,11 @@
     "@hono/node-server": "^1.14.1",
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/store": "workspace:*",
     "dotenv": "^17.3.1",
     "hono": "^4.7.5",
     "index-meta": "workspace:*",
+    "ioredis": "^5.10.1",
     "pino": "workspace:@qa-sdk/pino@*",
     "weighted-index": "workspace:*",
     "zod": "^3.24.2"

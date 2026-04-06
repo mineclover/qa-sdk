@@ -540,6 +540,9 @@ importers:
       '@qa-sdk/logger':
         specifier: workspace:*
         version: link:../logger
+      '@qa-sdk/store':
+        specifier: workspace:*
+        version: link:../store
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
@@ -549,6 +552,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      ioredis:
+        specifier: ^5.10.1
+        version: 5.10.1
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
@@ -1968,9 +1974,6 @@ importers:
       drizzle-orm:
         specifier: 1.0.0-beta.20
         version: 1.0.0-beta.20(@cloudflare/workers-types@4.20260313.1)(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/mssql@9.1.11(@azure/core-client@1.10.1))(better-sqlite3@12.8.0)(gel@2.2.0)(mssql@11.0.1(@azure/core-client@1.10.1))(postgres@3.4.8)(zod@3.25.76)
-      ioredis:
-        specifier: ^5.10.1
-        version: 5.10.1
       postgres:
         specifier: ^3.4.5
         version: 3.4.8
@@ -1996,6 +1999,10 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+    optionalDependencies:
+      ioredis:
+        specifier: ^5.10.1
+        version: 5.10.1
 
   packages/tag-search:
     devDependencies:
