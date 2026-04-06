@@ -92,37 +92,8 @@ import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from '
 import { dryRun, type ChangeScenario } from './commands/dry-run.js';
 import { schemaPull } from './commands/schema-pull.js';
 import { codegen, codegenDataObjects, runMigrationTest } from './commands/codegen.js';
-import {
-  specList,
-  specResolve,
-  specValidate,
-  specTrace,
-  specDecode,
-  specCodegen,
-} from './commands/spec.js';
-import type { CatalogInputLike, SchemaValidationInput } from './commands/spec.js';
 import { init } from './commands/init.js';
 import { syncObsidian } from './commands/sync-obsidian.js';
-import {
-  ingestHealth,
-  ingestSend,
-  ingestRecent,
-  ingestTrace,
-  ingestStatus,
-  ingestServices,
-  ingestMode,
-  ingestInsights,
-} from './commands/ingest.js';
-import {
-  gateCheck,
-  gateClassify,
-  gateHealth,
-  queryResolve,
-  queryRules,
-  queryHealth,
-} from './commands/service-query.js';
-import {
-} from './commands/service.js';
 import { cliDef } from './commands/def.js';
 import { prefixStamp, prefixDrift, prefixFind, prefixMigrate, prefixImpact } from './commands/prefix-stamp.js';
 import {
@@ -143,21 +114,6 @@ import {
   testReport,
 } from './commands/test.js';
 import { cliQuality } from './commands/quality.js';
-import { motionInspect, motionValidate } from './commands/motion.js';
-import {
-  motionApply,
-  motionExport,
-  motionImport,
-  motionPreview,
-  motionSceneCreate,
-  motionSceneDelete,
-  motionSceneList,
-  motionSceneShow,
-  motionWorkspaceCreate,
-  motionWorkspaceDelete,
-  motionWorkspaceList,
-  motionWorkspaceShow,
-} from './commands/motion-workspace.js';
 import {
 } from './commands/flow.js';
 import {
@@ -1029,16 +985,7 @@ async function dispatchReviewCommand(handlerKey: string, rest: string[]): Promis
   await dispatchFromRegistry(REVIEW_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
-const INGEST_HANDLER_REGISTRY = {
-  'ingest.health': ingestHealth,
-  'ingest.send': ingestSend,
-  'ingest.recent': ingestRecent,
-  'ingest.trace': ingestTrace,
-  'ingest.status': ingestStatus,
-  'ingest.services': ingestServices,
-  'ingest.mode': ingestMode,
-  'ingest.insights': ingestInsights,
-} satisfies Readonly<Record<string, RestCommandHandler>>;
+const INGEST_HANDLER_REGISTRY = INGEST_GROUP_HANDLER_REGISTRY;
 
 async function dispatchIngestCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(INGEST_HANDLER_REGISTRY, handlerKey, rest);
@@ -1080,34 +1027,19 @@ async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<v
   }
 }
 
-const GATE_HANDLER_REGISTRY = {
-  'gate.health': gateHealth,
-  'gate.check': gateCheck,
-  'gate.classify': gateClassify,
-} satisfies Readonly<Record<string, RestCommandHandler>>;
+const GATE_HANDLER_REGISTRY = GATE_GROUP_HANDLER_REGISTRY;
 
 async function dispatchGateCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(GATE_HANDLER_REGISTRY, handlerKey, rest);
 }
 
-const QUERY_HANDLER_REGISTRY = {
-  'query.health': queryHealth,
-  'query.resolve': queryResolve,
-  'query.rules': queryRules,
-} satisfies Readonly<Record<string, RestCommandHandler>>;
+const QUERY_HANDLER_REGISTRY = QUERY_GROUP_HANDLER_REGISTRY;
 
 async function dispatchQueryCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(QUERY_HANDLER_REGISTRY, handlerKey, rest);
 }
 
-const SPEC_HANDLER_REGISTRY = {
-  'spec.list': runSpecList,
-  'spec.resolve': runSpecResolve,
-  'spec.validate': runSpecValidate,
-  'spec.trace': runSpecTrace,
-  'spec.decode': runSpecDecode,
-  'spec.codegen': runSpecCodegen,
-} satisfies Readonly<Record<string, RestCommandHandler>>;
+const SPEC_HANDLER_REGISTRY = SPEC_GROUP_HANDLER_REGISTRY;
 
 async function dispatchSpecCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(SPEC_HANDLER_REGISTRY, handlerKey, rest);
@@ -1218,23 +1150,6 @@ async function dispatchCatalogCommand(handlerKey: string, rest: string[]): Promi
     }
   }
 }
-
-const MOTION_HANDLER_REGISTRY = {
-  'motion.validate': motionValidate,
-  'motion.inspect': motionInspect,
-  'motion.workspace.list': motionWorkspaceList,
-  'motion.workspace.show': motionWorkspaceShow,
-  'motion.workspace.create': motionWorkspaceCreate,
-  'motion.workspace.delete': motionWorkspaceDelete,
-  'motion.scene.list': motionSceneList,
-  'motion.scene.show': motionSceneShow,
-  'motion.scene.create': motionSceneCreate,
-  'motion.scene.delete': motionSceneDelete,
-  'motion.export': motionExport,
-  'motion.import': motionImport,
-  'motion.apply': motionApply,
-  'motion.preview': motionPreview,
-} satisfies Readonly<Record<string, RestCommandHandler>>;
 
 async function dispatchMotionCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(MOTION_GROUP_HANDLER_REGISTRY, handlerKey, rest);
@@ -1596,7 +1511,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const specResolved = resolveCliTreeCommand(args, ['spec'], SPEC_COMMAND_TREE);
+  const specResolved = resolveCliTreeCommand(args, ['spec'], SPEC_GROUP_COMMAND_TREE);
   if (specResolved) {
     return {
       name: specResolved.commandName,
@@ -1919,175 +1834,6 @@ async function runInspect(argv: string[]) {
     registry: registryUrl,
     output: values.output ?? './schemas',
     snapshotId: values['snapshot-id'],
-  });
-}
-
-// ── spec 공통: --catalog / --specs 파싱 ─────────────
-
-const SPEC_BASE_OPTIONS = {
-  specs: { type: 'string' as const },
-  catalog: { type: 'boolean' as const, default: false },
-};
-
-function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
-  try {
-    const { DEMO_CATALOG } = await import('demo-snapshot');
-    return DEMO_CATALOG;
-  } catch {
-    console.error('demo-snapshot 패키지를 로딩할 수 없습니다');
-    process.exit(1);
-  }
-}
-
-// ── spec list ───────────────────────────────────────
-
-async function runSpecList(argv: string[]) {
-  const { values } = parseArgs({ args: argv, options: { ...SPEC_BASE_OPTIONS }, strict: true });
-  await specList({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-  });
-}
-
-// ── spec resolve ────────────────────────────────────
-
-async function runSpecResolve(argv: string[]) {
-  const { values } = parseArgs({
-    args: argv,
-    options: { ...SPEC_BASE_OPTIONS, prefix: { type: 'string' }, values: { type: 'string' } },
-    strict: true,
-  });
-
-  if (!values.prefix || !values.values) {
-    console.error('--prefix <id> --values <json> 필수');
-    console.error(
-      '예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'',
-    );
-    process.exit(1);
-  }
-
-  let parsed: Record<string, string>;
-  try {
-    parsed = JSON.parse(values.values) as Record<string, string>;
-  } catch {
-    console.error('--values JSON 파싱 실패');
-    process.exit(1);
-  }
-
-  await specResolve({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-    prefixId: values.prefix,
-    values: parsed,
-  });
-}
-
-// ── spec validate ───────────────────────────────────
-
-async function runSpecValidate(argv: string[]) {
-  const { values } = parseArgs({
-    args: argv,
-    options: { ...SPEC_BASE_OPTIONS, schema: { type: 'string' }, data: { type: 'string' } },
-    strict: true,
-  });
-
-  if (!values.schema || !values.data) {
-    console.error('--schema <id> --data <json> 필수');
-    process.exit(1);
-  }
-
-  let parsed: SchemaValidationInput;
-  try {
-    const raw = JSON.parse(values.data) as unknown;
-    if (!isSchemaValidationInput(raw)) throw new Error('invalid');
-    parsed = raw;
-  } catch {
-    console.error('--data JSON 파싱 실패');
-    process.exit(1);
-  }
-
-  await specValidate({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-    schemaId: values.schema,
-    data: parsed,
-  });
-}
-
-// ── spec trace ──────────────────────────────────────
-
-async function runSpecTrace(argv: string[]) {
-  const { values } = parseArgs({
-    args: argv,
-    options: { ...SPEC_BASE_OPTIONS, id: { type: 'string' } },
-    strict: true,
-  });
-
-  if (!values.id) {
-    console.error('--id <specId> 필수');
-    console.error('예: qa-sdk spec trace --id FEAT-003');
-    process.exit(1);
-  }
-
-  await specTrace({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-    specId: values.id,
-  });
-}
-
-// ── spec codegen ────────────────────────────────────
-
-async function runSpecCodegen(argv: string[]) {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      ...SPEC_BASE_OPTIONS,
-      output: { type: 'string' },
-      format: { type: 'string', default: 'ts' },
-    },
-    strict: true,
-  });
-
-  await specCodegen({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-    output: values.output,
-    format: values.format as 'ts' | 'esm' | 'cjs' | 'proto' | 'json-schema',
-  });
-}
-
-// ── spec decode ─────────────────────────────────────
-
-async function runSpecDecode(argv: string[]) {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      ...SPEC_BASE_OPTIONS,
-      address: { type: 'string' },
-      deep: { type: 'boolean', default: false },
-      format: { type: 'string' },
-    },
-    strict: true,
-  });
-
-  if (!values.address) {
-    console.error('--address "prefix:version:address" 필수');
-    console.error('예: qa-sdk spec decode --catalog --address permission:v1:3');
-    console.error('    qa-sdk spec decode --catalog --address permission:v1:3 --deep');
-    process.exit(1);
-  }
-
-  await specDecode({
-    specPath: values.specs,
-    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
-    address: values.address,
-    deep: values.deep,
-    format: values.format === 'json' ? 'json' : 'text',
   });
 }
 
