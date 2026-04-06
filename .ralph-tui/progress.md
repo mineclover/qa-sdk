@@ -67,3 +67,20 @@ after each iteration and it's included in prompts for context.
   - Standardizing on create*HandlerRegistry(catalog?: Catalog) allows command groups to access shared state while remaining physically separate from index.ts.
   - Centralizing large command groups like dkg significantly reduces index.ts complexity and duplication.
 ---
+
+## 2026-04-06 - US-004
+- Refactored index.ts to become an assembly entry by migrating remaining command data to group files.
+- Created packages/cli/src/command-groups/obs.commands.ts and packages/cli/src/command-groups/def.commands.ts.
+- Migrated Obsidian and Definition Catalog command metadata and handler registries to their respective group files.
+- Moved 'spec drift' command from index.ts to packages/cli/src/command-groups/spec.commands.ts.
+- Removed remaining authored metadata (descriptors, specs, trees) and dispatch logic from index.ts.
+- Verified that all command groups (service, flow, quality, review, dkg, etc.) use handler registries or delegated routers.
+- Files changed:
+  - packages/cli/src/index.ts
+  - packages/cli/src/command-groups/obs.commands.ts
+  - packages/cli/src/command-groups/def.commands.ts
+  - packages/cli/src/command-groups/spec.commands.ts
+- **Learnings:**
+  - Using a Proxy for handler registries (e.g., for 'def' commands) maintains pattern consistency even when delegating to a complex sub-router like cliDef.
+  - Consolidating special argument handling (like --vault in obs) into group-level wrappers keeps index.ts focused on high-level wiring.
+---

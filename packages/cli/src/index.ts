@@ -9,7 +9,6 @@
  * CLI는 그 결과를 수집하여 일관적 인터페이스로 관리할 뿐이다.
  */
 
-import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import {
   emitCliEvent,
@@ -17,21 +16,15 @@ import {
 } from './commands/dkg.js';
 import { loadCatalog } from 'config-loader';
 import type { Catalog } from '@qa-sdk/core';
-import { obsRead, obsSearch, obsAppend, obsBacklinks, obsList, obsStats } from './commands/obs.js';
-import { cliDef } from './commands/def.js';
 import { cliQuality } from './commands/quality.js';
 import {
-  descriptorsToTree,
   executeCommand,
   generateHelp,
   resolveCliTreeCommand,
   formatUsageLines,
   formatUsageSpecs,
   type CliCommandNode,
-  type CommandDescriptor,
   type CommandContext,
-  type CommandUsageSpec,
-  type CommandDetailSpec,
   type RestCommandHandler,
 } from './command-spec.js';
 import {
@@ -120,6 +113,17 @@ import {
   MOTION_COMMAND_TREE as MOTION_GROUP_COMMAND_TREE,
   MOTION_HANDLER_REGISTRY as MOTION_GROUP_HANDLER_REGISTRY,
 } from './command-groups/motion.commands.js';
+import {
+  OBS_COMMAND_SPECS as OBS_GROUP_COMMAND_SPECS,
+  OBS_COMMAND_TREE as OBS_GROUP_COMMAND_TREE,
+  OBS_HANDLER_REGISTRY as OBS_GROUP_HANDLER_REGISTRY,
+} from './command-groups/obs.commands.js';
+import {
+  DEF_COMMAND_SPECS as DEF_GROUP_COMMAND_SPECS,
+  DEF_COMMAND_TREE as DEF_GROUP_COMMAND_TREE,
+  DEF_HANDLER_REGISTRY as DEF_GROUP_HANDLER_REGISTRY,
+  DEF_TOP_LEVEL_USAGE_LINES as DEF_GROUP_TOP_LEVEL_USAGE_LINES,
+} from './command-groups/def.commands.js';
 
 // ── Usage ────────────────────────────────────────────
 
@@ -131,30 +135,6 @@ interface TreeCommandGroup {
   readonly tree: readonly CliCommandNode[];
   readonly dispatch: TreeDispatch;
 }
-
-const OBS_COMMAND_SPECS = [
-  { name: 'read', usage: 'qa-sdk obs read <path> [--vault <name>]             Obsidian 노트 읽기' },
-  { name: 'search', usage: 'qa-sdk obs search <query> [--vault <name>]          Obsidian 검색' },
-  { name: 'append', usage: 'qa-sdk obs append <path> <content> [--vault <name>] Obsidian 노트에 내용 추가' },
-  { name: 'backlinks', usage: 'qa-sdk obs backlinks <name> [--vault <name>]        Obsidian 백링크 조회' },
-  { name: 'list', usage: 'qa-sdk obs list [prefix] [--vault <name>]' },
-  { name: 'stats', usage: 'qa-sdk obs stats [--vault <name>]' },
-] as const satisfies readonly CommandUsageSpec<string>[];
-
-const OBS_COMMAND_DESCRIPTORS = [
-  { id: 'obs.read', path: ['read'], usage: 'qa-sdk obs read <path> [--vault <name>]             Obsidian 노트 읽기', handlerKey: 'obs.read' },
-  { id: 'obs.search', path: ['search'], usage: 'qa-sdk obs search <query> [--vault <name>]          Obsidian 검색', handlerKey: 'obs.search' },
-  { id: 'obs.append', path: ['append'], usage: 'qa-sdk obs append <path> <content> [--vault <name>] Obsidian 노트에 내용 추가', handlerKey: 'obs.append' },
-  { id: 'obs.backlinks', path: ['backlinks'], usage: 'qa-sdk obs backlinks <name> [--vault <name>]        Obsidian 백링크 조회', handlerKey: 'obs.backlinks' },
-  { id: 'obs.list', path: ['list'], usage: 'qa-sdk obs list [prefix] [--vault <name>]', handlerKey: 'obs.list' },
-  { id: 'obs.stats', path: ['stats'], usage: 'qa-sdk obs stats [--vault <name>]', handlerKey: 'obs.stats' },
-] as const satisfies readonly CommandDescriptor[];
-
-const OBS_COMMAND_TREE = descriptorsToTree(OBS_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
-
-const DEF_TOP_LEVEL_USAGE_LINES = [
-  'qa-sdk def sync [--db path]        docs → local definition SQLite 동기화',
-] as const;
 
 export const USAGE = `
 qa-sdk — DSL 접근 도구
@@ -189,52 +169,9 @@ ${formatUsageSpecs(TEST_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(QUALITY_GROUP_COMMAND_SPECS)}
 
 ${formatUsageSpecs(CATALOG_GROUP_COMMAND_SPECS)}
-${formatUsageLines(DEF_TOP_LEVEL_USAGE_LINES)}
-${formatUsageLines(OBS_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
+${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
 `.trim();
-
-
-const DEF_COMMAND_DESCRIPTORS = [
-  { id: 'def.scan-audit', path: ['scan-audit'], handlerKey: 'def.scan-audit' },
-  { id: 'def.topdown', path: ['topdown'], handlerKey: 'def.topdown' },
-  { id: 'def.bottomup', path: ['bottomup'], handlerKey: 'def.bottomup' },
-  { id: 'def.context', path: ['context'], handlerKey: 'def.context' },
-  { id: 'def.boundary', path: ['boundary'], handlerKey: 'def.boundary' },
-  { id: 'def.boundary-context', path: ['boundary-context'], handlerKey: 'def.boundary-context' },
-  { id: 'def.audit', path: ['audit'], handlerKey: 'def.audit' },
-  { id: 'def.validate', path: ['validate'], handlerKey: 'def.validate' },
-  { id: 'def.stats', path: ['stats'], handlerKey: 'def.stats' },
-  { id: 'def.sync', path: ['sync'], handlerKey: 'def.sync' },
-  { id: 'def.read', path: ['read'], handlerKey: 'def.read' },
-  { id: 'def.list', path: ['list'], handlerKey: 'def.list' },
-  { id: 'def.get', path: ['get'], handlerKey: 'def.get' },
-  { id: 'def.body', path: ['body'], handlerKey: 'def.body' },
-  { id: 'def.children', path: ['children'], handlerKey: 'def.children' },
-  { id: 'def.parent', path: ['parent'], handlerKey: 'def.parent' },
-  { id: 'def.incoming', path: ['incoming'], handlerKey: 'def.incoming' },
-  { id: 'def.outgoing', path: ['outgoing'], handlerKey: 'def.outgoing' },
-  { id: 'def.search', path: ['search'], handlerKey: 'def.search' },
-  { id: 'def.concepts', path: ['concepts'], handlerKey: 'def.concepts' },
-  { id: 'def.impact', path: ['impact'], handlerKey: 'def.impact' },
-  { id: 'def.check', path: ['check'], handlerKey: 'def.check' },
-  { id: 'def.audit-db', path: ['audit-db'], handlerKey: 'def.audit-db' },
-  { id: 'def.overview', path: ['overview'], handlerKey: 'def.overview' },
-  { id: 'def.link-rules', path: ['link-rules'], handlerKey: 'def.link-rules' },
-  { id: 'def.find-by-file', path: ['find-by-file'], handlerKey: 'def.find-by-file' },
-  { id: 'def.guide', path: ['guide'], handlerKey: 'def.guide' },
-  { id: 'def.state', path: ['state'], handlerKey: 'def.state' },
-] as const satisfies readonly CommandDescriptor[];
-
-const DEF_COMMAND_TREE = descriptorsToTree(DEF_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
-
-async function dispatchDefCommand(handlerKey: string, rest: string[]): Promise<void> {
-  const subcommand = handlerKey.slice(4);
-  await cliDef([subcommand, ...rest]);
-}
-
-async function dispatchDkgCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(createDkgHandlerRegistry(loadedCatalog), handlerKey, rest);
-}
 
 async function dispatchFromRegistry(
   registry: Readonly<Record<string, RestCommandHandler>>,
@@ -245,6 +182,14 @@ async function dispatchFromRegistry(
   if (handler) {
     await handler(rest);
   }
+}
+
+async function dispatchDefCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(DEF_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchDkgCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(createDkgHandlerRegistry(loadedCatalog), handlerKey, rest);
 }
 
 async function dispatchServiceCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -259,64 +204,24 @@ async function dispatchReviewCommand(handlerKey: string, rest: string[]): Promis
   await dispatchFromRegistry(REVIEW_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
-const INGEST_HANDLER_REGISTRY = INGEST_GROUP_HANDLER_REGISTRY;
-
 async function dispatchIngestCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(INGEST_HANDLER_REGISTRY, handlerKey, rest);
+  await dispatchFromRegistry(INGEST_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<void> {
-  const vaultIdx = rest.indexOf('--vault');
-  const vault = vaultIdx >= 0 ? rest[vaultIdx + 1] : undefined;
-
-  switch (handlerKey) {
-    case 'obs.read':
-      if (rest[0]) obsRead(rest[0], vault);
-      else console.error('Usage: qa-sdk obs read <path>');
-      return;
-    case 'obs.search':
-      if (rest[0]) obsSearch(rest[0], vault);
-      else console.error('Usage: qa-sdk obs search <query>');
-      return;
-    case 'obs.append': {
-      const appendPath = rest[0];
-      const contentIdx = rest.indexOf('--content');
-      if (!appendPath || contentIdx < 0) {
-        console.error('Usage: qa-sdk obs append <path> --content "..."');
-        return;
-      }
-      obsAppend(appendPath, rest[contentIdx + 1], vault);
-      return;
-    }
-    case 'obs.backlinks':
-      if (rest[0]) obsBacklinks(rest[0], vault);
-      else console.error('Usage: qa-sdk obs backlinks <name>');
-      return;
-    case 'obs.list':
-      obsList(rest[0] ?? '', vault);
-      return;
-    case 'obs.stats':
-      obsStats(vault);
-      return;
-  }
+  await dispatchFromRegistry(OBS_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
-
-const GATE_HANDLER_REGISTRY = GATE_GROUP_HANDLER_REGISTRY;
 
 async function dispatchGateCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(GATE_HANDLER_REGISTRY, handlerKey, rest);
+  await dispatchFromRegistry(GATE_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
-
-const QUERY_HANDLER_REGISTRY = QUERY_GROUP_HANDLER_REGISTRY;
 
 async function dispatchQueryCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(QUERY_HANDLER_REGISTRY, handlerKey, rest);
+  await dispatchFromRegistry(QUERY_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
-const SPEC_HANDLER_REGISTRY = SPEC_GROUP_HANDLER_REGISTRY;
-
 async function dispatchSpecCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(SPEC_HANDLER_REGISTRY, handlerKey, rest);
+  await dispatchFromRegistry(SPEC_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchTestCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -361,13 +266,13 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['git'], rootName: 'qa-sdk git', tree: GIT_GROUP_COMMAND_TREE, dispatch: dispatchGitCommand },
   { rootSegments: ['prefix'], rootName: 'qa-sdk prefix', tree: PREFIX_GROUP_COMMAND_TREE, dispatch: dispatchPrefixCommand },
   { rootSegments: ['facet'], rootName: 'qa-sdk facet', tree: FACET_GROUP_COMMAND_TREE, dispatch: dispatchFacetCommand },
-  { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_COMMAND_TREE, dispatch: dispatchDefCommand },
+  { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_GROUP_COMMAND_TREE, dispatch: dispatchDefCommand },
   { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
   { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
   { rootSegments: ['quality'], rootName: 'qa-sdk quality', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
   { rootSegments: ['review'], rootName: 'qa-sdk review', tree: REVIEW_GROUP_COMMAND_TREE, dispatch: dispatchReviewCommand },
   { rootSegments: ['ingest'], rootName: 'qa-sdk ingest', tree: INGEST_GROUP_COMMAND_TREE, dispatch: dispatchIngestCommand },
-  { rootSegments: ['obs'], rootName: 'qa-sdk obs', tree: OBS_COMMAND_TREE, dispatch: dispatchObsCommand },
+  { rootSegments: ['obs'], rootName: 'qa-sdk obs', tree: OBS_GROUP_COMMAND_TREE, dispatch: dispatchObsCommand },
   { rootSegments: ['gate'], rootName: 'qa-sdk gate', tree: GATE_GROUP_COMMAND_TREE, dispatch: dispatchGateCommand },
   { rootSegments: ['query'], rootName: 'qa-sdk query', tree: QUERY_GROUP_COMMAND_TREE, dispatch: dispatchQueryCommand },
   { rootSegments: ['spec'], rootName: 'qa-sdk spec', tree: SPEC_GROUP_COMMAND_TREE, dispatch: dispatchSpecCommand },
@@ -487,20 +392,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   switch (sub.name) {
-    case 'spec drift': {
-      const { cliSpecDrift } = await import('./commands/spec-drift.js');
-      return cliSpecDrift(sub.rest);
-    }
-
-    // Definition Catalog 명령어
-    case 'def help':
-      await cliDef(['help', ...sub.rest]);
-      return;
-    case 'def':
-      await cliDef(sub.rest);
-      return;
-
-    // Quality Gate 명령어
+    // Quality Gate 명령어 fallback
     case 'quality':
       await cliQuality(sub.rest);
       return;
@@ -535,17 +427,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     }
   }
 
-  // 2단어 fallback: tree 미전환 command group + legacy direct commands
-  const twoWord = [
-    'spec drift',
-  ];
-  if (args.length >= 2) {
-    const candidate = `${args[0]} ${args[1]}`;
-    if (twoWord.includes(candidate)) {
-      return { name: candidate, rest: args.slice(2) };
-    }
-  }
-  // 1단어 커맨드
+  // 1단어 커맨드 fallback
   const oneWord = [
     'quality',
   ];

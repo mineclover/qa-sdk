@@ -92,6 +92,13 @@ export const SPEC_COMMAND_DESCRIPTORS = [
     ],
     handlerKey: "spec.codegen",
   },
+  {
+    id: "spec.drift",
+    path: ["drift"],
+    usage: "qa-sdk spec drift [options]",
+    description: "Spec drift 감지",
+    handlerKey: "spec.drift",
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const SPEC_COMMAND_TREE =
@@ -107,4 +114,8 @@ export const SPEC_HANDLER_REGISTRY = {
   "spec.trace": runSpecTrace,
   "spec.decode": runSpecDecode,
   "spec.codegen": runSpecCodegen,
+  "spec.drift": async (rest: string[]) => {
+    const { cliSpecDrift } = await import("../commands/spec-drift.js");
+    return cliSpecDrift(rest);
+  },
 } satisfies Readonly<Record<string, RestCommandHandler>>;
