@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
 import type { DecodeMap } from "index-meta";
+import type { KeyCache } from "@qa-sdk/core";
 
 // ── 테스트 데이터 ──────────────────────────────────────────────────────────────
 
@@ -516,5 +517,87 @@ describe("decode-service", () => {
       expect(vals).toHaveLength(0);
       expect(p.size).toBe(0); // 만료 항목 정리됨
     });
+  });
+});
+
+// ── L2 캐시 테스트 헬퍼 ──────────────────────────────────────────────────────
+
+function createMockCache(): { cache: KeyCache; store: Map<string, unknown> } {
+  const store = new Map<string, unknown>();
+  const cache: KeyCache = {
+    get: async (key: string) => store.get(key) as any,
+    set: async (key: string, value: unknown, _ttlMs: number) => { store.set(key, value); },
+    delete: async (key: string) => store.delete(key),
+    clear: async () => { store.clear(); },
+    has: async (key: string) => store.has(key),
+    stats: () => ({ size: store.size, hits: 0, misses: 0, evictions: 0 }),
+  };
+  return { cache, store };
+}
+
+// ── L2 캐시 테스트 ──────────────────────────────────────────────────────────
+
+describe("POST /decode — L2 캐시", () => {
+  it("캐시 hit → 캐시된 결과 반환", async () => {
+    const { cache, store } = createMockCache();
+    const pool = new DecoderPool(0);
+    pool.load({ map: permMap });
+    const app = createApp({ pool, decodeCache: cache, cacheTtlMs: 60_000 });
+
+    // 캐시에 미리 값 설정
+    const cacheKey = "perm:v1:0";
+    store.set(cacheKey, { indexId: "perm", versionId: "v1", value: 0, entities: { role: "CACHED", action: "CACHED" } });
+
+    const res = await req(app, "POST", "/decode", { input: 0, prefix: "perm", version: "v1" });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.entities.role).toBe("CACHED"); // 캐시에서 반환
+  });
+
+  it("캐시 miss → decode + 결과 캐싱", async () => {
+    const { cache, store } = createMockCache();
+    const pool = new DecoderPool(0);
+    pool.load({ map: permMap });
+    const app = createApp({ pool, decodeCache: cache, cacheTtlMs: 60_000 });
+
+    const res = await req(app, "POST", "/decode", { input: 0, prefix: "perm", version: "v1" });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.entities).toEqual({ role: "admin", action: "create" }); // 실제 decode 결과
+
+    // 캐시에 저장되었는지 확인
+    const cached = store.get("perm:v1:0") as any;
+    expect(cached).toBeDefined();
+    expect(cached.entities).toEqual({ role: "admin", action: "create" });
+  });
+
+  it("캐시 get 실패 → fail-open (decode 정상)", async () => {
+    const failingCache: KeyCache = {
+      get: async () => { throw new Error("Redis down"); },
+      set: async () => { throw new Error("Redis down"); },
+      delete: async () => false,
+      clear: async () => {},
+      has: async () => false,
+      stats: () => ({ size: 0, hits: 0, misses: 0, evictions: 0 }),
+    };
+    const pool = new DecoderPool(0);
+    pool.load({ map: permMap });
+    const app = createApp({ pool, decodeCache: failingCache, cacheTtlMs: 60_000 });
+
+    const res = await req(app, "POST", "/decode", { input: 0, prefix: "perm", version: "v1" });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.entities).toEqual({ role: "admin", action: "create" }); // 캐시 실패해도 정상 decode
+  });
+
+  it("decodeCache 없으면 기존 동작", async () => {
+    const pool = new DecoderPool(0);
+    pool.load({ map: permMap });
+    const app = createApp({ pool }); // no cache
+
+    const res = await req(app, "POST", "/decode", { input: 0, prefix: "perm", version: "v1" });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.entities).toEqual({ role: "admin", action: "create" });
   });
 });
