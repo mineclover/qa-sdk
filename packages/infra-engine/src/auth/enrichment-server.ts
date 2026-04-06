@@ -8,9 +8,11 @@
  * 1. role → bitmask 변환 (기본 경로)
  * 2. Zitadel user metadata에서 기존 perms 조회 (metadata 우선)
  * 3. env별 feature 제한 (ScopedEngine 경량 구현)
- *
- * 현재는 간이 매핑. 실제로는 permission-engine의 RoleRegistry +
- * UserPermissionEngine으로 교체 예정.
+ * 4. Role 계층 상속 (admin > operator > viewer)
+ * 5. Permission check — feature별 granted/denied + reason
+ * 6. User override — 개별 feature grant/deny
+ * 7. 세션 무효화 — perms_v 증가
+ * 8. Explain — 권한 부여 경로 추적
  *
  * 포트: 3900 (ENRICHMENT_PORT 환경변수로 변경 가능)
  */
@@ -37,6 +39,7 @@ const FEATURES = [
   "decision_write",   // 9
   "deploy_execute",   // 10
   "monitoring_read",  // 11
+  "ingest_admin",     // 12
 ] as const;
 
 type FeatureName = typeof FEATURES[number];
@@ -46,20 +49,54 @@ const FEATURE_INDEX = Object.fromEntries(
   FEATURES.map((f, i) => [f, i]),
 ) as Record<FeatureName, number>;
 
-// ── Role -> Feature 매핑 ─────────────────────────────
+// ── Role Registry (계층 상속) ────────────────────────
 
-const ROLE_FEATURES: Record<string, readonly FeatureName[]> = {
-  admin: FEATURES, // 전체
-  operator: [
-    "ingest_read", "ingest_write", "registry_read", "gate_read",
-    "query_read", "decode_read", "definition_read", "decision_read",
-    "deploy_execute", "monitoring_read",
-  ],
-  viewer: [
-    "ingest_read", "registry_read", "gate_read", "query_read",
-    "decode_read", "definition_read", "decision_read", "monitoring_read",
-  ],
+interface RoleDef {
+  name: string;
+  parents: string[];
+  features: FeatureName[];
+}
+
+const ROLE_DEFS: Record<string, RoleDef> = {
+  viewer: {
+    name: "viewer",
+    parents: [],
+    features: [
+      "ingest_read", "registry_read", "gate_read", "query_read",
+      "decode_read", "definition_read", "decision_read", "monitoring_read",
+    ],
+  },
+  operator: {
+    name: "operator",
+    parents: ["viewer"],
+    features: [
+      "ingest_write", "deploy_execute",
+    ],
+  },
+  admin: {
+    name: "admin",
+    parents: ["operator"],
+    features: [
+      "definition_write", "decision_write", "ingest_admin",
+    ],
+  },
 };
+
+/** Role 계층 flatten — 부모 features 상속 (OR 합산) */
+function resolveRoleFeatures(roleName: string): FeatureName[] {
+  const role = ROLE_DEFS[roleName];
+  if (!role) return [];
+  const features = new Set<FeatureName>(role.features);
+  for (const parent of role.parents) {
+    for (const f of resolveRoleFeatures(parent)) features.add(f);
+  }
+  return [...features];
+}
+
+// 레거시 호환: ROLE_FEATURES (flat)
+const ROLE_FEATURES: Record<string, readonly FeatureName[]> = Object.fromEntries(
+  Object.keys(ROLE_DEFS).map((role) => [role, resolveRoleFeatures(role)]),
+);
 
 // ── Env별 Feature 제한 (ScopedEngine 경량 구현) ──────
 
@@ -72,17 +109,13 @@ const ROLE_FEATURES: Record<string, readonly FeatureName[]> = {
  */
 const ENV_RESTRICTIONS: Record<string, Record<string, FeatureName[]>> = {
   prod: {
-    // prod에서는 admin만 deploy 가능 — operator/viewer에서 deploy 차단
     operator: ["deploy_execute"],
     viewer: ["deploy_execute", "ingest_write", "definition_write", "decision_write"],
   },
   staging: {
-    // staging에서는 viewer의 write 차단
     viewer: ["ingest_write", "definition_write", "decision_write"],
   },
-  dev: {
-    // 개발 환경: 제한 없음
-  },
+  dev: {},
 };
 
 /**
@@ -119,7 +152,7 @@ function createBitmask(features: readonly FeatureName[]): string {
 }
 
 /** base64 bitmask에서 특정 feature 비트 확인 */
-export function hasBit(bitmaskB64: string, featureName: string): boolean {
+function hasBit(bitmaskB64: string, featureName: string): boolean {
   const idx = FEATURE_INDEX[featureName as FeatureName];
   if (idx === undefined) return false;
   const bytes = Buffer.from(bitmaskB64, "base64");
@@ -185,11 +218,259 @@ async function fetchZitadelMetadata(userId: string): Promise<ZitadelPerms | null
   return null;
 }
 
-// ── 인메모리 사용자 Role 저장소 (간이) ────────────────
+// ── User State (인메모리) ─────────────────────────────
 
-const USER_ROLES: Record<string, string> = {};
+interface UserOverride {
+  feature: string;
+  granted: boolean;
+}
+
+interface UserState {
+  roles: string[];
+  overrides: UserOverride[];
+  perms_v: number;
+  active: boolean;
+}
+
+const users = new Map<string, UserState>();
+
+function getUser(userId: string): UserState {
+  if (!users.has(userId)) {
+    users.set(userId, {
+      roles: ["viewer"],
+      overrides: [],
+      perms_v: 1,
+      active: true,
+    });
+  }
+  return users.get(userId)!;
+}
+
+// ── Permission Check 로직 ────────────────────────────
+
+interface CheckResult {
+  granted: boolean;
+  reason: string;
+  sources: string[];
+}
+
+function checkFeature(userId: string, feature: string): CheckResult {
+  const user = getUser(userId);
+
+  // 1. 비활성 사용자 — 세션 무효화됨
+  if (!user.active) {
+    return { granted: false, reason: "session_invalidated", sources: [] };
+  }
+
+  // 2. Override 확인 (deny wins)
+  const override = user.overrides.find((o) => o.feature === feature);
+  if (override) {
+    return {
+      granted: override.granted,
+      reason: override.granted ? "user_override_grant" : "user_override_deny",
+      sources: [`override:${feature}`],
+    };
+  }
+
+  // 3. Role 계층에서 feature 확인
+  const grantingRoles: string[] = [];
+  for (const role of user.roles) {
+    const features = resolveRoleFeatures(role);
+    if (features.includes(feature as FeatureName)) grantingRoles.push(role);
+  }
+
+  if (grantingRoles.length > 0) {
+    return { granted: true, reason: "role_grant", sources: grantingRoles };
+  }
+
+  return { granted: false, reason: "not_assigned", sources: [] };
+}
 
 // ── Routes ───────────────────────────────────────────
+
+// ── 유저 상태 조회 ──────────────────────────────────
+
+app.get("/users/:userId", (c) => {
+  const userId = c.req.param("userId");
+  const user = getUser(userId);
+  return c.json({
+    userId,
+    roles: user.roles,
+    overrides: user.overrides,
+    perms_v: user.perms_v,
+    active: user.active,
+  });
+});
+
+// ── Role 부여/제거 ──────────────────────────────────
+
+app.post("/users/:userId/grant-role", async (c) => {
+  const userId = c.req.param("userId");
+  const body = await c.req.json<{ role: string }>();
+  const { role } = body;
+
+  if (!ROLE_DEFS[role]) {
+    return c.json({ error: `Unknown role: ${role}` }, 400);
+  }
+
+  const user = getUser(userId);
+  if (!user.roles.includes(role)) {
+    user.roles.push(role);
+  }
+  return c.json({ ok: true, userId, roles: user.roles });
+});
+
+app.delete("/users/:userId/revoke-role/:role", (c) => {
+  const userId = c.req.param("userId");
+  const role = c.req.param("role");
+  const user = getUser(userId);
+
+  const idx = user.roles.indexOf(role);
+  if (idx === -1) {
+    return c.json({ error: `User does not have role: ${role}` }, 404);
+  }
+  user.roles.splice(idx, 1);
+
+  // 최소 1개 role 보장 (빈 roles 방지)
+  if (user.roles.length === 0) {
+    user.roles.push("viewer");
+  }
+
+  return c.json({ ok: true, userId, roles: user.roles });
+});
+
+// ── Permission Check ────────────────────────────────
+
+app.post("/check", async (c) => {
+  const body = await c.req.json<{
+    userId: string;
+    domain?: string;
+    feature: string;
+  }>();
+
+  const result = checkFeature(body.userId, body.feature);
+  return c.json(result);
+});
+
+// ── Explain ─────────────────────────────────────────
+
+app.post("/explain", async (c) => {
+  const body = await c.req.json<{
+    userId: string;
+    domain?: string;
+    feature: string;
+  }>();
+
+  const user = getUser(body.userId);
+
+  if (!user.active) {
+    return c.json({
+      granted: false,
+      reason: "session_invalidated",
+      sources: [],
+      roles: user.roles,
+      overrides: user.overrides,
+      resolvedFeatures: {},
+    });
+  }
+
+  // Override 확인
+  const override = user.overrides.find((o) => o.feature === body.feature);
+  if (override) {
+    return c.json({
+      granted: override.granted,
+      reason: override.granted ? "user_override_grant" : "user_override_deny",
+      sources: [`override:${body.feature}`],
+      roles: user.roles,
+      overrides: user.overrides,
+    });
+  }
+
+  // Role별 resolved features
+  const resolvedFeatures: Record<string, string[]> = {};
+  const grantingRoles: string[] = [];
+
+  for (const role of user.roles) {
+    const features = resolveRoleFeatures(role);
+    resolvedFeatures[role] = features;
+    if (features.includes(body.feature as FeatureName)) {
+      grantingRoles.push(role);
+    }
+  }
+
+  return c.json({
+    granted: grantingRoles.length > 0,
+    reason: grantingRoles.length > 0 ? "role_grant" : "not_assigned",
+    sources: grantingRoles,
+    roles: user.roles,
+    overrides: user.overrides,
+    resolvedFeatures,
+  });
+});
+
+// ── User Override ───────────────────────────────────
+
+app.post("/users/:userId/override", async (c) => {
+  const userId = c.req.param("userId");
+  const body = await c.req.json<{ feature: string; granted: boolean }>();
+  const user = getUser(userId);
+
+  // 기존 override 교체 또는 추가
+  const existing = user.overrides.findIndex((o) => o.feature === body.feature);
+  if (existing !== -1) {
+    user.overrides[existing] = { feature: body.feature, granted: body.granted };
+  } else {
+    user.overrides.push({ feature: body.feature, granted: body.granted });
+  }
+
+  return c.json({ ok: true, userId, overrides: user.overrides });
+});
+
+app.delete("/users/:userId/override/:feature", (c) => {
+  const userId = c.req.param("userId");
+  const feature = c.req.param("feature");
+  const user = getUser(userId);
+
+  const idx = user.overrides.findIndex((o) => o.feature === feature);
+  if (idx !== -1) {
+    user.overrides.splice(idx, 1);
+  }
+
+  return c.json({ ok: true, userId, overrides: user.overrides });
+});
+
+// ── 세션 무효화 / 재활성화 ──────────────────────────
+
+app.post("/users/:userId/invalidate", (c) => {
+  const userId = c.req.param("userId");
+  const user = getUser(userId);
+
+  user.perms_v += 1;
+  user.active = false;
+
+  return c.json({
+    ok: true,
+    userId,
+    perms_v: user.perms_v,
+    active: user.active,
+  });
+});
+
+app.post("/users/:userId/activate", (c) => {
+  const userId = c.req.param("userId");
+  const user = getUser(userId);
+
+  user.active = true;
+
+  return c.json({
+    ok: true,
+    userId,
+    perms_v: user.perms_v,
+    active: user.active,
+  });
+});
+
+// ── Enrichment (기존 엔드포인트, 확장) ──────────────
 
 /**
  * Zitadel Action 또는 gateway에서 호출하는 enrichment 엔드포인트.
@@ -217,33 +498,55 @@ app.post("/enrich", async (c) => {
     });
   }
 
-  // 2. role 기반 계산 (env 제한 적용)
-  const role = body.roles?.[0] ?? USER_ROLES[userId] ?? "viewer";
-  const baseFeatures = ROLE_FEATURES[role] ?? ROLE_FEATURES["viewer"]!;
-  const features = applyEnvRestrictions(baseFeatures, role, body.env);
-  const bitmask = createBitmask(features);
+  // 2. 인메모리 user state에서 role 기반 계산
+  const user = getUser(userId);
+  const effectiveRoles = body.roles ?? user.roles;
+
+  // 모든 role의 features를 OR 합산
+  const allFeatures = new Set<FeatureName>();
+  for (const role of effectiveRoles) {
+    const features = resolveRoleFeatures(role);
+    for (const f of features) allFeatures.add(f);
+  }
+
+  // env 제한 적용 (각 role별)
+  const restricted = new Set<string>();
+  if (body.env) {
+    for (const role of effectiveRoles) {
+      const envFeatures = applyEnvRestrictions([...allFeatures], role, body.env);
+      for (const f of envFeatures) restricted.add(f);
+    }
+  }
+
+  const finalFeatures = body.env
+    ? [...restricted] as FeatureName[]
+    : [...allFeatures];
+
+  const bitmask = createBitmask(finalFeatures);
 
   return c.json({
     perms: { infra: bitmask },
-    perms_v: 1,
+    perms_v: user.perms_v,
     perms_schema: "qa-v1",
     source: "role-computed",
   });
 });
 
-/** Role 할당 API */
+// ── 레거시 호환: Role 할당 API ──────────────────────
+
 app.put("/roles/:userId", async (c) => {
   const userId = c.req.param("userId");
   const { role } = await c.req.json<{ role: string }>();
-  if (!ROLE_FEATURES[role]) return c.json({ error: "Unknown role" }, 400);
-  USER_ROLES[userId] = role;
+  if (!ROLE_DEFS[role]) return c.json({ error: "Unknown role" }, 400);
+  const user = getUser(userId);
+  user.roles = [role]; // 레거시 API: 단일 role 교체
   return c.json({ userId, role, ok: true });
 });
 
-/** Role 조회 */
 app.get("/roles/:userId", (c) => {
   const userId = c.req.param("userId");
-  return c.json({ userId, role: USER_ROLES[userId] ?? "viewer" });
+  const user = getUser(userId);
+  return c.json({ userId, role: user.roles[0] ?? "viewer", roles: user.roles });
 });
 
 /** Feature 목록 + role 정의 + env 제한 */
@@ -254,6 +557,7 @@ app.get("/features", (c) => {
     roles: Object.fromEntries(
       Object.entries(ROLE_FEATURES).map(([role, feats]) => [role, [...feats]]),
     ),
+    roleDefs: ROLE_DEFS,
     envRestrictions: ENV_RESTRICTIONS,
   });
 });
@@ -281,6 +585,8 @@ if (isDirectRun) {
 }
 
 export {
-  app, startServer, FEATURES, FEATURE_INDEX, ROLE_FEATURES,
+  app, startServer, FEATURES, FEATURE_INDEX, ROLE_FEATURES, ROLE_DEFS,
   createBitmask, applyEnvRestrictions, ENV_RESTRICTIONS,
+  hasBit, resolveRoleFeatures, checkFeature,
+  users, getUser,
 };
