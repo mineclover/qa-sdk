@@ -58,4 +58,21 @@ export function verdictStoreTests(
     const results = await store.findByTraceId("nonexistent");
     expect(results).toEqual([]);
   });
+
+  it("동일 scenario+trace 중복 insert → 업데이트 또는 에러", async () => {
+    await store.insert(makeVerdictInsert({ id: "v1", scenarioId: "sc-1", traceId: "t1", overallVerdict: "pass" }));
+    // 두 번째 insert: same scenarioId+traceId → ON CONFLICT 동작 (D1: 업데이트, PG: 에러)
+    try {
+      await store.insert(makeVerdictInsert({ id: "v2", scenarioId: "sc-1", traceId: "t1", overallVerdict: "fail" }));
+      // ON CONFLICT DO UPDATE 경우 — 업데이트 되어야 함
+      const verdicts = await store.findByTraceId("t1");
+      expect(verdicts).toHaveLength(1);
+      expect(verdicts[0].overallVerdict).toBe("fail");
+    } catch {
+      // UNIQUE constraint 에러 — PG 등에서 정상 동작
+      const verdicts = await store.findByTraceId("t1");
+      expect(verdicts).toHaveLength(1);
+      expect(verdicts[0].overallVerdict).toBe("pass");
+    }
+  });
 }

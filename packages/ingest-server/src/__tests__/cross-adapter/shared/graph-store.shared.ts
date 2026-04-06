@@ -85,4 +85,41 @@ export function graphStoreTests(
     const result = await store.findByTraceId("nonexistent");
     expect(result).toBeNull();
   });
+
+  it("upsert JSON 복잡 객체 라운드트립", async () => {
+    const complexGraph = makeGraph({
+      nodes: [
+        {
+          id: "n1",
+          log_id: "r1",
+          timestamp: "2026-01-01T00:00:00Z",
+          record_kind: "log",
+          event_key: "page.view",
+          event_version: "001",
+          payload: { eventKey: "page.view", nested: { deep: true } },
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+        },
+        {
+          id: "n2",
+          log_id: "r2",
+          timestamp: "2026-01-01T00:00:01Z",
+          record_kind: "log",
+          event_key: "checkout",
+          event_version: "001",
+          payload: { spanName: "checkout" },
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+        },
+      ],
+      edges: [
+        { source: "n1", target: "n2", type: "parent" },
+      ],
+    });
+    await store.upsert("t1", complexGraph);
+    const result = await store.findByTraceId("t1");
+    expect(result).not.toBeNull();
+    expect(result!.nodes).toHaveLength(2);
+    expect((result!.nodes[0].payload as Record<string, unknown>).nested).toEqual({ deep: true });
+  });
 }

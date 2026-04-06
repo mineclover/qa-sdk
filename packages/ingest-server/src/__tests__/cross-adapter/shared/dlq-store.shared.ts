@@ -51,4 +51,17 @@ export function dlqStoreTests(
     const resolved = pending.find((p) => p.id === "dlq-resolve");
     expect(resolved).toBeUndefined();
   });
+
+  it("findPending limit 적용", async () => {
+    await store.insert(makeDlqInsert({ id: "d1", traceId: "t1", phase: "reconstruction", errorMessage: "err1" }));
+    await store.insert(makeDlqInsert({ id: "d2", traceId: "t1", phase: "reconstruction", errorMessage: "err2" }));
+    await store.insert(makeDlqInsert({ id: "d3", traceId: "t1", phase: "verdict", errorMessage: "err3" }));
+    const results = await store.findPending(2);
+    expect(results).toHaveLength(2);
+  });
+
+  it("findPending 빈 상태 → 빈 배열", async () => {
+    const results = await store.findPending();
+    expect(results).toEqual([]);
+  });
 }

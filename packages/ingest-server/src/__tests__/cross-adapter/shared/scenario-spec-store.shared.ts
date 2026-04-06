@@ -65,4 +65,20 @@ export function scenarioSpecStoreTests(
     const result = await store.findById("nonexistent");
     expect(result).toBeNull();
   });
+
+  it("upsert 덮어쓰기 — 같은 scenarioId", async () => {
+    await store.upsert(makeSpec({ scenario_id: "sc-overwrite", version: "1.0.0", description: "v1" }));
+    await store.upsert(makeSpec({ scenario_id: "sc-overwrite", version: "2.0.0", description: "v2" }));
+    const result = await store.findById("sc-overwrite");
+    expect(result).not.toBeNull();
+    expect(result!.version).toBe("2.0.0");
+  });
+
+  it("findAll limit 적용", async () => {
+    await store.upsert(makeSpec({ scenario_id: "sc-a", domain: "auth" }));
+    await store.upsert(makeSpec({ scenario_id: "sc-b", domain: "auth" }));
+    await store.upsert(makeSpec({ scenario_id: "sc-c", domain: "payment" }));
+    const results = await store.findAll(2);
+    expect(results).toHaveLength(2);
+  });
 }

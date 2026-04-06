@@ -49,4 +49,17 @@ export function traceStoreTests(
     const trace = await store.findById("t1");
     expect(trace!.reconstructed).toBe(true);
   });
+
+  it("findUnreconstructed — reconstructed=false만 반환", async () => {
+    await store.upsert({ traceId: "t1", recordCount: 1, firstTimestamp: new Date(), lastTimestamp: new Date() });
+    await store.upsert({ traceId: "t2", recordCount: 1, firstTimestamp: new Date(), lastTimestamp: new Date() });
+    await store.markReconstructed("t1");
+    const unreconstructed = await store.findUnreconstructed();
+    expect(unreconstructed).toHaveLength(1);
+    expect(unreconstructed[0].traceId).toBe("t2");
+  });
+
+  it("findById 미존재 → null", async () => {
+    expect(await store.findById("nonexistent")).toBeNull();
+  });
 }

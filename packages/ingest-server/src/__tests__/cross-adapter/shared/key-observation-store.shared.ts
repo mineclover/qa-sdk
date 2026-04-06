@@ -54,4 +54,26 @@ export function keyObservationStoreTests(
     expect(unregistered).toHaveLength(1);
     expect(unregistered[0].registered).toBe(false);
   });
+
+  it("findByPrefix orderBy=last_seen", async () => {
+    await store.observeBatch([
+      { packedKey: "svc:v1:1", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:00:00Z" },
+      { packedKey: "svc:v1:2", prefixId: "svc", registered: true, timestamp: "2026-04-06T12:00:00Z" },
+    ]);
+    const results = await store.findByPrefix("svc", { orderBy: "last_seen" });
+    expect(results).toHaveLength(2);
+    // last_seen DESC — 더 최근 관측이 먼저
+    expect(results[0].packedKey).toBe("svc:v1:2");
+  });
+
+  it("prefixSummary — prefix 레벨 집계", async () => {
+    await store.observeBatch([
+      { packedKey: "svc:v1:1", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:00:00Z" },
+      { packedKey: "svc:v1:2", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:01:00Z" },
+      { packedKey: "svc:v1:1", prefixId: "svc", registered: true, timestamp: "2026-04-06T10:02:00Z" },
+    ]);
+    const prefixes = await store.prefixSummary("svc");
+    expect(prefixes).toHaveLength(1);
+    expect(prefixes[0].totalCount).toBe(3);
+  });
 }

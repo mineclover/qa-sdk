@@ -74,4 +74,48 @@ export function recordStoreTests(
     const records = await store.findByTraceId("t1");
     expect(records[0].addressContext).toEqual({ svc: "svc:v1:0" });
   });
+
+  it("findByTraceIdPaginated — cursor 기반 페이지네이션", async () => {
+    await store.insertBatch([
+      makeRecord({ logId: "r1", traceId: "t1", timestamp: new Date("2026-01-01T00:00:00Z") }),
+      makeRecord({ logId: "r2", traceId: "t1", timestamp: new Date("2026-01-01T00:00:01Z") }),
+      makeRecord({ logId: "r3", traceId: "t1", timestamp: new Date("2026-01-01T00:00:02Z") }),
+    ]);
+    const page1 = await store.findByTraceIdPaginated("t1", { limit: 2 });
+    expect(page1.items).toHaveLength(2);
+    expect(page1.hasMore).toBe(true);
+    expect(page1.nextCursor).not.toBeNull();
+
+    const page2 = await store.findByTraceIdPaginated("t1", { cursor: page1.nextCursor!, limit: 2 });
+    expect(page2.items).toHaveLength(1);
+    expect(page2.hasMore).toBe(false);
+  });
+
+  it("findByTimeRange — 시간 범위 필터", async () => {
+    await store.insertBatch([
+      makeRecord({ logId: "r1", traceId: "t1", timestamp: new Date("2026-01-01T00:00:00Z") }),
+      makeRecord({ logId: "r2", traceId: "t1", timestamp: new Date("2026-01-02T00:00:00Z") }),
+      makeRecord({ logId: "r3", traceId: "t1", timestamp: new Date("2026-01-03T00:00:00Z") }),
+    ]);
+    const results = await store.findByTimeRange({
+      from: new Date("2026-01-01T12:00:00Z"),
+      to: new Date("2026-01-02T12:00:00Z"),
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0].logId).toBe("r2");
+  });
+
+  it("findByTraceId 미존재 → 빈 배열", async () => {
+    const results = await store.findByTraceId("nonexistent");
+    expect(results).toEqual([]);
+  });
+
+  it("payload null 라운드트립", async () => {
+    await store.insertBatch([
+      makeRecord({ logId: "r1", traceId: "t1", payload: null }),
+    ]);
+    const records = await store.findByTraceId("t1");
+    // D1은 undefined, PG는 null — 둘 다 falsy
+    expect(records[0].payload ?? null).toBeNull();
+  });
 }
