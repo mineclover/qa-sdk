@@ -5,7 +5,7 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
-*Add reusable patterns discovered during development here.*
+* Standardizing on create*HandlerRegistry(catalog?: Catalog) allows command groups to access shared state while remaining physically separate from index.ts.
 
 ---
 
@@ -55,4 +55,15 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Group files should include detailed options in CommandDescriptors to support automated help generation.
   - Type definitions like RestCommandHandler should be centrally imported to avoid duplicate declarations and ReferenceErrors.
+---
+
+## 2026-04-06 - US-003
+- Made dkg command group physically authoritative.
+- Moved DKG_GROUP_HANDLER_REGISTRY and related handlers from index.ts to packages/cli/src/command-groups/dkg.commands.ts.
+- Refactored index.ts to import createDkgHandlerRegistry and use it for command dispatching.
+- Removed duplicate DKG-related imports, descriptors, and helper functions (e.g., parsePage) from index.ts.
+- Verified that dkg subtree help (e.g., dkg decisions --help, dkg transition --help) works correctly.
+- **Learnings:**
+  - Standardizing on create*HandlerRegistry(catalog?: Catalog) allows command groups to access shared state while remaining physically separate from index.ts.
+  - Centralizing large command groups like dkg significantly reduces index.ts complexity and duplication.
 ---
