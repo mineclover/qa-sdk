@@ -10,7 +10,7 @@
 // infra-config.json 기반 설정 적용
 import { loadInfraConfig, applyConfigToEnv } from "../src/commands/config-manager.js";
 const infraConfig = await loadInfraConfig();
-applyConfigToEnv(infraConfig);
+await applyConfigToEnv(infraConfig);
 
 // MinIO 자동 감지 fallback
 import { detectEnvironment } from "../src/commands/env-manager.js";

@@ -12,6 +12,7 @@ import { monitorStartHandler, monitorCheckHandler, monitorStatusHandler } from "
 import { dashboardSummaryHandler, dashboardServiceHandler, dashboardExportHandler } from "./cmd-dashboard.js";
 import { envUpHandler, envDownHandler, envStatusHandler, envResetHandler } from "./cmd-env.js";
 import { versionListHandler, versionShowHandler, versionRollbackHandler } from "./cmd-version.js";
+import { secretsShowHandler, secretsInitHandler, secretsRotateHandler } from "./cmd-secrets.js";
 
 /** infra-engine CLI 명령 트리 */
 export const INFRA_COMMAND_TREE: CliCommandNode[] = [
@@ -127,6 +128,15 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
       { segment: "list", description: "배포 버전 목록", handler: versionListHandler, args: [{ name: "env" }] },
       { segment: "show", description: "서비스 버전 상세", handler: versionShowHandler, args: [{ name: "service", required: true }, { name: "env" }] },
       { segment: "rollback", description: "이전 버전으로 롤백 표시", handler: versionRollbackHandler, args: [{ name: "service", required: true }, { name: "env" }] },
+    ],
+  },
+  {
+    segment: "secrets",
+    description: "시크릿 관리",
+    children: [
+      { segment: "show", description: "현재 시크릿 (마스킹)", handler: secretsShowHandler },
+      { segment: "init", description: "시크릿 초기화", handler: secretsInitHandler },
+      { segment: "rotate", description: "시크릿 로테이션", handler: secretsRotateHandler },
     ],
   },
 ];

@@ -137,14 +137,21 @@ export async function setConfigField(field: string, value: string): Promise<Infr
 }
 
 /** 설정을 환경변수로 적용 */
-export function applyConfigToEnv(config: InfraConfig): void {
+export async function applyConfigToEnv(config: InfraConfig): Promise<void> {
   // Pulumi backend
   if (config.backend === "minio" && config.s3Endpoint) {
     process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}?endpoint=${config.s3Endpoint}&disableSSL=true&s3ForcePathStyle=true`;
-    // minioadmin 기본 자격증명은 localhost에서만 허용
+    // MinIO 자격증명: secrets에서 로드, fallback은 기본값
     if (isLocalhost(config.s3Endpoint)) {
-      process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
-      process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+      try {
+        const { loadSecrets } = await import("./secrets-manager.js");
+        const secrets = await loadSecrets();
+        process.env.AWS_ACCESS_KEY_ID ??= secrets?.minioRootUser ?? "minioadmin";
+        process.env.AWS_SECRET_ACCESS_KEY ??= secrets?.minioRootPassword ?? "minioadmin";
+      } catch {
+        process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
+        process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+      }
     }
   } else if (config.backend === "s3") {
     process.env.PULUMI_BACKEND_URL ??= `s3://${config.s3Bucket}`;

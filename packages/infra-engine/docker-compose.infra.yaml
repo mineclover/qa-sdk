@@ -1,12 +1,11 @@
 services:
   minio:
     image: minio/minio:latest
+    env_file: .env.docker
     ports:
       - "9000:9000"      # S3 API
       - "9001:9001"      # Web Console
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
       MINIO_DEFAULT_BUCKETS: qa-sdk-infra-state
     command: server /data --console-address ":9001"
     volumes:
@@ -20,12 +19,13 @@ services:
 
   minio-init:
     image: minio/mc:latest
+    env_file: .env.docker
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
       mc mb local/qa-sdk-infra-state --ignore-existing;
       mc version enable local/qa-sdk-infra-state;
       echo '=== MinIO 초기화 완료 ===';
@@ -36,22 +36,17 @@ services:
   zitadel:
     image: ghcr.io/zitadel/zitadel:latest
     command: start-from-init --masterkeyFromEnv --tlsMode disabled
+    env_file: .env.docker
     environment:
-      ZITADEL_MASTERKEY: "QaSdkLocalDevMasterKey0123456789"
       ZITADEL_DATABASE_POSTGRES_HOST: zitadel-db
       ZITADEL_DATABASE_POSTGRES_PORT: 5432
       ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
-      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel
-      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: zitadel
       ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
-      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: postgres
-      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
       ZITADEL_EXTERNALSECURE: "false"
       ZITADEL_EXTERNALPORT: 8085
       ZITADEL_EXTERNALDOMAIN: localhost
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
-      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: "Admin123!"
     ports:
       - "8085:8080"
     depends_on:
@@ -66,9 +61,8 @@ services:
 
   zitadel-db:
     image: postgres:16-alpine
+    env_file: .env.docker
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: zitadel
     ports:
       - "5433:5432"

@@ -1,11 +1,21 @@
 // commands/env-manager.ts — 로컬 인프라 환경 관리 (MinIO S3 + K8s)
 
+import { resolve } from "node:path";
+
 const COMPOSE_FILE = "docker-compose.infra.yaml";
 const MINIO_ENDPOINT = "http://localhost:9000";
 const MINIO_CONSOLE = "http://localhost:9001";
 
 export async function envUp(cwd: string): Promise<void> {
   const { execa } = await import("execa");
+
+  // secrets 확인 + .env.docker 생성
+  const { ensureSecrets, generateDockerEnv } = await import("./secrets-manager.js");
+  const secrets = await ensureSecrets();
+  const envDockerPath = resolve(cwd, ".env.docker");
+  await generateDockerEnv(secrets, envDockerPath);
+  console.log("[env] .env.docker 생성됨");
+
   console.log("[env] MinIO S3 시작...");
   await execa("docker", ["compose", "-f", COMPOSE_FILE, "up", "-d"], { cwd, stdio: "inherit" });
 
@@ -17,7 +27,7 @@ export async function envUp(cwd: string): Promise<void> {
       if (res.ok) {
         console.log("[env] MinIO 준비 완료");
         console.log(`[env] S3 endpoint: ${MINIO_ENDPOINT}`);
-        console.log(`[env] Console: ${MINIO_CONSOLE} (minioadmin/minioadmin)`);
+        console.log(`[env] Console: ${MINIO_CONSOLE} (credentials in .env.docker)`);
         break;
       }
     } catch {
@@ -154,14 +164,21 @@ export async function detectEnvironment(): Promise<"minio" | "file"> {
     return "minio";
   }
 
-  // MinIO 자동 감지 — localhost에서만 minioadmin 기본 자격증명 설정
+  // MinIO 자동 감지 — secrets에서 자격증명 로드, fallback은 기본값
   try {
     const res = await fetch(`${MINIO_ENDPOINT}/minio/health/live`, { signal: AbortSignal.timeout(1000) });
     if (res.ok) {
       process.env.INFRA_AWS_ENDPOINT ??= MINIO_ENDPOINT;
-      // MINIO_ENDPOINT는 localhost 고정이므로 안전
-      process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
-      process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+      // secrets에서 MinIO 자격증명 로드
+      try {
+        const { loadSecrets } = await import("./secrets-manager.js");
+        const secrets = await loadSecrets();
+        process.env.AWS_ACCESS_KEY_ID ??= secrets?.minioRootUser ?? "minioadmin";
+        process.env.AWS_SECRET_ACCESS_KEY ??= secrets?.minioRootPassword ?? "minioadmin";
+      } catch {
+        process.env.AWS_ACCESS_KEY_ID ??= "minioadmin";
+        process.env.AWS_SECRET_ACCESS_KEY ??= "minioadmin";
+      }
       process.env.AWS_DEFAULT_REGION ??= "ap-northeast-2";
       process.env.PULUMI_BACKEND_URL ??=
         `s3://qa-sdk-infra-state?endpoint=${MINIO_ENDPOINT}&disableSSL=true&s3ForcePathStyle=true`;
