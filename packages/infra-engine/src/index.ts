@@ -57,6 +57,15 @@ export { createVultrProvider } from "./providers/vultr.js";
 
 // --- auth ---
 export { createTestJwt, TEST_TOKENS, type TestTokenOptions } from "./auth/test-jwt.js";
+export {
+  app as enrichmentApp,
+  startServer as startEnrichmentServer,
+  hasBit,
+  createBitmask,
+  FEATURES as ENRICHMENT_FEATURES,
+  FEATURE_INDEX as ENRICHMENT_FEATURE_INDEX,
+  ROLE_FEATURES as ENRICHMENT_ROLE_FEATURES,
+} from "./auth/enrichment-server.js";
 
 // --- post-deploy ---
 export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen.js";

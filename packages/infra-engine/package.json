@@ -18,10 +18,12 @@
     "infra": "tsx scripts/infra.ts"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.11",
     "@pulumi/kubernetes": "^4.28.0",
     "@pulumi/pulumi": "^3.229.0",
     "cli-command": "workspace:*",
     "execa": "^9.0.0",
+    "hono": "^4.12.7",
     "zod": "^3.23.0"
   },
   "devDependencies": {

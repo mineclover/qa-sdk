@@ -113,20 +113,47 @@ export function getRoutePermission(
   return best;
 }
 
+// ── Feature Index 정의 ─────────────────────────────────
+// enrichment-server.ts의 FEATURES 배열과 순서가 일치해야 한다.
+
+const FEATURE_INDEX: Record<string, number> = {
+  ingest_read: 0,
+  ingest_write: 1,
+  ingest_admin: 1, // admin은 write와 같은 비트 사용
+  registry_read: 2,
+  gate_read: 3,
+  query_read: 4,
+  decode_read: 5,
+  definition_read: 6,
+  definition_write: 7,
+  decision_read: 8,
+  decision_write: 9,
+  deploy_execute: 10,
+  monitoring_read: 11,
+};
+
 /**
  * JWT perms에서 특정 feature 권한이 있는지 확인.
  *
  * perms[domain]은 base64 encoded bitmask.
- * featureIndex는 RoleRegistry에서 정의.
- *
- * 현재 Phase 1: domain이 perms에 있으면 허용.
- * TODO: 실제 hasBit(decode(perms[domain]), featureIndex) 구현
+ * feature 이름에 대응하는 비트 인덱스를 FEATURE_INDEX에서 조회하여
+ * bitmask 내 해당 비트가 켜져 있는지 확인한다.
  */
 export function checkPermission(
   perms: Record<string, string>,
   domain: string,
-  _feature: string,
+  feature: string,
 ): boolean {
-  // Phase 1: domain 존재 여부만 확인 (bitmask 인덱스 매핑은 P1에서)
-  return domain in perms;
+  const bitmaskB64 = perms[domain];
+  if (!bitmaskB64) return false;
+
+  const idx = FEATURE_INDEX[feature];
+  // 알 수 없는 feature -> domain 존재만으로 허용 (fail-open)
+  if (idx === undefined) return true;
+
+  const bytes = Buffer.from(bitmaskB64, "base64");
+  const byteIdx = Math.floor(idx / 8);
+  const bitIdx = idx % 8;
+  if (byteIdx >= bytes.length) return false;
+  return (bytes[byteIdx] & (1 << bitIdx)) !== 0;
 }

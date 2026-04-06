@@ -35,6 +35,81 @@ if (JWKS_VERIFIER) {
   console.log(`[gateway] JWKS 미설정 — JWT 서명 미검증 (개발 모드)`);
 }
 
+// ── Zitadel Metadata / Enrichment Fallback ────────────
+
+const ZITADEL_URL = process.env.ZITADEL_URL; // e.g., "http://localhost:8085"
+const ZITADEL_SERVICE_TOKEN = process.env.ZITADEL_SERVICE_TOKEN; // admin PAT for metadata API
+const ENRICHMENT_URL = process.env.ENRICHMENT_URL; // e.g., "http://localhost:3900"
+
+interface PermsResult {
+  perms: unknown;
+  perms_v: number;
+  perms_schema: string;
+}
+
+/**
+ * id_token에 perms가 없을 때 Zitadel user metadata 또는
+ * enrichment 서버에서 permission claims를 가져온다.
+ *
+ * 시도 순서:
+ * 1. enrichment 서버 (/enrich) — 역할 기반 실시간 계산
+ * 2. Zitadel metadata API — 사전 저장된 값 조회
+ *
+ * 둘 다 실패하면 null 반환 (fail-open: 호출자가 403 결정).
+ */
+async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null> {
+  // 1. enrichment 서버 시도
+  if (ENRICHMENT_URL) {
+    try {
+      const resp = await fetch(`${ENRICHMENT_URL}/enrich`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+        signal: AbortSignal.timeout(3_000),
+      });
+      if (resp.ok) {
+        const data = await resp.json() as PermsResult;
+        if (data.perms) return data;
+      }
+    } catch { /* enrichment 서버 미실행 — metadata fallback */ }
+  }
+
+  // 2. Zitadel metadata fallback
+  if (ZITADEL_URL && ZITADEL_SERVICE_TOKEN && userId) {
+    try {
+      const metaResp = await fetch(
+        `${ZITADEL_URL}/management/v1/users/${userId}/metadata/_search`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+          signal: AbortSignal.timeout(3_000),
+        },
+      );
+      if (metaResp.ok) {
+        const meta = await metaResp.json() as {
+          result?: Array<{ key: string; value: string }>;
+        };
+        let perms: unknown = undefined;
+        let perms_v = 1;
+        let perms_schema = "qa-v1";
+        for (const m of meta.result ?? []) {
+          const val = Buffer.from(m.value, "base64").toString();
+          if (m.key === "perms") perms = JSON.parse(val);
+          if (m.key === "perms_v") perms_v = parseInt(val) || 1;
+          if (m.key === "perms_schema") perms_schema = val;
+        }
+        if (perms) return { perms, perms_v, perms_schema };
+      }
+    } catch { /* metadata 조회 실패 */ }
+  }
+
+  return null;
+}
+
 const SERVICE_URLS: Record<string, string> = {
   ingest: process.env.INGEST_URL ?? "http://localhost:3200",
   registry: process.env.REGISTRY_URL ?? "http://localhost:3300",
@@ -133,28 +208,38 @@ app.use("*", async (c, next) => {
     const token = auth.slice(7);
 
     try {
+      let payload: Record<string, unknown>;
+
       if (JWKS_VERIFIER) {
         // 프로덕션: JWKS 서명 검증
-        const { payload } = await JWKS_VERIFIER.verify(token);
-        if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
-        c.set("identity", String(payload.sub ?? payload.email ?? "jwt-user"));
-        c.set("perms", JSON.stringify(payload.perms));
-        c.set("perms_v", String(payload.perms_v ?? 0));
-        c.set("perms_schema", String(payload.perms_schema ?? ""));
+        const result = await JWKS_VERIFIER.verify(token);
+        payload = result.payload;
       } else {
         // 로컬 dev: 서명 미검증 (JWKS_URL 미설정 시)
         const parts = token.split(".");
         if (parts.length !== 3) throw new Error("invalid jwt");
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
-        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+        if (payload.exp && (payload.exp as number) < Math.floor(Date.now() / 1000)) {
           return c.json({ error: "Token expired" }, 401);
         }
-        if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
-        c.set("identity", payload.sub ?? payload.email ?? "jwt-user");
-        c.set("perms", JSON.stringify(payload.perms));
-        c.set("perms_v", String(payload.perms_v ?? 0));
-        c.set("perms_schema", payload.perms_schema ?? "");
       }
+
+      // id_token에 perms가 없으면 Zitadel user metadata에서 조회
+      if (!payload.perms) {
+        const enriched = await fetchPermsFromZitadel(String(payload.sub ?? ""));
+        if (enriched) {
+          payload.perms = enriched.perms;
+          payload.perms_v = enriched.perms_v;
+          payload.perms_schema = enriched.perms_schema;
+        }
+      }
+
+      if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
+
+      c.set("identity", String(payload.sub ?? payload.email ?? "jwt-user"));
+      c.set("perms", JSON.stringify(payload.perms));
+      c.set("perms_v", String(payload.perms_v ?? 0));
+      c.set("perms_schema", String(payload.perms_schema ?? ""));
       return next();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

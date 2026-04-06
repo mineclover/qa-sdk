@@ -140,6 +140,15 @@ export async function envStatus(): Promise<void> {
     console.log("  Zitadel:    ⬜ 미실행");
   }
 
+  // Enrichment Server
+  try {
+    const enrichPort = process.env.ENRICHMENT_PORT ?? "3900";
+    const res = await fetch(`http://localhost:${enrichPort}/health`, { signal: AbortSignal.timeout(2000) });
+    console.log(`  Enrichment: ${res.ok ? `🟢 실행 중 (localhost:${enrichPort})` : "⬜ 미실행"}`);
+  } catch {
+    console.log("  Enrichment: ⬜ 미실행");
+  }
+
   // Pulumi backend
   const backend = process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local";
   const isMinioS3 = backend.includes("localhost") || backend.includes("127.0.0.1");

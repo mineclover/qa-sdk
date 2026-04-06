@@ -13,6 +13,7 @@ import { dashboardSummaryHandler, dashboardServiceHandler, dashboardExportHandle
 import { envUpHandler, envDownHandler, envStatusHandler, envResetHandler } from "./cmd-env.js";
 import { versionListHandler, versionShowHandler, versionRollbackHandler } from "./cmd-version.js";
 import { secretsShowHandler, secretsInitHandler, secretsRotateHandler } from "./cmd-secrets.js";
+import { enrichmentStartHandler, enrichmentSetupHandler } from "./cmd-enrichment.js";
 
 /** infra-engine CLI 명령 트리 */
 export const INFRA_COMMAND_TREE: CliCommandNode[] = [
@@ -137,6 +138,14 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
       { segment: "show", description: "현재 시크릿 (마스킹)", handler: secretsShowHandler },
       { segment: "init", description: "시크릿 초기화", handler: secretsInitHandler },
       { segment: "rotate", description: "시크릿 로테이션", handler: secretsRotateHandler },
+    ],
+  },
+  {
+    segment: "enrichment",
+    description: "permission enrichment 서버",
+    children: [
+      { segment: "start", description: "enrichment 서버 시작", handler: enrichmentStartHandler },
+      { segment: "setup", description: "Zitadel Action + metadata 설정", handler: enrichmentSetupHandler },
     ],
   },
 ];

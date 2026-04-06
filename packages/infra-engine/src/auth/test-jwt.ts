@@ -56,22 +56,22 @@ export function createTestJwt(options: TestTokenOptions, secret: string = "test-
  * 미리 정의된 테스트 토큰들.
  */
 export const TEST_TOKENS = {
-  /** 관리자 -- 모든 권한 */
+  /** 관리자 -- 모든 권한 (12 features: 0xFF 0x0F) */
   admin: () =>
     createTestJwt({
       sub: "admin-001",
       email: "admin@qa-sdk.io",
-      perms: { shop: "/w==", infra: "/w==" }, // 0xFF = 모든 비트 on
+      perms: { shop: "/w8=", infra: "/w8=" }, // 0xFF, 0x0F = 12비트 전부 on
       perms_v: 1,
       perms_schema: "test",
     }),
 
-  /** 읽기 전용 -- perms 제한 */
+  /** 읽기 전용 -- read 권한만 (ingest_read, registry_read, gate_read, query_read, decode_read, definition_read, decision_read, monitoring_read) */
   reader: () =>
     createTestJwt({
       sub: "reader-001",
       email: "reader@qa-sdk.io",
-      perms: { shop: "AQ==" }, // 0x01 = 첫 비트만
+      perms: { shop: "fQk=", infra: "fQk=" }, // 0x7D,0x09 = bits 0,2,3,4,5,6,8,11 (viewer role)
       perms_v: 1,
       perms_schema: "test",
     }),
