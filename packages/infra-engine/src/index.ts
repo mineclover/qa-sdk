@@ -54,6 +54,9 @@ export { createAwsProvider } from "./providers/aws.js";
 export { createGcpProvider } from "./providers/gcp.js";
 export { createVultrProvider } from "./providers/vultr.js";
 
+// --- auth ---
+export { createTestJwt, TEST_TOKENS, type TestTokenOptions } from "./auth/test-jwt.js";
+
 // --- post-deploy ---
 export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen.js";
 export { findCascadeTargets, executeCascade, type CascadeTarget } from "./post-deploy/cascade.js";

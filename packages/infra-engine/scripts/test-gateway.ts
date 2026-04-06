@@ -53,9 +53,12 @@ async function test(
   }
 }
 
+const GATEWAY_JWT_URL = process.env.GATEWAY_JWT_URL ?? "http://127.0.0.1:28788";
+
 async function main() {
   console.log("\n=== 게이트웨이 통합 테스트 ===");
-  console.log(`대상: ${GATEWAY_URL}\n`);
+  console.log(`대상: ${GATEWAY_URL}`);
+  console.log(`JWT 대상: ${GATEWAY_JWT_URL}\n`);
 
   // 1. Gateway 헬스
   console.log("[1] Gateway 헬스체크");
@@ -152,6 +155,54 @@ async function main() {
     const error = err instanceof Error ? err.message : String(err);
     results.push({ name: "CORS", ok: false, error });
     console.log(`  FAIL CORS: ${error}`);
+  }
+
+  // === JWT Auth 테스트 ===
+  console.log("\n[8] JWT 인증 테스트");
+
+  // JWT 게이트웨이 접근 가능 여부 확인
+  let jwtGatewayAvailable = false;
+  try {
+    const res = await fetch(`${GATEWAY_JWT_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    jwtGatewayAvailable = res.ok;
+  } catch {
+    /* JWT 게이트웨이 미실행 */
+  }
+
+  if (jwtGatewayAvailable) {
+    const { createTestJwt, TEST_TOKENS } = await import("../src/auth/test-jwt.js");
+
+    // 8a. 유효한 JWT (admin)
+    const adminToken = TEST_TOKENS.admin();
+    await test("JWT admin 토큰 → 200", `${GATEWAY_JWT_URL}/health`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    // 8b. perms 없는 JWT → 403
+    const noPermsToken = TEST_TOKENS.noPerms();
+    await test("JWT perms 없음 → 403", `${GATEWAY_JWT_URL}/health`, {
+      headers: { Authorization: `Bearer ${noPermsToken}` },
+      expectedStatus: 403,
+    });
+
+    // 8c. JWT 없이 접근 → 401
+    await test("JWT 미포함 → 401", `${GATEWAY_JWT_URL}/api/services`, {
+      expectedStatus: 401,
+    });
+
+    // 8d. 잘못된 JWT → 401
+    await test("잘못된 JWT → 401", `${GATEWAY_JWT_URL}/health`, {
+      headers: { Authorization: "Bearer not.a.valid-jwt" },
+      expectedStatus: 401,
+    });
+
+    // 8e. reader 토큰 (perms 있음) → 200
+    const readerToken = TEST_TOKENS.reader();
+    await test("JWT reader 토큰 → 200", `${GATEWAY_JWT_URL}/health`, {
+      headers: { Authorization: `Bearer ${readerToken}` },
+    });
+  } else {
+    console.log("  SKIP JWT 게이트웨이 미실행 (GATEWAY_JWT_URL 또는 AUTH_MODE=jwt 인스턴스 필요)");
   }
 
   // 결과 요약

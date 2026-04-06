@@ -122,6 +122,14 @@ export async function envStatus(): Promise<void> {
     console.log("  Definition: ⬜ 미실행");
   }
 
+  // Zitadel
+  try {
+    const res = await fetch("http://localhost:8080/debug/healthz", { signal: AbortSignal.timeout(2000) });
+    console.log(`  Zitadel:    ${res.ok ? "🟢 실행 중 (localhost:8080)" : "⬜ 미실행"}`);
+  } catch {
+    console.log("  Zitadel:    ⬜ 미실행");
+  }
+
   // Pulumi backend
   const backend = process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local";
   const isMinioS3 = backend.includes("localhost") || backend.includes("127.0.0.1");

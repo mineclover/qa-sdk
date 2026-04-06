@@ -114,6 +114,33 @@ app.use("*", async (c, next) => {
     return next();
   }
 
+  // jwt 모드: JWT 토큰 파싱 + perms claims 추출
+  if (AUTH_MODE === "jwt") {
+    const auth = c.req.header("Authorization");
+    if (!auth?.startsWith("Bearer ")) return c.json({ error: "JWT required" }, 401);
+    const token = auth.slice(7);
+
+    try {
+      // JWT 디코딩 (서명 검증은 Zitadel의 JWKS로 — 로컬에서는 skip)
+      const parts = token.split(".");
+      if (parts.length !== 3) throw new Error("invalid jwt");
+      const payload = JSON.parse(atob(parts[1]));
+
+      // perms claims 확인
+      if (!payload.perms) {
+        return c.json({ error: "No permission claims in token" }, 403);
+      }
+
+      c.set("identity", payload.sub ?? payload.email ?? "jwt-user");
+      c.set("perms", JSON.stringify(payload.perms));
+      c.set("perms_v", String(payload.perms_v ?? 0));
+      c.set("perms_schema", payload.perms_schema ?? "");
+      return next();
+    } catch (err) {
+      return c.json({ error: "Invalid JWT", detail: String(err) }, 401);
+    }
+  }
+
   // tailscale 모드: Tailscale-User-Login 헤더 확인 (tailscale serve가 주입)
   if (AUTH_MODE === "tailscale") {
     const tsUser = c.req.header("Tailscale-User-Login");
