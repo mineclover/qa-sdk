@@ -67,6 +67,10 @@ export {
   ROLE_FEATURES as ENRICHMENT_ROLE_FEATURES,
 } from "./auth/enrichment-server.js";
 
+// --- pf-registry ---
+export { loadPfMap, savePfMap, registerPfEntry, removePfEntry, type PfEntry, type PfEntryKind } from "./lib/pf-registry.js";
+export { vitePfPlugin, type VitePfPluginOptions } from "./lib/vite-pf-plugin.js";
+
 // --- post-deploy ---
 export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen.js";
 export { findCascadeTargets, executeCascade, type CascadeTarget } from "./post-deploy/cascade.js";
