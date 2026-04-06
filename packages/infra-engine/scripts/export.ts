@@ -19,8 +19,9 @@ import { generateEnvFile } from "../src/export/env-file.js";
 import { generateTypescriptModule } from "../src/export/typescript-module.js";
 import { generateDockerComposeOverride } from "../src/export/docker-compose.js";
 import { homedir } from "node:os";
-import { resolve } from "node:path";
-import { writeFile, mkdir } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
 const DEFINITION_URL = process.env.DEFINITION_URL ?? "http://localhost:3700";
@@ -70,11 +71,23 @@ async function main() {
         process.exit(1);
       }
       const includeAll = process.argv.includes("--all");
-      const content = await generateEnvFile(client, {
-        serviceId: arg1,
-        env: arg2,
-        includeAll,
-      });
+
+      // config JSON에서 서비스별 설정 로딩
+      let svcConfig: Record<string, unknown> | undefined;
+      try {
+        const __dirname = dirname(fileURLToPath(import.meta.url));
+        const configPath = resolve(__dirname, `../config/${arg2}.json`);
+        const raw = JSON.parse(await readFile(configPath, "utf-8"));
+        svcConfig = raw.services?.[arg1] as Record<string, unknown> | undefined;
+      } catch {
+        // config 파일 없으면 기존 방식으로 fallback
+      }
+
+      const content = await generateEnvFile(
+        client,
+        { serviceId: arg1, env: arg2, includeAll },
+        svcConfig,
+      );
       const outPath = EXPORT_OUT ?? `.env.${arg1}.${arg2}`;
       const outDir = resolve(outPath, "..");
       await mkdir(outDir, { recursive: true });

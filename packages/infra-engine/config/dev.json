@@ -7,36 +7,52 @@
       "port": 3200,
       "store_driver": "d1",
       "cors_origin": "*",
-      "health_path": "/health/live",
       "registry_url": "http://registry-service-svc:3300",
+      "registry_validation_mode": "warn",
+      "health_path": "/health/live",
       "depends_on": ["registry-service"]
     },
     "registry-service": {
-      "port": 3300
+      "port": 3300,
+      "cors_origin": "*"
     },
     "gate-service": {
       "port": 3400,
+      "sqlite_driver": "node",
+      "sqlite_path": "data/gate-service.sqlite",
       "depends_on": ["registry-service", "ingest-server"]
     },
     "query-service": {
       "port": 3500,
+      "sqlite_driver": "node",
+      "sqlite_path": "data/query-service.sqlite",
+      "gate_service_url": "http://gate-service-svc:3400",
       "depends_on": ["gate-service"]
     },
     "decode-service": {
-      "port": 3600
+      "port": 3600,
+      "registry_url": "http://registry-service-svc:3300",
+      "cache_ttl_ms": 60000
     },
     "decision-service": {
       "port": 3800,
+      "sqlite_path": "data/decision-service.sqlite",
+      "definition_service_url": "http://definition-service-svc:3700",
+      "cors_origin": "*",
       "health_path": "/health",
       "depends_on": ["registry-service"]
     },
     "definition-service": {
       "port": 3700,
+      "sqlite_path": "data/definition-service.sqlite",
+      "registry_url": "http://registry-service-svc:3300",
+      "cors_origin": "*",
       "health_path": "/health",
       "depends_on": ["registry-service"]
     },
-    "motion-workspace": {
+    "motion-workspace-service": {
       "port": 3710,
+      "sqlite_path": "data/motion-workspace-service.sqlite",
       "health_path": "/health"
     }
   },
@@ -48,7 +64,7 @@
     "decode-service": { "endpoint": "http://localhost:3600" },
     "decision-service": { "endpoint": "http://localhost:3800" },
     "definition-service": { "endpoint": "http://localhost:3700" },
-    "motion-workspace": { "endpoint": "http://localhost:3710" }
+    "motion-workspace-service": { "endpoint": "http://localhost:3710" }
   },
   "monitoring": {
     "interval": 60
