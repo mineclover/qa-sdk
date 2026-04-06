@@ -280,7 +280,7 @@ infra dashboard export [path]                    # JSON export
 ### port-forward 관리
 
 ```
-infra pf list                                    # 활성 port-forward 목록
+infra pf list                                    # 활성 port-forward + dev server 목록
 infra pf register <name> <port>                  # ad-hoc local server 등록
 infra pf remove <name>                           # ad-hoc local server 제거
 infra pf cleanup                                 # 죽은 PID 정리
@@ -288,6 +288,29 @@ infra pf cleanup                                 # 죽은 PID 정리
 
 `infra pf list`는 K3s port-forward뿐 아니라 수동 등록한 local dev server도 함께 보여준다.
 예: `infra pf register viz-web 5201 --service viz-web --kind dev-server`
+
+### Vite Dev Server 자동 등록
+
+`vitePfPlugin`으로 Vite dev server 시작/종료 시 pf-registry에 자동 등록/해제한다. 포트 충돌로 변경되더라도 실제 할당 포트를 등록.
+
+```typescript
+// vite.config.ts
+import { vitePfPlugin } from "infra-engine";
+
+export default defineConfig({
+  plugins: [vitePfPlugin({ service: "my-app" })],
+});
+```
+
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `service` | (필수) | 서비스 식별자 |
+| `key` | `${service}-dev` | pf-registry 키 |
+| `namespace` | `"local"` | 네임스페이스 |
+| `note` | `"Vite dev server"` | 메모 |
+
+동작: `httpServer.listening` → `registerPfEntry()` (PID + 실제 포트), `SIGINT`/`SIGTERM`/`exit` → `removePfEntry()`.
+소스: `packages/infra-engine/src/lib/vite-pf-plugin.ts`
 
 ### version 관리
 

@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: draft
   layer: operation
   links:
     - target: infra-engine-pipeline
@@ -51,6 +51,8 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - AuthZ 라이프사이클: grant/revoke/override/invalidate/explain 57건
 - 운영 데모: 42건 E2E
 - cli-command 패키지: 트리 마이그레이션 완료
+- vitePfPlugin: Vite dev server pf-registry 자동 등록/해제 공식 플러그인
+- pf-registry public API export (loadPfMap, registerPfEntry, removePfEntry)
 
 ### 현재 규모
 
