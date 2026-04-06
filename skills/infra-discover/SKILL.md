@@ -36,6 +36,10 @@ pnpm exec tsx scripts/discover.ts --deep ingest-server dev
 # 연결 코드 생성
 pnpm exec tsx scripts/discover.ts --code ingest-server,gate-service dev
 # → TypeScript export const + connectXxx() 함수 생성
+
+# 로컬 port 확인 (K3s port-forward + ad-hoc dev server)
+pnpm exec tsx scripts/infra.ts pf list
+pnpm exec tsx scripts/infra.ts pf register viz-web 5201 --service viz-web --kind dev-server
 ```
 
 ## 출력 해석
@@ -69,3 +73,4 @@ pipeline_point  파이프라인 관측 포인트 (observation [svc_ref, pipeline
 2. **서비스 스펙 확인**: `discover.ts --deep gate-service dev` → 문서 17건, prefix 상세
 3. **코드에 연결 정보 넣을 때**: `discover.ts --code ingest-server,gate-service dev` → import 가능한 코드
 4. **전체 현황 파악**: `discover.ts --all prod` → prod 배포된 서비스 URL 맵
+5. **로컬 UI 포트 확인**: `infra.ts pf list` → 현재 활성 local endpoint 확인

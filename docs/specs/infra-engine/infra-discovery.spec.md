@@ -281,8 +281,13 @@ infra dashboard export [path]                    # JSON export
 
 ```
 infra pf list                                    # 활성 port-forward 목록
+infra pf register <name> <port>                  # ad-hoc local server 등록
+infra pf remove <name>                           # ad-hoc local server 제거
 infra pf cleanup                                 # 죽은 PID 정리
 ```
+
+`infra pf list`는 K3s port-forward뿐 아니라 수동 등록한 local dev server도 함께 보여준다.
+예: `infra pf register viz-web 5201 --service viz-web --kind dev-server`
 
 ### version 관리
 

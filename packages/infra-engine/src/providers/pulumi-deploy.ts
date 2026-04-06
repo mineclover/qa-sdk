@@ -1,27 +1,9 @@
 // providers/pulumi-deploy.ts — Pulumi Automation API 기반 배포 함수
 import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
-import { resolve } from "node:path";
-import { homedir } from "node:os";
 import type { DeployProvider } from "../adapters/adapter.js";
 import type { ResolvedConfig } from "../core/types.js";
 import { isSafePid } from "../lib/validation.js";
-
-const PF_DIR = resolve(homedir(), ".qa-sdk");
-const PF_FILE = resolve(PF_DIR, "infra-pf.json");
-
-interface PfEntry { pid: number; localPort: number; service: string; namespace: string }
-
-async function loadPfMap(): Promise<Record<string, PfEntry>> {
-  try { return JSON.parse(await readFile(PF_FILE, "utf-8")); } catch { return {}; }
-}
-
-async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
-  await mkdir(PF_DIR, { recursive: true });
-  const tmp = PF_FILE + ".tmp";
-  await writeFile(tmp, JSON.stringify(map, null, 2));
-  await rename(tmp, PF_FILE);
-}
+import { loadPfMap, registerPfEntry } from "../lib/pf-registry.js";
 
 /**
  * Pulumi Automation API를 사용하여 프로바이더의 프로그램을 실행한다.
@@ -133,14 +115,14 @@ export async function pulumiDeployFn(
 
       // PID를 infra-pf.json에 저장
       if (pf.pid) {
-        const updatedMap = await loadPfMap();
-        updatedMap[pfKey] = {
+        await registerPfEntry(pfKey, {
           pid: pf.pid,
           localPort,
           service: outputs.serviceName,
           namespace,
-        };
-        await savePfMap(updatedMap);
+          endpoint: `http://127.0.0.1:${localPort}`,
+          kind: "port-forward",
+        });
       }
 
       // port-forward 준비 대기 (연결 확인까지)

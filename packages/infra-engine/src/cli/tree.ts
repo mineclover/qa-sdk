@@ -7,7 +7,7 @@ import { statusHandler } from "./cmd-status.js";
 import { historyHandler } from "./cmd-history.js";
 import { auditHandler } from "./cmd-audit.js";
 import { configShowHandler, configUseHandler, configSetHandler, configPresetsHandler } from "./cmd-config.js";
-import { pfListHandler, pfCleanupHandler } from "./cmd-pf.js";
+import { pfListHandler, pfCleanupHandler, pfRegisterHandler, pfRemoveHandler } from "./cmd-pf.js";
 import { monitorStartHandler, monitorCheckHandler, monitorStatusHandler } from "./cmd-monitor.js";
 import { dashboardSummaryHandler, dashboardServiceHandler, dashboardExportHandler } from "./cmd-dashboard.js";
 import { envUpHandler, envDownHandler, envStatusHandler, envResetHandler } from "./cmd-env.js";
@@ -119,6 +119,13 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
     description: "port-forward 관리",
     children: [
       { segment: "list", description: "활성 목록", handler: pfListHandler },
+      {
+        segment: "register",
+        description: "로컬 서버 포트 수동 등록",
+        handler: pfRegisterHandler,
+        args: [{ name: "name", required: true }, { name: "port", required: true }],
+      },
+      { segment: "remove", description: "엔트리 제거", handler: pfRemoveHandler, args: [{ name: "name", required: true }] },
       { segment: "cleanup", description: "죽은 PID 정리", handler: pfCleanupHandler },
     ],
   },

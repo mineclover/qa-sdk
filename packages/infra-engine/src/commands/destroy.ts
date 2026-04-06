@@ -6,21 +6,9 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { readFile, writeFile, rename } from "node:fs/promises";
 import { validateId, isSafePid } from "../lib/validation.js";
+import { loadPfMap, savePfMap } from "../lib/pf-registry.js";
 
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
-const PF_FILE = resolve(PROFILE_DIR, "infra-pf.json");
-
-interface PfEntry { pid: number; localPort: number; service: string; namespace: string }
-
-async function loadPfMap(): Promise<Record<string, PfEntry>> {
-  try { return JSON.parse(await readFile(PF_FILE, "utf-8")); } catch { return {}; }
-}
-
-async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
-  const tmp = PF_FILE + ".tmp";
-  await writeFile(tmp, JSON.stringify(map, null, 2));
-  await rename(tmp, PF_FILE);
-}
 
 export async function destroy(serviceId: string, env: string): Promise<void> {
   validateId(serviceId, "serviceId");
