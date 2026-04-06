@@ -119,6 +119,11 @@ import {
   OBS_HANDLER_REGISTRY as OBS_GROUP_HANDLER_REGISTRY,
 } from './command-groups/obs.commands.js';
 import {
+  CACHE_COMMAND_SPECS as CACHE_GROUP_COMMAND_SPECS,
+  CACHE_COMMAND_TREE as CACHE_GROUP_COMMAND_TREE,
+  CACHE_HANDLER_REGISTRY as CACHE_GROUP_HANDLER_REGISTRY,
+} from './command-groups/cache.commands.js';
+import {
   DEF_COMMAND_SPECS as DEF_GROUP_COMMAND_SPECS,
   DEF_COMMAND_TREE as DEF_GROUP_COMMAND_TREE,
   DEF_HANDLER_REGISTRY as DEF_GROUP_HANDLER_REGISTRY,
@@ -171,6 +176,7 @@ ${formatUsageSpecs(QUALITY_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CATALOG_GROUP_COMMAND_SPECS)}
 ${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
+${formatUsageSpecs(CACHE_GROUP_COMMAND_SPECS)}
 `.trim();
 
 async function dispatchFromRegistry(
@@ -210,6 +216,10 @@ async function dispatchIngestCommand(handlerKey: string, rest: string[]): Promis
 
 async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(OBS_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchCacheCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(CACHE_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchGateCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -281,6 +291,7 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['catalog'], rootName: 'qa-sdk catalog', tree: CATALOG_GROUP_COMMAND_TREE, dispatch: dispatchCatalogCommand },
   { rootSegments: ['motion'], rootName: 'qa-sdk motion', tree: MOTION_GROUP_COMMAND_TREE, dispatch: dispatchMotionCommand },
   { rootSegments: ['flow'], rootName: 'qa-sdk flow', tree: FLOW_GROUP_COMMAND_TREE, dispatch: dispatchFlowCommand },
+  { rootSegments: ['cache'], rootName: 'qa-sdk cache', tree: CACHE_GROUP_COMMAND_TREE, dispatch: dispatchCacheCommand },
   { rootSegments: [], rootName: 'qa-sdk', tree: ROOT_GROUP_COMMAND_TREE, dispatch: dispatchRootCommand },
 ] as const;
 
