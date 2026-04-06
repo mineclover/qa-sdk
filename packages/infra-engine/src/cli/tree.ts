@@ -11,6 +11,7 @@ import { pfListHandler, pfCleanupHandler } from "./cmd-pf.js";
 import { monitorStartHandler, monitorCheckHandler, monitorStatusHandler } from "./cmd-monitor.js";
 import { dashboardSummaryHandler, dashboardServiceHandler, dashboardExportHandler } from "./cmd-dashboard.js";
 import { envUpHandler, envDownHandler, envStatusHandler, envResetHandler } from "./cmd-env.js";
+import { versionListHandler, versionShowHandler, versionRollbackHandler } from "./cmd-version.js";
 
 /** infra-engine CLI 명령 트리 */
 export const INFRA_COMMAND_TREE: CliCommandNode[] = [
@@ -35,6 +36,7 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
       { flag: "--provider", type: "string", description: "프로바이더", choices: ["local", "cloudflare"] },
       { flag: "--all", type: "boolean", description: "전체 서비스 배포" },
       { flag: "--continue-on-error", type: "boolean", description: "실패 시 계속" },
+      { flag: "--sync", type: "boolean", description: "배포 후 codegen + cascade 자동 실행" },
     ],
   },
   {
@@ -116,6 +118,15 @@ export const INFRA_COMMAND_TREE: CliCommandNode[] = [
     children: [
       { segment: "list", description: "활성 목록", handler: pfListHandler },
       { segment: "cleanup", description: "죽은 PID 정리", handler: pfCleanupHandler },
+    ],
+  },
+  {
+    segment: "version",
+    description: "버전 관리",
+    children: [
+      { segment: "list", description: "배포 버전 목록", handler: versionListHandler, args: [{ name: "env" }] },
+      { segment: "show", description: "서비스 버전 상세", handler: versionShowHandler, args: [{ name: "service", required: true }, { name: "env" }] },
+      { segment: "rollback", description: "이전 버전으로 롤백 표시", handler: versionRollbackHandler, args: [{ name: "service", required: true }, { name: "env" }] },
     ],
   },
 ];

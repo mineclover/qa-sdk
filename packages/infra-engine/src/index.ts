@@ -54,6 +54,12 @@ export { createAwsProvider } from "./providers/aws.js";
 export { createGcpProvider } from "./providers/gcp.js";
 export { createVultrProvider } from "./providers/vultr.js";
 
+// --- post-deploy ---
+export { runPostDeployCodegen, type CodegenOptions } from "./post-deploy/codegen.js";
+export { findCascadeTargets, executeCascade, type CascadeTarget } from "./post-deploy/cascade.js";
+export { createVersionStore, type VersionStore, type ServiceVersion } from "./post-deploy/version-manager.js";
+export { recordDeployVersion, syncToDefinitionService, type DeployVersion } from "./post-deploy/sync.js";
+
 import { createPipeline } from "./core/pipeline.js";
 import { createConfigStage } from "./config/config-stage.js";
 import { createSopsLoader } from "./config/sops-loader.js";

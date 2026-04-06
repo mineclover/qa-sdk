@@ -161,6 +161,41 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
       success: true,
       triggeredBy: "manual",
     });
+
+    // Post-deploy: 버전 기록
+    try {
+      const { createVersionStore } = await import("../post-deploy/version-manager.js");
+      const versionStore = createVersionStore();
+      const vEntry = await versionStore.setVersion(service, env, result.endpoint ?? "unknown", result.endpoint ?? "", "cloudflare");
+      if (vEntry.previousVersion) {
+        console.log(`[version] ${vEntry.previousVersion} -> ${vEntry.currentVersion}`);
+      } else {
+        console.log(`[version] ${vEntry.currentVersion} (초기 배포)`);
+      }
+    } catch { /* 버전 기록 실패 무시 */ }
+
+    // --sync 플래그: codegen + cascade 감지
+    if (ctx.options.sync) {
+      try {
+        const { createDiscoveryClient } = await import("../discovery/client.js");
+        const { runPostDeployCodegen } = await import("../post-deploy/codegen.js");
+        const client = createDiscoveryClient(REGISTRY_URL);
+        const codegenResult = await runPostDeployCodegen(client, service, env);
+        console.log(`[codegen] TS: ${codegenResult.tsPath}`);
+        console.log(`[codegen] env: ${codegenResult.envPaths.length}건`);
+      } catch (err) {
+        console.warn(`[codegen] 실패 — ${err}`);
+      }
+
+      try {
+        const { findCascadeTargets, executeCascade } = await import("../post-deploy/cascade.js");
+        const { createPlainLoader: createLoader } = await import("../config/sops-loader.js");
+        const loader = createLoader();
+        const config = await loader.decrypt(configPath) as any;
+        const targets = findCascadeTargets(config, service);
+        await executeCascade(targets, env, { dryRun: true });
+      } catch { /* config 읽기 실패 무시 */ }
+    }
   }
 
   process.exit(result.success ? 0 : 1);

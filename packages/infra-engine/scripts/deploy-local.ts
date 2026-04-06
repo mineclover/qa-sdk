@@ -47,6 +47,16 @@ const CONFIG_FILE = positionalArgs[2] || `${ENV}.json`;
 const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
 const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
 
+async function getGitSha(): Promise<string> {
+  try {
+    const { execa } = await import("execa");
+    const { stdout } = await execa("git", ["rev-parse", "--short", "HEAD"]);
+    return stdout.trim();
+  } catch {
+    return `build-${Date.now()}`;
+  }
+}
+
 async function main() {
   console.log(`\n=== infra-engine 로컬 배포 ===`);
   console.log(`서비스: ${SERVICE}`);
@@ -163,6 +173,21 @@ async function main() {
       triggeredBy: "manual",
     };
     await infraProfile.addHistory(SERVICE, historyEntry);
+
+    // 버전 기록
+    if (result.success) {
+      try {
+        const { createVersionStore } = await import("../src/post-deploy/version-manager.js");
+        const vs = createVersionStore();
+        const gitSha = await getGitSha();
+        const vEntry = await vs.setVersion(SERVICE, ENV, gitSha, result.endpoint ?? "", "local");
+        if (vEntry.previousVersion) {
+          console.log(`[version] ${vEntry.previousVersion} -> ${vEntry.currentVersion}`);
+        } else {
+          console.log(`[version] ${gitSha.slice(0, 8)} (초기 배포)`);
+        }
+      } catch { /* 버전 기록 실패 무시 */ }
+    }
   }
 
   // 프로필 확인
