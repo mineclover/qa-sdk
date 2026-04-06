@@ -51,9 +51,9 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
             value: String(v),
           }));
 
-        // K8s Deployment
+        // K8s Deployment — name 고정 (Pulumi 해시 제거 → K8s DNS 사용 가능)
         const deployment = new k8s.apps.v1.Deployment(serviceId, {
-          metadata: { namespace, labels: { app: serviceId } },
+          metadata: { namespace, name: serviceId, labels: { app: serviceId } },
           spec: {
             replicas: 1,
             selector: { matchLabels: { app: serviceId } },
@@ -79,9 +79,10 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
           },
         });
 
-        // K8s Service (NodePort)
-        const service = new k8s.core.v1.Service(`${serviceId}-svc`, {
-          metadata: { namespace, labels: { app: serviceId } },
+        // K8s Service (NodePort) — name 고정 → DNS: {serviceId}-svc.{namespace}.svc.cluster.local
+        const svcName = `${serviceId}-svc`;
+        const service = new k8s.core.v1.Service(svcName, {
+          metadata: { namespace, name: svcName, labels: { app: serviceId } },
           spec: {
             type: "NodePort",
             selector: { app: serviceId },

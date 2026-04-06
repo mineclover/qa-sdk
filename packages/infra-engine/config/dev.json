@@ -58,13 +58,13 @@
     "gateway": {
       "port": 8787,
       "auth_mode": "bypass",
-      "ingest_url": "http://ingest-server-svc-59c20c40:3200",
-      "registry_url": "http://localhost:3300",
-      "gate_url": "http://localhost:3400",
-      "query_url": "http://localhost:3500",
-      "decode_url": "http://localhost:3600",
-      "definition_url": "http://definition-service-svc-69a80510:3700",
-      "decision_url": "http://decision-service-svc-fd79356f:3800",
+      "ingest_url": "http://ingest-server-svc:3200",
+      "registry_url": "http://registry-service-svc:3300",
+      "gate_url": "http://gate-service-svc:3400",
+      "query_url": "http://query-service-svc:3500",
+      "decode_url": "http://decode-service-svc:3600",
+      "definition_url": "http://definition-service-svc:3700",
+      "decision_url": "http://decision-service-svc:3800",
       "health_path": "/health",
       "depends_on": ["ingest-server"]
     }
