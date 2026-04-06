@@ -207,16 +207,18 @@ interface StageResult {
 
 ## 현재 규모
 
-- **65 소스**, **116 테스트** (infra-engine 93 + cli-command 23)
-- **26 CLI 명령**, **4 skills**, **10 스펙**
+- **71 소스**, **220+ 테스트** (unit 106 + cli-command 23 + auth 57 + demo 37 + gateway 12 + advanced 24 + resilience 28 + login-flow 30)
+- **33 CLI 명령**, **4 skills**, **13 스펙**
 - **8 설정 파일** (test/dev/local/stage/prod/cloudflare-prod/test-nginx/test-nginx-v2)
-- **배포**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
+- **배포**: K3s dev 9서비스 + CF prod 2서비스 = 11서비스
+- **인프라**: Docker Compose (MinIO + Zitadel + CockroachDB) + K3s 클러스터
+- **인증**: JWKS RS256 + HS256 bitmask O(1) + 12 features x 3 roles
 
 ## 패키지 구조
 
 ```
 packages/infra-engine/
-  ├── src/                             # 65 소스 파일
+  ├── src/                             # 71 소스 파일
   │   ├── core/                        # 파이프라인 엔진 (범용, qa-sdk 무의존)
   │   │   ├── types.ts                 # DeployContext, DeployResult, Stage 등
   │   │   └── pipeline.ts              # DeployPipeline 실행기
@@ -282,11 +284,16 @@ packages/infra-engine/
   │   │   ├── version-manager.ts       # 배포 버전 기록 + rollback (JSON 영속)
   │   │   └── sync.ts                  # infra-profile 기록 + definition-service 동기화
   │   │
+  │   ├── auth/                         # 인증/인가
+  │   │   ├── enrichment-server.ts     # Permission enrichment HTTP 서버 (3 roles x 12 features)
+  │   │   └── test-jwt.ts              # JWT 테스트 유틸
+  │   │
   │   ├── commands/                    # 비즈니스 로직 구현
   │   │   ├── destroy.ts               # destroy (Pulumi destroy + 정리)
   │   │   ├── audit.ts                 # audit (registry 데이터 품질 점검)
   │   │   ├── config-manager.ts        # config (프로필 전환, 필드 변경)
-  │   │   └── env-manager.ts           # env (MinIO S3 + K8s 로컬 환경 관리)
+  │   │   ├── env-manager.ts           # env (MinIO S3 + K8s 로컬 환경 관리)
+  │   │   └── secrets-manager.ts       # secrets (시크릿 관리)
   │   │
   │   ├── cli/                         # CLI 명령 트리 (cli-command 기반)
   │   │   ├── tree.ts                  # 26개 명령 트리 정의
@@ -303,8 +310,10 @@ packages/infra-engine/
   │   │   ├── cmd-monitor.ts           # monitor (start/check/status)
   │   │   ├── cmd-dashboard.ts         # dashboard (summary/service/export)
   │   │   ├── cmd-env.ts               # env (up/down/status/reset)
-  │   │   ├── cmd-pf.ts               # pf (list/cleanup)
-  │   │   └── cmd-version.ts           # version (list/show/rollback)
+  │   │   ├── cmd-pf.ts               # pf (list/register/remove/cleanup)
+  │   │   ├── cmd-version.ts           # version (list/show/rollback)
+  │   │   ├── cmd-secrets.ts           # secrets (show/init/rotate)
+  │   │   └── cmd-enrichment.ts        # enrichment (start/setup)
   │   │
   │   ├── lib/                         # 공용 유틸리티
   │   │   └── validation.ts            # 보안 검증 (ID/경로/PID/URL 유효성)
@@ -315,7 +324,17 @@ packages/infra-engine/
   │   ├── infra.ts                     # 통합 CLI (cli-command 트리 기반)
   │   ├── deploy-local.ts              # 로컬 배포 (레거시, infra.ts에서 위임)
   │   ├── discover.ts                  # 디스커버리 (레거시, infra.ts에서 위임)
-  │   └── export.ts                    # export (레거시, infra.ts에서 위임)
+  │   ├── export.ts                    # export (레거시, infra.ts에서 위임)
+  │   ├── test-auth-lifecycle.ts       # AuthN/AuthZ 라이프사이클 테스트 (57건)
+  │   ├── test-gateway.ts              # Gateway 통합 테스트 (12건)
+  │   ├── test-advanced.ts             # 고급 시나리오 테스트 (24건)
+  │   ├── test-resilience.ts           # 장애 복구 테스트 (28건)
+  │   ├── test-login-flow.ts           # 로그인 플로우 테스트 (30건)
+  │   ├── test-oidc-browser.ts         # OIDC 브라우저 테스트 서버
+  │   └── setup-zitadel-action.ts      # Zitadel Action 설정
+  │
+  ├── test/                            # 브라우저 테스트
+  │   └── oidc-login.html              # OIDC + PKCE 브라우저 로그인 테스트 UI
   │
   ├── config/                          # 환경별 설정 JSON (8개)
   │   ├── test.json

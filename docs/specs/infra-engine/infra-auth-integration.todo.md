@@ -79,6 +79,7 @@ Gateway (AuthZ)
 - [x] Zitadel Action → flow 연결 (trigger 4 + 5 linked to qa-enrich-perms)
   - 엔드포인트: `http://enrichment-server:3900/enrich`
 - [x] Zitadel metadata sync (perms/perms_v/perms_schema stored in user metadata via _bulk POST)
+- [x] Enrichment JWT 발급 (POST /token — Zitadel 토큰 → HS256 enrichment JWT)
 - [ ] PermissionVersionStore → Zitadel metadata 연동
   - `perms_v` 불일치 → 토큰 재발급 강제
 
@@ -117,6 +118,40 @@ Gateway (AuthZ)
 
 ---
 
+## P2.5 — 고급 검증 ✅
+
+### 동시 배포 충돌 ✅
+
+- [x] 동일 서비스 동시 배포 시 Pulumi lock 충돌 감지
+- [x] 서로 다른 서비스 동시 배포 성공 검증
+
+### K8s DNS 엔드포인트 ✅
+
+- [x] K8s 내부 DNS `{serviceId}-svc.{namespace}.svc.cluster.local` 검증
+- [x] gateway → backend K8s DNS 라우팅 검증
+
+### 장애 복구 ✅
+
+- [x] Pod kill → auto restart (K8s liveness probe)
+- [x] 서비스 장애 감지 → 자동 복구 확인
+
+### 멀티 환경 동시 운영 ✅
+
+- [x] dev + stage 동시 운영 (namespace 격리)
+- [x] 환경별 설정 독립 검증
+
+---
+
+## P2.7 — 브라우저 OIDC 로그인
+
+### 브라우저 OIDC + PKCE ✅
+
+- [x] test/oidc-login.html — Zitadel authorization_code + PKCE 플로우 UI
+- [x] scripts/test-oidc-browser.ts — SPA 앱 자동 등록 + 정적 서버 (port 5500)
+- [ ] Browser OIDC 로그인 end-to-end 수동 검증
+
+---
+
 ## P3 — 멀티 OAuth 프로바이더
 
 ### 3-1. Zitadel에 외부 IdP 추가
@@ -132,19 +167,26 @@ Gateway (AuthZ)
 
 ---
 
+## P4 — CI/CD
+
+- [ ] GitHub Actions 활성화 — OIDC, SOPS, config 변경 감지 → 자동 배포
+
+---
+
 ## 현재 상태 요약
 
 ```
 ✅ P0 완료:
   JWKS RS256 서명 검증 (jwks-verifier.ts)
+  HS256 서명 검증 (enrichment JWT)
   AUTH_MODE=jwt — JWKS 설정 시 프로덕션, 미설정 시 dev
   route-permissions.ts — longest prefix match + FEATURE_INDEX 12종
   checkPermission() — base64 bitmask O(1) 비트 체크
   /health, /debug/healthz 공개 경로 스킵
 
 ✅ P1 완료:
-  enrichment-server.ts — POST /enrich + role 관리 API (infra-engine)
-  gateway에서 enrichment fallback 연동
+  enrichment-server.ts — POST /enrich + POST /token + role 관리 API (infra-engine)
+  gateway에서 enrichment fallback + HS256 검증 연동
   features 12종 + roles 3종 (admin/operator/viewer)
   Zitadel Action → flow 연결 (trigger 4 + 5 linked to qa-enrich-perms)
   Zitadel metadata sync (perms/perms_v/perms_schema via _bulk POST)
@@ -155,8 +197,20 @@ Gateway (AuthZ)
   K8s DNS 라우팅: {serviceId}-svc.{namespace}.svc.cluster.local
   dev.json gateway URL K8s DNS 기반으로 통일
 
+✅ P2.5 완료:
+  동시 배포 충돌 감지 + 독립 서비스 병렬 배포
+  K8s DNS 엔드포인트 검증
+  Pod kill → auto restart 장애 복구
+  dev + stage 멀티 환경 동시 운영
+
+✅ P2.7 완료:
+  OIDC 브라우저 테스트 UI (authorization_code + PKCE)
+  SPA 앱 자동 등록 + 정적 서버
+
 ❌ 미완:
   PermissionVersionStore → Zitadel metadata 연동 (perms_v 변경 시 자동)
+  Browser OIDC 로그인 end-to-end 수동 검증
   Google/GitHub IdP
   ZitadelProvider 세션 종료
+  CI/CD 활성화
 ```
