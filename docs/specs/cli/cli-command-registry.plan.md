@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: cli-command-spec
       type: depends_on
+    - target: cli-minor-gaps-todo
+      type: depends_on
 ---
 
 # CLI Command Registry — 전환 완료
