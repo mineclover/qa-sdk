@@ -436,3 +436,32 @@ describe("[속성 기반] 랜덤 입력 불변식", () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [extractDims] label 기반 부분 decode
+// ─────────────────────────────────────────────────────────────────────────────
+describe("extractDims", () => {
+  const wi = new WeightedIndex([8, 4, 5, 4], ["env", "region", "svc", "ns"]);
+
+  it("label로 부분 추출", () => {
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = wi.extractDims(addr, ["env", "svc"]);
+    expect(result).toEqual({ env: 3, svc: 4 });
+  });
+
+  it("전체 label → decodeToRecord와 동일", () => {
+    const addr = wi.encode([3, 2, 4, 1]);
+    const full = wi.decodeToRecord(addr);
+    const partial = wi.extractDims(addr, ["env", "region", "svc", "ns"]);
+    expect(partial).toEqual(full);
+  });
+
+  it("단일 label 추출", () => {
+    const addr = wi.encode([1, 3, 5, 4]);
+    expect(wi.extractDims(addr, ["ns"])).toEqual({ ns: 4 });
+  });
+
+  it("미존재 label → 에러", () => {
+    expect(() => wi.extractDims(0, ["unknown"])).toThrow("Unknown label");
+  });
+});
