@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcWeights, partialQueryBase, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges, expandRanges } from "./calc.js";
+import { calcWeights, partialQueryBase, partialDecode, describeRangeFormula, mergeRanges, intersectRanges, subtractRanges, complementRanges, containsAddress, positionsToConstraint, calcAddressRanges, expandRanges } from "./calc.js";
 import { WeightedIndex } from "./weighted-index.js";
 
 // ── calcWeights ────────────────────────────────────────────────────────────
@@ -470,5 +470,62 @@ describe("expandRanges", () => {
 
     // 전체 24개 중 짝수 index가 dim2=1: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22
     expect(expanded).toEqual([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]);
+  });
+});
+
+// ── partialDecode ──────────────────────────────────────────────────────────
+
+describe("partialDecode", () => {
+  const shape = [8, 4, 5, 4];
+  const strides = calcWeights(shape);
+
+  it("전체 차원 추출 — full decode와 동일", () => {
+    const wi = new WeightedIndex(shape);
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = partialDecode(addr, shape, strides, [0, 1, 2, 3]);
+    expect(result).toEqual({ 0: 3, 1: 2, 2: 4, 3: 1 });
+  });
+
+  it("단일 차원 추출 (dim 0)", () => {
+    const wi = new WeightedIndex(shape);
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = partialDecode(addr, shape, strides, [0]);
+    expect(result).toEqual({ 0: 3 });
+  });
+
+  it("단일 차원 추출 (마지막 dim)", () => {
+    const wi = new WeightedIndex(shape);
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = partialDecode(addr, shape, strides, [3]);
+    expect(result).toEqual({ 3: 1 });
+  });
+
+  it("2개 차원 추출 (dim 1, 3)", () => {
+    const wi = new WeightedIndex(shape);
+    const addr = wi.encode([3, 2, 4, 1]);
+    const result = partialDecode(addr, shape, strides, [1, 3]);
+    expect(result).toEqual({ 1: 2, 3: 1 });
+  });
+
+  it("address 0 → 모든 차원 1", () => {
+    const result = partialDecode(0, shape, strides, [0, 1, 2, 3]);
+    expect(result).toEqual({ 0: 1, 1: 1, 2: 1, 3: 1 });
+  });
+
+  it("빈 dimIndices → 빈 객체", () => {
+    const result = partialDecode(0, shape, strides, []);
+    expect(result).toEqual({});
+  });
+
+  it("모든 주소에 대해 full decode와 동치", () => {
+    const wi = new WeightedIndex([3, 4, 2]);
+    const s = calcWeights([3, 4, 2]);
+    for (let addr = 0; addr < wi.size; addr++) {
+      const full = wi.decode(addr);
+      const partial = partialDecode(addr, [3, 4, 2], s, [0, 1, 2]);
+      expect(partial[0]).toBe(full[0]);
+      expect(partial[1]).toBe(full[1]);
+      expect(partial[2]).toBe(full[2]);
+    }
   });
 });

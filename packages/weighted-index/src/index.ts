@@ -31,6 +31,7 @@ export {
 export {
   calcWeights,
   partialQueryBase,
+  partialDecode,
   describeRangeFormula,
   mergeRanges,
   intersectRanges,
