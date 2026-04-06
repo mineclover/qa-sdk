@@ -31,3 +31,7 @@ export {
   InMemoryKeyCache,
   InMemoryAggregator,
 } from "./adapters/memory/index.js";
+
+// ── Redis Adapters ────────────────────────────────────
+
+export { RedisKeyCache } from "./adapters/redis/index.js";
