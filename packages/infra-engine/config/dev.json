@@ -54,6 +54,19 @@
       "port": 3710,
       "sqlite_path": "data/motion-workspace-service.sqlite",
       "health_path": "/health"
+    },
+    "gateway": {
+      "port": 8787,
+      "auth_mode": "bypass",
+      "ingest_url": "http://ingest-server-svc-59c20c40:3200",
+      "registry_url": "http://localhost:3300",
+      "gate_url": "http://localhost:3400",
+      "query_url": "http://localhost:3500",
+      "decode_url": "http://localhost:3600",
+      "definition_url": "http://definition-service-svc-69a80510:3700",
+      "decision_url": "http://decision-service-svc-fd79356f:3800",
+      "health_path": "/health",
+      "depends_on": ["ingest-server"]
     }
   },
   "connections": {
@@ -64,7 +77,8 @@
     "decode-service": { "endpoint": "http://localhost:3600" },
     "decision-service": { "endpoint": "http://localhost:3800" },
     "definition-service": { "endpoint": "http://localhost:3700" },
-    "motion-workspace-service": { "endpoint": "http://localhost:3710" }
+    "motion-workspace-service": { "endpoint": "http://localhost:3710" },
+    "gateway": { "endpoint": "http://localhost:8787" }
   },
   "monitoring": {
     "interval": 60

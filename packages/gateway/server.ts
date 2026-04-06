@@ -29,6 +29,8 @@ const SERVICE_URLS: Record<string, string> = {
   gate: process.env.GATE_URL ?? "http://localhost:3400",
   query: process.env.QUERY_URL ?? "http://localhost:3500",
   decode: process.env.DECODE_URL ?? "http://localhost:3600",
+  definition: process.env.DEFINITION_URL ?? "http://localhost:3700",
+  decision: process.env.DECISION_URL ?? "http://localhost:3800",
 };
 
 const PATH_MAP: Array<{ prefix: string; service: string; strip?: boolean }> = [
@@ -47,6 +49,12 @@ const PATH_MAP: Array<{ prefix: string; service: string; strip?: boolean }> = [
   { prefix: "/query/", service: "query", strip: true },
   { prefix: "/state/", service: "query", strip: true },
   { prefix: "/decode/", service: "decode", strip: true },
+  { prefix: "/docs", service: "definition" },
+  { prefix: "/sync", service: "definition" },
+  { prefix: "/graph/", service: "definition" },
+  { prefix: "/definitions/", service: "definition", strip: true },
+  { prefix: "/decisions/", service: "decision", strip: true },
+  { prefix: "/decision/", service: "decision", strip: true },
 ];
 
 // ── 동적 라우팅 (registry 기반) ─────────────────────
