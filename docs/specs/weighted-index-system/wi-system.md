@@ -27,6 +27,8 @@ def:
       type: contains
     - target: range-query-spec
       type: contains
+    - target: wi-hardware-acceleration
+      type: contains
 ---
 
 # Weighted-Index 시스템
