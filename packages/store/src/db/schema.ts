@@ -42,7 +42,7 @@ export const traces = pgTable("traces", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("idx_traces_session_id").on(table.sessionId),
-  index("idx_traces_reconstructed").on(table.reconstructed),
+  index("idx_traces_reconstructed").on(table.reconstructed, table.createdAt),
 ]);
 
 // ── Event Records ───────────────────────────────────────
@@ -176,4 +176,51 @@ export const deadLetterQueue = pgTable("dead_letter_queue", {
     table.traceId,
     table.phase,
   ),
+]);
+
+// ── Key Observations ───────────────────────────────────
+// packed_key 관측 빈도 추적. 좌표 공간 coverage/drift 분석.
+
+export const keyObservations = pgTable("key_observations", {
+  packedKey: text("packed_key").primaryKey(),
+  prefixId: text("prefix_id").notNull(),
+  registered: boolean("registered").notNull().default(false),
+  count: integer("count").notNull().default(1),
+  firstSeen: timestamp("first_seen", { withTimezone: true }).notNull(),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).notNull(),
+  payloadSummary: jsonb("payload_summary").notNull().default({}),
+}, (t) => [
+  index("idx_key_obs_prefix").on(t.prefixId),
+  index("idx_key_obs_last_seen").on(t.lastSeen),
+  index("idx_key_obs_count").on(t.count),
+  index("idx_key_obs_registered").on(t.registered),
+]);
+
+// ── Key Observation Prefixes ───────────────────────────
+// prefix 레벨 집계. capacity planning 지원.
+
+export const keyObservationPrefixes = pgTable("key_observation_prefixes", {
+  prefixId: text("prefix_id").primaryKey(),
+  distinctKeys: integer("distinct_keys").notNull().default(1),
+  totalCount: integer("total_count").notNull().default(0),
+  firstSeen: timestamp("first_seen", { withTimezone: true }).notNull(),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).notNull(),
+});
+
+// ── Insight Labels ─────────────────────────────────────
+// 관측 데이터 수동 레이블링. 인사이트 분류·감사 추적.
+
+export const insightLabels = pgTable("insight_labels", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  targetId: text("target_id").notNull(),
+  label: text("label").notNull(),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("idx_insight_labels_kind").on(t.kind),
+  index("idx_insight_labels_target").on(t.targetId),
 ]);
