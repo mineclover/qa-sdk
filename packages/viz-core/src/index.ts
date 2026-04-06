@@ -54,6 +54,17 @@ export {
   type D3ScopeNode, type D3ContractEdge, type D3ScopeGraph,
 } from "./scope-d3.js";
 
+// ── Concept Hierarchy Grid ──
+export {
+  buildConceptHierarchyGrid,
+  type ConceptGridColumn,
+  type ConceptGridRow,
+  type ConceptGridCell,
+  type ConceptGridBoundary,
+  type ConceptGridLink,
+  type ConceptHierarchyGrid,
+} from "./concept-grid.js";
+
 // ── Scope Nesting Timeline ──
 export {
   SCOPE_DEPTH_COLORS, CONTRACT_TYPE_COLORS, TIMING_COLORS,

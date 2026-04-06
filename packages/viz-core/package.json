@@ -35,6 +35,11 @@
       "import": "./dist/scope-d3.js",
       "require": "./dist/scope-d3.cjs"
     },
+    "./concept-grid": {
+      "types": "./dist/concept-grid.d.ts",
+      "import": "./dist/concept-grid.js",
+      "require": "./dist/concept-grid.cjs"
+    },
     "./pipe-svg": {
       "types": "./dist/pipe-svg.d.ts",
       "import": "./dist/pipe-svg.js",

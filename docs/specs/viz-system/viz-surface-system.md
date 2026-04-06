@@ -17,6 +17,8 @@ def:
       type: contains
     - target: graph-renderer-live
       type: contains
+    - target: concept-hierarchy-grid
+      type: contains
 ---
 
 # Viz 표면 구성 그룹
@@ -30,5 +32,6 @@ def:
 - `viz-panel-layout`: scenario selector, event log, verdict panel의 배치와 제약을 정리한 문서.
 - `graph-renderer-pipeline`: DAG 레이아웃과 SVG 렌더링 파이프라인을 정리한 문서.
 - `graph-renderer-live`: 스타일 매핑과 실시간 업데이트 규칙을 정리한 문서.
+- `concept-hierarchy-grid`: 핵심 개념을 2차원 그리드 위에 배치해 높낮이와 바운더리 plane을 시각화하는 문서.
 
 원본: `docs/specs/visualization/panels.spec.md` (`viz-panels-spec`), `docs/specs/visualization/graph-renderer.spec.md` (`graph-renderer-spec`)

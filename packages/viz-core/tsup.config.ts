@@ -10,6 +10,7 @@ export default defineConfig({
     "src/scope-d3.ts",
     "src/pipe-svg.ts",
     "src/scope-nesting-timeline.ts",
+    "src/concept-grid.ts",
   ],
   format: ["esm", "cjs"],
   dts: true,
