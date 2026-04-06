@@ -313,6 +313,9 @@ describeIfDatabase("Drizzle adapters on PostgreSQL", () => {
         traceId: "trace_1",
         sessionId: "session_1",
         serviceName: "mobile-app",
+        actorId: null,
+        userId: null,
+        userAttributes: null,
         recordCount: 2,
         firstTimestamp: new Date("2026-03-12T00:00:02.000Z"),
         lastTimestamp: new Date("2026-03-12T00:00:04.000Z"),
@@ -335,6 +338,9 @@ describeIfDatabase("Drizzle adapters on PostgreSQL", () => {
         traceId: "trace_1",
         sessionId: "session_1",
         serviceName: "mobile-app",
+        actorId: null,
+        userId: null,
+        userAttributes: null,
         recordCount: 5,
         firstTimestamp: new Date("2026-03-12T00:00:01.000Z"),
         lastTimestamp: new Date("2026-03-12T00:00:05.000Z"),
@@ -446,6 +452,9 @@ describeIfDatabase("Drizzle adapters on PostgreSQL", () => {
         sessionId: "session_1",
         scenarioId: "scenario_signup",
         labels: { region: "kr" },
+        actorId: null,
+        userId: null,
+        userAttributes: null,
         startedAt: expect.any(Date),
         closedAt: null,
       });
@@ -466,6 +475,9 @@ describeIfDatabase("Drizzle adapters on PostgreSQL", () => {
         sessionId: "session_1",
         scenarioId: "scenario_signup",
         labels: { region: "kr" },
+        actorId: null,
+        userId: null,
+        userAttributes: null,
         startedAt: created!.startedAt,
         closedAt: expect.any(Date),
       });
@@ -597,7 +609,7 @@ describeIfDatabase("Drizzle adapters on PostgreSQL", () => {
             id: "verdict_2",
           }),
         ),
-      ).rejects.toMatchObject({ code: "23505" });
+      ).rejects.toMatchObject({ cause: { code: "23505" } });
       expect(await db.select().from(verdictReports)).toHaveLength(1);
     });
   });
