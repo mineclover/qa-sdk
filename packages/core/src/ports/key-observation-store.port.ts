@@ -57,7 +57,7 @@ export interface KeyObservationStore {
   /** 전체 관측 통계 */
   summary(): Promise<KeyObservationSummary>;
   /** 특정 시점 이전 미관측 좌표 (cold key) */
-  findStale(before: string): Promise<KeyObservation[]>;
+  findStale(before: string, limit?: number): Promise<KeyObservation[]>;
   /** 미등록 key 목록 (drift 감지) */
   findUnregistered(opts?: { limit?: number }): Promise<KeyObservation[]>;
   /** prefix 레벨 집계 */

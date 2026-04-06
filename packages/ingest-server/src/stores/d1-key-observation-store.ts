@@ -1,6 +1,6 @@
 // packages/ingest-server/src/stores/d1-key-observation-store.ts
 
-import { desc, eq, lt, sql, asc } from "drizzle-orm";
+import { count as countFn, desc, eq, lt, sql, sum, asc } from "drizzle-orm";
 import type {
   KeyObservationStore,
   KeyObservationEntry,
@@ -21,7 +21,16 @@ export class D1KeyObservationStore implements KeyObservationStore {
 
   async observeBatch(entries: readonly KeyObservationEntry[]): Promise<void> {
     for (const entry of entries) {
-      const summary = buildPayloadSummary(entry);
+      // 기존 payloadSummary 조회 → merge
+      const [existing] = await this.db
+        .select({ payloadSummary: keyObservations.payloadSummary })
+        .from(keyObservations)
+        .where(eq(keyObservations.packedKey, entry.packedKey));
+
+      const prevSummary = existing
+        ? parseJsonColumn<PayloadSummaryJson>(existing.payloadSummary, EMPTY_PAYLOAD_SUMMARY)
+        : EMPTY_PAYLOAD_SUMMARY;
+      const merged = mergePayloadSummary(prevSummary, entry);
 
       // key_observations upsert
       await this.db
@@ -33,7 +42,7 @@ export class D1KeyObservationStore implements KeyObservationStore {
           count: 1,
           firstSeen: entry.timestamp,
           lastSeen: entry.timestamp,
-          payloadSummary: JSON.stringify(summary),
+          payloadSummary: JSON.stringify(merged),
         })
         .onConflictDoUpdate({
           target: keyObservations.packedKey,
@@ -41,7 +50,7 @@ export class D1KeyObservationStore implements KeyObservationStore {
             count: sql`${keyObservations.count} + 1`,
             lastSeen: entry.timestamp,
             registered: entry.registered,
-            payloadSummary: JSON.stringify(summary),
+            payloadSummary: JSON.stringify(merged),
           },
         });
 
@@ -93,31 +102,45 @@ export class D1KeyObservationStore implements KeyObservationStore {
   }
 
   async summary(): Promise<KeyObservationSummary> {
-    const rows = await this.db.select().from(keyObservations);
+    // SQL 집계 — 전건 로드 방지
+    const [agg] = await this.db
+      .select({
+        totalKeys: countFn(),
+        totalCount: sum(keyObservations.count),
+        registeredKeys: sql<number>`SUM(CASE WHEN ${keyObservations.registered} = 1 THEN 1 ELSE 0 END)`,
+        unregisteredKeys: sql<number>`SUM(CASE WHEN ${keyObservations.registered} = 0 THEN 1 ELSE 0 END)`,
+      })
+      .from(keyObservations);
 
-    let totalKeys = 0;
-    let totalCount = 0;
-    let registeredKeys = 0;
-    let unregisteredKeys = 0;
+    const breakdownRows = await this.db
+      .select({
+        prefixId: keyObservations.prefixId,
+        total: sum(keyObservations.count),
+      })
+      .from(keyObservations)
+      .groupBy(keyObservations.prefixId);
+
     const prefixBreakdown: Record<string, number> = {};
-
-    for (const row of rows) {
-      totalKeys++;
-      totalCount += row.count;
-      if (row.registered) registeredKeys++;
-      else unregisteredKeys++;
-      prefixBreakdown[row.prefixId] = (prefixBreakdown[row.prefixId] ?? 0) + row.count;
+    for (const row of breakdownRows) {
+      prefixBreakdown[row.prefixId] = Number(row.total ?? 0);
     }
 
-    return { totalKeys, totalCount, registeredKeys, unregisteredKeys, prefixBreakdown };
+    return {
+      totalKeys: Number(agg?.totalKeys ?? 0),
+      totalCount: Number(agg?.totalCount ?? 0),
+      registeredKeys: Number(agg?.registeredKeys ?? 0),
+      unregisteredKeys: Number(agg?.unregisteredKeys ?? 0),
+      prefixBreakdown,
+    };
   }
 
-  async findStale(before: string): Promise<KeyObservation[]> {
+  async findStale(before: string, limit = 500): Promise<KeyObservation[]> {
     const rows = await this.db
       .select()
       .from(keyObservations)
       .where(lt(keyObservations.lastSeen, before))
-      .orderBy(asc(keyObservations.lastSeen));
+      .orderBy(asc(keyObservations.lastSeen))
+      .limit(limit);
 
     return rows.map(toKeyObservation);
   }
@@ -161,16 +184,18 @@ function toKeyObservation(row: typeof keyObservations.$inferSelect): KeyObservat
   };
 }
 
-function buildPayloadSummary(entry: KeyObservationEntry): PayloadSummaryJson {
-  const fieldFrequency: Record<string, number> = {};
-  const sampleValues: Record<string, unknown> = {};
+/** 기존 summary에 새 관측 데이터를 누적 merge */
+function mergePayloadSummary(prev: PayloadSummaryJson, entry: KeyObservationEntry): PayloadSummaryJson {
+  const fieldFrequency = { ...prev.fieldFrequency };
+  const sampleValues = { ...prev.sampleValues };
 
   if (entry.payloadFields) {
     for (const field of entry.payloadFields) {
-      fieldFrequency[field] = 1;
+      fieldFrequency[field] = (fieldFrequency[field] ?? 0) + 1;
     }
   }
 
+  // sampleValues는 최신 값으로 갱신 (최대 5 필드)
   if (entry.samplePayload) {
     const keys = Object.keys(entry.samplePayload).slice(0, 5);
     for (const key of keys) {
