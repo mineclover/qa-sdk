@@ -95,3 +95,12 @@ export function decodePrefixPartial(
 | d=16, k=3 | 16 mod/div | 3 div + 3 mod |
 
 projectAxis에서 수만 건 반복 시 d/k 비율만큼 개선.
+
+## 산출물 제약
+
+| 산출물 | 경로 | 설명 |
+|--------|------|------|
+| spec.md | `docs/specs/weighted-index-system/axis-projection.spec.md` | partialDecode 인터페이스, 수학적 기반, 적용 범위 |
+| test.md | `docs/specs/weighted-index-system/axis-projection.test.md` | 테스트 시나리오, 검증 항목, 동치성 증명 구조 |
+
+구현 완료 후 반드시 spec.md + test.md를 작성하여 코드와 1:1 대응시킨다.
