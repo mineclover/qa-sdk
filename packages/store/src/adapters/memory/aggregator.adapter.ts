@@ -9,6 +9,9 @@ import {
 /** decode 함수 시그니처 — 외부에서 주입 */
 export type DecodeFn = (key: string) => Record<string, string> | undefined;
 
+/** 부분 decode 함수 — 요청된 축만 디코딩하여 성능 최적화 */
+export type PartialDecodeFn = (key: string, axes: string[]) => Record<string, string> | undefined;
+
 interface StoredItem {
   readonly key: string;
   readonly timestamp: string;
@@ -23,9 +26,11 @@ interface StoredItem {
 export class InMemoryAggregator implements Aggregator {
   private readonly items: StoredItem[] = [];
   private readonly decodeFn: DecodeFn | undefined;
+  private readonly partialDecodeFn: PartialDecodeFn | undefined;
 
-  constructor(opts?: { decode?: DecodeFn }) {
+  constructor(opts?: { decode?: DecodeFn; partialDecode?: PartialDecodeFn }) {
     this.decodeFn = opts?.decode;
+    this.partialDecodeFn = opts?.partialDecode;
   }
 
   /** 테스트용 데이터 주입 */
@@ -87,7 +92,9 @@ export class InMemoryAggregator implements Aggregator {
     const projections = new Map<string, { values: Record<string, string>; count: number }>();
 
     for (const item of filtered) {
-      const decoded = this.decodeFn(item.key);
+      const decoded = this.partialDecodeFn
+        ? this.partialDecodeFn(item.key, axes as string[])
+        : this.decodeFn(item.key);
       if (!decoded) continue;
 
       // 지정된 축 값만 추출

@@ -108,5 +108,40 @@ describe("InMemoryAggregator", () => {
       );
       expect(result).toHaveLength(1);
     });
+
+    it("partialDecodeFn 주입 시 projectAxis 결과 동일", async () => {
+      const fullDecode = (key: string) => {
+        const [env, region] = key.split(":");
+        return { env, region };
+      };
+      const partialDecode = (key: string, axes: string[]) => {
+        const [env, region] = key.split(":");
+        const result: Record<string, string> = {};
+        if (axes.includes("env")) result.env = env;
+        if (axes.includes("region")) result.region = region;
+        return result;
+      };
+
+      const agg1 = new InMemoryAggregator({ decode: fullDecode });
+      const agg2 = new InMemoryAggregator({ decode: fullDecode, partialDecode: partialDecode });
+
+      const items = [
+        { key: "prod:us", timestamp: "2026-01-01T00:00:00Z" },
+        { key: "prod:eu", timestamp: "2026-01-01T00:00:01Z" },
+        { key: "dev:us", timestamp: "2026-01-01T00:00:02Z" },
+      ];
+      for (const item of items) {
+        agg1.ingest(item.key, item.timestamp);
+        agg2.ingest(item.key, item.timestamp);
+      }
+
+      const keys = items.map(i => i.key);
+      const r1 = await agg1.projectAxis(keys, ["env"]);
+      const r2 = await agg2.projectAxis(keys, ["env"]);
+
+      // 정렬해서 비교 (순서 무관)
+      const sort = (arr: typeof r1) => [...arr].sort((a, b) => JSON.stringify(a.axisValues).localeCompare(JSON.stringify(b.axisValues)));
+      expect(sort(r2)).toEqual(sort(r1));
+    });
   });
 });
