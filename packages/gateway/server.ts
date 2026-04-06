@@ -14,6 +14,8 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { JwksVerifier } from "./lib/jwks-verifier.js";
+import { getRoutePermission, checkPermission } from "./lib/route-permissions.js";
 
 const app = new Hono();
 
@@ -22,6 +24,16 @@ const app = new Hono();
 const AUTH_MODE = process.env.AUTH_MODE ?? "bypass";
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
 const PORT = parseInt(process.env.PORT ?? "8787");
+
+// ── JWKS 검증기 ────────────────────────────────────────
+
+const JWKS_URL = process.env.JWKS_URL; // e.g., "http://localhost:8085/oauth/v2/keys"
+const JWKS_VERIFIER = JWKS_URL ? new JwksVerifier(JWKS_URL) : null;
+if (JWKS_VERIFIER) {
+  console.log(`[gateway] JWKS 서명 검증 활성: ${JWKS_URL}`);
+} else {
+  console.log(`[gateway] JWKS 미설정 — JWT 서명 미검증 (개발 모드)`);
+}
 
 const SERVICE_URLS: Record<string, string> = {
   ingest: process.env.INGEST_URL ?? "http://localhost:3200",
@@ -121,23 +133,34 @@ app.use("*", async (c, next) => {
     const token = auth.slice(7);
 
     try {
-      // JWT 디코딩 (서명 검증은 Zitadel의 JWKS로 — 로컬에서는 skip)
-      const parts = token.split(".");
-      if (parts.length !== 3) throw new Error("invalid jwt");
-      const payload = JSON.parse(atob(parts[1]));
-
-      // perms claims 확인
-      if (!payload.perms) {
-        return c.json({ error: "No permission claims in token" }, 403);
+      if (JWKS_VERIFIER) {
+        // 프로덕션: JWKS 서명 검증
+        const { payload } = await JWKS_VERIFIER.verify(token);
+        if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
+        c.set("identity", String(payload.sub ?? payload.email ?? "jwt-user"));
+        c.set("perms", JSON.stringify(payload.perms));
+        c.set("perms_v", String(payload.perms_v ?? 0));
+        c.set("perms_schema", String(payload.perms_schema ?? ""));
+      } else {
+        // 로컬 dev: 서명 미검증 (JWKS_URL 미설정 시)
+        const parts = token.split(".");
+        if (parts.length !== 3) throw new Error("invalid jwt");
+        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+          return c.json({ error: "Token expired" }, 401);
+        }
+        if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
+        c.set("identity", payload.sub ?? payload.email ?? "jwt-user");
+        c.set("perms", JSON.stringify(payload.perms));
+        c.set("perms_v", String(payload.perms_v ?? 0));
+        c.set("perms_schema", payload.perms_schema ?? "");
       }
-
-      c.set("identity", payload.sub ?? payload.email ?? "jwt-user");
-      c.set("perms", JSON.stringify(payload.perms));
-      c.set("perms_v", String(payload.perms_v ?? 0));
-      c.set("perms_schema", payload.perms_schema ?? "");
       return next();
     } catch (err) {
-      return c.json({ error: "Invalid JWT", detail: String(err) }, 401);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("expired")) return c.json({ error: "Token expired" }, 401);
+      if (msg.includes("signature")) return c.json({ error: "Invalid signature" }, 401);
+      return c.json({ error: "Invalid JWT", detail: msg }, 401);
     }
   }
 
@@ -152,6 +175,39 @@ app.use("*", async (c, next) => {
 
   return c.json({ error: "Unknown auth mode" }, 500);
 });
+
+// ── Permission 체크 미들웨어 (AUTH_MODE=jwt일 때만) ──
+
+if (AUTH_MODE === "jwt") {
+  app.use("*", async (c, next) => {
+    const url = new URL(c.req.url);
+    const required = getRoutePermission(url.pathname);
+
+    // 공개 경로 or 매핑 없음 -> 통과
+    if (!required) return next();
+
+    const permsStr = c.get("perms");
+    if (!permsStr) return c.json({ error: "No permissions" }, 403);
+
+    try {
+      const perms = JSON.parse(permsStr) as Record<string, string>;
+      if (!checkPermission(perms, required.domain, required.feature)) {
+        return c.json(
+          {
+            error: "Forbidden",
+            required: `${required.domain}.${required.feature}`,
+            message: `이 API에 접근하려면 ${required.domain}.${required.feature} 권한이 필요합니다`,
+          },
+          403,
+        );
+      }
+    } catch {
+      return c.json({ error: "Invalid permission claims" }, 403);
+    }
+
+    return next();
+  });
+}
 
 // ── 헬스체크 ────────────────────────────────────────
 
