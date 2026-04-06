@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/store",
   "version": "0.1.0",
+  "description": "EventRecord, Trace, Session, Verdict 등의 저장소 어댑터 집합",
   "type": "module",
   "exports": {
     ".": {

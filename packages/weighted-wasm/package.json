@@ -1,6 +1,7 @@
 {
   "name": "weighted-wasm",
   "version": "0.1.0",
+  "description": "weighted-index와 bitmask 연산의 Rust+WASM 가속 패키지",
   "type": "module",
   "main": "js/index.ts",
   "scripts": {

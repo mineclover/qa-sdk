@@ -1,6 +1,7 @@
 {
   "name": "test-scenario-store",
   "version": "0.1.0",
+  "description": "테스트 시나리오 B 좌표를 저장하는 SQLite 레지스트리",
   "type": "module",
   "main": "./dist/index.cjs",
   "exports": {

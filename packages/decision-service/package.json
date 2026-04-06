@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/decision-service",
   "version": "0.1.0",
+  "description": "FlowSchema, FlowInstance, flow_links를 관리하는 decision-flow 서비스",
   "private": true,
   "type": "module",
   "exports": {

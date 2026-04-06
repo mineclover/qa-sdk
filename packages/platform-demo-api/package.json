@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/platform-demo-api",
   "version": "0.1.0",
+  "description": "demo-snapshot 카탈로그를 Workers API로 노출하는 데모 backend",
   "private": true,
   "type": "module",
   "scripts": {

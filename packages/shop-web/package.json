@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/shop-web",
   "version": "0.1.0",
+  "description": "브라우저 SDK를 소비하는 쇼핑 데모 사이트",
   "private": true,
   "type": "module",
   "scripts": {

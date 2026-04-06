@@ -1,6 +1,7 @@
 {
   "name": "demo-types",
   "version": "0.1.0",
+  "description": "DEMO_CATALOG에서 파생된 prefix, axis, dims 타입과 SDK 팩토리 산출물",
   "type": "module",
   "exports": {
     ".": {

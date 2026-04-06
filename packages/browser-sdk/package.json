@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/browser",
   "version": "0.1.0",
+  "description": "QaMonitor, session, auto-capture를 제공하는 브라우저 수집 SDK",
   "private": true,
   "type": "module",
   "main": "dist/qa-browser-sdk.umd.cjs",

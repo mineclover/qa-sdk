@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/convergence",
   "version": "0.1.0",
+  "description": "usage snapshot 기반 구조 수렴 분석 엔진",
   "type": "module",
   "exports": {
     ".": {

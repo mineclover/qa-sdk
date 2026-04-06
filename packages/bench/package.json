@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/bench",
   "version": "0.1.0",
+  "description": "weighted-index와 SDK 경로의 성능 측정 하니스와 리포트 도구",
   "type": "module",
   "bin": {
     "qa-bench": "./dist/cli.js"

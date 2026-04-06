@@ -1,6 +1,7 @@
 {
   "name": "demo-snapshot",
   "version": "0.2.0",
+  "description": "DEMO_CATALOG와 데모 도메인 데이터를 제공하는 카탈로그 SSOT",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

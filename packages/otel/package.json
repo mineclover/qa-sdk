@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/otel",
   "version": "0.1.0",
+  "description": "OpenTelemetry 초기화와 Drizzle 계측 유틸리티",
   "type": "module",
   "exports": {
     ".": {

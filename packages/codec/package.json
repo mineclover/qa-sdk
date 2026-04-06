@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/codec",
   "version": "0.1.0",
+  "description": "dim-wire 인코딩/디코딩과 typed SDK 패턴을 제공하는 플랫폼 보조층",
   "type": "module",
   "exports": {
     ".": {

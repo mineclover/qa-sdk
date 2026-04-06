@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/motion-workspace-service",
   "version": "0.1.0",
+  "description": "workspace CRUD와 revision 기반 동시성 제어를 제공하는 서비스",
   "private": true,
   "type": "module",
   "exports": {

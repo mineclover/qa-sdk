@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/context",
   "version": "0.1.0",
+  "description": "CatalogProvider와 ServiceBootConfig를 조립하는 QA 컨텍스트 레이어",
   "type": "module",
   "exports": {
     ".": {

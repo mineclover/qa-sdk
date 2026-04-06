@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/sdk",
   "version": "0.1.0",
+  "description": "core, logger, context, codec를 묶는 통합 수집 SDK",
   "type": "module",
   "exports": {
     ".": {

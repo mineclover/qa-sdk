@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/browser-codec",
   "version": "0.1.0",
+  "description": "브라우저용 좌표 encode/decode와 catalog 로딩 보조층",
   "files": [
     "dist"
   ],

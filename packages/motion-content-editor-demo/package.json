@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/motion-content-editor-demo",
   "version": "0.1.0",
+  "description": "motion-content-editor를 시연하는 데모 앱",
   "private": true,
   "type": "module",
   "scripts": {

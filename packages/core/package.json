@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/core",
   "version": "0.1.0",
+  "description": "카탈로그, 타입, 서비스 포트, 좌표 유틸리티를 담는 QA-SDK 코어",
   "type": "module",
   "exports": {
     ".": {

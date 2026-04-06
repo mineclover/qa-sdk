@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/definition-service",
   "version": "0.1.0",
+  "description": "문서 메타데이터 sync, search, graph를 제공하는 definition 서비스",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/codec-proto",
   "version": "0.1.0",
+  "description": "TransmissionEnvelope의 Protobuf encode/decode와 전송 보조층",
   "private": true,
   "type": "module",
   "files": [

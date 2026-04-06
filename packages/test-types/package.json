@@ -1,6 +1,7 @@
 {
   "name": "test-types",
   "version": "0.1.0",
+  "description": "TestPhase, TestKind, TestScope, TestLifecycle 타입과 상수 SSOT",
   "type": "module",
   "main": "./dist/index.cjs",
   "exports": {

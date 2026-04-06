@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/event-catalog",
   "version": "0.1.0",
+  "description": "핵심 이벤트 vocabulary와 payload, graph hint 카탈로그",
   "type": "module",
   "exports": {
     ".": {

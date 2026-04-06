@@ -1,6 +1,7 @@
 {
   "name": "infra-engine",
   "version": "0.1.0",
+  "description": "멀티 프로바이더 배포, 등록, 검증, 관측 파이프라인 엔진",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

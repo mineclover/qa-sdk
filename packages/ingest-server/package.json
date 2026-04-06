@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/ingest-server",
   "version": "0.1.0",
+  "description": "이벤트 수집, 저장, Phase 2 판정 파이프라인 서비스",
   "private": true,
   "type": "module",
   "files": [

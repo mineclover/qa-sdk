@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/engine",
   "version": "0.1.0",
+  "description": "ingest 파이프라인의 reconstruction, match, verdict 엔진",
   "type": "module",
   "exports": {
     ".": {

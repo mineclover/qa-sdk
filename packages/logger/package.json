@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/logger",
   "version": "0.1.0",
+  "description": "구조화 로깅과 Http, OTLP, Ingest transport를 제공하는 로거 레이어",
   "type": "module",
   "exports": {
     ".": {

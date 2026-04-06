@@ -1,6 +1,7 @@
 {
   "name": "query-service",
   "version": "0.1.0",
+  "description": "정책 규칙과 gate 통합 질의를 제공하는 query 서비스",
   "private": true,
   "type": "module",
   "files": [

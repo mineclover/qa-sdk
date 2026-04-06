@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/definition-client",
   "version": "0.1.0",
+  "description": "definition-service REST surface용 타입 안전 HTTP 클라이언트",
   "type": "module",
   "exports": {
     ".": {

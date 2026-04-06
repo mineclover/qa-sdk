@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/registry-service",
   "version": "0.1.0",
+  "description": "catalog, prefix, version, service, event를 관리하는 registry 서비스",
   "private": true,
   "type": "module",
   "exports": {

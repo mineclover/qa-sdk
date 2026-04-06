@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/facet-tests",
   "version": "0.1.0",
+  "description": "환경 의존을 제거한 서비스 패싯 회귀 테스트 모음",
   "private": true,
   "type": "module",
   "scripts": {

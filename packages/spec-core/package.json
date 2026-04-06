@@ -1,6 +1,7 @@
 {
   "name": "@qa-sdk/spec-core",
   "version": "0.1.0",
+  "description": "spec registry, propagation, codegen, transition, DKG bridge를 담는 spec 엔진 커널",
   "type": "module",
   "exports": {
     ".": {
