@@ -46,7 +46,8 @@ services:
       ZITADEL_EXTERNALSECURE: "false"
       ZITADEL_EXTERNALPORT: 8085
       ZITADEL_EXTERNALDOMAIN: localhost
-      # login v1 강제 (v4.13에서 v2 login UI 미포함 이슈)
+      # login v1 강제 — v2 SPA는 별도 이미지(zitadel-login)로 배포해야 하므로 v1 사용
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
       # Service Account PAT — API 접근용 (파일로 출력)
       # Machine User + PAT 자동 생성
