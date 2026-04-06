@@ -46,7 +46,11 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
       ZITADEL_EXTERNALSECURE: "false"
       ZITADEL_EXTERNALPORT: 8085
+      # Docker 내부에서도 접근 가능하도록 도메인을 서비스명으로 설정하되
+      # 외부에서는 nginx가 Host: localhost:8085로 프록시
       ZITADEL_EXTERNALDOMAIN: localhost
+      # Login SPA가 Host: localhost로 접근할 수 있도록 추가 호스트 허용
+      ZITADEL_SYSTEMDEFAULTS_DOMAINSADDITIONALHOSTS: "zitadel"
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
       # Machine User + PAT 자동 생성
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: qa-service
@@ -66,9 +70,12 @@ services:
   zitadel-login:
     image: ghcr.io/zitadel/zitadel-login:latest
     environment:
-      ZITADEL_API_URL: http://zitadel:8080
-      ZITADEL_API_INTERNAL_URL: http://zitadel:8080
+      # nginx 경유로 접근 — Host: localhost:8085가 유지됨
+      ZITADEL_API_URL: http://zitadel-nginx:80
       NEXT_PUBLIC_API_URL: http://localhost:8085
+      # Login SPA → Zitadel API 인증
+      # 방법 1: PAT (Zitadel 기동 후 발급하여 여기에 설정)
+      ZITADEL_SERVICE_USER_TOKEN: "${ZITADEL_LOGIN_TOKEN}"
     expose:
       - "3000"
     depends_on:
