@@ -12,6 +12,8 @@ def:
       type: refines
     - target: system-data-flow
       type: depends_on
+    - target: package-implementation-review
+      type: traces_to
 ---
 # QA-SDK 시스템 개요
 
@@ -302,6 +304,8 @@ Git/모노레포 ── git-utils (execa 기반) → package-classifier (tier/ru
 서비스 ──────────── ingest, registry-server, registry-service, gate, query, decode
 데모/참조 ────────── demo-snapshot, demo-types, shop-web, viz-3d
 ```
+
+패키지별 구현 목표와 문서 보강 우선순위는 [package-implementation-review.md](package-implementation-review.md)에서 별도로 관리한다.
 
 ---
 

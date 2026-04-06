@@ -15,6 +15,8 @@ def:
       type: contains
     - target: codegen-schema-output
       type: contains
+    - target: snapshot-io-spec
+      type: contains
 ---
 
 # APM 코드젠 그룹

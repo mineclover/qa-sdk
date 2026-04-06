@@ -19,6 +19,8 @@ def:
       type: contains
     - target: trace-context-spec
       type: contains
+    - target: shop-web-spec
+      type: contains
     - target: ingest-system
       type: depends_on
 ---

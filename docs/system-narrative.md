@@ -24,6 +24,8 @@ def:
       type: contains
     - target: realization-pipeline
       type: contains
+    - target: package-implementation-review
+      type: contains
     - target: realization-registry
       type: contains
     - target: realization-spec-core

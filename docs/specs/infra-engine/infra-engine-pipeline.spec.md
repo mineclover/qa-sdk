@@ -31,6 +31,8 @@ def:
       type: traces_to
     - target: infra-engine-todo
       type: traces_to
+    - target: infra-auth-integration-todo
+      type: contains
 ---
 # 인프라 엔진 배포 파이프라인
 

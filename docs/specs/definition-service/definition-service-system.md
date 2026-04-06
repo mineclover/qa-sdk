@@ -29,6 +29,8 @@ def:
       type: contains
     - target: def-svc-search-module
       type: contains
+    - target: definition-client-spec
+      type: contains
     - target: docs-explorer
       type: contains
 ---

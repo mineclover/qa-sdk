@@ -29,6 +29,12 @@ def:
       type: contains
     - target: wi-hardware-acceleration
       type: contains
+    - target: weighted-index-explorer-spec
+      type: contains
+    - target: weighted-gpu-spec
+      type: contains
+    - target: weighted-wasm-spec
+      type: contains
 ---
 
 # Weighted-Index 시스템

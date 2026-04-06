@@ -13,6 +13,8 @@ def:
   links:
     - target: api-client-spec
       type: contains
+    - target: canvas-viewport-spec
+      type: contains
     - target: docs-explorer-spec
       type: contains
     - target: iframe-protocol-spec
@@ -27,11 +29,15 @@ def:
       type: contains
     - target: registry-ui-spec
       type: contains
+    - target: viz-3d-spec
+      type: contains
     - target: viz-language-system
       type: contains
     - target: viz-roleplay-system
       type: contains
     - target: viz-surface-system
+      type: contains
+    - target: weighted-ui-spec
       type: contains
 ---
 

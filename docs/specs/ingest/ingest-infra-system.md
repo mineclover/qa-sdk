@@ -17,6 +17,8 @@ def:
       type: contains
     - target: key-observation-store
       type: contains
+    - target: store-adapter-parity
+      type: contains
 ---
 
 # Ingest 인프라 그룹

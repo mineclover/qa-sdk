@@ -22,6 +22,20 @@ def:
       type: contains
     - target: auth-service-spec
       type: contains
+    - target: e2e-suite-spec
+      type: contains
+    - target: facet-tests-spec
+      type: contains
+    - target: simulation-tests-spec
+      type: contains
+    - target: config-loader-spec
+      type: contains
+    - target: package-classifier-spec
+      type: contains
+    - target: db-traffic-control-spec
+      type: contains
+    - target: otel-package-spec
+      type: contains
     - target: error-handling-convention
       type: contains
     - target: review-ledger-spec

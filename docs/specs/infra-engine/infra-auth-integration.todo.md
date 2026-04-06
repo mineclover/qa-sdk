@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: approved
+  lifecycle: draft
   layer: mediation
   links:
     - target: infra-engine-pipeline
