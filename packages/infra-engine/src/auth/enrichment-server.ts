@@ -18,9 +18,11 @@
  */
 
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 
 const app = new Hono();
+app.use("*", cors({ origin: "*" }));
 
 // ── Feature 정의 ─────────────────────────────────────
 // route-permissions.ts의 feature 이름과 일치해야 한다.

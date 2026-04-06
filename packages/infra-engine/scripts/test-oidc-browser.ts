@@ -89,6 +89,20 @@ async function main(): Promise<void> {
 
   const app = new Hono();
 
+  // Zitadel/Enrichment 프록시 (CORS 우회)
+  app.get("/proxy/zitadel/health", async (c) => {
+    try {
+      const res = await fetch("http://localhost:8085/debug/healthz", { signal: AbortSignal.timeout(3000) });
+      return c.json({ status: res.ok ? "ok" : "fail" }, res.ok ? 200 : 502);
+    } catch { return c.json({ status: "fail" }, 502); }
+  });
+  app.get("/proxy/enrichment/health", async (c) => {
+    try {
+      const res = await fetch("http://localhost:3900/health", { signal: AbortSignal.timeout(3000) });
+      return c.json(await res.json(), res.status);
+    } catch { return c.json({ status: "fail" }, 502); }
+  });
+
   // 모든 경로에서 HTML 제공 (/callback 포함)
   app.get("*", async (c) => {
     let html = await readFile(

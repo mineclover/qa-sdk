@@ -83,9 +83,9 @@
     // -- Health Checks --
     async function checkHealth() {
       const checks = [
-        { id: 'zitadel-status', url: () => document.getElementById('zitadel-url').value + '/debug/healthz' },
+        { id: 'zitadel-status', url: () => '/proxy/zitadel/health' },
         { id: 'gateway-status', url: () => document.getElementById('gateway-url').value + '/health' },
-        { id: 'enrichment-status', url: () => document.getElementById('enrichment-url').value + '/health' },
+        { id: 'enrichment-status', url: () => '/proxy/enrichment/health' },
       ];
       for (const c of checks) {
         try {
