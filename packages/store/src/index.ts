@@ -15,6 +15,7 @@ export {
   DrizzleScenarioSpecStore,
   DrizzleVerdictStore,
   DrizzleDlqStore,
+  DrizzleKeyObservationStore,
 } from "./adapters/drizzle/index.js";
 
 // ── In-Memory Adapters ─────────────────────────────────

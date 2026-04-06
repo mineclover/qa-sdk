@@ -6,3 +6,4 @@ export { DrizzleGraphStore } from "./graph.adapter.js";
 export { DrizzleScenarioSpecStore } from "./scenario-spec.adapter.js";
 export { DrizzleVerdictStore } from "./verdict.adapter.js";
 export { DrizzleDlqStore } from "./dlq.adapter.js";
+export { DrizzleKeyObservationStore } from "./key-observation.adapter.js";
