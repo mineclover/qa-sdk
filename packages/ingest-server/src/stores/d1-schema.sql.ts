@@ -134,4 +134,27 @@ CREATE TABLE IF NOT EXISTS insight_labels (
 
 CREATE INDEX IF NOT EXISTS idx_insight_labels_kind ON insight_labels(kind);
 CREATE INDEX IF NOT EXISTS idx_insight_labels_target ON insight_labels(target_id);
+
+CREATE TABLE IF NOT EXISTS key_observations (
+  packed_key      TEXT    NOT NULL PRIMARY KEY,
+  prefix_id       TEXT    NOT NULL,
+  registered      INTEGER NOT NULL DEFAULT 0,
+  count           INTEGER NOT NULL DEFAULT 1,
+  first_seen      TEXT    NOT NULL,
+  last_seen       TEXT    NOT NULL,
+  payload_summary TEXT    NOT NULL DEFAULT '{}'
+);
+
+CREATE INDEX IF NOT EXISTS idx_key_obs_prefix ON key_observations(prefix_id);
+CREATE INDEX IF NOT EXISTS idx_key_obs_last_seen ON key_observations(last_seen);
+CREATE INDEX IF NOT EXISTS idx_key_obs_count ON key_observations(count DESC);
+CREATE INDEX IF NOT EXISTS idx_key_obs_registered ON key_observations(registered);
+
+CREATE TABLE IF NOT EXISTS key_observation_prefixes (
+  prefix_id      TEXT    NOT NULL PRIMARY KEY,
+  distinct_keys  INTEGER NOT NULL DEFAULT 1,
+  total_count    INTEGER NOT NULL DEFAULT 0,
+  first_seen     TEXT    NOT NULL,
+  last_seen      TEXT    NOT NULL
+);
 `;

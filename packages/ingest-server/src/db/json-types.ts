@@ -34,3 +34,15 @@ export function parseJsonColumn<T>(raw: string | null | undefined, fallback: T):
     return fallback;
   }
 }
+
+/** keyObservations.payloadSummary — 필드 빈도 + 샘플 값 */
+export type PayloadSummaryJson = {
+  fieldFrequency: Record<string, number>;
+  sampleValues: Record<string, unknown>;
+};
+
+/** 빈 PayloadSummary 기본값 */
+export const EMPTY_PAYLOAD_SUMMARY: PayloadSummaryJson = {
+  fieldFrequency: {},
+  sampleValues: {},
+};

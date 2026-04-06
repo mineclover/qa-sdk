@@ -78,4 +78,24 @@ CREATE TABLE IF NOT EXISTS verdict_reports (
   computed_at DateTime64(3) DEFAULT now64(3)
 ) ENGINE = ReplacingMergeTree(computed_at)
 ORDER BY (scenario_id, trace_id);
+
+CREATE TABLE IF NOT EXISTS key_observations (
+  packed_key String,
+  prefix_id LowCardinality(String),
+  registered UInt8 DEFAULT 0,
+  count UInt32 DEFAULT 1,
+  first_seen DateTime64(3),
+  last_seen DateTime64(3),
+  payload_summary String DEFAULT '{}'
+) ENGINE = ReplacingMergeTree(last_seen)
+ORDER BY (prefix_id, packed_key);
+
+CREATE TABLE IF NOT EXISTS key_observation_prefixes (
+  prefix_id LowCardinality(String),
+  distinct_keys UInt32 DEFAULT 1,
+  total_count UInt32 DEFAULT 0,
+  first_seen DateTime64(3),
+  last_seen DateTime64(3)
+) ENGINE = ReplacingMergeTree(last_seen)
+ORDER BY prefix_id;
 `;

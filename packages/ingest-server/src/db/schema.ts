@@ -161,3 +161,39 @@ export const insightLabels = sqliteTable(
     index("idx_insight_labels_target").on(t.targetId),
   ],
 );
+
+// ─── key_observations ─────────────────────────────────────────
+export const keyObservations = sqliteTable(
+  "key_observations",
+  {
+    packedKey: text("packed_key").primaryKey(),
+    prefixId: text("prefix_id").notNull(),
+    registered: integer("registered", { mode: "boolean" }).notNull().default(false),
+    count: integer("count").notNull().default(1),
+    firstSeen: text("first_seen").notNull(),
+    lastSeen: text("last_seen").notNull(),
+    payloadSummary: text("payload_summary").notNull().default("{}"),
+  },
+  (t) => [
+    index("idx_key_obs_prefix").on(t.prefixId),
+    index("idx_key_obs_last_seen").on(t.lastSeen),
+    index("idx_key_obs_count").on(t.count),
+    index("idx_key_obs_registered").on(t.registered),
+  ],
+);
+
+export type KeyObservationRow = typeof keyObservations.$inferSelect;
+
+// ─── key_observation_prefixes ─────────────────────────────────
+export const keyObservationPrefixes = sqliteTable(
+  "key_observation_prefixes",
+  {
+    prefixId: text("prefix_id").primaryKey(),
+    distinctKeys: integer("distinct_keys").notNull().default(1),
+    totalCount: integer("total_count").notNull().default(0),
+    firstSeen: text("first_seen").notNull(),
+    lastSeen: text("last_seen").notNull(),
+  },
+);
+
+export type KeyObservationPrefixRow = typeof keyObservationPrefixes.$inferSelect;
