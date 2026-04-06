@@ -19,7 +19,29 @@ const PORT = 5500;
 async function setupZitadelApp(): Promise<string> {
   try {
     const token = (await readFile("/tmp/zitadel-token.txt", "utf-8")).trim();
-    const projId = "367356115710640132";
+
+    // 프로젝트 동적 조회 (DB 초기화 후 ID 변경됨)
+    const projSearch = await fetch("http://localhost:8085/management/v1/projects/_search", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: "{}", signal: AbortSignal.timeout(5000),
+    });
+    const projects = (await projSearch.json()) as { result?: Array<{ id: string; name: string }> };
+    let projId = projects.result?.find(p => p.name === "qa-platform")?.id;
+
+    // 프로젝트 없으면 생성
+    if (!projId) {
+      const projResp = await fetch("http://localhost:8085/management/v1/projects", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "qa-platform" }), signal: AbortSignal.timeout(5000),
+      });
+      const proj = (await projResp.json()) as { id: string };
+      projId = proj.id;
+      console.log(`[zitadel] 프로젝트 생성: ${projId}`);
+    }
+
+    if (!projId) throw new Error("프로젝트 ID를 가져올 수 없습니다");
 
     // 기존 앱 검색
     const searchResp = await fetch(
