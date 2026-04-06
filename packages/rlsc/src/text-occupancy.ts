@@ -245,3 +245,50 @@ export function aggregateTextRegions(
 
   return results;
 }
+
+// ─── 반응형 예측 유틸리티 ──────────────────────────────────────────
+
+/**
+ * 새로운 maxWidth에서 텍스트 리플로우 결과를 예측한다.
+ * prepare()를 다시 호출하지 않고 layout()만 재실행 (순수 산술).
+ */
+export function predictTextReflow(
+  prepared: PreparedText,
+  newWidth: number,
+  lineHeight: number,
+): { lineCount: number; height: number } {
+  return layout(prepared, newWidth, lineHeight);
+}
+
+/**
+ * 이진 탐색으로 목표 줄 수가 되는 최소 maxWidth를 찾는다.
+ *
+ * @param prepared - pretext PreparedText
+ * @param targetLineCount - 원하는 줄 수
+ * @param lineHeight - CSS line-height (px)
+ * @param minWidth - 탐색 하한 (px)
+ * @param maxWidth - 탐색 상한 (px)
+ * @returns 목표 줄 수 이하가 되는 최소 너비 (px, 정수)
+ */
+export function findBreakpointWidth(
+  prepared: PreparedText,
+  targetLineCount: number,
+  lineHeight: number,
+  minWidth: number,
+  maxWidth: number,
+): number {
+  let lo = Math.ceil(minWidth);
+  let hi = Math.floor(maxWidth);
+
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const { lineCount } = layout(prepared, mid, lineHeight);
+    if (lineCount <= targetLineCount) {
+      hi = mid;
+    } else {
+      lo = mid + 1;
+    }
+  }
+
+  return lo;
+}

@@ -9,6 +9,8 @@ import { flattenTree } from "./tree-utils.js";
 import { analyzeGrid } from "./grid.js";
 import { detectRelations } from "./relations.js";
 import { classifyLayers } from "./layers.js";
+import { prepareTextMap } from "./text-occupancy.js";
+import type { TextPreparedMap } from "./text-occupancy.js";
 
 // ─── 기본 설정 ──────────────────────────────────────────────────────
 
@@ -277,14 +279,15 @@ export function collectLayout(
  * collectLayout()과 동일하되, 텍스트 노드에 대해 pretext prepare()를 수행하여
  * PreparedText Map을 함께 반환한다.
  *
- * TextPreparedMap은 text-occupancy 모듈의 analyzeTextOccupancy()에 전달한다.
+ * TextPreparedMap은 analyzeTextOccupancy()에 전달한다.
  */
 export function collectLayoutWithText(
   root?: Element,
   options?: CollectorOptions,
-): { doc: RLSCDocument; textPrepared: Map<string, unknown> } {
+): { doc: RLSCDocument; textPrepared: TextPreparedMap } {
   const doc = collectLayout(root, options);
-  return { doc, textPrepared: new Map() };
+  const textPrepared = prepareTextMap(doc);
+  return { doc, textPrepared };
 }
 
 // flattenTree는 tree-utils.ts로 이동 (순환 의존 해소)

@@ -131,8 +131,10 @@ import {
   prepareTextMap,
   analyzeTextOccupancy,
   aggregateTextRegions,
+  predictTextReflow,
+  findBreakpointWidth,
 } from "./text-occupancy.js";
-import { prepare } from "@chenglou/pretext";
+import { prepare, layout as pretextLayout } from "@chenglou/pretext";
 
 describe("prepareTextMap", () => {
   it("fontInfo + textContent가 있는 노드만 prepare 호출", () => {
@@ -268,5 +270,47 @@ describe("aggregateTextRegions", () => {
       expect(region.density).toBeGreaterThanOrEqual(0);
       expect(region.density).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("predictTextReflow", () => {
+  it("새로운 너비에서 줄 수 변화 반환", () => {
+    const t = textNode("p1", 0, 0, 200, 100, "Hello");
+    const doc = makeDoc([t]);
+    const map = prepareTextMap(doc);
+
+    // mock layout: 어떤 width든 lineCount=2, height=40 반환
+    const result = predictTextReflow(map.get("p1")!, 100, 20);
+    expect(result.lineCount).toBe(2);
+    expect(result.height).toBe(40);
+  });
+});
+
+describe("findBreakpointWidth", () => {
+  it("목표 줄 수가 되는 너비를 이진 탐색", () => {
+    // mock을 조정: width ≥ 180이면 1줄, < 180이면 2줄
+    vi.mocked(pretextLayout).mockImplementation(
+      (_p: unknown, maxWidth: number, lineHeight: number) => {
+        const lines = maxWidth >= 180 ? 1 : 2;
+        return { lineCount: lines, height: lines * lineHeight };
+      },
+    );
+
+    const t = textNode("p1", 0, 0, 400, 100, "Hello");
+    const doc = makeDoc([t]);
+    const map = prepareTextMap(doc);
+
+    const width = findBreakpointWidth(map.get("p1")!, 1, 20, 50, 400);
+    // 이진 탐색이 180 근처를 찾아야 함
+    expect(width).toBeGreaterThanOrEqual(178);
+    expect(width).toBeLessThanOrEqual(182);
+
+    // mock 복원
+    vi.mocked(pretextLayout).mockImplementation(
+      (_p: unknown, _mw: number, lineHeight: number) => ({
+        lineCount: 2,
+        height: lineHeight * 2,
+      }),
+    );
   });
 });

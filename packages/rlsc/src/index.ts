@@ -96,3 +96,16 @@ export { assignColors, renderToSVG, renderToCanvas } from "./canvas.js";
 
 // 모니터 (브라우저 전용)
 export { createLayoutMonitor } from "./monitor.js";
+
+// 텍스트 점유 분석
+export {
+  prepareTextMap,
+  analyzeTextOccupancy,
+  aggregateTextRegions,
+  predictTextReflow,
+  findBreakpointWidth,
+} from "./text-occupancy.js";
+export type {
+  TextPreparedMap,
+  TextOccupancyOptions,
+} from "./text-occupancy.js";
