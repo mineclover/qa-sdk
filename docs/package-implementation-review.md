@@ -24,7 +24,7 @@ def:
 - 전체 패키지: `86`개 (`foundation 40 / platform 25 / app 9 / service 9 / data 3`)
 - 구현 signal: `구현 57 / 부분 4 / 기반 18 / 쉘 7`
 - 로컬 문서 surface: `README 77 / specs redirect 11 / 둘 다 없음 0`
-- 추가 메모: `package.json description 없음 49`, `코드 패키지인데 패키지 내부 테스트가 없는 패키지 18`
+- 추가 메모: `package.json description 없음 0`, `코드 패키지인데 패키지 내부 테스트가 없는 패키지 18`
 
 이 문서의 상태 라벨은 품질 게이트 verdict가 아니라 `src/test/readme` 표면을 기준으로 한 리뷰 라벨이다. `구현 > 부분 > 기반 > 쉘` 순으로 읽는다.
 
@@ -51,6 +51,10 @@ def:
 2026-04-07 6차 반영:
 - `config-loader`, `package-classifier`, `db-traffic-control`, `otel`, `definition-client`, `snapshot-io`, `canvas-viewport`, `weighted-ui`, `e2e`, `facet-tests`, `simulation-tests`, `shop-web`, `viz-3d`, `weighted-index-explorer`, `weighted-gpu`, `weighted-wasm`의 package-level central spec을 추가했다.
 - 상위 모듈 문서(`system-support`, `definition-service-system`, `apm-codegen-system`, `browser-system`, `viz-system`, `wi-system`)에 `contains` 링크를 추가해 문서 그래프 편입도 마쳤다.
+
+2026-04-07 7차 반영:
+- description이 비어 있던 `49`개 패키지의 `package.json` 메타데이터를 실제 역할 기준으로 보강했다.
+- 현재 패키지 description 공백은 `0개`다.
 
 ## 1. Foundation 보강 후보
 
