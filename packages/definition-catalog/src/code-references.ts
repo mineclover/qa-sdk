@@ -16,8 +16,25 @@ export interface CodeReferenceTarget {
   symbol?: string;
 }
 
+export interface CodeLinkCoverageOptions {
+  docsDir?: string;
+  codeDirs?: readonly string[];
+  scopes?: readonly string[];
+  includeTests?: boolean;
+  includeNonSrc?: boolean;
+}
+
+export interface CodeLinkCoverageResult {
+  scopes: readonly string[];
+  totalFiles: number;
+  linkedFiles: number;
+  unlinkedFiles: number;
+  files: readonly string[];
+}
+
 const CODE_TARGET_RE = /^(.+?\.(?:ts|tsx|js|jsx|mjs|cjs|json|sh))(?:(?::|#)(.+))?$/;
 const CODE_FILE_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
+const TEST_FILE_RE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const IGNORED_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo", "coverage"]);
 
 function walkFiles(startPath: string, predicate: (file: string) => boolean): string[] {
@@ -176,4 +193,43 @@ export function collectCodeReferences(
   }
 
   return [...deduped.values()];
+}
+
+export function collectCodeLinkCoverage(
+  rootDir: string,
+  options: CodeLinkCoverageOptions = {},
+): CodeLinkCoverageResult {
+  const docsDir = options.docsDir ?? "docs";
+  const codeDirs = options.codeDirs ?? ["packages"];
+  const scopes = (options.scopes ?? []).map((scope) => scope.replaceAll("\\", "/"));
+  const includeTests = options.includeTests ?? false;
+  const includeNonSrc = options.includeNonSrc ?? false;
+
+  const linkedFiles = new Set(
+    collectCodeReferences(rootDir, { docsDir, codeDirs }).map((ref) => ref.codePath.replaceAll("\\", "/")),
+  );
+
+  const candidateFiles = new Set<string>();
+  for (const dir of codeDirs) {
+    const root = join(rootDir, dir);
+    const files = walkFiles(root, (file) => CODE_FILE_RE.test(file));
+    for (const filePath of files) {
+      const relPath = relative(rootDir, filePath).replaceAll("\\", "/");
+      if (!includeNonSrc && !relPath.includes("/src/")) continue;
+      if (!includeTests && TEST_FILE_RE.test(relPath)) continue;
+      if (scopes.length > 0 && !scopes.some((scope) => relPath.startsWith(scope))) continue;
+      candidateFiles.add(relPath);
+    }
+  }
+
+  const sortedCandidates = [...candidateFiles].toSorted();
+  const unlinked = sortedCandidates.filter((filePath) => !linkedFiles.has(filePath));
+
+  return {
+    scopes,
+    totalFiles: sortedCandidates.length,
+    linkedFiles: sortedCandidates.length - unlinked.length,
+    unlinkedFiles: unlinked.length,
+    files: unlinked,
+  };
 }

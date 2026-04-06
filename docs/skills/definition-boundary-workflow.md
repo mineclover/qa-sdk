@@ -80,6 +80,8 @@ node packages/cli/dist/index.js def validate --scan
   상위/하위/제약/의존 맥락 확인
 - `qa-sdk def find-by-file <파일경로[:symbol]>`
   `source:` + `@def.boundary`/`@def.doc`가 DB에 적재된 경우에만 authoritative boundary를 조회한다
+- `qa-sdk def code-link-gaps [--scope=...]`
+  explicit code link가 없는 코드를 file-level로 리스트업한다
 - `qa-sdk def validate`
   synced graph 검증
 - `qa-sdk def scan-audit`

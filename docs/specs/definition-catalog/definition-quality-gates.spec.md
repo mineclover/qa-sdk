@@ -22,6 +22,8 @@ def:
       type: contains
     - target: definition-gate-derivation
       type: contains
+    - target: definition-code-link-coverage
+      type: contains
     - target: gate-definition-quality-work-domain
       type: contains
     - target: gate-definition-quality-spec-tracker
@@ -57,6 +59,7 @@ anchor 문서(unit/module/leaf)의 완성도를 계약 문서 기반으로 검�
 
 - **definition-gate-fsm**: 9-state 게이트 상태 머신 + BundleState 파생 + 영속화
 - **definition-gate-derivation**: scope×aspect → GateKind 도출 + 구조적 상태 파생
+- **definition-code-link-coverage**: explicit `source:` / `@def.boundary` / `@def.doc`가 없는 코드 file-level gap 진단
 - `6단계 프로세스`: Define→Resolve→Gather→Execute→Judge→Route
 - `CLI`: `qa-sdk quality status/export/list/show/run/bundle/claims/next/diagnose`
 
@@ -122,6 +125,7 @@ qa-sdk quality bundle <bundle-doc-id>          # 번들 구조
 qa-sdk quality claims <bundle-doc-id>          # contract claim 감사표
 qa-sdk quality next <gate-doc-id>              # 다음 gate 추천
 qa-sdk quality diagnose <gate-doc-id>          # 최근 실행 결과 진단
+qa-sdk def code-link-gaps [--scope=...]        # explicit 문서 연결 없는 코드 목록
 ```
 
 ## 운영 라이프사이클
@@ -135,6 +139,8 @@ qa-sdk quality diagnose <gate-doc-id>          # 최근 실행 결과 진단
 5. `quality diagnose`와 `quality next`로 최근 실패/후속 gate 경로를 읽는다.
 6. `quality claims`로 contract marker 기반 claim verdict를 계산한다.
 7. `quality bundle`, `quality status`, `quality export`로 bundle/system 수준 상태를 요약하고 JSON snapshot을 남긴다.
+
+code↔document coverage는 별도 진단 표면으로 운영한다. repo 전체 baseline이 큰 동안에는 `def code-link-gaps`로 범위를 좁혀 리스트업하고, 충분히 정리된 scope부터 `--strict`를 gate command로 승격한다.
 
 ## Claim Audit
 

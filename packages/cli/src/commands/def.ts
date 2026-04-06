@@ -30,6 +30,7 @@ import {
   extractByMarker,
   extractFrontmatter,
   validateGraph,
+  collectCodeLinkCoverage,
   type DefDataSource,
   type DefDoc,
   type DefFeedbackRequestSummary,
@@ -120,6 +121,11 @@ function parseFlags(args: string[]): { positional: string[]; options: DataSource
   }
 
   return { positional, options: { mode }, flags };
+}
+
+function parseCsvFlag(value?: string): string[] {
+  if (!value) return [];
+  return value.split(",").map((item) => item.trim()).filter((item) => item.length > 0);
 }
 
 async function getSource(options: DataSourceOptions): Promise<DefDataSource> {
@@ -1111,6 +1117,59 @@ async function cmdSync(flags: Record<string, string>) {
   console.log(`DB: ${result.dbPath}`);
 }
 
+async function cmdCodeLinkGaps(flags: Record<string, string>) {
+  const root = getRootDir();
+  const scopes = parseCsvFlag(flags["scope"]);
+  const codeDirs = parseCsvFlag(flags["code-dir"]);
+  const rawLimit = Number.parseInt(flags["limit"] ?? "50", 10);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50;
+  const result = collectCodeLinkCoverage(root, {
+    docsDir: flags["docs"] ?? "docs",
+    ...(codeDirs.length > 0 ? { codeDirs } : {}),
+    ...(scopes.length > 0 ? { scopes } : {}),
+    includeTests: flags["include-tests"] === "true",
+    includeNonSrc: flags["include-non-src"] === "true",
+  });
+
+  const listedFiles = result.files.slice(0, limit);
+  const truncated = result.files.length > listedFiles.length ? result.files.length - listedFiles.length : 0;
+  const coverageRate = result.totalFiles === 0
+    ? 100
+    : Math.round((result.linkedFiles / result.totalFiles) * 1000) / 10;
+
+  if (flags["json"] === "true") {
+    console.log(JSON.stringify({
+      scopes: result.scopes,
+      totalFiles: result.totalFiles,
+      linkedFiles: result.linkedFiles,
+      unlinkedFiles: result.unlinkedFiles,
+      coverageRate,
+      listedFiles,
+      truncated,
+    }, null, 2));
+  } else {
+    console.log("=== code link gaps ===");
+    console.log(`total: ${result.totalFiles} | linked: ${result.linkedFiles} | unlinked: ${result.unlinkedFiles} | coverage: ${coverageRate}%`);
+    console.log(`scopes: ${result.scopes.length > 0 ? result.scopes.join(", ") : "(전체 packages/*/src)"}`);
+
+    if (listedFiles.length === 0) {
+      console.log("\n✓ explicit 문서 연결 없는 코드 없음");
+    } else {
+      console.log(`\n=== explicit 문서 연결 없는 코드 ${listedFiles.length}건 ===`);
+      for (const filePath of listedFiles) {
+        console.log(`  ${filePath}`);
+      }
+      if (truncated > 0) {
+        console.log(`  ... 외 ${truncated}건`);
+      }
+    }
+  }
+
+  if (flags["strict"] === "true" && result.unlinkedFiles > 0) {
+    process.exitCode = 1;
+  }
+}
+
 const DEF_HELP_SECTIONS = [
   {
     title: "시작하기",
@@ -1160,6 +1219,7 @@ const DEF_HELP_SECTIONS = [
       "sync                docs → local DB 동기화",
       "audit               품질 리포트 + 그래프 검증",
       "validate            DB 기준 그래프 + code reference 검증",
+      "code-link-gaps      explicit 문서 연결 없는 코드 목록",
       "stats               분포 통계",
       "check <ID>          문서 정합성 점검",
       "link-rules          LinkType 사용 규칙",
@@ -1196,6 +1256,7 @@ export async function cliDef(args: string[]): Promise<void> {
   if (sub === "scan") return cmdSync(flags);  // scan = sync alias (하위호환)
   if (sub === "scan-audit") return cmdScanAudit(flags);
   if (sub === "sync") return cmdSync(flags);
+  if (sub === "code-link-gaps") return cmdCodeLinkGaps(flags);
   if (sub === "link-rules") return cmdLinkRules();
   if (sub === "state") return cmdState(rest, flags);
 

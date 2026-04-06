@@ -227,9 +227,15 @@ export type { ValidationIssue, ValidationResult } from "./validate.js";
 export { validateGraph } from "./validate.js";
 
 // ─── 코드 참조 스캔 ─────────────────────────────────────
-export type { CodeReferenceInput, CodeReferenceTarget } from "./code-references.js";
+export type {
+  CodeReferenceInput,
+  CodeReferenceTarget,
+  CodeLinkCoverageOptions,
+  CodeLinkCoverageResult,
+} from "./code-references.js";
 export {
   collectCodeReferences,
+  collectCodeLinkCoverage,
   parseCodeReferenceTarget,
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
