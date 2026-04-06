@@ -269,8 +269,9 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_GROUP_COMMAND_TREE, dispatch: dispatchDefCommand },
   { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
   { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
-  { rootSegments: ['quality'], rootName: 'qa-sdk quality', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
+  { rootSegments: [], rootName: 'qa-sdk', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
   { rootSegments: ['review'], rootName: 'qa-sdk review', tree: REVIEW_GROUP_COMMAND_TREE, dispatch: dispatchReviewCommand },
+
   { rootSegments: ['ingest'], rootName: 'qa-sdk ingest', tree: INGEST_GROUP_COMMAND_TREE, dispatch: dispatchIngestCommand },
   { rootSegments: ['obs'], rootName: 'qa-sdk obs', tree: OBS_GROUP_COMMAND_TREE, dispatch: dispatchObsCommand },
   { rootSegments: ['gate'], rootName: 'qa-sdk gate', tree: GATE_GROUP_COMMAND_TREE, dispatch: dispatchGateCommand },
@@ -391,17 +392,9 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  switch (sub.name) {
-    // Quality Gate 명령어 fallback
-    case 'quality':
-      await cliQuality(sub.rest);
-      return;
-
-    default:
-      console.error(`알 수 없는 명령: ${sub.name}`);
-      console.log(USAGE);
-      process.exit(1);
-  }
+  console.error(`알 수 없는 명령: ${sub.name}`);
+  console.log(USAGE);
+  process.exit(1);
 }
 
 // ── Subcommand 해석 ──────────────────────────────────

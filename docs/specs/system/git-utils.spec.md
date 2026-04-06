@@ -8,6 +8,11 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural]
+  links:
+    - target: cli-command-group
+      type: refines
+    - target: cli-command-registry-plan
+      type: traces_to
 ---
 
 # git-utils — Git 메타데이터 추출 + 분기 충돌 분석

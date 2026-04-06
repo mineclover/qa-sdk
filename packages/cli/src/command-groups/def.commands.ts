@@ -9,6 +9,8 @@ import {
 import { cliDef } from "../commands/def.js";
 
 export const DEF_COMMAND_DESCRIPTORS = [
+  { id: "def.help", path: ["help"], handlerKey: "def.help" },
+  { id: "def.scan", path: ["scan"], handlerKey: "def.sync" },
   { id: "def.scan-audit", path: ["scan-audit"], handlerKey: "def.scan-audit" },
   { id: "def.topdown", path: ["topdown"], handlerKey: "def.topdown" },
   { id: "def.bottomup", path: ["bottomup"], handlerKey: "def.bottomup" },
@@ -19,7 +21,7 @@ export const DEF_COMMAND_DESCRIPTORS = [
   { id: "def.validate", path: ["validate"], handlerKey: "def.validate" },
   { id: "def.stats", path: ["stats"], handlerKey: "def.stats" },
   { id: "def.sync", path: ["sync"], handlerKey: "def.sync" },
-  { id: "def.read", path: ["read"], handlerKey: "def.read" },
+  { id: "def.read", path: ["read"], handlerKey: "def.body" },
   { id: "def.list", path: ["list"], handlerKey: "def.list" },
   { id: "def.get", path: ["get"], handlerKey: "def.get" },
   { id: "def.body", path: ["body"], handlerKey: "def.body" },
@@ -46,6 +48,7 @@ export const DEF_COMMAND_SPECS =
   collectCommandUsageSpecs(["def"], DEF_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
 export const DEF_TOP_LEVEL_USAGE_LINES = [
+  "qa-sdk def help                   도움말",
   "qa-sdk def sync [--db path]        docs → local definition SQLite 동기화",
 ] as const;
 

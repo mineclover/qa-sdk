@@ -5,7 +5,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: review
+  lifecycle: approved
   layer: experience
   links:
     - target: cli-flow-store
@@ -18,11 +18,7 @@ def:
 
 CLI 명령 표면에서 아직 구조적으로 남아 있는 작은 부채와 다음 정리 대상을 추적한다.
 
-## 잔여 항목 (2건)
-
-### command registry — tree 모델 예외 표면
-
-- [ ] `spec drift`, `def help`, `quality` 예외 표면을 CliCommandNode tree/runtime 모델에 완전 흡수 (현재는 동작하지만 레거시 분기 잔존)
+## 잔여 항목 (1건)
 
 ### smoke coverage
 
@@ -44,6 +40,7 @@ review는 파일 경로(glob) 기반, quality는 bundle-doc-id 기반. 좌표 ad
 
 ## 완료 항목
 
+- [x] `spec drift`, `def help`, `quality` root alias 등 모든 예외 표면을 runtime tree 모델에 흡수
 - [x] CliCommandNode tree 전 명령군 마이그레이션 (17개 + root)
 - [x] `executeCommand()` 공통 경로 + 서브트리 help 생성형
 - [x] `CommandDescriptor` authored SSOT + `cli-command` 패키지

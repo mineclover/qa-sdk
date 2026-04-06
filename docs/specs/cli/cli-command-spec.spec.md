@@ -100,11 +100,7 @@ CLI 명령을 사람이 읽는 help, parser 해석, dispatch 연결, usage 렌�
 
 ## 남은 예외
 
-- `spec drift`
-- `def help`
-- `quality` root alias
-
-이 표면은 현재 호환성/별도 구현 이유로 switch fallback에 남아 있다.
+없음. `spec drift`, `def help`, `def scan`, `def read`, `quality` root alias 등 모든 레거시 표면이 `CommandDescriptor` 기반 runtime tree 모델로 흡수되었다.
 
 ## 최적화 이력 (2026-04-06)
 

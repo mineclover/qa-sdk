@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 * Standardizing on create*HandlerRegistry(catalog?: Catalog) allows command groups to access shared state while remaining physically separate from index.ts.
+* Absorbing functional root aliases (like 'qa-sdk quality') can be achieved by setting rootSegments to an empty array and including the root segment in the CommandDescriptor paths.
 
 ---
 
@@ -83,4 +84,26 @@ after each iteration and it's included in prompts for context.
 - **Learnings:**
   - Using a Proxy for handler registries (e.g., for 'def' commands) maintains pattern consistency even when delegating to a complex sub-router like cliDef.
   - Consolidating special argument handling (like --vault in obs) into group-level wrappers keeps index.ts focused on high-level wiring.
+---
+
+## 2026-04-06 - US-005
+- Resolved remaining legacy exception surfaces by absorbing them into the runtime command tree model.
+- Integrated 'def help', 'def scan' (alias for sync), and 'def read' (alias for body) into DEF_COMMAND_DESCRIPTORS.
+- Refactored 'quality' command group to support root alias (qa-sdk quality -> quality list) by using empty rootSegments and prefixed paths in descriptors.
+- Removed legacy switch fallback from index.ts, making tryExecuteTreeCommand the primary dispatch path for all commands.
+- Updated documentation (spec, plan, todo) to reflect the final authority model and marked the transition as complete.
+- Fixed an isolation issue in 'git-utils' document to ensure 'def audit-db' passes with no issues.
+- Verified that 'def validate', 'def scan-audit', and 'def audit-db' pass with 0 warnings/issues.
+- Files changed:
+  - packages/cli/src/index.ts
+  - packages/cli/src/command-groups/def.commands.ts
+  - packages/cli/src/command-groups/quality.commands.ts
+  - docs/specs/cli/cli-command-spec.spec.md
+  - docs/specs/cli/cli-command-registry.plan.md
+  - docs/specs/cli/cli-minor-gaps.todo.md
+  - docs/specs/system/git-utils.spec.md
+- **Learnings:**
+  - Absorbing functional root aliases (like 'qa-sdk quality') can be achieved by setting rootSegments to an empty array and including the root segment in the CommandDescriptor paths.
+  - Proxy-based handler registries remain flexible enough to handle alias mappings by pointing multiple handler keys to the same implementation.
+  - Documentation should be updated in sync with structural changes to maintain an accurate architectural map.
 ---
