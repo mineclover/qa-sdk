@@ -121,7 +121,8 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
   }
 
   const { createCoordinateAdapter } = await import("../adapters/coordinate.js");
-  const coordinateAdapter = createCoordinateAdapter();
+  const { DEMO_CATALOG } = await import("demo-snapshot");
+  const coordinateAdapter = createCoordinateAdapter(DEMO_CATALOG);
 
   const stages = dryRun
     ? [createConfigStage(createPlainLoader())]

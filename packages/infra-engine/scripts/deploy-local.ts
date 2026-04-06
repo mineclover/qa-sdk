@@ -119,7 +119,8 @@ async function main() {
   }
 
   const { createCoordinateAdapter } = await import("../src/adapters/coordinate.js");
-  const coordinateAdapter = createCoordinateAdapter();
+  const { DEMO_CATALOG } = await import("demo-snapshot");
+  const coordinateAdapter = createCoordinateAdapter(DEMO_CATALOG);
 
   // 파이프라인 구성 — dry-run 시 config + provision(preview)만 실행
   const stages = DRY_RUN
