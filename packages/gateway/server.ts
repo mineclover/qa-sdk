@@ -24,6 +24,7 @@ const app = new Hono();
 const AUTH_MODE = process.env.AUTH_MODE ?? "bypass";
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
 const PORT = parseInt(process.env.PORT ?? "8787");
+const GATEWAY_ENV = process.env.GATEWAY_ENV ?? "dev"; // dev | staging | prod — ScopedEngine env 분리
 
 // ── JWKS 검증기 ────────────────────────────────────────
 
@@ -58,13 +59,16 @@ interface PermsResult {
  * 둘 다 실패하면 null 반환 (fail-open: 호출자가 403 결정).
  */
 async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null> {
-  // 1. enrichment 서버 시도
+  // 1. enrichment 서버 시도 (env 정보 전달 — ScopedEngine env 제한 적용)
   if (ENRICHMENT_URL) {
     try {
       const resp = await fetch(`${ENRICHMENT_URL}/enrich`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({
+          userId,
+          env: GATEWAY_ENV,
+        }),
         signal: AbortSignal.timeout(3_000),
       });
       if (resp.ok) {
