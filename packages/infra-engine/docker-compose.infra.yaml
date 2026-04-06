@@ -33,6 +33,7 @@ services:
       echo '  Console: http://localhost:9001';
       "
 
+  # Zitadel API + Login V2 SPA → Nginx 프록시(8085)로 통합
   zitadel:
     image: ghcr.io/zitadel/zitadel:latest
     command: start-from-init --masterkeyFromEnv --tlsMode disabled
@@ -46,26 +47,42 @@ services:
       ZITADEL_EXTERNALSECURE: "false"
       ZITADEL_EXTERNALPORT: 8085
       ZITADEL_EXTERNALDOMAIN: localhost
-      # login v1 강제 — v2 SPA는 별도 이미지(zitadel-login)로 배포해야 하므로 v1 사용
-      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
-      # Service Account PAT — API 접근용 (파일로 출력)
       # Machine User + PAT 자동 생성
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: qa-service
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: QA Service Account
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: "2027-01-01T00:00:00Z"
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE: 1
-    ports:
-      - "8085:8080"
+    # 내부 포트만 (외부 노출은 nginx가 담당)
+    expose:
+      - "8080"
     depends_on:
       zitadel-db:
         condition: service_healthy
+    # distroless 이미지 — curl/wget 없음. healthcheck 비활성화 + depends_on condition 제거
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/debug/healthz"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-      start_period: 30s
+      disable: true
+
+  zitadel-login:
+    image: ghcr.io/zitadel/zitadel-login:latest
+    environment:
+      ZITADEL_API_URL: http://zitadel:8080
+      ZITADEL_API_INTERNAL_URL: http://zitadel:8080
+      NEXT_PUBLIC_API_URL: http://localhost:8085
+    expose:
+      - "3000"
+    depends_on:
+      - zitadel
+
+  zitadel-nginx:
+    image: nginx:alpine
+    ports:
+      - "8085:80"
+    volumes:
+      - ./nginx-zitadel.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - zitadel
+      - zitadel-login
 
   zitadel-db:
     image: postgres:16-alpine
