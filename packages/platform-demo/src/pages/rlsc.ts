@@ -1,5 +1,8 @@
 import {
   collectLayout,
+  prepareTextMap,
+  analyzeTextOccupancy,
+  aggregateTextRegions,
   measureLayout,
   classifyLayout,
   renderToSVG,
@@ -12,6 +15,7 @@ import type {
   LayoutPattern,
   CanvasRenderOptions,
   LayoutMonitor,
+  TextPreparedMap,
 } from "rlsc";
 
 declare global {
@@ -93,6 +97,7 @@ let selectedId: string | null = null;
 let overlayOn = false;
 let rlscDoc: RLSCDocument | null = null;
 let layoutMonitor: LayoutMonitor | null = null;
+let textPrepared: TextPreparedMap | null = null;
 
 // ═══════════════════════════════════════════════════════
 //  인라인 수집
@@ -273,11 +278,22 @@ function runCollection(): void {
     rlscDoc = null;
   }
 
+  // 텍스트 점유 분석
+  textPrepared = null;
+  if (rlscDoc) {
+    try {
+      textPrepared = prepareTextMap(rlscDoc);
+    } catch (e) {
+      console.error("[rlsc] prepareTextMap 실패:", e);
+    }
+  }
+
   renderTree();
   renderLayers();
   renderContext();
   try { renderMetrics(); } catch (e) { console.error("[rlsc] renderMetrics:", e); setPanel("panel-metrics", `renderMetrics 오류: ${escHtml(String(e))}`); }
   try { renderPattern(); } catch (e) { console.error("[rlsc] renderPattern:", e); setPanel("panel-pattern", `renderPattern 오류: ${escHtml(String(e))}`); }
+  try { renderTextOccupancy(); } catch (e) { console.error("[rlsc] renderTextOccupancy:", e); setPanel("panel-text", `renderTextOccupancy 오류: ${escHtml(String(e))}`); }
   try { renderSVG(); } catch (e) { console.error("[rlsc] renderSVG:", e); }
   try { renderCanvas2D(); } catch (e) { console.error("[rlsc] renderCanvas2D:", e); }
   if (overlayOn) drawBboxOverlay();
@@ -495,6 +511,125 @@ function renderPattern(): void {
   }
   html += `</div>`;
   panel.innerHTML = html;
+}
+
+function renderTextOccupancy(): void {
+  const panel = document.getElementById("panel-text");
+  if (!panel) return;
+  if (!rlscDoc || !textPrepared) {
+    panel.innerHTML = `<span style="color:var(--text-muted);padding:12px;display:block">텍스트 분석 데이터 없음</span>`;
+    return;
+  }
+
+  const occupancies = analyzeTextOccupancy(rlscDoc, textPrepared);
+  const regions = aggregateTextRegions(rlscDoc, occupancies);
+
+  function row(k: string, v: string | number): string {
+    return metricsRow(k, escHtml(String(v)));
+  }
+
+  let html = `<div style="padding:12px">`;
+
+  // 요약
+  const totalNodes = occupancies.length;
+  const overflowNodes = occupancies.filter((o) => o.overflows);
+  const contactNodes = occupancies.filter((o) =>
+    o.boundaryContact.top || o.boundaryContact.right ||
+    o.boundaryContact.bottom || o.boundaryContact.left,
+  );
+  const avgFillX = totalNodes > 0
+    ? occupancies.reduce((s, o) => s + o.fillX, 0) / totalNodes
+    : 0;
+  const avgFillY = totalNodes > 0
+    ? occupancies.reduce((s, o) => s + o.fillY, 0) / totalNodes
+    : 0;
+
+  html += metricsSection("요약",
+    row("텍스트 노드", totalNodes) +
+    row("평균 x 점유율", `${(avgFillX * 100).toFixed(1)}%`) +
+    row("평균 y 점유율", `${(avgFillY * 100).toFixed(1)}%`) +
+    row("경계 접촉 노드", `${contactNodes.length} / ${totalNodes}`) +
+    row("오버플로우 노드", overflowNodes.length),
+  );
+
+  // 오버플로우 경고
+  if (overflowNodes.length > 0) {
+    html += metricsSection("오버플로우 경고",
+      overflowNodes.map((o) =>
+        `<div class="violation-item violation-error" style="font-size:10px">` +
+        `<strong>${escHtml(o.nodeId)}</strong> — ` +
+        `fillX: ${(o.fillX * 100).toFixed(0)}%, fillY: ${(o.fillY * 100).toFixed(0)}%, ${o.lineCount}줄` +
+        `</div>`,
+      ).join(""),
+    );
+  }
+
+  // 노드별 상세
+  html += `<div class="metrics-section"><div class="metrics-title">노드별 텍스트 점유 (${totalNodes})</div>`;
+  for (const occ of occupancies) {
+    const contactDirs: string[] = [];
+    if (occ.boundaryContact.top) contactDirs.push("T");
+    if (occ.boundaryContact.right) contactDirs.push("R");
+    if (occ.boundaryContact.bottom) contactDirs.push("B");
+    if (occ.boundaryContact.left) contactDirs.push("L");
+    const contactStr = contactDirs.length > 0
+      ? `<span style="color:var(--yellow)"> [${contactDirs.join("")}]</span>`
+      : "";
+    const overflowStr = occ.overflows
+      ? `<span style="color:var(--red)"> OVERFLOW</span>`
+      : "";
+
+    html += `<div style="padding:6px 8px;border:1px solid var(--border);border-radius:4px;margin-bottom:4px;font-size:10px" data-nid="${escHtml(occ.nodeId)}">`;
+    html += `<div style="display:flex;justify-content:space-between;margin-bottom:2px">`;
+    html += `<strong style="color:var(--cyan)">${escHtml(occ.nodeId)}</strong>`;
+    html += `<span>${occ.lineCount}줄 · ${occ.naturalWidth.toFixed(0)}px natural${contactStr}${overflowStr}</span>`;
+    html += `</div>`;
+
+    // 점유 바 시각화
+    const barW = 120;
+    const fillXPx = Math.round(occ.fillX * barW);
+    const fillYPx = Math.round(occ.fillY * barW);
+    html += `<div style="display:flex;gap:12px;align-items:center">`;
+    html += `<span style="color:var(--text-muted);width:16px">X</span>`;
+    html += `<div style="width:${barW}px;height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden">`;
+    html += `<div style="width:${fillXPx}px;height:100%;background:${occ.fillX > 0.95 ? 'var(--yellow)' : 'var(--accent)'};border-radius:3px"></div>`;
+    html += `</div>`;
+    html += `<span style="color:var(--text-secondary);font-size:9px">${(occ.fillX * 100).toFixed(0)}%</span>`;
+    html += `</div>`;
+    html += `<div style="display:flex;gap:12px;align-items:center;margin-top:2px">`;
+    html += `<span style="color:var(--text-muted);width:16px">Y</span>`;
+    html += `<div style="width:${barW}px;height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden">`;
+    html += `<div style="width:${fillYPx}px;height:100%;background:${occ.fillY > 0.95 ? 'var(--yellow)' : 'var(--green)'};border-radius:3px"></div>`;
+    html += `</div>`;
+    html += `<span style="color:var(--text-secondary);font-size:9px">${(occ.fillY * 100).toFixed(0)}%</span>`;
+    html += `</div>`;
+
+    // 여백 표시
+    const m = occ.margins;
+    html += `<div style="color:var(--text-muted);margin-top:2px">margins: T${m.top.toFixed(0)} R${m.right.toFixed(0)} B${m.bottom.toFixed(0)} L${m.left.toFixed(0)}px</div>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // 영역별 밀도
+  if (regions.length > 0) {
+    html += metricsSection(`영역별 텍스트 밀도 (${regions.length})`,
+      regions
+        .filter((r) => r.textArea > 0)
+        .sort((a, b) => b.density - a.density)
+        .slice(0, 10)
+        .map((r) =>
+          row(r.regionId, `밀도 ${(r.density * 100).toFixed(1)}% · 접촉 ${r.contactCount}`),
+        ).join("") || `<div class="metrics-row"><span class="metrics-key" style="color:var(--text-muted)">텍스트 영역 없음</span></div>`,
+    );
+  }
+
+  html += `</div>`;
+  panel.innerHTML = html;
+
+  panel.querySelectorAll<HTMLElement>("[data-nid]").forEach((el) => {
+    el.addEventListener("click", () => selectNode(el.dataset["nid"] ?? ""));
+  });
 }
 
 function renderSVG(): void {
