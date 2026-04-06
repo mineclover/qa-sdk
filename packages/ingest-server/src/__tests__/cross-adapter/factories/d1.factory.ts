@@ -9,10 +9,37 @@ import { createD1Drizzle, type D1Db } from "../../../stores/d1-db-type.js";
 import { D1RecordStore } from "../../../stores/d1-record-store.js";
 import { D1TraceStore } from "../../../stores/d1-trace-store.js";
 import { D1KeyObservationStore } from "../../../stores/d1-key-observation-store.js";
+import { D1SessionStore } from "../../../stores/d1-session-store.js";
+import { D1VerdictStore } from "../../../stores/d1-verdict-store.js";
+import { D1GraphStore } from "../../../stores/d1-graph-store.js";
+import { D1ScenarioSpecStore } from "../../../stores/d1-scenario-spec-store.js";
+import { D1TransmissionStore } from "../../../stores/d1-transmission-store.js";
+import { D1DlqStore } from "../../../stores/d1-dlq-store.js";
 
 const migrationsFolder = new URL("../../../../drizzle", import.meta.url).pathname;
 
-// key_observations 테이블은 migration에 미포함 — DDL 직접 실행
+// migration에 미포함된 테이블 — DDL 직접 실행
+const EXTRA_DDL = `
+CREATE TABLE IF NOT EXISTS runtime_graphs (
+  trace_id   TEXT PRIMARY KEY,
+  graph      TEXT NOT NULL,
+  node_count INTEGER NOT NULL,
+  edge_count INTEGER NOT NULL,
+  built_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS scenario_specs (
+  scenario_id TEXT PRIMARY KEY,
+  version     TEXT NOT NULL,
+  domain      TEXT NOT NULL,
+  description TEXT,
+  spec        TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_scenario_specs_domain ON scenario_specs(domain);
+`;
+
 const KEY_OBS_DDL = `
 CREATE TABLE IF NOT EXISTS key_observations (
   packed_key      TEXT    NOT NULL PRIMARY KEY,
@@ -41,8 +68,10 @@ function createDb(): D1Db {
   const driver = new NodeSqliteDriver(":memory:", null);
   const drizzleDb = drizzle({ client: driver.$client });
   migrate(drizzleDb, { migrationsFolder });
-  // migration에 key_observations 미포함 — DDL 직접 실행
-  (driver.$client as { exec(sql: string): void }).exec(KEY_OBS_DDL);
+  // migration에 미포함된 테이블 — DDL 직접 실행
+  const exec = (driver.$client as { exec(sql: string): void }).exec.bind(driver.$client);
+  exec(EXTRA_DDL);
+  exec(KEY_OBS_DDL);
   return createD1Drizzle(driver.$client);
 }
 
@@ -59,4 +88,34 @@ export function createD1TraceStore() {
 export function createD1KeyObservationStore() {
   const db = createDb();
   return { store: new D1KeyObservationStore(db), cleanup: async () => {} };
+}
+
+export function createD1SessionStore() {
+  const db = createDb();
+  return { store: new D1SessionStore(db), cleanup: async () => {} };
+}
+
+export function createD1VerdictStore() {
+  const db = createDb();
+  return { store: new D1VerdictStore(db), cleanup: async () => {} };
+}
+
+export function createD1GraphStore() {
+  const db = createDb();
+  return { store: new D1GraphStore(db), cleanup: async () => {} };
+}
+
+export function createD1ScenarioSpecStore() {
+  const db = createDb();
+  return { store: new D1ScenarioSpecStore(db), cleanup: async () => {} };
+}
+
+export function createD1TransmissionStore() {
+  const db = createDb();
+  return { store: new D1TransmissionStore(db), cleanup: async () => {} };
+}
+
+export function createD1DlqStore() {
+  const db = createDb();
+  return { store: new D1DlqStore(db), cleanup: async () => {} };
 }

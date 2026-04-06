@@ -6,6 +6,12 @@ import {
   DrizzleRecordStore,
   DrizzleTraceStore,
   DrizzleKeyObservationStore,
+  DrizzleSessionStore,
+  DrizzleVerdictStore,
+  DrizzleGraphStore,
+  DrizzleScenarioSpecStore,
+  DrizzleTransmissionStore,
+  DrizzleDlqStore,
   createDb,
   closeClient,
 } from "@qa-sdk/store";
@@ -68,6 +74,76 @@ export async function createPgKeyObservationStore() {
   return {
     store: new DrizzleKeyObservationStore(d),
     cleanup: async () => truncate(d, "key_observations", "key_observation_prefixes"),
+  };
+}
+
+export async function createPgSessionStore() {
+  const d = getDb();
+  return {
+    store: new DrizzleSessionStore(d),
+    cleanup: async () => truncate(d, "qa_sessions"),
+  };
+}
+
+export async function createPgVerdictStore() {
+  const d = getDb();
+  // verdict_reports에 traces FK 제약 — 테스트용 trace 시딩
+  const traceStore = new DrizzleTraceStore(d);
+  const traceIds = ["t1", "t2"];
+  for (const traceId of traceIds) {
+    await traceStore.upsert({
+      traceId,
+      recordCount: 0,
+      firstTimestamp: new Date("2026-01-01"),
+      lastTimestamp: new Date("2026-01-01"),
+    });
+  }
+  return {
+    store: new DrizzleVerdictStore(d),
+    cleanup: async () => truncate(d, "verdict_reports", "traces"),
+  };
+}
+
+export async function createPgGraphStore() {
+  const d = getDb();
+  // runtime_graphs에 traces FK 제약 — 테스트용 trace 시딩
+  const traceStore = new DrizzleTraceStore(d);
+  const traceIds = ["t1", "t2"];
+  for (const traceId of traceIds) {
+    await traceStore.upsert({
+      traceId,
+      recordCount: 0,
+      firstTimestamp: new Date("2026-01-01"),
+      lastTimestamp: new Date("2026-01-01"),
+    });
+  }
+  return {
+    store: new DrizzleGraphStore(d),
+    cleanup: async () => truncate(d, "runtime_graphs", "traces"),
+  };
+}
+
+export async function createPgScenarioSpecStore() {
+  const d = getDb();
+  return {
+    store: new DrizzleScenarioSpecStore(d),
+    cleanup: async () => truncate(d, "scenario_specs"),
+  };
+}
+
+export async function createPgTransmissionStore() {
+  const d = getDb();
+  return {
+    store: new DrizzleTransmissionStore(d),
+    cleanup: async () => truncate(d, "transmissions"),
+  };
+}
+
+export async function createPgDlqStore() {
+  const d = getDb();
+  return {
+    store: new DrizzleDlqStore(d),
+    cleanup: async () => truncate(d, "dead_letter_queue"),
   };
 }
 
