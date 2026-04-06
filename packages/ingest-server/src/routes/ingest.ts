@@ -14,6 +14,7 @@ import {
   type SessionStore,
   type VerdictStore,
   type DlqStore,
+  type KeyObservationStore,
 } from "@qa-sdk/core";
 import type { ValidationResult } from "@qa-sdk/registry-client";
 import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
@@ -31,6 +32,7 @@ import {
   type ConvergencePipelinePort,
 } from "../lib/phase-two-worker.js";
 import type { CatalogValidator } from "../lib/catalog-validator.js";
+import { extractKeyObservations } from "../lib/extract-key-observations.js";
 
 export type RegistryValidationMode = "strict" | "warn" | "off";
 
@@ -67,6 +69,8 @@ export interface IngestDeps {
   catalogValidator?: CatalogValidator;
   /** InsightsStore — 수집된 데이터를 인사이트 저장소에 전달 (app-hub 모드) */
   insightsStore?: import("../ports/insights-store.port.js").InsightsStore;
+  /** Key Observation — packed_key 관측 영속 기록 (fail-open) */
+  keyObservationStore?: KeyObservationStore;
 }
 
 export interface TracePersistenceStores {
@@ -330,6 +334,18 @@ async function storeEnvelope(
           for (const record of storedRecords) {
             deps.recordStreamBroker.publishToScenario(session.scenarioId, record);
           }
+        }
+      }
+
+      // Key observation — packed_key 관측 기록 (fail-open)
+      if (deps.keyObservationStore) {
+        try {
+          const observations = extractKeyObservations(inserts, deps.knownPrefixes);
+          if (observations.length > 0) {
+            await deps.keyObservationStore.observeBatch(observations);
+          }
+        } catch (err) {
+          deps.logger?.warn({ err }, "key observation failed — fail-open");
         }
       }
 

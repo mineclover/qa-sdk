@@ -10,6 +10,7 @@
 import type {
   RecordStore, TraceStore, SessionStore, VerdictStore,
   TransmissionStore, GraphStore, ScenarioSpecStore, DlqStore,
+  KeyObservationStore,
 } from "@qa-sdk/core";
 
 export type StoreDriver = "memory" | "pg" | "d1" | "clickhouse";
@@ -23,6 +24,7 @@ export interface StoreSet {
   graphStore: GraphStore;
   scenarioSpecStore: ScenarioSpecStore;
   dlqStore: DlqStore;
+  keyObservationStore?: KeyObservationStore;
   /** PG의 경우 Drizzle DB 인스턴스 (트랜잭션용) */
   db?: unknown;
 }
@@ -60,6 +62,7 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
   const { D1TraceStore } = await import("./d1-trace-store.js");
   const { D1SessionStore } = await import("./d1-session-store.js");
   const { D1VerdictStore } = await import("./d1-verdict-store.js");
+  const { D1KeyObservationStore } = await import("./d1-key-observation-store.js");
   // 부가 stores는 InMemory 사용 (D1 구현 후순위)
   const {
     InMemoryTransmissionStore,
@@ -73,6 +76,7 @@ export async function createD1Stores(driver: import("index-meta").SqlDriver): Pr
     traceStore: new D1TraceStore(db),
     sessionStore: new D1SessionStore(db),
     verdictStore: new D1VerdictStore(db),
+    keyObservationStore: new D1KeyObservationStore(db),
     transmissionStore: new InMemoryTransmissionStore(),
     graphStore: new InMemoryGraphStore(),
     scenarioSpecStore: new InMemoryScenarioSpecStore(),
