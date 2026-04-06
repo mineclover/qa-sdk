@@ -106,6 +106,21 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
       // kubectl 접근 가능 여부 + K8s 클러스터 상태 확인
       try {
         const { execa } = await import("execa");
+
+        // kubectl context가 k3d-qa-local인지 확인
+        const { stdout: currentContext } = await execa("kubectl", [
+          "config",
+          "current-context",
+        ]);
+        if (currentContext.trim() !== "k3d-qa-local") {
+          return {
+            valid: false,
+            errors: [
+              `kubectl context가 'k3d-qa-local'이 아닙니다 (현재: '${currentContext.trim()}'). k3d 클러스터를 확인하세요`,
+            ],
+          };
+        }
+
         const { stdout } = await execa("kubectl", [
           "cluster-info",
           "--request-timeout=3s",

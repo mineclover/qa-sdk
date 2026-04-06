@@ -4,7 +4,7 @@
 
 configVersion = "2.1"
 tracker = "json"
-agent = "codex"
+agent = "gemini"
 maxIterations = 0
 autoCommit = true
 

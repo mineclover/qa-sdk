@@ -17,12 +17,82 @@ import {
 type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 export const SPEC_COMMAND_DESCRIPTORS = [
-  { id: "spec.list", path: ["list"], usage: "qa-sdk spec list [options]         Prefix spec 목록 + schema + spec docs", handlerKey: "spec.list" },
-  { id: "spec.resolve", path: ["resolve"], usage: "qa-sdk spec resolve <prefix> ...   Export title 생성", handlerKey: "spec.resolve" },
-  { id: "spec.validate", path: ["validate"], usage: "qa-sdk spec validate <schema> ...  스키마 검증", handlerKey: "spec.validate" },
-  { id: "spec.trace", path: ["trace"], usage: "qa-sdk spec trace <specId>         추적성 경로 조회", handlerKey: "spec.trace" },
-  { id: "spec.decode", path: ["decode"], usage: "qa-sdk spec decode <addr>          주소 → 제목 변환 (decode→entries→export)", handlerKey: "spec.decode" },
-  { id: "spec.codegen", path: ["codegen"], usage: "qa-sdk spec codegen [options]      코드 생성 (ts|esm|cjs|proto|json-schema)", handlerKey: "spec.codegen" },
+  {
+    id: "spec.list",
+    path: ["list"],
+    usage: "qa-sdk spec list [options]",
+    description: "Prefix spec 목록 + schema + spec docs",
+    options: [
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.list",
+  },
+  {
+    id: "spec.resolve",
+    path: ["resolve"],
+    usage: "qa-sdk spec resolve --prefix <id> --values <json> [options]",
+    description: "Export title 생성",
+    options: [
+      { flag: "--prefix", valueHint: "<id>", type: "string", description: "Prefix ID" },
+      { flag: "--values", valueHint: "<json>", type: "string", description: "차원 값 JSON" },
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.resolve",
+  },
+  {
+    id: "spec.validate",
+    path: ["validate"],
+    usage: "qa-sdk spec validate --schema <id> --data <json> [options]",
+    description: "스키마 검증",
+    options: [
+      { flag: "--schema", valueHint: "<id>", type: "string", description: "Schema ID" },
+      { flag: "--data", valueHint: "<json>", type: "string", description: "검증할 데이터 JSON" },
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.validate",
+  },
+  {
+    id: "spec.trace",
+    path: ["trace"],
+    usage: "qa-sdk spec trace --id <specId> [options]",
+    description: "추적성 경로 조회",
+    options: [
+      { flag: "--id", valueHint: "<specId>", type: "string", description: "Spec ID (FEAT-xxx 등)" },
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.trace",
+  },
+  {
+    id: "spec.decode",
+    path: ["decode"],
+    usage: "qa-sdk spec decode --address <addr> [options]",
+    description: "주소 → 제목 변환 (decode→entries→export)",
+    options: [
+      { flag: "--address", valueHint: "<prefix:v:idx>", type: "string", description: "디코딩할 주소" },
+      { flag: "--deep", type: "boolean", description: "Deep resolve (참조 해결) 수행" },
+      { flag: "--format", valueHint: "<text|json>", type: "string", description: "출력 형식 (기본: text)" },
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.decode",
+  },
+  {
+    id: "spec.codegen",
+    path: ["codegen"],
+    usage: "qa-sdk spec codegen [options]",
+    description: "코드 생성 (ts|esm|cjs|proto|json-schema|dts)",
+    options: [
+      { flag: "--output", valueHint: "<path>", type: "string", description: "출력 파일 경로" },
+      { flag: "--format", valueHint: "<fmt>", type: "string", description: "생성 형식 (ts|esm|cjs|proto|json-schema|dts)" },
+      { flag: "--specs", valueHint: "<path>", type: "string", description: "spec 파일/디렉토리 경로" },
+      { flag: "--catalog", type: "boolean", description: "DEMO_CATALOG 연동 사용" },
+    ],
+    handlerKey: "spec.codegen",
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const SPEC_COMMAND_TREE =

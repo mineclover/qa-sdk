@@ -2,11 +2,11 @@
  * 유저 시나리오 E2E 테스트
  *
  * 실제 사용자 워크플로우를 시뮬레이션한다:
- * S1. Git 개발자 — Git DSL 스냅샷에서 protobuf + TypeScript 생성
+ * S1. Git 개발자 — Catalog 기반 TypeScript SDK 코드 생성
  * S2. K8s 운영자 — K8s DSL로 워크로드/인프라 주소 코드 생성
- * S3. APM 통합 — Git + K8s + APM Signal 멀티 DSL 동시 생성
+ * S3. APM 통합 — 멀티 DSL Catalog SDK 코드 생성
  * S4. 스키마 진화 — v1 → v2 축 entry 추가 후 양쪽 코드 생성 + 호환성 확인
- * S5. Schema Pull → Codegen 전체 파이프라인 (mock registry)
+ * S5. Schema Pull → Codegen 전체 파이프라인
  * S6. 에러 시나리오 — 유효하지 않은 입력 처리
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -17,6 +17,56 @@ import { codegen } from "./commands/codegen.js";
 import { generateProto, generateTypescript } from "codegen-core";
 import { readSnapshot, readSnapshots } from "snapshot-io";
 import type { SchemaSnapshot } from "codegen-core";
+import type { Catalog, VersionedAxis, PrefixDef, DimRef } from "@qa-sdk/core";
+
+// ── SDK 파일 세트 (codegen이 생성하는 파일 목록) ─────────────
+// dsl.ts는 DkgConfig 존재 시에만 생성되므로 base에 포함하지 않음
+const SDK_BASE_FILES = [
+  "axes.ts",
+  "context-types.ts",
+  "dims.ts",
+  "index.ts",
+  "prefix-ids.ts",
+  "sdk-factory.ts",
+] as const;
+
+// ── SchemaSnapshot → 최소 Catalog 변환 ─────────────────────
+/** 테스트용: SchemaSnapshot을 최소한의 Catalog 구조로 변환 */
+function snapshotToCatalog(snapshot: SchemaSnapshot): Catalog {
+  const axes: Record<string, VersionedAxis> = {};
+  for (const axis of snapshot.axes) {
+    axes[axis.id] = {
+      id: axis.id,
+      name: axis.id,
+      versions: {
+        v1: {
+          entries: axis.entries,
+          capacity: axis.capacity,
+        },
+      },
+    };
+  }
+
+  const prefixes: Record<string, PrefixDef> = {};
+  for (const comp of snapshot.composites) {
+    const dims: Record<string, DimRef> = {};
+    for (const dimId of comp.dims) {
+      dims[dimId] = { kind: "axis", axisId: dimId };
+    }
+    prefixes[comp.id] = {
+      id: comp.id,
+      name: comp.id,
+      labels: comp.dims,
+      dims,
+      versions: [{
+        version: "v1",
+        axisVersions: Object.fromEntries(comp.dims.map(d => [d, "v1"])),
+      }],
+    };
+  }
+
+  return { id: snapshot.id, name: snapshot.id, axes, prefixes };
+}
 
 // ── 테스트 픽스처 ──────────────────────────────────
 
@@ -88,19 +138,22 @@ async function readGenerated(dir: string, filename: string): Promise<string> {
 // ═══════════════════════════════════════════════════════
 
 describe("[S1] Git 개발자 — CI/CD 파이프라인 주소 코드 생성", () => {
-  it("Git DSL에서 proto + ts 양쪽 생성", async () => {
-    const input = join(tmpRoot, "input");
+  it("Git DSL Catalog에서 SDK 파일 세트 생성", async () => {
     const output = join(tmpRoot, "output");
-    const snapshotPath = await writeSnapshot(input, GIT_DSL_V1);
+    const catalog = snapshotToCatalog(GIT_DSL_V1);
 
     await codegen({
-      formats: ["proto", "ts"],
-      input: snapshotPath,
+      loadedCatalog: catalog,
       output,
     });
 
     const files = await readdir(output);
-    expect(files.toSorted()).toEqual(["git-dsl-v1.d.ts", "git-dsl-v1.proto"]);
+    // SDK base 파일이 모두 생성되어야 한다
+    for (const f of SDK_BASE_FILES) {
+      expect(files).toContain(f);
+    }
+    // 모든 생성 파일이 .ts 확장자
+    expect(files.every(f => f.endsWith(".ts"))).toBe(true);
   });
 
   it("proto: Conventional Commits 축이 올바른 enum으로 변환된다", async () => {
@@ -235,30 +288,30 @@ describe("[S2] K8s 운영자 — 워크로드/인프라 주소 코드 생성", (
 // S3. APM 통합 시나리오 — 멀티 DSL 동시 생성
 // ═══════════════════════════════════════════════════════
 
-describe("[S3] APM 통합 — 멀티 DSL 디렉토리 일괄 코드 생성", () => {
-  it("3개 DSL 스냅샷 → 6개 파일 (3 proto + 3 ts) 생성", async () => {
-    const input = join(tmpRoot, "multi-dsl");
+describe("[S3] APM 통합 — 멀티 DSL Catalog SDK 코드 생성", () => {
+  /** 3개 SchemaSnapshot의 축/prefix를 하나의 Catalog로 합성 */
+  function mergeCatalog(snapshots: SchemaSnapshot[]): Catalog {
+    const axes: Record<string, VersionedAxis> = {};
+    const prefixes: Record<string, PrefixDef> = {};
+    for (const snap of snapshots) {
+      const single = snapshotToCatalog(snap);
+      Object.assign(axes, single.axes);
+      Object.assign(prefixes, single.prefixes);
+    }
+    return { id: "merged-dsl", name: "merged-dsl", axes, prefixes };
+  }
+
+  it("멀티 DSL Catalog → SDK 파일 세트 생성", async () => {
     const output = join(tmpRoot, "generated");
+    const catalog = mergeCatalog([GIT_DSL_V1, K8S_DSL_V1, APM_SIGNAL_V1]);
 
-    await writeSnapshot(input, GIT_DSL_V1);
-    await writeSnapshot(input, K8S_DSL_V1);
-    await writeSnapshot(input, APM_SIGNAL_V1);
-
-    await codegen({
-      formats: ["proto", "ts"],
-      input,
-      output,
-    });
+    await codegen({ loadedCatalog: catalog, output });
 
     const files = (await readdir(output)).toSorted();
-    expect(files).toEqual([
-      "apm-signal-v1.d.ts",
-      "apm-signal-v1.proto",
-      "git-dsl-v1.d.ts",
-      "git-dsl-v1.proto",
-      "k8s-dsl-v1.d.ts",
-      "k8s-dsl-v1.proto",
-    ]);
+    for (const f of SDK_BASE_FILES) {
+      expect(files).toContain(f);
+    }
+    expect(files.every(f => f.endsWith(".ts"))).toBe(true);
   });
 
   it("APM Signal proto에 severity 레벨이 올바르게 정의된다", async () => {
@@ -283,48 +336,42 @@ describe("[S3] APM 통합 — 멀티 DSL 디렉토리 일괄 코드 생성", () 
     expect(ts).toContain('EVENT: "event",');
   });
 
-  it("각 생성 파일에 원본 스냅샷 ID가 기록된다", async () => {
-    const input = join(tmpRoot, "multi-dsl");
+  it("생성 파일 헤더에 Catalog ID가 기록된다", async () => {
     const output = join(tmpRoot, "generated");
+    const catalog = snapshotToCatalog(GIT_DSL_V1);
 
-    await writeSnapshot(input, GIT_DSL_V1);
-    await writeSnapshot(input, K8S_DSL_V1);
+    await codegen({ loadedCatalog: catalog, output });
 
-    await codegen({ formats: ["ts"], input, output });
+    // SDK 파일에 Catalog ID가 헤더에 포함
+    const indexTs = await readGenerated(output, "index.ts");
+    const axesTs = await readGenerated(output, "axes.ts");
 
-    const gitTs = await readGenerated(output, "git-dsl-v1.d.ts");
-    const k8sTs = await readGenerated(output, "k8s-dsl-v1.d.ts");
-
-    expect(gitTs).toContain('SchemaSnapshot "git-dsl-v1"');
-    expect(k8sTs).toContain('SchemaSnapshot "k8s-dsl-v1"');
+    expect(indexTs).toContain(`Catalog "${catalog.id}"`);
+    expect(axesTs).toContain(`Catalog "${catalog.id}"`);
   });
 
-  it("모든 생성 파일에 코어 ApmRecord/ApmEnvelope 타입이 포함된다", async () => {
-    const input = join(tmpRoot, "multi-dsl");
+  it("SDK 파일 세트에 축 상수와 prefix 타입이 포함된다", async () => {
     const output = join(tmpRoot, "generated");
+    const catalog = mergeCatalog([GIT_DSL_V1, APM_SIGNAL_V1]);
 
-    await writeSnapshot(input, GIT_DSL_V1);
-    await writeSnapshot(input, APM_SIGNAL_V1);
+    await codegen({ loadedCatalog: catalog, output });
 
-    await codegen({ formats: ["proto", "ts"], input, output });
+    // axes.ts — 각 DSL의 축 상수가 포함
+    const axesTs = await readGenerated(output, "axes.ts");
+    expect(axesTs).toContain("export const GIT_REPO =");
+    expect(axesTs).toContain("export const APM_SIGNAL_TYPE =");
+    expect(axesTs).toContain("export const APM_SEVERITY =");
 
-    // proto — 모든 파일에 코어 메시지 포함
-    const gitProto = await readGenerated(output, "git-dsl-v1.proto");
-    const apmProto = await readGenerated(output, "apm-signal-v1.proto");
-    for (const proto of [gitProto, apmProto]) {
-      expect(proto).toContain("message ApmRecord {");
-      expect(proto).toContain("message ApmEnvelope {");
-      expect(proto).toContain("message MetricPayload {");
-    }
+    // prefix-ids.ts — prefix ID 리터럴 유니온
+    const prefixIds = await readGenerated(output, "prefix-ids.ts");
+    expect(prefixIds).toContain("git_commit_addr");
+    expect(prefixIds).toContain("git_build_addr");
 
-    // ts — 모든 파일에 코어 인터페이스 포함
-    const gitTs = await readGenerated(output, "git-dsl-v1.d.ts");
-    const apmTs = await readGenerated(output, "apm-signal-v1.d.ts");
-    for (const ts of [gitTs, apmTs]) {
-      expect(ts).toContain("export interface ApmRecord {");
-      expect(ts).toContain("export interface ApmEnvelope {");
-      expect(ts).toContain("export interface MetricPayload {");
-    }
+    // index.ts — barrel export
+    const indexTs = await readGenerated(output, "index.ts");
+    expect(indexTs).toContain('export * from "./prefix-ids.js"');
+    expect(indexTs).toContain('export * from "./axes.js"');
+    expect(indexTs).toContain('export * from "./dims.js"');
   });
 });
 
@@ -394,22 +441,20 @@ describe("[S4] 스키마 진화 — v1 → v2 축 entry 추가 후 양쪽 코드
     expect(v2Proto).toContain("// k8s_service (capacity: 256)");
   });
 
-  it("v1, v2를 같은 디렉토리에서 동시 생성할 수 있다", async () => {
-    const input = join(tmpRoot, "evolution-input");
+  it("v2 Catalog에서 SDK 파일 세트가 생성된다", async () => {
     const output = join(tmpRoot, "evolution-output");
+    const catalog = snapshotToCatalog(K8S_DSL_V2);
 
-    await writeSnapshot(input, K8S_DSL_V1);
-    await writeSnapshot(input, K8S_DSL_V2);
-
-    await codegen({ formats: ["proto", "ts"], input, output });
+    await codegen({ loadedCatalog: catalog, output });
 
     const files = (await readdir(output)).toSorted();
-    expect(files).toEqual([
-      "k8s-dsl-v1.d.ts",
-      "k8s-dsl-v1.proto",
-      "k8s-dsl-v2.d.ts",
-      "k8s-dsl-v2.proto",
-    ]);
+    for (const f of SDK_BASE_FILES) {
+      expect(files).toContain(f);
+    }
+    // v2 추가 entry가 axes.ts에 반영된다
+    const axesTs = await readGenerated(output, "axes.ts");
+    expect(axesTs).toContain('PROD_ASIA: "prod-asia",');
+    expect(axesTs).toContain('NOTIFICATION: "notification",');
   });
 
   it("composite 구조(dims)는 v1↔v2 동일하다", async () => {
@@ -440,51 +485,42 @@ describe("[S4] 스키마 진화 — v1 → v2 축 entry 추가 후 양쪽 코드
 // ═══════════════════════════════════════════════════════
 
 describe("[S5] Schema Pull → Codegen 파이프라인 (mock registry)", () => {
-  it("pull로 저장한 JSON → codegen으로 코드 생성", async () => {
-    // Step 1: registry에서 pull 받은 것처럼 JSON 저장
-    const schemas = join(tmpRoot, "schemas");
+  it("Catalog → codegen으로 SDK 파일 생성", async () => {
     const generated = join(tmpRoot, "generated");
-    await writeSnapshot(schemas, K8S_DSL_V1);
+    const catalog = snapshotToCatalog(K8S_DSL_V1);
 
-    // Step 2: 저장된 JSON에서 codegen
-    await codegen({
-      formats: ["proto", "ts"],
-      input: schemas,
-      output: generated,
-    });
+    await codegen({ loadedCatalog: catalog, output: generated });
 
-    // Step 3: 생성된 파일 검증
-    const proto = await readGenerated(generated, "k8s-dsl-v1.proto");
-    const ts = await readGenerated(generated, "k8s-dsl-v1.d.ts");
+    // SDK 파일이 유효한 TypeScript 구조인지
+    const axesTs = await readGenerated(generated, "axes.ts");
+    expect(axesTs.startsWith("// Generated from")).toBe(true);
+    expect(axesTs).toContain("export const");
+    expect(axesTs).toContain("as const;");
+    expect(axesTs).toContain("export type");
 
-    // proto가 유효한 proto3 파일 구조인지
-    expect(proto.startsWith("// Generated from")).toBe(true);
-    expect(proto).toContain('syntax = "proto3";');
-    expect(proto).toContain("package qa.apm.v1;");
+    // prefix-ids.ts에 PrefixId 유니온 타입
+    const prefixIds = await readGenerated(generated, "prefix-ids.ts");
+    expect(prefixIds.startsWith("// Generated from")).toBe(true);
+    expect(prefixIds).toContain("export type PrefixId =");
 
-    // ts가 유효한 TypeScript 파일 구조인지
-    expect(ts.startsWith("// Generated from")).toBe(true);
-    expect(ts).toContain("export const");
-    expect(ts).toContain("as const;");
-    expect(ts).toContain("export type");
-    expect(ts).toContain("export interface");
+    // dims.ts에 dimension interface
+    const dimsTs = await readGenerated(generated, "dims.ts");
+    expect(dimsTs).toContain("export interface");
   });
 
-  it("커스텀 protobuf package 이름 적용", async () => {
-    const schemas = join(tmpRoot, "schemas");
+  it("SDK 파일에 contentHash가 기록된다", async () => {
     const generated = join(tmpRoot, "generated");
-    await writeSnapshot(schemas, K8S_DSL_V1);
+    const catalog = snapshotToCatalog(K8S_DSL_V1);
 
-    await codegen({
-      formats: ["proto"],
-      input: schemas,
-      output: generated,
-      packageName: "myorg.infra.v2",
-    });
+    await codegen({ loadedCatalog: catalog, output: generated });
 
-    const proto = await readGenerated(generated, "k8s-dsl-v1.proto");
-    expect(proto).toContain("package myorg.infra.v2;");
-    expect(proto).not.toContain("package qa.apm.v1;");
+    // 모든 SDK 파일에 동일한 hash가 헤더에 포함
+    const axesTs = await readGenerated(generated, "axes.ts");
+    const dimsTs = await readGenerated(generated, "dims.ts");
+
+    const hashMatch = axesTs.match(/hash: ([a-f0-9]+)/);
+    expect(hashMatch).not.toBeNull();
+    expect(dimsTs).toContain(`hash: ${hashMatch![1]}`);
   });
 
   it("snapshot-io: JSON 파일을 파싱하고 구조를 검증한다", async () => {
@@ -517,40 +553,40 @@ describe("[S5] Schema Pull → Codegen 파이프라인 (mock registry)", () => {
 // ═══════════════════════════════════════════════════════
 
 describe("[S6] 에러 시나리오", () => {
-  it("id 없는 JSON → 에러", async () => {
+  it("Catalog 형식이 아닌 JSON → loadCatalog 에러", async () => {
     const bad = join(tmpRoot, "bad.json");
     await writeFile(bad, JSON.stringify({ axes: [], composites: [] }));
 
     await expect(
-      codegen({ formats: ["ts"], input: bad, output: join(tmpRoot, "out") }),
-    ).rejects.toThrow("id 누락");
+      codegen({ catalog: bad, output: join(tmpRoot, "out") }),
+    ).rejects.toThrow();
   });
 
-  it("axes 배열 없는 JSON → 에러", async () => {
+  it("axes 없는 JSON → loadCatalog 에러", async () => {
     const bad = join(tmpRoot, "bad2.json");
     await writeFile(bad, JSON.stringify({ id: "x", composites: [] }));
 
     await expect(
-      codegen({ formats: ["ts"], input: bad, output: join(tmpRoot, "out") }),
-    ).rejects.toThrow("axes 배열 누락");
-  });
-
-  it("존재하지 않는 파일 → 에러", async () => {
-    await expect(
-      codegen({ formats: ["ts"], input: "/tmp/nonexistent-file-xyz.json", output: join(tmpRoot, "out") }),
+      codegen({ catalog: bad, output: join(tmpRoot, "out") }),
     ).rejects.toThrow();
   });
 
-  it("빈 디렉토리 → 파일 0개 (에러 아님)", async () => {
-    const emptyDir = join(tmpRoot, "empty");
-    await mkdir(emptyDir, { recursive: true });
+  it("존재하지 않는 catalog 경로 → 에러", async () => {
+    await expect(
+      codegen({ catalog: "/tmp/nonexistent-file-xyz.json", output: join(tmpRoot, "out") }),
+    ).rejects.toThrow();
+  });
 
-    // 에러 없이 완료, 0개 생성
-    await codegen({ formats: ["ts"], input: emptyDir, output: join(tmpRoot, "out") });
+  it("최소 Catalog → SDK 파일 생성 (에러 아님)", async () => {
+    const output = join(tmpRoot, "out");
+    // 빈 축/prefix를 가진 최소 Catalog
+    const minimalCatalog: Catalog = { id: "empty", name: "empty", axes: {}, prefixes: {} };
 
-    // 출력 디렉토리도 비어 있거나 없음
-    const outExists = await readdir(join(tmpRoot, "out")).catch(() => []);
-    expect(outExists).toHaveLength(0);
+    await codegen({ loadedCatalog: minimalCatalog, output });
+
+    // SDK 파일이 생성된다 (빈 Catalog도 유효)
+    const files = await readdir(output);
+    expect(files.length).toBeGreaterThan(0);
   });
 
   it("잘못된 JSON → 파싱 에러", async () => {
@@ -558,7 +594,7 @@ describe("[S6] 에러 시나리오", () => {
     await writeFile(bad, "{ not valid json }}}");
 
     await expect(
-      codegen({ formats: ["ts"], input: bad, output: join(tmpRoot, "out") }),
+      codegen({ catalog: bad, output: join(tmpRoot, "out") }),
     ).rejects.toThrow();
   });
 });

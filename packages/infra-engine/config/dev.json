@@ -7,6 +7,7 @@
       "port": 3200,
       "store_driver": "d1",
       "cors_origin": "*",
+      "health_path": "/health/live",
       "registry_url": "http://registry-service-svc:3300",
       "depends_on": ["registry-service"]
     },
@@ -34,7 +35,7 @@
       "health_path": "/health",
       "depends_on": ["registry-service"]
     },
-    "motion-workspace-service": {
+    "motion-workspace": {
       "port": 3710,
       "health_path": "/health"
     }
@@ -47,7 +48,7 @@
     "decode-service": { "endpoint": "http://localhost:3600" },
     "decision-service": { "endpoint": "http://localhost:3800" },
     "definition-service": { "endpoint": "http://localhost:3700" },
-    "motion-workspace-service": { "endpoint": "http://localhost:3710" }
+    "motion-workspace": { "endpoint": "http://localhost:3710" }
   },
   "monitoring": {
     "interval": 60

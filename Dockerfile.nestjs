@@ -7,7 +7,8 @@ RUN corepack enable pnpm
 
 FROM base AS build
 WORKDIR /app
-COPY . .
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/ packages/
 RUN pnpm install --frozen-lockfile
 # 런타임 의존 패키지 빌드 (서비스의 tsup external workspace 패키지)
 # logger: Docker 환경 @types/node 미해석 → tsc 타입 에러, noEmitOnError=false이므로 JS 정상 생성
@@ -33,18 +34,22 @@ RUN if [ "$SERVICE" = "decision-service" ]; then \
 # 서비스 자체 빌드
 # definition-service: GraphQL reflection이 tsup 번들과 호환 안 됨 → tsc 빌드 사용
 # tsc에서 DTS 에러가 나도 JS는 정상 생성 (noEmitOnError=false 기본값)
+# --filter: @qa-sdk/${SERVICE} 시도 후 실패 시 unscoped ${SERVICE} 폴백
 RUN if [ "$SERVICE" = "definition-service" ]; then \
       (pnpm --filter @qa-sdk/${SERVICE} run build:tsc || true); \
     else \
-      pnpm --filter @qa-sdk/${SERVICE} build; \
+      pnpm --filter @qa-sdk/${SERVICE}... build 2>/dev/null || pnpm --filter ${SERVICE}... build; \
     fi
 
 FROM node:22-slim AS production
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 ARG SERVICE
+ARG PORT=3000
+ENV PORT=${PORT}
 WORKDIR /app/packages/${SERVICE}
 ENV NODE_ENV=production
 COPY --from=build --chown=node:node /app /app
+EXPOSE ${PORT}
 USER node
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["sh", "-c", "curl -fsS http://localhost:${PORT:-3000}/health || exit 1"]
 CMD ["node", "dist/main.js"]

@@ -1,5 +1,9 @@
 // adapters/ingest.ts — IngestAdapter 실구현
+import { createRequire } from "node:module";
 import type { IngestAdapter } from "./adapter.js";
+
+const require = createRequire(import.meta.url);
+const { version: SDK_VERSION } = require("../../package.json") as { version: string };
 
 export interface IngestAdapterOptions {
   baseUrl: string; // "http://localhost:3200"
@@ -19,7 +23,7 @@ export function createIngestAdapter(options: IngestAdapterOptions): IngestAdapte
         transmission_id: id,
         sent_at: now,
         owner: { owner_type: "agent", owner_id: serviceName },
-        source: { service_name: serviceName, sdk_name: "infra-engine", sdk_version: "1.0.0" },
+        source: { service_name: serviceName, sdk_name: "infra-engine", sdk_version: SDK_VERSION },
         runtime: { platform: "node" },
         build: { env: (payload as Record<string, unknown>).env ?? "dev" },
         records: [
