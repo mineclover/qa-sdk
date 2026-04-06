@@ -13,6 +13,15 @@ describe("generateHelp", () => {
         { segment: "use", description: "프로필 전환", handler: async () => {} },
       ],
     },
+    {
+      segment: "review",
+      usage: "infra review request [file] --reviewer <name>",
+      continuation: [
+        "[--decision-id <id>]",
+        "[--title <text> --rationale <text>]",
+      ],
+      handler: async () => {},
+    },
   ];
 
   it("전체 help 생성", () => {
@@ -27,5 +36,12 @@ describe("generateHelp", () => {
     expect(help).toContain("config");
     expect(help).toContain("show");
     expect(help).toContain("use");
+  });
+
+  it("usage continuation을 함께 렌더링한다", () => {
+    const help = generateHelp("infra", tree);
+    expect(help).toContain("infra review request [file] --reviewer <name>");
+    expect(help).toContain("[--decision-id <id>]");
+    expect(help).toContain("[--title <text> --rationale <text>]");
   });
 });

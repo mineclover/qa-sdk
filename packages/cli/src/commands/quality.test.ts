@@ -167,6 +167,13 @@ describe("quality CLI surface", () => {
       rest: ["quality-gates-system", "--output=artifacts/status.json"],
     });
   });
+
+  it("quality diagnose를 tree 기반으로 해석한다", () => {
+    expect(resolveSubcommand(["quality", "diagnose", "gate-id", "--json"])).toEqual({
+      name: "quality diagnose",
+      rest: ["gate-id", "--json"],
+    });
+  });
 });
 
 describe("evaluateGateRunResult", () => {

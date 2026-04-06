@@ -89,6 +89,16 @@ describe("review commands", () => {
     });
   });
 
+  describe("review CLI surface", () => {
+    it("review request를 tree 기반으로 해석한다", async () => {
+      const { resolveSubcommand } = await import("../index.js");
+      expect(resolveSubcommand(["review", "request", "src/a.ts", "--reviewer", "bot", "--purpose", "check"])).toEqual({
+        name: "review request",
+        rest: ["src/a.ts", "--reviewer", "bot", "--purpose", "check"],
+      });
+    });
+  });
+
   describe("reviewMark + reviewLog 연동", () => {
     it("mark 후 log에서 이력 조회 가능", async () => {
       const { reviewMark, reviewLog } = await import("./review.js");

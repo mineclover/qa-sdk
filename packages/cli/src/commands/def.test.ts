@@ -158,7 +158,7 @@ describe("def commands", () => {
       await cliDef(["boundary", "--address=def_document:v2:342161"]);
       const boundaryOutput = getOutput();
       expect(boundaryOutput).toContain("바운더리");
-      expect(boundaryOutput).toContain("definition-addressing");
+      expect(boundaryOutput).toContain("Definition Addressing");
 
       vi.mocked(console.log).mockClear();
       await cliDef(["boundary-context", "--address=def_document:v2:342161"]);

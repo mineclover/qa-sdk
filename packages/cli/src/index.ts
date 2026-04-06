@@ -122,20 +122,6 @@ import {
   queryHealth,
 } from './commands/service-query.js';
 import {
-  serviceList,
-  serviceShow,
-  serviceOwners,
-  serviceOwnershipTopology,
-  serviceEndpoints,
-  serviceHealth,
-  serviceHealthAll,
-  serviceMode,
-  serviceAppList,
-  serviceAppShow,
-  serviceCleanupPlan,
-  serviceCleanupDraft,
-  serviceCleanupActivate,
-  serviceCleanupExecute,
 } from './commands/service.js';
 import { cliDef } from './commands/def.js';
 import { prefixStamp, prefixDrift, prefixFind, prefixMigrate, prefixImpact } from './commands/prefix-stamp.js';
@@ -173,84 +159,127 @@ import {
   motionWorkspaceShow,
 } from './commands/motion-workspace.js';
 import {
-  flowList,
-  flowStart,
-  flowSelect,
-  flowStatus,
-  flowTrace,
-  flowAnalyze,
-  flowCompare,
-  flowPolicyCandidates,
-  flowPolicyApprove,
-  flowPolicyReject,
-  flowPolicyList,
-  flowPolicyLearn,
-  flowLookup,
-  flowHistory,
-  flowVerdict,
-  flowJudge,
 } from './commands/flow.js';
 import {
   formatUsageSpecs,
   formatUsageLines,
   formatCommandDetailBlocks,
   collectCommandUsageSpecs,
+  descriptorsToTree,
   executeCommand,
   generateHelp,
   resolveCliTreeCommand,
   type CliCommandNode,
+  type CommandDescriptor,
   type CommandContext,
   type CommandUsageSpec,
   type CommandDetailSpec,
 } from './command-spec.js';
+import {
+  SERVICE_COMMAND_SPECS as SERVICE_GROUP_COMMAND_SPECS,
+  SERVICE_COMMAND_TREE as SERVICE_GROUP_COMMAND_TREE,
+  SERVICE_HANDLER_REGISTRY as SERVICE_GROUP_HANDLER_REGISTRY,
+} from './command-groups/service.commands.js';
+import {
+  FLOW_COMMAND_SPECS as FLOW_GROUP_COMMAND_SPECS,
+  FLOW_COMMAND_TREE as FLOW_GROUP_COMMAND_TREE,
+  FLOW_HANDLER_REGISTRY as FLOW_GROUP_HANDLER_REGISTRY,
+} from './command-groups/flow.commands.js';
+import {
+  DKG_COMMAND_SPECS as DKG_GROUP_COMMAND_SPECS,
+  DKG_COMMAND_TREE as DKG_GROUP_COMMAND_TREE,
+} from './command-groups/dkg.commands.js';
+import {
+  QUALITY_COMMAND_SPECS as QUALITY_GROUP_COMMAND_SPECS,
+  QUALITY_COMMAND_TREE as QUALITY_GROUP_COMMAND_TREE,
+  QUALITY_HANDLER_REGISTRY as QUALITY_GROUP_HANDLER_REGISTRY,
+} from './command-groups/quality.commands.js';
+import {
+  REVIEW_COMMAND_SPECS as REVIEW_GROUP_COMMAND_SPECS,
+  REVIEW_COMMAND_TREE as REVIEW_GROUP_COMMAND_TREE,
+  REVIEW_HANDLER_REGISTRY as REVIEW_GROUP_HANDLER_REGISTRY,
+} from './command-groups/review.commands.js';
+import {
+  INGEST_COMMAND_SPECS as INGEST_GROUP_COMMAND_SPECS,
+  INGEST_COMMAND_TREE as INGEST_GROUP_COMMAND_TREE,
+  INGEST_HANDLER_REGISTRY as INGEST_GROUP_HANDLER_REGISTRY,
+} from './command-groups/ingest.commands.js';
+import {
+  GATE_COMMAND_SPECS as GATE_GROUP_COMMAND_SPECS,
+  GATE_COMMAND_TREE as GATE_GROUP_COMMAND_TREE,
+  GATE_HANDLER_REGISTRY as GATE_GROUP_HANDLER_REGISTRY,
+} from './command-groups/gate.commands.js';
+import {
+  QUERY_COMMAND_SPECS as QUERY_GROUP_COMMAND_SPECS,
+  QUERY_COMMAND_TREE as QUERY_GROUP_COMMAND_TREE,
+  QUERY_HANDLER_REGISTRY as QUERY_GROUP_HANDLER_REGISTRY,
+} from './command-groups/query.commands.js';
+import {
+  SPEC_COMMAND_SPECS as SPEC_GROUP_COMMAND_SPECS,
+  SPEC_COMMAND_TREE as SPEC_GROUP_COMMAND_TREE,
+  SPEC_HANDLER_REGISTRY as SPEC_GROUP_HANDLER_REGISTRY,
+} from './command-groups/spec.commands.js';
+import {
+  TEST_COMMAND_SPECS as TEST_GROUP_COMMAND_SPECS,
+  TEST_COMMAND_TREE as TEST_GROUP_COMMAND_TREE,
+  TEST_HANDLER_REGISTRY as TEST_GROUP_HANDLER_REGISTRY,
+} from './command-groups/test.commands.js';
+import {
+  CATALOG_COMMAND_SPECS as CATALOG_GROUP_COMMAND_SPECS,
+  CATALOG_COMMAND_TREE as CATALOG_GROUP_COMMAND_TREE,
+  CATALOG_HANDLER_REGISTRY as CATALOG_GROUP_HANDLER_REGISTRY,
+} from './command-groups/catalog.commands.js';
+import {
+  ROOT_COMMAND_TREE as ROOT_GROUP_COMMAND_TREE,
+} from './command-groups/root.commands.js';
+import {
+  SCAN_COMMAND_TREE as SCAN_GROUP_COMMAND_TREE,
+  SCAN_HANDLER_REGISTRY as SCAN_GROUP_HANDLER_REGISTRY,
+} from './command-groups/scan.commands.js';
+import {
+  GIT_COMMAND_TREE as GIT_GROUP_COMMAND_TREE,
+  GIT_HANDLER_REGISTRY as GIT_GROUP_HANDLER_REGISTRY,
+} from './command-groups/git.commands.js';
+import {
+  PREFIX_COMMAND_TREE as PREFIX_GROUP_COMMAND_TREE,
+  createPrefixHandlerRegistry,
+} from './command-groups/prefix.commands.js';
+import {
+  FACET_COMMAND_TREE as FACET_GROUP_COMMAND_TREE,
+  FACET_HANDLER_REGISTRY as FACET_GROUP_HANDLER_REGISTRY,
+} from './command-groups/facet.commands.js';
+import {
+  MOTION_COMMAND_SPECS as MOTION_GROUP_COMMAND_SPECS,
+  MOTION_COMMAND_TREE as MOTION_GROUP_COMMAND_TREE,
+  MOTION_HANDLER_REGISTRY as MOTION_GROUP_HANDLER_REGISTRY,
+} from './command-groups/motion.commands.js';
 
 // ── Usage ────────────────────────────────────────────
 
-const SERVICE_COMMAND_TREE = [
-  { segment: 'list', usage: 'qa-sdk service list [--json]       서비스 목록 (tier/team/owned/url)', handlerKey: 'service.list' },
-  { segment: 'show', usage: 'qa-sdk service show <id>           서비스 상세 (owned + consumed prefixes)', handlerKey: 'service.show' },
-  { segment: 'health', usage: 'qa-sdk service health [--env dev]  전체 서비스 헬스체크 (registry 경유)', handlerKey: 'service.health' },
-  { segment: 'health-all', usage: 'qa-sdk service health-all [--json] 모든 서비스 직접 health check (registry 불필요)', handlerKey: 'service.health-all' },
-  { segment: 'owners', usage: 'qa-sdk service owners [--json]     prefix → 소유 서비스 맵', handlerKey: 'service.owners' },
-  { segment: 'ownership-topology', usage: 'qa-sdk service ownership-topology <serviceId> [--version v] [--json]', handlerKey: 'service.ownership-topology' },
-  { segment: 'endpoints', usage: 'qa-sdk service endpoints [--filter-env dev|prod]  서비스 엔드포인트 목록', handlerKey: 'service.endpoints' },
-  {
-    segment: 'app',
-    children: [
-      { segment: 'list', usage: 'qa-sdk service app list [--json]     Application 목록', handlerKey: 'service.app.list' },
-      { segment: 'show', usage: 'qa-sdk service app show <id>         Application 상세 (서비스 포함)', handlerKey: 'service.app.show' },
-    ],
-  },
-  { segment: 'cleanup-plan', usage: 'qa-sdk service cleanup-plan <serviceId> [--manifest-version v] [--json]', handlerKey: 'service.cleanup-plan' },
-  { segment: 'cleanup-draft', usage: 'qa-sdk service cleanup-draft <serviceId> --new-version <v> [--manifest-version v] [--replace kind=version]', handlerKey: 'service.cleanup-draft' },
-  { segment: 'cleanup-activate', usage: 'qa-sdk service cleanup-activate <serviceId> --manifest-version <v>', handlerKey: 'service.cleanup-activate' },
-  { segment: 'cleanup-execute', usage: 'qa-sdk service cleanup-execute <serviceId> --new-version <v> [--manifest-version v] [--replace kind=version]', handlerKey: 'service.cleanup-execute' },
-  { segment: 'mode', usage: 'qa-sdk service mode [local|staging|prod] [--set key=value]', handlerKey: 'service.mode' },
-] as const satisfies readonly CliCommandNode[];
+const QUALITY_COMMAND_DESCRIPTORS = [
+  { id: 'quality.list', path: ['list'], usage: 'qa-sdk quality list [filters]      gate 문서 목록', handlerKey: 'quality.list' },
+  { id: 'quality.status', path: ['status'], usage: 'qa-sdk quality status [bundle-id]  quality bundle 상태 요약', handlerKey: 'quality.status' },
+  { id: 'quality.export', path: ['export'], usage: 'qa-sdk quality export [bundle-id] [--output=<path>]  quality bundle 상태 JSON export', handlerKey: 'quality.export' },
+  { id: 'quality.bundle', path: ['bundle'], usage: 'qa-sdk quality bundle <bundle-id>  gate 번들 문서 조회', handlerKey: 'quality.bundle' },
+  { id: 'quality.claims', path: ['claims'], usage: 'qa-sdk quality claims <bundle-id>  contract claim 감사표 조회', handlerKey: 'quality.claims' },
+  { id: 'quality.show', path: ['show'], usage: 'qa-sdk quality show <gate-id>      gate 문서 상세', handlerKey: 'quality.show' },
+  { id: 'quality.run', path: ['run'], usage: 'qa-sdk quality run <gate-id>       gate 명령 실행', handlerKey: 'quality.run' },
+  { id: 'quality.next', path: ['next'], usage: 'qa-sdk quality next <gate-id>      다음 gate/doc 추천', handlerKey: 'quality.next' },
+  { id: 'quality.diagnose', path: ['diagnose'], usage: 'qa-sdk quality diagnose <gate-id>  최근 실패/검증 상태 진단', handlerKey: 'quality.diagnose' },
+] as const satisfies readonly CommandDescriptor[];
 
-const SERVICE_COMMAND_SPECS = collectCommandUsageSpecs(['service'], SERVICE_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
-
-const QUALITY_COMMAND_TREE = [
-  { segment: 'list', usage: 'qa-sdk quality list [filters]      gate 문서 목록', handlerKey: 'quality.list' },
-  { segment: 'status', usage: 'qa-sdk quality status [bundle-id]  quality bundle 상태 요약', handlerKey: 'quality.status' },
-  { segment: 'export', usage: 'qa-sdk quality export [bundle-id] [--output=<path>]  quality bundle 상태 JSON export', handlerKey: 'quality.export' },
-  { segment: 'bundle', usage: 'qa-sdk quality bundle <bundle-id>  gate 번들 문서 조회', handlerKey: 'quality.bundle' },
-  { segment: 'claims', usage: 'qa-sdk quality claims <bundle-id>  contract claim 감사표 조회', handlerKey: 'quality.claims' },
-  { segment: 'show', usage: 'qa-sdk quality show <gate-id>      gate 문서 상세', handlerKey: 'quality.show' },
-  { segment: 'run', usage: 'qa-sdk quality run <gate-id>       gate 명령 실행', handlerKey: 'quality.run' },
-  { segment: 'next', usage: 'qa-sdk quality next <gate-id>      다음 gate/doc 추천', handlerKey: 'quality.next' },
-  { segment: 'diagnose', usage: 'qa-sdk quality diagnose <gate-id>  최근 실패/검증 상태 진단', handlerKey: 'quality.diagnose' },
-] as const satisfies readonly CliCommandNode[];
+const QUALITY_COMMAND_TREE = descriptorsToTree(QUALITY_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const QUALITY_COMMAND_SPECS = collectCommandUsageSpecs(['quality'], QUALITY_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
-const REVIEW_COMMAND_TREE = [
-  { segment: 'mark', usage: 'qa-sdk review mark <file|glob...> --reviewer <name> [--model <ai>]  리뷰 완료 기록', handlerKey: 'review.mark' },
-  { segment: 'status', usage: 'qa-sdk review status [--service <scope>] [--stale] [--unreviewed]  리뷰 상태 조회', handlerKey: 'review.status' },
-  { segment: 'dashboard', usage: 'qa-sdk review dashboard            서비스별 리뷰 커버리지', handlerKey: 'review.dashboard' },
-  { segment: 'log', usage: 'qa-sdk review log <file>           파일 리뷰 이력', handlerKey: 'review.log' },
+const REVIEW_COMMAND_DESCRIPTORS = [
+  { id: 'review.mark', path: ['mark'], usage: 'qa-sdk review mark <file|glob...> --reviewer <name> [--model <ai>]  리뷰 완료 기록', handlerKey: 'review.mark' },
+  { id: 'review.status', path: ['status'], usage: 'qa-sdk review status [--service <scope>] [--stale] [--unreviewed]  리뷰 상태 조회', handlerKey: 'review.status' },
+  { id: 'review.dashboard', path: ['dashboard'], usage: 'qa-sdk review dashboard            서비스별 리뷰 커버리지', handlerKey: 'review.dashboard' },
+  { id: 'review.log', path: ['log'], usage: 'qa-sdk review log <file>           파일 리뷰 이력', handlerKey: 'review.log' },
   {
-    segment: 'request',
+    id: 'review.request',
+    path: ['request'],
     usage: 'qa-sdk review request [file|glob...] --reviewer <name> --purpose <text>  AI 피드백 요청 생성',
     continuation: [
       '[--dkg-target <nodeId>] [--decision-id <id>]',
@@ -258,14 +287,17 @@ const REVIEW_COMMAND_TREE = [
     ],
     handlerKey: 'review.request',
   },
-  { segment: 'requests', usage: 'qa-sdk review requests [--service <scope>] [--limit N]  피드백 요청 목록', handlerKey: 'review.requests' },
-  { segment: 'show-request', usage: 'qa-sdk review show-request <id>    피드백 요청 상세', handlerKey: 'review.show-request' },
-  { segment: 'bridge-request', usage: 'qa-sdk review bridge-request <id> --target <nodeId>  피드백 요청을 DKG observation/decision에 연결', handlerKey: 'review.bridge-request' },
-] as const satisfies readonly CliCommandNode[];
+  { id: 'review.requests', path: ['requests'], usage: 'qa-sdk review requests [--service <scope>] [--limit N]  피드백 요청 목록', handlerKey: 'review.requests' },
+  { id: 'review.show-request', path: ['show-request'], usage: 'qa-sdk review show-request <id>    피드백 요청 상세', handlerKey: 'review.show-request' },
+  { id: 'review.bridge-request', path: ['bridge-request'], usage: 'qa-sdk review bridge-request <id> --target <nodeId>  피드백 요청을 DKG observation/decision에 연결', handlerKey: 'review.bridge-request' },
+] as const satisfies readonly CommandDescriptor[];
+
+const REVIEW_COMMAND_TREE = descriptorsToTree(REVIEW_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const REVIEW_COMMAND_SPECS = collectCommandUsageSpecs(['review'], REVIEW_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
 type TreeDispatch = (handlerKey: string, rest: string[]) => Promise<void>;
+type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
 interface TreeCommandGroup {
   readonly rootSegments: readonly string[];
@@ -274,85 +306,70 @@ interface TreeCommandGroup {
   readonly dispatch: TreeDispatch;
 }
 
-const DKG_COMMAND_TREE = [
-  { segment: 'report', usage: 'qa-sdk dkg report                  전체 현황 + SQLite 상태', handlerKey: 'dkg.report' },
-  { segment: 'refresh', usage: 'qa-sdk dkg refresh                 bootstrap 재실행', handlerKey: 'dkg.refresh' },
-  { segment: 'axes', usage: 'qa-sdk dkg axes [--page N] [--group-by prefix|domain]  축 목록', handlerKey: 'dkg.axes' },
-  { segment: 'prefixes', usage: 'qa-sdk dkg prefixes [--page N]     prefix 목록', handlerKey: 'dkg.prefixes' },
-  { segment: 'domains', usage: 'qa-sdk dkg domains                 도메인 목록', handlerKey: 'dkg.domains' },
-  { segment: 'flow-schemas', usage: 'qa-sdk dkg flow-schemas [--page N] FlowSchemaNode 목록', handlerKey: 'dkg.flow-schemas' },
-  { segment: 'flow-schema', usage: 'qa-sdk dkg flow-schema <id>        FlowSchema 프로파일', handlerKey: 'dkg.flow-schema' },
-  { segment: 'impact', usage: 'qa-sdk dkg impact <axis>           영향 분석', handlerKey: 'dkg.impact' },
-  { segment: 'overlaps', usage: 'qa-sdk dkg overlaps                축 중복 스캔', handlerKey: 'dkg.overlaps' },
-  { segment: 'history', usage: 'qa-sdk dkg history [--limit N]     스냅샷 히스토리', handlerKey: 'dkg.history' },
-  { segment: 'audit-events', usage: 'qa-sdk dkg audit-events [--limit N] [--prefix P] [--command C] [--target ID] [--lifecycle L]', handlerKey: 'dkg.audit-events' },
-  { segment: 'skew', usage: 'qa-sdk dkg skew                    배포 스큐 상세', handlerKey: 'dkg.skew' },
-  { segment: 'coverage', usage: 'qa-sdk dkg coverage                entry 커버리지', handlerKey: 'dkg.coverage' },
-  { segment: 'skills', usage: 'qa-sdk dkg skills                  skill 목록', handlerKey: 'dkg.skills' },
-  { segment: 'service', usage: 'qa-sdk dkg service [id]            서비스 탐색 (id 없으면 목록)', handlerKey: 'dkg.service' },
-  { segment: 'prefix', usage: 'qa-sdk dkg prefix <id>             prefix 심층 탐색', handlerKey: 'dkg.prefix' },
-  { segment: 'dsl', usage: 'qa-sdk dkg dsl [id]                DSL 번들 탐색 (id 없으면 목록)', handlerKey: 'dkg.dsl' },
-  { segment: 'overview', usage: 'qa-sdk dkg overview                시스템 대시보드', handlerKey: 'dkg.overview' },
-  { segment: 'trace', usage: 'qa-sdk dkg trace <id>              노드 역추적 (전체 인과 체인)', handlerKey: 'dkg.trace' },
-  { segment: 'decide', usage: 'qa-sdk dkg decide [options]        의사결정 기록', handlerKey: 'dkg.decide' },
-  { segment: 'observe', usage: 'qa-sdk dkg observe [options]       관측 기록', handlerKey: 'dkg.observe' },
-  { segment: 'claim', usage: 'qa-sdk dkg claim <id> --by <name>  작업 선점 (전파)', handlerKey: 'dkg.claim' },
-  { segment: 'release', usage: 'qa-sdk dkg release <id>            작업 해제', handlerKey: 'dkg.release' },
-  { segment: 'claims', usage: 'qa-sdk dkg claims                  활성 claim 목록', handlerKey: 'dkg.claims' },
-  { segment: 'resolve', usage: 'qa-sdk dkg resolve <obs> [opts]    관측을 결정으로 해소 (루프 닫기)', handlerKey: 'dkg.resolve' },
-  { segment: 'link', usage: 'qa-sdk dkg link <obs> --decision   관측 → 결정 연결', handlerKey: 'dkg.link' },
-  { segment: 'timeline', usage: 'qa-sdk dkg timeline [--open]       시간순 이력', handlerKey: 'dkg.timeline' },
-  { segment: 'metrics', usage: 'qa-sdk dkg metrics                 전체 metric 대시보드', handlerKey: 'dkg.metrics' },
-  { segment: 'converge', usage: 'qa-sdk dkg converge [--persist] [--verbose]  수렴 분석 실행 (metric+converge+health chain)', handlerKey: 'dkg.converge' },
-  { segment: 'promote', usage: 'qa-sdk dkg promote                 좌표 승격 후보 스캔 (5Q 자동 판정)', handlerKey: 'dkg.promote' },
-  { segment: 'reset', usage: 'qa-sdk dkg reset <target> [--confirm]  지정 초기화 (bootstrap|operational|snapshots|auto|catalog|all)', handlerKey: 'dkg.reset' },
-  { segment: 'add-entry', usage: 'qa-sdk dkg add-entry <axis> <entry> [--apply]  축 entry 추가 (check→mutate→record)', handlerKey: 'dkg.add-entry' },
-  { segment: 'publish', usage: 'qa-sdk dkg publish [--registry url] [--version id]  카탈로그 → registry 등록', handlerKey: 'dkg.publish' },
-  { segment: 'version', usage: 'qa-sdk dkg version <action> <prefix> [versionId]    버전 lifecycle (list|lock|release|activate)', handlerKey: 'dkg.version' },
-  { segment: 'self-check', usage: 'qa-sdk dkg self-check [--apply]    빌드/테스트 자기 진단 (기본: dry-run)', handlerKey: 'dkg.self-check' },
-  { segment: 'patterns', usage: 'qa-sdk dkg patterns                패턴 분류 규칙 목록', handlerKey: 'dkg.patterns' },
-  { segment: 'pattern-stats', usage: 'qa-sdk dkg pattern-stats           패턴 통계', handlerKey: 'dkg.pattern-stats' },
-  { segment: 'discover-links', usage: 'qa-sdk dkg discover-links          co-occurrence 기반 IntentLink 후보 발견', handlerKey: 'dkg.discover-links' },
-  { segment: 'run', usage: 'qa-sdk dkg run <skillId> [args]    skill 직접 실행', handlerKey: 'dkg.run' },
-  { segment: 'export', usage: 'qa-sdk dkg export [--output path]  SQLite → JSON (전체)', handlerKey: 'dkg.export' },
-  { segment: 'import', usage: 'qa-sdk dkg import <input>          JSON → SQLite (전체)', handlerKey: 'dkg.import' },
-  { segment: 'tables', usage: 'qa-sdk dkg tables                   테이블 목록', handlerKey: 'dkg.tables' },
-  { segment: 'table', usage: 'qa-sdk dkg table <id>               테이블 상세 (컬럼 + FK + prefix 참조)', handlerKey: 'dkg.table' },
-  { segment: 'transitions', usage: 'qa-sdk dkg transitions [specId]     전이 spec 목록 (effect별 + 축 사용 빈도)', handlerKey: 'dkg.transitions' },
-  {
-    segment: 'transition',
-    usage: 'qa-sdk dkg transition <name>        전이 spec 상세 (축 역할 + 상태 의존성)',
-    handlerKey: 'dkg.transition',
-    children: [
-      { segment: 'coverage', usage: 'qa-sdk dkg transition coverage      전이 커버리지 분석', handlerKey: 'dkg.transition.coverage' },
-      { segment: 'orphans', usage: 'qa-sdk dkg transition orphans       전이 미관찰 prefix 분석', handlerKey: 'dkg.transition.orphans' },
-      { segment: 'violations', usage: 'qa-sdk dkg transition violations    전이 위반 통계', handlerKey: 'dkg.transition.violations' },
-    ],
-  },
-  { segment: 'audit', usage: 'qa-sdk dkg audit                    DKG 감사 (observation/decision/constraint 상태)', handlerKey: 'dkg.audit' },
-  { segment: 'diagram', usage: 'qa-sdk dkg diagram <kind> [id] [--output] [--format]  다이어그램 생성 (mmd|html|svg|png)', handlerKey: 'dkg.diagram' },
-  { segment: 'observations', usage: 'qa-sdk dkg observations', handlerKey: 'dkg.observations' },
-  {
-    segment: 'decisions',
-    usage: 'qa-sdk dkg decisions',
-    handlerKey: 'dkg.decisions',
-    children: [
-      { segment: 'export', usage: 'qa-sdk dkg decisions export [--output path]  의사결정만 백업', handlerKey: 'dkg.decisions.export' },
-      { segment: 'import', usage: 'qa-sdk dkg decisions import <input>          의사결정 복원 (머지)', handlerKey: 'dkg.decisions.import' },
-      { segment: 'list', usage: 'qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회', handlerKey: 'dkg.decisions.list' },
-    ],
-  },
-  { segment: 'constraints', usage: 'qa-sdk dkg constraints', handlerKey: 'dkg.constraints' },
-  { segment: 'scan-tables', usage: 'qa-sdk dkg scan-tables', handlerKey: 'dkg.scan-tables' },
-  {
-    segment: 'spec',
-    children: [
-      { segment: 'add', usage: 'qa-sdk dkg spec add --id <id> --type <type> --title \"...\" [--rationale \"...\"] [--governs <id,...>]', handlerKey: 'dkg.spec.add' },
-      { segment: 'list', usage: 'qa-sdk dkg spec list', handlerKey: 'dkg.spec.list' },
-      { segment: 'transition', usage: 'qa-sdk dkg spec transition <specId> <draft|active|deprecated>', handlerKey: 'dkg.spec.transition' },
-    ],
-  },
-] as const satisfies readonly CliCommandNode[];
+const DKG_COMMAND_DESCRIPTORS = [
+  { id: 'dkg.report', path: ['report'], usage: 'qa-sdk dkg report                  전체 현황 + SQLite 상태', handlerKey: 'dkg.report' },
+  { id: 'dkg.refresh', path: ['refresh'], usage: 'qa-sdk dkg refresh                 bootstrap 재실행', handlerKey: 'dkg.refresh' },
+  { id: 'dkg.axes', path: ['axes'], usage: 'qa-sdk dkg axes [--page N] [--group-by prefix|domain]  축 목록', handlerKey: 'dkg.axes' },
+  { id: 'dkg.prefixes', path: ['prefixes'], usage: 'qa-sdk dkg prefixes [--page N]     prefix 목록', handlerKey: 'dkg.prefixes' },
+  { id: 'dkg.domains', path: ['domains'], usage: 'qa-sdk dkg domains                 도메인 목록', handlerKey: 'dkg.domains' },
+  { id: 'dkg.flow-schemas', path: ['flow-schemas'], usage: 'qa-sdk dkg flow-schemas [--page N] FlowSchemaNode 목록', handlerKey: 'dkg.flow-schemas' },
+  { id: 'dkg.flow-schema', path: ['flow-schema'], usage: 'qa-sdk dkg flow-schema <id>        FlowSchema 프로파일', handlerKey: 'dkg.flow-schema' },
+  { id: 'dkg.impact', path: ['impact'], usage: 'qa-sdk dkg impact <axis>           영향 분석', handlerKey: 'dkg.impact' },
+  { id: 'dkg.overlaps', path: ['overlaps'], usage: 'qa-sdk dkg overlaps                축 중복 스캔', handlerKey: 'dkg.overlaps' },
+  { id: 'dkg.history', path: ['history'], usage: 'qa-sdk dkg history [--limit N]     스냅샷 히스토리', handlerKey: 'dkg.history' },
+  { id: 'dkg.audit-events', path: ['audit-events'], usage: 'qa-sdk dkg audit-events [--limit N] [--prefix P] [--command C] [--target ID] [--lifecycle L]', handlerKey: 'dkg.audit-events' },
+  { id: 'dkg.skew', path: ['skew'], usage: 'qa-sdk dkg skew                    배포 스큐 상세', handlerKey: 'dkg.skew' },
+  { id: 'dkg.coverage', path: ['coverage'], usage: 'qa-sdk dkg coverage                entry 커버리지', handlerKey: 'dkg.coverage' },
+  { id: 'dkg.skills', path: ['skills'], usage: 'qa-sdk dkg skills                  skill 목록', handlerKey: 'dkg.skills' },
+  { id: 'dkg.service', path: ['service'], usage: 'qa-sdk dkg service [id]            서비스 탐색 (id 없으면 목록)', handlerKey: 'dkg.service' },
+  { id: 'dkg.prefix', path: ['prefix'], usage: 'qa-sdk dkg prefix <id>             prefix 심층 탐색', handlerKey: 'dkg.prefix' },
+  { id: 'dkg.dsl', path: ['dsl'], usage: 'qa-sdk dkg dsl [id]                DSL 번들 탐색 (id 없으면 목록)', handlerKey: 'dkg.dsl' },
+  { id: 'dkg.overview', path: ['overview'], usage: 'qa-sdk dkg overview                시스템 대시보드', handlerKey: 'dkg.overview' },
+  { id: 'dkg.trace', path: ['trace'], usage: 'qa-sdk dkg trace <id>              노드 역추적 (전체 인과 체인)', handlerKey: 'dkg.trace' },
+  { id: 'dkg.decide', path: ['decide'], usage: 'qa-sdk dkg decide [options]        의사결정 기록', handlerKey: 'dkg.decide' },
+  { id: 'dkg.observe', path: ['observe'], usage: 'qa-sdk dkg observe [options]       관측 기록', handlerKey: 'dkg.observe' },
+  { id: 'dkg.claim', path: ['claim'], usage: 'qa-sdk dkg claim <id> --by <name>  작업 선점 (전파)', handlerKey: 'dkg.claim' },
+  { id: 'dkg.release', path: ['release'], usage: 'qa-sdk dkg release <id>            작업 해제', handlerKey: 'dkg.release' },
+  { id: 'dkg.claims', path: ['claims'], usage: 'qa-sdk dkg claims                  활성 claim 목록', handlerKey: 'dkg.claims' },
+  { id: 'dkg.resolve', path: ['resolve'], usage: 'qa-sdk dkg resolve <obs> [opts]    관측을 결정으로 해소 (루프 닫기)', handlerKey: 'dkg.resolve' },
+  { id: 'dkg.link', path: ['link'], usage: 'qa-sdk dkg link <obs> --decision   관측 → 결정 연결', handlerKey: 'dkg.link' },
+  { id: 'dkg.timeline', path: ['timeline'], usage: 'qa-sdk dkg timeline [--open]       시간순 이력', handlerKey: 'dkg.timeline' },
+  { id: 'dkg.metrics', path: ['metrics'], usage: 'qa-sdk dkg metrics                 전체 metric 대시보드', handlerKey: 'dkg.metrics' },
+  { id: 'dkg.converge', path: ['converge'], usage: 'qa-sdk dkg converge [--persist] [--verbose]  수렴 분석 실행 (metric+converge+health chain)', handlerKey: 'dkg.converge' },
+  { id: 'dkg.promote', path: ['promote'], usage: 'qa-sdk dkg promote                 좌표 승격 후보 스캔 (5Q 자동 판정)', handlerKey: 'dkg.promote' },
+  { id: 'dkg.reset', path: ['reset'], usage: 'qa-sdk dkg reset <target> [--confirm]  지정 초기화 (bootstrap|operational|snapshots|auto|catalog|all)', handlerKey: 'dkg.reset' },
+  { id: 'dkg.add-entry', path: ['add-entry'], usage: 'qa-sdk dkg add-entry <axis> <entry> [--apply]  축 entry 추가 (check→mutate→record)', handlerKey: 'dkg.add-entry' },
+  { id: 'dkg.publish', path: ['publish'], usage: 'qa-sdk dkg publish [--registry url] [--version id]  카탈로그 → registry 등록', handlerKey: 'dkg.publish' },
+  { id: 'dkg.version', path: ['version'], usage: 'qa-sdk dkg version <action> <prefix> [versionId]    버전 lifecycle (list|lock|release|activate)', handlerKey: 'dkg.version' },
+  { id: 'dkg.self-check', path: ['self-check'], usage: 'qa-sdk dkg self-check [--apply]    빌드/테스트 자기 진단 (기본: dry-run)', handlerKey: 'dkg.self-check' },
+  { id: 'dkg.patterns', path: ['patterns'], usage: 'qa-sdk dkg patterns                패턴 분류 규칙 목록', handlerKey: 'dkg.patterns' },
+  { id: 'dkg.pattern-stats', path: ['pattern-stats'], usage: 'qa-sdk dkg pattern-stats           패턴 통계', handlerKey: 'dkg.pattern-stats' },
+  { id: 'dkg.discover-links', path: ['discover-links'], usage: 'qa-sdk dkg discover-links          co-occurrence 기반 IntentLink 후보 발견', handlerKey: 'dkg.discover-links' },
+  { id: 'dkg.run', path: ['run'], usage: 'qa-sdk dkg run <skillId> [args]    skill 직접 실행', handlerKey: 'dkg.run' },
+  { id: 'dkg.export', path: ['export'], usage: 'qa-sdk dkg export [--output path]  SQLite → JSON (전체)', handlerKey: 'dkg.export' },
+  { id: 'dkg.import', path: ['import'], usage: 'qa-sdk dkg import <input>          JSON → SQLite (전체)', handlerKey: 'dkg.import' },
+  { id: 'dkg.tables', path: ['tables'], usage: 'qa-sdk dkg tables                   테이블 목록', handlerKey: 'dkg.tables' },
+  { id: 'dkg.table', path: ['table'], usage: 'qa-sdk dkg table <id>               테이블 상세 (컬럼 + FK + prefix 참조)', handlerKey: 'dkg.table' },
+  { id: 'dkg.transitions', path: ['transitions'], usage: 'qa-sdk dkg transitions [specId]     전이 spec 목록 (effect별 + 축 사용 빈도)', handlerKey: 'dkg.transitions' },
+  { id: 'dkg.transition', path: ['transition'], usage: 'qa-sdk dkg transition <name>        전이 spec 상세 (축 역할 + 상태 의존성)', handlerKey: 'dkg.transition' },
+  { id: 'dkg.transition.coverage', path: ['transition', 'coverage'], usage: 'qa-sdk dkg transition coverage      전이 커버리지 분석', handlerKey: 'dkg.transition.coverage' },
+  { id: 'dkg.transition.orphans', path: ['transition', 'orphans'], usage: 'qa-sdk dkg transition orphans       전이 미관찰 prefix 분석', handlerKey: 'dkg.transition.orphans' },
+  { id: 'dkg.transition.violations', path: ['transition', 'violations'], usage: 'qa-sdk dkg transition violations    전이 위반 통계', handlerKey: 'dkg.transition.violations' },
+  { id: 'dkg.audit', path: ['audit'], usage: 'qa-sdk dkg audit                    DKG 감사 (observation/decision/constraint 상태)', handlerKey: 'dkg.audit' },
+  { id: 'dkg.diagram', path: ['diagram'], usage: 'qa-sdk dkg diagram <kind> [id] [--output] [--format]  다이어그램 생성 (mmd|html|svg|png)', handlerKey: 'dkg.diagram' },
+  { id: 'dkg.observations', path: ['observations'], usage: 'qa-sdk dkg observations', handlerKey: 'dkg.observations' },
+  { id: 'dkg.decisions', path: ['decisions'], usage: 'qa-sdk dkg decisions', handlerKey: 'dkg.decisions' },
+  { id: 'dkg.decisions.export', path: ['decisions', 'export'], usage: 'qa-sdk dkg decisions export [--output path]  의사결정만 백업', handlerKey: 'dkg.decisions.export' },
+  { id: 'dkg.decisions.import', path: ['decisions', 'import'], usage: 'qa-sdk dkg decisions import <input>          의사결정 복원 (머지)', handlerKey: 'dkg.decisions.import' },
+  { id: 'dkg.decisions.list', path: ['decisions', 'list'], usage: 'qa-sdk dkg decisions list [--limit N]        최근 의사결정 조회', handlerKey: 'dkg.decisions.list' },
+  { id: 'dkg.constraints', path: ['constraints'], usage: 'qa-sdk dkg constraints', handlerKey: 'dkg.constraints' },
+  { id: 'dkg.scan-tables', path: ['scan-tables'], usage: 'qa-sdk dkg scan-tables', handlerKey: 'dkg.scan-tables' },
+  { id: 'dkg.spec.add', path: ['spec', 'add'], usage: 'qa-sdk dkg spec add --id <id> --type <type> --title "..." [--rationale "..."] [--governs <id,...>]', handlerKey: 'dkg.spec.add' },
+  { id: 'dkg.spec.list', path: ['spec', 'list'], usage: 'qa-sdk dkg spec list', handlerKey: 'dkg.spec.list' },
+  { id: 'dkg.spec.transition', path: ['spec', 'transition'], usage: 'qa-sdk dkg spec transition <specId> <draft|active|deprecated>', handlerKey: 'dkg.spec.transition' },
+] as const satisfies readonly CommandDescriptor[];
+
+const DKG_COMMAND_TREE = descriptorsToTree(DKG_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const DKG_COMMAND_SPECS = collectCommandUsageSpecs(['dkg'], DKG_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
 
@@ -366,107 +383,64 @@ const CORE_COMMAND_SPECS = [
   { name: 'sync-obsidian', usage: 'qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화' },
 ] as const satisfies readonly CommandUsageSpec<string>[];
 
-const MOTION_COMMAND_SPECS = [
-  { name: 'validate', usage: 'qa-sdk motion validate <file>      Motion composition/workspace 문서 검증' },
-  { name: 'inspect', usage: 'qa-sdk motion inspect <file>       Motion composition/workspace 요약' },
-  { name: 'workspace list', usage: 'qa-sdk motion workspace list       Remote motion workspace 목록' },
-  { name: 'workspace show', usage: 'qa-sdk motion workspace show <id>  Remote motion workspace 상세' },
-  { name: 'workspace create', usage: 'qa-sdk motion workspace create <id>  Remote motion workspace 생성' },
-  { name: 'workspace delete', usage: 'qa-sdk motion workspace delete <id>  Remote motion workspace 삭제' },
-  { name: 'scene list', usage: 'qa-sdk motion scene list --workspace <id>  Remote motion scene 목록' },
-  { name: 'scene show', usage: 'qa-sdk motion scene show --workspace <id> --scene <id>  Remote motion scene 상세' },
-  { name: 'scene create', usage: 'qa-sdk motion scene create --workspace <id>  Remote motion scene 생성' },
-  { name: 'scene delete', usage: 'qa-sdk motion scene delete --workspace <id> --scene <id>  Remote motion scene 삭제' },
-  { name: 'export', usage: 'qa-sdk motion export --workspace <id> --out <file>  Remote workspace → composition JSON' },
-  { name: 'import', usage: 'qa-sdk motion import <file> --workspace <id>        composition JSON → remote workspace' },
-  { name: 'apply', usage: 'qa-sdk motion apply --workspace <id> --command <json>  Remote workspace command 적용' },
-  { name: 'preview', usage: 'qa-sdk motion preview [--workspace <id>]  Online workspace preview 실행' },
-] as const satisfies readonly CommandUsageSpec<string>[];
+const ROOT_COMMAND_DESCRIPTORS = [
+  { id: 'root.init', path: ['init'], usage: 'qa-sdk init [options]            새 카탈로그 프로젝트 또는 Vite 소비처 스캐폴딩', handlerKey: 'root.init' },
+  { id: 'root.register', path: ['register'], usage: 'qa-sdk register [options]          SchemaSnapshot → Registry 등록', handlerKey: 'root.register' },
+  { id: 'root.dry-run', path: ['dry-run'], usage: 'qa-sdk dry-run [options]           변경 시뮬레이션 (DAG 전파, 변경 없음)', handlerKey: 'root.dry-run' },
+  { id: 'root.codegen', path: ['codegen'], usage: 'qa-sdk codegen [options]           SchemaSnapshot → 타입 인터페이스 생성', handlerKey: 'root.codegen' },
+  { id: 'root.inspect', path: ['inspect'], usage: 'qa-sdk inspect [options]           Registry 상태 조회', handlerKey: 'root.inspect' },
+  { id: 'root.sync-obsidian', path: ['sync-obsidian'], usage: 'qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화', handlerKey: 'root.sync-obsidian' },
+  { id: 'root.encode', path: ['encode'], usage: 'qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩', handlerKey: 'root.encode' },
+  { id: 'root.decode', path: ['decode'], usage: 'qa-sdk decode <addr>               주소 → 문자열 디코딩', handlerKey: 'root.decode' },
+  { id: 'root.resolve', path: ['resolve'], usage: 'qa-sdk resolve <addr>              자동 마이그레이션', handlerKey: 'root.resolve' },
+  { id: 'root.find-version', path: ['find-version'], usage: 'qa-sdk find-version <axis> <entry> 문자열이 있는 버전 찾기', handlerKey: 'root.find-version' },
+  { id: 'root.list-prefixes', path: ['list-prefixes'], usage: 'qa-sdk list-prefixes [--json]      prefix 목록', handlerKey: 'root.list-prefixes' },
+  { id: 'root.list-axes', path: ['list-axes'], usage: 'qa-sdk list-axes [--json]          축 목록', handlerKey: 'root.list-axes' },
+  { id: 'root.derive-refs', path: ['derive-refs'], usage: 'qa-sdk derive-refs [--check]       refEntries 정합성', handlerKey: 'root.derive-refs' },
+  { id: 'root.impact', path: ['impact'], usage: 'qa-sdk impact --axis <id>          영향 분석', handlerKey: 'root.impact' },
+] as const satisfies readonly CommandDescriptor[];
 
-const SPEC_COMMAND_SPECS = [
-  { name: 'list', usage: 'qa-sdk spec list [options]         Prefix spec 목록 + schema + spec docs' },
-  { name: 'resolve', usage: 'qa-sdk spec resolve <prefix> ...   Export title 생성' },
-  { name: 'validate', usage: 'qa-sdk spec validate <schema> ...  스키마 검증' },
-  { name: 'trace', usage: 'qa-sdk spec trace <specId>         추적성 경로 조회' },
-  { name: 'decode', usage: 'qa-sdk spec decode <addr>          주소 → 제목 변환 (decode→entries→export)' },
-  { name: 'codegen', usage: 'qa-sdk spec codegen [options]      코드 생성 (ts|esm|cjs|proto|json-schema)' },
-] as const satisfies readonly CommandUsageSpec<string>[];
+const ROOT_COMMAND_TREE = descriptorsToTree(ROOT_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+const SCAN_COMMAND_DESCRIPTORS = [
+  { id: 'scan.git', path: ['git'], usage: 'qa-sdk scan git [options]          Git 메타데이터 수집 → SchemaSnapshot', handlerKey: 'scan.git' },
+] as const satisfies readonly CommandDescriptor[];
+
+const SCAN_COMMAND_TREE = descriptorsToTree(SCAN_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+const GIT_COMMAND_DESCRIPTORS = [
+  { id: 'git.conflicts', path: ['conflicts'], usage: 'qa-sdk git conflicts [options]      Git 충돌/발산 리포트', handlerKey: 'git.conflicts' },
+] as const satisfies readonly CommandDescriptor[];
+
+const GIT_COMMAND_TREE = descriptorsToTree(GIT_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+const PREFIX_COMMAND_DESCRIPTORS = [
+  { id: 'prefix.stamp', path: ['stamp'], usage: 'qa-sdk prefix stamp [paths...] [--update] [--dry-run]', handlerKey: 'prefix.stamp' },
+  { id: 'prefix.drift', path: ['drift'], usage: 'qa-sdk prefix drift [paths...]', handlerKey: 'prefix.drift' },
+  { id: 'prefix.find', path: ['find'], usage: 'qa-sdk prefix find [prefixId] [--dim <name>] [--version <id>] [--summary]', handlerKey: 'prefix.find' },
+  { id: 'prefix.migrate', path: ['migrate'], usage: 'qa-sdk prefix migrate <prefixId> <fromVersion> <toVersion> [--dry-run]', handlerKey: 'prefix.migrate' },
+  { id: 'prefix.impact', path: ['impact'], usage: 'qa-sdk prefix impact <prefixId>', handlerKey: 'prefix.impact' },
+] as const satisfies readonly CommandDescriptor[];
+
+const PREFIX_COMMAND_TREE = descriptorsToTree(PREFIX_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
+const FACET_COMMAND_DESCRIPTORS = [
+  { id: 'facet.scan', path: ['scan'], usage: 'qa-sdk facet scan [--service <id>] [--output <path>] [--no-deps]', handlerKey: 'facet.scan' },
+  { id: 'facet.inject', path: ['inject'], usage: 'qa-sdk facet inject [dir]', handlerKey: 'facet.inject' },
+] as const satisfies readonly CommandDescriptor[];
+
+const FACET_COMMAND_TREE = descriptorsToTree(FACET_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const DX_COMMAND_SPECS_META = [
-  { name: 'encode', usage: 'qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩' },
-  { name: 'decode', usage: 'qa-sdk decode <addr>               주소 → 문자열 디코딩' },
-  { name: 'resolve', usage: 'qa-sdk resolve <addr>              자동 마이그레이션' },
-  { name: 'find-version', usage: 'qa-sdk find-version <axis> <entry> 문자열이 있는 버전 찾기' },
-  { name: 'list-prefixes', usage: 'qa-sdk list-prefixes [--json]      prefix 목록' },
-  { name: 'list-axes', usage: 'qa-sdk list-axes [--json]          축 목록' },
-  { name: 'derive-refs', usage: 'qa-sdk derive-refs [--check]       refEntries 정합성' },
-  { name: 'impact', usage: 'qa-sdk impact --axis <id>          영향 분석' },
+  { name: "encode", usage: "qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩" },
+  { name: "decode", usage: "qa-sdk decode <addr>               주소 → 문자열 디코딩" },
+  { name: "resolve", usage: "qa-sdk resolve <addr>              자동 마이그레이션" },
+  { name: "find-version", usage: "qa-sdk find-version <axis> <entry> 문자열이 있는 버전 찾기" },
+  { name: "list-prefixes", usage: "qa-sdk list-prefixes [--json]      prefix 목록" },
+  { name: "list-axes", usage: "qa-sdk list-axes [--json]          축 목록" },
+  { name: "derive-refs", usage: "qa-sdk derive-refs [--check]       refEntries 정합성" },
+  { name: "impact", usage: "qa-sdk impact --axis <id>          영향 분석" },
 ] as const satisfies readonly CommandUsageSpec<string>[];
-
-const FLOW_COMMAND_SPECS = [
-  { name: 'list', usage: 'qa-sdk flow list                              플로우 스키마 목록' },
-  { name: 'start', usage: 'qa-sdk flow start <schema-id>                 플로우 시작' },
-  { name: 'select', usage: 'qa-sdk flow select <branch-id>                현재 gate 선택' },
-  { name: 'status', usage: 'qa-sdk flow status [instance-id]              실행 상태 조회' },
-  { name: 'trace', usage: 'qa-sdk flow trace <instance-id>               코어 경로 추적' },
-  { name: 'analyze', usage: 'qa-sdk flow analyze <schema-id>               구조/영향 분석' },
-  { name: 'compare', usage: 'qa-sdk flow compare [options]                 쌍/분포/시간 비교' },
-  { name: 'policy candidates', usage: 'qa-sdk flow policy candidates                 정책 후보 목록' },
-  { name: 'policy approve', usage: 'qa-sdk flow policy approve <id>               후보 승인 + 정책 등록' },
-  { name: 'policy reject', usage: 'qa-sdk flow policy reject <id>                후보 거부' },
-  { name: 'policy list', usage: 'qa-sdk flow policy list                       등록된 정책 목록' },
-  { name: 'policy learn', usage: 'qa-sdk flow policy learn <schema-id>          패턴 감지 + 후보 생성' },
-  { name: 'lookup', usage: 'qa-sdk flow lookup <keyword>                  키워드로 의사결정 이력 조회' },
-  { name: 'history', usage: 'qa-sdk flow history [schema-id]               완료된 인스턴스 이력 (-n 20)' },
-  { name: 'verdict', usage: 'qa-sdk flow verdict <instance-id>             판정 상태 + 성공 기준 조회' },
-  { name: 'judge', usage: 'qa-sdk flow judge <instance-id>              판정 기록 (성공/실패/보류)' },
-] as const satisfies readonly CommandUsageSpec<string>[];
-
-const INGEST_COMMAND_SPECS = [
-  { name: 'health', usage: 'qa-sdk ingest health [--env dev|prod|staging]  수집 서버 헬스체크' },
-  { name: 'send', usage: 'qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송' },
-  { name: 'recent', usage: 'qa-sdk ingest recent [limit]       최근 수집 세션 목록' },
-  { name: 'trace', usage: 'qa-sdk ingest trace <traceId>      trace 상세 (records + verdicts)' },
-  { name: 'status', usage: 'qa-sdk ingest status               수집 파이프라인 상태 요약' },
-  { name: 'services', usage: 'qa-sdk ingest services             서비스 URL 맵 (registry 기반, → service list 권장)' },
-  { name: 'mode', usage: 'qa-sdk ingest mode [local|dev|staging|prod] [--set key=value]' },
-  { name: 'insights', usage: 'qa-sdk ingest insights [--limit N]' },
-] as const satisfies readonly CommandUsageSpec<string>[];
-
-const INGEST_COMMAND_TREE = [
-  { segment: 'health', usage: 'qa-sdk ingest health [--env dev|prod|staging]  수집 서버 헬스체크', handlerKey: 'ingest.health' },
-  { segment: 'send', usage: 'qa-sdk ingest send [eventKey] [--dim prefix.axis=value]  테스트 이벤트 전송', handlerKey: 'ingest.send' },
-  { segment: 'recent', usage: 'qa-sdk ingest recent [limit]       최근 수집 세션 목록', handlerKey: 'ingest.recent' },
-  { segment: 'trace', usage: 'qa-sdk ingest trace <traceId>      trace 상세 (records + verdicts)', handlerKey: 'ingest.trace' },
-  { segment: 'status', usage: 'qa-sdk ingest status               수집 파이프라인 상태 요약', handlerKey: 'ingest.status' },
-  { segment: 'services', usage: 'qa-sdk ingest services             서비스 URL 맵 (registry 기반, → service list 권장)', handlerKey: 'ingest.services' },
-  { segment: 'mode', usage: 'qa-sdk ingest mode [local|dev|staging|prod] [--set key=value]', handlerKey: 'ingest.mode' },
-  { segment: 'insights', usage: 'qa-sdk ingest insights [--limit N]', handlerKey: 'ingest.insights' },
-] as const satisfies readonly CliCommandNode[];
-
-const GATE_COMMAND_SPECS = [
-  { name: 'health', usage: 'qa-sdk gate health                  gate-service 헬스체크' },
-  { name: 'check', usage: 'qa-sdk gate check <prefix> [ver]   주소 상태 확인' },
-  { name: 'classify', usage: 'qa-sdk gate classify <prefix> <ver> <addr>  주소 분류' },
-] as const satisfies readonly CommandUsageSpec<string>[];
-
-const GATE_COMMAND_TREE = [
-  { segment: 'health', usage: 'qa-sdk gate health                  gate-service 헬스체크', handlerKey: 'gate.health' },
-  { segment: 'check', usage: 'qa-sdk gate check <prefix> [ver]   주소 상태 확인', handlerKey: 'gate.check' },
-  { segment: 'classify', usage: 'qa-sdk gate classify <prefix> <ver> <addr>  주소 분류', handlerKey: 'gate.classify' },
-] as const satisfies readonly CliCommandNode[];
-
-const QUERY_COMMAND_SPECS = [
-  { name: 'health', usage: 'qa-sdk query health                query-service 헬스체크' },
-  { name: 'resolve', usage: 'qa-sdk query resolve --coord d=v   정책 해석' },
-  { name: 'rules', usage: 'qa-sdk query rules                 정책 규칙 목록' },
-] as const satisfies readonly CommandUsageSpec<string>[];
-
-const QUERY_COMMAND_TREE = [
-  { segment: 'health', usage: 'qa-sdk query health                query-service 헬스체크', handlerKey: 'query.health' },
-  { segment: 'resolve', usage: 'qa-sdk query resolve --coord d=v   정책 해석', handlerKey: 'query.resolve' },
-  { segment: 'rules', usage: 'qa-sdk query rules                 정책 규칙 목록', handlerKey: 'query.rules' },
-] as const satisfies readonly CliCommandNode[];
 
 const TEST_COMMAND_SPECS = [
   { name: 'scan', usage: 'qa-sdk test scan [--dir <path>] [--db <path>]   스펙 frontmatter tests: 선언 → declared' },
@@ -476,10 +450,27 @@ const TEST_COMMAND_SPECS = [
   { name: 'report', usage: 'qa-sdk test report [--db <path>]                 커버리지 매트릭스' },
 ] as const satisfies readonly CommandUsageSpec<string>[];
 
+const TEST_COMMAND_DESCRIPTORS = [
+  { id: 'test.scan', path: ['scan'], usage: 'qa-sdk test scan [--dir <path>] [--db <path>]   스펙 frontmatter tests: 선언 → declared', handlerKey: 'test.scan' },
+  { id: 'test.assign', path: ['assign'], usage: 'qa-sdk test assign [--a-coord <c>] [--force] [--db <path>]  모듈화 체크 → B 좌표 부여', handlerKey: 'test.assign' },
+  { id: 'test.scaffold', path: ['scaffold'], usage: 'qa-sdk test scaffold [--b-coord <c>] [--db <path>]         테스트 스텁 파일 생성', handlerKey: 'test.scaffold' },
+  { id: 'test.status', path: ['status'], usage: 'qa-sdk test status [--db <path>]                 생명주기 현황', handlerKey: 'test.status' },
+  { id: 'test.report', path: ['report'], usage: 'qa-sdk test report [--db <path>]                 커버리지 매트릭스', handlerKey: 'test.report' },
+] as const satisfies readonly CommandDescriptor[];
+
+const TEST_COMMAND_TREE = descriptorsToTree(TEST_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+
 const CATALOG_COMMAND_SPECS = [
   { name: 'list', usage: 'qa-sdk catalog list                등록된 카탈로그 목록' },
   { name: 'info', usage: 'qa-sdk catalog info <id>           카탈로그 상세 정보' },
 ] as const satisfies readonly CommandUsageSpec<string>[];
+
+const CATALOG_COMMAND_DESCRIPTORS = [
+  { id: 'catalog.list', path: ['list'], usage: 'qa-sdk catalog list                등록된 카탈로그 목록', handlerKey: 'catalog.list' },
+  { id: 'catalog.info', path: ['info'], usage: 'qa-sdk catalog info <id>           카탈로그 상세 정보', handlerKey: 'catalog.info' },
+] as const satisfies readonly CommandDescriptor[];
+
+const CATALOG_COMMAND_TREE = descriptorsToTree(CATALOG_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const OBS_COMMAND_SPECS = [
   { name: 'read', usage: 'qa-sdk obs read <path> [--vault <name>]             Obsidian 노트 읽기' },
@@ -490,14 +481,16 @@ const OBS_COMMAND_SPECS = [
   { name: 'stats', usage: 'qa-sdk obs stats [--vault <name>]' },
 ] as const satisfies readonly CommandUsageSpec<string>[];
 
-const OBS_COMMAND_TREE = [
-  { segment: 'read', usage: 'qa-sdk obs read <path> [--vault <name>]             Obsidian 노트 읽기', handlerKey: 'obs.read' },
-  { segment: 'search', usage: 'qa-sdk obs search <query> [--vault <name>]          Obsidian 검색', handlerKey: 'obs.search' },
-  { segment: 'append', usage: 'qa-sdk obs append <path> <content> [--vault <name>] Obsidian 노트에 내용 추가', handlerKey: 'obs.append' },
-  { segment: 'backlinks', usage: 'qa-sdk obs backlinks <name> [--vault <name>]        Obsidian 백링크 조회', handlerKey: 'obs.backlinks' },
-  { segment: 'list', usage: 'qa-sdk obs list [prefix] [--vault <name>]', handlerKey: 'obs.list' },
-  { segment: 'stats', usage: 'qa-sdk obs stats [--vault <name>]', handlerKey: 'obs.stats' },
-] as const satisfies readonly CliCommandNode[];
+const OBS_COMMAND_DESCRIPTORS = [
+  { id: 'obs.read', path: ['read'], usage: 'qa-sdk obs read <path> [--vault <name>]             Obsidian 노트 읽기', handlerKey: 'obs.read' },
+  { id: 'obs.search', path: ['search'], usage: 'qa-sdk obs search <query> [--vault <name>]          Obsidian 검색', handlerKey: 'obs.search' },
+  { id: 'obs.append', path: ['append'], usage: 'qa-sdk obs append <path> <content> [--vault <name>] Obsidian 노트에 내용 추가', handlerKey: 'obs.append' },
+  { id: 'obs.backlinks', path: ['backlinks'], usage: 'qa-sdk obs backlinks <name> [--vault <name>]        Obsidian 백링크 조회', handlerKey: 'obs.backlinks' },
+  { id: 'obs.list', path: ['list'], usage: 'qa-sdk obs list [prefix] [--vault <name>]', handlerKey: 'obs.list' },
+  { id: 'obs.stats', path: ['stats'], usage: 'qa-sdk obs stats [--vault <name>]', handlerKey: 'obs.stats' },
+] as const satisfies readonly CommandDescriptor[];
+
+const OBS_COMMAND_TREE = descriptorsToTree(OBS_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 const DEF_TOP_LEVEL_USAGE_LINES = [
   'qa-sdk def sync [--db path]        docs → local definition SQLite 동기화',
@@ -578,25 +571,25 @@ Global Options:
 
 Usage:
 ${formatUsageLines(CORE_COMMAND_SPECS.map((item) => item.usage))}
-${formatUsageLines(MOTION_COMMAND_SPECS.map((item) => item.usage))}
-${formatUsageLines(SPEC_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageSpecs(MOTION_GROUP_COMMAND_SPECS)}
+${formatUsageSpecs(SPEC_GROUP_COMMAND_SPECS)}
 ${formatUsageLines(DX_COMMAND_SPECS_META.map((item) => item.usage))}
 
-${formatUsageSpecs(DKG_COMMAND_SPECS)}
+${formatUsageSpecs(DKG_GROUP_COMMAND_SPECS)}
 
-${formatUsageLines(FLOW_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageLines(FLOW_GROUP_COMMAND_SPECS.map((item) => item.usage))}
 
-${formatUsageLines(SERVICE_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageLines(SERVICE_GROUP_COMMAND_SPECS.map((item) => item.usage))}
 
-${formatUsageLines(INGEST_COMMAND_SPECS.map((item) => item.usage))}
-${formatUsageLines(GATE_COMMAND_SPECS.map((item) => item.usage))}
-${formatUsageLines(QUERY_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageSpecs(INGEST_GROUP_COMMAND_SPECS)}
+${formatUsageSpecs(GATE_GROUP_COMMAND_SPECS)}
+${formatUsageSpecs(QUERY_GROUP_COMMAND_SPECS)}
 
-${formatUsageSpecs(REVIEW_COMMAND_SPECS)}
+${formatUsageSpecs(REVIEW_GROUP_COMMAND_SPECS)}
 
 ${formatUsageLines(TEST_COMMAND_SPECS.map((item) => item.usage))}
 
-${formatUsageLines(QUALITY_COMMAND_SPECS.map((item) => item.usage))}
+${formatUsageLines(QUALITY_GROUP_COMMAND_SPECS.map((item) => item.usage))}
 
 ${formatUsageLines(CATALOG_COMMAND_SPECS.map((item) => item.usage))}
 ${formatUsageLines(DEF_TOP_LEVEL_USAGE_LINES)}
@@ -606,36 +599,38 @@ Commands:
 ${formatCommandDetailBlocks(COMMAND_DETAIL_SPECS)}
 `.trim();
 
-const DEF_COMMAND_TREE = [
-  { segment: 'scan-audit', handlerKey: 'def.scan-audit' },
-  { segment: 'topdown', handlerKey: 'def.topdown' },
-  { segment: 'bottomup', handlerKey: 'def.bottomup' },
-  { segment: 'context', handlerKey: 'def.context' },
-  { segment: 'boundary', handlerKey: 'def.boundary' },
-  { segment: 'boundary-context', handlerKey: 'def.boundary-context' },
-  { segment: 'audit', handlerKey: 'def.audit' },
-  { segment: 'validate', handlerKey: 'def.validate' },
-  { segment: 'stats', handlerKey: 'def.stats' },
-  { segment: 'sync', handlerKey: 'def.sync' },
-  { segment: 'read', handlerKey: 'def.read' },
-  { segment: 'list', handlerKey: 'def.list' },
-  { segment: 'get', handlerKey: 'def.get' },
-  { segment: 'body', handlerKey: 'def.body' },
-  { segment: 'children', handlerKey: 'def.children' },
-  { segment: 'parent', handlerKey: 'def.parent' },
-  { segment: 'incoming', handlerKey: 'def.incoming' },
-  { segment: 'outgoing', handlerKey: 'def.outgoing' },
-  { segment: 'search', handlerKey: 'def.search' },
-  { segment: 'concepts', handlerKey: 'def.concepts' },
-  { segment: 'impact', handlerKey: 'def.impact' },
-  { segment: 'check', handlerKey: 'def.check' },
-  { segment: 'audit-db', handlerKey: 'def.audit-db' },
-  { segment: 'overview', handlerKey: 'def.overview' },
-  { segment: 'link-rules', handlerKey: 'def.link-rules' },
-  { segment: 'find-by-file', handlerKey: 'def.find-by-file' },
-  { segment: 'guide', handlerKey: 'def.guide' },
-  { segment: 'state', handlerKey: 'def.state' },
-] as const satisfies readonly CliCommandNode[];
+const DEF_COMMAND_DESCRIPTORS = [
+  { id: 'def.scan-audit', path: ['scan-audit'], handlerKey: 'def.scan-audit' },
+  { id: 'def.topdown', path: ['topdown'], handlerKey: 'def.topdown' },
+  { id: 'def.bottomup', path: ['bottomup'], handlerKey: 'def.bottomup' },
+  { id: 'def.context', path: ['context'], handlerKey: 'def.context' },
+  { id: 'def.boundary', path: ['boundary'], handlerKey: 'def.boundary' },
+  { id: 'def.boundary-context', path: ['boundary-context'], handlerKey: 'def.boundary-context' },
+  { id: 'def.audit', path: ['audit'], handlerKey: 'def.audit' },
+  { id: 'def.validate', path: ['validate'], handlerKey: 'def.validate' },
+  { id: 'def.stats', path: ['stats'], handlerKey: 'def.stats' },
+  { id: 'def.sync', path: ['sync'], handlerKey: 'def.sync' },
+  { id: 'def.read', path: ['read'], handlerKey: 'def.read' },
+  { id: 'def.list', path: ['list'], handlerKey: 'def.list' },
+  { id: 'def.get', path: ['get'], handlerKey: 'def.get' },
+  { id: 'def.body', path: ['body'], handlerKey: 'def.body' },
+  { id: 'def.children', path: ['children'], handlerKey: 'def.children' },
+  { id: 'def.parent', path: ['parent'], handlerKey: 'def.parent' },
+  { id: 'def.incoming', path: ['incoming'], handlerKey: 'def.incoming' },
+  { id: 'def.outgoing', path: ['outgoing'], handlerKey: 'def.outgoing' },
+  { id: 'def.search', path: ['search'], handlerKey: 'def.search' },
+  { id: 'def.concepts', path: ['concepts'], handlerKey: 'def.concepts' },
+  { id: 'def.impact', path: ['impact'], handlerKey: 'def.impact' },
+  { id: 'def.check', path: ['check'], handlerKey: 'def.check' },
+  { id: 'def.audit-db', path: ['audit-db'], handlerKey: 'def.audit-db' },
+  { id: 'def.overview', path: ['overview'], handlerKey: 'def.overview' },
+  { id: 'def.link-rules', path: ['link-rules'], handlerKey: 'def.link-rules' },
+  { id: 'def.find-by-file', path: ['find-by-file'], handlerKey: 'def.find-by-file' },
+  { id: 'def.guide', path: ['guide'], handlerKey: 'def.guide' },
+  { id: 'def.state', path: ['state'], handlerKey: 'def.state' },
+] as const satisfies readonly CommandDescriptor[];
+
+const DEF_COMMAND_TREE = descriptorsToTree(DEF_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
 
 async function dispatchDefCommand(handlerKey: string, rest: string[]): Promise<void> {
   const subcommand = handlerKey.slice(4);
@@ -1011,113 +1006,42 @@ async function dispatchDkgCommand(handlerKey: string, rest: string[]): Promise<v
   }
 }
 
-async function dispatchServiceCommand(handlerKey: string, rest: string[]): Promise<void> {
-  switch (handlerKey) {
-    case 'service.list':
-      await serviceList(rest);
-      return;
-    case 'service.show':
-      await serviceShow(rest);
-      return;
-    case 'service.health':
-      await serviceHealth(rest);
-      return;
-    case 'service.health-all':
-      await serviceHealthAll(rest);
-      return;
-    case 'service.mode':
-      await serviceMode(rest);
-      return;
-    case 'service.owners':
-      await serviceOwners(rest);
-      return;
-    case 'service.ownership-topology':
-      await serviceOwnershipTopology(rest);
-      return;
-    case 'service.endpoints':
-      await serviceEndpoints(rest);
-      return;
-    case 'service.cleanup-plan':
-      await serviceCleanupPlan(rest);
-      return;
-    case 'service.cleanup-draft':
-      await serviceCleanupDraft(rest);
-      return;
-    case 'service.cleanup-activate':
-      await serviceCleanupActivate(rest);
-      return;
-    case 'service.cleanup-execute':
-      await serviceCleanupExecute(rest);
-      return;
-    case 'service.app.list':
-      serviceAppList(rest);
-      return;
-    case 'service.app.show':
-      serviceAppShow(rest);
-      return;
+async function dispatchFromRegistry(
+  registry: Readonly<Record<string, RestCommandHandler>>,
+  handlerKey: string,
+  rest: string[],
+): Promise<void> {
+  const handler = registry[handlerKey];
+  if (handler) {
+    await handler(rest);
   }
+}
+
+async function dispatchServiceCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(SERVICE_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchQualityCommand(handlerKey: string, rest: string[]): Promise<void> {
-  const subcommand = handlerKey.slice(8);
-  await cliQuality([subcommand, ...rest]);
-}
-async function dispatchReviewCommand(handlerKey: string, rest: string[]): Promise<void> {
-  switch (handlerKey) {
-    case 'review.mark':
-      await reviewMark(rest);
-      return;
-    case 'review.status':
-      reviewStatus(rest);
-      return;
-    case 'review.dashboard':
-      reviewDashboard(rest);
-      return;
-    case 'review.log':
-      reviewLog(rest);
-      return;
-    case 'review.request':
-      await reviewRequest(rest);
-      return;
-    case 'review.requests':
-      reviewRequests(rest);
-      return;
-    case 'review.show-request':
-      reviewShowRequest(rest);
-      return;
-    case 'review.bridge-request':
-      await reviewBridgeRequest(rest);
-      return;
-  }
+  await dispatchFromRegistry(QUALITY_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
+async function dispatchReviewCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(REVIEW_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+const INGEST_HANDLER_REGISTRY = {
+  'ingest.health': ingestHealth,
+  'ingest.send': ingestSend,
+  'ingest.recent': ingestRecent,
+  'ingest.trace': ingestTrace,
+  'ingest.status': ingestStatus,
+  'ingest.services': ingestServices,
+  'ingest.mode': ingestMode,
+  'ingest.insights': ingestInsights,
+} satisfies Readonly<Record<string, RestCommandHandler>>;
+
 async function dispatchIngestCommand(handlerKey: string, rest: string[]): Promise<void> {
-  switch (handlerKey) {
-    case 'ingest.health':
-      await ingestHealth(rest);
-      return;
-    case 'ingest.send':
-      await ingestSend(rest);
-      return;
-    case 'ingest.recent':
-      await ingestRecent(rest);
-      return;
-    case 'ingest.trace':
-      await ingestTrace(rest);
-      return;
-    case 'ingest.status':
-      await ingestStatus(rest);
-      return;
-    case 'ingest.services':
-      await ingestServices(rest);
-      return;
-    case 'ingest.mode':
-      await ingestMode(rest);
-      return;
-    case 'ingest.insights':
-      await ingestInsights(rest);
-      return;
-  }
+  await dispatchFromRegistry(INGEST_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -1156,44 +1080,257 @@ async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<v
   }
 }
 
+const GATE_HANDLER_REGISTRY = {
+  'gate.health': gateHealth,
+  'gate.check': gateCheck,
+  'gate.classify': gateClassify,
+} satisfies Readonly<Record<string, RestCommandHandler>>;
+
 async function dispatchGateCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(GATE_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+const QUERY_HANDLER_REGISTRY = {
+  'query.health': queryHealth,
+  'query.resolve': queryResolve,
+  'query.rules': queryRules,
+} satisfies Readonly<Record<string, RestCommandHandler>>;
+
+async function dispatchQueryCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(QUERY_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+const SPEC_HANDLER_REGISTRY = {
+  'spec.list': runSpecList,
+  'spec.resolve': runSpecResolve,
+  'spec.validate': runSpecValidate,
+  'spec.trace': runSpecTrace,
+  'spec.decode': runSpecDecode,
+  'spec.codegen': runSpecCodegen,
+} satisfies Readonly<Record<string, RestCommandHandler>>;
+
+async function dispatchSpecCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(SPEC_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchTestCommand(handlerKey: string, rest: string[]): Promise<void> {
   switch (handlerKey) {
-    case 'gate.health':
-      await gateHealth(rest);
+    case 'test.scan': {
+      const { values } = parseArgs({
+        args: rest,
+        options: { dir: { type: 'string' }, db: { type: 'string' } },
+        strict: false,
+      });
+      testScan({ dir: values['dir'] as string | undefined, db: values['db'] as string | undefined });
       return;
-    case 'gate.check':
-      await gateCheck(rest);
+    }
+    case 'test.assign': {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          'a-coord': { type: 'string' },
+          force: { type: 'boolean' },
+          db: { type: 'string' },
+        },
+        strict: false,
+      });
+      testAssign({ aCoord: values['a-coord'] as string | undefined, force: values['force'] as boolean | undefined, db: values['db'] as string | undefined });
       return;
-    case 'gate.classify':
-      await gateClassify(rest);
+    }
+    case 'test.scaffold': {
+      const { values } = parseArgs({
+        args: rest,
+        options: { 'b-coord': { type: 'string' }, mirror: { type: 'string' }, db: { type: 'string' } },
+        strict: false,
+      });
+      testScaffold({ bCoord: values['b-coord'] as string | undefined, mirror: values['mirror'] as string | undefined, db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test.status': {
+      const { values } = parseArgs({
+        args: rest,
+        options: { db: { type: 'string' } },
+        strict: false,
+      });
+      testStatus({ db: values['db'] as string | undefined });
+      return;
+    }
+    case 'test.report': {
+      const { values } = parseArgs({
+        args: rest,
+        options: { db: { type: 'string' } },
+        strict: false,
+      });
+      testReport({ db: values['db'] as string | undefined });
+      return;
+    }
+  }
+}
+
+async function dispatchCatalogCommand(handlerKey: string, rest: string[]): Promise<void> {
+  switch (handlerKey) {
+    case 'catalog.list': {
+      const reg = getCatalogRegistry();
+      const catalogs = reg.listCatalogs();
+      if (catalogs.length === 0) {
+        console.log('  등록된 카탈로그 없음');
+      } else {
+        console.log(`\n══ Catalogs (${catalogs.length}) ══\n`);
+        for (const c of catalogs) {
+          console.log(`  ${c.id.padEnd(15)} ${c.name.padEnd(20)} prefixes=${c.prefixCount}`);
+        }
+      }
+      return;
+    }
+    case 'catalog.info': {
+      const infoId = rest[0];
+      if (!infoId) {
+        console.error('Usage: qa-sdk catalog info <id>');
+        return;
+      }
+      const reg = getCatalogRegistry();
+      if (!reg.has(infoId)) {
+        console.error(
+          `카탈로그 '${infoId}' 없음. 사용 가능: ${reg
+            .listCatalogs()
+            .map((c) => c.id)
+            .join(', ')}`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+      const cat = reg.getCatalog(infoId);
+      console.log(`\n══ Catalog: ${cat.id} ══`);
+      console.log(`  name:     ${cat.name}`);
+      console.log(`  axes:     ${Object.keys(cat.axes).length}`);
+      console.log(`  prefixes: ${Object.keys(cat.prefixes).length}`);
+      console.log(`  tables:   ${cat.tables ? Object.keys(cat.tables).length : 0}`);
+      console.log(`\n  Axes:`);
+      for (const [id, a] of Object.entries(cat.axes)) {
+        const versions = Object.keys(a.versions);
+        console.log(`    ${id.padEnd(15)} versions=${versions.length}`);
+      }
+      console.log(`\n  Prefixes:`);
+      for (const [id, p] of Object.entries(cat.prefixes)) {
+        console.log(`    ${id.padEnd(15)} ${p.name.padEnd(15)} dims=${p.labels.length}`);
+      }
+      return;
+    }
+  }
+}
+
+const MOTION_HANDLER_REGISTRY = {
+  'motion.validate': motionValidate,
+  'motion.inspect': motionInspect,
+  'motion.workspace.list': motionWorkspaceList,
+  'motion.workspace.show': motionWorkspaceShow,
+  'motion.workspace.create': motionWorkspaceCreate,
+  'motion.workspace.delete': motionWorkspaceDelete,
+  'motion.scene.list': motionSceneList,
+  'motion.scene.show': motionSceneShow,
+  'motion.scene.create': motionSceneCreate,
+  'motion.scene.delete': motionSceneDelete,
+  'motion.export': motionExport,
+  'motion.import': motionImport,
+  'motion.apply': motionApply,
+  'motion.preview': motionPreview,
+} satisfies Readonly<Record<string, RestCommandHandler>>;
+
+async function dispatchMotionCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(MOTION_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchFlowCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(FLOW_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchRootCommand(handlerKey: string, rest: string[]): Promise<void> {
+  switch (handlerKey) {
+    case 'root.init':
+      await runInit(rest);
+      return;
+    case 'root.register':
+      await runRegister(rest);
+      return;
+    case 'root.dry-run':
+      await runDryRun(rest);
+      return;
+    case 'root.codegen':
+      await runCodegen(rest);
+      return;
+    case 'root.inspect':
+      await runInspect(rest);
+      return;
+    case 'root.sync-obsidian':
+      runSyncObsidian(rest);
+      return;
+    case 'root.encode':
+      runEncode(rest);
+      return;
+    case 'root.decode':
+      runDecode(rest);
+      return;
+    case 'root.resolve':
+      runResolve(rest);
+      return;
+    case 'root.find-version':
+      runFindVersion(rest);
+      return;
+    case 'root.list-prefixes':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
+      cliListPrefixes(loadedCatalog!, { json: rest.includes('--json') });
+      return;
+    case 'root.list-axes':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
+      cliListAxes(loadedCatalog!, { json: rest.includes('--json') });
+      return;
+    case 'root.derive-refs':
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
+      cliDeriveRefs(loadedCatalog!, { check: true });
+      return;
+    case 'root.impact':
+      await runImpactCmd(rest);
       return;
   }
 }
 
-async function dispatchQueryCommand(handlerKey: string, rest: string[]): Promise<void> {
-  switch (handlerKey) {
-    case 'query.health':
-      await queryHealth(rest);
-      return;
-    case 'query.resolve':
-      await queryResolve(rest);
-      return;
-    case 'query.rules':
-      await queryRules(rest);
-      return;
-  }
+async function dispatchScanCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(SCAN_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchGitCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(GIT_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchPrefixCommand(handlerKey: string, rest: string[]): Promise<void> {
+  if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+  await dispatchFromRegistry(createPrefixHandlerRegistry(loadedCatalog), handlerKey, rest);
+}
+
+async function dispatchFacetCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(FACET_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
+  { rootSegments: ['scan'], rootName: 'qa-sdk scan', tree: SCAN_GROUP_COMMAND_TREE, dispatch: dispatchScanCommand },
+  { rootSegments: ['git'], rootName: 'qa-sdk git', tree: GIT_GROUP_COMMAND_TREE, dispatch: dispatchGitCommand },
+  { rootSegments: ['prefix'], rootName: 'qa-sdk prefix', tree: PREFIX_GROUP_COMMAND_TREE, dispatch: dispatchPrefixCommand },
+  { rootSegments: ['facet'], rootName: 'qa-sdk facet', tree: FACET_GROUP_COMMAND_TREE, dispatch: dispatchFacetCommand },
   { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_COMMAND_TREE, dispatch: dispatchDefCommand },
-  { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_COMMAND_TREE, dispatch: dispatchServiceCommand },
-  { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_COMMAND_TREE, dispatch: dispatchDkgCommand },
-  { rootSegments: ['quality'], rootName: 'qa-sdk quality', tree: QUALITY_COMMAND_TREE, dispatch: dispatchQualityCommand },
-  { rootSegments: ['review'], rootName: 'qa-sdk review', tree: REVIEW_COMMAND_TREE, dispatch: dispatchReviewCommand },
-  { rootSegments: ['ingest'], rootName: 'qa-sdk ingest', tree: INGEST_COMMAND_TREE, dispatch: dispatchIngestCommand },
+  { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
+  { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
+  { rootSegments: ['quality'], rootName: 'qa-sdk quality', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
+  { rootSegments: ['review'], rootName: 'qa-sdk review', tree: REVIEW_GROUP_COMMAND_TREE, dispatch: dispatchReviewCommand },
+  { rootSegments: ['ingest'], rootName: 'qa-sdk ingest', tree: INGEST_GROUP_COMMAND_TREE, dispatch: dispatchIngestCommand },
   { rootSegments: ['obs'], rootName: 'qa-sdk obs', tree: OBS_COMMAND_TREE, dispatch: dispatchObsCommand },
-  { rootSegments: ['gate'], rootName: 'qa-sdk gate', tree: GATE_COMMAND_TREE, dispatch: dispatchGateCommand },
-  { rootSegments: ['query'], rootName: 'qa-sdk query', tree: QUERY_COMMAND_TREE, dispatch: dispatchQueryCommand },
+  { rootSegments: ['gate'], rootName: 'qa-sdk gate', tree: GATE_GROUP_COMMAND_TREE, dispatch: dispatchGateCommand },
+  { rootSegments: ['query'], rootName: 'qa-sdk query', tree: QUERY_GROUP_COMMAND_TREE, dispatch: dispatchQueryCommand },
+  { rootSegments: ['spec'], rootName: 'qa-sdk spec', tree: SPEC_GROUP_COMMAND_TREE, dispatch: dispatchSpecCommand },
+  { rootSegments: ['test'], rootName: 'qa-sdk test', tree: TEST_COMMAND_TREE, dispatch: dispatchTestCommand },
+  { rootSegments: ['catalog'], rootName: 'qa-sdk catalog', tree: CATALOG_COMMAND_TREE, dispatch: dispatchCatalogCommand },
+  { rootSegments: ['motion'], rootName: 'qa-sdk motion', tree: MOTION_GROUP_COMMAND_TREE, dispatch: dispatchMotionCommand },
+  { rootSegments: ['flow'], rootName: 'qa-sdk flow', tree: FLOW_GROUP_COMMAND_TREE, dispatch: dispatchFlowCommand },
+  { rootSegments: [], rootName: 'qa-sdk', tree: ROOT_GROUP_COMMAND_TREE, dispatch: dispatchRootCommand },
 ] as const;
 
 function createHandlerRegistry(dispatch: TreeDispatch): Record<string, (ctx: CommandContext) => Promise<void>> {
@@ -1305,134 +1442,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   switch (sub.name) {
-    case 'init':
-      return runInit(sub.rest);
-    case 'scan git':
-      return runScanGit(sub.rest);
-    case 'git conflicts':
-      return runGitConflicts(sub.rest);
-    case 'register':
-      return runRegister(sub.rest);
-    case 'dry-run':
-      return runDryRun(sub.rest);
-    case 'codegen':
-      return runCodegen(sub.rest);
-    case 'inspect':
-      return runInspect(sub.rest);
-    case 'motion validate':
-      return motionValidate(sub.rest);
-    case 'motion inspect':
-      return motionInspect(sub.rest);
-    case 'motion workspace list':
-      return motionWorkspaceList(sub.rest);
-    case 'motion workspace show':
-      return motionWorkspaceShow(sub.rest);
-    case 'motion workspace create':
-      return motionWorkspaceCreate(sub.rest);
-    case 'motion workspace delete':
-      return motionWorkspaceDelete(sub.rest);
-    case 'motion scene list':
-      return motionSceneList(sub.rest);
-    case 'motion scene show':
-      return motionSceneShow(sub.rest);
-    case 'motion scene create':
-      return motionSceneCreate(sub.rest);
-    case 'motion scene delete':
-      return motionSceneDelete(sub.rest);
-    case 'motion export':
-      return motionExport(sub.rest);
-    case 'motion import':
-      return motionImport(sub.rest);
-    case 'motion apply':
-      return motionApply(sub.rest);
-    case 'motion preview':
-      return motionPreview(sub.rest);
-    case 'spec list':
-      return runSpecList(sub.rest);
-    case 'spec resolve':
-      return runSpecResolve(sub.rest);
-    case 'spec validate':
-      return runSpecValidate(sub.rest);
-    case 'spec trace':
-      return runSpecTrace(sub.rest);
-    case 'spec decode':
-      return runSpecDecode(sub.rest);
-    case 'spec codegen':
-      return runSpecCodegen(sub.rest);
     case 'spec drift': {
       const { cliSpecDrift } = await import('./commands/spec-drift.js');
       return cliSpecDrift(sub.rest);
     }
 
-    // Obsidian 동기화
-    case 'sync-obsidian':
-      return runSyncObsidian(sub.rest);
-
-    // DX 명령어
-    case 'encode':
-      return runEncode(sub.rest);
-    case 'decode':
-      return runDecode(sub.rest);
-    case 'resolve':
-      return runResolve(sub.rest);
-    case 'find-version':
-      return runFindVersion(sub.rest);
-    case 'list-prefixes':
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
-      cliListPrefixes(loadedCatalog!, { json: sub.rest.includes('--json') });
-      return;
-    case 'list-axes':
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
-      cliListAxes(loadedCatalog!, { json: sub.rest.includes('--json') });
-      return;
-    case 'derive-refs':
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- DX_COMMANDS → needsCatalog → loadedCatalog 보장
-      cliDeriveRefs(loadedCatalog!, { check: true });
-      return;
-    case 'impact':
-      return runImpactCmd(sub.rest);
-
-    case 'prefix stamp': {
-      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
-      const psServiceIdx = sub.rest.indexOf('--service');
-      prefixStamp(loadedCatalog, {
-        update: sub.rest.includes('--update'),
-        dryRun: sub.rest.includes('--dry-run'),
-        service: psServiceIdx >= 0 ? sub.rest[psServiceIdx + 1] : undefined,
-        paths: sub.rest.filter(a => !a.startsWith('--') && (psServiceIdx < 0 || sub.rest.indexOf(a) !== psServiceIdx + 1)),
-      });
-      return;
-    }
-    case 'prefix drift':
-      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
-      prefixDrift(loadedCatalog, sub.rest.filter(a => !a.startsWith('--')));
-      return;
-    case 'prefix find': {
-      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
-      const pfDimIdx = sub.rest.indexOf('--dim');
-      const pfVerIdx = sub.rest.indexOf('--version');
-      prefixFind(loadedCatalog, sub.rest[0]?.startsWith('--') ? undefined : sub.rest[0], {
-        dim: pfDimIdx >= 0 ? sub.rest[pfDimIdx + 1] : undefined,
-        version: pfVerIdx >= 0 ? sub.rest[pfVerIdx + 1] : undefined,
-        summary: sub.rest.includes('--summary'),
-      });
-      return;
-    }
-    case 'prefix migrate': {
-      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
-      const [pmPrefix, pmFrom, pmTo] = sub.rest.filter(a => !a.startsWith('--'));
-      if (!pmPrefix || !pmFrom || !pmTo) {
-        console.error('Usage: qa-sdk prefix migrate <prefixId> <fromVersion> <toVersion> [--dry-run]');
-        return;
-      }
-      prefixMigrate(loadedCatalog, pmPrefix, pmFrom, pmTo, { dryRun: sub.rest.includes('--dry-run') });
-      return;
-    }
-    case 'prefix impact':
-      if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
-      if (!sub.rest[0]) { console.error('Usage: qa-sdk prefix impact <prefixId>'); return; }
-      prefixImpact(loadedCatalog, sub.rest[0]);
-      return;
     // Definition Catalog 명령어
     case 'def help':
       await cliDef(['help', ...sub.rest]);
@@ -1445,175 +1459,6 @@ export async function main(argv = process.argv.slice(2)) {
     case 'quality':
       await cliQuality(sub.rest);
       return;
-
-    // Catalog 명령어
-    case 'catalog list': {
-      const reg = getCatalogRegistry();
-      const catalogs = reg.listCatalogs();
-      if (catalogs.length === 0) {
-        console.log('  등록된 카탈로그 없음');
-      } else {
-        console.log(`\n══ Catalogs (${catalogs.length}) ══\n`);
-        for (const c of catalogs) {
-          console.log(`  ${c.id.padEnd(15)} ${c.name.padEnd(20)} prefixes=${c.prefixCount}`);
-        }
-      }
-      return;
-    }
-    case 'catalog info': {
-      const infoId = sub.rest[0];
-      if (!infoId) {
-        console.error('Usage: qa-sdk catalog info <id>');
-        return;
-      }
-      const reg = getCatalogRegistry();
-      if (!reg.has(infoId)) {
-        console.error(
-          `카탈로그 '${infoId}' 없음. 사용 가능: ${reg
-            .listCatalogs()
-            .map((c) => c.id)
-            .join(', ')}`,
-        );
-        process.exitCode = 1;
-        return;
-      }
-      const cat = reg.getCatalog(infoId);
-      console.log(`\n══ Catalog: ${cat.id} ══`);
-      console.log(`  name:     ${cat.name}`);
-      console.log(`  axes:     ${Object.keys(cat.axes).length}`);
-      console.log(`  prefixes: ${Object.keys(cat.prefixes).length}`);
-      console.log(`  tables:   ${cat.tables ? Object.keys(cat.tables).length : 0}`);
-      console.log(`\n  Axes:`);
-      for (const [id, a] of Object.entries(cat.axes)) {
-        const versions = Object.keys(a.versions);
-        console.log(`    ${id.padEnd(15)} versions=${versions.length}`);
-      }
-      console.log(`\n  Prefixes:`);
-      for (const [id, p] of Object.entries(cat.prefixes)) {
-        console.log(`    ${id.padEnd(15)} ${p.name.padEnd(15)} dims=${p.labels.length}`);
-      }
-      return;
-    }
-
-    // Decision Flow
-    case 'flow list':
-      flowList();
-      return;
-    case 'flow start':
-      flowStart(sub.rest);
-      return;
-    case 'flow select':
-      flowSelect(sub.rest);
-      return;
-    case 'flow status':
-      flowStatus(sub.rest);
-      return;
-    case 'flow trace':
-      flowTrace(sub.rest);
-      return;
-    case 'flow analyze':
-      flowAnalyze(sub.rest);
-      return;
-    case 'flow compare':
-      flowCompare(sub.rest);
-      return;
-    case 'flow policy candidates':
-      flowPolicyCandidates(sub.rest);
-      return;
-    case 'flow policy approve':
-      flowPolicyApprove(sub.rest);
-      return;
-    case 'flow policy reject':
-      flowPolicyReject(sub.rest);
-      return;
-    case 'flow policy list':
-      flowPolicyList();
-      return;
-    case 'flow policy learn':
-      flowPolicyLearn(sub.rest);
-      return;
-    case 'flow lookup':
-      flowLookup(sub.rest);
-      return;
-    case 'flow history':
-      flowHistory(sub.rest);
-      return;
-    case 'flow verdict':
-      flowVerdict(sub.rest);
-      return;
-    case 'flow judge':
-      flowJudge(sub.rest);
-      return;
-
-    // Test 하네스 명령어
-    case 'test scan': {
-      const { values } = parseArgs({
-        args: sub.rest,
-        options: { dir: { type: 'string' }, db: { type: 'string' } },
-        strict: false,
-      });
-      testScan({ dir: values['dir'] as string | undefined, db: values['db'] as string | undefined });
-      return;
-    }
-    case 'test assign': {
-      const { values } = parseArgs({
-        args: sub.rest,
-        options: {
-          'a-coord': { type: 'string' },
-          force: { type: 'boolean' },
-          db: { type: 'string' },
-        },
-        strict: false,
-      });
-      testAssign({ aCoord: values['a-coord'] as string | undefined, force: values['force'] as boolean | undefined, db: values['db'] as string | undefined });
-      return;
-    }
-    case 'test scaffold': {
-      const { values } = parseArgs({
-        args: sub.rest,
-        options: { 'b-coord': { type: 'string' }, mirror: { type: 'string' }, db: { type: 'string' } },
-        strict: false,
-      });
-      testScaffold({ bCoord: values['b-coord'] as string | undefined, mirror: values['mirror'] as string | undefined, db: values['db'] as string | undefined });
-      return;
-    }
-    case 'test status': {
-      const { values } = parseArgs({
-        args: sub.rest,
-        options: { db: { type: 'string' } },
-        strict: false,
-      });
-      testStatus({ db: values['db'] as string | undefined });
-      return;
-    }
-    case 'test report': {
-      const { values } = parseArgs({
-        args: sub.rest,
-        options: { db: { type: 'string' } },
-        strict: false,
-      });
-      testReport({ db: values['db'] as string | undefined });
-      return;
-    }
-
-    case 'facet scan': {
-      const { facetScan } = await import('./commands/facet-scan.js');
-      const serviceIdx = sub.rest.indexOf('--service');
-      const serviceId = serviceIdx >= 0 ? sub.rest[serviceIdx + 1] : undefined;
-      const outputIdx = sub.rest.indexOf('--output');
-      const output = outputIdx >= 0 ? sub.rest[outputIdx + 1] : undefined;
-      const noDeps = sub.rest.includes('--no-deps');
-      const root = serviceId ? resolve('packages', serviceId) : process.cwd();
-      facetScan(root, { output, deps: !noDeps });
-      return;
-    }
-    case 'facet inject': {
-      const { injectFacetExports } = await import('./commands/facet-inject.js');
-      const dir = sub.rest[0] ?? process.cwd();
-      const count = injectFacetExports(dir);
-      console.log(`export 주입: ${count}건`);
-      return;
-    }
 
     default:
       console.error(`알 수 없는 명령: ${sub.name}`);
@@ -1634,6 +1479,42 @@ interface InternalSubcommand extends Subcommand {
 }
 
 function resolveSubcommandInternal(args: string[]): InternalSubcommand {
+  const scanResolved = resolveCliTreeCommand(args, ['scan'], SCAN_GROUP_COMMAND_TREE);
+  if (scanResolved) {
+    return {
+      name: scanResolved.commandName,
+      rest: scanResolved.rest,
+      handlerKey: scanResolved.node.handlerKey,
+    };
+  }
+
+  const gitResolved = resolveCliTreeCommand(args, ['git'], GIT_GROUP_COMMAND_TREE);
+  if (gitResolved) {
+    return {
+      name: gitResolved.commandName,
+      rest: gitResolved.rest,
+      handlerKey: gitResolved.node.handlerKey,
+    };
+  }
+
+  const prefixResolved = resolveCliTreeCommand(args, ['prefix'], PREFIX_GROUP_COMMAND_TREE);
+  if (prefixResolved) {
+    return {
+      name: prefixResolved.commandName,
+      rest: prefixResolved.rest,
+      handlerKey: prefixResolved.node.handlerKey,
+    };
+  }
+
+  const facetResolved = resolveCliTreeCommand(args, ['facet'], FACET_GROUP_COMMAND_TREE);
+  if (facetResolved) {
+    return {
+      name: facetResolved.commandName,
+      rest: facetResolved.rest,
+      handlerKey: facetResolved.node.handlerKey,
+    };
+  }
+
   const defResolved = resolveCliTreeCommand(args, ['def'], DEF_COMMAND_TREE);
   if (defResolved) {
     return {
@@ -1643,7 +1524,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const serviceResolved = resolveCliTreeCommand(args, ['service'], SERVICE_COMMAND_TREE);
+  const serviceResolved = resolveCliTreeCommand(args, ['service'], SERVICE_GROUP_COMMAND_TREE);
   if (serviceResolved) {
     return {
       name: serviceResolved.commandName,
@@ -1652,7 +1533,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const dkgResolved = resolveCliTreeCommand(args, ['dkg'], DKG_COMMAND_TREE);
+  const dkgResolved = resolveCliTreeCommand(args, ['dkg'], DKG_GROUP_COMMAND_TREE);
   if (dkgResolved) {
     return {
       name: dkgResolved.commandName,
@@ -1661,7 +1542,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const qualityResolved = resolveCliTreeCommand(args, ['quality'], QUALITY_COMMAND_TREE);
+  const qualityResolved = resolveCliTreeCommand(args, ['quality'], QUALITY_GROUP_COMMAND_TREE);
   if (qualityResolved) {
     return {
       name: qualityResolved.commandName,
@@ -1670,7 +1551,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const reviewResolved = resolveCliTreeCommand(args, ['review'], REVIEW_COMMAND_TREE);
+  const reviewResolved = resolveCliTreeCommand(args, ['review'], REVIEW_GROUP_COMMAND_TREE);
   if (reviewResolved) {
     return {
       name: reviewResolved.commandName,
@@ -1679,7 +1560,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const ingestResolved = resolveCliTreeCommand(args, ['ingest'], INGEST_COMMAND_TREE);
+  const ingestResolved = resolveCliTreeCommand(args, ['ingest'], INGEST_GROUP_COMMAND_TREE);
   if (ingestResolved) {
     return {
       name: ingestResolved.commandName,
@@ -1697,7 +1578,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const gateResolved = resolveCliTreeCommand(args, ['gate'], GATE_COMMAND_TREE);
+  const gateResolved = resolveCliTreeCommand(args, ['gate'], GATE_GROUP_COMMAND_TREE);
   if (gateResolved) {
     return {
       name: gateResolved.commandName,
@@ -1706,7 +1587,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  const queryResolved = resolveCliTreeCommand(args, ['query'], QUERY_COMMAND_TREE);
+  const queryResolved = resolveCliTreeCommand(args, ['query'], QUERY_GROUP_COMMAND_TREE);
   if (queryResolved) {
     return {
       name: queryResolved.commandName,
@@ -1715,70 +1596,63 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
     };
   }
 
-  // 3단어: "dkg decisions export" 등
-  const threeWord = [
-    'motion workspace list',
-    'motion workspace show',
-    'motion workspace create',
-    'motion workspace delete',
-    'motion scene list',
-    'motion scene show',
-    'motion scene create',
-    'motion scene delete',
-    'flow policy candidates',
-    'flow policy approve',
-    'flow policy reject',
-    'flow policy list',
-    'flow policy learn',
-  ];
-  if (args.length >= 3) {
-    const candidate = `${args[0]} ${args[1]} ${args[2]}`;
-    if (threeWord.includes(candidate)) {
-      return { name: candidate, rest: args.slice(3) };
-    }
+  const specResolved = resolveCliTreeCommand(args, ['spec'], SPEC_COMMAND_TREE);
+  if (specResolved) {
+    return {
+      name: specResolved.commandName,
+      rest: specResolved.rest,
+      handlerKey: specResolved.node.handlerKey,
+    };
   }
-  // 2단어: "scan git", "spec list", "spec resolve", "spec validate"
+
+  const testResolved = resolveCliTreeCommand(args, ['test'], TEST_GROUP_COMMAND_TREE);
+  if (testResolved) {
+    return {
+      name: testResolved.commandName,
+      rest: testResolved.rest,
+      handlerKey: testResolved.node.handlerKey,
+    };
+  }
+
+  const catalogResolved = resolveCliTreeCommand(args, ['catalog'], CATALOG_GROUP_COMMAND_TREE);
+  if (catalogResolved) {
+    return {
+      name: catalogResolved.commandName,
+      rest: catalogResolved.rest,
+      handlerKey: catalogResolved.node.handlerKey,
+    };
+  }
+
+  const motionResolved = resolveCliTreeCommand(args, ['motion'], MOTION_GROUP_COMMAND_TREE);
+  if (motionResolved) {
+    return {
+      name: motionResolved.commandName,
+      rest: motionResolved.rest,
+      handlerKey: motionResolved.node.handlerKey,
+    };
+  }
+
+  const flowResolved = resolveCliTreeCommand(args, ['flow'], FLOW_GROUP_COMMAND_TREE);
+  if (flowResolved) {
+    return {
+      name: flowResolved.commandName,
+      rest: flowResolved.rest,
+      handlerKey: flowResolved.node.handlerKey,
+    };
+  }
+
+  const rootResolved = resolveCliTreeCommand(args, [], ROOT_GROUP_COMMAND_TREE);
+  if (rootResolved) {
+    return {
+      name: rootResolved.commandName,
+      rest: rootResolved.rest,
+      handlerKey: rootResolved.node.handlerKey,
+    };
+  }
+
+  // 2단어 fallback: tree 미전환 command group + legacy direct commands
   const twoWord = [
-    'motion validate',
-    'motion inspect',
-    'motion export',
-    'motion import',
-    'motion apply',
-    'motion preview',
-    'scan git',
-    'git conflicts',
-    'spec list',
-    'spec resolve',
-    'spec validate',
-    'spec trace',
-    'spec decode',
-    'spec codegen',
     'spec drift',
-    'prefix stamp',
-    'prefix drift',
-    'prefix find',
-    'prefix migrate',
-    'prefix impact',
-    'catalog list',
-    'catalog info',
-    'flow list',
-    'flow start',
-    'flow select',
-    'flow status',
-    'flow trace',
-    'flow analyze',
-    'flow compare',
-    'flow lookup',
-    'flow history',
-    'flow verdict',
-    'flow judge',
-    'test scan',
-    'test assign',
-    'test scaffold',
-    'test status',
-    'test report',
-    'facet scan',
-    'facet inject',
   ];
   if (args.length >= 2) {
     const candidate = `${args[0]} ${args[1]}`;
@@ -1788,20 +1662,6 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
   }
   // 1단어 커맨드
   const oneWord = [
-    'init',
-    'register',
-    'dry-run',
-    'codegen',
-    'inspect',
-    'encode',
-    'decode',
-    'resolve',
-    'find-version',
-    'list-prefixes',
-    'list-axes',
-    'derive-refs',
-    'impact',
-    'sync-obsidian',
     'quality',
   ];
   if (oneWord.includes(args[0])) {

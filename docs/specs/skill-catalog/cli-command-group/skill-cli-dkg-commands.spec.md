@@ -39,6 +39,7 @@ DKG 그래프를 조회하고, 변경을 관찰하고, 의사결정을 기록하
 좌표계 변경을 코드 수정으로 바로 밀어 넣지 않고, graph에 기록된 변경 이유와 영향 분석을 먼저 보게 한다.
 그래야 headroom, overlap, migration, ownership 같은 구조 제약이 빠지지 않는다.
 parser와 top-level dispatch도 같은 command registry 목록을 쓰게 해, `dkg audit-events`나 `dkg spec transition` 같은 신규 surface가 한쪽만 누락되는 drift를 줄인다.
+최근에는 `CliCommandNode` tree pilot이 적용돼 `decisions/spec/transition` 하위 명령도 longest-match로 해석된다.
 
 ## 피드백 규칙 ^feedback
 

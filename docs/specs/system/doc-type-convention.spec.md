@@ -10,6 +10,8 @@ def:
   links:
     - target: definition-catalog-spec
       type: depends_on
+    - target: drizzle-orm-convention
+      type: traces_to
 ---
 
 # 문서 유형 컨벤션 — 6종 확장자 체계

@@ -13,6 +13,8 @@ def:
       type: implements
     - target: definition-harness
       type: depends_on
+    - target: definition-cross-loop-bridge-rule
+      type: traces_to
 ---
 
 ## 목적 ^purpose

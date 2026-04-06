@@ -1,7 +1,7 @@
 ---
 def:
   id: query-state-replay
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification
@@ -10,10 +10,6 @@ def:
   links:
     - target: query-api
       type: depends_on
-    - target: query-state-replay-todo
-      type: contains
-    - target: query-state-replay-plan
-      type: contains
 ---
 
 # Query Service State Replay — 시점 상태 재구성

@@ -17,9 +17,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest run",
+    "build": "pnpm --filter cli-command build && tsup",
+    "dev": "pnpm --filter cli-command build && tsup --watch",
+    "test": "pnpm --filter cli-command build && vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "db:generate": "drizzle-kit generate"
@@ -30,6 +30,7 @@
     "@qa-sdk/spec-core": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "codegen-core": "workspace:*",
+    "cli-command": "workspace:*",
     "config-loader": "workspace:*",
     "decision-flow": "workspace:*",
     "decision-flow-store": "workspace:*",

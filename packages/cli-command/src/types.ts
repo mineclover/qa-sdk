@@ -31,6 +31,28 @@ export interface CommandContext {
 /** 명령 handler */
 export type CommandHandler = (ctx: CommandContext) => Promise<void>;
 
+/** authored SSOT용 명령 기술자 */
+export interface CommandDescriptor {
+  /** 안정적인 식별자 (예: "service.health") */
+  id: string;
+  /** 루트 기준 경로 세그먼트 */
+  path: readonly string[];
+  /** 명령 설명 */
+  description?: string;
+  /** 사용법 문자열 */
+  usage?: string;
+  /** usage 아래 이어지는 줄 */
+  continuation?: readonly string[];
+  /** 위치 인자 정의 */
+  args?: readonly ArgDef[];
+  /** 옵션 정의 */
+  options?: readonly OptionDef[];
+  /** 실행 함수 */
+  handler?: CommandHandler;
+  /** 외부 dispatch용 핸들러 키 */
+  handlerKey?: string;
+}
+
 /** CLI 명령 트리 노드 */
 export interface CliCommandNode {
   /** 경로 세그먼트 (예: "deploy", "config") */

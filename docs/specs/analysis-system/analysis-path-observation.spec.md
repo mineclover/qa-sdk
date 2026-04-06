@@ -11,8 +11,6 @@ def:
   links:
     - target: analysis-convergence
       type: depends_on
-    - target: analysis-path-observation-todo
-      type: traces_to
 ---
 
 # Path Observation — 경로 관측 파생

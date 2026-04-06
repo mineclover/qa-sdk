@@ -9,7 +9,10 @@ export function generateHelp(rootName: string, tree: readonly CliCommandNode[], 
   if (node) {
     // 특정 노드의 help
     lines.push(`${rootName} ${node.segment}${node.description ? ` — ${node.description}` : ""}`);
-    if (node.usage) lines.push(`\n사용: ${node.usage}`);
+    if (node.usage) {
+      lines.push("\n사용:");
+      pushUsage(lines, "  ", node.usage, node.continuation);
+    }
 
     if (node.args?.length) {
       lines.push("\n인자:");
@@ -55,7 +58,7 @@ function printTree(lines: string[], prefix: string, node: CliCommandNode, depth:
 
   if (hasHandler) {
     if (node.usage) {
-      lines.push(`${indent}${node.usage}`);
+      pushUsage(lines, indent, node.usage, node.continuation);
     } else {
       lines.push(`${indent}${prefix} ${node.segment}  ${desc}`);
     }
@@ -65,6 +68,18 @@ function printTree(lines: string[], prefix: string, node: CliCommandNode, depth:
 
   for (const child of node.children ?? []) {
     printTree(lines, `${prefix} ${node.segment}`, child, depth + 1);
+  }
+}
+
+function pushUsage(
+  lines: string[],
+  indent: string,
+  usage: string,
+  continuation?: readonly string[],
+): void {
+  lines.push(`${indent}${usage}`);
+  for (const line of continuation ?? []) {
+    lines.push(`${indent}  ${line}`);
   }
 }
 

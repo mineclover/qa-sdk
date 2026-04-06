@@ -15,6 +15,8 @@ def:
       type: contains
     - target: gate-state-model
       type: contains
+    - target: gate-state-model-rule
+      type: traces_to
     - target: gate-engine-func
       type: contains
     - target: gate-flow

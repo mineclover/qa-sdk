@@ -27,6 +27,8 @@ def:
       type: contains
     - target: infra-discovery
       type: contains
+    - target: infra-service-operations
+      type: traces_to
     - target: infra-engine-todo
       type: traces_to
 ---

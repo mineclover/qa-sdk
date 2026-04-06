@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
+    - target: analysis-convergence-rule
+      type: traces_to
 ---
 # Convergence — 수렴 분석
 

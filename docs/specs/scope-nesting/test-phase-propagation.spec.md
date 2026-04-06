@@ -1,7 +1,7 @@
 ---
 def:
   id: test-phase-propagation
-  level: module
+  level: leaf
   scope: feature
   aspect: func_def
   depth: specification
@@ -11,10 +11,6 @@ def:
   links:
     - target: scope-nesting-pattern-lifecycle
       type: depends_on
-    - target: test-phase-propagation-todo
-      type: contains
-    - target: test-phase-propagation-plan
-      type: contains
 ---
 
 # test_phase 분류체계 전파

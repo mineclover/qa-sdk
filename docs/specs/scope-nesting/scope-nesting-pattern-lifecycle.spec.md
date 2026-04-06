@@ -13,10 +13,6 @@ def:
       type: refines
     - target: scope-nesting-guide
       type: depends_on
-    - target: scope-nesting-pattern-lifecycle-plan
-      type: contains
-    - target: scope-nesting-pattern-lifecycle-todo
-      type: contains
     - target: scope-nesting-pattern-lifecycle-test
       type: contains
 ---

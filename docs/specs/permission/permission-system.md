@@ -15,6 +15,8 @@ def:
       type: contains
     - target: permission-encoding
       type: contains
+    - target: permission-encoding-rule
+      type: traces_to
     - target: permission-constraint
       type: contains
     - target: masking-spec

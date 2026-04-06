@@ -14,6 +14,8 @@ def:
       type: depends_on
     - target: address-context-format
       type: depends_on
+    - target: git-utils
+      type: depends_on
 ---
 # QA-SDK CLI 계약
 

@@ -1,6 +1,7 @@
 // 타입
 export type {
   CliCommandNode,
+  CommandDescriptor,
   CommandHandler,
   CommandContext,
   ArgDef,
@@ -17,7 +18,7 @@ export { resolveCommand } from "./resolve.js";
 export { executeCommand, type ExecuteOptions } from "./execute.js";
 export { parseCommandArgs } from "./parse.js";
 export { generateHelp } from "./help.js";
-export { composeTree } from "./compose.js";
+export { composeTree, descriptorsToTree } from "./compose.js";
 
 // 기존 호환 API (@deprecated)
 export { resolveCliTreeCommand } from "./resolve.js";

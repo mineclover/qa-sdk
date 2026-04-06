@@ -27,6 +27,7 @@ import {
 import type { AxisInput } from "@qa-sdk/spec-core/codegen";
 import { resolveAddress, type DemoCatalog } from "demo-snapshot";
 import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
+import { parseArgs } from "node:util";
 
 // ── Shared bootstrap ────────────────────────────────
 
@@ -126,6 +127,27 @@ export async function createSpecContext(options: {
   return cachedContext;
 }
 
+// ── spec 공통: --catalog / --specs 파싱 ─────────────
+
+const SPEC_BASE_OPTIONS = {
+  specs: { type: "string" as const },
+  catalog: { type: "boolean" as const, default: false },
+};
+
+function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
+  try {
+    const { DEMO_CATALOG } = await import("demo-snapshot");
+    return DEMO_CATALOG;
+  } catch {
+    console.error("demo-snapshot 패키지를 로딩할 수 없습니다");
+    process.exit(1);
+  }
+}
+
 // ── spec list ───────────────────────────────────────
 
 export async function specList(options: {
@@ -183,6 +205,14 @@ export async function specList(options: {
   }
 }
 
+export async function runSpecList(argv: string[]): Promise<void> {
+  const { values } = parseArgs({ args: argv, options: { ...SPEC_BASE_OPTIONS }, strict: true });
+  await specList({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+  });
+}
+
 // ── spec resolve ────────────────────────────────────
 
 export async function specResolve(options: {
@@ -194,6 +224,37 @@ export async function specResolve(options: {
   const ctx = await createSpecContext(options);
   const title = ctx.surfaces.resolve(options.prefixId, options.values);
   console.log(title);
+}
+
+export async function runSpecResolve(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, prefix: { type: "string" }, values: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.prefix || !values.values) {
+    console.error("--prefix <id> --values <json> 필수");
+    console.error(
+      '예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'',
+    );
+    process.exit(1);
+  }
+
+  let parsed: Record<string, string>;
+  try {
+    parsed = JSON.parse(values.values) as Record<string, string>;
+  } catch {
+    console.error("--values JSON 파싱 실패");
+    process.exit(1);
+  }
+
+  await specResolve({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    prefixId: values.prefix,
+    values: parsed,
+  });
 }
 
 // ── spec validate ───────────────────────────────────
@@ -224,6 +285,36 @@ export async function specValidate(options: {
     }
     process.exitCode = 1;
   }
+}
+
+export async function runSpecValidate(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, schema: { type: "string" }, data: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.schema || !values.data) {
+    console.error("--schema <id> --data <json> 필수");
+    process.exit(1);
+  }
+
+  let parsed: SchemaValidationInput;
+  try {
+    const raw = JSON.parse(values.data) as unknown;
+    if (!isSchemaValidationInput(raw)) throw new Error("invalid");
+    parsed = raw;
+  } catch {
+    console.error("--data JSON 파싱 실패");
+    process.exit(1);
+  }
+
+  await specValidate({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    schemaId: values.schema,
+    data: parsed,
+  });
 }
 
 // ── spec decode ─────────────────────────────────────
@@ -340,6 +431,34 @@ export async function specDecode(options: {
     console.log(`\n  Deep resolve:`);
     printResolved(resolved.dims, "    ");
   }
+}
+
+export async function runSpecDecode(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      address: { type: "string" },
+      deep: { type: "boolean", default: false },
+      format: { type: "string" },
+    },
+    strict: true,
+  });
+
+  if (!values.address) {
+    console.error('--address "prefix:version:address" 필수');
+    console.error("예: qa-sdk spec decode --catalog --address permission:v1:3");
+    console.error("    qa-sdk spec decode --catalog --address permission:v1:3 --deep");
+    process.exit(1);
+  }
+
+  await specDecode({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    address: values.address,
+    deep: values.deep,
+    format: values.format === "json" ? "json" : "text",
+  });
 }
 
 function buildResolvedJson(
@@ -490,6 +609,25 @@ export async function specCodegen(options: {
   }
 }
 
+export async function runSpecCodegen(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      ...SPEC_BASE_OPTIONS,
+      output: { type: "string" },
+      format: { type: "string", default: "ts" },
+    },
+    strict: true,
+  });
+
+  await specCodegen({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    output: values.output,
+    format: values.format as "ts" | "esm" | "cjs" | "proto" | "json-schema",
+  });
+}
+
 // ── spec trace ──────────────────────────────────────
 
 export async function specTrace(options: {
@@ -546,4 +684,24 @@ export async function specTrace(options: {
   if (outgoing.length === 0 && incoming.length === 0 && linkedPrefixes.length === 0) {
     console.log("\n  (no relations or linked prefixes)");
   }
+}
+
+export async function runSpecTrace(argv: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args: argv,
+    options: { ...SPEC_BASE_OPTIONS, id: { type: "string" } },
+    strict: true,
+  });
+
+  if (!values.id) {
+    console.error("--id <specId> 필수");
+    console.error("예: qa-sdk spec trace --id FEAT-003");
+    process.exit(1);
+  }
+
+  await specTrace({
+    specPath: values.specs,
+    catalogInput: values.catalog ? await loadCatalogInput() : undefined,
+    specId: values.id,
+  });
 }

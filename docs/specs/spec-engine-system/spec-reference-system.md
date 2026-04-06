@@ -17,6 +17,8 @@ def:
       type: contains
     - target: axis-boundary-patterns
       type: contains
+    - target: axis-consumption-patterns
+      type: contains
 ---
 
 # Spec Reference 그룹

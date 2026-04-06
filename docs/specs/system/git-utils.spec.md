@@ -1,7 +1,7 @@
 ---
 def:
   id: git-utils
-  level: module
+  level: leaf
   scope: interface
   aspect: cli_contract
   depth: specification

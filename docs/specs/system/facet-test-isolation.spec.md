@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: facet-test-isolation-rule
       type: traces_to
+    - target: testing-patterns
+      type: traces_to
 ---
 
 # Facet Test Isolation — 코드 패싯 추출 + 격리 테스트 인프라

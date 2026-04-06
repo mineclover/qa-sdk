@@ -23,6 +23,10 @@ def:
       type: contains
     - target: analysis-transition
       type: contains
+    - target: analysis-path-observation
+      type: contains
+    - target: tracking-three-axes
+      type: depends_on
 ---
 
 # 분석 시스템
