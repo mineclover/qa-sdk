@@ -205,11 +205,18 @@ interface StageResult {
 
 ---
 
+## 현재 규모
+
+- **65 소스**, **116 테스트** (infra-engine 93 + cli-command 23)
+- **26 CLI 명령**, **4 skills**, **10 스펙**
+- **8 설정 파일** (test/dev/local/stage/prod/cloudflare-prod/test-nginx/test-nginx-v2)
+- **배포**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
+
 ## 패키지 구조
 
 ```
 packages/infra-engine/
-  ├── src/                             # 40 소스 파일
+  ├── src/                             # 65 소스 파일
   │   ├── core/                        # 파이프라인 엔진 (범용, qa-sdk 무의존)
   │   │   ├── types.ts                 # DeployContext, DeployResult, Stage 등
   │   │   └── pipeline.ts              # DeployPipeline 실행기
@@ -222,10 +229,12 @@ packages/infra-engine/
   │   │
   │   ├── adapters/                    # 외부 시스템 연동 (교체 가능)
   │   │   ├── adapter.ts               # Adapter 인터페이스 정의 (6포트)
-  │   │   ├── registry.ts              # → registry-service API
   │   │   ├── gate.ts                  # → 품질 게이트 평가
   │   │   ├── infra-profile.ts         # → infra-profile.json
   │   │   ├── service-profile.ts       # → service-profile.json
+  │   │   ├── registry.ts              # → registry-service API
+  │   │   ├── ingest.ts                # → ingest-server 이벤트 emit
+  │   │   ├── coordinate.ts            # → 좌표 인코딩 (fail-open)
   │   │   └── definition.ts            # → definition-service (문서/테스트/prefix)
   │   │
   │   ├── providers/                   # Pulumi Program per provider
@@ -257,7 +266,7 @@ packages/infra-engine/
   │   │   └── manager.ts               # FleetManager (status, tier 그룹핑)
   │   │
   │   ├── export/                      # 설정 파일 생성 도구
-  │   │   ├── env-file.ts              # .env 파일 생성
+  │   │   ├── env-file.ts              # .env 파일 생성 (config → env 변환 포함)
   │   │   ├── typescript-module.ts     # TypeScript 서비스 연결 모듈
   │   │   └── docker-compose.ts        # docker-compose.override.yml
   │   │
@@ -267,28 +276,60 @@ packages/infra-engine/
   │   │   ├── auto-recovery.ts         # OutOfSync 자동 재배포
   │   │   └── sla.ts                   # SLA 추적 (uptime 계산)
   │   │
-  │   ├── commands/                    # CLI 명령 구현
-  │   │   ├── destroy.ts               # destroy 명령 (Pulumi destroy + 정리)
-  │   │   └── audit.ts                 # audit 명령 (registry 데이터 품질 점검)
+  │   ├── post-deploy/                 # 배포 후 자동화 (codegen, cascade, version)
+  │   │   ├── codegen.ts               # 배포 후 TS 모듈 + .env 재생성
+  │   │   ├── cascade.ts               # depends_on 기반 의존 서비스 감지
+  │   │   ├── version-manager.ts       # 배포 버전 기록 + rollback (JSON 영속)
+  │   │   └── sync.ts                  # infra-profile 기록 + definition-service 동기화
+  │   │
+  │   ├── commands/                    # 비즈니스 로직 구현
+  │   │   ├── destroy.ts               # destroy (Pulumi destroy + 정리)
+  │   │   ├── audit.ts                 # audit (registry 데이터 품질 점검)
+  │   │   ├── config-manager.ts        # config (프로필 전환, 필드 변경)
+  │   │   └── env-manager.ts           # env (MinIO S3 + K8s 로컬 환경 관리)
+  │   │
+  │   ├── cli/                         # CLI 명령 트리 (cli-command 기반)
+  │   │   ├── tree.ts                  # 26개 명령 트리 정의
+  │   │   ├── context.ts               # PROFILE_DIR, REGISTRY_URL, DEFINITION_URL
+  │   │   ├── index.ts                 # CLI 진입점
+  │   │   ├── cmd-deploy.ts            # deploy (--sync: codegen + cascade)
+  │   │   ├── cmd-destroy.ts           # destroy
+  │   │   ├── cmd-discover.ts          # discover (--all/--list/--deep/--code)
+  │   │   ├── cmd-export.ts            # export (env/ts/compose/docs)
+  │   │   ├── cmd-status.ts            # status (Fleet 상태)
+  │   │   ├── cmd-history.ts           # history (배포 이력)
+  │   │   ├── cmd-audit.ts             # audit (registry 감사)
+  │   │   ├── cmd-config.ts            # config (show/use/set/presets)
+  │   │   ├── cmd-monitor.ts           # monitor (start/check/status)
+  │   │   ├── cmd-dashboard.ts         # dashboard (summary/service/export)
+  │   │   ├── cmd-env.ts               # env (up/down/status/reset)
+  │   │   ├── cmd-pf.ts               # pf (list/cleanup)
+  │   │   └── cmd-version.ts           # version (list/show/rollback)
+  │   │
+  │   ├── lib/                         # 공용 유틸리티
+  │   │   └── validation.ts            # 보안 검증 (ID/경로/PID/URL 유효성)
   │   │
   │   └── index.ts                     # public export
   │
   ├── scripts/                         # CLI 진입점
-  │   ├── infra.ts                     # 통합 CLI (15 서브커맨드)
+  │   ├── infra.ts                     # 통합 CLI (cli-command 트리 기반)
   │   ├── deploy-local.ts              # 로컬 배포 (레거시, infra.ts에서 위임)
   │   ├── discover.ts                  # 디스커버리 (레거시, infra.ts에서 위임)
   │   └── export.ts                    # export (레거시, infra.ts에서 위임)
   │
-  ├── config/                          # 환경별 설정 JSON
+  ├── config/                          # 환경별 설정 JSON (8개)
   │   ├── test.json
   │   ├── dev.json
+  │   ├── local.json
   │   ├── stage.json
   │   ├── prod.json
+  │   ├── cloudflare-prod.json
   │   ├── test-nginx.json
   │   └── test-nginx-v2.json
   │
   ├── docs/
-  │   └── k3d-local-setup.md           # K3s 로컬 클러스터 설정 가이드
+  │   ├── k3d-local-setup.md           # K3s 로컬 클러스터 설정 가이드
+  │   └── local-infra-plan.md          # 로컬 인프라 계획
   │
   ├── sops.yaml                        # SOPS 암호화 규칙 (템플릿)
   ├── tsup.config.ts

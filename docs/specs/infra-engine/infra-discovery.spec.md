@@ -283,3 +283,81 @@ infra dashboard export [path]                    # JSON export
 infra pf list                                    # 활성 port-forward 목록
 infra pf cleanup                                 # 죽은 PID 정리
 ```
+
+### version 관리
+
+```
+infra version list [env]                         # 배포 버전 목록 (env 필터 가능)
+infra version show <service> [env]               # 서비스 버전 상세 (이력 포함)
+infra version rollback <service> [env]           # 이전 버전으로 롤백 표시
+```
+
+---
+
+## post-deploy 자동화
+
+배포 완료 후 실행되는 자동화 파이프라인. `--sync` 플래그로 활성화.
+
+### codegen (post-deploy/codegen.ts)
+
+배포된 서비스의 연결 정보 변경을 소비자에게 자동 전파한다.
+
+1. **TypeScript 연결 모듈 재생성** — `generated/service-connections.{env}.ts`
+2. **.env 파일 재생성** — 배포된 서비스 자체 + 의존 서비스 (consumedPrefixes 기반 역추적)
+3. config JSON에서 서비스별 설정을 로딩하여 env 변환에 반영
+
+```typescript
+interface CodegenOptions {
+  tsOutputDir?: string;        // 기본: generated/
+  envOutputDir?: string;       // 기본: generated/env/
+  targetServices?: string[];   // 명시적 대상 (미지정: 자동 역추적)
+  configPath?: string;         // 미지정: config/{env}.json 자동 탐색
+}
+
+function runPostDeployCodegen(
+  discovery: DiscoveryClient,
+  deployedServiceId: string,
+  env: string,
+  options?: CodegenOptions,
+): Promise<{ tsPath?: string; envPaths: string[] }>;
+```
+
+### cascade 감지 (post-deploy/cascade.ts)
+
+config의 `depends_on`을 기반으로 배포된 서비스에 의존하는 서비스를 감지한다.
+
+```typescript
+interface CascadeTarget {
+  serviceId: string;
+  reason: string;  // "depends_on ingest-server" 등
+}
+
+function findCascadeTargets(config: ResolvedConfig, deployedServiceId: string): CascadeTarget[];
+function executeCascade(targets: CascadeTarget[], env: string, options?: { dryRun?: boolean }): Promise<void>;
+```
+
+- dry-run 모드: 감지만 수행, 재배포 명령 안내만 출력
+- 실제 재배포는 호출자가 `infra deploy`를 다시 실행
+
+### 버전 관리 (post-deploy/version-manager.ts)
+
+배포 버전을 `~/.qa-sdk/infra-versions.json`에 영속화한다. 최대 20건 이력 보존.
+
+```typescript
+interface VersionStore {
+  getVersion(serviceId: string, env: string): Promise<ServiceVersion | null>;
+  setVersion(serviceId: string, env: string, version: string, endpoint: string, provider: string): Promise<ServiceVersion>;
+  listVersions(env?: string): Promise<ServiceVersion[]>;
+  rollback(serviceId: string, env: string): Promise<ServiceVersion | null>;
+}
+```
+
+- 원자적 쓰기: tmp 파일 → rename (데이터 손실 방지)
+- rollback: currentVersion ↔ previousVersion 교환 + history에 rollbackFrom 기록
+
+### definition-service 동기화 (post-deploy/sync.ts)
+
+배포 후 infra-profile에 버전을 기록하고, definition-service에 배포 상태를 알린다.
+
+- `recordDeployVersion()`: infra-profile history에 기록
+- `syncToDefinitionService()`: definition-service에 배포 알림 (fail-open — 미실행 시 무시)

@@ -16,85 +16,33 @@ def:
 
 ## 목적 ^purpose
 
-infra-engine 패키지의 구현 현황과 잔여 작업을 추적한다.
+infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은 spec에 반영됨.
 
 ---
 
-## 구현 완료
+## 구현 완료 요약
 
-### 코어
-- [x] 파이프라인 실행기 (createPipeline, 순차+rollback)
-- [x] 5단계 스테이지 (Config, Provision, Register, Verify, Observe)
-- [x] 어댑터 6포트 실구현 (Registry, ServiceProfile, InfraProfile, Ingest, Coordinate, Gate)
-- [x] IngestAdapter — TransmissionEnvelope + POST /v1/ingest 실호출
-- [x] CoordinateAdapter — fail-open (축 데이터 미가용 → 빈 address_context)
-
-### 프로바이더
-- [x] Local K3s — Pulumi + K8s Deployment/Service + port-forward PID 관리
-- [x] Cloudflare Workers — wrangler deploy 래핑 (registry-service, gateway 검증)
-- [x] 프로바이더 스텁 4종 (Railway, AWS, GCP, Vultr)
-
-### 디스커버리 + Fleet + Export
-- [x] DiscoveryClient (resolve, resolveAll, generateConnectCode)
-- [x] EnhancedDiscovery (registry + definition 통합, --deep)
-- [x] DefinitionAdapter (서비스 문서/테스트/prefix 조회)
-- [x] FleetManager (status, tier별 그룹핑, 헬스체크 실행 감지)
-- [x] Export 3종 (env, ts, compose) + docs 요약
-- [x] Fleet 일괄 배포 (deploy --all)
-
-### CLI (cli-command 트리 기반)
-- [x] 38줄 라우터 + 15개 handler 분리 (src/cli/cmd-*.ts)
-- [x] cli-command 패키지 추출 (zero-dep, 14 tests)
-- [x] 자동 help 생성 (트리 구조에서)
-
-### 운영
-- [x] destroy 명령 (Pulumi destroy + PF kill + 프로필 정리)
-- [x] 배포 이력 (history, 최대 50건)
-- [x] dry-run (Pulumi preview)
-- [x] registry 감사 (infra audit)
-- [x] 설정 프로필 관리 (infra config — local/local-s3/staging/prod)
-- [x] Docker Compose 환경 (MinIO S3 + infra env up/down/status)
-- [x] SyncLoop 모니터링 (monitor start/check/status)
-- [x] DashboardData (dashboard summary/service/export)
-- [x] 자동 복구 + SLA (auto-recovery, sla.ts)
-- [x] CI/CD 워크플로우 골격 (.github/workflows/infra-deploy.yaml)
-
-### 보안
-- [x] 입력 검증 (serviceId, env, 경로) — src/lib/validation.ts
-- [x] 경로 탐색 차단 (config 입력 + output 경로)
-- [x] PID 검증 (isSafePid)
-- [x] 원자적 JSON 쓰기 (write→tmp→rename)
-- [x] minioadmin localhost 제한
-- [x] URL 스키마 검증
-
-### Docker 빌드
-- [x] pino globalThis 타입 수정
-- [x] core ir-audit/ir-bridge/test-tracking 타입 수정
-- [x] Dockerfile pre-build 전략
-- [x] k3d image import 성공
-
-### K3s 실배포 (6서비스)
-- [x] **ingest-server K3s 배포** — Docker 빌드 + k3d import + 배포 + 200 OK 검증 (:23200)
-- [x] **decision-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23800)
-- [x] **definition-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23700)
-- [x] **motion-workspace-service K3s 배포** — Dockerfile.nestjs + NestJS 배포 + 200 OK 검증 (:23710)
-- [x] **Dockerfile.nestjs 공용화** — SERVICE build-arg로 NestJS 3서비스 공유
-- [x] **tsup 7서비스 전환** — 전 서비스 tsup 빌드 체인 통일
-- [x] **6서비스 전체 200 OK 검증** — K3s 4 (ingest, decision, definition, motion-workspace) + CF 2 (registry, gateway)
-
-### Dockerfile + 운영 개선 (2026-04-06)
-- [x] **Dockerfile.nestjs PORT 주입** — `ARG PORT` + `ENV PORT` + `EXPOSE` 추가. HEALTHCHECK가 서비스 실제 포트 사용
-- [x] **Docker layer cache 최적화** — lockfile/package.json 먼저 복사 → install → source 복사 순서
-- [x] **Dockerfile scope guard** — `@qa-sdk/${SERVICE}` 실패 시 unscoped `${SERVICE}` fallback
-- [x] **dev.json health_path 통일** — ingest-server에 `/health/live` 명시 (기본 `/health`과 불일치 해소)
-- [x] **motion-workspace 네이밍 통일** — dev.json `motion-workspace-service` → `motion-workspace` (prod와 일치)
-- [x] **sdk_version 동적 로드** — `adapters/ingest.ts` 하드코딩 `"1.0.0"` → `package.json` version 참조
-- [x] **kubectl context 검증** — `local.ts validate()`에서 `k3d-qa-local` context 확인 추가
+- 코어: 파이프라인 5단계 + 어댑터 8포트 (registry, gate, infra-profile, service-profile, ingest, coordinate, definition)
+- 프로바이더: Local K3s (Pulumi) + Cloudflare Workers + 스텁 4종
+- 디스커버리: DiscoveryClient + EnhancedDiscovery + FleetManager + Export 3종
+- CLI: cli-command 트리 기반 라우터 + 15개 handler 모듈 → 26개 리프 명령
+- 운영: destroy, history, dry-run, audit, config, Docker Compose, SyncLoop, Dashboard, auto-recovery, CI 골격
+- 보안: validation.ts — ID/경로/PID/URL 검증 유틸 13건 (validateId, assertPathContainment, assertNoTraversal, isSafePid, isValidServiceUrl, isLocalhost)
+- Docker: Dockerfile.nestjs 공용화 + PORT 주입 + layer cache + scope guard
+- K3s: 6서비스 배포 완료 (K3s 4 + CF 2)
+- 운영 개선: health_path 통일, motion-workspace 네이밍, sdk_version 동적, kubectl context 검증
+- env 공급 안정화: config JSON → env vars 변환 (SKIP_KEYS: depends_on, gates, health_path)
+- post-deploy 자동화: codegen (TS 모듈 + .env 재생성), cascade (depends_on 역추적), version-manager (JSON 영속 + rollback)
+- --sync 플래그: `infra deploy --sync`로 배포 후 codegen + cascade 자동 실행
+- cli-command 트리 마이그레이션: scripts/infra.ts에서 cli-command 기반 트리 라우팅으로 전환
+- tsup 7서비스 전환: NestJS 서비스 빌드를 tsup 단일 번들로 통일
 
 ### 현재 규모
-- **42 소스**, **93 테스트**, **107 테스트** (infra-engine 93 + cli-command 23)
-- **15 CLI**, **4 skills**, **10 스펙**
-- **배포 현황**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
+
+- **65 소스**, **116 테스트** (infra-engine 93 + cli-command 23)
+- **26 CLI 명령**, **4 skills**, **10 스펙**
+- **8 설정 파일** (test/dev/local/stage/prod/cloudflare-prod/test-nginx/test-nginx-v2)
+- **배포**: K3s dev 4서비스 + CF prod 2서비스 = 6서비스
 
 ---
 

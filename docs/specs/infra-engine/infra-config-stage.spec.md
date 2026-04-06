@@ -195,6 +195,44 @@ function resolveConnectionEnv(
 3. **Git에는 암호화된 YAML만 커밋** — `.gitignore`에 `*.decrypted.yaml` 추가
 4. **키 교체**: `scripts/rotate-keys.ts`로 KMS 키 교체 + SOPS 파일 재암호화 자동화
 
+## env 파일 생성 — config JSON → 환경변수 변환
+
+배포 후 각 서비스에 주입할 `.env` 파일을 config JSON에서 자동 생성한다. `export/env-file.ts`의 `configToEnvVars()`와 `generateEnvFile()`이 담당한다.
+
+### 변환 규칙
+
+1. config JSON의 `services.<serviceId>` 객체에서 **primitive 값**(string, number, boolean)만 추출
+2. 키를 `UPPER_SNAKE_CASE`로 변환 (`store_driver` → `STORE_DRIVER`)
+3. **SKIP_KEYS** — 인프라 전용 키는 env vars로 변환하지 않음:
+   - `depends_on` — 서비스 의존 관계 (env var이 아닌 연결 URL로 해석)
+   - `gates` — 배포 품질 게이트 설정
+   - `health_path` — 헬스체크 경로 (인프라 내부 사용)
+
+### 서비스 설정 + 연결 URL 통합
+
+생성되는 `.env` 파일은 두 종류의 환경변수를 통합한다:
+
+```
+# 서비스 설정 (config JSON의 서비스별 primitive 값)
+PORT=3200
+STORE_DRIVER=d1
+INSIGHTS_DRIVER=local
+
+# 서비스 연결 (depends_on + connections에서 해석)
+REGISTRY_SERVICE_URL=http://localhost:3300
+INGEST_SERVER_URL=http://localhost:3200
+```
+
+- **서비스 설정**: `configToEnvVars(serviceConfig)` — SKIP_KEYS 제외 후 UPPER_SNAKE_CASE
+- **연결 URL**: `resolveConnectionEnv(config, serviceId)` — depends_on 의존 서비스의 endpoint를 `{SERVICE_ID}_URL` 형식으로
+- **config 우선**: 같은 키가 config와 연결 URL에 모두 있으면 config 값 우선
+
+### post-deploy codegen
+
+`infra deploy --sync` 실행 시 배포 후 자동으로:
+1. TypeScript 연결 모듈 재생성 (`generated/service-connections.{env}.ts`)
+2. 배포된 서비스 + 의존 서비스의 `.env` 파일 재생성 (`generated/env/.env.{serviceId}.{env}`)
+
 ## 에러 처리
 
 | 에러 | 원인 | 대응 |
