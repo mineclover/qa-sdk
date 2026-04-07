@@ -59,6 +59,6 @@ def:
 - `service-event-adoption-spec`: 서비스별 pack 채택의 현재 계약.
 - `event-taxonomy-contracts-test`: 현재 계약을 유지하는 validation 시나리오.
 - `event-mapping-pack-plan`: mapping pack의 역사적 설계 메모.
-- `service-event-adoption-plan`: service adoption의 역사적 설계 메모.
+- `service-event-adoption-plan`: service adoption의 초기 설계 배경 메모.
 - `event-taxonomy-usecases-plan`: 관리 용이성과 확장성을 검증하는 대표 사용 시나리오.
 - `event-taxonomy-rollout-todo`: pack first-class화, service adoption 도입, seed-events 재설계의 실행 체크리스트.

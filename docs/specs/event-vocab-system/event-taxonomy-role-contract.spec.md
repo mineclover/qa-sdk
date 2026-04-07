@@ -14,7 +14,7 @@ def:
       type: refines
     - target: event-taxonomy-layering-plan
       type: depends_on
-    - target: service-event-adoption-plan
+    - target: service-event-adoption-spec
       type: depends_on
 ---
 

@@ -24,7 +24,7 @@ def:
 
 ## 목적 ^purpose
 
-각 서비스가 어떤 event pack을 채택하고 어떤 custom event surface를 노출하는지 독립 관리하기 위한 `service event adoption` 모델을 정의한다. 목적은 서비스별 event taxonomy를 prefix ownership과 분리해 관리하면서도, registry materialization과 drift 검출의 기준점을 만드는 것이다.
+각 서비스가 어떤 event pack을 채택하고 어떤 category 범위를 허용하는지 독립 관리하기 위한 `service event adoption` 모델을 정리한다. 목적은 서비스별 event taxonomy를 prefix ownership과 분리해 관리하면서도, registry materialization과 drift 검출의 기준점을 만드는 것이다.
 
 ## 구성 ^overview
 
