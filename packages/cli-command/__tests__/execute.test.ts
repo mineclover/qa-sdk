@@ -74,4 +74,12 @@ describe("executeCommand", () => {
     expect(ctx.options.dryRun).toBe(true);
     expect(ctx.options.provider).toBe("cloudflare");
   });
+
+  it("필수 인자가 빠지면 reject된다", async () => {
+    const tree: CliCommandNode[] = [
+      { segment: "deploy", handler: vi.fn(async () => {}), args: [{ name: "service", required: true }] },
+    ];
+
+    await expect(executeCommand(["deploy"], tree)).rejects.toThrow(/required argument missing: service/);
+  });
 });

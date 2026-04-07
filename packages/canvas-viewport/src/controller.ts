@@ -79,12 +79,12 @@ export function createCanvasViewportSession(options: {
     zoomAtPoint,
     centerOnPoint(point: CanvasPoint) {
       const transform = options.getTransform();
-      const content = options.getContentSize();
+      const viewport = options.getViewportSize();
       options.setTransform(createTransformCenteredAtPoint({
         point,
         scale: transform.k,
-        contentWidth: content.width,
-        contentHeight: content.height,
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
       }));
     },
     panBy(delta: CanvasPoint) {

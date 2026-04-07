@@ -31,6 +31,7 @@ export interface DocStore {
     doc: DocRecord,
     body: string,
   ): { action: "created" | "updated" | "unchanged"; version: number };
+  delete(docId: string): boolean;
   /** DB-owned 메타데이터만 업데이트 (body/markers 유지) */
   updateMetadata(
     docId: string,

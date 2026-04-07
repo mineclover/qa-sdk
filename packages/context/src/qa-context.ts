@@ -351,6 +351,14 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(userConf
       return createQaContext({ ...userConfig, catalog });
     } catch (err) {
       logger.warn({ err, registryUrl }, "Registry fetch 실패. 로컬 catalog fallback.");
+      try {
+        const { createCatalogProvider } = await import("./catalog-provider.js");
+        const provider = createCatalogProvider({ catalog: userConfig?.catalog });
+        const catalog = await provider.getCatalog();
+        return createQaContext({ ...userConfig, catalog });
+      } catch (fallbackErr) {
+        logger.warn({ err: fallbackErr }, "로컬 catalog fallback 실패");
+      }
     }
   }
 

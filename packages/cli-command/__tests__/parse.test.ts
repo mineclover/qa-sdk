@@ -47,4 +47,20 @@ describe("parseCommandArgs", () => {
     expect(ctx.args.service).toBe("nginx");
     expect(ctx.options.env).toBe("dev");
   });
+
+  it("필수 인자가 없으면 에러를 던진다", () => {
+    const node: CliCommandNode = {
+      segment: "deploy",
+      args: [{ name: "service", required: true }],
+    };
+    expect(() => parseCommandArgs([], node)).toThrow(/required argument missing: service/);
+  });
+
+  it("choices에 없는 옵션 값이면 에러를 던진다", () => {
+    const node: CliCommandNode = {
+      segment: "deploy",
+      options: [{ flag: "--env", type: "string", choices: ["dev", "prod"] }],
+    };
+    expect(() => parseCommandArgs(["--env", "stage"], node)).toThrow(/invalid value for --env/);
+  });
 });

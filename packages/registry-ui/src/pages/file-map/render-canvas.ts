@@ -198,30 +198,41 @@ function renderMinimap(params: {
     .attr("stroke-width", 1);
 
   minimapSvg.on("click", (event: MouseEvent) => {
-      const point = d3.pointer(event, minimapSvg.node());
-      const target = minimapPointToContentPoint({ x: point[0], y: point[1] }, params.minimapLayout);
+    const point = d3.pointer(event, minimapSvg.node());
+    const target = minimapPointToContentPoint({ x: point[0], y: point[1] }, params.minimapLayout);
     const currentTransform = d3.zoomTransform(params.svg.node() as SVGSVGElement);
+    const bounds = (params.svg.node() as SVGSVGElement).getBoundingClientRect();
     params.svg.call(
       params.zoomBehavior.transform,
       d3.zoomIdentity.translate(
-        contentWidth / 2 - target.x * currentTransform.k,
-        contentHeight / 2 - target.y * currentTransform.k,
+        bounds.width / 2 - target.x * currentTransform.k,
+        bounds.height / 2 - target.y * currentTransform.k,
       ).scale(currentTransform.k),
     );
   });
 
-  updateMinimapViewport(params.host, d3.zoomTransform(params.svg.node() as SVGSVGElement), params.minimapLayout);
+  updateMinimapViewport(
+    params.host,
+    params.svg.node() as SVGSVGElement,
+    d3.zoomTransform(params.svg.node() as SVGSVGElement),
+    params.minimapLayout,
+  );
 }
 
 function updateMinimapViewport(
   host: HTMLElement,
+  svg: SVGSVGElement,
   transform: d3.ZoomTransform,
   layout: ReturnType<typeof createMinimapLayout>,
 ): void {
   const viewport = host.querySelector<SVGRectElement>(".fmap-minimap-viewport");
   if (!viewport) return;
 
-  const frame = projectViewportFrame(transform, layout);
+  const bounds = svg.getBoundingClientRect();
+  const frame = projectViewportFrame(transform, layout, {
+    width: bounds.width || layout.contentWidth,
+    height: bounds.height || layout.contentHeight,
+  });
   viewport.setAttribute("x", String(frame.x));
   viewport.setAttribute("y", String(frame.y));
   viewport.setAttribute("width", String(frame.width));

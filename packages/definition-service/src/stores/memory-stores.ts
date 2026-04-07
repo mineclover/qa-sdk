@@ -95,6 +95,17 @@ export class InMemoryDocStore implements DocStore {
     return this.docs.get(docId) ?? null;
   }
 
+  delete(docId: string): boolean {
+    const existed = this.docs.delete(docId);
+    if (!existed) return false;
+    this.history.delete(docId);
+    this.codeReferences = this.codeReferences.filter((ref) => ref.docId !== docId);
+    for (const doc of this.docs.values()) {
+      doc.links = doc.links.filter((link) => link.target !== docId);
+    }
+    return true;
+  }
+
   getByAddress(address: string): DocRecord | null {
     return Array.from(this.docs.values()).find((doc) => doc.address === address) ?? null;
   }

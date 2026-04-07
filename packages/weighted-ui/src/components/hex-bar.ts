@@ -34,14 +34,18 @@ export function renderHexBar(
 
   const totalNeeded = fields.reduce((s, f) => s + f.chars, 0);
   const fits = totalNeeded <= capacity;
+  const overflowField = fields.find((f) => ((f.value ?? 0).toString(16).length > f.chars));
 
-  if (!fits) {
+  if (!fits || overflowField) {
+    const overflowText = overflowField
+      ? `${FIELD_LABELS[overflowField.type]} 값 overflow (${(overflowField.value ?? 0).toString(16).length}>${overflowField.chars})`
+      : `${totalNeeded - capacity}자리 부족`;
     return `
       <div class="hex-layout hex-layout-overflow">
         <div class="hex-layout-head">
           <span class="hex-layout-name">${label}</span>
           <span class="hex-layout-cap">${capacity} chars</span>
-          <span class="hex-layout-status hex-status-fail">${totalNeeded - capacity}자리 부족</span>
+          <span class="hex-layout-status hex-status-fail">${overflowText}</span>
         </div>
       </div>
     `;

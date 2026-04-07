@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { DEMO_CATALOG } from "demo-snapshot";
-import { createQaContext } from "@qa-sdk/context";
+import { createQaContext, createQaContextAsync } from "@qa-sdk/context";
 import type { TypedQaContext } from "demo-types";
 
 describe("QaContext", () => {
@@ -48,6 +48,34 @@ describe("QaContext", () => {
     });
     expect(testQa.executionMode).toBe("test");
     expect(testQa.executionId).toBe("e2e-checkout-v1");
+  });
+});
+
+describe("QaContext async fallback", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("registry fetch 실패 시 로컬 catalog로 fallback한다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("registry down");
+    }));
+
+    const qa = await createQaContextAsync({
+      registry: "http://registry.invalid",
+      env: "prod",
+      region: "asia",
+      service: "shopping-web",
+      namespace: "shop",
+    });
+
+    const serialized = qa.encode("endpoint", {
+      resource_type: "api",
+      http_method: "POST",
+      api_version: "v1",
+    });
+
+    expect(serialized).toMatch(/^endpoint:v1:\d+$/);
   });
 });
 

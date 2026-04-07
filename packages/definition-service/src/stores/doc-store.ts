@@ -396,6 +396,35 @@ export class SqlDocStore implements DocStore {
     return { action: "updated", version };
   }
 
+  delete(docId: string): boolean {
+    const existing = this.get(docId);
+    if (!existing) return false;
+
+    this.db
+      .delete(documentLinks)
+      .where(
+        sql`${documentLinks.sourceId} = ${docId} OR ${documentLinks.targetId} = ${docId}`,
+      )
+      .run();
+
+    this.db
+      .delete(codeReferences)
+      .where(eq(codeReferences.docId, docId))
+      .run();
+
+    this.db
+      .delete(documentHistory)
+      .where(eq(documentHistory.docId, docId))
+      .run();
+
+    this.db
+      .delete(documents)
+      .where(eq(documents.docId, docId))
+      .run();
+
+    return true;
+  }
+
   // ── Edge 동기화 ──────────────────────────────────
 
   private syncLinks(docId: string, links: { target: string; type: string }[]) {

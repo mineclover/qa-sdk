@@ -8,6 +8,7 @@ export interface SyncResult {
   synced: number;
   unchanged: number;
   created: number;
+  deleted: number;
   codeReferences: number;
   errors: string[];
 }
@@ -24,7 +25,7 @@ export async function syncDocsToDb(
   rootDir: string,
   docStore: DocStore,
 ): Promise<SyncResult> {
-  const result: SyncResult = { synced: 0, unchanged: 0, created: 0, codeReferences: 0, errors: [] };
+  const result: SyncResult = { synced: 0, unchanged: 0, created: 0, deleted: 0, codeReferences: 0, errors: [] };
 
   let scanResult;
   try {
@@ -45,6 +46,7 @@ export async function syncDocsToDb(
   // 레지스트리에 등록된 모든 문서 처리
   const registry = scanResult.registry;
   const allDocs = registry.all();
+  const scannedDocIds = new Set(allDocs.map((entry) => entry.id));
 
   for (const entry of allDocs) {
     try {
@@ -81,6 +83,13 @@ export async function syncDocsToDb(
       result.errors.push(
         `${entry.id}: ${err instanceof Error ? err.message : String(err)}`,
       );
+    }
+  }
+
+  for (const existing of docStore.list({ limit: 100000 })) {
+    if (scannedDocIds.has(existing.docId)) continue;
+    if (docStore.delete(existing.docId)) {
+      result.deleted++;
     }
   }
 

@@ -10,6 +10,7 @@
  */
 
 import { Hono } from "hono";
+import { AppError } from "../lib/errors.js";
 import type { ReplayRecordStore } from "../lib/replay-record-store.js";
 import type { ReplayCache } from "../lib/replay-cache.js";
 import { replayCacheKey } from "../lib/replay-cache.js";
@@ -31,6 +32,16 @@ export interface TransitionEnginePort {
   process(events: readonly TransitionEventLike[]): { instances: readonly unknown[] };
 }
 
+export interface ReplayStateStorePort extends StateStorePort {
+  clear(): void;
+}
+
+export type ReplayTransitionResolver = (
+  events: readonly TransitionEventLike[],
+  contextId: string,
+  resourceId: string,
+) => Promise<Record<string, string>> | Record<string, string>;
+
 interface TransitionEventLike {
   log_id: string;
   timestamp: string;
@@ -46,6 +57,10 @@ export interface StateRouteDeps {
   recordStore?: ReplayRecordStore;
   /** TransitionEngine (선택 — 있으면 정확한 전이 replay, 없으면 address_context 축약) */
   transitionEngine?: TransitionEnginePort;
+  /** 정확 replay용 상태 저장소 (없으면 transitionEngine은 fallback 모드) */
+  replayStateStore?: ReplayStateStorePort;
+  /** 상태 재생성 전용 resolver (있으면 transitionEngine보다 우선) */
+  replayTransition?: ReplayTransitionResolver;
   /** replay 캐시 (선택) */
   replayCache?: ReplayCache;
 }
@@ -102,21 +117,22 @@ export function createStateRoutes(deps: StateRouteDeps) {
       let replayedState: Record<string, string>;
       let mode: string;
 
-      if (deps.transitionEngine && relevant.length > 0) {
-        // TransitionEngine replay — 정확한 전이 재구성
-        const events = relevant.map(toTransitionEvent);
-        deps.transitionEngine.process(events);
-        // 전이 후 stateStore가 있으면 snapshot, 없으면 address_context 축약
-        if (deps.stateStore) {
-          replayedState = await deps.stateStore.snapshot(contextId, resourceId);
-        } else {
-          replayedState = mergeAddressContexts(relevant);
-        }
+      if (deps.replayTransition && relevant.length > 0) {
+        replayedState = await deps.replayTransition(
+          relevant.map(toTransitionEvent),
+          contextId,
+          resourceId,
+        );
+        mode = "engine-replay";
+      } else if (deps.transitionEngine && deps.replayStateStore && relevant.length > 0) {
+        deps.replayStateStore.clear();
+        deps.transitionEngine.process(relevant.map(toTransitionEvent));
+        replayedState = await deps.replayStateStore.snapshot(contextId, resourceId);
         mode = "engine-replay";
       } else {
-        // address_context 축약 (TransitionEngine 없을 때)
+        // 정확 replay resolver가 없으면 address_context 기반 축약으로만 응답
         replayedState = mergeAddressContexts(relevant);
-        mode = "replay";
+        mode = deps.transitionEngine ? "replay-fallback" : "replay";
       }
 
       // 캐시 저장
@@ -158,10 +174,19 @@ export function createStateRoutes(deps: StateRouteDeps) {
 
 function filterByContext(records: StoredRecord[], contextId: string, resourceId: string): StoredRecord[] {
   return records.filter(r => {
-    const ctx = r.addressContext;
-    if (!ctx) return false;
-    const values = Object.values(ctx);
-    return values.includes(contextId) || values.includes(resourceId);
+    const addressContext = r.addressContext ?? {};
+    const payload = isRecordObject(r.payload) ? r.payload : null;
+
+    const matchedContext = hasExplicitId(addressContext, payload, contextId, [
+      "context_id",
+      "contextId",
+    ]);
+    const matchedResource = hasExplicitId(addressContext, payload, resourceId, [
+      "resource_id",
+      "resourceId",
+    ]);
+
+    return matchedContext && matchedResource;
   });
 }
 
@@ -181,4 +206,21 @@ function toTransitionEvent(r: StoredRecord): TransitionEventLike {
     address_context: r.addressContext,
     payload: r.payload,
   };
+}
+
+function isRecordObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasExplicitId(
+  addressContext: Record<string, string>,
+  payload: Record<string, unknown> | null,
+  expected: string,
+  keys: readonly string[],
+): boolean {
+  for (const key of keys) {
+    if (addressContext[key] === expected) return true;
+    if (payload && payload[key] === expected) return true;
+  }
+  return false;
 }

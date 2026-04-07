@@ -86,7 +86,7 @@ export async function scanAndClassify(root: string): Promise<ClassifiedPackage[]
       dir: raw.dir,
       tier: classifyTier(raw),
       runtime: classifyRuntime(raw),
-      scope: raw.isScoped ? ("private" as const) : ("public" as const),
+      scope: raw.isPrivate ? ("private" as const) : ("public" as const),
       deps: internalDeps,
     };
   });

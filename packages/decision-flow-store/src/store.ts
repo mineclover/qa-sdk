@@ -118,9 +118,18 @@ export class SqliteInstanceStore implements InstanceStore {
     // SQLite에서 JSON 필드 검색 — json_extract 사용
     const jsonPath = `$.${query.key}`;
     if (Object.prototype.hasOwnProperty.call(query, "value")) {
-      conditions.push(
-        sql`json_extract(${flowInstances.context}, ${jsonPath}) = ${String(query.value)}`,
-      );
+      const value = query.value;
+      if (value === null) {
+        conditions.push(sql`json_type(${flowInstances.context}, ${jsonPath}) = 'null'`);
+      } else if (typeof value === "boolean") {
+        conditions.push(
+          sql`json_type(${flowInstances.context}, ${jsonPath}) = ${value ? "true" : "false"}`,
+        );
+      } else if (typeof value === "number" || typeof value === "string") {
+        conditions.push(sql`json_extract(${flowInstances.context}, ${jsonPath}) = ${value}`);
+      } else {
+        conditions.push(sql`json_extract(${flowInstances.context}, ${jsonPath}) = json(${JSON.stringify(value)})`);
+      }
     } else {
       conditions.push(
         sql`json_extract(${flowInstances.context}, ${jsonPath}) IS NOT NULL`,

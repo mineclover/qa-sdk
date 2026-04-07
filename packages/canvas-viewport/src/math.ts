@@ -94,11 +94,12 @@ export function fitTransformToViewport(options: {
 export function projectViewportFrame(
   transform: ViewTransformLike,
   layout: MinimapLayout,
+  viewport: { width: number; height: number },
 ): MinimapViewportFrame {
   const visibleX = (-transform.x) / transform.k;
   const visibleY = (-transform.y) / transform.k;
-  const visibleWidth = layout.contentWidth / transform.k;
-  const visibleHeight = layout.contentHeight / transform.k;
+  const visibleWidth = viewport.width / transform.k;
+  const visibleHeight = viewport.height / transform.k;
 
   return {
     x: layout.padding + visibleX * layout.scale,
@@ -121,12 +122,12 @@ export function minimapPointToContentPoint(
 export function createTransformCenteredAtPoint(options: {
   point: CanvasPoint;
   scale: number;
-  contentWidth: number;
-  contentHeight: number;
+  viewportWidth: number;
+  viewportHeight: number;
 }): ViewTransformLike {
   return {
-    x: options.contentWidth / 2 - options.point.x * options.scale,
-    y: options.contentHeight / 2 - options.point.y * options.scale,
+    x: options.viewportWidth / 2 - options.point.x * options.scale,
+    y: options.viewportHeight / 2 - options.point.y * options.scale,
     k: options.scale,
   };
 }

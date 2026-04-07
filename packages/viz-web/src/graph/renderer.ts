@@ -293,7 +293,10 @@ export function createGraphSvg(
 
   function updateMinimapViewport(): void {
     if (!minimapViewport) return;
-    const frame = projectViewportFrame(transform, minimapLayout);
+    const frame = projectViewportFrame(transform, minimapLayout, {
+      width: svg?.clientWidth ?? minimapLayout.contentWidth,
+      height: svg?.clientHeight ?? minimapLayout.contentHeight,
+    });
     minimapViewport.setAttribute("x", String(frame.x));
     minimapViewport.setAttribute("y", String(frame.y));
     minimapViewport.setAttribute("width", String(frame.width));

@@ -50,6 +50,25 @@ export function parseCommandArgs(rawArgs: string[], node: CliCommandNode): Comma
     args[argDefs[i].name] = parsed.positionals[i];
   }
 
+  for (const argDef of argDefs) {
+    if (argDef.required && !args[argDef.name]) {
+      throw new Error(`required argument missing: ${argDef.name}`);
+    }
+  }
+
+  for (const optDef of optDefs) {
+    if (!optDef.choices?.length) continue;
+    const kebabKey = optDef.flag.replace(/^--/, "");
+    const camelKey = kebabKey.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+    const value = options[camelKey];
+    if (value === undefined || typeof value !== "string") continue;
+    if (!optDef.choices.includes(value)) {
+      throw new Error(
+        `invalid value for ${optDef.flag}: ${value} (expected one of ${optDef.choices.join(", ")})`,
+      );
+    }
+  }
+
   // 나머지 positionals
   const rest = parsed.positionals.slice(argDefs.length);
 
