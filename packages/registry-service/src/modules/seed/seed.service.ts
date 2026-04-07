@@ -31,7 +31,7 @@ export class SeedService implements OnModuleInit {
     await seedDefinitionCatalog(this.catalogStore, this.axisStore, logger);
     await seedConfigs(this.configStore, logger);
     await seedEndpoints(this.endpointStore, logger);
-    await seedEventSchemas(this.eventSchemaStore, logger);
+    await seedEventSchemas(this.eventSchemaStore, this.configStore, logger);
 
     const [catalogs, axes, configs, endpoints, eventSchemas] = await Promise.all([
       this.catalogStore.list(),
