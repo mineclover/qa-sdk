@@ -199,5 +199,21 @@ describe("EventModule (Nest)", () => {
         }),
       }),
     );
+
+    const checkResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy/check?catalog=demo");
+    expect(checkResponse.statusCode).toBe(200);
+    expect(json<{
+      serviceId: string;
+      ok: boolean;
+      issueCount: number;
+      issues: Array<{ code: string }>;
+    }>(checkResponse)).toEqual(
+      expect.objectContaining({
+        serviceId: "shopping-web",
+        ok: true,
+        issueCount: 0,
+        issues: [],
+      }),
+    );
   });
 });

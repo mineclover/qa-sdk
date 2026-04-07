@@ -223,6 +223,34 @@ export class EventCatalogService {
     };
   }
 
+  async checkServiceTaxonomy(catalogId: string, serviceId: string) {
+    const taxonomy = await this.getServiceTaxonomy(catalogId, serviceId);
+    const issues: Array<{ severity: "warning"; code: string; detail?: unknown }> = [];
+
+    if (taxonomy.drift.adoptionMissing) {
+      issues.push({ severity: "warning", code: "adoption-missing" });
+    }
+    if (taxonomy.drift.missingPackIds.length > 0) {
+      issues.push({ severity: "warning", code: "missing-pack-ids", detail: taxonomy.drift.missingPackIds });
+    }
+    if (taxonomy.drift.stalePackVersions.length > 0) {
+      issues.push({ severity: "warning", code: "stale-pack-versions", detail: taxonomy.drift.stalePackVersions });
+    }
+    if (taxonomy.drift.recordsWithoutPackMetadata > 0) {
+      issues.push({ severity: "warning", code: "records-without-pack-metadata", detail: taxonomy.drift.recordsWithoutPackMetadata });
+    }
+    if (taxonomy.drift.prefixesWithoutOwnership.length > 0) {
+      issues.push({ severity: "warning", code: "prefixes-without-ownership", detail: taxonomy.drift.prefixesWithoutOwnership });
+    }
+
+    return {
+      serviceId,
+      ok: issues.length === 0,
+      issueCount: issues.length,
+      issues,
+    };
+  }
+
   private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
     const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
     if (!record) return [];
