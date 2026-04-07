@@ -55,13 +55,16 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - pf-registry public API export (loadPfMap, registerPfEntry, removePfEntry)
 - deployedWith: 부속 배포 관계 선언 (ServiceInfo.deployedWith) + FleetManager 상태 전파
 - seed-config: shopping-web/platform-demo-api에 urls.prod CF 엔드포인트 등록
+- CF 프로바이더 안정화: 비파괴적 롤백, 로컬 의존 스킵, warn-not-fail, --skip-verify, wrangler 경로 수정
+- 엔드포인트 피드백 루프: resolve 체인 (config→profile→skip), 자동 config 피드백, 최초 배포 지원
+- index-meta-workers: Workers/Edge 호환 서브셋 패키지 생성, 3서비스 마이그레이션 완료
 
 ### 현재 규모
 
 - **65+ 소스** (infra-engine) + **7** (cli-command)
 - **220+ 테스트** (unit 105 + demo 42 + auth 57 + advanced 16)
 - **26 CLI 명령**, **4 skills**, **10+ 스펙**
-- **배포**: 7 K8s pods + 2 Cloudflare + Zitadel + MinIO
+- **배포**: 7 K8s pods + 3 Cloudflare Workers + Zitadel + MinIO
 - **인프라**: Docker Compose (MinIO + Zitadel + CockroachDB) + K3s 클러스터
 
 ---
@@ -83,6 +86,23 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - [x] **gate-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
 - [x] **query-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
 - [x] **decode-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
+- [x] **query-service migrationsFolder lazy init** — Workers URL 호환을 위한 지연 초기화
+- [x] **CF Workers 3서비스 배포 완료** — decode(391 KiB), gate(292 KiB), query(810 KiB) gzip 포함
+
+### CF 프로바이더 안정화 (해결됨)
+
+- [x] **비파괴적 롤백** — CF provider `destroy()`가 verify 실패 시 Worker를 삭제하지 않고 유지. 명시적 삭제는 `explicitDestroyWorker()`로 분리
+- [x] **로컬 의존 스킵** — `isRemoteEndpoint()` 체크로 localhost/127.0.0.1 의존을 verify에서 자동 스킵
+- [x] **의존 warn-not-fail** — 원격 의존 서비스 미도달 시 fail 대신 warn 처리, 의존이 일시적으로 내려가도 배포 성공
+- [x] **`--skip-verify` 옵션** — cmd-deploy.ts에 CF 배포용 verify 스킵 플래그 추가
+- [x] **wrangler CLI 경로 수정** — validate()가 서비스 디렉토리(devDependency 위치)에서 wrangler 실행, `shell: true` 적용
+
+### 엔드포인트 피드백 루프 (해결됨)
+
+- [x] **엔드포인트 resolve 체인** — config.connections → service-profile → skip 순서로 해석
+- [x] **자동 config 피드백** — 성공적 배포 후 발견된 endpoint를 cloudflare-prod.json에 자동 기록
+- [x] **verify에서 service-profile 활용** — verify 단계가 serviceProfile을 받아 이전 배포의 의존 endpoint 해석
+- [x] **최초 배포 지원** — 사전 설정 없는 서비스도 배포 후 자동 등록되어 다음 배포에서 참조 가능
 
 ### 프로바이더 실구현
 

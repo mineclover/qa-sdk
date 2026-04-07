@@ -60,13 +60,16 @@ function getProvider(name: string): DeployProvider {
 
 **Cloudflare (Workers)**
 ```typescript
-// 기존 wrangler.toml 기반 배포를 Pulumi로 래핑
-const worker = new cloudflare.WorkerScript("service", {
-  name: `${serviceId}-${env}`,
-  content: bundledCode,
-  // ... env vars from config
-});
+// wrangler CLI 기반 배포. validate()는 서비스 디렉토리에서 wrangler 실행 (devDependency)
+// shell: true로 npx wrangler 호출
 ```
+
+#### CF 프로바이더 운영 특성
+
+- **비파괴적 롤백**: `destroy()`는 verify 실패 시 Worker를 삭제하지 않고 유지. 배포된 Worker가 정상 동작할 가능성을 보존
+- **명시적 삭제**: `explicitDestroyWorker()`로 Worker를 의도적으로 삭제할 때만 사용
+- **wrangler 경로**: `validate()`가 서비스 디렉토리(wrangler가 devDependency인 곳)에서 실행, `shell: true` 적용
+- **엔드포인트 피드백**: 성공적 배포 후 발견된 endpoint를 cloudflare-prod.json에 자동 기록하여 다음 배포에서 의존 해석에 활용
 
 **Railway**
 ```typescript

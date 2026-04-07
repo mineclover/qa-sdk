@@ -212,7 +212,7 @@ interface StageResult {
 - **71 소스**, **220+ 테스트** (unit 106 + cli-command 23 + auth 57 + demo 37 + gateway 12 + advanced 24 + resilience 28 + login-flow 30)
 - **33 CLI 명령**, **4 skills**, **13 스펙**
 - **8 설정 파일** (test/dev/local/stage/prod/cloudflare-prod/test-nginx/test-nginx-v2)
-- **배포**: K3s dev 9서비스 + CF prod 2서비스 = 11서비스
+- **배포**: K3s dev 9서비스 + CF prod 3서비스 (decode/gate/query) = 12서비스
 - **인프라**: Docker Compose (MinIO + Zitadel + CockroachDB) + K3s 클러스터
 - **인증**: JWKS RS256 + HS256 bitmask O(1) + 12 features x 3 roles
 

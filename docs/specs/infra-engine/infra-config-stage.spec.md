@@ -233,6 +233,13 @@ INGEST_SERVER_URL=http://localhost:3200
 1. TypeScript 연결 모듈 재생성 (`generated/service-connections.{env}.ts`)
 2. 배포된 서비스 + 의존 서비스의 `.env` 파일 재생성 (`generated/env/.env.{serviceId}.{env}`)
 
+### 엔드포인트 자동 피드백
+
+CF Workers 등 원격 배포 성공 시, 발견된 endpoint가 config JSON(예: `cloudflare-prod.json`)의 `connections` 섹션에 자동 기록된다. 이를 통해:
+- 최초 배포 시 endpoint가 사전 설정 없이도 자동 등록
+- 이후 배포에서 의존 서비스 endpoint를 config에서 바로 해석 가능
+- service-profile.json과 config JSON 양쪽에 endpoint가 기록되어 이중 소스 역할
+
 ## 에러 처리
 
 | 에러 | 원인 | 대응 |

@@ -37,6 +37,17 @@ def:
 | decision-service | 3800 |
 | gRPC debug | 50051 (`GRPC_PORT` 설정 시) |
 
+## Cloudflare Workers 배포
+
+| 서비스 | URL | 번들 크기 |
+|--------|-----|----------|
+| decode-service | https://qa-decode-service.astralclover.workers.dev | 391 KiB (73 KiB gzip) |
+| gate-service | https://qa-gate-service.astralclover.workers.dev | 292 KiB (53 KiB gzip) |
+| query-service | https://qa-query-service.astralclover.workers.dev | 810 KiB (142 KiB gzip) |
+
+- Workers 호환 패키지: `index-meta-workers` (Node.js 전용 드라이버 제외)
+- 배포 후 endpoint가 `cloudflare-prod.json`에 자동 기록
+
 ## Service Profile (서비스 URL 중앙 관리)
 
 - `~/.qa-sdk/service-profile.json` — 모든 CLI 명령의 서비스 URL 소스

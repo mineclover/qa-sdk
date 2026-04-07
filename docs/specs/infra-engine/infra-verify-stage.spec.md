@@ -55,7 +55,7 @@ pending → deploying → verifying → healthy
 |--------|------|----------|------------|
 | `health-endpoint` | 필수 | `GET {endpoint}{healthPath}` → 200 | timeout 10s, retry 3회 |
 | `response-time` | 선택 | 헬스체크 응답시간 | warn: >2s, fail: >10s |
-| `dependency-reach` | 필수 | depends_on 서비스 endpoint 도달 | timeout 5s |
+| `dependency-reach` | 선택 | depends_on 서비스 endpoint 도달 | timeout 5s, 미도달 시 warn |
 | `status-code` | 필수 | 헬스체크 응답 상태코드 | 200-299 범위 |
 
 ### 커스텀 게이트
@@ -123,6 +123,9 @@ interface VerifyResult {
 ```
 RegisterStage 완료 (endpoint 확정)
   │
+  ├─ 0. --skip-verify 플래그 확인 (CF 배포 등에서 사용)
+  │     → skip: 전체 VerifyStage 건너뜀, healthStatus = "healthy" 반환
+  │
   ├─ 1. 내장 게이트 실행 (health-endpoint, status-code, dependency-reach, response-time)
   │     retry: 최대 3회, 간격 5초 (서비스 기동 지연 대응)
   │
@@ -134,6 +137,22 @@ RegisterStage 완료 (endpoint 확정)
         → warn: 경고 + 파이프라인 계속
         → fail: rollback 트리거 (Register → Provision 역순)
 ```
+
+### 엔드포인트 해석 체인
+
+dependency-reach 게이트가 의존 서비스의 endpoint를 해석하는 순서:
+
+1. `config.connections[target].endpoint` — 설정 파일에 명시된 URL
+2. `serviceProfile.services[target]` — 이전 배포에서 등록된 URL
+3. **skip** — 두 곳 모두 없으면 해당 의존 검증 건너뜀
+
+### 로컬 의존 스킵
+
+`isRemoteEndpoint()` 검사로 localhost/127.0.0.1 주소는 CF Workers 등 원격 배포 시 자동 스킵한다. 로컬 개발 환경의 의존이 원격 verify를 차단하지 않도록 하기 위함.
+
+### Dependency warn-not-fail
+
+원격 의존 서비스가 일시적으로 미도달 상태여도 배포는 성공한다. dependency-reach 게이트 실패는 warn으로 처리되며, 배포 rollback을 트리거하지 않는다.
 
 ## 소비 ^consumes
 
