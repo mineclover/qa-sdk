@@ -34,10 +34,37 @@ import type { StateRouteDeps } from "./routes/state.js";
 const stateRoutesDeps: StateRouteDeps = {};
 try {
   const mod = await (Function('return import("@qa-sdk/spec-core/transition")')() as Promise<Record<string, unknown>>);
-  const StoreCtor = mod?.InMemoryStateStore as (new () => { snapshot(ctx: string, res: string): Record<string, string> }) | undefined;
+  const StoreCtor = mod?.InMemoryStateStore as (new () => {
+    snapshot(ctx: string, res: string): Record<string, string>;
+    clear(): void;
+  }) | undefined;
+  const RegistryCtor = mod?.TransitionRegistry as (new () => {
+    register(spec: unknown): void;
+    size: number;
+  }) | undefined;
+  const EngineCtor = mod?.TransitionEngine as (new (
+    registry: { register(spec: unknown): void; size: number },
+    store: { snapshot(ctx: string, res: string): Record<string, string>; clear(): void },
+  ) => { process(events: readonly unknown[]): unknown }) | undefined;
+  const demoSpecs = mod?.DEMO_TRANSITION_SPECS as readonly unknown[] | undefined;
+
   if (StoreCtor) {
     stateRoutesDeps.stateStore = new StoreCtor();
     logger.info("transition state store initialized (in-memory)");
+  }
+
+  if (StoreCtor && RegistryCtor && EngineCtor && demoSpecs?.length) {
+    const replayStore = new StoreCtor();
+    const registry = new RegistryCtor();
+    for (const spec of demoSpecs) registry.register(spec);
+    const engine = new EngineCtor(registry, replayStore);
+
+    stateRoutesDeps.replayTransition = async (events, contextId, resourceId) => {
+      replayStore.clear();
+      engine.process(events);
+      return replayStore.snapshot(contextId, resourceId);
+    };
+    logger.info({ specs: registry.size }, "transition replay initialized");
   }
 } catch {
   // spec-core/transition 미설치 환경에서는 무시

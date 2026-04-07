@@ -884,4 +884,45 @@ describe("query-service", () => {
     expect(body.recordCount).toBe(1);
     expect(body.state).toEqual({ flow_step: "entry" });
   });
+
+  it("GET /state/:context/:resource/at prefers replayTransition when available", async () => {
+    const replayTransition = vi.fn(async () => ({ lifecycle_state: "active" }));
+    const stateApp = createApp({
+      policyRuleStore,
+      prefixRegistry,
+      metaRegistry,
+      stateRoutes: {
+        recordStore: {
+          async findByTimeRange() {
+            return [
+              {
+                logId: "keep",
+                traceId: "t1",
+                spanId: "s1",
+                timestamp: AT,
+                recordKind: "log",
+                eventKey: "evt",
+                eventVersion: "v1",
+                payloadFormat: "json",
+                payloadEncoding: "raw",
+                payloadMaskingApplied: false,
+                payloadMaskedFields: [],
+                payload: { context_id: "ctx-1", resource_id: "res-1" },
+                addressContext: { flow_step: "entry" },
+                createdAt: AT,
+              },
+            ];
+          },
+        },
+        replayTransition,
+      },
+    });
+
+    const response = await stateApp.request("/state/ctx-1/res-1/at?ts=2026-01-01T00:00:00.000Z");
+    expect(response.status).toBe(200);
+    const body = await response.json() as { mode: string; state: Record<string, string> };
+    expect(body.mode).toBe("engine-replay");
+    expect(body.state).toEqual({ lifecycle_state: "active" });
+    expect(replayTransition).toHaveBeenCalledOnce();
+  });
 });
