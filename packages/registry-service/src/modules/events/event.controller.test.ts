@@ -240,6 +240,15 @@ describe("EventModule (Nest)", () => {
       }),
     );
 
+    const assertResponse = await request(app, "POST", "/api/event-catalog/services/shopping-web/taxonomy/assert?catalog=demo");
+    expect(assertResponse.statusCode).toBe(201);
+    expect(json(assertResponse)).toEqual({
+      ok: true,
+      serviceId: "shopping-web",
+      issueCount: 0,
+      issues: [],
+    });
+
     const adoptionDeleteResponse = await request(app, "DELETE", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
     expect(adoptionDeleteResponse.statusCode).toBe(200);
     expect(json(adoptionDeleteResponse)).toEqual({
@@ -271,6 +280,18 @@ describe("EventModule (Nest)", () => {
     expect(checkResponse.statusCode).toBe(200);
     expect(json<{ issues: Array<{ code: string }> }>(checkResponse)).toEqual(
       expect.objectContaining({
+        issues: expect.arrayContaining([
+          expect.objectContaining({ code: "legacy-pack-ref-format" }),
+        ]),
+      }),
+    );
+
+    const assertResponse = await request(app, "POST", "/api/event-catalog/services/shopping-web/taxonomy/assert?catalog=demo");
+    expect(assertResponse.statusCode).toBe(409);
+    expect(json<{ error: string; issueCount: number; issues: Array<{ code: string }> }>(assertResponse)).toEqual(
+      expect.objectContaining({
+        error: "Service taxonomy 'shopping-web' has drift issues",
+        issueCount: 1,
         issues: expect.arrayContaining([
           expect.objectContaining({ code: "legacy-pack-ref-format" }),
         ]),

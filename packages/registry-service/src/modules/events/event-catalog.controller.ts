@@ -73,6 +73,11 @@ export class EventCatalogController {
     return this.eventCatalog.checkServiceTaxonomy(catalogId ?? "demo", serviceId);
   }
 
+  @Post("services/:serviceId/taxonomy/assert")
+  assertServiceTaxonomy(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
+    return this.eventCatalog.assertServiceTaxonomy(catalogId ?? "demo", serviceId);
+  }
+
   @Get("categories")
   listCategories() {
     return this.eventCatalog.listCategories();

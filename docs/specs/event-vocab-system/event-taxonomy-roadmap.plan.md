@@ -123,13 +123,13 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 ### 작업
 
 - drift diagnostics/check surface 구현
+- drift enforcement/assert surface 구현
 - pack version pin 구현
 - adoption migration 규칙 구체화
 - override/local pack 정책 정의
 
 ### 남은 완료 조건
 
-- drift gate enforcement 정의
 - UC-7 Drift 검출 안정화
 - UC-8 Pack 버전 전환 안정화
 
@@ -151,6 +151,7 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - demo catalog 기본 `event-adoption` seed 구현
 - adoption의 `packId + version` pin 구현
 - 서비스별 event taxonomy read model + drift diagnostics/check surface 구현
+- service taxonomy drift를 409로 실패시키는 assert surface 구현
 - write/runtime path는 canonical pack ref만 허용
 - 아직 미구현:
   - drift gate의 enforcement

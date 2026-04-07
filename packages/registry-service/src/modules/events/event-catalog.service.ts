@@ -321,6 +321,23 @@ export class EventCatalogService {
     };
   }
 
+  async assertServiceTaxonomy(catalogId: string, serviceId: string) {
+    const result = await this.checkServiceTaxonomy(catalogId, serviceId);
+    if (!result.ok) {
+      throw new AppError("CONFLICT", `Service taxonomy '${serviceId}' has drift issues`, 409, {
+        serviceId,
+        issueCount: result.issueCount,
+        issues: result.issues,
+      });
+    }
+    return {
+      ok: true,
+      serviceId,
+      issueCount: 0,
+      issues: [],
+    };
+  }
+
   private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
     const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
     if (!record) return [];

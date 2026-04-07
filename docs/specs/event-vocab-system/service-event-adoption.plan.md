@@ -85,6 +85,7 @@ interface ServiceEventAdoption {
 - `POST /api/event-catalog/adoptions/migrate` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy/check` ✅
+- `POST /api/event-catalog/services/:serviceId/taxonomy/assert` ✅
 
 ## drift 포인트
 
@@ -116,6 +117,7 @@ interface ServiceEventAdoption {
 - 서비스별 taxonomy read model 존재
 - drift read model 존재
 - diagnostics check surface 존재
+- drift enforcement assert surface 존재
 - demo catalog 기본 adoption seed 존재
 - 새 adoption write path는 canonical `{ packId, version }[]`만 허용
 - runtime seed는 legacy string pack ref를 materialize하지 않음
