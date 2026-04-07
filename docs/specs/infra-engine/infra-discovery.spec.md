@@ -31,6 +31,8 @@ registry-service에 등록된 서비스 메타데이터를 기반으로, 서비�
 
 DiscoveryClient가 registry-service의 서비스 데이터를 가져오고, FleetManager가 이를 InfraProfileAdapter의 배포 메타데이터와 결합하여 Fleet 수준의 관리를 수행한다. Export 도구는 DiscoveryClient의 데이터를 다양한 형식으로 변환하여 소비자(다른 서비스, Docker, CI)에 주입한다.
 
+**부속 배포 전파**: `deployedWith`가 선언된 서비스는 자체 배포 기록이 없어도 부모 서비스의 deployed/running 상태를 상속받는다. Fleet status에서 `(via {parentId})`로 표시.
+
 ---
 
 ## 정의 ^defines
@@ -47,8 +49,13 @@ interface ServiceInfo {
   ownedPrefixes: string[];
   consumedPrefixes: string[];
   urls?: Record<string, string>;  // env별 URL 맵
+  /** 독립 배포 단위가 아닌 다른 서비스의 부속으로 배포되는 경우, 부모 serviceId */
+  deployedWith?: string;
 }
 ```
+
+`deployedWith`는 독립 패키지 없이 부모 서비스에 포함되어 배포되는 도메인 서비스를 표현한다.
+예: `shopping-backend`, `auth`, `payment`은 `platform-demo-api` Workers 하나에 포함되어 배포.
 
 ### DiscoveryClient
 
@@ -118,8 +125,11 @@ interface FleetServiceStatus {
   registryUrl: string;
   deployedUrl?: string;
   deployed: boolean;
+  running?: boolean;       // 헬스체크로 확인된 실행 상태
   healthy?: boolean;       // true=헬스체크 통과, false=실패, undefined=미배포
   env: string;
+  /** 부모 서비스의 부속으로 배포된 경우, 부모 serviceId */
+  deployedWith?: string;
 }
 ```
 

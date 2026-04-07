@@ -59,7 +59,8 @@ async function main() {
           const icon = s.deployed ? "✅" : s.running ? "🟢" : "⬜";
           const label = s.deployed ? "deployed" : s.running ? "running " : "pending ";
           const url = s.deployedUrl ?? s.registryUrl ?? "-";
-          console.log(`    ${icon} ${label} ${s.serviceId.padEnd(26)} ${url}`);
+          const suffix = s.deployedWith ? `  (via ${s.deployedWith})` : "";
+          console.log(`    ${icon} ${label} ${s.serviceId.padEnd(26)} ${url}${suffix}`);
         }
       }
       break;

@@ -25,6 +25,8 @@ export interface ServiceInfo {
   urls?: Record<string, string>;
   /** env별 URL이 없어 기본 URL로 대체된 경우 true */
   urlFallback?: boolean;
+  /** 이 서비스가 독립 배포 단위가 아닌 다른 서비스의 부속으로 배포되는 경우, 부모 serviceId */
+  deployedWith?: string;
 }
 
 export interface DiscoveryClient {

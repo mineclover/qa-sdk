@@ -26,6 +26,8 @@ export interface FleetServiceStatus {
   running?: boolean;
   healthy?: boolean;
   env: string;
+  /** 부모 서비스의 부속으로 배포된 경우, 부모 serviceId */
+  deployedWith?: string;
 }
 
 export interface FleetDeployResult {
@@ -74,6 +76,7 @@ export function createFleetManager(
       infraProfile.getAllDeployments(),
     ]);
 
+    // 1차: 각 서비스의 고유 상태 수집
     const statuses: FleetServiceStatus[] = [];
 
     for (const svc of services) {
@@ -121,6 +124,22 @@ export function createFleetManager(
         healthy,
         env,
       });
+    }
+
+    // 2차: deployedWith 관계로 부모 서비스 상태 전파
+    const statusMap = new Map(statuses.map((s) => [s.serviceId, s]));
+    for (let i = 0; i < services.length; i++) {
+      const svc = services[i];
+      const status = statuses[i];
+      if (!status.deployed && !status.running && svc.deployedWith) {
+        const parent = statusMap.get(svc.deployedWith);
+        if (parent && (parent.deployed || parent.running)) {
+          status.deployed = parent.deployed;
+          status.running = parent.running;
+          status.healthy = parent.healthy;
+          status.deployedWith = svc.deployedWith;
+        }
+      }
     }
 
     return statuses;

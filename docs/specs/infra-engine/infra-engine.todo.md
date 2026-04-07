@@ -53,6 +53,8 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 - cli-command 패키지: 트리 마이그레이션 완료
 - vitePfPlugin: Vite dev server pf-registry 자동 등록/해제 공식 플러그인
 - pf-registry public API export (loadPfMap, registerPfEntry, removePfEntry)
+- deployedWith: 부속 배포 관계 선언 (ServiceInfo.deployedWith) + FleetManager 상태 전파
+- seed-config: shopping-web/platform-demo-api에 urls.prod CF 엔드포인트 등록
 
 ### 현재 규모
 
