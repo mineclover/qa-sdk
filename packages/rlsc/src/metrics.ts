@@ -6,6 +6,7 @@ import type {
   LayoutGrid,
   LayoutMetrics,
   ProximityGroup,
+  TextOccupancy,
 } from "./types.js";
 import { flattenTree } from "./tree-utils.js";
 import { extractRegions } from "./grid.js";
@@ -438,7 +439,7 @@ export function measureAspectRatios(
 /**
  * RLSCDocument에서 모든 레이아웃 메트릭을 계산하여 단일 LayoutMetrics로 반환한다.
  */
-export function measureLayout(doc: RLSCDocument): LayoutMetrics {
+export function measureLayout(doc: RLSCDocument, textOccupancies?: readonly TextOccupancy[]): LayoutMetrics {
   const allNodes = flattenTree(doc.root);
 
   const balance = measureBalance(allNodes, doc.viewport);
@@ -453,6 +454,33 @@ export function measureLayout(doc: RLSCDocument): LayoutMetrics {
   );
   const aspectRatioDistribution = measureAspectRatios(allNodes);
 
+  // 텍스트 메트릭 (optional)
+  let textDensity: number | undefined;
+  let textBoundaryContactRate: number | undefined;
+  let textOverflowCount: number | undefined;
+
+  if (textOccupancies && textOccupancies.length > 0) {
+    const viewportArea = doc.viewport.width * doc.viewport.height;
+    let totalTextArea = 0;
+    let contactNodeCount = 0;
+    let overflowCount = 0;
+
+    for (const occ of textOccupancies) {
+      totalTextArea += occ.renderedRect.width * occ.renderedRect.height;
+      if (occ.overflows) overflowCount++;
+      const hasContact =
+        occ.boundaryContact.top ||
+        occ.boundaryContact.right ||
+        occ.boundaryContact.bottom ||
+        occ.boundaryContact.left;
+      if (hasContact) contactNodeCount++;
+    }
+
+    textDensity = viewportArea > 0 ? totalTextArea / viewportArea : 0;
+    textBoundaryContactRate = contactNodeCount / textOccupancies.length;
+    textOverflowCount = overflowCount;
+  }
+
   return {
     balance,
     dominantFlow,
@@ -463,5 +491,8 @@ export function measureLayout(doc: RLSCDocument): LayoutMetrics {
     spacingValues,
     spacingBase,
     aspectRatioDistribution,
+    textDensity,
+    textBoundaryContactRate,
+    textOverflowCount,
   };
 }

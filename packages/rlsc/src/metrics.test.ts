@@ -11,7 +11,7 @@ import {
   measureLayout,
 } from "./metrics.js";
 import { analyzeGrid } from "./grid.js";
-import type { RLSCNode, RLSCRelation, RLSCDocument } from "./types.js";
+import type { RLSCNode, RLSCRelation, RLSCDocument, TextOccupancy } from "./types.js";
 
 // ── 헬퍼 ─────────────────────────────────────────────────────────────
 
@@ -307,5 +307,61 @@ describe("measureLayout", () => {
     expect(Array.isArray(metrics.proximityGroups)).toBe(true);
     expect(Array.isArray(metrics.aspectRatioDistribution)).toBe(true);
     expect(["horizontal", "vertical", "grid", "free"]).toContain(metrics.dominantFlow);
+  });
+});
+
+// ── measureLayout — textOccupancies ─────────────────────────────────
+
+function makeTextOcc(
+  nodeId: string,
+  fillX: number,
+  fillY: number,
+  overflows: boolean,
+  contact: { top: boolean; right: boolean; bottom: boolean; left: boolean },
+): TextOccupancy {
+  return {
+    nodeId,
+    renderedRect: { x: 0, y: 0, width: 160, height: 40 },
+    fillX,
+    fillY,
+    lineCount: 2,
+    naturalWidth: 180,
+    margins: { top: 0, right: 40, bottom: 60, left: 0 },
+    boundaryContact: contact,
+    overflows,
+  };
+}
+
+describe("measureLayout — textOccupancies", () => {
+  it("TextOccupancy 미제공 시 텍스트 필드 undefined", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    const m = measureLayout(doc);
+    expect(m.textDensity).toBeUndefined();
+    expect(m.textBoundaryContactRate).toBeUndefined();
+    expect(m.textOverflowCount).toBeUndefined();
+  });
+
+  it("textDensity = 총 텍스트 면적 / 뷰포트 면적", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    const occs = [
+      makeTextOcc("a", 0.8, 0.4, false, { top: true, right: false, bottom: false, left: true }),
+      makeTextOcc("b", 0.6, 0.5, true, { top: false, right: false, bottom: false, left: false }),
+    ];
+    const m = measureLayout(doc, occs);
+    expect(m.textDensity).toBeCloseTo(12800 / 786432, 4);
+    expect(m.textBoundaryContactRate).toBeCloseTo(0.5);
+    expect(m.textOverflowCount).toBe(1);
+  });
+
+  it("모든 노드 contact 없고 overflow 없으면 rate=0, count=0", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    const noContact = { top: false, right: false, bottom: false, left: false };
+    const occs = [makeTextOcc("a", 0.5, 0.5, false, noContact)];
+    const m = measureLayout(doc, occs);
+    expect(m.textBoundaryContactRate).toBe(0);
+    expect(m.textOverflowCount).toBe(0);
   });
 });

@@ -5,6 +5,7 @@ import type {
   DesignContext,
   ContextPurpose,
   LayoutRect,
+  TextOccupancy,
 } from "./types.js";
 import { encodeToMarkup } from "./encoder.js";
 import { gridToText } from "./grid.js";
@@ -16,6 +17,10 @@ import { flattenTree } from "./tree-utils.js";
 
 const DEFAULT_SECTIONS = ["tree", "grid", "layers", "relations"] as const satisfies ContextOptions["sections"];
 
+interface GenerateContextOptions extends Partial<ContextOptions> {
+  readonly textOccupancies?: readonly TextOccupancy[];
+}
+
 /**
  * R.L.S.C. 문서를 LLM이 이해할 수 있는 디자인 컨텍스트로 변환한다.
  *
@@ -25,7 +30,7 @@ const DEFAULT_SECTIONS = ["tree", "grid", "layers", "relations"] as const satisf
  */
 export function generateDesignContext(
   doc: RLSCDocument,
-  options?: Partial<ContextOptions>,
+  options?: GenerateContextOptions,
 ): DesignContext {
   const opts = {
     purpose: options?.purpose ?? ("layout-analysis" as ContextPurpose),
@@ -53,6 +58,11 @@ export function generateDesignContext(
     ? relationsToText(doc.relations)
     : "";
 
+  // 텍스트 점유
+  const textSection = opts.sections.includes("text") && options?.textOccupancies?.length
+    ? generateTextSection(options.textOccupancies)
+    : "";
+
   // 포커스 상세
   const focusDetail = opts.focus
     ? generateFocusDetail(doc, allNodes, opts.focus)
@@ -71,6 +81,7 @@ export function generateDesignContext(
     layers,
     relations,
     focusDetail,
+    textSection,
   });
 
   return {
@@ -222,6 +233,7 @@ const PROMPT_TEMPLATES: Record<ContextPurpose, string> = {
 \`\`\`
 {relations}
 \`\`\`
+{textSection}
 {focusSection}
 
 이 레이아웃의 구조적 특성, 계층 관계, 공간 활용을 분석해주세요.`,
@@ -242,6 +254,7 @@ R.L.S.C. 분석된 페이지에서 특정 컴포넌트를 찾아야 합니다.
 \`\`\`
 {matrix}
 \`\`\`
+{textSection}
 {focusSection}
 
 위 구조에서 요청된 컴포넌트의 위치, 크기, 역할을 식별해주세요.`,
@@ -262,6 +275,7 @@ R.L.S.C. 분석된 페이지에서 특정 컴포넌트를 찾아야 합니다.
 \`\`\`
 {relations}
 \`\`\`
+{textSection}
 {focusSection}
 
 현재 레이아웃 패턴을 유지하면서 요청된 변경사항을 R.L.S.C. 마크업으로 생성해주세요.`,
@@ -276,6 +290,7 @@ R.L.S.C. 분석된 페이지에서 특정 컴포넌트를 찾아야 합니다.
 \`\`\`
 {structure}
 \`\`\`
+{textSection}
 {focusSection}
 
 변경된 요소, 이동된 위치, 크기 변화를 분석해주세요.`,
@@ -301,6 +316,7 @@ R.L.S.C. 분석을 기반으로 접근성 문제를 검사합니다.
 \`\`\`
 {relations}
 \`\`\`
+{textSection}
 
 ARIA 역할 누락, 키보드 접근성, 시각적 계층 문제를 분석해주세요.`,
 };
@@ -314,6 +330,7 @@ function buildPrompt(
     layers: string;
     relations: string;
     focusDetail?: string;
+    textSection?: string;
   },
 ): string {
   let template = PROMPT_TEMPLATES[purpose];
@@ -323,6 +340,7 @@ function buildPrompt(
   template = template.replace("{matrix}", data.matrix);
   template = template.replace("{layers}", data.layers);
   template = template.replace("{relations}", data.relations);
+  template = template.replace("{textSection}", data.textSection ?? "");
 
   const focusSection = data.focusDetail
     ? `\n## 포커스 영역\n${data.focusDetail}\n`
@@ -330,6 +348,50 @@ function buildPrompt(
   template = template.replace("{focusSection}", focusSection);
 
   return template;
+}
+
+// ─── 텍스트 점유 섹션 ──────────────────────────────────────────────
+
+function generateTextSection(
+  occupancies: readonly TextOccupancy[],
+): string {
+  if (occupancies.length === 0) return "";
+
+  const overflowing = occupancies.filter((o) => o.overflows);
+  const contacted = occupancies.filter(
+    (o) =>
+      o.boundaryContact.top ||
+      o.boundaryContact.right ||
+      o.boundaryContact.bottom ||
+      o.boundaryContact.left,
+  );
+
+  const lines: string[] = [
+    `## 텍스트 점유 분석`,
+    ``,
+    `텍스트 노드: ${occupancies.length}개`,
+  ];
+
+  if (overflowing.length > 0) {
+    lines.push(`오버플로우: ${overflowing.length}개`);
+    for (const o of overflowing.slice(0, 5)) {
+      lines.push(`  - ${o.nodeId}: fillX=${o.fillX.toFixed(2)} fillY=${o.fillY.toFixed(2)} (${o.lineCount}줄)`);
+    }
+  }
+
+  if (contacted.length > 0) {
+    lines.push(`경계 접촉: ${contacted.length}개`);
+    for (const o of contacted.slice(0, 5)) {
+      const dirs: string[] = [];
+      if (o.boundaryContact.top) dirs.push("상");
+      if (o.boundaryContact.right) dirs.push("우");
+      if (o.boundaryContact.bottom) dirs.push("하");
+      if (o.boundaryContact.left) dirs.push("좌");
+      lines.push(`  - ${o.nodeId}: ${dirs.join("·")} 접촉`);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 // ─── 유틸리티 ───────────────────────────────────────────────────────

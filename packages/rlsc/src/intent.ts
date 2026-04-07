@@ -6,6 +6,7 @@ import type {
   ConformanceResult,
   GridSystemPattern,
   SpacingPattern,
+  TextOccupancy,
 } from "./types.js";
 import { measureLayout } from "./metrics.js";
 import { classifyLayout } from "./pattern.js";
@@ -241,6 +242,50 @@ function checkSpacing(
   return violations;
 }
 
+function checkTextOccupancy(
+  declared: LayoutPattern,
+  doc: RLSCDocument,
+  textOccupancies?: readonly TextOccupancy[],
+): ConformanceViolation[] {
+  const violations: ConformanceViolation[] = [];
+  if (!textOccupancies || textOccupancies.length === 0) return violations;
+
+  // text-overflow: 오버플로우 노드 경고
+  const overflowing = textOccupancies.filter((o) => o.overflows);
+  if (overflowing.length > 0) {
+    violations.push({
+      rule: "text-overflow",
+      declared: "no overflow",
+      recognized: `${overflowing.length}개 노드 오버플로우: ${overflowing.map((o) => o.nodeId).join(", ")}`,
+      severity: "warning",
+      description: `텍스트 오버플로우 감지: ${overflowing.length}개 노드`,
+    });
+  }
+
+  // textDensityRange: 텍스트 밀도 범위 검증
+  if (declared.textDensityRange) {
+    const viewportArea = doc.viewport.width * doc.viewport.height;
+    let totalTextArea = 0;
+    for (const occ of textOccupancies) {
+      totalTextArea += occ.renderedRect.width * occ.renderedRect.height;
+    }
+    const density = viewportArea > 0 ? totalTextArea / viewportArea : 0;
+    const [min, max] = declared.textDensityRange;
+
+    if (density < min || density > max) {
+      violations.push({
+        rule: "textDensityRange",
+        declared: declared.textDensityRange,
+        recognized: density,
+        severity: "warning",
+        description: `텍스트 밀도 범위 밖: ${density.toFixed(4)} (허용 ${min}–${max})`,
+      });
+    }
+  }
+
+  return violations;
+}
+
 // ─── 선언된 필드 수 카운트 ───────────────────────────────────────────
 
 function countDeclaredFields(pattern: LayoutPattern): number {
@@ -253,6 +298,7 @@ function countDeclaredFields(pattern: LayoutPattern): number {
     pattern.gridSystem,
     pattern.spacing,
     pattern.proportions,
+    pattern.textDensityRange,
   ].filter((v) => v !== undefined).length;
 }
 
@@ -265,6 +311,7 @@ function countDeclaredFields(pattern: LayoutPattern): number {
 export function checkConformance(
   doc: RLSCDocument,
   declared: LayoutPattern,
+  textOccupancies?: readonly TextOccupancy[],
 ): ConformanceResult {
   const metrics: LayoutMetrics = measureLayout(doc);
   const recognized: LayoutPattern = classifyLayout(metrics);
@@ -278,6 +325,7 @@ export function checkConformance(
     ...checkGridSystem(declared, recognized),
     ...checkSpacing(declared, recognized),
     ...checkProportions(declared, recognized),
+    ...checkTextOccupancy(declared, doc, textOccupancies),
   ];
 
   const total = countDeclaredFields(declared);

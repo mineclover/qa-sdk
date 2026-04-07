@@ -164,7 +164,7 @@ export interface ContextOptions {
   /** 포커스 영역 (노드 ID 또는 rect) */
   readonly focus?: string | LayoutRect;
   /** 포함할 섹션 */
-  readonly sections?: readonly ("tree" | "grid" | "layers" | "relations")[];
+  readonly sections?: readonly ("tree" | "grid" | "layers" | "relations" | "text")[];
   /** 최대 토큰 수 (근사). 기본 4000 */
   readonly maxTokens?: number;
 }
@@ -247,6 +247,12 @@ export interface LayoutMetrics {
   readonly spacingBase: number | null;
   /** 가시 노드 width/height 비율 분포 (count 내림차순) */
   readonly aspectRatioDistribution: readonly { readonly ratio: number; readonly count: number }[];
+  /** 전체 가시 영역 대비 텍스트 점유 비율 (0–1). TextOccupancy 미제공 시 undefined */
+  readonly textDensity?: number;
+  /** 경계 접촉 노드 비율 (0–1). TextOccupancy 미제공 시 undefined */
+  readonly textBoundaryContactRate?: number;
+  /** 오버플로우 노드 수. TextOccupancy 미제공 시 undefined */
+  readonly textOverflowCount?: number;
 }
 
 // ─── Pattern ────────────────────────────────────────────────────────
@@ -293,6 +299,8 @@ export interface LayoutPattern {
   readonly gridSystem?: GridSystemPattern;
   readonly spacing?: SpacingPattern;
   readonly proportions?: ProportionPattern;
+  /** 허용 텍스트 밀도 범위 [min, max] (0–1) */
+  readonly textDensityRange?: readonly [number, number];
 }
 
 // ─── Conformance ────────────────────────────────────────────────────
@@ -348,6 +356,10 @@ export interface MonitorOptions {
   readonly debounceMs?: number;
   readonly collectOptions?: CollectorOptions;
   readonly onConformanceChange?: (result: ConformanceResult) => void;
+  /** 텍스트 점유 변화 감지 여부. 기본 false */
+  readonly trackText?: boolean;
+  /** 텍스트 점유 변화 콜백 */
+  readonly onTextOccupancyChange?: (occupancies: readonly TextOccupancy[]) => void;
 }
 
 /** 레이아웃 모니터 */

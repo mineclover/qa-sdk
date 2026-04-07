@@ -54,31 +54,27 @@ def:
   - text-align → textX 위치 계산, margin 4방향, boundaryContact, overflow 판정
 - [x] `aggregateTextRegions(doc, occupancies)` 함수 — 영역별 밀도 집계
 
-## Phase 4: 메트릭 통합 (`metrics.ts`)
+## Phase 4: 메트릭 통합 (`metrics.ts`) ✅
 
-- [ ] `LayoutMetrics`에 텍스트 관련 필드 추가 검토
+- [x] `LayoutMetrics`에 텍스트 관련 필드 추가
   - `textDensity?: number` — 전체 가시 영역 대비 텍스트 점유 비율
   - `textBoundaryContactRate?: number` — 경계 접촉 노드 비율
   - `textOverflowCount?: number` — 오버플로우 노드 수
-- [ ] `measureLayout()` 확장 — TextOccupancy 배열 수용 (optional 파라미터)
+- [x] `measureLayout()` 확장 — TextOccupancy 배열 수용 (optional 파라미터)
 
-## Phase 5: LLM 컨텍스트 통합 (`context.ts`)
+## Phase 5: LLM 컨텍스트 통합 (`context.ts`) ✅
 
-- [ ] `DesignContext`에 텍스트 점유 섹션 추가
-  - `textOccupancy?: string` — 텍스트 점유 요약 텍스트
-- [ ] `generateDesignContext()` — TextOccupancy 배열 받아서 요약 생성
+- [x] `generateDesignContext()`에 텍스트 점유 섹션 추가 (`textOccupancies` 옵션)
   - 경계 접촉 노드 목록
   - 오버플로우 위험 노드
-  - 영역별 텍스트 밀도 상위 N개
-- [ ] `ContextOptions.sections`에 `"text"` 추가
+- [x] `ContextOptions.sections`에 `"text"` 추가
 
-## Phase 6: 적합성 검증 통합 (`intent.ts`)
+## Phase 6: 적합성 검증 통합 (`intent.ts`) ✅
 
-- [ ] 텍스트 관련 ConformanceViolation 규칙 검토
+- [x] 텍스트 관련 ConformanceViolation 규칙
   - `text-overflow`: 텍스트가 컨테이너를 넘침
-  - `text-boundary-contact`: 의도하지 않은 경계 접촉
-  - `text-density-high`: 텍스트 밀도가 임계값 초과
-- [ ] `LayoutPattern`에 텍스트 의도 선언 필드 추가 검토
+  - `textDensityRange`: 텍스트 밀도가 허용 범위 밖
+- [x] `LayoutPattern`에 텍스트 의도 선언 필드 추가
   - `textDensityRange?: [number, number]` — 허용 밀도 범위
 
 ## Phase 7: 반응형 예측 유틸리티 ✅
@@ -88,11 +84,11 @@ def:
 - [x] `findBreakpointWidth(prepared, targetLineCount, lineHeight, minWidth, maxWidth)` 함수
   - 이진 탐색으로 목표 줄 수가 되는 최소 maxWidth 찾기
 
-## Phase 8: 모니터 통합 (`monitor.ts`)
+## Phase 8: 모니터 통합 (`monitor.ts`) ✅
 
-- [ ] `LayoutMonitor`에서 텍스트 점유 변화 감지 옵션
-  - re-collect 시 preparedMap 재생성 또는 변경 노드만 갱신
-  - 텍스트 점유 변화 콜백
+- [x] `MonitorOptions.trackText` — 텍스트 점유 변화 감지 옵션
+  - re-collect 시 `collectLayoutWithText` + `analyzeTextOccupancy` 자동 실행
+  - `onTextOccupancyChange` 콜백으로 변화 전달
 
 ## Phase 9: index.ts export + 테스트 ✅ (단위) / 🔲 (E2E)
 

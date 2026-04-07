@@ -4,9 +4,10 @@ import type {
   LayoutMonitor,
   MonitorOptions,
 } from "./types.js";
-import { collectLayout } from "./collector.js";
+import { collectLayout, collectLayoutWithText } from "./collector.js";
 import { diffDocuments } from "./query.js";
 import { checkConformance } from "./intent.js";
+import { analyzeTextOccupancy } from "./text-occupancy.js";
 
 const DEFAULT_DEBOUNCE_MS = 200;
 
@@ -38,7 +39,19 @@ export function createLayoutMonitor(
   function handleChange() {
     if (debounceTimer !== null) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      const next = collectLayout(root, collectOptions);
+      let next: RLSCDocument;
+
+      if (options?.trackText) {
+        const { doc, textPrepared } = collectLayoutWithText(root, collectOptions);
+        next = doc;
+        if (options.onTextOccupancyChange) {
+          const occupancies = analyzeTextOccupancy(doc, textPrepared);
+          options.onTextOccupancyChange(occupancies);
+        }
+      } else {
+        next = collectLayout(root, collectOptions);
+      }
+
       const diffs = diffDocuments(current, next);
 
       for (const diff of diffs) {

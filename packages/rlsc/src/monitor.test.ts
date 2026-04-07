@@ -1,11 +1,34 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createLayoutMonitor } from "./monitor.js";
-import { collectLayout } from "./collector.js";
+import { collectLayout, collectLayoutWithText } from "./collector.js";
 import type { RLSCDocument } from "./types.js";
 
 // collector를 mock하여 DOM 없이 실행
 vi.mock("./collector.js", () => ({
   collectLayout: vi.fn(),
+  collectLayoutWithText: vi.fn(() => ({
+    doc: {
+      version: "1.0",
+      viewport: { width: 1024, height: 768 },
+      url: "http://localhost",
+      timestamp: "2024-01-01T00:00:00.000Z",
+      root: {
+        id: "root", tag: "body", classes: [],
+        rect: { x: 0, y: 0, width: 1024, height: 768 },
+        zIndex: 0, depth: 0, display: "block",
+        position: "static", overflow: "visible",
+        visible: true, attributes: {}, children: [],
+      },
+      grid: { cellSize: 16, cols: 64, rows: 48, cells: [] },
+      layers: [],
+      relations: [],
+    },
+    textPrepared: new Map(),
+  })),
+}));
+
+vi.mock("./text-occupancy.js", () => ({
+  analyzeTextOccupancy: vi.fn(() => []),
 }));
 
 function makeDoc(): RLSCDocument {
@@ -105,5 +128,56 @@ describe("createLayoutMonitor — debounce", () => {
     vi.advanceTimersByTime(200);
     // stop() 후 타이머가 취소됐으므로 추가 호출 없음
     expect(collectSpy.mock.calls.length).toBe(callsAfterConstruct);
+  });
+});
+
+// ── trackText ────────────────────────────────────────────────────────
+
+describe("createLayoutMonitor — trackText", () => {
+  let mutationCb3: ((records: MutationRecord[], observer: MutationObserver) => void) | undefined;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    vi.mocked(collectLayout).mockReset();
+    vi.mocked(collectLayoutWithText).mockReset();
+  });
+
+  function stubBrowserEnv3() {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("document", { body: {}, documentElement: {} });
+    vi.stubGlobal("MutationObserver", class {
+      constructor(cb: (records: MutationRecord[], obs: MutationObserver) => void) {
+        mutationCb3 = cb;
+      }
+      observe() {}
+      disconnect() {}
+    });
+    vi.stubGlobal("ResizeObserver", class {
+      observe() {}
+      disconnect() {}
+    });
+  }
+
+  it("trackText: true일 때 onTextOccupancyChange 콜백 호출", () => {
+    vi.useFakeTimers();
+    vi.mocked(collectLayout).mockReturnValue(makeDoc());
+    // collectLayoutWithText mock is already set up at module level
+    stubBrowserEnv3();
+
+    const textCb = vi.fn();
+    const monitor = createLayoutMonitor(undefined, {
+      debounceMs: 50,
+      trackText: true,
+      onTextOccupancyChange: textCb,
+    });
+    monitor.start();
+
+    mutationCb3!([], {} as MutationObserver);
+    vi.advanceTimersByTime(50);
+
+    expect(textCb).toHaveBeenCalledWith([]);
+
+    monitor.stop();
   });
 });

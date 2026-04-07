@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { checkConformance, recognizeLayout } from "./intent.js";
 import { analyzeGrid } from "./grid.js";
-import type { RLSCDocument, RLSCNode, RLSCRelation, LayoutPattern } from "./types.js";
+import type { RLSCDocument, RLSCNode, RLSCRelation, LayoutPattern, TextOccupancy } from "./types.js";
 
 // ── 헬퍼 ─────────────────────────────────────────────────────────────
 
@@ -164,5 +164,58 @@ describe("recognizeLayout", () => {
     ]);
     const pattern = recognizeLayout(doc);
     expect(pattern.flowDirection).toBe("left-to-right");
+  });
+});
+
+// ── 텍스트 적합성 검증 ──────────────────────────────────────────────
+
+function makeTextOcc(
+  nodeId: string,
+  opts: { overflows?: boolean; fillX?: number; fillY?: number; contact?: { top: boolean; right: boolean; bottom: boolean; left: boolean } },
+): TextOccupancy {
+  return {
+    nodeId,
+    renderedRect: { x: 0, y: 0, width: 160, height: 40 },
+    fillX: opts.fillX ?? 0.8,
+    fillY: opts.fillY ?? 0.4,
+    lineCount: 2,
+    naturalWidth: 180,
+    margins: { top: 0, right: 40, bottom: 60, left: 0 },
+    boundaryContact: opts.contact ?? { top: false, right: false, bottom: false, left: false },
+    overflows: opts.overflows ?? false,
+  };
+}
+
+describe("checkConformance — 텍스트 규칙", () => {
+  it("text-overflow: overflows 노드가 있으면 violation", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    const occs = [makeTextOcc("p1", { overflows: true })];
+    const result = checkConformance(doc, {}, occs);
+    const v = result.violations.find((v) => v.rule === "text-overflow");
+    expect(v).toBeDefined();
+    expect(v!.severity).toBe("warning");
+  });
+
+  it("textDensityRange: 밀도가 범위 밖이면 violation", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    // 160×40 = 6400 / (1000×1000) = 0.0064
+    const occs = [makeTextOcc("p1", {})];
+    const result = checkConformance(doc, { textDensityRange: [0.1, 0.5] }, occs);
+    const v = result.violations.find((v) => v.rule === "textDensityRange");
+    expect(v).toBeDefined();
+    expect(v!.severity).toBe("warning");
+  });
+
+  it("텍스트 규칙 없고 overflow 없으면 text violation 없음", () => {
+    const n = node("a", 0, 0, 500, 500);
+    const doc = makeDoc([n]);
+    const occs = [makeTextOcc("p1", {})];
+    const result = checkConformance(doc, {}, occs);
+    const textViolations = result.violations.filter(
+      (v) => v.rule === "text-overflow" || v.rule === "textDensityRange",
+    );
+    expect(textViolations).toHaveLength(0);
   });
 });

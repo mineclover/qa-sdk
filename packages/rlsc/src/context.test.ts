@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateDesignContext } from "./context.js";
-import type { RLSCDocument, RLSCNode } from "./types.js";
+import type { RLSCDocument, RLSCNode, TextOccupancy } from "./types.js";
 
 // ─── 헬퍼 ────────────────────────────────────────────────────────────
 
@@ -108,5 +108,41 @@ describe("generateDesignContext 기본 반환", () => {
     const doc = makeDoc();
     const ctx = generateDesignContext(doc);
     expect(ctx.purpose).toBe("layout-analysis");
+  });
+});
+
+// ─── 텍스트 점유 섹션 ────────────────────────────────────────────────
+
+function makeTextOcc(nodeId: string, overflows: boolean): TextOccupancy {
+  return {
+    nodeId,
+    renderedRect: { x: 10, y: 10, width: 160, height: 40 },
+    fillX: 0.8,
+    fillY: 0.4,
+    lineCount: 2,
+    naturalWidth: 180,
+    margins: { top: 0, right: 40, bottom: 60, left: 0 },
+    boundaryContact: { top: true, right: false, bottom: false, left: true },
+    overflows,
+  };
+}
+
+describe("텍스트 점유 섹션 (sections: text)", () => {
+  it("sections에 text 포함 + textOccupancies 제공 시 prompt에 텍스트 분석 포함", () => {
+    const doc = makeDoc();
+    const occs = [makeTextOcc("p1", false), makeTextOcc("p2", true)];
+    const ctx = generateDesignContext(doc, {
+      sections: ["text"],
+      textOccupancies: occs,
+    });
+    expect(ctx.prompt).toContain("텍스트 점유");
+    expect(ctx.prompt).toContain("p2");
+    expect(ctx.prompt).toContain("오버플로우");
+  });
+
+  it("textOccupancies 미제공 시 텍스트 섹션 비어있음", () => {
+    const doc = makeDoc();
+    const ctx = generateDesignContext(doc, { sections: ["text"] });
+    expect(ctx.prompt).not.toContain("텍스트 점유");
   });
 });
