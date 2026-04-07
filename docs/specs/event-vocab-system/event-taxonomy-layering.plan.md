@@ -75,7 +75,7 @@ interface EventMappingPack {
 ```ts
 interface ServiceEventAdoption {
   serviceId: string;
-  eventPacks: string[];
+  eventPacks: { packId: string; version: string }[];
   allowedCategories?: string[];
 }
 ```

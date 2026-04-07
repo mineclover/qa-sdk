@@ -132,27 +132,14 @@ event taxonomy 3층 분리 설계가 실제로 관리하기 쉬운지, 그리고
 - 전제: override 규칙이 명시돼야 함
 - 안정화 상태: 낮음
 
-### UC-5: 서비스별 Custom Event 추가
+### UC-5: 서비스별 확장 이벤트
 
-**상황**: 특정 서비스에만 필요한 강한 도메인 의미 이벤트를 추가한다.
+**상태**: future scope
 
-예: `merchant_settlement_closed`
+현재 canonical adoption 모델은 `eventPacks + allowedCategories`만 지원한다.  
+서비스별 custom event surface는 아직 구현/정책 범위에 포함하지 않는다.
 
-**변경 대상**:
-- Layer 3 중심
-  - service custom event surface
-- 필요 시 Layer 2
-  - prefix mapping
-
-**기대 효과**:
-- core vocabulary를 불필요하게 비대하게 만들지 않는다.
-- 서비스 고유 언어를 유지할 수 있다.
-
-**평가**:
-- 관리 용이성: 중간
-- 확장성: 높음
-- 전제: custom event와 core event의 승격 기준이 문서화돼야 함
-- 안정화 상태: 중간
+따라서 이 시나리오는 현재 구조의 활성 use case가 아니라, 후속 확장 레이어 검토 항목으로 남긴다.
 
 ### UC-6: Registry가 서비스별 Event Schema를 Materialize
 
@@ -214,9 +201,9 @@ event taxonomy 3층 분리 설계가 실제로 관리하기 쉬운지, 그리고
 | 전역 vocabulary 관리 | 좋음 | 공통 의미를 한 곳에 고정 가능 |
 | 서비스별 해석 분리 | 좋음 | pack으로 분리하면 오염 최소화 |
 | 서비스 온보딩 | 좋음 | adoption layer만 바꾸면 됨 |
-| drift 추적 | 보완 필요 | 현재는 ownership/prefix 중심이라 event adoption drift가 안 보임 |
-| seed/materialization | 보완 필요 | 현재 구현은 `serviceId` 하드코딩이 있어 구조와 불일치 |
-| version migration | 설계 필요 | pack/adoption version 모델이 아직 없음 |
+| drift 추적 | 좋음 | adoption/ownership/materialization drift를 check/assert로 읽을 수 있음 |
+| seed/materialization | 좋음 | adoption 기반 materialization으로 정리됨 |
+| version migration | 중간 | pack/adoption version pin은 있으나 전환 시나리오 문서화는 더 필요 |
 
 ## 시나리오 안정화 우선순위
 
@@ -224,9 +211,8 @@ event taxonomy 3층 분리 설계가 실제로 관리하기 쉬운지, 그리고
 
 - UC-1 전역 Core Event 추가
 - UC-2 Mapping Pack 추가
-- UC-5 서비스별 Custom Event 추가
 
-이 3개는 vocabulary / pack 경계만 명확해도 관리 가능하다.
+이 2개는 vocabulary / pack 경계만 명확해도 관리 가능하다.
 
 ### 2차 안정화
 

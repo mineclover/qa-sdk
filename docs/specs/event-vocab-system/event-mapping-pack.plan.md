@@ -100,8 +100,8 @@ interface EventMappingPack {
 
 - pack registry 존재
 - pack owner/domain 조회 가능
+- pack version/status 조회 가능
 - event key → pack 역조회 가능
 - 아직 없음:
-  - pack version/status
   - pack lifecycle
   - pack 전용 drift gate
