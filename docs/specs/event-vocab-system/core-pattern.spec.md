@@ -24,7 +24,7 @@ QA Scenario DSL과 Runtime Matching Engine이 공통으로 참조할 수 있는 
 
 ## 구성 ^overview
 
-- **카테고리**: 8개 카테고리(navigation, interaction, form, session, network, execution, outcome, quality)로 총 60개 이벤트 분류
+- **카테고리**: 9개 카테고리(navigation, interaction, form, session, network, execution, outcome, quality, infrastructure)로 총 82개 이벤트 분류
 - **v1 핵심 세트**: page_view, click, session_start 등 20개 최소 핵심 이벤트 정의
 - **Core vs Custom 분기**: 여러 서비스에서 반복되고 자동 수집 가능한 것만 core, 도메인 특화는 custom
 - **graph_hint**: 각 이벤트에 entry/transition/terminal/observation 역할과 goal_eligible, loopable 플래그 부여
@@ -39,6 +39,7 @@ implemented
 - QA 시나리오 DSL의 공통 언어
 - SDK 자동 수집의 기본 타깃
 - 서비스별 커스텀 이벤트를 감싸는 기준 축
+- 서비스별 해석(mapping pack)과 채택(service adoption)의 상위 vocabulary
 
 ## 설계 원칙
 
@@ -65,7 +66,7 @@ interface CoreEventDef {
 
 `graph_hint`는 이벤트가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다. 상세 스펙은 [graph-hint.spec.md](graph-hint.spec.md) 참조.
 
-## 8개 카테고리
+## 9개 카테고리
 
 | 카테고리 | 의미 | 이벤트 수 |
 |---|---|---|
@@ -74,11 +75,12 @@ interface CoreEventDef {
 | form | 입력/제출 | 5 |
 | session | 세션/진입/이탈 | 6 |
 | network | 네트워크/API | 8 |
-| execution | 시스템/작업 실행 | 9 |
+| execution | 시스템/작업 실행 | 16 |
 | outcome | 성공/실패/완료 결과 | 7 |
 | quality | 오류/경고/검증/마스킹 | 8 |
+| infrastructure | 인프라/운영/배포/헬스 | 15 |
 
-전체 60개, v1 최소 핵심 세트 20개. 각 이벤트는 graph_hint를 통해 entry/transition/terminal/observation 역할과 goal_eligible, loopable 플래그를 갖는다.
+전체 82개, v1 최소 핵심 세트 20개. 각 이벤트는 graph_hint를 통해 entry/transition/terminal/observation 역할과 goal_eligible, loopable 플래그를 갖는다.
 
 ## v1 최소 핵심 세트 (20개)
 
@@ -105,6 +107,13 @@ page_view, screen_view, route_change, app_open, click, tap, input_change, form_s
 1. Core event는 **실행 패턴**을 표현 (click, http_request, sdk_flush)
 2. 도메인 의미는 payload 또는 custom event가 채움 (click + payload.element_id)
 3. 강한 도메인 의미가 필요하면 custom event (signup_completed, purchase_confirmed)
+
+## 책임 경계 ^constraint
+
+- 이 문서는 **global event vocabulary**를 소유한다.
+- 서비스별 이벤트→prefix 해석은 mapping pack layer가 소유한다.
+- 어떤 서비스가 어떤 이벤트 세트를 채택하는가는 service adoption layer가 소유한다.
+- 따라서 이 문서만으로 서비스별 event taxonomy가 완성되지는 않는다.
 
 ## 소비 패턴
 

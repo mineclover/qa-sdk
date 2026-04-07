@@ -7,7 +7,7 @@ def:
   scope: flow
   aspect: relation
   depth: specification
-  lifecycle: approved
+  lifecycle: draft
   layer: operation
   tags: [cross-scope, structural, entry-point]
   links:
@@ -31,7 +31,7 @@ def:
 
 ## 목적 ^purpose
 
-qa-sdk에 공존하는 여러 상태 체계를 하나로 합치지 않고, 각 체계의 소유권을 유지한 채 해석 가능한 번역표를 제공한다. 핵심은 "누가 어떤 상태를 authoritative 하게 소유하는가"를 먼저 고정하고, 그 다음에야 읽기용 crosswalk를 두는 것이다.
+qa-sdk에 공존하는 여러 상태 체계를 하나로 합치지 않고, 각 체계의 소유권을 유지한 채 해석 가능한 번역표를 제공한다. 이 문서는 책임 분리 이후의 **초안 해석 레이어**이며, 특히 PM taxonomy가 아직 draft인 동안에는 제안 vocabulary를 임시 번역하는 목적을 가진다.
 
 ## 정의 ^defines
 
@@ -44,7 +44,7 @@ qa-sdk에 공존하는 여러 상태 체계를 하나로 합치지 않고, 각 �
 
 | 상태 체계 | 소유 시스템 | 질문 | 대표 필드 |
 |---|---|---|---|
-| PM 상태 | PM taxonomy | 이 일은 누가 언제까지 어디까지 진행했는가 | `process_status`, `outcome_verdict` |
+| PM 상태(초안) | PM taxonomy plan | 이 일은 누가 언제까지 어디까지 진행했는가 | `process_status`, `outcome_verdict` |
 | 문서 상태 | definition-catalog | 이 문서는 어떤 생명주기에 있는가 | `lifecycle`, harness machine state |
 | 판단 상태 | decision-flow | 이 판단 과정은 진행 중인가, 결론은 무엇인가 | `FlowStatus`, `DecisionVerdict` |
 | 배포 상태 | infra-engine | 이 배포 실행은 어떤 단계 결과를 냈는가 | `StageResult.status`, `gateVerdict` |
@@ -52,7 +52,7 @@ qa-sdk에 공존하는 여러 상태 체계를 하나로 합치지 않고, 각 �
 
 ## 상태 소유권 ^constraint
 
-1. PM taxonomy만 `process_status`를 소유한다.
+1. PM taxonomy가 승인되기 전까지 `process_status`와 `outcome_verdict`는 **제안 vocabulary**다.
 2. definition-catalog만 문서 `lifecycle`를 소유한다.
 3. decision-flow만 판단 과정의 `FlowStatus`와 결론 `DecisionVerdict`를 소유한다.
 4. infra-engine만 배포 단계의 `StageResult.status`와 `gateVerdict`를 소유한다.
@@ -128,9 +128,9 @@ qa-sdk에 공존하는 여러 상태 체계를 하나로 합치지 않고, 각 �
 | `deferred` | `draft` |
 | `superseded` | `archived` |
 
-### decision-flow process → PM process
+### decision-flow process → PM process (초안)
 
-이 매핑은 **권장 읽기**이며 자동 확정이 아니다.
+이 매핑은 **권장 읽기**이며 자동 확정이 아니다. PM taxonomy가 spec으로 승격되기 전까지는 vocabulary 안정성도 보장하지 않는다.
 
 | `FlowStatus` | 권장 `process_status` 해석 |
 |---|---|
