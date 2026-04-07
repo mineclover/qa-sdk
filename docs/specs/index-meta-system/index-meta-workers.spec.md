@@ -107,7 +107,7 @@ Cloudflare Workers 런타임은 Node.js 전용 모듈을 로드할 수 없다.
 
 ### 소비 서비스
 
-| 서비스 | 진입점 | 번들 크기 | gzip |
+| 서비스 | 진입점 | 번들 크기 | gzip | (2026-04-08 기준) |
 |---|---|---|---|
 | decode-service | `src/worker.ts` | 391 KiB | 73 KiB |
 | gate-service | `src/worker.ts` | 292 KiB | 53 KiB |

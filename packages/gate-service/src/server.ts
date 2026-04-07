@@ -1,9 +1,7 @@
 import "dotenv/config";
 import { serve } from "@hono/node-server";
-import {
-  createSqliteDriver,
-  SqlAddressStateStore,
-} from "index-meta-workers";
+import { createSqliteDriver } from "index-meta";
+import { SqlAddressStateStore } from "index-meta-workers";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";

@@ -174,7 +174,7 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
       } else {
         console.log(`[version] ${vEntry.currentVersion} (초기 배포)`);
       }
-    } catch { /* 버전 기록 실패 무시 */ }
+    } catch (err) { console.warn(`[version] 기록 실패: ${err}`); }
 
     // endpoint 피드백: 배포에서 얻은 endpoint를 config에 반영
     if (result.endpoint) {
@@ -190,7 +190,7 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
           await writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
           console.log(`[endpoint-feedback] ${service}: ${result.endpoint}${current ? ` (이전: ${current})` : " (신규)"}`);
         }
-      } catch { /* config 피드백 실패 무시 */ }
+      } catch (err) { console.warn(`[endpoint-feedback] 실패: ${err}`); }
     }
 
     // --sync 플래그: codegen + cascade 감지
@@ -213,7 +213,7 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
         const config = await loader.decrypt(configPath) as any;
         const targets = findCascadeTargets(config, service);
         await executeCascade(targets, env, { dryRun: true });
-      } catch { /* config 읽기 실패 무시 */ }
+      } catch (err) { console.warn(`[cascade] 실패: ${err}`); }
     }
   }
 

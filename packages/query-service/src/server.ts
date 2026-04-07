@@ -1,9 +1,6 @@
 import "dotenv/config";
-import {
-  InMemoryPrefixRegistry,
-  MetaRegistry,
-  createSqliteDriver,
-} from "index-meta-workers";
+import { createSqliteDriver } from "index-meta";
+import { InMemoryPrefixRegistry, MetaRegistry } from "index-meta-workers";
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
