@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Query, UseFilters } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Put, Query, UseFilters } from "@nestjs/common";
 import { EventCatalogService } from "./event-catalog.service.js";
 import { EventExceptionFilter } from "./event.exception-filter.js";
 
@@ -45,6 +45,17 @@ export class EventCatalogController {
   @Get("adoptions/:serviceId")
   getServiceAdoption(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
     return this.eventCatalog.getServiceAdoption(catalogId ?? "demo", serviceId);
+  }
+
+  @HttpCode(200)
+  @Put("adoptions/:serviceId")
+  upsertServiceAdoption(@Param("serviceId") serviceId: string, @Body() body: unknown, @Query("catalog") catalogId?: string) {
+    return this.eventCatalog.upsertServiceAdoption(catalogId ?? "demo", serviceId, body);
+  }
+
+  @Delete("adoptions/:serviceId")
+  removeServiceAdoption(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
+    return this.eventCatalog.removeServiceAdoption(catalogId ?? "demo", serviceId);
   }
 
   @Get("services/:serviceId/taxonomy")

@@ -80,9 +80,10 @@ interface ServiceEventAdoption {
 
 - `GET /api/event-catalog/adoptions` ✅
 - `GET /api/event-catalog/adoptions/:serviceId` ✅
+- `PUT /api/event-catalog/adoptions/:serviceId` ✅
+- `DELETE /api/event-catalog/adoptions/:serviceId` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy/check` ✅
-- `PUT /api/services/:serviceId/event-adoption` 🔲
 
 ## drift 포인트
 
@@ -107,11 +108,12 @@ interface ServiceEventAdoption {
 ## 현재 구현 상태
 
 - adoption config read 가능
+- adoption config write/remove 가능
 - adoption의 `packId + version` pin 지원
 - adoption 기반 materialization 가능
 - 서비스별 taxonomy read model 존재
 - drift read model 존재
 - diagnostics check surface 존재
+- demo catalog 기본 adoption seed 존재
 - 아직 없음:
-  - adoption write surface
   - ownership/adoption 정합성 gate

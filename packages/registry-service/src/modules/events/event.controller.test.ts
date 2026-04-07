@@ -175,6 +175,29 @@ describe("EventModule (Nest)", () => {
       }),
     );
 
+    const adoptionUpsertResponse = await request(app, "PUT", "/api/event-catalog/adoptions/shopping-web?catalog=demo", {
+      eventPacks: [{ packId: "shop-pack", version: "v1" }, { packId: "sdk-pack" }],
+      allowedCategories: ["navigation", "interaction"],
+    });
+    expect(adoptionUpsertResponse.statusCode).toBe(200);
+    expect(json(adoptionUpsertResponse)).toEqual({
+      ok: true,
+      serviceId: "shopping-web",
+      action: "updated",
+    });
+
+    const updatedAdoptionResponse = await request(app, "GET", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
+    expect(updatedAdoptionResponse.statusCode).toBe(200);
+    expect(json<{ serviceId: string; eventPacks: Array<{ packId: string; version: string }> }>(updatedAdoptionResponse)).toEqual(
+      expect.objectContaining({
+        serviceId: "shopping-web",
+        eventPacks: [
+          { packId: "shop-pack", version: "v1" },
+          { packId: "sdk-pack", version: "v1" },
+        ],
+      }),
+    );
+
     const taxonomyResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy?catalog=demo");
     expect(taxonomyResponse.statusCode).toBe(200);
     expect(json<{
@@ -215,5 +238,12 @@ describe("EventModule (Nest)", () => {
         issues: [],
       }),
     );
+
+    const adoptionDeleteResponse = await request(app, "DELETE", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
+    expect(adoptionDeleteResponse.statusCode).toBe(200);
+    expect(json(adoptionDeleteResponse)).toEqual({
+      ok: true,
+      serviceId: "shopping-web",
+    });
   });
 });

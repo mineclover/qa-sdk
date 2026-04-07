@@ -114,7 +114,7 @@ registry seed가 `core vocabulary + mapping pack + service adoption` 3층을 조
 - `shopping-web` 하드코딩 완전 제거
 - 서비스별 event schema가 adoption 기반으로 생성
 
-## Phase 4 — Drift Gate + Versioning (다음 단계)
+## Phase 4 — Drift Gate + Versioning (진행 중)
 
 ### 목표
 
@@ -122,13 +122,15 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 
 ### 작업
 
-- drift gate 정의
-- pack version pin
-- adoption migration 규칙
+- drift diagnostics/check surface 구현
+- pack version pin 구현
+- adoption migration 규칙 구체화
 - override/local pack 정책 정의
 
-### 완료 조건
+### 남은 완료 조건
 
+- drift gate enforcement 정의
+- `_mapping` fallback 제거 조건 확정
 - UC-7 Drift 검출 안정화
 - UC-8 Pack 버전 전환 안정화
 
@@ -144,13 +146,14 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 
 - `_core` / `_mapping` synthetic bucket 기반 seed fallback 구현
 - `EventMappingPack` registry 및 조회 surface 구현
-- `service event adoption` config 조회 surface 구현
-- 서비스별 event taxonomy read model + drift diagnostics 구현
+- `service event adoption` config read/write/remove surface 구현
+- demo catalog 기본 `event-adoption` seed 구현
+- adoption의 `packId + version` pin 구현
+- 서비스별 event taxonomy read model + drift diagnostics/check surface 구현
 - 아직 미구현:
-  - pack version/status
-  - adoption의 `packId + version` pin
   - drift gate의 enforcement
   - `_mapping` fallback 제거
+  - adoption migration rule 명문화
 
 ## 관련 문서
 

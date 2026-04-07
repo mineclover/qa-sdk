@@ -67,7 +67,9 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 ## 다음 구현 초점
 
-- [ ] pack version/status 모델 도입
-- [ ] adoption의 `packId + version` pin 지원
-- [ ] drift diagnostics를 gate/check surface로 승격할지 결정
+- [x] pack version/status 모델 도입
+- [x] adoption의 `packId + version` pin 지원
+- [x] drift diagnostics check surface 추가
+- [x] adoption read/write/remove surface 추가
+- [x] demo catalog 기본 event-adoption seed 추가
 - [ ] `_mapping` fallback 제거 조건 정의

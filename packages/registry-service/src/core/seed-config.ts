@@ -8,6 +8,8 @@ const noopLogger: SeedLogger = {
   debug() {},
 };
 
+const EVENT_ADOPTION_CONFIG_TYPE = "event-adoption";
+
 /** DkgConfig + PatternRules + 서비스 목록 seed */
 export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger = noopLogger) {
   try {
@@ -133,4 +135,33 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
   ];
   await configStore.set("demo", "services", JSON.stringify(demoServices));
   logger.info({ count: demoServices.length }, "seeded demo services to config store");
+
+  try {
+    const { getAllPacks } = await import("@qa-sdk/event-catalog");
+    const serviceIds = new Set(demoServices.map((service) => service.serviceId));
+    const adoptions = getAllPacks()
+      .filter((pack) => pack.status === "active" && serviceIds.has(pack.owner))
+      .reduce<Array<{ serviceId: string; eventPacks: Array<{ packId: string; version: string }> }>>((acc, pack) => {
+        const existing = acc.find((item) => item.serviceId === pack.owner);
+        if (existing) {
+          existing.eventPacks.push({ packId: pack.packId, version: pack.version });
+          return acc;
+        }
+        acc.push({
+          serviceId: pack.owner,
+          eventPacks: [{ packId: pack.packId, version: pack.version }],
+        });
+        return acc;
+      }, [])
+      .sort((a, b) => a.serviceId.localeCompare(b.serviceId))
+      .map((item) => ({
+        serviceId: item.serviceId,
+        eventPacks: item.eventPacks.sort((a, b) => a.packId.localeCompare(b.packId)),
+      }));
+
+    await configStore.set("demo", EVENT_ADOPTION_CONFIG_TYPE, JSON.stringify(adoptions));
+    logger.info({ count: adoptions.length }, "seeded demo event adoption config");
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to seed event adoption config");
+  }
 }

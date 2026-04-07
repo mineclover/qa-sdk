@@ -24,6 +24,14 @@ type EventCatalogFilters = {
   channel?: string;
 };
 
+type EventPackRef = { packId: string; version?: string };
+type ServiceEventAdoptionRecord = {
+  serviceId: string;
+  eventPacks?: readonly (string | EventPackRef)[];
+  customEvents?: readonly string[];
+  allowedCategories?: readonly string[];
+};
+
 @Injectable()
 export class EventCatalogService {
   private static readonly ADOPTION_CONFIG_TYPE = "event-adoption";
@@ -124,6 +132,8 @@ export class EventCatalogService {
       packId: pack.packId,
       owner: pack.owner,
       domain: pack.domain,
+      version: pack.version,
+      status: pack.status,
       mappingCount: pack.mappings.length,
       eventKeys: pack.mappings.map((mapping) => mapping.event_key),
     }));
@@ -138,6 +148,8 @@ export class EventCatalogService {
       packId: pack.packId,
       owner: pack.owner,
       domain: pack.domain,
+      version: pack.version,
+      status: pack.status,
       mappings: pack.mappings.map((mapping) => ({
         event_key: mapping.event_key,
         domain: mapping.domain,
@@ -150,7 +162,7 @@ export class EventCatalogService {
     const record = await this.configStore.get(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE);
     if (!record) return [];
     const parsed = JSON.parse(record.data);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId)) : [];
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
@@ -160,6 +172,46 @@ export class EventCatalogService {
       throw new AppError("NOT_FOUND", `Service adoption '${serviceId}' not found`, 404);
     }
     return found;
+  }
+
+  async upsertServiceAdoption(catalogId: string, serviceId: string, input: unknown) {
+    const body = this.asRecord(input);
+    const normalized = this.normalizeAdoptionRecord({
+      serviceId,
+      eventPacks: body.eventPacks,
+      customEvents: body.customEvents,
+      allowedCategories: body.allowedCategories,
+    });
+    const adoptions = await this.listAdoptions(catalogId);
+    const next = [...adoptions];
+    const index = next.findIndex((item) => item.serviceId === serviceId);
+
+    if (index >= 0) {
+      next[index] = normalized;
+    } else {
+      next.push(normalized);
+    }
+
+    next.sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(next));
+    return {
+      ok: true,
+      serviceId,
+      action: index >= 0 ? "updated" : "created",
+    };
+  }
+
+  async removeServiceAdoption(catalogId: string, serviceId: string) {
+    const adoptions = await this.listAdoptions(catalogId);
+    const next = adoptions.filter((item) => item.serviceId !== serviceId);
+    if (next.length === adoptions.length) {
+      throw new AppError("NOT_FOUND", `Service adoption '${serviceId}' not found`, 404);
+    }
+    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(next));
+    return {
+      ok: true,
+      serviceId,
+    };
   }
 
   async getServiceTaxonomy(catalogId: string, serviceId: string) {
@@ -258,6 +310,55 @@ export class EventCatalogService {
     return Array.isArray(parsed) ? parsed : [];
   }
 
+  private normalizeAdoptionRecord(input: unknown): ServiceEventAdoptionRecord {
+    const body = this.asRecord(input);
+    const serviceId = typeof body.serviceId === "string" ? body.serviceId : "";
+    if (!serviceId) {
+      throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
+    }
+
+    const packRefs = this.normalizePackRefs(body.eventPacks);
+    const customEvents = this.normalizeStringList(body.customEvents);
+    const allowedCategories = this.normalizeStringList(body.allowedCategories);
+
+    return {
+      serviceId,
+      eventPacks: packRefs,
+      ...(customEvents.length > 0 ? { customEvents } : {}),
+      ...(allowedCategories.length > 0 ? { allowedCategories } : {}),
+    };
+  }
+
+  private normalizePackRefs(input: unknown): EventPackRef[] {
+    if (!Array.isArray(input)) return [];
+    return input.map((entry) => {
+      if (typeof entry === "string") {
+        const pack = getPack(entry);
+        return { packId: entry, ...(pack ? { version: pack.version } : {}) };
+      }
+      if (!entry || typeof entry !== "object" || typeof (entry as { packId?: unknown }).packId !== "string") {
+        throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
+      }
+      const packId = (entry as { packId: string }).packId;
+      const version = typeof (entry as { version?: unknown }).version === "string"
+        ? (entry as { version: string }).version
+        : getPack(packId)?.version;
+      return { packId, ...(version ? { version } : {}) };
+    });
+  }
+
+  private normalizeStringList(input: unknown): string[] {
+    if (!Array.isArray(input)) return [];
+    return input.filter((item): item is string => typeof item === "string");
+  }
+
+  private asRecord(input: unknown): Record<string, unknown> {
+    if (!input || typeof input !== "object") {
+      return {};
+    }
+    return input as Record<string, unknown>;
+  }
+
   listCategories() {
     return Object.entries(coreEventsByCategory).map(([category, events]) => ({
       category,
@@ -292,6 +393,6 @@ function normalizePackRefs(
   eventPacks: readonly (string | { packId: string; version?: string })[] | undefined,
 ): Array<{ packId: string; version?: string }> {
   return (eventPacks ?? []).map((entry) =>
-    typeof entry === "string" ? { packId: entry } : { packId: entry.packId, version: entry.version },
+    typeof entry === "string" ? { packId: entry, version: getPack(entry)?.version } : { packId: entry.packId, version: entry.version ?? getPack(entry.packId)?.version },
   );
 }

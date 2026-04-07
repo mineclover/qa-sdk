@@ -24,6 +24,7 @@ function createService(definitionClient?: Partial<DefinitionClient>) {
       definitionClient as DefinitionClient,
     ),
     catalogStore,
+    configStore,
   };
 }
 
@@ -61,6 +62,39 @@ describe("SeedService definition-client integration", () => {
     expect(await catalogStore.list()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: "demo" }),
+      ]),
+    );
+  });
+
+  it("seed 시 기본 event-adoption config를 함께 기록한다", async () => {
+    const triggerSync = vi.fn<DefinitionClient["triggerSync"]>().mockResolvedValue({
+      synced: 0,
+      unchanged: 0,
+      created: 0,
+      errors: [],
+      timestamp: "2026-03-27T00:00:00.000Z",
+    });
+    const { service, configStore } = createService({ triggerSync });
+
+    await service.onModuleInit();
+
+    const adoptionRecord = await configStore.get("demo", "event-adoption");
+    expect(adoptionRecord).not.toBeNull();
+    const adoptions = JSON.parse(adoptionRecord!.data) as Array<{
+      serviceId: string;
+      eventPacks: Array<{ packId: string; version: string }>;
+    }>;
+    expect(adoptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          serviceId: "shopping-web",
+          eventPacks: expect.arrayContaining([
+            expect.objectContaining({
+              packId: "shop-pack",
+              version: "v1",
+            }),
+          ]),
+        }),
       ]),
     );
   });
