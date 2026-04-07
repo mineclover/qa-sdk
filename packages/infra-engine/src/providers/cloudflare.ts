@@ -116,13 +116,29 @@ export async function wranglerDeployFn(
   };
 }
 
+/** 모노레포 루트 탐색 — pnpm-workspace.yaml이 있는 디렉토리를 찾는다 */
+async function findWorkspaceRoot(startDir: string): Promise<string> {
+  const { resolve, dirname } = await import("node:path");
+  const { access } = await import("node:fs/promises");
+  let dir = resolve(startDir);
+  const root = dirname(dir) === dir ? dir : "/"; // filesystem root
+  while (dir !== root) {
+    try {
+      await access(resolve(dir, "pnpm-workspace.yaml"));
+      return dir;
+    } catch {}
+    dir = dirname(dir);
+  }
+  // fallback: cwd 기준 2단계 상위
+  return resolve(startDir, "../..");
+}
+
 /** 서비스 디렉토리 탐색 — packages/{serviceId}에 wrangler.toml이 있는지 확인 */
 async function findServiceDir(serviceId: string, projectRoot?: string): Promise<string> {
   const { resolve } = await import("node:path");
   const { access } = await import("node:fs/promises");
 
-  // 프로젝트 루트 추정
-  const root = projectRoot ?? resolve(process.cwd(), "../..");
+  const root = projectRoot ?? await findWorkspaceRoot(process.cwd());
 
   // 1. packages/{serviceId}/wrangler.toml
   const direct = resolve(root, "packages", serviceId);

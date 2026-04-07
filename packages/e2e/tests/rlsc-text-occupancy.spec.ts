@@ -110,9 +110,11 @@ test.describe("RLSC Text Occupancy", () => {
     // 좁은 뷰포트로 변경 → resize 이벤트가 자동으로 runCollection 재실행 (300ms 딜레이)
     await page.setViewportSize({ width: narrowWidth, height: viewportHeight });
 
-    // resize 이벤트 후 재수집 대기 (300ms 딜레이 + 렌더링)
-    // status가 일시적으로 변할 수 있으므로 Collected 상태 재확인
-    await page.waitForTimeout(500);
+    // resize 후 status가 Collecting → Collected로 전환될 때까지 대기
+    // 먼저 수집 시작을 감지하고, 완료까지 대기
+    await expect(page.locator("#status-text")).not.toHaveText("Collected", {
+      timeout: 2_000,
+    }).catch(() => {});  // resize가 빠르면 이미 Collected일 수 있음
     await waitForCollection(page);
 
     // Text 탭이 여전히 활성 상태인지 확인
