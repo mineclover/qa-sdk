@@ -71,6 +71,12 @@ interface ServiceEventAdoption {
 1. adoption된 pack이 내보내는 prefix는 ownership과 충돌하지 않아야 한다.
 2. adoption은 pack version을 pin해야 한다.
 
+현재 구현 정책:
+
+- self-owned pack은 ownership consistency gate에서 제외한다.
+- 외부 pack 채택만 ownership consistency gate의 대상으로 본다.
+- catalog gate는 `adoption 선언 서비스 + active pack owner 서비스`만 검사한다.
+
 ## 권장 surface
 
 - `GET /api/event-catalog/adoptions` ✅

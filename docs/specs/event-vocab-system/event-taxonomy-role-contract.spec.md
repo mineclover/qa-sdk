@@ -118,11 +118,15 @@ event taxonomy를 구성하는 각 레이어의 책임을 고정한다. 이 문�
 4. materialization은 생성만 하고 의미를 바꾸지 않는다.
 5. gate는 판정만 하고 정의를 바꾸지 않는다.
 
+단, 현재 canonical gate policy로 아래 2가지는 허용한다.
+
+- 서비스가 **외부 pack**을 채택했을 때, 그 pack이 요구하는 prefix가 해당 서비스 ownership과 정합적인지 판정한다.
+- catalog gate는 **adoption 선언 서비스 + active pack owner 서비스**만 검사 대상으로 삼는다.
+
 ## 비목표 ^non-goals
 
 - drift 원인 분석
 - 추천/자동 수정
-- ownership 정책의 확장 해석
 - custom event 확장 설계
 
 이 항목들은 후속 레이어에서 다룬다.
