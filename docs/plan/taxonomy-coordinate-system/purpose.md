@@ -31,7 +31,8 @@ qa-sdk에는 5개 taxonomy가 독립적으로 존재한다. 각 taxonomy는 자�
 |------|-----------|
 | [meta-taxonomy.memo.md](meta-taxonomy.memo.md) | taxonomy 분류군 (topological/functional/bridge) |
 | [taxonomy-interpretation-model.memo.md](taxonomy-interpretation-model.memo.md) | taxonomy 고유 기여: 입력 → 관점 → 산출 |
-| [business-decomposition-coordinate.memo.md](business-decomposition-coordinate.memo.md) | 비즈니스 분해 좌표계, fold/algebra 패턴 |
+| [business-decomposition-coordinate.memo.md](business-decomposition-coordinate.memo.md) | 비즈니스 분해 좌표계, 코끼리 문제, 분해 기준 |
+| [fold-algebra-pattern.memo.md](fold-algebra-pattern.memo.md) | 재귀적 분해 fold/algebra 패턴, Product Algebra |
 | [coordinate-matrix.memo.md](coordinate-matrix.memo.md) | 좌표 행렬, taxonomy 흐름의 수학적 표현 |
 | [document-addressing-contract.memo.md](document-addressing-contract.memo.md) | 문서 주소 계약, family/role, identity/path 분리 |
 | [link-tag-redesign.memo.md](link-tag-redesign.memo.md) | links/tags 재설계 방향 |
