@@ -338,6 +338,39 @@ export class EventCatalogService {
     };
   }
 
+  async checkCatalogTaxonomy(catalogId: string) {
+    const [adoptions, services] = await Promise.all([
+      this.listAdoptions(catalogId),
+      this.listServices(catalogId),
+    ]);
+    const serviceIds = [...new Set([
+      ...adoptions.map((item) => item.serviceId),
+      ...services.map((item) => item.serviceId),
+    ])].sort((a, b) => a.localeCompare(b));
+    const results = await Promise.all(serviceIds.map((serviceId) => this.checkServiceTaxonomy(catalogId, serviceId)));
+    const failing = results.filter((result) => !result.ok);
+    return {
+      catalogId,
+      ok: failing.length === 0,
+      serviceCount: results.length,
+      failingServiceCount: failing.length,
+      results,
+    };
+  }
+
+  async assertCatalogTaxonomy(catalogId: string) {
+    const result = await this.checkCatalogTaxonomy(catalogId);
+    if (!result.ok) {
+      throw new AppError("CONFLICT", `Catalog taxonomy '${catalogId}' has drift issues`, 409, {
+        catalogId,
+        serviceCount: result.serviceCount,
+        failingServiceCount: result.failingServiceCount,
+        failingServices: result.results.filter((item) => !item.ok),
+      });
+    }
+    return result;
+  }
+
   private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
     const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
     if (!record) return [];

@@ -42,6 +42,16 @@ export class EventCatalogController {
     return this.eventCatalog.listAdoptions(catalogId ?? "demo");
   }
 
+  @Get("taxonomy/check")
+  checkCatalogTaxonomy(@Query("catalog") catalogId?: string) {
+    return this.eventCatalog.checkCatalogTaxonomy(catalogId ?? "demo");
+  }
+
+  @Post("taxonomy/assert")
+  assertCatalogTaxonomy(@Query("catalog") catalogId?: string) {
+    return this.eventCatalog.assertCatalogTaxonomy(catalogId ?? "demo");
+  }
+
   @Get("adoptions/:serviceId")
   getServiceAdoption(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
     return this.eventCatalog.getServiceAdoption(catalogId ?? "demo", serviceId);

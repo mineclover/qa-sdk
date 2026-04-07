@@ -166,6 +166,16 @@ describe("EventModule (Nest)", () => {
       ]),
     );
 
+    const catalogCheckResponse = await request(app, "GET", "/api/event-catalog/taxonomy/check?catalog=demo");
+    expect(catalogCheckResponse.statusCode).toBe(200);
+    expect(json<{ ok: boolean; serviceCount: number; failingServiceCount: number }>(catalogCheckResponse)).toEqual(
+      expect.objectContaining({
+        ok: true,
+        serviceCount: expect.any(Number),
+        failingServiceCount: 0,
+      }),
+    );
+
     const adoptionDetailResponse = await request(app, "GET", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
     expect(adoptionDetailResponse.statusCode).toBe(200);
     expect(json<{ serviceId: string; eventPacks: Array<{ packId: string; version: string }> }>(adoptionDetailResponse)).toEqual(
@@ -249,6 +259,15 @@ describe("EventModule (Nest)", () => {
       issues: [],
     });
 
+    const catalogAssertResponse = await request(app, "POST", "/api/event-catalog/taxonomy/assert?catalog=demo");
+    expect(catalogAssertResponse.statusCode).toBe(201);
+    expect(json<{ ok: boolean; failingServiceCount: number }>(catalogAssertResponse)).toEqual(
+      expect.objectContaining({
+        ok: true,
+        failingServiceCount: 0,
+      }),
+    );
+
     const adoptionDeleteResponse = await request(app, "DELETE", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
     expect(adoptionDeleteResponse.statusCode).toBe(200);
     expect(json(adoptionDeleteResponse)).toEqual({
@@ -294,6 +313,18 @@ describe("EventModule (Nest)", () => {
         issueCount: 1,
         issues: expect.arrayContaining([
           expect.objectContaining({ code: "legacy-pack-ref-format" }),
+        ]),
+      }),
+    );
+
+    const catalogAssertResponse = await request(app, "POST", "/api/event-catalog/taxonomy/assert?catalog=demo");
+    expect(catalogAssertResponse.statusCode).toBe(409);
+    expect(json<{ error: string; failingServiceCount: number; failingServices: Array<{ serviceId: string }> }>(catalogAssertResponse)).toEqual(
+      expect.objectContaining({
+        error: "Catalog taxonomy 'demo' has drift issues",
+        failingServiceCount: 1,
+        failingServices: expect.arrayContaining([
+          expect.objectContaining({ serviceId: "shopping-web" }),
         ]),
       }),
     );

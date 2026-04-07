@@ -79,6 +79,8 @@ interface ServiceEventAdoption {
 ## 권장 surface
 
 - `GET /api/event-catalog/adoptions` ✅
+- `GET /api/event-catalog/taxonomy/check` ✅
+- `POST /api/event-catalog/taxonomy/assert` ✅
 - `GET /api/event-catalog/adoptions/:serviceId` ✅
 - `PUT /api/event-catalog/adoptions/:serviceId` ✅
 - `DELETE /api/event-catalog/adoptions/:serviceId` ✅
@@ -118,6 +120,7 @@ interface ServiceEventAdoption {
 - drift read model 존재
 - diagnostics check surface 존재
 - drift enforcement assert surface 존재
+- catalog 단위 batch check/assert surface 존재
 - demo catalog 기본 adoption seed 존재
 - 새 adoption write path는 canonical `{ packId, version }[]`만 허용
 - runtime seed는 legacy string pack ref를 materialize하지 않음
