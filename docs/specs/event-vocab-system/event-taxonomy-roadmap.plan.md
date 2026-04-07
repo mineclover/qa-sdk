@@ -150,6 +150,7 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - adoption의 `packId + version` pin 구현
 - 서비스별 event taxonomy read model + drift diagnostics/check surface 구현
 - service taxonomy drift를 409로 실패시키는 assert surface 구현
+- adopted pack prefix와 service ownership 정합성 gate 구현
 - write/runtime path는 canonical pack ref만 허용
 - 운영 게이트 스크립트 `pnpm gate:event-taxonomy` 제공
 - 아직 미구현:

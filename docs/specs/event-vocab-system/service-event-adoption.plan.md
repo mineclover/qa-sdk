@@ -88,6 +88,7 @@ interface ServiceEventAdoption {
 - adoption에는 pack이 있는데 ownership에 해당 prefix가 전혀 없음
 - ownership은 있는데 adoption에 대응하는 pack이 없음
 - adoption version과 실제 materialized schema가 다름
+- 외부 pack을 채택했는데 그 pack이 요구하는 prefix와 service ownership이 맞지 않음
 
 ## 시나리오 연결
 
@@ -119,4 +120,4 @@ interface ServiceEventAdoption {
 - read/write/runtime path 모두 canonical `{ packId, version }[]`만 허용
 - 현재 범위에서는 custom event surface를 지원하지 않음
 - 아직 없음:
-  - ownership/adoption 정합성 gate
+  - ownership without adoption 역방향 gate

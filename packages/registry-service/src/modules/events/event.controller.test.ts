@@ -186,7 +186,7 @@ describe("EventModule (Nest)", () => {
     );
 
     const adoptionUpsertResponse = await request(app, "PUT", "/api/event-catalog/adoptions/shopping-web?catalog=demo", {
-      eventPacks: [{ packId: "shop-pack", version: "v1" }, { packId: "sdk-pack" }],
+      eventPacks: [{ packId: "shop-pack", version: "v1" }],
       allowedCategories: ["navigation", "interaction"],
     });
     expect(adoptionUpsertResponse.statusCode).toBe(200);
@@ -203,7 +203,6 @@ describe("EventModule (Nest)", () => {
         serviceId: "shopping-web",
         eventPacks: [
           { packId: "shop-pack", version: "v1" },
-          { packId: "sdk-pack", version: "v1" },
         ],
       }),
     );
@@ -228,6 +227,7 @@ describe("EventModule (Nest)", () => {
         }),
         drift: expect.objectContaining({
           adoptionMissing: false,
+          adoptedPrefixesWithoutOwnership: [],
           stalePackVersions: [],
         }),
       }),
@@ -286,5 +286,28 @@ describe("EventModule (Nest)", () => {
     expect(json(response)).toEqual({
       error: "eventPacks는 { packId, version? }[] 이어야 함",
     });
+  });
+
+  it("ownership과 맞지 않는 pack adoption은 drift로 잡힌다", async () => {
+    const app = await createNestTestApp({ imports: [AppModule] });
+    apps.push(app);
+
+    const response = await request(app, "PUT", "/api/event-catalog/adoptions/shopping-web?catalog=demo", {
+      eventPacks: [{ packId: "infra-observe-pack", version: "v1" }],
+    });
+    expect(response.statusCode).toBe(200);
+
+    const checkResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy/check?catalog=demo");
+    expect(checkResponse.statusCode).toBe(200);
+    expect(json<{ issues: Array<{ code: string; detail?: unknown }> }>(checkResponse)).toEqual(
+      expect.objectContaining({
+        issues: expect.arrayContaining([
+          expect.objectContaining({ code: "adopted-prefixes-without-ownership" }),
+        ]),
+      }),
+    );
+
+    const assertResponse = await request(app, "POST", "/api/event-catalog/services/shopping-web/taxonomy/assert?catalog=demo");
+    expect(assertResponse.statusCode).toBe(409);
   });
 });

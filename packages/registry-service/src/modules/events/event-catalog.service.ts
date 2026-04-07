@@ -234,6 +234,20 @@ export class EventCatalogService {
     const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).sort((a, b) => a.localeCompare(b));
     const packRefs = normalizePackRefs(adoption?.eventPacks);
     const missingPackIds = packRefs.map((ref) => ref.packId).filter((packId) => !getPack(packId)).sort((a, b) => a.localeCompare(b));
+    const adoptedPrefixSet = new Set<string>();
+    for (const ref of packRefs) {
+      const pack = getPack(ref.packId);
+      if (!pack) continue;
+      if (pack.owner === serviceId) continue;
+      for (const mapping of pack.mappings) {
+        for (const prefix of mapping.prefixes) {
+          adoptedPrefixSet.add(prefix.prefixId);
+        }
+      }
+    }
+    const adoptedPrefixesWithoutOwnership = [...adoptedPrefixSet]
+      .filter((prefixId) => !ownershipSet.has(prefixId))
+      .sort((a, b) => a.localeCompare(b));
     const stalePackVersions = packRefs
       .filter((ref) => {
         const pack = getPack(ref.packId);
@@ -263,6 +277,7 @@ export class EventCatalogService {
       drift: {
         adoptionMissing: adoption === null,
         missingPackIds,
+        adoptedPrefixesWithoutOwnership,
         stalePackVersions,
         recordsWithoutPackMetadata,
         prefixesWithoutOwnership,
@@ -279,6 +294,9 @@ export class EventCatalogService {
     }
     if (taxonomy.drift.missingPackIds.length > 0) {
       issues.push({ severity: "warning", code: "missing-pack-ids", detail: taxonomy.drift.missingPackIds });
+    }
+    if (taxonomy.drift.adoptedPrefixesWithoutOwnership.length > 0) {
+      issues.push({ severity: "warning", code: "adopted-prefixes-without-ownership", detail: taxonomy.drift.adoptedPrefixesWithoutOwnership });
     }
     if (taxonomy.drift.stalePackVersions.length > 0) {
       issues.push({ severity: "warning", code: "stale-pack-versions", detail: taxonomy.drift.stalePackVersions });
