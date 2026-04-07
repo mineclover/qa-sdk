@@ -159,7 +159,7 @@ export class EventCatalogService {
 
   async listAdoptions(catalogId: string) {
     const parsed = await this.readRawAdoptions(catalogId);
-    return parsed.map((item) => this.normalizeAdoptionRecord(item, true)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    return parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
@@ -210,27 +210,14 @@ export class EventCatalogService {
     };
   }
 
-  async migrateAdoptions(catalogId: string) {
-    const raw = await this.readRawAdoptions(catalogId);
-    const normalized = raw.map((item) => this.normalizeAdoptionRecord(item, true)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
-    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(normalized));
-    return {
-      ok: true,
-      catalogId,
-      count: normalized.length,
-    };
-  }
-
   async getServiceTaxonomy(catalogId: string, serviceId: string) {
-    const [rawAdoptions, adoptions, services, materialized] = await Promise.all([
-      this.readRawAdoptions(catalogId),
+    const [adoptions, services, materialized] = await Promise.all([
       this.listAdoptions(catalogId),
       this.listServices(catalogId),
       this.eventSchemaStore.listByService(catalogId, serviceId),
     ]);
 
     const adoption = adoptions.find((item) => item.serviceId === serviceId) ?? null;
-    const rawAdoption = rawAdoptions.find((item) => this.asRecord(item).serviceId === serviceId) ?? null;
     const service = services.find((item) => item.serviceId === serviceId) ?? null;
     const ownedPrefixes = service?.ownedPrefixes ?? [];
     const consumedPrefixes = service?.consumedPrefixes ?? [];
@@ -257,10 +244,6 @@ export class EventCatalogService {
         requestedVersion: ref.version!,
         currentVersion: getPack(ref.packId)!.version,
       }));
-    const legacyPackRefFormat = Array.isArray(this.asRecord(rawAdoption).eventPacks)
-      ? (this.asRecord(rawAdoption).eventPacks as unknown[]).some((entry) => typeof entry === "string")
-      : false;
-
     return {
       serviceId,
       adoption,
@@ -279,7 +262,6 @@ export class EventCatalogService {
       },
       drift: {
         adoptionMissing: adoption === null,
-        legacyPackRefFormat,
         missingPackIds,
         stalePackVersions,
         recordsWithoutPackMetadata,
@@ -294,9 +276,6 @@ export class EventCatalogService {
 
     if (taxonomy.drift.adoptionMissing) {
       issues.push({ severity: "warning", code: "adoption-missing" });
-    }
-    if (taxonomy.drift.legacyPackRefFormat) {
-      issues.push({ severity: "warning", code: "legacy-pack-ref-format" });
     }
     if (taxonomy.drift.missingPackIds.length > 0) {
       issues.push({ severity: "warning", code: "missing-pack-ids", detail: taxonomy.drift.missingPackIds });
@@ -388,14 +367,14 @@ export class EventCatalogService {
     return Array.isArray(parsed) ? parsed : [];
   }
 
-  private normalizeAdoptionRecord(input: unknown, allowLegacyStrings = false): ServiceEventAdoptionRecord {
+  private normalizeAdoptionRecord(input: unknown): ServiceEventAdoptionRecord {
     const body = this.asRecord(input);
     const serviceId = typeof body.serviceId === "string" ? body.serviceId : "";
     if (!serviceId) {
       throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
     }
 
-    const packRefs = this.normalizePackRefs(body.eventPacks, allowLegacyStrings);
+    const packRefs = this.normalizePackRefs(body.eventPacks);
     const allowedCategories = this.normalizeStringList(body.allowedCategories);
 
     return {
@@ -405,14 +384,11 @@ export class EventCatalogService {
     };
   }
 
-  private normalizePackRefs(input: unknown, allowLegacyStrings = false): EventPackRef[] {
+  private normalizePackRefs(input: unknown): EventPackRef[] {
     if (!Array.isArray(input)) return [];
     return input.map((entry) => {
       if (typeof entry === "string") {
-        if (!allowLegacyStrings) {
-          throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
-        }
-        return { packId: entry, ...(getPack(entry)?.version ? { version: getPack(entry)!.version } : {}) };
+        throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
       }
       if (!entry || typeof entry !== "object" || typeof (entry as { packId?: unknown }).packId !== "string") {
         throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);

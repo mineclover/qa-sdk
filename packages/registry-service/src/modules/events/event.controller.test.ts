@@ -228,7 +228,6 @@ describe("EventModule (Nest)", () => {
         }),
         drift: expect.objectContaining({
           adoptionMissing: false,
-          legacyPackRefFormat: false,
           stalePackVersions: [],
         }),
       }),
@@ -274,78 +273,6 @@ describe("EventModule (Nest)", () => {
       ok: true,
       serviceId: "shopping-web",
     });
-  });
-
-  it("legacy string adoption을 진단하고 migrate로 canonical form으로 올린다", async () => {
-    const app = await createNestTestApp({ imports: [AppModule] });
-    apps.push(app);
-    const { configStore } = createStores(app);
-
-    await configStore.set("demo", "event-adoption", JSON.stringify([
-      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
-    ]));
-
-    const taxonomyResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy?catalog=demo");
-    expect(taxonomyResponse.statusCode).toBe(200);
-    expect(json<{ drift: { legacyPackRefFormat: boolean } }>(taxonomyResponse)).toEqual(
-      expect.objectContaining({
-        drift: expect.objectContaining({
-          legacyPackRefFormat: true,
-        }),
-      }),
-    );
-
-    const checkResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy/check?catalog=demo");
-    expect(checkResponse.statusCode).toBe(200);
-    expect(json<{ issues: Array<{ code: string }> }>(checkResponse)).toEqual(
-      expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ code: "legacy-pack-ref-format" }),
-        ]),
-      }),
-    );
-
-    const assertResponse = await request(app, "POST", "/api/event-catalog/services/shopping-web/taxonomy/assert?catalog=demo");
-    expect(assertResponse.statusCode).toBe(409);
-    expect(json<{ error: string; issueCount: number; issues: Array<{ code: string }> }>(assertResponse)).toEqual(
-      expect.objectContaining({
-        error: "Service taxonomy 'shopping-web' has drift issues",
-        issueCount: 1,
-        issues: expect.arrayContaining([
-          expect.objectContaining({ code: "legacy-pack-ref-format" }),
-        ]),
-      }),
-    );
-
-    const catalogAssertResponse = await request(app, "POST", "/api/event-catalog/taxonomy/assert?catalog=demo");
-    expect(catalogAssertResponse.statusCode).toBe(409);
-    expect(json<{ error: string; failingServiceCount: number; failingServices: Array<{ serviceId: string }> }>(catalogAssertResponse)).toEqual(
-      expect.objectContaining({
-        error: "Catalog taxonomy 'demo' has drift issues",
-        failingServiceCount: 1,
-        failingServices: expect.arrayContaining([
-          expect.objectContaining({ serviceId: "shopping-web" }),
-        ]),
-      }),
-    );
-
-    const migrateResponse = await request(app, "POST", "/api/event-catalog/adoptions/migrate?catalog=demo");
-    expect(migrateResponse.statusCode).toBe(201);
-    expect(json(migrateResponse)).toEqual(
-      expect.objectContaining({
-        ok: true,
-        catalogId: "demo",
-        count: 1,
-      }),
-    );
-
-    const adoptionDetailResponse = await request(app, "GET", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
-    expect(adoptionDetailResponse.statusCode).toBe(200);
-    expect(json<{ eventPacks: Array<{ packId: string; version: string }> }>(adoptionDetailResponse)).toEqual(
-      expect.objectContaining({
-        eventPacks: [{ packId: "shop-pack", version: "v1" }],
-      }),
-    );
   });
 
   it("adoption write surface는 legacy string pack ref를 거부한다", async () => {

@@ -22,7 +22,7 @@ skill-catalog-system > automation-skill-group > **skill-event-taxonomy-gate**
 
 ## 목적 ^purpose
 
-registry event taxonomy 운영 게이트를 실행하고, migrate/check/assert 결과를 해석해 adoption drift를 정리하는 절차를 제공한다.
+registry event taxonomy 운영 게이트를 실행하고, check/assert 결과를 해석해 adoption drift를 정리하는 절차를 제공한다.
 
 ## 사용 맥락 ^context
 
@@ -30,11 +30,10 @@ event-catalog pack/adoption 구성이 바뀌었거나, 배포 전 registry event
 
 ## 설계 의도 ^intent
 
-legacy adoption migration, drift 진단, assert gate를 하나의 운영 루프로 묶어 event taxonomy 구조를 안정적으로 유지한다.
+drift 진단과 assert gate를 하나의 운영 루프로 묶어 event taxonomy 구조를 안정적으로 유지한다.
 
 ## 피드백 규칙 ^feedback
 
-- `legacy-pack-ref-format`이 반복되면 migration을 배포 전 필수 단계로 올린다.
 - `adoption-missing`이 반복되면 adoption 대상 서비스 정책을 다시 점검한다.
 
 ## 관련 소스

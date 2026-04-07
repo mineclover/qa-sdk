@@ -68,11 +68,6 @@ export class EventCatalogController {
     return this.eventCatalog.removeServiceAdoption(catalogId ?? "demo", serviceId);
   }
 
-  @Post("adoptions/migrate")
-  migrateAdoptions(@Query("catalog") catalogId?: string) {
-    return this.eventCatalog.migrateAdoptions(catalogId ?? "demo");
-  }
-
   @Get("services/:serviceId/taxonomy")
   getServiceTaxonomy(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
     return this.eventCatalog.getServiceTaxonomy(catalogId ?? "demo", serviceId);

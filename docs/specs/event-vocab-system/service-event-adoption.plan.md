@@ -79,7 +79,6 @@ interface ServiceEventAdoption {
 - `GET /api/event-catalog/adoptions/:serviceId` ✅
 - `PUT /api/event-catalog/adoptions/:serviceId` ✅
 - `DELETE /api/event-catalog/adoptions/:serviceId` ✅
-- `POST /api/event-catalog/adoptions/migrate` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy/check` ✅
 - `POST /api/event-catalog/services/:serviceId/taxonomy/assert` ✅
@@ -107,7 +106,6 @@ interface ServiceEventAdoption {
 
 - adoption config read 가능
 - adoption config write/remove 가능
-- legacy string pack ref migration 가능
 - adoption의 `packId + version` pin 지원
 - adoption 기반 materialization 가능
 - 서비스별 taxonomy read model 존재
@@ -118,7 +116,7 @@ interface ServiceEventAdoption {
 - 운영 스크립트 `pnpm gate:event-taxonomy` 제공
 - demo catalog 기본 adoption seed 존재
 - 새 adoption write path는 canonical `{ packId, version }[]`만 허용
-- runtime seed는 legacy string pack ref를 materialize하지 않음
+- read/write/runtime path 모두 canonical `{ packId, version }[]`만 허용
 - 현재 범위에서는 custom event surface를 지원하지 않음
 - 아직 없음:
   - ownership/adoption 정합성 gate

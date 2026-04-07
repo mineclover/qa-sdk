@@ -71,7 +71,6 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 - [x] adoption의 `packId + version` pin 지원
 - [x] drift diagnostics check surface 추가
 - [x] adoption read/write/remove surface 추가
-- [x] legacy string adoption migration surface 추가
 - [x] demo catalog 기본 event-adoption seed 추가
 - [x] `_mapping` fallback 제거 조건 정의
 - [x] runtime seed에서 `_mapping` fallback 제거
@@ -79,7 +78,7 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 ### `_mapping` fallback 제거 조건
 
 - demo/runtime seed에서 `event-adoption` config가 기본 제공될 것
-- adoption drift가 `adoption-missing`, `missing-pack-ids`, `legacy-pack-ref-format` 없이 유지될 것
+- adoption drift가 `adoption-missing`, `missing-pack-ids` 없이 유지될 것
 - 서비스별 taxonomy check가 핵심 서비스 집합에서 green일 것
 - 외부 수동 config가 canonical `{ packId, version }[]` 형태로 migration될 것
 - 위 조건 충족 후 runtime seed에서는 `_mapping`을 생성하지 않고, adoption 미존재 시 warning만 남긴다
