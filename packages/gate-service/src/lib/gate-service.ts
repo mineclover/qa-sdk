@@ -8,7 +8,7 @@ import {
   type AddressStateStore,
   type GateEngine,
   type GateResult,
-} from "index-meta";
+} from "index-meta-workers";
 
 export interface GateServiceDeps {
   addressStateStore?: AddressStateStore;

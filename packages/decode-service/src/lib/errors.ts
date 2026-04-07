@@ -5,7 +5,7 @@ import {
   ParseError,
   ValidationError,
   IndexMetaError,
-} from "index-meta";
+} from "index-meta-workers";
 import { IndexRangeError } from "weighted-index";
 export { AppError } from "@qa-sdk/core";
 import { AppError } from "@qa-sdk/core";

@@ -1,4 +1,4 @@
-import type { AddressStateCacheRecord } from "index-meta";
+import type { AddressStateCacheRecord } from "index-meta-workers";
 import { ServiceClientError } from "@qa-sdk/core";
 import { z } from "zod";
 

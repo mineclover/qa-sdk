@@ -5,7 +5,7 @@ import {
   detectPatternConflicts,
   type ConflictReport,
   type PrefixRegistry,
-} from "index-meta";
+} from "index-meta-workers";
 import type { PolicyRulePayload } from "../schemas/policy-rule.js";
 import type {
   PolicyRuleStore,

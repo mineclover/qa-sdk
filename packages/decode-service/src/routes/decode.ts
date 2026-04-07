@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { KeyCache } from "@qa-sdk/core";
-import { PrefixDecoder, PrefixDecoderBig } from "index-meta";
+import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";
 import type { DecoderPool } from "../lib/decoder-pool.js";
 import { AppError, decoderNotLoaded } from "../lib/errors.js";
 import {

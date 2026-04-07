@@ -3,7 +3,7 @@ import { serve } from "@hono/node-server";
 import {
   createSqliteDriver,
   SqlAddressStateStore,
-} from "index-meta";
+} from "index-meta-workers";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";

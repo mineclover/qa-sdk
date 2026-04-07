@@ -8,7 +8,7 @@ import {
   translateConstraint,
   type MetaRegistry,
   type CoordConstraint,
-} from "index-meta";
+} from "index-meta-workers";
 import type {
   PolicyRuleStore,
   StoredPolicyRule,

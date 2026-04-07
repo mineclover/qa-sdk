@@ -2,7 +2,7 @@ import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import type { KeyCache } from "@qa-sdk/core";
-import type { DecodeMap } from "index-meta";
+import type { DecodeMap } from "index-meta-workers";
 import { env } from "./config/env.js";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";

@@ -15,7 +15,7 @@
  * "recompute → 캐시 갱신 → 재조회" 시퀀스로 구현한다.
  */
 
-import type { GateResult, AddressState } from "index-meta";
+import type { GateResult, AddressState } from "index-meta-workers";
 import type { GateLookupService } from "../lib/gate-service.js";
 
 export interface ConsistencyServiceDeps {

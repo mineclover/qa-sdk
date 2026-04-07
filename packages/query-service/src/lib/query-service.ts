@@ -13,7 +13,7 @@ import {
   type RelationTypeRule,
   type ResolveResult,
   ValidationError,
-} from "index-meta";
+} from "index-meta-workers";
 import type { Logger } from "pino";
 import { AppError } from "./errors.js";
 import {

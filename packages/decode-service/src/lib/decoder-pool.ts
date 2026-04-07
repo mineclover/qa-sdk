@@ -1,5 +1,5 @@
-import { PrefixDecoder, PrefixDecoderBig } from "index-meta";
-import type { PrefixDecoderConfig, PrefixDecoderBigConfig, DecodeMap } from "index-meta";
+import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";
+import type { PrefixDecoderConfig, PrefixDecoderBigConfig, DecodeMap } from "index-meta-workers";
 
 type AnyDecoder = PrefixDecoder | PrefixDecoderBig;
 

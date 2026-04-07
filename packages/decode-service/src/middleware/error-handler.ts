@@ -2,7 +2,7 @@ import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";
 import { ZodError } from "zod";
 import { AppError, fromIndexMetaError } from "../lib/errors.js";
-import { IndexMetaError } from "index-meta";
+import { IndexMetaError } from "index-meta-workers";
 
 export function createErrorHandler(logger: Logger): ErrorHandler {
   return (err, c) => {

@@ -5,7 +5,7 @@ import {
   IndexVersionNotFoundError,
   ParseError,
   ValidationError,
-} from "index-meta";
+} from "index-meta-workers";
 import {
   PolicyRuleAlreadyExistsError,
   PolicyRuleNotFoundError,

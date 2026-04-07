@@ -1,5 +1,5 @@
 // @facet
-import type { PatternRule } from "index-meta";
+import type { PatternRule } from "index-meta-workers";
 
 export interface StoredPolicyRule<T> extends PatternRule<T> {
   readonly indexId: string;

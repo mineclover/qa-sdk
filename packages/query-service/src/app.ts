@@ -4,7 +4,7 @@ import {
   MetaRegistry,
   type ConflictStrategy,
   type PrefixRegistry,
-} from "index-meta";
+} from "index-meta-workers";
 import type { Logger } from "pino";
 import { createLogger } from "./lib/logger.js";
 import {

@@ -28,16 +28,19 @@ export function createCloudflareProvider(options?: CloudflareProviderOptions): D
       try {
         const cwd = await findServiceDir(serviceId, options?.projectRoot);
         console.log(`[cloudflare] deleting worker from ${cwd}...`);
-        await execa("npx", ["wrangler", "delete"], { cwd, stdio: "inherit", input: "y\n" });
+        await execa("npx", ["wrangler", "delete"], { cwd, stdio: "inherit", input: "y\n", shell: true });
       } catch (err) {
         console.warn(`[cloudflare] destroy 건너뜀: ${err instanceof Error ? err.message : err}`);
       }
     },
 
-    async validate(_config: ResolvedConfig): Promise<ValidationResult> {
+    async validate(config: ResolvedConfig): Promise<ValidationResult> {
       try {
         const { execa } = await import("execa");
-        const { stdout } = await execa("npx", ["wrangler", "whoami"], { timeout: 10_000 });
+        // wrangler는 서비스 패키지의 devDependency이므로 해당 디렉토리에서 실행해야 한다
+        const serviceId = Object.keys(config.services)[0];
+        const cwd = serviceId ? await findServiceDir(serviceId, options?.projectRoot).catch(() => undefined) : undefined;
+        const { stdout } = await execa("npx", ["wrangler", "whoami"], { timeout: 10_000, shell: true, ...(cwd ? { cwd } : {}) });
         if (stdout.includes("You are logged in")) {
           return { valid: true, errors: [] };
         }
@@ -91,7 +94,7 @@ export async function wranglerDeployFn(
   console.log(`[cloudflare] deploying ${serviceId}...`);
   const args = ["wrangler", "deploy", ...vars];
   // stdout를 캡��하면서 동시에 출력 (pipe)
-  const result = await execa("npx", args, { cwd, stdout: "pipe", stderr: "inherit" });
+  const result = await execa("npx", args, { cwd, stdout: "pipe", stderr: "inherit", shell: true });
   // stdout 출력
   if (result.stdout) process.stdout.write(result.stdout + "\n");
 

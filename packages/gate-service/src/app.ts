@@ -1,7 +1,7 @@
 // @facet
 import { Hono } from "hono";
 import type { Logger } from "pino";
-import type { AddressStateStore, GateEngine } from "index-meta";
+import type { AddressStateStore, GateEngine } from "index-meta-workers";
 import { requestId } from "./middleware/request-id.js";
 import { createErrorHandler } from "./middleware/error-handler.js";
 import { createHealthRoutes } from "./routes/health.js";

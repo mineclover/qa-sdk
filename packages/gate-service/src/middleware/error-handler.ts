@@ -1,6 +1,6 @@
 import type { ErrorHandler } from "hono";
 import type { Logger } from "pino";
-import { IndexMetaError } from "index-meta";
+import { IndexMetaError } from "index-meta-workers";
 import { ZodError } from "zod";
 import { AppError, fromIndexMetaError } from "../lib/errors.js";
 

@@ -1,4 +1,4 @@
-import type { SqlDriver } from "index-meta";
+import type { SqlDriver } from "index-meta-workers";
 import { parseJsonColumn } from "../lib/typed-json.js";
 import {
   cloneStoredPolicyRule,
@@ -21,7 +21,14 @@ interface PolicyRuleRow extends Record<string, unknown> {
   rule_set_id: string | null;
 }
 
-const migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+// Workers에서 import.meta.url이 file:// 기반이 아니므로 지연 평가
+let _migrationsFolder: string | undefined;
+function getMigrationsFolder(): string {
+  if (!_migrationsFolder) {
+    _migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+  }
+  return _migrationsFolder;
+}
 
 export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
   private schemaReady: Promise<void> | null = null;
@@ -200,6 +207,6 @@ async function migratePolicyRuleSchema(driver: SqlDriver): Promise<void> {
         }
       });
     },
-    { migrationsFolder },
+    { migrationsFolder: getMigrationsFolder() },
   );
 }

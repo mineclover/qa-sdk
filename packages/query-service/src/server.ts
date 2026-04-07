@@ -3,7 +3,7 @@ import {
   InMemoryPrefixRegistry,
   MetaRegistry,
   createSqliteDriver,
-} from "index-meta";
+} from "index-meta-workers";
 import { serve } from "@hono/node-server";
 import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
 import { env } from "./config/env.js";
