@@ -2,12 +2,12 @@
  * worker.ts — gate-service Cloudflare Workers 진입점.
  * D1SqlDriver → SqlAddressStateStore → createApp.
  */
-import { D1SqlDriver, SqlAddressStateStore } from "index-meta";
+import { D1SqlDriver, SqlAddressStateStore } from "index-meta-workers";
 import { createApp } from "./app.js";
 
 /** Cloudflare D1 바인딩 — D1SqlDriver가 받는 최소 인터페이스 */
 interface Env {
-  DB: import("index-meta").D1Database;
+  DB: import("index-meta-workers").D1Database;
 }
 
 export default {

@@ -5,7 +5,7 @@
  *   1. REGISTRY_DB (D1 바인딩) — registry D1에서 catalog 직접 조회 (가장 빠름)
  *   2. REGISTRY_URL — HTTP fetch (fallback, CF Workers 간 fetch 이슈 가능)
  */
-import type { DecodeMap, D1Database } from "index-meta";
+import type { DecodeMap, D1Database } from "index-meta-workers";
 import { createApp } from "./app.js";
 import { DecoderPool } from "./lib/decoder-pool.js";
 

@@ -77,11 +77,12 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 
 - [ ] **ZitadelProvider 세션 종료** — 사용자 비활성화 시 세션 종료 + 토큰 무효화
 
-### Workers 호환 (차단됨)
+### Workers 호환 (해결됨)
 
-- [ ] **gate-service Workers 호환** — index-meta Workers 호환 해결 필요
-- [ ] **query-service Workers 호환** — index-meta Workers 호환 해결 필요
-- [ ] **decode-service Workers 호환** — index-meta Workers 호환 해결 필요
+- [x] **index-meta-workers 패키지 생성** — Node.js 전용 드라이버 제외, D1 + 순수 로직만 포함
+- [x] **gate-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
+- [x] **query-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
+- [x] **decode-service Workers 호환** — worker.ts를 index-meta-workers로 마이그레이션
 
 ### 프로바이더 실구현
 

@@ -476,6 +476,9 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/decision-service:
     dependencies:
@@ -552,6 +555,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      index-meta-workers:
+        specifier: workspace:*
+        version: link:../index-meta-workers
       ioredis:
         specifier: ^5.10.1
         version: 5.10.1
@@ -915,6 +921,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      index-meta-workers:
+        specifier: workspace:*
+        version: link:../index-meta-workers
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
@@ -1009,6 +1018,19 @@ importers:
       vitest:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
+  packages/index-meta-workers:
+    dependencies:
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
   packages/infra-engine:
     dependencies:
@@ -1367,6 +1389,9 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
 
   packages/permission-engine:
     dependencies:
@@ -1546,6 +1571,9 @@ importers:
       index-meta:
         specifier: workspace:*
         version: link:../index-meta
+      index-meta-workers:
+        specifier: workspace:*
+        version: link:../index-meta-workers
       pino:
         specifier: workspace:@qa-sdk/pino@*
         version: link:../pino
@@ -2220,6 +2248,9 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(lightningcss@1.32.0)
       weighted-index:
         specifier: workspace:*
         version: link:../weighted-index
