@@ -47,6 +47,11 @@ export class EventCatalogController {
     return this.eventCatalog.getServiceAdoption(catalogId ?? "demo", serviceId);
   }
 
+  @Get("services/:serviceId/taxonomy")
+  getServiceTaxonomy(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
+    return this.eventCatalog.getServiceTaxonomy(catalogId ?? "demo", serviceId);
+  }
+
   @Get("categories")
   listCategories() {
     return this.eventCatalog.listCategories();

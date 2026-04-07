@@ -16,6 +16,8 @@ import type { Channel, DimSource } from "@qa-sdk/event-catalog";
 import { AppError } from "@qa-sdk/core";
 import type { ConfigStore } from "../../stores/config-store.js";
 import { CONFIG_STORE } from "../catalog/catalog.service.js";
+import type { EventSchemaStore } from "../../stores/event-schema-store.js";
+import { EVENT_SCHEMA_STORE } from "./event-schema.service.js";
 
 type EventCatalogFilters = {
   category?: string;
@@ -25,9 +27,11 @@ type EventCatalogFilters = {
 @Injectable()
 export class EventCatalogService {
   private static readonly ADOPTION_CONFIG_TYPE = "event-adoption";
+  private static readonly SERVICES_CONFIG_TYPE = "services";
 
   constructor(
     @Inject(CONFIG_STORE) private readonly configStore: ConfigStore,
+    @Inject(EVENT_SCHEMA_STORE) private readonly eventSchemaStore: EventSchemaStore,
   ) {}
 
   summary() {
@@ -158,6 +162,62 @@ export class EventCatalogService {
     return found;
   }
 
+  async getServiceTaxonomy(catalogId: string, serviceId: string) {
+    const [adoptions, services, materialized] = await Promise.all([
+      this.listAdoptions(catalogId),
+      this.listServices(catalogId),
+      this.eventSchemaStore.listByService(catalogId, serviceId),
+    ]);
+
+    const adoption = adoptions.find((item) => item.serviceId === serviceId) ?? null;
+    const service = services.find((item) => item.serviceId === serviceId) ?? null;
+    const ownedPrefixes = service?.ownedPrefixes ?? [];
+    const consumedPrefixes = service?.consumedPrefixes ?? [];
+    const ownershipSet = new Set([...ownedPrefixes, ...consumedPrefixes]);
+
+    const prefixUsage = new Set<string>();
+    let recordsWithoutPackMetadata = 0;
+    for (const record of materialized) {
+      const prefixes = extractPrefixedList(record.description, "prefix:");
+      prefixes.forEach((prefixId) => prefixUsage.add(prefixId));
+      if (!record.description?.includes("packs:")) recordsWithoutPackMetadata++;
+    }
+
+    const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).sort((a, b) => a.localeCompare(b));
+    const missingPackIds = (adoption?.eventPacks ?? []).filter((packId) => !getPack(packId)).sort((a, b) => a.localeCompare(b));
+
+    return {
+      serviceId,
+      adoption,
+      ownership: {
+        ownedPrefixes,
+        consumedPrefixes,
+      },
+      materialized: {
+        count: materialized.length,
+        eventKeys: materialized.map((record) => record.eventKey).sort((a, b) => a.localeCompare(b)),
+        records: materialized.map((record) => ({
+          eventKey: record.eventKey,
+          eventVersion: record.eventVersion,
+          description: record.description,
+        })),
+      },
+      drift: {
+        adoptionMissing: adoption === null,
+        missingPackIds,
+        recordsWithoutPackMetadata,
+        prefixesWithoutOwnership,
+      },
+    };
+  }
+
+  private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
+    const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
+    if (!record) return [];
+    const parsed = JSON.parse(record.data);
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
   listCategories() {
     return Object.entries(coreEventsByCategory).map(([category, events]) => ({
       category,
@@ -173,4 +233,17 @@ export class EventCatalogService {
   private isChannel(value: string): value is Channel {
     return ["browser", "mobile", "backend", "sdk", "agent", "common", "qa"].includes(value);
   }
+}
+
+function extractPrefixedList(description: string | undefined, marker: string): string[] {
+  if (!description) return [];
+  const start = description.indexOf(marker);
+  if (start < 0) return [];
+  const rest = description.slice(start + marker.length).trim();
+  const untilPipe = rest.split("|")[0]?.trim() ?? "";
+  if (!untilPipe) return [];
+  return untilPipe
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 }

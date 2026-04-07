@@ -174,5 +174,29 @@ describe("EventModule (Nest)", () => {
         eventPacks: ["shop-pack"],
       }),
     );
+
+    const taxonomyResponse = await request(app, "GET", "/api/event-catalog/services/shopping-web/taxonomy?catalog=demo");
+    expect(taxonomyResponse.statusCode).toBe(200);
+    expect(json<{
+      serviceId: string;
+      adoption: { serviceId: string } | null;
+      ownership: { ownedPrefixes: string[] };
+      materialized: { count: number };
+      drift: { adoptionMissing: boolean };
+    }>(taxonomyResponse)).toEqual(
+      expect.objectContaining({
+        serviceId: "shopping-web",
+        adoption: expect.objectContaining({ serviceId: "shopping-web" }),
+        ownership: expect.objectContaining({
+          ownedPrefixes: expect.any(Array),
+        }),
+        materialized: expect.objectContaining({
+          count: expect.any(Number),
+        }),
+        drift: expect.objectContaining({
+          adoptionMissing: false,
+        }),
+      }),
+    );
   });
 });
