@@ -22,6 +22,8 @@ def:
 
 # Event Seed Materialization Phase 0 — 하드코딩 제거 설계
 
+> 상태: historical. 이 문서는 Phase 0 임시 `_mapping` fallback 설계를 기록한다. 현재 runtime seed는 adoption 미존재 시 `_mapping`을 생성하지 않는다.
+
 ## 목적 ^purpose
 
 `seed-events.ts`의 `serviceId: "shopping-web"` 하드코딩을 제거하여, 전역 mapping 기반 이벤트가 특정 실제 서비스에 잘못 귀속되는 문제를 먼저 해소한다. 이 단계는 최종 service adoption 구조를 구현하는 것이 아니라, 현재 구조에서 **거짓 소유권을 제거하는 안전한 임시 materialization**을 제공하는 것이 목적이다.

@@ -130,7 +130,6 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 ### 남은 완료 조건
 
 - drift gate enforcement 정의
-- `_mapping` fallback 제거 조건 확정
 - UC-7 Drift 검출 안정화
 - UC-8 Pack 버전 전환 안정화
 
@@ -144,7 +143,8 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 
 ## 현재 상태 요약
 
-- `_core` / `_mapping` synthetic bucket 기반 seed fallback 구현
+- `_core` synthetic bucket 기반 vocabulary seed 유지
+- adoption 미존재 시 mapping materialization을 생략하도록 cutover 완료
 - `EventMappingPack` registry 및 조회 surface 구현
 - `service event adoption` config read/write/remove surface 구현
 - legacy string adoption -> canonical pin object migration surface 구현
@@ -153,7 +153,6 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - 서비스별 event taxonomy read model + drift diagnostics/check surface 구현
 - 아직 미구현:
   - drift gate의 enforcement
-  - `_mapping` fallback 제거
   - `_mapping` fallback 제거 이후 migration cutover 명문화
 
 ## 관련 문서
