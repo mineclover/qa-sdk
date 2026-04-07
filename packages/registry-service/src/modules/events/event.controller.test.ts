@@ -295,4 +295,17 @@ describe("EventModule (Nest)", () => {
       }),
     );
   });
+
+  it("adoption write surface는 legacy string pack ref를 거부한다", async () => {
+    const app = await createNestTestApp({ imports: [AppModule] });
+    apps.push(app);
+
+    const response = await request(app, "PUT", "/api/event-catalog/adoptions/shopping-web?catalog=demo", {
+      eventPacks: ["shop-pack"],
+    });
+    expect(response.statusCode).toBe(400);
+    expect(json(response)).toEqual({
+      error: "eventPacks는 { packId, version? }[] 이어야 함",
+    });
+  });
 });

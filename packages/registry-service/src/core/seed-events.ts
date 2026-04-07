@@ -11,7 +11,7 @@ const noopLogger: SeedLogger = {
 
 interface ServiceEventAdoptionRecord {
   readonly serviceId: string;
-  readonly eventPacks?: readonly (string | { packId: string; version?: string })[];
+  readonly eventPacks?: readonly { packId: string; version?: string }[];
   readonly customEvents?: readonly string[];
   readonly allowedCategories?: readonly string[];
 }
@@ -40,11 +40,9 @@ async function listAdoptions(
 }
 
 function normalizePackRefs(
-  eventPacks: readonly (string | { packId: string; version?: string })[] | undefined,
+  eventPacks: readonly { packId: string; version?: string }[] | undefined,
 ): AdoptionPackRef[] {
-  return (eventPacks ?? []).map((entry) =>
-    typeof entry === "string" ? { packId: entry } : { packId: entry.packId, version: entry.version },
-  );
+  return (eventPacks ?? []).map((entry) => ({ packId: entry.packId, version: entry.version }));
 }
 
 type MaterializedMappingRecord = {
@@ -107,6 +105,10 @@ export async function seedEventSchemas(
     if (adoptions.length > 0) {
       const materialized = new Map<string, MaterializedMappingRecord>();
       for (const adoption of adoptions) {
+        if (Array.isArray(adoption.eventPacks) && adoption.eventPacks.some((entry) => typeof (entry as unknown) === "string")) {
+          logger.warn({ serviceId: adoption.serviceId }, "legacy event pack refs are not supported in runtime seed — migrate adoption config first");
+          continue;
+        }
         for (const packRef of normalizePackRefs(adoption.eventPacks)) {
           const pack = ec.getPack(packRef.packId);
           if (!pack) continue;

@@ -27,7 +27,7 @@ type EventCatalogFilters = {
 type EventPackRef = { packId: string; version?: string };
 type ServiceEventAdoptionRecord = {
   serviceId: string;
-  eventPacks?: readonly (string | EventPackRef)[];
+  eventPacks?: readonly EventPackRef[];
   customEvents?: readonly string[];
   allowedCategories?: readonly string[];
 };
@@ -160,7 +160,7 @@ export class EventCatalogService {
 
   async listAdoptions(catalogId: string) {
     const parsed = await this.readRawAdoptions(catalogId);
-    return parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    return parsed.map((item) => this.normalizeAdoptionRecord(item, true)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
@@ -214,7 +214,7 @@ export class EventCatalogService {
 
   async migrateAdoptions(catalogId: string) {
     const raw = await this.readRawAdoptions(catalogId);
-    const normalized = raw.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    const normalized = raw.map((item) => this.normalizeAdoptionRecord(item, true)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
     await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(normalized));
     return {
       ok: true,
@@ -335,14 +335,14 @@ export class EventCatalogService {
     return Array.isArray(parsed) ? parsed : [];
   }
 
-  private normalizeAdoptionRecord(input: unknown): ServiceEventAdoptionRecord {
+  private normalizeAdoptionRecord(input: unknown, allowLegacyStrings = false): ServiceEventAdoptionRecord {
     const body = this.asRecord(input);
     const serviceId = typeof body.serviceId === "string" ? body.serviceId : "";
     if (!serviceId) {
       throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
     }
 
-    const packRefs = this.normalizePackRefs(body.eventPacks);
+    const packRefs = this.normalizePackRefs(body.eventPacks, allowLegacyStrings);
     const customEvents = this.normalizeStringList(body.customEvents);
     const allowedCategories = this.normalizeStringList(body.allowedCategories);
 
@@ -354,12 +354,14 @@ export class EventCatalogService {
     };
   }
 
-  private normalizePackRefs(input: unknown): EventPackRef[] {
+  private normalizePackRefs(input: unknown, allowLegacyStrings = false): EventPackRef[] {
     if (!Array.isArray(input)) return [];
     return input.map((entry) => {
       if (typeof entry === "string") {
-        const pack = getPack(entry);
-        return { packId: entry, ...(pack ? { version: pack.version } : {}) };
+        if (!allowLegacyStrings) {
+          throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
+        }
+        return { packId: entry, ...(getPack(entry)?.version ? { version: getPack(entry)!.version } : {}) };
       }
       if (!entry || typeof entry !== "object" || typeof (entry as { packId?: unknown }).packId !== "string") {
         throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
@@ -415,7 +417,7 @@ function extractPrefixedList(description: string | undefined, marker: string): s
 }
 
 function normalizePackRefs(
-  eventPacks: readonly (string | { packId: string; version?: string })[] | undefined,
+  eventPacks: readonly ({ packId: string; version?: string } | string)[] | undefined,
 ): Array<{ packId: string; version?: string }> {
   return (eventPacks ?? []).map((entry) =>
     typeof entry === "string" ? { packId: entry, version: getPack(entry)?.version } : { packId: entry.packId, version: entry.version ?? getPack(entry.packId)?.version },

@@ -67,4 +67,17 @@ describe("seedEventSchemas", () => {
 
     expect(await eventStore.get("demo", "shopping-web", "page.view", "001")).toBeNull();
   });
+
+  it("legacy string adoption config는 runtime seed에서 materialize하지 않는다", async () => {
+    const eventStore = new InMemoryEventSchemaStore();
+    const configStore = new InMemoryConfigStore();
+
+    await configStore.set("demo", "event-adoption", JSON.stringify([
+      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
+    ]));
+
+    await seedEventSchemas(eventStore, configStore);
+
+    expect(await eventStore.get("demo", "shopping-web", "page.view", "001")).toBeNull();
+  });
 });

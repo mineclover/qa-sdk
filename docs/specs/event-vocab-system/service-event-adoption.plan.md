@@ -117,5 +117,7 @@ interface ServiceEventAdoption {
 - drift read model 존재
 - diagnostics check surface 존재
 - demo catalog 기본 adoption seed 존재
+- 새 adoption write path는 canonical `{ packId, version }[]`만 허용
+- runtime seed는 legacy string pack ref를 materialize하지 않음
 - 아직 없음:
   - ownership/adoption 정합성 gate
