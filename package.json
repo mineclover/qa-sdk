@@ -5,6 +5,7 @@
   "scripts": {
     "setup": "bash scripts/setup.sh",
     "health": "bash scripts/health.sh",
+    "gate:event-taxonomy": "bash scripts/registry-event-taxonomy-gate.sh",
     "build": "pnpm -r run build",
     "test": "pnpm -r --workspace-concurrency=1 run test",
     "lint": "oxlint packages/",

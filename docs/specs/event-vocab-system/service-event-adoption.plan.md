@@ -121,6 +121,7 @@ interface ServiceEventAdoption {
 - diagnostics check surface 존재
 - drift enforcement assert surface 존재
 - catalog 단위 batch check/assert surface 존재
+- 운영 스크립트 `pnpm gate:event-taxonomy` 제공
 - demo catalog 기본 adoption seed 존재
 - 새 adoption write path는 canonical `{ packId, version }[]`만 허용
 - runtime seed는 legacy string pack ref를 materialize하지 않음

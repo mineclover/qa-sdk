@@ -32,3 +32,5 @@ quality-gates-system > registry-quality-bundle > **gate-registry-service-flow**
 ## 목적 ^purpose
 
 catalog/service/workspace/hook 흐름이 실제 테스트에서 유지되는지 검증하는 통합 게이트.
+
+운영 단계에서는 `pnpm gate:event-taxonomy`를 추가로 실행하여 registry event taxonomy의 migration/check/assert 흐름을 점검한다.
