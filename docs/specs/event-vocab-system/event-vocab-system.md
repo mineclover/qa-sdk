@@ -19,6 +19,8 @@ def:
       type: contains
     - target: event-taxonomy-layering-plan
       type: contains
+    - target: event-taxonomy-role-contract
+      type: contains
     - target: event-taxonomy-roadmap-plan
       type: contains
     - target: event-mapping-pack-plan
@@ -45,6 +47,7 @@ def:
 - `graph-hint-spec`: Core Event가 실행 그래프에서 어떤 역할을 하는지 정적 힌트를 제공한다.
 - `payload-guide`: Core Event별 권장 payload 필드 가이드.
 - `event-taxonomy-layering-plan`: global vocabulary / mapping pack / service adoption 3층 분리 설계 초안.
+- `event-taxonomy-role-contract`: 각 레이어가 무엇을 소유하고 무엇을 소유하지 않는지 고정하는 역할 계약.
 - `event-taxonomy-roadmap-plan`: `seed-events` 하드코딩 제거를 최우선으로 둔 이행 로드맵.
 - `event-mapping-pack-plan`: mapping pack을 first-class로 다루는 설계 초안.
 - `service-event-adoption-plan`: 서비스별 pack 채택과 custom event surface를 관리하는 설계 초안.
