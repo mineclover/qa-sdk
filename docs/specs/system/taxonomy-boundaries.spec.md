@@ -19,7 +19,7 @@ def:
       type: contains
     - target: df-taxonomy
       type: contains
-    - target: pm-taxonomy-plan
+    - target: pm-taxonomy
       type: contains
     - target: decision-definition-bridge
       type: depends_on
@@ -51,7 +51,7 @@ qa-sdk에서 함께 쓰이는 taxonomy 패밀리들의 소유 범위와 경계�
 - `structural-taxonomy` → facet/boundary/runtime scope/contract descent의 구조 축
 - `observability-taxonomy` → 앱 데이터 관측, semantic address, protocol telemetry, infra observe의 책임 경계
 - `df-taxonomy` → decision-flow의 판단 추적 분류 체계
-- `pm-taxonomy-plan` → delivery 중심 PM taxonomy 초안
+- `pm-taxonomy` → delivery 중심 PM taxonomy
 
 ## 구성 ^overview
 
@@ -82,5 +82,5 @@ qa-sdk에서 함께 쓰이는 taxonomy 패밀리들의 소유 범위와 경계�
 - `docs/specs/system/structural-taxonomy.spec.md`
 - `docs/specs/system/observability-taxonomy.spec.md`
 - `docs/specs/decision-flow/df-taxonomy.spec.md`
-- `docs/specs/system/pm-taxonomy.plan.md`
+- `docs/specs/system/pm-taxonomy.spec.md`
 - `docs/specs/system/decision-definition-bridge.spec.md`
