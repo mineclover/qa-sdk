@@ -59,11 +59,11 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 ## 시나리오 안정화
 
-- [ ] UC-1/2/5를 1차 안정화 시나리오로 고정하고, 각 시나리오의 변경 층과 blast radius를 문서화
-- [ ] UC-3/6/7을 adoption/materialization 시나리오로 묶고, registry seed 경로 재설계 후 안정화
-- [ ] UC-4 override 규칙 초안 작성 (global pack 오염 금지, local override 범위 제한)
-- [ ] UC-8 pack version pin / migration 규칙 초안 작성
-- [ ] 시나리오별 drift 검출 포인트(ownership / pack / adoption / seed 결과)를 gate 체크리스트로 정리
+- [x] UC-1/2/5를 1차 안정화 시나리오로 고정하고, 각 시나리오의 변경 층과 blast radius를 문서화
+- [x] UC-3/6/7을 adoption/materialization 시나리오로 묶고, registry seed 경로 재설계 후 안정화
+- [x] UC-4 override 규칙 초안 작성 (global pack 오염 금지, local override 범위 제한)
+- [x] UC-8 pack version pin / migration 규칙 초안 작성
+- [x] 시나리오별 drift 검출 포인트(ownership / pack / adoption / seed 결과)를 gate 체크리스트로 정리
 
 ## 다음 구현 초점
 
@@ -77,8 +77,8 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 ## 남은 정리
 
-- [ ] UC-1/2/5, UC-3/6/7, UC-8 시나리오를 spec으로 승격할 범위를 확정
-- [ ] roadmap의 historical phase를 더 축약하고 현재 정책만 남기기
+- [x] UC-1/2/5, UC-3/6/7, UC-8 시나리오를 spec으로 승격할 범위를 확정
+- [x] roadmap의 historical phase를 더 축약하고 현재 정책만 남기기
 
 ### `_mapping` fallback 제거 조건
 

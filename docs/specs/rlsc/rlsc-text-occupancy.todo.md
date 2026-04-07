@@ -106,5 +106,5 @@ def:
 ### 통합 테스트 (Playwright) — 실제 Canvas + pretext
 
 - [x] `platform-demo` rlsc 페이지에 Text 탭 추가 (텍스트 점유 시각화)
-- [ ] E2E: collectLayoutWithText → analyzeTextOccupancy 파이프라인 전체 검증
-- [ ] 반응형 예측: 같은 prepared에 다른 width → lineCount 변화 검증
+- [x] E2E: collectLayoutWithText → analyzeTextOccupancy 파이프라인 전체 검증
+- [x] 반응형 예측: 같은 prepared에 다른 width → lineCount 변화 검증

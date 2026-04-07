@@ -34,81 +34,16 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - **임시 해법과 최종 구조를 분리**: hardcoding 제거는 즉시 적용, service adoption은 후속 도입.
 - **기존 운영 surface를 깨지 않는다**: registry-event surface는 유지하고 내부 seed 규칙만 점진 교체한다.
 
-## Phase 0 — 하드코딩 제거 (완료)
+## Phase 0–3 — 완료 요약
 
-> historical note: 자세한 임시 `_mapping` fallback 설계는 `event-seed-materialization-phase0-plan`에 남기고, 현재 runtime은 adoption 기반 materialization만 사용한다.
+| Phase | 목표 | 핵심 결과 |
+|---|---|---|
+| Phase 0 | 하드코딩 제거 | `serviceId: "shopping-web"` 제거, `_core`/`_mapping` synthetic bucket 도입, candidate 힌트 기반 귀속 |
+| Phase 1 | Mapping Pack First-Class화 | `EventMappingPack` 타입/registry surface 도입, pack 단위 조회 구조 완성 |
+| Phase 2 | Service Event Adoption 도입 | `ServiceEventAdoption` 모델, `eventPacks`/`allowedCategories` 정의, ownership-adoption 정합성 규칙 |
+| Phase 3 | Registry Materialization 교체 | core vocabulary + pack + adoption 3층 조합 materialize, 서비스별 event schema 생성 |
 
-### 목표
-
-`seed-events.ts`가 전역 mapping을 모두 `shopping-web`로 귀속시키는 문제를 제거한다.
-
-### 개선안
-
-세부 알고리즘은 `event-seed-materialization-phase0-plan`을 따른다.
-
-핵심은:
-
-1. core event는 `_core`
-2. mapping event는 `_mapping`
-3. ownership overlap은 `candidate` 힌트로만 계산
-4. 실제 서비스 귀속은 adoption 도입 전까지 하지 않음
-
-### 이유
-
-- 지금 당장 잘못된 서비스 귀속을 막을 수 있다.
-- `service adoption` 도입 전에도 registry 결과의 명백한 왜곡을 줄인다.
-- 기존 스키마를 바꾸지 않고도 안전한 중간 상태를 만들 수 있다.
-
-## Phase 1 — Mapping Pack First-Class화 (완료)
-
-### 목표
-
-`prefix-mapping.ts`의 전역 side-effect registry를 pack 단위 구조로 승격한다.
-
-### 작업
-
-- `EventMappingPack` 타입 도입
-- pack registry surface 도입
-- 기존 mapping 묶음을 shop/harness/decision/infra/cli/... pack으로 명시 분리
-
-### 완료 조건
-
-- pack 단위 조회 가능
-- 각 mapping이 어떤 pack에 속하는지 명시 가능
-
-## Phase 2 — Service Event Adoption 도입 (완료)
-
-### 목표
-
-서비스가 어떤 pack을 채택하고 어떤 category 범위를 허용하는지 명시하는 layer를 만든다.
-
-### 작업
-
-- `ServiceEventAdoption` 모델 도입
-- 서비스별 `eventPacks`, `allowedCategories` 정의
-- ownership과 adoption의 정합성 규칙 초안 작성
-
-### 완료 조건
-
-- 서비스별 event taxonomy를 직접 조회 가능
-- `ownedPrefixes`와 분리된 event adoption surface 존재
-
-## Phase 3 — Registry Materialization 교체 (완료)
-
-### 목표
-
-registry seed가 `core vocabulary + mapping pack + service adoption` 3층을 조합해 event schema를 materialize하도록 재구성한다.
-
-### 작업
-
-- `seed-events.ts` 재설계
-- service별 event schema 생성 규칙 명시
-- 미채택 pack/custom event에 대한 처리 규칙 정의
-
-### 완료 조건
-
-- `shopping-web` 하드코딩 완전 제거
-- 서비스별 event schema가 adoption 기반으로 생성
+> 상세: Phase 0 임시 fallback 설계는 `event-seed-materialization-phase0-plan` 참조.
 
 ## Phase 4 — Drift Gate + Versioning (진행 중)
 
@@ -125,8 +60,8 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 
 ### 남은 완료 조건
 
-- UC-7 Drift 검출 시나리오 안정화
-- UC-8 Pack 버전 전환 시나리오 안정화
+- UC-3/6/7 adoption path 실 서비스 온보딩 검증 후 spec 승격
+- UC-4/8 override/migration 정책의 실 적용 사례 검증 후 spec 승격
 
 ## 우선순위
 
@@ -149,9 +84,9 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - adopted pack prefix와 service ownership 정합성 gate 구현
 - write/runtime path는 canonical pack ref만 허용
 - 운영 게이트 스크립트 `pnpm gate:event-taxonomy` 제공
-- 아직 미구현:
-  - 시나리오 안정화 문서 승격
-  - override/local pack 정책 구체화
+- 시나리오 안정화 문서화 완료 (`event-taxonomy-usecases-plan` 참조)
+- override/local pack 정책 초안 작성 완료 (UC-4, plan 단계)
+- pack version pin/migration 정책 초안 작성 완료 (UC-8, plan 단계)
 
 ## 관련 문서
 
