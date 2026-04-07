@@ -49,7 +49,7 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 - [x] `service event adoption` 모델 도입 (`serviceId -> eventPacks/allowedCategories`)
 - [x] registry-service에 pack/adoption 조회 surface 추가
-- [ ] `service ownership`와 `service event adoption`의 정합성 검증 규칙 정의
+- [x] `service ownership`와 `service event adoption`의 정합성 검증 규칙 정의
 
 ### Phase 3 — Materialization
 
@@ -74,6 +74,11 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 - [x] demo catalog 기본 event-adoption seed 추가
 - [x] `_mapping` fallback 제거 조건 정의
 - [x] runtime seed에서 `_mapping` fallback 제거
+
+## 남은 정리
+
+- [ ] UC-1/2/5, UC-3/6/7, UC-8 시나리오를 spec으로 승격할 범위를 확정
+- [ ] roadmap의 historical phase를 더 축약하고 현재 정책만 남기기
 
 ### `_mapping` fallback 제거 조건
 

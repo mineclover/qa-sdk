@@ -36,6 +36,8 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 
 ## Phase 0 — 하드코딩 제거 (완료)
 
+> historical note: 자세한 임시 `_mapping` fallback 설계는 `event-seed-materialization-phase0-plan`에 남기고, 현재 runtime은 adoption 기반 materialization만 사용한다.
+
 ### 목표
 
 `seed-events.ts`가 전역 mapping을 모두 `shopping-web`로 귀속시키는 문제를 제거한다.
@@ -56,12 +58,6 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - 지금 당장 잘못된 서비스 귀속을 막을 수 있다.
 - `service adoption` 도입 전에도 registry 결과의 명백한 왜곡을 줄인다.
 - 기존 스키마를 바꾸지 않고도 안전한 중간 상태를 만들 수 있다.
-
-### 한계
-
-- 이것은 **synthetic bucket 기반 임시 materialization**이다.
-- `_mapping`은 실제 서비스가 아니다.
-- 따라서 최종 authoritative model은 아니다.
 
 ## Phase 1 — Mapping Pack First-Class화 (완료)
 
@@ -129,8 +125,8 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 
 ### 남은 완료 조건
 
-- UC-7 Drift 검출 안정화
-- UC-8 Pack 버전 전환 안정화
+- UC-7 Drift 검출 시나리오 안정화
+- UC-8 Pack 버전 전환 시나리오 안정화
 
 ## 우선순위
 
@@ -154,7 +150,8 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - write/runtime path는 canonical pack ref만 허용
 - 운영 게이트 스크립트 `pnpm gate:event-taxonomy` 제공
 - 아직 미구현:
-  - `_mapping` fallback 제거 이후 migration cutover 명문화
+  - 시나리오 안정화 문서 승격
+  - override/local pack 정책 구체화
 
 ## 관련 문서
 
