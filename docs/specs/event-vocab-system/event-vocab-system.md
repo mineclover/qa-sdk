@@ -23,6 +23,10 @@ def:
       type: contains
     - target: event-taxonomy-roadmap-plan
       type: contains
+    - target: event-mapping-pack-spec
+      type: contains
+    - target: service-event-adoption-spec
+      type: contains
     - target: event-mapping-pack-plan
       type: contains
     - target: service-event-adoption-plan
@@ -49,7 +53,9 @@ def:
 - `event-taxonomy-layering-plan`: global vocabulary / mapping pack / service adoption 3층 분리 설계 초안.
 - `event-taxonomy-role-contract`: 각 레이어가 무엇을 소유하고 무엇을 소유하지 않는지 고정하는 역할 계약.
 - `event-taxonomy-roadmap-plan`: `seed-events` 하드코딩 제거를 최우선으로 둔 이행 로드맵.
-- `event-mapping-pack-plan`: mapping pack을 first-class로 다루는 설계 초안.
-- `service-event-adoption-plan`: 서비스별 pack 채택과 custom event surface를 관리하는 설계 초안.
+- `event-mapping-pack-spec`: mapping pack의 현재 계약.
+- `service-event-adoption-spec`: 서비스별 pack 채택의 현재 계약.
+- `event-mapping-pack-plan`: mapping pack의 역사적 설계 초안.
+- `service-event-adoption-plan`: service adoption의 역사적 설계 초안.
 - `event-taxonomy-usecases-plan`: 관리 용이성과 확장성을 검증하는 대표 사용 시나리오.
 - `event-taxonomy-rollout-todo`: pack first-class화, service adoption 도입, seed-events 재설계의 실행 체크리스트.
