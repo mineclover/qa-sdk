@@ -147,13 +147,14 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 - `_core` / `_mapping` synthetic bucket 기반 seed fallback 구현
 - `EventMappingPack` registry 및 조회 surface 구현
 - `service event adoption` config read/write/remove surface 구현
+- legacy string adoption -> canonical pin object migration surface 구현
 - demo catalog 기본 `event-adoption` seed 구현
 - adoption의 `packId + version` pin 구현
 - 서비스별 event taxonomy read model + drift diagnostics/check surface 구현
 - 아직 미구현:
   - drift gate의 enforcement
   - `_mapping` fallback 제거
-  - adoption migration rule 명문화
+  - `_mapping` fallback 제거 이후 migration cutover 명문화
 
 ## 관련 문서
 

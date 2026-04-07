@@ -82,6 +82,7 @@ interface ServiceEventAdoption {
 - `GET /api/event-catalog/adoptions/:serviceId` ✅
 - `PUT /api/event-catalog/adoptions/:serviceId` ✅
 - `DELETE /api/event-catalog/adoptions/:serviceId` ✅
+- `POST /api/event-catalog/adoptions/migrate` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy` ✅
 - `GET /api/event-catalog/services/:serviceId/taxonomy/check` ✅
 
@@ -109,6 +110,7 @@ interface ServiceEventAdoption {
 
 - adoption config read 가능
 - adoption config write/remove 가능
+- legacy string pack ref migration 가능
 - adoption의 `packId + version` pin 지원
 - adoption 기반 materialization 가능
 - 서비스별 taxonomy read model 존재

@@ -159,10 +159,8 @@ export class EventCatalogService {
   }
 
   async listAdoptions(catalogId: string) {
-    const record = await this.configStore.get(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE);
-    if (!record) return [];
-    const parsed = JSON.parse(record.data);
-    return Array.isArray(parsed) ? parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId)) : [];
+    const parsed = await this.readRawAdoptions(catalogId);
+    return parsed.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
@@ -214,14 +212,27 @@ export class EventCatalogService {
     };
   }
 
+  async migrateAdoptions(catalogId: string) {
+    const raw = await this.readRawAdoptions(catalogId);
+    const normalized = raw.map((item) => this.normalizeAdoptionRecord(item)).sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(normalized));
+    return {
+      ok: true,
+      catalogId,
+      count: normalized.length,
+    };
+  }
+
   async getServiceTaxonomy(catalogId: string, serviceId: string) {
-    const [adoptions, services, materialized] = await Promise.all([
+    const [rawAdoptions, adoptions, services, materialized] = await Promise.all([
+      this.readRawAdoptions(catalogId),
       this.listAdoptions(catalogId),
       this.listServices(catalogId),
       this.eventSchemaStore.listByService(catalogId, serviceId),
     ]);
 
     const adoption = adoptions.find((item) => item.serviceId === serviceId) ?? null;
+    const rawAdoption = rawAdoptions.find((item) => this.asRecord(item).serviceId === serviceId) ?? null;
     const service = services.find((item) => item.serviceId === serviceId) ?? null;
     const ownedPrefixes = service?.ownedPrefixes ?? [];
     const consumedPrefixes = service?.consumedPrefixes ?? [];
@@ -248,6 +259,9 @@ export class EventCatalogService {
         requestedVersion: ref.version!,
         currentVersion: getPack(ref.packId)!.version,
       }));
+    const legacyPackRefFormat = Array.isArray(this.asRecord(rawAdoption).eventPacks)
+      ? (this.asRecord(rawAdoption).eventPacks as unknown[]).some((entry) => typeof entry === "string")
+      : false;
 
     return {
       serviceId,
@@ -267,6 +281,7 @@ export class EventCatalogService {
       },
       drift: {
         adoptionMissing: adoption === null,
+        legacyPackRefFormat,
         missingPackIds,
         stalePackVersions,
         recordsWithoutPackMetadata,
@@ -281,6 +296,9 @@ export class EventCatalogService {
 
     if (taxonomy.drift.adoptionMissing) {
       issues.push({ severity: "warning", code: "adoption-missing" });
+    }
+    if (taxonomy.drift.legacyPackRefFormat) {
+      issues.push({ severity: "warning", code: "legacy-pack-ref-format" });
     }
     if (taxonomy.drift.missingPackIds.length > 0) {
       issues.push({ severity: "warning", code: "missing-pack-ids", detail: taxonomy.drift.missingPackIds });
@@ -305,6 +323,13 @@ export class EventCatalogService {
 
   private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
     const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
+    if (!record) return [];
+    const parsed = JSON.parse(record.data);
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
+  private async readRawAdoptions(catalogId: string): Promise<unknown[]> {
+    const record = await this.configStore.get(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE);
     if (!record) return [];
     const parsed = JSON.parse(record.data);
     return Array.isArray(parsed) ? parsed : [];
