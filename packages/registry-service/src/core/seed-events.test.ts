@@ -43,4 +43,45 @@ describe("seedEventSchemas", () => {
     expect(pageView).not.toBeNull();
     expect(pageView?.description).toContain("candidates: none");
   });
+
+  it("event-adoption config가 있으면 service별로 materialize하고 _mapping fallback을 사용하지 않는다", async () => {
+    const eventStore = new InMemoryEventSchemaStore();
+    const configStore = new InMemoryConfigStore();
+
+    await configStore.set("demo", "event-adoption", JSON.stringify([
+      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
+      { serviceId: "infra-controller", eventPacks: ["infra-observe-pack"] },
+    ]));
+
+    await seedEventSchemas(eventStore, configStore);
+
+    const shop = await eventStore.get("demo", "shopping-web", "page.view", "001");
+    expect(shop).not.toBeNull();
+    expect(shop?.description).toContain("packs: shop-pack");
+
+    const infra = await eventStore.get("demo", "infra-controller", "metric.collected", "001");
+    expect(infra).not.toBeNull();
+    expect(infra?.description).toContain("packs: infra-observe-pack");
+
+    const fallback = await eventStore.get("demo", "_mapping", "page.view", "001");
+    expect(fallback).toBeNull();
+  });
+
+  it("allowedCategories가 있으면 해당 category의 event만 materialize한다", async () => {
+    const eventStore = new InMemoryEventSchemaStore();
+    const configStore = new InMemoryConfigStore();
+
+    await configStore.set("demo", "event-adoption", JSON.stringify([
+      {
+        serviceId: "shopping-web",
+        eventPacks: ["shop-pack"],
+        allowedCategories: ["navigation"],
+      },
+    ]));
+
+    await seedEventSchemas(eventStore, configStore);
+
+    expect(await eventStore.get("demo", "shopping-web", "page.view", "001")).not.toBeNull();
+    expect(await eventStore.get("demo", "shopping-web", "auth.login", "001")).toBeNull();
+  });
 });

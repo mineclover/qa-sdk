@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import type { SqlDriver } from "index-meta";
 import { DATABASE } from "../../database.module.js";
+import { CatalogModule } from "../catalog/catalog.module.js";
 import { SqlEventSchemaStore } from "../../stores/sql-event-schema-store.js";
 import { EventCatalogController } from "./event-catalog.controller.js";
 import { EventCatalogService } from "./event-catalog.service.js";
@@ -8,6 +9,7 @@ import { EventSchemaController } from "./event-schema.controller.js";
 import { EVENT_SCHEMA_STORE, EventSchemaService } from "./event-schema.service.js";
 
 @Module({
+  imports: [CatalogModule],
   controllers: [EventSchemaController, EventCatalogController],
   providers: [
     {

@@ -37,6 +37,16 @@ export class EventCatalogController {
     return this.eventCatalog.getPack(packId);
   }
 
+  @Get("adoptions")
+  listAdoptions(@Query("catalog") catalogId?: string) {
+    return this.eventCatalog.listAdoptions(catalogId ?? "demo");
+  }
+
+  @Get("adoptions/:serviceId")
+  getServiceAdoption(@Param("serviceId") serviceId: string, @Query("catalog") catalogId?: string) {
+    return this.eventCatalog.getServiceAdoption(catalogId ?? "demo", serviceId);
+  }
+
   @Get("categories")
   listCategories() {
     return this.eventCatalog.listCategories();

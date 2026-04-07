@@ -4,6 +4,7 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import type { SqlDriver } from "index-meta";
 import { AppModule } from "../../app.module.js";
 import { DATABASE } from "../../database.module.js";
+import { SqlConfigStore } from "../../stores/sql-config-store.js";
 import { SqlEventSchemaStore } from "../../stores/sql-event-schema-store.js";
 import {
   createNestTestApp,
@@ -14,6 +15,7 @@ import {
 function createStores(app: NestFastifyApplication) {
   const db = app.get<SqlDriver>(DATABASE);
   return {
+    configStore: new SqlConfigStore(db),
     eventSchemaStore: new SqlEventSchemaStore(db),
   };
 }
@@ -105,6 +107,11 @@ describe("EventModule (Nest)", () => {
   it("GET /api/event-catalog serves static catalog data through Nest", async () => {
     const app = await createNestTestApp({ imports: [AppModule] });
     apps.push(app);
+    const { configStore } = createStores(app);
+
+    await configStore.set("demo", "event-adoption", JSON.stringify([
+      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
+    ]));
 
     const summaryResponse = await request(app, "GET", "/api/event-catalog");
     expect(summaryResponse.statusCode).toBe(200);
@@ -148,6 +155,23 @@ describe("EventModule (Nest)", () => {
       expect.objectContaining({
         packId: "shop-pack",
         owner: "shopping-web",
+      }),
+    );
+
+    const adoptionsResponse = await request(app, "GET", "/api/event-catalog/adoptions?catalog=demo");
+    expect(adoptionsResponse.statusCode).toBe(200);
+    expect(json<Array<{ serviceId: string }>>(adoptionsResponse)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ serviceId: "shopping-web" }),
+      ]),
+    );
+
+    const adoptionDetailResponse = await request(app, "GET", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
+    expect(adoptionDetailResponse.statusCode).toBe(200);
+    expect(json<{ serviceId: string; eventPacks: string[] }>(adoptionDetailResponse)).toEqual(
+      expect.objectContaining({
+        serviceId: "shopping-web",
+        eventPacks: ["shop-pack"],
       }),
     );
   });

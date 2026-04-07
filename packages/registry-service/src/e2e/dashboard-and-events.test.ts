@@ -305,4 +305,10 @@ describe("event-catalog routes (Nest)", () => {
       ]),
     );
   });
+
+  it("GET /api/event-catalog/adoptions adoption 목록", async () => {
+    const app = await buildDashboardApp();
+    const items = await (await app.request("/api/event-catalog/adoptions")).json<any[]>();
+    expect(Array.isArray(items)).toBe(true);
+  });
 });

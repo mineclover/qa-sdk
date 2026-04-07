@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   allCoreEvents,
   coreEventsByCategory,
@@ -14,6 +14,8 @@ import {
 } from "@qa-sdk/event-catalog";
 import type { Channel, DimSource } from "@qa-sdk/event-catalog";
 import { AppError } from "@qa-sdk/core";
+import type { ConfigStore } from "../../stores/config-store.js";
+import { CONFIG_STORE } from "../catalog/catalog.service.js";
 
 type EventCatalogFilters = {
   category?: string;
@@ -22,6 +24,12 @@ type EventCatalogFilters = {
 
 @Injectable()
 export class EventCatalogService {
+  private static readonly ADOPTION_CONFIG_TYPE = "event-adoption";
+
+  constructor(
+    @Inject(CONFIG_STORE) private readonly configStore: ConfigStore,
+  ) {}
+
   summary() {
     const categories: Record<string, number> = {};
     for (const [category, events] of Object.entries(coreEventsByCategory)) {
@@ -132,6 +140,22 @@ export class EventCatalogService {
         prefixes: mapping.prefixes.map((prefix) => prefix.prefixId),
       })),
     };
+  }
+
+  async listAdoptions(catalogId: string) {
+    const record = await this.configStore.get(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE);
+    if (!record) return [];
+    const parsed = JSON.parse(record.data);
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
+  async getServiceAdoption(catalogId: string, serviceId: string) {
+    const adoptions = await this.listAdoptions(catalogId);
+    const found = adoptions.find((item) => item.serviceId === serviceId);
+    if (!found) {
+      throw new AppError("NOT_FOUND", `Service adoption '${serviceId}' not found`, 404);
+    }
+    return found;
   }
 
   listCategories() {
