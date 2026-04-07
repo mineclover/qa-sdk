@@ -22,7 +22,7 @@ def:
       type: depends_on
 ---
 
-# Event Taxonomy Roadmap — 하드코딩 제거 우선 계획
+# Event Taxonomy Roadmap — 구현 진행 상태
 
 ## 목적 ^purpose
 
@@ -34,7 +34,7 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - **임시 해법과 최종 구조를 분리**: hardcoding 제거는 즉시 적용, service adoption은 후속 도입.
 - **기존 운영 surface를 깨지 않는다**: registry-event surface는 유지하고 내부 seed 규칙만 점진 교체한다.
 
-## Phase 0 — 하드코딩 제거 (최우선)
+## Phase 0 — 하드코딩 제거 (완료)
 
 ### 목표
 
@@ -63,7 +63,7 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - `_mapping`은 실제 서비스가 아니다.
 - 따라서 최종 authoritative model은 아니다.
 
-## Phase 1 — Mapping Pack First-Class화
+## Phase 1 — Mapping Pack First-Class화 (완료)
 
 ### 목표
 
@@ -80,7 +80,7 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - pack 단위 조회 가능
 - 각 mapping이 어떤 pack에 속하는지 명시 가능
 
-## Phase 2 — Service Event Adoption 도입
+## Phase 2 — Service Event Adoption 도입 (완료)
 
 ### 목표
 
@@ -97,7 +97,7 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 - 서비스별 event taxonomy를 직접 조회 가능
 - `ownedPrefixes`와 분리된 event adoption surface 존재
 
-## Phase 3 — Registry Materialization 교체
+## Phase 3 — Registry Materialization 교체 (완료)
 
 ### 목표
 
@@ -114,7 +114,7 @@ registry seed가 `core vocabulary + mapping pack + service adoption` 3층을 조
 - `shopping-web` 하드코딩 완전 제거
 - 서비스별 event schema가 adoption 기반으로 생성
 
-## Phase 4 — Drift Gate + Versioning
+## Phase 4 — Drift Gate + Versioning (다음 단계)
 
 ### 목표
 
@@ -139,6 +139,18 @@ pack/adoption/materialization 간 drift와 pack version 전환을 관리 가능�
 3. Phase 2 — Service Event Adoption
 4. Phase 3 — Registry Materialization 교체
 5. Phase 4 — Drift Gate + Versioning
+
+## 현재 상태 요약
+
+- `_core` / `_mapping` synthetic bucket 기반 seed fallback 구현
+- `EventMappingPack` registry 및 조회 surface 구현
+- `service event adoption` config 조회 surface 구현
+- 서비스별 event taxonomy read model + drift diagnostics 구현
+- 아직 미구현:
+  - pack version/status
+  - adoption의 `packId + version` pin
+  - drift gate의 enforcement
+  - `_mapping` fallback 제거
 
 ## 관련 문서
 

@@ -49,19 +49,19 @@ describe("seedEventSchemas", () => {
     const configStore = new InMemoryConfigStore();
 
     await configStore.set("demo", "event-adoption", JSON.stringify([
-      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
-      { serviceId: "infra-controller", eventPacks: ["infra-observe-pack"] },
+      { serviceId: "shopping-web", eventPacks: [{ packId: "shop-pack", version: "v1" }] },
+      { serviceId: "infra-controller", eventPacks: [{ packId: "infra-observe-pack", version: "v1" }] },
     ]));
 
     await seedEventSchemas(eventStore, configStore);
 
     const shop = await eventStore.get("demo", "shopping-web", "page.view", "001");
     expect(shop).not.toBeNull();
-    expect(shop?.description).toContain("packs: shop-pack");
+    expect(shop?.description).toContain("packs: shop-pack@v1");
 
     const infra = await eventStore.get("demo", "infra-controller", "metric.collected", "001");
     expect(infra).not.toBeNull();
-    expect(infra?.description).toContain("packs: infra-observe-pack");
+    expect(infra?.description).toContain("packs: infra-observe-pack@v1");
 
     const fallback = await eventStore.get("demo", "_mapping", "page.view", "001");
     expect(fallback).toBeNull();
@@ -74,7 +74,7 @@ describe("seedEventSchemas", () => {
     await configStore.set("demo", "event-adoption", JSON.stringify([
       {
         serviceId: "shopping-web",
-        eventPacks: ["shop-pack"],
+        eventPacks: [{ packId: "shop-pack", version: "v1" }],
         allowedCategories: ["navigation"],
       },
     ]));
@@ -83,5 +83,18 @@ describe("seedEventSchemas", () => {
 
     expect(await eventStore.get("demo", "shopping-web", "page.view", "001")).not.toBeNull();
     expect(await eventStore.get("demo", "shopping-web", "auth.login", "001")).toBeNull();
+  });
+
+  it("pack version이 맞지 않으면 materialize하지 않는다", async () => {
+    const eventStore = new InMemoryEventSchemaStore();
+    const configStore = new InMemoryConfigStore();
+
+    await configStore.set("demo", "event-adoption", JSON.stringify([
+      { serviceId: "shopping-web", eventPacks: [{ packId: "shop-pack", version: "v999" }] },
+    ]));
+
+    await seedEventSchemas(eventStore, configStore);
+
+    expect(await eventStore.get("demo", "shopping-web", "page.view", "001")).toBeNull();
   });
 });

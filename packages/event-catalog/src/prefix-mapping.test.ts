@@ -90,6 +90,8 @@ describe("prefix-mapping", () => {
       expect(packs.length).toBeGreaterThanOrEqual(5);
       expect(packs.map((pack) => pack.packId)).toContain("shop-pack");
       expect(getPack("shop-pack")?.owner).toBe("shopping-web");
+      expect(getPack("shop-pack")?.version).toBe("v1");
+      expect(getPack("shop-pack")?.status).toBe("active");
     });
 
     it("event_key로 소속 pack을 역조회한다", () => {

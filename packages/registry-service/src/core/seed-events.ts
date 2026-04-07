@@ -16,10 +16,15 @@ interface SeedServiceConfigRecord {
 
 interface ServiceEventAdoptionRecord {
   readonly serviceId: string;
-  readonly eventPacks?: readonly string[];
+  readonly eventPacks?: readonly (string | { packId: string; version?: string })[];
   readonly customEvents?: readonly string[];
   readonly allowedCategories?: readonly string[];
 }
+
+type AdoptionPackRef = {
+  packId: string;
+  version?: string;
+};
 
 const MAPPING_SERVICE_ID = "_mapping";
 const CORE_SERVICE_ID = "_core";
@@ -53,6 +58,14 @@ async function listAdoptions(
   } catch {
     return [];
   }
+}
+
+function normalizePackRefs(
+  eventPacks: readonly (string | { packId: string; version?: string })[] | undefined,
+): AdoptionPackRef[] {
+  return (eventPacks ?? []).map((entry) =>
+    typeof entry === "string" ? { packId: entry } : { packId: entry.packId, version: entry.version },
+  );
 }
 
 function findCandidateServices(
@@ -129,9 +142,10 @@ export async function seedEventSchemas(
     if (adoptions.length > 0) {
       const materialized = new Map<string, MaterializedMappingRecord>();
       for (const adoption of adoptions) {
-        for (const packId of adoption.eventPacks ?? []) {
-          const pack = ec.getPack(packId);
+        for (const packRef of normalizePackRefs(adoption.eventPacks)) {
+          const pack = ec.getPack(packRef.packId);
           if (!pack) continue;
+          if (packRef.version && pack.version !== packRef.version) continue;
           for (const mapping of pack.mappings) {
             const category = ec.getCoreEvent(mapping.event_key)?.category ?? mapping.domain;
             if (
@@ -146,7 +160,7 @@ export async function seedEventSchemas(
               eventKey: mapping.event_key,
               domain: mapping.domain,
               prefixes: mapping.prefixes.map((prefix) => prefix.prefixId),
-              packs: [pack.packId],
+              packs: [`${pack.packId}@${pack.version}`],
             });
           }
         }

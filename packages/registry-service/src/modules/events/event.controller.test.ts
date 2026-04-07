@@ -110,7 +110,7 @@ describe("EventModule (Nest)", () => {
     const { configStore } = createStores(app);
 
     await configStore.set("demo", "event-adoption", JSON.stringify([
-      { serviceId: "shopping-web", eventPacks: ["shop-pack"] },
+      { serviceId: "shopping-web", eventPacks: [{ packId: "shop-pack", version: "v1" }] },
     ]));
 
     const summaryResponse = await request(app, "GET", "/api/event-catalog");
@@ -168,10 +168,10 @@ describe("EventModule (Nest)", () => {
 
     const adoptionDetailResponse = await request(app, "GET", "/api/event-catalog/adoptions/shopping-web?catalog=demo");
     expect(adoptionDetailResponse.statusCode).toBe(200);
-    expect(json<{ serviceId: string; eventPacks: string[] }>(adoptionDetailResponse)).toEqual(
+    expect(json<{ serviceId: string; eventPacks: Array<{ packId: string; version: string }> }>(adoptionDetailResponse)).toEqual(
       expect.objectContaining({
         serviceId: "shopping-web",
-        eventPacks: ["shop-pack"],
+        eventPacks: [{ packId: "shop-pack", version: "v1" }],
       }),
     );
 
@@ -182,7 +182,7 @@ describe("EventModule (Nest)", () => {
       adoption: { serviceId: string } | null;
       ownership: { ownedPrefixes: string[] };
       materialized: { count: number };
-      drift: { adoptionMissing: boolean };
+      drift: { adoptionMissing: boolean; stalePackVersions: unknown[] };
     }>(taxonomyResponse)).toEqual(
       expect.objectContaining({
         serviceId: "shopping-web",
@@ -195,6 +195,7 @@ describe("EventModule (Nest)", () => {
         }),
         drift: expect.objectContaining({
           adoptionMissing: false,
+          stalePackVersions: [],
         }),
       }),
     );

@@ -184,7 +184,18 @@ export class EventCatalogService {
     }
 
     const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).sort((a, b) => a.localeCompare(b));
-    const missingPackIds = (adoption?.eventPacks ?? []).filter((packId) => !getPack(packId)).sort((a, b) => a.localeCompare(b));
+    const packRefs = normalizePackRefs(adoption?.eventPacks);
+    const missingPackIds = packRefs.map((ref) => ref.packId).filter((packId) => !getPack(packId)).sort((a, b) => a.localeCompare(b));
+    const stalePackVersions = packRefs
+      .filter((ref) => {
+        const pack = getPack(ref.packId);
+        return !!pack && !!ref.version && pack.version !== ref.version;
+      })
+      .map((ref) => ({
+        packId: ref.packId,
+        requestedVersion: ref.version!,
+        currentVersion: getPack(ref.packId)!.version,
+      }));
 
     return {
       serviceId,
@@ -205,6 +216,7 @@ export class EventCatalogService {
       drift: {
         adoptionMissing: adoption === null,
         missingPackIds,
+        stalePackVersions,
         recordsWithoutPackMetadata,
         prefixesWithoutOwnership,
       },
@@ -246,4 +258,12 @@ function extractPrefixedList(description: string | undefined, marker: string): s
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
+}
+
+function normalizePackRefs(
+  eventPacks: readonly (string | { packId: string; version?: string })[] | undefined,
+): Array<{ packId: string; version?: string }> {
+  return (eventPacks ?? []).map((entry) =>
+    typeof entry === "string" ? { packId: entry } : { packId: entry.packId, version: entry.version },
+  );
 }

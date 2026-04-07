@@ -78,9 +78,10 @@ interface ServiceEventAdoption {
 
 ## 권장 surface
 
-- `GET /api/services/:serviceId/event-adoption`
-- `PUT /api/services/:serviceId/event-adoption`
-- `GET /api/services/:serviceId/event-taxonomy`
+- `GET /api/event-catalog/adoptions` ✅
+- `GET /api/event-catalog/adoptions/:serviceId` ✅
+- `GET /api/event-catalog/services/:serviceId/taxonomy` ✅
+- `PUT /api/services/:serviceId/event-adoption` 🔲
 
 ## drift 포인트
 
@@ -101,3 +102,14 @@ interface ServiceEventAdoption {
 - 확장성: 매우 높음
 - 구현 난이도: 중간 이상
 - 선행 조건: mapping pack이 first-class여야 함
+
+## 현재 구현 상태
+
+- adoption config read 가능
+- adoption 기반 materialization 가능
+- 서비스별 taxonomy read model 존재
+- drift read model 존재
+- 아직 없음:
+  - adoption write surface
+  - adoption version pin
+  - ownership/adoption 정합성 gate

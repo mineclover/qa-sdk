@@ -46,6 +46,8 @@ export interface EventMappingPack {
   packId: string;
   owner: string;
   domain: string;
+  version: string;
+  status: "draft" | "active" | "deprecated";
   mappings: readonly EventPrefixMapping[];
 }
 
@@ -275,6 +277,8 @@ export const SHOP_EVENT_PACK: EventMappingPack = {
   packId: "shop-pack",
   owner: "shopping-web",
   domain: "shopping",
+  version: "v1",
+  status: "active",
   mappings: SHOP_EVENT_MAPPINGS,
 };
 
@@ -337,6 +341,8 @@ export const HARNESS_EVENT_PACK: EventMappingPack = {
   packId: "harness-pack",
   owner: "definition-service",
   domain: "harness",
+  version: "v1",
+  status: "active",
   mappings: HARNESS_EVENT_MAPPINGS,
 };
 
@@ -379,6 +385,8 @@ export const GATE_EVENT_PACK: EventMappingPack = {
   packId: "gate-pack",
   owner: "gate-service",
   domain: "harness",
+  version: "v1",
+  status: "active",
   mappings: GATE_EVENT_MAPPINGS,
 };
 
@@ -407,6 +415,8 @@ export const TRANSITION_EVENT_PACK: EventMappingPack = {
   packId: "transition-pack",
   owner: "spec-transition",
   domain: "transition",
+  version: "v1",
+  status: "active",
   mappings: TRANSITION_EVENT_MAPPINGS,
 };
 
@@ -435,6 +445,8 @@ export const CONVERGENCE_EVENT_PACK: EventMappingPack = {
   packId: "convergence-pack",
   owner: "convergence",
   domain: "convergence",
+  version: "v1",
+  status: "active",
   mappings: CONVERGENCE_EVENT_MAPPINGS,
 };
 
@@ -561,6 +573,8 @@ export const QUALITY_EVENT_PACK: EventMappingPack = {
   packId: "quality-pack",
   owner: "qa-sdk",
   domain: "quality",
+  version: "v1",
+  status: "active",
   mappings: QUALITY_EVENT_MAPPINGS,
 };
 
@@ -631,6 +645,8 @@ export const EXECUTION_EVENT_PACK: EventMappingPack = {
   packId: "execution-pack",
   owner: "qa-sdk",
   domain: "execution",
+  version: "v1",
+  status: "active",
   mappings: EXECUTION_EVENT_MAPPINGS,
 };
 
@@ -673,6 +689,8 @@ export const SDK_EVENT_PACK: EventMappingPack = {
   packId: "sdk-pack",
   owner: "browser-sdk",
   domain: "sdk",
+  version: "v1",
+  status: "active",
   mappings: SDK_EVENT_MAPPINGS,
 };
 
@@ -757,6 +775,8 @@ export const RPC_EVENT_PACK: EventMappingPack = {
   packId: "rpc-pack",
   owner: "gateway",
   domain: "network",
+  version: "v1",
+  status: "active",
   mappings: RPC_EVENT_MAPPINGS,
 };
 
@@ -799,6 +819,8 @@ export const DECISION_OBSERVE_PACK: EventMappingPack = {
   packId: "decision-observe-pack",
   owner: "dkg-engine",
   domain: "decision",
+  version: "v1",
+  status: "active",
   mappings: DECISION_OBSERVE_MAPPINGS,
 };
 
@@ -895,6 +917,8 @@ export const INFRA_OBSERVE_PACK: EventMappingPack = {
   packId: "infra-observe-pack",
   owner: "infra-controller",
   domain: "infrastructure",
+  version: "v1",
+  status: "active",
   mappings: INFRA_OBSERVE_MAPPINGS,
 };
 
@@ -923,6 +947,8 @@ export const CLI_OBSERVE_PACK: EventMappingPack = {
   packId: "cli-observe-pack",
   owner: "qa-sdk-cli",
   domain: "cli",
+  version: "v1",
+  status: "active",
   mappings: CLI_OBSERVE_MAPPINGS,
 };
 
@@ -952,6 +978,8 @@ export const GRAPH_EVENT_PACK: EventMappingPack = {
   packId: "graph-pack",
   owner: "definition-service",
   domain: "definition",
+  version: "v1",
+  status: "active",
   mappings: GRAPH_EVENT_MAPPINGS,
 };
 

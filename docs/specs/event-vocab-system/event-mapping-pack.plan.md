@@ -73,9 +73,9 @@ interface EventMappingPack {
 
 ## 권장 surface
 
-- `GET /api/event-catalog/packs`
-- `GET /api/event-catalog/packs/:packId`
-- `GET /api/event-catalog/packs/:packId/mappings`
+- `GET /api/event-catalog/packs` ✅
+- `GET /api/event-catalog/packs/:packId` ✅
+- `GET /api/event-catalog/packs/:packId/mappings` 🔲 (pack detail의 하위 surface로 분리할지 결정 필요)
 
 ## drift 포인트
 
@@ -95,3 +95,13 @@ interface EventMappingPack {
 - 확장성: 높음
 - 구현 난이도: 중간
 - 선행 조건: registry가 pack 단위를 직접 조회할 수 있어야 함
+
+## 현재 구현 상태
+
+- pack registry 존재
+- pack owner/domain 조회 가능
+- event key → pack 역조회 가능
+- 아직 없음:
+  - pack version/status
+  - pack lifecycle
+  - pack 전용 drift gate
