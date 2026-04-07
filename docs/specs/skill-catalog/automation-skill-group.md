@@ -15,6 +15,8 @@ def:
       type: contains
     - target: skill-spec-lifecycle
       type: contains
+    - target: skill-event-taxonomy-gate
+      type: contains
 ---
 
 
@@ -33,12 +35,14 @@ skill-catalog-system > **automation-skill-group**
 - `e2e-test` — 시나리오 문서를 Playwright E2E로 변환하고 디버깅
 - `gform-parser` — Google Form URL에서 폼 메타데이터와 config/HTML 생성
 - `spec-lifecycle` — 구현 완료 후 스펙 문서를 코드 참조 중심으로 전환
+- `event-taxonomy-gate` — registry event taxonomy 운영 게이트 실행
 
 ## 사용 순서
 
 구현 전에는 `spec-lifecycle`로 문서 전환 조건을 확인하고,
 검증 단계에서는 `e2e-test`로 사용자 흐름을 테스트하며,
 외부 폼 입력 연동이 있으면 `gform-parser`로 config 생성을 자동화한다.
+운영 정합성 점검이 필요하면 `event-taxonomy-gate`를 별도로 실행한다.
 
 ## 경계 ^boundary
 

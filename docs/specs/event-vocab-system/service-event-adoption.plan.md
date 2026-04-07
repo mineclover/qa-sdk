@@ -29,7 +29,6 @@ def:
 ## 구성 ^overview
 
 - 서비스별 채택 pack 목록
-- custom event surface
 - 허용 category 범위
 - adoption version pin
 - service ownership과의 관계
@@ -40,7 +39,6 @@ def:
 interface ServiceEventAdoption {
   serviceId: string;
   eventPacks: { packId: string; version: string }[];
-  customEvents?: string[];
   allowedCategories?: string[];
 }
 ```
@@ -48,13 +46,11 @@ interface ServiceEventAdoption {
 ### adoption이 답하는 질문
 
 - 이 서비스는 어떤 event pack을 실제로 말하는가?
-- 이 서비스는 어떤 custom event를 추가로 노출하는가?
 - 이 서비스가 허용하는 event category 범위는 무엇인가?
 
 ### adoption이 소유하는 것
 
 - service별 pack 채택
-- service별 custom event
 - service별 pack version pin
 
 ### adoption이 소유하지 않는 것
@@ -73,8 +69,7 @@ interface ServiceEventAdoption {
 권장 정합성 규칙:
 
 1. adoption된 pack이 내보내는 prefix는 ownership과 충돌하지 않아야 한다.
-2. 서비스가 custom event를 선언하면 최소 하나의 prefix mapping 경로가 있어야 한다.
-3. adoption은 pack version을 pin해야 한다.
+2. adoption은 pack version을 pin해야 한다.
 
 ## 권장 surface
 
@@ -92,13 +87,12 @@ interface ServiceEventAdoption {
 ## drift 포인트
 
 - adoption에는 pack이 있는데 ownership에 해당 prefix가 전혀 없음
-- ownership은 있는데 adoption에 대응하는 pack/custom event가 없음
+- ownership은 있는데 adoption에 대응하는 pack이 없음
 - adoption version과 실제 materialized schema가 다름
 
 ## 시나리오 연결
 
 - UC-3 기존 Pack을 새 서비스가 채택
-- UC-5 서비스별 Custom Event 추가
 - UC-6 Registry materialization
 - UC-7 Drift 검출
 
@@ -125,5 +119,6 @@ interface ServiceEventAdoption {
 - demo catalog 기본 adoption seed 존재
 - 새 adoption write path는 canonical `{ packId, version }[]`만 허용
 - runtime seed는 legacy string pack ref를 materialize하지 않음
+- 현재 범위에서는 custom event surface를 지원하지 않음
 - 아직 없음:
   - ownership/adoption 정합성 gate

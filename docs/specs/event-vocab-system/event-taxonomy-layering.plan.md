@@ -67,7 +67,7 @@ interface EventMappingPack {
 
 ### Layer 3 — Service Event Adoption
 
-- 소유: 서비스가 채택하는 event pack과 custom event surface
+- 소유: 서비스가 채택하는 event pack과 허용 category 범위
 - 질문: "이 서비스는 어떤 event set을 실제로 말하는가?"
 
 권장 모델:
@@ -76,7 +76,6 @@ interface EventMappingPack {
 interface ServiceEventAdoption {
   serviceId: string;
   eventPacks: string[];
-  customEvents?: string[];
   allowedCategories?: string[];
 }
 ```

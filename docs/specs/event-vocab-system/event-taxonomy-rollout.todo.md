@@ -47,7 +47,7 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 
 ### Phase 2 — Service Adoption
 
-- [x] `service event adoption` 모델 도입 (`serviceId -> eventPacks/customEvents/allowedCategories`)
+- [x] `service event adoption` 모델 도입 (`serviceId -> eventPacks/allowedCategories`)
 - [x] registry-service에 pack/adoption 조회 surface 추가
 - [ ] `service ownership`와 `service event adoption`의 정합성 검증 규칙 정의
 

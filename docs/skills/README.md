@@ -31,6 +31,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 
 - `docs/skills/automation-workflows.md`
   `e2e-test`, `gform-parser`, `spec-lifecycle` 사용 순서
+- `skills/event-taxonomy-gate/SKILL.md`
+  registry event taxonomy의 migrate/check/assert 운영 게이트
 - `skills/dkg-audit/SKILL.md`
   `dkg audit-events`, 로컬 `~/.qa-sdk/state.sqlite`, 중앙 ingest forwarding 점검
 - `docs/skills/ralph-tui-workflows.md`

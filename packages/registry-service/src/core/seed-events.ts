@@ -12,7 +12,6 @@ const noopLogger: SeedLogger = {
 interface ServiceEventAdoptionRecord {
   readonly serviceId: string;
   readonly eventPacks?: readonly { packId: string; version?: string }[];
-  readonly customEvents?: readonly string[];
   readonly allowedCategories?: readonly string[];
 }
 

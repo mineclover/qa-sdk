@@ -84,12 +84,12 @@ event taxonomy 3층 분리 구조를 실제 시스템으로 이행하기 위한 
 
 ### 목표
 
-서비스가 어떤 pack과 custom event surface를 채택하는지 명시하는 layer를 만든다.
+서비스가 어떤 pack을 채택하고 어떤 category 범위를 허용하는지 명시하는 layer를 만든다.
 
 ### 작업
 
 - `ServiceEventAdoption` 모델 도입
-- 서비스별 `eventPacks`, `customEvents`, `allowedCategories` 정의
+- 서비스별 `eventPacks`, `allowedCategories` 정의
 - ownership과 adoption의 정합성 규칙 초안 작성
 
 ### 완료 조건

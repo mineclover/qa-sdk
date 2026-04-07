@@ -28,7 +28,6 @@ type EventPackRef = { packId: string; version?: string };
 type ServiceEventAdoptionRecord = {
   serviceId: string;
   eventPacks?: readonly EventPackRef[];
-  customEvents?: readonly string[];
   allowedCategories?: readonly string[];
 };
 
@@ -177,7 +176,6 @@ export class EventCatalogService {
     const normalized = this.normalizeAdoptionRecord({
       serviceId,
       eventPacks: body.eventPacks,
-      customEvents: body.customEvents,
       allowedCategories: body.allowedCategories,
     });
     const adoptions = await this.listAdoptions(catalogId);
@@ -343,9 +341,14 @@ export class EventCatalogService {
       this.listAdoptions(catalogId),
       this.listServices(catalogId),
     ]);
+    const activePackOwners = new Set(
+      getAllPacks()
+        .filter((pack) => pack.status === "active")
+        .map((pack) => pack.owner),
+    );
     const serviceIds = [...new Set([
       ...adoptions.map((item) => item.serviceId),
-      ...services.map((item) => item.serviceId),
+      ...services.filter((item) => activePackOwners.has(item.serviceId)).map((item) => item.serviceId),
     ])].sort((a, b) => a.localeCompare(b));
     const results = await Promise.all(serviceIds.map((serviceId) => this.checkServiceTaxonomy(catalogId, serviceId)));
     const failing = results.filter((result) => !result.ok);
@@ -393,13 +396,11 @@ export class EventCatalogService {
     }
 
     const packRefs = this.normalizePackRefs(body.eventPacks, allowLegacyStrings);
-    const customEvents = this.normalizeStringList(body.customEvents);
     const allowedCategories = this.normalizeStringList(body.allowedCategories);
 
     return {
       serviceId,
       eventPacks: packRefs,
-      ...(customEvents.length > 0 ? { customEvents } : {}),
       ...(allowedCategories.length > 0 ? { allowedCategories } : {}),
     };
   }
