@@ -27,6 +27,16 @@ export class EventCatalogController {
     return this.eventCatalog.listMappings();
   }
 
+  @Get("packs")
+  listPacks() {
+    return this.eventCatalog.listPacks();
+  }
+
+  @Get("packs/:packId")
+  getPack(@Param("packId") packId: string) {
+    return this.eventCatalog.getPack(packId);
+  }
+
   @Get("categories")
   listCategories() {
     return this.eventCatalog.listCategories();

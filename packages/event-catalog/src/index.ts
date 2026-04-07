@@ -59,14 +59,32 @@ export type {
   PrefixDimMapping,
   EventPrefixEntry,
   EventPrefixMapping,
+  EventMappingPack,
   TrackingContext,
 } from "./prefix-mapping.js";
 export {
   resolvePrefixDims,
   registerMappings,
+  registerPack,
   getMapping,
   getAllMappings,
+  getPack,
+  getAllPacks,
+  getPacksForEvent,
   SHOP_EVENT_MAPPINGS,
+  SHOP_EVENT_PACK,
+  HARNESS_EVENT_PACK,
+  GATE_EVENT_PACK,
+  TRANSITION_EVENT_PACK,
+  CONVERGENCE_EVENT_PACK,
+  QUALITY_EVENT_PACK,
+  EXECUTION_EVENT_PACK,
+  SDK_EVENT_PACK,
+  RPC_EVENT_PACK,
+  DECISION_OBSERVE_PACK,
+  INFRA_OBSERVE_PACK,
+  CLI_OBSERVE_PACK,
+  GRAPH_EVENT_PACK,
 } from "./prefix-mapping.js";
 
 // ── Track Codegen ──────────────────────────────────────

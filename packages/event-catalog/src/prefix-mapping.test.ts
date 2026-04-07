@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolvePrefixDims, getMapping, getAllMappings, SHOP_EVENT_MAPPINGS } from "./prefix-mapping.js";
+import { resolvePrefixDims, getMapping, getAllMappings, getAllPacks, getPack, getPacksForEvent, SHOP_EVENT_MAPPINGS } from "./prefix-mapping.js";
 import type { TrackingContext } from "./prefix-mapping.js";
 
 const memberCtx: TrackingContext = { page: "product_detail", userType: "member", locale: "ko" };
@@ -83,6 +83,18 @@ describe("prefix-mapping", () => {
     it("getAllMappings()로 등록된 매핑 조회", () => {
       const all = getAllMappings();
       expect(all.length).toBeGreaterThanOrEqual(11);
+    });
+
+    it("pack registry로 등록된 pack 목록을 조회한다", () => {
+      const packs = getAllPacks();
+      expect(packs.length).toBeGreaterThanOrEqual(5);
+      expect(packs.map((pack) => pack.packId)).toContain("shop-pack");
+      expect(getPack("shop-pack")?.owner).toBe("shopping-web");
+    });
+
+    it("event_key로 소속 pack을 역조회한다", () => {
+      expect(getPacksForEvent("page.view")).toContain("shop-pack");
+      expect(getPacksForEvent("harness.transition")).toContain("harness-pack");
     });
 
     it("모든 매핑의 prefixes가 비어있지 않음", () => {

@@ -110,10 +110,12 @@ describe("EventModule (Nest)", () => {
     expect(summaryResponse.statusCode).toBe(200);
     expect(json<{
       totalEvents: number;
+      mappingPacks: number;
       prefixMappings: number;
       categories: Record<string, number>;
     }>(summaryResponse)).toEqual(expect.objectContaining({
       totalEvents: expect.any(Number),
+      mappingPacks: expect.any(Number),
       prefixMappings: expect.any(Number),
       categories: expect.any(Object),
     }));
@@ -128,5 +130,25 @@ describe("EventModule (Nest)", () => {
         category: "interaction",
       }),
     }));
+
+    const packsResponse = await request(app, "GET", "/api/event-catalog/packs");
+    expect(packsResponse.statusCode).toBe(200);
+    expect(json<Array<{ packId: string; owner: string }>>(packsResponse)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packId: "shop-pack",
+          owner: "shopping-web",
+        }),
+      ]),
+    );
+
+    const packDetailResponse = await request(app, "GET", "/api/event-catalog/packs/shop-pack");
+    expect(packDetailResponse.statusCode).toBe(200);
+    expect(json<{ packId: string; owner: string }>(packDetailResponse)).toEqual(
+      expect.objectContaining({
+        packId: "shop-pack",
+        owner: "shopping-web",
+      }),
+    );
   });
 });

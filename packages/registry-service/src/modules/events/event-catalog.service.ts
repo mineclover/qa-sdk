@@ -3,8 +3,10 @@ import {
   allCoreEvents,
   coreEventsByCategory,
   getAllMappings,
+  getAllPacks,
   getCoreEvent,
   getMapping,
+  getPack,
   getPayloadGuide,
   isV1MinimalEvent,
   payloadGuides,
@@ -31,6 +33,7 @@ export class EventCatalogService {
       categories,
       v1MinimalCount: v1MinimalSet.length,
       autoCollectable: allCoreEvents.filter((event) => event.auto_collectable).length,
+      mappingPacks: getAllPacks().length,
       prefixMappings: getAllMappings().length,
       payloadGuides: payloadGuides.length,
     };
@@ -102,6 +105,33 @@ export class EventCatalogService {
       prefixCount: mapping.prefixes.length,
       prefixes: mapping.prefixes.map((prefix) => prefix.prefixId),
     }));
+  }
+
+  listPacks() {
+    return getAllPacks().map((pack) => ({
+      packId: pack.packId,
+      owner: pack.owner,
+      domain: pack.domain,
+      mappingCount: pack.mappings.length,
+      eventKeys: pack.mappings.map((mapping) => mapping.event_key),
+    }));
+  }
+
+  getPack(packId: string) {
+    const pack = getPack(packId);
+    if (!pack) {
+      throw new AppError("NOT_FOUND", `Pack '${packId}' not found`, 404);
+    }
+    return {
+      packId: pack.packId,
+      owner: pack.owner,
+      domain: pack.domain,
+      mappings: pack.mappings.map((mapping) => ({
+        event_key: mapping.event_key,
+        domain: mapping.domain,
+        prefixes: mapping.prefixes.map((prefix) => prefix.prefixId),
+      })),
+    };
   }
 
   listCategories() {

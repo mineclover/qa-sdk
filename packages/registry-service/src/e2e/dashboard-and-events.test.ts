@@ -232,6 +232,7 @@ describe("event-catalog routes (Nest)", () => {
     expect(data.totalEvents).toBeGreaterThan(0);
     expect(Object.keys(data.categories).length).toBeGreaterThanOrEqual(5);
     expect(data.v1MinimalCount).toBeGreaterThan(0);
+    expect(data.mappingPacks).toBeGreaterThan(0);
     expect(data.prefixMappings).toBeGreaterThan(0);
   });
 
@@ -289,5 +290,19 @@ describe("event-catalog routes (Nest)", () => {
       expect(mapping.domain).toBeTruthy();
       expect(Array.isArray(mapping.prefixes)).toBe(true);
     }
+  });
+
+  it("GET /api/event-catalog/packs mapping pack 목록", async () => {
+    const app = await buildDashboardApp();
+    const items = await (await app.request("/api/event-catalog/packs")).json<any[]>();
+    expect(items.length).toBeGreaterThan(0);
+    expect(items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packId: "shop-pack",
+          owner: "shopping-web",
+        }),
+      ]),
+    );
   });
 });

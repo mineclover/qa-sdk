@@ -41,6 +41,14 @@ export interface EventPrefixMapping {
   prefixes: EventPrefixEntry[];
 }
 
+/** 이벤트→prefix 매핑을 묶는 first-class pack */
+export interface EventMappingPack {
+  packId: string;
+  owner: string;
+  domain: string;
+  mappings: readonly EventPrefixMapping[];
+}
+
 // ── Context ────────────────────────────────────────
 
 /** 런타임 컨텍스트 — 현재 페이지, 사용자 등 */
@@ -226,9 +234,21 @@ export const SHOP_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
 // ── Registry ──────────────────────────────────────
 
 const _mappingMap = new Map<string, EventPrefixMapping>();
+const _packMap = new Map<string, EventMappingPack>();
+const _eventToPackIds = new Map<string, string[]>();
 
 export function registerMappings(mappings: readonly EventPrefixMapping[]): void {
   for (const m of mappings) _mappingMap.set(m.event_key, m);
+}
+
+export function registerPack(pack: EventMappingPack): void {
+  _packMap.set(pack.packId, pack);
+  for (const mapping of pack.mappings) {
+    _mappingMap.set(mapping.event_key, mapping);
+    const packs = _eventToPackIds.get(mapping.event_key) ?? [];
+    if (!packs.includes(pack.packId)) packs.push(pack.packId);
+    _eventToPackIds.set(mapping.event_key, packs);
+  }
 }
 
 export function getMapping(eventKey: string): EventPrefixMapping | undefined {
@@ -239,8 +259,27 @@ export function getAllMappings(): readonly EventPrefixMapping[] {
   return [..._mappingMap.values()];
 }
 
+export function getPack(packId: string): EventMappingPack | undefined {
+  return _packMap.get(packId);
+}
+
+export function getAllPacks(): readonly EventMappingPack[] {
+  return [..._packMap.values()];
+}
+
+export function getPacksForEvent(eventKey: string): readonly string[] {
+  return _eventToPackIds.get(eventKey) ?? [];
+}
+
+export const SHOP_EVENT_PACK: EventMappingPack = {
+  packId: "shop-pack",
+  owner: "shopping-web",
+  domain: "shopping",
+  mappings: SHOP_EVENT_MAPPINGS,
+};
+
 // 기본 쇼핑 도메인 등록
-registerMappings(SHOP_EVENT_MAPPINGS);
+registerPack(SHOP_EVENT_PACK);
 
 // ── 하네스 상태 모델 이벤트 매핑 ──────────────────
 
@@ -294,7 +333,14 @@ export const HARNESS_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(HARNESS_EVENT_MAPPINGS);
+export const HARNESS_EVENT_PACK: EventMappingPack = {
+  packId: "harness-pack",
+  owner: "definition-service",
+  domain: "harness",
+  mappings: HARNESS_EVENT_MAPPINGS,
+};
+
+registerPack(HARNESS_EVENT_PACK);
 
 // ── 게이트 런타임 이벤트 매핑 ────────────────────────
 
@@ -329,7 +375,14 @@ export const GATE_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(GATE_EVENT_MAPPINGS);
+export const GATE_EVENT_PACK: EventMappingPack = {
+  packId: "gate-pack",
+  owner: "gate-service",
+  domain: "harness",
+  mappings: GATE_EVENT_MAPPINGS,
+};
+
+registerPack(GATE_EVENT_PACK);
 
 // ── 전이 엔진 이벤트 매핑 ────────────────────────────
 
@@ -350,7 +403,14 @@ export const TRANSITION_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(TRANSITION_EVENT_MAPPINGS);
+export const TRANSITION_EVENT_PACK: EventMappingPack = {
+  packId: "transition-pack",
+  owner: "spec-transition",
+  domain: "transition",
+  mappings: TRANSITION_EVENT_MAPPINGS,
+};
+
+registerPack(TRANSITION_EVENT_PACK);
 
 // ── 수렴 파이프라인 이벤트 매핑 ──────────────────────
 
@@ -371,7 +431,14 @@ export const CONVERGENCE_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(CONVERGENCE_EVENT_MAPPINGS);
+export const CONVERGENCE_EVENT_PACK: EventMappingPack = {
+  packId: "convergence-pack",
+  owner: "convergence",
+  domain: "convergence",
+  mappings: CONVERGENCE_EVENT_MAPPINGS,
+};
+
+registerPack(CONVERGENCE_EVENT_PACK);
 
 // ── 품질 관측 이벤트 매핑 ────────────────────────────
 
@@ -490,7 +557,14 @@ export const QUALITY_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(QUALITY_EVENT_MAPPINGS);
+export const QUALITY_EVENT_PACK: EventMappingPack = {
+  packId: "quality-pack",
+  owner: "qa-sdk",
+  domain: "quality",
+  mappings: QUALITY_EVENT_MAPPINGS,
+};
+
+registerPack(QUALITY_EVENT_PACK);
 
 // ── 실행 관측 이벤트 매핑 ────────────────────────────
 
@@ -553,7 +627,14 @@ export const EXECUTION_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(EXECUTION_EVENT_MAPPINGS);
+export const EXECUTION_EVENT_PACK: EventMappingPack = {
+  packId: "execution-pack",
+  owner: "qa-sdk",
+  domain: "execution",
+  mappings: EXECUTION_EVENT_MAPPINGS,
+};
+
+registerPack(EXECUTION_EVENT_PACK);
 
 // ── SDK 생명주기 이벤트 매핑 ─────────────────────────
 
@@ -588,7 +669,14 @@ export const SDK_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(SDK_EVENT_MAPPINGS);
+export const SDK_EVENT_PACK: EventMappingPack = {
+  packId: "sdk-pack",
+  owner: "browser-sdk",
+  domain: "sdk",
+  mappings: SDK_EVENT_MAPPINGS,
+};
+
+registerPack(SDK_EVENT_PACK);
 
 // ── RPC/WebSocket 이벤트 매핑 ────────────────────────
 
@@ -665,7 +753,14 @@ export const RPC_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(RPC_EVENT_MAPPINGS);
+export const RPC_EVENT_PACK: EventMappingPack = {
+  packId: "rpc-pack",
+  owner: "gateway",
+  domain: "network",
+  mappings: RPC_EVENT_MAPPINGS,
+};
+
+registerPack(RPC_EVENT_PACK);
 
 // ── Group A: Decision-Flow 관측 이벤트 매핑 ──────────
 
@@ -700,7 +795,14 @@ export const DECISION_OBSERVE_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(DECISION_OBSERVE_MAPPINGS);
+export const DECISION_OBSERVE_PACK: EventMappingPack = {
+  packId: "decision-observe-pack",
+  owner: "dkg-engine",
+  domain: "decision",
+  mappings: DECISION_OBSERVE_MAPPINGS,
+};
+
+registerPack(DECISION_OBSERVE_PACK);
 
 // ── Group B: 인프라 시스템 관측 이벤트 매핑 ──────────
 // 이 prefix들은 서비스가 address_context를 직접 생성한다.
@@ -789,7 +891,14 @@ export const INFRA_OBSERVE_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(INFRA_OBSERVE_MAPPINGS);
+export const INFRA_OBSERVE_PACK: EventMappingPack = {
+  packId: "infra-observe-pack",
+  owner: "infra-controller",
+  domain: "infrastructure",
+  mappings: INFRA_OBSERVE_MAPPINGS,
+};
+
+registerPack(INFRA_OBSERVE_PACK);
 
 // ── Group C: CLI 관측 이벤트 매핑 ────────────────────
 
@@ -810,7 +919,14 @@ export const CLI_OBSERVE_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(CLI_OBSERVE_MAPPINGS);
+export const CLI_OBSERVE_PACK: EventMappingPack = {
+  packId: "cli-observe-pack",
+  owner: "qa-sdk-cli",
+  domain: "cli",
+  mappings: CLI_OBSERVE_MAPPINGS,
+};
+
+registerPack(CLI_OBSERVE_PACK);
 
 // ── 문서 그래프 이벤트 매핑 ──────────────────────────
 
@@ -832,4 +948,11 @@ export const GRAPH_EVENT_MAPPINGS: readonly EventPrefixMapping[] = [
   },
 ];
 
-registerMappings(GRAPH_EVENT_MAPPINGS);
+export const GRAPH_EVENT_PACK: EventMappingPack = {
+  packId: "graph-pack",
+  owner: "definition-service",
+  domain: "definition",
+  mappings: GRAPH_EVENT_MAPPINGS,
+};
+
+registerPack(GRAPH_EVENT_PACK);
