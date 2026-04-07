@@ -72,3 +72,11 @@ partialDecode의 정확성을 full decode 동치성으로 증명하고, 적용 �
 | WeightedIndex | weighted-index.test.ts | 4 |
 | Aggregator | aggregator.adapter.test.ts | 1 |
 | **합계** | | **12** |
+
+## 향후 통합 테스트 (활용처 적용 시)
+
+| 활용처 | 검증 항목 |
+|--------|----------|
+| aggregateUsageData | axis-only partial decode → 기존 full decode 결과와 EntryUsage 동치 |
+| analyzeCollectionHealth | orphan 감지 결과가 full decode 기반과 동일 |
+| projectAxis + catalog | catalog 기반 partialDecodeFn 주입 → 기존 결과와 동치 |

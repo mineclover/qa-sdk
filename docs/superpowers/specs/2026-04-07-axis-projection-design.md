@@ -96,6 +96,13 @@ export function decodePrefixPartial(
 
 projectAxis에서 수만 건 반복 시 d/k 비율만큼 개선.
 
+## 주 활용처
+
+1. **aggregateUsageData** (convergence/usage-aggregator.ts:111) — 핫패스. axis-only decode로 ~2x
+2. **analyzeCollectionHealth** (convergence/usage-aggregator.ts:270) — 검증 전용. decode 루프 생략
+3. **Aggregator.projectAxis** (store/aggregator.adapter.ts) — partialDecodeFn 인프라 완료. 소비처 주입 대기
+4. **decode-service /decode/batch** — 향후 `fields` 파라미터 추가 시 적용
+
 ## 산출물 제약
 
 | 산출물 | 경로 | 설명 |

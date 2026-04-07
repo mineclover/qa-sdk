@@ -91,6 +91,22 @@ projectAxis 내부에서 partialDecodeFn이 있으면 사용, 없으면 기존 d
 
 projectAxis에서 수만 건 반복 시 d/k 비율만큼 개선.
 
+## 주 활용처 ^consumes
+
+| # | 활용처 | 파일 | 현재 | 최적화 | 효과 |
+|---|--------|------|------|--------|------|
+| UC-1 | **Usage Aggregation** | `convergence/usage-aggregator.ts:111` | `decodePrefixAsResult()` 전체 decode (per-record 루프) | axis-only labels로 `decodePrefixPartial()` 호출 | **핫패스 ~2x** — axis 차원만 사용하므로 prefix_ref/table_ref decode 생략 |
+| UC-2 | **Collection Health 검증** | `convergence/usage-aggregator.ts:270` | `decodePrefix()` 전체 decode (성공/실패만 확인) | 빈 labels로 호출 또는 경량 validation 함수 | decode 루프 완전 생략 |
+| UC-3 | **Aggregator.projectAxis** | `store/aggregator.adapter.ts:95` | `partialDecodeFn` 옵션 (이미 구현) | 소비처에서 catalog 기반 partialDecodeFn 주입 | axes 수만큼만 decode |
+| UC-4 | **decode-service /decode/batch** | `decode-service/routes/decode.ts:86` | 전체 decode per input | 향후 `fields` 파라미터 추가 시 적용 | 클라이언트 opt-in |
+
+### 적용 우선순위
+
+1. **UC-1 (aggregateUsageData)**: 프로덕션 convergence 파이프라인의 실 핫패스. prefix당 axis-only labels 사전 추출 → decodePrefixPartial 호출로 교체.
+2. **UC-2 (analyzeCollectionHealth)**: 검증 전용 경로. decode 성공 여부만 확인하므로 최소 비용.
+3. **UC-3 (projectAxis)**: 인프라 준비 완료. 소비처에서 partialDecodeFn을 catalog 기반으로 주입하면 즉시 활성화.
+4. **UC-4 (batch decode)**: 클라이언트 API 변경 필요. 향후 확장.
+
 ## 파일 배치
 
 | 파일 | 역할 |
