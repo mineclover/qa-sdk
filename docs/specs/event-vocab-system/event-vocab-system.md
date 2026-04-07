@@ -27,6 +27,8 @@ def:
       type: contains
     - target: service-event-adoption-spec
       type: contains
+    - target: service-event-adoption-rule
+      type: contains
     - target: event-taxonomy-contracts-test
       type: contains
     - target: event-mapping-pack-plan
@@ -57,6 +59,7 @@ def:
 - `event-taxonomy-roadmap-plan`: 현재 구조에 도달한 이행 단계와 남은 정리 항목.
 - `event-mapping-pack-spec`: mapping pack의 현재 계약.
 - `service-event-adoption-spec`: 서비스별 pack 채택의 현재 계약.
+- `service-event-adoption-rule`: service adoption을 소비할 때 확인할 운영 규칙.
 - `event-taxonomy-contracts-test`: 현재 계약을 유지하는 validation 시나리오.
 - `event-mapping-pack-plan`: mapping pack의 역사적 설계 메모.
 - `service-event-adoption-plan`: service adoption의 초기 설계 배경 메모.
