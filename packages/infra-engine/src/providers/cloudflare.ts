@@ -21,17 +21,10 @@ export function createCloudflareProvider(options?: CloudflareProviderOptions): D
     },
 
     async destroy(stackName: string) {
-      // Cloudflare는 wrangler.toml의 name으로 ���제 — stackName 파싱 불필요
-      // 실제로는 wrangler delete를 해당 서비스 디렉토리에서 실행
-      const { execa } = await import("execa");
-      const serviceId = stackName.split("-").slice(0, -3).join("-");
-      try {
-        const cwd = await findServiceDir(serviceId, options?.projectRoot);
-        console.log(`[cloudflare] deleting worker from ${cwd}...`);
-        await execa("npx", ["wrangler", "delete"], { cwd, stdio: "inherit", input: "y\n", shell: true });
-      } catch (err) {
-        console.warn(`[cloudflare] destroy 건너뜀: ${err instanceof Error ? err.message : err}`);
-      }
+      // 파이프라인 롤백에서 호출됨 — CF Workers는 삭제하지 않는다.
+      // 배포된 Worker를 삭제하면 다른 Worker(gateway, registry)의 Service Binding이 깨진다.
+      // verify 실패 시에도 배포된 버전을 유지하는 것이 삭제보다 안전하다.
+      console.warn(`[cloudflare] 롤백: Worker '${stackName}' 유지됨 (삭제 없음). 명시적 삭제: infra destroy`);
     },
 
     async validate(config: ResolvedConfig): Promise<ValidationResult> {
@@ -50,6 +43,18 @@ export function createCloudflareProvider(options?: CloudflareProviderOptions): D
       }
     },
   };
+}
+
+/** 명시적 Worker 삭제 — infra destroy 명령에서만 사용 */
+export async function explicitDestroyWorker(serviceId: string, projectRoot?: string): Promise<void> {
+  const { execa } = await import("execa");
+  try {
+    const cwd = await findServiceDir(serviceId, projectRoot);
+    console.log(`[cloudflare] deleting worker from ${cwd}...`);
+    await execa("npx", ["wrangler", "delete"], { cwd, stdio: "inherit", input: "y\n", shell: true });
+  } catch (err) {
+    console.warn(`[cloudflare] destroy 건너뜀: ${err instanceof Error ? err.message : err}`);
+  }
 }
 
 /** wrangler deploy를 실행하는 배포 함수 — pulumiDeployFn 대신 사용 */
@@ -93,14 +98,11 @@ export async function wranglerDeployFn(
 
   console.log(`[cloudflare] deploying ${serviceId}...`);
   const args = ["wrangler", "deploy", ...vars];
-  // stdout를 캡��하면서 동시에 출력 (pipe)
   const result = await execa("npx", args, { cwd, stdout: "pipe", stderr: "inherit", shell: true });
-  // stdout 출력
   if (result.stdout) process.stdout.write(result.stdout + "\n");
 
   // wrangler 출력에서 URL 추출
   const urlMatch = result.stdout?.match(/https:\/\/[^\s]+\.workers\.dev/);
-  // connections에서 endpoint도 참조
   const connEndpoint = config.connections[serviceId]?.endpoint;
   const endpoint = urlMatch?.[0] ?? connEndpoint ?? `https://${serviceId}.workers.dev`;
 

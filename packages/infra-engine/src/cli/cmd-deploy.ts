@@ -124,13 +124,14 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
   const { DEMO_CATALOG } = await import("demo-snapshot");
   const coordinateAdapter = createCoordinateAdapter(DEMO_CATALOG);
 
+  const skipVerify = !!ctx.options.skipVerify;
   const stages = dryRun
     ? [createConfigStage(createPlainLoader())]
     : [
         createConfigStage(createPlainLoader()),
         createProvisionStage(getProvider, wranglerDeployFn),
         createRegisterStage(registry, serviceProfile, infraProfile),
-        createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000 }),
+        ...(skipVerify ? [] : [createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000 })]),
         createObserveStage(ingestAdapter, coordinateAdapter, infraProfile),
       ];
 
