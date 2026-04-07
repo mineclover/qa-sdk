@@ -131,7 +131,7 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
         createConfigStage(createPlainLoader()),
         createProvisionStage(getProvider, wranglerDeployFn),
         createRegisterStage(registry, serviceProfile, infraProfile),
-        ...(skipVerify ? [] : [createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000 })]),
+        ...(skipVerify ? [] : [createVerifyStage(gate, { maxRetries: 3, retryDelay: 5000, serviceProfile })]),
         createObserveStage(ingestAdapter, coordinateAdapter, infraProfile),
       ];
 
@@ -175,6 +175,23 @@ async function deployCloudflare(ctx: CommandContext): Promise<void> {
         console.log(`[version] ${vEntry.currentVersion} (초기 배포)`);
       }
     } catch { /* 버전 기록 실패 무시 */ }
+
+    // endpoint 피드백: 배포에서 얻은 endpoint를 config에 반영
+    if (result.endpoint) {
+      try {
+        const { readFile, writeFile } = await import("node:fs/promises");
+        const raw = await readFile(configPath, "utf-8");
+        const config = JSON.parse(raw);
+        const current = config.connections?.[service]?.endpoint;
+        if (!current || current !== result.endpoint) {
+          config.connections = config.connections ?? {};
+          config.connections[service] = config.connections[service] ?? {};
+          config.connections[service].endpoint = result.endpoint;
+          await writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
+          console.log(`[endpoint-feedback] ${service}: ${result.endpoint}${current ? ` (이전: ${current})` : " (신규)"}`);
+        }
+      } catch { /* config 피드백 실패 무시 */ }
+    }
 
     // --sync 플래그: codegen + cascade 감지
     if (ctx.options.sync) {

@@ -1,16 +1,19 @@
 // verify/verify-stage.ts — 헬스체크 + 품질 게이트 검증 스테이지
 import type { Stage, DeployContext, VerifyResult, GateCheckResult } from "../core/types.js";
-import type { GateAdapter } from "../adapters/adapter.js";
-import { runBuiltinGates } from "./gate-definitions.js";
+import type { GateAdapter, ServiceProfileAdapter } from "../adapters/adapter.js";
+import { runBuiltinGates, type GateOptions } from "./gate-definitions.js";
 
 interface VerifyOptions {
   maxRetries?: number;
   retryDelay?: number;
+  /** service-profile을 통한 endpoint 피드백 루프 */
+  serviceProfile?: ServiceProfileAdapter;
 }
 
 export function createVerifyStage(gate: GateAdapter, options?: VerifyOptions): Stage {
   const maxRetries = options?.maxRetries ?? 3;
   const retryDelay = options?.retryDelay ?? 5_000;
+  const gateOptions: GateOptions = { serviceProfile: options?.serviceProfile };
 
   return {
     name: "verify",
@@ -20,7 +23,7 @@ export function createVerifyStage(gate: GateAdapter, options?: VerifyOptions): S
       let retryCount = 0;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        checks = await runBuiltinGates(ctx);
+        checks = await runBuiltinGates(ctx, gateOptions);
         const verdict = gate.evaluate(checks);
         if (verdict !== "fail") {
           const verification: VerifyResult = {
