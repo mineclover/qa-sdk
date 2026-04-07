@@ -211,6 +211,76 @@ export const DOC_SEQ = {
   capacity: 128,
 } as const;
 
+// ─── Meta-Taxonomy — taxonomy 분류군 ────────────────────
+
+/**
+ * taxonomy_family — taxonomy 분류군 (3 entries, capacity 8)
+ *
+ * 5Q: ✓유한(3) ✓분류 관련(taxonomy 종류 결정) ✓공유(전 taxonomy) ✓안정(메타 구조) ✓capacity
+ * 설명력: taxonomy 자체가 어떤 종류의 분류 기능을 제공하는지 결정한다.
+ */
+export const TAXONOMY_FAMILY = {
+  entries: ["topological", "functional", "bridge"] as const,
+  capacity: 8,  // nextPowerOf2(3 * 2 = 6) = 8
+  ko: {
+    topological: "위상좌표계",
+    functional: "기능부여",
+    bridge: "브릿지",
+  } as Record<string, string>,
+} as const;
+
+/**
+ * taxonomy 레지스트리 — 각 taxonomy의 meta-taxonomy 등록 정보.
+ *
+ * 새 taxonomy 추가 시 여기에 등록한다.
+ * 이 레지스트리가 meta-taxonomy의 SSOT다.
+ */
+export const TAXONOMY_REGISTRY: Record<string, {
+  readonly name: string;
+  readonly family: (typeof TAXONOMY_FAMILY.entries)[number];
+  readonly primaryQuestion: string;
+  readonly ownedConcepts: readonly string[];
+  readonly coordinateAxes?: readonly string[];
+  readonly bridgeTarget?: string;
+  readonly bridgeRole?: string;
+}> = {
+  "definition-taxonomy": {
+    name: "정의 분류",
+    family: "topological",
+    primaryQuestion: "어떤 인지 관점으로 읽고 기록할 것인가",
+    ownedConcepts: ["scope", "aspect", "depth", "level", "layer", "lifecycle"],
+    coordinateAxes: ["def_scope", "def_aspect", "def_depth", "doc_seq"],
+  },
+  "structural-taxonomy": {
+    name: "구조 분류",
+    family: "topological",
+    primaryQuestion: "실제로 어떤 단위가 존재하고 어떻게 배열되는가",
+    ownedConcepts: ["facet", "boundary", "runtime_scope", "contract"],
+    coordinateAxes: ["facet", "boundary", "runtime_scope"],
+  },
+  "observability-taxonomy": {
+    name: "관측 분류",
+    family: "functional",
+    primaryQuestion: "무엇을 어떤 층위에서 관측하는가",
+    ownedConcepts: ["semantic_address", "telemetry", "infra_observe"],
+  },
+  "pm-taxonomy": {
+    name: "전달 분류",
+    family: "functional",
+    primaryQuestion: "무엇을 누가 언제 끝내는가",
+    ownedConcepts: ["initiative", "epic", "deliverable", "task", "checkpoint"],
+  },
+  "df-taxonomy": {
+    name: "의사결정 분류",
+    family: "bridge",
+    primaryQuestion: "왜 이런 판단을 했는가",
+    ownedConcepts: ["DecisionUnit", "Evidence", "DecisionLayer", "verdict"],
+    coordinateAxes: ["decision_path", "decision_layer"],
+    bridgeTarget: "definition-taxonomy",
+    bridgeRole: "스펙관리의 의사결정 의도를 자체 좌표 공간에 기억한다",
+  },
+} as const;
+
 // ─── VersionedAxis 변환 ──────────────────────────────────
 
 /** 카탈로그 호환 VersionedAxis 목록 */

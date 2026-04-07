@@ -32,6 +32,8 @@ export type {
   DefLayer,
   DefLifecycle,
   LinkType,
+  TaxonomyFamily,
+  TaxonomyMeta,
   ConcernTag,
   StructuralTag,
   KnownTag,
@@ -58,6 +60,8 @@ export {
   DEF_DEPTH,
   DEF_LIFECYCLE,
   LINK_TYPE,
+  TAXONOMY_FAMILY,
+  TAXONOMY_REGISTRY,
   DEFINITION_AXES,
   AXIS_META,
 } from "./vocabulary.js";

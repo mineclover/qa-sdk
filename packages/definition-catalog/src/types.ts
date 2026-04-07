@@ -147,6 +147,47 @@ export type LinkType =
   | "evolves_from" // 개정/버전 진화
   | "supersedes";  // 이전 개정 대체
 
+// ─── Meta-Taxonomy — taxonomy 분류군 ────────────────────
+
+/**
+ * taxonomy 분류군 — taxonomy 자체를 분류하는 상위 체계.
+ *
+ * | 분류군       | 자체 좌표계 | 타 좌표계 연결 | 역할                              |
+ * |-------------|:---------:|:------------:|----------------------------------|
+ * | topological | O         | —            | 대상의 위치를 정의한다               |
+ * | functional  | —         | —            | 대상에 역할·기능을 부여한다           |
+ * | bridge      | O         | O            | 자체 좌표계로 타 좌표계의 의도를 보존  |
+ */
+export type TaxonomyFamily =
+  | "topological"   // 위상 좌표계 — 대상의 위치 정의
+  | "functional"    // 기능 부여 — 대상에 역할·기능 부여
+  | "bridge";       // 브릿지 — 자체 좌표 + 타 좌표계 의도 보존
+
+/**
+ * taxonomy 등록 메타데이터.
+ *
+ * 각 taxonomy를 meta-taxonomy에 등록할 때 사용하는 구조.
+ * topological/bridge는 coordinateAxes 필수, bridge는 bridgeTarget 필수.
+ */
+export interface TaxonomyMeta {
+  /** taxonomy 고유 식별자 */
+  readonly id: string;
+  /** 사람이 읽는 이름 */
+  readonly name: string;
+  /** 분류군 */
+  readonly family: TaxonomyFamily;
+  /** 이 taxonomy가 답하는 1차 질문 */
+  readonly primaryQuestion: string;
+  /** 소유 개념 목록 */
+  readonly ownedConcepts: readonly string[];
+  /** 자체 좌표계 축 (topological, bridge만 해당) */
+  readonly coordinateAxes?: readonly string[];
+  /** 연결 대상 taxonomy id (bridge만 해당) */
+  readonly bridgeTarget?: string;
+  /** 연결의 역할 설명 (bridge만 해당) */
+  readonly bridgeRole?: string;
+}
+
 // ─── 태그 체계 ───────────────────────────────────────────
 
 /**
