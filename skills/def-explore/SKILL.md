@@ -72,7 +72,7 @@ def get meta-semantic-extraction # LLM 기반 코드 추출 파이프라인
 
 IR 코드: `packages/core/src/meta-semantic/` (11 source files, 124 tests)
 
-문서 유형 6종: `.spec.md`(정의) / `.rule.md`(소비 규칙) / `.todo.md`(계획) / `.test.md`(검증) / `.memo.md`(기록) / `.plan.md`(방향)
+문서 유형 7종: `.spec.md`(정의) / `.rule.md`(소비 규칙) / `.todo.md`(계획) / `.test.md`(검증) / `.cases.md`(시나리오) / `.memo.md`(기록) / `.plan.md`(방향)
 
 ### 6. 추적 3축 + 격리 테스트
 

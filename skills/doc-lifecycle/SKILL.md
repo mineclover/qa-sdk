@@ -1,6 +1,6 @@
 ---
 name: doc-lifecycle
-description: "문서 유형 생명주기 관리. 6종 확장자(spec/rule/todo/test/memo/plan) 문서 생성, 승격, 상태 조회, 정합성 검증."
+description: "문서 유형 생명주기 관리. 7종 확장자(spec/rule/todo/test/cases/memo/plan) 문서 생성, 승격, 상태 조회, 정합성 검증."
 triggers:
   - doc lifecycle
   - 문서 생성
@@ -9,12 +9,12 @@ triggers:
   - doc promote
   - doc status
   - doc audit type
-argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|memo|plan]"
+argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|cases|memo|plan]"
 ---
 
 # Doc Lifecycle — 문서 유형 생명주기 관리
 
-6종 확장자(spec/rule/todo/test/memo/plan) 문서의 생성, 승격, 상태 조회를 수행한다.
+7종 확장자(spec/rule/todo/test/cases/memo/plan) 문서의 생성, 승격, 상태 조회를 수행한다.
 
 컨벤션: `docs/specs/system/doc-type-convention.spec.md`
 
@@ -23,7 +23,7 @@ argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|memo|plan]"
 ### create — 문서 생성
 
 ```
-/doc-lifecycle create <doc-id> --type <spec|rule|todo|test|memo|plan> [--dir <path>]
+/doc-lifecycle create <doc-id> --type <spec|rule|todo|test|cases|memo|plan> [--dir <path>]
 ```
 
 지정 유형의 문서를 생성한다. frontmatter 자동 포함.
@@ -32,6 +32,7 @@ argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|memo|plan]"
 - `--type rule` → `{id}.rule.md` (lifecycle: spec 따름, 소비 규칙/체크리스트/판별 기준)
 - `--type todo` → `{id}.todo.md` (lifecycle: draft, `[ ]` 체크박스 포함)
 - `--type test` → `{id}.test.md` (시나리오 구조, test.ts 식별자 참조 형식)
+- `--type cases` → `{id}.cases.md` (사용 시나리오/UC, 흐름 + 기대 결과)
 - `--type memo` → `{id}.memo.md` (frontmatter 선택, 자유 형식)
 - `--type plan` → `{id}.plan.md` (frontmatter 선택, 현재 목표/장기 목표 구조)
 - `--dir` 미지정 시 현재 def-id의 scope/aspect로 디렉토리 추론
@@ -53,16 +54,17 @@ argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|memo|plan]"
 /doc-lifecycle status <doc-id>
 ```
 
-해당 id의 6종 존재 여부 + 내용 요약:
+해당 id의 7종 존재 여부 + 내용 요약:
 
 ```
 pipe-static-lineage:
-  spec.md  ✅ lifecycle=approved, API 10개
-  rule.md  ❌ 없음
-  todo.md  ❌ 없음
-  test.md  ❌ 없음
-  memo.md  ❌ 없음
-  plan.md  ❌ 없음
+  spec.md   ✅ lifecycle=approved, API 10개
+  rule.md   ❌ 없음
+  todo.md   ❌ 없음
+  test.md   ❌ 없음
+  cases.md  ❌ 없음
+  memo.md   ❌ 없음
+  plan.md   ❌ 없음
 ```
 
 ### audit — 정합성 검증
@@ -81,6 +83,7 @@ pipe-static-lineage:
 | `.rule.md` lifecycle이 종속 spec과 불일치 | warning |
 | `.memo.md`만 있고 대응 spec/todo 없음 | warning (고아) |
 | `.test.md` 시나리오 ID가 test.ts에 없음 | warning |
+| `.cases.md`만 있고 대응 spec 없음 | error (종속 spec 필수) |
 | `.plan.md`에 장기 체류 항목 | info |
 
 ## 템플릿
@@ -213,6 +216,56 @@ def:
 - `aspect: validation`은 현재 taxonomy에 없으므로 쓰지 않는다
 - `.test.md`는 spec 또는 상위 module에서 authored link로 참조해야 orphan 경고가 나지 않는다
 
+### cases 템플릿
+
+```markdown
+---
+def:
+  id: {id}
+  level: leaf
+  scope: flow
+  aspect: user_scenario
+  depth: specification
+  lifecycle: approved
+  layer: {layer}
+  links:
+    - target: {spec-id}
+      type: refines
+---
+
+# {Title} — Use Cases
+
+## 목적 ^purpose
+
+{spec}의 구체적 사용 시나리오를 정의한다.
+
+---
+
+## UC-1: {시나리오명}
+
+**상황**: {언제 이 시나리오가 발생하는가}
+
+**관여**: {관여 패키지/컴포넌트}
+
+**흐름**:
+```
+1. ...
+2. ...
+```
+
+**기대 결과**:
+- ...
+
+**검증**: `{test 파일 또는 수동 검증 방법}`
+```
+
+cases 문서 규칙:
+- 종속 spec과 같은 디렉토리에 배치
+- lifecycle은 종속 spec을 따른다
+- links에 종속 spec을 `refines`로 연결
+- 각 UC: 상황, 관여, 흐름, 기대 결과, 검증 참조로 구성
+- test.ts 테스트 케이스의 원천 시나리오 — cases에서 파생하여 test.ts로 구현
+
 ### memo 템플릿
 
 ```markdown
@@ -261,7 +314,7 @@ def:
 
 | skill | 역할 | doc-lifecycle과의 관계 |
 |-------|------|----------------------|
-| `def-new` | spec 문서 생성 | doc-lifecycle create --type spec과 동등. def-new는 유지, doc-lifecycle은 6종 전체 커버 |
+| `def-new` | spec 문서 생성 | doc-lifecycle create --type spec과 동등. def-new는 유지, doc-lifecycle은 7종 전체 커버 |
 | `spec-lifecycle` | 코드 참조 전환, drift 점검 | doc-lifecycle promote와 연동 가능 — 승격 후 spec-lifecycle로 코드 참조 점검 |
 | `def-audit` | 링크/고아/깊이 검증 | doc-lifecycle audit는 확장자 정합성에 집중, def-audit은 구조 검증에 집중 |
 

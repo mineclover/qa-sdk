@@ -166,6 +166,7 @@ DB의 `code_references`를 갱신한다. `qa-sdk def find-by-file`와 review-fee
 | `.rule.md` | "이것을 사용할 때 무엇을 확인하는가" | 소비자 | meta-semantic-ir.rule.md |
 | `.todo.md` | "다음에 무엇을 하는가" | 구현자 | meta-semantic-ir.todo.md |
 | `.test.md` | "어떻게 검증하는가" | 검증자 | gate-scenario.test.md |
+| `.cases.md` | "누가 어떤 흐름으로 사용하는가" | 구현자/검증자 | infra-auth-usecases.cases.md |
 | `.memo.md` | "무엇을 발견했는가" | 탐색자 | performance-finding.memo.md |
 | `.plan.md` | "어떻게 구현할 것인가" | 설계자 | drizzle-migration.plan.md |
 
@@ -173,6 +174,11 @@ DB의 `code_references`를 갱신한다. `qa-sdk def find-by-file`와 review-fee
 - spec = "이것은 무엇이고, 어떤 구조인가" (정의)
 - rule = "이것을 소비할 때 어떤 조건을 확인하는가" (판별 기준 + 체크리스트)
 - rule은 종속 spec과 같은 디렉토리에 배치. spec 변경 시 rule도 함께 갱신.
+
+**cases vs test 구분**:
+- cases = "사용자/시스템이 어떤 흐름으로 동작하는가" (시나리오, UC, 기대 결과)
+- test = "코드 레벨에서 어떻게 검증하는가" (describe/it 식별자 매핑)
+- cases는 test.ts의 원천 시나리오. cases에서 파생하여 test.ts로 구현.
 
 ## 4. 본문 필수 구조
 

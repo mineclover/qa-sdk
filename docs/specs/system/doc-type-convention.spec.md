@@ -14,16 +14,16 @@ def:
       type: traces_to
 ---
 
-# 문서 유형 컨벤션 — 6종 확장자 체계
+# 문서 유형 컨벤션 — 7종 확장자 체계
 
 ## 목적 ^purpose
 
 definition-catalog 문서의 역할을 확장자로 명시하여,
-정의(spec)와 소비 규칙(rule)과 현재 상태(todo/test)와 히스토리(memo)와 방향(plan)을 구분한다.
+정의(spec)와 소비 규칙(rule)과 현재 상태(todo/test)와 사용 시나리오(cases)와 히스토리(memo)와 방향(plan)을 구분한다.
 
 ## ^defines
 
-### 6종 확장자
+### 7종 확장자
 
 | 확장자 | 질문 | 독자 | lifecycle | frontmatter |
 |--------|------|------|----------|-------------|
@@ -31,6 +31,7 @@ definition-catalog 문서의 역할을 확장자로 명시하여,
 | `.rule.md` | "이것을 사용할 때 무엇을 확인하는가" | 소비자 | spec 따름 | 필수 |
 | `.todo.md` | "다음에 무엇을 하는가" | 구현자 | `draft` | 필수 |
 | `.test.md` | "어떻게 검증하는가" | 검증자 | spec 따름 | 필수 |
+| `.cases.md` | "누가 어떤 흐름으로 사용하는가" | 구현자/검증자 | spec 따름 | 필수 |
 | `.memo.md` | "무엇을 발견/기록했는가" | 탐색자 | — | 선택 |
 | `.plan.md` | "어떻게 구현할 것인가" | 설계자 | — | 선택 |
 
@@ -40,6 +41,14 @@ definition-catalog 문서의 역할을 확장자로 명시하여,
 - rule = "이것을 소비할 때 어떤 조건을 확인하는가" (판별 기준 + 체크리스트)
 - guide(knowledge_kind)와의 차이: guide는 프로젝트 전역 절차, rule은 spec 단위 종속
 - rule은 소비자가 생길 때 생성. spec만으로 소비 가능하면 불필요
+
+### cases vs test
+
+- cases = "사용자/시스템이 어떤 흐름으로 동작하는가" (시나리오, UC, 기대 결과)
+- test = "코드 레벨에서 어떻게 검증하는가" (describe/it 식별자 매핑)
+- cases는 구현 전에도 작성 가능 — spec의 흐름을 구체화한 시나리오 문서
+- test.md가 코드 검증 매핑이라면, cases.md는 사용 흐름 + 기대 결과 명세
+- cases의 UC가 test.ts의 테스트 케이스로 파생 가능
 
 ### 배치 규칙
 
@@ -65,6 +74,7 @@ docs/specs/meta-semantic/meta-semantic-ir/
   meta-semantic-ir.rule.md
   meta-semantic-ir.todo.md
   meta-semantic-ir.test.md
+  meta-semantic-ir.cases.md
   meta-semantic-ir.memo.md
   meta-semantic-ir.plan.md
 ```
@@ -92,6 +102,7 @@ docs/specs/meta-semantic/meta-semantic-ir/
 | `.rule.md` | spec의 lifecycle 따름 | spec deprecated → rule deprecated |
 | `.todo.md` | `draft` | 구현 시작 → `review` (선택) |
 | `.test.md` | spec의 lifecycle 따름 | — |
+| `.cases.md` | spec의 lifecycle 따름 | spec 흐름 변경 → cases 갱신 |
 | `.memo.md` | 없음 (히스토리) | — |
 | `.plan.md` | 없음 (방향) | — |
 
@@ -114,6 +125,14 @@ docs/specs/meta-semantic/meta-semantic-ir/
 
 - spec에서 "왜" 설명 비중 > 1/3이면 `.memo.md`로 분리
 - 1-2줄이면 spec 안에 포함
+
+### cases.md 규칙
+
+- **종속 spec 필수** — cases만 단독 존재 불가
+- 각 UC: 상황, 관여 패키지, 흐름, 기대 결과, 검증 참조로 구성
+- 내용: 사용 시나리오(UC), 입력→흐름→출력, 기대 결과
+- 내용 아닌 것: 설계 구조(→spec), 코드 검증 매핑(→test), 잔여 작업(→todo)
+- test.ts 테스트 케이스의 원천 시나리오 — cases에서 파생하여 test.ts로 구현
 
 ### test.md 규칙
 

@@ -407,12 +407,13 @@ async function scanMarkdownFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-type DocVariant = "spec" | "todo" | "test" | "memo" | "plan" | "rule" | "other";
+type DocVariant = "spec" | "todo" | "test" | "cases" | "memo" | "plan" | "rule" | "other";
 
 function getDocVariant(filePath: string): DocVariant {
   if (filePath.endsWith(".spec.md")) return "spec";
   if (filePath.endsWith(".todo.md")) return "todo";
   if (filePath.endsWith(".test.md")) return "test";
+  if (filePath.endsWith(".cases.md")) return "cases";
   if (filePath.endsWith(".memo.md")) return "memo";
   if (filePath.endsWith(".plan.md")) return "plan";
   if (filePath.endsWith(".rule.md")) return "rule";
@@ -420,7 +421,7 @@ function getDocVariant(filePath: string): DocVariant {
 }
 
 function getDocStem(filePath: string): string {
-  return filePath.replace(/\.(spec|todo|test|memo|plan|rule)\.md$/, "").replace(/\.md$/, "");
+  return filePath.replace(/\.(spec|todo|test|cases|memo|plan|rule)\.md$/, "").replace(/\.md$/, "");
 }
 
 function compareVariantPriority(left: string, right: string): number {
@@ -428,10 +429,11 @@ function compareVariantPriority(left: string, right: string): number {
     spec: 0,
     rule: 1,
     test: 2,
-    memo: 3,
-    plan: 4,
-    todo: 5,
-    other: 6,
+    cases: 3,
+    memo: 4,
+    plan: 5,
+    todo: 6,
+    other: 7,
   };
   return priority[getDocVariant(left)] - priority[getDocVariant(right)] || left.localeCompare(right);
 }
