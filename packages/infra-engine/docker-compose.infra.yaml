@@ -57,9 +57,14 @@ services:
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: QA Service Account
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: "2027-01-01T00:00:00Z"
       ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINEKEY_TYPE: 1
+      # PAT/Key 출력 경로 (볼륨 마운트)
+      ZITADEL_FIRSTINSTANCE_PATPATH: /zitadel-pat/pat.txt
+      ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH: /zitadel-pat/machinekey.json
     # 내부 포트만 (외부 노출은 nginx가 담당)
     expose:
       - "8080"
+    volumes:
+      - zitadel-pat:/zitadel-pat
     depends_on:
       zitadel-db:
         condition: service_healthy

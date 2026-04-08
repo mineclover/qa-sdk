@@ -71,14 +71,20 @@ infra-engine 패키지의 잔여 작업을 추적한다. 구현 완료 항목은
 
 ## 잔여 작업 (모두 외부 의존)
 
+### Zitadel 운영 안정화 (해결됨)
+
+- [x] **PAT 캡처** — docker-compose에 PATPATH/MACHINEKEYPATH 볼륨 마운트 추가
+- [x] **Login V2 안정화** — .env에 ZITADEL_LOGIN_TOKEN 설정 → healthy
+- [x] **admin 계정** — admin@zitadel.localhost (DB 리셋 2026-04-08)
+
 ### OAuth IdP
 
-- [ ] **Google OAuth 연동** — Zitadel Admin → Identity Providers
+- [x] **Google OAuth 연동** — GCP 클라이언트 + Zitadel IdP 등록 + redirect URI(/idps/callback) 완료
 - [ ] **GitHub OAuth 연동** — Zitadel Admin → Identity Providers
 
-### Zitadel 세션 관리
+### Zitadel 세션 관리 (해결됨)
 
-- [ ] **ZitadelProvider 세션 종료** — 사용자 비활성화 시 세션 종료 + 토큰 무효화
+- [x] **ZitadelProvider 세션 종료** — enrichment /invalidate → revokeZitadelSessions() 연동 완료
 
 ### Workers 호환 (해결됨)
 

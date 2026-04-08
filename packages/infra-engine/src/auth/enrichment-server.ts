@@ -506,20 +506,90 @@ app.delete("/users/:userId/override/:feature", (c) => {
   return c.json({ ok: true, userId, overrides: user.overrides });
 });
 
-// ── 세션 무효화 / 재활성화 ──────────────────────────
+// ── Zitadel 세션 종료 ────────────────────────────────
 
-app.post("/users/:userId/invalidate", (c) => {
+/**
+ * Zitadel v2 API로 특정 유저의 모든 활성 세션을 종료한다.
+ * ZITADEL_URL + ZITADEL_SERVICE_TOKEN이 없으면 스킵 (fail-open).
+ */
+async function revokeZitadelSessions(userId: string): Promise<{ revoked: number }> {
+  if (!ZITADEL_URL || !ZITADEL_SERVICE_TOKEN) return { revoked: 0 };
+
+  const headers = {
+    Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+
+  // 1. 전체 세션 조회 후 userId로 필터 (Zitadel v2 connect API 호환)
+  const listRes = await fetch(
+    `${ZITADEL_URL}/zitadel.session.v2.SessionService/ListSessions`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({}),
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+
+  if (!listRes.ok) {
+    console.warn(`[enrichment] Zitadel 세션 조회 실패: ${listRes.status}`);
+    return { revoked: 0 };
+  }
+
+  type ZitadelSession = {
+    id: string;
+    sessionToken?: string;
+    factors?: { user?: { id?: string } };
+  };
+  const { sessions: allSessions = [] } = await listRes.json() as {
+    sessions?: ZitadelSession[];
+  };
+  const sessions = allSessions.filter(
+    s => s.factors?.user?.id === userId,
+  );
+  if (sessions.length === 0) return { revoked: 0 };
+
+  // 2. 각 세션 삭제
+  const results = await Promise.allSettled(
+    sessions.map(s =>
+      fetch(`${ZITADEL_URL}/zitadel.session.v2.SessionService/DeleteSession`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ sessionId: s.id, sessionToken: s.sessionToken }),
+        signal: AbortSignal.timeout(5_000),
+      }),
+    ),
+  );
+
+  const revoked = results.filter(r => r.status === "fulfilled").length;
+  return { revoked };
+}
+
+// ── 세션 무효화 / 재활성화 ────────────────────────────
+
+app.post("/users/:userId/invalidate", async (c) => {
   const userId = c.req.param("userId");
   const user = getUser(userId);
 
+  // 1. 내부 상태 무효화
   user.perms_v += 1;
   user.active = false;
+
+  // 2. Zitadel 세션 종료 (hardRevoke)
+  let zitadelRevoked = 0;
+  try {
+    const result = await revokeZitadelSessions(userId);
+    zitadelRevoked = result.revoked;
+  } catch (err) {
+    console.warn("[enrichment] Zitadel 세션 종료 실패 (fail-open):", err);
+  }
 
   return c.json({
     ok: true,
     userId,
     perms_v: user.perms_v,
     active: user.active,
+    zitadel_sessions_revoked: zitadelRevoked,
   });
 });
 
@@ -697,6 +767,7 @@ export {
   app, startServer, FEATURES, FEATURE_INDEX, ROLE_FEATURES, ROLE_DEFS,
   createBitmask, applyEnvRestrictions, ENV_RESTRICTIONS,
   hasBit, resolveRoleFeatures, checkFeature, computeEnrich,
+  revokeZitadelSessions,
   users, getUser,
   JWT_SECRET, JWT_ISSUER, JWT_EXPIRY,
 };
