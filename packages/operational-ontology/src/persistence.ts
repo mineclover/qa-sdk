@@ -72,11 +72,15 @@ export {
 } from "./internal/persistence-ingest.js";
 
 export {
+  type OperationalOntologyCheckpointDiff,
   type OperationalOntologyDiffStatus,
   type OperationalOntologyCorridorDiff,
+  type OperationalOntologyJunctionDiff,
   type OperationalOntologySnapshotDiffSummary,
   type OperationalOntologySnapshotDiff,
+  diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
+  diffOperationalOntologyJunction,
   diffOperationalOntologySnapshots,
 } from "./internal/persistence-diff.js";
 
@@ -101,7 +105,9 @@ export {
 } from "./internal/persistence-query.js";
 
 export {
+  diffLatestOperationalOntologyCheckpointByScope,
   diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologyJunctionByScope,
   diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
@@ -134,7 +140,9 @@ import {
 } from "./internal/persistence-snapshot.js";
 import { ingestOperationalOntologyProjection } from "./internal/persistence-ingest.js";
 import {
+  diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
+  diffOperationalOntologyJunction,
   diffOperationalOntologySnapshots,
 } from "./internal/persistence-diff.js";
 import {
@@ -154,7 +162,9 @@ import {
   loadOperationalOntologySnapshotView,
 } from "./internal/persistence-query.js";
 import {
+  diffLatestOperationalOntologyCheckpointByScope,
   diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologyJunctionByScope,
   diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
@@ -183,9 +193,13 @@ export const operationalOntologyPersistencePlane = {
   persistOperationalOntologySnapshot,
   loadOperationalOntologySnapshot,
   ingestOperationalOntologyProjection,
+  diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
+  diffOperationalOntologyJunction,
   diffOperationalOntologySnapshots,
+  diffLatestOperationalOntologyCheckpointByScope,
   diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologyJunctionByScope,
   diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,

@@ -1,5 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 
+import type { CheckpointLattice } from "./checkpoint-core.js";
+import type { JunctionDefinition } from "./junction-core.js";
 import type { OperationalOntologyStore } from "./persistence-memory.js";
 import {
   loadOperationalOntologyCorridorView,
@@ -43,6 +45,27 @@ export interface OperationalOntologySnapshotDiff {
   checkpointLatticeCountDelta: number;
   routeDecisionCountDelta: number;
   traversalBundleCountDelta: number;
+}
+
+export interface OperationalOntologyCheckpointDiff {
+  rootCheckpointId: string;
+  status: OperationalOntologyDiffStatus;
+  changedSections: string[];
+  definitionCountDelta: number;
+  observationCountDelta: number;
+  linkCountDelta: number;
+  from: CheckpointLattice | null;
+  to: CheckpointLattice | null;
+}
+
+export interface OperationalOntologyJunctionDiff {
+  junctionId: string;
+  status: OperationalOntologyDiffStatus;
+  changedSections: string[];
+  pathCountDelta: number;
+  routeDecisionCountDelta: number;
+  from: JunctionDefinition | null;
+  to: JunctionDefinition | null;
 }
 
 function summarizeStatuses(
@@ -157,6 +180,156 @@ export async function diffOperationalOntologyCorridor(
   }
 
   return diffCorridorViews(corridorId, from, to);
+}
+
+function diffCheckpointLattices(
+  rootCheckpointId: string,
+  from: CheckpointLattice | null,
+  to: CheckpointLattice | null,
+): OperationalOntologyCheckpointDiff {
+  if (!from && !to) {
+    throw new Error(`Checkpoint diff requires at least one side: ${rootCheckpointId}`);
+  }
+  if (!from) {
+    return {
+      rootCheckpointId,
+      status: "added",
+      changedSections: [],
+      definitionCountDelta: to!.definitions.length,
+      observationCountDelta: to!.observations.length,
+      linkCountDelta: to!.links.length,
+      from: null,
+      to,
+    };
+  }
+  if (!to) {
+    return {
+      rootCheckpointId,
+      status: "removed",
+      changedSections: [],
+      definitionCountDelta: -from.definitions.length,
+      observationCountDelta: -from.observations.length,
+      linkCountDelta: -from.links.length,
+      from,
+      to: null,
+    };
+  }
+
+  const changedSections: string[] = [];
+  if (!isDeepStrictEqual(from.definitions, to.definitions)) changedSections.push("definitions");
+  if (!isDeepStrictEqual(from.observations, to.observations)) changedSections.push("observations");
+  if (!isDeepStrictEqual(from.links, to.links)) changedSections.push("links");
+
+  return {
+    rootCheckpointId,
+    status: changedSections.length > 0 ? "changed" : "unchanged",
+    changedSections,
+    definitionCountDelta: to.definitions.length - from.definitions.length,
+    observationCountDelta: to.observations.length - from.observations.length,
+    linkCountDelta: to.links.length - from.links.length,
+    from,
+    to,
+  };
+}
+
+function diffJunctions(
+  junctionId: string,
+  from: JunctionDefinition | null,
+  to: JunctionDefinition | null,
+  fromRouteDecisionCount: number,
+  toRouteDecisionCount: number,
+): OperationalOntologyJunctionDiff {
+  if (!from && !to) {
+    throw new Error(`Junction diff requires at least one side: ${junctionId}`);
+  }
+  if (!from) {
+    return {
+      junctionId,
+      status: "added",
+      changedSections: [],
+      pathCountDelta: to!.paths.length,
+      routeDecisionCountDelta: toRouteDecisionCount,
+      from: null,
+      to,
+    };
+  }
+  if (!to) {
+    return {
+      junctionId,
+      status: "removed",
+      changedSections: [],
+      pathCountDelta: -from.paths.length,
+      routeDecisionCountDelta: -fromRouteDecisionCount,
+      from,
+      to: null,
+    };
+  }
+
+  const changedSections: string[] = [];
+  if (!isDeepStrictEqual(from, to)) changedSections.push("junction");
+  if (fromRouteDecisionCount !== toRouteDecisionCount) changedSections.push("routeDecisions");
+
+  return {
+    junctionId,
+    status: changedSections.length > 0 ? "changed" : "unchanged",
+    changedSections,
+    pathCountDelta: to.paths.length - from.paths.length,
+    routeDecisionCountDelta: toRouteDecisionCount - fromRouteDecisionCount,
+    from,
+    to,
+  };
+}
+
+export async function diffOperationalOntologyCheckpoint(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  rootCheckpointId: string,
+  fromSnapshotId: string,
+  toSnapshotId: string,
+): Promise<OperationalOntologyCheckpointDiff | null> {
+  const [from, to] = await Promise.all([
+    loadOperationalOntologySnapshotView(store, fromSnapshotId),
+    loadOperationalOntologySnapshotView(store, toSnapshotId),
+  ]);
+  const fromLattice =
+    from?.checkpointLattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ??
+    null;
+  const toLattice =
+    to?.checkpointLattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ??
+    null;
+  if (!fromLattice && !toLattice) {
+    return null;
+  }
+  return diffCheckpointLattices(rootCheckpointId, fromLattice, toLattice);
+}
+
+export async function diffOperationalOntologyJunction(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  junctionId: string,
+  fromSnapshotId: string,
+  toSnapshotId: string,
+): Promise<OperationalOntologyJunctionDiff | null> {
+  const [from, to] = await Promise.all([
+    loadOperationalOntologySnapshotView(store, fromSnapshotId),
+    loadOperationalOntologySnapshotView(store, toSnapshotId),
+  ]);
+  const fromJunction =
+    from?.junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
+  const toJunction =
+    to?.junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
+  if (!fromJunction && !toJunction) {
+    return null;
+  }
+  return diffJunctions(
+    junctionId,
+    fromJunction,
+    toJunction,
+    from?.routeDecisions.filter(
+      (decision) => (decision.junctionId ?? decision.branchNodeId) === junctionId,
+    ).length ?? 0,
+    to?.routeDecisions.filter(
+      (decision) => (decision.junctionId ?? decision.branchNodeId) === junctionId,
+    ).length ?? 0,
+  );
 }
 
 export async function diffOperationalOntologySnapshots(

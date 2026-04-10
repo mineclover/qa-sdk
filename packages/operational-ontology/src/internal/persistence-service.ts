@@ -4,9 +4,13 @@ import type {
 } from "./projector-core.js";
 import type { OperationalOntologyStore } from "./persistence-memory.js";
 import {
+  diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
+  diffOperationalOntologyJunction,
   diffOperationalOntologySnapshots,
+  type OperationalOntologyCheckpointDiff,
   type OperationalOntologyCorridorDiff,
+  type OperationalOntologyJunctionDiff,
   type OperationalOntologySnapshotDiff,
 } from "./persistence-diff.js";
 import {
@@ -364,6 +368,46 @@ export async function diffLatestOperationalOntologyCorridorByScope(
   return diffOperationalOntologyCorridor(
     store,
     corridorId,
+    previous.projectionId,
+    latest.projectionId,
+  );
+}
+
+export async function diffLatestOperationalOntologyCheckpointByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+  rootCheckpointId: string,
+): Promise<OperationalOntologyCheckpointDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologyCheckpoint(
+    store,
+    rootCheckpointId,
+    previous.projectionId,
+    latest.projectionId,
+  );
+}
+
+export async function diffLatestOperationalOntologyJunctionByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+  junctionId: string,
+): Promise<OperationalOntologyJunctionDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologyJunction(
+    store,
+    junctionId,
     previous.projectionId,
     latest.projectionId,
   );
