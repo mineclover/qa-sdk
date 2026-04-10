@@ -10,7 +10,7 @@ import { cliOntology } from "../commands/ontology.js";
 
 export const ONTOLOGY_COMMAND_DESCRIPTORS = [
   { id: "ontology.help", path: ["help"], usage: "qa-sdk ontology help                              operational-ontology 도움말", handlerKey: "ontology.help" },
-  { id: "ontology.status", path: ["status"], usage: "qa-sdk ontology status --scope <scope> [--store <file>] [--json]", handlerKey: "ontology.status" },
+  { id: "ontology.status", path: ["status"], usage: "qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]", handlerKey: "ontology.status" },
   { id: "ontology.snapshot.ingest", path: ["snapshot", "ingest"], usage: "qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]", handlerKey: "ontology.snapshot.ingest" },
   { id: "ontology.snapshot.list", path: ["snapshot", "list"], usage: "qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]", handlerKey: "ontology.snapshot.list" },
   { id: "ontology.snapshot.show", path: ["snapshot", "show"], usage: "qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]", handlerKey: "ontology.snapshot.show" },
