@@ -150,6 +150,17 @@ function printJson(data: unknown): void {
   console.log(JSON.stringify(data, null, 2));
 }
 
+function printTable(headers: string[], row: string[]): void {
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, row[index]?.length ?? 0),
+  );
+  console.log(
+    headers.map((header, index) => header.padEnd(widths[index]!)).join("  "),
+  );
+  console.log(widths.map((width) => "-".repeat(width)).join("  "));
+  console.log(row.map((value, index) => value.padEnd(widths[index]!)).join("  "));
+}
+
 function toIngestOptions(flags: Record<string, string>): IngestOperationalOntologyProjectionOptions {
   return {
     snapshotId: flags["snapshot-id"],
@@ -270,7 +281,7 @@ async function cmdStatus(rest: string[]): Promise<void> {
   const scope = flags["scope"];
   if (!scope) {
     console.error(
-      "Usage: qa-sdk ontology status --scope <scope> [--store <file>] [--json]",
+      "Usage: qa-sdk ontology status --scope <scope> [--store <file>] [--json] [--table]",
     );
     return;
   }
@@ -311,6 +322,53 @@ async function cmdStatus(rest: string[]): Promise<void> {
 
   if (flags["json"] === "true") {
     printJson(status);
+    return;
+  }
+
+  if (flags["table"] === "true") {
+    printTable(
+      [
+        "scope",
+        "snapshot",
+        "builtAt",
+        "snapshots",
+        "topology",
+        "corridors",
+        "flows",
+        "checkpoints",
+        "junctions",
+        "routes",
+        "traversals",
+      ],
+      [
+        status.scope,
+        status.snapshotId,
+        status.builtAt,
+        String(status.snapshotCount),
+        String(status.topologyValid),
+        String(status.corridors),
+        String(status.controlFlows),
+        String(status.checkpointLattices),
+        String(status.junctions),
+        String(status.routeDecisions),
+        String(status.traversals),
+      ],
+    );
+
+    if (status.latestDiff) {
+      console.log("");
+      printTable(
+        ["diff_from", "diff_to", "added", "removed", "changed", "unchanged"],
+        [
+          status.latestDiff.fromSnapshotId,
+          status.latestDiff.toSnapshotId,
+          String(status.latestDiff.summary.added),
+          String(status.latestDiff.summary.removed),
+          String(status.latestDiff.summary.changed),
+          String(status.latestDiff.summary.unchanged),
+        ],
+      );
+    }
     return;
   }
 
@@ -1194,7 +1252,7 @@ export async function cliOntology(args: string[]): Promise<void> {
         [
           "qa-sdk ontology",
           "",
-          "  qa-sdk ontology status --scope <scope> [--store <file>] [--json]",
+          "  qa-sdk ontology status --scope <scope> [--store <file>] [--json] [--table]",
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",

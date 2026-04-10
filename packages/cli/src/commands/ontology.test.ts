@@ -165,6 +165,19 @@ describe("ontology CLI", () => {
     });
     expect(statusOutput.stdout).toContain("Ontology status: event-scope");
     expect(statusOutput.stdout).toContain("snapshots: 1");
+
+    const statusTableOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "status",
+        "--scope",
+        "event-scope",
+        "--store",
+        storePath,
+        "--table",
+      ]);
+    });
+    expect(statusTableOutput.stdout).toContain("scope");
+    expect(statusTableOutput.stdout).toContain("event-scope");
   });
 
   it("pipe ingest 후 corridor show를 수행한다", async () => {
