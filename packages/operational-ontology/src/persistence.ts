@@ -101,6 +101,8 @@ export {
 } from "./internal/persistence-query.js";
 
 export {
+  diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
   loadLatestOperationalOntologyCheckpointLatticeByScope,
@@ -152,6 +154,8 @@ import {
   loadOperationalOntologySnapshotView,
 } from "./internal/persistence-query.js";
 import {
+  diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
   loadLatestOperationalOntologyCheckpointLatticeByScope,
@@ -181,6 +185,8 @@ export const operationalOntologyPersistencePlane = {
   ingestOperationalOntologyProjection,
   diffOperationalOntologyCorridor,
   diffOperationalOntologySnapshots,
+  diffLatestOperationalOntologyCorridorByScope,
+  diffLatestOperationalOntologySnapshotsByScope,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
   listOperationalOntologySnapshotProjections,

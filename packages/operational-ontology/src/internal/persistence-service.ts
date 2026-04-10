@@ -4,6 +4,12 @@ import type {
 } from "./projector-core.js";
 import type { OperationalOntologyStore } from "./persistence-memory.js";
 import {
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
+  type OperationalOntologyCorridorDiff,
+  type OperationalOntologySnapshotDiff,
+} from "./persistence-diff.js";
+import {
   ingestOperationalOntologyProjection,
   type IngestOperationalOntologyProjectionOptions,
   type IngestOperationalOntologyProjectionResult,
@@ -323,4 +329,42 @@ export async function loadLatestOperationalOntologyTraversalBundleByScope(
     }
   }
   return null;
+}
+
+export async function diffLatestOperationalOntologySnapshotsByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+): Promise<OperationalOntologySnapshotDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologySnapshots(
+    store,
+    previous.projectionId,
+    latest.projectionId,
+  );
+}
+
+export async function diffLatestOperationalOntologyCorridorByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+  corridorId: string,
+): Promise<OperationalOntologyCorridorDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologyCorridor(
+    store,
+    corridorId,
+    previous.projectionId,
+    latest.projectionId,
+  );
 }

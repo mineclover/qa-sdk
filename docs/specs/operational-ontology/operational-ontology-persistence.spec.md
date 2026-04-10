@@ -56,6 +56,8 @@ def:
 
 그 위에 `loadOperationalOntologyCorridorView()`, `listOperationalOntologyCorridorViewsByScope()`, `loadLatestOperationalOntologyCorridorViewByScope()`를 제공하여, 특정 corridor를 중심으로 control-flow/checkpoint-lattice/junction/route-decision/traversal bundle을 묶은 higher-level view를 직접 조회할 수 있게 한다.
 
+또한 `diffOperationalOntologySnapshots()`, `diffOperationalOntologyCorridor()`와 scope 기반 latest diff helper를 제공하여, snapshot 단위와 corridor 단위의 변화량을 비교할 수 있게 한다.
+
 ## 정의 ^defines
 
 ### facet bundle 저장 원칙

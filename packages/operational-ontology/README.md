@@ -50,6 +50,7 @@
 - `ingestEventRecordProjection()`, `ingestPipeGraphProjection()`, `listOperationalOntologySnapshotViewsByScope()`, `loadLatestOperationalOntologySnapshotViewByScope()`로 더 좁은 service-style 진입점을 제공한다.
 - `loadOperationalOntologyCorridors()`, `loadOperationalOntologyCheckpointLattices()`, `loadOperationalOntologyTraversalBundles()`와 scope 기반 `listOperationalOntologyCorridorsByScope()`, `listOperationalOntologyCheckpointLatticesByScope()`, `listOperationalOntologyTraversalBundlesByScope()`로 목적별 query DSL을 제공한다.
 - `loadOperationalOntologyCorridorView()`, `listOperationalOntologyCorridorViewsByScope()`, `loadLatestOperationalOntologyCorridorViewByScope()`로 corridor 기준의 higher-level view도 직접 조회할 수 있다.
+- `diffOperationalOntologySnapshots()`, `diffOperationalOntologyCorridor()`와 scope 기반 latest diff helper로 snapshot/corridor 변화 비교도 수행할 수 있다.
 - `RelationCategorySchema`와 축 검증 헬퍼로 relation type category가 허용한 축만 조합되게 한다.
 - category catalog는 패키지 내부에 고정하지 않고 외부 registry/resolver에서 주입받는다.
 
@@ -107,6 +108,7 @@
 - `src/internal/persistence-ingest.ts` — projection input → snapshot → store ingest helper
 - `src/internal/persistence-query.ts` — snapshot/corridor/checkpoint/traversal 조회 helper
 - `src/internal/persistence-service.ts` — event/pipe ingest와 scope 기반 snapshot query service helper
+- `src/internal/persistence-diff.ts` — snapshot/corridor diff helper
 - `src/internal/projector-utils.ts` — projector 저수준 helper
 
 ## 실행
