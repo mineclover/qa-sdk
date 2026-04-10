@@ -7,11 +7,15 @@ import {
   diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
   diffOperationalOntologyJunction,
+  diffOperationalOntologyRouteDecision,
   diffOperationalOntologySnapshots,
+  diffOperationalOntologyTraversal,
   type OperationalOntologyCheckpointDiff,
   type OperationalOntologyCorridorDiff,
   type OperationalOntologyJunctionDiff,
+  type OperationalOntologyRouteDecisionDiff,
   type OperationalOntologySnapshotDiff,
+  type OperationalOntologyTraversalDiff,
 } from "./persistence-diff.js";
 import {
   ingestOperationalOntologyProjection,
@@ -408,6 +412,46 @@ export async function diffLatestOperationalOntologyJunctionByScope(
   return diffOperationalOntologyJunction(
     store,
     junctionId,
+    previous.projectionId,
+    latest.projectionId,
+  );
+}
+
+export async function diffLatestOperationalOntologyRouteDecisionByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+  branchNodeId: string,
+): Promise<OperationalOntologyRouteDecisionDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologyRouteDecision(
+    store,
+    branchNodeId,
+    previous.projectionId,
+    latest.projectionId,
+  );
+}
+
+export async function diffLatestOperationalOntologyTraversalByScope(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  targetScope: string,
+  traversalKey: string,
+): Promise<OperationalOntologyTraversalDiff | null> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  const previous = projections.at(-2);
+  if (!latest || !previous) {
+    return null;
+  }
+
+  return diffOperationalOntologyTraversal(
+    store,
+    traversalKey,
     previous.projectionId,
     latest.projectionId,
   );

@@ -30,8 +30,12 @@ export const ONTOLOGY_COMMAND_DESCRIPTORS = [
   { id: "ontology.junction.diff-latest", path: ["junction", "diff-latest"], usage: "qa-sdk ontology junction diff-latest <junction-id> --scope <scope> [--store <file>] [--json]", handlerKey: "ontology.junction.diff-latest" },
   { id: "ontology.route.list", path: ["route", "list"], usage: "qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.route.list" },
   { id: "ontology.route.show", path: ["route", "show"], usage: "qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.route.show" },
+  { id: "ontology.route.diff", path: ["route", "diff"], usage: "qa-sdk ontology route diff <branch-node-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]", handlerKey: "ontology.route.diff" },
+  { id: "ontology.route.diff-latest", path: ["route", "diff-latest"], usage: "qa-sdk ontology route diff-latest <branch-node-id> --scope <scope> [--store <file>] [--json]", handlerKey: "ontology.route.diff-latest" },
   { id: "ontology.traversal.list", path: ["traversal", "list"], usage: "qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.traversal.list" },
   { id: "ontology.traversal.show", path: ["traversal", "show"], usage: "qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.traversal.show" },
+  { id: "ontology.traversal.diff", path: ["traversal", "diff"], usage: "qa-sdk ontology traversal diff <traversal-key> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]", handlerKey: "ontology.traversal.diff" },
+  { id: "ontology.traversal.diff-latest", path: ["traversal", "diff-latest"], usage: "qa-sdk ontology traversal diff-latest <traversal-key> --scope <scope> [--store <file>] [--json]", handlerKey: "ontology.traversal.diff-latest" },
   { id: "ontology.event.ingest", path: ["event", "ingest"], usage: "qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]", handlerKey: "ontology.event.ingest" },
   { id: "ontology.pipe.ingest", path: ["pipe", "ingest"], usage: "qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]", handlerKey: "ontology.pipe.ingest" },
 ] as const satisfies readonly CommandDescriptor[];

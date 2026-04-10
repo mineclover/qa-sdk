@@ -21,8 +21,12 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology junction diff-latest");
     expect(USAGE).toContain("qa-sdk ontology route list");
     expect(USAGE).toContain("qa-sdk ontology route show");
+    expect(USAGE).toContain("qa-sdk ontology route diff");
+    expect(USAGE).toContain("qa-sdk ontology route diff-latest");
     expect(USAGE).toContain("qa-sdk ontology traversal list");
     expect(USAGE).toContain("qa-sdk ontology traversal show");
+    expect(USAGE).toContain("qa-sdk ontology traversal diff");
+    expect(USAGE).toContain("qa-sdk ontology traversal diff-latest");
     expect(USAGE).toContain("qa-sdk ontology snapshot diff");
     expect(USAGE).toContain("qa-sdk ontology snapshot diff-latest");
     expect(USAGE).toContain("qa-sdk ontology corridor diff");
@@ -469,6 +473,20 @@ describe("ontology CLI", () => {
     });
     expect(routeShowOutput.stdout).toContain("Route decision: collect-order");
 
+    const routeDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "route.diff-latest",
+        "collect-order",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(routeDiffLatestOutput.stdout).toContain(
+      "Route diff-latest: collect-order",
+    );
+
     const traversalListOutput = await captureConsoleAsync(async () => {
       await cliOntology([
         "traversal.list",
@@ -493,6 +511,20 @@ describe("ontology CLI", () => {
       ]);
     });
     expect(traversalShowOutput.stdout).toContain(`Traversal: ${traversalKey}`);
+
+    const traversalDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "traversal.diff-latest",
+        traversalKey,
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(traversalDiffLatestOutput.stdout).toContain(
+      `Traversal diff-latest: ${traversalKey}`,
+    );
 
     const snapshotDiffOutput = await captureConsoleAsync(async () => {
       await cliOntology([

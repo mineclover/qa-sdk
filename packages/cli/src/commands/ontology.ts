@@ -6,11 +6,15 @@ import {
   diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
   diffOperationalOntologyJunction,
+  diffOperationalOntologyRouteDecision,
   diffOperationalOntologySnapshots,
+  diffOperationalOntologyTraversal,
   diffLatestOperationalOntologyCheckpointByScope,
   diffLatestOperationalOntologyCorridorByScope,
   diffLatestOperationalOntologyJunctionByScope,
+  diffLatestOperationalOntologyRouteDecisionByScope,
   diffLatestOperationalOntologySnapshotsByScope,
+  diffLatestOperationalOntologyTraversalByScope,
   ingestEventRecordProjection,
   ingestOperationalOntologyProjection,
   ingestPipeGraphProjection,
@@ -605,6 +609,150 @@ async function cmdTraversalShow(rest: string[]): Promise<void> {
   console.log(`  observations: ${bundle.observations.length}`);
 }
 
+async function cmdRouteDiff(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const branchNodeId = positional[0];
+  const fromSnapshotId = flags["from"];
+  const toSnapshotId = flags["to"];
+  if (!branchNodeId || !fromSnapshotId || !toSnapshotId) {
+    console.error(
+      "Usage: qa-sdk ontology route diff <branch-node-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffOperationalOntologyRouteDecision(
+    store,
+    branchNodeId,
+    fromSnapshotId,
+    toSnapshotId,
+  );
+  if (!diff) {
+    console.error(`Route diff 없음: ${branchNodeId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Route diff: ${branchNodeId}`);
+  console.log(`  status: ${diff.status}`);
+  console.log(
+    `  selected Δ=${diff.selectedPathCountDelta}  skipped Δ=${diff.skippedPathCountDelta}`,
+  );
+}
+
+async function cmdRouteDiffLatest(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const branchNodeId = positional[0];
+  const scope = flags["scope"];
+  if (!branchNodeId || !scope) {
+    console.error(
+      "Usage: qa-sdk ontology route diff-latest <branch-node-id> --scope <scope> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffLatestOperationalOntologyRouteDecisionByScope(
+    store,
+    scope,
+    branchNodeId,
+  );
+  if (!diff) {
+    console.error(`Route diff-latest 없음: ${branchNodeId} @ ${scope}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Route diff-latest: ${branchNodeId}`);
+  console.log(`  status: ${diff.status}`);
+  console.log(
+    `  selected Δ=${diff.selectedPathCountDelta}  skipped Δ=${diff.skippedPathCountDelta}`,
+  );
+}
+
+async function cmdTraversalDiff(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const traversalKey = positional[0];
+  const fromSnapshotId = flags["from"];
+  const toSnapshotId = flags["to"];
+  if (!traversalKey || !fromSnapshotId || !toSnapshotId) {
+    console.error(
+      "Usage: qa-sdk ontology traversal diff <traversal-key> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffOperationalOntologyTraversal(
+    store,
+    traversalKey,
+    fromSnapshotId,
+    toSnapshotId,
+  );
+  if (!diff) {
+    console.error(`Traversal diff 없음: ${traversalKey}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Traversal diff: ${traversalKey}`);
+  console.log(`  status: ${diff.status}`);
+  console.log(
+    `  facets Δ=${diff.facetCountDelta}  observations Δ=${diff.observationCountDelta}`,
+  );
+}
+
+async function cmdTraversalDiffLatest(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const traversalKey = positional[0];
+  const scope = flags["scope"];
+  if (!traversalKey || !scope) {
+    console.error(
+      "Usage: qa-sdk ontology traversal diff-latest <traversal-key> --scope <scope> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffLatestOperationalOntologyTraversalByScope(
+    store,
+    scope,
+    traversalKey,
+  );
+  if (!diff) {
+    console.error(`Traversal diff-latest 없음: ${traversalKey} @ ${scope}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Traversal diff-latest: ${traversalKey}`);
+  console.log(`  status: ${diff.status}`);
+  console.log(
+    `  facets Δ=${diff.facetCountDelta}  observations Δ=${diff.observationCountDelta}`,
+  );
+}
+
 async function cmdSnapshotDiff(rest: string[]): Promise<void> {
   const { positional, flags } = parseFlags(rest);
   const fromSnapshotId = positional[0];
@@ -995,8 +1143,12 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology junction diff-latest <junction-id> --scope <scope> [--store <file>] [--json]",
           "  qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology route diff <branch-node-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
+          "  qa-sdk ontology route diff-latest <branch-node-id> --scope <scope> [--store <file>] [--json]",
           "  qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology traversal diff <traversal-key> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
+          "  qa-sdk ontology traversal diff-latest <traversal-key> --scope <scope> [--store <file>] [--json]",
           "  qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
         ].join("\n"),
@@ -1062,11 +1214,23 @@ export async function cliOntology(args: string[]): Promise<void> {
     case "route.show":
       await cmdRouteShow(rest);
       return;
+    case "route.diff":
+      await cmdRouteDiff(rest);
+      return;
+    case "route.diff-latest":
+      await cmdRouteDiffLatest(rest);
+      return;
     case "traversal.list":
       await cmdTraversalList(rest);
       return;
     case "traversal.show":
       await cmdTraversalShow(rest);
+      return;
+    case "traversal.diff":
+      await cmdTraversalDiff(rest);
+      return;
+    case "traversal.diff-latest":
+      await cmdTraversalDiffLatest(rest);
       return;
     case "event.ingest":
       await cmdEventIngest(rest);
