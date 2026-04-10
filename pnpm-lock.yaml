@@ -201,6 +201,9 @@ importers:
       motion-workspace-client:
         specifier: workspace:*
         version: link:../motion-workspace-client
+      operational-ontology:
+        specifier: workspace:*
+        version: link:../operational-ontology
       package-classifier:
         specifier: workspace:*
         version: link:../package-classifier
@@ -1328,6 +1331,25 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(lightningcss@1.32.0)
+
+  packages/operational-ontology:
+    dependencies:
+      '@qa-sdk/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
       typescript:
         specifier: ^5.8.2
         version: 5.9.3

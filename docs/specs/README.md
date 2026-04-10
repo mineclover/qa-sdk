@@ -221,6 +221,40 @@ API 클라이언트, iframe 통신 프로토콜.
 | [meta-semantic-test-tracking.spec.md](meta-semantic/meta-semantic-test-tracking.spec.md) | 테스트 추적 — 패싯별 검증 루프 (스펙만) | draft |
 | [meta-semantic-v2-migration.spec.md](meta-semantic/meta-semantic-v2-migration.spec.md) | v2 마이그레이션 계획 — Phase 1~4 | draft |
 
+### operational-ontology/ — schema-first operational ontology 초안
+
+taxonomy를 schema로 선언/검증한 뒤 node, relation type, edge, traversal을 좌표화하는 operational ontology 초안.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [operational-ontology-system.spec.md](operational-ontology/operational-ontology-system.spec.md) | schema plane, validation plane, instance plane 전체 구조와 RDF 대응 개요 | draft |
+| [operational-ontology-taxonomy-schema.spec.md](operational-ontology/operational-ontology-taxonomy-schema.spec.md) | axis/taxonomy schema plane과 identity axis 규칙 | draft |
+| [operational-ontology-relation-category-schema.spec.md](operational-ontology/operational-ontology-relation-category-schema.spec.md) | relation type category schema와 외부 catalog 연동 규칙 | draft |
+| [operational-ontology-schema-validation.spec.md](operational-ontology/operational-ontology-schema-validation.spec.md) | taxonomy를 만들기 전에 검증하는 validation plane | draft |
+| [operational-ontology-persistence.spec.md](operational-ontology/operational-ontology-persistence.spec.md) | facet bundle, append-only observation, rebuildable projection 저장 모델 | draft |
+| [operational-ontology-data-facets.spec.md](operational-ontology/operational-ontology-data-facets.spec.md) | 정보를 definition/management/production/consumption/storage facet bundle로 다루는 원칙 | draft |
+| [operational-ontology-flow-corridor.spec.md](operational-ontology/operational-ontology-flow-corridor.spec.md) | 데이터가 지나가는 통로를 `FlowCorridor`로 정의하는 원칙 | draft |
+| [operational-ontology-junction.spec.md](operational-ontology/operational-ontology-junction.spec.md) | branch/join/retry를 junction 관점으로 읽는 원칙 | draft |
+| [operational-ontology-checkpoint.spec.md](operational-ontology/operational-ontology-checkpoint.spec.md) | corridor 위 관측 지점을 checkpoint로 읽는 원칙 | draft |
+| [operational-ontology-observation-topology.spec.md](operational-ontology/operational-ontology-observation-topology.spec.md) | corridor/junction/checkpoint를 함께 검증하는 상위 topology contract | draft |
+| [operational-ontology-information-transmission.spec.md](operational-ontology/operational-ontology-information-transmission.spec.md) | edge를 정보 전달 semantics로 읽는 원칙 | draft |
+| [operational-ontology-lineage.spec.md](operational-ontology/operational-ontology-lineage.spec.md) | 정보 facet 사이의 데이터 계보 추적 원칙 | draft |
+| [operational-ontology-branch-handling.spec.md](operational-ontology/operational-ontology-branch-handling.spec.md) | 분기 처리의 최소 해석 모델 | draft |
+| [operational-ontology-control-flow.spec.md](operational-ontology/operational-ontology-control-flow.spec.md) | 제어 흐름 관리의 최소 orchestration vocabulary | draft |
+| [operational-ontology-simulation.spec.md](operational-ontology/operational-ontology-simulation.spec.md) | 정보 패싯과 전달을 시뮬레이션하는 해석층 | draft |
+| [operational-ontology-runtime-interface.spec.md](operational-ontology/operational-ontology-runtime-interface.spec.md) | EventRecord/PipeGraph/DataSchema/PathObservation 기반 운영 포트 | draft |
+| [operational-ontology-event-projector.spec.md](operational-ontology/operational-ontology-event-projector.spec.md) | EventRecord를 corridor/checkpoint lattice로 투영하는 표면 | draft |
+| [operational-ontology-pipe-projector.spec.md](operational-ontology/operational-ontology-pipe-projector.spec.md) | PipeGraph를 control flow/corridor/junction으로 투영하는 표면 | draft |
+| [operational-ontology-path-projector.spec.md](operational-ontology/operational-ontology-path-projector.spec.md) | PathObservation을 traversal/route decision으로 투영하는 표면 | draft |
+| [operational-ontology-snapshot-projector.spec.md](operational-ontology/operational-ontology-snapshot-projector.spec.md) | projector 결과를 하나의 topology snapshot으로 합성하는 표면 | draft |
+| [operational-ontology-package-architecture.spec.md](operational-ontology/operational-ontology-package-architecture.spec.md) | schema/corridor/junction/checkpoint/topology facade 기준 패키지 공개 구조 | draft |
+| [operational-ontology-core-model.spec.md](operational-ontology/operational-ontology-core-model.spec.md) | anchor, taxonomy intersection, canonical identity, derived coordinate 구분 | draft |
+| [operational-ontology-relation-taxonomy.spec.md](operational-ontology/operational-ontology-relation-taxonomy.spec.md) | relation type 자체를 taxonomy 교차점으로 다루는 규칙 | draft |
+| [operational-ontology-edge-assertion.spec.md](operational-ontology/operational-ontology-edge-assertion.spec.md) | relation type이 특정 node 사이에서 성립한 assertion 모델 | draft |
+| [operational-ontology-category-constraint.spec.md](operational-ontology/operational-ontology-category-constraint.spec.md) | relation type category별 축 허용/금지 규칙과 폭발 방지 grammar | draft |
+| [operational-ontology-traversal-coordinate.spec.md](operational-ontology/operational-ontology-traversal-coordinate.spec.md) | start/end/edge chain과 purpose를 route identity로 다루는 방식 | draft |
+| [operational-ontology-rdf-bridge.spec.md](operational-ontology/operational-ontology-rdf-bridge.spec.md) | RDF URI/triple/path를 operational coordinate와 연결하는 대응 규칙 | draft |
+
 ### skill-catalog/ — 스킬 카탈로그
 
 Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에서 관리.

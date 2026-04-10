@@ -124,6 +124,11 @@ import {
   CACHE_HANDLER_REGISTRY as CACHE_GROUP_HANDLER_REGISTRY,
 } from './command-groups/cache.commands.js';
 import {
+  ONTOLOGY_COMMAND_SPECS as ONTOLOGY_GROUP_COMMAND_SPECS,
+  ONTOLOGY_COMMAND_TREE as ONTOLOGY_GROUP_COMMAND_TREE,
+  ONTOLOGY_HANDLER_REGISTRY as ONTOLOGY_GROUP_HANDLER_REGISTRY,
+} from './command-groups/ontology.commands.js';
+import {
   DEF_COMMAND_SPECS as DEF_GROUP_COMMAND_SPECS,
   DEF_COMMAND_TREE as DEF_GROUP_COMMAND_TREE,
   DEF_HANDLER_REGISTRY as DEF_GROUP_HANDLER_REGISTRY,
@@ -174,6 +179,7 @@ ${formatUsageSpecs(TEST_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(QUALITY_GROUP_COMMAND_SPECS)}
 
 ${formatUsageSpecs(CATALOG_GROUP_COMMAND_SPECS)}
+${formatUsageSpecs(ONTOLOGY_GROUP_COMMAND_SPECS)}
 ${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CACHE_GROUP_COMMAND_SPECS)}
@@ -220,6 +226,10 @@ async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<v
 
 async function dispatchCacheCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(CACHE_GROUP_HANDLER_REGISTRY, handlerKey, rest);
+}
+
+async function dispatchOntologyCommand(handlerKey: string, rest: string[]): Promise<void> {
+  await dispatchFromRegistry(ONTOLOGY_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchGateCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -289,6 +299,7 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
   { rootSegments: ['spec'], rootName: 'qa-sdk spec', tree: SPEC_GROUP_COMMAND_TREE, dispatch: dispatchSpecCommand },
   { rootSegments: ['test'], rootName: 'qa-sdk test', tree: TEST_GROUP_COMMAND_TREE, dispatch: dispatchTestCommand },
   { rootSegments: ['catalog'], rootName: 'qa-sdk catalog', tree: CATALOG_GROUP_COMMAND_TREE, dispatch: dispatchCatalogCommand },
+  { rootSegments: ['ontology'], rootName: 'qa-sdk ontology', tree: ONTOLOGY_GROUP_COMMAND_TREE, dispatch: dispatchOntologyCommand },
   { rootSegments: ['motion'], rootName: 'qa-sdk motion', tree: MOTION_GROUP_COMMAND_TREE, dispatch: dispatchMotionCommand },
   { rootSegments: ['flow'], rootName: 'qa-sdk flow', tree: FLOW_GROUP_COMMAND_TREE, dispatch: dispatchFlowCommand },
   { rootSegments: ['cache'], rootName: 'qa-sdk cache', tree: CACHE_GROUP_COMMAND_TREE, dispatch: dispatchCacheCommand },

@@ -12,7 +12,8 @@
 
 ## 패키지 역할
 
-- `qa-sdk` 단일 명령 진입점에서 catalog, def, dkg, flow, quality, ingest, motion, review, test 등을 묶는다.
+- `qa-sdk` 단일 명령 진입점에서 catalog, def, dkg, flow, quality, ingest, motion, review, test, ontology 등을 묶는다.
+- `qa-sdk ontology` 루트는 operational-ontology snapshot ingest/list/show와 corridor/checkpoint 조회 surface를 제공한다.
 - `cli-command` 패키지가 제공하는 command tree를 workspace 도메인 명령으로 조립한다.
 - 일부 명령은 로컬 SQLite와 서비스 profile을 사용해 런타임 상태를 관리한다.
 

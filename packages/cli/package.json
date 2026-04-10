@@ -27,6 +27,7 @@
   "dependencies": {
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
+    "operational-ontology": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "better-sqlite3": "^12.8.0",
     "codegen-core": "workspace:*",
