@@ -9,6 +9,7 @@ import { USAGE, resolveSubcommand } from "../index.js";
 
 describe("ontology CLI", () => {
   it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
+    expect(USAGE).toContain("qa-sdk ontology status");
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
     expect(USAGE).toContain("qa-sdk ontology corridor list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint list");
@@ -152,6 +153,18 @@ describe("ontology CLI", () => {
       ]);
     });
     expect(checkpointDiffOutput.stderr).toContain("Checkpoint diff-latest 없음");
+
+    const statusOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "status",
+        "--scope",
+        "event-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(statusOutput.stdout).toContain("Ontology status: event-scope");
+    expect(statusOutput.stdout).toContain("snapshots: 1");
   });
 
   it("pipe ingest 후 corridor show를 수행한다", async () => {

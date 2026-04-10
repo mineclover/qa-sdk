@@ -40,6 +40,7 @@ import {
   loadOperationalOntologyTraversalBundle,
   loadOperationalOntologyTraversalBundles,
   listOperationalOntologySnapshotProjections,
+  loadLatestOperationalOntologySnapshotViewByScope,
   loadOperationalOntologySnapshotView,
   type IngestOperationalOntologyProjectionOptions,
   type OperationalOntologyObjectRecord,
@@ -261,6 +262,76 @@ async function cmdSnapshotList(rest: string[]): Promise<void> {
 
   for (const projection of projections) {
     console.log(`${projection.projectionId}  ${projection.targetScope}  ${projection.builtAt}`);
+  }
+}
+
+async function cmdStatus(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const scope = flags["scope"];
+  if (!scope) {
+    console.error(
+      "Usage: qa-sdk ontology status --scope <scope> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const [latestView, latestDiff, projections] = await Promise.all([
+    loadLatestOperationalOntologySnapshotViewByScope(store, scope),
+    diffLatestOperationalOntologySnapshotsByScope(store, scope),
+    listOperationalOntologySnapshotProjections(store, scope),
+  ]);
+
+  if (!latestView) {
+    console.error(`Ontology status 없음: ${scope}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const status = {
+    scope,
+    snapshotId: latestView.snapshotProjection.projectionId,
+    builtAt: latestView.snapshotProjection.builtAt,
+    snapshotCount: projections.length,
+    topologyValid: latestView.snapshot.topologyValidation?.valid ?? null,
+    corridors: latestView.corridors.length,
+    controlFlows: latestView.controlFlows.length,
+    checkpointLattices: latestView.checkpointLattices.length,
+    junctions: latestView.junctions.length,
+    routeDecisions: latestView.routeDecisions.length,
+    traversals: latestView.traversalBundles.length,
+    latestDiff: latestDiff
+      ? {
+          fromSnapshotId: latestDiff.fromSnapshotId,
+          toSnapshotId: latestDiff.toSnapshotId,
+          summary: latestDiff.summary,
+        }
+      : null,
+  };
+
+  if (flags["json"] === "true") {
+    printJson(status);
+    return;
+  }
+
+  console.log(`Ontology status: ${scope}`);
+  console.log(`  snapshot: ${status.snapshotId}`);
+  console.log(`  builtAt: ${status.builtAt}`);
+  console.log(`  snapshots: ${status.snapshotCount}`);
+  console.log(`  topology valid: ${status.topologyValid}`);
+  console.log(
+    `  corridors=${status.corridors} controlFlows=${status.controlFlows} checkpointLattices=${status.checkpointLattices}`,
+  );
+  console.log(
+    `  junctions=${status.junctions} routeDecisions=${status.routeDecisions} traversals=${status.traversals}`,
+  );
+  if (status.latestDiff) {
+    console.log(
+      `  latest diff: ${status.latestDiff.fromSnapshotId} -> ${status.latestDiff.toSnapshotId}`,
+    );
+    console.log(
+      `    added=${status.latestDiff.summary.added} removed=${status.latestDiff.summary.removed} changed=${status.latestDiff.summary.changed} unchanged=${status.latestDiff.summary.unchanged}`,
+    );
   }
 }
 
@@ -1123,6 +1194,7 @@ export async function cliOntology(args: string[]): Promise<void> {
         [
           "qa-sdk ontology",
           "",
+          "  qa-sdk ontology status --scope <scope> [--store <file>] [--json]",
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",
@@ -1153,6 +1225,9 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
         ].join("\n"),
       );
+      return;
+    case "status":
+      await cmdStatus(rest);
       return;
     case "snapshot.ingest":
       await cmdSnapshotIngest(rest);
