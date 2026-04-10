@@ -19,6 +19,8 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology route show");
     expect(USAGE).toContain("qa-sdk ontology traversal list");
     expect(USAGE).toContain("qa-sdk ontology traversal show");
+    expect(USAGE).toContain("qa-sdk ontology snapshot diff");
+    expect(USAGE).toContain("qa-sdk ontology corridor diff");
     expect(USAGE).toContain("qa-sdk ontology corridor show");
     expect(
       resolveSubcommand([
@@ -361,6 +363,59 @@ describe("ontology CLI", () => {
       ]);
     });
 
+    await writeFile(
+      inputPath,
+      JSON.stringify(
+        {
+          graph: {
+            graphId: "snapshot-cli",
+            version: "v2",
+            entryPipeId: "collect-order",
+            pipes: [
+              {
+                pipeId: "collect-order",
+                version: "v2",
+                trigger: { eventKey: "order.submit" },
+                flow: { kind: "step", facet: "produced" },
+                ports: [{ portId: "out", direction: "out", facetType: "produced" }],
+              },
+              {
+                pipeId: "validate-order",
+                version: "v2",
+                trigger: { eventKey: "order.created" },
+                flow: { kind: "step", facet: "consumed" },
+                ports: [{ portId: "in", direction: "in", facetType: "consumed" }],
+              },
+            ],
+            connections: [
+              {
+                from: { pipeId: "collect-order", portId: "out" },
+                to: { pipeId: "validate-order", portId: "in" },
+                kind: "next",
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    await captureConsoleAsync(async () => {
+      await cliOntology([
+        "snapshot.ingest",
+        "--input",
+        inputPath,
+        "--store",
+        storePath,
+        "--snapshot-id",
+        "snapshot:rich-cli-2",
+        "--scope",
+        "snapshot-scope",
+      ]);
+    });
+
     const junctionListOutput = await captureConsoleAsync(async () => {
       await cliOntology([
         "junction.list",
@@ -420,6 +475,33 @@ describe("ontology CLI", () => {
       ]);
     });
     expect(traversalShowOutput.stdout).toContain(`Traversal: ${traversalKey}`);
+
+    const snapshotDiffOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "snapshot.diff",
+        "snapshot:rich-cli",
+        "snapshot:rich-cli-2",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(snapshotDiffOutput.stdout).toContain(
+      "Snapshot diff: snapshot:rich-cli -> snapshot:rich-cli-2",
+    );
+
+    const corridorDiffOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "corridor.diff",
+        "snapshot-cli",
+        "--from",
+        "snapshot:rich-cli",
+        "--to",
+        "snapshot:rich-cli-2",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(corridorDiffOutput.stdout).toContain("Corridor diff: snapshot-cli");
   });
 });
 

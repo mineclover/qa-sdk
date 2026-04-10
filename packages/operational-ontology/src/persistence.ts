@@ -72,6 +72,15 @@ export {
 } from "./internal/persistence-ingest.js";
 
 export {
+  type OperationalOntologyDiffStatus,
+  type OperationalOntologyCorridorDiff,
+  type OperationalOntologySnapshotDiffSummary,
+  type OperationalOntologySnapshotDiff,
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
+} from "./internal/persistence-diff.js";
+
+export {
   type OperationalOntologyCorridorView,
   type OperationalOntologyJunctionView,
   type OperationalOntologySnapshotView,
@@ -123,6 +132,10 @@ import {
 } from "./internal/persistence-snapshot.js";
 import { ingestOperationalOntologyProjection } from "./internal/persistence-ingest.js";
 import {
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
+} from "./internal/persistence-diff.js";
+import {
   loadOperationalOntologyCheckpointLattice,
   loadOperationalOntologyCorridorView,
   listOperationalOntologySnapshotProjections,
@@ -166,6 +179,8 @@ export const operationalOntologyPersistencePlane = {
   persistOperationalOntologySnapshot,
   loadOperationalOntologySnapshot,
   ingestOperationalOntologyProjection,
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
   listOperationalOntologySnapshotProjections,

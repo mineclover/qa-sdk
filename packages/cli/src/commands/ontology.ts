@@ -3,6 +3,8 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import {
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
   ingestEventRecordProjection,
   ingestOperationalOntologyProjection,
   ingestPipeGraphProjection,
@@ -597,6 +599,83 @@ async function cmdTraversalShow(rest: string[]): Promise<void> {
   console.log(`  observations: ${bundle.observations.length}`);
 }
 
+async function cmdSnapshotDiff(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const fromSnapshotId = positional[0];
+  const toSnapshotId = positional[1];
+  if (!fromSnapshotId || !toSnapshotId) {
+    console.error(
+      "Usage: qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffOperationalOntologySnapshots(
+    store,
+    fromSnapshotId,
+    toSnapshotId,
+  );
+  if (!diff) {
+    console.error(`Snapshot diff 실패: ${fromSnapshotId} -> ${toSnapshotId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Snapshot diff: ${fromSnapshotId} -> ${toSnapshotId}`);
+  console.log(
+    `  added=${diff.summary.added} removed=${diff.summary.removed} changed=${diff.summary.changed} unchanged=${diff.summary.unchanged}`,
+  );
+  console.log(
+    `  checkpoint lattices Δ=${diff.checkpointLatticeCountDelta}  route decisions Δ=${diff.routeDecisionCountDelta}  traversal bundles Δ=${diff.traversalBundleCountDelta}`,
+  );
+}
+
+async function cmdCorridorDiff(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const corridorId = positional[0];
+  const fromSnapshotId = flags["from"];
+  const toSnapshotId = flags["to"];
+  if (!corridorId || !fromSnapshotId || !toSnapshotId) {
+    console.error(
+      "Usage: qa-sdk ontology corridor diff <corridor-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const diff = await diffOperationalOntologyCorridor(
+    store,
+    corridorId,
+    fromSnapshotId,
+    toSnapshotId,
+  );
+  if (!diff) {
+    console.error(`Corridor diff 없음: ${corridorId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(diff);
+    return;
+  }
+
+  console.log(`Corridor diff: ${corridorId}`);
+  console.log(`  status: ${diff.status}`);
+  console.log(
+    `  endpoint Δ=${diff.endpointCountDelta}  contract Δ=${diff.contractCountDelta}  link Δ=${diff.linkCountDelta}`,
+  );
+  console.log(
+    `  checkpoint lattice Δ=${diff.checkpointLatticeCountDelta}  route decision Δ=${diff.routeDecisionCountDelta}  traversal bundle Δ=${diff.traversalBundleCountDelta}`,
+  );
+}
+
 async function cmdJunctionList(rest: string[]): Promise<void> {
   const { flags } = parseFlags(rest);
   const snapshotId = flags["snapshot"];
@@ -682,9 +761,11 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
           "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",
+          "  qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]",
           "  qa-sdk ontology corridor list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology corridor show <corridor-id> --snapshot <snapshot-id> [--store <file>] [--json]",
           "  qa-sdk ontology corridor show-latest <corridor-id> --scope <scope> [--store <file>] [--json]",
+          "  qa-sdk ontology corridor diff <corridor-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
           "  qa-sdk ontology checkpoint list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
@@ -707,6 +788,9 @@ export async function cliOntology(args: string[]): Promise<void> {
     case "snapshot.show":
       await cmdSnapshotShow(rest);
       return;
+    case "snapshot.diff":
+      await cmdSnapshotDiff(rest);
+      return;
     case "corridor.show":
       await cmdCorridorShow(rest);
       return;
@@ -715,6 +799,9 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "corridor.show-latest":
       await cmdCorridorShowLatest(rest);
+      return;
+    case "corridor.diff":
+      await cmdCorridorDiff(rest);
       return;
     case "checkpoint.list":
       await cmdCheckpointList(rest);

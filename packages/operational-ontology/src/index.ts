@@ -49,6 +49,7 @@ export * from "./internal/persistence-snapshot.js";
 export * from "./internal/persistence-ingest.js";
 export * from "./internal/persistence-query.js";
 export * from "./internal/persistence-service.js";
+export * from "./internal/persistence-diff.js";
 
 // ── Architecture Facades ───────────────────────────────
 

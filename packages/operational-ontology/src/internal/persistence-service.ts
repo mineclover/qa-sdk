@@ -223,19 +223,18 @@ export async function loadLatestOperationalOntologyCorridorViewByScope(
   targetScope: string,
   corridorId: string,
 ): Promise<OperationalOntologyCorridorView | null> {
-  const latest = await loadLatestOperationalOntologySnapshotViewByScope(
-    store,
-    targetScope,
-  );
-  if (!latest) {
-    return null;
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  for (const projection of [...projections].reverse()) {
+    const view = await loadOperationalOntologyCorridorView(
+      store,
+      projection.projectionId,
+      corridorId,
+    );
+    if (view) {
+      return view;
+    }
   }
-
-  return loadOperationalOntologyCorridorView(
-    store,
-    latest.snapshotProjection.projectionId,
-    corridorId,
-  );
+  return null;
 }
 
 export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
@@ -247,16 +246,17 @@ export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
   rootCheckpointId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyCheckpointLattice>>> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
-  const latest = projections.at(-1);
-  if (!latest) {
-    return null;
+  for (const projection of [...projections].reverse()) {
+    const lattice = await loadOperationalOntologyCheckpointLattice(
+      store,
+      projection.projectionId,
+      rootCheckpointId,
+    );
+    if (lattice) {
+      return lattice;
+    }
   }
-
-  return loadOperationalOntologyCheckpointLattice(
-    store,
-    latest.projectionId,
-    rootCheckpointId,
-  );
+  return null;
 }
 
 export async function loadLatestOperationalOntologyJunctionViewByScope(
@@ -267,19 +267,18 @@ export async function loadLatestOperationalOntologyJunctionViewByScope(
   targetScope: string,
   junctionId: string,
 ): Promise<OperationalOntologyJunctionView | null> {
-  const latest = await loadLatestOperationalOntologySnapshotViewByScope(
-    store,
-    targetScope,
-  );
-  if (!latest) {
-    return null;
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  for (const projection of [...projections].reverse()) {
+    const view = await loadOperationalOntologyJunctionView(
+      store,
+      projection.projectionId,
+      junctionId,
+    );
+    if (view) {
+      return view;
+    }
   }
-
-  return loadOperationalOntologyJunctionView(
-    store,
-    latest.snapshotProjection.projectionId,
-    junctionId,
-  );
+  return null;
 }
 
 export async function loadLatestOperationalOntologyRouteDecisionByScope(
@@ -290,16 +289,18 @@ export async function loadLatestOperationalOntologyRouteDecisionByScope(
   targetScope: string,
   branchNodeId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyRouteDecision>>> {
-  const latest = (await listOperationalOntologySnapshotProjections(store, targetScope)).at(-1);
-  if (!latest) {
-    return null;
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  for (const projection of [...projections].reverse()) {
+    const route = await loadOperationalOntologyRouteDecision(
+      store,
+      projection.projectionId,
+      branchNodeId,
+    );
+    if (route) {
+      return route;
+    }
   }
-
-  return loadOperationalOntologyRouteDecision(
-    store,
-    latest.projectionId,
-    branchNodeId,
-  );
+  return null;
 }
 
 export async function loadLatestOperationalOntologyTraversalBundleByScope(
@@ -310,17 +311,16 @@ export async function loadLatestOperationalOntologyTraversalBundleByScope(
   targetScope: string,
   traversalKey: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyTraversalBundle>>> {
-  const latest = await loadLatestOperationalOntologySnapshotViewByScope(
-    store,
-    targetScope,
-  );
-  if (!latest) {
-    return null;
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  for (const projection of [...projections].reverse()) {
+    const bundle = await loadOperationalOntologyTraversalBundle(
+      store,
+      projection.projectionId,
+      traversalKey,
+    );
+    if (bundle) {
+      return bundle;
+    }
   }
-
-  return loadOperationalOntologyTraversalBundle(
-    store,
-    latest.snapshotProjection.projectionId,
-    traversalKey,
-  );
+  return null;
 }

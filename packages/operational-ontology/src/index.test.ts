@@ -25,6 +25,8 @@ import { operationalOntologyCheckpointPlane } from "./checkpoint.js";
 import { operationalOntologyTopologyPlane } from "./topology.js";
 import { operationalOntologyProjectors } from "./projectors.js";
 import {
+  diffOperationalOntologyCorridor,
+  diffOperationalOntologySnapshots,
   ingestOperationalOntologyProjection,
   ingestEventRecordProjection,
   ingestPipeGraphProjection,
@@ -565,6 +567,97 @@ describe("in-memory adapters", () => {
       );
     expect(latestPipeCorridorView?.corridor.flowId).toBe("pipe-only");
     expect(latestPipeCorridorView?.controlFlow?.graphId).toBe("pipe-only");
+  });
+
+  it("diffs snapshots and corridors across persisted ontology snapshots", async () => {
+    const store = new InMemoryOperationalOntologyStore();
+
+    await ingestPipeGraphProjection(
+      store,
+      {
+        graph: {
+          graphId: "pipe-diff",
+          version: "v1",
+          entryPipeId: "collect-order",
+          pipes: [
+            {
+              pipeId: "collect-order",
+              version: "v1",
+              trigger: { eventKey: "order.submit" },
+              flow: { kind: "step", facet: "produced" },
+            },
+          ],
+          connections: [],
+        },
+      },
+      {
+        snapshotId: "snapshot:diff-a",
+        targetScope: "diff-scope",
+        builtAt: "2026-04-10T00:04:00.000Z",
+      },
+    );
+
+    await ingestPipeGraphProjection(
+      store,
+      {
+        graph: {
+          graphId: "pipe-diff",
+          version: "v2",
+          entryPipeId: "collect-order",
+          pipes: [
+            {
+              pipeId: "collect-order",
+              version: "v2",
+              trigger: { eventKey: "order.submit" },
+              flow: { kind: "step", facet: "produced" },
+              ports: [{ portId: "out", direction: "out", facetType: "produced" }],
+            },
+            {
+              pipeId: "persist-order",
+              version: "v2",
+              trigger: { eventKey: "order.created" },
+              flow: { kind: "step", facet: "consumed" },
+              ports: [{ portId: "in", direction: "in", facetType: "consumed" }],
+            },
+          ],
+          connections: [
+            {
+              from: { pipeId: "collect-order", portId: "out" },
+              to: { pipeId: "persist-order", portId: "in" },
+              kind: "next",
+            },
+          ],
+        },
+      },
+      {
+        snapshotId: "snapshot:diff-b",
+        targetScope: "diff-scope",
+        builtAt: "2026-04-10T00:04:10.000Z",
+      },
+    );
+
+    const corridorDiff = await diffOperationalOntologyCorridor(
+      store,
+      "pipe-diff",
+      "snapshot:diff-a",
+      "snapshot:diff-b",
+    );
+    expect(corridorDiff).toEqual(
+      expect.objectContaining({
+        corridorId: "pipe-diff",
+        status: "changed",
+      }),
+    );
+    expect(corridorDiff?.changedSections).toContain("corridor");
+    expect(corridorDiff?.endpointCountDelta).toBeGreaterThan(0);
+
+    const snapshotDiff = await diffOperationalOntologySnapshots(
+      store,
+      "snapshot:diff-a",
+      "snapshot:diff-b",
+    );
+    expect(snapshotDiff?.summary.changed).toBe(1);
+    expect(snapshotDiff?.corridorDiffs).toHaveLength(1);
   });
 });
 
