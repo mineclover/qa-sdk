@@ -13,8 +13,12 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology corridor list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint show");
+    expect(USAGE).toContain("qa-sdk ontology checkpoint diff");
+    expect(USAGE).toContain("qa-sdk ontology checkpoint diff-latest");
     expect(USAGE).toContain("qa-sdk ontology junction list");
     expect(USAGE).toContain("qa-sdk ontology junction show");
+    expect(USAGE).toContain("qa-sdk ontology junction diff");
+    expect(USAGE).toContain("qa-sdk ontology junction diff-latest");
     expect(USAGE).toContain("qa-sdk ontology route list");
     expect(USAGE).toContain("qa-sdk ontology route show");
     expect(USAGE).toContain("qa-sdk ontology traversal list");
@@ -132,6 +136,18 @@ describe("ontology CLI", () => {
     expect(checkpointShowOutput.stdout).toContain(
       "Checkpoint lattice: checkpoint:event-record:log-cli",
     );
+
+    const checkpointDiffOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "checkpoint.diff-latest",
+        "checkpoint:event-record:log-cli",
+        "--scope",
+        "event-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(checkpointDiffOutput.stderr).toContain("Checkpoint diff-latest 없음");
   });
 
   it("pipe ingest 후 corridor show를 수행한다", async () => {
@@ -530,6 +546,34 @@ describe("ontology CLI", () => {
     });
     expect(corridorDiffLatestOutput.stdout).toContain(
       "Corridor diff-latest: snapshot-cli",
+    );
+
+    const junctionDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "junction.diff-latest",
+        "collect-order",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(junctionDiffLatestOutput.stdout).toContain(
+      "Junction diff-latest: collect-order",
+    );
+
+    const checkpointDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "checkpoint.diff-latest",
+        "checkpoint:event-record:log-cli",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(checkpointDiffLatestOutput.stderr).toContain(
+      "Checkpoint diff-latest 없음: checkpoint:event-record:log-cli @ snapshot-scope",
     );
   });
 });
