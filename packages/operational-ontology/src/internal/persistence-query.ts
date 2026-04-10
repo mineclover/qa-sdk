@@ -43,6 +43,14 @@ export interface OperationalOntologyCorridorView {
   traversalBundles: OperationalOntologyObjectBundle[];
 }
 
+export interface OperationalOntologyJunctionView {
+  snapshotProjection: OperationalOntologyProjectionRecord;
+  junction: JunctionDefinition;
+  routeDecisions: RouteDecision[];
+  corridors: FlowCorridor[];
+  controlFlows: ControlFlowGraph[];
+}
+
 async function findProjectionById(
   store: Pick<OperationalOntologyStore, "listProjections">,
   projectionId: string,
@@ -119,6 +127,20 @@ export async function loadOperationalOntologyCheckpointLattices(
   );
 }
 
+export async function loadOperationalOntologyCheckpointLattice(
+  store: Pick<OperationalOntologyStore, "listProjections">,
+  snapshotProjectionId: string,
+  rootCheckpointId: string,
+): Promise<CheckpointLattice | null> {
+  const lattices = await loadOperationalOntologyCheckpointLattices(
+    store,
+    snapshotProjectionId,
+  );
+  return (
+    lattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ?? null
+  );
+}
+
 export async function loadOperationalOntologyJunctions(
   store: Pick<OperationalOntologyStore, "listProjections">,
   snapshotProjectionId: string,
@@ -134,6 +156,15 @@ export async function loadOperationalOntologyJunctions(
   );
 }
 
+export async function loadOperationalOntologyJunction(
+  store: Pick<OperationalOntologyStore, "listProjections">,
+  snapshotProjectionId: string,
+  junctionId: string,
+): Promise<JunctionDefinition | null> {
+  const junctions = await loadOperationalOntologyJunctions(store, snapshotProjectionId);
+  return junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
+}
+
 export async function loadOperationalOntologyRouteDecisions(
   store: Pick<OperationalOntologyStore, "listProjections">,
   snapshotProjectionId: string,
@@ -147,6 +178,18 @@ export async function loadOperationalOntologyRouteDecisions(
   return routeDecisionProjections.map(
     (projection) => structuredClone(projection.payloadJson) as RouteDecision,
   );
+}
+
+export async function loadOperationalOntologyRouteDecision(
+  store: Pick<OperationalOntologyStore, "listProjections">,
+  snapshotProjectionId: string,
+  branchNodeId: string,
+): Promise<RouteDecision | null> {
+  const routeDecisions = await loadOperationalOntologyRouteDecisions(
+    store,
+    snapshotProjectionId,
+  );
+  return routeDecisions.find((route) => route.branchNodeId === branchNodeId) ?? null;
 }
 
 export async function loadOperationalOntologyTraversalBundles(
@@ -170,6 +213,20 @@ export async function loadOperationalOntologyTraversalBundles(
   ).filter((bundle): bundle is OperationalOntologyObjectBundle => bundle !== null);
 
   return traversalBundles;
+}
+
+export async function loadOperationalOntologyTraversalBundle(
+  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  snapshotProjectionId: string,
+  traversalKey: string,
+): Promise<OperationalOntologyObjectBundle | null> {
+  const bundles = await loadOperationalOntologyTraversalBundles(
+    store,
+    snapshotProjectionId,
+  );
+  return (
+    bundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ?? null
+  );
 }
 
 export async function loadOperationalOntologySnapshotView(
@@ -275,5 +332,57 @@ export async function loadOperationalOntologyCorridorView(
     junctions,
     routeDecisions,
     traversalBundles,
+  };
+}
+
+export async function loadOperationalOntologyJunctionView(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections" | "getObjectBundle"
+  >,
+  snapshotProjectionId: string,
+  junctionId: string,
+): Promise<OperationalOntologyJunctionView | null> {
+  const view = await loadOperationalOntologySnapshotView(store, snapshotProjectionId);
+  if (!view) {
+    return null;
+  }
+
+  const junction =
+    view.junctions.find((candidate) => candidate.branchNodeId === junctionId) ?? null;
+  if (!junction) {
+    return null;
+  }
+
+  const routeDecisions = view.routeDecisions.filter(
+    (decision) =>
+      (decision.junctionId ?? decision.branchNodeId) === junctionId ||
+      decision.branchNodeId === junctionId,
+  );
+  const corridorIds =
+    routeDecisions.length > 0
+      ? new Set(
+          routeDecisions
+            .map((decision) => decision.corridorId)
+            .filter((id): id is string => Boolean(id)),
+        )
+      : new Set(
+          view.controlFlows
+            .filter((graph) => graph.nodes.some((node) => node.nodeId === junctionId))
+            .map((graph) => graph.graphId),
+        );
+  const corridors = view.corridors.filter((corridor) => corridorIds.has(corridor.flowId));
+  const controlFlows = view.controlFlows.filter(
+    (graph) =>
+      corridorIds.has(graph.graphId) ||
+      graph.nodes.some((node) => node.nodeId === junctionId),
+  );
+
+  return {
+    snapshotProjection: view.snapshotProjection,
+    junction,
+    routeDecisions,
+    corridors,
+    controlFlows,
   };
 }

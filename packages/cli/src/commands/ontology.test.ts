@@ -12,6 +12,13 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
     expect(USAGE).toContain("qa-sdk ontology corridor list");
     expect(USAGE).toContain("qa-sdk ontology checkpoint list");
+    expect(USAGE).toContain("qa-sdk ontology checkpoint show");
+    expect(USAGE).toContain("qa-sdk ontology junction list");
+    expect(USAGE).toContain("qa-sdk ontology junction show");
+    expect(USAGE).toContain("qa-sdk ontology route list");
+    expect(USAGE).toContain("qa-sdk ontology route show");
+    expect(USAGE).toContain("qa-sdk ontology traversal list");
+    expect(USAGE).toContain("qa-sdk ontology traversal show");
     expect(USAGE).toContain("qa-sdk ontology corridor show");
     expect(
       resolveSubcommand([
@@ -107,6 +114,20 @@ describe("ontology CLI", () => {
       ]);
     });
     expect(checkpointListOutput.stdout).toContain("checkpoint:event-record:log-cli");
+
+    const checkpointShowOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "checkpoint.show",
+        "checkpoint:event-record:log-cli",
+        "--scope",
+        "event-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(checkpointShowOutput.stdout).toContain(
+      "Checkpoint lattice: checkpoint:event-record:log-cli",
+    );
   });
 
   it("pipe ingest 후 corridor show를 수행한다", async () => {
@@ -129,8 +150,21 @@ describe("ontology CLI", () => {
                 trigger: { eventKey: "order.submit" },
                 flow: { kind: "step", facet: "produced" },
               },
+              {
+                pipeId: "persist-order",
+                version: "v1",
+                trigger: { eventKey: "order.created" },
+                flow: { kind: "step", facet: "consumed" },
+              },
             ],
-            connections: [],
+            connections: [
+              {
+                from: "collect-order",
+                to: "persist-order",
+                kind: "conditional",
+                condition: "order.valid == true",
+              },
+            ],
           },
         },
         null,
@@ -190,6 +224,202 @@ describe("ontology CLI", () => {
     });
     expect(corridorLatestOutput.stdout).toContain("Corridor: pipe-cli");
     expect(corridorLatestOutput.stdout).toContain("snapshot: snapshot:pipe-cli");
+
+    const junctionListOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "junction.list",
+        "--scope",
+        "pipe-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(junctionListOutput.stdout).toContain("collect-order");
+
+    const junctionShowOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "junction.show",
+        "collect-order",
+        "--scope",
+        "pipe-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(junctionShowOutput.stdout).toContain("Junction: collect-order");
+    expect(junctionShowOutput.stdout).toContain("mode: first_match");
+
+    const routeListOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "route.list",
+        "--scope",
+        "pipe-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(routeListOutput.stdout).toContain("Route decision 없음");
+  });
+
+  it("snapshot ingest 후 route/traversal/junction 조회를 수행한다", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-snapshot-"));
+    const storePath = join(dir, "store.json");
+    const inputPath = join(dir, "snapshot.json");
+
+    await writeFile(
+      inputPath,
+      JSON.stringify(
+        {
+          graph: {
+            graphId: "snapshot-cli",
+            version: "v1",
+            entryPipeId: "collect-order",
+            pipes: [
+              {
+                pipeId: "collect-order",
+                version: "v1",
+                trigger: { eventKey: "order.submit" },
+                flow: { kind: "step", facet: "produced" },
+              },
+              {
+                pipeId: "validate-order",
+                version: "v1",
+                trigger: { eventKey: "order.created" },
+                flow: { kind: "step", facet: "consumed" },
+              },
+            ],
+            connections: [
+              {
+                from: "collect-order",
+                to: "validate-order",
+                kind: "conditional",
+                condition: "order.valid == true",
+              },
+            ],
+          },
+          pathObservation: {
+            reached_nodes: [
+              {
+                spec_step_id: "collect-order",
+                runtime_node_id: "run-1",
+                event_key: "order.submit",
+                timestamp: "2026-04-10T00:03:00.000Z",
+              },
+              {
+                spec_step_id: "validate-order",
+                runtime_node_id: "run-2",
+                event_key: "order.created",
+                timestamp: "2026-04-10T00:03:01.000Z",
+              },
+            ],
+            traversed_edges: [
+              {
+                from_step_id: "collect-order",
+                to_step_id: "validate-order",
+                edge_type: "branch",
+              },
+            ],
+            reached_goals: ["validate-order"],
+            unreachable_goals: [],
+            loop_detected: false,
+            recovery_used: false,
+            terminal_node: "run-2",
+            terminal_reason: "goal_reached",
+            branchPoints: [
+              {
+                sourceStepId: "collect-order",
+                branches: [
+                  {
+                    targetStepId: "validate-order",
+                    edgeType: "branch",
+                    taken: true,
+                    reachedNodes: [],
+                  },
+                ],
+              },
+            ],
+            branchCoverage: { taken: 1, total: 1, rate: 1 },
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+
+    await captureConsoleAsync(async () => {
+      await cliOntology([
+        "snapshot.ingest",
+        "--input",
+        inputPath,
+        "--store",
+        storePath,
+        "--snapshot-id",
+        "snapshot:rich-cli",
+        "--scope",
+        "snapshot-scope",
+      ]);
+    });
+
+    const junctionListOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "junction.list",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(junctionListOutput.stdout).toContain("collect-order");
+
+    const junctionShowOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "junction.show",
+        "collect-order",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(junctionShowOutput.stdout).toContain("Junction: collect-order");
+
+    const routeShowOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "route.show",
+        "collect-order",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(routeShowOutput.stdout).toContain("Route decision: collect-order");
+
+    const traversalListOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "traversal.list",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(traversalListOutput.stdout).toContain("traversal:observe:collect-order");
+
+    const traversalKey =
+      "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order";
+    const traversalShowOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "traversal.show",
+        traversalKey,
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(traversalShowOutput.stdout).toContain(`Traversal: ${traversalKey}`);
   });
 });
 

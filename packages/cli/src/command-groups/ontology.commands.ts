@@ -17,6 +17,13 @@ export const ONTOLOGY_COMMAND_DESCRIPTORS = [
   { id: "ontology.corridor.show", path: ["corridor", "show"], usage: "qa-sdk ontology corridor show <corridor-id> --snapshot <snapshot-id> [--store <file>] [--json]", handlerKey: "ontology.corridor.show" },
   { id: "ontology.corridor.show-latest", path: ["corridor", "show-latest"], usage: "qa-sdk ontology corridor show-latest <corridor-id> --scope <scope> [--store <file>] [--json]", handlerKey: "ontology.corridor.show-latest" },
   { id: "ontology.checkpoint.list", path: ["checkpoint", "list"], usage: "qa-sdk ontology checkpoint list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.checkpoint.list" },
+  { id: "ontology.checkpoint.show", path: ["checkpoint", "show"], usage: "qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.checkpoint.show" },
+  { id: "ontology.junction.list", path: ["junction", "list"], usage: "qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.junction.list" },
+  { id: "ontology.junction.show", path: ["junction", "show"], usage: "qa-sdk ontology junction show <junction-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.junction.show" },
+  { id: "ontology.route.list", path: ["route", "list"], usage: "qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.route.list" },
+  { id: "ontology.route.show", path: ["route", "show"], usage: "qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.route.show" },
+  { id: "ontology.traversal.list", path: ["traversal", "list"], usage: "qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.traversal.list" },
+  { id: "ontology.traversal.show", path: ["traversal", "show"], usage: "qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]", handlerKey: "ontology.traversal.show" },
   { id: "ontology.event.ingest", path: ["event", "ingest"], usage: "qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]", handlerKey: "ontology.event.ingest" },
   { id: "ontology.pipe.ingest", path: ["pipe", "ingest"], usage: "qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]", handlerKey: "ontology.pipe.ingest" },
 ] as const satisfies readonly CommandDescriptor[];

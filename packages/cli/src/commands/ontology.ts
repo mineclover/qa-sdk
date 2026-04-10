@@ -9,10 +9,24 @@ import {
   InMemoryOperationalOntologyStore,
   listOperationalOntologyCheckpointLatticesByScope,
   listOperationalOntologyCorridorsByScope,
+  listOperationalOntologyJunctionsByScope,
+  listOperationalOntologyRouteDecisionsByScope,
+  listOperationalOntologyTraversalBundlesByScope,
   loadLatestOperationalOntologyCorridorViewByScope,
+  loadLatestOperationalOntologyCheckpointLatticeByScope,
+  loadLatestOperationalOntologyJunctionViewByScope,
+  loadLatestOperationalOntologyRouteDecisionByScope,
+  loadLatestOperationalOntologyTraversalBundleByScope,
+  loadOperationalOntologyCheckpointLattice,
   loadOperationalOntologyCheckpointLattices,
   loadOperationalOntologyCorridorView,
   loadOperationalOntologyCorridors,
+  loadOperationalOntologyJunctions,
+  loadOperationalOntologyJunctionView,
+  loadOperationalOntologyRouteDecision,
+  loadOperationalOntologyRouteDecisions,
+  loadOperationalOntologyTraversalBundle,
+  loadOperationalOntologyTraversalBundles,
   listOperationalOntologySnapshotProjections,
   loadOperationalOntologySnapshotView,
   type IngestOperationalOntologyProjectionOptions,
@@ -22,7 +36,7 @@ import {
   type OperationalOntologyProjectionRecord,
   type EventRecordObservationInput,
   type PipeGraphProjectionInput,
-} from "operational-ontology";
+} from "operational-ontology/persistence";
 import { getQaSdkDir } from "../lib/qa-dir.js";
 
 interface PersistedOntologyStoreFile {
@@ -398,6 +412,264 @@ async function cmdCheckpointList(rest: string[]): Promise<void> {
   }
 }
 
+async function cmdCheckpointShow(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const rootCheckpointId = positional[0];
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!rootCheckpointId || (!snapshotId && !scope)) {
+    console.error(
+      "Usage: qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const lattice = snapshotId
+    ? await loadOperationalOntologyCheckpointLattice(
+        store,
+        snapshotId,
+        rootCheckpointId,
+      )
+    : await loadLatestOperationalOntologyCheckpointLatticeByScope(
+        store,
+        scope!,
+        rootCheckpointId,
+      );
+
+  if (!lattice) {
+    console.error(`Checkpoint lattice 없음: ${rootCheckpointId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(lattice);
+    return;
+  }
+
+  console.log(`Checkpoint lattice: ${lattice.rootCheckpointId}`);
+  console.log(`  corridor: ${lattice.corridorId}`);
+  console.log(`  definitions: ${lattice.definitions.length}`);
+  console.log(`  observations: ${lattice.observations.length}`);
+  console.log(`  links: ${lattice.links.length}`);
+}
+
+async function cmdRouteList(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!snapshotId && !scope) {
+    console.error(
+      "Usage: qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const routes = snapshotId
+    ? await loadOperationalOntologyRouteDecisions(store, snapshotId)
+    : await listOperationalOntologyRouteDecisionsByScope(store, scope!);
+
+  if (flags["json"] === "true") {
+    printJson(routes);
+    return;
+  }
+
+  if (routes.length === 0) {
+    console.log("Route decision 없음");
+    return;
+  }
+
+  for (const route of routes) {
+    console.log(
+      `${route.branchNodeId}  mode=${route.mode}  selected=${route.selectedPathIds.join(",") || "-"}`,
+    );
+  }
+}
+
+async function cmdRouteShow(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const branchNodeId = positional[0];
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!branchNodeId || (!snapshotId && !scope)) {
+    console.error(
+      "Usage: qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const route = snapshotId
+    ? await loadOperationalOntologyRouteDecision(store, snapshotId, branchNodeId)
+    : await loadLatestOperationalOntologyRouteDecisionByScope(
+        store,
+        scope!,
+        branchNodeId,
+      );
+
+  if (!route) {
+    console.error(`Route decision 없음: ${branchNodeId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(route);
+    return;
+  }
+
+  console.log(`Route decision: ${route.branchNodeId}`);
+  console.log(`  mode: ${route.mode}`);
+  console.log(`  selected: ${route.selectedPathIds.join(",") || "-"}`);
+  console.log(`  skipped: ${route.skippedPathIds.join(",") || "-"}`);
+}
+
+async function cmdTraversalList(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!snapshotId && !scope) {
+    console.error(
+      "Usage: qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const bundles = snapshotId
+    ? await loadOperationalOntologyTraversalBundles(store, snapshotId)
+    : await listOperationalOntologyTraversalBundlesByScope(store, scope!);
+
+  if (flags["json"] === "true") {
+    printJson(bundles);
+    return;
+  }
+
+  if (bundles.length === 0) {
+    console.log("Traversal bundle 없음");
+    return;
+  }
+
+  for (const bundle of bundles) {
+    console.log(
+      `${bundle.object.canonicalKey}  lifecycle=${bundle.object.lifecycle}  observations=${bundle.observations.length}`,
+    );
+  }
+}
+
+async function cmdTraversalShow(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const traversalKey = positional[0];
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!traversalKey || (!snapshotId && !scope)) {
+    console.error(
+      "Usage: qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const bundle = snapshotId
+    ? await loadOperationalOntologyTraversalBundle(store, snapshotId, traversalKey)
+    : await loadLatestOperationalOntologyTraversalBundleByScope(
+        store,
+        scope!,
+        traversalKey,
+      );
+
+  if (!bundle) {
+    console.error(`Traversal bundle 없음: ${traversalKey}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(bundle);
+    return;
+  }
+
+  console.log(`Traversal: ${bundle.object.canonicalKey}`);
+  console.log(`  lifecycle: ${bundle.object.lifecycle}`);
+  console.log(`  facets: ${bundle.facets.length}`);
+  console.log(`  observations: ${bundle.observations.length}`);
+}
+
+async function cmdJunctionList(rest: string[]): Promise<void> {
+  const { flags } = parseFlags(rest);
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!snapshotId && !scope) {
+    console.error(
+      "Usage: qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const junctions = snapshotId
+    ? await loadOperationalOntologyJunctions(store, snapshotId)
+    : await listOperationalOntologyJunctionsByScope(store, scope!);
+
+  if (flags["json"] === "true") {
+    printJson(junctions);
+    return;
+  }
+
+  if (junctions.length === 0) {
+    console.log("Junction 없음");
+    return;
+  }
+
+  for (const junction of junctions) {
+    console.log(
+      `${junction.branchNodeId}  mode=${junction.mode}  paths=${junction.paths.length}`,
+    );
+  }
+}
+
+async function cmdJunctionShow(rest: string[]): Promise<void> {
+  const { positional, flags } = parseFlags(rest);
+  const junctionId = positional[0];
+  const snapshotId = flags["snapshot"];
+  const scope = flags["scope"];
+  if (!junctionId || (!snapshotId && !scope)) {
+    console.error(
+      "Usage: qa-sdk ontology junction show <junction-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+    );
+    return;
+  }
+
+  const store = await loadStore(getStorePath(flags));
+  const view = snapshotId
+    ? await loadOperationalOntologyJunctionView(store, snapshotId, junctionId)
+    : await loadLatestOperationalOntologyJunctionViewByScope(
+        store,
+        scope!,
+        junctionId,
+      );
+
+  if (!view) {
+    console.error(`Junction view 없음: ${junctionId}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags["json"] === "true") {
+    printJson(view);
+    return;
+  }
+
+  console.log(`Junction: ${view.junction.branchNodeId}`);
+  console.log(`  snapshot: ${view.snapshotProjection.projectionId}`);
+  console.log(`  mode: ${view.junction.mode}`);
+  console.log(`  paths: ${view.junction.paths.length}`);
+  console.log(`  route decisions: ${view.routeDecisions.length}`);
+  console.log(`  corridors: ${view.corridors.map((corridor) => corridor.flowId).join(",") || "-"}`);
+}
+
 export async function cliOntology(args: string[]): Promise<void> {
   const [cmd, ...rest] = args;
 
@@ -414,6 +686,13 @@ export async function cliOntology(args: string[]): Promise<void> {
           "  qa-sdk ontology corridor show <corridor-id> --snapshot <snapshot-id> [--store <file>] [--json]",
           "  qa-sdk ontology corridor show-latest <corridor-id> --scope <scope> [--store <file>] [--json]",
           "  qa-sdk ontology checkpoint list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology junction show <junction-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
+          "  qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
           "  qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
           "  qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
         ].join("\n"),
@@ -439,6 +718,27 @@ export async function cliOntology(args: string[]): Promise<void> {
       return;
     case "checkpoint.list":
       await cmdCheckpointList(rest);
+      return;
+    case "checkpoint.show":
+      await cmdCheckpointShow(rest);
+      return;
+    case "junction.list":
+      await cmdJunctionList(rest);
+      return;
+    case "junction.show":
+      await cmdJunctionShow(rest);
+      return;
+    case "route.list":
+      await cmdRouteList(rest);
+      return;
+    case "route.show":
+      await cmdRouteShow(rest);
+      return;
+    case "traversal.list":
+      await cmdTraversalList(rest);
+      return;
+    case "traversal.show":
+      await cmdTraversalShow(rest);
       return;
     case "event.ingest":
       await cmdEventIngest(rest);

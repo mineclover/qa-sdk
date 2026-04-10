@@ -9,13 +9,20 @@ import {
   type IngestOperationalOntologyProjectionResult,
 } from "./persistence-ingest.js";
 import {
+  loadOperationalOntologyCheckpointLattice,
   loadOperationalOntologyCheckpointLattices,
   loadOperationalOntologyCorridorView,
   loadOperationalOntologyCorridors,
+  loadOperationalOntologyRouteDecision,
+  loadOperationalOntologyJunctionView,
+  loadOperationalOntologyJunctions,
+  loadOperationalOntologyRouteDecisions,
   listOperationalOntologySnapshotProjections,
+  loadOperationalOntologyTraversalBundle,
   loadOperationalOntologyTraversalBundles,
   loadOperationalOntologySnapshotView,
   type OperationalOntologyCorridorView,
+  type OperationalOntologyJunctionView,
   type OperationalOntologySnapshotView,
 } from "./persistence-query.js";
 
@@ -123,6 +130,46 @@ export async function listOperationalOntologyCheckpointLatticesByScope(
   return lattices.flat();
 }
 
+export async function listOperationalOntologyRouteDecisionsByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections"
+  >,
+  targetScope: string,
+): Promise<
+  ReturnType<typeof loadOperationalOntologyRouteDecisions> extends Promise<infer T>
+    ? T
+    : never
+> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const routeDecisions = await Promise.all(
+    projections.map((projection) =>
+      loadOperationalOntologyRouteDecisions(store, projection.projectionId),
+    ),
+  );
+  return routeDecisions.flat();
+}
+
+export async function listOperationalOntologyJunctionsByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections"
+  >,
+  targetScope: string,
+): Promise<
+  ReturnType<typeof loadOperationalOntologyJunctions> extends Promise<infer T>
+    ? T
+    : never
+> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const junctions = await Promise.all(
+    projections.map((projection) =>
+      loadOperationalOntologyJunctions(store, projection.projectionId),
+    ),
+  );
+  return junctions.flat();
+}
+
 export async function listOperationalOntologyTraversalBundlesByScope(
   store: Pick<
     OperationalOntologyStore,
@@ -188,5 +235,92 @@ export async function loadLatestOperationalOntologyCorridorViewByScope(
     store,
     latest.snapshotProjection.projectionId,
     corridorId,
+  );
+}
+
+export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections"
+  >,
+  targetScope: string,
+  rootCheckpointId: string,
+): Promise<Awaited<ReturnType<typeof loadOperationalOntologyCheckpointLattice>>> {
+  const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
+  const latest = projections.at(-1);
+  if (!latest) {
+    return null;
+  }
+
+  return loadOperationalOntologyCheckpointLattice(
+    store,
+    latest.projectionId,
+    rootCheckpointId,
+  );
+}
+
+export async function loadLatestOperationalOntologyJunctionViewByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections" | "getObjectBundle"
+  >,
+  targetScope: string,
+  junctionId: string,
+): Promise<OperationalOntologyJunctionView | null> {
+  const latest = await loadLatestOperationalOntologySnapshotViewByScope(
+    store,
+    targetScope,
+  );
+  if (!latest) {
+    return null;
+  }
+
+  return loadOperationalOntologyJunctionView(
+    store,
+    latest.snapshotProjection.projectionId,
+    junctionId,
+  );
+}
+
+export async function loadLatestOperationalOntologyRouteDecisionByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections"
+  >,
+  targetScope: string,
+  branchNodeId: string,
+): Promise<Awaited<ReturnType<typeof loadOperationalOntologyRouteDecision>>> {
+  const latest = (await listOperationalOntologySnapshotProjections(store, targetScope)).at(-1);
+  if (!latest) {
+    return null;
+  }
+
+  return loadOperationalOntologyRouteDecision(
+    store,
+    latest.projectionId,
+    branchNodeId,
+  );
+}
+
+export async function loadLatestOperationalOntologyTraversalBundleByScope(
+  store: Pick<
+    OperationalOntologyStore,
+    "listProjections" | "getObjectBundle"
+  >,
+  targetScope: string,
+  traversalKey: string,
+): Promise<Awaited<ReturnType<typeof loadOperationalOntologyTraversalBundle>>> {
+  const latest = await loadLatestOperationalOntologySnapshotViewByScope(
+    store,
+    targetScope,
+  );
+  if (!latest) {
+    return null;
+  }
+
+  return loadOperationalOntologyTraversalBundle(
+    store,
+    latest.snapshotProjection.projectionId,
+    traversalKey,
   );
 }
