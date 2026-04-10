@@ -20,7 +20,9 @@ describe("ontology CLI", () => {
     expect(USAGE).toContain("qa-sdk ontology traversal list");
     expect(USAGE).toContain("qa-sdk ontology traversal show");
     expect(USAGE).toContain("qa-sdk ontology snapshot diff");
+    expect(USAGE).toContain("qa-sdk ontology snapshot diff-latest");
     expect(USAGE).toContain("qa-sdk ontology corridor diff");
+    expect(USAGE).toContain("qa-sdk ontology corridor diff-latest");
     expect(USAGE).toContain("qa-sdk ontology corridor show");
     expect(
       resolveSubcommand([
@@ -489,6 +491,19 @@ describe("ontology CLI", () => {
       "Snapshot diff: snapshot:rich-cli -> snapshot:rich-cli-2",
     );
 
+    const snapshotDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "snapshot.diff-latest",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(snapshotDiffLatestOutput.stdout).toContain(
+      "Snapshot diff-latest: snapshot-scope",
+    );
+
     const corridorDiffOutput = await captureConsoleAsync(async () => {
       await cliOntology([
         "corridor.diff",
@@ -502,6 +517,20 @@ describe("ontology CLI", () => {
       ]);
     });
     expect(corridorDiffOutput.stdout).toContain("Corridor diff: snapshot-cli");
+
+    const corridorDiffLatestOutput = await captureConsoleAsync(async () => {
+      await cliOntology([
+        "corridor.diff-latest",
+        "snapshot-cli",
+        "--scope",
+        "snapshot-scope",
+        "--store",
+        storePath,
+      ]);
+    });
+    expect(corridorDiffLatestOutput.stdout).toContain(
+      "Corridor diff-latest: snapshot-cli",
+    );
   });
 });
 
