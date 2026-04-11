@@ -68,7 +68,7 @@ def:
 - **schema plane**
   taxonomy/schema validation
 - **pack plane**
-  도메인 ontology pack의 schema/governance/blueprint 일괄 검증
+  도메인 ontology pack의 schema/governance/blueprint 일괄 검증과 pack registry 조회
 - **implementation governance plane**
   승인된 schema에서 구조 좌표와 구현/검증 binding, 제약 gate를 매칭하는 구현 거버넌스 계약
 - **corridor plane**

@@ -20,6 +20,7 @@ describe("submodule facades", () => {
   it("exposes plane-specific public surfaces", () => {
     expect(typeof operationalOntologySchemaPlane.validateOperationalOntologySchema).toBe("function");
     expect(typeof operationalOntologyPackPlane.validateOperationalOntologyPack).toBe("function");
+    expect(typeof operationalOntologyPackPlane.validateOperationalOntologyPacks).toBe("function");
     expect(typeof operationalOntologyLineagePlane.projectLineageToOperationalOntology).toBe("function");
     expect(typeof operationalOntologyCorridorPlane.validateCorridorAgainstTemplate).toBe("function");
     expect(typeof operationalOntologyJunctionPlane.defaultJunctionTemplateRegistry.get).toBe("function");

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { operationalOntologyPackPlane } from './pack.js';
+import { InMemoryOperationalOntologyPackRegistry } from './pack.js';
 
 const schema = {
   axes: [
@@ -110,6 +111,40 @@ describe('operational ontology pack validation', () => {
           blueprintId: 'missing-schema-blueprint',
         }),
       ]),
+    );
+  });
+
+  it('validates multiple packs and detects duplicate pack ids', () => {
+    const pack = {
+      packId: 'authorization-ontology',
+      schema,
+    };
+
+    const result = operationalOntologyPackPlane.validateOperationalOntologyPacks([pack, pack]);
+
+    expect(result.valid).toBe(false);
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'pack-id-duplicate', source: 'pack' }),
+      ]),
+    );
+    expect(result.packValidations).toHaveLength(2);
+  });
+
+  it('provides an in-memory pack registry facade', () => {
+    const registry = new InMemoryOperationalOntologyPackRegistry([
+      {
+        packId: 'authorization-ontology',
+        schema,
+      },
+    ]);
+
+    expect(registry.get('authorization-ontology')).toEqual(
+      expect.objectContaining({ packId: 'authorization-ontology' }),
+    );
+    expect(registry.list()).toHaveLength(1);
+    expect(registry.validateAll()).toEqual(
+      expect.objectContaining({ valid: true }),
     );
   });
 });

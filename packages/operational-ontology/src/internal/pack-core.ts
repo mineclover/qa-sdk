@@ -51,6 +51,18 @@ export interface OperationalOntologyPackValidationResult {
   blueprintValidations: readonly OperationalOntologyPackBlueprintValidation[];
 }
 
+export interface OperationalOntologyPacksValidationResult {
+  valid: boolean;
+  issues: readonly OperationalOntologyPackValidationIssue[];
+  packValidations: readonly OperationalOntologyPackValidationResult[];
+}
+
+export interface OperationalOntologyPackRegistry {
+  list(): readonly OperationalOntologyPack[];
+  get(packId: string): OperationalOntologyPack | undefined;
+  validateAll(): OperationalOntologyPacksValidationResult;
+}
+
 function createPackIssue(
   code: string,
   message: string,
@@ -144,4 +156,53 @@ export function validateOperationalOntologyPack(
     governanceTaxonomyValidation,
     blueprintValidations,
   };
+}
+
+export function validateOperationalOntologyPacks(
+  packs: readonly OperationalOntologyPack[],
+): OperationalOntologyPacksValidationResult {
+  const issues: OperationalOntologyPackValidationIssue[] = [];
+
+  for (const duplicate of duplicateValues(packs.map((pack) => pack.packId))) {
+    issues.push(
+      createPackIssue(
+        'pack-id-duplicate',
+        `Duplicate operational ontology pack id "${duplicate}"`,
+        `packs.${duplicate}`,
+        'pack',
+      ),
+    );
+  }
+
+  const packValidations = packs.map(validateOperationalOntologyPack);
+  for (const validation of packValidations) {
+    issues.push(...validation.issues);
+  }
+
+  return {
+    valid: issues.every((issue) => issue.level !== 'error'),
+    issues,
+    packValidations,
+  };
+}
+
+export class InMemoryOperationalOntologyPackRegistry implements OperationalOntologyPackRegistry {
+  private readonly packs: readonly OperationalOntologyPack[];
+
+  constructor(packs: readonly OperationalOntologyPack[] = []) {
+    this.packs = packs.map((pack) => structuredClone(pack));
+  }
+
+  list(): readonly OperationalOntologyPack[] {
+    return this.packs.map((pack) => structuredClone(pack));
+  }
+
+  get(packId: string): OperationalOntologyPack | undefined {
+    const pack = this.packs.find((candidate) => candidate.packId === packId);
+    return pack ? structuredClone(pack) : undefined;
+  }
+
+  validateAll(): OperationalOntologyPacksValidationResult {
+    return validateOperationalOntologyPacks(this.packs);
+  }
 }

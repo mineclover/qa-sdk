@@ -56,3 +56,11 @@ public surface:
 
 - `operational-ontology/pack`
 - `operationalOntologyPackPlane.validateOperationalOntologyPack()`
+- `operationalOntologyPackPlane.validateOperationalOntologyPacks()`
+- `InMemoryOperationalOntologyPackRegistry`
+
+registry 규칙:
+
+1. pack registry는 pack 목록 조회와 id 기반 조회를 제공한다.
+2. `validateAll()`은 pack id 중복과 각 pack 내부 검증 결과를 함께 반환한다.
+3. registry는 pack 내용을 직접 수정하지 않고, pack validation 결과만 제공한다.
