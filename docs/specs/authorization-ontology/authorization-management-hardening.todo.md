@@ -27,10 +27,10 @@ def:
 
 ### Graph Store / API
 
-- [ ] `AuthorizationOntologyGraph` 저장용 store adapter 정의
-- [ ] graph snapshot 저장/조회 API 추가
+- [x] `AuthorizationOntologyGraph` 저장용 store adapter 정의
+- [x] graph snapshot 저장/조회 API 추가
 - [ ] decision observation ingest API 연결
-- [ ] graph diff API 추가
+- [x] graph diff API 추가
 
 ### Policy Source Adapter
 

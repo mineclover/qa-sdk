@@ -4,6 +4,9 @@ import {
   auditAuthorizationGraph,
   createAuthorizationRealm,
   createAuthorizationRelation,
+  diffAuthorizationGraphSnapshots,
+  diffAuthorizationGraphs,
+  InMemoryAuthorizationGraphStore,
   createResourceNode,
   evaluateColumnPolicyPropagation,
   mergeAuthorizationGraphs,
@@ -1348,5 +1351,101 @@ server {
         errorKind: "PERMISSION_DENIED",
       }),
     );
+  });
+
+  it("stores, lists, audits, and diffs authorization graph snapshots", async () => {
+    const store = new InMemoryAuthorizationGraphStore();
+    const policyRealm = createAuthorizationRealm({
+      kind: "policy",
+      authority: "cerbos:prod",
+      environment: "prod",
+    });
+    const appRealm = createAuthorizationRealm({
+      kind: "application",
+      authority: "service:crm",
+      environment: "prod",
+    });
+    const baseGraph = projectCerbosResourcePolicy({
+      policyRealm,
+      resourceRealm: appRealm,
+      policy: {
+        resourcePolicy: {
+          resource: "crm.customer_profile",
+          rules: [
+            {
+              actions: ["read"],
+              effect: "EFFECT_ALLOW",
+              roles: ["analyst"],
+            },
+          ],
+        },
+      },
+    });
+    const expandedGraph = mergeAuthorizationGraphs(
+      baseGraph,
+      projectStructuredApplicationAuthorization({
+        environment: "prod",
+        service: {
+          authority: "service:crm",
+          id: "crm-api",
+        },
+        middleware: {
+          authority: "service:crm",
+          id: "crm-api:cerbos-middleware",
+        },
+        resource: {
+          id: "crm.customer_profile:customer-123",
+          kind: "domain_resource",
+        },
+        policy: {
+          authority: "cerbos:prod",
+          id: "cerbos:resource:crm.customer_profile",
+        },
+        actions: ["read"],
+      }),
+    );
+
+    const first = await store.saveSnapshot({
+      graphId: "crm-authz",
+      snapshotId: "crm-authz:001",
+      graph: baseGraph,
+      createdAt: "2026-04-11T00:00:00.000Z",
+      tags: ["crm", "policy"],
+      labels: { env: "prod" },
+      audit: true,
+      auditOptions: {
+        requireRoutePolicy: false,
+        requireRouteEnforcement: false,
+        requireRouteUpstream: false,
+        requireApplicationResourcePolicy: false,
+        requireApplicationResourceEnforcement: false,
+      },
+    });
+    const second = await store.saveSnapshot({
+      graphId: "crm-authz",
+      snapshotId: "crm-authz:002",
+      graph: expandedGraph,
+      createdAt: "2026-04-11T00:01:00.000Z",
+      tags: ["crm", "application"],
+      labels: { env: "prod" },
+    });
+
+    expect(first.auditReport?.ok).toBe(true);
+    expect(await store.getSnapshot(first.snapshotId)).toEqual(first);
+    expect(await store.listSnapshots({ graphId: "crm-authz" })).toHaveLength(2);
+    expect(await store.listSnapshots({ tag: "application" })).toEqual([second]);
+
+    const directDiff = diffAuthorizationGraphs(first.graph, second.graph);
+    expect(directDiff.summary.addedNodeCount).toBeGreaterThan(0);
+    expect(directDiff.summary.addedRelationCount).toBeGreaterThan(0);
+
+    const storedDiff = await diffAuthorizationGraphSnapshots(
+      store,
+      first.snapshotId,
+      second.snapshotId,
+    );
+    expect(storedDiff?.toSnapshotId).toBe(second.snapshotId);
+    expect(await store.deleteSnapshot(first.snapshotId)).toBe(true);
+    expect(await store.getSnapshot(first.snapshotId)).toBeNull();
   });
 });

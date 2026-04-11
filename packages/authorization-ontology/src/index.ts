@@ -2955,6 +2955,209 @@ export function auditAuthorizationGraph(
   };
 }
 
+export interface AuthorizationGraphSnapshotRecord {
+  snapshotId: string;
+  graphId: string;
+  graph: AuthorizationOntologyGraph;
+  createdAt: string;
+  sourceRef?: string;
+  tags?: string[];
+  labels?: Record<string, string>;
+  metadata?: Record<string, unknown>;
+  auditReport?: AuthorizationGraphAuditReport;
+}
+
+export interface SaveAuthorizationGraphSnapshotInput {
+  graph: AuthorizationOntologyGraph;
+  graphId?: string;
+  snapshotId?: string;
+  createdAt?: string;
+  sourceRef?: string;
+  tags?: string[];
+  labels?: Record<string, string>;
+  metadata?: Record<string, unknown>;
+  audit?: boolean;
+  auditOptions?: AuthorizationGraphAuditOptions;
+}
+
+export interface AuthorizationGraphSnapshotListFilter {
+  graphId?: string;
+  sourceRef?: string;
+  tag?: string;
+  labels?: Record<string, string>;
+  createdAfter?: string;
+  createdBefore?: string;
+  limit?: number;
+}
+
+export interface AuthorizationGraphStore {
+  saveSnapshot(input: SaveAuthorizationGraphSnapshotInput): Promise<AuthorizationGraphSnapshotRecord>;
+  getSnapshot(snapshotId: string): Promise<AuthorizationGraphSnapshotRecord | null>;
+  listSnapshots(
+    filter?: AuthorizationGraphSnapshotListFilter,
+  ): Promise<AuthorizationGraphSnapshotRecord[]>;
+  deleteSnapshot(snapshotId: string): Promise<boolean>;
+}
+
+export interface AuthorizationGraphDiffSummary {
+  nodeCountDelta: number;
+  relationCountDelta: number;
+  realmCountDelta: number;
+  addedNodeCount: number;
+  removedNodeCount: number;
+  addedRelationCount: number;
+  removedRelationCount: number;
+  addedRealmCount: number;
+  removedRealmCount: number;
+}
+
+export interface AuthorizationGraphDiff {
+  fromSnapshotId?: string;
+  toSnapshotId?: string;
+  summary: AuthorizationGraphDiffSummary;
+  addedNodeIds: string[];
+  removedNodeIds: string[];
+  addedRelationIds: string[];
+  removedRelationIds: string[];
+  addedRealmIds: string[];
+  removedRealmIds: string[];
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function createSnapshotId(graphId: string, createdAt: string, sequence: number): string {
+  const safeGraphId = graphId.replace(/[^a-zA-Z0-9_.:-]/g, "_");
+  return `${safeGraphId}:${createdAt}:${sequence}`;
+}
+
+function matchesSnapshotFilter(
+  record: AuthorizationGraphSnapshotRecord,
+  filter: AuthorizationGraphSnapshotListFilter,
+): boolean {
+  if (filter.graphId && record.graphId !== filter.graphId) return false;
+  if (filter.sourceRef && record.sourceRef !== filter.sourceRef) return false;
+  if (filter.tag && !(record.tags ?? []).includes(filter.tag)) return false;
+  if (filter.createdAfter && record.createdAt <= filter.createdAfter) return false;
+  if (filter.createdBefore && record.createdAt >= filter.createdBefore) return false;
+  for (const [key, value] of Object.entries(filter.labels ?? {})) {
+    if (record.labels?.[key] !== value) return false;
+  }
+  return true;
+}
+
+export class InMemoryAuthorizationGraphStore implements AuthorizationGraphStore {
+  private readonly snapshots = new Map<string, AuthorizationGraphSnapshotRecord>();
+  private sequence = 0;
+
+  async saveSnapshot(
+    input: SaveAuthorizationGraphSnapshotInput,
+  ): Promise<AuthorizationGraphSnapshotRecord> {
+    const createdAt = input.createdAt ?? new Date().toISOString();
+    const graphId = input.graphId ?? "authorization-graph";
+    const snapshotId = input.snapshotId ?? createSnapshotId(graphId, createdAt, this.sequence++);
+    const record: AuthorizationGraphSnapshotRecord = {
+      snapshotId,
+      graphId,
+      graph: cloneJson(input.graph),
+      createdAt,
+      sourceRef: input.sourceRef,
+      tags: input.tags ? [...input.tags] : undefined,
+      labels: input.labels ? { ...input.labels } : undefined,
+      metadata: input.metadata ? cloneJson(input.metadata) : undefined,
+      auditReport: input.audit ? auditAuthorizationGraph(input.graph, input.auditOptions) : undefined,
+    };
+
+    this.snapshots.set(snapshotId, record);
+    return cloneJson(record);
+  }
+
+  async getSnapshot(snapshotId: string): Promise<AuthorizationGraphSnapshotRecord | null> {
+    const record = this.snapshots.get(snapshotId);
+    return record ? cloneJson(record) : null;
+  }
+
+  async listSnapshots(
+    filter: AuthorizationGraphSnapshotListFilter = {},
+  ): Promise<AuthorizationGraphSnapshotRecord[]> {
+    const records = [...this.snapshots.values()]
+      .filter((record) => matchesSnapshotFilter(record, filter))
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    return cloneJson(filter.limit ? records.slice(0, filter.limit) : records);
+  }
+
+  async deleteSnapshot(snapshotId: string): Promise<boolean> {
+    return this.snapshots.delete(snapshotId);
+  }
+}
+
+function diffIds(fromIds: string[], toIds: string[]): { added: string[]; removed: string[] } {
+  const from = new Set(fromIds);
+  const to = new Set(toIds);
+  return {
+    added: toIds.filter((id) => !from.has(id)),
+    removed: fromIds.filter((id) => !to.has(id)),
+  };
+}
+
+export function diffAuthorizationGraphs(
+  fromGraph: AuthorizationOntologyGraph,
+  toGraph: AuthorizationOntologyGraph,
+  options: { fromSnapshotId?: string; toSnapshotId?: string } = {},
+): AuthorizationGraphDiff {
+  const nodeDiff = diffIds(
+    fromGraph.nodes.map((node) => node.nodeId),
+    toGraph.nodes.map((node) => node.nodeId),
+  );
+  const relationDiff = diffIds(
+    fromGraph.relations.map((relation) => relation.relationId),
+    toGraph.relations.map((relation) => relation.relationId),
+  );
+  const realmDiff = diffIds(
+    fromGraph.realms.map((realm) => realm.realmId),
+    toGraph.realms.map((realm) => realm.realmId),
+  );
+
+  return {
+    fromSnapshotId: options.fromSnapshotId,
+    toSnapshotId: options.toSnapshotId,
+    summary: {
+      nodeCountDelta: toGraph.nodes.length - fromGraph.nodes.length,
+      relationCountDelta: toGraph.relations.length - fromGraph.relations.length,
+      realmCountDelta: toGraph.realms.length - fromGraph.realms.length,
+      addedNodeCount: nodeDiff.added.length,
+      removedNodeCount: nodeDiff.removed.length,
+      addedRelationCount: relationDiff.added.length,
+      removedRelationCount: relationDiff.removed.length,
+      addedRealmCount: realmDiff.added.length,
+      removedRealmCount: realmDiff.removed.length,
+    },
+    addedNodeIds: nodeDiff.added,
+    removedNodeIds: nodeDiff.removed,
+    addedRelationIds: relationDiff.added,
+    removedRelationIds: relationDiff.removed,
+    addedRealmIds: realmDiff.added,
+    removedRealmIds: realmDiff.removed,
+  };
+}
+
+export async function diffAuthorizationGraphSnapshots(
+  store: Pick<AuthorizationGraphStore, "getSnapshot">,
+  fromSnapshotId: string,
+  toSnapshotId: string,
+): Promise<AuthorizationGraphDiff | null> {
+  const [from, to] = await Promise.all([
+    store.getSnapshot(fromSnapshotId),
+    store.getSnapshot(toSnapshotId),
+  ]);
+  if (!from || !to) return null;
+  return diffAuthorizationGraphs(from.graph, to.graph, {
+    fromSnapshotId,
+    toSnapshotId,
+  });
+}
+
 export function createAuthorizationFacetRef(
   node: AuthorizationNode,
   facetKind: InformationFacetKind,

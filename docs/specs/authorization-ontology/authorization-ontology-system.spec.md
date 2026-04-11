@@ -31,6 +31,8 @@ def:
       type: contains
     - target: authorization-ontology-audit-layer
       type: contains
+    - target: authorization-graph-store
+      type: contains
     - target: authorization-ontology-monitor-web
       type: contains
     - target: authorization-ontology-package-architecture
