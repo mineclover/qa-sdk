@@ -255,6 +255,19 @@ taxonomy를 schema로 선언/검증한 뒤 node, relation type, edge, traversal�
 | [operational-ontology-traversal-coordinate.spec.md](operational-ontology/operational-ontology-traversal-coordinate.spec.md) | start/end/edge chain과 purpose를 route identity로 다루는 방식 | draft |
 | [operational-ontology-rdf-bridge.spec.md](operational-ontology/operational-ontology-rdf-bridge.spec.md) | RDF URI/triple/path를 operational coordinate와 연결하는 대응 규칙 | draft |
 
+### authorization-ontology/ — Cerbos 중심 권한 온톨로지 초안
+
+Cerbos를 단일 권한 선언/판정 중심으로 두고 identity/enforcement/deployment/data lineage를 operational ontology 좌표로 연결한다.
+
+| 스펙 | 설명 | 상태 |
+|---|---|---|
+| [authorization-ontology-system.spec.md](authorization-ontology/authorization-ontology-system.spec.md) | Cerbos 중심 authorization ontology 전체 구조 | draft |
+| [authorization-ontology-realm-model.spec.md](authorization-ontology/authorization-ontology-realm-model.spec.md) | identity/policy/enforcement/infra/data realm 구분 규칙 | draft |
+| [authorization-ontology-cerbos-mapping.spec.md](authorization-ontology/authorization-ontology-cerbos-mapping.spec.md) | Cerbos resource policy를 policy/resource/action graph로 투영하는 규칙 | draft |
+| [authorization-ontology-auth-chain.spec.md](authorization-ontology/authorization-ontology-auth-chain.spec.md) | Pulumi/ArgoCD/LB/Caddy/Authentik/ZITADEL/Cerbos 역할 체인 | draft |
+| [authorization-ontology-column-lineage-policy.spec.md](authorization-ontology/authorization-ontology-column-lineage-policy.spec.md) | 컬럼 리니지 transform 기반 권한 정책 전파 규칙 | draft |
+| [authorization-ontology-package-architecture.spec.md](authorization-ontology/authorization-ontology-package-architecture.spec.md) | authorization-ontology 패키지 공개 표면 | draft |
+
 ### skill-catalog/ — 스킬 카탈로그
 
 Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에서 관리.
