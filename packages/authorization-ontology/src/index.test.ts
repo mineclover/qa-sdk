@@ -3,6 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   auditAuthorizationGraph,
   AuthorizationGraphIngestService,
+  AUTHORIZATION_ACTION_KINDS,
+  AUTHORIZATION_NODE_KINDS,
+  AUTHORIZATION_POLICY_KINDS,
+  AUTHORIZATION_PRINCIPAL_KINDS,
+  AUTHORIZATION_REALM_KINDS,
+  AUTHORIZATION_RELATION_KINDS,
+  AUTHORIZATION_RESOURCE_KINDS,
   computeAuthorizationCoverage,
   createAuthorizationRealm,
   createAuthorizationRelation,
@@ -31,6 +38,7 @@ import {
   projectStructuredEnforcementRoute,
   parseNginxProxyLocations,
   authorizationOntologyPack,
+  LINEAGE_AUTHORIZATION_TRANSFORMS,
   validateCerbosDerivedRolesLike,
   validateAuthorizationOntologyPack,
   validateCerbosResourcePolicyLike,
@@ -44,9 +52,28 @@ describe("authorization-ontology", () => {
     expect(validation.valid).toBe(true);
     expect(validation.issues).toEqual([]);
     expect(validation.blueprintValidations.map((item) => item.blueprintId)).toEqual([
+      "authorization-proxy-enforcement",
+      "authorization-application-enforcement",
+      "authorization-column-lineage-policy",
+      "authorization-permission-engine-bridge",
       "authorization-decision-observation",
       "authorization-graph-audit",
     ]);
+  });
+
+  it("keeps authorization pack axes aligned with runtime constants", () => {
+    const axes = new Map(
+      authorizationOntologyPack.schema.axes.map((axis) => [axis.id, axis.values]),
+    );
+
+    expect(axes.get("authorization_node_kind")).toEqual([...AUTHORIZATION_NODE_KINDS]);
+    expect(axes.get("authorization_realm_kind")).toEqual([...AUTHORIZATION_REALM_KINDS]);
+    expect(axes.get("authorization_principal_kind")).toEqual([...AUTHORIZATION_PRINCIPAL_KINDS]);
+    expect(axes.get("authorization_resource_kind")).toEqual([...AUTHORIZATION_RESOURCE_KINDS]);
+    expect(axes.get("authorization_action_kind")).toEqual([...AUTHORIZATION_ACTION_KINDS]);
+    expect(axes.get("authorization_policy_kind")).toEqual([...AUTHORIZATION_POLICY_KINDS]);
+    expect(axes.get("authorization_relation_kind")).toEqual([...AUTHORIZATION_RELATION_KINDS]);
+    expect(axes.get("authorization_lineage_transform")).toEqual([...LINEAGE_AUTHORIZATION_TRANSFORMS]);
   });
 
   it("projects Cerbos resource policies into policy/resource/action graph", () => {

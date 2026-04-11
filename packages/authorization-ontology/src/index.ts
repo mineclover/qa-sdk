@@ -66,6 +66,36 @@ export const AUTHORIZATION_RESOURCE_KINDS = [
 
 export type AuthorizationResourceKind = (typeof AUTHORIZATION_RESOURCE_KINDS)[number];
 
+export const AUTHORIZATION_PRINCIPAL_KINDS = [
+  "human_user",
+  "service_account",
+  "machine",
+  "group",
+  "role",
+] as const;
+
+export type AuthorizationPrincipalKind = (typeof AUTHORIZATION_PRINCIPAL_KINDS)[number];
+
+export const AUTHORIZATION_ACTION_KINDS = [
+  "read",
+  "write",
+  "delete",
+  "execute",
+  "export",
+  "traverse",
+] as const;
+
+export type AuthorizationActionKind = (typeof AUTHORIZATION_ACTION_KINDS)[number];
+
+export const AUTHORIZATION_POLICY_KINDS = [
+  "cerbos_resource_policy",
+  "cerbos_derived_roles",
+  "lineage_policy",
+  "gateway_policy",
+] as const;
+
+export type AuthorizationPolicyKind = (typeof AUTHORIZATION_POLICY_KINDS)[number];
+
 export const AUTHORIZATION_RELATION_KINDS = [
   "issued_by",
   "authenticated_by",
@@ -124,7 +154,7 @@ export interface AuthorizationOntologyGraph {
 export interface PrincipalRef {
   realm: AuthorizationRealm;
   principalId: string;
-  principalKind: "human_user" | "service_account" | "machine" | "group" | "role";
+  principalKind: AuthorizationPrincipalKind;
   issuer?: string;
   roles?: string[];
   attributes?: Record<string, unknown>;
@@ -143,13 +173,13 @@ export interface ResourceRef {
 export interface ActionRef {
   realm: AuthorizationRealm;
   actionId: string;
-  actionKind?: "read" | "write" | "delete" | "execute" | "export" | "traverse" | string;
+  actionKind?: AuthorizationActionKind | string;
 }
 
 export interface PolicyRef {
   realm: AuthorizationRealm;
   policyId: string;
-  policyKind: "cerbos_resource_policy" | "cerbos_derived_roles" | "lineage_policy" | "gateway_policy" | string;
+  policyKind: AuthorizationPolicyKind | string;
   version?: string;
   sourceRef?: string;
 }
@@ -3585,8 +3615,24 @@ export const authorizationOntologyPack = {
         values: [...AUTHORIZATION_NODE_KINDS],
       },
       {
+        id: "authorization_realm_kind",
+        values: [...AUTHORIZATION_REALM_KINDS],
+      },
+      {
+        id: "authorization_principal_kind",
+        values: [...AUTHORIZATION_PRINCIPAL_KINDS],
+      },
+      {
         id: "authorization_resource_kind",
         values: [...AUTHORIZATION_RESOURCE_KINDS],
+      },
+      {
+        id: "authorization_action_kind",
+        values: [...AUTHORIZATION_ACTION_KINDS],
+      },
+      {
+        id: "authorization_policy_kind",
+        values: [...AUTHORIZATION_POLICY_KINDS],
       },
       {
         id: "authorization_relation_kind",
@@ -3611,13 +3657,24 @@ export const authorizationOntologyPack = {
         id: "authorization_lineage_transform",
         values: [...LINEAGE_AUTHORIZATION_TRANSFORMS],
       },
+      {
+        id: "authorization_policy_propagation_mode",
+        values: ["inherit", "downgrade", "block", "manual_review"],
+      },
     ],
     taxonomies: [
       {
         id: "authorization-node",
         appliesTo: ["node"],
-        axisIds: ["authorization_node_kind"],
+        axisIds: ["authorization_node_kind", "authorization_realm_kind"],
         identityAxisIds: ["authorization_node_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-principal",
+        appliesTo: ["node"],
+        axisIds: ["authorization_principal_kind"],
+        identityAxisIds: ["authorization_principal_kind"],
         space: "authorization",
       },
       {
@@ -3625,6 +3682,20 @@ export const authorizationOntologyPack = {
         appliesTo: ["node"],
         axisIds: ["authorization_resource_kind"],
         identityAxisIds: ["authorization_resource_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-action",
+        appliesTo: ["node"],
+        axisIds: ["authorization_action_kind"],
+        identityAxisIds: ["authorization_action_kind"],
+        space: "authorization",
+      },
+      {
+        id: "authorization-policy",
+        appliesTo: ["node"],
+        axisIds: ["authorization_policy_kind"],
+        identityAxisIds: ["authorization_policy_kind"],
         space: "authorization",
       },
       {
@@ -3644,7 +3715,7 @@ export const authorizationOntologyPack = {
       {
         id: "authorization-lineage",
         appliesTo: ["edge"],
-        axisIds: ["authorization_lineage_transform"],
+        axisIds: ["authorization_lineage_transform", "authorization_policy_propagation_mode"],
         identityAxisIds: ["authorization_lineage_transform"],
         space: "authorization",
       },
@@ -3656,7 +3727,7 @@ export const authorizationOntologyPack = {
       },
       {
         category: "authorization_lineage",
-        requiredAxes: ["authorization_lineage_transform"],
+        requiredAxes: ["authorization_lineage_transform", "authorization_policy_propagation_mode"],
       },
       {
         category: "authorization_decision_effect",
@@ -3676,6 +3747,95 @@ export const authorizationOntologyPack = {
     ],
   },
   blueprints: [
+    {
+      blueprintId: "authorization-proxy-enforcement",
+      coordinateRef: "corridor:authorization-proxy-enforcement",
+      unitKind: "corridor_bundle",
+      requiredSchemas: ["authorization-enforcement", "authorization_relation"],
+      implementationBinding: {
+        coordinateRef: "corridor:authorization-proxy-enforcement",
+        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
+        relationCategories: ["authorization_relation"],
+      },
+      verificationBinding: {
+        coordinateRef: "corridor:authorization-proxy-enforcement",
+        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
+    {
+      blueprintId: "authorization-application-enforcement",
+      coordinateRef: "corridor:authorization-application-enforcement",
+      unitKind: "corridor_bundle",
+      requiredSchemas: ["authorization-resource", "authorization_relation"],
+      implementationBinding: {
+        coordinateRef: "corridor:authorization-application-enforcement",
+        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
+        relationCategories: ["authorization_relation"],
+      },
+      verificationBinding: {
+        coordinateRef: "corridor:authorization-application-enforcement",
+        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
+    {
+      blueprintId: "authorization-column-lineage-policy",
+      coordinateRef: "traversal:authorization-column-lineage-policy",
+      unitKind: "traversal_bundle",
+      requiredSchemas: ["authorization-lineage", "authorization_lineage"],
+      implementationBinding: {
+        coordinateRef: "traversal:authorization-column-lineage-policy",
+        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
+        relationCategories: ["authorization_lineage"],
+      },
+      verificationBinding: {
+        coordinateRef: "traversal:authorization-column-lineage-policy",
+        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        { kind: "allowed_relations", allowedRefs: ["authorization_lineage"] },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
+    {
+      blueprintId: "authorization-permission-engine-bridge",
+      coordinateRef: "corridor:authorization-permission-engine-bridge",
+      unitKind: "corridor_bundle",
+      requiredSchemas: ["authorization-policy", "authorization_relation"],
+      implementationBinding: {
+        coordinateRef: "corridor:authorization-permission-engine-bridge",
+        implementationRefs: [
+          { kind: "code", ref: "packages/authorization-ontology/src/index.ts" },
+          { kind: "code", ref: "packages/authorization-ontology/src/permission-engine-bridge.test.ts" },
+        ],
+        relationCategories: ["authorization_relation"],
+      },
+      verificationBinding: {
+        coordinateRef: "corridor:authorization-permission-engine-bridge",
+        verificationRefs: [
+          { kind: "test", ref: "packages/authorization-ontology/src/permission-engine-bridge.test.ts" },
+        ],
+      },
+      constraints: [
+        { kind: "unit_boundary", severity: "core" },
+        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
+        { kind: "validation_surface", requiredRefs: ["test"] },
+      ],
+      evolutionPolicy: { kind: "append_only" },
+    },
     {
       blueprintId: "authorization-decision-observation",
       coordinateRef: "checkpoint:authorization-decision",
