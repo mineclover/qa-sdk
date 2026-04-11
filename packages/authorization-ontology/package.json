@@ -23,7 +23,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "operational-ontology": "workspace:*"
+    "operational-ontology": "workspace:*",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

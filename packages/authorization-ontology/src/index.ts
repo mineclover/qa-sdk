@@ -10,6 +10,7 @@ import {
   type OperationalOntologyPack,
   type OperationalOntologyPackValidationResult,
 } from "operational-ontology";
+import { parse as parseYaml } from "yaml";
 
 export const AUTHORIZATION_REALM_KINDS = [
   "identity",
@@ -546,7 +547,7 @@ export interface CerbosPolicySourceProjectionInput {
   actionRealm?: AuthorizationRealm;
   roleRealm?: AuthorizationRealm;
   source: string | CerbosResourcePolicyLike | CerbosDerivedRolesLike;
-  sourceType?: "json" | "object";
+  sourceType?: "json" | "yaml" | "object";
   metadata?: CerbosPolicySourceMetadata;
 }
 
@@ -2003,9 +2004,18 @@ export function projectCerbosDerivedRoles(
 
 function parseCerbosPolicySource(
   source: CerbosPolicySourceProjectionInput["source"],
+  sourceType: CerbosPolicySourceProjectionInput["sourceType"] = "json",
 ): CerbosResourcePolicyLike | CerbosDerivedRolesLike {
   if (typeof source !== "string") {
     return source;
+  }
+  if (sourceType === "yaml") {
+    try {
+      return parseYaml(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown parse error";
+      throw new Error(`Invalid Cerbos policy YAML source: ${message}`);
+    }
   }
   try {
     return JSON.parse(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
@@ -2059,7 +2069,7 @@ function annotateGraphSourceMetadata(
 export function projectCerbosPolicySource(
   input: CerbosPolicySourceProjectionInput,
 ): CerbosPolicySourceProjectionResult {
-  const source = parseCerbosPolicySource(input.source);
+  const source = parseCerbosPolicySource(input.source, input.sourceType);
   const sourceKind = detectCerbosPolicySourceKind(source);
   const sourceRef = sourceRefFromMetadata(input.metadata);
   const graph =

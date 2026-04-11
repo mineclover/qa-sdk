@@ -43,7 +43,8 @@ def:
 ### 3. Cerbos 정책을 사용할 때
 
 - Cerbos는 선언형 policy decision point로 유지한다.
-- Cerbos YAML/JSON은 호출자가 파싱하고, `authorization-ontology`에는 Cerbos-like object를 넘긴다.
+- Cerbos JSON 문자열 또는 object source는 `projectCerbosPolicySource()`로 직접 투영한다.
+- Cerbos YAML 문자열은 `projectCerbosPolicySource({ sourceType: "yaml" })`로 투영한다.
 - `resourcePolicy.resource`는 `policy -> protects -> resource`로 투영한다.
 - `rules.effect`는 `allows_action` 또는 `denies_action`으로 투영한다.
 - roles, derivedRoles, condition은 relation metadata에 보존한다.

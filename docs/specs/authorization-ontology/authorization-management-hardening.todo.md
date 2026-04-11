@@ -35,7 +35,7 @@ def:
 ### Policy Source Adapter
 
 - [x] Cerbos JSON loader 추가
-- [ ] Cerbos YAML loader 추가
+- [x] Cerbos YAML loader 추가
 - [x] Cerbos bundle/sourceRef/version metadata adapter 추가
 - [ ] Caddy config adapter 추가
 - [ ] Authentik outpost/application adapter 추가

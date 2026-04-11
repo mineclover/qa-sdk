@@ -36,13 +36,13 @@ Cerbos resource policy를 authorization ontology의 policy/resource/action/relat
 - `normalizeCerbosResourcePolicy()` → effect/action/role 기본값 정규화
 - `validateCerbosDerivedRolesLike()` → derived role 최소 shape 검증
 - `normalizeCerbosDerivedRoles()` → parent role 중복 제거와 기본값 정규화
-- `projectCerbosPolicySource()` → JSON 문자열 또는 object source를 resource policy / derived roles graph로 투영
+- `projectCerbosPolicySource()` → JSON/YAML 문자열 또는 object source를 resource policy / derived roles graph로 투영
 
 ## 정의 ^defines
 
 Cerbos는 policy decision point이자 선언형 권한 정책 중심이다. authorization ontology는 Cerbos policy YAML을 opaque file로 보지 않고, policy/resource/action/condition/effect/relation으로 분해하여 관측과 diff가 가능한 graph로 만든다.
 
-초기 구현은 YAML parser를 포함하지 않는다. JSON 문자열 또는 object source는 `projectCerbosPolicySource()`가 처리하고, YAML 파싱은 호출자 또는 후속 adapter가 담당한다.
+JSON 문자열 또는 object source는 `projectCerbosPolicySource()`가 기본 처리한다. YAML 문자열은 `sourceType: "yaml"`을 명시해 같은 surface에서 처리한다.
 
 policy source metadata는 `sourceRef`, `bundleId`, `path`, `revision`으로 표현한다. 이 metadata는 policy node metadata에 보존되어 policy bundle과 graph snapshot의 추적성을 제공한다.
 

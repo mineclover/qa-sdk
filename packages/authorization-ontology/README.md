@@ -9,7 +9,7 @@
 - `AuthorizationRealm`으로 identity/policy/enforcement/infra/application/data/observation 권위 경계를 구분한다.
 - `PrincipalRef`, `ResourceRef`, `ActionRef`, `PolicyRef`를 `NodeCoord` 기반 `AuthorizationNode`로 투영한다.
 - `projectCerbosResourcePolicy()`로 Cerbos resource policy를 policy/resource/action graph로 변환한다.
-- `projectCerbosPolicySource()`로 Cerbos JSON 문자열/object source와 source metadata를 graph로 변환한다.
+- `projectCerbosPolicySource()`로 Cerbos JSON/YAML 문자열 또는 object source와 source metadata를 graph로 변환한다.
 - `projectCerbosDerivedRoles()`로 Cerbos derived roles를 policy/derived-role/parent-role graph로 변환한다.
 - `projectCerbosDecisionObservation()`로 Cerbos check 결과를 decision/principal/resource/action/policy/enforcement graph로 변환한다.
 - `projectEnforcementRoute()`로 Caddy/AuthentiK/Cloud LB route를 enforcement point, upstream resource, Cerbos policy, deployment provenance graph로 변환한다.

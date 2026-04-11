@@ -235,7 +235,7 @@ describe("authorization-ontology", () => {
     ]);
   });
 
-  it("projects Cerbos JSON policy sources with source metadata", () => {
+  it("projects Cerbos JSON and YAML policy sources with source metadata", () => {
     const policyRealm = createAuthorizationRealm({
       kind: "policy",
       authority: "cerbos:prod",
@@ -302,6 +302,53 @@ describe("authorization-ontology", () => {
       expect.arrayContaining(["imports_derived_role", "derives_role_from"]),
     );
 
+    const yamlResult = projectCerbosPolicySource({
+      policyRealm,
+      resourceRealm,
+      sourceType: "yaml",
+      source: `
+resourcePolicy:
+  resource: crm.customer_profile
+  version: v2
+  rules:
+    - actions: [read, export]
+      effect: EFFECT_ALLOW
+      roles: [analyst]
+`,
+      metadata: {
+        sourceRef: "git://policy-repo/customer.yaml@rev-2",
+      },
+    });
+    expect(yamlResult.sourceKind).toBe("resource_policy");
+    expect(yamlResult.graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toEqual(
+      expect.arrayContaining([
+        "policy:cerbos:resource:crm.customer_profile",
+        "action:read",
+        "action:export",
+      ]),
+    );
+
+    const yamlDerivedRolesResult = projectCerbosPolicySource({
+      policyRealm,
+      resourceRealm,
+      sourceType: "yaml",
+      source: `
+derivedRoles:
+  name: crm_derived_roles_yaml
+  definitions:
+    - name: regional_manager
+      parentRoles: [manager]
+`,
+    });
+    expect(yamlDerivedRolesResult.sourceKind).toBe("derived_roles");
+    expect(yamlDerivedRolesResult.graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toEqual(
+      expect.arrayContaining([
+        "policy:cerbos:derivedRoles:crm_derived_roles_yaml",
+        "role:regional_manager",
+        "role:manager",
+      ]),
+    );
+
     expect(() =>
       projectCerbosPolicySource({
         policyRealm,
@@ -309,6 +356,15 @@ describe("authorization-ontology", () => {
         source: "{ invalid json",
       }),
     ).toThrow("Invalid Cerbos policy JSON source");
+
+    expect(() =>
+      projectCerbosPolicySource({
+        policyRealm,
+        resourceRealm,
+        sourceType: "yaml",
+        source: "resourcePolicy: [",
+      }),
+    ).toThrow("Invalid Cerbos policy YAML source");
   });
 
   it("classifies column-level policy propagation by lineage transform", () => {
